@@ -180,6 +180,7 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
       }else if(ev->event_id == TRACE_BLOCK_END){
 	break;
       }else g_error("Not valid facilities trace file\n");
+      g_free(ev);
     }
   }
 }
@@ -714,7 +715,8 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
   LttTime lttTime;
   int headTime = timecmp(&(t->a_block_start->time), &time);
   int tailTime = timecmp(&(t->a_block_end->time), &time);
-  
+  LttEvent * ev;
+
   if(headTime < 0 && tailTime > 0){
     lttTime = getEventTime(t);
     err = timecmp(&lttTime, &time);
@@ -727,10 +729,12 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
       }
     }else if(err < 0){
       err = t->which_block;
-      if(ltt_tracefile_read(t) == NULL){
+      ev = ltt_tracefile_read(t);
+      if(ev == NULL){
 	g_print("End of file\n");      
 	return;
       }
+      g_free(ev);
       if(t->which_block == err)
 	return ltt_tracefile_seek_time(t,time);
     }else return;    
@@ -758,7 +762,11 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
   }else if(headTime == 0){
     updateTracefile(t);
   }else if(tailTime == 0){
-    t->cur_event_pos = t->a_block_end - EVENT_HEADER_SIZE;
+    t->cur_event_pos = t->a_block_end;
+    t->current_event_time = time;  
+    t->cur_heart_beat_number = 0;
+    t->prev_event_time.tv_sec = 0;
+    t->prev_event_time.tv_nsec = 0;
     return;
   }
 }
@@ -782,7 +790,7 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
     t->cur_heart_beat_number++;
 
   t->prev_event_time  = t->current_event_time;
-  t->current_event_time = getEventTime(t);
+  //  t->current_event_time = getEventTime(t);
 
   lttEvent->time_delta = *(uint32_t*)(t->cur_event_pos + EVENT_ID_SIZE);
   lttEvent->event_time = t->current_event_time;
@@ -850,14 +858,11 @@ int readBlock(LttTracefile * tf, int whichBlock)
   if(whichBlock - tf->which_block == 1 && tf->which_block != 0){
     tf->prev_block_end_time = tf->a_block_end->time;
     tf->prev_event_time     = tf->a_block_end->time;
-    tf->current_event_time  = tf->a_block_end->time;
   }else{
     tf->prev_block_end_time.tv_sec = 0;
     tf->prev_block_end_time.tv_nsec = 0;
     tf->prev_event_time.tv_sec = 0;
     tf->prev_event_time.tv_nsec = 0;
-    tf->current_event_time.tv_sec = 0;
-    tf->current_event_time.tv_nsec = 0;
   }
 
   nbBytes=lseek(tf->fd,(off_t)((whichBlock-1)*tf->block_size), SEEK_SET);
@@ -878,7 +883,7 @@ int readBlock(LttTracefile * tf, int whichBlock)
 
   getCyclePerNsec(tf);
 
-  //  tf->current_event_time = getEventTime(tf);  
+  tf->current_event_time = getEventTime(tf);  
 
   return 0;  
 }
@@ -895,9 +900,7 @@ void updateTracefile(LttTracefile * tf)
 {
   tf->which_event = 1;
   tf->cur_event_pos = tf->buffer;
-  //  tf->current_event_time = getEventTime(tf);  
-  tf->current_event_time.tv_sec = 0;  
-  tf->current_event_time.tv_nsec = 0;  
+  tf->current_event_time = getEventTime(tf);  
   tf->cur_heart_beat_number = 0;
 
   tf->prev_event_time.tv_sec = 0;
@@ -973,6 +976,7 @@ int skipEvent(LttTracefile * t)
     if(err) return err;
   }else{
     t->which_event++;
+    t->current_event_time = getEventTime(t);
   }
 
   return 0;
