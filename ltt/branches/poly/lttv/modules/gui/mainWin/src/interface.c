@@ -107,8 +107,8 @@ create_MWindow (void)
   GtkWidget *tlbRemoveViewer;
   GtkWidget *MToolbar2;
   GtkWidget *MNotebook;
-  //  GtkWidget *empty_notebook_page;
-  //  GtkWidget *label1;
+  GtkWidget *empty_notebook_page;
+  GtkWidget *label1;
   GtkWidget *MStatusbar;
   GtkAccelGroup *accel_group;
 
@@ -116,7 +116,7 @@ create_MWindow (void)
 
   MWindow = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_size_request (MWindow, 100, 50);
-  gtk_window_set_title (GTK_WINDOW (MWindow), _("Main window"));
+  gtk_window_set_title (GTK_WINDOW (MWindow), "Main window");
   gtk_window_set_default_size (GTK_WINDOW (MWindow), 600, 400);
 
   MVbox = gtk_vbox_new (FALSE, 0);
@@ -131,25 +131,25 @@ create_MWindow (void)
   gtk_widget_show (MenuMain);
   gtk_box_pack_start (GTK_BOX (MMenuBox), MenuMain, FALSE, FALSE, 0);
 
-  FileMenuTitle = gtk_menu_item_new_with_mnemonic (_("_File"));
+  FileMenuTitle = gtk_menu_item_new_with_mnemonic ("_File");
   gtk_widget_show (FileMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), FileMenuTitle);
 
   FileMenuTitle_menu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (FileMenuTitle), FileMenuTitle_menu);
 
-  FileMenuNewTitle = gtk_menu_item_new_with_mnemonic (_("New"));
+  FileMenuNewTitle = gtk_menu_item_new_with_mnemonic ("New");
   gtk_widget_show (FileMenuNewTitle);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), FileMenuNewTitle);
 
   FileMenuNewTitle_menu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (FileMenuNewTitle), FileMenuNewTitle_menu);
 
-  EmptyTraceset = gtk_menu_item_new_with_mnemonic (_("Empty trace set"));
+  EmptyTraceset = gtk_menu_item_new_with_mnemonic ("Empty trace set");
   gtk_widget_show (EmptyTraceset);
   gtk_container_add (GTK_CONTAINER (FileMenuNewTitle_menu), EmptyTraceset);
 
-  CloneTraceset = gtk_menu_item_new_with_mnemonic (_("Clone trace set"));
+  CloneTraceset = gtk_menu_item_new_with_mnemonic ("Clone trace set");
   gtk_widget_show (CloneTraceset);
   gtk_container_add (GTK_CONTAINER (FileMenuNewTitle_menu), CloneTraceset);
 
@@ -158,19 +158,19 @@ create_MWindow (void)
   gtk_container_add (GTK_CONTAINER (FileMenuNewTitle_menu), FileMenuNewSep);
   gtk_widget_set_sensitive (FileMenuNewSep, FALSE);
 
-  Tab = gtk_menu_item_new_with_mnemonic (_("Tab"));
+  Tab = gtk_menu_item_new_with_mnemonic ("Tab");
   gtk_widget_show (Tab);
   gtk_container_add (GTK_CONTAINER (FileMenuNewTitle_menu), Tab);
 
-  OpenTraceset = gtk_menu_item_new_with_mnemonic (_("Open"));
+  OpenTraceset = gtk_menu_item_new_with_mnemonic ("Open");
   gtk_widget_show (OpenTraceset);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), OpenTraceset);
 
-  Close = gtk_menu_item_new_with_mnemonic (_("Close"));
+  Close = gtk_menu_item_new_with_mnemonic ("Close");
   gtk_widget_show (Close);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), Close);
 
-  CloseTab = gtk_menu_item_new_with_mnemonic (_("Close Tab"));
+  CloseTab = gtk_menu_item_new_with_mnemonic ("Close Tab");
   gtk_widget_show (CloseTab);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), CloseTab);
 
@@ -179,19 +179,19 @@ create_MWindow (void)
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), FileMenuSeparator1);
   gtk_widget_set_sensitive (FileMenuSeparator1, FALSE);
 
-  AddTrace = gtk_menu_item_new_with_mnemonic (_("Add Trace"));
+  AddTrace = gtk_menu_item_new_with_mnemonic ("Add Trace");
   gtk_widget_show (AddTrace);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), AddTrace);
 
-  RemoveTrace = gtk_menu_item_new_with_mnemonic (_("Remove Trace"));
+  RemoveTrace = gtk_menu_item_new_with_mnemonic ("Remove Trace");
   gtk_widget_show (RemoveTrace);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), RemoveTrace);
 
-  Save = gtk_menu_item_new_with_mnemonic (_("Save"));
+  Save = gtk_menu_item_new_with_mnemonic ("Save");
   gtk_widget_show (Save);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), Save);
 
-  SaveAs = gtk_menu_item_new_with_mnemonic (_("Save As"));
+  SaveAs = gtk_menu_item_new_with_mnemonic ("Save As");
   gtk_widget_show (SaveAs);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), SaveAs);
 
@@ -200,11 +200,11 @@ create_MWindow (void)
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), FileMenuSeparator2);
   gtk_widget_set_sensitive (FileMenuSeparator2, FALSE);
 
-  Quit = gtk_menu_item_new_with_mnemonic (_("Quit"));
+  Quit = gtk_menu_item_new_with_mnemonic ("Quit");
   gtk_widget_show (Quit);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), Quit);
 
-  EditMenuTitle = gtk_menu_item_new_with_mnemonic (_("_Edit"));
+  EditMenuTitle = gtk_menu_item_new_with_mnemonic ("_Edit");
   gtk_widget_show (EditMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), EditMenuTitle);
 
@@ -227,22 +227,22 @@ create_MWindow (void)
   gtk_widget_show (Delete);
   gtk_container_add (GTK_CONTAINER (EditMenuTitle_menu), Delete);
 
-  ViewMenuTitle = gtk_menu_item_new_with_mnemonic (_("_View"));
+  ViewMenuTitle = gtk_menu_item_new_with_mnemonic ("_View");
   gtk_widget_show (ViewMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), ViewMenuTitle);
 
   ViewMenuTitle_menu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (ViewMenuTitle), ViewMenuTitle_menu);
 
-  ZoomIn = gtk_menu_item_new_with_mnemonic (_("Zoom in"));
+  ZoomIn = gtk_menu_item_new_with_mnemonic ("Zoom in");
   gtk_widget_show (ZoomIn);
   gtk_container_add (GTK_CONTAINER (ViewMenuTitle_menu), ZoomIn);
 
-  ZoomOut = gtk_menu_item_new_with_mnemonic (_("Zoom out"));
+  ZoomOut = gtk_menu_item_new_with_mnemonic ("Zoom out");
   gtk_widget_show (ZoomOut);
   gtk_container_add (GTK_CONTAINER (ViewMenuTitle_menu), ZoomOut);
 
-  ZoomExtended = gtk_menu_item_new_with_mnemonic (_("Zoom extended"));
+  ZoomExtended = gtk_menu_item_new_with_mnemonic ("Zoom extended");
   gtk_widget_show (ZoomExtended);
   gtk_container_add (GTK_CONTAINER (ViewMenuTitle_menu), ZoomExtended);
 
@@ -251,30 +251,30 @@ create_MWindow (void)
   gtk_container_add (GTK_CONTAINER (ViewMenuTitle_menu), ViewMenuSeparator);
   gtk_widget_set_sensitive (ViewMenuSeparator, FALSE);
 
-  GoToTime = gtk_menu_item_new_with_mnemonic (_("Go to time"));
+  GoToTime = gtk_menu_item_new_with_mnemonic ("Go to time");
   gtk_widget_show (GoToTime);
   gtk_container_add (GTK_CONTAINER (ViewMenuTitle_menu), GoToTime);
 
-  ShowTimeFrame = gtk_menu_item_new_with_mnemonic (_("Show time frame"));
+  ShowTimeFrame = gtk_menu_item_new_with_mnemonic ("Show time frame");
   gtk_widget_show (ShowTimeFrame);
   gtk_container_add (GTK_CONTAINER (ViewMenuTitle_menu), ShowTimeFrame);
 
-  ToolMenuTitle = gtk_menu_item_new_with_mnemonic (_("Tools"));
+  ToolMenuTitle = gtk_menu_item_new_with_mnemonic ("Tools");
   gtk_widget_show (ToolMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), ToolMenuTitle);
 
   ToolMenuTitle_menu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (ToolMenuTitle), ToolMenuTitle_menu);
 
-  MoveViewerUp = gtk_menu_item_new_with_mnemonic (_("Move viewer up"));
+  MoveViewerUp = gtk_menu_item_new_with_mnemonic ("Move viewer up");
   gtk_widget_show (MoveViewerUp);
   gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), MoveViewerUp);
 
-  MoveViewerDown = gtk_menu_item_new_with_mnemonic (_("Move viewer down"));
+  MoveViewerDown = gtk_menu_item_new_with_mnemonic ("Move viewer down");
   gtk_widget_show (MoveViewerDown);
   gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), MoveViewerDown);
 
-  RemoveViewer = gtk_menu_item_new_with_mnemonic (_("Remove viewer"));
+  RemoveViewer = gtk_menu_item_new_with_mnemonic ("Remove viewer");
   gtk_widget_show (RemoveViewer);
   gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), RemoveViewer);
 
@@ -283,37 +283,37 @@ create_MWindow (void)
   gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), ToolMenuSeparator);
   gtk_widget_set_sensitive (ToolMenuSeparator, FALSE);
 
-  insert_viewer_test = gtk_menu_item_new_with_mnemonic (_("Insert viewer test"));
+  insert_viewer_test = gtk_menu_item_new_with_mnemonic ("Insert viewer test");
   gtk_widget_show (insert_viewer_test);
   gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_viewer_test);
 
-  PluginMenuTitle = gtk_menu_item_new_with_mnemonic (_("Plugins"));
+  PluginMenuTitle = gtk_menu_item_new_with_mnemonic ("Plugins");
   gtk_widget_show (PluginMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), PluginMenuTitle);
 
   PluginMenuTitle_menu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (PluginMenuTitle), PluginMenuTitle_menu);
 
-  LoadModule = gtk_menu_item_new_with_mnemonic (_("Load module"));
+  LoadModule = gtk_menu_item_new_with_mnemonic ("Load module");
   gtk_widget_show (LoadModule);
   gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), LoadModule);
 
-  UnloadModule = gtk_menu_item_new_with_mnemonic (_("Unload module"));
+  UnloadModule = gtk_menu_item_new_with_mnemonic ("Unload module");
   gtk_widget_show (UnloadModule);
   gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), UnloadModule);
 
-  AddModuleSearchPath = gtk_menu_item_new_with_mnemonic (_("Add module search path"));
+  AddModuleSearchPath = gtk_menu_item_new_with_mnemonic ("Add module search path");
   gtk_widget_show (AddModuleSearchPath);
   gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), AddModuleSearchPath);
 
-  OptionMenuTitle = gtk_menu_item_new_with_mnemonic (_("Options"));
+  OptionMenuTitle = gtk_menu_item_new_with_mnemonic ("Options");
   gtk_widget_show (OptionMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), OptionMenuTitle);
 
   OptionMenuTitle_menu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (OptionMenuTitle), OptionMenuTitle_menu);
 
-  Color = gtk_menu_item_new_with_mnemonic (_("Color"));
+  Color = gtk_menu_item_new_with_mnemonic ("Color");
   gtk_widget_show (Color);
   gtk_container_add (GTK_CONTAINER (OptionMenuTitle_menu), Color);
 
@@ -322,11 +322,11 @@ create_MWindow (void)
   gtk_container_add (GTK_CONTAINER (OptionMenuTitle_menu), OptMenuSeparator);
   gtk_widget_set_sensitive (OptMenuSeparator, FALSE);
 
-  OpenFilter = gtk_menu_item_new_with_mnemonic (_("Filter"));
+  OpenFilter = gtk_menu_item_new_with_mnemonic ("Filter");
   gtk_widget_show (OpenFilter);
   gtk_container_add (GTK_CONTAINER (OptionMenuTitle_menu), OpenFilter);
 
-  SaveConfiguration = gtk_menu_item_new_with_mnemonic (_("Save configuration"));
+  SaveConfiguration = gtk_menu_item_new_with_mnemonic ("Save configuration");
   gtk_widget_show (SaveConfiguration);
   gtk_container_add (GTK_CONTAINER (OptionMenuTitle_menu), SaveConfiguration);
 
@@ -334,14 +334,14 @@ create_MWindow (void)
   gtk_widget_show (MenuHelp);
   gtk_box_pack_end (GTK_BOX (MMenuBox), MenuHelp, FALSE, FALSE, 0);
 
-  HelpMenuTitle = gtk_menu_item_new_with_mnemonic (_("_Help"));
+  HelpMenuTitle = gtk_menu_item_new_with_mnemonic ("_Help");
   gtk_widget_show (HelpMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuHelp), HelpMenuTitle);
 
   HelpMenu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (HelpMenuTitle), HelpMenu);
 
-  Content = gtk_menu_item_new_with_mnemonic (_("Content"));
+  Content = gtk_menu_item_new_with_mnemonic ("Content");
   gtk_widget_show (Content);
   gtk_container_add (GTK_CONTAINER (HelpMenu), Content);
 
@@ -350,7 +350,7 @@ create_MWindow (void)
   gtk_container_add (GTK_CONTAINER (HelpMenu), HelpmenuSeparator);
   gtk_widget_set_sensitive (HelpmenuSeparator, FALSE);
 
-  About = gtk_menu_item_new_with_mnemonic (_("About..."));
+  About = gtk_menu_item_new_with_mnemonic ("About...");
   gtk_widget_show (About);
   gtk_container_add (GTK_CONTAINER (HelpMenu), About);
 
@@ -364,7 +364,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("New window with empty trace set"), NULL,
+                                "New window with empty trace set", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbEmptyTraceset);
@@ -375,7 +375,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("open a trace set"), NULL,
+                                "open a trace set", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbOpenTraceset);
@@ -386,7 +386,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Add a trace "), NULL,
+                                "Add a trace ", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbAddTrace);
@@ -397,7 +397,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Remove a trace"), NULL,
+                                "Remove a trace", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbRemoveTrace);
@@ -408,7 +408,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("save the current trace set"), NULL,
+                                "save the current trace set", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbSave);
@@ -419,7 +419,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("save as "), NULL,
+                                "save as ", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbSaveAs);
@@ -432,7 +432,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Zoom in"), NULL,
+                                "Zoom in", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbZoomIn);
@@ -443,7 +443,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Zoom out"), NULL,
+                                "Zoom out", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbZoomOut);
@@ -454,7 +454,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Zoom extended"), NULL,
+                                "Zoom extended", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbZoomExtended);
@@ -465,7 +465,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Go to time"), NULL,
+                                "Go to time", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbGoToTime);
@@ -476,7 +476,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Show time frame"), NULL,
+                                "Show time frame", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbShowTimeFrame);
@@ -489,7 +489,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Move up current viewer"), NULL,
+                                "Move up current viewer", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbMoveViewerUp);
@@ -500,7 +500,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Move down current viewer"), NULL,
+                                "Move down current viewer", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbMoveViewerDown);
@@ -511,7 +511,7 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                _("Delete current viewer"), NULL,
+                                "Delete current viewer", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbRemoveViewer);
@@ -525,7 +525,7 @@ create_MWindow (void)
   MNotebook = gtk_notebook_new ();
   gtk_widget_show (MNotebook);
   gtk_box_pack_start (GTK_BOX (MVbox), MNotebook, TRUE, TRUE, 0);
-/*
+
   empty_notebook_page = gtk_vbox_new (FALSE, 0);
   gtk_widget_show (empty_notebook_page);
   gtk_container_add (GTK_CONTAINER (MNotebook), empty_notebook_page);
@@ -534,7 +534,7 @@ create_MWindow (void)
   gtk_widget_show (label1);
   gtk_notebook_set_tab_label (GTK_NOTEBOOK (MNotebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (MNotebook), 0), label1);
   gtk_label_set_justify (GTK_LABEL (label1), GTK_JUSTIFY_LEFT);
-*/
+
   MStatusbar = gtk_statusbar_new ();
   gtk_widget_show (MStatusbar);
   gtk_box_pack_start (GTK_BOX (MVbox), MStatusbar, FALSE, FALSE, 0);
@@ -762,7 +762,7 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, tlbRemoveViewer, "tlbRemoveViewer");
   GLADE_HOOKUP_OBJECT (MWindow, MToolbar2, "MToolbar2");
   GLADE_HOOKUP_OBJECT (MWindow, MNotebook, "MNotebook");
-  //  GLADE_HOOKUP_OBJECT (MWindow, label1, "label1");
+  GLADE_HOOKUP_OBJECT (MWindow, label1, "label1");
   GLADE_HOOKUP_OBJECT (MWindow, MStatusbar, "MStatusbar");
 
   gtk_window_add_accel_group (GTK_WINDOW (MWindow), accel_group);

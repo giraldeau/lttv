@@ -6,7 +6,7 @@ INCLUDES = \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
 	@PACKAGE_CFLAGS@ \
-	-I/home1/yangxx/poly/include
+	$(DEFAULT_INCLUDES)
 
 bin_PROGRAMS = mainwin
 
