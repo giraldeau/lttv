@@ -127,150 +127,6 @@ int draw_event_hook(void *hook_data, void *call_data)
 {
 	EventRequest *Event_Request = (EventRequest*)hook_data;
 	ControlFlowData *control_flow_data = Event_Request->Control_Flow_Data;
-	//static int i=0;
-
-	//i++;
-	//g_critical("%i", i);
-	LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttEvent *e;
-  e = tfc->e;
-
-	/* Temp dump */
-#ifdef DONTSHOW
-	GString *string = g_string_new("");;
-	gboolean field_names = TRUE, state = TRUE;
-
-  lttv_event_to_string(e, tfc->tf, string, TRUE, field_names, tfs);
-  g_string_append_printf(string,"\n");  
-
-  if(state) {
-    g_string_append_printf(string, " %s",
-        g_quark_to_string(tfs->process->state->s));
-  }
-
-  g_info("%s",string->str);
-
-	g_string_free(string, TRUE);
-	
-	/* End of text dump */
-#endif //DONTSHOW
-
-	/* Add process to process list (if not present) and get drawing "y" from
-	 * process position */
-	guint pid = tfs->process->pid;
-	LttTime birth = tfs->process->creation_time;
-	gchar *name = strdup(g_quark_to_string(tfs->process->name));
-	guint y = 0, height = 0, pl_height = 0;
-	HashedProcessData *Hashed_Process_Data = NULL;
-
-	ProcessList *process_list =
-		guicontrolflow_get_process_list(Event_Request->Control_Flow_Data);
-	
-	if(processlist_get_process_pixels(process_list,
-					pid,
-					&birth,
-					&y,
-					&height,
-					&Hashed_Process_Data) == 1)
-	{
-		/* Process not present */
-		processlist_add(process_list,
-				pid,
-				&birth,
-				name,
-				&pl_height,
-				&Hashed_Process_Data);
-		g_free(name);
-		drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y, height);
-	}
-	
-	/* Find pixels corresponding to time of the event. If the time does
-	 * not fit in the window, show a warning, not supposed to happend. */
-	guint x = 0;
-	guint width = control_flow_data->Drawing->Drawing_Area_V->allocation.width;
-
-	LttTime time = ltt_event_time(e);
-
-	LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
-												control_flow_data->Time_Window.start_time);
-
-	
-	convert_time_to_pixels(
-			control_flow_data->Time_Window.start_time,
-			window_end,
-			time,
-			width,
-			&x);
-	
-	assert(x <= width);
-	
-	/* Finally, draw what represents the event. */
-
-	GdkColor color = { 0, 0xffff, 0x0000, 0x0000 };
-	PropertiesArc prop_arc;
-	prop_arc.color = &color;
-	prop_arc.size = 10;
-	prop_arc.filled = TRUE;
-	prop_arc.position = OVER;
-
-	DrawContext *draw_context = Hashed_Process_Data->draw_context;
-	draw_context->Current->modify_over->x = x;
-	draw_context->Current->modify_over->y = y;
-	draw_context->drawable = control_flow_data->Drawing->Pixmap;
-	draw_context->pango_layout = control_flow_data->Drawing->pango_layout;
-	GtkWidget *widget = control_flow_data->Drawing->Drawing_Area_V;
-	//draw_context->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
-	draw_context->gc = widget->style->black_gc;
-	
-	//draw_arc((void*)&prop_arc, (void*)draw_context);
-	//test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->Pixmap);
-	
-	//GdkColor colorfg = { 0, 0xffff, 0x0000, 0x0000 };
-	GdkColor colorfg;
-	colorfg.red = 0xffff;
-	colorfg.green = 0x0000;
-	colorfg.blue = 0x0000;
-	//GdkColor colorbg = { 0, 0xffff, 0x0000, 0xffff };
-	GdkColor colorbg;
-	colorbg.red = 0x0000;
-	colorbg.green = 0x0000;
-	colorbg.blue = 0x0000;
-
-	PropertiesText prop_text;
-	prop_text.foreground = &colorfg;
-	prop_text.background = &colorbg;
-	prop_text.size = 10;
-	prop_text.position = OVER;
-
-	/* Print status of the process : U, WF, WC, E, W, R */
-	if(tfs->process->state->s == LTTV_STATE_UNNAMED)
-		prop_text.Text = "U";
-	else if(tfs->process->state->s == LTTV_STATE_WAIT_FORK)
-		prop_text.Text = "WF";
-	else if(tfs->process->state->s == LTTV_STATE_WAIT_CPU)
-		prop_text.Text = "WC";
-	else if(tfs->process->state->s == LTTV_STATE_EXIT)
-		prop_text.Text = "E";
-	else if(tfs->process->state->s == LTTV_STATE_WAIT)
-		prop_text.Text = "W";
-	else if(tfs->process->state->s == LTTV_STATE_RUN)
-		prop_text.Text = "R";
-	else
-		prop_text.Text = "U";
-	
-	draw_text((void*)&prop_text, (void*)draw_context);
-	
-	return 0;
-}
-
-
-int draw_after_hook(void *hook_data, void *call_data)
-{
-	EventRequest *Event_Request = (EventRequest*)hook_data;
-	ControlFlowData *control_flow_data = Event_Request->Control_Flow_Data;
 
 	LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
@@ -436,6 +292,237 @@ int draw_after_hook(void *hook_data, void *call_data)
 		DrawContext *draw_context_in = Hashed_Process_Data_in->draw_context;
 		draw_context_in->Current->modify_over->x = x;
 		draw_context_in->Current->modify_over->y = y_in;
+		draw_context_in->drawable = control_flow_data->Drawing->Pixmap;
+		draw_context_in->pango_layout = control_flow_data->Drawing->pango_layout;
+		widget = control_flow_data->Drawing->Drawing_Area_V;
+		//draw_context_in->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
+		draw_context_in->gc = widget->style->black_gc;
+		
+		//draw_arc((void*)&prop_arc, (void*)draw_context_in);
+		//test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->Pixmap);
+		
+		GdkColor colorfg_in = { 0, 0x0000, 0xffff, 0x0000 };
+		GdkColor colorbg_in = { 0, 0xffff, 0xffff, 0xffff };
+		PropertiesText prop_text_in;
+		prop_text_in.foreground = &colorfg_in;
+		prop_text_in.background = &colorbg_in;
+		prop_text_in.size = 10;
+		prop_text_in.position = OVER;
+
+		/* Print status of the process : U, WF, WC, E, W, R */
+		if(process_in->state->s == LTTV_STATE_UNNAMED)
+			prop_text_in.Text = "U";
+		else if(process_in->state->s == LTTV_STATE_WAIT_FORK)
+			prop_text_in.Text = "WF";
+		else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
+			prop_text_in.Text = "WC";
+		else if(process_in->state->s == LTTV_STATE_EXIT)
+			prop_text_in.Text = "E";
+		else if(process_in->state->s == LTTV_STATE_WAIT)
+			prop_text_in.Text = "W";
+		else if(process_in->state->s == LTTV_STATE_RUN)
+			prop_text_in.Text = "R";
+		else
+			prop_text_in.Text = "U";
+		
+		draw_text((void*)&prop_text_in, (void*)draw_context_in);
+		
+	}
+
+	return 0;
+
+	/* Temp dump */
+#ifdef DONTSHOW
+	GString *string = g_string_new("");;
+	gboolean field_names = TRUE, state = TRUE;
+
+  lttv_event_to_string(e, tfc->tf, string, TRUE, field_names, tfs);
+  g_string_append_printf(string,"\n");  
+
+  if(state) {
+    g_string_append_printf(string, " %s",
+        g_quark_to_string(tfs->process->state->s));
+  }
+
+  g_info("%s",string->str);
+
+	g_string_free(string, TRUE);
+	
+	/* End of text dump */
+#endif //DONTSHOW
+
+}
+
+
+int draw_after_hook(void *hook_data, void *call_data)
+{
+	EventRequest *Event_Request = (EventRequest*)hook_data;
+	ControlFlowData *control_flow_data = Event_Request->Control_Flow_Data;
+
+	LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+
+	
+  LttEvent *e;
+  e = tfc->e;
+
+	if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"schedchange") == 0)
+	{
+		g_critical("schedchange!");
+		
+		/* Add process to process list (if not present) and get drawing "y" from
+		 * process position */
+		guint pid_out, pid_in;
+		LttvProcessState *process_out, *process_in;
+		LttTime birth;
+		guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
+
+		ProcessList *process_list =
+			guicontrolflow_get_process_list(Event_Request->Control_Flow_Data);
+
+
+		LttField *f = ltt_event_field(e);
+		LttField *element;
+		element = ltt_field_member(f,0);
+		pid_out = ltt_event_get_long_unsigned(e,element);
+		element = ltt_field_member(f,1);
+		pid_in = ltt_event_get_long_unsigned(e,element);
+		g_critical("out : %u  in : %u", pid_out, pid_in);
+
+
+		/* Find process pid_out in the list... */
+		process_out = lttv_state_find_process(tfs, pid_out);
+		g_critical("out : %s",g_quark_to_string(process_out->state->s));
+
+		birth = process_out->creation_time;
+		gchar *name = strdup(g_quark_to_string(process_out->name));
+		HashedProcessData *Hashed_Process_Data_out = NULL;
+
+		if(processlist_get_process_pixels(process_list,
+						pid_out,
+						&birth,
+						&y_out,
+						&height,
+						&Hashed_Process_Data_out) == 1)
+		{
+		/* Process not present */
+		processlist_add(process_list,
+				pid_out,
+				&birth,
+				name,
+				&pl_height,
+				&Hashed_Process_Data_out);
+		processlist_get_process_pixels(process_list,
+						pid_out,
+						&birth,
+						&y_out,
+						&height,
+						&Hashed_Process_Data_out);
+		drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y_out, height);
+		}
+
+		g_free(name);
+		
+		/* Find process pid_in in the list... */
+		process_in = lttv_state_find_process(tfs, pid_in);
+		g_critical("in : %s",g_quark_to_string(process_in->state->s));
+
+		birth = process_in->creation_time;
+		name = strdup(g_quark_to_string(process_in->name));
+		HashedProcessData *Hashed_Process_Data_in = NULL;
+
+		if(processlist_get_process_pixels(process_list,
+						pid_in,
+						&birth,
+						&y_in,
+						&height,
+						&Hashed_Process_Data_in) == 1)
+		{
+		/* Process not present */
+			processlist_add(process_list,
+				pid_in,
+				&birth,
+				name,
+				&pl_height,
+				&Hashed_Process_Data_in);
+			processlist_get_process_pixels(process_list,
+						pid_in,
+						&birth,
+						&y_in,
+						&height,
+						&Hashed_Process_Data_in);
+
+			drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y_in, height);
+		}
+		g_free(name);
+
+
+		/* Find pixels corresponding to time of the event. If the time does
+		 * not fit in the window, show a warning, not supposed to happend. */
+		//guint x = 0;
+		//guint width = control_flow_data->Drawing->Drawing_Area_V->allocation.width;
+
+		//LttTime time = ltt_event_time(e);
+
+		//LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
+		//											control_flow_data->Time_Window.start_time);
+
+		
+		//convert_time_to_pixels(
+		//		control_flow_data->Time_Window.start_time,
+		//		window_end,
+		//		time,
+		//		width,
+		//		&x);
+		
+		//assert(x <= width);
+		
+		/* draw what represents the event for outgoing process. */
+
+		DrawContext *draw_context_out = Hashed_Process_Data_out->draw_context;
+		//draw_context_out->Current->modify_over->x = x;
+		//draw_context_out->Current->modify_over->y = y_out;
+		draw_context_out->drawable = control_flow_data->Drawing->Pixmap;
+		draw_context_out->pango_layout = control_flow_data->Drawing->pango_layout;
+		GtkWidget *widget = control_flow_data->Drawing->Drawing_Area_V;
+		//draw_context_out->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
+		draw_context_out->gc = widget->style->black_gc;
+		
+		//draw_arc((void*)&prop_arc, (void*)draw_context_out);
+		//test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->Pixmap);
+		
+		GdkColor colorfg_out = { 0, 0xffff, 0x0000, 0x0000 };
+		GdkColor colorbg_out = { 0, 0xffff, 0xffff, 0xffff };
+		PropertiesText prop_text_out;
+		prop_text_out.foreground = &colorfg_out;
+		prop_text_out.background = &colorbg_out;
+		prop_text_out.size = 10;
+		prop_text_out.position = OVER;
+
+		/* Print status of the process : U, WF, WC, E, W, R */
+		if(process_out->state->s == LTTV_STATE_UNNAMED)
+			prop_text_out.Text = "U";
+		else if(process_out->state->s == LTTV_STATE_WAIT_FORK)
+			prop_text_out.Text = "WF";
+		else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
+			prop_text_out.Text = "WC";
+		else if(process_out->state->s == LTTV_STATE_EXIT)
+			prop_text_out.Text = "E";
+		else if(process_out->state->s == LTTV_STATE_WAIT)
+			prop_text_out.Text = "W";
+		else if(process_out->state->s == LTTV_STATE_RUN)
+			prop_text_out.Text = "R";
+		else
+			prop_text_out.Text = "U";
+		
+		draw_text((void*)&prop_text_out, (void*)draw_context_out);
+
+		/* Finally, update the drawing context of the pid_in. */
+
+		DrawContext *draw_context_in = Hashed_Process_Data_in->draw_context;
+		//draw_context_in->Current->modify_over->x = x;
+		//draw_context_in->Current->modify_over->y = y_in;
 		draw_context_in->drawable = control_flow_data->Drawing->Pixmap;
 		draw_context_in->pango_layout = control_flow_data->Drawing->pango_layout;
 		widget = control_flow_data->Drawing->Drawing_Area_V;
