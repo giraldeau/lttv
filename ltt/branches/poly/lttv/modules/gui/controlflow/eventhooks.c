@@ -193,7 +193,8 @@ int draw_event_hook(void *hook_data, void *call_data)
 
 
     /* Find process pid_out in the list... */
-    process_out = lttv_state_find_process_from_trace(ts, pid_out);
+    //process_out = lttv_state_find_process_from_trace(ts, pid_out);
+    process_out = lttv_state_find_process(tfs, pid_out);
     if(process_out == NULL) return 0;
     g_critical("out : %s",g_quark_to_string(process_out->state->s));
     
@@ -230,7 +231,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     g_free(name);
     
     /* Find process pid_in in the list... */
-    process_in = lttv_state_find_process_from_trace(ts, pid_in);
+    //process_in = lttv_state_find_process_from_trace(ts, pid_in);
+    process_in = lttv_state_find_process(tfs, pid_in);
     if(process_in == NULL) return 0;
     g_critical("in : %s",g_quark_to_string(process_in->state->s));
 
