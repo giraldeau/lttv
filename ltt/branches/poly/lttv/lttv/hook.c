@@ -416,17 +416,6 @@ unsigned lttv_hooks_by_id_max_id(LttvHooksById *h)
   return h->len;
 }
 
-
-inline LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id)
-{
-  LttvHooks *ret;
-  if(id < h->len) ret = h->pdata[id];
-  else ret = NULL;
-
-  return ret;
-}
-
-
 void lttv_hooks_by_id_remove(LttvHooksById *h, unsigned id)
 {
   if(id < h->len && h->pdata[id] != NULL) {
