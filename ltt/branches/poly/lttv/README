@@ -15,3 +15,9 @@ would be (if the installation prefix is /usr, for instance)
 
 lttv -L /usr/lib/lttv/plugins -m mainwin -m guiEvents
 
+* Tree structure
+main:    main program
+mainLib: libraries acting as core of the interaction between main program
+         and modules.
+modules: text and graphical viewing and analysis tools.
+
