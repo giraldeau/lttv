@@ -45,7 +45,10 @@ lttlibdir="${libdir}/ltt"
 AC_SUBST(lttlibdir)
 
 
-DEFAULT_INCLUDES="-I\$(top_srcdir)/include"
+top_includedir="\$(top_srcdir)/include"
+AC_SUBST(top_includedir)
+
+DEFAULT_INCLUDES="-I\$(top_includedir)"
 AC_SUBST(DEFAULT_INCLUDES)
 
 #CPPFLAGS="${GLIB_CFLAGS}"

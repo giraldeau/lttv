@@ -124,6 +124,23 @@ do \
     }\
 } while(0)
 
+/*  (T2 = T1 * FLOAT) */
+/* WARNING : use this multiplicator carefully : on 32 bits, multiplying
+ * by more than 4 could overflow the tv_nsec.
+ */
+#define TimeMul(T2, T1, FLOAT) \
+do \
+{\
+  (T2).tv_sec  = (T1).tv_sec  * (FLOAT);  \
+  (T2).tv_nsec = (T1).tv_nsec * (FLOAT);  \
+  if((T2).tv_nsec >= 1000000000)\
+    {\
+    (T2).tv_sec += (T3).tv_nsec / 1000000000;\
+    (T2).tv_nsec = (T3).tv_nsec % 1000000000;\
+    }\
+} while(0)
+
+
 
 
 #include <ltt/ltt-private.h>
