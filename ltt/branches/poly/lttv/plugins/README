@@ -1,0 +1,13 @@
+
+|-----------------|
+|Graphical Plugins|
+|-----------------|
+
+guiEvents.c : Display events for time interval, drawing them using gdk.
+guiControlFlow.c : Display the control flow of the trace for time interval.
+
+
+|---------------------|
+|Text Oriented Plugins|
+|---------------------|
+
