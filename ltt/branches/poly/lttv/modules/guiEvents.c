@@ -939,13 +939,15 @@ void get_test_data(double time_value, guint list_height,
 	    if(size == 0)
 	      get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_CUBE,&size);
 	  }
-	}else size = 1;
-	if(size > 0) event_number = event_viewer_data->start_event_index + 1;	
-	else         event_number = event_viewer_data->start_event_index;
+	  if(size==0) event_number = event_viewer_data->start_event_index;	
+	  else event_number = event_viewer_data->number_of_events - size - list_height + 1;
+	}else event_number = event_viewer_data->start_event_index + 1;
 	break;
       case SCROLL_PAGE_DOWN:
 	i = event_viewer_data->number_of_events - 1 - list_height;
 	if((gint)(event_viewer_data->end_event_index) >= i){
+	  int remain_events = event_viewer_data->number_of_events - 1 
+	                      -  event_viewer_data->end_event_index;
 	  event_viewer_data->append = TRUE;
 	  first = event_viewer_data->raw_trace_data_queue->head;
 	  if(!first)break;
@@ -960,11 +962,12 @@ void get_test_data(double time_value, guint list_height,
 	    if(size == 0)
 	      get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_CUBE,&size);
 	  }
-	}
-	if(list_height <= event_viewer_data->number_of_events - 1 - event_viewer_data->end_event_index)
-	  event_number = event_viewer_data->start_event_index + list_height - 1;	
-	else
-	  event_number = event_viewer_data->number_of_events - 1 - list_height;		  
+	  remain_events += size;
+	  if(list_height <= remain_events)
+	    event_number = event_viewer_data->number_of_events - remain_events - 1;	
+	  else
+	    event_number = event_viewer_data->number_of_events - 1 - list_height;		  
+	}else event_number = event_viewer_data->start_event_index + list_height - 1;
 	break;
       case SCROLL_JUMP:
 	event_viewer_data->append = TRUE;
