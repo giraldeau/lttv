@@ -13,7 +13,8 @@
 #define PROCESS_EXIT_ID     21
 
 #define INFO_ENTRY          9
-#define OVERFLOW_FIGURE     0xffffffff
+#define OVERFLOW_FIGURE     0x100000000
+//#define OVERFLOW_FIGURE     0xffffffff
 
 typedef struct _new_process
 {
