@@ -339,7 +339,14 @@ ProcessList *processlist_construct(void)
       process_sort_func,
       NULL,
       NULL);
-  
+ 
+
+  gtk_tree_sortable_set_sort_column_id(
+      GTK_TREE_SORTABLE(process_list->list_store),
+      GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
+      GTK_SORT_ASCENDING);
+
+
   process_list->process_hash = g_hash_table_new_full(
       process_list_hash_fct, process_list_equ_fct,
       destroy_hash_key, destroy_hash_data
