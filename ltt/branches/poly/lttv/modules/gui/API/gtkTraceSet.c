@@ -498,7 +498,7 @@ void unreg_update_current_time(LttvHook hook, gpointer hook_data,
 
 void set_focused_pane(MainWindow *main_win, gpointer paned)
 {
-  gtk_custom_set_focus((GtkWidget*)main_win->current_tab->custom,paned);  
+  gtk_multi_vpaned_set_focus((GtkWidget*)main_win->current_tab->multi_vpaned,paned);  
 }
 
 

@@ -4,7 +4,7 @@ lttvinclude_HEADERS = \
 	common.h\
 	filter.h\
 	gtkTraceSet.h\
-	gtkcustom.h\
+	gtkmultivpaned.h\
 	hook.h\
 	iattribute.h\
 	lttv.h\

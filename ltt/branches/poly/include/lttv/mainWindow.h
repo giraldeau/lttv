@@ -9,7 +9,7 @@
 #include <lttv/processTrace.h>
 
 #include <lttv/common.h>
-#include <lttv/gtkcustom.h>
+#include <lttv/gtkmultivpaned.h>
 #include <lttv/hook.h>
 #include <lttv/stats.h>
 
@@ -59,7 +59,7 @@ struct _MainWindow{
 
 struct _Tab{
   GtkWidget * label;
-  GtkCustom * custom;
+  GtkMultiVPaned * multi_vpaned;
    
   // startTime is the left of the visible area. Corresponds to the scrollbar
   // value.

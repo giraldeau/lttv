@@ -71,18 +71,18 @@ insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data)
 /* internal functions */
 void insert_viewer(GtkWidget* widget, view_constructor constructor)
 {
-  GtkCustom * custom;
+  GtkMultiVPaned * multi_vpaned;
   MainWindow * mw_data;  
   GtkWidget * viewer;
 
   mw_data = get_window_data_struct(widget);
   if(!mw_data->current_tab) return;
-  custom = mw_data->current_tab->custom;
+  multi_vpaned = mw_data->current_tab->multi_vpaned;
 
   viewer = (GtkWidget*)constructor(mw_data);
   if(viewer)
   {
-    gtk_custom_widget_add(custom, viewer); 
+    gtk_multi_vpaned_widget_add(multi_vpaned, viewer); 
     // Added by MD
     //    g_object_unref(G_OBJECT(viewer));
   }
@@ -166,21 +166,21 @@ void move_up_viewer(GtkWidget * widget, gpointer user_data)
 {
   MainWindow * mw = get_window_data_struct(widget);
   if(!mw->current_tab) return;
-  gtk_custom_widget_move_up(mw->current_tab->custom);
+  gtk_multi_vpaned_widget_move_up(mw->current_tab->multi_vpaned);
 }
 
 void move_down_viewer(GtkWidget * widget, gpointer user_data)
 {
   MainWindow * mw = get_window_data_struct(widget);
   if(!mw->current_tab) return;
-  gtk_custom_widget_move_down(mw->current_tab->custom);
+  gtk_multi_vpaned_widget_move_down(mw->current_tab->multi_vpaned);
 }
 
 void delete_viewer(GtkWidget * widget, gpointer user_data)
 {
   MainWindow * mw = get_window_data_struct(widget);
   if(!mw->current_tab) return;
-  gtk_custom_widget_delete(mw->current_tab->custom);
+  gtk_multi_vpaned_widget_delete(mw->current_tab->multi_vpaned);
 }
 
 void open_traceset(GtkWidget * widget, gpointer user_data)
@@ -338,7 +338,7 @@ void zoom(GtkWidget * widget, double size)
     time_window.start_time = time_s;    
   }
   set_time_window(mw_data, &time_window);
-  gtk_custom_set_adjust(mw_data->current_tab->custom, FALSE);
+  gtk_multi_vpaned_set_adjust(mw_data->current_tab->multi_vpaned, FALSE);
 }
 
 void zoom_in(GtkWidget * widget, gpointer user_data)
@@ -1186,9 +1186,9 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   }
   tmp_tab->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   //  mw_data->current_tab = tmp_tab;
-  tmp_tab->custom = (GtkCustom*)gtk_custom_new();
-  tmp_tab->custom->mw = mw_data;
-  gtk_widget_show((GtkWidget*)tmp_tab->custom);
+  tmp_tab->multi_vpaned = (GtkMultiVPaned*)gtk_multi_vpaned_new();
+  tmp_tab->multi_vpaned->mw = mw_data;
+  gtk_widget_show((GtkWidget*)tmp_tab->multi_vpaned);
   tmp_tab->next = NULL;    
   tmp_tab->mw   = mw_data;
 
@@ -1196,12 +1196,12 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   gtk_widget_show (tmp_tab->label);
 
   g_object_set_data_full(
-           G_OBJECT(tmp_tab->custom),
+           G_OBJECT(tmp_tab->multi_vpaned),
            "Tab_Info",
 	   tmp_tab,
 	   (GDestroyNotify)tab_destructor);
   
-  gtk_notebook_append_page(notebook, (GtkWidget*)tmp_tab->custom, tmp_tab->label);  
+  gtk_notebook_append_page(notebook, (GtkWidget*)tmp_tab->multi_vpaned, tmp_tab->label);  
   list = gtk_container_get_children(GTK_CONTAINER(notebook));
   gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
 }
