@@ -227,9 +227,7 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
      * child of this widget. The little trick is to get each child
      * of each GTK_CONTAINER, even subchildren.
      */
-    {
-      connect_focus_recursive(viewer, viewer);
-    }
+    connect_focus_recursive(viewer, viewer);
   }
 }
 
@@ -472,6 +470,11 @@ void create_new_window(GtkWidget* widget, gpointer user_data, gboolean clone)
   }
 }
 
+/* Get the currently focused viewer.
+ * If no viewer is focused, use the first one.
+ *
+ * If no viewer available, return NULL.
+ */
 GtkWidget *viewer_container_focus(GtkWidget *container)
 {
   GtkWidget *widget;
@@ -479,7 +482,14 @@ GtkWidget *viewer_container_focus(GtkWidget *container)
   widget = (GtkWidget*)g_object_get_data(G_OBJECT(container),
                     "focused_viewer");
 
-  if(widget == NULL) g_debug("no widget focused");
+  if(widget == NULL) {
+    g_debug("no widget focused");
+    GList *children = gtk_container_get_children(GTK_CONTAINER(container));
+
+    if(children != NULL)
+      widget = GTK_WIDGET(children->data);
+  }
+  
   return widget;
 
 
