@@ -186,6 +186,7 @@ void drawing_data_request(Drawing_t *drawing,
   events_request->end_time = time_end;
   events_request->num_events = G_MAXUINT;
   events_request->end_position = NULL;
+  events_request->trace = 0;    /* FIXME */
   events_request->before_chunk_traceset = before_chunk_traceset;
   events_request->before_chunk_trace = NULL;
   events_request->before_chunk_tracefile = NULL;
@@ -483,7 +484,7 @@ after_expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data
 
 }
 
-
+#if 0
 void
 tree_row_activated(GtkTreeModel *treemodel,
                    GtkTreePath *arg1,
@@ -498,12 +499,12 @@ tree_row_activated(GtkTreeModel *treemodel,
   
   path_indices =  gtk_tree_path_get_indices (arg1);
 
-  height = get_cell_height(
+  height = get_cell_height(cfd->process_list,
         GTK_TREE_VIEW(treeview));
   drawing->horizontal_sel = height * path_indices[0];
   g_critical("new hor sel : %i", drawing->horizontal_sel);
 }
-
+#endif //0
 
 /* mouse click */
 static gboolean

@@ -1223,11 +1223,27 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
           /* 1.3.2 call before chunk
            * 1.3.3 events hooks added
            */
-          lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
-                                           events_request->before_chunk_trace,
-                                           events_request->before_chunk_tracefile,
-                                           events_request->event,
-                                           events_request->event_by_id);
+          if(events_request->trace == -1)
+            lttv_process_traceset_begin(tsc,
+                events_request->before_chunk_traceset,
+                events_request->before_chunk_trace,
+                events_request->before_chunk_tracefile,
+                events_request->event,
+                events_request->event_by_id);
+          else {
+            guint nb_trace = lttv_traceset_number(tsc->ts);
+            g_assert(events_request->trace < nb_trace &&
+                      events_request->trace > -1);
+            LttvTraceContext *tc = tsc->traces[events_request->trace];
+
+            lttv_hooks_call(events_request->before_chunk_traceset, tsc);
+
+            lttv_trace_context_add_hooks(tc,
+                                         events_request->before_chunk_trace,
+                                         events_request->before_chunk_tracefile,
+                                         events_request->event,
+                                         events_request->event_by_id);
+          }
         }
       }
     } else {
@@ -1244,11 +1260,27 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
           /* - Call before chunk
            * - events hooks added
            */
-          lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
+          if(events_request->trace == -1)
+            lttv_process_traceset_begin(tsc,
+                events_request->before_chunk_traceset,
+                events_request->before_chunk_trace,
+                events_request->before_chunk_tracefile,
+                events_request->event,
+                events_request->event_by_id);
+          else {
+            guint nb_trace = lttv_traceset_number(tsc->ts);
+            g_assert(events_request->trace < nb_trace &&
+                      events_request->trace > -1);
+            LttvTraceContext *tc = tsc->traces[events_request->trace];
+
+            lttv_hooks_call(events_request->before_chunk_traceset, tsc);
+
+            lttv_trace_context_add_hooks(tc,
                                          events_request->before_chunk_trace,
                                          events_request->before_chunk_tracefile,
                                          events_request->event,
                                          events_request->event_by_id);
+          }
 
           iter = g_slist_next(iter);
         }
@@ -1292,11 +1324,29 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
             /* call before chunk
              * events hooks added
              */
-            lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
-                                             events_request->before_chunk_trace,
-                                             events_request->before_chunk_tracefile,
-                                             events_request->event,
-                                             events_request->event_by_id);
+            if(events_request->trace == -1)
+              lttv_process_traceset_begin(tsc,
+                  events_request->before_chunk_traceset,
+                  events_request->before_chunk_trace,
+                  events_request->before_chunk_tracefile,
+                  events_request->event,
+                  events_request->event_by_id);
+            else {
+              guint nb_trace = lttv_traceset_number(tsc->ts);
+              g_assert(events_request->trace < nb_trace &&
+                        events_request->trace > -1);
+              LttvTraceContext *tc = tsc->traces[events_request->trace];
+
+              lttv_hooks_call(events_request->before_chunk_traceset, tsc);
+
+              lttv_trace_context_add_hooks(tc,
+                                           events_request->before_chunk_trace,
+                                           events_request->before_chunk_tracefile,
+                                           events_request->event,
+                                           events_request->event_by_id);
+          }
+
+
           }
 
           /* Go to next */
@@ -1426,11 +1476,31 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
           /* - Remove events hooks for req
            * - Call end chunk for req
            */
-          lttv_process_traceset_end(tsc, events_request->after_chunk_traceset,
+
+          if(events_request->trace == -1) 
+               lttv_process_traceset_end(tsc,
+                                         events_request->after_chunk_traceset,
                                          events_request->after_chunk_trace,
                                          events_request->after_chunk_tracefile,
                                          events_request->event,
                                          events_request->event_by_id);
+
+          else {
+            guint nb_trace = lttv_traceset_number(tsc->ts);
+            g_assert(events_request->trace < nb_trace &&
+                      events_request->trace > -1);
+            LttvTraceContext *tc = tsc->traces[events_request->trace];
+
+            lttv_trace_context_remove_hooks(tc,
+                                         events_request->after_chunk_trace,
+                                         events_request->after_chunk_tracefile,
+                                         events_request->event,
+                                         events_request->event_by_id);
+            lttv_hooks_call(events_request->after_chunk_traceset, tsc);
+
+
+          }
+
           /* - Call end request for req */
           lttv_hooks_call(events_request->after_request, (gpointer)tsc);
           
@@ -1465,11 +1535,28 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
           /* - Remove events hooks for req
            * - Call end chunk for req
            */
-          lttv_process_traceset_end(tsc, events_request->after_chunk_traceset,
+          if(events_request->trace == -1) 
+               lttv_process_traceset_end(tsc,
+                                         events_request->after_chunk_traceset,
                                          events_request->after_chunk_trace,
                                          events_request->after_chunk_tracefile,
                                          events_request->event,
                                          events_request->event_by_id);
+
+          else {
+            guint nb_trace = lttv_traceset_number(tsc->ts);
+            g_assert(events_request->trace < nb_trace &&
+                      events_request->trace > -1);
+            LttvTraceContext *tc = tsc->traces[events_request->trace];
+
+            lttv_trace_context_remove_hooks(tc,
+                                         events_request->after_chunk_trace,
+                                         events_request->after_chunk_tracefile,
+                                         events_request->event,
+                                         events_request->event_by_id);
+
+            lttv_hooks_call(events_request->after_chunk_traceset, tsc);
+          }
 
           /* - req.num -= count */
           g_assert(events_request->num_events >= count);

@@ -700,7 +700,7 @@ void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
     }
 }
 
-gint get_cell_height(GtkTreeView *TreeView)
+static __inline gint get_cell_height(GtkTreeView *TreeView)
 {
   gint height;
   GtkTreeViewColumn *column = gtk_tree_view_get_column(TreeView, 0);
@@ -1613,6 +1613,7 @@ void get_events(EventViewerData* event_viewer_data, LttTime start,
   events_request->end_time = ltt_time_infinite;
   events_request->num_events = max_num_events;
   events_request->end_position = NULL;
+  events_request->trace = 0;  /* FIXME */
   events_request->before_chunk_traceset = NULL;
   events_request->before_chunk_trace = NULL;
   events_request->before_chunk_tracefile = NULL;

@@ -434,7 +434,7 @@ GtkWidget *processlist_get_widget(ProcessList *process_list)
 
 
 
-__inline gint get_cell_height(ProcessList *process_list, GtkTreeView *tree_view)
+static __inline gint get_cell_height(ProcessList *process_list, GtkTreeView *tree_view)
 {
   gint height = process_list->cell_height_cache;
   if(height != -1) return height;

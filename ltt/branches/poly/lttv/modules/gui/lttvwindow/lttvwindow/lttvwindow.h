@@ -601,6 +601,7 @@ typedef struct _EventsRequest {
   LttTime                      end_time;        /* Unset : ltt_time_infinite*/
   guint                        num_events;      /* Unset : G_MAXUINT        */
   LttvTracesetContextPosition *end_position;    /* Unset : NULL             */
+  gint                         trace;           /* unset : -1               */
   LttvHooks                   *before_chunk_traceset; /* Unset : NULL       */
   LttvHooks                   *before_chunk_trace;    /* Unset : NULL       */
   LttvHooks                   *before_chunk_tracefile;/* Unset : NULL       */
