@@ -181,6 +181,9 @@ static void request_background_data(StatisticViewerData *svd)
                                                    background_ready_hook);
       
       }
+    } else {
+      /* ready */
+      lttv_hooks_call(background_ready_hook, NULL);
     }
   }
   lttv_hooks_destroy(background_ready_hook);
