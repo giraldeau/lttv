@@ -243,7 +243,7 @@ int main(int argc, char ** argv){
     g_error("Unable to open file interrupts\n");
   }
   fdProc = open(foo_control_processes,O_CREAT | O_RDWR | O_TRUNC,S_IRUSR |S_IWUSR | S_IRGRP | S_IROTH);
-  if(fdIntr<0){
+  if(fdProc<0){
     g_error("Unable to open file process\n");
   }
 
@@ -503,8 +503,9 @@ int main(int argc, char ** argv){
 	  write_pos_proc = buf_proc + block_size - sizeof(uint32_t);
   	  write_to_buffer(write_pos_intr,(void*)&size_intr, sizeof(uint32_t));
   	  write_to_buffer(write_pos_proc,(void*)&size_proc, sizeof(uint32_t));
-	  write(fdIntr,(void*)buf_intr,block_size);	  
-	  write(fdProc,(void*)buf_proc,block_size);	  
+	  //for now don't output processes and interrupt information
+	  //	  write(fdIntr,(void*)buf_intr,block_size);	  
+	  //	  write(fdProc,(void*)buf_proc,block_size);	  
 	}
 	break;   
       }
