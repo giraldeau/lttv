@@ -293,42 +293,42 @@ gboolean lttv_hooks_call_merge(LttvHooks *h1, void *call_data1,
 
   guint i, j;
 
-  if(h1 != NULL && h2 != NULL) {
-    for(i = 0, j = 0 ; i < h1->len && j < h2->len ;) {
-      c1 = &g_array_index(h1, LttvHookClosure, i);
-      c2 = &g_array_index(h2, LttvHookClosure, j);
-      if(c1->prio <= c2->prio) {
+  if(h1 != NULL) {
+    if(h2 != NULL) {
+      for(i = 0, j = 0 ; i < h1->len && j < h2->len ;) {
+        c1 = &g_array_index(h1, LttvHookClosure, i);
+        c2 = &g_array_index(h2, LttvHookClosure, j);
+        if(c1->prio <= c2->prio) {
+          ret = c1->hook(c1->hook_data,call_data1);
+          sum_ret = sum_ret || ret;
+          i++;
+        }
+        else {
+          ret = c2->hook(c2->hook_data,call_data2);
+          sum_ret = sum_ret || ret;
+          j++;
+        }
+      }
+      /* Finish the last list with hooks left */
+      for(;i < h1->len; i++) {
+        c1 = &g_array_index(h1, LttvHookClosure, i);
         ret = c1->hook(c1->hook_data,call_data1);
         sum_ret = sum_ret || ret;
-        i++;
       }
-      else {
+      for(;j < h2->len; j++) {
+        c2 = &g_array_index(h2, LttvHookClosure, j);
         ret = c2->hook(c2->hook_data,call_data2);
         sum_ret = sum_ret || ret;
-        j++;
+      }
+    } else {  /* h1 != NULL && h2 == NULL */
+      for(i = 0 ; i < h1->len ; i++) {
+        c1 = &g_array_index(h1, LttvHookClosure, i);
+        ret = c1->hook(c1->hook_data,call_data1);
+        sum_ret = sum_ret || ret;
       }
     }
-    /* Finish the last list with hooks left */
-    for(;i < h1->len; i++) {
-      c1 = &g_array_index(h1, LttvHookClosure, i);
-      ret = c1->hook(c1->hook_data,call_data1);
-      sum_ret = sum_ret || ret;
-    }
-    for(;j < h2->len; j++) {
-      c2 = &g_array_index(h2, LttvHookClosure, j);
-      ret = c2->hook(c2->hook_data,call_data2);
-      sum_ret = sum_ret || ret;
-    }
-  }
-  else if(h1 != NULL && h2 == NULL) {
-    for(i = 0 ; i < h1->len ; i++) {
-      c1 = &g_array_index(h1, LttvHookClosure, i);
-      ret = c1->hook(c1->hook_data,call_data1);
-      sum_ret = sum_ret || ret;
-    }
-  } 
-  else if(h1 == NULL && h2 != NULL) {
-    for(j = 0 ; j < h2->len ; j++) {
+  } else if(h2 != NULL) { /* h1 == NULL && h2 != NULL */
+     for(j = 0 ; j < h2->len ; j++) {
       c2 = &g_array_index(h2, LttvHookClosure, j);
       ret = c2->hook(c2->hook_data,call_data2);
       sum_ret = sum_ret || ret;
@@ -345,42 +345,42 @@ gboolean lttv_hooks_call_check_merge(LttvHooks *h1, void *call_data1,
 
   guint i, j;
 
-  if(h1 != NULL && h2 != NULL) {
-    for(i = 0, j = 0 ; i < h1->len && j < h2->len ;) {
-      c1 = &g_array_index(h1, LttvHookClosure, i);
-      c2 = &g_array_index(h2, LttvHookClosure, j);
-      if(c1->prio <= c2->prio) {
+  if(h1 != NULL) {
+    if(h2 != NULL) {
+      for(i = 0, j = 0 ; i < h1->len && j < h2->len ;) {
+        c1 = &g_array_index(h1, LttvHookClosure, i);
+        c2 = &g_array_index(h2, LttvHookClosure, j);
+        if(c1->prio <= c2->prio) {
+          if(c1->hook(c1->hook_data,call_data1)) return TRUE;
+            i++;
+        }
+        else {
+          if(c2->hook(c2->hook_data,call_data2)) return TRUE;
+          j++;
+        }
+      }
+      /* Finish the last list with hooks left */
+      for(;i < h1->len; i++) {
+        c1 = &g_array_index(h1, LttvHookClosure, i);
         if(c1->hook(c1->hook_data,call_data1)) return TRUE;
-        i++;
       }
-      else {
+      for(;j < h2->len; j++) {
+        c2 = &g_array_index(h2, LttvHookClosure, j);
         if(c2->hook(c2->hook_data,call_data2)) return TRUE;
-        j++;
+      }
+    } else { /* h2 == NULL && h1 != NULL */
+      for(i = 0 ; i < h1->len ; i++) {
+        c1 = &g_array_index(h1, LttvHookClosure, i);
+        if(c1->hook(c1->hook_data,call_data1)) return TRUE;
       }
     }
-    /* Finish the last list with hooks left */
-    for(;i < h1->len; i++) {
-      c1 = &g_array_index(h1, LttvHookClosure, i);
-      if(c1->hook(c1->hook_data,call_data1)) return TRUE;
-    }
-    for(;j < h2->len; j++) {
-      c2 = &g_array_index(h2, LttvHookClosure, j);
-      if(c2->hook(c2->hook_data,call_data2)) return TRUE;
-    }
-  }
-  else if(h1 != NULL && h2 == NULL) {
-    for(i = 0 ; i < h1->len ; i++) {
-      c1 = &g_array_index(h1, LttvHookClosure, i);
-      if(c1->hook(c1->hook_data,call_data1)) return TRUE;
-    }
-  } 
-  else if(h1 == NULL && h2 != NULL) {
+  } else if(h2 != NULL) { /* h1 == NULL && h2 != NULL */
     for(j = 0 ; j < h2->len ; j++) {
       c2 = &g_array_index(h2, LttvHookClosure, j);
       if(c2->hook(c2->hook_data,call_data2)) return TRUE;
     }
   }
-
+   
   return FALSE;
 
 }
@@ -417,10 +417,13 @@ unsigned lttv_hooks_by_id_max_id(LttvHooksById *h)
 }
 
 
-LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id)
+inline LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id)
 {
-  if(id < h->len) return h->pdata[id];
-  return NULL;
+  LttvHooks *ret;
+  if(id < h->len) ret = h->pdata[id];
+  else ret = NULL;
+
+  return ret;
 }
 
 
