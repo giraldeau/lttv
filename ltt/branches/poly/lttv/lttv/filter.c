@@ -274,7 +274,12 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
  *  @return success/failure of operation
  */
 gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op) {
-       
+     
+  g_print("se->field = %i\n",se->field);
+  g_print("se->offset = %i\n",se->offset);
+  g_print("se->op = %p\n",se->op);
+  g_print("se->value = %s\n",se->value);
+    
   switch(se->field) {
      /* char */
      case LTTV_FILTER_TRACE_NAME:
@@ -354,6 +359,9 @@ gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op) {
        g_warning("Error encountered in operator assignment");
        return FALSE;
    }
+  
+  return TRUE;
+  
 
 }
 
@@ -915,6 +923,7 @@ lttv_filter_update(LttvFilter* filter) {
        *   logical operators
        */
       case '&':   /* and */
+   
         t1 = (LttvFilterTree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
         while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
@@ -934,9 +943,10 @@ lttv_filter_update(LttvFilter* filter) {
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2; 
         }
-        
         break;
+      
       case '|':   /* or */
+      
         t1 = (LttvFilter*)g_ptr_array_index(tree_stack,tree_stack->len-1);
         while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
@@ -957,7 +967,9 @@ lttv_filter_update(LttvFilter* filter) {
           t1->r_child.t = t2; 
         }
         break;
+      
       case '^':   /* xor */
+        
         t1 = (LttvFilter*)g_ptr_array_index(tree_stack,tree_stack->len-1);
         while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
@@ -978,13 +990,15 @@ lttv_filter_update(LttvFilter* filter) {
           t1->r_child.t = t2; 
         }
         break;
+      
       case '!':   /* not, or not equal (math op) */
+        
         if(filter->expression[i+1] == '=') {  /* != */
-          assign_operator(a_simple_expression,LTTV_FIELD_NE);
-          i++;
           g_ptr_array_add( a_field_path,(gpointer) a_field_component );
           parse_field_path(a_field_path,a_simple_expression);
           a_field_component = g_string_new("");         
+          assign_operator(a_simple_expression,LTTV_FIELD_NE);
+          i++;
         } else {  /* ! */
         //  g_print("%s\n",a_field_component);
         //  a_field_component = g_string_new("");
@@ -996,16 +1010,20 @@ lttv_filter_update(LttvFilter* filter) {
           t1->r_child.t = t2;
         }
         break;
+      
       case '(':   /* start of parenthesis */
       case '[':
       case '{':
+        
         p_nesting++;      /* incrementing parenthesis nesting value */
         t1 = lttv_filter_tree_new();
         g_ptr_array_add( tree_stack,(gpointer) t1 );
         break;
+      
       case ')':   /* end of parenthesis */
       case ']':
       case '}':
+        
         p_nesting--;      /* decrementing parenthesis nesting value */
         if(p_nesting<0 || tree_stack->len<2) {
           g_warning("Wrong filtering options, the string\n\"%s\"\n\
@@ -1042,33 +1060,40 @@ lttv_filter_update(LttvFilter* filter) {
        *	mathematic operators
        */
       case '<':   /* lower, lower or equal */
+        
+        g_ptr_array_add( a_field_path,(gpointer) a_field_component );
+        parse_field_path(a_field_path,a_simple_expression);
+        a_field_component = g_string_new("");         
         if(filter->expression[i+1] == '=') { /* <= */
           i++;
           assign_operator(a_simple_expression,LTTV_FIELD_LE);
         } else assign_operator(a_simple_expression,LTTV_FIELD_LT);
-        g_ptr_array_add( a_field_path,(gpointer) a_field_component );
+       break;
+      
+      case '>':   /* higher, higher or equal */
+        
+        g_ptr_array_add( a_field_path,(gpointer) a_field_component );   
         parse_field_path(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
-        break;
-      case '>':   /* higher, higher or equal */
         if(filter->expression[i+1] == '=') {  /* >= */
           i++;
           assign_operator(a_simple_expression,LTTV_FIELD_GE);
         } else assign_operator(a_simple_expression,LTTV_FIELD_GT);
-        g_ptr_array_add( a_field_path,(gpointer) a_field_component );   
-        parse_field_path(a_field_path,a_simple_expression);
-        a_field_component = g_string_new("");         
-        break;
+       break;
+      
       case '=':   /* equal */
-        assign_operator(a_simple_expression,LTTV_FIELD_EQ);
+        
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );
         parse_field_path(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
+        assign_operator(a_simple_expression,LTTV_FIELD_EQ);
         break;
+        
       /*
        *  Field concatening caracter
        */
       case '.':   /* dot */
+        
         /*
          * divide field expression into elements 
          * in a_field_path array.
@@ -1078,6 +1103,7 @@ lttv_filter_update(LttvFilter* filter) {
           a_field_component = g_string_new("");
         }
         break;
+      
       default:    /* concatening current string */
         g_string_append_c(a_field_component,filter->expression[i]); 				
     }
@@ -1121,6 +1147,8 @@ lttv_filter_update(LttvFilter* filter) {
   g_assert(tree != NULL);
   g_assert(subtree == NULL); 
   
+  lttv_filter_tracefile(filter, NULL) ;
+
   return TRUE;
 //  return filter;
   
