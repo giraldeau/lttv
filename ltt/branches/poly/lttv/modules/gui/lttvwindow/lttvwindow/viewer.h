@@ -1,4 +1,4 @@
-/* This file is part of the Linux Trace Toolkit viewer
+/* This file is part of the Linux Trace Toolkit Graphic User Interface
  * Copyright (C) 2003-2004 Xiangxiu Yang, Mathieu Desnoyers
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,10 +22,14 @@ This file is what every viewer plugin writer should refer to.
 
 Module Related API
 
-A viewer plugin is, before anything, a plugin. It thus has an init and 
-a destroy function called whenever it is loaded/initialized and 
-unloaded/destroyed. A viewer depends on lttvwindow and thus uses its init and
-destroy functions to register module related hooks defined in this file.
+A viewer plugin is, before anything, a plugin. As a dynamically loadable 
+module, it thus has an init and a destroy function called whenever it is
+loaded/initialized and unloaded/destroyed. A graphical module depends on
+lttvwindow for construction of its viewer instances. In order to achieve this,
+it must register its constructor function to the main window along with
+button description or text menu entry description. A module keeps a list of
+every viewer that currently sits in memory so it can destroy them before the
+module gets unloaded/destroyed.
 
 
 Viewer Instance Related API
@@ -43,7 +47,7 @@ unload function will have to emit a "destroy" signal on each top level widget
 of all instances of its viewers.
 
 
-Notices from Main Window :
+Notices from Main Window
 
 time_window : This is the time interval visible on the viewer's tab. Every
               viewer that cares about being synchronised by respect to the
@@ -82,7 +86,8 @@ caused by actions known by a view instance. For example, clicking in a view may
 update the current time; all viewers within the same window must be told about
 the new current time to change the currently highlighted time point. A viewer
 reports such events by calling lttvwindow_report_current_time on its lttvwindow.
-The lttvwindow will thereafter call update for each of its contained viewers.
+The lttvwindow will consequently call current_time_notify for each of its 
+contained viewers.
 
 
 Available report methods are :
@@ -94,16 +99,64 @@ lttvwindow_report_dividor : reports the new horizontal dividor's position.
 lttvwindow_report_focus : One on the widgets in the viewer has the keyboard's
                           focus from GTK.
 
-Requiring Time Interval
 
-FIXME : explain
+
+Requesting Events to Main Window
+
+Events can be requested by passing a EventsRequest structure to the main window.
+They will be delivered later when the next g_idle functions will be called.
+Event delivery is done by calling the middle hook for this event ID, or the 
+main middle hooks.
+
+EventsRequest consists in 
+- a start timestamp or position
+- a end timestamp and/or position and/or number of events to read
+- hook lists to call for traceset/trace/tracefile begin and end, and for each
+  event (middle).
+
+The main window will deliver events for every EventRequests it has pending
+through an algorithm that guarantee that all events requested, and only them,
+will be delivered to the viewer between the call of the tracefile_begin hooks
+and the call of the tracefile_end hooks.
+
 
 
 
 GTK Events
 
-FIXME: explain GTK Events distribution and signals propagation in details
-(useful!)
+Events and Signals
+
+GTK is quite different from the other graphical toolkits around there. The main
+difference resides in that there are many X Windows inside one GtkWindow,
+instead of just one. That means that X events are delivered by the glib main 
+loop directly to the widget corresponding to the GdkWindow affected by the X
+event.
+
+Event delivery to a widget emits a signal on this widget. Signal emission and
+propagation is described there : 
+
+http://www.gtk.org/tutorial/sec-signalemissionandpropagation.html
+
+For further information on the GTK main loop (now a wrapper over glib main loop)
+see :
+
+http://developer.gnome.org/doc/API/2.0/gtk/gtk-General.html
+http://developer.gnome.org/doc/API/2.0/glib/glib-The-Main-Event-Loop.html
+
+
+For documentation on event handling in GTK/GDK, see :
+
+http://developer.gnome.org/doc/API/2.0/gdk/gdk-Events.html
+http://developer.gnome.org/doc/API/2.0/gdk/gdk-Event-Structures.html
+
+
+Signals can be connected to handlers, emitted, propagated, blocked, 
+stopped. See :
+
+http://developer.gnome.org/doc/API/2.0/gobject/gobject-Signals.html
+
+
+
 
 The "expose_event"
 
@@ -468,43 +521,43 @@ void lttvwindow_report_focus(MainWindow *main_win,
 
 
 /* Structure sent to the time request hook */
-typedef struct _TimeRequest {
-  TimeWindow  time_window;
-  guint num_events;
-  LttvHook after_hook;
-  gpointer after_hook_data;
-} TimeRequest;
+                                                /* Value considered as empty */
+typedef struct _EventsRequest {
+  LttTime                     start_time,       /* Unset : { 0, 0 }          */
+  LttvTracesetContextPosition start_position,   /* Unset : num_traces = 0    */
+  LttTime                     end_time,         /* Unset : { 0, 0 }          */
+  guint                       num_events,       /* Unset : G_MAXUINT         */
+  LttvTracesetContextPosition end_position,     /* Unset : num_traces = 0    */
+  LttvHooksById              *before_traceset,  /* Unset : NULL              */
+  LttvHooksById              *before_trace,     /* Unset : NULL              */
+  LttvHooksById              *before_tracefile, /* Unset : NULL              */
+  LttvHooksById              *middle,           /* Unset : NULL              */
+  LttvHooksById              *after_tracefile,  /* Unset : NULL              */
+  LttvHooksById              *after_trace,      /* Unset : NULL              */
+  LttvHooksById              *after_traceset    /* Unset : NULL              */
+} EventsRequest;
+
 
 /**
  * Function to request data in a specific time interval to the main window. The
  * time request servicing is differed until the glib idle functions are
  * called.
  *
- * The viewer has to make sure that it has registered hooks in the main window's
- * traceset context before the glib idle's function gets called to ensure that
- * it will be called for the events it has asked for.
+ * The viewer has to provide hooks that should be associated with the event
+ * request.
  *
+ * Either start time or start position must be defined in a EventRequest
+ * structure for it to be valid.
+ *
+ * end_time, end_position and num_events can all be defined. The first one
+ * to occur will be used as end criterion.
+ * 
  * @param main_win the main window the viewer belongs to.
- * @param time_requested the time requested by the viewer.
- * @param num_events the quantity of events to get (can be a little more if many
- *                   events have the same timestamp than the last one)
- * @param after_process_traceset hook called after the process traceset. It will
- *                               typically unregister the hooks in the context.
- *                               The call_data of this hook is a 
- *                               const TimeRequest*, corresponding to the 
- *                               original time request. It's there for
- *                               information purpose only and should not be
- *                               freed.
- * @param after_process_traceset_data hook data associated with the hook
- *                                    function. It will be typically a pointer
- *                                    to the viewer's data structure.
+ * @param events_requested the structure of request from.
  */
 
-void lttvwindow_time_interval_request(MainWindow *main_win,
-                                      TimeWindow  time_requested,
-                                      guint       num_events,
-                                      LttvHook    after_process_traceset,
-                                      gpointer    after_process_traceset_data);
+void lttvwindow_events_request(MainWindow    *main_win,
+                               EventsRequest  events_request);
 
 /**
  * Function to get the life span of the traceset
