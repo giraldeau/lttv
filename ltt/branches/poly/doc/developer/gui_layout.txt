@@ -38,8 +38,11 @@ Here is a short description of each menu entry
 *New -> *Empty trace set : open a new window with an empty trace set.
         *Clone trace set : copy the content of the current window in a new
 			   window.
+	*
+	*Tab : Opens a new tab.
 *Open : open a trace set. Calls a file selection dialog.
 *Close : close the current window.
+*Close Tab : close the current tab.
 *
 *Add trace : Add a trace to the window's traceset. Calls file selection dialog.
 *Remove trace : Removes a trace from the traceset.
@@ -102,9 +105,11 @@ So we have something like this :
 --------------------------------------------------------------------------------
 | Toolbar of the current viewer                                                |
 --------------------------------------------------------------------------------
-| viewers in vpaned                                                            |
-|                                                                              |
-|                                                                              |
+||Current Tab|                                                                 |
+|-----------------------------------------------------------------------------||
+||viewers in vpaned                                                           ||
+||                                                                            ||
+||----------------------------------------------------------------------------||
 --------------------------------------------------------------------------------
 | Status bar                                                                   |
 --------------------------------------------------------------------------------
