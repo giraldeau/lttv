@@ -6,48 +6,104 @@
 /* A hook is a function to call with the supplied hook data, and with 
    call site specific data (e.g., hooks for events are called with a 
    pointer to the current event). */
-// MD compile fix: int instead of bool as return value
-typedef int (*lttv_hook)(void *hook_data, void *call_data);
+
+typedef gboolean (*LttvHook)(void *hook_data, void *call_data);
 
 
 /* A list of hooks allows registering hooks to be called later. */
 
-typedef GArray _lttv_hooks;
-typedef _lttv_hooks lttv_hooks;
+typedef struct _LttvHooks LttvHooks;
 
-lttv_hooks *lttv_hooks_new();
 
-void lttv_hooks_destroy(lttv_hooks *h);
+/* Create and destroy a list of hooks */
 
-void lttv_hooks_add(lttv_hooks *h, lttv_hook f, void *hook_data);
+LttvHooks *lttv_hooks_new();
 
-void lttv_hooks_remove(lttv_hooks *h, lttv_hook f, void *hook_data);
+void lttv_hooks_destroy(LttvHooks *h);
 
-unsigned lttv_hooks_number(lttv_hooks *h);
 
-void lttv_hooks_get(lttv_hooks *h, unsigned i, lttv_hook *f, void **hook_data);
+/* Add a hook and its hook data to the list */
 
-void lttv_hooks_remove_by_position(lttv_hooks *h, unsigned i);
+void lttv_hooks_add(LttvHooks *h, LttvHook f, void *hook_data);
 
-int lttv_hooks_call(lttv_hooks *h, void *call_data);
 
-int lttv_hooks_call_check(lttv_hooks *h, void *call_data);
+/* Add a list of hooks to the list h */
+
+void lttv_hooks_add(LttvHooks *h, LttvHooks *list);
+
+
+/* Remove a hook from the list. Return the hook data. */
+
+void *lttv_hooks_remove(LttvHooks *h, LttvHook f);
+
+
+/* Remove a hook from the list checking that the hook data match. */
+
+void lttv_hooks_remove_data(LttvHooks *h, LttvHook f, void *hook_data);
+
+
+/* Remove a list of hooks from the hooks list in h. */
+
+void lttv_hooks_remove_data(LttvHooks *h, LttvHook *list);
+
+
+/* Return the number of hooks in the list */
+
+unsigned lttv_hooks_number(LttvHooks *h);
+
+
+/* Return the hook at the specified position in the list */
+
+void lttv_hooks_get(LttvHooks *h, unsigned i, LttvHook *f, void **hook_data);
+
+
+/* Remove the specified hook. The position of the following hooks may change */
+
+void lttv_hooks_remove_by_position(LttvHooks *h, unsigned i);
+
+
+/* Call all the hooks in the list, each with its hook data, 
+   with the specified call data. Return TRUE is one hook returned TRUE. */
+
+gboolean lttv_hooks_call(LttvHooks *h, void *call_data);
+
+
+/* Call the hooks in the list until one returns true, in which case TRUE is
+   returned. */
+
+gboolean lttv_hooks_call_check(LttvHooks *h, void *call_data);
 
 
 /* Sometimes different hooks need to be called based on the case. The
-   case is represented by an unsigned integer id and may represent different
-   event types, for instance. */
+   case is represented by an unsigned integer id */
 
-typedef GPtrArray _lttv_hooks_by_id;
-typedef _lttv_hooks_by_id lttv_hooks_by_id;
+typedef struct _LttvHooksById LttvHooksById;
 
-lttv_hooks_by_id *lttv_hooks_by_id_new();
 
-void lttv_hooks_by_id_destroy(lttv_hooks_by_id *h);
+/* Create and destroy a hooks by id list */
 
-void lttv_hooks_by_id_add(lttv_hooks_by_id *h, lttv_hook f, void *hook_data, 
-    unsigned int id);
+LttvHooksById *lttv_hooks_by_id_new();
 
-void lttv_hooks_by_id_call(lttv_hooks_by_id *h, void *call_data, unsigned int id);
+void lttv_hooks_by_id_destroy(LttvHooksById *h);
+
+
+/* Obtain the hooks for a given id, creating a list if needed */
+
+LttvHooks *lttv_hooks_by_id_find(LttvHooksById *h, unsigned id);
+
+
+/* Return an id larger than any for which a list exists. */
+
+unsigned lttv_hooks_by_id_max_id(LttvHooksById *h);
+
+
+/* Get the list of hooks for an id, NULL if none exists */
+
+LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id);
+
+
+/* Remove the list of hooks associated with an id */
+
+void lttv_hooks_by_id_remove(LttvHooksById *h, unsigned id);
 
 #endif // HOOK_H

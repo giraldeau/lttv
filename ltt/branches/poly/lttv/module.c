@@ -3,288 +3,268 @@
  * 
  */
 
-/* Initial draft by Michel Dagenais May 2003
- * Reworked by Mathieu Desnoyers, May 2003
- */
-
-#include <popt.h>
 #include <lttv/module.h>
-#include <lttv/lttv.h>
+
+
+struct _LttvModule
+{
+  GModule *module;
+  guint ref_count;
+  guint load_count;
+  GPtrArray *dependents;
+};
+
 
 /* Table of loaded modules and paths where to search for modules */
 
 static GHashTable *modules = NULL;
 
-static GPtrArray *modulesStandalone = NULL;
-
 static GPtrArray *modulesPaths = NULL;
 
-void lttv_module_init(int argc, char **argv) {
+static void lttv_module_unload_all();
+
+
+void lttv_module_init(int argc, char **argv) 
+{
   modules = g_hash_table_new(g_str_hash, g_str_equal);
-  modulesStandalone = g_ptr_array_new();
   modulesPaths = g_ptr_array_new();
 }
 
-void lttv_module_destroy() {
-  
+
+void lttv_module_destroy() 
+{  
   int i;
 
   /* Unload all modules */
   lttv_module_unload_all();
 
   /* Free the modules paths pointer array as well as the elements */
-  for(i = 0; i< modulesPaths->len; i++) {
+  for(i = 0; i < modulesPaths->len ; i++) {
     g_free(modulesPaths->pdata[i]);
   }
   g_ptr_array_free(modulesPaths,TRUE) ;
-  g_ptr_array_free(modulesStandalone,TRUE) ;
   modulesPaths = NULL;
-  modulesStandalone = NULL;
   
   /* destroy the hash table */
   g_hash_table_destroy(modules) ;
   modules = NULL;
 }
 
+
 /* Add a new pathname to the modules loading search path */
 
-void lttv_module_path_add(const char *name) {
+void lttv_module_path_add(const char *name) 
+{
   g_ptr_array_add(modulesPaths,(char*)g_strdup(name));
 }
 
 
-/* Load (if not already loaded) the named module. Its init function is
-   called. We pass the options of the command line to it in case it has
-   preliminary things to get from it. Note that the normal way to add a
-   command line option for a module is through the options parsing mecanism.
-   */
+static LttvModuleInfo *
+module_load(const char *name, int argc, char **argv) 
+{
+  GModule *gm;
 
-lttv_module_info *lttv_module_load(const char *name, int argc, char **argv, loadtype load) {
-
-  GModule *gmodule;
-
-  lttv_module_info *moduleInfo;
+  LttvModule *m;
 
   int i;
 
   char *pathname;
   
-  lttv_module_load_init init_Function;
+  LttvModuleInit init_function;
 
-  /* Find and load the module, It will increase the usage counter
-   * If the module is already loaded, only the reference counter will
-   * be incremented. It's part of the gmodule architecture. Very useful
-   * for modules dependencies.
-   */
-
-  g_assert(name != NULL);
+  /* Try to find the module along all the user specified paths */
 
   for(i = 0 ; i < modulesPaths->len ; i++) {
     pathname = g_module_build_path(modulesPaths->pdata[i],name);
-    gmodule = g_module_open(pathname,0) ;
+    gm = g_module_open(pathname,0);
+    g_free(pathname);    
     
-    
-    if(gmodule != NULL) {
-      g_message("Loading module %s ... found!",pathname);
+    if(gm != NULL) break;
+  }
 
-      /* Was the module already opened? */
-      moduleInfo = g_hash_table_lookup(modules,g_module_name(gmodule));
+  /* Try the default system path */
 
-      /* First time the module is opened */
-
-      if(moduleInfo == NULL ) {
-        moduleInfo = g_new(lttv_module_info, 1);
-        moduleInfo->module = gmodule;
-        moduleInfo->pathname = g_module_name(gmodule);
-        moduleInfo->directory = modulesPaths->pdata[i];
-        moduleInfo->name = (char *)g_strdup(name);
-	moduleInfo->ref_count = 0;
-	moduleInfo->index_standalone = -1;
-        g_hash_table_insert(modules, moduleInfo->pathname, moduleInfo);
-        if(!g_module_symbol(gmodule, "init", (gpointer) &init_Function)) {
- 	  g_critical("module %s (%s) does not have init function",
-            moduleInfo->pathname,moduleInfo->name);
-	}
-        else {
-          init_Function(argc,argv);
-        }
-      }
-
-      /* Add the module in the standalone array if the module is
-       * standalone and not in the array. Otherwise, set index to
-       * -1 (dependant only).
-       */
-      if(load == STANDALONE) {
-	      
-        if(moduleInfo->index_standalone == -1) {
-		
-          g_ptr_array_add(modulesStandalone, moduleInfo);
-          moduleInfo->index_standalone = modulesStandalone->len - 1;
-
-	  moduleInfo->ref_count++ ;  
-        }
-	else {
-          g_warning("Module %s is already loaded standalone.",pathname);
-	  /* Decrease the gmodule use_count. Has previously been increased in the g_module_open. */
-  	  g_module_close(moduleInfo->module) ;
-	}
-      }
-      else { /* DEPENDANT */
-	  moduleInfo->ref_count++ ;
-      }
-
-      return moduleInfo;
-    }
-    g_message("Loading module %s ... missing.",pathname);
+  if(gm == NULL) {
+    pathname = g_module_build_path(NULL,name);
+    gm = g_module_open(pathname,0);
     g_free(pathname);
   }
-  g_critical("module %s not found",name);
-  return NULL;
-}
 
-/* Unload the named module. */
+  /* Module cannot be found */
 
-int lttv_module_unload_pathname(const char *pathname, loadtype load) {
+  if(gm == NULL) return NULL;
 
-  lttv_module_info *moduleInfo;
+  /* Check if the module was already opened using the hopefully canonical name
+     returned by g_module_name. */
 
-  moduleInfo = g_hash_table_lookup(modules, pathname);
+  pathname = g_module_name(gm);
 
-  /* If no module of that name is loaded, nothing to unload. */
-  if(moduleInfo != NULL) {
-    g_message("Unloading module %s : is loaded.\n", pathname) ;
-    lttv_module_unload(moduleInfo, load) ;
-    return 1;
+  m = g_hash_table_lookup(modules, pathname);
+
+  if(m == NULL) {
+
+    /* Module loaded for the first time. Insert it in the table and call the
+       init function if any. */
+
+    m = g_new(LttvModule);
+    m->module = gm;
+    m->ref_count = 0;
+    m->load_count = 0;
+    m->dependents = g_ptr_array_new();
+    g_hash_table_insert(modules, pathname, m);
+
+    if(!g_module_symbol(gm, "init", (gpointer)&init_function)) {
+      g_warning("module %s (%s) has no init function", name, pathname);
+    }
+    else init_Function(argc,argv);
   }
   else {
-    g_message("Unloading module %s : is not loaded.\n", pathname) ;
-    return 0;
+
+    /* Module was already opened, check that it really is the same and
+       undo the extra g_module_open */
+
+    if(m->module != gm) g_error("Two gmodules with the same pathname");
+    g_module_close(gm);
   }
  
+  m->ref_count++;
+  return m;
 }
 
-int lttv_module_unload_name(const char *name, loadtype load) {
 
-  int i;
+LttvModuleInfo *
+lttv_module_load(const char *name, int argc, char **argv) 
+{
+  LttvModule *m = module_load(name, argc, argv);
+
+  if(m != NULL) m->load_count++;
+  return m;
+}
+
+
+LttvModule *
+lttv_module_require(LttvModule *m, const char *name, int argc, char **argv)
+{
+  LttvModule *module;
+
+  module = module_load(name, argc, argv);
+  if(module != NULL) g_ptr_array_add(m->dependents, module);
+  return module;
+}
+
+
+static void module_unload(LttvModule *m) 
+{
+  LttvModuleDestroy destroy_function;
 
   char *pathname;
-  
-  /* Find and load the module, It will increase the usage counter
-   * If the module is already loaded, only the reference counter will
-   * be incremented. It's part of the gmodule architecture. Very useful
-   * for modules dependencies.
-   */
 
-  g_assert(name != NULL);
+  guint len;
 
-  for(i = 0 ; i < modulesPaths->len ; i++) {
+  /* Decrement the reference count */
 
-    pathname = g_module_build_path(modulesPaths->pdata[i],name);
-    
-    if(lttv_module_unload_pathname(pathname, load) == TRUE)
-      return TRUE ;
+  m->ref_count--;
+  if(m->ref_count > 0) return;
+
+  /* We really have to unload the module, first unload its dependents */
+
+  len = m->dependents->len;
+
+  for(i = 0 ; i < len ; i++) {
+    module_unload(m->dependents->pdata[i]);
   }
-  g_critical("module %s not found",name);
-  return FALSE;
+
+  if(len != m->dependents->len) g_error("dependents list modified");
+
+  /* Unload the module itself */
+
+  if(!g_module_symbol(m->module, "destroy", (gpointer)&destroy_function)) {
+    g_warning("module (%s) has no destroy function", pathname);
+  }
+  else destroy_function();
+
+  g_hash_table_remove(modules, g_module_name(m->module));
+  g_ptr_array_free(m->dependents, TRUE);
+  g_module_close(m->module);
+  g_free(m);
 }
 
 
-
-/* Unload the module. We use a call_gclose boolean to keep the g_module_close call
- * after the call to the module's destroy function. */
-  
-int lttv_module_unload(lttv_module_info *moduleInfo, loadtype load) {
-
-  lttv_module_unload_destroy destroy_Function;
-
-  char *moduleName ;
-
-  gboolean call_gclose = FALSE;
-
-  if(moduleInfo == NULL) return FALSE;
-
- /* Closing the module decrements the usage counter if previously higher than
-  * 1. If 1, it unloads the module.
-  */
-
-  /* Add the module in the standalone array if the module is
-   * standalone and not in the array. Otherwise, set index to
-   * -1 (dependant only).
-   */
-  if(load == STANDALONE) {
-     
-    if(moduleInfo->index_standalone == -1) {
-	
-      g_warning("Module %s is not loaded standalone.",moduleInfo->pathname);
-    }
-    else {
-      /* We do not remove the element of the array, it would change
-       * the index orders. We will have to check if index is -1 in
-       * unload all modules.
-       */
-      moduleInfo->index_standalone = -1;
-      g_message("Unloading module %s, reference count passes from %u to %u",
-  	    moduleInfo->pathname,moduleInfo->ref_count,
-	    moduleInfo->ref_count-1);
-
-      moduleInfo->ref_count-- ;
-      call_gclose = TRUE ;
-    }
+void lttv_module_unload(LttvModule *m) 
+{
+  if(m->load_count <= 0) { 
+    g_error("more unload than load (%s)", g_module_name(m->module));
+    return;
   }
-  else { /* DEPENDANT */
-    g_message("Unloading module %s, reference count passes from %u to %u",
-              moduleInfo->pathname,
-              moduleInfo->ref_count,moduleInfo->ref_count-1);
-
-              moduleInfo->ref_count-- ;
-	      call_gclose = TRUE ;
-  }
-
-  /* The module is really closing if ref_count is 0 */
-  if(!moduleInfo->ref_count) {
-    g_message("Unloading module %s : closing module.",moduleInfo->pathname);
-
-    /* Call the destroy function of the module */
-    if(!g_module_symbol(moduleInfo->module, "destroy", (gpointer) &destroy_Function)) {
-       g_critical("module %s (%s) does not have destroy function",
-       		moduleInfo->pathname,moduleInfo->name);
-    }
-    else {
-       destroy_Function();
-    }
-  
-    /* If the module will effectively be closed, remove the moduleInfo from
-     * the hash table and free the module name.
-     */
-    g_free(moduleInfo->name) ;
-
-    g_hash_table_remove(modules, moduleInfo->pathname);
-  }
-  
-  if(call_gclose) g_module_close(moduleInfo->module) ;
-
-  return TRUE ;
+  m->load_count--;
+  module_unload(m);
 }
 
-#define MODULE_I ((lttv_module_info *)modulesStandalone->pdata[i])
-//FIXME use g_ptr_array_index instead
-/* unload all the modules in the hash table, calling module_destroy for
- * each of them.
- *
- * We first take all the moduleInfo in the hash table, put it in an
- * array. We use qsort on the array to have the use count of 1 first.
- */
-void lttv_module_unload_all() {
-	
-  int i = 0;
 
-  /* call the unload for each module.
-   */
-  for(i = 0; i < modulesStandalone->len; i++) {
-	  
-    if(MODULE_I->index_standalone != -1) {
-    lttv_module_unload(MODULE_I,STANDALONE) ;
-    }
+static void
+list_modules(gpointer key, gpointer value, gpointer user_data)
+{
+  g_ptr_array_add((GPtrArray *)user_data, value);
+}
+
+
+LttvModule **
+lttv_module_list(guint *nb)
+{
+  GPtrArray *list = g_ptr_array_new();
+
+  LttvModule **array;
+
+  g_hash_table_foreach(modules, list_modules, list);
+  *nb = list->len;
+  array = (LttvModule **)list->pdata;
+  g_ptr_array_free(list, FALSE);
+  return array;
+}
+
+
+LttvModule **
+lttv_module_info(LttvModule *m, const char **name, 
+    guint *ref_count, guint *load_count, guint *nb_dependents)
+{
+  guint i, len = m->dependents->len;
+
+  LttvModule **array = g_new(LttvModule *, len);
+
+  *name = g_module_name(m->module);
+  *ref_count = m->ref_count;
+  *load_count = m->load_count;
+  *nb_dependents = len;
+  for(i = 0 ; i < len ; i++) array[i] = m->dependents->pdata[i];
+  return array;
+}
+
+
+static void
+list_independent(gpointer key, gpointer value, gpointer user_data)
+{
+  LttvModule *m = (LttvModule *)value;
+
+  if(m->load_count > 0) g_ptr_array_add((GPtrArray *)user_data, m);
+}
+
+
+void
+lttv_module_unload_all()
+{
+  guint i;
+
+  LttvModule *m;
+
+  GPtrArray *independent_modules = g_ptr_array_new();
+
+  g_hash_table_foreach(modules, list_independent, independent_modules);
+
+  for(i = 0 ; i < independent_modules->len ; i++) {
+    m = (LttvModule)independent_modules->pdata[i];
+    while(m->load_count > 0) lttv_module_unload(m);
   }
- 
+
+  g_ptr_array_free(independent_modules, TRUE);
+  if(g_hash_table_size(modules) != 0) g_warning("cannot unload all modules"); 
 }

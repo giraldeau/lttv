@@ -5,100 +5,139 @@
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>
 #include <lttv/hook.h>
+#include <lttv/processTrace.h>
+#include <lttv/state.h>
 
-static void process_trace_set(void *hook_data, void *call_data)
+static LttvTraceset *traceset;
+
+static LttvHooks
+  *before_traceset,
+  *after_traceset,
+  *before_trace,
+  *after_trace,
+  *before_tracefile,
+  *after_tracefile,
+  *before_event,
+  *after_event,
+  *main_hooks;
+
+static char *a_trace;
+
+
+void lttv_trace_option(void *hook_data)
+{ 
+  LttTrace *trace;
+
+  trace = ltt_trace_open(a_trace);
+  if(trace == NULL) g_critical("cannot open trace %s", a_trace);
+  lttv_traceset_add(traceset, trace);
+}
+
+
+static void process_traceset(void *hook_data, void *call_data)
 {
-  int i, nb;
-  lttv_attributes *a, *sa;
-  lttv_trace_set *s;
-  lttv_hooks *global_before, *before, *global_after, *after;
-  ltt_time start, end;
-  lttv_key *key;
-  lttv_hook f;
-  void *hook_data;
+  LttvTracesetState *tc;
 
-  a = lttv_global_attributes();
-  global_before = (lttv_hooks *)lttv_attributes_get_pointer_pathname(a,
-      "hooks/trace_set/before");
-  global_after = (lttv_hooks *)lttv_attributes_get_pointer_pathname(a,
-      "hooks/trace_set/after");
-  s = (lttv_trace_set *)lttv_attributes_get_pointer_pathname(a,
-      "traceSet/main");
+  LttTime start, end;
 
-  key = lttv_key_new_pathname("time/start");
-  start = lttv_attributes_get_time(a,key);
-  lttv_key_destroy(key);
+  tc = g_object_new(LTTV_TRACESET_STATE);
+  lttv_context_init(LTTV_TRACESET_CONTEXT(tc), traceset);
 
-  key = lttv_key_new_pathname("time/end");
-  end = lttv_attributes_get_time(a,key);
-  lttv_key_destroy(key);
+  lttv_traceset_context_add_hooks(LTTV_TRACESET_CONTEXT(tc),
+  before_traceset, after_traceset, before_trace, after_trace,
+  before_tracefile, after_tracefile, before_event, after_event);
+  lttv_state_add_event_hooks(tc);
 
-  sa = lttv_trace_set_attributes(s);
+  start.tv_sec = 0;
+  start.tv_nsec = 0;
+  end.tv_sec = G_MAXULONG;
+  end.tv_nsec = G_MAXULONG;
 
-  before = (lttv_hooks *)lttv_attributes_get_pointer_pathname(sa,
-      "hooks/before");
-  if(before == NULL) {
-    before = lttv_hooks_new();
-    lttv_attributes_set_pointer_pathname(sa, "hooks/before", before);
-  }
+  lttv_process_trace(start, end, traceset, tc);
+  lttv_traceset_context_remove_hooks(LTTV_TRACESET_CONTEXT(tc),
+  before_traceset, after_traceset, before_trace, after_trace,
+  before_tracefile, after_tracefile, before_event, after_event);
 
-  after = (lttv_hooks *)lttv_attributes_get_pointer_pathname(sa,
-      "hooks/after");
-  if(after == NULL) {
-    after = lttv_hooks_new();
-    lttv_attributes_set_pointer_pathname(sa, "hooks/after", after);
-  }
-
-  nb = lttv_hooks_number(global_before);
-  for(i = 0 ; i < nb ; i++) {
-    lttv_hooks_get(global_before, i, &f, &hook_data);
-    lttv_hooks_add(before, f, hook_data);
-  }
-
-  nb = lttv_hooks_number(global_after);
-  for(i = 0 ; i < nb ; i++) {
-    lttv_hooks_get(global_after, i, &f, &hook_data);
-    lttv_hooks_add(after, f, hook_data);
-  }
-
-  lttv_trace_set_process(s, before_trace_set, after_trace_set, filter, start,
-      end);
-
-  nb = lttv_hooks_number(global_before);
-  for(i = 0 ; i < nb ; i++) {
-    lttv_hooks_get(global_before, i, &f, &hook_data);
-    lttv_hooks_remove(before, f, hook_data);
-  }
-
-  nb = lttv_hooks_number(global_after);
-  for(i = 0 ; i < nb ; i++) {
-    lttv_hooks_get(global_after, i, &f, &hook_data);
-    lttv_hooks_remove(after, f, hook_data);
-  }
+  lttv_state_remove_event_hooks(tc);
+  lttv_context_fini(LTTV_TRACESET_CONTEXT(tc));
+  g_object_unref(tc);
 }
 
 
 void init(int argc, char **argv)
 {
-  lttv_attributes *a;
-  lttv_hooks *h;
+  LttvAttribute_value *value;
 
-  a = lttv_global_attributes();
-  h = (lttv_hooks *)lttv_attributes_get_pointer_pathname(a,"hooks/main");
-  lttv_hooks_add(h, process_trace_set, NULL);
+  LttvIAttributes *attributes = LTTV_IATTRIBUTES(lttv_global_attributes());
+
+  lttv_option_add("trace", 't', 
+      "add a trace to the trace set to analyse", 
+      "pathname of the directory containing the trace", 
+      LTTV_OPT_STRING, &aTrace, lttv_trace_option, NULL);
+
+  traceset = lttv_traceset_new();
+
+  before_traceset = lttv_hooks_new();
+  after_traceset = lttv_hooks_new();
+  before_trace = lttv_hooks_new();
+  after_trace = lttv_hooks_new();
+  before_tracefile = lttv_hooks_new();
+  after_tracefile = lttv_hooks_new();
+  before_event = lttv_hooks_new();
+  after_event = lttv_hooks_new();
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
+      LTTV_POINTER, &value));
+  *(value->v_pointer) = before_traceset;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
+      LTTV_POINTER, &value));
+  *(value->v_pointer) = after_traceset;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
+      LTTV_POINTER, &value));
+  *(value->v_pointer) = before_trace;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/after",
+      LTTV_POINTER, &value));
+  *(value->v_pointer) = after_trace;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/before",
+      LTTV_POINTER, &value));
+  *(value->v_pointer) = before_tracefile;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/after",
+      LTTV_POINTER, &value));
+  *(value->v_pointer) = after_tracefile;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+      LTTV_POINTER, &value));
+  *(value->v_pointer) = before_event;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
+      LTTV_POINTER, &value));
+  *(value->v_pointer) = after_event;
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/before",
+      LTTV_POINTER, &value));
+  g_assert((main_hooks = *(value->v_pointer)) != NULL);
+  lttv_hooks_add(main_hooks, process_traceset, NULL);
 }
 
 
 void destroy()
 {
-  lttv_attributes *a;
-  lttv_hooks *h;
+  guint i, nb;
 
-  a = lttv_global_attributes();
-  h = (lttv_hooks *)lttv_attributes_get_pointer_pathname(a,"hooks/main");
-  lttv_hooks_remove(h, process_trace_set, NULL);
+  lttv_hooks_remove(main_hooks, process_traceset, NULL);
+
+  lttv_option_remove("trace");
+
+  lttv_hooks_destroy(before_traceset);
+  lttv_hooks_destroy(after_traceset);
+  lttv_hooks_destroy(before_trace);
+  lttv_hooks_destroy(after_trace);
+  lttv_hooks_destroy(before_tracefile);
+  lttv_hooks_destroy(after_tracefile);
+  lttv_hooks_destroy(before_event);
+  lttv_hooks_destroy(after_event);
+
+  nb = lttv_traceset_number(traceset);
+  for(i = 0 ; i < nb, i++) {
+    ltt_trace_close(lttv_traceset_get(traceset);
+  }
 }
-
-
-
 

@@ -2,287 +2,166 @@
    before each trace, to print each event, and to print statistics
    after each trace. */
 
-#include <ltt/type.h>
-#include <lttv/attribute.h>
-#include <lttv/hook.h>
+static gboolean
+  a_field_names,
+  a_state;
+
+static char
+  *a_file_name;
+
+static LttvHooks
+  *before_traceset,
+  *after_traceset,
+  *before_trace,
+  *before_event;
+
 
 void init(int argc, char **argv)
 {
-  lttv_attributes *a;
-  lttv_hooks *before, *after;
+  LttvAttribute_value *value;
 
-  a = lttv_global_attributes();
-  before = (lttv_hooks *)lttv_attributes_get_pointer_pathname(a,
-      "hooks/trace_set/before");
-  after = (lttv_hooks *)lttv_attributes_get_pointer_pathname(a,
-      "hooks/trace_set/after");
-  lttv_hooks_add(before, textDump_trace_set_before, NULL);
-  lttv_hooks_add(after, textDump_trace_set_after, NULL);
+  LttvIAttributes *attributes = LTTV_IATTRIBUTES(lttv_global_attributes());
+
+  a_file_name = NULL;
+  lttv_option_add("output", 'o', 
+      "output file where the text is written", 
+      "file name", 
+      LTTV_OPT_STRING, &a_file_name, NULL, NULL);
+
+  a_field_names = FALSE;
+  lttv_option_add("field_names", 'l', 
+      "write the field names for each event", 
+      "", 
+      LTTV_OPT_NONE, &a_field_names, NULL, NULL);
+
+  a_state = FALSE;
+  lttv_option_add("process_state", 's', 
+      "write the pid and state for each event", 
+      "", 
+      LTTV_OPT_NONE, &a_state, NULL, NULL);
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+      LTTV_POINTER, &value));
+  g_assert((before_event = *(value->v_pointer)) != NULL);
+  lttv_hooks_add(before_event, write_event_content, NULL);
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
+      LTTV_POINTER, &value));
+  g_assert((before_trace = *(value->v_pointer)) != NULL);
+  lttv_hooks_add(before_trace, write_trace_header, NULL);
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
+      LTTV_POINTER, &value));
+  g_assert((before_traceset = *(value->v_pointer)) != NULL);
+  lttv_hooks_add(before_traceset, write_traceset_header, NULL);
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
+      LTTV_POINTER, &value));
+  g_assert((after_traceset = *(value->v_pointer)) != NULL);
+  lttv_hooks_add(after_traceset, write_traceset_footer, NULL);
 }
 
 
 void destroy()
 {
-  lttv_attributes *a;
-  lttv_hooks *before, *after;
+  lttv_option_remove("output");
 
-  a = lttv_global_attributes();
-  before = (lttv_hooks *)lttv_attributes_get_pointer_pathname(a,
-      "hooks/trace_set/before");
-  after = (lttv_hooks *)lttv_attributes_get_pointer_pathname(a,
-      "hooks/trace_set/after");
-  lttv_hooks_remove(before, textDump_trace_set_before, NULL);
-  lttv_hooks_remove(after, textDump_trace_set_after, NULL);
+  lttv_option_remove("field_names");
+
+  lttv_option_remove("process_state");
+
+  lttv_hooks_remove(before_event, write_event, NULL);
+
+  lttv_hooks_remove(before_trace, write_trace_header, NULL);
+
+  lttv_hooks_remove(before_trace, write_traceset_header, NULL);
+
+  lttv_hooks_remove(before_trace, write_traceset_footer, NULL);
 }
+
 
 /* Insert the hooks before and after each trace and tracefile, and for each
    event. Print a global header. */
 
-typedef struct _trace_context {
-  g_string s;
-  FILE *fp;
-  bool mandatory_fields;
-  lttv_attributes *a;  
-} trace_context;
+static FILE *a_file;
 
-static bool textDump_trace_set_before(void *hook_data, void *call_data)
+static GString *a_string;
+
+static static gboolean write_traceset_header(void *hook_data, void *call_data)
 {
-  FILE *fp;
-  int i, j, nb, nbtf;
-  lttv_trace_set *s;
-  lttv_attributes *a;
-  trace_context *c;
+  LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
 
-  a = lttv_global_attributes();
-  s = (lttv_trace_set *)call_data
+  if(a_file_name == NULL) a_file = stdout;
+  else a_file = fopen(a_file_name, "w");
 
-  /* Get the file pointer */
-
-  fp = (FILE *)lttv_attributes_get_pointer_pathname(a, "textDump/file");
-
-  /* For each trace prepare the contexts and insert the hooks */
-
-  nb = lttv_trace_set_number(s);
-  for(i = 0 ; i < nb ; i++) {
-    c = g_new(trace_context);
-    a = lttv_trace_set_trace_attributes(s, i);
-
-    if(lttv_attributes_get_pointer_pathname(a, "textDump/context") != NULL) {
-      g_error("Recursive call to TextDump");
-    }
-
-    c->fp = fp;
-    c->mandatory_fields = TRUE;
-    c->s = g_string_new();
-    c->a = a;
-
-    lttv_attributes_set_pointer_pathname(a, "textDump/context", c);
-
-    h = lttv_attributes_get_hooks(a, "hooks/before");
-    lttv_hooks_add(h, textDump_trace_before, c);
-    h = lttv_attributes_get_hooks(a, "hooks/after");
-    lttv_hooks_add(h, textDump_trace_after, c);
-    h = lttv_attributes_get_hooks(a, "hooks/tacefile/before");
-    lttv_hooks_add(h, textDump_tracefile_before, c);
-    h = lttv_attributes_get_hooks(a, "hooks/tracefile/after");
-    lttv_hooks_add(h, textDump_tracefile_after, c);
-    h = lttv_attributes_get_hooks(a, "hooks/event/selected");
-    lttv_hooks_add(h, textDump_event, c);
-  }
+  if(a_file == NULL) g_error("cannot open file %s", a_file_name);
 
   /* Print the trace set header */
-  fprintf(fp,"Trace set contains %d traces\n\n", nb);
+  fprintf(a_file,"Trace set contains %d traces\n\n", 
+      lttv_traceset_number(tc->ta);
 
-  return TRUE;
+  return FALSE;
 }
 
 
-/* Remove the hooks before and after each trace and tracefile, and for each
-   event. Print trace set level statistics. */
-
-static bool textDump_trace_set_after(void *hook_data, void *call_data)
+static static gboolean write_traceset_footer(void *hook_data, void *call_data)
 {
-  FILE *fp;
-  int i, j, nb, nbtf;
-  lttv_trace_set *s;
-  lttv_attributes *ga, *a;
-  trace_context *c;
+  LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
 
-  ga = lttv_global_attributes();
-  s = (lttv_trace_set *)lttv_attributes_get_pointer_pathname(ga, 
-      "trace_set/main");
+  if(a_file_name != NULL) a_file = fclose(a_file);
 
-  /* Get the file pointer */
+  fprintf(a_file,"End trace set\n\n");
 
-  fp = (FILE *)lttv_attributes_get_pointer_pathname(ga, "textDump/file");
+  return FALSE;
+}
 
-  /* For each trace remove the hooks */
 
-  nb = lttv_trace_set_number(s);
-  for(i = 0 ; i < nb ; i++) {
-    a = lttv_trace_set_trace_attributes(s, i);
-    c = (trace_context *)lttv_attributes_get_pointer_pathname(a, 
-        "textDump/context");
-    lttv_attributes_set_pointer_pathname(a, "textDump/context", NULL);
-    g_string_free(c->s);
+static gboolean write_trace_header(void *hook_data, void *call_data)
+{
+  LttvTraceContext *tc = (LttvTraceContext *)call_data;
 
-    h = lttv_attributes_get_hooks(a, "hooks/before");
-    lttv_hooks_remove(h, textDump_trace_before, c);
-    h = lttv_attributes_get_hooks(a, "hooks/after");
-    lttv_hooks_remove(h, textDump_trace_after, c);
-    h = lttv_attributes_get_hooks(a, "hooks/tacefile/before");
-    lttv_hooks_remove(h, textDump_tracefile_before, c);
-    h = lttv_attributes_get_hooks(a, "hooks/tracefile/after");
-    lttv_hooks_remove(h, textDump_tracefile_after, c);
-    h = lttv_attributes_get_hooks(a, "hooks/event/selected");
-    lttv_hooks_remove(h, textDump_event, c);
-    g_free(c);
+  LttSystemDescription *system = ltt_trace_system_description(tc->t);
+
+  fprintf(a_file,"  Trace from %s in %s\n%s\n\n", system->node_name, 
+      system->domain_name, system->description);
+  return FALSE;
+}
+
+
+static int write_event_content(void *hook_data, void *call_data)
+{
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+
+  LttEvent *e;
+
+  e = tfc->e;
+
+  lttv_event_to_string(e, tfc->tf, a_string, TRUE, a_field_names);
+
+  if(a_state) {
+    g_string_append_printf(a_string, " %s",
+        g_quark_to_string(tfs->process->state->s);
   }
 
-  /* Print the trace set statistics */
-
-  fprintf(fp,"Trace set contains %d traces\n\n", nb);
-
-  print_stats(fp, ga);
-
-  return TRUE;
-}
-
-
-/* Print a trace level header */
-
-static bool textDump_trace_before(void *hook_data, void *call_data)
-{
-  ltt_trace *t;
-  trace_context *c;
-
-  c = (trace_context *)hook_data;
-  t = (ltt_trace *)call_data;
-  fprintf(c->fp,"Start trace\n");
-  return TRUE;
-}
-
-
-/* Print trace level statistics */
-
-static bool textDump_trace_after(void *hook_data, void *call_data)
-{
-  ltt_trace *t;
-  trace_context *c;
-
-  c = (trace_context *)hook_data;
-  t = (ltt_trace *)call_data;
-  fprintf(c->fp,"End trace\n");
-  print_stats(c->fp,c->a);
-  return TRUE;
-}
-
-
-static bool textDump_tracefile_before(void *hook_data, void *call_data)
-{
-  ltt_tracefile *tf;
-  trace_context *c;
-
-  c = (trace_context *)hook_data;
-  tf = (ltt_tracefile *)call_data;
-  fprintf(c->fp,"Start tracefile\n");
-  return TRUE;
-}
-
-
-static bool textDump_tracefile_after(void *hook_data, void *call_data)
-{
-  ltt_tracefile *tf;
-  trace_context *c;
-
-  c = (trace_context *)hook_data;
-  tf = (ltt_tracefile *)call_data;
-  fprintf(c->fp,"End tracefile\n");
-  return TRUE;
-}
-
-
-/* Print the event content */
-
-static bool textDump_event(void *hook_data, void *call_data)
-{
-  ltt_event *e;
-  trace_context *c;
-
-  e = (ltt_event *)call_data;
-  c = (event_context *)hook_data;
-  lttv_event_to_string(e,c->s,c->mandatory_fields);
   fputs(s, c->fd);
-  return TRUE;
+  return FALSE;
 }
 
 
-static void print_stats(FILE *fp, lttv_attributes *a)
+void lttv_event_to_string(LttEvent *e, LttTracefile *tf, g_string *s,
+    gboolean mandatory_fields, gboolean field_names)
 {
-  int i, j, k, nb, nbc;
+  LttFacility *facility;
 
-  lttv_attributes *sa, *ra;
-  lttv_attribute *reports, *content;
-  lttv_key *key, *previous_key, null_key;
+  LttEventType *event_type;
 
-  null_key = lttv_key_new_pathname("");
-  sa = (lttv_attributes *)lttv_attributes_get_pointer_pathname(a,"stats");
-  reports = lttv_attributes_array_get(sa);
-  nb= lttv_attributes_number(sa);
+  LttType *type;
 
-  for(i = 0 ; i < nb ; i++) {
-    ra = (lttv_attributes *)reports[i].v.p;
-    key = reports[i].key;
-    g_assert(reports[i].t == LTTV_POINTER);
+  LttField *field;
 
-    /* CHECK maybe have custom handlers registered for some specific reports */
-
-    print_key(fp,key);
-
-    content = lttv_attributes_array_get(ra);
-    nbc = lttv_attributes_number(ra);
-    lttv_attribute_array_sort_lexicographic(content, nbc, NULL, 0);
-    previous_key = nullKey;
-    for(j = 0 ; j < nbc ; j++) {
-      key = content[j].key;
-      for(k = 0 ; lttv_key_index(previous_key,k) == lttv_index(key,k) ; k++)
-      for(; k < lttv_key_number(key) ; k++) {
-        for(l = 0 ; l < k ; l++) fprintf(fp,"  ");
-        fprintf(fp, "%s", lttv_string_id_to_string(lttv_index(key,k)));
-        if(k == lttv_key_number(key)) {
-          switch(content[j].t) {
-            case LTTV_INTEGER:
-              fprintf(fp," %d\n", content[j].v.i);
-              break;
-            case LTTV_TIME:
-              fprintf(fp," %d.%09d\n", content[j].v.t.tv_sec, 
-                  content[j].v.t.tv_nsec);
-              break;
-            case LTTV_DOUBLE:
-              fprintf(fp," %g\n", content[j].v.d);
-              break;
-	    case LTTV_POINTER:
-              fprintf(fp," pointer\n");
-              break;
-          }
-        }
-        else fprintf(fp,"\n");
-      }
-    }
-    lttv_attribute_array_destroy(content);
-  }
-  lttv_attribute_array_destroy(reports);
-  lttv_key_destroy(null_key);
-}
-
-
-void lttv_event_to_string(ltt_event *e, lttv_string *s, bool mandatory_fields)
-{
-  ltt_facility *facility;
-  ltt_eventtype *eventtype;
-  ltt_type *type;
-  ltt_field *field;
-  ltt_time time;
+  LttTime time;
 
   g_string_set_size(s,0);
 
@@ -292,16 +171,22 @@ void lttv_event_to_string(ltt_event *e, lttv_string *s, bool mandatory_fields)
 
   if(mandatory_fields) {
     time = ltt_event_time(e);
-    g_string_append_printf(s,"%s.%s: %ld.%ld",ltt_facility_name(facility),
-        ltt_eventtype_name(eventtype), (long)time.tv_sec, time.tv_nsec);
+    g_string_append_printf(s,"%s.%s: %ld.%ld (%s)",ltt_facility_name(facility),
+        ltt_eventtype_name(eventtype), (long)time.tv_sec, time.tv_nsec,
+        ltt_tracefile_name(tf));
   }
 
-  print_field(e,f,s);
+  print_field(e,f,s, field_names);
 } 
 
-void print_field(ltt_event *e, ltt_field *f, lttv_string *s) {
-  ltt_type *type;
-  ltt_field *element;
+
+void print_field(LttEvent *e, LttField *f, g_string *s, gboolean field_names) {
+
+  LttType *type;
+
+  LttField *element;
+
+  char *name;
 
   int nb, i;
 
@@ -345,6 +230,10 @@ void print_field(ltt_event *e, ltt_field *f, lttv_string *s) {
       nb = ltt_type_member_number(type);
       for(i = 0 ; i < nb ; i++) {
         element = ltt_field_member(f,i);
+        if(name) {
+          ltt_type_member_type(type, &name);
+          g_string_append_printf(s, " %s = ", field_names);
+        }
         print_field(e,element,s);
       }
       g_string_append_printf(s, " }");

@@ -1,91 +1,98 @@
 #include <popt.h>
 
-#include <lttv/hook.h>
-#include <lttv/lttv.h>
 #include <lttv/option.h>
 
-/* Extensible array of popt command line options. Modules add options as
-   they are loaded and initialized. */
+typedef struct _LttvOption {
+  const char *long_name;
+  char char_name;
+  const char *description;
+  const char *arg_description;
+  LttvOptionType t;
+  gpointer p;
+  LttvOptionHook h;
+  gpointer hook_data;
+} LttvOption;
 
-typedef struct _lttv_option {
-  lttv_option_hook hook;
-  void *hook_data;
-} lttv_option;
-
-static GArray *lttv_options_command;
-
-static GArray *lttv_options_command_popt;
-
-// unneeded   static lttv_key *key ;
-
-static int command_argc;
-
-static char **command_argv;
-
-/* Lists of hooks to be called at different places */
-
-static lttv_hooks
-  *hooks_options_before,
-  *hooks_options_after;
-
-static gboolean init_done = FALSE;
-
-void lttv_options_command_parse(void *hook_data, void *call_data);
+GHashTable *options;
 
 
-void lttv_option_init(int argc, char **argv) {
-
-  lttv_hooks *hooks_init_after;
-
-  if(init_done) return;
-  else init_done = TRUE;
-
-  command_argc = argc;
-  command_argv = argv;
-
-  hooks_options_before = lttv_hooks_new();
-  hooks_options_after = lttv_hooks_new();
-
-  lttv_attributes_set_pointer_pathname(lttv_global_attributes(), 
-      "hooks/options/before", hooks_options_before);
-
-  lttv_attributes_set_pointer_pathname(lttv_global_attributes(),
-      "hooks/options/after",  hooks_options_after);
-
-  lttv_options_command_popt = g_array_new(0,0,sizeof(struct poptOption));
-  lttv_options_command = g_array_new(0,0,sizeof(lttv_option));
-
-  hooks_init_after = lttv_attributes_get_pointer_pathname(lttv_global_attributes(),
-		  "hooks/init/after");
-  lttv_hooks_add(hooks_init_after, lttv_options_command_parse, NULL);
-
+static void
+list_options(gpointer key, gpointer value, gpointer user_data)
+{
+  g_ptr_array_add((GPtrArray *)user_data, value);
 }
 
-void lttv_option_destroy() {
 
-  struct poptOption *poption;
+static void
+free_option(LttvOption *option)
+{
+  g_free(option->long_name);
+  g_free(option->description);
+  g_free(option->arg_description);
+  g_free(option);
+}
+
+
+void lttv_option_init(int argc, char **argv)
+{
+  options = g_hash_table_new(g_str_hash, g_str_equal);
+}
+
+
+void lttv_option_destroy()
+{
+  LttvOption option;
+
+  GPtrArray list = g_ptr_array_new();
 
   int i;
-  
-  for(i=0; i < lttv_options_command_popt->len ; i++) {
-    poption = &g_array_index (lttv_options_command_popt, struct poptOption, i);
 
-    g_free((gpointer)poption->longName);
-    g_free((gpointer)poption->descrip);
-    g_free((gpointer)poption->argDescrip);
+  g_hash_table_foreach(options, list_options, list);
+  g_hash_table_destroy(options);
+
+  for(i = 0 ; i < list->len ; i++) {
+    free_option((LttvOption *)list->pdata[i]);
   }
-  g_array_free(lttv_options_command_popt,TRUE) ;
-  g_array_free(lttv_options_command,TRUE) ;
+  g_ptr_array_free(list, TRUE);
+}
 
-  lttv_attributes_set_pointer_pathname(lttv_global_attributes(), 
-      "hooks/options/before", NULL);
 
-  lttv_attributes_set_pointer_pathname(lttv_global_attributes(),
-      "hooks/options/after",  NULL);
+void lttv_option_add(const char *long_name, const char char_name,
+    const char *description, const char *arg_description,
+    const LttvOptionType t, void *p,
+    const LttvOptionHook h, void *hook_data)
+{
+  LttvOption *option;
 
-  lttv_hooks_destroy(hooks_options_before);
-  lttv_hooks_destroy(hooks_options_after);
+  if(g_hash_table_lookup(options, long_name) != NULL) {
+    g_warning("duplicate option");
+    return;
+  }
 
+  option = g_new(LttvOption, 1);
+  option->long_name = g_strdup(long_name);
+  option->char_name = char_name;
+  option->description = g_strdup(description);
+  option->arg_description = g_strdup(arg_description);
+  option->t = t;
+  option->p = p;
+  option->h = h;
+  option->hook_data = hook_data;
+  g_hash_table_insert(options, option->long_name, option);
+}
+
+
+void 
+lttv_option_remove(const char *long_name) 
+{
+  LttvOption *option = g_hash_table_lookup(options, long_name);
+
+  if(option == NULL) {
+    g_warning("trying to remove unknown option %s", long_name);
+    return;
+  }
+  g_hash_table_remove(options, long_name);
+  free_option(option);
 }
 
 
@@ -93,100 +100,117 @@ static int poptToLTT[] = {
   POPT_ARG_NONE, POPT_ARG_STRING, POPT_ARG_INT, POPT_ARG_LONG
 };
 
+static struct poptOption endOption = { NULL, '\0', 0, NULL, 0};
 
-void lttv_option_add(const char *long_name, const char char_name,
-		const char *description, const char *argDescription,
-		const lttv_option_type t, void *p, 
-		const lttv_option_hook h, void *hook_data)
+
+static void 
+build_popts(GPtrArray **plist, struct poptOption **ppopts, poptContext *pc,
+    int argv, char **argv)
 {
-  struct poptOption poption;
+  LttvOption *option;
 
-  lttv_option option;
+  GPtrArray *list;
 
-  poption.longName = (char *)g_strdup(long_name);
-  poption.shortName = char_name;
-  poption.descrip = (char *)g_strdup(description);
-  poption.argDescrip = (char *)g_strdup(argDescription);
-  poption.argInfo = poptToLTT[t];
-  poption.arg = p;
-  poption.val = lttv_options_command->len + 1;
+  struct poptOption *popts;
 
-  option.hook = h;
-  option.hook_data = hook_data;
+  poptContext c;
 
-  g_array_append_val(lttv_options_command_popt,poption);
-  g_array_append_val(lttv_options_command,option);
+  guint i;
+
+  list = g_ptr_array_new();
+
+  g_hash_table_foreach(options, list_options, list);
+
+  /* Build a popt options array from our list */
+
+  popts = g_new(struct poptOption, list->len + 1);
+
+  for(i = 0 ; i < list->len ; i++) {
+    option = (LttvOption *)list->pdata[i];
+    popts[i].longName = option->long_name;
+    popts[i].shortName = option->char_name;
+    popts[i].descrip = option->description;
+    popts[i].argDescrip = option->arg_description;
+    popts[i].argInfo = poptToLTT[option->t];
+    popts[i].arg = option->p;
+    popts[i].val = i + 1;
+  }
+
+  /* Terminate the array for popt and create the context */
+
+  popts[list->len] = endOption;
+  c = poptGetContext(argv[0], argc, (const char**)argv, popts, 0);
+
+  *plist = list;
+  *ppopts = popts;
+  *pc = c;
 }
 
 
-static struct poptOption endOption = { NULL, '\0', 0, NULL, 0};
-
-/* As we may load modules in the hooks called for argument processing,
- * we have to recreate the argument context each time the
- * lttv_options_command_popt is modified. This way we will be able to
- * parse arguments defined by the modules
- */
-
-void lttv_options_command_parse(void *hook_data, void *call_data) 
+static void 
+destroy_popts(GPtrArray **plist, struct poptOption **ppopts, poptContext *pc)
 {
-  int rc;
-  int lastrc;
+  g_ptr_array_free(*plist, TRUE); *plist = NULL;
+  g_free(*ppopts); *ppopts = NULL;
+  poptFreeContext(*c);  
+}
+
+
+void lttv_option_parse(int argc, char **argv)
+{
+  GPtrArray *list;
+
+  LttvOption *option;
+
+  int i, rc, first_arg;
+
+  struct poptOption *popts;
+
   poptContext c;
-  lttv_option *option;
 
-  lttv_hooks_call(hooks_options_before,NULL);
-  /* Always add then remove the null option around the get context */
-  g_array_append_val(lttv_options_command_popt, endOption);
-  /* Compiler warning caused by const char ** for command_argv in header */
-  /* Nothing we can do about it. Header should not put it const. */
-  c = poptGetContext("lttv", command_argc, (const char**)command_argv,
-      (struct poptOption *)(lttv_options_command_popt->data),0);
+  i = 0;
 
-  /* We remove the null option here to be able to add options correctly */
-  g_array_remove_index(lttv_options_command_popt,
-		  lttv_options_command_popt->len - 1);
+  first_arg = 0;
 
-  /* There is no last good offset */
-  lastrc = -1;
+  build_popts(&list, &popts, &c, argc, argv);
 
   /* Parse options while not end of options event */
-  while((rc = poptGetNextOpt(c)) != -1) {
-	  
-    if(rc == POPT_ERROR_BADOPT) {
-      /* We need to redo the context with information added by modules */
-      g_array_append_val(lttv_options_command_popt, endOption);
-      poptFreeContext(c);  
-      c = poptGetContext("lttv", command_argc, (const char**)command_argv,
-          (struct poptOption *)lttv_options_command_popt->data,0);
-      g_array_remove_index(lttv_options_command_popt,
-		  lttv_options_command_popt->len -1);
 
-      /* Cut out the already parsed elements */
-      if(lastrc != -1)
-        while(poptGetNextOpt(c) != lastrc) { } ;
-      
-      /* Get the same option once again */
-      g_assert(rc = poptGetNextOpt(c) != -1) ;
-      if(rc == POPT_ERROR_BADOPT) {
-        /* If here again we have a parsing error with all context info ok,
-	 * then there is a problem in the arguments themself, give up */
-        g_critical("option %s: %s", poptBadOption(c,0), poptStrerror(rc));
-	break ;
-      }
+  while((rc = poptGetNextOpt(c)) != -1) {
+
+    /* The option was recognized and the rc value returned is the argument
+       position in the array. Call the associated hook if present. */
+  
+    if(rc > 0) {
+      option = (LttvOption *)(list->pdata[rc - 1]);
+      if(option->hook != NULL) option->hook(option->hook_data);
+      i++;
+    } 
+
+    else if(rc == POPT_ERROR_BADOPT && i != first_arg) {
+
+      /* Perhaps this option is newly added, restart parsing */
+
+      destroy_popts(&list, &popts, &c);
+      build_popts(&list, &popts, &c, argc, argv);
+
+      /* Get back to the same argument */
+
+      first_arg = i;
+      for(i = 0; i < first_arg; i++) poptGetNextOpt(c);
+    }
+
+    else {
+
+      /* The option has some error and it is not because this is a newly
+         added option not recognized. */
+
+      g_error("option %s: %s", poptBadOption(c,0), poptStrerror(rc));
+      break;
     }
     
-    /* Remember this offset as the last good option value */
-    lastrc = rc;
-
-    /* Execute the hook registered with this option */
-    option = ((lttv_option *)lttv_options_command->data) + rc - 1;
-    if(option->hook != NULL) option->hook(option->hook_data);
- 
   }
 
-  poptFreeContext(c);
-
-  lttv_hooks_call(hooks_options_after,NULL);
-  
+  destroy_popts(&list, &popts, &c);
 }
 
