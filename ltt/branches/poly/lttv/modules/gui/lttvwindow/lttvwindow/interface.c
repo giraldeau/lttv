@@ -481,7 +481,7 @@ create_MWindow (void)
 
   /* Manually added by Mathieu Desnoyers */
 
-  tmp_toolbar_icon = create_pixmap (MWindow, "stock_redraw_24.png");
+  tmp_toolbar_icon = create_pixmap (MWindow, "stock_refresh_24.png");
   tlbRedraw = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,

@@ -1287,9 +1287,8 @@ void redraw(GtkWidget *widget, gpointer user_data)
   g_assert(lttv_iattribute_find_by_path(tab->attributes, "hooks/redraw", LTTV_POINTER, &value));
 
   tmp = (LttvHooks*)*(value.v_pointer);
-  g_assert(tmp != NULL);
-  
-  lttv_hooks_call(tmp,NULL);
+  if(tmp != NULL)
+    lttv_hooks_call(tmp,NULL);
 }
 
 
@@ -1312,9 +1311,8 @@ void continue_processing(GtkWidget *widget, gpointer user_data)
      "hooks/continue", LTTV_POINTER, &value));
 
   tmp = (LttvHooks*)*(value.v_pointer);
-  g_assert(tmp != NULL);
-  
-  lttv_hooks_call(tmp,NULL);
+  if(tmp != NULL)
+    lttv_hooks_call(tmp,NULL);
 }
 
 /* Stop the processing for the calling main window's current tab.
