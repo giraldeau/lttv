@@ -28,6 +28,12 @@
  *  - the exists an other lttv_filter which conflicts with this one 
  */
 
+/*
+ *  TODO 
+ *  - refine switch of expression in multiple uses functions
+ *  - add the current simple expression to the tree
+ */
+
 #include <lttv/filter.h>
 
 /*
@@ -177,7 +183,6 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
    */
   lttv_filter_tree* tree = lttv_filter_tree_new(); 
   lttv_filter_tree* subtree = NULL;
-//  lttv_filter_tree* current_tree = NULL;
   GPtrArray *tree_stack = g_ptr_array_new();
   g_ptr_array_add( tree_stack,(gpointer) tree );
   
@@ -227,13 +232,13 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
   
   for(i=0;i<strlen(expression);i++) {
 //    g_print("%s\n",a_field_component->str);
-    g_print("%c\n",expression[i]);
+    g_print("%c ",expression[i]);
     switch(expression[i]) {
       /*
        *   logical operators
        */
       case '&':   /* and */
-        t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
+        t1 = (lttv_filter_tree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
         while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
         t2->node->type = LTTV_EXPRESSION_OP;
@@ -243,14 +248,14 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
           t2->l_child.t = subtree;
           subtree = NULL;
           t1->right = LTTV_TREE_NODE;
-          t1->l_child.t = t2;
+          t1->r_child.t = t2;
         } else {
           a_simple_expression.value = a_field_component->str;
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = g_new(lttv_simple_expression,1);
           t1->right = LTTV_TREE_NODE;
-          t1->l_child.t = t2; 
+          t1->r_child.t = t2; 
         }
         
         break;
@@ -287,7 +292,6 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         g_assert(tree_stack->len>0);
         if(subtree != NULL) { 
           t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-          /*  FIXME ==> SEG FAULT   */
           while(t1->right != LTTV_TREE_UNDEFINED && t1->right != LTTV_TREE_LEAF) {
               g_assert(t1!=NULL && t1->r_child.t != NULL);
               t1 = t1->r_child.t;
@@ -357,14 +361,33 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         g_string_append_c(a_field_component,expression[i]); 				
     }
   }
-
-
+ 
+  /*  processing last element of expression   */
+  g_assert(tree_stack->len==1); /* only root tree should remain */
+  t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
+  while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
+  if(subtree != NULL) {  /* add the subtree */
+    t1->right = LTTV_TREE_NODE;
+    t1->l_child.t = subtree;
+    subtree = NULL;
+  } else {  /* add a leaf */
+    a_simple_expression.value = a_field_component->str;
+    a_field_component = g_string_new("");
+    t1->right = LTTV_TREE_LEAF;
+    t1->r_child.leaf = g_new(lttv_simple_expression,1);
+  }
+  
+  g_assert(tree != NULL);
+  g_assert(subtree == NULL); 
   
   if( p_nesting>0 ) { 
     g_warning("Wrong filtering options, the string\n\"%s\"\n\
         is not valid due to parenthesis incorrect use",expression);	
     return NULL;
   }
+
+  return tree;
+  
 }
 
 /**
