@@ -33,11 +33,11 @@ guicontrolflow(void)
 
   ControlFlowData* control_flow_data = g_new(ControlFlowData,1) ;
 
-  /* Create the Drawing */
-  control_flow_data->Drawing = drawing_construct(control_flow_data);
+  /* Create the drawing */
+  control_flow_data->drawing = drawing_construct(control_flow_data);
   
   drawing_widget = 
-    drawing_get_widget(control_flow_data->Drawing);
+    drawing_get_widget(control_flow_data->drawing);
   
   control_flow_data->number_of_process = 0;
 
@@ -75,7 +75,7 @@ guicontrolflow(void)
     control_flow_data->h_paned);
   
   /* Set the size of the drawing area */
-  //Drawing_Resize(Drawing, h, w);
+  //drawing_Resize(drawing, h, w);
 
   /* Get trace statistics */
   //control_flow_data->Trace_Statistics = get_trace_statistics(Trace);
@@ -102,7 +102,7 @@ guicontrolflow(void)
       control_flow_data);
 
   //WARNING : The widget must be 
-  //inserted in the main window before the Drawing area
+  //inserted in the main window before the drawing area
   //can be configured (and this must happend bedore sending
   //data)
 

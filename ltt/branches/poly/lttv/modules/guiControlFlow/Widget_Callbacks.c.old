@@ -12,7 +12,7 @@ void expose_event_cb (GtkWidget *widget, GdkEventExpose *expose, gpointer data)
 	/* Calculate, from pixels in expose, the time interval to get data */
 	
 	get_time_from_pixels(expose->area.x, expose->area.width,
-													control_flow_data->Drawing_Area_Info.width,
+													control_flow_data->drawing_Area_Info.width,
 													&control_flow_data->Begin_Time, &control_flow_data->End_Time,
 													&event_request->time_begin, &event_request->time_end)
 	

@@ -93,7 +93,7 @@ static void get_test_data(guint event_number, guint List_Height,
 void add_test_data(ControlFlowData *control_flow_data);
 void test_draw(ControlFlowData *control_flow_data);
 
-void Drawing_Area_Init(ControlFlowData *control_flow_data);
+void drawing_Area_Init(ControlFlowData *control_flow_data);
 
 
 /*\@}*/

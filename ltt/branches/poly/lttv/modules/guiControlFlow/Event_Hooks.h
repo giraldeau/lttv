@@ -1,5 +1,5 @@
 /* Event_hooks.c defines the hooks that are given to processTrace as parameter.
- * These hooks call the Drawing API to draw the information on the screen,
+ * These hooks call the drawing API to draw the information on the screen,
  * using information from Context, but mostly state (running, waiting...).
  */
 
@@ -35,7 +35,7 @@ typedef struct _EventRequest
 
 
 
-void send_test_data(ProcessList *process_list, Drawing_t *Drawing);
+void send_test_data(ProcessList *process_list, Drawing_t *drawing);
 
 GtkWidget *h_guicontrolflow(MainWindow *mw, LttvTracesetSelector * s, char * key);
 

@@ -9,7 +9,7 @@ struct _ControlFlowData {
   MainWindow *mw;
 
   ProcessList *process_list;
-  Drawing_t *Drawing;
+  Drawing_t *drawing;
 
   GtkWidget *h_paned;
     

@@ -90,7 +90,7 @@
 
 #define MAX_PATH_LEN 256
 
-/* Drawing hook functions */
+/* drawing hook functions */
 gboolean draw_text( void *hook_data, void *call_data)
 {
   PropertiesText *Properties = (PropertiesText*)hook_data;

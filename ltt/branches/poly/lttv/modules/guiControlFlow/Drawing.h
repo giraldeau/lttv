@@ -47,37 +47,37 @@ struct _Drawing_t {
 };
 
 Drawing_t *drawing_construct(ControlFlowData *control_flow_data);
-void drawing_destroy(Drawing_t *Drawing);
+void drawing_destroy(Drawing_t *drawing);
 
-GtkWidget *drawing_get_widget(Drawing_t *Drawing);
+GtkWidget *drawing_get_widget(Drawing_t *drawing);
   
-//void Drawing_Refresh (  Drawing_t *Drawing,
+//void drawing_Refresh (  Drawing_t *drawing,
 //      guint x, guint y,
 //      guint width, guint height);
 
-void drawing_draw_line( Drawing_t *Drawing,
+void drawing_draw_line( Drawing_t *drawing,
       GdkPixmap *pixmap,
       guint x1, guint y1,
       guint x2, guint y2,
       GdkGC *GC);
 
-//void Drawing_copy( Drawing_t *Drawing,
+//void drawing_copy( Drawing_t *drawing,
 //    guint xsrc, guint ysrc,
 //    guint xdest, guint ydest,
 //    guint width, guint height);
 
 /* Insert a square corresponding to a new process in the list */
-void drawing_insert_square(Drawing_t *Drawing,
+void drawing_insert_square(Drawing_t *drawing,
         guint y,
         guint height);
 
 /* Remove a square corresponding to a removed process in the list */
-void drawing_remove_square(Drawing_t *Drawing,
+void drawing_remove_square(Drawing_t *drawing,
         guint y,
         guint height);
 
 
-//void Drawing_Resize(Drawing_t *Drawing, guint h, guint w);
+//void drawing_Resize(Drawing_t *drawing, guint h, guint w);
 
 void convert_pixels_to_time(
     gint width,

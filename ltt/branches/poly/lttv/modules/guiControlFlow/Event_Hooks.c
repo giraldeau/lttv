@@ -189,7 +189,7 @@ int draw_event_hook(void *hook_data, void *call_data)
             &y_out,
             &height,
             &hashed_process_data_out);
-    drawing_insert_square( event_request->control_flow_data->Drawing, y_out, height);
+    drawing_insert_square( event_request->control_flow_data->drawing, y_out, height);
     }
 
     g_free(name);
@@ -223,7 +223,7 @@ int draw_event_hook(void *hook_data, void *call_data)
             &height,
             &hashed_process_data_in);
 
-      drawing_insert_square( event_request->control_flow_data->Drawing, y_in, height);
+      drawing_insert_square( event_request->control_flow_data->drawing, y_in, height);
     }
     g_free(name);
 
@@ -231,7 +231,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     /* Find pixels corresponding to time of the event. If the time does
      * not fit in the window, show a warning, not supposed to happend. */
     guint x = 0;
-    guint width = control_flow_data->Drawing->drawing_area->allocation.width;
+    guint width = control_flow_data->drawing->drawing_area->allocation.width;
 
     LttTime time = ltt_event_time(e);
 
@@ -253,16 +253,16 @@ int draw_event_hook(void *hook_data, void *call_data)
     DrawContext *draw_context_out = hashed_process_data_out->draw_context;
     draw_context_out->current->modify_over->x = x;
     draw_context_out->current->modify_over->y = y_out;
-    draw_context_out->drawable = control_flow_data->Drawing->pixmap;
-    draw_context_out->pango_layout = control_flow_data->Drawing->pango_layout;
-    GtkWidget *widget = control_flow_data->Drawing->drawing_area;
+    draw_context_out->drawable = control_flow_data->drawing->pixmap;
+    draw_context_out->pango_layout = control_flow_data->drawing->pango_layout;
+    GtkWidget *widget = control_flow_data->drawing->drawing_area;
     //draw_context_out->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
-    draw_context_out->gc = gdk_gc_new(control_flow_data->Drawing->pixmap);
+    draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
     gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
     //draw_context_out->gc = widget->style->black_gc;
     
     //draw_arc((void*)&prop_arc, (void*)draw_context_out);
-    //test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->pixmap);
+    //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
     
     GdkColor colorfg_out = { 0, 0xffff, 0x0000, 0x0000 };
     GdkColor colorbg_out = { 0, 0xffff, 0xffff, 0xffff };
@@ -301,10 +301,10 @@ int draw_event_hook(void *hook_data, void *call_data)
     draw_context_out->current->middle->x = x;
     draw_context_out->current->middle->y = y_out + height/2;
     draw_context_out->previous->middle->y = y_out + height/2;
-    draw_context_out->drawable = control_flow_data->Drawing->pixmap;
-    draw_context_out->pango_layout = control_flow_data->Drawing->pango_layout;
+    draw_context_out->drawable = control_flow_data->drawing->pixmap;
+    draw_context_out->pango_layout = control_flow_data->drawing->pango_layout;
     //draw_context_out->gc = widget->style->black_gc;
-    draw_context_out->gc = gdk_gc_new(control_flow_data->Drawing->pixmap);
+    draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
     gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
 
     PropertiesLine prop_line_out;
@@ -367,16 +367,16 @@ int draw_event_hook(void *hook_data, void *call_data)
     DrawContext *draw_context_in = hashed_process_data_in->draw_context;
     draw_context_in->current->modify_over->x = x;
     draw_context_in->current->modify_over->y = y_in;
-    draw_context_in->drawable = control_flow_data->Drawing->pixmap;
-    draw_context_in->pango_layout = control_flow_data->Drawing->pango_layout;
-    widget = control_flow_data->Drawing->drawing_area;
+    draw_context_in->drawable = control_flow_data->drawing->pixmap;
+    draw_context_in->pango_layout = control_flow_data->drawing->pango_layout;
+    widget = control_flow_data->drawing->drawing_area;
     //draw_context_in->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
     //draw_context_in->gc = widget->style->black_gc;
-    draw_context_in->gc = gdk_gc_new(control_flow_data->Drawing->pixmap);
+    draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
     gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
     
     //draw_arc((void*)&prop_arc, (void*)draw_context_in);
-    //test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->pixmap);
+    //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
     
     GdkColor colorfg_in = { 0, 0x0000, 0xffff, 0x0000 };
     GdkColor colorbg_in = { 0, 0xffff, 0xffff, 0xffff };
@@ -415,10 +415,10 @@ int draw_event_hook(void *hook_data, void *call_data)
     draw_context_in->current->middle->x = x;
     draw_context_in->previous->middle->y = y_in + height/2;
     draw_context_in->current->middle->y = y_in + height/2;
-    draw_context_in->drawable = control_flow_data->Drawing->pixmap;
-    draw_context_in->pango_layout = control_flow_data->Drawing->pango_layout;
+    draw_context_in->drawable = control_flow_data->drawing->pixmap;
+    draw_context_in->pango_layout = control_flow_data->drawing->pango_layout;
     //draw_context_in->gc = widget->style->black_gc;
-    draw_context_in->gc = gdk_gc_new(control_flow_data->Drawing->pixmap);
+    draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
     gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
     
     PropertiesLine prop_line_in;
@@ -566,7 +566,7 @@ int draw_after_hook(void *hook_data, void *call_data)
             &y_out,
             &height,
             &hashed_process_data_out);
-    drawing_insert_square( event_request->control_flow_data->Drawing, y_out, height);
+    drawing_insert_square( event_request->control_flow_data->drawing, y_out, height);
     }
 
     g_free(name);
@@ -600,7 +600,7 @@ int draw_after_hook(void *hook_data, void *call_data)
             &height,
             &hashed_process_data_in);
 
-      drawing_insert_square( event_request->control_flow_data->Drawing, y_in, height);
+      drawing_insert_square( event_request->control_flow_data->drawing, y_in, height);
     }
     g_free(name);
 
@@ -608,7 +608,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     /* Find pixels corresponding to time of the event. If the time does
      * not fit in the window, show a warning, not supposed to happend. */
     //guint x = 0;
-    //guint width = control_flow_data->Drawing->drawing_area->allocation.width;
+    //guint width = control_flow_data->drawing->drawing_area->allocation.width;
 
     //LttTime time = ltt_event_time(e);
 
@@ -630,14 +630,14 @@ int draw_after_hook(void *hook_data, void *call_data)
     DrawContext *draw_context_out = hashed_process_data_out->draw_context;
     //draw_context_out->current->modify_over->x = x;
     draw_context_out->current->modify_over->y = y_out;
-    draw_context_out->drawable = control_flow_data->Drawing->pixmap;
-    draw_context_out->pango_layout = control_flow_data->Drawing->pango_layout;
-    GtkWidget *widget = control_flow_data->Drawing->drawing_area;
+    draw_context_out->drawable = control_flow_data->drawing->pixmap;
+    draw_context_out->pango_layout = control_flow_data->drawing->pango_layout;
+    GtkWidget *widget = control_flow_data->drawing->drawing_area;
     //draw_context_out->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
     draw_context_out->gc = widget->style->black_gc;
     
     //draw_arc((void*)&prop_arc, (void*)draw_context_out);
-    //test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->pixmap);
+    //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
     
     GdkColor colorfg_out = { 0, 0xffff, 0x0000, 0x0000 };
     GdkColor colorbg_out = { 0, 0xffff, 0xffff, 0xffff };
@@ -705,14 +705,14 @@ int draw_after_hook(void *hook_data, void *call_data)
     DrawContext *draw_context_in = hashed_process_data_in->draw_context;
     //draw_context_in->current->modify_over->x = x;
     draw_context_in->current->modify_over->y = y_in;
-    draw_context_in->drawable = control_flow_data->Drawing->pixmap;
-    draw_context_in->pango_layout = control_flow_data->Drawing->pango_layout;
-    widget = control_flow_data->Drawing->drawing_area;
+    draw_context_in->drawable = control_flow_data->drawing->pixmap;
+    draw_context_in->pango_layout = control_flow_data->drawing->pango_layout;
+    widget = control_flow_data->drawing->drawing_area;
     //draw_context_in->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
     draw_context_in->gc = widget->style->black_gc;
     
     //draw_arc((void*)&prop_arc, (void*)draw_context_in);
-    //test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->pixmap);
+    //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
     
     GdkColor colorfg_in = { 0, 0x0000, 0xffff, 0x0000 };
     GdkColor colorbg_in = { 0, 0xffff, 0xffff, 0xffff };
@@ -829,7 +829,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
       g_info("scrolling near right");
       /* Scroll right, keep right part of the screen */
       guint x = 0;
-      guint width = control_flow_data->Drawing->drawing_area->allocation.width;
+      guint width = control_flow_data->drawing->drawing_area->allocation.width;
       convert_time_to_pixels(
           *os,
           old_end,
@@ -838,9 +838,9 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           &x);
 
       /* Copy old data to new location */
-      gdk_draw_drawable (control_flow_data->Drawing->pixmap,
-          control_flow_data->Drawing->drawing_area->style->white_gc,
-          control_flow_data->Drawing->pixmap,
+      gdk_draw_drawable (control_flow_data->drawing->pixmap,
+          control_flow_data->drawing->drawing_area->style->white_gc,
+          control_flow_data->drawing->pixmap,
           x, 0,
           0, 0,
           -1, -1);
@@ -854,23 +854,23 @@ gint update_time_window_hook(void *hook_data, void *call_data)
 
       *old_time_window = *new_time_window;
       /* Clear the data request background, but not SAFETY */
-      gdk_draw_rectangle (control_flow_data->Drawing->pixmap,
-          control_flow_data->Drawing->drawing_area->style->white_gc,
+      gdk_draw_rectangle (control_flow_data->drawing->pixmap,
+          control_flow_data->drawing->drawing_area->style->white_gc,
           TRUE,
           x+SAFETY, 0,
-          control_flow_data->Drawing->width - x,  // do not overlap
-          control_flow_data->Drawing->height+SAFETY);
+          control_flow_data->drawing->width - x,  // do not overlap
+          control_flow_data->drawing->height+SAFETY);
       /* Get new data for the rest. */
-      drawing_data_request(control_flow_data->Drawing,
-          &control_flow_data->Drawing->pixmap,
+      drawing_data_request(control_flow_data->drawing,
+          &control_flow_data->drawing->pixmap,
           x, 0,
-          control_flow_data->Drawing->width - x,
-          control_flow_data->Drawing->height);
+          control_flow_data->drawing->width - x,
+          control_flow_data->drawing->height);
   
-      drawing_refresh(control_flow_data->Drawing,
+      drawing_refresh(control_flow_data->drawing,
           0, 0,
-          control_flow_data->Drawing->width,
-          control_flow_data->Drawing->height);
+          control_flow_data->drawing->width,
+          control_flow_data->drawing->height);
 
 
     } else { 
@@ -883,7 +883,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
         g_info("scrolling near left");
         /* Scroll left, keep left part of the screen */
         guint x = 0;
-        guint width = control_flow_data->Drawing->drawing_area->allocation.width;
+        guint width = control_flow_data->drawing->drawing_area->allocation.width;
         convert_time_to_pixels(
             *ns,
             new_end,
@@ -892,9 +892,9 @@ gint update_time_window_hook(void *hook_data, void *call_data)
             &x);
   
         /* Copy old data to new location */
-        gdk_draw_drawable (control_flow_data->Drawing->pixmap,
-            control_flow_data->Drawing->drawing_area->style->white_gc,
-            control_flow_data->Drawing->pixmap,
+        gdk_draw_drawable (control_flow_data->drawing->pixmap,
+            control_flow_data->drawing->drawing_area->style->white_gc,
+            control_flow_data->drawing->pixmap,
             0, 0,
             x, 0,
             -1, -1);
@@ -902,23 +902,23 @@ gint update_time_window_hook(void *hook_data, void *call_data)
         *old_time_window = *new_time_window;
 
         /* Clean the data request background */
-        gdk_draw_rectangle (control_flow_data->Drawing->pixmap,
-          control_flow_data->Drawing->drawing_area->style->white_gc,
+        gdk_draw_rectangle (control_flow_data->drawing->pixmap,
+          control_flow_data->drawing->drawing_area->style->white_gc,
           TRUE,
           0, 0,
           x,  // do not overlap
-          control_flow_data->Drawing->height+SAFETY);
+          control_flow_data->drawing->height+SAFETY);
         /* Get new data for the rest. */
-        drawing_data_request(control_flow_data->Drawing,
-            &control_flow_data->Drawing->pixmap,
+        drawing_data_request(control_flow_data->drawing,
+            &control_flow_data->drawing->pixmap,
             0, 0,
             x,
-            control_flow_data->Drawing->height);
+            control_flow_data->drawing->height);
     
-        drawing_refresh(control_flow_data->Drawing,
+        drawing_refresh(control_flow_data->drawing,
             0, 0,
-            control_flow_data->Drawing->width,
-            control_flow_data->Drawing->height);
+            control_flow_data->drawing->width,
+            control_flow_data->drawing->height);
         
       } else {
         g_info("scrolling far");
@@ -926,23 +926,23 @@ gint update_time_window_hook(void *hook_data, void *call_data)
         *old_time_window = *new_time_window;
         
         
-        gdk_draw_rectangle (control_flow_data->Drawing->pixmap,
-          control_flow_data->Drawing->drawing_area->style->white_gc,
+        gdk_draw_rectangle (control_flow_data->drawing->pixmap,
+          control_flow_data->drawing->drawing_area->style->white_gc,
           TRUE,
           0, 0,
-          control_flow_data->Drawing->width+SAFETY, // do not overlap
-          control_flow_data->Drawing->height+SAFETY);
+          control_flow_data->drawing->width+SAFETY, // do not overlap
+          control_flow_data->drawing->height+SAFETY);
 
-        drawing_data_request(control_flow_data->Drawing,
-            &control_flow_data->Drawing->pixmap,
+        drawing_data_request(control_flow_data->drawing,
+            &control_flow_data->drawing->pixmap,
             0, 0,
-            control_flow_data->Drawing->width,
-            control_flow_data->Drawing->height);
+            control_flow_data->drawing->width,
+            control_flow_data->drawing->height);
     
-        drawing_refresh(control_flow_data->Drawing,
+        drawing_refresh(control_flow_data->drawing,
             0, 0,
-            control_flow_data->Drawing->width,
-            control_flow_data->Drawing->height);
+            control_flow_data->drawing->width,
+            control_flow_data->drawing->height);
       }
     }
   } else {
@@ -951,24 +951,24 @@ gint update_time_window_hook(void *hook_data, void *call_data)
 
     *old_time_window = *new_time_window;
   
-    gdk_draw_rectangle (control_flow_data->Drawing->pixmap,
-          control_flow_data->Drawing->drawing_area->style->white_gc,
+    gdk_draw_rectangle (control_flow_data->drawing->pixmap,
+          control_flow_data->drawing->drawing_area->style->white_gc,
           TRUE,
           0, 0,
-          control_flow_data->Drawing->width+SAFETY, // do not overlap
-          control_flow_data->Drawing->height+SAFETY);
+          control_flow_data->drawing->width+SAFETY, // do not overlap
+          control_flow_data->drawing->height+SAFETY);
 
   
-    drawing_data_request(control_flow_data->Drawing,
-        &control_flow_data->Drawing->pixmap,
+    drawing_data_request(control_flow_data->drawing,
+        &control_flow_data->drawing->pixmap,
         0, 0,
-        control_flow_data->Drawing->width,
-        control_flow_data->Drawing->height);
+        control_flow_data->drawing->width,
+        control_flow_data->drawing->height);
   
-    drawing_refresh(control_flow_data->Drawing,
+    drawing_refresh(control_flow_data->drawing,
         0, 0,
-        control_flow_data->Drawing->width,
-        control_flow_data->Drawing->height);
+        control_flow_data->drawing->width,
+        control_flow_data->drawing->height);
   }
 
   return 0;
@@ -1036,7 +1036,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
     set_time_window(control_flow_data->mw, &time_window);
     
   }
-  gtk_widget_queue_draw(control_flow_data->Drawing->drawing_area);
+  gtk_widget_queue_draw(control_flow_data->drawing->drawing_area);
   
   return 0;
 }
@@ -1056,7 +1056,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   ControlFlowData *control_flow_data =
     closure_data->event_request->control_flow_data;
   
-  GtkWidget *widget = control_flow_data->Drawing->drawing_area;
+  GtkWidget *widget = control_flow_data->drawing->drawing_area;
 
   /* Get y position of process */
   gint y=0, height=0;
@@ -1086,10 +1086,10 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   draw_context->current->middle->x = closure_data->event_request->x_end;
   draw_context->current->middle->y = y + height/2;
   draw_context->previous->middle->y = y + height/2;
-  draw_context->drawable = control_flow_data->Drawing->pixmap;
-  draw_context->pango_layout = control_flow_data->Drawing->pango_layout;
+  draw_context->drawable = control_flow_data->drawing->pixmap;
+  draw_context->pango_layout = control_flow_data->drawing->pango_layout;
   //draw_context->gc = widget->style->black_gc;
-  draw_context->gc = gdk_gc_new(control_flow_data->Drawing->pixmap);
+  draw_context->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
   gdk_gc_copy(draw_context->gc, widget->style->black_gc);
 
   PropertiesLine prop_line;

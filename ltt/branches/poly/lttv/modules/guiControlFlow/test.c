@@ -103,7 +103,7 @@ void test_draw(ControlFlowData *control_flow_data)
 	 * This function calls the reading library to get the draw_hook called 
 	 * for the desired period of time. */
 	
-	DrawingAreaInfo *Drawing_Area_Info = &control_flow_data->Drawing_Area_Info;
+	drawingAreaInfo *drawing_Area_Info = &control_flow_data->drawing_Area_Info;
 
 	
 }
@@ -120,7 +120,7 @@ void test_draw() {
 
 	/* When redrawing, use widget->allocation.width to get the width of
 	 * drawable area. */
-	control_flow_data->Drawing_Area_Info.width = widget->allocation.width;
+	control_flow_data->drawing_Area_Info.width = widget->allocation.width;
 	
 	test_draw(control_flow_data);
 	
@@ -132,11 +132,11 @@ void test_draw() {
   //              TRUE,
   //              //0, 0, widget->allocation.width, widget->allocation.height,
   //              0, 0, widget->allocation.width,
-	//							control_flow_data->Drawing_Area_Info.height,
+	//							control_flow_data->drawing_Area_Info.height,
   //              0, 64 * 360);
 
 	
-	//Drawing_Area_Init(control_flow_data);
+	//drawing_Area_Init(control_flow_data);
 	
 	// 2 pixels for the box around the drawing area, 1 pixel for off-by-one
 	// (starting from 0)
@@ -186,7 +186,7 @@ void test_draw() {
 
 /* Event_Hook.c tests */
 
-void test_draw_item(Drawing_t *Drawing,
+void test_draw_item(Drawing_t *drawing,
 			GdkPixmap *pixmap) 
 {
 	PropertiesIcon properties_icon;
@@ -207,7 +207,7 @@ void test_draw_item(Drawing_t *Drawing,
 			current.modify_over = &over;
 	
 			draw_context.drawable = pixmap;
-			draw_context.gc = Drawing->drawing_area->style->black_gc;
+			draw_context.gc = drawing->drawing_area->style->black_gc;
 
 			draw_context.current = &current;
 			draw_context.previous = NULL;
@@ -230,7 +230,7 @@ void test_draw_item(Drawing_t *Drawing,
 /* NOTE : no drawing data should be sent there, since the drawing widget
  * has not been initialized */
 void send_test_drawing(ProcessList *process_list,
-			Drawing_t *Drawing,
+			Drawing_t *drawing,
 			GdkPixmap *pixmap,
 			gint x, gint y, // y not used here?
 		  gint width,
@@ -254,7 +254,7 @@ void send_test_drawing(ProcessList *process_list,
 	
 	gc = gdk_gc_new(pixmap);
 	/* Sent text data */
-	layout = gtk_widget_create_pango_layout(Drawing->drawing_area,
+	layout = gtk_widget_create_pango_layout(drawing->drawing_area,
 			NULL);
 	context = pango_layout_get_context(layout);
 	FontDesc = pango_context_get_font_description(context);
@@ -276,12 +276,12 @@ void send_test_drawing(ProcessList *process_list,
 	
 	g_info("we draw : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
 	drawing_draw_line(
-		Drawing, pixmap, x,
+		drawing, pixmap, x,
 		y+(height/2), x + width, y+(height/2),
-		Drawing->drawing_area->style->black_gc);
+		drawing->drawing_area->style->black_gc);
 
 	pango_layout_set_text(layout, "Test", -1);
-	gdk_draw_layout(pixmap, Drawing->drawing_area->style->black_gc,
+	gdk_draw_layout(pixmap, drawing->drawing_area->style->black_gc,
 			0, y+height, layout);
 
 	birth.tv_sec = 14000;
@@ -295,9 +295,9 @@ void send_test_drawing(ProcessList *process_list,
 	
 
 	drawing_draw_line(
-		Drawing, pixmap, x,
+		drawing, pixmap, x,
 		y+(height/2), x + width, y+(height/2),
-		Drawing->drawing_area->style->black_gc);
+		drawing->drawing_area->style->black_gc);
 
 	g_info("y : %u, height : %u", y, height);
 
@@ -313,20 +313,20 @@ void send_test_drawing(ProcessList *process_list,
 					&height);
 
 	/* Draw rectangle (background color) */
-	gdk_gc_copy(gc, Drawing->drawing_area->style->black_gc);
+	gdk_gc_copy(gc, drawing->drawing_area->style->black_gc);
 	gdk_gc_set_rgb_fg_color(gc, &color);
 	gdk_draw_rectangle(pixmap, gc,
 					TRUE,
 					x, y, width, height);
 
 	drawing_draw_line(
-		Drawing, pixmap, x,
+		drawing, pixmap, x,
 		y+(height/2), x + width, y+(height/2),
-		Drawing->drawing_area->style->black_gc);
+		drawing->drawing_area->style->black_gc);
 
 	
 	/* Draw arc */
-	gdk_draw_arc(pixmap, Drawing->drawing_area->style->black_gc,
+	gdk_draw_arc(pixmap, drawing->drawing_area->style->black_gc,
 							TRUE, 100, y, height/2, height/2, 0, 360*64);
 
 	g_info("y : %u, height : %u", y, height);
@@ -344,9 +344,9 @@ void send_test_drawing(ProcessList *process_list,
 		
 
 		drawing_draw_line(
-			Drawing, pixmap, x,
+			drawing, pixmap, x,
 			y+(height/2), x + width, y+(height/2),
-			Drawing->drawing_area->style->black_gc);
+			drawing->drawing_area->style->black_gc);
 
 		g_critical("y : %u, height : %u", y, height);
 
@@ -363,9 +363,9 @@ void send_test_drawing(ProcessList *process_list,
 	
 
 	drawing_draw_line(
-		Drawing, pixmap, x,
+		drawing, pixmap, x,
 		y+(height/2), x + width, y+(height/2),
-		Drawing->drawing_area->style->black_gc);
+		drawing->drawing_area->style->black_gc);
 
 	g_info("y : %u, height : %u", y, height);
 	
@@ -375,7 +375,7 @@ void send_test_drawing(ProcessList *process_list,
 //				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/move_message.xpm");
 	//				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/mini-display.xpm");
 
-	//		gdk_gc_set_clip_mask(Drawing->drawing_area->style->black_gc, mask);
+	//		gdk_gc_set_clip_mask(drawing->drawing_area->style->black_gc, mask);
 
 //	for(i=x;i<x+width;i=i+15)
 //	{
@@ -383,20 +383,20 @@ void send_test_drawing(ProcessList *process_list,
 //		{
 			
 			/* Draw icon */
-			//gdk_gc_copy(gc, Drawing->drawing_area->style->black_gc);
-//			gdk_gc_set_clip_origin(Drawing->drawing_area->style->black_gc, i, j);
+			//gdk_gc_copy(gc, drawing->drawing_area->style->black_gc);
+//			gdk_gc_set_clip_origin(drawing->drawing_area->style->black_gc, i, j);
 //			gdk_draw_drawable(pixmap, 
-//					Drawing->drawing_area->style->black_gc,
+//					drawing->drawing_area->style->black_gc,
 //					icon_pixmap,
 //					0, 0, i, j, -1, -1);
 
 //		}
 //	}
 
-	test_draw_item(Drawing,pixmap);
+	test_draw_item(drawing,pixmap);
 	
-	//gdk_gc_set_clip_origin(Drawing->drawing_area->style->black_gc, 0, 0);
-	//gdk_gc_set_clip_mask(Drawing->drawing_area->style->black_gc, NULL);
+	//gdk_gc_set_clip_origin(drawing->drawing_area->style->black_gc, 0, 0);
+	//gdk_gc_set_clip_mask(drawing->drawing_area->style->black_gc, NULL);
 
 	//g_free(icon_pixmap);
 	//g_free(mask);
@@ -411,7 +411,7 @@ void send_test_drawing(ProcessList *process_list,
 	g_free(gc);
 }
 
-void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
+void send_test_process(ProcessList *process_list, Drawing_t *drawing)
 {
 	guint height, y;
 	int i;
@@ -435,7 +435,7 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 					&birth,
 					&y,
 					&height);
-	drawing_insert_square( Drawing, y, height);
+	drawing_insert_square( drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
@@ -451,7 +451,7 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 					&birth,
 					&y,
 					&height);
-	drawing_insert_square( Drawing, y, height);
+	drawing_insert_square( drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
@@ -467,11 +467,11 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 					&birth,
 					&y,
 					&height);
-	drawing_insert_square( Drawing, y, height);
+	drawing_insert_square( drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
-	//drawing_insert_square( Drawing, height, 5);
+	//drawing_insert_square( drawing, height, 5);
 
 	for(i=0; i<10; i++)
 	{
@@ -487,7 +487,7 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 						&birth,
 						&y,
 						&height);
-		drawing_insert_square( Drawing, y, height);
+		drawing_insert_square( drawing, y, height);
 	
 	//	g_critical("y : %u, height : %u", y, height);
 	
@@ -506,7 +506,7 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 					&birth,
 					&y,
 					&height);
-	drawing_insert_square( Drawing, y, height);
+	drawing_insert_square( drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
@@ -519,11 +519,11 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 					&birth,
 					&y,
 					&height);
-	drawing_insert_square( Drawing, y, height);
+	drawing_insert_square( drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
-	//drawing_insert_square( Drawing, height, 5);
+	//drawing_insert_square( drawing, height, 5);
 	//g_critical("height : %u", height);
 
 
@@ -535,7 +535,7 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 				10000,
 				&birth);
 
-	drawing_remove_square( Drawing, y, height);
+	drawing_remove_square( drawing, y, height);
 	
 	if(row_ref = 
 		(GtkTreeRowReference*)g_hash_table_lookup(
