@@ -136,6 +136,7 @@ G_MODULE_EXPORT void destroy()
   lttv_hooks_destroy(after_tracefile);
   lttv_hooks_destroy(before_event);
   lttv_hooks_destroy(after_event);
+  lttv_hooks_remove_data(main_hooks, process_traceset, NULL);
 
   nb = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb ; i++) {
