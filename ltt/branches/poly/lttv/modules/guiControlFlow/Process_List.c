@@ -190,7 +190,7 @@ void send_test_data(ProcessList *Process_List)
 			&birth,
 			&height);
 
-	for(i=0; i<150; i++)
+	for(i=0; i<10; i++)
 	{
 		birth.tv_sec = i*12000;
 		birth.tv_nsec = i*55700;

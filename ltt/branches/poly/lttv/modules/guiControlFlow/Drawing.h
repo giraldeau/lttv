@@ -10,7 +10,7 @@
  * Draw horizontal lines, getting graphic context as arg.
  * Copy region of the screen into another.
  * Modify the boundaries to reflect a scale change. (resize)
- *
+ * Refresh the physical screen with the pixmap
  * A helper function is provided here to convert from time and process
  * identifier to pixels and the contrary (will be useful for mouse selection).
  */
@@ -22,16 +22,23 @@ void Drawing_destroy(Drawing_t *Drawing);
 
 GtkWidget *Drawing_getWidget(Drawing_t *Drawing);
 	
+//void Drawing_Refresh (	Drawing_t *Drawing,
+//			guint x, guint y,
+//			guint width, guint height);
 
-void Drawing_draw_line(	guint x1, guint y1, guint x2, guint y2,
+void Drawing_draw_line(	Drawing_t *Drawing,
+			GdkPixmap *Pixmap,
+			guint x1, guint y1,
+			guint x2, guint y2,
 			GdkGC *GC);
 
-void Drawing_copy(guint xsrc, guint ysrc,
-		guint xdest, guint ydest,
-		guint width, guint height);
+//void Drawing_copy( Drawing_t *Drawing,
+//		guint xsrc, guint ysrc,
+//		guint xdest, guint ydest,
+//		guint width, guint height);
 
 
-void Drawing_Resize(Drawing_t *Drawing, guint h, guint w);
+//void Drawing_Resize(Drawing_t *Drawing, guint h, guint w);
 
 void convert_pixels_to_time(
 		Drawing_t *Drawing,
