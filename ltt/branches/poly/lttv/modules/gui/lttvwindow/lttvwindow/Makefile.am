@@ -24,6 +24,7 @@ liblttvwindow_la_SOURCES = \
 	gtkdirsel.c\
 	gtkmultivpaned.c\
 	lttvwindow.c \
+	lttvwindowtraces.c \
 	init_module.c \
 	support.c \
 	interface.c \
@@ -40,6 +41,7 @@ lttvwindowinclude_HEADERS = \
 	gtkdirsel.h\
 	gtkmultivpaned.h\
 	lttvwindow.h\
+	lttvwindowtraces.h\
 	lttvfilter.h\
 	mainwindow.h\
 	menu.h\

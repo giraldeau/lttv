@@ -631,48 +631,6 @@ void lttvwindow_events_request_remove_all(Tab            *tab,
                                           gconstpointer   viewer);
 
 
-typedef struct _BackgroundRequest {
-  gchar *hook_path; /* Hook path in global attributes, where all standard hooks
-                       are : i.e. /TraceState/Statistics/ModuleName */
-  gchar *trace_path; /* path_to_trace */
-} BackgroundRequest;
-
-typedef struct _BackgroundNotify {
-  gchar                       *trace_path; /* path_to_trace */
-  LttTime                      notify_time;
-  LttvTracesetContextPosition *notify_position;
-  LttvHooks                   *notify; /* Hook to call when the notify is
-                                          passed, or at the end of trace */
-} BackgroundNotify;
-
-/**
- * Function to request data from a specific trace
- * 
- * @param bg_request Request specification
- */
-
-void lttvwindow_background_request_queue(const BackgroundRequest  *bg_request);
-
-/**
- * Register a callback to be called when requested data is passed in the next
- * queued background processing.
- * 
- * @param bg_request Request specification
- */
-
-void lttvwindow_background_notify_queue(const BackgroundNotify  *bg_notify);
-
-
-/**
- * Register a callback to be called when requested data is passed in the current
- * background processing.
- * 
- * @param bg_request Request specification
- */
-
-void lttvwindow_background_notify_current(const BackgroundNotify  *bg_notify);
-
-
 /**
  * Function to get the current time window of the current tab.
  * 

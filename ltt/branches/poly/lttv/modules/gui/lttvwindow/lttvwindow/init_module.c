@@ -26,6 +26,7 @@
 #endif
 
 #include <gtk/gtk.h>
+#include <glib.h>
 
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>
@@ -37,6 +38,7 @@
 #include <lttv/stats.h>
 #include <lttvwindow/menu.h>
 #include <lttvwindow/toolbar.h>
+#include <lttvwindow/lttvwindowtraces.h>
 
 #include "interface.h"
 #include "support.h"
@@ -46,7 +48,12 @@
 #include <ltt/trace.h>
 
 
-GQuark LTTV_TRACES;
+LttvTraceInfo LTTV_TRACES,
+       LTTV_COMPUTATION,
+       LTTV_REQUESTS_QUEUE,
+       LTTV_REQUESTS_CURRENT,
+       LTTV_NOTIFY_QUEUE,
+       LTTV_NOTIFY_CURRENT;
 
 /** Array containing instanced objects. */
 GSList * g_main_window_list = NULL ;
@@ -63,12 +70,16 @@ static char *a_trace;
 void lttv_trace_option(void *hook_data)
 { 
   LttTrace *trace;
-  gchar *path;
+  gchar *abs_path;
 
-  trace = ltt_trace_open(a_trace);
-  if(trace == NULL) g_critical("cannot open trace %s", a_trace);
-  g_init_trace = lttv_trace_new(trace);
-
+  get_absolute_pathname(a_trace, abs_path);
+  g_init_trace = lttvwindowtraces_get_trace_by_name(abs_path);
+  if(g_init_trace == NULL) {
+    trace = ltt_trace_open(abs_path);
+    if(trace == NULL) g_critical("cannot open trace %s", abs_path);
+    g_init_trace = lttv_trace_new(trace);
+    lttvwindowtraces_add_trace(g_init_trace);
+  }
 }
 
 /*****************************************************************************
@@ -110,7 +121,12 @@ static void init() {
   // Global attributes only used for interaction with main() here.
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   
-  LTTV_TRACES = g_quark_from_string("traces/");
+  LTTV_TRACES = g_quark_from_string("traces");
+  LTTV_COMPUTATION = g_quark_from_string("computation");
+  LTTV_REQUESTS_QUEUE = g_quark_from_string("requests_queue");
+  LTTV_REQUESTS_CURRENT = g_quark_from_string("requests_current");
+  LTTV_NOTIFY_QUEUE = g_quark_from_string("notify_queue");
+  LTTV_NOTIFY_CURRENT = g_quark_from_string("notify_current");
   
   g_debug("GUI init()");
 

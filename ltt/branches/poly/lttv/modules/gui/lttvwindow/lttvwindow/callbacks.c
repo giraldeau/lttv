@@ -20,6 +20,9 @@
 #  include <config.h>
 #endif
 
+#include <limits.h> // for PATH_MAX
+#include <stdlib.h>
+
 #include <gtk/gtk.h>
 
 #include "callbacks.h"
@@ -38,10 +41,11 @@
 #include <lttvwindow/menu.h>
 #include <lttvwindow/toolbar.h>
 #include <lttvwindow/lttvwindow.h>
+#include <lttvwindow/lttvwindowtraces.h>
 #include <lttvwindow/gtkdirsel.h>
 #include <lttvwindow/lttvfilter.h>
 
-#define PATH_LENGTH          256
+
 #define DEFAULT_TIME_WIDTH_S   1
 
 extern LttvTrace *g_init_trace ;
@@ -51,8 +55,8 @@ extern LttvTrace *g_init_trace ;
 extern GSList * g_main_window_list;
 
 /** MD : keep old directory. */
-static char remember_plugins_dir[PATH_LENGTH] = "";
-static char remember_trace_dir[PATH_LENGTH] = "";
+static char remember_plugins_dir[PATH_MAX] = "";
+static char remember_trace_dir[PATH_MAX] = "";
 
 
 MainWindow * get_window_data_struct(GtkWidget * widget);
@@ -871,7 +875,9 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       EventsRequest *events_request = (EventsRequest *)iter->data;
       
       /* 1.1. Use current postition as start position */
-      g_free(events_request->start_position);
+      if(events_request->start_position != NULL)
+        lttv_traceset_context_position_destroy(events_request->start_position);
+      events_request->start_position = ltt_traceset_context_position_new();
       lttv_traceset_context_position_save(tsc, events_request->start_position);
 
       /* 1.2. Remove start time */
@@ -975,6 +981,14 @@ static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
   LttvTraceset *traceset = tab->traceset_info->traceset;
   guint i;
 
+ //Verify if trace is already present.
+  for(i=0; i<lttv_traceset_number(traceset); i++)
+  {
+    LttvTrace * trace = lttv_traceset_get(traceset, i);
+    if(trace == trace_v)
+      return;
+  }
+
   //Keep a reference to the traces so they are not freed.
   for(i=0; i<lttv_traceset_number(traceset); i++)
   {
@@ -991,6 +1005,7 @@ static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
   g_object_unref(tab->traceset_info->traceset_context);
 
   lttv_traceset_add(traceset, trace_v);
+  lttv_trace_ref(trace_v);  /* local ref */
 
   /* Create new context */
   tab->traceset_info->traceset_context =
@@ -1023,6 +1038,7 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   LttvTrace * trace_v;
   LttvTraceset * traceset;
   const char * dir;
+  char abs_path[PATH_MAX];
   gint id;
   gint i;
   MainWindow * mw_data = get_window_data_struct(widget);
@@ -1049,14 +1065,19 @@ void add_trace(GtkWidget * widget, gpointer user_data)
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       dir = gtk_dir_selection_get_dir (file_selector);
-      strncpy(remember_trace_dir, dir, PATH_LENGTH);
+      strncpy(remember_trace_dir, dir, PATH_MAX);
       if(!dir || strlen(dir) == 0){
       	gtk_widget_destroy((GtkWidget*)file_selector);
       	break;
       }
-      trace = ltt_trace_open(dir);
-      if(trace == NULL) g_critical("cannot open trace %s", dir);
-      trace_v = lttv_trace_new(trace);
+      get_absolute_pathname(dir, abs_path);
+      trace_v = lttvwindowtraces_get_trace_by_name(abs_path);
+      if(trace_v == NULL) {
+        trace = ltt_trace_open(abs_path);
+        if(trace == NULL) g_critical("cannot open trace %s", abs_path);
+        trace_v = lttv_trace_new(trace);
+        lttvwindowtraces_add_trace(trace_v);
+      }
 
       lttvwindow_add_trace(tab, trace_v);
 
@@ -1195,8 +1216,11 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 
           trace_v = lttv_traceset_get(traceset, i);
 
-          if(lttv_trace_get_ref_number(trace_v) <= 1)
+          if(lttv_trace_get_ref_number(trace_v) <= 2) {
+            /* ref 2 : traceset, local */
+            lttvwindowtraces_remove_trace(trace_v);
             ltt_trace_close(lttv_trace(trace_v));
+          }
           
           lttv_traceset_remove(traceset, i);
           lttv_trace_unref(trace_v);  // Remove local reference
@@ -1232,7 +1256,7 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
           }else{
             if(tab){
               while(tab->multi_vpaned->num_children){
-          gtk_multi_vpaned_widget_delete(tab->multi_vpaned);
+                gtk_multi_vpaned_widget_delete(tab->multi_vpaned);
               }    
             }	    
           }
@@ -1402,7 +1426,7 @@ on_clone_traceset_activate             (GtkMenuItem     *menuitem,
  */
 
 Tab *create_new_tab(GtkWidget* widget, gpointer user_data){
-  gchar label[PATH_LENGTH];
+  gchar label[PATH_MAX];
   MainWindow * mw_data = get_window_data_struct(widget);
 
   GtkNotebook * notebook = (GtkNotebook *)lookup_widget(widget, "MNotebook");
@@ -1662,7 +1686,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
 {
   char ** dir;
   gint id;
-  char str[PATH_LENGTH], *str1;
+  char str[PATH_MAX], *str1;
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
   GtkFileSelection * file_selector = (GtkFileSelection *)gtk_file_selection_new("Select a module");
   if(remember_plugins_dir[0] != '\0')
@@ -1675,8 +1699,8 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       dir = gtk_file_selection_get_selections (file_selector);
-      strncpy(str,dir[0],PATH_LENGTH);
-      strncpy(remember_plugins_dir,dir[0],PATH_LENGTH);
+      strncpy(str,dir[0],PATH_MAX);
+      strncpy(remember_plugins_dir,dir[0],PATH_MAX);
       str1 = strrchr(str,'/');
       if(str1)str1++;
       else{
@@ -1757,8 +1781,8 @@ on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       dir = gtk_dir_selection_get_dir (file_selector);
-      strncpy(remember_plugins_dir,dir,PATH_LENGTH);
-      strncat(remember_plugins_dir,"/",PATH_LENGTH);
+      strncpy(remember_plugins_dir,dir,PATH_MAX);
+      strncat(remember_plugins_dir,"/",PATH_MAX);
       lttv_library_path_add(dir);
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
@@ -2535,10 +2559,8 @@ void tab_destructor(Tab * tab_instance)
       trace = lttv_traceset_get(tab_instance->traceset_info->traceset, i);
       ref_count = lttv_trace_get_ref_number(trace);
       if(ref_count <= 1){
-	ltt_trace_close(lttv_trace(trace));
-	lttv_trace_destroy(trace);
+	      ltt_trace_close(lttv_trace(trace));
       }
-      //      lttv_trace_destroy(trace);
     }
   }  
   lttv_traceset_destroy(tab_instance->traceset_info->traceset);

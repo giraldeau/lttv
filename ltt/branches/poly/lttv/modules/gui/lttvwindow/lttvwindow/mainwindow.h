@@ -22,8 +22,6 @@
 #include <glib.h>
 #include <ltt/time.h>
 
-extern GQuark LTTV_TRACES;
-
 typedef struct _MainWindow MainWindow;
 typedef struct _TimeWindow TimeWindow;
 typedef struct _Tab Tab;
