@@ -3756,8 +3756,8 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   tab->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   tab->interrupted_state = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
  
-  tab->vbox = gtk_vbox_new(FALSE, 0);
-  tab->viewer_container = gtk_vbox_new(TRUE, 0);
+  tab->vbox = gtk_vbox_new(FALSE, 2);
+  tab->viewer_container = gtk_vbox_new(TRUE, 2);
   tab->scrollbar = gtk_hscrollbar_new(NULL);
   //tab->multivpaned = gtk_multi_vpaned_new();
   
