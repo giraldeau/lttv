@@ -1,13 +1,19 @@
-GUI Layout
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>GUI Layout</title>
+</head>
+  <body>
 
+<h1>GUI Layout</h1>
 
-Mathieu Desnoyers, June 2003
-
-
+<P>
 In order to implement the GUI, choices has to be made based on habitual interfaces that we know users are familiar with. The inspiration for these choices came mainly from the Mozilla browser project and also from Openoffice, which are currently used as two userfriendly applications in various Linux distribution at the time of this writing.
 
+<P>
 This document describes the layout of the GUI in three sections : containers, menus and toolbars.
 
+<P>
 A status bar is also placed at the bottom of the window.
 
 - Containers
@@ -30,6 +36,7 @@ Window Mainwindow
 
 - Menus
 
+<P>
 Here is a short description of each menu entry
 *   by itself means a separator
 
@@ -92,12 +99,16 @@ Here is a short description of each menu entry
 *About
 
 
+<P>
 - Toolbar
 
+<P>
 The toolbar is separated in two parts : like the two lines used in Openoffice. The first one is applying to the top level window (or current tab) while the one below contains the current viewer's toolbar.
 
+<P>
 So we have something like this :
 
+<P>
 --------------------------------------------------------------------------------
 | Menus                                                                        |
 --------------------------------------------------------------------------------
@@ -115,10 +126,13 @@ So we have something like this :
 --------------------------------------------------------------------------------
 
 
+<P>
 The toolbar of the top level window is the only one described in this document, as the second one is defined by the viewers and specific to each of them.
 
+<P>
 This toolbar is mainly a selection of the menu entries.
 
+<P>
 New : New window with empty trace set.
 Open : open a trace set.
 Add Trace
@@ -139,4 +153,7 @@ Delete current viewer
 *
 Add viewer's specific insertion buttons are added here.
 
+
+
+Mathieu Desnoyers, June 2003
 
