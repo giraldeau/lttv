@@ -59,6 +59,58 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
   int size, size1, element_number, i, offset1, offset2;
   LttType * type = fld->field_type;
 
+  switch(type->type_class) {
+    case LTT_ARRAY:
+      element_number = (int) type->element_number;
+      if(fld->field_fixed == 0){// has string or sequence
+        size = 0;
+        for(i=0;i<element_number;i++){
+          size += ltt_event_refresh_fields(offsetRoot+size,size, 
+             fld->child[0], evD+size);
+        }
+      }else size = fld->field_size;
+      break;
+
+    case LTT_SEQUENCE:
+      size1 = fld->sequ_number_size;
+      element_number = getIntNumber(size1,evD);
+      type->element_number = element_number;
+      if(fld->element_size > 0){
+        size = element_number * fld->element_size;
+      }else{//sequence has string or sequence
+        size = 0;
+        for(i=0;i<element_number;i++){
+          size += ltt_event_refresh_fields(offsetRoot+size+size1,size+size1, 
+                   fld->child[0], evD+size+size1);
+        }	
+        size += size1;
+      }
+      break;
+
+    case LTT_STRING:
+      size = strlen((char*)evD) + 1; //include end : '\0'
+      break;
+
+    case LTT_STRUCT:
+      element_number = (int) type->element_number;
+      if(fld->field_fixed == 0){
+        offset1 = offsetRoot;
+        offset2 = 0;
+        for(i=0;i<element_number;i++){
+          size=ltt_event_refresh_fields(offset1,offset2,
+                                        fld->child[i],evD+offset2);
+          offset1 += size;
+          offset2 += size;
+        }      
+        size = offset2;
+      }else size = fld->field_size;
+      break;
+
+    default:
+      size = fld->field_size;
+  }
+
+#if 0
   if(type->type_class != LTT_STRUCT && type->type_class != LTT_ARRAY &&
      type->type_class != LTT_SEQUENCE && type->type_class != LTT_STRING){
     size = fld->field_size;
@@ -67,9 +119,9 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
     if(fld->field_fixed == 0){// has string or sequence
       size = 0;
       for(i=0;i<element_number;i++){
-	size += ltt_event_refresh_fields(offsetRoot+size,size, 
+	      size += ltt_event_refresh_fields(offsetRoot+size,size, 
 					 fld->child[0], evD+size);
-      }      
+      }
     }else size = fld->field_size;
   }else if(type->type_class == LTT_SEQUENCE){
     size1 = fld->sequ_number_size;
@@ -80,8 +132,8 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
     }else{//sequence has string or sequence
       size = 0;
       for(i=0;i<element_number;i++){
-	size += ltt_event_refresh_fields(offsetRoot+size+size1,size+size1, 
-					 fld->child[0], evD+size+size1);
+	      size += ltt_event_refresh_fields(offsetRoot+size+size1,size+size1, 
+				       	 fld->child[0], evD+size+size1);
       }	
       size += size1;
     }
@@ -93,14 +145,15 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
       offset1 = offsetRoot;
       offset2 = 0;
       for(i=0;i<element_number;i++){
-	size=ltt_event_refresh_fields(offset1,offset2,fld->child[i],evD+offset2);
-	offset1 += size;
-	offset2 += size;
+	      size=ltt_event_refresh_fields(offset1,offset2,
+                                      fld->child[i],evD+offset2);
+      	offset1 += size;
+      	offset2 += size;
       }      
       size = offset2;
     }else size = fld->field_size;
   }
-
+#endif //0
   fld->offset_root     = offsetRoot;
   fld->offset_parent   = offsetParent;
   fld->fixed_root      = (offsetRoot==-1)   ? 0 : 1;
@@ -637,7 +690,7 @@ float ltt_event_get_float(LttEvent *e, LttField *f)
     guint32 aInt;
     memcpy((void*)&aInt, e->data + f->offset_root, 4);
     aInt = ___swab32(aInt);
-    return *((float*)&aInt);
+    return ((float)aInt);
   }
 }
 
@@ -653,7 +706,7 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
     guint64 aInt;
     memcpy((void*)&aInt, e->data + f->offset_root, 8);
     aInt = ___swab64(aInt);
-    return *((double *)&aInt);
+    return ((double)aInt);
   }
 }
 

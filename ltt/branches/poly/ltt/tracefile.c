@@ -681,16 +681,20 @@ unsigned ltt_trace_eventtype_number(LttTrace *t)
 
 LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
 {
-  LttFacility * facility;
+  LttFacility * facility = NULL;
   unsigned int i;
+
   for(i=0;i<trace->facility_number;i++){
-    facility = (LttFacility*) g_ptr_array_index(trace->facilities,i);
-    if(id >= facility->base_id && 
-       id < facility->base_id + facility->event_number)
+    LttFacility *iter_facility =
+                      (LttFacility*) g_ptr_array_index(trace->facilities,i);
+    if(id >= iter_facility->base_id && 
+       id < iter_facility->base_id + iter_facility->event_number) {
+      facility = iter_facility;
       break;
+    }
   }
-  if(i==trace->facility_number) return NULL;
-  else return facility;
+
+  return facility;
 }
 
 LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned evId)
@@ -1360,6 +1364,107 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
     if(fld == evT->root_field) return fld->field_size;
   }     
 
+  switch(type->type_class) {
+    case LTT_ARRAY:
+      element_number = (int) type->element_number;
+      if(fld->field_fixed == -1){
+        size = getFieldtypeSize(t, evT, offsetRoot,
+                                0,fld->child[0], NULL, trace);
+        if(size == 0){ //has string or sequence
+          fld->field_fixed = 0;
+        }else{
+          fld->field_fixed = 1;
+          size *= element_number; 
+        }
+      }else if(fld->field_fixed == 0){// has string or sequence
+        size = 0;
+        for(i=0;i<element_number;i++){
+          size += getFieldtypeSize(t, evT, offsetRoot+size,size, 
+          fld->child[0], evD+size, trace);
+        }
+      }else size = fld->field_size;
+      break;
+
+    case LTT_SEQUENCE:
+      size1 = (int) ltt_type_size(trace, type);
+      if(fld->field_fixed == -1){
+        fld->sequ_number_size = size1;
+        fld->field_fixed = 0;
+        size = getFieldtypeSize(t, evT, offsetRoot,
+                                0,fld->child[0], NULL, trace);      
+        fld->element_size = size;
+      }else{//0: sequence
+        element_number = getIntNumber(size1,evD);
+        type->element_number = element_number;
+        if(fld->element_size > 0){
+          size = element_number * fld->element_size;
+        }else{//sequence has string or sequence
+          size = 0;
+          for(i=0;i<element_number;i++){
+            size += getFieldtypeSize(t, evT, offsetRoot+size+size1,size+size1, 
+                                     fld->child[0], evD+size+size1, trace);
+          }
+        }
+        size += size1;
+      }
+      break;
+      
+    case LTT_STRING:
+      size = 0;
+      if(fld->field_fixed == -1){
+        fld->field_fixed = 0;
+      }else{//0: string
+        size = strlen((char*)evD) + 1; //include end : '\0'
+      }
+      break;
+      
+    case LTT_STRUCT:
+      element_number = (int) type->element_number;
+      size = 0;
+      if(fld->field_fixed == -1){      
+        offset1 = offsetRoot;
+        offset2 = 0;
+        for(i=0;i<element_number;i++){
+          size1=getFieldtypeSize(t, evT,offset1,offset2,
+                                 fld->child[i], NULL, trace);
+          if(size1 > 0 && size >= 0){
+            size += size1;
+            if(offset1 >= 0) offset1 += size1;
+              offset2 += size1;
+          }else{
+            size = -1;
+            offset1 = -1;
+            offset2 = -1;
+          }
+        }
+        if(size == -1){
+           fld->field_fixed = 0;
+           size = 0;
+        }else fld->field_fixed = 1;
+      }else if(fld->field_fixed == 0){
+        offset1 = offsetRoot;
+        offset2 = 0;
+        for(i=0;i<element_number;i++){
+          size=getFieldtypeSize(t,evT,offset1,offset2,
+                                fld->child[i],evD+offset2, trace);
+          offset1 += size;
+          offset2 += size;
+        }      
+        size = offset2;
+      }else size = fld->field_size;
+      break;
+
+    default:
+      if(fld->field_fixed == -1){
+        size = (int) ltt_type_size(trace, type);
+        fld->field_fixed = 1;
+      }else size = fld->field_size;
+      break;
+  }
+
+
+
+#if 0
   if(type->type_class != LTT_STRUCT && type->type_class != LTT_ARRAY &&
      type->type_class != LTT_SEQUENCE && type->type_class != LTT_STRING){
     if(fld->field_fixed == -1){
@@ -1448,6 +1553,7 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
       size = offset2;
     }else size = fld->field_size;
   }
+#endif //0
 
   fld->offset_root     = offsetRoot;
   fld->offset_parent   = offsetParent;
@@ -1468,18 +1574,31 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
  *    size            : the size of the integer
  *    evD             : the event data
  *Return value
- *    int             : an integer
+ *    gint64          : a 64 bits integer
  ****************************************************************************/
 
-int getIntNumber(int size, void *evD)
+gint64 getIntNumber(int size, void *evD)
 {
   gint64 i;
+
+  switch(size) {
+    case 1: i = *(gint8 *)evD; break;
+    case 2: i = *(gint16 *)evD; break;
+    case 4: i = *(gint32 *)evD; break;
+    case 8: i = *(gint64 *)evD; break;
+    default: i = *(gint64 *)evD;
+             g_critical("getIntNumber : integer size %d unknown", size);
+             break;
+  }
+
+#if 0
   if(size == 1)      i = *(gint8 *)evD;
   else if(size == 2) i = *(gint16 *)evD;
   else if(size == 4) i = *(gint32 *)evD;
   else if(size == 8) i = *(gint64 *)evD;
- 
-  return (int) i;
+#endif //0
+
+  return (gint64)i;
 }
 
 /*****************************************************************************

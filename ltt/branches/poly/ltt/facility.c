@@ -286,17 +286,18 @@ void constructTypeAndFields(LttFacility * fac,type_descriptor * td,
 LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
 {
   LttType * lttType = NULL;
-  unsigned int i;
+  unsigned int i=0;
   char * name;
+
   if(td->type_name){
     for(i=0;i<fac->named_types_number; i++){
       if(fac->named_types[i] == NULL) break;
       name = fac->named_types[i]->type_name;
       if(strcmp(name, td->type_name)==0){
-	lttType = fac->named_types[i];	
+	      lttType = fac->named_types[i];	
 	//	if(lttType->element_name) g_free(lttType->element_name);
 	//	lttType->element_name = NULL;
-	break;	
+	      break;	
       }
     }
   }
@@ -313,7 +314,7 @@ LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
     lttType->element_name = NULL;
     if(td->type_name){
       lttType->type_name = g_strdup(td->type_name);
-      fac->named_types[i] = lttType;
+      fac->named_types[i] = lttType; /* i is initialized, checked. */
     }
     else{
       lttType->type_name = NULL;
@@ -516,7 +517,7 @@ LttEventType *ltt_facility_eventtype_get(LttFacility *f, unsigned i)
  *                     : obtain the event type according to event name
  *                       event name is unique in the facility
  *Input params
- *    f                : the facility that will be closed
+ *    f                : the facility
  *    name             : the name of the event
  *Return value
  *    LttEventType *  : the event type required  
@@ -525,13 +526,15 @@ LttEventType *ltt_facility_eventtype_get(LttFacility *f, unsigned i)
 LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, char *name)
 {
   unsigned int i;
-  LttEventType * ev;
+  LttEventType * ev = NULL;
+  
   for(i=0;i<f->event_number;i++){
-    ev = f->events[i];
-    if(strcmp(ev->name, name) == 0)break;      
+    LttEventType *iter_ev = f->events[i];
+    if(strcmp(iter_ev->name, name) == 0) {
+      ev = iter_ev;
+      break;
+    }
   }
-
-  if(i==f->event_number) return NULL;
-  else return ev;
+  return ev;
 }
 

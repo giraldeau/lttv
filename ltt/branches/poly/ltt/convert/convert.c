@@ -99,9 +99,9 @@ int main(int argc, char ** argv){
   char hardware_platform[BUFFER_SIZE];
   char operating_system[BUFFER_SIZE];
   int  cpu;
-  int  ltt_block_size;
-  int  ltt_major_version;
-  int  ltt_minor_version;
+  int  ltt_block_size=0;
+  int  ltt_major_version=0;
+  int  ltt_minor_version=0;
   int  ltt_log_cpu;
   char buf[BUFFER_SIZE];
   int i, k;
