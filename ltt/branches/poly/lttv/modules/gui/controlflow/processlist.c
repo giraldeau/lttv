@@ -411,7 +411,7 @@ void copy_pixmap_to_screen(ProcessList *process_list,
   gint end = MIN(ceil((y+height)/(double)cell_height),
                  process_list->index_to_pixmap->len);
   gint i;
-  g_warning("begin : %i, end : %i", begin,end);
+
   for(i=begin; i<end; i++) {
     g_assert(i<process_list->index_to_pixmap->len);
     /* Render the pixmap to the screen */
