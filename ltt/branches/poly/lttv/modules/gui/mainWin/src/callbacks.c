@@ -323,8 +323,8 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
   gdk_window_stick(win);
   gdk_window_unstick(win);
  
-  lttv_state_add_event_hooks(
-             (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
+  //lttv_state_add_event_hooks(
+  //           (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
 
   //update time window of each viewer, let viewer insert hooks needed by process_traceset
   set_time_window(mw_data, time_window);
@@ -335,8 +335,8 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
 		       ltt_time_add(time_window->start_time,time_window->time_width),
 		       max_nb_events);
 
-  lttv_state_remove_event_hooks(
-          (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
+  //lttv_state_remove_event_hooks(
+  //        (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
 
   //call hooks to show each viewer and let them remove hooks
   show_viewer(mw_data);  
