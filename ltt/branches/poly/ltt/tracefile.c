@@ -758,6 +758,15 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
   LttEvent * lttEvent = (LttEvent *)g_new(LttEvent, 1);
   int err;
 
+  if(t->cur_event_pos == t->buffer + t->block_size){
+    if(t->which_block == t->block_number){
+      g_free(lttEvent);
+      return NULL;
+    }
+    err = readBlock(t, t->which_block + 1);
+    if(err)g_error("Can not read tracefile");    
+  }
+
   lttEvent->event_id = (int)(*(uint16_t *)(t->cur_event_pos));
   if(lttEvent->event_id == TRACE_TIME_HEARTBEAT)
     t->cur_heart_beat_number++;
@@ -778,13 +787,7 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
 
   //update the fields of the current event and go to the next event
   err = skipEvent(t);
-  if(err == ENOMEM){
-    g_free(lttEvent);
-    return NULL;
-  }
-  if(err == ENOENT) return lttEvent;
   if(err == ERANGE) g_error("event id is out of range\n");
-  if(err)g_error("Can not read tracefile\n");
 
   return lttEvent;
 }
@@ -889,10 +892,6 @@ void updateTracefile(LttTracefile * tf)
  *    t         : tracefile
  *return value 
  *    0               : success
- *    EINVAL          : lseek fail
- *    EIO             : can not read from the file
- *    ENOMEM          : end of file
- *    ENOENT          : last event
  *    ERANGE          : event id is out of range
  ****************************************************************************/
 
@@ -902,14 +901,6 @@ int skipEvent(LttTracefile * t)
   void * evData;
   LttEventType * evT;
   LttField * rootFld;
-  static int evCount = 0;
-
-  if(evCount){
-    if(t->which_block == t->block_number && 
-       evCount == t->which_event){
-      return ENOMEM;
-    }else evCount = 0;
-  }
 
   evId   = (int)(*(uint16_t *)(t->cur_event_pos));
   evData = t->cur_event_pos + EVENT_HEADER_SIZE;
@@ -933,13 +924,7 @@ int skipEvent(LttTracefile * t)
 
   //the next event is in the next block
   if(evId == TRACE_BLOCK_END){
-    if(t->which_block == t->block_number){
-      t->which_event++;
-      evCount = t->which_event;
-      return ENOENT;
-    }
-    err = readBlock(t, t->which_block + 1);
-    if(err) return err;
+    t->cur_event_pos = t->buffer + t->block_size;
   }else{
     t->which_event++;
     t->current_event_time = getEventTime(t);
