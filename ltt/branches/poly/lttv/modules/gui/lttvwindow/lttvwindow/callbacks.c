@@ -504,9 +504,13 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       trace_v = lttv_trace_new(trace);
       traceset = mw_data->current_tab->traceset_info->traceset;
       if(mw_data->current_tab->traceset_info->traceset_context != NULL){
-	lttv_context_fini(LTTV_TRACESET_CONTEXT(mw_data->current_tab->
-						traceset_info->traceset_context));
-	g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
+      //remove state update hooks
+      lttv_state_remove_event_hooks(
+           (LttvTracesetState*)mw_data->current_tab->traceset_info->
+                                traceset_context);
+    	lttv_context_fini(LTTV_TRACESET_CONTEXT(mw_data->current_tab->
+		    				traceset_info->traceset_context));
+    	g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
       }
       lttv_traceset_add(traceset, trace_v);
       mw_data->current_tab->traceset_info->traceset_context =
@@ -514,6 +518,11 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       lttv_context_init(
 	LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->
 			      traceset_context),traceset); 
+      //add state update hooks
+      lttv_state_add_event_hooks(
+      (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
+  
+ 
       add_trace_into_traceset_selector(mw_data->current_tab->multi_vpaned, trace);
 
       gtk_widget_destroy((GtkWidget*)file_selector);
@@ -636,6 +645,10 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 	    ltt_trace_close(lttv_trace(trace_v));
 
 	  if(mw_data->current_tab->traceset_info->traceset_context != NULL){
+      //remove state update hooks
+      lttv_state_remove_event_hooks(
+           (LttvTracesetState*)mw_data->current_tab->traceset_info->
+                                traceset_context);
 	    lttv_context_fini(LTTV_TRACESET_CONTEXT(mw_data->current_tab->
 						    traceset_info->traceset_context));
 	    g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
@@ -645,9 +658,12 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 	     lttv_trace_destroy(trace_v);
 	  mw_data->current_tab->traceset_info->traceset_context =
 	    g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
-	  lttv_context_init(
+	    lttv_context_init(
 			    LTTV_TRACESET_CONTEXT(mw_data->current_tab->
 				      traceset_info->traceset_context),traceset);      
+      //add state update hooks
+      lttv_state_add_event_hooks(
+      (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
 	  //update current tab
 	  update_traceset(mw_data);
 	  if(nb_trace > 1){
@@ -1862,6 +1878,10 @@ void tab_destructor(Tab * tab_instance)
   }
 
   if(tab_instance->traceset_info->traceset_context != NULL){
+    //remove state update hooks
+    lttv_state_remove_event_hooks(
+         (LttvTracesetState*)tab_instance->traceset_info->
+                              traceset_context);
     lttv_context_fini(LTTV_TRACESET_CONTEXT(tab_instance->traceset_info->
 					    traceset_context));
     g_object_unref(tab_instance->traceset_info->traceset_context);
@@ -1929,7 +1949,11 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   lttv_context_init(
 	    LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context),
 	                          tmp_tab->traceset_info->traceset);
-
+  //add state update hooks
+  lttv_state_add_event_hooks(
+       (LttvTracesetState*)tmp_tab->traceset_info->traceset_context);
+  
+ 
   //determine the current_time and time_window of the tab
   if(mw_data->current_tab){
     // Will have to read directly at the main window level, as we want
@@ -1972,11 +1996,7 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
 	   tmp_tab,
 	   (GDestroyNotify)tab_destructor);
 
-  //add state update hooks
-  lttv_state_add_event_hooks(
-       (LttvTracesetState*)tmp_tab->traceset_info->traceset_context);
-  
-  //insert tab into notebook
+ //insert tab into notebook
   gtk_notebook_append_page(notebook, (GtkWidget*)tmp_tab->multi_vpaned, tmp_tab->label);  
   list = gtk_container_get_children(GTK_CONTAINER(notebook));
   gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
