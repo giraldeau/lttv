@@ -40,12 +40,10 @@ static inline LttTime ltt_time_sub(LttTime t1, LttTime t2)
 {
   LttTime res;
   res.tv_sec  = t1.tv_sec  - t2.tv_sec;
+  res.tv_nsec = t1.tv_nsec - t2.tv_nsec;
   if(t1.tv_nsec < t2.tv_nsec) {
     res.tv_sec--;
-    res.tv_nsec = NANOSECONDS_PER_SECOND + t1.tv_nsec - t2.tv_nsec;
-  }
-  else {
-    res.tv_nsec = t1.tv_nsec - t2.tv_nsec;
+    res.tv_nsec += NANOSECONDS_PER_SECOND;
   }
   return res;
 }
@@ -54,8 +52,8 @@ static inline LttTime ltt_time_sub(LttTime t1, LttTime t2)
 static inline LttTime ltt_time_add(LttTime t1, LttTime t2) 
 {
   LttTime res;
-  res.tv_sec  = t1.tv_sec  + t2.tv_sec;
   res.tv_nsec = t1.tv_nsec + t2.tv_nsec;
+  res.tv_sec = t1.tv_sec + t2.tv_sec;
   if(res.tv_nsec >= NANOSECONDS_PER_SECOND) {
     res.tv_sec++;
     res.tv_nsec -= NANOSECONDS_PER_SECOND;
