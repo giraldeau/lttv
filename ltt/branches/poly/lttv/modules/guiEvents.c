@@ -1421,6 +1421,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
   GtkTreePath* path;
   char str_path[64];
   int i, j;
+  LttTime t;
 
   //check if the event is shown in the current viewer
   if(gtk_tree_model_get_iter_first(model, &iter)){
@@ -1461,17 +1462,20 @@ gboolean update_current_time(void * hook_data, void * call_data)
       if(event_viewer_data->raw_trace_data_queue->length-count < event_viewer_data->num_visible_events){
 	j = event_viewer_data->raw_trace_data_queue->length - event_viewer_data->num_visible_events;
 	count -= j;
+	data = (RawTraceData*)g_list_nth_data(list,j);
       }else{
 	j = count;
 	count = 0;
       }
+      t = ltt_time_sub(data->time, event_viewer_data->time_span.startTime);
+      event_viewer_data->vadjust_c->value = ltt_time_to_double(t) * NANOSECONDS_PER_SECOND;
+      g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->vadjust_c), "value-changed");
+      event_viewer_data->previous_value = event_viewer_data->vadjust_c->value;
       insert_data_into_model(event_viewer_data,j, j+event_viewer_data->num_visible_events);      
     }else{//the event is not in the buffer
       LttTime start = ltt_time_sub(event_viewer_data->current_time, event_viewer_data->time_span.startTime);
       double position = ltt_time_to_double(start) * NANOSECONDS_PER_SECOND;
-      get_test_data(position,
-		    event_viewer_data->num_visible_events, 
-		    event_viewer_data);      
+      gtk_adjustment_set_value(event_viewer_data->vadjust_c, position);
     }
   }
 
