@@ -45,9 +45,9 @@ unsigned ltt_event_cpu_id(LttEvent *e);
 void *ltt_event_data(LttEvent *e);
 
 
-/* The number of elements in a sequence field is specific to each event.
-   This function returns the number of elements for an array or sequence
-   field in an event. */
+/* The number of elements in a sequence field is specific to each event 
+   instance. This function returns the number of elements for an array or 
+   sequence field in an event. */
 
 unsigned ltt_event_field_element_number(LttEvent *e, LttField *f);
 
@@ -55,6 +55,13 @@ unsigned ltt_event_field_element_number(LttEvent *e, LttField *f);
 /* Set the currently selected element for a sequence or array field. */
 
 void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i);
+
+
+/* A union is like a structure except that only a single member at a time
+   is present depending on the specific event instance. This function tells
+   the active member for a union field in an event. */
+
+unsigned ltt_event_field_union_member(LttEvent *e, LttField *f);
 
 
 /* These functions extract data from an event after architecture specific

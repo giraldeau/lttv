@@ -8,7 +8,7 @@
 
 typedef enum _LttTypeEnum 
 { LTT_INT, LTT_UINT, LTT_FLOAT, LTT_STRING, LTT_ENUM, LTT_ARRAY, 
-  LTT_SEQUENCE, LTT_STRUCT
+  LTT_SEQUENCE, LTT_STRUCT, LTT_UNION
 } LttTypeEnum;
 
 
@@ -54,7 +54,7 @@ LttType *ltt_type_element_type(LttType *t);
 unsigned ltt_type_element_number(LttType *t);
 
 
-/* The number of data members for structures. */
+/* The number of data members for structures and unions. */
 
 unsigned ltt_type_member_number(LttType *t);
 
