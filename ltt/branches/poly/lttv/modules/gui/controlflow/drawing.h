@@ -88,8 +88,9 @@ struct _Drawing_t {
   gint      height, width, depth;
   
   /* X coordinate of damaged region */
-  gint      damage_begin, damage_end;
-  LttTime   last_start;
+  gint      damage_begin, damage_end; /* damaged region to be exposed,
+                                         updated per chunk */
+  LttTime   last_start;               
   GdkGC     *dotted_gc;
   GdkGC     *gc;
 };

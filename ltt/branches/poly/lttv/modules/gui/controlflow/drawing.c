@@ -152,7 +152,17 @@ void drawing_data_request(Drawing_t *drawing,
                  after_schedchange_hook,
                  events_request,
                  LTTV_PRIO_STATE+5);
+#if 0
   lttv_hooks_add(event,
+                 before_execmode_hook,
+                 events_request,
+                 LTTV_PRIO_STATE-5);
+  lttv_hooks_add(event,
+                 after_execmode_hook,
+                 events_request,
+                 LTTV_PRIO_STATE+5);
+#endif //0
+ lttv_hooks_add(event,
                  after_fork_hook,
                  events_request,
                  LTTV_PRIO_STATE+5);
@@ -233,8 +243,8 @@ void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
   LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
 
-  cfd->drawing->last_start = LTT_TIME_MIN(current_time,
-                                          events_request->end_time);
+  //cfd->drawing->last_start = LTT_TIME_MIN(current_time,
+  //                                        events_request->end_time);
 }
 
 
@@ -255,7 +265,7 @@ void drawing_request_expose(EventsRequest *events_request,
   
   LttTime window_end = ltt_time_add(time_window.time_width,
                                     time_window.start_time);
-
+#if 0
   convert_time_to_pixels(
         time_window.start_time,
         window_end,
@@ -263,13 +273,15 @@ void drawing_request_expose(EventsRequest *events_request,
         drawing->width,
         &x);
 
+#endif //0
   convert_time_to_pixels(
         time_window.start_time,
         window_end,
         end_time,
         drawing->width,
         &x_end);
-
+  x = drawing->damage_begin;
+ // x_end = drawing->damage_end;
   width = x_end - x;
 
   drawing->damage_begin = x+width;
