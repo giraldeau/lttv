@@ -85,12 +85,15 @@ void insertView(GtkWidget* widget, view_constructor constructor)
 {
   GtkCustom * custom;
   mainWindow * mwData;  
+  GtkWidget * viewer;
 
   mwData = get_window_data_struct(widget);
   if(!mwData->CurrentTab) return;
   custom = mwData->CurrentTab->custom;
 
-  gtk_custom_widget_add(custom, (GtkWidget*)constructor(mwData));  
+  viewer = (GtkWidget*)constructor(mwData);
+  if(viewer)
+    gtk_custom_widget_add(custom, viewer);  
 }
 
 void get_label_string (GtkWidget * text, gchar * label) 

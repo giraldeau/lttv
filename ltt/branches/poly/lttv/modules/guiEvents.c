@@ -230,7 +230,9 @@ hGuiEvents(mainWindow * pmParentWindow)
 {
   EventViewerData* Event_Viewer_Data = GuiEvents(pmParentWindow) ;
 
-  return Event_Viewer_Data->HBox_V ;
+  if(Event_Viewer_Data)
+    return Event_Viewer_Data->HBox_V ;
+  else return NULL;
 	
 }
 
@@ -424,6 +426,8 @@ GuiEvents(mainWindow *pmParentWindow)
   Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
   get_events(Event_Viewer_Data, start,end, RESERVE_SIZE);
   Event_Viewer_Data->Number_Of_Events = Event_Viewer_Data->raw_trace_data->len;
+
+  if(Event_Viewer_Data->raw_trace_data->len == 0) return NULL;
   
   time_period = g_new(TimePeriod, 1);
   data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,0);
