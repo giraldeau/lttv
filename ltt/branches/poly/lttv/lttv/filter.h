@@ -172,7 +172,7 @@ typedef struct _LttvFilterTree {
 typedef struct _LttvFilter {
   char *expression;
   LttvFilterTree *head;
-}
+} LttvFilter;
 
 /*
  * General Data Handling functions
@@ -180,7 +180,7 @@ typedef struct _LttvFilter {
 
 LttvSimpleExpression* lttv_simple_expression_new();
 
-void lttv_filter_tree_add_node(GPtrArray* stack, LttvFilter* subtree, LttvLogicalOp op);
+void lttv_filter_tree_add_node(GPtrArray* stack, LttvFilterTree* subtree, LttvLogicalOp op);
 
 gboolean parse_field_path(GPtrArray* fp);
 
@@ -190,17 +190,37 @@ gboolean parse_simple_expression(GString* expression);
  * Logical operators functions
  */
 
-gboolean lttv_apply_op_eq();
+gboolean lttv_apply_op_eq_uint64();
+gboolean lttv_apply_op_eq_uint32();
+gboolean lttv_apply_op_eq_uint16();
+gboolean lttv_apply_op_eq_double();
+gboolean lttv_apply_op_eq_string();
 
-gboolean lttv_apply_op_ne();
+gboolean lttv_apply_op_ne_uint64();
+gboolean lttv_apply_op_ne_uint32();
+gboolean lttv_apply_op_ne_uint16();
+gboolean lttv_apply_op_ne_double();
+gboolean lttv_apply_op_ne_string();
 
-gboolean lttv_apply_op_lt();
+gboolean lttv_apply_op_lt_uint64();
+gboolean lttv_apply_op_lt_uint32();
+gboolean lttv_apply_op_lt_uint16();
+gboolean lttv_apply_op_lt_double();
 
-gboolean lttv_apply_op_le();
+gboolean lttv_apply_op_le_uint64();
+gboolean lttv_apply_op_le_uint32();
+gboolean lttv_apply_op_le_uint16();
+gboolean lttv_apply_op_le_double();
 
-gboolean lttv_apply_op_gt();
+gboolean lttv_apply_op_gt_uint64();
+gboolean lttv_apply_op_gt_uint32();
+gboolean lttv_apply_op_gt_uint16();
+gboolean lttv_apply_op_gt_double();
 
-gboolean lttv_apply_op_ge();
+gboolean lttv_apply_op_ge_uint64();
+gboolean lttv_apply_op_ge_uint32();
+gboolean lttv_apply_op_ge_uint16();
+gboolean lttv_apply_op_ge_double();
 
 /*
  * Cloning

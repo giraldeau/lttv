@@ -91,12 +91,12 @@ lttv_simple_expression_new() {
  * @param op the logical operator that will form the node
  */
 void
-lttv_filter_tree_add_node(GPtrArray* stack, LttvFilter* subtree, LttvLogicalOp op) {
+lttv_filter_tree_add_node(GPtrArray* stack, LttvFilterTree* subtree, LttvLogicalOp op) {
 
-  LttvFilter* t1 = NULL;
-  LttvFilter* t2 = NULL;
+  LttvFilterTree* t1 = NULL;
+  LttvFilterTree* t2 = NULL;
 
-  t1 = (LttvFilter*)g_ptr_array_index(stack,stack->len-1);
+  t1 = (LttvFilterTree*)g_ptr_array_index(stack,stack->len-1);
   while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
   t2 = lttv_filter_tree_new();
   t2->node = op;
@@ -194,55 +194,182 @@ parse_simple_expression(GString* expression) {
  *  specified structure and value
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq() {
+gboolean lttv_apply_op_eq_uint64() {}
 
-}
+/**
+ *  Applies the 'equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_eq_uint32() {}
+
+/**
+ *  Applies the 'equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_eq_uint16() {}
+
+/**
+ *  Applies the 'equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_eq_double() {}
+
+/**
+ *  Applies the 'equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_eq_string() {}
 
 /**
  *  Applies the 'not equal' operator to the
  *  specified structure and value
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne() {
+gboolean lttv_apply_op_ne_uint64() {}
 
-}
+/**
+ *  Applies the 'not equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ne_uint32() {}
+
+/**
+ *  Applies the 'not equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ne_uint16() {}
+
+/**
+ *  Applies the 'not equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ne_double() {}
+
+/**
+ *  Applies the 'not equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ne_string() {}
 
 /**
  *  Applies the 'lower than' operator to the
  *  specified structure and value
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt() {
+gboolean lttv_apply_op_lt_uint64() {}
 
-}
+/**
+ *  Applies the 'lower than' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_lt_uint32() {}
+
+/**
+ *  Applies the 'lower than' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_lt_uint16() {}
+
+/**
+ *  Applies the 'lower than' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_lt_double() {}
+
+/**
+ *  Applies the 'lower than' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_le_uint64() {}
 
 /**
  *  Applies the 'lower or equal' operator to the
  *  specified structure and value
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le() {
+gboolean lttv_apply_op_le_uint32() {}
 
-}
+/**
+ *  Applies the 'lower or equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_le_uint16() {}
+
+/**
+ *  Applies the 'lower or equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_le_double() {}
+
+/**
+ *  Applies the 'lower or equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_gt_uint64() {}
 
 /**
  *  Applies the 'greater than' operator to the
  *  specified structure and value
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt() {
+gboolean lttv_apply_op_gt_uint32() {}
 
-}
+/**
+ *  Applies the 'greater than' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_gt_uint16() {}
+
+/**
+ *  Applies the 'greater than' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_gt_double() {}
+
+/**
+ *  Applies the 'greater than' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ge_uint64() {}
 
 /**
  *  Applies the 'greater or equal' operator to the
  *  specified structure and value
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge() {
+gboolean lttv_apply_op_ge_uint32() {}
 
-}
+/**
+ *  Applies the 'greater or equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ge_uint16() {}
 
+/**
+ *  Applies the 'greater or equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ge_double() {}
 
 
 /**
@@ -295,7 +422,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
     b=0;	/* current breakpoint in expression string */
 
   /* trees */
-  LttvFilter
+  LttvFilterTree
     *tree = lttv_filter_tree_new(),   /* main tree */
     *subtree = NULL,                  /* buffer for subtrees */
     *t1,                              /* buffer #1 */
@@ -363,7 +490,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
        *   logical operators
        */
       case '&':   /* and */
-        t1 = (LttvFilter*)g_ptr_array_index(tree_stack,tree_stack->len-1);
+        t1 = (LttvFilterTree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
         while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_AND;
@@ -615,6 +742,8 @@ void lttv_filter_tree_destroy(LttvFilterTree* tree) {
 gboolean
 lttv_filter_tracefile(LttvFilter *filter, LttTracefile *tracefile) {
 
+  LttvFilterTree* t = filter->head;
+    
   /*
    *  Each tree is parsed in inorder.
    *  This way, it's possible to apply the left filter of the 
@@ -626,17 +755,17 @@ lttv_filter_tracefile(LttvFilter *filter, LttTracefile *tracefile) {
    *  managing an array of all items to be removed .. 
    */
   
-  g_print("node:%p lchild:%p rchild:%p\n",filter,filter->l_child.t,filter->r_child.t);
-  g_print("node type%i\n",filter->node);
-  if(filter->left == LTTV_TREE_NODE) lttv_filter_tracefile(filter->l_child.t,NULL);
-  else if(filter->left == LTTV_TREE_LEAF) {
-    g_assert(filter->l_child.leaf->value != NULL);
-    g_print("%p: left is qqch %i %s\n",filter,filter->l_child.leaf->op,filter->l_child.leaf->value);
+  g_print("node:%p lchild:%p rchild:%p\n",t,t->l_child.t,t->r_child.t);
+  g_print("node type%i\n",t->node);
+  if(t->left == LTTV_TREE_NODE) lttv_filter_tracefile(t->l_child.t,NULL);
+  else if(t->left == LTTV_TREE_LEAF) {
+    g_assert(t->l_child.leaf->value != NULL);
+    g_print("%p: left is qqch %i %s\n",t,t->l_child.leaf->op,t->l_child.leaf->value);
   }
-  if(filter->right == LTTV_TREE_NODE) lttv_filter_tracefile(filter->r_child.t,NULL);
-  else if(filter->right == LTTV_TREE_LEAF) {
-    g_assert(filter->r_child.leaf->value != NULL);
-    g_print("%p: right is qqch %i %s\n",filter,filter->r_child.leaf->op,filter->r_child.leaf->value);
+  if(t->right == LTTV_TREE_NODE) lttv_filter_tracefile(t->r_child.t,NULL);
+  else if(t->right == LTTV_TREE_LEAF) {
+    g_assert(t->r_child.leaf->value != NULL);
+    g_print("%p: right is qqch %i %s\n",t,t->r_child.leaf->op,t->r_child.leaf->value);
   }
   
   /* test */
@@ -695,30 +824,30 @@ static void module_init()
    */
   
   /* top fields */
-  LTTV_FILTER_EVENT = g_quark_from_string("event"); 
-  LTTV_FILTER_TRACE = g_quark_from_string("trace"); 
-  LTTV_FILTER_TRACESET = g_quark_from_string("traceset"); 
-  LTTV_FILTER_STATE = g_quark_from_string("state"); 
-  LTTV_FILTER_TRACEFILE = g_quark_from_string("tracefile"); 
+//  LTTV_FILTER_EVENT = g_quark_from_string("event"); 
+//  LTTV_FILTER_TRACE = g_quark_from_string("trace"); 
+//  LTTV_FILTER_TRACESET = g_quark_from_string("traceset"); 
+//  LTTV_FILTER_STATE = g_quark_from_string("state"); 
+//  LTTV_FILTER_TRACEFILE = g_quark_from_string("tracefile"); 
  
   /* event.name, tracefile.name, trace.name */
-  LTTV_FILTER_NAME = g_quark_from_string("name");
+//  LTTV_FILTER_NAME = g_quark_from_string("name");
 
   /* event sub fields */
-  LTTV_FILTER_CATEGORY = g_quark_from_string("category"); 
-  LTTV_FILTER_TIME = g_quark_from_string("time"); 
-  LTTV_FILTER_TSC = g_quark_from_string("tsc"); 
+//  LTTV_FILTER_CATEGORY = g_quark_from_string("category"); 
+//  LTTV_FILTER_TIME = g_quark_from_string("time"); 
+//  LTTV_FILTER_TSC = g_quark_from_string("tsc"); 
 
   /* state sub fields */
-  LTTV_FILTER_PID = g_quark_from_string("pid"); 
-  LTTV_FILTER_PPID = g_quark_from_string("ppid"); 
-  LTTV_FILTER_C_TIME = g_quark_from_string("creation_time");  
-  LTTV_FILTER_I_TIME = g_quark_from_string("insertion_time"); 
-  LTTV_FILTER_P_NAME = g_quark_from_string("process_name"); 
-  LTTV_FILTER_EX_MODE = g_quark_from_string("execution_mode");  
-  LTTV_FILTER_EX_SUBMODE = g_quark_from_string("execution_submode");
-  LTTV_FILTER_P_STATUS = g_quark_from_string("process_status");
-  LTTV_FILTER_CPU = g_quark_from_string("cpu");
+//  LTTV_FILTER_PID = g_quark_from_string("pid"); 
+//  LTTV_FILTER_PPID = g_quark_from_string("ppid"); 
+//  LTTV_FILTER_C_TIME = g_quark_from_string("creation_time");  
+//  LTTV_FILTER_I_TIME = g_quark_from_string("insertion_time"); 
+//  LTTV_FILTER_P_NAME = g_quark_from_string("process_name"); 
+//  LTTV_FILTER_EX_MODE = g_quark_from_string("execution_mode");  
+//  LTTV_FILTER_EX_SUBMODE = g_quark_from_string("execution_submode");
+//  LTTV_FILTER_P_STATUS = g_quark_from_string("process_status");
+//  LTTV_FILTER_CPU = g_quark_from_string("cpu");
   
 }
 
