@@ -105,7 +105,7 @@ void UpdateStatus(mainWindow *main_win, char *info);
  * @param time_interval a pointer where time interval will be stored.
  */
 
-void GetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window);
+void GetTimeWindow(mainWindow *main_win, TimeWindow *time_window);
 
 
 /**
@@ -116,12 +116,12 @@ void GetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window);
  * @param time_interval a pointer where time interval is stored.
  */
 
-void SetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window);
+void SetTimeWindow(mainWindow *main_win, TimeWindow *time_window);
 
 /**
  * Function to get the time span of the main window's traceset.
  */
-void GetTracesetTimeSpan(mainWindow *main_win, TimeInterval *Time_Interval);
+void GetTracesetTimeSpan(mainWindow *main_win, TimeInterval *time_interval);
 
 /**
  * Function to get the current time/event of the current tab.

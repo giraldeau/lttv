@@ -191,11 +191,11 @@ void UpdateStatus(mainWindow *main_win, char *info)
  * @param time_interval a pointer where time interval will be stored.
  */
 
-void GetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window)
+void GetTimeWindow(mainWindow *main_win, TimeWindow *time_window)
 {
-  //Time_Window->startTime = main_win->CurrentTab->Time_Window.startTime;
-  //Time_Window->Time_Width = main_win->CurrentTab->Time_Window.Time_Width;
-  *Time_Window = main_win->CurrentTab->Time_Window;
+  //time_window->startTime = main_win->CurrentTab->Time_Window.startTime;
+  //time_window->Time_Width = main_win->CurrentTab->Time_Window.Time_Width;
+  *time_window = main_win->CurrentTab->Time_Window;
 }
 
 /**
@@ -207,11 +207,11 @@ void GetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window)
  * @param time_interval a pointer where time interval will be stored.
  */
 
-void getTracesetTimeSpan(mainWindow *main_win, TimeInterval *Time_Interval)
+void getTracesetTimeSpan(mainWindow *main_win, TimeInterval *time_interval)
 {
-  //Time_Window->startTime = main_win->CurrentTab->Time_Window.startTime;
-  //Time_Window->Time_Width = main_win->CurrentTab->Time_Window.Time_Width;
-  *Time_Interval = *(LTTV_TRACESET_CONTEXT(main_win->Traceset_Info->TracesetContext)->Time_Span);
+  //time_window->startTime = main_win->CurrentTab->Time_Window.startTime;
+  //time_window->Time_Width = main_win->CurrentTab->Time_Window.Time_Width;
+  *time_interval = *(LTTV_TRACESET_CONTEXT(main_win->Traceset_Info->TracesetContext)->Time_Span);
 }
 
 
@@ -224,16 +224,16 @@ void getTracesetTimeSpan(mainWindow *main_win, TimeInterval *Time_Interval)
  * @param time_interval a pointer where time interval is stored.
  */
 
-void SetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window)
+void SetTimeWindow(mainWindow *main_win, TimeWindow *time_window)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  main_win->CurrentTab->Time_Window = *Time_Window;
+  main_win->CurrentTab->Time_Window = *time_window;
   g_assert(lttv_iattribute_find_by_path(main_win->CurrentTab->Attributes,
 		       "hooks/updatetimewindow", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
-  lttv_hooks_call(tmp, Time_Window);
+  lttv_hooks_call(tmp, time_window);
 }
 
 
