@@ -20,7 +20,7 @@
 #include <gdk/gdk.h>
 
 #include <lttv/processTrace.h>
-#include <lttv/gtkTraceSet.h>
+#include <lttv/gtktraceset.h>
 #include <lttv/hook.h>
 
 #include "drawing.h"

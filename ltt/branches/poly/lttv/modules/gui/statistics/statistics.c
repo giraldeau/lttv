@@ -22,7 +22,7 @@
 #include <gdk/gdk.h>
 
 #include <lttv/module.h>
-#include <lttv/gtkTraceSet.h>
+#include <lttv/gtktraceset.h>
 #include <lttv/processTrace.h>
 #include <lttv/hook.h>
 #include <lttv/common.h>

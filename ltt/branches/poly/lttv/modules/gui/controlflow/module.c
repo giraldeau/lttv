@@ -43,7 +43,7 @@
 #include <glib.h>
 #include <gmodule.h>
 #include <lttv/module.h>
-#include <lttv/gtkTraceSet.h>
+#include <lttv/gtktraceset.h>
 
 #include "cfv.h"
 #include "eventhooks.h"

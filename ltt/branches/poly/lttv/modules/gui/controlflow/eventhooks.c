@@ -42,7 +42,7 @@
 #include <lttv/hook.h>
 #include <lttv/common.h>
 #include <lttv/state.h>
-#include <lttv/gtkTraceSet.h>
+#include <lttv/gtktraceset.h>
 
 
 #include "eventhooks.h"
