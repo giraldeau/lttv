@@ -55,6 +55,7 @@ static char *a_save_sample;
 static int
   a_sample_interval,
   a_sample_number,
+  a_seek_number,
   a_save_interval;
 
 static gboolean
@@ -486,7 +487,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   if((a_test7 && a_test3) || a_test_all) {
     int i, j;
 
-    for(i = 0 ; i < 2 ; i++) {
+    for(i = 0 ; i < a_seek_number ; i++) {
       for(j = save_state.position - 1 ; j >= 0 ; j--) {
         lttv_state_add_event_hooks(ts);
         t = run_one_test(ts, save_state.write_time[j], 
@@ -577,6 +578,12 @@ static void init()
       "maximum number", 
       LTTV_OPT_INT, &a_sample_number, NULL, NULL);
 
+  a_seek_number = 200;
+  lttv_option_add("seek-number", 'K', 
+      "Number of seek", 
+      "number", 
+      LTTV_OPT_INT, &a_seek_number, NULL, NULL);
+
   a_test1 = FALSE;
   lttv_option_add("test1", '1', "Test just counting events", "", 
       LTTV_OPT_NONE, &a_test1, NULL, NULL);
@@ -666,6 +673,7 @@ static void destroy()
   lttv_option_remove("save-state-copy");
   lttv_option_remove("sample-interval");
   lttv_option_remove("sample-number");
+  lttv_option_remove("seek-number");
   lttv_option_remove("save-interval");
   lttv_option_remove("test1");
   lttv_option_remove("test2");

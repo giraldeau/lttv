@@ -17,7 +17,54 @@
  */
 
 /*
-CHECK Rename to viewer.h
+This file is what every viewer plugin writer should refer to.
+
+- Rename to viewer.h
+- Remove the _api functions which add nothing
+- streamline the rest.
+
+A viewer plugin is, before anything, a plugin. It thus has an init and 
+a destroy function called whenever it is loaded/initialized and 
+unloaded/destroyed. A viewer depends on lttvwindow and thus uses its init and
+destroy functions to register viewer related hooks defined in this file.
+
+The lifetime of a viewer is as follows. The viewer constructor function is
+called each time an instance view is created (one subwindow of this viewer
+type is created by the user). Thereafter, the viewer gets hooks called for
+different purposes by the window containing it. These hooks are detailed
+below.
+
+show: called initially once the trace, position and time window are known.
+      Do the drawing or register hooks
+process_trace for show: hooks called
+show_end: remove the hooks
+
+background_init: prepare for background computation (comes after show_end).
+process_trace for background: done in small chunks in gtk_idle, hooks called.
+background_end: remove the hooks and perhaps update the window.
+
+update: called when the windows is exposed/resized, the time window is changed,
+        the current time is changed or the traceset is changed (different
+        traceset or traces added/removed. Redraw or register hooks.
+process_trace for update: hooks called
+update_end: remove the hooks.
+
+There may be different versions of update functions for the different cases,
+or the type of update may be described in an argument. The expose method
+normally provides the exposed region. This should be used to register hooks
+to process_traceset but also tell about the time interval for which it is
+required. Then, a expose_end will be required to remove the hooks and finish
+the display as needed.
+
+In most cases, the enclosing window knows about updates such as a new trace
+added to a traceset, time window updates caused by scrolling and even
+expose events. There are a few cases, however, where updates are caused by
+actions known by a view instance. For example, clicking in a view may update
+the current time; all viewers within the same window must be told about the
+new current time to change the currently highlighted time point. A viewer
+reports such events by calling report_update on its lttvwindow. The lttvwindow
+will thereafter call update for each of its contained viewers.
+
 
 Things that can happen to a viewer:
 
@@ -27,7 +74,7 @@ update_traceset
 update_filter
 show_viewer
 update_dividor
-?? Reshape, damage ??
+?? Reshape, damage as gtk methods ??
 
 Things that a viewer can do:
 

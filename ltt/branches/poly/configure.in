@@ -67,6 +67,7 @@ AC_CHECK_FUNCS([select])
 
 #CPPFLAGS="$CPPFLAGS -I"
 
+AM_CONDITIONAL(LTTVSTATIC, test "$enable_lttvstatic" = yes)
 lttvlibdir="${libdir}/lttv"
 AC_SUBST(lttvlibdir)
 

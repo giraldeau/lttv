@@ -30,3 +30,6 @@ lttv_SOURCES = batchtest.c main.c module.c option.c \
                iattribute.c state.c stats.c \
 	       tracecontext.c traceset.c
 
+if LTTVSTATIC
+  lttv_LDFLAGS = -profile -static
+endif
