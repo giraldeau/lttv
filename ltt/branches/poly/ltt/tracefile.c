@@ -728,15 +728,17 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 	return ltt_tracefile_seek_time(t, time);
       }
     }else if(err < 0){
-      err = t->which_block;
-      ev = ltt_tracefile_read(t);
-      if(ev == NULL){
-	g_print("End of file\n");      
-	return;
+      while(1){
+	ev = ltt_tracefile_read(t);
+	if(ev == NULL){
+	  g_print("End of file\n");      
+	  return;
+	}
+	g_free(ev);
+	lttTime = getEventTime(t);
+	err = timecmp(&lttTime, &time);
+	if(err >= 0)return;
       }
-      g_free(ev);
-      if(t->which_block == err)
-	return ltt_tracefile_seek_time(t,time);
     }else return;    
   }else if(headTime > 0){
     if(t->which_block == 1){
@@ -762,7 +764,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
   }else if(headTime == 0){
     updateTracefile(t);
   }else if(tailTime == 0){
-    t->cur_event_pos = t->a_block_end;
+    t->cur_event_pos = t->a_block_end - EVENT_HEADER_SIZE;
     t->current_event_time = time;  
     t->cur_heart_beat_number = 0;
     t->prev_event_time.tv_sec = 0;
