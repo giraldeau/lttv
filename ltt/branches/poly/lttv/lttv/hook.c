@@ -58,6 +58,7 @@ void lttv_hooks_add(LttvHooks *h, LttvHook f, void *hook_data, LttvHookPrio p)
   new_c.hook = f;
   new_c.hook_data = hook_data;
   new_c.prio = p;
+  new_c.ref_count = 1;
 
   /* Preliminary check for duplication */
   /* only hook and hook data is checked */
