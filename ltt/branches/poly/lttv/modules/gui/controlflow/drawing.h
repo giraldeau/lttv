@@ -157,7 +157,7 @@ tree_row_activated(GtkTreeModel *treemodel,
  *
  * Convert from window pixel and time interval to an absolute time.
  */
-inline void convert_pixels_to_time(
+static inline void convert_pixels_to_time(
     gint width,
     guint x,
     TimeWindow time_window,
@@ -172,7 +172,7 @@ inline void convert_pixels_to_time(
 }
 
 
-inline void convert_time_to_pixels(
+static inline void convert_time_to_pixels(
     TimeWindow time_window,
     LttTime time,
     int width,

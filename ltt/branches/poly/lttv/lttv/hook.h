@@ -144,7 +144,7 @@ unsigned lttv_hooks_by_id_max_id(LttvHooksById *h);
 
 /* Get the list of hooks for an id, NULL if none exists */
 
-inline LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id)
+static inline LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id)
 {
   LttvHooks *ret;
   if(id < h->len) ret = h->pdata[id];

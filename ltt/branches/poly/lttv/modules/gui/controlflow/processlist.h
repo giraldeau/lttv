@@ -113,7 +113,7 @@ int processlist_remove(ProcessList *process_list, guint pid, guint cpu,
     LttTime *birth, guint trace_num);
 
 
-inline guint processlist_get_height(ProcessList *process_list)
+static inline guint processlist_get_height(ProcessList *process_list)
 {
   return get_cell_height(process_list,
                          (GtkTreeView*)process_list->process_list_widget)
@@ -121,7 +121,7 @@ inline guint processlist_get_height(ProcessList *process_list)
 }
 
 
-inline HashedProcessData *processlist_get_process_data( 
+static inline HashedProcessData *processlist_get_process_data( 
           ProcessList *process_list,
           guint pid, guint cpu, LttTime *birth, guint trace_num)
 {
@@ -143,7 +143,7 @@ inline HashedProcessData *processlist_get_process_data(
 }
 
 
-inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
+static inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
           HashedProcessData *hashed_process_data,
           guint *y,
           guint *height)
