@@ -46,7 +46,8 @@ static char
 
 static gboolean
   a_verbose,
-  a_debug;
+  a_debug,
+  a_fatal;
 
 gboolean lttv_profile_memory;
 
@@ -61,6 +62,8 @@ static void lttv_module_path_option(void *hook_data);
 static void lttv_verbose(void *hook_data);
 
 static void lttv_debug(void *hook_data);
+
+static void lttv_fatal(void *hook_data);
 
 static void lttv_help(void *hook_data);
 
@@ -173,6 +176,11 @@ int main(int argc, char **argv) {
   a_debug = FALSE;
   lttv_option_add("debug",'d', "print debugging messages", "none", 
       LTTV_OPT_NONE, NULL, lttv_debug, NULL);
+
+  a_fatal = FALSE;
+  lttv_option_add("fatal",'f', "make critical messages fatal",
+                  "none", 
+      LTTV_OPT_NONE, NULL, lttv_fatal, NULL);
  
   lttv_profile_memory = FALSE;
   lttv_option_add(profile_memory_long_option + 2, 
@@ -249,6 +257,13 @@ void lttv_debug(void *hook_data)
 {
   g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, g_log_default_handler, NULL);
   g_info("Logging set to include DEBUG level messages");
+}
+
+void lttv_fatal(void *hook_data)
+{
+  //g_log_set_always_fatal(G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL);
+  g_log_set_always_fatal(G_LOG_LEVEL_CRITICAL);
+  g_info("Critical log from glib will abort execution");
 }
 
 void lttv_help(void *hook_data)
