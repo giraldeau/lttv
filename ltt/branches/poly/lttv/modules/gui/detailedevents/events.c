@@ -1201,6 +1201,7 @@ gui_events_free(EventViewerData *event_viewer_data)
     unreg_show_viewer(show_event_detail,event_viewer_data, event_viewer_data->mw);
     unreg_update_traceset(traceset_changed,event_viewer_data, event_viewer_data->mw);
 
+    g_free(event_viewer_data->filter_key);
     g_event_viewer_data_list = g_slist_remove(g_event_viewer_data_list, event_viewer_data);
     g_free(event_viewer_data);
   }
@@ -1213,8 +1214,8 @@ gui_events_destructor(EventViewerData *event_viewer_data)
 
   /* May already been done by GTK window closing */
   if(GTK_IS_WIDGET(event_viewer_data->hbox_v)){
+    gui_events_free(event_viewer_data);
     gtk_widget_destroy(event_viewer_data->hbox_v);
-    g_free(event_viewer_data->filter_key);
     event_viewer_data = NULL;
   }
   

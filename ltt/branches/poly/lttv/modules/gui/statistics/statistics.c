@@ -191,6 +191,7 @@ gui_statistic_destructor(StatisticViewerData *statistic_viewer_data)
 {
   /* May already been done by GTK window closing */
   if(GTK_IS_WIDGET(statistic_viewer_data->hpaned_v)){
+    gui_statistic_free(statistic_viewer_data);
     gtk_widget_destroy(statistic_viewer_data->hpaned_v);
     statistic_viewer_data = NULL;
   }
