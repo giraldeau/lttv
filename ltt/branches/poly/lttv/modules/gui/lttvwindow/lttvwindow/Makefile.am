@@ -26,8 +26,7 @@ liblttvwindow_la_SOURCES = \
 	support.c \
 	interface.c \
 	callbacks.c \
-	lttvfilter.c \
-	fnmatch.c
+	lttvfilter.c
 
 noinst_HEADERS = \
 	support.h \

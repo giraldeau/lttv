@@ -1,6 +1,11 @@
 /* This file is part of the Linux Trace Toolkit viewer
  * Copyright (C) 2003-2004 XangXiu Yang
  *
+ * Contributions :
+ * Jean-Hugues Deschenes
+ *    02-02-2005 Patch removing non standard _fn_match calls
+ *
+ * This program is free software; you can redistribute it and/or modify
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
  * published by the Free Software Foundation;
@@ -3723,14 +3728,19 @@ find_completion_dir (gchar          *text_to_complete,
       gchar *found_name = NULL;         /* Quiet gcc */
       gint i;
       gchar* pat_buf = g_new (gchar, len + 1);
+      GtkFileFilter *filter = gtk_file_filter_new ();
+      GtkFileFilterInfo filter_info = {GTK_FILE_FILTER_FILENAME,};
 
       strncpy (pat_buf, *remaining_text, len);
       pat_buf[len] = 0;
 
+      gtk_file_filter_add_pattern (filter, pat_buf);
+
       for (i = 0; i < dir->sent->entry_count; i += 1)
 	{
+          filter_info.filename = dir->sent->entries[i].entry_name;
 	  if (dir->sent->entries[i].is_dir &&
-	      _gtk_fnmatch (pat_buf, dir->sent->entries[i].entry_name,1))
+              gtk_file_filter_filter(filter, &filter_info))
 	    {
 	      if (found)
 		{
@@ -3831,6 +3841,8 @@ attempt_dir_completion (CompletionState *cmpl_state)
 {
   gchar *pat_buf, *first_slash;
   CompletionDir *dir = cmpl_state->active_completion_dir;
+  GtkFileFilter *filter = gtk_file_filter_new ();
+  GtkFileFilterInfo filter_info = {GTK_FILE_FILTER_FILENAME,};
 
   dir->cmpl_index += 1;
 
@@ -3876,12 +3888,14 @@ attempt_dir_completion (CompletionState *cmpl_state)
 	strcpy (pat_buf + len, "*");
     }
 
+  gtk_file_filter_add_pattern (filter, pat_buf);
+
   if (first_slash)
     {
       if (dir->sent->entries[dir->cmpl_index].is_dir)
 	{
-	  if (_gtk_fnmatch (pat_buf,
-                      dir->sent->entries[dir->cmpl_index].entry_name,1))
+	  filter_info.filename = dir->sent->entries[dir->cmpl_index].entry_name;
+           if(gtk_file_filter_filter(filter, &filter_info))
 	    {
 	      CompletionDir* new_dir;
 
@@ -3928,8 +3942,9 @@ attempt_dir_completion (CompletionState *cmpl_state)
 
       append_completion_text (dir->sent->entries[dir->cmpl_index].entry_name, cmpl_state);
 
+      filter_info.filename = dir->sent->entries[dir->cmpl_index].entry_name;
       cmpl_state->the_completion.is_a_completion =
-	_gtk_fnmatch (pat_buf, dir->sent->entries[dir->cmpl_index].entry_name,1);
+	gtk_file_filter_filter(filter, &filter_info);
 
       cmpl_state->the_completion.is_directory = dir->sent->entries[dir->cmpl_index].is_dir;
       if (dir->sent->entries[dir->cmpl_index].is_dir)
