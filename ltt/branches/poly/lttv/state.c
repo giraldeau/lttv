@@ -23,6 +23,8 @@ static GQuark
 
 void remove_all_processes(GHashTable *processes);
 
+LttvProcessState *create_process(LttvTracefileState *tfs, 
+				 LttvProcessState *parent, guint pid);
 
 static void
 init(LttvTracesetState *self, LttvTraceset *ts)
@@ -36,6 +38,8 @@ init(LttvTracesetState *self, LttvTraceset *ts)
   LttvTracefileContext *tfc;
 
   LttvTracefileState *tfcs;
+  
+  LttTime timestamp = {0,0};
 
   LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek_parent(LTTV_TRACESET_STATE_GET_CLASS(self)))->init((LttvTracesetContext *)self, ts);
 
@@ -47,13 +51,15 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     nb_tracefile = ltt_trace_control_tracefile_number(tc->t);
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfcs = (LttvTracefileState *)tfc = tc->control_tracefiles[j];
-      tfcs->process = NULL;
+      tfc->timestamp = timestamp;
+      tfcs->process = create_process(tfcs, NULL,0);
     }
 
     nb_tracefile = ltt_trace_per_cpu_tracefile_number(tc->t);
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfcs = (LttvTracefileState *)tfc = tc->per_cpu_tracefiles[j];
-      tfcs->process = NULL;
+      tfc->timestamp = timestamp;
+      tfcs->process = create_process(tfcs, NULL,0);
     }
   }
 }
@@ -282,7 +288,11 @@ static void pop_state(LttvTracefileState *tfs, LttvInterruptType t)
 
   guint depth = process->interrupt_stack->len - 1;
 
-  g_assert(process->state->t == t);
+  //  g_assert(process->state->t == t);
+  if(process->state->t != t){
+    g_warning("Different interrupt type: ignore it\n");
+    return;
+  }
   g_array_remove_index(process->interrupt_stack, depth);
   depth--;
   process->state = &g_array_index(process->interrupt_stack, LttvInterruptState,
@@ -427,14 +437,17 @@ gboolean schedchange(void *hook_data, void *call_data)
 
   guint pid_in, pid_out, state_out;
 
-  pid_in = ltt_event_get_int(s->parent.e, h->f1);
-  pid_out = ltt_event_get_int(s->parent.e, h->f2);
-  state_out = ltt_event_get_int(s->parent.e, h->f3);
+  pid_in = ltt_event_get_unsigned(s->parent.e, h->f1);
+  pid_out = ltt_event_get_unsigned(s->parent.e, h->f2);
+  state_out = ltt_event_get_unsigned(s->parent.e, h->f3);
   if(s->process != NULL) {
     if(state_out == 0) s->process->state->s = LTTV_STATE_WAIT_CPU;
     else if(s->process->state->s == LTTV_STATE_EXIT) 
         exit_process(s, s->process);
     else s->process->state->s = LTTV_STATE_WAIT;
+
+    if(s->process->pid == 0)
+      s->process->pid == pid_out;
   }
   s->process = find_process(s, pid_in);
   s->process->state->s = LTTV_STATE_RUN;
@@ -450,7 +463,7 @@ gboolean process_fork(void *hook_data, void *call_data)
 
   guint child_pid;
 
-  child_pid = ltt_event_get_int(s->parent.e, f);
+  child_pid = ltt_event_get_unsigned(s->parent.e, f);
   create_process(s, s->process, child_pid);
   return FALSE;
 }
@@ -591,7 +604,6 @@ lttv_state_add_event_hooks(LttvTracesetState *self)
 			"in", "out", "out_state", schedchange);
     g_array_append_val(hooks, hook_id);
 
-/* for now, in core facility there is no process_fork and process_exit event
     hook_id = find_hook(ts->parent.t, "core", "process_fork", 
 			"child_pid", NULL, NULL, process_fork);
     g_array_append_val(hooks, hook_id);
@@ -599,7 +611,6 @@ lttv_state_add_event_hooks(LttvTracesetState *self)
     hook_id = find_hook(ts->parent.t, "core", "process_exit", 
 			NULL, NULL, NULL, process_exit);
     g_array_append_val(hooks, hook_id);
-*/
 
     /* Add these hooks to each before_event_by_id hooks list */
 

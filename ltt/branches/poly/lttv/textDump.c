@@ -92,8 +92,8 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
 
 
 void lttv_event_to_string(LttEvent *e, LttTracefile *tf, GString *s,
-    gboolean mandatory_fields, gboolean field_names)
-{
+    gboolean mandatory_fields, gboolean field_names, LttvTracefileState *tfs)
+{ 
   LttFacility *facility;
 
   LttEventType *event_type;
@@ -116,6 +116,8 @@ void lttv_event_to_string(LttEvent *e, LttTracefile *tf, GString *s,
         ltt_eventtype_name(event_type), (long)time.tv_sec, time.tv_nsec,
         ltt_tracefile_name(tf));
     /* Print the process id and the state/interrupt type of the process */
+    g_string_append_printf(s,", %d, %s", tfs->process->pid,
+			   g_quark_to_string(tfs->process->state->t));
   }
 
   if(field)
@@ -181,7 +183,7 @@ static int write_event_content(void *hook_data, void *call_data)
 
   e = tfc->e;
 
-  lttv_event_to_string(e, tfc->tf, a_string, TRUE, a_field_names);
+  lttv_event_to_string(e, tfc->tf, a_string, TRUE, a_field_names, tfs);
   g_string_append_printf(a_string,"\n");  
 
   if(a_state) {
