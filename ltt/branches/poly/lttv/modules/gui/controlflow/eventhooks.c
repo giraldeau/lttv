@@ -97,8 +97,7 @@ static void process_add(gpointer key,
   LttTime birth;
   guint y = 0, height = 0, pl_height = 0;
 
-  ProcessList *process_list =
-    guicontrolflow_get_process_list(control_flow_data);
+  ProcessList *process_list = control_flow_data->process_list;
 
   pid = process->pid;
   birth = process->creation_time;
@@ -437,8 +436,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
        /* Add process to process list (if not present) */
       guint y = 0, height = 0, pl_height = 0;
       HashedProcessData *hashed_process_data = NULL;
-      ProcessList *process_list = 
-                      guicontrolflow_get_process_list(control_flow_data);
+      ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process->creation_time;
       const gchar *name = g_quark_to_string(process->name);
       
@@ -561,8 +559,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
        /* Add process to process list (if not present) */
       guint y = 0, height = 0, pl_height = 0;
       HashedProcessData *hashed_process_data = NULL;
-      ProcessList *process_list = 
-                      guicontrolflow_get_process_list(control_flow_data);
+      ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process->creation_time;
       const gchar *name = g_quark_to_string(process->name);
       
@@ -708,8 +705,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
     LttTime birth;
     guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
 
-    ProcessList *process_list =
-      guicontrolflow_get_process_list(control_flow_data);
+    ProcessList *process_list = control_flow_data->process_list;
 
 
     LttField *f = ltt_event_field(e);
@@ -1327,8 +1323,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
   HashedProcessData *hashed_process_data_in = NULL;
 
-  ProcessList *process_list =
-    guicontrolflow_get_process_list(control_flow_data);
+  ProcessList *process_list = control_flow_data->process_list;
   
   guint pid_in;
   {
@@ -1439,8 +1434,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
     LttTime birth;
     guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
 
-    ProcessList *process_list =
-      guicontrolflow_get_process_list(control_flow_data);
+    ProcessList *process_list = control_flow_data->process_list;
 
 
     LttField *f = ltt_event_field(e);
@@ -1951,8 +1945,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
    /* Add process to process list (if not present) */
   guint y = 0, height = 0, pl_height = 0;
   HashedProcessData *hashed_process_data = NULL;
-  ProcessList *process_list = 
-                  guicontrolflow_get_process_list(control_flow_data);
+  ProcessList *process_list = control_flow_data->process_list;
   LttTime birth = process->creation_time;
   const gchar *name = g_quark_to_string(process->name);
   
@@ -2102,9 +2095,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
   guint y = 0, height = 0, pl_height = 0;
   HashedProcessData *hashed_process_data = NULL;
 
-  ProcessList *process_list =
-    guicontrolflow_get_process_list(control_flow_data);
-  
+  ProcessList *process_list = control_flow_data->process_list;
 
   /* Find process pid_in in the list... */
   process = tfs->process;
@@ -2221,8 +2212,7 @@ int before_process_hook(void *hook_data, void *call_data)
     guint y = 0, height = 0, pl_height = 0;
     HashedProcessData *hashed_process_data = NULL;
 
-    ProcessList *process_list =
-      guicontrolflow_get_process_list(control_flow_data);
+    ProcessList *process_list = control_flow_data->process_list;
     
     g_assert(process != NULL);
 
@@ -2397,9 +2387,7 @@ int after_process_hook(void *hook_data, void *call_data)
     guint y_child = 0, height = 0, pl_height = 0;
     HashedProcessData *hashed_process_data_child = NULL;
 
-    ProcessList *process_list =
-      guicontrolflow_get_process_list(control_flow_data);
-    
+    ProcessList *process_list = control_flow_data->process_list;
 
     /* Find child in the list... */
     process_child = lttv_state_find_process(tfs, child_pid);
@@ -2473,9 +2461,7 @@ int after_process_hook(void *hook_data, void *call_data)
     guint y = 0, height = 0, pl_height = 0;
     HashedProcessData *hashed_process_data = NULL;
 
-    ProcessList *process_list =
-      guicontrolflow_get_process_list(control_flow_data);
-    
+    ProcessList *process_list = control_flow_data->process_list;
 
     /* It should exist, because we are after the state update. */
     g_assert(process != NULL);
@@ -2986,8 +2972,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
       /* Only draw for processes that are currently in the trace states */
 
       guint y = 0, height = 0, pl_height = 0;
-      ProcessList *process_list = 
-                      guicontrolflow_get_process_list(control_flow_data);
+      ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process_info->birth;
       
       /* Should be alike when background info is ready */
@@ -3128,8 +3113,7 @@ int after_request(void *hook_data, void *call_data)
   LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(call_data);
   
-  ProcessList *process_list =
-    guicontrolflow_get_process_list(control_flow_data);
+  ProcessList *process_list = control_flow_data->process_list;
   LttTime end_time = events_request->end_time;
 
   ClosureData closure_data;
@@ -3160,8 +3144,7 @@ int after_chunk(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = lttv_traceset_context_get_current_tfc(tsc);
   LttTime end_time;
   
-  ProcessList *process_list =
-    guicontrolflow_get_process_list(control_flow_data);
+  ProcessList *process_list = control_flow_data->process_list;
 
   if(tfc != NULL)
     end_time = LTT_TIME_MIN(tfc->timestamp, events_request->end_time);
