@@ -949,8 +949,10 @@ void get_test_data(double time_value, guint List_Height,
 	    get_events(Event_Viewer_Data, start, end, maxNum, &size);
 	    Event_Viewer_Data->start_event_index = Event_Viewer_Data->current_event_index;
 	  }
+	  Event_Number = Event_Viewer_Data->raw_trace_data_queue->length - List_Height;
+	}else{
+	  Event_Number = 0;
 	}
-	Event_Number = Event_Viewer_Data->raw_trace_data_queue->length - List_Height;
 	break;
       case SCROLL_NONE:
 	Event_Number = Event_Viewer_Data->current_event_index;
