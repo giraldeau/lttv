@@ -346,7 +346,7 @@
  * returns : (LttvExecutionState*)
  */
 #define LTTV_PROCESS_STATE_GET_NESTED_EXECUTION_STATE(pse, num_nest)\
-            ((LttvExecutionState*)pse->execution_stack[num_nest])
+       (&g_array_index(pse->execution_stack,LttvExecutionState,num_nest))
 
 
 /* LTTV_PROCESS_STATE_GET_NUM_NESTED_EXECUTION_STATES
