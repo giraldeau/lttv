@@ -3708,12 +3708,13 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     tab->traceset_info->traceset = lttv_traceset_new();
   }
 
-//FIXME : this is g_debug level
+#ifdef DEBUG
   lttv_attribute_write_xml(
       lttv_traceset_attribute(tab->traceset_info->traceset),
       stdout,
       0, 4);
   fflush(stdout);
+#endif //DEBUG
 
 
   //FIXME copy not implemented in lower level
