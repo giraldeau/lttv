@@ -53,6 +53,9 @@ typedef struct _BackgroundNotify {
 
 
 
+/* Prototypes */
+gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace);
+
 /* Get a trace by its path name. 
  *
  * @param path path of the trace on the virtual file system.
@@ -153,7 +156,7 @@ void lttvwindowtraces_add_trace(LttvTrace *trace)
   
   /* create new traceset and tracesetcontext */
   LttvTraceset *ts;
-  LttvTracesetContext *tsc;
+  LttvTracesetStats *tss;
   
   attribute = lttv_trace_attribute(trace);
   g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
@@ -169,10 +172,10 @@ void lttvwindowtraces_add_trace(LttvTrace *trace)
                                 LTTV_COMPUTATION_TRACESET_CONTEXT,
                                 LTTV_POINTER,
                                 &value));
-  tsc = g_object_new(LTTV_TRACESET_CONTEXT_TYPE, NULL);
-  *(value.v_pointer) = tsc;
+  tss = g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+  *(value.v_pointer) = tss;
   
-  lttv_context_init(tsc, ts);
+  lttv_context_init(LTTV_TRACESET_CONTEXT(tss), ts);
 
   value = lttv_attribute_add(attribute,
                      LTTV_REQUESTS_QUEUE,
@@ -216,7 +219,7 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace)
 
       /* create new traceset and tracesetcontext */
       LttvTraceset *ts;
-      LttvTracesetContext *tsc;
+      LttvTracesetStats *tss;
       
       l_attribute = lttv_trace_attribute(trace);
 
@@ -243,10 +246,10 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace)
                                     LTTV_COMPUTATION_TRACESET_CONTEXT,
                                     LTTV_POINTER,
                                     &value));
-      tsc = (LttvTracesetContext*)*(value.v_pointer);
+      tss = (LttvTracesetStats*)*(value.v_pointer);
       
-      lttv_context_fini(tsc);
-      g_object_unref(tsc);
+      lttv_context_fini(LTTV_TRACESET_CONTEXT(tss));
+      g_object_unref(tss);
       lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
                                      LTTV_COMPUTATION_TRACESET_CONTEXT);
       lttv_traceset_destroy(ts);
@@ -292,6 +295,13 @@ void lttvwindowtraces_background_request_queue
   bg_req->trace = trace;
 
   *slist = g_slist_append(*slist, bg_req);
+
+  /* Priority lower than live servicing */
+  g_idle_remove_by_data(trace);
+  g_idle_add_full((G_PRIORITY_HIGH_IDLE + 23),
+                  (GSourceFunc)lttvwindowtraces_process_pending_requests,
+                  trace,
+                  NULL);
 }
 
 /**
@@ -376,9 +386,14 @@ void lttvwindowtraces_background_notify_queue
   bg_notify->owner = owner;
   bg_notify->trace = trace;
   bg_notify->notify_time = notify_time;
-  bg_notify->notify_position = ltt_traceset_context_position_new();
-  lttv_traceset_context_position_copy(bg_notify->notify_position,
-                                      notify_position);
+  if(notify_position != NULL) {
+    bg_notify->notify_position = ltt_traceset_context_position_new();
+    lttv_traceset_context_position_copy(bg_notify->notify_position,
+                                        notify_position);
+  } else {
+    bg_notify->notify_position = NULL;
+  }
+
   bg_notify->notify = lttv_hooks_new();
   lttv_hooks_add_list(bg_notify->notify, notify);
 
@@ -419,9 +434,13 @@ void lttvwindowtraces_background_notify_current
   bg_notify->owner = owner;
   bg_notify->trace = trace;
   bg_notify->notify_time = notify_time;
-  bg_notify->notify_position = ltt_traceset_context_position_new();
-  lttv_traceset_context_position_copy(bg_notify->notify_position,
-                                      notify_position);
+  if(notify_position!= NULL) {
+    bg_notify->notify_position = ltt_traceset_context_position_new();
+    lttv_traceset_context_position_copy(bg_notify->notify_position,
+                                        notify_position);
+  } else {
+    bg_notify->notify_position = NULL;
+  }
   bg_notify->notify = lttv_hooks_new();
   lttv_hooks_add_list(bg_notify->notify, notify);
 
@@ -462,8 +481,9 @@ void lttvwindowtraces_background_notify_remove(gpointer owner)
       if(bg_notify->owner == owner) {
         GSList *rem_iter = iter;
         iter=g_slist_next(iter);
-        lttv_traceset_context_position_destroy(
-                      bg_notify->notify_position);
+        if(bg_notify->notify_position != NULL)
+          lttv_traceset_context_position_destroy(
+                        bg_notify->notify_position);
         lttv_hooks_destroy(bg_notify->notify);
         g_free(bg_notify); 
         g_slist_remove_link(*slist, rem_iter);
@@ -485,8 +505,9 @@ void lttvwindowtraces_background_notify_remove(gpointer owner)
       if(bg_notify->owner == owner) {
         GSList *rem_iter = iter;
         iter=g_slist_next(iter);
-        lttv_traceset_context_position_destroy(
-                      bg_notify->notify_position);
+        if(bg_notify->notify_position != NULL)
+          lttv_traceset_context_position_destroy(
+                        bg_notify->notify_position);
         lttv_hooks_destroy(bg_notify->notify);
         g_free(bg_notify); 
         g_slist_remove_link(*slist, rem_iter);
@@ -512,6 +533,7 @@ void lttvwindowtraces_add_computation_hooks(LttvAttributeName module_name,
   LttvHooks *before_chunk_tracefile=NULL;
   LttvHooks *event_hook=NULL;
   LttvHooksById *event_hook_by_id=NULL;
+  LttvTracesetStats *tss = LTTV_TRACESET_STATS(tsc);
 
  
   g_assert(module_attribute =
@@ -558,6 +580,15 @@ void lttvwindowtraces_add_computation_hooks(LttvAttributeName module_name,
     event_hook_by_id = (LttvHooksById*)*(value.v_pointer);
   }
 
+  /* Call the module's hook adder */
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_HOOK_ADDER,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    lttv_hooks_call((LttvHooks*)*(value.v_pointer), (gpointer)tss);
+  }
+
+
 
   lttv_process_traceset_begin(tsc,
                               before_chunk_traceset,
@@ -580,7 +611,7 @@ void lttvwindowtraces_remove_computation_hooks(LttvAttributeName module_name,
   LttvHooks *after_chunk_tracefile=NULL;
   LttvHooks *event_hook=NULL;
   LttvHooksById *event_hook_by_id=NULL;
-
+  LttvTracesetStats *tss = LTTV_TRACESET_STATS(tsc);
  
   g_assert(module_attribute =
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
@@ -625,14 +656,21 @@ void lttvwindowtraces_remove_computation_hooks(LttvAttributeName module_name,
   if(type == LTTV_POINTER) {
     event_hook_by_id = (LttvHooksById*)*(value.v_pointer);
   }
-
-
+  
   lttv_process_traceset_end(tsc,
                             after_chunk_traceset,
                             after_chunk_trace,
                             after_chunk_tracefile,
                             event_hook,
                             event_hook_by_id);
+
+  /* Call the module's hook remover */
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_HOOK_REMOVER,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    lttv_hooks_call((LttvHooks*)*(value.v_pointer), (gpointer)tss);
+  }
 }
 
 
@@ -662,7 +700,7 @@ void lttvwindowtraces_unset_in_progress(LttvAttributeName module_name,
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
                                 module_name)));
  
-  lttv_iattribute_remove(LTTV_IATTRIBUTE(attribute),
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
                          LTTV_IN_PROGRESS);
 }
 
@@ -713,7 +751,7 @@ void lttvwindowtraces_unset_ready(LttvAttributeName module_name,
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
                                 module_name)));
  
-  lttv_iattribute_remove(LTTV_IATTRIBUTE(attribute),
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
                          LTTV_READY);
 }
 
@@ -751,13 +789,14 @@ gboolean lttvwindowtraces_get_ready(LttvAttributeName module_name,
 gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 {
   LttvTracesetContext *tsc;
+  LttvTracesetStats *tss;
   LttvTraceset *ts;
   LttvAttribute *attribute;
-  GSList *list_out, *list_in, *notify_in, *notify_out;
+  GSList **list_out, **list_in, **notify_in, **notify_out;
   LttvAttributeValue value;
   LttvAttributeType type;
 
-   if(trace == NULL)
+  if(trace == NULL)
     return FALSE;
    
   attribute = lttv_trace_attribute(trace);
@@ -766,25 +805,25 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
                                      LTTV_REQUESTS_QUEUE,
                                      &value);
   g_assert(type == LTTV_POINTER);
-  list_out = (GSList*)*(value.v_pointer);
+  list_out = (GSList**)(value.v_pointer);
 
   type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
                                      LTTV_REQUESTS_CURRENT,
                                      &value);
   g_assert(type == LTTV_POINTER);
-  list_in = (GSList*)*(value.v_pointer);
+  list_in = (GSList**)(value.v_pointer);
  
   type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
                                      LTTV_NOTIFY_QUEUE,
                                      &value);
   g_assert(type == LTTV_POINTER);
-  notify_out = (GSList*)*(value.v_pointer);
+  notify_out = (GSList**)(value.v_pointer);
   
   type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
                                      LTTV_NOTIFY_CURRENT,
                                      &value);
   g_assert(type == LTTV_POINTER);
-  notify_in = (GSList*)*(value.v_pointer);
+  notify_in = (GSList**)(value.v_pointer);
  
   type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
                                      LTTV_COMPUTATION_TRACESET,
@@ -797,21 +836,23 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
                                      &value);
   g_assert(type == LTTV_POINTER);
   tsc = (LttvTracesetContext*)*(value.v_pointer);
+  tss = (LttvTracesetStats*)*(value.v_pointer);
   g_assert(LTTV_IS_TRACESET_CONTEXT(tsc));
+  g_assert(LTTV_IS_TRACESET_STATS(tss));
  
   /* There is no events requests pending : we should never have been called! */
-  g_assert(g_slist_length(list_out) != 0 || g_slist_length(list_in) != 0);
+  g_assert(g_slist_length(*list_out) != 0 || g_slist_length(*list_in) != 0);
 
 
 
   /* 1. Before processing */
   {
     /* if list_in is empty */
-    if(g_slist_length(list_in) == 0) {
+    if(g_slist_length(*list_in) == 0) {
 
       {
         /* - Add all requests in list_out to list_in, empty list_out */
-        GSList *iter = list_out;
+        GSList *iter = *list_out;
 
         while(iter != NULL) {
           gboolean remove = FALSE;
@@ -821,7 +862,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
           remove = TRUE;
           free_data = FALSE;
-          list_in = g_slist_append(list_in, bg_req);
+          *list_in = g_slist_append(*list_in, bg_req);
 
           /* Go to next */
           if(remove)
@@ -830,7 +871,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
             iter = g_slist_next(iter);
             if(free_data) g_free(remove_iter->data);
-            list_out = g_slist_remove_link(list_out, remove_iter);
+            *list_out = g_slist_remove_link(*list_out, remove_iter);
           } else { // not remove
             iter = g_slist_next(iter);
           }
@@ -838,7 +879,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
       }
 
       {
-        GSList *iter = list_in;
+        GSList *iter = *list_in;
         /* - for each request in list_in */
         while(iter != NULL) {
           
@@ -859,8 +900,8 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
       /* - Move all notifications from notify_out to notify_in. */
       {
-        GSList *iter = notify_out;
-        g_assert(g_slist_length(notify_in) == 0);
+        GSList *iter = *notify_out;
+        g_assert(g_slist_length(*notify_in) == 0);
 
         while(iter != NULL) {
           gboolean remove = FALSE;
@@ -870,7 +911,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
           remove = TRUE;
           free_data = FALSE;
-          notify_in = g_slist_append(notify_in, notify_req);
+          *notify_in = g_slist_append(*notify_in, notify_req);
 
           /* Go to next */
           if(remove)
@@ -879,7 +920,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
             iter = g_slist_next(iter);
             if(free_data) g_free(remove_iter->data);
-            notify_out = g_slist_remove_link(notify_out, remove_iter);
+            *notify_out = g_slist_remove_link(*notify_out, remove_iter);
           } else { // not remove
             iter = g_slist_next(iter);
           }
@@ -888,7 +929,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
     }
 
     {
-      GSList *iter = list_in;
+      GSList *iter = *list_in;
       /* - for each request in list_in */
       while(iter != NULL) {
         
@@ -906,7 +947,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   {
     /*(assert list_in is not empty! : should not even be called in that case)*/
     LttTime end = { G_MAXUINT, G_MAXUINT };
-    g_assert(g_slist_length(list_in) != 0);
+    g_assert(g_slist_length(*list_in) != 0);
     
     lttv_process_traceset_middle(tsc, end, CHUNK_NUM_EVENTS, NULL);
   }
@@ -915,7 +956,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   {
     /*  3.1 call after_chunk hooks for list_in */
     {
-      GSList *iter = list_in;
+      GSList *iter = *list_in;
       /* - for each request in list_in */
       while(iter != NULL) {
         
@@ -930,7 +971,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
     /* 3.2 for each notify_in */
     {
-      GSList *iter = notify_in;
+      GSList *iter = *notify_in;
       LttvTracefileContext *tfc = lttv_traceset_context_get_current_tfc(tsc);
         
       while(iter != NULL) {
@@ -945,10 +986,11 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
          * from notify_in.
          */
         if( (tfc != NULL &&
-              ltt_time_compare(notify_req->notify_time, tfc->timestamp) >= 0)
+              ltt_time_compare(notify_req->notify_time, tfc->timestamp) <= 0)
            ||
-            (lttv_traceset_context_ctx_pos_compare(tsc,
-                                           notify_req->notify_position) >= 0)
+            (notify_req->notify_position != NULL && 
+                     lttv_traceset_context_ctx_pos_compare(tsc,
+                              notify_req->notify_position) >= 0)
            ) {
 
           lttv_hooks_call(notify_req->notify, notify_req);
@@ -964,7 +1006,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
           iter = g_slist_next(iter);
           if(free_data) g_free(remove_iter->data);
-          notify_in = g_slist_remove_link(notify_in, remove_iter);
+          *notify_in = g_slist_remove_link(*notify_in, remove_iter);
         } else { // not remove
           iter = g_slist_next(iter);
         }
@@ -974,12 +1016,15 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
     {
       LttvTracefileContext *tfc = lttv_traceset_context_get_current_tfc(tsc);
       /* 3.3 if end of trace reached */
+      if(tfc != NULL)
+        g_debug("Current time : %lu sec, %lu nsec",
+            tfc->timestamp.tv_sec, tfc->timestamp.tv_nsec);
       if(tfc == NULL || ltt_time_compare(tfc->timestamp,
                          tsc->time_span.end_time) > 0) {
         
         /* - for each request in list_in */
         {
-          GSList *iter = list_in;
+          GSList *iter = *list_in;
           
           while(iter != NULL) {
             gboolean remove = FALSE;
@@ -1004,7 +1049,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
               iter = g_slist_next(iter);
               if(free_data) g_free(remove_iter->data);
-              list_in = g_slist_remove_link(list_in, remove_iter);
+              *list_in = g_slist_remove_link(*list_in, remove_iter);
             } else { // not remove
               iter = g_slist_next(iter);
             }
@@ -1013,7 +1058,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
         /* - for each notifications in notify_in */
         {
-          GSList *iter = notify_in;
+          GSList *iter = *notify_in;
           
           while(iter != NULL) {
             gboolean remove = FALSE;
@@ -1033,7 +1078,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
               iter = g_slist_next(iter);
               if(free_data) g_free(remove_iter->data);
-              notify_in = g_slist_remove_link(notify_in, remove_iter);
+              *notify_in = g_slist_remove_link(*notify_in, remove_iter);
             } else { // not remove
               iter = g_slist_next(iter);
             }
@@ -1041,10 +1086,12 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
         }
         
         /* - return FALSE (scheduler stopped) */
+        g_debug("Background computation scheduler stopped");
         return FALSE;
       } else {
         /* 3.4 else, end of trace not reached */
         /* - return TRUE (scheduler still registered) */
+        g_debug("Background computation left");
         return TRUE;
       }
     }
@@ -1055,7 +1102,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
 /**
  * Register the background computation hooks for a specific module. It adds the
- * computation hooks to the global attrubutes, under "computation/module name"
+ * computation hooks to the global attrubutes, under "computation/module name".
  *
  * @param module_name A GQuark : the name of the module which computes the
  *                    information.
@@ -1070,7 +1117,9 @@ void lttvwindowtraces_register_computation_hooks(LttvAttributeName module_name,
                                           LttvHooks *before_request,
                                           LttvHooks *after_request,
                                           LttvHooks *event_hook,
-                                          LttvHooksById *event_hook_by_id)
+                                          LttvHooksById *event_hook_by_id,
+                                          LttvHooks *hook_adder,
+                                          LttvHooks *hook_remover)
 {
   LttvAttribute *g_attribute = lttv_global_attributes();
   LttvAttribute *attribute;
@@ -1144,6 +1193,18 @@ void lttvwindowtraces_register_computation_hooks(LttvAttributeName module_name,
                                 &value));
   *(value.v_pointer) = event_hook_by_id;
 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_HOOK_ADDER,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = hook_adder;
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_HOOK_REMOVER,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = hook_remover;
+
 }
 
 
@@ -1166,16 +1227,16 @@ void lttvwindowtraces_unregister_requests(LttvAttributeName module_name)
     LttTrace *trace;
     LttvAttribute *attribute = lttv_trace_attribute(trace_v);
     LttvAttributeValue value;
-    GSList *queue, *current;
+    GSList **queue, **current;
     GSList *iter;
     
     g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
                                   LTTV_REQUESTS_QUEUE,
                                   LTTV_POINTER,
                                   &value));
-    queue = (GSList*)*(value.v_pointer);
+    queue = (GSList**)(value.v_pointer);
     
-    iter = queue;
+    iter = *queue;
     while(iter != NULL) {
       gboolean remove = FALSE;
       gboolean free_data = FALSE;
@@ -1194,7 +1255,7 @@ void lttvwindowtraces_unregister_requests(LttvAttributeName module_name)
 
         iter = g_slist_next(iter);
         if(free_data) g_free(remove_iter->data);
-        queue = g_slist_remove_link(queue, remove_iter);
+        *queue = g_slist_remove_link(*queue, remove_iter);
       } else { // not remove
         iter = g_slist_next(iter);
       }
@@ -1205,9 +1266,9 @@ void lttvwindowtraces_unregister_requests(LttvAttributeName module_name)
                                   LTTV_REQUESTS_CURRENT,
                                   LTTV_POINTER,
                                   &value));
-    current = (GSList*)*(value.v_pointer);
+    current = (GSList**)(value.v_pointer);
     
-    iter = current;
+    iter = *current;
     while(iter != NULL) {
       gboolean remove = FALSE;
       gboolean free_data = FALSE;
@@ -1226,7 +1287,7 @@ void lttvwindowtraces_unregister_requests(LttvAttributeName module_name)
 
         iter = g_slist_next(iter);
         if(free_data) g_free(remove_iter->data);
-        current = g_slist_remove_link(current, remove_iter);
+        *current = g_slist_remove_link(*current, remove_iter);
       } else { // not remove
         iter = g_slist_next(iter);
       }
@@ -1282,6 +1343,11 @@ void lttvwindowtraces_unregister_computation_hooks
                                      LTTV_BEFORE_CHUNK_TRACE);
   lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
                                      LTTV_BEFORE_CHUNK_TRACESET);
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_HOOK_ADDER);
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_HOOK_REMOVER);
+
   /* finally, remove module name */
   g_assert(attribute = 
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),

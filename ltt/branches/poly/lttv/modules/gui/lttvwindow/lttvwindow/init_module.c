@@ -66,6 +66,8 @@ LttvTraceInfo LTTV_TRACES,
        LTTV_AFTER_REQUEST,
        LTTV_EVENT_HOOK,
        LTTV_EVENT_HOOK_BY_ID,
+       LTTV_HOOK_ADDER,
+       LTTV_HOOK_REMOVER,
        LTTV_IN_PROGRESS,
        LTTV_READY;
 
@@ -158,6 +160,8 @@ static void init() {
   LTTV_AFTER_REQUEST = g_quark_from_string("after_request");
   LTTV_EVENT_HOOK = g_quark_from_string("event_hook");
   LTTV_EVENT_HOOK_BY_ID = g_quark_from_string("event_hook_by_id");
+  LTTV_HOOK_ADDER = g_quark_from_string("hook_adder");
+  LTTV_HOOK_REMOVER = g_quark_from_string("hook_remover");
   LTTV_IN_PROGRESS = g_quark_from_string("in_progress");
   LTTV_READY = g_quark_from_string("ready");
 
@@ -174,6 +178,16 @@ static void init() {
 
   lttv_hooks_add(main_hooks, window_creation_hook, NULL, LTTV_PRIO_DEFAULT);
 
+  LttvHooks *hook_adder = lttv_hooks_new();
+  lttv_hooks_add(hook_adder, lttv_state_save_hook_add_event_hooks, NULL,
+                 LTTV_PRIO_DEFAULT);
+  LttvHooks *hook_remover = lttv_hooks_new();
+  lttv_hooks_add(hook_remover, lttv_state_save_hook_remove_event_hooks,
+                                  NULL, LTTV_PRIO_DEFAULT);
+  /* Add state computation background hook adder to attributes */
+  lttvwindowtraces_register_computation_hooks(g_quark_from_string("state"),
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      hook_adder, hook_remover);
 }
 
 void
@@ -196,6 +210,9 @@ static void destroy() {
   LttvTrace *trace;
   GSList *iter = NULL;
   
+  lttvwindowtraces_unregister_requests(g_quark_from_string("state"));
+  lttvwindowtraces_unregister_computation_hooks(g_quark_from_string("state"));
+
   lttv_option_remove("trace");
 
   lttv_hooks_remove_data(main_hooks, window_creation_hook, NULL);

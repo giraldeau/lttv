@@ -44,6 +44,8 @@ extern LttvTraceInfo LTTV_TRACES,
               LTTV_AFTER_REQUEST,
               LTTV_EVENT_HOOK,
               LTTV_EVENT_HOOK_BY_ID,
+              LTTV_HOOK_ADDER,
+              LTTV_HOOK_REMOVER,
               LTTV_IN_PROGRESS,
               LTTV_READY;
               
@@ -200,7 +202,9 @@ void lttvwindowtraces_register_computation_hooks(LttvAttributeName module_name,
                                           LttvHooks *before_request,
                                           LttvHooks *after_request,
                                           LttvHooks *event_hook,
-                                          LttvHooksById *event_hook_by_id);
+                                          LttvHooksById *event_hook_by_id,
+                                          LttvHooks *hook_adder,
+                                          LttvHooks *hook_remover);
 /**
  * Unregister the background computation hooks for a specific module.
  *

@@ -204,6 +204,75 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
   }
 }
 
+/**
+ * Function to set/update traceset for the viewers
+ * @param tab viewer's tab 
+ * @param traceset traceset of the main window.
+ * return value :
+ *  0 : traceset updated
+ *  1 : no traceset hooks to update; not an error.
+ */
+
+int SetTraceset(Tab * tab, LttvTraceset *traceset)
+{
+  LttvHooks * tmp;
+  LttvAttributeValue value;
+
+  g_assert( lttv_iattribute_find_by_path(tab->attributes,
+     "hooks/updatetraceset", LTTV_POINTER, &value));
+
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return 1;
+  
+  lttv_hooks_call(tmp,traceset);
+  
+  return 0;
+}
+
+/**
+ * Function to set/update filter for the viewers
+ * @param tab viewer's tab 
+ * @param filter filter of the main window.
+ * return value :
+ * -1 : error
+ *  0 : filters updated
+ *  1 : no filter hooks to update; not an error.
+ */
+
+int SetFilter(Tab * tab, gpointer filter)
+{
+  LttvHooks * tmp;
+  LttvAttributeValue value;
+
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+     "hooks/updatefilter", LTTV_POINTER, &value));
+
+  tmp = (LttvHooks*)*(value.v_pointer);
+
+  if(tmp == NULL) return 1;
+  lttv_hooks_call(tmp,filter);
+
+  return 0;
+}
+
+
+
+/**
+ * Function to redraw each viewer belonging to the current tab 
+ * @param tab viewer's tab 
+ */
+
+void update_traceset(Tab *tab)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/updatetraceset", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return;
+  lttv_hooks_call(tmp, NULL);
+}
+
 
 /* get_label function is used to get user input, it displays an input
  * box, which allows user to input a string 
@@ -1406,19 +1475,19 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 
           //update current tab
           //update_traceset(mw_data);
-          if(nb_trace > 1){
+          //if(nb_trace > 1){
 
-            SetTraceset(mw_data, (gpointer)traceset);
+            SetTraceset(tab, (gpointer)traceset);
             // in expose now call_pending_read_hooks(mw_data);
 
             //lttvwindow_report_current_time(mw_data,&(tab->current_time));
-          }else{
-            if(tab){
-              while(tab->multi_vpaned->num_children){
-                gtk_multi_vpaned_widget_delete(tab->multi_vpaned);
-              }    
-            }	    
-          }
+          //}else{
+          //  if(tab){
+          //    while(tab->multi_vpaned->num_children){
+          //      gtk_multi_vpaned_widget_delete(tab->multi_vpaned);
+          //    }    
+          //  }	    
+          //}
         }
         break;
       }
