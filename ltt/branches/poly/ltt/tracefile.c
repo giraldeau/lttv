@@ -367,6 +367,27 @@ void getCpuFileInfo(LttTrace *t, char* cpu)
  *are released as well.
  ****************************************************************************/
 
+void get_absolute_pathname(const char *pathname, char * abs_pathname)
+{
+  char * ptr, *ptr1;
+  size_t size = DIR_NAME_SIZE;
+  abs_pathname[0] = '\0';
+  if(!getcwd(abs_pathname, size)){
+    g_warning("Can not get current working directory\n");
+    strcat(abs_pathname, pathname);
+    return;
+  }
+  strcat(abs_pathname,"/");
+  
+  ptr = (char*)pathname;
+  ptr1 = ptr + 1;
+  while(*ptr == '.' && *ptr1 == '.'){
+    ptr += 3;
+    ptr1 = ptr + 1;
+  }
+  strcat(abs_pathname,ptr);
+}
+
 LttTrace *ltt_trace_open(const char *pathname)
 {
   LttTrace  * t;
@@ -376,30 +397,33 @@ LttTrace *ltt_trace_open(const char *pathname)
   char control[DIR_NAME_SIZE];
   char cpu[DIR_NAME_SIZE];
   char tmp[DIR_NAME_SIZE];
+  char abs_path[DIR_NAME_SIZE];
   gboolean has_slash = FALSE;
 
+  get_absolute_pathname(pathname, abs_path);
+  
   //establish the pathname to different directories
-  if(pathname[strlen(pathname)-1] == '/')has_slash = TRUE;
-  strcpy(eventdefs,pathname);
+  if(abs_path[strlen(abs_path)-1] == '/')has_slash = TRUE;
+  strcpy(eventdefs,abs_path);
   if(!has_slash)strcat(eventdefs,"/");
   strcat(eventdefs,"eventdefs/");
 
-  strcpy(info,pathname);
+  strcpy(info,abs_path);
   if(!has_slash)strcat(info,"/");
   strcat(info,"info/");
 
-  strcpy(control,pathname);
+  strcpy(control,abs_path);
   if(!has_slash)strcat(control,"/");
   strcat(control,"control/");
 
-  strcpy(cpu,pathname);
+  strcpy(cpu,abs_path);
   if(!has_slash)strcat(cpu,"/");
   strcat(cpu,"cpu/");
 
   //new trace
   t               = g_new(LttTrace, 1);
   sys_description = g_new(LttSystemDescription, 1);  
-  t->pathname     = g_strdup(pathname);
+  t->pathname     = g_strdup(abs_path);
   t->facility_number          = 0;
   t->control_tracefile_number = 0;
   t->per_cpu_tracefile_number = 0;

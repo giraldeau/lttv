@@ -65,8 +65,10 @@ typedef struct _RawTraceData{
   LttEventPosition *ep;
 } RawTraceData;
 
-#define RESERVE_BIG_SIZE      1000
-#define RESERVE_SMALL_SIZE    100
+#define RESERVE_BIG_SIZE             1000
+#define RESERVE_SMALL_SIZE           100
+#define RESERVE_SMALL_SIZE_SQUARE    RESERVE_SMALL_SIZE*RESERVE_SMALL_SIZE
+#define RESERVE_SMALL_SIZE_CUBE      RESERVE_SMALL_SIZE*RESERVE_SMALL_SIZE_SQUARE
 
 typedef enum _ScrollDirection{
   SCROLL_STEP_UP,
@@ -876,7 +878,7 @@ void get_test_data(double time_value, guint list_height,
 		ltt_tracefile_seek_position(tf, raw_data->ep);
 		ev = ltt_tracefile_read(tf);
 		start = ltt_event_time(ev);
-		maxNum = G_MAXULONG;
+		maxNum = RESERVE_SMALL_SIZE_CUBE;
 	      }else{
 		if(block_num > 1){
 		  ltt_event_position_set(raw_data->ep, block_num-1, 1);
@@ -887,7 +889,7 @@ void get_test_data(double time_value, guint list_height,
 		  start.tv_sec  = 0;
 		  start.tv_nsec = 0;		
 		}
-		maxNum = G_MAXULONG;
+		maxNum = RESERVE_SMALL_SIZE_CUBE;
 	      }
 	    }else{
 	      if(block_num > count){
@@ -899,7 +901,7 @@ void get_test_data(double time_value, guint list_height,
 		start.tv_sec  = 0;
 		start.tv_nsec = 0;		
 	      }	      
-	      maxNum = G_MAXULONG;
+	      maxNum = RESERVE_SMALL_SIZE_CUBE;
 	    }
 
 	    event_viewer_data->current_event_index = event_viewer_data->start_event_index;
@@ -933,7 +935,9 @@ void get_test_data(double time_value, guint list_height,
 	  end.tv_nsec = G_MAXULONG;
 	  get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE, &size);
 	  if(size == 0){
-	    get_events(event_viewer_data, start, end, G_MAXULONG, &size);
+	    get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_SQUARE,&size);
+	    if(size == 0)
+	      get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_CUBE,&size);
 	  }
 	}else size = 1;
 	if(size > 0) event_number = event_viewer_data->start_event_index + 1;	
@@ -952,7 +956,9 @@ void get_test_data(double time_value, guint list_height,
 	  end.tv_nsec = G_MAXULONG;
 	  get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE,&size);
 	  if(size == 0){
-	    get_events(event_viewer_data, start, end, G_MAXULONG,&size);
+	    get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_SQUARE,&size);
+	    if(size == 0)
+	      get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_CUBE,&size);
 	  }
 	}
 	if(list_height <= event_viewer_data->number_of_events - 1 - event_viewer_data->end_event_index)
@@ -985,14 +991,16 @@ void get_test_data(double time_value, guint list_height,
 	    ltt_tracefile_seek_position(tf, raw_data->ep);
 	    ev = ltt_tracefile_read(tf);
 	    start = ltt_event_time(ev);
-	    maxNum = G_MAXULONG;
+	    maxNum = RESERVE_SMALL_SIZE_CUBE;
 	    event_viewer_data->current_event_index = 0;
 	    get_events(event_viewer_data, start, end, maxNum, &size);
 	    event_viewer_data->start_event_index = event_viewer_data->current_event_index;
 	  }
 	  event_number = event_viewer_data->raw_trace_data_queue->length - list_height;
 	}else if(size == 0){
-	  get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE*RESERVE_SMALL_SIZE,&size);
+	  get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_SQUARE,&size);
+	  if(size == 0)
+	    get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_CUBE,&size);
 	  event_number = 0;
 	}else{
 	  event_number = 0;

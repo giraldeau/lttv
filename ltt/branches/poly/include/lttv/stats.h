@@ -132,6 +132,10 @@ gboolean lttv_stats_add_event_hooks(LttvTracesetStats *self);
 
 gboolean lttv_stats_remove_event_hooks(LttvTracesetStats *self);
 
+void lttv_stats_save_statistics(LttvTracesetStats *self);
+
+gboolean lttv_stats_load_statistics(LttvTracesetStats *self);
+
 
 /* The LttvTracesetStats, LttvTraceStats and LttvTracefileStats types
    inherit from the corresponding State objects defined in state.h.. */
