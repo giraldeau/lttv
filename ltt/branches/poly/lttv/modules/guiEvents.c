@@ -1110,6 +1110,21 @@ void add_test_data(EventViewerData *Event_Viewer_Data)
   
 }
 	
+void
+GuiEvents_free(EventViewerData *Event_Viewer_Data)
+{
+  lttv_hooks_remove(Event_Viewer_Data->before_event_hooks,parse_event);
+  lttv_hooks_destroy(Event_Viewer_Data->before_event_hooks);
+  
+  remove_all_items_from_queue (Event_Viewer_Data->raw_trace_data_queue);
+  g_queue_free(Event_Viewer_Data->raw_trace_data_queue);
+  g_queue_free(Event_Viewer_Data->raw_trace_data_queue_tmp);
+
+  UnregUpdateTimeInterval(updateTimeInterval,Event_Viewer_Data, Event_Viewer_Data->mw);
+  UnregUpdateCurrentTime(updateCurrentTime,Event_Viewer_Data, Event_Viewer_Data->mw);
+
+  g_free(Event_Viewer_Data);
+}
 
 void
 GuiEvents_Destructor(EventViewerData *Event_Viewer_Data)
@@ -1127,17 +1142,7 @@ GuiEvents_Destructor(EventViewerData *Event_Viewer_Data)
   //gtk_list_store_clear(Event_Viewer_Data->Store_M);
   //gtk_widget_destroy(GTK_WIDGET(Event_Viewer_Data->Store_M));
   
-  lttv_hooks_remove(Event_Viewer_Data->before_event_hooks,parse_event);
-  lttv_hooks_destroy(Event_Viewer_Data->before_event_hooks);
-  
-  remove_all_items_from_queue (Event_Viewer_Data->raw_trace_data_queue);
-  g_queue_free(Event_Viewer_Data->raw_trace_data_queue);
-  g_queue_free(Event_Viewer_Data->raw_trace_data_queue_tmp);
-
-  UnregUpdateTimeInterval(updateTimeInterval,Event_Viewer_Data, Event_Viewer_Data->mw);
-  UnregUpdateCurrentTime(updateCurrentTime,Event_Viewer_Data, Event_Viewer_Data->mw);
-
-  g_free(Event_Viewer_Data);
+  GuiEvents_free(Event_Viewer_Data);
 }
 
 //FIXME : call hGuiEvents_Destructor for corresponding data upon widget destroy
@@ -1490,6 +1495,7 @@ void remove_instance(GtkCustomHBox * box){
     Event_Viewer_Data = (EventViewerData *)g_slist_nth_data(sEvent_Viewer_Data_List, i);
     if((void*)box == (void*)Event_Viewer_Data->instance_container){
       sEvent_Viewer_Data_List = g_slist_remove(sEvent_Viewer_Data_List, Event_Viewer_Data);
+      GuiEvents_free(Event_Viewer_Data);
       break;
     }
   }
