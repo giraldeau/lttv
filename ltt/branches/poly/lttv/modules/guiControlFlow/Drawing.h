@@ -2,12 +2,14 @@
 #define _DRAWING_H
 
 #include <glib.h>
+#include <gdk/gdk.h>
+#include <gtk/gtk.h>
 #include <ltt/ltt.h>
 
 /* This part of the viewer does :
- * Draw horizontal lines, getting line color and width as arguments.
+ * Draw horizontal lines, getting graphic context as arg.
  * Copy region of the screen into another.
- * Modify the boundaries to reflect a scale change.
+ * Modify the boundaries to reflect a scale change. (resize)
  *
  * A helper function is provided here to convert from time and process
  * identifier to pixels and the contrary (will be useful for mouse selection).
@@ -15,11 +17,21 @@
 
 typedef struct _Drawing_t Drawing_t;
 
-Drawing_t *Drawing(void);
+Drawing_t *Drawing_construct(void);
 void Drawing_destroy(Drawing_t *Drawing);
+
+GtkWidget *Drawing_getWidget(Drawing_t *Drawing);
+	
+
+void Drawing_draw_line(	guint x1, guint y1, guint x2, guint y2,
+			GdkGC *GC);
+
+void Drawing_copy(guint xsrc, guint ysrc,
+		guint xdest, guint ydest,
+		guint width, guint height);
+
+
 void Drawing_Resize(Drawing_t *Drawing, guint h, guint w);
-
-
 
 void convert_pixels_to_time(
 		Drawing_t *Drawing,
@@ -34,6 +46,5 @@ void convert_time_to_pixels(
 		LttTime time,
 		Drawing_t *Drawing,
 		guint *x);
-
 
 #endif // _DRAWING_H

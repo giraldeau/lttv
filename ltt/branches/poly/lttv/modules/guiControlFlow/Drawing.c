@@ -1,5 +1,7 @@
 
 #include "Drawing.h"
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
 
 /*****************************************************************************
  *                              Drawing functions                            *
@@ -26,41 +28,59 @@ static GdkColor CF_Colors [] =
 };
 
 
-typedef struct _Drawing_t {
-	GtkWidget *Drawing_Area_V
+struct _Drawing_t {
+	GtkWidget	*Drawing_Area_V;
+	GdkPixmap	*Pixmap;
 
-	guint height, width;
+	gint 		height, width, depth;
 
-} Drawing_t;
+};
 
 
-Drawing_t *Drawing(void)
+Drawing_t *Drawing_construct(void)
 {
 
-	Drawing_t Drawing = g_new(Drawing_t, 1);
+	Drawing_t *Drawing = g_new(Drawing_t, 1);
 		
 	Drawing->Drawing_Area_V = gtk_drawing_area_new ();
 
 	g_object_set_data_full(
 			G_OBJECT(Drawing->Drawing_Area_V),
-			"Drawing_Data",
+			"Link_Drawing_Data",
 			Drawing,
 			(GDestroyNotify)Drawing_destroy);
 
-	gtk_widget_modify_bg(	Control_Flow_Data->Drawing_Area_V,
+	gtk_widget_modify_bg(	Drawing->Drawing_Area_V,
 				GTK_STATE_NORMAL,
 				&CF_Colors[BLACK]);
 	
-
+	gdk_window_get_geometry(Drawing->Drawing_Area_V->window,
+			NULL, NULL,
+			&(Drawing->width),
+			&(Drawing->height),
+			&(Drawing->depth));
+	
+	Drawing->Pixmap = gdk_pixmap_new(
+			Drawing->Drawing_Area_V->window,
+			Drawing->width,
+			Drawing->height,
+			Drawing->depth);
+			
 	return Drawing;
 }
 
 void Drawing_destroy(Drawing_t *Drawing)
 {
 
-	g_object_unref( G_OBJECT(Drawing->Drawing_Area_V));
+	// Do not unref here, Drawing_t destroyed by it's widget.
+	//g_object_unref( G_OBJECT(Drawing->Drawing_Area_V));
 		
 	g_free(Drawing);
+}
+
+GtkWidget *Drawing_getWidget(Drawing_t *Drawing)
+{
+	return Drawing->Drawing_Area_V;
 }
 
 /* get_time_from_pixels
@@ -74,17 +94,16 @@ void convert_pixels_to_time(
 		guint x,
 		LttTime *window_time_begin,
 		LttTime *window_time_end,
-		LttTime *time,
-		);
+		LttTime *time)
 {
 	LttTime window_time_interval;
 	
-	TimeSub(window_time_interval, *window_time_end, window_time_begin);
+	TimeSub(window_time_interval, *window_time_end, *window_time_begin);
 
 	
 	TimeMul(*time, window_time_interval,
 			(x/(float)Drawing->width));
-	TimeAdd(*time, window_time_begin, *time);
+	TimeAdd(*time, *window_time_begin, *time);
 	
 }
 
@@ -95,34 +114,34 @@ void convert_time_to_pixels(
 		LttTime window_time_end,
 		LttTime time,
 		Drawing_t *Drawing,
-		guint *x,
-		)
+		guint *x)
 {
 	LttTime window_time_interval;
+	float interval_float, time_float;
 	
 	TimeSub(window_time_interval, window_time_end, window_time_begin);
 	
-	TimeSub(time, time, wimdow_time_begin);
+	TimeSub(time, time, window_time_begin);
 	
-	*x = (guint)((time/(float)window_time_interval) * Drawing->width);
+	interval_float = (window_time_interval.tv_sec * NANSECOND_CONST)
+			+ window_time_interval.tv_nsec;
+	time_float = (time.tv_sec * NANSECOND_CONST)
+			+ time.tv_nsec;
+
+	*x = (guint)(time_float/interval_float * Drawing->width);
 	
 }
 
 
 
-void Drawing_Resize(Drawing_t *Drawing, guint h, guint, w)
+void Drawing_Resize(Drawing_t *Drawing, guint h, guint w)
 {
-	guint w;
-
 	Drawing->height = h ;
-	Drawing->weight = w ;
+	Drawing->width = w ;
 
-	gtk_widget_set_size_request (	Control_Flow_Data->Drawing_Area_V,
-					Drawing->weight,
+	gtk_widget_set_size_request (	Drawing->Drawing_Area_V,
+					Drawing->width,
 					Drawing->height);
 	
 	
 }
-
-
-

@@ -17,7 +17,6 @@ extern GSList *gControl_Flow_Data_List;
 
 struct _ControlFlowData {
 
-	GtkWidget *Drawing_Area_V;
 	GtkWidget *Scrolled_Window_VC;
 	
 	ProcessList *Process_List;
@@ -57,12 +56,15 @@ struct _ControlFlowData {
 ControlFlowData *
 GuiControlFlow(void)
 {
-	GtkWidget *Process_List_Widget;
+	GtkWidget *Process_List_Widget, *Drawing_Widget;
 
 	ControlFlowData* Control_Flow_Data = g_new(ControlFlowData,1) ;
 
 	/* Create the Drawing */
-	//Control_Flow_Data->Drawing = Drawing();
+	Control_Flow_Data->Drawing = Drawing_construct();
+	
+	Drawing_Widget = 
+		Drawing_getWidget(Control_Flow_Data->Drawing);
 	
 	/* TEST DATA, TO BE READ FROM THE TRACE */
 	Control_Flow_Data->Number_Of_Events = 1000 ;
@@ -84,10 +86,10 @@ GuiControlFlow(void)
 
 	gtk_box_pack_start(
 		GTK_BOX(Control_Flow_Data->Inside_HBox_V),
-		Process_List_Widget, TRUE, TRUE, 0); // FALSE TRUE
-	//gtk_box_pack_start(
-	//	GTK_BOX(Control_Flow_Data->Inside_HBox_V),
-	//	Control_Flow_Data->Drawing_Area_V, TRUE, TRUE, 0);
+		Process_List_Widget, FALSE, TRUE, 0); // FALSE TRUE
+	gtk_box_pack_start(
+		GTK_BOX(Control_Flow_Data->Inside_HBox_V),
+		Drawing_Widget, TRUE, TRUE, 0);
 
 
 	Control_Flow_Data->VAdjust_C = 
@@ -132,7 +134,7 @@ GuiControlFlow(void)
 	//Control_Flow_Data->Trace_Statistics = get_trace_statistics(Trace);
 
 
-	//gtk_widget_show(Control_Flow_Data->Drawing_Area_V);
+	gtk_widget_show(Drawing_Widget);
 	gtk_widget_show(Process_List_Widget);
 	gtk_widget_show(Control_Flow_Data->Inside_HBox_V);
 	gtk_widget_show(Control_Flow_Data->Scrolled_Window_VC);

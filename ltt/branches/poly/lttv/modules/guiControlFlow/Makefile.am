@@ -13,4 +13,5 @@ libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libguiControlFlow.la
 libguiControlFlow_la_LDFLAGS = -module
-libguiControlFlow_la_SOURCES = module.c Event_Hooks.c CFV.c Process_List.c
+libguiControlFlow_la_SOURCES = 	module.c Event_Hooks.c CFV.c Process_List.c\
+				Drawing.c
