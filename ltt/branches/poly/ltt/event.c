@@ -136,6 +136,7 @@ LttField *ltt_event_field(LttEvent *e)
   LttEventType * event_type = ltt_event_eventtype(e);
   if(!event_type) return NULL;
   field = event_type->root_field;
+  if(!field) return NULL;
 
   //check if the field need refresh
   if(e->which_block != event_type->latest_block ||

@@ -93,6 +93,7 @@ unsigned ltt_eventtype_id(LttEventType *et)
 
 LttType *ltt_eventtype_type(LttEventType *et)
 {
+  if(!et->root_field) return NULL;
   return et->root_field->field_type;
 }
 
@@ -311,6 +312,7 @@ LttField *ltt_field_member(LttField *f, unsigned i)
 
 LttType *ltt_field_type(LttField *f)
 {
+  if(!f)return NULL;
   return f->field_type;
 }
 
