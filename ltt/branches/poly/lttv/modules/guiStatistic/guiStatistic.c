@@ -26,6 +26,7 @@
 #define PATH_LENGTH        256
 
 static LttvModule *statistic_main_win_module;
+static GPtrArray  * statistic_traceset;
 
 /** Array containing instanced objects. Used when module is unloaded */
 static GSList *g_statistic_viewer_data_list = NULL ;
@@ -62,6 +63,8 @@ void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data,
 void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data, 
 			  LttvTracesetContext * tsc);
 
+gboolean statistic_insert_traceset_stats(void * stats);
+
 enum
 {
    NAME_COLUMN,
@@ -71,6 +74,8 @@ enum
 struct _StatisticViewerData{
   MainWindow * mw;
   LttvTracesetStats * stats;
+  gboolean            calculate_stats;
+  int                 size;
 
   TimeInterval time_span;
   gboolean     shown;       //indicate if the statistic is shown or not
@@ -109,7 +114,9 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
       g_critical("Can't load Statistic Viewer : missing mainwin\n");
       return;
   }
-	
+
+  statistic_traceset = g_ptr_array_new ();
+
   /* Register the toolbar insert button */
   toolbar_item_reg(hGuiStatisticInsert_xpm, "Insert Statistic Viewer", h_gui_statistic);
   
@@ -136,6 +143,7 @@ G_MODULE_EXPORT void destroy() {
     g_slist_foreach(g_statistic_viewer_data_list, statistic_destroy_walk, NULL );    
     g_slist_free(g_statistic_viewer_data_list);
   }
+  g_ptr_array_free (statistic_traceset, TRUE);
 
   /* Unregister the toolbar insert button */
   toolbar_item_unreg(h_gui_statistic);
@@ -191,6 +199,23 @@ h_gui_statistic(MainWindow * parent_window, LttvTracesetSelector * s, char* key)
 	
 }
 
+gboolean statistic_insert_traceset_stats(void * stats)
+{
+  int i, len;
+  gpointer s;
+
+  len = statistic_traceset->len;
+  for(i=0;i<len;i++){
+    s = g_ptr_array_index(statistic_traceset, i);
+    if(s == stats) break;    
+  }
+  if(i==len){
+    g_ptr_array_add(statistic_traceset, stats);
+    return TRUE;
+  }
+  return FALSE;
+}
+
 /**
  * Statistic Viewer's constructor
  *
@@ -207,6 +232,7 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
 
   statistic_viewer_data->mw     = parent_window;
   statistic_viewer_data->stats  = get_traceset_stats_api(statistic_viewer_data->mw);
+  statistic_viewer_data->calculate_stats = statistic_insert_traceset_stats((void *)statistic_viewer_data->stats);
 
   reg_update_time_window(statistic_update_time_window,statistic_viewer_data, statistic_viewer_data->mw);
   reg_show_viewer(statistic_show_viewer,statistic_viewer_data, statistic_viewer_data->mw);
@@ -286,6 +312,14 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
 		    G_OBJECT(statistic_viewer_data->hpaned_v),
 		    TRACESET_TIME_SPAN,
 		    &statistic_viewer_data->time_span);
+
+  if(statistic_viewer_data->calculate_stats == FALSE){
+    statistic_viewer_data->size = 1;
+    g_object_set_data(
+		      G_OBJECT(statistic_viewer_data->hpaned_v),
+		      MAX_NUMBER_EVENT,
+		      &statistic_viewer_data->size);
+  }
 
   g_object_set_data_full(
 			G_OBJECT(statistic_viewer_data->hpaned_v),
@@ -504,6 +538,11 @@ gboolean statistic_update_time_window(void * hook_data, void * call_data)
   StatisticViewerData *statistic_viewer_data = (StatisticViewerData*) hook_data;
   LttvTracesetContext * tsc = get_traceset_context(statistic_viewer_data->mw);
 
+  //if statistic is already calculated, do nothing
+  if(!statistic_viewer_data->calculate_stats){
+    return FALSE;
+  }
+
   if(statistic_viewer_data->shown == FALSE){    
     statistic_add_context_hooks(statistic_viewer_data, tsc);
   }
@@ -518,7 +557,9 @@ gboolean statistic_show_viewer(void * hook_data, void * call_data)
   if(statistic_viewer_data->shown == FALSE){
     statistic_viewer_data->shown = TRUE;
     show_traceset_stats(statistic_viewer_data);
-    statistic_remove_context_hooks(statistic_viewer_data,tsc);
+    if(statistic_viewer_data->calculate_stats){
+      statistic_remove_context_hooks(statistic_viewer_data,tsc);
+    }
   }
 
   return FALSE;
