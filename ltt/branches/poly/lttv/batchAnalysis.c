@@ -5,6 +5,7 @@
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>
 #include <lttv/hook.h>
+#include <lttv/module.h>
 #include <lttv/processTrace.h>
 #include <lttv/state.h>
 
@@ -64,7 +65,7 @@ static void process_traceset(void *hook_data, void *call_data)
 }
 
 
-void init(int argc, char **argv)
+void init(LttvModule *self, int argc, char **argv)
 {
   LttvAttribute_value *value;
 

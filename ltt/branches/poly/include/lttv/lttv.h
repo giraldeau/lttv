@@ -1,12 +1,12 @@
 #ifndef LTTV_H
 #define LTTV_H
 
-#include "attribute.h"
+#include <lttv/attribute.h>
 
 /* The modules in the visualizer communicate with the main module and
    with each other through attributes. There is a global set of attributes */
 
-LttvAttributes *lttv_global_attributes();
+LttvAttribute *lttv_global_attributes();
 
 
 /* A number of global attributes are initialized before modules are

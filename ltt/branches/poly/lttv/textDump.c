@@ -2,6 +2,14 @@
    before each trace, to print each event, and to print statistics
    after each trace. */
 
+#include <lttv/lttv.h>
+#include <lttv/option.h>
+#include <lttv/module.h>
+#include <lttv/hook.h>
+#include <lttv/attribute.h>
+#include <lttv/iattribute.h>
+#include <lttv/state.h>
+
 static gboolean
   a_field_names,
   a_state;
@@ -18,9 +26,9 @@ static LttvHooks
 
 void init(int argc, char **argv)
 {
-  LttvAttribute_value *value;
+  LttvAttributeValue *value;
 
-  LttvIAttributes *attributes = LTTV_IATTRIBUTES(lttv_global_attributes());
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
   a_file_name = NULL;
   lttv_option_add("output", 'o', 

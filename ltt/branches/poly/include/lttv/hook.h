@@ -12,7 +12,7 @@ typedef gboolean (*LttvHook)(void *hook_data, void *call_data);
 
 /* A list of hooks allows registering hooks to be called later. */
 
-typedef struct _LttvHooks LttvHooks;
+typedef GArray LttvHooks;
 
 
 /* Create and destroy a list of hooks */

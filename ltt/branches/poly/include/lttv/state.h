@@ -29,9 +29,9 @@
    like enumerations. */
 
 
-gboolean lttv_state_add_event_hooks(void *hook_data, void *call_data);
+gboolean lttv_state_add_event_hooks(LttvTracesetState *self);
 
-gboolean lttv_state_remove_event_hooks(void *hook_data, void *call_data);
+gboolean lttv_state_remove_event_hooks(LttvTracesetState *self);
 
 
 /* The interrupt type is one of "user mode", "kernel thread", "system call",
@@ -44,7 +44,7 @@ typedef GQuark LttvInterruptType;
    thread, which are the normal mode (interrupt stack bottom), it is set to
    "none". For interrupt requests, faults and system calls, it is set 
    respectively to the interrupt name (e.g. "timer"), fault name 
-   (e.g. "page fault"), and system call name (e.g. "select").
+   (e.g. "page fault"), and system call name (e.g. "select"). */
  
 typedef GQuark LttvInterruptNumber;
 

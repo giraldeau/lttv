@@ -116,7 +116,7 @@ module_load(const char *name, int argc, char **argv)
     if(!g_module_symbol(gm, "init", (gpointer)&init_function)) {
       g_warning("module %s (%s) has no init function", name, pathname);
     }
-    else init_Function(argc,argv);
+    else init_Function(m, argc, argv);
   }
   else {
 

@@ -24,7 +24,7 @@
 
 typedef struct _LttvModule LttvModule;
 
-typedef void (*LttvModuleInit)(int argc, char **argv);
+typedef void (*LttvModuleInit)(LttvModule *self, int argc, char **argv);
 
 typedef void (*LttvModuleDestroy)();
 

@@ -26,10 +26,10 @@ typedef union LttvAttributeValue {
   unsigned long *v_ulong;
   float *v_float;
   double *v_double;
-  timespec *v_timespec;
+  LttvTime *v_time;
   gpointer *v_pointer;
   char **v_string;
-  gobject **v_gobject;
+  GObject **v_gobject;
 } LttvAttributeValue;
 
 
