@@ -114,50 +114,50 @@
 gboolean draw_text( void *hook_data, void *call_data)
 {
   PropertiesText *Properties = (PropertiesText*)hook_data;
-  DrawContext *Draw_Context = (DrawContext*)call_data;
+  DrawContext *draw_context = (DrawContext*)call_data;
 
   PangoContext *context;
   PangoLayout *layout;
   PangoAttribute *attribute;
-  PangoFontDescription *FontDesc;// = pango_font_description_new();
-  gint Font_Size;
+  PangoFontDescription *font_desc;// = pango_font_description_new();
+  gint font_size;
   PangoRectangle ink_rect;
     
-  layout = Draw_Context->pango_layout;
+  layout = draw_context->pango_layout;
 
   context = pango_layout_get_context(layout);
-  FontDesc = pango_context_get_font_description(context);
+  font_desc = pango_context_get_font_description(context);
 
-  pango_font_description_set_size(FontDesc, Properties->size*PANGO_SCALE);
+  pango_font_description_set_size(font_desc, Properties->size*PANGO_SCALE);
   pango_layout_context_changed(layout);
 
   pango_layout_set_text(layout, Properties->text, -1);
   pango_layout_get_pixel_extents(layout, &ink_rect, NULL);
   switch(Properties->position) {
     case OVER:
-              gdk_draw_layout_with_colors(Draw_Context->drawable,
-                Draw_Context->gc,
-                Draw_Context->current->modify_over->x,
-                Draw_Context->current->modify_over->y,
+              gdk_draw_layout_with_colors(draw_context->drawable,
+                draw_context->gc,
+                draw_context->drawinfo.modify_over.x,
+                draw_context->drawinfo.modify_over.y,
                 layout, Properties->foreground, Properties->background);
-              Draw_Context->current->modify_over->x += ink_rect.width;
+              draw_context->drawinfo.modify_over.x += ink_rect.width;
 
       break;
     case MIDDLE:
-              gdk_draw_layout_with_colors(Draw_Context->drawable,
-                Draw_Context->gc,
-                Draw_Context->current->modify_middle->x,
-                Draw_Context->current->modify_middle->y,
+              gdk_draw_layout_with_colors(draw_context->drawable,
+                draw_context->gc,
+                draw_context->drawinfo.modify_middle.x,
+                draw_context->drawinfo.modify_middle.y,
                 layout, Properties->foreground, Properties->background);
-              Draw_Context->current->modify_middle->x += ink_rect.width;
+              draw_context->drawinfo.modify_middle.x += ink_rect.width;
       break;
     case UNDER:
-              gdk_draw_layout_with_colors(Draw_Context->drawable,
-                Draw_Context->gc,
-                Draw_Context->current->modify_under->x,
-                Draw_Context->current->modify_under->y,
+              gdk_draw_layout_with_colors(draw_context->drawable,
+                draw_context->gc,
+                draw_context->drawinfo.modify_under.x,
+                draw_context->drawinfo.modify_under.y,
                 layout, Properties->foreground, Properties->background);
-              Draw_Context->current->modify_under->x += ink_rect.width;
+              draw_context->drawinfo.modify_under.x += ink_rect.width;
       break;
   }
 
@@ -170,15 +170,15 @@ gboolean draw_text( void *hook_data, void *call_data)
  */
 gboolean draw_icon( void *hook_data, void *call_data)
 {
-  PropertiesIcon *Properties = (PropertiesIcon*)hook_data;
-  DrawContext *Draw_Context = (DrawContext*)call_data;
+  PropertiesIcon *properties = (PropertiesIcon*)hook_data;
+  DrawContext *draw_context = (DrawContext*)call_data;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvAttributeValue value;
   gchar icon_name[MAX_PATH_LEN] = "icons/";
   IconStruct *icon_info;
 
-  strcat(icon_name, Properties->icon_name);
+  strcat(icon_name, properties->icon_name);
   
   g_assert(lttv_iattribute_find_by_path(attributes, icon_name,
       LTTV_POINTER, &value));
@@ -186,118 +186,118 @@ gboolean draw_icon( void *hook_data, void *call_data)
   {
     *(value.v_pointer) = icon_info = g_new(IconStruct,1);
     
-    icon_info->pixmap = gdk_pixmap_create_from_xpm(Draw_Context->drawable,
-                          &icon_info->mask, NULL, Properties->icon_name);
+    icon_info->pixmap = gdk_pixmap_create_from_xpm(draw_context->drawable,
+                          &icon_info->mask, NULL, properties->icon_name);
   }
   else
   {
     icon_info = *(value.v_pointer);
   }
   
-  gdk_gc_set_clip_mask(Draw_Context->gc, icon_info->mask);
+  gdk_gc_set_clip_mask(draw_context->gc, icon_info->mask);
   
-  switch(Properties->position) {
+  switch(properties->position) {
     case OVER:
               gdk_gc_set_clip_origin(
-                  Draw_Context->gc,
-                  Draw_Context->current->modify_over->x,
-                  Draw_Context->current->modify_over->y);
-              gdk_draw_drawable(Draw_Context->drawable, 
-                  Draw_Context->gc,
+                  draw_context->gc,
+                  draw_context->drawinfo.modify_over.x,
+                  draw_context->drawinfo.modify_over.y);
+              gdk_draw_drawable(draw_context->drawable, 
+                  draw_context->gc,
                   icon_info->pixmap,
                   0, 0,
-                  Draw_Context->current->modify_over->x,
-                  Draw_Context->current->modify_over->y,
-                  Properties->width, Properties->height);
+                  draw_context->drawinfo.modify_over.x,
+                  draw_context->drawinfo.modify_over.y,
+                  properties->width, properties->height);
 
-              Draw_Context->current->modify_over->x += Properties->width;
+              draw_context->drawinfo.modify_over.x += properties->width;
 
       break;
     case MIDDLE:
               gdk_gc_set_clip_origin(
-                  Draw_Context->gc,
-                  Draw_Context->current->modify_middle->x,
-                  Draw_Context->current->modify_middle->y);
-              gdk_draw_drawable(Draw_Context->drawable, 
-                  Draw_Context->gc,
+                  draw_context->gc,
+                  draw_context->drawinfo.modify_middle.x,
+                  draw_context->drawinfo.modify_middle.y);
+              gdk_draw_drawable(draw_context->drawable, 
+                  draw_context->gc,
                   icon_info->pixmap,
                   0, 0,
-                  Draw_Context->current->modify_middle->x,
-                  Draw_Context->current->modify_middle->y,
-                  Properties->width, Properties->height);
+                  draw_context->drawinfo.modify_middle.x,
+                  draw_context->drawinfo.modify_middle.y,
+                  properties->width, properties->height);
 
-              Draw_Context->current->modify_middle->x += Properties->width;
+              draw_context->drawinfo.modify_middle.x += properties->width;
       break;
     case UNDER:
               gdk_gc_set_clip_origin(
-                  Draw_Context->gc,
-                  Draw_Context->current->modify_under->x,
-                  Draw_Context->current->modify_under->y);
-              gdk_draw_drawable(Draw_Context->drawable, 
-                  Draw_Context->gc,
+                  draw_context->gc,
+                  draw_context->drawinfo.modify_under.x,
+                  draw_context->drawinfo.modify_under.y);
+              gdk_draw_drawable(draw_context->drawable, 
+                  draw_context->gc,
                   icon_info->pixmap,
                   0, 0,
-                  Draw_Context->current->modify_under->x,
-                  Draw_Context->current->modify_under->y,
-                  Properties->width, Properties->height);
+                  draw_context->drawinfo.modify_under.x,
+                  draw_context->drawinfo.modify_under.y,
+                  properties->width, properties->height);
 
-              Draw_Context->current->modify_under->x += Properties->width;
+              draw_context->drawinfo.modify_under.x += properties->width;
       break;
   }
 
-  gdk_gc_set_clip_origin(Draw_Context->gc, 0, 0);
-  gdk_gc_set_clip_mask(Draw_Context->gc, NULL);
+  gdk_gc_set_clip_origin(draw_context->gc, 0, 0);
+  gdk_gc_set_clip_mask(draw_context->gc, NULL);
   
   return 0;
 }
 
 gboolean draw_line( void *hook_data, void *call_data)
 {
-  PropertiesLine *Properties = (PropertiesLine*)hook_data;
-  DrawContext *Draw_Context = (DrawContext*)call_data;
-  //GdkGC *gc = gdk_gc_new(Draw_Context->drawable);
+  PropertiesLine *properties = (PropertiesLine*)hook_data;
+  DrawContext *draw_context = (DrawContext*)call_data;
+  //GdkGC *gc = gdk_gc_new(draw_context->drawable);
   
-  //gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
-  gdk_gc_set_rgb_fg_color(Draw_Context->gc, Properties->color);
-  //gdk_gc_set_foreground(gc, Properties->color);
-  gdk_gc_set_line_attributes( Draw_Context->gc,
-                              Properties->line_width,
-                              Properties->style,
+  //gdk_gc_set_foreground(draw_context->gc, properties->color);
+  gdk_gc_set_rgb_fg_color(draw_context->gc, &properties->color);
+  //gdk_gc_set_foreground(gc, properties->color);
+  gdk_gc_set_line_attributes( draw_context->gc,
+                              properties->line_width,
+                              properties->style,
                               GDK_CAP_BUTT,
                               GDK_JOIN_MITER);
   //g_critical("DRAWING LINE : x1: %i, y1: %i, x2:%i, y2:%i", 
-  //    Draw_Context->previous->middle->x,
-  //    Draw_Context->previous->middle->y,
-  //    Draw_Context->current->middle->x,
-  //    Draw_Context->current->middle->y);
+  //    draw_context->previous->middle->x,
+  //    draw_context->previous->middle->y,
+  //    draw_context->drawinfo.middle.x,
+  //    draw_context->drawinfo.middle.y);
 
-  switch(Properties->position) {
+  switch(properties->position) {
     case OVER:
               drawing_draw_line(
-                NULL, Draw_Context->drawable,
-                Draw_Context->previous->over->x,
-                Draw_Context->previous->over->y,
-                Draw_Context->current->over->x,
-                Draw_Context->current->over->y,
-                Draw_Context->gc);
+                NULL, draw_context->drawable,
+                draw_context->previous->over->x,
+                draw_context->previous->over->y,
+                draw_context->drawinfo.over.x,
+                draw_context->current->over->y,
+                draw_context->gc);
       break;
     case MIDDLE:
               drawing_draw_line(
-                NULL, Draw_Context->drawable,
-                Draw_Context->previous->middle->x,
-                Draw_Context->previous->middle->y,
-                Draw_Context->current->middle->x,
-                Draw_Context->current->middle->y,
-                Draw_Context->gc);
+                NULL, draw_context->drawable,
+                draw_context->previous->middle->x,
+                draw_context->previous->middle->y,
+                draw_context->drawinfo.middle.x,
+                draw_context->drawinfo.middle.y,
+                draw_context->gc);
       break;
     case UNDER:
               drawing_draw_line(
-                NULL, Draw_Context->drawable,
-                Draw_Context->previous->under->x,
-                Draw_Context->previous->under->y,
-                Draw_Context->current->under->x,
-                Draw_Context->current->under->y,
-                Draw_Context->gc);
+                NULL, draw_context->drawable,
+                draw_context->previous->under->x,
+                draw_context->previous->under->y,
+                draw_context->drawinfo.under.x,
+                draw_context->drawinfo.under.y,
+                draw_context->gc);
 
       break;
   }
@@ -309,37 +309,37 @@ gboolean draw_line( void *hook_data, void *call_data)
 
 gboolean draw_arc( void *hook_data, void *call_data)
 {
-  PropertiesArc *Properties = (PropertiesArc*)hook_data;
-  DrawContext *Draw_Context = (DrawContext*)call_data;
+  PropertiesArc *properties = (PropertiesArc*)hook_data;
+  DrawContext *draw_context = (DrawContext*)call_data;
 
-  //gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
-  gdk_gc_set_rgb_fg_color(Draw_Context->gc, Properties->color);
+  //gdk_gc_set_foreground(draw_context->gc, properties->color);
+  gdk_gc_set_rgb_fg_color(draw_context->gc, properties->color);
 
-  switch(Properties->position) {
+  switch(properties->position) {
     case OVER:
-      gdk_draw_arc(Draw_Context->drawable, Draw_Context->gc,
-              Properties->filled,
-              Draw_Context->current->modify_over->x,
-              Draw_Context->current->modify_over->y,
-              Properties->size, Properties->size, 0, 360*64);
-      Draw_Context->current->modify_over->x += Properties->size;
+      gdk_draw_arc(draw_context->drawable, draw_context->gc,
+              properties->filled,
+              draw_context->drawinfo.modify_over.x,
+              draw_context->drawinfo.modify_over.y,
+              properties->size, properties->size, 0, 360*64);
+      draw_context->drawinfo.modify_over.x += properties->size;
       break;
     case MIDDLE:
-      gdk_draw_arc(Draw_Context->drawable, Draw_Context->gc,
-              Properties->filled,
-              Draw_Context->current->modify_middle->x,
-              Draw_Context->current->modify_middle->y,
-              Properties->size, Properties->size, 0, 360*64);
-      Draw_Context->current->modify_middle->x += Properties->size;
+      gdk_draw_arc(draw_context->drawable, draw_context->gc,
+              properties->filled,
+              draw_context->drawinfo.modify_middle.x,
+              draw_context->drawinfo.modify_middle.y,
+              properties->size, properties->size, 0, 360*64);
+      draw_context->drawinfo.modify_middle.x += properties->size;
       
       break;
     case UNDER:
-      gdk_draw_arc(Draw_Context->drawable, Draw_Context->gc,
-              Properties->filled,
-              Draw_Context->current->modify_under->x,
-              Draw_Context->current->modify_under->y,
-              Properties->size, Properties->size, 0, 360*64);
-      Draw_Context->current->modify_under->x += Properties->size;
+      gdk_draw_arc(draw_context->drawable, draw_context->gc,
+              properties->filled,
+              draw_context->drawinfo.modify_under.x,
+              draw_context->drawinfo.modify_under.y,
+              properties->size, properties->size, 0, 360*64);
+      draw_context->drawinfo.modify_under.x += properties->size;
   
       break;
   }
@@ -350,25 +350,25 @@ gboolean draw_arc( void *hook_data, void *call_data)
 
 gboolean draw_bg( void *hook_data, void *call_data)
 {
-  PropertiesBG *Properties = (PropertiesBG*)hook_data;
-  DrawContext *Draw_Context = (DrawContext*)call_data;
+  PropertiesBG *properties = (PropertiesBG*)hook_data;
+  DrawContext *draw_context = (DrawContext*)call_data;
 
-  //gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
-  gdk_gc_set_rgb_fg_color(Draw_Context->gc, Properties->color);
+  //gdk_gc_set_foreground(draw_context->gc, properties->color);
+  gdk_gc_set_rgb_fg_color(draw_context->gc, properties->color);
 
   //g_critical("DRAWING RECT : x: %i, y: %i, w:%i, h:%i, val1 :%i, val2:%i ", 
-  //    Draw_Context->previous->over->x,
-  //    Draw_Context->previous->over->y,
-  //    Draw_Context->current->over->x - Draw_Context->previous->over->x,
-  //    Draw_Context->previous->under->y-Draw_Context->previous->over->y,
-  //    Draw_Context->current->over->x,
-  //    Draw_Context->previous->over->x);
-  gdk_draw_rectangle(Draw_Context->drawable, Draw_Context->gc,
+  //    draw_context->previous->over->x,
+  //    draw_context->previous->over->y,
+  //    draw_context->drawinfo.over.x - draw_context->previous->over->x,
+  //    draw_context->previous->under->y-draw_context->previous->over->y,
+  //    draw_context->drawinfo.over.x,
+  //    draw_context->previous->over->x);
+  gdk_draw_rectangle(draw_context->drawable, draw_context->gc,
           TRUE,
-          Draw_Context->previous->over->x,
-          Draw_Context->previous->over->y,
-          Draw_Context->current->over->x - Draw_Context->previous->over->x,
-          Draw_Context->previous->under->y-Draw_Context->previous->over->y);
+          draw_context->previous->over->x,
+          draw_context->previous->over->y,
+          draw_context->drawinfo.over.x - draw_context->previous->over->x,
+          draw_context->previous->under->y-draw_context->previous->over->y);
 
   return 0;
 }

@@ -59,6 +59,8 @@ typedef enum _RelPos {
  * when we draw a text, an arc or an icon, while it's unneeded when we
  * draw a line or background.
  *
+ * The modify_* positions are altered by the draw item functions.
+ *
  */
 
 
@@ -67,41 +69,22 @@ struct _DrawContext {
   GdkGC   *gc;
   PangoLayout *pango_layout;
 
-  DrawInfo  *current;
-  DrawInfo  *previous;
+  struct {
+    gint x_start;
+    gint x_end;
+
+    gint y_over;
+    gint y_middle;
+    gint y_under;
+
+    gint x_modify_over;
+    gint x_modify_middle;
+    gint x_modify_under;
+  } drawinfo;
 };
 
-/* LttvExecutionState is accessible through the LttvTracefileState. Is has
- * a pointer to the LttvProcessState which points to the top of stack
- * execution state : LttvExecutionState *state.
- *
- * LttvExecutionState contains (useful here):
- * LttvExecutionMode t,
- * LttvExecutionSubmode n,
- * LttvProcessStatus s
- * 
- *
- * LttvTraceState will be used in the case we need the string of the
- * different processes, eventtype_names, syscall_names, trap_names, irq_names.
- *
- * LttvTracefileState also gives the cpu_name and, as it herits from
- * LttvTracefileContext, it gives the LttEvent structure, which is needed
- * to get facility name and event name.
- */
-struct _DrawInfo {
-  ItemInfo  *over;
-  ItemInfo  *middle;
-  ItemInfo  *under;
-  
-  ItemInfo  *modify_over;
-  ItemInfo  *modify_middle;
-  ItemInfo  *modify_under;
-  LttvProcessStatus status;
-};
 
-struct _ItemInfo {
-  gint  x, y;
-};
+
 
 /*
  * Structure used to keep information about icons.
@@ -163,7 +146,7 @@ struct _PropertiesIcon {
 };
 
 struct _PropertiesLine {
-  GdkColor  *color;
+  GdkColor  color;
   gint    line_width;
   GdkLineStyle  style;
   RelPos    position;

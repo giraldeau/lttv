@@ -4,7 +4,9 @@ Contributors :
 
 Michel Dagenais (New trace format, lttv main)
 Mathieu Desnoyers (Directory structure, build with automake/conf,
-                   lttv gui, control flow view)
+                   lttv gui, control flow view, gui green threads
+                   with interruptible foreground and background computation,
+                   detailed event list)
 Benoit Des Ligneris (Cluster adaptation)
 Xang-Xiu Yang (new trace reading library and converter, lttv gui, 
                detailed event list and statistics view)
