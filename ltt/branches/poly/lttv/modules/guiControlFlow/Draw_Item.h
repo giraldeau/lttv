@@ -14,6 +14,16 @@ typedef struct _PropertiesLine PropertiesLine;
 typedef struct _PropertiesArc PropertiesArc;
 typedef struct _PropertiesBG PropertiesBG;
 
+typedef enum _DrawableItems DrawableItems;
+enum _DrawableItems {
+		ITEM_TEXT, ITEM_ICON, ITEM_LINE, ITEM_POINT, ITEM_BACKGROUND
+};
+
+
+typedef enum _RelPos {
+	OVER, MIDDLE, UNDER
+} RelPos;
+
 
 void draw_item(	GdkDrawable *drawable,
 		gint x,
@@ -100,19 +110,19 @@ PropertiesIcon *properties_icon_create(
 	gchar		*icon_name,
 	gint		width,
 	gint		height,
-	RelPos		position),
+	RelPos		position);
 
 PropertiesLine *properties_line_create(
 	GdkColor	*color,
 	gint		line_width,
 	GdkLineStyle	style,
-	RelPos		position),
+	RelPos		position);
 
 PropertiesArc *properties_arc_create(
 	GdkColor	*color,
 	gint		size,
 	gboolean	filled,
-	RelPos		position),
+	RelPos		position);
 
 PropertiesBG *properties_bg_create(
 	GdkColor	*color);

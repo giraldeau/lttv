@@ -74,6 +74,8 @@
  */
 
 #include <glib.h>
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
 #include <lttv/hook.h>
 #include <lttv/attribute.h>
 #include <lttv/iattribute.h>
@@ -81,12 +83,18 @@
 #include <lttv/processTrace.h>
 #include <lttv/state.h>
 
+#include "Draw_Item.h"
+ 
 /* The DrawContext keeps information about the current drawing position and
  * the previous one, so we can use both to draw lines.
  *
  * over : position for drawing over the middle line.
  * middle : middle line position.
  * under : position for drawing under the middle line.
+ *
+ * the modify_* are used to take into account that we should go forward
+ * when we draw a text, an arc or an icon, while it's unneeded when we
+ * draw a line or background.
  */
 struct _DrawContext {
 	GdkDrawable	*drawable;
@@ -100,6 +108,10 @@ struct _DrawInfo {
 	ItemInfo	*over;
 	ItemInfo	*middle;
 	ItemInfo	*under;
+	
+	ItemInfo	*modify_over;
+	ItemInfo	*modify_middle;
+	ItemInfo	*modify_under;
 };
 
 /* LttvExecutionState is accessible through the LttvTracefileState. Is has
@@ -145,21 +157,13 @@ struct _DrawOperation {
  * is in fact a rectangle, does not hide the line.
  */
 
-typedef enum _DrawableItems {
-	ITEM_TEXT, ITEM_ICON, ITEM_LINE, ITEM_POINT, ITEM_BACKGROUND
-} DrawableItems;
-
-static gchar * Items_Priorities = {
+static int Items_Priorities[] = {
 	50,	/* ITEM_TEXT */
 	40,	/* ITEM_ICON */
 	20,	/* ITEM_LINE */
 	30,	/* ITEM_POINT */
 	10	/* ITEM_BACKGROUND */
 };
-
-typedef enum _RelPos {
-	OVER, MIDDLE, UNDER
-} RelPos;
 
 /*
  * Here are the different structures describing each item type that can be
@@ -203,14 +207,60 @@ struct _PropertiesBG {
 };
 
 
-
-
-
 /* Drawing hook functions */
 gboolean draw_text( void *hook_data, void *call_data)
 {
 	PropertiesText *Properties = (PropertiesText*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
+
+	PangoContext *context;
+	PangoLayout *layout;
+	PangoFontDescription *FontDesc;// = pango_font_description_new();
+	gint Font_Size;
+	PangoRectangle ink_rect;
+		
+	gdk_gc_set_foreground(Draw_Context->gc, Properties->foreground);
+	gdk_gc_set_background(Draw_Context->gc, Properties->background);
+
+	layout = gtk_widget_create_pango_layout(GTK_WIDGET(Draw_Context->drawable), NULL);
+	context = pango_layout_get_context(layout);
+	FontDesc = pango_context_get_font_description(context);
+	Font_Size = pango_font_description_get_size(FontDesc);
+	pango_font_description_set_size(FontDesc, Properties->size*PANGO_SCALE);
+	
+	
+	pango_layout_set_text(layout, Properties->Text, -1);
+	pango_layout_get_pixel_extents(layout, &ink_rect, NULL);
+	switch(Properties->position) {
+		case OVER:
+							gdk_draw_layout(Draw_Context->drawable, Draw_Context->gc,
+								Draw_Context->Current->modify_over->x,
+								Draw_Context->Current->modify_over->y,
+								layout);
+							Draw_Context->Current->modify_over->x += ink_rect.width;
+
+			break;
+		case MIDDLE:
+							gdk_draw_layout(Draw_Context->drawable, Draw_Context->gc,
+								Draw_Context->Current->modify_middle->x,
+								Draw_Context->Current->modify_middle->y,
+								layout);
+							Draw_Context->Current->modify_middle->x += ink_rect.width;
+			break;
+		case UNDER:
+							gdk_draw_layout(Draw_Context->drawable, Draw_Context->gc,
+								Draw_Context->Current->modify_under->x,
+								Draw_Context->Current->modify_under->y,
+								layout);
+							Draw_Context->Current->modify_under->x += ink_rect.width;
+			break;
+	}
+
+
+	pango_font_description_set_size(FontDesc, Font_Size);
+	g_free(layout);
+	
+	return 0;
 }
 
 gboolean draw_icon( void *hook_data, void *call_data)
@@ -218,6 +268,57 @@ gboolean draw_icon( void *hook_data, void *call_data)
 	PropertiesIcon *Properties = (PropertiesIcon*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
+	GdkBitmap *mask = g_new(GdkBitmap, 1);
+	GdkPixmap *icon_pixmap = g_new(GdkPixmap, 1);
+	GdkGC *gc = gdk_gc_new(Draw_Context->drawable);
+	gdk_gc_copy(gc, Draw_Context->gc);
+
+	icon_pixmap = gdk_pixmap_create_from_xpm(Draw_Context->drawable, &mask, NULL,
+																						Properties->icon_name);
+
+	gdk_gc_set_clip_mask(gc, mask);
+
+	switch(Properties->position) {
+		case OVER:
+							gdk_draw_drawable(Draw_Context->drawable, 
+									gc,
+									icon_pixmap,
+									0, 0,
+									Draw_Context->Current->modify_over->x,
+									Draw_Context->Current->modify_over->y,
+									Properties->width, Properties->height);
+
+							Draw_Context->Current->modify_over->x += Properties->width;
+
+			break;
+		case MIDDLE:
+							gdk_draw_drawable(Draw_Context->drawable, 
+									gc,
+									icon_pixmap,
+									0, 0,
+									Draw_Context->Current->modify_middle->x,
+									Draw_Context->Current->modify_middle->y,
+									Properties->width, Properties->height);
+
+
+							Draw_Context->Current->modify_middle->x += Properties->width;
+			break;
+		case UNDER:
+							gdk_draw_drawable(Draw_Context->drawable, 
+									gc,
+									icon_pixmap,
+									0, 0,
+									Draw_Context->Current->modify_under->x,
+									Draw_Context->Current->modify_under->y,
+									Properties->width, Properties->height);
+
+							Draw_Context->Current->modify_under->x += Properties->width;
+			break;
+	}
+
+	g_free(gc);
+	
+	return 0;
 }
 
 gboolean draw_line( void *hook_data, void *call_data)
@@ -225,6 +326,45 @@ gboolean draw_line( void *hook_data, void *call_data)
 	PropertiesLine *Properties = (PropertiesLine*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
+	gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
+	gdk_gc_set_line_attributes(	Draw_Context->gc,
+															Properties->line_width,
+															Properties->style,
+															GDK_CAP_BUTT,
+															GDK_JOIN_MITER);
+
+	switch(Properties->position) {
+		case OVER:
+							drawing_draw_line(
+								NULL, Draw_Context->drawable,
+								Draw_Context->Previous->over->x,
+								Draw_Context->Previous->over->y,
+								Draw_Context->Current->over->x,
+								Draw_Context->Current->over->y,
+								Draw_Context->gc);
+			break;
+		case MIDDLE:
+							drawing_draw_line(
+								NULL, Draw_Context->drawable,
+								Draw_Context->Previous->middle->x,
+								Draw_Context->Previous->middle->y,
+								Draw_Context->Current->middle->x,
+								Draw_Context->Current->middle->y,
+								Draw_Context->gc);
+			break;
+		case UNDER:
+							drawing_draw_line(
+								NULL, Draw_Context->drawable,
+								Draw_Context->Previous->under->x,
+								Draw_Context->Previous->under->y,
+								Draw_Context->Current->under->x,
+								Draw_Context->Current->under->y,
+								Draw_Context->gc);
+
+			break;
+	}
+
+	return 0;
 }
 
 gboolean draw_arc( void *hook_data, void *call_data)
@@ -232,6 +372,40 @@ gboolean draw_arc( void *hook_data, void *call_data)
 	PropertiesArc *Properties = (PropertiesArc*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
+	gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
+
+	switch(Properties->position) {
+		case OVER:
+			gdk_draw_arc(Draw_Context->drawable, Draw_Context->gc,
+							Properties->filled,
+							Draw_Context->Current->modify_over->x,
+							Draw_Context->Current->modify_over->y,
+							Properties->size, Properties->size, 0, 360*64);
+			Draw_Context->Current->modify_over->x += Properties->size;
+		
+			break;
+		case MIDDLE:
+			gdk_draw_arc(Draw_Context->drawable, Draw_Context->gc,
+							Properties->filled,
+							Draw_Context->Current->modify_middle->x,
+							Draw_Context->Current->modify_middle->y,
+							Properties->size, Properties->size, 0, 360*64);
+			Draw_Context->Current->modify_middle->x += Properties->size;
+			
+			break;
+		case UNDER:
+			gdk_draw_arc(Draw_Context->drawable, Draw_Context->gc,
+							Properties->filled,
+							Draw_Context->Current->modify_under->x,
+							Draw_Context->Current->modify_under->y,
+							Properties->size, Properties->size, 0, 360*64);
+			Draw_Context->Current->modify_under->x += Properties->size;
+	
+			break;
+	}
+
+	
+	return 0;
 }
 
 gboolean draw_bg( void *hook_data, void *call_data)
@@ -239,6 +413,17 @@ gboolean draw_bg( void *hook_data, void *call_data)
 	PropertiesBG *Properties = (PropertiesBG*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
+	gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
+
+
+	gdk_draw_rectangle(Draw_Context->drawable, Draw_Context->gc,
+					TRUE,
+					Draw_Context->Previous->over->x,
+					Draw_Context->Previous->over->y,
+					Draw_Context->Current->over->x - Draw_Context->Previous->over->x,
+					Draw_Context->Previous->under->y);
+
+	return 0;
 }
 
 
