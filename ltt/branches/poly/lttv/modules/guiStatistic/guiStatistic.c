@@ -33,9 +33,9 @@ static GSList *g_statistic_viewer_data_list = NULL ;
 typedef struct _StatisticViewerData StatisticViewerData;
 
 //! Statistic Viewer's constructor hook
-GtkWidget *h_gui_statistic(MainWindow *parent_window);
+GtkWidget *h_gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key);
 //! Statistic Viewer's constructor
-StatisticViewerData *gui_statistic(MainWindow *parent_window);
+StatisticViewerData *gui_statistic(MainWindow *parent_window,LttvTracesetSelector * s, char* key);
 //! Statistic Viewer's destructor
 void gui_statistic_destructor(StatisticViewerData *statistic_viewer_data);
 void gui_statistic_free(StatisticViewerData *statistic_viewer_data);
@@ -164,9 +164,9 @@ gui_statistic_destructor(StatisticViewerData *statistic_viewer_data)
  * @return The widget created.
  */
 GtkWidget *
-h_gui_statistic(MainWindow * parent_window)
+h_gui_statistic(MainWindow * parent_window, LttvTracesetSelector * s, char* key)
 {
-  StatisticViewerData* statistic_viewer_data = gui_statistic(parent_window) ;
+  StatisticViewerData* statistic_viewer_data = gui_statistic(parent_window, s, key) ;
 
   if(statistic_viewer_data)
     return statistic_viewer_data->hpaned_v;
@@ -181,7 +181,7 @@ h_gui_statistic(MainWindow * parent_window)
  * @return The Statistic viewer data created.
  */
 StatisticViewerData *
-gui_statistic(MainWindow *parent_window)
+gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
 {
   GtkCellRenderer *renderer;
   GtkTreeViewColumn *column;
@@ -250,6 +250,11 @@ gui_statistic(MainWindow *parent_window)
   gtk_widget_show(statistic_viewer_data->tree_v);
   gtk_widget_show(statistic_viewer_data->text_v);
   gtk_widget_show(statistic_viewer_data->hpaned_v);
+
+  g_object_set_data(
+		    G_OBJECT(statistic_viewer_data->hpaned_v),
+		    key,
+		    s);
 
   g_object_set_data_full(
 			G_OBJECT(statistic_viewer_data->hpaned_v),

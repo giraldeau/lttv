@@ -66,6 +66,7 @@ gtk_multi_vpaned_init (GtkMultiVPaned * multi_vpaned)
   multi_vpaned->first_pane    = NULL;
   multi_vpaned->last_pane     = NULL;
   multi_vpaned->focused_pane  = NULL;
+  multi_vpaned->iter          = NULL;
   multi_vpaned->num_children  = 0;
 
   multi_vpaned->vbox         = NULL;
@@ -80,6 +81,39 @@ GtkWidget* gtk_multi_vpaned_new ()
   return GTK_WIDGET (g_object_new (gtk_multi_vpaned_get_type (), NULL));
 }
 
+GtkWidget * gtk_multi_vpaned_get_widget(GtkMultiVPaned * multi_vpaned)
+{
+  if(multi_vpaned->focused_pane == NULL)return NULL;
+  return (GtkWidget*)multi_vpaned->focused_pane->child2;
+}
+
+GtkWidget * gtk_multi_vpaned_get_first_widget(GtkMultiVPaned * multi_vpaned)
+{
+  if(multi_vpaned->first_pane == NULL)return NULL;
+  multi_vpaned->iter = multi_vpaned->first_pane;
+  return multi_vpaned->first_pane->child2;
+}
+
+GtkWidget * gtk_multi_vpaned_get_next_widget(GtkMultiVPaned * multi_vpaned)
+{
+  if(multi_vpaned->iter != multi_vpaned->last_pane){
+    multi_vpaned->iter = (GtkPaned *)multi_vpaned->iter->child1;
+    return multi_vpaned->iter->child2;
+  }else {
+    return NULL;
+  }
+}
+
+void gtk_multi_vpaned_set_data(GtkMultiVPaned * multi_vpaned,char * key, gpointer value)
+{
+  g_object_set_data(G_OBJECT(multi_vpaned->focused_pane), key, value);    
+}
+
+gpointer gtk_multi_vpaned_get_data(GtkMultiVPaned * multi_vpaned,char * key)
+{
+  if(multi_vpaned->focused_pane == NULL)return NULL;
+  return g_object_get_data(G_OBJECT(multi_vpaned->focused_pane), key);
+}
 
 void gtk_multi_vpaned_set_focus (GtkWidget * widget, gpointer user_data)
 {

@@ -24,7 +24,8 @@ libmainwin_la_SOURCES = \
 	interface.c \
 	callbacks.c \
 	gtkmultivpaned.c \
-	gtkdirsel.c
+	gtkdirsel.c \
+	lttvfilter.c
 
 noinst_HEADERS = \
 	support.h \

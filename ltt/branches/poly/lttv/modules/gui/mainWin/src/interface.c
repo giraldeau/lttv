@@ -37,7 +37,7 @@ create_MWindow (void)
   GtkWidget *FileMenuTitle_menu;
   GtkWidget *FileMenuNewTitle;
   GtkWidget *FileMenuNewTitle_menu;
-  GtkWidget *EmptyTraceset;
+  //  GtkWidget *EmptyTraceset;
   GtkWidget *CloneTraceset;
   GtkWidget *FileMenuNewSep;
   GtkWidget *Tab;
@@ -71,6 +71,9 @@ create_MWindow (void)
   GtkWidget *MoveViewerDown;
   GtkWidget *RemoveViewer;
   GtkWidget *ToolMenuSeparator;
+  GtkWidget *Filter;
+  //  GtkWidget *Facility;
+  GtkWidget *ToolMenuSeparator1;
   //  GtkWidget *insert_viewer_test;
   GtkWidget *PluginMenuTitle;
   GtkWidget *PluginMenuTitle_menu;
@@ -145,11 +148,12 @@ create_MWindow (void)
   FileMenuNewTitle_menu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (FileMenuNewTitle), FileMenuNewTitle_menu);
 
-  EmptyTraceset = gtk_menu_item_new_with_mnemonic ("Empty trace set");
-  gtk_widget_show (EmptyTraceset);
-  gtk_container_add (GTK_CONTAINER (FileMenuNewTitle_menu), EmptyTraceset);
+  //  EmptyTraceset = gtk_menu_item_new_with_mnemonic ("Empty trace set");
+  //  gtk_widget_show (EmptyTraceset);
+  //  gtk_container_add (GTK_CONTAINER (FileMenuNewTitle_menu), EmptyTraceset);
 
-  CloneTraceset = gtk_menu_item_new_with_mnemonic ("Clone trace set");
+  //  CloneTraceset = gtk_menu_item_new_with_mnemonic ("Clone trace set");
+  CloneTraceset = gtk_menu_item_new_with_mnemonic ("New window");
   gtk_widget_show (CloneTraceset);
   gtk_container_add (GTK_CONTAINER (FileMenuNewTitle_menu), CloneTraceset);
 
@@ -283,6 +287,19 @@ create_MWindow (void)
   gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), ToolMenuSeparator);
   gtk_widget_set_sensitive (ToolMenuSeparator, FALSE);
 
+  Filter = gtk_menu_item_new_with_mnemonic ("Trace Filter Selector");
+  gtk_widget_show (Filter);
+  gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), Filter);
+
+  //  Facility = gtk_menu_item_new_with_mnemonic ("Facility Selector");
+  //  gtk_widget_show (Facility);
+  //  gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), Facility);
+
+  ToolMenuSeparator1 = gtk_menu_item_new ();
+  gtk_widget_show (ToolMenuSeparator1);
+  gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), ToolMenuSeparator1);
+  gtk_widget_set_sensitive (ToolMenuSeparator1, FALSE);
+
   //  insert_viewer_test = gtk_menu_item_new_with_mnemonic ("Insert viewer test");
   //  gtk_widget_show (insert_viewer_test);
   //  gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_viewer_test);
@@ -364,7 +381,8 @@ create_MWindow (void)
                                 GTK_TOOLBAR_CHILD_BUTTON,
                                 NULL,
                                 "",
-                                "New window with empty trace set", NULL,
+                                "New window", NULL,
+				//"New window with empty trace set", NULL,
                                 tmp_toolbar_icon, NULL, NULL);
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbEmptyTraceset);
@@ -542,9 +560,9 @@ create_MWindow (void)
   g_signal_connect ((gpointer) MWindow, "destroy",
                     G_CALLBACK (on_MWindow_destroy),
                     NULL);
-  g_signal_connect ((gpointer) EmptyTraceset, "activate",
-                    G_CALLBACK (on_empty_traceset_activate),
-                    NULL);
+  //  g_signal_connect ((gpointer) EmptyTraceset, "activate",
+  //                    G_CALLBACK (on_empty_traceset_activate),
+  //                    NULL);
   g_signal_connect ((gpointer) CloneTraceset, "activate",
                     G_CALLBACK (on_clone_traceset_activate),
                     NULL);
@@ -619,6 +637,12 @@ create_MWindow (void)
   g_signal_connect ((gpointer) RemoveViewer, "activate",
                     G_CALLBACK (on_remove_viewer_activate),
                     NULL);
+  g_signal_connect ((gpointer) Filter, "activate",
+                    G_CALLBACK (on_trace_filter_activate),
+                    NULL);
+  //  g_signal_connect ((gpointer) Facility, "activate",
+  //                    G_CALLBACK (on_trace_facility_activate),
+  //                    NULL);
   //  g_signal_connect ((gpointer) insert_viewer_test, "activate",
   //                    G_CALLBACK (on_insert_viewer_test_activate),
   //                    NULL);
@@ -709,7 +733,7 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, FileMenuTitle_menu, "FileMenuTitle_menu");
   GLADE_HOOKUP_OBJECT (MWindow, FileMenuNewTitle, "FileMenuNewTitle");
   GLADE_HOOKUP_OBJECT (MWindow, FileMenuNewTitle_menu, "FileMenuNewTitle_menu");
-  GLADE_HOOKUP_OBJECT (MWindow, EmptyTraceset, "EmptyTraceset");
+  //  GLADE_HOOKUP_OBJECT (MWindow, EmptyTraceset, "EmptyTraceset");
   GLADE_HOOKUP_OBJECT (MWindow, CloneTraceset, "CloneTraceset");
   GLADE_HOOKUP_OBJECT (MWindow, FileMenuNewSep, "FileMenuNewSep");
   GLADE_HOOKUP_OBJECT (MWindow, Tab, "Tab");
@@ -743,6 +767,9 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, MoveViewerDown, "MoveViewerDown");
   GLADE_HOOKUP_OBJECT (MWindow, RemoveViewer, "RemoveViewer");
   GLADE_HOOKUP_OBJECT (MWindow, ToolMenuSeparator, "ToolMenuSeparator");
+  GLADE_HOOKUP_OBJECT (MWindow, Filter, "Filter");
+  //  GLADE_HOOKUP_OBJECT (MWindow, Facility, "Facility");
+  GLADE_HOOKUP_OBJECT (MWindow, ToolMenuSeparator1, "ToolMenuSeparator1");
   //  GLADE_HOOKUP_OBJECT (MWindow, insert_viewer_test, "insert_viewer_test");
   GLADE_HOOKUP_OBJECT (MWindow, PluginMenuTitle, "PluginMenuTitle");
   GLADE_HOOKUP_OBJECT (MWindow, PluginMenuTitle_menu, "PluginMenuTitle_menu");

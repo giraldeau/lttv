@@ -15,11 +15,12 @@
 #include <lttv/module.h>
 #include <lttv/gtkdirsel.h>
 #include <lttv/iattribute.h>
+#include <lttv/lttvfilter.h>
 
 #define PATH_LENGTH          256
 #define DEFAULT_TIME_WIDTH_S   1
 
-extern LttTrace *g_init_trace ;
+extern LttvTrace *g_init_trace ;
 
 
 /** Array containing instanced objects. */
@@ -31,10 +32,27 @@ MainWindow * get_window_data_struct(GtkWidget * widget);
 char * get_unload_module(char ** loaded_module_name, int nb_module);
 char * get_remove_trace(char ** all_trace_name, int nb_trace);
 char * get_selection(char ** all_name, int nb, char *title, char * column_title);
+void get_filter_selection(LttvTracesetSelector *s, char *title, char * column_title);
 void * create_tab(MainWindow * parent, MainWindow * current_window,
 		  GtkNotebook * notebook, char * label);
 
 void insert_viewer(GtkWidget* widget, view_constructor constructor);
+void update_filter(LttvTracesetSelector *s,  GtkTreeStore *store );
+
+void checkbox_changed(GtkTreeView *treeview,
+		      GtkTreePath *arg1,
+		      GtkTreeViewColumn *arg2,
+		      gpointer user_data);
+void remove_trace_from_traceset_selector(GtkMultiVPaned * paned, unsigned i);
+void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * trace);
+
+LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset);
+
+enum {
+  CHECKBOX_COLUMN,
+  NAME_COLUMN,
+  TOTAL_COLUMNS
+};
 
 enum
 {
@@ -42,6 +60,39 @@ enum
   N_COLUMNS
 };
 
+
+LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset)
+{
+  LttvTracesetSelector  * s;
+  LttvTraceSelector     * trace;
+  LttvTracefileSelector * tracefile;
+  int i, j, nb_trace, nb_tracefile, nb_control, nb_per_cpu;
+  LttvTrace * trace_v;
+  LttTrace  * t;
+  LttTracefile *tf;
+
+  s = lttv_traceset_selector_new(lttv_traceset_name(traceset));
+  nb_trace = lttv_traceset_number(traceset);
+  for(i=0;i<nb_trace;i++){
+    trace_v = lttv_traceset_get(traceset, i);
+    t       = lttv_trace(trace_v);
+    trace   = lttv_trace_selector_new(t);
+    lttv_traceset_selector_add(s, trace);
+    nb_control = ltt_trace_control_tracefile_number(t);
+    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(t);
+    nb_tracefile = nb_control + nb_per_cpu;
+
+    for(j = 0 ; j < nb_tracefile ; j++) {
+      if(j < nb_control)
+        tf = ltt_trace_control_tracefile_get(t, j);
+      else
+        tf = ltt_trace_per_cpu_tracefile_get(t, j - nb_control);     
+      tracefile = lttv_tracefile_selector_new(tf);  
+      lttv_trace_selector_add(trace, tracefile);
+    }
+  } 
+  return s;
+}
 
 void
 insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data)
@@ -74,12 +125,14 @@ void insert_viewer(GtkWidget* widget, view_constructor constructor)
   GtkMultiVPaned * multi_vpaned;
   MainWindow * mw_data;  
   GtkWidget * viewer;
+  LttvTracesetSelector  * s;
 
   mw_data = get_window_data_struct(widget);
   if(!mw_data->current_tab) return;
   multi_vpaned = mw_data->current_tab->multi_vpaned;
 
-  viewer = (GtkWidget*)constructor(mw_data);
+  s = construct_traceset_selector(mw_data->current_tab->traceset_info->traceset);
+  viewer = (GtkWidget*)constructor(mw_data, s, "Traceset_Selector");
   if(viewer)
   {
     gtk_multi_vpaned_widget_add(multi_vpaned, viewer); 
@@ -212,6 +265,38 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
 
 }
 
+void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * t)
+{
+  int j, nb_tracefile, nb_control, nb_per_cpu;
+  LttvTracesetSelector  * s;
+  LttvTraceSelector     * trace;
+  LttvTracefileSelector * tracefile;
+  LttTracefile          * tf;
+  GtkWidget             * w;
+
+  w = gtk_multi_vpaned_get_first_widget(paned);  
+  while(w){
+    s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
+
+    trace   = lttv_trace_selector_new(t);
+    lttv_traceset_selector_add(s, trace);
+    nb_control = ltt_trace_control_tracefile_number(t);
+    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(t);
+    nb_tracefile = nb_control + nb_per_cpu;
+    
+    for(j = 0 ; j < nb_tracefile ; j++) {
+      if(j < nb_control)
+        tf = ltt_trace_control_tracefile_get(t, j);
+      else
+	tf = ltt_trace_per_cpu_tracefile_get(t, j - nb_control);     
+      tracefile = lttv_tracefile_selector_new(tf);  
+      lttv_trace_selector_add(trace, tracefile);
+    }
+
+    w = gtk_multi_vpaned_get_next_widget(paned);  
+  }
+}
+
 void add_trace(GtkWidget * widget, gpointer user_data)
 {
   LttTrace *trace;
@@ -242,14 +327,36 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   	g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
       lttv_context_init(
 	LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->
-			      traceset_context),traceset);      
+			      traceset_context),traceset); 
+      add_trace_into_traceset_selector(mw_data->current_tab->multi_vpaned, trace);
+
+      gtk_widget_destroy((GtkWidget*)file_selector);
+      
+      //update current tab
+      //      set_current_time(mw_data, &(mw_data->current_tab->current_time));
+      break;
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
     default:
       gtk_widget_destroy((GtkWidget*)file_selector);
       break;
   }
-  g_printf("add a trace to a trace set\n");
+}
+
+void remove_trace_from_traceset_selector(GtkMultiVPaned * paned, unsigned i)
+{
+  LttvTracesetSelector * s;
+  LttvTraceSelector * t;
+  GtkWidget * w; 
+  
+  w = gtk_multi_vpaned_get_first_widget(paned);  
+  while(w){
+    s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
+    t = lttv_traceset_selector_get(s,i);
+    lttv_traceset_selector_remove(s, i);
+    lttv_trace_selector_destroy(t);
+    w = gtk_multi_vpaned_get_next_widget(paned);  
+  }
 }
 
 void remove_trace(GtkWidget * widget, gpointer user_data)
@@ -260,6 +367,10 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
   gint i, nb_trace;
   char ** name, *remove_trace_name;
   MainWindow * mw_data = get_window_data_struct(widget);
+  LttvTracesetSelector * s;
+  LttvTraceSelector * t;
+  GtkWidget * w; 
+  gboolean selected;
   
   nb_trace =lttv_traceset_number(mw_data->current_tab->traceset_info->traceset); 
   name = g_new(char*,nb_trace);
@@ -275,25 +386,52 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
   if(remove_trace_name){
     for(i=0; i<nb_trace; i++){
       if(strcmp(remove_trace_name,name[i]) == 0){
-	traceset = mw_data->current_tab->traceset_info->traceset;
-	if(mw_data->current_tab->traceset_info->traceset_context != NULL){
-	  lttv_context_fini(LTTV_TRACESET_CONTEXT(mw_data->current_tab->
-						  traceset_info->traceset_context));
-	  g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
+	//unselect the trace from the current viewer
+	w = gtk_multi_vpaned_get_widget(mw_data->current_tab->multi_vpaned);  
+	s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
+	t = lttv_traceset_selector_get(s,i);
+	lttv_trace_selector_set_selected(t, FALSE);
+
+	//check if other viewers select the trace
+	w = gtk_multi_vpaned_get_first_widget(mw_data->current_tab->multi_vpaned);  
+	while(w){
+	  s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
+	  t = lttv_traceset_selector_get(s,i);
+	  selected = lttv_trace_selector_get_selected(t);
+	  if(selected)break;
+	  w = gtk_multi_vpaned_get_next_widget(mw_data->current_tab->multi_vpaned);  
 	}
-	lttv_traceset_remove(traceset, i);
-	mw_data->current_tab->traceset_info->traceset_context =
-	  g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
-	lttv_context_init(
-	  LTTV_TRACESET_CONTEXT(mw_data->current_tab->
-				traceset_info->traceset_context),traceset);      
+
+	//if no viewer selects the trace, remove it
+	if(!selected){
+	  remove_trace_from_traceset_selector(mw_data->current_tab->multi_vpaned, i);
+
+	  traceset = mw_data->current_tab->traceset_info->traceset;
+	  trace_v = lttv_traceset_get(traceset, i);
+	  if(lttv_trace_get_ref_number(trace_v) <= 1)
+	    ltt_trace_close(lttv_trace(trace_v));
+
+	  if(mw_data->current_tab->traceset_info->traceset_context != NULL){
+	    lttv_context_fini(LTTV_TRACESET_CONTEXT(mw_data->current_tab->
+						    traceset_info->traceset_context));
+	    g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
+	  }
+	  lttv_traceset_remove(traceset, i);
+	  lttv_trace_destroy(trace_v);
+	  mw_data->current_tab->traceset_info->traceset_context =
+	    g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+	  lttv_context_init(
+			    LTTV_TRACESET_CONTEXT(mw_data->current_tab->
+				      traceset_info->traceset_context),traceset);      
+	  //update current tab
+	  //	  set_current_time(mw_data, &(mw_data->current_tab->current_time));
+	}
 	break;
       }
     }
   }
 
   g_free(name);
-  g_printf("remove a trace from a trace set\n");
 }
 
 void save(GtkWidget * widget, gpointer user_data)
@@ -587,6 +725,28 @@ on_remove_viewer_activate              (GtkMenuItem     *menuitem,
   delete_viewer((GtkWidget*)menuitem, user_data);
 }
 
+void
+on_trace_filter_activate              (GtkMenuItem     *menuitem,
+                                        gpointer         user_data)
+{
+  MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
+  LttvTracesetSelector * s;
+  GtkWidget * w = gtk_multi_vpaned_get_widget(mw_data->current_tab->multi_vpaned);
+  
+  s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
+  if(!s){
+    g_printf("There is no viewer yet\n");      
+    return;
+  }
+  get_filter_selection(s, "Configure trace and tracefile filter", "Select traces and tracefiles");
+}
+
+void
+on_trace_facility_activate              (GtkMenuItem     *menuitem,
+                                        gpointer         user_data)
+{
+  g_printf("Trace facility selector: %s\n");  
+}
 
 void
 on_load_module_activate                (GtkMenuItem     *menuitem,
@@ -866,6 +1026,152 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
   mw->current_tab = tab;
 }
 
+void checkbox_changed(GtkTreeView *treeview,
+		      GtkTreePath *arg1,
+		      GtkTreeViewColumn *arg2,
+		      gpointer user_data)
+{
+  GtkTreeStore * store = (GtkTreeStore *)gtk_tree_view_get_model (treeview);
+  GtkTreeIter iter;
+  gboolean value;
+
+  if (gtk_tree_model_get_iter ((GtkTreeModel *)store, &iter, arg1)){
+    gtk_tree_model_get ((GtkTreeModel *)store, &iter, CHECKBOX_COLUMN, &value, -1);
+    value = value? FALSE : TRUE;
+    gtk_tree_store_set (GTK_TREE_STORE (store), &iter, CHECKBOX_COLUMN, value, -1);    
+  }  
+  
+}
+
+void update_filter(LttvTracesetSelector *s,  GtkTreeStore *store )
+{
+  GtkTreeIter iter, child_iter;
+  int i, j;
+  LttvTraceSelector     * trace;
+  LttvTracefileSelector * tracefile;
+  gboolean value, value1;
+
+  if(gtk_tree_model_get_iter_first((GtkTreeModel*)store, &iter)){
+    i = 0;
+    do{
+      trace = lttv_traceset_selector_get(s, i);
+      gtk_tree_model_get ((GtkTreeModel*)store, &iter, CHECKBOX_COLUMN, &value,-1);
+      if(value){
+	j = 0;
+	if(gtk_tree_model_iter_children ((GtkTreeModel*)store, &child_iter, &iter)){
+	  do{
+	    tracefile = lttv_trace_selector_get(trace, j);
+	    gtk_tree_model_get ((GtkTreeModel*)store, &child_iter, CHECKBOX_COLUMN, &value1,-1);
+	    lttv_tracefile_selector_set_selected(tracefile,value1);
+	    j++;
+	  }while(gtk_tree_model_iter_next((GtkTreeModel*)store, &child_iter));
+	}
+      }
+      lttv_trace_selector_set_selected(trace,value);
+      i++;
+    }while(gtk_tree_model_iter_next((GtkTreeModel*)store, &iter));
+  }
+}
+
+void get_filter_selection(LttvTracesetSelector *s,char *title, char * column_title)
+{
+  GtkWidget         * dialogue;
+  GtkTreeStore      * store;
+  GtkWidget         * tree;
+  GtkWidget         * scroll_win;
+  GtkCellRenderer   * renderer;
+  GtkTreeViewColumn * column;
+  GtkTreeIter         iter, child_iter;
+  int i, j, id, nb_trace, nb_tracefile;
+  LttvTraceSelector     * trace;
+  LttvTracefileSelector * tracefile;
+  char * name;
+  gboolean checked;
+
+  dialogue = gtk_dialog_new_with_buttons(title,
+					 NULL,
+					 GTK_DIALOG_MODAL,
+					 GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
+					 GTK_STOCK_CANCEL,GTK_RESPONSE_REJECT,
+					 NULL); 
+  gtk_window_set_default_size((GtkWindow*)dialogue, 300, 100);
+
+  store = gtk_tree_store_new (TOTAL_COLUMNS, G_TYPE_BOOLEAN, G_TYPE_STRING);
+  tree  = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));
+  g_object_unref (G_OBJECT (store));
+  g_signal_connect (G_OBJECT (tree), "row-activated",
+		    G_CALLBACK (checkbox_changed),
+  		    NULL);  
+
+
+  renderer = gtk_cell_renderer_toggle_new ();
+  gtk_cell_renderer_toggle_set_radio((GtkCellRendererToggle *)renderer, FALSE);
+
+  g_object_set (G_OBJECT (renderer),"activatable", TRUE, NULL);
+
+  column   = gtk_tree_view_column_new_with_attributes ("Checkbox",
+				  		       renderer,
+						       "active", CHECKBOX_COLUMN,
+						       NULL);
+  gtk_tree_view_column_set_alignment (column, 0.5);
+  gtk_tree_view_column_set_fixed_width (column, 20);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (tree), column);
+
+  renderer = gtk_cell_renderer_text_new ();
+  column   = gtk_tree_view_column_new_with_attributes (column_title,
+				  		       renderer,
+						       "text", NAME_COLUMN,
+						       NULL);
+  gtk_tree_view_column_set_alignment (column, 0.0);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (tree), column);
+  gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (tree), FALSE);
+
+  scroll_win = gtk_scrolled_window_new (NULL, NULL);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_win), 
+				 GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
+  gtk_container_add (GTK_CONTAINER (scroll_win), tree);
+
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialogue)->vbox), scroll_win,TRUE, TRUE,0);
+
+  gtk_widget_show(scroll_win);
+  gtk_widget_show(tree);
+  
+  nb_trace = lttv_traceset_selector_number(s);
+  for(i=0;i<nb_trace;i++){
+    trace = lttv_traceset_selector_get(s, i);
+    name  = lttv_trace_selector_get_name(trace);    
+    gtk_tree_store_append (store, &iter, NULL);
+    checked = lttv_trace_selector_get_selected(trace);
+    gtk_tree_store_set (store, &iter, 
+			CHECKBOX_COLUMN,checked,
+			NAME_COLUMN,name,
+			-1);
+    nb_tracefile = lttv_trace_selector_number(trace);
+    for(j=0;j<nb_tracefile;j++){
+      tracefile = lttv_trace_selector_get(trace, j);
+      name      = lttv_tracefile_selector_get_name(tracefile);    
+      gtk_tree_store_append (store, &child_iter, &iter);
+      checked = lttv_tracefile_selector_get_selected(tracefile);
+      gtk_tree_store_set (store, &child_iter, 
+			  CHECKBOX_COLUMN, checked,
+			  NAME_COLUMN,name,
+			  -1);
+    }
+  }
+
+  id = gtk_dialog_run(GTK_DIALOG(dialogue));
+  switch(id){
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_OK:
+      update_filter(s, store);
+    case GTK_RESPONSE_REJECT:
+    case GTK_RESPONSE_CANCEL:
+    default:
+      gtk_widget_destroy(dialogue);
+      break;
+  }
+}
+
 char * get_remove_trace(char ** all_trace_name, int nb_trace)
 {
   return get_selection(all_trace_name, nb_trace, 
@@ -1111,8 +1417,10 @@ void tab_destructor(Tab * tab_instance)
     for(i = 0 ; i < nb ; i++) {
       trace = lttv_traceset_get(tab_instance->traceset_info->traceset, i);
       ref_count = lttv_trace_get_ref_number(trace);
-      if(ref_count <= 1)
+      if(ref_count <= 1){
 	ltt_trace_close(lttv_trace(trace));
+      }
+      lttv_trace_destroy(trace);
     }
   }  
   lttv_traceset_destroy(tab_instance->traceset_info->traceset); 
@@ -1149,11 +1457,10 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
         lttv_traceset_copy(mw_data->current_tab->traceset_info->traceset);
     }else{
       tmp_tab->traceset_info->traceset = lttv_traceset_new();    
+      /* Add the command line trace */
+      if(g_init_trace != NULL)
+	lttv_traceset_add(tmp_tab->traceset_info->traceset, g_init_trace);
     }
-
-    /* Add the command line trace */
-    if(g_init_trace != NULL && parent == NULL)
-      lttv_traceset_add(tmp_tab->traceset_info->traceset, g_init_trace);
   }
   //FIXME copy not implemented in lower level
   tmp_tab->traceset_info->traceset_context =

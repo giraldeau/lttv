@@ -15,6 +15,8 @@ typedef struct _LttvTrace LttvTrace;
 
 LttvTraceset *lttv_traceset_new();
 
+char * lttv_traceset_name(LttvTraceset * s);
+
 LttvTrace *lttv_trace_new(LttTrace *t);
 
 LttvTraceset *lttv_traceset_copy(LttvTraceset *s_orig);

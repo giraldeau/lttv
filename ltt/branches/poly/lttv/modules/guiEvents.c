@@ -129,9 +129,9 @@ typedef struct _EventViewerData {
 } EventViewerData ;
 
 //! Event Viewer's constructor hook
-GtkWidget *h_gui_events(MainWindow *parent_window);
+GtkWidget *h_gui_events(MainWindow *parent_window, LttvTracesetSelector * s, char* key);
 //! Event Viewer's constructor
-EventViewerData *gui_events(MainWindow *parent_window);
+EventViewerData *gui_events(MainWindow *parent_window, LttvTracesetSelector *s, char *key);
 //! Event Viewer's destructor
 void gui_events_destructor(EventViewerData *event_viewer_data);
 void gui_events_free(EventViewerData *event_viewer_data);
@@ -235,9 +235,9 @@ enum
  * @return The widget created.
  */
 GtkWidget *
-h_gui_events(MainWindow * parent_window)
+h_gui_events(MainWindow * parent_window, LttvTracesetSelector * s, char* key)
 {
-  EventViewerData* event_viewer_data = gui_events(parent_window) ;
+  EventViewerData* event_viewer_data = gui_events(parent_window, s, key) ;
 
   if(event_viewer_data)
     return event_viewer_data->hbox_v;
@@ -252,7 +252,7 @@ h_gui_events(MainWindow * parent_window)
  * @return The Event viewer data created.
  */
 EventViewerData *
-gui_events(MainWindow *parent_window)
+gui_events(MainWindow *parent_window, LttvTracesetSelector * s,char* key )
 {
   LttTime start, end;
   GtkTreeViewColumn *column;
@@ -456,6 +456,11 @@ gui_events(MainWindow *parent_window)
   //  tree_v_set_cursor(event_viewer_data);
 
 
+  g_object_set_data(
+		    G_OBJECT(event_viewer_data->hbox_v),
+		    key,
+		    s);
+  
   g_object_set_data_full(
 			G_OBJECT(event_viewer_data->hbox_v),
 			"event_viewer_data",

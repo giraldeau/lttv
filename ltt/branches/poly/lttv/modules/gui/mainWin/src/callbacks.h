@@ -105,6 +105,14 @@ on_remove_viewer_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
 
 void
+on_trace_filter_activate              (GtkMenuItem     *menuitem,
+				       gpointer         user_data);
+
+void
+on_trace_facility_activate              (GtkMenuItem     *menuitem,
+				       gpointer         user_data);
+
+void
 on_load_module_activate                (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
 

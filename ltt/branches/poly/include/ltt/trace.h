@@ -15,6 +15,8 @@ LttTrace *ltt_trace_open(const char *pathname);
 /* copy reopens a trace */
 LttTrace *ltt_trace_copy(LttTrace *self);
 
+char * ltt_trace_name(LttTrace *t);
+
 void ltt_trace_close(LttTrace *t); 
 
 

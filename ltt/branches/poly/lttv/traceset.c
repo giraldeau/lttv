@@ -33,6 +33,11 @@ LttvTraceset *lttv_traceset_new()
   return s;
 }
 
+char * lttv_traceset_name(LttvTraceset * s)
+{
+  return s->filename;
+}
+
 LttvTrace *lttv_trace_new(LttTrace *t) 
 {
   LttvTrace *new_trace;

@@ -458,6 +458,12 @@ LttTrace *ltt_trace_open(const char *pathname)
   return t;
 }
 
+char * ltt_trace_name(LttTrace *t)
+{
+  return t->pathname;
+}
+
+
 /******************************************************************************
  * When we copy a trace, we want all the opening actions to happen again :
  * the trace will be reopened and totally independant from the original.

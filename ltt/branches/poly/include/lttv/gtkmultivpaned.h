@@ -33,6 +33,7 @@ struct _GtkMultiVPaned
   GtkPaned * first_pane;
   GtkPaned * last_pane;
   GtkPaned * focused_pane;
+  GtkPaned * iter;
   guint num_children;
 
   GtkWidget * vbox;
@@ -58,8 +59,11 @@ void gtk_multi_vpaned_widget_delete(GtkMultiVPaned * multi_vpaned);
 void gtk_multi_vpaned_widget_move_up(GtkMultiVPaned * multi_vpaned);
 void gtk_multi_vpaned_widget_move_down(GtkMultiVPaned * multi_vpaned);
 void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, gboolean first_time);
-
-
+void gtk_multi_vpaned_set_data(GtkMultiVPaned * multi_vpaned, char * key, gpointer value);
+gpointer gtk_multi_vpaned_get_data(GtkMultiVPaned * multi_vpaned, char * key);
+GtkWidget * gtk_multi_vpaned_get_widget(GtkMultiVPaned * multi_vpaned);
+GtkWidget * gtk_multi_vpaned_get_first_widget(GtkMultiVPaned * multi_vpaned);
+GtkWidget * gtk_multi_vpaned_get_next_widget(GtkMultiVPaned * multi_vpaned);
 
 #ifdef __cplusplus
 }

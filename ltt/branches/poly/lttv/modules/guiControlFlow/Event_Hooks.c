@@ -302,7 +302,7 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
  * @return The widget created.
  */
 GtkWidget *
-hGuiControlFlow(MainWindow *pmParentWindow)
+hGuiControlFlow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * key)
 {
 	g_critical("hGuiControlFlow");
 	ControlFlowData *Control_Flow_Data = GuiControlFlow() ;

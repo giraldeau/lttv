@@ -17,4 +17,5 @@ lttvinclude_HEADERS = \
 	stats.h\
 	textDump.h\
 	toolbar.h\
-	traceset.h
+	traceset.h\
+	lttvfilter.h
