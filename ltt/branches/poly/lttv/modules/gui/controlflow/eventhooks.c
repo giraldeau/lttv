@@ -206,7 +206,13 @@ void request_background_data(ControlFlowData *control_flow_data)
                                                    background_ready_hook);
         control_flow_data->background_info_waiting++;
       }
+    } else {
+      /* Data ready. Be its nature, this viewer doesn't need to have
+       * its data ready hook called htere, because a background
+       * request is always linked with a redraw.
+       */
     }
+    
   }
 
   lttv_hooks_destroy(background_ready_hook);
