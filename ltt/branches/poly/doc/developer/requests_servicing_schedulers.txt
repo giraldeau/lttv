@@ -68,6 +68,8 @@ at the same time. Another difference is that the hook_data of theses requests
 will typically be NULL, and the typical hook function will be located in a
 library upon which the viewer depends.
 
+A viewer is informed of the completeness of its request by its after_request
+hook registered along with the events request.
 
 
 Hooks Lists
