@@ -21,7 +21,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
-#include <linux/errno.h>  
+#include <linux/errno.h>
 
 // For realpath
 #include <limits.h>
@@ -33,6 +33,7 @@
 #include "ltt-private.h"
 #include <ltt/trace.h>
 #include <ltt/facility.h>
+#include <ltt/event.h>
 
 #define DIR_NAME_SIZE 256
 
@@ -221,7 +222,7 @@ void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name)
 gint ltt_tracefile_open_control(LttTrace *t, char * control_name)
 {
   LttTracefile * tf;
-  LttEvent * ev;
+  LttEvent ev;
   LttFacility * f;
   guint16 evId;
   void * pos;
@@ -239,11 +240,10 @@ gint ltt_tracefile_open_control(LttTrace *t, char * control_name)
   //parse facilities tracefile to get base_id
   if(strcmp(&control_name[strlen(control_name)-10],"facilities") ==0){
     while(1){
-      ev = ltt_tracefile_read(tf);
-      if(!ev)return 0; // end of file
+      if(!ltt_tracefile_read(tf,&ev)) return 0; // end of file
 
-      if(ev->event_id == TRACE_FACILITY_LOAD){
-	pos = ev->data;
+      if(ev.event_id == TRACE_FACILITY_LOAD){
+	pos = ev.data;
 	fLoad.name = (char*)pos;
 	fLoad.checksum = *(LttChecksum*)(pos + strlen(fLoad.name));
 	fLoad.base_code = *(guint32 *)(pos + strlen(fLoad.name) + sizeof(LttChecksum));
@@ -260,9 +260,9 @@ gint ltt_tracefile_open_control(LttTrace *t, char * control_name)
 		  fLoad.name,fLoad.checksum);
     return -1;
   }
-      }else if(ev->event_id == TRACE_BLOCK_START){
+      }else if(ev.event_id == TRACE_BLOCK_START){
 	continue;
-      }else if(ev->event_id == TRACE_BLOCK_END){
+      }else if(ev.event_id == TRACE_BLOCK_END){
 	break;
       }else {
         g_warning("Not valid facilities trace file\n");
@@ -807,8 +807,8 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
     if(ltt_time_compare(endBig,endTmp) < 0) endBig = endTmp;
   }
 
-  *start = startSmall;
-  *end = endBig;
+  if(start != NULL) *start = startSmall;
+  if(end != NULL) *end = endBig;
 }
 
 
@@ -916,7 +916,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
   LttTime lttTime;
   int headTime = ltt_time_compare(t->a_block_start->time, time);
   int tailTime = ltt_time_compare(t->a_block_end->time, time);
-  LttEvent * ev;
+  LttEvent ev;
 
   if(headTime < 0 && tailTime > 0){
     if(ltt_time_compare(t->a_block_end->time, t->current_event_time) !=0) {
@@ -931,8 +931,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 	}
       }else if(err < 0){
 	while(1){
-	  ev = ltt_tracefile_read(t);
-	  if(ev == NULL){
+	  if(ltt_tracefile_read(t,&ev) == NULL) {
 	    g_print("End of file\n");      
 	    return;
 	  }
@@ -1021,7 +1020,8 @@ void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
   //MD: warning : this is slow!
   g_warning("using slow O(n) tracefile seek position");
 
-  while(t->which_event < ep->event_num) ltt_tracefile_read(t);
+  LttEvent event;
+  while(t->which_event < ep->event_num) ltt_tracefile_read(t, &event);
 
   return;
 }
@@ -1035,9 +1035,8 @@ void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
  *    LttEvent *        : an event to be processed
  ****************************************************************************/
 
-LttEvent *ltt_tracefile_read(LttTracefile *t)
+LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event)
 {
-  LttEvent * lttEvent = &t->an_event;
   int err;
 
   if(t->cur_event_pos == t->buffer + t->block_size){
@@ -1048,28 +1047,28 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
     if(err)g_error("Can not read tracefile");    
   }
 
-  lttEvent->event_id = (int)(*(guint16 *)(t->cur_event_pos));
-  if(lttEvent->event_id == TRACE_TIME_HEARTBEAT)
+  event->event_id = (int)(*(guint16 *)(t->cur_event_pos));
+  if(event->event_id == TRACE_TIME_HEARTBEAT)
     t->cur_heart_beat_number++;
 
   t->prev_event_time  = t->current_event_time;
   //  t->current_event_time = getEventTime(t);
 
-  lttEvent->time_delta = *(guint32 *)(t->cur_event_pos + EVENT_ID_SIZE);
-  lttEvent->event_time = t->current_event_time;
-  lttEvent->event_cycle_count = t->cur_cycle_count;
+  event->time_delta = *(guint32 *)(t->cur_event_pos + EVENT_ID_SIZE);
+  event->event_time = t->current_event_time;
+  event->event_cycle_count = t->cur_cycle_count;
 
-  lttEvent->tracefile = t;
-  lttEvent->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
-  lttEvent->which_block = t->which_block;
-  lttEvent->which_event = t->which_event;
+  event->tracefile = t;
+  event->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
+  event->which_block = t->which_block;
+  event->which_event = t->which_event;
 
   /* This is a workaround for fast position seek */
-  lttEvent->last_event_pos = t->last_event_pos;
-  lttEvent->prev_block_end_time = t->prev_block_end_time;
-  lttEvent->prev_event_time = t->prev_event_time;
-  lttEvent->pre_cycle_count = t->pre_cycle_count;
-  lttEvent->count = t->count;
+  event->last_event_pos = t->last_event_pos;
+  event->prev_block_end_time = t->prev_block_end_time;
+  event->prev_event_time = t->prev_event_time;
+  event->pre_cycle_count = t->pre_cycle_count;
+  event->count = t->count;
   /* end of workaround */
 
 
@@ -1078,7 +1077,7 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
   err = skipEvent(t);
   if(err == ERANGE) g_error("event id is out of range\n");
 
-  return lttEvent;
+  return event;
 }
 
 /****************************************************************************

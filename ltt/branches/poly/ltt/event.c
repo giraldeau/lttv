@@ -26,6 +26,18 @@
 #include <ltt/event.h>
 #include <ltt/trace.h>
 
+
+LttEvent *ltt_event_new()
+{
+  return g_new(LttEvent, 1);
+}
+
+void ltt_event_destroy(LttEvent *event)
+{
+  g_free(event);
+}
+
+
 /*****************************************************************************
  *Function name
  *    ltt_event_refresh_fields   : refresh fields of an event 

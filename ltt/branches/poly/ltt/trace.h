@@ -127,7 +127,7 @@ void ltt_tracefile_seek_position(LttTracefile *t,
 
 /* Read the next event */
 
-LttEvent *ltt_tracefile_read(LttTracefile *t);
+LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event);
 
 /* open tracefile */
 

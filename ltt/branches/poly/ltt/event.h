@@ -21,11 +21,14 @@
 
 #include <ltt/ltt.h>
 
+LttEvent *ltt_event_new();
+
+void ltt_event_destroy(LttEvent *event);
+
 /* Events and their content, including the raw data, are only valid 
    until reading another event from the same tracefile. 
    Indeed, since event reading is critical to the performance, 
    the memory associated with an event may be reused at each read. */
-
 
 /* Obtain the trace unique integer id associated with the type of 
    this event */

@@ -83,6 +83,26 @@ struct _LttEventType{
   int latest_event;       //the latest event using the event type
 };
 
+struct _LttEvent{
+  guint16  event_id;
+  guint32  time_delta;
+  LttTime event_time;
+  LttCycleCount event_cycle_count;
+  LttTracefile * tracefile;
+  void * data;               //event data
+  int which_block;           //the current block of the event
+  int which_event;           //the position of the event
+  /* This is a workaround for fast position seek */
+  void * last_event_pos;
+
+  LttTime prev_block_end_time;       //the end time of previous block
+  LttTime prev_event_time;           //the time of the previous event
+  LttCycleCount pre_cycle_count;     //previous cycle count of the event
+  int      count;                    //the number of overflow of cycle count
+  /* end of workaround */
+};
+
+
 struct _LttField{
   unsigned field_pos;        //field position within its parent
   LttType * field_type;      //field type, if it is root field
@@ -114,24 +134,6 @@ struct _LttField{
   unsigned current_element;  //which element is currently processed
 };
 
-struct _LttEvent{
-  guint16  event_id;
-  guint32  time_delta;
-  LttTime event_time;
-  LttCycleCount event_cycle_count;
-  LttTracefile * tracefile;
-  void * data;               //event data
-  int which_block;           //the current block of the event
-  int which_event;           //the position of the event
-  /* This is a workaround for fast position seek */
-  void * last_event_pos;
-
-  LttTime prev_block_end_time;       //the end time of previous block
-  LttTime prev_event_time;           //the time of the previous event
-  LttCycleCount pre_cycle_count;     //previous cycle count of the event
-  int      count;                    //the number of overflow of cycle count
-  /* end of workaround */
-};
 
 struct _LttFacility{
   char * name;               //facility name 
@@ -165,7 +167,6 @@ struct _LttTracefile{
 
   LttTime prev_block_end_time;       //the end time of previous block
   LttTime prev_event_time;           //the time of the previous event
-  LttEvent an_event;
   LttCycleCount pre_cycle_count;     //previous cycle count of the event
   int      count;                    //the number of overflow of cycle count
 };
@@ -199,7 +200,6 @@ struct _LttEventPosition{
 
   LttTime prev_block_end_time;       //the end time of previous block
   LttTime prev_event_time;           //the time of the previous event
-  LttEvent an_event;
   LttCycleCount pre_cycle_count;     //previous cycle count of the event
   int      count;                    //the number of overflow of cycle count
   /* end of workaround */
