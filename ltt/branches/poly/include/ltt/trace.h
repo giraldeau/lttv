@@ -94,6 +94,11 @@ LttTracefile *ltt_trace_control_tracefile_get(LttTrace *t, unsigned i);
 LttTracefile *ltt_trace_per_cpu_tracefile_get(LttTrace *t, unsigned i);
 
 
+/* Get the start time and end time of the trace */
+
+void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end);
+
+
 /* Get the name of a tracefile */
 
 char *ltt_tracefile_name(LttTracefile *tf);

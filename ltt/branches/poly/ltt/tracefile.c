@@ -662,6 +662,52 @@ LttTracefile *ltt_trace_per_cpu_tracefile_get(LttTrace *t, unsigned i)
 }
 
 /*****************************************************************************
+ * Get the start time and end time of the trace 
+ ****************************************************************************/
+
+void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
+{
+  LttTime startSmall, startTmp, endBig, endTmp;
+  int i, j=0;
+  LttTracefile * tf;
+
+  for(i=0;i<t->control_tracefile_number;i++){
+    tf = g_ptr_array_index(t->control_tracefiles, i);
+    readBlock(tf,1);
+    startTmp = tf->a_block_start->time;    
+    readBlock(tf,tf->block_number);
+    endTmp = tf->a_block_end->time;
+    if(i==0){
+      startSmall = startTmp;
+      endBig     = endTmp;
+      j = 1;
+      continue;
+    }
+    if(timecmp(&startSmall,&startTmp) > 0) startSmall = startTmp;
+    if(timecmp(&endBig,&endTmp) < 0) endBig = endTmp;
+  }
+
+  for(i=0;i<t->per_cpu_tracefile_number;i++){
+    tf = g_ptr_array_index(t->per_cpu_tracefiles, i);
+    readBlock(tf,1);
+    startTmp = tf->a_block_start->time;    
+    readBlock(tf,tf->block_number);
+    endTmp = tf->a_block_end->time;
+    if(j == 0 && i==0){
+      startSmall = startTmp;
+      endBig     = endTmp;
+      continue;
+    }
+    if(timecmp(&startSmall,&startTmp) > 0) startSmall = startTmp;
+    if(timecmp(&endBig,&endTmp) < 0) endBig = endTmp;
+  }
+
+  *start = startSmall;
+  *end = endBig;
+}
+
+
+/*****************************************************************************
  *Get the name of a tracefile
  ****************************************************************************/
 
@@ -793,7 +839,6 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
 
   if(t->cur_event_pos == t->buffer + t->block_size){
     if(t->which_block == t->block_number){
-      g_free(lttEvent);
       return NULL;
     }
     err = readBlock(t, t->which_block + 1);
