@@ -1,6 +1,8 @@
 #ifndef TRACE_H
 #define TRACE_H
 
+#include "attribute.h"
+
 /* A trace is a sequence of events gathered in the same tracing session. The
    events may be stored in several tracefiles in the same directory. 
    A trace set is defined when several traces are to be analyzed together,

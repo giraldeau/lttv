@@ -1,6 +1,8 @@
 #ifndef LTTV_H
 #define LTTV_H
 
+#include "attribute.h"
+
 /* Initial draft by Michel Dagenais May 2003
  * Reworked by Mathieu Desnoyers, May 2003
  */
