@@ -695,7 +695,7 @@ static gboolean schedchange(void *hook_data, void *call_data)
     else s->process->state->s = LTTV_STATE_WAIT;
 
     if(s->process->pid == 0)
-      s->process->pid == pid_out;
+      s->process->pid = pid_out;
 
     s->process->state->change = s->parent.timestamp;
   }
