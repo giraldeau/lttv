@@ -814,7 +814,6 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
   return process;
 }
 
-
 LttvProcessState *
 lttv_state_find_process_from_trace(LttvTraceState *ts, GQuark cpu, guint pid)
 {
@@ -1072,7 +1071,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
        associated by id hooks. */
 
     hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
-    g_array_set_size(hooks, 9);
+    g_array_set_size(hooks, 8);
 
     lttv_trace_find_hook(ts->parent.t, "core","syscall_entry","syscall_id", 
 	NULL, NULL, syscall_entry, &g_array_index(hooks, LttvTraceHook, 0));
