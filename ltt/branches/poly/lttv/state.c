@@ -534,7 +534,7 @@ static LttvProcessState *create_process(LttvTracefileState *tfs,
   char buffer[128];
 
   tcs = (LttvTraceState *)tc = tfs->parent.t_context;
-
+	
   g_hash_table_insert(tcs->processes, GUINT_TO_POINTER(pid), process);
   process->pid = pid;
 

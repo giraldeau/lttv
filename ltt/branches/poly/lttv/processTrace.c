@@ -678,10 +678,10 @@ void lttv_process_traceset(LttvTracesetContext *self, LttTime end,
 
     if(!lttv_hooks_call(tfc->check_event, tfc)) {
       id = ltt_event_eventtype_id(tfc->e);
-      lttv_hooks_call(tfc->before_event, tfc);
       lttv_hooks_call(lttv_hooks_by_id_get(tfc->before_event_by_id, id), tfc);
-      lttv_hooks_call(tfc->after_event, tfc);
+      lttv_hooks_call(tfc->before_event, tfc);
       lttv_hooks_call(lttv_hooks_by_id_get(tfc->after_event_by_id, id), tfc);
+      lttv_hooks_call(tfc->after_event, tfc);
     }
 
     event = ltt_tracefile_read(tfc->tf);
