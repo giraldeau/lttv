@@ -138,7 +138,7 @@ create_MWindow (void)
 
   MWindow = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_size_request (MWindow, 100, 50);
-  gtk_window_set_title (GTK_WINDOW (MWindow), "Main window");
+  gtk_window_set_title (GTK_WINDOW (MWindow), "LTT");
   gtk_window_set_default_size (GTK_WINDOW (MWindow), 600, 400);
 
   MVbox = gtk_vbox_new (FALSE, 0);
@@ -566,13 +566,16 @@ create_MWindow (void)
   gtk_widget_show (tlbRemoveViewer);
   gtk_container_set_border_width (GTK_CONTAINER (tlbRemoveViewer), 1);
 
-  MToolbar2 = gtk_toolbar_new ();
-  gtk_widget_show (MToolbar2);
-  gtk_box_pack_start (GTK_BOX (MVbox), MToolbar2, FALSE, FALSE, 0);
-  gtk_toolbar_set_style (GTK_TOOLBAR (MToolbar2), GTK_TOOLBAR_ICONS);
+  gtk_toolbar_append_space (GTK_TOOLBAR (MToolbar1));
+
+  //  MToolbar2 = gtk_toolbar_new ();
+  //  gtk_widget_show (MToolbar2);
+  //  gtk_box_pack_start (GTK_BOX (MVbox), MToolbar2, FALSE, FALSE, 0);
+  //  gtk_toolbar_set_style (GTK_TOOLBAR (MToolbar2), GTK_TOOLBAR_ICONS);
 
   MNotebook = gtk_notebook_new ();
   gtk_widget_show (MNotebook);
+  gtk_notebook_set_show_tabs((GtkNotebook*)MNotebook, FALSE);
   gtk_box_pack_start (GTK_BOX (MVbox), MNotebook, TRUE, TRUE, 0);
 /*
   empty_notebook_page = gtk_vbox_new (FALSE, 0);

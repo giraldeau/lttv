@@ -386,7 +386,7 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
 
   //set the cursor to be X shape, indicating that the computer is busy in doing its job
   new = gdk_cursor_new(GDK_X_CURSOR);
-  widget = lookup_widget(mw_data->mwindow, "MToolbar2");
+  widget = lookup_widget(mw_data->mwindow, "MToolbar1");
   win = gtk_widget_get_parent_window(widget);  
   gdk_window_set_cursor(win, new);
   gdk_cursor_unref(new);  
@@ -818,6 +818,7 @@ void
 on_close_tab_activate                  (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
+  GList * list;
   int count = 0;
   GtkWidget * notebook;
   Tab * tmp;
@@ -842,6 +843,9 @@ on_close_tab_activate                  (GtkMenuItem     *menuitem,
   }
 
   gtk_notebook_remove_page((GtkNotebook*)notebook, count);  
+  list = gtk_container_get_children(GTK_CONTAINER(notebook));
+  if(g_list_length(list)==1)
+    gtk_notebook_set_show_tabs((GtkNotebook*)notebook, FALSE);
 }
 
 
@@ -1736,7 +1740,7 @@ void insert_menu_toolbar_item(MainWindow * mw, gpointer user_data)
       tmp = g_hash_table_lookup(mw->hash_toolbar_item, g_strdup(toolbar_item->tooltip));
       if(tmp)continue;
       constructor = toolbar_item->con;
-      tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar2");
+      tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar1");
       pixbuf = gdk_pixbuf_new_from_xpm_data ((const char**)toolbar_item->pixmap);
       pixmap = gtk_image_new_from_pixbuf(pixbuf);
       insert_view = gtk_toolbar_append_element (GTK_TOOLBAR (tool_menu_title_menu),
@@ -1963,6 +1967,8 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   gtk_notebook_append_page(notebook, (GtkWidget*)tmp_tab->multi_vpaned, tmp_tab->label);  
   list = gtk_container_get_children(GTK_CONTAINER(notebook));
   gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
+  if(g_list_length(list)>1)
+    gtk_notebook_set_show_tabs(notebook, TRUE);
 }
 
 
@@ -1992,7 +1998,7 @@ void remove_toolbar_item(gpointer main_win, gpointer user_data)
   GtkWidget * tool_menu_title_menu, *insert_view;
 
 
-  tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar2");
+  tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar1");
   insert_view = (GtkWidget*)g_hash_table_lookup(mw->hash_toolbar_item,
 						toolbar_item->tooltip);
   if(insert_view){
