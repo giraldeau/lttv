@@ -33,6 +33,7 @@
 #include <lttv/module.h>
 //#include <lttv/gtkTraceSet.h>
 #include "mw_api.h"
+#include "gtktreeprivate.h"
 
 #include "icons/hGuiEventsInsert.xpm"
 
@@ -170,7 +171,7 @@ GuiEvents(void)
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
 	EventViewerData* Event_Viewer_Data = g_new(EventViewerData,1) ;
-	gint width, height;
+
 	/* Create a model for storing the data list */
   Event_Viewer_Data->Store_M = gtk_list_store_new (N_COLUMNS,       /* Total number of columns */
                                             G_TYPE_INT,      /* CPUID                  */
@@ -256,8 +257,6 @@ GuiEvents(void)
   gtk_tree_view_append_column (GTK_TREE_VIEW (Event_Viewer_Data->Tree_V), column);
 
 
-	gtk_cell_renderer_get_size(renderer, GTK_WIDGET(Event_Viewer_Data->Tree_V), NULL, NULL, NULL, &width, &height);
-	g_critical("first size h : %i",height);
 	/* Setup the selection handler */
 	Event_Viewer_Data->Select_C = gtk_tree_view_get_selection (GTK_TREE_VIEW (Event_Viewer_Data->Tree_V));
 	gtk_tree_selection_set_mode (Event_Viewer_Data->Select_C, GTK_SELECTION_SINGLE);
@@ -287,7 +286,6 @@ GuiEvents(void)
 	Event_Viewer_Data->VAdjust_C->step_increment = 1;
 	Event_Viewer_Data->VAdjust_C->page_increment = 
 				 Event_Viewer_Data->VTree_Adjust_C->upper;
-	//FIXME change page size dynamically to fit event list size
 	Event_Viewer_Data->VAdjust_C->page_size =
 				 Event_Viewer_Data->VTree_Adjust_C->upper;
 	g_critical("value : %u",Event_Viewer_Data->VTree_Adjust_C->upper);
@@ -311,44 +309,49 @@ void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
 
 }
 
+gint get_cell_height(GtkTreeView *TreeView)
+{
+	gint height, width;
+	GtkTreeViewColumn *Column = gtk_tree_view_get_column(TreeView, 0);
+	GList *Render_List = gtk_tree_view_column_get_cell_renderers(Column);
+	GtkCellRenderer *Renderer = g_list_first(Render_List)->data;
+	
+	gtk_cell_renderer_get_size(Renderer, GTK_WIDGET(TreeView),
+														NULL, NULL, NULL, &width, &height);
+	
+	return height;
+}
+
 void Tree_V_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer data)
 {
 	EventViewerData *Event_Viewer_Data = (EventViewerData*)data;
-	
+	gint Cell_Height = get_cell_height(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V));
+
 	g_critical("size-allocate");
 
-	Event_Viewer_Data->Visible_Events = alloc->y ;
-	g_critical("num of event shown : %u",Event_Viewer_Data->Visible_Events);
-	
-	
+	Event_Viewer_Data->Visible_Events = ( alloc->height -
+			TREE_VIEW_HEADER_HEIGHT (GTK_TREE_VIEW(Event_Viewer_Data->Tree_V)) )
+				/ Cell_Height ;
+	g_critical("number of events shown : %u",Event_Viewer_Data->Visible_Events);
+
+	Event_Viewer_Data->VAdjust_C->page_increment = 
+				 Event_Viewer_Data->Visible_Events;
+	Event_Viewer_Data->VAdjust_C->page_size =
+				 Event_Viewer_Data->Visible_Events;
+
 }
 
 void Tree_V_size_request_cb (GtkWidget *widget, GtkRequisition *requisition, gpointer data)
 {
-	gint w, h;
-	gint height, width;
-
+	gint h;
 	EventViewerData *Event_Viewer_Data = (EventViewerData*)data;
-	GtkTreeViewColumn *Column = gtk_tree_view_get_column(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), 1);
-	GList *Render_List = gtk_tree_view_column_get_cell_renderers(Column);
-	GtkCellRenderer *Renderer = g_list_first(Render_List)->data;
+	gint Cell_Height = get_cell_height(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V));
 	
 	g_critical("size-request");
 
-	//gtk_tree_view_column_cell_get_size(Column, NULL, NULL, NULL, &width, &height);
-	//h = height;
-	//gtk_cell_renderer_get_size(Renderer, GTK_WIDGET(Event_Viewer_Data->Tree_V), NULL, NULL, NULL, &width, &height);
-	//h += height;
-	//gtk_cell_renderer_get_fixed_size(Renderer,w,h);
-
-	gtk_tree_view_tree_to_widget_coords(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V),
-				1,1,&width, &height);
-	w = width;
-	h = height;
-	//requisition->height = Cell_Height;
-	requisition->height = 46;
-	g_critical("width : %i height : %i", w, h); 
-	
+	h = Cell_Height + TREE_VIEW_HEADER_HEIGHT
+											(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V));
+	requisition->height = h;
 	
 }
 
@@ -807,8 +810,8 @@ int main(int argc, char **argv)
   ListViewer = hGuiEvents(Window);
   gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, TRUE, TRUE, 0);
 
-  ListViewer = hGuiEvents(Window);
-  gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, FALSE, TRUE, 0);
+  //ListViewer = hGuiEvents(Window);
+  //gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, FALSE, TRUE, 0);
 
   gtk_widget_show (VBox_V);
 	gtk_widget_show (Window);
