@@ -465,6 +465,102 @@ void lttvwindow_unregister_traceset_notify(Tab *tab,
 }
 
 /**
+ * Function to register a hook function for a viewer be completely redrawn.
+ * 
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_register_redraw_notify(Tab *tab,
+    LttvHook hook, gpointer hook_data)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/redraw", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL){    
+    tmp = lttv_hooks_new();
+    *(value.v_pointer) = tmp;
+  }
+  lttv_hooks_add(tmp, hook, hook_data, LTTV_PRIO_DEFAULT);
+}
+
+
+/**
+ * Function to unregister a hook function for a viewer be completely redrawn.
+ *
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_unregister_redraw_notify(Tab *tab,
+              LttvHook hook, gpointer hook_data)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/redraw", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return;
+  lttv_hooks_remove_data(tmp, hook, hook_data);
+}
+
+/**
+ * Function to register a hook function for a viewer to re-do the events
+ * requests for the needed interval.
+ *
+ * This action is typically done after a "stop".
+ *
+ * The typical hook will remove all current requests for the viewer
+ * and make requests for missing information.
+ * 
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_register_continue_notify(Tab *tab,
+    LttvHook hook, gpointer hook_data)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/continue", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL){    
+    tmp = lttv_hooks_new();
+    *(value.v_pointer) = tmp;
+  }
+  lttv_hooks_add(tmp, hook, hook_data, LTTV_PRIO_DEFAULT);
+}
+
+
+/**
+ * Function to unregister a hook function for a viewer to re-do the events
+ * requests for the needed interval.
+ *
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_unregister_continue_notify(Tab *tab,
+              LttvHook hook, gpointer hook_data)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/continue", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return;
+  lttv_hooks_remove_data(tmp, hook, hook_data);
+}
+
+
+/**
  * Function to register a hook function for a viewer to set/update its 
  * filter.
  * @param tab viewer's tab 

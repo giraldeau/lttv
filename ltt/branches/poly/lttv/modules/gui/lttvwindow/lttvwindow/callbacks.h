@@ -182,6 +182,17 @@ on_button_add_trace_clicked            (GtkButton       *button,
 void
 on_button_remove_trace_clicked         (GtkButton       *button,
                                         gpointer         user_data);
+void
+on_button_redraw_clicked               (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_continue_processing_clicked  (GtkButton       *button,
+                                        gpointer         user_data);
+
+void
+on_button_stop_processing_clicked      (GtkButton       *button,
+                                        gpointer         user_data);
 
 void
 on_button_save_clicked                 (GtkButton       *button,

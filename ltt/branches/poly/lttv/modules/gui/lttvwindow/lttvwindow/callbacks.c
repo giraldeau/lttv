@@ -435,8 +435,6 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
   LttvTracesetContextPosition *end_position;
     
   
-  /* Current tab check : if no current tab is present, no hooks to call. */
-  /* (Xang Xiu) It makes the expose works..  MD:? */
   if(tab == NULL)
     return FALSE;
 
@@ -1270,6 +1268,86 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 }
 
 
+/* Redraw all the viewers in the current tab */
+void redraw(GtkWidget *widget, gpointer user_data)
+{
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
+  LttvHooks * tmp;
+  LttvAttributeValue value;
+
+  g_assert(lttv_iattribute_find_by_path(tab->attributes, "hooks/redraw", LTTV_POINTER, &value));
+
+  tmp = (LttvHooks*)*(value.v_pointer);
+  g_assert(tmp != NULL);
+  
+  lttv_hooks_call(tmp,NULL);
+}
+
+
+void continue_processing(GtkWidget *widget, gpointer user_data)
+{
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
+  LttvHooks * tmp;
+  LttvAttributeValue value;
+
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+     "hooks/continue", LTTV_POINTER, &value));
+
+  tmp = (LttvHooks*)*(value.v_pointer);
+  g_assert(tmp != NULL);
+  
+  lttv_hooks_call(tmp,NULL);
+}
+
+/* Stop the processing for the calling main window's current tab.
+ * It removes every processing requests that are in its list. It does not call
+ * the end request hooks, because the request is not finished.
+ */
+
+void stop_processing(GtkWidget *widget, gpointer user_data)
+{
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+  GSList *events_requests = tab->events_requests;
+
+  GSList *iter = events_requests;
+  
+  while(iter != NULL) {
+    GSList *remove_iter = iter;
+    iter = g_slist_next(iter);
+    
+    g_free(remove_iter->data);
+    events_requests = g_slist_remove_link(events_requests, remove_iter);
+  }
+  g_assert(g_slist_length(events_requests) == 0);
+}
+
+
 /* save will save the traceset to a file
  * Not implemented yet FIXME
  */
@@ -1869,6 +1947,28 @@ on_button_remove_trace_clicked         (GtkButton       *button,
 {
   remove_trace((GtkWidget*)button, user_data);
 }
+
+void
+on_button_redraw_clicked               (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  redraw((GtkWidget*)button, user_data);
+}
+
+void
+on_button_continue_processing_clicked  (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  continue_processing((GtkWidget*)button, user_data);
+}
+
+void
+on_button_stop_processing_clicked      (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  stop_processing((GtkWidget*)button, user_data);
+}
+
 
 
 void

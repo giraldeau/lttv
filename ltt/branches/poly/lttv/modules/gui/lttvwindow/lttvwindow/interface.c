@@ -117,6 +117,9 @@ create_MWindow (void)
   //  GtkWidget *tlbOpenTraceset;
   GtkWidget *tlbAddTrace;
   GtkWidget *tlbRemoveTrace;
+  GtkWidget *tlbRedraw;
+  GtkWidget *tlbContinueProcessing;
+  GtkWidget *tlbStopProcessing;
   //  GtkWidget *tlbSave;
   //  GtkWidget *tlbSaveAs;
   GtkWidget *tlbZoomIn;
@@ -476,6 +479,44 @@ create_MWindow (void)
 */
   gtk_toolbar_append_space (GTK_TOOLBAR (MToolbar1));
 
+  /* Manually added by Mathieu Desnoyers */
+
+  tmp_toolbar_icon = create_pixmap (MWindow, "stock_redraw_24.png");
+  tlbRedraw = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
+                                GTK_TOOLBAR_CHILD_BUTTON,
+                                NULL,
+                                "",
+                                "Redraw", NULL,
+                                tmp_toolbar_icon, NULL, NULL);
+  gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
+  gtk_widget_show (tlbRedraw);
+  gtk_container_set_border_width (GTK_CONTAINER (tlbRedraw), 1);
+
+  tmp_toolbar_icon = create_pixmap (MWindow, "stock_redo_24.png");
+  tlbContinueProcessing = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
+                                GTK_TOOLBAR_CHILD_BUTTON,
+                                NULL,
+                                "",
+                                "Continue Processing", NULL,
+                                tmp_toolbar_icon, NULL, NULL);
+  gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
+  gtk_widget_show (tlbContinueProcessing);
+  gtk_container_set_border_width (GTK_CONTAINER (tlbContinueProcessing), 1);
+
+  tmp_toolbar_icon = create_pixmap (MWindow, "stock_stop_24.png");
+  tlbStopProcessing = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
+                                GTK_TOOLBAR_CHILD_BUTTON,
+                                NULL,
+                                "",
+                                "Stop Processing", NULL,
+                                tmp_toolbar_icon, NULL, NULL);
+  gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
+  gtk_widget_show (tlbStopProcessing);
+  gtk_container_set_border_width (GTK_CONTAINER (tlbStopProcessing), 1);
+
+
+  gtk_toolbar_append_space (GTK_TOOLBAR (MToolbar1));
+
   tmp_toolbar_icon = create_pixmap (MWindow, "stock_zoom_in_24.png");
   tlbZoomIn = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
                                 GTK_TOOLBAR_CHILD_BUTTON,
@@ -726,6 +767,15 @@ create_MWindow (void)
                     NULL);
   g_signal_connect ((gpointer) tlbRemoveTrace, "clicked",
                     G_CALLBACK (on_button_remove_trace_clicked),
+                    NULL);
+  g_signal_connect ((gpointer) tlbRedraw, "clicked",
+                    G_CALLBACK (on_button_redraw_clicked),
+                    NULL);
+  g_signal_connect ((gpointer) tlbContinueProcessing, "clicked",
+                    G_CALLBACK (on_button_continue_processing_clicked),
+                    NULL);
+  g_signal_connect ((gpointer) tlbStopProcessing, "clicked",
+                    G_CALLBACK (on_button_stop_processing_clicked),
                     NULL);
 /*
   g_signal_connect ((gpointer) tlbSave, "clicked",

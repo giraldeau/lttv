@@ -401,6 +401,60 @@ void lttvwindow_unregister_traceset_notify(Tab *tab,
 
 
 /**
+ * Function to register a hook function for a viewer be completely redrawn.
+ * 
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_register_redraw_notify(Tab *tab,
+    LttvHook hook, gpointer hook_data);
+
+/**
+ * Function to unregister a hook function for a viewer be completely redrawn.
+ *
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_unregister_redraw_notify(Tab *tab,
+              LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to register a hook function for a viewer to re-do the events
+ * requests for the needed interval.
+ *
+ * This action is typically done after a "stop".
+ *
+ * The typical hook will remove all current requests for the viewer
+ * and make requests for missing information.
+ * 
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_register_continue_notify(Tab *tab,
+    LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to unregister a hook function for a viewer to re-do the events
+ * requests for the needed interval.
+ *
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_unregister_continue_notify(Tab *tab,
+              LttvHook hook, gpointer hook_data);
+
+
+/**
  * Function to register a hook function for a viewer to set/update its 
  * filter. 
  *

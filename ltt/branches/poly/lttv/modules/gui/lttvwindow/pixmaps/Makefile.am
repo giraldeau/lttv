@@ -21,4 +21,7 @@ EXTRA_DIST =  \
 	remove1.png\
 	stock_zoom_fit_24.png\
 	stock_zoom_in_24.png\
-	stock_zoom_out_24.png
+	stock_zoom_out_24.png\
+	stock_stop_24.png\
+	stock_redo_24.png\
+	stock_refresh_24.png
