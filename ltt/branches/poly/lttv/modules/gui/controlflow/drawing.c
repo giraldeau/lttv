@@ -325,8 +325,12 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   if(x >= event->area.x && x <= event->area.x+event->area.width)
   {
     GdkGC *gc = gdk_gc_new(control_flow_data->drawing->pixmap);
-    gdk_gc_copy(gc, widget->style->black_gc);
-    
+    gdk_gc_copy(gc, widget->style->white_gc);
+    gdk_gc_set_line_attributes(gc,
+                               1,
+                               GDK_LINE_ON_OFF_DASH,
+                               GDK_CAP_BUTT,
+                               GDK_JOIN_MITER);
     drawing_draw_line(NULL, widget->window,
                   x, event->area.y,
                   x, event->area.y+event->area.height,
