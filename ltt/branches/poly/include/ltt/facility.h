@@ -1,3 +1,5 @@
+#ifndef FACILITY_H
+#define FACILITY_H
 
 #include <ltt/ltt.h>
 
@@ -27,3 +29,4 @@ ltt_eventtype *ltt_facility_eventtype_get(ltt_facility *f, unsigned i);
 
 ltt_eventtype *ltt_facility_eventtype_get_by_name(ltt_facility *f, char *name);
 
+#endif // FACILITY_H

@@ -1,3 +1,5 @@
+#ifndef TYPE_H
+#define TYPE_H
 
 #include <ltt/ltt.h>
 
@@ -18,9 +20,9 @@ ltt_type *ltt_eventtype_type(ltt_eventtype *et);
  
 char *ltt_type_name(ltt_type *t);
 
-ltt_type_enum *ltt_type_class(ltt_type *t);
+ltt_type_enum ltt_type_class(ltt_type *t);
 
-unsigned ltt_type_size(ltt_type *t);
+unsigned ltt_type_size(ltt_tracefile * tf, ltt_type *t); 
 
 
 /* The type of nested elements for arrays and sequences. */
@@ -63,3 +65,4 @@ ltt_field *ltt_field_member(ltt_field *f, unsigned i);
 
 ltt_type *ltt_field_type(ltt_field *f);
 
+#endif // TYPE_H

@@ -1,3 +1,7 @@
+#ifndef EVENT_H
+#define EVENT_H
+
+#include <ltt/ltt.h>
 
 /* Events and their content, including the raw data, are only valid 
    until reading another event from the same tracefile. 
@@ -71,3 +75,5 @@ double ltt_event_get_double(ltt_event *e, ltt_field *f);
    the same tracefile. */
 
 char *ltt_event_get_string(ltt_event *e, ltt_field *f);
+
+#endif // EVENT_H

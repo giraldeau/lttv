@@ -1,3 +1,5 @@
+#ifndef TRACEFILE_H
+#define TRACEFILE_H
 
 #include <ltt/ltt.h>
 
@@ -16,7 +18,7 @@
 
 ltt_tracefile *ltt_tracefile_open(char *pathname);
 
-int ltt_tracefile_close(ltt_tracefile *t, bool close_facilities);
+int ltt_tracefile_close(ltt_tracefile *t, int close_facilities); 
 
 int ltt_tracefile_facility_add(ltt_tracefile *t, ltt_facility *f, int base_id);
 
@@ -28,23 +30,16 @@ int ltt_tracefile_facility_add(ltt_tracefile *t, ltt_facility *f, int base_id);
    host name). All character strings belong to the associated tracefile 
    and are freed when it is closed. */
 
-typedef enum _ltt_arch_size 
-{ LTT_LP32, LTT_ILP32, LTT_LP64, LTT_ILP64 
-} ltt_arch_size;
 
-typedef enum _ltt_arch_endian
-{ LTT_LITTLE_ENDIAN, LTT_BIG_ENDIAN
-} ltt_arch_endian;
- 
-char *ltt_tracefile_arch_type(ltt_tracefile *t);  
+uint32_t ltt_tracefile_arch_type(ltt_tracefile *t); 
 
-char *ltt_tracefile_arch_variant(ltt_tracefile *t); 
+uint32_t ltt_tracefile_arch_variant(ltt_tracefile *t);
 
-ltt_arch_size *ltt_tracefile_arch_size(ltt_tracefile *t); 
+ltt_arch_size ltt_tracefile_arch_size(ltt_tracefile *t);
 
-ltt_arch_endian *ltt_tracefile_arch_endian(ltt_tracefile *t); 
+ltt_arch_endian ltt_tracefile_arch_endian(ltt_tracefile *t); 
 
-char *ltt_tracefile_system_type(ltt_tracefile *t);
+uint32_t ltt_tracefile_system_type(ltt_tracefile *t);
 
 char *ltt_tracefile_system_name(ltt_tracefile *t);
 
@@ -56,7 +51,7 @@ unsigned ltt_tracefile_cpu_number(ltt_tracefile *t);
 
 /* Does the tracefile contain events only for a single CPU? */
  
-bool ltt_tracefile_cpu_single(ltt_tracefile *t);
+int ltt_tracefile_cpu_single(ltt_tracefile *t); 
 
 
 /* It this is the case, which CPU? */
@@ -108,3 +103,5 @@ int ltt_tracefile_seek_time(ltt_tracefile *t, ltt_time time);
 /* Read the next event */
 
 ltt_event *ltt_tracefile_read(ltt_tracefile *t);
+
+#endif // TRACEFILE_H

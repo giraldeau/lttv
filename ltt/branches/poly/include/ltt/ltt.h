@@ -1,5 +1,6 @@
+#ifndef LTT_H
+#define LTT_H
 
-#include <ltt/ltt-private.h>
 
 /* A trace is associated with a tracing session run on a single, possibly
    multi-cpu, system. It is defined as a pathname to a directory containing
@@ -85,6 +86,17 @@ typedef struct timespec ltt_time;
 
 typedef uint64_t ltt_cycle_count;
 
+typedef enum _ltt_arch_size 
+{ LTT_LP32, LTT_ILP32, LTT_LP64, LTT_ILP64, LTT_UNKNOWN 
+} ltt_arch_size;
+
+typedef enum _ltt_arch_endian
+{ LTT_LITTLE_ENDIAN, LTT_BIG_ENDIAN
+} ltt_arch_endian;
 
 
 
+#include <ltt/ltt-private.h>
+
+ 
+#endif // LTT_H
