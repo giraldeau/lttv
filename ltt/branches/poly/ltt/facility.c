@@ -89,7 +89,7 @@ void ltt_facility_open(LttTrace * t, char * pathname)
       table_dispose(&fac->named_types);
       freeTypes(&fac->unnamed_types);
       sequence_dispose(&fac->unnamed_types);      
-      free(fac);
+      g_free(fac);
     }
     else in.error(&in,"facility token was expected");
   }
