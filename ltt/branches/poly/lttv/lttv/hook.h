@@ -92,6 +92,7 @@ void lttv_hooks_get(LttvHooks *h, unsigned i, LttvHook *f, void **hook_data,
 
 
 /* Remove the specified hook. The position of the following hooks may change */
+/* The hook is removed from the list event if its ref_count is higher than 1 */
 
 void lttv_hooks_remove_by_position(LttvHooks *h, unsigned i);
 

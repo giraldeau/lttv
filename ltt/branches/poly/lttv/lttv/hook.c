@@ -24,6 +24,7 @@ typedef struct _LttvHookClosure {
   LttvHook      hook;
   void         *hook_data;
   LttvHookPrio  prio;
+  guint         ref_count;
 } LttvHookClosure;
 
 gint lttv_hooks_prio_compare(LttvHookClosure *a, LttvHookClosure *b)
@@ -57,8 +58,20 @@ void lttv_hooks_add(LttvHooks *h, LttvHook f, void *hook_data, LttvHookPrio p)
   new_c.hook = f;
   new_c.hook_data = hook_data;
   new_c.prio = p;
+
+  /* Preliminary check for duplication */
+  /* only hook and hook data is checked */
   for(i = 0; i < h->len; i++) {
-    
+    c = &g_array_index(h, LttvHookClosure, i);
+    if(new_c.hook == c->hook && new_c.hook_data == c->hook_data) {
+      g_assert(new_c.prio == c->prio);
+      c->ref_count++;
+      return;
+    }
+  }
+
+
+  for(i = 0; i < h->len; i++) {
     c = &g_array_index(h, LttvHookClosure, i);
     if(new_c.prio < c->prio) {
       g_array_insert_val(h,i,new_c);
@@ -81,25 +94,44 @@ void lttv_hooks_add(LttvHooks *h, LttvHook f, void *hook_data, LttvHookPrio p)
  */
 void lttv_hooks_add_list(LttvHooks *h, const LttvHooks *list) 
 {
-  guint i,j;
+  guint i,j,k;
   LttvHookClosure *c;
   const LttvHookClosure *new_c;
 
   if(list == NULL) return;
   for(i = 0, j = 0 ; i < list->len; i++) {
     new_c = &g_array_index(list, LttvHookClosure, i);
-    while(j < h->len) {
-      c = &g_array_index(h, LttvHookClosure, j);
-      if(new_c->prio < c->prio) {
-        g_array_insert_val(h,j,*new_c);
-        j++;
+    gboolean found=FALSE;
+
+    /* Preliminary check for duplication */
+    /* only hook and hook data is checked, not priority */
+    for(k = 0; k < h->len; k++) {
+      c = &g_array_index(h, LttvHookClosure, k);
+      if(new_c->hook == c->hook && new_c->hook_data == c->hook_data) {
+        /* Found another identical entry : increment its ref_count and
+         * jump over the source index */
+        g_assert(new_c->prio == c->prio);
+        found=TRUE;
+        c->ref_count++;
         break;
       }
-      else j++;
     }
-    if(j == h->len) {
-      g_array_append_val(h,*new_c);
-      j++;
+
+    if(!found) {
+      /* If not found, add it to the destination array */
+      while(j < h->len) {
+        c = &g_array_index(h, LttvHookClosure, j);
+        if(new_c->prio < c->prio) {
+          g_array_insert_val(h,j,*new_c);
+          j++;
+          break;
+        }
+        else j++;
+      }
+      if(j == h->len) {
+        g_array_append_val(h,*new_c);
+        j++;
+      }
     }
   }
 }
@@ -116,9 +148,16 @@ void *lttv_hooks_remove(LttvHooks *h, LttvHook f)
   for(i = 0 ; i < h->len ; i++) {
     c = &g_array_index(h, LttvHookClosure, i);
     if(c->hook == f) {
-      hook_data = c->hook_data;
-      lttv_hooks_remove_by_position(h, i);
-      return hook_data;
+      if(c->ref_count == 1) {
+        hook_data = c->hook_data;
+        lttv_hooks_remove_by_position(h, i);
+        return hook_data;
+      } else {
+        g_assert(c->ref_count != 0);
+        c->ref_count--;
+        return NULL;  /* We do not want anyone to free a hook_data 
+                         still referenced */
+      }
     }
   }
   return NULL;
@@ -134,8 +173,14 @@ void lttv_hooks_remove_data(LttvHooks *h, LttvHook f, void *hook_data)
   for(i = 0 ; i < h->len ; i++) {
     c = &g_array_index(h, LttvHookClosure, i);
     if(c->hook == f && c->hook_data == hook_data) {
-      lttv_hooks_remove_by_position(h, i);
-      return;
+      if(c->ref_count == 1) {
+        lttv_hooks_remove_by_position(h, i);
+        return;
+      } else {
+        g_assert(c->ref_count != 0);
+        c->ref_count--;
+        return;
+      }
     }
   }
 }
@@ -152,7 +197,12 @@ void lttv_hooks_remove_list(LttvHooks *h, LttvHooks *list)
     c = &g_array_index(h, LttvHookClosure, i);
     c_list = &g_array_index(list, LttvHookClosure, j);
     if(c->hook == c_list->hook && c->hook_data == c_list->hook_data) {
-      lttv_hooks_remove_by_position(h, i);
+      if(c->ref_count == 1) {
+        lttv_hooks_remove_by_position(h, i);
+      } else {
+        g_assert(c->ref_count != 0);
+        c->ref_count--;
+      }
       j++;
     }
     else i++;
