@@ -572,6 +572,7 @@ gboolean lttv_apply_op_eq_double(gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_eq_string(gpointer v1, LttvFieldValue v2) {
   char* r = (char*) v1;
+  g_print("v1:%s = v2:%s\n",r,v2.v_string);
   return (!g_strcasecmp(r,v2.v_string));
 }
 
@@ -1243,14 +1244,14 @@ lttv_filter_update(LttvFilter* filter) {
          * in a_field_path array.
          */
         /* FIXME: check for double values */
-//        if(a_simple_expression->op == NULL) {
+        if(a_simple_expression->field == LTTV_FILTER_UNDEFINED) {
           g_ptr_array_add( a_field_path,(gpointer) a_field_component );
           a_field_component = g_string_new("");
-//        }
+        }
         break;
-//    case ' ':
-//    case '\n':
-//      ignore
+      case ' ':
+      case '\n':
+        break;
       default:    /* concatening current string */
         g_string_append_c(a_field_component,filter->expression[i]);
     }
@@ -1336,7 +1337,7 @@ lttv_filter_destroy(LttvFilter* filter) {
 }
 
 /**
- *  LttvFilterTree* lttv_filter_tree_new()
+ *  @fn LttvFilterTree* lttv_filter_tree_new()
  * 
  *  Assign a new tree for the current expression
  *  or sub expression
@@ -1419,7 +1420,7 @@ lttv_filter_tree_destroy(LttvFilterTree* tree) {
 }
 
 /**
- *  gboolean lttv_filter_tree_parse(LttvFilterTree*,LttEvent,LttTracefile,LttTrace,LttvProcessState)
+ *  @fn gboolean lttv_filter_tree_parse(LttvFilterTree*,LttEvent,LttTracefile,LttTrace,LttvProcessState)
  * 
  *  Global parsing function for the current
  *  LttvFilterTree
@@ -1718,6 +1719,7 @@ lttv_filter_tree_parse(
     case LTTV_LOGICAL_AND: return (lresult & rresult);
     case LTTV_LOGICAL_NOT: return (!rresult);
     case LTTV_LOGICAL_XOR: return (lresult ^ rresult);
+    case 0: return (rresult);
     default: 
       /*
        * This case should never be 
@@ -1756,7 +1758,7 @@ lttv_print_tree(LttvFilterTree* t) {
 }
 
 /**
- *  gboolean lttv_filter_tracefile(LttvFilter*, LttTracefile*)
+ *  @fn gboolean lttv_filter_tracefile(LttvFilter*, LttTracefile*)
  * 
  * 	Apply the filter to a specific trace
  * 	@param filter the current filter applied
@@ -1806,7 +1808,7 @@ static void module_init()
 }
 
 /**
- *  Destroys the filter module and specific values
+ *  @fn Destroys the filter module and specific values
  */
 static void module_destroy() 
 {

@@ -136,8 +136,8 @@ void filter_analyze_string(void *hook_data) {
   if(((GString*)*(value.v_pointer))->len != 0) g_string_append_c((GString*)*(value.v_pointer),'&');
   g_string_append((GString*)*(value.v_pointer),a_string);
 
-  LttvFilter* filter = lttv_filter_new();
-  lttv_filter_append_expression(filter,a_string);
+//  LttvFilter* filter = lttv_filter_new();
+//  lttv_filter_append_expression(filter,a_string);
 }
 
 /**
