@@ -38,6 +38,8 @@
 static gboolean
 expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data );
 
+static gboolean
+motion_notify_ruler(GtkWidget *widget, GdkEventMotion *event, gpointer user_data);
 
 
 //FIXME Colors will need to be dynamic. Graphic context part not done so far.
@@ -395,19 +397,15 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   drawing->control_flow_data = control_flow_data;
 
   drawing->vbox = gtk_vbox_new(FALSE, 1);
-  
   drawing->ruler = gtk_drawing_area_new ();
   gtk_widget_set_size_request(drawing->ruler, -1, 27);
-
   
   drawing->drawing_area = gtk_drawing_area_new ();
 
   gtk_box_pack_start(GTK_BOX(drawing->vbox), drawing->ruler, 
                      FALSE, FALSE, 0);
-  //g_object_unref(G_OBJECT(drawing->ruler));
   gtk_box_pack_end(GTK_BOX(drawing->vbox), drawing->drawing_area,
                    TRUE, TRUE, 0);
-  //g_object_unref(G_OBJECT(drawing->drawing_area));
   
   drawing->pango_layout =
     gtk_widget_create_pango_layout(drawing->drawing_area, NULL);
@@ -459,6 +457,14 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
         "expose_event",
         G_CALLBACK(expose_ruler),
         (gpointer)drawing);
+
+  gtk_widget_add_events(drawing->ruler, GDK_POINTER_MOTION_MASK);
+
+  g_signal_connect (G_OBJECT(drawing->ruler),
+        "motion-notify-event",
+        G_CALLBACK(motion_notify_ruler),
+        (gpointer)drawing);
+
 
   g_signal_connect (G_OBJECT(drawing->drawing_area),
         "expose_event",
@@ -867,3 +873,10 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 }
 
 
+/* notify mouse on ruler */
+static gboolean
+motion_notify_ruler(GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
+{
+  //g_critical("motion");
+  //eventually follow mouse and show time here
+}
