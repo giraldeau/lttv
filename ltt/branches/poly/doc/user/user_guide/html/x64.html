@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Conversion from LTT to LTTV trace format</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer User Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Getting started"
+HREF="c25.html"><LINK
+REL="PREVIOUS"
+TITLE="Installing LTT trace recording daemon"
+HREF="x54.html"><LINK
+REL="NEXT"
+TITLE="Running the executable with basic libraries"
+HREF="x81.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer User Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x54.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. Getting started</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x81.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="convert"
+>2.4. Conversion from LTT to LTTV trace format</A
+></H1
+><P
+>&#13;If you used the default directory for installation, you should find the
+conversion tool in /usr/local/bin/convert. Before using it, some other files are
+necessary. You will find them in
+/usr/local/share/LinuxTraceToolkitViewer/convert/. Those are sysInfo and
+core.xml.
+</P
+><P
+>&#13;sysInfo is a script that get informations about the traced computer. It should
+be invoked like this :
+</P
+><PRE
+CLASS="screen"
+>&#13;<SAMP
+CLASS="prompt"
+>$</SAMP
+> <KBD
+CLASS="userinput"
+>sh /usr/local/LinuxTraceToolkitViewer/convert/sysInfo</KBD
+>
+</PRE
+><P
+>&#13;It creates a file named sysInfo.out. This file has to be present in the current
+directory where the convert tool will be executed. I suggest that you choose a
+destination directory where will be written converted traces right now, put sysInfo.out in it, at
+use it as current directory for running the convert tool.
+</P
+><P
+>&#13;Once the sysInfo.out file is ready and you have a trace ready for conversion,
+you should invoke convert like the following example. This is for a uniprocessor
+computer. If you whish to get detailed explanation on the parameters, simply
+execute the convert tool without any option. You may also wish to see the
+/usr/local/LinuxTraceToolkitViewer/convert/README file.
+</P
+><PRE
+CLASS="screen"
+>&#13;<SAMP
+CLASS="prompt"
+>$</SAMP
+> <KBD
+CLASS="userinput"
+>/usr/local/bin/convert sample.proc 1 sample.trace sample.converted</KBD
+>
+</PRE
+><P
+>&#13;You must then copy the core event definition file to the converted trace directory :
+</P
+><PRE
+CLASS="screen"
+>&#13;<SAMP
+CLASS="prompt"
+>$</SAMP
+> <KBD
+CLASS="userinput"
+>cp /usr/local/share/LinuxTraceToolkitViewer/convert/core.xml sample.converted/</KBD
+>
+</PRE
+><P
+>&#13;You now have a converted trace ready for visualization in LTTV. Congratulations!
+</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x54.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x81.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Installing LTT trace recording daemon</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c25.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Running the executable with basic libraries</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

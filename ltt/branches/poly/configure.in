@@ -111,5 +111,14 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/gui/statistics/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
-		 ltt/convert/Makefile])
+		 ltt/convert/Makefile
+     doc/Makefile
+     doc/developer/Makefile
+     doc/developer/developer_guide/Makefile
+     doc/developer/developer_guide/docbook/Makefile
+     doc/developer/developer_guide/html/Makefile
+     doc/user/Makefile
+     doc/user/user_guide/Makefile
+     doc/user/user_guide/docbook/Makefile
+     doc/user/user_guide/html/Makefile])
 AC_OUTPUT
