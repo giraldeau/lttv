@@ -221,6 +221,7 @@ void lttv_attributes_set_pointer(lttv_attributes *a, lttv_key *k, void *p) {
 }
 
 
+#ifdef EXT_ATTRIBS
 /* Sometimes the attributes must be accessed in bulk, sorted in different
    ways. For this purpose they may be converted to arrays and sorted
    multiple times. The keys used in the array belong to the lttv_attributes
@@ -420,3 +421,4 @@ static void select_pointer(void *key, void *value, void *user_data)
 
 
 
+#endif // EXT_ATTRIBS
