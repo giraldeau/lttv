@@ -3176,23 +3176,26 @@ on_about_activate                      (GtkMenuItem     *menuitem,
   GtkWidget *label2 = gtk_label_new("");
   gtk_misc_set_padding(GTK_MISC(label2), 10, 20);
   gtk_label_set_markup(GTK_LABEL(label2), "\
-Project author: Karim Yaghmour\n\
-\n\
 Contributors :\n\
 \n\
 Michel Dagenais (New trace format, lttv main)\n\
 Mathieu Desnoyers (Directory structure, build with automake/conf,\n\
-                   lttv gui, control flow view, gui green threads\n\
-                   with interruptible foreground and background computation,\n\
-                   detailed event list)\n\
-Benoit Des Ligneris (Cluster adaptation)\n\
+                   lttv gui, control flow view, gui cooperative trace reading
+                   scheduler with interruptible foreground and background\n
+                   computation, detailed event list)\n\
+Benoit Des Ligneris, Éric Clement (Cluster adaptation, work in progress)\n\
 Xang-Xiu Yang (new trace reading library and converter, lttv gui, \n\
                detailed event list and statistics view)\n\
-Tom Zanussi (RelayFS)");
+Tom Zanussi (RelayFS)\n\
+\n\
+Strongly inspired from the original Linux Trace Toolkit Visualizer made by\n\
+Karim Yaghmour");
 
   GtkWidget *label3 = gtk_label_new("");
   gtk_label_set_markup(GTK_LABEL(label3), "\
-Linux Trace Toolkit, Copyright (C) 2004  Karim Yaghmour\n\
+Linux Trace Toolkit Viewer, Copyright (C) 2004  Michel Dagenais\n\
+                                                Mathieu Desnoyers\n\
+                                                Xang-Xiu Yang\n\
 Linux Trace Toolkit comes with ABSOLUTELY NO WARRANTY.\n\
 This is free software, and you are welcome to redistribute it\n\
 under certain conditions. See COPYING for details.");

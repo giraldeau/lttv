@@ -16,6 +16,7 @@ libtraceread_la_SOURCES = event.c facility.c parser.c tracefile.c type.c
 noinst_HEADERS = parser.h ltt-private.h
 
 lttinclude_HEADERS = \
+  compiler.h\
 	event.h\
 	facility.h\
 	ltt.h\

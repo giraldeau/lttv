@@ -40,6 +40,16 @@ lttv:   Linux Trace Toolkit trace analysis tool and viewer.
 lttv/modules:  Linux Trace Toolkit analysis tool and viewer plugin modules.
 specs:  RPM config files (currently empty).
 
+* The rest of the tools
+
+You must use the lastest versions of patches for the Linux Kernel. That includes
+relayfs and ltt patches, available on the ltt-dev mailing list at
+http://www.listserv.shafik.org/pipermail/ltt-dev/. You will find there the
+lastest version of the trace daemon that must be used to create the traces. (in
+the TraceToolkit package)
+
+Once your traces are created, you must use the convert tool to create a trace in
+the proper format from them.
 
 * For Developers
 
@@ -55,6 +65,7 @@ GNU Libtool
 
 If you get the tree from the repository, you will need to use the autogen.sh
 script. It calls all the GNU tools needed to prepare the tree configuration.
+
 
 
 Mathieu Desnoyers 
