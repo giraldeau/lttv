@@ -34,6 +34,16 @@ static void     gtk_multi_vpaned_size_allocate  (GtkWidget      *widget,
 
 void gtk_multi_vpaned_scroll_value_changed (GtkRange *range, gpointer multi_vpaned);
 
+gboolean gtk_multi_vpaned_destroy(GtkObject       *object,
+                                  gpointer           user_data)
+{
+  GtkMultiVPaned * multi_vpaned = (GtkMultiVPaned * )object;
+  while(multi_vpaned->num_children){
+    gtk_multi_vpaned_widget_delete(multi_vpaned);
+  }    
+  return FALSE;
+}
+
 GType
 gtk_multi_vpaned_get_type (void)
 {
@@ -96,7 +106,11 @@ gtk_multi_vpaned_init (GtkMultiVPaned * multi_vpaned)
 
 GtkWidget* gtk_multi_vpaned_new ()
 {
-  return GTK_WIDGET (g_object_new (gtk_multi_vpaned_get_type (), NULL));
+  GtkWidget * widget = GTK_WIDGET (g_object_new (gtk_multi_vpaned_get_type (), NULL));
+  g_signal_connect(G_OBJECT(widget), "destroy",
+		   G_CALLBACK(gtk_multi_vpaned_destroy),NULL);
+  
+  return widget;
 }
 
 GtkWidget * gtk_multi_vpaned_get_widget(GtkMultiVPaned * multi_vpaned)

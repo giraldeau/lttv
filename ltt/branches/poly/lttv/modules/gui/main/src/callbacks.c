@@ -1285,13 +1285,6 @@ on_MWindow_destroy                     (GtkObject       *object,
  
   g_printf("There are : %d windows\n",g_slist_length(g_main_window_list));
 
-  while(tab){
-    while(tab->multi_vpaned->num_children){
-      gtk_multi_vpaned_widget_delete(tab->multi_vpaned);
-    }    
-    tab = tab->next;
-  }
-  
   g_win_count--;
   if(g_win_count == 0)
     gtk_main_quit ();
