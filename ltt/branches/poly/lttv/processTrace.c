@@ -441,7 +441,7 @@ gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
 
 
 void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset, 
-    LttvTracesetContext *context)
+    LttvTracesetContext *context, unsigned maxNumEvents)
 {
   GPtrArray *traces = g_ptr_array_new();
 
@@ -460,6 +460,8 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
   LttvTracefileContext *tfc;
 
   LttEvent *event;
+  unsigned count = 0;
+  LttTime preTimestamp;
 
   /* Call all before_traceset, before_trace, and before_tracefile hooks.
      For all qualifying tracefiles, seek to the start time, create a context,
@@ -521,6 +523,23 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
        or more tracefiles have events for the same time, hope that lookup
        and remove are consistent. */
 
+    count++;
+    if(count > maxNumEvents){
+      if(tfc->timestamp.tv_sec == preTimestamp.tv_sec &&
+	 tfc->timestamp.tv_nsec == preTimestamp.tv_nsec) {
+	count--;
+      }else{	
+	while(TRUE){
+	  tfc = NULL;
+	  g_tree_foreach(pqueue, get_first, &tfc);
+	  if(tfc == NULL) break;
+	  g_tree_remove(pqueue, &(tfc->timestamp));
+	}
+	break;
+      }
+    }
+    preTimestamp = tfc->timestamp;
+
     tfc = g_tree_lookup(pqueue, &(tfc->timestamp));
     g_tree_remove(pqueue, &(tfc->timestamp));
 
@@ -536,7 +555,9 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
     if(event != NULL) {
       tfc->e = event;
       tfc->timestamp = ltt_event_time(event);
-      g_tree_insert(pqueue, &(tfc->timestamp), tfc);
+      if(tfc->timestamp.tv_sec < end.tv_sec ||
+	 (tfc->timestamp.tv_sec == end.tv_sec && tfc->timestamp.tv_nsec <= end.tv_nsec))
+	g_tree_insert(pqueue, &(tfc->timestamp), tfc);
     }
   }
 

@@ -55,7 +55,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   end.tv_sec = G_MAXULONG;
   end.tv_nsec = G_MAXULONG;
 
-  lttv_process_trace(start, end, traceset, LTTV_TRACESET_CONTEXT(tc));
+  lttv_process_trace(start, end, traceset, LTTV_TRACESET_CONTEXT(tc),G_MAXULONG);
   lttv_traceset_context_remove_hooks(LTTV_TRACESET_CONTEXT(tc),
   before_traceset, after_traceset, NULL, before_trace, after_trace,
   NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
