@@ -51,6 +51,9 @@ AC_SUBST(lttincludedir)
 
 AC_CONFIG_FILES([Makefile
                  lttv/Makefile
+		 lttv/modules/Makefile
+		 lttv/modules/gui/Makefile
+		 lttv/modules/text/Makefile
                  lttv/plugins/Makefile
 		 lttv/plugins/exemples/Makefile
 		 lttd/Makefile
