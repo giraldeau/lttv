@@ -526,11 +526,15 @@ attribute_instance_init (GTypeInstance *instance, gpointer g_class)
 static void
 attribute_finalize (LttvAttribute *self)
 {
-  g_hash_table_destroy(self->names);
+  guint i;
   g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "attribute_finalize()");
+
+  for(i=0;i<self->attributes->len;i++) {
+    lttv_attribute_remove(self, i);
+  }
+  
+  g_hash_table_destroy(self->names);
   g_array_free(self->attributes, TRUE);
-  G_OBJECT_CLASS(g_type_class_peek_parent(
-      g_type_class_peek(LTTV_ATTRIBUTE_TYPE)))->finalize(G_OBJECT(self));
 }
 
 

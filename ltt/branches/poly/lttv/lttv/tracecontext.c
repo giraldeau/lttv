@@ -638,8 +638,8 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
 
     if(last_ret == TRUE ||
        count >= nb_events ||
-       (end_position!=NULL)?FALSE:lttv_traceset_context_ctx_pos_compare(self,
-                                                           end_position) >= 0 ||
+     ((end_position==NULL)?FALSE:(lttv_traceset_context_ctx_pos_compare(self,
+                                                          end_position) >= 0))||
        ltt_time_compare(tfc->timestamp, end) >= 0)
     {
       return count;
@@ -880,12 +880,16 @@ void lttv_traceset_context_position_save(const LttvTracesetContext *self,
 
     pos->t_pos[iter_trace].tf_pos = g_new(LttEventPosition*, nb_tracefile);
     for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
-      pos->t_pos[iter_trace].tf_pos[iter_tracefile] 
-                                                = ltt_event_position_new();
       tfc = tc->tracefiles[iter_tracefile];
       event = tfc->e;
-      ltt_event_position(event, 
-                         pos->t_pos[iter_trace].tf_pos[iter_tracefile]);
+      if(event!=NULL) {
+        pos->t_pos[iter_trace].tf_pos[iter_tracefile] 
+                                                = ltt_event_position_new();
+        ltt_event_position(event, 
+                           pos->t_pos[iter_trace].tf_pos[iter_tracefile]);
+      } else {
+        pos->t_pos[iter_trace].tf_pos[iter_tracefile] = NULL;
+      }
       if(ltt_time_compare(tfc->timestamp, timestamp) < 0)
         timestamp = tfc->timestamp;
     }
@@ -904,8 +908,8 @@ void lttv_traceset_context_position_destroy(LttvTracesetContextPosition *pos)
     for(iter_tracefile = 0; iter_tracefile < 
                         pos->t_pos[iter_trace].nb_tracefile;
                         iter_tracefile++) {
-      
-      g_free(pos->t_pos[iter_trace].tf_pos[iter_tracefile]);
+      if(pos->t_pos[iter_trace].tf_pos[iter_tracefile] != NULL)
+        g_free(pos->t_pos[iter_trace].tf_pos[iter_tracefile]);
     }
     g_free(pos->t_pos[iter_trace].tf_pos);
   }
@@ -930,9 +934,12 @@ void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
     for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
       dest->t_pos[iter_trace].tf_pos[iter_tracefile] = 
                       ltt_event_position_new();
-      ltt_event_position_copy(
+      if(src->t_pos[iter_trace].tf_pos[iter_tracefile] != NULL)
+        ltt_event_position_copy(
               dest->t_pos[iter_trace].tf_pos[iter_tracefile],
               src->t_pos[iter_trace].tf_pos[iter_tracefile]);
+      else
+        dest->t_pos[iter_trace].tf_pos[iter_tracefile] = NULL;
     }
   }
 
