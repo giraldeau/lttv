@@ -150,7 +150,7 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
   g_ptr_array_add(t->control_tracefiles,tf);
 
   //parse facilities tracefile to get base_id
-  if(strcmp(control_name,"facilities") ==0){
+  if(strcmp(&control_name[strlen(control_name)-10],"facilities") ==0){
     while(1){
       ev = ltt_tracefile_read(tf);
       if(!ev)return; // end of file
