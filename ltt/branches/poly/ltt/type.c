@@ -241,7 +241,7 @@ LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name)
 {
   if(t->type_class != LTT_STRUCT){*name == NULL; return NULL;}
   if(i >= t->element_number || i < 0 ){*name = NULL; return NULL;}
-  *name = t->element_name;
+  *name = t->element_type[i]->element_name;
   return t->element_type[i];
 }
 

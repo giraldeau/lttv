@@ -74,6 +74,7 @@ void ltt_facility_open(LttTrace * t, char * pathname)
       generateChecksum(fac->name, &checksum, &fac->events);
 
       f = g_new(LttFacility,1);    
+      f->base_id = 0;
       generateFacility(f, fac, checksum);
 
       t->facility_number++;
