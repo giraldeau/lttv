@@ -156,9 +156,6 @@ LttvProcessState *
 lttv_state_find_process(LttvTracefileState *tfs, guint pid);
 
 LttvProcessState *
-lttv_state_find_process_from_trace(LttvTraceState *ts, GQuark cpu, guint pid);
-
-LttvProcessState *
 lttv_state_find_process_or_create(LttvTracefileState *tfs, guint pid);
 
 LttvProcessState *

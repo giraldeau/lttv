@@ -814,26 +814,19 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
   return process;
 }
 
-LttvProcessState *
-lttv_state_find_process_from_trace(LttvTraceState *ts, GQuark cpu, guint pid)
+LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs, 
+    guint pid)
 {
   LttvProcessState key;
   LttvProcessState *process;
 
+  LttvTraceState* ts = (LttvTraceState*)tfs->parent.t_context;
+
   key.pid = pid;
-  key.last_cpu = cpu;
+  key.last_cpu = tfs->cpu_name;
   process = g_hash_table_lookup(ts->processes, &key);
   return process;
 }
-
-
-LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs, 
-    guint pid)
-{
-  LttvTraceState *ts =(LttvTraceState *)tfs->parent.t_context;
-  return lttv_state_find_process_from_trace(ts, tfs->cpu_name, pid);
-}
-
 
 LttvProcessState *
 lttv_state_find_process_or_create(LttvTracefileState *tfs, guint pid)
@@ -844,7 +837,16 @@ lttv_state_find_process_or_create(LttvTracefileState *tfs, guint pid)
   return process;
 }
 
-
+/* FIXME : this function should be called when we receive an event telling that
+ * release_task has been called in the kernel. In happens generally when
+ * the parent waits for its child terminaison, but may also happen in special
+ * cases in the child's exit : when the parent ignores its children SIGCCHLD or
+ * has the flag SA_NOCLDWAIT. It can also happen when the child is part
+ * of a killed thread ground, but isn't the leader.
+ *
+ * This function is important : it removes the dead PID entry in the hash
+ * table so there is no collision when the OS reuses PID.
+ */
 static void exit_process(LttvTracefileState *tfs, LttvProcessState *process) 
 {
   LttvTraceState *ts = LTTV_TRACE_STATE(tfs->parent.t_context);
@@ -970,10 +972,17 @@ static gboolean schedchange(void *hook_data, void *call_data)
       g_assert(s->process->pid == 0);
     }
 
-    if(state_out == 0) s->process->state->s = LTTV_STATE_WAIT_CPU;
-    else if(s->process->state->s == LTTV_STATE_EXIT) 
-        exit_process(s, s->process);
-    else s->process->state->s = LTTV_STATE_WAIT;
+    if(s->process->state->s != LTTV_STATE_EXIT) {
+      if(state_out == 0) s->process->state->s = LTTV_STATE_WAIT_CPU;
+      else s->process->state->s = LTTV_STATE_WAIT;
+    } /* FIXME : we do not remove process here, because the kernel
+       * still has them : they may be zombies. We need to know
+       * exactly when release_task is executed on the PID to 
+       * know when the zombie is destroyed. We should rename STATE_EXIT
+       * for STATE_ZOMBIE.
+       */
+    //else
+    //  exit_process(s, s->process);
 
     s->process->state->change = s->parent.timestamp;
   }
