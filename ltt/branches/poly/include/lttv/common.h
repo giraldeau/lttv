@@ -6,6 +6,9 @@
 #include <gtk/gtk.h>
 #include <lttv/lttvfilter.h>
 
+#define MAX_NUMBER_EVENT     "MAX_NUMBER_EVENT"
+#define TRACESET_TIME_SPAN   "TRACESET_TIME_SPAN"
+
 typedef struct _MainWindow MainWindow;
 typedef struct _Tab Tab;
 

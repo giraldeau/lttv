@@ -489,6 +489,71 @@ void unreg_update_current_time(LttvHook hook, gpointer hook_data,
 
 
 /**
+ * Function to register a hook function for a viewer to show 
+ *the content of the viewer.
+ * It will be called by the constructor of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void reg_show_viewer(LttvHook hook, gpointer hook_data, 
+		     MainWindow *main_win)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
+		       "hooks/showviewer", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL){    
+    tmp = lttv_hooks_new();
+    *(value.v_pointer) = tmp;
+  }
+  lttv_hooks_add(tmp, hook, hook_data);
+}
+
+
+/**
+ * Function to unregister a viewer's hook function which is used to 
+ * show the content of the viewer..
+ * It will be called by the destructor of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void unreg_show_viewer(LttvHook hook, gpointer hook_data,
+		       MainWindow * main_win)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
+		       "hooks/showviewer", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return;
+  lttv_hooks_remove_data(tmp, hook, hook_data);
+}
+
+
+/**
+ * Function to show each viewer in the current tab.
+ * It will be called by main window after it called process_traceset 
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void show_viewer(MainWindow *main_win)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
+		       "hooks/showviewer", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return;
+  lttv_hooks_call(tmp, NULL);
+}
+
+
+/**
  * Function to set the focused pane (viewer).
  * It will be called by a viewer's signal handle associated with 
  * the grab_focus signal

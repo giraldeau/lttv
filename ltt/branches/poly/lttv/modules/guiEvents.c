@@ -57,6 +57,7 @@ static GSList *g_event_viewer_data_list = NULL ;
 /** hook functions for update time interval, current time ... */
 gboolean update_time_window(void * hook_data, void * call_data);
 gboolean update_current_time(void * hook_data, void * call_data);
+gboolean show_event_detail(void * hook_data, void * call_data);
 void remove_item_from_queue(GQueue * q, gboolean fromHead);
 void remove_all_items_from_queue(GQueue * q);
 
@@ -95,11 +96,11 @@ typedef struct _EventViewerData {
   unsigned     current_event_index;
   double       previous_value;            //value of the slide
   TimeInterval time_span;
- // LttTime      trace_start;
- // LttTime      trace_end;
   unsigned     start_event_index;        //the first event shown in the window
   unsigned     end_event_index;          //the last event shown in the window
-
+  unsigned     size;                     //maxi number of events loaded when instance the viewer
+  gboolean     shown;                    //indicate if event detail is shown or not
+ 
   //scroll window containing Tree View
   GtkWidget * scroll_win;
 
@@ -155,6 +156,8 @@ static void get_test_data(double time, guint list_height,
 			  EventViewerData *event_viewer_data);
 
 void add_test_data(EventViewerData *event_viewer_data);
+
+static void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size);
 
 static void get_events(EventViewerData* event_viewer_data, LttTime start, 
 		       LttTime end, unsigned max_num_events, unsigned * real_num_events);
@@ -259,7 +262,6 @@ gui_events(MainWindow *parent_window, LttvTracesetSelector * s,char* key )
   GtkCellRenderer *renderer;
   EventViewerData* event_viewer_data = g_new(EventViewerData,1) ;
   RawTraceData * data;
-  unsigned size;
 
   event_viewer_data->mw = parent_window;
   get_time_window(event_viewer_data->mw, &event_viewer_data->time_window);
@@ -273,6 +275,7 @@ gui_events(MainWindow *parent_window, LttvTracesetSelector * s,char* key )
 
   reg_update_time_window(update_time_window,event_viewer_data, event_viewer_data->mw);
   reg_update_current_time(update_current_time,event_viewer_data, event_viewer_data->mw);
+  reg_show_viewer(show_event_detail,event_viewer_data, event_viewer_data->mw);
 
   event_viewer_data->scroll_win = gtk_scrolled_window_new (NULL, NULL);
   gtk_widget_show ( event_viewer_data->scroll_win);
@@ -437,24 +440,23 @@ gui_events(MainWindow *parent_window, LttvTracesetSelector * s,char* key )
 
   event_viewer_data->append = TRUE;
 
-  start.tv_sec = 0;
-  start.tv_nsec = 0;
-  end.tv_sec = G_MAXULONG;
-  end.tv_nsec = G_MAXULONG;
-
-  get_events(event_viewer_data, start,end, RESERVE_SMALL_SIZE, &size);
-
   event_viewer_data->start_event_index = 0;
   event_viewer_data->end_event_index   = event_viewer_data->num_visible_events - 1;  
-
-  // Test data 
-  get_test_data(event_viewer_data->vadjust_c->value,
-		event_viewer_data->num_visible_events, 
-		event_viewer_data);
 
   /* Set the Selected Event */
   //  tree_v_set_cursor(event_viewer_data);
 
+  event_viewer_data->shown = FALSE;
+  event_viewer_data->size  = RESERVE_SMALL_SIZE;
+  g_object_set_data(
+		    G_OBJECT(event_viewer_data->hbox_v),
+		    MAX_NUMBER_EVENT,
+		    &event_viewer_data->size);
+  
+  g_object_set_data(
+		    G_OBJECT(event_viewer_data->hbox_v),
+		    TRACESET_TIME_SPAN,
+		    &event_viewer_data->time_span);
 
   g_object_set_data(
 		    G_OBJECT(event_viewer_data->hbox_v),
@@ -767,6 +769,26 @@ void tree_v_size_request_cb (GtkWidget *widget, GtkRequisition *requisition, gpo
     (GTK_TREE_VIEW(event_viewer_data->tree_v));
   requisition->height = h;
 	
+}
+
+gboolean show_event_detail(void * hook_data, void * call_data)
+{
+  EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
+
+  if(event_viewer_data->shown == FALSE){
+    event_viewer_data->shown = TRUE;
+    update_raw_data_array(event_viewer_data, 
+			  event_viewer_data->raw_trace_data_queue_tmp->length);
+
+    get_test_data(event_viewer_data->vadjust_c->value,
+		  event_viewer_data->num_visible_events, 
+		  event_viewer_data);
+    //remove hooks from context
+    context_remove_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
+			     NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
+  }
+
+  return FALSE;
 }
 
 void get_test_data(double time_value, guint list_height, 
@@ -1111,6 +1133,7 @@ gui_events_free(EventViewerData *event_viewer_data)
 
     unreg_update_time_window(update_time_window,event_viewer_data, event_viewer_data->mw);
     unreg_update_current_time(update_current_time,event_viewer_data, event_viewer_data->mw);
+    unreg_show_viewer(show_event_detail,event_viewer_data, event_viewer_data->mw);
 
     g_event_viewer_data_list = g_slist_remove(g_event_viewer_data_list, event_viewer_data);
     g_free(event_viewer_data);
@@ -1173,7 +1196,14 @@ int event_selected_hook(void *hook_data, void *call_data)
 gboolean update_time_window(void * hook_data, void * call_data)
 {
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
-  event_viewer_data->time_window = *(TimeWindow*)call_data;
+
+  if(event_viewer_data->shown == FALSE){
+    event_viewer_data->time_window = *(TimeWindow*)call_data;
+
+    //add hooks for process_traceset
+    context_add_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
+			  NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);  
+  }
 
   return FALSE;
 }
@@ -1214,19 +1244,9 @@ void tree_v_grab_focus(GtkWidget *widget, gpointer data){
   set_focused_pane(mw, gtk_widget_get_parent(event_viewer_data->hbox_v));
 }
 
-void get_events(EventViewerData* event_viewer_data, LttTime start, 
-		LttTime end,unsigned max_num_events, unsigned * real_num_events)
+void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
 {
-  int size;
   RawTraceData * data;
-  context_add_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
-			NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
-  process_traceset_api(event_viewer_data->mw, start, end, max_num_events);
-  context_remove_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
-			   NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
-
-  size = event_viewer_data->raw_trace_data_queue_tmp->length;
-  *real_num_events = size;
   if(size > 0){
     int pid, tmpPid, i;
     GList * list, *tmpList;
@@ -1283,6 +1303,22 @@ void get_events(EventViewerData* event_viewer_data, LttTime start,
       }
     }
   }
+}
+
+void get_events(EventViewerData* event_viewer_data, LttTime start, 
+		LttTime end,unsigned max_num_events, unsigned * real_num_events)
+{
+  int size;
+  context_add_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
+			NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
+  process_traceset_api(event_viewer_data->mw, start, end, max_num_events);
+  context_remove_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
+			   NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
+
+  size = event_viewer_data->raw_trace_data_queue_tmp->length;
+  *real_num_events = size;
+  
+  update_raw_data_array(event_viewer_data,size);
 }
 
 static void get_event_detail(LttEvent *e, LttField *f, GString * s)
