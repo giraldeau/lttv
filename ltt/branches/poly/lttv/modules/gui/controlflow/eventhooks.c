@@ -3085,14 +3085,11 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
       const gchar *name = g_quark_to_string(process->name);
       
       /* process HAS to be present */
-      g_assert(processlist_get_process_pixels(process_list,
-              process_info->pid,
-              process_info->cpu,
-              &birth,
-              process_info->trace_num,
+      processlist_get_pixels_from_data(process_list,
+              process_info,
+              hashed_process_data,
               &y,
-              &height,
-              &hashed_process_data) != 1);
+              &height);
     
       /* Now, the process is in the state hash and our own process hash.
        * We definitely can draw the items related to the ending state.
