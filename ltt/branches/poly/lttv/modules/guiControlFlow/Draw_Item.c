@@ -25,13 +25,12 @@
  * - point (color, size)
  * - background color (color)
  *
- * Each item has an array of pointers to operation structures, which define
- * the information type selector. We seek the array each time we want to
- * draw an item. We execute each operation in order, casting to the right
- * operation type corresponding to the information type selector.
+ * Each item has an array of hooks (hook list). Each hook represents an
+ * operation to perform. We seek the array each time we want to
+ * draw an item. We execute each operation in order.
  *
  * The array has to be sorted by priority each time we add a task in it.
- * A priority is associated with each information type selector. It permits
+ * A priority is associated with each hook. It permits
  * to perform background color selection before line or text drawing. We also
  * draw lines before text, so the text appears over the lines.
  *
@@ -40,7 +39,13 @@
  * has to be done in a same DrawContext. The goal there is to keep the offset
  * of the text and icons over and under the middle line, so a specific
  * event could be printed as (  R Si 0 for running, scheduled in, cpu 0  ),
- * text being easy to replace with icons.
+ * text being easy to replace with icons. The DrawContext is passed as
+ * call_data for the operation hooks.
  *
  * Author : Mathieu Desnoyers, October 2003
  */
+
+#include <glib.h>
+#include <lttv/hook.h>
+
+
