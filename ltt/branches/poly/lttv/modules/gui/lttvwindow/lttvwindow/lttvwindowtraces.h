@@ -31,7 +31,23 @@ extern LttvTraceInfo LTTV_TRACES,
               LTTV_REQUESTS_QUEUE,
               LTTV_REQUESTS_CURRENT,
               LTTV_NOTIFY_QUEUE,
-              LTTV_NOTIFY_CURRENT;
+              LTTV_NOTIFY_CURRENT,
+              LTTV_COMPUTATION_TRACESET,
+              LTTV_COMPUTATION_TRACESET_CONTEXT,
+              LTTV_BEFORE_CHUNK_TRACESET,
+              LTTV_BEFORE_CHUNK_TRACE,
+              LTTV_BEFORE_CHUNK_TRACEFILE,
+              LTTV_AFTER_CHUNK_TRACESET,
+              LTTV_AFTER_CHUNK_TRACE,
+              LTTV_AFTER_CHUNK_TRACEFILE,
+              LTTV_BEFORE_REQUEST,
+              LTTV_AFTER_REQUEST,
+              LTTV_EVENT_HOOK,
+              LTTV_EVENT_HOOK_BY_ID,
+              LTTV_IN_PROGRESS,
+              LTTV_READY;
+              
+
 
 /* Get a trace by its path name. 
  *

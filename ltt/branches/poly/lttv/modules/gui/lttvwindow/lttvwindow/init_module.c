@@ -53,7 +53,22 @@ LttvTraceInfo LTTV_TRACES,
        LTTV_REQUESTS_QUEUE,
        LTTV_REQUESTS_CURRENT,
        LTTV_NOTIFY_QUEUE,
-       LTTV_NOTIFY_CURRENT;
+       LTTV_NOTIFY_CURRENT,
+       LTTV_COMPUTATION_TRACESET,
+       LTTV_COMPUTATION_TRACESET_CONTEXT,
+       LTTV_BEFORE_CHUNK_TRACESET,
+       LTTV_BEFORE_CHUNK_TRACE,
+       LTTV_BEFORE_CHUNK_TRACEFILE,
+       LTTV_AFTER_CHUNK_TRACESET,
+       LTTV_AFTER_CHUNK_TRACE,
+       LTTV_AFTER_CHUNK_TRACEFILE,
+       LTTV_BEFORE_REQUEST,
+       LTTV_AFTER_REQUEST,
+       LTTV_EVENT_HOOK,
+       LTTV_EVENT_HOOK_BY_ID,
+       LTTV_IN_PROGRESS,
+       LTTV_READY;
+
 
 /** Array containing instanced objects. */
 GSList * g_main_window_list = NULL ;
@@ -127,7 +142,22 @@ static void init() {
   LTTV_REQUESTS_CURRENT = g_quark_from_string("requests_current");
   LTTV_NOTIFY_QUEUE = g_quark_from_string("notify_queue");
   LTTV_NOTIFY_CURRENT = g_quark_from_string("notify_current");
-  
+  LTTV_COMPUTATION_TRACESET = g_quark_from_string("computation_traceset");
+  LTTV_COMPUTATION_TRACESET_CONTEXT =
+                        g_quark_from_string("computation_traceset_context");
+  LTTV_BEFORE_CHUNK_TRACESET = g_quark_from_string("before_chunk_traceset");
+  LTTV_BEFORE_CHUNK_TRACE = g_quark_from_string("before_chunk_trace");
+  LTTV_BEFORE_CHUNK_TRACEFILE = g_quark_from_string("before_chunk_tracefile");
+  LTTV_AFTER_CHUNK_TRACESET = g_quark_from_string("after_chunk_traceset");
+  LTTV_AFTER_CHUNK_TRACE = g_quark_from_string("after_chunk_trace");
+  LTTV_AFTER_CHUNK_TRACEFILE = g_quark_from_string("after_chunk_tracefile");
+  LTTV_BEFORE_REQUEST = g_quark_from_string("before_request");
+  LTTV_AFTER_REQUEST = g_quark_from_string("after_request");
+  LTTV_EVENT_HOOK = g_quark_from_string("event_hook");
+  LTTV_EVENT_HOOK_BY_ID = g_quark_from_string("event_hook_by_id");
+  LTTV_IN_PROGRESS = g_quark_from_string("in_progress");
+  LTTV_READY = g_quark_from_string("ready");
+
   g_debug("GUI init()");
 
   lttv_option_add("trace", 't', 

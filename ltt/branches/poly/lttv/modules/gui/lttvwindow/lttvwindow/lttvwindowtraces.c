@@ -32,6 +32,7 @@
 #include <lttv/attribute.h>
 #include <lttv/tracecontext.h>
 #include <lttvwindow/lttvwindowtraces.h>
+#include <lttvwindow/lttvwindow.h> // for CHUNK_NUM_EVENTS
 
 
 typedef struct _BackgroundRequest {
@@ -150,6 +151,46 @@ void lttvwindowtraces_add_trace(LttvTrace *trace)
                      LTTV_POINTER);
 
   *(value.v_pointer) = (gpointer)trace;
+  
+  /* create new traceset and tracesetcontext */
+  LttvTraceset *ts;
+  LttvTracesetContext *tsc;
+  
+  attribute = lttv_trace_attribute(trace);
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_COMPUTATION_TRACESET,
+                                LTTV_POINTER,
+                                &value));
+  ts = lttv_traceset_new();
+  *(value.v_pointer) = ts;
+ 
+  lttv_traceset_add(ts,trace);
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_COMPUTATION_TRACESET_CONTEXT,
+                                LTTV_POINTER,
+                                &value));
+  tsc = g_object_new(LTTV_TRACESET_CONTEXT_TYPE, NULL);
+  *(value.v_pointer) = tsc;
+  
+  lttv_context_init(tsc, ts);
+
+  value = lttv_attribute_add(attribute,
+                     LTTV_REQUESTS_QUEUE,
+                     LTTV_POINTER);
+
+  value = lttv_attribute_add(attribute,
+                     LTTV_REQUESTS_CURRENT,
+                     LTTV_POINTER);
+ 
+  value = lttv_attribute_add(attribute,
+                     LTTV_NOTIFY_QUEUE,
+                     LTTV_POINTER);
+  
+  value = lttv_attribute_add(attribute,
+                     LTTV_NOTIFY_CURRENT,
+                     LTTV_POINTER);
+ 
 }
 
 /* Remove a trace from the global attributes */
@@ -172,7 +213,50 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace)
 
     if(trace_v == trace) {
       /* Found */
+      LttvAttribute *l_attribute;
+
+      /* create new traceset and tracesetcontext */
+      LttvTraceset *ts;
+      LttvTracesetContext *tsc;
+      
+      l_attribute = lttv_trace_attribute(trace);
+
+
+      lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
+                                     LTTV_REQUESTS_QUEUE);
+
+      lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
+                                     LTTV_REQUESTS_CURRENT);
+
+      lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
+                                     LTTV_NOTIFY_QUEUE);
+
+      lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
+                                     LTTV_NOTIFY_CURRENT);
+
+      g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(l_attribute),
+                                    LTTV_COMPUTATION_TRACESET,
+                                    LTTV_POINTER,
+                                    &value));
+      ts = (LttvTraceset*)*(value.v_pointer);
+     
+      g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(l_attribute),
+                                    LTTV_COMPUTATION_TRACESET_CONTEXT,
+                                    LTTV_POINTER,
+                                    &value));
+      tsc = (LttvTracesetContext*)*(value.v_pointer);
+      
+      lttv_context_fini(tsc);
+      g_object_unref(tsc);
+      lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
+                                     LTTV_COMPUTATION_TRACESET_CONTEXT);
+      lttv_traceset_destroy(ts);
+      lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
+                                     LTTV_COMPUTATION_TRACESET);
+
+      /* finally, remove the global attribute */
       lttv_attribute_remove(attribute, i);
+
       return;
     }
   }
@@ -414,3 +498,556 @@ void lttvwindowtraces_background_notify_remove(gpointer owner)
   }
 }
 
+
+/* Background processing helper functions */
+
+void lttvwindowtraces_add_computation_hooks(LttvAttributeName module_name,
+                                            LttvTracesetContext *tsc)
+{
+  LttvAttribute *g_attribute = lttv_global_attributes();
+  LttvAttribute *module_attribute;
+  LttvAttributeType type;
+  LttvAttributeValue value;
+  LttvHooks *before_chunk_traceset=NULL;
+  LttvHooks *before_chunk_trace=NULL;
+  LttvHooks *before_chunk_tracefile=NULL;
+  LttvHooks *event_hook=NULL;
+  LttvHooksById *event_hook_by_id=NULL;
+
+ 
+  g_assert(module_attribute =
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
+                                LTTV_COMPUTATION)));
+
+  g_assert(module_attribute =
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                                LTTV_IATTRIBUTE(module_attribute),
+                                module_name)));
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_BEFORE_CHUNK_TRACESET,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    before_chunk_traceset = (LttvHooks*)*(value.v_pointer);
+  }
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_BEFORE_CHUNK_TRACE,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    before_chunk_trace = (LttvHooks*)*(value.v_pointer);
+  }
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_BEFORE_CHUNK_TRACEFILE,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    before_chunk_tracefile = (LttvHooks*)*(value.v_pointer);
+  }
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_EVENT_HOOK,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    event_hook = (LttvHooks*)*(value.v_pointer);
+  }
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_EVENT_HOOK_BY_ID,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    event_hook_by_id = (LttvHooksById*)*(value.v_pointer);
+  }
+
+
+  lttv_process_traceset_begin(tsc,
+                              before_chunk_traceset,
+                              before_chunk_trace,
+                              before_chunk_tracefile,
+                              event_hook,
+                              event_hook_by_id);
+
+}
+                                            
+void lttvwindowtraces_remove_computation_hooks(LttvAttributeName module_name,
+                                               LttvTracesetContext *tsc)
+{
+  LttvAttribute *g_attribute = lttv_global_attributes();
+  LttvAttribute *module_attribute;
+  LttvAttributeType type;
+  LttvAttributeValue value;
+  LttvHooks *after_chunk_traceset=NULL;
+  LttvHooks *after_chunk_trace=NULL;
+  LttvHooks *after_chunk_tracefile=NULL;
+  LttvHooks *event_hook=NULL;
+  LttvHooksById *event_hook_by_id=NULL;
+
+ 
+  g_assert(module_attribute =
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
+                                LTTV_COMPUTATION)));
+
+  g_assert(module_attribute =
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                                LTTV_IATTRIBUTE(module_attribute),
+                                module_name)));
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_AFTER_CHUNK_TRACESET,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    after_chunk_traceset = (LttvHooks*)*(value.v_pointer);
+  }
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_AFTER_CHUNK_TRACE,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    after_chunk_trace = (LttvHooks*)*(value.v_pointer);
+  }
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_AFTER_CHUNK_TRACEFILE,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    after_chunk_tracefile = (LttvHooks*)*(value.v_pointer);
+  }
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_EVENT_HOOK,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    event_hook = (LttvHooks*)*(value.v_pointer);
+  }
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     LTTV_EVENT_HOOK_BY_ID,
+                                     &value);
+  if(type == LTTV_POINTER) {
+    event_hook_by_id = (LttvHooksById*)*(value.v_pointer);
+  }
+
+
+  lttv_process_traceset_end(tsc,
+                            after_chunk_traceset,
+                            after_chunk_trace,
+                            after_chunk_tracefile,
+                            event_hook,
+                            event_hook_by_id);
+}
+
+
+void lttvwindowtraces_set_in_progress(LttvAttributeName module_name,
+                                      LttvTrace *trace)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+  LttvAttributeValue value;
+
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
+                                module_name)));
+ 
+  value = lttv_iattribute_add(LTTV_IATTRIBUTE(attribute),
+                              LTTV_IN_PROGRESS,
+                              LTTV_INT);
+  /* the value is left unset. The only presence of the attribute is necessary.
+   */
+}
+
+void lttvwindowtraces_unset_in_progress(LttvAttributeName module_name,
+                                        LttvTrace *trace)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
+                                module_name)));
+ 
+  lttv_iattribute_remove(LTTV_IATTRIBUTE(attribute),
+                         LTTV_IN_PROGRESS);
+}
+
+gboolean lttvwindowtraces_get_in_progress(LttvAttributeName module_name,
+                                          LttvTrace *trace)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+  LttvAttributeType type;
+  LttvAttributeValue value;
+
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
+                                module_name)));
+ 
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_IN_PROGRESS,
+                                     &value);
+  /* The only presence of the attribute is necessary. */
+  if(type == LTTV_NONE)
+    return FALSE;
+  else
+    return TRUE;
+}
+
+void lttvwindowtraces_set_ready(LttvAttributeName module_name,
+                                LttvTrace *trace)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+  LttvAttributeValue value;
+
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
+                                module_name)));
+ 
+  value = lttv_iattribute_add(LTTV_IATTRIBUTE(attribute),
+                              LTTV_READY,
+                              LTTV_INT);
+  /* the value is left unset. The only presence of the attribute is necessary.
+   */
+}
+
+void lttvwindowtraces_unset_ready(LttvAttributeName module_name,
+                                  LttvTrace *trace)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
+                                module_name)));
+ 
+  lttv_iattribute_remove(LTTV_IATTRIBUTE(attribute),
+                         LTTV_READY);
+}
+
+gboolean lttvwindowtraces_get_ready(LttvAttributeName module_name,
+                                    LttvTrace *trace)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+  LttvAttributeType type;
+  LttvAttributeValue value;
+
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
+                                module_name)));
+ 
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_READY,
+                                     &value);
+  /* The only presence of the attribute is necessary. */
+  if(type == LTTV_NONE)
+    return FALSE;
+  else
+    return TRUE;
+}
+
+
+
+/* lttvwindowtraces_process_pending_requests
+ * 
+ * This internal function gets called by g_idle, taking care of the pending
+ * requests.
+ *
+ */
+
+
+gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
+{
+  LttvTracesetContext *tsc;
+  LttvTraceset *ts;
+  LttvAttribute *attribute;
+  GSList *list_out, *list_in, *notify_in, *notify_out;
+  LttvAttributeValue value;
+  LttvAttributeType type;
+
+   if(trace == NULL)
+    return FALSE;
+   
+  attribute = lttv_trace_attribute(trace);
+  
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_REQUESTS_QUEUE,
+                                     &value);
+  g_assert(type == LTTV_POINTER);
+  list_out = (GSList*)*(value.v_pointer);
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_REQUESTS_CURRENT,
+                                     &value);
+  g_assert(type == LTTV_POINTER);
+  list_in = (GSList*)*(value.v_pointer);
+ 
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_NOTIFY_QUEUE,
+                                     &value);
+  g_assert(type == LTTV_POINTER);
+  notify_out = (GSList*)*(value.v_pointer);
+  
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_NOTIFY_CURRENT,
+                                     &value);
+  g_assert(type == LTTV_POINTER);
+  notify_in = (GSList*)*(value.v_pointer);
+ 
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_COMPUTATION_TRACESET,
+                                     &value);
+  g_assert(type == LTTV_POINTER);
+  ts = (LttvTraceset*)*(value.v_pointer);
+ 
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_COMPUTATION_TRACESET_CONTEXT,
+                                     &value);
+  g_assert(type == LTTV_POINTER);
+  tsc = (LttvTracesetContext*)*(value.v_pointer);
+  g_assert(LTTV_IS_TRACESET_CONTEXT(tsc));
+ 
+  /* There is no events requests pending : we should never have been called! */
+  g_assert(g_slist_length(list_out) != 0 || g_slist_length(list_in) != 0);
+
+
+
+  /* 1. Before processing */
+  {
+    /* if list_in is empty */
+    if(g_slist_length(list_in) == 0) {
+
+      {
+        /* - Add all requests in list_out to list_in, empty list_out */
+        GSList *iter = list_out;
+
+        while(iter != NULL) {
+          gboolean remove = FALSE;
+          gboolean free_data = FALSE;
+
+          BackgroundRequest *bg_req = (BackgroundRequest*)iter->data;
+
+          remove = TRUE;
+          free_data = FALSE;
+          list_in = g_slist_append(list_in, bg_req);
+
+          /* Go to next */
+          if(remove)
+          {
+            GSList *remove_iter = iter;
+
+            iter = g_slist_next(iter);
+            if(free_data) g_free(remove_iter->data);
+            list_out = g_slist_remove_link(list_out, remove_iter);
+          } else { // not remove
+            iter = g_slist_next(iter);
+          }
+        }
+      }
+
+      {
+        GSList *iter = list_in;
+        /* - for each request in list_in */
+        while(iter != NULL) {
+          
+          BackgroundRequest *bg_req = (BackgroundRequest*)iter->data;
+          /*- add hooks to context*/
+          lttvwindowtraces_set_in_progress(bg_req->module_name,
+                                           bg_req->trace);
+          
+          iter = g_slist_next(iter);
+        }
+      }
+
+      /* - seek trace to start */
+      {
+        LttTime start = { 0, 0};
+        lttv_process_traceset_seek_time(tsc, start);
+      }
+
+      /* - Move all notifications from notify_out to notify_in. */
+      {
+        GSList *iter = notify_out;
+        g_assert(g_slist_length(notify_in) == 0);
+
+        while(iter != NULL) {
+          gboolean remove = FALSE;
+          gboolean free_data = FALSE;
+
+          BackgroundNotify *notify_req = (BackgroundNotify*)iter->data;
+
+          remove = TRUE;
+          free_data = FALSE;
+          notify_in = g_slist_append(notify_in, notify_req);
+
+          /* Go to next */
+          if(remove)
+          {
+            GSList *remove_iter = iter;
+
+            iter = g_slist_next(iter);
+            if(free_data) g_free(remove_iter->data);
+            notify_out = g_slist_remove_link(notify_out, remove_iter);
+          } else { // not remove
+            iter = g_slist_next(iter);
+          }
+        }
+      }
+    }
+
+    {
+      GSList *iter = list_in;
+      /* - for each request in list_in */
+      while(iter != NULL) {
+        
+        BackgroundRequest *bg_req = (BackgroundRequest*)iter->data;
+        /*- Call before chunk hooks for list_in*/
+        /*- add hooks to context*/
+        lttvwindowtraces_add_computation_hooks(bg_req->module_name,
+                                               tsc);
+        iter = g_slist_next(iter);
+      }
+    }
+  }
+
+  /* 2. call process traceset middle for a chunk */
+  {
+    /*(assert list_in is not empty! : should not even be called in that case)*/
+    LttTime end = { G_MAXUINT, G_MAXUINT };
+    g_assert(g_slist_length(list_in) != 0);
+    
+    lttv_process_traceset_middle(tsc, end, CHUNK_NUM_EVENTS, NULL);
+  }
+
+  /* 3. After the chunk */
+  {
+    /*  3.1 call after_chunk hooks for list_in */
+    {
+      GSList *iter = list_in;
+      /* - for each request in list_in */
+      while(iter != NULL) {
+        
+        BackgroundRequest *bg_req = (BackgroundRequest*)iter->data;
+        /* - Call after chunk hooks for list_in */
+        /* - remove hooks from context */
+        lttvwindowtraces_remove_computation_hooks(bg_req->module_name,
+                                                  tsc);
+        iter = g_slist_next(iter);
+      }
+    }
+
+    /* 3.2 for each notify_in */
+    {
+      GSList *iter = notify_in;
+      LttvTracefileContext *tfc = lttv_traceset_context_get_current_tfc(tsc);
+        
+      while(iter != NULL) {
+        gboolean remove = FALSE;
+        gboolean free_data = FALSE;
+
+        BackgroundNotify *notify_req = (BackgroundNotify*)iter->data;
+
+        /* - if current time >= notify time, call notify and remove from
+         * notify_in.
+         * - if current position >= notify position, call notify and remove
+         * from notify_in.
+         */
+        if( (tfc != NULL &&
+              ltt_time_compare(notify_req->notify_time, tfc->timestamp) >= 0)
+           ||
+            (lttv_traceset_context_ctx_pos_compare(tsc,
+                                           notify_req->notify_position) >= 0)
+           ) {
+
+          lttv_hooks_call(notify_req->notify, notify_req);
+
+          remove = TRUE;
+          free_data = TRUE;
+        }
+
+        /* Go to next */
+        if(remove)
+        {
+          GSList *remove_iter = iter;
+
+          iter = g_slist_next(iter);
+          if(free_data) g_free(remove_iter->data);
+          notify_in = g_slist_remove_link(notify_in, remove_iter);
+        } else { // not remove
+          iter = g_slist_next(iter);
+        }
+      }
+    }
+
+    {
+      LttvTracefileContext *tfc = lttv_traceset_context_get_current_tfc(tsc);
+      /* 3.3 if end of trace reached */
+      if(tfc == NULL || ltt_time_compare(tfc->timestamp,
+                         tsc->time_span.end_time) > 0) {
+        
+        /* - for each request in list_in */
+        {
+          GSList *iter = list_in;
+          
+          while(iter != NULL) {
+            gboolean remove = FALSE;
+            gboolean free_data = FALSE;
+
+            BackgroundRequest *bg_req = (BackgroundRequest*)iter->data;
+
+            /* - set hooks'in_progress flag to FALSE */
+            lttvwindowtraces_unset_in_progress(bg_req->module_name,
+                                               bg_req->trace);
+            /* - set hooks'ready flag to TRUE */
+            lttvwindowtraces_set_ready(bg_req->module_name,
+                                       bg_req->trace);
+            /* - remove request */
+            remove = TRUE;
+            free_data = TRUE;
+
+            /* Go to next */
+            if(remove)
+            {
+              GSList *remove_iter = iter;
+
+              iter = g_slist_next(iter);
+              if(free_data) g_free(remove_iter->data);
+              list_in = g_slist_remove_link(list_in, remove_iter);
+            } else { // not remove
+              iter = g_slist_next(iter);
+            }
+          }
+        }
+
+        /* - for each notifications in notify_in */
+        {
+          GSList *iter = notify_in;
+          
+          while(iter != NULL) {
+            gboolean remove = FALSE;
+            gboolean free_data = FALSE;
+
+            BackgroundNotify *notify_req = (BackgroundNotify*)iter->data;
+
+            /* - call notify and remove from notify_in */
+            lttv_hooks_call(notify_req->notify, notify_req);
+            remove = TRUE;
+            free_data = TRUE;
+
+            /* Go to next */
+            if(remove)
+            {
+              GSList *remove_iter = iter;
+
+              iter = g_slist_next(iter);
+              if(free_data) g_free(remove_iter->data);
+              notify_in = g_slist_remove_link(notify_in, remove_iter);
+            } else { // not remove
+              iter = g_slist_next(iter);
+            }
+          }
+        }
+        
+        /* - return FALSE (scheduler stopped) */
+        return FALSE;
+      } else {
+        /* 3.4 else, end of trace not reached */
+        /* - return TRUE (scheduler still registered) */
+        return TRUE;
+      }
+    }
+  }
+}
