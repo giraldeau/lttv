@@ -23,7 +23,7 @@
 AC_PREREQ(2.57)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 #AC_WITH_LTDL  # not needed ?
-AM_INIT_AUTOMAKE(LinuxTraceToolkit,0.9.7-30092003)
+AM_INIT_AUTOMAKE(LinuxTraceToolkitViewer,0.1-21082004)
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
@@ -106,7 +106,6 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/gui/lttvwindow/Makefile
 		 lttv/modules/gui/lttvwindow/lttvwindow/Makefile
 		 lttv/modules/gui/lttvwindow/pixmaps/Makefile
-		 lttv/modules/gui/lttvwindow/glade/Makefile
 		 lttv/modules/gui/controlflow/Makefile
 		 lttv/modules/gui/detailedevents/Makefile
 		 lttv/modules/gui/statistics/Makefile
