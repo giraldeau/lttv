@@ -53,7 +53,7 @@ de traces, sera de ne pas limiter les champs selon lesquels le filtrage pourra
 <para>
 Comme le filtrage se fait à la lecture de chaque événement, il peut rapidement
 devenir un goulot d'étranglement important. Les performances doivent donc être
-un soucis de taille lors de la réalisation de cette fonctionnalité. C'est
+un souci de taille lors de la réalisation de cette fonctionnalité. C'est
 pourquoi l'architecture proposée se base sur une compilation des règles de
 filtrage lors de leur définition afin de générer une structure de données
 optimale pour le parcours de la trace.

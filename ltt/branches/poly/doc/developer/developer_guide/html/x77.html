@@ -1,0 +1,160 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>The dynamic part of a module : the viewer</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer Developer Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Linux Trace Toolkit Viewer Graphical Module Tutorial"
+HREF="c67.html"><LINK
+REL="PREVIOUS"
+TITLE="The static part of a module"
+HREF="x72.html"><LINK
+REL="NEXT"
+TITLE="How to request background computation"
+HREF="x81.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer Developer Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x72.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 3. Linux Trace Toolkit Viewer Graphical Module Tutorial</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x81.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="AEN77"
+>3.3. The dynamic part of a module : the viewer</A
+></H1
+><P
+>&#13;The dynamic part starts with the constructor of the viewer. It is called by the
+main window when the corresponding button or menu item is selected. See
+h_guicontrolflow() from control flow viewer eventhooks.c for an example. It does
+basic connexion to the tab's events available : time window change notification,
+current time notification, redraw notification, continue notification. All these
+function should be implemented in your viewer if you want the data you shown to
+be synchronised with the main window and the other viewers. It also calls the
+background computation, which will be discussed in the next section.
+</P
+><P
+>&#13;This is also at this point that the viewer does create it's own memory footprint
+: its inner structure. This structure will have to be passed as hook_data to
+each function registered by the viewer : this is what makes the functions
+"belong" to this instance of the viewer.
+</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x72.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x81.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>The static part of a module</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c67.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>How to request background computation</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
