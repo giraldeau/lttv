@@ -13,6 +13,7 @@
 #include <lttv/toolbar.h>
 #include <lttv/gtkTraceSet.h>
 #include <lttv/module.h>
+#include <lttv/gtkdirsel.h>
 
 #define PATH_LENGTH     256
 
@@ -608,13 +609,24 @@ void
 on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
+  GtkDirSelection * fileSelector = (GtkDirSelection *)gtk_dir_selection_new("Select module path");
+  char * dir;
+  gint id;
+
   gchar  str[PATH_LENGTH];
   mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
-  g_printf("Add module search path\n");
-  str[0] = '\0';
-  get_label((GtkWindow*)mwData->MWindow, str, "Add module search path", "Please input a search path:");
-  if(strlen(str)){
-    lttv_module_path_add(str);
+
+  id = gtk_dialog_run(GTK_DIALOG(fileSelector));
+  switch(id){
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_OK:
+      dir = gtk_dir_selection_get_dir (fileSelector);
+      lttv_module_path_add(dir);
+    case GTK_RESPONSE_REJECT:
+    case GTK_RESPONSE_CANCEL:
+    default:
+      gtk_widget_destroy((GtkWidget*)fileSelector);
+      break;
   }
 }
 

@@ -23,7 +23,8 @@ libmainwin_la_SOURCES = \
 	support.c \
 	interface.c \
 	callbacks.c \
-	gtkcustom.c
+	gtkcustom.c \
+	gtkdirsel.c
 
 noinst_HEADERS = \
 	support.h \
