@@ -13,11 +13,9 @@ INCLUDES = \
 
 libdir = ${lttvplugindir}
 
-#bin_PROGRAMS = lttvwindow
 lib_LTLIBRARIES = liblttvwindow.la
 
 
-#liblttvwindow_la_LDFLAGS = -module
 liblttvwindow_la_SOURCES = \
 	toolbar.c\
 	menu.c\
@@ -29,7 +27,6 @@ liblttvwindow_la_SOURCES = \
 	interface.c \
 	callbacks.c \
 	lttvfilter.c
-#	gtkmultivpaned.c\
 
 noinst_HEADERS = \
 	support.h \
@@ -45,7 +42,6 @@ lttvwindowinclude_HEADERS = \
 	mainwindow.h\
 	menu.h\
 	toolbar.h
-#	gtkmultivpaned.h\
 
 liblttvwindow_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
 
