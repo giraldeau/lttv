@@ -141,7 +141,7 @@ void test_draw() {
 	
 	test_draw(control_flow_data);
 	
-	gdk_gc_copy(GC,widget->style->white_gc);
+	gdk_gc_copy(GC,widget->style->black_gc);
 	gdk_gc_set_foreground(GC,&color);
 	
 	//gdk_draw_arc (widget->window,

@@ -205,7 +205,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 
     // Clear the image
     gdk_draw_rectangle (drawing->pixmap,
-          widget->style->white_gc,
+          widget->style->black_gc,
           TRUE,
           0, 0,
           widget->allocation.width+SAFETY,
@@ -240,7 +240,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
   
   /* Copy old data to new pixmap */
   gdk_draw_drawable (pixmap,
-    widget->style->white_gc,
+    widget->style->black_gc,
     drawing->pixmap,
     0, 0,
     0, 0,
@@ -253,7 +253,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
     
   // Clear the bottom part of the image (SAFETY)
   gdk_draw_rectangle (pixmap,
-          widget->style->white_gc,
+          widget->style->black_gc,
           TRUE,
           0, drawing->height+SAFETY,
           drawing->width+SAFETY,  // do not overlap
@@ -261,7 +261,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 
   // Clear the right part of the image (SAFETY)
   gdk_draw_rectangle (pixmap,
-          widget->style->white_gc,
+          widget->style->black_gc,
           TRUE,
           drawing->width+SAFETY, 0,
           (widget->allocation.width) - drawing->width,  // do not overlap
@@ -269,7 +269,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 
   /* Clear the backgound for data request, but not SAFETY */
   gdk_draw_rectangle (pixmap,
-          drawing->drawing_area->style->white_gc,
+          drawing->drawing_area->style->black_gc,
           TRUE,
           drawing->width + SAFETY, 0,
           widget->allocation.width - drawing->width,  // do not overlap
@@ -571,7 +571,7 @@ void drawing_insert_square(Drawing_t *drawing,
 
   /* add an empty square */
   gdk_draw_rectangle (pixmap,
-    drawing->drawing_area->style->white_gc,
+    drawing->drawing_area->style->black_gc,
     TRUE,
     0, y,
     drawing->width + SAFETY,  // do not overlap
