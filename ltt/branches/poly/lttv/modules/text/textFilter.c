@@ -56,13 +56,11 @@ static char
 GString
   *a_filter_string = NULL;
 
-
 static LttvHooks
   *before_traceset,
   *event_hook;
 
 static FILE *a_file;
-
 
 /**
  * filters the file input from user
@@ -93,12 +91,14 @@ void filter_analyze_file(void *hook_data) {
   else {
     g_string_append(a_filter_string,"&"); /*conjonction between expression*/
   }
- 
+
   while(!feof(a_file)) {
     getline(&line,&len,a_file);
     g_string_append(a_filter_string,line);
     line = NULL;
   }
+ 
+//  lttv_filter_append_expression(lttvfilter_t,a_filter_string->str);
   
   fclose(a_file);
 }
@@ -122,9 +122,11 @@ void filter_analyze_string(void *hook_data) {
     g_string_append(a_filter_string,a_string);
   }
   else {
-    g_string_append(a_filter_string,"&"); /*conjonction between expression*/
+    g_string_append(a_filter_string,"&"); 
     g_string_append(a_filter_string,a_string);
   }
+
+//  lttv_filter_append_expression(lttvfilter_t,a_string); 
 
 }
 
@@ -152,7 +154,7 @@ static void init() {
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
   g_info("Init textFilter.c");
-  
+ 
   a_string = NULL;
   lttv_option_add("string", 's', 
       "filters a string issued by the user on the command line", 

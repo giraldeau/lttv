@@ -80,7 +80,8 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   lttv_state_add_event_hooks(&tscs->parent);
   if(a_stats) lttv_stats_add_event_hooks(tscs);
 
-  a_lttv_filter = lttv_filter_new(a_filter_string,(LttvTraceState*)tscs);
+  a_lttv_filter = lttv_filter_new();
+  lttv_filter_append_expression(a_lttv_filter,a_filter_string->str);
   
   //lttv_traceset_context_add_hooks(tc,
   //before_traceset, after_traceset, NULL, before_trace, after_trace,
@@ -231,4 +232,4 @@ static void destroy()
 
 LTTV_MODULE("batchAnalysis", "Batch processing of a trace", \
     "Run through a trace calling all the registered hooks", \
-    init, destroy, "state", "stats", "option","filter")
+    init, destroy, "state", "stats", "option","textFilter")

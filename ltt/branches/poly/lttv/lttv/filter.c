@@ -146,12 +146,12 @@ gboolean
 parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
 
   GString* f = NULL;
-  g_print("fp->len:%i\n",fp->len);
-  int i;
-  for(i=0;i<fp->len;i++) { 
-      GString* f2 = g_ptr_array_index(fp,i);
-      g_print("%i=%s",i,f2->str); 
-  }
+//  g_print("fp->len:%i\n",fp->len);
+//  int i;
+//  for(i=0;i<fp->len;i++) { 
+//      GString* f2 = g_ptr_array_index(fp,i);
+//      g_print("%i=%s",i,f2->str); 
+//  }
   if(fp->len < 2) return FALSE;
   g_assert(f=g_ptr_array_index(fp,0)); //list_first(fp)->data; 
  
@@ -283,10 +283,10 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
  */
 gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op) {
      
-  g_print("se->field = %i\n",se->field);
-  g_print("se->offset = %i\n",se->offset);
-  g_print("se->op = %p\n",se->op);
-  g_print("se->value = %s\n",se->value);
+//  g_print("se->field = %i\n",se->field);
+//  g_print("se->offset = %i\n",se->offset);
+//  g_print("se->op = %p\n",se->op);
+//  g_print("se->value = %s\n",se->value);
     
   switch(se->field) {
      /* char */

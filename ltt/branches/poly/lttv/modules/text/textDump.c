@@ -27,6 +27,7 @@
 #include <lttv/attribute.h>
 #include <lttv/iattribute.h>
 #include <lttv/stats.h>
+#include <lttv/filter.h>
 #include <ltt/ltt.h>
 #include <ltt/event.h>
 #include <ltt/type.h>
@@ -48,7 +49,6 @@ static LttvHooks
   *after_traceset,
   *before_trace,
   *event_hook;
-
 
 void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
 
@@ -335,6 +335,11 @@ static int write_event_content(void *hook_data, void *call_data)
 
   e = tfc->e;
 
+  /*
+   * call to the filter if available
+   */
+  //  lttv_filter_tree_parse(f->head,e,NULL,NULL,NULL);
+  
   lttv_event_to_string(e, a_string, TRUE, a_field_names, tfs);
   g_string_append_printf(a_string,"\n");  
 
