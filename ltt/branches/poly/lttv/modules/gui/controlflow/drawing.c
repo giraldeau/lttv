@@ -108,7 +108,7 @@ void drawing_data_request(Drawing_t *drawing,
   LttvTracesetContext * tsc =
         get_traceset_context(control_flow_data->mw);
   LttvTracesetState * tss =
-        LTTV_TRACESET_STATE(tsc);
+        (LttvTracesetState*)tsc;
   
     //send_test_process(
   //guicontrolflow_get_process_list(drawing->control_flow_data),
@@ -145,15 +145,15 @@ void drawing_data_request(Drawing_t *drawing,
   // FIXME : would like to place the after_traceset hook after the traceset,
   // but the traceset context state is not valid anymore.
   lttv_traceset_context_add_hooks(tsc,
-  //    NULL, after_traceset, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL, NULL, NULL,
-      NULL, after_traceset, NULL, event, after_event);
+      NULL, after_traceset, NULL, NULL, NULL, NULL,
+      //NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL, NULL, NULL, event, after_event);
   lttv_process_traceset(tsc, end, G_MAXULONG);
   //after_data_request((void*)&event_request,(void*)tsc);
   lttv_traceset_context_remove_hooks(tsc,
-      //NULL, after_traceset, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL, NULL, NULL,
-      NULL, after_traceset, NULL, event, after_event);
+      NULL, after_traceset, NULL, NULL, NULL, NULL,
+     // NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL, NULL, NULL, event, after_event);
   //Modified by xiangxiu: state update hooks are removed by the main window
   //state_remove_event_hooks_api(control_flow_data->mw);
 

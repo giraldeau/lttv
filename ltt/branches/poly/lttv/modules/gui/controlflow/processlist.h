@@ -45,6 +45,7 @@ typedef struct _ProcessInfo {
   
   guint pid;
   LttTime birth;
+  guint trace_num;
 
 } ProcessInfo;
 
@@ -75,15 +76,17 @@ GtkWidget *processlist_get_widget(ProcessList *process_list);
 
 // out : success (0) and height
 int processlist_add(ProcessList *process_list, guint pid, LttTime *birth,
-    gchar *name, guint *height, HashedProcessData **hashed_process_data);
+    guint trace_num, gchar *name, guint *height,
+    HashedProcessData **hashed_process_data);
 // out : success (0) and height
-int processlist_remove(ProcessList *process_list, guint pid, LttTime *birth);
+int processlist_remove(ProcessList *process_list, guint pid, LttTime *birth,
+    guint trace_num);
 
 guint processlist_get_height(ProcessList *process_list);
 
 // Returns 0 on success
 gint processlist_get_process_pixels(ProcessList *process_list,
-        guint pid, LttTime *birth,
+        guint pid, LttTime *birth, guint trace_num,
         guint *y, guint *height,
         HashedProcessData **hashed_process_data);
 

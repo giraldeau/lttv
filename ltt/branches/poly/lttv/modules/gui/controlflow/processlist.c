@@ -33,6 +33,7 @@ enum
   PID_COLUMN,
   BIRTH_S_COLUMN,
   BIRTH_NS_COLUMN,
+  TRACE_COLUMN,
   N_COLUMNS
 };
 
@@ -146,6 +147,37 @@ gint process_sort_func  ( GtkTreeModel *model,
   g_value_unset(&a);
   g_value_unset(&b);
 
+  /* Order by trace_num */
+  gtk_tree_model_get_value( model,
+          it_a,
+          TRACE_COLUMN,
+          &a);
+
+  gtk_tree_model_get_value( model,
+          it_b,
+          TRACE_COLUMN,
+          &b);
+
+  if(G_VALUE_TYPE(&a) == G_TYPE_ULONG
+    && G_VALUE_TYPE(&b) == G_TYPE_ULONG )
+  {
+    if(g_value_get_ulong(&a) > g_value_get_ulong(&b))
+    {
+      g_value_unset(&a);
+      g_value_unset(&b);
+      return 1;
+    }
+    if(g_value_get_ulong(&a) < g_value_get_ulong(&b))
+    {
+      g_value_unset(&a);
+      g_value_unset(&b);
+      return 0;
+    }
+
+  }
+
+
+
   return 0;
 
 }
@@ -167,6 +199,9 @@ gboolean equ_fct(gconstpointer a, gconstpointer b)
   if(((ProcessInfo*)a)->birth.tv_nsec != ((ProcessInfo*)b)->birth.tv_nsec)
     return 0;
 //  g_critical("compare %u and %u",((ProcessInfo*)a)->birth.tv_nsec,((ProcessInfo*)b)->birth.tv_nsec);
+
+  if(((ProcessInfo*)a)->trace_num != ((ProcessInfo*)b)->trace_num)
+    return 0;
 
   return 1;
 }
@@ -191,6 +226,7 @@ ProcessList *processlist_construct(void)
   process_list->list_store = gtk_list_store_new (  N_COLUMNS,
               G_TYPE_STRING,
               G_TYPE_UINT,
+              G_TYPE_ULONG,
               G_TYPE_ULONG,
               G_TYPE_ULONG);
 
@@ -263,6 +299,15 @@ ProcessList *processlist_construct(void)
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
 
+  column = gtk_tree_view_column_new_with_attributes ( "TRACE",
+                renderer,
+                "text",
+                TRACE_COLUMN,
+                NULL);
+  gtk_tree_view_append_column (
+    GTK_TREE_VIEW (process_list->process_list_widget), column);
+
+
   //gtk_tree_view_column_set_visible(column, 0);
   
   g_object_set_data_full(
@@ -315,6 +360,7 @@ void destroy_hash_data(gpointer data)
 int processlist_add(  ProcessList *process_list,
       guint pid,
       LttTime *birth,
+      guint trace_num,
       gchar *name,
       guint *height,
       HashedProcessData **pm_hashed_process_data)
@@ -326,6 +372,7 @@ int processlist_add(  ProcessList *process_list,
   
   Process_Info->pid = pid;
   Process_Info->birth = *birth;
+  Process_Info->trace_num = trace_num;
   
   hashed_process_data->draw_context = g_new(DrawContext, 1);
   hashed_process_data->draw_context->drawable = NULL;
@@ -383,6 +430,7 @@ int processlist_add(  ProcessList *process_list,
         PID_COLUMN, pid,
         BIRTH_S_COLUMN, birth->tv_sec,
         BIRTH_NS_COLUMN, birth->tv_nsec,
+        TRACE_COLUMN, trace_num,
         -1);
   hashed_process_data->row_ref = gtk_tree_row_reference_new (
       GTK_TREE_MODEL(process_list->list_store),
@@ -409,7 +457,8 @@ int processlist_add(  ProcessList *process_list,
 
 int processlist_remove( ProcessList *process_list,
       guint pid,
-      LttTime *birth)
+      LttTime *birth,
+      guint trace_num)
 {
   ProcessInfo Process_Info;
   gint *path_indices;
@@ -418,6 +467,7 @@ int processlist_remove( ProcessList *process_list,
   
   Process_Info.pid = pid;
   Process_Info.birth = *birth;
+  Process_Info.trace_num = trace_num;
 
 
   if(hashed_process_data = 
@@ -471,7 +521,7 @@ guint processlist_get_height(ProcessList *process_list)
 
 
 gint processlist_get_process_pixels(  ProcessList *process_list,
-          guint pid, LttTime *birth,
+          guint pid, LttTime *birth, guint trace_num,
           guint *y,
           guint *height,
           HashedProcessData **pm_hashed_process_data)
@@ -483,6 +533,7 @@ gint processlist_get_process_pixels(  ProcessList *process_list,
 
   Process_Info.pid = pid;
   Process_Info.birth = *birth;
+  Process_Info.trace_num = trace_num;
 
   if(hashed_process_data = 
     (HashedProcessData*)g_hash_table_lookup(

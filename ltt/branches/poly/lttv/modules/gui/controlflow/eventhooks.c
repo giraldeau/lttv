@@ -203,6 +203,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     if(processlist_get_process_pixels(process_list,
             pid_out,
             &birth,
+            tfc->t_context->index,
             &y_out,
             &height,
             &hashed_process_data_out) == 1)
@@ -211,12 +212,14 @@ int draw_event_hook(void *hook_data, void *call_data)
     processlist_add(process_list,
         pid_out,
         &birth,
+        tfc->t_context->index,
         name,
         &pl_height,
         &hashed_process_data_out);
     processlist_get_process_pixels(process_list,
             pid_out,
             &birth,
+            tfc->t_context->index,
             &y_out,
             &height,
             &hashed_process_data_out);
@@ -236,6 +239,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     if(processlist_get_process_pixels(process_list,
             pid_in,
             &birth,
+            tfc->t_context->index,
             &y_in,
             &height,
             &hashed_process_data_in) == 1)
@@ -244,12 +248,14 @@ int draw_event_hook(void *hook_data, void *call_data)
       processlist_add(process_list,
         pid_in,
         &birth,
+        tfc->t_context->index,
         name,
         &pl_height,
         &hashed_process_data_in);
       processlist_get_process_pixels(process_list,
             pid_in,
             &birth,
+            tfc->t_context->index,
             &y_in,
             &height,
             &hashed_process_data_in);
@@ -289,13 +295,79 @@ int draw_event_hook(void *hook_data, void *call_data)
     draw_context_out->pango_layout = control_flow_data->drawing->pango_layout;
     GtkWidget *widget = control_flow_data->drawing->drawing_area;
     //draw_context_out->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
-    draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
-    gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
+    //draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+    //gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
     //draw_context_out->gc = widget->style->black_gc;
     
     //draw_arc((void*)&prop_arc, (void*)draw_context_out);
     //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
     
+    /* Draw the line/background of the out process */
+    if(draw_context_out->previous->middle->x == -1)
+    {
+      draw_context_out->previous->over->x = event_request->x_begin;
+      draw_context_out->previous->middle->x = event_request->x_begin;
+      draw_context_out->previous->under->x = event_request->x_begin;
+
+      g_critical("out middle x_beg : %u",event_request->x_begin);
+    }
+  
+    draw_context_out->current->middle->x = x;
+    draw_context_out->current->over->x = x;
+    draw_context_out->current->under->x = x;
+    draw_context_out->current->middle->y = y_out + height/2;
+    draw_context_out->current->over->y = y_out;
+    draw_context_out->current->under->y = y_out + height;
+    draw_context_out->previous->middle->y = y_out + height/2;
+    draw_context_out->previous->over->y = y_out;
+    draw_context_out->previous->under->y = y_out + height;
+
+    draw_context_out->drawable = control_flow_data->drawing->pixmap;
+    draw_context_out->pango_layout = control_flow_data->drawing->pango_layout;
+
+    if(process_out->state->s == LTTV_STATE_RUN)
+    {
+      draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+      gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
+
+      PropertiesBG prop_bg;
+      prop_bg.color = g_new(GdkColor,1);
+      
+      switch(tfc->index) {
+        case 0:
+          prop_bg.color->red = 0x1515;
+          prop_bg.color->green = 0x1515;
+          prop_bg.color->blue = 0x8c8c;
+          break;
+        case 1:
+          prop_bg.color->red = 0x4e4e;
+          prop_bg.color->green = 0xa9a9;
+          prop_bg.color->blue = 0xa4a4;
+          break;
+        case 2:
+          prop_bg.color->red = 0x7a7a;
+          prop_bg.color->green = 0x4a4a;
+          prop_bg.color->blue = 0x8b8b;
+          break;
+        case 3:
+          prop_bg.color->red = 0x8080;
+          prop_bg.color->green = 0x7777;
+          prop_bg.color->blue = 0x4747;
+          break;
+        default:
+          prop_bg.color->red = 0xe7e7;
+          prop_bg.color->green = 0xe7e7;
+          prop_bg.color->blue = 0xe7e7;
+      }
+      
+      g_critical("calling from draw_event");
+      draw_bg((void*)&prop_bg, (void*)draw_context_out);
+      g_free(prop_bg.color);
+      gdk_gc_unref(draw_context_out->gc);
+    }
+
+    draw_context_out->gc = widget->style->black_gc;
+
     GdkColor colorfg_out = { 0, 0xffff, 0x0000, 0x0000 };
     GdkColor colorbg_out = { 0, 0x0000, 0x0000, 0x0000 };
     PropertiesText prop_text_out;
@@ -366,21 +438,8 @@ int draw_event_hook(void *hook_data, void *call_data)
       prop_text_out.text = "U";
     
     draw_text((void*)&prop_text_out, (void*)draw_context_out);
-    gdk_gc_unref(draw_context_out->gc);
+    //gdk_gc_unref(draw_context_out->gc);
 
-    /* Draw the line of the out process */
-    if(draw_context_out->previous->middle->x == -1)
-    {
-      draw_context_out->previous->middle->x = event_request->x_begin;
-      g_critical("out middle x_beg : %u",event_request->x_begin);
-    }
-  
-    draw_context_out->current->middle->x = x;
-    draw_context_out->current->middle->y = y_out + height/2;
-    draw_context_out->previous->middle->y = y_out + height/2;
-    draw_context_out->drawable = control_flow_data->drawing->pixmap;
-    draw_context_out->pango_layout = control_flow_data->drawing->pango_layout;
-    //draw_context_out->gc = widget->style->black_gc;
     draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
     gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
 
@@ -453,12 +512,78 @@ int draw_event_hook(void *hook_data, void *call_data)
     widget = control_flow_data->drawing->drawing_area;
     //draw_context_in->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
     //draw_context_in->gc = widget->style->black_gc;
-    draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
-    gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
+    //draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+    //gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
     
     //draw_arc((void*)&prop_arc, (void*)draw_context_in);
     //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
+      
+    /* Draw the line/bg of the in process */
+    if(draw_context_in->previous->middle->x == -1)
+    {
+      draw_context_in->previous->middle->x = event_request->x_begin;
+      draw_context_in->previous->over->x = event_request->x_begin;
+      draw_context_in->previous->under->x = event_request->x_begin;
+      g_critical("in middle x_beg : %u",event_request->x_begin);
+    }
+  
+    draw_context_in->current->middle->x = x;
+    draw_context_in->current->over->x = x;
+    draw_context_in->current->under->x = x;
+    draw_context_in->current->middle->y = y_in + height/2;
+    draw_context_in->current->over->y = y_in;
+    draw_context_in->current->under->y = y_in + height;
+    draw_context_in->previous->middle->y = y_in + height/2;
+    draw_context_in->previous->over->y = y_in;
+    draw_context_in->previous->under->y = y_in + height;
     
+    draw_context_in->drawable = control_flow_data->drawing->pixmap;
+    draw_context_in->pango_layout = control_flow_data->drawing->pango_layout;
+ 
+
+    if(process_in->state->s == LTTV_STATE_RUN)
+    {
+      draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+      gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
+
+      PropertiesBG prop_bg;
+      prop_bg.color = g_new(GdkColor,1);
+        
+      switch(tfc->index) {
+        case 0:
+          prop_bg.color->red = 0x1515;
+          prop_bg.color->green = 0x1515;
+          prop_bg.color->blue = 0x8c8c;
+          break;
+        case 1:
+          prop_bg.color->red = 0x4e4e;
+          prop_bg.color->green = 0xa9a9;
+          prop_bg.color->blue = 0xa4a4;
+          break;
+        case 2:
+          prop_bg.color->red = 0x7a7a;
+          prop_bg.color->green = 0x4a4a;
+          prop_bg.color->blue = 0x8b8b;
+          break;
+        case 3:
+          prop_bg.color->red = 0x8080;
+          prop_bg.color->green = 0x7777;
+          prop_bg.color->blue = 0x4747;
+          break;
+        default:
+          prop_bg.color->red = 0xe7e7;
+          prop_bg.color->green = 0xe7e7;
+          prop_bg.color->blue = 0xe7e7;
+      }
+      
+
+      draw_bg((void*)&prop_bg, (void*)draw_context_in);
+      g_free(prop_bg.color);
+      gdk_gc_unref(draw_context_in->gc);
+    }
+
+    draw_context_in->gc = widget->style->black_gc;
+
     GdkColor colorfg_in = { 0, 0x0000, 0xffff, 0x0000 };
     GdkColor colorbg_in = { 0, 0x0000, 0x0000, 0x0000 };
     PropertiesText prop_text_in;
@@ -531,24 +656,11 @@ int draw_event_hook(void *hook_data, void *call_data)
       prop_text_in.text = "U";
     
     draw_text((void*)&prop_text_in, (void*)draw_context_in);
-    gdk_gc_unref(draw_context_in->gc);
-    
-    /* Draw the line of the in process */
-    if(draw_context_in->previous->middle->x == -1)
-    {
-      draw_context_in->previous->middle->x = event_request->x_begin;
-      g_critical("in middle x_beg : %u",event_request->x_begin);
-    }
-  
-    draw_context_in->current->middle->x = x;
-    draw_context_in->previous->middle->y = y_in + height/2;
-    draw_context_in->current->middle->y = y_in + height/2;
-    draw_context_in->drawable = control_flow_data->drawing->pixmap;
-    draw_context_in->pango_layout = control_flow_data->drawing->pango_layout;
-    //draw_context_in->gc = widget->style->black_gc;
+    //gdk_gc_unref(draw_context_in->gc);
+   
     draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
     gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
-    
+
     PropertiesLine prop_line_in;
     prop_line_in.color = g_new(GdkColor,1);
     prop_line_in.line_width = 2;
@@ -689,6 +801,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     if(processlist_get_process_pixels(process_list,
             pid_out,
             &birth,
+            tfc->t_context->index,
             &y_out,
             &height,
             &hashed_process_data_out) == 1)
@@ -697,12 +810,14 @@ int draw_after_hook(void *hook_data, void *call_data)
     processlist_add(process_list,
         pid_out,
         &birth,
+        tfc->t_context->index,
         name,
         &pl_height,
         &hashed_process_data_out);
     processlist_get_process_pixels(process_list,
             pid_out,
             &birth,
+            tfc->t_context->index,
             &y_out,
             &height,
             &hashed_process_data_out);
@@ -722,6 +837,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     if(processlist_get_process_pixels(process_list,
             pid_in,
             &birth,
+            tfc->t_context->index,
             &y_in,
             &height,
             &hashed_process_data_in) == 1)
@@ -730,12 +846,14 @@ int draw_after_hook(void *hook_data, void *call_data)
       processlist_add(process_list,
         pid_in,
         &birth,
+        tfc->t_context->index,
         name,
         &pl_height,
         &hashed_process_data_in);
       processlist_get_process_pixels(process_list,
             pid_in,
             &birth,
+            tfc->t_context->index,
             &y_in,
             &height,
             &hashed_process_data_in);
@@ -775,11 +893,28 @@ int draw_after_hook(void *hook_data, void *call_data)
     draw_context_out->pango_layout = control_flow_data->drawing->pango_layout;
     GtkWidget *widget = control_flow_data->drawing->drawing_area;
     //draw_context_out->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
-    draw_context_out->gc = widget->style->black_gc;
-    
+ 
     //draw_arc((void*)&prop_arc, (void*)draw_context_out);
     //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
-    
+     
+    /*if(process_out->state->s == LTTV_STATE_RUN)
+    {
+      draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+      gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
+      PropertiesBG prop_bg;
+      prop_bg.color = g_new(GdkColor,1);
+      
+      prop_bg.color->red = 0xffff;
+      prop_bg.color->green = 0xffff;
+      prop_bg.color->blue = 0xffff;
+      
+      draw_bg((void*)&prop_bg, (void*)draw_context_out);
+      g_free(prop_bg.color);
+      gdk_gc_unref(draw_context_out->gc);
+    }*/
+
+    draw_context_out->gc = widget->style->black_gc;
+
     GdkColor colorfg_out = { 0, 0xffff, 0x0000, 0x0000 };
     GdkColor colorbg_out = { 0, 0x0000, 0x0000, 0x0000 };
     PropertiesText prop_text_out;
@@ -849,8 +984,12 @@ int draw_after_hook(void *hook_data, void *call_data)
       prop_text_out.text = "U";
     
     draw_text((void*)&prop_text_out, (void*)draw_context_out);
+
+    //gdk_gc_unref(draw_context_out->gc);
  
     draw_context_out->current->middle->y = y_out+height/2;
+    draw_context_out->current->over->y = y_out;
+    draw_context_out->current->under->y = y_out+height;
     draw_context_out->current->status = process_out->state->s;
     
     /* for pid_out : remove previous, Prev = current, new current (default) */
@@ -895,11 +1034,28 @@ int draw_after_hook(void *hook_data, void *call_data)
     draw_context_in->pango_layout = control_flow_data->drawing->pango_layout;
     widget = control_flow_data->drawing->drawing_area;
     //draw_context_in->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
-    draw_context_in->gc = widget->style->black_gc;
     
     //draw_arc((void*)&prop_arc, (void*)draw_context_in);
     //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
-    
+     
+    /*if(process_in->state->s == LTTV_STATE_RUN)
+    {
+      draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+      gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
+      PropertiesBG prop_bg;
+      prop_bg.color = g_new(GdkColor,1);
+      
+      prop_bg.color->red = 0xffff;
+      prop_bg.color->green = 0xffff;
+      prop_bg.color->blue = 0xffff;
+      
+      draw_bg((void*)&prop_bg, (void*)draw_context_in);
+      g_free(prop_bg.color);
+      gdk_gc_unref(draw_context_in->gc);
+    }*/
+
+    draw_context_in->gc = widget->style->black_gc;
+
     GdkColor colorfg_in = { 0, 0x0000, 0xffff, 0x0000 };
     GdkColor colorbg_in = { 0, 0x0000, 0x0000, 0x0000 };
     PropertiesText prop_text_in;
@@ -971,6 +1127,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     
     draw_text((void*)&prop_text_in, (void*)draw_context_in);
     
+
     if(process_in->state->s == LTTV_STATE_RUN)
     { 
       gchar tmp[255];
@@ -993,6 +1150,8 @@ int draw_after_hook(void *hook_data, void *call_data)
 
     
     draw_context_in->current->middle->y = y_in+height/2;
+    draw_context_in->current->over->y = y_in;
+    draw_context_in->current->under->y = y_in+height;
     draw_context_in->current->status = process_in->state->s;
 
     /* for pid_in : remove previous, Prev = current, new current (default) */
@@ -1302,7 +1461,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
 
 typedef struct _ClosureData {
   EventRequest *event_request;
-  LttvTraceState *ts;
+  LttvTracesetState *tss;
 } ClosureData;
   
 
@@ -1327,29 +1486,78 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
           &height);
   /* Get last state of process */
   LttvTraceContext *tc =
-    (LttvTraceContext *)closure_data->ts;
+    ((LttvTracesetContext*)closure_data->tss)->traces[process_info->trace_num];
+  //LttvTracefileContext *tfc = (LttvTracefileContext *)closure_data->ts;
 
-  LttvTraceState *ts = closure_data->ts;
+  LttvTraceState *ts = (LttvTraceState*)tc;
   LttvProcessState *process;
 
-  process = lttv_state_find_process((LttvTracefileState*)ts, process_info->pid);
+  process = lttv_state_find_process_from_trace(ts, process_info->pid);
   
   /* Draw the closing line */
   DrawContext *draw_context = hashed_process_data->draw_context;
   if(draw_context->previous->middle->x == -1)
   {
     draw_context->previous->middle->x = closure_data->event_request->x_begin;
+    draw_context->previous->over->x = closure_data->event_request->x_begin;
+    draw_context->previous->under->x = closure_data->event_request->x_begin;
     g_critical("out middle x_beg : %u",closure_data->event_request->x_begin);
   }
 
   draw_context->current->middle->x = closure_data->event_request->x_end;
+  draw_context->current->over->x = closure_data->event_request->x_end;
+  draw_context->current->under->x = closure_data->event_request->x_end;
   draw_context->current->middle->y = y + height/2;
+  draw_context->current->over->y = y ;
+  draw_context->current->under->y = y + height;
   draw_context->previous->middle->y = y + height/2;
+  draw_context->previous->over->y = y ;
+  draw_context->previous->under->y = y + height;
   draw_context->drawable = control_flow_data->drawing->pixmap;
   draw_context->pango_layout = control_flow_data->drawing->pango_layout;
   //draw_context->gc = widget->style->black_gc;
   draw_context->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
   gdk_gc_copy(draw_context->gc, widget->style->black_gc);
+ 
+  if(process->state->s == LTTV_STATE_RUN)
+  {
+    PropertiesBG prop_bg;
+    prop_bg.color = g_new(GdkColor,1);
+
+    /*switch(tfc->index) {
+      case 0:
+        prop_bg.color->red = 0x1515;
+        prop_bg.color->green = 0x1515;
+        prop_bg.color->blue = 0x8c8c;
+        break;
+      case 1:
+        prop_bg.color->red = 0x4e4e;
+        prop_bg.color->green = 0xa9a9;
+        prop_bg.color->blue = 0xa4a4;
+      break;
+      case 2:
+        prop_bg.color->red = 0x7a7a;
+        prop_bg.color->green = 0x4a4a;
+        prop_bg.color->blue = 0x8b8b;
+        break;
+      case 3:
+        prop_bg.color->red = 0x8080;
+        prop_bg.color->green = 0x7777;
+        prop_bg.color->blue = 0x4747;
+        break;
+      default:
+        prop_bg.color->red = 0xe7e7;
+        prop_bg.color->green = 0xe7e7;
+        prop_bg.color->blue = 0xe7e7;
+    }
+    */
+
+    g_critical("calling from closure");
+    //FIXME : I need the cpu number in process's state to draw this.
+    //draw_bg((void*)&prop_bg, (void*)draw_context);
+    g_free(prop_bg.color);
+  }
+
 
   PropertiesLine prop_line;
   prop_line.color = g_new(GdkColor,1);
@@ -1455,7 +1663,7 @@ int  after_data_request(void *hook_data, void *call_data)
 
   ClosureData closure_data;
   closure_data.event_request = (EventRequest*)hook_data;
-  closure_data.ts = (LttvTraceState*)call_data;
+  closure_data.tss = (LttvTracesetState*)call_data;
 
   g_hash_table_foreach(process_list->process_hash, draw_closure,
                         (void*)&closure_data);

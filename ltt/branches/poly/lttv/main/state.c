@@ -61,6 +61,9 @@ static void lttv_state_free_process_table(GHashTable *processes);
 static LttvProcessState *create_process(LttvTracefileState *tfs, 
 				 LttvProcessState *parent, guint pid);
 
+static LttvProcessState *create_process_from_trace(LttvTraceState *ts, 
+				 LttvProcessState *parent, guint pid);
+
 void lttv_state_save(LttvTraceState *self, LttvAttribute *container)
 {
   LTTV_TRACE_STATE_GET_CLASS(self)->state_save(self, container);
@@ -585,6 +588,54 @@ static LttvProcessState *create_process(LttvTracefileState *tfs,
   return process;
 }
 
+static LttvProcessState *create_process_from_trace(LttvTraceState *tcs, 
+    LttvProcessState *parent, guint pid)
+{
+  LttvProcessState *process = g_new(LttvProcessState, 1);
+
+  LttvExecutionState *es;
+
+  LttvTraceContext *tc = (LttvTraceContext *)tcs;
+
+  char buffer[128];
+
+  g_hash_table_insert(tcs->processes, GUINT_TO_POINTER(pid), process);
+  process->pid = pid;
+
+  if(parent) {
+    process->ppid = parent->pid;
+    process->name = parent->name;
+  }
+  else {
+    process->ppid = 0;
+    process->name = LTTV_STATE_UNNAMED;
+  }
+
+  //FIXME timestamp should come from trace
+  process->creation_time.tv_sec = 0;
+  process->creation_time.tv_nsec = 0;
+  sprintf(buffer,"%d-%lu.%lu",pid, process->creation_time.tv_sec, 
+	  process->creation_time.tv_nsec);
+  process->pid_time = g_quark_from_string(buffer);
+  process->execution_stack = g_array_new(FALSE, FALSE, 
+      sizeof(LttvExecutionState));
+  g_array_set_size(process->execution_stack, 1);
+  es = process->state = &g_array_index(process->execution_stack, 
+      LttvExecutionState, 0);
+  es->t = LTTV_STATE_USER_MODE;
+  es->n = LTTV_STATE_SUBMODE_NONE;
+  //FIXME es->entry = tfs->parent.timestamp;
+  es->entry.tv_sec = 0;
+  es->entry.tv_nsec = 0;
+  //FIXME es->change = tfs->parent.timestamp;
+  es->change.tv_sec = 0;
+  es->change.tv_nsec = 0;
+  es->s = LTTV_STATE_WAIT_FORK;
+
+  return process;
+}
+
+
 
 LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs, 
     guint pid)
@@ -595,6 +646,17 @@ LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs,
   if(process == NULL) process = create_process(tfs, NULL, pid);
   return process;
 }
+
+LttvProcessState *lttv_state_find_process_from_trace(LttvTraceState *ts, 
+    guint pid)
+{
+  LttvProcessState *process = g_hash_table_lookup(ts->processes, 
+      GUINT_TO_POINTER(pid));
+  
+  if(process == NULL) process = create_process_from_trace(ts, NULL, pid);
+  return process;
+}
+
 
 
 static void exit_process(LttvTracefileState *tfs, LttvProcessState *process) 

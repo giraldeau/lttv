@@ -140,8 +140,9 @@ typedef struct _LttvProcessState {
   /* opened file descriptors, address map?... */
 } LttvProcessState;
 
-
+//FIXME : find by pid and birth time : both are necessary to be unique
 LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs, guint pid);
+LttvProcessState *lttv_state_find_process_from_trace(LttvTraceState *ts, guint pid);
 
 
 /* The LttvTracesetState, LttvTraceState and LttvTracefileState types
@@ -183,6 +184,7 @@ struct _LttvTraceState {
   GQuark *trap_names;
   GQuark *irq_names;
   gboolean recompute_state_in_seek;
+  gboolean saved_state_ready;
   gboolean saved_state_available;
 };
 

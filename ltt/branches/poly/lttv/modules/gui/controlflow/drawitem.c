@@ -265,6 +265,11 @@ gboolean draw_line( void *hook_data, void *call_data)
                               Properties->style,
                               GDK_CAP_BUTT,
                               GDK_JOIN_MITER);
+  //g_critical("DRAWING LINE : x1: %i, y1: %i, x2:%i, y2:%i", 
+  //    Draw_Context->previous->middle->x,
+  //    Draw_Context->previous->middle->y,
+  //    Draw_Context->current->middle->x,
+  //    Draw_Context->current->middle->y);
 
   switch(Properties->position) {
     case OVER:
@@ -351,13 +356,19 @@ gboolean draw_bg( void *hook_data, void *call_data)
   //gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
   gdk_gc_set_rgb_fg_color(Draw_Context->gc, Properties->color);
 
-
+  //g_critical("DRAWING RECT : x: %i, y: %i, w:%i, h:%i, val1 :%i, val2:%i ", 
+  //    Draw_Context->previous->over->x,
+  //    Draw_Context->previous->over->y,
+  //    Draw_Context->current->over->x - Draw_Context->previous->over->x,
+  //    Draw_Context->previous->under->y-Draw_Context->previous->over->y,
+  //    Draw_Context->current->over->x,
+  //    Draw_Context->previous->over->x);
   gdk_draw_rectangle(Draw_Context->drawable, Draw_Context->gc,
           TRUE,
           Draw_Context->previous->over->x,
           Draw_Context->previous->over->y,
           Draw_Context->current->over->x - Draw_Context->previous->over->x,
-          Draw_Context->previous->under->y);
+          Draw_Context->previous->under->y-Draw_Context->previous->over->y);
 
   return 0;
 }
