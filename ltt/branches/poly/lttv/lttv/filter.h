@@ -46,10 +46,60 @@
 */
 
 /**
+ * 	@enum lttv_expression_op
+ */
+typedef enum _lttv_expression_op
+{ 
+  LTTV_FIELD_EQ,	/** equal */
+  LTTV_FIELD_NE,	/** not equal */
+  LTTV_FIELD_LT,	/** lower than */
+  LTTV_FIELD_LE,	/** lower or equal */
+  LTTV_FIELD_GT,	/** greater than */
+  LTTV_FIELD_GE		/** greater or equal */
+} lttv_expression_op;
+
+typedef enum _lttv_expression_type
+{ 
+  LTTV_EXPRESSION,
+  LTTV_SIMPLE_EXPRESSION
+} lttv_expression_type;
+
+typedef struct _lttv_simple_expression
+{ 
+  lttv_expression_op op;
+  char *field_name;
+  char *value;
+} lttv_simple_expression;
+
+typedef struct _lttv_expression 
+{ 
+  gboolean or;
+  gboolean not;
+  gboolean and;
+  gboolean xor;
+  gboolean simple_expression;
+//  union e 
+//  { 
+//	struct lttv_expression *e;
+//    	lttv_field_relation *se;
+//  };
+} lttv_expression;
+
+typedef struct _lttv_filter_tree {
+	lttv_expression* node;
+	struct lttv_filter_tree* r_child;
+	struct lttv_filter_tree* l_child;
+} lttv_filter_tree;
+
+/**
  * @struct lttv_filter
  * ( will later contain a binary tree of filtering options )
  */
-typedef struct _lttv_filter lttv_filter;
+typedef struct _lttv_filter {
+	lttv_filter_tree* tree;	
+} lttv_filter;
+
+gboolean parse_simple_expression(GString* expression);
 
 /* Compile the filter expression into an efficient data structure */
 

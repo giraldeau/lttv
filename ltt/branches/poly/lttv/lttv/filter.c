@@ -24,40 +24,6 @@
 
 #include <lttv/filter.h>
 
-typedef enum _lttv_expression_op
-{ LTTV_FIELD_EQ,
-  LTTV_FIELD_NE,
-  LTTV_FIELD_LT,
-  LTTV_FIELD_LE,
-  LTTV_FIELD_GT,
-  LTTV_FIELD_GE
-} lttv_expression_op;
-
-typedef enum _lttv_expression_type
-{ 
-  LTTV_EXPRESSION,
-  LTTV_SIMPLE_EXPRESSION
-} lttv_expression_type;
-
-typedef struct _lttv_simple_expression
-{ 
-  lttv_expression_op op;
-  char *field_name;
-  char *value;
-} lttv_simple_expression;
-
-typedef struct _lttv_expression 
-{ 
-  gboolean or;
-  gboolean not;
-  gboolean simple_expression;
-//  union e 
-//  { 
-//	lttv_expression *e;
-//    	lttv_field_relation *se;
-//  };
-} lttv_expression;
-
 /*
 	read_token
 
@@ -82,14 +48,39 @@ typedef struct _lttv_expression
 */
 
 /**
- * 	create a new lttv_filter
+ * 	Add an filtering option to the current tree
+ * 	@param expression Current expression to parse
+ * 	@return success/failure of operation
+ */
+gboolean
+parse_simple_expression(GString* expression) {
+	
+	unsigned i;
+
+	for(i=0;i<strlen(expression);i++) {
+		
+
+	}
+}
+
+/**
+ * 	Creates a new lttv_filter
  * 	@param expression filtering options string
  * 	@param t pointer to the current LttvTrace
- * 	@return the current lttv_filter
+ * 	@return the current lttv_filter or NULL if error
  */
 lttv_filter*
 lttv_filter_new(char *expression, LttvTrace *t) {
 
+	unsigned 	
+		i, 
+		p=0,	/* parenthesis nesting value */
+		b=0;	/* current breakpoint in expression string */
+	
+	gpointer tree;
+		
+	GString *currentOption = g_string_new(""); 
+		
 	g_print("filter::lttv_filter_new()\n");		/* debug */
 
 	/*
@@ -98,14 +89,73 @@ lttv_filter_new(char *expression, LttvTrace *t) {
 	 * 	3. return corresponding filter
 	 */
 
+	/*
+	 * 	Binary tree memory allocation
+	 * 	- based upon a preliminary block size
+	 */
+	gulong size = (strlen(expression)/6) * 1.5;	
+	tree = g_malloc(size*sizeof(lttv_filter_tree));
 	
+	/*
+	 *	Parse entire expression and construct
+	 *	the binary tree
+	 */
+	for(i=0;i<strlen(expression);i++) {
+		switch(expression[i]) {
+			case '&':		/* and */
+				parse_simple_expression(currentOption);
+				g_print("%s\n",&currentOption);
+				currentOption = g_string_new("");
+				break;
+			case '|':		/* or */
+				g_print("%s\n",currentOption);
+				currentOption = g_string_new("");
+				break;
+			case '^':		/* xor */
+				g_print("%s\n",currentOption);
+				currentOption = g_string_new("");
+				break;
+			case '!':		/* not */
+				g_print("%s\n",currentOption);
+				currentOption = g_string_new("");
+				break;
+			case '(':		/* start of parenthesis */
+				p++;
+				break;
+			case ')':		/* end of parenthesis */
+				p--;
+				break;
+			default:		/* concatening current string */
+				g_string_append_c(currentOption,expression[i]); 				
+		}
+		
+		
+	}
+	
+	if( p>0 ) { 
+		g_warning("Wrong filtering options, the string\n\"%s\"\n\ 
+				is not valid due to parenthesis incorrect use",expression);	
+		return NULL;
+	}
 }
 
+/**
+ * 	Apply the filter to a specific trace
+ * 	@param filter the current filter applied
+ * 	@param tracefile the trace to apply the filter to
+ * 	@return success/failure of operation
+ */
 gboolean
 lttv_filter_tracefile(lttv_filter *filter, void *tracefile) {
 
 }
 
+/**
+ * 	Apply the filter to a specific event
+ * 	@param filter the current filter applied
+ * 	@param event the event to apply the filter to
+ * 	@return success/failure of operation
+ */
 gboolean
 lttv_filter_event(lttv_filter *filter, void *event) {
 
