@@ -63,13 +63,16 @@ static inline LttTime ltt_time_add(LttTime t1, LttTime t2)
 }
 
 
+/* Fastest comparison : t1 > t2 */
 static inline int ltt_time_compare(LttTime t1, LttTime t2)
 {
-  if(t1.tv_sec > t2.tv_sec) return 1;
-  if(t1.tv_sec < t2.tv_sec) return -1;
-  if(t1.tv_nsec > t2.tv_nsec) return 1;
-  if(t1.tv_nsec < t2.tv_nsec) return -1;
-  return 0;
+  int ret=0;
+  if(t1.tv_sec > t2.tv_sec) ret = 1;
+  else if(t1.tv_sec < t2.tv_sec) ret = -1;
+  else if(t1.tv_nsec > t2.tv_nsec) ret = 1;
+  else if(t1.tv_nsec < t2.tv_nsec) ret = -1;
+  
+  return ret;
 }
 
 #define LTT_TIME_MIN(a,b) ((ltt_time_compare((a),(b)) < 0) ? (a) : (b))
