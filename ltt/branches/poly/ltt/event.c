@@ -305,15 +305,15 @@ gint ltt_event_position_compare(const LttEventPosition *ep1,
 gint ltt_event_event_position_compare(const LttEvent *event,
                                       const LttEventPosition *ep)
 {
-  if(event->tf != ep->tf)
+  if(event->tracefile != ep->tf)
     g_error("ltt_event_position_compare on different tracefiles makes no sense");
-  if(e->which_block < ep->block_num)
+  if(event->which_block < ep->block_num)
     return -1;
-  if(e->which_block > ep->block_num)
+  if(event->which_block > ep->block_num)
     return 1;
-  if(e->which_event < ep->event_num)
+  if(event->which_event < ep->event_num)
     return -1;
-  if(e->which_event > ep->event_num)
+  if(event->which_event > ep->event_num)
     return 1;
   return 0;
 }
