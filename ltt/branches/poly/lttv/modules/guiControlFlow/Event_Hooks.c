@@ -583,9 +583,7 @@ int draw_event_hook(void *hook_data, void *call_data)
 	prop_arc.position = OVER;
 	DrawContext *draw_context = Hashed_Process_Data->draw_context;
 	draw_context->Current->modify_over->x = x;
-	g_critical("x should be %i", x);
 	draw_context->Current->modify_over->y = y;
-	g_critical("y should be %i", y);
 	draw_context->drawable = control_flow_data->Drawing->Pixmap;
 	GtkWidget *widget = control_flow_data->Drawing->Drawing_Area_V;
 	//draw_context->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];

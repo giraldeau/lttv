@@ -480,7 +480,6 @@ gint processlist_get_process_pixels(	ProcessList *Process_List,
 	 	*height = get_cell_height(
 				GTK_TREE_VIEW(Process_List->Process_List_VC));
 		*y = *height * path_indices[0];
-		g_critical("inside, y is %i", *y);
 		*pmHashed_Process_Data = Hashed_Process_Data;
 		return 0;	
 	} else {
