@@ -1519,7 +1519,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   draw_context->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
   gdk_gc_copy(draw_context->gc, widget->style->black_gc);
  
-  if(process->state->s == LTTV_STATE_RUN)
+  if(process != NULL && process->state->s == LTTV_STATE_RUN)
   {
     PropertiesBG prop_bg;
     prop_bg.color = g_new(GdkColor,1);
@@ -1566,47 +1566,57 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   prop_line.position = MIDDLE;
 
   /* color of line : status of the process */
-  if(process->state->s == LTTV_STATE_UNNAMED)
+  if(process != NULL)
   {
-    prop_line.color->red = 0xffff;
-    prop_line.color->green = 0xffff;
-    prop_line.color->blue = 0xffff;
-  }
-  else if(process->state->s == LTTV_STATE_WAIT_FORK)
-  {
-    prop_line.color->red = 0x0fff;
-    prop_line.color->green = 0xffff;
-    prop_line.color->blue = 0xfff0;
-  }
-  else if(process->state->s == LTTV_STATE_WAIT_CPU)
-  {
-    prop_line.color->red = 0xffff;
-    prop_line.color->green = 0xffff;
-    prop_line.color->blue = 0x0000;
-  }
-  else if(process->state->s == LTTV_STATE_EXIT)
-  {
-    prop_line.color->red = 0xffff;
-    prop_line.color->green = 0x0000;
-    prop_line.color->blue = 0xffff;
-  }
-  else if(process->state->s == LTTV_STATE_WAIT)
-  {
-    prop_line.color->red = 0xffff;
-    prop_line.color->green = 0x0000;
-    prop_line.color->blue = 0x0000;
-  }
-  else if(process->state->s == LTTV_STATE_RUN)
-  {
-    prop_line.color->red = 0x0000;
-    prop_line.color->green = 0xffff;
-    prop_line.color->blue = 0x0000;
+    if(process->state->s == LTTV_STATE_UNNAMED)
+    {
+      prop_line.color->red = 0xffff;
+      prop_line.color->green = 0xffff;
+      prop_line.color->blue = 0xffff;
+    }
+    else if(process->state->s == LTTV_STATE_WAIT_FORK)
+    {
+      prop_line.color->red = 0x0fff;
+      prop_line.color->green = 0xffff;
+      prop_line.color->blue = 0xfff0;
+    }
+    else if(process->state->s == LTTV_STATE_WAIT_CPU)
+    {
+      prop_line.color->red = 0xffff;
+      prop_line.color->green = 0xffff;
+      prop_line.color->blue = 0x0000;
+    }
+    else if(process->state->s == LTTV_STATE_EXIT)
+    {
+      prop_line.color->red = 0xffff;
+      prop_line.color->green = 0x0000;
+      prop_line.color->blue = 0xffff;
+    }
+    else if(process->state->s == LTTV_STATE_WAIT)
+    {
+      prop_line.color->red = 0xffff;
+      prop_line.color->green = 0x0000;
+      prop_line.color->blue = 0x0000;
+    }
+    else if(process->state->s == LTTV_STATE_RUN)
+    {
+      prop_line.color->red = 0x0000;
+      prop_line.color->green = 0xffff;
+      prop_line.color->blue = 0x0000;
+    }
+    else
+    {
+      prop_line.color->red = 0xffff;
+      prop_line.color->green = 0xffff;
+      prop_line.color->blue = 0xffff;
+    }
+
   }
   else
   {
-    prop_line.color->red = 0xffff;
-    prop_line.color->green = 0xffff;
-    prop_line.color->blue = 0xffff;
+      prop_line.color->red = 0xffff;
+      prop_line.color->green = 0xffff;
+      prop_line.color->blue = 0xffff;
   }
 
   draw_line((void*)&prop_line, (void*)draw_context);
