@@ -222,6 +222,10 @@ parameter.
 If a tab is removed, its associated idle events requests servicing function must
 also be removed.
 
+It now looks a lot more useful to give a Tab* to the viewer instead of a
+MainWindow*, as all the information needed by the viewer is located at the tab
+level. It will diminish the dependance upon the current tab concept.
+
 
 
 Idle function (lttvwindow_process_pending_requests)
