@@ -91,6 +91,7 @@ lttv_simple_expression_new() {
   LttvSimpleExpression* se = g_new(LttvSimpleExpression,1);
 
   se->field = LTTV_FILTER_UNDEFINED;
+  se->op = NULL;
   se->offset = 0;
   se->value = NULL;
 
@@ -98,6 +99,7 @@ lttv_simple_expression_new() {
 }
 /**
  * add a node to the current tree
+ * FIXME: Might be used to lower coding in lttv_filter_new switch expression
  * @param stack the tree stack
  * @param subtree the subtree if available (pointer or NULL)
  * @param op the logical operator that will form the node
@@ -135,6 +137,7 @@ lttv_filter_tree_add_node(GPtrArray* stack, LttvFilterTree* subtree, LttvLogical
  *  by user.  This function compares each value to 
  *  predetermined quarks
  *  @param fp The field path list
+ *  @param se current simple expression
  *  @return success/failure of operation
  */
 gboolean
@@ -258,7 +261,100 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
     return FALSE;
   }
 
+  /* free the pointer array */
+  g_ptr_array_free(fp,FALSE);
+  
   return TRUE;  
+}
+
+/**
+ *  Sets the function pointer for the current
+ *  Simple Expression
+ *  @param se current simple expression
+ *  @return success/failure of operation
+ */
+gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op) {
+       
+  switch(se->field) {
+     /* char */
+     case LTTV_FILTER_TRACE_NAME:
+     case LTTV_FILTER_TRACEFILE_NAME:
+     case LTTV_FILTER_STATE_P_NAME:
+     case LTTV_FILTER_EVENT_NAME:
+       switch(op) {
+         case LTTV_FIELD_EQ:
+           se->op = lttv_apply_op_eq_string;
+           break;
+         case LTTV_FIELD_NE:
+           se->op = lttv_apply_op_eq_string;
+           break;
+         default:
+           g_warning("Error encountered in operator assignment");
+           return FALSE;
+       }
+       break;
+     case LTTV_FILTER_STATE_PID:
+     case LTTV_FILTER_STATE_PPID:
+     case LTTV_FILTER_STATE_EX_MODE:
+     case LTTV_FILTER_STATE_EX_SUBMODE:
+     case LTTV_FILTER_STATE_P_STATUS:
+       switch(op) {
+         case LTTV_FIELD_EQ:
+           se->op = lttv_apply_op_eq_uint64;
+           break;
+         case LTTV_FIELD_NE:
+           se->op = lttv_apply_op_ne_uint64;
+           break;
+         case LTTV_FIELD_LT:
+           se->op = lttv_apply_op_lt_uint64;
+           break;
+         case LTTV_FIELD_LE:
+           se->op = lttv_apply_op_le_uint64;
+           break;
+         case LTTV_FIELD_GT:
+           se->op = lttv_apply_op_gt_uint64;
+           break;
+         case LTTV_FIELD_GE:
+           se->op = lttv_apply_op_ge_uint64;
+           break;
+         default:
+           g_warning("Error encountered in operator assignment");
+           return FALSE;
+       }
+       break;
+     case LTTV_FILTER_STATE_CT:
+     case LTTV_FILTER_STATE_IT:
+     case LTTV_FILTER_EVENT_TIME:
+     case LTTV_FILTER_EVENT_TSC:
+       switch(op) {
+         case LTTV_FIELD_EQ:
+           se->op = lttv_apply_op_eq_double;
+           break;
+         case LTTV_FIELD_NE:
+           se->op = lttv_apply_op_ne_double;
+           break;
+         case LTTV_FIELD_LT:
+           se->op = lttv_apply_op_lt_double;
+           break;
+         case LTTV_FIELD_LE:
+           se->op = lttv_apply_op_le_double;
+           break;
+         case LTTV_FIELD_GT:
+           se->op = lttv_apply_op_gt_double;
+           break;
+         case LTTV_FIELD_GE:
+           se->op = lttv_apply_op_ge_double;
+           break;
+         default:
+           g_warning("Error encountered in operator assignment");
+           return FALSE;
+       }
+       break;
+     default:
+       g_warning("Error encountered in operator assignment");
+       return FALSE;
+   }
+
 }
 
 /**
@@ -283,7 +379,7 @@ parse_simple_expression(GString* expression) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint64(guint64 v1, guint64 v2) {}
+gboolean lttv_apply_op_eq_uint64(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'equal' operator to the
@@ -292,7 +388,7 @@ gboolean lttv_apply_op_eq_uint64(guint64 v1, guint64 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint32(guint32 v1, guint32 v2) {}
+gboolean lttv_apply_op_eq_uint32(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'equal' operator to the
@@ -301,7 +397,7 @@ gboolean lttv_apply_op_eq_uint32(guint32 v1, guint32 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint16(guint16 v1, guint16 v2) {}
+gboolean lttv_apply_op_eq_uint16(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'equal' operator to the
@@ -310,7 +406,7 @@ gboolean lttv_apply_op_eq_uint16(guint16 v1, guint16 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_double(double v1, double v2) {}
+gboolean lttv_apply_op_eq_double(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'equal' operator to the
@@ -319,7 +415,7 @@ gboolean lttv_apply_op_eq_double(double v1, double v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_string(char* v1, char* v2) {}
+gboolean lttv_apply_op_eq_string(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -328,7 +424,7 @@ gboolean lttv_apply_op_eq_string(char* v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint64(guint64 v1, guint64 v2) {}
+gboolean lttv_apply_op_ne_uint64(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -337,7 +433,7 @@ gboolean lttv_apply_op_ne_uint64(guint64 v1, guint64 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint32(guint32 v1, guint32 v2) {}
+gboolean lttv_apply_op_ne_uint32(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -346,7 +442,7 @@ gboolean lttv_apply_op_ne_uint32(guint32 v1, guint32 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint16(guint16 v1, guint16 v2) {}
+gboolean lttv_apply_op_ne_uint16(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -355,7 +451,7 @@ gboolean lttv_apply_op_ne_uint16(guint16 v1, guint16 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_double(double v1, double v2) {}
+gboolean lttv_apply_op_ne_double(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -364,7 +460,7 @@ gboolean lttv_apply_op_ne_double(double v1, double v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_string(char* v1, char* v2) {}
+gboolean lttv_apply_op_ne_string(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -373,7 +469,7 @@ gboolean lttv_apply_op_ne_string(char* v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint64(guint64 v1, guint64 v2) {}
+gboolean lttv_apply_op_lt_uint64(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -382,7 +478,7 @@ gboolean lttv_apply_op_lt_uint64(guint64 v1, guint64 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint32(guint32 v1, guint32 v2) {}
+gboolean lttv_apply_op_lt_uint32(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -391,7 +487,7 @@ gboolean lttv_apply_op_lt_uint32(guint32 v1, guint32 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint16(guint16 v1, guint16 v2) {}
+gboolean lttv_apply_op_lt_uint16(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -400,7 +496,7 @@ gboolean lttv_apply_op_lt_uint16(guint16 v1, guint16 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_double(double v1, double v2) {}
+gboolean lttv_apply_op_lt_double(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -409,7 +505,7 @@ gboolean lttv_apply_op_lt_double(double v1, double v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint64(guint64 v1, guint64 v2) {}
+gboolean lttv_apply_op_le_uint64(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'lower or equal' operator to the
@@ -418,7 +514,7 @@ gboolean lttv_apply_op_le_uint64(guint64 v1, guint64 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint32(guint32 v1, guint32 v2) {}
+gboolean lttv_apply_op_le_uint32(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'lower or equal' operator to the
@@ -427,7 +523,7 @@ gboolean lttv_apply_op_le_uint32(guint32 v1, guint32 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint16(guint16 v1, guint16 v2) {}
+gboolean lttv_apply_op_le_uint16(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'lower or equal' operator to the
@@ -436,7 +532,7 @@ gboolean lttv_apply_op_le_uint16(guint16 v1, guint16 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_double(double v1, double v2) {}
+gboolean lttv_apply_op_le_double(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'lower or equal' operator to the
@@ -445,7 +541,7 @@ gboolean lttv_apply_op_le_double(double v1, double v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint64(guint64 v1, guint64 v2) {}
+gboolean lttv_apply_op_gt_uint64(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'greater than' operator to the
@@ -454,7 +550,7 @@ gboolean lttv_apply_op_gt_uint64(guint64 v1, guint64 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint32(guint32 v1, guint32 v2) {}
+gboolean lttv_apply_op_gt_uint32(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'greater than' operator to the
@@ -463,7 +559,7 @@ gboolean lttv_apply_op_gt_uint32(guint32 v1, guint32 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint16(guint16 v1, guint16 v2) {}
+gboolean lttv_apply_op_gt_uint16(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'greater than' operator to the
@@ -472,7 +568,7 @@ gboolean lttv_apply_op_gt_uint16(guint16 v1, guint16 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_double(double v1, double v2) {}
+gboolean lttv_apply_op_gt_double(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'greater than' operator to the
@@ -481,7 +577,7 @@ gboolean lttv_apply_op_gt_double(double v1, double v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint64(guint64 v1, guint64 v2) {}
+gboolean lttv_apply_op_ge_uint64(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'greater or equal' operator to the
@@ -490,7 +586,7 @@ gboolean lttv_apply_op_ge_uint64(guint64 v1, guint64 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint32(guint32 v1, guint32 v2) {}
+gboolean lttv_apply_op_ge_uint32(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'greater or equal' operator to the
@@ -499,7 +595,7 @@ gboolean lttv_apply_op_ge_uint32(guint32 v1, guint32 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint16(guint16 v1, guint16 v2) {}
+gboolean lttv_apply_op_ge_uint16(gpointer v1, char* v2) {}
 
 /**
  *  Applies the 'greater or equal' operator to the
@@ -508,7 +604,7 @@ gboolean lttv_apply_op_ge_uint16(guint16 v1, guint16 v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_double(double v1, double v2) {}
+gboolean lttv_apply_op_ge_double(gpointer v1, char* v2) {}
 
 
 /**
@@ -633,13 +729,13 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_AND;
-        if(subtree != NULL) {
+        if(subtree != NULL) {   /* append subtree to current tree */
           t2->left = LTTV_TREE_NODE;
           t2->l_child.t = subtree;
           subtree = NULL;
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2;
-        } else {
+        } else {  /* append a simple expression */
           a_simple_expression->value = a_field_component->str;
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
@@ -655,13 +751,13 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_OR;
-        if(subtree != NULL) { 
+        if(subtree != NULL) {   /* append subtree to current tree */
           t2->left = LTTV_TREE_NODE;
           t2->l_child.t = subtree;
           subtree = NULL;
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2;
-        } else {
+        } else {    /* append a simple expression */
           a_simple_expression->value = a_field_component->str;
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
@@ -676,13 +772,13 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_XOR;
-        if(subtree != NULL) { 
+        if(subtree != NULL) {   /* append subtree to current tree */
           t2->left = LTTV_TREE_NODE;
           t2->l_child.t = subtree;
           subtree = NULL;
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2;
-        } else {
+        } else {    /* append a simple expression */
           a_simple_expression->value = a_field_component->str;
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
@@ -694,7 +790,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         break;
       case '!':   /* not, or not equal (math op) */
         if(expression[i+1] == '=') {  /* != */
-          a_simple_expression->op = LTTV_FIELD_NE;
+          assign_operator(a_simple_expression,LTTV_FIELD_NE);
           i++;
           g_ptr_array_add( a_field_path,(gpointer) a_field_component );
           parse_field_path(a_field_path,a_simple_expression);
@@ -728,7 +824,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         }
         
         g_assert(tree_stack->len>0);
-        if(subtree != NULL) { 
+        if(subtree != NULL) {   /* append subtree to current tree */
           t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
           while(t1->right != LTTV_TREE_IDLE && t1->right != LTTV_TREE_LEAF) {
               g_assert(t1!=NULL && t1->r_child.t != NULL);
@@ -738,7 +834,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
           t1->r_child.t = subtree;
           subtree = g_ptr_array_index(tree_stack,tree_stack->len-1);
           g_ptr_array_remove_index(tree_stack,tree_stack->len-1);
-        } else {
+        } else {    /* assign subtree as current tree */
           a_simple_expression->value = a_field_component->str;
           a_field_component = g_string_new("");
           t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
@@ -758,8 +854,8 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
       case '<':   /* lower, lower or equal */
         if(expression[i+1] == '=') { /* <= */
           i++;
-          a_simple_expression->op = LTTV_FIELD_LE; 
-        } else a_simple_expression->op = LTTV_FIELD_LT;
+          assign_operator(a_simple_expression,LTTV_FIELD_LE);
+        } else assign_operator(a_simple_expression,LTTV_FIELD_LT);
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );
         parse_field_path(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
@@ -767,14 +863,14 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
       case '>':   /* higher, higher or equal */
         if(expression[i+1] == '=') {  /* >= */
           i++;
-          a_simple_expression->op = LTTV_FIELD_GE;        
-        } else a_simple_expression->op = LTTV_FIELD_GT;
+          assign_operator(a_simple_expression,LTTV_FIELD_GE);
+        } else assign_operator(a_simple_expression,LTTV_FIELD_GT);
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );   
         parse_field_path(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
         break;
       case '=':   /* equal */
-        a_simple_expression->op = LTTV_FIELD_EQ;
+        assign_operator(a_simple_expression,LTTV_FIELD_EQ);
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );
         parse_field_path(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
@@ -783,8 +879,14 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
        *  Field concatening caracter
        */
       case '.':   /* dot */
-        g_ptr_array_add( a_field_path,(gpointer) a_field_component );
-        a_field_component = g_string_new("");
+        /*
+         * divide field expression into elements 
+         * in a_field_path array.
+         */
+        if(a_simple_expression->op != NULL) {
+          g_ptr_array_add( a_field_path,(gpointer) a_field_component );
+          a_field_component = g_string_new("");
+        }
         break;
       default:    /* concatening current string */
         g_string_append_c(a_field_component,expression[i]); 				

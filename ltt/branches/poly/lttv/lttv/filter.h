@@ -66,23 +66,22 @@ enum _LttvFieldType {
   LTTV_FILTER_TRACEFILE,
   LTTV_FILTER_STATE,
   LTTV_FILTER_EVENT,
-  LTTV_FILTER_TRACE_NAME,
-  LTTV_FILTER_TRACESET_NAME,
-  LTTV_FILTER_TRACEFILE_NAME,
-  LTTV_FILTER_STATE_PID,
-  LTTV_FILTER_STATE_PPID,
-  LTTV_FILTER_STATE_CT,
-  LTTV_FILTER_STATE_IT,
-  LTTV_FILTER_STATE_P_NAME,
-  LTTV_FILTER_STATE_EX_MODE,
-  LTTV_FILTER_STATE_EX_SUBMODE,
-  LTTV_FILTER_STATE_P_STATUS,
-  LTTV_FILTER_STATE_CPU,
-  LTTV_FILTER_EVENT_NAME,
-  LTTV_FILTER_EVENT_CATEGORY,
-  LTTV_FILTER_EVENT_TIME,
-  LTTV_FILTER_EVENT_TSC,
-  LTTV_FILTER_EVENT_FIELD,
+  LTTV_FILTER_TRACE_NAME,             /** trace.name (char*) */
+  LTTV_FILTER_TRACEFILE_NAME,         /** tracefile.name (char*) */
+  LTTV_FILTER_STATE_PID,              /** state.pid (guint) */
+  LTTV_FILTER_STATE_PPID,             /** state.ppid (guint) */
+  LTTV_FILTER_STATE_CT,               /** state.creation_time (double) */
+  LTTV_FILTER_STATE_IT,               /** state.insertion_time (double) */
+  LTTV_FILTER_STATE_P_NAME,           /** state.process_name (char*) */
+  LTTV_FILTER_STATE_EX_MODE,          /** state.execution_mode (LttvExecutionMode) */
+  LTTV_FILTER_STATE_EX_SUBMODE,       /** state.execution_submode (LttvExecutionSubmode) */
+  LTTV_FILTER_STATE_P_STATUS,         /** state.process_status (LttvProcessStatus) */
+  LTTV_FILTER_STATE_CPU,              /** state.cpu (?last_cpu?) */
+  LTTV_FILTER_EVENT_NAME,             /** event.name (char*) */
+  LTTV_FILTER_EVENT_CATEGORY,         /** FIXME: not implemented */
+  LTTV_FILTER_EVENT_TIME,             /** event.time (double) */
+  LTTV_FILTER_EVENT_TSC,              /** event.tsc (double) */
+  LTTV_FILTER_EVENT_FIELD,           
   LTTV_FILTER_UNDEFINED
 //  LTTV_FILTER_CATEGORY,
 //  LTTV_FILTER_TIME,
@@ -142,7 +141,7 @@ typedef struct _LttvSimpleExpression
   gint field;
   gint offset;
 //  LttvExpressionOp op;
-  gboolean (*op)();
+  gboolean (*op)(gpointer,char*);
   char *value;
 } LttvSimpleExpression;
 
@@ -203,43 +202,45 @@ void lttv_filter_tree_add_node(GPtrArray* stack, LttvFilterTree* subtree, LttvLo
 
 gboolean parse_field_path(GPtrArray* fp, LttvSimpleExpression* se);
 
+gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op);
+
 gboolean parse_simple_expression(GString* expression);
 
 /*
  * Logical operators functions
  */
 
-gboolean lttv_apply_op_eq_uint64(guint64 v1, guint64 v2);
-gboolean lttv_apply_op_eq_uint32(guint32 v1, guint32 v2);
-gboolean lttv_apply_op_eq_uint16(guint16 v1, guint16 v2);
-gboolean lttv_apply_op_eq_double(double v1, double v2);
-gboolean lttv_apply_op_eq_string(char* v1, char* v2);
+gboolean lttv_apply_op_eq_uint64(gpointer v1, char* v2);
+gboolean lttv_apply_op_eq_uint32(gpointer v1, char* v2);
+gboolean lttv_apply_op_eq_uint16(gpointer v1, char* v2);
+gboolean lttv_apply_op_eq_double(gpointer v1, char* v2);
+gboolean lttv_apply_op_eq_string(gpointer v1, char* v2);
 
-gboolean lttv_apply_op_ne_uint64(guint64 v1, guint64 v2);
-gboolean lttv_apply_op_ne_uint32(guint32 v1, guint32 v2);
-gboolean lttv_apply_op_ne_uint16(guint16 v1, guint16 v2);
-gboolean lttv_apply_op_ne_double(double v1, double v2);
-gboolean lttv_apply_op_ne_string(char* v1, char* v2);
+gboolean lttv_apply_op_ne_uint64(gpointer v1, char* v2);
+gboolean lttv_apply_op_ne_uint32(gpointer v1, char* v2);
+gboolean lttv_apply_op_ne_uint16(gpointer v1, char* v2);
+gboolean lttv_apply_op_ne_double(gpointer v1, char* v2);
+gboolean lttv_apply_op_ne_string(gpointer v1, char* v2);
 
-gboolean lttv_apply_op_lt_uint64(guint64 v1, guint64 v2);
-gboolean lttv_apply_op_lt_uint32(guint32 v1, guint32 v2);
-gboolean lttv_apply_op_lt_uint16(guint16 v1, guint16 v2);
-gboolean lttv_apply_op_lt_double(double v1, double v2);
+gboolean lttv_apply_op_lt_uint64(gpointer v1, char* v2);
+gboolean lttv_apply_op_lt_uint32(gpointer v1, char* v2);
+gboolean lttv_apply_op_lt_uint16(gpointer v1, char* v2);
+gboolean lttv_apply_op_lt_double(gpointer v1, char* v2);
 
-gboolean lttv_apply_op_le_uint64(guint64 v1, guint64 v2);
-gboolean lttv_apply_op_le_uint32(guint32 v1, guint32 v2);
-gboolean lttv_apply_op_le_uint16(guint16 v1, guint16 v2);
-gboolean lttv_apply_op_le_double(double v1, double v2);
+gboolean lttv_apply_op_le_uint64(gpointer v1, char* v2);
+gboolean lttv_apply_op_le_uint32(gpointer v1, char* v2);
+gboolean lttv_apply_op_le_uint16(gpointer v1, char* v2);
+gboolean lttv_apply_op_le_double(gpointer v1, char* v2);
 
-gboolean lttv_apply_op_gt_uint64(guint64 v1, guint64 v2);
-gboolean lttv_apply_op_gt_uint32(guint32 v1, guint32 v2);
-gboolean lttv_apply_op_gt_uint16(guint16 v1, guint16 v2);
-gboolean lttv_apply_op_gt_double(double v1, double v2);
+gboolean lttv_apply_op_gt_uint64(gpointer v1, char* v2);
+gboolean lttv_apply_op_gt_uint32(gpointer v1, char* v2);
+gboolean lttv_apply_op_gt_uint16(gpointer v1, char* v2);
+gboolean lttv_apply_op_gt_double(gpointer v1, char* v2);
 
-gboolean lttv_apply_op_ge_uint64(guint64 v1, guint64 v2);
-gboolean lttv_apply_op_ge_uint32(guint32 v1, guint32 v2);
-gboolean lttv_apply_op_ge_uint16(guint16 v1, guint16 v2);
-gboolean lttv_apply_op_ge_double(double v1, double v2);
+gboolean lttv_apply_op_ge_uint64(gpointer v1, char* v2);
+gboolean lttv_apply_op_ge_uint32(gpointer v1, char* v2);
+gboolean lttv_apply_op_ge_uint16(gpointer v1, char* v2);
+gboolean lttv_apply_op_ge_double(gpointer v1, char* v2);
 
 /*
  * Cloning
