@@ -168,6 +168,8 @@ void delete_viewer(GtkWidget * widget, gpointer user_data)
 void open_traceset(GtkWidget * widget, gpointer user_data)
 {
   g_printf("Open a trace set\n");
+  
+
 }
 
 void add_trace(GtkWidget * widget, gpointer user_data)
@@ -464,7 +466,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
 	lttv_module_load(str1, mwData->winCreationData->argc,mwData->winCreationData->argv);
       else
 	lttv_module_load(str1, 0,NULL);
-      insertMenuToolbarItem(mwData);
+      g_slist_foreach(Main_Window_List, insertMenuToolbarItem, NULL);
       g_strfreev(dir);
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
@@ -793,7 +795,7 @@ void destroy_hash_data(gpointer data)
 }
 
 
-void insertMenuToolbarItem(mainWindow * mw)
+void insertMenuToolbarItem(mainWindow * mw, gpointer user_data)
 {
   int i;
   GdkPixbuf *pixbuf;
@@ -956,7 +958,7 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
   newMWindow->hash_toolbar_item = g_hash_table_new_full (g_str_hash, g_str_equal,
 					      destroy_hash_key, destroy_hash_data);
 
-  insertMenuToolbarItem(newMWindow);
+  insertMenuToolbarItem(newMWindow, NULL);
   
   g_object_set_data(G_OBJECT(newWindow), "mainWindow", (gpointer)newMWindow);    
 
