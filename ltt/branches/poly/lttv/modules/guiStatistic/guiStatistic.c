@@ -25,20 +25,20 @@
 
 #define PATH_LENGTH        256
 
-static LttvModule *Main_Win_Module;
+static LttvModule *statistic_main_win_module;
 
 /** Array containing instanced objects. Used when module is unloaded */
-static GSList *gStatistic_Viewer_Data_List = NULL ;
+static GSList *g_statistic_viewer_data_list = NULL ;
 
 typedef struct _StatisticViewerData StatisticViewerData;
 
 //! Statistic Viewer's constructor hook
-GtkWidget *hGuiStatistic(mainWindow *pmParentWindow);
+GtkWidget *h_gui_statistic(mainWindow *parent_window);
 //! Statistic Viewer's constructor
-StatisticViewerData *GuiStatistic(mainWindow *pmParentWindow);
+StatisticViewerData *gui_statistic(mainWindow *parent_window);
 //! Statistic Viewer's destructor
-void GuiStatistic_Destructor(StatisticViewerData *Statistic_Viewer_Data);
-void GuiStatistic_free(StatisticViewerData *Statistic_Viewer_Data);
+void gui_statistic_destructor(StatisticViewerData *statistic_viewer_data);
+void gui_statistic_free(StatisticViewerData *statistic_viewer_data);
 
 void grab_focus(GtkWidget *widget, gpointer data);
 static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
@@ -46,11 +46,11 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer dat
 void statistic_destroy_hash_key(gpointer key);
 void statistic_destroy_hash_data(gpointer data);
 
-void get_traceset_stats(StatisticViewerData * Statistic_Viewer_Data);
-void show_traceset_stats(StatisticViewerData * Statistic_Viewer_Data);
-void show_tree(StatisticViewerData * Statistic_Viewer_Data,
+void get_traceset_stats(StatisticViewerData * statistic_viewer_data);
+void show_traceset_stats(StatisticViewerData * statistic_viewer_data);
+void show_tree(StatisticViewerData * statistic_viewer_data,
 	       LttvAttribute* stats,  GtkTreeIter* parent);
-void show_statistic(StatisticViewerData * Statistic_Viewer_Data,
+void show_statistic(StatisticViewerData * statistic_viewer_data,
 		    LttvAttribute* stats, GtkTextBuffer* buf);
 
 
@@ -64,22 +64,22 @@ struct _StatisticViewerData{
   mainWindow * mw;
   LttvTracesetStats * stats;
 
-  GtkWidget    * HPaned_V;
-  GtkTreeStore * Store_M;
-  GtkWidget    * Tree_V;
+  GtkWidget    * hpaned_v;
+  GtkTreeStore * store_m;
+  GtkWidget    * tree_v;
 
   //scroll window containing Tree View
-  GtkWidget * Scroll_Win_Tree;
+  GtkWidget * scroll_win_tree;
 
-  GtkWidget    * Text_V;  
+  GtkWidget    * text_v;  
   //scroll window containing Text View
-  GtkWidget * Scroll_Win_Text;
+  GtkWidget * scroll_win_text;
 
   // Selection handler 
-  GtkTreeSelection *Select_C;
+  GtkTreeSelection *select_c;
   
   //hash 
-  GHashTable *Statistic_Hash;
+  GHashTable *statistic_hash;
 };
 
 
@@ -91,26 +91,24 @@ struct _StatisticViewerData{
  */
 G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
-  Main_Win_Module = lttv_module_require(self, "mainwin", argc, argv);
+  statistic_main_win_module = lttv_module_require(self, "mainwin", argc, argv);
   
-  if(Main_Win_Module == NULL){
+  if(statistic_main_win_module == NULL){
       g_critical("Can't load Statistic Viewer : missing mainwin\n");
       return;
   }
 	
-  g_critical("GUI Statistic Viewer init()");
-  
   /* Register the toolbar insert button */
-  ToolbarItemReg(hGuiStatisticInsert_xpm, "Insert Statistic Viewer", hGuiStatistic);
+  ToolbarItemReg(hGuiStatisticInsert_xpm, "Insert Statistic Viewer", h_gui_statistic);
   
   /* Register the menu item insert entry */
-  MenuItemReg("/", "Insert Statistic Viewer", hGuiStatistic);
+  MenuItemReg("/", "Insert Statistic Viewer", h_gui_statistic);
   
 }
 
 void statistic_destroy_walk(gpointer data, gpointer user_data)
 {
-  GuiStatistic_Destructor((StatisticViewerData*)data);
+  gui_statistic_destructor((StatisticViewerData*)data);
 }
 
 /**
@@ -122,43 +120,38 @@ void statistic_destroy_walk(gpointer data, gpointer user_data)
 G_MODULE_EXPORT void destroy() {
   int i;
   
-  g_critical("GUI Statistic Viewer destroy()");
-
-  if(gStatistic_Viewer_Data_List){
-    g_slist_foreach(gStatistic_Viewer_Data_List, statistic_destroy_walk, NULL );    
-    g_slist_free(gStatistic_Viewer_Data_List);
+  if(g_statistic_viewer_data_list){
+    g_slist_foreach(g_statistic_viewer_data_list, statistic_destroy_walk, NULL );    
+    g_slist_free(g_statistic_viewer_data_list);
   }
 
   /* Unregister the toolbar insert button */
-  ToolbarItemUnreg(hGuiStatistic);
+  ToolbarItemUnreg(h_gui_statistic);
 	
   /* Unregister the menu item insert entry */
-  MenuItemUnreg(hGuiStatistic);
+  MenuItemUnreg(h_gui_statistic);
 }
 
 
 void
-GuiStatistic_free(StatisticViewerData *Statistic_Viewer_Data)
+gui_statistic_free(StatisticViewerData *statistic_viewer_data)
 { 
-  g_critical("GuiStatistic_free()");
-  if(Statistic_Viewer_Data){
-    g_hash_table_destroy(Statistic_Viewer_Data->Statistic_Hash);
-    gStatistic_Viewer_Data_List = g_slist_remove(gStatistic_Viewer_Data_List, Statistic_Viewer_Data);
-    g_warning("Delete Statistic data\n");
-    g_free(Statistic_Viewer_Data);
+  if(statistic_viewer_data){
+    g_hash_table_destroy(statistic_viewer_data->statistic_hash);
+    g_statistic_viewer_data_list = g_slist_remove(g_statistic_viewer_data_list, statistic_viewer_data);
+    g_free(statistic_viewer_data);
   }
 }
 
 void
-GuiStatistic_Destructor(StatisticViewerData *Statistic_Viewer_Data)
+gui_statistic_destructor(StatisticViewerData *statistic_viewer_data)
 {
-  g_critical("GuiStatistic_Destructor()");
   /* May already been done by GTK window closing */
-  if(GTK_IS_WIDGET(Statistic_Viewer_Data->HPaned_V)){
-    gtk_widget_destroy(Statistic_Viewer_Data->HPaned_V);
-    Statistic_Viewer_Data = NULL;
+  if(GTK_IS_WIDGET(statistic_viewer_data->hpaned_v)){
+    gtk_widget_destroy(statistic_viewer_data->hpaned_v);
+    statistic_viewer_data = NULL;
   }
-  //GuiStatistic_free(Statistic_Viewer_Data);
+  //gui_statistic_free(statistic_viewer_data);
 }
 
 
@@ -167,16 +160,16 @@ GuiStatistic_Destructor(StatisticViewerData *Statistic_Viewer_Data)
  *
  * This constructor is given as a parameter to the menuitem and toolbar button
  * registration. It creates the list.
- * @param pmParentWindow A pointer to the parent window.
+ * @param parent_window A pointer to the parent window.
  * @return The widget created.
  */
 GtkWidget *
-hGuiStatistic(mainWindow * pmParentWindow)
+h_gui_statistic(mainWindow * parent_window)
 {
-  StatisticViewerData* Statistic_Viewer_Data = GuiStatistic(pmParentWindow) ;
+  StatisticViewerData* statistic_viewer_data = gui_statistic(parent_window) ;
 
-  if(Statistic_Viewer_Data)
-    return Statistic_Viewer_Data->HPaned_V;
+  if(statistic_viewer_data)
+    return statistic_viewer_data->hpaned_v;
   else return NULL;
 	
 }
@@ -188,35 +181,35 @@ hGuiStatistic(mainWindow * pmParentWindow)
  * @return The Statistic viewer data created.
  */
 StatisticViewerData *
-GuiStatistic(mainWindow *pmParentWindow)
+gui_statistic(mainWindow *parent_window)
 {
   GtkCellRenderer *renderer;
   GtkTreeViewColumn *column;
 
-  StatisticViewerData* Statistic_Viewer_Data = g_new(StatisticViewerData,1);
+  StatisticViewerData* statistic_viewer_data = g_new(StatisticViewerData,1);
 
-  Statistic_Viewer_Data->mw     = pmParentWindow;
-  Statistic_Viewer_Data->stats  = getTracesetStats(Statistic_Viewer_Data->mw);
+  statistic_viewer_data->mw     = parent_window;
+  statistic_viewer_data->stats  = getTracesetStats(statistic_viewer_data->mw);
 
-  Statistic_Viewer_Data->Statistic_Hash = g_hash_table_new_full(g_str_hash, g_str_equal,
+  statistic_viewer_data->statistic_hash = g_hash_table_new_full(g_str_hash, g_str_equal,
 								statistic_destroy_hash_key,
 								statistic_destroy_hash_data);
 
-  Statistic_Viewer_Data->HPaned_V  = gtk_hpaned_new();
-  Statistic_Viewer_Data->Store_M = gtk_tree_store_new (N_COLUMNS, G_TYPE_STRING);
-  Statistic_Viewer_Data->Tree_V  = gtk_tree_view_new_with_model (GTK_TREE_MODEL (Statistic_Viewer_Data->Store_M));
-  g_object_unref (G_OBJECT (Statistic_Viewer_Data->Store_M));
+  statistic_viewer_data->hpaned_v  = gtk_hpaned_new();
+  statistic_viewer_data->store_m = gtk_tree_store_new (N_COLUMNS, G_TYPE_STRING);
+  statistic_viewer_data->tree_v  = gtk_tree_view_new_with_model (GTK_TREE_MODEL (statistic_viewer_data->store_m));
+  g_object_unref (G_OBJECT (statistic_viewer_data->store_m));
 
-  g_signal_connect (G_OBJECT (Statistic_Viewer_Data->Tree_V), "grab-focus",
+  g_signal_connect (G_OBJECT (statistic_viewer_data->tree_v), "grab-focus",
 		    G_CALLBACK (grab_focus),
-		    Statistic_Viewer_Data);
+		    statistic_viewer_data);
 
   // Setup the selection handler
-  Statistic_Viewer_Data->Select_C = gtk_tree_view_get_selection (GTK_TREE_VIEW (Statistic_Viewer_Data->Tree_V));
-  gtk_tree_selection_set_mode (Statistic_Viewer_Data->Select_C, GTK_SELECTION_SINGLE);
-  g_signal_connect (G_OBJECT (Statistic_Viewer_Data->Select_C), "changed",
+  statistic_viewer_data->select_c = gtk_tree_view_get_selection (GTK_TREE_VIEW (statistic_viewer_data->tree_v));
+  gtk_tree_selection_set_mode (statistic_viewer_data->select_c, GTK_SELECTION_SINGLE);
+  g_signal_connect (G_OBJECT (statistic_viewer_data->select_c), "changed",
 		    G_CALLBACK (tree_selection_changed_cb),
-		    Statistic_Viewer_Data);
+		    statistic_viewer_data);
 
   renderer = gtk_cell_renderer_text_new ();
   column = gtk_tree_view_column_new_with_attributes ("Statistic Name",
@@ -225,69 +218,69 @@ GuiStatistic(mainWindow *pmParentWindow)
 						     NULL);
   gtk_tree_view_column_set_alignment (column, 0.0);
   //  gtk_tree_view_column_set_fixed_width (column, 45);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (Statistic_Viewer_Data->Tree_V), column);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (statistic_viewer_data->tree_v), column);
 
 
-  gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (Statistic_Viewer_Data->Tree_V), FALSE);
+  gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (statistic_viewer_data->tree_v), FALSE);
 
-  Statistic_Viewer_Data->Scroll_Win_Tree = gtk_scrolled_window_new (NULL, NULL);
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(Statistic_Viewer_Data->Scroll_Win_Tree), 
+  statistic_viewer_data->scroll_win_tree = gtk_scrolled_window_new (NULL, NULL);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(statistic_viewer_data->scroll_win_tree), 
 				 GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
 
-  gtk_container_add (GTK_CONTAINER (Statistic_Viewer_Data->Scroll_Win_Tree), Statistic_Viewer_Data->Tree_V);
-  gtk_paned_pack1(GTK_PANED(Statistic_Viewer_Data->HPaned_V),Statistic_Viewer_Data->Scroll_Win_Tree, TRUE, FALSE);
-  gtk_paned_set_position(GTK_PANED(Statistic_Viewer_Data->HPaned_V), 160);
+  gtk_container_add (GTK_CONTAINER (statistic_viewer_data->scroll_win_tree), statistic_viewer_data->tree_v);
+  gtk_paned_pack1(GTK_PANED(statistic_viewer_data->hpaned_v),statistic_viewer_data->scroll_win_tree, TRUE, FALSE);
+  gtk_paned_set_position(GTK_PANED(statistic_viewer_data->hpaned_v), 160);
 
-  Statistic_Viewer_Data->Scroll_Win_Text = gtk_scrolled_window_new (NULL, NULL);
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(Statistic_Viewer_Data->Scroll_Win_Text), 
+  statistic_viewer_data->scroll_win_text = gtk_scrolled_window_new (NULL, NULL);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(statistic_viewer_data->scroll_win_text), 
 				 GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
 
-  Statistic_Viewer_Data->Text_V = gtk_text_view_new ();
-  g_signal_connect (G_OBJECT (Statistic_Viewer_Data->Text_V), "grab-focus",
+  statistic_viewer_data->text_v = gtk_text_view_new ();
+  g_signal_connect (G_OBJECT (statistic_viewer_data->text_v), "grab-focus",
 		    G_CALLBACK (grab_focus),
-		    Statistic_Viewer_Data);
+		    statistic_viewer_data);
   
-  gtk_text_view_set_editable(GTK_TEXT_VIEW(Statistic_Viewer_Data->Text_V),FALSE);
-  gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(Statistic_Viewer_Data->Text_V),FALSE);
-  gtk_container_add (GTK_CONTAINER (Statistic_Viewer_Data->Scroll_Win_Text), Statistic_Viewer_Data->Text_V);
-  gtk_paned_pack2(GTK_PANED(Statistic_Viewer_Data->HPaned_V), Statistic_Viewer_Data->Scroll_Win_Text, TRUE, FALSE);
+  gtk_text_view_set_editable(GTK_TEXT_VIEW(statistic_viewer_data->text_v),FALSE);
+  gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(statistic_viewer_data->text_v),FALSE);
+  gtk_container_add (GTK_CONTAINER (statistic_viewer_data->scroll_win_text), statistic_viewer_data->text_v);
+  gtk_paned_pack2(GTK_PANED(statistic_viewer_data->hpaned_v), statistic_viewer_data->scroll_win_text, TRUE, FALSE);
 
-  gtk_widget_show(Statistic_Viewer_Data->Scroll_Win_Tree);
-  gtk_widget_show(Statistic_Viewer_Data->Scroll_Win_Text);
-  gtk_widget_show(Statistic_Viewer_Data->Tree_V);
-  gtk_widget_show(Statistic_Viewer_Data->Text_V);
-  gtk_widget_show(Statistic_Viewer_Data->HPaned_V);
+  gtk_widget_show(statistic_viewer_data->scroll_win_tree);
+  gtk_widget_show(statistic_viewer_data->scroll_win_text);
+  gtk_widget_show(statistic_viewer_data->tree_v);
+  gtk_widget_show(statistic_viewer_data->text_v);
+  gtk_widget_show(statistic_viewer_data->hpaned_v);
 
   g_object_set_data_full(
-			G_OBJECT(Statistic_Viewer_Data->HPaned_V),
-			"Statistic_Viewer_Data",
-			Statistic_Viewer_Data,
-			(GDestroyNotify)GuiStatistic_free);
+			G_OBJECT(statistic_viewer_data->hpaned_v),
+			"statistic_viewer_data",
+			statistic_viewer_data,
+			(GDestroyNotify)gui_statistic_free);
 
   /* Add the object's information to the module's array */
-  gStatistic_Viewer_Data_List = g_slist_append(
-			gStatistic_Viewer_Data_List,
-			Statistic_Viewer_Data);
+  g_statistic_viewer_data_list = g_slist_append(
+			g_statistic_viewer_data_list,
+			statistic_viewer_data);
 
-  get_traceset_stats(Statistic_Viewer_Data);
+  get_traceset_stats(statistic_viewer_data);
 
-  return Statistic_Viewer_Data;
+  return statistic_viewer_data;
 }
 
 void grab_focus(GtkWidget *widget, gpointer data)
 {
-  StatisticViewerData *Statistic_Viewer_Data = (StatisticViewerData *)data;
-  mainWindow * mw = Statistic_Viewer_Data->mw;
-  SetFocusedPane(mw, gtk_widget_get_parent(Statistic_Viewer_Data->HPaned_V));
+  StatisticViewerData *statistic_viewer_data = (StatisticViewerData *)data;
+  mainWindow * mw = statistic_viewer_data->mw;
+  SetFocusedPane(mw, gtk_widget_get_parent(statistic_viewer_data->hpaned_v));
 }
 
 static void
 tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
 {
-  StatisticViewerData *Statistic_Viewer_Data = (StatisticViewerData*)data;
+  StatisticViewerData *statistic_viewer_data = (StatisticViewerData*)data;
   GtkTreeIter iter;
-  GtkTreeModel *model = GTK_TREE_MODEL(Statistic_Viewer_Data->Store_M);
-  gchar *Event;
+  GtkTreeModel *model = GTK_TREE_MODEL(statistic_viewer_data->store_m);
+  gchar *event;
   GtkTextBuffer* buf;
   gchar * str;
   GtkTreePath * path;
@@ -296,23 +289,23 @@ tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
 
   if (gtk_tree_selection_get_selected (selection, &model, &iter))
     {
-      gtk_tree_model_get (model, &iter, NAME_COLUMN, &Event, -1);
+      gtk_tree_model_get (model, &iter, NAME_COLUMN, &event, -1);
 
       path = gtk_tree_model_get_path(GTK_TREE_MODEL(model),&iter);
       str = gtk_tree_path_to_string (path);
-      stats = (LttvAttribute*)g_hash_table_lookup (Statistic_Viewer_Data->Statistic_Hash,str);
+      stats = (LttvAttribute*)g_hash_table_lookup (statistic_viewer_data->statistic_hash,str);
       g_free(str);
       
-      buf =  gtk_text_view_get_buffer((GtkTextView*)Statistic_Viewer_Data->Text_V);
+      buf =  gtk_text_view_get_buffer((GtkTextView*)statistic_viewer_data->text_v);
       gtk_text_buffer_set_text(buf,"Statistic for  '", -1);
       gtk_text_buffer_get_end_iter(buf, &text_iter);
-      gtk_text_buffer_insert(buf, &text_iter, Event, strlen(Event));      
+      gtk_text_buffer_insert(buf, &text_iter, event, strlen(event));      
       gtk_text_buffer_get_end_iter(buf, &text_iter);
       gtk_text_buffer_insert(buf, &text_iter, "' :\n\n",5);
       
-      show_statistic(Statistic_Viewer_Data, stats, buf);
+      show_statistic(statistic_viewer_data, stats, buf);
 
-      g_free (Event);
+      g_free (event);
     }
 }
 
@@ -326,7 +319,7 @@ void statistic_destroy_hash_data(gpointer data)
   //  g_free(data);
 }
 
-void get_traceset_stats(StatisticViewerData * Statistic_Viewer_Data)
+void get_traceset_stats(StatisticViewerData * statistic_viewer_data)
 {
   LttTime start, end;
 
@@ -335,29 +328,29 @@ void get_traceset_stats(StatisticViewerData * Statistic_Viewer_Data)
   end.tv_sec = G_MAXULONG;
   end.tv_nsec = G_MAXULONG;
   
-  stateAddEventHooks(Statistic_Viewer_Data->mw);
-  statsAddEventHooks(Statistic_Viewer_Data->mw);
+  stateAddEventHooks(statistic_viewer_data->mw);
+  statsAddEventHooks(statistic_viewer_data->mw);
 
-  processTraceset(Statistic_Viewer_Data->mw, start, end, G_MAXULONG);
+  processTraceset(statistic_viewer_data->mw, start, end, G_MAXULONG);
   
-  stateRemoveEventHooks(Statistic_Viewer_Data->mw);
-  statsRemoveEventHooks(Statistic_Viewer_Data->mw);
+  stateRemoveEventHooks(statistic_viewer_data->mw);
+  statsRemoveEventHooks(statistic_viewer_data->mw);
 
   //establish tree view for stats
-  show_traceset_stats(Statistic_Viewer_Data);
+  show_traceset_stats(statistic_viewer_data);
 }
 
-void show_traceset_stats(StatisticViewerData * Statistic_Viewer_Data)
+void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
 {
   int i, nb;
   LttvTraceset *ts;
   LttvTraceStats *tcs;
   LttSystemDescription *desc;
-  LttvTracesetStats * tscs = Statistic_Viewer_Data->stats;
+  LttvTracesetStats * tscs = statistic_viewer_data->stats;
   gchar * str, trace_str[PATH_LENGTH];
   GtkTreePath * path;
   GtkTreeIter   iter;
-  GtkTreeStore * store = Statistic_Viewer_Data->Store_M;
+  GtkTreeStore * store = statistic_viewer_data->store_m;
 
   if(tscs->stats == NULL) return;
 
@@ -367,9 +360,9 @@ void show_traceset_stats(StatisticViewerData * Statistic_Viewer_Data)
 		      -1);  
   path = gtk_tree_model_get_path(GTK_TREE_MODEL(store),	&iter);
   str = gtk_tree_path_to_string (path);
-  g_hash_table_insert(Statistic_Viewer_Data->Statistic_Hash,
+  g_hash_table_insert(statistic_viewer_data->statistic_hash,
 		      (gpointer)str, tscs->stats);
-  show_tree(Statistic_Viewer_Data, tscs->stats, &iter);
+  show_tree(statistic_viewer_data, tscs->stats, &iter);
 
   //show stats for all traces
   ts = tscs->parent.parent.ts;
@@ -385,13 +378,13 @@ void show_traceset_stats(StatisticViewerData * Statistic_Viewer_Data)
     gtk_tree_store_set (store, &iter,NAME_COLUMN,trace_str,-1);  
     path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
     str = gtk_tree_path_to_string (path);
-    g_hash_table_insert(Statistic_Viewer_Data->Statistic_Hash,
+    g_hash_table_insert(statistic_viewer_data->statistic_hash,
 			(gpointer)str,tcs->stats);
-    show_tree(Statistic_Viewer_Data, tcs->stats, &iter);
+    show_tree(statistic_viewer_data, tcs->stats, &iter);
   }
 }
 
-void show_tree(StatisticViewerData * Statistic_Viewer_Data,
+void show_tree(StatisticViewerData * statistic_viewer_data,
 	       LttvAttribute* stats,  GtkTreeIter* parent)
 {
   int i, nb;
@@ -402,7 +395,7 @@ void show_tree(StatisticViewerData * Statistic_Viewer_Data,
   gchar * str, dir_str[PATH_LENGTH];
   GtkTreePath * path;
   GtkTreeIter   iter;
-  GtkTreeStore * store = Statistic_Viewer_Data->Store_M;
+  GtkTreeStore * store = statistic_viewer_data->store_m;
 
   nb = lttv_attribute_get_number(stats);
   for(i = 0 ; i < nb ; i++) {
@@ -416,9 +409,9 @@ void show_tree(StatisticViewerData * Statistic_Viewer_Data,
 	  gtk_tree_store_set (store, &iter,NAME_COLUMN,dir_str,-1);  
 	  path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
 	  str = gtk_tree_path_to_string (path);
-	  g_hash_table_insert(Statistic_Viewer_Data->Statistic_Hash,
+	  g_hash_table_insert(statistic_viewer_data->statistic_hash,
 			      (gpointer)str, subtree);
-          show_tree(Statistic_Viewer_Data, subtree, &iter);
+          show_tree(statistic_viewer_data, subtree, &iter);
         }
         break;
       default:
@@ -427,7 +420,7 @@ void show_tree(StatisticViewerData * Statistic_Viewer_Data,
   }    
 }
 
-void show_statistic(StatisticViewerData * Statistic_Viewer_Data,
+void show_statistic(StatisticViewerData * statistic_viewer_data,
 		    LttvAttribute* stats, GtkTextBuffer* buf)
 {
   int i, nb , flag;

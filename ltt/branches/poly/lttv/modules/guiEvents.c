@@ -177,9 +177,6 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
     return;
   }
 	
-
-  g_critical("GUI Event Viewer init()");
-  
   /* Register the toolbar insert button */
   ToolbarItemReg(hGuiEventsInsert_xpm, "Insert Event Viewer", h_gui_events);
   
@@ -204,8 +201,6 @@ G_MODULE_EXPORT void destroy() {
   
   EventViewerData *event_viewer_data;
   
-  g_critical("GUI Event Viewer destroy()");
-
   if(g_event_viewer_data_list){
     g_slist_foreach(g_event_viewer_data_list, event_destroy_walk, NULL );
     g_slist_free(g_event_viewer_data_list);
@@ -419,7 +414,6 @@ gui_events(mainWindow *parent_window)
     //  event_viewer_data->vtree_adjust_c->upper;
   event_viewer_data->vadjust_c->page_size = 2.0;
   //    event_viewer_data->vtree_adjust_c->upper;
-  g_critical("value : %u",event_viewer_data->vtree_adjust_c->upper);
   /*  Raw event trace */
   gtk_widget_show(event_viewer_data->hbox_v);
   gtk_widget_show(event_viewer_data->tree_v);
@@ -506,7 +500,6 @@ void tree_v_get_cursor(EventViewerData *event_viewer_data)
       event_viewer_data->selected_event = FALSE;
       event_viewer_data->currently_selected_event = 0;
     }
-  g_critical("DEBUG : Event Selected : %i , num: %u", event_viewer_data->selected_event,  event_viewer_data->currently_selected_event) ;
   
   gtk_tree_path_free(path);
 
@@ -531,8 +524,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, 
   
   indices = gtk_tree_path_get_indices(path);
   
-  g_critical("DEBUG : move cursor step : %u , int : %i , indice : %i", (guint)arg1, arg2, indices[0]) ;
-  
   value = gtk_adjustment_get_value(event_viewer_data->vadjust_c);
   
   if(arg1 == GTK_MOVEMENT_DISPLAY_LINES)
@@ -546,7 +537,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, 
 	      if(value + event_viewer_data->num_visible_events <= 
 		 event_viewer_data->number_of_events -1)
 		{
-		  g_critical("need 1 event down") ;
 		  event_viewer_data->currently_selected_event += 1;
 		  //		  gtk_adjustment_set_value(event_viewer_data->vadjust_c, value+1);
 		  //gtk_tree_path_free(path);
@@ -561,7 +551,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, 
 	    {
 	      if(value - 1 >= 0 )
 		{
-		  g_critical("need 1 event up") ;
 		  event_viewer_data->currently_selected_event -= 1;
 		  //		  gtk_adjustment_set_value(event_viewer_data->vadjust_c, value-1);
 		  //gtk_tree_path_free(path);
@@ -586,8 +575,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, 
 	  if(value + event_viewer_data->num_visible_events-1 <= 
 	     event_viewer_data->number_of_events )
 	    {
-	      g_critical("need 1 page down") ;
-	      
 	      event_viewer_data->currently_selected_event += event_viewer_data->num_visible_events-1;
 	      //	      gtk_adjustment_set_value(event_viewer_data->vadjust_c,
 	      //				       value+(event_viewer_data->num_visible_events-1));
@@ -605,8 +592,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, 
 	    {
 	      if(value - (event_viewer_data->num_visible_events-1) >= 0)
 		{
-		  g_critical("need 1 page up") ;
-		  
 		  event_viewer_data->currently_selected_event -= event_viewer_data->num_visible_events-1;
 		  
 		  //		  gtk_adjustment_set_value(event_viewer_data->vadjust_c,
@@ -618,8 +603,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, 
 		  
 		} else {
 		  /* Go to first Event */
-		  g_critical("need 1 page up") ;
-		  
 		  event_viewer_data->currently_selected_event == 0 ;
 		  //		  gtk_adjustment_set_value(event_viewer_data->vadjust_c,
 		  //					   0);
@@ -641,7 +624,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, 
       if(arg2 == 1)
 	{
 	  /* move end of buffer */
-	  g_critical("End of buffer") ;
 	  event_viewer_data->currently_selected_event = event_viewer_data->number_of_events-1 ;
 	  //	  gtk_adjustment_set_value(event_viewer_data->vadjust_c, 
 	  //				   event_viewer_data->number_of_events -
@@ -652,7 +634,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, 
 	  g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
 	} else {
 	  /* Move beginning of buffer */
-	  g_critical("Beginning of buffer") ;
 	  event_viewer_data->currently_selected_event = 0 ;
 	  //	  gtk_adjustment_set_value(event_viewer_data->vadjust_c, 0);
 			//gtk_tree_path_free(path);
@@ -676,7 +657,6 @@ void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data)
   GtkTreeModel* model = GTK_TREE_MODEL(event_viewer_data->store_m);
   GtkTreePath *path;
 	
-  g_critical("DEBUG : cursor change");
   /* On cursor change, modify the currently selected event by calling
    * the right API function */
   tree_v_get_cursor(event_viewer_data);
@@ -702,8 +682,6 @@ void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
   EventViewerData *event_viewer_data = (EventViewerData*)data;
   GtkTreePath *tree_path;
 
-  g_critical("DEBUG : scroll signal, value : %f", adjustment->value);
-  
   get_test_data(adjustment->value, event_viewer_data->num_visible_events, 
 		event_viewer_data);
   
@@ -735,10 +713,9 @@ gint get_cell_height(GtkTreeView *TreeView)
   gint height, width;
   GtkTreeViewColumn *column = gtk_tree_view_get_column(TreeView, 0);
   GList *Render_List = gtk_tree_view_column_get_cell_renderers(column);
-  GtkCellRenderer *Renderer = g_list_first(Render_List)->data;
+  GtkCellRenderer *renderer = g_list_first(Render_List)->data;
   
   gtk_tree_view_column_cell_get_size(column, NULL, NULL, NULL, NULL, &height);
-  g_critical("cell 0 height : %u",height);
   
   return height;
 }
@@ -750,17 +727,12 @@ void tree_v_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer 
   gint last_num_visible_events = event_viewer_data->num_visible_events;
   gdouble exact_num_visible;
   
-  g_critical("size-allocate");
-  
   exact_num_visible = ( alloc->height -
 			TREE_VIEW_HEADER_HEIGHT (GTK_TREE_VIEW(event_viewer_data->tree_v)) )
     / (double)cell_height ;
   
   event_viewer_data->num_visible_events = ceil(exact_num_visible) ;
   
-  g_critical("number of events shown : %u",event_viewer_data->num_visible_events);
-  g_critical("ex number of events shown : %f",exact_num_visible);
-
 /*
   event_viewer_data->vadjust_c->page_increment = 
     floor(exact_num_visible);
@@ -784,8 +756,6 @@ void tree_v_size_request_cb (GtkWidget *widget, GtkRequisition *requisition, gpo
   EventViewerData *event_viewer_data = (EventViewerData*)data;
   gint cell_height = get_cell_height(GTK_TREE_VIEW(event_viewer_data->tree_v));
 	
-  g_critical("size-request");
-
   h = cell_height + TREE_VIEW_HEADER_HEIGHT
     (GTK_TREE_VIEW(event_viewer_data->tree_v));
   requisition->height = h;
@@ -812,7 +782,6 @@ void get_test_data(double time_value, guint list_height,
   unsigned size = 1, count = 0;
   gboolean need_backward_again, backward;
 
-  g_warning("DEBUG : get_test_data, time value  %f\n", time_value);
   
   //	if(event_number > event_viewer_data->last_event ||
   //		 event_number + list_height-1 < event_viewer_data->first_event ||
@@ -1124,7 +1093,6 @@ gui_events_free(EventViewerData *event_viewer_data)
     UnregUpdateCurrentTime(update_current_time,event_viewer_data, event_viewer_data->mw);
 
     g_event_viewer_data_list = g_slist_remove(g_event_viewer_data_list, event_viewer_data);
-    g_warning("Delete Event data\n");
     g_free(event_viewer_data);
   }
 }
@@ -1147,7 +1115,6 @@ gui_events_destructor(EventViewerData *event_viewer_data)
   //gtk_list_store_clear(event_viewer_data->store_m);
   //gtk_widget_destroy(GTK_WIDGET(event_viewer_data->store_m));
   
-  g_warning("Delete Event data from destroy\n");
   //gui_events_free(event_viewer_data);
 }
 
@@ -1165,8 +1132,6 @@ tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
     {
       gtk_tree_model_get (model, &iter, EVENT_COLUMN, &event, -1);
       
-      g_print ("Event selected :  %s\n", event);
-      
       g_free (event);
     }
 }
@@ -1176,8 +1141,6 @@ int event_selected_hook(void *hook_data, void *call_data)
 {
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
   guint *event_number = (guint*) call_data;
-  
-  g_critical("DEBUG : event selected by main window : %u", *event_number);
   
   event_viewer_data->currently_selected_event = *event_number;
   event_viewer_data->selected_event = TRUE ;
@@ -1493,426 +1456,4 @@ void remove_all_items_from_queue(GQueue *q)
   }  
 }
 
-
-
-
-
-/* Imported code from LTT 0.9.6pre2 tracevisualizer */
-#ifdef DEBUG
-
-/******************************************************************
- * Function :
- *    WDI_gtk_clist_set_last_row_data_full()
- * Description :
- *    Appends data to the last row of a GtkClist.
- * Parameters :
- * Return values :
- *    NONE.
- * History :
- *    J.H.D., 27/08/99, Initial typing.
- * Note :
- *    Based on gtk_clist_set_row_data_full() version 1.2.3.
- *    Much faster than using gtk_clist_set_row_data_full().
- ******************************************************************/
-static void WDI_gtk_clist_set_last_row_data_full(GtkCList*         pmClist,
-					  gpointer          pmData,
-					  GtkDestroyNotify  pmDestroy)
-{
-  GtkCListRow *pClistRow;
-
-  g_return_if_fail (pmClist != NULL);
-  g_return_if_fail (GTK_IS_CLIST (pmClist));
-  g_return_if_fail (pmClist->row_list_end != NULL);
-
-  pClistRow = pmClist->row_list_end->data;
-  pClistRow->data    = pmData;
-  pClistRow->destroy = pmDestroy;
-}
-
-
-/******************************************************************
- * Function :
- *    SHRTEventSelect()
- * Description :
- * Parameters :
- * Return values :
- * History :
- * Note :
- ******************************************************************/
-static void SHRTEventSelect(GtkWidget*      pmCList,
-		     gint            pmRow,
-		     gint            pmColumn,
-		     GdkEventButton* pmEvent,
-		     gpointer        pmData)
-{
-  systemView*  pSysView;        /* The system being displayed */
-
-  /* Do we have anything meaningfull */
-  if((pSysView = (systemView*) pmData) == NULL)
-    return;
-
-  /* Store the selected event */
-  pSysView->Window->LastSelectedEvent = *(event*) gtk_clist_get_row_data(GTK_CLIST(pmCList), pmRow);
-  pSysView->Window->EventSelected = TRUE;
-}
-
-/******************************************************************
- * Function :
- *    SHRTEventButtonPress()
- * Description :
- * Parameters :
- * Return values :
- * History :
- * Note :
- ******************************************************************/
-static void SHRTEventButtonPress(GtkWidget*      pmCList,
-			  GdkEventButton* pmEvent,
-			  gpointer        pmData)
-{
-  systemView*  pSysView;        /* The system being displayed */
-  gint         row, column;     /* The clicked row and column */
-
-  /* Do we have anything meaningfull */
-  if((pSysView = (systemView*) pmData) == NULL)
-    return;
-
-  /* if we have a right-click event */
-  if(pmEvent->button == 3)
-    /* If we clicked on an item, get its row and column values */
-    if(gtk_clist_get_selection_info(GTK_CLIST(pmCList), pmEvent->x, pmEvent->y, &row, &column))
-      {
-      /* Highlight the selected row */
-      gtk_clist_select_row(GTK_CLIST(pmCList), row, column);
-
-      /* Store the selected event */
-      pSysView->Window->LastSelectedEvent = *(event*) gtk_clist_get_row_data(GTK_CLIST(pmCList), row);
-      pSysView->Window->EventSelected = TRUE;
-
-      /* Display the popup menu */
-      gtk_menu_popup(GTK_MENU(pSysView->Window->RawEventPopup),
-		     NULL, NULL, NULL, NULL,
-		     pmEvent->button, GDK_CURRENT_TIME);
-      }
-}
-
-
-/******************************************************************
- * Function :
- *    SHRTVAdjustValueChanged()
- * Description :
- * Parameters :
- * Return values :
- * History :
- * Note :
- ******************************************************************/
-static void SHRTVAdjustValueChanged(GtkAdjustment*  pmVAdjust,
-			     gpointer        pmData)
-{
-  event        lEvent;          /* Event used for searching */
-  guint32      lPosition;       /* The position to scroll to */
-  systemView*  pSysView;        /* The system being displayed */
-
-  /* Do we have anything meaningfull */
-  if((pSysView = (systemView*) pmData) == NULL)
-    return;
-
-  /* Is there an event database? */
-  if(pSysView->EventDB == NULL)
-    return;
-
-  /* Set the pointer to the first event */
-  if(pSysView->EventDB->TraceStart == NULL)
-    return;
-
-  /* Are we closer to the beginning? */
-  if((pmVAdjust->value - (pmVAdjust->upper / 2)) < 0)
-    {
-    /* Set the navigation pointer to the beginning of the list */
-    lEvent =  pSysView->EventDB->FirstEvent;
-
-    /* Calculate distance from beginning */
-    lPosition = (guint32) pmVAdjust->value;
-
-    /* Find the event in the event database */
-    while(lPosition > 0)
-      {
-      lPosition--;
-      if(DBEventNext(pSysView->EventDB, &lEvent) != TRUE)
-	break;
-      }
-    }
-  else
-    {
-    /* Set the navigation pointer to the end of the list */
-    lEvent = pSysView->EventDB->LastEvent;
-
-    /* Calculate distance from end */
-    lPosition = (guint32) (pmVAdjust->upper - pmVAdjust->value);
-
-    /* Find the event in the event database */
-    while(lPosition > 0)
-      {
-      lPosition--;
-      if(DBEventPrev(pSysView->EventDB, &lEvent) != TRUE)
-	break;
-      }
-    }
-
-  /* Fill the event list according to what was found */
-  WDFillEventList(pSysView->Window->RTCList,
-		  pSysView->EventDB,
-		  pSysView->System,
-		  &lEvent,
-		  &(pSysView->Window->LastSelectedEvent));
-}
-
-
-
-/******************************************************************
- * Function :
- *    WDConnectSignals()
- * Description :
- *    Attaches signal handlers to the window items.
- * Parameters :
- *    pmSysView, System view for which signals have to be connected
- * Return values :
- *    NONE
- * History :
- * Note :
- *    This function attaches a pointer to the main window during
- *    the connect. This means that the handlers will get a pointer
- *    to the window in the data argument.
- ******************************************************************/
-static void WDConnectSignals(systemView* pmSysView)
-{
-  /* Raw event Popup menu */
-  gtk_signal_connect(GTK_OBJECT(pmSysView->Window->RawGotoProcess),
-		     "activate",
-		     GTK_SIGNAL_FUNC(SHGotoProcAnalysis),
-		     pmSysView);
-  gtk_signal_connect(GTK_OBJECT(pmSysView->Window->RawViewEvent),
-		     "activate",
-		     GTK_SIGNAL_FUNC(SHViewEventInEG),
-		     pmSysView);
-
-  /* Set event list callbacks */
-  gtk_signal_connect(GTK_OBJECT(pmSysView->Window->RTCList),
-		     "select_row",
-		     GTK_SIGNAL_FUNC(SHRTEventSelect),
-		     pmSysView);
-  gtk_signal_connect(GTK_OBJECT(pmSysView->Window->RTCList),
-		     "button-press-event",
-		     GTK_SIGNAL_FUNC(SHRTEventButtonPress),
-		     pmSysView);
-  gtk_signal_connect(GTK_OBJECT(pmSysView->Window->RTVAdjust),
-		     "value-changed",
-		     GTK_SIGNAL_FUNC(SHRTVAdjustValueChanged),
-		     pmSysView);
-
-
-}
-
-
-/******************************************************************
- * Function :
- *    WDFillEventList()
- * Description :
- *    Fills the window's event list using the trace database.
- * Parameters :
- *    pmList, The list to be filled.
- *    pmTraceDB, The database of events.
- *    pmSystem, The system to which this list belongs.
- *    pmEvent, Event from which we start drawing.
- *    pmSelectedEvent, Event selected if any.
- * Return values :
- *    NONE.
- * History :
- *    K.Y., 18/06/99, Initial typing.
- * Note :
- ******************************************************************/
-static void WDFillEventList(GtkWidget*  pmList,
-		     db*         pmTraceDB,
-		     systemInfo* pmSystem,
-		     event*      pmEvent,
-		     event*      pmSelectedEvent)
-{
-  gint                i = 0;                              /* Generic index */
-  event               lEvent;                             /* Generic event */
-  gchar               lTimeStr[TIME_STR_LEN];             /* Time of event */
-  static gchar*       lString[RTCLIST_NB_COLUMNS]={'\0'}; /* Strings describing event */
-  process*            pProcess;                           /* Generic process pointer */
-#if SUPP_RTAI
-  RTAItask*           pTask = NULL;                       /* Generic task pointer */
-#endif /* SUPP_RTAI */
-  eventDescription    lEventDesc;                         /* Description of event */
-
-  /* Did we allocate space for strings */
-  if(lString[0] == NULL)
-    /* Allocate space for strings */
-    for (i = 0;  i < RTCLIST_NB_COLUMNS - 1; i++)
-      lString[i] = (char*) g_malloc(MW_DEFAULT_STRLEN);
-
-  /* Allocate space for description string */
-  lString[RTCLIST_NB_COLUMNS - 1] = (char*) g_malloc(MW_LONG_STRLEN);
-
-  /* If no event was supplied, start at the beginning */
-  if(pmEvent == NULL)
-    lEvent = pmTraceDB->FirstEvent;
-  else
-    lEvent = *pmEvent;
-
-  /* Freeze and clear clist */
-  gtk_clist_freeze(GTK_CLIST(pmList));
-  gtk_clist_clear(GTK_CLIST(pmList));
-
-  /* Reset index */
-  i = 0;
-
-  /* Go through the event list */
-  do
-    {
-    /* Get the event description */
-    DBEventDescription(pmTraceDB, &lEvent, TRUE, &lEventDesc);
-
-    /* Get the event's process */
-    pProcess = DBEventProcess(pmTraceDB, &lEvent, pmSystem, FALSE);
-
-#if SUPP_RTAI
-    /* Does this trace contain RTAI information */
-    if(pmTraceDB->SystemType == TRACE_SYS_TYPE_RTAI_LINUX)
-      /* Get the RTAI task to which this event belongs */
-      pTask = RTAIDBEventTask(pmTraceDB, &lEvent, pmSystem, FALSE);
-#endif /* SUPP_RTAI */
-
-    /* Set the event's entry in the list of raw events displayed */
-    sRawEventsDisplayed[i] = lEvent;
-
-    /* Add text describing the event */
-    /*  The CPU ID */
-    if(pmTraceDB->LogCPUID == TRUE)
-      snprintf(lString[0], MW_DEFAULT_STRLEN, "%d", lEventDesc.CPUID);
-    else
-      snprintf(lString[0], MW_DEFAULT_STRLEN, "0");
-
-    /*  The event ID */
-    snprintf(lString[1], MW_DEFAULT_STRLEN, "%s", pmTraceDB->EventString(pmTraceDB, lEventDesc.ID, &lEvent));
-
-    /*  The event's time of occurence */
-    DBFormatTimeInReadableString(lTimeStr,
-				 lEventDesc.Time.tv_sec,
-				 lEventDesc.Time.tv_usec);    
-    snprintf(lString[2], MW_DEFAULT_STRLEN, "%s", lTimeStr);
-
-    /* Is this an RT event */
-    if(lEventDesc.ID <= TRACE_MAX)
-      {
-      /*  The PID of the process to which the event belongs */
-      if(pProcess != NULL)
-	snprintf(lString[3], MW_DEFAULT_STRLEN, "%d", pProcess->PID);
-      else
-	snprintf(lString[3], MW_DEFAULT_STRLEN, "N/A");
-      }
-#if SUPP_RTAI
-    else
-      {
-      /*  The TID of the task to which the event belongs */
-      if(pTask != NULL)
-	snprintf(lString[3], MW_DEFAULT_STRLEN, "RT:%d", pTask->TID);
-      else
-	snprintf(lString[3], MW_DEFAULT_STRLEN, "RT:N/A");
-      }
-#endif /* SUPP_RTAI */
-
-    /*  The size of the entry */
-    snprintf(lString[4], MW_DEFAULT_STRLEN, "%d", lEventDesc.Size);
-
-    /*  The string describing the event */
-    snprintf(lString[5], MW_LONG_STRLEN, "%s", lEventDesc.String);
-
-    /* Insert the entry into the list */
-    gtk_clist_append(GTK_CLIST(pmList), lString);
-
-    /* Set the row's data to point to the current event */
-    WDI_gtk_clist_set_last_row_data_full(GTK_CLIST(pmList), (gpointer) &(sRawEventsDisplayed[i]), NULL);
-
-    /* Was this the last selected event */
-    if(DBEventsEqual(lEvent, (*pmSelectedEvent)))
-      gtk_clist_select_row(GTK_CLIST(pmList), i, 0);
-
-    /* Go to next row */
-    i++;
-    } while((DBEventNext(pmTraceDB, &lEvent) == TRUE) && (i < RTCLIST_NB_ROWS));
-
-  /* Resize the list's length */
-  gtk_widget_queue_resize(pmList);
-
-  /* Thaw the clist */
-  gtk_clist_thaw(GTK_CLIST(pmList));
-}
-
-#endif //DEBUG
-
-static void destroy_cb( GtkWidget *widget,
-		                        gpointer   data )
-{ 
-	    gtk_main_quit ();
-}
-
-
-/*
-int main(int argc, char **argv)
-{
-	GtkWidget *Window;
-	GtkWidget *ListViewer;
-	GtkWidget *VBox_V;
-	EventViewerData *event_viewer_data;
-	guint ev_sel = 444 ;
-	
-	// Initialize i18n support 
-  gtk_set_locale ();
-
-  // Initialize the widget set 
-  gtk_init (&argc, &argv);
-
-	init();
-
-  Window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	gtk_window_set_title (GTK_WINDOW (Window), ("Test Window"));
-	
-	g_signal_connect (G_OBJECT (Window), "destroy",
-			G_CALLBACK (destroy_cb), NULL);
-
-
-  VBox_V = gtk_vbox_new(0, 0);
-	gtk_container_add (GTK_CONTAINER (Window), VBox_V);
-
-   //ListViewer = h_gui_events(Window);
-  //gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, TRUE, TRUE, 0);
-
-  //ListViewer = h_gui_events(Window);
-  //gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, FALSE, TRUE, 0);
-	
-	event_viewer_data = gui_events(g_new(mainWindow,1));
-	ListViewer = event_viewer_data->hbox_v;
-	gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, TRUE, TRUE, 0);
-	
-  gtk_widget_show (VBox_V);
-	gtk_widget_show (Window);
-
-	//	event_selected_hook(event_viewer_data, &ev_sel);
-	
-	gtk_main ();
-
-	g_critical("main loop finished");
-  
-	//hGuiEvents_Destructor(ListViewer);
-
-	//g_critical("GuiEvents Destructor finished");
-	destroy();
-	
-	return 0;
-}
-*/
-
-/*\@}*/
 
