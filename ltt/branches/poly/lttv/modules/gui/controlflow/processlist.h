@@ -88,7 +88,6 @@ typedef struct _HashedProcessData {
 
   LttTime next_good_time; /* precalculate the next time where the next
                              pixel is.*/
-  // FIXME : add info on last event ?
 
 } HashedProcessData;
   

@@ -68,8 +68,8 @@ GdkColor drawing_colors[NUM_COLORS] =
   { 0, 0x0000, 0xFF00, 0x0000 }, /* COL_RUN_USER_MODE : green */
   { 0, 0x0100, 0x9E00, 0xFFFF }, /* COL_RUN_SYSCALL : pale blue */
   { 0, 0xFF00, 0xFF00, 0x0100 }, /* COL_RUN_TRAP : yellow */
-  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_RUN_IRQ : red */
-  { 0, 0xA3FF, 0x0000, 0x0000 }, /* COL_WAIT : dark red */
+  { 0, 0xFFFF, 0x5E00, 0x0000 }, /* COL_RUN_IRQ : red */
+  { 0, 0x6600, 0x0000, 0x0000 }, /* COL_WAIT : dark red */
   { 0, 0x7700, 0x7700, 0x0000 }, /* COL_WAIT_CPU : dark yellow */
   { 0, 0x6400, 0x0000, 0x5D00 }, /* COL_ZOMBIE : dark purple */
   { 0, 0x0700, 0x6400, 0x0000 }, /* COL_WAIT_FORK : dark green */

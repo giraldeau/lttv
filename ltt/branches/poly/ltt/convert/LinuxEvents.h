@@ -177,6 +177,8 @@ typedef struct _trace_soft_irq
 #define TRACE_PROCESS_WAIT        4  /* A wait occured */
 #define TRACE_PROCESS_SIGNAL      5  /* A signal has been sent */
 #define TRACE_PROCESS_WAKEUP      6  /* Wake up a process */
+#define TRACE_PROCESS_RELEASE     7  /* A task struct has been released */
+
 typedef struct _trace_process
 {
   uint8_t   event_sub_id;    /* Process event ID */

@@ -273,7 +273,6 @@ void copy_pixmap_to_screen(ProcessList *process_list,
   if(process_list->index_to_pixmap->len == 0) return;
   guint cell_height = process_list->cell_height;
 
-  //cell_height = 24; //FIXME
   /* Get indexes */
   gint begin = floor(y/(double)cell_height);
   gint end = MIN(ceil((y+height)/(double)cell_height),
@@ -577,7 +576,6 @@ int processlist_add(  ProcessList *process_list,
 
   hashed_process_data->height = process_list->cell_height;
 
-  //hashed_process_data->height = 24; // FIXME
   g_assert(hashed_process_data->height != 0);
 
   *height = hashed_process_data->height * process_list->number_of_process;

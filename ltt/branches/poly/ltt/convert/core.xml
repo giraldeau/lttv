@@ -86,6 +86,7 @@
           <label name=TRACE_EV_PROCESS_WAIT/>
           <label name=TRACE_EV_PROCESS_SIGNAL/>
           <label name=TRACE_EV_PROCESS_WAKEUP/>
+          <label name=TRACE_EV_PROCESS_RELEASE/>
         </enum> 
       </field>
 	

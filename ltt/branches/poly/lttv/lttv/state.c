@@ -1037,6 +1037,28 @@ static gboolean process_exit(LttvTraceHook *trace_hook, LttvTracefileState *s)
   return FALSE;
 }
 
+static gboolean process_release(LttvTraceHook *trace_hook,
+                                LttvTracefileState *s)
+{
+  LttField *f;
+  guint release_pid;
+  LttvProcessState *process;
+
+  /* PID of the process to release */
+  f = trace_hook->f2;
+  release_pid = ltt_event_get_unsigned(s->parent.e, f);
+
+  process = lttv_state_find_process(s, release_pid);
+
+  if(likely(process != NULL)) {
+    /* release_task is happening at kernel level : we can now safely release
+     * the data structure of the process */
+    exit_process(s, process);
+  }
+
+  return FALSE;
+}
+
 gboolean process(void *hook_data, void *call_data)
 {
   LttvTraceHook *trace_hook = (LttvTraceHook *)hook_data;
@@ -1051,6 +1073,8 @@ gboolean process(void *hook_data, void *call_data)
     return process_fork(trace_hook, s);
   } else if(sub_id == 3) {
     return process_exit(trace_hook, s);
+  } else if(sub_id == 7) {
+    return process_release(trace_hook, s);
   }
   return 0;
 }

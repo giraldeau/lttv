@@ -111,7 +111,7 @@ int main(int argc, char ** argv){
   int  ltt_major_version=0;
   int  ltt_minor_version=0;
   int  ltt_log_cpu;
-  guint ltt_trace_start_size;
+  guint ltt_trace_start_size = 0;
   char buf[BUFFER_SIZE];
   int i, k;
 
@@ -346,11 +346,11 @@ int main(int argc, char ** argv){
       ltt_trace_start_size = sizeof(trace_start_2_3);
     /* We do not use the flight recorder information for now, because we
      * never use the .proc file anyway */
-    } else {
-      ltt_trace_start_size = 0;
+    }
+    
+    if(ltt_trace_start_size == 0) 
       g_error("Minor version unknown : %hu. Supported minors : 2, 3",
                tStart->MinorVersion);
-    }
 
     block_size = ltt_block_size;//FIXME
     block_number = file_size/ltt_block_size;

@@ -2432,6 +2432,169 @@ int before_process_hook(void *hook_data, void *call_data)
       }
     }
 
+  } else if(sub_id == 7) /* release */ {
+
+    guint pid;
+    {
+      LttField *f = ltt_event_field(e);
+      LttField *element;
+      element = ltt_field_member(f,1);
+      pid = ltt_event_get_long_unsigned(e,element);
+    }
+
+    /* Add process to process list (if not present) */
+    /* Don't care about the process if it's not in the state hash already :
+     * that means a process that has never done anything in the trace and
+     * unknown suddently gets destroyed : no state meaningful to show. */
+    LttvProcessState *process = lttv_state_find_process(tfs, pid);
+
+    if(process != NULL) {
+      LttTime birth;
+      guint pl_height = 0;
+      HashedProcessData *hashed_process_data = NULL;
+
+      ProcessList *process_list = control_flow_data->process_list;
+      
+      birth = process->creation_time;
+
+      /* Cannot use current process : this event happens on another process,
+       * action done by the parent. */
+      hashed_process_data = processlist_get_process_data(process_list,
+            pid,
+            process->last_cpu_index,
+            &birth,
+            tfc->t_context->index);
+      if(unlikely(hashed_process_data == NULL))
+      {
+        g_assert(pid == 0 || pid != process->ppid);
+        /* Process not present */
+        Drawing_t *drawing = control_flow_data->drawing;
+        const gchar *name = g_quark_to_string(process->name);
+        ProcessInfo *process_info;
+        processlist_add(process_list,
+            drawing,
+            pid,
+            process->last_cpu_index,
+            process->ppid,
+            &birth,
+            tfc->t_context->index,
+            name,
+            &pl_height,
+            &process_info,
+            &hashed_process_data);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
+      }
+
+      /* Now, the process is in the state hash and our own process hash.
+       * We definitely can draw the items related to the ending state.
+       */
+      
+      if(likely(ltt_time_compare(hashed_process_data->next_good_time,
+                          evtime) > 0))
+      {
+        if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
+          TimeWindow time_window = 
+            lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+          if(ltt_time_compare(evtime, time_window.start_time) == -1
+                || ltt_time_compare(evtime, time_window.end_time) == 1)
+                    return;
+#endif //EXTRA_CHECK
+          Drawing_t *drawing = control_flow_data->drawing;
+          guint width = drawing->width;
+          guint x;
+          convert_time_to_pixels(
+                    time_window,
+                    evtime,
+                    width,
+                    &x);
+
+          /* Draw collision indicator */
+          gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+          gdk_draw_point(hashed_process_data->pixmap,
+                         drawing->gc,
+                         x,
+                         (hashed_process_data->height/2)-3);
+          hashed_process_data->x.middle_marked = TRUE;
+        }
+      } else {
+        TimeWindow time_window = 
+          lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+        if(ltt_time_compare(evtime, time_window.start_time) == -1
+              || ltt_time_compare(evtime, time_window.end_time) == 1)
+                  return;
+#endif //EXTRA_CHECK
+        Drawing_t *drawing = control_flow_data->drawing;
+        guint width = drawing->width;
+        guint x;
+
+        convert_time_to_pixels(
+            time_window,
+            evtime,
+            width,
+            &x);
+
+
+        /* Jump over draw if we are at the same x position */
+        if(unlikely(x == hashed_process_data->x.middle &&
+               hashed_process_data->x.middle_used))
+        { 
+          if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
+            /* Draw collision indicator */
+            gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+            gdk_draw_point(hashed_process_data->pixmap,
+                           drawing->gc,
+                           x,
+                           (hashed_process_data->height/2)-3);
+            hashed_process_data->x.middle_marked = TRUE;
+          }
+          /* jump */
+        } else {
+          DrawContext draw_context;
+
+          /* Now create the drawing context that will be used to draw
+           * items related to the last state. */
+          draw_context.drawable = hashed_process_data->pixmap;
+          draw_context.gc = drawing->gc;
+          draw_context.pango_layout = drawing->pango_layout;
+          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+          draw_context.drawinfo.end.x = x;
+
+          draw_context.drawinfo.y.over = 1;
+          draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+          draw_context.drawinfo.y.under = hashed_process_data->height;
+
+          draw_context.drawinfo.start.offset.over = 0;
+          draw_context.drawinfo.start.offset.middle = 0;
+          draw_context.drawinfo.start.offset.under = 0;
+          draw_context.drawinfo.end.offset.over = 0;
+          draw_context.drawinfo.end.offset.middle = 0;
+          draw_context.drawinfo.end.offset.under = 0;
+
+          {
+            /* Draw the line */
+            PropertiesLine prop_line = prepare_s_e_line(process);
+            draw_line((void*)&prop_line, (void*)&draw_context);
+
+          }
+          /* become the last x position */
+          hashed_process_data->x.middle = x;
+          hashed_process_data->x.middle_used = TRUE;
+          hashed_process_data->x.middle_marked = FALSE;
+
+          /* Calculate the next good time */
+          convert_pixels_to_time(width, x+1, time_window,
+                                 &hashed_process_data->next_good_time);
+        }
+      }
+    }
+
   }
   return 0;
 
@@ -2496,6 +2659,8 @@ int after_process_hook(void *hook_data, void *call_data)
 
     birth = process_child->creation_time;
 
+    /* Cannot use current process, because this action is done by the parent
+     * on its child. */
     hashed_process_data_child = processlist_get_process_data(process_list,
             child_pid,
             process_child->last_cpu_index,
@@ -3059,11 +3224,11 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 #ifdef EXTRA_CHECK
     g_assert(lttv_traceset_number(tsc->ts) > 0);
 #endif //EXTRA_CHECK
-    /* tracefiles[0] is ok here, because we draw for every PID, and
-     * assume CPU 0 for PID 0 //FIXME */
-    LttvTracefileState *tfs =
-      (LttvTracefileState*)tsc->traces[process_info->trace_num]->tracefiles[0];
 
+    LttvTracefileState *tfs =
+     (LttvTracefileState*)tsc->traces[process_info->trace_num]->
+                         tracefiles[process_info->cpu];
+ 
     LttvProcessState *process;
     process = lttv_state_find_process(tfs,
                                       process_info->pid);
