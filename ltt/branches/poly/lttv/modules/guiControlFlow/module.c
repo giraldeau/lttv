@@ -27,7 +27,7 @@
 
 // #include "../icons/hGuiControlFlowInsert.xpm"
 
-LttvModule *Main_Win_Module;
+static LttvModule *Main_Win_Module;
 
 
 /** Array containing instanced objects. Used when module is unloaded */
