@@ -63,15 +63,15 @@ gtk_custom_init (GtkCustom *custom)
   GTK_WIDGET_SET_FLAGS (custom, GTK_NO_WINDOW);
   gtk_widget_set_redraw_on_allocate (GTK_WIDGET (custom), FALSE);
   
-  custom->firstPane    = NULL;
-  custom->lastPane     = NULL;
-  custom->focusedPane  = NULL;
-  custom->numChildren  = 0;
+  custom->first_pane    = NULL;
+  custom->last_pane     = NULL;
+  custom->focused_pane  = NULL;
+  custom->num_children  = 0;
 
   custom->vbox         = NULL;
   //  custom->scrollWindow = NULL;
   //  custom->viewport     = NULL;
-  custom->hScrollbar   = NULL;
+  custom->hscrollbar   = NULL;
 }
 
 
@@ -85,17 +85,17 @@ void gtk_custom_set_focus (GtkWidget * widget, gpointer user_data)
 {
   GtkCustom * custom = (GtkCustom*) widget;
   GtkPaned * pane;
-  if(!custom->firstPane) return;
+  if(!custom->first_pane) return;
   
 
-  pane = custom->firstPane;
+  pane = custom->first_pane;
   while(1){
     if((GtkWidget*)pane == (GtkWidget*)user_data){
-      custom->focusedPane = pane;
+      custom->focused_pane = pane;
       break;
     }
-    if(pane == custom->lastPane){
-      custom->focusedPane = NULL;
+    if(pane == custom->last_pane){
+      custom->focused_pane = NULL;
       break;
     }
     pane = (GtkPaned*)pane->child1;
@@ -114,35 +114,35 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
   g_object_ref(G_OBJECT(widget1));
  
 
-  if(!custom->firstPane){
-    custom->firstPane = (GtkPaned *)gtk_vpaned_new();
-    custom->lastPane = custom->firstPane;
+  if(!custom->first_pane){
+    custom->first_pane = (GtkPaned *)gtk_vpaned_new();
+    custom->last_pane = custom->first_pane;
 
-    custom->hScrollbar = gtk_hscrollbar_new (NULL);
-    gtk_widget_show(custom->hScrollbar);
+    custom->hscrollbar = gtk_hscrollbar_new (NULL);
+    gtk_widget_show(custom->hscrollbar);
 
-    custom->hAdjust = gtk_range_get_adjustment(GTK_RANGE(custom->hScrollbar));
+    custom->hadjust = gtk_range_get_adjustment(GTK_RANGE(custom->hscrollbar));
     GetTimeWindow(custom->mw,&Time_Window);
     GetCurrentTime(custom->mw,&time);
-    Time_Span = LTTV_TRACESET_CONTEXT(custom->mw->Traceset_Info->TracesetContext)->Time_Span ;
+    Time_Span = LTTV_TRACESET_CONTEXT(custom->mw->traceset_info->traceset_context)->Time_Span ;
 
-    custom->hAdjust->lower =  ltt_time_to_double(Time_Span->startTime) * 
+    custom->hadjust->lower =  ltt_time_to_double(Time_Span->startTime) * 
         NANOSECONDS_PER_SECOND;
-    custom->hAdjust->value = custom->hAdjust->lower;
-    custom->hAdjust->upper = ltt_time_to_double(Time_Span->endTime) *
+    custom->hadjust->value = custom->hadjust->lower;
+    custom->hadjust->upper = ltt_time_to_double(Time_Span->endTime) *
         NANOSECONDS_PER_SECOND;
     /* Page increment of whole visible area */
-    custom->hAdjust->page_increment = ltt_time_to_double(
-        Time_Window.Time_Width) * NANOSECONDS_PER_SECOND;
+    custom->hadjust->page_increment = ltt_time_to_double(
+        Time_Window.time_width) * NANOSECONDS_PER_SECOND;
     /* page_size to the whole visible area will take care that the
      * scroll value + the shown area will never be more than what is
      * in the trace. */
-    custom->hAdjust->page_size = custom->hAdjust->page_increment;
-    custom->hAdjust->step_increment = custom->hAdjust->page_increment / 10;
+    custom->hadjust->page_size = custom->hadjust->page_increment;
+    custom->hadjust->step_increment = custom->hadjust->page_increment / 10;
 
-    gtk_range_set_update_policy (GTK_RANGE(custom->hScrollbar),
+    gtk_range_set_update_policy (GTK_RANGE(custom->hscrollbar),
                                   GTK_UPDATE_DISCONTINUOUS);
-    g_signal_connect(G_OBJECT(custom->hScrollbar), "value-changed",
+    g_signal_connect(G_OBJECT(custom->hscrollbar), "value-changed",
 		     G_CALLBACK(gtk_custom_scroll_value_changed), custom);
 
     custom->vbox = gtk_vbox_new(FALSE,0);
@@ -152,8 +152,8 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
     //    gtk_widget_show(custom->viewport);
     
     //    gtk_container_add(GTK_CONTAINER(custom->viewport), (GtkWidget*)custom->vbox);
-    gtk_box_pack_end(GTK_BOX(custom->vbox),(GtkWidget*)custom->hScrollbar,FALSE,FALSE,0);
-    gtk_box_pack_end(GTK_BOX(custom->vbox),(GtkWidget*)custom->firstPane,TRUE,TRUE,0);
+    gtk_box_pack_end(GTK_BOX(custom->vbox),(GtkWidget*)custom->hscrollbar,FALSE,FALSE,0);
+    gtk_box_pack_end(GTK_BOX(custom->vbox),(GtkWidget*)custom->first_pane,TRUE,TRUE,0);
     
     //    custom->scrollWindow = gtk_scrolled_window_new (NULL, NULL);
     //    gtk_widget_show(custom->scrollWindow);
@@ -162,15 +162,15 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
 
     gtk_paned_pack1(GTK_PANED(custom), (GtkWidget*)custom->vbox,FALSE, TRUE);
   }else{
-    tmpPane = custom->lastPane;
-    custom->lastPane = (GtkPaned *)gtk_vpaned_new();
-    gtk_paned_pack1 (tmpPane,(GtkWidget*)custom->lastPane, FALSE,TRUE);
+    tmpPane = custom->last_pane;
+    custom->last_pane = (GtkPaned *)gtk_vpaned_new();
+    gtk_paned_pack1 (tmpPane,(GtkWidget*)custom->last_pane, FALSE,TRUE);
   }
-  gtk_widget_show((GtkWidget *)custom->lastPane);  
+  gtk_widget_show((GtkWidget *)custom->last_pane);  
 
-  gtk_paned_pack2 (custom->lastPane,widget1, TRUE, TRUE);      
-  custom->focusedPane = custom->lastPane;
-  custom->numChildren++;
+  gtk_paned_pack2 (custom->last_pane,widget1, TRUE, TRUE);      
+  custom->focused_pane = custom->last_pane;
+  custom->num_children++;
   
 }
 
@@ -178,47 +178,47 @@ void gtk_custom_widget_delete(GtkCustom * custom)
 {
   GtkPaned * tmp, *prev, *next;
 
-  if(!custom->focusedPane) return;
+  if(!custom->focused_pane) return;
  
-  tmp = (GtkPaned*)custom->focusedPane->child2; //widget in vpaned
+  tmp = (GtkPaned*)custom->focused_pane->child2; //widget in vpaned
   g_object_unref(G_OBJECT(tmp));
 
-  if(custom->focusedPane == custom->firstPane &&
-     custom->focusedPane == custom->lastPane){
+  if(custom->focused_pane == custom->first_pane &&
+     custom->focused_pane == custom->last_pane){
     //    gtk_container_remove(GTK_CONTAINER(custom),(GtkWidget*)custom->scrollWindow);
     gtk_container_remove(GTK_CONTAINER(custom),(GtkWidget*)custom->vbox);
-    custom->firstPane = NULL;
-    custom->lastPane = NULL;
-    custom->focusedPane = NULL;
-  }else if(custom->focusedPane == custom->firstPane &&
-	   custom->focusedPane != custom->lastPane){
-    next = (GtkPaned*)custom->firstPane->child1;
+    custom->first_pane = NULL;
+    custom->last_pane = NULL;
+    custom->focused_pane = NULL;
+  }else if(custom->focused_pane == custom->first_pane &&
+	   custom->focused_pane != custom->last_pane){
+    next = (GtkPaned*)custom->first_pane->child1;
     g_object_ref(G_OBJECT(next));
-    gtk_container_remove(GTK_CONTAINER(custom->firstPane),(GtkWidget*)next);
-    gtk_container_remove(GTK_CONTAINER(custom->vbox),(GtkWidget*)custom->firstPane);
-    custom->firstPane = next;
-    gtk_box_pack_end(GTK_BOX(custom->vbox),(GtkWidget*)custom->firstPane,TRUE,TRUE,0);
-    custom->focusedPane = custom->firstPane;
+    gtk_container_remove(GTK_CONTAINER(custom->first_pane),(GtkWidget*)next);
+    gtk_container_remove(GTK_CONTAINER(custom->vbox),(GtkWidget*)custom->first_pane);
+    custom->first_pane = next;
+    gtk_box_pack_end(GTK_BOX(custom->vbox),(GtkWidget*)custom->first_pane,TRUE,TRUE,0);
+    custom->focused_pane = custom->first_pane;
     g_object_unref(G_OBJECT(next));
-  }else if(custom->focusedPane != custom->firstPane &&
-	   custom->focusedPane == custom->lastPane){
-    tmp = custom->lastPane;
-    custom->lastPane = (GtkPaned*)gtk_widget_get_parent((GtkWidget*)custom->lastPane);
-    custom->focusedPane = custom->lastPane;
-    gtk_container_remove(GTK_CONTAINER(custom->lastPane),(GtkWidget*)tmp);
+  }else if(custom->focused_pane != custom->first_pane &&
+	   custom->focused_pane == custom->last_pane){
+    tmp = custom->last_pane;
+    custom->last_pane = (GtkPaned*)gtk_widget_get_parent((GtkWidget*)custom->last_pane);
+    custom->focused_pane = custom->last_pane;
+    gtk_container_remove(GTK_CONTAINER(custom->last_pane),(GtkWidget*)tmp);
   }else{
-    tmp = custom->focusedPane;
+    tmp = custom->focused_pane;
     prev = (GtkPaned*)gtk_widget_get_parent((GtkWidget*)tmp);
     next = (GtkPaned*)tmp->child1;
     g_object_ref(G_OBJECT(next));
-    gtk_container_remove(GTK_CONTAINER(custom->focusedPane),(GtkWidget*)next);
-    gtk_container_remove(GTK_CONTAINER(prev),(GtkWidget*)custom->focusedPane);
+    gtk_container_remove(GTK_CONTAINER(custom->focused_pane),(GtkWidget*)next);
+    gtk_container_remove(GTK_CONTAINER(prev),(GtkWidget*)custom->focused_pane);
     gtk_paned_pack1(prev, (GtkWidget*)next, FALSE, TRUE);
-    custom->focusedPane = next;
+    custom->focused_pane = next;
     g_object_unref(G_OBJECT(next));
   }
 
-  custom->numChildren--;
+  custom->num_children--;
 }
 
 
@@ -227,39 +227,39 @@ void gtk_custom_widget_move_up(GtkCustom * custom)
   GtkWidget* upWidget, *downWidget;
   GtkPaned * prev,*next, *prevPrev;
 
-  if(custom->lastPane == custom->focusedPane) return;
+  if(custom->last_pane == custom->focused_pane) return;
 
   // move VPane
-  prev = (GtkPaned*)custom->focusedPane->child1;
+  prev = (GtkPaned*)custom->focused_pane->child1;
   g_object_ref(G_OBJECT(prev));
-  gtk_container_remove(GTK_CONTAINER(custom->focusedPane),(GtkWidget*)prev);
+  gtk_container_remove(GTK_CONTAINER(custom->focused_pane),(GtkWidget*)prev);
 
-  if(prev == custom->lastPane){
+  if(prev == custom->last_pane){
     prevPrev = NULL;
-    custom->lastPane = custom->focusedPane;
+    custom->last_pane = custom->focused_pane;
   }else{    
     prevPrev = (GtkPaned*)prev->child1;
     g_object_ref(G_OBJECT(prevPrev));
     gtk_container_remove(GTK_CONTAINER(prev),(GtkWidget*)prevPrev);   
   }
 
-  g_object_ref(G_OBJECT(custom->focusedPane));
-  if(custom->firstPane == custom->focusedPane){
-    gtk_container_remove(GTK_CONTAINER(custom->vbox),(GtkWidget*)custom->focusedPane);
+  g_object_ref(G_OBJECT(custom->focused_pane));
+  if(custom->first_pane == custom->focused_pane){
+    gtk_container_remove(GTK_CONTAINER(custom->vbox),(GtkWidget*)custom->focused_pane);
     gtk_box_pack_end(GTK_BOX(custom->vbox),(GtkWidget*)prev,TRUE,TRUE,0);
-    custom->firstPane = prev;
+    custom->first_pane = prev;
   }else{
-    next = (GtkPaned*)gtk_widget_get_parent((GtkWidget*)custom->focusedPane);
-    gtk_container_remove(GTK_CONTAINER(next),(GtkWidget*)custom->focusedPane);
+    next = (GtkPaned*)gtk_widget_get_parent((GtkWidget*)custom->focused_pane);
+    gtk_container_remove(GTK_CONTAINER(next),(GtkWidget*)custom->focused_pane);
     gtk_paned_pack1(GTK_PANED(next), (GtkWidget*)prev, FALSE,TRUE);
   }
-  gtk_paned_pack1(GTK_PANED(prev),(GtkWidget*)custom->focusedPane, FALSE,TRUE);
+  gtk_paned_pack1(GTK_PANED(prev),(GtkWidget*)custom->focused_pane, FALSE,TRUE);
   if(prevPrev)
-    gtk_paned_pack1(GTK_PANED(custom->focusedPane),(GtkWidget*)prevPrev, FALSE,TRUE);
+    gtk_paned_pack1(GTK_PANED(custom->focused_pane),(GtkWidget*)prevPrev, FALSE,TRUE);
 
   g_object_unref(G_OBJECT(prev));
   if(prevPrev) g_object_unref(G_OBJECT(prevPrev));
-  g_object_unref(G_OBJECT(custom->focusedPane));
+  g_object_unref(G_OBJECT(custom->focused_pane));
 }
 
 
@@ -268,40 +268,40 @@ void gtk_custom_widget_move_down(GtkCustom * custom)
   GtkWidget* upWidget, *downWidget;
   GtkPaned * prev,*next, *nextNext;
 
-  if(custom->firstPane == custom->focusedPane) return;
+  if(custom->first_pane == custom->focused_pane) return;
 
   //move VPane
-  next = (GtkPaned*)gtk_widget_get_parent((GtkWidget*)custom->focusedPane);
+  next = (GtkPaned*)gtk_widget_get_parent((GtkWidget*)custom->focused_pane);
   g_object_ref(G_OBJECT(next));
 
-  if(custom->lastPane == custom->focusedPane){
+  if(custom->last_pane == custom->focused_pane){
     prev = NULL;
-    custom->lastPane = next;
+    custom->last_pane = next;
   }else{
-    prev = (GtkPaned*)custom->focusedPane->child1;
+    prev = (GtkPaned*)custom->focused_pane->child1;
     g_object_ref(G_OBJECT(prev));
-    gtk_container_remove(GTK_CONTAINER(custom->focusedPane),(GtkWidget*)prev);    
+    gtk_container_remove(GTK_CONTAINER(custom->focused_pane),(GtkWidget*)prev);    
   }
 
-  g_object_ref(G_OBJECT(custom->focusedPane));
-  gtk_container_remove(GTK_CONTAINER(next),(GtkWidget*)custom->focusedPane);
+  g_object_ref(G_OBJECT(custom->focused_pane));
+  gtk_container_remove(GTK_CONTAINER(next),(GtkWidget*)custom->focused_pane);
   
-  if(next == custom->firstPane){
-    custom->firstPane = custom->focusedPane;
+  if(next == custom->first_pane){
+    custom->first_pane = custom->focused_pane;
     gtk_container_remove(GTK_CONTAINER(custom->vbox),(GtkWidget*)next);       
-    gtk_box_pack_end(GTK_BOX(custom->vbox),(GtkWidget*)custom->focusedPane,TRUE,TRUE,0);
+    gtk_box_pack_end(GTK_BOX(custom->vbox),(GtkWidget*)custom->focused_pane,TRUE,TRUE,0);
   }else{    
     nextNext = (GtkPaned*)gtk_widget_get_parent((GtkWidget*)next);
     gtk_container_remove(GTK_CONTAINER(nextNext),(GtkWidget*)next);       
-    gtk_paned_pack1(nextNext, (GtkWidget*)custom->focusedPane, FALSE, TRUE);
+    gtk_paned_pack1(nextNext, (GtkWidget*)custom->focused_pane, FALSE, TRUE);
   }
-  gtk_paned_pack1(custom->focusedPane,(GtkWidget*)next, FALSE,TRUE);
+  gtk_paned_pack1(custom->focused_pane,(GtkWidget*)next, FALSE,TRUE);
   if(prev)
     gtk_paned_pack1(next,(GtkWidget*)prev, FALSE,TRUE);
 
   if(prev)g_object_unref(G_OBJECT(prev));
   g_object_unref(G_OBJECT(next));
-  g_object_unref(G_OBJECT(custom->focusedPane));
+  g_object_unref(G_OBJECT(custom->focused_pane));
 }
 
 void gtk_custom_scroll_value_changed(GtkRange *range, gpointer custom_arg)

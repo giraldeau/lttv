@@ -14,7 +14,7 @@
 
 void send_test_data(ProcessList *Process_List, Drawing_t *Drawing);
 
-GtkWidget *hGuiControlFlow(mainWindow *pmParentWindow);
+GtkWidget *hGuiControlFlow(MainWindow *pmParentWindow);
 
 int Event_Selected_Hook(void *hook_data, void *call_data);
 

@@ -30,17 +30,17 @@ struct _GtkCustom
   GtkPaned container;
 
   /*< public >*/
-  GtkPaned * firstPane;
-  GtkPaned * lastPane;
-  GtkPaned * focusedPane;
-  guint numChildren;
+  GtkPaned * first_pane;
+  GtkPaned * last_pane;
+  GtkPaned * focused_pane;
+  guint num_children;
 
   GtkWidget * vbox;
   //  GtkWidget * scrollWindow;
   //  GtkWidget * viewport;
-  GtkWidget * hScrollbar;  
-  GtkAdjustment *hAdjust;
-  mainWindow * mw;
+  GtkWidget * hscrollbar;  
+  GtkAdjustment *hadjust;
+  MainWindow * mw;
 };
 
 struct _GtkCustomClass

@@ -84,7 +84,7 @@ typedef enum _ScrollDirection{
 
 typedef struct _EventViewerData {
 
-  mainWindow * mw;
+  MainWindow * mw;
   TimeWindow   time_window;
   LttTime      current_time;
   LttvHooks  * before_event_hooks;
@@ -129,9 +129,9 @@ typedef struct _EventViewerData {
 } EventViewerData ;
 
 //! Event Viewer's constructor hook
-GtkWidget *h_gui_events(mainWindow *parent_window);
+GtkWidget *h_gui_events(MainWindow *parent_window);
 //! Event Viewer's constructor
-EventViewerData *gui_events(mainWindow *parent_window);
+EventViewerData *gui_events(MainWindow *parent_window);
 //! Event Viewer's destructor
 void gui_events_destructor(EventViewerData *event_viewer_data);
 void gui_events_free(EventViewerData *event_viewer_data);
@@ -235,7 +235,7 @@ enum
  * @return The widget created.
  */
 GtkWidget *
-h_gui_events(mainWindow * parent_window)
+h_gui_events(MainWindow * parent_window)
 {
   EventViewerData* event_viewer_data = gui_events(parent_window) ;
 
@@ -252,7 +252,7 @@ h_gui_events(mainWindow * parent_window)
  * @return The Event viewer data created.
  */
 EventViewerData *
-gui_events(mainWindow *parent_window)
+gui_events(MainWindow *parent_window)
 {
   LttTime start, end;
   GtkTreeViewColumn *column;
@@ -1190,7 +1190,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
 
 void tree_v_grab_focus(GtkWidget *widget, gpointer data){
   EventViewerData *event_viewer_data = (EventViewerData *)data;
-  mainWindow * mw = event_viewer_data->mw;
+  MainWindow * mw = event_viewer_data->mw;
   SetFocusedPane(mw, gtk_widget_get_parent(event_viewer_data->hbox_v));
 }
 

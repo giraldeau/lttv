@@ -302,7 +302,7 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
  * @return The widget created.
  */
 GtkWidget *
-hGuiControlFlow(mainWindow *pmParentWindow)
+hGuiControlFlow(MainWindow *pmParentWindow)
 {
 	g_critical("hGuiControlFlow");
 	ControlFlowData *Control_Flow_Data = GuiControlFlow() ;
@@ -403,10 +403,10 @@ void Update_Time_Window_Hook(void *hook_data, void *call_data)
 
 	*Time_Window = *New_Time_Window;
 	g_critical("New time window HOOK : %u, %u to %u, %u",
-			Time_Window->startTime.tv_sec,
-			Time_Window->startTime.tv_nsec,
-			Time_Window->Time_Width.tv_sec,
-			Time_Window->Time_Width.tv_nsec);
+			Time_Window->start_time.tv_sec,
+			Time_Window->start_time.tv_nsec,
+			Time_Window->time_width.tv_sec,
+			Time_Window->time_width.tv_nsec);
 
    	Drawing_Data_Request(Control_Flow_Data->Drawing,
 			&Control_Flow_Data->Drawing->Pixmap,

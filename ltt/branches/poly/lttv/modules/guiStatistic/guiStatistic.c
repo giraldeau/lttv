@@ -33,9 +33,9 @@ static GSList *g_statistic_viewer_data_list = NULL ;
 typedef struct _StatisticViewerData StatisticViewerData;
 
 //! Statistic Viewer's constructor hook
-GtkWidget *h_gui_statistic(mainWindow *parent_window);
+GtkWidget *h_gui_statistic(MainWindow *parent_window);
 //! Statistic Viewer's constructor
-StatisticViewerData *gui_statistic(mainWindow *parent_window);
+StatisticViewerData *gui_statistic(MainWindow *parent_window);
 //! Statistic Viewer's destructor
 void gui_statistic_destructor(StatisticViewerData *statistic_viewer_data);
 void gui_statistic_free(StatisticViewerData *statistic_viewer_data);
@@ -61,7 +61,7 @@ enum
 };
 
 struct _StatisticViewerData{
-  mainWindow * mw;
+  MainWindow * mw;
   LttvTracesetStats * stats;
 
   GtkWidget    * hpaned_v;
@@ -164,7 +164,7 @@ gui_statistic_destructor(StatisticViewerData *statistic_viewer_data)
  * @return The widget created.
  */
 GtkWidget *
-h_gui_statistic(mainWindow * parent_window)
+h_gui_statistic(MainWindow * parent_window)
 {
   StatisticViewerData* statistic_viewer_data = gui_statistic(parent_window) ;
 
@@ -181,7 +181,7 @@ h_gui_statistic(mainWindow * parent_window)
  * @return The Statistic viewer data created.
  */
 StatisticViewerData *
-gui_statistic(mainWindow *parent_window)
+gui_statistic(MainWindow *parent_window)
 {
   GtkCellRenderer *renderer;
   GtkTreeViewColumn *column;
@@ -270,7 +270,7 @@ gui_statistic(mainWindow *parent_window)
 void grab_focus(GtkWidget *widget, gpointer data)
 {
   StatisticViewerData *statistic_viewer_data = (StatisticViewerData *)data;
-  mainWindow * mw = statistic_viewer_data->mw;
+  MainWindow * mw = statistic_viewer_data->mw;
   SetFocusedPane(mw, gtk_widget_get_parent(statistic_viewer_data->hpaned_v));
 }
 

@@ -70,7 +70,7 @@ void MenuItemUnreg(lttv_constructor view_constructor);
  */
 
 // Not Needed : Main window add widget returned by constructor
-//void AttachViewer(mainWindow *main_win, GtkWidget *viewer);
+//void AttachViewer(MainWindow *main_win, GtkWidget *viewer);
 
 
 /* ?? Maybe we do not need this function, when a widget is destroyed, 
@@ -84,7 +84,7 @@ void MenuItemUnreg(lttv_constructor view_constructor);
  * @param viewer viewer to be detached from the current tab.
  */
 
-//void DetachViewer(mainWindow *main_win, GtkWidget *viewer);
+//void DetachViewer(MainWindow *main_win, GtkWidget *viewer);
 
 
 /**
@@ -93,7 +93,7 @@ void MenuItemUnreg(lttv_constructor view_constructor);
  * @param info the message which will be shown in the status bar.
  */
 
-void UpdateStatus(mainWindow *main_win, char *info);
+void UpdateStatus(MainWindow *main_win, char *info);
 
 
 /**
@@ -105,7 +105,7 @@ void UpdateStatus(mainWindow *main_win, char *info);
  * @param time_interval a pointer where time interval will be stored.
  */
 
-void GetTimeWindow(mainWindow *main_win, TimeWindow *time_window);
+void GetTimeWindow(MainWindow *main_win, TimeWindow *time_window);
 
 
 /**
@@ -116,12 +116,12 @@ void GetTimeWindow(mainWindow *main_win, TimeWindow *time_window);
  * @param time_interval a pointer where time interval is stored.
  */
 
-void SetTimeWindow(mainWindow *main_win, TimeWindow *time_window);
+void SetTimeWindow(MainWindow *main_win, TimeWindow *time_window);
 
 /**
  * Function to get the time span of the main window's traceset.
  */
-void GetTracesetTimeSpan(mainWindow *main_win, TimeInterval *time_interval);
+void GetTracesetTimeSpan(MainWindow *main_win, TimeInterval *time_interval);
 
 /**
  * Function to get the current time/event of the current tab.
@@ -131,7 +131,7 @@ void GetTracesetTimeSpan(mainWindow *main_win, TimeInterval *time_interval);
  * @param time a pointer where time will be stored.
  */
 
-void GetCurrentTime(mainWindow *main_win, LttTime *time);
+void GetCurrentTime(MainWindow *main_win, LttTime *time);
 
 
 /**
@@ -142,7 +142,7 @@ void GetCurrentTime(mainWindow *main_win, LttTime *time);
  * @param time a pointer where time is stored.
  */
 
-void SetCurrentTime(mainWindow *main_win, LttTime *time);
+void SetCurrentTime(MainWindow *main_win, LttTime *time);
 
 
 /**
@@ -153,7 +153,7 @@ void SetCurrentTime(mainWindow *main_win, LttTime *time);
  * @param traceset a pointer to a traceset.
  */
 
-//void GetTraceset(mainWindow *main_win, Traceset *traceset);
+//void GetTraceset(MainWindow *main_win, Traceset *traceset);
 
 
 /**
@@ -164,7 +164,7 @@ void SetCurrentTime(mainWindow *main_win, LttTime *time);
  * @param filter, a pointer to a filter.
  */
 
-//void GetFilter(mainWindow *main_win, Filter *filter);
+//void GetFilter(MainWindow *main_win, Filter *filter);
 
 
 /**
@@ -177,7 +177,7 @@ void SetCurrentTime(mainWindow *main_win, LttTime *time);
  */
 
 void RegUpdateTimeInterval(LttvHook hook, gpointer hook_data,
-			   mainWindow * main_win);
+			   MainWindow * main_win);
 
 
 /**
@@ -190,7 +190,7 @@ void RegUpdateTimeInterval(LttvHook hook, gpointer hook_data,
  */
 
 void UnregUpdateTimeInterval(LttvHook hook, gpointer hook_data,
-			     mainWindow * main_win);
+			     MainWindow * main_win);
 
 
 /**
@@ -203,7 +203,7 @@ void UnregUpdateTimeInterval(LttvHook hook, gpointer hook_data,
  */
 
 void RegUpdateTraceset(LttvHook hook, gpointer hook_data,
-		       mainWindow * main_win);
+		       MainWindow * main_win);
 
 
 /**
@@ -216,7 +216,7 @@ void RegUpdateTraceset(LttvHook hook, gpointer hook_data,
  */
 
 void UnregUpdateTraceset(LttvHook hook, gpointer hook_data,
-			 mainWindow * main_win);
+			 MainWindow * main_win);
 
 
 /**
@@ -229,7 +229,7 @@ void UnregUpdateTraceset(LttvHook hook, gpointer hook_data,
  */
 
 void RegUpdateFilter(LttvHook hook, gpointer hook_data, 
-		     mainWindow *main_win);
+		     MainWindow *main_win);
 
 
 /**
@@ -242,7 +242,7 @@ void RegUpdateFilter(LttvHook hook, gpointer hook_data,
  */
 
 void UnregUpdateFilter(LttvHook hook,  gpointer hook_data,
-		       mainWindow * main_win);
+		       MainWindow * main_win);
 
 
 /**
@@ -255,7 +255,7 @@ void UnregUpdateFilter(LttvHook hook,  gpointer hook_data,
  */
 
 void RegUpdateCurrentTime(LttvHook hook, gpointer hook_data, 
-			  mainWindow *main_win);
+			  MainWindow *main_win);
 
 
 /**
@@ -268,7 +268,7 @@ void RegUpdateCurrentTime(LttvHook hook, gpointer hook_data,
  */
 
 void UnregUpdateCurrentTime(LttvHook hook, gpointer hook_data,
-			    mainWindow * main_win);
+			    MainWindow * main_win);
 
 
 /**
@@ -279,7 +279,7 @@ void UnregUpdateCurrentTime(LttvHook hook, gpointer hook_data,
  * @param paned a pointer to a pane where the viewer is contained.
  */
 
-void SetFocusedPane(mainWindow *main_win, gpointer paned);
+void SetFocusedPane(MainWindow *main_win, gpointer paned);
 
 
 /**
@@ -292,7 +292,7 @@ void SetFocusedPane(mainWindow *main_win, gpointer paned);
  */
 
 void RegUpdateDividor(LttvHook hook, gpointer hook_data, 
-		      mainWindow *main_win);
+		      MainWindow *main_win);
 
 
 /**
@@ -305,7 +305,7 @@ void RegUpdateDividor(LttvHook hook, gpointer hook_data,
  */
 
 void UnregUpdateDividor(LttvHook hook, gpointer hook_data, 
-			mainWindow *main_win);
+			MainWindow *main_win);
 
 
 /**
@@ -316,7 +316,7 @@ void UnregUpdateDividor(LttvHook hook, gpointer hook_data,
  * @param position position of the hpane's dividor.
  */
 
-void SetHPaneDividor(mainWindow *main_win, gint position);
+void SetHPaneDividor(MainWindow *main_win, gint position);
 
 
 /**
@@ -327,7 +327,7 @@ void SetHPaneDividor(mainWindow *main_win, gint position);
  * @param end the end time of the last event to be processed.
  */
 
-void processTraceset(mainWindow *main_win, LttTime start, 
+void processTraceset(MainWindow *main_win, LttTime start, 
 		     LttTime end, unsigned maxNumEvents);
 
 
@@ -339,7 +339,7 @@ void processTraceset(mainWindow *main_win, LttTime start,
  * @param LttvHooks hooks to be registered.
  */
 
-void contextAddHooks(mainWindow *main_win ,
+void contextAddHooks(MainWindow *main_win ,
 		     LttvHooks *before_traceset, 
 		     LttvHooks *after_traceset,
 		     LttvHooks *check_trace, 
@@ -361,7 +361,7 @@ void contextAddHooks(mainWindow *main_win ,
  * @param LttvHooks hooks to be registered.
  */
 
-void contextRemoveHooks(mainWindow *main_win ,
+void contextRemoveHooks(MainWindow *main_win ,
 			LttvHooks *before_traceset, 
 			LttvHooks *after_traceset,
 			LttvHooks *check_trace, 
@@ -382,7 +382,7 @@ void contextRemoveHooks(mainWindow *main_win ,
  * @param end end time of the traceset.
  */
 
-void getTracesetTimeSpan(mainWindow *main_win, TimeInterval *time_span);
+void getTracesetTimeSpan(MainWindow *main_win, TimeInterval *time_span);
 
 
 /**
@@ -390,8 +390,8 @@ void getTracesetTimeSpan(mainWindow *main_win, TimeInterval *time_span);
  * @param main_win the main window the viewer belongs to.
  */
 
-void stateAddEventHooks(mainWindow *main_win );
-void stateRemoveEventHooks(mainWindow *main_win );
+void stateAddEventHooks(MainWindow *main_win );
+void stateRemoveEventHooks(MainWindow *main_win );
 
 
 /**
@@ -399,8 +399,8 @@ void stateRemoveEventHooks(mainWindow *main_win );
  * @param main_win the main window the viewer belongs to.
  */
 
-void statsAddEventHooks(mainWindow *main_win );
-void statsRemoveEventHooks(mainWindow *main_win );
+void statsAddEventHooks(MainWindow *main_win );
+void statsRemoveEventHooks(MainWindow *main_win );
 
 
 /**
@@ -408,4 +408,4 @@ void statsRemoveEventHooks(mainWindow *main_win );
  * @param main_win the main window the viewer belongs to.
  */
 
-LttvTracesetStats* getTracesetStats(mainWindow *main_win);
+LttvTracesetStats* getTracesetStats(MainWindow *main_win);

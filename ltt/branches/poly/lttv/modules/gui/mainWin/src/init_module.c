@@ -26,8 +26,6 @@
 #include "callbacks.h"
 
 /* global variable */
-//LttvTracesetStats * gTracesetContext = NULL;
-//static LttvTraceset * traceset;
 static WindowCreationData  win_creation_data;
 
 /** Array containing instanced objects. */
@@ -110,7 +108,7 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 }
 
 void
-main_window_free(mainWindow * mw)
+main_window_free(MainWindow * mw)
 { 
   guint i, nb, ref_count;
   LttvTrace * trace;
@@ -118,38 +116,38 @@ main_window_free(mainWindow * mw)
   if(mw){
 
 g_critical("begin remove");
-    lttv_hooks_destroy(mw->Traceset_Info->before_traceset);
-    lttv_hooks_destroy(mw->Traceset_Info->after_traceset);
-    lttv_hooks_destroy(mw->Traceset_Info->before_trace);
-    lttv_hooks_destroy(mw->Traceset_Info->after_trace);
-    lttv_hooks_destroy(mw->Traceset_Info->before_tracefile);
-    lttv_hooks_destroy(mw->Traceset_Info->after_tracefile);
-    lttv_hooks_destroy(mw->Traceset_Info->before_event);
-    lttv_hooks_destroy(mw->Traceset_Info->after_event);
+    lttv_hooks_destroy(mw->traceset_info->before_traceset);
+    lttv_hooks_destroy(mw->traceset_info->after_traceset);
+    lttv_hooks_destroy(mw->traceset_info->before_trace);
+    lttv_hooks_destroy(mw->traceset_info->after_trace);
+    lttv_hooks_destroy(mw->traceset_info->before_tracefile);
+    lttv_hooks_destroy(mw->traceset_info->after_tracefile);
+    lttv_hooks_destroy(mw->traceset_info->before_event);
+    lttv_hooks_destroy(mw->traceset_info->after_event);
 g_critical("end remove");
     
-    if(mw->Traceset_Info->path != NULL)
-      g_free(mw->Traceset_Info->path);
-    if(mw->Traceset_Info->TracesetContext != NULL){
-      lttv_context_fini(LTTV_TRACESET_CONTEXT(mw->Traceset_Info->TracesetContext));
-      g_object_unref(mw->Traceset_Info->TracesetContext);
+    if(mw->traceset_info->path != NULL)
+      g_free(mw->traceset_info->path);
+    if(mw->traceset_info->traceset_context != NULL){
+      lttv_context_fini(LTTV_TRACESET_CONTEXT(mw->traceset_info->traceset_context));
+      g_object_unref(mw->traceset_info->traceset_context);
     }
-    if(mw->Traceset_Info->traceset != NULL) {
-      nb = lttv_traceset_number(mw->Traceset_Info->traceset);
+    if(mw->traceset_info->traceset != NULL) {
+      nb = lttv_traceset_number(mw->traceset_info->traceset);
       for(i = 0 ; i < nb ; i++) {
-	trace = lttv_traceset_get(mw->Traceset_Info->traceset, i);
+	trace = lttv_traceset_get(mw->traceset_info->traceset, i);
 	ref_count = lttv_trace_get_ref_number(trace);
 	if(ref_count <= 1)
 	  ltt_trace_close(lttv_trace(trace));
       }
     }
 
-    lttv_traceset_destroy(mw->Traceset_Info->traceset); 
+    lttv_traceset_destroy(mw->traceset_info->traceset); 
 
-    g_object_unref(mw->Attributes);
+    g_object_unref(mw->attributes);
 
-    g_free(mw->Traceset_Info);
-    mw->Traceset_Info = NULL;
+    g_free(mw->traceset_info);
+    mw->traceset_info = NULL;
       
     g_main_window_list = g_slist_remove(g_main_window_list, mw);
 
@@ -162,10 +160,10 @@ g_critical("end remove");
 }
 
 void
-main_window_destructor(mainWindow * mw)
+main_window_destructor(MainWindow * mw)
 {
-  if(GTK_IS_WIDGET(mw->MWindow)){
-    gtk_widget_destroy(mw->MWindow);
+  if(GTK_IS_WIDGET(mw->mwindow)){
+    gtk_widget_destroy(mw->mwindow);
     //    gtk_widget_destroy(mw->HelpContents);
     //    gtk_widget_destroy(mw->AboutBox);    
     mw = NULL;
@@ -177,7 +175,7 @@ main_window_destructor(mainWindow * mw)
 
 void main_window_destroy_walk(gpointer data, gpointer user_data)
 {
-  main_window_destructor((mainWindow*)data);
+  main_window_destructor((MainWindow*)data);
 }
 
 

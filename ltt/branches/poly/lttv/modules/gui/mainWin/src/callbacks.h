@@ -5,11 +5,11 @@
 /* internal functions */
 
 void create_new_window(GtkWidget* widget, gpointer user_data, gboolean clone);
-void insert_menu_toolbar_item(mainWindow * mw, gpointer user_data);
-void construct_main_window(mainWindow * parent, WindowCreationData *win_creation_data,
+void insert_menu_toolbar_item(MainWindow * mw, gpointer user_data);
+void construct_main_window(MainWindow * parent, WindowCreationData *win_creation_data,
 			   gboolean first_window);
-void main_window_free(mainWindow * mw);
-void main_window_destructor(mainWindow * mw);
+void main_window_free(MainWindow * mw);
+void main_window_destructor(MainWindow * mw);
 
 /* callback functions*/
 

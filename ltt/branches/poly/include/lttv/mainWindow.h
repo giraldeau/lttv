@@ -31,13 +31,13 @@ typedef struct _TracesetInfo {
 	  *before_event,
 	  *after_event;
         //FIXME? TracesetContext and stats in same or different variable ?
-	LttvTracesetStats * TracesetContext;
+	LttvTracesetStats * traceset_context;
 	LttvTraceset * traceset;
 } TracesetInfo ;
 
 
-struct _mainWindow{
-  GtkWidget*      MWindow;            /* Main Window */
+struct _MainWindow{
+  GtkWidget*      mwindow;            /* Main Window */
 
   /* Status bar information */
   //  guint         MainSBarContextID;    /* Context ID of main status bar */
@@ -49,42 +49,42 @@ struct _mainWindow{
   //viewTimeFrameWindow* ViewTimeFrameWindow;/*Window to select time frame */
   //gotoEventWindow*     GotoEventWindow; /*search for event description*/
   //openFilterWindow*    OpenFilterWindow; /* Open a filter selection window */
-  GtkWidget*           HelpContents;/* Window to display help contents */
-  GtkWidget*           AboutBox;    /* Window  about information */
+  GtkWidget*           help_contents;/* Window to display help contents */
+  GtkWidget*           about_box;    /* Window  about information */
  
   //  lttv_trace_filter * filter; /* trace filter associated with the window */
 
   /* Traceset related information */
-  TracesetInfo * Traceset_Info; 
+  TracesetInfo * traceset_info; 
   /* Attributes for trace reading hooks local to the main window */
-  LttvIAttribute * Attributes;
+  LttvIAttribute * attributes;
   
-  tab * Tab;
-  tab * CurrentTab;
+  Tab * tab;
+  Tab * current_tab;
 
-  WindowCreationData * winCreationData; 
+  WindowCreationData * win_creation_data; 
 
   GHashTable * hash_menu_item;
   GHashTable * hash_toolbar_item;
 };
 
 
-struct _tab{
+struct _Tab{
   GtkWidget * label;
   GtkCustom * custom;
    
   // startTime is the left of the visible area. Corresponds to the scrollbar
   // value.
   // Time_Width is a zoom dependant value (corresponding to page size)
-  TimeWindow Time_Window;
+  TimeWindow time_window;
   
   // The current time is the time selected in the visible area by the user,
   // not the scrollbar value.
-  LttTime currentTime;
-  LttvIAttribute * Attributes;
+  LttTime current_time;
+  LttvIAttribute * attributes;
 
-  struct _tab * Next;
-  mainWindow  * mw;
+  struct _Tab * next;
+  MainWindow  * mw;
 };
 
 /**
