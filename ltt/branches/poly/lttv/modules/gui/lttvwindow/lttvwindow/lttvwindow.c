@@ -842,9 +842,12 @@ void lttvwindow_events_request_remove_all(Tab       *tab,
                                 (GCompareFunc)find_viewer))
               != NULL) {
     EventsRequest *events_request = (EventsRequest *)element->data;
-    if(events_request->servicing == TRUE) {
-      lttv_hooks_call(events_request->after_request, NULL);
-    }
+    // Modified so a viewer being destroyed won't have its after_request
+    // called. Not so important anyway. Note that a viewer that call this
+    // remove_all function will not get its after_request called.
+    //if(events_request->servicing == TRUE) {
+    //  lttv_hooks_call(events_request->after_request, NULL);
+    //}
     g_free(events_request);
     tab->events_requests = g_slist_remove_link(tab->events_requests, element);
   }

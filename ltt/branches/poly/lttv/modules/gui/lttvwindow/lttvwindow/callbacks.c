@@ -745,259 +745,190 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
    */
   /* A. Servicing loop */
   //while( (g_slist_length(list_in) != 0 || g_slist_length(list_out) != 0)) {
+  if((g_slist_length(list_in) != 0 || g_slist_length(list_out) != 0)) {
+    /* Servicing */
+    /* 1. If list_in is empty (need a seek) */
+    if( g_slist_length(list_in) ==  0 ) {
 
-  /* Servicing */
-  /* 1. If list_in is empty (need a seek) */
-  if( g_slist_length(list_in) ==  0 ) {
-
-    /* list in is empty, need a seek */
-    {
-      /* 1.1 Add requests to list_in */
-      GSList *ltime = NULL;
-      GSList *lpos = NULL;
-      GSList *iter = NULL;
-      
-      /* 1.1.1 Find all time requests with the lowest start time in list_out
-       * (ltime)
-       */
-      if(g_slist_length(list_out) > 0)
-        ltime = g_slist_append(ltime, g_slist_nth_data(list_out, 0));
-      for(iter=g_slist_nth(list_out,1);iter!=NULL;iter=g_slist_next(iter)) {
-        /* Find all time requests with the lowest start time in list_out */
-        guint index_ltime = g_array_index(ltime, guint, 0);
-        EventsRequest *event_request_ltime = (EventsRequest*)g_slist_nth_data(ltime, 0);
-        EventsRequest *event_request_list_out = (EventsRequest*)iter->data;
-
-        int comp;
-        comp = ltt_time_compare(event_request_ltime->start_time,
-                                event_request_list_out->start_time);
-        if(comp == 0)
-          ltime = g_slist_append(ltime, event_request_list_out);
-        else if(comp > 0) {
-          /* Remove all elements from ltime, and add current */
-          while(ltime != NULL)
-            ltime = g_slist_delete_link(ltime, g_slist_nth(ltime, 0));
-          ltime = g_slist_append(ltime, event_request_list_out);
-        }
-      }
-      
-      /* 1.1.2 Find all position requests with the lowest position in list_out
-       * (lpos)
-       */
-      if(g_slist_length(list_out) > 0)
-        lpos = g_slist_append(lpos, g_slist_nth_data(list_out, 0));
-      for(iter=g_slist_nth(list_out,1);iter!=NULL;iter=g_slist_next(iter)) {
-        /* Find all position requests with the lowest position in list_out */
-        EventsRequest *event_request_lpos = (EventsRequest*)g_slist_nth_data(lpos, 0);
-        EventsRequest *event_request_list_out = (EventsRequest*)iter->data;
-
-        int comp;
-        if(event_request_lpos->start_position != NULL
-            && event_request_list_out->start_position != NULL)
-        {
-          comp = lttv_traceset_context_pos_pos_compare
-                               (event_request_lpos->start_position,
-                                event_request_list_out->start_position);
-        } else {
-          comp = -1;
-        }
-        if(comp == 0)
-          lpos = g_slist_append(lpos, event_request_list_out);
-        else if(comp > 0) {
-          /* Remove all elements from lpos, and add current */
-          while(lpos != NULL)
-            lpos = g_slist_delete_link(lpos, g_slist_nth(lpos, 0));
-          lpos = g_slist_append(lpos, event_request_list_out);
-        }
-      }
-      
+      /* list in is empty, need a seek */
       {
-        EventsRequest *event_request_lpos = (EventsRequest*)g_slist_nth_data(lpos, 0);
-        EventsRequest *event_request_ltime = (EventsRequest*)g_slist_nth_data(ltime, 0);
-        LttTime lpos_start_time;
+        /* 1.1 Add requests to list_in */
+        GSList *ltime = NULL;
+        GSList *lpos = NULL;
+        GSList *iter = NULL;
         
-        if(event_request_lpos != NULL 
-            && event_request_lpos->start_position != NULL) {
-          lpos_start_time = lttv_traceset_context_position_get_time(
-                                    event_request_lpos->start_position);
-        }
-        
-        /* 1.1.3 If lpos.start time < ltime */
-        if(event_request_lpos != NULL
-            && event_request_lpos->start_position != NULL
-            && ltt_time_compare(lpos_start_time,
-                            event_request_ltime->start_time)<0) {
-          /* Add lpos to list_in, remove them from list_out */
-          for(iter=lpos;iter!=NULL;iter=g_slist_next(iter)) {
-            /* Add to list_in */
-            EventsRequest *event_request_lpos = 
-                                  (EventsRequest*)iter->data;
+        /* 1.1.1 Find all time requests with the lowest start time in list_out
+         * (ltime)
+         */
+        if(g_slist_length(list_out) > 0)
+          ltime = g_slist_append(ltime, g_slist_nth_data(list_out, 0));
+        for(iter=g_slist_nth(list_out,1);iter!=NULL;iter=g_slist_next(iter)) {
+          /* Find all time requests with the lowest start time in list_out */
+          guint index_ltime = g_array_index(ltime, guint, 0);
+          EventsRequest *event_request_ltime = (EventsRequest*)g_slist_nth_data(ltime, 0);
+          EventsRequest *event_request_list_out = (EventsRequest*)iter->data;
 
-            list_in = g_slist_append(list_in, event_request_lpos);
-            /* Remove from list_out */
-            list_out = g_slist_remove(list_out, event_request_lpos);
-          }
-        } else {
-          /* 1.1.4 (lpos.start time >= ltime) */
-          /* Add ltime to list_in, remove them from list_out */
-
-          for(iter=ltime;iter!=NULL;iter=g_slist_next(iter)) {
-            /* Add to list_in */
-            EventsRequest *event_request_ltime = 
-                                  (EventsRequest*)iter->data;
-
-            list_in = g_slist_append(list_in, event_request_ltime);
-            /* Remove from list_out */
-            list_out = g_slist_remove(list_out, event_request_ltime);
+          int comp;
+          comp = ltt_time_compare(event_request_ltime->start_time,
+                                  event_request_list_out->start_time);
+          if(comp == 0)
+            ltime = g_slist_append(ltime, event_request_list_out);
+          else if(comp > 0) {
+            /* Remove all elements from ltime, and add current */
+            while(ltime != NULL)
+              ltime = g_slist_delete_link(ltime, g_slist_nth(ltime, 0));
+            ltime = g_slist_append(ltime, event_request_list_out);
           }
         }
-      }
-      g_slist_free(lpos);
-      g_slist_free(ltime);
-    }
+        
+        /* 1.1.2 Find all position requests with the lowest position in list_out
+         * (lpos)
+         */
+        if(g_slist_length(list_out) > 0)
+          lpos = g_slist_append(lpos, g_slist_nth_data(list_out, 0));
+        for(iter=g_slist_nth(list_out,1);iter!=NULL;iter=g_slist_next(iter)) {
+          /* Find all position requests with the lowest position in list_out */
+          EventsRequest *event_request_lpos = (EventsRequest*)g_slist_nth_data(lpos, 0);
+          EventsRequest *event_request_list_out = (EventsRequest*)iter->data;
 
-    /* 1.2 Seek */
-    {
-      tfc = lttv_traceset_context_get_current_tfc(tsc);
-      g_assert(g_slist_length(list_in)>0);
-      EventsRequest *events_request = g_slist_nth_data(list_in, 0);
-      guint seek_count;
-
-      /* 1.2.1 If first request in list_in is a time request */
-      if(events_request->start_position == NULL) {
-        /* - If first req in list_in start time != current time */
-        if(tfc == NULL || ltt_time_compare(events_request->start_time,
-                            tfc->timestamp) != 0)
-          /* - Seek to that time */
-          g_debug("SEEK TIME : %lu, %lu", events_request->start_time.tv_sec,
-            events_request->start_time.tv_nsec);
-          //lttv_process_traceset_seek_time(tsc, events_request->start_time);
-          lttv_state_traceset_seek_time_closest(LTTV_TRACESET_STATE(tsc),
-                                                events_request->start_time);
-
-          /* Process the traceset with only state hooks */
-          seek_count =
-             lttv_process_traceset_middle(tsc,
-                                          events_request->start_time,
-                                          G_MAXUINT, NULL);
-
-
-      } else {
-        LttTime pos_time;
-        /* Else, the first request in list_in is a position request */
-        /* If first req in list_in pos != current pos */
-        g_assert(events_request->start_position != NULL);
-        g_debug("SEEK POS time : %lu, %lu", 
-               lttv_traceset_context_position_get_time(
-                    events_request->start_position).tv_sec,
-               lttv_traceset_context_position_get_time(
-                    events_request->start_position).tv_nsec);
-
-        g_debug("SEEK POS context time : %lu, %lu", 
-             lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_sec,
-             lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_nsec);
-        g_assert(events_request->start_position != NULL);
-        if(lttv_traceset_context_ctx_pos_compare(tsc,
-                   events_request->start_position) != 0) {
-          /* 1.2.2.1 Seek to that position */
-          g_debug("SEEK POSITION");
-          //lttv_process_traceset_seek_position(tsc, events_request->start_position);
-          pos_time = lttv_traceset_context_position_get_time(
-                                   events_request->start_position);
+          int comp;
+          if(event_request_lpos->start_position != NULL
+              && event_request_list_out->start_position != NULL)
+          {
+            comp = lttv_traceset_context_pos_pos_compare
+                                 (event_request_lpos->start_position,
+                                  event_request_list_out->start_position);
+          } else {
+            comp = -1;
+          }
+          if(comp == 0)
+            lpos = g_slist_append(lpos, event_request_list_out);
+          else if(comp > 0) {
+            /* Remove all elements from lpos, and add current */
+            while(lpos != NULL)
+              lpos = g_slist_delete_link(lpos, g_slist_nth(lpos, 0));
+            lpos = g_slist_append(lpos, event_request_list_out);
+          }
+        }
+        
+        {
+          EventsRequest *event_request_lpos = (EventsRequest*)g_slist_nth_data(lpos, 0);
+          EventsRequest *event_request_ltime = (EventsRequest*)g_slist_nth_data(ltime, 0);
+          LttTime lpos_start_time;
           
-          lttv_state_traceset_seek_time_closest(LTTV_TRACESET_STATE(tsc),
-                                                pos_time);
+          if(event_request_lpos != NULL 
+              && event_request_lpos->start_position != NULL) {
+            lpos_start_time = lttv_traceset_context_position_get_time(
+                                      event_request_lpos->start_position);
+          }
+          
+          /* 1.1.3 If lpos.start time < ltime */
+          if(event_request_lpos != NULL
+              && event_request_lpos->start_position != NULL
+              && ltt_time_compare(lpos_start_time,
+                              event_request_ltime->start_time)<0) {
+            /* Add lpos to list_in, remove them from list_out */
+            for(iter=lpos;iter!=NULL;iter=g_slist_next(iter)) {
+              /* Add to list_in */
+              EventsRequest *event_request_lpos = 
+                                    (EventsRequest*)iter->data;
 
-          /* Process the traceset with only state hooks */
-          seek_count =
-             lttv_process_traceset_middle(tsc,
-                                          ltt_time_infinite,
-                                          G_MAXUINT,
-                                          events_request->start_position);
-          g_assert(lttv_traceset_context_ctx_pos_compare(tsc,
-                       events_request->start_position) == 0);
+              list_in = g_slist_append(list_in, event_request_lpos);
+              /* Remove from list_out */
+              list_out = g_slist_remove(list_out, event_request_lpos);
+            }
+          } else {
+            /* 1.1.4 (lpos.start time >= ltime) */
+            /* Add ltime to list_in, remove them from list_out */
+
+            for(iter=ltime;iter!=NULL;iter=g_slist_next(iter)) {
+              /* Add to list_in */
+              EventsRequest *event_request_ltime = 
+                                    (EventsRequest*)iter->data;
+
+              list_in = g_slist_append(list_in, event_request_ltime);
+              /* Remove from list_out */
+              list_out = g_slist_remove(list_out, event_request_ltime);
+            }
+          }
+        }
+        g_slist_free(lpos);
+        g_slist_free(ltime);
+      }
+
+      /* 1.2 Seek */
+      {
+        tfc = lttv_traceset_context_get_current_tfc(tsc);
+        g_assert(g_slist_length(list_in)>0);
+        EventsRequest *events_request = g_slist_nth_data(list_in, 0);
+        guint seek_count;
+
+        /* 1.2.1 If first request in list_in is a time request */
+        if(events_request->start_position == NULL) {
+          /* - If first req in list_in start time != current time */
+          if(tfc == NULL || ltt_time_compare(events_request->start_time,
+                              tfc->timestamp) != 0)
+            /* - Seek to that time */
+            g_debug("SEEK TIME : %lu, %lu", events_request->start_time.tv_sec,
+              events_request->start_time.tv_nsec);
+            //lttv_process_traceset_seek_time(tsc, events_request->start_time);
+            lttv_state_traceset_seek_time_closest(LTTV_TRACESET_STATE(tsc),
+                                                  events_request->start_time);
+
+            /* Process the traceset with only state hooks */
+            seek_count =
+               lttv_process_traceset_middle(tsc,
+                                            events_request->start_time,
+                                            G_MAXUINT, NULL);
 
 
+        } else {
+          LttTime pos_time;
+          /* Else, the first request in list_in is a position request */
+          /* If first req in list_in pos != current pos */
+          g_assert(events_request->start_position != NULL);
+          g_debug("SEEK POS time : %lu, %lu", 
+                 lttv_traceset_context_position_get_time(
+                      events_request->start_position).tv_sec,
+                 lttv_traceset_context_position_get_time(
+                      events_request->start_position).tv_nsec);
+
+          g_debug("SEEK POS context time : %lu, %lu", 
+               lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_sec,
+               lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_nsec);
+          g_assert(events_request->start_position != NULL);
+          if(lttv_traceset_context_ctx_pos_compare(tsc,
+                     events_request->start_position) != 0) {
+            /* 1.2.2.1 Seek to that position */
+            g_debug("SEEK POSITION");
+            //lttv_process_traceset_seek_position(tsc, events_request->start_position);
+            pos_time = lttv_traceset_context_position_get_time(
+                                     events_request->start_position);
+            
+            lttv_state_traceset_seek_time_closest(LTTV_TRACESET_STATE(tsc),
+                                                  pos_time);
+
+            /* Process the traceset with only state hooks */
+            seek_count =
+               lttv_process_traceset_middle(tsc,
+                                            ltt_time_infinite,
+                                            G_MAXUINT,
+                                            events_request->start_position);
+            g_assert(lttv_traceset_context_ctx_pos_compare(tsc,
+                         events_request->start_position) == 0);
+
+
+          }
         }
       }
-    }
 
-    /* 1.3 Add hooks and call before request for all list_in members */
-    {
-      GSList *iter = NULL;
+      /* 1.3 Add hooks and call before request for all list_in members */
+      {
+        GSList *iter = NULL;
 
-      for(iter=list_in;iter!=NULL;iter=g_slist_next(iter)) {
-        EventsRequest *events_request = (EventsRequest*)iter->data;
-        /* 1.3.1 If !servicing */
-        if(events_request->servicing == FALSE) {
-          /* - begin request hooks called
-           * - servicing = TRUE
-           */
-          lttv_hooks_call(events_request->before_request, (gpointer)tsc);
-          events_request->servicing = TRUE;
-        }
-        /* 1.3.2 call before chunk
-         * 1.3.3 events hooks added
-         */
-        lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
-                                         events_request->before_chunk_trace,
-                                         events_request->before_chunk_tracefile,
-                                         events_request->event,
-                                         events_request->event_by_id);
-      }
-    }
-  } else {
-    /* 2. Else, list_in is not empty, we continue a read */
-    
-    {
-      /* 2.0 For each req of list_in */
-      GSList *iter = list_in;
-  
-      while(iter != NULL) {
-
-        EventsRequest *events_request = (EventsRequest *)iter->data;
-        
-        /* - Call before chunk
-         * - events hooks added
-         */
-        lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
-                                       events_request->before_chunk_trace,
-                                       events_request->before_chunk_tracefile,
-                                       events_request->event,
-                                       events_request->event_by_id);
-
-        iter = g_slist_next(iter);
-      }
-    }
-
-    {
-      tfc = lttv_traceset_context_get_current_tfc(tsc);
-    
-      /* 2.1 For each req of list_out */
-      GSList *iter = list_out;
-  
-      while(iter != NULL) {
-
-        gboolean remove = FALSE;
-        gboolean free_data = FALSE;
-        EventsRequest *events_request = (EventsRequest *)iter->data;
-        
-        /* if req.start time == current context time 
-         * or req.start position == current position*/
-        if(  ltt_time_compare(events_request->start_time,
-                            tfc->timestamp) == 0 
-           ||
-             (events_request->start_position != NULL 
-             &&
-             lttv_traceset_context_ctx_pos_compare(tsc,
-                     events_request->start_position) == 0)
-           ) {
-          /* - Add to list_in, remove from list_out */
-          list_in = g_slist_append(list_in, events_request);
-          remove = TRUE;
-          free_data = FALSE;
-
-          /* - If !servicing */
+        for(iter=list_in;iter!=NULL;iter=g_slist_next(iter)) {
+          EventsRequest *events_request = (EventsRequest*)iter->data;
+          /* 1.3.1 If !servicing */
           if(events_request->servicing == FALSE) {
             /* - begin request hooks called
              * - servicing = TRUE
@@ -1005,8 +936,8 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
             lttv_hooks_call(events_request->before_request, (gpointer)tsc);
             events_request->servicing = TRUE;
           }
-          /* call before chunk
-           * events hooks added
+          /* 1.3.2 call before chunk
+           * 1.3.3 events hooks added
            */
           lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
                                            events_request->before_chunk_trace,
@@ -1014,230 +945,299 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                            events_request->event,
                                            events_request->event_by_id);
         }
+      }
+    } else {
+      /* 2. Else, list_in is not empty, we continue a read */
+      
+      {
+        /* 2.0 For each req of list_in */
+        GSList *iter = list_in;
+    
+        while(iter != NULL) {
 
-        /* Go to next */
-        if(remove)
-        {
-          GSList *remove_iter = iter;
+          EventsRequest *events_request = (EventsRequest *)iter->data;
+          
+          /* - Call before chunk
+           * - events hooks added
+           */
+          lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
+                                         events_request->before_chunk_trace,
+                                         events_request->before_chunk_tracefile,
+                                         events_request->event,
+                                         events_request->event_by_id);
 
-          iter = g_slist_next(iter);
-          if(free_data) events_request_free((EventsRequest*)remove_iter->data);
-          list_out = g_slist_remove_link(list_out, remove_iter);
-        } else { // not remove
           iter = g_slist_next(iter);
         }
       }
-    }
-  }
 
-  /* 3. Find end criterions */
-  {
-    /* 3.1 End time */
-    GSList *iter;
+      {
+        tfc = lttv_traceset_context_get_current_tfc(tsc);
+      
+        /* 2.1 For each req of list_out */
+        GSList *iter = list_out;
     
-    /* 3.1.1 Find lowest end time in list_in */
-    g_assert(g_slist_length(list_in)>0);
-    end_time = ((EventsRequest*)g_slist_nth_data(list_in,0))->end_time;
-    
-    for(iter=g_slist_nth(list_in,1);iter!=NULL;iter=g_slist_next(iter)) {
-      EventsRequest *events_request = (EventsRequest*)iter->data;
+        while(iter != NULL) {
 
-      if(ltt_time_compare(events_request->end_time,
-                          end_time) < 0)
-        end_time = events_request->end_time;
-    }
-     
-    /* 3.1.2 Find lowest start time in list_out */
-    for(iter=list_out;iter!=NULL;iter=g_slist_next(iter)) {
-      EventsRequest *events_request = (EventsRequest*)iter->data;
+          gboolean remove = FALSE;
+          gboolean free_data = FALSE;
+          EventsRequest *events_request = (EventsRequest *)iter->data;
+          
+          /* if req.start time == current context time 
+           * or req.start position == current position*/
+          if(  ltt_time_compare(events_request->start_time,
+                              tfc->timestamp) == 0 
+             ||
+               (events_request->start_position != NULL 
+               &&
+               lttv_traceset_context_ctx_pos_compare(tsc,
+                       events_request->start_position) == 0)
+             ) {
+            /* - Add to list_in, remove from list_out */
+            list_in = g_slist_append(list_in, events_request);
+            remove = TRUE;
+            free_data = FALSE;
 
-      if(ltt_time_compare(events_request->start_time,
-                          end_time) < 0)
-        end_time = events_request->start_time;
-    }
-  }
+            /* - If !servicing */
+            if(events_request->servicing == FALSE) {
+              /* - begin request hooks called
+               * - servicing = TRUE
+               */
+              lttv_hooks_call(events_request->before_request, (gpointer)tsc);
+              events_request->servicing = TRUE;
+            }
+            /* call before chunk
+             * events hooks added
+             */
+            lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
+                                             events_request->before_chunk_trace,
+                                             events_request->before_chunk_tracefile,
+                                             events_request->event,
+                                             events_request->event_by_id);
+          }
 
-  {
-    /* 3.2 Number of events */
+          /* Go to next */
+          if(remove)
+          {
+            GSList *remove_iter = iter;
 
-    /* 3.2.1 Find lowest number of events in list_in */
-    GSList *iter;
-
-    end_nb_events = ((EventsRequest*)g_slist_nth_data(list_in,0))->num_events;
-
-    for(iter=g_slist_nth(list_in,1);iter!=NULL;iter=g_slist_next(iter)) {
-      EventsRequest *events_request = (EventsRequest*)iter->data;
-
-      if(events_request->num_events < end_nb_events)
-        end_nb_events = events_request->num_events;
-    }
-
-    /* 3.2.2 Use min(CHUNK_NUM_EVENTS, min num events in list_in) as
-     * num_events */
-    
-    end_nb_events = MIN(CHUNK_NUM_EVENTS, end_nb_events);
-  }
-
-  {
-    /* 3.3 End position */
-
-    /* 3.3.1 Find lowest end position in list_in */
-    GSList *iter;
-
-    end_position =((EventsRequest*)g_slist_nth_data(list_in,0))->end_position;
-
-    for(iter=g_slist_nth(list_in,1);iter!=NULL;iter=g_slist_next(iter)) {
-      EventsRequest *events_request = (EventsRequest*)iter->data;
-
-      if(events_request->end_position != NULL && end_position != NULL &&
-          lttv_traceset_context_pos_pos_compare(events_request->end_position,
-                                               end_position) <0)
-        end_position = events_request->end_position;
-    }
-  }
-  
-  {  
-    /* 3.3.2 Find lowest start position in list_out */
-    GSList *iter;
-
-    for(iter=list_out;iter!=NULL;iter=g_slist_next(iter)) {
-      EventsRequest *events_request = (EventsRequest*)iter->data;
-
-      if(events_request->end_position != NULL && end_position != NULL &&
-          lttv_traceset_context_pos_pos_compare(events_request->end_position,
-                                               end_position) <0)
-        end_position = events_request->end_position;
-    }
-  }
-
-  {
-    /* 4. Call process traceset middle */
-    g_debug("Calling process traceset middle with %p, %lu sec %lu nsec, %lu nb ev, %p end pos", tsc, end_time.tv_sec, end_time.tv_nsec, end_nb_events, end_position);
-    count = lttv_process_traceset_middle(tsc, end_time, end_nb_events, end_position);
-
-    tfc = lttv_traceset_context_get_current_tfc(tsc);
-    if(tfc != NULL)
-      g_debug("Context time after middle : %lu, %lu", tfc->timestamp.tv_sec,
-                                                      tfc->timestamp.tv_nsec);
-    else
-      g_debug("End of trace reached after middle.");
-
-  }
-  {
-    /* 5. After process traceset middle */
-    tfc = lttv_traceset_context_get_current_tfc(tsc);
-
-    /* - if current context time > traceset.end time */
-    if(tfc == NULL || ltt_time_compare(tfc->timestamp,
-                                       tsc->time_span.end_time) > 0) {
-      /* - For each req in list_in */
-      GSList *iter = list_in;
-  
-      while(iter != NULL) {
-
-        gboolean remove = FALSE;
-        gboolean free_data = FALSE;
-        EventsRequest *events_request = (EventsRequest *)iter->data;
-        
-        /* - Remove events hooks for req
-         * - Call end chunk for req
-         */
-        lttv_process_traceset_end(tsc, events_request->after_chunk_traceset,
-                                       events_request->after_chunk_trace,
-                                       events_request->after_chunk_tracefile,
-                                       events_request->event,
-                                       events_request->event_by_id);
-        /* - Call end request for req */
-        lttv_hooks_call(events_request->after_request, (gpointer)tsc);
-        
-        /* - remove req from list_in */
-        /* Destroy the request */
-        remove = TRUE;
-        free_data = TRUE;
-
-        /* Go to next */
-        if(remove)
-        {
-          GSList *remove_iter = iter;
-
-          iter = g_slist_next(iter);
-          if(free_data) events_request_free((EventsRequest*)remove_iter->data);
-          list_in = g_slist_remove_link(list_in, remove_iter);
-        } else { // not remove
-          iter = g_slist_next(iter);
+            iter = g_slist_next(iter);
+            if(free_data) events_request_free((EventsRequest*)remove_iter->data);
+            list_out = g_slist_remove_link(list_out, remove_iter);
+          } else { // not remove
+            iter = g_slist_next(iter);
+          }
         }
       }
+    }
+
+    /* 3. Find end criterions */
+    {
+      /* 3.1 End time */
+      GSList *iter;
+      
+      /* 3.1.1 Find lowest end time in list_in */
+      g_assert(g_slist_length(list_in)>0);
+      end_time = ((EventsRequest*)g_slist_nth_data(list_in,0))->end_time;
+      
+      for(iter=g_slist_nth(list_in,1);iter!=NULL;iter=g_slist_next(iter)) {
+        EventsRequest *events_request = (EventsRequest*)iter->data;
+
+        if(ltt_time_compare(events_request->end_time,
+                            end_time) < 0)
+          end_time = events_request->end_time;
+      }
+       
+      /* 3.1.2 Find lowest start time in list_out */
+      for(iter=list_out;iter!=NULL;iter=g_slist_next(iter)) {
+        EventsRequest *events_request = (EventsRequest*)iter->data;
+
+        if(ltt_time_compare(events_request->start_time,
+                            end_time) < 0)
+          end_time = events_request->start_time;
+      }
+    }
+
+    {
+      /* 3.2 Number of events */
+
+      /* 3.2.1 Find lowest number of events in list_in */
+      GSList *iter;
+
+      end_nb_events = ((EventsRequest*)g_slist_nth_data(list_in,0))->num_events;
+
+      for(iter=g_slist_nth(list_in,1);iter!=NULL;iter=g_slist_next(iter)) {
+        EventsRequest *events_request = (EventsRequest*)iter->data;
+
+        if(events_request->num_events < end_nb_events)
+          end_nb_events = events_request->num_events;
+      }
+
+      /* 3.2.2 Use min(CHUNK_NUM_EVENTS, min num events in list_in) as
+       * num_events */
+      
+      end_nb_events = MIN(CHUNK_NUM_EVENTS, end_nb_events);
+    }
+
+    {
+      /* 3.3 End position */
+
+      /* 3.3.1 Find lowest end position in list_in */
+      GSList *iter;
+
+      end_position =((EventsRequest*)g_slist_nth_data(list_in,0))->end_position;
+
+      for(iter=g_slist_nth(list_in,1);iter!=NULL;iter=g_slist_next(iter)) {
+        EventsRequest *events_request = (EventsRequest*)iter->data;
+
+        if(events_request->end_position != NULL && end_position != NULL &&
+            lttv_traceset_context_pos_pos_compare(events_request->end_position,
+                                                 end_position) <0)
+          end_position = events_request->end_position;
+      }
+    }
+    
+    {  
+      /* 3.3.2 Find lowest start position in list_out */
+      GSList *iter;
+
+      for(iter=list_out;iter!=NULL;iter=g_slist_next(iter)) {
+        EventsRequest *events_request = (EventsRequest*)iter->data;
+
+        if(events_request->end_position != NULL && end_position != NULL &&
+            lttv_traceset_context_pos_pos_compare(events_request->end_position,
+                                                 end_position) <0)
+          end_position = events_request->end_position;
+      }
+    }
+
+    {
+      /* 4. Call process traceset middle */
+      g_debug("Calling process traceset middle with %p, %lu sec %lu nsec, %lu nb ev, %p end pos", tsc, end_time.tv_sec, end_time.tv_nsec, end_nb_events, end_position);
+      count = lttv_process_traceset_middle(tsc, end_time, end_nb_events, end_position);
+
+      tfc = lttv_traceset_context_get_current_tfc(tsc);
+      if(tfc != NULL)
+        g_debug("Context time after middle : %lu, %lu", tfc->timestamp.tv_sec,
+                                                        tfc->timestamp.tv_nsec);
+      else
+        g_debug("End of trace reached after middle.");
+
     }
     {
-      /* 5.1 For each req in list_in */
-      GSList *iter = list_in;
-  
-      while(iter != NULL) {
+      /* 5. After process traceset middle */
+      tfc = lttv_traceset_context_get_current_tfc(tsc);
 
-        gboolean remove = FALSE;
-        gboolean free_data = FALSE;
-        EventsRequest *events_request = (EventsRequest *)iter->data;
-        
-        /* - Remove events hooks for req
-         * - Call end chunk for req
-         */
-        lttv_process_traceset_end(tsc, events_request->after_chunk_traceset,
-                                       events_request->after_chunk_trace,
-                                       events_request->after_chunk_tracefile,
-                                       events_request->event,
-                                       events_request->event_by_id);
+      /* - if current context time > traceset.end time */
+      if(tfc == NULL || ltt_time_compare(tfc->timestamp,
+                                         tsc->time_span.end_time) > 0) {
+        /* - For each req in list_in */
+        GSList *iter = list_in;
+    
+        while(iter != NULL) {
 
-        /* - req.num -= count */
-        g_assert(events_request->num_events >= count);
-        events_request->num_events -= count;
-        
-        g_assert(tfc != NULL);
-        /* - if req.num == 0
-         *   or
-         *     current context time >= req.end time
-         *   or
-         *     req.end pos == current pos
-         *   or
-         *     req.stop_flag == TRUE
-         */
-        if(   events_request->num_events == 0
-            ||
-              events_request->stop_flag == TRUE
-            ||
-              ltt_time_compare(tfc->timestamp,
-                                       events_request->end_time) >= 0
-            ||
-                (events_request->end_position != NULL 
-               &&
-                lttv_traceset_context_ctx_pos_compare(tsc,
-                          events_request->end_position) == 0)
-
-            ) {
-          g_assert(events_request->servicing == TRUE);
-          /* - Call end request for req
-           * - remove req from list_in */
+          gboolean remove = FALSE;
+          gboolean free_data = FALSE;
+          EventsRequest *events_request = (EventsRequest *)iter->data;
+          
+          /* - Remove events hooks for req
+           * - Call end chunk for req
+           */
+          lttv_process_traceset_end(tsc, events_request->after_chunk_traceset,
+                                         events_request->after_chunk_trace,
+                                         events_request->after_chunk_tracefile,
+                                         events_request->event,
+                                         events_request->event_by_id);
+          /* - Call end request for req */
           lttv_hooks_call(events_request->after_request, (gpointer)tsc);
+          
           /* - remove req from list_in */
           /* Destroy the request */
           remove = TRUE;
           free_data = TRUE;
-        }
-        
-        /* Go to next */
-        if(remove)
-        {
-          GSList *remove_iter = iter;
 
-          iter = g_slist_next(iter);
-          if(free_data) events_request_free((EventsRequest*)remove_iter->data);
-          list_in = g_slist_remove_link(list_in, remove_iter);
-        } else { // not remove
-          iter = g_slist_next(iter);
+          /* Go to next */
+          if(remove)
+          {
+            GSList *remove_iter = iter;
+
+            iter = g_slist_next(iter);
+            if(free_data) events_request_free((EventsRequest*)remove_iter->data);
+            list_in = g_slist_remove_link(list_in, remove_iter);
+          } else { // not remove
+            iter = g_slist_next(iter);
+          }
+        }
+      }
+      {
+        /* 5.1 For each req in list_in */
+        GSList *iter = list_in;
+    
+        while(iter != NULL) {
+
+          gboolean remove = FALSE;
+          gboolean free_data = FALSE;
+          EventsRequest *events_request = (EventsRequest *)iter->data;
+          
+          /* - Remove events hooks for req
+           * - Call end chunk for req
+           */
+          lttv_process_traceset_end(tsc, events_request->after_chunk_traceset,
+                                         events_request->after_chunk_trace,
+                                         events_request->after_chunk_tracefile,
+                                         events_request->event,
+                                         events_request->event_by_id);
+
+          /* - req.num -= count */
+          g_assert(events_request->num_events >= count);
+          events_request->num_events -= count;
+          
+          g_assert(tfc != NULL);
+          /* - if req.num == 0
+           *   or
+           *     current context time >= req.end time
+           *   or
+           *     req.end pos == current pos
+           *   or
+           *     req.stop_flag == TRUE
+           */
+          if(   events_request->num_events == 0
+              ||
+                events_request->stop_flag == TRUE
+              ||
+                ltt_time_compare(tfc->timestamp,
+                                         events_request->end_time) >= 0
+              ||
+                  (events_request->end_position != NULL 
+                 &&
+                  lttv_traceset_context_ctx_pos_compare(tsc,
+                            events_request->end_position) == 0)
+
+              ) {
+            g_assert(events_request->servicing == TRUE);
+            /* - Call end request for req
+             * - remove req from list_in */
+            lttv_hooks_call(events_request->after_request, (gpointer)tsc);
+            /* - remove req from list_in */
+            /* Destroy the request */
+            remove = TRUE;
+            free_data = TRUE;
+          }
+          
+          /* Go to next */
+          if(remove)
+          {
+            GSList *remove_iter = iter;
+
+            iter = g_slist_next(iter);
+            if(free_data) events_request_free((EventsRequest*)remove_iter->data);
+            list_in = g_slist_remove_link(list_in, remove_iter);
+          } else { // not remove
+            iter = g_slist_next(iter);
+          }
         }
       }
     }
   }
-
   /* End of removed servicing loop : leave control to GTK instead. */
   //  if(gtk_events_pending()) break;
   //}
