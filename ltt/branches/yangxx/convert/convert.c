@@ -291,7 +291,11 @@ int main(int argc, char ** argv){
     size_lost = *(uint32_t*)(end_pos - sizeof(uint32_t));
 
     end_pos = buffer + block_size - size_lost ; //buffer_end event
-    tBufEnd = (trace_buffer_end*)(end_pos+sizeof(uint8_t)+sizeof(uint32_t));
+    if(ltt_log_cpu){
+      tBufEnd = (trace_buffer_end*)(end_pos + 2 * sizeof(uint8_t)+sizeof(uint32_t));
+    }else{
+      tBufEnd = (trace_buffer_end*)(end_pos+sizeof(uint8_t)+sizeof(uint32_t));
+    }
     end.seconds = tBufEnd->Time.tv_sec;
     end.nanoseconds = tBufEnd->Time.tv_usec;
     end.cycle_count = tBufEnd->TSC;
