@@ -19,12 +19,13 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
+#include <lttv/lttv.h>
+#include <lttvwindow/lttvwindow.h>
 
 #include "cfv.h"
 #include "drawing.h"
 #include "processlist.h"
 #include "eventhooks.h"
-#include <lttv/lttv.h>
 
 extern GSList *g_control_flow_data_list;
 

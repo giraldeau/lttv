@@ -104,6 +104,7 @@
 
 #include <lttv/tracecontext.h>
 #include <lttv/state.h>
+#include <lttv/lttv.h>
 
 #include "drawitem.h"
 
@@ -118,9 +119,7 @@ gboolean draw_text( void *hook_data, void *call_data)
 
   PangoContext *context;
   PangoLayout *layout;
-  PangoAttribute *attribute;
   PangoFontDescription *font_desc;// = pango_font_description_new();
-  gint font_size;
   PangoRectangle ink_rect;
     
   layout = draw_context->pango_layout;

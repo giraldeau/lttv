@@ -452,6 +452,7 @@ gtk_dir_selection_get_type (void)
 	sizeof (GtkDirSelection),
 	0,		/* n_preallocs */
 	(GInstanceInitFunc) gtk_dir_selection_init,
+  NULL  /* GValue */
       };
 
       file_selection_type =
@@ -2305,7 +2306,8 @@ gtk_dir_selection_file_changed (GtkTreeSelection *selection,
 	    index = new_names->len - 1;
 	  else
 	    {
-	      gint i = 0, j = 0, cmp;
+	      guint i = 0, j = 0;
+        gint cmp;
 
 	      /* do a quick diff, stopping at the first file not in the
 	       * old list
@@ -2425,7 +2427,8 @@ gtk_dir_selection_dir_changed (GtkTreeSelection *selection,
 	    index = new_names->len - 1;
 	  else
 	    {
-	      gint i = 0, j = 0, cmp;
+	      guint i = 0, j = 0;
+        gint cmp;
 
 	      /* do a quick diff, stopping at the first file not in the
 	       * old list
@@ -2483,7 +2486,7 @@ gtk_dir_selection_dir_changed (GtkTreeSelection *selection,
       gchar str[256];
       err = gtk_label_get_text (GTK_LABEL (fs->selection_text));
       err += 11;  //pass over "Selection: "
-      sprintf(str,"%s\0",err);
+      sprintf(str,"%s",err);
       
       
       if (fs->last_selected != NULL)
@@ -2535,7 +2538,7 @@ gtk_dir_selection_get_selections (GtkDirSelection *filesel)
   gchar **selections;
   gchar *filename, *dirname;
   gchar *current, *buf;
-  gint i, count;
+  guint i, count;
   gboolean unselected_entry;
 
   g_return_val_if_fail (GTK_IS_DIR_SELECTION (filesel), NULL);
@@ -2843,7 +2846,6 @@ cmpl_completion_matches (gchar           *text_to_complete,
 			 gchar          **remaining_text,
 			 CompletionState *cmpl_state)
 {
-  gchar* first_slash;
   PossibleCompletion *poss;
 
   prune_memory_usage (cmpl_state);
@@ -3163,18 +3165,16 @@ open_new_dir (gchar       *dir_name,
 
   for (i = 0; i < entry_count; i += 1)
     {
-      GError *error = NULL;
-
       if (i == 0)
-	dirent = ".";
+	      dirent = ".";
       else if (i == 1)
-	dirent = "..";
+       	dirent = "..";
       else
-	{
-	  dirent = g_dir_read_name (directory);
-	  if (!dirent)		/* Directory changed */
-	    break;
-	}
+      {
+        dirent = g_dir_read_name (directory);
+        if (!dirent)		/* Directory changed */
+          break;
+	    }
 
       sent->entries[n_entries].entry_name = g_filename_to_utf8 (dirent, -1, NULL, NULL, &error);
       if (sent->entries[n_entries].entry_name == NULL
@@ -4038,8 +4038,8 @@ compare_cmpl_dir (const void *a,
 		  const void *b)
 {
   
-  return strcmp (((CompletionDirEntry*)a)->sort_key,
-		 (((CompletionDirEntry*)b))->sort_key);
+  return strcmp (((const CompletionDirEntry*)a)->sort_key,
+		 (((const CompletionDirEntry*)b))->sort_key);
 }
 
 static gint

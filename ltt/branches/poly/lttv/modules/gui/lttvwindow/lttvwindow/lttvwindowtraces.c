@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <string.h>
 
 #include <ltt/time.h>
 #include <ltt/trace.h>
@@ -65,7 +66,6 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace);
 
 LttvTrace *lttvwindowtraces_get_trace_by_name(gchar *path)
 {
-  LttvAttribute *attribute = lttv_global_attributes();
   guint i;
 
   for(i=0;i<lttvwindowtraces_get_number();i++) {
@@ -829,7 +829,6 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   LttvAttributeValue value;
   LttvAttributeType type;
   gboolean ret_val;
-  LttvHooks *before_request, *after_request;
 
   if(trace == NULL)
     return FALSE;
@@ -957,7 +956,6 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
                                              &value);
           g_assert(type == LTTV_POINTER);
           LttvHooks *before_request = (LttvHooks*)*(value.v_pointer);
-
  
           if(before_request != NULL) lttv_hooks_call(before_request, tsc);
           

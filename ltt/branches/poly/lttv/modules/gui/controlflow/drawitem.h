@@ -120,7 +120,7 @@ struct _DrawOperation {
   DrawableItems item;
   LttvHooks *hook;
 };
-
+#if 0
 /*
  * We define here each items that can be drawn, together with their
  * associated priority. Many item types can have the same priority,
@@ -138,6 +138,7 @@ static int Items_Priorities[] = {
   30, /* ITEM_POINT */
   10  /* ITEM_BACKGROUND */
 };
+#endif //0
 
 /*
  * Here are the different structures describing each item type that can be

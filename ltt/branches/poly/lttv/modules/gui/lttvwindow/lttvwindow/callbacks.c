@@ -386,7 +386,7 @@ static void connect_focus_recursive(GtkWidget *widget,
 
   }
   if(GTK_IS_TREE_VIEW(widget)) {
-    gtk_tree_view_set_headers_clickable(widget, TRUE);
+    gtk_tree_view_set_headers_clickable(GTK_TREE_VIEW(widget), TRUE);
   }
   gtk_widget_add_events(widget, GDK_BUTTON_PRESS_MASK);
   g_signal_connect (G_OBJECT(widget),
@@ -403,10 +403,7 @@ static void connect_focus_recursive(GtkWidget *widget,
 void
 insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data)
 {
-  guint val = 20;
-
   insert_viewer((GtkWidget*)menuitem, (lttvwindow_viewer_constructor)user_data);
-  //  selected_hook(&val);
 }
 
 
@@ -669,7 +666,7 @@ MainWindow * get_window_data_struct(GtkWidget * widget)
   
   mw_data = (MainWindow *) g_object_get_data(G_OBJECT(mw),"main_window_data");
   if(mw_data == NULL){
-    g_printf("Main window data does not exist\n");
+    g_warning("Main window data does not exist\n");
     return NULL;
   }
   return mw_data;
@@ -726,7 +723,8 @@ gint viewer_container_position(GtkWidget *container, GtkWidget *child)
   if(child == NULL) return -1;
 
   gint pos;
-  GValue value = { 0, };
+  GValue value;
+  memset(&value, 0, sizeof(GValue));
   g_value_init(&value, G_TYPE_INT);
   gtk_container_child_get_property(GTK_CONTAINER(container),
                                    child,
@@ -936,9 +934,6 @@ static void events_request_free(EventsRequest *events_request)
 
 gboolean lttvwindow_process_pending_requests(Tab *tab)
 {
-  unsigned max_nb_events;
-  GdkWindow * win;
-  GdkCursor * new;
   GtkWidget* widget;
   LttvTracesetContext *tsc;
   LttvTracefileContext *tfc;
@@ -1052,7 +1047,6 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
           ltime = g_slist_append(ltime, g_slist_nth_data(list_out, 0));
         for(iter=g_slist_nth(list_out,1);iter!=NULL;iter=g_slist_next(iter)) {
           /* Find all time requests with the lowest start time in list_out */
-          guint index_ltime = g_array_index(ltime, guint, 0);
           EventsRequest *event_request_ltime = (EventsRequest*)g_slist_nth_data(ltime, 0);
           EventsRequest *event_request_list_out = (EventsRequest*)iter->data;
 
@@ -1236,7 +1230,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                 events_request->event_by_id);
           else {
             guint nb_trace = lttv_traceset_number(tsc->ts);
-            g_assert(events_request->trace < nb_trace &&
+            g_assert((guint)events_request->trace < nb_trace &&
                       events_request->trace > -1);
             LttvTraceContext *tc = tsc->traces[events_request->trace];
 
@@ -1273,7 +1267,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                 events_request->event_by_id);
           else {
             guint nb_trace = lttv_traceset_number(tsc->ts);
-            g_assert(events_request->trace < nb_trace &&
+            g_assert((guint)events_request->trace < nb_trace &&
                       events_request->trace > -1);
             LttvTraceContext *tc = tsc->traces[events_request->trace];
 
@@ -1337,7 +1331,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                   events_request->event_by_id);
             else {
               guint nb_trace = lttv_traceset_number(tsc->ts);
-              g_assert(events_request->trace < nb_trace &&
+              g_assert((guint)events_request->trace < nb_trace &&
                         events_request->trace > -1);
               LttvTraceContext *tc = tsc->traces[events_request->trace];
 
@@ -1450,7 +1444,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 
     {
       /* 4. Call process traceset middle */
-      g_debug("Calling process traceset middle with %p, %lu sec %lu nsec, %lu nb ev, %p end pos", tsc, end_time.tv_sec, end_time.tv_nsec, end_nb_events, end_position);
+      g_debug("Calling process traceset middle with %p, %lu sec %lu nsec, %u nb ev, %p end pos", tsc, end_time.tv_sec, end_time.tv_nsec, end_nb_events, end_position);
       count = lttv_process_traceset_middle(tsc, end_time, end_nb_events, end_position);
 
       tfc = lttv_traceset_context_get_current_tfc(tsc);
@@ -1829,7 +1823,6 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   const char * dir;
   char abs_path[PATH_MAX];
   gint id;
-  gint i;
   MainWindow * mw_data = get_window_data_struct(widget);
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
 
@@ -2259,7 +2252,7 @@ void zoom(GtkWidget * widget, double size)
 {
   TimeInterval time_span;
   TimeWindow new_time_window;
-  LttTime    current_time, time_delta, time_s, time_e, time_tmp;
+  LttTime    current_time, time_delta;
   MainWindow * mw_data = get_window_data_struct(widget);
   LttvTracesetContext *tsc;
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
@@ -2742,7 +2735,7 @@ on_load_library_activate                (GtkMenuItem     *menuitem,
         lttv_module_require(str1, &error);
 #endif //0   
         lttv_library_load(str1, &error);
-        if(error != NULL) g_warning(error->message);
+        if(error != NULL) g_warning("%s", error->message);
         else g_printf("Load library: %s\n", str);
         g_strfreev(dir);
       case GTK_RESPONSE_REJECT:
@@ -2769,40 +2762,39 @@ on_unload_library_activate              (GtkMenuItem     *menuitem,
 {
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
 
-  LttvLibrary *library;
-  {
-    GPtrArray *name;
-    guint nb,i;
-    gchar *lib_name;
-    name = g_ptr_array_new();
-    nb = lttv_library_number();
-    LttvLibraryInfo *lib_info = g_new(LttvLibraryInfo,nb);
-    /* ask for the library name */
+  LttvLibrary *library = NULL;
 
+  GPtrArray *name;
+  guint nb,i;
+  gchar *lib_name;
+  name = g_ptr_array_new();
+  nb = lttv_library_number();
+  LttvLibraryInfo *lib_info = g_new(LttvLibraryInfo,nb);
+  /* ask for the library name */
+
+  for(i=0;i<nb;i++){
+    LttvLibrary *iter_lib = lttv_library_get(i);
+    lttv_library_info(iter_lib, &lib_info[i]);
+    
+    gchar *path = lib_info[i].name;
+    g_ptr_array_add(name, path);
+  }
+  lib_name = get_selection((char **)(name->pdata), name->len,
+                           "Select a library", "Libraries");
+  if(lib_name != NULL) {
     for(i=0;i<nb;i++){
-      LttvLibrary *iter_lib = lttv_library_get(i);
-      lttv_library_info(iter_lib, &lib_info[i]);
-      
-      gchar *path = lib_info[i].name;
-      g_ptr_array_add(name, lib_info[i].name);
-    }
-    lib_name = get_selection((char **)(name->pdata), name->len,
-                             "Select a library", "Libraries");
-    if(lib_name != NULL) {
-      for(i=0;i<nb;i++){
-        if(strcmp(lib_name, lib_info[i].name) == 0) {
-          library = lttv_library_get(i);
-          break;
-        }
+      if(strcmp(lib_name, lib_info[i].name) == 0) {
+        library = lttv_library_get(i);
+        break;
       }
     }
-    g_ptr_array_free(name, TRUE);
-    g_free(lib_info);
-
-    if(lib_name == NULL) return;
   }
-  
-  lttv_library_unload(library);
+  g_ptr_array_free(name, TRUE);
+  g_free(lib_info);
+
+  if(lib_name == NULL) return;
+
+  if(library != NULL) lttv_library_unload(library);
 }
 
 
@@ -2817,7 +2809,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
   GError *error = NULL;
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
 
-  LttvLibrary *library;
+  LttvLibrary *library = NULL;
   {
     GPtrArray *name;
     guint nb,i;
@@ -2888,8 +2880,8 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
   }
   
   lttv_module_require(module_name_out, &error);
-  if(error != NULL) g_warning(error->message);
-  else g_printf("Load module: %s\n", module_name_out);
+  if(error != NULL) g_warning("%s", error->message);
+  else g_printf("Load module: %s", module_name_out);
 
 
 #if 0
@@ -2997,7 +2989,7 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
     if(lib_name == NULL) return;
   }
 
-  LttvModule *module;
+  LttvModule *module = NULL;
   {
     /* Ask for the module to load : list modules in the selected lib */
     GPtrArray *name;
@@ -3397,11 +3389,6 @@ on_MWindow_configure                   (GtkWidget         *widget,
                                         gpointer           user_data)
 {
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)widget);
-  float width = event->width;
-  TimeWindow time_win;
-  double ratio;
-  TimeInterval *time_span;
-  LttTime time;
 	
 	// MD : removed time width modification upon resizing of the main window.
 	// The viewers will redraw themselves completely, without time interval
@@ -4230,10 +4217,11 @@ char * get_selection(char ** loaded_module_name, int nb_module,
   }
 
   id = gtk_dialog_run(GTK_DIALOG(dialogue));
+  GtkTreeModel **store_model = &store;  /* for strict aliasing */
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
-      if (gtk_tree_selection_get_selected (select, (GtkTreeModel**)&store, &iter)){
+      if (gtk_tree_selection_get_selected (select, store_model, &iter)){
 	  gtk_tree_model_get ((GtkTreeModel*)store, &iter, MODULE_COLUMN, &unload_module_name, -1);
       }
     case GTK_RESPONSE_REJECT:
@@ -4254,7 +4242,7 @@ char * get_selection(char ** loaded_module_name, int nb_module,
 
 void add_all_menu_toolbar_constructors(MainWindow * mw, gpointer user_data)
 {
-  int i;
+  guint i;
   GdkPixbuf *pixbuf;
   lttvwindow_viewer_constructor constructor;
   LttvMenus * global_menu, * instance_menu;
@@ -4527,7 +4515,6 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
 {
   GList * list;
   Tab * tab;
-  LttTime tmp_time;
   
   //create a new tab data structure
   tab = g_new(Tab,1);

@@ -712,4 +712,29 @@ LttvTracesetStats* lttvwindow_get_traceset_stats(Tab *tab);
 LttvTracesetContext* lttvwindow_get_traceset_context(Tab *tab);
 
 
+/* set_time_window 
+ *
+ * It updates the time window of the tab, then calls the updatetimewindow
+ * hooks of each viewer.
+ *
+ * This is called whenever the scrollbar value changes.
+ *
+ * This is mostly an internal function.
+ */
+
+void set_time_window(Tab *tab, const TimeWindow *time_window);
+
+
+/* set_current_time
+ *
+ * It updates the current time of the tab, then calls the updatetimewindow
+ * hooks of each viewer.
+ *
+ * This is called whenever the current time value changes.
+ *
+ * This is mostly an internal function.
+ */
+
+void set_current_time(Tab *tab, const LttTime *current_time);
+
 #endif //VIEWER_H

@@ -141,8 +141,6 @@ gint background_ready(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData *)hook_data;
   LttvTrace *trace = (LttvTrace*)call_data;
-  LttvTracesetContext *tsc =
-        lttvwindow_get_traceset_context(control_flow_data->tab);
 
   control_flow_data->background_info_waiting--;
   
@@ -266,6 +264,7 @@ int event_selected_hook(void *hook_data, void *call_data)
 
   g_debug("DEBUG : event selected by main window : %u", *event_number);
   
+  return 0;
 }
 
 /* Function that selects the color of status&exemode line */
@@ -461,12 +460,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
        * We definitely can draw the items related to the ending state.
        */
       
-      /* Check if the x position is unset. In can have been left unset by
-       * a draw closure from a after chunk hook. This should never happen,
-       * because it must be set by before chunk hook to the damage_begin
-       * value.
-       */
-      g_assert(hashed_process_data->x.middle != -1);
       if(ltt_time_compare(hashed_process_data->next_good_time,
                           evtime) > 0)
       {
@@ -633,13 +626,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
        * We definitely can draw the items related to the ending state.
        */
       
-      /* Check if the x position is unset. In can have been left unset by
-       * a draw closure from a after chunk hook. This should never happen,
-       * because it must be set by before chunk hook to the damage_begin
-       * value.
-       */
-      g_assert(hashed_process_data->x.middle != -1);
-
       if(ltt_time_compare(hashed_process_data->next_good_time,
                           evtime) > 0)
       {
@@ -1388,9 +1374,9 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   LttTime evtime = ltt_event_time(e);
 
   /* Add process to process list (if not present) */
-  LttvProcessState *process_out, *process_in;
+  LttvProcessState *process_in;
   LttTime birth;
-  guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
+  guint y_in = 0, height = 0, pl_height = 0;
   HashedProcessData *hashed_process_data_in = NULL;
 
   ProcessList *process_list = control_flow_data->process_list;
@@ -2058,13 +2044,6 @@ int before_execmode_hook(void *hook_data, void *call_data)
   /* Now, the process is in the state hash and our own process hash.
    * We definitely can draw the items related to the ending state.
    */
-  
-  /* Check if the x position is unset. In can have been left unset by
-   * a draw closure from a after chunk hook. This should never happen,
-   * because it must be set by before chunk hook to the damage_begin
-   * value.
-   */
-  g_assert(hashed_process_data->x.over != -1);
 
   if(likely(ltt_time_compare(hashed_process_data->next_good_time,
                       evtime) > 0))
@@ -2382,13 +2361,6 @@ int before_process_hook(void *hook_data, void *call_data)
      * We definitely can draw the items related to the ending state.
      */
     
-    /* Check if the x position is unset. In can have been left unset by
-     * a draw closure from a after chunk hook. This should never happen,
-     * because it must be set by before chunk hook to the damage_begin
-     * value.
-     */
-    g_assert(hashed_process_data->x.over != -1);
-
     if(likely(ltt_time_compare(hashed_process_data->next_good_time,
                         evtime) > 0))
     {
@@ -2750,13 +2722,13 @@ gint update_time_window_hook(void *hook_data, void *call_data)
    * currently shown time interval. (reuse is only for scrolling)
    */
 
-  g_info("Old time window HOOK : %u, %u to %u, %u",
+  g_info("Old time window HOOK : %lu, %lu to %lu, %lu",
       old_time_window->start_time.tv_sec,
       old_time_window->start_time.tv_nsec,
       old_time_window->time_width.tv_sec,
       old_time_window->time_width.tv_nsec);
 
-  g_info("New time window HOOK : %u, %u to %u, %u",
+  g_info("New time window HOOK : %lu, %lu to %lu, %lu",
       new_time_window->start_time.tv_sec,
       new_time_window->start_time.tv_nsec,
       new_time_window->time_width.tv_sec,
@@ -2946,7 +2918,6 @@ gint traceset_notify(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
   Drawing_t *drawing = control_flow_data->drawing;
-  GtkWidget *widget = drawing->drawing_area;
 
 
   drawing_clear(control_flow_data->drawing);
@@ -2954,24 +2925,6 @@ gint traceset_notify(void *hook_data, void *call_data)
   redraw_notify(control_flow_data, NULL);
 
   request_background_data(control_flow_data);
-#if 0
-  drawing->damage_begin = 0;
-  drawing->damage_end = drawing->width;
-  if(drawing->damage_begin < drawing->damage_end)
-  {
-    drawing_data_request(drawing,
-                         &drawing->pixmap,
-                         drawing->damage_begin,
-                         0,
-                         drawing->damage_end-drawing->damage_begin,
-                         drawing->height);
-  }
-
-  gtk_widget_queue_draw_area(drawing->drawing_area,
-                             0,0,
-                             drawing->width,
-                             drawing->height);
-#endif //0
  
   return FALSE;
 }
@@ -3021,7 +2974,6 @@ gint continue_notify(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
   Drawing_t *drawing = control_flow_data->drawing;
-  GtkWidget *widget = drawing->drawing_area;
 
   //g_assert(widget->allocation.width == drawing->damage_end);
 
@@ -3065,7 +3017,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
   LttTime trace_start = tsc->time_span.start_time;
   LttTime trace_end = tsc->time_span.end_time;
   
-  g_info("New current time HOOK : %u, %u", current_time.tv_sec,
+  g_info("New current time HOOK : %lu, %lu", current_time.tv_sec,
               current_time.tv_nsec);
 
 
@@ -3168,9 +3120,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
       
       /* Only draw for processes that are currently in the trace states */
 
-      guint y = 0, height = 0, pl_height = 0;
+      guint y = 0, height = 0;
       ProcessList *process_list = control_flow_data->process_list;
-      LttTime birth = process_info->birth;
 #ifdef EXTRA_CHECK
       /* Should be alike when background info is ready */
       if(control_flow_data->background_info_waiting==0)
@@ -3187,13 +3138,6 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
        * We definitely can draw the items related to the ending state.
        */
       
-      /* Check if the x position is unset. In can have been left unset by
-       * a draw closure from a after chunk hook. This should never happen,
-       * because it must be set by before chunk hook to the damage_begin
-       * value.
-       */
-      g_assert(hashed_process_data->x.over != -1);
-
       if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
                             evtime) <= 0))
       {
@@ -3316,7 +3260,6 @@ int after_request(void *hook_data, void *call_data)
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
   LttvTracesetState *tss = (LttvTracesetState*)call_data;
-  LttvTracesetContext *tsc = (LttvTracesetContext*)call_data;
   
   ProcessList *process_list = control_flow_data->process_list;
   LttTime end_time = events_request->end_time;

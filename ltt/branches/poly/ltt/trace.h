@@ -173,5 +173,6 @@ LttTracefile *ltt_tracefile_new();
 void ltt_tracefile_destroy(LttTracefile *tf);
 void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src);
 
+void get_absolute_pathname(const char *pathname, char * abs_pathname);
 
 #endif // TRACE_H

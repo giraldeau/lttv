@@ -20,6 +20,8 @@
 #include <gdk/gdk.h>
 #include <string.h>
 
+#include <ltt/trace.h>
+
 #include <lttv/lttv.h>
 #include <lttv/tracecontext.h>
 #include <lttvwindow/lttvwindow.h>
@@ -126,13 +128,13 @@ void drawing_data_request(Drawing_t *drawing,
   LttTime start, time_end;
   LttTime window_end = time_window.end_time;
 
-  g_debug("req : window start_time : %u, %u", time_window.start_time.tv_sec, 
+  g_debug("req : window start_time : %lu, %lu", time_window.start_time.tv_sec, 
                                        time_window.start_time.tv_nsec);
 
-  g_debug("req : window time width : %u, %u", time_window.time_width.tv_sec, 
+  g_debug("req : window time width : %lu, %lu", time_window.time_width.tv_sec, 
                                        time_window.time_width.tv_nsec);
   
-  g_debug("req : window_end : %u, %u", window_end.tv_sec, 
+  g_debug("req : window_end : %lu, %lu", window_end.tv_sec, 
                                        window_end.tv_nsec);
 
   g_debug("x is : %i, x+width is : %i", x, x+width);
@@ -165,8 +167,6 @@ void drawing_data_request(Drawing_t *drawing,
     GArray *hooks;
 
     LttvTraceHook hook;
-
-    LttvAttributeValue val;
 
     nb_trace = lttv_traceset_number(traceset);
     // FIXME : eventually request for more traces
@@ -335,10 +335,10 @@ void drawing_data_request(Drawing_t *drawing,
       events_request->before_request = before_request_hook;
       events_request->after_request = after_request_hook;
 
-      g_debug("req : start : %u, %u", start.tv_sec, 
+      g_debug("req : start : %lu, %lu", start.tv_sec, 
                                           start.tv_nsec);
 
-      g_debug("req : end : %u, %u", time_end.tv_sec, 
+      g_debug("req : end : %lu, %lu", time_end.tv_sec, 
                                          time_end.tv_nsec);
 
       lttvwindow_events_request(tab, events_request);
@@ -404,7 +404,6 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
   TimeWindow time_window = 
     lttvwindow_get_time_window(cfd->tab);
-  LttTime end_time = time_window.end_time;
 
   guint width = cfd->drawing->width;
   guint x=0;
@@ -427,7 +426,7 @@ void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
   g_debug("Begin of chunk");
   ControlFlowData *cfd = events_request->viewer_data;
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
-  LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
+  //LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
   guint num_cpu = 
     ltt_trace_per_cpu_tracefile_number(tss->parent.traces[TRACE_NUMBER]->t);
 
@@ -446,7 +445,7 @@ void drawing_request_expose(EventsRequest *events_request,
   gint x, x_end, width;
 
   ControlFlowData *cfd = events_request->viewer_data;
-  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
+  LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
   Drawing_t *drawing = cfd->drawing;
   
   TimeWindow time_window = 
@@ -454,37 +453,17 @@ void drawing_request_expose(EventsRequest *events_request,
 
   g_debug("request expose");
   
-  LttTime window_end = time_window.end_time;
-
-#if 0
-  convert_time_to_pixels(
-        time_window,
-        cfd->drawing->last_start,
-        drawing->width,
-        &x);
-
-#endif //0
   convert_time_to_pixels(
         time_window,
         end_time,
         drawing->width,
         &x_end);
   x = drawing->damage_begin;
- // x_end = drawing->damage_end;
+
   width = x_end - x;
 
   drawing->damage_begin = x+width;
-  //drawing->damage_end = drawing->width;
 
-  /* ask for the buffer to be redrawn */
-
-  //gtk_widget_queue_draw_area ( drawing->drawing_area,
-  //                             0, 0,
-  //                             drawing->width, drawing->height);
-
-  /* FIXME
-   * will need more precise pixel_to_time and time_to_pixel conversion
-   * functions to redraw only the needed area. */
   gtk_widget_queue_draw_area ( drawing->drawing_area,
                                x, 0,
                                width, drawing->height);
@@ -700,9 +679,6 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
   if(event->button == 1)
   {
     LttTime time;
-
-    LttTime window_end = time_window.end_time;
-
 
     /* left mouse button click */
     g_debug("x click is : %f", event->x);
@@ -1034,7 +1010,7 @@ void drawing_remove_square(Drawing_t *drawing,
 {
   GdkPixmap *pixmap;
 
-  if(unlikely(drawing->height == height)) {
+  if(unlikely((guint)drawing->height == height)) {
     pixmap = gdk_pixmap_new(
         drawing->drawing_area->window,
         drawing->width + SAFETY,
@@ -1111,11 +1087,9 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   
   PangoContext *context;
   PangoLayout *layout;
-  PangoAttribute *attribute;
   PangoFontDescription *FontDesc;
-  gint Font_Size;
   PangoRectangle ink_rect;
-  guint global_width=0;
+  gint global_width=0;
   GdkColor foreground = { 0, 0, 0, 0 };
   GdkColor background = { 0, 0xffff, 0xffff, 0xffff };
 

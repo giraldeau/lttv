@@ -37,14 +37,11 @@ LttvToolbarClosure lttv_toolbars_add(LttvToolbars *h,
 {
   LttvToolbarClosure c;
 
-  /* if h is null, do nothing, or popup a warning message */
-  if(h == NULL)return;
-
   c.con = f;
   c.tooltip = tooltip;
   c.pixmap = pixmap;
   c.widget = widget;
-  g_array_append_val(h,c);
+  if(h != NULL) g_array_append_val(h,c);
 
   return c;
 }
@@ -52,7 +49,7 @@ LttvToolbarClosure lttv_toolbars_add(LttvToolbars *h,
 GtkWidget *lttv_toolbars_remove(LttvToolbars *h, lttvwindow_viewer_constructor f)
 {
   LttvToolbarClosure * tmp;
-  gint i;
+  guint i;
   GtkWidget *widget;
 
   for(i=0;i<h->len;i++){

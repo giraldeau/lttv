@@ -47,13 +47,8 @@
 
 #include "hGuiControlFlowInsert.xpm"
 
-static LttvModule *Main_Win_Module;
-
-
 /** Array containing instanced objects. Used when module is unloaded */
 GSList *g_control_flow_data_list = NULL ;
-
-
 
 
 /*****************************************************************************
@@ -94,7 +89,6 @@ void destroy_walk(gpointer data, gpointer user_data)
  */
 static void destroy() {
   g_info("GUI Control Flow Viewer destroy()");
-  int i;
 
   g_slist_foreach(g_control_flow_data_list, destroy_walk, NULL );
   

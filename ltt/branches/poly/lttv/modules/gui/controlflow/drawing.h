@@ -118,6 +118,13 @@ void drawing_destroy(Drawing_t *drawing);
 GtkWidget *drawing_get_widget(Drawing_t *drawing);
 GtkWidget *drawing_get_drawing_area(Drawing_t *drawing);
 
+
+void drawing_data_request(Drawing_t *drawing,
+      GdkPixmap **pixmap,
+      gint x, gint y,
+      gint width,
+      gint height);
+
 void drawing_draw_line( Drawing_t *drawing,
       GdkPixmap *pixmap,
       guint x1, guint y1,

@@ -145,8 +145,6 @@ static inline HashedProcessData *processlist_get_process_data(
           guint pid, guint cpu, LttTime *birth, guint trace_num)
 {
   ProcessInfo process_info;
-  gint *path_indices;
-  GtkTreePath *tree_path;
 
   process_info.pid = pid;
   if(pid == 0)

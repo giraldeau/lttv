@@ -235,8 +235,8 @@ gint process_sort_func  ( GtkTreeModel *model,
 
 static guint process_list_hash_fct(gconstpointer key)
 {
-  guint pid = ((ProcessInfo*)key)->pid;
-  return ((pid>>8 ^ pid>>4 ^ pid>>2 ^ pid) ^ ((ProcessInfo*)key)->cpu);
+  guint pid = ((const ProcessInfo*)key)->pid;
+  return ((pid>>8 ^ pid>>4 ^ pid>>2 ^ pid) ^ ((const ProcessInfo*)key)->cpu);
 }
 
 /* If hash is good, should be different */
@@ -534,7 +534,6 @@ int processlist_remove( ProcessList *process_list,
       guint trace_num)
 {
   ProcessInfo process_info;
-  gint *path_indices;
   HashedProcessData *hashed_process_data;
   GtkTreeIter iter;
   

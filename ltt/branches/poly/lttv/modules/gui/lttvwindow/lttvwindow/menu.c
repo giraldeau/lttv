@@ -38,14 +38,11 @@ LttvMenuClosure lttv_menus_add(LttvMenus *h,
 {
   LttvMenuClosure c;
 
-  /* if h is null, do nothing, or popup a warning message */
-  if(h == NULL)return;
-
   c.con = f;
   c.menu_path = menu_path;
   c.menu_text = menu_text;
   c.widget = widget;
-  g_array_append_val(h,c);
+  if(h != NULL) g_array_append_val(h,c);
 
   return c;
 }
@@ -53,7 +50,7 @@ LttvMenuClosure lttv_menus_add(LttvMenus *h,
 GtkWidget *lttv_menus_remove(LttvMenus *h, lttvwindow_viewer_constructor f)
 {
   LttvMenuClosure * tmp;
-  gint i;
+  guint i;
   GtkWidget *widget;
   
   for(i=0;i<h->len;i++){
