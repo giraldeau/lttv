@@ -394,6 +394,8 @@ gui_events(MainWindow *parent_window)
 
   /* Create vertical scrollbar and pack it */
   event_viewer_data->vscroll_vc = gtk_vscrollbar_new(NULL);
+  gtk_range_set_update_policy (GTK_RANGE(event_viewer_data->vscroll_vc),
+			       GTK_UPDATE_DISCONTINUOUS);
   gtk_box_pack_start(GTK_BOX(event_viewer_data->hbox_v), event_viewer_data->vscroll_vc, FALSE, TRUE, 0);
   
   /* Get the vertical scrollbar's adjustment */
