@@ -402,10 +402,10 @@ void copy_pixmap_to_screen(ProcessList *process_list,
     gint x, gint y,
     gint width, gint height)
 {
-  gint cell_height = 
-     get_cell_height(process_list, 
-                     (GtkTreeView*)process_list->process_list_widget);
-  cell_height = 24; //FIXME
+  if(process_list->index_to_pixmap->len == 0) return;
+  guint cell_height = process_list->cell_height;
+
+  //cell_height = 24; //FIXME
   /* Get indexes */
   gint begin = floor(y/(double)cell_height);
   gint end = MIN(ceil((y+height)/(double)cell_height),
@@ -490,6 +490,16 @@ ProcessList *processlist_construct(void)
    * cell_renderer to the first column of the model */
   /* Columns alignment : 0.0 : Left    0.5 : Center   1.0 : Right */
   renderer = gtk_cell_renderer_text_new ();
+  process_list->renderer = renderer;
+
+  gtk_cell_renderer_get_size(renderer,
+      GTK_WIDGET(process_list->process_list_widget),
+      NULL,
+      NULL,
+      NULL,
+      NULL,
+      &process_list->cell_height);
+  
   column = gtk_tree_view_column_new_with_attributes ( "Process",
                 renderer,
                 "text",
@@ -680,16 +690,19 @@ int processlist_add(  ProcessList *process_list,
         BIRTH_NS_COLUMN, birth->tv_nsec,
         TRACE_COLUMN, trace_num,
         -1);
-
+  //gtk_tree_view_set_model(GTK_TREE_VIEW(process_list->process_list_widget),
+  //                        GTK_TREE_MODEL(process_list->list_store));
+  //gtk_container_resize_children(GTK_CONTAINER(process_list->process_list_widget));
+  
   g_hash_table_insert(process_list->process_hash,
         (gpointer)Process_Info,
         (gpointer)hashed_process_data);
   
   process_list->number_of_process++;
 
-  hashed_process_data->height = get_cell_height(process_list,
-                        (GtkTreeView*)process_list->process_list_widget);
-  hashed_process_data->height = 24; // FIXME
+  hashed_process_data->height = process_list->cell_height;
+
+  //hashed_process_data->height = 24; // FIXME
   g_assert(hashed_process_data->height != 0);
 
   *height = hashed_process_data->height * process_list->number_of_process;

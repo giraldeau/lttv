@@ -83,12 +83,13 @@ struct _ProcessList {
   GtkWidget *process_list_widget;
   GtkListStore *list_store;
   GtkWidget *button; /* one button of the tree view */
+  GtkCellRenderer *renderer;
 
   /* A hash table by PID to speed up process position find in the list */
   GHashTable *process_hash;
   
   guint number_of_process;
-  gint cell_height_cache;
+  gint cell_height;
 
   /* Current process, one per cpu */
   HashedProcessData **current_hash_data;
@@ -149,27 +150,9 @@ void copy_pixmap_to_screen(ProcessList *process_list,
 
 
 
-static inline gint get_cell_height(ProcessList *process_list,
-                                   GtkTreeView *tree_view)
-{
-  gint height = process_list->cell_height_cache;
-  if(height != -1) return height;
-  else {
-    GtkTreeViewColumn *Column = gtk_tree_view_get_column(tree_view, 0);
-  
-    gtk_tree_view_column_cell_get_size(Column, NULL, NULL, NULL, NULL,
-                                       &process_list->cell_height_cache);
-  }
-  return process_list->cell_height_cache;
-}
-
-
-
 static inline guint processlist_get_height(ProcessList *process_list)
 {
-  return get_cell_height(process_list,
-                         (GtkTreeView*)process_list->process_list_widget)
-        * process_list->number_of_process ;
+  return process_list->cell_height * process_list->number_of_process ;
 }
 
 
