@@ -1029,7 +1029,7 @@ LttTime lttv_traceset_context_position_get_time(
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(LttvTracesetContext *self)
 {
   GTree *pqueue = self->pqueue;
-  LttvTracefileContext *tfc;
+  LttvTracefileContext *tfc = NULL;
 
   g_tree_foreach(pqueue, get_first, &tfc);
 

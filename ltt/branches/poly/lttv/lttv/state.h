@@ -65,8 +65,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self);
 void lttv_state_remove_event_hooks(LttvTracesetState *self);
 
 void lttv_state_save_add_event_hooks(LttvTracesetState *self);
+// Hook wrapper. call_data is a trace context.
+gint lttv_state_save_hook_add_event_hooks(void *hook_data, void *call_data);
 
 void lttv_state_save_remove_event_hooks(LttvTracesetState *self);
+// Hook wrapper. call_data is a trace context.
+gint lttv_state_save_hook_remove_event_hooks(void *hook_data, void *call_data);
 
 void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t);
 

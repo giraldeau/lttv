@@ -448,7 +448,8 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     if(*(value.v_pointer) == NULL) tfcs->parent.e = NULL;
     else {
       ep = *(value.v_pointer);
-      lttv_process_tracefile_seek_position(tfcs->parent, ep);
+      g_assert(tfcs->parent.t_context != NULL);
+      lttv_process_tracefile_seek_position(LTTV_TRACEFILE_CONTEXT(tfcs), ep);
     }
   }
 }
@@ -1233,6 +1234,15 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
   }
 }
 
+gint lttv_state_save_hook_add_event_hooks(void *hook_data, void *call_data)
+{
+  LttvTracesetState *tss = (LttvTracesetState*)(call_data);
+
+  lttv_state_save_add_event_hooks(tss);
+
+  return 0;
+}
+
 
 void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
 {
@@ -1268,6 +1278,14 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
   }
 }
 
+gint lttv_state_save_hook_remove_event_hooks(void *hook_data, void *call_data)
+{
+  LttvTracesetState *tss = (LttvTracesetState*)(call_data);
+
+  lttv_state_save_remove_event_hooks(tss);
+
+  return 0;
+}
 
 void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 {
