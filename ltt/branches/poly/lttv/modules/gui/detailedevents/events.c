@@ -1094,8 +1094,11 @@ static void get_data_wrapped(double time_value, guint list_height,
   if(!event_fields) event_fields = (EventFields*)g_list_nth_data(first,0);       
   time = ltt_time_sub(event_fields->time, time_span.start_time);
   event_viewer_data->vadjust_c->value = ltt_time_to_double(time) * NANOSECONDS_PER_SECOND;
-  g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->vadjust_c), "value-changed");
+  //gtk_adjustment_set_value(event_viewer_data->vadjust_c, 
+  //                         ltt_time_to_double(time) * NANOSECONDS_PER_SECOND);
+  //g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->vadjust_c), "value-changed");
   event_viewer_data->previous_value = event_viewer_data->vadjust_c->value;
+  //gtk_adjustment_value_changed(event_viewer_data->vadjust_c);
       }
     }
     
@@ -1491,9 +1494,13 @@ gboolean update_current_time(void * hook_data, void * call_data)
       }
       t = ltt_time_sub(data->time, time_span.start_time);
       event_viewer_data->vadjust_c->value = ltt_time_to_double(t) * NANOSECONDS_PER_SECOND;
-      g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->vadjust_c), "value-changed");
+      //gtk_adjustment_set_value(event_viewer_data->vadjust_c, 
+      //                         ltt_time_to_double(t) * NANOSECONDS_PER_SECOND);
+      //g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->vadjust_c), "value-changed");
       event_viewer_data->previous_value = event_viewer_data->vadjust_c->value;
-      insert_data_into_model(event_viewer_data,j, j+event_viewer_data->num_visible_events);      
+      insert_data_into_model(event_viewer_data,j, j+event_viewer_data->num_visible_events); 
+      //gtk_adjustment_value_changed(event_viewer_data->vadjust_c);
+
     }else{//the event is not in the buffer
       LttTime start = ltt_time_sub(*current_time, time_span.start_time);
       double position = ltt_time_to_double(start) * NANOSECONDS_PER_SECOND;
@@ -1683,7 +1690,7 @@ void get_events(EventViewerData* event_viewer_data, LttTime start,
                               event_viewer_data->event_hooks,
                               NULL);
 
-  lttv_process_traceset_middle(tsc, ltt_time_infinite, max_num_events, NULL);
+  lttv_process_traceset_middle(tsc, end, max_num_events, NULL);
 
   //remove_context_hooks(event_viewer_data,tsc);
   lttv_process_traceset_end(tsc,
