@@ -22,6 +22,8 @@ extern LttvTracesetContext * gTracesetContext;
 /** Array containing instanced objects. */
 extern GSList * Main_Window_List;
 
+static int gWinCount = 0;
+
 mainWindow * get_window_data_struct(GtkWidget * widget);
 char * get_unload_module(char ** loaded_module_name, int nb_module);
 void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label);
@@ -354,7 +356,8 @@ void
 on_quit_activate                       (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  on_MWindow_destroy(GTK_OBJECT(menuitem), user_data);
+  mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
+  mainWindow_Destructor(mwData);  
 }
 
 
@@ -700,9 +703,10 @@ on_MWindow_destroy                     (GtkObject       *object,
                                         gpointer         user_data)
 {
   g_printf("There are : %d windows\n",g_slist_length(Main_Window_List));
-  
-  gtk_main_quit ();
 
+  gWinCount--;
+  if(gWinCount == 0)
+    gtk_main_quit ();
 }
 
 
@@ -849,13 +853,13 @@ void insertMenuToolbarItem(mainWindow * mw)
 
 void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_data)
 {
-  systemView * sv = NULL; /* System view */
+  //  systemView * sv = NULL; /* System view */
   systemView * newSv;     /* New system view displayed in the new window */
   GtkWidget  * newWindow; /* New generated main window */
   mainWindow * newMWindow;/* New main window structure */
   GtkNotebook * notebook;
 
-  if(parent) sv = parent->SystemView;
+  //  if(parent) sv = parent->SystemView;
     
   newMWindow = g_new(mainWindow, 1);
 
@@ -866,10 +870,10 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
   gtk_widget_show (newWindow);
     
   newSv = g_new(systemView, 1);
-  if(sv){
-    while(sv->Next) sv = sv->Next;
-    sv->Next = newSv;
-  }
+  //  if(sv){
+  //    while(sv->Next) sv = sv->Next;
+  //    sv->Next = newSv;
+  //  }
 
   newSv->EventDB = NULL;
   newSv->SystemInfo = NULL;
@@ -907,6 +911,13 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
   //Use "Traceset" as the label for the default tab
   create_tab(newMWindow->MWindow, notebook,"Traceset");
 
+  g_object_set_data_full(
+			G_OBJECT(newMWindow->MWindow),
+			"Main_Window_Data",
+			newMWindow,
+			(GDestroyNotify)mainWindow_free);
+
+  gWinCount++;
 }
 
 void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label)

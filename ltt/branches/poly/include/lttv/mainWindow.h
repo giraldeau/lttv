@@ -48,8 +48,8 @@ struct _mainWindow{
 
 struct _systemView{
   gpointer             EventDB;
-  gpointer           * SystemInfo;
-  gpointer           * Options;
+  gpointer             SystemInfo;
+  gpointer             Options;
   mainWindow         * Window;
   struct _systemView * Next;
 };

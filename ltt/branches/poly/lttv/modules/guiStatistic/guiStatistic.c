@@ -138,18 +138,22 @@ G_MODULE_EXPORT void destroy() {
 void
 GuiStatistic_free(StatisticViewerData *Statistic_Viewer_Data)
 { 
-  g_hash_table_destroy(Statistic_Viewer_Data->Statistic_Hash);
-  gStatistic_Viewer_Data_List = g_slist_remove(gStatistic_Viewer_Data_List, Statistic_Viewer_Data);
-  g_warning("Delete Statistic data\n");
-  g_free(Statistic_Viewer_Data);
+  if(Statistic_Viewer_Data){
+    g_hash_table_destroy(Statistic_Viewer_Data->Statistic_Hash);
+    gStatistic_Viewer_Data_List = g_slist_remove(gStatistic_Viewer_Data_List, Statistic_Viewer_Data);
+    g_warning("Delete Statistic data\n");
+    g_free(Statistic_Viewer_Data);
+  }
 }
 
 void
 GuiStatistic_Destructor(StatisticViewerData *Statistic_Viewer_Data)
 {
   /* May already been done by GTK window closing */
-  if(GTK_IS_WIDGET(Statistic_Viewer_Data->HPaned_V))
+  if(GTK_IS_WIDGET(Statistic_Viewer_Data->HPaned_V)){
     gtk_widget_destroy(Statistic_Viewer_Data->HPaned_V);
+    Statistic_Viewer_Data = NULL;
+  }
   
   GuiStatistic_free(Statistic_Viewer_Data);
 }

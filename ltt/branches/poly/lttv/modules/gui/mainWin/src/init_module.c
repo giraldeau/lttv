@@ -28,6 +28,7 @@
 /* global variable */
 LttvTracesetStats * gTracesetContext = NULL;
 static LttvTraceset * traceset;
+WindowCreationData  gWinCreationData;
 
 /** Array containing instanced objects. */
 GSList * Main_Window_List = NULL ;
@@ -84,7 +85,6 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 
   if(!gTracesetContext){
     gTracesetContext = g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
-    //FIXME: lttv_context_fini should be called some where.
     lttv_context_init(LTTV_TRACESET_CONTEXT(gTracesetContext), traceset);
   }
 
@@ -101,7 +101,6 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
   LttvAttributeValue value;
-  WindowCreationData *Window_Creation_Data = g_new(WindowCreationData, 1);
   
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   
@@ -152,16 +151,69 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
       LTTV_POINTER, &value));
   g_assert((main_hooks = *(value.v_pointer)) != NULL);
 
-  Window_Creation_Data->argc = argc;
-  Window_Creation_Data->argv = argv;
+  gWinCreationData.argc = argc;
+  gWinCreationData.argv = argv;
   
-  lttv_hooks_add(main_hooks, Window_Creation_Hook, Window_Creation_Data);
+  lttv_hooks_add(main_hooks, Window_Creation_Hook, &gWinCreationData);
 
 }
 
+void
+free_system_view(systemView * SystemView)
+{
+  if(!SystemView)return;
+  //free_EventDB(SystemView->EventDB);
+  //free_SystemInfo(SystemView->SystemInfo);
+  //free_Options(SystemView->Options);
+  if(SystemView->Next)
+    free_system_view(SystemView->Next);
+  g_free(SystemView);
+}
+
+void free_tab(tab * Tab)
+{
+  if(!Tab) return;
+  if(Tab->custom->vbox)
+    gtk_widget_destroy(Tab->custom->vbox);
+  if(Tab->Attributes)
+    g_object_unref(Tab->Attributes);
+
+  if(Tab->Next) free_tab(Tab->Next);
+  g_free(Tab);
+}
+
+void
+mainWindow_free(mainWindow * mw)
+{ 
+  if(mw){
+    Main_Window_List = g_slist_remove(Main_Window_List, mw);
+    
+    //should free memory allocated dynamically first
+    free_system_view(mw->SystemView);
+    free_tab(mw->Tab);
+    g_object_unref(mw->Attributes);
+
+    g_free(mw);    
+  }
+}
+
+void
+mainWindow_Destructor(mainWindow * mw)
+{
+  if(GTK_IS_WIDGET(mw->MWindow)){
+    gtk_widget_destroy(mw->MWindow);
+    //    gtk_widget_destroy(mw->HelpContents);
+    //    gtk_widget_destroy(mw->AboutBox);    
+    mw = NULL;
+  }
+  
+  mainWindow_free(mw);
+}
+
+
 void destroy_walk(gpointer data, gpointer user_data)
 {
-	//GuiControlFlow_Destructor((ControlFlowData*)data);
+  mainWindow_Destructor((mainWindow*)data);
 }
 
 
@@ -174,8 +226,7 @@ void destroy_walk(gpointer data, gpointer user_data)
  */
 G_MODULE_EXPORT void destroy() {
 
-  WindowCreationData *Window_Creation_Data;
-  LttvAttributeValue value;
+  LttvAttributeValue value;  
 
   guint i, nb;
 
@@ -189,7 +240,7 @@ G_MODULE_EXPORT void destroy() {
   lttv_hooks_destroy(after_tracefile);
   lttv_hooks_destroy(before_event);
   lttv_hooks_destroy(after_event);
-  lttv_hooks_remove_data(main_hooks, Window_Creation_Hook, NULL);
+  lttv_hooks_remove_data(main_hooks, Window_Creation_Hook, &gWinCreationData);
 
   nb = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb ; i++) {
@@ -200,18 +251,9 @@ G_MODULE_EXPORT void destroy() {
 
   g_critical("GUI destroy()");
 
-
-
-  //ControlFlowData *Control_Flow_Data;
-  
-
   g_slist_foreach(Main_Window_List, destroy_walk, NULL );
+  g_slist_free(Main_Window_List);
   
-  
-  //lttv_hooks_remove_data(main_hooks,Window_Creation_Hook, NULL);
-  //lttv_hooks_remove_data(before_traceset, get_traceset_context, NULL);
-
-  //  g_free(Window_Creation_Data);
 
   g_object_unref(gTracesetContext);
 }

@@ -1127,19 +1127,21 @@ void add_test_data(EventViewerData *Event_Viewer_Data)
 void
 GuiEvents_free(EventViewerData *Event_Viewer_Data)
 {
-  lttv_hooks_remove(Event_Viewer_Data->before_event_hooks,parse_event);
-  lttv_hooks_destroy(Event_Viewer_Data->before_event_hooks);
-  
-  remove_all_items_from_queue (Event_Viewer_Data->raw_trace_data_queue);
-  g_queue_free(Event_Viewer_Data->raw_trace_data_queue);
-  g_queue_free(Event_Viewer_Data->raw_trace_data_queue_tmp);
+  if(Event_Viewer_Data){
+    lttv_hooks_remove(Event_Viewer_Data->before_event_hooks,parse_event);
+    lttv_hooks_destroy(Event_Viewer_Data->before_event_hooks);
+    
+    remove_all_items_from_queue (Event_Viewer_Data->raw_trace_data_queue);
+    g_queue_free(Event_Viewer_Data->raw_trace_data_queue);
+    g_queue_free(Event_Viewer_Data->raw_trace_data_queue_tmp);
 
-  UnregUpdateTimeInterval(updateTimeInterval,Event_Viewer_Data, Event_Viewer_Data->mw);
-  UnregUpdateCurrentTime(updateCurrentTime,Event_Viewer_Data, Event_Viewer_Data->mw);
+    UnregUpdateTimeInterval(updateTimeInterval,Event_Viewer_Data, Event_Viewer_Data->mw);
+    UnregUpdateCurrentTime(updateCurrentTime,Event_Viewer_Data, Event_Viewer_Data->mw);
 
-  sEvent_Viewer_Data_List = g_slist_remove(sEvent_Viewer_Data_List, Event_Viewer_Data);
-  g_warning("Delete Event data\n");
-  g_free(Event_Viewer_Data);
+    sEvent_Viewer_Data_List = g_slist_remove(sEvent_Viewer_Data_List, Event_Viewer_Data);
+    g_warning("Delete Event data\n");
+    g_free(Event_Viewer_Data);
+  }
 }
 
 void
@@ -1148,8 +1150,10 @@ GuiEvents_Destructor(EventViewerData *Event_Viewer_Data)
   guint index;
 
   /* May already been done by GTK window closing */
-  if(GTK_IS_WIDGET(Event_Viewer_Data->HBox_V))
+  if(GTK_IS_WIDGET(Event_Viewer_Data->HBox_V)){
     gtk_widget_destroy(Event_Viewer_Data->HBox_V);
+    Event_Viewer_Data = NULL;
+  }
   
   /* Destroy the Tree View */
   //gtk_widget_destroy(Event_Viewer_Data->Tree_V);
