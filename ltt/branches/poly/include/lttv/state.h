@@ -91,6 +91,7 @@ typedef struct _LttvInterruptState {
 
 typedef struct _LttvProcessState {
   guint pid;
+  guint ppid;
   LttTime birth;
   GQuark name;
   GArray *interrupt_stack;         /* Array of LttvInterruptState */
