@@ -638,3 +638,40 @@ void contextRemoveHooks(mainWindow *main_win ,
 				     check_tracefile,before_tracefile,after_tracefile,
 				     check_event,before_event, after_event);
 }
+
+
+/**
+ * Function to get the life span of the traceset
+ * @param main_win the main window the viewer belongs to.
+ * @param start start time of the traceset.
+ * @param end end time of the traceset.
+ */
+
+void getTracesetTimeSpan(mainWindow *main_win, LttTime * start, LttTime* end)
+{
+  LttvTraceset * traceset = main_win->traceset;
+  int numTraces = lttv_traceset_number(traceset);
+  int i;
+  LttTime s, e;
+  LttvTraceContext *tc;
+  LttTrace * trace;
+
+  for(i=0; i<numTraces;i++){
+    tc = main_win->traceset_context->traces[i];
+    trace = tc->t;
+
+    ltt_trace_time_span_get(trace, &s, &e);
+
+    if(i==0){
+      *start = s;
+      *end   = e;
+    }else{
+      if(s.tv_sec < start->tv_sec ||
+	 (s.tv_sec == start->tv_sec && s.tv_nsec < start->tv_nsec))
+	*start = s;
+      if(e.tv_sec > end->tv_sec ||
+	 (e.tv_sec == end->tv_sec && e.tv_nsec > end->tv_nsec))
+	*end = e;      
+    }
+  }
+}
