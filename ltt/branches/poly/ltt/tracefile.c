@@ -654,7 +654,7 @@ int ltt_trace_per_cpu_tracefile_find(LttTrace *t, unsigned i)
 
 LttTracefile *ltt_trace_control_tracefile_get(LttTrace *t, unsigned i)
 {
-  return (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles, i);  
+  return (LttTracefile*)g_ptr_array_index(t->control_tracefiles, i);  
 }
 
 LttTracefile *ltt_trace_per_cpu_tracefile_get(LttTrace *t, unsigned i)
