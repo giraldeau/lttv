@@ -97,7 +97,7 @@ void SetFilter(MainWindow * main_win, gpointer filter)
  * @param view_constructor constructor of the viewer. 
  */
 
-void toolbar_item_reg(char ** pixmap, char *tooltip, lttvwindow_viewer_constructor view_constructor)
+void lttvwindow_viewer_register_toolbar_item(char ** pixmap, char *tooltip, lttvwindow_viewer_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
@@ -123,7 +123,7 @@ void toolbar_item_reg(char ** pixmap, char *tooltip, lttvwindow_viewer_construct
  * a reference to find out where the pixmap and tooltip are.
  */
 
-void toolbar_item_unreg(lttvwindow_viewer_constructor view_constructor)
+void lttvwindow_viewer_unregister_toolbar_item(lttvwindow_viewer_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;

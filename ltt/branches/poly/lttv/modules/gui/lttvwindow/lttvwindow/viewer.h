@@ -106,6 +106,7 @@ set_hpane_dividor
 #include <lttv/hook.h>
 #include <lttvwindow/common.h>
 #include <lttv/stats.h>
+#include <lttv/filter.h>
 
 /**
  * Function to register a view constructor so that main window can generate
@@ -116,7 +117,7 @@ set_hpane_dividor
  * @param view_constructor constructor of the viewer. 
  */
 
-void lttvwindow_viewer_register_toolbar_item(char ** pixmap, char *tooltip, lttvwindow_viewer_constructor view_constructor);
+void lttvwindow_viewer_register_toolbar(char ** pixmap, char *tooltip, lttvwindow_viewer_constructor view_constructor);
 
 
 /**
@@ -127,7 +128,7 @@ void lttvwindow_viewer_register_toolbar_item(char ** pixmap, char *tooltip, lttv
  * a reference to find out where the pixmap and tooltip are.
  */
 
-void toolbar_item_unreg(lttvwindow_viewer_constructor view_constructor);
+void lttvwindow_viewer_unregister_toolbar(lttvwindow_viewer_constructor view_constructor);
 
 
 /**
@@ -139,7 +140,7 @@ void toolbar_item_unreg(lttvwindow_viewer_constructor view_constructor);
  * @param view_constructor constructor of the viewer. 
  */
 
-void menu_item_reg(char *menu_path, char *menu_text, lttvwindow_viewer_constructor view_constructor);
+void lttvwindow_viewer_register_menu(char *menu_path, char *menu_text, lttvwindow_viewer_constructor view_constructor);
 
 
 /**
@@ -150,7 +151,138 @@ void menu_item_reg(char *menu_path, char *menu_text, lttvwindow_viewer_construct
  * a reference to find out where the menu_path and menu_text are.
  */
 
-void menu_item_unreg(lttvwindow_viewer_constructor view_constructor);
+void lttvwindow_viewer_unregister_menu(lttvwindow_viewer_constructor view_constructor);
+
+
+/**
+ * Function to register a hook function for a viewer to update its
+ * time interval.
+ * This register function is typically called by the constructor of the viewer.
+ * @param hook hook function of the viewer. Takes a TimeInterval* as call_data.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_register_time_window_notify(MainWindow * main_win,
+    LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to unregister a viewer's hook function which is used to 
+ * set/update the time interval of the viewer.
+ * This unregister function is typically called by the destructor of the viewer.
+ * @param hook hook function of the viewer. Takes a TimeInterval as call_data.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_unregister_time_window_notify(MainWindow * main_win,
+    LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to register a hook function for a viewer to set/update its 
+ * traceset.
+ * This register function is typically called by the constructor of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_register_traceset_notify(MainWindow * main_win,
+    LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to unregister a viewer's hook function which is used to 
+ * set/update the traceset of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_unregister_traceset_notify(MainWindow * main_win,
+              LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to register a hook function for a viewer to set/update its 
+ * filter.
+ * This register function is typically called by the constructor of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_register_filter_notify(MainWindow *main_win,
+      LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to unregister a viewer's hook function which is used to 
+ * set/update the filter of the viewer.
+ * This unregistration is called by the destructor of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_unregister_filter_notify(LttvHook hook,  gpointer hook_data,
+		       MainWindow * main_win);
+
+
+/**
+ * Function to register a hook function for a viewer to set/update its 
+ * current time.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_register_current_time_notify(MainWindow *main_win,
+            LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to unregister a viewer's hook function which is used to 
+ * set/update the current time of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_unregister_current_time_notify(MainWindow * main_win,
+            LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to register a hook function for a viewer to show 
+ * its content.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_register_show(MainWindow *main_win,
+          LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to unregister a viewer's hook function which is used to 
+ * show the content of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_unregister_show(MainWindow * main_win,
+              LttvHook hook, gpointer hook_data);
+
+
+
+
+
+
 
 
 /**
@@ -159,19 +291,7 @@ void menu_item_unreg(lttvwindow_viewer_constructor view_constructor);
  * @param info the message which will be shown in the status bar.
  */
 
-void update_status(MainWindow *main_win, char *info);
-
-
-/**
- * Function to get the current time window of the current tab.
- * It will be called by a viewer's hook function to update the 
- * time window of the viewer and also be called by the constructor
- * of the viewer.
- * @param main_win the main window the viewer belongs to.
- * @param time_interval a pointer where time interval will be stored.
- */
-
-void get_time_window(MainWindow *main_win, TimeWindow *time_window);
+void lttvwindow_viewer_report_status(MainWindow *main_win, char *info);
 
 
 /**
@@ -182,18 +302,7 @@ void get_time_window(MainWindow *main_win, TimeWindow *time_window);
  * @param time_interval a pointer where time interval is stored.
  */
 
-void set_time_window(MainWindow *main_win, TimeWindow *time_window);
-
-/**
- * Function to get the current time/event of the current tab.
- * It will be called by a viewer's hook function to update the 
- * current time/event of the viewer.
- * @param main_win the main window the viewer belongs to.
- * @param time a pointer where time will be stored.
- */
-
-void get_current_time(MainWindow *main_win, LttTime *time);
-
+void lttvwindow_viewer_report_time_window(MainWindow *main_win, TimeWindow *time_window);
 
 /**
  * Function to set the current time/event of the current tab.
@@ -203,213 +312,7 @@ void get_current_time(MainWindow *main_win, LttTime *time);
  * @param time a pointer where time is stored.
  */
 
-void set_current_time(MainWindow *main_win, LttTime *time);
-
-
-/**
- * Function to get the traceset from the current tab.
- * It will be called by the constructor of the viewer and also be
- * called by a hook funtion of the viewer to update its traceset.
- * @param main_win the main window the viewer belongs to.
- * @param traceset a pointer to a traceset.
- */
-
-//void get_traceset(MainWindow *main_win, Traceset *traceset);
-
-
-/**
- * Function to get the filter of the current tab.
- * It will be called by the constructor of the viewer and also be
- * called by a hook funtion of the viewer to update its filter.
- * @param main_win, the main window the viewer belongs to.
- * @param filter, a pointer to a filter.
- */
-
-//void get_filter(MainWindow *main_win, Filter *filter);
-
-
-/**
- * Function to register a hook function for a viewer to set/update its
- * time interval.
- * It will be called by the constructor of the viewer.
- * @param hook hook function of the viewer. Takes a TimeInterval* as call_data.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void reg_update_time_window(LttvHook hook, gpointer hook_data,
-			    MainWindow * main_win);
-
-
-/**
- * Function to unregister a viewer's hook function which is used to 
- * set/update the time interval of the viewer.
- * It will be called by the destructor of the viewer.
- * @param hook hook function of the viewer. Takes a TimeInterval as call_data.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void unreg_update_time_window(LttvHook hook, gpointer hook_data,
-			      MainWindow * main_win);
-
-
-/**
- * Function to register a hook function for a viewer to set/update its 
- * traceset.
- * It will be called by the constructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void reg_update_traceset(LttvHook hook, gpointer hook_data,
-		       MainWindow * main_win);
-
-
-/**
- * Function to unregister a viewer's hook function which is used to 
- * set/update the traceset of the viewer.
- * It will be called by the destructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void unreg_update_traceset(LttvHook hook, gpointer hook_data,
-			 MainWindow * main_win);
-
-
-/**
- * Function to redraw each viewer belonging to the current tab 
- * @param main_win the main window the viewer belongs to.
- */
-
-void update_traceset(MainWindow * main_win);
-
-
-/**
- * Function to register a hook function for a viewer to set/update its 
- * filter.
- * It will be called by the constructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void reg_update_filter(LttvHook hook, gpointer hook_data, 
-		     MainWindow *main_win);
-
-
-/**
- * Function to unregister a viewer's hook function which is used to 
- * set/update the filter of the viewer.
- * It will be called by the destructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void unreg_update_filter(LttvHook hook,  gpointer hook_data,
-		       MainWindow * main_win);
-
-
-/**
- * Function to register a hook function for a viewer to set/update its 
- * current time.
- * It will be called by the constructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void reg_update_current_time(LttvHook hook, gpointer hook_data, 
-			  MainWindow *main_win);
-
-
-/**
- * Function to unregister a viewer's hook function which is used to 
- * set/update the current time of the viewer.
- * It will be called by the destructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void unreg_update_current_time(LttvHook hook, gpointer hook_data,
-			    MainWindow * main_win);
-
-
-/**
- * Function to register a hook function for a viewer to show 
- *the content of the viewer.
- * It will be called by the constructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void reg_show_viewer(LttvHook hook, gpointer hook_data, 
-		     MainWindow *main_win);
-
-
-/**
- * Function to unregister a viewer's hook function which is used to 
- * show the content of the viewer..
- * It will be called by the destructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void unreg_show_viewer(LttvHook hook, gpointer hook_data,
-		       MainWindow * main_win);
-
-
-/**
- * Function to show each viewer in the current tab.
- * It will be called by main window after it called process_traceset 
- * @param main_win the main window the viewer belongs to.
- */
-
-void show_viewer(MainWindow *main_win);
-
-
-/**
- * Function to set the focused pane (viewer).
- * It will be called by a viewer's signal handle associated with 
- * the grab_focus signal
- * @param main_win the main window the viewer belongs to.
- * @param paned a pointer to a pane where the viewer is contained.
- */
-
-void set_focused_pane(MainWindow *main_win, gpointer paned);
-
-
-/**
- * Function to register a hook function for a viewer to set/update the 
- * dividor of the hpane.
- * It will be called by the constructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void reg_update_dividor(LttvHook hook, gpointer hook_data, 
-		      MainWindow *main_win);
-
-
-/**
- * Function to unregister a viewer's hook function which is used to 
- * set/update hpane's dividor of the viewer.
- * It will be called by the destructor of the viewer.
- * @param hook hook function of the viewer.
- * @param hook_data hook data associated with the hook function.
- * @param main_win the main window the viewer belongs to.
- */
-
-void unreg_update_dividor(LttvHook hook, gpointer hook_data, 
-			MainWindow *main_win);
+void lttvwindow_viewer_report_current_time(MainWindow *main_win, LttTime *time);
 
 
 /**
@@ -420,7 +323,60 @@ void unreg_update_dividor(LttvHook hook, gpointer hook_data,
  * @param position position of the hpane's dividor.
  */
 
-void set_hpane_dividor(MainWindow *main_win, gint position);
+void lttvwindow_viewer_report_dividor(MainWindow *main_win, gint position);
+
+/**
+ * Function to redraw each viewer belonging to the current tab, when a traceset
+ * change has been made by the viewer.
+ * @param main_win the main window the viewer belongs to.
+ */
+// FIXME : should never be directly changed by a viewer.
+//void lttvwindow_viewer_report_traceset(MainWindow * main_win);
+
+
+/**
+ * Function to show each viewer in the current tab.
+ * It will be called by main window after it called process_traceset 
+ * @param main_win the main window the viewer belongs to.
+ */
+//FIXME : not an API function, belongs to the main window.
+//void lttvwindow_viewer_report_show(MainWindow *main_win);
+
+
+/**
+ * Function to set the focused pane (viewer).
+ * It will be called by a viewer's signal handle associated with 
+ * the grab_focus signal
+ * @param main_win the main window the viewer belongs to.
+ * @param paned a pointer to a pane where the viewer is contained.
+ */
+//FIXME : can we do this through normal GTK signals ?
+//void set_focused_pane(MainWindow *main_win, gpointer paned);
+
+
+/**
+ * Function to register a hook function for a viewer to set/update the 
+ * dividor of the hpane. It provides a way to make the horizontal
+ * dividors of all the viewers linked together.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_register_dividor(MainWindow *main_win,
+                    LttvHook hook, gpointer hook_data);
+
+
+/**
+ * Function to unregister a viewer's hook function which is used to 
+ * set/update hpane's dividor of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void lttvwindow_viewer_unregister_dividor(MainWindow *main_win,
+                    LttvHook hook, gpointer hook_data);
 
 
 /**
@@ -430,7 +386,41 @@ void set_hpane_dividor(MainWindow *main_win, gint position);
  * @param end end time of the traceset.
  */
 
-void get_traceset_time_span(MainWindow *main_win, TimeInterval *time_span);
+TimeInterval *lttvwindow_viewer_get_time_span(MainWindow *main_win);
+
+/**
+ * Function to get the current time window of the current tab.
+ * @param main_win the main window the viewer belongs to.
+ * @param time_interval a pointer where time interval will be stored.
+ */
+
+TimeWindow *lttvwindow_viewer_get_time_window(MainWindow *main_win);
+
+
+/**
+ * Function to get the current time/event of the current tab.
+ * @param main_win the main window the viewer belongs to.
+ * @param time a pointer where time will be stored.
+ */
+
+LttTime *lttvwindow_viewer_get_current_time(MainWindow *main_win);
+
+/**
+ * Function to get the traceset from the current tab.
+ * @param main_win the main window the viewer belongs to.
+ * @param traceset a pointer to a traceset.
+ */
+
+LttvTraceset *lttvwindow_viewer_get_traceset(MainWindow *main_win);
+
+
+/**
+ * Function to get the filter of the current tab.
+ * @param main_win, the main window the viewer belongs to.
+ * @param filter, a pointer to a filter.
+ */
+
+lttv_filter *lttvwindow_viewer_get_filter(MainWindow *main_win);
 
 
 /**
@@ -438,6 +428,8 @@ void get_traceset_time_span(MainWindow *main_win, TimeInterval *time_span);
  * @param main_win the main window the viewer belongs to.
  */
 
-LttvTracesetStats* get_traceset_stats(MainWindow *main_win);
+LttvTracesetStats* lttvwindow_viewer_get_traceset_stats(MainWindow *main_win);
 
-LttvTracesetContext* get_traceset_context(MainWindow *main_win);
+LttvTracesetContext* lttvwindow_viewer_get_traceset_context(MainWindow *main_win);
+
+
