@@ -13,7 +13,7 @@
 #include <gtk/gtk.h>
 #include <ltt/ltt.h>
 #include <lttv/hook.h>
-#include <lttv/mainWindow.h>
+#include <lttv/common.h>
 
 /**
  * Function to register a view constructor so that main window can generate
