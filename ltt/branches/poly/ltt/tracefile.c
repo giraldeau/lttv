@@ -365,6 +365,10 @@ void getCpuFileInfo(LttTrace *t, char* cpu)
  *
  *When a trace is closed, all the associated facilities, types and fields
  *are released as well.
+ *
+ * MD : If pathname is already absolute, we do not add current working
+ * directory to it.
+ *
  ****************************************************************************/
 
 void get_absolute_pathname(const char *pathname, char * abs_pathname)
@@ -372,11 +376,19 @@ void get_absolute_pathname(const char *pathname, char * abs_pathname)
   char * ptr, *ptr1;
   size_t size = DIR_NAME_SIZE;
   abs_pathname[0] = '\0';
+
+	if(pathname[0] == '/')
+	{
+    strcat(abs_pathname, pathname);
+		return;
+	}
+
   if(!getcwd(abs_pathname, size)){
     g_warning("Can not get current working directory\n");
     strcat(abs_pathname, pathname);
     return;
   }
+
   strcat(abs_pathname,"/");
   
   ptr = (char*)pathname;
