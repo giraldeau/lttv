@@ -276,9 +276,10 @@ gint get_cell_height(GtkTreeView *TreeView)
 {
 	gint height;
 	GtkTreeViewColumn *Column = gtk_tree_view_get_column(TreeView, 0);
-	GList *Render_List = gtk_tree_view_column_get_cell_renderers(Column);
-	GtkCellRenderer *Renderer = g_list_first(Render_List)->data;
+	//GList *Render_List = gtk_tree_view_column_get_cell_renderers(Column);
+	//GtkCellRenderer *Renderer = g_list_first(Render_List)->data;
 	
+	//g_list_free(Render_List);
 	gtk_tree_view_column_cell_get_size(Column, NULL, NULL, NULL, NULL, &height);
 	//g_critical("cell 0 height : %u",height);
 	
@@ -396,6 +397,7 @@ gint processlist_get_process_pixels(	ProcessList *Process_List,
 	ProcessInfo Process_Info;
 	gint *path_indices;
 	GtkTreeRowReference *got_RowRef;
+	GtkTreePath *tree_path;
 
 	Process_Info.pid = pid;
 	Process_Info.birth = *birth;
@@ -405,10 +407,10 @@ gint processlist_get_process_pixels(	ProcessList *Process_List,
 					Process_List->Process_Hash,
 					&Process_Info))
 	{
-		path_indices =	gtk_tree_path_get_indices (
-				gtk_tree_row_reference_get_path(
-					(GtkTreeRowReference*)got_RowRef)
-				);
+		tree_path = gtk_tree_row_reference_get_path(
+										(GtkTreeRowReference*)got_RowRef);
+		path_indices =	gtk_tree_path_get_indices (tree_path);
+		gtk_tree_path_free(tree_path);
 
 	 	*height = get_cell_height(
 				GTK_TREE_VIEW(Process_List->Process_List_VC));

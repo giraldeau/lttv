@@ -25,61 +25,7 @@
 #define MAX_PATH_LEN 256
 
 //FIXME : remove this include when tests finished.
-#include "Draw_Item.h"
 #include <string.h>
-
-struct _DrawContext {
-	GdkDrawable	*drawable;
-	GdkGC		*gc;
-	
-
-	DrawInfo	*Current;
-	DrawInfo	*Previous;
-};
-
-struct _DrawInfo {
-	ItemInfo	*over;
-	ItemInfo	*middle;
-	ItemInfo	*under;
-	
-	ItemInfo	*modify_over;
-	ItemInfo	*modify_middle;
-	ItemInfo	*modify_under;
-};
-
-/* LttvExecutionState is accessible through the LttvTracefileState. Is has
- * a pointer to the LttvProcessState which points to the top of stack
- * execution state : LttvExecutionState *state.
- *
- * LttvExecutionState contains (useful here):
- * LttvExecutionMode t,
- * LttvExecutionSubmode n,
- * LttvProcessStatus s
- * 
- *
- * LttvTraceState will be used in the case we need the string of the
- * different processes, eventtype_names, syscall_names, trap_names, irq_names.
- *
- * LttvTracefileState also gives the cpu_name and, as it herits from
- * LttvTracefileContext, it gives the LttEvent structure, which is needed
- * to get facility name and event name.
- */
-struct _ItemInfo {
-	gint	x, y;
-	LttvTraceState		*ts;
-	LttvTracefileState	*tfs;
-};
-
-
-
-struct _PropertiesIcon {
-	gchar		*icon_name;
-	gint		width;
-	gint		height;
-	RelPos		position;
-};
-
-
 
 void test_draw_item(Drawing_t *Drawing,
 			GdkPixmap *Pixmap) 
@@ -116,8 +62,8 @@ void test_draw_item(Drawing_t *Drawing,
 			properties_icon.width = -1;
 			properties_icon.height = -1;
 			properties_icon.position = OVER;
-	
 			draw_icon(&properties_icon, &draw_context);
+			g_free(properties_icon.icon_name);
 		}
 	}
 
@@ -129,7 +75,7 @@ void send_test_drawing(ProcessList *Process_List,
 			Drawing_t *Drawing,
 			GdkPixmap *Pixmap,
 			gint x, gint y, // y not used here?
-		   	gint width,
+		  gint width,
 			gint height) // height won't be used here ?
 {
 	int i,j;
@@ -142,20 +88,20 @@ void send_test_drawing(ProcessList *Process_List,
 	gint Font_Size;
 
 	//icon
-	GdkBitmap *mask = g_new(GdkBitmap, 1);
-	GdkPixmap *icon_pixmap = g_new(GdkPixmap, 1);
-	GdkGC * gc = gdk_gc_new(Pixmap);
-	
+	//GdkBitmap *mask = g_new(GdkBitmap, 1);
+	//GdkPixmap *icon_pixmap = g_new(GdkPixmap, 1);
+	GdkGC * gc;
 	// rectangle
 	GdkColor color = { 0, 0xffff, 0x0000, 0x0000 };
 	
+	//gc = gdk_gc_new(Pixmap);
 	/* Sent text data */
-	layout = gtk_widget_create_pango_layout(Drawing->Drawing_Area_V,
-			NULL);
-	context = pango_layout_get_context(layout);
-	FontDesc = pango_context_get_font_description(context);
-	Font_Size = pango_font_description_get_size(FontDesc);
-	pango_font_description_set_size(FontDesc, Font_Size-3*PANGO_SCALE);
+	//layout = gtk_widget_create_pango_layout(Drawing->Drawing_Area_V,
+	//		NULL);
+	//context = pango_layout_get_context(layout);
+	//FontDesc = pango_context_get_font_description(context);
+	//Font_Size = pango_font_description_get_size(FontDesc);
+	//pango_font_description_set_size(FontDesc, Font_Size-3*PANGO_SCALE);
 	
 	
 
@@ -176,9 +122,9 @@ void send_test_drawing(ProcessList *Process_List,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
 
-	pango_layout_set_text(layout, "Test", -1);
-	gdk_draw_layout(Pixmap, Drawing->Drawing_Area_V->style->black_gc,
-			0, y+height, layout);
+	//pango_layout_set_text(layout, "Test", -1);
+	//gdk_draw_layout(Pixmap, Drawing->Drawing_Area_V->style->black_gc,
+	//		0, y+height, layout);
 
 	birth.tv_sec = 14000;
 	birth.tv_nsec = 55500;
@@ -209,11 +155,11 @@ void send_test_drawing(ProcessList *Process_List,
 					&height);
 
 	/* Draw rectangle (background color) */
-	gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
-	gdk_gc_set_rgb_fg_color(gc, &color);
-	gdk_draw_rectangle(Pixmap, gc,
-					TRUE,
-					x, y, width, height);
+	//gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
+	//gdk_gc_set_rgb_fg_color(gc, &color);
+	//gdk_draw_rectangle(Pixmap, gc,
+	//				TRUE,
+	//				x, y, width, height);
 
 	drawing_draw_line(
 		Drawing, Pixmap, x,
@@ -288,7 +234,7 @@ void send_test_drawing(ProcessList *Process_List,
 
 //		}
 //	}
-	
+
 	test_draw_item(Drawing,Pixmap);
 	
 	//gdk_gc_set_clip_origin(Drawing->Drawing_Area_V->style->black_gc, 0, 0);
@@ -302,10 +248,9 @@ void send_test_drawing(ProcessList *Process_List,
 
 
 
-	pango_font_description_set_size(FontDesc, Font_Size);
-	g_free(gc);
-	g_free(layout);
-	//g_free(context);
+	//pango_font_description_set_size(FontDesc, Font_Size);
+	//g_object_unref(layout);
+	//g_object_unref(gc);
 }
 
 void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)

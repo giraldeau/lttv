@@ -37,15 +37,6 @@ static GdkColor CF_Colors [] =
 };
 
 
-//struct _Drawing_t {
-//	GtkWidget	*Drawing_Area_V;
-//	GdkPixmap	*Pixmap;
-//	ControlFlowData	*Control_Flow_Data;
-
-//	gint 		height, width, depth;
-
-//};
-
 /* Function responsible for updating the exposed area.
  * It must call processTrace() to ask for this update.
  */
@@ -55,6 +46,12 @@ void drawing_data_request(Drawing_t *Drawing,
 		  gint width,
 			gint height)
 {
+	
+//	start from pixel to time(x)
+//	end from pixel to time (x + width)
+	
+//	LttvTracesetContext * tsc = get_traceset_context(event_viewer_data->mw);
+	
   if(width < 0) return ;
   if(height < 0) return ;
 
@@ -72,6 +69,13 @@ void drawing_data_request(Drawing_t *Drawing,
 	guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
 	Drawing, *Pixmap, x, y, width, height);
   
+	// Let's call processTrace() !!
+	
+	
+	//lttv_process_traceset_seek_time(tsc, start);
+	//lttv_traceset_context_add_hooks(
+	//lttv_process_traceset
+	//lttv_traceset_context_remove_hooks
 }
 		      
 /* Callbacks */
@@ -152,7 +156,6 @@ g_critical("missing data");
 //		      widget->allocation.height -
 //		      			Drawing->height);
  
-
   
   
   if (Drawing->Pixmap)

@@ -151,6 +151,9 @@ guicontrolflow_destructor(ControlFlowData *Control_Flow_Data)
 	
 	g_info("CFV.c : guicontrolflow_destructor, %p", Control_Flow_Data);
 	g_info("%p, %p, %p", update_time_window_hook, Control_Flow_Data, Control_Flow_Data->Parent_Window);
+	if(GTK_IS_WIDGET(Control_Flow_Data->Scrolled_Window_VC))
+		g_info("widget still exists");
+	
 	/* Process List is removed with it's widget */
 	//ProcessList_destroy(Control_Flow_Data->Process_List);
 	if(Control_Flow_Data->Parent_Window != NULL)
