@@ -41,7 +41,7 @@ LttvProcessStatus
   LTTV_STATE_UNNAMED,
   LTTV_STATE_WAIT_FORK,
   LTTV_STATE_WAIT_CPU,
-  LTTV_STATE_EXIT,
+  LTTV_STATE_ZOMBIE,
   LTTV_STATE_WAIT,
   LTTV_STATE_RUN;
 
@@ -969,14 +969,13 @@ static gboolean schedchange(void *hook_data, void *call_data)
       g_assert(s->process->pid == 0);
     }
 
-    if(s->process->state->s != LTTV_STATE_EXIT) {
+    if(s->process->state->s != LTTV_STATE_ZOMBIE) {
       if(state_out == 0) s->process->state->s = LTTV_STATE_WAIT_CPU;
       else s->process->state->s = LTTV_STATE_WAIT;
     } /* FIXME : we do not remove process here, because the kernel
        * still has them : they may be zombies. We need to know
        * exactly when release_task is executed on the PID to 
-       * know when the zombie is destroyed. We should rename STATE_EXIT
-       * for STATE_ZOMBIE.
+       * know when the zombie is destroyed.
        */
     //else
     //  exit_process(s, s->process);
@@ -1018,7 +1017,7 @@ static gboolean process_fork(LttvTraceHook *trace_hook, LttvTracefileState *s)
 static gboolean process_exit(LttvTraceHook *trace_hook, LttvTracefileState *s)
 {
   if(s->process != NULL) {
-    s->process->state->s = LTTV_STATE_EXIT;
+    s->process->state->s = LTTV_STATE_ZOMBIE;
   }
   return FALSE;
 }
@@ -1572,7 +1571,7 @@ static void module_init()
   LTTV_STATE_SUBMODE_UNKNOWN = g_quark_from_string("unknown submode");
   LTTV_STATE_SUBMODE_NONE = g_quark_from_string("(no submode)");
   LTTV_STATE_WAIT_CPU = g_quark_from_string("wait for cpu");
-  LTTV_STATE_EXIT = g_quark_from_string("exiting");
+  LTTV_STATE_ZOMBIE = g_quark_from_string("zombie");
   LTTV_STATE_WAIT = g_quark_from_string("wait for I/O");
   LTTV_STATE_RUN = g_quark_from_string("running");
   LTTV_STATE_TRACEFILES = g_quark_from_string("tracefiles");

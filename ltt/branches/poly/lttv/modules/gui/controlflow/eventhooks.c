@@ -283,8 +283,8 @@ static __inline PropertiesLine prepare_line(LttvProcessState *process)
     prop_line.color = drawing_colors[COL_WAIT_FORK];
   else if(process->state->s == LTTV_STATE_WAIT_CPU)
     prop_line.color = drawing_colors[COL_WAIT_CPU];
-  else if(process->state->s == LTTV_STATE_EXIT)
-    prop_line.color = drawing_colors[COL_EXIT];
+  else if(process->state->s == LTTV_STATE_ZOMBIE)
+    prop_line.color = drawing_colors[COL_ZOMBIE];
   else if(process->state->s == LTTV_STATE_WAIT)
     prop_line.color = drawing_colors[COL_WAIT];
   else if(process->state->s == LTTV_STATE_RUN)
@@ -841,7 +841,7 @@ int draw_before_hook(void *hook_data, void *call_data)
       prop_text_out.foreground->green = 0xffff;
       prop_text_out.foreground->blue = 0x0000;
     }
-    else if(process_out->state->s == LTTV_STATE_EXIT)
+    else if(process_out->state->s == LTTV_STATE_ZOMBIE)
     {
       prop_text_out.foreground->red = 0xffff;
       prop_text_out.foreground->green = 0x0000;
@@ -874,7 +874,7 @@ int draw_before_hook(void *hook_data, void *call_data)
       prop_text_out.text = "WF->";
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
       prop_text_out.text = "WC->";
-    else if(process_out->state->s == LTTV_STATE_EXIT)
+    else if(process_out->state->s == LTTV_STATE_ZOMBIE)
       prop_text_out.text = "E->";
     else if(process_out->state->s == LTTV_STATE_WAIT)
       prop_text_out.text = "W->";
@@ -917,7 +917,7 @@ int draw_before_hook(void *hook_data, void *call_data)
       prop_line_out.color->green = 0xffff;
       prop_line_out.color->blue = 0x0000;
     }
-    else if(process_out->state->s == LTTV_STATE_EXIT)
+    else if(process_out->state->s == LTTV_STATE_ZOMBIE)
     {
       prop_line_out.color->red = 0xffff;
       prop_line_out.color->green = 0x0000;
@@ -1065,7 +1065,7 @@ int draw_before_hook(void *hook_data, void *call_data)
       prop_text_in.foreground->green = 0xffff;
       prop_text_in.foreground->blue = 0x0000;
     }
-    else if(process_in->state->s == LTTV_STATE_EXIT)
+    else if(process_in->state->s == LTTV_STATE_ZOMBIE)
     {
       prop_text_in.foreground->red = 0xffff;
       prop_text_in.foreground->green = 0x0000;
@@ -1099,7 +1099,7 @@ int draw_before_hook(void *hook_data, void *call_data)
       prop_text_in.text = "WF->";
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
       prop_text_in.text = "WC->";
-    else if(process_in->state->s == LTTV_STATE_EXIT)
+    else if(process_in->state->s == LTTV_STATE_ZOMBIE)
       prop_text_in.text = "E->";
     else if(process_in->state->s == LTTV_STATE_WAIT)
       prop_text_in.text = "W->";
@@ -1140,7 +1140,7 @@ int draw_before_hook(void *hook_data, void *call_data)
       prop_line_in.color->green = 0xffff;
       prop_line_in.color->blue = 0x0000;
     }
-    else if(process_in->state->s == LTTV_STATE_EXIT)
+    else if(process_in->state->s == LTTV_STATE_ZOMBIE)
     {
       prop_line_in.color->red = 0xffff;
       prop_line_in.color->green = 0x0000;
@@ -1522,7 +1522,7 @@ int draw_after_hook(void *hook_data, void *call_data)
       prop_text_out.foreground->green = 0xffff;
       prop_text_out.foreground->blue = 0x0000;
     }
-    else if(process_out->state->s == LTTV_STATE_EXIT)
+    else if(process_out->state->s == LTTV_STATE_ZOMBIE)
     {
       prop_text_out.foreground->red = 0xffff;
       prop_text_out.foreground->green = 0x0000;
@@ -1554,7 +1554,7 @@ int draw_after_hook(void *hook_data, void *call_data)
       prop_text_out.text = "WF";
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
       prop_text_out.text = "WC";
-    else if(process_out->state->s == LTTV_STATE_EXIT)
+    else if(process_out->state->s == LTTV_STATE_ZOMBIE)
       prop_text_out.text = "E";
     else if(process_out->state->s == LTTV_STATE_WAIT)
       prop_text_out.text = "W";
@@ -1663,7 +1663,7 @@ int draw_after_hook(void *hook_data, void *call_data)
       prop_text_in.foreground->green = 0xffff;
       prop_text_in.foreground->blue = 0x0000;
     }
-    else if(process_in->state->s == LTTV_STATE_EXIT)
+    else if(process_in->state->s == LTTV_STATE_ZOMBIE)
     {
       prop_text_in.foreground->red = 0xffff;
       prop_text_in.foreground->green = 0x0000;
@@ -1696,7 +1696,7 @@ int draw_after_hook(void *hook_data, void *call_data)
       prop_text_in.text = "WF";
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
       prop_text_in.text = "WC";
-    else if(process_in->state->s == LTTV_STATE_EXIT)
+    else if(process_in->state->s == LTTV_STATE_ZOMBIE)
       prop_text_in.text = "E";
     else if(process_in->state->s == LTTV_STATE_WAIT)
       prop_text_in.text = "W";

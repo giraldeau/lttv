@@ -38,7 +38,7 @@ typedef enum _draw_color { COL_BLACK,
                            COL_WHITE,
                            COL_WAIT_FORK,
                            COL_WAIT_CPU,
-                           COL_EXIT,
+                           COL_ZOMBIE,
                            COL_WAIT,
                            COL_RUN,
                            NUM_COLORS } draw_color;
