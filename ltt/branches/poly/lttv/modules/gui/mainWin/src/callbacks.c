@@ -17,7 +17,6 @@
 
 #define PATH_LENGTH     256
 
-extern systemView * gSysView;
 extern LttvTracesetContext * gTracesetContext;
 
 /** Array containing instanced objects. */
@@ -25,6 +24,7 @@ extern GSList * Main_Window_List;
 
 mainWindow * get_window_data_struct(GtkWidget * widget);
 char * get_unload_module(char ** loaded_module_name, int nb_module);
+void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label);
 
 /* test part */
 void insertView(GtkWidget* widget, view_constructor constructor);
@@ -126,7 +126,7 @@ void get_label(GtkWindow * mw, gchar * str, gchar* dialogue_title, gchar * label
   GtkWidget * label;
   gint id;
 
-  dialogue = gtk_dialog_new_with_buttons(dialogue_title,mw,
+  dialogue = gtk_dialog_new_with_buttons(dialogue_title,NULL,
 					 GTK_DIALOG_MODAL,
 					 GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
 					 GTK_STOCK_CANCEL,GTK_RESPONSE_REJECT,
@@ -175,110 +175,9 @@ mainWindow * get_window_data_struct(GtkWidget * widget)
 
 void createNewWindow(GtkWidget* widget, gpointer user_data, gboolean clone)
 {
-  GtkWidget  * mw = NULL; /* Main window */
-  systemView * sv = NULL; /* System view */
-  systemView * newSv;     /* New system view displayed in the new window */
-  GtkWidget  * newWindow; /* New generated main window */
-  mainWindow * newMWindow;/* New main window structure */
+  mainWindow * parent = get_window_data_struct(widget);
 
-  //test
-  int i;
-  GtkWidget * ToolMenuTitle_menu, *insert_view, *pixmap;
-  LttvMenus * menu;
-  LttvToolbars * toolbar;
-  lttv_menu_closure *menuItem;
-  lttv_toolbar_closure *toolbarItem;
-  LttvAttributeValue value;
-  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
-  view_constructor constructor;
-  GdkPixbuf *pixbuf;
-  //end
-
-  mw = lookup_widget (widget, "MWindow");
-  if(mw == NULL){
-    g_printf("Can not find main window\n");
-    return;
-  }
-  
-  sv = (systemView *)g_object_get_data(G_OBJECT(mw),"systemView");
-  if(sv == NULL){
-    g_printf("Can not find system view\n");
-    return;
-  }  
-    
-  newMWindow = g_new(mainWindow, 1);
-
-  /* Add the object's information to the module's array */
-  Main_Window_List = g_slist_append(Main_Window_List, mw);
-
-  newWindow  = create_MWindow();
-  gtk_widget_show (newWindow);
-  
-  
-  newSv = g_new(systemView, 1);
-  while(sv->Next) sv = sv->Next;
-  sv->Next = newSv;
-
-  newSv->EventDB = NULL;
-  newSv->SystemInfo = NULL;
-  newSv->Options  = NULL;
-  newSv->Next = NULL;
-  newSv->Window = newMWindow;
-
-  newMWindow->MWindow = newWindow;
-  newMWindow->Tab = NULL;
-  newMWindow->CurrentTab = NULL;
-  newMWindow->SystemView = newSv;
-  newMWindow->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
-  newMWindow->traceset_context = LTTV_TRACESET_CONTEXT(gTracesetContext);
-  newMWindow->traceset = (LTTV_TRACESET_CONTEXT(gTracesetContext))->ts;
-  g_object_ref(gTracesetContext);
-
-  //test yxx
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/menu", LTTV_POINTER, &value));
-  menu = (LttvMenus*)*(value.v_pointer);
-
-  if(menu){
-    for(i=0;i<menu->len;i++){
-      menuItem = &g_array_index(menu, lttv_menu_closure, i);
-      constructor = menuItem->con;
-      ToolMenuTitle_menu = lookup_widget(newMWindow->MWindow,"ToolMenuTitle_menu");
-      insert_view = gtk_menu_item_new_with_mnemonic (menuItem->menuText);
-      gtk_widget_show (insert_view);
-      gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
-      g_signal_connect ((gpointer) insert_view, "activate",
-			G_CALLBACK (insertViewTest),
-			constructor);  
-    }
-  }
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/toolbar", LTTV_POINTER, &value));
-  toolbar = (LttvToolbars*)*(value.v_pointer);
-
-  if(toolbar){
-    for(i=0;i<toolbar->len;i++){
-      toolbarItem = &g_array_index(toolbar, lttv_toolbar_closure, i);
-      constructor = toolbarItem->con;
-      ToolMenuTitle_menu = lookup_widget(newMWindow->MWindow,"MToolbar2");
-      pixbuf = gdk_pixbuf_new_from_xpm_data ((const char**)toolbarItem->pixmap);
-      pixmap = gtk_image_new_from_pixbuf(pixbuf);
-      insert_view = gtk_toolbar_append_element (GTK_TOOLBAR (ToolMenuTitle_menu),
-						GTK_TOOLBAR_CHILD_BUTTON,
-						NULL,
-						"",
-						toolbarItem->tooltip, NULL,
-						pixmap, NULL, NULL);
-      gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (ToolMenuTitle_menu)->children)->data))->label), TRUE);
-      gtk_widget_show (insert_view);
-      gtk_container_set_border_width (GTK_CONTAINER (insert_view), 1);
-      g_signal_connect ((gpointer) insert_view, "clicked",G_CALLBACK (insertViewTest),constructor);       
-    }
-  }
-  //end
-  
-  g_object_set_data(G_OBJECT(newWindow), "systemView", (gpointer)newSv);    
-  g_object_set_data(G_OBJECT(newWindow), "mainWindow", (gpointer)newMWindow);    
+  constructMainWin(parent, NULL);
 
   if(clone){
     g_printf("Clone : use the same traceset\n");
@@ -381,58 +280,17 @@ void
 on_tab_activate                        (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  GList * list;
   gchar label[PATH_LENGTH];
-
-  tab * tmpTab;
-  GtkWidget * pane;
-  mainWindow * mwData;
   GtkNotebook * notebook = (GtkNotebook *)lookup_widget((GtkWidget*)menuitem, "MNotebook");
   if(notebook == NULL){
     g_printf("Notebook does not exist\n");
     return;
   }
 
-  mwData = get_window_data_struct((GtkWidget*)menuitem);
-
-  tmpTab = mwData->Tab;
-  while(tmpTab && tmpTab->Next) tmpTab = tmpTab->Next;
-  if(!tmpTab){
-    mwData->CurrentTab = NULL;
-    tmpTab = g_new(tab,1);
-    mwData->Tab = tmpTab;    
-  }else{
-    tmpTab->Next = g_new(tab,1);
-    tmpTab = tmpTab->Next;
-  }
-  if(mwData->CurrentTab){
-    tmpTab->traceStartTime = mwData->CurrentTab->traceStartTime;
-    tmpTab->traceEndTime   = mwData->CurrentTab->traceEndTime;
-    tmpTab->startTime      = mwData->CurrentTab->startTime;
-    tmpTab->endTime        = mwData->CurrentTab->endTime;
-    tmpTab->currentTime    = mwData->CurrentTab->currentTime;
-  }else{
-    getTracesetTimeSpan(mwData,&tmpTab->traceStartTime, &tmpTab->traceEndTime);
-    tmpTab->startTime   = tmpTab->traceStartTime;
-    tmpTab->endTime     = tmpTab->traceEndTime;
-    tmpTab->currentTime = tmpTab->traceStartTime;
-  }
-  tmpTab->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
-  //  mwData->CurrentTab = tmpTab;
-  tmpTab->custom = (GtkCustom*)gtk_custom_new();
-  tmpTab->custom->mw = mwData;
-  gtk_widget_show((GtkWidget*)tmpTab->custom);
-  tmpTab->Next = NULL;    
-
   strcpy(label,"Page");
-  get_label((GtkWindow*)mwData->MWindow, label,"Get the name of the tab","Please input tab's name");
-  tmpTab->label = gtk_label_new (label);
-  gtk_widget_show (tmpTab->label);
+  get_label(NULL, label,"Get the name of the tab","Please input tab's name");
 
-  gtk_notebook_append_page(notebook, (GtkWidget*)tmpTab->custom, tmpTab->label); 
-  
-  list = gtk_container_get_children(GTK_CONTAINER(notebook));
-  gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
+  create_tab ((GtkWidget*)menuitem, notebook, label);
 }
 
 
@@ -841,13 +699,7 @@ void
 on_MWindow_destroy                     (GtkObject       *object,
                                         gpointer         user_data)
 {
-  systemView * sv = gSysView;
-  gint count = 0;
-  while(sv->Next){
-    g_printf("There are : %d windows\n",++count);
-    sv = sv->Next;
-  }
-  g_printf("There are : %d windows\n",++count);
+  g_printf("There are : %d windows\n",g_slist_length(Main_Window_List));
   
   gtk_main_quit ();
 
@@ -937,4 +789,168 @@ char * get_unload_module(char ** loaded_module_name, int nb_module)
   }
 
   return unload_module_name;
+}
+
+void insertMenuToolbarItem(mainWindow * mw)
+{
+  int i;
+  GdkPixbuf *pixbuf;
+  view_constructor constructor;
+  LttvMenus * menu;
+  LttvToolbars * toolbar;
+  lttv_menu_closure *menuItem;
+  lttv_toolbar_closure *toolbarItem;
+  LttvAttributeValue value;
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  GtkWidget * ToolMenuTitle_menu, *insert_view, *pixmap;
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/menu", LTTV_POINTER, &value));
+  menu = (LttvMenus*)*(value.v_pointer);
+
+  if(menu){
+    for(i=0;i<menu->len;i++){
+      menuItem = &g_array_index(menu, lttv_menu_closure, i);
+      constructor = menuItem->con;
+      ToolMenuTitle_menu = lookup_widget(mw->MWindow,"ToolMenuTitle_menu");
+      insert_view = gtk_menu_item_new_with_mnemonic (menuItem->menuText);
+      gtk_widget_show (insert_view);
+      gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
+      g_signal_connect ((gpointer) insert_view, "activate",
+			G_CALLBACK (insertViewTest),
+			constructor);  
+    }
+  }
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/toolbar", LTTV_POINTER, &value));
+  toolbar = (LttvToolbars*)*(value.v_pointer);
+
+  if(toolbar){
+    for(i=0;i<toolbar->len;i++){
+      toolbarItem = &g_array_index(toolbar, lttv_toolbar_closure, i);
+      constructor = toolbarItem->con;
+      ToolMenuTitle_menu = lookup_widget(mw->MWindow,"MToolbar2");
+      pixbuf = gdk_pixbuf_new_from_xpm_data ((const char**)toolbarItem->pixmap);
+      pixmap = gtk_image_new_from_pixbuf(pixbuf);
+      insert_view = gtk_toolbar_append_element (GTK_TOOLBAR (ToolMenuTitle_menu),
+						GTK_TOOLBAR_CHILD_BUTTON,
+						NULL,
+						"",
+						toolbarItem->tooltip, NULL,
+						pixmap, NULL, NULL);
+      gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (ToolMenuTitle_menu)->children)->data))->label), TRUE);
+      gtk_widget_show (insert_view);
+      gtk_container_set_border_width (GTK_CONTAINER (insert_view), 1);
+      g_signal_connect ((gpointer) insert_view, "clicked",G_CALLBACK (insertViewTest),constructor);       
+    }
+  }
+}
+
+void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_data)
+{
+  systemView * sv = NULL; /* System view */
+  systemView * newSv;     /* New system view displayed in the new window */
+  GtkWidget  * newWindow; /* New generated main window */
+  mainWindow * newMWindow;/* New main window structure */
+  GtkNotebook * notebook;
+
+  if(parent) sv = parent->SystemView;
+    
+  newMWindow = g_new(mainWindow, 1);
+
+  // Add the object's information to the module's array 
+  Main_Window_List = g_slist_append(Main_Window_List, newMWindow);
+
+  newWindow  = create_MWindow();
+  gtk_widget_show (newWindow);
+    
+  newSv = g_new(systemView, 1);
+  if(sv){
+    while(sv->Next) sv = sv->Next;
+    sv->Next = newSv;
+  }
+
+  newSv->EventDB = NULL;
+  newSv->SystemInfo = NULL;
+  newSv->Options  = NULL;
+  newSv->Next = NULL;
+  newSv->Window = newMWindow;
+
+  newMWindow->MWindow = newWindow;
+  newMWindow->Tab = NULL;
+  newMWindow->CurrentTab = NULL;
+  newMWindow->SystemView = newSv;
+  newMWindow->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
+  if(parent){
+    newMWindow->traceset_context = parent->traceset_context;
+    newMWindow->traceset = parent->traceset;
+    newMWindow->winCreationData = parent->winCreationData;
+  }else{
+    newMWindow->traceset_context = LTTV_TRACESET_CONTEXT(gTracesetContext);
+    newMWindow->traceset = (LTTV_TRACESET_CONTEXT(gTracesetContext))->ts;
+    newMWindow->winCreationData = win_creation_data;
+  }
+
+  insertMenuToolbarItem(newMWindow);
+  
+  g_object_set_data(G_OBJECT(newWindow), "systemView", (gpointer)newSv);    
+  g_object_set_data(G_OBJECT(newWindow), "mainWindow", (gpointer)newMWindow);    
+
+  //create a default tab
+  notebook = (GtkNotebook *)lookup_widget(newMWindow->MWindow, "MNotebook");
+  if(notebook == NULL){
+    g_printf("Notebook does not exist\n");
+    return;
+  }
+  //for now there is no name field in LttvTraceset structure
+  //Use "Traceset" as the label for the default tab
+  create_tab(newMWindow->MWindow, notebook,"Traceset");
+
+}
+
+void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label)
+{
+  GList * list;
+  tab * tmpTab;
+  mainWindow * mwData;
+
+  mwData = get_window_data_struct(parent);
+
+  tmpTab = mwData->Tab;
+  while(tmpTab && tmpTab->Next) tmpTab = tmpTab->Next;
+  if(!tmpTab){
+    mwData->CurrentTab = NULL;
+    tmpTab = g_new(tab,1);
+    mwData->Tab = tmpTab;    
+  }else{
+    tmpTab->Next = g_new(tab,1);
+    tmpTab = tmpTab->Next;
+  }
+  if(mwData->CurrentTab){
+    tmpTab->traceStartTime = mwData->CurrentTab->traceStartTime;
+    tmpTab->traceEndTime   = mwData->CurrentTab->traceEndTime;
+    tmpTab->startTime      = mwData->CurrentTab->startTime;
+    tmpTab->endTime        = mwData->CurrentTab->endTime;
+    tmpTab->currentTime    = mwData->CurrentTab->currentTime;
+  }else{
+    getTracesetTimeSpan(mwData,&tmpTab->traceStartTime, &tmpTab->traceEndTime);
+    tmpTab->startTime   = tmpTab->traceStartTime;
+    tmpTab->endTime     = tmpTab->traceEndTime;
+    tmpTab->currentTime = tmpTab->traceStartTime;
+  }
+  tmpTab->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
+  //  mwData->CurrentTab = tmpTab;
+  tmpTab->custom = (GtkCustom*)gtk_custom_new();
+  tmpTab->custom->mw = mwData;
+  gtk_widget_show((GtkWidget*)tmpTab->custom);
+  tmpTab->Next = NULL;    
+
+  tmpTab->label = gtk_label_new (label);
+  gtk_widget_show (tmpTab->label);
+
+  gtk_notebook_append_page(notebook, (GtkWidget*)tmpTab->custom, tmpTab->label); 
+  
+  list = gtk_container_get_children(GTK_CONTAINER(notebook));
+  gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
 }

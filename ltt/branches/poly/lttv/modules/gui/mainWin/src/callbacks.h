@@ -1,9 +1,12 @@
 #include <gtk/gtk.h>
+#include <lttv/common.h>
+#include <lttv/mainWindow.h>
 
 /* internal functions */
 
 void createNewWindow(GtkWidget* widget, gpointer user_data, gboolean clone);
-
+void insertMenuToolbarItem(mainWindow * mw);
+void constructMainWin(mainWindow * parent, WindowCreationData *win_creation_data);
 
 /* callback functions*/
 

@@ -26,8 +26,6 @@
 #include "callbacks.h"
 
 /* global variable */
-systemView * gSysView;
-
 LttvTracesetStats * gTracesetContext = NULL;
 static LttvTraceset * traceset;
 
@@ -67,26 +65,7 @@ void lttv_trace_option(void *hook_data)
 
 static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 {
-  int i;
-  GdkPixbuf *pixbuf;
-  view_constructor constructor;
-  LttvMenus * menu;
-  LttvToolbars * toolbar;
-  lttv_menu_closure *menuItem;
-  lttv_toolbar_closure *toolbarItem;
-  LttvAttributeValue value;
-  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
-  GModule *gm;
-  GtkWidget * ToolMenuTitle_menu, *insert_view, *pixmap;
-  GtkWidget *window1;
-  mainWindow * mw = g_new(mainWindow, 1);
-  gSysView = g_new(systemView, 1);
-  WindowCreationData *Window_Creation_Data = (WindowCreationData*)hook_data;
-
-  mw->winCreationData = Window_Creation_Data;
-
-  /* Add the object's information to the module's array */
-  Main_Window_List = g_slist_append(Main_Window_List, mw);
+  WindowCreationData* Window_Creation_Data = (WindowCreationData*)hook_data;
 
   g_critical("GUI Window_Creation_Hook()");
 #ifdef ENABLE_NLS
@@ -102,81 +81,14 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
   add_pixmap_directory ("pixmaps");
   add_pixmap_directory ("modules/gui/mainWin/pixmaps");
 
-  /*
-   * The following code was added by Glade to create one of each component
-   * (except popup menus), just so that you see something after building
-   * the project. Delete any components that you don't want shown initially.
-   */
-  window1 = create_MWindow ();
-  gtk_widget_show (window1);
 
-  mw->MWindow = window1;
-  mw->SystemView = gSysView;
-  mw->Tab = NULL;
-  mw->CurrentTab = NULL;
-  mw->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   if(!gTracesetContext){
     gTracesetContext = g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
     //FIXME: lttv_context_fini should be called some where.
     lttv_context_init(LTTV_TRACESET_CONTEXT(gTracesetContext), traceset);
   }
-  mw->traceset_context = LTTV_TRACESET_CONTEXT(gTracesetContext);
-  mw->traceset = (LTTV_TRACESET_CONTEXT(gTracesetContext))->ts;
-  g_object_ref(gTracesetContext);
 
-  //test
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/menu", LTTV_POINTER, &value));
-  menu = (LttvMenus*)*(value.v_pointer);
-
-  if(menu){
-    for(i=0;i<menu->len;i++){
-      menuItem = &g_array_index(menu, lttv_menu_closure, i);
-      constructor = menuItem->con;
-      ToolMenuTitle_menu = lookup_widget(mw->MWindow,"ToolMenuTitle_menu");
-      insert_view = gtk_menu_item_new_with_mnemonic (menuItem->menuText);
-      gtk_widget_show (insert_view);
-      gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
-      g_signal_connect ((gpointer) insert_view, "activate",
-			G_CALLBACK (insertViewTest),
-			constructor);  
-    }
-  }
-
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/toolbar", LTTV_POINTER, &value));
-  toolbar = (LttvToolbars*)*(value.v_pointer);
-
-  if(toolbar){
-    for(i=0;i<toolbar->len;i++){
-      toolbarItem = &g_array_index(toolbar, lttv_toolbar_closure, i);
-      constructor = toolbarItem->con;
-      ToolMenuTitle_menu = lookup_widget(mw->MWindow,"MToolbar2");
-      pixbuf = gdk_pixbuf_new_from_xpm_data ((const char**)toolbarItem->pixmap);
-      pixmap = gtk_image_new_from_pixbuf(pixbuf);
-      insert_view = gtk_toolbar_append_element (GTK_TOOLBAR (ToolMenuTitle_menu),
-						GTK_TOOLBAR_CHILD_BUTTON,
-						NULL,
-						"",
-						toolbarItem->tooltip, NULL,
-						pixmap, NULL, NULL);
-      gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (ToolMenuTitle_menu)->children)->data))->label), TRUE);
-      gtk_widget_show (insert_view);
-      gtk_container_set_border_width (GTK_CONTAINER (insert_view), 1);
-      g_signal_connect ((gpointer) insert_view, "clicked",G_CALLBACK (insertViewTest),constructor);       
-    }
-  }
-
-  //end
-
-  gSysView->EventDB = NULL;
-  gSysView->SystemInfo = NULL;
-  gSysView->Options  = NULL;
-  gSysView->Window = mw;
-  gSysView->Next = NULL;
-
-  g_object_set_data(G_OBJECT(window1), "systemView", (gpointer)gSysView);
-  g_object_set_data(G_OBJECT(window1), "mainWindow", (gpointer)mw);
+  constructMainWin(NULL, Window_Creation_Data);
 
   gtk_main ();
 
