@@ -7,7 +7,8 @@ AM_INIT_AUTOMAKE(LinuxTraceToolkit,0.9.7-29052003)
 AC_CONFIG_HEADER([config.h])
 AC_PROG_LIBTOOL
 AM_PROG_LIBTOOL
-AM_CONFIG_HEADER
+#AM_CONFIG_HEADER
+AM_PATH_GLIB_2_0
 
 # Checks for programs.
 AC_PROG_CC
@@ -20,7 +21,7 @@ AC_CHECK_LIB([glib-2.0], [g_malloc])
 
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/time.h unistd.h glib-2.0/glib.h])
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/time.h unistd.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
