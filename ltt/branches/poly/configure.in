@@ -83,6 +83,7 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/gui/API/Makefile
 		 lttv/modules/guiControlFlow/Makefile
 		 lttv/modules/icons/Makefile
+		 lttv/modules/guiStatistic/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 include/Makefile
