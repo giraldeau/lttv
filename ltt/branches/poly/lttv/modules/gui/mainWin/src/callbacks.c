@@ -94,7 +94,11 @@ void insertView(GtkWidget* widget, view_constructor constructor)
 
   viewer = (GtkWidget*)constructor(mwData);
   if(viewer)
-    gtk_custom_widget_add(custom, viewer);  
+  {
+    gtk_custom_widget_add(custom, viewer); 
+    // Added by MD
+    g_object_unref(G_OBJECT(viewer));
+  }
 }
 
 void get_label_string (GtkWidget * text, gchar * label) 

@@ -5,7 +5,7 @@
 #
 
 # the gui subdir comes first : dependency
-SUBDIRS = gui guiControlFlow
+SUBDIRS = gui # guiControlFlow
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
