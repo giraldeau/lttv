@@ -73,7 +73,15 @@ extern GdkColor drawing_colors[NUM_COLORS];
  * of the shown processes.
  */
 
+#ifndef TYPE_DRAWING_T_DEFINED
+#define TYPE_DRAWING_T_DEFINED
 typedef struct _Drawing_t Drawing_t;
+#endif //TYPE_DRAWING_T_DEFINED
+
+#ifndef TYPE_CONTROLFLOWDATA_DEFINED
+#define TYPE_CONTROLFLOWDATA_DEFINED
+typedef struct _ControlFlowData ControlFlowData;
+#endif //TYPE_CONTROLFLOWDATA_DEFINED
 
 struct _Drawing_t {
   GtkWidget *vbox;

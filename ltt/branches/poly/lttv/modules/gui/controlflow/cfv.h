@@ -26,6 +26,16 @@
 #include "processlist.h"
 
 
+#ifndef TYPE_DRAWING_T_DEFINED
+#define TYPE_DRAWING_T_DEFINED
+typedef struct _Drawing_t Drawing_t;
+#endif //TYPE_DRAWING_T_DEFINED
+
+#ifndef TYPE_CONTROLFLOWDATA_DEFINED
+#define TYPE_CONTROLFLOWDATA_DEFINED
+typedef struct _ControlFlowData ControlFlowData;
+#endif //TYPE_CONTROLFLOWDATA_DEFINED
+
 struct _ControlFlowData {
 
   GtkWidget *top_widget;
@@ -50,10 +60,6 @@ struct _ControlFlowData {
 
 } ;
 
-
-
-
-typedef struct _ControlFlowData ControlFlowData;
 
 /* Control Flow Data constructor */
 ControlFlowData *guicontrolflow(void);

@@ -34,7 +34,7 @@ libguicontrolflow_la_LDFLAGS = -module
 libguicontrolflow_la_SOURCES = 	module.c eventhooks.c cfv.c processlist.c\
 				drawing.c drawitem.c
 
-noinst_HEADERS = 	eventhooks.h cfv.h cfv-private.h processlist.h\
+noinst_HEADERS = 	eventhooks.h cfv.h processlist.h\
 				drawing.h drawitem.h
 
 EXTRA_DIST = \

@@ -71,7 +71,6 @@
 #include "cfv.h"
 #include "processlist.h"
 #include "drawing.h"
-#include "cfv-private.h"
 
 
 #define MAX_PATH_LEN 256

@@ -29,7 +29,6 @@
 #include "drawing.h"
 #include "eventhooks.h"
 #include "cfv.h"
-#include "cfv-private.h"
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)

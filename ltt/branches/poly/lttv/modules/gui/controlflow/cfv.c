@@ -24,7 +24,6 @@
 #include "drawing.h"
 #include "processlist.h"
 #include "eventhooks.h"
-#include "cfv-private.h"
 #include <lttv/lttv.h>
 
 extern GSList *g_control_flow_data_list;
