@@ -354,6 +354,7 @@ void getFacilityInfo(LttTrace *t, char* eventdefs)
   int i,j;
   LttFacility * f;
   LttEventType * et;
+  char name[DIR_NAME_SIZE];
 
   dir = opendir(eventdefs);
   if(!dir) g_error("Can not open directory: %s\n", eventdefs);
@@ -361,7 +362,9 @@ void getFacilityInfo(LttTrace *t, char* eventdefs)
   while((entry = readdir(dir)) != NULL){
     ptr = &entry->d_name[strlen(entry->d_name)-4];
     if(strcmp(ptr,".xml") != 0) continue;
-    ltt_facility_open(t,entry->d_name);
+    strcpy(name,eventdefs);
+    strcat(name,entry->d_name);
+    ltt_facility_open(t,name);
   }  
   closedir(dir);
   
@@ -378,6 +381,7 @@ void getControlFileInfo(LttTrace *t, char* control)
 {
   DIR * dir;
   struct dirent *entry;
+  char name[DIR_NAME_SIZE];
 
   dir = opendir(control);
   if(!dir) g_error("Can not open directory: %s\n", control);
@@ -387,7 +391,9 @@ void getControlFileInfo(LttTrace *t, char* control)
        strcmp(entry->d_name,"interrupts") != 0 ||
        strcmp(entry->d_name,"processes") != 0) continue;
     
-    ltt_tracefile_open_control(t,entry->d_name);
+    strcpy(name,control);
+    strcat(name,entry->d_name);
+    ltt_tracefile_open_control(t,name);
   }  
   closedir(dir);
 }
@@ -396,6 +402,7 @@ void getCpuFileInfo(LttTrace *t, char* cpu)
 {
   DIR * dir;
   struct dirent *entry;
+  char name[DIR_NAME_SIZE];
 
   dir = opendir(cpu);
   if(!dir) g_error("Can not open directory: %s\n", cpu);
@@ -403,7 +410,9 @@ void getCpuFileInfo(LttTrace *t, char* cpu)
   while((entry = readdir(dir)) != NULL){
     if(strcmp(entry->d_name,".") != 0 ||
        strcmp(entry->d_name,"..") != 0 ){
-      ltt_tracefile_open_cpu(t,entry->d_name);
+      strcpy(name,cpu);
+      strcat(name,entry->d_name);
+      ltt_tracefile_open_cpu(t,name);
     }else continue;
   }  
   closedir(dir);
