@@ -749,12 +749,9 @@ void lttvwindow_report_focus(Tab *tab, GtkWidget *top_widget)
  */
 
 void lttvwindow_events_request(Tab *tab,
-                               const EventsRequest  *events_request)
+                               EventsRequest  *events_request)
 {
-  EventsRequest *alloc = g_new(EventsRequest,1);
-  *alloc = *events_request;
-
-  tab->events_requests = g_slist_append(tab->events_requests, alloc);
+  tab->events_requests = g_slist_append(tab->events_requests, events_request);
   
   if(!tab->events_request_pending)
   {

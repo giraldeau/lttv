@@ -2506,8 +2506,7 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   if(parent){
     if(parent->current_tab){
       tmp_tab->traceset_info->traceset = 
-                      lttv_traceset_new();
-        //FIXME lttv_traceset_copy(parent->current_tab->traceset_info->traceset);
+        lttv_traceset_copy(parent->current_tab->traceset_info->traceset);
     }else{
       tmp_tab->traceset_info->traceset = lttv_traceset_new();
     }
@@ -2515,8 +2514,7 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   }else{  /* Initial window */
     if(mw_data->current_tab){
       tmp_tab->traceset_info->traceset = 
-                      lttv_traceset_new();
-        //FIXME lttv_traceset_copy(mw_data->current_tab->traceset_info->traceset);
+        lttv_traceset_copy(mw_data->current_tab->traceset_info->traceset);
     }else{
       tmp_tab->traceset_info->traceset = lttv_traceset_new();    
       /* Add the command line trace */
@@ -2525,7 +2523,15 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
       }
     }
   }
-  
+
+//FIXME : this is g_debug level
+  lttv_attribute_write_xml(
+      lttv_traceset_attribute(tmp_tab->traceset_info->traceset),
+      stdout,
+      0, 4);
+  fflush(stdout);
+
+
   //FIXME copy not implemented in lower level
   tmp_tab->traceset_info->traceset_context =
     g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);

@@ -606,13 +606,16 @@ typedef struct _EventsRequest {
  *
  * end_time, end_position and num_events can all be defined. The first one
  * to occur will be used as end criterion.
+ *
+ * The events_request memory will be managed by the main window once its
+ * pointer is passed by this function.
  * 
  * @param tab the tab the viewer belongs to.
  * @param events_requested Details about the event request.
  */
 
 void lttvwindow_events_request(Tab                  *tab,
-                               const EventsRequest  *events_request);
+                               EventsRequest  *events_request);
 
 /**
  * Function to remove data requests related to a viewer.
