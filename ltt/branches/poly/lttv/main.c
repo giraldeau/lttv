@@ -124,6 +124,12 @@ int main(int argc, char **argv) {
   
 }
 
+lttv_attributes *lttv_global_attributes()
+{
+	return attributes_global;
+}
+
+
 void lttv_module_option(void *hook_data)
 { 
   lttv_module_load(aModule,aArgc,aArgv,STANDALONE);

@@ -1,8 +1,8 @@
+#include <popt.h>
 
 #include "lttv.h"
 #include "option.h"
 #include "hook.h"
-#include <popt.h>
 
 /* Extensible array of popt command line options. Modules add options as
    they are loaded and initialized. */
@@ -11,8 +11,6 @@ typedef struct _lttv_option {
   lttv_option_hook hook;
   void *hook_data;
 } lttv_option;
-
-extern lttv_attributes *attributes_global;
 
 static GArray *lttv_options_command;
 
@@ -48,16 +46,16 @@ void lttv_option_init(int argc, char **argv) {
   hooks_options_before = lttv_hooks_new();
   hooks_options_after = lttv_hooks_new();
 
-  lttv_attributes_set_pointer_pathname(attributes_global, 
+  lttv_attributes_set_pointer_pathname(lttv_global_attributes(), 
       "hooks/options/before", hooks_options_before);
 
-  lttv_attributes_set_pointer_pathname(attributes_global,
+  lttv_attributes_set_pointer_pathname(lttv_global_attributes(),
       "hooks/options/after",  hooks_options_after);
 
   lttv_options_command_popt = g_array_new(0,0,sizeof(struct poptOption));
   lttv_options_command = g_array_new(0,0,sizeof(lttv_option));
 
-  hooks_init_after = lttv_attributes_get_pointer_pathname(attributes_global,
+  hooks_init_after = lttv_attributes_get_pointer_pathname(lttv_global_attributes(),
 		  "hooks/init/after");
   lttv_hooks_add(hooks_init_after, lttv_options_command_parse, NULL);
 
@@ -68,10 +66,10 @@ void lttv_option_destroy() {
   g_array_free(lttv_options_command_popt,TRUE) ;
   g_array_free(lttv_options_command,TRUE) ;
 
-  lttv_attributes_set_pointer_pathname(attributes_global, 
+  lttv_attributes_set_pointer_pathname(lttv_global_attributes(), 
       "hooks/options/before", NULL);
 
-  lttv_attributes_set_pointer_pathname(attributes_global,
+  lttv_attributes_set_pointer_pathname(lttv_global_attributes(),
       "hooks/options/after",  NULL);
 
   lttv_hooks_destroy(hooks_options_before);
