@@ -548,7 +548,8 @@ void lttvwindowtraces_background_notify_remove(gpointer owner)
 /* Background processing helper functions */
 
 void lttvwindowtraces_add_computation_hooks(LttvAttributeName module_name,
-                                            LttvTracesetContext *tsc)
+                                            LttvTracesetContext *tsc,
+                                            LttvHooks *hook_adder)
 {
   LttvAttribute *g_attribute = lttv_global_attributes();
   LttvAttribute *module_attribute;
@@ -611,7 +612,9 @@ void lttvwindowtraces_add_computation_hooks(LttvAttributeName module_name,
                                      LTTV_HOOK_ADDER,
                                      &value);
   if(type == LTTV_POINTER) {
-    lttv_hooks_call((LttvHooks*)*(value.v_pointer), (gpointer)tss);
+    //lttv_hooks_call((LttvHooks*)*(value.v_pointer), (gpointer)tss);
+    if(hook_adder != NULL)
+      lttv_hooks_add_list(hook_adder, (LttvHooks*)*(value.v_pointer));
   }
 
 
@@ -626,7 +629,8 @@ void lttvwindowtraces_add_computation_hooks(LttvAttributeName module_name,
 }
                                             
 void lttvwindowtraces_remove_computation_hooks(LttvAttributeName module_name,
-                                               LttvTracesetContext *tsc)
+                                               LttvTracesetContext *tsc,
+                                               LttvHooks *hook_remover)
 {
   LttvAttribute *g_attribute = lttv_global_attributes();
   LttvAttribute *module_attribute;
@@ -695,7 +699,9 @@ void lttvwindowtraces_remove_computation_hooks(LttvAttributeName module_name,
                                      LTTV_HOOK_REMOVER,
                                      &value);
   if(type == LTTV_POINTER) {
-    lttv_hooks_call((LttvHooks*)*(value.v_pointer), (gpointer)tss);
+    //lttv_hooks_call((LttvHooks*)*(value.v_pointer), (gpointer)tss);
+    if(hook_remover != NULL)
+      lttv_hooks_add_list(hook_remover, (LttvHooks*)*(value.v_pointer));
   }
 }
 
@@ -997,6 +1003,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
     {
       GSList *iter = *list_in;
+      LttvHooks *hook_adder = lttv_hooks_new();
       /* - for each request in list_in */
       while(iter != NULL) {
         
@@ -1004,9 +1011,12 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
         /*- Call before chunk hooks for list_in*/
         /*- add hooks to context*/
         lttvwindowtraces_add_computation_hooks(bg_req->module_name,
-                                               tsc);
+                                               tsc,
+                                               hook_adder);
         iter = g_slist_next(iter);
       }
+      lttv_hooks_call(hook_adder,tsc);
+      lttv_hooks_destroy(hook_adder);
     }
   }
 
@@ -1024,6 +1034,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
     /*  3.1 call after_chunk hooks for list_in */
     {
       GSList *iter = *list_in;
+      LttvHooks *hook_remover = lttv_hooks_new();
       /* - for each request in list_in */
       while(iter != NULL) {
         
@@ -1031,9 +1042,12 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
         /* - Call after chunk hooks for list_in */
         /* - remove hooks from context */
         lttvwindowtraces_remove_computation_hooks(bg_req->module_name,
-                                                  tsc);
+                                                  tsc,
+                                                  hook_remover);
         iter = g_slist_next(iter);
       }
+      lttv_hooks_call(hook_remover,tsc);
+      lttv_hooks_destroy(hook_remover);
     }
 
     /* 3.2 for each notify_in */
@@ -1173,6 +1187,11 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
               iter = g_slist_next(iter);
             }
           }
+        }
+        {
+          /* - reset the context */
+          LTTV_TRACESET_CONTEXT_GET_CLASS(tsc)->fini(tsc);
+          LTTV_TRACESET_CONTEXT_GET_CLASS(tsc)->init(tsc,ts);
         }
         /* - if list_out is empty */
         if(g_slist_length(*list_out) == 0) {

@@ -185,8 +185,12 @@ static void init() {
     LttvHooks *hook_adder = lttv_hooks_new();
     lttv_hooks_add(hook_adder, lttv_state_save_hook_add_event_hooks, NULL,
                    LTTV_PRIO_DEFAULT);
+    lttv_hooks_add(hook_adder, lttv_state_hook_add_event_hooks, NULL,
+                   LTTV_PRIO_DEFAULT);
     LttvHooks *hook_remover = lttv_hooks_new();
     lttv_hooks_add(hook_remover, lttv_state_save_hook_remove_event_hooks,
+                                    NULL, LTTV_PRIO_DEFAULT);
+    lttv_hooks_add(hook_remover, lttv_state_hook_remove_event_hooks,
                                     NULL, LTTV_PRIO_DEFAULT);
     /* Add state computation background hook adder to attributes */
     lttvwindowtraces_register_computation_hooks(g_quark_from_string("state"),
@@ -199,8 +203,12 @@ static void init() {
     LttvHooks *hook_adder = lttv_hooks_new();
     lttv_hooks_add(hook_adder, lttv_stats_hook_add_event_hooks, NULL,
                    LTTV_PRIO_DEFAULT);
+    lttv_hooks_add(hook_adder, lttv_state_hook_add_event_hooks, NULL,
+                   LTTV_PRIO_DEFAULT);
     LttvHooks *hook_remover = lttv_hooks_new();
     lttv_hooks_add(hook_remover, lttv_stats_hook_remove_event_hooks,
+                                    NULL, LTTV_PRIO_DEFAULT);
+    lttv_hooks_add(hook_remover, lttv_state_hook_remove_event_hooks,
                                     NULL, LTTV_PRIO_DEFAULT);
     LttvHooks *after_request = lttv_hooks_new();
     lttv_hooks_add(after_request, lttv_stats_sum_traceset_hook, NULL,
