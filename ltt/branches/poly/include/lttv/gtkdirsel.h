@@ -84,7 +84,7 @@ void       gtk_dir_selection_show_fileop_buttons (GtkDirSelection *filesel);
 void       gtk_dir_selection_hide_fileop_buttons (GtkDirSelection *filesel);
 
 gchar**    gtk_dir_selection_get_selections      (GtkDirSelection *filesel);
-gchar *    gtk_dir_selection_get_dir (GtkDirSelection *filesel);
+const gchar *    gtk_dir_selection_get_dir (GtkDirSelection *filesel);
 void       gtk_dir_selection_set_select_multiple (GtkDirSelection *filesel,
 						   gboolean          select_multiple);
 gboolean   gtk_dir_selection_get_select_multiple (GtkDirSelection *filesel);

@@ -2460,7 +2460,8 @@ gtk_dir_selection_dir_changed (GtkTreeSelection *selection,
 
   if (index != -1)
     {
-      gchar * err, str[256];
+      const gchar * err;
+      gchar str[256];
       err = gtk_label_get_text (GTK_LABEL (fs->selection_text));
       err += 11;  //pass over "Selection: "
       sprintf(str,"%s\0",err);
@@ -4039,7 +4040,7 @@ cmpl_strerror (gint err)
     return g_strerror (err);
 }
 
-gchar *    gtk_dir_selection_get_dir (GtkDirSelection *filesel)
+const gchar *    gtk_dir_selection_get_dir (GtkDirSelection *filesel)
 {
   return     gtk_entry_get_text (GTK_ENTRY (filesel->selection_entry));
 }

@@ -391,7 +391,7 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   LttTrace *trace;
   LttvTrace * trace_v;
   LttvTraceset * traceset;
-  char * dir;
+  const char * dir;
   gint id;
   MainWindow * mw_data = get_window_data_struct(widget);
   GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
