@@ -164,12 +164,18 @@ unsigned ltt_type_size(LttTrace * trace, LttType *t)
       return intSizes[t->size];
     else{
       LttArchSize size = trace->system_description->size;
-      if(size == LTT_LP32)
-	return sizeof(int16_t);
-      else if(size == LTT_ILP32 || size == LTT_LP64)
-	return sizeof(int32_t);
-      else if(size == LTT_ILP64)
-	return sizeof(int64_t);	
+      if(size == LTT_LP32){
+	if(t->size == 5)return sizeof(int16_t);
+	else return sizeof(int32_t);
+      }
+      else if(size == LTT_ILP32 || size == LTT_LP64){
+	if(t->size == 5)return sizeof(int32_t);
+	else{
+	  if(size == LTT_ILP32) return sizeof(int32_t);
+	  else return sizeof(int64_t);
+	}
+      }
+      else if(size == LTT_ILP64)return sizeof(int64_t);	      
     }
   }
 }
