@@ -29,7 +29,14 @@ typedef struct _LttTime {
 
 
 #define NANOSECONDS_PER_SECOND 1000000000
-#define SHIFT_CONST 1.07374182400631629848
+/* 2^30/1.07374182400631629848 = 1000000000.0 */ 
+#define DOUBLE_SHIFT_CONST 1.07374182400631629848
+#define DOUBLE_SHIFT 30
+
+/* 1953125 * 2^9 = NANOSECONDS_PER_SECOND */
+#define LTT_TIME_UINT_SHIFT_CONST 1953125
+#define LTT_TIME_UINT_SHIFT 9
+
 
 static const LttTime ltt_time_zero = { 0, 0 };
 
@@ -101,7 +108,9 @@ static inline double ltt_time_to_double(LttTime t1)
   if(t1.tv_sec > MAX_TV_SEC_TO_DOUBLE)
     g_warning("Precision loss in conversion LttTime to double");
 #endif //EXTRA_CHECK
-  return ((double)t1.tv_sec * (double)NANOSECONDS_PER_SECOND) + (double)t1.tv_nsec;
+  return ((double)((guint64)t1.tv_sec<<DOUBLE_SHIFT)
+                  / (double)DOUBLE_SHIFT_CONST)
+                  + (double)t1.tv_nsec;
 }
 
 
@@ -122,8 +131,9 @@ static inline LttTime ltt_time_from_double(double t1)
 #endif //EXTRA_CHECK
   LttTime res;
   //res.tv_sec = t1/(double)NANOSECONDS_PER_SECOND;
-  res.tv_sec = (guint64)(t1 * SHIFT_CONST) >> 30;
-  res.tv_nsec = (t1 - (res.tv_sec*NANOSECONDS_PER_SECOND));
+  res.tv_sec = (guint64)(t1 * DOUBLE_SHIFT_CONST) >> DOUBLE_SHIFT;
+  res.tv_nsec = (t1 - (((guint64)res.tv_sec<<LTT_TIME_UINT_SHIFT))
+                               * LTT_TIME_UINT_SHIFT_CONST);
   return res;
 }
 
@@ -192,14 +202,19 @@ static inline LttTime ltt_time_div(LttTime t1, double d)
 #endif //0
 }
 
+
 static inline guint64 ltt_time_to_uint64(LttTime t1)
 {
-  return (guint64)t1.tv_sec*NANOSECONDS_PER_SECOND
-            + (guint64)t1.tv_nsec;
+  return (guint64)(t1.tv_sec*LTT_TIME_UINT_SHIFT_CONST) >> LTT_TIME_UINT_SHIFT
+                       + (guint64)t1.tv_nsec;
 }
 
 
 #define MAX_TV_SEC_TO_UINT64 0x3FFFFFFFFFFFFFFFULL
+
+/* The likely branch is with sec != 0, because most events in a bloc
+ * will be over 1s from the block start. (see tracefile.c)
+ */
 static inline LttTime ltt_time_from_uint64(guint64 t1)
 {
   /* We lose precision if tv_sec is > than (2^62)-1
@@ -210,8 +225,11 @@ static inline LttTime ltt_time_from_uint64(guint64 t1)
     g_warning("Conversion from uint64 to non precise LttTime");
 #endif //EXTRA_CHECK
   LttTime res;
-  if(unlikely(t1 >= NANOSECONDS_PER_SECOND)) {
-    res.tv_sec = t1/NANOSECONDS_PER_SECOND;
+  //if(unlikely(t1 >= NANOSECONDS_PER_SECOND)) {
+  if(likely(t1>>LTT_TIME_UINT_SHIFT >= LTT_TIME_UINT_SHIFT_CONST)) {
+    //res.tv_sec = t1/NANOSECONDS_PER_SECOND;
+    res.tv_sec = (t1>>LTT_TIME_UINT_SHIFT)
+                         /LTT_TIME_UINT_SHIFT_CONST; // acceleration
     res.tv_nsec = (t1 - res.tv_sec*NANOSECONDS_PER_SECOND);
   } else {
     res.tv_sec = 0;
