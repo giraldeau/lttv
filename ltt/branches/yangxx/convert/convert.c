@@ -260,7 +260,13 @@ int main(int argc, char ** argv){
     beat_count = 0;
 
     for(j=1;j<cpu;j++)has_event[j] = FALSE;
-    for(j=0;j<cpu;j++) write_pos[j] = buf_out[j];
+    for(j=0;j<cpu;j++){
+      memset((void*)buf_out[j], 0, block_size);
+      write_pos[j] = buf_out[j];
+    }
+    memset((void*)buf_intr, 0, block_size);    
+    memset((void*)buf_fac, 0, block_size);    
+    memset((void*)buf_proc, 0, block_size);    
     write_pos_intr = buf_intr;
     write_pos_fac = buf_fac;
     write_pos_proc = buf_proc;
