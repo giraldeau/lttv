@@ -212,7 +212,8 @@ static void destroy()
   for(i = 0 ; i < nb ; i++) {
     trace = lttv_traceset_get(traceset, i);
     ltt_trace_close(lttv_trace(trace));
-    lttv_trace_destroy(trace);
+    /* This will be done by lttv_traceset_destroy */
+    //lttv_trace_destroy(trace);
   }
 
   lttv_traceset_destroy(traceset); 
