@@ -324,7 +324,20 @@ int main(int argc, char ** argv){
       ltt_block_size    = tStart_2_2->BufferSize;
       ltt_log_cpu       = tStart_2_2->LogCPUID;
       ltt_trace_start_size = sizeof(trace_start_2_2);
-    } else if(tStart->MinorVersion == 3) {
+      /* Verify if it's a broken 2.2 format */
+      if(*(uint8_t*)(cur_pos + sizeof(trace_start_2_2)) == 0) {
+        /* Cannot have two trace start events. We cannot detect the problem
+         * if the flight recording flag is set to 1, as it conflicts
+         * with TRACE_SYSCALL_ENTRY.
+         */
+        g_warning("This is a 2.3 trace format that has a 2.2 tag. Please upgrade your kernel");
+        g_printf("Processing the trace as a 2.3 format\n");
+
+        tStart->MinorVersion = 3;
+      }
+    }
+    
+    if(tStart->MinorVersion == 3) {
       trace_start_2_3* tStart_2_3 = (trace_start_2_3*)tStart;
       ltt_major_version = tStart_2_3->MajorVersion;
       ltt_minor_version = tStart_2_3->MinorVersion;
