@@ -149,21 +149,27 @@ GuiControlFlow(void)
 
 }
 
+/* Destroys widget also */
+void
+GuiControlFlow_Destructor_Full(ControlFlowData *Control_Flow_Data)
+{
+	/* May already have been done by GTK window closing */
+	if(GTK_IS_WIDGET(Control_Flow_Data->Scrolled_Window_VC))
+		gtk_widget_destroy(Control_Flow_Data->Scrolled_Window_VC);
+
+	GuiControlFlow_Destructor(Control_Flow_Data);
+}
+
 void
 GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
 {
 	guint index;
 
-	/* May already been done by GTK window closing */
-	if(GTK_IS_WIDGET(Control_Flow_Data->Scrolled_Window_VC))
-		gtk_widget_destroy(Control_Flow_Data->Scrolled_Window_VC);
-	
 	//ProcessList_destroy(Control_Flow_Data->Process_List);
 	
 	g_slist_remove(gControl_Flow_Data_List,Control_Flow_Data);
+	g_free(Control_Flow_Data);
 }
-
-//FIXME : call hGuiEvents_Destructor for corresponding data upon widget destroy
 
 GtkWidget *GuiControlFlow_get_Widget(ControlFlowData *Control_Flow_Data)
 {
