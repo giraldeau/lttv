@@ -40,7 +40,7 @@
 //#include "mw_api.h"
 #include "gtktreeprivate.h"
 
-#include "icons/hGuiEventsInsert.xpm"
+#include "../icons/hGuiEventsInsert.xpm"
 
 
 static LttvHooks  *before_event;
