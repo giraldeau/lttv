@@ -61,6 +61,7 @@ typedef struct _LttField LttField;
 
 typedef struct _LttEvent LttEvent;
 
+typedef struct _LttSystemDescription LttSystemDescription;
 
 /* Checksums are used to differentiate facilities which have the same name
    but differ. */
