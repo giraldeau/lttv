@@ -21,7 +21,7 @@
 
 
 inline LttvMenus *lttv_menus_new() {
-  return g_array_new(FALSE, FALSE, sizeof(lttv_menu_closure));
+  return g_array_new(FALSE, FALSE, sizeof(LttvMenuClosure));
 }
 
 /* MD: delete elements of the array also, but don't free pointed addresses
@@ -32,9 +32,9 @@ inline void lttv_menus_destroy(LttvMenus *h) {
   g_array_free(h, TRUE);
 }
 
-inline void lttv_menus_add(LttvMenus *h, lttvwindow_viewer_constructor f, char* menuPath, char* menuText)
+inline void lttv_menus_add(LttvMenus *h, lttvwindow_viewer_constructor f, char* menuPath, char* menuText, GtkWidget *widget)
 {
-  lttv_menu_closure c;
+  LttvMenuClosure c;
 
   /* if h is null, do nothing, or popup a warning message */
   if(h == NULL)return;
@@ -42,15 +42,16 @@ inline void lttv_menus_add(LttvMenus *h, lttvwindow_viewer_constructor f, char* 
   c.con = f;
   c.menuPath = menuPath;
   c.menuText = menuText;
+  c.widget = widget;
   g_array_append_val(h,c);
 }
 
 gboolean lttv_menus_remove(LttvMenus *h, lttvwindow_viewer_constructor f)
 {
-  lttv_menu_closure * tmp;
+  LttvMenuClosure * tmp;
   gint i;
   for(i=0;i<h->len;i++){
-    tmp = & g_array_index(h, lttv_menu_closure, i);
+    tmp = & g_array_index(h, LttvMenuClosure, i);
     if(tmp->con == f)break;
   }
   if(i<h->len){

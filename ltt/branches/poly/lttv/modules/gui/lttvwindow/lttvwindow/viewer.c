@@ -144,202 +144,106 @@ void set_time_window(MainWindow * main_win, const TimeWindow *time_window)
 
 }
 
-
-/* Remove menu entry and tool button from main window for the 
- * unloaded  module
- */
-
-void remove_menu_item(gpointer main_win, gpointer user_data)
-{
-  MainWindow * mw = (MainWindow *) main_win;
-  lttv_menu_closure *menu_item = (lttv_menu_closure *)user_data;
-  GtkWidget * tool_menu_title_menu, *insert_view;
-
-  tool_menu_title_menu = lookup_widget(mw->mwindow,"ToolMenuTitle_menu");
-  insert_view = (GtkWidget*)g_hash_table_lookup(mw->hash_menu_item,
-						menu_item->menuText);
-  if(insert_view){
-    g_hash_table_remove(mw->hash_menu_item, menu_item->menuText);
-    gtk_container_remove (GTK_CONTAINER (tool_menu_title_menu), insert_view);
-  }
-}
-
-void remove_toolbar_item(gpointer main_win, gpointer user_data)
-{
-  MainWindow * mw = (MainWindow *) main_win;
-  lttv_toolbar_closure *toolbar_item = (lttv_toolbar_closure *)user_data;
-  GtkWidget * tool_menu_title_menu, *insert_view;
-
-
-  tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar1");
-  insert_view = (GtkWidget*)g_hash_table_lookup(mw->hash_toolbar_item,
-						toolbar_item->tooltip);
-  if(insert_view){
-    g_hash_table_remove(mw->hash_toolbar_item, toolbar_item->tooltip);
-    gtk_container_remove (GTK_CONTAINER (tool_menu_title_menu), insert_view);
-  }
-}
-
-/**
- * Remove menu and toolbar item when a module unloaded from all 
- * main windows
- */
-
-void main_window_remove_menu_item(lttvwindow_viewer_constructor constructor)
-{
-  int i;
-  LttvMenus * menu;
-  lttv_menu_closure *menu_item;
-  LttvAttributeValue value;
-  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
-
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/menu", LTTV_POINTER, &value));
-  menu = (LttvMenus*)*(value.v_pointer);
-
-  if(menu){
-    for(i=0;i<menu->len;i++){
-      menu_item = &g_array_index(menu, lttv_menu_closure, i);
-      if(menu_item->con != constructor) continue;
-      if(g_main_window_list){
-	g_slist_foreach(g_main_window_list, remove_menu_item, menu_item);
-      }
-      break;
-    }
-  }
-  
-}
-
-void main_window_remove_toolbar_item(lttvwindow_viewer_constructor constructor)
-{
-  int i;
-  LttvToolbars * toolbar;
-  lttv_toolbar_closure *toolbar_item;
-  LttvAttributeValue value;
-  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
-
-  g_assert(lttv_iattribute_find_by_path(attributes,
-	   "viewers/toolbar", LTTV_POINTER, &value));
-  toolbar = (LttvToolbars*)*(value.v_pointer);
-
-  if(toolbar){
-    for(i=0;i<toolbar->len;i++){
-      toolbar_item = &g_array_index(toolbar, lttv_toolbar_closure, i);
-      if(toolbar_item->con != constructor) continue;
-      if(g_main_window_list){
-	g_slist_foreach(g_main_window_list, remove_toolbar_item, toolbar_item);
-      }
-      break;
-    }
-  }
-}
-
-
-
-
 /**
  * API parts
  */
 
+
 /**
  * Function to register a view constructor so that main window can generate
- * a toolbar item for the viewer in order to generate a new instance easily. 
- * It will be called by init function of the module.
- * @param ButtonPixmap image shown on the toolbar item.
+ * a menu item and a toolbar item for the viewer in order to generate a new
+ * instance easily. A menu entry and toolbar item will be added to each main
+ * window.
+ * 
+ * It should be called by init function of the module.
+ * 
+ * @param menu_path path of the menu item.
+ * @param menu_text text of the menu item.
+ * @param pixmap Image shown on the toolbar item.
  * @param tooltip tooltip of the toolbar item.
  * @param view_constructor constructor of the viewer. 
  */
 
-void lttvwindow_register_toolbar(char ** pixmap, char *tooltip, lttvwindow_viewer_constructor view_constructor)
+void lttvwindow_register_constructor
+                            (char *  menu_path, 
+                             char *  menu_text,
+                             char ** pixmap,
+                             char *  tooltip,
+                             lttvwindow_viewer_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
+  LttvMenus * menu;
   LttvAttributeValue value;
 
-  g_assert(lttv_iattribute_find_by_path(attributes_global,
-     "viewers/toolbar", LTTV_POINTER, &value));
-  toolbar = (LttvToolbars*)*(value.v_pointer);
+  if(pixmap != NULL) {
+    g_assert(lttv_iattribute_find_by_path(attributes_global,
+       "viewers/toolbar", LTTV_POINTER, &value));
+    toolbar = (LttvToolbars*)*(value.v_pointer);
 
-  if(toolbar == NULL){
-    toolbar = lttv_toolbars_new();
-    *(value.v_pointer) = toolbar;
+    if(toolbar == NULL) {
+      toolbar = lttv_toolbars_new();
+      *(value.v_pointer) = toolbar;
+    }
+    lttv_toolbars_add(toolbar, view_constructor, tooltip, pixmap);
+    main_window_add_toolbars_item(toolbar, view_constructor, tooltip, pixmap);
   }
-  lttv_toolbars_add(toolbar, view_constructor, tooltip, pixmap);
+
+  if(menu_path != NULL) {
+    g_assert(lttv_iattribute_find_by_path(attributes_global,
+       "viewers/menu", LTTV_POINTER, &value));
+    menu = (LttvMenus*)*(value.v_pointer);
+    
+    if(menu == NULL) {
+      menu = lttv_menus_new();
+      *(value.v_pointer) = menu;
+    }
+    lttv_menus_add(menu, view_constructor, menu_path, menu_text);
+    main_window_add_menu_item(menu, view_constructor, menu_path, menu_text);
+  }
 }
 
 
 /**
  * Function to unregister the viewer's constructor, release the space 
- * occupied by pixmap, tooltip and constructor of the viewer.
+ * occupied by menu_path, menu_text, pixmap, tooltip and constructor of the
+ * viewer.
+ * 
  * It will be called when a module is unloaded.
- * @param view_constructor constructor of the viewer which is used as 
- * a reference to find out where the pixmap and tooltip are.
+ * 
+ * @param view_constructor constructor of the viewer.
  */
 
-void lttvwindow_unregister_toolbar(lttvwindow_viewer_constructor view_constructor)
+
+void lttvwindow_unregister_constructor
+                  (lttvwindow_viewer_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
+  LttvMenus * menu;
   LttvAttributeValue value;
 
   g_assert(lttv_iattribute_find_by_path(attributes_global,
      "viewers/toolbar", LTTV_POINTER, &value));
   toolbar = (LttvToolbars*)*(value.v_pointer);
   
-  main_window_remove_toolbar_item(view_constructor);
-
-  lttv_toolbars_remove(toolbar, view_constructor);
-}
-
-
-/**
- * Function to register a view constructor so that main window can generate
- * a menu item for the viewer in order to generate a new instance easily.
- * It will be called by init function of the module.
- * @param menu_path path of the menu item.
- * @param menu_text text of the menu item.
- * @param view_constructor constructor of the viewer. 
- */
-
-void lttvwindow_register_menu(char *menu_path, char *menu_text, lttvwindow_viewer_constructor view_constructor)
-{
-  LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
-  LttvMenus * menu;
-  LttvAttributeValue value;
+  if(toolbar != NULL) {
+    main_window_remove_toolbar_item(view_constructor);
+    lttv_toolbars_remove(toolbar, view_constructor);
+  }
 
   g_assert(lttv_iattribute_find_by_path(attributes_global,
      "viewers/menu", LTTV_POINTER, &value));
   menu = (LttvMenus*)*(value.v_pointer);
   
-  if(menu == NULL){    
-    menu = lttv_menus_new();
-    *(value.v_pointer) = menu;
+  if(menu != NULL) {
+    main_window_remove_menu_item(view_constructor);
+    lttv_menus_remove(menu, view_constructor);
   }
-  lttv_menus_add(menu, view_constructor, menu_path, menu_text);
+
+
 }
 
-/**
- * Function to unregister the viewer's constructor, release the space 
- * occupied by menu_path, menu_text and constructor of the viewer.
- * It will be called when a module is unloaded.
- * @param view_constructor constructor of the viewer which is used as 
- * a reference to find out where the menu_path and menu_text are.
- */
-
-void lttvwindow_unregister_menu(lttvwindow_viewer_constructor view_constructor)
-{
-  LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
-  LttvMenus * menu;
-  LttvAttributeValue value;
-
-  g_assert(lttv_iattribute_find_by_path(attributes_global,
-                              "viewers/menu", LTTV_POINTER, &value));
-  menu = (LttvMenus*)*(value.v_pointer);
-
-  main_window_remove_menu_item(view_constructor);
-
-  lttv_menus_remove(menu, view_constructor);
-}
 
 /**
  * Function to register a hook function for a viewer to set/update its

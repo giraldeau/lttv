@@ -20,21 +20,24 @@
 #define MENU_H
 
 #include <lttvwindow/common.h>
+#include <gtk/gtk.h>
+
 
 typedef GArray LttvMenus;
 
-typedef struct _lttv_menu_closure {
+typedef struct _LttvMenuClosure {
   lttvwindow_viewer_constructor con;
   char * menuPath;
   char * menuText;
-} lttv_menu_closure;
+  GtkWidget *widget;
+} LttvMenuClosure;
 
 
 LttvMenus *lttv_menus_new();
 
 void lttv_menus_destroy(LttvMenus *h);
 
-void lttv_menus_add(LttvMenus *h, lttvwindow_viewer_constructor f, char* menuPath, char * menuText);
+void lttv_menus_add(LttvMenus *h, lttvwindow_viewer_constructor f, char* menuPath, char * menuText, GtkWidget *widget);
 
 gboolean lttv_menus_remove(LttvMenus *h, lttvwindow_viewer_constructor f);
 
