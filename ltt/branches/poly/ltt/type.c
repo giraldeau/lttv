@@ -174,7 +174,7 @@ LttTypeEnum ltt_type_class(LttType *t)
 unsigned ltt_type_size(LttTrace * trace, LttType *t)
 {
   if(t->type_class==LTT_STRUCT || t->type_class==LTT_ARRAY || 
-     t->type_class==LTT_STRING) return 0;
+     t->type_class==LTT_STRING || t->type_class==LTT_UNION) return 0;
 
   if(t->type_class == LTT_FLOAT){
     return floatSizes[t->size];
@@ -253,7 +253,8 @@ unsigned ltt_type_member_number(LttType *t)
 
 /*****************************************************************************
  *Function name
- *    ltt_type_member_type : obtain the type of a data members in a structure 
+ *    ltt_type_member_type : obtain the type of a data member in a structure 
+ *                           or union.
  *Input params
  *    t                    : a type   
  *    i                    : index of the member
@@ -263,7 +264,8 @@ unsigned ltt_type_member_number(LttType *t)
 
 LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name)
 {
-  if(t->type_class != LTT_STRUCT){*name = NULL; return NULL;}
+  if(t->type_class != LTT_STRUCT
+      || t->type_class != LTT_UNION){*name = NULL; return NULL;}
   if(i >= t->element_number){*name = NULL; return NULL;}
   *name = t->element_type[i]->element_name;
   return t->element_type[i];
@@ -309,7 +311,7 @@ LttField *ltt_field_element(LttField *f)
 
 /*****************************************************************************
  *Function name
- *    ltt_field_member  : obtain the filed of data members for structure
+ *    ltt_field_member  : obtain the field of data members for structure
  *Input params
  *    f                 : a field   
  *    i                 : index of member field
@@ -319,7 +321,8 @@ LttField *ltt_field_element(LttField *f)
 
 LttField *ltt_field_member(LttField *f, unsigned i)
 {
-  if(f->field_type->type_class != LTT_STRUCT) return NULL;
+  if(f->field_type->type_class != LTT_STRUCT
+      || f->field_type->type_class != LTT_UNION) return NULL;
   if(i >= f->field_type->element_number) return NULL;
   return f->child[i];
 }
