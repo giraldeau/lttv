@@ -1,3 +1,4 @@
+
 #include "Drawing.h"
 
 /*****************************************************************************
@@ -44,7 +45,7 @@ Drawing_t *Drawing(void)
 			G_OBJECT(Drawing->Drawing_Area_V),
 			"Drawing_Data",
 			Drawing,
-			Drawing_destroy);
+			(GDestroyNotify)Drawing_destroy);
 
 	gtk_widget_modify_bg(	Control_Flow_Data->Drawing_Area_V,
 				GTK_STATE_NORMAL,
@@ -68,27 +69,46 @@ void Drawing_destroy(Drawing_t *Drawing)
  * function uses TimeMul, which should only be used if the float value is lower
  * that 4, and here it's always lower than 1, so it's ok.
  */
-void get_time_from_pixels(
-		guint area_x,
-		guint area_width,
-		guint window_width,
-		ltt_time *window_time_begin,
-		ltt_time *window_time_end,
-		ltt_time *time_begin,
-		ltt_time *time_end)
+void convert_pixels_to_time(
+		Drawing_t *Drawing,
+		guint x,
+		LttTime *window_time_begin,
+		LttTime *window_time_end,
+		LttTime *time,
+		);
 {
-	ltt_time window_time_interval;
+	LttTime window_time_interval;
 	
-	TimeSub(window_time_interval, window_time_end, window_time_begin);
+	TimeSub(window_time_interval, *window_time_end, window_time_begin);
 
 	
-	TimeMul(time_begin, window_time_interval, (area_x/(float)window_width));
-	TimeAdd(time_begin, window_time_begin, time_begin);
-	
-	TimeMul(time_end, window_time_interval, (area_width/(float)window_width));
-	TimeAdd(time_end, time_begin, time_end);
+	TimeMul(*time, window_time_interval,
+			(x/(float)Drawing->width));
+	TimeAdd(*time, window_time_begin, *time);
 	
 }
+
+
+
+void convert_time_to_pixels(
+		LttTime window_time_begin,
+		LttTime window_time_end,
+		LttTime time,
+		Drawing_t *Drawing,
+		guint *x,
+		)
+{
+	LttTime window_time_interval;
+	
+	TimeSub(window_time_interval, window_time_end, window_time_begin);
+	
+	TimeSub(time, time, wimdow_time_begin);
+	
+	*x = (guint)((time/(float)window_time_interval) * Drawing->width);
+	
+}
+
+
 
 void Drawing_Resize(Drawing_t *Drawing, guint h, guint, w)
 {

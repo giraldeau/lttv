@@ -83,9 +83,9 @@ void add_test_process(ControlFlowData *Control_Flow_Data)
 	{
 	  /* Add a new row to the model */
 		gtk_list_store_append (Control_Flow_Data->Store_M, &iter);
-		gtk_list_store_set (Control_Flow_Data->Store_M, &iter,
-												PROCESS_COLUMN, process[i],
-												-1);
+		gtk_list_store_set (	Control_Flow_Data->Store_M, &iter,
+					PROCESS_COLUMN, process[i],
+					-1);
 	}
 							
 }

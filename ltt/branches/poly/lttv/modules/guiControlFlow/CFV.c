@@ -34,7 +34,7 @@ struct _ControlFlowData {
 	
 	/* Shown events information */
 	guint First_Event, Last_Event;
-	ltt_time Begin_Time, End_Time;
+	LttTime Begin_Time, End_Time;
 	
 	
 	/* TEST DATA, TO BE READ FROM THE TRACE */
@@ -75,16 +75,16 @@ GuiControlFlow(void)
 
 
 	/* Create the Process list */
-	//Control_Flow_Data->Process_List = ProcessList_contruct();
+	Control_Flow_Data->Process_List = ProcessList_construct();
 	
-	//Process_List_Widget = 
-	//	ProcessList_getWidget(Control_Flow_Data->Process_List);
+	Process_List_Widget = 
+		ProcessList_getWidget(Control_Flow_Data->Process_List);
 	
 	Control_Flow_Data->Inside_HBox_V = gtk_hbox_new(0, 0);
 
-	//gtk_box_pack_start(
-	//	GTK_BOX(Control_Flow_Data->Inside_HBox_V),
-	//	Process_List_Widget, FALSE, TRUE, 0);
+	gtk_box_pack_start(
+		GTK_BOX(Control_Flow_Data->Inside_HBox_V),
+		Process_List_Widget, TRUE, TRUE, 0); // FALSE TRUE
 	//gtk_box_pack_start(
 	//	GTK_BOX(Control_Flow_Data->Inside_HBox_V),
 	//	Control_Flow_Data->Drawing_Area_V, TRUE, TRUE, 0);
@@ -133,7 +133,7 @@ GuiControlFlow(void)
 
 
 	//gtk_widget_show(Control_Flow_Data->Drawing_Area_V);
-	//gtk_widget_show(Process_List_Widget);
+	gtk_widget_show(Process_List_Widget);
 	gtk_widget_show(Control_Flow_Data->Inside_HBox_V);
 	gtk_widget_show(Control_Flow_Data->Scrolled_Window_VC);
 	
@@ -164,7 +164,8 @@ void
 GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
 {
 	guint index;
-
+	
+	/* Process List is removed with it's widget */
 	//ProcessList_destroy(Control_Flow_Data->Process_List);
 	
 	g_slist_remove(gControl_Flow_Data_List,Control_Flow_Data);
