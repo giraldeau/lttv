@@ -150,9 +150,9 @@ gboolean lttv_stats_add_event_hooks(LttvTracesetStats *self);
 
 gboolean lttv_stats_remove_event_hooks(LttvTracesetStats *self);
 
-void lttv_stats_save_statistics(LttvTracesetStats *self);
+void lttv_stats_sum_traceset(LttvTracesetStats *self);
 
-gboolean lttv_stats_load_statistics(LttvTracesetStats *self);
+void lttv_stats_sum_trace(LttvTraceStats *self);
 
 
 /* The LttvTracesetStats, LttvTraceStats and LttvTracefileStats types

@@ -16,6 +16,34 @@
  * MA 02111-1307, USA.
  */
 
+/*
+CHECK Rename to viewer.h
+
+Things that can happen to a viewer:
+
+update_time_window
+update_current_time
+update_traceset
+update_filter
+show_viewer
+update_dividor
+?? Reshape, damage ??
+
+Things that a viewer can do:
+
+update_status
+set_time_window
+set_current_time
+update_traceset?
+update_filter?
+show_viewer?
+set_focused_pane
+set_hpane_dividor
+*/
+
+
+
+
 /*! \file gtktraceset.h
  * \brief API used by the graphical viewers to interact with their top window.
  * 
@@ -350,6 +378,10 @@ void unreg_update_dividor(LttvHook hook, gpointer hook_data,
 void set_hpane_dividor(MainWindow *main_win, gint position);
 
 
+/*
+CHECK These functions really should not appear here. Directr calls would
+be OK unless there is a linker problem.
+*/
 /**
  * Function to process traceset. It will call lttv_process_trace, 
  * each view will call this api to get events.

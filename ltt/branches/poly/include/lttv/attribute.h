@@ -21,6 +21,7 @@
 
 #include <glib-object.h>
 #include <lttv/iattribute.h>
+#include <stdio.h>
 
 #define LTTV_ATTRIBUTE_TYPE        (lttv_attribute_get_type ())
 #define LTTV_ATTRIBUTE(obj)        (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_ATTRIBUTE_TYPE, LttvAttribute))
@@ -111,5 +112,10 @@ void lttv_attribute_recursive_free(LttvAttribute *self);
 /* Add items from a tree of attributes to another tree. */
 
 void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src);
+
+void
+lttv_attribute_write_xml(LttvAttribute *self, FILE *fp, int pos, int indent);
+
+void lttv_attribute_read_xml(LttvAttribute *self, FILE *fp);
 
 #endif // ATTRIBUTE_H

@@ -109,7 +109,6 @@ AC_CONFIG_FILES([Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 include/Makefile
-		 include/ltt/Makefile
 		 ltt/convert/Makefile
 		 include/lttv/Makefile])
 AC_OUTPUT

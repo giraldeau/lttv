@@ -58,6 +58,8 @@ static int
   a_save_interval;
 
 static gboolean
+  a_trace_event,
+  a_save_state_copy,
   a_test1,
   a_test2,
   a_test3,
@@ -66,6 +68,8 @@ static gboolean
   a_test6,
   a_test7,
   a_test_all;
+
+LttEventPosition *a_event_position;
 
 typedef struct _save_state {
   guint count;
@@ -99,9 +103,15 @@ static double run_one_test(LttvTracesetState *ts, LttTime start, LttTime end)
 {
   double t0, t1;
 
+  int i;
+
   lttv_traceset_context_add_hooks(&ts->parent,
   before_traceset, after_traceset, NULL, before_trace, after_trace,
   NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+
+  for(i = 0 ; i < lttv_traceset_number(traceset) ; i++) {
+    ((LttvTraceState *)(ts->parent.traces[i]))->save_interval =a_save_interval;
+  }
 
   t0 = get_time();
   lttv_state_traceset_seek_time_closest(ts, start);
@@ -116,11 +126,58 @@ static double run_one_test(LttvTracesetState *ts, LttTime start, LttTime end)
 }
 
 
+gboolean trace_event(void *hook_data, void *call_data)
+{
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+
+  guint nb_block, nb_event;
+
+  LttTracefile *tf;
+
+  ltt_event_position(tfs->parent.e, a_event_position);
+  ltt_event_position_get(a_event_position, &nb_block, &nb_event, &tf);
+  fprintf(stderr,"Event %s %lu.%09lu [%lu %lu]\n",
+      ltt_eventtype_name(ltt_event_eventtype(tfs->parent.e)),
+      tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec,
+      nb_block, nb_event);
+  return FALSE;
+}
+
+
 gboolean count_event(void *hook_data, void *call_data)
 {
   guint *pcount = (guint *)hook_data;
 
   (*pcount)++;
+  return FALSE;
+}
+
+
+gboolean save_state_copy_event(void *hook_data, void *call_data)
+{
+  SaveState *save_state = (SaveState *)hook_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+
+  LttvTraceState *ts = (LttvTraceState *)tfs->parent.t_context;
+
+  GString *filename;
+
+  FILE *fp;
+
+  if(ts->nb_event == 0 && strcmp(ltt_eventtype_name(
+      ltt_event_eventtype(tfs->parent.e)), "block_start") == 0) {
+    if(a_save_sample != NULL) {
+      filename = g_string_new("");
+      g_string_printf(filename, "%s.copy.%lu.%09lu.xml", a_save_sample, 
+          tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
+      fp = fopen(filename->str, "w");
+      if(fp == NULL) g_error("Cannot open %s", filename->str);
+      g_string_free(filename, TRUE);
+      lttv_state_write(ts, tfs->parent.timestamp, fp);
+      fclose(fp);
+    } //else lttv_state_write(ts, tfs->parent.timestamp, save_state->fp);
+  }
   return FALSE;
 }
 
@@ -149,7 +206,7 @@ gboolean save_state_event(void *hook_data, void *call_data)
       g_string_free(filename, TRUE);
       lttv_state_write(ts, tfs->parent.timestamp, fp);
       fclose(fp);
-    } else lttv_state_write(ts, tfs->parent.timestamp, save_state->fp);
+    } //else lttv_state_write(ts, tfs->parent.timestamp, save_state->fp);
 
     save_state->write_time[save_state->position] = tfs->parent.timestamp;
     save_state->position++;
@@ -198,14 +255,13 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   LttTime start_time;
 
-  LttEventPosition *event_position;
-
   LttTime zero_time = ltt_time_zero;
 
   LttTime max_time = { G_MAXULONG, G_MAXULONG };
 
+  a_event_position = ltt_event_position_new();
+
   if(a_dump_tracefiles != NULL) {
-    event_position = ltt_event_position_new();
     for(i = 0 ; i < lttv_traceset_number(traceset) ; i++) {
       trace = lttv_trace(lttv_traceset_get(traceset, i));
       nb_control = ltt_trace_control_tracefile_number(trace);
@@ -231,8 +287,8 @@ static gboolean process_traceset(void *hook_data, void *call_data)
           event_type = ltt_event_eventtype(event);
           time = ltt_event_time(event);
           cycle_count = ltt_event_cycle_count(event);
-          ltt_event_position(event, event_position);
-          ltt_event_position_get(event_position, &nb_block, &nb_event, &tf);
+          ltt_event_position(event, a_event_position);
+          ltt_event_position_get(a_event_position, &nb_block, &nb_event, &tf);
           fprintf(fp,"%s.%s: %llu %lu.%09lu position %u/%u\n", 
               ltt_facility_name(facility), ltt_eventtype_name(event_type), 
 	      cycle_count, (unsigned long)time.tv_sec, 
@@ -277,7 +333,6 @@ static gboolean process_traceset(void *hook_data, void *call_data)
         fclose(fp);
       }
     }
-    g_free(event_position);
   }
 
   tscs = g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
@@ -285,9 +340,6 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   tc = &tscs->parent.parent;
 
   lttv_context_init(tc, traceset);
-  for(i = 0 ; i < lttv_traceset_number(traceset) ; i++) {
-    ((LttvTraceState *)(tc->traces[i]))->save_interval = a_save_interval;
-  }
 
   /* For each case compute and print the elapsed time.
      The first case is simply to run through all events with a
@@ -354,6 +406,21 @@ static gboolean process_traceset(void *hook_data, void *call_data)
       g_message("Memory summary after computing stats");
       g_mem_profile();
     }
+
+    lttv_stats_sum_traceset(tscs);
+
+    if(lttv_profile_memory) {
+      g_message("Memory summary after summing stats");
+      g_mem_profile();
+    }
+
+    lttv_context_fini(tc);
+    lttv_context_init(tc, traceset);
+
+    if(lttv_profile_memory) {
+      g_message("Memory summary after cleaning up the stats");
+      g_mem_profile();
+    }
   }
 
   /* Run through all events computing the state and stats. */
@@ -376,9 +443,19 @@ static gboolean process_traceset(void *hook_data, void *call_data)
       g_message("Memory summary after computing and state and stats");
       g_mem_profile();
     }
+
+    lttv_context_fini(tc);
+    lttv_context_init(tc, traceset);
+
+    if(lttv_profile_memory) {
+      g_message("Memory summary after cleaning up the stats");
+      g_mem_profile();
+    }
   }
 
   /* Run through all events computing and saving the state. */
+
+  if(a_trace_event) lttv_hooks_add(after_event, trace_event, NULL);
 
   if(a_test6 || a_test_all) {
     if(lttv_profile_memory) {
@@ -388,9 +465,14 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
     lttv_state_add_event_hooks(ts);
     lttv_state_save_add_event_hooks(ts);
+    if(a_save_state_copy)
+        lttv_hooks_add(after_event, save_state_copy_event, &save_state);
     t = run_one_test(ts, zero_time, max_time);
     lttv_state_remove_event_hooks(ts);
     lttv_state_save_remove_event_hooks(ts);
+    if(a_save_state_copy)
+        lttv_hooks_remove_data(after_event,save_state_copy_event, &save_state);
+
     g_warning("Processing trace while updating/saving state (%g seconds)", t);
 
     if(lttv_profile_memory) {
@@ -424,15 +506,23 @@ static gboolean process_traceset(void *hook_data, void *call_data)
               save_state.write_time[j], fp);
           fclose(fp);
         }
-        else lttv_state_write((LttvTraceState *)tc->traces[0], 
-            save_state.write_time[j], save_state.fp);
+        //else lttv_state_write((LttvTraceState *)tc->traces[0], 
+        //    save_state.write_time[j], save_state.fp);
       }
     }
   }
 
+  if(a_trace_event) lttv_hooks_remove_data(after_event, trace_event, NULL);
+
   g_free(save_state.write_time);
+  g_free(a_event_position);
   lttv_context_fini(tc);
   g_object_unref(tscs);
+
+  if(lttv_profile_memory) {
+    g_message("Memory summary at the end of batchtest");
+    g_mem_profile();
+  }
 
   g_info("BatchTest end process traceset");
 }
@@ -451,6 +541,8 @@ static void init()
       "pathname of the directory containing the trace", 
       LTTV_OPT_STRING, &a_trace, lttv_trace_option, NULL);
 
+  a_trace_event = FALSE;
+
   a_dump_tracefiles = NULL;
   lttv_option_add("dump-tracefiles", 'D', 
       "Write event by event the content of tracefiles", 
@@ -462,6 +554,10 @@ static void init()
       "Save state samples to multiple files", 
       "basename for the files containing the state samples", 
       LTTV_OPT_STRING, &a_save_sample, NULL, NULL);
+
+  a_save_state_copy = FALSE;
+  lttv_option_add("save-state-copy", 'S', "Write the state saved for seeking", 
+      "", LTTV_OPT_NONE, &a_save_state_copy, NULL, NULL);
 
   a_save_interval = 100000;
   lttv_option_add("save-interval", 'i', 
@@ -567,6 +663,7 @@ static void destroy()
   lttv_option_remove("trace");
   lttv_option_remove("dump-tracefiles");
   lttv_option_remove("save-sample");
+  lttv_option_remove("save-state-copy");
   lttv_option_remove("sample-interval");
   lttv_option_remove("sample-number");
   lttv_option_remove("save-interval");

@@ -277,8 +277,8 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
         &statistic_viewer_data->time_span);
   
   if(statistic_viewer_data->calculate_stats){
-    if(lttv_stats_load_statistics(statistic_viewer_data->stats))
-      statistic_viewer_data->calculate_stats = FALSE;
+    //if(lttv_stats_load_statistics(statistic_viewer_data->stats))
+    //  statistic_viewer_data->calculate_stats = FALSE;
   }
 
   if(statistic_viewer_data->calculate_stats == FALSE){
@@ -528,7 +528,7 @@ gboolean statistic_show_viewer(void * hook_data, void * call_data)
     show_traceset_stats(statistic_viewer_data);
     if(statistic_viewer_data->calculate_stats){
       statistic_remove_context_hooks(statistic_viewer_data,tsc);
-      lttv_stats_save_statistics((LttvTracesetStats*)tsc);
+      //lttv_stats_save_statistics((LttvTracesetStats*)tsc);
     }
   }
 

@@ -15,5 +15,12 @@ lib_LTLIBRARIES = libtraceread.la
 libtraceread_la_SOURCES = event.c facility.c parser.c tracefile.c type.c
 noinst_HEADERS = parser.h ltt-private.h
 
+lttinclude_HEADERS = \
+	event.h\
+	facility.h\
+	ltt.h\
+	time.h\
+	trace.h\
+	type.h
 
 EXTRA_DIST = crc32.tab

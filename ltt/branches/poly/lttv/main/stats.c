@@ -21,6 +21,7 @@
 #include <lttv/module.h>
 #include <lttv/stats.h>
 #include <lttv/lttv.h>
+#include <lttv/attribute.h>
 #include <ltt/facility.h>
 #include <ltt/trace.h>
 #include <ltt/event.h>
@@ -38,7 +39,11 @@ GQuark
   LTTV_STATS_CPU_TIME,
   LTTV_STATS_ELAPSED_TIME,
   LTTV_STATS_EVENTS,
-  LTTV_STATS_EVENTS_COUNT;
+  LTTV_STATS_EVENTS_COUNT,
+  LTTV_STATS_USE_COUNT,
+  LTTV_STATS,
+  LTTV_STATS_TRACEFILES,
+  LTTV_STATS_SUMMED;
 
 static GQuark
   LTTV_STATS_BEFORE_HOOKS,
@@ -66,22 +71,47 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
   
   LttTime timestamp = {0,0};
 
+  LttvAttributeValue v;
+
+  LttvAttribute
+    *stats_tree,
+    *tracefiles_stats;
+
   LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek(LTTV_TRACESET_STATE_TYPE))->
       init((LttvTracesetContext *)self, ts);
 
-  self->stats = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+  self->stats =lttv_attribute_find_subdir(self->parent.parent.ts_a,LTTV_STATS);
+  lttv_attribute_find(self->parent.parent.ts_a, LTTV_STATS_USE_COUNT, 
+        LTTV_UINT, &v);
+
+  *(v.v_uint)++;
+  if(*(v.v_uint) == 1) { 
+    g_assert(lttv_attribute_get_number(self->stats) == 0);
+  }
+
   nb_trace = lttv_traceset_number(ts);
 
   for(i = 0 ; i < nb_trace ; i++) {
     tcs = (LttvTraceStats *)tc = (LTTV_TRACESET_CONTEXT(self)->traces[i]);
-    tcs->stats = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+
+    tcs->stats = lttv_attribute_find_subdir(tcs->parent.parent.t_a,LTTV_STATS);
+    tracefiles_stats = lttv_attribute_find_subdir(tcs->parent.parent.t_a, 
+          LTTV_STATS_TRACEFILES);
+    lttv_attribute_find(tcs->parent.parent.t_a, LTTV_STATS_USE_COUNT, 
+        LTTV_UINT, &v);
+
+    *(v.v_uint)++;
+    if(*(v.v_uint) == 1) { 
+      g_assert(lttv_attribute_get_number(tcs->stats) == 0);
+    }
 
     nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
         ltt_trace_per_cpu_tracefile_number(tc->t);
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfcs = LTTV_TRACEFILE_STATS(tc->tracefiles[j]);
-      tfcs->stats = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+      tfcs->stats = lttv_attribute_find_subdir(tracefiles_stats, 
+          tfcs->parent.cpu_name);
       find_event_tree(tfcs, LTTV_STATS_PROCESS_UNKNOWN,
           tfcs->parent.cpu_name, LTTV_STATE_MODE_UNKNOWN, 
           LTTV_STATE_SUBMODE_UNKNOWN, &tfcs->current_events_tree,
@@ -108,20 +138,47 @@ fini(LttvTracesetStats *self)
   
   LttTime timestamp = {0,0};
 
-  lttv_attribute_recursive_free(self->stats);
+  LttvAttributeValue v;
+
+  LttvAttribute *tracefiles_stats;
+
+  lttv_attribute_find(self->parent.parent.ts_a, LTTV_STATS_USE_COUNT, 
+        LTTV_UINT, &v);
+  *(v.v_uint)--;
+
+  if(*(v.v_uint) == 0) {
+    lttv_attribute_remove_by_name(self->parent.parent.ts_a, LTTV_STATS);
+    lttv_attribute_recursive_free(self->stats);
+  }
+  self->stats = NULL;
+
   ts = self->parent.parent.ts;
   nb_trace = lttv_traceset_number(ts);
 
   for(i = 0 ; i < nb_trace ; i++) {
-    tcs = (LttvTraceStats *)tc = (LTTV_TRACESET_CONTEXT(self)->traces[i]);
-    lttv_attribute_recursive_free(tcs->stats);
+    tcs = (LttvTraceStats *)(tc = (LTTV_TRACESET_CONTEXT(self)->traces[i]));
+
+    lttv_attribute_find(tcs->parent.parent.t_a, LTTV_STATS_USE_COUNT, 
+        LTTV_UINT, &v);
+    *(v.v_uint)--;
+
+    if(*(v.v_uint) == 0) { 
+      lttv_attribute_remove_by_name(tcs->parent.parent.t_a,LTTV_STATS);
+      lttv_attribute_recursive_free(tcs->stats);
+      tracefiles_stats = lttv_attribute_find_subdir(tcs->parent.parent.t_a, 
+          LTTV_STATS_TRACEFILES);
+      lttv_attribute_remove_by_name(tcs->parent.parent.t_a,
+          LTTV_STATS_TRACEFILES);
+      lttv_attribute_recursive_free(tracefiles_stats);
+    }
+    tcs->stats = NULL;
 
     nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
         ltt_trace_per_cpu_tracefile_number(tc->t);
 
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tfcs = (LttvTracefileStats *)tfc = tc->tracefiles[j];
-      lttv_attribute_recursive_free(tfcs->stats);
+      tfcs = ((LttvTracefileStats *)tfc = tc->tracefiles[j]);
+      tfcs->stats = NULL;
       tfcs->current_events_tree = NULL;
       tfcs->current_event_types_tree = NULL;
     }
@@ -516,14 +573,10 @@ gboolean every_event(void *hook_data, void *call_data)
 }
 
 
-static gboolean 
-sum_stats(void *hook_data, void *call_data)
+void
+lttv_stats_sum_trace(LttvTraceStats *self)
 {
-  LttvTracesetStats *tscs = (LttvTracesetStats *)call_data;
-
   LttvTraceStats *tcs;
-
-  LttvTraceset *traceset = tscs->parent.parent.ts;
 
   LttvAttributeType type;
 
@@ -533,86 +586,115 @@ sum_stats(void *hook_data, void *call_data)
 
   unsigned sum;
 
-  int i, j, k, l, m, n, nb_trace, nb_process, nb_cpu, nb_mode_type, nb_submode,
+  int i, j, k, l, m, nb_process, nb_cpu, nb_mode_type, nb_submode,
       nb_event_type;
 
   LttvAttribute *main_tree, *processes_tree, *process_tree, *cpus_tree,
       *cpu_tree, *mode_tree, *mode_types_tree, *submodes_tree,
       *submode_tree, *event_types_tree, *mode_events_tree,
       *cpu_events_tree, *process_modes_tree, *trace_cpu_tree, 
-      *trace_modes_tree, *traceset_modes_tree;
+      *trace_modes_tree;
 
-  traceset_modes_tree = lttv_attribute_find_subdir(tscs->stats, 
+  main_tree = self->stats;
+
+  lttv_attribute_find(self->parent.parent.t_a, LTTV_STATS_SUMMED, 
+      LTTV_UINT, &value);
+  if(*(value.v_uint) != 0) return;
+  *(value.v_uint) = 1;
+
+  processes_tree = lttv_attribute_find_subdir(main_tree, 
+      LTTV_STATS_PROCESSES);
+  trace_modes_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_MODES);
+  nb_process = lttv_attribute_get_number(processes_tree);
+
+  for(i = 0 ; i < nb_process ; i++) {
+    type = lttv_attribute_get(processes_tree, i, &name, &value);
+    process_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+
+    cpus_tree = lttv_attribute_find_subdir(process_tree, LTTV_STATS_CPU);
+    process_modes_tree = lttv_attribute_find_subdir(process_tree,
+        LTTV_STATS_MODES);
+    nb_cpu = lttv_attribute_get_number(cpus_tree);
+
+    for(j = 0 ; j < nb_cpu ; j++) {
+      type = lttv_attribute_get(cpus_tree, j, &name, &value);
+      cpu_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+
+      mode_types_tree = lttv_attribute_find_subdir(cpu_tree, 
+          LTTV_STATS_MODE_TYPES);
+      cpu_events_tree = lttv_attribute_find_subdir(cpu_tree,
+          LTTV_STATS_EVENTS);
+      trace_cpu_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_CPU);
+      trace_cpu_tree = lttv_attribute_find_subdir(trace_cpu_tree, name);
+      nb_mode_type = lttv_attribute_get_number(mode_types_tree);
+
+      for(k = 0 ; k < nb_mode_type ; k++) {
+        type = lttv_attribute_get(mode_types_tree, k, &name, &value);
+        mode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+
+        submodes_tree = lttv_attribute_find_subdir(mode_tree, 
+            LTTV_STATS_SUBMODES);
+        mode_events_tree = lttv_attribute_find_subdir(mode_tree,
+            LTTV_STATS_EVENTS);
+        nb_submode = lttv_attribute_get_number(submodes_tree);
+
+        for(l = 0 ; l < nb_submode ; l++) {
+          type = lttv_attribute_get(submodes_tree, l, &name, &value);
+          submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+
+          event_types_tree = lttv_attribute_find_subdir(submode_tree, 
+            LTTV_STATS_EVENT_TYPES);
+          nb_event_type = lttv_attribute_get_number(event_types_tree);
+
+          sum = 0;
+          for(m = 0 ; m < nb_event_type ; m++) {
+            type = lttv_attribute_get(event_types_tree, m, &name, &value);
+            sum += *(value.v_uint);
+          }
+          lttv_attribute_find(submode_tree, LTTV_STATS_EVENTS_COUNT, 
+              LTTV_UINT, &value);
+          *(value.v_uint) = sum;
+          lttv_attribute_recursive_add(mode_events_tree, submode_tree);
+        }
+        lttv_attribute_recursive_add(cpu_events_tree, mode_events_tree);
+      }
+      lttv_attribute_recursive_add(process_modes_tree, cpu_tree);
+      lttv_attribute_recursive_add(trace_cpu_tree, cpu_tree);
+    }
+    lttv_attribute_recursive_add(trace_modes_tree, process_modes_tree);
+  }
+}
+
+
+void
+lttv_stats_sum_traceset(LttvTracesetStats *self)
+{
+  LttvTraceset *traceset = self->parent.parent.ts;
+
+  LttvTraceStats *tcs;
+
+  int i, nb_trace;
+
+  LttvAttribute *main_tree, *trace_modes_tree, *traceset_modes_tree;
+
+  LttvAttributeValue value;
+
+  lttv_attribute_find(self->parent.parent.ts_a, LTTV_STATS_SUMMED, 
+      LTTV_UINT, &value);
+  if(*(value.v_uint) != 0) return;
+  *(value.v_uint) = 1;
+
+  traceset_modes_tree = lttv_attribute_find_subdir(self->stats, 
       LTTV_STATS_MODES);
   nb_trace = lttv_traceset_number(traceset);
 
   for(i = 0 ; i < nb_trace ; i++) {
-    tcs = (LttvTraceStats *)(tscs->parent.parent.traces[i]);
+    tcs = (LttvTraceStats *)(self->parent.parent.traces[i]);
+    lttv_stats_sum_trace(tcs);
     main_tree = tcs->stats;
-    processes_tree = lttv_attribute_find_subdir(main_tree, 
-        LTTV_STATS_PROCESSES);
     trace_modes_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_MODES);
-    nb_process = lttv_attribute_get_number(processes_tree);
-
-    for(j = 0 ; j < nb_process ; j++) {
-      type = lttv_attribute_get(processes_tree, j, &name, &value);
-      process_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-
-      cpus_tree = lttv_attribute_find_subdir(process_tree, LTTV_STATS_CPU);
-      process_modes_tree = lttv_attribute_find_subdir(process_tree,
-          LTTV_STATS_MODES);
-      nb_cpu = lttv_attribute_get_number(cpus_tree);
-
-      for(k = 0 ; k < nb_cpu ; k++) {
-        type = lttv_attribute_get(cpus_tree, k, &name, &value);
-        cpu_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-
-        mode_types_tree = lttv_attribute_find_subdir(cpu_tree, 
-            LTTV_STATS_MODE_TYPES);
-        cpu_events_tree = lttv_attribute_find_subdir(cpu_tree,
-            LTTV_STATS_EVENTS);
-        trace_cpu_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_CPU);
-        trace_cpu_tree = lttv_attribute_find_subdir(trace_cpu_tree, name);
-        nb_mode_type = lttv_attribute_get_number(mode_types_tree);
-
-        for(l = 0 ; l < nb_mode_type ; l++) {
-          type = lttv_attribute_get(mode_types_tree, l, &name, &value);
-          mode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-
-          submodes_tree = lttv_attribute_find_subdir(mode_tree, 
-              LTTV_STATS_SUBMODES);
-          mode_events_tree = lttv_attribute_find_subdir(mode_tree,
-	      LTTV_STATS_EVENTS);
-          nb_submode = lttv_attribute_get_number(submodes_tree);
-
-          for(m = 0 ; m < nb_submode ; m++) {
-            type = lttv_attribute_get(submodes_tree, m, &name, &value);
-            submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-
-            event_types_tree = lttv_attribute_find_subdir(submode_tree, 
-              LTTV_STATS_EVENT_TYPES);
-            nb_event_type = lttv_attribute_get_number(event_types_tree);
-
-            sum = 0;
-            for(n = 0 ; n < nb_event_type ; n++) {
-              type = lttv_attribute_get(event_types_tree, n, &name, &value);
-              sum += *(value.v_uint);
-            }
-            lttv_attribute_find(submode_tree, LTTV_STATS_EVENTS_COUNT, 
-                LTTV_UINT, &value);
-            *(value.v_uint) = sum;
-            lttv_attribute_recursive_add(mode_events_tree, submode_tree);
-          }
-	  lttv_attribute_recursive_add(cpu_events_tree, mode_events_tree);
-        }
-        lttv_attribute_recursive_add(process_modes_tree, cpu_tree);
-        lttv_attribute_recursive_add(trace_cpu_tree, cpu_tree);
-      }
-      lttv_attribute_recursive_add(trace_modes_tree, process_modes_tree);
-    }
     lttv_attribute_recursive_add(traceset_modes_tree, trace_modes_tree);
   }
-  return FALSE;
 }
 
 
@@ -736,7 +818,6 @@ lttv_stats_add_event_hooks(LttvTracesetStats *self)
         LTTV_POINTER, &val);
     *(val.v_pointer) = after_hooks;
   }
-  lttv_hooks_add(self->parent.parent.after, sum_stats, NULL);
 }
 
 
@@ -795,361 +876,6 @@ lttv_stats_remove_event_hooks(LttvTracesetStats *self)
     g_array_free(before_hooks, TRUE);
     g_array_free(after_hooks, TRUE);
   }
-  lttv_hooks_remove_data(self->parent.parent.after, sum_stats, NULL);
-}
-
-
-void lttv_stats_save_attribute(LttvAttribute *attr, char *indent, FILE * fp)
-{
-  LttvAttributeType type;
-  LttvAttributeValue value;
-  LttvAttributeName name;
-  char type_value[BUF_SIZE];
-  int i, nb_attr, flag;
-
-  nb_attr = lttv_attribute_get_number(attr);
-  for(i=0;i<nb_attr;i++){
-    flag = 1;
-    type = lttv_attribute_get(attr, i, &name, &value);
-    switch(type) {
-      case LTTV_INT:
-        sprintf(type_value, "%d\0", *value.v_int);
-        break;
-      case LTTV_UINT:
-        sprintf(type_value, "%u\0", *value.v_uint);
-        break;
-      case LTTV_LONG:
-        sprintf(type_value, "%ld\0", *value.v_long);
-        break;
-      case LTTV_ULONG:
-        sprintf(type_value, "%lu\0", *value.v_ulong);
-        break;
-      case LTTV_FLOAT:
-        sprintf(type_value, "%f\0", (double)*value.v_float);
-        break;
-      case LTTV_DOUBLE:
-        sprintf(type_value, "%f\0", *value.v_double);
-        break;
-      case LTTV_TIME:
-        sprintf(type_value, "%10u.%09u\0", value.v_time->tv_sec, 
-            value.v_time->tv_nsec);
-        break;
-      case LTTV_POINTER:
-        sprintf(type_value, "POINTER\0");
-        break;
-      case LTTV_STRING:
-        sprintf(type_value, "%s\0", *value.v_string);
-        break;
-      default:
-	flag = 0;
-        break;
-    }
-    if(flag == 0) continue;
-    fprintf(fp,"%s<VALUE type=\"%d\" name=\"%s\">",indent,type,g_quark_to_string(name));
-    fprintf(fp,"%s",type_value);
-    fprintf(fp,"</VALUE> \n");
-  }
-  
-}
-
-void lttv_stats_save_statistics(LttvTracesetStats *self)
-{
-  LttvTracesetStats *tscs = self;
-  LttvTraceStats *tcs;
-  LttvTraceset *traceset = tscs->parent.parent.ts;
-  LttvAttributeType type;
-  LttvAttributeValue value;
-  LttvAttributeName name;
-
-  char filename[BUF_SIZE];
-  FILE * fp;
-  char indent[10][24]= {"  ",
-			"    ",
-			"      ",
-			"        ",
-			"          ",
-			"            ",
-			"              ",
-			"                ",
-			"                  ",
-			"                    "
-                       };
-  
-
-  int i, j, k, l, m, n, nb_trace, nb_process, nb_cpu, nb_mode_type, nb_submode;
-
-  LttvAttribute *main_tree, *processes_tree, *process_tree, *cpus_tree,
-      *cpu_tree, *mode_tree, *mode_types_tree, *submodes_tree,
-      *submode_tree, *event_types_tree;
-
-  nb_trace = lttv_traceset_number(traceset);
-
-  for(i = 0 ; i < nb_trace ; i++) {
-    tcs = (LttvTraceStats *)(tscs->parent.parent.traces[i]);
-
-    filename[0] = '\0';
-    strcat(filename,ltt_trace_name(tcs->parent.parent.t));
-    strcat(filename,"/statistics.xml");
-    fp = fopen(filename,"w");
-    if(!fp){
-      g_warning("can not open the file %s for saving statistics\n", filename);
-      exit(1);
-    }    
-
-    main_tree = tcs->stats;
-    processes_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_PROCESSES);
-    nb_process = lttv_attribute_get_number(processes_tree);
-
-    fprintf(fp, "<NODE name=\"%s\"> \n",g_quark_to_string(LTTV_STATS_PROCESSES)); //root NODE
-
-    for(j = 0 ; j < nb_process ; j++) {
-      type = lttv_attribute_get(processes_tree, j, &name, &value);
-      process_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-
-      fprintf(fp,"%s<NODE name=\"%s\"> \n",indent[0],g_quark_to_string(name)); //process NODE   
-      lttv_stats_save_attribute(process_tree,indent[1], fp);
-      fprintf(fp,"%s<NODE name=\"%s\"> \n", indent[1],g_quark_to_string(LTTV_STATS_CPU)); //cpus NODE
-      
-      cpus_tree = lttv_attribute_find_subdir(process_tree, LTTV_STATS_CPU);
-      nb_cpu = lttv_attribute_get_number(cpus_tree);
-
-      for(k = 0 ; k < nb_cpu ; k++) {
-        type = lttv_attribute_get(cpus_tree, k, &name, &value);
-        cpu_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-
-	fprintf(fp,"%s<NODE name=\"%s\"> \n",indent[2],g_quark_to_string(name)); //cpu NODE
-	lttv_stats_save_attribute(cpu_tree,indent[3], fp);
-	fprintf(fp,"%s<NODE name=\"%s\"> \n",indent[3],g_quark_to_string(LTTV_STATS_MODE_TYPES)); //mode_types NODE
-
-        mode_types_tree = lttv_attribute_find_subdir(cpu_tree,LTTV_STATS_MODE_TYPES);
-        nb_mode_type = lttv_attribute_get_number(mode_types_tree);
-
-        for(l = 0 ; l < nb_mode_type ; l++) {
-          type = lttv_attribute_get(mode_types_tree, l, &name, &value);
-          mode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-
-	  fprintf(fp,"%s<NODE name=\"%s\"> \n",indent[4],g_quark_to_string(name)); //mode NODE
-	  lttv_stats_save_attribute(mode_tree,indent[5], fp);
-	  fprintf(fp,"%s<NODE name=\"%s\"> \n",indent[5],g_quark_to_string(LTTV_STATS_SUBMODES)); //sub_modes NODE
-
-          submodes_tree = lttv_attribute_find_subdir(mode_tree,LTTV_STATS_SUBMODES);
-          nb_submode = lttv_attribute_get_number(submodes_tree);
-
-          for(m = 0 ; m < nb_submode ; m++) {
-            type = lttv_attribute_get(submodes_tree, m, &name, &value);
-            submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-	    fprintf(fp,"%s<NODE name=\"%s\"> \n",indent[6],g_quark_to_string(name)); //sub_mode NODE
-	    lttv_stats_save_attribute(submode_tree,indent[7], fp);
-	    fprintf(fp,"%s<NODE name=\"%s\"> \n",indent[7],g_quark_to_string(LTTV_STATS_EVENT_TYPES)); //event_types NODE
-
-            event_types_tree = lttv_attribute_find_subdir(submode_tree, LTTV_STATS_EVENT_TYPES);
-	    lttv_stats_save_attribute(event_types_tree,indent[8], fp);
-
-	    fprintf(fp,"%s</NODE> \n",indent[7]); //event_types NODE
-	    fprintf(fp,"%s</NODE> \n",indent[6]); //sub_mode NODE
-          }
-	  fprintf(fp,"%s</NODE> \n",indent[5]); //sub_modes NODE
-	  fprintf(fp,"%s</NODE> \n",indent[4]); //mode NODE
-        }
-	fprintf(fp,"%s</NODE> \n",indent[3]); //mode_type NODE
-	fprintf(fp,"%s</NODE> \n",indent[2]); //cpu NODE
-      }
-      fprintf(fp,"%s</NODE> \n",indent[1]); //cpus NODE
-      fprintf(fp,"%s</NODE> \n", indent[0]); //process NODE
-    }
-    fprintf(fp, "</NODE>\n"); //root NODE
-    fclose(fp);
-  }
-}
-
-
-/* Functions to parse statistic.xml file (using glib xml parser) */
-
-typedef struct _ParserStruct{
-  GPtrArray * attribute;
-  LttvAttributeType type;
-  LttvAttributeName name;  
-} ParserStruct;
-
-static void stats_parser_start_element (GMarkupParseContext  *context,
-					const gchar          *element_name,
-					const gchar         **attribute_names,
-					const gchar         **attribute_values,
-					gpointer              user_data,
-					GError              **error)
-{
-  ParserStruct * parser = (ParserStruct *)user_data;
-  int len;
-  LttvAttributeType type;
-  LttvAttributeName name;
-  LttvAttribute * parent_att, *new_att;
-
-  len = parser->attribute->len;
-  parent_att = (LttvAttribute *)g_ptr_array_index (parser->attribute, len-1);
-
-  if(strcmp("NODE", element_name) == 0){
-    type = LTTV_GOBJECT;
-    name = g_quark_from_string(attribute_values[0]);
-    new_att = lttv_attribute_find_subdir(parent_att,name);
-    g_ptr_array_add(parser->attribute, (gpointer)new_att);
-  }else if(strcmp("VALUE", element_name) == 0){
-    parser->type = (LttvAttributeType) atoi(attribute_values[0]);
-    parser->name = g_quark_from_string(attribute_values[1]);    
-  }else{
-    g_warning("This is not statistics.xml file\n");
-    exit(1);
-  }
-}
-
-static void stats_parser_end_element   (GMarkupParseContext  *context,
-					const gchar          *element_name,
-					gpointer              user_data,
-					GError              **error)
-{
-  ParserStruct * parser = (ParserStruct *)user_data;
-  int len;
-  LttvAttribute * parent_att;
-
-  len = parser->attribute->len;
-  parent_att = (LttvAttribute *)g_ptr_array_index (parser->attribute, len-1);
-
-  if(strcmp("NODE", element_name) == 0){
-    g_ptr_array_remove_index(parser->attribute, len-1);
-  }else if(strcmp("VALUE", element_name) == 0){
-  }else{
-    g_warning("This is not statistics.xml file\n");
-    exit(1);
-  }
-  
-}
-
-static void  stats_parser_characters   (GMarkupParseContext  *context,
-					const gchar          *text,
-					gsize                 text_len,
-					gpointer              user_data,
-					GError              **error)
-{
-  ParserStruct * parser = (ParserStruct *)user_data;
-  LttvAttributeValue  value;
-  int len;
-  LttvAttribute * parent_att;
-  char *pos;
-
-  pos = (char*)text;
-  for(len=0;len<text_len;len++){
-    if(isspace(*pos)){
-      pos++;
-      continue;
-    }
-    break;
-  }
-  if(strlen(pos) == 0)return;
-
-  len = parser->attribute->len;
-  parent_att = (LttvAttribute *)g_ptr_array_index (parser->attribute, len-1);
-  if(!lttv_attribute_find(parent_att,parser->name, parser->type, &value)){
-    g_warning("can not find value\n");
-    exit(1);
-  }
-
-  switch(parser->type) {
-    case LTTV_INT:
-      *value.v_int = atoi(text);
-      break;
-    case LTTV_UINT:
-      *value.v_uint = (unsigned)atoi(text);
-      break;
-    case LTTV_LONG:
-      *value.v_long = atol(text);
-      break;
-    case LTTV_ULONG:
-      *value.v_ulong = (unsigned long)atol(text);
-      break;
-    case LTTV_FLOAT:
-      *value.v_float = atof(text);
-      break;
-    case LTTV_DOUBLE:
-      *value.v_float = atof(text);
-      break;
-    case LTTV_TIME:
-      pos = strrchr(text,'.');
-      if(pos){
-	*pos = '\0';
-	pos++;
-	value.v_time->tv_sec = atol(text);
-	value.v_time->tv_nsec = atol(pos);
-      }else{
-	g_warning("The time value format is wrong\n");
-	exit(1);
-      }
-      break;
-    case LTTV_POINTER:
-      break;
-    case LTTV_STRING:
-      *value.v_string = g_strdup(text);
-      break;
-    default:
-      break;
-  }
-
-}
-
-gboolean lttv_stats_load_statistics(LttvTracesetStats *self)
-{
-  FILE * fp;
-  char buf[BUF_SIZE];
-  LttvTracesetStats *tscs = self;
-  LttvTraceStats *tcs;
-  LttvTraceset *traceset = tscs->parent.parent.ts;
-  char filename[BUF_SIZE];
-
-  GMarkupParseContext * context;
-  GError * error = NULL;
-  GMarkupParser markup_parser =
-    {
-      stats_parser_start_element,
-      stats_parser_end_element,
-      stats_parser_characters,
-      NULL,  /*  passthrough  */
-      NULL   /*  error        */
-    };
-
-  int i, nb_trace;
-  LttvAttribute *main_tree;
-  ParserStruct a_parser_struct;
-  a_parser_struct.attribute = g_ptr_array_new(); 
-
-  nb_trace = lttv_traceset_number(traceset);
-
-  for(i = 0 ; i < nb_trace ; i++) {
-    tcs = (LttvTraceStats *)(tscs->parent.parent.traces[i]);
-
-    filename[0] = '\0';
-    strcat(filename,ltt_trace_name(tcs->parent.parent.t));
-    strcat(filename,"/statistics.xml");
-    fp = fopen(filename,"r");
-    if(!fp){
-      g_warning("can not open the file %s for reading statistics\n", filename);
-      return FALSE;
-    }    
-
-    main_tree = tcs->stats;
-    g_ptr_array_add(a_parser_struct.attribute,(gpointer)main_tree);
-
-    context = g_markup_parse_context_new(&markup_parser, 0, (gpointer)&a_parser_struct, NULL);
-    
-    while(fgets(buf,BUF_SIZE, fp) != NULL){
-      if(!g_markup_parse_context_parse(context, buf, BUF_SIZE, &error)){
-	g_warning("Can not parse xml file: \n%s\n", error->message);
-	exit(1);
-      }
-    }
-    fclose(fp);
-  }
-
-  sum_stats(NULL, (void *)self);
-
-  return TRUE;
 }
 
 
@@ -1168,6 +894,10 @@ static void module_init()
   LTTV_STATS_EVENTS_COUNT = g_quark_from_string("events count");
   LTTV_STATS_BEFORE_HOOKS = g_quark_from_string("saved stats before hooks");
   LTTV_STATS_AFTER_HOOKS = g_quark_from_string("saved stats after hooks");
+  LTTV_STATS_USE_COUNT = g_quark_from_string("stats_use_count");
+  LTTV_STATS = g_quark_from_string("statistics");
+  LTTV_STATS_TRACEFILES = g_quark_from_string("tracefiles statistics");
+  LTTV_STATS_SUMMED = g_quark_from_string("statistics summed");
 }
 
 static void module_destroy() 
@@ -1178,3 +908,9 @@ static void module_destroy()
 LTTV_MODULE("stats", "Compute processes statistics", \
     "Accumulate statistics for event types, processes and CPUs", \
     module_init, module_destroy, "state");
+
+/* Change the places where stats are called (create/read/write stats)
+
+   Check for options in batchtest.c to reduce writing and see what tests are
+   best candidates for performance analysis. Once OK, commit, move to main
+   and run tests. Update the gui for statistics. */

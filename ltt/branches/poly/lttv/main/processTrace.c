@@ -564,7 +564,20 @@ lttv_tracefile_context_get_type(void)
 
 gint compare_tracefile(gconstpointer a, gconstpointer b)
 {
-  return ltt_time_compare(*((LttTime *)a), *((LttTime *)b));
+  gint comparison;
+
+  LttvTracefileContext *trace_a = (LttvTracefileContext *)a;
+
+  LttvTracefileContext *trace_b = (LttvTracefileContext *)b;
+
+  if(trace_a == trace_b) return 0;
+  comparison = ltt_time_compare(trace_a->timestamp, trace_b->timestamp);
+  if(comparison != 0) return comparison;
+  if(trace_a->index < trace_b->index) return -1;
+  else if(trace_a->index > trace_b->index) return 1;
+  if(trace_a->t_context->index < trace_b->t_context->index) return -1;
+  else if(trace_a->t_context->index > trace_b->t_context->index) return 1;
+  g_assert(FALSE);
 }
 
 
@@ -608,7 +621,7 @@ void lttv_process_traceset_begin(LttvTracesetContext *self, LttTime end)
 	    if(tfc->timestamp.tv_sec < end.tv_sec ||
 	       (tfc->timestamp.tv_sec == end.tv_sec && 
                tfc->timestamp.tv_nsec <= end.tv_nsec)) {
-	      g_tree_insert(self->pqueue, &(tfc->timestamp), tfc);
+	      g_tree_insert(self->pqueue, tfc, tfc);
 	    }
           }
         }
@@ -660,8 +673,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self, LttTime end,
        or more tracefiles have events for the same time, hope that lookup
        and remove are consistent. */
 
-    tfc = g_tree_lookup(pqueue, &(tfc->timestamp));
-    g_tree_remove(pqueue, &(tfc->timestamp));
+    g_tree_remove(pqueue, tfc);
     count++;
 
     if(!lttv_hooks_call(tfc->check_event, tfc)) {
@@ -678,7 +690,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self, LttTime end,
       tfc->timestamp = ltt_event_time(event);
       if(tfc->timestamp.tv_sec < end.tv_sec ||
 	 (tfc->timestamp.tv_sec == end.tv_sec && tfc->timestamp.tv_nsec <= end.tv_nsec))
-	g_tree_insert(pqueue, &(tfc->timestamp), tfc);
+	g_tree_insert(pqueue, tfc, tfc);
     }
   }
 }

@@ -214,7 +214,7 @@ void lttv_state_save(LttvTraceState *self, LttvAttribute *container);
 
 void lttv_state_restore(LttvTraceState *self, LttvAttribute *container);
 
-void lttv_state_saved_state_free(LttvTraceState *self, 
+void lttv_state_state_saved_free(LttvTraceState *self, 
     LttvAttribute *container);
 
 

@@ -308,6 +308,167 @@ void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src)
 
 
 static void
+print_indent(FILE *fp, int pos)
+{
+  int i;
+
+  for(i = 0 ; i < pos ; i++) putc(' ', fp);
+}
+
+
+void 
+lttv_attribute_write_xml(LttvAttribute *self, FILE *fp, int pos, int indent)
+{
+  int i, nb;
+
+  Attribute *a;
+
+  nb = self->attributes->len;
+
+  fprintf(fp,"<ATTRS>\n");
+  for(i = 0 ; i < nb ; i++) {
+    a = &g_array_index(self->attributes, Attribute, i);
+    print_indent(fp, pos);
+    fprintf(fp, "<ATTR NAME=\"%s\" ", a->name);
+    if(a->type == LTTV_GOBJECT && LTTV_IS_ATTRIBUTE(a->value.dv_gobject)) {
+      fprintf(fp, "TYPE=ATTRS>");
+      lttv_attribute_write_xml((LttvAttribute *)(a->value.dv_gobject), fp,
+          pos + indent, indent);
+    }
+    else {
+      switch(a->type) {
+	case LTTV_INT:
+          fprintf(fp, "TYPE=INT VALUE=%d/>\n", a->value.dv_int);
+          break;
+        case LTTV_UINT:
+          fprintf(fp, "TYPE=UINT VALUE=%u/>\n", a->value.dv_uint);
+          break;
+        case LTTV_LONG:
+          fprintf(fp, "TYPE=LONG VALUE=%ld/>\n", a->value.dv_long);
+          break;
+        case LTTV_ULONG:
+          fprintf(fp, "TYPE=ULONG VALUE=%lu/>\n", a->value.dv_ulong);
+          break;
+        case LTTV_FLOAT:
+          fprintf(fp, "TYPE=FLOAT VALUE=%f/>\n", a->value.dv_float);
+          break;
+        case LTTV_DOUBLE:
+          fprintf(fp, "TYPE=DOUBLE VALUE=%f/>\n", a->value.dv_double);
+          break;
+        case LTTV_TIME:
+          fprintf(fp, "TYPE=TIME SEC=%u NSEC=%u/>\n", a->value.dv_time.tv_sec,
+              a->value.dv_time.tv_nsec);
+          break;
+        case LTTV_POINTER:
+          fprintf(fp, "TYPE=POINTER VALUE=%p/>\n", a->value.dv_pointer);
+          break;
+        case LTTV_STRING:
+          fprintf(fp, "TYPE=STRING VALUE=\"%s\"/>\n", a->value.dv_string);
+          break;
+        case LTTV_GOBJECT:
+          fprintf(fp, "TYPE=GOBJECT VALUE=%p/>\n", a->value.dv_gobject);
+          break;
+        case LTTV_NONE:
+          fprintf(fp, "TYPE=NONE/>\n");
+          break;
+      }    
+    }
+  }
+  print_indent(fp, pos);
+  fprintf(fp,"</ATTRS>\n");
+}
+
+
+void 
+lttv_attribute_read_xml(LttvAttribute *self, FILE *fp)
+{
+  int i, nb, res;
+
+  Attribute *a;
+
+  char buffer[256], type[10];
+
+  LttvAttributeName name;
+
+  LttvAttributeValue value;
+
+  LttvAttribute *subtree;
+
+  fscanf(fp,"<ATTRS>");
+  while(1) {
+    res = fscanf(fp, "<ATTR NAME=\"%256[^\"]\" TYPE=%10[^ >]", buffer, type);
+    g_assert(res == 2);
+    name = g_quark_from_string(buffer);
+    if(strcmp(type, "ATTRS") == 0) {
+      fscanf(fp, ">");
+      subtree = lttv_attribute_find_subdir(self, name);
+      lttv_attribute_read_xml(subtree, fp);
+    }
+    else if(strcmp(type, "INT") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_INT);
+      res = fscanf(fp, " VALUE=%d/>", value.v_int);
+      g_assert(res == 1);
+    }
+    else if(strcmp(type, "UINT") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_UINT);
+      res = fscanf(fp, " VALUE=%u/>", value.v_uint);
+      g_assert(res == 1);
+    }
+    else if(strcmp(type, "LONG") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_LONG);
+      res = fscanf(fp, " VALUE=%ld/>", value.v_long);
+      g_assert(res == 1);
+    }
+    else if(strcmp(type, "ULONG") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_ULONG);
+      res = fscanf(fp, " VALUE=%lu/>", value.v_ulong);
+      g_assert(res == 1);
+    }
+    else if(strcmp(type, "FLOAT") == 0) {
+      float d;
+      value = lttv_attribute_add(self, name, LTTV_FLOAT);
+      res = fscanf(fp, " VALUE=%f/>", &d);
+      *(value.v_float) = d;
+      g_assert(res == 1);
+    }
+    else if(strcmp(type, "DOUBLE") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_DOUBLE);
+      res = fscanf(fp, " VALUE=%f/>", value.v_double);
+      g_assert(res == 1);
+    }
+    else if(strcmp(type, "TIME") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_TIME);
+      res = fscanf(fp, " SEC=%u NSEC=%u/>", &(value.v_time->tv_sec), 
+          &(value.v_time->tv_nsec));
+      g_assert(res == 2);
+    }
+    else if(strcmp(type, "POINTER") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_POINTER);
+      res = fscanf(fp, " VALUE=%p/>", value.v_pointer);
+      g_error("Cannot read a pointer");
+    }
+    else if(strcmp(type, "STRING") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_STRING);
+      res = fscanf(fp, " VALUE=\"%256[^\"]\"/>", buffer);
+      *(value.v_string) = g_strdup(buffer);
+      g_assert(res == 1);
+    }
+    else if(strcmp(type, "GOBJECT") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_GOBJECT);
+      res = fscanf(fp, " VALUE=%p/>", value.v_gobject);
+      g_error("Cannot read a pointer");
+    }
+    else if(strcmp(type, "NONE") == 0) {
+      value = lttv_attribute_add(self, name, LTTV_NONE);
+      fscanf(fp, "/>");
+    }
+    else g_error("Unknown type to read");
+  }
+  fscanf(fp,"</ATTRS>");
+}
+
+
+static void
 attribute_interface_init (gpointer g_iface, gpointer iface_data)
 {
   LttvIAttributeClass *klass = (LttvIAttributeClass *)g_iface;

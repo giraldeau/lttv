@@ -24,6 +24,7 @@
 #include <ltt/trace.h>
 #include <ltt/event.h>
 #include <ltt/type.h>
+#include <stdio.h>
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -52,12 +53,24 @@ static GQuark
   LTTV_STATE_SAVED_STATES,
   LTTV_STATE_SAVED_STATES_TIME,
   LTTV_STATE_TIME,
-  LTTV_STATE_HOOKS;
+  LTTV_STATE_HOOKS,
+  LTTV_STATE_NAME_TABLES,
+  LTTV_STATE_TRACE_STATE_USE_COUNT;
 
 
-static void fill_name_tables(LttvTraceState *tcs);
+static void create_max_time(LttvTraceState *tcs);
+
+static void get_max_time(LttvTraceState *tcs);
+
+static void free_max_time(LttvTraceState *tcs);
+
+static void create_name_tables(LttvTraceState *tcs);
+
+static void get_name_tables(LttvTraceState *tcs);
 
 static void free_name_tables(LttvTraceState *tcs);
+
+static void free_saved_state(LttvTraceState *tcs);
 
 static void lttv_state_free_process_table(GHashTable *processes);
 
@@ -74,10 +87,10 @@ void lttv_state_restore(LttvTraceState *self, LttvAttribute *container)
 }
 
 
-void lttv_state_saved_state_free(LttvTraceState *self, 
+void lttv_state__state_saved_free(LttvTraceState *self, 
     LttvAttribute *container)
 {
-  LTTV_TRACE_STATE_GET_CLASS(self)->state_restore(self, container);
+  LTTV_TRACE_STATE_GET_CLASS(self)->state_saved_free(self, container);
 }
 
 
@@ -150,15 +163,16 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     tc = self->parent.traces[i];
     tcs = (LttvTraceState *)tc;
     tcs->save_interval = 50000;
-    lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_SAVED_STATES_TIME, 
-        LTTV_POINTER, &v);
-    if(*(v.v_pointer) == NULL) {
-      *(v.v_pointer) = g_new(LttTime,1);
-      *((LttTime *)*(v.v_pointer)) = time_zero;
-    }
-    tcs->max_time_state_recomputed_in_seek = (LttTime *)*(v.v_pointer);
+    lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_TRACE_STATE_USE_COUNT, 
+        LTTV_UINT, &v);
+    (*v.v_uint)++;
 
-    fill_name_tables(tcs);
+    if(*(v.v_uint) == 1) {
+      create_name_tables(tcs);
+      create_max_time(tcs);
+    }
+    get_name_tables(tcs);
+    get_max_time(tcs);
 
     nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
         ltt_trace_per_cpu_tracefile_number(tc->t);
@@ -182,12 +196,23 @@ fini(LttvTracesetState *self)
 
   LttvTracefileState *tfcs;
 
+  LttvAttributeValue v;
+
   nb_trace = lttv_traceset_number(LTTV_TRACESET_CONTEXT(self)->ts);
   for(i = 0 ; i < nb_trace ; i++) {
     tcs = (LttvTraceState *)(LTTV_TRACESET_CONTEXT(self)->traces[i]);
+    lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_TRACE_STATE_USE_COUNT, 
+        LTTV_UINT, &v);
+    (*v.v_uint)--;
+
+    g_assert(*(v.v_uint) >= 0);
+    if(*(v.v_uint) == 0) {
+      free_name_tables(tcs);
+      free_max_time(tcs);
+      free_saved_state(tcs);
+    }
     lttv_state_free_process_table(tcs->processes);
     tcs->processes = NULL;
-    free_name_tables(tcs);
   }
   LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek(LTTV_TRACESET_CONTEXT_TYPE))->
       fini((LttvTracesetContext *)self);
@@ -230,8 +255,8 @@ static void write_process_state(gpointer key, gpointer value,
 
   process = (LttvProcessState *)value;
   fprintf(fp,
-"  <PROCESS PID=%u PPID=%u CTIME_S=%lu CTIME_NS=%lu NAME=\"%s\" CPU=\"%s\">\n",
-      process->pid, process->ppid, process->creation_time.tv_sec,
+"  <PROCESS CORE=%p PID=%u PPID=%u CTIME_S=%lu CTIME_NS=%lu NAME=\"%s\" CPU=\"%s\">\n",
+      process, process->pid, process->ppid, process->creation_time.tv_sec,
       process->creation_time.tv_nsec, g_quark_to_string(process->name),
       g_quark_to_string(process->last_cpu));
 
@@ -476,8 +501,80 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
 }
 
 
+static void free_saved_state(LttvTraceState *self)
+{
+  guint i, nb;
+
+  LttvAttributeType type;
+
+  LttvAttributeValue value;
+
+  LttvAttributeName name;
+
+  LttvAttribute *saved_states;
+
+  saved_states = lttv_attribute_find_subdir(self->parent.t_a,
+      LTTV_STATE_SAVED_STATES);
+
+  nb = lttv_attribute_get_number(saved_states);
+  for(i = 0 ; i < nb ; i++) {
+    type = lttv_attribute_get(saved_states, i, &name, &value);
+    g_assert(type == LTTV_GOBJECT);
+    state_saved_free(self, *((LttvAttribute **)value.v_gobject));
+  }
+
+  lttv_attribute_remove_by_name(self->parent.t_a, LTTV_STATE_SAVED_STATES);
+  lttv_attribute_recursive_free(saved_states);
+}
+
+
 static void 
-fill_name_tables(LttvTraceState *tcs) 
+create_max_time(LttvTraceState *tcs) 
+{
+  LttvAttributeValue v;
+
+  lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_SAVED_STATES_TIME, 
+        LTTV_POINTER, &v);
+  g_assert(*(v.v_pointer) == NULL);
+  *(v.v_pointer) = g_new(LttTime,1);
+  *((LttTime *)*(v.v_pointer)) = time_zero;
+}
+
+
+static void 
+get_max_time(LttvTraceState *tcs) 
+{
+  LttvAttributeValue v;
+
+  lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_SAVED_STATES_TIME, 
+        LTTV_POINTER, &v);
+  g_assert(*(v.v_pointer) != NULL);
+  tcs->max_time_state_recomputed_in_seek = (LttTime *)*(v.v_pointer);
+}
+
+
+static void 
+free_max_time(LttvTraceState *tcs) 
+{
+  LttvAttributeValue v;
+
+  lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_SAVED_STATES_TIME, 
+        LTTV_POINTER, &v);
+  g_free(*(v.v_pointer));
+  *(v.v_pointer) = NULL;
+}
+
+
+typedef struct _LttvNameTables {
+  GQuark *eventtype_names;
+  GQuark *syscall_names;
+  GQuark *trap_names;
+  GQuark *irq_names;
+} LttvNameTables;
+
+
+static void 
+create_name_tables(LttvTraceState *tcs) 
 {
   int i, nb;
 
@@ -491,14 +588,23 @@ fill_name_tables(LttvTraceState *tcs)
 
   GString *fe_name = g_string_new("");
 
+  LttvNameTables *name_tables = g_new(LttvNameTables, 1);
+
+  LttvAttributeValue v;
+
+  lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_NAME_TABLES, 
+      LTTV_POINTER, &v);
+  g_assert(*(v.v_pointer) == NULL);
+  *(v.v_pointer) = name_tables;
+
   nb = ltt_trace_eventtype_number(tcs->parent.t);
-  tcs->eventtype_names = g_new(GQuark, nb);
+  name_tables->eventtype_names = g_new(GQuark, nb);
   for(i = 0 ; i < nb ; i++) {
     et = ltt_trace_eventtype_get(tcs->parent.t, i);
     e_name = ltt_eventtype_name(et);
     f_name = ltt_facility_name(ltt_eventtype_facility(et));
     g_string_printf(fe_name, "%s.%s", f_name, e_name);
-    tcs->eventtype_names[i] = g_quark_from_string(fe_name->str);    
+    name_tables->eventtype_names[i] = g_quark_from_string(fe_name->str);    
   }
 
   lttv_trace_find_hook(tcs->parent.t, "core", "syscall_entry",
@@ -507,17 +613,18 @@ fill_name_tables(LttvTraceState *tcs)
   nb = ltt_type_element_number(t);
 
   /* CHECK syscalls should be an emun but currently are not!  
-  tcs->syscall_names = g_new(GQuark, nb);
+  name_tables->syscall_names = g_new(GQuark, nb);
 
   for(i = 0 ; i < nb ; i++) {
-    tcs->syscall_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
+    name_tables->syscall_names[i] = g_quark_from_string(
+        ltt_enum_string_get(t, i));
   }
   */
 
-  tcs->syscall_names = g_new(GQuark, 256);
+  name_tables->syscall_names = g_new(GQuark, 256);
   for(i = 0 ; i < 256 ; i++) {
     g_string_printf(fe_name, "syscall %d", i);
-    tcs->syscall_names[i] = g_quark_from_string(fe_name->str);
+    name_tables->syscall_names[i] = g_quark_from_string(fe_name->str);
   }
 
   lttv_trace_find_hook(tcs->parent.t, "core", "trap_entry",
@@ -526,16 +633,17 @@ fill_name_tables(LttvTraceState *tcs)
   nb = ltt_type_element_number(t);
 
   /*
-  tcs->trap_names = g_new(GQuark, nb);
+  name_tables->trap_names = g_new(GQuark, nb);
   for(i = 0 ; i < nb ; i++) {
-    tcs->trap_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
+    name_tables->trap_names[i] = g_quark_from_string(
+        ltt_enum_string_get(t, i));
   }
   */
 
-  tcs->trap_names = g_new(GQuark, 256);
+  name_tables->trap_names = g_new(GQuark, 256);
   for(i = 0 ; i < 256 ; i++) {
     g_string_printf(fe_name, "trap %d", i);
-    tcs->trap_names[i] = g_quark_from_string(fe_name->str);
+    name_tables->trap_names[i] = g_quark_from_string(fe_name->str);
   }
 
   lttv_trace_find_hook(tcs->parent.t, "core", "irq_entry",
@@ -544,16 +652,16 @@ fill_name_tables(LttvTraceState *tcs)
   nb = ltt_type_element_number(t);
 
   /*
-  tcs->irq_names = g_new(GQuark, nb);
+  name_tables->irq_names = g_new(GQuark, nb);
   for(i = 0 ; i < nb ; i++) {
-    tcs->irq_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
+    name_tables->irq_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
   }
   */
 
-  tcs->irq_names = g_new(GQuark, 256);
+  name_tables->irq_names = g_new(GQuark, 256);
   for(i = 0 ; i < 256 ; i++) {
     g_string_printf(fe_name, "irq %d", i);
-    tcs->irq_names[i] = g_quark_from_string(fe_name->str);
+    name_tables->irq_names[i] = g_quark_from_string(fe_name->str);
   }
 
   g_string_free(fe_name, TRUE);
@@ -561,12 +669,40 @@ fill_name_tables(LttvTraceState *tcs)
 
 
 static void 
+get_name_tables(LttvTraceState *tcs) 
+{
+  LttvNameTables *name_tables;
+
+  LttvAttributeValue v;
+
+  lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_NAME_TABLES, 
+        LTTV_POINTER, &v);
+  g_assert(*(v.v_pointer) != NULL);
+  name_tables = (LttvNameTables *)*(v.v_pointer);
+  tcs->eventtype_names = name_tables->eventtype_names;
+  tcs->syscall_names = name_tables->syscall_names;
+  tcs->trap_names = name_tables->trap_names;
+  tcs->irq_names = name_tables->irq_names;
+}
+
+
+static void 
 free_name_tables(LttvTraceState *tcs) 
 {
-  g_free(tcs->eventtype_names);
-  g_free(tcs->syscall_names);
-  g_free(tcs->trap_names);
-  g_free(tcs->irq_names);
+  LttvNameTables *name_tables;
+
+  LttvAttributeValue v;
+
+  lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_NAME_TABLES, 
+        LTTV_POINTER, &v);
+  name_tables = (LttvNameTables *)*(v.v_pointer);
+  *(v.v_pointer) = NULL;
+
+  g_free(name_tables->eventtype_names);
+  g_free(name_tables->syscall_names);
+  g_free(name_tables->trap_names);
+  g_free(name_tables->irq_names);
+  g_free(name_tables);
 } 
 
 
@@ -593,7 +729,7 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
 {
   LttvProcessState *process = tfs->process;
 
-  guint depth = process->execution_stack->len - 1;
+  guint depth = process->execution_stack->len;
 
   if(process->state->t != t){
     g_info("Different execution mode type (%d.%09d): ignore it\n",
@@ -609,16 +745,15 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
     return;
   }
 
-  if(depth == 0){
+  if(depth == 1){
     g_info("Trying to pop last state on stack (%d.%09d): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
     return;
   }
 
-  g_array_remove_index(process->execution_stack, depth);
-  depth--;
+  g_array_set_size(process->execution_stack, depth - 1);
   process->state = &g_array_index(process->execution_stack, LttvExecutionState,
-      depth);
+      depth - 2);
   process->state->change = tfs->parent.timestamp;
 }
 
@@ -637,10 +772,11 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
 
   char buffer[128];
 
-  tcs = (LttvTraceState *)tc = tfs->parent.t_context;
+  tcs = ((LttvTraceState *)tc = tfs->parent.t_context);
 	
   process->pid = pid;
   process->last_cpu = tfs->cpu_name;
+  g_warning("Process %u, core %p", process->pid, process);
   g_hash_table_insert(tcs->processes, process, process);
 
   if(parent) {
@@ -825,13 +961,20 @@ static gboolean schedchange(void *hook_data, void *call_data)
 
   if(s->process != NULL) {
 
+    /* We could not know but it was not the idle process executing.
+       This should only happen at the beginning, before the first schedule
+       event, and when the initial information (current process for each CPU)
+       is missing. It is not obvious how we could, after the fact, compensate
+       the wrongly attributed statistics. */
+
+    if(s->process->pid != pid_out) {
+      g_assert(s->process->pid == 0);
+    }
+
     if(state_out == 0) s->process->state->s = LTTV_STATE_WAIT_CPU;
     else if(s->process->state->s == LTTV_STATE_EXIT) 
         exit_process(s, s->process);
     else s->process->state->s = LTTV_STATE_WAIT;
-
-    if(s->process->pid == 0)
-      s->process->pid = pid_out;
 
     s->process->state->change = s->parent.timestamp;
   }
@@ -1175,7 +1318,9 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
       }
 
       /* restore the closest earlier saved state */
-      if(min_pos != -1) lttv_state_restore(tcs, closest_tree);
+      if(min_pos != -1) {
+        lttv_state_restore(tcs, closest_tree);
+      }
 
       /* There is no saved state, yet we want to have it. Restart at T0 */
       else {
@@ -1364,6 +1509,9 @@ static void module_init()
   LTTV_STATE_SAVED_STATES_TIME = g_quark_from_string("saved states time");
   LTTV_STATE_TIME = g_quark_from_string("time");
   LTTV_STATE_HOOKS = g_quark_from_string("saved state hooks");
+  LTTV_STATE_NAME_TABLES = g_quark_from_string("name tables");
+  LTTV_STATE_TRACE_STATE_USE_COUNT = 
+      g_quark_from_string("trace_state_use_count");
 }
 
 static void module_destroy() 
