@@ -700,8 +700,8 @@ void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
 						 event_viewer_data->first_event,
 						 -1);
       
-      gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v), tree_path,
-			       NULL, FALSE);
+      //      gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v), tree_path,
+      //			       NULL, FALSE);
       gtk_tree_path_free(tree_path);
     }
  
@@ -948,7 +948,7 @@ void get_test_data(double time_value, guint list_height,
       time = ltt_time_sub(raw_data->time, event_viewer_data->time_span.startTime);
       event_viewer_data->vadjust_c->value = ltt_time_to_double(time) * NANOSECONDS_PER_SECOND;
       g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->vadjust_c), "value-changed");
-      event_viewer_data->previous_value = value;
+      event_viewer_data->previous_value = event_viewer_data->vadjust_c->value;
     }
     
 
@@ -1241,7 +1241,7 @@ void get_events(EventViewerData* event_viewer_data, LttTime start,
       }else if(pid != -1 && tmpPid == -1){
 	for(i=0;i<event_viewer_data->raw_trace_data_queue_tmp->length;i++){
 	  data = (RawTraceData*)g_list_nth_data(tmpList,i);
-	  if(data->pid == -1) data->pid = tmpPid;
+	  if(data->pid == -1) data->pid = pid;
 	}
       }
     }
