@@ -442,7 +442,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
 {
   char ** dir;
   gint id;
-  char str[PATH_LENGTH];
+  char str[PATH_LENGTH], *str1;
   mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
   GtkFileSelection * fileSelector = (GtkFileSelection *)gtk_file_selection_new("Select a module");
   gtk_file_selection_hide_fileop_buttons(fileSelector);
@@ -454,10 +454,17 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
     case GTK_RESPONSE_OK:
       dir = gtk_file_selection_get_selections (fileSelector);
       sprintf(str,dir[0]);
+      str1 = strrchr(str,'/');
+      if(str1)str1++;
+      else{
+	str1 = strrchr(str,'\\');
+	str1++;
+      }
       if(mwData->winCreationData)
-	lttv_module_load(str, mwData->winCreationData->argc,mwData->winCreationData->argv);
+	lttv_module_load(str1, mwData->winCreationData->argc,mwData->winCreationData->argv);
       else
-	lttv_module_load(str, 0,NULL);
+	lttv_module_load(str1, 0,NULL);
+      insertMenuToolbarItem(mwData);
       g_strfreev(dir);
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
@@ -797,7 +804,7 @@ void insertMenuToolbarItem(mainWindow * mw)
   lttv_toolbar_closure *toolbarItem;
   LttvAttributeValue value;
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
-  GtkWidget * ToolMenuTitle_menu, *insert_view, *pixmap;
+  GtkWidget * ToolMenuTitle_menu, *insert_view, *pixmap, *tmp;
 
   g_assert(lttv_iattribute_find_by_path(attributes,
 	   "viewers/menu", LTTV_POINTER, &value));
@@ -806,6 +813,8 @@ void insertMenuToolbarItem(mainWindow * mw)
   if(menu){
     for(i=0;i<menu->len;i++){
       menuItem = &g_array_index(menu, lttv_menu_closure, i);
+      tmp = g_hash_table_lookup(mw->hash_menu_item, g_strdup(menuItem->menuText));
+      if(tmp)continue;
       constructor = menuItem->con;
       ToolMenuTitle_menu = lookup_widget(mw->MWindow,"ToolMenuTitle_menu");
       insert_view = gtk_menu_item_new_with_mnemonic (menuItem->menuText);
@@ -826,6 +835,8 @@ void insertMenuToolbarItem(mainWindow * mw)
   if(toolbar){
     for(i=0;i<toolbar->len;i++){
       toolbarItem = &g_array_index(toolbar, lttv_toolbar_closure, i);
+      tmp = g_hash_table_lookup(mw->hash_toolbar_item, g_strdup(toolbarItem->tooltip));
+      if(tmp)continue;
       constructor = toolbarItem->con;
       ToolMenuTitle_menu = lookup_widget(mw->MWindow,"MToolbar2");
       pixbuf = gdk_pixbuf_new_from_xpm_data ((const char**)toolbarItem->pixmap);
