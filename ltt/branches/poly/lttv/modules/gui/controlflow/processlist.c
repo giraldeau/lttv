@@ -596,7 +596,7 @@ int processlist_remove( ProcessList *process_list,
 guint processlist_get_height(ProcessList *process_list)
 {
   return get_cell_height(process_list,
-                         GTK_TREE_VIEW(process_list->process_list_widget))
+                         (GtkTreeView*)process_list->process_list_widget)
         * process_list->number_of_process ;
 }
 
@@ -626,12 +626,12 @@ __inline gint processlist_get_process_pixels(  ProcessList *process_list,
           &process_info))
   {
     tree_path = gtk_tree_model_get_path(
-                    GTK_TREE_MODEL(process_list->list_store),
+                    (GtkTreeModel*)process_list->list_store,
                     &hashed_process_data->y_iter);
     path_indices =  gtk_tree_path_get_indices (tree_path);
 
     *height = get_cell_height(process_list,
-        GTK_TREE_VIEW(process_list->process_list_widget));
+        (GtkTreeView*)process_list->process_list_widget);
     *y = *height * path_indices[0];
     *pm_hashed_process_data = hashed_process_data;
     gtk_tree_path_free(tree_path);
@@ -654,12 +654,12 @@ __inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
   gint *path_indices;
   GtkTreePath *tree_path;
 
-  tree_path = gtk_tree_model_get_path(GTK_TREE_MODEL(process_list->list_store),
+  tree_path = gtk_tree_model_get_path((GtkTreeModel*)process_list->list_store,
                     &hashed_process_data->y_iter);
   path_indices =  gtk_tree_path_get_indices (tree_path);
 
   *height = get_cell_height(process_list,
-      GTK_TREE_VIEW(process_list->process_list_widget));
+      (GtkTreeView*)process_list->process_list_widget);
   *y = *height * path_indices[0];
   gtk_tree_path_free(tree_path);
 
