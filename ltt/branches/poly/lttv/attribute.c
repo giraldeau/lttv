@@ -103,7 +103,7 @@ lttv_attribute_get_by_name(LttvAttribute *self, LttvAttributeName name,
   p = g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
   if(p == NULL) return LTTV_NONE;
 
-  i = POINTER_TO_GUINT(p);
+  i = GPOINTER_TO_UINT(p);
   i--;
   a = &g_array_index(self->attributes, Attribute, i);
   *v = address_of_value(a->type, &(a->value));
@@ -258,7 +258,7 @@ attribute_instance_init (GTypeInstance *instance, gpointer g_class)
 static void
 attribute_finalize (LttvAttribute *self)
 {
-  g_hash_table_free(self->names);
+  g_hash_table_destroy(self->names);
   g_array_free(self->attributes, TRUE);
   G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_ATTRIBUTE_GET_CLASS(self)))->finalize(G_OBJECT(self));
 }

@@ -257,21 +257,21 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
 }
 
 
-LttvTracesetContext *
+static LttvTracesetContext *
 new_traceset_context(LttvTracesetContext *self)
 {
   return g_object_new(LTTV_TRACESET_CONTEXT_TYPE, NULL);
 }
 
 
-LttvTraceContext * 
+static LttvTraceContext * 
 new_trace_context(LttvTracesetContext *self)
 {
   return g_object_new(LTTV_TRACE_CONTEXT_TYPE, NULL);
 }
 
 
-LttvTracefileContext *
+static LttvTracefileContext *
 new_tracefile_context(LttvTracesetContext *self)
 {
   return g_object_new(LTTV_TRACEFILE_CONTEXT_TYPE, NULL);

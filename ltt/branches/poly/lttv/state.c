@@ -1,5 +1,7 @@
 
 #include <lttv/state.h>
+#include <ltt/facility.h>
+#include <ltt/trace.h>
 
 LttvInterruptType
   LTTV_STATE_USER_MODE,
@@ -15,6 +17,11 @@ LttvProcessStatus
   LTTV_STATE_EXIT,
   LTTV_STATE_WAIT,
   LTTV_STATE_RUN;
+
+static GQuark
+  LTTV_STATE_HOOKS;
+
+void remove_all_processes(GHashTable *processes);
 
 
 static void
@@ -291,38 +298,44 @@ LttvProcessState *create_process(LttvTracefileState *tfs,
 
   LttvTraceContext *tc;
 
-  LttvTraceContext *tcs;
+  LttvTraceState *tcs;
 
-  tcs = (LttvTraceState *)tc = LTTV_TRACEFILE_CONTEXT(tfs)->ts;
+  LttvTracefileContext *tfc = LTTV_TRACEFILE_CONTEXT(tfs);
+
+  tcs = (LttvTraceState *)tc = tfc->t_context;
 
   g_hash_table_insert(tcs->processes, GUINT_TO_POINTER(pid), process);
   process->pid = pid;
-  process->birth = tfs->timestamp;
+  process->birth = tfc->timestamp;
   process->name = LTTV_STATE_UNNAMED;
   process->interrupt_stack = g_array_new(FALSE, FALSE, 
       sizeof(LttvInterruptState));
   g_array_set_size(process->interrupt_stack, 1);
   intr = process->state = &g_array_index(process->interrupt_stack, 
       LttvInterruptState, 0);
-  intr->t = LTTV_STATE_USER_MODE
+  intr->t = LTTV_STATE_USER_MODE;
   intr->n = 0;
-  intr->entry = tfs->timestamp;
-  intr->last_change = tfs->timestamp;
+  intr->entry = tfc->timestamp;
+  intr->last_change = tfc->timestamp;
   intr->s = LTTV_STATE_WAIT_FORK;
 }
 
 
-LttvProcessState *find_process(LttvTraceState *tfs, guint pid)
+LttvProcessState *find_process(LttvTracefileState *tfs, guint pid)
 {
-  LttvProcessState *process = g_hash_table_lookup(tfs->processes, pid);
+  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+  LttvProcessState *process = g_hash_table_lookup(ts->processes, 
+      GUINT_TO_POINTER(pid));
   if(process == NULL) process = create_process(tfs, NULL, pid);
   return process;
 }
 
 
-void exit_process(LttvTraceState *ts, LttvProcessState *process) 
+void exit_process(LttvTracefileState *tfs, LttvProcessState *process) 
 {
-  g_hash_table_remove(tfs-ts->processes, process->pid);
+  LttvTraceState *ts = LTTV_TRACE_STATE(tfs->parent.t_context);
+
+  g_hash_table_remove(ts->processes, GUINT_TO_POINTER(process->pid));
   g_array_free(process->interrupt_stack, TRUE);
   g_free(process);
 }
@@ -345,16 +358,17 @@ gboolean syscall_entry(void *hook_data, void *call_data)
 {
   LttField *f = (LttField *)hook_data;
 
-  struct LttvTracefileState *s = (LttvTraceFileState *)call_data;
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
 
-  push_state(s, LTTV_STATE_SYSCALL, ltt_event_get_unsigned(s->e, f));
+  push_state(s, LTTV_STATE_SYSCALL, ltt_event_get_unsigned(
+      LTTV_TRACEFILE_CONTEXT(s)->e, f));
   return FALSE;
 }
 
 
 gboolean syscall_exit(void *hook_data, void *call_data)
 {
-  struct LttvTracefileState *s = (LttvTraceFileState *)call_data;
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   pop_state(s, LTTV_STATE_SYSCALL);
   return FALSE;
@@ -365,16 +379,16 @@ gboolean trap_entry(void *hook_data, void *call_data)
 {
   LttField *f = (LttField *)hook_data;
 
-  struct LttvTracefileState *s = (LttvTraceFileState *)call_data;
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
 
-  push_state(s, LTTV_STATE_TRAP, ltt_event_get_unsigned(s->e, f));
+  push_state(s, LTTV_STATE_TRAP, ltt_event_get_unsigned(s->parent.e, f));
   return FALSE;
 }
 
 
 gboolean trap_exit(void *hook_data, void *call_data)
 {
-  struct LttvTracefileState *s = (LttvTraceFileState *)call_data;
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   pop_state(s, LTTV_STATE_TRAP);
   return FALSE;
@@ -385,17 +399,17 @@ gboolean irq_entry(void *hook_data, void *call_data)
 {
   LttField *f = (LttField *)hook_data;
 
-  struct LttvTracefileState *s = (LttvTraceFileState *)call_data;
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   /* Do something with the info about being in user or system mode when int? */
-  push_state(s, LTTV_STATE_IRQ, ltt_event_get_unsigned(s->e, f));
+  push_state(s, LTTV_STATE_IRQ, ltt_event_get_unsigned(s->parent.e, f));
   return FALSE;
 }
 
 
 gboolean irq_exit(void *hook_data, void *call_data)
 {
-  struct LttvTracefileState *s = (LttvTraceFileState *)call_data;
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   pop_state(s, LTTV_STATE_IRQ);
   return FALSE;
@@ -406,20 +420,20 @@ gboolean schedchange(void *hook_data, void *call_data)
 {
   struct HookData *h = (struct HookData *)hook_data;
 
-  struct LttvTracefileState *s = (LttvTraceFileState *)call_data;
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   guint pid_in, pid_out, state_out;
 
-  pid_in = ltt_event_get_int(s->e, h->f1);
-  pid_out = ltt_event_get_int(s->e, h->f2);
-  state_out = ltt_event_get_int(s->e, h->f3);
+  pid_in = ltt_event_get_int(s->parent.e, h->f1);
+  pid_out = ltt_event_get_int(s->parent.e, h->f2);
+  state_out = ltt_event_get_int(s->parent.e, h->f3);
   if(s->process != NULL) {
     if(state_out == 0) s->process->state->s = LTTV_STATE_WAIT_CPU;
     else if(s->process->state->s == LTTV_STATE_EXIT) 
-        exit_process(s->tc, s->process);
+        exit_process(s, s->process);
     else s->process->state->s = LTTV_STATE_WAIT;
   }
-  s->process = find_process(s->tc, pid_in);
+  s->process = find_process(s, pid_in);
   s->process->state->s = LTTV_STATE_RUN;
   return FALSE;
 }
@@ -429,19 +443,19 @@ gboolean process_fork(void *hook_data, void *call_data)
 {
   LttField *f = (LttField *)hook_data;
 
-  struct LttvTracefileState *s = (LttvTraceFileState *)call_data;
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   guint child_pid;
 
-  child_pid = ltt_event_get_int(s->e, f);
-  create_process(s->tc, s->process, child_pid);
+  child_pid = ltt_event_get_int(s->parent.e, f);
+  create_process(s, s->process, child_pid);
   return FALSE;
 }
 
 
 gboolean process_exit(void *hook_data, void *call_data)
 {
-  struct LttvTracefileState *s = (LttvTraceFileState *)call_data;
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   if(s->process != NULL) {
     s->process->state->s = LTTV_STATE_EXIT;
@@ -476,9 +490,9 @@ find_field(LttEventType *et, const char *field)
 }
 
 
-static HookId
-find_hook(LttTrace *t, const char *facility, const char *event, 
-    const char *field1, *field2, *field3, LttHook h)
+static struct HookId
+find_hook(LttTrace *t, char *facility, char *event, 
+    char *field1, char *field2, char *field3, LttvHook h)
 {
   LttFacility *f;
 
@@ -494,18 +508,18 @@ find_hook(LttTrace *t, const char *facility, const char *event,
 
   nb = ltt_trace_facility_find(t, facility, &pos);
   if(nb < 1) g_error("No %s facility", facility);
-  f = ltt_facility_get(t, pos);
-  et = ltt_facility_get_by_name(f, event);
+  f = ltt_trace_facility_get(t, pos);
+  et = ltt_facility_eventtype_get_by_name(f, event);
   if(et == NULL) g_error("Event %s does not exist", event);
 
-  hook_id.id = ltt_eventtype_id(et);
+  hook_id.id = *(ltt_eventtype_id(et)); /* CHECK */
   hook_id.h = h;
   hook_id.free_hook_data = FALSE;
   hook_data.f1 = find_field(et, field1);
   hook_data.f2 = find_field(et, field2);
   hook_data.f3 = find_field(et, field3);
-  if(hook_data->f1 == NULL) hook_id->hook_data = NULL;
-  else if(hook_data->f2 == NULL) hook_id->hook_data = hook_data->f1;
+  if(hook_data.f1 == NULL) hook_id.hook_data = NULL;
+  else if(hook_data.f2 == NULL) hook_id.hook_data = hook_data.f1;
   else {
     phook_data = g_new(struct HookData, 1);
     *phook_data = hook_data;
@@ -518,17 +532,17 @@ find_hook(LttTrace *t, const char *facility, const char *event,
 
 lttv_state_add_event_hooks(LttvTracesetState *self)
 {
-  LttvTraceset *ts = self->ts;
+  LttvTraceset *traceset = self->parent.ts;
 
-  guint i, j, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, j, k, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
 
   LttFacility *f;
 
   LttEventType *et;
 
-  LttvTraceState *tc;
+  LttvTraceState *ts;
 
-  LttvTracefileState *tfc;
+  LttvTracefileState *tfs;
 
   void *hook_data;
 
@@ -538,67 +552,67 @@ lttv_state_add_event_hooks(LttvTracesetState *self)
 
   LttvAttributeValue val;
 
-  nb_trace = lttv_traceset_number(ts);
+  nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
-    tc = (LttvTraceState *)self->traces[i];
+    ts = (LttvTraceState *)self->parent.traces[i];
 
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
-    hooks = g_array_new(FALSE, FALSE, struct HookId);
-    g_array_add(hooks, find_hook(tc->t, "core","syscall_entry", "syscall_id", 
-        NULL, NULL, syscall_entry));
-    g_array_add(hooks, find_hook(tc->t, "core", "syscall_exit", NULL, NULL,
-        NULL, syscall_exit));
-    g_array_add(hooks, find_hook(tc->t, "core", "trap_entry", "trap_id",
-        NULL, trap_entry));
-    g_array_add(hooks, find_hook(tc->t, "core", "trap_exit", NULL, NULL,
+    hooks = g_array_new(FALSE, FALSE, sizeof(struct HookId));
+    g_array_add(hooks, find_hook(ts->parent.t, "core","syscall_entry", 
+        "syscall_id", NULL, NULL, syscall_entry));
+    g_array_add(hooks, find_hook(ts->parent.t, "core", "syscall_exit", 
+        NULL, NULL, NULL, syscall_exit));
+    g_array_add(hooks, find_hook(ts->parent.t, "core", "trap_entry", "trap_id",
+        NULL, NULL, trap_entry));
+    g_array_add(hooks, find_hook(ts->parent.t, "core", "trap_exit", NULL, NULL,
         NULL, trap_exit));
-    g_array_add(hooks, find_hook(tc->t, "core", "irq_entry", "irq_id",
-        NULL, irq_entry));
-    g_array_add(hooks, find_hook(tc->t, "core", "irq_exit", NULL, NULL,
+    g_array_add(hooks, find_hook(ts->parent.t, "core", "irq_entry", "irq_id",
+        NULL, NULL, irq_entry));
+    g_array_add(hooks, find_hook(ts->parent.t, "core", "irq_exit", NULL, NULL,
         NULL, irq_exit));
-    g_array_add(hooks, find_hook(tc->t, "core", "schedchange", "in", "out",
-        "out_state", schedchange));
-    g_array_add(hooks, find_hook(tc->t, "core", "process_fork", "child_pid", 
-        NULL, NULL, process_fork));
-    g_array_add(hooks, find_hook(tc->t, "core", "process_exit", NULL, NULL,
-        NULL, process_exit));
+    g_array_add(hooks, find_hook(ts->parent.t, "core", "schedchange", 
+        "in", "out", "out_state", schedchange));
+    g_array_add(hooks, find_hook(ts->parent.t, "core", "process_fork", 
+        "child_pid", NULL, NULL, process_fork));
+    g_array_add(hooks, find_hook(ts->parent.t, "core", "process_exit", 
+        NULL, NULL, NULL, process_exit));
 
     /* Add these hooks to each before_event_by_id hooks list */
 
-    nb_control = ltt_trace_control_tracefile_number(tc->t);
-    nb_per_cpu = ltt_trace_control_tracefile_number(tc->t);
+    nb_control = ltt_trace_control_tracefile_number(ts->parent.t);
+    nb_per_cpu = ltt_trace_control_tracefile_number(ts->parent.t);
     nb_tracefile = nb_control + nb_per_cpu;
     for(j = 0 ; j < nb_tracefile ; j++) {
       if(j < nb_control) {
-        tfc = tc->control_tracefiles[j];
+        tfs = LTTV_TRACEFILE_STATE(ts->parent.control_tracefiles[j]);
       }
       else {
-        tfc = tc->per_cpu_tracefiles[j];
+        tfs = LTTV_TRACEFILE_STATE(ts->parent.per_cpu_tracefiles[j]);
       }
 
       for(k = 0 ; k < hooks->len ; k++) {
         hook_id = g_array_index(hooks, struct HookId, k);
-        lttv_hooks_add(lttv_hooks_by_id_find(tfc->before_event_by_id, 
-	  hook_id->id), hook_id->h, hook_id->hook_data);
+        lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.before_event_by_id, 
+	  hook_id.id), hook_id.h, hook_id.hook_data);
       }
     }
-    lttv_attribute_find(self->a, LTTV_STATE_HOOKS, LTTV_POINTER, val);
-    val->v_pointer = hooks;
+    lttv_attribute_find(self->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
+    *(val.v_pointer) = hooks;
   }
 }
 
 
 lttv_state_remove_event_hooks(LttvTracesetState *self)
 {
-  LttvTraceset *ts = self->ts;
+  LttvTraceset *traceset = self->parent.ts;
 
-  guint i, j, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, j, k, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
 
-  LttvTraceState *tc;
+  LttvTraceState *ts;
 
-  LttvTracefileState *tfc;
+  LttvTracefileState *tfs;
 
   void *hook_data;
 
@@ -608,34 +622,35 @@ lttv_state_remove_event_hooks(LttvTracesetState *self)
 
   LttvAttributeValue val;
 
-  nb_trace = lttv_traceset_number(ts);
+  nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
-    tc = (LttvTraceState *)self->traces[i];
-    lttv_attribute_find(self->a, LTTV_STATE_HOOKS, LTTV_POINTER, val);
-    hooks = val->v_pointer;
+    ts = LTTV_TRACE_STATE(self->parent.traces[i]);
+    lttv_attribute_find(self->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
+    hooks = *(val.v_pointer);
 
     /* Add these hooks to each before_event_by_id hooks list */
 
-    nb_control = ltt_trace_control_tracefile_number(tc->t);
-    nb_per_cpu = ltt_trace_control_tracefile_number(tc->t);
+    nb_control = ltt_trace_control_tracefile_number(ts->parent.t);
+    nb_per_cpu = ltt_trace_control_tracefile_number(ts->parent.t);
     nb_tracefile = nb_control + nb_per_cpu;
     for(j = 0 ; j < nb_tracefile ; j++) {
       if(j < nb_control) {
-        tfc = tc->control_tracefiles[j];
+        tfs = LTTV_TRACEFILE_STATE(ts->parent.control_tracefiles[j]);
       }
       else {
-        tfc = tc->per_cpu_tracefiles[j];
+        tfs = LTTV_TRACEFILE_STATE(ts->parent.per_cpu_tracefiles[j]);
       }
 
       for(k = 0 ; k < hooks->len ; k++) {
         hook_id = g_array_index(hooks, struct HookId, k);
-        lttv_hooks_remove_data(lttv_hooks_by_id_find(tfc->before_event_by_id, 
-	  hook_id->id), hook_id->h, hook_id->hook_data);
+        lttv_hooks_remove_data(
+            lttv_hooks_by_id_find(tfs->parent.before_event_by_id, 
+	    hook_id.id), hook_id.h, hook_id.hook_data);
 
       }
       for(k = 0 ; k < hooks->len ; k++) {
         hook_id = g_array_index(hooks, struct HookId, k);
-        if(hook_id->free_hook_data) g_free(hook_id->hook_data);
+        if(hook_id.free_hook_data) g_free(hook_id.hook_data);
       }
     }
     g_array_free(hooks, TRUE);

@@ -16,53 +16,54 @@ struct _LttvTraceset {
 
 LttvTraceset *lttv_trace_set_new() 
 {
-  LttvTraceset s;
+  LttvTraceset *s;
 
   s = g_new(LttvTraceset, 1);
   s->traces = g_ptr_array_new();
   s->attributes = g_ptr_array_new();
-  s->a = g_object_new(LTTV_ATTRIBUTE_TYPE);
+  s->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
 }
 
 
-LttvTraceset *lttv_traceset_destroy(LttvTraceset *s) 
+void lttv_traceset_destroy(LttvTraceset *s) 
 {
   int i, nb;
 
   for(i = 0 ; i < s->attributes->len ; i++) {
-    lttv_attribute_free((lttv_attributes *)s->attributes->pdata[i]);
+    g_object_unref((LttvAttribute *)s->attributes->pdata[i]);
   }
-  g_ptr_array_free(s->attributes);
-  g_ptr_array_free(s->traces);
-  lttv_attribute_free(s->a);
-  return g_free(s);
+  g_ptr_array_free(s->attributes, TRUE);
+  g_ptr_array_free(s->traces, TRUE);
+  g_object_unref(s->a);
+  g_free(s);
 }
 
 
 void lttv_traceset_add(LttvTraceset *s, LttTrace *t) 
 {
   g_ptr_array_add(s->traces, t);
-  g_ptr_array_add(s->attributes, g_object_new(LTTV_ATTRIBUTE_TYPE));
+  g_ptr_array_add(s->attributes, g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
 }
 
 
 unsigned lttv_traceset_number(LttvTraceset *s) 
 {
-  return s->traces.len;
+  return s->traces->len;
 }
 
 
 LttTrace *lttv_traceset_get(LttvTraceset *s, unsigned i) 
 {
   g_assert(s->traces->len > i);
-  return ((LttTrace *)s->traces.pdata[i]);
+  return ((LttTrace *)s->traces->pdata[i]);
 }
 
 
-LttTrace *lttv_traceset_remove(LttvTraceset *s, unsigned i) 
+void lttv_traceset_remove(LttvTraceset *s, unsigned i) 
 {
-  return g_ptr_array_remove_index(s->traces, i);
-  lttv_attribute_free(g_ptr_array_remove_index(s->attributes,i));
+  g_ptr_array_remove_index(s->traces, i);
+  g_object_unref(s->attributes->pdata[i]);
+  g_ptr_array_remove_index(s->attributes,i);
 }
 
 
@@ -77,7 +78,5 @@ LttvAttribute *lttv_traceset_attribute(LttvTraceset *s)
 
 LttvAttribute *lttv_traceset_trace_attribute(LttvTraceset *s, unsigned i)
 {
-  return (LttAttribute *)s->attributes->pdata[i];
+  return (LttvAttribute *)s->attributes->pdata[i];
 }
-
-

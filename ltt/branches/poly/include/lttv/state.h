@@ -83,15 +83,15 @@ extern LttvProcessStatus
 typedef struct _LttvInterruptState {
   LttvInterruptType t;
   LttvInterruptNumber n;
-  LttvTime entry;
-  LttvTime last_change;
+  LttTime entry;
+  LttTime last_change;
   LttvProcessStatus s;
 } LttvInterruptState;
 
 
 typedef struct _LttvProcessState {
   guint pid;
-  LttvTime birth;
+  LttTime birth;
   GQuark name;
   GArray *interrupt_stack;         /* Array of LttvInterruptState */
   LttvInterruptState *state;       /* Top of interrupt stack */

@@ -7,7 +7,7 @@
 
 /* A traceset is a set of traces to be analyzed together. */
 
-typedef struct LttvTraceset LttvTraceset;
+typedef struct _LttvTraceset LttvTraceset;
 
 
 /* Tracesets may be added to, removed from and their content listed. */
