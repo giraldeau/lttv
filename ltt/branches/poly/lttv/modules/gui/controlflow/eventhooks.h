@@ -61,16 +61,11 @@ GtkWidget *h_guicontrolflow(Tab *tab, LttvTracesetSelector * s, char * key);
 
 int event_selected_hook(void *hook_data, void *call_data);
 
-/* Hook called before drawing. Gets the initial context at the beginning of the
- * drawing interval and copy it to the context in event_request.
- */
-int draw_before_hook(void *hook_data, void *call_data);
-
 /*
  * The draw event hook is called by the reading API to have a
  * particular event drawn on the screen.
  * @param hook_data ControlFlowData structure of the viewer. 
- * @param call_data Event context.
+ * @param call_data Event context with state.
  *
  * This function basically draw lines and icons. Two types of lines are drawn :
  * one small (3 pixels?) representing the state of the process and the second
@@ -86,14 +81,17 @@ int draw_before_hook(void *hook_data, void *call_data);
  * The choice of lines'color is defined by the context of the last event for this
  * process.
  */
-int draw_event_hook(void *hook_data, void *call_data);
+int draw_before_hook(void *hook_data, void *call_data);
 
 int draw_after_hook(void *hook_data, void *call_data);
 
 void draw_closure(gpointer key, gpointer value, gpointer user_data);
 
-int  before_data_request(void *hook_data, void *call_data);
-int  after_data_request(void *hook_data, void *call_data);
+int  before_chunk(void *hook_data, void *call_data);
+int  after_chunk(void *hook_data, void *call_data);
+int  before_request(void *hook_data, void *call_data);
+int  after_request(void *hook_data, void *call_data);
+
 
 
 gint update_time_window_hook(void *hook_data, void *call_data);
@@ -101,9 +99,5 @@ gint update_current_time_hook(void *hook_data, void *call_data);
 gint traceset_notify(void *hook_data, void *call_data);
 gint redraw_notify(void *hook_data, void *call_data);
 gint continue_notify(void *hook_data, void *call_data);
-
-gint after_process_traceset_hook(void *hook_data, void *call_data);
-
-
 
 #endif // _EVENT_HOOKS_H

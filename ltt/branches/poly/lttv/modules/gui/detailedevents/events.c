@@ -231,7 +231,7 @@ h_gui_events(Tab * tab, LttvTracesetSelector * s, char* key)
 EventViewerData *
 gui_events(Tab *tab, LttvTracesetSelector * s,char* key )
 {
-  LttTime start;
+  LttTime end;
   GtkTreeViewColumn *column;
   GtkCellRenderer *renderer;
   EventViewerData* event_viewer_data = g_new(EventViewerData,1) ;
@@ -423,10 +423,10 @@ gui_events(Tab *tab, LttvTracesetSelector * s,char* key )
   LttvTracesetContext * tsc =
         lttvwindow_get_traceset_context(event_viewer_data->tab);
   TimeInterval time_span = tsc->time_span;
-  start = ltt_time_sub(time_span.end_time, time_span.start_time);
+  end = ltt_time_sub(time_span.end_time, time_span.start_time);
 
   event_viewer_data->vadjust_c->upper =
-              ltt_time_to_double(start) * NANOSECONDS_PER_SECOND;
+              ltt_time_to_double(end) * NANOSECONDS_PER_SECOND;
 
   event_viewer_data->append = TRUE;
 
@@ -1524,13 +1524,13 @@ gboolean traceset_changed(void * hook_data, void * call_data)
         lttvwindow_get_traceset_context(event_viewer_data->tab);
   TimeInterval time_span = tsc->time_span;
   
-  LttTime start;
+  LttTime end;
   remove_all_items_from_queue(event_viewer_data->event_fields_queue);
   gtk_list_store_clear(event_viewer_data->store_m);
   event_viewer_data->append = TRUE;
 
-  start = ltt_time_sub(time_span.end_time, time_span.start_time);
-  event_viewer_data->vadjust_c->upper = ltt_time_to_double(start) * NANOSECONDS_PER_SECOND;
+  end = ltt_time_sub(time_span.end_time, time_span.start_time);
+  event_viewer_data->vadjust_c->upper = ltt_time_to_double(end) * NANOSECONDS_PER_SECOND;
   //  event_viewer_data->vadjust_c->value = 0;
 
   return FALSE;

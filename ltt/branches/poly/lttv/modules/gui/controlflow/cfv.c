@@ -39,6 +39,22 @@ static void control_flow_grab_focus(GtkWidget *widget, gpointer data){
 }
 
 
+static gboolean
+header_size_allocate(GtkWidget *widget,
+                        GtkAllocation *allocation,
+                        gpointer user_data)
+{
+  Drawing_t *drawing = (Drawing_t*)user_data;
+
+  gtk_widget_set_size_request(drawing->ruler, -1, allocation->height);
+  //gtk_widget_queue_resize(drawing->padding);
+  //gtk_widget_queue_resize(drawing->ruler);
+  gtk_container_check_resize(GTK_CONTAINER(drawing->ruler_hbox));
+  return 0;
+}
+
+
+
 /*****************************************************************************
  *                     Control Flow Viewer class implementation              *
  *****************************************************************************/
@@ -86,6 +102,12 @@ guicontrolflow(void)
                                 GTK_ADJUSTMENT(
                                    control_flow_data->v_adjust));
 
+  g_signal_connect (G_OBJECT(control_flow_data->process_list->button),
+        "size-allocate",
+        G_CALLBACK(header_size_allocate),
+        (gpointer)control_flow_data->drawing);
+
+  
   
   control_flow_data->h_paned = gtk_hpaned_new();
   control_flow_data->box = gtk_event_box_new();
@@ -155,7 +177,6 @@ guicontrolflow_destructor_full(ControlFlowData *control_flow_data)
 void
 guicontrolflow_destructor(ControlFlowData *control_flow_data)
 {
-  guint index;
   Tab *tab = control_flow_data->tab;
   
   g_info("CFV.c : guicontrolflow_destructor, %p", control_flow_data);
@@ -188,8 +209,8 @@ guicontrolflow_destructor(ControlFlowData *control_flow_data)
     lttvwindow_events_request_remove_all(control_flow_data->tab,
                                          control_flow_data);
 
-    lttvwindowtraces_background_notify_remove(control_flow_data);
   }
+  lttvwindowtraces_background_notify_remove(control_flow_data);
   g_control_flow_data_list = 
          g_slist_remove(g_control_flow_data_list,control_flow_data);
 

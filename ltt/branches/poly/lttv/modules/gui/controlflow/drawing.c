@@ -125,25 +125,38 @@ void drawing_data_request(Drawing_t *drawing,
   LttvHooks *event = lttv_hooks_new();
   LttvHooks *before_chunk_traceset = lttv_hooks_new();
   LttvHooks *after_chunk_traceset = lttv_hooks_new();
+  LttvHooks *before_request_hook = lttv_hooks_new();
+  LttvHooks *after_request_hook = lttv_hooks_new();
 
   lttv_hooks_add(before_chunk_traceset,
-                 before_data_request,
+                 before_chunk,
                  events_request,
                  LTTV_PRIO_DEFAULT);
 
   lttv_hooks_add(after_chunk_traceset,
-                 after_data_request,
+                 after_chunk,
                  events_request,
                  LTTV_PRIO_DEFAULT);
+
+  lttv_hooks_add(before_request_hook,
+                 before_request,
+                 events_request,
+                 LTTV_PRIO_DEFAULT);
+
+  lttv_hooks_add(after_request_hook,
+                 after_request,
+                 events_request,
+                 LTTV_PRIO_DEFAULT);
+
+
   lttv_hooks_add(event,
-                 draw_event_hook,
+                 draw_before_hook,
                  events_request,
                  LTTV_PRIO_STATE-5);
   lttv_hooks_add(event,
                  draw_after_hook,
                  events_request,
                  LTTV_PRIO_STATE+5);
-
 
   // Fill the events request
   events_request->owner = control_flow_data;
@@ -163,8 +176,8 @@ void drawing_data_request(Drawing_t *drawing,
   events_request->after_chunk_tracefile = NULL;
   events_request->after_chunk_trace = NULL;
   events_request->after_chunk_traceset = after_chunk_traceset;
-  events_request->before_request = NULL;
-  events_request->after_request = NULL;
+  events_request->before_request = before_request_hook;
+  events_request->after_request = after_request_hook;
 
   g_debug("req : start : %u, %u", start.tv_sec, 
                                       start.tv_nsec);
@@ -176,21 +189,58 @@ void drawing_data_request(Drawing_t *drawing,
                                        control_flow_data);
   lttvwindow_events_request(tab, events_request);
 }
-   
+ 
 
+static void set_last_start(gpointer key, gpointer value, gpointer user_data)
+{
+  ProcessInfo *process_info = (ProcessInfo*)key;
+  HashedProcessData *hashed_process_data = (HashedProcessData*)value;
+  guint x = (guint)user_data;
+
+  hashed_process_data->x = x;
+
+  return;
+}
 
 void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState *tss)
 {
-  g_debug("Begin of data request chunk");
+  g_debug("Begin of data request");
   ControlFlowData *cfd = events_request->viewer_data;
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
+  TimeWindow time_window = 
+    lttvwindow_get_time_window(cfd->tab);
+  LttTime end_time = ltt_time_add(time_window.start_time,
+                                    time_window.time_width);
+  guint width = cfd->drawing->width;
+  guint x=0;
 
+  cfd->drawing->last_start = events_request->start_time;
+
+  convert_time_to_pixels(
+          time_window.start_time,
+          end_time,
+          events_request->start_time,
+          width,
+          &x);
+
+  g_hash_table_foreach(cfd->process_list->process_hash, set_last_start,
+                            (gpointer)x);
+}
+
+void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
+{
+  g_debug("Begin of chunk");
+  ControlFlowData *cfd = events_request->viewer_data;
+  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
   LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
 
   cfd->drawing->last_start = current_time;
 }
 
-void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *tss)
+
+void drawing_request_expose(EventsRequest *events_request,
+                            LttvTracesetState *tss,
+                            LttTime end_time)
 {
   gint x, x_end, width;
 
@@ -201,13 +251,11 @@ void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *
   TimeWindow time_window = 
         lttvwindow_get_time_window(cfd->tab);
 
-  g_debug("End of data request chunk");
+  g_debug("request expose");
   
   LttTime window_end = ltt_time_add(time_window.time_width,
                                     time_window.start_time);
 
-  LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
-  
   convert_time_to_pixels(
         time_window.start_time,
         window_end,
@@ -218,7 +266,7 @@ void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *
   convert_time_to_pixels(
         time_window.start_time,
         window_end,
-        current_time,
+        end_time,
         drawing->width,
         &x_end);
 
@@ -229,16 +277,16 @@ void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *
 
   /* ask for the buffer to be redrawn */
 
-  gtk_widget_queue_draw_area ( drawing->drawing_area,
-                               0, 0,
-                               drawing->width, drawing->height);
+  //gtk_widget_queue_draw_area ( drawing->drawing_area,
+  //                             0, 0,
+  //                             drawing->width, drawing->height);
 
   /* FIXME
    * will need more precise pixel_to_time and time_to_pixel conversion
    * functions to redraw only the needed area. */
-  //gtk_widget_queue_draw_area ( drawing->drawing_area,
-  //                             x, 0,
-  //                             width, drawing->height);
+  gtk_widget_queue_draw_area ( drawing->drawing_area,
+                               x, 0,
+                               width, drawing->height);
  
 }
 
@@ -449,13 +497,13 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
 }
 
 static gboolean
-scrollbar_size_request(GtkWidget *widget,
-                       GtkRequisition *requisition,
-                       gpointer user_data)
+scrollbar_size_allocate(GtkWidget *widget,
+                        GtkAllocation *allocation,
+                        gpointer user_data)
 {
   Drawing_t *drawing = (Drawing_t*)user_data;
 
-  gtk_widget_set_size_request(drawing->padding, requisition->width, -1);
+  gtk_widget_set_size_request(drawing->padding, allocation->width, -1);
   //gtk_widget_queue_resize(drawing->padding);
   //gtk_widget_queue_resize(drawing->ruler);
   gtk_container_check_resize(GTK_CONTAINER(drawing->ruler_hbox));
@@ -476,7 +524,7 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   drawing->ruler_hbox = gtk_hbox_new(FALSE, 1);
   drawing->ruler = gtk_drawing_area_new ();
   gtk_widget_add_events(drawing->ruler, GDK_BUTTON_PRESS_MASK);
-  gtk_widget_set_size_request(drawing->ruler, -1, 27);
+  //gtk_widget_set_size_request(drawing->ruler, -1, 27);
   
   drawing->padding = gtk_drawing_area_new ();
   gtk_widget_add_events(drawing->padding, GDK_BUTTON_PRESS_MASK);
@@ -589,8 +637,8 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
 
 
   g_signal_connect (G_OBJECT(drawing->scrollbar),
-        "size-request",
-        G_CALLBACK(scrollbar_size_request),
+        "size-allocate",
+        G_CALLBACK(scrollbar_size_allocate),
         (gpointer)drawing);
 
 
@@ -678,16 +726,17 @@ void convert_time_to_pixels(
     guint *x)
 {
   LttTime window_time_interval;
-  float interval_float, time_float;
+  double interval_double, time_double;
   
   window_time_interval = ltt_time_sub(window_time_end,window_time_begin);
   
   time = ltt_time_sub(time, window_time_begin);
   
-  interval_float = ltt_time_to_double(window_time_interval);
-  time_float = ltt_time_to_double(time);
+  /* LttTime to double conversions here should really be under 4000 hours.. */
+  interval_double = ltt_time_to_double(window_time_interval);
+  time_double = ltt_time_to_double(time);
 
-  *x = (guint)(time_float/interval_float * width);
+  *x = (guint)(time_double/interval_double * width);
   
 }
 
@@ -702,7 +751,28 @@ void drawing_draw_line( Drawing_t *drawing,
       x1, y1, x2, y2);
 }
 
+void drawing_clear(Drawing_t *drawing)
+{ 
+  if (drawing->pixmap)
+    gdk_pixmap_unref(drawing->pixmap);
 
+  drawing->height = 1;
+  /* Allocate a new pixmap with new height */
+  drawing->pixmap = gdk_pixmap_new(drawing->drawing_area->window,
+                                   drawing->width + SAFETY,
+                                   drawing->height,
+                                     -1);
+
+  gtk_widget_set_size_request(drawing->drawing_area,
+                             -1,
+                             drawing->height);
+  gtk_widget_queue_resize_no_redraw(drawing->drawing_area);
+  
+  /* ask for the buffer to be redrawn */
+  gtk_widget_queue_draw_area ( drawing->drawing_area,
+                               0, 0,
+                               drawing->width, drawing->height);
+}
 
 
 /* Insert a square corresponding to a new process in the list */
@@ -766,7 +836,6 @@ void drawing_insert_square(Drawing_t *drawing,
   gtk_widget_queue_draw_area ( drawing->drawing_area,
                                0, y,
                                drawing->width, drawing->height-y);
-
 }
 
 
@@ -775,40 +844,46 @@ void drawing_remove_square(Drawing_t *drawing,
         guint y,
         guint height)
 {
-  //GdkRectangle update_rect;
-  
-  /* Allocate a new pixmap with new height */
-  GdkPixmap *pixmap = gdk_pixmap_new(
-      drawing->drawing_area->window,
-      drawing->width + SAFETY,
-      drawing->height - height,
-      -1);
-  
-  /* Copy the high region */
-  gdk_draw_drawable (pixmap,
-    drawing->drawing_area->style->black_gc,
-    drawing->pixmap,
-    0, 0,
-    0, 0,
-    drawing->width + SAFETY, y);
+  GdkPixmap *pixmap;
 
+  if(drawing->height == height) {
+    pixmap = gdk_pixmap_new(
+        drawing->drawing_area->window,
+        drawing->width + SAFETY,
+        1,
+        -1);
+    drawing->height=1;
+  } else {
+    /* Allocate a new pixmap with new height */
+     pixmap = gdk_pixmap_new(
+        drawing->drawing_area->window,
+        drawing->width + SAFETY,
+        drawing->height - height,
+        -1);
+   
+    /* Copy the high region */
+    gdk_draw_drawable (pixmap,
+      drawing->drawing_area->style->black_gc,
+      drawing->pixmap,
+      0, 0,
+      0, 0,
+      drawing->width + SAFETY, y);
 
+    /* Copy up the bottom of the region */
+    gdk_draw_drawable (pixmap,
+      drawing->drawing_area->style->black_gc,
+      drawing->pixmap,
+      0, y + height,
+      0, y,
+      drawing->width, drawing->height - y - height);
 
-  /* Copy up the bottom of the region */
-  gdk_draw_drawable (pixmap,
-    drawing->drawing_area->style->black_gc,
-    drawing->pixmap,
-    0, y + height,
-    0, y,
-    drawing->width, drawing->height - y - height);
-
+    drawing->height-=height;
+  }
 
   if (drawing->pixmap)
     gdk_pixmap_unref(drawing->pixmap);
 
   drawing->pixmap = pixmap;
-  
-  drawing->height-=height;
   
   gtk_widget_set_size_request(drawing->drawing_area,
                              -1,
@@ -817,7 +892,7 @@ void drawing_remove_square(Drawing_t *drawing,
   /* ask for the buffer to be redrawn */
   gtk_widget_queue_draw_area ( drawing->drawing_area,
                                0, y,
-                               drawing->width, drawing->height-y);
+                               drawing->width, MAX(drawing->height-y, 1));
 }
 
 void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window)

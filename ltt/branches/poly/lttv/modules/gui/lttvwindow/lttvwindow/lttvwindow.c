@@ -691,10 +691,10 @@ void lttvwindow_report_time_window(Tab *tab,
       
   g_object_set(G_OBJECT(adjustment),
                "lower",
-               ltt_time_to_double(time_span.start_time) 
-                 * NANOSECONDS_PER_SECOND, /* lower */
+               0, /* lower */
                "upper",
-               ltt_time_to_double(time_span.end_time) 
+               ltt_time_to_double(
+                 ltt_time_sub(time_span.end_time, time_span.start_time)) 
                  * NANOSECONDS_PER_SECOND, /* upper */
                "step_increment",
                ltt_time_to_double(time_window->time_width)
@@ -717,8 +717,10 @@ void lttvwindow_report_time_window(Tab *tab,
   /* Note : the set value will call set_time_window if scrollbar value changed
    */
   gtk_adjustment_set_value(adjustment,
-                                   ltt_time_to_double(time_window->start_time)
-                                   * NANOSECONDS_PER_SECOND);
+                           ltt_time_to_double(
+                             ltt_time_sub(time_window->start_time,
+                                          time_span.start_time))
+                           * NANOSECONDS_PER_SECOND);
 }
 
 

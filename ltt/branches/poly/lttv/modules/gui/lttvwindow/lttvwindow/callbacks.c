@@ -259,10 +259,10 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
       
   g_object_set(G_OBJECT(adjustment),
                "lower",
-               ltt_time_to_double(time_span.start_time) 
-                 * NANOSECONDS_PER_SECOND, /* lower */
+                 0, /* lower */
                "upper",
-               ltt_time_to_double(time_span.end_time) 
+               ltt_time_to_double(
+                   ltt_time_sub(time_span.end_time, time_span.start_time)) 
                  * NANOSECONDS_PER_SECOND, /* upper */
                "step_increment",
                ltt_time_to_double(tab->time_window.time_width)
@@ -279,8 +279,9 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
 
   g_object_set(G_OBJECT(adjustment),
                "value",
-               ltt_time_to_double(tab->time_window.start_time) 
-                 * NANOSECONDS_PER_SECOND, /* value */
+               ltt_time_to_double(
+                ltt_time_sub(tab->time_window.start_time, time_span.start_time))
+                   * NANOSECONDS_PER_SECOND, /* value */
                NULL);
   gtk_adjustment_value_changed(adjustment);
   
@@ -2023,10 +2024,10 @@ void zoom(GtkWidget * widget, double size)
                  //ltt_time_to_double(new_time_window.start_time) 
                  //  * NANOSECONDS_PER_SECOND, /* value */
                  "lower",
-                 ltt_time_to_double(time_span.start_time) 
-                   * NANOSECONDS_PER_SECOND, /* lower */
+                   0, /* lower */
                  "upper",
-                 ltt_time_to_double(time_span.end_time) 
+                 ltt_time_to_double(
+                   ltt_time_sub(time_span.end_time, time_span.start_time))
                    * NANOSECONDS_PER_SECOND, /* upper */
                  "step_increment",
                  ltt_time_to_double(new_time_window.time_width)
@@ -2044,7 +2045,8 @@ void zoom(GtkWidget * widget, double size)
     //gtk_adjustment_value_changed(adjustment);
     g_object_set(G_OBJECT(adjustment),
                  "value",
-                 ltt_time_to_double(new_time_window.start_time) 
+                 ltt_time_to_double(
+                   ltt_time_sub(new_time_window.start_time, time_span.start_time))
                    * NANOSECONDS_PER_SECOND, /* value */
                  NULL);
     gtk_adjustment_value_changed(adjustment);
@@ -3089,17 +3091,16 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
 {
   Tab *tab = (Tab *)user_data;
   TimeWindow time_window;
-  TimeInterval *time_span;
   LttTime time;
   GtkAdjustment *adjust = gtk_range_get_adjustment(GTK_RANGE(scrollbar));
   gdouble value = gtk_adjustment_get_value(adjust);
   gdouble upper, lower, ratio, page_size;
   LttvTracesetContext * tsc = 
     LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
 
   //time_window = tab->time_window;
 
-  time_span = &tsc->time_span ;
   lower = adjust->lower;
   upper = adjust->upper;
   ratio = (value - lower) / (upper - lower);
@@ -3108,7 +3109,8 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
   //time = ltt_time_sub(time_span->end_time, time_span->start_time);
   //time = ltt_time_mul(time, (float)ratio);
   //time = ltt_time_add(time_span->start_time, time);
-  time = ltt_time_from_double(value/NANOSECONDS_PER_SECOND);
+  time = ltt_time_add(ltt_time_from_double(value/NANOSECONDS_PER_SECOND),
+                      time_span.start_time);
 
   time_window.start_time = time;
   
@@ -3116,7 +3118,7 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
 
   time_window.time_width = 
     ltt_time_from_double(page_size/NANOSECONDS_PER_SECOND);
-  //time = ltt_time_sub(time_span->end_time, time);
+  //time = ltt_time_sub(time_span.end_time, time);
   //if(ltt_time_compare(time,time_window.time_width) < 0){
   //  time_window.time_width = time;
   //}

@@ -99,6 +99,9 @@ void drawing_draw_line( Drawing_t *drawing,
 //    guint xdest, guint ydest,
 //    guint width, guint height);
 
+/* Clear the drawing : make it 1xwidth. */
+void drawing_clear(Drawing_t *drawing);
+
 /* Insert a square corresponding to a new process in the list */
 void drawing_insert_square(Drawing_t *drawing,
         guint y,
@@ -108,7 +111,6 @@ void drawing_insert_square(Drawing_t *drawing,
 void drawing_remove_square(Drawing_t *drawing,
         guint y,
         guint height);
-
 
 void convert_pixels_to_time(
     gint width,
@@ -126,6 +128,12 @@ void convert_time_to_pixels(
 
 void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window);
 
-void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *tss);
+void drawing_request_expose(EventsRequest *events_request,
+                            LttvTracesetState *tss,
+                            LttTime end_time);
+
+void drawing_data_request_begin(EventsRequest *events_request,
+                                LttvTracesetState *tss);
+void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss);
 
 #endif // _DRAWING_H

@@ -274,7 +274,9 @@ ProcessList *processlist_construct(void)
   gtk_tree_view_column_set_fixed_width (column, 45);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
-
+  
+  process_list->button = column->button;
+  
   column = gtk_tree_view_column_new_with_attributes ( "PID",
                 renderer,
                 "text",
@@ -321,15 +323,68 @@ ProcessList *processlist_construct(void)
 
   return process_list;
 }
+
 void processlist_destroy(ProcessList *process_list)
 {
-  g_info("processlist_destroy %p", process_list);
+  g_debug("processlist_destroy %p", process_list);
   g_hash_table_destroy(process_list->process_hash);
   process_list->process_hash = NULL;
 
   g_free(process_list);
-  g_info("processlist_destroy end");
+  g_debug("processlist_destroy end");
 }
+
+static gboolean remove_hash_item(ProcessInfo *process_info,
+                                 HashedProcessData *hashed_process_data,
+                                 ProcessList *process_list)
+{
+  GtkTreePath *tree_path;
+  GtkTreeIter iter;
+
+  tree_path = gtk_tree_row_reference_get_path(
+                  hashed_process_data->row_ref);
+
+  gtk_tree_model_get_iter (
+      GTK_TREE_MODEL(process_list->list_store),
+      &iter, tree_path);
+
+  gtk_tree_path_free(tree_path);
+
+  gtk_list_store_remove (process_list->list_store, &iter);
+
+#if 0
+    g_free(hashed_process_data->draw_context->previous->modify_under);
+    g_free(hashed_process_data->draw_context->previous->modify_middle);
+    g_free(hashed_process_data->draw_context->previous->modify_over);
+    g_free(hashed_process_data->draw_context->previous->under);
+    g_free(hashed_process_data->draw_context->previous->middle);
+    g_free(hashed_process_data->draw_context->previous->over);
+    g_free(hashed_process_data->draw_context->previous);
+    g_free(hashed_process_data->draw_context->current->modify_under);
+    g_free(hashed_process_data->draw_context->current->modify_middle);
+    g_free(hashed_process_data->draw_context->current->modify_over);
+    g_free(hashed_process_data->draw_context->current->under);
+    g_free(hashed_process_data->draw_context->current->middle);
+    g_free(hashed_process_data->draw_context->current->over);
+    g_free(hashed_process_data->draw_context->current);
+    g_free(hashed_process_data->draw_context);
+    g_free(hashed_process_data);
+#endif //0
+
+
+  return TRUE; /* remove the element from the hash table */
+}
+
+void processlist_clear(ProcessList *process_list)
+{
+  g_info("processlist_clear %p", process_list);
+
+  g_hash_table_foreach_remove(process_list->process_hash,
+                              (GHRFunc)remove_hash_item,
+                              (gpointer)process_list);
+  process_list->number_of_process = 0;
+}
+
 
 GtkWidget *processlist_get_widget(ProcessList *process_list)
 {
@@ -378,7 +433,16 @@ int processlist_add(  ProcessList *process_list,
   Process_Info->pid = pid;
   Process_Info->birth = *birth;
   Process_Info->trace_num = trace_num;
+
+  /* When we create it from before state update, we are sure that the
+   * last event occured before the beginning of the global area.
+   *
+   * If it is created after state update, this value (0) will be
+   * overriden by the new state before anything is drawn.
+   */
+  hashed_process_data->x = 0;
   
+#if 0
   hashed_process_data->draw_context = g_new(DrawContext, 1);
   hashed_process_data->draw_context->drawable = NULL;
   hashed_process_data->draw_context->gc = NULL;
@@ -423,7 +487,8 @@ int processlist_add(  ProcessList *process_list,
   hashed_process_data->draw_context->previous->modify_under->x = -1;
   hashed_process_data->draw_context->previous->modify_under->y = -1;
   hashed_process_data->draw_context->previous->status = LTTV_STATE_UNNAMED;
-  
+#endif //0
+
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->list_store, &iter);
   //g_critical ( "iter before : %s", gtk_tree_path_to_string (
@@ -492,7 +557,7 @@ int processlist_remove( ProcessList *process_list,
     gtk_tree_path_free(tree_path);
 
     gtk_list_store_remove (process_list->list_store, &iter);
-    
+#if 0
     g_free(hashed_process_data->draw_context->previous->modify_under);
     g_free(hashed_process_data->draw_context->previous->modify_middle);
     g_free(hashed_process_data->draw_context->previous->modify_over);
@@ -509,7 +574,7 @@ int processlist_remove( ProcessList *process_list,
     g_free(hashed_process_data->draw_context->current);
     g_free(hashed_process_data->draw_context);
     g_free(hashed_process_data);
-
+#endif //0
     g_hash_table_remove(process_list->process_hash,
         &Process_Info);
     

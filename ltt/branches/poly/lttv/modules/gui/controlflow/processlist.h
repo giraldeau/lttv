@@ -52,7 +52,11 @@ typedef struct _ProcessInfo {
 typedef struct _HashedProcessData {
   
   GtkTreeRowReference *row_ref;
-  DrawContext *draw_context;
+ // DrawContext *draw_context;
+  /* Information on current drawing */
+  guint x; /* last x position saved by after state update */
+
+  // FIXME : add info on last event ?
 
 } HashedProcessData;
   
@@ -60,6 +64,7 @@ struct _ProcessList {
   
   GtkWidget *process_list_widget;
   GtkListStore *list_store;
+  GtkWidget *button; /* one button of the tree view */
 
   /* A hash table by PID to speed up process position find in the list */
   GHashTable *process_hash;
@@ -73,6 +78,8 @@ typedef struct _ProcessList ProcessList;
 ProcessList *processlist_construct(void);
 void processlist_destroy(ProcessList *process_list);
 GtkWidget *processlist_get_widget(ProcessList *process_list);
+
+void processlist_clear(ProcessList *process_list);
 
 // out : success (0) and height
 int processlist_add(ProcessList *process_list, guint pid, LttTime *birth,

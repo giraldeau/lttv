@@ -22,6 +22,30 @@
  *****************************************************************************/
 
 
+/* Event hooks are the drawing hooks called during traceset read. They draw the
+ * icons, text, lines and background color corresponding to the events read.
+ *
+ * Two hooks are used for drawing : draw_before and draw_after hooks. The
+ * draw_before is called before the state update that occurs with an event and
+ * the draw_after hook is called after this state update.
+ *
+ * The draw_before hooks fulfill the task of drawing the visible objects that
+ * corresponds to the data accumulated by the draw_after hook.
+ *
+ * The draw_after hook accumulates the data that need to be shown on the screen
+ * (items) into a queue. Then, the next draw_before hook will draw what that
+ * queue contains. That's the Right Way (TM) of drawing items on the screen,
+ * because we need to draw the background first (and then add icons, text, ...
+ * over it), but we only know the length of a background region once the state
+ * corresponding to it is over, which happens to be at the next draw_before
+ * hook.
+ *
+ * We also have a hook called at the end of a chunk to draw the information left
+ * undrawn in each process queue. We use the current time as end of
+ * line/background.
+ */
+
+
 //#define PANGO_ENABLE_BACKEND
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -53,19 +77,98 @@
 #define MAX_PATH_LEN 256
 
 
+#if 0
+typedef struct _ProcessAddClosure {
+  ControlFlowData *cfd;
+  guint trace_num;
+} ProcessAddClosure;
+
+static void process_add(gpointer key,
+                        gpointer value,
+                        gpointer user_data)
+{
+  LttvProcessState *process = (LttvProcessState*)value;
+  ProcessAddClosure *closure = (ProcessAddClosure*)user_data;
+  ControlFlowData *control_flow_data = closure->cfd;
+  guint trace_num = closure->trace_num;
+
+  /* Add process to process list (if not present) */
+  guint pid;
+  LttTime birth;
+  guint y = 0, height = 0, pl_height = 0;
+
+  ProcessList *process_list =
+    guicontrolflow_get_process_list(control_flow_data);
+
+  pid = process->pid;
+  birth = process->creation_time;
+  const gchar *name = g_quark_to_string(process->name);
+  HashedProcessData *hashed_process_data = NULL;
+
+  if(processlist_get_process_pixels(process_list,
+          pid,
+          &birth,
+          trace_num,
+          &y,
+          &height,
+          &hashed_process_data) == 1)
+  {
+    /* Process not present */
+    processlist_add(process_list,
+        pid,
+        &birth,
+        trace_num,
+        name,
+        &pl_height,
+        &hashed_process_data);
+    processlist_get_process_pixels(process_list,
+            pid,
+            &birth,
+            trace_num,
+            &y,
+            &height,
+            &hashed_process_data);
+    drawing_insert_square( control_flow_data->drawing, y, height);
+  }
+}
+#endif //0
+
+
 /* Action to do when background computation completed.
  *
  * Eventually, will have to check that every requested traces are finished
- * before doing the redraw.
+ * before doing the redraw. It will save unnecessary processor usage.
  */
 
 gint background_ready(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData *)hook_data;
   LttvTrace *trace = (LttvTrace*)call_data;
+  LttvTracesetContext *tsc =
+        lttvwindow_get_traceset_context(control_flow_data->tab);
 
   g_debug("control flow viewer : background computation data ready.");
 
+  drawing_clear(control_flow_data->drawing);
+  processlist_clear(control_flow_data->process_list);
+#if 0
+  {
+    gint num_traces = lttv_traceset_number(tsc->ts);
+    gint i;
+    LttvTraceState *ts;
+    ProcessAddClosure closure;
+    closure.cfd = control_flow_data;
+
+    for(i=0;i<num_traces;i++) {
+      ts = (LttvTraceState*)tsc->traces[i];
+      
+      closure.trace_num = i;
+      
+      /* add all the processes to the list */
+      lttv_state_for_each_process(ts, (GHFunc)process_add, &closure);
+    }
+  }
+#endif //0
   redraw_notify(control_flow_data, NULL);
 
   return 0;
@@ -174,32 +277,10 @@ int event_selected_hook(void *hook_data, void *call_data)
 
   g_debug("DEBUG : event selected by main window : %u", *event_number);
   
-//  control_flow_data->currently_Selected_Event = *event_number;
-//  control_flow_data->Selected_Event = TRUE ;
-  
-//  tree_v_set_cursor(control_flow_data);
-
 }
 
-/* Hook called before drawing. Gets the initial context at the beginning of the
- * drawing interval and copy it to the context in event_request.
- */
-int draw_before_hook(void *hook_data, void *call_data)
-{
-  EventsRequest *events_request = (EventsRequest*)hook_data;
-  //EventsContext Events_Context = (EventsContext*)call_data;
-  
-  //event_request->Events_Context = Events_Context;
-
-  return 0;
-}
-
-/*
- * The draw event hook is called by the reading API to have a
- * particular event drawn on the screen.
- * @param hook_data ControlFlowData structure of the viewer. 
- * @param call_data Event context.
- *
+/* draw_before_hook
+ * 
  * This function basically draw lines and icons. Two types of lines are drawn :
  * one small (3 pixels?) representing the state of the process and the second
  * type is thicker (10 pixels?) representing on which CPU a process is running
@@ -214,8 +295,120 @@ int draw_before_hook(void *hook_data, void *call_data)
  * The choice of lines'color is defined by the context of the last event for this
  * process.
  */
-int draw_event_hook(void *hook_data, void *call_data)
+
+
+int draw_before_hook(void *hook_data, void *call_data)
 {
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
+
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+
+  LttEvent *e;
+  e = tfc->e;
+
+  LttTime evtime = ltt_event_time(e);
+  TimeWindow time_window = 
+    lttvwindow_get_time_window(control_flow_data->tab);
+
+  LttTime end_time = ltt_time_add(time_window.start_time,
+                                    time_window.time_width);
+
+  if(ltt_time_compare(evtime, time_window.start_time) == -1
+        || ltt_time_compare(evtime, end_time) == 1)
+            return;
+
+  guint width = control_flow_data->drawing->width;
+
+  if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"schedchange") == 0) {
+
+    /* we are in a schedchange, before the state update. We must draw the
+     * items corresponding to the state before it changes : now is the right
+     * time to do it.
+     */
+
+    guint pid_out;
+    {
+      guint pid_in;
+      LttField *f = ltt_event_field(e);
+      LttField *element;
+      element = ltt_field_member(f,0);
+      pid_out = ltt_event_get_long_unsigned(e,element);
+      element = ltt_field_member(f,1);
+      pid_in = ltt_event_get_long_unsigned(e,element);
+      g_debug("out : %u  in : %u", pid_out, pid_in);
+    }
+
+    /* First, check if the current process is in the state computation process
+     * list. If it is there, that means we must add it right now and draw items
+     * from the beginning of the read for it. If it is not present, it's a new
+     * process and it was not present : it will be added after the state update.
+     */
+    LttvProcessState *process;
+    process = lttv_state_find_process(tfs, pid_out);
+    
+    if(process != NULL) {
+      /* Well, the process_out existed : we must get it in the process hash
+       * or add it, and draw its items.
+       */
+       /* Add process to process list (if not present) */
+      guint y_out = 0, height = 0, pl_height = 0;
+      HashedProcessData *hashed_process_data = NULL;
+      ProcessList *process_list = 
+                      guicontrolflow_get_process_list(control_flow_data);
+      LttTime birth = process->creation_time;
+      const gchar *name = g_quark_to_string(process->name);
+      
+      if(processlist_get_process_pixels(process_list,
+              pid_out,
+              &birth,
+              tfc->t_context->index,
+              &y_out,
+              &height,
+              &hashed_process_data) == 1)
+      {
+        /* Process not present */
+        processlist_add(process_list,
+            pid_out,
+            &birth,
+            tfc->t_context->index,
+            name,
+            &pl_height,
+            &hashed_process_data);
+        processlist_get_process_pixels(process_list,
+                pid_out,
+                &birth,
+                tfc->t_context->index,
+                &y_out,
+                &height,
+                &hashed_process_data);
+        drawing_insert_square( control_flow_data->drawing, y_out, height);
+      }
+    
+      /* Now, the process is in the state hash and our own process hash.
+       * We definitely can draw the items related to the ending state.
+       */
+      
+      /* Check if the x position is unset. In can have been left unset by
+       * a draw closure from a after chunk hook. This should never happen,
+       * because it must be set by before chunk hook to the damage_begin
+       * value.
+       */
+      g_assert(hashed_process_data->x != -1);
+      
+   
+    }
+  }
+
+  
+  return 0;
+
+
+
+#if 0
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = 
                       (ControlFlowData*)events_request->viewer_data;
@@ -802,6 +995,9 @@ int draw_event_hook(void *hook_data, void *call_data)
   }
 
   return 0;
+#endif //0
+
+
 
   /* Text dump */
 #ifdef DONTSHOW
@@ -825,9 +1021,116 @@ int draw_event_hook(void *hook_data, void *call_data)
 
 }
 
-
+/* draw_after_hook
+ * 
+ * The draw after hook is called by the reading API to have a
+ * particular event drawn on the screen.
+ * @param hook_data ControlFlowData structure of the viewer. 
+ * @param call_data Event context.
+ *
+ * This function adds items to be drawn in a queue for each process.
+ * 
+ */
 int draw_after_hook(void *hook_data, void *call_data)
 {
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
+
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+
+  LttEvent *e;
+  e = tfc->e;
+
+  LttTime evtime = ltt_event_time(e);
+  TimeWindow time_window = 
+    lttvwindow_get_time_window(control_flow_data->tab);
+
+  LttTime end_time = ltt_time_add(time_window.start_time,
+                                    time_window.time_width);
+
+  if(ltt_time_compare(evtime, time_window.start_time) == -1
+        || ltt_time_compare(evtime, end_time) == 1)
+            return;
+
+  guint width = control_flow_data->drawing->width;
+
+  if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"schedchange") == 0) {
+
+    g_debug("schedchange!");
+    
+    {
+      /* Add process to process list (if not present) */
+      LttvProcessState *process_out, *process_in;
+      LttTime birth;
+      guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
+      HashedProcessData *hashed_process_data_in = NULL;
+
+      ProcessList *process_list =
+        guicontrolflow_get_process_list(control_flow_data);
+      
+      guint pid_in;
+      {
+        guint pid_out;
+        LttField *f = ltt_event_field(e);
+        LttField *element;
+        element = ltt_field_member(f,0);
+        pid_out = ltt_event_get_long_unsigned(e,element);
+        element = ltt_field_member(f,1);
+        pid_in = ltt_event_get_long_unsigned(e,element);
+        g_debug("out : %u  in : %u", pid_out, pid_in);
+      }
+
+
+      /* Find process pid_in in the list... */
+      process_in = lttv_state_find_process(tfs, pid_in);
+      /* It should exist, because we are after the state update. */
+      g_assert(process_in != NULL);
+
+      birth = process_in->creation_time;
+      const gchar *name = g_quark_to_string(process_in->name);
+
+      if(processlist_get_process_pixels(process_list,
+              pid_in,
+              &birth,
+              tfc->t_context->index,
+              &y_in,
+              &height,
+              &hashed_process_data_in) == 1)
+      {
+        /* Process not present */
+        processlist_add(process_list,
+            pid_in,
+            &birth,
+            tfc->t_context->index,
+            name,
+            &pl_height,
+            &hashed_process_data_in);
+        processlist_get_process_pixels(process_list,
+                pid_in,
+                &birth,
+                tfc->t_context->index,
+                &y_in,
+                &height,
+                &hashed_process_data_in);
+        drawing_insert_square( control_flow_data->drawing, y_in, height);
+      }
+
+      convert_time_to_pixels(
+          time_window.start_time,
+          end_time,
+          evtime,
+          width,
+          &hashed_process_data_in->x);
+    }
+  }
+  return 0;
+
+
+
+#if 0
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
 
@@ -1277,6 +1580,7 @@ int draw_after_hook(void *hook_data, void *call_data)
   }
 
   return 0;
+#endif //0
 }
 
 
@@ -1510,15 +1814,8 @@ gint traceset_notify(void *hook_data, void *call_data)
   drawing->damage_begin = 0;
   drawing->damage_end = drawing->width;
 
-
-  // Clear the image
-  gdk_draw_rectangle (drawing->pixmap,
-        widget->style->black_gc,
-        TRUE,
-        0, 0,
-        drawing->width+SAFETY,
-        drawing->height);
-
+  drawing_clear(control_flow_data->drawing);
+  processlist_clear(control_flow_data->process_list);
 
   if(drawing->damage_begin < drawing->damage_end)
   {
@@ -1601,22 +1898,6 @@ gint continue_notify(void *hook_data, void *call_data)
 }
 
 
-gint after_process_traceset_hook(void *hook_data, void *call_data)
-{
-  //ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
-  EventsRequest *events_request = (EventsRequest *)hook_data;
-
-  ControlFlowData *control_flow_data = 
-                   (ControlFlowData*)events_request->viewer_data;
-
-
-  drawing_data_request_end(events_request,
-                           (LttvTracesetState*)call_data);
-  return 0; 
-}
- 
-
-
 gint update_current_time_hook(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*)hook_data;
@@ -1695,11 +1976,17 @@ gint update_current_time_hook(void *hook_data, void *call_data)
 typedef struct _ClosureData {
   EventsRequest *events_request;
   LttvTracesetState *tss;
+  LttTime end_time;
 } ClosureData;
   
 
 void draw_closure(gpointer key, gpointer value, gpointer user_data)
 {
+
+  return;
+  
+
+#if 0
   ProcessInfo *process_info = (ProcessInfo*)key;
   HashedProcessData *hashed_process_data = (HashedProcessData*)value;
   ClosureData *closure_data = (ClosureData*)user_data;
@@ -1915,9 +2202,20 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   hashed_process_data->draw_context->previous->modify_under->y = -1;
   hashed_process_data->draw_context->previous->status = LTTV_STATE_UNNAMED;
 
+#endif //0
 }
 
-int  before_data_request(void *hook_data, void *call_data)
+int before_chunk(void *hook_data, void *call_data)
+{
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
+
+  drawing_chunk_begin(events_request, tss);
+
+  return 0;
+}
+
+int before_request(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
@@ -1929,29 +2227,72 @@ int  before_data_request(void *hook_data, void *call_data)
 
 
 /*
+ * after request is necessary in addition of after chunk in order to draw 
+ * lines until the end of the screen. after chunk just draws lines until
+ * the last event.
+ * 
  * for each process
  *    draw closing line
- *    new default prev and current
- * then finally remove reading hooks.
+ *    expose
  */
-int  after_data_request(void *hook_data, void *call_data)
+int after_request(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
   LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
+  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(call_data);
   
   ProcessList *process_list =
     guicontrolflow_get_process_list(control_flow_data);
+  LttTime end_time = events_request->end_time;
 
   ClosureData closure_data;
   closure_data.events_request = (EventsRequest*)hook_data;
   closure_data.tss = tss;
+  closure_data.end_time = end_time;
 
+  /* Draw last items */
   g_hash_table_foreach(process_list->process_hash, draw_closure,
                         (void*)&closure_data);
 
   /* Request expose */
-  drawing_data_request_end(events_request, tss);
+  drawing_request_expose(events_request, tss, end_time);
+  return 0;
+}
+
+/*
+ * for each process
+ *    draw closing line
+ *    expose
+ */
+int after_chunk(void *hook_data, void *call_data)
+{
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
+  LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
+  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(call_data);
+  LttvTracefileContext *tfc = lttv_traceset_context_get_current_tfc(tsc);
+  LttTime end_time;
+  
+  ProcessList *process_list =
+    guicontrolflow_get_process_list(control_flow_data);
+
+  if(tfc != NULL)
+    end_time = tfc->timestamp;
+  else /* end of traceset */
+    end_time = tsc->time_span.end_time;
+
+  ClosureData closure_data;
+  closure_data.events_request = (EventsRequest*)hook_data;
+  closure_data.tss = tss;
+  closure_data.end_time = end_time;
+
+  /* Draw last items */
+  g_hash_table_foreach(process_list->process_hash, draw_closure,
+                        (void*)&closure_data);
+
+  /* Request expose */
+  drawing_request_expose(events_request, tss, end_time);
 
   return 0;
 }
