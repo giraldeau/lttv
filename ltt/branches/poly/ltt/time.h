@@ -115,9 +115,9 @@ static inline double ltt_time_to_double(LttTime t1)
   if(t1.tv_sec > MAX_TV_SEC_TO_DOUBLE)
     g_warning("Precision loss in conversion LttTime to double");
 #endif //EXTRA_CHECK
-  return ((double)((guint64)t1.tv_sec<<DOUBLE_SHIFT)
+  return round(((double)((guint64)t1.tv_sec<<DOUBLE_SHIFT)
                   * (double)DOUBLE_SHIFT_CONST_MUL)
-                  + (double)t1.tv_nsec;
+                  + (double)t1.tv_nsec);
 }
 
 
@@ -139,7 +139,7 @@ static inline LttTime ltt_time_from_double(double t1)
   LttTime res;
   //res.tv_sec = t1/(double)NANOSECONDS_PER_SECOND;
   res.tv_sec = (guint64)(t1 * DOUBLE_SHIFT_CONST_DIV) >> DOUBLE_SHIFT;
-  res.tv_nsec = (t1 - (((guint64)res.tv_sec<<LTT_TIME_UINT_SHIFT))
+  res.tv_nsec = (round(t1) - (((guint64)res.tv_sec<<LTT_TIME_UINT_SHIFT))
                                * LTT_TIME_UINT_SHIFT_CONST);
   return res;
 }

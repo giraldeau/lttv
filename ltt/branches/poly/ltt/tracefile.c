@@ -24,6 +24,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <unistd.h>
+#include <math.h>
 
 // For realpath
 #include <limits.h>
@@ -1199,8 +1200,9 @@ int readBlock(LttTracefile * tf, int whichBlock)
 
   getCyclePerNsec(tf);
 
-  tf->overflow_nsec = (-((double)(tf->a_block_start->cycle_count&0xFFFFFFFF))
-                                        * tf->nsec_per_cycle);
+  tf->overflow_nsec = round(
+                        (-((double)(tf->a_block_start->cycle_count&0xFFFFFFFF))
+                                        * tf->nsec_per_cycle));
 
   tf->current_event_time = getEventTime(tf);  
 
@@ -1226,8 +1228,8 @@ void updateTracefile(LttTracefile * tf)
   tf->prev_event_time.tv_nsec = 0;
   tf->count = 0;
 
-  tf->overflow_nsec = (-((double)tf->a_block_start->cycle_count)
-                                        * tf->nsec_per_cycle);
+  tf->overflow_nsec = round((-((double)tf->a_block_start->cycle_count)
+                                        * tf->nsec_per_cycle));
 
 }
 
@@ -1308,7 +1310,7 @@ void getCyclePerNsec(LttTracefile * t)
   t->nsec_per_cycle = (double)lBufTotalNSec / (double)lBufTotalCycle;
 
   /* Pre-multiply one overflow (2^32 cycles) by nsec_per_cycle */
-  t->one_overflow_nsec = t->nsec_per_cycle * (double)0x100000000ULL;
+  t->one_overflow_nsec = round(t->nsec_per_cycle * (double)0x100000000ULL);
 
 }
 
@@ -1348,9 +1350,9 @@ static inline LttTime getEventTime(LttTracefile * tf)
   if(unlikely(evId == TRACE_BLOCK_START)) {
      lEventNSec = 0;
   } else if(unlikely(evId == TRACE_BLOCK_END)) {
-    lEventNSec = ((double)
+    lEventNSec = round(((double)
                  (tf->a_block_end->cycle_count - tf->a_block_start->cycle_count)
-                           * tf->nsec_per_cycle);
+                           * tf->nsec_per_cycle));
   }
 #if 0
   /* If you want to make heart beat a special case and use their own 64 bits
@@ -1365,7 +1367,7 @@ static inline LttTime getEventTime(LttTracefile * tf)
   }
 #endif //0
   else {
-    lEventNSec = (gint64)((double)cycle_count * tf->nsec_per_cycle)
+    lEventNSec = (gint64)round(((double)cycle_count * tf->nsec_per_cycle))
                                 +tf->overflow_nsec;
   }
 
