@@ -5,6 +5,8 @@
 #
 
 libdir = ${lttvplugindir}
+AM_CFLAGS = $(GLIB_CFLAGS) 
+LIBS += $(GLIB_LIBS)
 
 lib_LTLIBRARIES = sampledep.la samplemodule.la samplemodule2.la
 sampledep_la_LDFLAGS = -module

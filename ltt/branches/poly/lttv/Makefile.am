@@ -1,5 +1,8 @@
 SUBDIRS = modules plugins
 
+AM_CFLAGS = $(GLIB_CFLAGS) 
+LIBS += $(GLIB_LIBS)
+
 bin_PROGRAMS = textui
 
 #AM_CPPFLAGS = \

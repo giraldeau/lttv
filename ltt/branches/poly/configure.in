@@ -6,16 +6,17 @@ AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AM_INIT_AUTOMAKE(LinuxTraceToolkit,0.9.7-29052003)
 AM_CONFIG_HEADER([config.h])
 AM_PROG_LIBTOOL
-AM_PATH_GLIB_2_0
+
+AM_PATH_GLIB_2_0(2.0.0, ,AC_MSG_ERROR([glib is required in order to compile LinuxTraceToolkit - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)
 
 # Checks for programs.
 AC_PROG_CC
 
 # Checks for libraries.
 AC_CHECK_LIB([popt], [poptGetNextOpt])
-AC_CHECK_LIB([gmodule-2.0], [g_module_open])
+#AC_CHECK_LIB([gmodule-2.0], [g_module_open])
 AC_CHECK_LIB([dl], [dlopen])
-AC_CHECK_LIB([glib-2.0], [g_malloc])
+#AC_CHECK_LIB([glib-2.0], [g_malloc])
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -44,8 +45,11 @@ lttlibdir="${libdir}/ltt"
 AC_SUBST(lttlibdir)
 
 
-DEFAULT_INCLUDES="-I\$(top_srcdir)/include -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include"
+DEFAULT_INCLUDES="-I\$(top_srcdir)/include"
 AC_SUBST(DEFAULT_INCLUDES)
+
+#CPPFLAGS="${GLIB_CFLAGS}"
+#AC_SUBST(CPPFLAGS)
 
 lttvincludedir="${includedir}/lttv"
 AC_SUBST(lttvincludedir)
