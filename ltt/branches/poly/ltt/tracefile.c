@@ -1238,17 +1238,24 @@ gboolean ltt_tracefile_pre_read_cycles(LttTracefile *tf)
   // Calculate total time in cycles from start of buffer for this event
   cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
   //g_debug("event cycle count %llu", cycle_count);
-  gint64 delta_count = (gint64)(cycle_count - tf->pre_cycle_count);
-  LttCycleCount res_delta_count;
+  //
+  //gint64 delta_count = (gint64)(cycle_count - tf->pre_cycle_count);
+  //LttCycleCount res_delta_count;
+  gboolean comp_count = cycle_count < tf->pre_cycle_count;
   tf->pre_cycle_count = cycle_count;
   
+  if(unlikely(comp_count)) {
+    /* Wrapped */
+    tf->count++; //increment wrap count
+  }
+  
   //if(unlikely(cycle_count < tf->pre_cycle_count)) tf->count++;
-  if(unlikely(delta_count < 0)) {
+  //if(unlikely(delta_count < 0)) {
   //  tf->count++; //increment wrap count
     // keep in mind that delta_count is negative here.
-    res_delta_count = delta_count + 0x100000000ULL ;
-  } else
-    res_delta_count = (LttCycleCount)delta_count;
+  //  res_delta_count = delta_count + 0x100000000ULL ;
+  //} else
+  //  res_delta_count = (LttCycleCount)delta_count;
   
   //cycle_count += (LttCycleCount)tf->count << 32;  
   
@@ -1256,7 +1263,8 @@ gboolean ltt_tracefile_pre_read_cycles(LttTracefile *tf)
   //  if(tf->cur_heart_beat_number > tf->count)
   //    cycle_count += (tf->cur_heart_beat_number - tf->count) << 32;  
 
-  tf->cur_cycle_count = tf->cur_cycle_count + res_delta_count;
+  //tf->cur_cycle_count = tf->cur_cycle_count + res_delta_count;
+  tf->cur_cycle_count = cycle_count | ((LttCycleCount)tf->count << 32);
   g_debug("cur cycle count %llu", tf->cur_cycle_count);
 
 
@@ -1298,6 +1306,9 @@ int readBlock(LttTracefile * tf, int whichBlock)
   off_t nbBytes;
   guint32 lostSize;
 
+  /* same block already opened requested */
+  if((guint)whichBlock == tf->which_block) return 0;
+  
   if(likely(whichBlock - tf->which_block == 1 && tf->which_block != 0)){
     tf->prev_block_end_time = tf->a_block_end->time;
     tf->prev_event_time     = tf->a_block_end->time;
@@ -1328,9 +1339,14 @@ int readBlock(LttTracefile * tf, int whichBlock)
   /* read the whole block to precalculate total of cycles in it */
   tf->count = 0;
   tf->pre_cycle_count = 0;
-  tf->cur_cycle_count = tf->a_block_start->cycle_count;
+  tf->cur_cycle_count = 0;
+  g_debug("precalculating cycles begin for block %i", whichBlock);
   while(likely(ltt_tracefile_pre_read_cycles(tf)));
+  g_debug("precalculating cycles end for block %i", whichBlock);
 
+  tf->count = 0;
+  tf->pre_cycle_count = 0;
+  tf->cur_cycle_count = 0;
   /* put back pointer at the beginning */
   tf->which_event = 1;
   tf->cur_event_pos = tf->buffer;//the beginning of the block, block start ev
@@ -1483,17 +1499,24 @@ static inline LttTime getEventTime(LttTracefile * tf)
   // Calculate total time in cycles from start of buffer for this event
   cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
   //g_debug("event cycle count %llu", cycle_count);
-  gint64 delta_count = (gint64)(cycle_count - tf->pre_cycle_count);
-  LttCycleCount res_delta_count;
+  //
+  //gint64 delta_count = (gint64)(cycle_count - tf->pre_cycle_count);
+  //LttCycleCount res_delta_count;
+  gboolean comp_count = cycle_count < tf->pre_cycle_count;
   tf->pre_cycle_count = cycle_count;
   
+  if(unlikely(comp_count)) {
+    /* Wrapped */
+    tf->count++; //increment wrap count
+  }
+  
   //if(unlikely(cycle_count < tf->pre_cycle_count)) tf->count++;
-  if(unlikely(delta_count < 0)) {
+  //if(unlikely(delta_count < 0)) {
   //  tf->count++; //increment wrap count
     // keep in mind that delta_count is negative here.
-    res_delta_count = delta_count + 0x100000000ULL ;
-  } else
-    res_delta_count = (LttCycleCount)delta_count;
+  //  res_delta_count = delta_count + 0x100000000ULL ;
+  //} else
+  //  res_delta_count = (LttCycleCount)delta_count;
   
   //cycle_count += (LttCycleCount)tf->count << 32;  
   
@@ -1501,8 +1524,10 @@ static inline LttTime getEventTime(LttTracefile * tf)
   //  if(tf->cur_heart_beat_number > tf->count)
   //    cycle_count += (tf->cur_heart_beat_number - tf->count) << 32;  
 
-  tf->cur_cycle_count = tf->cur_cycle_count + res_delta_count;
+  //tf->cur_cycle_count = tf->cur_cycle_count + res_delta_count;
+  tf->cur_cycle_count = cycle_count | ((LttCycleCount)tf->count << 32);
   g_debug("cur cycle count %llu", tf->cur_cycle_count);
+
 
   lEventTotalCycle = tf->cur_cycle_count;
 
