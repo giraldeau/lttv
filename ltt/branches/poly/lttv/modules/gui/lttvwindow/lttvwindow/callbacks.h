@@ -54,7 +54,11 @@ on_close_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
 
 void
-on_close_tab_activate                  (GtkMenuItem     *menuitem,
+on_close_tab_X_clicked                 (GtkWidget       *widget,
+                                        gpointer         user_data);
+
+void
+on_close_tab_activate                  (GtkWidget       *widget,
                                         gpointer         user_data);
 
 void

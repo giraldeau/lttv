@@ -1554,14 +1554,14 @@ on_close_activate                      (GtkMenuItem     *menuitem,
  */
 
 void
-on_close_tab_activate                  (GtkMenuItem     *menuitem,
+on_close_tab_activate                  (GtkWidget       *widget,
                                         gpointer         user_data)
 {
   gint page_num;
   GtkWidget * notebook;
   GtkWidget * page;
-  MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
-  notebook = lookup_widget((GtkWidget*)menuitem, "MNotebook");
+  MainWindow * mw_data = get_window_data_struct(widget);
+  notebook = lookup_widget(widget, "MNotebook");
   if(notebook == NULL){
     g_printf("Notebook does not exist\n");
     return;
@@ -1570,6 +1570,22 @@ on_close_tab_activate                  (GtkMenuItem     *menuitem,
   page_num = gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook));
   
   gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), page_num);
+
+}
+
+void
+on_close_tab_X_clicked                 (GtkWidget       *widget,
+                                        gpointer         user_data)
+{
+  gint page_num;
+  GtkWidget *notebook = lookup_widget(widget, "MNotebook");
+  if(notebook == NULL){
+    g_printf("Notebook does not exist\n");
+    return;
+  }
+ 
+  if((page_num = gtk_notebook_page_num(GTK_NOTEBOOK(notebook), widget)) != -1)
+    gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), page_num);
 
 }
 
@@ -2600,6 +2616,7 @@ void construct_main_window(MainWindow * parent)
     g_printf("Notebook does not exist\n");
     return;
   }
+  gtk_notebook_popup_enable (GTK_NOTEBOOK(notebook));
   //for now there is no name field in LttvTraceset structure
   //Use "Traceset" as the label for the default tab
   if(parent) {
@@ -2743,10 +2760,33 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   tab->multi_vpaned = (GtkMultiVPaned*)gtk_multi_vpaned_new();
   gtk_widget_show((GtkWidget*)tab->multi_vpaned);
   tab->mw   = mw;
+  
+  {
+    /* Display a label with a X */
+    GtkWidget *w_hbox = gtk_hbox_new(FALSE, 4);
+    GtkWidget *w_label = gtk_label_new (label);
+    GtkWidget *pixmap = create_pixmap(GTK_WIDGET(notebook), "close.png");
+    GtkWidget *w_button = gtk_button_new ();
+    gtk_container_add(GTK_CONTAINER(w_button), pixmap);
+    //GtkWidget *w_button = gtk_button_new_with_label("x");
 
-  tab->label = gtk_label_new (label);
-  gtk_widget_show (tab->label);
+    gtk_button_set_relief(GTK_BUTTON(w_button), GTK_RELIEF_NONE);
+    
+    gtk_box_pack_start(GTK_BOX(w_hbox), w_label, TRUE, TRUE, 0);
+    gtk_box_pack_end(GTK_BOX(w_hbox), w_button, FALSE,
+                       FALSE, 0);
 
+    g_signal_connect_swapped (w_button, "clicked",
+                      G_CALLBACK (on_close_tab_X_clicked),
+                      tab->multi_vpaned);
+
+    gtk_widget_show (w_label);
+    gtk_widget_show (pixmap);
+    gtk_widget_show (w_button);
+    gtk_widget_show (w_hbox);
+
+    tab->label = w_hbox;
+  }
   /* Start with empty events requests list */
   tab->events_requests = NULL;
   tab->events_request_pending = FALSE;
