@@ -292,13 +292,14 @@ GuiEvents(mainWindow *pmParentWindow)
   Event_Viewer_Data->Selected_Event = 0;
 
   /* Create a model for storing the data list */
-  Event_Viewer_Data->Store_M = gtk_list_store_new (N_COLUMNS,       /* Total number of columns */
-						   G_TYPE_INT,      /* CPUID                  */
-						   G_TYPE_STRING,   /* Event                   */
-						   G_TYPE_UINT64,      /* Time                    */
-						   G_TYPE_INT,      /* PID                     */
-						   G_TYPE_INT,      /* Entry length            */
-						   G_TYPE_STRING);  /* Event's description     */
+  Event_Viewer_Data->Store_M = gtk_list_store_new (
+		N_COLUMNS,	/* Total number of columns */
+		G_TYPE_INT,	/* CPUID                  */
+		G_TYPE_STRING,	/* Event                   */
+		G_TYPE_UINT64,	/* Time                    */
+		G_TYPE_INT,	/* PID                     */
+		G_TYPE_INT,	/* Entry length            */
+		G_TYPE_STRING);	/* Event's description     */
 	
   /* Create the viewer widget for the columned list */
   Event_Viewer_Data->Tree_V = gtk_tree_view_new_with_model (GTK_TREE_MODEL (Event_Viewer_Data->Store_M));
