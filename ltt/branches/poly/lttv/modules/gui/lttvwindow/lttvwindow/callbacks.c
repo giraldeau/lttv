@@ -1479,13 +1479,34 @@ void
 on_MWindow_destroy                     (GtkObject       *object,
                                         gpointer         user_data)
 {
-  MainWindow *Main_Window = get_window_data_struct((GtkWidget*)object);
+  MainWindow *main_window = get_window_data_struct((GtkWidget*)object);
   GtkWidget  *widget;
-  Tab *tab = Main_Window->tab;
+  Tab *tab = main_window->tab;
+  LttvIAttribute *attributes = main_window->attributes;
+  LttvAttributeValue value;
  
-  g_printf("There are : %d windows\n",g_slist_length(g_main_window_list));
+  //This is unnecessary, since widgets will be destroyed
+  //by the main window widget anyway.
+  //remove_all_menu_toolbar_constructors(main_window, NULL);
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+           "viewers/menu", LTTV_POINTER, &value));
+  lttv_menus_destroy((LttvMenus*)*(value.v_pointer));
+
+  g_assert(lttv_iattribute_find_by_path(attributes_global,
+           "viewers/toolbar", LTTV_POINTER, &value));
+  lttv_toolbars_destroy((LttvToolbars*)*(value.v_pointer));
+  
+  while(main_window->tab){
+    lttv_state_remove_event_hooks(
+         (LttvTracesetState*)main_window->tab->traceset_info->traceset_context);
+    main_window->tab = main_window->tab->next;
+  }
+  g_object_unref(main_window->attributes);
+  g_main_window_list = g_slist_remove(g_main_window_list, main_window);
 
   g_win_count--;
+  g_printf("There are now : %d windows\n",g_slist_length(g_main_window_list));
   if(g_win_count == 0)
     gtk_main_quit ();
 }
@@ -1871,7 +1892,7 @@ char * get_selection(char ** loaded_module_name, int nb_module,
 }
 
 
-/* Insert or remove all menu entry and tool buttons into this main window
+/* Insert all menu entry and tool buttons into this main window
  * for modules.
  *
  */
@@ -2028,9 +2049,10 @@ void construct_main_window(MainWindow * parent)
 			G_OBJECT(new_m_window->mwindow),
 			"Main_Window_Data",
 			new_m_window,
-			(GDestroyNotify)main_window_free);
+			NULL);
 
   g_win_count++;
+  g_printf("There are now : %d windows\n",g_slist_length(g_main_window_list));
 }
 
 
