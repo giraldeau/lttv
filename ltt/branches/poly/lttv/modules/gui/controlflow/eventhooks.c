@@ -235,7 +235,6 @@ h_guicontrolflow(Tab *tab)
   
   control_flow_data->tab = tab;
   
-  //g_debug("time width2 : %u",time_window->time_width);
   // Unreg done in the GuiControlFlow_Destructor
   lttvwindow_register_traceset_notify(tab,
         traceset_notify,
@@ -391,8 +390,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
   LttTime evtime = ltt_event_time(e);
 
-  guint width = drawing->width;
-
   /* we are in a schedchange, before the state update. We must draw the
    * items corresponding to the state before it changes : now is the right
    * time to do it.
@@ -488,7 +485,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                 || ltt_time_compare(evtime, time_window.end_time) == 1)
                     return;
 #endif //EXTRA_CHECK
-
+          
+          guint width = drawing->width;
           guint x;
           convert_time_to_pixels(
                     time_window,
@@ -518,7 +516,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
               || ltt_time_compare(evtime, time_window.end_time) == 1)
                   return;
 #endif //EXTRA_CHECK
-
+        guint width = drawing->width;
         guint x;
         convert_time_to_pixels(
                   time_window,
@@ -659,6 +657,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                 || ltt_time_compare(evtime, time_window.end_time) == 1)
                     return;
 #endif //EXTRA_CHECK
+          guint width = drawing->width;
           guint x;
           convert_time_to_pixels(
                     time_window,
@@ -686,6 +685,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
               || ltt_time_compare(evtime, time_window.end_time) == 1)
                   return;
 #endif //EXTRA_CHECK
+        guint width = drawing->width;
         guint x;
 
         convert_time_to_pixels(
@@ -1387,8 +1387,6 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 
   LttTime evtime = ltt_event_time(e);
 
-  guint width = control_flow_data->drawing->width;
-
   /* Add process to process list (if not present) */
   LttvProcessState *process_out, *process_in;
   LttTime birth;
@@ -1414,8 +1412,9 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   //process_in = lttv_state_find_process(tfs, pid_in);
   process_in = tfs->process;
   /* It should exist, because we are after the state update. */
+#ifdef EXTRA_CHECK
   g_assert(process_in != NULL);
-
+#endif //EXTRA_CHECK
   birth = process_in->creation_time;
 
   hashed_process_data_in = processlist_get_process_data(process_list,
@@ -1465,6 +1464,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
             return;
 #endif //EXTRA_CHECK
 
+    guint width = control_flow_data->drawing->width;
     guint new_x;
     
     convert_time_to_pixels(
@@ -2002,7 +2002,6 @@ int before_execmode_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  guint width = drawing->width;
 
   /* we are in a execmode, before the state update. We must draw the
    * items corresponding to the state before it changes : now is the right
@@ -2085,6 +2084,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
             || ltt_time_compare(evtime, time_window.end_time) == 1)
                 return;
 #endif //EXTRA_CHECK
+      guint width = drawing->width;
       guint x;
       convert_time_to_pixels(
                 time_window,
@@ -2113,6 +2113,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
           || ltt_time_compare(evtime, time_window.end_time) == 1)
               return;
 #endif //EXTRA_CHECK
+    guint width = drawing->width;
     guint x;
 
     convert_time_to_pixels(
@@ -2208,7 +2209,6 @@ int after_execmode_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  guint width = control_flow_data->drawing->width;
 
   /* Add process to process list (if not present) */
   LttvProcessState *process;
@@ -2279,8 +2279,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
           || ltt_time_compare(evtime, time_window.end_time) == 1)
               return;
 #endif //EXTRA_CHECK
-
-
+    guint width = control_flow_data->drawing->width;
     guint new_x;
     
     convert_time_to_pixels(
@@ -2325,7 +2324,6 @@ int before_process_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  guint width = control_flow_data->drawing->width;
 
   guint sub_id;
   {
@@ -2410,6 +2408,7 @@ int before_process_hook(void *hook_data, void *call_data)
                   return;
 #endif //EXTRA_CHECK
 
+        guint width = drawing->width;
         guint x;
         convert_time_to_pixels(
                   time_window,
@@ -2438,7 +2437,7 @@ int before_process_hook(void *hook_data, void *call_data)
             || ltt_time_compare(evtime, time_window.end_time) == 1)
                 return;
 #endif //EXTRA_CHECK
-
+      guint width = drawing->width;
       guint x;
 
       convert_time_to_pixels(
@@ -2526,6 +2525,7 @@ int after_process_hook(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
+  Drawing_t *drawing = control_flow_data->drawing;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
@@ -2536,7 +2536,6 @@ int after_process_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  guint width = control_flow_data->drawing->width;
 
   guint sub_id;
   guint param1;
@@ -2614,6 +2613,7 @@ int after_process_hook(void *hook_data, void *call_data)
                 return;
 #endif //EXTRA_CHECK
 
+      guint width = drawing->width;
       guint new_x;
       convert_time_to_pixels(
           time_window,
@@ -2708,6 +2708,7 @@ int after_process_hook(void *hook_data, void *call_data)
                 return;
 #endif //EXTRA_CHECK
 
+      guint width = drawing->width;
       guint new_x;
       convert_time_to_pixels(
           time_window,
@@ -3146,7 +3147,6 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   LttvTracesetContext *tsc = (LttvTracesetContext*)closure_data->tss;
 
   LttTime evtime = closure_data->end_time;
-  guint width = drawing->width;
 
   { 
     /* For the process */
@@ -3207,6 +3207,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
               || ltt_time_compare(evtime, time_window.end_time) == 1)
                   return;
 #endif //EXTRA_CHECK
+        guint width = drawing->width;
         guint x;
 
         convert_time_to_pixels(
