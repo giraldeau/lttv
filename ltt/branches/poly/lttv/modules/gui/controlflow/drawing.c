@@ -115,12 +115,6 @@ void drawing_data_request(Drawing_t *drawing,
   if(width < 0) return ;
   if(height < 0) return ;
 
-  if(drawing->gc == NULL) {
-    drawing->gc = gdk_gc_new(drawing->drawing_area->window);
-    gdk_gc_copy(drawing->gc, drawing->drawing_area->style->black_gc);
-  }
-
-
   Tab *tab = drawing->control_flow_data->tab;
   TimeWindow time_window =
               lttvwindow_get_time_window(tab);
@@ -588,6 +582,10 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
                 "control_flow_data");
+  if(drawing->gc == NULL) {
+    drawing->gc = gdk_gc_new(drawing->drawing_area->window);
+    gdk_gc_copy(drawing->gc, drawing->drawing_area->style->black_gc);
+  }
 
   TimeWindow time_window = 
       lttvwindow_get_time_window(control_flow_data->tab);
