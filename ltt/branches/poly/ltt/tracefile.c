@@ -743,27 +743,32 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
   LttEvent * ev;
 
   if(headTime < 0 && tailTime > 0){
-    lttTime = getEventTime(t);
-    err = timecmp(&lttTime, &time);
-    if(err > 0){
-      if(t->which_event==2 || timecmp(&t->prev_event_time,&time)<0){
-	return;
-      }else{
-	updateTracefile(t);
-	return ltt_tracefile_seek_time(t, time);
-      }
-    }else if(err < 0){
-      while(1){
-	ev = ltt_tracefile_read(t);
-	if(ev == NULL){
-	  g_print("End of file\n");      
+    if(timecmp(&(t->a_block_end->time),&(t->current_event_time)) !=0){
+      lttTime = getEventTime(t);
+      err = timecmp(&lttTime, &time);
+      if(err > 0){
+	if(t->which_event==2 || timecmp(&t->prev_event_time,&time)<0){
 	  return;
+	}else{
+	  updateTracefile(t);
+	  return ltt_tracefile_seek_time(t, time);
 	}
-	lttTime = getEventTime(t);
-	err = timecmp(&lttTime, &time);
-	if(err >= 0)return;
-      }
-    }else return;    
+      }else if(err < 0){
+	while(1){
+	  ev = ltt_tracefile_read(t);
+	  if(ev == NULL){
+	    g_print("End of file\n");      
+	    return;
+	  }
+	  lttTime = getEventTime(t);
+	  err = timecmp(&lttTime, &time);
+	  if(err >= 0)return;
+	}
+      }else return;    
+    }else{//we are at the end of the block
+      updateTracefile(t);
+      return ltt_tracefile_seek_time(t, time);      
+    }
   }else if(headTime > 0){
     if(t->which_block == 1){
       updateTracefile(t);      
