@@ -1987,12 +1987,15 @@ gint traceset_notify(void *hook_data, void *call_data)
   Drawing_t *drawing = control_flow_data->drawing;
   GtkWidget *widget = drawing->drawing_area;
 
-  drawing->damage_begin = 0;
-  drawing->damage_end = drawing->width;
 
   drawing_clear(control_flow_data->drawing);
   processlist_clear(control_flow_data->process_list);
+  redraw_notify(control_flow_data, NULL);
 
+  request_background_data(control_flow_data);
+#if 0
+  drawing->damage_begin = 0;
+  drawing->damage_end = drawing->width;
   if(drawing->damage_begin < drawing->damage_end)
   {
     drawing_data_request(drawing,
@@ -2007,8 +2010,7 @@ gint traceset_notify(void *hook_data, void *call_data)
                              0,0,
                              drawing->width,
                              drawing->height);
-
-  request_background_data(control_flow_data);
+#endif //0
  
   return FALSE;
 }
