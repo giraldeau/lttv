@@ -26,6 +26,10 @@ TODO list on control flow view by Mathieu Desnoyers
   in the left side and then connect the tree view's adjustment to the
   scrolled window's scroll bar.
 
+- Modify icon, text and arc drawing so they are drawn only on top of the
+  background. They will have to be drawn from the following event or from 
+  closure function in order to respect the priorities.
+
 Wish list
 
 - Tool bar for the viewer so many actions can be done on the screen.
