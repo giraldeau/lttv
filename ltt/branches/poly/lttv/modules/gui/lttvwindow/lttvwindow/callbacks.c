@@ -170,7 +170,11 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
   TimeInterval * time_interval;
   Tab *tab = mw_data->current_tab;
 
-  if(!tab) create_new_tab(widget, NULL);
+  if(!tab) {
+    create_new_tab(widget, NULL);
+    tab = mw_data->current_tab;
+  }
+
   multi_vpaned = tab->multi_vpaned;
 
   s = construct_traceset_selector(tab->traceset_info->traceset);
@@ -989,7 +993,10 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
   gtk_dir_selection_hide_fileop_buttons(file_selector);
   
-  if(!tab) create_new_tab(widget, NULL);
+  if(!tab) {
+    create_new_tab(widget, NULL);
+    tab = mw_data->current_tab;
+  }
   
   if(remember_trace_dir[0] != '\0')
     gtk_dir_selection_set_filename(file_selector, remember_trace_dir);
@@ -1921,14 +1928,12 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
                                         guint            page_num,
                                         gpointer         user_data)
 {
-  MainWindow * mw = get_window_data_struct((GtkWidget*)notebook);
-  Tab * tab = mw->tab;
- 
-  while(page_num){
-    tab = tab->next;
-    page_num--;
-  }
-  mw->current_tab = tab;
+  MainWindow * mw_data = get_window_data_struct((GtkWidget*)notebook);
+  GtkWidget *cur_page = gtk_notebook_get_nth_page(notebook, page_num);
+
+  mw_data->current_tab =
+                   (Tab *)g_object_get_data(G_OBJECT(cur_page), "Tab_Info");
+
 }
 
 
