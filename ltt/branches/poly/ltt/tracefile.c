@@ -978,6 +978,9 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 
 /*****************************************************************************
  * Seek to the first event with position equal or larger to ep 
+ *
+ * Modified by Mathieu Desnoyers to used faster offset position instead of
+ * re-reading the whole buffer.
  ****************************************************************************/
 
 void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
@@ -988,15 +991,36 @@ void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
   
   if(t->which_block == ep->block_num) updateTracefile(t);
   else readBlock(t,ep->block_num);
-
-  //event offset is availiable
+  //event offset is available
   if(ep->old_position){
-    t->cur_heart_beat_number = ep->heart_beat_number;
+    int err;
+
+    t->which_event = ep->event_num;
     t->cur_event_pos = t->buffer + ep->event_offset;
+    t->prev_event_time = ep->event_time;
+    t->current_event_time = ep->event_time;
+    t->cur_heart_beat_number = ep->heart_beat_number;
+    t->cur_cycle_count = ep->event_cycle_count;
+
+    /* This is a workaround for fast position seek */
+    t->last_event_pos = ep->last_event_pos;
+    t->prev_block_end_time = ep->prev_block_end_time;
+    t->prev_event_time = ep->prev_event_time;
+    t->pre_cycle_count = ep->pre_cycle_count;
+    t->count = ep->count;
+    /* end of workaround */
+
+    //update the fields of the current event and go to the next event
+    err = skipEvent(t);
+    if(err == ERANGE) g_error("event id is out of range\n");
+      
     return;
   }
 
-  //only block number and event index are availiable
+  //only block number and event index are available
+  //MD: warning : this is slow!
+  g_warning("using slow O(n) tracefile seek position");
+
   while(t->which_event < ep->event_num) ltt_tracefile_read(t);
 
   return;
@@ -1039,6 +1063,16 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
   lttEvent->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
   lttEvent->which_block = t->which_block;
   lttEvent->which_event = t->which_event;
+
+  /* This is a workaround for fast position seek */
+  lttEvent->last_event_pos = t->last_event_pos;
+  lttEvent->prev_block_end_time = t->prev_block_end_time;
+  lttEvent->prev_event_time = t->prev_event_time;
+  lttEvent->pre_cycle_count = t->pre_cycle_count;
+  lttEvent->count = t->count;
+  /* end of workaround */
+
+
 
   //update the fields of the current event and go to the next event
   err = skipEvent(t);
@@ -1188,6 +1222,7 @@ int skipEvent(LttTracefile * t)
 
   return 0;
 }
+
 
 /*****************************************************************************
  *Function name
@@ -1504,5 +1539,21 @@ char * ltt_trace_system_description_description (LttSystemDescription * s)
 LttTime ltt_trace_system_description_trace_start_time(LttSystemDescription *s)
 {
   return s->trace_start;
+}
+
+
+LttTracefile *ltt_tracefile_new()
+{
+  return g_new(LttTracefile, 1);
+}
+
+void ltt_tracefile_destroy(LttTracefile *tf)
+{
+  g_free(tf);
+}
+
+void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src)
+{
+  *dest = *src;
 }
 

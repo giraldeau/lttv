@@ -171,4 +171,10 @@ char * ltt_trace_system_description_description (LttSystemDescription * s);
 
 LttTime ltt_trace_system_description_trace_start_time(LttSystemDescription *s);
 
+/* copy tracefile info over another. Used for sync. */
+LttTracefile *ltt_tracefile_new();
+void ltt_tracefile_destroy(LttTracefile *tf);
+void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src);
+
+
 #endif // TRACE_H

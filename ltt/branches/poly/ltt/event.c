@@ -31,7 +31,7 @@
  *    ltt_event_refresh_fields   : refresh fields of an event 
  *Input params
  *    offsetRoot      : offset from the root
- *    offsetParent    : offset from the parrent
+ *    offsetParent    : offset from the parent
  *    fld             : field
  *    evD             : event data
  *Return value
@@ -217,9 +217,17 @@ void ltt_event_position(LttEvent *e, LttEventPosition *ep)
   ep->event_time        = e->event_time;
   ep->event_cycle_count = e->event_cycle_count;
   ep->heart_beat_number = e->tracefile->cur_heart_beat_number;
-  ep->old_position      = FALSE;
+  ep->old_position      = TRUE;
   ep->event_offset      = e->data - e->tracefile->buffer - EVENT_HEADER_SIZE ;
   ep->tf                = e->tracefile;
+
+  /* This is a workaround for fast position seek */
+  ep->last_event_pos = e->last_event_pos;
+  ep->prev_block_end_time = e->prev_block_end_time;
+  ep->prev_event_time = e->prev_event_time;
+  ep->pre_cycle_count = e->pre_cycle_count;
+  ep->count = e->count;
+  /* end of workaround */
 }
 
 LttEventPosition * ltt_event_position_new()

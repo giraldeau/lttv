@@ -123,6 +123,14 @@ struct _LttEvent{
   void * data;               //event data
   int which_block;           //the current block of the event
   int which_event;           //the position of the event
+  /* This is a workaround for fast position seek */
+  void * last_event_pos;
+
+  LttTime prev_block_end_time;       //the end time of previous block
+  LttTime prev_event_time;           //the time of the previous event
+  LttCycleCount pre_cycle_count;     //previous cycle count of the event
+  int      count;                    //the number of overflow of cycle count
+  /* end of workaround */
 };
 
 struct _LttFacility{
@@ -186,6 +194,15 @@ struct _LttEventPosition{
   LttTracefile *tf;                 //tracefile containing the event
   gboolean      old_position;       //flag to show if it is the position
                                     //being remembered
+  /* This is a workaround for fast position seek */
+  void * last_event_pos;
+
+  LttTime prev_block_end_time;       //the end time of previous block
+  LttTime prev_event_time;           //the time of the previous event
+  LttEvent an_event;
+  LttCycleCount pre_cycle_count;     //previous cycle count of the event
+  int      count;                    //the number of overflow of cycle count
+  /* end of workaround */
 };
 
 /* The characteristics of the system on which the trace was obtained

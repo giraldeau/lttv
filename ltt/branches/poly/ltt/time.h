@@ -32,6 +32,8 @@ static const unsigned long NANOSECONDS_PER_SECOND = 1000000000;
 
 static const LttTime ltt_time_zero = { 0, 0};
 
+static const LttTime ltt_time_one = { 0, 1 };
+
 static const LttTime ltt_time_infinite = { G_MAXUINT, G_MAXUINT };
 
 static inline LttTime ltt_time_sub(LttTime t1, LttTime t2) 
