@@ -19,7 +19,7 @@
 #ifndef ATTRIBUTE_H
 #define ATTRIBUTE_H
 
-/* FIXME : unnamed attributed not implemented */
+/* FIXME : unnamed attributes not implemented */
 
 #include <glib-object.h>
 #include <lttv/iattribute.h>
@@ -110,7 +110,8 @@ gboolean lttv_attribute_find(LttvAttribute *self, LttvAttributeName name,
 /* Free recursively a tree of attributes. All contained gobject of type
    LttvAttribute are freed (unreferenced) recursively. */
 
-void lttv_attribute_recursive_free(LttvAttribute *self);
+// Now done by default.
+// void lttv_attribute_recursive_free(LttvAttribute *self);
 
 /* Add items from a tree of attributes to another tree. */
 

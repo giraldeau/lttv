@@ -472,6 +472,7 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
 
   tracefiles_tree = lttv_attribute_find_subdir(container, 
       LTTV_STATE_TRACEFILES);
+  g_object_ref(G_OBJECT(tracefiles_tree));
   lttv_attribute_remove_by_name(container, LTTV_STATE_TRACEFILES);
 
   type = lttv_attribute_get_by_name(container, LTTV_STATE_PROCESSES, 
@@ -495,7 +496,7 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
     g_assert(type == LTTV_POINTER);
     if(*(value.v_pointer) != NULL) g_free(*(value.v_pointer));
   }
-  lttv_attribute_recursive_free(tracefiles_tree);
+  g_object_unref(G_OBJECT(tracefiles_tree));
 }
 
 
@@ -522,7 +523,6 @@ static void free_saved_state(LttvTraceState *self)
   }
 
   lttv_attribute_remove_by_name(self->parent.t_a, LTTV_STATE_SAVED_STATES);
-  lttv_attribute_recursive_free(saved_states);
 }
 
 

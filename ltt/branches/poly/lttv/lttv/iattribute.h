@@ -16,7 +16,7 @@
  * MA 02111-1307, USA.
  */
 
-/* FIXME : unnamed attributed not implemented */
+/* FIXME : unnamed attributes not implemented */
 
 #ifndef IATTRIBUTE_H
 #define IATTRIBUTE_H
@@ -29,6 +29,13 @@
    attribute name and value. This simple model allows generic navigation 
    and access functions over a wide range of structures. The names are 
    represented by unique integer identifiers, GQuarks. */
+
+/* Please note that adding a value of type gobject that is non null does not
+ * increment the reference count of this object : the actual reference to
+ * the object is "given" to the attribute tree. When the gobject value
+ * is removed, the object is unreferenced. A value copy through
+ * lttv_iattribute_copy_value does increase the reference count of the 
+ * gobject. */
 
 typedef GQuark LttvAttributeName;
 
@@ -126,7 +133,6 @@ LttvAttributeType lttv_iattribute_get_by_name(LttvIAttribute *self,
 
 LttvAttributeValue lttv_iattribute_add(LttvIAttribute *self, 
     LttvAttributeName name, LttvAttributeType t);
-
 
 /* Remove an attribute */
 

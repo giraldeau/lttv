@@ -270,7 +270,8 @@ void lttv_iattribute_copy_value(LttvAttributeType t, LttvAttributeValue dest,
       break;
 
     case LTTV_GOBJECT:
-      *(dest.v_gobject) = *(src.v_gobject); 
+      *(dest.v_gobject) = *(src.v_gobject);
+      if(*(dest.v_gobject) != NULL) g_object_ref(*(dest.v_gobject));
       break;
 
     case LTTV_NONE:

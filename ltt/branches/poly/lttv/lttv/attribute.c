@@ -161,6 +161,10 @@ lttv_attribute_remove(LttvAttribute *self, unsigned i)
 
   a = &g_array_index(self->attributes, Attribute, i);
 
+  /* If the element is a gobject, unreference it. */
+  if(a->type == LTTV_GOBJECT && a->value.dv_gobject != NULL)
+    g_object_unref(a->value.dv_gobject);
+  
   /* Remove the array element and its entry in the name index */
 
   g_hash_table_remove(self->names, GUINT_TO_POINTER(a->name));
@@ -234,7 +238,7 @@ lttv_attribute_find(LttvAttribute *self, LttvAttributeName name,
 }
 
 
-void lttv_attribute_recursive_free(LttvAttribute *self)
+/*void lttv_attribute_recursive_free(LttvAttribute *self)
 {
   int i, nb;
 
@@ -249,7 +253,7 @@ void lttv_attribute_recursive_free(LttvAttribute *self)
     }
   }
   g_object_unref(self);
-}
+}*/
 
 
 void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src)
@@ -272,7 +276,7 @@ void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src)
     else {
       g_assert(lttv_attribute_find(dest, a->name, a->type, &value));
       switch(a->type) {
-	case LTTV_INT:
+	      case LTTV_INT:
           *value.v_int += a->value.dv_int;
           break;
         case LTTV_UINT:

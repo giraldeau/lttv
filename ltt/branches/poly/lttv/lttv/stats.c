@@ -149,7 +149,6 @@ fini(LttvTracesetStats *self)
 
   if(*(v.v_uint) == 0) {
     lttv_attribute_remove_by_name(self->parent.parent.ts_a, LTTV_STATS);
-    lttv_attribute_recursive_free(self->stats);
   }
   self->stats = NULL;
 
@@ -165,12 +164,10 @@ fini(LttvTracesetStats *self)
 
     if(*(v.v_uint) == 0) { 
       lttv_attribute_remove_by_name(tcs->parent.parent.t_a,LTTV_STATS);
-      lttv_attribute_recursive_free(tcs->stats);
       tracefiles_stats = lttv_attribute_find_subdir(tcs->parent.parent.t_a, 
           LTTV_STATS_TRACEFILES);
       lttv_attribute_remove_by_name(tcs->parent.parent.t_a,
           LTTV_STATS_TRACEFILES);
-      lttv_attribute_recursive_free(tracefiles_stats);
     }
     tcs->stats = NULL;
 
