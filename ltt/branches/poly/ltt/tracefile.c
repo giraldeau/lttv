@@ -689,7 +689,8 @@ unsigned ltt_trace_eventtype_number(LttTrace *t)
 }
 
 /* FIXME : performances could be improved with a better design for this
- * function */
+ * function : sequential search through a container has never been the
+ * best on the critical path. */
 LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
 {
   LttFacility * facility = NULL;
@@ -710,10 +711,15 @@ LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
 
 LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned evId)
 {
+  LttEventType *event_type;
+  
   LttFacility * f;
   f = ltt_trace_facility_by_id(t,evId);
-  if(!f) return NULL;
-  return f->events[evId - f->base_id];
+
+  if(unlikely(!f)) event_type = NULL;
+  else event_type = f->events[evId - f->base_id];
+
+  return event_type;
 }
 
 /*****************************************************************************
@@ -1717,7 +1723,10 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
       if(fld->field_fixed == -1){
         fld->field_fixed = 0;
       }else{//0: string
-        size = strlen((char*)evD) + 1; //include end : '\0'
+        /* Hope my implementation is faster than strlen (Mathieu) */
+        char *ptr=(char*)evD;
+        while(*ptr != '\0') ptr++;
+        size = ptr - (char*)evD + 1; //include end : '\0'
       }
       break;
       
