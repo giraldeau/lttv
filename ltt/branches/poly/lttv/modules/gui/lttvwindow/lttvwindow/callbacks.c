@@ -379,6 +379,8 @@ unsigned get_max_event_number(MainWindow * mw_data)
  * process_traceset, then display all viewers of 
  * the current tab
  * It will then remove all entries from the time_requests array.
+ * CHECK : we give more events than requested to the viewers. They
+ * Have to filter them by themselves.
  */
 
 gint compare_time_request(TimeRequest *a, TimeRequest *b)
@@ -447,11 +449,30 @@ void call_pending_read_hooks(MainWindow * mw_data)
     LttTime end_time = ltt_time_add( time_request->time_window.start_time,
                                      time_request->time_window.time_width);
     
-    if(i == 0 || !(ltt_time_compare(time_request->time_window.start_time, ltt_event_time(tsc->e))<0) )//FIXME This comparison makes no sense (the author) :)
+    if(i == 0 || !(ltt_time_compare(time_request->time_window.start_time, ltt_event_time(tsc->e))<0) )
     {
       /* do it if first request or start_time >= last event's time */
       lttv_process_traceset_seek_time(tsc, time_request->time_window.start_time);
       lttv_process_traceset(tsc, end_time, time_request->num_events);
+    }
+    else
+    {
+      if(ltt_time_compare(time_request->time_window.start_time, ltt_event_time(tsc->e))<0
+          && !(ltt_time_compare(end_time, ltt_event_time(tsc->e))<0))
+      {
+        /* Continue reading from current event */
+        lttv_process_traceset(tsc, end_time, time_request->num_events);
+
+      }
+      else
+      {
+        if(ltt_time_compare(time_request->time_window.start_time, end_time) > 0)
+        {
+          /* This is a request for a minimum number of events, give
+           * more events than necessary */
+          lttv_process_traceset(tsc, end_time, time_request->num_events);
+        }
+      }
     }
 
     /* Call the end of process_traceset hook */
