@@ -50,29 +50,29 @@ GSList *gControl_Flow_Data_List = NULL ;
  */
 G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
-	Main_Win_Module = lttv_module_require(self, "mainwin", argc, argv);
-	
-	if(Main_Win_Module == NULL)
-	{
-	  g_critical("Can't load Control Flow Viewer : missing mainwin\n");
-	  return;
-	}
-	
-	g_info("GUI ControlFlow Viewer init()");
+  Main_Win_Module = lttv_module_require(self, "mainwin", argc, argv);
+  
+  if(Main_Win_Module == NULL)
+  {
+    g_critical("Can't load Control Flow Viewer : missing mainwin\n");
+    return;
+  }
+  
+  g_info("GUI ControlFlow Viewer init()");
 
-	/* Register the toolbar insert button */
-	toolbar_item_reg(hGuiControlFlowInsert_xpm, "Insert Control Flow Viewer",
-			h_guicontrolflow);
+  /* Register the toolbar insert button */
+  toolbar_item_reg(hGuiControlFlowInsert_xpm, "Insert Control Flow Viewer",
+      h_guicontrolflow);
 
-	/* Register the menu item insert entry */
-	menu_item_reg("/", "Insert Control Flow Viewer", h_guicontrolflow);
-	
+  /* Register the menu item insert entry */
+  menu_item_reg("/", "Insert Control Flow Viewer", h_guicontrolflow);
+  
 }
 
 void destroy_walk(gpointer data, gpointer user_data)
 {
-	g_info("Walk destroy GUI Control Flow Viewer");
-	guicontrolflow_destructor_full((ControlFlowData*)data);
+  g_info("Walk destroy GUI Control Flow Viewer");
+  guicontrolflow_destructor_full((ControlFlowData*)data);
 }
 
 
@@ -84,17 +84,17 @@ void destroy_walk(gpointer data, gpointer user_data)
  * everything that has been registered in the gtkTraceSet API.
  */
 G_MODULE_EXPORT void destroy() {
-	g_info("GUI Control Flow Viewer destroy()");
-	int i;
+  g_info("GUI Control Flow Viewer destroy()");
+  int i;
 
-	g_slist_foreach(gControl_Flow_Data_List, destroy_walk, NULL );
-	
-	g_slist_free(gControl_Flow_Data_List);
+  g_slist_foreach(gControl_Flow_Data_List, destroy_walk, NULL );
+  
+  g_slist_free(gControl_Flow_Data_List);
 
-	/* Unregister the toolbar insert button */
-	toolbar_item_unreg(h_guicontrolflow);
+  /* Unregister the toolbar insert button */
+  toolbar_item_unreg(h_guicontrolflow);
 
-	/* Unregister the menu item insert entry */
-	menu_item_unreg(h_guicontrolflow);
-	
+  /* Unregister the menu item insert entry */
+  menu_item_unreg(h_guicontrolflow);
+  
 }

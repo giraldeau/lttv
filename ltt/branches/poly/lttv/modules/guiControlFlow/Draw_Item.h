@@ -20,12 +20,12 @@ typedef struct _PropertiesBG PropertiesBG;
 
 typedef enum _DrawableItems DrawableItems;
 enum _DrawableItems {
-		ITEM_TEXT, ITEM_ICON, ITEM_LINE, ITEM_POINT, ITEM_BACKGROUND
+    ITEM_TEXT, ITEM_ICON, ITEM_LINE, ITEM_POINT, ITEM_BACKGROUND
 };
 
 
 typedef enum _RelPos {
-	OVER, MIDDLE, UNDER
+  OVER, MIDDLE, UNDER
 } RelPos;
 
 
@@ -44,12 +44,12 @@ typedef enum _RelPos {
 
 
 struct _DrawContext {
-	GdkDrawable	*drawable;
-	GdkGC		*gc;
-	PangoLayout *pango_layout;
+  GdkDrawable *drawable;
+  GdkGC   *gc;
+  PangoLayout *pango_layout;
 
-	DrawInfo	*Current;
-	DrawInfo	*Previous;
+  DrawInfo  *Current;
+  DrawInfo  *Previous;
 };
 
 /* LttvExecutionState is accessible through the LttvTracefileState. Is has
@@ -70,26 +70,26 @@ struct _DrawContext {
  * to get facility name and event name.
  */
 struct _DrawInfo {
-	ItemInfo	*over;
-	ItemInfo	*middle;
-	ItemInfo	*under;
-	
-	ItemInfo	*modify_over;
-	ItemInfo	*modify_middle;
-	ItemInfo	*modify_under;
-	LttvProcessStatus status;
+  ItemInfo  *over;
+  ItemInfo  *middle;
+  ItemInfo  *under;
+  
+  ItemInfo  *modify_over;
+  ItemInfo  *modify_middle;
+  ItemInfo  *modify_under;
+  LttvProcessStatus status;
 };
 
 struct _ItemInfo {
-	gint	x, y;
+  gint  x, y;
 };
 
 /*
  * Structure used to keep information about icons.
  */
 struct _IconStruct {
-	GdkPixmap *pixmap;
-	GdkBitmap *mask;
+  GdkPixmap *pixmap;
+  GdkBitmap *mask;
 };
 
 
@@ -98,8 +98,8 @@ struct _IconStruct {
  * During drawing, only the Hook is needed.
  */
 struct _DrawOperation {
-	DrawableItems	Item;
-	LttvHooks	*Hook;
+  DrawableItems Item;
+  LttvHooks *Hook;
 };
 
 /*
@@ -113,11 +113,11 @@ struct _DrawOperation {
  */
 
 static int Items_Priorities[] = {
-	50,	/* ITEM_TEXT */
-	40,	/* ITEM_ICON */
-	20,	/* ITEM_LINE */
-	30,	/* ITEM_POINT */
-	10	/* ITEM_BACKGROUND */
+  50, /* ITEM_TEXT */
+  40, /* ITEM_ICON */
+  20, /* ITEM_LINE */
+  30, /* ITEM_POINT */
+  10  /* ITEM_BACKGROUND */
 };
 
 /*
@@ -128,47 +128,47 @@ static int Items_Priorities[] = {
  */
 
 struct _PropertiesText {
-	GdkColor	*foreground;
-	GdkColor	*background;
-	gint		size;
-	gchar		*Text;
-	RelPos		position;
+  GdkColor  *foreground;
+  GdkColor  *background;
+  gint    size;
+  gchar   *Text;
+  RelPos    position;
 };
 
 
 struct _PropertiesIcon {
-	gchar		*icon_name;
-	gint		width;
-	gint		height;
-	RelPos		position;
+  gchar   *icon_name;
+  gint    width;
+  gint    height;
+  RelPos    position;
 };
 
 struct _PropertiesLine {
-	GdkColor	*color;
-	gint		line_width;
-	GdkLineStyle	style;
-	RelPos		position;
+  GdkColor  *color;
+  gint    line_width;
+  GdkLineStyle  style;
+  RelPos    position;
 };
 
 struct _PropertiesArc {
-	GdkColor	*color;
-	gint		size;	/* We force circle by width = height */
-	gboolean	filled;
-	RelPos		position;
+  GdkColor  *color;
+  gint    size; /* We force circle by width = height */
+  gboolean  filled;
+  RelPos    position;
 };
 
 struct _PropertiesBG {
-	GdkColor	*color;
+  GdkColor  *color;
 };
 
 
 
-void draw_item(	GdkDrawable *drawable,
-		gint x,
-		gint y,
-		LttvTraceState *ts,
-		LttvTracefileState *tfs,
-		LttvIAttribute *attributes);
+void draw_item( GdkDrawable *drawable,
+    gint x,
+    gint y,
+    LttvTraceState *ts,
+    LttvTracefileState *tfs,
+    LttvIAttribute *attributes);
 
 /*
  * The tree of attributes used to store drawing operations goes like this :
@@ -194,34 +194,34 @@ void draw_item(	GdkDrawable *drawable,
  * The add_operation has to do a quick sort by priority to keep the operations
  * in the right order.
  */
-void add_operation(	LttvIAttribute *attributes,
-			gchar *pathname,
-			DrawOperation *Operation);
+void add_operation( LttvIAttribute *attributes,
+      gchar *pathname,
+      DrawOperation *Operation);
 
 /* 
  * The del_operation seeks the array present at pathname (if any) and
  * removes the DrawOperation if present. It returns 0 on success, -1
  * if it fails.
  */
-gint del_operation(	LttvIAttribute *attributes,
-			gchar *pathname,
-			DrawOperation *Operation);
+gint del_operation( LttvIAttribute *attributes,
+      gchar *pathname,
+      DrawOperation *Operation);
 
 /* 
  * The clean_operations removes all operations present at a pathname.
  * returns 0 on success, -1 if it fails.
  */
-gint clean_operations(	LttvIAttribute *attributes,
-			gchar *pathname );
+gint clean_operations(  LttvIAttribute *attributes,
+      gchar *pathname );
 
 
 /* 
  * The list_operations gives a pointer to the operation array associated
  * with the pathname. It will be NULL if no operation is present.
  */
-void list_operations(	LttvIAttribute *attributes,
-			gchar *pathname,
-			GArray **Operation);
+void list_operations( LttvIAttribute *attributes,
+      gchar *pathname,
+      GArray **Operation);
 
 
 
@@ -229,8 +229,8 @@ void list_operations(	LttvIAttribute *attributes,
  * exec_operation executes the operations if present in the attributes, or
  * do nothing if not present.
  */
-void exec_operations(	LttvIAttribute *attributes,
-			gchar *pathname);
+void exec_operations( LttvIAttribute *attributes,
+      gchar *pathname);
 
 
 /*
@@ -238,32 +238,32 @@ void exec_operations(	LttvIAttribute *attributes,
  */
 
 PropertiesText *properties_text_create(
-	GdkColor	*foreground,
-	GdkColor	*background,
-	gint		size,
-	gchar		*Text,
-	RelPos		position);
+  GdkColor  *foreground,
+  GdkColor  *background,
+  gint    size,
+  gchar   *Text,
+  RelPos    position);
 
 PropertiesIcon *properties_icon_create(
-	gchar		*icon_name,
-	gint		width,
-	gint		height,
-	RelPos		position);
+  gchar   *icon_name,
+  gint    width,
+  gint    height,
+  RelPos    position);
 
 PropertiesLine *properties_line_create(
-	GdkColor	*color,
-	gint		line_width,
-	GdkLineStyle	style,
-	RelPos		position);
+  GdkColor  *color,
+  gint    line_width,
+  GdkLineStyle  style,
+  RelPos    position);
 
 PropertiesArc *properties_arc_create(
-	GdkColor	*color,
-	gint		size,
-	gboolean	filled,
-	RelPos		position);
+  GdkColor  *color,
+  gint    size,
+  gboolean  filled,
+  RelPos    position);
 
 PropertiesBG *properties_bg_create(
-	GdkColor	*color);
+  GdkColor  *color);
 
 
 

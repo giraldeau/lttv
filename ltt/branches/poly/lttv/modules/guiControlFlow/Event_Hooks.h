@@ -22,13 +22,13 @@
  */
 typedef struct _EventRequest
 {
-	ControlFlowData *Control_Flow_Data;
-	LttTime time_begin, time_end;
-	gint	x_begin, x_end;
-	/* Fill the Events_Context during the initial expose, before calling for
-	 * events.
-	 */
-	//GArray Events_Context; //FIXME
+  ControlFlowData *Control_Flow_Data;
+  LttTime time_begin, time_end;
+  gint  x_begin, x_end;
+  /* Fill the Events_Context during the initial expose, before calling for
+   * events.
+   */
+  //GArray Events_Context; //FIXME
 } EventRequest ;
 
 

@@ -9,7 +9,7 @@
 #include "Draw_Item.h"
 
 
-#define SAFETY 50	// safety pixels at right and bottom of pixmap buffer
+#define SAFETY 50 // safety pixels at right and bottom of pixmap buffer
 
 /* This part of the viewer does :
  * Draw horizontal lines, getting graphic context as arg.
@@ -36,61 +36,61 @@
 typedef struct _Drawing_t Drawing_t;
 
 struct _Drawing_t {
-	GtkWidget	*Drawing_Area_V;
-	GdkPixmap	*Pixmap;
-	ControlFlowData	*Control_Flow_Data;
-	
-	PangoLayout *pango_layout;
+  GtkWidget *Drawing_Area_V;
+  GdkPixmap *Pixmap;
+  ControlFlowData *Control_Flow_Data;
+  
+  PangoLayout *pango_layout;
 
-	gint 		height, width, depth;
-	
+  gint    height, width, depth;
+  
 };
 
 Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data);
 void drawing_destroy(Drawing_t *Drawing);
 
 GtkWidget *drawing_get_widget(Drawing_t *Drawing);
-	
-//void Drawing_Refresh (	Drawing_t *Drawing,
-//			guint x, guint y,
-//			guint width, guint height);
+  
+//void Drawing_Refresh (  Drawing_t *Drawing,
+//      guint x, guint y,
+//      guint width, guint height);
 
-void drawing_draw_line(	Drawing_t *Drawing,
-			GdkPixmap *Pixmap,
-			guint x1, guint y1,
-			guint x2, guint y2,
-			GdkGC *GC);
+void drawing_draw_line( Drawing_t *Drawing,
+      GdkPixmap *Pixmap,
+      guint x1, guint y1,
+      guint x2, guint y2,
+      GdkGC *GC);
 
 //void Drawing_copy( Drawing_t *Drawing,
-//		guint xsrc, guint ysrc,
-//		guint xdest, guint ydest,
-//		guint width, guint height);
+//    guint xsrc, guint ysrc,
+//    guint xdest, guint ydest,
+//    guint width, guint height);
 
 /* Insert a square corresponding to a new process in the list */
 void drawing_insert_square(Drawing_t *Drawing,
-				guint y,
-				guint height);
+        guint y,
+        guint height);
 
 /* Remove a square corresponding to a removed process in the list */
 void drawing_remove_square(Drawing_t *Drawing,
-				guint y,
-				guint height);
+        guint y,
+        guint height);
 
 
 //void Drawing_Resize(Drawing_t *Drawing, guint h, guint w);
 
 void convert_pixels_to_time(
-		gint width,
-		guint x,
-		LttTime *window_time_begin,
-		LttTime *window_time_end,
-		LttTime *time);
+    gint width,
+    guint x,
+    LttTime *window_time_begin,
+    LttTime *window_time_end,
+    LttTime *time);
 
 void convert_time_to_pixels(
-		LttTime window_time_begin,
-		LttTime window_time_end,
-		LttTime time,
-		gint width,
-		guint *x);
+    LttTime window_time_begin,
+    LttTime window_time_end,
+    LttTime time,
+    gint width,
+    guint *x);
 
 #endif // _DRAWING_H
