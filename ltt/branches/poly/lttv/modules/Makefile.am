@@ -4,7 +4,7 @@
 # Created by Mathieu Desnoyers on May 6, 2003
 #
 
-SUBDIRS = examples coreGUI
+#SUBDIRS = examples
 
 libdir = ${lttvplugindir}
 
