@@ -116,8 +116,9 @@ void lttv_event_to_string(LttEvent *e, LttTracefile *tf, GString *s,
         ltt_eventtype_name(event_type), (long)time.tv_sec, time.tv_nsec,
         ltt_tracefile_name(tf));
     /* Print the process id and the state/interrupt type of the process */
-    g_string_append_printf(s,", %d, %s", tfs->process->pid,
-			   g_quark_to_string(tfs->process->state->t));
+    g_string_append_printf(s,", %u, %u,  %s", tfs->process->pid,
+		    tfs->process->ppid,
+		    g_quark_to_string(tfs->process->state->t));
   }
 
   if(field)
