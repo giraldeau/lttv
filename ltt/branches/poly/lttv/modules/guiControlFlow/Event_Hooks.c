@@ -5,11 +5,102 @@
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
+#include <glib.h>
+
 #include <lttv/hook.h>
 #include <lttv/common.h>
 
 #include "Event_Hooks.h"
 #include "CFV.h"
+#include "Process_List.h"
+
+void send_test_data(ProcessList *Process_List)
+{
+	guint height;
+	int i;
+	ProcessInfo Process_Info = {10000, 12000, 55600};
+	//ProcessInfo Process_Info = {156, 14000, 55500};
+	GtkTreeRowReference *got_RowRef;
+
+	LttTime birth;
+	birth.tv_sec = 12000;
+	birth.tv_nsec = 55500;
+
+	ProcessList_add(Process_List,
+			1,
+			&birth,
+			&height);
+
+	g_critical("height : %u", height);
+	
+	birth.tv_sec = 14000;
+	birth.tv_nsec = 55500;
+
+	ProcessList_add(Process_List,
+			156,
+			&birth,
+			&height);
+
+	g_critical("height : %u", height);
+
+	birth.tv_sec = 12000;
+	birth.tv_nsec = 55700;
+
+	ProcessList_add(Process_List,
+			10,
+			&birth,
+			&height);
+
+	for(i=0; i<10; i++)
+	{
+		birth.tv_sec = i*12000;
+		birth.tv_nsec = i*55700;
+
+		ProcessList_add(Process_List,
+				i,
+				&birth,
+				&height);
+
+	}
+	g_critical("height : %u", height);
+
+	birth.tv_sec = 12000;
+	birth.tv_nsec = 55600;
+
+	ProcessList_add(Process_List,
+			10,
+			&birth,
+			&height);
+	g_critical("height : %u", height);
+
+	ProcessList_add(Process_List,
+			10000,
+			&birth,
+			&height);
+	g_critical("height : %u", height);
+
+
+	ProcessList_remove( 	Process_List,
+				10000,
+				&birth);
+	
+	if(got_RowRef = 
+		(GtkTreeRowReference*)g_hash_table_lookup(
+					Process_List->Process_Hash,
+					&Process_Info))
+	{
+		g_critical("key found");
+		g_critical("position in the list : %s",
+			gtk_tree_path_to_string (
+			gtk_tree_row_reference_get_path(
+				(GtkTreeRowReference*)got_RowRef)
+			));
+		
+	}
+
+}
+
+
 
 /**
  * Event Viewer's constructor hook

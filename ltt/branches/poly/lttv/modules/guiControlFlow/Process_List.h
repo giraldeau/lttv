@@ -15,7 +15,31 @@
  * 	note : the sync with drawing is left to the caller.
  * provides helper function to convert a process unique identifier to
  * 	pixels (in height).
+ *
+ * //FIXME : connect the scrolled window adjustment with the list.
  */
+
+typedef struct _ProcessInfo {
+	
+	guint pid;
+	LttTime birth;
+
+} ProcessInfo;
+
+
+
+struct _ProcessList {
+	
+	GtkWidget *Process_List_VC;
+	GtkListStore *Store_M;
+
+	/* A hash table by PID to speed up process position find in the list */
+	GHashTable *Process_Hash;
+	
+	guint Number_Of_Process;
+
+};
+
 
 typedef struct _ProcessList ProcessList;
 

@@ -322,3 +322,112 @@ void Drawing_Resize(Drawing_t *Drawing, guint h, guint w)
 }
 
 
+/* Insert a square corresponding to a new process in the list */
+/* Applies to whole Drawing->width */
+void Drawing_Insert_Square(Drawing_t *Drawing,
+				guint y,
+				guint height)
+{
+	GdkRectangle update_rect;
+
+	/* Allocate a new pixmap with new height */
+	GdkPixmap *Pixmap = gdk_pixmap_new(Drawing->Drawing_Area_V->window,
+			  Drawing->width,
+			  Drawing->height + height,
+			  -1);
+	
+	/* Copy the high region */
+	gdk_draw_drawable (Pixmap,
+		Drawing->Drawing_Area_V->style->black_gc,
+		Drawing->Pixmap,
+		0, 0,
+		0, 0,
+		Drawing->width, y);
+
+
+
+
+	/* add an empty square */
+	gdk_draw_rectangle (Pixmap,
+		Drawing->Drawing_Area_V->style->white_gc,
+		TRUE,
+		0, y,
+		Drawing->width,	// do not overlap
+		height);
+
+
+
+	/* copy the bottom of the region */
+ 	gdk_draw_drawable (Pixmap,
+		Drawing->Drawing_Area_V->style->black_gc,
+		Drawing->Pixmap,
+		0, y,
+		0, y + height,
+		Drawing->width, Drawing->height - y);
+
+
+
+
+	if (Drawing->Pixmap)
+		gdk_pixmap_unref(Drawing->Pixmap);
+
+	Drawing->Pixmap = Pixmap;
+	
+	Drawing->height+=height;
+
+	/* Rectangle to update, from new Drawing dimensions */
+	update_rect.x = 0 ;
+	update_rect.y = y ;
+	update_rect.width = Drawing->width;
+	update_rect.height = Drawing->height - y ;
+	gtk_widget_draw( Drawing->Drawing_Area_V, &update_rect);
+}
+
+
+/* Remove a square corresponding to a removed process in the list */
+void Drawing_Remove_Square(Drawing_t *Drawing,
+				guint y,
+				guint height)
+{
+	GdkRectangle update_rect;
+	
+	/* Allocate a new pixmap with new height */
+	GdkPixmap *Pixmap = gdk_pixmap_new(
+			Drawing->Drawing_Area_V->window,
+			Drawing->width,
+			Drawing->height - height,
+			-1);
+	
+	/* Copy the high region */
+	gdk_draw_drawable (Pixmap,
+		Drawing->Drawing_Area_V->style->black_gc,
+		Drawing->Pixmap,
+		0, 0,
+		0, 0,
+		Drawing->width, y);
+
+
+
+	/* Copy up the bottom of the region */
+ 	gdk_draw_drawable (Pixmap,
+		Drawing->Drawing_Area_V->style->black_gc,
+		Drawing->Pixmap,
+		0, y + height,
+		0, y,
+		Drawing->width, Drawing->height - y - height);
+
+
+	if (Drawing->Pixmap)
+		gdk_pixmap_unref(Drawing->Pixmap);
+
+	Drawing->Pixmap = Pixmap;
+	
+	Drawing->height-=height;
+	
+	/* Rectangle to update, from new Drawing dimensions */
+	update_rect.x = 0 ;
+	update_rect.y = y ;
+	update_rect.width = Drawing->width;
+	update_rect.height = Drawing->height - y ;
+	gtk_widget_draw( Drawing->Drawing_Area_V, &update_rect);
+}

@@ -13,6 +13,10 @@
  * Refresh the physical screen with the pixmap
  * A helper function is provided here to convert from time and process
  * identifier to pixels and the contrary (will be useful for mouse selection).
+ * Insert an empty square in the drawing, moving the bottom part.
+ *
+ * The pixmap used has the width of the physical window, but the height
+ * of the shown processes.
  */
 
 typedef struct _Drawing_t Drawing_t;
@@ -36,6 +40,16 @@ void Drawing_draw_line(	Drawing_t *Drawing,
 //		guint xsrc, guint ysrc,
 //		guint xdest, guint ydest,
 //		guint width, guint height);
+
+/* Insert a square corresponding to a new process in the list */
+void Drawing_Insert_Square(Drawing_t *Drawing,
+				guint y,
+				guint height);
+
+/* Remove a square corresponding to a removed process in the list */
+void Drawing_Remove_Square(Drawing_t *Drawing,
+				guint y,
+				guint height);
 
 
 //void Drawing_Resize(Drawing_t *Drawing, guint h, guint w);

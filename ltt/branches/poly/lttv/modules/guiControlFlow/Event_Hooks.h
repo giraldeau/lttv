@@ -9,6 +9,9 @@
 
 #include <gtk/gtk.h>
 #include <lttv/mainWindow.h>
+#include "Process_List.h"
+
+void send_test_data(ProcessList *Process_List);
 
 GtkWidget *hGuiControlFlow(mainWindow *pmParentWindow);
 
