@@ -157,6 +157,17 @@ int draw_event_hook(void *hook_data, void *call_data)
   LttEvent *e;
   e = tfc->e;
 
+  LttTime evtime = ltt_event_time(e);
+  TimeWindow *time_window = 
+    guicontrolflow_get_time_window(control_flow_data);
+
+  LttTime end_time = ltt_time_add(time_window->start_time,
+                                    time_window->time_width);
+  //if(time < time_beg || time > time_end) return;
+  if(ltt_time_compare(evtime, time_window->start_time) == -1
+        || ltt_time_compare(evtime, end_time) == 1)
+            return;
+
   if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"schedchange") == 0)
   {
     g_critical("schedchange!");
@@ -265,8 +276,7 @@ int draw_event_hook(void *hook_data, void *call_data)
         time,
         width,
         &x);
-    
-    assert(x <= width);
+    //assert(x <= width);
     
     /* draw what represents the event for outgoing process. */
 
@@ -631,6 +641,18 @@ int draw_after_hook(void *hook_data, void *call_data)
   
   LttEvent *e;
   e = tfc->e;
+
+  LttTime evtime = ltt_event_time(e);
+  TimeWindow *time_window = 
+    guicontrolflow_get_time_window(control_flow_data);
+
+  LttTime end_time = ltt_time_add(time_window->start_time,
+                                    time_window->time_width);
+  //if(time < time_beg || time > time_end) return;
+  if(ltt_time_compare(evtime, time_window->start_time) == -1
+        || ltt_time_compare(evtime, end_time) == 1)
+            return;
+
 
   if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"schedchange") == 0)
   {

@@ -130,8 +130,8 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     tc = self->parent.traces[i];
     tcs = (LttvTraceState *)tc;
     tcs->save_interval = 100000;
-    tcs->recompute_state_in_seek = false;
-    tcs->saved_state_ready = false;
+    tcs->recompute_state_in_seek = TRUE;
+    tcs->saved_state_ready = FALSE;
     fill_name_tables(tcs);
 
     nb_control = ltt_trace_control_tracefile_number(tc->t);
@@ -1033,18 +1033,13 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
         /* restore the closest earlier saved state */
         if(min_pos != -1) lttv_state_restore(tcs, closest_tree);
 
-        /* there is no earlier saved state, restart at T0 */
-        else {
-          restore_init_state(tcs);
-          lttv_process_trace_seek_time(&(tcs->parent), ltt_time_zero);
-        }
-
+      }
       /* There is no saved state yet we want to have it. Restart at T0 */
       else {
         restore_init_state(tcs);
         lttv_process_trace_seek_time(&(tcs->parent), ltt_time_zero);
       }
-
+    }
     /* We want to seek quickly without restoring/updating the state */
     else {
       restore_init_state(tcs);
