@@ -94,27 +94,27 @@ gint process_sort_func  ( GtkTreeModel *model,
   if(a_pid == 0 &&  b_pid == 0) {
     /* If 0, order by CPU */
     if(a_cpu > b_cpu) return 1;
-    if(a_cpu < b_cpu) return 0;
+    if(a_cpu < b_cpu) return -1;
 
   } else { /* if not 0, order by pid */
 
     if(a_pid > b_pid) return 1;
-    if(a_pid < b_pid) return 0;
+    if(a_pid < b_pid) return -1;
   }
 
   /* Order by birth second */
 
   if(a_birth_s > b_birth_s) return 1;
-  if(a_birth_s < b_birth_s) return 0;
+  if(a_birth_s < b_birth_s) return -1;
   
 
   /* Order by birth nanosecond */
   if(a_birth_ns > b_birth_ns) return 1;
-  if(a_birth_ns < b_birth_ns) return 0;
+  if(a_birth_ns < b_birth_ns) return -1;
   
   /* Order by trace_num */
   if(a_trace > b_trace) return 1;
-  if(a_trace < b_trace) return 0;
+  if(a_trace < b_trace) return -1;
 
   return 0;
 
