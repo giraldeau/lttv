@@ -76,14 +76,16 @@ AC_SUBST(lttincludedir)
 AC_CONFIG_FILES([Makefile
 		 lttv/Makefile
 		 lttv/modules/Makefile
+		 lttv/modules/gui/text/Makefile
 		 lttv/modules/gui/Makefile
-		 lttv/modules/gui/mainWin/Makefile
-		 lttv/modules/gui/mainWin/src/Makefile
-		 lttv/modules/gui/mainWin/pixmaps/Makefile
-		 lttv/modules/gui/API/Makefile
-		 lttv/modules/guiControlFlow/Makefile
-		 lttv/modules/icons/Makefile
-		 lttv/modules/guiStatistic/Makefile
+		 lttv/modules/gui/mainLib/Makefile
+		 lttv/modules/gui/main/Makefile
+		 lttv/modules/gui/main/src/Makefile
+		 lttv/modules/gui/main/pixmaps/Makefile
+		 lttv/modules/gui/icons/Makefile
+		 lttv/modules/gui/ControlFlow/Makefile
+		 lttv/modules/gui/DetailedEvents/Makefile
+		 lttv/modules/gui/Statistics/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 include/Makefile
