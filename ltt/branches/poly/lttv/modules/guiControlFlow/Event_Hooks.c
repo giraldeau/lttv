@@ -313,15 +313,15 @@ h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * ke
 			GuiControlFlow_get_Current_Time(Control_Flow_Data));
 
 	// Unreg done in the GuiControlFlow_Destructor
-	reg_update_time_window(Update_Time_Window_Hook, Control_Flow_Data,
+	reg_update_time_window(update_time_window_hook, Control_Flow_Data,
 				pmParentWindow);
-	reg_update_current_time(Update_Current_Time_Hook, Control_Flow_Data,
+	reg_update_current_time(update_current_time_hook, Control_Flow_Data,
 				pmParentWindow);
-	return GuiControlFlow_get_Widget(Control_Flow_Data) ;
+	return guicontrolflow_get_widget(Control_Flow_Data) ;
 	
 }
 
-int Event_Selected_Hook(void *hook_data, void *call_data)
+int event_selected_hook(void *hook_data, void *call_data)
 {
 	ControlFlowData *Control_Flow_Data = (ControlFlowData*) hook_data;
 	guint *Event_Number = (guint*) call_data;
@@ -393,7 +393,7 @@ void update_time_window_hook(void *hook_data, void *call_data)
 {
 	ControlFlowData *Control_Flow_Data = (ControlFlowData*) hook_data;
 	TimeWindow* Time_Window = 
-		GuiControlFlow_get_Time_Window(Control_Flow_Data);
+		guicontrolflow_get_time_window(Control_Flow_Data);
 	TimeWindow *New_Time_Window = ((TimeWindow*)call_data);
 
 	// As the time interval change will mostly be used for

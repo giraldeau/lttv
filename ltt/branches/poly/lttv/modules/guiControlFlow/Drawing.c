@@ -190,7 +190,7 @@ Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data)
 			G_OBJECT(Drawing->Drawing_Area_V),
 			"Link_Drawing_Data",
 			Drawing,
-			(GDestroyNotify)Drawing_destroy);
+			(GDestroyNotify)drawing_destroy);
 
 	//gtk_widget_modify_bg(	Drawing->Drawing_Area_V,
 	//			GTK_STATE_NORMAL,
