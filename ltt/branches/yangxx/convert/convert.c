@@ -87,10 +87,22 @@ int main(int argc, char ** argv){
   int i,j;
 
   uint8_t cpu_id;
+
+  char foo[4*BUFFER_SIZE];
+  char foo_eventdefs[4*BUFFER_SIZE];
+  char foo_control[4*BUFFER_SIZE];
+  char foo_cpu[4*BUFFER_SIZE];
+  char foo_info[4*BUFFER_SIZE];
+
+  char foo_control_facilities[4*BUFFER_SIZE];
+  char foo_control_processes[4*BUFFER_SIZE];
+  char foo_control_interrupts[4*BUFFER_SIZE];
+  char foo_info_system[4*BUFFER_SIZE];
+
   struct stat      lTDFStat;   
   off_t file_size;                  
   int block_number, block_size;                 
-  char * buffer, **buf_out, cpuStr[BUFFER_SIZE];
+  char * buffer, **buf_out, cpuStr[4*BUFFER_SIZE];
   char * buf_fac, * buf_intr, * buf_proc;
   void ** write_pos, *write_pos_fac, * write_pos_intr, *write_pos_proc;
   trace_start *tStart;
@@ -109,10 +121,36 @@ int main(int argc, char ** argv){
   uint32_t size_lost;
   int reserve_size = sizeof(buffer_start) + sizeof(uint16_t) + 2*sizeof(uint32_t);//lost_size and buffer_end event
 
-  if(argc != 3){
-    printf("need a trace file and cpu number\n");
+  if(argc != 3 && argc != 4){
+    printf("need a trace file and cpu number or root directory for the new tracefile\n");
     exit(1);
   }
+
+  if(argc == 3){
+    strcpy(foo, "foo");
+    strcpy(foo_eventdefs, "foo/eventdefs");
+    strcpy(foo_control, "foo/control");
+    strcpy(foo_cpu, "foo/cpu");
+    strcpy(foo_info, "foo/info");
+  }else{
+    strcpy(foo, argv[3]);
+    strcpy(foo_eventdefs, argv[3]);
+    strcat(foo_eventdefs,"/eventdefs");
+    strcpy(foo_control, argv[3]);
+    strcat(foo_control,"/control");
+    strcpy(foo_cpu, argv[3]);
+    strcat(foo_cpu,"/cpu");
+    strcpy(foo_info, argv[3]);
+    strcat(foo_info,"/info");
+  }
+  strcpy(foo_control_facilities, foo_control);
+  strcat(foo_control_facilities,"/facilities");
+  strcpy(foo_control_processes, foo_control);
+  strcat(foo_control_processes, "/processes");
+  strcpy(foo_control_interrupts, foo_control);
+  strcat(foo_control_interrupts, "/interrupts");
+  strcpy(foo_info_system, foo_info);
+  strcat(foo_info_system, "/system.xml");
 
   cpu = atoi(argv[2]);
   printf("cpu number = %d\n", cpu);
@@ -160,13 +198,18 @@ int main(int argc, char ** argv){
   }
   fclose(fp);
 
-  if(mkdir("foo", S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) g_error("can not make foo directory");
-  if(mkdir("foo/info", S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) g_error("can not make foo/info directory");
-  if(mkdir("foo/cpu", S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) g_error("can not make foo/cpu directory");
-  if(mkdir("foo/control", S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) g_error("can not make foo/control directory");
-  if(mkdir("foo/eventdefs", S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) g_error("can not make foo/eventdefs directory");
+  if(mkdir(foo, S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) 
+    g_error("can not make %s directory", foo);
+  if(mkdir(foo_info, S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) 
+    g_error("can not make %s directory", foo_info);
+  if(mkdir(foo_cpu, S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) 
+    g_error("can not make %s directory", foo_cpu);
+  if(mkdir(foo_control, S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) 
+    g_error("can not make %s directory", foo_control);
+  if(mkdir(foo_eventdefs, S_IFDIR | S_IRWXU | S_IRGRP |  S_IROTH)) 
+    g_error("can not make %s directory", foo_eventdefs);
   
-  fp = fopen("foo/info/system.xml","w");
+  fp = fopen(foo_info_system,"w");
   if(!fp){
     g_error("Unable to open file system.xml\n");
   }
@@ -176,15 +219,15 @@ int main(int argc, char ** argv){
     g_error("Unable to open input data file %s\n", argv[1]);
   }
 
-  fdFac = open("foo/control/facilities",O_CREAT | O_RDWR | O_TRUNC,S_IRUSR |S_IWUSR | S_IRGRP | S_IROTH);
+  fdFac = open(foo_control_facilities,O_CREAT | O_RDWR | O_TRUNC,S_IRUSR |S_IWUSR | S_IRGRP | S_IROTH);
   if(fdFac < 0){
     g_error("Unable to open file facilities\n");
   }
-  fdIntr = open("foo/control/interrupts",O_CREAT | O_RDWR | O_TRUNC,S_IRUSR |S_IWUSR | S_IRGRP | S_IROTH);
+  fdIntr = open(foo_control_interrupts,O_CREAT | O_RDWR | O_TRUNC,S_IRUSR |S_IWUSR | S_IRGRP | S_IROTH);
   if(fdIntr<0){
     g_error("Unable to open file interrupts\n");
   }
-  fdProc = open("foo/control/processes",O_CREAT | O_RDWR | O_TRUNC,S_IRUSR |S_IWUSR | S_IRGRP | S_IROTH);
+  fdProc = open(foo_control_processes,O_CREAT | O_RDWR | O_TRUNC,S_IRUSR |S_IWUSR | S_IRGRP | S_IROTH);
   if(fdIntr<0){
     g_error("Unable to open file process\n");
   }
@@ -248,7 +291,7 @@ int main(int argc, char ** argv){
     if(i==0)has_event[i] = TRUE;
     buf_out[i] = g_new(char, block_size);
     write_pos[i] = NULL;;
-    sprintf(cpuStr,"foo/cpu/%d\0",i);
+    sprintf(cpuStr,"%s/%d\0",foo_cpu,i);
     fdCpu[i] = open(cpuStr, O_CREAT | O_RDWR | O_TRUNC,S_IRUSR |S_IWUSR | S_IRGRP | S_IROTH); //for cpu i
     if(fdCpu[i] < 0)  g_error("Unable to open  cpu file %d\n", i);    
   }
