@@ -277,7 +277,9 @@ static void library_unload(LttvLibrary *l)
 
 void lttv_library_unload(LttvLibrary *l)
 {
-  l->info.load_count--;
+  /* In the case where we wait for a module to release, the load count is 0
+   * and should not be decremented. */
+  if(l->info.load_count != 0) l->info.load_count--;
   library_unload(l);
 }
 
