@@ -167,6 +167,10 @@ guicontrolflow_destructor(ControlFlowData *control_flow_data)
   if(tab != NULL)
   {
       /* Delete reading hooks */
+    lttvwindow_unregister_traceset_notify(tab,
+        traceset_notify,
+        control_flow_data);
+    
     lttvwindow_unregister_time_window_notify(tab,
         update_time_window_hook,
         control_flow_data);

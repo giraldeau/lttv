@@ -102,8 +102,6 @@ void drawing_remove_square(Drawing_t *drawing,
         guint height);
 
 
-//void drawing_Resize(Drawing_t *drawing, guint h, guint w);
-
 void convert_pixels_to_time(
     gint width,
     guint x,

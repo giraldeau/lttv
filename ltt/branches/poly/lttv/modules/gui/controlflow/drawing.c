@@ -218,7 +218,7 @@ void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *
   width = x_end - x;
 
   drawing->damage_begin = x+width;
-  drawing->damage_end = drawing->width;
+  //drawing->damage_end = drawing->width;
 
   /* ask for the buffer to be redrawn */
   gtk_widget_queue_draw_area ( drawing->drawing_area,
@@ -234,6 +234,9 @@ void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *
 /* Create a new backing pixmap of the appropriate size */
 /* As the scaling will always change, it's of no use to copy old
  * pixmap.
+ *
+ * Only change the size if width changes. The height is specified and changed
+ * when process ID are added or removed from the process list.
  */
 static gboolean
 configure_event( GtkWidget *widget, GdkEventConfigure *event, 
@@ -256,17 +259,15 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
   //      widget->allocation.height + SAFETY,
   //      -1);
   
-  g_debug("drawing configure event");
-  g_debug("New draw size : %i by %i",widget->allocation.width,
+  if(widget->allocation.width != drawing->width) {
+    g_debug("drawing configure event");
+    g_debug("New draw size : %i by %i",widget->allocation.width,
                                     widget->allocation.height);
   
     
-  if (drawing->pixmap)
-    gdk_pixmap_unref(drawing->pixmap);
+    if (drawing->pixmap)
+      gdk_pixmap_unref(drawing->pixmap);
   
-  /* If no old pixmap present */
-  //if(drawing->pixmap == NULL)
-  {
     drawing->pixmap = gdk_pixmap_new(
     widget->window,
     widget->allocation.width + SAFETY,
@@ -309,12 +310,11 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
                            &drawing->pixmap,
                            drawing->damage_begin,
                            0,
-                           drawing->damage_end,
+                           drawing->damage_end - drawing->damage_begin,
                            widget->allocation.height);
     }
-   
-    return TRUE;
   }
+  return TRUE;
 }
 
 
@@ -568,6 +568,7 @@ GtkWidget *drawing_get_widget(Drawing_t *drawing)
  *
  * Convert from window pixel and time interval to an absolute time.
  */
+//FIXME : could need ceil and floor versions of this function
 void convert_pixels_to_time(
     gint width,
     guint x,
@@ -583,7 +584,7 @@ void convert_pixels_to_time(
   *time = ltt_time_add(window_time_begin, *time);
 }
 
-
+//FIXME : could need ceil and floor versions of this function
 
 void convert_time_to_pixels(
     LttTime window_time_begin,
@@ -618,19 +619,6 @@ void drawing_draw_line( Drawing_t *drawing,
 }
 
 
-
-
-void drawing_resize(Drawing_t *drawing, guint h, guint w)
-{
-  drawing->height = h ;
-  drawing->width = w ;
-
-  gtk_widget_set_size_request ( drawing->drawing_area,
-          drawing->width,
-          drawing->height);
-  
-  
-}
 
 
 /* Insert a square corresponding to a new process in the list */
@@ -686,12 +674,11 @@ void drawing_insert_square(Drawing_t *drawing,
   
   drawing->height+=height;
 
-  /* Rectangle to update, from new drawing dimensions */
-  //update_rect.x = 0 ;
-  //update_rect.y = y ;
-  //update_rect.width = drawing->width;
-  //update_rect.height = drawing->height - y ;
-  //gtk_widget_draw( drawing->drawing_area, &update_rect);
+  /* ask for the buffer to be redrawn */
+  gtk_widget_queue_draw_area ( drawing->drawing_area,
+                               0, y,
+                               drawing->width, drawing->height-y);
+
 }
 
 
@@ -735,12 +722,10 @@ void drawing_remove_square(Drawing_t *drawing,
   
   drawing->height-=height;
   
-  /* Rectangle to update, from new drawing dimensions */
-  //update_rect.x = 0 ;
-  //update_rect.y = y ;
-  //update_rect.width = drawing->width;
-  //update_rect.height = drawing->height - y ;
-  //gtk_widget_draw( drawing->drawing_area, &update_rect);
+  /* ask for the buffer to be redrawn */
+  gtk_widget_queue_draw_area ( drawing->drawing_area,
+                               0, y,
+                               drawing->width, drawing->height-y);
 }
 
 void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window)

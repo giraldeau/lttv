@@ -40,6 +40,7 @@
 #include <lttv/hook.h>
 #include <lttv/state.h>
 #include <lttvwindow/lttvwindow.h>
+#include <lttvwindow/lttvwindowtraces.h>
 
 
 #include "eventhooks.h"
@@ -50,6 +51,79 @@
 
 
 #define MAX_PATH_LEN 256
+
+
+/* Action to do when background computation completed.
+ *
+ * Eventually, will have to check that every requested traces are finished
+ * before doing the redraw.
+ */
+
+gint background_ready(void *hook_data, void *call_data)
+{
+  ControlFlowData *control_flow_data = (ControlFlowData *)hook_data;
+  LttvTrace *trace = (LttvTrace*)call_data;
+
+  g_debug("control flow viewer : background computation data ready.");
+
+  redraw_notify(control_flow_data, NULL);
+
+  return 0;
+}
+
+
+/* Request background computation. Verify if it is in progress or ready first.
+ *
+ * Right now, for all loaded traces.
+ *
+ * Later : must be only for each trace in the tab's traceset.
+ */
+void request_background_data(ControlFlowData *control_flow_data)
+{
+  gint num_traces = lttvwindowtraces_get_number();
+  gint i;
+  LttvTrace *trace;
+
+  LttvHooks *background_ready_hook = 
+    lttv_hooks_new();
+  lttv_hooks_add(background_ready_hook, background_ready, control_flow_data,
+      LTTV_PRIO_DEFAULT);
+  
+  for(i=0;i<num_traces;i++) {
+    trace = lttvwindowtraces_get_trace(i);
+
+    if(lttvwindowtraces_get_ready(g_quark_from_string("state"),trace)==FALSE) {
+
+      if(lttvwindowtraces_get_in_progress(g_quark_from_string("state"),
+                                          trace) == FALSE) {
+        /* We first remove requests that could have been done for the same
+         * information. Happens when two viewers ask for it before servicing
+         * starts.
+         */
+        lttvwindowtraces_background_request_remove(trace, "state");
+        lttvwindowtraces_background_request_queue(trace,
+                                                  "state");
+        lttvwindowtraces_background_notify_queue(control_flow_data,
+                                                 trace,
+                                                 ltt_time_infinite,
+                                                 NULL,
+                                                 background_ready_hook);
+      } else { /* in progress */
+      
+        lttvwindowtraces_background_notify_current(control_flow_data,
+                                                   trace,
+                                                   ltt_time_infinite,
+                                                   NULL,
+                                                   background_ready_hook);
+      
+      }
+    }
+  }
+
+  lttv_hooks_destroy(background_ready_hook);
+}
+
+
 
 
 /**
@@ -70,6 +144,10 @@ h_guicontrolflow(Tab *tab, LttvTracesetSelector * s, char * key)
   
   //g_debug("time width2 : %u",time_window->time_width);
   // Unreg done in the GuiControlFlow_Destructor
+  lttvwindow_register_traceset_notify(tab,
+        traceset_notify,
+        control_flow_data);
+    
   lttvwindow_register_time_window_notify(tab,
                                          update_time_window_hook,
                                          control_flow_data);
@@ -82,7 +160,8 @@ h_guicontrolflow(Tab *tab, LttvTracesetSelector * s, char * key)
   lttvwindow_register_continue_notify(tab,
                                       continue_notify,
                                       control_flow_data);
-
+  request_background_data(control_flow_data);
+  
 
   return guicontrolflow_get_widget(control_flow_data) ;
   
@@ -1271,28 +1350,35 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           control_flow_data->drawing->pixmap,
           x, 0,
           0, 0,
-          -1, -1);
-      
+         control_flow_data->drawing->width-x+SAFETY, -1);
+ 
+      if(drawing->damage_begin == drawing->damage_end)
+        drawing->damage_begin = control_flow_data->drawing->width-x;
+      else
+        drawing->damage_begin = 0;
+
+      drawing->damage_end = control_flow_data->drawing->width;
+
       /* Clear the data request background, but not SAFETY */
       gdk_draw_rectangle (control_flow_data->drawing->pixmap,
+          //control_flow_data->drawing->drawing_area->style->black_gc,
           control_flow_data->drawing->drawing_area->style->black_gc,
           TRUE,
-          x+SAFETY, 0,
-          control_flow_data->drawing->width - x,  // do not overlap
+          drawing->damage_begin+SAFETY, 0,
+          drawing->damage_end - drawing->damage_begin,  // do not overlap
           control_flow_data->drawing->height+SAFETY);
 
-      gtk_widget_queue_draw_area (drawing->drawing_area,
+       gtk_widget_queue_draw_area (drawing->drawing_area,
                                 0,0,
-                                control_flow_data->drawing->width - x,
+                                control_flow_data->drawing->width,
                                 control_flow_data->drawing->height);
 
       /* Get new data for the rest. */
       drawing_data_request(control_flow_data->drawing,
           &control_flow_data->drawing->pixmap,
-          x, 0,
-          control_flow_data->drawing->width - x,
+          drawing->damage_begin, 0,
+          drawing->damage_end - drawing->damage_begin,
           control_flow_data->drawing->height);
-  
     } else { 
       //if(ns<os<ns+w)
       //if(ns<os && os<ns+w)
@@ -1310,7 +1396,8 @@ gint update_time_window_hook(void *hook_data, void *call_data)
             *os,
             width,
             &x);
-  
+        
+
         /* Copy old data to new location */
         gdk_draw_drawable (control_flow_data->drawing->pixmap,
             control_flow_data->drawing->drawing_area->style->black_gc,
@@ -1321,24 +1408,32 @@ gint update_time_window_hook(void *hook_data, void *call_data)
   
         *old_time_window = *new_time_window;
 
-        /* Clean the data request background */
+        if(drawing->damage_begin == drawing->damage_end)
+          drawing->damage_end = x;
+        else
+          drawing->damage_end = 
+            control_flow_data->drawing->drawing_area->allocation.width;
+
+        drawing->damage_begin = 0;
+        
         gdk_draw_rectangle (control_flow_data->drawing->pixmap,
           control_flow_data->drawing->drawing_area->style->black_gc,
           TRUE,
-          0, 0,
-          x,  // do not overlap
+          drawing->damage_begin, 0,
+          drawing->damage_end - drawing->damage_begin,  // do not overlap
           control_flow_data->drawing->height+SAFETY);
 
-          gtk_widget_queue_draw_area (drawing->drawing_area,
-                                x,0,
-                                control_flow_data->drawing->width - x,
+        gtk_widget_queue_draw_area (drawing->drawing_area,
+                                0,0,
+                                control_flow_data->drawing->width,
                                 control_flow_data->drawing->height);
+
 
         /* Get new data for the rest. */
         drawing_data_request(control_flow_data->drawing,
             &control_flow_data->drawing->pixmap,
-            0, 0,
-            x,
+            drawing->damage_begin, 0,
+            drawing->damage_end - drawing->damage_begin,
             control_flow_data->drawing->height);
     
       } else {
@@ -1361,6 +1456,9 @@ gint update_time_window_hook(void *hook_data, void *call_data)
                                 0,0,
                                 control_flow_data->drawing->width,
                                 control_flow_data->drawing->height);
+
+          drawing->damage_begin = 0;
+          drawing->damage_end = control_flow_data->drawing->width;
 
           drawing_data_request(control_flow_data->drawing,
               &control_flow_data->drawing->pixmap,
@@ -1387,17 +1485,58 @@ gint update_time_window_hook(void *hook_data, void *call_data)
                                 control_flow_data->drawing->width,
                                 control_flow_data->drawing->height);
   
+    drawing->damage_begin = 0;
+    drawing->damage_end = control_flow_data->drawing->width;
+
     drawing_data_request(control_flow_data->drawing,
         &control_flow_data->drawing->pixmap,
         0, 0,
         control_flow_data->drawing->width,
         control_flow_data->drawing->height);
-  
   }
 
 
   
   return 0;
+}
+
+gint traceset_notify(void *hook_data, void *call_data)
+{
+  ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
+  Drawing_t *drawing = control_flow_data->drawing;
+  GtkWidget *widget = drawing->drawing_area;
+
+  drawing->damage_begin = 0;
+  drawing->damage_end = widget->allocation.width;
+
+
+  // Clear the image
+  gdk_draw_rectangle (drawing->pixmap,
+        widget->style->black_gc,
+        TRUE,
+        0, 0,
+        widget->allocation.width+SAFETY,
+        widget->allocation.height+SAFETY);
+
+
+  if(drawing->damage_begin < drawing->damage_end)
+  {
+    drawing_data_request(drawing,
+                         &drawing->pixmap,
+                         drawing->damage_begin,
+                         0,
+                         drawing->damage_end-drawing->damage_begin,
+                         widget->allocation.height);
+  }
+
+  gtk_widget_queue_draw_area(drawing->drawing_area,
+                             0,0,
+                             drawing->width,
+                             drawing->height);
+
+  request_background_data(control_flow_data);
+ 
+  return FALSE;
 }
 
 gint redraw_notify(void *hook_data, void *call_data)
@@ -1445,7 +1584,7 @@ gint continue_notify(void *hook_data, void *call_data)
   Drawing_t *drawing = control_flow_data->drawing;
   GtkWidget *widget = drawing->drawing_area;
 
-  g_assert(widget->allocation.width == drawing->damage_end);
+  //g_assert(widget->allocation.width == drawing->damage_end);
 
   if(drawing->damage_begin < drawing->damage_end)
   {

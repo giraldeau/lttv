@@ -98,6 +98,7 @@ int  after_data_request(void *hook_data, void *call_data);
 
 gint update_time_window_hook(void *hook_data, void *call_data);
 gint update_current_time_hook(void *hook_data, void *call_data);
+gint traceset_notify(void *hook_data, void *call_data);
 gint redraw_notify(void *hook_data, void *call_data);
 gint continue_notify(void *hook_data, void *call_data);
 
