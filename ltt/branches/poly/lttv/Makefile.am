@@ -9,7 +9,7 @@ bin_PROGRAMS = lttv
 #INCLUDES=$(top_srcdir)/include
 
 lttv_SOURCES = main.c module.c option.c hook.c attribute.c \
-		iattribute.c processTrace.c state.c traceset.c
+		iattribute.c processTrace.c state.c stats.c traceset.c
 
 libdir = ${lttvplugindir}
 

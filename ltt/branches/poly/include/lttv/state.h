@@ -14,22 +14,6 @@
    (one per cpu) per trace and multiple traces per trace set. The state
    objects defined here simply add fields to the relevant context objects. */
 
-
-/* The LttvProcessState structure defines the current state for each process.
-   A process can make system calls (in some rare cases nested) and receive
-   interrupts/faults. For instance, a process may issue a system call,
-   generate a page fault while reading an argument from user space, and
-   get caught by an interrupt. To represent these nested states, an
-   interrupt stack is maintained. The stack bottom is normal user mode and
-   the top of stack is the current interrupt state.
-
-   The interrupt state tells about the process status, interrupt type and
-   interrupt number. All these could be defined as enumerations but may 
-   need extensions (e.g. new process state). GQuark are thus used being 
-   as easy to manipulate as integers but having a string associated, just
-   like enumerations. */
-
-
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
 
@@ -43,27 +27,44 @@ gboolean lttv_state_add_event_hooks(LttvTracesetState *self);
 
 gboolean lttv_state_remove_event_hooks(LttvTracesetState *self);
 
+/* The LttvProcessState structure defines the current state for each process.
+   A process can make system calls (in some rare cases nested) and receive
+   interrupts/faults. For instance, a process may issue a system call,
+   generate a page fault while reading an argument from user space, and
+   get caught by an interrupt. To represent these nested states, an
+   execution mode stack is maintained. The stack bottom is normal user mode 
+   and the top of stack is the current execution mode.
 
-/* The interrupt type is one of "user mode", "kernel thread", "system call",
+   The execution mode stack tells about the process status, execution mode and
+   submode (interrupt, system call or IRQ number). All these could be 
+   defined as enumerations but may need extensions (e.g. new process state). 
+   GQuark are thus used. They are as easy to manipulate as integers but have
+   a string associated, just like enumerations.
+
+   The execution mode is one of "user mode", "kernel thread", "system call",
    "interrupt request", "fault". */
 
-typedef GQuark LttvInterruptType;
+typedef GQuark LttvExecutionMode;
 
-extern LttvInterruptType
+extern LttvExecutionMode
   LTTV_STATE_USER_MODE,
   LTTV_STATE_SYSCALL,
   LTTV_STATE_TRAP,
-  LTTV_STATE_IRQ;
+  LTTV_STATE_IRQ,
+  LTTV_STATE_MODE_UNKNOWN;
 
 
-/* The interrupt number depends on the interrupt type. For user mode or kernel
-   thread, which are the normal mode (interrupt stack bottom), it is set to
-   "none". For interrupt requests, faults and system calls, it is set 
-   respectively to the interrupt name (e.g. "timer"), fault name 
+/* The submode number depends on the execution mode. For user mode or kernel
+   thread, which are the normal mode (execution mode stack bottom), 
+   it is set to "none". For interrupt requests, faults and system calls, 
+   it is set respectively to the interrupt name (e.g. "timer"), fault name 
    (e.g. "page fault"), and system call name (e.g. "select"). */
  
-typedef GQuark LttvInterruptNumber;
+typedef GQuark LttvExecutionSubmode;
 
+extern LttvExecutionSubmode
+  LTTV_STATE_SUBMODE_NONE,
+  LTTV_STATE_SUBMODE_UNKNOWN;
 
 /* The process status is one of "running", "wait-cpu" (runnable), or "wait-*"
    where "*" describes the resource waited for (e.g. timer, process, 
@@ -80,24 +81,28 @@ extern LttvProcessStatus
   LTTV_STATE_RUN;
 
 
-typedef struct _LttvInterruptState {
-  LttvInterruptType t;
-  LttvInterruptNumber n;
+typedef struct _LttvExecutionState {
+  LttvExecutionMode t;
+  LttvExecutionSubmode n;
   LttTime entry;
-  LttTime last_change;
+  LttTime change;
   LttvProcessStatus s;
-} LttvInterruptState;
+} LttvExecutionState;
 
 
 typedef struct _LttvProcessState {
   guint pid;
   guint ppid;
-  LttTime birth;
+  LttTime creation_time;
   GQuark name;
-  GArray *interrupt_stack;         /* Array of LttvInterruptState */
-  LttvInterruptState *state;       /* Top of interrupt stack */
-  /* opened file descriptors, address map... */
+  GQuark pid_time;
+  GArray *execution_stack;         /* Array of LttvExecutionState */
+  LttvExecutionState *state;       /* Top of interrupt stack */
+  /* opened file descriptors, address map?... */
 } LttvProcessState;
+
+
+LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs, guint pid);
 
 
 /* The LttvTracesetState, LttvTraceState and LttvTracefileState types
@@ -133,6 +138,10 @@ struct _LttvTraceState {
 
   GHashTable *processes;  /* LttvProcessState objects indexed by pid */
   /* Block/char devices, locks, memory pages... */
+  GQuark *eventtype_names;
+  GQuark *syscall_names;
+  GQuark *trap_names;
+  GQuark *irq_names;
 };
 
 struct _LttvTraceStateClass {
@@ -153,6 +162,7 @@ struct _LttvTracefileState {
   LttvTracefileContext parent;
 
   LttvProcessState *process;
+  GQuark cpu_name;
 };
 
 struct _LttvTracefileStateClass {
@@ -162,4 +172,4 @@ struct _LttvTracefileStateClass {
 GType lttv_tracefile_state_get_type (void);
 
 
-#endif // PROCESSTRACE_H
+#endif // STATE_H

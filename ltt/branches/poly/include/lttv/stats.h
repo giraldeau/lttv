@@ -1,52 +1,201 @@
+#ifndef STATS_H
+#define STATS_H
+
+#include <glib.h>
+#include <lttv/state.h>
 
 /* The statistics are for a complete time interval. These structures differ
    from the system state since they relate to static components of the 
    system (all processes which existed instead of just the currently 
    existing processes). 
 
-   At each level are kept statistics as well as pointers to subcomponents.
-   During the trace processing, the statistics are accumulated at the
-   lowest level component level. Then, in the "after" hooks of the processing,
-   these statistics are summed to get the values at higher levels (process,
-   CPU, trace, traceSet). */
+   The basic attributes tree to gather for several different execution modes 
+   (e.g., user mode, syscall, irq), thereafter called the "events tree", 
+   contains the following attributes: the number of events of each type, 
+   the total number of events, the number of bytes written, the time spent 
+   executing, waiting for a resource, waiting for a cpu, and possibly many 
+   others. The name "facility-event_type" below is to be replaced
+   by specific event types (e.g., core-schedchange, code-syscall_entry...).
 
-typedef struct _lttv_trace_set_stats {
-  lttv_attributes *stats;
-  lttv_attributes *traces;
-} lttv_trace_set_stats;
+   event_types/
+     "facility-event_type"
+   events_count
+   cpu_time
+   elapsed_time
+   wait_time
+   bytes_written
+   packets_sent
+   ...
 
-typedef struct _lttv_trace_stats {
-  lttv_attributes *stats;
-  lttv_attributes *CPUs;
-  lttv_attributes *processes;
-  lttv_attributes *int_calls;
-  lttv_attributes *block_devices;
-} lttv_trace_stats;
+   The events for several different execution modes are joined together to 
+   form the "execution modes tree". The name "execution mode" is to be replaced
+   by "system call", "trap", "irq", "user mode" or "kernel thread".
+   The name "submode" is to be replaced by the specific system call, trap or
+   irq name. The "submode" is an empty string if none is applicable, which is
+   the case for "user mode" and "kernel thread".
 
-typedef struct _lttv_cpu_stats {
-  lttv_attributes *processes;
-  lttv_attributes *int_calls;
-  lttv_attributes *block_devices;
-} lttv_cpu_stats;
+   An "events tree" for each "execution mode" contains the sum for all its 
+   different submodes. An "events tree" in the "execution modes tree" contains
+   the sum for all its different execution modes.
 
-typedef struct _lttv_process_identity {
-  char *names;
-  lttv_time entry, exit;
-} lttv_process_identity;
+   mode_types/
+     "execution mode"/
+       submodes/
+         "submode"/
+           Events Tree
+       events/
+         Event Tree
+   events/
+     Events Tree
 
-typedef struct _lttv_process_stats {
-  lttv_attributes *stats;
-  lttv_process_identify *p;
-  lttv_attributes *int_calls;
-  lttv_attributes *block_devices;
-} lttv_process_stats;
+   Each trace set contains an "execution modes tree". While the traces
+   come from possibly different systems, which may differ in their system
+   calls..., most of the system calls will have the same name, even if their
+   actual internal numeric id differs. Categories such as cpu id and process
+   id are not kept since these are specific to each system. When several
+   traces are taken from the same system, these categories may make sense and
+   could eventually be considered.
 
-typedef lttv_int_stats {
-  lttv_attributes *stats;
-  lttv_int_type type;
-} lttv_int_stats;
+   Each trace contains a global "execution modes tree", one for each
+   cpu and process, and one for each process/cpu combination. The name
+   "cpu number" stands for the cpu identifier, and "process_id-start_time"
+   is a unique process identifier composed of the process id
+   (unique at any given time but which may be reused over time) concatenated
+   with the process start time.
 
-typedef lttv_block_device_stats {
-  lttv_attributes *stats;
-} lttv_block_device_stats;
+   modes/
+     Execution Modes Tree
+   cpu/
+     "cpu number"/
+       Execution Modes Tree
+   processes/
+     "process_id-start_time"/
+       exec_file_name
+       parent
+       start_time
+       end_time
+       modes/
+         Execution Modes Tree
+       cpu/
+         "cpu number"/
+           Execution Modes Tree
 
+   All the events and derived values (cpu, elapsed and wait time) are
+   added during the trace analysis in the relevant 
+   trace / processes / * / cpu / * / mode_types / * /submodes / * 
+   "events tree". To achieve this efficiently, each tracefile context 
+   contains a pointer to the current relevant "events tree" and "event_types" 
+   tree within it.
+
+   Once all the events are processed, the total number of events is computed
+   within each trace / processes / * / cpu / * / mode_types / * / submodes / *.
+   Then, the "events tree" are summed for all submodes within each mode type 
+   and for all mode types within a processes / * / cpu / * 
+   "execution modes tree".
+
+   Finally, the "execution modes trees" for all cpu within a process,
+   for all processes, and for all traces are computed. Separately,
+   the "execution modes tree" for each cpu but for all processes within a
+   trace are summed in the trace / cpu / * subtrees.
+
+ */
+
+
+/* The various statistics branch names are GQuarks. They are pre-computed for
+   easy and efficient access */
+
+extern GQuark
+  LTTV_STATS_PROCESS_UNKNOWN,
+  LTTV_STATS_PROCESSES,
+  LTTV_STATS_CPU,
+  LTTV_STATS_MODE_TYPES,
+  LTTV_STATS_SUBMODES,
+  LTTV_STATS_EVENT_TYPES,
+  LTTV_STATS_CPU_TIME,
+  LTTV_STATS_ELAPSED_TIME,
+  LTTV_STATS_EVENTS,
+  LTTV_STATS_EVENTS_COUNT,
+  LTTV_STATS_BEFORE_HOOKS,
+  LTTV_STATS_AFTER_HOOKS;
+
+
+typedef struct _LttvTracesetStats LttvTracesetStats;
+typedef struct _LttvTracesetStatsClass LttvTracesetStatsClass;
+
+typedef struct _LttvTraceStats LttvTraceStats;
+typedef struct _LttvTraceStatsClass LttvTraceStatsClass;
+
+typedef struct _LttvTracefileStats LttvTracefileStats;
+typedef struct _LttvTracefileStatsClass LttvTracefileStatsClass;
+
+gboolean lttv_stats_add_event_hooks(LttvTracesetStats *self);
+
+gboolean lttv_stats_remove_event_hooks(LttvTracesetStats *self);
+
+
+/* The LttvTracesetStats, LttvTraceStats and LttvTracefileStats types
+   inherit from the corresponding State objects defined in state.h.. */
+
+#define LTTV_TRACESET_STATS_TYPE  (lttv_traceset_stats_get_type ())
+#define LTTV_TRACESET_STATS(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACESET_STATS_TYPE, LttvTracesetStats))
+#define LTTV_TRACESET_STATS_CLASS(vtable)  (G_TYPE_CHECK_CLASS_CAST ((vtable), LTTV_TRACESET_STATS_TYPE, LttvTracesetStatsClass))
+#define LTTV_IS_TRACESET_STATS(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LTTV_TRACESET_STATS_TYPE))
+#define LTTV_IS_TRACESET_STATS_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACESET_STATS_TYPE))
+#define LTTV_TRACESET_STATS_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACESET_STATS_TYPE, LttvTracesetStatsClass))
+
+struct _LttvTracesetStats {
+  LttvTracesetState parent;
+
+  LttvAttribute *stats;
+};
+
+struct _LttvTracesetStatsClass {
+  LttvTracesetStateClass parent;
+};
+
+GType lttv_traceset_stats_get_type (void);
+
+
+#define LTTV_TRACE_STATS_TYPE  (lttv_trace_stats_get_type ())
+#define LTTV_TRACE_STATS(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACE_STATS_TYPE, LttvTraceStats))
+#define LTTV_TRACE_STATS_CLASS(vtable)  (G_TYPE_CHECK_CLASS_CAST ((vtable), LTTV_TRACE_STATS_TYPE, LttvTraceStatsClass))
+#define LTTV_IS_TRACE_STATS(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LTTV_TRACE_STATS_TYPE))
+#define LTTV_IS_TRACE_STATS_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACE_STATS_TYPE))
+#define LTTV_TRACE_STATS_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACE_STATS_TYPE, LttvTraceStatsClass))
+
+struct _LttvTraceStats {
+  LttvTraceState parent;
+
+  LttvAttribute *stats;
+};
+
+struct _LttvTraceStatsClass {
+  LttvTraceStateClass parent;
+};
+
+GType lttv_trace_stats_get_type (void);
+
+
+#define LTTV_TRACEFILE_STATS_TYPE  (lttv_tracefile_stats_get_type ())
+#define LTTV_TRACEFILE_STATS(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACEFILE_STATS_TYPE, LttvTracefileStats))
+#define LTTV_TRACEFILE_STATS_CLASS(vtable)  (G_TYPE_CHECK_CLASS_CAST ((vtable), LTTV_TRACEFILE_STATS_TYPE, LttvTracefileStatsClass))
+#define LTTV_IS_TRACEFILE_STATS(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LTTV_TRACEFILE_STATS_TYPE))
+#define LTTV_IS_TRACEFILE_STATS_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACEFILE_STATS_TYPE))
+#define LTTV_TRACEFILE_STATS_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACEFILE_STATS_TYPE, LttvTracefileStatsClass))
+
+struct _LttvTracefileStats {
+  LttvTracefileState parent;
+
+  LttvAttribute *stats;
+  LttvAttribute *current_events_tree;
+  LttvAttribute *current_event_types_tree;
+};
+
+struct _LttvTracefileStatsClass {
+  LttvTracefileStateClass parent;
+};
+
+GType lttv_tracefile_stats_get_type (void);
+
+
+#endif // STATS_H

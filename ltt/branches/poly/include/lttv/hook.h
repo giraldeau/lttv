@@ -63,7 +63,7 @@ void lttv_hooks_remove_by_position(LttvHooks *h, unsigned i);
 
 
 /* Call all the hooks in the list, each with its hook data, 
-   with the specified call data. Return TRUE is one hook returned TRUE. */
+   with the specified call data. Return TRUE if one hook returned TRUE. */
 
 gboolean lttv_hooks_call(LttvHooks *h, void *call_data);
 

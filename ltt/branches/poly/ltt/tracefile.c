@@ -571,7 +571,7 @@ unsigned ltt_trace_eventtype_number(LttTrace *t)
   int i;
   unsigned count = 0;
   LttFacility * f;
-  for(i=0;i=t->facility_number;i++){
+  for(i=0;i<t->facility_number;i++){
     f = (LttFacility*)g_ptr_array_index(t->facilities, i);
     count += f->event_number;
   }

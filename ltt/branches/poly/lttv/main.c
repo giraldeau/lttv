@@ -19,6 +19,9 @@ void lttv_module_destroy();
 void lttv_state_init(int argc, char **argv);
 void lttv_state_destroy();
 
+void lttv_stats_init(int argc, char **argv);
+void lttv_stats_destroy();
+
 /* The main program maintains a few central data structures and relies
    on modules for the rest. These data structures may be accessed by modules
    through an exported API */
@@ -35,6 +38,10 @@ static char
   *a_module,
   *a_module_path;
 
+static gboolean
+  a_verbose,
+  a_debug;
+
 static int a_argc;
 
 static char **a_argv;
@@ -42,6 +49,10 @@ static char **a_argv;
 static void lttv_module_option(void *hook_data);
 
 static void lttv_module_path_option(void *hook_data);
+
+static void lttv_verbose(void *hook_data);
+
+static void lttv_debug(void *hook_data);
 
 static void lttv_help(void);
 
@@ -84,9 +95,12 @@ int main(int argc, char **argv) {
 
   /* Initialize the command line options processing */
 
+  a_argc = argc;
+  a_argv = argv;
   lttv_option_init(argc,argv);
   lttv_module_init(argc,argv);
   lttv_state_init(argc,argv);
+  lttv_stats_init(argc,argv);
 
   /* Initialize the module loading */
 
@@ -104,6 +118,14 @@ int main(int argc, char **argv) {
 	
   lttv_option_add("help",'h', "basic help", "none", 
       LTTV_OPT_NONE, NULL, lttv_help, NULL);
+
+  a_verbose = FALSE; 
+  lttv_option_add("verbose",'v', "print information messages", "none", 
+      LTTV_OPT_NONE, NULL, lttv_verbose, NULL);
+ 
+  a_debug = FALSE;
+  lttv_option_add("debug",'d', "print debugging messages", "none", 
+      LTTV_OPT_NONE, NULL, lttv_debug, NULL);
  
  
   lttv_hooks_call(before_options, NULL);
@@ -113,6 +135,7 @@ int main(int argc, char **argv) {
   lttv_hooks_call(before_main, NULL);
   lttv_hooks_call(after_main, NULL);
 
+  lttv_stats_destroy();
   lttv_state_destroy();
   lttv_module_destroy();
   lttv_option_destroy();
@@ -147,6 +170,18 @@ void lttv_module_path_option(void *hook_data)
   lttv_module_path_add(a_module_path);
 }
 
+void lttv_verbose(void *hook_data)
+{
+  g_log_set_handler(NULL, G_LOG_LEVEL_INFO, g_log_default_handler, NULL);
+  g_info("Logging set to include INFO level messages");
+}
+
+void lttv_debug(void *hook_data)
+{
+  g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, g_log_default_handler, NULL);
+  g_info("Logging set to include DEBUG level messages");
+}
+
 void lttv_help()
 {
 	printf("Linux Trace Toolkit Visualizer\n");
@@ -154,3 +189,9 @@ void lttv_help()
 	lttv_option_show_help();
 	printf("\n");
 }
+
+/* remove countEvents.c, add alias to init to allow static/dynamic loading 
+   MODULE_INFO(name, init, destroy, { require} ). This info could be used
+   by module_load and as a constructor function when not a module
+   -> check constructor functions versus dynamic loading and init section
+   -> have a list of available modules builtin as default or mandatory */

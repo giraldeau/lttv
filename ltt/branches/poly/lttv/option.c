@@ -3,6 +3,9 @@
 #include <glib.h>
 #include <lttv/option.h>
 
+#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+
 typedef struct _LttvOption {
   char *long_name;
   char char_name;
@@ -36,6 +39,7 @@ free_option(LttvOption *option)
 
 void lttv_option_init(int argc, char **argv)
 {
+  g_info("Init option.c");
   options = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
@@ -48,6 +52,7 @@ void lttv_option_destroy()
 
   int i;
 
+  g_info("Destroy option.c");
   g_hash_table_foreach(options, list_options, list);
   g_hash_table_destroy(options);
 
@@ -65,6 +70,7 @@ void lttv_option_add(const char *long_name, const char char_name,
 {
   LttvOption *option;
 
+  g_info("Add option %s", long_name);
   if(g_hash_table_lookup(options, long_name) != NULL) {
     g_warning("duplicate option");
     return;
@@ -88,6 +94,7 @@ lttv_option_remove(const char *long_name)
 {
   LttvOption *option = g_hash_table_lookup(options, long_name);
 
+  g_info("Remove option %s", long_name);
   if(option == NULL) {
     g_warning("trying to remove unknown option %s", long_name);
     return;
@@ -184,11 +191,17 @@ void lttv_option_parse(int argc, char **argv)
   
     if(rc > 0) {
       option = (LttvOption *)(list->pdata[rc - 1]);
-      if(option->hook != NULL) option->hook(option->hook_data);
+      g_info("Option %s encountered", option->long_name);
+      if(option->hook != NULL) { 
+        g_info("Option %s hook called", option->long_name);
+        option->hook(option->hook_data);
+      }
       i++;
     } 
 
     else if(rc == POPT_ERROR_BADOPT && i != first_arg) {
+      g_info("Option %s not recognized, rescan options with new additions",
+	     poptBadOption(c,0));
 
       /* Perhaps this option is newly added, restart parsing */
 
@@ -198,7 +211,11 @@ void lttv_option_parse(int argc, char **argv)
       /* Get back to the same argument */
 
       first_arg = i;
-      for(i = 0; i < first_arg; i++) poptGetNextOpt(c);
+      for(i = 0; i < first_arg; i++) {
+        rc = poptGetNextOpt(c);
+        option = (LttvOption *)(list->pdata[rc - 1]);
+        g_info("Option %s rescanned, skipped", option->long_name);
+      }
     }
 
     else {
@@ -244,3 +261,4 @@ void lttv_option_show_help(void)
 
 
 }
+

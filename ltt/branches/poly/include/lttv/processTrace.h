@@ -188,4 +188,23 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
     LttvHooks *before_event, 
     LttvHooks *after_event);
 
+typedef struct _LttvTraceHook {
+  LttvHook h;
+  guint id;
+  LttField *f1;
+  LttField *f2;
+  LttField *f3;
+} LttvTraceHook;
+
+
+/* Search in the trace for the id of the named event type within the named
+   facility. Then, find the three (if non null) named fields. All that
+   information is then used to fill the LttvTraceHook structure. This
+   is useful to find the specific id for an event within a trace, for
+   registering a hook using this structure as event data;
+   it already contains the (up to three) needed fields handles. */
+ 
+void lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
+    char *field1, char *field2, char *field3, LttvHook h, LttvTraceHook *th);
+
 #endif // PROCESSTRACE_H

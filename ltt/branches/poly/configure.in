@@ -5,7 +5,7 @@ AC_PREREQ(2.57)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 #AC_WITH_LTDL  # not needed ?
 AM_INIT_AUTOMAKE(LinuxTraceToolkit,0.9.7-30092003)
-AM_CONFIG_HEADER([config.h])
+AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
 AM_PATH_GLIB_2_0(2.0.0, ,AC_MSG_ERROR([glib is required in order to compile LinuxTraceToolkit - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)

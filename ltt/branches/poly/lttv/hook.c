@@ -132,7 +132,7 @@ void lttv_hooks_remove_by_position(LttvHooks *h, unsigned i)
 
 gboolean lttv_hooks_call(LttvHooks *h, void *call_data)
 {
-  gboolean ret = FALSE;
+  gboolean ret, sum_ret = FALSE;
 
   LttvHookClosure *c;
 
@@ -141,10 +141,11 @@ gboolean lttv_hooks_call(LttvHooks *h, void *call_data)
   if(h != NULL) {
     for(i = 0 ; i < h->len ; i++) {
       c = &g_array_index(h, LttvHookClosure, i);
-      ret = ret || c->hook(c->hook_data,call_data);
+      ret = c->hook(c->hook_data,call_data);
+      sum_ret = sum_ret || ret;
     }
   }
-  return ret;
+  return sum_ret;
 }
 
 

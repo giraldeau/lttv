@@ -68,7 +68,7 @@ struct _LttvIAttributeClass {
   void (*remove_by_name) (LttvIAttribute *self,
       LttvAttributeName name);
 
-  LttvIAttribute* (*create_subdir) (LttvIAttribute *self, 
+  LttvIAttribute* (*find_subdir) (LttvIAttribute *self, 
       LttvAttributeName name);
 };
 
@@ -121,7 +121,7 @@ void lttv_iattribute_remove_by_name(LttvIAttribute *self,
    attribute of that name already exists but is not a GObject supporting the
    iattribute interface, return NULL. */
 
-LttvIAttribute* lttv_iattribute_create_subdir(LttvIAttribute *self, 
+LttvIAttribute* lttv_iattribute_find_subdir(LttvIAttribute *self, 
       LttvAttributeName name);
 
 

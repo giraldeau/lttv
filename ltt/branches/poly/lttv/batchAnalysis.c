@@ -9,6 +9,7 @@
 #include <lttv/module.h>
 #include <lttv/processTrace.h>
 #include <lttv/state.h>
+#include <lttv/stats.h>
 
 static LttvTraceset *traceset;
 
@@ -25,6 +26,7 @@ static LttvHooks
 
 static char *a_trace;
 
+static gboolean a_stats;
 
 void lttv_trace_option(void *hook_data)
 { 
@@ -38,31 +40,47 @@ void lttv_trace_option(void *hook_data)
 
 static gboolean process_traceset(void *hook_data, void *call_data)
 {
-  LttvTracesetState *tc;
+  LttvTracesetStats *tscs;
+
+  LttvTracesetContext *tc;
 
   LttTime start, end;
 
-  tc = g_object_new(LTTV_TRACESET_STATE_TYPE, NULL);
-  lttv_context_init(LTTV_TRACESET_CONTEXT(tc), traceset);
+  g_info("BatchAnalysis begin process traceset");
 
-  lttv_traceset_context_add_hooks(LTTV_TRACESET_CONTEXT(tc),
+  tscs = g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+  tc = &tscs->parent.parent;
+
+  g_info("BatchAnalysis initialize context");
+
+  lttv_context_init(tc, traceset);
+  lttv_state_add_event_hooks(&tscs->parent);
+  if(a_stats) lttv_stats_add_event_hooks(tscs);
+
+  lttv_traceset_context_add_hooks(tc,
   before_traceset, after_traceset, NULL, before_trace, after_trace,
   NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
-  lttv_state_add_event_hooks(tc);
 
   start.tv_sec = 0;
   start.tv_nsec = 0;
   end.tv_sec = G_MAXULONG;
   end.tv_nsec = G_MAXULONG;
 
-  lttv_process_trace(start, end, traceset, LTTV_TRACESET_CONTEXT(tc),G_MAXULONG);
-  lttv_traceset_context_remove_hooks(LTTV_TRACESET_CONTEXT(tc),
+  g_info("BatchAnalysis process traceset");
+
+  lttv_process_trace(start, end, traceset, tc, G_MAXULONG);
+
+  g_info("BatchAnalysis destroy context");
+
+  lttv_traceset_context_remove_hooks(tc,
   before_traceset, after_traceset, NULL, before_trace, after_trace,
   NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+  lttv_state_remove_event_hooks(&tscs->parent);
+  if(a_stats) lttv_stats_remove_event_hooks(tscs);
+  lttv_context_fini(tc);
+  g_object_unref(tscs);
 
-  lttv_state_remove_event_hooks(tc);
-  lttv_context_fini(LTTV_TRACESET_CONTEXT(tc));
-  g_object_unref(tc);
+  g_info("BatchAnalysis end process traceset");
 }
 
 
@@ -72,10 +90,19 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
+  g_info("Init batchAnalysis.c");
+
   lttv_option_add("trace", 't', 
       "add a trace to the trace set to analyse", 
       "pathname of the directory containing the trace", 
       LTTV_OPT_STRING, &a_trace, lttv_trace_option, NULL);
+
+  a_stats = FALSE;
+  lttv_option_add("stats", 's', 
+      "write the traceset and trace statistics", 
+      "", 
+      LTTV_OPT_NONE, &a_stats, NULL, NULL);
+
 
   traceset = lttv_traceset_new();
 
@@ -124,7 +151,10 @@ G_MODULE_EXPORT void destroy()
 {
   guint i, nb;
 
+  g_info("Destroy batchAnalysis.c");
+
   lttv_option_remove("trace");
+  lttv_option_remove("stats");
 
   lttv_hooks_destroy(before_traceset);
   lttv_hooks_destroy(after_traceset);

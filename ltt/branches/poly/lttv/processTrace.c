@@ -1,6 +1,7 @@
 
 #include <lttv/processTrace.h>
 #include <ltt/event.h>
+#include <ltt/facility.h>
 
 void lttv_context_init(LttvTracesetContext *self, LttvTraceset *ts)
 {
@@ -288,7 +289,8 @@ traceset_context_instance_init (GTypeInstance *instance, gpointer g_class)
 static void
 traceset_context_finalize (LttvTracesetContext *self)
 {
-  G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_TRACESET_CONTEXT_GET_CLASS(self)))->finalize(G_OBJECT(self));
+  G_OBJECT_CLASS(g_type_class_peek(g_type_parent(LTTV_TRACESET_CONTEXT_TYPE)))
+      ->finalize(G_OBJECT(self));
 }
 
 
@@ -340,7 +342,8 @@ trace_context_instance_init (GTypeInstance *instance, gpointer g_class)
 static void
 trace_context_finalize (LttvTraceContext *self)
 {
-  G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_TRACE_CONTEXT_GET_CLASS(self)))->finalize(G_OBJECT(self));
+  G_OBJECT_CLASS(g_type_class_peek(g_type_parent(LTTV_TRACE_CONTEXT_TYPE)))->
+      finalize(G_OBJECT(self));
 }
 
 
@@ -387,7 +390,8 @@ tracefile_context_instance_init (GTypeInstance *instance, gpointer g_class)
 static void
 tracefile_context_finalize (LttvTracefileContext *self)
 {
-  G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_TRACEFILE_CONTEXT_GET_CLASS(self)))->finalize(G_OBJECT(self));
+  G_OBJECT_CLASS(g_type_class_peek(g_type_parent(LTTV_TRACEFILE_CONTEXT_TYPE)))
+      ->finalize(G_OBJECT(self));
 }
 
 
@@ -543,11 +547,11 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
     tfc = g_tree_lookup(pqueue, &(tfc->timestamp));
     g_tree_remove(pqueue, &(tfc->timestamp));
 
-    if(!lttv_hooks_call(tfc->check_event, context)) {
+    if(!lttv_hooks_call(tfc->check_event, tfc)) {
       id = ltt_event_eventtype_id(tfc->e);
       lttv_hooks_call(tfc->before_event, tfc);
       lttv_hooks_call(lttv_hooks_by_id_get(tfc->before_event_by_id, id), tfc);
-      lttv_hooks_call(tfc->after_event, context);
+      lttv_hooks_call(tfc->after_event, tfc);
       lttv_hooks_call(lttv_hooks_by_id_get(tfc->after_event_by_id, id), tfc);
     }
 
@@ -586,3 +590,56 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
   g_ptr_array_free(traces, TRUE);
   g_tree_destroy(pqueue);
 }
+
+static LttField *
+find_field(LttEventType *et, const char *field)
+{
+  LttType *t;
+
+  LttField *f;
+
+  guint i, nb;
+
+  char *name;
+
+  if(field == NULL) return NULL;
+
+  f = ltt_eventtype_field(et);
+  t = ltt_eventtype_type(et);
+  g_assert(ltt_type_class(t) == LTT_STRUCT);
+  nb = ltt_type_member_number(t);
+  for(i = 0 ; i < nb ; i++) {
+    ltt_type_member_type(t, i, &name);
+    if(strcmp(name, field) == 0) break;
+  }
+  g_assert(i < nb);
+  return ltt_field_member(f, i);
+}
+
+
+void 
+lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type, 
+    char *field1, char *field2, char *field3, LttvHook h, LttvTraceHook *th)
+{
+  LttFacility *f;
+
+  LttEventType *et;
+
+  guint nb, pos, i;
+
+  char *name;
+
+  nb = ltt_trace_facility_find(t, facility, &pos);
+  if(nb < 1) g_error("No %s facility", facility);
+  f = ltt_trace_facility_get(t, pos);
+  et = ltt_facility_eventtype_get_by_name(f, event_type);
+  if(et == NULL) g_error("Event %s does not exist", event_type);
+
+  th->h = h;
+  th->id = ltt_eventtype_id(et);
+  th->f1 = find_field(et, field1);
+  th->f2 = find_field(et, field2);
+  th->f3 = find_field(et, field3);
+}
+
+

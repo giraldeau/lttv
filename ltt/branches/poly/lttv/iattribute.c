@@ -80,10 +80,10 @@ void lttv_iattribute_remove_by_name(LttvIAttribute *self,
   return LTTV_IATTRIBUTE_GET_CLASS (self)->remove_by_name (self, name);
 }
 
-LttvIAttribute* lttv_iattribute_create_subdir(LttvIAttribute *self, 
+LttvIAttribute* lttv_iattribute_find_subdir(LttvIAttribute *self, 
       LttvAttributeName name)
 {
-  return LTTV_IATTRIBUTE_GET_CLASS (self)->create_subdir (self, name);
+  return LTTV_IATTRIBUTE_GET_CLASS (self)->find_subdir (self, name);
 }
 
 
@@ -142,7 +142,7 @@ gboolean lttv_iattribute_find_by_path(LttvIAttribute *self, char *path,
     else {
       found_type = lttv_iattribute_get_by_name(node, name, v);
       if(found_type == LTTV_NONE) {
-        node = lttv_iattribute_create_subdir(node, name);
+        node = lttv_iattribute_find_subdir(node, name);
       }
       else if(found_type == LTTV_GOBJECT && 
 	      LTTV_IS_IATTRIBUTE(*(v->v_gobject))) {

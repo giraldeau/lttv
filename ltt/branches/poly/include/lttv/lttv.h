@@ -31,4 +31,7 @@ LttvAttribute *lttv_global_attributes();
 
 */
 
+#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+
 #endif // LTTV_H

@@ -8,7 +8,7 @@
 #include <lttv/hook.h>
 #include <lttv/attribute.h>
 #include <lttv/iattribute.h>
-#include <lttv/state.h>
+#include <lttv/stats.h>
 #include <ltt/ltt.h>
 #include <ltt/event.h>
 #include <ltt/type.h>
@@ -17,10 +17,12 @@
 
 static gboolean
   a_field_names,
-  a_state;
+  a_state,
+  a_cpu_stats,
+  a_process_stats;
 
 static char
-  *a_file_name;
+  *a_file_name = NULL;
 
 static LttvHooks
   *before_traceset,
@@ -112,9 +114,10 @@ void lttv_event_to_string(LttEvent *e, LttTracefile *tf, GString *s,
 
   if(mandatory_fields) {
     time = ltt_event_time(e);
-    g_string_append_printf(s,"%s.%s: %ld.%ld (%s)",ltt_facility_name(facility),
+    g_string_append_printf(s,"%s.%s: %ld.%09ld (%s)",
+        ltt_facility_name(facility),
         ltt_eventtype_name(event_type), (long)time.tv_sec, time.tv_nsec,
-        ltt_tracefile_name(tf));
+        g_quark_to_string(tfs->cpu_name));
     /* Print the process id and the state/interrupt type of the process */
     g_string_append_printf(s,", %u, %u,  %s", tfs->process->pid,
 		    tfs->process->ppid,
@@ -124,6 +127,106 @@ void lttv_event_to_string(LttEvent *e, LttTracefile *tf, GString *s,
   if(field)
     print_field(e, field, s, field_names);
 } 
+
+
+static void 
+print_tree(FILE *fp, GString *indent, LttvAttribute *tree)
+{
+  int i, nb, saved_length;
+
+  LttvAttribute *subtree;
+
+  LttvAttributeName name;
+
+  LttvAttributeValue value;
+
+  LttvAttributeType type;
+
+  nb = lttv_attribute_get_number(tree);
+  for(i = 0 ; i < nb ; i++) {
+    type = lttv_attribute_get(tree, i, &name, &value);
+    fprintf(fp, "%s%s: ", indent->str, g_quark_to_string(name));
+
+    switch(type) {
+      case LTTV_INT:
+        fprintf(fp, "%d\n", *value.v_int);
+        break;
+      case LTTV_UINT:
+        fprintf(fp, "%u\n", *value.v_uint);
+        break;
+      case LTTV_LONG:
+        fprintf(fp, "%ld\n", *value.v_long);
+        break;
+      case LTTV_ULONG:
+        fprintf(fp, "%lu\n", *value.v_ulong);
+        break;
+      case LTTV_FLOAT:
+        fprintf(fp, "%f\n", (double)*value.v_float);
+        break;
+      case LTTV_DOUBLE:
+        fprintf(fp, "%f\n", *value.v_double);
+        break;
+      case LTTV_TIME:
+        fprintf(fp, "%10u.%09u\n", value.v_time->tv_sec, 
+            value.v_time->tv_nsec);
+        break;
+      case LTTV_POINTER:
+        fprintf(fp, "POINTER\n");
+        break;
+      case LTTV_STRING:
+        fprintf(fp, "%s\n", *value.v_string);
+        break;
+      case LTTV_GOBJECT:
+        if(LTTV_IS_ATTRIBUTE(*(value.v_gobject))) {
+          fprintf(fp, "\n");
+          subtree = (LttvAttribute *)*(value.v_gobject);
+          saved_length = indent->len; 
+          g_string_append(indent, "  ");
+          print_tree(fp, indent, subtree);
+          g_string_truncate(indent, saved_length);
+        }
+        else fprintf(fp, "GOBJECT\n");
+        break;
+      case LTTV_NONE:
+        break;
+    }
+  }
+}
+
+
+static void
+print_stats(FILE *fp, LttvTracesetStats *tscs)
+{
+  int i, nb, saved_length;
+
+  LttvTraceset *ts;
+
+  LttvTraceStats *tcs;
+
+  GString *indent;
+
+  LttSystemDescription *desc;
+
+  if(tscs->stats == NULL) return;
+  indent = g_string_new("");
+  fprintf(fp, "Traceset statistics:\n\n");
+  print_tree(fp, indent, tscs->stats);
+
+  ts = tscs->parent.parent.ts;
+  nb = lttv_traceset_number(ts);
+
+  for(i = 0 ; i < nb ; i++) {
+    tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
+    desc = ltt_trace_system_description(tcs->parent.parent.t);
+    fprintf(fp, "Trace on system %s at time %d secs:\n", desc->node_name, 
+        desc->trace_start.tv_sec);
+    saved_length = indent->len;
+    g_string_append(indent, "  ");
+    print_tree(fp, indent, tcs->stats);
+    g_string_truncate(indent, saved_length);
+  }
+  g_string_free(indent, TRUE);
+}
 
 
 /* Insert the hooks before and after each trace and tracefile, and for each
@@ -136,6 +239,8 @@ static GString *a_string;
 static gboolean write_traceset_header(void *hook_data, void *call_data)
 {
   LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
+
+  g_info("TextDump traceset header");
 
   if(a_file_name == NULL) a_file = stdout;
   else a_file = fopen(a_file_name, "w");
@@ -154,7 +259,13 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
 {
   LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
 
+  g_info("TextDump traceset footer");
+
   fprintf(a_file,"End trace set\n\n");
+
+  if(LTTV_IS_TRACESET_STATS(tc)) {
+    print_stats(a_file, (LttvTracesetStats *)tc);
+  }
 
   if(a_file_name != NULL) fclose(a_file);
 
@@ -203,16 +314,8 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
-  LttvModule *batchAnalysis  =
-	  lttv_module_require(self, "batchAnalysis", argc, argv);
+  g_info("Init textDump.c");
 
-  if(batchAnalysis == NULL)
-  {
-    g_error("Can't load required module batchAnalysis");
-    return;
-  }
-	
-  
   a_string = g_string_new("");
 
   a_file_name = NULL;
@@ -232,6 +335,18 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
       "write the pid and state for each event", 
       "", 
       LTTV_OPT_NONE, &a_state, NULL, NULL);
+
+  a_cpu_stats = FALSE;
+  lttv_option_add("cpu_stats", 's', 
+      "write the per cpu statistics", 
+      "", 
+      LTTV_OPT_NONE, &a_cpu_stats, NULL, NULL);
+
+  a_process_stats = FALSE;
+  lttv_option_add("process_stats", 's', 
+      "write the per process statistics", 
+      "", 
+      LTTV_OPT_NONE, &a_process_stats, NULL, NULL);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
       LTTV_POINTER, &value));
@@ -257,11 +372,17 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
 
 G_MODULE_EXPORT void destroy()
 {
+  g_info("Destroy textDump");
+
   lttv_option_remove("output");
 
   lttv_option_remove("field_names");
 
   lttv_option_remove("process_state");
+
+  lttv_option_remove("cpu_stats");
+
+  lttv_option_remove("process_stats");
 
   g_string_free(a_string, TRUE);
 

@@ -1,5 +1,6 @@
 
 #include <lttv/attribute.h>
+#include <ltt/ltt.h>
 
 typedef union _AttributeValue {
   int dv_int;
@@ -173,8 +174,8 @@ lttv_attribute_remove_by_name(LttvAttribute *self, LttvAttributeName name)
    attribute of that name already exists but is not a GObject supporting the
    iattribute interface, return NULL. */
 
-LttvIAttribute* 
-lttv_attribute_create_subdir(LttvAttribute *self, LttvAttributeName name)
+/*CHECK*/LttvAttribute* 
+lttv_attribute_find_subdir(LttvAttribute *self, LttvAttributeName name)
 {
   unsigned i;
 
@@ -186,13 +187,13 @@ lttv_attribute_create_subdir(LttvAttribute *self, LttvAttributeName name)
   if(i != 0) {
     a = g_array_index(self->attributes, Attribute, i - 1);
     if(a.type == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(a.value.dv_gobject)) {
-      return LTTV_IATTRIBUTE(a.value.dv_gobject);
+      return LTTV_ATTRIBUTE(a.value.dv_gobject);
     }
     else return NULL;    
   }
   new = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
   *(lttv_attribute_add(self, name, LTTV_GOBJECT).v_gobject) = G_OBJECT(new);
-  return (LttvIAttribute *)new;
+  return (LttvAttribute *)new;
 }
 
 gboolean 
@@ -213,6 +214,79 @@ lttv_attribute_find(LttvAttribute *self, LttvAttributeName name,
 
   *v = lttv_attribute_add(self, name, t);
   return TRUE;
+}
+
+
+void lttv_attribute_recursive_free(LttvAttribute *self)
+{
+  int i, nb;
+
+  Attribute *a;
+
+  nb = self->attributes->len;
+
+  for(i = 0 ; i < nb ; i++) {
+    a = &g_array_index(self->attributes, Attribute, i);
+    if(a->type == LTTV_GOBJECT && LTTV_IS_ATTRIBUTE(a->value.dv_gobject)) {
+      lttv_attribute_recursive_free((LttvAttribute *)(a->value.dv_gobject));
+    }
+  }
+  g_object_unref(self);
+}
+
+
+void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src)
+{
+  int i, nb;
+
+  Attribute *a;
+
+  LttvAttributeValue value;
+
+  nb = src->attributes->len;
+
+  for(i = 0 ; i < nb ; i++) {
+    a = &g_array_index(src->attributes, Attribute, i);
+    if(a->type == LTTV_GOBJECT && LTTV_IS_ATTRIBUTE(a->value.dv_gobject)) {
+      lttv_attribute_recursive_add(
+      /*CHECK*/(LttvAttribute *)lttv_attribute_find_subdir(dest, a->name),
+          (LttvAttribute *)(a->value.dv_gobject));
+    }
+    else {
+      g_assert(lttv_attribute_find(dest, a->name, a->type, &value));
+      switch(a->type) {
+	case LTTV_INT:
+          *value.v_int += a->value.dv_int;
+          break;
+        case LTTV_UINT:
+          *value.v_uint += a->value.dv_uint;
+          break;
+        case LTTV_LONG:
+          *value.v_long += a->value.dv_long;
+          break;
+        case LTTV_ULONG:
+          *value.v_ulong += a->value.dv_ulong;
+          break;
+        case LTTV_FLOAT:
+          *value.v_float += a->value.dv_float;
+          break;
+        case LTTV_DOUBLE:
+          *value.v_double += a->value.dv_double;
+          break;
+        case LTTV_TIME:
+          TimeAdd(*value.v_time, *value.v_time, a->value.dv_time);
+          break;
+        case LTTV_POINTER:
+          break;
+        case LTTV_STRING:
+          break;
+        case LTTV_GOBJECT:
+          break;
+        case LTTV_NONE:
+          break;
+      }    
+    }
+  }
 }
 
 
@@ -243,8 +317,8 @@ attribute_interface_init (gpointer g_iface, gpointer iface_data)
   klass->remove_by_name = (void (*) (LttvIAttribute *self,
       LttvAttributeName name)) lttv_attribute_remove_by_name;
 
-  klass->create_subdir = (LttvIAttribute* (*) (LttvIAttribute *self, 
-      LttvAttributeName name)) lttv_attribute_create_subdir;
+  klass->find_subdir = (LttvIAttribute* (*) (LttvIAttribute *self, 
+      LttvAttributeName name)) lttv_attribute_find_subdir;
 }
 
 
@@ -262,7 +336,8 @@ attribute_finalize (LttvAttribute *self)
 {
   g_hash_table_destroy(self->names);
   g_array_free(self->attributes, TRUE);
-  G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_ATTRIBUTE_GET_CLASS(self)))->finalize(G_OBJECT(self));
+  G_OBJECT_CLASS(g_type_class_peek_parent(
+      g_type_class_peek(LTTV_ATTRIBUTE_TYPE)))->finalize(G_OBJECT(self));
 }
 
 

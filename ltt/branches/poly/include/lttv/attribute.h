@@ -78,11 +78,20 @@ void lttv_attribute_remove_by_name(LttvAttribute *self,
    attribute of that name already exists but is not a GObject supporting the
    iattribute interface, return NULL. */
 
-LttvIAttribute* lttv_attribute_create_subdir(LttvAttribute *self, 
+LttvAttribute* lttv_attribute_find_subdir(LttvAttribute *self, 
       LttvAttributeName name);
 
 gboolean lttv_attribute_find(LttvAttribute *self, LttvAttributeName name, 
     LttvAttributeType t, LttvAttributeValue *v);
 
+
+/* Free recursively a tree of attributes. All contained gobject of type
+   LttvAttribute are freed (unreferenced) recursively. */
+
+void lttv_attribute_recursive_free(LttvAttribute *self);
+
+/* Add items from a tree of attributes to another tree. */
+
+void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src);
 
 #endif // ATTRIBUTE_H
