@@ -928,8 +928,7 @@ static void get_data_wrapped(double time_value, gint list_height,
     event_fields = (EventFields*)g_list_nth_data(first,event_viewer_data->number_of_events - 1);
     start = event_fields->time;
     start.tv_nsec++;
-    end.tv_sec = G_MAXULONG;
-    end.tv_nsec = G_MAXULONG;
+    end = ltt_time_infinite;
     get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE, &size);
     if(size == 0){
       get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_SQUARE,&size);
@@ -952,8 +951,7 @@ static void get_data_wrapped(double time_value, gint list_height,
     event_fields = (EventFields*)g_list_nth_data(first,event_viewer_data->number_of_events - 1);
     start = event_fields->time;
     start.tv_nsec++;
-    end.tv_sec = G_MAXULONG;
-    end.tv_nsec = G_MAXULONG;
+    end = ltt_time_infinite;
     get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE,&size);
     if(size == 0){
       get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE_SQUARE,&size);
@@ -971,8 +969,7 @@ static void get_data_wrapped(double time_value, gint list_height,
         g_debug("direction SCROLL_JUMP");
   event_viewer_data->append = TRUE;
   remove_all_items_from_queue(event_viewer_data->event_fields_queue);
-  end.tv_sec = G_MAXULONG;
-  end.tv_nsec = G_MAXULONG;
+  end = ltt_time_infinite;
   time = ltt_time_from_double(time_value);
   start = ltt_time_add(time_span.start_time, time);
   event_viewer_data->previous_value = time_value;
