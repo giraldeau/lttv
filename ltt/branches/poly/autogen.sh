@@ -67,7 +67,7 @@ fi
   }
 }
 
-(automake --version) < /dev/null > /dev/null 2>&1 || {
+(automake-1.7 --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: You must have \`automake' installed."
   echo "You can get it from: ftp://ftp.gnu.org/pub/gnu/"
@@ -77,7 +77,7 @@ fi
 
 
 # if no automake, don't bother testing for aclocal
-test -n "$NO_AUTOMAKE" || (aclocal --version) < /dev/null > /dev/null 2>&1 || {
+test -n "$NO_AUTOMAKE" || (aclocal-1.7 --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: Missing \`aclocal'.  The version of \`automake'"
   echo "installed doesn't appear recent enough."
@@ -140,8 +140,8 @@ do
 	echo "Running autoheader..."
 	autoheader
       fi
-      echo "Running automake --gnu $am_opt ..."
-      automake --add-missing --gnu $am_opt
+      echo "Running automake-1.7 --gnu $am_opt ..."
+      automake-1.7 --add-missing --gnu $am_opt
       echo "Running autoconf ..."
       autoconf
     )
