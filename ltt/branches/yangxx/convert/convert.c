@@ -200,7 +200,7 @@ int main(int argc, char ** argv){
   buffer = g_new(char, 4000);
   readFile(fd,(void*)buffer, 3500, "Unable to read block header");
 
-  cur_pos = buffer;
+  cur_pos= buffer;
   evId = *(uint8_t *)cur_pos;
   cur_pos += sizeof(uint8_t);
   newId = evId;
@@ -417,7 +417,7 @@ int main(int argc, char ** argv){
 	  } 
 	  break;
 	case TRACE_FILE_SYSTEM:
-	  event_size = sizeof(trace_file_system);
+	  event_size = sizeof(trace_file_system)- sizeof(char*);
 	  break;
 	case TRACE_TIMER:
 	  event_size = sizeof(trace_timer);
@@ -464,8 +464,10 @@ int main(int argc, char ** argv){
 	
 	if(evId == TRACE_HEARTBEAT){
 	  if(ltt_log_cpu){
+	    size_count[cpu_id] += sizeof(heartbeat);
 	    write_to_buffer(write_pos[cpu_id],(void*)&beat , sizeof(heartbeat)); 	 
 	  }else{
+	    size_count[0] +=  sizeof(heartbeat);
 	    write_to_buffer(write_pos[0], (void*)&beat, sizeof(heartbeat)); 	    	  
 	  }
 	}
@@ -473,14 +475,12 @@ int main(int argc, char ** argv){
 	cur_pos += event_size + sizeof(uint16_t); //skip data_size
       }else if(evId == TRACE_FILE_SYSTEM){
 	size_t nbBytes;
+	char  c = '\0';
 	tFileSys = (trace_file_system*)cur_pos;
 	subId = tFileSys->event_sub_id;	
 	if(subId == TRACE_FILE_SYSTEM_OPEN || subId == TRACE_FILE_SYSTEM_EXEC){
 	  nbBytes = tFileSys->event_data2 +1;
 	}else nbBytes = 0;
-	nbBytes += event_size;
-
-	//	printf("bytes : %d\n", nbBytes);
 
 	if(ltt_log_cpu){
 	  size_count[cpu_id] += nbBytes + sizeof(uint16_t) + sizeof(uint32_t);
@@ -488,14 +488,26 @@ int main(int argc, char ** argv){
 	    printf("size count exceeds the limit of the buffer\n");
 	    exit(1);
 	  }
-	  write_to_buffer(write_pos[cpu_id], cur_pos, nbBytes); 	
+	  write_to_buffer(write_pos[cpu_id], cur_pos, event_size); 	
+	  cur_pos += event_size + sizeof(char*);
+	  if(nbBytes){
+	    write_to_buffer(write_pos[cpu_id], cur_pos, nbBytes); 	
+	  }else{
+	    write_to_buffer(write_pos[cpu_id], (void*)&c, 1);
+	  }
 	}else{
 	  size_count[0] += nbBytes + sizeof(uint16_t) + sizeof(uint32_t);
 	  if(size_count[0] > block_size - reserve_size){
 	    printf("size count exceeds the limit of the buffer\n");
 	    exit(1);
 	  }
-	  write_to_buffer(write_pos[0], cur_pos, nbBytes); 	
+	  write_to_buffer(write_pos[0], cur_pos, event_size);
+	  cur_pos += event_size + sizeof(char*);
+	  if(nbBytes){
+	    write_to_buffer(write_pos[0], cur_pos, nbBytes); 	
+	  }else{
+	    write_to_buffer(write_pos[0], (void*)&c, 1);
+	  }
 	}
 	cur_pos += nbBytes + sizeof(uint16_t); //skip data_size
       }else if(event_size == -1){
