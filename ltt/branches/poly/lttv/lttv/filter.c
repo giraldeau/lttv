@@ -25,7 +25,6 @@
 
 /*
  *  YET TO BE ANSWERED
- *  - should the filter be implemented as a module
  *  - should all the structures and field types be associated with GQuarks
  */
 
@@ -54,6 +53,13 @@
   path(component...) -> field
 */
 
+GQuark
+  LTTV_FILTER_TRACE,
+  LTTV_FILTER_TRACESET,
+  LTTV_FILTER_TRACEFILE,
+  LTTV_FILTER_STATE,
+  LTTV_FILTER_EVENT;
+
 /**
  *  Parse through filtering field hierarchy as specified 
  *  by user.  This function compares each value to 
@@ -67,21 +73,21 @@ parse_field_path(GList* fp) {
   GString* f = g_list_first(fp)->data; 
   
   switch(g_quark_try_string(f->str)) {
-//    case LTTV_FILTER_TRACE:
+    case LTTV_FILTER_TRACE:
 
-//    break;
-//    case LTTV_FILTER_TRACEFILE:
+    break;
+    case LTTV_FILTER_TRACEFILE:
 
-//      break;
-//    case LTTV_FILTER_TRACESET:
+      break;
+    case LTTV_FILTER_TRACESET:
 
-//      break;
-//    case LTTV_FILTER_STATE:
+      break;
+    case LTTV_FILTER_STATE:
 
-//      break;
-//    case LTTV_FILTER_EVENT:
+      break;
+    case LTTV_FILTER_EVENT:
 
-//      break;
+      break;
     default:    /* Quark value unrecognized or equal to 0 */
       g_warning("Unrecognized field in filter string");
       return FALSE;
@@ -120,12 +126,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
     p=0,	/* parenthesis nesting value */
     b=0;	/* current breakpoint in expression string */
 	
-  LTTV_FILTER_EVENT = g_quark_from_string("event");
-  LTTV_FILTER_TRACE = g_quark_from_string("trace");
-  LTTV_FILTER_TRACESET = g_quark_from_string("traceset");
-  LTTV_FILTER_STATE = g_quark_from_string("state");
-  LTTV_FILTER_TRACEFILE = g_quark_from_string("tracefile");
-     
+    
   gpointer tree = NULL;
   
   /* temporary values */
@@ -177,7 +178,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
           i++;
         } else {  /* ! */
           g_print("%s\n",a_field_component);
-          current_option = g_string_new("");
+          a_field_component = g_string_new("");
         }
         break;
       case '(':   /* start of parenthesis */
@@ -213,7 +214,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         a_field_component = g_string_new("");
         break;
       default:    /* concatening current string */
-        g_string_append_c(current_option,expression[i]); 				
+        g_string_append_c(a_field_component,expression[i]); 				
     }
   }
 
@@ -263,6 +264,9 @@ lttv_filter_tracefile(lttv_filter *filter, LttTracefile *tracefile) {
  */
 }
 
+gboolean
+lttv_filter_tracestate(lttv_filter *filter, LttvTraceState *tracestate) {}
+
 /**
  * 	Apply the filter to a specific event
  * 	@param filter the current filter applied
@@ -273,3 +277,25 @@ gboolean
 lttv_filter_event(lttv_filter *filter, LttEvent *event) {
 
 }
+
+static void module_init()
+{
+  LTTV_FILTER_EVENT = g_quark_from_string("event");
+  LTTV_FILTER_TRACE = g_quark_from_string("trace");
+  LTTV_FILTER_TRACESET = g_quark_from_string("traceset");
+  LTTV_FILTER_STATE = g_quark_from_string("state");
+  LTTV_FILTER_TRACEFILE = g_quark_from_string("tracefile");
+ 
+}
+
+static void module_destroy() 
+{
+}
+
+
+LTTV_MODULE("filter", "Filter state & event", \
+    "Filters the current tracestate and events from user expression", \
+    module_init, module_destroy)
+
+
+

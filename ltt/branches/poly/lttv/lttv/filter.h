@@ -52,7 +52,7 @@
 
 */
 
-static GQuark
+extern GQuark
   LTTV_FILTER_TRACE,
   LTTV_FILTER_TRACESET,
   LTTV_FILTER_TRACEFILE,
@@ -85,22 +85,31 @@ typedef struct _lttv_simple_expression
   char *value;
 } lttv_simple_expression;
 
-
-//typedef union _tmp {
-//  struct lttv_expression *e;
-//  lttv_field_relation *se;
-//} tmp;
+typedef enum _lttv_logical_op {
+    OR = 1,
+    AND = 1<<1,
+    NOT = 1<<2,
+    XOR = 1<<3
+} lttv_logical_op;
+    
 /*
+ * Ah .. that's my tree
+ */
 typedef struct _lttv_expression 
 { 
-  gboolean or;
-  gboolean not;
-  gboolean and;
-  gboolean xor;
-  gboolean simple_expression;
-//  tmp e;
+//  gboolean or;
+//  gboolean not;
+//  gboolean and;
+//  gboolean xor;
+//  gboolean simple_expression;
+  lttv_logical_op op;
+  lttv_expression_type type;
+  union {
+    struct lttv_expression *e;
+    lttv_field_relation *se;  /* --> simple expression */
+  } e;
 } lttv_expression;
-*/
+
 
 typedef union _lttv_expression {
   lttv_simple_expression se;
@@ -133,6 +142,8 @@ lttv_filter *lttv_filter_new(char *expression, LttvTraceState *tfs);
    declared as void * to allow these functions to be used as hooks. */
 
 gboolean lttv_filter_tracefile(lttv_filter *filter, LttTracefile *tracefile);
+
+gboolean lttv_filter_tracestate(lttv_filter *filter, LttvTraceState *tracestate);
 
 gboolean lttv_filter_event(lttv_filter *filter, LttEvent *event);
 

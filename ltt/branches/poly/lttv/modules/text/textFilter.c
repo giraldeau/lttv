@@ -125,7 +125,8 @@ static void init() {
       "filters a string issued by the user on the command line", 
       "string", 
       LTTV_OPT_STRING, &a_filter_string, NULL, NULL);
-
+  // add function to call for option
+  
   a_file_name = NULL;
   lttv_option_add("filename", 'f', 
       "browse the filter options contained in specified file", 
@@ -169,5 +170,5 @@ static void destroy() {
 
 LTTV_MODULE("textFilter", "Filters traces", \
 	    "Filter the trace following commands issued by user input", \
-	    init, destroy, "batchAnalysis", "option")
+	    init, destroy, "option")
 
