@@ -666,10 +666,7 @@ void lttvwindow_events_request_remove_all(Tab            *tab,
  * @return time window.
  */
 
-static inline TimeWindow lttvwindow_get_time_window(Tab *tab)
-{
-  return tab->time_window;
-}
+TimeWindow lttvwindow_get_time_window(Tab *tab);
 
 
 /**

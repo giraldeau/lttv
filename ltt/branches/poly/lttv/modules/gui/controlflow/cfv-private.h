@@ -20,29 +20,5 @@
 #define _CFV_PRIVATE_H
 
 
-struct _ControlFlowData {
-
-  GtkWidget *top_widget;
-  Tab *tab;
-
-  GtkWidget *box; /* box that contains the hpaned. necessary for it to work */
-  GtkWidget *h_paned;
-
-  ProcessList *process_list;
-
-  Drawing_t *drawing;
-  GtkAdjustment *v_adjust ;
-  
-  /* Shown events information */
-//  TimeWindow time_window;
-//  LttTime current_time;
-  
-  //guint currently_Selected_Event  ;
-  guint number_of_process;
-  guint background_info_waiting; /* Number of background requests waited for
-                                    in order to have all the info ready. */
-
-} ;
-
 
 #endif //_CFV_PRIVATE_H
