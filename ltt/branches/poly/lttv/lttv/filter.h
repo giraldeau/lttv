@@ -22,6 +22,7 @@
 #include <lttv/traceset.h>
 #include <lttv/tracecontext.h>
 #include <lttv/state.h>
+#include <lttv/module.h>
 #include <ltt/ltt.h>
 #include <ltt/event.h>
 
@@ -57,8 +58,21 @@ extern GQuark
   LTTV_FILTER_TRACESET,
   LTTV_FILTER_TRACEFILE,
   LTTV_FILTER_STATE,
-  LTTV_FILTER_EVENT;
-
+  LTTV_FILTER_EVENT,
+  LTTV_FILTER_NAME,
+  LTTV_FILTER_CATEGORY,
+  LTTV_FILTER_TIME,
+  LTTV_FILTER_TSC,
+  LTTV_FILTER_PID,
+  LTTV_FILTER_PPID,
+  LTTV_FILTER_C_TIME,
+  LTTV_FILTER_I_TIME,
+  LTTV_FILTER_P_NAME,
+  LTTV_FILTER_EX_MODE,
+  LTTV_FILTER_EX_SUBMODE,
+  LTTV_FILTER_P_STATUS,
+  LTTV_FILTER_CPU;
+  
 /**
  * 	@enum lttv_expression_op
  */
@@ -86,10 +100,10 @@ typedef struct _lttv_simple_expression
 } lttv_simple_expression;
 
 typedef enum _lttv_logical_op {
-    OR = 1,
-    AND = 1<<1,
-    NOT = 1<<2,
-    XOR = 1<<3
+    OR = 1,         /* 1 */
+    AND = 1<<1,     /* 2 */
+    NOT = 1<<2,     /* 4 */
+    XOR = 1<<3      /* 8 */
 } lttv_logical_op;
     
 /*
@@ -97,12 +111,8 @@ typedef enum _lttv_logical_op {
  */
 typedef struct _lttv_expression 
 { 
-//  gboolean or;
-//  gboolean not;
-//  gboolean and;
-//  gboolean xor;
 //  gboolean simple_expression;
-  lttv_logical_op op;
+  int op;
   lttv_expression_type type;
   union {
     struct lttv_expression *e;
@@ -126,26 +136,28 @@ typedef struct _lttv_filter_tree {
  * @struct lttv_filter
  * ( will later contain a binary tree of filtering options )
  */
-typedef struct _lttv_filter {
+typedef struct _lttv_filter_t {
 	lttv_filter_tree* tree;	
-} lttv_filter;
+} lttv_filter_t;
 
+/* Parse field path contained in list */
 gboolean parse_field_path(GList* fp);
+
 
 gboolean parse_simple_expression(GString* expression);
 
 /* Compile the filter expression into an efficient data structure */
-lttv_filter *lttv_filter_new(char *expression, LttvTraceState *tfs);
+lttv_filter_t *lttv_filter_new(char *expression, LttvTraceState *tfs);
 
 
 /* Check if the tracefile or event satisfies the filter. The arguments are
    declared as void * to allow these functions to be used as hooks. */
 
-gboolean lttv_filter_tracefile(lttv_filter *filter, LttTracefile *tracefile);
+gboolean lttv_filter_tracefile(lttv_filter_t *filter, LttTracefile *tracefile);
 
-gboolean lttv_filter_tracestate(lttv_filter *filter, LttvTraceState *tracestate);
+gboolean lttv_filter_tracestate(lttv_filter_t *filter, LttvTraceState *tracestate);
 
-gboolean lttv_filter_event(lttv_filter *filter, LttEvent *event);
+gboolean lttv_filter_event(lttv_filter_t *filter, LttEvent *event);
 
 #endif // FILTER_H
 

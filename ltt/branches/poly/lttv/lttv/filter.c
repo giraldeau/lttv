@@ -25,7 +25,7 @@
 
 /*
  *  YET TO BE ANSWERED
- *  - should all the structures and field types be associated with GQuarks
+ *  - nothing for now
  */
 
 #include <lttv/filter.h>
@@ -58,7 +58,21 @@ GQuark
   LTTV_FILTER_TRACESET,
   LTTV_FILTER_TRACEFILE,
   LTTV_FILTER_STATE,
-  LTTV_FILTER_EVENT;
+  LTTV_FILTER_EVENT,
+  LTTV_FILTER_NAME,
+  LTTV_FILTER_CATEGORY,
+  LTTV_FILTER_TIME,
+  LTTV_FILTER_TSC,
+  LTTV_FILTER_PID,
+  LTTV_FILTER_PPID,
+  LTTV_FILTER_C_TIME,
+  LTTV_FILTER_I_TIME,
+  LTTV_FILTER_P_NAME,
+  LTTV_FILTER_EX_MODE,
+  LTTV_FILTER_EX_SUBMODE,
+  LTTV_FILTER_P_STATUS,
+  LTTV_FILTER_CPU;
+  
 
 /**
  *  Parse through filtering field hierarchy as specified 
@@ -72,27 +86,20 @@ parse_field_path(GList* fp) {
 
   GString* f = g_list_first(fp)->data; 
   
-  switch(g_quark_try_string(f->str)) {
-//    case LTTV_FILTER_TRACE:
-//
-//    break;
-//    case LTTV_FILTER_TRACEFILE:
-//
-//      break;
-//    case LTTV_FILTER_TRACESET:
-//
-//      break;
-//    case LTTV_FILTER_STATE:
-//
-//      break;
-//    case LTTV_FILTER_EVENT:
-//
-//      break;
-    default:    /* Quark value unrecognized or equal to 0 */
-      g_warning("Unrecognized field in filter string");
-      return FALSE;
+  if(g_quark_try_string(f->str) == LTTV_FILTER_EVENT) {
+//    parse_subfield(fp, LTTV_FILTER_EVENT);   
+
+  } else if(g_quark_try_string(f->str) == LTTV_FILTER_TRACEFILE) {
+    
+  } else if(g_quark_try_string(f->str) == LTTV_FILTER_TRACE) {
+
+  } else if(g_quark_try_string(f->str) == LTTV_FILTER_STATE) {
+
+  } else {
+    g_warning("Unrecognized field in filter string");
+    return FALSE;
   }
-  return TRUE;
+  return TRUE;  
 }
 
 /**
@@ -116,19 +123,16 @@ parse_simple_expression(GString* expression) {
  * 	@param t pointer to the current LttvTrace
  * 	@return the current lttv_filter or NULL if error
  */
-lttv_filter*
+lttv_filter_t*
 lttv_filter_new(char *expression, LttvTraceState *tcs) {
 
   g_print("filter::lttv_filter_new()\n");		/* debug */
 
   unsigned 	
     i, 
-    p=0,	/* parenthesis nesting value */
+    p_nesting=0,	/* parenthesis nesting value */
     b=0;	/* current breakpoint in expression string */
 	
-    
-  gpointer tree = NULL;
-  
   /* temporary values */
   GString *a_field_component = g_string_new(""); 
   GList *a_field_path = NULL;
@@ -144,8 +148,8 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
    * 	Binary tree memory allocation
    * 	- based upon a preliminary block size
    */
-  gulong size = (strlen(expression)/AVERAGE_EXPRESSION_LENGTH)*MAX_FACTOR;
-  tree = g_malloc(size*sizeof(lttv_filter_tree));
+//  gulong size = (strlen(expression)/AVERAGE_EXPRESSION_LENGTH)*MAX_FACTOR;
+//  tree = g_malloc(size*sizeof(lttv_filter_tree));
     
   /*
    *	Parse entire expression and construct
@@ -182,10 +186,14 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         }
         break;
       case '(':   /* start of parenthesis */
-        p++;      /* incrementing parenthesis nesting value */
+      case '[':
+      case '{':
+        p_nesting++;      /* incrementing parenthesis nesting value */
         break;
       case ')':   /* end of parenthesis */
-        p--;      /* decrementing parenthesis nesting value */
+      case ']':
+      case '}':
+        p_nesting--;      /* decrementing parenthesis nesting value */
         break;
 
       /*	
@@ -220,7 +228,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
 
 
   
-  if( p>0 ) { 
+  if( p_nesting>0 ) { 
     g_warning("Wrong filtering options, the string\n\"%s\"\n\
         is not valid due to parenthesis incorrect use",expression);	
     return NULL;
@@ -234,7 +242,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
  * 	@return success/failure of operation
  */
 gboolean
-lttv_filter_tracefile(lttv_filter *filter, LttTracefile *tracefile) {
+lttv_filter_tracefile(lttv_filter_t *filter, LttTracefile *tracefile) {
 
   
   
@@ -265,7 +273,7 @@ lttv_filter_tracefile(lttv_filter *filter, LttTracefile *tracefile) {
 }
 
 gboolean
-lttv_filter_tracestate(lttv_filter *filter, LttvTraceState *tracestate) {
+lttv_filter_tracestate(lttv_filter_t *filter, LttvTraceState *tracestate) {
 
 }
 
@@ -276,28 +284,61 @@ lttv_filter_tracestate(lttv_filter *filter, LttvTraceState *tracestate) {
  * 	@return success/failure of operation
  */
 gboolean
-lttv_filter_event(lttv_filter *filter, LttEvent *event) {
+lttv_filter_event(lttv_filter_t *filter, LttEvent *event) {
 
 }
 
+/**
+ *  Initializes the filter module and specific values
+ */
 static void module_init()
 {
-  LTTV_FILTER_EVENT = g_quark_from_string("event");
-  LTTV_FILTER_TRACE = g_quark_from_string("trace");
-  LTTV_FILTER_TRACESET = g_quark_from_string("traceset");
-  LTTV_FILTER_STATE = g_quark_from_string("state");
-  LTTV_FILTER_TRACEFILE = g_quark_from_string("tracefile");
+
+  /* 
+   *  Quarks initialization
+   *  for hardcoded filtering options
+   *
+   *  TODO: traceset has no yet been defined
+   */
+  
+  /* top fields */
+  LTTV_FILTER_EVENT = g_quark_from_string("event"); 
+  LTTV_FILTER_TRACE = g_quark_from_string("trace"); 
+  LTTV_FILTER_TRACESET = g_quark_from_string("traceset"); 
+  LTTV_FILTER_STATE = g_quark_from_string("state"); 
+  LTTV_FILTER_TRACEFILE = g_quark_from_string("tracefile"); 
  
+  /* event.name, tracefile.name, trace.name */
+  LTTV_FILTER_NAME = g_quark_from_string("name");
+
+  /* event sub fields */
+  LTTV_FILTER_CATEGORY = g_quark_from_string("category"); 
+  LTTV_FILTER_TIME = g_quark_from_string("time"); 
+  LTTV_FILTER_TSC = g_quark_from_string("tsc"); 
+
+  /* state sub fields */
+  LTTV_FILTER_PID = g_quark_from_string("pid"); 
+  LTTV_FILTER_PPID = g_quark_from_string("ppid"); 
+  LTTV_FILTER_C_TIME = g_quark_from_string("creation_time");  
+  LTTV_FILTER_I_TIME = g_quark_from_string("insertion_time"); 
+  LTTV_FILTER_P_NAME = g_quark_from_string("process_name"); 
+  LTTV_FILTER_EX_MODE = g_quark_from_string("execution_mode");  
+  LTTV_FILTER_EX_SUBMODE = g_quark_from_string("execution_submode");
+  LTTV_FILTER_P_STATUS = g_quark_from_string("process_status");
+  LTTV_FILTER_CPU = g_quark_from_string("cpu");
+  
 }
 
+/**
+ *  Destroys the filter module and specific values
+ */
 static void module_destroy() 
 {
 }
 
 
-//LTTV_MODULE("filter", \
-    "", \
-    "", \
+LTTV_MODULE("filter", "Filters traceset and events", \
+    "Filters traceset and events specifically to user input", \
     module_init, module_destroy)
 
 

@@ -16,8 +16,10 @@
  * MA 02111-1307, USA.
  */
 
-/* The text filter facility will prompt for user filter option 
- * and transmit them to the lttv core */
+/* 
+ * The text filter facility will prompt for user filter option 
+ * and transmit them to the lttv core 
+ */
 
 #include <lttv/lttv.h>
 #include <lttv/option.h>
@@ -37,9 +39,18 @@
 /* Insert the hooks before and after each trace and tracefile, and for each
    event. Print a global header. */
 
-static char
+/*
+ *  YET TO BE ANSWERED !
+ *  - why does this module need dependency with batchAnalysis ?
+ */
+
+static char 
   *a_file_name = NULL,
+  *a_string = NULL;
+
+static GString
   *a_filter_string = NULL;
+
 
 static LttvHooks
   *before_traceset,
@@ -47,52 +58,64 @@ static LttvHooks
 
 static FILE *a_file;
 
+
 /**
- * analyses user filter options and issues the filter string
- * to the core
+ * filters the file input from user
  * @param hook_data the hook data
- * @param call_data the call data
+ * @return success/failure of operation
  */
-static void parse_filter_options(void *hook_data, void *call_data) {
+void filter_analyze_file(void *hook_data) {
 
-	char* parsed_string=NULL;	/* the string compiled from user's input */ 
-	
-	/* debug */
-	g_print("textFilter::parse_filter_options\n");	
-	
-	/* recovering hooks data */
-	LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-	LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-//	LttvTrace* lt = tfc->t_context->vt;
-	
-	/* hook header */
-	g_info("TextFilter options parser");
-	
-	/*
+  g_print("textFilter::filter_analyze_file\n");
+ 
+  /*
 	 * 	User may specify filtering options through static file
 	 * 	and/or command line string.  From these sources, an 
 	 * 	option string is rebuilded and sent to the filter core
 	 */
-	if(a_file_name != NULL) { 	/* -f switch in use */
-		a_file = fopen(a_file_name, "r"); 
-		if(a_file == NULL) 
-			g_error("textFilter::parse_filter_content() cannot open file %s", a_file_name);
+	a_file = fopen(a_file_name, "r"); 
+	if(a_file == NULL) { 
+		g_warning("file %s does not exist", a_file_name);
+    return;
+  }
+  
+  char* tmp;
+  fscanf(a_file,"%s",tmp);
+    
+  if(!a_filter_string->len) {
+    g_string_append(a_filter_string,tmp);
+  }
+  else {
+    g_string_append(a_filter_string,"&"); /*conjonction between expression*/
+    g_string_append(a_filter_string,tmp);
+  }
+  
+  fclose(a_file);
+}
 
-		fscanf(a_file,"%s",parsed_string);
-		
-		fclose(a_file);
-	}
-	if(a_filter_string != NULL) 	/* -s switch in use */
-		parsed_string = a_filter_string;	
+/**
+ * filters the string input from user
+ * @param hook_data the hook data
+ * @return success/failure of operation
+ */
+void filter_analyze_string(void *hook_data) {
 
-	if(parsed_string==NULL) 
-		g_warning("textFilter::parser_filter_options() no filtering options specified !"); 
+  g_print("textFilter::filter_analyze_string\n");
+ 
+  /*
+	 * 	User may specify filtering options through static file
+	 * 	and/or command line string.  From these sources, an 
+	 * 	option string is rebuilded and sent to the filter core
+	 */
+  if(!a_filter_string->len) {
+    g_string_append(a_filter_string,a_string);
+    lttv_filter_new(a_filter_string,NULL);
+  }
+  else {
+    g_string_append(a_filter_string,"&"); /*conjonction between expression*/
+    g_string_append(a_filter_string,a_string);
+  }
 
-	/* 	send the filtering string to the core	*/
-	lttv_filter_new(parsed_string,tfs);	
-	
 }
 
 /**
@@ -112,26 +135,28 @@ static gboolean filter_event_content(void *hook_data, void *call_data) {
  */
 static void init() {
   
-  g_print("textFilter::init()");	/* debug */
-	
+  g_print("textFilter::init()\n");	/* debug */
+
+  a_filter_string = g_string_new("");
+  
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
   g_info("Init textFilter.c");
   
-  a_filter_string = NULL;
+  a_string = NULL;
   lttv_option_add("string", 's', 
       "filters a string issued by the user on the command line", 
       "string", 
-      LTTV_OPT_STRING, &a_filter_string, NULL, NULL);
+      LTTV_OPT_STRING, &a_string, filter_analyze_string, NULL);
   // add function to call for option
   
   a_file_name = NULL;
   lttv_option_add("filename", 'f', 
       "browse the filter options contained in specified file", 
       "file name", 
-      LTTV_OPT_STRING, &a_file_name, NULL, NULL);
+      LTTV_OPT_STRING, &a_file_name, filter_analyze_file, NULL);
   
   /*
    * 	Note to myself !
@@ -143,10 +168,10 @@ static void init() {
   g_assert((event_hook = *(value.v_pointer)) != NULL);
   lttv_hooks_add(event_hook, filter_event_content, NULL, LTTV_PRIO_DEFAULT);
 
-  g_assert(lttv_iattribute_find_by_path(attributes,"hooks/trace/before",
-	LTTV_POINTER, &value));
-  g_assert((before_traceset = *(value.v_pointer)) != NULL);
-  lttv_hooks_add(before_traceset, parse_filter_options, NULL, LTTV_PRIO_DEFAULT);
+//  g_assert(lttv_iattribute_find_by_path(attributes,"hooks/trace/before",
+//	LTTV_POINTER, &value));
+//  g_assert((before_traceset = *(value.v_pointer)) != NULL);
+//  lttv_hooks_add(before_traceset, parse_filter_options, NULL, LTTV_PRIO_DEFAULT);
 
   
 }
@@ -163,12 +188,12 @@ static void destroy() {
 
   lttv_hooks_remove_data(event_hook, filter_event_content, NULL);
 
-  lttv_hooks_remove_data(before_traceset, parse_filter_options, NULL);
+//  lttv_hooks_remove_data(before_traceset, parse_filter_options, NULL);
   
 }
 
 
 LTTV_MODULE("textFilter", "Filters traces", \
 	    "Filter the trace following commands issued by user input", \
-	    init, destroy, "option")
+	    init, destroy, "batchAnalysis", "option")
 
