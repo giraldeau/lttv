@@ -3,12 +3,12 @@
 
 #include <gtk/gtk.h>
 
-#include <lttv/gtkcustom.h>
 #include <ltt/ltt.h>
 #include <lttv/attribute.h>
 #include <lttv/traceset.h>
 #include <lttv/processTrace.h>
 
+#include "gtkcustom.h"
 
 typedef struct _TimeInterval{
   LttTime startTime;
