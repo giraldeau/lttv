@@ -501,7 +501,7 @@ int main(int argc, char ** argv){
 	}else nbBytes = 0;
 
 	if(ltt_log_cpu){
-	  size_count[cpu_id] += nbBytes + sizeof(uint16_t) + sizeof(uint32_t);
+	  size_count[cpu_id] += nbBytes + sizeof(uint16_t) + sizeof(uint32_t)+ event_size;
 	  if(size_count[cpu_id] > block_size - reserve_size){
 	    printf("size count exceeds the limit of the buffer\n");
 	    exit(1);
@@ -514,7 +514,7 @@ int main(int argc, char ** argv){
 	    write_to_buffer(write_pos[cpu_id], (void*)&c, 1);
 	  }
 	}else{
-	  size_count[0] += nbBytes + sizeof(uint16_t) + sizeof(uint32_t);
+	  size_count[0] += nbBytes + sizeof(uint16_t) + sizeof(uint32_t)+event_size;
 	  if(size_count[0] > block_size - reserve_size){
 	    printf("size count exceeds the limit of the buffer\n");
 	    exit(1);
