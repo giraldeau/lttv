@@ -166,6 +166,8 @@ lttv_filter_tree* lttv_filter_tree_new();
 
 void lttv_filter_tree_destroy(lttv_filter_tree* tree);
 
+lttv_filter* lttv_filter_clone(lttv_filter* tree);
+
 void lttv_filter_tree_add_node(GPtrArray* stack, lttv_filter_tree* subtree, lttv_logical_op op);
 
 /* Parse field path contained in list */

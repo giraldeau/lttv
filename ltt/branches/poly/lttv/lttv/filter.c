@@ -118,6 +118,19 @@ void lttv_filter_tree_destroy(lttv_filter_tree* tree) {
   g_free(tree);
 }
 
+lttv_filter*
+lttv_filter_clone(lttv_filter* tree) {
+
+    lttv_filter* newtree = lttv_filter_tree_new();
+
+    /*
+     * TODO : Copy tree into new tree
+     */
+    
+    return newtree;
+    
+}
+
 void
 lttv_filter_tree_add_node(GPtrArray* stack, lttv_filter_tree* subtree, lttv_logical_op op) {
 
