@@ -553,7 +553,7 @@ void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data,
   
   nbi = lttv_traceset_number(tsc->ts);
   for(i = 0 ; i < nbi ; i++) {
-    t_s = lttv_traceset_selector_get(ts_s,i);
+    t_s = lttv_traceset_selector_trace_get(ts_s,i);
     selected = lttv_trace_selector_get_selected(t_s);
     if(!selected) continue;
     tc = tsc->traces[i];
@@ -565,7 +565,7 @@ void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data,
     nb_tracefile = nb_control + nb_per_cpu;
     
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tf_s = lttv_trace_selector_get(t_s,j);
+      tf_s = lttv_trace_selector_tracefile_get(t_s,j);
       selected = lttv_tracefile_selector_get_selected(tf_s);
       if(!selected) continue;
       
@@ -605,7 +605,7 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
   
   nbi = lttv_traceset_number(tsc->ts);
   for(i = 0 ; i < nbi ; i++) {
-    t_s = lttv_traceset_selector_get(ts_s,i);
+    t_s = lttv_traceset_selector_trace_get(ts_s,i);
     selected = lttv_trace_selector_get_selected(t_s);
     if(!selected) continue;
     tc = tsc->traces[i];
@@ -617,7 +617,7 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
     nb_tracefile = nb_control + nb_per_cpu;
     
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tf_s = lttv_trace_selector_get(t_s,j);
+      tf_s = lttv_trace_selector_tracefile_get(t_s,j);
       selected = lttv_tracefile_selector_get_selected(tf_s);
       if(!selected) continue;
       

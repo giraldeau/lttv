@@ -41,6 +41,7 @@
 #include <ltt/event.h>
 #include <ltt/type.h>
 #include <ltt/trace.h>
+#include <ltt/facility.h>
 #include <string.h>
 
 //#include "mw_api.h"
@@ -931,12 +932,16 @@ void get_test_data(double time_value, guint list_height,
 	  end.tv_sec = G_MAXULONG;
 	  end.tv_nsec = G_MAXULONG;
 	  get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE, &size);
+	  if(size == 0){
+	    get_events(event_viewer_data, start, end, G_MAXULONG, &size);
+	  }
 	}else size = 1;
 	if(size > 0) event_number = event_viewer_data->start_event_index + 1;	
 	else         event_number = event_viewer_data->start_event_index;
 	break;
       case SCROLL_PAGE_DOWN:
-	if(event_viewer_data->end_event_index >= event_viewer_data->number_of_events - 1 - list_height){
+	i = event_viewer_data->number_of_events - 1 - list_height;
+	if((gint)(event_viewer_data->end_event_index) >= i){
 	  event_viewer_data->append = TRUE;
 	  first = event_viewer_data->raw_trace_data_queue->head;
 	  if(!first)break;
@@ -946,6 +951,9 @@ void get_test_data(double time_value, guint list_height,
 	  end.tv_sec = G_MAXULONG;
 	  end.tv_nsec = G_MAXULONG;
 	  get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE,&size);
+	  if(size == 0){
+	    get_events(event_viewer_data, start, end, G_MAXULONG,&size);
+	  }
 	}
 	if(list_height <= event_viewer_data->number_of_events - 1 - event_viewer_data->end_event_index)
 	  event_number = event_viewer_data->start_event_index + list_height - 1;	
@@ -961,7 +969,7 @@ void get_test_data(double time_value, guint list_height,
 	start = ltt_time_add(event_viewer_data->time_span.startTime, time);
 	event_viewer_data->previous_value = time_value;
 	get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE,&size);
-	if(size < list_height){
+	if(size < list_height && size > 0){
 	  event_viewer_data->append = FALSE;
 	  first = event_viewer_data->raw_trace_data_queue->head;
 	  if(!first)break;
@@ -983,6 +991,9 @@ void get_test_data(double time_value, guint list_height,
 	    event_viewer_data->start_event_index = event_viewer_data->current_event_index;
 	  }
 	  event_number = event_viewer_data->raw_trace_data_queue->length - list_height;
+	}else if(size == 0){
+	  get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE*RESERVE_SMALL_SIZE,&size);
+	  event_number = 0;
 	}else{
 	  event_number = 0;
 	}
@@ -1001,6 +1012,7 @@ void get_test_data(double time_value, guint list_height,
       first = event_viewer_data->raw_trace_data_queue->head;
       if(first){
 	raw_data = (RawTraceData*)g_list_nth_data(first,event_number);
+	if(!raw_data) raw_data = (RawTraceData*)g_list_nth_data(first,0);       
 	time = ltt_time_sub(raw_data->time, event_viewer_data->time_span.startTime);
 	event_viewer_data->vadjust_c->value = ltt_time_to_double(time) * NANOSECONDS_PER_SECOND;
 	g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->vadjust_c), "value-changed");
@@ -1011,6 +1023,9 @@ void get_test_data(double time_value, guint list_height,
 
     event_viewer_data->start_event_index = event_number;
     event_viewer_data->end_event_index = event_number + list_height - 1;    
+    if(event_viewer_data->end_event_index > event_viewer_data->number_of_events - 1){
+      event_viewer_data->end_event_index = event_viewer_data->number_of_events - 1;
+    }
 
     first = event_viewer_data->raw_trace_data_queue->head;
     gtk_list_store_clear(event_viewer_data->store_m);
@@ -1218,11 +1233,14 @@ int event_selected_hook(void *hook_data, void *call_data)
 
 }
 
-
+/* If every module uses the filter, maybe these two 
+ * (add/remove_context_hooks functions) should be put in common place
+ */
 void add_context_hooks(EventViewerData * event_viewer_data, 
 		       LttvTracesetContext * tsc)
 {
-  gint i, j, nbi, nb_tracefile, nb_control, nb_per_cpu;
+  gint i, j, k, m,n, nbi, id;
+  gint nb_tracefile, nb_control, nb_per_cpu, nb_facility, nb_event;
   LttTrace *trace;
   LttvTraceContext *tc;
   LttvTracefileContext *tfc;
@@ -1230,6 +1248,9 @@ void add_context_hooks(EventViewerData * event_viewer_data,
   LttvTraceSelector     * t_s;
   LttvTracefileSelector * tf_s;
   gboolean selected;
+  LttFacility           * fac;
+  LttEventType          * et;
+  LttvEventtypeSelector * eventtype;
 
   ts_s = (LttvTracesetSelector*)g_object_get_data(G_OBJECT(event_viewer_data->hbox_v), 
 						  event_viewer_data->filter_key);
@@ -1238,7 +1259,7 @@ void add_context_hooks(EventViewerData * event_viewer_data,
   
   nbi = lttv_traceset_number(tsc->ts);
   for(i = 0 ; i < nbi ; i++) {
-    t_s = lttv_traceset_selector_get(ts_s,i);
+    t_s = lttv_traceset_selector_trace_get(ts_s,i);
     selected = lttv_trace_selector_get_selected(t_s);
     if(!selected) continue;
     tc = tsc->traces[i];
@@ -1250,7 +1271,7 @@ void add_context_hooks(EventViewerData * event_viewer_data,
     nb_tracefile = nb_control + nb_per_cpu;
     
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tf_s = lttv_trace_selector_get(t_s,j);
+      tf_s = lttv_trace_selector_tracefile_get(t_s,j);
       selected = lttv_tracefile_selector_get_selected(tf_s);
       if(!selected) continue;
       
@@ -1260,8 +1281,28 @@ void add_context_hooks(EventViewerData * event_viewer_data,
 	tfc = tc->per_cpu_tracefiles[j - nb_control];
       
       //if there are hooks for tracefile, add them here
-      lttv_tracefile_context_add_hooks(tfc, NULL,NULL,NULL,NULL,
-				       event_viewer_data->before_event_hooks,NULL);
+      //      lttv_tracefile_context_add_hooks(tfc, NULL,NULL,NULL,NULL,
+      //				       event_viewer_data->before_event_hooks,NULL);
+
+      nb_facility = ltt_trace_facility_number(trace);
+      n = 0;
+      for(k=0;k<nb_facility;k++){
+	fac = ltt_trace_facility_get(trace,k);
+	nb_event = (int) ltt_facility_eventtype_number(fac);
+	for(m=0;m<nb_event;m++){
+	  et = ltt_facility_eventtype_get(fac,m);
+	  eventtype = lttv_tracefile_selector_eventtype_get(tf_s, n);
+	  selected = lttv_eventtype_selector_get_selected(eventtype);
+	  if(selected){
+	    id = (gint) ltt_eventtype_id(et);
+	    lttv_tracefile_context_add_hooks_by_id(tfc,id, 
+						   event_viewer_data->before_event_hooks,
+						   NULL);
+	  }
+	  n++;
+	}
+      }
+
     }
   }
   
@@ -1274,7 +1315,8 @@ void add_context_hooks(EventViewerData * event_viewer_data,
 void remove_context_hooks(EventViewerData * event_viewer_data, 
 			  LttvTracesetContext * tsc)
 {
-  gint i, j, nbi, nb_tracefile, nb_control, nb_per_cpu;
+  gint i, j, k, m, nbi, n, id;
+  gint nb_tracefile, nb_control, nb_per_cpu, nb_facility, nb_event;
   LttTrace *trace;
   LttvTraceContext *tc;
   LttvTracefileContext *tfc;
@@ -1282,6 +1324,9 @@ void remove_context_hooks(EventViewerData * event_viewer_data,
   LttvTraceSelector     * t_s;
   LttvTracefileSelector * tf_s;
   gboolean selected;
+  LttFacility           * fac;
+  LttEventType          * et;
+  LttvEventtypeSelector * eventtype;
 
   ts_s = (LttvTracesetSelector*)g_object_get_data(G_OBJECT(event_viewer_data->hbox_v), 
 						  event_viewer_data->filter_key);
@@ -1290,7 +1335,7 @@ void remove_context_hooks(EventViewerData * event_viewer_data,
   
   nbi = lttv_traceset_number(tsc->ts);
   for(i = 0 ; i < nbi ; i++) {
-    t_s = lttv_traceset_selector_get(ts_s,i);
+    t_s = lttv_traceset_selector_trace_get(ts_s,i);
     selected = lttv_trace_selector_get_selected(t_s);
     if(!selected) continue;
     tc = tsc->traces[i];
@@ -1302,7 +1347,7 @@ void remove_context_hooks(EventViewerData * event_viewer_data,
     nb_tracefile = nb_control + nb_per_cpu;
     
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tf_s = lttv_trace_selector_get(t_s,j);
+      tf_s = lttv_trace_selector_tracefile_get(t_s,j);
       selected = lttv_tracefile_selector_get_selected(tf_s);
       if(!selected) continue;
       
@@ -1312,8 +1357,25 @@ void remove_context_hooks(EventViewerData * event_viewer_data,
 	tfc = tc->per_cpu_tracefiles[j - nb_control];
       
       //if there are hooks for tracefile, remove them here
-      lttv_tracefile_context_remove_hooks(tfc, NULL,NULL,NULL,NULL,
-					  event_viewer_data->before_event_hooks,NULL);
+      //      lttv_tracefile_context_remove_hooks(tfc, NULL,NULL,NULL,NULL,
+      //					  event_viewer_data->before_event_hooks,NULL);
+
+      nb_facility = ltt_trace_facility_number(trace);
+      n = 0;
+      for(k=0;k<nb_facility;k++){
+	fac = ltt_trace_facility_get(trace,k);
+	nb_event = (int) ltt_facility_eventtype_number(fac);
+	for(m=0;m<nb_event;m++){
+	  et = ltt_facility_eventtype_get(fac,m);
+	  eventtype = lttv_tracefile_selector_eventtype_get(tf_s, n);
+	  selected = lttv_eventtype_selector_get_selected(eventtype);
+	  if(selected){
+	    id = (gint) ltt_eventtype_id(et);
+	    lttv_tracefile_context_remove_hooks_by_id(tfc,id); 
+	  }
+	  n++;
+	}
+      }
     }
   }
   //remove hooks from context
