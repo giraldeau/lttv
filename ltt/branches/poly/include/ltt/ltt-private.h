@@ -135,6 +135,7 @@ struct _LttTracefile{
   double cycle_per_nsec;             //Cycles per nsec
   unsigned cur_heart_beat_number;    //current number of heart beat in the buf
   LttCycleCount cur_cycle_count;     //current cycle count of the event
+  void * last_event_pos;
 
   LttTime prev_block_end_time;       //the end time of previous block
   LttTime prev_event_time;           //the time of the previous event

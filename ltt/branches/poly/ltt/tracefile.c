@@ -769,7 +769,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
       updateTracefile(t);
       return ltt_tracefile_seek_time(t, time);      
     }
-  }else if(headTime > 0){
+  }else if(headTime >= 0){
     if(t->which_block == 1){
       updateTracefile(t);      
     }else{
@@ -790,10 +790,8 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
       return;      
     }    
     if(tailTime < 0) return ltt_tracefile_seek_time(t, time);
-  }else if(headTime == 0){
-    updateTracefile(t);
   }else if(tailTime == 0){
-    t->cur_event_pos = t->a_block_end - EVENT_HEADER_SIZE;
+    t->cur_event_pos = t->last_event_pos;
     t->current_event_time = time;  
     t->cur_heart_beat_number = 0;
     t->prev_event_time.tv_sec = 0;
@@ -935,6 +933,7 @@ int readBlock(LttTracefile * tf, int whichBlock)
   lostSize = *(uint32_t*)(tf->buffer + tf->block_size - sizeof(uint32_t));
   tf->a_block_end=(BlockEnd *)(tf->buffer + tf->block_size - 
 				lostSize + EVENT_HEADER_SIZE); 
+  tf->last_event_pos = tf->buffer + tf->block_size - lostSize;
 
   tf->which_block = whichBlock;
   tf->which_event = 1;
