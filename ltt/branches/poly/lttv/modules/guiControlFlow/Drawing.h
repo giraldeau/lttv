@@ -12,9 +12,18 @@
  * Copy region of the screen into another.
  * Modify the boundaries to reflect a scale change. (resize)
  * Refresh the physical screen with the pixmap
- * A helper function is provided here to convert from time and process
+ * A helper function is provided here to convert from time to process
  * identifier to pixels and the contrary (will be useful for mouse selection).
  * Insert an empty square in the drawing, moving the bottom part.
+ *
+ * Note: The last point is exactly why it would not be so easy to add the
+ * vertical line functionnality as in the original version of LTT. In order
+ * to do so, we should keep all processes in the list for the duration of
+ * all the trace instead of dynamically adding and removing them when we
+ * scroll. Another possibility is to redraw all the visible area when a new
+ * process is added to the list. The second solution seems more appropriate
+ * to me.
+ * 
  *
  * The pixmap used has the width of the physical window, but the height
  * of the shown processes.

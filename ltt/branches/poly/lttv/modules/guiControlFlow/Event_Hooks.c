@@ -3,6 +3,9 @@
  *****************************************************************************/
 
 
+#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+
 //#define PANGO_ENABLE_BACKEND
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -20,7 +23,7 @@
 #include "CFV-private.h"
 
 
-/* NOTE : no drawing data should be sent there, as the drawing widget
+/* NOTE : no drawing data should be sent there, since the drawing widget
  * has not been initialized */
 void send_test_drawing(ProcessList *Process_List,
 			Drawing_t *Drawing,
@@ -38,6 +41,11 @@ void send_test_drawing(ProcessList *Process_List,
 	PangoFontDescription *FontDesc;// = pango_font_description_new();
 	gint Font_Size;
 
+	//icon
+	GdkBitmap *mask = g_new(GdkBitmap, 1);
+	GdkPixmap *icon_pixmap = g_new(GdkPixmap, 1);
+	GdkGC * gc = gdk_gc_new(Pixmap);
+	
 	/* Sent text data */
 	layout = gtk_widget_create_pango_layout(Drawing->Drawing_Area_V,
 			NULL);
@@ -52,14 +60,14 @@ void send_test_drawing(ProcessList *Process_List,
 	LttTime birth;
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55500;
-	g_critical("we have : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
+	g_info("we have : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
 	processlist_get_process_pixels(Process_List,
 					1,
 					&birth,
 					&y,
 					&height);
 	
-	g_critical("we draw : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
+	g_info("we draw : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
 	drawing_draw_line(
 		Drawing, Pixmap, x,
 		y+(height/2), x + width, y+(height/2),
@@ -84,7 +92,23 @@ void send_test_drawing(ProcessList *Process_List,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
 
-	g_critical("y : %u, height : %u", y, height);
+
+	/* Draw icon */
+	icon_pixmap = gdk_pixmap_create_from_xpm(Pixmap, &mask, NULL,
+//				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/move_message.xpm");
+				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/mini-display.xpm");
+	gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
+	gdk_gc_set_clip_mask(gc, mask);
+	gdk_draw_drawable(Pixmap, 
+			gc,
+			icon_pixmap,
+			0, 0, 0, 0, -1, -1);
+	
+	g_free(icon_pixmap);
+	g_free(mask);
+	g_free(gc);
+
+	g_info("y : %u, height : %u", y, height);
 
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55700;
@@ -101,7 +125,7 @@ void send_test_drawing(ProcessList *Process_List,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
 
-	g_critical("y : %u, height : %u", y, height);
+	g_info("y : %u, height : %u", y, height);
 
 	for(i=0; i<10; i++)
 	{
@@ -139,7 +163,7 @@ void send_test_drawing(ProcessList *Process_List,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
 
-	g_critical("y : %u, height : %u", y, height);
+	g_info("y : %u, height : %u", y, height);
 
 
 	pango_font_description_set_size(FontDesc, Font_Size);
@@ -304,8 +328,10 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 GtkWidget *
 h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * key)
 {
-	g_critical("hGuiControlFlow");
+	g_info("h_guicontrolflow, %p, %p, %s", pmParentWindow, s, key);
 	ControlFlowData *Control_Flow_Data = guicontrolflow() ;
+	
+	Control_Flow_Data->Parent_Window = pmParentWindow;
 
 	get_time_window(pmParentWindow,
 			guicontrolflow_get_time_window(Control_Flow_Data));
@@ -402,7 +428,7 @@ void update_time_window_hook(void *hook_data, void *call_data)
 	
 
 	*Time_Window = *New_Time_Window;
-	g_critical("New time window HOOK : %u, %u to %u, %u",
+	g_info("New time window HOOK : %u, %u to %u, %u",
 			Time_Window->start_time.tv_sec,
 			Time_Window->start_time.tv_nsec,
 			Time_Window->time_width.tv_sec,
@@ -427,7 +453,7 @@ void update_current_time_hook(void *hook_data, void *call_data)
 	LttTime* Current_Time = 
 		guicontrolflow_get_current_time(Control_Flow_Data);
 	*Current_Time = *((LttTime*)call_data);
-	g_critical("New Current time HOOK : %u, %u", Current_Time->tv_sec,
+	g_info("New Current time HOOK : %u, %u", Current_Time->tv_sec,
 							Current_Time->tv_nsec);
 
 	/* If current time is inside time interval, just move the highlight

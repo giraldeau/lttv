@@ -37,9 +37,13 @@
  *   GQuark.) The habitual place for xpm icons is in
  *   ${prefix}/share/LinuxTraceToolkit.) + position (over or under line)
  * - line (color, width, style)
- * - Arc (can be seen as points) (color, size)
+ * - Arc (big points) (color, size)
  * - background color (color)
  *
+ * An item is a leaf of the attributes tree. It is, in that case, including
+ * all kind of events categories we can have. It then associates each category
+ * with one or more actions (drawing something) or nothing.
+ * 
  * Each item has an array of hooks (hook list). Each hook represents an
  * operation to perform. We seek the array each time we want to
  * draw an item. We execute each operation in order. An operation type

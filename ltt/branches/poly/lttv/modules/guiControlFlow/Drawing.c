@@ -444,3 +444,5 @@ void drawing_remove_square(Drawing_t *Drawing,
 	update_rect.height = Drawing->height - y ;
 	gtk_widget_draw( Drawing->Drawing_Area_V, &update_rect);
 }
+
+

@@ -17,6 +17,9 @@
  * Author : Mathieu Desnoyers, June 2003
  */
 
+#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+
 #include <glib.h>
 #include <gmodule.h>
 #include <lttv/module.h>
@@ -55,7 +58,7 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 	  return;
 	}
 	
-	g_critical("GUI ControlFlow Viewer init()");
+	g_info("GUI ControlFlow Viewer init()");
 
 	/* Register the toolbar insert button */
 	toolbar_item_reg(hGuiControlFlowInsert_xpm, "Insert Control Flow Viewer",
@@ -68,8 +71,8 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
 void destroy_walk(gpointer data, gpointer user_data)
 {
+	g_info("Walk destroy GUI Control Flow Viewer");
 	guicontrolflow_destructor_full((ControlFlowData*)data);
-	g_critical("Walk destroy GUI Control Flow Viewer");
 }
 
 
@@ -81,7 +84,7 @@ void destroy_walk(gpointer data, gpointer user_data)
  * everything that has been registered in the gtkTraceSet API.
  */
 G_MODULE_EXPORT void destroy() {
-	g_critical("GUI Control Flow Viewer destroy()");
+	g_info("GUI Control Flow Viewer destroy()");
 	int i;
 
 	g_slist_foreach(gControl_Flow_Data_List, destroy_walk, NULL );

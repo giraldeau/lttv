@@ -10,6 +10,9 @@
 #include "CFV-private.h"
 
 
+#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+
 extern GSList *gControl_Flow_Data_List;
 
 /*****************************************************************************
@@ -132,28 +135,35 @@ guicontrolflow(void)
 void
 guicontrolflow_destructor_full(ControlFlowData *Control_Flow_Data)
 {
+	g_info("CFV.c : guicontrolflow_destructor_full, %p", Control_Flow_Data);
 	/* May already have been done by GTK window closing */
 	if(GTK_IS_WIDGET(Control_Flow_Data->Scrolled_Window_VC))
 		gtk_widget_destroy(Control_Flow_Data->Scrolled_Window_VC);
-
-	guicontrolflow_destructor(Control_Flow_Data);
+	//Control_Flow_Data->Parent_Window = NULL;
+	//FIXME guicontrolflow_destructor(Control_Flow_Data);
 }
 
+/* When this destructor is called, the widgets are already disconnected */
 void
 guicontrolflow_destructor(ControlFlowData *Control_Flow_Data)
 {
 	guint index;
 	
+	g_info("CFV.c : guicontrolflow_destructor, %p", Control_Flow_Data);
+	g_info("%p, %p, %p", update_time_window_hook, Control_Flow_Data, Control_Flow_Data->Parent_Window);
 	/* Process List is removed with it's widget */
 	//ProcessList_destroy(Control_Flow_Data->Process_List);
-	unreg_update_time_window(update_time_window_hook,
+	if(Control_Flow_Data->Parent_Window != NULL)
+	{
+		unreg_update_time_window(update_time_window_hook,
 				Control_Flow_Data,
-				Control_Flow_Data->Scrolled_Window_VC->parent);
+				Control_Flow_Data->Parent_Window);
 	
-	unreg_update_current_time(update_current_time_hook,
+		unreg_update_current_time(update_current_time_hook,
 				Control_Flow_Data,
-				Control_Flow_Data->Scrolled_Window_VC->parent);
-	
+				Control_Flow_Data->Parent_Window);
+	}
+	g_info("CFV.c : guicontrolflow_destructor, %p", Control_Flow_Data);
 	g_slist_remove(gControl_Flow_Data_List,Control_Flow_Data);
 	g_free(Control_Flow_Data);
 }

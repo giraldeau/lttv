@@ -6,7 +6,8 @@
 struct _ControlFlowData {
 
 	GtkWidget *Scrolled_Window_VC;
-	
+	MainWindow *Parent_Window;
+
 	ProcessList *Process_List;
 	Drawing_t *Drawing;
 

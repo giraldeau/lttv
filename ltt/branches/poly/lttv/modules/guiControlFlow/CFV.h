@@ -2,8 +2,8 @@
 #define _CFV_H
 
 #include <gtk/gtk.h>
-#include "lttv/common.h"
-#include "lttv/mainWindow.h"
+#include <lttv/common.h>
+#include <lttv/mainWindow.h>
 #include "Process_List.h"
 
 typedef struct _ControlFlowData ControlFlowData;
