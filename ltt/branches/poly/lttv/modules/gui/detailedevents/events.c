@@ -42,6 +42,7 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
+#include <string.h>
 
 #include <ltt/ltt.h>
 #include <ltt/event.h>
@@ -105,10 +106,9 @@ typedef struct _EventViewerData {
    */
   double       previous_value;
   
-  unsigned     start_event_index;       // the first event shown in the window
-  unsigned     end_event_index;         // the last event shown in the window
-  unsigned     size;                    // maxi number of events loaded when instance the viewer
- // gboolean     current_time_updated;
+  gint     start_event_index;       // the first event shown in the window
+  gint     end_event_index;         // the last event shown in the window
+  gint     size;                    // maxi number of events loaded
 
   //scroll window containing Tree View
   GtkWidget * scroll_win;
@@ -130,11 +130,11 @@ typedef struct _EventViewerData {
   /* Selection handler */
   GtkTreeSelection *select_c;
   
-  guint num_visible_events;
-  guint first_event, last_event;
+  gint num_visible_events;
+  gint first_event, last_event;
   
   gint number_of_events ;
-  guint currently_selected_event;
+  gint currently_selected_event;
   gboolean selected_event ;
 
 } EventViewerData ;
@@ -157,8 +157,6 @@ EventViewerData *gui_events(Tab *tab);
 //! Event Viewer's destructor
 void gui_events_destructor(EventViewerData *event_viewer_data);
 void gui_events_free(EventViewerData *event_viewer_data);
-
-static int event_selected_hook(void *hook_data, void *call_data);
 
 static gboolean
 header_size_allocate(GtkWidget *widget,
@@ -185,11 +183,7 @@ static void update_raw_data_array(EventViewerData* event_viewer_data, unsigned s
 static void get_events(EventViewerData* event_viewer_data, LttTime start, 
            LttTime end, unsigned max_num_events, unsigned * real_num_events);
 
-static int after_get_events(void *hook_data, void *call_data);
-
 static gboolean parse_event(void *hook_data, void *call_data);
-
-static LttvModule *main_win_module;
 
 /* Enumeration of the columns */
 enum
@@ -235,7 +229,6 @@ gui_events(Tab *tab)
   GtkTreeViewColumn *column;
   GtkCellRenderer *renderer;
   EventViewerData* event_viewer_data = g_new(EventViewerData,1) ;
-  EventFields * data;
 
   event_viewer_data->tab = tab;
   
@@ -466,9 +459,6 @@ void tree_v_set_cursor(EventViewerData *event_viewer_data)
   
   if(event_viewer_data->selected_event && event_viewer_data->first_event != -1)
     {
-      //      gtk_adjustment_set_value(event_viewer_data->vadjust_c,
-     //            event_viewer_data->currently_selected_event);
-      
       path = gtk_tree_path_new_from_indices(
               event_viewer_data->currently_selected_event-
               event_viewer_data->first_event,
@@ -712,10 +702,8 @@ void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
 
 gint get_cell_height(GtkTreeView *TreeView)
 {
-  gint height, width;
+  gint height;
   GtkTreeViewColumn *column = gtk_tree_view_get_column(TreeView, 0);
-  GList *Render_List = gtk_tree_view_column_get_cell_renderers(column);
-  GtkCellRenderer *renderer = g_list_first(Render_List)->data;
   
   gtk_tree_view_column_cell_get_size(column, NULL, NULL, NULL, NULL, &height);
   
@@ -742,8 +730,8 @@ void tree_v_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer 
     floor(exact_num_visible);
 */
  
-  g_debug("size allocate : last_num_visible_events : %lu,\
-           num_visible_events : %lu",
+  g_debug("size allocate : last_num_visible_events : %d,\
+           num_visible_events : %d",
            last_num_visible_events,
            event_viewer_data->num_visible_events);
   if(event_viewer_data->num_visible_events != last_num_visible_events)
@@ -825,7 +813,7 @@ void insert_data_into_model(EventViewerData *event_viewer_data, int start, int e
   }
 }
 
-static void get_data_wrapped(double time_value, guint list_height, 
+static void get_data_wrapped(double time_value, gint list_height, 
        EventViewerData *event_viewer_data, LttEvent *ev);
 
 static void get_data(double time_value, guint list_height,
@@ -839,52 +827,41 @@ static void get_data(double time_value, guint list_height,
   ltt_event_destroy(ev);
 }
 
-static void get_data_wrapped(double time_value, guint list_height, 
+static void get_data_wrapped(double time_value, gint list_height, 
        EventViewerData *event_viewer_data, LttEvent *ev)
 {
-  GtkTreeIter iter;
   int i;
   GtkTreeModel *model = GTK_TREE_MODEL(event_viewer_data->store_m);
-  GtkTreePath *tree_path;
   EventFields * event_fields;
   ScrollDirection  direction = SCROLL_NONE;
   GList * first;
-  int event_number;
+  gint event_number = event_viewer_data->start_event_index;
   double value = event_viewer_data->previous_value - time_value;
   LttTime start, end, time;
-  unsigned backward_num, minNum, maxNum;
+  gint backward_num, minNum, maxNum;
   LttTracefile * tf;
-  unsigned  block_num, event_num;
-  unsigned size = 1, count = 0;
+  unsigned  block_num;
+  gint size = 1, count = 0;
   gboolean need_backward_again, backward;
-  GdkWindow * win;
-  //GdkCursor * new;
-  GtkWidget* widget = gtk_widget_get_parent(event_viewer_data->hbox_v);
   LttvTracesetContext * tsc =
         lttvwindow_get_traceset_context(event_viewer_data->tab);
   TimeInterval time_span = tsc->time_span;
-
-  //if(widget){
-  //  new = gdk_cursor_new(GDK_X_CURSOR);
-  //  win = gtk_widget_get_parent_window(widget);  
-  //  gdk_window_set_cursor(win, new);
-  //  gdk_cursor_unref(new);  
-  //  gdk_window_stick(win);
-  //  gdk_window_unstick(win);
-  //}
-
 
   //  if(event_number > event_viewer_data->last_event ||
   //     event_number + list_height-1 < event_viewer_data->first_event ||
   //     event_viewer_data->first_event == -1)
   {
     /* no event can be reused, clear and start from nothing */
-    if(value == -1.0)      direction = SCROLL_STEP_DOWN;
-    else if(value == 1.0 ) direction = SCROLL_STEP_UP;
-    else if(value == -2.0) direction = SCROLL_PAGE_DOWN;
-    else if(value == 2.0 ) direction = SCROLL_PAGE_UP;
-    else if(value == 0.0 ) direction = SCROLL_NONE;
-    else direction = SCROLL_JUMP;
+    if(value < 0.0) {
+      if(value >= -1.0)      direction = SCROLL_STEP_DOWN;
+      else if(value >= -2.0) direction = SCROLL_PAGE_DOWN;
+      else direction = SCROLL_JUMP;
+    } else if(value > 0.0) {
+      if(value <= 1.0) direction = SCROLL_STEP_UP;
+      else if(value <= 2.0) direction = SCROLL_PAGE_UP;
+      else direction = SCROLL_JUMP;
+    } 
+    else direction = SCROLL_NONE; /* 0.0 */
 
     if(g_queue_get_length(event_viewer_data->event_fields_queue)==0)
       direction = SCROLL_JUMP;
@@ -921,43 +898,6 @@ static void get_data_wrapped(double time_value, guint list_height,
       backward_start = LTT_TIME_MAX(ltt_time_sub(backward_start,
                                                    ltt_time_backward),
                               tsc->time_span.start_time);
-
-      /*
-      ltt_event_position_get(event_fields->ep, &block_num, &event_num, &tf);
-      if(size !=0){
-        if(event_num > minNum){
-    backward_num = event_num > RESERVE_SMALL_SIZE 
-                  ? event_num - RESERVE_SMALL_SIZE : 1;
-    ltt_event_position_set(event_fields->ep, block_num, backward_num);
-    ltt_tracefile_seek_position(tf, event_fields->ep);
-    g_assert(ltt_tracefile_read(tf,ev) != NULL);
-    start = ltt_event_time(ev);
-    maxNum = RESERVE_SMALL_SIZE_CUBE;
-        }else{
-    if(block_num > 1){
-      ltt_event_position_set(event_fields->ep, block_num-1, 1);
-      ltt_tracefile_seek_position(tf, event_fields->ep);
-      g_assert(ltt_tracefile_read(tf,ev) != NULL);
-      start = ltt_event_time(ev);             
-    }else{
-      start.tv_sec  = 0;
-      start.tv_nsec = 0;    
-    }
-    maxNum = RESERVE_SMALL_SIZE_CUBE;
-        }
-      }else{
-        if(block_num > count){
-    ltt_event_position_set(event_fields->ep, block_num-count, 1);
-    ltt_tracefile_seek_position(tf, event_fields->ep);
-    g_assert(ltt_tracefile_read(tf, ev) != NULL);
-    start = ltt_event_time(ev);             
-        }else{
-    start.tv_sec  = 0;
-    start.tv_nsec = 0;    
-        }       
-        maxNum = RESERVE_SMALL_SIZE_CUBE;
-      }
-      */
 
       event_viewer_data->current_event_index = event_viewer_data->start_event_index;
       get_events(event_viewer_data, backward_start, end, maxNum, &size);
@@ -1051,6 +991,7 @@ static void get_data_wrapped(double time_value, guint list_height,
       end.tv_nsec = NANOSECONDS_PER_SECOND-1;
     }
       
+    gint event_num;
     ltt_event_position_get(event_fields->ep, &block_num, &event_num, &tf);
     
     if(event_num > list_height - size){
@@ -1120,71 +1061,12 @@ static void get_data_wrapped(double time_value, guint list_height,
 
     insert_data_into_model(event_viewer_data,event_number, event_number+list_height);
   }
-#ifdef DEBUG //do not use this, it's slower and broken
-  //  } else {
-  /* Some events will be reused */
-  if(event_number < event_viewer_data->first_event)
-    {
-      /* scrolling up, prepend events */
-      tree_path = gtk_tree_path_new_from_indices
-  (event_number+list_height-1 -
-   event_viewer_data->first_event + 1,
-   -1);
-      for(i=0; i<event_viewer_data->last_event-(event_number+list_height-1);
-    i++)
-  {
-    /* Remove the last events from the list */
-    if(gtk_tree_model_get_iter(model, &iter, tree_path))
-      gtk_list_store_remove(event_viewer_data->store_m, &iter);
-  }
-      
-      for(i=event_viewer_data->first_event-1; i>=event_number; i--)
-  {
-    if(i>=event_viewer_data->number_of_events) break;
-    /* Prepend new events */
-    gtk_list_store_prepend (event_viewer_data->store_m, &iter);
-    gtk_list_store_set (event_viewer_data->store_m, &iter,
-            CPUID_COLUMN, 0,
-            EVENT_COLUMN, "event irq",
-            TIME_COLUMN, i,
-            PID_COLUMN, 100,
-            ENTRY_LEN_COLUMN, 17,
-            EVENT_DESCR_COLUMN, "Detailed information",
-            -1);
-  }
-    } else {
-      /* Scrolling down, append events */
-      for(i=event_viewer_data->first_event; i<event_number; i++)
-  {
-    /* Remove these events from the list */
-    gtk_tree_model_get_iter_first(model, &iter);
-    gtk_list_store_remove(event_viewer_data->store_m, &iter);
-  }
-      for(i=event_viewer_data->last_event+1; i<event_number+list_height; i++)
-  {
-    if(i>=event_viewer_data->number_of_events) break;
-    /* Append new events */
-    gtk_list_store_append (event_viewer_data->store_m, &iter);
-    gtk_list_store_set (event_viewer_data->store_m, &iter,
-            CPUID_COLUMN, 0,
-            EVENT_COLUMN, "event irq",
-            TIME_COLUMN, i,
-            PID_COLUMN, 100,
-            ENTRY_LEN_COLUMN, 17,
-            EVENT_DESCR_COLUMN, "Detailed information",
-            -1);
-  }
-      
-    }
-  //}
-#endif //DEBUG
+
   event_viewer_data->first_event = event_viewer_data->start_event_index ;
   event_viewer_data->last_event = event_viewer_data->end_event_index ;
 
  LAST:
   return;
- // if(widget)
- //    gdk_window_set_cursor(win, NULL);  
 
 }
 
@@ -1237,24 +1119,13 @@ gui_events_free(EventViewerData *event_viewer_data)
 void
 gui_events_destructor(EventViewerData *event_viewer_data)
 {
-  guint index;
 
   /* May already been done by GTK window closing */
   if(GTK_IS_WIDGET(event_viewer_data->hbox_v)){
     gtk_widget_destroy(event_viewer_data->hbox_v);
   }
-  
-  /* Destroy the Tree View */
-  //gtk_widget_destroy(event_viewer_data->tree_v);
-  
-  /*  Clear raw event list */
-  //gtk_list_store_clear(event_viewer_data->store_m);
-  //gtk_widget_destroy(GTK_WIDGET(event_viewer_data->store_m));
-  
-  //gui_events_free(event_viewer_data);
 }
 
-//FIXME : call hGuiEvents_Destructor for corresponding data upon widget destroy
 
 static void
 tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
@@ -1272,18 +1143,6 @@ tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
     }
 }
 
-
-int event_selected_hook(void *hook_data, void *call_data)
-{
-  EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
-  guint *event_number = (guint*) call_data;
-  
-  event_viewer_data->currently_selected_event = *event_number;
-  event_viewer_data->selected_event = TRUE ;
-  
-  tree_v_set_cursor(event_viewer_data);
-
-}
 
 #if 0
 /* If every module uses the filter, maybe these two 
@@ -1432,7 +1291,8 @@ gboolean update_current_time(void * hook_data, void * call_data)
   EventFields * data, *data1;
   GtkTreePath* path;
   char str_path[64];
-  int i, j;
+  guint i;
+  gint  j;
   LttTime t;
   LttvTracesetContext * tsc =
         lttvwindow_get_traceset_context(event_viewer_data->tab);
@@ -1491,7 +1351,8 @@ gboolean update_current_time(void * hook_data, void * call_data)
   }
   break;
       }
-      if(event_viewer_data->event_fields_queue->length-count < event_viewer_data->num_visible_events){
+      if((gint)event_viewer_data->event_fields_queue->length-count
+              < event_viewer_data->num_visible_events){
   j = event_viewer_data->event_fields_queue->length - event_viewer_data->num_visible_events;
   count -= j;
   data = (EventFields*)g_list_nth_data(list,j);
@@ -1515,7 +1376,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
     }
   }
 
-  sprintf(str_path,"%d\0",count);
+  sprintf(str_path,"%d",count);
   path = gtk_tree_path_new_from_string (str_path);
   gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v), path, NULL, FALSE);
   //g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->tree_v), "cursor-changed");
@@ -1567,7 +1428,7 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
       list    = event_viewer_data->event_fields_queue->head;
       tmpList = event_viewer_data->event_fields_queue_tmp->head;
       if(event_viewer_data->append){
-  for(i= event_viewer_data->event_fields_queue->length-1;i>=0;i--){
+  for(i=(gint)event_viewer_data->event_fields_queue->length-1;i>=0;i--){
     data = (EventFields*)g_list_nth_data(list,i);
     len = data->pid==0 ? -2 : data->pid;
     if(data->cpu_id+1 > pid_array->len){
@@ -1583,7 +1444,7 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
     }   
   }
 
-  for(i=0;i<event_viewer_data->event_fields_queue_tmp->length;i++){
+  for(i=0;i<(gint)event_viewer_data->event_fields_queue_tmp->length;i++){
     data = (EventFields*)g_list_nth_data(tmpList,i);
     len = data->pid==0 ? -2 : data->pid;
     if(data->cpu_id+1 > tmp_pid_array->len){
@@ -1599,7 +1460,7 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
     }   
   }
       }else{
-  for(i=0;i<event_viewer_data->event_fields_queue->length;i++){
+  for(i=0;i<(gint)event_viewer_data->event_fields_queue->length;i++){
     data = (EventFields*)g_list_nth_data(list,i);
     len = data->pid==0 ? -2 : data->pid;
     if(data->cpu_id+1 > pid_array->len){
@@ -1615,7 +1476,7 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
     }   
   }
 
-  for(i=event_viewer_data->event_fields_queue_tmp->length-1;i>=0;i--){
+  for(i=(gint)event_viewer_data->event_fields_queue_tmp->length-1;i>=0;i--){
     data = (EventFields*)g_list_nth_data(tmpList,i);
     len = data->pid==0 ? -2 : data->pid;
     if(data->cpu_id+1 > tmp_pid_array->len){
@@ -1632,7 +1493,8 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
   }
       }
       
-      len = pid_array->len > tmp_pid_array->len ? tmp_pid_array->len : pid_array->len;
+      len = (pid_array->len > tmp_pid_array->len) ? 
+                                    tmp_pid_array->len : pid_array->len;
       for(j=0;j<len;j++){
   pid = g_array_index(pid_array,int, j);
   tmpPid = g_array_index(tmp_pid_array,int,j);
@@ -1640,14 +1502,14 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
   if(tmpPid == -2) tmpPid = 0;
   
   if(pid == -1 && tmpPid != -1){
-    for(i=0;i<event_viewer_data->event_fields_queue->length;i++){
+    for(i=0;i<(gint)event_viewer_data->event_fields_queue->length;i++){
       data = (EventFields*)g_list_nth_data(list,i);
-      if(data->pid == -1 && data->cpu_id == j) data->pid = tmpPid;
+      if(data->pid == -1 && (gint)data->cpu_id == j) data->pid = tmpPid;
     }
   }else if(pid != -1 && tmpPid == -1){
-    for(i=0;i<event_viewer_data->event_fields_queue_tmp->length;i++){
+    for(i=0;i<(gint)event_viewer_data->event_fields_queue_tmp->length;i++){
       data = (EventFields*)g_list_nth_data(tmpList,i);
-      if(data->pid == -1 && data->cpu_id == j) data->pid = pid;
+      if(data->pid == -1 && (gint)data->cpu_id == j) data->pid = pid;
     }
   }
       }
@@ -1657,8 +1519,9 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
     g_array_free(tmp_pid_array, TRUE);
 
     //add data from tmp queue into the queue
-    event_viewer_data->number_of_events = event_viewer_data->event_fields_queue->length 
-                                        + event_viewer_data->event_fields_queue_tmp->length;
+    event_viewer_data->number_of_events = 
+                     event_viewer_data->event_fields_queue->length 
+                     + event_viewer_data->event_fields_queue_tmp->length;
     if(event_viewer_data->append){
       if(event_viewer_data->event_fields_queue->length > 0)
   event_viewer_data->current_event_index = event_viewer_data->event_fields_queue->length - 1;
@@ -1835,6 +1698,19 @@ static void get_event_detail(LttEvent *e, LttField *f, GString * s)
       }
       g_string_append_printf(s, " }");
       break;
+
+    case LTT_UNION:
+      g_string_append_printf(s, " {");
+      nb = ltt_type_member_number(type);
+      for(i = 0 ; i < nb ; i++) {
+        element = ltt_field_member(f,i);
+        ltt_type_member_type(type, i, &name);
+        g_string_append_printf(s, " %s = ", name);        
+        get_event_detail(e, element, s);
+      }
+      g_string_append_printf(s, " }");
+      break;
+
   }
   
 }
@@ -1911,7 +1787,7 @@ gboolean parse_event(void *hook_data, void *call_data)
     tmp_event_fields->pid = in;
     if(prev_event_fields && prev_event_fields->pid == -1){
       list = event_viewer_data->event_fields_queue_tmp->head;
-      for(i=0;i<event_viewer_data->event_fields_queue_tmp->length;i++){
+      for(i=0;i<(gint)event_viewer_data->event_fields_queue_tmp->length;i++){
   data = (EventFields *)g_list_nth_data(list,i);
   if(data->cpu_id == tmp_event_fields->cpu_id){
     data->pid = out;
@@ -2010,9 +1886,6 @@ void event_destroy_walk(gpointer data, gpointer user_data)
  * everything that has been registered in the gtkTraceSet API.
  */
 static void destroy() {
-  int i;
-  
-  EventViewerData *event_viewer_data;
   
   g_slist_foreach(g_event_viewer_data_list, event_destroy_walk, NULL );
   g_slist_free(g_event_viewer_data_list);
