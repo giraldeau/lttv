@@ -89,8 +89,6 @@ char  seekNextChar(parse_file *in);
 
 void skipComment(parse_file * in);
 void skipEOL(parse_file * in);
-int isalpha(char car);
-int isalnum(char car);
 
 /* Some constants */
 
@@ -128,34 +126,34 @@ typedef struct _type_descriptor {
 
 /* Fields within types */
 
-typedef struct _field{
+typedef struct _type_fields{
   char *name;
   char *description;
   type_descriptor *type;
-} field;
+} type_fields;
 
 
 /* Events definitions */
 
-typedef struct _event {  
+typedef struct _event_t {  
   char *name;
   char *description;
   type_descriptor *type; 
-} event;
+} event_t;
 
-typedef struct _facility {
+typedef struct _facility_t {
   char * name;
   char * description;
   sequence events;
   sequence unnamed_types;
   table named_types;
-} facility;
+} facility_t;
 
 int getSize(parse_file *in);
 unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type);
 
-void parseFacility(parse_file *in, facility * fac);
-void parseEvent(parse_file *in, event *ev, sequence * unnamed_types, table * named_types);
+void parseFacility(parse_file *in, facility_t * fac);
+void parseEvent(parse_file *in, event_t *ev, sequence * unnamed_types, table * named_types);
 void parseTypeDefinition(parse_file *in, sequence * unnamed_types, table * named_types);
 type_descriptor *parseType(parse_file *in, type_descriptor *t, sequence * unnamed_types, table * named_types);
 void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types, table * named_types);

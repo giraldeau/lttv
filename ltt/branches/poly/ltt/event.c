@@ -17,6 +17,9 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include <asm/types.h>
 #include <linux/byteorder/swab.h>
 
@@ -460,7 +463,8 @@ void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
 {
   unsigned element_number;
   LttField *fld;
-  int k, size;
+  unsigned int k;
+  int size;
   void *evD;
  
   if(f->field_type->type_class != LTT_ARRAY &&
@@ -468,7 +472,9 @@ void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
     return ;
 
   element_number  = ltt_event_field_element_number(e,f);
-  if((element_number-1) < i || i < 0) return;
+  /* Sanity check for i : 1..n only, and must be lower or equal element_number
+   */
+  if(element_number < i || i == 0) return;
   
   fld = f->child[0];
   
@@ -477,7 +483,6 @@ void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
   for(k=0;k<i;k++){
     size += ltt_event_refresh_fields(f->offset_root+size,size, fld, evD+size);
   }
-
   f->current_element = i - 1;
 }
 
@@ -516,6 +521,8 @@ unsigned ltt_event_get_unsigned(LttEvent *e, LttField *f)
     else
       return (unsigned int) (revFlag ? GUINT64_FROM_LE(x): x);    
   }
+  g_critical("ltt_event_get_unsigned : field size %i unknown", f->field_size);
+  return 0;
 }
 
 int ltt_event_get_int(LttEvent *e, LttField *f)
@@ -547,6 +554,8 @@ int ltt_event_get_int(LttEvent *e, LttField *f)
     else
       return (int) (revFlag ? GINT64_FROM_LE(x): x);    
   }
+  g_critical("ltt_event_get_int : field size %i unknown", f->field_size);
+  return 0;
 }
 
 unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
@@ -579,6 +588,8 @@ unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
     else
       return (unsigned long) (revFlag ? GUINT64_FROM_LE(x): x);    
   }
+  g_critical("ltt_event_get_long_unsigned : field size %i unknown", f->field_size);
+  return 0;
 }
 
 long int ltt_event_get_long_int(LttEvent *e, LttField *f)
@@ -610,6 +621,8 @@ long int ltt_event_get_long_int(LttEvent *e, LttField *f)
     else
       return (long) (revFlag ? GINT64_FROM_LE(x): x);    
   }
+  g_critical("ltt_event_get_long_int : field size %i unknown", f->field_size);
+  return 0;
 }
 
 float ltt_event_get_float(LttEvent *e, LttField *f)

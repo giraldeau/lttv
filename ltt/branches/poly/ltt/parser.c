@@ -36,6 +36,7 @@ This program is distributed in the hope that it will be useful,
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <ctype.h>
 #include <linux/errno.h>  
 
 
@@ -175,7 +176,7 @@ char * getFormatAttribute(parse_file *in)
 
 int getSizeAttribute(parse_file *in)
 {
-  char * token;
+  /* skip name and equal */
   getName(in);
   getEqual(in);
 
@@ -184,7 +185,7 @@ int getSizeAttribute(parse_file *in)
 
 int getValueAttribute(parse_file *in)
 {
-  char * token;
+  /* skip name and equal */
   getName(in);
   getEqual(in);
   
@@ -255,10 +256,10 @@ char * getDescription(parse_file *in)
  *    fac           : facility filled with event list
  ****************************************************************************/
 
-void parseFacility(parse_file *in, facility * fac)
+void parseFacility(parse_file *in, facility_t * fac)
 {
   char * token;
-  event *ev;
+  event_t *ev;
   
   fac->name = allocAndCopy(getNameAttribute(in));    
   getRAnglebracket(in);    
@@ -273,7 +274,7 @@ void parseFacility(parse_file *in, facility * fac)
       in->error(in,"the definition of the facility is not finished");
 
     if(strcmp("event",token) == 0){
-      ev = (event*) memAlloc(sizeof(event));
+      ev = (event_t*) memAlloc(sizeof(event_t));
       sequence_push(&(fac->events),ev);
       parseEvent(in,ev, &(fac->unnamed_types), &(fac->named_types));    
     }else if(strcmp("type",token) == 0){
@@ -300,11 +301,10 @@ void parseFacility(parse_file *in, facility * fac)
  *    ev            : new event (parameters are passed to it)   
  ****************************************************************************/
 
-void parseEvent(parse_file *in, event * ev, sequence * unnamed_types, 
+void parseEvent(parse_file *in, event_t * ev, sequence * unnamed_types, 
 		table * named_types) 
 {
   char *token;
-  type_descriptor *t;
 
   //<event name=eventtype_name>
   ev->name = allocAndCopy(getNameAttribute(in));
@@ -350,9 +350,9 @@ void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
 		 table * named_types) 
 {
   char * token;
-  field *f;
+  type_fields *f;
 
-  f = (field *)memAlloc(sizeof(field));
+  f = (type_fields *)memAlloc(sizeof(type_fields));
   sequence_push(&(t->fields),f);
 
   //<field name=field_name> <description> <type> </field>
@@ -864,21 +864,6 @@ void skipEOL(parse_file * in)
   if(car == EOF)ungetc(car, in->fp);
 }
 
-int isalpha(char c)
-{
-  int i,j;
-  if(c == '_')return 1;
-  i = c - 'a';
-  j = c - 'A';
-  if((i>=0 && i<26) || (j>=0 && j<26)) return 1;
-  return 0;
-}
-
-int isalnum(char c)
-{
-  return (isalpha(c) || isdigit(c));
-}
-
 /*****************************************************************************
  *Function name
  *    checkNamedTypesImplemented : check if all named types have definition
@@ -913,12 +898,12 @@ void generateChecksum( char* facName, unsigned long * checksum, sequence * event
 {
   unsigned long crc ;
   int pos;
-  event * ev;
+  event_t * ev;
   char str[256];
 
   crc = crc32(facName);
   for(pos = 0; pos < events->position; pos++){
-    ev = (event *)(events->array[pos]);
+    ev = (event_t *)(events->array[pos]);
     crc = partial_crc32(ev->name,crc);    
     if(!ev->type) continue; //event without type
     if(ev->type->type != STRUCT){
@@ -945,7 +930,7 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
   unsigned long crc = aCrc;
   char * str = NULL, buf[16];
   int flag = 0, pos;
-  field * fld;
+  type_fields * fld;
 
   switch(type->type){
     case INT:
@@ -966,12 +951,12 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
       flag = 1;
       break;
     case ARRAY:
-      sprintf(buf,"%d\0",type->size);
+      sprintf(buf,"%d",type->size);
       str = appendString("array ",buf);
       flag = 1;
       break;
     case SEQUENCE:
-      sprintf(buf,"%d\0",type->size);
+      sprintf(buf,"%d",type->size);
       str = appendString("sequence ",buf);
       flag = 1;
       break;
@@ -997,7 +982,7 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
     crc = getTypeChecksum(crc,type->nested_type);
   }else if(type->type == STRUCT || type->type == UNION){
     for(pos =0; pos < type->fields.position; pos++){
-      fld = (field *) type->fields.array[pos];
+      fld = (type_fields *) type->fields.array[pos];
       crc = partial_crc32(fld->name,crc);
       crc = getTypeChecksum(crc, fld->type);
     }    
@@ -1014,7 +999,7 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
 void freeType(type_descriptor * tp)
 {
   int pos2;
-  field *f;
+  type_fields *f;
 
   if(tp->fmt != NULL) free(tp->fmt);
   if(tp->type == ENUM) {
@@ -1025,7 +1010,7 @@ void freeType(type_descriptor * tp)
   }
   if(tp->type == STRUCT) {
     for(pos2 = 0; pos2 < tp->fields.position; pos2++) {
-      f = (field *) tp->fields.array[pos2];
+      f = (type_fields *) tp->fields.array[pos2];
       free(f->name);
       free(f->description);
       free(f);
@@ -1049,9 +1034,8 @@ void freeNamedType(table * t)
 
 void freeTypes(sequence *t) 
 {
-  int pos, pos2;
+  int pos;
   type_descriptor *tp;
-  field *f;
 
   for(pos = 0 ; pos < t->position; pos++) {
     tp = (type_descriptor *)t->array[pos];
@@ -1063,10 +1047,10 @@ void freeTypes(sequence *t)
 void freeEvents(sequence *t) 
 {
   int pos;
-  event *ev;
+  event_t *ev;
 
   for(pos = 0 ; pos < t->position; pos++) {
-    ev = (event *) t->array[pos];
+    ev = (event_t *) t->array[pos];
     free(ev->name);
     free(ev->description);
     free(ev);

@@ -18,10 +18,12 @@
 
 #include <stdio.h>
 #include <fcntl.h>
+#include <string.h>
+#include <dirent.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <dirent.h>
-#include <linux/errno.h>
+#include <errno.h>
+#include <unistd.h>
 
 // For realpath
 #include <limits.h>
@@ -34,8 +36,10 @@
 #include <ltt/trace.h>
 #include <ltt/facility.h>
 #include <ltt/event.h>
+#include <ltt/type.h>
 
 #define DIR_NAME_SIZE 256
+#define UNUSED __attribute__((__unused__))
 
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
@@ -61,7 +65,7 @@ int skipEvent(LttTracefile * t);
 
 
 /* Functions to parse system.xml file (using glib xml parser) */
-static void parser_start_element (GMarkupParseContext  *context,
+static void parser_start_element (GMarkupParseContext  UNUSED *context,
 				  const gchar          *element_name,
 				  const gchar         **attribute_names,
 				  const gchar         **attribute_values,
@@ -125,18 +129,11 @@ static void parser_start_element (GMarkupParseContext  *context,
   }
 }
 
-static void parser_end_element   (GMarkupParseContext  *context,
-				  const gchar          *element_name,
-				  gpointer              user_data,
-				  GError              **error)
-{
-}
-
-static void  parser_characters   (GMarkupParseContext  *context,
+static void  parser_characters   (GMarkupParseContext UNUSED *context,
 				  const gchar          *text,
-				  gsize                 text_len,
+				  gsize UNUSED          text_len,
 				  gpointer              user_data,
-				  GError              **error)
+				  GError UNUSED       **error)
 {
   LttSystemDescription* des = (LttSystemDescription* )user_data;
   des->description = g_strdup(text);
@@ -157,7 +154,6 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
 {
   LttTracefile * tf;
   struct stat    lTDFStat;    /* Trace data file status */
-  BlockStart     a_block_start;
 
   tf = g_new(LttTracefile, 1);  
 
@@ -182,7 +178,7 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
   }
 
   // Is the file large enough to contain a trace 
-  if(lTDFStat.st_size < sizeof(BlockStart) + EVENT_HEADER_SIZE){
+  if(lTDFStat.st_size < (off_t)(sizeof(BlockStart) + EVENT_HEADER_SIZE)){
     g_print("The input data file %s does not contain a trace\n", fileName);
     g_free(tf->name);
     close(tf->fd);
@@ -224,10 +220,9 @@ gint ltt_tracefile_open_control(LttTrace *t, char * control_name)
   LttTracefile * tf;
   LttEvent ev;
   LttFacility * f;
-  guint16 evId;
   void * pos;
   FacilityLoad fLoad;
-  int i;
+  unsigned int i;
 
   tf = ltt_tracefile_open(t,control_name);
   if(!tf) {
@@ -256,8 +251,8 @@ gint ltt_tracefile_open_control(LttTrace *t, char * control_name)
 	  }
 	}
 	if(i==t->facility_number) {
-	  g_warning("Facility: %s, checksum: %d is not found\n",
-		  fLoad.name,fLoad.checksum);
+	  g_warning("Facility: %s, checksum: %u is not found",
+		  fLoad.name,(unsigned int)fLoad.checksum);
     return -1;
   }
       }else if(ev.event_id == TRACE_BLOCK_START){
@@ -265,7 +260,7 @@ gint ltt_tracefile_open_control(LttTrace *t, char * control_name)
       }else if(ev.event_id == TRACE_BLOCK_END){
 	break;
       }else {
-        g_warning("Not valid facilities trace file\n");
+        g_warning("Not valid facilities trace file");
         return -1;
       }
     }
@@ -296,14 +291,13 @@ gint getSystemInfo(LttSystemDescription* des, char * pathname)
 {
   FILE * fp;
   char buf[DIR_NAME_SIZE];
-  char description[4*DIR_NAME_SIZE];
 
   GMarkupParseContext * context;
   GError * error = NULL;
   GMarkupParser markup_parser =
     {
       parser_start_element,
-      parser_end_element,
+      NULL,
       parser_characters,
       NULL,  /*  passthrough  */
       NULL   /*  error        */
@@ -342,7 +336,7 @@ gint getFacilityInfo(LttTrace *t, char* eventdefs)
   DIR * dir;
   struct dirent *entry;
   char * ptr;
-  int i,j;
+  unsigned int i,j;
   LttFacility * f;
   LttEventType * et;
   char name[DIR_NAME_SIZE];
@@ -430,29 +424,31 @@ gint getCpuFileInfo(LttTrace *t, char* cpu)
  *
  *When a trace is closed, all the associated facilities, types and fields
  *are released as well.
+ */
+
+
+/****************************************************************************
+ * get_absolute_pathname
  *
+ * return the unique pathname in the system
+ * 
  * MD : Fixed this function so it uses realpath, dealing well with
  * forgotten cases (.. were not used correctly before).
  *
  ****************************************************************************/
-
 void get_absolute_pathname(const char *pathname, char * abs_pathname)
 {
-  char * ptr, *ptr1;
-  size_t size = DIR_NAME_SIZE;
   abs_pathname[0] = '\0';
 
   if ( realpath (pathname, abs_pathname) != NULL)
     return;
   else
   {
-    // FIXME : Path is wrong, is it ok to return the pathname unmodified ?
+    /* error, return the original path unmodified */
     strcpy(abs_pathname, pathname);
     return;
   }
-
   return;
-  
 }
 
 LttTrace *ltt_trace_open(const char *pathname)
@@ -570,7 +566,7 @@ LttTrace *ltt_trace_copy(LttTrace *self)
 
 void ltt_trace_close(LttTrace *t)
 {
-  int i;
+  unsigned int i;
   LttTracefile * tf;
   LttFacility * f;
 
@@ -653,7 +649,7 @@ LttFacility *ltt_trace_facility_get(LttTrace *t, unsigned i)
 
 unsigned ltt_trace_facility_find(LttTrace *t, char *name, unsigned *position)
 {
-  int i, count=0;
+  unsigned int i, count=0;
   LttFacility * f;
   for(i=0;i<t->facility_number;i++){
     f = (LttFacility*)g_ptr_array_index(t->facilities, i);
@@ -673,7 +669,7 @@ unsigned ltt_trace_facility_find(LttTrace *t, char *name, unsigned *position)
 
 unsigned ltt_trace_eventtype_number(LttTrace *t)
 {
-  int i;
+  unsigned int i;
   unsigned count = 0;
   LttFacility * f;
   for(i=0;i<t->facility_number;i++){
@@ -686,7 +682,7 @@ unsigned ltt_trace_eventtype_number(LttTrace *t)
 LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
 {
   LttFacility * facility;
-  int i;
+  unsigned int i;
   for(i=0;i<trace->facility_number;i++){
     facility = (LttFacility*) g_ptr_array_index(trace->facilities,i);
     if(id >= facility->base_id && 
@@ -727,10 +723,10 @@ unsigned ltt_trace_per_cpu_tracefile_number(LttTrace *t)
  *and a negative value otherwise. 
  ****************************************************************************/
 
-int ltt_trace_control_tracefile_find(LttTrace *t, char *name)
+int ltt_trace_control_tracefile_find(LttTrace *t, const gchar *name)
 {
   LttTracefile * tracefile;
-  int i;
+  unsigned int i;
   for(i=0;i<t->control_tracefile_number;i++){
     tracefile = (LttTracefile*)g_ptr_array_index(t->control_tracefiles, i);
     if(strcmp(tracefile->name, name)==0)break;
@@ -739,17 +735,19 @@ int ltt_trace_control_tracefile_find(LttTrace *t, char *name)
   return i;
 }
 
-int ltt_trace_per_cpu_tracefile_find(LttTrace *t, unsigned i)
+/* not really useful. We just have to know that cpu tracefiles
+ * comes before control tracefiles.
+ */
+int ltt_trace_per_cpu_tracefile_find(LttTrace *t, const gchar *name)
 {
   LttTracefile * tracefile;
-  int j, name;
-  for(j=0;j<t->per_cpu_tracefile_number;j++){
-    tracefile = (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles, j);
-    name = atoi(tracefile->name);
-    if(name == (int)i)break;
+  unsigned int i;
+  for(i=0;i<t->per_cpu_tracefile_number;i++){
+    tracefile = (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles, i);
+    if(strcmp(tracefile->name, name)==0)break;
   }
-  if(j == t->per_cpu_tracefile_number) return -1;
-  return j;
+  if(i == t->per_cpu_tracefile_number) return -1;
+  return i;
 }
 
 /*****************************************************************************
@@ -773,7 +771,7 @@ LttTracefile *ltt_trace_per_cpu_tracefile_get(LttTrace *t, unsigned i)
 void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
 {
   LttTime startSmall, startTmp, endBig, endTmp;
-  int i, j=0;
+  unsigned int i, j=0;
   LttTracefile * tf;
 
   for(i=0;i<t->control_tracefile_number;i++){
@@ -923,7 +921,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
       lttTime = getEventTime(t);
       err = ltt_time_compare(lttTime, time);
       if(err > 0){
-	if(t->which_event==2 || (&t->prev_event_time,&time)<0){
+	if(t->which_event==2 || ltt_time_compare(t->prev_event_time,time)<0){
 	  return;
 	}else{
 	  updateTracefile(t);
@@ -1095,10 +1093,14 @@ LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event)
 
 int readFile(int fd, void * buf, size_t size, char * mesg)
 {
-   ssize_t nbBytes;
-   nbBytes = read(fd, buf, size);
-   if(nbBytes != size){
-     printf("%s\n",mesg);
+   ssize_t nbBytes = read(fd, buf, size);
+
+   if((size_t)nbBytes != size) {
+     if(nbBytes < 0) {
+       perror("Error in readFile : ");
+     } else {
+       g_warning("%s",mesg);
+     }
      return EIO;
    }
    return 0;
@@ -1186,7 +1188,7 @@ void updateTracefile(LttTracefile * tf)
 
 int skipEvent(LttTracefile * t)
 {
-  int evId, err;
+  int evId;
   void * evData;
   LttEventType * evT;
   LttField * rootFld;

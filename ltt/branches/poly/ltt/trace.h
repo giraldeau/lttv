@@ -85,13 +85,15 @@ unsigned ltt_trace_control_tracefile_number(LttTrace *t);
 unsigned ltt_trace_per_cpu_tracefile_number(LttTrace *t);
 
 
-/* It is possible to search for the tracefiles by name or by CPU position.
-   The index within the tracefiles of the same type is returned if found
-   and a negative value otherwise. */
+/* It is possible to search for the tracefiles by name or by CPU tracefile
+ * name.
+ * The index within the tracefiles of the same type is returned if found
+ * and a negative value otherwise.
+ */
 
-int ltt_trace_control_tracefile_find(LttTrace *t, char *name);
+int ltt_trace_control_tracefile_find(LttTrace *t, const gchar *name);
 
-int ltt_trace_per_cpu_tracefile_find(LttTrace *t, unsigned i);
+int ltt_trace_per_cpu_tracefile_find(LttTrace *t, const gchar *name);
 
 
 /* Get a specific tracefile */

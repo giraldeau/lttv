@@ -65,7 +65,7 @@ struct _LttType{
   char * type_name;                //type name if it is a named type
   char * element_name;             //elements name of the struct
   char * fmt;
-  int size;
+  unsigned int size;
   LttTypeEnum type_class;          //which type
   char ** enum_strings;            //for enum labels
   struct _LttType ** element_type; //for array, sequence and struct
@@ -79,8 +79,8 @@ struct _LttEventType{
   int index;              //id of the event type within the facility
   LttFacility * facility; //the facility that contains the event type
   LttField * root_field;  //root field
-  int latest_block;       //the latest block using the event type
-  int latest_event;       //the latest event using the event type
+  unsigned int latest_block;       //the latest block using the event type
+  unsigned int latest_event;       //the latest event using the event type
 };
 
 struct _LttEvent{
@@ -90,8 +90,8 @@ struct _LttEvent{
   LttCycleCount event_cycle_count;
   LttTracefile * tracefile;
   void * data;               //event data
-  int which_block;           //the current block of the event
-  int which_event;           //the position of the event
+  unsigned int which_block;           //the current block of the event
+  unsigned int which_event;           //the position of the event
   /* This is a workaround for fast position seek */
   void * last_event_pos;
 
@@ -137,12 +137,12 @@ struct _LttField{
 
 struct _LttFacility{
   char * name;               //facility name 
-  int event_number;          //number of events in the facility 
+  unsigned int event_number;          //number of events in the facility 
   LttChecksum checksum;      //checksum of the facility 
   guint32  base_id;          //base id of the facility
   LttEventType ** events;    //array of event types 
   LttType ** named_types;
-  int  named_types_number;
+  unsigned int named_types_number;
 };
 
 struct _LttTracefile{
@@ -151,9 +151,9 @@ struct _LttTracefile{
   int fd;                            //file descriptor 
   off_t file_size;                   //file size
   unsigned block_size;               //block_size
-  int block_number;                  //number of blocks in the file
-  int which_block;                   //which block the current block is
-  int which_event;                   //which event of the current block 
+  unsigned int block_number;         //number of blocks in the file
+  unsigned int which_block;          //which block the current block is
+  unsigned int which_event;          //which event of the current block 
                                      //is currently processed 
   LttTime current_event_time;        //time of the current event
   BlockStart * a_block_start;        //block start of the block
@@ -168,7 +168,7 @@ struct _LttTracefile{
   LttTime prev_block_end_time;       //the end time of previous block
   LttTime prev_event_time;           //the time of the previous event
   LttCycleCount pre_cycle_count;     //previous cycle count of the event
-  int      count;                    //the number of overflow of cycle count
+  unsigned int      count;           //the number of overflow of cycle count
 };
 
 struct _LttTrace{

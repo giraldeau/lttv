@@ -168,6 +168,7 @@ LttTypeEnum ltt_type_class(LttType *t)
  *    t             : a type   
  *Return value
  *    unsigned      : the type size
+ *    returns 0 if erroneous, and show a critical warning message.
  ****************************************************************************/
 
 unsigned ltt_type_size(LttTrace * trace, LttType *t)
@@ -183,19 +184,22 @@ unsigned ltt_type_size(LttTrace * trace, LttType *t)
     else{
       LttArchSize size = trace->system_description->size;
       if(size == LTT_LP32){
-	if(t->size == 5)return sizeof(int16_t);
-	else return sizeof(int32_t);
+	      if(t->size == 5)return sizeof(int16_t);
+	      else return sizeof(int32_t);
       }
       else if(size == LTT_ILP32 || size == LTT_LP64){
-	if(t->size == 5)return sizeof(int32_t);
-	else{
-	  if(size == LTT_ILP32) return sizeof(int32_t);
-	  else return sizeof(int64_t);
-	}
+	      if(t->size == 5)return sizeof(int32_t);
+	      else{
+	        if(size == LTT_ILP32) return sizeof(int32_t);
+	        else return sizeof(int64_t);
+	      }
       }
       else if(size == LTT_ILP64)return sizeof(int64_t);	      
     }
   }
+  
+  g_critical("ltt_type_size : Type size %u unknown", t->size);
+  return 0;
 }
 
 /*****************************************************************************
@@ -259,8 +263,8 @@ unsigned ltt_type_member_number(LttType *t)
 
 LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name)
 {
-  if(t->type_class != LTT_STRUCT){*name == NULL; return NULL;}
-  if(i >= t->element_number || i < 0 ){*name = NULL; return NULL;}
+  if(t->type_class != LTT_STRUCT){*name = NULL; return NULL;}
+  if(i >= t->element_number){*name = NULL; return NULL;}
   *name = t->element_type[i]->element_name;
   return t->element_type[i];
 }
@@ -280,7 +284,7 @@ LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name)
 char *ltt_enum_string_get(LttType *t, unsigned i)
 {  
   if(t->type_class != LTT_ENUM) return NULL;
-  if(i >= t->element_number || i < 0 ) return NULL;
+  if(i >= t->element_number) return NULL;
   return t->enum_strings[i];
 }
 
@@ -316,7 +320,7 @@ LttField *ltt_field_element(LttField *f)
 LttField *ltt_field_member(LttField *f, unsigned i)
 {
   if(f->field_type->type_class != LTT_STRUCT) return NULL;
-  if(i < 0 || i >= f->field_type->element_number) return NULL;
+  if(i >= f->field_type->element_number) return NULL;
   return f->child[i];
 }
 

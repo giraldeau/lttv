@@ -45,5 +45,7 @@ LttEventType *ltt_facility_eventtype_get(LttFacility *f, unsigned i);
 
 LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, char *name);
 
+int ltt_facility_close(LttFacility *f);
+
 #endif // FACILITY_H
 

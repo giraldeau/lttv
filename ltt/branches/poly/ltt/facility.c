@@ -34,7 +34,7 @@ void constructTypeAndFields(LttFacility * fac,type_descriptor * td,
                             LttField * fld);
 
 /* generate the facility according to the events belongin to it */
-void generateFacility(LttFacility * f, facility  * fac, 
+void generateFacility(LttFacility * f, facility_t  * fac, 
                       LttChecksum checksum);
 
 /* functions to release the memory occupied by a facility */
@@ -58,7 +58,7 @@ void ltt_facility_open(LttTrace * t, char * pathname)
   char *token;
   parse_file in;
   char buffer[BUFFER_SIZE];
-  facility * fac;
+  facility_t * fac;
   LttFacility * f;
   LttChecksum checksum;
 
@@ -78,7 +78,7 @@ void ltt_facility_open(LttTrace * t, char * pathname)
     token = getName(&in);
     
     if(strcmp("facility",token) == 0) {
-      fac = g_new(facility, 1);
+      fac = g_new(facility_t, 1);
       fac->name = NULL;
       fac->description = NULL;
       sequence_init(&(fac->events));
@@ -124,7 +124,7 @@ void ltt_facility_open(LttTrace * t, char * pathname)
  *    checksum            : checksum of the facility          
  ****************************************************************************/
 
-void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
+void generateFacility(LttFacility *f, facility_t *fac,LttChecksum checksum)
 {
   char * facilityName = fac->name;
   sequence * events = &fac->events;
@@ -148,17 +148,17 @@ void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
     evType = g_new(LttEventType,1);
     f->events[i] = evType;
 
-    evType->name = g_strdup(((event*)(events->array[i]))->name);
-    evType->description=g_strdup(((event*)(events->array[i]))->description);
+    evType->name = g_strdup(((event_t*)(events->array[i]))->name);
+    evType->description=g_strdup(((event_t*)(events->array[i]))->description);
     
     field = g_new(LttField, 1);
     evType->root_field = field;
     evType->facility = f;
     evType->index = i;
 
-    if(((event*)(events->array[i]))->type != NULL){
+    if(((event_t*)(events->array[i]))->type != NULL){
       field->field_pos = 0;
-      type = lookup_named_type(f,((event*)(events->array[i]))->type);
+      type = lookup_named_type(f,((event_t*)(events->array[i]))->type);
       field->field_type = type;
       field->offset_root = 0;
       field->fixed_root = 1;
@@ -172,7 +172,7 @@ void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
       field->current_element = 0;
 
       //construct field tree and type graph
-      constructTypeAndFields(f,((event*)(events->array[i]))->type,field);
+      constructTypeAndFields(f,((event_t*)(events->array[i]))->type,field);
     }else{
       evType->root_field = NULL;
       g_free(field);
@@ -242,7 +242,7 @@ void constructTypeAndFields(LttFacility * fac,type_descriptor * td,
 
     fld->child = g_new(LttField*, td->fields.position);      
     for(i=0;i<td->fields.position;i++){
-      tmpTd = ((field*)(td->fields.array[i]))->type;
+      tmpTd = ((type_fields*)(td->fields.array[i]))->type;
 
       if(flag)
 	fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
@@ -253,7 +253,7 @@ void constructTypeAndFields(LttFacility * fac,type_descriptor * td,
 
       if(flag){
 	fld->child[i]->field_type->element_name 
-	  = g_strdup(((field*)(td->fields.array[i]))->name);
+	  = g_strdup(((type_fields*)(td->fields.array[i]))->name);
       }
 
       fld->child[i]->offset_root = -1;
@@ -286,7 +286,7 @@ void constructTypeAndFields(LttFacility * fac,type_descriptor * td,
 LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
 {
   LttType * lttType = NULL;
-  int i;
+  unsigned int i;
   char * name;
   if(td->type_name){
     for(i=0;i<fac->named_types_number; i++){
@@ -348,7 +348,7 @@ int ltt_facility_close(LttFacility *f)
 
 void freeFacility(LttFacility * fac)
 {
-  int i;
+  unsigned int i;
   g_free(fac->name);  //free facility name
 
   //free event types
@@ -385,7 +385,6 @@ void freeEventtype(LttEventType * evType)
 
 void freeLttNamedType(LttType * type)
 {
-  int i;
   g_free(type->type_name);
   type->type_name = NULL;
   freeLttType(&type);
@@ -393,7 +392,7 @@ void freeLttNamedType(LttType * type)
 
 void freeLttType(LttType ** type)
 {
-  int i;
+  unsigned int i;
   if(*type == NULL) return;
   if((*type)->type_name){
     return; //this is a named type
@@ -493,7 +492,7 @@ unsigned ltt_facility_base_id(LttFacility *f)
 
 unsigned ltt_facility_eventtype_number(LttFacility *f)
 {
-  return (unsigned)(f->event_number);
+  return (f->event_number);
 }
 
 /*****************************************************************************
@@ -525,7 +524,7 @@ LttEventType *ltt_facility_eventtype_get(LttFacility *f, unsigned i)
 
 LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, char *name)
 {
-  int i;
+  unsigned int i;
   LttEventType * ev;
   for(i=0;i<f->event_number;i++){
     ev = f->events[i];

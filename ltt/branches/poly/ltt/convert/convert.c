@@ -35,11 +35,12 @@ int readFile(int fd, void * buf, size_t size, char * mesg)
 {
    ssize_t nbBytes = read(fd, buf, size);
    
-   if(nbBytes < 0) {
-     perror("Error in readFile : ");
-     exit(1);
-   } else if((size_t)nbBytes != size) {
-     printf("%s\n",mesg);
+   if((size_t)nbBytes != size) {
+     if(nbBytes < 0) {
+       perror("Error in readFile : ");
+     } else {
+       printf("%s\n",mesg);
+     }
      exit(1);
    }
    return 0;
