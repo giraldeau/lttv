@@ -185,15 +185,6 @@ Background Computation Request
 The types of background computation that can be requested by a viewer : state
 computation (main window scope) or viewer specific background computation.
 
-A background computation request is asked via lttvwindow_events_request, with a
-priority field set with a low priority.
-
-In the case of a background computation with viewer pointer field set to NULL,
-if a lttvwindow_events_request_remove_all is done on the viewer pointer, it will
-not affect the state computation as no viewer pointer will have been passed in
-the initial request. This is the expected result. For the background processings
-that call viewer's hooks, they will be removed.
-
 
 A New "Redraw" Button
 
@@ -254,13 +245,10 @@ registered. The viewer can access this structure during the read as its
 hook_data. Only the stop_flag can be changed by the viewer through the
 event hooks.
 
-typedef LttvEventsRequestPrio guint;
-
 typedef struct _EventsRequest {
   gpointer                     owner;           /* Owner of the request     */
   gpointer                     viewer_data;     /* Unset : NULL             */
   gboolean                     servicing;       /* service in progress: TRUE */ 
-  LttvEventsRequestPrio        prio;            /* Ev. Req. priority        */
   LttTime                      start_time;/* Unset : { G_MAXUINT, G_MAXUINT }*/
   LttvTracesetContextPosition *start_position;  /* Unset : NULL             */
   gboolean                     stop_flag;       /* Continue:TRUE Stop:FALSE */
@@ -343,23 +331,23 @@ We remove the g_idle function when list_in and list_out are empty
       1.3.1 If !servicing
           - begin request hooks called
           - servicing = TRUE
-      1.3.2 call before_traceset
+      1.3.2 call before chunk
       1.3.3 events hooks added
   2. Else, list_in is not empty, we continue a read
     2.1 For each req of list_out
     - if req.start time == current context time
       - Add to list_in, remove from list_out
       - If !servicing
-        - Call begin request
+        - Call before request
         - servicing = TRUE
-      - Call before_traceset
+      - Call before chunk
       - events hooks added
     - if req.start position == current position
       - Add to list_in, remove from list_out
       - If !servicing
-        - Call begin request
+        - Call before request
         - servicing = TRUE
-      - Call before_traceset
+      - Call before_chunk
       - events hooks added
 
   3. Find end criterions
@@ -384,37 +372,37 @@ We remove the g_idle function when list_in and list_out are empty
     - if current context time > traceset.end time
       - For each req in list_in
         - Remove events hooks for req
-        - Call end traceset for req
+        - Call end chunk for req
         - Call end request for req
         - remove req from list_in
     5.1 For each req in list_in
           - req.num -= count
           - if req.num == 0
             - Remove events hooks for req
-            - Call end traceset for req
+            - Call end chunk for req
             - Call end request for req
             - remove req from list_in
           - if current context time > req.end time
             - Remove events hooks for req
-            - Call end traceset for req
+            - Call end chunk for req
             - Call end request for req
             - remove req from list_in
           - if req.end pos == current pos
             - Remove events hooks for req
-            - Call end traceset for req
+            - Call end_chunk for req
             - Call end request for req
             - remove req from list_in
           - if req.stop_flag == TRUE
             - Remove events hooks for req
-            - Call end traceset for req
+            - Call end chunk for req
             - Call end request for req
             - remove req from list_in
 
-B. When interrupted
+B. Between each chunk (interrupted or not)
   1. for each request in list_in
     1.1. Use current postition as start position
     1.2. Remove start time
-    1.3. Call after_traceset
+    1.3. Call after_chunk_traceset
     1.4. Remove event hooks
     1.5. Put it back in list_out
 
@@ -432,16 +420,6 @@ The >= for position is necessary to make ensure consistency between start time
 requests and positions requests that happens to be at the exact same start time
 and position.
 
-We only keep one saved state in memory. If, for example, a low priority
-servicing is interrupted, a high priority is serviced, then the low priority
-will use the saved state to start back where it was instead of seeking to the
-time. In the very specific case where a low priority servicing is interrupted,
-and then a high priority servicing on top of it is also interrupted, well, the
-low priority will loose its state and will have to seek back. It should not
-occur often. The solution to it would be to save one state per priority.
-
-
-
 
 
 
@@ -457,6 +435,4 @@ Strengths
 
 - Solves all the weaknesses idenfied in the actual boundaryless traceset
 reading.
-
-- Background processing available.
 
