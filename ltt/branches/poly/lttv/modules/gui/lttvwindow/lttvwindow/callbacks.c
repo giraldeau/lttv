@@ -639,6 +639,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
             g_debug("SEEK POSITION");
             //lttv_process_traceset_seek_position(tsc, events_request->start_position);
             pos_time = lttv_traceset_context_position_get_time(events_request->start_position);
+            
             lttv_state_traceset_seek_time_closest(LTTV_TRACESET_STATE(tsc),
                                                   pos_time);
 
@@ -950,7 +951,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       }
     }
 
-    //if(gtk_events_pending()) break;
+    if(gtk_events_pending()) break;
   }
 
   /* B. When interrupted between chunks */
