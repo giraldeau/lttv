@@ -8,28 +8,21 @@ Seeing that a very precise hook call ordering is needed when processing events
 this document defines a new type and interface that permits to merge all kind of
 hooks, eventually sorted by the priority associated to them.
 
-As the LttvHooksById has never been used up to this point in the project, I
-doubt that any real need for it exists. If we still want to implement it, it
-would require to create temporary by_id hook lists, add all the specific by_id
-hooks and the main hooks to it, and sort it before the traceset reading starts.
+- Type LttvHooks with priorities
 
-- Type LttvHooksPrio
+This is a modification to the actual LttvHooks that associates a priority with
+each hook. The container for this type would be a garray, just like hook.c, but
+a lttv_hooks_prio_sort would be called every time a hook is added to a list. It
+would sort the hooks in a hook list by priority : from highest priority (-19) to
+lowest (20). The default priority is 0.
 
-This is a new type containing hooks associated with a priority. It has its own
-interface which pretty much looks like the one found in hook.h, plus the fact
-that a priority is associated with each hook. (lttv_hooks_prio_add,
-lttv_hooks_prio_call, lttv_hooks_prio_remove are sample names of functions
-offered by this interface) The container for this type would be a garray, just
-like hook.c, but a lttv_hooks_prio_sort would be required in order to sort the
-array before using lttv_hooks_prio_call.
+In order to make lttv_hooks_call aware of the different kind of hooks it has to
+call, the LttvHooksById will be modified to integrate a new "main" list : a
+pointer to a LttvHooks that will be called for any Id.
 
-The viewers will just have to pass hooks to the main window through this type,
-using the hookprio.h interface to manipulate it. Then, the main window will add
-them and remove them from the context to deliver exactly the events requested by
-each viewer through process traceset.
+A new lttv_hooks_by_id_call that will get the hooks from the main and by_id
+lists in the right order will deal with the multiple lists priority problem.
 
-If we want to make this data type more encapsulated, we could call
-lttv_hooks_prio_sort upon each modification to the structure. Then, a simple
-lttv_hooks_prio_call would be assured to call the hooks in the right order.
+
 
 
