@@ -293,12 +293,13 @@ int main(int argc, char ** argv){
     cur_pos += sizeof(uint16_t); //Skip event size
 
     evId = *(uint8_t *)cur_pos;
-    cur_pos += sizeof(uint8_t);
-    if(*(uint32_t*)cur_pos != TRACER_MAGIC_NUMBER)
-      g_error("Trace magic number does not match : %lx, should be %lx",
-               (uint32_t*)cur_pos, TRACER_MAGIC_NUMBER);
-    cur_pos += sizeof(uint32_t);
+    g_assert(evId == TRACE_START);
+    cur_pos += sizeof(uint8_t); //skip EvId
+    cur_pos += sizeof(uint32_t); //skip time delta
     tStart = (trace_start_any*)cur_pos;
+    if(tStart->MagicNumber != TRACER_MAGIC_NUMBER)
+      g_error("Trace magic number does not match : %lx, should be %lx",
+               tStart->MagicNumber, TRACER_MAGIC_NUMBER);
     if(tStart->MajorVersion != TRACER_SUP_VERSION_MAJOR)
       g_error("Trace Major number does match : %hu, should be %u",
                tStart->MajorVersion, TRACER_SUP_VERSION_MAJOR);
@@ -312,6 +313,10 @@ int main(int argc, char ** argv){
     start.block_id = tBufStart->ID;
     end.block_id = start.block_id;
 
+
+    g_printf("Trace version %hu.%hu detected\n",
+             tStart->MajorVersion,
+             tStart->MinorVersion);
     if(tStart->MinorVersion == 2) {
       trace_start_2_2* tStart_2_2 = (trace_start_2_2*)tStart;
       ltt_major_version = tStart_2_2->MajorVersion;
