@@ -637,8 +637,8 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
 
     if(last_ret == TRUE ||
        count >= nb_events ||
-       lttv_traceset_context_ctx_pos_compare(self,
-                                             end_position) >= 0 ||
+       (end_position!=NULL)?FALSE:lttv_traceset_context_ctx_pos_compare(self,
+                                                           end_position) >= 0 ||
        ltt_time_compare(tfc->timestamp, end) >= 0)
     {
       return count;
