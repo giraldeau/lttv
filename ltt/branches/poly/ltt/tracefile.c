@@ -738,6 +738,77 @@ unsigned ltt_tracefile_block_number(LttTracefile *tf)
  *    t                      : tracefile
  *    time                   : criteria of the time
  ****************************************************************************/
+void ltt_tracefile_find_time_block(LttTracefile *t, LttTime time, 
+				   int start_block, int end_block)
+{
+  int err, tmp_block, s, e; 
+  int headTime;
+  int tailTime;
+  
+  err=readBlock(t,start_block);
+  if(err) g_error("Can not read tracefile: %s\n", t->name); 
+  if(start_block == end_block)return;
+
+  tailTime = ltt_time_compare(t->a_block_end->time, time);
+  if(tailTime >= 0) return;
+  
+  err=readBlock(t,end_block);
+  if(err) g_error("Can not read tracefile: %s\n", t->name); 
+  if(start_block+1 == end_block)return;
+  
+  headTime = ltt_time_compare(t->a_block_start->time, time);
+  if(headTime <= 0 ) return;
+  
+  tmp_block = (end_block + start_block)/2;
+  err=readBlock(t,tmp_block);
+  if(err) g_error("Can not read tracefile: %s\n", t->name); 
+
+  headTime = ltt_time_compare(t->a_block_start->time, time);
+  tailTime = ltt_time_compare(t->a_block_end->time, time);
+  if(headTime <= 0 && tailTime >= 0) return;
+  
+  if(headTime > 0){
+    s = start_block + 1;
+    e = tmp_block - 1;
+    if(s <= e)
+      ltt_tracefile_find_time_block(t, time, s, e);
+    else return;
+  }
+
+  if(tailTime < 0){
+    s = tmp_block + 1;
+    e = end_block - 1;
+    if(s <= e)
+      ltt_tracefile_find_time_block(t, time, s, e);
+    else return;
+  }  
+}
+
+void ltt_tracefile_backward_find_time_block(LttTracefile *t, LttTime time)
+{
+  int t_time, h_time, err;
+  err=readBlock(t,t->which_block-1);
+  if(err) g_error("Can not read tracefile: %s\n", t->name); 
+  h_time = ltt_time_compare(t->a_block_start->time, time);
+  t_time = ltt_time_compare(t->a_block_end->time, time);
+  if(h_time == 0){
+    int tmp;
+    if(t->which_block == 1) return;
+    err=readBlock(t,t->which_block-1);
+    if(err) g_error("Can not read tracefile: %s\n", t->name); 
+    tmp = ltt_time_compare(t->a_block_end->time, time);
+    if(tmp == 0) return ltt_tracefile_seek_time(t, time);
+    err=readBlock(t,t->which_block+1);
+    if(err) g_error("Can not read tracefile: %s\n", t->name);     
+  }else if(h_time > 0){
+    ltt_tracefile_find_time_block(t, time, 1, t->which_block);
+    return ltt_tracefile_seek_time(t, time) ;    
+  }else{
+    if(t_time >= 0) return ltt_tracefile_seek_time(t, time);
+    err=readBlock(t,t->which_block+1);
+    if(err) g_error("Can not read tracefile: %s\n", t->name);    
+  }
+}
 
 void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 {
@@ -781,22 +852,19 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
       if(ltt_time_compare(t->prev_block_end_time, time) >= 0 ||
 	 (t->prev_block_end_time.tv_sec == 0 && 
 	  t->prev_block_end_time.tv_nsec == 0 )){
-	err=readBlock(t,t->which_block-1);
-	if(err) g_error("Can not read tracefile: %s\n", t->name); 
-	return ltt_tracefile_seek_time(t, time) ;
+	ltt_tracefile_backward_find_time_block(t, time);
       }else{
 	updateTracefile(t);
       }
     }
   }else if(tailTime < 0){
     if(t->which_block != t->block_number){
-      err=readBlock(t,t->which_block+1);
-      if(err) g_error("Can not read tracefile: %s\n", t->name); 
+      ltt_tracefile_find_time_block(t, time, t->which_block+1, t->block_number);
+      return ltt_tracefile_seek_time(t, time);
     }else {
       g_print("End of file\n");      
       return;      
     }    
-    if(tailTime < 0) return ltt_tracefile_seek_time(t, time);
   }else if(tailTime == 0){
     t->cur_event_pos = t->last_event_pos;
     t->current_event_time = time;  
