@@ -598,7 +598,7 @@ void lttv_process_traceset_begin(LttvTracesetContext *self,
 /* Note : a _middle must be preceded from a _seek or another middle */
 guint lttv_process_traceset_middle(LttvTracesetContext *self,
                               LttTime end,
-                              unsigned nb_events,
+                              guint nb_events,
                               const LttvTracesetContextPosition *end_position)
 {
   GTree *pqueue = self->pqueue;

@@ -42,8 +42,9 @@ static LttvHooks
   *after_trace,
   *before_tracefile,
   *after_tracefile,
-  *before_event,
-  *after_event,
+  //*before_event,
+  //*after_event,
+  *event_hook,
   *main_hooks;
 
 static char *a_trace;
@@ -106,9 +107,15 @@ static double run_one_test(LttvTracesetState *ts, LttTime start, LttTime end)
 
   int i;
 
-  lttv_traceset_context_add_hooks(&ts->parent,
-  before_traceset, after_traceset, NULL, before_trace, after_trace,
-  NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+  //lttv_traceset_context_add_hooks(&ts->parent,
+  //before_traceset, after_traceset, NULL, before_trace, after_trace,
+  //NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+  lttv_process_traceset_begin(&ts->parent,
+                              before_traceset,
+                              before_trace,
+                              before_tracefile,
+                              event_hook,
+                              NULL);
 
   for(i = 0 ; i < lttv_traceset_number(traceset) ; i++) {
     ((LttvTraceState *)(ts->parent.traces[i]))->save_interval =a_save_interval;
@@ -116,12 +123,22 @@ static double run_one_test(LttvTracesetState *ts, LttTime start, LttTime end)
 
   t0 = get_time();
   lttv_state_traceset_seek_time_closest(ts, start);
-  lttv_process_traceset(&ts->parent, end, G_MAXULONG);
+  //lttv_process_traceset(&ts->parent, end, G_MAXULONG);
+  lttv_process_traceset_middle(&ts->parent,
+                               end,
+                               G_MAXULONG,
+                               NULL);
   t1 = get_time();
 
-  lttv_traceset_context_remove_hooks(&ts->parent,
-  before_traceset, after_traceset, NULL, before_trace, after_trace,
-  NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+  //lttv_traceset_context_remove_hooks(&ts->parent,
+  //before_traceset, after_traceset, NULL, before_trace, after_trace,
+  //NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+  lttv_process_traceset_end(&ts->parent,
+                            after_traceset,
+                            after_trace,
+                            after_tracefile,
+                            event_hook,
+                            NULL);
 
   return t1 - t0;
 }
@@ -348,9 +365,9 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   if(a_test1 || a_test_all) {
     count = 0;
-    lttv_hooks_add(after_event, count_event, &count);
+    lttv_hooks_add(event_hook, count_event, &count, LTTV_PRIO_DEFAULT);
     t = run_one_test(ts, zero_time, max_time);
-    lttv_hooks_remove_data(after_event, count_event, &count);
+    lttv_hooks_remove_data(event_hook, count_event, &count);
     g_warning(
         "Processing trace while counting events (%u events in %g seconds)",
 	count, t);
@@ -382,10 +399,11 @@ static gboolean process_traceset(void *hook_data, void *call_data)
       save_state.position = 0;
       save_state.version = i;
       lttv_state_add_event_hooks(ts);
-      lttv_hooks_add(after_event, save_state_event, &save_state);
+      lttv_hooks_add(event_hook, save_state_event, &save_state,
+                        LTTV_PRIO_DEFAULT);
       t = run_one_test(ts, zero_time, max_time);
       lttv_state_remove_event_hooks(ts);
-      lttv_hooks_remove_data(after_event, save_state_event, &save_state);
+      lttv_hooks_remove_data(event_hook, save_state_event, &save_state);
       g_warning("Processing while updating/writing state (%g seconds)", t);
     }
   }
@@ -456,7 +474,8 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   /* Run through all events computing and saving the state. */
 
-  if(a_trace_event) lttv_hooks_add(after_event, trace_event, NULL);
+  if(a_trace_event) lttv_hooks_add(event_hook, trace_event, NULL,
+                                      LTTV_PRIO_DEFAULT);
 
   if(a_test6 || a_test_all) {
     if(lttv_profile_memory) {
@@ -467,12 +486,13 @@ static gboolean process_traceset(void *hook_data, void *call_data)
     lttv_state_add_event_hooks(ts);
     lttv_state_save_add_event_hooks(ts);
     if(a_save_state_copy)
-        lttv_hooks_add(after_event, save_state_copy_event, &save_state);
+        lttv_hooks_add(event_hook, save_state_copy_event, &save_state,
+                          LTTV_PRIO_DEFAULT);
     t = run_one_test(ts, zero_time, max_time);
     lttv_state_remove_event_hooks(ts);
     lttv_state_save_remove_event_hooks(ts);
     if(a_save_state_copy)
-        lttv_hooks_remove_data(after_event,save_state_copy_event, &save_state);
+        lttv_hooks_remove_data(event_hook,save_state_copy_event, &save_state);
 
     g_warning("Processing trace while updating/saving state (%g seconds)", t);
 
@@ -513,7 +533,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
     }
   }
 
-  if(a_trace_event) lttv_hooks_remove_data(after_event, trace_event, NULL);
+  if(a_trace_event) lttv_hooks_remove_data(event_hook, trace_event, NULL);
 
   g_free(save_state.write_time);
   g_free(a_event_position);
@@ -624,8 +644,10 @@ static void init()
   after_trace = lttv_hooks_new();
   before_tracefile = lttv_hooks_new();
   after_tracefile = lttv_hooks_new();
-  before_event = lttv_hooks_new();
-  after_event = lttv_hooks_new();
+  //before_event = lttv_hooks_new();
+  //after_event = lttv_hooks_new();
+  event_hook = lttv_hooks_new();
+  
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
       LTTV_POINTER, &value));
@@ -645,17 +667,19 @@ static void init()
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/after",
       LTTV_POINTER, &value));
   *(value.v_pointer) = after_tracefile;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+  //g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+  //    LTTV_POINTER, &value));
+  //*(value.v_pointer) = before_event;
+  //g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
+  //    LTTV_POINTER, &value));
+  //*(value.v_pointer) = after_event;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/event_hook",
       LTTV_POINTER, &value));
-  *(value.v_pointer) = before_event;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
-      LTTV_POINTER, &value));
-  *(value.v_pointer) = after_event;
-
+  *(value.v_pointer) = event_hook;
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/before",
       LTTV_POINTER, &value));
   g_assert((main_hooks = *(value.v_pointer)) != NULL);
-  lttv_hooks_add(main_hooks, process_traceset, NULL);
+  lttv_hooks_add(main_hooks, process_traceset, NULL, LTTV_PRIO_DEFAULT);
 }
 
 
@@ -690,8 +714,9 @@ static void destroy()
   lttv_hooks_destroy(after_trace);
   lttv_hooks_destroy(before_tracefile);
   lttv_hooks_destroy(after_tracefile);
-  lttv_hooks_destroy(before_event);
-  lttv_hooks_destroy(after_event);
+  //lttv_hooks_destroy(before_event);
+  //lttv_hooks_destroy(after_event);
+  lttv_hooks_destroy(event_hook);
   lttv_hooks_remove_data(main_hooks, process_traceset, NULL);
 
   nb = lttv_traceset_number(traceset);
