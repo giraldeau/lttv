@@ -7,6 +7,6 @@ convert_SOURCES = convert.c
 
 noinst_HEADERS = LTTTypes.h LinuxEvents.h
 
-EXTRA_DIST = core.xml sysInfo
+EXTRA_DIST = core.xml sysInfo README
 convertdir = $(pkgdatadir)/convert
-convert_DATA = core.xml sysInfo
+convert_DATA = core.xml sysInfo README
