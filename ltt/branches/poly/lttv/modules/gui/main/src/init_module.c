@@ -93,7 +93,7 @@ static gboolean window_creation_hook(void *hook_data, void *call_data)
 
   add_pixmap_directory (PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
   add_pixmap_directory ("pixmaps");
-  add_pixmap_directory ("modules/gui/mainWin/pixmaps");
+  add_pixmap_directory ("../modules/gui/main/pixmaps");
 
   construct_main_window(NULL, window_creation_data);
 
