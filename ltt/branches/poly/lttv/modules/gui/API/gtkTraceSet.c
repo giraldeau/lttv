@@ -599,7 +599,7 @@ void processTraceset(mainWindow *main_win, LttTime start,
 		     LttTime end, unsigned maxNumEvents)
 {
   lttv_process_traceset_seek_time(main_win->Traceset_Info->TracesetContext, start);
-  lttv_process_trace(main_win->Traceset_Info->TracesetContext, end, maxNumEvents);
+  lttv_process_traceset(main_win->Traceset_Info->TracesetContext, end, maxNumEvents);
 }
 
 /**
