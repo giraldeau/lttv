@@ -265,7 +265,6 @@ GuiEvents(mainWindow *pmParentWindow)
   GtkCellRenderer *renderer;
   EventViewerData* Event_Viewer_Data = g_new(EventViewerData,1) ;
   RawTraceData * data;
-  double time_value;
   unsigned size;
 
   Event_Viewer_Data->mw = pmParentWindow;
@@ -438,10 +437,8 @@ GuiEvents(mainWindow *pmParentWindow)
   //get the life span of the traceset and set the upper of the scroll bar
   getTracesetTimeSpan(Event_Viewer_Data->mw, &Event_Viewer_Data->time_span);
   
-  time_value = Event_Viewer_Data->time_span.endTime.tv_sec - Event_Viewer_Data->time_span.startTime.tv_sec;
-  time_value *= NANOSECONDS_PER_SECOND;
-  time_value += (double)Event_Viewer_Data->time_span.endTime.tv_nsec - Event_Viewer_Data->time_span.startTime.tv_nsec;
-  Event_Viewer_Data->VAdjust_C->upper = time_value;
+  start = ltt_time_sub(Event_Viewer_Data->time_span.endTime, Event_Viewer_Data->time_span.startTime);
+  Event_Viewer_Data->VAdjust_C->upper = ltt_time_to_double(start) * NANOSECONDS_PER_SECOND;
 
   Event_Viewer_Data->append = TRUE;
 
@@ -940,16 +937,8 @@ void get_test_data(double time_value, guint List_Height,
 	remove_all_items_from_queue(Event_Viewer_Data->raw_trace_data_queue);
 	end.tv_sec = G_MAXULONG;
 	end.tv_nsec = G_MAXULONG;
-	start = Event_Viewer_Data->time_span.startTime;
-	value = (int)(time_value / NANOSECONDS_PER_SECOND);
-	start.tv_sec += value;
-	value = time_value / NANOSECONDS_PER_SECOND - value;
-	value *= NANOSECONDS_PER_SECOND;
-	start.tv_nsec += value;
-	if(start.tv_nsec > NANOSECONDS_PER_SECOND){
-	  start.tv_sec++;
-	  start.tv_nsec -= NANOSECONDS_PER_SECOND;
-	}
+	time = ltt_time_from_double(time_value / NANOSECONDS_PER_SECOND);
+	start = ltt_time_add(Event_Viewer_Data->time_span.startTime, time);
 	Event_Viewer_Data->previous_value = time_value;
 	get_events(Event_Viewer_Data, start, end, RESERVE_SMALL_SIZE,&size);
 	if(size < List_Height){
@@ -988,12 +977,8 @@ void get_test_data(double time_value, guint List_Height,
     if(direction != SCROLL_NONE && direction != SCROLL_JUMP){
       first = Event_Viewer_Data->raw_trace_data_queue->head;
       raw_data = (RawTraceData*)g_list_nth_data(first,Event_Number);
-      value = raw_data->time.tv_sec;
-      value -= Event_Viewer_Data->time_span.startTime.tv_sec;
-      value *= NANOSECONDS_PER_SECOND;
-      value -= Event_Viewer_Data->time_span.startTime.tv_nsec;
-      value += raw_data->time.tv_nsec;
-      Event_Viewer_Data->VAdjust_C->value = value;
+      time = ltt_time_sub(raw_data->time, Event_Viewer_Data->time_span.startTime);
+      Event_Viewer_Data->VAdjust_C->value = ltt_time_to_double(time) * NANOSECONDS_PER_SECOND;
       g_signal_stop_emission_by_name(G_OBJECT(Event_Viewer_Data->VAdjust_C), "value-changed");
       Event_Viewer_Data->previous_value = value;
     }
@@ -1164,7 +1149,7 @@ GuiEvents_Destructor(EventViewerData *Event_Viewer_Data)
   //gtk_widget_destroy(GTK_WIDGET(Event_Viewer_Data->Store_M));
   
   g_warning("Delete Event data from destroy\n");
-  GuiEvents_free(Event_Viewer_Data);
+  //GuiEvents_free(Event_Viewer_Data);
 }
 
 //FIXME : call hGuiEvents_Destructor for corresponding data upon widget destroy
