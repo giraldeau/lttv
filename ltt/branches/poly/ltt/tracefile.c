@@ -903,7 +903,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
  * Seek to the first event with position equal or larger to ep 
  ****************************************************************************/
 
-void ltt_tracefile_seek_position(LttTracefile *t, LttEventPosition *ep)
+void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
 {
   //if we are at the right place, just return
   if(t->which_block == ep->block_num && t->which_event == ep->event_num)

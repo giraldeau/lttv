@@ -116,7 +116,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time);
 /* Seek to the first event with position equal or larger to ep */
 
 void ltt_tracefile_seek_position(LttTracefile *t,
-    LttEventPosition *ep);
+    const LttEventPosition *ep);
 
 /* Read the next event */
 

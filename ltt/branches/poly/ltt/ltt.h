@@ -96,8 +96,8 @@ typedef unsigned long LttChecksum;
 
 
 typedef struct _TimeInterval{
-  LttTime startTime;
-  LttTime endTime;  
+  LttTime start_time;
+  LttTime end_time;  
 } TimeInterval;
 
 
