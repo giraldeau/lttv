@@ -82,8 +82,8 @@ void add_test_process(ControlFlowData *control_flow_data)
 	for(i=0; i<control_flow_data->number_of_process; i++)
 	{
 	  /* Add a new row to the model */
-		gtk_list_store_append (control_flow_data->Store_M, &iter);
-		gtk_list_store_set (	control_flow_data->Store_M, &iter,
+		gtk_list_store_append (control_flow_data->list_store, &iter);
+		gtk_list_store_set (	control_flow_data->list_store, &iter,
 					PROCESS_COLUMN, process[i],
 					-1);
 	}
@@ -110,7 +110,7 @@ void test_draw(ControlFlowData *control_flow_data)
 
 #ifdef DEBUG
 void test_draw() {
-	gint cell_height = get_cell_height(GTK_TREE_VIEW(control_flow_data->process_list_VC));
+	gint cell_height = get_cell_height(GTK_TREE_VIEW(control_flow_data->process_list_widget));
 	GdkGC *GC = gdk_gc_new(widget->window);
 	GdkColor color = CF_Colors[GREEN];
 	
@@ -239,7 +239,7 @@ void send_test_drawing(ProcessList *process_list,
 	int i,j;
 	ProcessInfo Process_Info = {10000, 12000, 55600};
 	//ProcessInfo Process_Info = {156, 14000, 55500};
-	GtkTreeRowReference *got_RowRef;
+	GtkTreeRowReference *row_ref;
 	PangoContext *context;
 	PangoLayout *layout;
 	PangoFontDescription *FontDesc;// = pango_font_description_new();
@@ -417,7 +417,7 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 	int i;
 	ProcessInfo Process_Info = {10000, 12000, 55600};
 	//ProcessInfo Process_Info = {156, 14000, 55500};
-	GtkTreeRowReference *got_RowRef;
+	GtkTreeRowReference *row_ref;
 
 	LttTime birth;
 
@@ -537,7 +537,7 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 
 	drawing_remove_square( Drawing, y, height);
 	
-	if(got_RowRef = 
+	if(row_ref = 
 		(GtkTreeRowReference*)g_hash_table_lookup(
 					process_list->process_hash,
 					&Process_Info))
@@ -546,7 +546,7 @@ void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 		g_critical("position in the list : %s",
 			gtk_tree_path_to_string (
 			gtk_tree_row_reference_get_path(
-				(GtkTreeRowReference*)got_RowRef)
+				(GtkTreeRowReference*)row_ref)
 			));
 		
 	}

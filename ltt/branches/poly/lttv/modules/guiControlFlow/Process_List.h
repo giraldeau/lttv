@@ -29,22 +29,20 @@ typedef struct _ProcessInfo {
 
 typedef struct _HashedProcessData {
   
-  GtkTreeRowReference *RowRef;
+  GtkTreeRowReference *row_ref;
   DrawContext *draw_context;
 
 } HashedProcessData;
   
 struct _ProcessList {
   
-  GtkWidget *process_list_VC;
-  GtkListStore *Store_M;
+  GtkWidget *process_list_widget;
+  GtkListStore *list_store;
 
   /* A hash table by PID to speed up process position find in the list */
   GHashTable *process_hash;
   
   guint number_of_process;
-  gboolean Test_Process_Sent;
-
 };
 
 
@@ -56,8 +54,7 @@ GtkWidget *processlist_get_widget(ProcessList *process_list);
 
 // out : success (0) and height
 int processlist_add(ProcessList *process_list, guint pid, LttTime *birth,
-    gchar *name,
-    guint *height, HashedProcessData **hashed_process_data);
+    gchar *name, guint *height, HashedProcessData **hashed_process_data);
 // out : success (0) and height
 int processlist_remove(ProcessList *process_list, guint pid, LttTime *birth);
 
