@@ -105,10 +105,10 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/text/Makefile
 		 lttv/modules/gui/Makefile
 		 lttv/modules/gui/lttvgui/Makefile
-		 lttv/modules/gui/main/Makefile
-		 lttv/modules/gui/main/src/Makefile
-		 lttv/modules/gui/main/pixmaps/Makefile
-		 lttv/modules/gui/icons/Makefile
+		 lttv/modules/gui/lttvwindow/Makefile
+		 lttv/modules/gui/lttvwindow/src/Makefile
+		 lttv/modules/gui/lttvwindow/pixmaps/Makefile
+		 lttv/modules/gui/lttvwindow/glade/Makefile
 		 lttv/modules/gui/controlflow/Makefile
 		 lttv/modules/gui/detailedevents/Makefile
 		 lttv/modules/gui/statistics/Makefile

@@ -12,7 +12,13 @@ LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS)
 
 lib_LTLIBRARIES = liblttvgui.la
-liblttvgui_la_SOURCES = toolbar.c menu.c gtktraceset.c
+liblttvgui_la_SOURCES =\
+	toolbar.c\
+	menu.c\
+	gtkdirsel.c\
+	gtkmultivpaned.c\
+	gtktraceset.c
+
 #liblttvgui_la_LDFLAGS = -L${top_srcdir}/lttv/modules/gui/lttvgui -lcustomBox
 
 lttvguiinclude_HEADERS = \

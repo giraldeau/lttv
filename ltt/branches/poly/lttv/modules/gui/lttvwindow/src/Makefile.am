@@ -23,8 +23,6 @@ liblttvwindow_la_SOURCES = \
 	support.c \
 	interface.c \
 	callbacks.c \
-	gtkmultivpaned.c \
-	gtkdirsel.c \
 	lttvfilter.c
 
 noinst_HEADERS = \

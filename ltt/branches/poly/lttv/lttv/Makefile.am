@@ -28,5 +28,5 @@ noinst_HEADERS = \
 lttv_SOURCES = batchtest.c main.c module.c option.c \
                hook.c attribute.c \
                iattribute.c state.c stats.c \
-	       processTrace.c traceset.c
+	       tracecontext.c traceset.c
 
