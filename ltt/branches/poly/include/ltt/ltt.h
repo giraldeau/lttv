@@ -94,6 +94,33 @@ typedef enum _LttArchEndian
 { LTT_LITTLE_ENDIAN, LTT_BIG_ENDIAN
 } LttArchEndian;
 
+/* Time operation macros for LttTime (struct timespec) */
+/*  (T3 = T2 - T1) */
+#define TimeSub(T3, T2, T1) \
+do \
+{\
+  (T3).tv_sec  = (T2).tv_sec  - (T1).tv_sec;  \
+  (T3).tv_nsec = (T2).tv_nsec - (T1).tv_nsec; \
+  if((T3).tv_nsec < 0)\
+    {\
+    (T3).tv_sec--;\
+    (T3).tv_nsec += 1000000000;\
+    }\
+} while(0)
+
+/*  (T3 = T2 + T1) */
+#define TimeAdd(T3, T2, T1) \
+do \
+{\
+  (T3).tv_sec  = (T2).tv_sec  + (T1).tv_sec;  \
+  (T3).tv_nsec = (T2).tv_nsec + (T1).tv_nsec; \
+  if((T3).tv_nsec >= 1000000000)\
+    {\
+    (T3).tv_sec += (T3).tv_nsec / 1000000000;\
+    (T3).tv_nsec = (T3).tv_nsec % 1000000000;\
+    }\
+} while(0)
+
 
 
 #include <ltt/ltt-private.h>
