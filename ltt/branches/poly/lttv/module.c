@@ -7,7 +7,7 @@
  * Reworked by Mathieu Desnoyers, May 2003
  */
 
-#include <lttv/lttv.h>
+#include "lttv.h"
 #include "module.h"
 #include <popt.h>
 

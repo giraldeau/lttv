@@ -40,6 +40,9 @@ AC_CHECK_FUNCS([select])
 lttplugindir="${libdir}/ltt/plugins"
 AC_SUBST(lttplugindir)
 
+DEFAULT_INCLUDES="-I\$(top_srcdir)/include"
+AC_SUBST(DEFAULT_INCLUDES)
+
 AC_CONFIG_FILES([Makefile
                  lttv/Makefile
                  lttv/plugins/Makefile

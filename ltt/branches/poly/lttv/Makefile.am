@@ -1,7 +1,8 @@
 bin_PROGRAMS = textui
 
-AM_CPPFLAGS = \
-	-I$(top_srcdir)/include
+#AM_CPPFLAGS = \
+#	-I$(top_srcdir)/include
+#INCLUDES=$(top_srcdir)/include
 
 # MD //FIXME add headers dependancy
 textui_SOURCES = main.c module.c option.c hook.c attribute.c
