@@ -133,7 +133,7 @@ lttv_simple_expression_new() {
   se->field = LTTV_FILTER_UNDEFINED;
   se->op = NULL;
   se->offset = 0;
-//  se->value = NULL;
+  se->value.v_uint64 = NULL;
 
   return se;
 }
@@ -450,6 +450,14 @@ void
 lttv_simple_expression_destroy(LttvSimpleExpression* se) {
   
  // g_free(se->value);
+  switch(se->field) {
+     case LTTV_FILTER_TRACE_NAME:
+     case LTTV_FILTER_TRACEFILE_NAME:
+     case LTTV_FILTER_STATE_P_NAME:
+     case LTTV_FILTER_EVENT_NAME:
+       g_free(se->value.v_string);
+       break;
+  }
   g_free(se);
 
 }
@@ -958,7 +966,7 @@ lttv_filter_update(LttvFilter* filter) {
   
   if(filter->expression == NULL) return FALSE;
   
-  unsigned 	
+  int	
     i, 
     p_nesting=0;	/* parenthesis nesting value */
 
@@ -975,7 +983,7 @@ lttv_filter_update(LttvFilter* filter) {
    * destroy it and build a new one
    */
   if(filter->head != NULL) lttv_filter_tree_destroy(filter->head);
-  filter->head = tree;
+  filter->head = NULL;    /* will be assigned at the end */
  
   /*
    * Tree Stack
@@ -1289,15 +1297,17 @@ lttv_filter_update(LttvFilter* filter) {
   g_ptr_array_free(a_field_path,TRUE);
 
   /* free the tree stack -- but keep the root tree */
-  g_ptr_array_free(tree_stack,FALSE);
-
+ // g_ptr_array_free(tree_stack,FALSE);
+  filter->head = g_ptr_array_remove_index(tree_stack,0);
+  g_ptr_array_free(tree_stack,TRUE);
+  
   /* free the field buffer if allocated */
   if(a_field_component != NULL) g_string_free(a_field_component,TRUE); 
  
   /* free the simple expression buffer if allocated */
   if(a_simple_expression != NULL) lttv_simple_expression_destroy(a_simple_expression);
   
-  g_assert(tree != NULL); /* tree should exist */
+  g_assert(filter->head != NULL); /* tree should exist */
   g_assert(subtree == NULL); /* remaining subtree should be included in main tree */
   
   /* debug */
@@ -1340,7 +1350,9 @@ lttv_filter_tree_new() {
   tree->node = 0; //g_new(lttv_expression,1);
   tree->left = LTTV_TREE_IDLE;
   tree->right = LTTV_TREE_IDLE;
-
+  tree->r_child.t = NULL;
+  tree->l_child.t = NULL;
+  
   return tree;
 }
 
