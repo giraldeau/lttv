@@ -843,9 +843,6 @@ lttv_state_find_process_or_create(LttvTracefileState *tfs, guint pid)
  * cases in the child's exit : when the parent ignores its children SIGCCHLD or
  * has the flag SA_NOCLDWAIT. It can also happen when the child is part
  * of a killed thread ground, but isn't the leader.
- *
- * This function is important : it removes the dead PID entry in the hash
- * table so there is no collision when the OS reuses PID.
  */
 static void exit_process(LttvTracefileState *tfs, LttvProcessState *process) 
 {
@@ -998,25 +995,23 @@ static gboolean process_fork(LttvTraceHook *trace_hook, LttvTracefileState *s)
 {
   LttField *f;
   guint child_pid;
+  LttvProcessState *zombie_process;
 
   /* Child PID */
   f = trace_hook->f2;
   child_pid = ltt_event_get_unsigned(s->parent.e, f);
 
+  zombie_process = lttv_state_find_process(s, child_pid);
+
+  if(zombie_process != NULL) {
+    /* Reutilisation of PID. Only now we are sure that the old PID
+     * has been released. FIXME : sould know when release_task happens instead.
+     */
+    exit_process(s, zombie_process);
+  }
   lttv_state_create_process(s, s->process, child_pid);
 
   return FALSE;
-#if 0
-  LttField *f = ((LttvTraceHook *)hook_data)->f1;
-
-  LttvTracefileState *s = (LttvTracefileState *)call_data;
-
-  guint child_pid;
-
-  child_pid = ltt_event_get_unsigned(s->parent.e, f);
-  lttv_state_create_process(s, s->process, child_pid);
-  return FALSE;
-#endif //0
 }
 
 
@@ -1026,15 +1021,6 @@ static gboolean process_exit(LttvTraceHook *trace_hook, LttvTracefileState *s)
     s->process->state->s = LTTV_STATE_EXIT;
   }
   return FALSE;
- 
-#if 0
-  LttvTracefileState *s = (LttvTracefileState *)call_data;
-
-  if(s->process != NULL) {
-    s->process->state->s = LTTV_STATE_EXIT;
-  }
-  return FALSE;
-#endif //0
 }
 
 gboolean process(void *hook_data, void *call_data)
