@@ -263,6 +263,9 @@ int main(int argc, char ** argv){
     beat_count = 0;
 
     for(j=0;j<cpu;j++) write_pos[j] = buf_out[j];
+    write_pos_intr = buf_intr;
+    write_pos_fac = buf_fac;
+    write_pos_proc = buf_proc;
 
     readFile(fd,(void*)buffer, block_size, "Unable to read block header");
 
