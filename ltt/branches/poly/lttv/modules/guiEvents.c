@@ -1465,8 +1465,12 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
 {
   RawTraceData * data;
   if(size > 0){
-    int pid, tmpPid, i;
+    int pid, tmpPid, i,j,len;
     GList * list, *tmpList;
+    GArray * pid_array, * tmp_pid_array;
+    
+    pid_array     = g_array_sized_new(FALSE, TRUE, sizeof(int), 10);
+    tmp_pid_array = g_array_sized_new(FALSE, TRUE, sizeof(int), 10);
 
     //if the queue is full, remove some data, keep the size of the queue constant
     while(event_viewer_data->raw_trace_data_queue->length + size > RESERVE_BIG_SIZE){
@@ -1479,29 +1483,94 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
       list    = event_viewer_data->raw_trace_data_queue->head;
       tmpList = event_viewer_data->raw_trace_data_queue_tmp->head;
       if(event_viewer_data->append){
-	data = (RawTraceData*)g_list_nth_data(list, event_viewer_data->raw_trace_data_queue->length-1);
-	pid  = data->pid;
-	data = (RawTraceData*)g_list_nth_data(tmpList, 0);
-	tmpPid = data->pid;
+	for(i= event_viewer_data->raw_trace_data_queue->length-1;i>=0;i--){
+	  data = (RawTraceData*)g_list_nth_data(list,i);
+	  len = data->pid==0 ? -2 : data->pid;
+	  if(data->cpu_id+1 > pid_array->len){
+	    pid_array = g_array_set_size(pid_array,data->cpu_id+1);	    
+	    pid_array = g_array_insert_val(pid_array,data->cpu_id,len);
+	    pid_array = g_array_remove_index(pid_array,data->cpu_id+1);
+	  }else if(data->cpu_id+1 < pid_array->len){
+	    pid = g_array_index(pid_array,int,data->cpu_id);
+	    if(pid == 0){
+	      pid_array = g_array_insert_val(pid_array,data->cpu_id,len);
+	      pid_array = g_array_remove_index(pid_array,data->cpu_id+1);
+	    }
+	  }	  
+	}
+
+	for(i=0;i<event_viewer_data->raw_trace_data_queue_tmp->length-1;i++){
+	  data = (RawTraceData*)g_list_nth_data(tmpList,i);
+	  len = data->pid==0 ? -2 : data->pid;
+	  if(data->cpu_id+1 > tmp_pid_array->len){
+	    tmp_pid_array = g_array_set_size(tmp_pid_array,data->cpu_id+1);	    
+	    tmp_pid_array = g_array_insert_val(tmp_pid_array,data->cpu_id,len);
+	    tmp_pid_array = g_array_remove_index(tmp_pid_array,data->cpu_id+1);
+	  }else if(data->cpu_id+1 < tmp_pid_array->len){
+	    pid = g_array_index(tmp_pid_array,int,data->cpu_id);
+	    if(pid == 0){
+	      tmp_pid_array = g_array_insert_val(tmp_pid_array,data->cpu_id,len);
+	      tmp_pid_array = g_array_remove_index(tmp_pid_array,data->cpu_id+1);
+	    }
+	  }	  
+	}
       }else{
-	data = (RawTraceData*)g_list_nth_data(list, 0);
-	pid  = data->pid;
-	data = (RawTraceData*)g_list_nth_data(tmpList, event_viewer_data->raw_trace_data_queue_tmp->length-1);
-	tmpPid = data->pid;
+	for(i=0;i<event_viewer_data->raw_trace_data_queue->length-1;i++){
+	  data = (RawTraceData*)g_list_nth_data(list,i);
+	  len = data->pid==0 ? -2 : data->pid;
+	  if(data->cpu_id+1 > pid_array->len){
+	    pid_array = g_array_set_size(pid_array,data->cpu_id+1);	    
+	    pid_array = g_array_insert_val(pid_array,data->cpu_id,len);
+	    pid_array = g_array_remove_index(pid_array,data->cpu_id+1);
+	  }else if(data->cpu_id+1 < pid_array->len){
+	    pid = g_array_index(pid_array,int,data->cpu_id);
+	    if(pid == 0){
+	      pid_array = g_array_insert_val(pid_array,data->cpu_id,len);
+	      pid_array = g_array_remove_index(pid_array,data->cpu_id+1);
+	    }
+	  }	  
+	}
+
+	for(i=event_viewer_data->raw_trace_data_queue_tmp->length-1;i>=0;i--){
+	  data = (RawTraceData*)g_list_nth_data(tmpList,i);
+	  len = data->pid==0 ? -2 : data->pid;
+	  if(data->cpu_id+1 > tmp_pid_array->len){
+	    tmp_pid_array = g_array_set_size(tmp_pid_array,data->cpu_id+1);	    
+	    tmp_pid_array = g_array_insert_val(tmp_pid_array,data->cpu_id,len);
+	    tmp_pid_array = g_array_remove_index(tmp_pid_array,data->cpu_id+1);
+	  }else if(data->cpu_id+1 < tmp_pid_array->len){
+	    pid = g_array_index(tmp_pid_array,int,data->cpu_id);
+	    if(pid == 0){
+	      tmp_pid_array = g_array_insert_val(tmp_pid_array,data->cpu_id,len);
+	      tmp_pid_array = g_array_remove_index(tmp_pid_array,data->cpu_id+1);
+	    }
+	  }	  
+	}
       }
       
-      if(pid == -1 && tmpPid != -1){
-	for(i=0;i<event_viewer_data->raw_trace_data_queue->length;i++){
-	  data = (RawTraceData*)g_list_nth_data(list,i);
-	  if(data->pid == -1) data->pid = tmpPid;
-	}
-      }else if(pid != -1 && tmpPid == -1){
-	for(i=0;i<event_viewer_data->raw_trace_data_queue_tmp->length;i++){
-	  data = (RawTraceData*)g_list_nth_data(tmpList,i);
-	  if(data->pid == -1) data->pid = pid;
+      len = pid_array->len > tmp_pid_array->len ? tmp_pid_array->len : pid_array->len;
+      for(j=0;j<len;j++){
+	pid = g_array_index(pid_array,int, j);
+	tmpPid = g_array_index(tmp_pid_array,int,j);
+	if(pid == -2)pid = 0;
+	if(tmpPid == -2) tmpPid = 0;
+	
+	if(pid == -1 && tmpPid != -1){
+	  for(i=0;i<event_viewer_data->raw_trace_data_queue->length;i++){
+	    data = (RawTraceData*)g_list_nth_data(list,i);
+	    if(data->pid == -1 && data->cpu_id == j) data->pid = tmpPid;
+	  }
+	}else if(pid != -1 && tmpPid == -1){
+	  for(i=0;i<event_viewer_data->raw_trace_data_queue_tmp->length;i++){
+	    data = (RawTraceData*)g_list_nth_data(tmpList,i);
+	    if(data->pid == -1 && data->cpu_id == j) data->pid = pid;
+	  }
 	}
       }
     }
+
+    g_array_free(pid_array,TRUE);
+    g_array_free(tmp_pid_array, TRUE);
 
     //add data from tmp queue into the queue
     event_viewer_data->number_of_events = event_viewer_data->raw_trace_data_queue->length 
@@ -1640,16 +1709,22 @@ gboolean parse_event(void *hook_data, void *call_data)
   field = ltt_event_field(e);
   time = ltt_event_time(e);
 
-  if(event_viewer_data->raw_trace_data_queue_tmp->length){ 
-    list = g_list_last(event_viewer_data->raw_trace_data_queue_tmp->head);
-    prev_raw_trace_data = (RawTraceData *)(list->data);
-  }
-
   tmp_raw_trace_data = g_new(RawTraceData,1);
   tmp_raw_trace_data->cpu_id = ltt_event_cpu_id(e);
   tmp_raw_trace_data->event_name = g_strdup(ltt_eventtype_name(ltt_event_eventtype(e)));
   tmp_raw_trace_data->time = time;
   tmp_raw_trace_data->ep = ltt_event_position_new();
+
+  if(event_viewer_data->raw_trace_data_queue_tmp->length){ 
+    list = event_viewer_data->raw_trace_data_queue_tmp->head;
+    for(i=event_viewer_data->raw_trace_data_queue_tmp->length-1;i>=0;i--){
+      data = (RawTraceData *)g_list_nth_data(list,i);
+      if(data->cpu_id == tmp_raw_trace_data->cpu_id){
+	prev_raw_trace_data = data;
+	break;
+      }
+    }    
+  }  
 
   if(prev_raw_trace_data) tmp_raw_trace_data->pid = prev_raw_trace_data->pid;
   else tmp_raw_trace_data->pid = -1;
@@ -1669,7 +1744,9 @@ gboolean parse_event(void *hook_data, void *call_data)
       list = event_viewer_data->raw_trace_data_queue_tmp->head;
       for(i=0;i<event_viewer_data->raw_trace_data_queue_tmp->length;i++){
  	data = (RawTraceData *)g_list_nth_data(list,i);
-	data->pid = out;
+	if(data->cpu_id == tmp_raw_trace_data->cpu_id){
+	  data->pid = out;
+	}
       }
     }
   }
