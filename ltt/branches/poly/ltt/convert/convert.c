@@ -144,7 +144,7 @@ int main(int argc, char ** argv){
   buffer_start start, start_proc, start_intr;
   buffer_end end, end_proc, end_intr;
   heartbeat beat;
-  uint64_t beat_count;
+  uint64_t adaptation_tsc;    // (Mathieu)
   uint32_t size_lost;
   int reserve_size = sizeof(buffer_start) + sizeof(uint16_t) + 2*sizeof(uint32_t);//lost_size and buffer_end event
   int nb_para;
@@ -357,8 +357,6 @@ int main(int argc, char ** argv){
       start.seconds = tBufStart->Time.tv_sec;
       /* usec -> nsec (Mathieu) */
       start.nanoseconds = tBufStart->Time.tv_usec * 1000;
-      start.cycle_count = tBufStart->TSC;
-      beat_count = start.cycle_count;
       start.block_id = tBufStart->ID;
       end.block_id = start.block_id;
       
@@ -374,14 +372,37 @@ int main(int argc, char ** argv){
       end.seconds = tBufEnd->Time.tv_sec;
       /* usec -> nsec (Mathieu) */
       end.nanoseconds = tBufEnd->Time.tv_usec * 1000;
-      end.cycle_count = tBufEnd->TSC;
+      // only 32 bits :( 
+      //end.cycle_count = tBufEnd->TSC;
     
       //skip buffer start and trace start events
-      if(i==0) //the first block
-	cur_pos = buffer + sizeof(trace_buffer_start) + sizeof(trace_start) + 2*(sizeof(uint8_t)+sizeof(uint16_t)+sizeof(uint32_t));
-      else //other blocks
-	cur_pos = buffer + sizeof(trace_buffer_start) + sizeof(uint8_t)+sizeof(uint16_t)+sizeof(uint32_t);
-      
+      if(i==0) {
+        //the first block
+        adaptation_tsc = (uint64_t)tBufStart->TSC;
+	      cur_pos = buffer + sizeof(trace_buffer_start) 
+                         + sizeof(trace_start) 
+                         + 2*(sizeof(uint8_t)
+                         + sizeof(uint16_t)+sizeof(uint32_t));
+      } else {
+        //other blocks
+	      cur_pos = buffer + sizeof(trace_buffer_start) 
+                         + sizeof(uint8_t)
+                         + sizeof(uint16_t)+sizeof(uint32_t);
+
+        /* Fix (Mathieu) */
+        if(time_delta < (0xFFFFFFFFULL&adaptation_tsc)) {
+          /* Overflow */
+          adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) 
+                                       + 0x100000000ULL 
+                                       + (uint64_t)time_delta;
+        } else {
+          /* No overflow */
+          adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + time_delta;
+        }
+
+      }
+      start.cycle_count = adaptation_tsc;
+
       //write start block event
       write_to_buffer(write_pos,(void*)&startId, sizeof(uint16_t));    
       write_to_buffer(write_pos,(void*)&startTimeDelta, sizeof(uint32_t));
@@ -454,16 +475,24 @@ int main(int argc, char ** argv){
 	cur_pos += sizeof(uint8_t);
 	time_delta = *(uint32_t*)cur_pos;
 	cur_pos += sizeof(uint32_t); 
-	
+
+
 	//write event_id and time_delta
 	write_to_buffer(write_pos,(void*)&newId,sizeof(uint16_t));
 	write_to_buffer(write_pos,(void*)&time_delta, sizeof(uint32_t));     
 	
 	if(evId == TRACE_BUFFER_END){
-#if 0 //(Mathieu : already set correctly to tBufEnd.TSC)
-    end.cycle_count = start.cycle_count 
-                         + beat_count * OVERFLOW_FIGURE;
-#endif //)
+    /* Fix (Mathieu) */
+    if(time_delta < (0xFFFFFFFFULL&adaptation_tsc)) {
+      /* Overflow */
+     adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + 0x100000000ULL 
+                                   + (uint64_t)time_delta;
+    } else {
+      /* No overflow */
+      adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + time_delta;
+    }
+
+    end.cycle_count = adaptation_tsc;
 	  int size = (void*)buf_out + block_size - write_pos 
                    - sizeof(buffer_end) - sizeof(uint32_t);
 
@@ -581,24 +610,25 @@ int main(int argc, char ** argv){
 	    break;
 	  case TRACE_HEARTBEAT:
       /* Fix (Mathieu) */
-      if(timeDelta < (0xFFFFFFFF&beat_count)) {
+      if(time_delta < (0xFFFFFFFFULL&adaptation_tsc)) {
         /* Overflow */
-        beat_count += 0x100000000ULL - (uint64_t)(0xFFFFFFFF&beat_count)
-                                     + (uint64_t)timeDelta;
+       adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + 0x100000000ULL 
+                                     + (uint64_t)time_delta;
       } else {
         /* No overflow */
-        beat_count += timeDelta - (0xFFFFFFFF&beat_count);
+        adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + time_delta;
       }
+
 	    beat.seconds = 0;
 	    beat.nanoseconds = 0;
-	    beat.cycle_count = beat_count;
+	    beat.cycle_count = adaptation_tsc;
 	    event_size = 0;
 	    
 	    write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));
-	    write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint32_t));
+	    write_to_buffer(write_pos_intr,(void*)&time_delta, sizeof(uint32_t));
 	    write_to_buffer(write_pos_intr,(void*)&beat, sizeof(heartbeat)); 	    	  
 	    write_to_buffer(write_pos_proc,(void*)&newId, sizeof(uint16_t));
-	    write_to_buffer(write_pos_proc,(void*)&timeDelta, sizeof(uint32_t));
+	    write_to_buffer(write_pos_proc,(void*)&time_delta, sizeof(uint32_t));
 	    write_to_buffer(write_pos_proc,(void*)&beat, sizeof(heartbeat)); 	    	  
 	    break;
           default:

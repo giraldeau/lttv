@@ -1386,11 +1386,10 @@ int readBlock(LttTracefile * tf, int whichBlock)
   /* Make start time more precise */
   /* Start overflow_nsec to a negative value : takes account of the 
    * start of block cycle counter */
-  tf->overflow_nsec = (-((double)tf->a_block_start->cycle_count)
+  tf->overflow_nsec = (-((double)(tf->a_block_start->cycle_count&0xFFFFFFFF))
                                         * tf->nsec_per_cycle);
 
   tf->a_block_start->time = getEventTime(tf);
-
 
   {
     guint64 lEventNSec;
@@ -1421,10 +1420,9 @@ int readBlock(LttTracefile * tf, int whichBlock)
   /* recalculate the cycles per nsec, with now more precise start and end time
    */
   getCyclePerNsec(tf);
-  tf->overflow_nsec = (-((double)tf->a_block_start->cycle_count)
+
+  tf->overflow_nsec = (-((double)(tf->a_block_start->cycle_count&0xFFFFFFFF))
                                         * tf->nsec_per_cycle);
-
-
 
   tf->current_event_time = getEventTime(tf);  
 
@@ -1517,7 +1515,7 @@ void getCyclePerNsec(LttTracefile * t)
 {
   LttTime           lBufTotalTime; /* Total time for this buffer */
   double            lBufTotalNSec; /* Total time for this buffer in nsecs */
-  double            lBufTotalCycle;/* Total cycles for this buffer */
+  LttCycleCount     lBufTotalCycle;/* Total cycles for this buffer */
 
   /* Calculate the total time for this buffer */
   lBufTotalTime = ltt_time_sub(t->a_block_end->time, t->a_block_start->time);
@@ -1526,10 +1524,11 @@ void getCyclePerNsec(LttTracefile * t)
   lBufTotalCycle  = t->a_block_end->cycle_count;
   lBufTotalCycle -= t->a_block_start->cycle_count;
 
-  /* Convert the total time to nsecs */
+  /* Convert the total time to double */
   lBufTotalNSec  = ltt_time_to_double(lBufTotalTime);
   
   t->nsec_per_cycle = (double)lBufTotalNSec / (double)lBufTotalCycle;
+
   /* Pre-multiply one overflow (2^32 cycles) by nsec_per_cycle */
   t->one_overflow_nsec = t->nsec_per_cycle * (double)0x100000000ULL;
 
@@ -1660,15 +1659,14 @@ static inline LttTime getEventTime(LttTracefile * tf)
     lEventNSec = ((double)
                  (tf->a_block_end->cycle_count - tf->a_block_start->cycle_count)
                            * tf->nsec_per_cycle);
+#if 0
     g_printf("CYCLES COUNTED : %llu",
         (gint64)((double)cycle_count * tf->nsec_per_cycle)
                                 +tf->overflow_nsec 
                                 +tf->a_block_start->cycle_count);
-
+#endif //0
     
   }
-  /* heartbeat cycle counter is only numheartbeat<<32, not meaningful
-   */
 #if 0
   else if(unlikely(evId == TRACE_TIME_HEARTBEAT)) {
 
@@ -1679,7 +1677,6 @@ static inline LttTime getEventTime(LttTracefile * tf)
   }
 #endif //0
   else {
-  
     lEventNSec = (gint64)((double)cycle_count * tf->nsec_per_cycle)
                                 +tf->overflow_nsec;
   }
