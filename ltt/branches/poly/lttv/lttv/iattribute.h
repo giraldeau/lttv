@@ -16,6 +16,8 @@
  * MA 02111-1307, USA.
  */
 
+/* FIXME : unnamed attributed not implemented */
+
 #ifndef IATTRIBUTE_H
 #define IATTRIBUTE_H
 

@@ -19,6 +19,8 @@
 #ifndef ATTRIBUTE_H
 #define ATTRIBUTE_H
 
+/* FIXME : unnamed attributed not implemented *"
+
 #include <glib-object.h>
 #include <lttv/iattribute.h>
 #include <stdio.h>
