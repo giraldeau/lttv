@@ -211,7 +211,8 @@ guicontrolflow_destructor(ControlFlowData *control_flow_data)
  
 }
 
-GtkWidget *guicontrolflow_get_widget(ControlFlowData *control_flow_data)
+__inline GtkWidget *guicontrolflow_get_widget(
+                                     ControlFlowData *control_flow_data)
 {
   return control_flow_data->top_widget ;
 }

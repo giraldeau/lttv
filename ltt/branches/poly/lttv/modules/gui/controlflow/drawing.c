@@ -935,13 +935,13 @@ __inline void convert_pixels_to_time(
     LttTime *time)
 {
   LttTime window_time_interval;
-  guint64 time_ll;
+  double time_d;
   
   window_time_interval = ltt_time_sub(window_time_end, 
             window_time_begin);
-  time_ll = ltt_time_to_uint64(window_time_interval);
-  time_ll = time_ll * x / width;
-  *time = ltt_time_from_uint64(time_ll);
+  time_d = ltt_time_to_double(window_time_interval);
+  time_d = time_d / (double)width * (double)x;
+  *time = ltt_time_from_double(time_d);
   *time = ltt_time_add(window_time_begin, *time);
 }
 
@@ -954,23 +954,23 @@ __inline void convert_time_to_pixels(
     guint *x)
 {
   LttTime window_time_interval;
-  guint64 time_ll, interval_ll;
-  
+  double time_d, interval_d;
+#ifdef EXTRA_CHECK 
   g_assert(ltt_time_compare(window_time_begin, time) <= 0 &&
            ltt_time_compare(window_time_end, time) >= 0);
-  
+#endif //EXTRA_CHECK
   window_time_interval = ltt_time_sub(window_time_end,window_time_begin);
   
   time = ltt_time_sub(time, window_time_begin);
   
-  time_ll = ltt_time_to_uint64(time);
-  interval_ll = ltt_time_to_uint64(window_time_interval);
+  time_d = ltt_time_to_double(time);
+  interval_d = ltt_time_to_double(window_time_interval);
   
-  if(interval_ll == 0) {
-    g_assert(time_ll == 0);
+  if(interval_d == 0.0) {
+    g_assert(time_d == 0.0);
     *x = 0;
   } else {
-    *x = (guint)(time_ll * width / interval_ll);
+    *x = (guint)(time_d / interval_d * (double)width);
   }
   
 }

@@ -3454,18 +3454,15 @@ void time_change_manager               (Tab *tab,
                "lower",
                  0.0, /* lower */
                "upper",
-               ltt_time_to_double(upper) 
-                 * NANOSECONDS_PER_SECOND, /* upper */
+               ltt_time_to_double(upper), /* upper */
                "step_increment",
                ltt_time_to_double(new_time_window.time_width)
-                             / SCROLL_STEP_PER_PAGE
-                             * NANOSECONDS_PER_SECOND, /* step increment */
+                             / SCROLL_STEP_PER_PAGE, /* step increment */
                "page_increment",
-               ltt_time_to_double(new_time_window.time_width) 
-                 * NANOSECONDS_PER_SECOND, /* page increment */
+               ltt_time_to_double(new_time_window.time_width), 
+                                                     /* page increment */
                "page_size",
-               ltt_time_to_double(new_time_window.time_width) 
-                 * NANOSECONDS_PER_SECOND, /* page size */
+               ltt_time_to_double(new_time_window.time_width), /* page size */
                NULL);
   gtk_adjustment_changed(adjustment);
 
@@ -3473,13 +3470,12 @@ void time_change_manager               (Tab *tab,
  //              "value",
  //              ltt_time_to_double(
  //               ltt_time_sub(start_time, time_span.start_time))
- //                  * NANOSECONDS_PER_SECOND, /* value */
+ //                 , /* value */
  //              NULL);
   //gtk_adjustment_value_changed(adjustment);
   gtk_range_set_value(GTK_RANGE(tab->scrollbar),
                ltt_time_to_double(
-                ltt_time_sub(start_time, time_span.start_time))
-                   * NANOSECONDS_PER_SECOND /* value */);
+                ltt_time_sub(start_time, time_span.start_time)) /* value */);
 
   /* set the time bar. */
   /* start seconds */
@@ -3841,7 +3837,7 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
     LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
 
-  time = ltt_time_add(ltt_time_from_double(value/NANOSECONDS_PER_SECOND),
+  time = ltt_time_add(ltt_time_from_double(value),
                       time_span.start_time);
 
   new_time_window.start_time = time;
@@ -3849,7 +3845,7 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
   page_size = adjust->page_size;
 
   new_time_window.time_width = 
-    ltt_time_from_double(page_size/NANOSECONDS_PER_SECOND);
+    ltt_time_from_double(page_size);
 
 
   time_change_manager(tab, new_time_window);
@@ -3864,7 +3860,7 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
   //time = ltt_time_sub(time_span->end_time, time_span->start_time);
   //time = ltt_time_mul(time, (float)ratio);
   //time = ltt_time_add(time_span->start_time, time);
-  time = ltt_time_add(ltt_time_from_double(value/NANOSECONDS_PER_SECOND),
+  time = ltt_time_add(ltt_time_from_double(value),
                       time_span.start_time);
 
   time_window.start_time = time;
@@ -3872,7 +3868,7 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
   page_size = adjust->page_size;
 
   time_window.time_width = 
-    ltt_time_from_double(page_size/NANOSECONDS_PER_SECOND);
+    ltt_time_from_double(page_size);
   //time = ltt_time_sub(time_span.end_time, time);
   //if(ltt_time_compare(time,time_window.time_width) < 0){
   //  time_window.time_width = time;

@@ -759,24 +759,24 @@ void lttvwindow_report_time_window(Tab *tab,
                "upper",
                ltt_time_to_double(
                  ltt_time_sub(time_span.end_time, time_span.start_time)) 
-                 * NANOSECONDS_PER_SECOND, /* upper */
+                 , /* upper */
                "step_increment",
                ltt_time_to_double(time_window->time_width)
                              / SCROLL_STEP_PER_PAGE
-                             * NANOSECONDS_PER_SECOND, /* step increment */
+                            , /* step increment */
                "page_increment",
                ltt_time_to_double(time_window->time_width) 
-                 * NANOSECONDS_PER_SECOND, /* page increment */
+                 , /* page increment */
                "page_size",
                ltt_time_to_double(time_window->time_width) 
-                 * NANOSECONDS_PER_SECOND, /* page size */
+                 , /* page size */
                NULL);
   gtk_adjustment_changed(adjustment);
 
   //g_object_set(G_OBJECT(adjustment),
   //             "value",
   //             ltt_time_to_double(time_window->start_time) 
-  //               * NANOSECONDS_PER_SECOND, /* value */
+  //               , /* value */
   //               NULL);
   /* Note : the set value will call set_time_window if scrollbar value changed
    */
@@ -784,7 +784,7 @@ void lttvwindow_report_time_window(Tab *tab,
                            ltt_time_to_double(
                              ltt_time_sub(time_window->start_time,
                                           time_span.start_time))
-                           * NANOSECONDS_PER_SECOND);
+                           );
 #endif //0
 }
 

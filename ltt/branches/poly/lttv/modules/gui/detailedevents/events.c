@@ -415,7 +415,7 @@ gui_events(Tab *tab)
   end = ltt_time_sub(time_span.end_time, time_span.start_time);
 
   event_viewer_data->vadjust_c->upper =
-              ltt_time_to_double(end) * NANOSECONDS_PER_SECOND;
+              ltt_time_to_double(end);
 
   event_viewer_data->append = TRUE;
 
@@ -973,7 +973,7 @@ static void get_data_wrapped(double time_value, gint list_height,
   remove_all_items_from_queue(event_viewer_data->event_fields_queue);
   end.tv_sec = G_MAXULONG;
   end.tv_nsec = G_MAXULONG;
-  time = ltt_time_from_double(time_value / NANOSECONDS_PER_SECOND);
+  time = ltt_time_from_double(time_value);
   start = ltt_time_add(time_span.start_time, time);
   event_viewer_data->previous_value = time_value;
   get_events(event_viewer_data, start, end, RESERVE_SMALL_SIZE,&size);
@@ -1034,9 +1034,9 @@ static void get_data_wrapped(double time_value, gint list_height,
   event_fields = (EventFields*)g_list_nth_data(first,event_number);
   if(!event_fields) event_fields = (EventFields*)g_list_nth_data(first,0);       
   time = ltt_time_sub(event_fields->time, time_span.start_time);
-  event_viewer_data->vadjust_c->value = ltt_time_to_double(time) * NANOSECONDS_PER_SECOND;
+  event_viewer_data->vadjust_c->value = ltt_time_to_double(time);
   //gtk_adjustment_set_value(event_viewer_data->vadjust_c, 
-  //                         ltt_time_to_double(time) * NANOSECONDS_PER_SECOND);
+  //                         ltt_time_to_double(time));
   //g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->vadjust_c), "value-changed");
   event_viewer_data->previous_value = event_viewer_data->vadjust_c->value;
   //gtk_adjustment_value_changed(event_viewer_data->vadjust_c);
@@ -1361,9 +1361,9 @@ gboolean update_current_time(void * hook_data, void * call_data)
   count = 0;
       }
       t = ltt_time_sub(data->time, time_span.start_time);
-      event_viewer_data->vadjust_c->value = ltt_time_to_double(t) * NANOSECONDS_PER_SECOND;
+      event_viewer_data->vadjust_c->value = ltt_time_to_double(t);
       //gtk_adjustment_set_value(event_viewer_data->vadjust_c, 
-      //                         ltt_time_to_double(t) * NANOSECONDS_PER_SECOND);
+      //                         ltt_time_to_double(t));
       //g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->vadjust_c), "value-changed");
       event_viewer_data->previous_value = event_viewer_data->vadjust_c->value;
       insert_data_into_model(event_viewer_data,j, j+event_viewer_data->num_visible_events); 
@@ -1371,7 +1371,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
 
     }else{//the event is not in the buffer
       LttTime start = ltt_time_sub(*current_time, time_span.start_time);
-      double position = ltt_time_to_double(start) * NANOSECONDS_PER_SECOND;
+      double position = ltt_time_to_double(start);
       gtk_adjustment_set_value(event_viewer_data->vadjust_c, position);
     }
   }
@@ -1398,7 +1398,7 @@ gboolean traceset_changed(void * hook_data, void * call_data)
   event_viewer_data->append = TRUE;
 
   end = ltt_time_sub(time_span.end_time, time_span.start_time);
-  event_viewer_data->vadjust_c->upper = ltt_time_to_double(end) * NANOSECONDS_PER_SECOND;
+  event_viewer_data->vadjust_c->upper = ltt_time_to_double(end);
   g_signal_emit_by_name(event_viewer_data->vadjust_c, "value-changed");
   //  event_viewer_data->vadjust_c->value = 0;
 
