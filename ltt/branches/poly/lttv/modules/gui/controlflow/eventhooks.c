@@ -2148,7 +2148,6 @@ gint redraw_notify(void *hook_data, void *call_data)
   drawing_clear(control_flow_data->drawing);
   processlist_clear(control_flow_data->process_list);
 
-#if 0 /* normal redraw, without removing PIDs */
   // Clear the image
   gdk_draw_rectangle (drawing->pixmap,
         widget->style->black_gc,
@@ -2172,7 +2171,6 @@ gint redraw_notify(void *hook_data, void *call_data)
                              0,0,
                              drawing->width,
                              drawing->height);
-#endif //0
   return FALSE;
 
 }
