@@ -9,7 +9,7 @@ SUBDIRS = gui
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
-LIBS += $(GTK_LIBS) -lmainWinApi
+LIBS += $(GTK_LIBS) -Lgui/API -lmainWinApi
 
 libdir = ${lttvplugindir}
 
