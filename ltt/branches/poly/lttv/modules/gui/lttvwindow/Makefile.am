@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = src glade
+SUBDIRS = lttvwindow glade
 
 install-data-local:
 	@$(NORMAL_INSTALL)

@@ -40,7 +40,7 @@
 #include <glib.h>
 #include <lttv/lttv.h>
 #include <lttv/module.h>
-#include <lttvgui/gtktraceset.h>
+#include <lttvwindow/gtktraceset.h>
 
 #include "cfv.h"
 #include "eventhooks.h"

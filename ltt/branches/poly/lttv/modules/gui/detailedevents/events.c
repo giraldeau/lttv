@@ -45,7 +45,7 @@
 
 #include <lttv/module.h>
 #include <lttv/hook.h>
-#include <lttvgui/gtktraceset.h>
+#include <lttvwindow/gtktraceset.h>
 #include <lttv/tracecontext.h>
 #include <lttv/state.h>
 #include <ltt/ltt.h>

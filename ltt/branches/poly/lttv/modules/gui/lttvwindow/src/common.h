@@ -16,32 +16,28 @@
  * MA 02111-1307, USA.
  */
 
-#ifndef MENU_H
-#define MENU_H
+#ifndef COMMON_H
+#define COMMON_H
 
-#include <lttvgui/common.h>
+#include <stdio.h>
+#include <ltt/ltt.h>
+#include <gtk/gtk.h>
+#include <lttvwindow/lttvfilter.h>
+
+#define MAX_NUMBER_EVENT     "MAX_NUMBER_EVENT"
+#define TRACESET_TIME_SPAN   "TRACESET_TIME_SPAN"
+
+typedef struct _MainWindow MainWindow;
+typedef struct _Tab Tab;
 
 /* constructor of the viewer */
-//typedef GtkWidget* (*lttv_constructor)(void * main_window);
+typedef GtkWidget * (*lttv_constructor)(MainWindow * main_window, 
+			    LttvTracesetSelector * s, char *key);
+typedef lttv_constructor view_constructor;
 
+typedef struct _TimeWindow {
+	LttTime start_time;
+	LttTime time_width;
+} TimeWindow;
 
-typedef GArray LttvMenus;
-
-typedef struct _lttv_menu_closure {
-  lttv_constructor con;
-  char * menuPath;
-  char * menuText;
-} lttv_menu_closure;
-
-
-LttvMenus *lttv_menus_new();
-
-void lttv_menus_destroy(LttvMenus *h);
-
-void lttv_menus_add(LttvMenus *h, lttv_constructor f, char* menuPath, char * menuText);
-
-gboolean lttv_menus_remove(LttvMenus *h, lttv_constructor f);
-
-unsigned lttv_menus_number(LttvMenus *h);
-
-#endif // MENU_H
+#endif // COMMON_H

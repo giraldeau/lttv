@@ -80,10 +80,10 @@ AC_SUBST(lttlibdir)
 top_lttvdir="\$(top_srcdir)/lttv"
 AC_SUBST(top_lttvdir)
 
-top_guidir="\$(top_srcdir)/lttv/modules/gui"
-AC_SUBST(top_guidir)
+top_lttvwindowdir="\$(top_srcdir)/lttv/modules/gui/lttvwindow"
+AC_SUBST(top_lttvwindowdir)
 
-DEFAULT_INCLUDES="-I\$(top_srcdir) -I\$(top_lttvdir) -I\$(top_guidir)"
+DEFAULT_INCLUDES="-I\$(top_srcdir) -I\$(top_lttvdir) -I\$(top_lttvwindowdir)"
 AC_SUBST(DEFAULT_INCLUDES)
 
 #CPPFLAGS="${GLIB_CFLAGS}"
@@ -95,8 +95,8 @@ AC_SUBST(lttincludedir)
 lttvincludedir="${includedir}/lttv"
 AC_SUBST(lttvincludedir)
 
-lttvguiincludedir="${includedir}/lttvgui"
-AC_SUBST(lttvguiincludedir)
+lttvwindowincludedir="${includedir}/lttvwindow"
+AC_SUBST(lttvwindowincludedir)
 
 AC_CONFIG_FILES([Makefile
 		 lttv/Makefile
@@ -104,9 +104,8 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/Makefile
 		 lttv/modules/text/Makefile
 		 lttv/modules/gui/Makefile
-		 lttv/modules/gui/lttvgui/Makefile
 		 lttv/modules/gui/lttvwindow/Makefile
-		 lttv/modules/gui/lttvwindow/src/Makefile
+		 lttv/modules/gui/lttvwindow/lttvwindow/Makefile
 		 lttv/modules/gui/lttvwindow/pixmaps/Makefile
 		 lttv/modules/gui/lttvwindow/glade/Makefile
 		 lttv/modules/gui/controlflow/Makefile

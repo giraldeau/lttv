@@ -19,7 +19,7 @@
 #ifndef TOOLBAR_H
 #define TOOLBAR_H
 
-#include <lttvgui/common.h>
+#include <lttvwindow/common.h>
 
 /* constructor of the viewer */
 //typedef GtkWidget* (*lttv_constructor)(void * main_window);

@@ -18,10 +18,10 @@
 
 #include <gtk/gtk.h>
 
-#include <lttvgui/gtkmultivpaned.h>
+#include <lttvwindow/gtkmultivpaned.h>
 //#include "gtkintl.h"
-#include <lttvgui/mainwindow.h>
-#include <lttvgui/gtktraceset.h>
+#include <lttvwindow/mainwindow.h>
+#include <lttvwindow/gtktraceset.h>
 
 static void gtk_multi_vpaned_class_init (GtkMultiVPanedClass    *klass);
 static void gtk_multi_vpaned_init       (GtkMultiVPaned         *multi_vpaned);

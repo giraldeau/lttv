@@ -12,7 +12,7 @@
 
 #include "interface.h"
 #include "support.h"
-#include <lttvgui/mainWindow.h>
+#include <lttvwindow/mainWindow.h>
 #include "callbacks.h"
 
 /* global variable */

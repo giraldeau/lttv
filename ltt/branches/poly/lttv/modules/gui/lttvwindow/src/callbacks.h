@@ -17,8 +17,8 @@
  */
 
 #include <gtk/gtk.h>
-#include <lttvgui/common.h>
-#include <lttvgui/mainwindow.h>
+#include <lttvwindow/common.h>
+#include <lttvwindow/mainwindow.h>
 
 /* internal functions */
 

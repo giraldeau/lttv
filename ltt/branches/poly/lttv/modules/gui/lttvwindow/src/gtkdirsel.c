@@ -49,7 +49,7 @@
 
 #include "gdk/gdkkeysyms.h"
 #include <gtk/gtk.h>
-#include <lttvgui/gtkdirsel.h>
+#include <lttvwindow/gtkdirsel.h>
 
 #define _(A) A
 #define WANT_HPANED 1

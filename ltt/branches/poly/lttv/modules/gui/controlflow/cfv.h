@@ -22,8 +22,8 @@
 #define _CFV_H
 
 #include <gtk/gtk.h>
-#include <lttvgui/common.h>
-#include <lttvgui/mainwindow.h>
+#include <lttvwindow/common.h>
+#include <lttvwindow/mainwindow.h>
 #include "processlist.h"
 
 typedef struct _ControlFlowData ControlFlowData;

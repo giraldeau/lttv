@@ -17,50 +17,49 @@
  */
 
 #include <lttv/lttv.h>
-#include <lttvgui/menu.h>
+#include <lttvwindow/toolbar.h>
 
 
-inline LttvMenus *lttv_menus_new() {
-  return g_array_new(FALSE, FALSE, sizeof(lttv_menu_closure));
+inline LttvToolbars *lttv_toolbars_new() {
+  return g_array_new(FALSE, FALSE, sizeof(lttv_toolbar_closure));
 }
 
 /* MD: delete elements of the array also, but don't free pointed addresses
  * (functions).
  */
-inline void lttv_menus_destroy(LttvMenus *h) {
-  g_debug("lttv_menus_destroy()");
+inline void lttv_toolbars_destroy(LttvToolbars *h) {
+  g_debug("lttv_toolbars_destroy");
   g_array_free(h, TRUE);
 }
 
-inline void lttv_menus_add(LttvMenus *h, lttv_constructor f, char* menuPath, char* menuText)
+inline void lttv_toolbars_add(LttvToolbars *h, lttv_constructor f, char* tooltip, char ** pixmap)
 {
-  lttv_menu_closure c;
+  lttv_toolbar_closure c;
 
   /* if h is null, do nothing, or popup a warning message */
   if(h == NULL)return;
 
   c.con = f;
-  c.menuPath = menuPath;
-  c.menuText = menuText;
+  c.tooltip = tooltip;
+  c.pixmap = pixmap;
   g_array_append_val(h,c);
 }
 
-gboolean lttv_menus_remove(LttvMenus *h, lttv_constructor f)
+gboolean lttv_toolbars_remove(LttvToolbars *h, lttv_constructor f)
 {
-  lttv_menu_closure * tmp;
+  lttv_toolbar_closure * tmp;
   gint i;
   for(i=0;i<h->len;i++){
-    tmp = & g_array_index(h, lttv_menu_closure, i);
+    tmp = & g_array_index(h, lttv_toolbar_closure, i);
     if(tmp->con == f)break;
   }
   if(i<h->len){
     g_array_remove_index(h, i);
     return TRUE;
   }else return FALSE;
-  
 }
 
-unsigned lttv_menus_number(LttvMenus *h)
+unsigned lttv_toolbars_number(LttvToolbars *h)
 {
   return h->len;
 }

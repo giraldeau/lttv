@@ -35,12 +35,12 @@
 #include <lttv/tracecontext.h>
 #include <lttv/state.h>
 #include <lttv/stats.h>
-#include <lttvgui/menu.h>
-#include <lttvgui/toolbar.h>
+#include <lttvwindow/menu.h>
+#include <lttvwindow/toolbar.h>
 
 #include "interface.h"
 #include "support.h"
-#include <lttvgui/mainwindow.h>
+#include <lttvwindow/mainwindow.h>
 #include "callbacks.h"
 #include <ltt/trace.h>
 

@@ -27,7 +27,7 @@
 #define _EVENT_HOOKS_H
 
 #include <gtk/gtk.h>
-#include <lttvgui/mainwindow.h>
+#include <lttvwindow/mainwindow.h>
 #include <ltt/time.h>
 
 #include "processlist.h"

@@ -3,7 +3,7 @@
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
-LIBS += $(GTK_LIBS) -L$(top_srcdir)/lttv/modules/gui/lttvgui -llttvgui
+LIBS += $(GTK_LIBS) -lcustomBox
 
 INCLUDES = \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
@@ -19,6 +19,11 @@ lib_LTLIBRARIES = liblttvwindow.la
 
 liblttvwindow_la_LDFLAGS = -module
 liblttvwindow_la_SOURCES = \
+	toolbar.c\
+	menu.c\
+	gtkdirsel.c\
+	gtkmultivpaned.c\
+	gtktraceset.c \
 	init_module.c \
 	support.c \
 	interface.c \
@@ -30,6 +35,15 @@ noinst_HEADERS = \
 	interface.h \
 	callbacks.h
 
+lttvguiinclude_HEADERS = \
+	common.h\
+	gtkdirsel.h\
+	gtkmultivpaned.h\
+	gtktraceset.h\
+	lttvfilter.h\
+	mainwindow.h\
+	menu.h\
+	toolbar.h
 
 liblttvwindow_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
 

@@ -22,10 +22,10 @@
 
 #include <lttv/lttv.h>
 #include <lttv/module.h>
-#include <lttvgui/gtktraceset.h>
+#include <lttvwindow/gtktraceset.h>
 #include <lttv/tracecontext.h>
 #include <lttv/hook.h>
-#include <lttvgui/common.h>
+#include <lttvwindow/common.h>
 #include <lttv/state.h>
 #include <lttv/stats.h>
 
