@@ -386,7 +386,7 @@ void lttvwindow_viewer_unregister_dividor(MainWindow *main_win,
  * @param end end time of the traceset.
  */
 
-TimeInterval *lttvwindow_viewer_get_time_span(MainWindow *main_win);
+const TimeInterval *lttvwindow_viewer_get_time_span(MainWindow *main_win);
 
 /**
  * Function to get the current time window of the current tab.
@@ -394,7 +394,7 @@ TimeInterval *lttvwindow_viewer_get_time_span(MainWindow *main_win);
  * @param time_interval a pointer where time interval will be stored.
  */
 
-TimeWindow *lttvwindow_viewer_get_time_window(MainWindow *main_win);
+const TimeWindow *lttvwindow_viewer_get_time_window(MainWindow *main_win);
 
 
 /**
@@ -403,7 +403,7 @@ TimeWindow *lttvwindow_viewer_get_time_window(MainWindow *main_win);
  * @param time a pointer where time will be stored.
  */
 
-LttTime *lttvwindow_viewer_get_current_time(MainWindow *main_win);
+const LttTime *lttvwindow_viewer_get_current_time(MainWindow *main_win);
 
 /**
  * Function to get the traceset from the current tab.
@@ -411,7 +411,7 @@ LttTime *lttvwindow_viewer_get_current_time(MainWindow *main_win);
  * @param traceset a pointer to a traceset.
  */
 
-LttvTraceset *lttvwindow_viewer_get_traceset(MainWindow *main_win);
+const LttvTraceset *lttvwindow_viewer_get_traceset(MainWindow *main_win);
 
 
 /**
@@ -420,7 +420,7 @@ LttvTraceset *lttvwindow_viewer_get_traceset(MainWindow *main_win);
  * @param filter, a pointer to a filter.
  */
 
-lttv_filter *lttvwindow_viewer_get_filter(MainWindow *main_win);
+const lttv_filter *lttvwindow_viewer_get_filter(MainWindow *main_win);
 
 
 /**
