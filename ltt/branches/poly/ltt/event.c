@@ -275,7 +275,6 @@ void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
 
 unsigned ltt_event_get_unsigned(LttEvent *e, LttField *f)
 {
-  LttArchSize rSize = e->tracefile->trace->system_description->size;
   int revFlag = e->tracefile->trace->my_arch_endian == 
                 e->tracefile->trace->system_description->endian ? 0:1;
   LttTypeEnum t = f->field_type->type_class;
@@ -283,66 +282,46 @@ unsigned ltt_event_get_unsigned(LttEvent *e, LttField *f)
   if(t != LTT_UINT && t != LTT_ENUM)
     g_error("The type of the field is not unsigned int\n");
 
-  if(rSize == LTT_LP32){
-    if(f->field_size != 2)
-      g_error("The type of the field is not unsigned int: uint16_t\n");
-    else{
-      uint16_t x = *(uint16_t *)(e->data + f->offset_root);
-      return (unsigned) (revFlag ? BREV16(x) : x); 
-    }
-  }else if(rSize == LTT_ILP32 || rSize == LTT_LP64){
-    if(f->field_size != 4)
-      g_error("The type of the field is not unsigned int: uint32_t\n");
-    else{
-      uint32_t x = *(uint32_t *)(e->data + f->offset_root);
-      return (unsigned) (revFlag ? BREV32(x): x);
-    }
-  }else if(rSize == LTT_ILP64){
-    if(f->field_size != 8)
-      g_error("The type of the field is not unsigned int: uint64_t\n");
-    else{
-      uint64_t x = *(uint64_t *)(e->data + f->offset_root);
-      return (unsigned) (revFlag ? BREV64(x): x);
-    }
+  if(f->field_size == 1){
+    uint8_t x = *(uint8_t*)(e->data + f->offset_root);
+    return (unsigned int) x;    
+  }else if(f->field_size == 2){
+    uint16_t x = *(uint16_t*)(e->data + f->offset_root);
+    return (unsigned int) (revFlag ? BREV16(x): x);    
+  }else if(f->field_size == 4){
+    uint32_t x = *(uint32_t*)(e->data + f->offset_root);
+    return (unsigned int) (revFlag ? BREV32(x): x);    
+  }else if(f->field_size == 8){
+    uint64_t x = *(uint64_t*)(e->data + f->offset_root);
+    return (unsigned int) (revFlag ? BREV64(x): x);    
   }
 }
 
 int ltt_event_get_int(LttEvent *e, LttField *f)
 {
-  LttArchSize rSize = e->tracefile->trace->system_description->size;
   int revFlag = e->tracefile->trace->my_arch_endian == 
                 e->tracefile->trace->system_description->endian ? 0:1;
 
   if(f->field_type->type_class != LTT_INT)
     g_error("The type of the field is not int\n");
 
-  if(rSize == LTT_LP32){
-    if(f->field_size != 2)
-      g_error("The type of the field is not int: int16_t\n");
-    else{
-      int16_t x = *(int16_t *)(e->data + f->offset_root);
-      return (int) (revFlag ? BREV16(x) : x); 
-    }
-  }else if(rSize == LTT_ILP32 || rSize == LTT_LP64){
-    if(f->field_size != 4)
-      g_error("The type of the field is not int: int32_t\n");
-    else{
-      int32_t x = *(int32_t *)(e->data + f->offset_root);
-      return (int) (revFlag ? BREV32(x): x);
-    }
-  }else if(rSize == LTT_ILP64){
-    if(f->field_size != 8)
-      g_error("The type of the field is not int: int64_t\n");
-    else{
-      int64_t x = *(int64_t *)(e->data + f->offset_root);
-      return (int) (revFlag ? BREV64(x): x);
-    }
+  if(f->field_size == 1){
+    int8_t x = *(int8_t*)(e->data + f->offset_root);
+    return (int) x;    
+  }else if(f->field_size == 2){
+    int16_t x = *(int16_t*)(e->data + f->offset_root);
+    return (int) (revFlag ? BREV16(x): x);    
+  }else if(f->field_size == 4){
+    int32_t x = *(int32_t*)(e->data + f->offset_root);
+    return (int) (revFlag ? BREV32(x): x);    
+  }else if(f->field_size == 8){
+    int64_t x = *(int64_t*)(e->data + f->offset_root);
+    return (int) (revFlag ? BREV64(x): x);    
   }
 }
 
 unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
 {
-  LttArchSize rSize = e->tracefile->trace->system_description->size;
   int revFlag = e->tracefile->trace->my_arch_endian == 
                 e->tracefile->trace->system_description->endian ? 0:1;
   LttTypeEnum t = f->field_type->type_class;
@@ -350,46 +329,41 @@ unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
   if(t != LTT_UINT && t != LTT_ENUM)
     g_error("The type of the field is not unsigned long\n");
 
-  if(rSize == LTT_LP32 || rSize == LTT_ILP32 ){
-    if(f->field_size != 4)
-      g_error("The type of the field is not unsigned long: uint32_t\n");
-    else{
-      uint32_t x = *(uint32_t *)(e->data + f->offset_root);
-      return (unsigned long) (revFlag ? BREV32(x) : x); 
-    }
-  }else if(rSize == LTT_LP64 || rSize == LTT_ILP64){
-    if(f->field_size != 8)
-      g_error("The type of the field is not unsigned long: uint64_t\n");
-    else{
-      uint64_t x = *(uint64_t *)(e->data + f->offset_root);
-      return (unsigned long) (revFlag ? BREV64(x): x);
-    }
+  if(f->field_size == 1){
+    uint8_t x = *(uint8_t*)(e->data + f->offset_root);
+    return (unsigned long) x;    
+  }else if(f->field_size == 2){
+    uint16_t x = *(uint16_t*)(e->data + f->offset_root);
+    return (unsigned long) (revFlag ? BREV16(x): x);    
+  }else if(f->field_size == 4){
+    uint32_t x = *(uint32_t*)(e->data + f->offset_root);
+    return (unsigned long) (revFlag ? BREV32(x): x);    
+  }else if(f->field_size == 8){
+    uint64_t x = *(uint64_t*)(e->data + f->offset_root);
+    return (unsigned long) (revFlag ? BREV64(x): x);    
   }
 }
 
 long int ltt_event_get_long_int(LttEvent *e, LttField *f)
 {
-  LttArchSize rSize = e->tracefile->trace->system_description->size;
   int revFlag = e->tracefile->trace->my_arch_endian == 
                 e->tracefile->trace->system_description->endian ? 0:1;
 
   if( f->field_type->type_class != LTT_INT)
     g_error("The type of the field is not long int\n");
 
-  if(rSize == LTT_LP32 || rSize == LTT_ILP32 ){
-    if(f->field_size != 4)
-      g_error("The type of the field is not long int: int32_t\n");
-    else{
-      int32_t x = *(int32_t *)(e->data + f->offset_root);
-      return (long) (revFlag ? BREV32(x) : x); 
-    }
-  }else if(rSize == LTT_LP64 || rSize == LTT_ILP64){
-    if(f->field_size != 8)
-      g_error("The type of the field is not long int: int64_t\n");
-    else{
-      int64_t x = *(int64_t *)(e->data + f->offset_root);
-      return (long) (revFlag ? BREV64(x): x);
-    }
+  if(f->field_size == 1){
+    int8_t x = *(int8_t*)(e->data + f->offset_root);
+    return (long) x;    
+  }else if(f->field_size == 2){
+    int16_t x = *(int16_t*)(e->data + f->offset_root);
+    return (long) (revFlag ? BREV16(x): x);    
+  }else if(f->field_size == 4){
+    int32_t x = *(int32_t*)(e->data + f->offset_root);
+    return (long) (revFlag ? BREV32(x): x);    
+  }else if(f->field_size == 8){
+    int64_t x = *(int64_t*)(e->data + f->offset_root);
+    return (long) (revFlag ? BREV64(x): x);    
   }
 }
 
