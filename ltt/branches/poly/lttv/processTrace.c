@@ -466,7 +466,8 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
      read one event and insert in the pqueue based on the event time. */
 
   lttv_hooks_call(context->before, context);
-  nbi = ltt_trace_set_number(traceset);
+  nbi = lttv_traceset_number(traceset);
+  //  nbi = ltt_trace_set_number(traceset);
 
   for(i = 0 ; i < nbi ; i++) {
     tc = context->traces[i];
@@ -524,7 +525,7 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
     g_tree_remove(pqueue, &(tfc->timestamp));
 
     if(!lttv_hooks_call(tfc->check_event, context)) {
-      id = lttv_event_id(tfc->e);
+      id = ltt_event_eventtype_id(tfc->e);
       lttv_hooks_call(tfc->before_event, tfc);
       lttv_hooks_call(lttv_hooks_by_id_get(tfc->before_event_by_id, id), tfc);
       lttv_hooks_call(tfc->after_event, context);

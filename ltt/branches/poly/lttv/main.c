@@ -126,7 +126,7 @@ int main(int argc, char **argv) {
 
 LttvAttribute *lttv_global_attributes()
 {
-  return attributes;
+  return (LttvAttribute*)attributes;
 }
 
 
