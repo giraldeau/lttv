@@ -31,6 +31,9 @@ button description or text menu entry description. A module keeps a list of
 every viewer that currently sits in memory so it can destroy them before the
 module gets unloaded/destroyed.
 
+The contructor registration to the main window adds button and menu entry
+to each main window, thus allowing instanciation of viewers.
+
 
 Main Window
 
@@ -272,60 +275,40 @@ typedef GtkWidget * (*lttvwindow_viewer_constructor)
 
 /**
  * Function to register a view constructor so that main window can generate
- * a toolbar item for the viewer in order to generate a new instance easily. 
+ * a menu item and a toolbar item for the viewer in order to generate a new
+ * instance easily. A menu entry and toolbar item will be added to each main
+ * window.
  * 
  * It should be called by init function of the module.
  * 
- * @param pixmap Image shown on the toolbar item.
+ * @param menu_path path of the menu item. NULL : no menu entry.
+ * @param menu_text text of the menu item.
+ * @param pixmap Image shown on the toolbar item. NULL : no button.
  * @param tooltip tooltip of the toolbar item.
  * @param view_constructor constructor of the viewer. 
  */
 
-void lttvwindow_register_toolbar
-                            (char ** pixmap,
+void lttvwindow_register_constructor
+                            (char *  menu_path, 
+                             char *  menu_text,
+                             char ** pixmap,
                              char *  tooltip,
                              lttvwindow_viewer_constructor view_constructor);
 
 
 /**
  * Function to unregister the viewer's constructor, release the space 
- * occupied by pixmap, tooltip and constructor of the viewer.
+ * occupied by menu_path, menu_text, pixmap, tooltip and constructor of the
+ * viewer.
  * 
  * It will be called when a module is unloaded.
  * 
  * @param view_constructor constructor of the viewer.
  */
 
-void lttvwindow_unregister_toolbar
+void lttvwindow_unregister_constructor
                             (lttvwindow_viewer_constructor view_constructor);
 
-
-/**
- * Function to register a view constructor so that main window can generate
- * a menu item for the viewer in order to generate a new instance easily.
- * 
- * It will be called by init function of the module.
- * 
- * @param menu_path path of the menu item.
- * @param menu_text text of the menu item.
- * @param view_constructor constructor of the viewer. 
- */
-
-void lttvwindow_register_menu(char *menu_path, 
-                              char *menu_text,
-                              lttvwindow_viewer_constructor view_constructor);
-
-
-/**
- * Function to unregister the viewer's constructor, release the space 
- * occupied by menu_path, menu_text and constructor of the viewer.
- * 
- * It will be called when a module is unloaded.
- * 
- * @param view_constructor constructor of the viewer.
- */
-
-void lttvwindow_unregister_menu(lttvwindow_viewer_constructor view_constructor);
 
 
 
