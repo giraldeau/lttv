@@ -20,19 +20,9 @@ typedef struct _WindowCreationData {
 
 
 typedef struct _TracesetInfo {
-	gchar* path;
-	LttvHooks 
-	  *before_traceset,
-	  *after_traceset,
-	  *before_trace,
-	  *after_trace,
-	  *before_tracefile,
-	  *after_tracefile,
-	  *before_event,
-	  *after_event;
-        //FIXME? TracesetContext and stats in same or different variable ?
-	LttvTracesetStats * traceset_context;
-	LttvTraceset * traceset;
+  //FIXME? TracesetContext and stats in same or different variable ?
+  LttvTracesetStats * traceset_context;
+  LttvTraceset * traceset;
 } TracesetInfo ;
 
 
@@ -54,8 +44,6 @@ struct _MainWindow{
  
   //  lttv_trace_filter * filter; /* trace filter associated with the window */
 
-  /* Traceset related information */
-  TracesetInfo * traceset_info; 
   /* Attributes for trace reading hooks local to the main window */
   LttvIAttribute * attributes;
   
@@ -85,6 +73,9 @@ struct _Tab{
 
   struct _Tab * next;
   MainWindow  * mw;
+
+  /* Traceset related information */
+  TracesetInfo * traceset_info; 
 };
 
 /**

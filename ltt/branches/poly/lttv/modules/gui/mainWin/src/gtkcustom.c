@@ -111,7 +111,8 @@ void gtk_custom_set_adjust(GtkCustom * custom, gboolean first_time)
 
   get_time_window(custom->mw,&time_window);
   if(first_time){
-    time_span = LTTV_TRACESET_CONTEXT(custom->mw->traceset_info->traceset_context)->Time_Span ;
+    time_span = LTTV_TRACESET_CONTEXT(custom->mw->current_tab->traceset_info->
+				      traceset_context)->Time_Span ;
   
     custom->hadjust->lower = ltt_time_to_double(time_span->startTime) * 
                              NANOSECONDS_PER_SECOND;

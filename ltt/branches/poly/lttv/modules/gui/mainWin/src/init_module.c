@@ -75,7 +75,7 @@ static gboolean window_creation_hook(void *hook_data, void *call_data)
   add_pixmap_directory ("pixmaps");
   add_pixmap_directory ("modules/gui/mainWin/pixmaps");
 
-  construct_main_window(NULL, window_creation_data, TRUE);
+  construct_main_window(NULL, window_creation_data);
 
   gtk_main ();
 
@@ -110,45 +110,8 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 void
 main_window_free(MainWindow * mw)
 { 
-  guint i, nb, ref_count;
-  LttvTrace * trace;
-
   if(mw){
-
-g_critical("begin remove");
-    lttv_hooks_destroy(mw->traceset_info->before_traceset);
-    lttv_hooks_destroy(mw->traceset_info->after_traceset);
-    lttv_hooks_destroy(mw->traceset_info->before_trace);
-    lttv_hooks_destroy(mw->traceset_info->after_trace);
-    lttv_hooks_destroy(mw->traceset_info->before_tracefile);
-    lttv_hooks_destroy(mw->traceset_info->after_tracefile);
-    lttv_hooks_destroy(mw->traceset_info->before_event);
-    lttv_hooks_destroy(mw->traceset_info->after_event);
-g_critical("end remove");
-    
-    if(mw->traceset_info->path != NULL)
-      g_free(mw->traceset_info->path);
-    if(mw->traceset_info->traceset_context != NULL){
-      lttv_context_fini(LTTV_TRACESET_CONTEXT(mw->traceset_info->traceset_context));
-      g_object_unref(mw->traceset_info->traceset_context);
-    }
-    if(mw->traceset_info->traceset != NULL) {
-      nb = lttv_traceset_number(mw->traceset_info->traceset);
-      for(i = 0 ; i < nb ; i++) {
-	trace = lttv_traceset_get(mw->traceset_info->traceset, i);
-	ref_count = lttv_trace_get_ref_number(trace);
-	if(ref_count <= 1)
-	  ltt_trace_close(lttv_trace(trace));
-      }
-    }
-
-    lttv_traceset_destroy(mw->traceset_info->traceset); 
-
     g_object_unref(mw->attributes);
-
-    g_free(mw->traceset_info);
-    mw->traceset_info = NULL;
-      
     g_main_window_list = g_slist_remove(g_main_window_list, mw);
 
     g_hash_table_destroy(mw->hash_menu_item);

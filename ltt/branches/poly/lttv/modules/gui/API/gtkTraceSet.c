@@ -211,7 +211,8 @@ void get_traceset_time_span(MainWindow *main_win, TimeInterval *time_interval)
 {
   //time_window->start_time = main_win->current_tab->time_window.start_time;
   //time_window->time_width = main_win->current_tab->time_window.time_width;
-  *time_interval = *(LTTV_TRACESET_CONTEXT(main_win->traceset_info->traceset_context)->Time_Span);
+  *time_interval = *(LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
+					   traceset_context)->Time_Span);
 }
 
 
@@ -579,8 +580,10 @@ void set_hpane_dividor(MainWindow *main_win, gint position)
 void process_traceset_api(MainWindow *main_win, LttTime start, 
 			  LttTime end, unsigned maxNumEvents)
 {
-  lttv_process_traceset_seek_time(main_win->traceset_info->traceset_context, start);
-  lttv_process_traceset(main_win->traceset_info->traceset_context, end, maxNumEvents);
+  lttv_process_traceset_seek_time(main_win->current_tab->traceset_info->
+				  traceset_context, start);
+  lttv_process_traceset(main_win->current_tab->traceset_info->
+			traceset_context, end, maxNumEvents);
 }
 
 /**
@@ -605,7 +608,8 @@ void context_add_hooks_api(MainWindow *main_win ,
 			   LttvHooks *after_event)
 {
   LttvTracesetContext * tsc = 
-	  LTTV_TRACESET_CONTEXT(main_win->traceset_info->traceset_context);
+	  LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
+				traceset_context);
   lttv_traceset_context_add_hooks(tsc,before_traceset,after_traceset,
 				  check_trace,before_trace,after_trace,
 				  check_tracefile,before_tracefile,after_tracefile,
@@ -635,7 +639,7 @@ void context_remove_hooks_api(MainWindow *main_win ,
 			      LttvHooks *after_event)
 {
   LttvTracesetContext * tsc =
-        LTTV_TRACESET_CONTEXT(main_win->traceset_info->traceset_context);
+        LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->traceset_context);
   lttv_traceset_context_remove_hooks(tsc,before_traceset,after_traceset,
 				     check_trace,before_trace,after_trace,
 				     check_tracefile,before_tracefile,after_tracefile,
@@ -651,13 +655,13 @@ void context_remove_hooks_api(MainWindow *main_win ,
 void state_add_event_hooks_api(MainWindow *main_win )
 {
   lttv_state_add_event_hooks(
-       (LttvTracesetState*)main_win->traceset_info->traceset_context);
+       (LttvTracesetState*)main_win->current_tab->traceset_info->traceset_context);
 }
 
 void state_remove_event_hooks_api(MainWindow *main_win )
 {
   lttv_state_remove_event_hooks(
-       (LttvTracesetState*)main_win->traceset_info->traceset_context);
+       (LttvTracesetState*)main_win->current_tab->traceset_info->traceset_context);
 }
 
 
@@ -669,13 +673,13 @@ void state_remove_event_hooks_api(MainWindow *main_win )
 void stats_add_event_hooks_api(MainWindow *main_win )
 {
   lttv_stats_add_event_hooks(
-        (LttvTracesetStats*)main_win->traceset_info->traceset_context);
+        (LttvTracesetStats*)main_win->current_tab->traceset_info->traceset_context);
 }
 
 void stats_remove_event_hooks_api(MainWindow *main_win )
 {
   lttv_stats_remove_event_hooks(
-        (LttvTracesetStats*)main_win->traceset_info->traceset_context);
+        (LttvTracesetStats*)main_win->current_tab->traceset_info->traceset_context);
 }
 
 /**
@@ -685,5 +689,5 @@ void stats_remove_event_hooks_api(MainWindow *main_win )
 
 LttvTracesetStats* get_traceset_stats_api(MainWindow *main_win)
 {
-  return main_win->traceset_info->traceset_context;
+  return main_win->current_tab->traceset_info->traceset_context;
 }
