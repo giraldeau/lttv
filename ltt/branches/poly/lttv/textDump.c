@@ -196,13 +196,22 @@ static int write_event_content(void *hook_data, void *call_data)
 }
 
 
-//void init(int argc, char **argv)
 G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
 {
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
+  LttvModule *batchAnalysis  =
+	  lttv_module_require(self, "batchAnalysis", argc, argv);
+
+  if(batchAnalysis == NULL)
+  {
+    g_error("Can't load required module batchAnalysis");
+    return;
+  }
+	
+  
   a_string = g_string_new("");
 
   a_file_name = NULL;
