@@ -317,6 +317,7 @@ LttvProcessState *create_process(LttvTracefileState *tfs,
 
   g_hash_table_insert(tcs->processes, GUINT_TO_POINTER(pid), process);
   process->pid = pid;
+  if(parent) process->ppid = parent->pid;
   process->birth = tfc->timestamp;
   process->name = LTTV_STATE_UNNAMED;
   process->interrupt_stack = g_array_new(FALSE, FALSE, 
