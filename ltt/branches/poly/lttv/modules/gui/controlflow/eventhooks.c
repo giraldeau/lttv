@@ -2987,12 +2987,12 @@ gint update_current_time_hook(void *hook_data, void *call_data)
    * at one end of the trace. */
   
   
-  if(ltt_time_compare(current_time, time_begin) == -1)
+  if(ltt_time_compare(current_time, time_begin) < 0)
   {
     TimeWindow new_time_window;
 
     if(ltt_time_compare(current_time,
-          ltt_time_add(trace_start,half_width)) == -1)
+          ltt_time_add(trace_start,half_width)) < 0)
       time_begin = trace_start;
     else
       time_begin = ltt_time_sub(current_time,half_width);
@@ -3004,11 +3004,11 @@ gint update_current_time_hook(void *hook_data, void *call_data)
 
     lttvwindow_report_time_window(control_flow_data->tab, new_time_window);
   }
-  else if(ltt_time_compare(current_time, time_end) == 1)
+  else if(ltt_time_compare(current_time, time_end) > 0)
   {
     TimeWindow new_time_window;
 
-    if(ltt_time_compare(current_time, ltt_time_sub(trace_end, half_width)) == 1)
+    if(ltt_time_compare(current_time, ltt_time_sub(trace_end, half_width)) > 0)
       time_begin = ltt_time_sub(trace_end,width);
     else
       time_begin = ltt_time_sub(current_time,half_width);
