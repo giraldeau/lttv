@@ -236,8 +236,8 @@ unsigned ltt_type_member_number(LttType *t)
 LttType *ltt_type_member_type(LttType *t, unsigned i)
 {
   if(t->type_class != LTT_STRUCT) return NULL;
-  if(i > t->element_number || i == 0 ) return NULL;
-  return t->element_type[i-1];
+  if(i >= t->element_number || i < 0 ) return NULL;
+  return t->element_type[i];
 }
 
 /*****************************************************************************
@@ -255,8 +255,8 @@ LttType *ltt_type_member_type(LttType *t, unsigned i)
 char *ltt_enum_string_get(LttType *t, unsigned i)
 {  
   if(t->type_class != LTT_ENUM) return NULL;
-  if(i > t->element_number || i == 0 ) return NULL;
-  return t->enum_strings[i-1];
+  if(i >= t->element_number || i < 0 ) return NULL;
+  return t->enum_strings[i];
 }
 
 /*****************************************************************************
@@ -291,8 +291,8 @@ LttField *ltt_field_element(LttField *f)
 LttField *ltt_field_member(LttField *f, unsigned i)
 {
   if(f->field_type->type_class != LTT_STRUCT) return NULL;
-  if(i==0 || i>f->field_type->element_number) return NULL;
-  return f->child[i-1];
+  if(i < 0 || i >= f->field_type->element_number) return NULL;
+  return f->child[i];
 }
 
 /*****************************************************************************

@@ -255,7 +255,7 @@ void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
     return ;
 
   element_number  = ltt_event_field_element_number(e,f);
-  if(element_number < i || i == 0) return;
+  if((element_number-1) < i || i < 0) return;
   
   fld = f->child[0];
   
