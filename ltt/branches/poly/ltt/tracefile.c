@@ -779,7 +779,9 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
     if(t->which_block == 1){
       updateTracefile(t);      
     }else{
-      if(ltt_time_compare(t->prev_block_end_time, time) >= 0 ){
+      if(ltt_time_compare(t->prev_block_end_time, time) >= 0 ||
+	 (t->prev_block_end_time.tv_sec == 0 && 
+	  t->prev_block_end_time.tv_nsec == 0 )){
 	err=readBlock(t,t->which_block-1);
 	if(err) g_error("Can not read tracefile: %s\n", t->name); 
 	return ltt_tracefile_seek_time(t, time) ;
