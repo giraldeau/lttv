@@ -52,6 +52,13 @@
 
 */
 
+static GQuark
+  LTTV_FILTER_TRACE,
+  LTTV_FILTER_TRACESET,
+  LTTV_FILTER_TRACEFILE,
+  LTTV_FILTER_STATE,
+  LTTV_FILTER_EVENT;
+
 /**
  * 	@enum lttv_expression_op
  */
@@ -114,17 +121,18 @@ typedef struct _lttv_filter {
 	lttv_filter_tree* tree;	
 } lttv_filter;
 
+gboolean parse_field_path(GList* fp);
+
 gboolean parse_simple_expression(GString* expression);
 
 /* Compile the filter expression into an efficient data structure */
-
 lttv_filter *lttv_filter_new(char *expression, LttvTraceState *tfs);
 
 
 /* Check if the tracefile or event satisfies the filter. The arguments are
    declared as void * to allow these functions to be used as hooks. */
 
-gboolean lttv_filter_tracefile(lttv_filter *filter, LttvTrace *tracefile);
+gboolean lttv_filter_tracefile(lttv_filter *filter, LttTracefile *tracefile);
 
 gboolean lttv_filter_event(lttv_filter *filter, LttEvent *event);
 

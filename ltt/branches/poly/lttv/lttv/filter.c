@@ -1,5 +1,5 @@
 /* This file is part of the Linux Trace Toolkit viewer
- * Copyright (C) 2003-2004 Michel Dagenais
+ * Copyright (C) 2003-2005 Michel Dagenais
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -22,6 +22,12 @@
    in an event is equal, not equal, smaller, smaller or equal, larger, or
    larger or equal to a specified value. 
 */
+
+/*
+ *  YET TO BE ANSWERED
+ *  - should the filter be implemented as a module
+ *  - should all the structures and field types be associated with GQuarks
+ */
 
 #include <lttv/filter.h>
 
@@ -49,6 +55,41 @@
 */
 
 /**
+ *  Parse through filtering field hierarchy as specified 
+ *  by user.  This function compares each value to 
+ *  predetermined quarks
+ *  @param fp The field path list
+ *  @return success/failure of operation
+ */
+gboolean
+parse_field_path(GList* fp) {
+
+  GString* f = g_list_first(fp)->data; 
+  
+  switch(g_quark_try_string(f->str)) {
+//    case LTTV_FILTER_TRACE:
+
+//    break;
+//    case LTTV_FILTER_TRACEFILE:
+
+//      break;
+//    case LTTV_FILTER_TRACESET:
+
+//      break;
+//    case LTTV_FILTER_STATE:
+
+//      break;
+//    case LTTV_FILTER_EVENT:
+
+//      break;
+    default:    /* Quark value unrecognized or equal to 0 */
+      g_warning("Unrecognized field in filter string");
+      return FALSE;
+  }
+  return TRUE;
+}
+
+/**
  * 	Add an filtering option to the current tree
  * 	@param expression Current expression to parse
  * 	@return success/failure of operation
@@ -58,6 +99,7 @@ parse_simple_expression(GString* expression) {
 	
 	unsigned i;
 
+  
   
 
 }
@@ -69,32 +111,28 @@ parse_simple_expression(GString* expression) {
  * 	@return the current lttv_filter or NULL if error
  */
 lttv_filter*
-lttv_filter_new(char *expression, LttvTraceState *tfs) {
+lttv_filter_new(char *expression, LttvTraceState *tcs) {
 
-  /* test */
-  char* field = "cpu";
-  LttEventType *et;
-  
- // LttField* a_ltt_field = NULL;
- // a_ltt_field = find_field(NULL,field);
+  g_print("filter::lttv_filter_new()\n");		/* debug */
 
- // g_print("%s\n",a_ltt_field->field_type->type_name);
-
-  return NULL;
-  
   unsigned 	
     i, 
     p=0,	/* parenthesis nesting value */
     b=0;	/* current breakpoint in expression string */
 	
+  LTTV_FILTER_EVENT = g_quark_from_string("event");
+  LTTV_FILTER_TRACE = g_quark_from_string("trace");
+  LTTV_FILTER_TRACESET = g_quark_from_string("traceset");
+  LTTV_FILTER_STATE = g_quark_from_string("state");
+  LTTV_FILTER_TRACEFILE = g_quark_from_string("tracefile");
+     
   gpointer tree = NULL;
   
   /* temporary values */
-  GString *current_option = g_string_new(""); 
+  GString *a_field_component = g_string_new(""); 
+  GList *a_field_path = NULL;
   lttv_simple_expression a_simple_expression;
-
-  g_print("filter::lttv_filter_new()\n");		/* debug */
-
+  
   /*	
    *  1. parse expression
    *  2. construct binary tree
@@ -114,13 +152,15 @@ lttv_filter_new(char *expression, LttvTraceState *tfs) {
    *	in browsing that string
    *	  1. finding boolean ops ( &,|,^,! ) and parenthesis
    *	  2. finding simple expressions
-   *	    - field path
+   *	    - field path ( separated by dots )
    *	    - op ( >, <, =, >=, <=, !=)
-   *	    - value
+   *	    - value ( integer, string ... )
+   *	To spare computing time, the whole 
+   *	string is parsed in this loop for a 
+   *	O(n) complexity order.
    */
-
   for(i=0;i<strlen(expression);i++) {
-    g_print("%s\n",current_option->str);
+    g_print("%s\n",a_field_component->str);
     switch(expression[i]) {
       /*
        *   logical operators
@@ -128,14 +168,15 @@ lttv_filter_new(char *expression, LttvTraceState *tfs) {
       case '&':   /* and */
       case '|':   /* or */
       case '^':   /* xor */
-        current_option = g_string_new("");
+        g_list_append( a_field_path, a_field_component );
+        a_field_component = g_string_new("");
         break;
       case '!':   /* not, or not equal (math op) */
         if(expression[i+1] == '=') {  /* != */
           a_simple_expression.op = LTTV_FIELD_NE;
           i++;
         } else {  /* ! */
-          g_print("%s\n",current_option);
+          g_print("%s\n",a_field_component);
           current_option = g_string_new("");
         }
         break;
@@ -164,6 +205,13 @@ lttv_filter_new(char *expression, LttvTraceState *tfs) {
       case '=':   /* equal */
         a_simple_expression.op = LTTV_FIELD_EQ;
         break;
+      /*
+       *  Field concatening caracter
+       */
+      case '.':   /* dot */
+        g_list_append( a_field_path, a_field_component );
+        a_field_component = g_string_new("");
+        break;
       default:    /* concatening current string */
         g_string_append_c(current_option,expression[i]); 				
     }
@@ -185,8 +233,34 @@ lttv_filter_new(char *expression, LttvTraceState *tfs) {
  * 	@return success/failure of operation
  */
 gboolean
-lttv_filter_tracefile(lttv_filter *filter, LttvTrace *tracefile) {
+lttv_filter_tracefile(lttv_filter *filter, LttTracefile *tracefile) {
 
+  
+  
+  /* test */
+/*  int i, nb;
+  char *f_name, *e_name;
+
+  char* field = "cpu";
+   
+  LttvTraceHook h;
+
+  LttEventType *et;
+
+  LttType *t;
+
+  GString *fe_name = g_string_new("");
+
+  nb = ltt_trace_eventtype_number(tcs->parent.t);
+  g_print("NB:%i\n",nb);
+  for(i = 0 ; i < nb ; i++) {
+    et = ltt_trace_eventtype_get(tcs->parent.t, i);
+    e_name = ltt_eventtype_name(et);
+    f_name = ltt_facility_name(ltt_eventtype_facility(et));
+    g_string_printf(fe_name, "%s.%s", f_name, e_name);
+    g_print("facility:%s and event:%s\n",f_name,e_name);
+  }
+ */
 }
 
 /**
