@@ -66,6 +66,8 @@ typedef struct _LttvIAttributeClass LttvIAttributeClass;
 struct _LttvIAttributeClass {
   GTypeInterface parent;
 
+  LttvIAttribute* (*new_attribute) (LttvIAttribute *self);
+
   unsigned int (*get_number) (LttvIAttribute *self);
 
   gboolean (*named) (LttvIAttribute *self, gboolean *homogeneous);

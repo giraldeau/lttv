@@ -467,11 +467,20 @@ lttv_attribute_read_xml(LttvAttribute *self, FILE *fp)
   fscanf(fp,"</ATTRS>");
 }
 
+static LttvAttribute *
+new_attribute (LttvAttribute *self)
+{
+  return g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+}
+
 
 static void
 attribute_interface_init (gpointer g_iface, gpointer iface_data)
 {
   LttvIAttributeClass *klass = (LttvIAttributeClass *)g_iface;
+
+  klass->new_attribute = (LttvIAttribute* (*) (LttvIAttribute *self))
+      new_attribute;
 
   klass->get_number = (unsigned int (*) (LttvIAttribute *self)) 
       lttv_attribute_get_number;
@@ -524,7 +533,7 @@ static void
 attribute_class_init (LttvAttributeClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
-
+  
   gobject_class->finalize = (void (*)(GObject *self))attribute_finalize;
 }
 

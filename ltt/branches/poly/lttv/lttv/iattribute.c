@@ -174,6 +174,7 @@ gboolean lttv_iattribute_find_by_path(LttvIAttribute *self, char *path,
   }
 }
 
+
 /* Shallow and deep copies */
 
 LttvIAttribute *lttv_iattribute_shallow_copy(LttvIAttribute *self)
@@ -190,13 +191,14 @@ LttvIAttribute *lttv_iattribute_shallow_copy(LttvIAttribute *self)
 
   int nb_attributes = lttv_iattribute_get_number(self);
 
-  copy = LTTV_IATTRIBUTE(g_object_new(G_OBJECT_TYPE(self),NULL));
+  copy = LTTV_IATTRIBUTE_GET_CLASS(self)->new_attribute(NULL);
 
   for(i = 0 ; i < nb_attributes ; i++) {
     t = lttv_iattribute_get(self, i, &name, &v);
     v_copy = lttv_iattribute_add(copy, name, t);
     lttv_iattribute_copy_value(t, v_copy, v);
   }
+  return copy;
 }
 
 LttvIAttribute *lttv_iattribute_deep_copy(LttvIAttribute *self)
@@ -213,7 +215,7 @@ LttvIAttribute *lttv_iattribute_deep_copy(LttvIAttribute *self)
 
   int nb_attributes = lttv_iattribute_get_number(self);
 
-  copy = LTTV_IATTRIBUTE(g_object_new(G_OBJECT_TYPE(self), NULL));
+  copy = LTTV_IATTRIBUTE_GET_CLASS(self)->new_attribute(NULL);
 
   for(i = 0 ; i < nb_attributes ; i++) {
     t = lttv_iattribute_get(self, i, &name, &v);
@@ -224,6 +226,7 @@ LttvIAttribute *lttv_iattribute_deep_copy(LttvIAttribute *self)
     }
     else lttv_iattribute_copy_value(t, v_copy, v);
   }
+  return copy;
 }
 
 void lttv_iattribute_copy_value(LttvAttributeType t, LttvAttributeValue dest, 

@@ -44,6 +44,7 @@ struct _LttvAttribute {
 
 struct _LttvAttributeClass {
   GObjectClass parent;
+
 };
 
 GType lttv_attribute_get_type (void);
