@@ -103,6 +103,9 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
   // Is the file large enough to contain a trace 
   if(lTDFStat.st_size < sizeof(BlockStart) + EVENT_HEADER_SIZE){
     g_print("The input data file %s does not contain a trace\n", fileName);
+    g_free(tf->name);
+    close(tf->fd);
+    g_free(tf);
     return NULL;
   }
   
@@ -192,6 +195,7 @@ void ltt_tracefile_close(LttTracefile *t)
 {
   g_free(t->name);
   g_free(t->buffer);
+  close(t->fd);
   g_free(t);
 }
 
@@ -791,7 +795,10 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
 
   //update the fields of the current event and go to the next event
   err = skipEvent(t);
-  if(err == ENOMEM) return NULL;
+  if(err == ENOMEM){
+    g_free(lttEvent);
+    return NULL;
+  }
   if(err == ENOENT) return lttEvent;
   if(err == ERANGE) g_error("event id is out of range\n");
   if(err)g_error("Can not read tracefile\n");
