@@ -2761,8 +2761,8 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   gtk_widget_show((GtkWidget*)tab->multi_vpaned);
   tab->mw   = mw;
   
-  {
-    /* Display a label with a X */
+  /*{
+    // Display a label with a X
     GtkWidget *w_hbox = gtk_hbox_new(FALSE, 4);
     GtkWidget *w_label = gtk_label_new (label);
     GtkWidget *pixmap = create_pixmap(GTK_WIDGET(notebook), "close.png");
@@ -2780,13 +2780,21 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
                       G_CALLBACK (on_close_tab_X_clicked),
                       tab->multi_vpaned);
 
+    gtk_widget_set_state(w_button, GTK_STATE_ACTIVE);
+
     gtk_widget_show (w_label);
     gtk_widget_show (pixmap);
     gtk_widget_show (w_button);
     gtk_widget_show (w_hbox);
 
     tab->label = w_hbox;
-  }
+  }*/
+
+
+  tab->label = gtk_label_new (label);
+  gtk_widget_show (tab->label);
+
+
   /* Start with empty events requests list */
   tab->events_requests = NULL;
   tab->events_request_pending = FALSE;
