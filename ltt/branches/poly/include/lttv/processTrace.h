@@ -160,7 +160,7 @@ struct _LttvTracefileContextClass {
 GType lttv_tracefile_context_get_type (void);
 
 void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset, 
-    LttvTracesetContext *context);
+    LttvTracesetContext *context, unsigned maxNumEvents);
 
 void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
     LttvHooks *before_traceset, 

@@ -322,7 +322,8 @@ void SetHPaneDividor(mainWindow *main_win, gint position);
  * @param end the end time of the last event to be processed.
  */
 
-void processTraceset(mainWindow *main_win, LttTime start, LttTime end);
+void processTraceset(mainWindow *main_win, LttTime start, 
+		     LttTime end, unsigned maxNumEvents);
 
 
 /**
