@@ -5,5 +5,5 @@
 #
 
 # the gui subdir comes first : dependency
-SUBDIRS = mainLib main text gui
+SUBDIRS = text gui
 
