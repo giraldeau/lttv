@@ -141,12 +141,12 @@ Added to the lttvwindow API :
 
 
 void lttvwindow_events_request
-( MainWindow    *main_win,
-  EventsRequest  events_request);
+( Tab                  *tab,
+  const EventsRequest  *events_request);
 
 void lttvwindow_events_request_remove_all
-( MainWindow    *main_win,
-  gpointer       viewer);
+( Tab                *tab,
+  gconstpointer       viewer);
 
 
 Internal functions :
@@ -188,7 +188,8 @@ computation (main window scope) or viewer specific background computation.
 A background computation request is asked via lttvwindow_events_request, with a
 priority field set with a low priority.
 
-If a lttvwindow_events_request_remove_all is done on the viewer pointer, it will
+In the case of a background computation with viewer pointer field set to NULL,
+if a lttvwindow_events_request_remove_all is done on the viewer pointer, it will
 not affect the state computation as no viewer pointer will have been passed in
 the initial request. This is the expected result. For the background processings
 that call viewer's hooks, they will be removed.
