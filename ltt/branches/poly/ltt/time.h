@@ -178,5 +178,25 @@ static inline LttTime ltt_time_div(LttTime t1, double d)
 #endif //0
 }
 
+static inline guint64 ltt_time_to_uint64(LttTime t1)
+{
+  return (guint64)t1.tv_sec*NANOSECONDS_PER_SECOND
+            + (guint64)t1.tv_nsec;
+}
+
+
+#define MAX_TV_SEC_TO_UINT64 0x3FFFFFFFFFFFFFFFULL
+static inline LttTime ltt_time_from_uint64(guint64 t1)
+{
+  /* We lose precision if tv_sec is > than (2^62)-1
+   * */
+  g_assert(t1 <= MAX_TV_SEC_TO_UINT64);
+  if(t1 > MAX_TV_SEC_TO_UINT64)
+    g_warning("Conversion from non precise uint64 to LttTime");
+  LttTime res;
+  res.tv_sec = t1/NANOSECONDS_PER_SECOND;
+  res.tv_nsec = (t1 - res.tv_sec*NANOSECONDS_PER_SECOND);
+  return res;
+}
 
 #endif // LTT_TIME_H

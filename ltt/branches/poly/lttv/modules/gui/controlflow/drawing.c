@@ -742,8 +742,7 @@ GtkWidget *drawing_get_widget(Drawing_t *drawing)
  *
  * Convert from window pixel and time interval to an absolute time.
  */
-//FIXME : could need ceil and floor versions of this function
-void convert_pixels_to_time(
+__inline void convert_pixels_to_time(
     gint width,
     guint x,
     LttTime window_time_begin,
@@ -751,16 +750,18 @@ void convert_pixels_to_time(
     LttTime *time)
 {
   LttTime window_time_interval;
+  guint64 time_ll;
   
   window_time_interval = ltt_time_sub(window_time_end, 
             window_time_begin);
-  *time = ltt_time_mul(window_time_interval, (x/(float)width));
+  time_ll = ltt_time_to_uint64(window_time_interval);
+  time_ll = time_ll * x / width;
+  *time = ltt_time_from_uint64(time_ll);
   *time = ltt_time_add(window_time_begin, *time);
 }
 
-//FIXME : could need ceil and floor versions of this function
 
-void convert_time_to_pixels(
+__inline void convert_time_to_pixels(
     LttTime window_time_begin,
     LttTime window_time_end,
     LttTime time,
@@ -768,7 +769,7 @@ void convert_time_to_pixels(
     guint *x)
 {
   LttTime window_time_interval;
-  double interval_double, time_double;
+  guint64 time_ll, interval_ll;
   
   g_assert(ltt_time_compare(window_time_begin, time) <= 0 &&
            ltt_time_compare(window_time_end, time) >= 0);
@@ -777,11 +778,10 @@ void convert_time_to_pixels(
   
   time = ltt_time_sub(time, window_time_begin);
   
-  /* LttTime to double conversions here should really be under 4000 hours.. */
-  interval_double = ltt_time_to_double(window_time_interval);
-  time_double = ltt_time_to_double(time);
+  time_ll = ltt_time_to_uint64(time);
+  interval_ll = ltt_time_to_uint64(window_time_interval);
 
-  *x = (guint)(time_double/interval_double * width);
+  *x = (guint)(time_ll * width / interval_ll);
   
 }
 

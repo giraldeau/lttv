@@ -2733,7 +2733,12 @@ gint update_current_time_hook(void *hook_data, void *call_data)
   
   LttTime time_begin = time_window.start_time;
   LttTime width = time_window.time_width;
-  LttTime half_width = ltt_time_div(width,2.0);
+  LttTime half_width;
+  {
+    guint64 time_ll = ltt_time_to_uint64(width);
+    time_ll = time_ll >> 1; /* divide by two */
+    half_width = ltt_time_from_uint64(time_ll);
+  }
   LttTime time_end = ltt_time_add(time_begin, width);
 
   LttvTracesetContext * tsc =

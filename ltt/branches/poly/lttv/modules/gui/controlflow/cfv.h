@@ -34,7 +34,7 @@ guicontrolflow_destructor_full(ControlFlowData *control_flow_data);
 void
 guicontrolflow_destructor(ControlFlowData *control_flow_data);
 GtkWidget *guicontrolflow_get_widget(ControlFlowData *control_flow_data);
-ProcessList *guicontrolflow_get_process_list(ControlFlowData *control_flow_data);
+__inline ProcessList *guicontrolflow_get_process_list(ControlFlowData *control_flow_data);
 
 
 #endif // _CFV_H

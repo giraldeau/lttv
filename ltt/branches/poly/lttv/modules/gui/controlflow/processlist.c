@@ -32,7 +32,7 @@
  *                       Methods to synchronize process list                 *
  *****************************************************************************/
 
-static guint get_cpu_number_from_name(GQuark name);
+static __inline guint get_cpu_number_from_name(GQuark name);
   
 /* Enumeration of the columns */
 enum
@@ -575,7 +575,7 @@ guint processlist_get_height(ProcessList *process_list)
 }
 
 
-gint processlist_get_process_pixels(  ProcessList *process_list,
+__inline gint processlist_get_process_pixels(  ProcessList *process_list,
           guint pid, guint cpu, LttTime *birth, guint trace_num,
           guint *y,
           guint *height,
@@ -616,7 +616,7 @@ gint processlist_get_process_pixels(  ProcessList *process_list,
 }
 
 
-gint processlist_get_pixels_from_data(  ProcessList *process_list,
+__inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
           ProcessInfo *process_info,
           HashedProcessData *hashed_process_data,
           guint *y,
@@ -638,9 +638,8 @@ gint processlist_get_pixels_from_data(  ProcessList *process_list,
 
 }
 
-static guint get_cpu_number_from_name(GQuark name)
+static __inline guint get_cpu_number_from_name(GQuark name)
 {
-  /* remember / */
   const gchar *string;
   char *begin;
   guint cpu;
