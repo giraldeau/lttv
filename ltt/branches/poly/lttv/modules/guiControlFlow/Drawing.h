@@ -79,7 +79,7 @@ void convert_pixels_to_time(
 		guint x,
 		LttTime *window_time_begin,
 		LttTime *window_time_end,
-		LttTime *begin);
+		LttTime *time);
 
 void convert_time_to_pixels(
 		LttTime window_time_begin,

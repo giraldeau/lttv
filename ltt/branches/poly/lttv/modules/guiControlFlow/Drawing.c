@@ -1,11 +1,15 @@
 
-#include "Drawing.h"
-#include "CFV.h"
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
 #include <lttv/processTrace.h>
+#include <lttv/gtkTraceSet.h>
+#include <lttv/hook.h>
 
+#include "Drawing.h"
+#include "CFV.h"
+#include "CFV-private.h"
+#include "Event_Hooks.h"
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
@@ -46,15 +50,31 @@ void drawing_data_request(Drawing_t *Drawing,
 		  gint width,
 			gint height)
 {
-	
-//	start from pixel to time(x)
-//	end from pixel to time (x + width)
-	
-//	LttvTracesetContext * tsc = get_traceset_context(event_viewer_data->mw);
-	
   if(width < 0) return ;
   if(height < 0) return ;
+	ControlFlowData *control_flow_data =
+			(ControlFlowData*)g_object_get_data(
+								G_OBJECT(
+										Drawing->Drawing_Area_V),
+								"Control_Flow_Data");
 
+	LttTime start, end;
+	LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
+												control_flow_data->Time_Window.start_time);
+
+	convert_pixels_to_time(Drawing, x,
+				&control_flow_data->Time_Window.start_time,
+				&window_end,
+				&start);
+
+	convert_pixels_to_time(Drawing, x + width,
+				&control_flow_data->Time_Window.start_time,
+				&window_end,
+				&end);
+	
+	LttvTracesetContext * tsc =
+				get_traceset_context(control_flow_data->Parent_Window);
+	
   gdk_draw_rectangle (*Pixmap,
 		      Drawing->Drawing_Area_V->style->white_gc,
 		      TRUE,
@@ -65,17 +85,28 @@ void drawing_data_request(Drawing_t *Drawing,
   send_test_process(
 	guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
 	Drawing);
-  send_test_drawing(
-	guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
-	Drawing, *Pixmap, x, y, width, height);
+  //send_test_drawing(
+	//guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
+	//Drawing, *Pixmap, x, y, width, height);
   
 	// Let's call processTrace() !!
-	
-	
-	//lttv_process_traceset_seek_time(tsc, start);
-	//lttv_traceset_context_add_hooks(
-	//lttv_process_traceset
-	//lttv_traceset_context_remove_hooks
+	EventRequest event_request; // Variable freed at the end of the function.
+	event_request.Control_Flow_Data = control_flow_data;
+	event_request.time_begin = start;
+	event_request.time_end = end;
+
+	LttvHooks *event = lttv_hooks_new();
+	lttv_hooks_add(event, draw_event_hook, &event_request);
+
+	lttv_process_traceset_seek_time(tsc, start);
+	lttv_traceset_context_add_hooks(tsc,
+			NULL, NULL, NULL, NULL, NULL, NULL,
+			NULL, NULL, NULL, event, NULL);
+	lttv_process_traceset(tsc, end, G_MAXULONG);
+	lttv_traceset_context_remove_hooks(tsc, NULL, NULL, NULL, NULL, NULL, NULL,
+			NULL, NULL, NULL, event, NULL);
+
+	lttv_hooks_destroy(event);
 }
 		      
 /* Callbacks */
@@ -250,9 +281,9 @@ GtkWidget *drawing_get_widget(Drawing_t *Drawing)
 	return Drawing->Drawing_Area_V;
 }
 
-/* get_time_from_pixels
+/* convert_pixels_to_time
  *
- * Get the time interval from window time and pixels, and pixels requested.
+ * Convert from window pixel and time interval to an absolute time.
  */
 void convert_pixels_to_time(
 		Drawing_t *Drawing,

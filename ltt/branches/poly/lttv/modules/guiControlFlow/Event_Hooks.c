@@ -414,12 +414,24 @@ h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * ke
 	ControlFlowData *Control_Flow_Data = guicontrolflow() ;
 	
 	Control_Flow_Data->Parent_Window = pmParentWindow;
+	TimeWindow *time_window = guicontrolflow_get_time_window(Control_Flow_Data);
+	time_window->start_time.tv_sec = 0;
+	time_window->start_time.tv_nsec = 0;
+	time_window->time_width.tv_sec = 0;
+	time_window->time_width.tv_nsec = 0;
 
+	LttTime *current_time = guicontrolflow_get_current_time(Control_Flow_Data);
+	current_time->tv_sec = 0;
+	current_time->tv_nsec = 0;
+	
+	//g_critical("time width1 : %u",time_window->time_width);
+	
 	get_time_window(pmParentWindow,
-			guicontrolflow_get_time_window(Control_Flow_Data));
+			time_window);
 	get_current_time(pmParentWindow,
-			guicontrolflow_get_current_time(Control_Flow_Data));
+			current_time);
 
+	//g_critical("time width2 : %u",time_window->time_width);
 	// Unreg done in the GuiControlFlow_Destructor
 	reg_update_time_window(update_time_window_hook, Control_Flow_Data,
 				pmParentWindow);
@@ -443,16 +455,15 @@ int event_selected_hook(void *hook_data, void *call_data)
 
 }
 
-#ifdef DEBUG
 /* Hook called before drawing. Gets the initial context at the beginning of the
  * drawing interval and copy it to the context in Event_Request.
  */
 int draw_before_hook(void *hook_data, void *call_data)
 {
 	EventRequest *Event_Request = (EventRequest*)hook_data;
-	EventsContext Events_Context = (EventsContext*)call_data;
+	//EventsContext Events_Context = (EventsContext*)call_data;
 	
-	Event_Request->Events_Context = Events_Context;
+	//Event_Request->Events_Context = Events_Context;
 
 	return 0;
 }
@@ -481,6 +492,7 @@ int draw_event_hook(void *hook_data, void *call_data)
 {
 	EventRequest *Event_Request = (EventRequest*)hook_data;
 	
+	
 	return 0;
 }
 
@@ -492,7 +504,6 @@ int draw_after_hook(void *hook_data, void *call_data)
 	g_free(Event_Request);
 	return 0;
 }
-#endif
 
 
 

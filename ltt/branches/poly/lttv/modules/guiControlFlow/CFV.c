@@ -117,7 +117,12 @@ guicontrolflow(void)
 			"Control_Flow_Data",
 			Control_Flow_Data,
 			(GDestroyNotify)guicontrolflow_destructor);
-			
+		
+	g_object_set_data(
+			G_OBJECT(Drawing_Widget),
+			"Control_Flow_Data",
+			Control_Flow_Data);
+				
 	gControl_Flow_Data_List = g_slist_append(
 			gControl_Flow_Data_List,
 			Control_Flow_Data);

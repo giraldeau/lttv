@@ -9,8 +9,30 @@
 
 #include <gtk/gtk.h>
 #include <lttv/mainWindow.h>
+#include <ltt/time.h>
 #include "Process_List.h"
 #include "Drawing.h"
+#include "CFV.h"
+
+
+/* Structure used to store and use information relative to one events refresh
+ * request. Typically filled in by the expose event callback, then passed to the
+ * library call, then used by the drawing hooks. Then, once all the events are
+ * sent, it is freed by the hook called after the reading.
+ */
+typedef struct _EventRequest
+{
+	ControlFlowData *Control_Flow_Data;
+	LttTime time_begin, time_end;
+	/* Fill the Events_Context during the initial expose, before calling for
+	 * events.
+	 */
+	//GArray Events_Context; //FIXME
+} EventRequest ;
+
+
+
+
 
 void send_test_data(ProcessList *Process_List, Drawing_t *Drawing);
 
@@ -49,6 +71,8 @@ int draw_after_hook(void *hook_data, void *call_data);
 
 void update_time_window_hook(void *hook_data, void *call_data);
 void update_current_time_hook(void *hook_data, void *call_data);
+
+
 
 
 #endif // _EVENT_HOOKS_H
