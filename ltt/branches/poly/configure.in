@@ -55,7 +55,7 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/gui/Makefile
 		 lttv/modules/text/Makefile
                  lttv/plugins/Makefile
-		 lttv/plugins/exemples/Makefile
+		 lttv/plugins/examples/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 include/Makefile
