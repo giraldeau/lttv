@@ -931,7 +931,7 @@ on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
   GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select module path");
-  char * dir;
+  const char * dir;
   gint id;
 
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
