@@ -110,16 +110,26 @@ main middle hooks.
 
 EventsRequest consists in 
 - a start timestamp or position
+- a stop_flag, ending the read process when set to TRUE
 - a end timestamp and/or position and/or number of events to read
 - hook lists to call for traceset/trace/tracefile begin and end, and for each
   event (middle).
-
+  
 The main window will deliver events for every EventRequests it has pending
 through an algorithm that guarantee that all events requested, and only them,
 will be delivered to the viewer between the call of the tracefile_begin hooks
 and the call of the tracefile_end hooks.
 
+If a viewer wants to stop the event request at a certain point inside the event
+hooks, it has to set the stop_flag to TRUE and return TRUE from the hook
+function. Then return value will stop the process traceset. Then, the main
+window will look for the stop_flag and remove the EventRequests from its lists,
+calling the process_traceset_end for this request (it removes hooks from the
+context and calls the after hooks).
 
+It no stop_flag is rose, the end timestamp, end position or number of events to
+read has to be reached to determine the end of the request. Otherwise,
+the end of traceset does determine it.
 
 
 GTK Events
