@@ -860,10 +860,9 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
 
   /* Allocate the colors */
   GdkColormap* colormap = gdk_colormap_get_system();
-
+  gboolean success[NUM_COLORS];
   gdk_colormap_alloc_colors(colormap, drawing_colors, NUM_COLORS, FALSE,
-                            TRUE, NULL);
-  
+                            TRUE, success);
   
   return drawing;
 }
