@@ -16,7 +16,7 @@
  * MA 02111-1307, USA.
  */
 
-/*! \file gtktraceset.h
+/*! \file lttvviewer.c
  * \brief API used by the graphical viewers to interact with their top window.
  * 
  * Main window (gui module) is the place to contain and display viewers. 
@@ -32,7 +32,7 @@
 #include <ltt/ltt.h>
 #include <lttv/lttv.h>
 #include <lttvwindow/mainwindow.h>   
-#include <lttvwindow/gtktraceset.h>
+#include <lttvwindow/viewer.h>
 #include <lttv/tracecontext.h>
 #include <lttvwindow/toolbar.h>
 #include <lttvwindow/menu.h>

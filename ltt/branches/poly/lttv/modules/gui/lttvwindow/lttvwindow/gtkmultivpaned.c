@@ -21,7 +21,7 @@
 #include <lttvwindow/gtkmultivpaned.h>
 //#include "gtkintl.h"
 #include <lttvwindow/mainwindow.h>
-#include <lttvwindow/gtktraceset.h>
+#include <lttvwindow/viewer.h>
 
 static void gtk_multi_vpaned_class_init (GtkMultiVPanedClass    *klass);
 static void gtk_multi_vpaned_init       (GtkMultiVPaned         *multi_vpaned);

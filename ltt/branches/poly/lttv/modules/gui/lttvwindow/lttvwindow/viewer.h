@@ -19,7 +19,6 @@
 /*
 This file is what every viewer plugin writer should refer to.
 
-- Rename to viewer.h
 - Remove the _api functions which add nothing
 - streamline the rest.
 
@@ -91,7 +90,7 @@ set_hpane_dividor
 
 
 
-/*! \file gtktraceset.h
+/*! \file viewer.h
  * \brief API used by the graphical viewers to interact with their top window.
  * 
  * Main window (gui module) is the place to contain and display viewers. 

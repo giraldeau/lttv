@@ -39,7 +39,7 @@ lttvwindowinclude_HEADERS = \
 	common.h\
 	gtkdirsel.h\
 	gtkmultivpaned.h\
-	gtktraceset.h\
+	viewer.h\
 	lttvfilter.h\
 	mainwindow.h\
 	menu.h\

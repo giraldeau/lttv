@@ -29,7 +29,7 @@
 #include <lttvwindow/mainwindow.h>
 #include <lttvwindow/menu.h>
 #include <lttvwindow/toolbar.h>
-#include <lttvwindow/gtktraceset.h>
+#include <lttvwindow/viewer.h>
 #include <lttv/module.h>
 #include <lttvwindow/gtkdirsel.h>
 #include <lttv/iattribute.h>
