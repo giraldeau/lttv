@@ -25,19 +25,19 @@
 /* Event hooks are the drawing hooks called during traceset read. They draw the
  * icons, text, lines and background color corresponding to the events read.
  *
- * Two hooks are used for drawing : draw_before and draw_after hooks. The
- * draw_before is called before the state update that occurs with an event and
- * the draw_after hook is called after this state update.
+ * Two hooks are used for drawing : before_schedchange and after_schedchange hooks. The
+ * before_schedchange is called before the state update that occurs with an event and
+ * the after_schedchange hook is called after this state update.
  *
- * The draw_before hooks fulfill the task of drawing the visible objects that
- * corresponds to the data accumulated by the draw_after hook.
+ * The before_schedchange hooks fulfill the task of drawing the visible objects that
+ * corresponds to the data accumulated by the after_schedchange hook.
  *
- * The draw_after hook accumulates the data that need to be shown on the screen
- * (items) into a queue. Then, the next draw_before hook will draw what that
+ * The after_schedchange hook accumulates the data that need to be shown on the screen
+ * (items) into a queue. Then, the next before_schedchange hook will draw what that
  * queue contains. That's the Right Way (TM) of drawing items on the screen,
  * because we need to draw the background first (and then add icons, text, ...
  * over it), but we only know the length of a background region once the state
- * corresponding to it is over, which happens to be at the next draw_before
+ * corresponding to it is over, which happens to be at the next before_schedchange
  * hook.
  *
  * We also have a hook called at the end of a chunk to draw the information left
@@ -266,7 +266,7 @@ int event_selected_hook(void *hook_data, void *call_data)
 }
 
 
-static __inline PropertiesLine prepare_line(LttvProcessState *process)
+static __inline PropertiesLine prepare_status_line(LttvProcessState *process)
 {
   PropertiesLine prop_line;
   prop_line.line_width = 2;
@@ -274,7 +274,7 @@ static __inline PropertiesLine prepare_line(LttvProcessState *process)
   prop_line.y = MIDDLE;
   //GdkColormap *colormap = gdk_colormap_get_system();
   
-  g_debug("prepare_line for state : %s", g_quark_to_string(process->state->s));
+  g_debug("prepare_status_line for state : %s", g_quark_to_string(process->state->s));
 
   /* color of line : status of the process */
   if(process->state->s == LTTV_STATE_UNNAMED)
@@ -303,7 +303,7 @@ static __inline PropertiesLine prepare_line(LttvProcessState *process)
 
 
 
-/* draw_before_hook
+/* before_schedchange_hook
  * 
  * This function basically draw lines and icons. Two types of lines are drawn :
  * one small (3 pixels?) representing the state of the process and the second
@@ -321,7 +321,7 @@ static __inline PropertiesLine prepare_line(LttvProcessState *process)
  */
 
 
-int draw_before_hook(void *hook_data, void *call_data)
+int before_schedchange_hook(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
@@ -397,15 +397,11 @@ int draw_before_hook(void *hook_data, void *call_data)
                 &height,
                 &hashed_process_data) == 1)
         {
-          g_assert(!(process->pid == 432 && 
-                        ltt_time_compare(process->creation_time,
-                                         ltt_time_zero)==0));
-
-          g_assert(!(process->pid == 432 && 
-                        process->creation_time.tv_nsec == 47797905));
+          g_assert(pid_out == 0 || pid_out != process->ppid);
           /* Process not present */
           processlist_add(process_list,
               pid_out,
+              process->ppid,
               &birth,
               tfc->t_context->index,
               name,
@@ -463,7 +459,7 @@ int draw_before_hook(void *hook_data, void *call_data)
 
           {
             /* Draw the line */
-            PropertiesLine prop_line = prepare_line(process);
+            PropertiesLine prop_line = prepare_status_line(process);
             draw_line((void*)&prop_line, (void*)&draw_context);
 
           }
@@ -503,9 +499,11 @@ int draw_before_hook(void *hook_data, void *call_data)
                 &height,
                 &hashed_process_data) == 1)
         {
+          g_assert(pid_in == 0 || pid_in != process->ppid);
           /* Process not present */
           processlist_add(process_list,
               pid_in,
+              process->ppid,
               &birth,
               tfc->t_context->index,
               name,
@@ -563,7 +561,7 @@ int draw_before_hook(void *hook_data, void *call_data)
 
           {
             /* Draw the line */
-            PropertiesLine prop_line = prepare_line(process);
+            PropertiesLine prop_line = prepare_status_line(process);
             draw_line((void*)&prop_line, (void*)&draw_context);
           }
 
@@ -1197,7 +1195,7 @@ int draw_before_hook(void *hook_data, void *call_data)
 
 }
 
-/* draw_after_hook
+/* after_schedchange_hook
  * 
  * The draw after hook is called by the reading API to have a
  * particular event drawn on the screen.
@@ -1207,7 +1205,7 @@ int draw_before_hook(void *hook_data, void *call_data)
  * This function adds items to be drawn in a queue for each process.
  * 
  */
-int draw_after_hook(void *hook_data, void *call_data)
+int after_schedchange_hook(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
@@ -1276,16 +1274,11 @@ int draw_after_hook(void *hook_data, void *call_data)
               &height,
               &hashed_process_data_in) == 1)
       {
-          g_assert(!(process_in->pid == 432 && 
-                        ltt_time_compare(process_in->creation_time,
-                                         ltt_time_zero)==0));
-
-          g_assert(!(process_in->pid == 432 && 
-                        process_in->creation_time.tv_nsec == 47797905));
-
+        g_assert(pid_in == 0 || pid_in != process_in->ppid);
         /* Process not present */
         processlist_add(process_list,
             pid_in,
+            process_in->ppid,
             &birth,
             tfc->t_context->index,
             name,
@@ -1308,13 +1301,7 @@ int draw_after_hook(void *hook_data, void *call_data)
           width,
           &hashed_process_data_in->x);
     }
-  } else if(strcmp(
-          ltt_eventtype_name(ltt_event_eventtype(e)),"process") == 0) {
-    /* We are in a fork or exit event */
-
-
   }
-
   return 0;
 
 
@@ -1772,7 +1759,115 @@ int draw_after_hook(void *hook_data, void *call_data)
 #endif //0
 }
 
+/* after_fork_hook
+ * 
+ * Create the processlist entry for the child process. Put the last
+ * position in x at the current time value.
+ *
+ * @param hook_data ControlFlowData structure of the viewer. 
+ * @param call_data Event context.
+ *
+ * This function adds items to be drawn in a queue for each process.
+ * 
+ */
+int after_fork_hook(void *hook_data, void *call_data)
+{
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
 
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+
+  LttEvent *e;
+  e = tfc->e;
+
+  LttTime evtime = ltt_event_time(e);
+  TimeWindow time_window = 
+    lttvwindow_get_time_window(control_flow_data->tab);
+
+  LttTime end_time = ltt_time_add(time_window.start_time,
+                                    time_window.time_width);
+
+  if(ltt_time_compare(evtime, time_window.start_time) == -1
+        || ltt_time_compare(evtime, end_time) == 1)
+            return;
+
+  guint width = control_flow_data->drawing->width;
+
+  if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"process") == 0) {
+
+    guint sub_id;
+    guint child_pid;
+    {
+      LttField *f = ltt_event_field(e);
+      LttField *element;
+      element = ltt_field_member(f,0);
+      sub_id = ltt_event_get_long_unsigned(e,element);
+      element = ltt_field_member(f,1);
+      child_pid = ltt_event_get_long_unsigned(e,element);
+    }
+
+    if(sub_id == 2) { /* fork */
+
+      /* Add process to process list (if not present) */
+      LttvProcessState *process_child;
+      LttTime birth;
+      guint y_child = 0, height = 0, pl_height = 0;
+      HashedProcessData *hashed_process_data_child = NULL;
+
+      ProcessList *process_list =
+        guicontrolflow_get_process_list(control_flow_data);
+      
+
+      /* Find child in the list... */
+      process_child = lttv_state_find_process(tfs, child_pid);
+      /* It should exist, because we are after the state update. */
+      g_assert(process_child != NULL);
+
+      birth = process_child->creation_time;
+      const gchar *name = g_quark_to_string(process_child->name);
+
+      if(processlist_get_process_pixels(process_list,
+              child_pid,
+              &birth,
+              tfc->t_context->index,
+              &y_child,
+              &height,
+              &hashed_process_data_child) == 1)
+      {
+        g_assert(child_pid == 0 || child_pid != process_child->ppid);
+        /* Process not present */
+        processlist_add(process_list,
+            child_pid,
+            process_child->ppid,
+            &birth,
+            tfc->t_context->index,
+            name,
+            &pl_height,
+            &hashed_process_data_child);
+        processlist_get_process_pixels(process_list,
+                child_pid,
+                &birth,
+                tfc->t_context->index,
+                &y_child,
+                &height,
+                &hashed_process_data_child);
+        drawing_insert_square( control_flow_data->drawing, y_child, height);
+      }
+
+      convert_time_to_pixels(
+          time_window.start_time,
+          end_time,
+          evtime,
+          width,
+          &hashed_process_data_child->x);
+    }
+  }
+  return 0;
+
+}
 
 
 gint update_time_window_hook(void *hook_data, void *call_data)
@@ -2281,7 +2376,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
         {
           /* Draw the line */
-          PropertiesLine prop_line = prepare_line(process);
+          PropertiesLine prop_line = prepare_status_line(process);
           draw_line((void*)&prop_line, (void*)&draw_context);
 
         }

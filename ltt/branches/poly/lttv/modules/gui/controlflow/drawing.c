@@ -38,11 +38,11 @@ GdkColor drawing_colors[NUM_COLORS] =
 { /* Pixel, R, G, B */
   { 0, 0, 0, 0 }, /* COL_BLACK */
   { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_WHITE */
-  { 0, 0x0fff, 0xffff, 0xfff0 }, /* COL_WAIT_FORK */
-  { 0, 0xffff, 0xffff, 0x0000 }, /* COL_WAIT_CPU */
-  { 0, 0xffff, 0x0000, 0xffff }, /* COL_ZOMBIE */
-  { 0, 0xffff, 0x0000, 0x0000 }, /* COL_WAIT */
-  { 0, 0x0000, 0xffff, 0x0000 }  /* COL_RUN */
+  { 0, 0x0fff, 0xffff, 0xfffF }, /* COL_WAIT_FORK : pale blue */
+  { 0, 0xffff, 0xffff, 0x0000 }, /* COL_WAIT_CPU : yeallow */
+  { 0, 0xffff, 0x0000, 0xffff }, /* COL_ZOMBIE : purple */
+  { 0, 0xffff, 0x0000, 0x0000 }, /* COL_WAIT : red */
+  { 0, 0x0000, 0xffff, 0x0000 }  /* COL_RUN : green */
 };
 
 
@@ -140,13 +140,20 @@ void drawing_data_request(Drawing_t *drawing,
                  events_request,
                  LTTV_PRIO_DEFAULT);
 
-
+  /* FIXME : hooks are registered global instead of by ID.
+   * This is due to the lack of granularity of main window's events requests.
+   * Should be fixed for gain of performance.
+   */
   lttv_hooks_add(event,
-                 draw_before_hook,
+                 before_schedchange_hook,
                  events_request,
                  LTTV_PRIO_STATE-5);
   lttv_hooks_add(event,
-                 draw_after_hook,
+                 after_schedchange_hook,
+                 events_request,
+                 LTTV_PRIO_STATE+5);
+  lttv_hooks_add(event,
+                 after_fork_hook,
                  events_request,
                  LTTV_PRIO_STATE+5);
 

@@ -35,6 +35,7 @@ enum
 {
   PROCESS_COLUMN,
   PID_COLUMN,
+  PPID_COLUMN,
   BIRTH_S_COLUMN,
   BIRTH_NS_COLUMN,
   TRACE_COLUMN,
@@ -230,6 +231,7 @@ ProcessList *processlist_construct(void)
   process_list->list_store = gtk_list_store_new (  N_COLUMNS,
               G_TYPE_STRING,
               G_TYPE_UINT,
+              G_TYPE_UINT,
               G_TYPE_ULONG,
               G_TYPE_ULONG,
               G_TYPE_ULONG);
@@ -285,6 +287,13 @@ ProcessList *processlist_construct(void)
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
 
+  column = gtk_tree_view_column_new_with_attributes ( "PPID",
+                renderer,
+                "text",
+                PPID_COLUMN,
+                NULL);
+  gtk_tree_view_append_column (
+    GTK_TREE_VIEW (process_list->process_list_widget), column);
 
   column = gtk_tree_view_column_new_with_attributes ( "Birth sec",
                 renderer,
@@ -399,6 +408,7 @@ void destroy_hash_data(gpointer data)
 
 int processlist_add(  ProcessList *process_list,
       guint pid,
+      guint ppid,
       LttTime *birth,
       guint trace_num,
       const gchar *name,
@@ -411,6 +421,7 @@ int processlist_add(  ProcessList *process_list,
   *pm_hashed_process_data = hashed_process_data;
   
   Process_Info->pid = pid;
+  Process_Info->ppid = ppid;
   Process_Info->birth = *birth;
   Process_Info->trace_num = trace_num;
 
@@ -478,6 +489,7 @@ int processlist_add(  ProcessList *process_list,
   gtk_list_store_set (  process_list->list_store, &iter,
         PROCESS_COLUMN, name,
         PID_COLUMN, pid,
+        PPID_COLUMN, ppid,
         BIRTH_S_COLUMN, birth->tv_sec,
         BIRTH_NS_COLUMN, birth->tv_nsec,
         TRACE_COLUMN, trace_num,

@@ -81,9 +81,9 @@ int event_selected_hook(void *hook_data, void *call_data);
  * The choice of lines'color is defined by the context of the last event for this
  * process.
  */
-int draw_before_hook(void *hook_data, void *call_data);
-
-int draw_after_hook(void *hook_data, void *call_data);
+int before_schedchange_hook(void *hook_data, void *call_data);
+int after_schedchange_hook(void *hook_data, void *call_data);
+int after_fork_hook(void *hook_data, void *call_data);
 
 void draw_closure(gpointer key, gpointer value, gpointer user_data);
 
