@@ -106,6 +106,8 @@ void gtk_custom_set_adjust(GtkCustom * custom, gboolean first_time)
 {
   TimeWindow time_window;
   TimeInterval *time_span;
+  double tmp, start;
+  double range = 5;
 
   get_time_window(custom->mw,&time_window);
   if(first_time){
@@ -123,14 +125,25 @@ void gtk_custom_set_adjust(GtkCustom * custom, gboolean first_time)
     g_warning("Insert a viewer first");
     return;
   }
+
+  start = ltt_time_to_double(time_window.start_time) * NANOSECONDS_PER_SECOND;
+  tmp = custom->hadjust->upper - custom->hadjust->lower;
+
   custom->hadjust->page_increment = ltt_time_to_double(
 		        time_window.time_width) * NANOSECONDS_PER_SECOND;
+
+  if(custom->hadjust->page_increment >= tmp - range)
+    custom->hadjust->value = custom->hadjust->lower;
+  if(start + custom->hadjust->page_increment > custom->hadjust->upper - range)
+    custom->hadjust->value = start;
+
   /* page_size to the whole visible area will take care that the
      * scroll value + the shown area will never be more than what is
      * in the trace. */
   custom->hadjust->page_size = custom->hadjust->page_increment;
   custom->hadjust->step_increment = custom->hadjust->page_increment / 10;
 
+  gtk_adjustment_changed (custom->hadjust);
 }
 
 void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
