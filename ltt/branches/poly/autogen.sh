@@ -151,20 +151,20 @@ done
 conf_flags="--enable-maintainer-mode"
 
 
-if [ -a "$srcdir/include" ]; then
-	echo -n Removing old system include behavior emulation... 
-	rm -rf $srcdir/include
-	echo done.
-fi
-echo -n Creating the system include behavior emulation... 
-mkdir $srcdir/include
-mkdir $srcdir/include/ltt
-ln -sf ../../LibLTT/ltt.h $srcdir/include/ltt/ltt.h
-mkdir $srcdir/include/lttv
-ln -sf ../../lttv/module.h $srcdir/include/lttv/module.h
-ln -sf ../../lttv/hook.h $srcdir/include/lttv/hook.h
-ln -sf ../../lttv/traceWindow.h $srcdir/include/lttv/traceWindow.h
-echo done.
+#if [ -a "$srcdir/include" ]; then
+#	echo -n Removing old system include behavior emulation... 
+#	rm -rf $srcdir/include
+#	echo done.
+#fi
+#echo -n Creating the system include behavior emulation... 
+#mkdir $srcdir/include
+#mkdir $srcdir/include/ltt
+#ln -sf ../../LibLTT/ltt.h $srcdir/include/ltt/ltt.h
+#mkdir $srcdir/include/lttv
+#ln -sf ../../lttv/module.h $srcdir/include/lttv/module.h
+#ln -sf ../../lttv/hook.h $srcdir/include/lttv/hook.h
+#ln -sf ../../lttv/traceWindow.h $srcdir/include/lttv/traceWindow.h
+#echo done.
 
 
 
