@@ -7,6 +7,75 @@
 
 /*****************************************************************************
  *Function name
+ *    ltt_event_refresh_fields   : refresh fields of an event 
+ *Input params
+ *    offsetRoot      : offset from the root
+ *    offsetParent    : offset from the parrent
+ *    fld             : field
+ *    evD             : event data
+ *Return value
+ *    int             : size of the field
+ ****************************************************************************/
+
+int ltt_event_refresh_fields(int offsetRoot,int offsetParent, 
+			     LttField * fld, void *evD)
+{
+  int size, size1, element_number, i, offset1, offset2;
+  LttType * type = fld->field_type;
+
+  if(type->type_class != LTT_STRUCT && type->type_class != LTT_ARRAY &&
+     type->type_class != LTT_SEQUENCE && type->type_class != LTT_STRING){
+    size = fld->field_size;
+  }else if(type->type_class == LTT_ARRAY){
+    element_number = (int) type->element_number;
+    if(fld->field_fixed == 0){// has string or sequence
+      size = 0;
+      for(i=0;i<element_number;i++){
+	size += ltt_event_refresh_fields(offsetRoot+size,size, 
+					 fld->child[0], evD+size);
+      }      
+    }else size = fld->field_size;
+  }else if(type->type_class == LTT_SEQUENCE){
+    size1 = fld->sequ_number_size;
+    element_number = getIntNumber(size1,evD);
+    type->element_number = element_number;
+    if(fld->element_size > 0){
+      size = element_number * fld->element_size;
+    }else{//sequence has string or sequence
+      size = 0;
+      for(i=0;i<element_number;i++){
+	size += ltt_event_refresh_fields(offsetRoot+size+size1,size+size1, 
+					 fld->child[0], evD+size+size1);
+      }	
+      size += size1;
+    }
+  }else if(type->type_class == LTT_STRING){
+    size = strlen((char*)evD) + 1; //include end : '\0'
+  }else if(type->type_class == LTT_STRUCT){
+    element_number = (int) type->element_number;
+    if(fld->field_fixed == 0){
+      offset1 = offsetRoot;
+      offset2 = 0;
+      for(i=0;i<element_number;i++){
+	size=ltt_event_refresh_fields(offset1,offset2,fld->child[i],evD+offset2);
+	offset1 += size;
+	offset2 += size;
+      }      
+      size = offset2;
+    }else size = fld->field_size;
+  }
+
+  fld->offset_root     = offsetRoot;
+  fld->offset_parent   = offsetParent;
+  fld->fixed_root      = (offsetRoot==-1)   ? 0 : 1;
+  fld->fixed_parent    = (offsetParent==-1) ? 0 : 1;
+  fld->field_size      = size;
+
+  return size;
+}
+
+/*****************************************************************************
+ *Function name
  *    ltt_event_eventtype_id: get event type id 
  *                            (base id + position of the event)
  *Input params
@@ -63,9 +132,24 @@ LttEventType *ltt_event_eventtype(LttEvent *e)
 
 LttField *ltt_event_field(LttEvent *e)
 {
+  LttField * field;
   LttEventType * event_type = ltt_event_eventtype(e);
   if(!event_type) return NULL;
-  return event_type->root_field;
+  field = event_type->root_field;
+
+  //check if the field need refresh
+  if(e->which_block != event_type->latest_block ||
+     e->which_event != event_type->latest_event){
+
+    event_type->latest_block = e->which_block;
+    event_type->latest_event = e->which_event;
+    
+    if(field->field_fixed == 1)return field;
+
+    //refresh the field
+    ltt_event_refresh_fields(0, 0, field, e->data);    
+  }
+  return field;
 }
 
 /*****************************************************************************
@@ -131,7 +215,7 @@ void *ltt_event_data(LttEvent *e)
  *                     to each event. This function returns the number of 
  *                     elements for an array or sequence field in an event.
  *Input params
- *    e              : an instance of an event type   ????
+ *    e              : an instance of an event type
  *    f              : a field of the instance
  *Return value
  *    unsigned       : the number of elements for an array/sequence field
@@ -142,8 +226,10 @@ unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
   if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
     return 0;
-
-  return f->field_type->element_number;
+  
+  if(f->field_type->type_class == LTT_ARRAY)
+    return f->field_type->element_number;
+  return (unsigned)  getIntNumber(f->sequ_number_size, e + f->offset_root);
 }
 
 /*****************************************************************************
@@ -152,20 +238,34 @@ unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
  *                   : Set the currently selected element for a sequence or
  *                     array field
  *Input params
- *    e              : an instance of an event type   ????
+ *    e              : an instance of an event type
  *    f              : a field of the instance
  *    i              : the ith element
  ****************************************************************************/
 
 void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
 {
-   if(f->field_type->type_class != LTT_ARRAY &&
+  unsigned element_number;
+  LttField *fld;
+  int k, size;
+  void *evD;
+ 
+  if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
-     return ;
-   
-   if(f->field_type->element_number < i || i == 0) return;
+    return ;
 
-   f->current_element = i - 1;
+  element_number  = ltt_event_field_element_number(e,f);
+  if(element_number < i || i == 0) return;
+  
+  fld = f->child[0];
+  
+  evD = e->data + f->offset_root;
+  size = 0;
+  for(k=0;k<i;k++){
+    size += ltt_event_refresh_fields(f->offset_root+size,size, fld, evD+size);
+  }
+
+  f->current_element = i - 1;
 }
 
 /*****************************************************************************
@@ -331,7 +431,7 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
 
 /*****************************************************************************
  * The string obtained is only valid until the next read from
- * the same tracefile. ????
+ * the same tracefile.
  ****************************************************************************/
 
 char *ltt_event_get_string(LttEvent *e, LttField *f)

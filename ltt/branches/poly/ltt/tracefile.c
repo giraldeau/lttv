@@ -36,9 +36,6 @@ int skipEvent(LttTracefile * t);
 /* compare two time (LttTime), 0:t1=t2, -1:t1<t2, 1:t1>t2 */
 int timecmp(LttTime * t1, LttTime * t2);
 
-/* get an integer number */
-int getIntNumber(int size1, void *evD);
-
 
 
 /*****************************************************************************
@@ -776,6 +773,8 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
 
   lttEvent->tracefile = t;
   lttEvent->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
+  lttEvent->which_block = t->which_block;
+  lttEvent->which_event = t->which_event;
 
   //update the fields of the current event and go to the next event
   err = skipEvent(t);
@@ -915,32 +914,23 @@ int skipEvent(LttTracefile * t)
   evId   = (int)(*(uint16_t *)(t->cur_event_pos));
   evData = t->cur_event_pos + EVENT_HEADER_SIZE;
 
-  //regard BLOCK_START, END and HEARTBEAT as special case, there are buildin events
-  if(evId != TRACE_BLOCK_START && evId != TRACE_BLOCK_END && evId != TRACE_TIME_HEARTBEAT){
-    evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
+  evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
     
-    if(evT) rootFld = evT->root_field;
-    else return ERANGE;
+  if(evT) rootFld = evT->root_field;
+  else return ERANGE;
   
-    if(rootFld){
-      //event has string/sequence or the last event is not the same event
-      if((evT->latest_block!=t->which_block || evT->latest_event!=t->which_event) 
-	 && rootFld->field_fixed == 0){
-	setFieldsOffset(t, evT, evData, t->trace);
-      }
-      t->cur_event_pos += EVENT_HEADER_SIZE + rootFld->field_size;
-    }else t->cur_event_pos += EVENT_HEADER_SIZE;
-    
-    evT->latest_block = t->which_block;
-    evT->latest_event = t->which_event;
-  }else{
-    if(evId == TRACE_BLOCK_START || evId == TRACE_BLOCK_END){
-      t->cur_event_pos += sizeof(BlockStart) + EVENT_HEADER_SIZE;
-    }else{
-      t->cur_event_pos += sizeof(TimeHeartbeat) + EVENT_HEADER_SIZE;
+  if(rootFld){
+    //event has string/sequence or the last event is not the same event
+    if((evT->latest_block!=t->which_block || evT->latest_event!=t->which_event) 
+       && rootFld->field_fixed == 0){
+      setFieldsOffset(t, evT, evData, t->trace);
     }
-  }
-  
+    t->cur_event_pos += EVENT_HEADER_SIZE + rootFld->field_size;
+  }else t->cur_event_pos += EVENT_HEADER_SIZE;
+    
+  evT->latest_block = t->which_block;
+  evT->latest_event = t->which_event;
+
   //the next event is in the next block
   if(evId == TRACE_BLOCK_END){
     if(t->which_block == t->block_number){
@@ -1103,6 +1093,7 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
   }else if(type->type_class == LTT_SEQUENCE){
     size1 = (int) ltt_type_size(trace, type);
     if(fld->field_fixed == -1){
+      fld->sequ_number_size = size1;
       fld->field_fixed = 0;
       size = getFieldtypeSize(t, evT, offsetRoot,0,fld->child[0], NULL, trace);      
       fld->element_size = size;

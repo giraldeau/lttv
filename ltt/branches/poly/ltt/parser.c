@@ -578,7 +578,8 @@ type_descriptor * find_named_type(char *name, table * named_types)
     t->type_name = allocAndCopy(name);
     t->type = NONE;
     t->fmt = NULL;
-    table_insert(named_types,allocAndCopy(name),t);
+    table_insert(named_types,t->type_name,t);
+    //    table_insert(named_types,allocAndCopy(name),t);
   }
   return t;
 }  

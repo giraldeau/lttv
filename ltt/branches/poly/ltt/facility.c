@@ -23,6 +23,7 @@ void freeFacility(LttFacility * facility);
 void freeEventtype(LttEventType * evType);
 void freeLttType(LttType ** type);
 void freeLttField(LttField * fld);
+void freeLttNamedType(LttType * type);
 
 
 /*****************************************************************************
@@ -173,7 +174,7 @@ void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
 void constructTypeAndFields(LttFacility * fac,type_descriptor * td, 
                             LttField * fld)
 {
-  int i;
+  int i, flag;
   type_descriptor * tmpTd;
 
   //  if(td->type == LTT_STRING || td->type == LTT_SEQUENCE)
@@ -211,17 +212,30 @@ void constructTypeAndFields(LttFacility * fac,type_descriptor * td,
     constructTypeAndFields(fac, tmpTd, fld->child[0]);
   }else if(td->type == LTT_STRUCT){
     fld->field_type->element_number = td->fields.position;
-    fld->field_type->element_type = g_new(LttType*, td->fields.position);
+
+    if(fld->field_type->element_type == NULL){
+      fld->field_type->element_type = g_new(LttType*, td->fields.position);
+      flag = 1;
+    }else{
+      flag = 0;
+    }
+
     fld->child = g_new(LttField*, td->fields.position);      
     for(i=0;i<td->fields.position;i++){
       tmpTd = ((field*)(td->fields.array[i]))->type;
-      fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
+
+      if(flag)
+	fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
       fld->child[i] = g_new(LttField,1); 
 
       fld->child[i]->field_pos = i;
       fld->child[i]->field_type = fld->field_type->element_type[i]; 
-      fld->child[i]->field_type->element_name 
-                      = g_strdup(((field*)(td->fields.array[i]))->name);
+
+      if(flag){
+	fld->child[i]->field_type->element_name 
+	  = g_strdup(((field*)(td->fields.array[i]))->name);
+      }
+
       fld->child[i]->offset_root = -1;
       fld->child[i]->fixed_root = -1;
       fld->child[i]->offset_parent = -1;
@@ -257,9 +271,11 @@ LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
   if(td->type_name){
     for(i=0;i<fac->named_types_number; i++){
       if(fac->named_types[i] == NULL) break;
-      name = fac->named_types[i]->element_name;
+      name = fac->named_types[i]->type_name;
       if(strcmp(name, td->type_name)==0){
-	lttType = fac->named_types[i];
+	lttType = fac->named_types[i];	
+	//	if(lttType->element_name) g_free(lttType->element_name);
+	//	lttType->element_name = NULL;
 	break;	
       }
     }
@@ -274,12 +290,13 @@ LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
     lttType->enum_strings = NULL;
     lttType->element_type = NULL;
     lttType->element_number = 0;
+    lttType->element_name = NULL;
     if(td->type_name){
-      lttType->element_name = g_strdup(td->type_name);
+      lttType->type_name = g_strdup(td->type_name);
       fac->named_types[i] = lttType;
     }
     else{
-      lttType->element_name = NULL;
+      lttType->type_name = NULL;
     }
   }
 
@@ -321,6 +338,10 @@ void freeFacility(LttFacility * fac)
   g_free(fac->events);
 
   //free all named types
+  for(i=0;i<fac->named_types_number;i++){
+    freeLttNamedType(fac->named_types[i]);
+    fac->named_types[i] = NULL;
+  }
   g_free(fac->named_types);
 
   //free the facility itself
@@ -329,20 +350,34 @@ void freeFacility(LttFacility * fac)
 
 void freeEventtype(LttEventType * evType)
 {
+  LttType * root_type;
   g_free(evType->name);
   if(evType->description)
     g_free(evType->description); 
   if(evType->root_field){    
+    root_type = evType->root_field->field_type;
     freeLttField(evType->root_field);
+    freeLttType(&root_type);
   }
 
   g_free(evType);
+}
+
+void freeLttNamedType(LttType * type)
+{
+  int i;
+  g_free(type->type_name);
+  type->type_name = NULL;
+  freeLttType(&type);
 }
 
 void freeLttType(LttType ** type)
 {
   int i;
   if(*type == NULL) return;
+  if((*type)->type_name){
+    return; //this is a named type
+  }
   if((*type)->element_name)
     g_free((*type)->element_name);
   if((*type)->fmt)
@@ -354,8 +389,8 @@ void freeLttType(LttType ** type)
   }
 
   if((*type)->element_type){
-    //    for(i=0;i<(*type)->element_number;i++)
-    //       freeLttType(&((*type)->element_type[i]));   
+    for(i=0;i<(*type)->element_number;i++)
+      freeLttType(&((*type)->element_type[i]));   
     g_free((*type)->element_type);
   }
   g_free(*type);
@@ -365,7 +400,7 @@ void freeLttType(LttType ** type)
 void freeLttField(LttField * fld)
 { 
   int i;
-  int size;
+  int size = 0;
   
   if(fld->field_type){
     if(fld->field_type->type_class == LTT_ARRAY ||
@@ -374,7 +409,6 @@ void freeLttField(LttField * fld)
     }else if(fld->field_type->type_class == LTT_STRUCT){
       size = fld->field_type->element_number;
     }
-    freeLttType(&(fld->field_type));
   }
 
   if(fld->child){
