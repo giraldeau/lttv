@@ -139,22 +139,27 @@ void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
     evType->facility = f;
     evType->index = i;
 
-    field->field_pos = 0;
-    type = lookup_named_type(f,((event*)(events->array[i]))->type);
-    field->field_type = type;
-    field->offset_root = 0;
-    field->fixed_root = 1;
-    field->offset_parent = 0;
-    field->fixed_parent = 1;
-    //    field->base_address = NULL;
-    field->field_size  = 0;
-    field->field_fixed = -1;
-    field->parent = NULL;
-    field->child = NULL;
-    field->current_element = 0;
-
-    //construct field tree and type graph
-    constructTypeAndFields(f,((event*)(events->array[i]))->type,field);
+    if(((event*)(events->array[i]))->type != NULL){
+      field->field_pos = 0;
+      type = lookup_named_type(f,((event*)(events->array[i]))->type);
+      field->field_type = type;
+      field->offset_root = 0;
+      field->fixed_root = 1;
+      field->offset_parent = 0;
+      field->fixed_parent = 1;
+      //    field->base_address = NULL;
+      field->field_size  = 0;
+      field->field_fixed = -1;
+      field->parent = NULL;
+      field->child = NULL;
+      field->current_element = 0;
+      
+      //construct field tree and type graph
+      constructTypeAndFields(f,((event*)(events->array[i]))->type,field);
+    }else{
+      evType->root_field = NULL;      
+      g_free(field);
+    }
   }  
 }
 

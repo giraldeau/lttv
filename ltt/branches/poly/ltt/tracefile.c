@@ -102,7 +102,8 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
 
   // Is the file large enough to contain a trace 
   if(lTDFStat.st_size < sizeof(BlockStart) + EVENT_HEADER_SIZE){
-    g_error("The input data file %s does not contain a trace\n", fileName);
+    g_print("The input data file %s does not contain a trace\n", fileName);
+    return NULL;
   }
   
   //store the size of the file
@@ -144,6 +145,7 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
   int i;
 
   tf = ltt_tracefile_open(t,control_name);
+  if(!tf) return;
   t->control_tracefile_number++;
   g_ptr_array_add(t->control_tracefiles,tf);
 
@@ -223,6 +225,7 @@ void getSystemInfo(LttSystemDescription* des, char * pathname)
   for(i=0;i<entry_number;i++){
     if(fgets(buf,DIR_NAME_SIZE, fp)== NULL)
       g_error("Not a valid file: %s\n", pathname);
+    buf[strlen(buf)-1] = '\0';
     ptr = buf;
     while(isspace(*ptr)) ptr++;
     switch(i){
@@ -297,24 +300,24 @@ void getSystemInfo(LttSystemDescription* des, char * pathname)
 	 if(strncmp("ltt_major_version=",ptr,18)!=0)
 	   g_error("Not a valid file: %s\n", pathname);
 	 ptr += 18; 
-	 ptr++;//skip begining "
-	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
+	 //	 ptr++;//skip begining "
+	 //	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
 	 des->ltt_major_version = (unsigned)atoi(ptr);
 	 break;
        case 13:
 	 if(strncmp("ltt_minor_version=",ptr,18)!=0)
 	   g_error("Not a valid file: %s\n", pathname);
 	 ptr += 18; 
-	 ptr++;//skip begining "
-	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
+	 //	 ptr++;//skip begining "
+	 //	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
 	 des->ltt_minor_version = (unsigned)atoi(ptr);
 	 break;
        case 14:
 	 if(strncmp("ltt_block_size=",ptr,15)!=0)
 	   g_error("Not a valid file: %s\n", pathname);
 	 ptr += 15; 
-	 ptr++;//skip begining "
-	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
+	 //	 ptr++;//skip begining "
+	 //	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
 	 des->ltt_block_size = (unsigned)atoi(ptr);
 	 break;
        default:
@@ -369,7 +372,7 @@ void getFacilityInfo(LttTrace *t, char* eventdefs)
   closedir(dir);
   
   for(j=0;j<t->facility_number;j++){
-    f = (LttFacility*)g_ptr_array_index(t->facilities, i);
+    f = (LttFacility*)g_ptr_array_index(t->facilities, j);
     for(i=0; i<f->event_number; i++){
       et = f->events[i];
       setFieldsOffset(NULL, et, NULL, t);
@@ -387,8 +390,8 @@ void getControlFileInfo(LttTrace *t, char* control)
   if(!dir) g_error("Can not open directory: %s\n", control);
 
   while((entry = readdir(dir)) != NULL){
-    if(strcmp(entry->d_name,"facilities") != 0 ||
-       strcmp(entry->d_name,"interrupts") != 0 ||
+    if(strcmp(entry->d_name,"facilities") != 0 &&
+       strcmp(entry->d_name,"interrupts") != 0 &&
        strcmp(entry->d_name,"processes") != 0) continue;
     
     strcpy(name,control);
@@ -408,7 +411,7 @@ void getCpuFileInfo(LttTrace *t, char* cpu)
   if(!dir) g_error("Can not open directory: %s\n", cpu);
 
   while((entry = readdir(dir)) != NULL){
-    if(strcmp(entry->d_name,".") != 0 ||
+    if(strcmp(entry->d_name,".") != 0 &&
        strcmp(entry->d_name,"..") != 0 ){
       strcpy(name,cpu);
       strcat(name,entry->d_name);
@@ -1024,7 +1027,8 @@ void setFieldsOffset(LttTracefile *tf,LttEventType *evT,void *evD,LttTrace* t)
   LttField * rootFld = evT->root_field;
   //  rootFld->base_address = evD;
 
-  rootFld->field_size = getFieldtypeSize(tf, evT, 0,0,rootFld, evD,t);  
+  if(rootFld)
+    rootFld->field_size = getFieldtypeSize(tf, evT, 0,0,rootFld, evD,t);  
 }
 
 /*****************************************************************************
@@ -1047,7 +1051,7 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
   int size, size1, element_number, i, offset1, offset2;
   LttType * type = fld->field_type;
 
-  if(!t){
+  if(t){
     if(evT->latest_block==t->which_block && evT->latest_event==t->which_event){
       return fld->field_size;
     } 
