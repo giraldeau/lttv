@@ -76,7 +76,7 @@ void lttv_hooks_remove_data(LttvHooks *h, LttvHook f, void *hook_data);
 
 /* Remove a list of hooks from the hooks list in h. */
 
-void lttv_hooks_remove_data_list(LttvHooks *h, LttvHooks *list);
+void lttv_hooks_remove_list(LttvHooks *h, LttvHooks *list);
 
 
 /* Return the number of hooks in the list */
