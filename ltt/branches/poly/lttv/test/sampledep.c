@@ -6,7 +6,7 @@
 #include <gmodule.h>
 
 /* Include module.h from lttv headers for module loading */
-#include "../../include/lttv/module.h"
+#include <lttv/module.h>
 
 G_MODULE_EXPORT void init() {
 	g_critical("Sample module dependant init()");
