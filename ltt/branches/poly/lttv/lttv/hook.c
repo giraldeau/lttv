@@ -49,27 +49,59 @@ void lttv_hooks_destroy(LttvHooks *h)
 
 void lttv_hooks_add(LttvHooks *h, LttvHook f, void *hook_data, LttvHookPrio p) 
 {
-  LttvHookClosure c;
-
+  LttvHookClosure *c, new_c;
+  guint i;
+  
   if(h == NULL)g_error("Null hook added");
 
-  c.hook = f;
-  c.hook_data = hook_data;
-  c.prio = p;
-  g_array_append_val(h,c);
-  g_array_sort(h, (GCompareFunc)lttv_hooks_prio_compare);
+  new_c.hook = f;
+  new_c.hook_data = hook_data;
+  new_c.prio = p;
+  for(i = 0; i < h->len; i++) {
+    
+    c = &g_array_index(h, LttvHookClosure, i);
+    if(new_c.prio < c->prio) {
+      g_array_insert_val(h,i,new_c);
+      return;
+    }
+  }
+  if(i == h->len)
+    g_array_append_val(h,new_c);
 }
 
-
-void lttv_hooks_add_list(LttvHooks *h, LttvHooks *list) 
+/* lttv_hooks_add_list
+ *
+ * Adds a sorted list into another sorted list.
+ *
+ * Note : h->len is modified, but only incremented. This assures
+ * its coherence through the function.
+ *
+ * j is an index to the element following the last one added in the
+ * destination array.
+ */
+void lttv_hooks_add_list(LttvHooks *h, const LttvHooks *list) 
 {
-  guint i;
+  guint i,j;
+  LttvHookClosure *c;
+  const LttvHookClosure *new_c;
 
   if(list == NULL) return;
-  for(i = 0 ; i < list->len; i++) {
-    g_array_append_val(h,g_array_index(list, LttvHookClosure, i));
+  for(i = 0, j = 0 ; i < list->len; i++) {
+    new_c = &g_array_index(list, LttvHookClosure, i);
+    while(j < h->len) {
+      c = &g_array_index(h, LttvHookClosure, j);
+      if(new_c->prio < c->prio) {
+        g_array_insert_val(h,j,*new_c);
+        j++;
+        break;
+      }
+      else j++;
+    }
+    if(j == h->len) {
+      g_array_append_val(h,*new_c);
+      j++;
+    }
   }
-  g_array_sort(h, (GCompareFunc)lttv_hooks_prio_compare);
 }
 
 

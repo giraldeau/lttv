@@ -41,7 +41,10 @@ typedef GArray LttvHooks;
  * functions. Hook removal does not change list order.
  */
 
-#define LTTV_PRIO_DEFAULT 0
+#define LTTV_PRIO_DEFAULT 50
+#define LTTV_PRIO_HIGH 0
+#define LTTV_PRIO_LOW 99
+
 typedef gint LttvHookPrio;
 
 /* Create and destroy a list of hooks */
@@ -58,7 +61,7 @@ void lttv_hooks_add(LttvHooks *h, LttvHook f, void *hook_data, LttvHookPrio p);
 
 /* Add a list of hooks to the list h */
 
-void lttv_hooks_add_list(LttvHooks *h, LttvHooks *list);
+void lttv_hooks_add_list(LttvHooks *h, const LttvHooks *list);
 
 
 /* Remove a hook from the list. Return the hook data. */
