@@ -5,11 +5,11 @@
  * in a drawable. Doing this generically will permit user defined drawing
  * behavior in a later time.
  *
- * We keep each data type in a hash table, as this container suits the
- * best the information we receive (GQuark).
- * (A hash table for facilities, pointing to an array per facility, containing
- * event_number events.)
- * (hash tables for cpus, for process state, for execution mode and submode).
+ * We keep each data type in attributes, keys to specific information
+ * being formed from the GQuark corresponding to the information received.
+ * (facilities / facility_name / events / eventname.)
+ * (cpus/cpu_name, process_states/ps_name,
+ * execution_modes/em_name, execution_submodes/es_name).
  * The goal is then to provide a generic way to print information on the
  * screen for all this different information.
  *
@@ -51,5 +51,6 @@
 
 #include <glib.h>
 #include <lttv/hook.h>
-
+#include <lttv/attribute.h>
+#include <lttv/iattribute.h>
 
