@@ -373,6 +373,37 @@ parse_simple_expression(GString* expression) {
 }
 
 /**
+ *  Append a new expression to the expression 
+ *  defined in the current filter
+ *  @param filter pointer to the current LttvFilter
+ *  @param expression string that must be appended
+ */
+void lttv_filter_append_expression(LttvFilter* filter, char *expression) {
+
+  if(expression == NULL) return;
+  if(filter == NULL) {
+    filter = lttv_filter_new(); 
+    filter->expression = expression;
+  } else if(filter->expression == NULL) {
+    filter->expression = expression;
+  } else {
+    filter->expression = g_strconcat(filter->expression,"&",expression);
+  }
+
+  lttv_filter_update(filter);
+  
+}
+
+void lttv_filter_clear_expression(LttvFilter* filter) {
+  
+  if(filter->expression != NULL) {
+    g_free(filter->expression);
+    filter->expression = NULL;
+  }
+  
+}
+
+/**
  *  Applies the 'equal' operator to the
  *  specified structure and value 
  *  @param v1 left member of comparison
@@ -751,10 +782,21 @@ lttv_filter_clone(LttvFilter* filter) {
  * 	@return the current lttv_filter or NULL if error
  */
 LttvFilter*
-lttv_filter_new(char *expression, LttvTraceState *tcs) {
+lttv_filter_new() {
 
+  LttvFilter* filter = g_new(LttvFilter,1);
+  filter->expression = NULL;
+  filter->head = NULL;
+    
+}
+
+gboolean
+lttv_filter_update(LttvFilter* filter) {
+    
   g_print("filter::lttv_filter_new()\n");		/* debug */
-
+  
+  if(filter->expression == NULL) return FALSE;
+  
   unsigned 	
     i, 
     p_nesting=0,	/* parenthesis nesting value */
@@ -767,6 +809,14 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
     *t1,                              /* buffer #1 */
     *t2;                              /* buffer #2 */
 
+  /* 
+   * the filter
+   * If the tree already exists, 
+   * destroy it and build a new one
+   */
+  if(filter->head != NULL) lttv_filter_tree_destroy(filter->head);
+  filter->head = tree;
+ 
   /*
    * Tree Stack
    * each element of the list
@@ -820,11 +870,10 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
   g_ptr_array_set_size(a_field_path,2);   /* by default, recording 2 field expressions */
 
   
-  for(i=0;i<strlen(expression);i++) {
-//    g_print("%s\n",a_field_component->str);
-    g_print("%c ",expression[i]);
-//    g_print("switch:%c -->subtree:%p\n",expression[i],subtree);
-    switch(expression[i]) {
+  for(i=0;i<strlen(filter->expression);i++) {
+    // debug
+    g_print("%c ",filter->expression[i]);
+    switch(filter->expression[i]) {
       /*
        *   logical operators
        */
@@ -893,7 +942,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         }
         break;
       case '!':   /* not, or not equal (math op) */
-        if(expression[i+1] == '=') {  /* != */
+        if(filter->expression[i+1] == '=') {  /* != */
           assign_operator(a_simple_expression,LTTV_FIELD_NE);
           i++;
           g_ptr_array_add( a_field_path,(gpointer) a_field_component );
@@ -923,8 +972,8 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         p_nesting--;      /* decrementing parenthesis nesting value */
         if(p_nesting<0 || tree_stack->len<2) {
           g_warning("Wrong filtering options, the string\n\"%s\"\n\
-                     is not valid due to parenthesis incorrect use",expression);	
-          return NULL;
+                     is not valid due to parenthesis incorrect use",filter->expression);	
+          return FALSE;
         }
         
         g_assert(tree_stack->len>0);
@@ -956,7 +1005,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
        *	mathematic operators
        */
       case '<':   /* lower, lower or equal */
-        if(expression[i+1] == '=') { /* <= */
+        if(filter->expression[i+1] == '=') { /* <= */
           i++;
           assign_operator(a_simple_expression,LTTV_FIELD_LE);
         } else assign_operator(a_simple_expression,LTTV_FIELD_LT);
@@ -965,7 +1014,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         a_field_component = g_string_new("");         
         break;
       case '>':   /* higher, higher or equal */
-        if(expression[i+1] == '=') {  /* >= */
+        if(filter->expression[i+1] == '=') {  /* >= */
           i++;
           assign_operator(a_simple_expression,LTTV_FIELD_GE);
         } else assign_operator(a_simple_expression,LTTV_FIELD_GT);
@@ -993,7 +1042,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         }
         break;
       default:    /* concatening current string */
-        g_string_append_c(a_field_component,expression[i]); 				
+        g_string_append_c(a_field_component,filter->expression[i]); 				
     }
   }
 
@@ -1006,12 +1055,12 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
    */
   if( p_nesting>0 ) { 
     g_warning("Wrong filtering options, the string\n\"%s\"\n\
-        is not valid due to parenthesis incorrect use",expression);	
-    return NULL;
+        is not valid due to parenthesis incorrect use",filter->expression);	
+    return FALSE;
   }
  
   if(tree_stack->len != 1) /* only root tree should remain */ 
-    return NULL;
+    return FALSE;
   
   /*  processing last element of expression   */
   t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
@@ -1035,15 +1084,18 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
   g_assert(tree != NULL);
   g_assert(subtree == NULL); 
   
-  lttv_filter_tracefile(tree,NULL); 
-  
-  return tree;
+  return TRUE;
+//  return filter;
   
 }
 
 void
 lttv_filter_destroy(LttvFilter* filter) {
-
+  
+  g_free(filter->expression);
+  lttv_filter_tree_destroy(filter->head);
+  g_free(filter);
+  
 }
 
 /**
@@ -1051,12 +1103,12 @@ lttv_filter_destroy(LttvFilter* filter) {
  *  or sub expression
  *  @return pointer of LttvFilterTree
  */
-LttvFilterTree* lttv_filter_tree_new() {
+LttvFilterTree* 
+lttv_filter_tree_new() {
   LttvFilterTree* tree;
 
   tree = g_new(LttvFilter,1);
   tree->node = 0; //g_new(lttv_expression,1);
-//  tree->node->type = LTTV_UNDEFINED_EXPRESSION;
   tree->left = LTTV_TREE_IDLE;
   tree->right = LTTV_TREE_IDLE;
 
@@ -1067,7 +1119,8 @@ LttvFilterTree* lttv_filter_tree_new() {
  *  Destroys the tree and his sub-trees
  *  @param tree Tree which must be destroyed
  */
-void lttv_filter_tree_destroy(LttvFilterTree* tree) {
+void 
+lttv_filter_tree_destroy(LttvFilterTree* tree) {
   
   if(tree == NULL) return;
 
@@ -1104,6 +1157,9 @@ lttv_filter_tracefile(LttvFilter *filter, LttTracefile *tracefile) {
    *  managing an array of all items to be removed .. 
    */
   
+  /////////////////////////////////////////////////////////////////////////////
+  //                                 TEST                                    //
+  /////////////////////////////////////////////////////////////////////////////
   g_print("node:%p lchild:%p rchild:%p\n",t,t->l_child.t,t->r_child.t);
   g_print("node type%i\n",t->node);
   if(t->left == LTTV_TREE_NODE) lttv_filter_tracefile(t->l_child.t,NULL);
@@ -1116,6 +1172,10 @@ lttv_filter_tracefile(LttvFilter *filter, LttTracefile *tracefile) {
     g_assert(t->r_child.leaf->value != NULL);
     g_print("%p: right is qqch %i %s\n",t,t->r_child.leaf->op,t->r_child.leaf->value);
   }
+  /////////////////////////////////////////////////////////////////////////////
+  
+   
+
   
   /* test */
 /*  int i, nb;

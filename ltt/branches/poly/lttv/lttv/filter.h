@@ -206,6 +206,10 @@ gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op);
 
 gboolean parse_simple_expression(GString* expression);
 
+void lttv_filter_append_expression(LttvFilter* filter, char *expression);
+
+void lttv_filter_clear_expression(LttvFilter* filter);
+
 /*
  * Logical operators functions
  */
@@ -255,7 +259,9 @@ LttvFilter* lttv_filter_clone(LttvFilter* filter);
  */
 
 /* LttvFilter */
-LttvFilter *lttv_filter_new(char *expression, LttvTraceState *tfs);
+LttvFilter *lttv_filter_new();
+
+gboolean lttv_filter_update(LttvFilter* filter);
 
 void lttv_filter_destroy(LttvFilter* filter);
 
