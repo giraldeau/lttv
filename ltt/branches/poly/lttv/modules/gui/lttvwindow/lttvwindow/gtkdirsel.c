@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <limits.h> // For PATH_MAX
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
@@ -416,7 +417,7 @@ translate_win32_path (GtkDirSelection *filesel)
 {
   int updated = 0;
   const gchar *path;
-  gchar newPath[MAX_PATH];
+  gchar newPath[PATH_MAX];
 
   /*
    * Retrieve the current path
@@ -1916,7 +1917,7 @@ get_real_filename (gchar    *filename,
   /* Check to see if the selection was a drive selector */
   if (isalpha (filename[0]) && (filename[1] == ':'))
     {
-      gchar temp_filename[MAX_PATH];
+      gchar temp_filename[PATH_MAX];
       int len;
 
       cygwin_conv_to_posix_path (filename, temp_filename);

@@ -20,6 +20,10 @@
 
 /* Here is the implementation of the API */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <ltt/time.h>
 #include <ltt/trace.h>
 #include <glib.h>
@@ -126,14 +130,23 @@ void lttvwindowtraces_add_trace(LttvTrace *trace)
   LttvAttribute *attribute;
   LttvAttributeValue value;
   guint num;
+  struct stat buf;
+  gchar attribute_path[PATH_MAX];
 
+  if(stat(ltt_trace_name(lttv_trace(trace)), &buf)) {
+    g_warning("lttvwindowtraces_add_trace: Trace %s not found",
+        ltt_trace_name(lttv_trace(trace)));
+    return;
+  }
+  g_assert(
+      snprintf(attribute_path, PATH_MAX, "%lu:%lu", buf.st_dev, buf.st_ino) >= 0);
+  
   g_assert(attribute = 
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
                                 LTTV_TRACES)));
-  num = lttv_attribute_get_number(attribute);
- 
+    
   value = lttv_attribute_add(attribute,
-                     num,
+                     g_quark_from_string(attribute_path),
                      LTTV_POINTER);
 
   *(value.v_pointer) = (gpointer)trace;
