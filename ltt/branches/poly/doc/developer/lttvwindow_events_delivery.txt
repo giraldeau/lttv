@@ -371,10 +371,12 @@ A. While list_in !empty and list_out !empty and !GTK Event pending
         - Add ltime to list_in, remove them from list_out
     1.2 Seek
       1.2.1 If first request in list_in is a time request
-        1.2.1.1 Seek to that time
+        - If first req in list_in start time != current time
+          - Seek to that time
       1.2.2 Else, the first request in list_in is a position request
-        1.2.2.1 If the position is the same than the saved state, restore state
-        1.2.2.1 Else, seek to that position
+        - If first req in list_in pos != current pos
+          - If the position is the same than the saved state, restore state
+          - Else, seek to that position
     1.3 Add hooks and call begin for all list_in members
       1.3.1 If !servicing
           - begin hooks called
