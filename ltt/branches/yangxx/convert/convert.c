@@ -91,7 +91,8 @@ int main(int argc, char ** argv){
   off_t file_size;                  
   int block_number, block_size;                 
   char * buffer, **buf_out, cpuStr[BUFFER_SIZE];
-  void ** write_pos;
+  char * buf_fac, * buf_intr, * buf_proc;
+  void ** write_pos, *write_pos_fac, * write_pos_intr, *write_pos_proc;
   trace_start *tStart;
   trace_buffer_start *tBufStart;
   trace_buffer_end *tBufEnd;
@@ -232,7 +233,14 @@ int main(int argc, char ** argv){
   block_number = file_size/block_size;
 
   g_free(buffer);
-  buffer     = g_new(char, block_size);
+  buffer         = g_new(char, block_size);
+  buf_fac        = g_new(char, block_size);
+  write_pos_fac  = buf_fac;
+  buf_intr       = g_new(char, block_size);
+  write_pos_intr = buf_intr;
+  buf_proc       = g_new(char, block_size);
+  write_pos_proc = buf_proc;
+  
   buf_out    = g_new(char*,cpu);
   write_pos  = g_new(void*, cpu);
   fdCpu      = g_new(int, cpu); 
@@ -280,6 +288,14 @@ int main(int argc, char ** argv){
     write_to_buffer(write_pos[0],(void*)&startId, sizeof(uint16_t));    
     write_to_buffer(write_pos[0],(void*)&startTimeDelta, sizeof(uint32_t));
     write_to_buffer(write_pos[0],(void*)&start, sizeof(buffer_start));
+    
+    //write start block event into processes and interrupts files
+    write_to_buffer(write_pos_intr,(void*)&startId, sizeof(uint16_t));    
+    write_to_buffer(write_pos_intr,(void*)&startTimeDelta, sizeof(uint32_t));
+    write_to_buffer(write_pos_intr,(void*)&start, sizeof(buffer_start));
+    write_to_buffer(write_pos_proc,(void*)&startId, sizeof(uint16_t));    
+    write_to_buffer(write_pos_proc,(void*)&startTimeDelta, sizeof(uint32_t));
+    write_to_buffer(write_pos_proc,(void*)&start, sizeof(buffer_start));
 
     while(1){
       int event_size;
@@ -329,7 +345,21 @@ int main(int argc, char ** argv){
 	  write_pos[0] = buf_out[0] + block_size - sizeof(uint32_t);
   	  write_to_buffer(write_pos[0],(void*)&size, sizeof(uint32_t));
 	  write(fdCpu[0],(void*)buf_out[0], block_size);
-	}	
+	}
+
+	//write out processes and intrrupts files
+	{
+	  int size_intr =(int) (write_pos_intr - (void*)buf_intr);
+	  int size_proc =(int) (write_pos_proc - (void*)buf_proc);
+	  write_to_buffer(write_pos_intr,(void*)&end,sizeof(buffer_start));   
+	  write_to_buffer(write_pos_proc,(void*)&end,sizeof(buffer_start));   
+	  write_pos_intr = buf_intr + block_size - sizeof(uint32_t);
+	  write_pos_proc = buf_intr + block_size - sizeof(uint32_t);
+  	  write_to_buffer(write_pos_intr,(void*)&size_intr, sizeof(uint32_t));
+  	  write_to_buffer(write_pos_proc,(void*)&size_proc, sizeof(uint32_t));
+	  write(fdIntr,(void*)buf_intr,block_size);	  
+	  write(fdProc,(void*)buf_proc,block_size);	  
+	}
 	break;   
       }
 
@@ -350,15 +380,15 @@ int main(int argc, char ** argv){
 	case TRACE_IRQ_ENTRY:
 	  event_size = sizeof(trace_irq_entry);
 	  timeDelta = time_delta;
-	  write(fdIntr,(void*)&newId, sizeof(uint16_t));
-	  write(fdIntr,(void*)&timeDelta, sizeof(uint64_t));
-	  write(fdIntr,cur_pos, event_size);
+	  write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t)); 
+	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint64_t));
+	  write_to_buffer(write_pos_intr,cur_pos, event_size);
 	  break;
 	case TRACE_IRQ_EXIT:
 	  event_size = 0;
 	  timeDelta = time_delta;
-	  write(fdIntr,(void*)&newId, sizeof(uint16_t));
-	  write(fdIntr,(void*)&timeDelta, sizeof(uint64_t));
+	  write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));
+	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint64_t));
 	  break;
 	case TRACE_SCHEDCHANGE:
 	  event_size = sizeof(trace_schedchange);
@@ -369,18 +399,18 @@ int main(int argc, char ** argv){
 	case TRACE_SOFT_IRQ:
 	  event_size = sizeof(trace_soft_irq);
 	  timeDelta = time_delta;
-	  write(fdIntr,(void*)&newId, sizeof(uint16_t));
-	  write(fdIntr,(void*)&timeDelta, sizeof(uint64_t));
-	  write(fdIntr,cur_pos, event_size);
+	  write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));
+	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint64_t));
+	  write_to_buffer(write_pos_intr,cur_pos, event_size);
 	  break;
 	case TRACE_PROCESS:
 	  event_size = sizeof(trace_process);
 	  timeDelta = time_delta;
 	  subId = *(uint8_t*)cur_pos;
 	  if(subId == TRACE_PROCESS_FORK || subId ==TRACE_PROCESS_EXIT){
-	    write(fdProc,(void*)&newId, sizeof(uint16_t));
-	    write(fdProc,(void*)&timeDelta, sizeof(uint64_t));
-	    write(fdProc,cur_pos, event_size);
+	    write_to_buffer(write_pos_proc,(void*)&newId, sizeof(uint16_t));
+	    write_to_buffer(write_pos_proc,(void*)&timeDelta, sizeof(uint64_t));
+	    write_to_buffer(write_pos_proc,cur_pos, event_size);
 	  } 
 	  break;
 	case TRACE_FILE_SYSTEM:
