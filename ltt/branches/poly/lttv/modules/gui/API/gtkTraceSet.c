@@ -10,7 +10,7 @@
  * 
  */
 
-#include "common.h"
+#include <lttv/common.h>
 #include <ltt/ltt.h>
 #include <lttv/lttv.h>
 #include <lttv/mainWindow.h>   
