@@ -1,0 +1,28 @@
+TODO list on control flow view by Mathieu Desnoyers
+
+
+- Split in process view and CPU ciew :
+  - remove process 0 from the process list
+  - add a new viewer to the module :
+    - cfv.c -> new cpuctl.c : core of the view
+    - eventhooks.c -> cpuhooks.c : draw cpu states
+    - processlist.c -> cpulist.c
+
+- Check cfv for stability, modules load/unload, viewer start (many:3+), stop,
+  memory leaks; standardize module unloading : in all cases they should call
+  main window's API for viewer widget removal, and only then the memory should
+  be released (from the call of the main window).
+
+- Add viewer selected signal (call main window's API function)
+- When viewing a big trace, use the fact that the drawing cannot be more
+  precise than the amount of horizontal pixels it has : "jump" from one event
+  to another, converting pixels to time in the trace. It will use efficiently
+  the "saved state" functionnality of underlying state.c.
+
+- Modify widgets'organization so the time bar is not affected by scrolling :
+  it may need to separate process list from the drawing area (not in a
+  scrolled window anymore). The idea would be to use a scrolled window for
+  the drawing area, put it in the right side of a hbox, put the tree view
+  in the left side and then connect the tree view's adjustment to the
+  scrolled window's scroll bar.
+
