@@ -66,4 +66,5 @@ LttvModule **lttv_module_list(guint *nb);
 LttvModule **lttv_module_info(LttvModule *m, const char **name, 
     guint *ref_count, guint *load_count, guint *nb_dependents);
 
+char * lttv_module_name(LttvModule *m);
 #endif // MODULES_H

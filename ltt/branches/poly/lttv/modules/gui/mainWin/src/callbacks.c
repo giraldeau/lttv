@@ -24,9 +24,16 @@ extern LttvTracesetContext * gTracesetContext;
 extern GSList * Main_Window_List;
 
 mainWindow * get_window_data_struct(GtkWidget * widget);
+char * get_unload_module(char ** loaded_module_name, int nb_module);
 
 /* test part */
 void insertView(GtkWidget* widget, view_constructor constructor);
+
+enum
+{
+  MODULE_COLUMN,
+  N_COLUMNS
+};
 
 void
 on_textview1_grab_focus                     (GtkTextView     *text_view,
@@ -593,7 +600,32 @@ void
 on_load_module_activate                (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Load module\n");
+  char ** dir;
+  gint id;
+  char str[PATH_LENGTH];
+  mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
+  GtkFileSelection * fileSelector = (GtkFileSelection *)gtk_file_selection_new("Select a module");
+  gtk_file_selection_hide_fileop_buttons(fileSelector);
+  
+  str[0] = '\0';
+  id = gtk_dialog_run(GTK_DIALOG(fileSelector));
+  switch(id){
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_OK:
+      dir = gtk_file_selection_get_selections (fileSelector);
+      sprintf(str,dir[0]);
+      if(mwData->winCreationData)
+	lttv_module_load(str, mwData->winCreationData->argc,mwData->winCreationData->argv);
+      else
+	lttv_module_load(str, 0,NULL);
+      g_strfreev(dir);
+    case GTK_RESPONSE_REJECT:
+    case GTK_RESPONSE_CANCEL:
+    default:
+      gtk_widget_destroy((GtkWidget*)fileSelector);
+      break;
+  }
+  g_printf("Load module: %s\n", str);
 }
 
 
@@ -601,7 +633,31 @@ void
 on_unload_module_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Unload module\n");
+  int i;
+  char **name, *unload_module_name;
+  guint nb;
+  LttvModule ** modules, *module;
+  mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
+  
+  modules = lttv_module_list(&nb);
+  name  = g_new(char*, nb);
+  for(i=0;i<nb;i++){
+    module = modules[i];
+    name[i] = lttv_module_name(module);
+  }
+
+  unload_module_name =get_unload_module(name,nb);
+  
+  if(unload_module_name){
+    for(i=0;i<nb;i++){
+      if(strcmp(unload_module_name, name[i]) == 0){
+	lttv_module_unload(modules[i]);
+	break;
+      }
+    }    
+  }
+
+  g_free(name);
 }
 
 
@@ -613,7 +669,6 @@ on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
   char * dir;
   gint id;
 
-  gchar  str[PATH_LENGTH];
   mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
 
   id = gtk_dialog_run(GTK_DIALOG(fileSelector));
@@ -815,3 +870,71 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
   mw->CurrentTab = Tab;
 }
 
+char * get_unload_module(char ** loaded_module_name, int nb_module)
+{
+  GtkWidget         * dialogue;
+  GtkWidget         * scroll_win;
+  GtkWidget         * tree;
+  GtkListStore      * store;
+  GtkTreeViewColumn * column;
+  GtkCellRenderer   * renderer;
+  GtkTreeSelection  * select;
+  GtkTreeIter         iter;
+  gint                id, i;
+  char              * unload_module_name = NULL;
+
+  dialogue = gtk_dialog_new_with_buttons("Select an unload module",
+					 NULL,
+					 GTK_DIALOG_MODAL,
+					 GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
+					 GTK_STOCK_CANCEL,GTK_RESPONSE_REJECT,
+					 NULL); 
+  gtk_window_set_default_size((GtkWindow*)dialogue, 500, 200);
+
+  scroll_win = gtk_scrolled_window_new (NULL, NULL);
+  gtk_widget_show ( scroll_win);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_win), 
+				 GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+
+  store = gtk_list_store_new (N_COLUMNS,G_TYPE_STRING);
+  tree = gtk_tree_view_new_with_model(GTK_TREE_MODEL (store));
+  gtk_widget_show ( tree);
+  g_object_unref (G_OBJECT (store));
+		
+  renderer = gtk_cell_renderer_text_new ();
+  column   = gtk_tree_view_column_new_with_attributes ("MODULE NAME",
+						     renderer,
+						     "text", MODULE_COLUMN,
+						     NULL);
+  gtk_tree_view_column_set_alignment (column, 0.5);
+  gtk_tree_view_column_set_fixed_width (column, 150);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (tree), column);
+
+  select = gtk_tree_view_get_selection (GTK_TREE_VIEW (tree));
+  gtk_tree_selection_set_mode (select, GTK_SELECTION_SINGLE);
+
+  gtk_container_add (GTK_CONTAINER (scroll_win), tree);  
+
+  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialogue)->vbox), scroll_win,TRUE, TRUE,0);
+
+  for(i=0;i<nb_module;i++){
+    gtk_list_store_append (store, &iter);
+    gtk_list_store_set (store, &iter, MODULE_COLUMN,loaded_module_name[i],-1);
+  }
+
+  id = gtk_dialog_run(GTK_DIALOG(dialogue));
+  switch(id){
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_OK:
+      if (gtk_tree_selection_get_selected (select, (GtkTreeModel**)&store, &iter)){
+	  gtk_tree_model_get ((GtkTreeModel*)store, &iter, MODULE_COLUMN, &unload_module_name, -1);
+      }
+    case GTK_RESPONSE_REJECT:
+    case GTK_RESPONSE_CANCEL:
+    default:
+      gtk_widget_destroy(dialogue);
+      break;
+  }
+
+  return unload_module_name;
+}

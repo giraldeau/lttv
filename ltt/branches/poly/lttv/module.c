@@ -266,6 +266,11 @@ lttv_module_info(LttvModule *m, const char **name,
   return array;
 }
 
+char * 
+lttv_module_name(LttvModule *m)
+{
+  return g_module_name(m->module);
+}
 
 static void
 list_independent(gpointer key, gpointer value, gpointer user_data)

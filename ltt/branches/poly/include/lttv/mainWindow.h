@@ -11,6 +11,10 @@
 #include <lttv/common.h>
 #include <lttv/gtkcustom.h>
 
+typedef struct _WindowCreationData {
+	int argc;
+	char ** argv;
+} WindowCreationData;
 
 struct _mainWindow{
   GtkWidget*      MWindow;            /* Main Window */
@@ -37,7 +41,8 @@ struct _mainWindow{
   tab * Tab;
   tab * CurrentTab;
   LttvIAttribute * Attributes;
- 
+
+  WindowCreationData * winCreationData; 
 };
 
 

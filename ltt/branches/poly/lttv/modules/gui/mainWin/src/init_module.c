@@ -65,11 +65,6 @@ void lttv_trace_option(void *hook_data)
  * This function initializes the GUI.
  */
 
-typedef struct _WindowCreationData {
-	int argc;
-	char ** argv;
-} WindowCreationData;
-
 static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 {
   int i;
@@ -86,7 +81,9 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
   GtkWidget *window1;
   mainWindow * mw = g_new(mainWindow, 1);
   gSysView = g_new(systemView, 1);
-  WindowCreationData *Window_Creation_Data = (WindowCreationData*)call_data;
+  WindowCreationData *Window_Creation_Data = (WindowCreationData*)hook_data;
+
+  mw->winCreationData = Window_Creation_Data;
 
   /* Add the object's information to the module's array */
   Main_Window_List = g_slist_append(Main_Window_List, mw);
