@@ -76,8 +76,6 @@ typedef struct _TimePeriod{
 } TimePeriod;
 
 #define RESERVE_SIZE        1000
-#define SECOND_INTERVAL     1
-#define NANOSECOND_INTERVAL 1000
 
 typedef enum _ScrollDirection{
   SCROLL_IN_SAME_PERIOD,
@@ -153,11 +151,12 @@ static void Tree_V_grab_focus(GtkWidget *widget, gpointer data);
 
 
 static void get_test_data(guint Event_Number, guint List_Height, 
-									 EventViewerData *Event_Viewer_Data);
+			  EventViewerData *Event_Viewer_Data);
 
 void add_test_data(EventViewerData *Event_Viewer_Data);
 
-static void get_events(EventViewerData* Event_Viewer_Data, LttTime start, LttTime end);
+static void get_events(EventViewerData* Event_Viewer_Data, LttTime start, 
+		       LttTime end, unsigned maxNumEvents);
 static gboolean parse_event(void *hook_data, void *call_data);
 
 /**
@@ -419,11 +418,11 @@ GuiEvents(mainWindow *pmParentWindow)
 
   start.tv_sec = 0;
   start.tv_nsec = 0;
-  end.tv_sec = SECOND_INTERVAL;
-  end.tv_nsec = NANOSECOND_INTERVAL;
+  end.tv_sec = G_MAXULONG;
+  end.tv_nsec = G_MAXULONG;
 
   Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
-  get_events(Event_Viewer_Data, start,end);
+  get_events(Event_Viewer_Data, start,end, RESERVE_SIZE);
   Event_Viewer_Data->Number_Of_Events = Event_Viewer_Data->raw_trace_data->len;
   
   time_period = g_new(TimePeriod, 1);
@@ -441,7 +440,7 @@ GuiEvents(mainWindow *pmParentWindow)
 
   Event_Viewer_Data->current_period = 0;
   Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_second;
-  get_events(Event_Viewer_Data, start,end);
+  get_events(Event_Viewer_Data, start,end, RESERVE_SIZE);
   Event_Viewer_Data->Number_Of_Events += Event_Viewer_Data->raw_trace_data->len;
 
   time_period = g_new(TimePeriod, 1);
@@ -854,7 +853,7 @@ void get_test_data(guint Event_Number, guint List_Height,
 	}
 	time_period = g_ptr_array_index(Event_Viewer_Data->time_period, 
 					Event_Viewer_Data->current_period);
-	get_events(Event_Viewer_Data, time_period->start, time_period->end);
+	get_events(Event_Viewer_Data, time_period->start, time_period->end,RESERVE_SIZE);
 	raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,
 				     Event_Viewer_Data->raw_trace_data->len-1);      
 	Event_Viewer_Data->start_event_number -= Event_Viewer_Data->raw_trace_data->len;
@@ -867,13 +866,13 @@ void get_test_data(guint Event_Number, guint List_Height,
 	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
 	time_period = g_ptr_array_index(Event_Viewer_Data->time_period, 
 					Event_Viewer_Data->current_period);
-	get_events(Event_Viewer_Data, time_period->start, time_period->end);
+	get_events(Event_Viewer_Data, time_period->start, time_period->end,RESERVE_SIZE);
 	Event_Viewer_Data->start_event_number = time_period->start_event_number;
 
 	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_second;
 	time_period = g_ptr_array_index(Event_Viewer_Data->time_period, 
 					Event_Viewer_Data->current_period + 1);
-	get_events(Event_Viewer_Data, time_period->start, time_period->end);
+	get_events(Event_Viewer_Data, time_period->start, time_period->end,RESERVE_SIZE);
 	Event_Viewer_Data->end_event_number = time_period->end_event_number;
 	
 	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;		
@@ -899,8 +898,8 @@ void get_test_data(guint Event_Number, guint List_Height,
 	  raw_data = g_ptr_array_index(second_data,second_data->len-1);
 	  time_period->start = raw_data->time;
 	  time_period->start.tv_nsec++;
-	  time_period->end.tv_sec  = time_period->start.tv_sec + SECOND_INTERVAL;
-	  time_period->end.tv_nsec = time_period->start.tv_nsec + NANOSECOND_INTERVAL;
+	  time_period->end.tv_sec  = G_MAXULONG;
+	  time_period->end.tv_nsec = G_MAXULONG;
 	  time_period->start_event_number = Event_Viewer_Data->end_event_number + 1;      
 	  g_ptr_array_add(Event_Viewer_Data->time_period,time_period);
 	}
@@ -908,7 +907,7 @@ void get_test_data(guint Event_Number, guint List_Height,
 	time_period = g_ptr_array_index(Event_Viewer_Data->time_period,
 					Event_Viewer_Data->current_period+1);
 	
-	get_events(Event_Viewer_Data,time_period->start, time_period->end);
+	get_events(Event_Viewer_Data,time_period->start, time_period->end, RESERVE_SIZE);
 	Event_Viewer_Data->end_event_number += Event_Viewer_Data->raw_trace_data->len;
 	if(new_time_period){
 	  raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,0);
@@ -937,8 +936,8 @@ void get_test_data(guint Event_Number, guint List_Height,
 					   Event_Viewer_Data->time_period->len-1);
 	  time_period->start = time_period1->end;
 	  time_period->start.tv_nsec++;
-	  time_period->end.tv_sec  = time_period->start.tv_sec + SECOND_INTERVAL;
-	  time_period->end.tv_nsec = time_period->start.tv_nsec + NANOSECOND_INTERVAL;
+	  time_period->end.tv_sec  = G_MAXULONG;
+	  time_period->end.tv_nsec = G_MAXULONG;
 	  time_period->start_event_number = time_period1->end_event_number + 1;
 	  g_ptr_array_add(Event_Viewer_Data->time_period,time_period);
 	}
@@ -946,14 +945,14 @@ void get_test_data(guint Event_Number, guint List_Height,
 	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
 	time_period = g_ptr_array_index(Event_Viewer_Data->time_period,
 					Event_Viewer_Data->current_period);	
-	get_events(Event_Viewer_Data,time_period->start, time_period->end);
+	get_events(Event_Viewer_Data,time_period->start, time_period->end, RESERVE_SIZE);
 	Event_Viewer_Data->start_event_number = time_period->start_event_number;
 	Event_Viewer_Data->end_event_number   = time_period->end_event_number;	  
 
 	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_second;
 	time_period = g_ptr_array_index(Event_Viewer_Data->time_period,
 					Event_Viewer_Data->current_period+1);	
-	get_events(Event_Viewer_Data,time_period->start, time_period->end);
+	get_events(Event_Viewer_Data,time_period->start, time_period->end, RESERVE_SIZE);
 	Event_Viewer_Data->end_event_number += Event_Viewer_Data->raw_trace_data->len;	
 	if(new_time_period){
 	  raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,0);
@@ -1197,11 +1196,12 @@ void Tree_V_grab_focus(GtkWidget *widget, gpointer data){
   SetFocusedPane(mw, gtk_widget_get_parent(Event_Viewer_Data->HBox_V));
 }
 
-void get_events(EventViewerData* Event_Viewer_Data, LttTime start, LttTime end)
+void get_events(EventViewerData* Event_Viewer_Data, LttTime start, 
+		LttTime end,unsigned maxNumEvents)
 {
   contextAddHooks(Event_Viewer_Data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
 		  NULL, NULL, NULL,Event_Viewer_Data->before_event_hooks,NULL);
-  processTraceset(Event_Viewer_Data->mw, start, end);
+  processTraceset(Event_Viewer_Data->mw, start, end, maxNumEvents);
   contextRemoveHooks(Event_Viewer_Data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
 		     NULL, NULL, NULL,Event_Viewer_Data->before_event_hooks,NULL);
   
