@@ -13,6 +13,7 @@
 #include <gtk/gtk.h>
 #include <ltt/ltt.h>
 #include <lttv/hook.h>
+#include <lttv/mainWindow.h>
 
 /**
  * Function to register a view constructor so that main window can generate
@@ -23,7 +24,7 @@
  * @param view_constructor constructor of the viewer. 
  */
 
-void ToolbarItemReg(gchar **ButtonPixmap, char *tooltip, void *view_constructor);
+void ToolbarItemReg(GdkPixmap * pixmap, char *tooltip, void *view_constructor);
 
 
 /**
@@ -68,7 +69,7 @@ void MenuItemUnreg(void *view_constructor);
  */
 
 // Not Needed : Main window add widget returned by constructor
-//void AttachViewer(MainWindow *main_win, GtkWidget *viewer);
+//void AttachViewer(mainWindow *main_win, GtkWidget *viewer);
 
 
 /* ?? Maybe we do not need this function, when a widget is destroyed, 
@@ -82,7 +83,7 @@ void MenuItemUnreg(void *view_constructor);
  * @param viewer viewer to be detached from the current tab.
  */
 
-//void DetachViewer(MainWindow *main_win, GtkWidget *viewer);
+//void DetachViewer(mainWindow *main_win, GtkWidget *viewer);
 
 
 /**
@@ -91,7 +92,7 @@ void MenuItemUnreg(void *view_constructor);
  * @param info the message which will be shown in the status bar.
  */
 
-void UpdateStatus(MainWindow *main_win, char *info);
+void UpdateStatus(mainWindow *main_win, char *info);
 
 
 /**
@@ -103,7 +104,7 @@ void UpdateStatus(MainWindow *main_win, char *info);
  * @param time_interval a pointer where time interval will be stored.
  */
 
-void GetTimeInterval(MainWindow *main_win, TimeInterval *time_interval);
+void GetTimeInterval(mainWindow *main_win, TimeInterval *time_interval);
 
 
 /**
@@ -114,7 +115,7 @@ void GetTimeInterval(MainWindow *main_win, TimeInterval *time_interval);
  * @param time_interval a pointer where time interval is stored.
  */
 
-void SetTimeInterval(MainWindow *main_win, TimeInterval *time_interval);
+void SetTimeInterval(mainWindow *main_win, TimeInterval *time_interval);
 
 
 /**
@@ -122,10 +123,10 @@ void SetTimeInterval(MainWindow *main_win, TimeInterval *time_interval);
  * It will be called by a viewer's hook function to update the 
  * current time/event of the viewer.
  * @param main_win the main window the viewer belongs to.
- * @param ltt_time a pointer where time will be stored.
+ * @param time a pointer where time will be stored.
  */
 
-void GetCurrentTime(MainWindow *main_win, ltt_time *time);
+void GetCurrentTime(mainWindow *main_win, LttTime *time);
 
 
 /**
@@ -133,10 +134,10 @@ void GetCurrentTime(MainWindow *main_win, ltt_time *time);
  * It will be called by a viewer's signal handle associated with 
  * the button-release-event signal
  * @param main_win the main window the viewer belongs to.
- * @param ltt_time a pointer where time is stored.
+ * @param time a pointer where time is stored.
  */
 
-void SetCurrentTime(MainWindow *main_win, ltt_time *time);
+void SetCurrentTime(mainWindow *main_win, LttTime *time);
 
 
 /**
@@ -147,7 +148,7 @@ void SetCurrentTime(MainWindow *main_win, ltt_time *time);
  * @param traceset a pointer to a traceset.
  */
 
-void GetTraceset(MainWindow *main_win, Traceset *traceset);
+//void GetTraceset(mainWindow *main_win, Traceset *traceset);
 
 
 /**
@@ -158,7 +159,7 @@ void GetTraceset(MainWindow *main_win, Traceset *traceset);
  * @param filter, a pointer to a filter.
  */
 
-void GetFilter(MainWindow *main_win, Filter *filter);
+//void GetFilter(mainWindow *main_win, Filter *filter);
 
 
 /**
@@ -170,8 +171,8 @@ void GetFilter(MainWindow *main_win, Filter *filter);
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateTimeInterval(lttv_hook *hook, TimeInterval *hook_data,
-			   MainWindow * main_win);
+void RegUpdateTimeInterval(LttvHook hook, gpointer hook_data,
+			   mainWindow * main_win);
 
 
 /**
@@ -183,8 +184,8 @@ void RegUpdateTimeInterval(lttv_hook *hook, TimeInterval *hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateTimeInterval(lttv_hook *hook, TimeInterval *hook_data,
-			     MainWindow * main_win);
+void UnregUpdateTimeInterval(LttvHook hook, gpointer hook_data,
+			     mainWindow * main_win);
 
 
 /**
@@ -196,8 +197,8 @@ void UnregUpdateTimeInterval(lttv_hook *hook, TimeInterval *hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateTraceset(lttv_hook *hook, Traceset *hook_data,
-		       MainWindow * main_win);
+void RegUpdateTraceset(LttvHook hook, gpointer hook_data,
+		       mainWindow * main_win);
 
 
 /**
@@ -209,8 +210,8 @@ void RegUpdateTraceset(lttv_hook *hook, Traceset *hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateTraceset(lttv_hook *hook, Traceset *hook_data,
-			 MainWindow * main_win);
+void UnregUpdateTraceset(LttvHook hook, gpointer hook_data,
+			 mainWindow * main_win);
 
 
 /**
@@ -222,8 +223,8 @@ void UnregUpdateTraceset(lttv_hook *hook, Traceset *hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateFilter(lttv_hook *hook, Filter *hook_data, 
-		     MainWindow *main_win);
+void RegUpdateFilter(LttvHook hook, gpointer hook_data, 
+		     mainWindow *main_win);
 
 
 /**
@@ -235,8 +236,8 @@ void RegUpdateFilter(lttv_hook *hook, Filter *hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateFilter(lttv_hook *hook, Filter *hook_data,
-		       MainWindow * main_win);
+void UnregUpdateFilter(LttvHook hook,  gpointer hook_data,
+		       mainWindow * main_win);
 
 
 /**
@@ -248,8 +249,8 @@ void UnregUpdateFilter(lttv_hook *hook, Filter *hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateCurrentTime(lttv_hook *hook, ltt_time *hook_data, 
-			  MainWindow *main_win);
+void RegUpdateCurrentTime(LttvHook hook, gpointer hook_data, 
+			  mainWindow *main_win);
 
 
 /**
@@ -261,7 +262,110 @@ void RegUpdateCurrentTime(lttv_hook *hook, ltt_time *hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateCurrentTime(lttv_hook *hook, ltt_time *hook_data,
-			    MainWindow * main_win);
+void UnregUpdateCurrentTime(LttvHook hook, gpointer hook_data,
+			    mainWindow * main_win);
+
+
+/**
+ * Function to set the focused pane (viewer).
+ * It will be called by a viewer's signal handle associated with 
+ * the grab_focus signal
+ * @param main_win the main window the viewer belongs to.
+ * @param paned a pointer to a pane where the viewer is contained.
+ */
+
+void SetFocusedPane(mainWindow *main_win, gpointer paned);
+
+
+/**
+ * Function to register a hook function for a viewer to set/update the 
+ * dividor of the hpane.
+ * It will be called by the constructor of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void RegUpdateDividor(LttvHook hook, gpointer hook_data, 
+		      mainWindow *main_win);
+
+
+/**
+ * Function to unregister a viewer's hook function which is used to 
+ * set/update hpane's dividor of the viewer.
+ * It will be called by the destructor of the viewer.
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void UnregUpdateDividor(LttvHook hook, gpointer hook_data, 
+			mainWindow *main_win);
+
+
+/**
+ * Function to set the position of the hpane's dividor (viewer).
+ * It will be called by a viewer's signal handle associated with 
+ * the motion_notify_event event/signal
+ * @param main_win the main window the viewer belongs to.
+ * @param position position of the hpane's dividor.
+ */
+
+void SetHPaneDividor(mainWindow *main_win, gint position);
+
+
+/**
+ * Function to process traceset. It will call lttv_process_trace, 
+ * each view will call this api to get events.
+ * @param main_win the main window the viewer belongs to.
+ * @param start the start time of the first event to be processed.
+ * @param end the end time of the last event to be processed.
+ */
+
+void processTraceset(mainWindow *main_win, LttTime start, LttTime end);
+
+
+/**
+ * Function to add hooks into the context of a traceset,
+ * before reading events from traceset, viewer will call this api to
+ * register hooks
+ * @param main_win the main window the viewer belongs to.
+ * @param LttvHooks hooks to be registered.
+ */
+
+void contextAddHooks(mainWindow *main_win ,
+		     LttvHooks *before_traceset, 
+		     LttvHooks *after_traceset,
+		     LttvHooks *check_trace, 
+		     LttvHooks *before_trace, 
+		     LttvHooks *after_trace, 
+		     LttvHooks *check_tracefile,
+		     LttvHooks *before_tracefile,
+		     LttvHooks *after_tracefile,
+		     LttvHooks *check_event, 
+		     LttvHooks *before_event, 
+		     LttvHooks *after_event);
+
+
+/**
+ * Function to remove hooks from the context of a traceset,
+ * before reading events from traceset, viewer will call this api to
+ * unregister hooks
+ * @param main_win the main window the viewer belongs to.
+ * @param LttvHooks hooks to be registered.
+ */
+
+void contextRemoveHooks(mainWindow *main_win ,
+			LttvHooks *before_traceset, 
+			LttvHooks *after_traceset,
+			LttvHooks *check_trace, 
+			LttvHooks *before_trace, 
+			LttvHooks *after_trace, 
+			LttvHooks *check_tracefile,
+			LttvHooks *before_tracefile,
+			LttvHooks *after_tracefile,
+			LttvHooks *check_event, 
+			LttvHooks *before_event, 
+			LttvHooks *after_event);
 
 
