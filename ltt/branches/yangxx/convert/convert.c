@@ -384,6 +384,9 @@ int main(int argc, char ** argv){
       }
       evId = *(uint8_t *)cur_pos;
       newId = evId;
+      if(evId == TRACE_HEARTBEAT) {
+	newId = 19;
+      }
       cur_pos += sizeof(uint8_t);
       time_delta = *(uint32_t*)cur_pos;
       cur_pos += sizeof(uint32_t); 

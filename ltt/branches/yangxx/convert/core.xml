@@ -1,6 +1,15 @@
 <facility name=core>
   <description>The core facility contains the basic events</description>
 
+  <event name=facility_load>
+    <description>Facility used in the trace</description>
+    <struct>
+      <field name="name"><string/></field>
+      <field name="checksum"><uint size=4/></field>
+      <field name="base_code"><uint size=4/></field>
+    </struct>
+  </event>
+
   <event name=syscall_entry>
     <description>Entry in a given system call</description>
     <struct>
@@ -193,12 +202,44 @@
      </struct>
   </event>
 
-  <event name=change_mask>
-    <description>Change in event mask</description>
-    <struct>
-      <field name="mask"> <description>Event mask</description> <uint size=8/> </field>
-     </struct>
+  <event name=block_start>
+    <description>Block start timestamp</description>
+    <typeref name=block_timestamp/>
   </event>
+
+  <event name=block_end>
+    <description>Block end timestamp</description>
+    <typeref name=block_timestamp/>
+  </event>
+
+  <event name=time_heartbeat>
+    <description>System time values sent periodically to minimize cycle counter
+                 drift with respect to real time clock and to detect cycle counter roolovers
+    </description>
+    <typeref name=timestamp/>
+  </event>
+
+  <type name=block_timestamp>
+    <struct>
+      <field name=timestamp><typeref name=timestamp/></field>
+      <field name=block_id><uint size=4/></field>
+    </struct>
+  </type>
+
+  <type name=timestamp>
+    <struct>
+      <field name=time><typeref name=timespec/></field>
+      <field name="cycle_count"><uint size=8/></field>
+    </struct>
+  </type>
+
+  <type name=timespec>
+    <struct>
+      <field name="seconds"><uint size=4/></field>
+      <field name="nanoseconds"><uint size=4/></field>
+    </struct>
+  </type>
+
 
 </facility>
 
