@@ -166,13 +166,14 @@ each viewer through process traceset.
 
 - lttvwindow_events_request
 
-It adds the a pointer to the EventsRequest struct to the array of time requests
+It adds the an EventsRequest struct to the array of time requests
 pending and registers a pending request for the next g_idle if none is
-registered. The viewer has to keep a reference to this structure in its own
-instance data structure. Only the stop_flag can be changed by the viewer
-through the event hooks.
+registered. The viewer can access this structure during the read as its
+hook_data. Only the stop_flag can be changed by the viewer through the
+event hooks.
 
 typedef struct _EventsRequest {
+  gpointer                    viewer_data;
   LttTime                     start_time,       /* Unset : { 0, 0 }         */
   LttvTracesetContextPosition start_position,   /* Unset : num_traces = 0   */
   gboolean                    stop_flag,        /* Continue:TRUE Stop:FALSE */
