@@ -36,6 +36,16 @@
  * - connect the gui filter to the core filter
  */
 
+/*
+ * NOTE 
+ * The version of gtk-2.0 currently installed on 
+ * my desktop misses some function of the newer 
+ * gtk+ api.
+ *
+ * For the time being, I'll use the older api 
+ * to keep compatibility with most systems.
+ */
+
 typedef struct _FilterViewerData FilterViewerData;
 typedef struct _FilterViewerDataLine FilterViewerDataLine;
 
@@ -65,8 +75,9 @@ struct _FilterViewerDataLine {
   int row;
   gboolean visible;
   GtkWidget *f_logical_op_box;
-  GtkWidget *f_struct_box;
-  GtkWidget *f_subfield_box;
+  GtkWidget *f_field_box;
+//  GtkWidget *f_struct_box;
+//  GtkWidget *f_subfield_box;
   GtkWidget *f_math_op_box;
   GtkWidget *f_value_field;
 };
@@ -90,7 +101,11 @@ struct _FilterViewerData {
 
   int rows;
   GPtrArray *f_lines;
- 
+
+  GPtrArray *f_logical_op_options;
+  GPtrArray *f_field_options;
+  GPtrArray *f_math_op_options;
+  
   GtkWidget *f_add_button;
   
   GtkWidget *f_textwnd;
@@ -120,7 +135,8 @@ FilterViewerData*
 gui_filter(Tab *tab)
 {
   g_print("filter::gui_filter()");
-  
+
+  unsigned i;
   GtkCellRenderer *renderer;
   GtkTreeViewColumn *column;
 
@@ -133,6 +149,47 @@ gui_filter(Tab *tab)
                                       filter_viewer_data);
 //  request_background_data(filter_viewer_data);
  
+  /*
+   * Initiating items for
+   * combo boxes
+   */
+  fvd->f_logical_op_options = g_ptr_array_new(); //g_array_new(FALSE,FALSE,sizeof(gchar));
+  g_ptr_array_add(fvd->f_logical_op_options,(gpointer) g_string_new(""));
+  g_ptr_array_add(fvd->f_logical_op_options,(gpointer) g_string_new("&"));
+  g_ptr_array_add(fvd->f_logical_op_options,(gpointer) g_string_new("|"));
+  g_ptr_array_add(fvd->f_logical_op_options,(gpointer) g_string_new("!"));
+  g_ptr_array_add(fvd->f_logical_op_options,(gpointer) g_string_new("^"));
+
+  fvd->f_field_options = g_ptr_array_new(); //g_array_new(FALSE,FALSE,16);
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new(""));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.name"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.category"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.time"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.tsc"));
+  /*
+   * TODO: Add core.xml fields here !
+   */
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("tracefile.name"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("trace.name"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.pid"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.ppid"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.creation_time"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.insertion_time"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.execution_mode"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.execution_submode"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.process_status"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.cpu"));
+  
+  fvd->f_math_op_options = g_ptr_array_new(); //g_array_new(FALSE,FALSE,7);  
+  g_ptr_array_add(fvd->f_math_op_options,(gpointer) g_string_new(""));
+  g_ptr_array_add(fvd->f_math_op_options,(gpointer) g_string_new("="));
+  g_ptr_array_add(fvd->f_math_op_options,(gpointer) g_string_new("!="));
+  g_ptr_array_add(fvd->f_math_op_options,(gpointer) g_string_new("<"));
+  g_ptr_array_add(fvd->f_math_op_options,(gpointer) g_string_new("<="));
+  g_ptr_array_add(fvd->f_math_op_options,(gpointer) g_string_new(">"));
+  g_ptr_array_add(fvd->f_math_op_options,(gpointer) g_string_new(">="));
+  
+
   /* 
    * Initiating GtkTable layout 
    * starts with 2 rows and 5 columns and 
@@ -178,11 +235,12 @@ gui_filter(Tab *tab)
   gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_add_button,5,6,1,2,GTK_FILL,GTK_FILL,0,0);
   
   fvd->f_logical_op_junction_box = gtk_combo_box_new_text();
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvd->f_logical_op_junction_box), "");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvd->f_logical_op_junction_box), "&");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvd->f_logical_op_junction_box), "|");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvd->f_logical_op_junction_box), "^");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvd->f_logical_op_junction_box), "!");
+  for(i=0;i<fvd->f_logical_op_options->len;i++) {
+    GString* s = g_ptr_array_index(fvd->f_logical_op_options,i);
+    gtk_combo_box_append_text(GTK_COMBO_BOX(fvd->f_logical_op_junction_box), s->str); 
+  }
+  gtk_combo_box_set_active(GTK_COMBO_BOX(fvd->f_logical_op_junction_box),0);
+  
   //gtk_widget_show(fvd->f_logical_op_box);
  
   gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_logical_op_junction_box,0,1,1,2,GTK_SHRINK,GTK_FILL,0,0);
@@ -219,9 +277,11 @@ gui_filter_add_line(FilterViewerData* fvd) {
 
   FilterViewerDataLine* fvdl = g_new(FilterViewerDataLine,1);
 
+  unsigned i;
   fvdl->row = fvd->rows;
   fvdl->visible = TRUE;
-  
+
+  /*
   fvdl->f_struct_box = gtk_combo_box_new_text();
   gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_struct_box), "");
   gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_struct_box), "event");
@@ -229,7 +289,7 @@ gui_filter_add_line(FilterViewerData* fvd) {
   gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_struct_box), "trace");
   gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_struct_box), "state");
   gtk_widget_show(fvdl->f_struct_box);
- 
+
   fvdl->f_subfield_box = gtk_combo_box_new_text();
   gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "");
   gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "name");
@@ -246,28 +306,28 @@ gui_filter_add_line(FilterViewerData* fvd) {
   gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "process status");
   gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "cpu");
   gtk_widget_show(fvdl->f_subfield_box);
- 
-  fvdl->f_math_op_box = gtk_combo_box_new_text();
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_math_op_box), "");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_math_op_box), "=");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_math_op_box), "!=");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_math_op_box), "<");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_math_op_box), "<=");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_math_op_box), ">");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_math_op_box), ">=");
-  gtk_widget_show(fvdl->f_math_op_box);
+  */
 
+  fvdl->f_field_box = gtk_combo_box_new_text();
+  for(i=0;i<fvd->f_field_options->len;i++) {
+    GString* s = g_ptr_array_index(fvd->f_field_options,i);
+    g_print("String field: %s\n",s->str);
+    gtk_combo_box_append_text(GTK_COMBO_BOX(fvdl->f_field_box), s->str);
+  }
+  
+  fvdl->f_math_op_box = gtk_combo_box_new_text();
+  for(i=0;i<fvd->f_math_op_options->len;i++) {
+    GString* s = g_ptr_array_index(fvd->f_math_op_options,i);
+    gtk_combo_box_append_text(GTK_COMBO_BOX(fvdl->f_math_op_box), s->str); 
+  }
+  
   fvdl->f_value_field = gtk_entry_new();
-  gtk_widget_show(fvdl->f_value_field);
  
   fvdl->f_logical_op_box = gtk_combo_box_new_text();
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_logical_op_box), "");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_logical_op_box), "&");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_logical_op_box), "|");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_logical_op_box), "^");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_logical_op_box), "!");
-  gtk_widget_show(fvdl->f_logical_op_box);
-
+  for(i=0;i<fvd->f_logical_op_options->len;i++) {
+    GString* s = g_ptr_array_index(fvd->f_logical_op_options,i);
+    gtk_combo_box_append_text(GTK_COMBO_BOX(fvdl->f_logical_op_box), s->str); 
+  }
   gtk_widget_set_events(fvdl->f_logical_op_box,
       GDK_ENTER_NOTIFY_MASK |
       GDK_LEAVE_NOTIFY_MASK |
@@ -275,9 +335,13 @@ gui_filter_add_line(FilterViewerData* fvd) {
 
   g_signal_connect (G_OBJECT (fvdl->f_logical_op_box), "changed",
     G_CALLBACK (callback_logical_op_box), (gpointer) fvd); 
+
+  gui_filter_line_reset(fvdl);
+  gui_filter_line_set_visible(fvdl,TRUE);
   
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_struct_box,0,1,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_subfield_box,1,2,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
+//  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_struct_box,0,1,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
+//  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_subfield_box,1,2,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_field_box,0,2,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
   gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_math_op_box,2,3,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
   gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_value_field,3,4,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
   gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_logical_op_box,4,5,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
@@ -289,14 +353,16 @@ void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v) {
 
   fvdl->visible = v;
   if(v) {
-    gtk_widget_show(fvdl->f_struct_box);
-    gtk_widget_show(fvdl->f_subfield_box);
+//    gtk_widget_show(fvdl->f_struct_box);
+//    gtk_widget_show(fvdl->f_subfield_box);
+    gtk_widget_show(fvdl->f_field_box);
     gtk_widget_show(fvdl->f_math_op_box);
     gtk_widget_show(fvdl->f_value_field);
     gtk_widget_show(fvdl->f_logical_op_box);
   } else {
-    gtk_widget_hide(fvdl->f_struct_box);
-    gtk_widget_hide(fvdl->f_subfield_box);
+//    gtk_widget_hide(fvdl->f_struct_box);
+//    gtk_widget_hide(fvdl->f_subfield_box);
+    gtk_widget_hide(fvdl->f_field_box);
     gtk_widget_hide(fvdl->f_math_op_box);
     gtk_widget_hide(fvdl->f_value_field);
     gtk_widget_hide(fvdl->f_logical_op_box);
@@ -306,8 +372,9 @@ void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v) {
 
 void gui_filter_line_reset(FilterViewerDataLine *fvdl) {
 
-  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_struct_box),0);
-  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_subfield_box),0);
+//  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_struct_box),0);
+//  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_subfield_box),0);
+  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_field_box),0);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_math_op_box),0);
   gtk_entry_set_text(GTK_COMBO_BOX(fvdl->f_value_field),"");
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_logical_op_box),0);
@@ -462,28 +529,41 @@ void callback_add_button(GtkWidget *widget, gpointer data) {
   FilterViewerData *fvd = (FilterViewerData*)data;
   FilterViewerDataLine *fvdl = NULL;
   GString* a_filter_string = g_string_new("");
-  
-//  g_string_append(a_filter_string,gtk_combo_box_get_active_text(GTK_COMBO_BOX(fvd->f_logical_op_junction_box)));
+
+  GString* s;
+  s = g_ptr_array_index(fvd->f_logical_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvd->f_logical_op_junction_box)));
+  g_print("s:%p\n",s);
+  g_print("string:%s\n",s);
+  g_string_append(a_filter_string,s->str);
   gtk_combo_box_set_active(fvd->f_logical_op_junction_box,0);
 
-  g_string_append_c(a_filter_string,"(");
+  g_print("passe junction\n");
   
+  g_string_append_c(a_filter_string,'(');
+
   int i;
   for(i=0;i<fvd->f_lines->len;i++) {
     fvdl = (FilterViewerDataLine*)g_ptr_array_index(fvd->f_lines,i);
-//    g_string_append(a_filter_string,gtk_combo_box_get_active_text(GTK_COMBO_BOX(fvdl->f_struct_box)));
-    g_string_append_c(a_filter_string,".");
-//    g_string_append(a_filter_string,gtk_combo_box_get_active_text(GTK_COMBO_BOX(fvdl->f_subfield_box)));
-//    g_string_append(a_filter_string,gtk_combo_box_get_active_text(GTK_COMBO_BOX(fvdl->f_math_op_box)));
-//    g_string_append(a_filter_string,gtk_entry_get_text(GTK_ENTRY(fvdl->f_value_field)));
-//    g_string_append(a_filter_string,gtk_combo_box_get_active_text(GTK_COMBO_BOX(fvdl->f_logical_op_box)));
+    
+    s = g_ptr_array_index(fvd->f_field_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_field_box)));
+    g_string_append(a_filter_string,s->str);
+    
+    s = g_ptr_array_index(fvd->f_math_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_math_op_box)));
+    g_string_append(a_filter_string,s->str);
+    
+    g_string_append(a_filter_string,gtk_entry_get_text(GTK_ENTRY(fvdl->f_value_field)));
+    
+    s = g_ptr_array_index(fvd->f_logical_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_logical_op_box)));
+    g_string_append(a_filter_string,s->str);
+    
     gui_filter_line_reset(fvdl);
-    if(i) gui_filter_line_set_visible(fvdl,FALSE);
+    if(i) gui_filter_line_set_visible(fvdl,FALSE); // Only keep the first line
   }
 
-  g_string_append(a_filter_string,")");
+  g_string_append_c(a_filter_string,')');
 
-  gtk_entry_set_text(GTK_ENTRY(fvdl->f_value_field),a_filter_string->str);
+  g_string_prepend(a_filter_string,gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
+  gtk_entry_set_text(GTK_ENTRY(fvd->f_expression_field),a_filter_string->str);
   
 }
 
