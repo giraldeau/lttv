@@ -119,8 +119,6 @@ Available report methods are :
 lttvwindow_report_time_window : reports the new time window.
 lttvwindow_report_current_time : reports the new current time.
 lttvwindow_report_dividor : reports the new horizontal dividor's position.
-lttvwindow_report_focus : One on the widgets in the viewer has the keyboard's
-                          focus from GTK.
 
 
 
@@ -587,18 +585,6 @@ void lttvwindow_report_current_time(Tab *tab,
  */
 
 void lttvwindow_report_dividor(Tab *tab, gint position);
-
-/**
- * Function to set the focused viewer of the tab.
- * It will be called by a viewer's signal handle associated with 
- * the grab_focus signal of all widgets in the viewer.
- *
- * @param tab the tab the viewer belongs to.
- * @param top_widget the top widget containing all the other widgets of the
- *                   viewer.
- */
-void lttvwindow_report_focus(Tab *tab, 
-                             GtkWidget  *top_widget);
 
 
 /* Structure sent to the events request hook */

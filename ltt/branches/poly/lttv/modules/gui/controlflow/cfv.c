@@ -29,16 +29,6 @@
 
 extern GSList *g_control_flow_data_list;
 
-static void control_flow_grab_focus(GtkWidget *widget, gpointer data){
-  ControlFlowData * control_flow_data = (ControlFlowData *)data;
-  Tab * tab = control_flow_data->tab;
-  lttvwindow_report_focus(tab, guicontrolflow_get_widget(control_flow_data));
-  //g_assert(GTK_WIDGET_CAN_FOCUS(widget));
-  //gtk_widget_grab_focus(widget);
-  g_debug("FOCUS GRABBED");
-}
-
-
 static gboolean
 header_size_allocate(GtkWidget *widget,
                         GtkAllocation *allocation,
@@ -152,11 +142,6 @@ guicontrolflow(void)
   //can be configured (and this must happend bedore sending
   //data)
 
-  //g_signal_connect (G_OBJECT (process_list_widget), "grab-focus",
-  //g_signal_connect (G_OBJECT (control_flow_data->scrolled_window), 
-  //      "button-press-event",
-  //      G_CALLBACK (control_flow_grab_focus),
-  //      control_flow_data);
   
   return control_flow_data;
 

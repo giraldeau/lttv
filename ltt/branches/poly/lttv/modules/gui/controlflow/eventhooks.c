@@ -567,6 +567,11 @@ int draw_before_hook(void *hook_data, void *call_data)
         }
       }
     }
+  } else if(strcmp(
+          ltt_eventtype_name(ltt_event_eventtype(e)),"process") == 0) {
+    /* We are in a fork or exit event */
+
+
   }
 
   
@@ -1290,7 +1295,13 @@ int draw_after_hook(void *hook_data, void *call_data)
           width,
           &hashed_process_data_in->x);
     }
+  } else if(strcmp(
+          ltt_eventtype_name(ltt_event_eventtype(e)),"process") == 0) {
+    /* We are in a fork or exit event */
+
+
   }
+
   return 0;
 
 

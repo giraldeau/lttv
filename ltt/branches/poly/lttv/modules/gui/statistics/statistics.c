@@ -58,7 +58,6 @@ StatisticViewerData *gui_statistic(Tab *tab);
 //! Statistic Viewer's destructor
 void gui_statistic_destructor(StatisticViewerData *statistic_viewer_data);
 
-void grab_focus(GtkWidget *widget, gpointer data);
 static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
 
 void statistic_destroy_hash_key(gpointer key);
@@ -291,10 +290,6 @@ gui_statistic(Tab *tab)
         GTK_TREE_MODEL (statistic_viewer_data->store_m));
   g_object_unref (G_OBJECT (statistic_viewer_data->store_m));
 
-  g_signal_connect (G_OBJECT (statistic_viewer_data->tree_v), "grab-focus",
-        G_CALLBACK (grab_focus),
-        statistic_viewer_data);
-
   // Setup the selection handler
   statistic_viewer_data->select_c = gtk_tree_view_get_selection (GTK_TREE_VIEW (statistic_viewer_data->tree_v));
   gtk_tree_selection_set_mode (statistic_viewer_data->select_c, GTK_SELECTION_SINGLE);
@@ -327,9 +322,6 @@ gui_statistic(Tab *tab)
          GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
 
   statistic_viewer_data->text_v = gtk_text_view_new ();
-  g_signal_connect (G_OBJECT (statistic_viewer_data->text_v), "grab-focus",
-        G_CALLBACK (grab_focus),
-        statistic_viewer_data);
   
   gtk_text_view_set_editable(GTK_TEXT_VIEW(statistic_viewer_data->text_v),FALSE);
   gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(statistic_viewer_data->text_v),FALSE);
@@ -354,13 +346,6 @@ gui_statistic(Tab *tab)
       statistic_viewer_data);
 
   return statistic_viewer_data;
-}
-
-void grab_focus(GtkWidget *widget, gpointer data)
-{
-  StatisticViewerData *statistic_viewer_data = (StatisticViewerData *)data;
-  Tab * tab = statistic_viewer_data->tab;
-  lttvwindow_report_focus(tab, guistatistic_get_widget(statistic_viewer_data));
 }
 
 static void

@@ -487,9 +487,6 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
 
   }
 
-  lttvwindow_report_focus(control_flow_data->tab,
-           gtk_widget_get_parent(guicontrolflow_get_widget(control_flow_data)));
-
   return FALSE;
 }
 
@@ -520,11 +517,9 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   
   drawing->ruler_hbox = gtk_hbox_new(FALSE, 1);
   drawing->ruler = gtk_drawing_area_new ();
-  gtk_widget_add_events(drawing->ruler, GDK_BUTTON_PRESS_MASK);
   //gtk_widget_set_size_request(drawing->ruler, -1, 27);
   
   drawing->padding = gtk_drawing_area_new ();
-  gtk_widget_add_events(drawing->padding, GDK_BUTTON_PRESS_MASK);
   //gtk_widget_set_size_request(drawing->padding, -1, 27);
   gtk_box_pack_start(GTK_BOX(drawing->ruler_hbox), drawing->ruler, 
                      TRUE, TRUE, 0);
@@ -613,8 +608,6 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
 //        drawing->drawing_area->allocation.height,
 //        -1);
 
-  gtk_widget_add_events(drawing->drawing_area, GDK_BUTTON_PRESS_MASK);
-  
   g_signal_connect (G_OBJECT(drawing->drawing_area),
         "configure_event",
         G_CALLBACK (configure_event),

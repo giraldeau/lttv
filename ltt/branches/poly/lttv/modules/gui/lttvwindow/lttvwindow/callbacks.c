@@ -149,16 +149,31 @@ LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset)
   return s;
 }
 
-
 static gboolean viewer_grab_focus(GtkWidget *widget, GdkEventButton *event,
                                   gpointer data)
 {
-  GtkWidget *viewer_container = GTK_WIDGET(data);
+  GtkWidget *viewer = GTK_WIDGET(data);
+  GtkWidget *viewer_container = gtk_widget_get_parent(viewer);
 
   g_debug("FOCUS GRABBED");
-  g_object_set_data(G_OBJECT(viewer_container), "focused_viewer", widget);
+  g_object_set_data(G_OBJECT(viewer_container), "focused_viewer", viewer);
+  return 0;
 }
 
+static void connect_focus_recursive(GtkWidget *widget,
+                                    GtkWidget *viewer)
+{
+  if(GTK_IS_CONTAINER(widget)) {
+    gtk_container_forall(GTK_CONTAINER(widget),
+                         (GtkCallback)connect_focus_recursive,
+                         viewer);
+  }
+  gtk_widget_add_events(widget, GDK_BUTTON_PRESS_MASK);
+  g_signal_connect (G_OBJECT(widget),
+                    "button-press-event",
+                    G_CALLBACK (viewer_grab_focus),
+                    (gpointer)viewer);
+}
 
 /* insert_viewer function constructs an instance of a viewer first,
  * then inserts the widget of the instance into the container of the
@@ -208,22 +223,13 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
                      TRUE,
                      0);
 
-    g_signal_connect (G_OBJECT(viewer),
-                      "button-press-event",
-                      G_CALLBACK (viewer_grab_focus),
-                      (gpointer)viewer_container);
-    
-    // We unref here, because it is now referenced by the viewer_container!
-    // not for a box ... g_object_unref(G_OBJECT(viewer));
-
-    // The viewer will show itself when it receives a show notify
-    // So we call the show notify hooks here. It will
-    // typically add hooks for reading, we call process trace, and the
-    // end of reading hook will call gtk_widget_show and unregister the
-    // hooks.
-    // Note that show notify gets the time_requested through the call_data.
-    //show_viewer(mw_data);
-    // in expose now call_pending_read_hooks(mw_data);
+    /* We want to connect the viewer_grab_focus to EVERY
+     * child of this widget. The little trick is to get each child
+     * of each GTK_CONTAINER, even subchildren.
+     */
+    {
+      connect_focus_recursive(viewer, viewer);
+    }
   }
 }
 

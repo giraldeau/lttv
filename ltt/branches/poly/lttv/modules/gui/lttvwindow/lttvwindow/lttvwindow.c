@@ -786,23 +786,6 @@ void lttvwindow_report_dividor(Tab *tab, gint position)
 }
 
 /**
- * Function to set the focused pane (viewer).
- * It will be called by a viewer's signal handle associated with 
- * the grab_focus signal
- * @param tab viewer's tab 
- * @param top_widget the top widget containing all the other widgets of the
- *                   viewer.
- */
-
-void lttvwindow_report_focus(Tab *tab, GtkWidget *top_widget)
-{
-  //FIXME
-  //gtk_multi_vpaned_set_focus(tab->multivpaned,
-  //                           GTK_PANED(gtk_widget_get_parent(top_widget)));
-}
-
-
-/**
  * Function to request data in a specific time interval to the main window. The
  * event request servicing is differed until the glib idle functions are
  * called.

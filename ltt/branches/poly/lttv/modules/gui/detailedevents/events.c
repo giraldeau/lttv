@@ -175,7 +175,6 @@ static void tree_v_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gp
 static void tree_v_size_request_cb (GtkWidget *widget, GtkRequisition *requisition, gpointer data);
 static void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data);
 static void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, gpointer data);
-static void tree_v_grab_focus(GtkWidget *widget, gpointer data);
 
 
 static void get_data(double time, guint list_height, 
@@ -217,7 +216,6 @@ GtkWidget *
 h_gui_events(Tab * tab, LttvTracesetSelector * s, char* key)
 {
   EventViewerData* event_viewer_data = gui_events(tab, s, key) ;
-
   if(event_viewer_data)
     return event_viewer_data->hbox_v;
   else return NULL;
@@ -293,10 +291,6 @@ gui_events(Tab *tab, LttvTracesetSelector * s,char* key )
         G_CALLBACK (tree_v_move_cursor_cb),
         event_viewer_data);
 
-  g_signal_connect (G_OBJECT (event_viewer_data->tree_v), "grab-focus",
-        G_CALLBACK (tree_v_grab_focus),
-        event_viewer_data);
-    
   // Use on each column!
   //gtk_tree_view_column_set_sizing(event_viewer_data->tree_v, GTK_TREE_VIEW_COLUMN_FIXED);
   
@@ -1545,12 +1539,6 @@ gboolean traceset_changed(void * hook_data, void * call_data)
   return FALSE;
 }
 
-
-void tree_v_grab_focus(GtkWidget *widget, gpointer data){
-  EventViewerData *event_viewer_data = (EventViewerData *)data;
-  Tab * tab = event_viewer_data->tab;
-  lttvwindow_report_focus(tab, event_viewer_data->hbox_v);
-}
 
 void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
 {
