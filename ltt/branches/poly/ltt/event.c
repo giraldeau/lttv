@@ -105,6 +105,10 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
         size = offset2;
       }else size = fld->field_size;
       break;
+      
+    case LTT_UNION:
+      size = fld->field_size;
+      break;
 
     default:
       size = fld->field_size;
