@@ -110,15 +110,35 @@ static inline int ltt_time_compare(LttTime t1, LttTime t2)
   return 0;
 }
 
-
+#define MAX_TV_SEC_TO_DOUBLE 0x7FFFFF
 static inline double ltt_time_to_double(LttTime t1)
 {
+  /* We lose precision if tv_sec is > than (2^23)-1
+   * 
+   * Max values that fits in a double (53 bits precision on normalised 
+   * mantissa):
+   * tv_nsec : NANOSECONDS_PER_SECONDS : 2^30
+   *
+   * So we have 53-30 = 23 bits left for tv_sec.
+   * */
+  if(t1.tv_sec > MAX_TV_SEC_TO_DOUBLE)
+    g_warning("Precision loss in conversion LttTime to double");
   return (double)t1.tv_sec + (double)t1.tv_nsec / NANOSECONDS_PER_SECOND;
 }
 
 
 static inline LttTime ltt_time_from_double(double t1)
 {
+  /* We lose precision if tv_sec is > than (2^23)-1
+   * 
+   * Max values that fits in a double (53 bits precision on normalised 
+   * mantissa):
+   * tv_nsec : NANOSECONDS_PER_SECONDS : 2^30
+   *
+   * So we have 53-30 = 23 bits left for tv_sec.
+   * */
+  if(t1 > MAX_TV_SEC_TO_DOUBLE)
+    g_warning("Conversion from non precise double to LttTime");
   LttTime res;
   res.tv_sec = t1;
   res.tv_nsec = (t1 - res.tv_sec) * NANOSECONDS_PER_SECOND;
