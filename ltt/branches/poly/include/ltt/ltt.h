@@ -75,7 +75,10 @@ typedef unsigned long LttChecksum;
    times per second) of the real time clock with their corresponding 
    cycle count values. */
 
-typedef struct timespec LttTime;
+typedef struct _LttTime {
+  unsigned long tv_sec;
+  unsigned long tv_nsec;
+} LttTime;
 
 typedef uint64_t LttCycleCount;
 

@@ -61,7 +61,7 @@ unsigned ltt_type_member_number(LttType *t);
 
 /* The type of a data member in a structure. */
 
-LttType *ltt_type_member_type(LttType *t, unsigned i);
+LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name);
 
 
 /* For enumerations, obtain the symbolic string associated with a value
