@@ -284,7 +284,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
     
     GdkColor colorfg_out = { 0, 0xffff, 0x0000, 0x0000 };
-    GdkColor colorbg_out = { 0, 0xffff, 0xffff, 0xffff };
+    GdkColor colorbg_out = { 0, 0x0000, 0x0000, 0x0000 };
     PropertiesText prop_text_out;
     prop_text_out.foreground = &colorfg_out;
     prop_text_out.background = &colorbg_out;
@@ -306,8 +306,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     }
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
     {
-      prop_text_out.foreground->red = 0x0fff;
-      prop_text_out.foreground->green = 0x0fff;
+      prop_text_out.foreground->red = 0xffff;
+      prop_text_out.foreground->green = 0xffff;
       prop_text_out.foreground->blue = 0x0000;
     }
     else if(process_out->state->s == LTTV_STATE_EXIT)
@@ -391,8 +391,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     }
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
     {
-      prop_line_out.color->red = 0x0fff;
-      prop_line_out.color->green = 0x0fff;
+      prop_line_out.color->red = 0xffff;
+      prop_line_out.color->green = 0xffff;
       prop_line_out.color->blue = 0x0000;
     }
     else if(process_out->state->s == LTTV_STATE_EXIT)
@@ -442,7 +442,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
     
     GdkColor colorfg_in = { 0, 0x0000, 0xffff, 0x0000 };
-    GdkColor colorbg_in = { 0, 0xffff, 0xffff, 0xffff };
+    GdkColor colorbg_in = { 0, 0x0000, 0x0000, 0x0000 };
     PropertiesText prop_text_in;
     prop_text_in.foreground = &colorfg_in;
     prop_text_in.background = &colorbg_in;
@@ -464,8 +464,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     }
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
     {
-      prop_text_in.foreground->red = 0x0fff;
-      prop_text_in.foreground->green = 0x0fff;
+      prop_text_in.foreground->red = 0xffff;
+      prop_text_in.foreground->green = 0xffff;
       prop_text_in.foreground->blue = 0x0000;
     }
     else if(process_in->state->s == LTTV_STATE_EXIT)
@@ -551,8 +551,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     }
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
     {
-      prop_line_in.color->red = 0x0fff;
-      prop_line_in.color->green = 0x0fff;
+      prop_line_in.color->red = 0xffff;
+      prop_line_in.color->green = 0xffff;
       prop_line_in.color->blue = 0x0000;
     }
     else if(process_in->state->s == LTTV_STATE_EXIT)
@@ -749,7 +749,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
     
     GdkColor colorfg_out = { 0, 0xffff, 0x0000, 0x0000 };
-    GdkColor colorbg_out = { 0, 0xffff, 0xffff, 0xffff };
+    GdkColor colorbg_out = { 0, 0x0000, 0x0000, 0x0000 };
     PropertiesText prop_text_out;
     prop_text_out.foreground = &colorfg_out;
     prop_text_out.background = &colorbg_out;
@@ -771,8 +771,8 @@ int draw_after_hook(void *hook_data, void *call_data)
     }
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
     {
-      prop_text_out.foreground->red = 0x0fff;
-      prop_text_out.foreground->green = 0x0fff;
+      prop_text_out.foreground->red = 0xffff;
+      prop_text_out.foreground->green = 0xffff;
       prop_text_out.foreground->blue = 0x0000;
     }
     else if(process_out->state->s == LTTV_STATE_EXIT)
@@ -868,7 +868,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     //test_draw_item(control_flow_data->drawing, control_flow_data->drawing->pixmap);
     
     GdkColor colorfg_in = { 0, 0x0000, 0xffff, 0x0000 };
-    GdkColor colorbg_in = { 0, 0xffff, 0xffff, 0xffff };
+    GdkColor colorbg_in = { 0, 0x0000, 0x0000, 0x0000 };
     PropertiesText prop_text_in;
     prop_text_in.foreground = &colorfg_in;
     prop_text_in.background = &colorbg_in;
@@ -890,8 +890,8 @@ int draw_after_hook(void *hook_data, void *call_data)
     }
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
     {
-      prop_text_in.foreground->red = 0x0fff;
-      prop_text_in.foreground->green = 0x0fff;
+      prop_text_in.foreground->red = 0xffff;
+      prop_text_in.foreground->green = 0xffff;
       prop_text_in.foreground->blue = 0x0000;
     }
     else if(process_in->state->s == LTTV_STATE_EXIT)
@@ -1311,8 +1311,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   }
   else if(process->state->s == LTTV_STATE_WAIT_CPU)
   {
-    prop_line.color->red = 0x0fff;
-    prop_line.color->green = 0x0fff;
+    prop_line.color->red = 0xffff;
+    prop_line.color->green = 0xffff;
     prop_line.color->blue = 0x0000;
   }
   else if(process->state->s == LTTV_STATE_EXIT)
