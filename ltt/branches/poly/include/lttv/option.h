@@ -30,4 +30,6 @@ void lttv_option_remove(const char *long_name);
 
 void lttv_option_parse(int argc, char **argv);
 
+void lttv_option_show_help(void);
+
 #endif // OPTION_H
