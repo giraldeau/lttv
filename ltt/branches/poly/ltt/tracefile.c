@@ -1265,19 +1265,19 @@ gboolean ltt_tracefile_pre_read_cycles(LttTracefile *tf)
 
   //tf->cur_cycle_count = tf->cur_cycle_count + res_delta_count;
   tf->cur_cycle_count = cycle_count | ((LttCycleCount)tf->count << 32);
-  g_debug("cur cycle count %llu", tf->cur_cycle_count);
+  //g_debug("cur cycle count %llu", tf->cur_cycle_count);
 
 
 
 
   if(unlikely(evId == TRACE_BLOCK_START)){
-    g_debug("BLOCK START");
+    //g_debug("BLOCK START");
   }else if(unlikely(evId == TRACE_BLOCK_END)){
-    g_debug("BLOCK END");
+    //g_debug("BLOCK END");
 
     /* The goal of all this pre reading */
     tf->a_block_end->cycle_count = tf->cur_cycle_count;
-    g_debug("end of block cycle count : %llu", tf->cur_cycle_count);
+    //g_debug("end of block cycle count : %llu", tf->cur_cycle_count);
 
     return FALSE;
   }
@@ -1341,7 +1341,7 @@ int readBlock(LttTracefile * tf, int whichBlock)
   tf->count = 0;
   tf->pre_cycle_count = 0;
   tf->cur_cycle_count = 0;
-  g_debug("precalculating cycles begin for block %i", whichBlock);
+  //g_debug("precalculating cycles begin for block %i", whichBlock);
   while(likely(ltt_tracefile_pre_read_cycles(tf)));
   /* Rough approximation of cycles per usec to calculate
    * the real block start and end time.
@@ -1350,7 +1350,7 @@ int readBlock(LttTracefile * tf, int whichBlock)
   /* we are at end position, make end time more precise */
   tf->a_block_end->time = getEventTime(tf);  
   
-  g_debug("precalculating cycles end for block %i", whichBlock);
+  //g_debug("precalculating cycles end for block %i", whichBlock);
 
   /* put back pointer at the beginning */
   tf->count = 0;
@@ -1538,11 +1538,14 @@ static inline LttTime getEventTime(LttTracefile * tf)
   //    cycle_count += (tf->cur_heart_beat_number - tf->count) << 32;  
 
   //tf->cur_cycle_count = tf->cur_cycle_count + res_delta_count;
+  // Total cycle counter of the event.
   tf->cur_cycle_count = cycle_count | ((LttCycleCount)tf->count << 32);
-  g_debug("cur cycle count %llu", tf->cur_cycle_count);
 
+  //g_debug("cur cycle count %llu", tf->cur_cycle_count);
 
-  lEventTotalCycle = tf->cur_cycle_count;
+  // Total number of cycles since the beginning of the block
+  lEventTotalCycle = tf->cur_cycle_count
+                         - tf->a_block_start->cycle_count;
 
 
 
