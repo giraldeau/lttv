@@ -113,6 +113,25 @@ int processlist_remove(ProcessList *process_list, guint pid, guint cpu,
     LttTime *birth, guint trace_num);
 
 
+
+
+
+static inline gint get_cell_height(ProcessList *process_list,
+                                   GtkTreeView *tree_view)
+{
+  gint height = process_list->cell_height_cache;
+  if(height != -1) return height;
+  else {
+    GtkTreeViewColumn *Column = gtk_tree_view_get_column(tree_view, 0);
+  
+    gtk_tree_view_column_cell_get_size(Column, NULL, NULL, NULL, NULL,
+                                       &process_list->cell_height_cache);
+  }
+  return process_list->cell_height_cache;
+}
+
+
+
 static inline guint processlist_get_height(ProcessList *process_list)
 {
   return get_cell_height(process_list,
