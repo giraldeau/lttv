@@ -121,6 +121,7 @@ static inline double ltt_time_to_double(LttTime t1)
    *
    * So we have 53-30 = 23 bits left for tv_sec.
    * */
+  g_assert(t1.tv_sec <= MAX_TV_SEC_TO_DOUBLE);
   if(t1.tv_sec > MAX_TV_SEC_TO_DOUBLE)
     g_warning("Precision loss in conversion LttTime to double");
   return (double)t1.tv_sec + (double)t1.tv_nsec / NANOSECONDS_PER_SECOND;
@@ -137,6 +138,7 @@ static inline LttTime ltt_time_from_double(double t1)
    *
    * So we have 53-30 = 23 bits left for tv_sec.
    * */
+  g_assert(t1 <= MAX_TV_SEC_TO_DOUBLE);
   if(t1 > MAX_TV_SEC_TO_DOUBLE)
     g_warning("Conversion from non precise double to LttTime");
   LttTime res;

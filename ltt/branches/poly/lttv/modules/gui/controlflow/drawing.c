@@ -402,14 +402,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   LttTime window_end = ltt_time_add(time_window.time_width,
                                     time_window.start_time);
 
-  convert_time_to_pixels(
-        time_window.start_time,
-        window_end,
-        current_time,
-        drawing->width,
-        &cursor_x);
 
- 
   /* update the screen from the pixmap buffer */
   gdk_draw_pixmap(widget->window,
       widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
@@ -418,30 +411,41 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
       event->area.x, event->area.y,
       event->area.width, event->area.height);
 
+  
+  if(ltt_time_compare(time_window.start_time, current_time) <= 0 &&
+           ltt_time_compare(window_end, current_time) >= 0)
+  {
+    /* Draw the dotted lines */
+    convert_time_to_pixels(
+          time_window.start_time,
+          window_end,
+          current_time,
+          drawing->width,
+          &cursor_x);
 
-  /* Draw the dotted lines */
 
-  if(drawing->dotted_gc == NULL) {
+    if(drawing->dotted_gc == NULL) {
 
-    drawing->dotted_gc = gdk_gc_new(drawing->drawing_area->window);
-    gdk_gc_copy(drawing->dotted_gc, widget->style->white_gc);
- 
-    gint8 dash_list[] = { 1, 2 };
-    gdk_gc_set_line_attributes(drawing->dotted_gc,
-                               1,
-                               GDK_LINE_ON_OFF_DASH,
-                               GDK_CAP_BUTT,
-                               GDK_JOIN_MITER);
-    gdk_gc_set_dashes(drawing->dotted_gc,
-                      0,
-                      dash_list,
-                      2);
+      drawing->dotted_gc = gdk_gc_new(drawing->drawing_area->window);
+      gdk_gc_copy(drawing->dotted_gc, widget->style->white_gc);
+   
+      gint8 dash_list[] = { 1, 2 };
+      gdk_gc_set_line_attributes(drawing->dotted_gc,
+                                 1,
+                                 GDK_LINE_ON_OFF_DASH,
+                                 GDK_CAP_BUTT,
+                                 GDK_JOIN_MITER);
+      gdk_gc_set_dashes(drawing->dotted_gc,
+                        0,
+                        dash_list,
+                        2);
+    }
+
+    drawing_draw_line(NULL, widget->window,
+                  cursor_x, 0,
+                  cursor_x, drawing->height,
+                  drawing->dotted_gc);
   }
-
-  drawing_draw_line(NULL, widget->window,
-                cursor_x, 0,
-                cursor_x, drawing->height,
-                drawing->dotted_gc);
   return FALSE;
 }
 
@@ -727,6 +731,9 @@ void convert_time_to_pixels(
 {
   LttTime window_time_interval;
   double interval_double, time_double;
+  
+  g_assert(ltt_time_compare(window_time_begin, time) <= 0 &&
+           ltt_time_compare(window_time_end, time) >= 0);
   
   window_time_interval = ltt_time_sub(window_time_end,window_time_begin);
   

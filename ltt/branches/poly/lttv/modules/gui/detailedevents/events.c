@@ -1511,7 +1511,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
   sprintf(str_path,"%d\0",count);
   path = gtk_tree_path_new_from_string (str_path);
   gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v), path, NULL, FALSE);
-  g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->tree_v), "cursor-changed");
+  //g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->tree_v), "cursor-changed");
   gtk_tree_path_free(path);  
 
   return FALSE;

@@ -219,10 +219,18 @@ computation/      /* Global background computation hooks */
     after_request
     event_hook
     event_hook_by_id
+    hook_adder
+    hook_remover
   stats/
     ...
   modulename1/
     ...
+
+Hook Adder and Hook remover
+
+Hook functions that takes a trace context as call data. They simply 
+add / remove the computation related hooks from the trace context.
+
 
 
 Modify Traceset
@@ -270,16 +278,20 @@ notify_in : currently checked notifications
 notify_out : queue of notifications that comes along with next processing.
 
 
+0.1 Lock traces
+0.2 Sync tracefiles
+
 1. Before processing
   - if list_in is empty
     - Add all requests in list_out to list_in, empty list_out
     - for each request in list_in
       - set hooks'in_progress flag to TRUE
+      - call before request hook
     - seek trace to start
     - Move all notifications from notify_out to notify_in.
   - for each request in list_in
     - Call before chunk hooks for list_in
-    - add hooks to context
+    - add hooks to context *note only one hook of each type added.
 
 2. call process traceset middle for a chunk
   (assert list_in is not empty! : should not even be called in that case)
@@ -288,7 +300,7 @@ notify_out : queue of notifications that comes along with next processing.
   3.1 call after_chunk hooks for list_in
     - for each request in list_in
       - Call after chunk hooks for list_in
-      - remove hooks from context
+      - remove hooks from context *note : only one hook of each type
   3.2 for each notify_in
     - if current time >= notify time, call notify and remove from notify_in
     - if current position >= notify position, call notify and remove from
@@ -297,10 +309,16 @@ notify_out : queue of notifications that comes along with next processing.
     - for each request in list_in
       - set hooks'in_progress flag to FALSE
       - set hooks'ready flag to TRUE
+      - call after request hook
       - remove request
     - for each notifications in notify_in
       - call notify and remove from notify_in
-    - return FALSE (scheduler stopped)
+    - reset the context
+    - if list_out is empty
+      return FALSE (scheduler stopped)
+    - else
+      return TRUE (scheduler still registered)
   3.4 else
     - return TRUE (scheduler still registered)
 
+4. Unlock traces

@@ -422,8 +422,5 @@ static void destroy()
 
 LTTV_MODULE("textDump", "Print events in a file", \
 	    "Produce a detailed text printout of a trace", \
-	    init, destroy, "stats", "batchAnalysis")
-
-
-
+	    init, destroy, "stats", "batchAnalysis", "option")
 

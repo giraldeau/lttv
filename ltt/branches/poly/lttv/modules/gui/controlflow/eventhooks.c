@@ -2277,11 +2277,12 @@ int after_chunk(void *hook_data, void *call_data)
   ProcessList *process_list =
     guicontrolflow_get_process_list(control_flow_data);
 
-  if(tfc != NULL)
+  if(tfc != NULL 
+      && ltt_time_compare(tfc->timestamp, events_request->end_time) <= 0)
     end_time = tfc->timestamp;
-  else /* end of traceset */
-    end_time = tsc->time_span.end_time;
-
+  else /* end of traceset, or position now out of request : end */
+    end_time = events_request->end_time;
+  
   ClosureData closure_data;
   closure_data.events_request = (EventsRequest*)hook_data;
   closure_data.tss = tss;

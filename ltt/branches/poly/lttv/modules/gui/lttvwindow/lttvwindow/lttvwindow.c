@@ -691,7 +691,7 @@ void lttvwindow_report_time_window(Tab *tab,
       
   g_object_set(G_OBJECT(adjustment),
                "lower",
-               0, /* lower */
+               0.0, /* lower */
                "upper",
                ltt_time_to_double(
                  ltt_time_sub(time_span.end_time, time_span.start_time)) 

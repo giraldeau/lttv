@@ -256,13 +256,13 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
         LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
   GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
+  LttTime upper = ltt_time_sub(time_span.end_time, time_span.start_time);
       
   g_object_set(G_OBJECT(adjustment),
                "lower",
-                 0, /* lower */
+                 0.0, /* lower */
                "upper",
-               ltt_time_to_double(
-                   ltt_time_sub(time_span.end_time, time_span.start_time)) 
+               ltt_time_to_double(upper) 
                  * NANOSECONDS_PER_SECOND, /* upper */
                "step_increment",
                ltt_time_to_double(tab->time_window.time_width)
@@ -1996,15 +1996,15 @@ void zoom(GtkWidget * widget, double size)
   //
   //
 
+ LttTime rel_time =
+       ltt_time_sub(new_time_window.start_time, time_span.start_time); 
  if(   ltt_time_to_double(new_time_window.time_width)
                              * NANOSECONDS_PER_SECOND
                              / SCROLL_STEP_PER_PAGE/* step increment */
        +
-       ltt_time_to_double(new_time_window.start_time)
-                             * NANOSECONDS_PER_SECOND /* page size */
+       ltt_time_to_double(rel_time) * NANOSECONDS_PER_SECOND /* page size */
                     == 
-       ltt_time_to_double(new_time_window.start_time)
-                             * NANOSECONDS_PER_SECOND /* page size */
+       ltt_time_to_double(rel_time) * NANOSECONDS_PER_SECOND /* page size */
        ) {
     g_warning("Can not zoom that far due to scrollbar precision");
  } else if(
@@ -2024,7 +2024,7 @@ void zoom(GtkWidget * widget, double size)
                  //ltt_time_to_double(new_time_window.start_time) 
                  //  * NANOSECONDS_PER_SECOND, /* value */
                  "lower",
-                   0, /* lower */
+                   0.0, /* lower */
                  "upper",
                  ltt_time_to_double(
                    ltt_time_sub(time_span.end_time, time_span.start_time))

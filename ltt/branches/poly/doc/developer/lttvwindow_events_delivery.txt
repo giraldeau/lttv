@@ -308,7 +308,10 @@ list_in : empty
 list_out : many events requests
 
 
-A. While (list_in !empty or list_out !empty) and !GTK Event pending
+0.1 Lock the traces
+0.2 Seek traces positions to current context position.
+
+A. While (list_in !empty or list_out !empty)
   1. If list_in is empty (need a seek)
     1.1 Add requests to list_in
       1.1.1 Find all time requests with lowest start time in list_out (ltime)
@@ -331,6 +334,9 @@ A. While (list_in !empty or list_out !empty) and !GTK Event pending
       1.3.2 call before chunk
       1.3.3 events hooks added
   2. Else, list_in is not empty, we continue a read
+    2.0 For each req of list_in
+      - Call before chunk
+      - events hooks added
     2.1 For each req of list_out
     - if req.start time == current context time
               or req.start position == current position
@@ -372,19 +378,22 @@ A. While (list_in !empty or list_out !empty) and !GTK Event pending
           - req.num -= count
           - if   req.num == 0
                or
-                 current context time > req.end time
+                 current context time >= req.end time
                or
                  req.end pos == current pos
                or
                  req.stop_flag == TRUE
             - Call end request for req
             - remove req from list_in
+  If GTK Event pending : break A loop
 
 B. When interrupted between chunks
   1. for each request in list_in
     1.1. Use current postition as start position
     1.2. Remove start time
     1.3. Move from list_in to list_out
+
+C. Unlock the traces
 
 
 
