@@ -673,7 +673,7 @@ static void init()
   //g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
   //    LTTV_POINTER, &value));
   //*(value.v_pointer) = after_event;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/event_hook",
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event",
       LTTV_POINTER, &value));
   *(value.v_pointer) = event_hook;
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/before",
