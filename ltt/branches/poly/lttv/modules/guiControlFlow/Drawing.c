@@ -48,6 +48,9 @@ void Drawing_Data_Request(Drawing_t *Drawing,
 		   	gint width,
 			gint height)
 {
+  if(width < 0) return ;
+  if(height < 0) return ;
+
   gdk_draw_rectangle (Pixmap,
 		      Drawing->Drawing_Area_V->style->white_gc,
 		      TRUE,
