@@ -1,3 +1,5 @@
+SUBDIRS = plugins
+
 bin_PROGRAMS = textui
 
 #AM_CPPFLAGS = \
