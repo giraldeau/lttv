@@ -3,7 +3,7 @@ lttvinclude_HEADERS = \
 	batchAnalysis.h\
 	common.h\
 	filter.h\
-	gtkTraceSet.h\
+	gtktraceset.h\
 	gtkmultivpaned.h\
 	hook.h\
 	iattribute.h\
