@@ -6,14 +6,16 @@ INCLUDES = \
 	@PACKAGE_CFLAGS@ \
 	$(DEFAULT_INCLUDES)
 
-bin_PROGRAMS = mainwin
+#bin_PROGRAMS = mainwin
+lib_LTLIBRARIES = libmainwin.la
 
-mainwin_SOURCES = \
-	main.c \
+libmainwin_la_LDFLAGS = -module
+libmainwin_la_SOURCES = \
+	init_module.c \
 	support.c support.h \
 	interface.c interface.h \
 	callbacks.c callbacks.h \
 	gtkcustom.c gtkcustom.h
 
-mainwin_LDADD = @PACKAGE_LIBS@ $(INTLLIBS)
+libmainwin_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
 
