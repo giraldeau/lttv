@@ -297,6 +297,8 @@ void ltt_event_position(LttEvent *e, LttEventPosition *ep)
   ep->prev_event_time = e->prev_event_time;
   ep->pre_cycle_count = e->pre_cycle_count;
   ep->count = e->count;
+  ep->last_heartbeat = e->last_heartbeat;
+
   /* end of workaround */
 }
 

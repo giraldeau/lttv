@@ -1036,6 +1036,7 @@ void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
     t->pre_cycle_count = ep->pre_cycle_count;
     t->count = ep->count;
     t->overflow_nsec = ep->overflow_nsec;
+    t->last_heartbeat = ep->last_heartbeat;
     /* end of workaround */
 
     //update the fields of the current event and go to the next event
@@ -1099,6 +1100,7 @@ LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event)
   event->pre_cycle_count = t->pre_cycle_count;
   event->count = t->count;
   event->overflow_nsec = t->overflow_nsec;
+  event->last_heartbeat = t->last_heartbeat;
   
   /* end of workaround */
 
@@ -1150,7 +1152,7 @@ int readFile(int fd, void * buf, size_t size, char * mesg)
  *    0               : success
  *    ERANGE          : event id is out of range
  ****************************************************************************/
-
+#if 0
 int skipEvent_pre_read_cycles(LttTracefile * t)
 {
   int evId;
@@ -1190,7 +1192,7 @@ int skipEvent_pre_read_cycles(LttTracefile * t)
 
   return 0;
 }
-
+#endif //0
 
 
 
@@ -1203,7 +1205,7 @@ int skipEvent_pre_read_cycles(LttTracefile * t)
  *Return value
  * False : end of bloc reached
  ****************************************************************************/
-
+#if 0
 gboolean ltt_tracefile_pre_read_cycles(LttTracefile *tf)
 {
   int err;
@@ -1240,6 +1242,7 @@ gboolean ltt_tracefile_pre_read_cycles(LttTracefile *tf)
   //event.prev_event_time = t->prev_event_time;
   //event.pre_cycle_count = t->pre_cycle_count;
   //event.count = t->count;
+  //event.last_heartbeat = t->last_heartbeat;
   /* end of workaround */
 
 
@@ -1307,6 +1310,7 @@ gboolean ltt_tracefile_pre_read_cycles(LttTracefile *tf)
 
   return TRUE;
 }
+#endif //0
 
 /****************************************************************************
  *Function name
@@ -1354,13 +1358,15 @@ int readBlock(LttTracefile * tf, int whichBlock)
   tf->which_event = 1;
   tf->cur_event_pos = tf->buffer;//the beginning of the block, block start ev
   tf->cur_heart_beat_number = 0;
+  tf->last_heartbeat = NULL;
   
   /* read the whole block to precalculate total of cycles in it */
   tf->count = 0;
   tf->pre_cycle_count = 0;
   tf->cur_cycle_count = 0;
   //g_debug("precalculating cycles begin for block %i", whichBlock);
-  while(likely(ltt_tracefile_pre_read_cycles(tf)));
+  /* End of block event already has 64 bits cycle counter! */
+  //while(likely(ltt_tracefile_pre_read_cycles(tf)));
   /* Rough approximation of cycles per usec to calculate
    * the real block start and end time.
    */
@@ -1368,15 +1374,37 @@ int readBlock(LttTracefile * tf, int whichBlock)
   /* we are at end position, make end time more precise */
   /* Start overflow_nsec to a negative value : takes account of the 
    * start of block cycle counter */
-  tf->overflow_nsec = (-((double)tf->a_block_start->cycle_count)
-                                    * tf->nsec_per_cycle);
+  //tf->overflow_nsec = (-((double)tf->a_block_start->cycle_count)
+   //                                 * tf->nsec_per_cycle);
   /* put back the numbers corresponding to end time */
-  tf->overflow_nsec += tf->one_overflow_nsec * tf->count;
+  //tf->overflow_nsec += tf->one_overflow_nsec * tf->count;
 
-  tf->a_block_end->time = getEventTime(tf);  
+  //tf->a_block_end->time = getEventTime(tf);  
+ 
+  /* Make start time more precise */
+  /* Start overflow_nsec to a negative value : takes account of the 
+   * start of block cycle counter */
+  tf->overflow_nsec = (-((double)tf->a_block_start->cycle_count)
+                                        * tf->nsec_per_cycle);
+
+  tf->a_block_start->time = getEventTime(tf);
+
+  {
+    guint64 lEventNSec;
+    LttTime lTimeOffset;
+    /* End time more precise */
+    lEventNSec = ((double)
+                 (tf->a_block_end->cycle_count - tf->a_block_start->cycle_count)
+                           * tf->nsec_per_cycle);
+    //g_assert(lEventNSec >= 0);
+    lTimeOffset = ltt_time_from_uint64(lEventNSec);
+    tf->a_block_end->time = ltt_time_add(tf->a_block_start->time, lTimeOffset); 
+  }
+
   
   //g_debug("precalculating cycles end for block %i", whichBlock);
 
+#if 0
   /* put back pointer at the beginning */
   tf->count = 0;
   tf->pre_cycle_count = 0;
@@ -1384,15 +1412,8 @@ int readBlock(LttTracefile * tf, int whichBlock)
   tf->which_event = 1;
   tf->cur_event_pos = tf->buffer;//the beginning of the block, block start ev
   tf->cur_heart_beat_number = 0;
-
-  /* Make start time more precise */
-  /* Start overflow_nsec to a negative value : takes account of the 
-   * start of block cycle counter */
-  tf->overflow_nsec = (-((double)tf->a_block_start->cycle_count)
-                                        * tf->nsec_per_cycle);
-
-
-  tf->a_block_start->time = getEventTime(tf);
+  tf->last_heartbeat = NULL;
+#endif //0
 
   /* recalculate the cycles per nsec, with now more precise start and end time
    */
@@ -1553,20 +1574,9 @@ static inline LttTime getEventTime(LttTracefile * tf)
   //}
   
   // Calculate total time in cycles from start of buffer for this event
-  cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
-  //g_debug("event cycle count %llu", cycle_count);
-  //
-  //gint64 delta_count = (gint64)(cycle_count - tf->pre_cycle_count);
-  //LttCycleCount res_delta_count;
-  gboolean comp_count = cycle_count < tf->pre_cycle_count;
-  tf->pre_cycle_count = cycle_count;
+
   
-  if(unlikely(comp_count)) {
-    /* Wrapped */
-    tf->overflow_nsec += tf->one_overflow_nsec;
-    tf->count++; //increment overflow count
-  }
-  
+ 
   //if(unlikely(cycle_count < tf->pre_cycle_count)) tf->count++;
   //if(unlikely(delta_count < 0)) {
   //  tf->count++; //increment wrap count
@@ -1623,8 +1633,48 @@ static inline LttTime getEventTime(LttTracefile * tf)
   // on the overflow_nsec
   // The result should never be negative, because the cycle count of
   // the event following the block start should be >= the previous one.
-  lEventNSec = (gint64)((double)cycle_count * tf->nsec_per_cycle)
-                              +tf->overflow_nsec;
+  
+   /* keep the overflow count correct. The heartbeat event makes sure
+    * that we do not miss an overflow.*/
+  
+  cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
+  //g_debug("event cycle count %llu", cycle_count);
+  //
+  //gint64 delta_count = (gint64)(cycle_count - tf->pre_cycle_count);
+  //LttCycleCount res_delta_count;
+  gboolean comp_count = cycle_count < tf->pre_cycle_count;
+  tf->pre_cycle_count = cycle_count;
+  
+  if(unlikely(comp_count)) {
+    /* Wrapped */
+    tf->overflow_nsec += tf->one_overflow_nsec;
+    tf->count++; //increment overflow count
+  }
+
+  if(unlikely(evId == TRACE_BLOCK_START)) {
+     lEventNSec = 0;
+  } else if(unlikely(evId == TRACE_BLOCK_END)) {
+    lEventNSec = ((double)
+                 (tf->a_block_end->cycle_count - tf->a_block_start->cycle_count)
+                           * tf->nsec_per_cycle);
+  }
+  /* heartbeat cycle counter is only numheartbeat<<32, not meaningful
+   */
+#if 0
+  else if(unlikely(evId == TRACE_TIME_HEARTBEAT)) {
+
+    tf->last_heartbeat = (TimeHeartbeat*)(tf->cur_event_pos+EVENT_HEADER_SIZE);
+    lEventNSec = ((double)(tf->last_heartbeat->cycle_count 
+                           - tf->a_block_start->cycle_count)
+                  * tf->nsec_per_cycle);
+  }
+#endif //0
+  else {
+  
+    lEventNSec = (gint64)((double)cycle_count * tf->nsec_per_cycle)
+                                +tf->overflow_nsec;
+  }
+
   //g_assert(lEventNSec >= 0);
   lTimeOffset = ltt_time_from_uint64(lEventNSec);
   

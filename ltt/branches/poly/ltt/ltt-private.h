@@ -100,6 +100,8 @@ struct _LttEvent{
   LttCycleCount pre_cycle_count;     //previous cycle count of the event
   int      count;                    //the number of overflow of cycle count
   gint64 overflow_nsec;              //precalculated nsec for overflows
+  TimeHeartbeat * last_heartbeat;    //last heartbeat
+
   /* end of workaround */
 };
 
@@ -159,6 +161,7 @@ struct _LttTracefile{
   LttTime current_event_time;        //time of the current event
   BlockStart * a_block_start;        //block start of the block
   BlockEnd   * a_block_end;          //block end of the block
+  TimeHeartbeat * last_heartbeat;    //last heartbeat
   void * cur_event_pos;              //the position of the current event
   void * buffer;                     //the buffer containing the block
   double nsec_per_cycle;             //Nsec per cycle
@@ -211,6 +214,7 @@ struct _LttEventPosition{
   LttCycleCount pre_cycle_count;     //previous cycle count of the event
   int      count;                    //the number of overflow of cycle count
   gint64 overflow_nsec;              //precalculated nsec for overflows
+  TimeHeartbeat * last_heartbeat;    //last heartbeat
   /* end of workaround */
 };
 
