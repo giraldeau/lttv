@@ -121,13 +121,15 @@ void lttv_filter_tree_destroy(LttvFilter* tree) {
 LttvFilter*
 lttv_filter_clone(LttvFilter* tree) {
 
-    LttvFilter* newtree = lttv_filter_tree_new();
-
-    /*
-     * TODO : Copy tree into new tree
-     */
+  if(tree == NULL) return NULL;
     
-    return newtree;
+  LttvFilter* newtree = lttv_filter_tree_new();
+
+  /*
+   * TODO : Copy tree into new tree
+   */
+    
+  return newtree;
     
 }
 
