@@ -316,9 +316,8 @@ __inline gboolean draw_line( void *hook_data, void *call_data)
   PropertiesLine *properties = (PropertiesLine*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
   
-  //gdk_gc_set_foreground(draw_context->gc, properties->color);
-  gdk_gc_set_rgb_fg_color(draw_context->gc, &properties->color);
-  //gdk_gc_set_foreground(gc, properties->color);
+  gdk_gc_set_foreground(draw_context->gc, &properties->color);
+  //gdk_gc_set_rgb_fg_color(draw_context->gc, &properties->color);
   gdk_gc_set_line_attributes( draw_context->gc,
                               properties->line_width,
                               properties->style,
@@ -363,8 +362,8 @@ __inline gboolean draw_arc( void *hook_data, void *call_data)
   PropertiesArc *properties = (PropertiesArc*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
 
-  //gdk_gc_set_foreground(draw_context->gc, properties->color);
-  gdk_gc_set_rgb_fg_color(draw_context->gc, properties->color);
+  gdk_gc_set_foreground(draw_context->gc, properties->color);
+  //gdk_gc_set_rgb_fg_color(draw_context->gc, properties->color);
 
   gint x=0, y=0;
   gint *offset=NULL;
@@ -439,8 +438,8 @@ __inline gboolean draw_bg( void *hook_data, void *call_data)
   PropertiesBG *properties = (PropertiesBG*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
 
-  //gdk_gc_set_foreground(draw_context->gc, properties->color);
-  gdk_gc_set_rgb_fg_color(draw_context->gc, properties->color);
+  gdk_gc_set_foreground(draw_context->gc, properties->color);
+  //gdk_gc_set_rgb_fg_color(draw_context->gc, properties->color);
 
   //g_critical("DRAWING RECT : x: %i, y: %i, w:%i, h:%i, val1 :%i, val2:%i ", 
   //    draw_context->previous->over->x,

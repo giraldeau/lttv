@@ -858,6 +858,12 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   gtk_widget_show(drawing->scrollbar);
   gtk_widget_show(drawing->hbox);
 
+  /* Allocate the colors */
+  GdkColormap* colormap = gdk_colormap_get_system();
+
+  gdk_colormap_alloc_colors(colormap, drawing_colors, NUM_COLORS, FALSE,
+                            TRUE, NULL);
+  
   
   return drawing;
 }
@@ -865,6 +871,14 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
 void drawing_destroy(Drawing_t *drawing)
 {
   g_info("drawing_destroy %p", drawing);
+
+  /* Free the colors */
+  GdkColormap* colormap = gdk_colormap_get_system();
+
+  gdk_colormap_free_colors(colormap, drawing_colors, NUM_COLORS);
+  
+
+
   // Do not unref here, Drawing_t destroyed by it's widget.
   //g_object_unref( G_OBJECT(drawing->drawing_area));
   if(drawing->gc != NULL)
