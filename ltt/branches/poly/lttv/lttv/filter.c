@@ -73,21 +73,21 @@ parse_field_path(GList* fp) {
   GString* f = g_list_first(fp)->data; 
   
   switch(g_quark_try_string(f->str)) {
-    case LTTV_FILTER_TRACE:
-
-    break;
-    case LTTV_FILTER_TRACEFILE:
-
-      break;
-    case LTTV_FILTER_TRACESET:
-
-      break;
-    case LTTV_FILTER_STATE:
-
-      break;
-    case LTTV_FILTER_EVENT:
-
-      break;
+//    case LTTV_FILTER_TRACE:
+//
+//    break;
+//    case LTTV_FILTER_TRACEFILE:
+//
+//      break;
+//    case LTTV_FILTER_TRACESET:
+//
+//      break;
+//    case LTTV_FILTER_STATE:
+//
+//      break;
+//    case LTTV_FILTER_EVENT:
+//
+//      break;
     default:    /* Quark value unrecognized or equal to 0 */
       g_warning("Unrecognized field in filter string");
       return FALSE;
@@ -265,7 +265,9 @@ lttv_filter_tracefile(lttv_filter *filter, LttTracefile *tracefile) {
 }
 
 gboolean
-lttv_filter_tracestate(lttv_filter *filter, LttvTraceState *tracestate) {}
+lttv_filter_tracestate(lttv_filter *filter, LttvTraceState *tracestate) {
+
+}
 
 /**
  * 	Apply the filter to a specific event
@@ -293,8 +295,9 @@ static void module_destroy()
 }
 
 
-LTTV_MODULE("filter", "Filter state & event", \
-    "Filters the current tracestate and events from user expression", \
+//LTTV_MODULE("filter", \
+    "", \
+    "", \
     module_init, module_destroy)
 
 

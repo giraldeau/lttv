@@ -106,15 +106,15 @@ typedef struct _lttv_expression
   lttv_expression_type type;
   union {
     struct lttv_expression *e;
-    lttv_field_relation *se;  /* --> simple expression */
+ //   lttv_field_relation *se;  /* --> simple expression */
   } e;
 } lttv_expression;
 
 
-typedef union _lttv_expression {
-  lttv_simple_expression se;
-  
-} lttv_expression;
+//typedef union _lttv_expression {
+//  lttv_simple_expression se;
+//  
+//} lttv_expression;
 
 typedef struct _lttv_filter_tree {
 	lttv_expression* node;
