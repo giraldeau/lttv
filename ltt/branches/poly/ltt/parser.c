@@ -497,10 +497,9 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
 	free(str);
 	str = appendString(str1,token);
 	free(str1);
-	sequence_push(&(t->labels),allocAndCopy(str));
-	free(str);
+	sequence_push(&(t->labels),str);
       }else
-	sequence_push(&(t->labels),allocAndCopy(str));
+	sequence_push(&(t->labels),str);
 
       getForwardslash(in);
       getRAnglebracket(in);
