@@ -136,7 +136,7 @@ int main(int argc, char ** argv){
   buffer_start start, start_proc, start_intr;
   buffer_start end, end_proc, end_intr;
   heartbeat beat;
-  int beat_count = 0;
+  uint64_t beat_count;
   uint32_t size_lost;
   int reserve_size = sizeof(buffer_start) + sizeof(uint16_t) + 2*sizeof(uint32_t);//lost_size and buffer_end event
   int nb_para;
@@ -320,7 +320,6 @@ int main(int argc, char ** argv){
     
     for(i=0;i<block_number;i++){
       int event_count = 0;
-      beat_count = 0;
 
       memset((void*)buf_out, 0, block_size);
       write_pos = buf_out;
@@ -347,8 +346,10 @@ int main(int argc, char ** argv){
       startId = newId;
       startTimeDelta = time_delta;
       start.seconds = tBufStart->Time.tv_sec;
-      start.nanoseconds = tBufStart->Time.tv_usec;
+      /* usec -> nsec (Mathieu) */
+      start.nanoseconds = tBufStart->Time.tv_usec * 1000;
       start.cycle_count = tBufStart->TSC;
+      beat_count = start.cycle_count;
       start.block_id = tBufStart->ID;
       end.block_id = start.block_id;
       
@@ -362,7 +363,8 @@ int main(int argc, char ** argv){
 	tBufEnd = (trace_buffer_end*)(end_pos+sizeof(uint8_t)+sizeof(uint32_t));
       }
       end.seconds = tBufEnd->Time.tv_sec;
-      end.nanoseconds = tBufEnd->Time.tv_usec;
+      /* usec -> nsec (Mathieu) */
+      end.nanoseconds = tBufEnd->Time.tv_usec * 1000;
       end.cycle_count = tBufEnd->TSC;
     
       //skip buffer start and trace start events
@@ -449,8 +451,10 @@ int main(int argc, char ** argv){
 	write_to_buffer(write_pos,(void*)&time_delta, sizeof(uint32_t));     
 	
 	if(evId == TRACE_BUFFER_END){
+#if 0 //(Mathieu : already set correctly to tBufEnd.TSC)
     end.cycle_count = start.cycle_count 
                          + beat_count * OVERFLOW_FIGURE;
+#endif //)
 	  int size = block_size + ((void*)buf_out - write_pos)+ sizeof(uint16_t) + sizeof(uint32_t);
 	  write_to_buffer(write_pos,(void*)&end,sizeof(buffer_start));   
 	  write_pos = buf_out + block_size - sizeof(uint32_t);
@@ -557,11 +561,18 @@ int main(int argc, char ** argv){
 	    event_size = sizeof(trace_network);
 	    break;
 	  case TRACE_HEARTBEAT:
-	    beat_count++;
+      /* Fix (Mathieu) */
+      if(timeDelta < (0xFFFFFFFF&beat_count)) {
+        /* Overflow */
+        beat_count += 0x100000000ULL - (uint64_t)(0xFFFFFFFF&beat_count)
+                                     + (uint64_t)timeDelta;
+      } else {
+        /* No overflow */
+        beat_count += timeDelta - (0xFFFFFFFF&beat_count);
+      }
 	    beat.seconds = 0;
 	    beat.nanoseconds = 0;
-	    beat.cycle_count = (uint64_t)start.cycle_count 
-                         + (uint64_t)beat_count * OVERFLOW_FIGURE;
+	    beat.cycle_count = beat_count;
 	    event_size = 0;
 	    
 	    write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));

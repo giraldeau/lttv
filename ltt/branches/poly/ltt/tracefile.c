@@ -1389,6 +1389,7 @@ int readBlock(LttTracefile * tf, int whichBlock)
 
   tf->a_block_start->time = getEventTime(tf);
 
+
   {
     guint64 lEventNSec;
     LttTime lTimeOffset;
@@ -1657,6 +1658,12 @@ static inline LttTime getEventTime(LttTracefile * tf)
     lEventNSec = ((double)
                  (tf->a_block_end->cycle_count - tf->a_block_start->cycle_count)
                            * tf->nsec_per_cycle);
+    g_printf("CYCLES COUNTED : %llu",
+        (gint64)((double)cycle_count * tf->nsec_per_cycle)
+                                +tf->overflow_nsec 
+                                +tf->a_block_start->cycle_count);
+
+    
   }
   /* heartbeat cycle counter is only numheartbeat<<32, not meaningful
    */
