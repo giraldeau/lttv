@@ -8,7 +8,7 @@
 #include "callbacks.h"
 #include "interface.h"
 #include "support.h"
-#include "mainWindow.h"
+#include <lttv/mainWindow.h>
 
 
 extern systemView * gSysView;

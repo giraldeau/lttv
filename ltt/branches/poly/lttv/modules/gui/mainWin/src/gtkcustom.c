@@ -1,6 +1,6 @@
 #include <gtk/gtk.h>
 
-#include "gtkcustom.h"
+#include <lttv/gtkcustom.h>
 //#include "gtkintl.h"
 
 static void gtk_custom_class_init (GtkCustomClass    *klass);

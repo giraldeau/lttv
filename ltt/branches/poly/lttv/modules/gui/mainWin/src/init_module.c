@@ -18,7 +18,7 @@
 
 #include "interface.h"
 #include "support.h"
-#include "mainWindow.h"
+#include <lttv/mainWindow.h>
 #include "callbacks.h"
 
 /* global variable */
