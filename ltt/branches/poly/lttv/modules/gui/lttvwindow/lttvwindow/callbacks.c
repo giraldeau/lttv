@@ -2749,10 +2749,11 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
     if(module_name == NULL) return;
   }
   
-  lttv_module_release(module);
   LttvModuleInfo module_info;
   lttv_module_info(module, &module_info);
   g_printf("Release module: %s\n", module_info.name);
+ 
+  lttv_module_release(module);
 }
 
 
