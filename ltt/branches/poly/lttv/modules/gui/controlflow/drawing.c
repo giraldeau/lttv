@@ -468,7 +468,7 @@ void drawing_request_expose(EventsRequest *events_request,
 
   gtk_widget_queue_draw_area ( drawing->drawing_area,
                                x, 0,
-                               width, drawing->height);
+                               width, drawing->drawing_area->allocation.height);
  
 }
 
@@ -601,13 +601,15 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 
   /* Erase the dotted lines left.. */
   if(widget->allocation.height > drawing->height)
+  {
     gdk_draw_rectangle (widget->window,
       drawing->drawing_area->style->black_gc,
       TRUE,
       event->area.x, drawing->height,
       event->area.width,  // do not overlap
       widget->allocation.height - drawing->height);
-
+g_critical("blah : %u, %u", widget->allocation.height, drawing->height);
+  }
 
   if(ltt_time_compare(time_window.start_time, current_time) <= 0 &&
            ltt_time_compare(window_end, current_time) >= 0)
@@ -637,10 +639,10 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
                         2);
     }
     
-    drawing_draw_line(NULL, widget->window,
+    gdk_draw_line(widget->window,
+                  drawing->dotted_gc,
                   cursor_x, 0,
-                  cursor_x, widget->allocation.height,
-                  drawing->dotted_gc);
+                  cursor_x, widget->allocation.height);
   }
   return FALSE;
 }
@@ -952,9 +954,7 @@ void drawing_clear(Drawing_t *drawing)
   gtk_widget_queue_resize_no_redraw(drawing->drawing_area);
   
   /* ask for the buffer to be redrawn */
-  gtk_widget_queue_draw_area ( drawing->drawing_area,
-                               0, 0,
-                               drawing->width, drawing->height);
+  gtk_widget_queue_draw ( drawing->drawing_area);
 }
 
 

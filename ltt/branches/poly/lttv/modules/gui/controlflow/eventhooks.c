@@ -2778,11 +2778,11 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           drawing->damage_begin+SAFETY, 0,
           drawing->damage_end - drawing->damage_begin,  // do not overlap
           control_flow_data->drawing->height);
-
-      gtk_widget_queue_draw_area (drawing->drawing_area,
-                                0,0,
-                                control_flow_data->drawing->width,
-                                control_flow_data->drawing->height);
+      gtk_widget_queue_draw(drawing->drawing_area);
+      //gtk_widget_queue_draw_area (drawing->drawing_area,
+      //                          0,0,
+      //                          control_flow_data->drawing->width,
+      //                          control_flow_data->drawing->height);
 
       /* Get new data for the rest. */
       drawing_data_request(control_flow_data->drawing,
@@ -2831,10 +2831,11 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           drawing->damage_end - drawing->damage_begin,  // do not overlap
           control_flow_data->drawing->height);
 
-        gtk_widget_queue_draw_area (drawing->drawing_area,
-                                0,0,
-                                control_flow_data->drawing->width,
-                                control_flow_data->drawing->height);
+        gtk_widget_queue_draw(drawing->drawing_area);
+        //gtk_widget_queue_draw_area (drawing->drawing_area,
+        //                        0,0,
+        //                        control_flow_data->drawing->width,
+        //                        control_flow_data->drawing->height);
 
 
         /* Get new data for the rest. */
@@ -2860,10 +2861,11 @@ gint update_time_window_hook(void *hook_data, void *call_data)
             control_flow_data->drawing->width+SAFETY, // do not overlap
             control_flow_data->drawing->height);
 
-          gtk_widget_queue_draw_area (drawing->drawing_area,
-                                0,0,
-                                control_flow_data->drawing->width,
-                                control_flow_data->drawing->height);
+          //gtk_widget_queue_draw_area (drawing->drawing_area,
+          //                      0,0,
+          //                      control_flow_data->drawing->width,
+          //                      control_flow_data->drawing->height);
+          gtk_widget_queue_draw(drawing->drawing_area);
 
           drawing->damage_begin = 0;
           drawing->damage_end = control_flow_data->drawing->width;
@@ -2888,10 +2890,11 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           control_flow_data->drawing->width+SAFETY, // do not overlap
           control_flow_data->drawing->height);
 
-    gtk_widget_queue_draw_area (drawing->drawing_area,
-                                0,0,
-                                control_flow_data->drawing->width,
-                                control_flow_data->drawing->height);
+    //gtk_widget_queue_draw_area (drawing->drawing_area,
+    //                            0,0,
+    //                            control_flow_data->drawing->width,
+    //                            control_flow_data->drawing->height);
+    gtk_widget_queue_draw(drawing->drawing_area);
   
     drawing->damage_begin = 0;
     drawing->damage_end = control_flow_data->drawing->width;
@@ -2955,10 +2958,11 @@ gint redraw_notify(void *hook_data, void *call_data)
                          drawing->height);
   }
 
-  gtk_widget_queue_draw_area(drawing->drawing_area,
-                             0,0,
-                             drawing->width,
-                             drawing->height);
+  gtk_widget_queue_draw(drawing->drawing_area);
+  //gtk_widget_queue_draw_area(drawing->drawing_area,
+  //                           0,0,
+  //                           drawing->width,
+  //                           drawing->height);
   return FALSE;
 
 }
@@ -3060,11 +3064,8 @@ gint update_current_time_hook(void *hook_data, void *call_data)
     lttvwindow_report_time_window(control_flow_data->tab, new_time_window);
     
   }
-  //gtk_widget_queue_draw(control_flow_data->drawing->drawing_area);
-  gtk_widget_queue_draw_area(drawing->drawing_area,
-                             0,0,
-                             drawing->width,
-                             drawing->height);
+  gtk_widget_queue_draw(control_flow_data->drawing->drawing_area);
+                             
   
   return 0;
 }
