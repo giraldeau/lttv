@@ -196,8 +196,9 @@ void ltt_event_position(LttEvent *e, LttEventPosition *ep)
   ep->event_time        = e->event_time;
   ep->event_cycle_count = e->event_cycle_count;
   ep->heart_beat_number = e->tracefile->cur_heart_beat_number;
-  ep->old_position      = TRUE;
+  ep->old_position      = FALSE;
   ep->event_offset      = e->data - e->tracefile->buffer - EVENT_HEADER_SIZE ;
+  ep->tf                = e->tracefile;
 }
 
 /*****************************************************************************
@@ -210,10 +211,11 @@ void ltt_event_position(LttEvent *e, LttEventPosition *ep)
  ****************************************************************************/
 
 void ltt_event_position_get(LttEventPosition *ep,
-    unsigned *block_number, unsigned *index_in_block)
+    unsigned *block_number, unsigned *index_in_block, LttTracefile ** tf)
 {
   *block_number   = ep->block_num;
   *index_in_block = ep->event_num;
+  *tf             = ep->tf;
 }
 
 /*****************************************************************************
@@ -229,7 +231,7 @@ void ltt_event_position_set(LttEventPosition *ep,
     unsigned block_number, unsigned index_in_block)
 {
   ep->block_num = block_number;
-  ep->event_num = index_in_block;
+  ep->event_num = index_in_block;  
 }
 
 /*****************************************************************************

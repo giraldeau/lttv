@@ -124,7 +124,7 @@ int main(int argc, char ** argv){
   trace_file_system * tFileSys;
   uint16_t newId, startId, tmpId;
   uint8_t  evId;
-  uint32_t time_delta, startTimeDelta;
+  uint32_t time_delta, startTimeDelta, previous_time_delta;
   void * cur_pos, *end_pos;
   buffer_start start, start_proc, start_intr;
   buffer_start end, end_proc, end_intr;
@@ -344,6 +344,7 @@ int main(int argc, char ** argv){
 
     startId = newId;
     startTimeDelta = time_delta;
+    previous_time_delta = time_delta;
     start.seconds = tBufStart->Time.tv_sec;
     start.nanoseconds = tBufStart->Time.tv_usec;
     start.cycle_count = tBufStart->TSC;
@@ -447,6 +448,11 @@ int main(int argc, char ** argv){
       cur_pos += sizeof(uint8_t);
       time_delta = *(uint32_t*)cur_pos;
       cur_pos += sizeof(uint32_t); 
+
+      if(time_delta < previous_time_delta){
+	end.cycle_count += OVERFLOW_FIGURE;
+      }
+      previous_time_delta = time_delta;
 
       if(ltt_log_cpu){
 	write_to_buffer(write_pos[cpu_id],(void*)&newId,sizeof(uint16_t));
@@ -582,7 +588,7 @@ int main(int argc, char ** argv){
 	  beat.cycle_count = start.cycle_count + beat_count * OVERFLOW_FIGURE;
 	  event_size = 0;
 
-	  end.cycle_count += OVERFLOW_FIGURE;
+	  //	  end.cycle_count += OVERFLOW_FIGURE;
 
 	  write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));
 	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint32_t));

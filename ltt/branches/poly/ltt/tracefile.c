@@ -855,9 +855,6 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
   lttEvent->time_delta = *(uint32_t*)(t->cur_event_pos + EVENT_ID_SIZE);
   lttEvent->event_time = t->current_event_time;
 
-  lttEvent->event_cycle_count = ((uint64_t)1)<<32  * t->cur_heart_beat_number 
-                                + lttEvent->time_delta;
-
   lttEvent->tracefile = t;
   lttEvent->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
   lttEvent->which_block = t->which_block;
@@ -866,6 +863,8 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
   //update the fields of the current event and go to the next event
   err = skipEvent(t);
   if(err == ERANGE) g_error("event id is out of range\n");
+
+  lttEvent->event_cycle_count = t->cur_cycle_count;
 
   return lttEvent;
 }
@@ -1028,11 +1027,13 @@ void getCyclePerNsec(LttTracefile * t)
   TimeSub(lBufTotalTime,t->a_block_end->time, t->a_block_start->time);
 
   /* Calculate the total cycles for this bufffer */
-  lBufTotalCycle = t->a_block_end->cycle_count 
-                   - t->a_block_start->cycle_count;
+  lBufTotalCycle  = t->a_block_end->cycle_count;
+  lBufTotalCycle -= t->a_block_start->cycle_count;
 
   /* Convert the total time to nsecs */
-  lBufTotalNSec = lBufTotalTime.tv_sec * 1000000000 + lBufTotalTime.tv_nsec;
+  lBufTotalNSec  = lBufTotalTime.tv_sec;
+  lBufTotalNSec *= NANSECOND_CONST; 
+  lBufTotalNSec += lBufTotalTime.tv_nsec;
   
   t->cycle_per_nsec = (double)lBufTotalCycle / (double)lBufTotalNSec;
 }
@@ -1054,29 +1055,48 @@ LttTime getEventTime(LttTracefile * tf)
   double        lEventNSec;       // Total usecs from start for event
   LttTime       lTimeOffset;      // Time offset in struct LttTime
   uint16_t      evId;
-  
-  evId = *(uint16_t*)tf->cur_event_pos;
-  if(evId == TRACE_BLOCK_START)
-    return tf->a_block_start->time;
-  else if(evId == TRACE_BLOCK_END)
-    return tf->a_block_end->time;
-  
+  int64_t       nanoSec, tmpCycleCount = (((uint64_t)1)<<32);
+  static LttCycleCount preCycleCount = 0;
+  static int   count = 0;
 
-  // Calculate total time in cycles from start of buffer for this event 
+  evId = *(uint16_t*)tf->cur_event_pos;
+  if(evId == TRACE_BLOCK_START){
+    count = 0;
+    preCycleCount = 0;
+    tf->cur_cycle_count = tf->a_block_start->cycle_count;
+    return tf->a_block_start->time;
+  }else if(evId == TRACE_BLOCK_END){
+    count = 0;
+    preCycleCount = 0;
+    tf->cur_cycle_count = tf->a_block_end->cycle_count;
+    return tf->a_block_end->time;
+  }
+  
+  // Calculate total time in cycles from start of buffer for this event
   cycle_count = (LttCycleCount)*(uint32_t*)(tf->cur_event_pos + EVENT_ID_SIZE);
-  if(tf->cur_heart_beat_number)
-    cycle_count += ((uint64_t)1)<<32  * tf->cur_heart_beat_number;
-  lEventTotalCycle = cycle_count - tf->a_block_start->cycle_count;
+  
+  if(cycle_count < preCycleCount)count++;
+  preCycleCount = cycle_count;
+  cycle_count += tmpCycleCount * count;  
+  
+  if(tf->cur_heart_beat_number > count)
+    cycle_count += tmpCycleCount * (tf->cur_heart_beat_number - count);  
+
+  tf->cur_cycle_count = cycle_count;
+
+  lEventTotalCycle  = cycle_count;
+  lEventTotalCycle -= tf->a_block_start->cycle_count;
 
   // Convert it to nsecs
   lEventNSec = lEventTotalCycle / tf->cycle_per_nsec;
-  
+  nanoSec    = lEventNSec;
+
   // Determine offset in struct LttTime 
-  lTimeOffset.tv_nsec = (long)lEventNSec % 1000000000;
-  lTimeOffset.tv_sec  = (long)lEventNSec / 1000000000;
+  lTimeOffset.tv_nsec = nanoSec % NANSECOND_CONST;
+  lTimeOffset.tv_sec  = nanoSec / NANSECOND_CONST;
 
   TimeAdd(time, tf->a_block_start->time, lTimeOffset);  
-
+  
   return time;
 }
 
