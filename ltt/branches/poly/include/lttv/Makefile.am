@@ -8,7 +8,7 @@ lttvinclude_HEADERS = \
 	hook.h\
 	iattribute.h\
 	lttv.h\
-	mainWindow.h\
+	mainwindow.h\
 	menu.h\
 	module.h\
 	option.h\
