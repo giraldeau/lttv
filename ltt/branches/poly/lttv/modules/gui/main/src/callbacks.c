@@ -26,7 +26,7 @@
 #include "callbacks.h"
 #include "interface.h"
 #include "support.h"
-#include <lttv/mainWindow.h>
+#include <lttv/mainwindow.h>
 #include <lttv/menu.h>
 #include <lttv/toolbar.h>
 #include <lttv/gtkTraceSet.h>

@@ -23,7 +23,7 @@
 
 #include <gtk/gtk.h>
 #include <lttv/common.h>
-#include <lttv/mainWindow.h>
+#include <lttv/mainwindow.h>
 #include "processlist.h"
 
 typedef struct _ControlFlowData ControlFlowData;

@@ -20,7 +20,7 @@
 
 #include <lttv/gtkmultivpaned.h>
 //#include "gtkintl.h"
-#include <lttv/mainWindow.h>
+#include <lttv/mainwindow.h>
 #include <lttv/gtkTraceSet.h>
 
 static void gtk_multi_vpaned_class_init (GtkMultiVPanedClass    *klass);

@@ -40,7 +40,7 @@
 
 #include "interface.h"
 #include "support.h"
-#include <lttv/mainWindow.h>
+#include <lttv/mainwindow.h>
 #include "callbacks.h"
 #include <ltt/trace.h>
 

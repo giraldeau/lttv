@@ -13,7 +13,7 @@
 #include <lttv/common.h>
 #include <ltt/ltt.h>
 #include <lttv/lttv.h>
-#include <lttv/mainWindow.h>   
+#include <lttv/mainwindow.h>   
 #include <lttv/gtkTraceSet.h>
 #include <lttv/processTrace.h>
 #include <lttv/toolbar.h>
