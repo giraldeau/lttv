@@ -58,11 +58,11 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 	g_critical("GUI ControlFlow Viewer init()");
 
 	/* Register the toolbar insert button */
-	ToolbarItemReg(hGuiControlFlowInsert_xpm, "Insert Control Flow Viewer",
+	toolbar_item_reg(hGuiControlFlowInsert_xpm, "Insert Control Flow Viewer",
 			hGuiControlFlow);
 
 	/* Register the menu item insert entry */
-	MenuItemReg("/", "Insert Control Flow Viewer", hGuiControlFlow);
+	menu_item_reg("/", "Insert Control Flow Viewer", hGuiControlFlow);
 	
 }
 
@@ -89,9 +89,9 @@ G_MODULE_EXPORT void destroy() {
 	g_slist_free(gControl_Flow_Data_List);
 
 	/* Unregister the toolbar insert button */
-	ToolbarItemUnreg(hGuiControlFlow);
+	toolbar_item_unreg(hGuiControlFlow);
 
 	/* Unregister the menu item insert entry */
-	MenuItemUnreg(hGuiControlFlow);
+	menu_item_unreg(hGuiControlFlow);
 	
 }

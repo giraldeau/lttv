@@ -1134,7 +1134,7 @@ void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label)
   }else{
  // Will have to read directly at the main window level, as we want
  // to be able to modify a traceset on the fly.
-  //  getTracesetTimeSpan(mw_data,&tmp_tab->traceStartTime, &tmp_tab->traceEndTime);
+  //  get_traceset_time_span(mw_data,&tmp_tab->traceStartTime, &tmp_tab->traceEndTime);
     tmp_tab->time_window.start_time   = 
 	    LTTV_TRACESET_CONTEXT(mw_data->traceset_info->traceset_context)->Time_Span->startTime;
     if(DEFAULT_TIME_WIDTH_S <

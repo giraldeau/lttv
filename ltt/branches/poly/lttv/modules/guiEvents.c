@@ -178,10 +178,10 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
   }
 	
   /* Register the toolbar insert button */
-  ToolbarItemReg(hGuiEventsInsert_xpm, "Insert Event Viewer", h_gui_events);
+  toolbar_item_reg(hGuiEventsInsert_xpm, "Insert Event Viewer", h_gui_events);
   
   /* Register the menu item insert entry */
-  MenuItemReg("/", "Insert Event Viewer", h_gui_events);
+  menu_item_reg("/", "Insert Event Viewer", h_gui_events);
   
 }
 
@@ -207,10 +207,10 @@ G_MODULE_EXPORT void destroy() {
   }
 
   /* Unregister the toolbar insert button */
-  ToolbarItemUnreg(h_gui_events);
+  toolbar_item_unreg(h_gui_events);
 	
   /* Unregister the menu item insert entry */
-  MenuItemUnreg(h_gui_events);
+  menu_item_unreg(h_gui_events);
 }
 
 /* Enumeration of the columns */
@@ -262,8 +262,8 @@ gui_events(MainWindow *parent_window)
   unsigned size;
 
   event_viewer_data->mw = parent_window;
-  GetTimeWindow(event_viewer_data->mw, &event_viewer_data->time_window);
-  GetCurrentTime(event_viewer_data->mw, &event_viewer_data->current_time);
+  get_time_window(event_viewer_data->mw, &event_viewer_data->time_window);
+  get_current_time(event_viewer_data->mw, &event_viewer_data->current_time);
   
   event_viewer_data->before_event_hooks = lttv_hooks_new();
   lttv_hooks_add(event_viewer_data->before_event_hooks, parse_event, event_viewer_data);
@@ -271,8 +271,8 @@ gui_events(MainWindow *parent_window)
   event_viewer_data->raw_trace_data_queue     = g_queue_new();
   event_viewer_data->raw_trace_data_queue_tmp = g_queue_new();  
 
-  RegUpdateTimeWindow(update_time_window,event_viewer_data, event_viewer_data->mw);
-  RegUpdateCurrentTime(update_current_time,event_viewer_data, event_viewer_data->mw);
+  reg_update_time_window(update_time_window,event_viewer_data, event_viewer_data->mw);
+  reg_update_current_time(update_current_time,event_viewer_data, event_viewer_data->mw);
 
   event_viewer_data->scroll_win = gtk_scrolled_window_new (NULL, NULL);
   gtk_widget_show ( event_viewer_data->scroll_win);
@@ -428,7 +428,7 @@ gui_events(MainWindow *parent_window)
   event_viewer_data->num_visible_events = 1;
 
   //get the life span of the traceset and set the upper of the scroll bar
-  getTracesetTimeSpan(event_viewer_data->mw, &event_viewer_data->time_span);
+  get_traceset_time_span(event_viewer_data->mw, &event_viewer_data->time_span);
   
   start = ltt_time_sub(event_viewer_data->time_span.endTime, event_viewer_data->time_span.startTime);
   event_viewer_data->vadjust_c->upper = ltt_time_to_double(start) * NANOSECONDS_PER_SECOND;
@@ -669,7 +669,7 @@ void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data)
  
     if(ltt_time.tv_sec != event_viewer_data->current_time.tv_sec ||
        ltt_time.tv_nsec != event_viewer_data->current_time.tv_nsec)
-      SetCurrentTime(event_viewer_data->mw,&ltt_time);
+      set_current_time(event_viewer_data->mw,&ltt_time);
   }else{
     g_warning("Can not get iter\n");
   }
@@ -1089,8 +1089,8 @@ gui_events_free(EventViewerData *event_viewer_data)
     g_queue_free(event_viewer_data->raw_trace_data_queue);
     g_queue_free(event_viewer_data->raw_trace_data_queue_tmp);
 
-    UnregUpdateTimeWindow(update_time_window,event_viewer_data, event_viewer_data->mw);
-    UnregUpdateCurrentTime(update_current_time,event_viewer_data, event_viewer_data->mw);
+    unreg_update_time_window(update_time_window,event_viewer_data, event_viewer_data->mw);
+    unreg_update_current_time(update_current_time,event_viewer_data, event_viewer_data->mw);
 
     g_event_viewer_data_list = g_slist_remove(g_event_viewer_data_list, event_viewer_data);
     g_free(event_viewer_data);
@@ -1191,7 +1191,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
 void tree_v_grab_focus(GtkWidget *widget, gpointer data){
   EventViewerData *event_viewer_data = (EventViewerData *)data;
   MainWindow * mw = event_viewer_data->mw;
-  SetFocusedPane(mw, gtk_widget_get_parent(event_viewer_data->hbox_v));
+  set_focused_pane(mw, gtk_widget_get_parent(event_viewer_data->hbox_v));
 }
 
 void get_events(EventViewerData* event_viewer_data, LttTime start, 
@@ -1199,11 +1199,11 @@ void get_events(EventViewerData* event_viewer_data, LttTime start,
 {
   int size;
   RawTraceData * data;
-  contextAddHooks(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
-		  NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
-  processTraceset(event_viewer_data->mw, start, end, max_num_events);
-  contextRemoveHooks(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
-		     NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
+  context_add_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
+			NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
+  process_traceset_api(event_viewer_data->mw, start, end, max_num_events);
+  context_remove_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
+			   NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
 
   size = event_viewer_data->raw_trace_data_queue_tmp->length;
   *real_num_events = size;

@@ -79,7 +79,7 @@ void SetFilter(MainWindow * main_win, gpointer filter)
  * @param view_constructor constructor of the viewer. 
  */
 
-void ToolbarItemReg(char ** pixmap, char *tooltip, lttv_constructor view_constructor)
+void toolbar_item_reg(char ** pixmap, char *tooltip, lttv_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
@@ -105,7 +105,7 @@ void ToolbarItemReg(char ** pixmap, char *tooltip, lttv_constructor view_constru
  * a reference to find out where the pixmap and tooltip are.
  */
 
-void ToolbarItemUnreg(lttv_constructor view_constructor)
+void toolbar_item_unreg(lttv_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
@@ -130,7 +130,7 @@ void ToolbarItemUnreg(lttv_constructor view_constructor)
  * @param view_constructor constructor of the viewer. 
  */
 
-void MenuItemReg(char *menu_path, char *menu_text, lttv_constructor view_constructor)
+void menu_item_reg(char *menu_path, char *menu_text, lttv_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvMenus * menu;
@@ -155,7 +155,7 @@ void MenuItemReg(char *menu_path, char *menu_text, lttv_constructor view_constru
  * a reference to find out where the menu_path and menu_text are.
  */
 
-void MenuItemUnreg(lttv_constructor view_constructor)
+void menu_item_unreg(lttv_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvMenus * menu;
@@ -177,7 +177,7 @@ void MenuItemUnreg(lttv_constructor view_constructor)
  * @param info the message which will be shown in the status bar.
  */
 
-void UpdateStatus(MainWindow *main_win, char *info)
+void update_status(MainWindow *main_win, char *info)
 {
 }
 
@@ -191,7 +191,7 @@ void UpdateStatus(MainWindow *main_win, char *info)
  * @param time_interval a pointer where time interval will be stored.
  */
 
-void GetTimeWindow(MainWindow *main_win, TimeWindow *time_window)
+void get_time_window(MainWindow *main_win, TimeWindow *time_window)
 {
   //time_window->start_time = main_win->current_tab->time_window.start_time;
   //time_window->time_width = main_win->current_tab->time_window.time_width;
@@ -207,7 +207,7 @@ void GetTimeWindow(MainWindow *main_win, TimeWindow *time_window)
  * @param time_interval a pointer where time interval will be stored.
  */
 
-void getTracesetTimeSpan(MainWindow *main_win, TimeInterval *time_interval)
+void get_traceset_time_span(MainWindow *main_win, TimeInterval *time_interval)
 {
   //time_window->start_time = main_win->current_tab->time_window.start_time;
   //time_window->time_width = main_win->current_tab->time_window.time_width;
@@ -224,7 +224,7 @@ void getTracesetTimeSpan(MainWindow *main_win, TimeInterval *time_interval)
  * @param time_interval a pointer where time interval is stored.
  */
 
-void SetTimeWindow(MainWindow *main_win, TimeWindow *time_window)
+void set_time_window(MainWindow *main_win, TimeWindow *time_window)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
@@ -245,7 +245,7 @@ void SetTimeWindow(MainWindow *main_win, TimeWindow *time_window)
  * @param time a pointer where time will be stored.
  */
 
-void GetCurrentTime(MainWindow *main_win, LttTime *time)
+void get_current_time(MainWindow *main_win, LttTime *time)
 {
   time = &main_win->current_tab->current_time;
 }
@@ -259,7 +259,7 @@ void GetCurrentTime(MainWindow *main_win, LttTime *time)
  * @param time a pointer where time is stored.
  */
 
-void SetCurrentTime(MainWindow *main_win, LttTime *time)
+void set_current_time(MainWindow *main_win, LttTime *time)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
@@ -281,7 +281,7 @@ void SetCurrentTime(MainWindow *main_win, LttTime *time)
  * @param traceset a pointer to a traceset.
  */
 /*
-void GetTraceset(MainWindow *main_win, Traceset *traceset)
+void get_traceset(MainWindow *main_win, Traceset *traceset)
 {
 }
 */
@@ -294,7 +294,7 @@ void GetTraceset(MainWindow *main_win, Traceset *traceset)
  * @param filter, a pointer to a filter.
  */
 /*
-void GetFilter(MainWindow *main_win, Filter *filter)
+void get_filter(MainWindow *main_win, Filter *filter)
 {
 }
 */
@@ -308,7 +308,7 @@ void GetFilter(MainWindow *main_win, Filter *filter)
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateTimeWindow(LttvHook hook, gpointer hook_data,
+void reg_update_time_window(LttvHook hook, gpointer hook_data,
 			   MainWindow * main_win)
 {
   LttvAttributeValue value;
@@ -333,7 +333,7 @@ void RegUpdateTimeWindow(LttvHook hook, gpointer hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateTimeWindow(LttvHook hook, gpointer hook_data,
+void unreg_update_time_window(LttvHook hook, gpointer hook_data,
 			     MainWindow * main_win)
 {
   LttvAttributeValue value;
@@ -355,7 +355,7 @@ void UnregUpdateTimeWindow(LttvHook hook, gpointer hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateTraceset(LttvHook hook, gpointer hook_data,
+void reg_update_traceset(LttvHook hook, gpointer hook_data,
 		       MainWindow * main_win)
 {
   LttvAttributeValue value;
@@ -380,7 +380,7 @@ void RegUpdateTraceset(LttvHook hook, gpointer hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateTraceset(LttvHook hook, gpointer hook_data,
+void unreg_update_traceset(LttvHook hook, gpointer hook_data,
 			 MainWindow * main_win)
 {
   LttvAttributeValue value;
@@ -402,7 +402,7 @@ void UnregUpdateTraceset(LttvHook hook, gpointer hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateFilter(LttvHook hook, gpointer hook_data,
+void reg_update_filter(LttvHook hook, gpointer hook_data,
 		     MainWindow *main_win)
 {
   LttvAttributeValue value;
@@ -427,7 +427,7 @@ void RegUpdateFilter(LttvHook hook, gpointer hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateFilter(LttvHook hook, gpointer hook_data,
+void unreg_update_filter(LttvHook hook, gpointer hook_data,
 		       MainWindow * main_win)
 {
   LttvAttributeValue value;
@@ -449,7 +449,7 @@ void UnregUpdateFilter(LttvHook hook, gpointer hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateCurrentTime(LttvHook hook, gpointer hook_data, 
+void reg_update_current_time(LttvHook hook, gpointer hook_data, 
 			  MainWindow *main_win)
 {
   LttvAttributeValue value;
@@ -474,7 +474,7 @@ void RegUpdateCurrentTime(LttvHook hook, gpointer hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateCurrentTime(LttvHook hook, gpointer hook_data,
+void unreg_update_current_time(LttvHook hook, gpointer hook_data,
 			    MainWindow * main_win)
 {
   LttvAttributeValue value;
@@ -495,7 +495,7 @@ void UnregUpdateCurrentTime(LttvHook hook, gpointer hook_data,
  * @param paned a pointer to a pane where the viewer is contained.
  */
 
-void SetFocusedPane(MainWindow *main_win, gpointer paned)
+void set_focused_pane(MainWindow *main_win, gpointer paned)
 {
   gtk_custom_set_focus((GtkWidget*)main_win->current_tab->custom,paned);  
 }
@@ -510,7 +510,7 @@ void SetFocusedPane(MainWindow *main_win, gpointer paned)
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateDividor(LttvHook hook, gpointer hook_data, 
+void reg_update_dividor(LttvHook hook, gpointer hook_data, 
 		      MainWindow *main_win)
 {
   LttvAttributeValue value;
@@ -535,7 +535,7 @@ void RegUpdateDividor(LttvHook hook, gpointer hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateDividor(LttvHook hook, gpointer hook_data, 
+void unreg_update_dividor(LttvHook hook, gpointer hook_data, 
 			MainWindow *main_win)
 {
   LttvAttributeValue value;
@@ -556,7 +556,7 @@ void UnregUpdateDividor(LttvHook hook, gpointer hook_data,
  * @param position position of the hpane's dividor.
  */
 
-void SetHPaneDividor(MainWindow *main_win, gint position)
+void set_hpane_dividor(MainWindow *main_win, gint position)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
@@ -576,8 +576,8 @@ void SetHPaneDividor(MainWindow *main_win, gint position)
  * @param end the end time of the last event to be processed.
  */
 
-void processTraceset(MainWindow *main_win, LttTime start, 
-		     LttTime end, unsigned maxNumEvents)
+void process_traceset_api(MainWindow *main_win, LttTime start, 
+			  LttTime end, unsigned maxNumEvents)
 {
   lttv_process_traceset_seek_time(main_win->traceset_info->traceset_context, start);
   lttv_process_traceset(main_win->traceset_info->traceset_context, end, maxNumEvents);
@@ -591,18 +591,18 @@ void processTraceset(MainWindow *main_win, LttTime start,
  * @param LttvHooks hooks to be registered.
  */
 
-void contextAddHooks(MainWindow *main_win ,
-		     LttvHooks *before_traceset, 
-		     LttvHooks *after_traceset,
-		     LttvHooks *check_trace, 
-		     LttvHooks *before_trace, 
-		     LttvHooks *after_trace, 
-		     LttvHooks *check_tracefile,
-		     LttvHooks *before_tracefile,
-		     LttvHooks *after_tracefile,
-		     LttvHooks *check_event, 
-		     LttvHooks *before_event, 
-		     LttvHooks *after_event)
+void context_add_hooks_api(MainWindow *main_win ,
+			   LttvHooks *before_traceset, 
+			   LttvHooks *after_traceset,
+			   LttvHooks *check_trace, 
+			   LttvHooks *before_trace, 
+			   LttvHooks *after_trace, 
+			   LttvHooks *check_tracefile,
+			   LttvHooks *before_tracefile,
+			   LttvHooks *after_tracefile,
+			   LttvHooks *check_event, 
+			   LttvHooks *before_event, 
+			   LttvHooks *after_event)
 {
   LttvTracesetContext * tsc = 
 	  LTTV_TRACESET_CONTEXT(main_win->traceset_info->traceset_context);
@@ -621,18 +621,18 @@ void contextAddHooks(MainWindow *main_win ,
  * @param LttvHooks hooks to be registered.
  */
 
-void contextRemoveHooks(MainWindow *main_win ,
-			LttvHooks *before_traceset, 
-			LttvHooks *after_traceset,
-			LttvHooks *check_trace, 
-			LttvHooks *before_trace, 
-			LttvHooks *after_trace, 
-			LttvHooks *check_tracefile,
-			LttvHooks *before_tracefile,
-			LttvHooks *after_tracefile,
-			LttvHooks *check_event, 
-			LttvHooks *before_event, 
-			LttvHooks *after_event)
+void context_remove_hooks_api(MainWindow *main_win ,
+			      LttvHooks *before_traceset, 
+			      LttvHooks *after_traceset,
+			      LttvHooks *check_trace, 
+			      LttvHooks *before_trace, 
+			      LttvHooks *after_trace, 
+			      LttvHooks *check_tracefile,
+			      LttvHooks *before_tracefile,
+			      LttvHooks *after_tracefile,
+			      LttvHooks *check_event, 
+			      LttvHooks *before_event, 
+			      LttvHooks *after_event)
 {
   LttvTracesetContext * tsc =
         LTTV_TRACESET_CONTEXT(main_win->traceset_info->traceset_context);
@@ -648,13 +648,13 @@ void contextRemoveHooks(MainWindow *main_win ,
  * @param main_win the main window the viewer belongs to.
  */
 
-void stateAddEventHooks(MainWindow *main_win )
+void state_add_event_hooks_api(MainWindow *main_win )
 {
   lttv_state_add_event_hooks(
        (LttvTracesetState*)main_win->traceset_info->traceset_context);
 }
 
-void stateRemoveEventHooks(MainWindow *main_win )
+void state_remove_event_hooks_api(MainWindow *main_win )
 {
   lttv_state_remove_event_hooks(
        (LttvTracesetState*)main_win->traceset_info->traceset_context);
@@ -666,13 +666,13 @@ void stateRemoveEventHooks(MainWindow *main_win )
  * @param main_win the main window the viewer belongs to.
  */
 
-void statsAddEventHooks(MainWindow *main_win )
+void stats_add_event_hooks_api(MainWindow *main_win )
 {
   lttv_stats_add_event_hooks(
         (LttvTracesetStats*)main_win->traceset_info->traceset_context);
 }
 
-void statsRemoveEventHooks(MainWindow *main_win )
+void stats_remove_event_hooks_api(MainWindow *main_win )
 {
   lttv_stats_remove_event_hooks(
         (LttvTracesetStats*)main_win->traceset_info->traceset_context);
@@ -683,7 +683,7 @@ void statsRemoveEventHooks(MainWindow *main_win )
  * @param main_win the main window the viewer belongs to.
  */
 
-LttvTracesetStats* getTracesetStats(MainWindow *main_win)
+LttvTracesetStats* get_traceset_stats_api(MainWindow *main_win)
 {
   return main_win->traceset_info->traceset_context;
 }

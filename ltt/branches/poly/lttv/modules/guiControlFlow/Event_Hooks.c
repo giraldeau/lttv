@@ -307,15 +307,15 @@ hGuiControlFlow(MainWindow *pmParentWindow)
 	g_critical("hGuiControlFlow");
 	ControlFlowData *Control_Flow_Data = GuiControlFlow() ;
 
-	GetTimeWindow(pmParentWindow,
+	get_time_window(pmParentWindow,
 			GuiControlFlow_get_Time_Window(Control_Flow_Data));
-	GetCurrentTime(pmParentWindow,
+	get_current_time(pmParentWindow,
 			GuiControlFlow_get_Current_Time(Control_Flow_Data));
 
 	// Unreg done in the GuiControlFlow_Destructor
-	RegUpdateTimeWindow(Update_Time_Window_Hook, Control_Flow_Data,
+	reg_update_time_window(Update_Time_Window_Hook, Control_Flow_Data,
 				pmParentWindow);
-	RegUpdateCurrentTime(Update_Current_Time_Hook, Control_Flow_Data,
+	reg_update_current_time(Update_Current_Time_Hook, Control_Flow_Data,
 				pmParentWindow);
 	return GuiControlFlow_get_Widget(Control_Flow_Data) ;
 	

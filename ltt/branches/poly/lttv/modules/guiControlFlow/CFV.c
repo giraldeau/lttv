@@ -146,11 +146,11 @@ GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
 	
 	/* Process List is removed with it's widget */
 	//ProcessList_destroy(Control_Flow_Data->Process_List);
-	UnregUpdateTimeWindow(Update_Time_Window_Hook,
+	unreg_update_time_window(Update_Time_Window_Hook,
 				Control_Flow_Data,
 				Control_Flow_Data->Scrolled_Window_VC->parent);
 	
-	UnregUpdateCurrentTime(Update_Current_Time_Hook,
+	unreg_update_current_time(Update_Current_Time_Hook,
 				Control_Flow_Data,
 				Control_Flow_Data->Scrolled_Window_VC->parent);
 	

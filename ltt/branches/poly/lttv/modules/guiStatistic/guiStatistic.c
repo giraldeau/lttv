@@ -99,10 +99,10 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
   }
 	
   /* Register the toolbar insert button */
-  ToolbarItemReg(hGuiStatisticInsert_xpm, "Insert Statistic Viewer", h_gui_statistic);
+  toolbar_item_reg(hGuiStatisticInsert_xpm, "Insert Statistic Viewer", h_gui_statistic);
   
   /* Register the menu item insert entry */
-  MenuItemReg("/", "Insert Statistic Viewer", h_gui_statistic);
+  menu_item_reg("/", "Insert Statistic Viewer", h_gui_statistic);
   
 }
 
@@ -126,10 +126,10 @@ G_MODULE_EXPORT void destroy() {
   }
 
   /* Unregister the toolbar insert button */
-  ToolbarItemUnreg(h_gui_statistic);
+  toolbar_item_unreg(h_gui_statistic);
 	
   /* Unregister the menu item insert entry */
-  MenuItemUnreg(h_gui_statistic);
+  menu_item_unreg(h_gui_statistic);
 }
 
 
@@ -189,7 +189,7 @@ gui_statistic(MainWindow *parent_window)
   StatisticViewerData* statistic_viewer_data = g_new(StatisticViewerData,1);
 
   statistic_viewer_data->mw     = parent_window;
-  statistic_viewer_data->stats  = getTracesetStats(statistic_viewer_data->mw);
+  statistic_viewer_data->stats  = get_traceset_stats_api(statistic_viewer_data->mw);
 
   statistic_viewer_data->statistic_hash = g_hash_table_new_full(g_str_hash, g_str_equal,
 								statistic_destroy_hash_key,
@@ -271,7 +271,7 @@ void grab_focus(GtkWidget *widget, gpointer data)
 {
   StatisticViewerData *statistic_viewer_data = (StatisticViewerData *)data;
   MainWindow * mw = statistic_viewer_data->mw;
-  SetFocusedPane(mw, gtk_widget_get_parent(statistic_viewer_data->hpaned_v));
+  set_focused_pane(mw, gtk_widget_get_parent(statistic_viewer_data->hpaned_v));
 }
 
 static void
@@ -328,13 +328,13 @@ void get_traceset_stats(StatisticViewerData * statistic_viewer_data)
   end.tv_sec = G_MAXULONG;
   end.tv_nsec = G_MAXULONG;
   
-  stateAddEventHooks(statistic_viewer_data->mw);
-  statsAddEventHooks(statistic_viewer_data->mw);
+  state_add_event_hooks_api(statistic_viewer_data->mw);
+  stats_add_event_hooks_api(statistic_viewer_data->mw);
 
-  processTraceset(statistic_viewer_data->mw, start, end, G_MAXULONG);
+  process_traceset_api(statistic_viewer_data->mw, start, end, G_MAXULONG);
   
-  stateRemoveEventHooks(statistic_viewer_data->mw);
-  statsRemoveEventHooks(statistic_viewer_data->mw);
+  state_remove_event_hooks_api(statistic_viewer_data->mw);
+  stats_remove_event_hooks_api(statistic_viewer_data->mw);
 
   //establish tree view for stats
   show_traceset_stats(statistic_viewer_data);

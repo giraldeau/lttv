@@ -122,8 +122,8 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
     gtk_widget_show(custom->hscrollbar);
 
     custom->hadjust = gtk_range_get_adjustment(GTK_RANGE(custom->hscrollbar));
-    GetTimeWindow(custom->mw,&Time_Window);
-    GetCurrentTime(custom->mw,&time);
+    get_time_window(custom->mw,&Time_Window);
+    get_current_time(custom->mw,&time);
     Time_Span = LTTV_TRACESET_CONTEXT(custom->mw->traceset_info->traceset_context)->Time_Span ;
 
     custom->hadjust->lower =  ltt_time_to_double(Time_Span->startTime) * 
@@ -310,7 +310,7 @@ void gtk_custom_scroll_value_changed(GtkRange *range, gpointer custom_arg)
   GtkCustom * custom = (GtkCustom*)custom_arg;
   gdouble value = gtk_range_get_value(range);
   time = ltt_time_from_double(value / NANOSECONDS_PER_SECOND);
-  SetCurrentTime(custom->mw, &time);
+  set_current_time(custom->mw, &time);
   g_warning("The current time is second :%d, nanosecond : %d\n", time.tv_sec, time.tv_nsec);
 }
 

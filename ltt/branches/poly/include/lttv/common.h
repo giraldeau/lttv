@@ -6,7 +6,6 @@
 #include <gtk/gtk.h>
 
 typedef struct _MainWindow MainWindow;
-//typedef struct _systemView systemView;
 typedef struct _Tab Tab;
 
 /* constructor of the viewer */
