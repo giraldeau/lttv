@@ -43,5 +43,6 @@ AC_SUBST(lttplugindir)
 
 AC_CONFIG_FILES([Makefile
                  lttv/Makefile
-                 lttv/plugins/Makefile])
+                 lttv/plugins/Makefile
+		 lttd/Makefile])
 AC_OUTPUT
