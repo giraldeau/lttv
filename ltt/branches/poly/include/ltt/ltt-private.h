@@ -13,7 +13,7 @@ typedef enum _BuildinEvent{
   TRACE_FACILITY_LOAD = 0,
   TRACE_BLOCK_START   = 17,
   TRACE_BLOCK_END     = 18,
-  TRACE_TIME_HEARTBEAT= 22
+  TRACE_TIME_HEARTBEAT= 19
 } BuildinEvent;
 
 
@@ -44,7 +44,8 @@ typedef struct _TimeHeartbeat {
 
 
 struct _LttType{
-  char * element_name;             //elements name of the struct or type name
+  char * type_name;                //type name if it is a named type
+  char * element_name;             //elements name of the struct
   char * fmt;
   int size;
   LttTypeEnum type_class;          //which type
@@ -80,6 +81,9 @@ struct _LttField{
   int  field_size;           //>0: size of the field, 
                              //0 : uncertain
                              //-1: uninitialize
+  int sequ_number_size;      //the size of unsigned used to save the
+                             //number of elements in the sequence
+
   int element_size;          //the element size of the sequence
   int field_fixed;           //0: field has string or sequence
                              //1: field has no string or sequenc
@@ -99,6 +103,8 @@ struct _LttEvent{
   LttCycleCount event_cycle_count;
   LttTracefile * tracefile;
   void * data;               //event data
+  int which_block;           //the current block of the event
+  int which_event;           //the position of the event
 };
 
 struct _LttFacility{
@@ -162,6 +168,9 @@ LttTime getEventTime(LttTracefile * tf);
 
 /* get the data type size and endian type of the local machine */
 void getDataEndianType(LttArchSize * size, LttArchEndian * endian);
+
+/* get an integer number */
+int getIntNumber(int size1, void *evD);
 
 /* open facility */
 void ltt_facility_open(LttTrace * t, char * facility_name);
