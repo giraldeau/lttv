@@ -3,10 +3,13 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
+#include <lttv/processTrace.h>
+
 /*****************************************************************************
  *                              Drawing functions                            *
  *****************************************************************************/
 
+//FIXME Colors will need to be dynamic. Graphic context part not done so far.
 typedef enum 
 {
 	RED,
@@ -36,36 +39,9 @@ struct _Drawing_t {
 
 };
 
-void test_draw(Drawing_t *Drawing)
-{
-	GdkRectangle update_rect;
-//	GdkColor color = { 0, 65535, 65535, 65535 };
-
-//	gdk_colormap_alloc_color(gdk_rgb_get_cmap(), &color, 0, 1);
-	
-//	GdkGC *gc = 
-//		Drawing->Drawing_Area_V->
-//		style->fg_gc[GTK_WIDGET_STATE (Drawing->Drawing_Area_V)];
-//	gdk_gc_set_foreground(gc, &color);
-	update_rect.x = 50;
-	update_rect.y = 50;
-	update_rect.width = 1000;
-	update_rect.height = 1000;
-	gdk_draw_rectangle (Drawing->Pixmap,
-		      Drawing->Drawing_Area_V->style->black_gc,
-		      TRUE,
-		      50, 50,
-		      1000,
-		      1000);
-
-
-	//Drawing_draw_line(Drawing, 10, 10, 50, 10,
-	//		Drawing->Drawing_Area_V->style->black_gc);
-	gtk_widget_draw (Drawing->Drawing_Area_V, &update_rect);
-	
-//	Drawing_Refresh( Drawing, 0, 0, 30, 30);
-}
-
+/* Function responsible for updating the exposed area.
+ * It must call processTrace() to ask for this update.
+ */
 void Drawing_Data_Request(Drawing_t *Drawing,
 			GdkPixmap *Pixmap,
 			gint x, gint y,
@@ -82,6 +58,7 @@ void Drawing_Data_Request(Drawing_t *Drawing,
   Drawing_draw_line(Drawing, Pixmap, 10, 10, 50, 10,
 			Drawing->Drawing_Area_V->style->black_gc);
 
+  
 }
 		      
 /* Callbacks */
