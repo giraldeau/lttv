@@ -20,31 +20,32 @@
    consist in AND, OR and NOT nested expressions, forming a tree with 
    simple relations as leaves. The simple relations test is a field
    in an event is equal, not equal, smaller, smaller or equal, larger, or
-   larger or equal to a specified value. */
+   larger or equal to a specified value. 
+*/
 
 #include <lttv/filter.h>
 
 /*
-	read_token
+  read_token
 
-	read_expression
-	  ( read expr )
-	  simple expr [ op expr ]
+  read_expression
+    ( read expr )
+    simple expr [ op expr ]
 
-	read_simple_expression
-	  read_field_path [ rel value ]
+  read_simple_expression
+    read_field_path [ rel value ]
 
-	read_field_path
-	  read_field_component [. field path]
+  read_field_path
+    read_field_component [. field path]
 
-	read_field_component
-	  name [ \[ value \] ]
+  read_field_component
+    name [ \[ value \] ]
 
-	data struct:
-	and/or(left/right)
-	not(child)
-	op(left/right)
-	path(component...) -> field
+  data struct:
+  and/or(left/right)
+  not(child)
+  op(left/right)
+  path(component...) -> field
 */
 
 /**
@@ -57,9 +58,8 @@ parse_simple_expression(GString* expression) {
 	
 	unsigned i;
 
-//	for(i=0;i<strlen(expression);i++) {
-//
-//	}
+  
+
 }
 
 /**
@@ -69,106 +69,113 @@ parse_simple_expression(GString* expression) {
  * 	@return the current lttv_filter or NULL if error
  */
 lttv_filter*
-lttv_filter_new(char *expression, LttvTrace *t) {
+lttv_filter_new(char *expression, LttvTraceState *tfs) {
 
-	unsigned 	
-		i, 
-		p=0,	/* parenthesis nesting value */
-		b=0;	/* current breakpoint in expression string */
+  /* test */
+  char* field = "cpu";
+  LttEventType *et;
+  
+ // LttField* a_ltt_field = NULL;
+ // a_ltt_field = find_field(NULL,field);
+
+ // g_print("%s\n",a_ltt_field->field_type->type_name);
+
+  return NULL;
+  
+  unsigned 	
+    i, 
+    p=0,	/* parenthesis nesting value */
+    b=0;	/* current breakpoint in expression string */
 	
-	gpointer tree;
-		
-	GString *current_option = g_string_new(""); 
-	lttv_simple_expression current_expression;
-	
-	g_print("filter::lttv_filter_new()\n");		/* debug */
+  gpointer tree = NULL;
+  
+  /* temporary values */
+  GString *current_option = g_string_new(""); 
+  lttv_simple_expression a_simple_expression;
 
-	/*
-	 * 	1. parse expression
-	 *	2. construct binary tree
-	 * 	3. return corresponding filter
-	 */
+  g_print("filter::lttv_filter_new()\n");		/* debug */
 
-	/*
-	 * 	Binary tree memory allocation
-	 * 	- based upon a preliminary block size
-	 */
-	gulong size = (strlen(expression)/6) * 1.5;	
-	tree = g_malloc(size*sizeof(lttv_filter_tree));
-	
-	/*
-	 *	Parse entire expression and construct
-	 *	the binary tree.  There are two steps 
-      	 *	in browsing that string
-      	 *	  1. finding boolean ops ( &,|,^,! ) and parenthesis
-      	 *	  2. finding simple expressions
-      	 *	    - field path
-      	 *	    - op ( >, <, =, >=, <=, !=)
-      	 *	    - value
-	*/
+  /*	
+   *  1. parse expression
+   *  2. construct binary tree
+   *  3. return corresponding filter
+   */
 
-	for(i=0;i<strlen(expression);i++) {
-		switch(expression[i]) {
-		       	/*
-			 *   boolean operators
-			 */
-			case '&':		/* and */
-				parse_simple_expression(current_option);
-				g_print("%s\n",&current_option);
-				current_option = g_string_new("");
-				break;
-			case '|':		/* or */
-				g_print("%s\n",current_option);
-				current_option = g_string_new("");
-				break;
-			case '^':		/* xor */
-				g_print("%s\n",current_option);
-				current_option = g_string_new("");
-				break;
-			case '!':		/* not, or not equal (math op) */
-			        if(expression[i+1] == '=') {  /* != */
-			          current_expression.op = LTTV_FIELD_NE;
-			          i++;
-			        } else {  /* ! */
-				  g_print("%s\n",current_option);
-  			 	  current_option = g_string_new("");
-        			}
-        			break;
-			case '(':		/* start of parenthesis */
-				p++;
-				break;
-			case ')':		/* end of parenthesis */
-				p--;
-				break;
+  /*
+   * 	Binary tree memory allocation
+   * 	- based upon a preliminary block size
+   */
+  gulong size = (strlen(expression)/AVERAGE_EXPRESSION_LENGTH)*MAX_FACTOR;
+  tree = g_malloc(size*sizeof(lttv_filter_tree));
+    
+  /*
+   *	Parse entire expression and construct
+   *	the binary tree.  There are two steps 
+   *	in browsing that string
+   *	  1. finding boolean ops ( &,|,^,! ) and parenthesis
+   *	  2. finding simple expressions
+   *	    - field path
+   *	    - op ( >, <, =, >=, <=, !=)
+   *	    - value
+   */
 
-	  		/*	
-			 *	mathematic operators
-			 */
-			case '<':   /* lower, lower or equal */
-				if(expression[i+1] == '=') { /* <= */
-			  	  i++;
-			  	  current_expression.op = LTTV_FIELD_LE;                  
-				} else current_expression.op = LTTV_FIELD_LT;
-				break;
-		        case '>':   /* higher, higher or equal */
-				if(expression[i+1] == '=') { /* >= */
-			  	  i++;
-			  	  current_expression.op = LTTV_FIELD_GE;                  
-				} else current_expression.op = LTTV_FIELD_GT;
-				break;
-		        case '=':   /* equal */
-				current_expression.op = LTTV_FIELD_EQ;
-				break;
-			default:		/* concatening current string */
-			  	g_string_append_c(current_option,expression[i]); 				
-		}
-	}
-	
-	if( p>0 ) { 
-		g_warning("Wrong filtering options, the string\n\"%s\"\n\ 
-				is not valid due to parenthesis incorrect use",expression);	
-		return NULL;
-	}
+  for(i=0;i<strlen(expression);i++) {
+    g_print("%s\n",current_option->str);
+    switch(expression[i]) {
+      /*
+       *   logical operators
+       */
+      case '&':   /* and */
+      case '|':   /* or */
+      case '^':   /* xor */
+        current_option = g_string_new("");
+        break;
+      case '!':   /* not, or not equal (math op) */
+        if(expression[i+1] == '=') {  /* != */
+          a_simple_expression.op = LTTV_FIELD_NE;
+          i++;
+        } else {  /* ! */
+          g_print("%s\n",current_option);
+          current_option = g_string_new("");
+        }
+        break;
+      case '(':   /* start of parenthesis */
+        p++;      /* incrementing parenthesis nesting value */
+        break;
+      case ')':   /* end of parenthesis */
+        p--;      /* decrementing parenthesis nesting value */
+        break;
+
+      /*	
+       *	mathematic operators
+       */
+      case '<':   /* lower, lower or equal */
+        if(expression[i+1] == '=') { /* <= */
+          i++;
+          a_simple_expression.op = LTTV_FIELD_LE;                  
+        } else a_simple_expression.op = LTTV_FIELD_LT;
+        break;
+      case '>':   /* higher, higher or equal */
+        if(expression[i+1] == '=') {  /* >= */
+          i++;
+          a_simple_expression.op = LTTV_FIELD_GE;                  
+        } else a_simple_expression.op = LTTV_FIELD_GT;
+        break;
+      case '=':   /* equal */
+        a_simple_expression.op = LTTV_FIELD_EQ;
+        break;
+      default:    /* concatening current string */
+        g_string_append_c(current_option,expression[i]); 				
+    }
+  }
+
+
+  
+  if( p>0 ) { 
+    g_warning("Wrong filtering options, the string\n\"%s\"\n\
+        is not valid due to parenthesis incorrect use",expression);	
+    return NULL;
+  }
 }
 
 /**
@@ -178,7 +185,7 @@ lttv_filter_new(char *expression, LttvTrace *t) {
  * 	@return success/failure of operation
  */
 gboolean
-lttv_filter_tracefile(lttv_filter *filter, void *tracefile) {
+lttv_filter_tracefile(lttv_filter *filter, LttvTrace *tracefile) {
 
 }
 
@@ -189,6 +196,6 @@ lttv_filter_tracefile(lttv_filter *filter, void *tracefile) {
  * 	@return success/failure of operation
  */
 gboolean
-lttv_filter_event(lttv_filter *filter, void *event) {
+lttv_filter_event(lttv_filter *filter, LttEvent *event) {
 
 }

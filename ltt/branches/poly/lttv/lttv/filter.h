@@ -20,6 +20,13 @@
 #define FILTER_H
 
 #include <lttv/traceset.h>
+#include <lttv/tracecontext.h>
+#include <lttv/state.h>
+#include <ltt/ltt.h>
+#include <ltt/event.h>
+
+#define AVERAGE_EXPRESSION_LENGTH 6
+#define MAX_FACTOR 1.5
 
 /* A filter expression consists in nested AND, OR and NOT expressions
    involving boolean relation (>, >=, =, !=, <, <=) between event fields and 
@@ -71,6 +78,12 @@ typedef struct _lttv_simple_expression
   char *value;
 } lttv_simple_expression;
 
+
+//typedef union _tmp {
+//  struct lttv_expression *e;
+//  lttv_field_relation *se;
+//} tmp;
+/*
 typedef struct _lttv_expression 
 { 
   gboolean or;
@@ -78,11 +91,13 @@ typedef struct _lttv_expression
   gboolean and;
   gboolean xor;
   gboolean simple_expression;
-//  union e 
-//  { 
-//	struct lttv_expression *e;
-//    	lttv_field_relation *se;
-//  };
+//  tmp e;
+} lttv_expression;
+*/
+
+typedef union _lttv_expression {
+  lttv_simple_expression se;
+  
 } lttv_expression;
 
 typedef struct _lttv_filter_tree {
@@ -103,15 +118,15 @@ gboolean parse_simple_expression(GString* expression);
 
 /* Compile the filter expression into an efficient data structure */
 
-lttv_filter *lttv_filter_new(char *expression, LttvTrace *t);
+lttv_filter *lttv_filter_new(char *expression, LttvTraceState *tfs);
 
 
 /* Check if the tracefile or event satisfies the filter. The arguments are
    declared as void * to allow these functions to be used as hooks. */
 
-gboolean lttv_filter_tracefile(lttv_filter *filter, void *tracefile);
+gboolean lttv_filter_tracefile(lttv_filter *filter, LttvTrace *tracefile);
 
-gboolean lttv_filter_event(lttv_filter *filter, void *event);
+gboolean lttv_filter_event(lttv_filter *filter, LttEvent *event);
 
 #endif // FILTER_H
 

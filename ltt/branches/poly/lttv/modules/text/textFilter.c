@@ -65,7 +65,7 @@ static void parse_filter_options(void *hook_data, void *call_data) {
 
 	LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
-	LttvTrace* lt = tfc->t_context->vt;
+//	LttvTrace* lt = tfc->t_context->vt;
 	
 	/* hook header */
 	g_info("TextFilter options parser");
@@ -91,7 +91,7 @@ static void parse_filter_options(void *hook_data, void *call_data) {
 		g_warning("textFilter::parser_filter_options() no filtering options specified !"); 
 
 	/* 	send the filtering string to the core	*/
-	lttv_filter_new(parsed_string,lt);	
+	lttv_filter_new(parsed_string,tfs);	
 	
 }
 
