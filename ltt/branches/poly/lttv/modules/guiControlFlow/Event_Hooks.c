@@ -138,7 +138,7 @@ void send_test_drawing(ProcessList *Process_List,
 	
 	/* Draw arc */
 	gdk_draw_arc(Pixmap, Drawing->Drawing_Area_V->style->black_gc,
-							TRUE, 100, y, 5, 5, 0, 360*64);
+							TRUE, 100, y, height/2, height/2, 0, 360*64);
 
 	g_info("y : %u, height : %u", y, height);
 
