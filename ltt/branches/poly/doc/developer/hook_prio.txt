@@ -1,0 +1,35 @@
+Linux Trace Toolkit
+
+Mathieu Desnoyers 18-05-2004
+
+
+Seeing that a very precise hook call ordering is needed when processing events
+(especially the order for calling state update hooks and event delivery hooks),
+this document defines a new type and interface that permits to merge all kind of
+hooks, eventually sorted by the priority associated to them.
+
+As the LttvHooksById has never been used up to this point in the project, I
+doubt that any real need for it exists. If we still want to implement it, it
+would require to create temporary by_id hook lists, add all the specific by_id
+hooks and the main hooks to it, and sort it before the traceset reading starts.
+
+- Type LttvHooksPrio
+
+This is a new type containing hooks associated with a priority. It has its own
+interface which pretty much looks like the one found in hook.h, plus the fact
+that a priority is associated with each hook. (lttv_hooks_prio_add,
+lttv_hooks_prio_call, lttv_hooks_prio_remove are sample names of functions
+offered by this interface) The container for this type would be a garray, just
+like hook.c, but a lttv_hooks_prio_sort would be required in order to sort the
+array before using lttv_hooks_prio_call.
+
+The viewers will just have to pass hooks to the main window through this type,
+using the hookprio.h interface to manipulate it. Then, the main window will add
+them and remove them from the context to deliver exactly the events requested by
+each viewer through process traceset.
+
+If we want to make this data type more encapsulated, we could call
+lttv_hooks_prio_sort upon each modification to the structure. Then, a simple
+lttv_hooks_prio_call would be assured to call the hooks in the right order.
+
+

@@ -1,0 +1,264 @@
+Linux Trace Toolkit
+
+Mathieu Desnoyers 17-05-2004
+
+
+This document explains how the lttvwindow API could process the event requests
+of the viewers, merging event requests and hook lists to benefit from the fact
+that process_traceset can call multiple hooks for the same event.
+
+First, we will explain the detailed process of event delivery in the current
+framework. We will then study its strengths and weaknesses.
+
+In a second time, a framework where the events requests are dealt by the main
+window with fine granularity will be described. We will then discussed the
+advantages and inconvenients over the first framework.
+
+
+1. (Actual) Boundaryless event reading
+
+Actually, viewers request events in a time interval from the main window. They
+also specify a (not so) maximum number of events to be delivered. In fact, the
+number of events to read only gives a stop point, from where only events with
+the same timestamp will be delivered.
+
+Viewers register hooks themselves in the traceset context. When merging read
+requests in the main window, all hooks registered by viewers will be called for
+the union of all the read requests, because the main window has no control on
+hook registration.
+
+The main window calls process_traceset on its own for all the intervals
+requested by all the viewers. It must not duplicate a read of the same time
+interval : it could be very hard to filter by viewers. So, in order to achieve
+this, time requests are sorted by start time, and process_traceset is called for
+each time request. We keep the last event time between each read : if the start
+time of the next read is lower than the time reached, we continue the reading
+from the actual position.
+
+We deal with specific number of events requests (infinite end time) by
+garantying that, starting from the time start of the request, at least that
+number of events will be read. As we can't do it efficiently without interacting
+very closely with process_traceset, we always read the specified number of
+events requested starting from the current position when we answer to a request
+based on the number of events.
+
+The viewers have to filter events delivered by traceset reading, because they
+can be asked by another viewer for a totally (or partially) different time
+interval.
+
+
+Weaknesses
+
+- process_middle does not guarantee the number of events read
+
+First of all, a viewer that requests events to process_traceset has no garantee
+that it will get exactly what it asked for. For example, a direct call to
+traceset_middle for a specific number of events will delived _at least_ that
+quantity of events, plus the ones that have the same timestamp that the last one
+has.
+
+- Border effects
+
+Viewer's writers will have to deal with a lot of border effects caused by the
+particularities of the reading by selecting the information.
+
+- Lack of encapsulation
+
+The viewer's writer will have to take into account all the border effects caused
+by the interaction with other modules. This means that event if a viewer works
+well alone or with another viewer, it's possible that new bugs arises when a new
+viewer comes around.
+
+
+- Duplication of the work
+
+Time based filters and counters of events will have to be implemented at the
+viewer's side, which is a duplication of the functionnalities that would
+normally be expected from the tracecontext API.
+
+- Lack of control over the data input
+
+As we expect module's writers to prefer to be as close as possible from the raw
+datas, making them interact with a lower level library that gives them a data
+input that they only control by further filtering of the input is not
+appropriated. We should expect some reluctancy from them about using this API
+because of this lack of control on the input.
+
+- Speed cost
+
+All hooks of all viewers will be called for all the time intervals. So, if we
+have a detailed events list and a control flow view, asking both for different
+time intervals, the detailed events list will have to filter all the events
+delivered originally to the control flow view. This can be a case occuring quite
+often.
+
+
+
+Strengths
+
+- Simple concatenation of time intervals at the main window level.
+
+Having the opportunity of delivering more events than necessary to the viewers
+means that we can concatenate time intervals and number of events requested
+fairly easily, while being hard to determine if some specific cases will be
+wrong by formal methods.
+
+- No duplication of the tracecontext API
+
+Viewers deal directly with the tracecontext API for registering hooks, removing
+a layer of encapsulation.
+
+
+
+
+
+2. (Proposed) Strict boundaries events reading
+
+The idea behind this method is to provide exactly the events requested by the
+viewers to them, no more, no less.
+
+This method relies on the fact that time based and number based event requests
+are, by nature, totally different and that there is no real interest in merging
+both requests types.
+
+It uses the new API for process traceset suggested in the document
+process_traceset_strict_boundaries.txt.
+
+It also means that the lttvwindow API will have to deal with viewer's hooks.
+Those will not be allowed to add them directly in the context. They will give
+them to the lttvwindow API, along with the time interval or the position and
+number of events. The lttvwindow API will have to take care of adding and
+removing hooks for the different time intervals requested. That means that hooks
+insertion and removal will be done between each traceset processing based on
+the time intervals and event positions related to each hook. We must therefore
+provide a simple interface for hooks passing between the viewers and the main
+window, make them easier to manage from the main window. The new type
+LttvHooksPrio solves this problem.
+
+
+Architecture
+
+Added to the lttvwindow API :
+
+
+- lttvwindow_time_interval_request
+arguments :
+( MainWindow *main_win,
+  TimeWindow time_requested, guint num_events,
+  LttvHooksPrio process_traceset_middle,
+  LttvHook after_process_traceset,
+  gpointer after_process_traceset_data);
+
+- lttvwindow_position_request
+arguments :
+( MainWindow *main_win,
+  LttvTracesetPosition position, guint max_num_events,
+  LttvHooksPrio process_traceset_middle,
+  LttvHook after_process_traceset,
+  gpointer after_process_traceset_data);
+
+
+Internal functions :
+
+- lttvwindow_process_pending_requests
+
+
+
+Implementation
+
+
+- Type LttvHooksPrio
+
+see hook_prio.h
+
+
+- lttvwindow_time_interval_request
+
+It adds the TimeRequest struct to the array of time requests pending and
+registers a pending request for the next g_idle if none is registered.
+
+typedef struct _TimeRequest {
+  TimeWindow  time_window;
+  guint num_events;
+  LttvHooksPrio middle_hooks;
+  LttvHook after_hook;
+  gpointer after_hook_data;
+} TimeRequest;
+
+
+- lttvwindow_position_request
+
+It adds a PositionRequest struct to the array of position requests pending and
+registers a pending request for the next g_idle if none is registered.
+
+typedef struct _PositionRequest {
+  LttvTracesetPosition  position;
+  guint max_num_events;
+  LttvHooksPrio middle_hooks;
+  LttvHook after_hook;
+  gpointer after_hook_data;
+} PositionRequest;
+
+
+
+- lttvwindow_process_pending_requests
+
+This internal function gets called by g_idle, taking care of the pending
+requests. It is responsible for concatenation of time intervals and position
+requests. It does it while it calls process traceset. Here is the detailed
+description of the way it works :
+
+It treats time interval requests and position requests as two different cases.
+So let's start with time interval requests.
+
+- Time interval requests servicing
+
+(1)
+It starts by finding the time interval request with the lowest start time and
+the others with the same start time. It add its (or their) hooks to the context.
+It will use this start time to seek in the traceset.
+
+Then, it searches for what event comes first : the end of one of the time
+request actually added in the context or the start of a time request that is not
+in the context. It uses this value as a end boundary for the first process
+traceset middle call.
+
+After a process traceset middle ends, we check if we have reached the end time
+of any time request. If so, we call the time requests process traceset end hook
+and remove this time request from the context and the array of time requests. If
+the context has no hooks left, that means that we have to jump further in the
+traceset. We then simply have to use the exact routine that we used for (1).
+
+Else, if there are hooks left, that means that we have not finished requesting
+one hook's time interval request yet, but maybe we must add a new time request
+to the hook list of the context. We start back at point (1), except that instead
+of finding the lowest start time, we simply keep the hooks already present in
+the context and add hooks that has their start time with a value equal to the
+last process traceset's end time.
+
+
+- Position requests servicing
+
+As it is nearly impossible to compare two traceset positions without replaying
+part of the traceset reading, which is not very efficient, we consider that the
+performance cost of doing one trace read per request does not justify position
+requests combinations. So, each position request will be serviced independently.
+
+
+
+
+Weaknesses
+
+- Position requests are serviced independently, which may duplicate traceset
+reads.
+
+
+
+Strengths
+
+- Removes the need for filtering of information supplied to the viewers.
+
+- Viewers have a better control on their data input.
+
+- Solves all the weaknesses idenfied in the actual boundaryless traceset
+reading.
