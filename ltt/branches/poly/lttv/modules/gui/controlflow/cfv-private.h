@@ -39,12 +39,6 @@ struct _ControlFlowData {
   //guint currently_Selected_Event  ;
   guint number_of_process;
 
-  /* hooks for trace read */
-  LttvHooks *event;
-  LttvHooks *after_event;
-  LttvHooks *after_traceset;
-  EventRequest *event_request;
-
 } ;
 
 

@@ -22,6 +22,10 @@
 #include "processlist.h"
 #include "drawitem.h"
 
+#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+
+
 /*****************************************************************************
  *                       Methods to synchronize process list                 *
  *****************************************************************************/
@@ -320,10 +324,12 @@ ProcessList *processlist_construct(void)
 }
 void processlist_destroy(ProcessList *process_list)
 {
+  g_info("processlist_destroy %p", process_list);
   g_hash_table_destroy(process_list->process_hash);
   process_list->process_hash = NULL;
 
   g_free(process_list);
+  g_info("processlist_destroy end");
 }
 
 GtkWidget *processlist_get_widget(ProcessList *process_list)

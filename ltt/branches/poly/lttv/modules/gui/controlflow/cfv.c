@@ -31,8 +31,8 @@ extern GSList *g_control_flow_data_list;
 
 static void control_flow_grab_focus(GtkWidget *widget, gpointer data){
   ControlFlowData * control_flow_data = (ControlFlowData *)data;
-  MainWindow * mw = control_flow_data->mw;
-  lttvwindow_report_focus(mw, control_flow_data->scrolled_window);
+  Tab * tab = control_flow_data->tab;
+  lttvwindow_report_focus(tab, guicontrolflow_get_widget(control_flow_data));
 }
 
 
@@ -104,13 +104,6 @@ guicontrolflow(void)
   /* Get trace statistics */
   //control_flow_data->Trace_Statistics = get_trace_statistics(Trace);
 
-  /* Create reading hooks */
-  control_flow_data->event = lttv_hooks_new();
-  control_flow_data->after_event = lttv_hooks_new();
-  control_flow_data->after_traceset = lttv_hooks_new();
-  control_flow_data->event_request = g_new(EventRequest, 1);
-
-  
   gtk_widget_show(drawing_widget);
   gtk_widget_show(process_list_widget);
   gtk_widget_show(control_flow_data->h_paned);
@@ -151,8 +144,8 @@ guicontrolflow_destructor_full(ControlFlowData *control_flow_data)
 {
   g_info("CFV.c : guicontrolflow_destructor_full, %p", control_flow_data);
   /* May already have been done by GTK window closing */
-  if(GTK_IS_WIDGET(control_flow_data->scrolled_window))
-    gtk_widget_destroy(control_flow_data->scrolled_window);
+  if(GTK_IS_WIDGET(guicontrolflow_get_widget(control_flow_data)))
+    gtk_widget_destroy(guicontrolflow_get_widget(control_flow_data));
   //control_flow_data->mw = NULL;
   //FIXME guicontrolflow_destructor(control_flow_data);
 }
@@ -162,33 +155,40 @@ void
 guicontrolflow_destructor(ControlFlowData *control_flow_data)
 {
   guint index;
+  Tab *tab = control_flow_data->tab;
   
   g_info("CFV.c : guicontrolflow_destructor, %p", control_flow_data);
-  g_info("%p, %p, %p", update_time_window_hook, control_flow_data, control_flow_data->mw);
-  if(GTK_IS_WIDGET(control_flow_data->scrolled_window))
+  g_info("%p, %p, %p", update_time_window_hook, control_flow_data, tab);
+  if(GTK_IS_WIDGET(guicontrolflow_get_widget(control_flow_data)))
     g_info("widget still exists");
   
   /* Process List is removed with it's widget */
   //ProcessList_destroy(control_flow_data->process_list);
-  if(control_flow_data->mw != NULL)
+  if(tab != NULL)
   {
       /* Delete reading hooks */
-    lttv_hooks_destroy(control_flow_data->event);
-    lttv_hooks_destroy(control_flow_data->after_event);
-    lttv_hooks_destroy(control_flow_data->after_traceset);
-    g_free(control_flow_data->event_request);
-
-    lttvwindow_unregister_time_window_notify(control_flow_data->mw,
+    lttvwindow_unregister_time_window_notify(tab,
         update_time_window_hook,
         control_flow_data);
   
-    lttvwindow_unregister_current_time_notify(control_flow_data->mw,
+    lttvwindow_unregister_current_time_notify(tab,
         update_current_time_hook,
         control_flow_data);
+
+    lttvwindow_unregister_redraw_notify(tab, redraw_notify, control_flow_data);
+    lttvwindow_unregister_continue_notify(tab,
+                                          continue_notify,
+                                          control_flow_data);
+    
+    lttvwindow_events_request_remove_all(control_flow_data->tab,
+                                         control_flow_data);
   }
-  g_info("CFV.c : guicontrolflow_destructor, %p", control_flow_data);
-  g_slist_remove(g_control_flow_data_list,control_flow_data);
+  g_control_flow_data_list = 
+         g_slist_remove(g_control_flow_data_list,control_flow_data);
+
+  g_info("CFV.c : guicontrolflow_destructor end, %p", control_flow_data);
   g_free(control_flow_data);
+ 
 }
 
 GtkWidget *guicontrolflow_get_widget(ControlFlowData *control_flow_data)

@@ -40,16 +40,16 @@
  * library call, then used by the drawing hooks. Then, once all the events are
  * sent, it is freed by the hook called after the reading.
  */
-typedef struct _EventRequest
-{
-  ControlFlowData *control_flow_data;
-  LttTime time_begin, time_end;
-  gint  x_begin, x_end;
+//typedef struct _EventRequest
+//{
+//  ControlFlowData *control_flow_data;
+//  LttTime time_begin, time_end;
+//  gint  x_begin, x_end;
   /* Fill the Events_Context during the initial expose, before calling for
    * events.
    */
   //GArray Events_Context; //FIXME
-} EventRequest ;
+//} EventRequest ;
 
 
 
@@ -57,7 +57,7 @@ typedef struct _EventRequest
 
 void send_test_data(ProcessList *process_list, Drawing_t *drawing);
 
-GtkWidget *h_guicontrolflow(MainWindow *mw, LttvTracesetSelector * s, char * key);
+GtkWidget *h_guicontrolflow(Tab *tab, LttvTracesetSelector * s, char * key);
 
 int event_selected_hook(void *hook_data, void *call_data);
 
@@ -92,12 +92,17 @@ int draw_after_hook(void *hook_data, void *call_data);
 
 void draw_closure(gpointer key, gpointer value, gpointer user_data);
 
+int  before_data_request(void *hook_data, void *call_data);
 int  after_data_request(void *hook_data, void *call_data);
 
 
 gint update_time_window_hook(void *hook_data, void *call_data);
 gint update_current_time_hook(void *hook_data, void *call_data);
-
+gint redraw_notify(void *hook_data, void *call_data);
+gint continue_notify(void *hook_data, void *call_data);
 
 gint after_process_traceset_hook(void *hook_data, void *call_data);
+
+
+
 #endif // _EVENT_HOOKS_H

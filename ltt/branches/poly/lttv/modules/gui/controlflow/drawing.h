@@ -24,6 +24,9 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <ltt/ltt.h>
+#include <lttv/tracecontext.h>
+#include <lttv/state.h>
+#include <lttvwindow/lttvwindow.h>
 #include "cfv.h"
 #include "drawitem.h"
 
@@ -64,8 +67,11 @@ struct _Drawing_t {
   PangoLayout *pango_layout;
 
   gint      height, width, depth;
-  gboolean  data_injected;
   
+  /* X coordinate of damaged region */
+  gint      damage_begin, damage_end;
+  LttTime   last_start;
+  GdkGC     *dotted_gc;
 };
 
 Drawing_t *drawing_construct(ControlFlowData *control_flow_data);
@@ -114,8 +120,7 @@ void convert_time_to_pixels(
 
 void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window);
 
-void drawing_data_request_end(Drawing_t *drawing,
-                              TimeWindow req_time_window);
+void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *tss);
 
 
 #endif // _DRAWING_H

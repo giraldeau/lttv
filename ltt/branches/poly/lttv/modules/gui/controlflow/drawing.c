@@ -67,7 +67,7 @@ static GdkColor CF_Colors [] =
 
 
 /* Function responsible for updating the exposed area.
- * It must call processTrace() to ask for this update.
+ * It must do an events request to the lttvwindow API to ask for this update.
  * Note : this function cannot clear the background, because it may
  * erase drawing already present (SAFETY).
  */
@@ -80,21 +80,23 @@ void drawing_data_request(Drawing_t *drawing,
   if(width < 0) return ;
   if(height < 0) return ;
 
-  const TimeWindow *time_window = lttvwindow_get_time_window(drawing->control_flow_data->mw);
+  TimeWindow time_window =
+              lttvwindow_get_time_window(drawing->control_flow_data->tab);
 
   ControlFlowData *control_flow_data = drawing->control_flow_data;
+  Tab *tab = control_flow_data->tab;
   //    (ControlFlowData*)g_object_get_data(
   //               G_OBJECT(drawing->drawing_area), "control_flow_data");
 
   LttTime start, time_end;
-  LttTime window_end = ltt_time_add(time_window->time_width,
-                                    time_window->start_time);
+  LttTime window_end = ltt_time_add(time_window.time_width,
+                                    time_window.start_time);
 
-  g_debug("req : window start_time : %u, %u", time_window->start_time.tv_sec, 
-                                       time_window->start_time.tv_nsec);
+  g_debug("req : window start_time : %u, %u", time_window.start_time.tv_sec, 
+                                       time_window.start_time.tv_nsec);
 
-  g_debug("req : window time width : %u, %u", time_window->time_width.tv_sec, 
-                                       time_window->time_width.tv_nsec);
+  g_debug("req : window time width : %u, %u", time_window.time_width.tv_sec, 
+                                       time_window.time_width.tv_nsec);
   
   g_debug("req : window_end : %u, %u", window_end.tv_sec, 
                                        window_end.tv_nsec);
@@ -102,109 +104,127 @@ void drawing_data_request(Drawing_t *drawing,
   g_debug("x is : %i, x+width is : %i", x, x+width);
 
   convert_pixels_to_time(drawing->drawing_area->allocation.width, x,
-        time_window->start_time,
+        time_window.start_time,
         window_end,
         &start);
 
   convert_pixels_to_time(drawing->drawing_area->allocation.width, x+width,
-        time_window->start_time,
+        time_window.start_time,
         window_end,
         &time_end);
   
-  LttvTracesetContext * tsc =
-        lttvwindow_get_traceset_context(control_flow_data->mw);
-  LttvTracesetState * tss =
-        (LttvTracesetState*)tsc;
-  
-  // Let's call processTrace() !!
-  
-  EventRequest *event_request = control_flow_data->event_request;
-  event_request->control_flow_data = control_flow_data;
-  event_request->time_begin = start;
-  event_request->time_end = time_end;
+  EventsRequest *events_request = g_new(EventsRequest, 1);
+  // Create the hooks
+  LttvHooks *event = lttv_hooks_new();
+  LttvHooks *before_chunk_traceset = lttv_hooks_new();
+  LttvHooks *after_chunk_traceset = lttv_hooks_new();
 
-  event_request->x_begin = x;
-  event_request->x_end = x+width;
+  lttv_hooks_add(before_chunk_traceset,
+                 before_data_request,
+                 events_request,
+                 LTTV_PRIO_DEFAULT);
 
-  g_debug("req : start : %u, %u", event_request->time_begin.tv_sec, 
-                                      event_request->time_begin.tv_nsec);
+  lttv_hooks_add(after_chunk_traceset,
+                 after_data_request,
+                 events_request,
+                 LTTV_PRIO_DEFAULT);
+  lttv_hooks_add(event,
+                 draw_event_hook,
+                 events_request,
+                 LTTV_PRIO_STATE-5);
+  lttv_hooks_add(event,
+                 draw_after_hook,
+                 events_request,
+                 LTTV_PRIO_STATE+5);
 
-  g_debug("req : end : %u, %u", event_request->time_end.tv_sec, 
-                                      event_request->time_end.tv_nsec);
-  
-  lttv_hooks_add(control_flow_data->after_traceset, after_data_request, event_request);
-  lttv_hooks_add(control_flow_data->event, draw_event_hook, event_request);
-  lttv_hooks_add(control_flow_data->after_event, draw_after_hook, event_request);
 
-  //lttv_process_traceset_seek_time(tsc, start);
-  //lttv_state_traceset_seek_time_closest(tss, start);
-  // FIXME : would like to place the after_traceset hook after the traceset,
-  // but the traceset context state is not valid anymore.
-  lttv_traceset_context_add_hooks(tsc,
-      NULL, control_flow_data->after_traceset, NULL, NULL, NULL, NULL,
-      //NULL, NULL, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, control_flow_data->event, control_flow_data->after_event);
-  TimeWindow time_request;
-  time_request.start_time = start;
-  time_request.time_width = ltt_time_sub(time_end, start);
-  
-  lttvwindow_time_interval_request(drawing->control_flow_data->mw, 
-                                   time_request, G_MAXUINT,
-                                   after_process_traceset_hook,
-                                   control_flow_data);
-      
-  //lttv_process_traceset(tsc, end, G_MAXULONG);
+  // Fill the events request
+  events_request->owner = control_flow_data;
+  events_request->viewer_data = control_flow_data;
+  events_request->servicing = FALSE;
+  events_request->start_time = start;
+  events_request->start_position = NULL;
+  events_request->stop_flag = FALSE;
+  events_request->end_time = time_end;
+  events_request->num_events = G_MAXUINT;
+  events_request->end_position = NULL;
+  events_request->before_chunk_traceset = before_chunk_traceset;
+  events_request->before_chunk_trace = NULL;
+  events_request->before_chunk_tracefile = NULL;
+  events_request->event = event;
+  events_request->event_by_id = NULL;
+  events_request->after_chunk_tracefile = NULL;
+  events_request->after_chunk_trace = NULL;
+  events_request->after_chunk_traceset = after_chunk_traceset;
+  events_request->before_request = NULL;
+  events_request->after_request = NULL;
+
+  g_debug("req : start : %u, %u", start.tv_sec, 
+                                      start.tv_nsec);
+
+  g_debug("req : end : %u, %u", time_end.tv_sec, 
+                                     time_end.tv_nsec);
+
+  lttvwindow_events_request_remove_all(tab,
+                                       control_flow_data);
+  lttvwindow_events_request(tab, events_request);
 }
    
 
 
+void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState *tss)
+{
+  g_debug("Begin of data request chunk");
+  ControlFlowData *cfd = events_request->viewer_data;
+  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
 
-void drawing_data_request_end(Drawing_t *drawing,
-                              TimeWindow req_time_window)
+  LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
+
+  cfd->drawing->last_start = current_time;
+}
+
+void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *tss)
 {
   gint x, x_end, width;
+
+  ControlFlowData *cfd = events_request->viewer_data;
+  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
+  Drawing_t *drawing = cfd->drawing;
   
-  LttvTracesetContext * tsc =
-        lttvwindow_get_traceset_context(drawing->control_flow_data->mw);
+  TimeWindow time_window = 
+        lttvwindow_get_time_window(cfd->tab);
 
-  const TimeWindow *time_window = lttvwindow_get_time_window(drawing->control_flow_data->mw);
-
-  //FIXME ? removing hooks during processtrace can BREAK things!
-  lttv_traceset_context_remove_hooks(tsc,
-      NULL, drawing->control_flow_data->after_traceset, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL,
-      drawing->control_flow_data->event,
-      drawing->control_flow_data->after_event);
-
-  g_debug("End of data request");
+  g_debug("End of data request chunk");
   
-  LttTime window_end = ltt_time_add(time_window->time_width,
-                                    time_window->start_time);
+  LttTime window_end = ltt_time_add(time_window.time_width,
+                                    time_window.start_time);
 
-  LttTime req_window_end = ltt_time_add(req_time_window.time_width,
-                                        req_time_window.start_time);
-
+  LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
+  
   convert_time_to_pixels(
-        time_window->start_time,
+        time_window.start_time,
         window_end,
-        req_time_window.start_time,
+        cfd->drawing->last_start,
         drawing->width,
         &x);
 
   convert_time_to_pixels(
-        time_window->start_time,
+        time_window.start_time,
         window_end,
-        req_window_end,
+        current_time,
         drawing->width,
         &x_end);
 
   width = x_end - x;
 
+  drawing->damage_begin = x+width;
+  drawing->damage_end = drawing->width;
+
   /* ask for the buffer to be redrawn */
   gtk_widget_queue_draw_area ( drawing->drawing_area,
                                x, 0,
                                width, drawing->height);
-
+ 
 }
 
 
@@ -237,7 +257,8 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
   //      -1);
   
   g_debug("drawing configure event");
-  g_debug("New draw size : %i by %i",widget->allocation.width, widget->allocation.height);
+  g_debug("New draw size : %i by %i",widget->allocation.width,
+                                    widget->allocation.height);
   
     
   if (drawing->pixmap)
@@ -279,12 +300,20 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
     drawing->width = widget->allocation.width;
     drawing->height = widget->allocation.height;
   
-    drawing->data_injected = FALSE;
+    drawing->damage_begin = 0;
+    drawing->damage_end = widget->allocation.width;
 
+    if(drawing->damage_begin < drawing->damage_end)
+    {
+      drawing_data_request(drawing,
+                           &drawing->pixmap,
+                           drawing->damage_begin,
+                           0,
+                           drawing->damage_end,
+                           widget->allocation.height);
+    }
+   
     return TRUE;
-
-
-
   }
 }
 
@@ -295,38 +324,29 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 {
   Drawing_t *drawing = (Drawing_t*)user_data;
 
-  const TimeWindow *time_window = lttvwindow_get_time_window(drawing->control_flow_data->mw);
-  const LttTime* current_time = 
-      lttvwindow_get_current_time(drawing->control_flow_data->mw);
-
   ControlFlowData *control_flow_data =
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
                 "control_flow_data");
 
+  TimeWindow time_window = 
+      lttvwindow_get_time_window(control_flow_data->tab);
+  LttTime current_time = 
+      lttvwindow_get_current_time(control_flow_data->tab);
+
   guint cursor_x=0;
 
-  LttTime window_end = ltt_time_add(time_window->time_width,
-                                    time_window->start_time);
+  LttTime window_end = ltt_time_add(time_window.time_width,
+                                    time_window.start_time);
 
   convert_time_to_pixels(
-        time_window->start_time,
+        time_window.start_time,
         window_end,
-        *current_time,
+        current_time,
         widget->allocation.width,
         &cursor_x);
 
-
-
-
-  if(!drawing->data_injected)
-  {
-    drawing_data_request(drawing, &drawing->pixmap, 0, 0,
-        widget->allocation.width,
-        widget->allocation.height);
-    drawing->data_injected = TRUE;
-  }
-  
+ 
   /* update the screen from the pixmap buffer */
   gdk_draw_pixmap(widget->window,
       widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
@@ -338,27 +358,26 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 
   /* Draw the dotted lines */
 
-  gint8 dash_list[] = { 1, 2 };
-  GdkGC *gc = gdk_gc_new(control_flow_data->drawing->pixmap);
-  gdk_gc_copy(gc, widget->style->white_gc);
-  gdk_gc_set_line_attributes(gc,
-                             1,
-                             GDK_LINE_ON_OFF_DASH,
-                             GDK_CAP_BUTT,
-                             GDK_JOIN_MITER);
-  gdk_gc_set_dashes(gc,
-                    0,
-                    dash_list,
-                    2);
-  drawing_draw_line(NULL, widget->window,
-                cursor_x, 0,
-                cursor_x, drawing->height,
-                gc);
-  gdk_gc_unref(gc);
+  if(drawing->dotted_gc == NULL) {
 
-  
-
-
+    drawing->dotted_gc = gdk_gc_new(drawing->drawing_area->window);
+    gdk_gc_copy(drawing->dotted_gc, widget->style->white_gc);
+ 
+    gint8 dash_list[] = { 1, 2 };
+    gdk_gc_set_line_attributes(drawing->dotted_gc,
+                               1,
+                               GDK_LINE_ON_OFF_DASH,
+                               GDK_CAP_BUTT,
+                               GDK_JOIN_MITER);
+    gdk_gc_set_dashes(drawing->dotted_gc,
+                      0,
+                      dash_list,
+                      2);
+    drawing_draw_line(NULL, widget->window,
+                  cursor_x, 0,
+                  cursor_x, drawing->height,
+                  drawing->dotted_gc);
+  }
   return FALSE;
 }
 
@@ -383,31 +402,33 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
                 G_OBJECT(widget),
                 "control_flow_data");
   Drawing_t *drawing = control_flow_data->drawing;
-  const TimeWindow *time_window = lttvwindow_get_time_window(drawing->control_flow_data->mw);
+  TimeWindow time_window =
+               lttvwindow_get_time_window(control_flow_data->tab);
 
   g_debug("click");
   if(event->button == 1)
   {
     LttTime time;
 
-    LttTime window_end = ltt_time_add(time_window->time_width,
-                                      time_window->start_time);
+    LttTime window_end = ltt_time_add(time_window.time_width,
+                                      time_window.start_time);
 
 
     /* left mouse button click */
     g_debug("x click is : %f", event->x);
 
     convert_pixels_to_time(widget->allocation.width, (guint)event->x,
-        time_window->start_time,
+        time_window.start_time,
         window_end,
         &time);
 
-    lttvwindow_report_current_time(control_flow_data->mw, &time);
+    lttvwindow_report_current_time(control_flow_data->tab, &time);
 
   }
 
-  lttvwindow_report_focus(control_flow_data->mw, gtk_widget_get_parent(control_flow_data->scrolled_window));
-  
+  lttvwindow_report_focus(control_flow_data->tab,
+           gtk_widget_get_parent(guicontrolflow_get_widget(control_flow_data)));
+
   return FALSE;
 }
 
@@ -433,12 +454,15 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   
   drawing->pango_layout =
     gtk_widget_create_pango_layout(drawing->drawing_area, NULL);
-  
+
+  drawing->dotted_gc = NULL;
+
   drawing->height = 0;
   drawing->width = 0;
   drawing->depth = 0;
   
-  drawing->data_injected = FALSE;
+  drawing->damage_begin = 0;
+  drawing->damage_end = 0;
   
   //gtk_widget_set_size_request(drawing->drawing_area->window, 50, 50);
   g_object_set_data_full(
@@ -520,12 +544,14 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
 
 void drawing_destroy(Drawing_t *drawing)
 {
-
+  g_info("drawing_destroy %p", drawing);
   // Do not unref here, Drawing_t destroyed by it's widget.
   //g_object_unref( G_OBJECT(drawing->drawing_area));
     
   g_free(drawing->pango_layout);
+  if(!drawing->dotted_gc) gdk_gc_unref(drawing->dotted_gc);
   g_free(drawing);
+  g_info("drawing_destroy end");
 }
 
 GtkWidget *drawing_get_drawing_area(Drawing_t *drawing)
@@ -740,7 +766,7 @@ static gboolean
 expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 {
   Drawing_t *drawing = (Drawing_t*)user_data;
-  const TimeWindow *time_window = lttvwindow_get_time_window(drawing->control_flow_data->mw);
+  TimeWindow time_window = lttvwindow_get_time_window(drawing->control_flow_data->tab);
   gchar text[255];
   
   PangoContext *context;
@@ -754,13 +780,13 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   GdkColor background = { 0, 0xffff, 0xffff, 0xffff };
 
   LttTime window_end = 
-    ltt_time_add(time_window->time_width,
-                 time_window->start_time);
+    ltt_time_add(time_window.time_width,
+                 time_window.start_time);
   LttTime half_width =
-    ltt_time_div(time_window->time_width,2.0);
+    ltt_time_div(time_window.time_width,2.0);
   LttTime window_middle =
     ltt_time_add(half_width,
-                 time_window->start_time);
+                 time_window.start_time);
   g_debug("ruler expose event");
  
   gdk_draw_rectangle (drawing->ruler->window,
@@ -784,8 +810,8 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 
 
   snprintf(text, 255, "%lus\n%luns",
-    time_window->start_time.tv_sec,
-    time_window->start_time.tv_nsec);
+    time_window.start_time.tv_sec,
+    time_window.start_time.tv_nsec);
 
   layout = gtk_widget_create_pango_layout(drawing->drawing_area, NULL);
 

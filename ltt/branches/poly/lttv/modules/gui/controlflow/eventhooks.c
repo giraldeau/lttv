@@ -57,25 +57,33 @@
  *
  * This constructor is given as a parameter to the menuitem and toolbar button
  * registration. It creates the list.
- * @param mw A pointer to the parent window.
+ * @param tab A pointer to the parent tab.
  * @return The widget created.
  */
 GtkWidget *
-h_guicontrolflow(MainWindow *mw, LttvTracesetSelector * s, char * key)
+h_guicontrolflow(Tab *tab, LttvTracesetSelector * s, char * key)
 {
-  g_info("h_guicontrolflow, %p, %p, %s", mw, s, key);
+  g_info("h_guicontrolflow, %p, %p, %s", tab, s, key);
   ControlFlowData *control_flow_data = guicontrolflow() ;
   
-  control_flow_data->mw = mw;
+  control_flow_data->tab = tab;
   
   //g_debug("time width2 : %u",time_window->time_width);
   // Unreg done in the GuiControlFlow_Destructor
-  lttvwindow_register_time_window_notify(mw,
+  lttvwindow_register_time_window_notify(tab,
                                          update_time_window_hook,
                                          control_flow_data);
-  lttvwindow_register_current_time_notify(mw,
+  lttvwindow_register_current_time_notify(tab,
                                           update_current_time_hook,
                                           control_flow_data);
+  lttvwindow_register_redraw_notify(tab,
+                                    redraw_notify,
+                                    control_flow_data);
+  lttvwindow_register_continue_notify(tab,
+                                      continue_notify,
+                                      control_flow_data);
+
+
   return guicontrolflow_get_widget(control_flow_data) ;
   
 }
@@ -99,7 +107,7 @@ int event_selected_hook(void *hook_data, void *call_data)
  */
 int draw_before_hook(void *hook_data, void *call_data)
 {
-  EventRequest *event_request = (EventRequest*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)hook_data;
   //EventsContext Events_Context = (EventsContext*)call_data;
   
   //event_request->Events_Context = Events_Context;
@@ -129,9 +137,10 @@ int draw_before_hook(void *hook_data, void *call_data)
  */
 int draw_event_hook(void *hook_data, void *call_data)
 {
-  EventRequest *event_request = (EventRequest*)hook_data;
-  ControlFlowData *control_flow_data = event_request->control_flow_data;
-  MainWindow *mw = control_flow_data->mw;
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  ControlFlowData *control_flow_data = 
+                      (ControlFlowData*)events_request->viewer_data;
+  Tab *tab = control_flow_data->tab;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
@@ -142,13 +151,13 @@ int draw_event_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  const TimeWindow *time_window = 
-    lttvwindow_get_time_window(mw);
+  TimeWindow time_window = 
+    lttvwindow_get_time_window(tab);
 
-  LttTime end_time = ltt_time_add(time_window->start_time,
-                                    time_window->time_width);
+  LttTime end_time = ltt_time_add(time_window.start_time,
+                                    time_window.time_width);
   //if(time < time_beg || time > time_end) return;
-  if(ltt_time_compare(evtime, time_window->start_time) == -1
+  if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
 
@@ -164,7 +173,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
 
     ProcessList *process_list =
-      guicontrolflow_get_process_list(event_request->control_flow_data);
+      guicontrolflow_get_process_list(control_flow_data);
 
 
     LttField *f = ltt_event_field(e);
@@ -208,7 +217,7 @@ int draw_event_hook(void *hook_data, void *call_data)
             &y_out,
             &height,
             &hashed_process_data_out);
-    drawing_insert_square( event_request->control_flow_data->drawing, y_out, height);
+    drawing_insert_square( control_flow_data->drawing, y_out, height);
     }
 
     g_free(name);
@@ -246,7 +255,7 @@ int draw_event_hook(void *hook_data, void *call_data)
             &height,
             &hashed_process_data_in);
 
-      drawing_insert_square( event_request->control_flow_data->drawing, y_in, height);
+      drawing_insert_square( control_flow_data->drawing, y_in, height);
     }
     g_free(name);
 
@@ -258,12 +267,12 @@ int draw_event_hook(void *hook_data, void *call_data)
 
     LttTime time = ltt_event_time(e);
 
-    LttTime window_end = ltt_time_add(time_window->time_width,
-                          time_window->start_time);
+    LttTime window_end = ltt_time_add(time_window.time_width,
+                          time_window.start_time);
 
     
     convert_time_to_pixels(
-        time_window->start_time,
+        time_window.start_time,
         window_end,
         time,
         width,
@@ -291,11 +300,14 @@ int draw_event_hook(void *hook_data, void *call_data)
     /* Draw the line/background of the out process */
     if(draw_context_out->previous->middle->x == -1)
     {
-      draw_context_out->previous->over->x = event_request->x_begin;
-      draw_context_out->previous->middle->x = event_request->x_begin;
-      draw_context_out->previous->under->x = event_request->x_begin;
+      draw_context_out->previous->over->x =
+                            control_flow_data->drawing->damage_begin;
+      draw_context_out->previous->middle->x = 
+                            control_flow_data->drawing->damage_begin;
+      draw_context_out->previous->under->x =
+                            control_flow_data->drawing->damage_begin;
 
-      g_debug("out middle x_beg : %u",event_request->x_begin);
+      g_debug("out middle x_beg : %u",control_flow_data->drawing->damage_begin);
     }
   
     draw_context_out->current->middle->x = x;
@@ -507,10 +519,15 @@ int draw_event_hook(void *hook_data, void *call_data)
     /* Draw the line/bg of the in process */
     if(draw_context_in->previous->middle->x == -1)
     {
-      draw_context_in->previous->middle->x = event_request->x_begin;
-      draw_context_in->previous->over->x = event_request->x_begin;
-      draw_context_in->previous->under->x = event_request->x_begin;
-      g_debug("in middle x_beg : %u",event_request->x_begin);
+      draw_context_in->previous->over->x =
+                            control_flow_data->drawing->damage_begin;
+      draw_context_in->previous->middle->x = 
+                            control_flow_data->drawing->damage_begin;
+      draw_context_in->previous->under->x =
+                            control_flow_data->drawing->damage_begin;
+
+      g_debug("in middle x_beg : %u",control_flow_data->drawing->damage_begin);
+
     }
   
     draw_context_in->current->middle->x = x;
@@ -729,8 +746,8 @@ int draw_event_hook(void *hook_data, void *call_data)
 
 int draw_after_hook(void *hook_data, void *call_data)
 {
-  EventRequest *event_request = (EventRequest*)hook_data;
-  ControlFlowData *control_flow_data = event_request->control_flow_data;
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
@@ -742,13 +759,13 @@ int draw_after_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  const TimeWindow *time_window = 
-    lttvwindow_get_time_window(control_flow_data->mw);
+  TimeWindow time_window = 
+    lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = ltt_time_add(time_window->start_time,
-                                    time_window->time_width);
+  LttTime end_time = ltt_time_add(time_window.start_time,
+                                    time_window.time_width);
   //if(time < time_beg || time > time_end) return;
-  if(ltt_time_compare(evtime, time_window->start_time) == -1
+  if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
 
@@ -765,7 +782,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
 
     ProcessList *process_list =
-      guicontrolflow_get_process_list(event_request->control_flow_data);
+      guicontrolflow_get_process_list(control_flow_data);
 
 
     LttField *f = ltt_event_field(e);
@@ -809,7 +826,7 @@ int draw_after_hook(void *hook_data, void *call_data)
             &y_out,
             &height,
             &hashed_process_data_out);
-    drawing_insert_square( event_request->control_flow_data->drawing, y_out, height);
+    drawing_insert_square( control_flow_data->drawing, y_out, height);
     }
 
     g_free(name);
@@ -847,7 +864,7 @@ int draw_after_hook(void *hook_data, void *call_data)
             &height,
             &hashed_process_data_in);
 
-      drawing_insert_square( event_request->control_flow_data->drawing, y_in, height);
+      drawing_insert_square( control_flow_data->drawing, y_in, height);
     }
     g_free(name);
 
@@ -1383,13 +1400,78 @@ gint update_time_window_hook(void *hook_data, void *call_data)
   return 0;
 }
 
-gint after_process_traceset_hook(void *hook_data, void *call_data)
+gint redraw_notify(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
-  TimeRequest *time_request = (TimeRequest *)call_data;
+  Drawing_t *drawing = control_flow_data->drawing;
+  GtkWidget *widget = drawing->drawing_area;
 
-  drawing_data_request_end(control_flow_data->drawing,
-                           time_request->time_window);
+  drawing->damage_begin = 0;
+  drawing->damage_end = widget->allocation.width;
+
+
+  // Clear the image
+  gdk_draw_rectangle (drawing->pixmap,
+        widget->style->black_gc,
+        TRUE,
+        0, 0,
+        widget->allocation.width+SAFETY,
+        widget->allocation.height+SAFETY);
+
+
+  if(drawing->damage_begin < drawing->damage_end)
+  {
+    drawing_data_request(drawing,
+                         &drawing->pixmap,
+                         drawing->damage_begin,
+                         0,
+                         drawing->damage_end-drawing->damage_begin,
+                         widget->allocation.height);
+  }
+
+  gtk_widget_queue_draw_area(drawing->drawing_area,
+                             0,0,
+                             drawing->width,
+                             drawing->height);
+ 
+  return FALSE;
+
+}
+
+
+gint continue_notify(void *hook_data, void *call_data)
+{
+  ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
+  Drawing_t *drawing = control_flow_data->drawing;
+  GtkWidget *widget = drawing->drawing_area;
+
+  g_assert(widget->allocation.width == drawing->damage_end);
+
+  if(drawing->damage_begin < drawing->damage_end)
+  {
+    drawing_data_request(drawing,
+                         &drawing->pixmap,
+                         drawing->damage_begin,
+                         0,
+                         drawing->damage_end-drawing->damage_begin,
+                         widget->allocation.height);
+  }
+
+  return FALSE;
+}
+
+
+gint after_process_traceset_hook(void *hook_data, void *call_data)
+{
+  //ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
+  EventsRequest *events_request = (EventsRequest *)hook_data;
+
+  ControlFlowData *control_flow_data = 
+                   (ControlFlowData*)events_request->viewer_data;
+
+
+  drawing_data_request_end(events_request,
+                           (LttvTracesetState*)call_data);
   return 0; 
 }
  
@@ -1402,19 +1484,19 @@ gint update_current_time_hook(void *hook_data, void *call_data)
 
   LttTime current_time = *((LttTime*)call_data);
   
-  const TimeWindow *time_window =
-            lttvwindow_get_time_window(control_flow_data->mw);
+  TimeWindow time_window =
+            lttvwindow_get_time_window(control_flow_data->tab);
   
-  LttTime time_begin = time_window->start_time;
-  LttTime width = time_window->time_width;
+  LttTime time_begin = time_window.start_time;
+  LttTime width = time_window.time_width;
   LttTime half_width = ltt_time_div(width,2.0);
   LttTime time_end = ltt_time_add(time_begin, width);
 
   LttvTracesetContext * tsc =
-        lttvwindow_get_traceset_context(control_flow_data->mw);
+        lttvwindow_get_traceset_context(control_flow_data->tab);
   
-  LttTime trace_start = tsc->Time_Span->startTime;
-  LttTime trace_end = tsc->Time_Span->endTime;
+  LttTime trace_start = tsc->time_span.start_time;
+  LttTime trace_end = tsc->time_span.end_time;
   
   g_info("New current time HOOK : %u, %u", current_time.tv_sec,
               current_time.tv_nsec);
@@ -1444,7 +1526,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
     new_time_window.start_time = time_begin;
     new_time_window.time_width = width;
 
-    lttvwindow_report_time_window(control_flow_data->mw, &new_time_window);
+    lttvwindow_report_time_window(control_flow_data->tab, &new_time_window);
   }
   else if(ltt_time_compare(current_time, time_end) == 1)
   {
@@ -1458,7 +1540,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
     new_time_window.start_time = time_begin;
     new_time_window.time_width = width;
 
-    lttvwindow_report_time_window(control_flow_data->mw, &new_time_window);
+    lttvwindow_report_time_window(control_flow_data->tab, &new_time_window);
     
   }
   //gtk_widget_queue_draw(control_flow_data->drawing->drawing_area);
@@ -1471,7 +1553,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
 }
 
 typedef struct _ClosureData {
-  EventRequest *event_request;
+  EventsRequest *events_request;
   LttvTracesetState *tss;
 } ClosureData;
   
@@ -1483,7 +1565,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   ClosureData *closure_data = (ClosureData*)user_data;
     
   ControlFlowData *control_flow_data =
-    closure_data->event_request->control_flow_data;
+    closure_data->events_request->viewer_data;
   
   GtkWidget *widget = control_flow_data->drawing->drawing_area;
 
@@ -1498,7 +1580,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   /* Get last state of process */
   LttvTraceContext *tc =
     ((LttvTracesetContext*)closure_data->tss)->traces[process_info->trace_num];
-  //LttvTracefileContext *tfc = (LttvTracefileContext *)closure_data->ts;
+  LttvTracesetContext *tsc = (LttvTracesetContext *)closure_data->tss;
 
   LttvTraceState *ts = (LttvTraceState*)tc;
   LttvProcessState *process;
@@ -1511,15 +1593,39 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   DrawContext *draw_context = hashed_process_data->draw_context;
   if(draw_context->previous->middle->x == -1)
   {
-    draw_context->previous->middle->x = closure_data->event_request->x_begin;
-    draw_context->previous->over->x = closure_data->event_request->x_begin;
-    draw_context->previous->under->x = closure_data->event_request->x_begin;
-    g_debug("out middle x_beg : %u",closure_data->event_request->x_begin);
+    draw_context->previous->over->x =
+                          control_flow_data->drawing->damage_begin;
+    draw_context->previous->middle->x = 
+                          control_flow_data->drawing->damage_begin;
+    draw_context->previous->under->x =
+                          control_flow_data->drawing->damage_begin;
+
+    g_debug("out middle x_beg : %u",control_flow_data->drawing->damage_begin);
   }
 
-  draw_context->current->middle->x = closure_data->event_request->x_end;
-  draw_context->current->over->x = closure_data->event_request->x_end;
-  draw_context->current->under->x = closure_data->event_request->x_end;
+  /* Find pixels corresponding to current time . If the time does
+   * not fit in the window, show a warning, not supposed to happend. */
+  guint x = 0;
+  guint width = control_flow_data->drawing->drawing_area->allocation.width;
+
+  TimeWindow time_window =
+            lttvwindow_get_time_window(control_flow_data->tab);
+
+  LttTime time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
+
+  LttTime window_end = ltt_time_add(time_window.time_width,
+                        time_window.start_time);
+  
+  convert_time_to_pixels(
+      time_window.start_time,
+      window_end,
+      time,
+      width,
+      &x);
+
+  draw_context->current->middle->x = x;
+  draw_context->current->over->x = x;
+  draw_context->current->under->x = x;
   draw_context->current->middle->y = y + height/2;
   draw_context->current->over->y = y ;
   draw_context->current->under->y = y + height;
@@ -1667,9 +1773,19 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   hashed_process_data->draw_context->previous->modify_under->x = -1;
   hashed_process_data->draw_context->previous->modify_under->y = -1;
   hashed_process_data->draw_context->previous->status = LTTV_STATE_UNNAMED;
-  
 
 }
+
+int  before_data_request(void *hook_data, void *call_data)
+{
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
+
+  drawing_data_request_begin(events_request, tss);
+
+  return 0;
+}
+
 
 /*
  * for each process
@@ -1679,22 +1795,23 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
  */
 int  after_data_request(void *hook_data, void *call_data)
 {
-  EventRequest *event_request = (EventRequest*)hook_data;
-  ControlFlowData *control_flow_data = event_request->control_flow_data;
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
+  LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
   
   ProcessList *process_list =
-    guicontrolflow_get_process_list(event_request->control_flow_data);
+    guicontrolflow_get_process_list(control_flow_data);
 
   ClosureData closure_data;
-  closure_data.event_request = (EventRequest*)hook_data;
-  closure_data.tss = (LttvTracesetState*)call_data;
+  closure_data.events_request = (EventsRequest*)hook_data;
+  closure_data.tss = tss;
 
   g_hash_table_foreach(process_list->process_hash, draw_closure,
                         (void*)&closure_data);
 
-  /* Remove reading hooks */
-  // Cannot do this here, will break processtrace!
-  //drawing_data_request_end(control_flow_data->drawing);
-  
+  /* Request expose */
+  drawing_data_request_end(events_request, tss);
+
+  return 0;
 }
 

@@ -69,13 +69,12 @@ static void init() {
 
   g_info("GUI ControlFlow Viewer init()");
 
-  /* Register the toolbar insert button */
-  lttvwindow_register_toolbar(hGuiControlFlowInsert_xpm,
-      "Insert Control Flow Viewer", h_guicontrolflow);
-
-  /* Register the menu item insert entry */
-  lttvwindow_register_menu("/", "Insert Control Flow Viewer", h_guicontrolflow);
-  
+  /* Register the toolbar insert button and menu entry*/
+  lttvwindow_register_constructor("/",
+                                  "Insert Control Flow Viewer",
+                                  hGuiControlFlowInsert_xpm,
+                                  "Insert Control Flow Viewer",
+                                  h_guicontrolflow);
 }
 
 void destroy_walk(gpointer data, gpointer user_data)
@@ -100,12 +99,8 @@ static void destroy() {
   
   g_slist_free(g_control_flow_data_list);
 
-  /* Unregister the toolbar insert button */
-  lttvwindow_unregister_toolbar(h_guicontrolflow);
-
-  /* Unregister the menu item insert entry */
-  lttvwindow_unregister_menu(h_guicontrolflow);
-  
+  /* Unregister the toolbar insert button and menu entry */
+  lttvwindow_unregister_constructor(h_guicontrolflow);
 }
 
 
