@@ -665,10 +665,15 @@ void set_hpane_dividor(MainWindow *main_win, gint position)
 void process_traceset_api(MainWindow *main_win, LttTime start, 
 			  LttTime end, unsigned maxNumEvents)
 {
-  lttv_process_traceset_seek_time(main_win->current_tab->traceset_info->
-				  traceset_context, start);
-  lttv_process_traceset(main_win->current_tab->traceset_info->
-			traceset_context, end, maxNumEvents);
+  lttv_process_traceset_seek_time(
+     LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
+           traceset_context),
+      start);
+  lttv_process_traceset(
+     LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
+           traceset_context),
+      end,
+      maxNumEvents);
 }
 
 /**
