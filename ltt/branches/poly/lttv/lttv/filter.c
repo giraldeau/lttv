@@ -397,7 +397,7 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
  */
 gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
 
-  g_print("se->value:%s\n",value);
+//  g_print("se->value:%s\n",value);
   
   switch(se->field) {
      /* 
@@ -1036,8 +1036,8 @@ lttv_filter_update(LttvFilter* filter) {
    *    3. pop the tree value from the tree stack
    */
   
-  g_print("expression: %s\n",filter->expression);
-  g_print("strlen(expression): %i\n",strlen(filter->expression));
+//  g_print("expression: %s\n",filter->expression);
+//  g_print("strlen(expression): %i\n",strlen(filter->expression));
   for(i=0;i<strlen(filter->expression);i++) {
     // debug
     g_print("%c ",filter->expression[i]);
@@ -1186,14 +1186,12 @@ lttv_filter_update(LttvFilter* filter) {
           //a_simple_expression->value = g_string_free(a_field_component,FALSE);
           a_field_component = g_string_new("");
           t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-          g_print("here\n");
           while(t1->right != LTTV_TREE_IDLE) {
              g_print("while right:%i %p->child:%p\n",t1->right,t1,t1->r_child.t);
              g_assert(t1->right == LTTV_TREE_NODE);
              g_assert(t1->r_child.t != NULL);
              t1 = t1->r_child.t;
           }
-          g_print("here2\n");
           t1->right = LTTV_TREE_LEAF;
           t1->r_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
@@ -1257,8 +1255,8 @@ lttv_filter_update(LttvFilter* filter) {
     }
   }
 
-  g_print("subtree:%p, tree:%p, t1:%p, t2:%p\n",subtree,tree,t1,t2);
-  g_print("stack size: %i\n",tree_stack->len);
+//  g_print("subtree:%p, tree:%p, t1:%p, t2:%p\n",subtree,tree,t1,t2);
+//  g_print("stack size: %i\n",tree_stack->len);
 
   /*
    * Preliminary check to see

@@ -57,8 +57,6 @@ static LttvHooks
   *before_traceset,
   *event_hook;
 
-static FILE *a_file;
-
 /**
  * filters the file input from user
  * @param hook_data the hook data
@@ -77,7 +75,9 @@ void filter_analyze_file(void *hook_data) {
 	 * 	and/or command line string.  From these sources, an 
 	 * 	option string is rebuilded and sent to the filter core
 	 */
-  GString* a_file_content = g_string_new("");
+  
+/* OLD CODE
+ * GString* a_file_content = g_string_new("");
   a_file = fopen(a_file_name, "r"); 
 	if(a_file == NULL) { 
 		g_warning("file %s does not exist", a_file_name);
@@ -92,14 +92,27 @@ void filter_analyze_file(void *hook_data) {
     g_string_append(a_file_content,line);
   }
   free(line);
+
+  fclose(a_file);
+*/  
+  
+  if(!g_file_test(a_file_name,G_FILE_TEST_EXISTS)) {
+    g_warning("file %s does not exist", a_file_name);
+    return;
+  }
+
+  char* a_file_content = NULL;
+
+  g_file_get_contents(a_file_name,&a_file_content,NULL,NULL);
   
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
       LTTV_POINTER, &value));
 
   if(((GString*)*(value.v_pointer))->len != 0) g_string_append_c((GString*)*(value.v_pointer),'&');
-  g_string_append((GString*)*(value.v_pointer),a_file_content->str);
+  g_string_append_c((GString*)*(value.v_pointer),'(');
+  g_string_append((GString*)*(value.v_pointer),a_file_content);
+  g_string_append_c((GString*)*(value.v_pointer),')');
   
-  fclose(a_file);
 }
 
 /**
@@ -134,7 +147,9 @@ void filter_analyze_string(void *hook_data) {
       LTTV_POINTER, &value));
 
   if(((GString*)*(value.v_pointer))->len != 0) g_string_append_c((GString*)*(value.v_pointer),'&');
+  g_string_append_c((GString*)*(value.v_pointer),'(');
   g_string_append((GString*)*(value.v_pointer),a_string);
+  g_string_append_c((GString*)*(value.v_pointer),')');
 
 //  LttvFilter* filter = lttv_filter_new();
 //  lttv_filter_append_expression(filter,a_string);
