@@ -9,9 +9,11 @@
 
 #include <gtk/gtk.h>
 
-#include <lttv/module.h>
-#include <lttv/hook.h>
 #include <lttv/lttv.h>
+#include <lttv/attribute.h>
+#include <lttv/hook.h>
+#include <lttv/option.h>
+#include <lttv/module.h>
 
 
 #include "interface.h"
@@ -29,7 +31,10 @@ call_Event_Selected_Hook selected_hook = NULL;
 GModule *gm;
 view_constructor gConstructor = NULL;
 
-int Window_Creation_Hook(void *hook_data, void *call_data);
+
+static LttvHooks
+	*main_hooks;
+
 
 /*****************************************************************************
  *                 Functions for module loading/unloading                    *
@@ -45,23 +50,8 @@ typedef struct _WindowCreationData {
 	char ** argv;
 } WindowCreationData;
 
-G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
-	LttvAttributeValue value;
-	WindowCreationData *Window_Creation_Data = g_new(WindowCreationData, 1);
-	
-	Window_Creation_Data->argc = argc;
-	Window_Creation_Data->argv = argv;
-
-	
-	lttv_iattribute_find_by_path(LTTV_IATTRIBUTE(lttv_global_attributes()),
-			"/hooks/main/before",	LTTV_POINTER, &value);
-
-	lttv_hooks_add(*(value.v_pointer), Window_Creation_Hook, Window_Creation_Data);
-
-}
-
-int Window_Creation_Hook(void *hook_data, void *call_data)
+static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 {
   GModule *gm;
   GtkWidget * ToolMenuTitle_menu, *insert_view;
@@ -82,6 +72,7 @@ int Window_Creation_Hook(void *hook_data, void *call_data)
 
   add_pixmap_directory (PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
   add_pixmap_directory ("pixmaps");
+  add_pixmap_directory ("modules/gui/mainWin/pixmaps");
 
   /*
    * The following code was added by Glade to create one of each component
@@ -128,6 +119,31 @@ int Window_Creation_Hook(void *hook_data, void *call_data)
   g_object_set_data(G_OBJECT(window1), "mainWindow", (gpointer)mw);
 
   gtk_main ();
+
+	return FALSE;
+}
+
+
+
+
+G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
+
+	LttvAttributeValue value;
+	WindowCreationData *Window_Creation_Data = g_new(WindowCreationData, 1);
+	
+	LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+
+	Window_Creation_Data->argc = argc;
+	Window_Creation_Data->argv = argv;
+	
+	g_assert(lttv_iattribute_find_by_path(
+				attributes,
+				"hooks/main/before",	LTTV_POINTER, &value));
+	
+	g_assert((main_hooks = *(value.v_pointer)) != NULL);
+
+	lttv_hooks_add(main_hooks, Window_Creation_Hook, Window_Creation_Data);
+
 }
 
 void destroy_walk(gpointer data, gpointer user_data)

@@ -1,7 +1,7 @@
 SUBDIRS = modules
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
-LIBS += $(GLIB_LIBS) -lgobject-2.0 -ltraceread
+LIBS += $(GLIB_LIBS) -lgobject-2.0 -L$(top_srcdir)/ltt -ltraceread
 #LIBS += $(GLIB_LIBS) -lgobject-2.0 -lltt
 
 bin_PROGRAMS = lttv
