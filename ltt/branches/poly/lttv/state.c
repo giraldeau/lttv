@@ -291,6 +291,14 @@ static void pop_state(LttvTracefileState *tfs, LttvInterruptType t)
   //  g_assert(process->state->t == t);
   if(process->state->t != t){
     g_warning("Different interrupt type: ignore it\n");
+    g_warning("process state has %s when pop_int is %s\n",
+		    g_quark_to_string(process->state->t),
+		    g_quark_to_string(t));
+    g_warning("{ %u, %u, %s, %s }\n",
+		    process->pid,
+		    process->ppid,
+		    g_quark_to_string(process->name),
+		    g_quark_to_string(process->state->s));
     return;
   }
   g_array_remove_index(process->interrupt_stack, depth);
@@ -318,6 +326,7 @@ LttvProcessState *create_process(LttvTracefileState *tfs,
   g_hash_table_insert(tcs->processes, GUINT_TO_POINTER(pid), process);
   process->pid = pid;
   if(parent) process->ppid = parent->pid;
+  else process->ppid = 0;
   process->birth = tfc->timestamp;
   process->name = LTTV_STATE_UNNAMED;
   process->interrupt_stack = g_array_new(FALSE, FALSE, 
