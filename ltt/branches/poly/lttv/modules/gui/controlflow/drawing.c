@@ -386,6 +386,8 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
     set_current_time(control_flow_data->mw, &time);
 
   }
+
+  set_focused_pane(control_flow_data->mw, gtk_widget_get_parent(control_flow_data->scrolled_window));
   
   return FALSE;
 }

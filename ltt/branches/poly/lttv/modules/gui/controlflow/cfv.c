@@ -32,6 +32,13 @@
 
 extern GSList *g_control_flow_data_list;
 
+static void control_flow_grab_focus(GtkWidget *widget, gpointer data){
+  ControlFlowData * control_flow_data = (ControlFlowData *)data;
+  MainWindow * mw = control_flow_data->mw;
+  set_focused_pane(mw, gtk_widget_get_parent(control_flow_data->scrolled_window));
+}
+
+
 /*****************************************************************************
  *                     Control Flow Viewer class implementation              *
  *****************************************************************************/
@@ -125,6 +132,11 @@ guicontrolflow(void)
   //inserted in the main window before the drawing area
   //can be configured (and this must happend bedore sending
   //data)
+
+  g_signal_connect (G_OBJECT (process_list_widget), "grab-focus",
+        G_CALLBACK (control_flow_grab_focus),
+        control_flow_data);
+
 
   return control_flow_data;
 
