@@ -20,41 +20,43 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
-#include <lttv/lttv.h>
-#include <lttv/module.h>
-#include <lttvwindow/viewer.h>
-#include <lttv/tracecontext.h>
-#include <lttv/hook.h>
-#include <lttvwindow/common.h>
-#include <lttv/state.h>
-#include <lttv/stats.h>
-
 #include <ltt/ltt.h>
 #include <ltt/event.h>
 #include <ltt/type.h>
 #include <ltt/trace.h>
 
-#include <string.h>
+#include <lttv/lttv.h>
+#include <lttv/module.h>
+#include <lttv/tracecontext.h>
+#include <lttv/hook.h>
+#include <lttv/state.h>
+#include <lttv/stats.h>
+
+#include <lttvwindow/lttvwindow.h>
+#include <lttvwindow/lttvwindowtraces.h>
 
 #include "hGuiStatisticInsert.xpm"
 
 #define PATH_LENGTH        256  /* CHECK */
+#define MAX_NUMBER_EVENT "max_number_event"
 
-static LttvModule *statistic_main_win_module;
-static GPtrArray  * statistic_traceset;
+//???????????????6
+//static GPtrArray  * statistic_traceset;
 
 /** Array containing instanced objects. Used when module is unloaded */
 static GSList *g_statistic_viewer_data_list = NULL ;
 
 typedef struct _StatisticViewerData StatisticViewerData;
 
+static void request_background_data(StatisticViewerData *svd);
+GtkWidget *guistatistic_get_widget(StatisticViewerData *svd);
+
 //! Statistic Viewer's constructor hook
-GtkWidget *h_gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key);
+GtkWidget *h_gui_statistic(Tab *tab, LttvTracesetSelector * s, char * key);
 //! Statistic Viewer's constructor
-StatisticViewerData *gui_statistic(MainWindow *parent_window,LttvTracesetSelector * s, char* key);
+StatisticViewerData *gui_statistic(Tab *tab);
 //! Statistic Viewer's destructor
 void gui_statistic_destructor(StatisticViewerData *statistic_viewer_data);
-void gui_statistic_free(StatisticViewerData *statistic_viewer_data);
 
 void grab_focus(GtkWidget *widget, gpointer data);
 static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
@@ -66,19 +68,16 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data);
 void show_tree(StatisticViewerData * statistic_viewer_data,
          LttvAttribute* stats,  GtkTreeIter* parent);
 void show_statistic(StatisticViewerData * statistic_viewer_data,
-        LttvAttribute* stats, GtkTextBuffer* buf);
+         LttvAttribute* stats, GtkTextBuffer* buf);
 
 
-/** hook functions for update time interval, current time ... */
-gboolean statistic_update_time_window(void * hook_data, void * call_data);
-gboolean statistic_show_viewer(void * hook_data, void * call_data);
 gboolean statistic_traceset_changed(void * hook_data, void * call_data);
-void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data, 
-           LttvTracesetContext * tsc);
-void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data, 
-        LttvTracesetContext * tsc);
+//void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data, 
+//           LttvTracesetContext * tsc);
+//void statistic_remove_context_hooks(StatisticViewerData *statistic_viewer_data, 
+//           LttvTracesetContext * tsc);
 
-gboolean statistic_insert_traceset_stats(void * stats);
+//gboolean statistic_insert_traceset_stats(void * stats);
 
 enum
 {
@@ -87,14 +86,12 @@ enum
 };
 
 struct _StatisticViewerData{
-  MainWindow * mw;
-  LttvTracesetStats * stats;
-  gboolean            calculate_stats;
+  Tab *tab;
+  //LttvTracesetStats * stats;
   int                 size;
 
-  //TimeInterval time_span;
-  gboolean     shown;       //indicate if the statistic is shown or not
-  char *       filter_key;
+  //gboolean     shown;       //indicate if the statistic is shown or not
+  //char *       filter_key;
 
   GtkWidget    * hpaned_v;
   GtkTreeStore * store_m;
@@ -115,34 +112,107 @@ struct _StatisticViewerData{
 };
 
 
-void
-gui_statistic_free(StatisticViewerData *statistic_viewer_data)
-{ 
-  if(statistic_viewer_data){
-    lttvwindow_unregister_time_window_notify(statistic_viewer_data->mw,
-                            statistic_update_time_window,statistic_viewer_data);
-    lttvwindow_unregister_show_notify(statistic_viewer_data->mw,
-                            statistic_show_viewer,statistic_viewer_data);
-    lttvwindow_unregister_traceset_notify(statistic_viewer_data->mw,
-                            statistic_traceset_changed,statistic_viewer_data);
 
-    g_hash_table_destroy(statistic_viewer_data->statistic_hash);
-    g_free(statistic_viewer_data->filter_key);
-    g_statistic_viewer_data_list = g_slist_remove(g_statistic_viewer_data_list, statistic_viewer_data);
-    g_free(statistic_viewer_data);
-  }
+
+/* Action to do when background computation completed.
+ *
+ * Eventually, will have to check that every requested traces are finished
+ * before doing the redraw. It will save unnecessary processor usage.
+ */
+
+static gint background_ready(void *hook_data, void *call_data)
+{
+  StatisticViewerData *svd = (StatisticViewerData *)hook_data;
+  Tab *tab = svd->tab;
+  LttvTrace *trace = (LttvTrace*)call_data;
+
+  g_debug("statistics viewer : background computation data ready.");
+
+  gtk_tree_store_clear (svd->store_m);
+
+  lttv_stats_sum_traceset(lttvwindow_get_traceset_stats(tab));
+  show_traceset_stats(svd);
+
+  return 0;
 }
+
+/* Request background computation. Verify if it is in progress or ready first.
+ *
+ * Right now, for all loaded traces.
+ *
+ * Later : must be only for each trace in the tab's traceset.
+ */
+static void request_background_data(StatisticViewerData *svd)
+{
+  gint num_traces = lttvwindowtraces_get_number();
+  gint i;
+  LttvTrace *trace;
+
+  LttvHooks *background_ready_hook = 
+    lttv_hooks_new();
+  lttv_hooks_add(background_ready_hook, background_ready, svd,
+      LTTV_PRIO_DEFAULT);
+  
+  for(i=0;i<num_traces;i++) {
+    trace = lttvwindowtraces_get_trace(i);
+
+    if(lttvwindowtraces_get_ready(g_quark_from_string("stats"),trace)==FALSE) {
+
+      if(lttvwindowtraces_get_in_progress(g_quark_from_string("stats"),
+                                          trace) == FALSE) {
+        /* We first remove requests that could have been done for the same
+         * information. Happens when two viewers ask for it before servicing
+         * starts.
+         */
+        lttvwindowtraces_background_request_remove(trace, "stats");
+        lttvwindowtraces_background_request_queue(trace,
+                                                  "stats");
+        lttvwindowtraces_background_notify_queue(svd,
+                                                 trace,
+                                                 ltt_time_infinite,
+                                                 NULL,
+                                                 background_ready_hook);
+      } else { /* in progress */
+      
+        lttvwindowtraces_background_notify_current(svd,
+                                                   trace,
+                                                   ltt_time_infinite,
+                                                   NULL,
+                                                   background_ready_hook);
+      
+      }
+    }
+  }
+  lttv_hooks_destroy(background_ready_hook);
+}
+
+
+GtkWidget *guistatistic_get_widget(StatisticViewerData *svd)
+{
+  return svd->hpaned_v;
+}
+
 
 void
 gui_statistic_destructor(StatisticViewerData *statistic_viewer_data)
 {
+  Tab *tab = statistic_viewer_data->tab;
+
   /* May already been done by GTK window closing */
-  if(GTK_IS_WIDGET(statistic_viewer_data->hpaned_v)){
-    gui_statistic_free(statistic_viewer_data);
-    gtk_widget_destroy(statistic_viewer_data->hpaned_v);
-    statistic_viewer_data = NULL;
+  if(GTK_IS_WIDGET(guistatistic_get_widget(statistic_viewer_data))){
+    g_info("widget still exists");
   }
-  //gui_statistic_free(statistic_viewer_data);
+  if(tab != NULL) {
+    lttvwindow_unregister_traceset_notify(statistic_viewer_data->tab,
+                                          statistic_traceset_changed,
+                                          statistic_viewer_data);
+  }
+  lttvwindowtraces_background_notify_remove(statistic_viewer_data);
+
+  g_hash_table_destroy(statistic_viewer_data->statistic_hash);
+  g_statistic_viewer_data_list =
+    g_slist_remove(g_statistic_viewer_data_list, statistic_viewer_data);
+  g_free(statistic_viewer_data);
 }
 
 
@@ -155,16 +225,17 @@ gui_statistic_destructor(StatisticViewerData *statistic_viewer_data)
  * @return The widget created.
  */
 GtkWidget *
-h_gui_statistic(MainWindow * parent_window, LttvTracesetSelector * s, char* key)
+h_gui_statistic(Tab *tab, LttvTracesetSelector * s, char * key)
 {
-  StatisticViewerData* statistic_viewer_data = gui_statistic(parent_window, s, key) ;
+  StatisticViewerData* statistic_viewer_data = gui_statistic(tab) ;
 
   if(statistic_viewer_data)
-    return statistic_viewer_data->hpaned_v;
+    return guistatistic_get_widget(statistic_viewer_data);
   else return NULL;
   
 }
 
+#if 0
 gboolean statistic_insert_traceset_stats(void * stats)
 {
   int i, len;
@@ -181,6 +252,7 @@ gboolean statistic_insert_traceset_stats(void * stats)
   }
   return FALSE;
 }
+#endif //0
 
 /**
  * Statistic Viewer's constructor
@@ -189,25 +261,24 @@ gboolean statistic_insert_traceset_stats(void * stats)
  * @return The Statistic viewer data created.
  */
 StatisticViewerData *
-gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
+gui_statistic(Tab *tab)
 {
   GtkCellRenderer *renderer;
   GtkTreeViewColumn *column;
 
   StatisticViewerData* statistic_viewer_data = g_new(StatisticViewerData,1);
 
-  statistic_viewer_data->mw     = parent_window;
-  statistic_viewer_data->stats  =
-          lttvwindow_get_traceset_stats(statistic_viewer_data->mw);
-  statistic_viewer_data->calculate_stats = statistic_insert_traceset_stats((void *)statistic_viewer_data->stats);
+  statistic_viewer_data->tab  = tab;
+ // statistic_viewer_data->stats  =
+ //         lttvwindow_get_traceset_stats(statistic_viewer_data->tab);
+ // statistic_viewer_data->calculate_stats = 
+ //   statistic_insert_traceset_stats((void *)statistic_viewer_data->stats);
 
-  lttvwindow_register_time_window_notify(statistic_viewer_data->mw,
-                          statistic_update_time_window,statistic_viewer_data);
-  lttvwindow_register_show_notify(statistic_viewer_data->mw,
-                          statistic_show_viewer,statistic_viewer_data);
-  lttvwindow_register_traceset_notify(statistic_viewer_data->mw,
-                          statistic_traceset_changed,statistic_viewer_data);
-
+  lttvwindow_register_traceset_notify(statistic_viewer_data->tab,
+                                      statistic_traceset_changed,
+                                      statistic_viewer_data);
+  request_background_data(statistic_viewer_data);
+  
   statistic_viewer_data->statistic_hash = g_hash_table_new_full(g_str_hash,
                                                   g_str_equal,
                                                   statistic_destroy_hash_key,
@@ -271,37 +342,11 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
   gtk_widget_show(statistic_viewer_data->text_v);
   gtk_widget_show(statistic_viewer_data->hpaned_v);
 
-  statistic_viewer_data->shown = FALSE;  
-  statistic_viewer_data->filter_key = g_strdup(key);
-  g_object_set_data(
-        G_OBJECT(statistic_viewer_data->hpaned_v),
-        statistic_viewer_data->filter_key,
-        s);
-  /*
-  g_object_set_data(
-        G_OBJECT(statistic_viewer_data->hpaned_v),
-        TRACESET_TIME_SPAN,
-        &statistic_viewer_data->time_span);
-  */
-
-  if(statistic_viewer_data->calculate_stats){
-    //if(lttv_stats_load_statistics(statistic_viewer_data->stats))
-    //  statistic_viewer_data->calculate_stats = FALSE;
-  }
-
-  if(statistic_viewer_data->calculate_stats == FALSE){
-    statistic_viewer_data->size = 1;
-    g_object_set_data(
-          G_OBJECT(statistic_viewer_data->hpaned_v),
-          MAX_NUMBER_EVENT,
-          &statistic_viewer_data->size);
-  }
-
   g_object_set_data_full(
-      G_OBJECT(statistic_viewer_data->hpaned_v),
+      G_OBJECT(guistatistic_get_widget(statistic_viewer_data)),
       "statistic_viewer_data",
       statistic_viewer_data,
-      (GDestroyNotify)gui_statistic_free);
+      (GDestroyNotify)gui_statistic_destructor);
 
   /* Add the object's information to the module's array */
   g_statistic_viewer_data_list = g_slist_append(
@@ -314,8 +359,8 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
 void grab_focus(GtkWidget *widget, gpointer data)
 {
   StatisticViewerData *statistic_viewer_data = (StatisticViewerData *)data;
-  MainWindow * mw = statistic_viewer_data->mw;
-  lttvwindow_report_focus(mw, statistic_viewer_data->hpaned_v);
+  Tab * tab = statistic_viewer_data->tab;
+  lttvwindow_report_focus(tab, guistatistic_get_widget(statistic_viewer_data));
 }
 
 static void
@@ -363,20 +408,29 @@ void statistic_destroy_hash_data(gpointer data)
   //  g_free(data);
 }
 
+#include <stdio.h>
+extern FILE *stdin;
+extern FILE *stdout;
+extern FILE *stderr;
+
 void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
 {
+  Tab *tab = statistic_viewer_data->tab;
   int i, nb;
   LttvTraceset *ts;
   LttvTraceStats *tcs;
   LttSystemDescription *desc;
-  LttvTracesetStats * tscs = statistic_viewer_data->stats;
+  LttvTracesetStats * tscs = lttvwindow_get_traceset_stats(tab);
   gchar * str, trace_str[PATH_LENGTH];
   GtkTreePath * path;
   GtkTreeIter   iter;
   GtkTreeStore * store = statistic_viewer_data->store_m;
 
   if(tscs->stats == NULL) return;
-
+#ifdef DEBUG
+  lttv_attribute_write_xml(tscs->stats, stdout, 1, 4);
+#endif //DEBUG
+  
   ts = tscs->parent.parent.ts;
   nb = lttv_traceset_number(ts);
   if(nb == 0)return;
@@ -406,6 +460,9 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
     g_hash_table_insert(statistic_viewer_data->statistic_hash,
       (gpointer)str,tcs->stats);
     show_tree(statistic_viewer_data, tcs->stats, &iter);
+#ifdef DEBUG
+    lttv_attribute_write_xml(tcs->stats, stdout, 3, 4);
+#endif //DEBUG
   }
 }
 
@@ -510,51 +567,16 @@ void show_statistic(StatisticViewerData * statistic_viewer_data,
   }
 }
 
-gboolean statistic_update_time_window(void * hook_data, void * call_data)
-{
-  StatisticViewerData *statistic_viewer_data = (StatisticViewerData*) hook_data;
-  LttvTracesetContext * tsc =
-    lttvwindow_get_traceset_context(statistic_viewer_data->mw);
-
-  //if statistic is already calculated, do nothing
-  if(!statistic_viewer_data->calculate_stats){
-    return FALSE;
-  }
-
-  if(statistic_viewer_data->shown == FALSE){    
-    statistic_add_context_hooks(statistic_viewer_data, tsc);
-  }
-  return FALSE;
-}
-
-gboolean statistic_show_viewer(void * hook_data, void * call_data)
-{
-  StatisticViewerData *statistic_viewer_data = (StatisticViewerData*) hook_data;
-  LttvTracesetContext * tsc = 
-        lttvwindow_get_traceset_context(statistic_viewer_data->mw);
-
-  if(statistic_viewer_data->shown == FALSE){
-    statistic_viewer_data->shown = TRUE;
-    show_traceset_stats(statistic_viewer_data);
-    if(statistic_viewer_data->calculate_stats){
-      statistic_remove_context_hooks(statistic_viewer_data,tsc);
-      //lttv_stats_save_statistics((LttvTracesetStats*)tsc);
-    }
-  }
-
-  return FALSE;
-}
-
 gboolean statistic_traceset_changed(void * hook_data, void * call_data)
 {
   StatisticViewerData *statistic_viewer_data = (StatisticViewerData*) hook_data;
   
-  gtk_tree_store_clear (statistic_viewer_data->store_m);  
-  statistic_viewer_data->shown = FALSE;
+  request_background_data(statistic_viewer_data);
 
   return FALSE;
 }
 
+#if 0
 void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data, 
            LttvTracesetContext * tsc)
 {
@@ -643,7 +665,7 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
 
   lttv_stats_remove_event_hooks(LTTV_TRACESET_STATS(tsc));
 }
-
+#endif //0
 
 /**
  * plugin's init function
@@ -653,19 +675,21 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
  */
 static void init() {
 
-  statistic_traceset = g_ptr_array_new ();
-
-  /* Register the toolbar insert button */
-  lttvwindow_register_toolbar(hGuiStatisticInsert_xpm, "Insert Statistic Viewer", h_gui_statistic);
-  
-  /* Register the menu item insert entry */
-  lttvwindow_register_menu("/", "Insert Statistic Viewer", h_gui_statistic);
-  
+  lttvwindow_register_constructor("/",
+                                  "Insert Statistic Viewer",
+                                  hGuiStatisticInsert_xpm,
+                                  "Insert Statistic Viewer",
+                                  h_gui_statistic);
 }
 
 void statistic_destroy_walk(gpointer data, gpointer user_data)
 {
-  gui_statistic_destructor((StatisticViewerData*)data);
+  StatisticViewerData *svd = (StatisticViewerData*)data;
+
+  g_debug("CFV.c : statistic_destroy_walk, %p", svd);
+  /* May already have been done by GTK window closing */
+  if(GTK_IS_WIDGET(guistatistic_get_widget(svd)))
+    gtk_widget_destroy(guistatistic_get_widget(svd));
 }
 
 /**
@@ -677,17 +701,11 @@ void statistic_destroy_walk(gpointer data, gpointer user_data)
 static void destroy() {
   int i;
   
-  if(g_statistic_viewer_data_list){
-    g_slist_foreach(g_statistic_viewer_data_list, statistic_destroy_walk, NULL );    
-    g_slist_free(g_statistic_viewer_data_list);
-  }
-  g_ptr_array_free (statistic_traceset, TRUE);
+  g_slist_foreach(g_statistic_viewer_data_list, statistic_destroy_walk, NULL );    
+  g_slist_free(g_statistic_viewer_data_list);
 
-  /* Unregister the toolbar insert button */
-  lttvwindow_unregister_toolbar(h_gui_statistic);
+  lttvwindow_unregister_constructor(h_gui_statistic);
   
-  /* Unregister the menu item insert entry */
-  lttvwindow_unregister_menu(h_gui_statistic);
 }
 
 
