@@ -49,9 +49,9 @@ void statistic_destroy_hash_data(gpointer data);
 
 void show_traceset_stats(StatisticViewerData * statistic_viewer_data);
 void show_tree(StatisticViewerData * statistic_viewer_data,
-	       LttvAttribute* stats,  GtkTreeIter* parent);
+         LttvAttribute* stats,  GtkTreeIter* parent);
 void show_statistic(StatisticViewerData * statistic_viewer_data,
-		    LttvAttribute* stats, GtkTextBuffer* buf);
+        LttvAttribute* stats, GtkTextBuffer* buf);
 
 
 /** hook functions for update time interval, current time ... */
@@ -59,9 +59,9 @@ gboolean statistic_update_time_window(void * hook_data, void * call_data);
 gboolean statistic_show_viewer(void * hook_data, void * call_data);
 gboolean statistic_traceset_changed(void * hook_data, void * call_data);
 void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data, 
-		       LttvTracesetContext * tsc);
+           LttvTracesetContext * tsc);
 void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data, 
-			  LttvTracesetContext * tsc);
+        LttvTracesetContext * tsc);
 
 gboolean statistic_insert_traceset_stats(void * stats);
 
@@ -147,7 +147,7 @@ G_MODULE_EXPORT void destroy() {
 
   /* Unregister the toolbar insert button */
   toolbar_item_unreg(h_gui_statistic);
-	
+  
   /* Unregister the menu item insert entry */
   menu_item_unreg(h_gui_statistic);
 }
@@ -196,7 +196,7 @@ h_gui_statistic(MainWindow * parent_window, LttvTracesetSelector * s, char* key)
   if(statistic_viewer_data)
     return statistic_viewer_data->hpaned_v;
   else return NULL;
-	
+  
 }
 
 gboolean statistic_insert_traceset_stats(void * stats)
@@ -239,8 +239,8 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
   reg_update_traceset(statistic_traceset_changed,statistic_viewer_data, statistic_viewer_data->mw);
 
   statistic_viewer_data->statistic_hash = g_hash_table_new_full(g_str_hash, g_str_equal,
-								statistic_destroy_hash_key,
-								statistic_destroy_hash_data);
+                statistic_destroy_hash_key,
+                statistic_destroy_hash_data);
 
   statistic_viewer_data->hpaned_v  = gtk_hpaned_new();
   statistic_viewer_data->store_m = gtk_tree_store_new (N_COLUMNS, G_TYPE_STRING);
@@ -248,21 +248,21 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
   g_object_unref (G_OBJECT (statistic_viewer_data->store_m));
 
   g_signal_connect (G_OBJECT (statistic_viewer_data->tree_v), "grab-focus",
-		    G_CALLBACK (grab_focus),
-		    statistic_viewer_data);
+        G_CALLBACK (grab_focus),
+        statistic_viewer_data);
 
   // Setup the selection handler
   statistic_viewer_data->select_c = gtk_tree_view_get_selection (GTK_TREE_VIEW (statistic_viewer_data->tree_v));
   gtk_tree_selection_set_mode (statistic_viewer_data->select_c, GTK_SELECTION_SINGLE);
   g_signal_connect (G_OBJECT (statistic_viewer_data->select_c), "changed",
-		    G_CALLBACK (tree_selection_changed_cb),
-		    statistic_viewer_data);
+        G_CALLBACK (tree_selection_changed_cb),
+        statistic_viewer_data);
 
   renderer = gtk_cell_renderer_text_new ();
   column = gtk_tree_view_column_new_with_attributes ("Statistic Name",
-						     renderer,
-						     "text", NAME_COLUMN,
-						     NULL);
+                 renderer,
+                 "text", NAME_COLUMN,
+                 NULL);
   gtk_tree_view_column_set_alignment (column, 0.0);
   //  gtk_tree_view_column_set_fixed_width (column, 45);
   gtk_tree_view_append_column (GTK_TREE_VIEW (statistic_viewer_data->tree_v), column);
@@ -272,7 +272,7 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
 
   statistic_viewer_data->scroll_win_tree = gtk_scrolled_window_new (NULL, NULL);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(statistic_viewer_data->scroll_win_tree), 
-				 GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
+         GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
 
   gtk_container_add (GTK_CONTAINER (statistic_viewer_data->scroll_win_tree), statistic_viewer_data->tree_v);
   gtk_paned_pack1(GTK_PANED(statistic_viewer_data->hpaned_v),statistic_viewer_data->scroll_win_tree, TRUE, FALSE);
@@ -280,12 +280,12 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
 
   statistic_viewer_data->scroll_win_text = gtk_scrolled_window_new (NULL, NULL);
   gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(statistic_viewer_data->scroll_win_text), 
-				 GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
+         GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
 
   statistic_viewer_data->text_v = gtk_text_view_new ();
   g_signal_connect (G_OBJECT (statistic_viewer_data->text_v), "grab-focus",
-		    G_CALLBACK (grab_focus),
-		    statistic_viewer_data);
+        G_CALLBACK (grab_focus),
+        statistic_viewer_data);
   
   gtk_text_view_set_editable(GTK_TEXT_VIEW(statistic_viewer_data->text_v),FALSE);
   gtk_text_view_set_cursor_visible(GTK_TEXT_VIEW(statistic_viewer_data->text_v),FALSE);
@@ -304,14 +304,14 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
   statistic_viewer_data->shown = FALSE;  
   statistic_viewer_data->filter_key = g_strdup(key);
   g_object_set_data(
-		    G_OBJECT(statistic_viewer_data->hpaned_v),
-		    statistic_viewer_data->filter_key,
-		    s);
+        G_OBJECT(statistic_viewer_data->hpaned_v),
+        statistic_viewer_data->filter_key,
+        s);
 
   g_object_set_data(
-		    G_OBJECT(statistic_viewer_data->hpaned_v),
-		    TRACESET_TIME_SPAN,
-		    &statistic_viewer_data->time_span);
+        G_OBJECT(statistic_viewer_data->hpaned_v),
+        TRACESET_TIME_SPAN,
+        &statistic_viewer_data->time_span);
   
   if(statistic_viewer_data->calculate_stats){
     if(lttv_stats_load_statistics(statistic_viewer_data->stats))
@@ -321,21 +321,21 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
   if(statistic_viewer_data->calculate_stats == FALSE){
     statistic_viewer_data->size = 1;
     g_object_set_data(
-		      G_OBJECT(statistic_viewer_data->hpaned_v),
-		      MAX_NUMBER_EVENT,
-		      &statistic_viewer_data->size);
+          G_OBJECT(statistic_viewer_data->hpaned_v),
+          MAX_NUMBER_EVENT,
+          &statistic_viewer_data->size);
   }
 
   g_object_set_data_full(
-			G_OBJECT(statistic_viewer_data->hpaned_v),
-			"statistic_viewer_data",
-			statistic_viewer_data,
-			(GDestroyNotify)gui_statistic_free);
+      G_OBJECT(statistic_viewer_data->hpaned_v),
+      "statistic_viewer_data",
+      statistic_viewer_data,
+      (GDestroyNotify)gui_statistic_free);
 
   /* Add the object's information to the module's array */
   g_statistic_viewer_data_list = g_slist_append(
-			g_statistic_viewer_data_list,
-			statistic_viewer_data);
+      g_statistic_viewer_data_list,
+      statistic_viewer_data);
 
   return statistic_viewer_data;
 }
@@ -408,12 +408,12 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
 
   gtk_tree_store_append (store, &iter, NULL);  
   gtk_tree_store_set (store, &iter,
-		      NAME_COLUMN, "Traceset statistics",
-		      -1);  
-  path = gtk_tree_model_get_path(GTK_TREE_MODEL(store),	&iter);
+          NAME_COLUMN, "Traceset statistics",
+          -1);  
+  path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
   str = gtk_tree_path_to_string (path);
   g_hash_table_insert(statistic_viewer_data->statistic_hash,
-		      (gpointer)str, tscs->stats);
+          (gpointer)str, tscs->stats);
   show_tree(statistic_viewer_data, tscs->stats, &iter);
 
   //show stats for all traces
@@ -424,21 +424,21 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
     tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
     desc = ltt_trace_system_description(tcs->parent.parent.t);    
     sprintf(trace_str, "Trace on system %s at time %d secs", 
-      	    ltt_trace_system_description_node_name(desc),
-	    (ltt_trace_system_description_trace_start_time(desc)).tv_sec);
+            ltt_trace_system_description_node_name(desc),
+      (ltt_trace_system_description_trace_start_time(desc)).tv_sec);
     
     gtk_tree_store_append (store, &iter, NULL);  
     gtk_tree_store_set (store, &iter,NAME_COLUMN,trace_str,-1);  
     path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
     str = gtk_tree_path_to_string (path);
     g_hash_table_insert(statistic_viewer_data->statistic_hash,
-			(gpointer)str,tcs->stats);
+      (gpointer)str,tcs->stats);
     show_tree(statistic_viewer_data, tcs->stats, &iter);
   }
 }
 
 void show_tree(StatisticViewerData * statistic_viewer_data,
-	       LttvAttribute* stats,  GtkTreeIter* parent)
+         LttvAttribute* stats,  GtkTreeIter* parent)
 {
   int i, nb;
   LttvAttribute *subtree;
@@ -456,25 +456,25 @@ void show_tree(StatisticViewerData * statistic_viewer_data,
     switch(type) {
      case LTTV_GOBJECT:
         if(LTTV_IS_ATTRIBUTE(*(value.v_gobject))) {
-	  sprintf(dir_str, "%s", g_quark_to_string(name));
+    sprintf(dir_str, "%s", g_quark_to_string(name));
           subtree = (LttvAttribute *)*(value.v_gobject);
-	  gtk_tree_store_append (store, &iter, parent);  
-	  gtk_tree_store_set (store, &iter,NAME_COLUMN,dir_str,-1);  
-	  path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
-	  str = gtk_tree_path_to_string (path);
-	  g_hash_table_insert(statistic_viewer_data->statistic_hash,
-			      (gpointer)str, subtree);
+    gtk_tree_store_append (store, &iter, parent);  
+    gtk_tree_store_set (store, &iter,NAME_COLUMN,dir_str,-1);  
+    path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
+    str = gtk_tree_path_to_string (path);
+    g_hash_table_insert(statistic_viewer_data->statistic_hash,
+            (gpointer)str, subtree);
           show_tree(statistic_viewer_data, subtree, &iter);
         }
         break;
       default:
-	break;
+  break;
     }
   }    
 }
 
 void show_statistic(StatisticViewerData * statistic_viewer_data,
-		    LttvAttribute* stats, GtkTextBuffer* buf)
+        LttvAttribute* stats, GtkTextBuffer* buf)
 {
   int i, nb , flag;
   LttvAttribute *subtree;
@@ -582,7 +582,7 @@ gboolean statistic_traceset_changed(void * hook_data, void * call_data)
 }
 
 void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data, 
-		       LttvTracesetContext * tsc)
+           LttvTracesetContext * tsc)
 {
   gint i, j, nbi, nb_tracefile, nb_control, nb_per_cpu;
   LttTrace *trace;
@@ -594,7 +594,7 @@ void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data,
   gboolean selected;
 
   ts_s = (LttvTracesetSelector*)g_object_get_data(G_OBJECT(statistic_viewer_data->hpaned_v), 
-						  statistic_viewer_data->filter_key);
+              statistic_viewer_data->filter_key);
 
   //if there are hooks for traceset, add them here
   
@@ -617,13 +617,13 @@ void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data,
       if(!selected) continue;
       
       if(j < nb_control)
-	tfc = tc->control_tracefiles[j];
+  tfc = tc->control_tracefiles[j];
       else
-	tfc = tc->per_cpu_tracefiles[j - nb_control];
+  tfc = tc->per_cpu_tracefiles[j - nb_control];
       
       //if there are hooks for tracefile, add them here
       //      lttv_tracefile_context_add_hooks(tfc, NULL,NULL,NULL,NULL,
-      //				       statistic_viewer_data->before_event_hooks,NULL);
+      //               statistic_viewer_data->before_event_hooks,NULL);
     }
   }  
 
@@ -634,7 +634,7 @@ void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data,
 }
 
 void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data, 
-			  LttvTracesetContext * tsc)
+        LttvTracesetContext * tsc)
 {
   gint i, j, nbi, nb_tracefile, nb_control, nb_per_cpu;
   LttTrace *trace;
@@ -646,7 +646,7 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
   gboolean selected;
 
   ts_s = (LttvTracesetSelector*)g_object_get_data(G_OBJECT(statistic_viewer_data->hpaned_v), 
-						  statistic_viewer_data->filter_key);
+              statistic_viewer_data->filter_key);
 
   //if there are hooks for traceset, remove them here
   
@@ -669,13 +669,13 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
       if(!selected) continue;
       
       if(j < nb_control)
-	tfc = tc->control_tracefiles[j];
+  tfc = tc->control_tracefiles[j];
       else
-	tfc = tc->per_cpu_tracefiles[j - nb_control];
+  tfc = tc->per_cpu_tracefiles[j - nb_control];
       
       //if there are hooks for tracefile, remove them here
       //      lttv_tracefile_context_remove_hooks(tfc, NULL,NULL,NULL,NULL,
-      //					  statistic_viewer_data->before_event_hooks,NULL);
+      //            statistic_viewer_data->before_event_hooks,NULL);
     }
   }
 
