@@ -57,6 +57,7 @@ static GSList *sEvent_Viewer_Data_List = NULL ;
 /** hook functions for update time interval, current time ... */
 gboolean updateTimeInterval(void * hook_data, void * call_data);
 gboolean updateCurrentTime(void * hook_data, void * call_data);
+void free_ptr_array(GPtrArray * raw_tarce_data);
 
 typedef struct _RawTraceData{
   unsigned  cpu_id;
@@ -70,11 +71,21 @@ typedef struct _RawTraceData{
 typedef struct _TimePeriod{
   LttTime start;
   LttTime end;
+  unsigned start_event_number;
+  unsigned end_event_number;
 } TimePeriod;
 
 #define RESERVE_SIZE        1000
 #define SECOND_INTERVAL     1
 #define NANOSECOND_INTERVAL 1000
+
+typedef enum _ScrollDirection{
+  SCROLL_IN_SAME_PERIOD,
+  SCROLL_UP_ONE_PERIOD,
+  SCROLL_UP_MORE_PERIOD,
+  SCROLL_DOWN_ONE_PERIOD,
+  SCROLL_DOWN_MORE_PERIOD
+} ScrollDirection;
 
 typedef struct _EventViewerData {
 
@@ -259,7 +270,7 @@ GuiEvents(mainWindow *pmParentWindow)
   Event_Viewer_Data->Store_M = gtk_list_store_new (N_COLUMNS,       /* Total number of columns */
 						   G_TYPE_INT,      /* CPUID                  */
 						   G_TYPE_STRING,   /* Event                   */
-						   G_TYPE_INT,      /* Time                    */
+						   G_TYPE_UINT64,      /* Time                    */
 						   G_TYPE_INT,      /* PID                     */
 						   G_TYPE_INT,      /* Entry length            */
 						   G_TYPE_STRING);  /* Event's description     */
@@ -411,6 +422,8 @@ GuiEvents(mainWindow *pmParentWindow)
   data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,
 			   Event_Viewer_Data->raw_trace_data->len-1);
   time_period->end = data->time;
+  time_period->start_event_number = 0;
+  time_period->end_event_number = Event_Viewer_Data->raw_trace_data->len - 1;
   g_ptr_array_add(Event_Viewer_Data->time_period, time_period);
 
   start = data->time;
@@ -427,14 +440,17 @@ GuiEvents(mainWindow *pmParentWindow)
   data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,
 			   Event_Viewer_Data->raw_trace_data->len-1);
   time_period->end = data->time;
+  time_period->start_event_number = Event_Viewer_Data->Number_Of_Events 
+                                    - Event_Viewer_Data->raw_trace_data->len;
+  time_period->end_event_number = Event_Viewer_Data->Number_Of_Events - 1;
   g_ptr_array_add(Event_Viewer_Data->time_period, time_period);
 
   Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
 
   Event_Viewer_Data->start_event_number = 0;
-  Event_Viewer_Data->end_event_number = Event_Viewer_Data->Number_Of_Events;
+  Event_Viewer_Data->end_event_number = Event_Viewer_Data->Number_Of_Events - 1;
 
-  Event_Viewer_Data->VAdjust_C->upper = Event_Viewer_Data->Number_Of_Events + 1;
+  Event_Viewer_Data->VAdjust_C->upper = Event_Viewer_Data->Number_Of_Events;
 
   // Test data 
   get_test_data((int)Event_Viewer_Data->VAdjust_C->value,
@@ -649,7 +665,7 @@ void Tree_V_cursor_changed_cb (GtkWidget *widget, gpointer data)
 {
   EventViewerData *Event_Viewer_Data = (EventViewerData*) data;
   LttTime ltt_time;
-  unsigned long time;
+  guint64 time;
   GtkTreeIter iter;
   GtkTreeModel* model = GTK_TREE_MODEL(Event_Viewer_Data->Store_M);
   GtkTreePath *path;
@@ -778,7 +794,11 @@ void get_test_data(guint Event_Number, guint List_Height,
   gchar *test_string;
   RawTraceData * raw_data;
   GPtrArray * second_data;
-  TimePeriod * time_period; 
+  TimePeriod * time_period, *time_period1; 
+  unsigned  scroll_period;
+  ScrollDirection  direction = SCROLL_IN_SAME_PERIOD;
+  int period_diff;
+  gboolean  new_time_period = FALSE;
 
   //	if(Event_Number > Event_Viewer_Data->Last_Event ||
   //		 Event_Number + List_Height-1 < Event_Viewer_Data->First_Event ||
@@ -787,65 +807,153 @@ void get_test_data(guint Event_Number, guint List_Height,
     /* no event can be reused, clear and start from nothing */
     second_data = Event_Viewer_Data->raw_trace_data == Event_Viewer_Data->raw_trace_data_first 
                   ? Event_Viewer_Data->raw_trace_data_second : Event_Viewer_Data->raw_trace_data_first;
+    
+    // get the right time period
+    for(i=0;i<Event_Viewer_Data->time_period->len;i++){
+      time_period = g_ptr_array_index(Event_Viewer_Data->time_period, i);
+      scroll_period = i;
+      if(Event_Number > time_period->end_event_number)continue;
+      if(Event_Number + List_Height <= time_period->end_event_number){
+	if(Event_Viewer_Data->current_period == scroll_period -1){
+	  scroll_period--;
+	}
+      }      
+      break;
+    }
+
+    period_diff = scroll_period - Event_Viewer_Data->current_period;
+    if(period_diff == 0)       direction = SCROLL_IN_SAME_PERIOD;
+    else if(period_diff == -1) direction = SCROLL_UP_ONE_PERIOD;
+    else if(period_diff < -1)  direction = SCROLL_UP_MORE_PERIOD;
+    else if(period_diff == 1)  direction = SCROLL_DOWN_ONE_PERIOD;
+    else if(period_diff > 1)   direction = SCROLL_DOWN_MORE_PERIOD;
+    Event_Viewer_Data->current_period += period_diff;
 
     //scroll up
-    if(Event_Number < Event_Viewer_Data->start_event_number){
-      Event_Viewer_Data->current_period--;
-      Event_Viewer_Data->end_event_number -= second_data->len;
-      g_ptr_array_free(second_data, TRUE);
-      if(Event_Viewer_Data->raw_trace_data == Event_Viewer_Data->raw_trace_data_first){
+    if(Event_Number < Event_Viewer_Data->start_event_number){  
+      if(direction == SCROLL_UP_ONE_PERIOD){
+	//	Event_Viewer_Data->current_period--;
+	Event_Viewer_Data->end_event_number -= second_data->len;
+	free_ptr_array(second_data);
+	if(Event_Viewer_Data->raw_trace_data == Event_Viewer_Data->raw_trace_data_first){
+	  Event_Viewer_Data->raw_trace_data_second = g_ptr_array_sized_new(RESERVE_SIZE);
+	  Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_second;
+	}else{
+	  Event_Viewer_Data->raw_trace_data_first = g_ptr_array_sized_new(RESERVE_SIZE);
+	  Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
+	}
+	time_period = g_ptr_array_index(Event_Viewer_Data->time_period, 
+					Event_Viewer_Data->current_period);
+	get_events(Event_Viewer_Data, time_period->start, time_period->end);
+	raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,
+				     Event_Viewer_Data->raw_trace_data->len-1);      
+	Event_Viewer_Data->start_event_number -= Event_Viewer_Data->raw_trace_data->len;
+      }else{//direction = SCROLL_UP_MORE_PERIOD
+	free_ptr_array(second_data);
+	free_ptr_array(Event_Viewer_Data->raw_trace_data);
+	Event_Viewer_Data->raw_trace_data_first  = g_ptr_array_sized_new(RESERVE_SIZE);
 	Event_Viewer_Data->raw_trace_data_second = g_ptr_array_sized_new(RESERVE_SIZE);
-	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_second;
-      }else{
-	Event_Viewer_Data->raw_trace_data_first = g_ptr_array_sized_new(RESERVE_SIZE);
-	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
-      }
-      time_period = g_ptr_array_index(Event_Viewer_Data->time_period, 
-				      Event_Viewer_Data->current_period);
-      get_events(Event_Viewer_Data, time_period->start, time_period->end);
-      raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,
-				   Event_Viewer_Data->raw_trace_data->len-1);      
-      Event_Viewer_Data->start_event_number -= Event_Viewer_Data->raw_trace_data->len;
 
+	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
+	time_period = g_ptr_array_index(Event_Viewer_Data->time_period, 
+					Event_Viewer_Data->current_period);
+	get_events(Event_Viewer_Data, time_period->start, time_period->end);
+	Event_Viewer_Data->start_event_number = time_period->start_event_number;
+
+	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_second;
+	time_period = g_ptr_array_index(Event_Viewer_Data->time_period, 
+					Event_Viewer_Data->current_period + 1);
+	get_events(Event_Viewer_Data, time_period->start, time_period->end);
+	Event_Viewer_Data->end_event_number = time_period->end_event_number;
+	
+	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;		
+      }
     }
     //scroll down
     else if(Event_Number+List_Height >= Event_Viewer_Data->end_event_number){
-      Event_Viewer_Data->current_period++;
-      Event_Viewer_Data->start_event_number += Event_Viewer_Data->raw_trace_data->len;
-      g_ptr_array_free(Event_Viewer_Data->raw_trace_data, TRUE);
-      if(second_data == Event_Viewer_Data->raw_trace_data_first){
+      if(direction == SCROLL_DOWN_ONE_PERIOD){
+	//Event_Viewer_Data->current_period++;
+	Event_Viewer_Data->start_event_number += Event_Viewer_Data->raw_trace_data->len;
+	free_ptr_array(Event_Viewer_Data->raw_trace_data);
+	if(second_data == Event_Viewer_Data->raw_trace_data_first){
+	  Event_Viewer_Data->raw_trace_data_second = g_ptr_array_sized_new(RESERVE_SIZE);
+	  Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_second;	
+	}else{
+	  Event_Viewer_Data->raw_trace_data_first = g_ptr_array_sized_new(RESERVE_SIZE);
+	  Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
+	}
+	
+	if(Event_Viewer_Data->current_period+1 == Event_Viewer_Data->time_period->len){
+	  new_time_period = TRUE;
+	  time_period = g_new(TimePeriod, 1);
+	  raw_data = g_ptr_array_index(second_data,second_data->len-1);
+	  time_period->start = raw_data->time;
+	  time_period->start.tv_nsec++;
+	  time_period->end.tv_sec  = time_period->start.tv_sec + SECOND_INTERVAL;
+	  time_period->end.tv_nsec = time_period->start.tv_nsec + NANOSECOND_INTERVAL;
+	  time_period->start_event_number = Event_Viewer_Data->end_event_number + 1;      
+	  g_ptr_array_add(Event_Viewer_Data->time_period,time_period);
+	}
+	
+	time_period = g_ptr_array_index(Event_Viewer_Data->time_period,
+					Event_Viewer_Data->current_period+1);
+	
+	get_events(Event_Viewer_Data,time_period->start, time_period->end);
+	Event_Viewer_Data->end_event_number += Event_Viewer_Data->raw_trace_data->len;
+	if(new_time_period){
+	  raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,0);
+	  time_period->start = raw_data->time;      
+	  raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,
+				       Event_Viewer_Data->raw_trace_data->len-1);      
+	  time_period->end = raw_data->time;
+	  time_period->end_event_number = Event_Viewer_Data->end_event_number;      
+	}
+	Event_Viewer_Data->raw_trace_data = second_data;
+	
+	if(Event_Viewer_Data->end_event_number > Event_Viewer_Data->Number_Of_Events){
+	  Event_Viewer_Data->Number_Of_Events = Event_Viewer_Data->end_event_number;
+	  Event_Viewer_Data->VAdjust_C->upper = Event_Viewer_Data->Number_Of_Events;	
+	}
+      }else{//direction = SCROLL_DOWN_MORE_PERIOD
+	free_ptr_array(second_data);
+	free_ptr_array(Event_Viewer_Data->raw_trace_data);
+	Event_Viewer_Data->raw_trace_data_first  = g_ptr_array_sized_new(RESERVE_SIZE);
 	Event_Viewer_Data->raw_trace_data_second = g_ptr_array_sized_new(RESERVE_SIZE);
-	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_second;	
-      }else{
-	Event_Viewer_Data->raw_trace_data_first = g_ptr_array_sized_new(RESERVE_SIZE);
+	
+	if(Event_Viewer_Data->current_period+1 == Event_Viewer_Data->time_period->len){
+	  new_time_period = TRUE;
+	  time_period  = g_new(TimePeriod, 1);
+	  time_period1 = g_ptr_array_index(Event_Viewer_Data->time_period,
+					   Event_Viewer_Data->time_period->len-1);
+	  time_period->start = time_period1->end;
+	  time_period->start.tv_nsec++;
+	  time_period->end.tv_sec  = time_period->start.tv_sec + SECOND_INTERVAL;
+	  time_period->end.tv_nsec = time_period->start.tv_nsec + NANOSECOND_INTERVAL;
+	  time_period->start_event_number = time_period1->end_event_number + 1;
+	  g_ptr_array_add(Event_Viewer_Data->time_period,time_period);
+	}
+
 	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
-      }
+	time_period = g_ptr_array_index(Event_Viewer_Data->time_period,
+					Event_Viewer_Data->current_period);	
+	get_events(Event_Viewer_Data,time_period->start, time_period->end);
+	Event_Viewer_Data->start_event_number = time_period->start_event_number;
+	Event_Viewer_Data->end_event_number   = time_period->end_event_number;	  
 
-      if(Event_Viewer_Data->current_period+1 == Event_Viewer_Data->time_period->len){
-	time_period = g_new(TimePeriod, 1);
-	raw_data = g_ptr_array_index(second_data,second_data->len-1);
-	time_period->start = raw_data->time;
-	time_period->start.tv_nsec++;
-	time_period->end.tv_sec  = time_period->start.tv_sec + SECOND_INTERVAL;
-	time_period->end.tv_nsec = time_period->start.tv_nsec + NANOSECOND_INTERVAL;
-	g_ptr_array_add(Event_Viewer_Data->time_period,time_period);
-      }
-
-      time_period = g_ptr_array_index(Event_Viewer_Data->time_period,
-				      Event_Viewer_Data->current_period+1);
-
-      get_events(Event_Viewer_Data,time_period->start, time_period->end);
-      raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,0);
-      time_period->start = raw_data->time;      
-      raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,
-				   Event_Viewer_Data->raw_trace_data->len-1);      
-      time_period->end = raw_data->time;
-      Event_Viewer_Data->end_event_number += Event_Viewer_Data->raw_trace_data->len;
-      Event_Viewer_Data->raw_trace_data = second_data;
-
-      if(Event_Viewer_Data->end_event_number > Event_Viewer_Data->Number_Of_Events){
-	Event_Viewer_Data->Number_Of_Events = Event_Viewer_Data->end_event_number;
-	Event_Viewer_Data->VAdjust_C->upper = Event_Viewer_Data->Number_Of_Events + 1;	
+	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_second;
+	time_period = g_ptr_array_index(Event_Viewer_Data->time_period,
+					Event_Viewer_Data->current_period+1);	
+	get_events(Event_Viewer_Data,time_period->start, time_period->end);
+	Event_Viewer_Data->end_event_number += Event_Viewer_Data->raw_trace_data->len;	
+	if(new_time_period){
+	  raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,0);
+	  time_period->start = raw_data->time;      
+	  raw_data = g_ptr_array_index(Event_Viewer_Data->raw_trace_data,
+				       Event_Viewer_Data->raw_trace_data->len-1);      
+	  time_period->end = raw_data->time;
+	  time_period->end_event_number = Event_Viewer_Data->end_event_number;      
+	}
+	Event_Viewer_Data->raw_trace_data = Event_Viewer_Data->raw_trace_data_first;
       }
     }
     
@@ -855,6 +963,8 @@ void get_test_data(guint Event_Number, guint List_Height,
     gtk_list_store_clear(Event_Viewer_Data->Store_M);
     for(i=Event_Number; i<Event_Number+List_Height; i++)
       {
+	guint64 real_data;
+
 	if(i>=Event_Viewer_Data->Number_Of_Events) break;
 
 	j = i - Event_Viewer_Data->start_event_number;
@@ -865,11 +975,14 @@ void get_test_data(guint Event_Number, guint List_Height,
 	  raw_data = g_ptr_array_index(second_data, j - Event_Viewer_Data->raw_trace_data->len);
 
 	/* Add a new row to the model */
+	real_data = raw_data->time.tv_sec;
+	real_data *= 1000000000;
+	real_data += raw_data->time.tv_nsec;
 	gtk_list_store_append (Event_Viewer_Data->Store_M, &iter);
 	gtk_list_store_set (Event_Viewer_Data->Store_M, &iter,
 			    CPUID_COLUMN, raw_data->cpu_id,
 			    EVENT_COLUMN, raw_data->event_name,
-			    TIME_COLUMN, raw_data->time.tv_sec*1000000000 + raw_data->time.tv_nsec,
+			    TIME_COLUMN, real_data,
 			    PID_COLUMN, raw_data->pid,
 			    ENTRY_LEN_COLUMN, raw_data->entry_length,
 			    EVENT_DESCR_COLUMN, raw_data->event_description,
@@ -1220,6 +1333,18 @@ gboolean parse_event(void *hook_data, void *call_data)
   return FALSE;
 }
 
+void free_ptr_array(GPtrArray* raw_trace_data)
+{
+  RawTraceData* data;
+  int i;
+  for(i=0;i<raw_trace_data->len;i++){
+    data = g_ptr_array_index(raw_trace_data, i);
+    g_free(data->event_name);
+    g_free(data->event_description);
+    g_free(data);
+  }
+  g_ptr_array_free(raw_trace_data, TRUE);
+}
 
 
 
