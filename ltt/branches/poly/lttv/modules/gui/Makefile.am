@@ -6,5 +6,5 @@
 
 # WARNING : subdirs order is important : mainWin depends on API
 
-SUBDIRS = API mainWin
+SUBDIRS = mainLib main icons ControlFlow DetailedEvents Statistics
 
