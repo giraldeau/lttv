@@ -141,14 +141,14 @@ gboolean equ_fct(gconstpointer a, gconstpointer b)
 {
 	if(((ProcessInfo*)a)->pid != ((ProcessInfo*)b)->pid)
 		return 0;
-	g_critical("compare %u and %u",((ProcessInfo*)a)->pid,((ProcessInfo*)b)->pid);
+//	g_critical("compare %u and %u",((ProcessInfo*)a)->pid,((ProcessInfo*)b)->pid);
 	if(((ProcessInfo*)a)->birth.tv_sec != ((ProcessInfo*)b)->birth.tv_sec)
 		return 0;
-	g_critical("compare %u and %u",((ProcessInfo*)a)->birth.tv_sec,((ProcessInfo*)b)->birth.tv_sec);
+//	g_critical("compare %u and %u",((ProcessInfo*)a)->birth.tv_sec,((ProcessInfo*)b)->birth.tv_sec);
 
 	if(((ProcessInfo*)a)->birth.tv_nsec != ((ProcessInfo*)b)->birth.tv_nsec)
 		return 0;
-	g_critical("compare %u and %u",((ProcessInfo*)a)->birth.tv_nsec,((ProcessInfo*)b)->birth.tv_nsec);
+//	g_critical("compare %u and %u",((ProcessInfo*)a)->birth.tv_nsec,((ProcessInfo*)b)->birth.tv_nsec);
 
 	return 1;
 }
@@ -252,7 +252,9 @@ ProcessList *ProcessList_construct(void)
 			"Process_List_Data",
 			Process_List,
 			(GDestroyNotify)ProcessList_destroy);
-			
+
+	Process_List->Test_Process_Sent = 0;
+	
 	return Process_List;
 }
 void ProcessList_destroy(ProcessList *Process_List)
@@ -278,7 +280,7 @@ gint get_cell_height(GtkTreeView *TreeView)
 	GtkCellRenderer *Renderer = g_list_first(Render_List)->data;
 	
 	gtk_tree_view_column_cell_get_size(Column, NULL, NULL, NULL, NULL, &height);
-	g_critical("cell 0 height : %u",height);
+	//g_critical("cell 0 height : %u",height);
 	
 	return height;
 }
@@ -307,10 +309,10 @@ int ProcessList_add(	ProcessList *Process_List,
 	
 	/* Add a new row to the model */
 	gtk_list_store_append (	Process_List->Store_M, &iter);
-	g_critical ( "iter before : %s", gtk_tree_path_to_string (
-			gtk_tree_model_get_path (
-					GTK_TREE_MODEL(Process_List->Store_M),
-					&iter)));
+	//g_critical ( "iter before : %s", gtk_tree_path_to_string (
+	//		gtk_tree_model_get_path (
+	//				GTK_TREE_MODEL(Process_List->Store_M),
+	//				&iter)));
 	gtk_list_store_set (	Process_List->Store_M, &iter,
 				PROCESS_COLUMN, "name",
 				PID_COLUMN, pid,
@@ -327,10 +329,10 @@ int ProcessList_add(	ProcessList *Process_List,
 				(gpointer)Process_Info,
 				(gpointer)RowRef);
 	
-	g_critical ( "iter after : %s", gtk_tree_path_to_string (
-			gtk_tree_model_get_path (
-					GTK_TREE_MODEL(Process_List->Store_M),
-					&iter)));
+	//g_critical ( "iter after : %s", gtk_tree_path_to_string (
+	//		gtk_tree_model_get_path (
+	//				GTK_TREE_MODEL(Process_List->Store_M),
+	//				&iter)));
 	Process_List->Number_Of_Process++;
 
 	*height = get_cell_height(GTK_TREE_VIEW(Process_List->Process_List_VC))
@@ -388,7 +390,7 @@ guint ProcessList_get_height(ProcessList *Process_List)
 
 gint ProcessList_get_process_pixels(	ProcessList *Process_List,
 					guint pid, LttTime *birth,
-					guint *x,
+					guint *y,
 					guint *height)
 {
 	ProcessInfo Process_Info;
@@ -410,7 +412,7 @@ gint ProcessList_get_process_pixels(	ProcessList *Process_List,
 
 	 	*height = get_cell_height(
 				GTK_TREE_VIEW(Process_List->Process_List_VC));
-		*x = *height * path_indices[0];
+		*y = *height * path_indices[0];
 		
 		return 0;	
 	} else {

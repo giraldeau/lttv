@@ -335,6 +335,7 @@ static void
 attribute_finalize (LttvAttribute *self)
 {
   g_hash_table_destroy(self->names);
+  g_critical("attribute_finalize()");
   g_array_free(self->attributes, TRUE);
   G_OBJECT_CLASS(g_type_class_peek_parent(
       g_type_class_peek(LTTV_ATTRIBUTE_TYPE)))->finalize(G_OBJECT(self));

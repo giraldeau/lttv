@@ -5,6 +5,7 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <ltt/ltt.h>
+#include "CFV.h"
 
 /* This part of the viewer does :
  * Draw horizontal lines, getting graphic context as arg.
@@ -21,7 +22,19 @@
 
 typedef struct _Drawing_t Drawing_t;
 
-Drawing_t *Drawing_construct(void);
+
+//FIXME : TEMPORARILY FOR GC !!
+struct _Drawing_t {
+	GtkWidget	*Drawing_Area_V;
+	GdkPixmap	*Pixmap;
+	ControlFlowData	*Control_Flow_Data;
+
+	gint 		height, width, depth;
+
+};
+
+
+Drawing_t *Drawing_construct(ControlFlowData *Control_Flow_Data);
 void Drawing_destroy(Drawing_t *Drawing);
 
 GtkWidget *Drawing_getWidget(Drawing_t *Drawing);

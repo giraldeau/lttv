@@ -20,12 +20,15 @@
 
 #include "../icons/hGuiStatisticInsert.xpm"
 
+#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+
 #define PATH_LENGTH        256
 
 static LttvModule *Main_Win_Module;
 
 /** Array containing instanced objects. Used when module is unloaded */
-GSList *gStatistic_Viewer_Data_List = NULL ;
+static GSList *gStatistic_Viewer_Data_List = NULL ;
 
 typedef struct _StatisticViewerData StatisticViewerData;
 
@@ -119,10 +122,7 @@ void destroy_walk(gpointer data, gpointer user_data)
 G_MODULE_EXPORT void destroy() {
   int i;
   
-  StatisticViewerData *Statistic_Viewer_Data;
-  
   g_critical("GUI Statistic Viewer destroy()");
-
   g_slist_foreach(gStatistic_Viewer_Data_List, destroy_walk, NULL );
 
   g_slist_free(gStatistic_Viewer_Data_List);
@@ -138,6 +138,7 @@ G_MODULE_EXPORT void destroy() {
 void
 GuiStatistic_free(StatisticViewerData *Statistic_Viewer_Data)
 { 
+  g_critical("GuiStatistic_free()");
   if(Statistic_Viewer_Data){
     g_hash_table_destroy(Statistic_Viewer_Data->Statistic_Hash);
     gStatistic_Viewer_Data_List = g_slist_remove(gStatistic_Viewer_Data_List, Statistic_Viewer_Data);
@@ -149,12 +150,12 @@ GuiStatistic_free(StatisticViewerData *Statistic_Viewer_Data)
 void
 GuiStatistic_Destructor(StatisticViewerData *Statistic_Viewer_Data)
 {
+  g_critical("GuiStatistic_Destructor()");
   /* May already been done by GTK window closing */
   if(GTK_IS_WIDGET(Statistic_Viewer_Data->HPaned_V)){
     gtk_widget_destroy(Statistic_Viewer_Data->HPaned_V);
     Statistic_Viewer_Data = NULL;
   }
-  
   GuiStatistic_free(Statistic_Viewer_Data);
 }
 
@@ -261,7 +262,9 @@ GuiStatistic(mainWindow *pmParentWindow)
 			(GDestroyNotify)GuiStatistic_free);
 
   /* Add the object's information to the module's array */
-  gStatistic_Viewer_Data_List = g_slist_append(gStatistic_Viewer_Data_List, Statistic_Viewer_Data);
+  gStatistic_Viewer_Data_List = g_slist_append(
+			gStatistic_Viewer_Data_List,
+			Statistic_Viewer_Data);
 
   get_traceset_stats(Statistic_Viewer_Data);
 

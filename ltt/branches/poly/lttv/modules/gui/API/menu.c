@@ -9,6 +9,7 @@ inline LttvMenus *lttv_menus_new() {
  * (functions).
  */
 inline void lttv_menus_destroy(LttvMenus *h) {
+  g_critical("lttv_menus_destroy()");
   g_array_free(h, TRUE);
 }
 

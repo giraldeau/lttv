@@ -10,7 +10,10 @@
    When a trace is closed, all the associated facilities, types and fields
    are released as well. */
 
-LttTrace *ltt_trace_open(char *pathname);
+LttTrace *ltt_trace_open(const char *pathname);
+
+/* copy reopens a trace */
+LttTrace *ltt_trace_copy(LttTrace *self);
 
 void ltt_trace_close(LttTrace *t); 
 

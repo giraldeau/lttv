@@ -794,6 +794,7 @@ lttv_stats_remove_event_hooks(LttvTracesetStats *self)
 	    hook.id), hook.h, &g_array_index(after_hooks, LttvTraceHook, k));
       }
     }
+    g_critical("lttv_stats_remove_event_hooks()");
     g_array_free(before_hooks, TRUE);
     g_array_free(after_hooks, TRUE);
   }

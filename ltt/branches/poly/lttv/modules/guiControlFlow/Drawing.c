@@ -1,5 +1,6 @@
 
 #include "Drawing.h"
+#include "CFV.h"
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
@@ -31,19 +32,20 @@ static GdkColor CF_Colors [] =
 };
 
 
-struct _Drawing_t {
-	GtkWidget	*Drawing_Area_V;
-	GdkPixmap	*Pixmap;
+//struct _Drawing_t {
+//	GtkWidget	*Drawing_Area_V;
+//	GdkPixmap	*Pixmap;
+//	ControlFlowData	*Control_Flow_Data;
 
-	gint 		height, width, depth;
+//	gint 		height, width, depth;
 
-};
+//};
 
 /* Function responsible for updating the exposed area.
  * It must call processTrace() to ask for this update.
  */
 void Drawing_Data_Request(Drawing_t *Drawing,
-			GdkPixmap *Pixmap,
+			GdkPixmap **Pixmap,
 			gint x, gint y,
 		   	gint width,
 			gint height)
@@ -51,16 +53,19 @@ void Drawing_Data_Request(Drawing_t *Drawing,
   if(width < 0) return ;
   if(height < 0) return ;
 
-  gdk_draw_rectangle (Pixmap,
+  gdk_draw_rectangle (*Pixmap,
 		      Drawing->Drawing_Area_V->style->white_gc,
 		      TRUE,
 		      x, y,
 		      width,	// do not overlap
 		      height);
 
-  Drawing_draw_line(Drawing, Pixmap, 10, 10, 50, 10,
-			Drawing->Drawing_Area_V->style->black_gc);
-
+  send_test_process(
+	GuiControlFlow_get_Process_List(Drawing->Control_Flow_Data),
+	Drawing);
+  send_test_drawing(
+	GuiControlFlow_get_Process_List(Drawing->Control_Flow_Data),
+	Drawing, *Pixmap, x, y, width, height);
   
 }
 		      
@@ -74,22 +79,29 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 {
   Drawing_t *Drawing = (Drawing_t*)user_data;
 
+  /* New Pixmap, size of the configure event */
   GdkPixmap *Pixmap = gdk_pixmap_new(widget->window,
 			  widget->allocation.width,
 			  widget->allocation.height,
 			  -1);
 	
+  g_critical("drawing configure event");
+
+  /* If no old Pixmap present */
   if(Drawing->Pixmap == NULL)
   {
-  	Drawing->Pixmap = gdk_pixmap_new(widget->window,
-			  	widget->allocation.width,
-			  	widget->allocation.height,
-			  	-1);
+  	Drawing->Pixmap = gdk_pixmap_new(
+		widget->window,
+		widget->allocation.width,
+		widget->allocation.height,
+		//ProcessList_get_height
+		// (GuiControlFlow_get_Process_List(Drawing->Control_Flow_Data)),
+		-1);
 	Drawing->width = widget->allocation.width;
 	Drawing->height = widget->allocation.height;
-
+g_critical("init data");
 	/* Initial data request */
- 	Drawing_Data_Request(Drawing, Drawing->Pixmap, 0, 0,
+ 	Drawing_Data_Request(Drawing, &Drawing->Pixmap, 0, 0,
 		   	widget->allocation.width,
 			widget->allocation.height);
 
@@ -111,10 +123,11 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 		  -1, -1);
 
    /* Request data for missing space */
-   Drawing_Data_Request(Drawing, Pixmap, Drawing->width, 0,
+g_critical("missing data");
+   Drawing_Data_Request(Drawing, &Pixmap, Drawing->width, 0,
 		   	widget->allocation.width - Drawing->width,
 			widget->allocation.height);
-   Drawing_Data_Request(Drawing, Pixmap, 0, Drawing->height,
+   Drawing_Data_Request(Drawing, &Pixmap, 0, Drawing->height,
 		   Drawing->width,
 		   widget->allocation.height - Drawing->height);
 			                      
@@ -136,8 +149,6 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
  
 
   
-  g_critical("drawing configure event");
-
   
   if (Drawing->Pixmap)
     gdk_pixmap_unref(Drawing->Pixmap);
@@ -167,12 +178,13 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   return FALSE;
 }
 
-Drawing_t *Drawing_construct(void)
+Drawing_t *Drawing_construct(ControlFlowData *Control_Flow_Data)
 {
 	Drawing_t *Drawing = g_new(Drawing_t, 1);
 		
 	Drawing->Drawing_Area_V = gtk_drawing_area_new ();
-	
+	Drawing->Control_Flow_Data = Control_Flow_Data;
+
 	//gtk_widget_set_size_request(Drawing->Drawing_Area_V->window, 50, 50);
 	g_object_set_data_full(
 			G_OBJECT(Drawing->Drawing_Area_V),
@@ -202,7 +214,6 @@ Drawing_t *Drawing_construct(void)
 //			  Drawing->Drawing_Area_V->allocation.width,
 //			  Drawing->Drawing_Area_V->allocation.height,
 //			  -1);
-
 
 	g_signal_connect (G_OBJECT(Drawing->Drawing_Area_V),
 				"configure_event",
@@ -284,6 +295,8 @@ void Drawing_Refresh (	Drawing_t *Drawing,
 			guint x, guint y,
 			guint width, guint height)
 {
+	GdkRectangle update_rect;
+
 	gdk_draw_drawable(
 		Drawing->Drawing_Area_V->window,
 		Drawing->Drawing_Area_V->
@@ -292,6 +305,13 @@ void Drawing_Refresh (	Drawing_t *Drawing,
 		x, y,
 		x, y,
 		width, height);
+
+	update_rect.x = 0 ;
+	update_rect.y = 0 ;
+	update_rect.width = Drawing->width;
+	update_rect.height = Drawing->height ;
+	gtk_widget_draw( Drawing->Drawing_Area_V, &update_rect);
+
 }
 
 

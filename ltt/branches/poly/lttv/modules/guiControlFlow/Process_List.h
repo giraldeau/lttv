@@ -37,6 +37,7 @@ struct _ProcessList {
 	GHashTable *Process_Hash;
 	
 	guint Number_Of_Process;
+	gboolean Test_Process_Sent;
 
 };
 
@@ -53,10 +54,10 @@ int ProcessList_add(ProcessList *Process_List, guint pid, LttTime *birth,
 // out : success (0) and height
 int ProcessList_remove(ProcessList *Process_List, guint pid, LttTime *birth);
 
-guint ProcessList_get_pixels(ProcessList *Process_List);
+guint ProcessList_get_height(ProcessList *Process_List);
 
 // Returns 0 on success
 gint ProcessList_get_process_pixels(ProcessList *Process_List,
 				guint pid, LttTime *birth,
-				guint *x, guint *height);
+				guint *y, guint *height);
 #endif // _PROCESS_LIST_H

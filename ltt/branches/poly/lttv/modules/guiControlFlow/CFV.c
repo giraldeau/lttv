@@ -6,6 +6,8 @@
 #include "CFV.h"
 #include "Drawing.h"
 #include "Process_List.h"
+#include "Event_Hooks.h"
+#include "CFV-private.h"
 
 
 extern GSList *gControl_Flow_Data_List;
@@ -13,38 +15,6 @@ extern GSList *gControl_Flow_Data_List;
 /*****************************************************************************
  *                     Control Flow Viewer class implementation              *
  *****************************************************************************/
-
-
-struct _ControlFlowData {
-
-	GtkWidget *Scrolled_Window_VC;
-	
-	ProcessList *Process_List;
-	Drawing_t *Drawing;
-
-	//GtkWidget *HBox_V;
-	GtkWidget *Inside_HBox_V;
-
-	GtkAdjustment *VAdjust_C ;
-	
-	/* Trace information */
-	//TraceSet *Trace_Set;
-	//TraceStatistics *Trace_Statistics;
-	
-	/* Shown events information */
-	guint First_Event, Last_Event;
-	LttTime Begin_Time, End_Time;
-	
-	
-	/* TEST DATA, TO BE READ FROM THE TRACE */
-	gint Number_Of_Events ;
-	guint Currently_Selected_Event  ;
-	gboolean Selected_Event ;
-	guint Number_Of_Process;
-
-} ;
-
-
 /**
  * Control Flow Viewer's constructor
  *
@@ -61,7 +31,7 @@ GuiControlFlow(void)
 	ControlFlowData* Control_Flow_Data = g_new(ControlFlowData,1) ;
 
 	/* Create the Drawing */
-	Control_Flow_Data->Drawing = Drawing_construct();
+	Control_Flow_Data->Drawing = Drawing_construct(Control_Flow_Data);
 	
 	Drawing_Widget = 
 		Drawing_getWidget(Control_Flow_Data->Drawing);
@@ -145,15 +115,15 @@ GuiControlFlow(void)
 			Control_Flow_Data,
 			(GDestroyNotify)GuiControlFlow_Destructor);
 			
-	g_slist_append(gControl_Flow_Data_List,Control_Flow_Data);
+	gControl_Flow_Data_List = g_slist_append(
+			gControl_Flow_Data_List,
+			Control_Flow_Data);
 
-	//FIXME : data sent too fast. The widget must be 
+	//WARNING : The widget must be 
 	//inserted in the main window before the Drawing area
 	//can be configured (and this must happend bedore sending
 	//data)
-	send_test_data(Control_Flow_Data->Process_List,
-			Control_Flow_Data->Drawing);
-	
+
 	return Control_Flow_Data;
 
 }
@@ -176,6 +146,13 @@ GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
 	
 	/* Process List is removed with it's widget */
 	//ProcessList_destroy(Control_Flow_Data->Process_List);
+	UnregUpdateTimeWindow(Update_Time_Window_Hook,
+				Control_Flow_Data,
+				Control_Flow_Data->Scrolled_Window_VC->parent);
+	
+	UnregUpdateCurrentTime(Update_Current_Time_Hook,
+				Control_Flow_Data,
+				Control_Flow_Data->Scrolled_Window_VC->parent);
 	
 	g_slist_remove(gControl_Flow_Data_List,Control_Flow_Data);
 	g_free(Control_Flow_Data);
@@ -185,4 +162,20 @@ GtkWidget *GuiControlFlow_get_Widget(ControlFlowData *Control_Flow_Data)
 {
 	return Control_Flow_Data->Scrolled_Window_VC ;
 }
+
+ProcessList *GuiControlFlow_get_Process_List
+		(ControlFlowData *Control_Flow_Data)
+{
+		return Control_Flow_Data->Process_List ;
+}
+
+TimeWindow *GuiControlFlow_get_Time_Window(ControlFlowData *Control_Flow_Data)
+{
+	return &Control_Flow_Data->Time_Window;
+}
+LttTime *GuiControlFlow_get_Current_Time(ControlFlowData *Control_Flow_Data)
+{
+	return &Control_Flow_Data->Current_Time;
+}
+
 

@@ -71,6 +71,7 @@ struct _LttvTracesetContext {
   LttvHooks *after;
   LttvTraceContext **traces;
   LttvAttribute *a;
+  TimeInterval *Time_Span;
 };
 
 struct _LttvTracesetContextClass {

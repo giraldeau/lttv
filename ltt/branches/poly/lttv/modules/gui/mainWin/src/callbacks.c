@@ -14,10 +14,14 @@
 #include <lttv/gtkTraceSet.h>
 #include <lttv/module.h>
 #include <lttv/gtkdirsel.h>
+#include <lttv/iattribute.h>
 
-#define PATH_LENGTH     256
+#define PATH_LENGTH          256
+#define DEFAULT_TIME_WIDTH_S   1
 
-extern LttvTracesetContext * gTracesetContext;
+//extern LttvTracesetContext * gTracesetContext;
+extern LttTrace *gInit_Trace ;
+
 
 /** Array containing instanced objects. */
 extern GSList * Main_Window_List;
@@ -702,6 +706,8 @@ void
 on_MWindow_destroy                     (GtkObject       *object,
                                         gpointer         user_data)
 {
+  mainWindow *Main_Window = (mainWindow*)user_data;
+  
   g_printf("There are : %d windows\n",g_slist_length(Main_Window_List));
 
   gWinCount--;
@@ -853,12 +859,16 @@ void insertMenuToolbarItem(mainWindow * mw)
 
 void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_data)
 {
+  g_critical("constructMainWin()");
   //  systemView * sv = NULL; /* System view */
-  systemView * newSv;     /* New system view displayed in the new window */
+  //systemView * newSv;     /* New system view displayed in the new window */
   GtkWidget  * newWindow; /* New generated main window */
   mainWindow * newMWindow;/* New main window structure */
   GtkNotebook * notebook;
-
+  LttvIAttribute *attributes =
+	  LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
+  LttvAttributeValue value;
+     
   //  if(parent) sv = parent->SystemView;
     
   newMWindow = g_new(mainWindow, 1);
@@ -866,39 +876,100 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
   // Add the object's information to the module's array 
   Main_Window_List = g_slist_append(Main_Window_List, newMWindow);
 
+
   newWindow  = create_MWindow();
   gtk_widget_show (newWindow);
     
-  newSv = g_new(systemView, 1);
+  //newSv = g_new(systemView, 1);
   //  if(sv){
   //    while(sv->Next) sv = sv->Next;
   //    sv->Next = newSv;
   //  }
 
-  newSv->EventDB = NULL;
-  newSv->SystemInfo = NULL;
-  newSv->Options  = NULL;
-  newSv->Next = NULL;
-  newSv->Window = newMWindow;
+  //newSv->EventDB = NULL;
+  //newSv->SystemInfo = NULL;
+  //newSv->Options  = NULL;
+  //newSv->Next = NULL;
+  //newSv->Window = newMWindow;
+  
+  newMWindow->Attributes = attributes;
+  
+  newMWindow->Traceset_Info = g_new(TracesetInfo,1);
+  newMWindow->Traceset_Info->path = NULL ;
 
+
+  newMWindow->Traceset_Info->before_traceset = lttv_hooks_new();
+  newMWindow->Traceset_Info->after_traceset = lttv_hooks_new();
+  newMWindow->Traceset_Info->before_trace = lttv_hooks_new();
+  newMWindow->Traceset_Info->after_trace = lttv_hooks_new();
+  newMWindow->Traceset_Info->before_tracefile = lttv_hooks_new();
+  newMWindow->Traceset_Info->after_tracefile = lttv_hooks_new();
+  newMWindow->Traceset_Info->before_event = lttv_hooks_new();
+  newMWindow->Traceset_Info->after_event = lttv_hooks_new();
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = newMWindow->Traceset_Info->before_traceset;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = newMWindow->Traceset_Info->after_traceset;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = newMWindow->Traceset_Info->before_trace;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/after",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = newMWindow->Traceset_Info->after_trace;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/before",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = newMWindow->Traceset_Info->before_tracefile;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/after",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = newMWindow->Traceset_Info->after_tracefile;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = newMWindow->Traceset_Info->before_event;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = newMWindow->Traceset_Info->after_event;
+ 
+  
   newMWindow->MWindow = newWindow;
   newMWindow->Tab = NULL;
   newMWindow->CurrentTab = NULL;
-  newMWindow->SystemView = newSv;
+  //newMWindow->SystemView = newSv;
   newMWindow->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   if(parent){
-    newMWindow->traceset_context = parent->traceset_context;
-    newMWindow->traceset = parent->traceset;
+    newMWindow->Traceset_Info->traceset = 
+        lttv_traceset_copy(parent->Traceset_Info->traceset);
+    
+//FIXME copy not implemented in lower level
+    newMWindow->Traceset_Info->TracesetContext =
+  	g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+    lttv_context_init(
+	LTTV_TRACESET_CONTEXT(newMWindow->Traceset_Info->TracesetContext),
+	newMWindow->Traceset_Info->traceset);
+  //newMWindow->traceset_context = parent->traceset_context;
     newMWindow->winCreationData = parent->winCreationData;
   }else{
-    newMWindow->traceset_context = LTTV_TRACESET_CONTEXT(gTracesetContext);
-    newMWindow->traceset = (LTTV_TRACESET_CONTEXT(gTracesetContext))->ts;
+    newMWindow->Traceset_Info->traceset = lttv_traceset_new();
+
+    /* Add the command line trace */
+    if(gInit_Trace != NULL)
+      lttv_traceset_add(newMWindow->Traceset_Info->traceset, gInit_Trace);
+    /* NOTE : the context must be recreated if we change the traceset,
+     * ie : adding/removing traces */
+    newMWindow->Traceset_Info->TracesetContext =
+  	g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+    lttv_context_init(
+	LTTV_TRACESET_CONTEXT(newMWindow->Traceset_Info->TracesetContext),
+	newMWindow->Traceset_Info->traceset);
+
     newMWindow->winCreationData = win_creation_data;
   }
 
   insertMenuToolbarItem(newMWindow);
   
-  g_object_set_data(G_OBJECT(newWindow), "systemView", (gpointer)newSv);    
+  //g_object_set_data(G_OBJECT(newWindow), "systemView", (gpointer)newSv);    
   g_object_set_data(G_OBJECT(newWindow), "mainWindow", (gpointer)newMWindow);    
 
   //create a default tab
@@ -920,14 +991,21 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
   gWinCount++;
 }
 
+void Tab_Destructor(tab *Tab)
+{
+  if(Tab->Attributes)
+    g_object_unref(Tab->Attributes);
+  g_free(Tab);
+}
+
 void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label)
 {
   GList * list;
   tab * tmpTab;
   mainWindow * mwData;
+  LttTime TmpTime;
 
   mwData = get_window_data_struct(parent);
-
   tmpTab = mwData->Tab;
   while(tmpTab && tmpTab->Next) tmpTab = tmpTab->Next;
   if(!tmpTab){
@@ -939,16 +1017,28 @@ void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label)
     tmpTab = tmpTab->Next;
   }
   if(mwData->CurrentTab){
-    tmpTab->traceStartTime = mwData->CurrentTab->traceStartTime;
-    tmpTab->traceEndTime   = mwData->CurrentTab->traceEndTime;
-    tmpTab->startTime      = mwData->CurrentTab->startTime;
-    tmpTab->endTime        = mwData->CurrentTab->endTime;
+ // Will have to read directly at the main window level, as we want
+ // to be able to modify a traceset on the fly.
+ //   tmpTab->traceStartTime = mwData->CurrentTab->traceStartTime;
+ //   tmpTab->traceEndTime   = mwData->CurrentTab->traceEndTime;
+    tmpTab->Time_Window      = mwData->CurrentTab->Time_Window;
     tmpTab->currentTime    = mwData->CurrentTab->currentTime;
   }else{
-    getTracesetTimeSpan(mwData,&tmpTab->traceStartTime, &tmpTab->traceEndTime);
-    tmpTab->startTime   = tmpTab->traceStartTime;
-    tmpTab->endTime     = tmpTab->traceEndTime;
-    tmpTab->currentTime = tmpTab->traceStartTime;
+ // Will have to read directly at the main window level, as we want
+ // to be able to modify a traceset on the fly.
+  //  getTracesetTimeSpan(mwData,&tmpTab->traceStartTime, &tmpTab->traceEndTime);
+    tmpTab->Time_Window.startTime   = 
+	    LTTV_TRACESET_CONTEXT(mwData->Traceset_Info->TracesetContext)->Time_Span->startTime;
+    if(DEFAULT_TIME_WIDTH_S <
+              LTTV_TRACESET_CONTEXT(mwData->Traceset_Info->TracesetContext)->Time_Span->endTime.tv_sec)
+      TmpTime.tv_sec = DEFAULT_TIME_WIDTH_S;
+    else
+      TmpTime.tv_sec =
+              LTTV_TRACESET_CONTEXT(mwData->Traceset_Info->TracesetContext)->Time_Span->endTime.tv_sec;
+    TmpTime.tv_nsec = 0;
+    tmpTab->Time_Window.Time_Width = TmpTime ;
+    tmpTab->currentTime.tv_sec = TmpTime.tv_sec / 2;
+    tmpTab->currentTime.tv_nsec = 0 ;
   }
   tmpTab->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   //  mwData->CurrentTab = tmpTab;
@@ -960,8 +1050,13 @@ void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label)
   tmpTab->label = gtk_label_new (label);
   gtk_widget_show (tmpTab->label);
 
-  gtk_notebook_append_page(notebook, (GtkWidget*)tmpTab->custom, tmpTab->label); 
+  g_object_set_data_full(
+           G_OBJECT(tmpTab->custom),
+           "Tab_Info",
+	   tmpTab,
+	   (GDestroyNotify)Tab_Destructor);
   
+  gtk_notebook_append_page(notebook, (GtkWidget*)tmpTab->custom, tmpTab->label);  
   list = gtk_container_get_children(GTK_CONTAINER(notebook));
   gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
 }

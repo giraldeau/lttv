@@ -9,6 +9,7 @@ inline LttvToolbars *lttv_toolbars_new() {
  * (functions).
  */
 inline void lttv_toolbars_destroy(LttvToolbars *h) {
+  g_critical("lttv_toolbars_destroy");
   g_array_free(h, TRUE);
 }
 

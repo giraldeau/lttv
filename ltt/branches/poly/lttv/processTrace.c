@@ -37,6 +37,51 @@ lttv_context_new_tracefile_context(LttvTracesetContext *self)
   return LTTV_TRACESET_CONTEXT_GET_CLASS(self)->new_tracefile_context(self);
 }
 
+/****************************************************************************
+ * lttv_traceset_context_compute_time_span
+ *
+ * Keep the Time_Span is sync with on the fly addition and removal of traces
+ * in a trace set. It must be called each time a trace is added/removed from
+ * the traceset. It could be more efficient to call it only once a bunch
+ * of traces are loaded, but the calculation is not long, so it's not
+ * critical.
+ *
+ * Author : Xang Xiu Yang
+ * Imported from gtkTraceSet.c by Mathieu Desnoyers
+ ***************************************************************************/
+static void lttv_traceset_context_compute_time_span(
+                                          LttvTracesetContext *self,
+					  TimeInterval *Time_Span)
+{
+  LttvTraceset * traceset = self->ts;
+  int numTraces = lttv_traceset_number(traceset);
+  int i;
+  LttTime s, e;
+  LttvTraceContext *tc;
+  LttTrace * trace;
+
+  for(i=0; i<numTraces;i++){
+    tc = self->traces[i];
+    trace = tc->t;
+
+    ltt_trace_time_span_get(trace, &s, &e);
+
+    if(i==0){
+      Time_Span->startTime = s;
+      Time_Span->endTime   = e;
+    }else{
+      if(s.tv_sec < Time_Span->startTime.tv_sec ||
+	 (s.tv_sec == Time_Span->startTime.tv_sec 
+          && s.tv_nsec < Time_Span->startTime.tv_nsec))
+	Time_Span->startTime = s;
+      if(e.tv_sec > Time_Span->endTime.tv_sec ||
+	 (e.tv_sec == Time_Span->endTime.tv_sec &&
+          e.tv_nsec > Time_Span->endTime.tv_nsec))
+	Time_Span->endTime = e;      
+    }
+  }
+}
+
 
 static void
 init(LttvTracesetContext *self, LttvTraceset *ts)
@@ -96,6 +141,8 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
       tfc->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
     }
   }
+  self->Time_Span = g_new(TimeInterval,1);
+  lttv_traceset_context_compute_time_span(self, self->Time_Span);
 }
 
 
@@ -109,9 +156,12 @@ void fini(LttvTracesetContext *self)
 
   LttvTraceset *ts = self->ts;
 
+  g_free(self->Time_Span);
+
   lttv_hooks_destroy(self->before);
   lttv_hooks_destroy(self->after);
-  g_object_unref(self->a);
+  //FIXME : segfault
+ // g_object_unref(self->a);
 
   nb_trace = lttv_traceset_number(ts);
 

@@ -15,6 +15,7 @@
 #include <lttv/hook.h>
 #include <lttv/common.h>
 #include <lttv/stats.h>
+#include <lttv/mainWindow.h>
 
 /**
  * Function to register a view constructor so that main window can generate
@@ -97,15 +98,15 @@ void UpdateStatus(mainWindow *main_win, char *info);
 
 
 /**
- * Function to get the current time interval of the current tab.
+ * Function to get the current time window of the current tab.
  * It will be called by a viewer's hook function to update the 
- * time interval of the viewer and also be called by the constructor
+ * time window of the viewer and also be called by the constructor
  * of the viewer.
  * @param main_win the main window the viewer belongs to.
  * @param time_interval a pointer where time interval will be stored.
  */
 
-void GetTimeInterval(mainWindow *main_win, TimeInterval *time_interval);
+void GetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window);
 
 
 /**
@@ -116,8 +117,12 @@ void GetTimeInterval(mainWindow *main_win, TimeInterval *time_interval);
  * @param time_interval a pointer where time interval is stored.
  */
 
-void SetTimeInterval(mainWindow *main_win, TimeInterval *time_interval);
+void SetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window);
 
+/**
+ * Function to get the time span of the main window's traceset.
+ */
+void GetTracesetTimeSpan(mainWindow *main_win, TimeInterval *Time_Interval);
 
 /**
  * Function to get the current time/event of the current tab.
@@ -167,7 +172,7 @@ void SetCurrentTime(mainWindow *main_win, LttTime *time);
  * Function to register a hook function for a viewer to set/update its
  * time interval.
  * It will be called by the constructor of the viewer.
- * @param hook hook function of the viewer.
+ * @param hook hook function of the viewer. Takes a TimeInterval* as call_data.
  * @param hook_data hook data associated with the hook function.
  * @param main_win the main window the viewer belongs to.
  */
@@ -180,7 +185,7 @@ void RegUpdateTimeInterval(LttvHook hook, gpointer hook_data,
  * Function to unregister a viewer's hook function which is used to 
  * set/update the time interval of the viewer.
  * It will be called by the destructor of the viewer.
- * @param hook hook function of the viewer.
+ * @param hook hook function of the viewer. Takes a TimeInterval as call_data.
  * @param hook_data hook data associated with the hook function.
  * @param main_win the main window the viewer belongs to.
  */
@@ -378,7 +383,7 @@ void contextRemoveHooks(mainWindow *main_win ,
  * @param end end time of the traceset.
  */
 
-void getTracesetTimeSpan(mainWindow *main_win, LttTime * start, LttTime* end);
+void getTracesetTimeSpan(mainWindow *main_win, TimeInterval *time_span);
 
 
 /**

@@ -14,28 +14,140 @@
 #include "CFV.h"
 #include "Process_List.h"
 #include "Drawing.h"
+#include "CFV-private.h"
 
-/* NOTE : no draing data should be sent there, as the drawing widget
+
+/* NOTE : no drawing data should be sent there, as the drawing widget
  * has not been initialized */
-void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
+void send_test_drawing(ProcessList *Process_List,
+			Drawing_t *Drawing,
+			GdkPixmap *Pixmap,
+			gint x, gint y, // y not used here?
+		   	gint width,
+			gint height) // height won't be used here ?
 {
-	guint height, size;
+	int i;
+	ProcessInfo Process_Info = {10000, 12000, 55600};
+	//ProcessInfo Process_Info = {156, 14000, 55500};
+	GtkTreeRowReference *got_RowRef;
+	
+	LttTime birth;
+	birth.tv_sec = 12000;
+	birth.tv_nsec = 55500;
+	g_critical("we have : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
+	ProcessList_get_process_pixels(Process_List,
+					1,
+					&birth,
+					&y,
+					&height);
+	
+	g_critical("we draw : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
+	Drawing_draw_line(
+		Drawing, Pixmap, x,
+		y+(height/2), x + width, y+(height/2),
+		Drawing->Drawing_Area_V->style->black_gc);
+
+	birth.tv_sec = 14000;
+	birth.tv_nsec = 55500;
+
+	ProcessList_get_process_pixels(Process_List,
+					156,
+					&birth,
+					&y,
+					&height);
+	
+
+	Drawing_draw_line(
+		Drawing, Pixmap, x,
+		y+(height/2), x + width, y+(height/2),
+		Drawing->Drawing_Area_V->style->black_gc);
+
+	g_critical("y : %u, height : %u", y, height);
+
+	birth.tv_sec = 12000;
+	birth.tv_nsec = 55700;
+
+	ProcessList_get_process_pixels(Process_List,
+					10,
+					&birth,
+					&y,
+					&height);
+	
+
+	Drawing_draw_line(
+		Drawing, Pixmap, x,
+		y+(height/2), x + width, y+(height/2),
+		Drawing->Drawing_Area_V->style->black_gc);
+
+	g_critical("y : %u, height : %u", y, height);
+
+	for(i=0; i<10; i++)
+	{
+		birth.tv_sec = i*12000;
+		birth.tv_nsec = i*55700;
+
+		ProcessList_get_process_pixels(Process_List,
+						i,
+						&birth,
+						&y,
+						&height);
+		
+
+		Drawing_draw_line(
+			Drawing, Pixmap, x,
+			y+(height/2), x + width, y+(height/2),
+			Drawing->Drawing_Area_V->style->black_gc);
+
+		g_critical("y : %u, height : %u", y, height);
+
+	}
+
+	birth.tv_sec = 12000;
+	birth.tv_nsec = 55600;
+
+	ProcessList_get_process_pixels(Process_List,
+					10,
+					&birth,
+					&y,
+					&height);
+	
+
+	Drawing_draw_line(
+		Drawing, Pixmap, x,
+		y+(height/2), x + width, y+(height/2),
+		Drawing->Drawing_Area_V->style->black_gc);
+
+	g_critical("y : %u, height : %u", y, height);
+	
+}
+
+void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
+{
+	guint height, y;
 	int i;
 	ProcessInfo Process_Info = {10000, 12000, 55600};
 	//ProcessInfo Process_Info = {156, 14000, 55500};
 	GtkTreeRowReference *got_RowRef;
 
 	LttTime birth;
+
+	if(Process_List->Test_Process_Sent) return;
+
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55500;
 
 	ProcessList_add(Process_List,
 			1,
 			&birth,
-			&height);
-	//Drawing_Insert_Square( Drawing, height, 5);
+			&y);
+	ProcessList_get_process_pixels(Process_List,
+					1,
+					&birth,
+					&y,
+					&height);
+	Drawing_Insert_Square( Drawing, y, height);
 	
-	g_critical("height : %u", height);
+	//g_critical("y : %u, height : %u", y, height);
 	
 	birth.tv_sec = 14000;
 	birth.tv_nsec = 55500;
@@ -43,11 +155,16 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 	ProcessList_add(Process_List,
 			156,
 			&birth,
-			&height);
-	//Drawing_Insert_Square( Drawing, height, 5);
-
-	g_critical("height : %u", height);
-
+			&y);
+	ProcessList_get_process_pixels(Process_List,
+					156,
+					&birth,
+					&y,
+					&height);
+	Drawing_Insert_Square( Drawing, y, height);
+	
+	//g_critical("y : %u, height : %u", y, height);
+	
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55700;
 
@@ -55,6 +172,15 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 			10,
 			&birth,
 			&height);
+	ProcessList_get_process_pixels(Process_List,
+					10,
+					&birth,
+					&y,
+					&height);
+	Drawing_Insert_Square( Drawing, y, height);
+	
+	//g_critical("y : %u, height : %u", y, height);
+	
 	//Drawing_Insert_Square( Drawing, height, 5);
 
 	for(i=0; i<10; i++)
@@ -66,10 +192,17 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 				i,
 				&birth,
 				&height);
-	//Drawing_Insert_Square( Drawing, height, 5);
-
+		ProcessList_get_process_pixels(Process_List,
+						i,
+						&birth,
+						&y,
+						&height);
+		Drawing_Insert_Square( Drawing, y, height);
+	
+	//	g_critical("y : %u, height : %u", y, height);
+	
 	}
-	g_critical("height : %u", height);
+	//g_critical("height : %u", height);
 
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55600;
@@ -77,27 +210,42 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 	ProcessList_add(Process_List,
 			10,
 			&birth,
-			&height);
-	//Drawing_Insert_Square( Drawing, height, 5);
-	g_critical("height : %u", height);
-
+			&y);
+	ProcessList_get_process_pixels(Process_List,
+					10,
+					&birth,
+					&y,
+					&height);
+	Drawing_Insert_Square( Drawing, y, height);
+	
+	//g_critical("y : %u, height : %u", y, height);
+	
 	ProcessList_add(Process_List,
 			10000,
 			&birth,
 			&height);
+	ProcessList_get_process_pixels(Process_List,
+					10000,
+					&birth,
+					&y,
+					&height);
+	Drawing_Insert_Square( Drawing, y, height);
+	
+	//g_critical("y : %u, height : %u", y, height);
+	
 	//Drawing_Insert_Square( Drawing, height, 5);
-	g_critical("height : %u", height);
+	//g_critical("height : %u", height);
 
 
 	ProcessList_get_process_pixels(Process_List,
 				10000,
 				&birth,
-				&height, &size);
+				&y, &height);
 	ProcessList_remove( 	Process_List,
 				10000,
 				&birth);
 
-	//Drawing_Remove_Square( Drawing, height, 5);
+	Drawing_Remove_Square( Drawing, y, height);
 	
 	if(got_RowRef = 
 		(GtkTreeRowReference*)g_hash_table_lookup(
@@ -112,6 +260,8 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 			));
 		
 	}
+
+	Process_List->Test_Process_Sent = TRUE;
 
 }
 
@@ -131,6 +281,16 @@ hGuiControlFlow(mainWindow *pmParentWindow)
 	g_critical("hGuiControlFlow");
 	ControlFlowData *Control_Flow_Data = GuiControlFlow() ;
 
+	GetTimeWindow(pmParentWindow,
+			GuiControlFlow_get_Time_Window(Control_Flow_Data));
+	GetCurrentTime(pmParentWindow,
+			GuiControlFlow_get_Current_Time(Control_Flow_Data));
+
+	// Unreg done in the GuiControlFlow_Destructor
+	RegUpdateTimeWindow(Update_Time_Window_Hook, Control_Flow_Data,
+				pmParentWindow);
+	RegUpdateCurrentTime(Update_Current_Time_Hook, Control_Flow_Data,
+				pmParentWindow);
 	return GuiControlFlow_get_Widget(Control_Flow_Data) ;
 	
 }
@@ -199,3 +359,58 @@ int Draw_After_Hook(void *hook_data, void *call_data)
 	return 0;
 }
 #endif
+
+
+
+
+void Update_Time_Window_Hook(void *hook_data, void *call_data)
+{
+	ControlFlowData *Control_Flow_Data = (ControlFlowData*) hook_data;
+	TimeWindow* Time_Window = 
+		GuiControlFlow_get_Time_Window(Control_Flow_Data);
+	TimeWindow *New_Time_Window = ((TimeWindow*)call_data);
+
+	// As the time interval change will mostly be used for
+	// zoom in and out, it's not useful to keep old drawing
+	// sections, as scale will be changed.
+	
+
+	*Time_Window = *New_Time_Window;
+	g_critical("New time window HOOK : %u, %u to %u, %u",
+			Time_Window->startTime.tv_sec,
+			Time_Window->startTime.tv_nsec,
+			Time_Window->Time_Width.tv_sec,
+			Time_Window->Time_Width.tv_nsec);
+
+   	Drawing_Data_Request(Control_Flow_Data->Drawing,
+			&Control_Flow_Data->Drawing->Pixmap,
+			0, 0,
+			Control_Flow_Data->Drawing->width,
+		   	Control_Flow_Data->Drawing->height);
+
+	Drawing_Refresh(Control_Flow_Data->Drawing,
+			0, 0,
+			Control_Flow_Data->Drawing->width,
+			Control_Flow_Data->Drawing->height);
+
+}
+
+void Update_Current_Time_Hook(void *hook_data, void *call_data)
+{
+	ControlFlowData *Control_Flow_Data = (ControlFlowData*) hook_data;
+	LttTime* Current_Time = 
+		GuiControlFlow_get_Current_Time(Control_Flow_Data);
+	*Current_Time = *((LttTime*)call_data);
+	g_critical("New Current time HOOK : %u, %u", Current_Time->tv_sec,
+							Current_Time->tv_nsec);
+
+	/* If current time is inside time interval, just move the highlight
+	 * bar */
+
+	/* Else, we have to change the time interval. We have to tell it
+	 * to the main window. */
+	/* The time interval change will take care of placing the current
+	 * time at the center of the visible area */
+	
+}
+

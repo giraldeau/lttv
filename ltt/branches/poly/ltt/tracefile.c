@@ -404,7 +404,7 @@ void getCpuFileInfo(LttTrace *t, char* cpu)
  *are released as well.
  ****************************************************************************/
 
-LttTrace *ltt_trace_open(char *pathname)
+LttTrace *ltt_trace_open(const char *pathname)
 {
   LttTrace  * t;
   LttSystemDescription * sys_description;
@@ -461,6 +461,16 @@ LttTrace *ltt_trace_open(char *pathname)
   getCpuFileInfo(t,cpu);
 
   return t;
+}
+
+/******************************************************************************
+ * When we copy a trace, we want all the opening actions to happen again :
+ * the trace will be reopened and totally independant from the original.
+ * That's why we call ltt_trace_open.
+ *****************************************************************************/
+LttTrace *ltt_trace_copy(LttTrace *self)
+{
+  return ltt_trace_open(self->pathname);
 }
 
 void ltt_trace_close(LttTrace *t)

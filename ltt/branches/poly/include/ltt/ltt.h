@@ -80,6 +80,13 @@ typedef struct _LttTime {
   unsigned long tv_nsec;
 } LttTime;
 
+
+typedef struct _TimeInterval{
+  LttTime startTime;
+  LttTime endTime;  
+} TimeInterval;
+
+
 typedef uint64_t LttCycleCount;
 
 #define NANSECOND_CONST       1000000000

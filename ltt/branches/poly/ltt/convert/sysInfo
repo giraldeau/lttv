@@ -23,9 +23,12 @@ echo "kernel_version="$KERNEL_VERSION >> $outputFile
 MACHINE="`uname -m`"
 echo "machine="$MACHINE >> $outputFile
 
+
+# not available anymore in uname version 5 and newer
 PROCESSOR="`uname -p`"
 echo "processor="$PROCESSOR >> $outputFile
 
+# not available anymore in uname version 5 and newer
 HARDWARE_PLATFORM="`uname -i`"
 echo "hardware_platform="$HARDWARE_PLATFORM >> $outputFile
 

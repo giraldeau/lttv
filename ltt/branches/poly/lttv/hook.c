@@ -16,6 +16,7 @@ LttvHooks *lttv_hooks_new()
 
 void lttv_hooks_destroy(LttvHooks *h) 
 {
+  g_critical("lttv_hooks_destroy()");
   g_array_free(h, TRUE);
 }
 

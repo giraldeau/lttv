@@ -84,10 +84,10 @@ G_MODULE_EXPORT void destroy() {
 	g_critical("GUI Control Flow Viewer destroy()");
 	int i;
 
-	ControlFlowData *Control_Flow_Data;
-	
 	g_slist_foreach(gControl_Flow_Data_List, destroy_walk, NULL );
 	
+	g_slist_free(gControl_Flow_Data_List);
+
 	/* Unregister the toolbar insert button */
 	ToolbarItemUnreg(hGuiControlFlow);
 

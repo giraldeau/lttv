@@ -55,7 +55,7 @@ static LttvHooks  *before_event;
 static GSList *sEvent_Viewer_Data_List = NULL ;
 
 /** hook functions for update time interval, current time ... */
-gboolean updateTimeInterval(void * hook_data, void * call_data);
+gboolean updateTimeWindow(void * hook_data, void * call_data);
 gboolean updateCurrentTime(void * hook_data, void * call_data);
 void remove_item_from_queue(GQueue * q, gboolean fromHead);
 void remove_all_items_from_queue(GQueue * q);
@@ -85,7 +85,7 @@ typedef enum _ScrollDirection{
 typedef struct _EventViewerData {
 
   mainWindow * mw;
-  TimeInterval time_interval;
+  TimeWindow   time_window;
   LttTime      current_time;
   LttvHooks  * before_event_hooks;
 
@@ -94,8 +94,9 @@ typedef struct _EventViewerData {
   GQueue     * raw_trace_data_queue_tmp;  //tmp buf to contain raw data
   unsigned     current_event_index;
   double       previous_value;            //value of the slide
-  LttTime      trace_start;
-  LttTime      trace_end;
+  TimeInterval time_span;
+ // LttTime      trace_start;
+ // LttTime      trace_end;
   unsigned     start_event_index;        //the first event shown in the window
   unsigned     end_event_index;          //the last event shown in the window
 
@@ -268,7 +269,7 @@ GuiEvents(mainWindow *pmParentWindow)
   unsigned size;
 
   Event_Viewer_Data->mw = pmParentWindow;
-  GetTimeInterval(Event_Viewer_Data->mw, &Event_Viewer_Data->time_interval);
+  GetTimeWindow(Event_Viewer_Data->mw, &Event_Viewer_Data->time_window);
   GetCurrentTime(Event_Viewer_Data->mw, &Event_Viewer_Data->current_time);
   
   Event_Viewer_Data->before_event_hooks = lttv_hooks_new();
@@ -277,7 +278,7 @@ GuiEvents(mainWindow *pmParentWindow)
   Event_Viewer_Data->raw_trace_data_queue     = g_queue_new();
   Event_Viewer_Data->raw_trace_data_queue_tmp = g_queue_new();  
 
-  RegUpdateTimeInterval(updateTimeInterval,Event_Viewer_Data, Event_Viewer_Data->mw);
+  RegUpdateTimeWindow(updateTimeWindow,Event_Viewer_Data, Event_Viewer_Data->mw);
   RegUpdateCurrentTime(updateCurrentTime,Event_Viewer_Data, Event_Viewer_Data->mw);
 
   Event_Viewer_Data->Scroll_Win = gtk_scrolled_window_new (NULL, NULL);
@@ -435,11 +436,11 @@ GuiEvents(mainWindow *pmParentWindow)
   Event_Viewer_Data->Num_Visible_Events = 1;
 
   //get the life span of the traceset and set the upper of the scroll bar
-  getTracesetTimeSpan(Event_Viewer_Data->mw, &Event_Viewer_Data->trace_start, 
-		      &Event_Viewer_Data->trace_end);
-  time_value = Event_Viewer_Data->trace_end.tv_sec - Event_Viewer_Data->trace_start.tv_sec;
+  getTracesetTimeSpan(Event_Viewer_Data->mw, &Event_Viewer_Data->time_span);
+  
+  time_value = Event_Viewer_Data->time_span.endTime.tv_sec - Event_Viewer_Data->time_span.startTime.tv_sec;
   time_value *= NANSECOND_CONST;
-  time_value += (double)Event_Viewer_Data->trace_end.tv_nsec - Event_Viewer_Data->trace_start.tv_nsec;
+  time_value += (double)Event_Viewer_Data->time_span.endTime.tv_nsec - Event_Viewer_Data->time_span.startTime.tv_nsec;
   Event_Viewer_Data->VAdjust_C->upper = time_value;
 
   Event_Viewer_Data->append = TRUE;
@@ -939,7 +940,7 @@ void get_test_data(double time_value, guint List_Height,
 	remove_all_items_from_queue(Event_Viewer_Data->raw_trace_data_queue);
 	end.tv_sec = G_MAXULONG;
 	end.tv_nsec = G_MAXULONG;
-	start = Event_Viewer_Data->trace_start;
+	start = Event_Viewer_Data->time_span.startTime;
 	value = (int)(time_value / NANSECOND_CONST);
 	start.tv_sec += value;
 	value = time_value / NANSECOND_CONST - value;
@@ -988,9 +989,9 @@ void get_test_data(double time_value, guint List_Height,
       first = Event_Viewer_Data->raw_trace_data_queue->head;
       raw_data = (RawTraceData*)g_list_nth_data(first,Event_Number);
       value = raw_data->time.tv_sec;
-      value -= Event_Viewer_Data->trace_start.tv_sec;
+      value -= Event_Viewer_Data->time_span.startTime.tv_sec;
       value *= NANSECOND_CONST;
-      value -= Event_Viewer_Data->trace_start.tv_nsec;
+      value -= Event_Viewer_Data->time_span.startTime.tv_nsec;
       value += raw_data->time.tv_nsec;
       Event_Viewer_Data->VAdjust_C->value = value;
       g_signal_stop_emission_by_name(G_OBJECT(Event_Viewer_Data->VAdjust_C), "value-changed");
@@ -1135,7 +1136,7 @@ GuiEvents_free(EventViewerData *Event_Viewer_Data)
     g_queue_free(Event_Viewer_Data->raw_trace_data_queue);
     g_queue_free(Event_Viewer_Data->raw_trace_data_queue_tmp);
 
-    UnregUpdateTimeInterval(updateTimeInterval,Event_Viewer_Data, Event_Viewer_Data->mw);
+    UnregUpdateTimeWindow(updateTimeWindow,Event_Viewer_Data, Event_Viewer_Data->mw);
     UnregUpdateCurrentTime(updateCurrentTime,Event_Viewer_Data, Event_Viewer_Data->mw);
 
     sEvent_Viewer_Data_List = g_slist_remove(sEvent_Viewer_Data_List, Event_Viewer_Data);
@@ -1202,10 +1203,10 @@ int Event_Selected_Hook(void *hook_data, void *call_data)
 }
 
 
-gboolean updateTimeInterval(void * hook_data, void * call_data)
+gboolean updateTimeWindow(void * hook_data, void * call_data)
 {
   EventViewerData *Event_Viewer_Data = (EventViewerData*) hook_data;
-  Event_Viewer_Data->time_interval = *(TimeInterval*)call_data;
+  Event_Viewer_Data->time_window = *(TimeWindow*)call_data;
 
   return FALSE;
 }

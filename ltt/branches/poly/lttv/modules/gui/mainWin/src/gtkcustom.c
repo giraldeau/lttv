@@ -105,10 +105,11 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
 {
   GtkPaned * tmpPane; 
   GtkWidget * w;
-  TimeInterval timeInterval;
+  TimeWindow Time_Window;
   LttTime      time;
   double       tmpValue;
-
+  TimeInterval *Time_Span;
+  
   g_return_if_fail(GTK_IS_CUSTOM(custom));
   g_object_ref(G_OBJECT(widget1));
  
@@ -121,26 +122,37 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
     gtk_widget_show(custom->hScrollbar);
 
     custom->hAdjust = gtk_range_get_adjustment(GTK_RANGE(custom->hScrollbar));
-    GetTimeInterval(custom->mw,&timeInterval);
+    GetTimeWindow(custom->mw,&Time_Window);
     GetCurrentTime(custom->mw,&time);
+    Time_Span = LTTV_TRACESET_CONTEXT(custom->mw->Traceset_Info->TracesetContext)->Time_Span ;
 
-    tmpValue               = timeInterval.startTime.tv_sec;
+    tmpValue               = Time_Span->startTime.tv_sec;
     tmpValue              *= NANSECOND_CONST;
-    tmpValue              += timeInterval.startTime.tv_nsec;
+    tmpValue              += Time_Span->startTime.tv_nsec;
     custom->hAdjust->lower = tmpValue;
-    tmpValue               = timeInterval.endTime.tv_sec;
-    tmpValue              *= NANSECOND_CONST;
-    tmpValue              += timeInterval.endTime.tv_nsec;
-    custom->hAdjust->upper = tmpValue;
-    tmpValue               = time.tv_sec;
-    tmpValue              *= NANSECOND_CONST;
-    tmpValue              += time.tv_nsec;
     custom->hAdjust->value = tmpValue;
-    custom->hAdjust->step_increment = 1;
-    custom->hAdjust->page_increment = 100000000;
-    custom->hAdjust->page_size = 100000000;
+    tmpValue               = Time_Span->endTime.tv_sec;
+    tmpValue              *= NANSECOND_CONST;
+    tmpValue              += Time_Span->endTime.tv_nsec;
+    custom->hAdjust->upper = tmpValue;
+    //tmpValue               = time.tv_sec;
+    //tmpValue              *= NANSECOND_CONST;
+    //tmpValue              += time.tv_nsec;
+    //custom->hAdjust->value = tmpValue;
+    /* Step increment to 1/10 of visible area */
+    tmpValue               = Time_Window.Time_Width.tv_sec;
+    tmpValue              *= NANSECOND_CONST;
+    tmpValue              += Time_Window.Time_Width.tv_nsec;
+    custom->hAdjust->step_increment = tmpValue / 10;
+    /* Page increment of whole visible area */
+    custom->hAdjust->page_increment = tmpValue;
+    /* page_size to the whole visible area will take care that the
+     * scroll value + the shown area will never be more than what is
+     * in the trace. */
+    custom->hAdjust->page_size = tmpValue;
 
-    gtk_range_set_update_policy (GTK_RANGE(custom->hScrollbar), GTK_UPDATE_DISCONTINUOUS);
+    gtk_range_set_update_policy (GTK_RANGE(custom->hScrollbar),
+                                  GTK_UPDATE_DISCONTINUOUS);
     g_signal_connect(G_OBJECT(custom->hScrollbar), "value-changed",
 		     G_CALLBACK(gtk_custom_scroll_value_changed), custom);
 

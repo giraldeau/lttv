@@ -47,4 +47,8 @@ int Draw_Event_Hook(void *hook_data, void *call_data);
 
 int Draw_After_Hook(void *hook_data, void *call_data);
 
+void Update_Time_Window_Hook(void *hook_data, void *call_data);
+void Update_Current_Time_Hook(void *hook_data, void *call_data);
+
+
 #endif // _EVENT_HOOKS_H

@@ -202,7 +202,23 @@ void UpdateStatus(mainWindow *main_win, char *info)
 
 
 /**
- * Function to get the current time interval of the current tab.
+ * Function to get the current time interval shown on the current tab.
+ * It will be called by a viewer's hook function to update the 
+ * shown time interval of the viewer and also be called by the constructor
+ * of the viewer.
+ * @param main_win the main window the viewer belongs to.
+ * @param time_interval a pointer where time interval will be stored.
+ */
+
+void GetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window)
+{
+  //Time_Window->startTime = main_win->CurrentTab->Time_Window.startTime;
+  //Time_Window->Time_Width = main_win->CurrentTab->Time_Window.Time_Width;
+  *Time_Window = main_win->CurrentTab->Time_Window;
+}
+
+/**
+ * Function to get the current time interval of the current traceset.
  * It will be called by a viewer's hook function to update the 
  * time interval of the viewer and also be called by the constructor
  * of the viewer.
@@ -210,11 +226,13 @@ void UpdateStatus(mainWindow *main_win, char *info)
  * @param time_interval a pointer where time interval will be stored.
  */
 
-void GetTimeInterval(mainWindow *main_win, TimeInterval *time_interval)
+void getTracesetTimeSpan(mainWindow *main_win, TimeInterval *Time_Interval)
 {
-  time_interval->startTime = main_win->CurrentTab->startTime;
-  time_interval->endTime = main_win->CurrentTab->endTime;
+  //Time_Window->startTime = main_win->CurrentTab->Time_Window.startTime;
+  //Time_Window->Time_Width = main_win->CurrentTab->Time_Window.Time_Width;
+  *Time_Interval = *(LTTV_TRACESET_CONTEXT(main_win->Traceset_Info->TracesetContext)->Time_Span);
 }
+
 
 
 /**
@@ -225,17 +243,16 @@ void GetTimeInterval(mainWindow *main_win, TimeInterval *time_interval)
  * @param time_interval a pointer where time interval is stored.
  */
 
-void SetTimeInterval(mainWindow *main_win, TimeInterval *time_interval)
+void SetTimeWindow(mainWindow *main_win, TimeWindow *Time_Window)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  main_win->CurrentTab->startTime = time_interval->startTime;
-  main_win->CurrentTab->endTime = time_interval->endTime;
+  main_win->CurrentTab->Time_Window = *Time_Window;
   g_assert(lttv_iattribute_find_by_path(main_win->CurrentTab->Attributes,
-		       "hooks/updatetimeinterval", LTTV_POINTER, &value));
+		       "hooks/updatetimewindow", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
-  if(tmp == NULL)return;
-  lttv_hooks_call(tmp, time_interval);
+  if(tmp == NULL) return;
+  lttv_hooks_call(tmp, Time_Window);
 }
 
 
@@ -310,13 +327,13 @@ void GetFilter(mainWindow *main_win, Filter *filter)
  * @param main_win the main window the viewer belongs to.
  */
 
-void RegUpdateTimeInterval(LttvHook hook, gpointer hook_data,
+void RegUpdateTimeWindow(LttvHook hook, gpointer hook_data,
 			   mainWindow * main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->CurrentTab->Attributes,
-		       "hooks/updatetimeinterval", LTTV_POINTER, &value));
+		       "hooks/updatetimewindow", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -335,13 +352,13 @@ void RegUpdateTimeInterval(LttvHook hook, gpointer hook_data,
  * @param main_win the main window the viewer belongs to.
  */
 
-void UnregUpdateTimeInterval(LttvHook hook, gpointer hook_data,
+void UnregUpdateTimeWindow(LttvHook hook, gpointer hook_data,
 			     mainWindow * main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->CurrentTab->Attributes,
-		       "hooks/updatetimeinterval", LTTV_POINTER, &value));
+		       "hooks/updatetimewindow", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -581,8 +598,9 @@ void SetHPaneDividor(mainWindow *main_win, gint position)
 void processTraceset(mainWindow *main_win, LttTime start, 
 		     LttTime end, unsigned maxNumEvents)
 {
-  lttv_process_trace(start, end, main_win->traceset, 
-		     main_win->traceset_context,  maxNumEvents);
+  lttv_process_trace(start, end, main_win->Traceset_Info->traceset, 
+      LTTV_TRACESET_CONTEXT(main_win->Traceset_Info->TracesetContext),
+      maxNumEvents);
 }
 
 /**
@@ -606,7 +624,8 @@ void contextAddHooks(mainWindow *main_win ,
 		     LttvHooks *before_event, 
 		     LttvHooks *after_event)
 {
-  LttvTracesetContext * tsc = main_win->traceset_context;
+  LttvTracesetContext * tsc = 
+	  LTTV_TRACESET_CONTEXT(main_win->Traceset_Info->TracesetContext);
   lttv_traceset_context_add_hooks(tsc,before_traceset,after_traceset,
 				  check_trace,before_trace,after_trace,
 				  check_tracefile,before_tracefile,after_tracefile,
@@ -635,48 +654,12 @@ void contextRemoveHooks(mainWindow *main_win ,
 			LttvHooks *before_event, 
 			LttvHooks *after_event)
 {
-  LttvTracesetContext * tsc = main_win->traceset_context;
+  LttvTracesetContext * tsc =
+        LTTV_TRACESET_CONTEXT(main_win->Traceset_Info->TracesetContext);
   lttv_traceset_context_remove_hooks(tsc,before_traceset,after_traceset,
 				     check_trace,before_trace,after_trace,
 				     check_tracefile,before_tracefile,after_tracefile,
 				     check_event,before_event, after_event);
-}
-
-
-/**
- * Function to get the life span of the traceset
- * @param main_win the main window the viewer belongs to.
- * @param start start time of the traceset.
- * @param end end time of the traceset.
- */
-
-void getTracesetTimeSpan(mainWindow *main_win, LttTime * start, LttTime* end)
-{
-  LttvTraceset * traceset = main_win->traceset;
-  int numTraces = lttv_traceset_number(traceset);
-  int i;
-  LttTime s, e;
-  LttvTraceContext *tc;
-  LttTrace * trace;
-
-  for(i=0; i<numTraces;i++){
-    tc = main_win->traceset_context->traces[i];
-    trace = tc->t;
-
-    ltt_trace_time_span_get(trace, &s, &e);
-
-    if(i==0){
-      *start = s;
-      *end   = e;
-    }else{
-      if(s.tv_sec < start->tv_sec ||
-	 (s.tv_sec == start->tv_sec && s.tv_nsec < start->tv_nsec))
-	*start = s;
-      if(e.tv_sec > end->tv_sec ||
-	 (e.tv_sec == end->tv_sec && e.tv_nsec > end->tv_nsec))
-	*end = e;      
-    }
-  }
 }
 
 
@@ -687,12 +670,14 @@ void getTracesetTimeSpan(mainWindow *main_win, LttTime * start, LttTime* end)
 
 void stateAddEventHooks(mainWindow *main_win )
 {
-  lttv_state_add_event_hooks((LttvTracesetState*)main_win->traceset_context);
+  lttv_state_add_event_hooks(
+       (LttvTracesetState*)main_win->Traceset_Info->TracesetContext);
 }
 
 void stateRemoveEventHooks(mainWindow *main_win )
 {
-  lttv_state_remove_event_hooks((LttvTracesetState*)main_win->traceset_context);
+  lttv_state_remove_event_hooks(
+       (LttvTracesetState*)main_win->Traceset_Info->TracesetContext);
 }
 
 
@@ -703,12 +688,14 @@ void stateRemoveEventHooks(mainWindow *main_win )
 
 void statsAddEventHooks(mainWindow *main_win )
 {
-  lttv_stats_add_event_hooks((LttvTracesetStats*)main_win->traceset_context);
+  lttv_stats_add_event_hooks(
+        (LttvTracesetStats*)main_win->Traceset_Info->TracesetContext);
 }
 
 void statsRemoveEventHooks(mainWindow *main_win )
 {
-  lttv_stats_remove_event_hooks((LttvTracesetStats*)main_win->traceset_context);
+  lttv_stats_remove_event_hooks(
+        (LttvTracesetStats*)main_win->Traceset_Info->TracesetContext);
 }
 
 /**
@@ -718,5 +705,5 @@ void statsRemoveEventHooks(mainWindow *main_win )
 
 LttvTracesetStats* getTracesetStats(mainWindow *main_win)
 {
-  return (LttvTracesetStats*)main_win->traceset_context;
+  return main_win->Traceset_Info->TracesetContext;
 }
