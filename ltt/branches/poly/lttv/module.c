@@ -169,7 +169,7 @@ lttv_module_require(LttvModule *m, const char *name, int argc, char **argv)
   g_info("Load module %s, as %s is a dependent requiring it", name, 
       g_module_name(m->module));
   module = module_load(name, argc, argv);
-  if(module != NULL) g_ptr_array_add(m->dependents, module);
+  if(module != NULL) g_ptr_array_add(module->dependents, m);
   return module;
 }
 
