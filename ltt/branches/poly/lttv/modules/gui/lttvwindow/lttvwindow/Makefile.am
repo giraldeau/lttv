@@ -25,8 +25,7 @@ liblttvwindow_la_SOURCES = \
 	init_module.c \
 	support.c \
 	interface.c \
-	callbacks.c \
-	lttvfilter.c
+	callbacks.c
 
 noinst_HEADERS = \
 	support.h \
@@ -38,7 +37,6 @@ lttvwindowinclude_HEADERS = \
 	gtkdirsel.h\
 	lttvwindow.h\
 	lttvwindowtraces.h\
-	lttvfilter.h\
 	mainwindow.h\
 	menu.h\
 	toolbar.h

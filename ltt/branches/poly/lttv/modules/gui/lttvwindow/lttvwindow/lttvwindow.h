@@ -119,6 +119,7 @@ Available report methods are :
 lttvwindow_report_time_window : reports the new time window.
 lttvwindow_report_current_time : reports the new current time.
 lttvwindow_report_dividor : reports the new horizontal dividor's position.
+lttvwindow_report_filter : reports the new filter object
 
 
 
@@ -256,9 +257,8 @@ FIXME : explain other important events
 #include <lttv/hook.h>
 #include <lttv/tracecontext.h>
 #include <lttv/stats.h>
+#include <lttv/filter.h>
 #include <lttvwindow/mainwindow.h>
-#include <lttvwindow/lttvfilter.h>
-//FIXME (not ready yet) #include <lttv/filter.h>
 
 /* Module Related API */
 
@@ -685,10 +685,23 @@ LttTime lttvwindow_get_current_time(Tab *tab);
  * @param filter, a pointer to a filter.
  */
 
-//FIXME
-typedef void lttv_filter;
-//FIXME
-const lttv_filter *lttvwindow_get_filter(Tab *tab);
+lttv_filter *lttvwindow_get_filter(Tab *tab);
+
+/**
+ * Function to set the filter of the current tab.
+ * It should be called by the filter GUI to tell the
+ * main window to update the filter tab's lttv_filter.
+ *
+ * Notice : the lttv_filter object will be owned by the
+ *          main window after the return of this function.
+ *          Do NOT desallocate it.
+ * 
+ * @param main_win, the main window the viewer belongs to.
+ * @param filter, a pointer to a filter.
+ */
+
+void lttvwindow_report_filter(Tab *tab, lttv_filter *filter);
+
 
 
 /**
