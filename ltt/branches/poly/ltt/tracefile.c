@@ -477,15 +477,15 @@ LttTrace *ltt_trace_open(char *pathname)
   strcat(tmp,"system.xml");
   getSystemInfo(sys_description, tmp);
 
+  //get facilities info
+  getFacilityInfo(t,eventdefs);
+  
   //get control tracefile info
   getControlFileInfo(t,control);
 
   //get cpu tracefile info
   getCpuFileInfo(t,cpu);
 
-  //get facilities info
-  getFacilityInfo(t,eventdefs);
-  
   return t;
 }
 
