@@ -90,7 +90,7 @@ static inline double ltt_time_to_double(LttTime t1)
   if(t1.tv_sec > MAX_TV_SEC_TO_DOUBLE)
     g_warning("Precision loss in conversion LttTime to double");
 #endif //EXTRA_CHECK
-  return ((double)t1.tv_sec * NANOSECONDS_PER_SECOND) + (double)t1.tv_nsec;
+  return ((double)t1.tv_sec * (double)NANOSECONDS_PER_SECOND) + (double)t1.tv_nsec;
 }
 
 

@@ -485,6 +485,7 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
       tmp_time.tv_sec = time_span.end_time.tv_sec;
     tmp_time.tv_nsec = 0;
     new_time_window.time_width = tmp_time ;
+    new_time_window.time_width_double = ltt_time_to_double(tmp_time);
     new_time_window.end_time = ltt_time_add(new_time_window.start_time,
                                             new_time_window.time_width) ;
   }
@@ -2284,14 +2285,18 @@ void zoom(GtkWidget * widget, double size)
   if(size == 0){
     new_time_window.start_time = time_span.start_time;
     new_time_window.time_width = time_delta;
+    new_time_window.time_width_double = ltt_time_to_double(time_delta);
     new_time_window.end_time = ltt_time_add(new_time_window.start_time,
                                             new_time_window.time_width) ;
   }else{
     new_time_window.time_width = ltt_time_div(new_time_window.time_width, size);
+    new_time_window.time_width_double = 
+                   ltt_time_to_double(new_time_window.time_width);
     if(ltt_time_compare(new_time_window.time_width,time_delta) > 0)
     { /* Case where zoom out is bigger than trace length */
       new_time_window.start_time = time_span.start_time;
       new_time_window.time_width = time_delta;
+      new_time_window.time_width_double = ltt_time_to_double(time_delta);
       new_time_window.end_time = ltt_time_add(new_time_window.start_time,
                                             new_time_window.time_width) ;
     }
@@ -2299,7 +2304,8 @@ void zoom(GtkWidget * widget, double size)
     {
       /* Center the image on the current time */
       new_time_window.start_time = 
-        ltt_time_sub(current_time, ltt_time_div(new_time_window.time_width, 2.0));
+        ltt_time_sub(current_time,
+            ltt_time_from_double(new_time_window.time_width_double/2.0));
       new_time_window.end_time = ltt_time_add(new_time_window.start_time,
                                             new_time_window.time_width) ;
       /* If on borders, don't fall off */
@@ -3466,13 +3472,13 @@ void time_change_manager               (Tab *tab,
                "upper",
                ltt_time_to_double(upper), /* upper */
                "step_increment",
-               ltt_time_to_double(new_time_window.time_width)
+               new_time_window.time_width_double
                              / SCROLL_STEP_PER_PAGE, /* step increment */
                "page_increment",
-               ltt_time_to_double(new_time_window.time_width), 
+               new_time_window.time_width_double, 
                                                      /* page increment */
                "page_size",
-               ltt_time_to_double(new_time_window.time_width), /* page size */
+               new_time_window.time_width_double, /* page size */
                NULL);
   gtk_adjustment_changed(adjustment);
 
@@ -3609,6 +3615,9 @@ on_MEntry1_value_changed               (GtkSpinButton *spinbutton,
   /* Fix the time width to fit start time and end time */
   new_time_window.time_width = ltt_time_sub(end_time,
                                             new_time_window.start_time);
+  new_time_window.time_width_double =
+              ltt_time_to_double(new_time_window.time_width);
+
   new_time_window.end_time = end_time;
 
   time_change_manager(tab, new_time_window);
@@ -3642,6 +3651,8 @@ on_MEntry2_value_changed               (GtkSpinButton *spinbutton,
   /* Fix the time width to fit start time and end time */
   new_time_window.time_width = ltt_time_sub(end_time,
                                             new_time_window.start_time);
+  new_time_window.time_width_double =
+              ltt_time_to_double(new_time_window.time_width);
 
   new_time_window.end_time = end_time;
 
@@ -3694,6 +3705,8 @@ on_MEntry3_value_changed               (GtkSpinButton *spinbutton,
   /* Fix the time width to fit start time and end time */
   new_time_window.time_width = ltt_time_sub(end_time,
                                             new_time_window.start_time);
+  new_time_window.time_width_double =
+              ltt_time_to_double(new_time_window.time_width);
 
   new_time_window.end_time = end_time;
   
@@ -3729,6 +3742,8 @@ on_MEntry4_value_changed               (GtkSpinButton *spinbutton,
   /* Fix the time width to fit start time and end time */
   new_time_window.time_width = ltt_time_sub(end_time,
                                             new_time_window.start_time);
+  new_time_window.time_width_double =
+              ltt_time_to_double(new_time_window.time_width);
   new_time_window.end_time = end_time;
 
   time_change_manager(tab, new_time_window);
@@ -3854,6 +3869,9 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
 
   new_time_window.time_width = 
     ltt_time_from_double(page_size);
+
+  new_time_window.time_width_double =
+              page_size;
 
   new_time_window.end_time = ltt_time_add(new_time_window.start_time, 
                                           new_time_window.time_width);

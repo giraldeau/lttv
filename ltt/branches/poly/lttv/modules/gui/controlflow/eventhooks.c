@@ -395,10 +395,11 @@ int before_schedchange_hook(void *hook_data, void *call_data)
     lttvwindow_get_time_window(control_flow_data->tab);
 
   LttTime end_time = time_window.end_time;
-
+#ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
+#endif //EXTRA_CHECK
   guint width = drawing->width;
 
   /* we are in a schedchange, before the state update. We must draw the
@@ -483,9 +484,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       {
         guint x;
         convert_time_to_pixels(
-                  time_window.start_time,
-                  time_window.time_width,
-                  end_time,
+                  time_window,
                   evtime,
                   width,
                   &x);
@@ -608,9 +607,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         guint x;
 
         convert_time_to_pixels(
-                  time_window.start_time,
-                  time_window.time_width,
-                  end_time,
+                  time_window,
                   evtime,
                   width,
                   &x);
@@ -799,14 +796,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
     LttTime time = ltt_event_time(e);
 
-    LttTime window_end = ltt_time_add(time_window.time_width,
-                          time_window.start_time);
-
+    LttTime window_end = time_window.end_time;
     
     convert_time_to_pixels(
-        time_window.start_time,
-        time_window.time_width,
-        window_end,
+        time_window,
         time,
         width,
         &x);
@@ -1312,9 +1305,11 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 
   LttTime end_time = time_window.end_time;
 
+#ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
+#endif //EXTRA_CHECK
 
   guint width = control_flow_data->drawing->width;
 
@@ -1381,9 +1376,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   guint new_x;
   
   convert_time_to_pixels(
-      time_window.start_time,
-      time_window.time_width,
-      end_time,
+      time_window,
       evtime,
       width,
       &new_x);
@@ -1530,14 +1523,11 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 
     //LttTime time = ltt_event_time(e);
 
-    //LttTime window_end = ltt_time_add(time_window->time_width,
-    //                      time_window->start_time);
+    //LttTime window_end = time_window->end_time;
 
     
     //convert_time_to_pixels(
-    //    time_window->start_time,
-    //    time_window.time_width,
-    //    window_end,
+    //    *time_window,
     //    time,
     //    width,
     //    &x);
@@ -1925,9 +1915,11 @@ int before_execmode_hook(void *hook_data, void *call_data)
 
   LttTime end_time = time_window.end_time;
 
+#ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
+#endif //EXTRA_CHECK
 
   guint width = drawing->width;
 
@@ -1996,9 +1988,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
     guint x;
 
     convert_time_to_pixels(
-        time_window.start_time,
-        time_window.time_width,
-        end_time,
+        time_window,
         evtime,
         width,
         &x);
@@ -2085,9 +2075,11 @@ int after_execmode_hook(void *hook_data, void *call_data)
 
   LttTime end_time = time_window.end_time;
 
+#ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
+#endif //EXTRA_CHECK
 
   guint width = control_flow_data->drawing->width;
 
@@ -2143,9 +2135,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
   guint new_x;
   
   convert_time_to_pixels(
-      time_window.start_time,
-      time_window.time_width,
-      end_time,
+      time_window,
       evtime,
       width,
       &new_x);
@@ -2191,9 +2181,11 @@ int before_process_hook(void *hook_data, void *call_data)
 
   LttTime end_time = time_window.end_time;
 
+#ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
+#endif //EXTRA_CHECK
 
   guint width = control_flow_data->drawing->width;
 
@@ -2266,9 +2258,7 @@ int before_process_hook(void *hook_data, void *call_data)
       guint x;
 
       convert_time_to_pixels(
-          time_window.start_time,
-          time_window.time_width,
-          end_time,
+          time_window,
           evtime,
           width,
           &x);
@@ -2363,9 +2353,11 @@ int after_process_hook(void *hook_data, void *call_data)
 
   LttTime end_time = time_window.end_time;
 
+#ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
+#endif //EXTRA_CHECK
 
   guint width = control_flow_data->drawing->width;
 
@@ -2432,9 +2424,7 @@ int after_process_hook(void *hook_data, void *call_data)
 
     guint new_x;
     convert_time_to_pixels(
-        time_window.start_time,
-        time_window.time_width,
-        end_time,
+        time_window,
         evtime,
         width,
         &new_x);
@@ -2505,9 +2495,7 @@ int after_process_hook(void *hook_data, void *call_data)
 
     guint new_x;
     convert_time_to_pixels(
-        time_window.start_time,
-        time_window.time_width,
-        end_time,
+        time_window,
         evtime,
         width,
         &new_x);
@@ -2583,9 +2571,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
       guint x = 0;
       guint width = control_flow_data->drawing->width;
       convert_time_to_pixels(
-          *os,
-          *ow,
-          old_end,
+          *old_time_window,
           *ns,
           width,
           &x);
@@ -2637,9 +2623,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
         guint x = 0;
         guint width = control_flow_data->drawing->width;
         convert_time_to_pixels(
-            *ns,
-            *nw,
-            new_end,
+            *new_time_window,
             *os,
             width,
             &x);
@@ -2895,6 +2879,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
   
     new_time_window.start_time = time_begin;
     new_time_window.time_width = width;
+    new_time_window.time_width_double = ltt_time_to_double(width);
     new_time_window.end_time = ltt_time_add(time_begin, width);
 
     lttvwindow_report_time_window(control_flow_data->tab, new_time_window);
@@ -2910,6 +2895,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
   
     new_time_window.start_time = time_begin;
     new_time_window.time_width = width;
+    new_time_window.time_width_double = ltt_time_to_double(width);
     new_time_window.end_time = ltt_time_add(time_begin, width);
 
     lttvwindow_report_time_window(control_flow_data->tab, new_time_window);
@@ -2950,9 +2936,11 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
   LttTime end_time = time_window.end_time;
 
+#ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
+#endif //EXTRA_CHECK
 
   guint width = drawing->width;
 
@@ -3012,9 +3000,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         guint x;
 
         convert_time_to_pixels(
-            time_window.start_time,
-            time_window.time_width,
-            end_time,
+            time_window,
             evtime,
             width,
             &x);

@@ -138,15 +138,11 @@ void drawing_data_request(Drawing_t *drawing,
   g_debug("x is : %i, x+width is : %i", x, x+width);
 
   convert_pixels_to_time(drawing->width, x,
-        time_window.start_time,
-        time_window.time_width,
-        window_end,
+        time_window,
         &start);
 
   convert_pixels_to_time(drawing->width, x+width,
-        time_window.start_time,
-        time_window.time_width,
-        window_end,
+        time_window,
         &time_end);
 
   lttvwindow_events_request_remove_all(tab,
@@ -406,9 +402,7 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
   cfd->drawing->last_start = events_request->start_time;
 
   convert_time_to_pixels(
-          time_window.start_time,
-          time_window.time_width,
-          end_time,
+          time_window,
           events_request->start_time,
           width,
           &x);
@@ -448,18 +442,14 @@ void drawing_request_expose(EventsRequest *events_request,
 
 #if 0
   convert_time_to_pixels(
-        time_window.start_time,
-        time_window.time_width,
-        window_end,
+        time_window,
         cfd->drawing->last_start,
         drawing->width,
         &x);
 
 #endif //0
   convert_time_to_pixels(
-        time_window.start_time,
-        time_window.time_width,
-        window_end,
+        time_window,
         end_time,
         drawing->width,
         &x_end);
@@ -614,9 +604,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   {
     /* Draw the dotted lines */
     convert_time_to_pixels(
-          time_window.start_time,
-          time_window.time_width,
-          window_end,
+          time_window,
           current_time,
           drawing->width,
           &cursor_x);
@@ -704,9 +692,7 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
     g_debug("x click is : %f", event->x);
 
     convert_pixels_to_time(drawing->width, (guint)event->x,
-        time_window.start_time,
-        time_window.time_width,
-        window_end,
+        time_window,
         &time);
 
     lttvwindow_report_current_time(control_flow_data->tab, time);
@@ -933,44 +919,39 @@ GtkWidget *drawing_get_widget(Drawing_t *drawing)
 __inline void convert_pixels_to_time(
     gint width,
     guint x,
-    LttTime window_time_begin,
-    LttTime window_time_interval,
-    LttTime window_time_end,
+    TimeWindow time_window,
     LttTime *time)
 {
   double time_d;
   
-  time_d = ltt_time_to_double(window_time_interval);
+  time_d = time_window.time_width_double;
   time_d = time_d / (double)width * (double)x;
   *time = ltt_time_from_double(time_d);
-  *time = ltt_time_add(window_time_begin, *time);
+  *time = ltt_time_add(time_window.start_time, *time);
 }
 
 
 __inline void convert_time_to_pixels(
-    LttTime window_time_begin,
-    LttTime window_time_interval,
-    LttTime window_time_end,
+    TimeWindow time_window,
     LttTime time,
     int width,
     guint *x)
 {
-  double time_d, interval_d;
+  double time_d;
 #ifdef EXTRA_CHECK 
   g_assert(ltt_time_compare(window_time_begin, time) <= 0 &&
            ltt_time_compare(window_time_end, time) >= 0);
 #endif //EXTRA_CHECK
   
-  time = ltt_time_sub(time, window_time_begin);
+  time = ltt_time_sub(time, time_window.start_time);
   
   time_d = ltt_time_to_double(time);
-  interval_d = ltt_time_to_double(window_time_interval);
   
-  if(interval_d == 0.0) {
+  if(time_window.time_width_double == 0.0) {
     g_assert(time_d == 0.0);
     *x = 0;
   } else {
-    *x = (guint)(time_d / interval_d * (double)width);
+    *x = (guint)(time_d / time_window.time_width_double * (double)width);
   }
   
 }
