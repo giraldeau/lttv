@@ -101,20 +101,21 @@ void filter_analyze_file(void *hook_data) {
 void filter_analyze_string(void *hook_data) {
 
   g_print("textFilter::filter_analyze_string\n");
- 
+
+  a_filter_string = g_string_new("");
   /*
 	 * 	User may specify filtering options through static file
 	 * 	and/or command line string.  From these sources, an 
 	 * 	option string is rebuilded and sent to the filter core
 	 */
-  if(!a_filter_string->len) {
+//  if(!a_filter_string->len) {
     g_string_append(a_filter_string,a_string);
-    lttv_filter_new(a_filter_string,NULL);
-  }
-  else {
-    g_string_append(a_filter_string,"&"); /*conjonction between expression*/
-    g_string_append(a_filter_string,a_string);
-  }
+    lttv_filter_new(a_filter_string->str,NULL);
+//  }
+//  else {
+//    g_string_append(a_filter_string,"&"); /*conjonction between expression*/
+//    g_string_append(a_filter_string,a_string);
+//  }
 
 }
 

@@ -175,11 +175,11 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
    * will be the one created at the root of 
    * the list
    */
-  lttv_filter_tree* tree = NULL; 
+  lttv_filter_tree* tree = lttv_filter_tree_new(); 
   lttv_filter_tree* subtree = NULL;
-  lttv_filter_tree* current_tree = NULL;
-  GPtrArray *tree_list = g_ptr_array_new();
-  g_ptr_array_add( tree_list,(gpointer) tree );
+//  lttv_filter_tree* current_tree = NULL;
+  GPtrArray *tree_stack = g_ptr_array_new();
+  g_ptr_array_add( tree_stack,(gpointer) tree );
   
   /* temporary values */
   GString *a_field_component = g_string_new(""); 
@@ -201,29 +201,56 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
    *	O(n) complexity order.
    */
 
+  /*
+   *  When encountering logical op &,|,^
+   *    1. parse the last value if any
+   *    2. create a new tree
+   *    3. add the expression (simple exp, or exp (subtree)) to the tree
+   *    4. concatenate this tree with the current tree on top of the stack
+   *  When encountering math ops >,>=,<,<=,=,!=
+   *    1. add to op to the simple expression
+   *    2. concatenate last field component to field path
+   *  When encountering concatening ops .
+   *    1. concatenate last field component to field path
+   *  When encountering opening parenthesis (,{,[
+   *    1. create a new subtree on top of tree stack
+   *  When encountering closing parenthesis ),},]
+   *    1. add the expression on right child of the current tree
+   *    2. the subtree is completed, allocate a new subtree
+   *    3. pop the tree value from the tree stack
+   */
+  
   a_field_path = g_ptr_array_new();
   g_ptr_array_set_size(a_field_path,2);   /* by default, recording 2 field expressions */
 
+  lttv_filter_tree *t1, *t2;
+  
   for(i=0;i<strlen(expression);i++) {
-    g_print("%s\n",a_field_component->str);
+//    g_print("%s\n",a_field_component->str);
+    g_print("%c\n",expression[i]);
     switch(expression[i]) {
       /*
        *   logical operators
        */
       case '&':   /* and */
-        a_simple_expression.value = a_field_component->str;
-        a_field_component = g_string_new("");
-        lttv_filter_tree* t;
-        t = lttv_filter_tree_new();
-        t->node->type = LTTV_EXPRESSION_OP;
-        t->node->e.op = LTTV_LOGICAL_AND;
+        t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
+        while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
+        t2 = lttv_filter_tree_new();
+        t2->node->type = LTTV_EXPRESSION_OP;
+        t2->node->e.op = LTTV_LOGICAL_AND;
         if(subtree != NULL) { 
-          t->left = LTTV_TREE_NODE;
-          t->l_child.t = subtree;
+          t2->left = LTTV_TREE_NODE;
+          t2->l_child.t = subtree;
           subtree = NULL;
+          t1->right = LTTV_TREE_NODE;
+          t1->l_child.t = t2;
         } else {
-          t->left = LTTV_TREE_LEAF;
-          t->l_child.leaf = g_new(lttv_simple_expression,1);
+          a_simple_expression.value = a_field_component->str;
+          a_field_component = g_string_new("");
+          t2->left = LTTV_TREE_LEAF;
+          t2->l_child.leaf = g_new(lttv_simple_expression,1);
+          t1->right = LTTV_TREE_NODE;
+          t1->l_child.t = t2; 
         }
         
         break;
@@ -245,18 +272,39 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
       case '{':
         p_nesting++;      /* incrementing parenthesis nesting value */
         lttv_filter_tree* subtree = lttv_filter_tree_new();
-        g_ptr_array_add( tree_list,(gpointer) subtree );
+        g_ptr_array_add( tree_stack,(gpointer) subtree );
         break;
       case ')':   /* end of parenthesis */
       case ']':
       case '}':
         p_nesting--;      /* decrementing parenthesis nesting value */
-        a_simple_expression.value = a_field_component->str;
-        a_field_component = g_string_new("");
-        if(p_nesting<0 || tree_list->len<2) {
+        if(p_nesting<0 || tree_stack->len<2) {
           g_warning("Wrong filtering options, the string\n\"%s\"\n\
                      is not valid due to parenthesis incorrect use",expression);	
           return NULL;
+        }
+        
+        g_assert(tree_stack->len>0);
+        if(subtree != NULL) { 
+          t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
+          /*  FIXME ==> SEG FAULT   */
+          while(t1->right != LTTV_TREE_UNDEFINED && t1->right != LTTV_TREE_LEAF) {
+              g_assert(t1!=NULL && t1->r_child.t != NULL);
+              t1 = t1->r_child.t;
+          }
+          t1->right = LTTV_TREE_NODE;
+          t1->r_child.t = subtree;
+          subtree = g_ptr_array_index(tree_stack,tree_stack->len-1);
+          g_ptr_array_remove_index(tree_stack,tree_stack->len-1);
+        } else {
+          a_simple_expression.value = a_field_component->str;
+          a_field_component = g_string_new("");
+          t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
+          while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
+          t1->right = LTTV_TREE_LEAF;
+          t1->r_child.leaf = g_new(lttv_simple_expression,1);
+          subtree = g_ptr_array_index(tree_stack,tree_stack->len-1);
+          g_ptr_array_remove_index(tree_stack,tree_stack->len-1);
         }
       /*  lttv_filter_tree *sub1 = g_ptr_array_index(tree_list,tree_list->len-1);
         lttv_filter_tree *sub2 = g_ptr_array_index(tree_list,tree_list->len);
@@ -270,8 +318,8 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         g_ptr_array_remove_index(tree_list,tree_list->len);
         break;
         */
-        subtree = g_ptr_array_index(tree_list,tree_list->len);
-        g_ptr_array_remove_index(tree_list,tree_list->len);
+      //  subtree = g_ptr_array_index(tree_stack,tree_stack->len);
+      //  g_ptr_array_remove_index(tree_stack,tree_stack->len);
         break;
 
       /*	
