@@ -162,7 +162,7 @@ char * getFormatAttribute(parse_file *in)
 
   //format is an option
   token = getToken(in); 
-  if(strcmp("/",token) == 0){
+  if(strcmp("/",token) == 0 || strcmp(">",token) == 0){
     ungetToken(in);
     return NULL;
   }
