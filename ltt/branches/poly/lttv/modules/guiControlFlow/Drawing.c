@@ -14,7 +14,6 @@
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
-
 /*****************************************************************************
  *                              Drawing functions                            *
  *****************************************************************************/
@@ -43,6 +42,8 @@ static GdkColor CF_Colors [] =
 
 /* Function responsible for updating the exposed area.
  * It must call processTrace() to ask for this update.
+ * Note : this function cannot clear the background, because it may
+ * erase drawing already present (SAFETY).
  */
 void drawing_data_request(Drawing_t *Drawing,
 			GdkPixmap **Pixmap,
@@ -83,14 +84,7 @@ void drawing_data_request(Drawing_t *Drawing,
 	LttvTracesetContext * tsc =
 				get_traceset_context(control_flow_data->Parent_Window);
 	
-  gdk_draw_rectangle (*Pixmap,
-		      Drawing->Drawing_Area_V->style->white_gc,
-		      TRUE,
-		      x, y,
-		      width,	// do not overlap
-		      height);
-
-  //send_test_process(
+    //send_test_process(
 	//guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
 	//Drawing);
   //send_test_drawing(
@@ -146,8 +140,8 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 		
   /* New Pixmap, size of the configure event */
   GdkPixmap *Pixmap = gdk_pixmap_new(widget->window,
-			  widget->allocation.width,
-			  widget->allocation.height,
+			  widget->allocation.width + SAFETY,
+			  widget->allocation.height + SAFETY,
 			  -1);
 	
   g_critical("drawing configure event");
@@ -157,18 +151,29 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
   {
   	Drawing->Pixmap = gdk_pixmap_new(
 		widget->window,
-		widget->allocation.width,
-		widget->allocation.height,
+		widget->allocation.width + SAFETY,
+		widget->allocation.height + SAFETY,
 		//ProcessList_get_height
 		// (GuiControlFlow_get_Process_List(Drawing->Control_Flow_Data)),
 		-1);
-	Drawing->width = widget->allocation.width;
-	Drawing->height = widget->allocation.height;
-g_critical("init data");
-	/* Initial data request */
- 	drawing_data_request(Drawing, &Drawing->Pixmap, 0, 0,
+		Drawing->width = widget->allocation.width;
+		Drawing->height = widget->allocation.height;
+
+ 		// Clear the image
+	  gdk_draw_rectangle (Drawing->Pixmap,
+		      widget->style->white_gc,
+		      TRUE,
+		      0, 0,
+		      widget->allocation.width+SAFETY,
+		      widget->allocation.height+SAFETY);
+
+		g_info("init data request");
+
+
+		/* Initial data request */
+ 		drawing_data_request(Drawing, &Drawing->Pixmap, 0, 0,
 		   	widget->allocation.width,
-			widget->allocation.height);
+				widget->allocation.height);
 
   }
 //  /* Draw empty background */ 
@@ -191,11 +196,33 @@ g_critical("init data");
     gdk_pixmap_unref(Drawing->Pixmap);
 
   Drawing->Pixmap = Pixmap;
+		
+ 	// Clear the bottom part of the image (SAFETY)
+  gdk_draw_rectangle (Pixmap,
+		      widget->style->white_gc,
+		      TRUE,
+		      0, Drawing->height+SAFETY,
+		      Drawing->width+SAFETY,	// do not overlap
+		      (widget->allocation.height) - Drawing->height);
+ 	// Clear the right part of the image (SAFETY)
+  gdk_draw_rectangle (Pixmap,
+		      widget->style->white_gc,
+		      TRUE,
+		      Drawing->width+SAFETY, 0,
+		      (widget->allocation.width) - Drawing->width,	// do not overlap
+		      Drawing->height+SAFETY);
 
-   /* Request data for missing space */
-g_critical("missing data");
-   drawing_data_request(Drawing, &Pixmap, Drawing->width, 0,
-		   	widget->allocation.width - Drawing->width,
+	/* Clear the backgound for data request, but not SAFETY */
+	gdk_draw_rectangle (Pixmap,
+	 				Drawing->Drawing_Area_V->style->white_gc,
+		      TRUE,
+		      Drawing->width + SAFETY, 0,
+		      widget->allocation.width - Drawing->width,	// do not overlap
+		      widget->allocation.height+SAFETY);
+  /* Request data for missing space */
+	g_info("missing data request");
+  drawing_data_request(Drawing, &Pixmap, Drawing->width, 0,
+	   	widget->allocation.width - Drawing->width,
 			widget->allocation.height);
 	 // we do not request data vertically!
 //   drawing_data_request(Drawing, &Pixmap, 0, Drawing->height,
@@ -209,15 +236,6 @@ g_critical("missing data");
 //		      widget->allocation.width -
 //		      			Drawing->width,
 //		      widget->allocation.height);
-		
-	 	// Clear the bottom part of the image
-    gdk_draw_rectangle (Pixmap,
-		      widget->style->white_gc,
-		      TRUE,
-		      0, Drawing->height,
-		      Drawing->width,	// do not overlap
-		      widget->allocation.height -	Drawing->height);
- 
   Drawing->width = widget->allocation.width;
   Drawing->height = widget->allocation.height;
 
@@ -410,8 +428,8 @@ void drawing_insert_square(Drawing_t *Drawing,
 
 	/* Allocate a new pixmap with new height */
 	GdkPixmap *Pixmap = gdk_pixmap_new(Drawing->Drawing_Area_V->window,
-			  Drawing->width,
-			  Drawing->height + height,
+			  Drawing->width + SAFETY,
+			  Drawing->height + height + SAFETY,
 			  -1);
 	
 	/* Copy the high region */
@@ -420,7 +438,7 @@ void drawing_insert_square(Drawing_t *Drawing,
 		Drawing->Pixmap,
 		0, 0,
 		0, 0,
-		Drawing->width, y);
+		Drawing->width + SAFETY, y);
 
 
 
@@ -430,7 +448,7 @@ void drawing_insert_square(Drawing_t *Drawing,
 		Drawing->Drawing_Area_V->style->black_gc,
 		TRUE,
 		0, y,
-		Drawing->width,	// do not overlap
+		Drawing->width + SAFETY,	// do not overlap
 		height);
 
 
@@ -441,7 +459,7 @@ void drawing_insert_square(Drawing_t *Drawing,
 		Drawing->Pixmap,
 		0, y,
 		0, y + height,
-		Drawing->width, Drawing->height - y);
+		Drawing->width, Drawing->height - y + SAFETY);
 
 
 
@@ -472,8 +490,8 @@ void drawing_remove_square(Drawing_t *Drawing,
 	/* Allocate a new pixmap with new height */
 	GdkPixmap *Pixmap = gdk_pixmap_new(
 			Drawing->Drawing_Area_V->window,
-			Drawing->width,
-			Drawing->height - height,
+			Drawing->width + SAFETY,
+			Drawing->height - height + SAFETY,
 			-1);
 	
 	/* Copy the high region */
@@ -482,7 +500,7 @@ void drawing_remove_square(Drawing_t *Drawing,
 		Drawing->Pixmap,
 		0, 0,
 		0, 0,
-		Drawing->width, y);
+		Drawing->width + SAFETY, y);
 
 
 
@@ -492,7 +510,7 @@ void drawing_remove_square(Drawing_t *Drawing,
 		Drawing->Pixmap,
 		0, y + height,
 		0, y,
-		Drawing->width, Drawing->height - y - height);
+		Drawing->width, Drawing->height - y - height + SAFETY);
 
 
 	if (Drawing->Pixmap)

@@ -56,6 +56,7 @@ GtkWidget *processlist_get_widget(ProcessList *Process_List);
 
 // out : success (0) and height
 int processlist_add(ProcessList *Process_List, guint pid, LttTime *birth,
+		gchar *name,
 		guint *height, HashedProcessData **Hashed_Process_Data);
 // out : success (0) and height
 int processlist_remove(ProcessList *Process_List, guint pid, LttTime *birth);

@@ -532,6 +532,7 @@ int draw_event_hook(void *hook_data, void *call_data)
 	 * process position */
 	guint pid = tfs->process->pid;
 	LttTime birth = tfs->process->creation_time;
+	gchar *name = strdup("name");
 	guint y = 0, height = 0, pl_height = 0;
 	HashedProcessData *Hashed_Process_Data = NULL;
 
@@ -549,8 +550,10 @@ int draw_event_hook(void *hook_data, void *call_data)
 		processlist_add(process_list,
 				pid,
 				&birth,
+				name,
 				&pl_height,
 				&Hashed_Process_Data);
+		g_free(name);
 		drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y, height);
 	}
 	
@@ -668,8 +671,22 @@ void update_time_window_hook(void *hook_data, void *call_data)
 				  x, 0,
 				  0, 0,
 				  -1, -1);
+			
+			convert_time_to_pixels(
+					*ns,
+					new_end,
+					old_end,
+					width,
+					&x);
 
 			*Old_Time_Window = *New_Time_Window;
+			/* Clear the data request background, but not SAFETY */
+			gdk_draw_rectangle (control_flow_data->Drawing->Pixmap,
+	 				control_flow_data->Drawing->Drawing_Area_V->style->white_gc,
+		      TRUE,
+		      x+SAFETY, 0,
+		      control_flow_data->Drawing->width - x,	// do not overlap
+		      control_flow_data->Drawing->height+SAFETY);
 			/* Get new data for the rest. */
 		  drawing_data_request(control_flow_data->Drawing,
 					&control_flow_data->Drawing->Pixmap,
@@ -710,6 +727,14 @@ void update_time_window_hook(void *hook_data, void *call_data)
 					  -1, -1);
 	
 				*Old_Time_Window = *New_Time_Window;
+
+				/* Clean the data request background */
+				gdk_draw_rectangle (control_flow_data->Drawing->Pixmap,
+	 				control_flow_data->Drawing->Drawing_Area_V->style->white_gc,
+		      TRUE,
+		      0, 0,
+		      x,	// do not overlap
+		      control_flow_data->Drawing->height+SAFETY);
 				/* Get new data for the rest. */
 			  drawing_data_request(control_flow_data->Drawing,
 						&control_flow_data->Drawing->Pixmap,
@@ -726,6 +751,14 @@ void update_time_window_hook(void *hook_data, void *call_data)
 				g_info("scrolling far");
 				/* Cannot reuse any part of the screen : far jump */
 				*Old_Time_Window = *New_Time_Window;
+				
+
+				gdk_draw_rectangle (control_flow_data->Drawing->Pixmap,
+	 				control_flow_data->Drawing->Drawing_Area_V->style->white_gc,
+		      TRUE,
+		      0, 0,
+		      control_flow_data->Drawing->width+SAFETY,	// do not overlap
+		      control_flow_data->Drawing->height+SAFETY);
 
 			 	drawing_data_request(control_flow_data->Drawing,
 						&control_flow_data->Drawing->Pixmap,
@@ -744,7 +777,15 @@ void update_time_window_hook(void *hook_data, void *call_data)
 		g_info("zoom");
 
 		*Old_Time_Window = *New_Time_Window;
-		
+	
+		gdk_draw_rectangle (control_flow_data->Drawing->Pixmap,
+	 				control_flow_data->Drawing->Drawing_Area_V->style->white_gc,
+		      TRUE,
+		      0, 0,
+		      control_flow_data->Drawing->width+SAFETY,	// do not overlap
+		      control_flow_data->Drawing->height+SAFETY);
+
+	
 	  drawing_data_request(control_flow_data->Drawing,
 				&control_flow_data->Drawing->Pixmap,
 				0, 0,

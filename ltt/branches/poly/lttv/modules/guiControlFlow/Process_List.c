@@ -299,6 +299,7 @@ void destroy_hash_data(gpointer data)
 int processlist_add(	ProcessList *Process_List,
 			guint pid,
 			LttTime *birth,
+			gchar *name,
 			guint *height,
 			HashedProcessData **pmHashed_Process_Data)
 {
@@ -363,7 +364,7 @@ int processlist_add(	ProcessList *Process_List,
 	//				GTK_TREE_MODEL(Process_List->Store_M),
 	//				&iter)));
 	gtk_list_store_set (	Process_List->Store_M, &iter,
-				PROCESS_COLUMN, "name",
+				PROCESS_COLUMN, name,
 				PID_COLUMN, pid,
 				BIRTH_S_COLUMN, birth->tv_sec,
 				BIRTH_NS_COLUMN, birth->tv_nsec,

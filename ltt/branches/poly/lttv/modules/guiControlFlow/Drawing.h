@@ -8,6 +8,9 @@
 #include "CFV.h"
 #include "Draw_Item.h"
 
+
+#define SAFETY 50	// safety pixels at right and bottom of pixmap buffer
+
 /* This part of the viewer does :
  * Draw horizontal lines, getting graphic context as arg.
  * Copy region of the screen into another.
