@@ -14,7 +14,8 @@
 #include <lttv/hook.h>
 #include <lttv/option.h>
 #include <lttv/module.h>
-
+#include <lttv/menu.h>
+#include <lttv/toolbar.h>
 
 #include "interface.h"
 #include "support.h"
@@ -23,14 +24,6 @@
 
 /* global variable */
 systemView * gSysView;
-
-typedef view_constructor (* constructor)();
-constructor get_constructor = NULL;
-typedef void (*call_Event_Selected_Hook)(void * call_data);
-call_Event_Selected_Hook selected_hook = NULL;
-GModule *gm;
-view_constructor gConstructor = NULL;
-
 
 static LttvHooks
 	*main_hooks;
@@ -53,8 +46,17 @@ typedef struct _WindowCreationData {
 
 static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 {
+  int i;
+  GdkPixbuf *pixbuf;
+  view_constructor constructor;
+  LttvMenus * menu;
+  LttvToolbars * toolbar;
+  lttv_menu_closure *menuItem;
+  lttv_toolbar_closure *toolbarItem;
+  LttvAttributeValue value;
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   GModule *gm;
-  GtkWidget * ToolMenuTitle_menu, *insert_view;
+  GtkWidget * ToolMenuTitle_menu, *insert_view, *pixmap;
   GtkWidget *window1;
   mainWindow * mw = g_new(mainWindow, 1);
   gSysView = g_new(systemView, 1);
@@ -89,24 +91,48 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
   //  mw->Attributes = lttv_attributes_new();
 
   //test
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/menu", LTTV_POINTER, &value));
+  menu = (LttvMenus*)*(value.v_pointer);
 
-  gm = g_module_open("/home1/yangxx/poly/lttv/modules/libguiEvents.la",0);
-  printf("Main : the address of gm : %d\n", gm);
-  if(!g_module_symbol(gm, "get_constructor", (gpointer)&get_constructor)){
-    g_error("can not get constructor\n");
-  }  
-  if(!g_module_symbol(gm, "call_Event_Selected_Hook", (gpointer)&selected_hook)){
-    g_error("can not get selected hook\n");
-  }  
+  if(menu){
+    for(i=0;i<menu->len;i++){
+      menuItem = &g_array_index(menu, lttv_menu_closure, i);
+      constructor = menuItem->con;
+      ToolMenuTitle_menu = lookup_widget(mw->MWindow,"ToolMenuTitle_menu");
+      insert_view = gtk_menu_item_new_with_mnemonic (menuItem->menuText);
+      gtk_widget_show (insert_view);
+      gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
+      g_signal_connect ((gpointer) insert_view, "activate",
+			G_CALLBACK (insertViewTest),
+			constructor);  
+    }
+  }
 
-  gConstructor = get_constructor();
-  ToolMenuTitle_menu = lookup_widget(mw->MWindow,"ToolMenuTitle_menu");
-  insert_view = gtk_menu_item_new_with_mnemonic ("insert_view");
-  gtk_widget_show (insert_view);
-  gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
-  g_signal_connect ((gpointer) insert_view, "activate",
-                    G_CALLBACK (insertViewTest),
-                    NULL);  
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/toolbar", LTTV_POINTER, &value));
+  toolbar = (LttvToolbars*)*(value.v_pointer);
+
+  if(toolbar){
+    for(i=0;i<toolbar->len;i++){
+      toolbarItem = &g_array_index(toolbar, lttv_toolbar_closure, i);
+      constructor = toolbarItem->con;
+      ToolMenuTitle_menu = lookup_widget(mw->MWindow,"MToolbar2");
+      pixbuf = gdk_pixbuf_new_from_xpm_data ((const char**)toolbarItem->pixmap);
+      pixmap = gtk_image_new_from_pixbuf(pixbuf);
+      insert_view = gtk_toolbar_append_element (GTK_TOOLBAR (ToolMenuTitle_menu),
+						GTK_TOOLBAR_CHILD_BUTTON,
+						NULL,
+						"",
+						toolbarItem->tooltip, NULL,
+						pixmap, NULL, NULL);
+      gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (ToolMenuTitle_menu)->children)->data))->label), TRUE);
+      gtk_widget_show (insert_view);
+      gtk_container_set_border_width (GTK_CONTAINER (insert_view), 1);
+      g_signal_connect ((gpointer) insert_view, "clicked",G_CALLBACK (insertViewTest),constructor);       
+    }
+  }
+
   //end
 
   gSysView->EventDB = NULL;
@@ -175,9 +201,8 @@ G_MODULE_EXPORT void destroy() {
 	lttv_iattribute_find_by_path(LTTV_IATTRIBUTE(lttv_global_attributes()),
 			"/hooks/main/before",	LTTV_POINTER, &value);
 
-	Window_Creation_Data = lttv_hooks_remove(*(value.v_pointer),
-																					 Window_Creation_Hook);
-
+	//	Window_Creation_Data = lttv_hooks_remove(*(value.v_pointer),													 Window_Creation_Hook);
+      
 	g_free(Window_Creation_Data);
 
 

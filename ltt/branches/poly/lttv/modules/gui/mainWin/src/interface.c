@@ -520,7 +520,7 @@ create_MWindow (void)
   MToolbar2 = gtk_toolbar_new ();
   gtk_widget_show (MToolbar2);
   gtk_box_pack_start (GTK_BOX (MVbox), MToolbar2, FALSE, FALSE, 0);
-  gtk_toolbar_set_style (GTK_TOOLBAR (MToolbar2), GTK_TOOLBAR_BOTH);
+  gtk_toolbar_set_style (GTK_TOOLBAR (MToolbar2), GTK_TOOLBAR_ICONS);
 
   MNotebook = gtk_notebook_new ();
   gtk_widget_show (MNotebook);

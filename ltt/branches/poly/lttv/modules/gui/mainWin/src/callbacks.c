@@ -9,13 +9,10 @@
 #include "interface.h"
 #include "support.h"
 #include <lttv/mainWindow.h>
-
+#include <lttv/menu.h>
+#include <lttv/toolbar.h>
 
 extern systemView * gSysView;
-
-typedef void (*call_Event_Selected_Hook)(void * call_data);
-extern call_Event_Selected_Hook selected_hook;
-extern view_constructor gConstructor;
 
 mainWindow * get_window_data_struct(GtkWidget * widget);
 
@@ -37,8 +34,8 @@ void
 insertViewTest(GtkMenuItem *menuitem, gpointer user_data)
 {
   guint val = 20;
-  insertView((GtkWidget*)menuitem, gConstructor);
-  selected_hook(&val);
+  insertView((GtkWidget*)menuitem, (view_constructor)user_data);
+  //  selected_hook(&val);
 }
 
 void
@@ -164,7 +161,16 @@ void createNewWindow(GtkWidget* widget, gpointer user_data, gboolean clone)
   mainWindow * newMWindow;/* New main window structure */
 
   //test
-  GtkWidget * ToolMenuTitle_menu, *insert_view;
+  int i;
+  GtkWidget * ToolMenuTitle_menu, *insert_view, *pixmap;
+  LttvMenus * menu;
+  LttvToolbars * toolbar;
+  lttv_menu_closure *menuItem;
+  lttv_toolbar_closure *toolbarItem;
+  LttvAttributeValue value;
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  view_constructor constructor;
+  GdkPixbuf *pixbuf;
   //end
 
   mw = lookup_widget (widget, "MWindow");
@@ -201,13 +207,46 @@ void createNewWindow(GtkWidget* widget, gpointer user_data, gboolean clone)
   //  newMWindow->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
 
   //test yxx
-  ToolMenuTitle_menu = lookup_widget(newMWindow->MWindow,"ToolMenuTitle_menu");
-  insert_view = gtk_menu_item_new_with_mnemonic ("insert_view");
-  gtk_widget_show (insert_view);
-  gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
-  g_signal_connect ((gpointer) insert_view, "activate",
-                    G_CALLBACK (insertViewTest),
-                    NULL);  
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/menu", LTTV_POINTER, &value));
+  menu = (LttvMenus*)*(value.v_pointer);
+
+  if(menu){
+    for(i=0;i<menu->len;i++){
+      menuItem = &g_array_index(menu, lttv_menu_closure, i);
+      constructor = menuItem->con;
+      ToolMenuTitle_menu = lookup_widget(newMWindow->MWindow,"ToolMenuTitle_menu");
+      insert_view = gtk_menu_item_new_with_mnemonic (menuItem->menuText);
+      gtk_widget_show (insert_view);
+      gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
+      g_signal_connect ((gpointer) insert_view, "activate",
+			G_CALLBACK (insertViewTest),
+			constructor);  
+    }
+  }
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/toolbar", LTTV_POINTER, &value));
+  toolbar = (LttvToolbars*)*(value.v_pointer);
+
+  if(toolbar){
+    for(i=0;i<toolbar->len;i++){
+      toolbarItem = &g_array_index(toolbar, lttv_toolbar_closure, i);
+      constructor = toolbarItem->con;
+      ToolMenuTitle_menu = lookup_widget(newMWindow->MWindow,"MToolbar2");
+      pixbuf = gdk_pixbuf_new_from_xpm_data ((const char**)toolbarItem->pixmap);
+      pixmap = gtk_image_new_from_pixbuf(pixbuf);
+      insert_view = gtk_toolbar_append_element (GTK_TOOLBAR (ToolMenuTitle_menu),
+						GTK_TOOLBAR_CHILD_BUTTON,
+						NULL,
+						"",
+						toolbarItem->tooltip, NULL,
+						pixmap, NULL, NULL);
+      gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (ToolMenuTitle_menu)->children)->data))->label), TRUE);
+      gtk_widget_show (insert_view);
+      gtk_container_set_border_width (GTK_CONTAINER (insert_view), 1);
+      g_signal_connect ((gpointer) insert_view, "clicked",G_CALLBACK (insertViewTest),constructor);       
+    }
+  }
   //end
   
   g_object_set_data(G_OBJECT(newWindow), "systemView", (gpointer)newSv);    
