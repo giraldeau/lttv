@@ -140,11 +140,6 @@ void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name);
 gint ltt_tracefile_open_control(LttTrace *t, char * control_name);
 
 
-/* obtain the time of an event */
-
-LttTime getEventTime(LttTracefile * tf);
-
-
 /* get the data type size and endian type of the local machine */
 
 void getDataEndianType(LttArchSize * size, LttArchEndian * endian);

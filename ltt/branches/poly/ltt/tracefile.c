@@ -41,6 +41,12 @@
 #define DIR_NAME_SIZE 256
 #define __UNUSED__ __attribute__((__unused__))
 
+
+/* obtain the time of an event */
+
+static inline LttTime getEventTime(LttTracefile * tf);
+
+
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
 void setFieldsOffset(LttTracefile *tf,LttEventType *evT,void *evD,LttTrace *t);
@@ -1266,15 +1272,14 @@ void getCyclePerNsec(LttTracefile * t)
  *    LttTime        : the time of the event
  ****************************************************************************/
 
-LttTime getEventTime(LttTracefile * tf)
+static inline LttTime getEventTime(LttTracefile * tf)
 {
   LttTime       time;
   LttCycleCount cycle_count;      // cycle count for the current event
   LttCycleCount lEventTotalCycle; // Total cycles from start for event
-  LttCycleCount lEventNSec;       // Total usecs from start for event
+  double        lEventNSec;       // Total nsecs from start for event
   LttTime       lTimeOffset;      // Time offset in struct LttTime
   guint16       evId;
-  LttCycleCount tmpCycleCount = (((LttCycleCount)1)<<32);
 
   evId = *(guint16 *)tf->cur_event_pos;
   if(evId == TRACE_BLOCK_START){
@@ -1294,7 +1299,7 @@ LttTime getEventTime(LttTracefile * tf)
   
   if(cycle_count < tf->pre_cycle_count)tf->count++;
   tf->pre_cycle_count = cycle_count;
-  cycle_count += tmpCycleCount * tf->count;  
+  cycle_count += (LttCycleCount)tf->count << 32;  
   
   //  if(tf->cur_heart_beat_number > tf->count)
   //    cycle_count += tmpCycleCount * (tf->cur_heart_beat_number - tf->count);  
@@ -1308,8 +1313,7 @@ LttTime getEventTime(LttTracefile * tf)
   lEventNSec = (double)lEventTotalCycle / (double)tf->cycle_per_nsec;
 
   // Determine offset in struct LttTime 
-  lTimeOffset.tv_nsec = lEventNSec % NANOSECONDS_PER_SECOND;
-  lTimeOffset.tv_sec  = lEventNSec / NANOSECONDS_PER_SECOND;
+  lTimeOffset = ltt_time_from_double(lEventNSec);
 
   time = ltt_time_add(tf->a_block_start->time, lTimeOffset);  
   
