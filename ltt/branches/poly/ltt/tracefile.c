@@ -700,7 +700,7 @@ LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
   for(i=0;i<trace->facility_number;i++){
     LttFacility *iter_facility =
                       (LttFacility*) g_ptr_array_index(trace->facilities,i);
-    if(unlikely(id >= iter_facility->base_id && 
+    if(likely(id >= iter_facility->base_id && 
        id < iter_facility->base_id + iter_facility->event_number)) {
       facility = iter_facility;
       break;
@@ -1670,14 +1670,17 @@ static inline gint getFieldtypeSize(LttTracefile * t,
     goto end_getFieldtypeSize;
   }
 
+  /* This likely has been tested with gcov : half of them.. */
   if(unlikely(fld->field_fixed == 1)){
-    if(likely(fld == evT->root_field)) {
+    /* tested : none */
+    if(unlikely(fld == evT->root_field)) {
       size = fld->field_size;
       goto end_getFieldtypeSize;
     }
   }
 
-
+  /* From gcov profiling : half string, half struct, can we gain something from
+   * that ? (Mathieu) */
   switch(type->type_class) {
     case LTT_ARRAY:
       element_number = (int) type->element_number;
@@ -1731,7 +1734,8 @@ static inline gint getFieldtypeSize(LttTracefile * t,
         /* Hope my implementation is faster than strlen (Mathieu) */
         char *ptr=(char*)evD;
         size = 1;
-        while(*ptr != '\0') { size++; ptr++; }
+        /* from gcov : many many strings are empty, make it the common case. */
+        while(unlikely(*ptr != '\0')) { size++; ptr++; }
         //size = ptr - (char*)evD + 1; //include end : '\0'
       }
       break;
@@ -1739,15 +1743,16 @@ static inline gint getFieldtypeSize(LttTracefile * t,
     case LTT_STRUCT:
       element_number = (int) type->element_number;
       size = 0;
-      if(fld->field_fixed == -1){
+      /* tested with gcov */
+      if(unlikely(fld->field_fixed == -1)){
         offset1 = offsetRoot;
         offset2 = 0;
         for(i=0;i<element_number;i++){
           size1=getFieldtypeSize(t, evT,offset1,offset2,
                                  fld->child[i], NULL, trace);
-          if(size1 > 0 && size >= 0){
+          if(likely(size1 > 0 && size >= 0)){
             size += size1;
-            if(offset1 >= 0) offset1 += size1;
+            if(likely(offset1 >= 0)) offset1 += size1;
               offset2 += size1;
           }else{
             size = -1;
@@ -1755,11 +1760,11 @@ static inline gint getFieldtypeSize(LttTracefile * t,
             offset2 = -1;
           }
         }
-        if(size == -1){
+        if(unlikely(size == -1)){
            fld->field_fixed = 0;
            size = 0;
         }else fld->field_fixed = 1;
-      }else if(fld->field_fixed == 0){
+      }else if(likely(fld->field_fixed == 0)){
         offset1 = offsetRoot;
         offset2 = 0;
         for(i=0;i<element_number;i++){
@@ -1773,7 +1778,7 @@ static inline gint getFieldtypeSize(LttTracefile * t,
       break;
 
     default:
-      if(fld->field_fixed == -1){
+      if(unlikely(fld->field_fixed == -1)){
         size = (int) ltt_type_size(trace, type);
         fld->field_fixed = 1;
       }else size = fld->field_size;
