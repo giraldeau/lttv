@@ -349,7 +349,8 @@ void getCpuFileInfo(LttTrace *t, char* cpu)
 
   while((entry = readdir(dir)) != NULL){
     if(strcmp(entry->d_name,".") != 0 &&
-       strcmp(entry->d_name,"..") != 0 ){
+       strcmp(entry->d_name,"..") != 0 &&
+       strcmp(entry->d_name,".svn") != 0){      
       strcpy(name,cpu);
       strcat(name,entry->d_name);
       ltt_tracefile_open_cpu(t,name);
