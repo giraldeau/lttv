@@ -33,16 +33,17 @@ gint compare_tracefile(gconstpointer a, gconstpointer b)
   const LttvTracefileContext *trace_a = (const LttvTracefileContext *)a;
   const LttvTracefileContext *trace_b = (const LttvTracefileContext *)b;
 
-  comparison = ltt_time_compare(trace_a->timestamp, trace_b->timestamp);
-  if(comparison == 0) {
-    if(trace_a->index < trace_b->index) comparison = -1;
-    else if(trace_a->index > trace_b->index) comparison = 1;
-    else if(trace_a->t_context->index < trace_b->t_context->index) 
-      comparison = -1;
-    else if(trace_a->t_context->index > trace_b->t_context->index)
-      comparison = 1;
+  if(trace_a != trace_b) {
+    comparison = ltt_time_compare(trace_a->timestamp, trace_b->timestamp);
+    if(comparison == 0) {
+      if(trace_a->index < trace_b->index) comparison = -1;
+      else if(trace_a->index > trace_b->index) comparison = 1;
+      else if(trace_a->t_context->index < trace_b->t_context->index) 
+        comparison = -1;
+      else if(trace_a->t_context->index > trace_b->t_context->index)
+        comparison = 1;
+    }
   }
-
   return comparison;
 }
 
