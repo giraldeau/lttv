@@ -1,0 +1,4550 @@
+Trace start time: (1042824617, 654653) 
+Trace end time: (1042824737, 641416) 
+Trace duration: (119, 986763) 
+
+Number of occurences of:
+	Events: 5311979 
+	Scheduling changes: 210109 
+	Kernel timer tics: 11999 
+	System call entries: 700337 
+	System call exits: 700211 
+	Trap entries: 58021 
+	Trap exits: 58021 
+	IRQ entries: 13998 
+	IRQ exits: 13998 
+	Bottom halves: 12664 
+	Timer expiries: 4962 
+	Page allocations: 83259 
+	Page frees: 111748 
+	Packets Out: 0 
+	Packets In: 0 
+
+Analysis details: 
+	Process (3045, 627): expr: 
+		Number of system calls: 54 
+		Number of traps: 125 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 6 
+		Time executing process code: (0, 1152) => 0.00 % 
+		Time running: (0, 2180) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 10)
+		munmap: 	 2 	 (0, 14)
+		mprotect: 	 1 	 (0, 6)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 5)
+		open: 		 3 	 (0, 26)
+		old_mmap: 	 6 	 (0, 25)
+		brk: 		 4 	 (0, 2)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 243)
+		stat64: 	 4 	 (0, 27)
+		close: 		 5 	 (0, 10)
+		dup2: 		 1 	 (0, 2)
+		setpgid: 	 1 	 (0, 11)
+		rt_sigaction: 	 13 	 (0, 11)
+		rt_sigprocmask:  5 	 (0, 3)
+		getpid: 	 1 	 (0, 1)
+	Process (3044, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 116 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1054) => 0.00 % 
+		Time running: (0, 1984) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		gettimeofday: 	 1 	 (0, 1)
+		munmap: 	 2 	 (0, 15)
+		mprotect: 	 1 	 (0, 5)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 6)
+		open: 		 3 	 (0, 25)
+		old_mmap: 	 6 	 (0, 21)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 2)
+		execve: 	 1 	 (0, 244)
+		close: 		 4 	 (0, 4)
+		dup2: 		 1 	 (0, 2)
+		setpgid: 	 1 	 (0, 11)
+		rt_sigaction: 	 13 	 (0, 7)
+		rt_sigprocmask:  5 	 (0, 4)
+		getpid: 	 1 	 (0, 1)
+	Process (3043, 3042): gnuplot_x11: 
+		Number of system calls: 204 
+		Number of traps: 235 
+		Quantity of data read from files: 61372 
+		Quantity of data written to files: 9670 
+		Time executing process code: (0, 6232) => 0.01 % 
+		Time running: (0, 8631) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		select: 	 6 	 (0, 98122)
+		stat64: 	 1 	 (0, 10)
+		write: 		 46 	 (0, 226)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 68)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 24)
+		mprotect: 	 6 	 (0, 20)
+		read: 		 63 	 (0, 20874)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 12 	 (0, 123)
+		old_mmap: 	 18 	 (0, 66)
+		brk: 		 10 	 (0, 19)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 276)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 52)
+	Process (3042, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7934) => 0.01 % 
+		Time running: (0, 11518) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 30724)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 149)
+		pipe: 		 1 	 (0, 34)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 18)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 14)
+		open: 		 9 	 (0, 88)
+		old_mmap: 	 16 	 (0, 62)
+		brk: 		 8 	 (0, 19)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 228)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 764)
+		rt_sigprocmask:  508 	 (0, 316)
+		getpid: 	 1 	 (0, 1)
+	Process (3041, 3040): gnuplot_x11: 
+		Number of system calls: 211 
+		Number of traps: 237 
+		Quantity of data read from files: 30780 
+		Quantity of data written to files: 9662 
+		Time executing process code: (0, 6386) => 0.01 % 
+		Time running: (0, 8782) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 5 	 (0, 9)
+		select: 	 6 	 (0, 77496)
+		stat64: 	 1 	 (0, 9)
+		write: 		 47 	 (0, 242)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 11)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 65)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 16)
+		read: 		 64 	 (0, 29224)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 116)
+		old_mmap: 	 18 	 (0, 64)
+		brk: 		 10 	 (0, 24)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 256)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 48)
+	Process (3040, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7716) => 0.01 % 
+		Time running: (0, 11073) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 89818)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 106)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 60)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 91)
+		old_mmap: 	 16 	 (0, 59)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 225)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 732)
+		rt_sigprocmask:  508 	 (0, 284)
+		getpid: 	 1 	 (0, 1)
+	Process (3039, 3038): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30884 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6702) => 0.01 % 
+		Time running: (0, 9207) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 20)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 270)
+		select: 	 6 	 (0, 315)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 62)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 24)
+		mprotect: 	 6 	 (0, 19)
+		read: 		 68 	 (0, 23715)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 12 	 (0, 118)
+		old_mmap: 	 18 	 (0, 63)
+		brk: 		 10 	 (0, 27)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 256)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 39)
+	Process (3038, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7716) => 0.01 % 
+		Time running: (0, 11080) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 129068)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 109)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 34)
+		mprotect: 	 7 	 (0, 25)
+		read: 		 7 	 (0, 61)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 88)
+		old_mmap: 	 16 	 (0, 56)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 226)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 732)
+		rt_sigprocmask:  508 	 (0, 307)
+		getpid: 	 1 	 (0, 1)
+	Process (3037, 3036): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30884 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6796) => 0.01 % 
+		Time running: (0, 9355) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 20)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 284)
+		select: 	 6 	 (0, 45210)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 61)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 16)
+		read: 		 68 	 (0, 15788)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 126)
+		old_mmap: 	 18 	 (0, 64)
+		brk: 		 10 	 (0, 29)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 259)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 46)
+	Process (3036, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7752) => 0.01 % 
+		Time running: (0, 11037) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 78328)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 106)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 34)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 92)
+		old_mmap: 	 16 	 (0, 61)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 224)
+		ioctl: 		 2 	 (0, 23)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 715)
+		rt_sigprocmask:  508 	 (0, 270)
+		getpid: 	 1 	 (0, 1)
+	Process (3035, 3034): gnuplot_x11: 
+		Number of system calls: 209 
+		Number of traps: 237 
+		Quantity of data read from files: 30748 
+		Quantity of data written to files: 9662 
+		Time executing process code: (0, 6431) => 0.01 % 
+		Time running: (0, 8847) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 4 	 (0, 8)
+		select: 	 6 	 (0, 18927)
+		stat64: 	 1 	 (0, 10)
+		write: 		 47 	 (0, 248)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 67)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 24)
+		mprotect: 	 6 	 (0, 15)
+		read: 		 63 	 (0, 21757)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 12 	 (0, 118)
+		old_mmap: 	 18 	 (0, 65)
+		brk: 		 10 	 (0, 27)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 259)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 48)
+	Process (3034, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7669) => 0.01 % 
+		Time running: (0, 11023) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 120555)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 103)
+		pipe: 		 1 	 (0, 22)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 0)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 34)
+		mprotect: 	 7 	 (0, 21)
+		read: 		 7 	 (0, 61)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 60)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 230)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 729)
+		rt_sigprocmask:  508 	 (0, 307)
+		getpid: 	 1 	 (0, 1)
+	Process (3033, 3032): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30884 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6775) => 0.01 % 
+		Time running: (0, 9273) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 20)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 270)
+		select: 	 6 	 (0, 7833)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 61)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 24)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 68 	 (0, 21964)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 127)
+		old_mmap: 	 18 	 (0, 62)
+		brk: 		 10 	 (0, 30)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 243)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 44)
+	Process (3032, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 8256) => 0.01 % 
+		Time running: (0, 11349) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 22395)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 101)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 0)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 18)
+		read: 		 7 	 (0, 61)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 88)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 17)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 228)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 716)
+		rt_sigprocmask:  508 	 (0, 304)
+		getpid: 	 1 	 (0, 1)
+	Process (3031, 3030): gnuplot_x11: 
+		Number of system calls: 227 
+		Number of traps: 237 
+		Quantity of data read from files: 41124 
+		Quantity of data written to files: 9678 
+		Time executing process code: (0, 6966) => 0.01 % 
+		Time running: (0, 9505) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 21)
+		stat64: 	 1 	 (0, 13)
+		write: 		 50 	 (0, 276)
+		select: 	 7 	 (0, 98646)
+		writev: 	 4 	 (0, 49)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 61)
+		rt_sigaction: 	 2 	 (0, 3)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 16)
+		read: 		 69 	 (0, 1103)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 135)
+		old_mmap: 	 18 	 (0, 63)
+		brk: 		 10 	 (0, 30)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 242)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 43)
+	Process (3030, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7833) => 0.01 % 
+		Time running: (0, 11040) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 110)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 106)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 0)
+		geteuid: 	 1 	 (0, 0)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 63)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 91)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 12)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 232)
+		ioctl: 		 2 	 (0, 23)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 722)
+		rt_sigprocmask:  508 	 (0, 293)
+		getpid: 	 1 	 (0, 1)
+	Process (3029, 3028): gnuplot_x11: 
+		Number of system calls: 215 
+		Number of traps: 237 
+		Quantity of data read from files: 41052 
+		Quantity of data written to files: 9666 
+		Time executing process code: (0, 6413) => 0.01 % 
+		Time running: (0, 8814) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 6 	 (0, 11)
+		select: 	 7 	 (0, 41608)
+		stat64: 	 1 	 (0, 9)
+		write: 		 47 	 (0, 236)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 11)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 67)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 66 	 (0, 11517)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 115)
+		old_mmap: 	 18 	 (0, 85)
+		brk: 		 10 	 (0, 19)
+		newuname: 	 6 	 (0, 9)
+		execve: 	 1 	 (0, 257)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 48)
+	Process (3028, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7641) => 0.01 % 
+		Time running: (0, 11019) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 57)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 21)
+		read: 		 7 	 (0, 61)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 14)
+		open: 		 9 	 (0, 87)
+		old_mmap: 	 16 	 (0, 61)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 231)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 738)
+		rt_sigprocmask:  508 	 (0, 353)
+		getpid: 	 1 	 (0, 1)
+	Process (3027, 3026): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30908 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6784) => 0.01 % 
+		Time running: (0, 9391) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 23)
+		select: 	 6 	 (0, 66645)
+		stat64: 	 1 	 (0, 8)
+		write: 		 50 	 (0, 269)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 68)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 27)
+		mprotect: 	 6 	 (0, 19)
+		read: 		 68 	 (0, 75542)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 120)
+		old_mmap: 	 18 	 (0, 69)
+		brk: 		 10 	 (0, 28)
+		newuname: 	 6 	 (0, 10)
+		execve: 	 1 	 (0, 301)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 50)
+	Process (3026, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7764) => 0.01 % 
+		Time running: (0, 11563) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 151359)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 108)
+		pipe: 		 1 	 (0, 22)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 25)
+		read: 		 7 	 (0, 101)
+		close: 		 9 	 (0, 13)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 95)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 17)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 254)
+		ioctl: 		 2 	 (0, 26)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 758)
+		rt_sigprocmask:  508 	 (0, 322)
+		getpid: 	 1 	 (0, 0)
+	Process (3025, 3024): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6837) => 0.01 % 
+		Time running: (0, 9388) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 22)
+		select: 	 5 	 (0, 24)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 278)
+		writev: 	 4 	 (0, 32)
+		access: 	 1 	 (0, 12)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 74)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 19)
+		read: 		 67 	 (0, 12578)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 131)
+		old_mmap: 	 18 	 (0, 67)
+		brk: 		 10 	 (0, 28)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 272)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 40)
+	Process (3024, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7779) => 0.01 % 
+		Time running: (0, 11550) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 10592)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 111)
+		pipe: 		 1 	 (0, 23)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 25)
+		read: 		 7 	 (0, 61)
+		close: 		 9 	 (0, 21)
+		fstat64: 	 8 	 (0, 15)
+		open: 		 9 	 (0, 91)
+		old_mmap: 	 16 	 (0, 60)
+		brk: 		 8 	 (0, 17)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 242)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 751)
+		rt_sigprocmask:  508 	 (0, 342)
+		getpid: 	 1 	 (0, 1)
+	Process (3023, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 451569) => 4.54 % 
+		Time running: (5, 630093) => 4.69 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 19379)
+		access: 	 6 	 (0, 53)
+		fcntl64: 	 6 	 (0, 6)
+		socketcall: 	 6 	 (0, 112)
+		write: 		 1903 	 (0, 22359)
+		llseek: 	 7615 	 (0, 14240)
+		stat64: 	 2 	 (0, 25)
+		times: 		 1 	 (0, 1)
+		sysctl: 	 1 	 (0, 6)
+		setrlimit: 	 1 	 (0, 1)
+		getrlimit: 	 1 	 (0, 1)
+		munmap: 	 65 	 (0, 496)
+		mprotect: 	 14 	 (0, 40)
+		read: 		 10159 	 (0, 71778)
+		close: 		 80 	 (0, 366)
+		fstat64: 	 136 	 (0, 167)
+		open: 		 496 	 (0, 2917)
+		old_mmap: 	 99 	 (0, 345)
+		brk: 		 397 	 (0, 3616)
+		newuname: 	 10 	 (0, 18)
+		execve: 	 1 	 (0, 248)
+		ioctl: 		 2 	 (0, 17)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 10 	 (0, 8)
+		rt_sigprocmask:  4 	 (0, 5)
+		getpid: 	 2 	 (0, 2)
+	Process (3022, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 445155) => 4.54 % 
+		Time running: (5, 622502) => 4.69 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 19397)
+		access: 	 6 	 (0, 51)
+		fcntl64: 	 6 	 (0, 10)
+		socketcall: 	 6 	 (0, 110)
+		write: 		 1903 	 (0, 22375)
+		llseek: 	 7615 	 (0, 14168)
+		stat64: 	 2 	 (0, 28)
+		times: 		 1 	 (0, 1)
+		sysctl: 	 1 	 (0, 6)
+		setrlimit: 	 1 	 (0, 1)
+		getrlimit: 	 1 	 (0, 1)
+		munmap: 	 65 	 (0, 497)
+		mprotect: 	 14 	 (0, 43)
+		read: 		 10159 	 (0, 71528)
+		close: 		 80 	 (0, 271)
+		fstat64: 	 136 	 (0, 171)
+		open: 		 496 	 (0, 2936)
+		old_mmap: 	 99 	 (0, 369)
+		brk: 		 397 	 (0, 3581)
+		newuname: 	 10 	 (0, 17)
+		execve: 	 1 	 (0, 231)
+		ioctl: 		 2 	 (0, 17)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 10 	 (0, 9)
+		rt_sigprocmask:  4 	 (0, 5)
+		getpid: 	 2 	 (0, 2)
+	Process (3021, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 115 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1049) => 0.00 % 
+		Time running: (0, 2035) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 10)
+		gettimeofday: 	 1 	 (0, 2)
+		munmap: 	 2 	 (0, 14)
+		mprotect: 	 1 	 (0, 6)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 7)
+		open: 		 3 	 (0, 24)
+		old_mmap: 	 6 	 (0, 22)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 266)
+		close: 		 4 	 (0, 6)
+		dup2: 		 1 	 (0, 4)
+		setpgid: 	 1 	 (0, 13)
+		rt_sigaction: 	 13 	 (0, 13)
+		rt_sigprocmask:  5 	 (0, 5)
+		getpid: 	 1 	 (0, 1)
+	Process (3020, 627): expr: 
+		Number of system calls: 54 
+		Number of traps: 124 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 6 
+		Time executing process code: (0, 1215) => 0.00 % 
+		Time running: (0, 2430) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 10)
+		munmap: 	 2 	 (0, 15)
+		mprotect: 	 1 	 (0, 6)
+		read: 		 1 	 (0, 9)
+		fstat64: 	 3 	 (0, 7)
+		open: 		 3 	 (0, 25)
+		old_mmap: 	 6 	 (0, 23)
+		brk: 		 4 	 (0, 4)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 265)
+		stat64: 	 4 	 (0, 33)
+		close: 		 5 	 (0, 8)
+		dup2: 		 1 	 (0, 2)
+		setpgid: 	 1 	 (0, 13)
+		rt_sigaction: 	 13 	 (0, 10)
+		rt_sigprocmask:  5 	 (0, 5)
+		getpid: 	 1 	 (0, 1)
+	Process (3019, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 115 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1064) => 0.00 % 
+		Time running: (0, 1990) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 6)
+		gettimeofday: 	 1 	 (0, 2)
+		munmap: 	 2 	 (0, 13)
+		mprotect: 	 1 	 (0, 5)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 7)
+		open: 		 3 	 (0, 24)
+		old_mmap: 	 6 	 (0, 22)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 243)
+		close: 		 4 	 (0, 6)
+		dup2: 		 1 	 (0, 2)
+		setpgid: 	 1 	 (0, 12)
+		rt_sigaction: 	 13 	 (0, 11)
+		rt_sigprocmask:  5 	 (0, 1)
+		getpid: 	 1 	 (0, 1)
+	Process (3018, 3017): gnuplot_x11: 
+		Number of system calls: 211 
+		Number of traps: 237 
+		Quantity of data read from files: 30756 
+		Quantity of data written to files: 9662 
+		Time executing process code: (0, 6502) => 0.01 % 
+		Time running: (0, 9070) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 4 	 (0, 7)
+		stat64: 	 1 	 (0, 10)
+		write: 		 47 	 (0, 239)
+		select: 	 7 	 (0, 106848)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 62)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 64 	 (0, 23081)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 124)
+		old_mmap: 	 18 	 (0, 62)
+		brk: 		 10 	 (0, 30)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 263)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 35)
+	Process (3017, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7676) => 0.01 % 
+		Time running: (0, 11092) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 146497)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 102)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 37)
+		mprotect: 	 7 	 (0, 20)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 92)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 224)
+		ioctl: 		 2 	 (0, 23)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 724)
+		rt_sigprocmask:  508 	 (0, 324)
+		getpid: 	 1 	 (0, 1)
+	Process (3016, 3015): gnuplot_x11: 
+		Number of system calls: 213 
+		Number of traps: 237 
+		Quantity of data read from files: 30812 
+		Quantity of data written to files: 9662 
+		Time executing process code: (0, 6458) => 0.01 % 
+		Time running: (0, 8879) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 6 	 (0, 11)
+		select: 	 6 	 (0, 18849)
+		stat64: 	 1 	 (0, 9)
+		write: 		 47 	 (0, 239)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 66)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 15)
+		read: 		 65 	 (0, 11924)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 12 	 (0, 119)
+		old_mmap: 	 18 	 (0, 64)
+		brk: 		 10 	 (0, 24)
+		newuname: 	 6 	 (0, 9)
+		execve: 	 1 	 (0, 266)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 48)
+	Process (3015, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7614) => 0.01 % 
+		Time running: (0, 11034) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 88693)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 23)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 59)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 221)
+		ioctl: 		 2 	 (0, 24)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 781)
+		rt_sigprocmask:  508 	 (0, 363)
+		getpid: 	 1 	 (0, 1)
+	Process (3014, 3013): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30908 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6816) => 0.01 % 
+		Time running: (0, 9285) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 18)
+		select: 	 6 	 (0, 12433)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 273)
+		writev: 	 4 	 (0, 28)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 65)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 68 	 (0, 11928)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 118)
+		old_mmap: 	 18 	 (0, 59)
+		brk: 		 10 	 (0, 27)
+		newuname: 	 6 	 (0, 13)
+		execve: 	 1 	 (0, 260)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 41)
+	Process (3013, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7619) => 0.01 % 
+		Time running: (0, 10965) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 127833)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 101)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 34)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 87)
+		old_mmap: 	 16 	 (0, 59)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 231)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 752)
+		rt_sigprocmask:  508 	 (0, 321)
+		getpid: 	 1 	 (0, 1)
+	Process (3012, 3011): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6733) => 0.01 % 
+		Time running: (0, 9230) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 20)
+		select: 	 5 	 (0, 23)
+		stat64: 	 1 	 (0, 8)
+		write: 		 50 	 (0, 272)
+		writev: 	 4 	 (0, 31)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 59)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 67 	 (0, 11952)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 115)
+		old_mmap: 	 18 	 (0, 59)
+		brk: 		 10 	 (0, 23)
+		newuname: 	 6 	 (0, 10)
+		execve: 	 1 	 (0, 257)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 46)
+	Process (3011, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7691) => 0.01 % 
+		Time running: (0, 11048) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 99192)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 105)
+		pipe: 		 1 	 (0, 19)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 2)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 34)
+		mprotect: 	 7 	 (0, 20)
+		read: 		 7 	 (0, 62)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 56)
+		brk: 		 8 	 (0, 13)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 233)
+		ioctl: 		 2 	 (0, 23)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 716)
+		rt_sigprocmask:  508 	 (0, 295)
+		getpid: 	 1 	 (0, 1)
+	Process (3010, 3009): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30884 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6834) => 0.01 % 
+		Time running: (0, 9320) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 22)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 277)
+		select: 	 6 	 (0, 2308)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 62)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 68 	 (0, 12050)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 121)
+		old_mmap: 	 18 	 (0, 57)
+		brk: 		 10 	 (0, 25)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 256)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 42)
+	Process (3009, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7778) => 0.01 % 
+		Time running: (0, 11136) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 26971)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 103)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 34)
+		mprotect: 	 7 	 (0, 21)
+		read: 		 7 	 (0, 62)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 9 	 (0, 90)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 226)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 752)
+		rt_sigprocmask:  508 	 (0, 321)
+		getpid: 	 1 	 (0, 1)
+	Process (3008, 3007): gnuplot_x11: 
+		Number of system calls: 227 
+		Number of traps: 237 
+		Quantity of data read from files: 41124 
+		Quantity of data written to files: 9678 
+		Time executing process code: (0, 6778) => 0.01 % 
+		Time running: (0, 9239) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 17)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 268)
+		select: 	 7 	 (0, 25364)
+		writev: 	 4 	 (0, 26)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 60)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 20)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 69 	 (0, 542)
+		fstat64: 	 8 	 (0, 9)
+		open: 		 12 	 (0, 124)
+		old_mmap: 	 18 	 (0, 63)
+		brk: 		 10 	 (0, 28)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 233)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 41)
+	Process (3007, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7948) => 0.01 % 
+		Time running: (0, 11247) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 19496)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 20)
+		read: 		 7 	 (0, 58)
+		close: 		 9 	 (0, 15)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 62)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 220)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 731)
+		rt_sigprocmask:  508 	 (0, 317)
+		getpid: 	 1 	 (0, 0)
+	Process (3006, 3005): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6864) => 0.01 % 
+		Time running: (0, 9317) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 22)
+		select: 	 5 	 (0, 21)
+		stat64: 	 1 	 (0, 11)
+		write: 		 50 	 (0, 270)
+		writev: 	 4 	 (0, 31)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 63)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 20)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 67 	 (0, 9978)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 128)
+		old_mmap: 	 18 	 (0, 65)
+		brk: 		 10 	 (0, 24)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 261)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 39)
+	Process (3005, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7773) => 0.01 % 
+		Time running: (0, 11094) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 85215)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 23)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 20)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 59)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 236)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 730)
+		rt_sigprocmask:  508 	 (0, 306)
+		getpid: 	 1 	 (0, 1)
+	Process (3004, 3003): gnuplot_x11: 
+		Number of system calls: 208 
+		Number of traps: 237 
+		Quantity of data read from files: 30748 
+		Quantity of data written to files: 9662 
+		Time executing process code: (0, 6452) => 0.01 % 
+		Time running: (0, 8845) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 3 	 (0, 6)
+		select: 	 6 	 (0, 23458)
+		stat64: 	 1 	 (0, 10)
+		write: 		 47 	 (0, 247)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 65)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 63 	 (0, 15840)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 131)
+		old_mmap: 	 18 	 (0, 68)
+		brk: 		 10 	 (0, 31)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 230)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 48)
+	Process (3003, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7654) => 0.01 % 
+		Time running: (0, 10896) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 63003)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 103)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 58)
+		close: 		 9 	 (0, 22)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 85)
+		old_mmap: 	 16 	 (0, 60)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 211)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 749)
+		rt_sigprocmask:  508 	 (0, 303)
+		getpid: 	 1 	 (0, 1)
+	Process (3002, 3001): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 41116 
+		Quantity of data written to files: 9678 
+		Time executing process code: (0, 6782) => 0.01 % 
+		Time running: (0, 9280) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 22)
+		select: 	 6 	 (0, 2800)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 272)
+		writev: 	 4 	 (0, 28)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 65)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 68 	 (0, 14462)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 122)
+		old_mmap: 	 18 	 (0, 66)
+		brk: 		 10 	 (0, 22)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 256)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 41)
+	Process (3001, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7648) => 0.01 % 
+		Time running: (0, 10951) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 60)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 103)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 0)
+		geteuid: 	 1 	 (0, 0)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 21)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 17)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 9 	 (0, 91)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 234)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 718)
+		rt_sigprocmask:  508 	 (0, 323)
+		getpid: 	 1 	 (0, 0)
+	Process (3000, 2999): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6715) => 0.01 % 
+		Time running: (0, 9224) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 18)
+		select: 	 5 	 (0, 23)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 271)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 66)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 23)
+		mprotect: 	 6 	 (0, 20)
+		read: 		 67 	 (0, 14542)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 12 	 (0, 124)
+		old_mmap: 	 18 	 (0, 64)
+		brk: 		 10 	 (0, 26)
+		newuname: 	 6 	 (0, 9)
+		execve: 	 1 	 (0, 303)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 43)
+	Process (2999, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7866) => 0.01 % 
+		Time running: (0, 11496) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 10149)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 136)
+		pipe: 		 1 	 (0, 28)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 0)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 63)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 9 	 (0, 92)
+		old_mmap: 	 16 	 (0, 65)
+		brk: 		 8 	 (0, 17)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 231)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 757)
+		rt_sigprocmask:  508 	 (0, 300)
+		getpid: 	 1 	 (0, 1)
+	Process (2998, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 454142) => 4.55 % 
+		Time running: (5, 631836) => 4.69 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 19954)
+		access: 	 6 	 (0, 52)
+		fcntl64: 	 6 	 (0, 9)
+		socketcall: 	 6 	 (0, 108)
+		write: 		 1903 	 (0, 22569)
+		llseek: 	 7615 	 (0, 14147)
+		stat64: 	 2 	 (0, 28)
+		times: 		 1 	 (0, 1)
+		sysctl: 	 1 	 (0, 6)
+		setrlimit: 	 1 	 (0, 1)
+		getrlimit: 	 1 	 (0, 2)
+		munmap: 	 65 	 (0, 510)
+		mprotect: 	 14 	 (0, 41)
+		read: 		 10159 	 (0, 71890)
+		close: 		 80 	 (0, 278)
+		fstat64: 	 136 	 (0, 175)
+		open: 		 496 	 (0, 2948)
+		old_mmap: 	 99 	 (0, 373)
+		brk: 		 397 	 (0, 3652)
+		newuname: 	 10 	 (0, 15)
+		execve: 	 1 	 (0, 254)
+		ioctl: 		 2 	 (0, 18)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 10 	 (0, 10)
+		rt_sigprocmask:  4 	 (0, 6)
+		getpid: 	 2 	 (0, 2)
+	Process (2997, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 460657) => 4.55 % 
+		Time running: (5, 641819) => 4.70 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 20296)
+		access: 	 6 	 (0, 53)
+		fcntl64: 	 6 	 (0, 8)
+		socketcall: 	 6 	 (0, 113)
+		write: 		 1903 	 (0, 22722)
+		llseek: 	 7615 	 (0, 14258)
+		stat64: 	 2 	 (0, 25)
+		times: 		 1 	 (0, 1)
+		sysctl: 	 1 	 (0, 6)
+		setrlimit: 	 1 	 (0, 1)
+		getrlimit: 	 1 	 (0, 2)
+		munmap: 	 65 	 (0, 523)
+		mprotect: 	 14 	 (0, 39)
+		read: 		 10159 	 (0, 71225)
+		close: 		 80 	 (0, 277)
+		fstat64: 	 136 	 (0, 175)
+		open: 		 496 	 (0, 2935)
+		old_mmap: 	 99 	 (0, 400)
+		brk: 		 397 	 (0, 3669)
+		newuname: 	 10 	 (0, 16)
+		execve: 	 1 	 (0, 232)
+		ioctl: 		 2 	 (0, 16)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 10 	 (0, 9)
+		rt_sigprocmask:  4 	 (0, 5)
+		getpid: 	 2 	 (0, 2)
+	Process (2996, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 116 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1051) => 0.00 % 
+		Time running: (0, 2075) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		gettimeofday: 	 1 	 (0, 1)
+		munmap: 	 2 	 (0, 12)
+		mprotect: 	 1 	 (0, 6)
+		read: 		 1 	 (0, 8)
+		fstat64: 	 3 	 (0, 8)
+		open: 		 3 	 (0, 24)
+		old_mmap: 	 6 	 (0, 24)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 275)
+		close: 		 4 	 (0, 6)
+		dup2: 		 1 	 (0, 3)
+		setpgid: 	 1 	 (0, 13)
+		rt_sigaction: 	 13 	 (0, 12)
+		rt_sigprocmask:  5 	 (0, 6)
+		getpid: 	 1 	 (0, 1)
+	Process (2995, 627): expr: 
+		Number of system calls: 54 
+		Number of traps: 125 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 6 
+		Time executing process code: (0, 1155) => 0.00 % 
+		Time running: (0, 2150) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		munmap: 	 2 	 (0, 14)
+		mprotect: 	 1 	 (0, 5)
+		read: 		 1 	 (0, 6)
+		fstat64: 	 3 	 (0, 5)
+		open: 		 3 	 (0, 24)
+		old_mmap: 	 6 	 (0, 21)
+		brk: 		 4 	 (0, 2)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 235)
+		stat64: 	 4 	 (0, 29)
+		close: 		 5 	 (0, 10)
+		dup2: 		 1 	 (0, 2)
+		setpgid: 	 1 	 (0, 11)
+		rt_sigaction: 	 13 	 (0, 13)
+		rt_sigprocmask:  5 	 (0, 2)
+		getpid: 	 1 	 (0, 1)
+	Process (2994, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 115 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1011) => 0.00 % 
+		Time running: (0, 1941) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		gettimeofday: 	 1 	 (0, 2)
+		munmap: 	 2 	 (0, 13)
+		mprotect: 	 1 	 (0, 6)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 7)
+		open: 		 3 	 (0, 24)
+		old_mmap: 	 6 	 (0, 22)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 243)
+		close: 		 4 	 (0, 6)
+		dup2: 		 1 	 (0, 2)
+		setpgid: 	 1 	 (0, 12)
+		rt_sigaction: 	 13 	 (0, 11)
+		rt_sigprocmask:  5 	 (0, 4)
+		getpid: 	 1 	 (0, 1)
+	Process (2993, 2992): gnuplot_x11: 
+		Number of system calls: 213 
+		Number of traps: 237 
+		Quantity of data read from files: 30788 
+		Quantity of data written to files: 9662 
+		Time executing process code: (0, 6581) => 0.01 % 
+		Time running: (0, 9003) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 6 	 (0, 12)
+		stat64: 	 1 	 (0, 9)
+		write: 		 47 	 (0, 255)
+		select: 	 6 	 (0, 16566)
+		writev: 	 4 	 (0, 28)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 58)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 15)
+		read: 		 65 	 (0, 11953)
+		fstat64: 	 8 	 (0, 9)
+		open: 		 12 	 (0, 120)
+		old_mmap: 	 18 	 (0, 61)
+		brk: 		 10 	 (0, 31)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 227)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 29)
+	Process (2992, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7670) => 0.01 % 
+		Time running: (0, 11000) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 43717)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 103)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 24)
+		read: 		 7 	 (0, 60)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 87)
+		old_mmap: 	 16 	 (0, 60)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 234)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 739)
+		rt_sigprocmask:  508 	 (0, 327)
+		getpid: 	 1 	 (0, 0)
+	Process (2991, 2990): gnuplot_x11: 
+		Number of system calls: 227 
+		Number of traps: 237 
+		Quantity of data read from files: 51356 
+		Quantity of data written to files: 9682 
+		Time executing process code: (0, 6788) => 0.01 % 
+		Time running: (0, 9275) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 19)
+		select: 	 7 	 (0, 13764)
+		stat64: 	 1 	 (0, 19)
+		write: 		 50 	 (0, 281)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 64)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 16)
+		read: 		 69 	 (0, 651)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 116)
+		old_mmap: 	 18 	 (0, 59)
+		brk: 		 10 	 (0, 23)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 257)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 41)
+	Process (2990, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7784) => 0.01 % 
+		Time running: (0, 11156) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 71)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 24)
+		read: 		 7 	 (0, 57)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 88)
+		old_mmap: 	 16 	 (0, 60)
+		brk: 		 8 	 (0, 21)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 231)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 720)
+		rt_sigprocmask:  508 	 (0, 315)
+		getpid: 	 1 	 (0, 1)
+	Process (2989, 2988): gnuplot_x11: 
+		Number of system calls: 211 
+		Number of traps: 237 
+		Quantity of data read from files: 30756 
+		Quantity of data written to files: 9662 
+		Time executing process code: (0, 6499) => 0.01 % 
+		Time running: (0, 8917) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 4 	 (0, 6)
+		stat64: 	 1 	 (0, 10)
+		write: 		 47 	 (0, 240)
+		select: 	 7 	 (0, 58961)
+		writev: 	 4 	 (0, 28)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 61)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 20)
+		read: 		 64 	 (0, 40677)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 132)
+		old_mmap: 	 18 	 (0, 67)
+		brk: 		 10 	 (0, 27)
+		newuname: 	 6 	 (0, 9)
+		execve: 	 1 	 (0, 266)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 27)
+	Process (2988, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7620) => 0.01 % 
+		Time running: (0, 10993) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 94778)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 105)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 33)
+		mprotect: 	 7 	 (0, 23)
+		read: 		 7 	 (0, 60)
+		close: 		 9 	 (0, 15)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 86)
+		old_mmap: 	 16 	 (0, 56)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 220)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 743)
+		rt_sigprocmask:  508 	 (0, 335)
+		getpid: 	 1 	 (0, 0)
+	Process (2987, 2986): gnuplot_x11: 
+		Number of system calls: 209 
+		Number of traps: 237 
+		Quantity of data read from files: 40988 
+		Quantity of data written to files: 9666 
+		Time executing process code: (0, 6346) => 0.01 % 
+		Time running: (0, 8786) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 2 	 (0, 4)
+		select: 	 7 	 (0, 60124)
+		stat64: 	 1 	 (0, 9)
+		write: 		 47 	 (0, 239)
+		writev: 	 4 	 (0, 28)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 64)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 23)
+		mprotect: 	 6 	 (0, 16)
+		read: 		 64 	 (0, 14284)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 119)
+		old_mmap: 	 18 	 (0, 62)
+		brk: 		 10 	 (0, 20)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 260)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 50)
+	Process (2986, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7629) => 0.01 % 
+		Time running: (0, 10990) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 63)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 33)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 58)
+		close: 		 9 	 (0, 17)
+		fstat64: 	 8 	 (0, 18)
+		open: 		 9 	 (0, 86)
+		old_mmap: 	 16 	 (0, 57)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 227)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 716)
+		rt_sigprocmask:  508 	 (0, 341)
+		getpid: 	 1 	 (0, 0)
+	Process (2985, 2984): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30884 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6916) => 0.01 % 
+		Time running: (0, 9439) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 22)
+		stat64: 	 1 	 (0, 8)
+		write: 		 50 	 (0, 281)
+		select: 	 6 	 (0, 25612)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 60)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 23)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 68 	 (0, 27948)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 121)
+		old_mmap: 	 18 	 (0, 63)
+		brk: 		 10 	 (0, 26)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 270)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 45)
+	Process (2984, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7703) => 0.01 % 
+		Time running: (0, 11040) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 53278)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 103)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 57)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 90)
+		old_mmap: 	 16 	 (0, 57)
+		brk: 		 8 	 (0, 13)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 224)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 732)
+		rt_sigprocmask:  508 	 (0, 292)
+		getpid: 	 1 	 (0, 1)
+	Process (2983, 2982): gnuplot_x11: 
+		Number of system calls: 212 
+		Number of traps: 237 
+		Quantity of data read from files: 41052 
+		Quantity of data written to files: 9666 
+		Time executing process code: (0, 6478) => 0.01 % 
+		Time running: (0, 8852) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 2 	 (0, 3)
+		select: 	 8 	 (0, 39563)
+		stat64: 	 1 	 (0, 9)
+		write: 		 47 	 (0, 240)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 65)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 16)
+		read: 		 66 	 (0, 15755)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 12 	 (0, 113)
+		old_mmap: 	 18 	 (0, 59)
+		brk: 		 10 	 (0, 25)
+		newuname: 	 6 	 (0, 10)
+		execve: 	 1 	 (0, 258)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 29)
+	Process (2982, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7744) => 0.01 % 
+		Time running: (0, 11179) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 75082)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 1)
+		fork: 		 1 	 (0, 105)
+		pipe: 		 1 	 (0, 17)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 23)
+		read: 		 7 	 (0, 60)
+		close: 		 9 	 (0, 18)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 54)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 227)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 739)
+		rt_sigprocmask:  508 	 (0, 368)
+		getpid: 	 1 	 (0, 1)
+	Process (2981, 2980): gnuplot_x11: 
+		Number of system calls: 231 
+		Number of traps: 236 
+		Quantity of data read from files: 61604 
+		Quantity of data written to files: 9686 
+		Time executing process code: (0, 6914) => 0.01 % 
+		Time running: (0, 9513) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 19)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 290)
+		select: 	 9 	 (0, 97514)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 61)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 23)
+		mprotect: 	 6 	 (0, 19)
+		read: 		 71 	 (0, 377)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 126)
+		old_mmap: 	 18 	 (0, 65)
+		brk: 		 10 	 (0, 28)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 254)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 44)
+	Process (2980, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7955) => 0.01 % 
+		Time running: (0, 11390) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 55)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 0)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 88)
+		old_mmap: 	 16 	 (0, 52)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 228)
+		ioctl: 		 2 	 (0, 20)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 765)
+		rt_sigprocmask:  508 	 (0, 308)
+		getpid: 	 1 	 (0, 0)
+	Process (2979, 2978): gnuplot_x11: 
+		Number of system calls: 210 
+		Number of traps: 237 
+		Quantity of data read from files: 40988 
+		Quantity of data written to files: 9666 
+		Time executing process code: (0, 6550) => 0.01 % 
+		Time running: (0, 8923) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 4 	 (0, 6)
+		select: 	 6 	 (0, 82918)
+		stat64: 	 1 	 (0, 9)
+		write: 		 47 	 (0, 242)
+		writev: 	 4 	 (0, 28)
+		access: 	 1 	 (0, 17)
+		fcntl64: 	 3 	 (0, 6)
+		socketcall: 	 3 	 (0, 68)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 24)
+		mprotect: 	 6 	 (0, 16)
+		read: 		 64 	 (0, 2268)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 114)
+		old_mmap: 	 18 	 (0, 63)
+		brk: 		 10 	 (0, 25)
+		newuname: 	 6 	 (0, 13)
+		execve: 	 1 	 (0, 240)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 49)
+	Process (2978, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7832) => 0.01 % 
+		Time running: (0, 11265) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 90779)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 105)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 21)
+		read: 		 7 	 (0, 61)
+		close: 		 9 	 (0, 17)
+		fstat64: 	 8 	 (0, 15)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 229)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 727)
+		rt_sigprocmask:  508 	 (0, 320)
+		getpid: 	 1 	 (0, 0)
+	Process (2977, 2976): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6828) => 0.01 % 
+		Time running: (0, 9399) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 21)
+		select: 	 5 	 (0, 24)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 282)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 11)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 66)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 24)
+		mprotect: 	 6 	 (0, 20)
+		read: 		 67 	 (0, 12163)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 12 	 (0, 126)
+		old_mmap: 	 18 	 (0, 68)
+		brk: 		 10 	 (0, 26)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 281)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 45)
+	Process (2976, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7700) => 0.01 % 
+		Time running: (0, 10970) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 136193)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 103)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 33)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 58)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 88)
+		old_mmap: 	 16 	 (0, 60)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 230)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 710)
+		rt_sigprocmask:  508 	 (0, 294)
+		getpid: 	 1 	 (0, 1)
+	Process (2975, 2974): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6798) => 0.01 % 
+		Time running: (0, 9292) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 20)
+		select: 	 5 	 (0, 24)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 268)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 63)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 67 	 (0, 11962)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 125)
+		old_mmap: 	 18 	 (0, 61)
+		brk: 		 10 	 (0, 22)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 263)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 39)
+	Process (2974, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7736) => 0.01 % 
+		Time running: (0, 11142) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 10092)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 103)
+		pipe: 		 1 	 (0, 22)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 33)
+		mprotect: 	 7 	 (0, 23)
+		read: 		 7 	 (0, 63)
+		close: 		 9 	 (0, 23)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 95)
+		old_mmap: 	 16 	 (0, 59)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 272)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 768)
+		rt_sigprocmask:  508 	 (0, 271)
+		getpid: 	 1 	 (0, 1)
+	Process (2973, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 450377) => 4.54 % 
+		Time running: (5, 630009) => 4.69 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 19795)
+		access: 	 6 	 (0, 53)
+		fcntl64: 	 6 	 (0, 6)
+		socketcall: 	 6 	 (0, 111)
+		write: 		 1903 	 (0, 22740)
+		llseek: 	 7615 	 (0, 14214)
+		stat64: 	 2 	 (0, 25)
+		times: 		 1 	 (0, 1)
+		sysctl: 	 1 	 (0, 7)
+		setrlimit: 	 1 	 (0, 1)
+		getrlimit: 	 1 	 (0, 1)
+		munmap: 	 65 	 (0, 522)
+		mprotect: 	 14 	 (0, 41)
+		read: 		 10159 	 (0, 71596)
+		close: 		 80 	 (0, 282)
+		fstat64: 	 136 	 (0, 179)
+		open: 		 496 	 (0, 2998)
+		old_mmap: 	 99 	 (0, 394)
+		brk: 		 397 	 (0, 3694)
+		newuname: 	 10 	 (0, 19)
+		execve: 	 1 	 (0, 247)
+		ioctl: 		 2 	 (0, 16)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 10 	 (0, 12)
+		rt_sigprocmask:  4 	 (0, 5)
+		getpid: 	 2 	 (0, 1)
+	Process (2972, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 469848) => 4.56 % 
+		Time running: (5, 655087) => 4.71 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 21512)
+		access: 	 6 	 (0, 54)
+		fcntl64: 	 6 	 (0, 6)
+		socketcall: 	 6 	 (0, 108)
+		write: 		 1903 	 (0, 24505)
+		llseek: 	 7615 	 (0, 14137)
+		stat64: 	 2 	 (0, 26)
+		times: 		 1 	 (0, 1)
+		sysctl: 	 1 	 (0, 7)
+		setrlimit: 	 1 	 (0, 1)
+		getrlimit: 	 1 	 (0, 1)
+		munmap: 	 65 	 (0, 504)
+		mprotect: 	 14 	 (0, 36)
+		read: 		 10159 	 (0, 70155)
+		close: 		 80 	 (0, 272)
+		fstat64: 	 136 	 (0, 165)
+		open: 		 496 	 (0, 2959)
+		old_mmap: 	 99 	 (0, 357)
+		brk: 		 397 	 (0, 3577)
+		newuname: 	 10 	 (0, 17)
+		execve: 	 1 	 (0, 227)
+		ioctl: 		 2 	 (0, 15)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 10 	 (0, 11)
+		rt_sigprocmask:  4 	 (0, 4)
+		getpid: 	 2 	 (0, 2)
+	Process (2971, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 115 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1049) => 0.00 % 
+		Time running: (0, 2027) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		gettimeofday: 	 1 	 (0, 1)
+		munmap: 	 2 	 (0, 11)
+		mprotect: 	 1 	 (0, 5)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 6)
+		open: 		 3 	 (0, 24)
+		old_mmap: 	 6 	 (0, 23)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 273)
+		close: 		 4 	 (0, 6)
+		dup2: 		 1 	 (0, 4)
+		setpgid: 	 1 	 (0, 13)
+		rt_sigaction: 	 13 	 (0, 13)
+		rt_sigprocmask:  5 	 (0, 6)
+		getpid: 	 1 	 (0, 0)
+	Process (2970, 627): expr: 
+		Number of system calls: 54 
+		Number of traps: 123 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 6 
+		Time executing process code: (0, 1139) => 0.00 % 
+		Time running: (0, 2124) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		munmap: 	 2 	 (0, 12)
+		mprotect: 	 1 	 (0, 5)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 6)
+		open: 		 3 	 (0, 24)
+		old_mmap: 	 6 	 (0, 18)
+		brk: 		 4 	 (0, 4)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 225)
+		stat64: 	 4 	 (0, 28)
+		close: 		 5 	 (0, 10)
+		dup2: 		 1 	 (0, 1)
+		setpgid: 	 1 	 (0, 11)
+		rt_sigaction: 	 13 	 (0, 11)
+		rt_sigprocmask:  5 	 (0, 2)
+		getpid: 	 1 	 (0, 1)
+	Process (2969, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 115 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1031) => 0.00 % 
+		Time running: (0, 1964) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		gettimeofday: 	 1 	 (0, 2)
+		munmap: 	 2 	 (0, 12)
+		mprotect: 	 1 	 (0, 5)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 6)
+		open: 		 3 	 (0, 25)
+		old_mmap: 	 6 	 (0, 21)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 238)
+		close: 		 4 	 (0, 5)
+		dup2: 		 1 	 (0, 2)
+		setpgid: 	 1 	 (0, 11)
+		rt_sigaction: 	 13 	 (0, 9)
+		rt_sigprocmask:  5 	 (0, 5)
+		getpid: 	 1 	 (0, 1)
+	Process (2968, 2967): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6710) => 0.01 % 
+		Time running: (0, 9152) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 19)
+		select: 	 5 	 (0, 25)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 271)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 66)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 16)
+		read: 		 67 	 (0, 12104)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 117)
+		old_mmap: 	 18 	 (0, 63)
+		brk: 		 10 	 (0, 27)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 257)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 39)
+	Process (2967, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7680) => 0.01 % 
+		Time running: (0, 11032) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 103966)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 106)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 20)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 90)
+		old_mmap: 	 16 	 (0, 57)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 245)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 747)
+		rt_sigprocmask:  508 	 (0, 284)
+		getpid: 	 1 	 (0, 1)
+	Process (2966, 2965): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30908 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6807) => 0.01 % 
+		Time running: (0, 9264) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 19)
+		select: 	 6 	 (0, 12295)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 274)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 64)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 23)
+		mprotect: 	 6 	 (0, 19)
+		read: 		 68 	 (0, 12038)
+		fstat64: 	 8 	 (0, 9)
+		open: 		 12 	 (0, 119)
+		old_mmap: 	 18 	 (0, 61)
+		brk: 		 10 	 (0, 27)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 247)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 43)
+	Process (2965, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7657) => 0.01 % 
+		Time running: (0, 10951) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 119861)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 106)
+		pipe: 		 1 	 (0, 22)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 0)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 34)
+		mprotect: 	 7 	 (0, 24)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 22)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 57)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 221)
+		ioctl: 		 2 	 (0, 23)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 725)
+		rt_sigprocmask:  508 	 (0, 295)
+		getpid: 	 1 	 (0, 1)
+	Process (2964, 2963): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6717) => 0.01 % 
+		Time running: (0, 9196) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 21)
+		select: 	 5 	 (0, 22)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 272)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 65)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 67 	 (0, 11918)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 147)
+		old_mmap: 	 18 	 (0, 62)
+		brk: 		 10 	 (0, 24)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 262)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 44)
+	Process (2963, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7675) => 0.01 % 
+		Time running: (0, 10961) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 91941)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 106)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 21)
+		read: 		 7 	 (0, 58)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 91)
+		old_mmap: 	 16 	 (0, 53)
+		brk: 		 8 	 (0, 13)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 208)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 730)
+		rt_sigprocmask:  508 	 (0, 302)
+		getpid: 	 1 	 (0, 1)
+	Process (2962, 2961): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30884 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6763) => 0.01 % 
+		Time running: (0, 9251) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 22)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 281)
+		select: 	 6 	 (0, 27544)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 61)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 68 	 (0, 11894)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 121)
+		old_mmap: 	 18 	 (0, 64)
+		brk: 		 10 	 (0, 28)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 238)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 42)
+	Process (2961, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7617) => 0.01 % 
+		Time running: (0, 10964) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 125193)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 106)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 24)
+		read: 		 7 	 (0, 58)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 9 	 (0, 91)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 216)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 722)
+		rt_sigprocmask:  508 	 (0, 346)
+		getpid: 	 1 	 (0, 1)
+	Process (2960, 2959): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30908 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6885) => 0.01 % 
+		Time running: (0, 9389) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 22)
+		stat64: 	 1 	 (0, 9)
+		select: 	 6 	 (0, 63303)
+		write: 		 50 	 (0, 278)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 66)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 24)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 68 	 (0, 24318)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 119)
+		old_mmap: 	 18 	 (0, 63)
+		brk: 		 10 	 (0, 27)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 268)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 42)
+	Process (2959, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7800) => 0.01 % 
+		Time running: (0, 11163) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 85902)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 103)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 24)
+		read: 		 7 	 (0, 61)
+		close: 		 9 	 (0, 17)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 60)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 234)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 760)
+		rt_sigprocmask:  508 	 (0, 292)
+		getpid: 	 1 	 (0, 1)
+	Process (2958, 2957): gnuplot_x11: 
+		Number of system calls: 201 
+		Number of traps: 235 
+		Quantity of data read from files: 30652 
+		Quantity of data written to files: 9658 
+		Time executing process code: (0, 6413) => 0.01 % 
+		Time running: (0, 8838) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		select: 	 6 	 (0, 30462)
+		stat64: 	 1 	 (0, 8)
+		write: 		 46 	 (0, 242)
+		writev: 	 4 	 (0, 31)
+		access: 	 1 	 (0, 17)
+		fcntl64: 	 3 	 (0, 7)
+		socketcall: 	 3 	 (0, 64)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 25)
+		mprotect: 	 6 	 (0, 19)
+		read: 		 60 	 (0, 16474)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 12 	 (0, 122)
+		old_mmap: 	 18 	 (0, 71)
+		brk: 		 10 	 (0, 21)
+		newuname: 	 6 	 (0, 14)
+		execve: 	 1 	 (0, 267)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 48)
+	Process (2957, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7705) => 0.01 % 
+		Time running: (0, 11053) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 135013)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 105)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 0)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 37)
+		mprotect: 	 7 	 (0, 21)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 9 	 (0, 87)
+		old_mmap: 	 16 	 (0, 56)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 215)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 747)
+		rt_sigprocmask:  508 	 (0, 286)
+		getpid: 	 1 	 (0, 0)
+	Process (2956, 2955): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6694) => 0.01 % 
+		Time running: (0, 9145) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 21)
+		select: 	 5 	 (0, 24)
+		stat64: 	 1 	 (0, 8)
+		write: 		 50 	 (0, 268)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 62)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 67 	 (0, 15377)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 119)
+		old_mmap: 	 18 	 (0, 62)
+		brk: 		 10 	 (0, 25)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 261)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 39)
+	Process (2955, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7655) => 0.01 % 
+		Time running: (0, 10959) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 61918)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 105)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 23)
+		read: 		 7 	 (0, 58)
+		close: 		 9 	 (0, 16)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 9 	 (0, 88)
+		old_mmap: 	 16 	 (0, 59)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 222)
+		ioctl: 		 2 	 (0, 23)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 707)
+		rt_sigprocmask:  508 	 (0, 328)
+		getpid: 	 1 	 (0, 0)
+	Process (2954, 2953): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 41116 
+		Quantity of data written to files: 9678 
+		Time executing process code: (0, 6729) => 0.01 % 
+		Time running: (0, 9189) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 18)
+		select: 	 6 	 (0, 3265)
+		stat64: 	 1 	 (0, 8)
+		write: 		 50 	 (0, 276)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 62)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 15)
+		read: 		 68 	 (0, 10580)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 12 	 (0, 114)
+		old_mmap: 	 18 	 (0, 56)
+		brk: 		 10 	 (0, 19)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 258)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 45)
+	Process (2953, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7634) => 0.01 % 
+		Time running: (0, 10959) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 60)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 101)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 59)
+		mprotect: 	 7 	 (0, 20)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 21)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 86)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 219)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 747)
+		rt_sigprocmask:  508 	 (0, 300)
+		getpid: 	 1 	 (0, 1)
+	Process (2952, 2951): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 41116 
+		Quantity of data written to files: 9678 
+		Time executing process code: (0, 6802) => 0.01 % 
+		Time running: (0, 9348) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 21)
+		select: 	 6 	 (0, 9878)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 283)
+		writev: 	 4 	 (0, 28)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 65)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 24)
+		mprotect: 	 6 	 (0, 20)
+		read: 		 68 	 (0, 136044)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 117)
+		old_mmap: 	 18 	 (0, 64)
+		brk: 		 10 	 (0, 25)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 270)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 41)
+	Process (2951, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7700) => 0.01 % 
+		Time running: (0, 11058) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 143270)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 0)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 20)
+		read: 		 7 	 (0, 57)
+		close: 		 9 	 (0, 17)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 9 	 (0, 85)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 214)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 725)
+		rt_sigprocmask:  508 	 (0, 310)
+		getpid: 	 1 	 (0, 1)
+	Process (2950, 2949): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6797) => 0.01 % 
+		Time running: (0, 9235) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 21)
+		select: 	 5 	 (0, 26)
+		stat64: 	 1 	 (0, 8)
+		write: 		 50 	 (0, 262)
+		writev: 	 4 	 (0, 34)
+		access: 	 1 	 (0, 13)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 71)
+		rt_sigaction: 	 2 	 (0, 3)
+		munmap: 	 2 	 (0, 25)
+		mprotect: 	 6 	 (0, 19)
+		read: 		 67 	 (0, 22037)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 12 	 (0, 122)
+		old_mmap: 	 18 	 (0, 70)
+		brk: 		 10 	 (0, 27)
+		newuname: 	 6 	 (0, 13)
+		execve: 	 1 	 (0, 245)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 41)
+	Process (2949, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7749) => 0.01 % 
+		Time running: (0, 10996) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 6812)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 107)
+		pipe: 		 1 	 (0, 23)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 0)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 21)
+		read: 		 7 	 (0, 62)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 90)
+		old_mmap: 	 16 	 (0, 62)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 229)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 743)
+		rt_sigprocmask:  508 	 (0, 297)
+		getpid: 	 1 	 (0, 1)
+	Process (2948, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 457657) => 4.55 % 
+		Time running: (5, 634160) => 4.70 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 19957)
+		access: 	 6 	 (0, 50)
+		fcntl64: 	 6 	 (0, 6)
+		socketcall: 	 6 	 (0, 111)
+		write: 		 1903 	 (0, 23245)
+		llseek: 	 7615 	 (0, 13996)
+		stat64: 	 2 	 (0, 25)
+		times: 		 1 	 (0, 2)
+		sysctl: 	 1 	 (0, 6)
+		setrlimit: 	 1 	 (0, 2)
+		getrlimit: 	 1 	 (0, 1)
+		munmap: 	 65 	 (0, 498)
+		mprotect: 	 14 	 (0, 38)
+		read: 		 10159 	 (0, 71626)
+		close: 		 80 	 (0, 282)
+		fstat64: 	 136 	 (0, 172)
+		open: 		 496 	 (0, 2869)
+		old_mmap: 	 99 	 (0, 340)
+		brk: 		 397 	 (0, 3637)
+		newuname: 	 10 	 (0, 16)
+		execve: 	 1 	 (0, 237)
+		ioctl: 		 2 	 (0, 17)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 10 	 (0, 13)
+		rt_sigprocmask:  4 	 (0, 3)
+		getpid: 	 2 	 (0, 2)
+	Process (2947, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 456386) => 4.55 % 
+		Time running: (5, 635810) => 4.70 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 20419)
+		access: 	 6 	 (0, 56)
+		fcntl64: 	 6 	 (0, 6)
+		socketcall: 	 6 	 (0, 110)
+		write: 		 1903 	 (0, 23570)
+		llseek: 	 7615 	 (0, 14168)
+		stat64: 	 2 	 (0, 27)
+		times: 		 1 	 (0, 1)
+		sysctl: 	 1 	 (0, 7)
+		setrlimit: 	 1 	 (0, 1)
+		getrlimit: 	 1 	 (0, 2)
+		munmap: 	 65 	 (0, 510)
+		mprotect: 	 14 	 (0, 39)
+		read: 		 10159 	 (0, 71289)
+		close: 		 80 	 (0, 282)
+		fstat64: 	 136 	 (0, 174)
+		open: 		 496 	 (0, 2966)
+		old_mmap: 	 99 	 (0, 361)
+		brk: 		 397 	 (0, 3621)
+		newuname: 	 10 	 (0, 16)
+		execve: 	 1 	 (0, 219)
+		ioctl: 		 2 	 (0, 16)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 10 	 (0, 9)
+		rt_sigprocmask:  4 	 (0, 4)
+		getpid: 	 2 	 (0, 2)
+	Process (2946, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 114 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1058) => 0.00 % 
+		Time running: (0, 2044) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		gettimeofday: 	 1 	 (0, 1)
+		munmap: 	 2 	 (0, 12)
+		mprotect: 	 1 	 (0, 5)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 6)
+		open: 		 3 	 (0, 25)
+		old_mmap: 	 6 	 (0, 23)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 2)
+		execve: 	 1 	 (0, 276)
+		close: 		 4 	 (0, 6)
+		dup2: 		 1 	 (0, 4)
+		setpgid: 	 1 	 (0, 12)
+		rt_sigaction: 	 13 	 (0, 14)
+		rt_sigprocmask:  5 	 (0, 6)
+		getpid: 	 1 	 (0, 1)
+	Process (2945, 627): expr: 
+		Number of system calls: 54 
+		Number of traps: 123 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 6 
+		Time executing process code: (0, 1136) => 0.00 % 
+		Time running: (0, 2141) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 10)
+		munmap: 	 2 	 (0, 15)
+		mprotect: 	 1 	 (0, 6)
+		read: 		 1 	 (0, 6)
+		fstat64: 	 3 	 (0, 5)
+		open: 		 3 	 (0, 25)
+		old_mmap: 	 6 	 (0, 24)
+		brk: 		 4 	 (0, 3)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 231)
+		stat64: 	 4 	 (0, 25)
+		close: 		 5 	 (0, 10)
+		dup2: 		 1 	 (0, 1)
+		setpgid: 	 1 	 (0, 11)
+		rt_sigaction: 	 13 	 (0, 12)
+		rt_sigprocmask:  5 	 (0, 4)
+		getpid: 	 1 	 (0, 0)
+	Process (2944, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 115 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1034) => 0.00 % 
+		Time running: (0, 1983) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		gettimeofday: 	 1 	 (0, 2)
+		munmap: 	 2 	 (0, 15)
+		mprotect: 	 1 	 (0, 6)
+		read: 		 1 	 (0, 7)
+		fstat64: 	 3 	 (0, 5)
+		open: 		 3 	 (0, 25)
+		old_mmap: 	 6 	 (0, 24)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 239)
+		close: 		 4 	 (0, 6)
+		dup2: 		 1 	 (0, 2)
+		setpgid: 	 1 	 (0, 11)
+		rt_sigaction: 	 13 	 (0, 10)
+		rt_sigprocmask:  5 	 (0, 3)
+		getpid: 	 1 	 (0, 1)
+	Process (2943, 2942): gnuplot_x11: 
+		Number of system calls: 201 
+		Number of traps: 235 
+		Quantity of data read from files: 30652 
+		Quantity of data written to files: 9658 
+		Time executing process code: (0, 6231) => 0.01 % 
+		Time running: (0, 8557) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		select: 	 6 	 (0, 59483)
+		stat64: 	 1 	 (0, 10)
+		write: 		 46 	 (0, 228)
+		writev: 	 4 	 (0, 31)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 64)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 60 	 (0, 11996)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 114)
+		old_mmap: 	 18 	 (0, 65)
+		brk: 		 10 	 (0, 22)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 254)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 48)
+	Process (2942, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7763) => 0.01 % 
+		Time running: (0, 11114) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 54742)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 105)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 34)
+		mprotect: 	 7 	 (0, 21)
+		read: 		 7 	 (0, 62)
+		close: 		 9 	 (0, 17)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 9 	 (0, 90)
+		old_mmap: 	 16 	 (0, 59)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 7)
+		execve: 	 1 	 (0, 230)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 734)
+		rt_sigprocmask:  508 	 (0, 299)
+		getpid: 	 1 	 (0, 1)
+	Process (2941, 2940): gnuplot_x11: 
+		Number of system calls: 229 
+		Number of traps: 237 
+		Quantity of data read from files: 51364 
+		Quantity of data written to files: 9682 
+		Time executing process code: (0, 6831) => 0.01 % 
+		Time running: (0, 9360) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 21)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 284)
+		select: 	 8 	 (0, 24923)
+		writev: 	 4 	 (0, 28)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 63)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 70 	 (0, 23505)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 127)
+		old_mmap: 	 18 	 (0, 63)
+		brk: 		 10 	 (0, 31)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 239)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 42)
+	Process (2940, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7774) => 0.01 % 
+		Time running: (0, 11241) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 104566)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 105)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 74)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 63)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 87)
+		old_mmap: 	 16 	 (0, 57)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 239)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 747)
+		rt_sigprocmask:  508 	 (0, 334)
+		getpid: 	 1 	 (0, 1)
+	Process (2939, 2938): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30884 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6789) => 0.01 % 
+		Time running: (0, 9361) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 17)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 277)
+		select: 	 6 	 (0, 75961)
+		writev: 	 4 	 (0, 26)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 6)
+		socketcall: 	 3 	 (0, 61)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 26)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 68 	 (0, 12035)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 12 	 (0, 122)
+		old_mmap: 	 18 	 (0, 66)
+		brk: 		 10 	 (0, 30)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 274)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 40)
+	Process (2938, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7667) => 0.01 % 
+		Time running: (0, 11056) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 88048)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 107)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 63)
+		close: 		 9 	 (0, 22)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 9 	 (0, 91)
+		old_mmap: 	 16 	 (0, 59)
+		brk: 		 8 	 (0, 14)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 232)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 758)
+		rt_sigprocmask:  508 	 (0, 312)
+		getpid: 	 1 	 (0, 1)
+	Process (2937, 2936): gnuplot_x11: 
+		Number of system calls: 209 
+		Number of traps: 237 
+		Quantity of data read from files: 40988 
+		Quantity of data written to files: 9666 
+		Time executing process code: (0, 6441) => 0.01 % 
+		Time running: (0, 8835) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 2 	 (0, 4)
+		select: 	 7 	 (0, 51875)
+		stat64: 	 1 	 (0, 10)
+		write: 		 47 	 (0, 246)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 87)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 23)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 64 	 (0, 10671)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 113)
+		old_mmap: 	 18 	 (0, 57)
+		brk: 		 10 	 (0, 21)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 249)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 48)
+	Process (2936, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7617) => 0.01 % 
+		Time running: (0, 10998) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 60)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 102)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 33)
+		mprotect: 	 7 	 (0, 20)
+		read: 		 7 	 (0, 60)
+		close: 		 9 	 (0, 17)
+		fstat64: 	 8 	 (0, 16)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 235)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 763)
+		rt_sigprocmask:  508 	 (0, 302)
+		getpid: 	 1 	 (0, 1)
+	Process (2935, 2934): gnuplot_x11: 
+		Number of system calls: 227 
+		Number of traps: 237 
+		Quantity of data read from files: 41124 
+		Quantity of data written to files: 9678 
+		Time executing process code: (0, 6856) => 0.01 % 
+		Time running: (0, 9342) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 18)
+		stat64: 	 1 	 (0, 10)
+		write: 		 50 	 (0, 277)
+		select: 	 7 	 (0, 24806)
+		writev: 	 4 	 (0, 27)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 60)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 69 	 (0, 1586)
+		fstat64: 	 8 	 (0, 12)
+		open: 		 12 	 (0, 119)
+		old_mmap: 	 18 	 (0, 61)
+		brk: 		 10 	 (0, 34)
+		newuname: 	 6 	 (0, 12)
+		execve: 	 1 	 (0, 225)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 41)
+	Process (2934, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7983) => 0.01 % 
+		Time running: (0, 11377) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 29895)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 61)
+		close: 		 9 	 (0, 21)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 87)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 225)
+		ioctl: 		 2 	 (0, 23)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 768)
+		rt_sigprocmask:  508 	 (0, 278)
+		getpid: 	 1 	 (0, 1)
+	Process (2933, 2932): gnuplot_x11: 
+		Number of system calls: 227 
+		Number of traps: 237 
+		Quantity of data read from files: 41124 
+		Quantity of data written to files: 9678 
+		Time executing process code: (0, 6977) => 0.01 % 
+		Time running: (0, 9576) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 22)
+		stat64: 	 1 	 (0, 11)
+		write: 		 50 	 (0, 299)
+		select: 	 7 	 (0, 25451)
+		writev: 	 4 	 (0, 28)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 5)
+		socketcall: 	 3 	 (0, 61)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 21)
+		mprotect: 	 6 	 (0, 19)
+		read: 		 69 	 (0, 59276)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 12 	 (0, 130)
+		old_mmap: 	 18 	 (0, 66)
+		brk: 		 10 	 (0, 31)
+		newuname: 	 6 	 (0, 13)
+		execve: 	 1 	 (0, 269)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 39)
+	Process (2932, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7723) => 0.01 % 
+		Time running: (0, 11094) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 83643)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 35)
+		mprotect: 	 7 	 (0, 20)
+		read: 		 7 	 (0, 58)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 90)
+		old_mmap: 	 16 	 (0, 58)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 7)
+		execve: 	 1 	 (0, 227)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 741)
+		rt_sigprocmask:  508 	 (0, 313)
+		getpid: 	 1 	 (0, 1)
+	Process (2931, 2930): gnuplot_x11: 
+		Number of system calls: 215 
+		Number of traps: 237 
+		Quantity of data read from files: 41052 
+		Quantity of data written to files: 9666 
+		Time executing process code: (0, 6483) => 0.01 % 
+		Time running: (0, 8825) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 6 	 (0, 10)
+		select: 	 7 	 (0, 26989)
+		stat64: 	 1 	 (0, 10)
+		write: 		 47 	 (0, 237)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 66)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 22)
+		mprotect: 	 6 	 (0, 18)
+		read: 		 66 	 (0, 14282)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 113)
+		old_mmap: 	 18 	 (0, 64)
+		brk: 		 10 	 (0, 20)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 266)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 44)
+	Process (2930, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 273 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7681) => 0.01 % 
+		Time running: (0, 10998) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 56)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 106)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 1)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 17)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 92)
+		old_mmap: 	 16 	 (0, 61)
+		brk: 		 8 	 (0, 16)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 232)
+		ioctl: 		 2 	 (0, 21)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 749)
+		rt_sigprocmask:  508 	 (0, 305)
+		getpid: 	 1 	 (0, 1)
+	Process (2929, 2928): gnuplot_x11: 
+		Number of system calls: 225 
+		Number of traps: 237 
+		Quantity of data read from files: 30908 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6810) => 0.01 % 
+		Time running: (0, 9293) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 20)
+		select: 	 6 	 (0, 4911)
+		stat64: 	 1 	 (0, 11)
+		write: 		 50 	 (0, 291)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 9)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 67)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 24)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 68 	 (0, 11326)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 116)
+		old_mmap: 	 18 	 (0, 60)
+		brk: 		 10 	 (0, 26)
+		newuname: 	 6 	 (0, 10)
+		execve: 	 1 	 (0, 248)
+		dup2: 		 1 	 (0, 2)
+		close: 		 10 	 (0, 44)
+	Process (2928, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7701) => 0.01 % 
+		Time running: (0, 10959) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 2053)
+		llseek: 	 1 	 (0, 3)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 104)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 0)
+		munmap: 	 3 	 (0, 34)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 59)
+		close: 		 9 	 (0, 20)
+		fstat64: 	 8 	 (0, 11)
+		open: 		 9 	 (0, 89)
+		old_mmap: 	 16 	 (0, 59)
+		brk: 		 8 	 (0, 15)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 227)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 759)
+		rt_sigprocmask:  508 	 (0, 300)
+		getpid: 	 1 	 (0, 1)
+	Process (2927, 2926): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6768) => 0.01 % 
+		Time running: (0, 9279) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 19)
+		select: 	 5 	 (0, 24)
+		stat64: 	 1 	 (0, 11)
+		write: 		 50 	 (0, 275)
+		writev: 	 4 	 (0, 29)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 4)
+		socketcall: 	 3 	 (0, 65)
+		rt_sigaction: 	 2 	 (0, 5)
+		munmap: 	 2 	 (0, 26)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 67 	 (0, 142784)
+		fstat64: 	 8 	 (0, 14)
+		open: 		 12 	 (0, 124)
+		old_mmap: 	 18 	 (0, 67)
+		brk: 		 10 	 (0, 26)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 262)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 43)
+	Process (2926, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7664) => 0.01 % 
+		Time running: (0, 11049) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 143646)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 3)
+		fork: 		 1 	 (0, 107)
+		pipe: 		 1 	 (0, 21)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 1)
+		geteuid: 	 1 	 (0, 0)
+		munmap: 	 3 	 (0, 33)
+		mprotect: 	 7 	 (0, 22)
+		read: 		 7 	 (0, 62)
+		close: 		 9 	 (0, 17)
+		fstat64: 	 8 	 (0, 42)
+		open: 		 9 	 (0, 92)
+		old_mmap: 	 16 	 (0, 63)
+		brk: 		 8 	 (0, 18)
+		newuname: 	 2 	 (0, 5)
+		execve: 	 1 	 (0, 236)
+		ioctl: 		 2 	 (0, 22)
+		setpgid: 	 1 	 (0, 0)
+		rt_sigaction: 	 1017 	 (0, 752)
+		rt_sigprocmask:  508 	 (0, 297)
+		getpid: 	 1 	 (0, 1)
+	Process (2925, 2924): gnuplot_x11: 
+		Number of system calls: 223 
+		Number of traps: 237 
+		Quantity of data read from files: 30876 
+		Quantity of data written to files: 9674 
+		Time executing process code: (0, 6696) => 0.01 % 
+		Time running: (0, 9147) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		ioctl: 		 12 	 (0, 22)
+		select: 	 5 	 (0, 22)
+		stat64: 	 1 	 (0, 9)
+		write: 		 50 	 (0, 264)
+		writev: 	 4 	 (0, 30)
+		access: 	 1 	 (0, 10)
+		fcntl64: 	 3 	 (0, 3)
+		socketcall: 	 3 	 (0, 65)
+		rt_sigaction: 	 2 	 (0, 4)
+		munmap: 	 2 	 (0, 23)
+		mprotect: 	 6 	 (0, 17)
+		read: 		 67 	 (0, 22233)
+		fstat64: 	 8 	 (0, 10)
+		open: 		 12 	 (0, 126)
+		old_mmap: 	 18 	 (0, 65)
+		brk: 		 10 	 (0, 27)
+		newuname: 	 6 	 (0, 11)
+		execve: 	 1 	 (0, 273)
+		dup2: 		 1 	 (0, 3)
+		close: 		 10 	 (0, 38)
+	Process (2924, 627): gnuplot: 
+		Number of system calls: 1612 
+		Number of traps: 274 
+		Quantity of data read from files: 13312 
+		Quantity of data written to files: 9177 
+		Time executing process code: (0, 7797) => 0.01 % 
+		Time running: (0, 11161) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 5 	 (0, 10103)
+		llseek: 	 1 	 (0, 2)
+		fcntl64: 	 1 	 (0, 2)
+		fork: 		 1 	 (0, 105)
+		pipe: 		 1 	 (0, 20)
+		setuid: 	 1 	 (0, 2)
+		getuid: 	 1 	 (0, 0)
+		geteuid: 	 1 	 (0, 1)
+		munmap: 	 3 	 (0, 36)
+		mprotect: 	 7 	 (0, 24)
+		read: 		 7 	 (0, 62)
+		close: 		 9 	 (0, 19)
+		fstat64: 	 8 	 (0, 13)
+		open: 		 9 	 (0, 90)
+		old_mmap: 	 16 	 (0, 63)
+		brk: 		 8 	 (0, 13)
+		newuname: 	 2 	 (0, 6)
+		execve: 	 1 	 (0, 240)
+		ioctl: 		 2 	 (0, 20)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 1017 	 (0, 744)
+		rt_sigprocmask:  508 	 (0, 296)
+		getpid: 	 1 	 (0, 1)
+	Process (2923, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 439174) => 4.53 % 
+		Time running: (5, 617980) => 4.68 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 21048)
+		access: 	 6 	 (0, 51)
+		fcntl64: 	 6 	 (0, 8)
+		socketcall: 	 6 	 (0, 111)
+		write: 		 1903 	 (0, 24074)
+		llseek: 	 7615 	 (0, 14120)
+		stat64: 	 2 	 (0, 28)
+		times: 		 1 	 (0, 2)
+		sysctl: 	 1 	 (0, 6)
+		setrlimit: 	 1 	 (0, 1)
+		getrlimit: 	 1 	 (0, 1)
+		munmap: 	 65 	 (0, 505)
+		mprotect: 	 14 	 (0, 41)
+		read: 		 10159 	 (0, 71739)
+		close: 		 80 	 (0, 282)
+		fstat64: 	 136 	 (0, 182)
+		open: 		 496 	 (0, 3003)
+		old_mmap: 	 99 	 (0, 384)
+		brk: 		 397 	 (0, 3620)
+		newuname: 	 10 	 (0, 16)
+		execve: 	 1 	 (0, 257)
+		ioctl: 		 2 	 (0, 16)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 10 	 (0, 11)
+		rt_sigprocmask:  4 	 (0, 3)
+		getpid: 	 2 	 (0, 1)
+	Process (2922, 627): gs-gnu: 
+		Number of system calls: 22598 
+		Number of traps: 2501 
+		Quantity of data read from files: 39575101 
+		Quantity of data written to files: 3366983 
+		Time executing process code: (5, 455072) => 4.55 % 
+		Time running: (5, 631611) => 4.69 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1579 	 (0, 19632)
+		access: 	 6 	 (0, 51)
+		fcntl64: 	 6 	 (0, 7)
+		socketcall: 	 6 	 (0, 112)
+		write: 		 1903 	 (0, 22468)
+		llseek: 	 7615 	 (0, 14041)
+		stat64: 	 2 	 (0, 40)
+		times: 		 1 	 (0, 2)
+		sysctl: 	 1 	 (0, 6)
+		setrlimit: 	 1 	 (0, 1)
+		getrlimit: 	 1 	 (0, 1)
+		munmap: 	 65 	 (0, 505)
+		mprotect: 	 14 	 (0, 37)
+		read: 		 10159 	 (0, 71182)
+		close: 		 80 	 (0, 275)
+		fstat64: 	 136 	 (0, 180)
+		open: 		 496 	 (0, 2966)
+		old_mmap: 	 99 	 (0, 394)
+		brk: 		 397 	 (0, 3654)
+		newuname: 	 10 	 (0, 16)
+		execve: 	 1 	 (0, 227)
+		ioctl: 		 2 	 (0, 16)
+		setpgid: 	 1 	 (0, 1)
+		rt_sigaction: 	 10 	 (0, 11)
+		rt_sigprocmask:  4 	 (0, 4)
+		getpid: 	 2 	 (0, 1)
+	Process (2921, 627): getTime: 
+		Number of system calls: 47 
+		Number of traps: 115 
+		Quantity of data read from files: 1024 
+		Quantity of data written to files: 14 
+		Time executing process code: (0, 1067) => 0.00 % 
+		Time running: (0, 2051) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		write: 		 1 	 (0, 9)
+		gettimeofday: 	 1 	 (0, 2)
+		munmap: 	 2 	 (0, 11)
+		mprotect: 	 1 	 (0, 5)
+		read: 		 1 	 (0, 8)
+		fstat64: 	 3 	 (0, 6)
+		open: 		 3 	 (0, 23)
+		old_mmap: 	 6 	 (0, 21)
+		brk: 		 1 	 (0, 1)
+		newuname: 	 1 	 (0, 3)
+		execve: 	 1 	 (0, 273)
+		close: 		 4 	 (0, 5)
+		dup2: 		 1 	 (0, 3)
+		setpgid: 	 1 	 (0, 13)
+		rt_sigaction: 	 13 	 (0, 13)
+		rt_sigprocmask:  5 	 (0, 6)
+		getpid: 	 1 	 (0, 1)
+	Process (2920, 1): tracedaemon: 
+		Number of system calls: 345 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 86000000 
+		Time executing process code: (0, 2240) => 0.00 % 
+		Time running: (0, 553237) => 0.46 % 
+		Time waiting for I/O: (0, 11970) => 0.01 % 
+		System call usage: 
+		pause: 		 86 	 (110, 303110)
+		sigreturn: 	 86 	 (0, 233)
+		ioctl: 		 86 	 (0, 526)
+		write: 		 86 	 (0, 561114)
+	Process (2716, 619): bash: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (627, 621): bash: 
+		Number of system calls: 2401 
+		Number of traps: 1373 
+		Quantity of data read from files: 5885 
+		Quantity of data written to files: 1330 
+		Time executing process code: (0, 18769) => 0.02 % 
+		Time running: (0, 49406) => 0.04 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		kill: 		 1 	 (0, 17)
+		stat64: 	 2 	 (0, 17)
+		dup2: 		 10 	 (0, 15)
+		getdents64: 	 20 	 (0, 121)
+		fcntl64: 	 35 	 (0, 58)
+		fstat64: 	 10 	 (0, 16)
+		open: 		 15 	 (0, 239)
+		wait4: 		 150 	 (72, 556964)
+		close: 		 50 	 (0, 216)
+		setpgid: 	 75 	 (0, 272)
+		fork: 		 75 	 (0, 9752)
+		pipe: 		 15 	 (0, 304)
+		read: 		 170 	 (17, 700361)
+		write: 		 66 	 (0, 482)
+		ioctl: 		 291 	 (0, 6291)
+		time: 		 8 	 (0, 5)
+		rt_sigprocmask:  1171 	 (0, 946)
+		sigreturn: 	 76 	 (0, 137)
+		rt_sigaction: 	 161 	 (0, 168)
+	Process (621, 619): bash: 
+		Number of system calls: 97 
+		Number of traps: 3 
+		Quantity of data read from files: 3 
+		Quantity of data written to files: 203 
+		Time executing process code: (0, 562) => 0.00 % 
+		Time running: (0, 873) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		stat64: 	 1 	 (0, 14)
+		time: 		 2 	 (0, 1)
+		sigreturn: 	 1 	 (0, 2)
+		wait4: 		 2 	 (90, 305040)
+		kill: 		 1 	 (0, 18)
+		rt_sigaction: 	 24 	 (0, 24)
+		ioctl: 		 13 	 (0, 1197)
+		read: 		 2 	 (0, 426115)
+		rt_sigprocmask:  42 	 (0, 38)
+		write: 		 8 	 (0, 55)
+	Process (620, 619): gnome-pty-helpe: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (619, 1): gnome-terminal: 
+		Number of system calls: 20989 
+		Number of traps: 0 
+		Quantity of data read from files: 3290304 
+		Quantity of data written to files: 2154194 
+		Time executing process code: (1, 611475) => 1.34 % 
+		Time running: (1, 818763) => 1.52 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 99 	 (0, 1942)
+		select: 	 13 	 (0, 83320)
+		write: 		 3063 	 (0, 35643)
+		poll: 		 3405 	 (115, 810968)
+		gettimeofday: 	 6811 	 (0, 6042)
+		ioctl: 		 3445 	 (0, 8163)
+		read: 		 4152 	 (0, 21946)
+	Process (617, 1): mixer_applet2: 
+		Number of system calls: 1193 
+		Number of traps: 0 
+		Quantity of data read from files: 96 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 18078) => 0.02 % 
+		Time running: (0, 30493) => 0.03 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		read: 		 3 	 (0, 22)
+		poll: 		 237 	 (119, 319666)
+		ioctl: 		 476 	 (0, 1786)
+		gettimeofday: 	 476 	 (0, 415)
+	Process (615, 613): nautilus: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (614, 613): nautilus: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (613, 611): nautilus: 
+		Number of system calls: 120 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 3006) => 0.00 % 
+		Time running: (0, 4023) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		poll: 		 59 	 (118, 587017)
+		getppid: 	 60 	 (0, 79)
+	Process (611, 1): nautilus: 
+		Number of system calls: 3934 
+		Number of traps: 0 
+		Quantity of data read from files: 31936 
+		Quantity of data written to files: 119064 
+		Time executing process code: (0, 146266) => 0.12 % 
+		Time running: (0, 177779) => 0.15 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		select: 	 9 	 (0, 27417)
+		write: 		 147 	 (0, 2105)
+		read: 		 545 	 (0, 2966)
+		poll: 		 606 	 (116, 315309)
+		ioctl: 		 1323 	 (0, 2457)
+		stat64: 	 89 	 (0, 1404)
+		gettimeofday: 	 1214 	 (0, 937)
+	Process (609, 1): gnome-panel: 
+		Number of system calls: 20250 
+		Number of traps: 53 
+		Quantity of data read from files: 267656 
+		Quantity of data written to files: 669950 
+		Time executing process code: (1, 800627) => 1.50 % 
+		Time running: (1, 935109) => 1.61 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		writev: 	 1 	 (0, 22)
+		brk: 		 17 	 (0, 123)
+		readv: 		 78 	 (0, 360)
+		select: 	 36 	 (0, 486025)
+		read: 		 7853 	 (0, 31474)
+		write: 		 4481 	 (0, 33018)
+		time: 		 119 	 (0, 104)
+		poll: 		 2005 	 (113, 218767)
+		ioctl: 		 1647 	 (0, 3816)
+		gettimeofday: 	 4012 	 (0, 3505)
+	Process (607, 1): bonobo-activati: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (604, 1): xscreensaver: 
+		Number of system calls: 15178 
+		Number of traps: 21 
+		Quantity of data read from files: 140724 
+		Quantity of data written to files: 5864 
+		Time executing process code: (0, 117301) => 0.10 % 
+		Time running: (0, 170689) => 0.14 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		munmap: 	 21 	 (0, 246)
+		close: 		 21 	 (0, 55)
+		llseek: 	 42 	 (0, 79)
+		old_mmap: 	 21 	 (0, 187)
+		fstat64: 	 21 	 (0, 48)
+		fcntl64: 	 21 	 (0, 47)
+		dup: 		 21 	 (0, 62)
+		write: 		 939 	 (0, 5071)
+		select: 	 4165 	 (118, 179466)
+		time: 		 95 	 (0, 79)
+		gettimeofday: 	 4707 	 (0, 3495)
+		read: 		 1896 	 (0, 10195)
+		ioctl: 		 3207 	 (0, 5517)
+	Process (591, 1): metacity: 
+		Number of system calls: 45418 
+		Number of traps: 0 
+		Quantity of data read from files: 837196 
+		Quantity of data written to files: 689098 
+		Time executing process code: (0, 775787) => 0.65 % 
+		Time running: (1, 29732) => 0.86 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		gettimeofday: 	 63 	 (0, 55)
+		writev: 	 1 	 (0, 28)
+		readv: 		 60 	 (0, 273)
+		select: 	 40 	 (0, 230937)
+		poll: 		 2118 	 (114, 466213)
+		write: 		 16239 	 (0, 79403)
+		read: 		 24478 	 (0, 94030)
+		ioctl: 		 2418 	 (0, 4420)
+	Process (589, 1): gnome-settings-: 
+		Number of system calls: 18 
+		Number of traps: 0 
+		Quantity of data read from files: 192 
+		Quantity of data written to files: 24 
+		Time executing process code: (0, 375) => 0.00 % 
+		Time running: (0, 557) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		poll: 		 2 	 (112, 361339)
+		write: 		 3 	 (0, 16)
+		read: 		 6 	 (0, 31)
+		ioctl: 		 6 	 (0, 12)
+	Process (587, 1): gnome-smproxy: 
+		Number of system calls: 17197 
+		Number of traps: 0 
+		Quantity of data read from files: 167280 
+		Quantity of data written to files: 14160 
+		Time executing process code: (0, 194025) => 0.16 % 
+		Time running: (0, 260338) => 0.22 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		readv: 		 60 	 (0, 276)
+		write: 		 660 	 (0, 2872)
+		gettimeofday: 	 1597 	 (0, 1285)
+		select: 	 6158 	 (118, 943289)
+		read: 		 3709 	 (0, 15157)
+		ioctl: 		 5012 	 (0, 7930)
+	Process (584, 1): gconfd-2: 
+		Number of system calls: 11 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 145) => 0.00 % 
+		Time running: (0, 263) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		poll: 		 1 	 (0, 159951)
+		time: 		 5 	 (0, 4)
+		gettimeofday: 	 4 	 (0, 1)
+	Process (581, 577): gnome-session: 
+		Number of system calls: 12 
+		Number of traps: 0 
+		Quantity of data read from files: 96 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 240) => 0.00 % 
+		Time running: (0, 425) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		poll: 		 2 	 (112, 361571)
+		read: 		 3 	 (0, 18)
+		ioctl: 		 6 	 (0, 13)
+	Process (578, 577): XFree86: 
+		Number of system calls: 253693 
+		Number of traps: 4284 
+		Quantity of data read from files: 509059136 
+		Quantity of data written to files: 35008 
+		Time executing process code: (7, 584706) => 6.32 % 
+		Time running: (11, 318284) => 9.43 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		getegid: 	 50 	 (0, 26)
+		geteuid: 	 50 	 (0, 43)
+		close: 		 70 	 (0, 1196)
+		fcntl64: 	 140 	 (0, 222)
+		socketcall: 	 140 	 (0, 1189)
+		munmap: 	 119 	 (0, 5821)
+		old_mmap: 	 119 	 (0, 1412)
+		rt_sigprocmask:  1650 	 (0, 1638)
+		setitimer: 	 6875 	 (0, 18961)
+		sigreturn: 	 4972 	 (0, 14278)
+		select: 	 73194 	 (111, 538333)
+		gettimeofday: 	 5945 	 (0, 4955)
+		writev: 	 35008 	 (0, 159348)
+		read: 		 125360 	 (0, 509895)
+	Process (577, 340): xinit: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (345, 1): getty: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (344, 1): getty: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (343, 1): getty: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (342, 1): getty: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (341, 1): getty: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (340, 1): bash: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (338, 1): miniserv.pl: 
+		Number of system calls: 72 
+		Number of traps: 0 
+		Quantity of data read from files: 24576 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 2005) => 0.00 % 
+		Time running: (0, 2494) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		select: 	 11 	 (109, 997962)
+		read: 		 24 	 (0, 168)
+		llseek: 	 12 	 (0, 42)
+		wait4: 		 12 	 (0, 30)
+		time: 		 12 	 (0, 8)
+	Process (337, 1): miniserv.pl: 
+		Number of system calls: 36 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 1475) => 0.00 % 
+		Time running: (0, 1731) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		select: 	 11 	 (109, 998630)
+		wait4: 		 12 	 (0, 32)
+		time: 		 12 	 (0, 11)
+	Process (331, 1): cron: 
+		Number of system calls: 22 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 124) => 0.00 % 
+		Time running: (0, 216) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		nanosleep: 	 1 	 (60, 9619)
+		rt_sigaction: 	 2 	 (0, 5)
+		rt_sigprocmask:  4 	 (0, 7)
+		stat64: 	 10 	 (0, 64)
+		time: 		 4 	 (0, 3)
+	Process (328, 1): atd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (326, 1): xfs: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (315, 1): sshd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (251, 1): rpc.mountd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (248, 1): nfsd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (247, 1): nfsd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (246, 1): nfsd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (245, 1): nfsd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (244, 1): nfsd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (243, 1): nfsd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (242, 1): nfsd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (241, 240): rpciod: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (240, 1): lockd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (239, 1): nfsd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (233, 1): cfd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (231, 1): cupsd: 
+		Number of system calls: 492 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 4215) => 0.00 % 
+		Time running: (0, 6606) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		select: 	 119 	 (118, 992494)
+		time: 		 372 	 (0, 253)
+	Process (228, 1): inetd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (213, 1): rpc.statd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (209, 1): named: 
+		Number of system calls: 6 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 38) => 0.00 % 
+		Time running: (0, 73) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		gettimeofday: 	 3 	 (0, 2)
+		rt_sigprocmask:  2 	 (0, 3)
+	Process (206, 1): klogd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (203, 1): syslogd: 
+		Number of system calls: 20 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 102) => 0.00 % 
+		Time running: (0, 211) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		select: 	 3 	 (89, 999467)
+		sigreturn: 	 4 	 (0, 5)
+		alarm: 		 4 	 (0, 12)
+		rt_sigaction: 	 4 	 (0, 11)
+		time: 		 4 	 (0, 3)
+	Process (125, 1): portmap: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (7, 1): khubd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (6, 0): kupdated: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 27491) => 0.02 % 
+		Time waiting for I/O: (0, 31924) => 0.03 % 
+		System call usage: 
+	Process (5, 0): bdflush: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (4, 0): kswapd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (3, 0): ksoftirqd_CPU0: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 0) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (2, 1): keventd: 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (0, 1290) => 0.00 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	Process (1, 0): init: 
+		Number of system calls: 515 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 2767) => 0.00 % 
+		Time running: (0, 6464) => 0.01 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+		sigreturn: 	 50 	 (0, 97)
+		wait4: 		 100 	 (0, 995)
+		select: 	 72 	 (118, 474784)
+		fstat64: 	 73 	 (0, 80)
+		stat64: 	 146 	 (0, 1260)
+		time: 		 73 	 (0, 68)
+	Process (0, -1): 
+		Number of system calls: 0 
+		Number of traps: 0 
+		Quantity of data read from files: 0 
+		Quantity of data written to files: 0 
+		Time executing process code: (0, 0) => 0.00 % 
+		Time running: (45, 210377) => 37.68 % 
+		Time waiting for I/O: (0, 0) => 0.00 % 
+		System call usage: 
+	System-wide:
+		Total process time: (67, 561725) => 56.31 % 
+		Total system time: (52, 425038) => 43.69 % 
+		System idle: (45, 210377) => 37.68 % 
+		System call usage: 
+		alarm: 		 4 	 (0, 12)
+		nanosleep: 	 1 	 (60, 9619)
+		setitimer: 	 6875 	 (0, 18961)
+		getegid: 	 50 	 (0, 26)
+		dup: 		 21 	 (0, 62)
+		readv: 		 198 	 (0, 909)
+		getppid: 	 60 	 (0, 79)
+		poll: 		 8435 	 (922, 600801)
+		time: 		 706 	 (0, 539)
+		wait4: 		 276 	 (162, 863061)
+		getdents64: 	 20 	 (0, 121)
+		kill: 		 2 	 (0, 35)
+		sigreturn: 	 5189 	 (0, 14752)
+		pause: 		 86 	 (110, 303110)
+		getrlimit: 	 10 	 (0, 13)
+		setrlimit: 	 10 	 (0, 11)
+		sysctl: 	 10 	 (0, 63)
+		times: 		 10 	 (0, 13)
+		ioctl: 		 18512 	 (0, 44175)
+		geteuid: 	 100 	 (0, 87)
+		getuid: 	 50 	 (0, 42)
+		setuid: 	 50 	 (0, 88)
+		pipe: 		 65 	 (0, 1361)
+		fork: 		 125 	 (0, 15057)
+		llseek: 	 76254 	 (0, 141737)
+		socketcall: 	 350 	 (0, 5517)
+		fcntl64: 	 456 	 (0, 714)
+		access: 	 110 	 (0, 1024)
+		writev: 	 51099 	 (0, 364190)
+		select: 	 84137 	 (898, 435436)
+		gettimeofday: 	 24842 	 (0, 20708)
+		getpid: 	 85 	 (0, 70)
+		rt_sigprocmask:  28384 	 (0, 18256)
+		rt_sigaction: 	 51436 	 (0, 37697)
+		setpgid: 	 150 	 (0, 498)
+		dup2: 		 75 	 (0, 180)
+		close: 		 1956 	 (0, 7503)
+		stat64: 	 338 	 (0, 3661)
+		execve: 	 125 	 (0, 30517)
+		newuname: 	 515 	 (0, 1063)
+		brk: 		 4917 	 (0, 38528)
+		old_mmap: 	 2920 	 (0, 11776)
+		open: 		 6070 	 (0, 40653)
+		fstat64: 	 2309 	 (0, 3163)
+		read: 		 273487 	 (20, 610407)
+		mprotect: 	 805 	 (0, 2445)
+		munmap: 	 1070 	 (0, 14273)
+		write: 		 47436 	 (4, 158743)
+
+####################################################################
+Event			Time			PID	Length	Description
+####################################################################
+Syscall exit           1,042,824,617,654,658 	N/A 	7 	
+Trap entry             1,042,824,617,654,663 	N/A 	13 	TRAP : page fault; EIP : 0x400E6448

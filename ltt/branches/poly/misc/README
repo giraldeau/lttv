@@ -1,0 +1,8 @@
+Revise all .h, see if complete. 2h
+Look at how plugins work with GTK windows, perhaps add hooks to that 2h
+Functions to manage the list of traces? 1h
+Revise all .h perhaps send for review.
+Implement the text part of it 4h
+Definitely send for review.
+Add the beginnings of graphical support (open traces, view events, view stats)?
+Later add really graphical views ?

@@ -1,0 +1,270 @@
+//TRACE_EV_START
+event(TRACE_EV_START, "This is to mark the trace's start",
+      field(magic_number,"Magic number to identify a trace", uint(4)),
+      field(arch_type, "Type of architecture", uint(4)),
+      field(arch_variant, "Variant of the given type of architecture", uint(4)),
+      field(system_type, "Operating system type", uint(4)),
+      field(major_version, "Major version of trace", uint(1)),
+      field(minor_version, "Minor version of trace", uint(1)),
+      field(buffer_size, "Size of buffers", uint(4)),
+      field(event_mask, "The event mask", uint(8)),
+      field(details_mask, "Are the event details logged", uint(8)),
+      field(log_cpuid, "Is the CPUID logged ", uint(1)),
+      field(use_tsc, "Are we using TSCs or time deltas?", uint(1))
+     );
+
+
+
+//TRACE_EV_SYSCALL_ENTRY
+event(TRACE_EV_SYSCALL_ENTRY, "Entry in a given system call",
+      field(syscall_id, "Syscall entry number in entry.S", uint(1)),
+      field(address, "Address from which call was made", uint(4))
+     );
+
+
+
+//TRACE_EV_SYSCALL_EXIT
+event(TRACE_EV_SYSCALL_EXIT, "Exit from a given system call"
+     );
+
+
+
+//TRACE_EV_TRAP_ENTRY : not for  __s390__
+event(TRACE_EV_TRAP_ENTRY, "Entry in a trap",
+      field(trap_id, "Trap number", uint(2)),
+      field(address, "Address where trap occured", uint(4))
+     );
+
+
+
+//TRACE_EV_TRAP_EXIT
+event(TRACE_EV_TRAP_EXIT, "Exit from a trap"
+     );
+
+
+
+//TRACE_EV_IRQ_ENTRY
+event(TRACE_EV_IRQ_ENTRY, "Entry in an irq",
+      field(irq_id, "IRQ number", uint(1)),
+      field(kernel, "Are we executing kernel code", uint(1))
+     );
+
+
+
+//TRACE_EV_IRQ_EXIT
+event(TRACE_EV_IRQ_EXIT, "Exit from an irq" 
+     );
+
+
+
+//TRACE_EV_SCHEDCHANGE
+event(TRACE_EV_SCHEDCHANGE, "Scheduling change", 
+      field(out, "Outgoing process", uint(4)),
+      field(in, "Incoming process", uint(4)),
+      field(out_state, "Outgoing process' state", uint(4))
+     );
+
+
+
+//TRACE_EV_KERNEL_TIMER
+event(TRACE_EV_KERNEL_TIMER, "The kernel timer routine has been called"     );
+
+
+
+//TRACE_EV_SOFT_IRQ
+event(TRACE_EV_SOFT_IRQ, "Hit key part of soft-irq management", 
+      field(event_sub_id,"Soft-irq event Id", 
+            enum(1,
+                  (
+                    TRACE_EV_SOFT_IRQ_BOTTOM_HALF = 1,
+                    TRACE_EV_SOFT_IRQ_SOFT_IRQ,
+		    TRACE_EV_SOFT_IRQ_TASKLET_ACTION,
+		    TRACE_EV_SOFT_IRQ_TASKLET_HI_ACTION
+                  )
+                )
+           ),
+      field(event_data, "Data associated with event", uint(4))
+     );
+
+
+
+//TRACE_EV_PROCESS
+event(TRACE_EV_PROCESS, "Hit key part of process management",
+      field(event_sub_id, "Process event ID",
+             enum(1,
+                   (
+                     TRACE_EV_PROCESS_KTHREAD = 1,
+		     TRACE_EV_PROCESS_FORK,
+		     TRACE_EV_PROCESS_EXIT,
+		     TRACE_EV_PROCESS_WAIT,
+		     TRACE_EV_PROCESS_SIGNAL,
+		     TRACE_EV_PROCESS_WAKEUP
+                   )
+                 )
+           ),
+      field(event_data1, "Data associated with event", uint(4)), 
+      field(event_data2, "Data associated with event", uint(4)) 
+     );
+
+
+
+//TRACE_EV_FILE_SYSTEM
+event(TRACE_EV_FILE_SYSTEM, "Hit key part of file system", 
+      field(event_sub_id,"File system event ID",
+	    enum(1,
+		 (
+		   TRACE_EV_FILE_SYSTEM_BUF_WAIT_START = 1,
+		   TRACE_EV_FILE_SYSTEM_BUF_WAIT_END,
+		   TRACE_EV_FILE_SYSTEM_EXEC,
+		   TRACE_EV_FILE_SYSTEM_OPEN,
+		   TRACE_EV_FILE_SYSTEM_CLOSE,
+		   TRACE_EV_FILE_SYSTEM_READ,
+		   TRACE_EV_FILE_SYSTEM_WRITE,
+		   TRACE_EV_FILE_SYSTEM_SEEK,
+		   TRACE_EV_FILE_SYSTEM_IOCTL,
+		   TRACE_EV_FILE_SYSTEM_SELECT,
+		   TRACE_EV_FILE_SYSTEM_POLL
+		 )
+                )
+           ),
+      field(event_data1, " Event data ", uint(4)),
+      field(event_data2, " Event data 2", uint(4)),
+      field(file_name, "Name of file operated on ", string()) 
+     );
+
+
+
+//TRACE_EV_TIMER
+event(TRACE_EV_TIMER, "Hit key part of timer management", 
+      field(event_sub_id, "Timer event ID",
+	    enum(1,
+	         (
+		   TRACE_EV_TIMER_EXPIRED = 1,
+		   TRACE_EV_TIMER_SETITIMER,
+		   TRACE_EV_TIMER_SETTIMEOUT
+	         )
+	        )
+	   ), 
+      field(event_sdata, "Short data", uint(1)), 
+      field(event_data1, "Data associated with event", uint(4)),
+      field(event_data2, "Data associated with event", uint(4))
+     );
+
+
+
+//TRACE_EV_MEMORY
+event(TRACE_EV_MEMORY, "Hit key part of memory management", 
+      field(event_sub_id, "",
+	    enum(1,
+		 (
+		   TRACE_EV_MEMORY_PAGE_ALLOC = 1,
+		   TRACE_EV_MEMORY_PAGE_FREE,
+		   TRACE_EV_MEMORY_SWAP_IN,
+		   TRACE_EV_MEMORY_SWAP_OUT,
+		   TRACE_EV_MEMORY_PAGE_WAIT_START,
+		   TRACE_EV_MEMORY_PAGE_WAIT_END
+		 )
+		)
+	   ),
+      field(event_data, "Data associated with event", uint(4))
+     );
+
+
+
+//TRACE_EV_SOCKET
+event(TRACE_EV_SOCKET, "Hit key part of socket communication",
+      field(event_sub_id, "Socket event ID",
+	    enum(1,
+		 (
+		   TRACE_EV_SOCKET_CALL = 1,
+		   TRACE_EV_SOCKET_CREATE,
+		   TRACE_EV_SOCKET_SEND,
+		   TRACE_EV_SOCKET_RECEIVE
+		 )
+		) 
+	   ),
+      field(event_data1, "Data associated with event", uint(4)),
+      field(event_data2, "Data associated with event", uint(4))
+     );
+
+
+
+//TRACE_EV_IPC
+event(TRACE_EV_IPC, "Hit key part of System V IPC", 
+      field(event_sub_id, "IPC event ID",
+	    enum(1,
+		 (
+		   TRACE_EV_IPC_CALL = 1,
+		   TRACE_EV_IPC_MSG_CREATE,
+		   TRACE_EV_IPC_SEM_CREATE,
+		   TRACE_EV_IPC_SHM_CREATE
+		 )
+		)
+	   ),
+      field(event_data1, "Data associated with event", uint(4)),
+      field(event_data2, "Data associated with event", uint(4))
+     );
+
+
+
+//TRACE_EV_NETWORK
+event(TRACE_EV_NETWORK, "Hit key part of network communication",
+      field(event_sub_id, "Network event ID",
+	    enum(1,
+		 (
+		   TRACE_EV_NETWORK_PACKET_IN = 1,
+		   TRACE_EV_NETWORK_PACKET_OUT
+		 )
+		)
+	   ), 
+      field(event_data, "Event data", uint(4))
+     );
+
+
+
+//TRACE_EV_BUFFER_START
+event(TRACE_EV_BUFFER_START, "Mark the begining of a trace buffer", 
+      field(time, "Time stamp of this buffer",array(2,int(8)) ),
+      field(tsc,"TSC of this buffer, if applicable",uint(4)),
+      field(id, "Unique buffer ID", uint(4))
+     );
+
+
+
+//TRACE_EV_BUFFER_END
+event(TRACE_EV_BUFFER_END, "Mark the ending of a trace buffer", 
+      field(time, "Time stamp of this buffer",array(2,int(8)) ),
+      field(tsc,"TSC of this buffer, if applicable",uint(4))
+     );
+
+
+
+//TRACE_EV_NEW_EVENT
+event(TRACE_EV_NEW_EVENT, "New event type", 
+      field(id, "Custom event ID", uint(4)),
+      field(type, "Event type description", string()),
+      field(desc, "Detailed event description", string()),
+      field(format_type, "Type of formatting", uint(4)),
+      field(form, "Data specific to format", string())
+     );
+
+
+
+//TRACE_EV_CUSTOM
+event(TRACE_EV_CUSTOM, "Custom event" 
+     );
+
+
+
+//TRACE_EV_CHANGE_MASK
+event(TRACE_EV_CHANGE_MASK, "Change in event mask", 
+      field(mask, "Event mask",uint(8) )
+     );
+
+
+
+//TRACE_EV_HEARTBEAT
+event(TRACE_EV_HEARTBEAT, "Heartbeat event" );
+
+
+
