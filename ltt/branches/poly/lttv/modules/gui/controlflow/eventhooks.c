@@ -504,6 +504,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                            drawing->gc,
                            x,
                            y+(height/2)-3);
+            hashed_process_data->x.middle_marked = TRUE;
           }
           /* jump */
         } else {
@@ -628,6 +629,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                            drawing->gc,
                            x,
                            y+(height/2)-3);
+            hashed_process_data->x.middle_marked = TRUE;
           }
           /* jump */
         } else {
@@ -2017,6 +2019,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
                        drawing->gc,
                        x,
                        y+(height/2)-3);
+        hashed_process_data->x.middle_marked = TRUE;
       }
       /* jump */
     } else {
@@ -2289,6 +2292,7 @@ int before_process_hook(void *hook_data, void *call_data)
                          drawing->gc,
                          x,
                          y+(height/2)-3);
+          hashed_process_data->x.middle_marked = TRUE;
         }
         /* jump */
       } else {
@@ -3065,6 +3069,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
                            drawing->gc,
                            x,
                            y+(height/2)-3);
+            hashed_process_data->x.middle_marked = TRUE;
           }
           /* Jump */
         } else {
