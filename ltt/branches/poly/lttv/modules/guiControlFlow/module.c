@@ -95,7 +95,4 @@ G_MODULE_EXPORT void destroy() {
 	/* Unregister the menu item insert entry */
 	//MenuItemUnreg(hGuiControlFlow);
 	
-
-	lttv_module_unload(Main_Win_Module);
-	
 }

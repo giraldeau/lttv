@@ -79,8 +79,8 @@ module_load(const char *name, int argc, char **argv)
   for(i = 0 ; i < modulesPaths->len ; i++) {
     pathname = g_module_build_path(modulesPaths->pdata[i],name);
     gm = g_module_open(pathname,G_MODULE_BIND_LAZY);
-	g_critical("module : %s", pathname);
-	g_critical("erreur : %s", g_module_error());
+	g_critical("loading module : %s", pathname);
+	g_critical("module error : %s", g_module_error());
     g_free(pathname);    
     
     if(gm != NULL) break;
@@ -91,13 +91,11 @@ module_load(const char *name, int argc, char **argv)
   if(gm == NULL) {
     pathname = g_module_build_path(NULL,name);
     gm = g_module_open(pathname,G_MODULE_BIND_LAZY);
-	g_critical("module : %s", pathname);
+	g_critical("loading module : %s", pathname);
     g_free(pathname);
   }
 
   /* Module cannot be found */
-  if(gm==NULL)
-	g_critical("module est null");
   if(gm == NULL) return NULL;
 
   /* Check if the module was already opened using the hopefully canonical name
