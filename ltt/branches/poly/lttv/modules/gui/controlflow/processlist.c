@@ -233,16 +233,17 @@ gint process_sort_func  ( GtkTreeModel *model,
 
 }
 
-static guint hash_fct(gconstpointer key)
+static guint process_list_hash_fct(gconstpointer key)
 {
-  return ((ProcessInfo*)key)->pid ^ ((ProcessInfo*)key)->cpu;
+  guint pid = ((ProcessInfo*)key)->pid;
+  return ((pid>>8 ^ pid>>4 ^ pid>>2 ^ pid) ^ ((ProcessInfo*)key)->cpu);
 }
 
-static gboolean equ_fct(gconstpointer a, gconstpointer b)
+static gboolean process_list_equ_fct(gconstpointer a, gconstpointer b)
 {
   const ProcessInfo *pa = (const ProcessInfo*)a;
   const ProcessInfo *pb = (const ProcessInfo*)b;
-
+  
   if(pa->pid != pb->pid)
     return 0;
 
@@ -307,7 +308,7 @@ ProcessList *processlist_construct(void)
       GTK_SORT_ASCENDING);
   
   process_list->process_hash = g_hash_table_new_full(
-      hash_fct, equ_fct,
+      process_list_hash_fct, process_list_equ_fct,
       destroy_hash_key, destroy_hash_data
       );
   

@@ -97,7 +97,8 @@ void lttv_state_state_saved_free(LttvTraceState *self,
 
 guint process_hash(gconstpointer key) 
 {
-  return ((const LttvProcessState *)key)->pid;
+  guint pid = ((const LttvProcessState *)key)->pid;
+  return (pid>>8 ^ pid>>4 ^ pid>>2 ^ pid) ;
 }
 
 

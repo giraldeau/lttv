@@ -54,7 +54,19 @@ GdkColor drawing_colors[NUM_COLORS] =
   { 0, 0xFFFF, 0xFFFF, 0xFFFF }  /* COL_MODE_UNKNOWN : white */
 
 };
+/*
+RUN+USER MODE green
+RUN+SYSCALL
+RUN+TRAP
+RUN+IRQ
+WAIT+foncé
+WAIT CPU + WAIT FORK vert foncé ou jaune
+IRQ rouge
+TRAP: orange
+SYSCALL: bleu pâle
 
+ZOMBIE + WAIT EXIT
+*/
 
 
 /*****************************************************************************
@@ -261,7 +273,6 @@ void drawing_data_request(Drawing_t *drawing,
 
       
       /* Add these hooks to each event_by_id hooks list */
-
       /* add before */
       for(k = 0 ; k < hooks->len/2 ; k++) {
         hook = g_array_index(hooks, LttvTraceHook, k);
