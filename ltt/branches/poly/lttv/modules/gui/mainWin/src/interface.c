@@ -560,6 +560,9 @@ create_MWindow (void)
   g_signal_connect ((gpointer) MWindow, "destroy",
                     G_CALLBACK (on_MWindow_destroy),
                     NULL);
+  g_signal_connect ((gpointer) MWindow, "configure-event",
+                    G_CALLBACK (on_MWindow_configure),
+                    NULL);
   //  g_signal_connect ((gpointer) EmptyTraceset, "activate",
   //                    G_CALLBACK (on_empty_traceset_activate),
   //                    NULL);

@@ -366,12 +366,32 @@ void gtk_multi_vpaned_widget_move_down(GtkMultiVPaned * multi_vpaned)
 
 void gtk_multi_vpaned_scroll_value_changed(GtkRange *range, gpointer multi_vpaned_arg)
 {
+  TimeWindow time_window;
+  TimeInterval *time_span;
   LttTime time;
   GtkMultiVPaned * multi_vpaned = (GtkMultiVPaned*)multi_vpaned_arg;
   gdouble value = gtk_range_get_value(range);
-  time = ltt_time_from_double(value / NANOSECONDS_PER_SECOND);
-  set_current_time(multi_vpaned->mw, &time);
-  g_warning("The current time is second :%d, nanosecond : %d\n", time.tv_sec, time.tv_nsec);
+  gdouble upper, lower, ratio;
+
+  time_window = multi_vpaned->mw->current_tab->time_window;
+
+  time_span = LTTV_TRACESET_CONTEXT(multi_vpaned->mw->current_tab->traceset_info->
+				    traceset_context)->Time_Span ;
+  lower = multi_vpaned->hadjust->lower;
+  upper = multi_vpaned->hadjust->upper;
+  ratio = (value - lower) / (upper - lower);
+  
+  time = ltt_time_sub(time_span->endTime, time_span->startTime);
+  time = ltt_time_mul(time, (float)ratio);
+  time = ltt_time_add(time_span->startTime, time);
+
+  time_window.start_time = time;
+
+  time = ltt_time_sub(time_span->endTime, time);
+  if(ltt_time_compare(time,time_window.time_width) < 0){
+    time_window.time_width = time;
+  }
+  set_time_window(multi_vpaned->mw, &time_window); 
 }
 
 

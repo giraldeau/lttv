@@ -204,6 +204,10 @@ void
 on_MWindow_destroy                     (GtkObject       *object,
                                         gpointer         user_data);
 
+gboolean    
+on_MWindow_configure                   (GtkWidget         *widget,
+                                        GdkEventConfigure *event,
+                                        gpointer           user_data);
 
 void
 on_insert_viewer_test_activate         (GtkMenuItem     *menuitem,

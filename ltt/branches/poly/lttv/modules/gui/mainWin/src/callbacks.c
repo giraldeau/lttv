@@ -134,7 +134,7 @@ void insert_viewer(GtkWidget* widget, view_constructor constructor)
   GtkWidget * viewer;
   LttvTracesetSelector  * s;
   TimeInterval * time_interval;
-  TimeWindow  time_window;
+  TimeWindow  time_window, t;
 
   mw_data = get_window_data_struct(widget);
   if(!mw_data->current_tab) return;
@@ -151,12 +151,16 @@ void insert_viewer(GtkWidget* widget, view_constructor constructor)
     time_window = mw_data->current_tab->time_window;
     time_interval = (TimeInterval*)g_object_get_data(G_OBJECT(viewer), TRACESET_TIME_SPAN);
     if(time_interval){
+      t = time_window;
       time_window.start_time = time_interval->startTime;
       time_window.time_width = ltt_time_sub(time_interval->endTime,time_interval->startTime);
     }
 
     redraw_viewer(mw_data,&time_window);
     set_current_time(mw_data,&(mw_data->current_tab->current_time));
+    if(time_interval){
+      set_time_window(mw_data,&t);
+    }
   }
 }
 
@@ -1108,6 +1112,36 @@ on_MWindow_destroy                     (GtkObject       *object,
     gtk_main_quit ();
 }
 
+gboolean    
+on_MWindow_configure                   (GtkWidget         *widget,
+                                        GdkEventConfigure *event,
+                                        gpointer           user_data)
+{
+  MainWindow * mw_data = get_window_data_struct((GtkWidget*)widget);
+  float width = event->width;
+  Tab * tab = mw_data->tab;
+  TimeWindow time_win;
+  double ratio;
+  TimeInterval *time_span;
+  LttTime time;
+
+  while(tab){
+    if(mw_data->window_width){
+      time_span = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->Time_Span ;
+      time_win = tab->time_window;
+      ratio = width / mw_data->window_width;
+      tab->time_window.time_width = ltt_time_mul(time_win.time_width,ratio);
+      time = ltt_time_sub(time_span->endTime, time_win.start_time);
+      if(ltt_time_compare(time, tab->time_window.time_width) < 0){
+	tab->time_window.time_width = time;
+      }
+    } 
+    tab = tab->next;
+  }
+
+  mw_data->window_width = (int)width;
+  return FALSE;
+}
 
 void
 on_MNotebook_switch_page               (GtkNotebook     *notebook,

@@ -28,6 +28,7 @@ typedef struct _TracesetInfo {
 
 struct _MainWindow{
   GtkWidget*      mwindow;            /* Main Window */
+  int             window_width;
 
   /* Status bar information */
   //  guint         MainSBarContextID;    /* Context ID of main status bar */
