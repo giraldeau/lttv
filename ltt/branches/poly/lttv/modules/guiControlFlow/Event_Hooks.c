@@ -22,6 +22,7 @@
 #include <lttv/hook.h>
 #include <lttv/common.h>
 #include <lttv/state.h>
+#include <lttv/gtkTraceSet.h>
 
 
 #include "Event_Hooks.h"
@@ -782,7 +783,7 @@ int draw_after_hook(void *hook_data, void *call_data)
 
 
 
-void update_time_window_hook(void *hook_data, void *call_data)
+gint update_time_window_hook(void *hook_data, void *call_data)
 {
 	ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
 	TimeWindow *Old_Time_Window = 
@@ -970,19 +971,34 @@ void update_time_window_hook(void *hook_data, void *call_data)
 				control_flow_data->Drawing->height);
 	}
 
-	
+	return 0;
 }
 
-void update_current_time_hook(void *hook_data, void *call_data)
+gint update_current_time_hook(void *hook_data, void *call_data)
 {
-	ControlFlowData *Control_Flow_Data = (ControlFlowData*) hook_data;
-	LttTime* Current_Time = 
-		guicontrolflow_get_current_time(Control_Flow_Data);
-	*Current_Time = *((LttTime*)call_data);
-	g_info("New Current time HOOK : %u, %u", Current_Time->tv_sec,
-							Current_Time->tv_nsec);
+	ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
 
-	gtk_widget_queue_draw(Control_Flow_Data->Drawing->Drawing_Area_V);
+	LttTime* current_time = 
+		guicontrolflow_get_current_time(control_flow_data);
+	*current_time = *((LttTime*)call_data);
+	
+	TimeWindow time_window;
+	
+	LttTime time_begin = control_flow_data->Time_Window.start_time;
+	LttTime width = control_flow_data->Time_Window.time_width;
+	LttTime half_width = ltt_time_div(width,2.0);
+	LttTime time_end = ltt_time_add(time_begin, width);
+
+	LttvTracesetContext * tsc =
+				get_traceset_context(control_flow_data->Parent_Window);
+	
+	LttTime trace_start = tsc->Time_Span->startTime;
+	LttTime trace_end = tsc->Time_Span->endTime;
+	
+	g_info("New Current time HOOK : %u, %u", current_time->tv_sec,
+							current_time->tv_nsec);
+
+
 	
 	/* If current time is inside time interval, just move the highlight
 	 * bar */
@@ -990,8 +1006,39 @@ void update_current_time_hook(void *hook_data, void *call_data)
 	/* Else, we have to change the time interval. We have to tell it
 	 * to the main window. */
 	/* The time interval change will take care of placing the current
-	 * time at the center of the visible area */
+	 * time at the center of the visible area, or nearest possible if we are
+	 * at one end of the trace. */
 	
+	
+	if(ltt_time_compare(*current_time, time_begin) == -1)
+	{
+		if(ltt_time_compare(*current_time,
+					ltt_time_add(trace_start,half_width)) == -1)
+			time_begin = trace_start;
+		else
+			time_begin = ltt_time_sub(*current_time,half_width);
+	
+		time_window.start_time = time_begin;
+		time_window.time_width = width;
+
+		set_time_window(control_flow_data->Parent_Window, &time_window);
+	}
+	else if(ltt_time_compare(*current_time, time_end) == 1)
+	{
+		if(ltt_time_compare(*current_time, ltt_time_sub(trace_end, half_width)) == 1)
+			time_begin = ltt_time_sub(trace_end,width);
+		else
+			time_begin = ltt_time_sub(*current_time,half_width);
+	
+		time_window.start_time = time_begin;
+		time_window.time_width = width;
+
+		set_time_window(control_flow_data->Parent_Window, &time_window);
+		
+	}
+	gtk_widget_queue_draw(control_flow_data->Drawing->Drawing_Area_V);
+	
+	return 0;
 }
 
 typedef struct _ClosureData {

@@ -75,8 +75,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data);
 int  after_data_request(void *hook_data, void *call_data);
 
 
-void update_time_window_hook(void *hook_data, void *call_data);
-void update_current_time_hook(void *hook_data, void *call_data);
+gint update_time_window_hook(void *hook_data, void *call_data);
+gint update_current_time_hook(void *hook_data, void *call_data);
 
 
 
