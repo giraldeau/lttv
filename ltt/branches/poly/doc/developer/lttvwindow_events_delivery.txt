@@ -434,7 +434,10 @@ occur often. The solution to it would be to save one state per priority.
 
 Weaknesses
 
-- None (nearly?) :)
+- There is a possibility that we must use seek if more than one interruption
+  occurs, i.e. low priority interrupted by addition of high priority, and then
+  high priority interrupted. The seek will be necessary for the low priority.
+  It could be a good idea to keep one saved_state per priority ?
 
 
 Strengths
