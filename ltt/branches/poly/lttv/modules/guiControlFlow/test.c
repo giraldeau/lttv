@@ -14,7 +14,7 @@ int main(int argc, char **argv)
 	GtkWidget *CF_Viewer;
 	GtkWidget *VBox_V;
 	GtkWidget *HScroll_VC;
-	ControlFlowData *Control_Flow_Data;
+	ControlFlowData *control_flow_data;
 	guint ev_sel = 444 ;
 	/* Horizontal scrollbar and it's adjustment */
 	GtkWidget *VScroll_VC;
@@ -44,8 +44,8 @@ int main(int argc, char **argv)
   //ListViewer = hGuiEvents(Window);
   //gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, FALSE, TRUE, 0);
 	
-	Control_Flow_Data = guicontrolflow();
-	CF_Viewer = Control_Flow_Data->scrolled_window;
+	control_flow_data = guicontrolflow();
+	CF_Viewer = control_flow_data->scrolled_window;
   gtk_box_pack_start(GTK_BOX(VBox_V), CF_Viewer, TRUE, TRUE, 0);
 
   /* Create horizontal scrollbar and pack it */
@@ -57,7 +57,7 @@ int main(int argc, char **argv)
   gtk_widget_show (VBox_V);
 	gtk_widget_show (Window);
 
-	//Event_Selected_Hook(Control_Flow_Data, &ev_sel);
+	//Event_Selected_Hook(control_flow_data, &ev_sel);
 	
 	gtk_main ();
 
@@ -73,17 +73,17 @@ int main(int argc, char **argv)
 
 
 
-void add_test_process(ControlFlowData *Control_Flow_Data)
+void add_test_process(ControlFlowData *control_flow_data)
 {
 	GtkTreeIter iter;
 	int i;
 	gchar *process[] = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" };
 
-	for(i=0; i<Control_Flow_Data->number_of_process; i++)
+	for(i=0; i<control_flow_data->number_of_process; i++)
 	{
 	  /* Add a new row to the model */
-		gtk_list_store_append (Control_Flow_Data->Store_M, &iter);
-		gtk_list_store_set (	Control_Flow_Data->Store_M, &iter,
+		gtk_list_store_append (control_flow_data->Store_M, &iter);
+		gtk_list_store_set (	control_flow_data->Store_M, &iter,
 					PROCESS_COLUMN, process[i],
 					-1);
 	}
@@ -95,7 +95,7 @@ void add_test_process(ControlFlowData *Control_Flow_Data)
 
 
 
-void test_draw(ControlFlowData *Control_Flow_Data)
+void test_draw(ControlFlowData *control_flow_data)
 {
 	/* Draw event states using available height, Number of process, cell height
 	 * (don't forget to remove two pixels at beginning and end).
@@ -103,14 +103,14 @@ void test_draw(ControlFlowData *Control_Flow_Data)
 	 * This function calls the reading library to get the draw_hook called 
 	 * for the desired period of time. */
 	
-	DrawingAreaInfo *Drawing_Area_Info = &Control_Flow_Data->Drawing_Area_Info;
+	DrawingAreaInfo *Drawing_Area_Info = &control_flow_data->Drawing_Area_Info;
 
 	
 }
 
 #ifdef DEBUG
 void test_draw() {
-	gint cell_height = get_cell_height(GTK_TREE_VIEW(Control_Flow_Data->process_list_VC));
+	gint cell_height = get_cell_height(GTK_TREE_VIEW(control_flow_data->process_list_VC));
 	GdkGC *GC = gdk_gc_new(widget->window);
 	GdkColor color = CF_Colors[GREEN];
 	
@@ -120,9 +120,9 @@ void test_draw() {
 
 	/* When redrawing, use widget->allocation.width to get the width of
 	 * drawable area. */
-	Control_Flow_Data->Drawing_Area_Info.width = widget->allocation.width;
+	control_flow_data->Drawing_Area_Info.width = widget->allocation.width;
 	
-	test_draw(Control_Flow_Data);
+	test_draw(control_flow_data);
 	
 	gdk_gc_copy(GC,widget->style->white_gc);
 	gdk_gc_set_foreground(GC,&color);
@@ -132,11 +132,11 @@ void test_draw() {
   //              TRUE,
   //              //0, 0, widget->allocation.width, widget->allocation.height,
   //              0, 0, widget->allocation.width,
-	//							Control_Flow_Data->Drawing_Area_Info.height,
+	//							control_flow_data->Drawing_Area_Info.height,
   //              0, 64 * 360);
 
 	
-	//Drawing_Area_Init(Control_Flow_Data);
+	//Drawing_Area_Init(control_flow_data);
 	
 	// 2 pixels for the box around the drawing area, 1 pixel for off-by-one
 	// (starting from 0)
@@ -209,8 +209,8 @@ void test_draw_item(Drawing_t *Drawing,
 			draw_context.drawable = Pixmap;
 			draw_context.gc = Drawing->Drawing_Area_V->style->black_gc;
 
-			draw_context.Current = &current;
-			draw_context.Previous = NULL;
+			draw_context.current = &current;
+			draw_context.previous = NULL;
 	
 			properties_icon.icon_name = g_new(char, MAX_PATH_LEN);
 			strncpy(properties_icon.icon_name, 

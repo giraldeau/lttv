@@ -19,7 +19,7 @@ struct _ControlFlowData {
   TimeWindow time_window;
   LttTime current_time;
   
-  //guint Currently_Selected_Event  ;
+  //guint currently_Selected_Event  ;
   guint number_of_process;
 
 } ;

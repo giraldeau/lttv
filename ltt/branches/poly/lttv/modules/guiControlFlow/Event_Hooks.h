@@ -22,7 +22,7 @@
  */
 typedef struct _EventRequest
 {
-  ControlFlowData *Control_Flow_Data;
+  ControlFlowData *control_flow_data;
   LttTime time_begin, time_end;
   gint  x_begin, x_end;
   /* Fill the Events_Context during the initial expose, before calling for

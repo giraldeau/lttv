@@ -11,13 +11,13 @@ typedef struct _ControlFlowData ControlFlowData;
 /* Control Flow Data constructor */
 ControlFlowData *guicontrolflow(void);
 void
-guicontrolflow_destructor_full(ControlFlowData *Control_Flow_Data);
+guicontrolflow_destructor_full(ControlFlowData *control_flow_data);
 void
-guicontrolflow_destructor(ControlFlowData *Control_Flow_Data);
-GtkWidget *guicontrolflow_get_widget(ControlFlowData *Control_Flow_Data);
-ProcessList *guicontrolflow_get_process_list(ControlFlowData *Control_Flow_Data);
-TimeWindow *guicontrolflow_get_time_window(ControlFlowData *Control_Flow_Data);
-LttTime *guicontrolflow_get_current_time(ControlFlowData *Control_Flow_Data);
+guicontrolflow_destructor(ControlFlowData *control_flow_data);
+GtkWidget *guicontrolflow_get_widget(ControlFlowData *control_flow_data);
+ProcessList *guicontrolflow_get_process_list(ControlFlowData *control_flow_data);
+TimeWindow *guicontrolflow_get_time_window(ControlFlowData *control_flow_data);
+LttTime *guicontrolflow_get_current_time(ControlFlowData *control_flow_data);
 
 
 #endif // _CFV_H

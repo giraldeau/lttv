@@ -34,7 +34,7 @@ static LttvModule *Main_Win_Module;
 
 
 /** Array containing instanced objects. Used when module is unloaded */
-GSList *gControl_Flow_Data_List = NULL ;
+GSList *g_control_flow_data_list = NULL ;
 
 
 
@@ -87,9 +87,9 @@ G_MODULE_EXPORT void destroy() {
   g_info("GUI Control Flow Viewer destroy()");
   int i;
 
-  g_slist_foreach(gControl_Flow_Data_List, destroy_walk, NULL );
+  g_slist_foreach(g_control_flow_data_list, destroy_walk, NULL );
   
-  g_slist_free(gControl_Flow_Data_List);
+  g_slist_free(g_control_flow_data_list);
 
   /* Unregister the toolbar insert button */
   toolbar_item_unreg(h_guicontrolflow);

@@ -38,7 +38,7 @@ typedef struct _Drawing_t Drawing_t;
 struct _Drawing_t {
   GtkWidget *Drawing_Area_V;
   GdkPixmap *Pixmap;
-  ControlFlowData *Control_Flow_Data;
+  ControlFlowData *control_flow_data;
   
   PangoLayout *pango_layout;
 
@@ -46,7 +46,7 @@ struct _Drawing_t {
   
 };
 
-Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data);
+Drawing_t *drawing_construct(ControlFlowData *control_flow_data);
 void drawing_destroy(Drawing_t *Drawing);
 
 GtkWidget *drawing_get_widget(Drawing_t *Drawing);

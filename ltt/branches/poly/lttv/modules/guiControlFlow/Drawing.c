@@ -57,7 +57,7 @@ void drawing_data_request(Drawing_t *Drawing,
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(
                     Drawing->Drawing_Area_V),
-                "Control_Flow_Data");
+                "control_flow_data");
 
   LttTime start, end;
   LttTime window_end = ltt_time_add(control_flow_data->time_window.time_width,
@@ -85,15 +85,15 @@ void drawing_data_request(Drawing_t *Drawing,
         get_traceset_context(control_flow_data->mw);
   
     //send_test_process(
-  //guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
+  //guicontrolflow_get_process_list(Drawing->control_flow_data),
   //Drawing);
   //send_test_drawing(
-  //guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
+  //guicontrolflow_get_process_list(Drawing->control_flow_data),
   //Drawing, *Pixmap, x, y, width, height);
   
   // Let's call processTrace() !!
   EventRequest event_request; // Variable freed at the end of the function.
-  event_request.Control_Flow_Data = control_flow_data;
+  event_request.control_flow_data = control_flow_data;
   event_request.time_begin = start;
   event_request.time_end = end;
   event_request.x_begin = x;
@@ -156,8 +156,8 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
    * has updated the time interval before this configure gets
    * executed.
    */
-  get_time_window(Drawing->Control_Flow_Data->mw,
-        &Drawing->Control_Flow_Data->time_window);
+  get_time_window(Drawing->control_flow_data->mw,
+        &Drawing->control_flow_data->time_window);
   
   /* New Pixmap, size of the configure event */
   //GdkPixmap *Pixmap = gdk_pixmap_new(widget->window,
@@ -180,7 +180,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
     widget->allocation.width + SAFETY,
     widget->allocation.height + SAFETY,
     //ProcessList_get_height
-    // (GuiControlFlow_get_process_list(Drawing->Control_Flow_Data)),
+    // (GuiControlFlow_get_process_list(Drawing->control_flow_data)),
     -1);
     Drawing->width = widget->allocation.width;
     Drawing->height = widget->allocation.height;
@@ -280,7 +280,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   ControlFlowData *control_flow_data =
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
-                "Control_Flow_Data");
+                "control_flow_data");
 
   g_critical("drawing expose event");
   
@@ -326,7 +326,7 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
   ControlFlowData *control_flow_data =
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
-                "Control_Flow_Data");
+                "control_flow_data");
   Drawing_t *Drawing = control_flow_data->Drawing;
 
 
@@ -357,12 +357,12 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
 
 
 
-Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data)
+Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
 {
   Drawing_t *Drawing = g_new(Drawing_t, 1);
     
   Drawing->Drawing_Area_V = gtk_drawing_area_new ();
-  Drawing->Control_Flow_Data = Control_Flow_Data;
+  Drawing->control_flow_data = control_flow_data;
 
   Drawing->pango_layout =
     gtk_widget_create_pango_layout(Drawing->Drawing_Area_V, NULL);

@@ -39,7 +39,7 @@ typedef struct _ltt_time_interval
  */
 typedef struct _EventRequest
 {
-	ControlFlowData *Control_Flow_Data;
+	ControlFlowData *control_flow_data;
 	ltt_time time_begin, time_end;
 	/* Fill the Events_Context during the initial expose, before calling for
 	 * events.
@@ -57,7 +57,7 @@ GtkWidget *hGuiControlFlow(GtkWidget *pmParentWindow);
 //! Control Flow Viewer's constructor
 ControlFlowData *GuiControlFlow(void);
 //! Control Flow Viewer's destructor
-void GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data);
+void GuiControlFlow_Destructor(ControlFlowData *control_flow_data);
 
 
 static int Event_Selected_Hook(void *hook_data, void *call_data);
@@ -72,8 +72,8 @@ Draw_Event_Hook(void *hook_data, void *call_data)
 Draw_After_Hook(void *hook_data, void *call_data)
 
 
-//void Tree_V_set_cursor(ControlFlowData *Control_Flow_Data);
-//void Tree_V_get_cursor(ControlFlowData *Control_Flow_Data);
+//void Tree_V_set_cursor(ControlFlowData *control_flow_data);
+//void Tree_V_get_cursor(ControlFlowData *control_flow_data);
 
 /* Prototype for selection handler callback */
 //static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
@@ -85,15 +85,15 @@ static void v_scroll_cb (GtkAdjustment *adjustment, gpointer data);
 
 static void expose_event_cb (GtkWidget *widget, GdkEventExpose *expose, gpointer data);
 
-void add_test_process(ControlFlowData *Control_Flow_Data);
+void add_test_process(ControlFlowData *control_flow_data);
 
 static void get_test_data(guint Event_Number, guint List_Height, 
-									 ControlFlowData *Control_Flow_Data);
+									 ControlFlowData *control_flow_data);
 
-void add_test_data(ControlFlowData *Control_Flow_Data);
-void test_draw(ControlFlowData *Control_Flow_Data);
+void add_test_data(ControlFlowData *control_flow_data);
+void test_draw(ControlFlowData *control_flow_data);
 
-void Drawing_Area_Init(ControlFlowData *Control_Flow_Data);
+void Drawing_Area_Init(ControlFlowData *control_flow_data);
 
 
 /*\@}*/

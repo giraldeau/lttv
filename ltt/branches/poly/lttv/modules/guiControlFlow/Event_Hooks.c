@@ -47,16 +47,16 @@ GtkWidget *
 h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * key)
 {
   g_info("h_guicontrolflow, %p, %p, %s", pmParentWindow, s, key);
-  ControlFlowData *Control_Flow_Data = guicontrolflow() ;
+  ControlFlowData *control_flow_data = guicontrolflow() ;
   
-  Control_Flow_Data->mw = pmParentWindow;
-  TimeWindow *time_window = guicontrolflow_get_time_window(Control_Flow_Data);
+  control_flow_data->mw = pmParentWindow;
+  TimeWindow *time_window = guicontrolflow_get_time_window(control_flow_data);
   time_window->start_time.tv_sec = 0;
   time_window->start_time.tv_nsec = 0;
   time_window->time_width.tv_sec = 0;
   time_window->time_width.tv_nsec = 0;
 
-  LttTime *current_time = guicontrolflow_get_current_time(Control_Flow_Data);
+  LttTime *current_time = guicontrolflow_get_current_time(control_flow_data);
   current_time->tv_sec = 0;
   current_time->tv_nsec = 0;
   
@@ -69,25 +69,25 @@ h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * ke
 
   //g_critical("time width2 : %u",time_window->time_width);
   // Unreg done in the GuiControlFlow_Destructor
-  reg_update_time_window(update_time_window_hook, Control_Flow_Data,
+  reg_update_time_window(update_time_window_hook, control_flow_data,
         pmParentWindow);
-  reg_update_current_time(update_current_time_hook, Control_Flow_Data,
+  reg_update_current_time(update_current_time_hook, control_flow_data,
         pmParentWindow);
-  return guicontrolflow_get_widget(Control_Flow_Data) ;
+  return guicontrolflow_get_widget(control_flow_data) ;
   
 }
 
 int event_selected_hook(void *hook_data, void *call_data)
 {
-  ControlFlowData *Control_Flow_Data = (ControlFlowData*) hook_data;
+  ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
   guint *Event_Number = (guint*) call_data;
 
   g_critical("DEBUG : event selected by main window : %u", *Event_Number);
   
-//  Control_Flow_Data->Currently_Selected_Event = *Event_Number;
-//  Control_Flow_Data->Selected_Event = TRUE ;
+//  control_flow_data->currently_Selected_Event = *Event_Number;
+//  control_flow_data->Selected_Event = TRUE ;
   
-//  tree_v_set_cursor(Control_Flow_Data);
+//  tree_v_set_cursor(control_flow_data);
 
 }
 
@@ -127,7 +127,7 @@ int draw_before_hook(void *hook_data, void *call_data)
 int draw_event_hook(void *hook_data, void *call_data)
 {
   EventRequest *Event_Request = (EventRequest*)hook_data;
-  ControlFlowData *control_flow_data = Event_Request->Control_Flow_Data;
+  ControlFlowData *control_flow_data = Event_Request->control_flow_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
@@ -149,7 +149,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
 
     ProcessList *process_list =
-      guicontrolflow_get_process_list(Event_Request->Control_Flow_Data);
+      guicontrolflow_get_process_list(Event_Request->control_flow_data);
 
 
     LttField *f = ltt_event_field(e);
@@ -189,7 +189,7 @@ int draw_event_hook(void *hook_data, void *call_data)
             &y_out,
             &height,
             &Hashed_Process_Data_out);
-    drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y_out, height);
+    drawing_insert_square( Event_Request->control_flow_data->Drawing, y_out, height);
     }
 
     g_free(name);
@@ -223,7 +223,7 @@ int draw_event_hook(void *hook_data, void *call_data)
             &height,
             &Hashed_Process_Data_in);
 
-      drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y_in, height);
+      drawing_insert_square( Event_Request->control_flow_data->Drawing, y_in, height);
     }
     g_free(name);
 
@@ -251,8 +251,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     /* draw what represents the event for outgoing process. */
 
     DrawContext *draw_context_out = Hashed_Process_Data_out->draw_context;
-    draw_context_out->Current->modify_over->x = x;
-    draw_context_out->Current->modify_over->y = y_out;
+    draw_context_out->current->modify_over->x = x;
+    draw_context_out->current->modify_over->y = y_out;
     draw_context_out->drawable = control_flow_data->Drawing->Pixmap;
     draw_context_out->pango_layout = control_flow_data->Drawing->pango_layout;
     GtkWidget *widget = control_flow_data->Drawing->Drawing_Area_V;
@@ -274,33 +274,33 @@ int draw_event_hook(void *hook_data, void *call_data)
 
     /* Print status of the process : U, WF, WC, E, W, R */
     if(process_out->state->s == LTTV_STATE_UNNAMED)
-      prop_text_out.Text = "U";
+      prop_text_out.text = "U";
     else if(process_out->state->s == LTTV_STATE_WAIT_FORK)
-      prop_text_out.Text = "WF";
+      prop_text_out.text = "WF";
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
-      prop_text_out.Text = "WC";
+      prop_text_out.text = "WC";
     else if(process_out->state->s == LTTV_STATE_EXIT)
-      prop_text_out.Text = "E";
+      prop_text_out.text = "E";
     else if(process_out->state->s == LTTV_STATE_WAIT)
-      prop_text_out.Text = "W";
+      prop_text_out.text = "W";
     else if(process_out->state->s == LTTV_STATE_RUN)
-      prop_text_out.Text = "R";
+      prop_text_out.text = "R";
     else
-      prop_text_out.Text = "U";
+      prop_text_out.text = "U";
     
     draw_text((void*)&prop_text_out, (void*)draw_context_out);
     gdk_gc_unref(draw_context_out->gc);
 
     /* Draw the line of the out process */
-    if(draw_context_out->Previous->middle->x == -1)
+    if(draw_context_out->previous->middle->x == -1)
     {
-      draw_context_out->Previous->middle->x = Event_Request->x_begin;
+      draw_context_out->previous->middle->x = Event_Request->x_begin;
       g_critical("out middle x_beg : %u",Event_Request->x_begin);
     }
   
-    draw_context_out->Current->middle->x = x;
-    draw_context_out->Current->middle->y = y_out + height/2;
-    draw_context_out->Previous->middle->y = y_out + height/2;
+    draw_context_out->current->middle->x = x;
+    draw_context_out->current->middle->y = y_out + height/2;
+    draw_context_out->previous->middle->y = y_out + height/2;
     draw_context_out->drawable = control_flow_data->Drawing->Pixmap;
     draw_context_out->pango_layout = control_flow_data->Drawing->pango_layout;
     //draw_context_out->gc = widget->style->black_gc;
@@ -365,8 +365,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     /* Finally, update the drawing context of the pid_in. */
 
     DrawContext *draw_context_in = Hashed_Process_Data_in->draw_context;
-    draw_context_in->Current->modify_over->x = x;
-    draw_context_in->Current->modify_over->y = y_in;
+    draw_context_in->current->modify_over->x = x;
+    draw_context_in->current->modify_over->y = y_in;
     draw_context_in->drawable = control_flow_data->Drawing->Pixmap;
     draw_context_in->pango_layout = control_flow_data->Drawing->pango_layout;
     widget = control_flow_data->Drawing->Drawing_Area_V;
@@ -388,33 +388,33 @@ int draw_event_hook(void *hook_data, void *call_data)
 
     /* Print status of the process : U, WF, WC, E, W, R */
     if(process_in->state->s == LTTV_STATE_UNNAMED)
-      prop_text_in.Text = "U";
+      prop_text_in.text = "U";
     else if(process_in->state->s == LTTV_STATE_WAIT_FORK)
-      prop_text_in.Text = "WF";
+      prop_text_in.text = "WF";
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
-      prop_text_in.Text = "WC";
+      prop_text_in.text = "WC";
     else if(process_in->state->s == LTTV_STATE_EXIT)
-      prop_text_in.Text = "E";
+      prop_text_in.text = "E";
     else if(process_in->state->s == LTTV_STATE_WAIT)
-      prop_text_in.Text = "W";
+      prop_text_in.text = "W";
     else if(process_in->state->s == LTTV_STATE_RUN)
-      prop_text_in.Text = "R";
+      prop_text_in.text = "R";
     else
-      prop_text_in.Text = "U";
+      prop_text_in.text = "U";
     
     draw_text((void*)&prop_text_in, (void*)draw_context_in);
     gdk_gc_unref(draw_context_in->gc);
     
     /* Draw the line of the in process */
-    if(draw_context_in->Previous->middle->x == -1)
+    if(draw_context_in->previous->middle->x == -1)
     {
-      draw_context_in->Previous->middle->x = Event_Request->x_begin;
+      draw_context_in->previous->middle->x = Event_Request->x_begin;
       g_critical("in middle x_beg : %u",Event_Request->x_begin);
     }
   
-    draw_context_in->Current->middle->x = x;
-    draw_context_in->Previous->middle->y = y_in + height/2;
-    draw_context_in->Current->middle->y = y_in + height/2;
+    draw_context_in->current->middle->x = x;
+    draw_context_in->previous->middle->y = y_in + height/2;
+    draw_context_in->current->middle->y = y_in + height/2;
     draw_context_in->drawable = control_flow_data->Drawing->Pixmap;
     draw_context_in->pango_layout = control_flow_data->Drawing->pango_layout;
     //draw_context_in->gc = widget->style->black_gc;
@@ -504,7 +504,7 @@ int draw_event_hook(void *hook_data, void *call_data)
 int draw_after_hook(void *hook_data, void *call_data)
 {
   EventRequest *Event_Request = (EventRequest*)hook_data;
-  ControlFlowData *control_flow_data = Event_Request->Control_Flow_Data;
+  ControlFlowData *control_flow_data = Event_Request->control_flow_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
@@ -526,7 +526,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
 
     ProcessList *process_list =
-      guicontrolflow_get_process_list(Event_Request->Control_Flow_Data);
+      guicontrolflow_get_process_list(Event_Request->control_flow_data);
 
 
     LttField *f = ltt_event_field(e);
@@ -566,7 +566,7 @@ int draw_after_hook(void *hook_data, void *call_data)
             &y_out,
             &height,
             &Hashed_Process_Data_out);
-    drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y_out, height);
+    drawing_insert_square( Event_Request->control_flow_data->Drawing, y_out, height);
     }
 
     g_free(name);
@@ -600,7 +600,7 @@ int draw_after_hook(void *hook_data, void *call_data)
             &height,
             &Hashed_Process_Data_in);
 
-      drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y_in, height);
+      drawing_insert_square( Event_Request->control_flow_data->Drawing, y_in, height);
     }
     g_free(name);
 
@@ -628,8 +628,8 @@ int draw_after_hook(void *hook_data, void *call_data)
     /* draw what represents the event for outgoing process. */
 
     DrawContext *draw_context_out = Hashed_Process_Data_out->draw_context;
-    //draw_context_out->Current->modify_over->x = x;
-    draw_context_out->Current->modify_over->y = y_out;
+    //draw_context_out->current->modify_over->x = x;
+    draw_context_out->current->modify_over->y = y_out;
     draw_context_out->drawable = control_flow_data->Drawing->Pixmap;
     draw_context_out->pango_layout = control_flow_data->Drawing->pango_layout;
     GtkWidget *widget = control_flow_data->Drawing->Drawing_Area_V;
@@ -649,62 +649,62 @@ int draw_after_hook(void *hook_data, void *call_data)
 
     /* Print status of the process : U, WF, WC, E, W, R */
     if(process_out->state->s == LTTV_STATE_UNNAMED)
-      prop_text_out.Text = "U";
+      prop_text_out.text = "U";
     else if(process_out->state->s == LTTV_STATE_WAIT_FORK)
-      prop_text_out.Text = "WF";
+      prop_text_out.text = "WF";
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
-      prop_text_out.Text = "WC";
+      prop_text_out.text = "WC";
     else if(process_out->state->s == LTTV_STATE_EXIT)
-      prop_text_out.Text = "E";
+      prop_text_out.text = "E";
     else if(process_out->state->s == LTTV_STATE_WAIT)
-      prop_text_out.Text = "W";
+      prop_text_out.text = "W";
     else if(process_out->state->s == LTTV_STATE_RUN)
-      prop_text_out.Text = "R";
+      prop_text_out.text = "R";
     else
-      prop_text_out.Text = "U";
+      prop_text_out.text = "U";
     
     draw_text((void*)&prop_text_out, (void*)draw_context_out);
 
-    draw_context_out->Current->middle->y = y_out+height/2;
-    draw_context_out->Current->status = process_out->state->s;
+    draw_context_out->current->middle->y = y_out+height/2;
+    draw_context_out->current->status = process_out->state->s;
     
-    /* for pid_out : remove Previous, Prev = Current, new Current (default) */
-    g_free(draw_context_out->Previous->modify_under);
-    g_free(draw_context_out->Previous->modify_middle);
-    g_free(draw_context_out->Previous->modify_over);
-    g_free(draw_context_out->Previous->under);
-    g_free(draw_context_out->Previous->middle);
-    g_free(draw_context_out->Previous->over);
-    g_free(draw_context_out->Previous);
+    /* for pid_out : remove previous, Prev = current, new current (default) */
+    g_free(draw_context_out->previous->modify_under);
+    g_free(draw_context_out->previous->modify_middle);
+    g_free(draw_context_out->previous->modify_over);
+    g_free(draw_context_out->previous->under);
+    g_free(draw_context_out->previous->middle);
+    g_free(draw_context_out->previous->over);
+    g_free(draw_context_out->previous);
 
-    draw_context_out->Previous = draw_context_out->Current;
+    draw_context_out->previous = draw_context_out->current;
     
-    draw_context_out->Current = g_new(DrawInfo,1);
-    draw_context_out->Current->over = g_new(ItemInfo,1);
-    draw_context_out->Current->over->x = -1;
-    draw_context_out->Current->over->y = -1;
-    draw_context_out->Current->middle = g_new(ItemInfo,1);
-    draw_context_out->Current->middle->x = -1;
-    draw_context_out->Current->middle->y = -1;
-    draw_context_out->Current->under = g_new(ItemInfo,1);
-    draw_context_out->Current->under->x = -1;
-    draw_context_out->Current->under->y = -1;
-    draw_context_out->Current->modify_over = g_new(ItemInfo,1);
-    draw_context_out->Current->modify_over->x = -1;
-    draw_context_out->Current->modify_over->y = -1;
-    draw_context_out->Current->modify_middle = g_new(ItemInfo,1);
-    draw_context_out->Current->modify_middle->x = -1;
-    draw_context_out->Current->modify_middle->y = -1;
-    draw_context_out->Current->modify_under = g_new(ItemInfo,1);
-    draw_context_out->Current->modify_under->x = -1;
-    draw_context_out->Current->modify_under->y = -1;
-    draw_context_out->Current->status = LTTV_STATE_UNNAMED;
+    draw_context_out->current = g_new(DrawInfo,1);
+    draw_context_out->current->over = g_new(ItemInfo,1);
+    draw_context_out->current->over->x = -1;
+    draw_context_out->current->over->y = -1;
+    draw_context_out->current->middle = g_new(ItemInfo,1);
+    draw_context_out->current->middle->x = -1;
+    draw_context_out->current->middle->y = -1;
+    draw_context_out->current->under = g_new(ItemInfo,1);
+    draw_context_out->current->under->x = -1;
+    draw_context_out->current->under->y = -1;
+    draw_context_out->current->modify_over = g_new(ItemInfo,1);
+    draw_context_out->current->modify_over->x = -1;
+    draw_context_out->current->modify_over->y = -1;
+    draw_context_out->current->modify_middle = g_new(ItemInfo,1);
+    draw_context_out->current->modify_middle->x = -1;
+    draw_context_out->current->modify_middle->y = -1;
+    draw_context_out->current->modify_under = g_new(ItemInfo,1);
+    draw_context_out->current->modify_under->x = -1;
+    draw_context_out->current->modify_under->y = -1;
+    draw_context_out->current->status = LTTV_STATE_UNNAMED;
       
     /* Finally, update the drawing context of the pid_in. */
 
     DrawContext *draw_context_in = Hashed_Process_Data_in->draw_context;
-    //draw_context_in->Current->modify_over->x = x;
-    draw_context_in->Current->modify_over->y = y_in;
+    //draw_context_in->current->modify_over->x = x;
+    draw_context_in->current->modify_over->y = y_in;
     draw_context_in->drawable = control_flow_data->Drawing->Pixmap;
     draw_context_in->pango_layout = control_flow_data->Drawing->pango_layout;
     widget = control_flow_data->Drawing->Drawing_Area_V;
@@ -724,56 +724,56 @@ int draw_after_hook(void *hook_data, void *call_data)
 
     /* Print status of the process : U, WF, WC, E, W, R */
     if(process_in->state->s == LTTV_STATE_UNNAMED)
-      prop_text_in.Text = "U";
+      prop_text_in.text = "U";
     else if(process_in->state->s == LTTV_STATE_WAIT_FORK)
-      prop_text_in.Text = "WF";
+      prop_text_in.text = "WF";
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
-      prop_text_in.Text = "WC";
+      prop_text_in.text = "WC";
     else if(process_in->state->s == LTTV_STATE_EXIT)
-      prop_text_in.Text = "E";
+      prop_text_in.text = "E";
     else if(process_in->state->s == LTTV_STATE_WAIT)
-      prop_text_in.Text = "W";
+      prop_text_in.text = "W";
     else if(process_in->state->s == LTTV_STATE_RUN)
-      prop_text_in.Text = "R";
+      prop_text_in.text = "R";
     else
-      prop_text_in.Text = "U";
+      prop_text_in.text = "U";
     
     draw_text((void*)&prop_text_in, (void*)draw_context_in);
     
-    draw_context_in->Current->middle->y = y_in+height/2;
-    draw_context_in->Current->status = process_in->state->s;
+    draw_context_in->current->middle->y = y_in+height/2;
+    draw_context_in->current->status = process_in->state->s;
 
-    /* for pid_in : remove Previous, Prev = Current, new Current (default) */
-    g_free(draw_context_in->Previous->modify_under);
-    g_free(draw_context_in->Previous->modify_middle);
-    g_free(draw_context_in->Previous->modify_over);
-    g_free(draw_context_in->Previous->under);
-    g_free(draw_context_in->Previous->middle);
-    g_free(draw_context_in->Previous->over);
-    g_free(draw_context_in->Previous);
+    /* for pid_in : remove previous, Prev = current, new current (default) */
+    g_free(draw_context_in->previous->modify_under);
+    g_free(draw_context_in->previous->modify_middle);
+    g_free(draw_context_in->previous->modify_over);
+    g_free(draw_context_in->previous->under);
+    g_free(draw_context_in->previous->middle);
+    g_free(draw_context_in->previous->over);
+    g_free(draw_context_in->previous);
 
-    draw_context_in->Previous = draw_context_in->Current;
+    draw_context_in->previous = draw_context_in->current;
     
-    draw_context_in->Current = g_new(DrawInfo,1);
-    draw_context_in->Current->over = g_new(ItemInfo,1);
-    draw_context_in->Current->over->x = -1;
-    draw_context_in->Current->over->y = -1;
-    draw_context_in->Current->middle = g_new(ItemInfo,1);
-    draw_context_in->Current->middle->x = -1;
-    draw_context_in->Current->middle->y = -1;
-    draw_context_in->Current->under = g_new(ItemInfo,1);
-    draw_context_in->Current->under->x = -1;
-    draw_context_in->Current->under->y = -1;
-    draw_context_in->Current->modify_over = g_new(ItemInfo,1);
-    draw_context_in->Current->modify_over->x = -1;
-    draw_context_in->Current->modify_over->y = -1;
-    draw_context_in->Current->modify_middle = g_new(ItemInfo,1);
-    draw_context_in->Current->modify_middle->x = -1;
-    draw_context_in->Current->modify_middle->y = -1;
-    draw_context_in->Current->modify_under = g_new(ItemInfo,1);
-    draw_context_in->Current->modify_under->x = -1;
-    draw_context_in->Current->modify_under->y = -1;
-    draw_context_in->Current->status = LTTV_STATE_UNNAMED;
+    draw_context_in->current = g_new(DrawInfo,1);
+    draw_context_in->current->over = g_new(ItemInfo,1);
+    draw_context_in->current->over->x = -1;
+    draw_context_in->current->over->y = -1;
+    draw_context_in->current->middle = g_new(ItemInfo,1);
+    draw_context_in->current->middle->x = -1;
+    draw_context_in->current->middle->y = -1;
+    draw_context_in->current->under = g_new(ItemInfo,1);
+    draw_context_in->current->under->x = -1;
+    draw_context_in->current->under->y = -1;
+    draw_context_in->current->modify_over = g_new(ItemInfo,1);
+    draw_context_in->current->modify_over->x = -1;
+    draw_context_in->current->modify_over->y = -1;
+    draw_context_in->current->modify_middle = g_new(ItemInfo,1);
+    draw_context_in->current->modify_middle->x = -1;
+    draw_context_in->current->modify_middle->y = -1;
+    draw_context_in->current->modify_under = g_new(ItemInfo,1);
+    draw_context_in->current->modify_under->x = -1;
+    draw_context_in->current->modify_under->y = -1;
+    draw_context_in->current->status = LTTV_STATE_UNNAMED;
   
   }
 
@@ -995,7 +995,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
   LttTime trace_start = tsc->Time_Span->startTime;
   LttTime trace_end = tsc->Time_Span->endTime;
   
-  g_info("New Current time HOOK : %u, %u", current_time->tv_sec,
+  g_info("New current time HOOK : %u, %u", current_time->tv_sec,
               current_time->tv_nsec);
 
 
@@ -1054,7 +1054,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   ClosureData *closure_data = (ClosureData*)user_data;
     
   ControlFlowData *control_flow_data =
-    closure_data->event_request->Control_Flow_Data;
+    closure_data->event_request->control_flow_data;
   
   GtkWidget *widget = control_flow_data->Drawing->Drawing_Area_V;
 
@@ -1077,15 +1077,15 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   
   /* Draw the closing line */
   DrawContext *draw_context = hashed_process_data->draw_context;
-  if(draw_context->Previous->middle->x == -1)
+  if(draw_context->previous->middle->x == -1)
   {
-    draw_context->Previous->middle->x = closure_data->event_request->x_begin;
+    draw_context->previous->middle->x = closure_data->event_request->x_begin;
     g_critical("out middle x_beg : %u",closure_data->event_request->x_begin);
   }
 
-  draw_context->Current->middle->x = closure_data->event_request->x_end;
-  draw_context->Current->middle->y = y + height/2;
-  draw_context->Previous->middle->y = y + height/2;
+  draw_context->current->middle->x = closure_data->event_request->x_end;
+  draw_context->current->middle->y = y + height/2;
+  draw_context->previous->middle->y = y + height/2;
   draw_context->drawable = control_flow_data->Drawing->Pixmap;
   draw_context->pango_layout = control_flow_data->Drawing->pango_layout;
   //draw_context->gc = widget->style->black_gc;
@@ -1151,32 +1151,32 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   hashed_process_data->draw_context->drawable = NULL;
   hashed_process_data->draw_context->gc = NULL;
   hashed_process_data->draw_context->pango_layout = NULL;
-  hashed_process_data->draw_context->Current->over->x = -1;
-  hashed_process_data->draw_context->Current->over->y = -1;
-  hashed_process_data->draw_context->Current->middle->x = -1;
-  hashed_process_data->draw_context->Current->middle->y = -1;
-  hashed_process_data->draw_context->Current->under->x = -1;
-  hashed_process_data->draw_context->Current->under->y = -1;
-  hashed_process_data->draw_context->Current->modify_over->x = -1;
-  hashed_process_data->draw_context->Current->modify_over->y = -1;
-  hashed_process_data->draw_context->Current->modify_middle->x = -1;
-  hashed_process_data->draw_context->Current->modify_middle->y = -1;
-  hashed_process_data->draw_context->Current->modify_under->x = -1;
-  hashed_process_data->draw_context->Current->modify_under->y = -1;
-  hashed_process_data->draw_context->Current->status = LTTV_STATE_UNNAMED;
-  hashed_process_data->draw_context->Previous->over->x = -1;
-  hashed_process_data->draw_context->Previous->over->y = -1;
-  hashed_process_data->draw_context->Previous->middle->x = -1;
-  hashed_process_data->draw_context->Previous->middle->y = -1;
-  hashed_process_data->draw_context->Previous->under->x = -1;
-  hashed_process_data->draw_context->Previous->under->y = -1;
-  hashed_process_data->draw_context->Previous->modify_over->x = -1;
-  hashed_process_data->draw_context->Previous->modify_over->y = -1;
-  hashed_process_data->draw_context->Previous->modify_middle->x = -1;
-  hashed_process_data->draw_context->Previous->modify_middle->y = -1;
-  hashed_process_data->draw_context->Previous->modify_under->x = -1;
-  hashed_process_data->draw_context->Previous->modify_under->y = -1;
-  hashed_process_data->draw_context->Previous->status = LTTV_STATE_UNNAMED;
+  hashed_process_data->draw_context->current->over->x = -1;
+  hashed_process_data->draw_context->current->over->y = -1;
+  hashed_process_data->draw_context->current->middle->x = -1;
+  hashed_process_data->draw_context->current->middle->y = -1;
+  hashed_process_data->draw_context->current->under->x = -1;
+  hashed_process_data->draw_context->current->under->y = -1;
+  hashed_process_data->draw_context->current->modify_over->x = -1;
+  hashed_process_data->draw_context->current->modify_over->y = -1;
+  hashed_process_data->draw_context->current->modify_middle->x = -1;
+  hashed_process_data->draw_context->current->modify_middle->y = -1;
+  hashed_process_data->draw_context->current->modify_under->x = -1;
+  hashed_process_data->draw_context->current->modify_under->y = -1;
+  hashed_process_data->draw_context->current->status = LTTV_STATE_UNNAMED;
+  hashed_process_data->draw_context->previous->over->x = -1;
+  hashed_process_data->draw_context->previous->over->y = -1;
+  hashed_process_data->draw_context->previous->middle->x = -1;
+  hashed_process_data->draw_context->previous->middle->y = -1;
+  hashed_process_data->draw_context->previous->under->x = -1;
+  hashed_process_data->draw_context->previous->under->y = -1;
+  hashed_process_data->draw_context->previous->modify_over->x = -1;
+  hashed_process_data->draw_context->previous->modify_over->y = -1;
+  hashed_process_data->draw_context->previous->modify_middle->x = -1;
+  hashed_process_data->draw_context->previous->modify_middle->y = -1;
+  hashed_process_data->draw_context->previous->modify_under->x = -1;
+  hashed_process_data->draw_context->previous->modify_under->y = -1;
+  hashed_process_data->draw_context->previous->status = LTTV_STATE_UNNAMED;
   
 
 }
@@ -1189,10 +1189,10 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 int  after_data_request(void *hook_data, void *call_data)
 {
   EventRequest *Event_Request = (EventRequest*)hook_data;
-  ControlFlowData *control_flow_data = Event_Request->Control_Flow_Data;
+  ControlFlowData *control_flow_data = Event_Request->control_flow_data;
   
   ProcessList *process_list =
-    guicontrolflow_get_process_list(Event_Request->Control_Flow_Data);
+    guicontrolflow_get_process_list(Event_Request->control_flow_data);
 
   ClosureData closure_data;
   closure_data.event_request = (EventRequest*)hook_data;

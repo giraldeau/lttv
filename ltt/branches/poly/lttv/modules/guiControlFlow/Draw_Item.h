@@ -48,8 +48,8 @@ struct _DrawContext {
   GdkGC   *gc;
   PangoLayout *pango_layout;
 
-  DrawInfo  *Current;
-  DrawInfo  *Previous;
+  DrawInfo  *current;
+  DrawInfo  *previous;
 };
 
 /* LttvExecutionState is accessible through the LttvTracefileState. Is has
@@ -98,8 +98,8 @@ struct _IconStruct {
  * During drawing, only the Hook is needed.
  */
 struct _DrawOperation {
-  DrawableItems Item;
-  LttvHooks *Hook;
+  DrawableItems item;
+  LttvHooks *hook;
 };
 
 /*
@@ -131,7 +131,7 @@ struct _PropertiesText {
   GdkColor  *foreground;
   GdkColor  *background;
   gint    size;
-  gchar   *Text;
+  gchar   *text;
   RelPos    position;
 };
 
@@ -196,7 +196,7 @@ void draw_item( GdkDrawable *drawable,
  */
 void add_operation( LttvIAttribute *attributes,
       gchar *pathname,
-      DrawOperation *Operation);
+      DrawOperation *operation);
 
 /* 
  * The del_operation seeks the array present at pathname (if any) and
@@ -205,7 +205,7 @@ void add_operation( LttvIAttribute *attributes,
  */
 gint del_operation( LttvIAttribute *attributes,
       gchar *pathname,
-      DrawOperation *Operation);
+      DrawOperation *operation);
 
 /* 
  * The clean_operations removes all operations present at a pathname.
@@ -221,7 +221,7 @@ gint clean_operations(  LttvIAttribute *attributes,
  */
 void list_operations( LttvIAttribute *attributes,
       gchar *pathname,
-      GArray **Operation);
+      GArray **operation);
 
 
 
@@ -241,7 +241,7 @@ PropertiesText *properties_text_create(
   GdkColor  *foreground,
   GdkColor  *background,
   gint    size,
-  gchar   *Text,
+  gchar   *text,
   RelPos    position);
 
 PropertiesIcon *properties_icon_create(
