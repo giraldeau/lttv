@@ -39,6 +39,8 @@ struct _ControlFlowData {
   
   //guint currently_Selected_Event  ;
   guint number_of_process;
+  guint background_info_waiting; /* Number of background requests waited for
+                                    in order to have all the info ready. */
 
 } ;
 

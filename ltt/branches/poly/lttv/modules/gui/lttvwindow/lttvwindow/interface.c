@@ -128,8 +128,8 @@ create_MWindow (void)
   GtkWidget *tlbZoomIn;
   GtkWidget *tlbZoomOut;
   GtkWidget *tlbZoomExtended;
-  //  GtkWidget *tlbGoToTime;
-  //  GtkWidget *tlbShowTimeFrame;
+  //GtkWidget *tlbGoToTime;
+  //GtkWidget *tlbShowTimeFrame;
   GtkWidget *tlbMoveViewerUp;
   GtkWidget *tlbMoveViewerDown;
   GtkWidget *tlbRemoveViewer;
@@ -565,7 +565,8 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbZoomExtended);
   gtk_container_set_border_width (GTK_CONTAINER (tlbZoomExtended), 1);
-/*
+
+  /*
   tmp_toolbar_icon = create_pixmap (MWindow, "gtk-jump-to.png");
   tlbGoToTime = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
                                 GTK_TOOLBAR_CHILD_BUTTON,
@@ -587,7 +588,7 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbShowTimeFrame);
   gtk_container_set_border_width (GTK_CONTAINER (tlbShowTimeFrame), 1);
-*/
+  */
   gtk_toolbar_append_space (GTK_TOOLBAR (MToolbar1));
 
   tmp_toolbar_icon = create_pixmap (MWindow, "1uparrow.png");
@@ -634,6 +635,7 @@ create_MWindow (void)
   gtk_widget_show (MNotebook);
   gtk_notebook_set_show_tabs((GtkNotebook*)MNotebook, FALSE);
   gtk_box_pack_start (GTK_BOX (MVbox), MNotebook, TRUE, TRUE, 0);
+
 /*
   empty_notebook_page = gtk_vbox_new (FALSE, 0);
   gtk_widget_show (empty_notebook_page);
@@ -819,14 +821,14 @@ create_MWindow (void)
   g_signal_connect ((gpointer) tlbZoomExtended, "clicked",
                     G_CALLBACK (on_button_zoom_extended_clicked),
                     NULL);
-/*
+  /*
   g_signal_connect ((gpointer) tlbGoToTime, "clicked",
                     G_CALLBACK (on_button_go_to_time_clicked),
                     NULL);
   g_signal_connect ((gpointer) tlbShowTimeFrame, "clicked",
                     G_CALLBACK (on_button_show_time_frame_clicked),
                     NULL);
-*/
+                    */
   g_signal_connect ((gpointer) tlbMoveViewerUp, "clicked",
                     G_CALLBACK (on_button_move_up_clicked),
                     NULL);

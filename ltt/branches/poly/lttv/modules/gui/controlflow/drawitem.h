@@ -42,10 +42,13 @@ enum _DrawableItems {
     ITEM_TEXT, ITEM_ICON, ITEM_LINE, ITEM_POINT, ITEM_BACKGROUND
 };
 
+typedef enum _RelPosX {
+  POS_START, POS_END
+} RelPosX;
 
-typedef enum _RelPos {
+typedef enum _RelPosY {
   OVER, MIDDLE, UNDER
-} RelPos;
+} RelPosY;
 
 
 /* The DrawContext keeps information about the current drawing position and
@@ -70,16 +73,30 @@ struct _DrawContext {
   PangoLayout *pango_layout;
 
   struct {
-    gint x_start;
-    gint x_end;
+    struct {
+      gint x;
+      struct {
+        gint over;
+        gint middle;
+        gint under;
+      } offset;
+    } start;
 
-    gint y_over;
-    gint y_middle;
-    gint y_under;
+    struct {
+      gint x;
+      struct {
+        gint over;
+        gint middle;
+        gint under;
+      } offset;
+    } end;
 
-    gint x_modify_over;
-    gint x_modify_middle;
-    gint x_modify_under;
+    struct {
+      gint over;
+      gint middle;
+      gint under;
+    } y;
+
   } drawinfo;
 };
 
@@ -132,9 +149,12 @@ static int Items_Priorities[] = {
 struct _PropertiesText {
   GdkColor  *foreground;
   GdkColor  *background;
-  gint    size;
-  gchar   *text;
-  RelPos    position;
+  gint       size;
+  gchar     *text;
+  struct {
+    RelPosX    x;
+    RelPosY    y;
+  } position;
 };
 
 
@@ -142,21 +162,27 @@ struct _PropertiesIcon {
   gchar   *icon_name;
   gint    width;
   gint    height;
-  RelPos    position;
+  struct {
+    RelPosX    x;
+    RelPosY    y;
+  } position;
 };
 
 struct _PropertiesLine {
   GdkColor  color;
   gint    line_width;
   GdkLineStyle  style;
-  RelPos    position;
+  RelPosY    y;
 };
 
 struct _PropertiesArc {
   GdkColor  *color;
   gint    size; /* We force circle by width = height */
   gboolean  filled;
-  RelPos    position;
+  struct {
+    RelPosX    x;
+    RelPosY    y;
+  } position;
 };
 
 struct _PropertiesBG {
@@ -192,6 +218,8 @@ void draw_item( GdkDrawable *drawable,
  * process_states/ "name associated with LTTV_STATE_SYSCALL"
  */
 
+
+#if 0
 /* 
  * The add_operation has to do a quick sort by priority to keep the operations
  * in the right order.
@@ -233,42 +261,7 @@ void list_operations( LttvIAttribute *attributes,
  */
 void exec_operations( LttvIAttribute *attributes,
       gchar *pathname);
-
-
-/*
- * Functions to create Properties structures.
- */
-
-PropertiesText *properties_text_create(
-  GdkColor  *foreground,
-  GdkColor  *background,
-  gint    size,
-  gchar   *text,
-  RelPos    position);
-
-PropertiesIcon *properties_icon_create(
-  gchar   *icon_name,
-  gint    width,
-  gint    height,
-  RelPos    position);
-
-PropertiesLine *properties_line_create(
-  GdkColor  *color,
-  gint    line_width,
-  GdkLineStyle  style,
-  RelPos    position);
-
-PropertiesArc *properties_arc_create(
-  GdkColor  *color,
-  gint    size,
-  gboolean  filled,
-  RelPos    position);
-
-PropertiesBG *properties_bg_create(
-  GdkColor  *color);
-
-
-
+#endif //0
 
 /*
  * Here follow the prototypes of the hook functions used to draw the

@@ -91,6 +91,7 @@ guicontrolflow(void)
     drawing_get_drawing_area(control_flow_data->drawing);
 
   control_flow_data->number_of_process = 0;
+  control_flow_data->background_info_waiting = 0;
 
   /* Create the Process list */
   control_flow_data->process_list = processlist_construct();

@@ -678,7 +678,7 @@ void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data)
     if(ltt_time.tv_sec != current_time.tv_sec ||
        ltt_time.tv_nsec != current_time.tv_nsec){
       event_viewer_data->current_time_updated = TRUE;
-      lttvwindow_report_current_time(tab,&ltt_time);
+      lttvwindow_report_current_time(tab,ltt_time);
     }
   }else{
     g_warning("Can not get iter\n");

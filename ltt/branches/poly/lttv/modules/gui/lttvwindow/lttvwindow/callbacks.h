@@ -283,4 +283,31 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
                                         guint            page_num,
                                         gpointer         user_data);
 
+
+void
+on_MEntry1_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data);
+void
+on_MEntry2_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data);
+void
+on_MEntry3_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data);
+void
+on_MEntry4_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data);
+void
+on_MEntry5_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data);
+void
+on_MEntry6_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data);
+
+
+void time_change_manager               (Tab *tab,
+                                        TimeWindow new_time_window);
+
+void current_time_change_manager       (Tab *tab,
+                                        LttTime new_current_time);
+
 gboolean execute_time_requests(MainWindow * mw);

@@ -352,26 +352,6 @@ static gboolean remove_hash_item(ProcessInfo *process_info,
 
   gtk_list_store_remove (process_list->list_store, &iter);
 
-#if 0
-    g_free(hashed_process_data->draw_context->previous->modify_under);
-    g_free(hashed_process_data->draw_context->previous->modify_middle);
-    g_free(hashed_process_data->draw_context->previous->modify_over);
-    g_free(hashed_process_data->draw_context->previous->under);
-    g_free(hashed_process_data->draw_context->previous->middle);
-    g_free(hashed_process_data->draw_context->previous->over);
-    g_free(hashed_process_data->draw_context->previous);
-    g_free(hashed_process_data->draw_context->current->modify_under);
-    g_free(hashed_process_data->draw_context->current->modify_middle);
-    g_free(hashed_process_data->draw_context->current->modify_over);
-    g_free(hashed_process_data->draw_context->current->under);
-    g_free(hashed_process_data->draw_context->current->middle);
-    g_free(hashed_process_data->draw_context->current->over);
-    g_free(hashed_process_data->draw_context->current);
-    g_free(hashed_process_data->draw_context);
-    g_free(hashed_process_data);
-#endif //0
-
-
   return TRUE; /* remove the element from the hash table */
 }
 
@@ -557,24 +537,7 @@ int processlist_remove( ProcessList *process_list,
     gtk_tree_path_free(tree_path);
 
     gtk_list_store_remove (process_list->list_store, &iter);
-#if 0
-    g_free(hashed_process_data->draw_context->previous->modify_under);
-    g_free(hashed_process_data->draw_context->previous->modify_middle);
-    g_free(hashed_process_data->draw_context->previous->modify_over);
-    g_free(hashed_process_data->draw_context->previous->under);
-    g_free(hashed_process_data->draw_context->previous->middle);
-    g_free(hashed_process_data->draw_context->previous->over);
-    g_free(hashed_process_data->draw_context->previous);
-    g_free(hashed_process_data->draw_context->current->modify_under);
-    g_free(hashed_process_data->draw_context->current->modify_middle);
-    g_free(hashed_process_data->draw_context->current->modify_over);
-    g_free(hashed_process_data->draw_context->current->under);
-    g_free(hashed_process_data->draw_context->current->middle);
-    g_free(hashed_process_data->draw_context->current->over);
-    g_free(hashed_process_data->draw_context->current);
-    g_free(hashed_process_data->draw_context);
-    g_free(hashed_process_data);
-#endif //0
+    
     g_hash_table_remove(process_list->process_hash,
         &Process_Info);
     

@@ -678,17 +678,20 @@ void lttvwindow_unregister_dividor(Tab *tab,
  */
 
 void lttvwindow_report_time_window(Tab *tab,
-                                   const TimeWindow *time_window)
+                                   TimeWindow time_window)
 {
   //set_time_window(tab, time_window);
   //set_time_window_adjustment(tab, time_window);
 
+  time_change_manager(tab, time_window);
+
+  
+#if 0    
   /* Set scrollbar */
   LttvTracesetContext *tsc =
         LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
   GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
-      
   g_object_set(G_OBJECT(adjustment),
                "lower",
                0.0, /* lower */
@@ -721,6 +724,7 @@ void lttvwindow_report_time_window(Tab *tab,
                              ltt_time_sub(time_window->start_time,
                                           time_span.start_time))
                            * NANOSECONDS_PER_SECOND);
+#endif //0
 }
 
 
@@ -733,11 +737,13 @@ void lttvwindow_report_time_window(Tab *tab,
  */
 
 void lttvwindow_report_current_time(Tab *tab,
-                                    const LttTime *time)
+                                    LttTime time)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  tab->current_time = *time;
+  
+  current_time_change_manager(tab, time);
+  
   g_assert(lttv_iattribute_find_by_path(tab->attributes,
            "hooks/updatecurrenttime", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);

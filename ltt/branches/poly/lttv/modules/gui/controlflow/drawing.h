@@ -33,6 +33,18 @@
 
 #define SAFETY 50 // safety pixels at right and bottom of pixmap buffer
 
+
+typedef enum _draw_color { COL_BLACK,
+                           COL_WHITE,
+                           COL_WAIT_FORK,
+                           COL_WAIT_CPU,
+                           COL_EXIT,
+                           COL_WAIT,
+                           COL_RUN,
+                           NUM_COLORS } draw_color;
+
+extern GdkColor drawing_colors[NUM_COLORS];
+
 /* This part of the viewer does :
  * Draw horizontal lines, getting graphic context as arg.
  * Copy region of the screen into another.

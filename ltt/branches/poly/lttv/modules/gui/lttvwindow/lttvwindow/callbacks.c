@@ -241,6 +241,8 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   LttvTracesetContext *tsc =
         LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
+  TimeWindow new_time_window;
+  LttTime new_current_time;
 
   /* Set the tab's time window and current time if
    * out of bounds */
@@ -248,8 +250,9 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
      || ltt_time_compare(  ltt_time_add(tab->time_window.start_time,
                                         tab->time_window.time_width),
                            time_span.end_time) > 0) {
-    tab->time_window.start_time = time_span.start_time;
-    tab->current_time = time_span.start_time;
+    new_time_window.start_time = time_span.start_time;
+    
+    new_current_time = time_span.start_time;
     
     LttTime tmp_time;
 
@@ -258,9 +261,12 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
     else
       tmp_time.tv_sec = time_span.end_time.tv_sec;
     tmp_time.tv_nsec = 0;
-    tab->time_window.time_width = tmp_time ;
+    new_time_window.time_width = tmp_time ;
   }
-  
+  time_change_manager(tab, new_time_window);
+  current_time_change_manager(tab, new_current_time);
+
+#if 0
   /* Set scrollbar */
   GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
   LttTime upper = ltt_time_sub(time_span.end_time, time_span.start_time);
@@ -292,6 +298,23 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
                NULL);
   gtk_adjustment_value_changed(adjustment);
 
+  /* set the time bar. The value callbacks will change their nsec themself */
+  /* start seconds */
+  gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry1),
+                            (double)time_span.start_time.tv_sec,
+                            (double)time_span.end_time.tv_sec);
+
+  /* end seconds */
+  gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry3),
+                            (double)time_span.start_time.tv_sec,
+                            (double)time_span.end_time.tv_sec);
+
+   /* current seconds */
+  gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry5),
+                            (double)time_span.start_time.tv_sec,
+                            (double)time_span.end_time.tv_sec);
+#endif //0
+  
   /* Finally, call the update hooks of the viewers */
   LttvHooks * tmp;
   LttvAttributeValue value;
@@ -2008,6 +2031,8 @@ void zoom(GtkWidget * widget, double size)
      == 0 ) {
     g_warning("Can not zoom that far due to time nanosecond precision");
  } else {
+   time_change_manager(tab, new_time_window);
+#if 0
     /* Set scrollbar */
     GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
         
@@ -2054,6 +2079,7 @@ void zoom(GtkWidget * widget, double size)
     //gtk_adjustment_set_value(adjustment,
     //                         ltt_time_to_double(new_time_window.start_time)
     //                         * NANOSECONDS_PER_SECOND);
+#endif //0
   }
 }
 
@@ -2074,7 +2100,7 @@ void zoom_extended(GtkWidget * widget, gpointer user_data)
 
 void go_to_time(GtkWidget * widget, gpointer user_data)
 {
-  g_printf("Go to time\n");
+  g_printf("Go to time\n");  
 }
 
 void show_time_frame(GtkWidget * widget, gpointer user_data)
@@ -3157,19 +3183,396 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
 }
 
 
+void time_change_manager               (Tab *tab,
+                                        TimeWindow new_time_window)
+{
+  /* Only one source of time change */
+  if(tab->time_manager_lock == TRUE) return;
+
+  tab->time_manager_lock = TRUE;
+
+  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  LttTime start_time = new_time_window.start_time;
+  LttTime end_time = ltt_time_add(new_time_window.start_time,
+                                  new_time_window.time_width);
+
+  /* Set scrollbar */
+  GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
+  LttTime upper = ltt_time_sub(time_span.end_time, time_span.start_time);
+#if 0  
+  gtk_range_set_increments(GTK_RANGE(tab->scrollbar),
+               ltt_time_to_double(new_time_window.time_width)
+                             / SCROLL_STEP_PER_PAGE
+                             * NANOSECONDS_PER_SECOND, /* step increment */
+               ltt_time_to_double(new_time_window.time_width) 
+                 * NANOSECONDS_PER_SECOND); /* page increment */
+  gtk_range_set_range(GTK_RANGE(tab->scrollbar),
+                 0.0, /* lower */
+               ltt_time_to_double(upper) 
+                 * NANOSECONDS_PER_SECOND); /* upper */
+#endif //0
+  g_object_set(G_OBJECT(adjustment),
+               "lower",
+                 0.0, /* lower */
+               "upper",
+               ltt_time_to_double(upper) 
+                 * NANOSECONDS_PER_SECOND, /* upper */
+               "step_increment",
+               ltt_time_to_double(new_time_window.time_width)
+                             / SCROLL_STEP_PER_PAGE
+                             * NANOSECONDS_PER_SECOND, /* step increment */
+               "page_increment",
+               ltt_time_to_double(new_time_window.time_width) 
+                 * NANOSECONDS_PER_SECOND, /* page increment */
+               "page_size",
+               ltt_time_to_double(new_time_window.time_width) 
+                 * NANOSECONDS_PER_SECOND, /* page size */
+               NULL);
+  gtk_adjustment_changed(adjustment);
+
+ // g_object_set(G_OBJECT(adjustment),
+ //              "value",
+ //              ltt_time_to_double(
+ //               ltt_time_sub(start_time, time_span.start_time))
+ //                  * NANOSECONDS_PER_SECOND, /* value */
+ //              NULL);
+  //gtk_adjustment_value_changed(adjustment);
+  gtk_range_set_value(GTK_RANGE(tab->scrollbar),
+               ltt_time_to_double(
+                ltt_time_sub(start_time, time_span.start_time))
+                   * NANOSECONDS_PER_SECOND /* value */);
+
+  /* set the time bar. */
+  /* start seconds */
+  gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry1),
+                            (double)time_span.start_time.tv_sec,
+                            (double)time_span.end_time.tv_sec);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry1),
+                            (double)start_time.tv_sec);
+
+  /* start nanoseconds */
+  if(start_time.tv_sec == time_span.start_time.tv_sec) {
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry2),
+                              (double)time_span.start_time.tv_nsec,
+                              (double)NANOSECONDS_PER_SECOND-1);
+  }
+  else if(start_time.tv_sec == time_span.end_time.tv_sec) {
+    /* If we are at the end, max nsec to end..  -1 (not zero length) */
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry2),
+                              0.0,
+                              (double)time_span.end_time.tv_nsec-1);
+  }
+  else /* anywhere else */
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry2),
+                              0.0,
+                              (double)NANOSECONDS_PER_SECOND-1);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry2),
+                            (double)start_time.tv_nsec);
+
+  /* end seconds */
+  gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry3),
+                            (double)time_span.start_time.tv_sec,
+                            (double)time_span.end_time.tv_sec);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry3),
+                            (double)end_time.tv_sec);
+
+  /* end nanoseconds */
+  if(end_time.tv_sec == time_span.start_time.tv_sec) {
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry4),
+                              (double)time_span.start_time.tv_nsec+1,
+                              (double)NANOSECONDS_PER_SECOND-1);
+  }
+  else if(end_time.tv_sec == time_span.end_time.tv_sec) {
+    /* If we are at the end, max nsec to end.. */
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry4),
+                              0.0,
+                              (double)time_span.end_time.tv_nsec);
+  }
+  else /* anywhere else */
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry4),
+                              0.0,
+                              (double)NANOSECONDS_PER_SECOND-1);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry4),
+                            (double)end_time.tv_nsec);
+
+  /* call viewer hooks for new time window */
+  set_time_window(tab, &new_time_window);
+
+  tab->time_manager_lock = FALSE;
+}
+
+
+/* value changed for frame start s
+ *
+ * Check time span : if ns is out of range, clip it the nearest good value.
+ */
+void
+on_MEntry1_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data)
+{
+  Tab *tab =(Tab *)user_data;
+  LttvTracesetContext * tsc = 
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  gint value = gtk_spin_button_get_value_as_int(spinbutton);
+
+  TimeWindow new_time_window = tab->time_window;
+ 
+  LttTime end_time = ltt_time_add(new_time_window.start_time,
+                                  new_time_window.time_width);
+
+  new_time_window.start_time.tv_sec = value;
+
+  /* start nanoseconds */
+  if(new_time_window.start_time.tv_sec == time_span.start_time.tv_sec) {
+    if(new_time_window.start_time.tv_nsec < time_span.start_time.tv_nsec)
+      new_time_window.start_time.tv_nsec = time_span.start_time.tv_nsec;
+  }
+  else if(new_time_window.start_time.tv_sec == time_span.end_time.tv_sec) {
+    if(new_time_window.start_time.tv_nsec > time_span.end_time.tv_nsec)
+      new_time_window.start_time.tv_nsec = time_span.end_time.tv_nsec-1;
+  }
+
+  /* check if end time selected is below or equal */
+  if(ltt_time_compare(new_time_window.start_time, end_time) >= 0) {
+    /* Then, we must push back end time : keep the same time width
+     * if possible, else end traceset time */
+    end_time = LTT_TIME_MIN(time_span.end_time,
+                                  ltt_time_add(new_time_window.start_time,
+                                               new_time_window.time_width)
+                                 );
+  }
+
+  /* Fix the time width to fit start time and end time */
+  new_time_window.time_width = ltt_time_sub(end_time,
+                                            new_time_window.start_time);
+
+  time_change_manager(tab, new_time_window);
+
+}
+
+void
+on_MEntry2_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data)
+{
+  Tab *tab =(Tab *)user_data;
+  LttvTracesetContext * tsc = 
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  gint value = gtk_spin_button_get_value_as_int(spinbutton);
+
+  TimeWindow new_time_window = tab->time_window;
+ 
+  LttTime end_time = ltt_time_add(new_time_window.start_time,
+                                  new_time_window.time_width);
+
+  new_time_window.start_time.tv_nsec = value;
+
+  /* check if end time selected is below or equal */
+  if(ltt_time_compare(new_time_window.start_time, end_time) >= 0) {
+    /* Then, we must push back end time : keep the same time width
+     * if possible, else end traceset time */
+    end_time = LTT_TIME_MIN(time_span.end_time,
+                                  ltt_time_add(new_time_window.start_time,
+                                               new_time_window.time_width)
+                                 );
+  }
+
+  /* Fix the time width to fit start time and end time */
+  new_time_window.time_width = ltt_time_sub(end_time,
+                                            new_time_window.start_time);
+
+  time_change_manager(tab, new_time_window);
+
+}
+
+void
+on_MEntry3_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data)
+{
+  Tab *tab =(Tab *)user_data;
+  LttvTracesetContext * tsc = 
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  gint value = gtk_spin_button_get_value_as_int(spinbutton);
+
+  TimeWindow new_time_window = tab->time_window;
+ 
+  LttTime end_time = ltt_time_add(new_time_window.start_time,
+                                  new_time_window.time_width);
+  end_time.tv_sec = value;
+
+  /* end nanoseconds */
+  if(end_time.tv_sec == time_span.start_time.tv_sec) {
+    if(end_time.tv_nsec < time_span.start_time.tv_nsec)
+      end_time.tv_nsec = time_span.start_time.tv_nsec+1;
+  }
+  else if(end_time.tv_sec == time_span.end_time.tv_sec) {
+    if(end_time.tv_nsec > time_span.end_time.tv_nsec)
+      end_time.tv_nsec = time_span.end_time.tv_nsec;
+  }
+
+  /* check if end time selected is below or equal */
+  if(ltt_time_compare(new_time_window.start_time, end_time) >= 0) {
+    /* Then, we must push front start time : keep the same time width
+     * if possible, else end traceset time */
+    new_time_window.start_time = LTT_TIME_MAX(time_span.start_time,
+                                        ltt_time_sub(end_time,
+                                                     new_time_window.time_width)
+                                             );
+  }
+
+  /* Fix the time width to fit start time and end time */
+  new_time_window.time_width = ltt_time_sub(end_time,
+                                            new_time_window.start_time);
+
+  time_change_manager(tab, new_time_window);
+
+}
+
+void
+on_MEntry4_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data)
+{
+  Tab *tab =(Tab *)user_data;
+  LttvTracesetContext * tsc = 
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  gint value = gtk_spin_button_get_value_as_int(spinbutton);
+
+  TimeWindow new_time_window = tab->time_window;
+ 
+  LttTime end_time = ltt_time_add(new_time_window.start_time,
+                                  new_time_window.time_width);
+  end_time.tv_nsec = value;
+
+  /* check if end time selected is below or equal */
+  if(ltt_time_compare(new_time_window.start_time, end_time) >= 0) {
+    /* Then, we must push front start time : keep the same time width
+     * if possible, else end traceset time */
+    new_time_window.start_time = LTT_TIME_MAX(time_span.start_time,
+                                        ltt_time_sub(end_time,
+                                                     new_time_window.time_width)
+                                             );
+  }
+
+  /* Fix the time width to fit start time and end time */
+  new_time_window.time_width = ltt_time_sub(end_time,
+                                            new_time_window.start_time);
+
+  time_change_manager(tab, new_time_window);
+
+}
+
+
+void current_time_change_manager       (Tab *tab,
+                                        LttTime new_current_time)
+{
+  /* Only one source of time change */
+  if(tab->current_time_manager_lock == TRUE) return;
+
+  tab->current_time_manager_lock = TRUE;
+
+  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+
+  tab->current_time = new_current_time;
+
+  /* current seconds */
+  gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry5),
+                            (double)time_span.start_time.tv_sec,
+                            (double)time_span.end_time.tv_sec);
+
+  /* start nanoseconds */
+  if(new_current_time.tv_sec == time_span.start_time.tv_sec) {
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
+                              (double)time_span.start_time.tv_nsec,
+                              (double)NANOSECONDS_PER_SECOND-1);
+  }
+  else if(new_current_time.tv_sec == time_span.end_time.tv_sec) {
+    /* If we are at the end, max nsec to end.. */
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
+                              0.0,
+                              (double)time_span.end_time.tv_nsec);
+  }
+  else /* anywhere else */
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
+                              0.0,
+                              (double)NANOSECONDS_PER_SECOND-1);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry6),
+                            (double)new_current_time.tv_nsec);
+
+  lttvwindow_report_current_time(tab, tab->current_time);
+
+  tab->current_time_manager_lock = FALSE;
+}
+
+void
+on_MEntry5_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data)
+{
+  Tab *tab = (Tab*)user_data;
+  LttvTracesetContext * tsc = 
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  gint value = gtk_spin_button_get_value_as_int(spinbutton);
+  LttTime new_current_time = tab->current_time;
+  new_current_time.tv_sec = value;
+
+  /* current nanoseconds */
+  if(new_current_time.tv_sec == time_span.start_time.tv_sec) {
+    if(new_current_time.tv_nsec < time_span.start_time.tv_nsec)
+      new_current_time.tv_nsec = time_span.start_time.tv_nsec;
+  }
+  else if(new_current_time.tv_sec == time_span.end_time.tv_sec) {
+    if(new_current_time.tv_nsec > time_span.end_time.tv_nsec)
+      new_current_time.tv_nsec = time_span.end_time.tv_nsec;
+  }
+
+  current_time_change_manager(tab, new_current_time);
+}
+
+void
+on_MEntry6_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data)
+{
+  Tab *tab = (Tab*)user_data;
+  gint value = gtk_spin_button_get_value_as_int(spinbutton);
+  LttTime new_current_time = tab->current_time;
+  new_current_time.tv_nsec = value;
+
+  current_time_change_manager(tab, new_current_time);
+}
+
+
 void scroll_value_changed_cb(GtkWidget *scrollbar,
                              gpointer user_data)
 {
   Tab *tab = (Tab *)user_data;
-  TimeWindow time_window;
+  TimeWindow new_time_window;
   LttTime time;
   GtkAdjustment *adjust = gtk_range_get_adjustment(GTK_RANGE(scrollbar));
   gdouble value = gtk_adjustment_get_value(adjust);
-  gdouble upper, lower, ratio, page_size;
+ // gdouble upper, lower, ratio, page_size;
+  gdouble page_size;
   LttvTracesetContext * tsc = 
     LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
 
+  time = ltt_time_add(ltt_time_from_double(value/NANOSECONDS_PER_SECOND),
+                      time_span.start_time);
+
+  new_time_window.start_time = time;
+  
+  page_size = adjust->page_size;
+
+  new_time_window.time_width = 
+    ltt_time_from_double(page_size/NANOSECONDS_PER_SECOND);
+
+
+  time_change_manager(tab, new_time_window);
+#if 0
   //time_window = tab->time_window;
 
   lower = adjust->lower;
@@ -3196,7 +3599,7 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
 
   /* call viewer hooks for new time window */
   set_time_window(tab, &time_window);
-
+#endif //0
 }
 
 
@@ -3662,7 +4065,6 @@ void construct_main_window(MainWindow * parent)
   // Add the object's information to the module's array 
   g_main_window_list = g_slist_append(g_main_window_list, new_m_window);
 
-
   new_window  = create_MWindow();
   gtk_widget_show (new_window);
     
@@ -3689,7 +4091,7 @@ void construct_main_window(MainWindow * parent)
     g_printf("Notebook does not exist\n");
     return;
   }
-  gtk_notebook_popup_enable (GTK_NOTEBOOK(notebook));
+  //gtk_notebook_popup_enable (GTK_NOTEBOOK(notebook));
   //for now there is no name field in LttvTraceset structure
   //Use "Traceset" as the label for the default tab
   if(parent) {
@@ -3711,9 +4113,9 @@ void construct_main_window(MainWindow * parent)
       lttvwindow_add_trace(new_tab,
                            g_init_trace);
 
-      LttvTraceset *traceset = new_tab->traceset_info->traceset;
-      SetTraceset(new_tab, traceset);
     }
+    LttvTraceset *traceset = new_tab->traceset_info->traceset;
+    SetTraceset(new_tab, traceset);
   }
 
   g_printf("There are now : %d windows\n",g_slist_length(g_main_window_list));
@@ -3796,6 +4198,8 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   fflush(stdout);
 #endif //DEBUG
 
+  tab->time_manager_lock = FALSE;
+  tab->current_time_manager_lock = FALSE;
 
   //FIXME copy not implemented in lower level
   tab->traceset_info->traceset_context =
@@ -3809,6 +4213,7 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
        (LttvTracesetState*)tab->traceset_info->traceset_context);
   
   //determine the current_time and time_window of the tab
+#if 0
   if(copy_tab != NULL){
     tab->time_window      = copy_tab->time_window;
     tab->current_time     = copy_tab->current_time;
@@ -3833,6 +4238,7 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
        LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
                              time_span.start_time.tv_nsec;
   }
+#endif //0
   tab->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   tab->interrupted_state = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
  
@@ -3846,13 +4252,94 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
                      TRUE, /* expand */
                      TRUE, /* Give the extra space to the child */
                      0);    /* No padding */
- 
+
+  /* Create the timebar */
+  {
+    tab->MTimebar = gtk_hbox_new(FALSE, 2);
+    gtk_widget_show(tab->MTimebar);
+
+    tab->MText1 = gtk_label_new("Time Frame  start: ");
+    gtk_widget_show(tab->MText1);
+    tab->MText2 = gtk_label_new("s");
+    gtk_widget_show(tab->MText2);
+    tab->MText3a = gtk_label_new("ns");
+    gtk_widget_show(tab->MText3a);
+    tab->MText3b = gtk_label_new("end:");
+    gtk_widget_show(tab->MText3b);
+    tab->MText4 = gtk_label_new("s");
+    gtk_widget_show(tab->MText4);
+    tab->MText5a = gtk_label_new("ns");
+    gtk_widget_show(tab->MText5a);
+    tab->MText5b = gtk_label_new("Current Time:");
+    gtk_widget_show(tab->MText5b);
+    tab->MText6 = gtk_label_new("s");
+    gtk_widget_show(tab->MText6);
+    tab->MText7 = gtk_label_new("ns");
+    gtk_widget_show(tab->MText7);
+
+    tab->MEntry1 = gtk_spin_button_new_with_range(0.0, 1.0, 1.0);
+    gtk_spin_button_set_digits(GTK_SPIN_BUTTON(tab->MEntry1),0);
+    gtk_spin_button_set_snap_to_ticks(GTK_SPIN_BUTTON(tab->MEntry1),TRUE);
+    gtk_widget_show(tab->MEntry1);
+    tab->MEntry2 = gtk_spin_button_new_with_range(0.0, 1.0, 1.0);
+    gtk_spin_button_set_digits(GTK_SPIN_BUTTON(tab->MEntry2),0);
+    gtk_spin_button_set_snap_to_ticks(GTK_SPIN_BUTTON(tab->MEntry2),TRUE);
+    gtk_widget_show(tab->MEntry2);
+    tab->MEntry3 = gtk_spin_button_new_with_range(0.0, 1.0, 1.0);
+    gtk_spin_button_set_digits(GTK_SPIN_BUTTON(tab->MEntry3),0);
+    gtk_spin_button_set_snap_to_ticks(GTK_SPIN_BUTTON(tab->MEntry3),TRUE);
+    gtk_widget_show(tab->MEntry3);
+    tab->MEntry4 = gtk_spin_button_new_with_range(0.0, 1.0, 1.0);
+    gtk_spin_button_set_digits(GTK_SPIN_BUTTON(tab->MEntry4),0);
+    gtk_spin_button_set_snap_to_ticks(GTK_SPIN_BUTTON(tab->MEntry4),TRUE);
+    gtk_widget_show(tab->MEntry4);
+    tab->MEntry5 = gtk_spin_button_new_with_range(0.0, 1.0, 1.0);
+    gtk_spin_button_set_digits(GTK_SPIN_BUTTON(tab->MEntry5),0);
+    gtk_spin_button_set_snap_to_ticks(GTK_SPIN_BUTTON(tab->MEntry5),TRUE);
+    gtk_widget_show(tab->MEntry5);
+    tab->MEntry6 = gtk_spin_button_new_with_range(0.0, 1.0, 1.0);
+    gtk_spin_button_set_digits(GTK_SPIN_BUTTON(tab->MEntry6),0);
+    gtk_spin_button_set_snap_to_ticks(GTK_SPIN_BUTTON(tab->MEntry6),TRUE);
+    gtk_widget_show(tab->MEntry6);
+
+    
+    GtkWidget *temp_widget;
+    
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText1, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEntry1, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText2, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEntry2, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText3a, FALSE, FALSE, 0);
+    temp_widget = gtk_vseparator_new();
+    gtk_widget_show(temp_widget);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), temp_widget, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText3b, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEntry3, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText4, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEntry4, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText5a, FALSE, FALSE, 0);
+    temp_widget = gtk_vseparator_new();
+    gtk_widget_show(temp_widget);
+    gtk_box_pack_end (GTK_BOX (tab->MTimebar), tab->MText7, FALSE, FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (tab->MTimebar), tab->MEntry6, FALSE, FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (tab->MTimebar), tab->MText6, FALSE, FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (tab->MTimebar), tab->MEntry5, FALSE, FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (tab->MTimebar), tab->MText5b, FALSE, FALSE, 0);
+    gtk_box_pack_end (GTK_BOX (tab->MTimebar), temp_widget, FALSE, FALSE, 0);
+  }
+
   gtk_box_pack_end(GTK_BOX(tab->vbox),
                    tab->scrollbar,
                    FALSE, /* Do not expand */
                    FALSE, /* Fill has no effect here  (expand false) */
                    0);    /* No padding */
- 
+  
+  gtk_box_pack_end(GTK_BOX(tab->vbox),
+                   tab->MTimebar,
+                   FALSE, /* Do not expand */
+                   FALSE, /* Fill has no effect here  (expand false) */
+                   0);    /* No padding */
+
   g_object_set_data(G_OBJECT(tab->viewer_container), "focused_viewer", NULL);
 
 
@@ -3909,6 +4396,26 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
 
   g_signal_connect(G_OBJECT(tab->scrollbar), "value-changed",
       G_CALLBACK(scroll_value_changed_cb), tab);
+
+  g_signal_connect ((gpointer) tab->MEntry1, "value-changed",
+                    G_CALLBACK (on_MEntry1_value_changed),
+                    tab);
+  g_signal_connect ((gpointer) tab->MEntry2, "value-changed",
+                    G_CALLBACK (on_MEntry2_value_changed),
+                    tab);
+  g_signal_connect ((gpointer) tab->MEntry3, "value-changed",
+                    G_CALLBACK (on_MEntry3_value_changed),
+                    tab);
+  g_signal_connect ((gpointer) tab->MEntry4, "value-changed",
+                    G_CALLBACK (on_MEntry4_value_changed),
+                    tab);
+  g_signal_connect ((gpointer) tab->MEntry5, "value-changed",
+                    G_CALLBACK (on_MEntry5_value_changed),
+                    tab);
+  g_signal_connect ((gpointer) tab->MEntry6, "value-changed",
+                    G_CALLBACK (on_MEntry6_value_changed),
+                    tab);
+
   //g_signal_connect(G_OBJECT(tab->scrollbar), "changed",
   //    G_CALLBACK(scroll_value_changed_cb), tab);
 

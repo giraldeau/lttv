@@ -73,15 +73,36 @@ struct _Tab{
   //GtkWidget *multivpaned;
   GtkWidget *viewer_container;
   GtkWidget *scrollbar;
+
+  /* time bar */
+  GtkWidget *MTimebar;
+  GtkWidget *MText1;
+  GtkWidget *MEntry1;
+  GtkWidget *MText2;
+  GtkWidget *MEntry2;
+  GtkWidget *MText3a;
+  GtkWidget *MText3b;
+  GtkWidget *MEntry3;
+  GtkWidget *MText4;
+  GtkWidget *MEntry4;
+  GtkWidget *MText5a;
+  GtkWidget *MText5b;
+  GtkWidget *MEntry5;
+  GtkWidget *MText6;
+  GtkWidget *MEntry6;
+  GtkWidget *MText7;
    
   // startTime is the left of the visible area. Corresponds to the scrollbar
   // value.
   // Time_Width is a zoom dependant value (corresponding to page size)
   TimeWindow time_window;
+  gboolean time_manager_lock;
   
   // The current time is the time selected in the visible area by the user,
   // not the scrollbar value.
   LttTime current_time;
+  gboolean current_time_manager_lock;
+
   LttvIAttribute * attributes;
 
   //struct _Tab * next;

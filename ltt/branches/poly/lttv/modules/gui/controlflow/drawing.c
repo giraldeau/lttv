@@ -33,6 +33,20 @@
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
+
+GdkColor drawing_colors[NUM_COLORS] =
+{ /* Pixel, R, G, B */
+  { 0, 0, 0, 0 }, /* COL_BLACK */
+  { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_WHITE */
+  { 0, 0x0fff, 0xffff, 0xfff0 }, /* COL_WAIT_FORK */
+  { 0, 0xffff, 0xffff, 0x0000 }, /* COL_WAIT_CPU */
+  { 0, 0xffff, 0x0000, 0xffff }, /* COL_EXIT */
+  { 0, 0xffff, 0x0000, 0x0000 }, /* COL_WAIT */
+  { 0, 0x0000, 0xffff, 0x0000 }  /* COL_RUN */
+};
+
+
+
 /*****************************************************************************
  *                              drawing functions                            *
  *****************************************************************************/
@@ -42,28 +56,6 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data );
 
 static gboolean
 motion_notify_ruler(GtkWidget *widget, GdkEventMotion *event, gpointer user_data);
-
-
-//FIXME Colors will need to be dynamic. Graphic context part not done so far.
-typedef enum 
-{
-  RED,
-  GREEN,
-  BLUE,
-  WHITE,
-  BLACK
-
-} ControlFlowColors;
-
-/* Vector of unallocated colors */
-static GdkColor CF_Colors [] = 
-{
-  { 0, 0xffff, 0x0000, 0x0000 },  // RED
-  { 0, 0x0000, 0xffff, 0x0000 },  // GREEN
-  { 0, 0x0000, 0x0000, 0xffff },  // BLUE
-  { 0, 0xffff, 0xffff, 0xffff },  // WHITE
-  { 0, 0x0000, 0x0000, 0x0000 } // BLACK
-};
 
 
 /* Function responsible for updating the exposed area.
@@ -234,7 +226,8 @@ void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
   LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
 
-  cfd->drawing->last_start = current_time;
+  cfd->drawing->last_start = LTT_TIME_MIN(current_time,
+                                          events_request->end_time);
 }
 
 
@@ -490,7 +483,7 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
         window_end,
         &time);
 
-    lttvwindow_report_current_time(control_flow_data->tab, &time);
+    lttvwindow_report_current_time(control_flow_data->tab, time);
 
   }
 

@@ -113,7 +113,7 @@
 /* drawing hook functions */
 gboolean draw_text( void *hook_data, void *call_data)
 {
-  PropertiesText *Properties = (PropertiesText*)hook_data;
+  PropertiesText *properties = (PropertiesText*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
 
   PangoContext *context;
@@ -128,38 +128,76 @@ gboolean draw_text( void *hook_data, void *call_data)
   context = pango_layout_get_context(layout);
   font_desc = pango_context_get_font_description(context);
 
-  pango_font_description_set_size(font_desc, Properties->size*PANGO_SCALE);
+  pango_font_description_set_size(font_desc, properties->size*PANGO_SCALE);
   pango_layout_context_changed(layout);
 
-  pango_layout_set_text(layout, Properties->text, -1);
+  pango_layout_set_text(layout, properties->text, -1);
   pango_layout_get_pixel_extents(layout, &ink_rect, NULL);
-  switch(Properties->position) {
-    case OVER:
-              gdk_draw_layout_with_colors(draw_context->drawable,
-                draw_context->gc,
-                draw_context->drawinfo.modify_over.x,
-                draw_context->drawinfo.modify_over.y,
-                layout, Properties->foreground, Properties->background);
-              draw_context->drawinfo.modify_over.x += ink_rect.width;
 
+  gint x=0, y=0;
+  gint *offset=NULL;
+  gboolean enough_space = FALSE;
+  gint width = ink_rect.width;
+
+  switch(properties->position.x) {
+    case POS_START:
+      x = draw_context->drawinfo.start.x;
+      switch(properties->position.y) {
+        case OVER:
+          offset = &draw_context->drawinfo.start.offset.over;
+          x += draw_context->drawinfo.start.offset.over;
+          y = draw_context->drawinfo.y.over;
+          break;
+        case MIDDLE:
+          offset = &draw_context->drawinfo.start.offset.middle;
+          x += draw_context->drawinfo.start.offset.middle;
+          y = draw_context->drawinfo.y.middle;
+          break;
+        case UNDER:
+          offset = &draw_context->drawinfo.start.offset.under;
+          x += draw_context->drawinfo.start.offset.under;
+          y = draw_context->drawinfo.y.under;
+          break;
+      }
+      /* verify if there is enough space to draw */
+      if(x + width <= draw_context->drawinfo.end.x) {
+        enough_space = TRUE;
+        *offset += width;
+      }
       break;
-    case MIDDLE:
-              gdk_draw_layout_with_colors(draw_context->drawable,
-                draw_context->gc,
-                draw_context->drawinfo.modify_middle.x,
-                draw_context->drawinfo.modify_middle.y,
-                layout, Properties->foreground, Properties->background);
-              draw_context->drawinfo.modify_middle.x += ink_rect.width;
-      break;
-    case UNDER:
-              gdk_draw_layout_with_colors(draw_context->drawable,
-                draw_context->gc,
-                draw_context->drawinfo.modify_under.x,
-                draw_context->drawinfo.modify_under.y,
-                layout, Properties->foreground, Properties->background);
-              draw_context->drawinfo.modify_under.x += ink_rect.width;
+    case POS_END:
+      x = draw_context->drawinfo.end.x;
+      switch(properties->position.y) {
+        case OVER:
+          offset = &draw_context->drawinfo.end.offset.over;
+          x += draw_context->drawinfo.end.offset.over;
+          y = draw_context->drawinfo.y.over;
+          break;
+        case MIDDLE:
+          offset = &draw_context->drawinfo.end.offset.middle;
+          x += draw_context->drawinfo.end.offset.middle;
+          y = draw_context->drawinfo.y.middle;
+          break;
+        case UNDER:
+          offset = &draw_context->drawinfo.end.offset.under;
+          x += draw_context->drawinfo.end.offset.under;
+          y = draw_context->drawinfo.y.under;
+          break;
+      }
+      /* verify if there is enough space to draw */
+      if(x - width >= draw_context->drawinfo.start.x) {
+        enough_space = TRUE;
+        *offset -= width;
+      }
       break;
   }
+
+  if(enough_space)
+    gdk_draw_layout_with_colors(draw_context->drawable,
+              draw_context->gc,
+              x,
+              y,
+              layout, properties->foreground, properties->background);
 
   return 0;
 }
@@ -194,60 +232,82 @@ gboolean draw_icon( void *hook_data, void *call_data)
     icon_info = *(value.v_pointer);
   }
   
-  gdk_gc_set_clip_mask(draw_context->gc, icon_info->mask);
+  gint x=0, y=0;
+  gint *offset=NULL;
+  gboolean enough_space = FALSE;
+  gint width = properties->width;
   
-  switch(properties->position) {
-    case OVER:
-              gdk_gc_set_clip_origin(
-                  draw_context->gc,
-                  draw_context->drawinfo.modify_over.x,
-                  draw_context->drawinfo.modify_over.y);
-              gdk_draw_drawable(draw_context->drawable, 
-                  draw_context->gc,
-                  icon_info->pixmap,
-                  0, 0,
-                  draw_context->drawinfo.modify_over.x,
-                  draw_context->drawinfo.modify_over.y,
-                  properties->width, properties->height);
-
-              draw_context->drawinfo.modify_over.x += properties->width;
-
+  switch(properties->position.x) {
+    case POS_START:
+      x = draw_context->drawinfo.start.x;
+      switch(properties->position.y) {
+        case OVER:
+          offset = &draw_context->drawinfo.start.offset.over;
+          x += draw_context->drawinfo.start.offset.over;
+          y = draw_context->drawinfo.y.over;
+          break;
+        case MIDDLE:
+          offset = &draw_context->drawinfo.start.offset.middle;
+          x += draw_context->drawinfo.start.offset.middle;
+          y = draw_context->drawinfo.y.middle;
+          break;
+        case UNDER:
+          offset = &draw_context->drawinfo.start.offset.under;
+          x += draw_context->drawinfo.start.offset.under;
+          y = draw_context->drawinfo.y.under;
+          break;
+      }
+      /* verify if there is enough space to draw */
+      if(x + width <= draw_context->drawinfo.end.x) {
+        enough_space = TRUE;
+        *offset += width;
+      }
       break;
-    case MIDDLE:
-              gdk_gc_set_clip_origin(
-                  draw_context->gc,
-                  draw_context->drawinfo.modify_middle.x,
-                  draw_context->drawinfo.modify_middle.y);
-              gdk_draw_drawable(draw_context->drawable, 
-                  draw_context->gc,
-                  icon_info->pixmap,
-                  0, 0,
-                  draw_context->drawinfo.modify_middle.x,
-                  draw_context->drawinfo.modify_middle.y,
-                  properties->width, properties->height);
-
-              draw_context->drawinfo.modify_middle.x += properties->width;
-      break;
-    case UNDER:
-              gdk_gc_set_clip_origin(
-                  draw_context->gc,
-                  draw_context->drawinfo.modify_under.x,
-                  draw_context->drawinfo.modify_under.y);
-              gdk_draw_drawable(draw_context->drawable, 
-                  draw_context->gc,
-                  icon_info->pixmap,
-                  0, 0,
-                  draw_context->drawinfo.modify_under.x,
-                  draw_context->drawinfo.modify_under.y,
-                  properties->width, properties->height);
-
-              draw_context->drawinfo.modify_under.x += properties->width;
+    case POS_END:
+      x = draw_context->drawinfo.end.x;
+      switch(properties->position.y) {
+        case OVER:
+          offset = &draw_context->drawinfo.end.offset.over;
+          x += draw_context->drawinfo.end.offset.over;
+          y = draw_context->drawinfo.y.over;
+          break;
+        case MIDDLE:
+          offset = &draw_context->drawinfo.end.offset.middle;
+          x += draw_context->drawinfo.end.offset.middle;
+          y = draw_context->drawinfo.y.middle;
+          break;
+        case UNDER:
+          offset = &draw_context->drawinfo.end.offset.under;
+          x += draw_context->drawinfo.end.offset.under;
+          y = draw_context->drawinfo.y.under;
+          break;
+      }
+      /* verify if there is enough space to draw */
+      if(x - width >= draw_context->drawinfo.start.x) {
+        enough_space = TRUE;
+        *offset -= width;
+      }
       break;
   }
 
-  gdk_gc_set_clip_origin(draw_context->gc, 0, 0);
-  gdk_gc_set_clip_mask(draw_context->gc, NULL);
-  
+  if(enough_space) {
+    gdk_gc_set_clip_mask(draw_context->gc, icon_info->mask);
+
+    gdk_gc_set_clip_origin(
+        draw_context->gc,
+        x,
+        y);
+    gdk_draw_drawable(draw_context->drawable, 
+        draw_context->gc,
+        icon_info->pixmap,
+        0, 0,
+        x,
+        y,
+        properties->width, properties->height);
+
+    gdk_gc_set_clip_origin(draw_context->gc, 0, 0);
+    gdk_gc_set_clip_mask(draw_context->gc, NULL);
+  }
   return 0;
 }
 
@@ -255,7 +315,6 @@ gboolean draw_line( void *hook_data, void *call_data)
 {
   PropertiesLine *properties = (PropertiesLine*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
-  //GdkGC *gc = gdk_gc_new(draw_context->drawable);
   
   //gdk_gc_set_foreground(draw_context->gc, properties->color);
   gdk_gc_set_rgb_fg_color(draw_context->gc, &properties->color);
@@ -271,38 +330,30 @@ gboolean draw_line( void *hook_data, void *call_data)
   //    draw_context->drawinfo.middle.x,
   //    draw_context->drawinfo.middle.y);
 
-  switch(properties->position) {
+  gint x_begin=0, x_end=0, y=0;
+  
+  x_begin = draw_context->drawinfo.start.x;
+  x_end = draw_context->drawinfo.end.x;
+
+  switch(properties->y) {
     case OVER:
-              drawing_draw_line(
-                NULL, draw_context->drawable,
-                draw_context->previous->over->x,
-                draw_context->previous->over->y,
-                draw_context->drawinfo.over.x,
-                draw_context->current->over->y,
-                draw_context->gc);
+      y = draw_context->drawinfo.y.over;
       break;
     case MIDDLE:
-              drawing_draw_line(
-                NULL, draw_context->drawable,
-                draw_context->previous->middle->x,
-                draw_context->previous->middle->y,
-                draw_context->drawinfo.middle.x,
-                draw_context->drawinfo.middle.y,
-                draw_context->gc);
+      y = draw_context->drawinfo.y.middle;
       break;
     case UNDER:
-              drawing_draw_line(
-                NULL, draw_context->drawable,
-                draw_context->previous->under->x,
-                draw_context->previous->under->y,
-                draw_context->drawinfo.under.x,
-                draw_context->drawinfo.under.y,
-                draw_context->gc);
-
+      y = draw_context->drawinfo.y.under;
       break;
   }
-  
-  //gdk_gc_unref(gc);
+
+  drawing_draw_line(
+    NULL, draw_context->drawable,
+    x_begin,
+    y,
+    x_end,
+    y,
+    draw_context->gc);
   
   return 0;
 }
@@ -315,35 +366,70 @@ gboolean draw_arc( void *hook_data, void *call_data)
   //gdk_gc_set_foreground(draw_context->gc, properties->color);
   gdk_gc_set_rgb_fg_color(draw_context->gc, properties->color);
 
-  switch(properties->position) {
-    case OVER:
-      gdk_draw_arc(draw_context->drawable, draw_context->gc,
-              properties->filled,
-              draw_context->drawinfo.modify_over.x,
-              draw_context->drawinfo.modify_over.y,
-              properties->size, properties->size, 0, 360*64);
-      draw_context->drawinfo.modify_over.x += properties->size;
-      break;
-    case MIDDLE:
-      gdk_draw_arc(draw_context->drawable, draw_context->gc,
-              properties->filled,
-              draw_context->drawinfo.modify_middle.x,
-              draw_context->drawinfo.modify_middle.y,
-              properties->size, properties->size, 0, 360*64);
-      draw_context->drawinfo.modify_middle.x += properties->size;
-      
-      break;
-    case UNDER:
-      gdk_draw_arc(draw_context->drawable, draw_context->gc,
-              properties->filled,
-              draw_context->drawinfo.modify_under.x,
-              draw_context->drawinfo.modify_under.y,
-              properties->size, properties->size, 0, 360*64);
-      draw_context->drawinfo.modify_under.x += properties->size;
+  gint x=0, y=0;
+  gint *offset=NULL;
+  gboolean enough_space = FALSE;
+  gint width = properties->size;
   
+  switch(properties->position.x) {
+    case POS_START:
+      x = draw_context->drawinfo.start.x;
+      switch(properties->position.y) {
+        case OVER:
+          offset = &draw_context->drawinfo.start.offset.over;
+          x += draw_context->drawinfo.start.offset.over;
+          y = draw_context->drawinfo.y.over;
+          break;
+        case MIDDLE:
+          offset = &draw_context->drawinfo.start.offset.middle;
+          x += draw_context->drawinfo.start.offset.middle;
+          y = draw_context->drawinfo.y.middle;
+          break;
+        case UNDER:
+          offset = &draw_context->drawinfo.start.offset.under;
+          x += draw_context->drawinfo.start.offset.under;
+          y = draw_context->drawinfo.y.under;
+          break;
+      }
+      /* verify if there is enough space to draw */
+      if(x + width <= draw_context->drawinfo.end.x) {
+        enough_space = TRUE;
+        *offset += width;
+      }
+      break;
+    case POS_END:
+      x = draw_context->drawinfo.end.x;
+      switch(properties->position.y) {
+        case OVER:
+          offset = &draw_context->drawinfo.end.offset.over;
+          x += draw_context->drawinfo.end.offset.over;
+          y = draw_context->drawinfo.y.over;
+          break;
+        case MIDDLE:
+          offset = &draw_context->drawinfo.end.offset.middle;
+          x += draw_context->drawinfo.end.offset.middle;
+          y = draw_context->drawinfo.y.middle;
+          break;
+        case UNDER:
+          offset = &draw_context->drawinfo.end.offset.under;
+          x += draw_context->drawinfo.end.offset.under;
+          y = draw_context->drawinfo.y.under;
+          break;
+      }
+      /* verify if there is enough space to draw */
+      if(x - width >= draw_context->drawinfo.start.x) {
+        enough_space = TRUE;
+        *offset -= width;
+      }
       break;
   }
 
+  if(enough_space)
+    gdk_draw_arc(draw_context->drawable, draw_context->gc,
+          properties->filled,
+          x,
+          y,
+          properties->size, properties->size, 0, 360*64);
   
   return 0;
 }
@@ -365,10 +451,10 @@ gboolean draw_bg( void *hook_data, void *call_data)
   //    draw_context->previous->over->x);
   gdk_draw_rectangle(draw_context->drawable, draw_context->gc,
           TRUE,
-          draw_context->previous->over->x,
-          draw_context->previous->over->y,
-          draw_context->drawinfo.over.x - draw_context->previous->over->x,
-          draw_context->previous->under->y-draw_context->previous->over->y);
+          draw_context->drawinfo.start.x,
+          draw_context->drawinfo.y.over,
+          draw_context->drawinfo.end.x - draw_context->drawinfo.start.x,
+          draw_context->drawinfo.y.under - draw_context->drawinfo.y.over);
 
   return 0;
 }

@@ -559,22 +559,22 @@ void lttvwindow_unregister_dividor(Tab *tab,
  * Function to set the time interval of the current tab.a
  *
  * @param tab the tab the viewer belongs to.
- * @param time_interval pointer to the time interval value.
+ * @param time_interval new time window.
  */
 
 void lttvwindow_report_time_window(Tab *tab,
-                                   const TimeWindow *time_window);
+                                   TimeWindow time_window);
 
 /**
  * Function to set the current time/event of the current tab.
  * It will be called by a viewer's signal handle associated with 
  * the button-release-event signal
  * @param tab the tab the viewer belongs to.
- * @param time a pointer where time is stored.
+ * @param new current time.
  */
 
 void lttvwindow_report_current_time(Tab *tab, 
-                                    const LttTime *time);
+                                    LttTime time);
 
 
 /**

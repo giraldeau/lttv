@@ -25,4 +25,5 @@ EXTRA_DIST =  \
 	stock_stop_24.png\
 	stock_redo_24.png\
 	stock_refresh_24.png\
-	close.png
+	close.png\
+	stock_jump_to_24.png
