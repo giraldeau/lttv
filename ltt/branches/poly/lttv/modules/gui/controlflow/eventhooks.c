@@ -22,9 +22,6 @@
  *****************************************************************************/
 
 
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
-
 //#define PANGO_ENABLE_BACKEND
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -39,6 +36,7 @@
 #include <ltt/time.h>
 #include <ltt/type.h>
 
+#include <lttv/lttv.h>
 #include <lttv/hook.h>
 #include <lttv/common.h>
 #include <lttv/state.h>
@@ -80,14 +78,14 @@ h_guicontrolflow(MainWindow *mw, LttvTracesetSelector * s, char * key)
   current_time->tv_sec = 0;
   current_time->tv_nsec = 0;
   
-  //g_critical("time width1 : %u",time_window->time_width);
+  //g_debug("time width1 : %u",time_window->time_width);
   
   get_time_window(mw,
       time_window);
   get_current_time(mw,
       current_time);
 
-  //g_critical("time width2 : %u",time_window->time_width);
+  //g_debug("time width2 : %u",time_window->time_width);
   // Unreg done in the GuiControlFlow_Destructor
   reg_update_time_window(update_time_window_hook, control_flow_data,
         mw);
@@ -102,7 +100,7 @@ int event_selected_hook(void *hook_data, void *call_data)
   ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
   guint *event_number = (guint*) call_data;
 
-  g_critical("DEBUG : event selected by main window : %u", *event_number);
+  g_debug("DEBUG : event selected by main window : %u", *event_number);
   
 //  control_flow_data->currently_Selected_Event = *event_number;
 //  control_flow_data->Selected_Event = TRUE ;
@@ -170,7 +168,7 @@ int draw_event_hook(void *hook_data, void *call_data)
 
   if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"schedchange") == 0)
   {
-    g_critical("schedchange!");
+    g_debug("schedchange!");
     
     /* Add process to process list (if not present) and get drawing "y" from
      * process position */
@@ -189,14 +187,13 @@ int draw_event_hook(void *hook_data, void *call_data)
     pid_out = ltt_event_get_long_unsigned(e,element);
     element = ltt_field_member(f,1);
     pid_in = ltt_event_get_long_unsigned(e,element);
-    g_critical("out : %u  in : %u", pid_out, pid_in);
+    g_debug("out : %u  in : %u", pid_out, pid_in);
 
 
     /* Find process pid_out in the list... */
-    //process_out = lttv_state_find_process_from_trace(ts, pid_out);
     process_out = lttv_state_find_process(tfs, pid_out);
     if(process_out == NULL) return 0;
-    g_critical("out : %s",g_quark_to_string(process_out->state->s));
+    g_debug("out : %s",g_quark_to_string(process_out->state->s));
     
     birth = process_out->creation_time;
     gchar *name = strdup(g_quark_to_string(process_out->name));
@@ -231,10 +228,9 @@ int draw_event_hook(void *hook_data, void *call_data)
     g_free(name);
     
     /* Find process pid_in in the list... */
-    //process_in = lttv_state_find_process_from_trace(ts, pid_in);
     process_in = lttv_state_find_process(tfs, pid_in);
     if(process_in == NULL) return 0;
-    g_critical("in : %s",g_quark_to_string(process_in->state->s));
+    g_debug("in : %s",g_quark_to_string(process_in->state->s));
 
     birth = process_in->creation_time;
     name = strdup(g_quark_to_string(process_in->name));
@@ -313,7 +309,7 @@ int draw_event_hook(void *hook_data, void *call_data)
       draw_context_out->previous->middle->x = event_request->x_begin;
       draw_context_out->previous->under->x = event_request->x_begin;
 
-      g_critical("out middle x_beg : %u",event_request->x_begin);
+      g_debug("out middle x_beg : %u",event_request->x_begin);
     }
   
     draw_context_out->current->middle->x = x;
@@ -364,7 +360,7 @@ int draw_event_hook(void *hook_data, void *call_data)
           prop_bg.color->blue = 0xe7e7;
       }
       
-      g_critical("calling from draw_event");
+      g_debug("calling from draw_event");
       draw_bg((void*)&prop_bg, (void*)draw_context_out);
       g_free(prop_bg.color);
       gdk_gc_unref(draw_context_out->gc);
@@ -453,7 +449,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     prop_line_out.style = GDK_LINE_SOLID;
     prop_line_out.position = MIDDLE;
     
-    g_critical("out state : %s", g_quark_to_string(process_out->state->s));
+    g_debug("out state : %s", g_quark_to_string(process_out->state->s));
 
     /* color of line : status of the process */
     if(process_out->state->s == LTTV_STATE_UNNAMED)
@@ -528,7 +524,7 @@ int draw_event_hook(void *hook_data, void *call_data)
       draw_context_in->previous->middle->x = event_request->x_begin;
       draw_context_in->previous->over->x = event_request->x_begin;
       draw_context_in->previous->under->x = event_request->x_begin;
-      g_critical("in middle x_beg : %u",event_request->x_begin);
+      g_debug("in middle x_beg : %u",event_request->x_begin);
     }
   
     draw_context_in->current->middle->x = x;
@@ -596,7 +592,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     prop_text_in.size = 6;
     prop_text_in.position = OVER;
 
-    g_critical("in state : %s", g_quark_to_string(process_in->state->s));
+    g_debug("in state : %s", g_quark_to_string(process_in->state->s));
     /* foreground of text : status of the process */
     if(process_in->state->s == LTTV_STATE_UNNAMED)
     {
@@ -773,7 +769,7 @@ int draw_after_hook(void *hook_data, void *call_data)
 
   if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"schedchange") == 0)
   {
-    g_critical("schedchange!");
+    g_debug("schedchange!");
     
     /* Add process to process list (if not present) and get drawing "y" from
      * process position */
@@ -792,13 +788,13 @@ int draw_after_hook(void *hook_data, void *call_data)
     pid_out = ltt_event_get_long_unsigned(e,element);
     element = ltt_field_member(f,1);
     pid_in = ltt_event_get_long_unsigned(e,element);
-    //g_critical("out : %u  in : %u", pid_out, pid_in);
+    //g_debug("out : %u  in : %u", pid_out, pid_in);
 
 
     /* Find process pid_out in the list... */
-    process_out = lttv_state_find_process_from_trace(ts, pid_out);
+    process_out = lttv_state_find_process(tfs, pid_out);
     if(process_out == NULL) return 0;
-    //g_critical("out : %s",g_quark_to_string(process_out->state->s));
+    //g_debug("out : %s",g_quark_to_string(process_out->state->s));
 
     birth = process_out->creation_time;
     gchar *name = strdup(g_quark_to_string(process_out->name));
@@ -833,9 +829,9 @@ int draw_after_hook(void *hook_data, void *call_data)
     g_free(name);
     
     /* Find process pid_in in the list... */
-    process_in = lttv_state_find_process_from_trace(ts, pid_in);
+    process_in = lttv_state_find_process(tfs, pid_in);
     if(process_in == NULL) return 0;
-    //g_critical("in : %s",g_quark_to_string(process_in->state->s));
+    //g_debug("in : %s",g_quark_to_string(process_in->state->s));
 
     birth = process_in->creation_time;
     name = strdup(g_quark_to_string(process_in->name));
@@ -1499,7 +1495,9 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   LttvTraceState *ts = (LttvTraceState*)tc;
   LttvProcessState *process;
 
-  process = lttv_state_find_process_from_trace(ts, process_info->pid);
+  /* We do not provide a cpu_name argument assuming that this is not the
+     idle job (pid 0) and thus its pid is unique across all cpus */
+  process = lttv_state_find_process_from_trace(ts, 0, process_info->pid);
   
   /* Draw the closing line */
   DrawContext *draw_context = hashed_process_data->draw_context;
@@ -1508,7 +1506,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
     draw_context->previous->middle->x = closure_data->event_request->x_begin;
     draw_context->previous->over->x = closure_data->event_request->x_begin;
     draw_context->previous->under->x = closure_data->event_request->x_begin;
-    g_critical("out middle x_beg : %u",closure_data->event_request->x_begin);
+    g_debug("out middle x_beg : %u",closure_data->event_request->x_begin);
   }
 
   draw_context->current->middle->x = closure_data->event_request->x_end;
@@ -1559,7 +1557,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
     }
     */
 
-    g_critical("calling from closure");
+    g_debug("calling from closure");
     //FIXME : I need the cpu number in process's state to draw this.
     //draw_bg((void*)&prop_bg, (void*)draw_context);
     g_free(prop_bg.color);

@@ -81,7 +81,7 @@ static gboolean window_creation_hook(void *hook_data, void *call_data)
 {
   WindowCreationData* window_creation_data = (WindowCreationData*)hook_data;
 
-  g_critical("GUI window_creation_hook()");
+  g_debug("GUI window_creation_hook()");
 #ifdef ENABLE_NLS
   bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
@@ -109,7 +109,7 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
   // Global attributes only used for interaction with main() here.
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   
-  g_critical("GUI init()");
+  g_debug("GUI init()");
   
   lttv_option_add("trace", 't', 
       "add a trace to the trace set to analyse", 
@@ -183,7 +183,7 @@ G_MODULE_EXPORT void destroy() {
 
   lttv_hooks_remove_data(main_hooks, window_creation_hook, &win_creation_data);
 
-  g_critical("GUI destroy()");
+  g_debug("GUI destroy()");
 
   if(g_main_window_list){
     g_slist_foreach(g_main_window_list, main_window_destroy_walk, NULL );

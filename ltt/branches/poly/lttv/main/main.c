@@ -74,6 +74,14 @@ static void lttv_debug(void *hook_data);
 
 static void lttv_help(void *hook_data);
 
+/* This is the handler to specify when we dont need all the debugging 
+   messages. It receives the message and does nothing. */
+
+void ignore_and_drop_message(const gchar *log_domain, GLogLevelFlags log_level,
+    const gchar *message, gpointer user_data) {
+}
+
+
 /* Since everything is done in modules, the main program only takes care
    of the infrastructure. */
 
@@ -86,6 +94,9 @@ int main(int argc, char **argv) {
   g_message("Memory summary before main");
   g_mem_profile();
 #endif
+
+  g_log_set_handler(NULL, G_LOG_LEVEL_INFO, ignore_and_drop_message, NULL);
+  g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, ignore_and_drop_message, NULL);
 
   g_type_init();
   //g_type_init_with_debug_flags (G_TYPE_DEBUG_OBJECTS | G_TYPE_DEBUG_SIGNALS);
@@ -122,7 +133,7 @@ int main(int argc, char **argv) {
 
   /* Initialize the module loading */
 
-  lttv_module_path_add("/usr/lib/lttv/plugins");
+  lttv_module_path_add(PACKAGE_PLUGIN_DIR);
 
   /* Add some built-in options */
 
@@ -187,6 +198,7 @@ void lttv_module_path_option(void *hook_data)
 {
   lttv_module_path_add(a_module_path);
 }
+
 
 void lttv_verbose(void *hook_data)
 {

@@ -19,6 +19,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
+#include <lttv/lttv.h>
 #include <lttv/processTrace.h>
 #include <lttv/gtktraceset.h>
 #include <lttv/hook.h>
@@ -87,13 +88,13 @@ void drawing_data_request(Drawing_t *drawing,
   LttTime window_end = ltt_time_add(control_flow_data->time_window.time_width,
                         control_flow_data->time_window.start_time);
 
-  g_critical("req : window_end : %u, %u", window_end.tv_sec, 
+  g_debug("req : window_end : %u, %u", window_end.tv_sec, 
                                       window_end.tv_nsec);
 
-  g_critical("req : time width : %u, %u", control_flow_data->time_window.time_width.tv_sec, 
+  g_debug("req : time width : %u, %u", control_flow_data->time_window.time_width.tv_sec, 
                                 control_flow_data->time_window.time_width.tv_nsec);
   
-  g_critical("x is : %i, x+width is : %i", x, x+width);
+  g_debug("x is : %i, x+width is : %i", x, x+width);
 
   convert_pixels_to_time(drawing->drawing_area->allocation.width, x,
         &control_flow_data->time_window.start_time,
@@ -125,10 +126,10 @@ void drawing_data_request(Drawing_t *drawing,
   event_request.x_begin = x;
   event_request.x_end = x+width;
 
-  g_critical("req : start : %u, %u", event_request.time_begin.tv_sec, 
+  g_debug("req : start : %u, %u", event_request.time_begin.tv_sec, 
                                       event_request.time_begin.tv_nsec);
 
-  g_critical("req : end : %u, %u", event_request.time_end.tv_sec, 
+  g_debug("req : end : %u, %u", event_request.time_end.tv_sec, 
                                       event_request.time_end.tv_nsec);
   
   LttvHooks *event = lttv_hooks_new();
@@ -192,8 +193,8 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
   //      widget->allocation.height + SAFETY,
   //      -1);
   
-  g_critical("drawing configure event");
-  g_critical("New draw size : %i by %i",widget->allocation.width, widget->allocation.height);
+  g_debug("drawing configure event");
+  g_debug("New draw size : %i by %i",widget->allocation.width, widget->allocation.height);
   
     
   if (drawing->pixmap)
@@ -309,7 +310,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
                 G_OBJECT(widget),
                 "control_flow_data");
 
-  g_critical("drawing expose event");
+  g_debug("drawing expose event");
   
   guint x=0;
   LttTime* current_time = 
@@ -366,7 +367,7 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
   Drawing_t *drawing = control_flow_data->drawing;
 
 
-  g_critical("click");
+  g_debug("click");
   if(event->button == 1)
   {
     LttTime time;
@@ -376,7 +377,7 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
 
 
     /* left mouse button click */
-    g_critical("x click is : %f", event->x);
+    g_debug("x click is : %f", event->x);
 
     convert_pixels_to_time(widget->allocation.width, (guint)event->x,
         &control_flow_data->time_window.start_time,
@@ -756,7 +757,7 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   LttTime window_middle =
     ltt_time_add(half_width,
                  drawing->control_flow_data->time_window.start_time);
-  g_critical("ruler expose event");
+  g_debug("ruler expose event");
  
   gdk_draw_rectangle (drawing->ruler->window,
           drawing->ruler->style->white_gc,
@@ -882,6 +883,6 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 static gboolean
 motion_notify_ruler(GtkWidget *widget, GdkEventMotion *event, gpointer user_data)
 {
-  //g_critical("motion");
+  //g_debug("motion");
   //eventually follow mouse and show time here
 }

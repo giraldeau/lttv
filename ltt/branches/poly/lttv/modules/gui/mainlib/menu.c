@@ -16,6 +16,7 @@
  * MA 02111-1307, USA.
  */
 
+#include <lttv/lttv.h>
 #include <lttv/menu.h>
 
 
@@ -27,7 +28,7 @@ inline LttvMenus *lttv_menus_new() {
  * (functions).
  */
 inline void lttv_menus_destroy(LttvMenus *h) {
-  g_critical("lttv_menus_destroy()");
+  g_debug("lttv_menus_destroy()");
   g_array_free(h, TRUE);
 }
 

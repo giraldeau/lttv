@@ -21,6 +21,7 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
+#include <lttv/lttv.h>
 #include <lttv/module.h>
 #include <lttv/gtktraceset.h>
 #include <lttv/processTrace.h>

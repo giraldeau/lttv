@@ -23,9 +23,6 @@
 
 #include <lttv/module.h>
 
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
-
 struct _LttvModule
 {
   GModule *module;
@@ -46,7 +43,7 @@ static void lttv_module_unload_all();
 
 void lttv_module_init(int argc, char **argv) 
 {
-  g_info("Init module.c");
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Init module.c");
   modules = g_hash_table_new(g_str_hash, g_str_equal);
   modulesPaths = g_ptr_array_new();
 }
@@ -56,7 +53,7 @@ void lttv_module_destroy()
 {  
   int i;
 
-  g_info("Destroy module.c");
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Destroy module.c");
 
   /* Unload all modules */
   lttv_module_unload_all();
@@ -78,7 +75,7 @@ void lttv_module_destroy()
 
 void lttv_module_path_add(const char *name) 
 {
-  g_info("Add module path %s", name);
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Add module path %s", name);
   g_ptr_array_add(modulesPaths,(char*)g_strdup(name));
 }
 
@@ -98,33 +95,33 @@ module_load(const char *name, int argc, char **argv)
   
   LttvModuleInit init_function;
 
-  g_info("Load module %s", name);
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Load module %s", name);
 
   /* Try to find the module along all the user specified paths */
 
   for(i = 0 ; i < modulesPaths->len ; i++) {
     pathname = g_module_build_path(modulesPaths->pdata[i],name);
-    g_info("Try path %s", pathname);
+    g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "Try path %s", pathname);
     gm = g_module_open(pathname,0);
     g_free(pathname);    
     
     if(gm != NULL) break;
-    g_info("Trial failed, %s", g_module_error());
+    g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,"Trial failed, %s",g_module_error());
   }
 
   /* Try the default system path */
 
   if(gm == NULL) {
     pathname = g_module_build_path(NULL,name);
-    g_info("Try default path");
+    g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "Try default path");
     gm = g_module_open(pathname,0);
     g_free(pathname);
   }
 
   /* Module cannot be found */
   if(gm == NULL) {
-    g_info("Trial failed, %s", g_module_error());
-    g_info("Failed to load %s", name); 
+    g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG,"Trial failed, %s",g_module_error());
+    g_warning("Failed to load module %s", name); 
     return NULL;
   }
 
@@ -136,7 +133,8 @@ module_load(const char *name, int argc, char **argv)
   m = g_hash_table_lookup(modules, module_name);
 
   if(m == NULL) {
-    g_info("Module %s (%s) loaded, call its init function", name, module_name);
+    g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, 
+        "Module %s (%s) loaded, call its init function", name, module_name);
 
     /* Module loaded for the first time. Insert it in the table and call the
        init function if any. */
@@ -158,8 +156,9 @@ module_load(const char *name, int argc, char **argv)
     /* Module was already opened, check that it really is the same and
        undo the extra g_module_open */
 
-    g_info("Module %s (%s) was already loaded, no need to call init function",
-	   name, module_name);
+    g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, 
+        "Module %s (%s) was already loaded, no need to call init function",
+	name, module_name);
     if(m->module != gm) g_error("Two gmodules with the same pathname");
     g_module_close(gm);
   }
@@ -172,7 +171,7 @@ module_load(const char *name, int argc, char **argv)
 LttvModule *
 lttv_module_load(const char *name, int argc, char **argv) 
 {
-  g_info("Load module %s explicitly", name);
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Load module %s explicitly", name);
   LttvModule *m = module_load(name, argc, argv);
   if(m != NULL) m->load_count++;
   return m;
@@ -184,7 +183,8 @@ lttv_module_require(LttvModule *m, const char *name, int argc, char **argv)
 {
   LttvModule *module;
 
-  g_info("Load module %s, as %s is a dependent requiring it", name, 
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, 
+      "Load module %s, as %s is a dependent requiring it", name, 
       g_module_name(m->module));
   module = module_load(name, argc, argv);
   if(module != NULL) g_ptr_array_add(module->dependents, m);
@@ -202,16 +202,18 @@ static void module_unload(LttvModule *m)
 
   /* Decrement the reference count */
 
-  g_info("Unload module %s", g_module_name(m->module));
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Unload module %s", 
+      g_module_name(m->module));
   m->ref_count--;
   if(m->ref_count > 0) {
-    g_info("Module usage count decremented to %d", m->ref_count);
+    g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, 
+        "Module usage count decremented to %d", m->ref_count);
     return;
   }
   /* We really have to unload the module, first unload its dependents */
 
   len = m->dependents->len;
-  g_info("Unload dependent modules");
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Unload dependent modules");
 
   for(i = 0 ; i < len ; i++) {
     module_unload(m->dependents->pdata[i]);
@@ -221,7 +223,8 @@ static void module_unload(LttvModule *m)
 
   /* Unload the module itself */
 
-  g_info("Call the destroy function and unload the module");
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, 
+      "Call the destroy function and unload the module");
   if(!g_module_symbol(m->module, "destroy", (gpointer)&destroy_function)) {
     g_warning("module (%s) has no destroy function", pathname);
   }
@@ -236,7 +239,8 @@ static void module_unload(LttvModule *m)
 
 void lttv_module_unload(LttvModule *m) 
 {
-  g_info("Explicitly unload module %s", g_module_name(m->module));
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Explicitly unload module %s", 
+      g_module_name(m->module));
   if(m->load_count <= 0) { 
     g_error("more unload than load (%s)", g_module_name(m->module));
     return;

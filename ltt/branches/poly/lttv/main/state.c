@@ -58,8 +58,6 @@ static void free_name_tables(LttvTraceState *tcs);
 
 static void lttv_state_free_process_table(GHashTable *processes);
 
-static LttvProcessState *create_process(LttvTracefileState *tfs, 
-				 LttvProcessState *parent, guint pid);
 
 void lttv_state_save(LttvTraceState *self, LttvAttribute *container)
 {
@@ -80,6 +78,26 @@ void lttv_state_saved_state_free(LttvTraceState *self,
 }
 
 
+guint process_hash(gconstpointer key) 
+{
+  return ((LttvProcessState *)key)->pid;
+}
+
+
+gboolean process_equal(gconstpointer a, gconstpointer b)
+{
+  LttvProcessState *process_a, *process_b;
+
+  process_a = (LttvProcessState *)a;
+  process_b = (LttvProcessState *)b;
+
+  if(process_a->pid != process_b->pid) return FALSE;
+  if(process_a->pid == 0 && 
+      process_a->last_cpu != process_b->last_cpu) return FALSE;
+  return TRUE;
+}
+
+
 static void
 restore_init_state(LttvTraceState *self)
 {
@@ -90,7 +108,7 @@ restore_init_state(LttvTraceState *self)
   LttTime null_time = {0,0};
 
   if(self->processes != NULL) lttv_state_free_process_table(self->processes);
-  self->processes = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->processes = g_hash_table_new(process_hash, process_equal);
   self->nb_event = 0;
 
   nb_control = ltt_trace_control_tracefile_number(self->parent.t);
@@ -106,10 +124,13 @@ restore_init_state(LttvTraceState *self)
 
     tfcs->parent.timestamp = null_time;
     tfcs->saved_position = 0;
-    tfcs->process = create_process(tfcs, NULL,0);
+    tfcs->process = lttv_state_create_process(tfcs, NULL,0);
+    tfcs->process->state->s = LTTV_STATE_RUN;
+    tfcs->process->last_cpu = tfcs->cpu_name;
   }
 }
 
+static LttTime time_zero = {0,0};
 
 static void
 init(LttvTracesetState *self, LttvTraceset *ts)
@@ -130,8 +151,7 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     tc = self->parent.traces[i];
     tcs = (LttvTraceState *)tc;
     tcs->save_interval = 100000;
-    tcs->recompute_state_in_seek = TRUE;
-    tcs->saved_state_ready = FALSE;
+    tcs->max_time_state_recomputed_in_seek = &time_zero;
     fill_name_tables(tcs);
 
     nb_control = ltt_trace_control_tracefile_number(tc->t);
@@ -214,14 +234,13 @@ static void copy_process_state(gpointer key, gpointer value,gpointer user_data)
   }
   new_process->state = &g_array_index(new_process->execution_stack, 
       LttvExecutionState, new_process->execution_stack->len - 1);
-  g_hash_table_insert(new_processes, GUINT_TO_POINTER(new_process->pid), 
-      new_process);
+  g_hash_table_insert(new_processes, new_process, new_process);
 }
 
 
 static GHashTable *lttv_state_copy_process_table(GHashTable *processes)
 {
-  GHashTable *new_processes = g_hash_table_new(g_direct_hash, g_direct_equal);
+  GHashTable *new_processes = g_hash_table_new(process_hash, process_equal);
 
   g_hash_table_foreach(processes, copy_process_state, new_processes);
   return new_processes;
@@ -288,7 +307,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
 
 static void state_restore(LttvTraceState *self, LttvAttribute *container)
 {
-  guint i, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, nb_control, nb_per_cpu, nb_tracefile, pid;
 
   LttvTracefileState *tfcs;
 
@@ -328,7 +347,9 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     type = lttv_attribute_get_by_name(tracefile_tree, LTTV_STATE_PROCESS, 
         &value);
     g_assert(type == LTTV_UINT);
-    tfcs->process = lttv_state_find_process(tfcs, *(value.v_uint));
+    pid = *(value.v_uint);
+    tfcs->process = lttv_state_find_process_or_create(tfcs, pid);
+
     type = lttv_attribute_get_by_name(tracefile_tree, LTTV_STATE_EVENT, 
         &value);
     g_assert(type == LTTV_POINTER);
@@ -540,8 +561,9 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
 }
 
 
-static LttvProcessState *create_process(LttvTracefileState *tfs, 
-    LttvProcessState *parent, guint pid)
+LttvProcessState *
+lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent, 
+    guint pid)
 {
   LttvProcessState *process = g_new(LttvProcessState, 1);
 
@@ -555,22 +577,31 @@ static LttvProcessState *create_process(LttvTracefileState *tfs,
 
   tcs = (LttvTraceState *)tc = tfs->parent.t_context;
 	
-  g_hash_table_insert(tcs->processes, GUINT_TO_POINTER(pid), process);
   process->pid = pid;
+  process->last_cpu = tfs->cpu_name;
+  g_hash_table_insert(tcs->processes, process, process);
 
   if(parent) {
     process->ppid = parent->pid;
     process->name = parent->name;
+    process->creation_time = tfs->parent.timestamp;
   }
+
+  /* No parent. This process exists but we are missing all information about
+     its creation. The birth time is set to zero but we remember the time of
+     insertion */
+
   else {
     process->ppid = 0;
     process->name = LTTV_STATE_UNNAMED;
+    process->creation_time = ltt_time_zero;
   }
 
-  process->creation_time = tfs->parent.timestamp;
+  process->insertion_time = tfs->parent.timestamp;
   sprintf(buffer,"%d-%lu.%lu",pid, process->creation_time.tv_sec, 
 	  process->creation_time.tv_nsec);
   process->pid_time = g_quark_from_string(buffer);
+  process->last_cpu = tfs->cpu_name;
   process->execution_stack = g_array_new(FALSE, FALSE, 
       sizeof(LttvExecutionState));
   g_array_set_size(process->execution_stack, 1);
@@ -585,35 +616,46 @@ static LttvProcessState *create_process(LttvTracefileState *tfs,
   return process;
 }
 
+
+LttvProcessState *
+lttv_state_find_process_from_trace(LttvTraceState *ts, GQuark cpu, guint pid)
+{
+  LttvProcessState key;
+  LttvProcessState *process;
+
+  key.pid = pid;
+  key.last_cpu = cpu;
+  process = g_hash_table_lookup(ts->processes, &key);
+  return process;
+}
+
+
 LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs, 
     guint pid)
 {
-  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
-  LttvProcessState *process = g_hash_table_lookup(ts->processes, 
-      GUINT_TO_POINTER(pid));
-  if(process == NULL) process = create_process(tfs, NULL, pid);
-  return process;
+  LttvTraceState *ts =(LttvTraceState *)tfs->parent.t_context;
+  return lttv_state_find_process_from_trace(ts, tfs->cpu_name, pid);
 }
 
-LttvProcessState *lttv_state_find_process_from_trace(LttvTraceState *ts, 
-    guint pid)
+
+LttvProcessState *
+lttv_state_find_process_or_create(LttvTracefileState *tfs, guint pid)
 {
-  LttvProcessState *process = g_hash_table_lookup(ts->processes, 
-      GUINT_TO_POINTER(pid));
-  //We do not create a process at this level, because we can be called
-  //from outside of state.c, and therefore cannot assume a tracefile
-  //exists.
-  //if(process == NULL) process = create_process_from_trace(ts, NULL, pid);
+  LttvProcessState *process = lttv_state_find_process(tfs, pid);
+
+  if(process == NULL) process = lttv_state_create_process(tfs, NULL, pid);
   return process;
 }
-
 
 
 static void exit_process(LttvTracefileState *tfs, LttvProcessState *process) 
 {
   LttvTraceState *ts = LTTV_TRACE_STATE(tfs->parent.t_context);
+  LttvProcessState key;
 
-  g_hash_table_remove(ts->processes, GUINT_TO_POINTER(process->pid));
+  key.pid = process->pid;
+  key.last_cpu = process->last_cpu;
+  g_hash_table_remove(ts->processes, &key);
   g_array_free(process->execution_stack, TRUE);
   g_free(process);
 }
@@ -731,8 +773,9 @@ static gboolean schedchange(void *hook_data, void *call_data)
 
     s->process->state->change = s->parent.timestamp;
   }
-  s->process = lttv_state_find_process(s, pid_in);
+  s->process = lttv_state_find_process_or_create(s, pid_in);
   s->process->state->s = LTTV_STATE_RUN;
+  s->process->last_cpu = s->cpu_name;
   s->process->state->change = s->parent.timestamp;
   return FALSE;
 }
@@ -747,7 +790,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
   guint child_pid;
 
   child_pid = ltt_event_get_unsigned(s->parent.e, f);
-  create_process(s, s->process, child_pid);
+  lttv_state_create_process(s, s->process, child_pid);
   return FALSE;
 }
 
@@ -1019,11 +1062,12 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
   for(i = 0 ; i < nb_trace ; i++) {
     tcs = (LttvTraceState *)self->parent.traces[i];
 
-    if(tcs->recompute_state_in_seek) {
-      if(tcs->saved_state_available) {
-        saved_states_tree = lttv_attribute_find_subdir(tcs->parent.t_a,
-            LTTV_STATE_SAVED_STATES);
-        min_pos = -1;
+    if(ltt_time_compare(t, *(tcs->max_time_state_recomputed_in_seek)) < 0) {
+      saved_states_tree = lttv_attribute_find_subdir(tcs->parent.t_a,
+          LTTV_STATE_SAVED_STATES);
+      min_pos = -1;
+
+      if(saved_states_tree) {
         max_pos = lttv_attribute_get_number(saved_states_tree) - 1;
         mid_pos = max_pos / 2;
         while(min_pos < max_pos) {
@@ -1041,12 +1085,12 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 
           mid_pos = (min_pos + max_pos + 1) / 2;
         }
-
-        /* restore the closest earlier saved state */
-        if(min_pos != -1) lttv_state_restore(tcs, closest_tree);
-
       }
-      /* There is no saved state yet we want to have it. Restart at T0 */
+
+      /* restore the closest earlier saved state */
+      if(min_pos != -1) lttv_state_restore(tcs, closest_tree);
+
+      /* There is no saved state, yet we want to have it. Restart at T0 */
       else {
         restore_init_state(tcs);
         lttv_process_trace_seek_time(&(tcs->parent), ltt_time_zero);

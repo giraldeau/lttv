@@ -25,10 +25,7 @@
 #include "processlist.h"
 #include "eventhooks.h"
 #include "cfv-private.h"
-
-
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+#include <lttv/lttv.h>
 
 extern GSList *g_control_flow_data_list;
 

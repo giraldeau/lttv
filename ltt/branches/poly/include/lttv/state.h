@@ -133,16 +133,28 @@ typedef struct _LttvProcessState {
   guint pid;
   guint ppid;
   LttTime creation_time;
+  LttTime insertion_time;
   GQuark name;
   GQuark pid_time;
   GArray *execution_stack;         /* Array of LttvExecutionState */
   LttvExecutionState *state;       /* Top of interrupt stack */
+  GQuark last_cpu;                /* Last CPU where process was scheduled */
   /* opened file descriptors, address map?... */
 } LttvProcessState;
 
-//FIXME : find by pid and birth time : both are necessary to be unique
-LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs, guint pid);
-LttvProcessState *lttv_state_find_process_from_trace(LttvTraceState *ts, guint pid);
+
+LttvProcessState *
+lttv_state_find_process(LttvTracefileState *tfs, guint pid);
+
+LttvProcessState *
+lttv_state_find_process_from_trace(LttvTraceState *ts, GQuark cpu, guint pid);
+
+LttvProcessState *
+lttv_state_find_process_or_create(LttvTracefileState *tfs, guint pid);
+
+LttvProcessState *
+lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent, 
+    guint pid);
 
 
 /* The LttvTracesetState, LttvTraceState and LttvTracefileState types
@@ -183,9 +195,7 @@ struct _LttvTraceState {
   GQuark *syscall_names;
   GQuark *trap_names;
   GQuark *irq_names;
-  gboolean recompute_state_in_seek;
-  gboolean saved_state_ready;
-  gboolean saved_state_available;
+  LttTime *max_time_state_recomputed_in_seek;
 };
 
 struct _LttvTraceStateClass {

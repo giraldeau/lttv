@@ -16,6 +16,7 @@
  * MA 02111-1307, USA.
  */
 
+#include <lttv/lttv.h>
 #include <lttv/toolbar.h>
 
 
@@ -27,7 +28,7 @@ inline LttvToolbars *lttv_toolbars_new() {
  * (functions).
  */
 inline void lttv_toolbars_destroy(LttvToolbars *h) {
-  g_critical("lttv_toolbars_destroy");
+  g_debug("lttv_toolbars_destroy");
   g_array_free(h, TRUE);
 }
 

@@ -91,6 +91,7 @@ struct _LttvTracesetContext {
   LttvAttribute *a;
   LttvAttribute *ts_a;
   TimeInterval *Time_Span;
+  GTree *pqueue;
 };
 
 struct _LttvTracesetContextClass {
@@ -181,8 +182,26 @@ struct _LttvTracefileContextClass {
 
 GType lttv_tracefile_context_get_type (void);
 
+/* Run through the events in a traceset in sorted order calling all the
+   hooks appropriately. It starts at the current time and runs until end or
+   nb_events are processed. */
+
 void lttv_process_traceset(LttvTracesetContext *self, LttTime end, 
-    unsigned maxNumEvents);
+    unsigned nb_events);
+
+/* Process traceset can also be done in smaller pieces calling begin, middle
+   repeatedly, and end. The middle function return the number of events 
+   processed. It may be larger than nb_events if several events have the 
+   same timestamp. It will be smaller than nb_events if the end time
+   is reached. */
+
+void lttv_process_traceset_begin(LttvTracesetContext *self, LttTime end);
+
+guint lttv_process_traceset_middle(LttvTracesetContext *self, LttTime end, 
+    unsigned nb_events);
+
+void lttv_process_traceset_end(LttvTracesetContext *self);
+
 
 void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start);
 

@@ -26,6 +26,7 @@
 #include "callbacks.h"
 #include "interface.h"
 #include "support.h"
+#include <lttv/lttv.h>
 #include <lttv/mainwindow.h>
 #include <lttv/menu.h>
 #include <lttv/toolbar.h>
@@ -1765,7 +1766,7 @@ void insert_menu_toolbar_item(MainWindow * mw, gpointer user_data)
 
 void construct_main_window(MainWindow * parent, WindowCreationData * win_creation_data)
 {
-  g_critical("construct_main_window()");
+  g_debug("construct_main_window()");
   GtkWidget  * new_window; /* New generated main window */
   MainWindow * new_m_window;/* New main window structure */
   GtkNotebook * notebook;

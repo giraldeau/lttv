@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <lttv/stats.h>
+#include <lttv/lttv.h>
 #include <ltt/facility.h>
 #include <ltt/trace.h>
 #include <ltt/event.h>
@@ -478,7 +479,7 @@ gboolean before_schedchange(void *hook_data, void *call_data)
 
   /* get the information for the process scheduled in */
 
-  process = lttv_state_find_process(&(tfcs->parent), pid_in);
+  process = lttv_state_find_process_or_create(&(tfcs->parent), pid_in);
 
   find_event_tree(tfcs, process->pid_time, tfcs->parent.cpu_name, 
       process->state->t, process->state->n, &(tfcs->current_events_tree), 
@@ -815,7 +816,7 @@ lttv_stats_remove_event_hooks(LttvTracesetStats *self)
 	    hook.id), hook.h, &g_array_index(after_hooks, LttvTraceHook, k));
       }
     }
-    g_critical("lttv_stats_remove_event_hooks()");
+    g_debug("lttv_stats_remove_event_hooks()");
     g_array_free(before_hooks, TRUE);
     g_array_free(after_hooks, TRUE);
   }

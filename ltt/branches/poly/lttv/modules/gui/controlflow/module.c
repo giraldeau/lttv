@@ -37,11 +37,9 @@
  * Author : Mathieu Desnoyers, June 2003
  */
 
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
-
 #include <glib.h>
 #include <gmodule.h>
+#include <lttv/lttv.h>
 #include <lttv/module.h>
 #include <lttv/gtktraceset.h>
 
