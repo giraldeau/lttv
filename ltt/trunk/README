@@ -1,0 +1,14 @@
+This is a sample of the suggested tree for Linux Trace Toolkit.
+
+
+LibLTT : Libraries used for LTT.
+README : This file. Introduction pointing to specific resources in the tree.
+debian : debian config files.
+doc :    LTT Documentation.
+doc/user :      User related documentation.
+doc/developer : Developer related documentation.
+kernel : LTT kernel patches.
+lttd :   Linux Trace Toolkit daemon.
+lttv :   Linux Trace Toolkit visualizer/analyzer.
+lttv/plugins :  Linux Trace Toolkit visualizer plugins.
+specs :  RPM config files.
