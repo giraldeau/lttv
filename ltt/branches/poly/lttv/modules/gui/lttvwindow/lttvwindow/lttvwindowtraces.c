@@ -69,7 +69,6 @@ LttvTrace *lttvwindowtraces_get_trace_by_name(gchar *path)
     LttvTrace *trace_v = lttvwindowtraces_get_trace(i);
     LttTrace *trace;
     gchar *name;
-    
     g_assert(trace_v != NULL);
 
     trace = lttv_trace(trace_v);

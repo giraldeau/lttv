@@ -91,9 +91,12 @@ void lttv_trace_option(void *hook_data)
   g_init_trace = lttvwindowtraces_get_trace_by_name(abs_path);
   if(g_init_trace == NULL) {
     trace = ltt_trace_open(abs_path);
-    if(trace == NULL) g_critical("cannot open trace %s", abs_path);
-    g_init_trace = lttv_trace_new(trace);
-    lttvwindowtraces_add_trace(g_init_trace);
+    if(trace == NULL) {
+      g_warning("cannot open trace %s", abs_path);
+    } else {
+      g_init_trace = lttv_trace_new(trace);
+      lttvwindowtraces_add_trace(g_init_trace);
+    }
   }
 }
 

@@ -305,8 +305,8 @@ gint ltt_event_position_compare(const LttEventPosition *ep1,
 gint ltt_event_event_position_compare(const LttEvent *event,
                                       const LttEventPosition *ep)
 {
-  if(event->tracefile != ep->tf)
-    g_error("ltt_event_position_compare on different tracefiles makes no sense");
+  g_assert(event->tracefile == ep->tf);
+
   if(event->which_block < ep->block_num)
     return -1;
   if(event->which_block > ep->block_num)
@@ -318,6 +318,20 @@ gint ltt_event_event_position_compare(const LttEvent *event,
   return 0;
 }
 
+/*****************************************************************************
+ * Function name
+ *    ltt_event_position_copy : copy position
+ * Input params
+ *    src                    : a pointer to event's position structure source
+ *    dest                   : a pointer to event's position structure dest
+ * Return
+ *    void
+ ****************************************************************************/
+void ltt_event_position_copy(LttEventPosition *dest,
+                             const LttEventPosition *src)
+{
+  *dest = *src;
+}
 
 
 /*****************************************************************************
@@ -434,8 +448,7 @@ unsigned ltt_event_get_unsigned(LttEvent *e, LttField *f)
                 e->tracefile->trace->system_description->endian ? 0:1;
   LttTypeEnum t = f->field_type->type_class;
 
-  if(t != LTT_UINT && t != LTT_ENUM)
-    g_error("The type of the field is not unsigned int\n");
+  g_assert(t == LTT_UINT || t == LTT_ENUM);
 
   if(f->field_size == 1){
     guint8 x = *(guint8 *)(e->data + f->offset_root);
@@ -466,8 +479,7 @@ int ltt_event_get_int(LttEvent *e, LttField *f)
   int revFlag = e->tracefile->trace->my_arch_endian == 
                 e->tracefile->trace->system_description->endian ? 0:1;
 
-  if(f->field_type->type_class != LTT_INT)
-    g_error("The type of the field is not int\n");
+  g_assert(f->field_type->type_class == LTT_INT);
 
   if(f->field_size == 1){
     gint8 x = *(gint8 *)(e->data + f->offset_root);
@@ -499,8 +511,7 @@ unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
                 e->tracefile->trace->system_description->endian ? 0:1;
   LttTypeEnum t = f->field_type->type_class;
 
-  if(t != LTT_UINT && t != LTT_ENUM)
-    g_error("The type of the field is not unsigned long\n");
+  g_assert(t == LTT_UINT || t == LTT_ENUM);
 
   if(f->field_size == 1){
     guint8 x = *(guint8 *)(e->data + f->offset_root);
@@ -531,8 +542,7 @@ long int ltt_event_get_long_int(LttEvent *e, LttField *f)
   int revFlag = e->tracefile->trace->my_arch_endian == 
                 e->tracefile->trace->system_description->endian ? 0:1;
 
-  if( f->field_type->type_class != LTT_INT)
-    g_error("The type of the field is not long int\n");
+  g_assert( f->field_type->type_class == LTT_INT);
 
   if(f->field_size == 1){
     gint8 x = *(gint8 *)(e->data + f->offset_root);
@@ -563,9 +573,7 @@ float ltt_event_get_float(LttEvent *e, LttField *f)
   int revFlag = e->tracefile->trace->my_arch_endian == 
                 e->tracefile->trace->system_description->endian ? 0:1;
 
-  if(f->field_type->type_class != LTT_FLOAT || 
-     (f->field_type->type_class == LTT_FLOAT && f->field_size != 4))
-    g_error("The type of the field is not float\n");
+  g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 4);
 
   if(revFlag == 0) return *(float *)(e->data + f->offset_root);
   else{
@@ -581,9 +589,7 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
   int revFlag = e->tracefile->trace->my_arch_endian == 
                 e->tracefile->trace->system_description->endian ? 0:1;
 
-  if(f->field_type->type_class != LTT_FLOAT || 
-     (f->field_type->type_class == LTT_FLOAT && f->field_size != 8))
-    g_error("The type of the field is not double\n");
+  g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 8);
 
   if(revFlag == 0) return *(double *)(e->data + f->offset_root);
   else{
@@ -601,7 +607,7 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
 
 char *ltt_event_get_string(LttEvent *e, LttField *f)
 {
-  if(f->field_type->type_class != LTT_STRING)
-    g_error("The field contains no string\n");
+  g_assert(f->field_type->type_class == LTT_STRING);
+
   return (char*)g_strdup((char*)(e->data + f->offset_root));
 }

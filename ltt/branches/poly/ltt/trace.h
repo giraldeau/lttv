@@ -26,11 +26,18 @@
    descriptions...).
 
    When a trace is closed, all the associated facilities, types and fields
-   are released as well. */
+   are released as well. 
+   
+   return value is NULL if there is an error when opening the trace.
+   
+   */
 
 LttTrace *ltt_trace_open(const char *pathname);
 
-/* copy reopens a trace */
+/* copy reopens a trace 
+ *
+ * return value NULL if error while opening the trace 
+ */
 LttTrace *ltt_trace_copy(LttTrace *self);
 
 char * ltt_trace_name(LttTrace *t);
@@ -128,7 +135,7 @@ LttTracefile * ltt_tracefile_open(LttTrace *t, char * tracefile_name);
 
 void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name);
 
-void ltt_tracefile_open_control(LttTrace *t, char * control_name);
+gint ltt_tracefile_open_control(LttTrace *t, char * control_name);
 
 
 /* obtain the time of an event */

@@ -1072,12 +1072,16 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       trace_v = lttvwindowtraces_get_trace_by_name(abs_path);
       if(trace_v == NULL) {
         trace = ltt_trace_open(abs_path);
-        if(trace == NULL) g_critical("cannot open trace %s", abs_path);
-        trace_v = lttv_trace_new(trace);
-        lttvwindowtraces_add_trace(trace_v);
+        if(trace == NULL) {
+          g_warning("cannot open trace %s", abs_path);
+        } else {
+          trace_v = lttv_trace_new(trace);
+          lttvwindowtraces_add_trace(trace_v);
+          lttvwindow_add_trace(tab, trace_v);
+        }
+      } else {
+        lttvwindow_add_trace(tab, trace_v);
       }
-
-      lttvwindow_add_trace(tab, trace_v);
 
       gtk_widget_destroy((GtkWidget*)file_selector);
       
@@ -1406,7 +1410,6 @@ void zoom(GtkWidget * widget, double size)
     else
     {
       /* Center the image on the current time */
-      g_critical("update is HERE");
       new_time_window.start_time = 
         ltt_time_sub(current_time, ltt_time_div(new_time_window.time_width, 2.0));
       /* If on borders, don't fall off */

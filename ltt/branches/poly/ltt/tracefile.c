@@ -70,8 +70,10 @@ static void parser_start_element (GMarkupParseContext  *context,
   int i=0;
   LttSystemDescription* des = (LttSystemDescription* )user_data;
   if(strcmp("system", element_name)){
-    g_warning("This is not system.xml file\n");
-    exit(1);
+    *error = g_error_new(G_MARKUP_ERROR,
+                         G_LOG_LEVEL_WARNING,
+                         "This is not system.xml file");
+    return;
   }
   
   while(attribute_names[i]){
@@ -113,8 +115,10 @@ static void parser_start_element (GMarkupParseContext  *context,
     }else if(strcmp("ltt_block_size", attribute_names[i])==0){
 	des->ltt_block_size = atoi(attribute_values[i]);      
     }else{
-      g_warning("Not a valid attribute\n");
-      exit(1);      
+      *error = g_error_new(G_MARKUP_ERROR,
+                           G_LOG_LEVEL_WARNING,
+                           "Not a valid attribute");
+      return;      
     }
     i++;
   }
@@ -161,12 +165,19 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
   tf->trace = t;
   tf->fd = open(fileName, O_RDONLY, 0);
   if(tf->fd < 0){
-    g_error("Unable to open input data file %s\n", fileName);
+    g_warning("Unable to open input data file %s\n", fileName);
+    g_free(tf->name);
+    g_free(tf);
+    return NULL;
   }
  
   // Get the file's status 
   if(fstat(tf->fd, &lTDFStat) < 0){
-    g_error("Unable to get the status of the input data file %s\n", fileName);
+    g_warning("Unable to get the status of the input data file %s\n", fileName);
+    g_free(tf->name);
+    close(tf->fd);
+    g_free(tf);
+    return NULL;
   }
 
   // Is the file large enough to contain a trace 
@@ -207,7 +218,7 @@ void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name)
   g_ptr_array_add(t->per_cpu_tracefiles, tf);
 }
 
-void ltt_tracefile_open_control(LttTrace *t, char * control_name)
+gint ltt_tracefile_open_control(LttTrace *t, char * control_name)
 {
   LttTracefile * tf;
   LttEvent * ev;
@@ -218,7 +229,10 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
   int i;
 
   tf = ltt_tracefile_open(t,control_name);
-  if(!tf) return;
+  if(!tf) {
+	  g_warning("ltt_tracefile_open_control : bad file descriptor");
+    return -1;
+  }
   t->control_tracefile_number++;
   g_ptr_array_add(t->control_tracefiles,tf);
 
@@ -226,7 +240,7 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
   if(strcmp(&control_name[strlen(control_name)-10],"facilities") ==0){
     while(1){
       ev = ltt_tracefile_read(tf);
-      if(!ev)return; // end of file
+      if(!ev)return 0; // end of file
 
       if(ev->event_id == TRACE_FACILITY_LOAD){
 	pos = ev->data;
@@ -241,16 +255,22 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
 	    break;
 	  }
 	}
-	if(i==t->facility_number)
-	  g_error("Facility: %s, checksum: %d is not founded\n",
+	if(i==t->facility_number) {
+	  g_warning("Facility: %s, checksum: %d is not found\n",
 		  fLoad.name,fLoad.checksum);
+    return -1;
+  }
       }else if(ev->event_id == TRACE_BLOCK_START){
 	continue;
       }else if(ev->event_id == TRACE_BLOCK_END){
 	break;
-      }else g_error("Not valid facilities trace file\n");
+      }else {
+        g_warning("Not valid facilities trace file\n");
+        return -1;
+      }
     }
   }
+  return 0;
 }
 
 /*****************************************************************************
@@ -272,14 +292,14 @@ void ltt_tracefile_close(LttTracefile *t)
 /*****************************************************************************
  *Get system information
  ****************************************************************************/
-void getSystemInfo(LttSystemDescription* des, char * pathname)
+gint getSystemInfo(LttSystemDescription* des, char * pathname)
 {
   FILE * fp;
   char buf[DIR_NAME_SIZE];
   char description[4*DIR_NAME_SIZE];
 
   GMarkupParseContext * context;
-  GError * error;
+  GError * error = NULL;
   GMarkupParser markup_parser =
     {
       parser_start_element,
@@ -291,25 +311,33 @@ void getSystemInfo(LttSystemDescription* des, char * pathname)
 
   fp = fopen(pathname,"r");
   if(!fp){
-    g_error("Can not open file : %s\n", pathname);
+    g_warning("Can not open file : %s\n", pathname);
+    return -1;
   }
   
   context = g_markup_parse_context_new(&markup_parser, 0, des,NULL);
   
   while(fgets(buf,DIR_NAME_SIZE, fp) != NULL){
     if(!g_markup_parse_context_parse(context, buf, DIR_NAME_SIZE, &error)){
-      g_warning("Can not parse xml file: \n%s\n", error->message);
-      exit(1);
+      if(error != NULL) {
+        g_warning("Can not parse xml file: \n%s\n", error->message);
+        g_error_free(error);
+      }
+      g_markup_parse_context_free(context);
+      fclose(fp);
+      return -1;
     }
   }
+  g_markup_parse_context_free(context);
   fclose(fp);
+  return 0;
 }
 
 /*****************************************************************************
  *The following functions get facility/tracefile information
  ****************************************************************************/
 
-void getFacilityInfo(LttTrace *t, char* eventdefs)
+gint getFacilityInfo(LttTrace *t, char* eventdefs)
 {
   DIR * dir;
   struct dirent *entry;
@@ -320,7 +348,10 @@ void getFacilityInfo(LttTrace *t, char* eventdefs)
   char name[DIR_NAME_SIZE];
 
   dir = opendir(eventdefs);
-  if(!dir) g_error("Can not open directory: %s\n", eventdefs);
+  if(!dir) {
+    g_warning("Can not open directory: %s\n", eventdefs);
+    return -1;
+  }
 
   while((entry = readdir(dir)) != NULL){
     ptr = &entry->d_name[strlen(entry->d_name)-4];
@@ -338,16 +369,20 @@ void getFacilityInfo(LttTrace *t, char* eventdefs)
       setFieldsOffset(NULL, et, NULL, t);
     }    
   }
+  return 0;
 }
 
-void getControlFileInfo(LttTrace *t, char* control)
+gint getControlFileInfo(LttTrace *t, char* control)
 {
   DIR * dir;
   struct dirent *entry;
   char name[DIR_NAME_SIZE];
 
   dir = opendir(control);
-  if(!dir) g_error("Can not open directory: %s\n", control);
+  if(!dir) {
+    g_warning("Can not open directory: %s\n", control);
+    return -1;
+  }
 
   while((entry = readdir(dir)) != NULL){
     if(strcmp(entry->d_name,"facilities") != 0 &&
@@ -356,19 +391,24 @@ void getControlFileInfo(LttTrace *t, char* control)
     
     strcpy(name,control);
     strcat(name,entry->d_name);
-    ltt_tracefile_open_control(t,name);
+    if(ltt_tracefile_open_control(t,name))
+      return -1;
   }  
   closedir(dir);
+  return 0;
 }
 
-void getCpuFileInfo(LttTrace *t, char* cpu)
+gint getCpuFileInfo(LttTrace *t, char* cpu)
 {
   DIR * dir;
   struct dirent *entry;
   char name[DIR_NAME_SIZE];
 
   dir = opendir(cpu);
-  if(!dir) g_error("Can not open directory: %s\n", cpu);
+  if(!dir) {
+    g_warning("Can not open directory: %s\n", cpu);
+    return -1;
+  }
 
   while((entry = readdir(dir)) != NULL){
     if(strcmp(entry->d_name,".") != 0 &&
@@ -380,6 +420,7 @@ void getCpuFileInfo(LttTrace *t, char* cpu)
     }else continue;
   }  
   closedir(dir);
+  return 0;
 }
 
 /*****************************************************************************
@@ -446,8 +487,8 @@ LttTrace *ltt_trace_open(const char *pathname)
   strcat(cpu,"cpu/");
 
   //new trace
-  t               = g_new(LttTrace, 1);
   sys_description = g_new(LttSystemDescription, 1);  
+  t               = g_new(LttTrace, 1);
   t->pathname     = g_strdup(abs_path);
   t->facility_number          = 0;
   t->control_tracefile_number = 0;
@@ -461,16 +502,51 @@ LttTrace *ltt_trace_open(const char *pathname)
   //get system description  
   strcpy(tmp,info);
   strcat(tmp,"system.xml");
-  getSystemInfo(sys_description, tmp);
+  if(getSystemInfo(sys_description, tmp)) {
+    g_ptr_array_free(t->facilities, TRUE);
+    g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
+    g_ptr_array_free(t->control_tracefiles, TRUE);
+    g_free(sys_description);
+    g_free(t->pathname);
+    g_free(t);
+    return NULL;
+  }
+
+
 
   //get facilities info
-  getFacilityInfo(t,eventdefs);
+  if(getFacilityInfo(t,eventdefs)) {
+    g_ptr_array_free(t->facilities, TRUE);
+    g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
+    g_ptr_array_free(t->control_tracefiles, TRUE);
+    g_free(sys_description);
+    g_free(t->pathname);
+    g_free(t);
+    return NULL;
+  }
   
   //get control tracefile info
-  getControlFileInfo(t,control);
+  
+  if(getControlFileInfo(t,control)) {
+    g_ptr_array_free(t->facilities, TRUE);
+    g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
+    g_ptr_array_free(t->control_tracefiles, TRUE);
+    g_free(sys_description);
+    g_free(t->pathname);
+    g_free(t);
+    return NULL;
+  }
 
   //get cpu tracefile info
-  getCpuFileInfo(t,cpu);
+  if(getCpuFileInfo(t,cpu)) {
+    g_ptr_array_free(t->facilities, TRUE);
+    g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
+    g_ptr_array_free(t->control_tracefiles, TRUE);
+    g_free(sys_description);
+    g_free(t->pathname);
+    g_free(t);
+    return NULL;
+  }
 
   return t;
 }
