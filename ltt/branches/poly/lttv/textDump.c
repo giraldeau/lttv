@@ -302,7 +302,7 @@ static int write_event_content(void *hook_data, void *call_data)
   g_string_append_printf(a_string,"\n");  
 
   if(a_state) {
-    g_string_append_printf(a_string, " %s",
+    g_string_append_printf(a_string, " %s ",
         g_quark_to_string(tfs->process->state->s));
   }
 
@@ -342,13 +342,13 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
       LTTV_OPT_NONE, &a_state, NULL, NULL);
 
   a_cpu_stats = FALSE;
-  lttv_option_add("cpu_stats", 's', 
+  lttv_option_add("cpu_stats", 'c', 
       "write the per cpu statistics", 
       "", 
       LTTV_OPT_NONE, &a_cpu_stats, NULL, NULL);
 
   a_process_stats = FALSE;
-  lttv_option_add("process_stats", 's', 
+  lttv_option_add("process_stats", 'p', 
       "write the per process statistics", 
       "", 
       LTTV_OPT_NONE, &a_process_stats, NULL, NULL);
