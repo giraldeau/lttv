@@ -75,6 +75,14 @@ typedef struct _buffer_start{
   uint32_t block_id;  
 } __attribute__ ((packed)) buffer_start;
 
+typedef struct _buffer_end{
+  uint32_t seconds;
+  uint32_t nanoseconds;
+  uint64_t cycle_count;
+  uint32_t block_id;  
+} __attribute__ ((packed)) buffer_end;
+
+
 typedef struct _heartbeat{
   uint32_t seconds;
   uint32_t nanoseconds;
@@ -134,7 +142,7 @@ int main(int argc, char ** argv){
   uint32_t time_delta, startTimeDelta;
   void * cur_pos, *end_pos;
   buffer_start start, start_proc, start_intr;
-  buffer_start end, end_proc, end_intr;
+  buffer_end end, end_proc, end_intr;
   heartbeat beat;
   uint64_t beat_count;
   uint32_t size_lost;
@@ -289,7 +297,8 @@ int main(int argc, char ** argv){
     startId = newId;
     startTimeDelta = time_delta;
     start.seconds = tBufStart->Time.tv_sec;
-    start.nanoseconds = tBufStart->Time.tv_usec;
+    /* Fix (Mathieu) */
+    start.nanoseconds = tBufStart->Time.tv_usec * 1000;
     start.cycle_count = tBufStart->TSC;
     start.block_id = tBufStart->ID;
     end.block_id = start.block_id;
@@ -299,11 +308,11 @@ int main(int argc, char ** argv){
     ltt_block_size    = tStart->BufferSize;
     ltt_log_cpu       = tStart->LogCPUID;
 
-    block_size = ltt_block_size;
-    block_number = file_size/block_size;
+    block_size = ltt_block_size;//FIXME
+    block_number = file_size/ltt_block_size;
 
     g_free(buffer);
-    buffer         = g_new(char, block_size);
+    buffer         = g_new(char, ltt_block_size);
     buf_fac        = g_new(char, block_size);
     write_pos_fac  = buf_fac;
     buf_intr       = g_new(char, block_size);
@@ -330,8 +339,8 @@ int main(int argc, char ** argv){
       write_pos_fac = buf_fac;
       write_pos_proc = buf_proc;
       
-      memset((void*)buffer,0,block_size); 
-      readFile(fd,(void*)buffer, block_size, "Unable to read block header");
+      memset((void*)buffer,0,ltt_block_size); 
+      readFile(fd,(void*)buffer, ltt_block_size, "Unable to read block header");
       
       cur_pos= buffer;
       evId = *(uint8_t *)cur_pos;
@@ -353,10 +362,10 @@ int main(int argc, char ** argv){
       start.block_id = tBufStart->ID;
       end.block_id = start.block_id;
       
-      end_pos = buffer + block_size; //end of the buffer
+      end_pos = buffer + ltt_block_size; //end of the buffer
       size_lost = *(uint32_t*)(end_pos - sizeof(uint32_t));
       
-      end_pos = buffer + block_size - size_lost ; //buffer_end event
+      end_pos = buffer + ltt_block_size - size_lost ; //buffer_end event
       if(ltt_log_cpu){
 	tBufEnd = (trace_buffer_end*)(end_pos + 2 * sizeof(uint8_t)+sizeof(uint32_t));
       }else{
@@ -455,16 +464,26 @@ int main(int argc, char ** argv){
     end.cycle_count = start.cycle_count 
                          + beat_count * OVERFLOW_FIGURE;
 #endif //)
-	  int size = block_size + ((void*)buf_out - write_pos)+ sizeof(uint16_t) + sizeof(uint32_t);
-	  write_to_buffer(write_pos,(void*)&end,sizeof(buffer_start));   
+	  int size = (void*)buf_out + block_size - write_pos 
+                   - sizeof(buffer_end) - sizeof(uint32_t);
+
+    /* size _lost_ ? */
+    //int size = (void*)buf_out + block_size - write_pos 
+    //            + sizeof(uint16_t) + sizeof(uint32_t);
+    g_assert((void*)write_pos < (void*)buf_out + block_size);
+	  write_to_buffer(write_pos,(void*)&end,sizeof(buffer_end));
 	  write_pos = buf_out + block_size - sizeof(uint32_t);
 	  write_to_buffer(write_pos,(void*)&size, sizeof(uint32_t));
 	  write(fdCpu,(void*)buf_out, block_size);
 	  
 	  //write out processes and intrrupts files
 	  {
-	    int size_intr = block_size - (write_pos_intr - (void*)buf_intr);
-	    int size_proc = block_size - (write_pos_proc - (void*)buf_proc);
+	    int size_intr = block_size + (void*)buf_intr - write_pos_intr
+                         - sizeof(buffer_end) - sizeof(uint32_t);
+	    int size_proc = block_size + (void*)buf_proc - write_pos_proc
+                         - sizeof(buffer_end) - sizeof(uint32_t);
+      //int size_intr = block_size - (write_pos_intr - (void*)buf_intr);
+      //int size_proc = block_size - (write_pos_proc - (void*)buf_proc);
 	    write_to_buffer(write_pos_intr,(void*)&newId,sizeof(uint16_t));
 	    write_to_buffer(write_pos_intr,(void*)&time_delta, sizeof(uint32_t));     
 	    end_intr = end;

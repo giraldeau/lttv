@@ -63,11 +63,11 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
   type = ltt_field_type(f);
   switch(ltt_type_class(type)) {
     case LTT_INT:
-      g_string_append_printf(s, " %ld", ltt_event_get_long_int(e,f));
+      g_string_append_printf(s, " %lld", ltt_event_get_long_int(e,f));
       break;
 
     case LTT_UINT:
-      g_string_append_printf(s, " %lu", ltt_event_get_long_unsigned(e,f));
+      g_string_append_printf(s, " %llu", ltt_event_get_long_unsigned(e,f));
       break;
 
     case LTT_FLOAT:

@@ -114,13 +114,13 @@ unsigned ltt_event_field_union_member(LttEvent *e, LttField *f);
 /* These functions extract data from an event after architecture specific
    conversions. */
 
-unsigned ltt_event_get_unsigned(LttEvent *e, LttField *f);
+guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f);
 
-int ltt_event_get_int(LttEvent *e, LttField *f);
+gint32 ltt_event_get_int(LttEvent *e, LttField *f);
 
-unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f);
+guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f);
 
-long int ltt_event_get_long_int(LttEvent *e, LttField *f);
+gint64 ltt_event_get_long_int(LttEvent *e, LttField *f);
 
 float ltt_event_get_float(LttEvent *e, LttField *f);
 

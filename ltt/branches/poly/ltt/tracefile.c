@@ -1350,9 +1350,11 @@ int readBlock(LttTracefile * tf, int whichBlock)
 
   tf->a_block_start=(BlockStart *) (tf->buffer + EVENT_HEADER_SIZE);
   lostSize = *(guint32 *)(tf->buffer + tf->block_size - sizeof(guint32));
-  tf->a_block_end=(BlockEnd *)(tf->buffer + tf->block_size - 
-				lostSize + EVENT_HEADER_SIZE); 
-  tf->last_event_pos = tf->buffer + tf->block_size - lostSize;
+  tf->a_block_end=(BlockEnd *)(tf->buffer + tf->block_size
+	           			- sizeof(guint32) - lostSize - sizeof(BlockEnd)); 
+  tf->last_event_pos = tf->buffer + tf->block_size - 
+                              sizeof(guint32) - lostSize
+                              - sizeof(BlockEnd) - EVENT_HEADER_SIZE;
 
   tf->which_block = whichBlock;
   tf->which_event = 1;
