@@ -1278,6 +1278,7 @@ gboolean ltt_tracefile_pre_read_cycles(LttTracefile *tf)
     /* The goal of all this pre reading */
     tf->a_block_end->cycle_count = tf->cur_cycle_count;
     g_debug("end of block cycle count : %llu", tf->cur_cycle_count);
+
     return FALSE;
   }
 
@@ -1342,16 +1343,28 @@ int readBlock(LttTracefile * tf, int whichBlock)
   tf->cur_cycle_count = 0;
   g_debug("precalculating cycles begin for block %i", whichBlock);
   while(likely(ltt_tracefile_pre_read_cycles(tf)));
+  /* Rough approximation of cycles per usec to calculate
+   * the real block start and end time.
+   */
+  getCyclePerNsec(tf);
+  /* we are at end position, make end time more precise */
+  tf->a_block_end->time = getEventTime(tf);  
+  
   g_debug("precalculating cycles end for block %i", whichBlock);
 
+  /* put back pointer at the beginning */
   tf->count = 0;
   tf->pre_cycle_count = 0;
   tf->cur_cycle_count = 0;
-  /* put back pointer at the beginning */
   tf->which_event = 1;
   tf->cur_event_pos = tf->buffer;//the beginning of the block, block start ev
   tf->cur_heart_beat_number = 0;
 
+  /* Make start time more precise */
+  tf->a_block_start->time = getEventTime(tf);
+
+  /* recalculate the cycles per nsec, with now more precise start and end time
+   */
   getCyclePerNsec(tf);
 
   tf->current_event_time = getEventTime(tf);  
