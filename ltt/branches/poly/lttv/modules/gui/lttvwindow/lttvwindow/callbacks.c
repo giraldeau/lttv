@@ -3477,13 +3477,12 @@ void current_time_change_manager       (Tab *tab,
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
 
-  tab->current_time = new_current_time;
-
   /* current seconds */
   gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry5),
                             (double)time_span.start_time.tv_sec,
                             (double)time_span.end_time.tv_sec);
-
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry5),
+                            (double)new_current_time.tv_sec);
   /* start nanoseconds */
   if(new_current_time.tv_sec == time_span.start_time.tv_sec) {
     gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
@@ -3503,7 +3502,7 @@ void current_time_change_manager       (Tab *tab,
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry6),
                             (double)new_current_time.tv_nsec);
 
-  lttvwindow_report_current_time(tab, tab->current_time);
+  set_current_time(tab, &new_current_time);
 
   tab->current_time_manager_lock = FALSE;
 }

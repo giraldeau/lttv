@@ -76,6 +76,27 @@ void set_time_window(Tab *tab, const TimeWindow *time_window)
 
 }
 
+/* set_current_time
+ *
+ * It updates the current time of the tab, then calls the updatetimewindow
+ * hooks of each viewer.
+ *
+ * This is called whenever the current time value changes.
+ */
+
+void set_current_time(Tab *tab, const LttTime *current_time)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+
+  tab->current_time = *current_time;
+
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/updatecurrenttime", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp != NULL) lttv_hooks_call(tmp, &tab->current_time);
+}
+
 void add_toolbar_constructor(MainWindow *mw, LttvToolbarClosure *toolbar_c)
 {
   LttvIAttribute *attributes = mw->attributes;
@@ -743,13 +764,6 @@ void lttvwindow_report_current_time(Tab *tab,
   LttvHooks * tmp;
   
   current_time_change_manager(tab, time);
-  
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/updatecurrenttime", LTTV_POINTER, &value));
-  tmp = (LttvHooks*)*(value.v_pointer);
-
-  if(tmp == NULL)return;
-  lttv_hooks_call(tmp, &tab->current_time);
 }
 
 /**
