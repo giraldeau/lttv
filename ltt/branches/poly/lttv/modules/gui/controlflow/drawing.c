@@ -598,7 +598,17 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
       event->area.x, event->area.y,
       event->area.x, event->area.y,
       event->area.width, event->area.height);
-  
+
+  /* Erase the dotted lines left.. */
+  if(widget->allocation.height > drawing->height)
+    gdk_draw_rectangle (widget->window,
+      drawing->drawing_area->style->black_gc,
+      TRUE,
+      event->area.x, drawing->height,
+      event->area.width,  // do not overlap
+      widget->allocation.height - drawing->height);
+
+
   if(ltt_time_compare(time_window.start_time, current_time) <= 0 &&
            ltt_time_compare(window_end, current_time) >= 0)
   {
@@ -626,10 +636,10 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
                         dash_list,
                         2);
     }
-
+    
     drawing_draw_line(NULL, widget->window,
                   cursor_x, 0,
-                  cursor_x, drawing->height,
+                  cursor_x, widget->allocation.height,
                   drawing->dotted_gc);
   }
   return FALSE;
