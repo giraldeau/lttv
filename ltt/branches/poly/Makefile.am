@@ -1,1 +1,1 @@
-SUBDIRS = lttv lttd ltt
+SUBDIRS = lttv lttd ltt include

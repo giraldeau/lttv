@@ -8,5 +8,3 @@ bin_PROGRAMS = textui
 
 textui_SOURCES = main.c module.c option.c hook.c attribute.c \
 		 attribute.h lttv.h module.h option.h trace.h
-
-lttvinclude_HEADERS = traceWindow.h module.h hook.h
