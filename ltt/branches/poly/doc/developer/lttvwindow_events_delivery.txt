@@ -60,14 +60,17 @@ has.
 - Border effects
 
 Viewer's writers will have to deal with a lot of border effects caused by the
-particularities of the reading by selecting the information.
+particularities of the reading. They will be required to select the information
+they need from their input by filtering.
 
-- Lack of encapsulation
+- Lack of encapsulation and difficulty of testing
 
 The viewer's writer will have to take into account all the border effects caused
 by the interaction with other modules. This means that event if a viewer works
 well alone or with another viewer, it's possible that new bugs arises when a new
-viewer comes around.
+viewer comes around. So, even if a perfect testbench works well for a viewer, it
+does not confirm that no new bug will arise when another viewer is loaded at the
+same moment asking for different time intervals.
 
 
 - Duplication of the work
@@ -101,7 +104,7 @@ Strengths
 Having the opportunity of delivering more events than necessary to the viewers
 means that we can concatenate time intervals and number of events requested
 fairly easily, while being hard to determine if some specific cases will be
-wrong by formal methods.
+wrong, in depth testing being impossible.
 
 - No duplication of the tracecontext API
 
@@ -117,10 +120,6 @@ a layer of encapsulation.
 The idea behind this method is to provide exactly the events requested by the
 viewers to them, no more, no less.
 
-This method relies on the fact that time based and number based event requests
-are, by nature, totally different and that there is no real interest in merging
-both requests types.
-
 It uses the new API for process traceset suggested in the document
 process_traceset_strict_boundaries.txt.
 
@@ -132,8 +131,8 @@ removing hooks for the different time intervals requested. That means that hooks
 insertion and removal will be done between each traceset processing based on
 the time intervals and event positions related to each hook. We must therefore
 provide a simple interface for hooks passing between the viewers and the main
-window, make them easier to manage from the main window. The new type
-LttvHooksPrio solves this problem.
+window, make them easier to manage from the main window. A modification to the
+LttvHooks type solves this problem.
 
 
 Architecture
@@ -141,21 +140,20 @@ Architecture
 Added to the lttvwindow API :
 
 
-- lttvwindow_time_interval_request
-arguments :
-( MainWindow *main_win,
-  TimeWindow time_requested, guint num_events,
-  LttvHooksPrio process_traceset_middle,
-  LttvHook after_process_traceset,
-  gpointer after_process_traceset_data);
-
-- lttvwindow_position_request
-arguments :
-( MainWindow *main_win,
-  LttvTracesetPosition position, guint max_num_events,
-  LttvHooksPrio process_traceset_middle,
-  LttvHook after_process_traceset,
-  gpointer after_process_traceset_data);
+- lttvwindow_events_request
+( MainWindow          *main_win,
+  LttTime              start_time,
+  LttvTracesetPosition start_position,
+  LttTime              end_time,
+  guint                num_events,
+  LttvTracesetPosition end_position,
+  LttvHooksById        before_traceset,
+  LttvHooksById        before_trace,
+  LttvHooksById        before_tracefile,
+  LttvHooksById        middle,
+  LttvHooksById        after_tracefile,
+  LttvHooksById        after_trace,
+  LttvHooksById        after_traceset)
 
 
 Internal functions :
@@ -167,91 +165,131 @@ Internal functions :
 Implementation
 
 
-- Type LttvHooksPrio
+- Type LttvHooks
 
 see hook_prio.txt
 
+The viewers will just have to pass hooks to the main window through this type,
+using the hook.h interface to manipulate it. Then, the main window will add
+them and remove them from the context to deliver exactly the events requested by
+each viewer through process traceset.
 
-- lttvwindow_time_interval_request
 
-It adds the TimeRequest struct to the array of time requests pending and
+- lttvwindow_events_request
+
+It adds the EventsRequest struct to the array of time requests pending and
 registers a pending request for the next g_idle if none is registered.
 
-typedef struct _TimeRequest {
-  TimeWindow  time_window;
-  guint num_events;
-  LttvHooksPrio middle_hooks;
-  LttvHook after_hook;
-  gpointer after_hook_data;
-} TimeRequest;
-
-
-- lttvwindow_position_request
-
-It adds a PositionRequest struct to the array of position requests pending and
-registers a pending request for the next g_idle if none is registered.
-
-typedef struct _PositionRequest {
-  LttvTracesetPosition  position;
-  guint max_num_events;
-  LttvHooksPrio middle_hooks;
-  LttvHook after_hook;
-  gpointer after_hook_data;
-} PositionRequest;
-
+typedef struct _EventsRequest {
+  LttTime              start_time,
+  LttvTracesetPosition start_position,
+  LttTime              end_time,
+  guint                num_events,
+  LttvTracesetPosition end_position,
+  LttvHooksById        before_traceset,
+  LttvHooksById        before_trace,
+  LttvHooksById        before_tracefile,
+  LttvHooksById        middle,
+  LttvHooksById        after_tracefile,
+  LttvHooksById        after_trace,
+  LttvHooksById        after_traceset)
+} EventsRequest;
 
 
 - lttvwindow_process_pending_requests
 
 This internal function gets called by g_idle, taking care of the pending
 requests. It is responsible for concatenation of time intervals and position
-requests. It does it while it calls process traceset. Here is the detailed
-description of the way it works :
-
-It treats time interval requests and position requests as two different cases.
-So let's start with time interval requests.
-
-- Time interval requests servicing
-
-(1)
-It starts by finding the time interval request with the lowest start time and
-the others with the same start time. It add its (or their) hooks to the context.
-It will use this start time to seek in the traceset.
-
-Then, it searches for what event comes first : the end of one of the time
-request actually added in the context or the start of a time request that is not
-in the context. It uses this value as a end boundary for the first process
-traceset middle call.
-
-After a process traceset middle ends, we check if we have reached the end time
-of any time request. If so, we call the time requests process traceset end hook
-and remove this time request from the context and the array of time requests. If
-the context has no hooks left, that means that we have to jump further in the
-traceset. We then simply have to use the exact routine that we used for (1).
-
-Else, if there are hooks left, that means that we have not finished requesting
-one hook's time interval request yet, but maybe we must add a new time request
-to the hook list of the context. We start back at point (1), except that instead
-of finding the lowest start time, we simply keep the hooks already present in
-the context and add hooks that has their start time with a value equal to the
-last process traceset's end time.
+requests. It does it with the following algorithm organizing process traceset
+calls. Here is the detailed description of the way it works :
 
 
-- Position requests servicing
+- Events Requests Servicing Algorithm
 
-As it is nearly impossible to compare two traceset positions without replaying
-part of the traceset reading, which is not very efficient, we consider that the
-performance cost of doing one trace read per request does not justify position
-requests combinations. So, each position request will be serviced independently.
+Data structures necessary :
 
+List of requests added to context : list_in
+List of requests not added to context : list_out
+
+Initial state :
+
+list_in : empty
+list_out : many events requests
+
+
+While list_in !empty and list_out !empty
+  1. If list_in is empty (need a seek)
+    1.1 Add requests to list_in
+      1.1.1 Find all time requests with the lowest start time in list_out 
+            (ltime)
+      1.1.2 Find all position requests with the lowest position in list_out
+            (lpos)
+      1.1.3 If lpos.start time < ltime
+        - Add lpos to list_in, remove them from list_out
+      1.1.4 Else, (lpos.start time >= ltime)
+        - Add ltime to list_in, remove them from list_out
+    1.2 Seek
+      1.2.1 If first request in list_in is a time request
+        1.2.1.1 Seek to that time
+      1.2.2 Else, the first request in list_in is a position request
+        1.2.2.1 Seek to that position
+    1.3 Call begin for all list_in members
+      (1.3.1 begin hooks called)
+      (1.3.2 middle hooks added)
+  2. Else, list_in is not empty, we continue a read
+    2.1 For each req of list_out
+    - if req.start time == current time
+      - Add to list_in, remove from list_out
+      - Call begin
+    - if req.start position == current position
+      - Add to list_in, remove from list_out
+      - Call begin
+
+  3. Find end criterions
+    3.1 End time
+      3.1.1 Find lowest end time in list_in
+      3.1.2 Find lowest start time in list_out
+      3.1.3 Use lowest of both as end time
+    3.2 Number of events
+      3.2.1 Find lowest number of events in list_in
+    3.3 End position
+      3.3.1 Find lowest end position in list_in
+      3.3.2 Find lowest start position in list_out
+      3.3.3 Use lowest of both as end position
+
+  4. Call process traceset middle
+    4.1 Call process traceset middle (Use end criterion found in 3)
+  5. After process traceset middle
+    5.1 For each req in list_in
+          - req.num -= count
+          - if req.num == 0
+            - Call end for req
+            - remove req from list_in
+          - if req.end time == current time
+            - Call end for req
+            - remove req from list_in
+          - if req.end pos == current pos
+            - Call end for req
+            - remove req from list_in
+
+
+
+Notes :
+End criterions for process traceset middle :
+If the criterion is reached, event is out of boundaries and we return.
+Current time > End time
+Event count > Number of events
+Current position >= End position
+
+The >= for position is necessary to make ensure consistency between start time
+requests and positions requests that happens to be at the exact same start time
+and position.
 
 
 
 Weaknesses
 
-- Position requests are serviced independently, which may duplicate traceset
-reads.
-
+- None (nearly?) :)
 
 
 Strengths
