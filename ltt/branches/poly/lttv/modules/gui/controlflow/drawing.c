@@ -107,6 +107,8 @@ void drawing_data_request(Drawing_t *drawing,
   
   LttvTracesetContext * tsc =
         get_traceset_context(control_flow_data->mw);
+  LttvTracesetState * tss =
+        LTTV_TRACESET_STATE(tsc);
   
     //send_test_process(
   //guicontrolflow_get_process_list(drawing->control_flow_data),
@@ -138,7 +140,8 @@ void drawing_data_request(Drawing_t *drawing,
   //state_add_event_hooks_api(control_flow_data->mw);
   lttv_hooks_add(after_event, draw_after_hook, &event_request);
 
-  lttv_process_traceset_seek_time(tsc, start);
+  //lttv_process_traceset_seek_time(tsc, start);
+  lttv_state_traceset_seek_time_closest(tss, start);
   // FIXME : would like to place the after_traceset hook after the traceset,
   // but the traceset context state is not valid anymore.
   lttv_traceset_context_add_hooks(tsc,

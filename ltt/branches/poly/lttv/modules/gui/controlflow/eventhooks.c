@@ -304,8 +304,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     else if(process_out->state->s == LTTV_STATE_WAIT_FORK)
     {
       prop_text_out.foreground->red = 0x0fff;
-      prop_text_out.foreground->green = 0x0000;
-      prop_text_out.foreground->blue = 0x0fff;
+      prop_text_out.foreground->green = 0xffff;
+      prop_text_out.foreground->blue = 0xfff0;
     }
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
     {
@@ -338,6 +338,7 @@ int draw_event_hook(void *hook_data, void *call_data)
       prop_text_out.foreground->blue = 0xffff;
     }
  
+    
     /* Print status of the process : U, WF, WC, E, W, R */
     if(process_out->state->s == LTTV_STATE_UNNAMED)
       prop_text_out.text = "U->";
@@ -378,6 +379,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     prop_line_out.line_width = 2;
     prop_line_out.style = GDK_LINE_SOLID;
     prop_line_out.position = MIDDLE;
+    
+    g_critical("out state : %s", g_quark_to_string(process_out->state->s));
 
     /* color of line : status of the process */
     if(process_out->state->s == LTTV_STATE_UNNAMED)
@@ -389,8 +392,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     else if(process_out->state->s == LTTV_STATE_WAIT_FORK)
     {
       prop_line_out.color->red = 0x0fff;
-      prop_line_out.color->green = 0x0000;
-      prop_line_out.color->blue = 0x0fff;
+      prop_line_out.color->green = 0xffff;
+      prop_line_out.color->blue = 0xfff0;
     }
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
     {
@@ -454,6 +457,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     prop_text_in.size = 6;
     prop_text_in.position = OVER;
 
+    g_critical("in state : %s", g_quark_to_string(process_in->state->s));
     /* foreground of text : status of the process */
     if(process_in->state->s == LTTV_STATE_UNNAMED)
     {
@@ -464,8 +468,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     else if(process_in->state->s == LTTV_STATE_WAIT_FORK)
     {
       prop_text_in.foreground->red = 0x0fff;
-      prop_text_in.foreground->green = 0x0000;
-      prop_text_in.foreground->blue = 0x0fff;
+      prop_text_in.foreground->green = 0xffff;
+      prop_text_in.foreground->blue = 0xfff0;
     }
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
     {
@@ -551,8 +555,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     else if(process_in->state->s == LTTV_STATE_WAIT_FORK)
     {
       prop_line_in.color->red = 0x0fff;
-      prop_line_in.color->green = 0x0000;
-      prop_line_in.color->blue = 0x0fff;
+      prop_line_in.color->green = 0xffff;
+      prop_line_in.color->blue = 0xfff0;
     }
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
     {
@@ -772,8 +776,8 @@ int draw_after_hook(void *hook_data, void *call_data)
     else if(process_out->state->s == LTTV_STATE_WAIT_FORK)
     {
       prop_text_out.foreground->red = 0x0fff;
-      prop_text_out.foreground->green = 0x0000;
-      prop_text_out.foreground->blue = 0x0fff;
+      prop_text_out.foreground->green = 0xffff;
+      prop_text_out.foreground->blue = 0xfff0;
     }
     else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
     {
@@ -892,8 +896,8 @@ int draw_after_hook(void *hook_data, void *call_data)
     else if(process_in->state->s == LTTV_STATE_WAIT_FORK)
     {
       prop_text_in.foreground->red = 0x0fff;
-      prop_text_in.foreground->green = 0x0000;
-      prop_text_in.foreground->blue = 0x0fff;
+      prop_text_in.foreground->green = 0xffff;
+      prop_text_in.foreground->blue = 0xfff0;
     }
     else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
     {
@@ -1341,8 +1345,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   else if(process->state->s == LTTV_STATE_WAIT_FORK)
   {
     prop_line.color->red = 0x0fff;
-    prop_line.color->green = 0x0000;
-    prop_line.color->blue = 0x0fff;
+    prop_line.color->green = 0xffff;
+    prop_line.color->blue = 0xfff0;
   }
   else if(process->state->s == LTTV_STATE_WAIT_CPU)
   {
