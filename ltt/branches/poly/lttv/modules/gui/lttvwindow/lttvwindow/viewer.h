@@ -132,8 +132,16 @@ instead of just one. That means that X events are delivered by the glib main
 loop directly to the widget corresponding to the GdkWindow affected by the X
 event.
 
-Event delivery to a widget emits a signal on this widget. Signal emission and
-propagation is described there : 
+Event delivery to a widget emits a signal on that widget. Then, if a handler
+is connected to this widget's signal, it will be executed. There are default
+handlers for signals, connected at class instantiation time. There is also
+the possibility to connect other handlers to these signals, which is what
+should be done in most cases when a viewer needs to interact with X in any
+way.
+
+
+
+Signal emission and propagation is described there : 
 
 http://www.gtk.org/tutorial/sec-signalemissionandpropagation.html
 
