@@ -64,6 +64,15 @@
 #define LTTV_TRACE_CONTEXT_GET_TRACESET_CONTEXT(tc)\
             (tc->ts_context)
 
+/* LTTV_TRACE_CONTEXT_GET_TRACE_INDEX
+ *
+ * Input : LttvTraceContext *tc
+ * returns : (guint)      trace context index in its traceset context.
+ */
+#define LTTV_TRACE_CONTEXT_GET_TRACE_INDEX(tc)\
+            (tc->index)
+
+
 
 /* LTTV_TRACE_CONTEXT_GET_TRACE_STATE
  *
