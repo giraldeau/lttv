@@ -625,7 +625,6 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     /* End of traceset : tfc is NULL */
     if(tfc == NULL)
     {
-      self->e = event;
       return count;
     }
 
@@ -643,7 +642,6 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
                                              end_position) >= 0 ||
        ltt_time_compare(tfc->timestamp, end) >= 0)
     {
-      self->e = event;
       return count;
     }
 
