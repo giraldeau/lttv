@@ -15,7 +15,7 @@
 #ifndef __TRACE_TOOLKIT_LINUX_HEADER__
 #define __TRACE_TOOLKIT_LINUX_HEADER__
 
-#include <LTTTypes.h>
+#include "LTTTypes.h"
 
 /* Traced events */
 #define TRACE_START           0    /* This is to mark the trace's start */
