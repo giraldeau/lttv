@@ -442,6 +442,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
   tsc = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
 
   //set the cursor to be X shape, indicating that the computer is busy in doing its job
+#if 0
   new = gdk_cursor_new(GDK_X_CURSOR);
   widget = lookup_widget(tab->mw->mwindow, "MToolbar1");
   win = gtk_widget_get_parent_window(widget);  
@@ -449,6 +450,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
   gdk_cursor_unref(new);  
   gdk_window_stick(win);
   gdk_window_unstick(win);
+#endif //0
 
   g_debug("SIZE events req len  : %d", g_slist_length(list_out));
   
@@ -1004,9 +1006,10 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 
   }
 
+#if 0
   //set the cursor back to normal
   gdk_window_set_cursor(win, NULL);  
-
+#endif //0
 
   g_assert(g_slist_length(list_in) == 0);
 
@@ -1472,18 +1475,19 @@ void stop_processing(GtkWidget *widget, gpointer user_data)
   } else {
     tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
   }
-  GSList *events_requests = tab->events_requests;
-
-  GSList *iter = events_requests;
+  GSList *iter = tab->events_requests;
   
   while(iter != NULL) {
     GSList *remove_iter = iter;
     iter = g_slist_next(iter);
     
     g_free(remove_iter->data);
-    events_requests = g_slist_remove_link(events_requests, remove_iter);
+    tab->events_requests = 
+                       g_slist_remove_link(tab->events_requests, remove_iter);
   }
-  g_assert(g_slist_length(events_requests) == 0);
+  tab->events_request_pending = FALSE;
+  g_idle_remove_by_data(tab);
+  g_assert(g_slist_length(tab->events_requests) == 0);
 }
 
 
