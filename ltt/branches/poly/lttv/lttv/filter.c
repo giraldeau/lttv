@@ -500,6 +500,11 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
   
 }
 
+void
+lttv_filter_destroy(lttv_filter* filter) {
+
+}
+
 /**
  * 	Apply the filter to a specific trace
  * 	@param filter the current filter applied

@@ -176,6 +176,8 @@ gboolean parse_simple_expression(GString* expression);
 /* Compile the filter expression into an efficient data structure */
 lttv_filter_tree *lttv_filter_new(char *expression, LttvTraceState *tfs);
 
+void lttv_filter_destroy(lttv_filter* filter);
+
 /* Check if the tracefile or event satisfies the filter. The arguments are
    declared as void * to allow these functions to be used as hooks. */
 

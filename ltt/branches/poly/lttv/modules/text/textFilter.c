@@ -53,7 +53,7 @@ static char
   *a_file_name = NULL,
   *a_string = NULL;
 
-static GString
+GString
   *a_filter_string = NULL;
 
 
@@ -100,7 +100,6 @@ void filter_analyze_file(void *hook_data) {
     line = NULL;
   }
   
-  lttv_filter_new(a_filter_string->str,NULL);
   fclose(a_file);
 }
 
@@ -181,7 +180,6 @@ static void init() {
 //	LTTV_POINTER, &value));
 //  g_assert((before_traceset = *(value.v_pointer)) != NULL);
 //  lttv_hooks_add(before_traceset, parse_filter_options, NULL, LTTV_PRIO_DEFAULT);
-
   
 }
 

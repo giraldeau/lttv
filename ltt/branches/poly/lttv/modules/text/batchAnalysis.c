@@ -28,6 +28,7 @@
 #include <lttv/tracecontext.h>
 #include <lttv/state.h>
 #include <lttv/stats.h>
+#include <lttv/filter.h>
 #include <ltt/trace.h>
 
 static LttvTraceset *traceset;
@@ -45,6 +46,10 @@ static LttvHooks
 static char *a_trace;
 
 static gboolean a_stats;
+
+static lttv_filter *a_lttv_filter;
+
+extern GString *a_filter_string;
 
 void lttv_trace_option(void *hook_data)
 { 
@@ -75,6 +80,8 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   lttv_state_add_event_hooks(&tscs->parent);
   if(a_stats) lttv_stats_add_event_hooks(tscs);
 
+  a_lttv_filter = lttv_filter_new(a_filter_string,(LttvTraceState*)tscs);
+  
   //lttv_traceset_context_add_hooks(tc,
   //before_traceset, after_traceset, NULL, before_trace, after_trace,
   //NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
@@ -110,6 +117,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
                             event_hook,
                             NULL);
 
+  lttv_filter_destroy(a_lttv_filter);
   lttv_state_remove_event_hooks(&tscs->parent);
   if(a_stats) lttv_stats_remove_event_hooks(tscs);
   lttv_context_fini(tc);
@@ -223,4 +231,4 @@ static void destroy()
 
 LTTV_MODULE("batchAnalysis", "Batch processing of a trace", \
     "Run through a trace calling all the registered hooks", \
-    init, destroy, "state", "stats", "option")
+    init, destroy, "state", "stats", "option","filter")
