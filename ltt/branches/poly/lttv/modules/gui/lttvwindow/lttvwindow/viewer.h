@@ -19,7 +19,6 @@
 /*
 This file is what every viewer plugin writer should refer to.
 
-- Remove the _api functions which add nothing
 - streamline the rest.
 
 A viewer plugin is, before anything, a plugin. It thus has an init and 
@@ -424,66 +423,6 @@ void unreg_update_dividor(LttvHook hook, gpointer hook_data,
 void set_hpane_dividor(MainWindow *main_win, gint position);
 
 
-/*
-CHECK These functions really should not appear here. Directr calls would
-be OK unless there is a linker problem.
-*/
-/**
- * Function to process traceset. It will call lttv_process_trace, 
- * each view will call this api to get events.
- * @param main_win the main window the viewer belongs to.
- * @param start the start time of the first event to be processed.
- * @param end the end time of the last event to be processed.
- */
-
-void process_traceset_api(MainWindow *main_win, LttTime start, 
-			  LttTime end, unsigned maxNumEvents);
-
-
-/**
- * Function to add hooks into the context of a traceset,
- * before reading events from traceset, viewer will call this api to
- * register hooks
- * @param main_win the main window the viewer belongs to.
- * @param LttvHooks hooks to be registered.
- */
-
-void context_add_hooks_api(MainWindow *main_win ,
-			   LttvHooks *before_traceset, 
-			   LttvHooks *after_traceset,
-			   LttvHooks *check_trace, 
-			   LttvHooks *before_trace, 
-			   LttvHooks *after_trace, 
-			   LttvHooks *check_tracefile,
-			   LttvHooks *before_tracefile,
-			   LttvHooks *after_tracefile,
-			   LttvHooks *check_event, 
-			   LttvHooks *before_event, 
-			   LttvHooks *after_event);
-
-
-/**
- * Function to remove hooks from the context of a traceset,
- * before reading events from traceset, viewer will call this api to
- * unregister hooks
- * @param main_win the main window the viewer belongs to.
- * @param LttvHooks hooks to be registered.
- */
-
-void context_remove_hooks_api(MainWindow *main_win ,
-			      LttvHooks *before_traceset, 
-			      LttvHooks *after_traceset,
-			      LttvHooks *check_trace, 
-			      LttvHooks *before_trace, 
-			      LttvHooks *after_trace, 
-			      LttvHooks *check_tracefile,
-			      LttvHooks *before_tracefile,
-			      LttvHooks *after_tracefile,
-			      LttvHooks *check_event, 
-			      LttvHooks *before_event, 
-			      LttvHooks *after_event);
-
-
 /**
  * Function to get the life span of the traceset
  * @param main_win the main window the viewer belongs to.
@@ -495,28 +434,10 @@ void get_traceset_time_span(MainWindow *main_win, TimeInterval *time_span);
 
 
 /**
- * Function to add/remove event hooks for state 
- * @param main_win the main window the viewer belongs to.
- */
-
-void state_add_event_hooks_api(MainWindow *main_win );
-void state_remove_event_hooks_api(MainWindow *main_win );
-
-
-/**
- * Function to add/remove event hooks for stats 
- * @param main_win the main window the viewer belongs to.
- */
-
-void stats_add_event_hooks_api(MainWindow *main_win );
-void stats_remove_event_hooks_api(MainWindow *main_win );
-
-
-/**
  * Function to get the stats of the traceset 
  * @param main_win the main window the viewer belongs to.
  */
 
-LttvTracesetStats* get_traceset_stats_api(MainWindow *main_win);
+LttvTracesetStats* get_traceset_stats(MainWindow *main_win);
 
 LttvTracesetContext* get_traceset_context(MainWindow *main_win);

@@ -378,7 +378,7 @@ unsigned get_max_event_number(MainWindow * mw_data)
 
 
 /* redraw_viewer parses the traceset first by calling 
- * process_traceset_api, then display all viewers of 
+ * process_traceset, then display all viewers of 
  * the current tab
  */
 
@@ -388,6 +388,9 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
   GdkWindow * win;
   GdkCursor * new;
   GtkWidget* widget;
+  LttvTracesetContext *tsc = 
+   LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
+                            traceset_context);
 
   //set the cursor to be X shape, indicating that the computer is busy in doing its job
   new = gdk_cursor_new(GDK_X_CURSOR);
@@ -403,7 +406,8 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
   
   max_nb_events = get_max_event_number(mw_data);
 
-  process_traceset_api(mw_data, time_window->start_time, 
+  lttv_process_traceset_seek_time(tsc, time_window->start_time);
+  lttv_process_traceset(tsc,
 		       ltt_time_add(time_window->start_time,time_window->time_width),
 		       max_nb_events);
 
