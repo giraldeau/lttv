@@ -39,7 +39,7 @@
 #include <ltt/type.h>
 
 #define DIR_NAME_SIZE 256
-#define UNUSED __attribute__((__unused__))
+#define __UNUSED__ __attribute__((__unused__))
 
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
@@ -65,7 +65,7 @@ int skipEvent(LttTracefile * t);
 
 
 /* Functions to parse system.xml file (using glib xml parser) */
-static void parser_start_element (GMarkupParseContext  UNUSED *context,
+static void parser_start_element (GMarkupParseContext  __UNUSED__ *context,
 				  const gchar          *element_name,
 				  const gchar         **attribute_names,
 				  const gchar         **attribute_values,
@@ -129,11 +129,11 @@ static void parser_start_element (GMarkupParseContext  UNUSED *context,
   }
 }
 
-static void  parser_characters   (GMarkupParseContext UNUSED *context,
+static void  parser_characters   (GMarkupParseContext __UNUSED__ *context,
 				  const gchar          *text,
-				  gsize UNUSED          text_len,
+				  gsize __UNUSED__      text_len,
 				  gpointer              user_data,
-				  GError UNUSED       **error)
+				  GError __UNUSED__     **error)
 {
   LttSystemDescription* des = (LttSystemDescription* )user_data;
   des->description = g_strdup(text);
