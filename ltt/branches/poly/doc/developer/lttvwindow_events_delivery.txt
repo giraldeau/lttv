@@ -169,7 +169,7 @@ Implementation
 
 - Type LttvHooksPrio
 
-see hook_prio.h
+see hook_prio.txt
 
 
 - lttvwindow_time_interval_request
