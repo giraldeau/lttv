@@ -576,6 +576,44 @@ gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
 }
 
 
+/* Put all the tracefiles at the tracefile context position */
+void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *self)
+{
+  guint iter_trace, nb_trace;
+
+  LttvTraceContext *tc;
+
+  nb_trace = lttv_traceset_number(self->ts);
+  
+  for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
+    tc = self->traces[iter_trace];
+    {
+      /* each trace */
+      guint iter_tf, nb_tracefile;
+
+      LttvTracefileContext *tfc;
+
+      nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
+          ltt_trace_per_cpu_tracefile_number(tc->t);
+
+      for(iter_tf = 0 ; iter_tf < nb_tracefile ; iter_tf++) {
+        tfc = tc->tracefiles[iter_tf];
+        {
+          /* each tracefile */
+          //ltt_tracefile_copy(tfc->tf_sync_data, tfc->tf);
+          LttEventPosition *ep = ltt_event_position_new();
+
+          ltt_event_position(tfc->e, ep);
+          
+          ltt_tracefile_seek_position(tfc->tf, ep);
+          g_free(ep);
+        }
+      }
+    }
+  }
+}
+
+
 
 void lttv_process_traceset_begin(LttvTracesetContext *self,
                                  LttvHooks       *before_traceset,
@@ -638,8 +676,8 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
 
     if(last_ret == TRUE ||
        count >= nb_events ||
-     ((end_position==NULL)?FALSE:(lttv_traceset_context_ctx_pos_compare(self,
-                                                          end_position) >= 0))||
+     (end_position!=NULL&&lttv_traceset_context_ctx_pos_compare(self,
+                                                          end_position) == 0)||
        ltt_time_compare(tfc->timestamp, end) >= 0)
     {
       return count;
@@ -849,7 +887,7 @@ lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
 }
 
 
-LttvTracesetContextPosition *ltt_traceset_context_position_new()
+LttvTracesetContextPosition *lttv_traceset_context_position_new()
 {
   return g_new(LttvTracesetContextPosition,1);
 }

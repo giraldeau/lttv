@@ -180,6 +180,12 @@ GType lttv_tracefile_context_get_type (void);
 void lttv_process_traceset(LttvTracesetContext *self, LttTime end, 
     unsigned nb_events);
 
+/* Save the complete tracefile information in the context */
+//void lttv_process_traceset_get_sync_data(LttvTracesetContext *self);
+
+/* Put all the tracefiles at the tracefile context position */
+void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *self);
+
 /* Process traceset can also be done in smaller pieces calling begin,
  * then seek and middle repeatedly, and end. The middle function return the
  * number of events processed. It will be smaller than nb_events if the end time
@@ -278,11 +284,11 @@ typedef struct _LttvTraceHook {
 void lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
     char *field1, char *field2, char *field3, LttvHook h, LttvTraceHook *th);
 
-
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);
 
-LttvTracesetContextPosition *ltt_traceset_context_position_new();
+
+LttvTracesetContextPosition *lttv_traceset_context_position_new();
 
 void lttv_traceset_context_position_save(const LttvTracesetContext *self,
                                     LttvTracesetContextPosition *pos);
@@ -293,14 +299,14 @@ void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
                                    const LttvTracesetContextPosition *src);
 
 gint lttv_traceset_context_pos_pos_compare(
-                              const LttvTracesetContextPosition *pos1,
-                              const LttvTracesetContextPosition *pos2);
+                          const LttvTracesetContextPosition *pos1,
+                          const LttvTracesetContextPosition *pos2);
 
 gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
-                                        const LttvTracesetContextPosition *pos);
+                                    const LttvTracesetContextPosition *pos2);
 
-gint lttv_traceset_context_pos_pos_compare(const LttvTracesetContextPosition *a,
-                                          const LttvTracesetContextPosition *b);
 LttTime lttv_traceset_context_position_get_time(
-                                  const LttvTracesetContextPosition *pos);
+                                      const LttvTracesetContextPosition *pos);
+
+
 #endif // PROCESSTRACE_H

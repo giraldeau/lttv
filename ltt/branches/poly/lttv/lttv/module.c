@@ -189,7 +189,7 @@ static LttvLibrary *library_load(char *name, GError **error)
     module_chain = NULL;
     module_next = &module_chain;
     gm = g_module_open(pathname,0);
-    g_free(pathname);    
+    g_free(pathname);
     
     if(gm != NULL) break;
 
@@ -226,8 +226,8 @@ static LttvLibrary *library_load(char *name, GError **error)
 
 LttvLibrary *lttv_library_load(char *name, GError **error)
 {
-  LttvLibrary *l = library_load(name, error); 
-  l->info.load_count++;
+  LttvLibrary *l = library_load(name, error);
+  if(l != NULL) l->info.load_count++;
   return l;
 }
 
