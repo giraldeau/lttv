@@ -81,9 +81,9 @@ static inline LttTime ltt_get_time(gboolean reverse_byte_order, void *ptr)
 {
   LttTime output;
 
-  output.tv_sec = ltt_get_uint64(reverse_byte_order, ptr);
-  ptr += sizeof(guint64);
-  output.tv_nsec = ltt_get_uint64(reverse_byte_order, ptr);
+  output.tv_sec = ltt_get_uint32(reverse_byte_order, ptr);
+  ptr += sizeof(guint32);
+  output.tv_nsec = ltt_get_uint32(reverse_byte_order, ptr);
 
   return output;
 }
