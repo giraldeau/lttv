@@ -212,7 +212,7 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
   viewer_container = tab->viewer_container;
 
   s = construct_traceset_selector(tab->traceset_info->traceset);
-  viewer = (GtkWidget*)constructor(tab, s, "Traceset_Selector");
+  viewer = (GtkWidget*)constructor(tab);
   if(viewer)
   {
     //gtk_multivpaned_widget_add(GTK_MULTIVPANED(multivpaned), viewer); 

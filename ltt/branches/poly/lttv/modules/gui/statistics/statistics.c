@@ -52,7 +52,7 @@ static void request_background_data(StatisticViewerData *svd);
 GtkWidget *guistatistic_get_widget(StatisticViewerData *svd);
 
 //! Statistic Viewer's constructor hook
-GtkWidget *h_gui_statistic(Tab *tab, LttvTracesetSelector * s, char * key);
+GtkWidget *h_gui_statistic(Tab *tab);
 //! Statistic Viewer's constructor
 StatisticViewerData *gui_statistic(Tab *tab);
 //! Statistic Viewer's destructor
@@ -224,7 +224,7 @@ gui_statistic_destructor(StatisticViewerData *statistic_viewer_data)
  * @return The widget created.
  */
 GtkWidget *
-h_gui_statistic(Tab *tab, LttvTracesetSelector * s, char * key)
+h_gui_statistic(Tab *tab)
 {
   StatisticViewerData* statistic_viewer_data = gui_statistic(tab) ;
 

@@ -264,9 +264,7 @@ FIXME : explain other important events
 
 
 /* constructor a the viewer */
-//FIXME explain LttvTracesetSelector and key
-typedef GtkWidget * (*lttvwindow_viewer_constructor)
-                (Tab *tab, LttvTracesetSelector * s, char *key);
+typedef GtkWidget* (*lttvwindow_viewer_constructor)(Tab *tab);
 
 
 /**

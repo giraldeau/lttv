@@ -224,9 +224,9 @@ void request_background_data(ControlFlowData *control_flow_data)
  * @return The widget created.
  */
 GtkWidget *
-h_guicontrolflow(Tab *tab, LttvTracesetSelector * s, char * key)
+h_guicontrolflow(Tab *tab)
 {
-  g_info("h_guicontrolflow, %p, %p, %s", tab, s, key);
+  g_info("h_guicontrolflow, %p", tab);
   ControlFlowData *control_flow_data = guicontrolflow() ;
   
   control_flow_data->tab = tab;

@@ -57,7 +57,7 @@
 
 void send_test_data(ProcessList *process_list, Drawing_t *drawing);
 
-GtkWidget *h_guicontrolflow(Tab *tab, LttvTracesetSelector * s, char * key);
+GtkWidget *h_guicontrolflow(Tab *tab);
 
 int event_selected_hook(void *hook_data, void *call_data);
 

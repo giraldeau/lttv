@@ -151,9 +151,9 @@ void remove_context_hooks(EventViewerData * event_viewer_data,
         LttvTracesetContext * tsc);
 
 //! Event Viewer's constructor hook
-GtkWidget *h_gui_events(Tab *tab, LttvTracesetSelector * s, char* key);
+GtkWidget *h_gui_events(Tab *tab);
 //! Event Viewer's constructor
-EventViewerData *gui_events(Tab *tab, LttvTracesetSelector *s, char *key);
+EventViewerData *gui_events(Tab *tab);
 //! Event Viewer's destructor
 void gui_events_destructor(EventViewerData *event_viewer_data);
 void gui_events_free(EventViewerData *event_viewer_data);
@@ -213,9 +213,9 @@ enum
  * @return The widget created.
  */
 GtkWidget *
-h_gui_events(Tab * tab, LttvTracesetSelector * s, char* key)
+h_gui_events(Tab * tab)
 {
-  EventViewerData* event_viewer_data = gui_events(tab, s, key) ;
+  EventViewerData* event_viewer_data = gui_events(tab) ;
   if(event_viewer_data)
     return event_viewer_data->hbox_v;
   else return NULL;
@@ -229,7 +229,7 @@ h_gui_events(Tab * tab, LttvTracesetSelector * s, char* key)
  * @return The Event viewer data created.
  */
 EventViewerData *
-gui_events(Tab *tab, LttvTracesetSelector * s,char* key )
+gui_events(Tab *tab)
 {
   LttTime end;
   GtkTreeViewColumn *column;
