@@ -3180,7 +3180,7 @@ Contributors :\n\
 \n\
 Michel Dagenais (New trace format, lttv main)\n\
 Mathieu Desnoyers (Directory structure, build with automake/conf,\n\
-                   lttv gui, control flow view, gui cooperative trace reading
+                   lttv gui, control flow view, gui cooperative trace reading\n\
                    scheduler with interruptible foreground and background\n
                    computation, detailed event list)\n\
 Benoit Des Ligneris, Éric Clement (Cluster adaptation, work in progress)\n\
