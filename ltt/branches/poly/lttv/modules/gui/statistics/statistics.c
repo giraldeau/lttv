@@ -315,7 +315,7 @@ void grab_focus(GtkWidget *widget, gpointer data)
 {
   StatisticViewerData *statistic_viewer_data = (StatisticViewerData *)data;
   MainWindow * mw = statistic_viewer_data->mw;
-  lttvwindow_report_focus(mw, gtk_widget_get_parent(statistic_viewer_data->hpaned_v));
+  lttvwindow_report_focus(mw, statistic_viewer_data->hpaned_v);
 }
 
 static void

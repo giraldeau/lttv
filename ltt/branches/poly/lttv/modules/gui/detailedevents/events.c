@@ -1503,7 +1503,7 @@ gboolean traceset_changed(void * hook_data, void * call_data)
 void tree_v_grab_focus(GtkWidget *widget, gpointer data){
   EventViewerData *event_viewer_data = (EventViewerData *)data;
   MainWindow * mw = event_viewer_data->mw;
-  lttvwindow_report_focus(mw, gtk_widget_get_parent(event_viewer_data->hbox_v));
+  lttvwindow_report_focus(mw, event_viewer_data->hbox_v);
 }
 
 void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)

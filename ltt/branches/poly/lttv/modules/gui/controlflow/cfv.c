@@ -32,7 +32,7 @@ extern GSList *g_control_flow_data_list;
 static void control_flow_grab_focus(GtkWidget *widget, gpointer data){
   ControlFlowData * control_flow_data = (ControlFlowData *)data;
   MainWindow * mw = control_flow_data->mw;
-  lttvwindow_report_focus(mw, gtk_widget_get_parent(control_flow_data->scrolled_window));
+  lttvwindow_report_focus(mw, control_flow_data->scrolled_window);
 }
 
 
