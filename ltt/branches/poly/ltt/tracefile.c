@@ -551,7 +551,7 @@ unsigned ltt_trace_facility_find(LttTrace *t, char *name, unsigned *position)
 {
   int i, count=0;
   LttFacility * f;
-  for(i=0;i=t->facility_number;i++){
+  for(i=0;i<t->facility_number;i++){
     f = (LttFacility*)g_ptr_array_index(t->facilities, i);
     if(strcmp(f->name,name)==0){
       count++;
