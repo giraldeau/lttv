@@ -60,8 +60,10 @@ typedef struct _LttvTraceStateClass LttvTraceStateClass;
 typedef struct _LttvTracefileState LttvTracefileState;
 typedef struct _LttvTracefileStateClass LttvTracefileStateClass;
 
+gint lttv_state_hook_add_event_hooks(void *hook_data, void *call_data);
 void lttv_state_add_event_hooks(LttvTracesetState *self);
 
+gint lttv_state_hook_remove_event_hooks(void *hook_data, void *call_data);
 void lttv_state_remove_event_hooks(LttvTracesetState *self);
 
 void lttv_state_save_add_event_hooks(LttvTracesetState *self);

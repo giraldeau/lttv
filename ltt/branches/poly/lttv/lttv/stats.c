@@ -740,8 +740,6 @@ lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
   LttvAttributeValue val;
 
-  lttv_state_add_event_hooks(&self->parent);
-  
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceStats *)self->parent.parent.traces[i];
@@ -910,7 +908,6 @@ lttv_stats_remove_event_hooks(LttvTracesetStats *self)
     g_array_free(before_hooks, TRUE);
     g_array_free(after_hooks, TRUE);
   }
-  lttv_state_remove_event_hooks(&self->parent);
 }
 
 

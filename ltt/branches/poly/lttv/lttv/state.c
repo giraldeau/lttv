@@ -1045,6 +1045,14 @@ gboolean process(void *hook_data, void *call_data)
   return 0;
 }
 
+gint lttv_state_hook_add_event_hooks(void *hook_data, void *call_data)
+{
+  LttvTracesetState *tss = (LttvTracesetState*)(call_data);
+
+  lttv_state_add_event_hooks(tss);
+
+  return 0;
+}
 
 void lttv_state_add_event_hooks(LttvTracesetState *self)
 {
@@ -1123,6 +1131,14 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
   }
 }
 
+gint lttv_state_hook_remove_event_hooks(void *hook_data, void *call_data)
+{
+  LttvTracesetState *tss = (LttvTracesetState*)(call_data);
+
+  lttv_state_remove_event_hooks(tss);
+
+  return 0;
+}
 
 void lttv_state_remove_event_hooks(LttvTracesetState *self)
 {
@@ -1253,8 +1269,6 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
 
   LttvTraceHook hook_start, hook_end;
 
-  lttv_state_add_event_hooks(self);
-  
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceState *)self->parent.traces[i];
@@ -1318,8 +1332,6 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
           tfs->parent.event_by_id, hook_end.id), hook_end.h, NULL);
     }
   }
-  
-  lttv_state_remove_event_hooks(self);
 }
 
 gint lttv_state_save_hook_remove_event_hooks(void *hook_data, void *call_data)
