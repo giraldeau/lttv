@@ -2191,6 +2191,12 @@ int before_execmode_hook(void *hook_data, void *call_data)
  */
 int after_execmode_hook(void *hook_data, void *call_data)
 {
+  /**************** DOES NOTHING!! *************/
+  /* hook desactivated in drawing.c */
+  return 0;
+
+
+
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
 

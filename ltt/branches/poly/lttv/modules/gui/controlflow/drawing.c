@@ -210,7 +210,7 @@ void drawing_data_request(Drawing_t *drawing,
          associated by id hooks. */
 
       hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
-      g_array_set_size(hooks, 16);
+      g_array_set_size(hooks, 15);
 
       /* before hooks */
       
@@ -252,29 +252,31 @@ void drawing_data_request(Drawing_t *drawing,
       
       lttv_trace_find_hook(ts->parent.t, "core","syscall_entry","syscall_id", 
     NULL, NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 8));
-
+#if 0
+      /**** DESACTIVATED ****/
       lttv_trace_find_hook(ts->parent.t, "core", "syscall_exit", NULL, NULL, 
           NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 9));
+#endif //0
 
       lttv_trace_find_hook(ts->parent.t, "core", "trap_entry", "trap_id",
-    NULL, NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 10));
+    NULL, NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 9));
 
       lttv_trace_find_hook(ts->parent.t, "core", "trap_exit", NULL, NULL, NULL, 
-          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 11));
+          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 10));
 
       lttv_trace_find_hook(ts->parent.t, "core", "irq_entry", "irq_id", NULL, 
-          NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 12));
+          NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 11));
 
       lttv_trace_find_hook(ts->parent.t, "core", "irq_exit", NULL, NULL, NULL, 
-          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 13));
+          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 12));
 
       lttv_trace_find_hook(ts->parent.t, "core", "schedchange", "in", "out", 
         "out_state", after_schedchange_hook, 
-        &g_array_index(hooks, LttvTraceHook, 14));
+        &g_array_index(hooks, LttvTraceHook, 13));
 
       lttv_trace_find_hook(ts->parent.t, "core", "process", "event_sub_id", 
           "event_data1", "event_data2", after_process_hook,
-          &g_array_index(hooks, LttvTraceHook, 15));
+          &g_array_index(hooks, LttvTraceHook, 14));
 
 #if 0
       lttv_trace_find_hook(ts->parent.t, "core", "process_fork", "child_pid", 
