@@ -167,6 +167,10 @@ static void connect_focus_recursive(GtkWidget *widget,
     gtk_container_forall(GTK_CONTAINER(widget),
                          (GtkCallback)connect_focus_recursive,
                          viewer);
+
+  }
+  if(GTK_IS_TREE_VIEW(widget)) {
+    gtk_tree_view_set_headers_clickable(widget, TRUE);
   }
   gtk_widget_add_events(widget, GDK_BUTTON_PRESS_MASK);
   g_signal_connect (G_OBJECT(widget),
