@@ -210,6 +210,29 @@ complete the servicing after a "stop" action.
 
 
 
+Tab change
+
+If a tab change occurs, we still want to do background processing.
+Events requests must be stocked in a list located in the same scope than the
+traceset context. Right now, this is tab scope. All functions called from the
+request servicing function must _not_ use the current_tab concept, as it may
+change. The idle function must the take a tab, and not the main window, as
+parameter.
+
+If a tab is removed, its associated idle events requests servicing function must
+also be removed.
+
+
+
+Idle function (lttvwindow_process_pending_requests)
+
+The idle function must return FALSE to be removed from the idle functions when
+no more events requests are pending. Otherwise, it returns TRUE. It will service
+requests until there is no more request left.
+
+
+
+
 Implementation
 
 
