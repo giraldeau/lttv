@@ -1145,18 +1145,16 @@ LttTime getEventTime(LttTracefile * tf)
   LttTime       lTimeOffset;      // Time offset in struct LttTime
   guint16       evId;
   gint64        nanoSec, tmpCycleCount = (((guint64)1)<<32);
-  static LttCycleCount preCycleCount = 0;
-  static int   count = 0;
 
   evId = *(guint16 *)tf->cur_event_pos;
   if(evId == TRACE_BLOCK_START){
-    count = 0;
-    preCycleCount = 0;
+    tf->count = 0;
+    tf->pre_cycle_count = 0;
     tf->cur_cycle_count = tf->a_block_start->cycle_count;
     return tf->a_block_start->time;
   }else if(evId == TRACE_BLOCK_END){
-    count = 0;
-    preCycleCount = 0;
+    tf->count = 0;
+    tf->pre_cycle_count = 0;
     tf->cur_cycle_count = tf->a_block_end->cycle_count;
     return tf->a_block_end->time;
   }
@@ -1164,12 +1162,12 @@ LttTime getEventTime(LttTracefile * tf)
   // Calculate total time in cycles from start of buffer for this event
   cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
   
-  if(cycle_count < preCycleCount)count++;
-  preCycleCount = cycle_count;
-  cycle_count += tmpCycleCount * count;  
+  if(cycle_count < tf->pre_cycle_count)tf->count++;
+  tf->pre_cycle_count = cycle_count;
+  cycle_count += tmpCycleCount * tf->count;  
   
-  if(tf->cur_heart_beat_number > count)
-    cycle_count += tmpCycleCount * (tf->cur_heart_beat_number - count);  
+  if(tf->cur_heart_beat_number > tf->count)
+    cycle_count += tmpCycleCount * (tf->cur_heart_beat_number - tf->count);  
 
   tf->cur_cycle_count = cycle_count;
 

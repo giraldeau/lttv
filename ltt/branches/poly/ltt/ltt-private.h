@@ -140,6 +140,8 @@ struct _LttTracefile{
   LttTime prev_block_end_time;       //the end time of previous block
   LttTime prev_event_time;           //the time of the previous event
   LttEvent an_event;
+  LttCycleCount pre_cycle_count;     //previous cycle count of the event
+  int      count;                    //the number of overflow of cycle count
 };
 
 struct _LttTrace{

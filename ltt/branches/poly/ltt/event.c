@@ -252,8 +252,23 @@ void ltt_event_position_set(LttEventPosition *ep,
  ****************************************************************************/
 
 unsigned ltt_event_cpu_id(LttEvent *e)
-{  
-  return (unsigned)atoi(e->tracefile->name);
+{ 
+  char * c1, * c2, * c3;
+  c1 = strrchr(e->tracefile->name,'\\');
+  c2 = strrchr(e->tracefile->name,'/');
+  if(c1 == NULL && c2 == NULL){
+    return (unsigned)atoi(e->tracefile->name);
+  }else if(c1 == NULL){
+    c2++;
+    return (unsigned)atoi(c2);    
+  }else if(c2 == NULL){
+    c1++;
+    return (unsigned)atoi(c1);    
+  }else{
+    c3 = (c1 > c2) ? c1 : c2;
+    c3++;
+    return (unsigned)atoi(c3);        
+  }
 }
 
 /*****************************************************************************
