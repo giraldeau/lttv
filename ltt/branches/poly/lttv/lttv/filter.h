@@ -182,7 +182,7 @@ LttvSimpleExpression* lttv_simple_expression_new();
 
 void lttv_filter_tree_add_node(GPtrArray* stack, LttvFilterTree* subtree, LttvLogicalOp op);
 
-gboolean parse_field_path(GPtrArray* fp);
+gboolean parse_field_path(GPtrArray* fp, LttvSimpleExpression* se);
 
 gboolean parse_simple_expression(GString* expression);
 
@@ -190,37 +190,37 @@ gboolean parse_simple_expression(GString* expression);
  * Logical operators functions
  */
 
-gboolean lttv_apply_op_eq_uint64();
-gboolean lttv_apply_op_eq_uint32();
-gboolean lttv_apply_op_eq_uint16();
-gboolean lttv_apply_op_eq_double();
-gboolean lttv_apply_op_eq_string();
+gboolean lttv_apply_op_eq_uint64(guint64 v1, guint64 v2);
+gboolean lttv_apply_op_eq_uint32(guint32 v1, guint32 v2);
+gboolean lttv_apply_op_eq_uint16(guint16 v1, guint16 v2);
+gboolean lttv_apply_op_eq_double(double v1, double v2);
+gboolean lttv_apply_op_eq_string(char* v1, char* v2);
 
-gboolean lttv_apply_op_ne_uint64();
-gboolean lttv_apply_op_ne_uint32();
-gboolean lttv_apply_op_ne_uint16();
-gboolean lttv_apply_op_ne_double();
-gboolean lttv_apply_op_ne_string();
+gboolean lttv_apply_op_ne_uint64(guint64 v1, guint64 v2);
+gboolean lttv_apply_op_ne_uint32(guint32 v1, guint32 v2);
+gboolean lttv_apply_op_ne_uint16(guint16 v1, guint16 v2);
+gboolean lttv_apply_op_ne_double(double v1, double v2);
+gboolean lttv_apply_op_ne_string(char* v1, char* v2);
 
-gboolean lttv_apply_op_lt_uint64();
-gboolean lttv_apply_op_lt_uint32();
-gboolean lttv_apply_op_lt_uint16();
-gboolean lttv_apply_op_lt_double();
+gboolean lttv_apply_op_lt_uint64(guint64 v1, guint64 v2);
+gboolean lttv_apply_op_lt_uint32(guint32 v1, guint32 v2);
+gboolean lttv_apply_op_lt_uint16(guint16 v1, guint16 v2);
+gboolean lttv_apply_op_lt_double(double v1, double v2);
 
-gboolean lttv_apply_op_le_uint64();
-gboolean lttv_apply_op_le_uint32();
-gboolean lttv_apply_op_le_uint16();
-gboolean lttv_apply_op_le_double();
+gboolean lttv_apply_op_le_uint64(guint64 v1, guint64 v2);
+gboolean lttv_apply_op_le_uint32(guint32 v1, guint32 v2);
+gboolean lttv_apply_op_le_uint16(guint16 v1, guint16 v2);
+gboolean lttv_apply_op_le_double(double v1, double v2);
 
-gboolean lttv_apply_op_gt_uint64();
-gboolean lttv_apply_op_gt_uint32();
-gboolean lttv_apply_op_gt_uint16();
-gboolean lttv_apply_op_gt_double();
+gboolean lttv_apply_op_gt_uint64(guint64 v1, guint64 v2);
+gboolean lttv_apply_op_gt_uint32(guint32 v1, guint32 v2);
+gboolean lttv_apply_op_gt_uint16(guint16 v1, guint16 v2);
+gboolean lttv_apply_op_gt_double(double v1, double v2);
 
-gboolean lttv_apply_op_ge_uint64();
-gboolean lttv_apply_op_ge_uint32();
-gboolean lttv_apply_op_ge_uint16();
-gboolean lttv_apply_op_ge_double();
+gboolean lttv_apply_op_ge_uint64(guint64 v1, guint64 v2);
+gboolean lttv_apply_op_ge_uint32(guint32 v1, guint32 v2);
+gboolean lttv_apply_op_ge_uint16(guint16 v1, guint16 v2);
+gboolean lttv_apply_op_ge_double(double v1, double v2);
 
 /*
  * Cloning

@@ -126,51 +126,87 @@ lttv_filter_tree_add_node(GPtrArray* stack, LttvFilterTree* subtree, LttvLogical
  *  @return success/failure of operation
  */
 gboolean
-parse_field_path(GPtrArray* fp) {
+parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
 
   GString* f = NULL;
   if(fp->len < 2) return FALSE;
   g_assert(f=g_ptr_array_index(fp,0)); //list_first(fp)->data; 
-  
-  if(g_quark_try_string(f->str) == LTTV_FILTER_EVENT) {
+ 
+  /*
+   * Parse through the specified 
+   * hardcoded fields.
+   *
+   * Take note however that the 
+   * 'event' subfields might change 
+   * depending on values specified 
+   * in core.xml file.  Hence, if 
+   * none of the subfields in the 
+   * array match the hardcoded 
+   * subfields, it will be considered 
+   * as a dynamic field
+   */
+  if(g_strcasecmp(f->str,"trace") ) {
+    /*
+     * Possible values:
+     *  trace.name
+     */
     f=g_ptr_array_index(fp,1);
-    if(g_quark_try_string(f->str) == LTTV_FILTER_NAME) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_CATEGORY) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_TIME) {
+    if(g_strcasecmp(f->str,"name")) {}
+    else return FALSE;
+  } else if(g_strcasecmp(f->str,"traceset") ) {
+    /* 
+     * FIXME: not yet implemented !
+     */
+  } else if(g_strcasecmp(f->str,"tracefile") ) {
+    /*
+     * Possible values:
+     *  tracefile.name
+     */
+    f=g_ptr_array_index(fp,1);
+    if(g_strcasecmp(f->str,"name")) {}
+    else return FALSE;
+  } else if(g_strcasecmp(f->str,"state") ) {
+    /*
+     * Possible values:
+     *  state.pid
+     *  state.ppid
+     *  state.creation_time
+     *  state.insertion_time
+     *  state.process_name
+     *  state.execution_mode
+     *  state.execution_submode
+     *  state.process_status
+     *  state.cpu
+     */
+    f=g_ptr_array_index(fp,1);
+    if(g_strcasecmp(f->str,"pid") ) {}
+    else if(g_strcasecmp(f->str,"ppid") ) {}
+    else if(g_strcasecmp(f->str,"creation_time") ) {}
+    else if(g_strcasecmp(f->str,"insertion_time") ) {}
+    else if(g_strcasecmp(f->str,"process_name") ) {}
+    else if(g_strcasecmp(f->str,"execution_mode") ) {}
+    else if(g_strcasecmp(f->str,"execution_submode") ) {}
+    else if(g_strcasecmp(f->str,"process_status") ) {}
+    else if(g_strcasecmp(f->str,"cpu") ) {}
+    else return FALSE;
+  } else if(g_strcasecmp(f->str,"event") ) {
+    f=g_ptr_array_index(fp,1);
+    if(g_strcasecmp(f->str,"name") ) {}
+    else if(g_strcasecmp(f->str,"category") ) {}
+    else if(g_strcasecmp(f->str,"time") ) {
       // offset = &((LttEvent*)NULL)->event_time);
     }
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_TSC) {
+    else if(g_strcasecmp(f->str,"tsc") ) {
       // offset = &((LttEvent*)NULL)->event_cycle_count);
     }
     else {  /* core.xml specified options */
 
     }
-  } else if(g_quark_try_string(f->str) == LTTV_FILTER_TRACEFILE) {
-     f=g_ptr_array_index(fp,1);
-    if(g_quark_try_string(f->str) == LTTV_FILTER_NAME) {}
-    else return FALSE;
-  } else if(g_quark_try_string(f->str) == LTTV_FILTER_TRACE) {
-    f=g_ptr_array_index(fp,1);
-    if(g_quark_try_string(f->str) == LTTV_FILTER_NAME) {}
-    else return FALSE;
-
-  } else if(g_quark_try_string(f->str) == LTTV_FILTER_STATE) {
-    f=g_ptr_array_index(fp,1);
-    if(g_quark_try_string(f->str) == LTTV_FILTER_PID) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_PPID) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_C_TIME) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_I_TIME) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_P_NAME) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_EX_MODE) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_EX_SUBMODE) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_P_STATUS) {}
-    else if(g_quark_try_string(f->str) == LTTV_FILTER_CPU) {}
-    else return FALSE;
-
   } else {
     g_warning("Unrecognized field in filter string");
     return FALSE;
   }
+
   return TRUE;  
 }
 
@@ -191,185 +227,237 @@ parse_simple_expression(GString* expression) {
 
 /**
  *  Applies the 'equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint64() {}
+gboolean lttv_apply_op_eq_uint64(guint64 v1, guint64 v2) {}
 
 /**
  *  Applies the 'equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint32() {}
+gboolean lttv_apply_op_eq_uint32(guint32 v1, guint32 v2) {}
 
 /**
  *  Applies the 'equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint16() {}
+gboolean lttv_apply_op_eq_uint16(guint16 v1, guint16 v2) {}
 
 /**
  *  Applies the 'equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_double() {}
+gboolean lttv_apply_op_eq_double(double v1, double v2) {}
 
 /**
  *  Applies the 'equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_string() {}
+gboolean lttv_apply_op_eq_string(char* v1, char* v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint64() {}
+gboolean lttv_apply_op_ne_uint64(guint64 v1, guint64 v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint32() {}
+gboolean lttv_apply_op_ne_uint32(guint32 v1, guint32 v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint16() {}
+gboolean lttv_apply_op_ne_uint16(guint16 v1, guint16 v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_double() {}
+gboolean lttv_apply_op_ne_double(double v1, double v2) {}
 
 /**
  *  Applies the 'not equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_string() {}
+gboolean lttv_apply_op_ne_string(char* v1, char* v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint64() {}
+gboolean lttv_apply_op_lt_uint64(guint64 v1, guint64 v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint32() {}
+gboolean lttv_apply_op_lt_uint32(guint32 v1, guint32 v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint16() {}
+gboolean lttv_apply_op_lt_uint16(guint16 v1, guint16 v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_double() {}
+gboolean lttv_apply_op_lt_double(double v1, double v2) {}
 
 /**
  *  Applies the 'lower than' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint64() {}
+gboolean lttv_apply_op_le_uint64(guint64 v1, guint64 v2) {}
 
 /**
  *  Applies the 'lower or equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint32() {}
+gboolean lttv_apply_op_le_uint32(guint32 v1, guint32 v2) {}
 
 /**
  *  Applies the 'lower or equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint16() {}
+gboolean lttv_apply_op_le_uint16(guint16 v1, guint16 v2) {}
 
 /**
  *  Applies the 'lower or equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_double() {}
+gboolean lttv_apply_op_le_double(double v1, double v2) {}
 
 /**
  *  Applies the 'lower or equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint64() {}
+gboolean lttv_apply_op_gt_uint64(guint64 v1, guint64 v2) {}
 
 /**
  *  Applies the 'greater than' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint32() {}
+gboolean lttv_apply_op_gt_uint32(guint32 v1, guint32 v2) {}
 
 /**
  *  Applies the 'greater than' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint16() {}
+gboolean lttv_apply_op_gt_uint16(guint16 v1, guint16 v2) {}
 
 /**
  *  Applies the 'greater than' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_double() {}
+gboolean lttv_apply_op_gt_double(double v1, double v2) {}
 
 /**
  *  Applies the 'greater than' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint64() {}
+gboolean lttv_apply_op_ge_uint64(guint64 v1, guint64 v2) {}
 
 /**
  *  Applies the 'greater or equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint32() {}
+gboolean lttv_apply_op_ge_uint32(guint32 v1, guint32 v2) {}
 
 /**
  *  Applies the 'greater or equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint16() {}
+gboolean lttv_apply_op_ge_uint16(guint16 v1, guint16 v2) {}
 
 /**
  *  Applies the 'greater or equal' operator to the
- *  specified structure and value
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_double() {}
+gboolean lttv_apply_op_ge_double(double v1, double v2) {}
 
 
 /**
