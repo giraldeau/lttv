@@ -1,5 +1,9 @@
 TODO list on control flow view by Mathieu Desnoyers
 
+- Make "before hook" update process's info : it creates an inconsistency
+  between state.c process table and process list. Waiting to see if
+  state.c will take first event time as creation time or first schedule.
+
 
 - Split in process view and CPU ciew :
   - remove process 0 from the process list
