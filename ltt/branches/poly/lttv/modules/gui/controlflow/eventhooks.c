@@ -397,6 +397,12 @@ int draw_before_hook(void *hook_data, void *call_data)
                 &height,
                 &hashed_process_data) == 1)
         {
+          g_assert(!(process->pid == 432 && 
+                        ltt_time_compare(process->creation_time,
+                                         ltt_time_zero)==0));
+
+          g_assert(!(process->pid == 432 && 
+                        process->creation_time.tv_nsec == 47797905));
           /* Process not present */
           processlist_add(process_list,
               pid_out,
@@ -1270,6 +1276,13 @@ int draw_after_hook(void *hook_data, void *call_data)
               &height,
               &hashed_process_data_in) == 1)
       {
+          g_assert(!(process_in->pid == 432 && 
+                        ltt_time_compare(process_in->creation_time,
+                                         ltt_time_zero)==0));
+
+          g_assert(!(process_in->pid == 432 && 
+                        process_in->creation_time.tv_nsec == 47797905));
+
         /* Process not present */
         processlist_add(process_list,
             pid_in,
@@ -2158,35 +2171,6 @@ typedef struct _ClosureData {
 } ClosureData;
   
 
-/* find_process
- * Input : A trace and a PID.
- * 
- * - For each CPU of the trace
- *   - Search in trace states by PID and CPU key
- * - If no ProcessState found, return NULL.
- */
-static LttvProcessState *find_process(LttvTraceState *tstate, guint pid)
-{
-  guint cpu_num = ltt_trace_per_cpu_tracefile_number(tstate->parent.t);
-  GQuark cpu_name;
-  guint i;
-  
-  LttvProcessState *real_state = NULL;
-  
-  for(i=0;i<cpu_num;i++) {
-    cpu_name = ((LttvTracefileState*)tstate->parent.tracefiles[i])->cpu_name;
-    LttvProcessState *state = lttv_state_find_process_from_trace(tstate,
-                                                                 cpu_name,
-                                                                 pid);
-    if(state != NULL) {
-      real_state = state;
-      break;
-    }
-  }
-  return real_state;
-}
-
-
 void draw_closure(gpointer key, gpointer value, gpointer user_data)
 {
   ProcessInfo *process_info = (ProcessInfo*)key;
@@ -2222,11 +2206,14 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
      * be added after the state update.  */
     g_assert(lttv_traceset_number(tsc->ts) > 0);
 
-    LttvTraceState *trace_state =
-      (LttvTraceState*)tsc->traces[process_info->trace_num];
+    /* tracefiles[0] is ok here, because we draw for every PID, and
+     * assume CPU 0 for PID 0 //FIXME */
+    LttvTracefileState *tfs =
+      (LttvTracefileState*)tsc->traces[process_info->trace_num]->tracefiles[0];
 
     LttvProcessState *process;
-    process = find_process(trace_state, process_info->pid);
+    process = lttv_state_find_process(tfs,
+                                      process_info->pid);
 
     if(process != NULL) {
       

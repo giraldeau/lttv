@@ -70,7 +70,8 @@ static void init() {
   g_info("GUI ControlFlow Viewer init()");
 
   /* Register the toolbar insert button and menu entry*/
-  lttvwindow_register_constructor("/",
+  lttvwindow_register_constructor("guicontrolflow",
+                                  "/",
                                   "Insert Control Flow Viewer",
                                   hGuiControlFlowInsert_xpm,
                                   "Insert Control Flow Viewer",

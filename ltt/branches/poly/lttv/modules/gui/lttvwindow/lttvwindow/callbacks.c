@@ -4308,6 +4308,50 @@ void construct_main_window(MainWindow * parent)
     }
     LttvTraceset *traceset = new_tab->traceset_info->traceset;
     SetTraceset(new_tab, traceset);
+
+    /* Insert default viewers */
+    {
+      LttvAttributeType type;
+      LttvAttributeName name;
+      LttvAttributeValue value;
+      LttvAttribute *attribute;
+      
+      LttvIAttribute *attributes_global = 
+         LTTV_IATTRIBUTE(lttv_global_attributes());
+
+      g_assert(attribute = 
+        LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                                  LTTV_IATTRIBUTE(attributes_global),
+                                  LTTV_VIEWER_CONSTRUCTORS)));
+
+      name = g_quark_from_string("guievents");
+      type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                         name, &value);
+      if(type == LTTV_POINTER) {
+        lttvwindow_viewer_constructor viewer_constructor = 
+                  (lttvwindow_viewer_constructor)*value.v_pointer;
+        insert_viewer(new_window, viewer_constructor);
+      }
+
+      name = g_quark_from_string("guicontrolflow");
+      type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                         name, &value);
+      if(type == LTTV_POINTER) {
+        lttvwindow_viewer_constructor viewer_constructor = 
+                  (lttvwindow_viewer_constructor)*value.v_pointer;
+        insert_viewer(new_window, viewer_constructor);
+      }
+
+      name = g_quark_from_string("guistatistics");
+      type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                         name, &value);
+      if(type == LTTV_POINTER) {
+        lttvwindow_viewer_constructor viewer_constructor = 
+                  (lttvwindow_viewer_constructor)*value.v_pointer;
+        insert_viewer(new_window, viewer_constructor);
+      }
+
+    }
   }
 
   g_printf("There are now : %d windows\n",g_slist_length(g_main_window_list));
@@ -4323,7 +4367,7 @@ void tab_destructor(Tab * tab)
   int i, nb, ref_count;
   LttvTrace * trace;
 
-  g_object_free(tab->tooltips);
+  g_object_unref(tab->tooltips);
   
   if(tab->attributes)
     g_object_unref(tab->attributes);

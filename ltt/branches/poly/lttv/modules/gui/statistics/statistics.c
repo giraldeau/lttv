@@ -17,6 +17,7 @@
  */
 
 #include <glib.h>
+#include <string.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
@@ -281,7 +282,7 @@ gui_statistic(Tab *tab)
   statistic_viewer_data->statistic_hash = g_hash_table_new_full(g_str_hash,
                                                   g_str_equal,
                                                   statistic_destroy_hash_key,
-                                                  statistic_destroy_hash_data);
+                                                  NULL);
 
   statistic_viewer_data->hpaned_v  = gtk_hpaned_new();
   statistic_viewer_data->store_m = gtk_tree_store_new (N_COLUMNS, G_TYPE_STRING);
@@ -388,15 +389,12 @@ void statistic_destroy_hash_key(gpointer key)
   g_free(key);
 }
 
-void statistic_destroy_hash_data(gpointer data)
-{
-  //  g_free(data);
-}
-
+#ifdef DEBUG
 #include <stdio.h>
 extern FILE *stdin;
 extern FILE *stdout;
 extern FILE *stderr;
+#endif //DEBUG
 
 void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
 {
@@ -434,9 +432,11 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
   for(i = 0 ; i < nb ; i++) {
     tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
     desc = ltt_trace_system_description(tcs->parent.parent.t);    
-    sprintf(trace_str, "Trace on system %s at time %d secs", 
+    LttTime start_time = ltt_trace_system_description_trace_start_time(desc);
+    sprintf(trace_str, "Trace on system %s at time %lu.%09lu", 
             ltt_trace_system_description_node_name(desc),
-      (ltt_trace_system_description_trace_start_time(desc)).tv_sec);
+            start_time.tv_sec,
+            start_time.tv_nsec);
     
     gtk_tree_store_append (store, &iter, NULL);  
     gtk_tree_store_set (store, &iter,NAME_COLUMN,trace_str,-1);  
@@ -491,7 +491,6 @@ void show_statistic(StatisticViewerData * statistic_viewer_data,
         LttvAttribute* stats, GtkTextBuffer* buf)
 {
   int i, nb , flag;
-  LttvAttribute *subtree;
   LttvAttributeName name;
   LttvAttributeValue value;
   LttvAttributeType type;
@@ -524,7 +523,7 @@ void show_statistic(StatisticViewerData * statistic_viewer_data,
         sprintf(type_value, " :  %f\n", *value.v_double);
         break;
       case LTTV_TIME:
-        sprintf(type_value, " :  %10u.%09u\n", value.v_time->tv_sec, 
+        sprintf(type_value, " :  %10lu.%09lu\n", value.v_time->tv_sec, 
             value.v_time->tv_nsec);
         break;
       case LTTV_POINTER:
@@ -660,7 +659,8 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
  */
 static void init() {
 
-  lttvwindow_register_constructor("/",
+  lttvwindow_register_constructor("guistatistics",
+                                  "/",
                                   "Insert Statistic Viewer",
                                   hGuiStatisticInsert_xpm,
                                   "Insert Statistic Viewer",
@@ -684,7 +684,6 @@ void statistic_destroy_walk(gpointer data, gpointer user_data)
  * everything that has been registered in the gtkTraceSet API.
  */
 static void destroy() {
-  int i;
   
   g_slist_foreach(g_statistic_viewer_data_list, statistic_destroy_walk, NULL );    
   g_slist_free(g_statistic_viewer_data_list);

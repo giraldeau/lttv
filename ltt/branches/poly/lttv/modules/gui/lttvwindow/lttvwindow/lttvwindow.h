@@ -262,6 +262,8 @@ FIXME : explain other important events
 
 /* Module Related API */
 
+/* GQuark containing constructors of viewers in global attributes */
+extern GQuark LTTV_VIEWER_CONSTRUCTORS;
 
 /* constructor a the viewer */
 typedef GtkWidget* (*lttvwindow_viewer_constructor)(Tab *tab);
@@ -274,7 +276,8 @@ typedef GtkWidget* (*lttvwindow_viewer_constructor)(Tab *tab);
  * window.
  * 
  * It should be called by init function of the module.
- * 
+ *
+ * @param name name of the viewer : mainly used as tag for constructor
  * @param menu_path path of the menu item. NULL : no menu entry.
  * @param menu_text text of the menu item.
  * @param pixmap Image shown on the toolbar item. NULL : no button.
@@ -283,7 +286,8 @@ typedef GtkWidget* (*lttvwindow_viewer_constructor)(Tab *tab);
  */
 
 void lttvwindow_register_constructor
-                            (char *  menu_path, 
+                            (char * name,
+                             char *  menu_path, 
                              char *  menu_text,
                              char ** pixmap,
                              char *  tooltip,

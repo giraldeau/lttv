@@ -228,6 +228,7 @@ void remove_menu_constructor(MainWindow *mw, lttvwindow_viewer_constructor viewe
  * 
  * It should be called by init function of the module.
  * 
+ * @param name name of the viewer
  * @param menu_path path of the menu item.
  * @param menu_text text of the menu item.
  * @param pixmap Image shown on the toolbar item.
@@ -236,7 +237,8 @@ void remove_menu_constructor(MainWindow *mw, lttvwindow_viewer_constructor viewe
  */
 
 void lttvwindow_register_constructor
-                            (char *  menu_path, 
+                            (char *  name,
+                             char *  menu_path, 
                              char *  menu_text,
                              char ** pixmap,
                              char *  tooltip,
@@ -249,6 +251,8 @@ void lttvwindow_register_constructor
   LttvMenuClosure menu_c;
   LttvAttributeValue value;
 
+  if(view_constructor == NULL) return;
+  
   if(pixmap != NULL) {
     g_assert(lttv_iattribute_find_by_path(attributes_global,
        "viewers/toolbar", LTTV_POINTER, &value));
@@ -280,6 +284,19 @@ void lttvwindow_register_constructor
     g_slist_foreach(g_main_window_list,
                     (gpointer)add_menu_constructor,
                     &menu_c);
+  }
+  {
+    LttvAttribute *attribute;
+    g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                                LTTV_IATTRIBUTE(attributes_global),
+                                LTTV_VIEWER_CONSTRUCTORS)));
+  
+    g_assert(lttv_iattribute_find_by_path(LTTV_IATTRIBUTE(attribute),
+                            name, LTTV_POINTER, &value));
+
+    *(value.v_pointer) = view_constructor;
+
   }
 }
 
@@ -323,6 +340,29 @@ void lttvwindow_unregister_constructor
                     (gpointer)remove_menu_constructor,
                     view_constructor);
     lttv_menus_remove(menu, view_constructor);
+  }
+
+  {
+    LttvAttribute *attribute;
+    g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                                LTTV_IATTRIBUTE(attributes_global),
+                                LTTV_VIEWER_CONSTRUCTORS)));
+  
+    guint num = lttv_iattribute_get_number(LTTV_IATTRIBUTE(attribute));
+    guint i;
+    LttvAttributeName name;
+    LttvAttributeValue value;
+    LttvAttributeType type;
+    
+    for(i=0;i<num;i++) {
+      type = lttv_iattribute_get(LTTV_IATTRIBUTE(attribute), i, &name, &value);
+      g_assert(type == LTTV_POINTER);
+      if(*(value.v_pointer) == view_constructor) {
+        lttv_iattribute_remove(LTTV_IATTRIBUTE(attribute), i);
+        break;
+      }
+    }
   }
 }
 

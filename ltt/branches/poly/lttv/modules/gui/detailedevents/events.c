@@ -1867,7 +1867,8 @@ void remove_all_items_from_queue(GQueue *q)
  */
 static void init() {
 
-  lttvwindow_register_constructor("/",
+  lttvwindow_register_constructor("guievents",
+                                  "/",
                                   "Insert Event Viewer",
                                   hGuiEventsInsert_xpm,
                                   "Insert Event Viewer",

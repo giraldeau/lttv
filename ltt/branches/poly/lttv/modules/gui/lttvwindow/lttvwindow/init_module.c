@@ -50,6 +50,7 @@
 
 LttvTraceInfo LTTV_TRACES,
        LTTV_COMPUTATION,
+       LTTV_VIEWER_CONSTRUCTORS,
        LTTV_REQUESTS_QUEUE,
        LTTV_REQUESTS_CURRENT,
        LTTV_NOTIFY_QUEUE,
@@ -144,6 +145,7 @@ static void init() {
   
   LTTV_TRACES = g_quark_from_string("traces");
   LTTV_COMPUTATION = g_quark_from_string("computation");
+  LTTV_VIEWER_CONSTRUCTORS = g_quark_from_string("viewer_constructors");
   LTTV_REQUESTS_QUEUE = g_quark_from_string("requests_queue");
   LTTV_REQUESTS_CURRENT = g_quark_from_string("requests_current");
   LTTV_NOTIFY_QUEUE = g_quark_from_string("notify_queue");
