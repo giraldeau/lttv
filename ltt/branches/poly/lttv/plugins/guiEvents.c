@@ -4,15 +4,15 @@
 /*! \file guiEvents.c
  * \brief Graphical plugin for showing events.
  *
+ * This plugin lists all the events contained in the current time interval
+ * in a list.
+ * 
  * This plugin adds a Events Viewer functionnality to Linux TraceToolkit
  * GUI when this plugin is loaded. The init and destroy functions add the
  * viewer's insertion menu item and toolbar icon by calling gtkTraceSet's
  * API functions. Then, when a viewer's object is created, the constructor
  * creates ans register through API functions what is needed to interact
  * with the TraceSet window.
- *
- * This plugin uses the gdk library to draw the events and gtk to interact
- * with the user.
  *
  * Author : Mathieu Desnoyers, June 2003
  */
@@ -24,15 +24,10 @@
 
 #include <lttv/module.h>
 
-#include "guiEvents.h"
 #include "icons/guiEventsInsert.xpm"
 
 //! Event Viewer's constructor
 GtkWidget *guiEvents(GtkWidget *ParentWindow);
-
-//! Callback functions
-gboolean
-expose_event_callback (GtkWidget *widget, GdkEventExpose *event, gpointer data);
 
 /**
  * plugin's init function
@@ -78,19 +73,10 @@ G_MODULE_EXPORT void destroy() {
 static GtkWidget *
 guiEvents(GtkWidget *ParentWindow)
 {
-	GtkWidget *drawing_area = gtk_drawing_area_new ();
-
-	g_signal_connect (G_OBJECT (drawing_area), "expose_event",
-                          G_CALLBACK (expose_event_callback), NULL);
-}
-
-
-gboolean
-expose_event_callback (GtkWidget *widget, GdkEventExpose *event, gpointer data)
-{
 
 
 }
+
 
 
 /*\@}*/
