@@ -93,8 +93,8 @@ lttv_filter_tree* lttv_filter_tree_new() {
   tree = g_new(lttv_filter_tree,1);
   tree->node = g_new(lttv_expression,1);
   tree->node->type = LTTV_UNDEFINED_EXPRESSION;
-  tree->left = LTTV_TREE_UNDEFINED;
-  tree->right = LTTV_TREE_UNDEFINED;
+  tree->left = LTTV_TREE_IDLE;
+  tree->right = LTTV_TREE_IDLE;
 
   return tree;
 }
@@ -272,7 +272,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
        */
       case '&':   /* and */
         t1 = (lttv_filter_tree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
-        while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
+        while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
         t2->node->type = LTTV_EXPRESSION_OP;
         t2->node->e.op = LTTV_LOGICAL_AND;
@@ -294,7 +294,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         break;
       case '|':   /* or */
         t1 = (lttv_filter_tree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
-        while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
+        while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
         t2->node->type = LTTV_EXPRESSION_OP;
         t2->node->e.op = LTTV_LOGICAL_OR;
@@ -315,7 +315,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         break;
       case '^':   /* xor */
         t1 = (lttv_filter_tree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
-        while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
+        while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
         t2 = lttv_filter_tree_new();
         t2->node->type = LTTV_EXPRESSION_OP;
         t2->node->e.op = LTTV_LOGICAL_XOR;
@@ -342,7 +342,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         //  g_print("%s\n",a_field_component);
         //  a_field_component = g_string_new("");
           t1 = (lttv_filter_tree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
-          while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
+          while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
           t2 = lttv_filter_tree_new();
           t2->node->type = LTTV_EXPRESSION_OP;
           t2->node->e.op = LTTV_LOGICAL_NOT;
@@ -370,7 +370,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
         g_assert(tree_stack->len>0);
         if(subtree != NULL) { 
           t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-          while(t1->right != LTTV_TREE_UNDEFINED && t1->right != LTTV_TREE_LEAF) {
+          while(t1->right != LTTV_TREE_IDLE && t1->right != LTTV_TREE_LEAF) {
               g_assert(t1!=NULL && t1->r_child.t != NULL);
               t1 = t1->r_child.t;
           }
@@ -382,7 +382,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
           a_simple_expression.value = a_field_component->str;
           a_field_component = g_string_new("");
           t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-          while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
+          while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
           t1->right = LTTV_TREE_LEAF;
           t1->r_child.leaf = g_new(lttv_simple_expression,1);
           subtree = g_ptr_array_index(tree_stack,tree_stack->len-1);
@@ -432,7 +432,7 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
   /*  processing last element of expression   */
   g_assert(tree_stack->len==1); /* only root tree should remain */
   t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-  while(t1->right != LTTV_TREE_UNDEFINED) t1 = t1->r_child.t;
+  while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
   if(subtree != NULL) {  /* add the subtree */
     t1->right = LTTV_TREE_NODE;
     t1->l_child.t = subtree;

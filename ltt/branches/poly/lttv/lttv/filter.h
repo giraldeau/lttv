@@ -95,7 +95,7 @@ typedef enum _lttv_expression_type
 } lttv_expression_type;
 
 typedef enum _lttv_tree_element {
-  LTTV_TREE_UNDEFINED,
+  LTTV_TREE_IDLE,
   LTTV_TREE_NODE,
   LTTV_TREE_LEAF
 } lttv_tree_element;
