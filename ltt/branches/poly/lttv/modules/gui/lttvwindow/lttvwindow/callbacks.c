@@ -3272,17 +3272,23 @@ void time_change_manager               (Tab *tab,
 
   /* start nanoseconds */
   if(start_time.tv_sec == time_span.start_time.tv_sec) {
-    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry2),
-                              (double)time_span.start_time.tv_nsec,
-                              (double)NANOSECONDS_PER_SECOND-1);
-  }
-  else if(start_time.tv_sec == time_span.end_time.tv_sec) {
-    /* If we are at the end, max nsec to end..  -1 (not zero length) */
-    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry2),
-                              0.0,
-                              (double)time_span.end_time.tv_nsec-1);
-  }
-  else /* anywhere else */
+    /* can be both beginning and end at the same time. */
+    if(start_time.tv_sec == time_span.end_time.tv_sec) {
+      /* If we are at the end, max nsec to end..  -1 (not zero length) */
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry2),
+                                (double)time_span.start_time.tv_nsec,
+                                (double)time_span.end_time.tv_nsec-1);
+    } else {
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry2),
+                                (double)time_span.start_time.tv_nsec,
+                                (double)NANOSECONDS_PER_SECOND-1);
+    }
+  } else if(start_time.tv_sec == time_span.end_time.tv_sec) {
+      /* If we are at the end, max nsec to end..  -1 (not zero length) */
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry2),
+                                0.0,
+                                (double)time_span.end_time.tv_nsec-1);
+  } else /* anywhere else */
     gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry2),
                               0.0,
                               (double)NANOSECONDS_PER_SECOND-1);
@@ -3298,9 +3304,17 @@ void time_change_manager               (Tab *tab,
 
   /* end nanoseconds */
   if(end_time.tv_sec == time_span.start_time.tv_sec) {
-    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry4),
-                              (double)time_span.start_time.tv_nsec+1,
-                              (double)NANOSECONDS_PER_SECOND-1);
+    /* can be both beginning and end at the same time. */
+    if(end_time.tv_sec == time_span.end_time.tv_sec) {
+      /* If we are at the end, max nsec to end.. */
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry4),
+                                (double)time_span.start_time.tv_nsec+1,
+                                (double)time_span.end_time.tv_nsec);
+    } else {
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry4),
+                                (double)time_span.start_time.tv_nsec+1,
+                                (double)NANOSECONDS_PER_SECOND-1);
+    }
   }
   else if(end_time.tv_sec == time_span.end_time.tv_sec) {
     /* If we are at the end, max nsec to end.. */
@@ -3345,8 +3359,15 @@ on_MEntry1_value_changed               (GtkSpinButton *spinbutton,
 
   /* start nanoseconds */
   if(new_time_window.start_time.tv_sec == time_span.start_time.tv_sec) {
-    if(new_time_window.start_time.tv_nsec < time_span.start_time.tv_nsec)
-      new_time_window.start_time.tv_nsec = time_span.start_time.tv_nsec;
+    if(new_time_window.start_time.tv_sec == time_span.end_time.tv_sec) {
+      if(new_time_window.start_time.tv_nsec > time_span.end_time.tv_nsec)
+        new_time_window.start_time.tv_nsec = time_span.end_time.tv_nsec-1;
+      if(new_time_window.start_time.tv_nsec < time_span.start_time.tv_nsec)
+        new_time_window.start_time.tv_nsec = time_span.start_time.tv_nsec;
+    } else {
+      if(new_time_window.start_time.tv_nsec < time_span.start_time.tv_nsec)
+        new_time_window.start_time.tv_nsec = time_span.start_time.tv_nsec;
+    }
   }
   else if(new_time_window.start_time.tv_sec == time_span.end_time.tv_sec) {
     if(new_time_window.start_time.tv_nsec > time_span.end_time.tv_nsec)
@@ -3424,8 +3445,15 @@ on_MEntry3_value_changed               (GtkSpinButton *spinbutton,
 
   /* end nanoseconds */
   if(end_time.tv_sec == time_span.start_time.tv_sec) {
-    if(end_time.tv_nsec < time_span.start_time.tv_nsec)
-      end_time.tv_nsec = time_span.start_time.tv_nsec+1;
+    if(end_time.tv_sec == time_span.end_time.tv_sec) {
+      if(end_time.tv_nsec > time_span.end_time.tv_nsec)
+        end_time.tv_nsec = time_span.end_time.tv_nsec;
+      if(end_time.tv_nsec < time_span.start_time.tv_nsec)
+        end_time.tv_nsec = time_span.start_time.tv_nsec+1;
+    } else {
+      if(end_time.tv_nsec < time_span.start_time.tv_nsec)
+        end_time.tv_nsec = time_span.start_time.tv_nsec+1;
+    }
   }
   else if(end_time.tv_sec == time_span.end_time.tv_sec) {
     if(end_time.tv_nsec > time_span.end_time.tv_nsec)
@@ -3502,22 +3530,31 @@ void current_time_change_manager       (Tab *tab,
                             (double)time_span.end_time.tv_sec);
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry5),
                             (double)new_current_time.tv_sec);
+
+
   /* start nanoseconds */
   if(new_current_time.tv_sec == time_span.start_time.tv_sec) {
-    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
-                              (double)time_span.start_time.tv_nsec,
-                              (double)NANOSECONDS_PER_SECOND-1);
-  }
-  else if(new_current_time.tv_sec == time_span.end_time.tv_sec) {
-    /* If we are at the end, max nsec to end.. */
+    /* can be both beginning and end at the same time. */
+    if(new_current_time.tv_sec == time_span.end_time.tv_sec) {
+      /* If we are at the end, max nsec to end..  */
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
+                                (double)time_span.start_time.tv_nsec,
+                                (double)time_span.end_time.tv_nsec);
+    } else {
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
+                                (double)time_span.start_time.tv_nsec,
+                                (double)NANOSECONDS_PER_SECOND-1);
+    }
+  } else if(new_current_time.tv_sec == time_span.end_time.tv_sec) {
+      /* If we are at the end, max nsec to end..  */
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
+                                0.0,
+                                (double)time_span.end_time.tv_nsec);
+  } else /* anywhere else */
     gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
                               0.0,
-                              (double)time_span.end_time.tv_nsec);
-  }
-  else /* anywhere else */
-    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry6),
-                              0.0,
                               (double)NANOSECONDS_PER_SECOND-1);
+
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry6),
                             (double)new_current_time.tv_nsec);
 
@@ -3540,8 +3577,15 @@ on_MEntry5_value_changed               (GtkSpinButton *spinbutton,
 
   /* current nanoseconds */
   if(new_current_time.tv_sec == time_span.start_time.tv_sec) {
-    if(new_current_time.tv_nsec < time_span.start_time.tv_nsec)
-      new_current_time.tv_nsec = time_span.start_time.tv_nsec;
+    if(new_current_time.tv_sec == time_span.end_time.tv_sec) {
+      if(new_current_time.tv_nsec > time_span.end_time.tv_nsec)
+        new_current_time.tv_nsec = time_span.end_time.tv_nsec;
+      if(new_current_time.tv_nsec < time_span.start_time.tv_nsec)
+        new_current_time.tv_nsec = time_span.start_time.tv_nsec;
+    } else {
+      if(new_current_time.tv_nsec < time_span.start_time.tv_nsec)
+        new_current_time.tv_nsec = time_span.start_time.tv_nsec;
+    }
   }
   else if(new_current_time.tv_sec == time_span.end_time.tv_sec) {
     if(new_current_time.tv_nsec > time_span.end_time.tv_nsec)
