@@ -521,23 +521,25 @@ void ltt_trace_close(LttTrace *t)
     tf = (LttTracefile*)g_ptr_array_index(t->control_tracefiles,i);
     ltt_tracefile_close(tf);
   }
-  g_ptr_array_free(t->control_tracefiles, FALSE);
+  g_ptr_array_free(t->control_tracefiles, TRUE);
 
   //free per_cpu_tracefiles
   for(i=0;i<t->per_cpu_tracefile_number;i++){
     tf = (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles,i);
     ltt_tracefile_close(tf);
   }
-  g_ptr_array_free(t->per_cpu_tracefiles, FALSE);
+  g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
 
   //free facilities
   for(i=0;i<t->facility_number;i++){
     f = (LttFacility*)g_ptr_array_index(t->facilities,i);
     ltt_facility_close(f);
   }
-  g_ptr_array_free(t->facilities, FALSE);
+  g_ptr_array_free(t->facilities, TRUE);
 
   g_free(t);
+ 
+  g_blow_chunks();
 }
 
 
