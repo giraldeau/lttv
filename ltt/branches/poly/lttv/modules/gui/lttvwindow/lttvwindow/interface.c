@@ -144,7 +144,7 @@ create_MWindow (void)
 
   MWindow = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_widget_set_size_request (MWindow, 100, 50);
-  gtk_window_set_title (GTK_WINDOW (MWindow), "Linux Trace Toolkit Visualizer");
+  gtk_window_set_title (GTK_WINDOW (MWindow), "Linux Trace Toolkit Viewer");
   gtk_window_set_default_size (GTK_WINDOW (MWindow),
       gdk_screen_width()*0.9, gdk_screen_height()*0.9);
 
