@@ -3183,7 +3183,7 @@ Mathieu Desnoyers (Directory structure, build with automake/conf,\n\
                    lttv gui, control flow view, gui cooperative trace reading\n\
                    scheduler with interruptible foreground and background\n\
                    computation, detailed event list)\n\
-Benoit Des Ligneris, Éric Clement (Cluster adaptation, work in progress)\n\
+Benoit Des Ligneris, Eric Clement (Cluster adaptation, work in progress)\n\
 Xang-Xiu Yang (new trace reading library and converter, lttv gui, \n\
                detailed event list and statistics view)\n\
 Tom Zanussi (RelayFS)\n\
@@ -3193,7 +3193,8 @@ Karim Yaghmour");
 
   GtkWidget *label3 = gtk_label_new("");
   gtk_label_set_markup(GTK_LABEL(label3), "\
-Linux Trace Toolkit Viewer, Copyright (C) 2004  Michel Dagenais\n\
+Linux Trace Toolkit Viewer, Copyright (C) 2004\n\
+                                                Michel Dagenais\n\
                                                 Mathieu Desnoyers\n\
                                                 Xang-Xiu Yang\n\
 Linux Trace Toolkit comes with ABSOLUTELY NO WARRANTY.\n\
