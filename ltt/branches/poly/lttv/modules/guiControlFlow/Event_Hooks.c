@@ -3,9 +3,12 @@
  *****************************************************************************/
 
 
+//#define PANGO_ENABLE_BACKEND
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <glib.h>
+
+//#include <pango/pango.h>
 
 #include <lttv/hook.h>
 #include <lttv/common.h>
@@ -30,7 +33,22 @@ void send_test_drawing(ProcessList *Process_List,
 	ProcessInfo Process_Info = {10000, 12000, 55600};
 	//ProcessInfo Process_Info = {156, 14000, 55500};
 	GtkTreeRowReference *got_RowRef;
+	PangoContext *context;
+	PangoLayout *layout;
+	PangoFontDescription *FontDesc;// = pango_font_description_new();
+	gint Font_Size;
+
+	/* Sent text data */
+	layout = gtk_widget_create_pango_layout(Drawing->Drawing_Area_V,
+			NULL);
+	context = pango_layout_get_context(layout);
+	FontDesc = pango_context_get_font_description(context);
+	Font_Size = pango_font_description_get_size(FontDesc);
+	pango_font_description_set_size(FontDesc, Font_Size-3*PANGO_SCALE);
 	
+	
+
+
 	LttTime birth;
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55500;
@@ -46,6 +64,10 @@ void send_test_drawing(ProcessList *Process_List,
 		Drawing, Pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
+
+	pango_layout_set_text(layout, "Test", -1);
+	gdk_draw_layout(Pixmap, Drawing->Drawing_Area_V->style->black_gc,
+			0, y+height, layout);
 
 	birth.tv_sec = 14000;
 	birth.tv_nsec = 55500;
@@ -118,7 +140,11 @@ void send_test_drawing(ProcessList *Process_List,
 		Drawing->Drawing_Area_V->style->black_gc);
 
 	g_critical("y : %u, height : %u", y, height);
-	
+
+
+	pango_font_description_set_size(FontDesc, Font_Size);
+	g_free(layout);
+	//g_free(context);
 }
 
 void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)

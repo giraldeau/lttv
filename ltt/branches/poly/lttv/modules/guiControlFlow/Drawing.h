@@ -23,7 +23,7 @@
 typedef struct _Drawing_t Drawing_t;
 
 
-//FIXME : TEMPORARILY FOR GC !!
+//FIXME : TEMPORARILY PLACED HERE FOR GC !!
 struct _Drawing_t {
 	GtkWidget	*Drawing_Area_V;
 	GdkPixmap	*Pixmap;
