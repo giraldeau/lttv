@@ -88,7 +88,7 @@ static char *a_trace;
 void lttv_trace_option(void *hook_data)
 { 
   LttTrace *trace;
-  gchar *abs_path;
+  gchar abs_path[PATH_MAX];
 
   get_absolute_pathname(a_trace, abs_path);
   g_init_trace = lttvwindowtraces_get_trace_by_name(abs_path);
@@ -180,16 +180,37 @@ static void init() {
 
   lttv_hooks_add(main_hooks, window_creation_hook, NULL, LTTV_PRIO_DEFAULT);
 
-  LttvHooks *hook_adder = lttv_hooks_new();
-  lttv_hooks_add(hook_adder, lttv_state_save_hook_add_event_hooks, NULL,
-                 LTTV_PRIO_DEFAULT);
-  LttvHooks *hook_remover = lttv_hooks_new();
-  lttv_hooks_add(hook_remover, lttv_state_save_hook_remove_event_hooks,
-                                  NULL, LTTV_PRIO_DEFAULT);
-  /* Add state computation background hook adder to attributes */
-  lttvwindowtraces_register_computation_hooks(g_quark_from_string("state"),
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-      hook_adder, hook_remover);
+  {
+    /* Register state calculator */
+    LttvHooks *hook_adder = lttv_hooks_new();
+    lttv_hooks_add(hook_adder, lttv_state_save_hook_add_event_hooks, NULL,
+                   LTTV_PRIO_DEFAULT);
+    LttvHooks *hook_remover = lttv_hooks_new();
+    lttv_hooks_add(hook_remover, lttv_state_save_hook_remove_event_hooks,
+                                    NULL, LTTV_PRIO_DEFAULT);
+    /* Add state computation background hook adder to attributes */
+    lttvwindowtraces_register_computation_hooks(g_quark_from_string("state"),
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+        hook_adder, hook_remover);
+  }
+
+  {
+    /* Register statistics calculator */
+    LttvHooks *hook_adder = lttv_hooks_new();
+    lttv_hooks_add(hook_adder, lttv_stats_hook_add_event_hooks, NULL,
+                   LTTV_PRIO_DEFAULT);
+    LttvHooks *hook_remover = lttv_hooks_new();
+    lttv_hooks_add(hook_remover, lttv_stats_hook_remove_event_hooks,
+                                    NULL, LTTV_PRIO_DEFAULT);
+    LttvHooks *after_request = lttv_hooks_new();
+    lttv_hooks_add(after_request, lttv_stats_sum_traceset_hook, NULL,
+        LTTV_PRIO_DEFAULT);
+    /* Add state computation background hook adder to attributes */
+    lttvwindowtraces_register_computation_hooks(g_quark_from_string("stats"),
+        NULL, NULL, NULL, NULL, NULL, NULL, NULL, 
+        after_request, NULL, NULL,
+        hook_adder, hook_remover);
+  }
 }
 
 void
@@ -212,7 +233,9 @@ static void destroy() {
   LttvTrace *trace;
   GSList *iter = NULL;
   
+  lttvwindowtraces_unregister_requests(g_quark_from_string("stats"));
   lttvwindowtraces_unregister_requests(g_quark_from_string("state"));
+  lttvwindowtraces_unregister_computation_hooks(g_quark_from_string("stats"));
   lttvwindowtraces_unregister_computation_hooks(g_quark_from_string("state"));
 
   lttv_option_remove("trace");

@@ -283,7 +283,10 @@ void lttvwindowtraces_background_request_queue
 {
   BackgroundRequest *bg_req;
   LttvAttribute *attribute = lttv_trace_attribute(trace);
+  LttvAttribute *g_attribute = lttv_global_attributes();
+  LttvAttribute *module_attribute;
   LttvAttributeValue value;
+  LttvAttributeType type;
   GSList **slist;
   guint num;
 
@@ -292,7 +295,21 @@ void lttvwindowtraces_background_request_queue
                                 LTTV_POINTER,
                                 &value));
   slist = (GSList**)(value.v_pointer);
-  
+
+  /* Verify that the calculator is loaded */
+  g_assert(module_attribute =
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
+                                LTTV_COMPUTATION)));
+
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                     g_quark_from_string(module_name),
+                                     &value);
+  if(type == LTTV_NONE) {
+    g_critical("Missing background calculator %s", module_name);
+    return;
+  }
+
   bg_req = g_new(BackgroundRequest,1);
   bg_req->module_name = g_quark_from_string(module_name);
   bg_req->trace = trace;
@@ -800,10 +817,12 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   LttvTracesetStats *tss;
   LttvTraceset *ts;
   LttvAttribute *attribute;
+  LttvAttribute *g_attribute = lttv_global_attributes();
   GSList **list_out, **list_in, **notify_in, **notify_out;
   LttvAttributeValue value;
   LttvAttributeType type;
   gboolean ret_val;
+  LttvHooks *before_request, *after_request;
 
   if(trace == NULL)
     return FALSE;
@@ -908,9 +927,32 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
         while(iter != NULL) {
           
           BackgroundRequest *bg_req = (BackgroundRequest*)iter->data;
-          /*- add hooks to context*/
+          /* - set hooks'in_progress flag to TRUE */
           lttvwindowtraces_set_in_progress(bg_req->module_name,
                                            bg_req->trace);
+
+          /* - call before request hook */
+          /* Get before request hook */
+          LttvAttribute *module_attribute;
+
+          g_assert(module_attribute =
+              LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                                 LTTV_IATTRIBUTE(g_attribute),
+                                 LTTV_COMPUTATION)));
+
+          g_assert(module_attribute =
+              LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                                        LTTV_IATTRIBUTE(module_attribute),
+                                        bg_req->module_name)));
+          
+          type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                             LTTV_BEFORE_REQUEST,
+                                             &value);
+          g_assert(type == LTTV_POINTER);
+          LttvHooks *before_request = (LttvHooks*)*(value.v_pointer);
+
+ 
+          if(before_request != NULL) lttv_hooks_call(before_request, tsc);
           
           iter = g_slist_next(iter);
         }
@@ -1064,6 +1106,27 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
             /* - set hooks'ready flag to TRUE */
             lttvwindowtraces_set_ready(bg_req->module_name,
                                        bg_req->trace);
+            /* - call after request hook */
+            /* Get after request hook */
+            LttvAttribute *module_attribute;
+
+            g_assert(module_attribute =
+                LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                                   LTTV_IATTRIBUTE(g_attribute),
+                                   LTTV_COMPUTATION)));
+
+            g_assert(module_attribute =
+                LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                                          LTTV_IATTRIBUTE(module_attribute),
+                                          bg_req->module_name)));
+            
+            type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
+                                               LTTV_AFTER_REQUEST,
+                                               &value);
+            g_assert(type == LTTV_POINTER);
+            LttvHooks *after_request = (LttvHooks*)*(value.v_pointer);
+
+            if(after_request != NULL) lttv_hooks_call(after_request, tsc);
             /* - remove request */
             remove = TRUE;
             free_data = TRUE;
@@ -1354,6 +1417,7 @@ void lttvwindowtraces_unregister_computation_hooks
 {
   LttvAttribute *g_attribute = lttv_global_attributes();
   LttvAttribute *attribute;
+  LttvAttributeValue value;
 
   g_assert(attribute = 
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
@@ -1362,6 +1426,103 @@ void lttvwindowtraces_unregister_computation_hooks
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
                                 module_name)));
 
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_BEFORE_CHUNK_TRACESET,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *before_chunk_traceset = (LttvHooks*)*(value.v_pointer);
+  if(before_chunk_traceset != NULL)
+    lttv_hooks_destroy(before_chunk_traceset);
+  
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_BEFORE_CHUNK_TRACE,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *before_chunk_trace = (LttvHooks*)*(value.v_pointer);
+  if(before_chunk_trace != NULL)
+    lttv_hooks_destroy(before_chunk_trace);
+  
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_BEFORE_CHUNK_TRACEFILE,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *before_chunk_tracefile = (LttvHooks*)*(value.v_pointer);
+  if(before_chunk_tracefile != NULL)
+    lttv_hooks_destroy(before_chunk_tracefile);
+  
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_AFTER_CHUNK_TRACESET,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *after_chunk_traceset = (LttvHooks*)*(value.v_pointer);
+  if(after_chunk_traceset != NULL)
+    lttv_hooks_destroy(after_chunk_traceset);
+ 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_AFTER_CHUNK_TRACE,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *after_chunk_trace = (LttvHooks*)*(value.v_pointer);
+  if(after_chunk_trace != NULL)
+    lttv_hooks_destroy(after_chunk_trace);
+ 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_AFTER_CHUNK_TRACEFILE,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *after_chunk_tracefile = (LttvHooks*)*(value.v_pointer);
+  if(after_chunk_tracefile != NULL)
+    lttv_hooks_destroy(after_chunk_tracefile);
+ 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_BEFORE_REQUEST,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *before_request = (LttvHooks*)*(value.v_pointer);
+  if(before_request != NULL)
+    lttv_hooks_destroy(before_request);
+ 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_AFTER_REQUEST,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *after_request = (LttvHooks*)*(value.v_pointer);
+  if(after_request != NULL)
+    lttv_hooks_destroy(after_request);
+ 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_EVENT_HOOK,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *event_hook = (LttvHooks*)*(value.v_pointer);
+  if(event_hook != NULL)
+    lttv_hooks_destroy(event_hook);
+ 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_EVENT_HOOK_BY_ID,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooksById *event_hook_by_id = (LttvHooksById*)*(value.v_pointer);
+  if(event_hook_by_id != NULL)
+    lttv_hooks_by_id_destroy(event_hook_by_id);
+ 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_HOOK_ADDER,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *hook_adder = (LttvHooks*)*(value.v_pointer);
+  if(hook_adder != NULL)
+    lttv_hooks_destroy(hook_adder);
+ 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_HOOK_REMOVER,
+                                LTTV_POINTER,
+                                &value));
+  LttvHooks *hook_remover = (LttvHooks*)*(value.v_pointer);
+  if(hook_remover != NULL)
+    lttv_hooks_destroy(hook_remover);
+ 
 
   lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
                                      LTTV_EVENT_HOOK_BY_ID);

@@ -1384,9 +1384,10 @@ static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
 {
   LttvTraceset *traceset = tab->traceset_info->traceset;
   guint i;
+  guint num_traces = lttv_traceset_number(traceset);
 
  //Verify if trace is already present.
-  for(i=0; i<lttv_traceset_number(traceset); i++)
+  for(i=0; i<num_traces; i++)
   {
     LttvTrace * trace = lttv_traceset_get(traceset, i);
     if(trace == trace_v)
@@ -3625,9 +3626,13 @@ void construct_main_window(MainWindow * parent)
     new_tab = create_tab(new_m_window, parent_tab, notebook, "Traceset");
   } else {
     new_tab = create_tab(new_m_window, NULL, notebook, "Traceset");
+    /* First window, use command line trace */
     if(g_init_trace != NULL){
       lttvwindow_add_trace(new_tab,
                            g_init_trace);
+
+      LttvTraceset *traceset = new_tab->traceset_info->traceset;
+      SetTraceset(new_tab, traceset);
     }
   }
 
