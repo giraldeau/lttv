@@ -23,6 +23,8 @@
 #include <ltt/compiler.h>
 #include <math.h>
 
+#include <ltt/ltt-types.h>
+
 typedef struct _LttTime {
   unsigned long tv_sec;
   unsigned long tv_nsec;
@@ -244,6 +246,19 @@ static inline LttTime ltt_time_from_uint64(guint64 t1)
     res.tv_nsec = (guint32)t1;
   }
   return res;
+}
+
+inline LttTime ltt_get_time(LttTrace t, void *ptr)
+{
+  LttTime output;
+
+  output.tv_sec =
+    (guint64) (t->reverse_byte_order ? GUINT64_SWAP_LE_BE(ptr): ptr);
+  ptr += sizeof(guint64);
+  output.tv_nsec =
+    (guint64) (t->reverse_byte_order ? GUINT64_SWAP_LE_BE(ptr): ptr);
+
+  return output;
 }
 
 #endif // LTT_TIME_H

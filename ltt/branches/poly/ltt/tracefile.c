@@ -38,6 +38,7 @@
 #include <ltt/facility.h>
 #include <ltt/event.h>
 #include <ltt/type.h>
+#include <ltt/ltt-types.h>
 
 #define DIR_NAME_SIZE 256
 #define __UNUSED__ __attribute__((__unused__))
@@ -504,8 +505,8 @@ LttTrace *ltt_trace_open(const char *pathname)
   t->control_tracefiles = g_ptr_array_new();
   t->per_cpu_tracefiles = g_ptr_array_new();
   t->facilities         = g_ptr_array_new();
-  getDataEndianType(&(t->my_arch_size), &(t->my_arch_endian));
-
+  //getDataEndianType(&(t->my_arch_size), &(t->my_arch_endian));
+  
   //get system description  
   strcpy(tmp,info);
   strcat(tmp,"system.xml");
@@ -518,8 +519,15 @@ LttTrace *ltt_trace_open(const char *pathname)
     g_free(t);
     return NULL;
   }
-
-
+  
+  /* Set the reverse byte order between trace and reader */
+  if(sys_description->endian == LTT_LITTLE_ENDIAN 
+          && G_BYTE_ORDER != G_LITTLE_ENDIAN) {
+    t->reverse_byte_order = true;
+  } else if(sys_description->endian == LTT_BIG_ENDIAN
+          && G_BYTE_ORDER != G_BIG_ENDIAN) {
+    t->reverse_byte_order = true;
+  } else t->reverse_byte_order = false;
 
   //get facilities info
   if(getFacilityInfo(t,eventdefs)) {
@@ -1078,19 +1086,19 @@ LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event)
     if(unlikely(err))g_error("Can not read tracefile");    
   }
 
-  event->event_id = (int)(*(guint16 *)(t->cur_event_pos));
+  event->event_id = ltt_get_uint16(t, t->cur_event_pos);
   if(unlikely(event->event_id == TRACE_TIME_HEARTBEAT))
     t->cur_heart_beat_number++;
 
   t->prev_event_time  = t->current_event_time;
   //  t->current_event_time = getEventTime(t);
 
-  event->time_delta = *(guint32 *)(t->cur_event_pos + EVENT_ID_SIZE);
+  event->time_delta = ltt_get_uint32(t, t->cur_event_pos + EVENT_ID_SIZE);
   event->event_time = t->current_event_time;
   event->event_cycle_count = t->cur_cycle_count;
 
   event->tracefile = t;
-  event->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
+  event->data = t->cur_event_pos + EVENT_HEADER_SIZE;
   event->which_block = t->which_block;
   event->which_event = t->which_event;
 
@@ -1196,12 +1204,13 @@ int readBlock(LttTracefile * tf, int whichBlock)
   /* read the whole block to precalculate total of cycles in it */
   tf->count = 0;
   tf->pre_cycle_count = 0;
-  tf->cur_cycle_count = 0;
+  tf->cur_cycle_count = ltt_get_uint32(tf, tf->cur_event_pos + EVENT_ID_SIZE);
 
   getCyclePerNsec(tf);
 
   tf->overflow_nsec = 
-                        (-((double)(tf->a_block_start->cycle_count&0xFFFFFFFF))
+               (-((double)
+               (ltt_get_uint32(tf, tf->a_block_start->cycle_count)&0xFFFFFFFF))
                                         * tf->nsec_per_cycle);
 
   tf->current_event_time = getEventTime(tf);  
@@ -1228,7 +1237,8 @@ void updateTracefile(LttTracefile * tf)
   tf->prev_event_time.tv_nsec = 0;
   tf->count = 0;
 
-  tf->overflow_nsec = (-((double)tf->a_block_start->cycle_count)
+  tf->overflow_nsec = 
+    (-((double)ltt_get_uint32(tf, tf->a_block_start->cycle_count))
                                         * tf->nsec_per_cycle);
 
 }
@@ -1250,7 +1260,7 @@ int skipEvent(LttTracefile * t)
   LttEventType * evT;
   LttField * rootFld;
 
-  evId   = (int)(*(guint16 *)(t->cur_event_pos));
+  evId   = ltt_get_uint16(t, t->cur_event_pos);
   evData = t->cur_event_pos + EVENT_HEADER_SIZE;
 
   evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
@@ -1274,6 +1284,7 @@ int skipEvent(LttTracefile * t)
   if(unlikely(evId == TRACE_BLOCK_END)){
     t->cur_event_pos = t->buffer + t->block_size;
   }else{
+    t->cur_cycle_count = ltt_get_uint32(t, t->cur_event_pos + EVENT_ID_SIZE);
     t->which_event++;
     t->current_event_time = getEventTime(t);
   }
@@ -1301,8 +1312,8 @@ void getCyclePerNsec(LttTracefile * t)
   lBufTotalTime = ltt_time_sub(t->a_block_end->time, t->a_block_start->time);
 
   /* Calculate the total cycles for this bufffer */
-  lBufTotalCycle  = t->a_block_end->cycle_count;
-  lBufTotalCycle -= t->a_block_start->cycle_count;
+  lBufTotalCycle  = ltt_get_uint32(t, t->a_block_end->cycle_count);
+  lBufTotalCycle -= ltt_get_uint32(t, t->a_block_start->cycle_count);
 
   /* Convert the total time to double */
   lBufTotalNSec  = ltt_time_to_double(lBufTotalTime);
@@ -1333,9 +1344,9 @@ static inline LttTime getEventTime(LttTracefile * tf)
   LttTime       lTimeOffset;      // Time offset in struct LttTime
   guint16       evId;
 
-  evId = *(guint16 *)tf->cur_event_pos;
+  evId = ltt_get_uint16(tf, tf->cur_event_pos);
   
-  cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
+  cycle_count = ltt_get_uint32(tf, tf->cur_event_pos + EVENT_ID_SIZE);
 
   gboolean comp_count = cycle_count < tf->pre_cycle_count;
 
@@ -1351,7 +1362,8 @@ static inline LttTime getEventTime(LttTracefile * tf)
      lEventNSec = 0;
   } else if(unlikely(evId == TRACE_BLOCK_END)) {
     lEventNSec = ((double)
-                 (tf->a_block_end->cycle_count - tf->a_block_start->cycle_count)
+          (ltt_get_uint32(tf, tf->a_block_end->cycle_count) 
+           - ltt_get_uint32(tf, tf->a_block_start->cycle_count))
                            * tf->nsec_per_cycle);
   }
 #if 0
@@ -1468,7 +1480,7 @@ static inline gint getFieldtypeSize(LttTracefile * t,
                                   0,fld->child[0], NULL, trace);      
           fld->element_size = size;
         }else{//0: sequence
-          element_number = getIntNumber(size1,evD);
+          element_number = getIntNumber(t,size1,evD);
           type->element_number = element_number;
           if(fld->element_size > 0){
             size = element_number * fld->element_size;
@@ -1577,21 +1589,21 @@ end_getFieldtypeSize:
  *    gint64          : a 64 bits integer
  ****************************************************************************/
 
-gint64 getIntNumber(int size, void *evD)
+gint64 getIntNumber(LttTracefile * t, int size, void *evD)
 {
   gint64 i;
 
   switch(size) {
-    case 1: i = *(gint8 *)evD; break;
-    case 2: i = *(gint16 *)evD; break;
-    case 4: i = *(gint32 *)evD; break;
-    case 8: i = *(gint64 *)evD; break;
-    default: i = *(gint64 *)evD;
+    case 1: i = *((gint8*)evD); break;
+    case 2: i = ltt_get_int16(t, evD); break;
+    case 4: i = ltt_get_int32(t, evD); break;
+    case 8: i = ltt_get_int64(t, evD); break;
+    default: i = ltt_get_int64(t, evD);
              g_critical("getIntNumber : integer size %d unknown", size);
              break;
   }
 
-  return (gint64)i;
+  return i;
 }
 
 /*****************************************************************************

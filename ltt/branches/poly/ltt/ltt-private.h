@@ -159,8 +159,8 @@ struct _LttTracefile{
   unsigned int which_event;          //which event of the current block 
                                      //is currently processed 
   LttTime current_event_time;        //time of the current event
-  BlockStart * a_block_start;        //block start of the block
-  BlockEnd   * a_block_end;          //block end of the block
+  BlockStart * a_block_start;        //block start of the block- trace endian
+  BlockEnd   * a_block_end;          //block end of the block - trace endian
   TimeHeartbeat * last_heartbeat;    //last heartbeat
   void * cur_event_pos;              //the position of the current event
   void * buffer;                     //the buffer containing the block
@@ -192,8 +192,7 @@ struct _LttTrace{
   GPtrArray *control_tracefiles;            //array of control tracefiles 
   GPtrArray *per_cpu_tracefiles;            //array of per cpu tracefiles 
   GPtrArray *facilities;                    //array of facilities 
-  LttArchSize my_arch_size;                 //data size of the local machine
-  LttArchEndian my_arch_endian;             //endian type of the local machine
+  gboolean reverse_byte_order;              //must we reverse BO ?
 };
 
 struct _LttEventPosition{
