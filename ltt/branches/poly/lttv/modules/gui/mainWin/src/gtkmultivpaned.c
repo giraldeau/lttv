@@ -201,7 +201,9 @@ void gtk_multi_vpaned_widget_add(GtkMultiVPaned * multi_vpaned, GtkWidget * widg
     gtk_multi_vpaned_set_adjust(multi_vpaned, TRUE);
 
     gtk_range_set_update_policy (GTK_RANGE(multi_vpaned->hscrollbar),
-                                  GTK_UPDATE_DISCONTINUOUS);
+																 GTK_UPDATE_CONTINUOUS);
+																 //changed by Mathieu Desnoyers, was :
+                                 // GTK_UPDATE_DISCONTINUOUS);
     g_signal_connect(G_OBJECT(multi_vpaned->hscrollbar), "value-changed",
 		     G_CALLBACK(gtk_multi_vpaned_scroll_value_changed), multi_vpaned);
 
