@@ -8,102 +8,92 @@
 
 /* search for the (named) type in the table, if it does not exist
    create a new one */
-ltt_type * lookup_named_type(ltt_facility *fac, type_descriptor * td);
+LttType * lookup_named_type(LttFacility *fac, type_descriptor * td);
 
 /* construct directed acyclic graph for types, and tree for fields */
-void constructTypeAndFields(ltt_facility * fac,type_descriptor * td, 
-                            ltt_field * fld);
+void constructTypeAndFields(LttFacility * fac,type_descriptor * td, 
+                            LttField * fld);
 
 /* generate the facility according to the events belongin to it */
-void generateFacility(ltt_facility * facility, char * pathname, 
-                      ltt_checksum checksum, sequence * events);
+void generateFacility(LttFacility * f, facility  * fac, 
+                      LttChecksum checksum);
 
 /* functions to release the memory occupied by a facility */
-void freeFacility(ltt_facility * facility);
-void freeEventtype(ltt_eventtype * evType);
+void freeFacility(LttFacility * facility);
+void freeEventtype(LttEventType * evType);
 void freeAllNamedTypes(table * named_types);
 void freeAllUnamedTypes(sequence * unnamed_types);
 void freeAllFields(sequence * all_fields);
-void freeLttType(ltt_type * type);
-void freeLttField(ltt_field * fld);
+void freeLttType(LttType * type);
+void freeLttField(LttField * fld);
 
 
 /*****************************************************************************
  *Function name
- *    ltt_facility_open       : open a facility
+ *    ltt_facility_open       : open facilities
  *Input params
+ *    t                       : the trace containing the facilities
  *    pathname                : the path name of the facility   
- *    c                       : checksum of the facility registered in kernal
- *Return value
- *    ltt_facility*           : return a ltt_facility
  ****************************************************************************/
 
-ltt_facility * ltt_facility_open(char * pathname, ltt_checksum c)
+void ltt_facility_open(LttTrace * t, char * pathname)
 {
   char *token;
   parse_file in;
   char buffer[BUFFER_SIZE];
-  ltt_checksum checksum;
-  event *ev;
-  sequence  events;
-  table namedTypes;
-  sequence unnamedTypes;
-  ltt_facility * aFacility = NULL;
-
-  sequence_init(&events);
-  table_init(&namedTypes);
-  sequence_init(&unnamedTypes);
+  facility * fac;
+  LttFacility * f;
+  LttChecksum checksum;
 
   in.buffer = buffer;
   in.lineno = 0;
   in.error = error_callback;
-  in.name = appendString(pathname,".event");
+  in.name = pathname;
 
   in.fp = fopen(in.name, "r");
-  if(!in.fp )g_error("cannot open input file: %s\n", in.name);
- 
+  if(!in.fp ) in.error(&in,"cannot open input file");
+
   while(1){
     token = getToken(&in);
     if(in.type == ENDFILE) break;
     
-    if(strcmp("event",token) == 0) {
-      ev = g_new(event,1);
-      sequence_push(&events,ev);
-      parseEvent(&in,ev, &unnamedTypes, &namedTypes);
+    if(strcmp(token, "<")) in.error(&in,"not a facility file");
+    token = getName(&in);
+    
+    if(strcmp("facility",token) == 0) {
+      fac = g_new(facility, 1);
+      fac->name = NULL;
+      fac->description = NULL;
+      sequence_init(&(fac->events));
+      table_init(&(fac->named_types));
+      sequence_init(&(fac->unnamed_types));
+      
+      parseFacility(&in, fac);
+
+      //check if any namedType is not defined
+      checkNamedTypesImplemented(&fac->named_types);
+    
+      generateChecksum(fac->name, &checksum, &fac->events);
+
+      f = g_new(LttFacility,1);    
+      generateFacility(f, fac, checksum);
+
+      t->facility_number++;
+      g_ptr_array_add(t->facilities,f);
+
+      free(fac->name);
+      free(fac->description);
+      freeEvents(&fac->events);
+      sequence_dispose(&fac->events);
+      freeNamedType(&fac->named_types);
+      table_dispose(&fac->named_types);
+      freeTypes(&fac->unnamed_types);
+      sequence_dispose(&fac->unnamed_types);      
+      free(fac);
     }
-    else if(strcmp("type",token) == 0) {
-      parseTypeDefinition(&in, &unnamedTypes, &namedTypes);
-    }
-    else g_error("event or type token expected\n");
+    else in.error(&in,"facility token was expected");
   }
-  
   fclose(in.fp);
-
-  checkNamedTypesImplemented(&namedTypes);
-
-  generateChecksum(pathname, &checksum, &events);
-
-  //yxx disable during the test
-  aFacility = g_new(ltt_facility,1);    
-  generateFacility(aFacility, pathname, checksum, &events);
-/*
-  if(checksum == c){
-    aFacility = g_new(ltt_facility,1);    
-    generateFacility(aFacility, pathname, checksum, &events);
-  }else{
-    g_error("local facility is different from the one registered in the kernel");
-  }
-*/
-
-  free(in.name);
-  freeEvents(&events);
-  sequence_dispose(&events);
-  freeNamedType(&namedTypes);
-  table_dispose(&namedTypes);
-  freeTypes(&unnamedTypes);
-  sequence_dispose(&unnamedTypes);
-
-  return aFacility;
 }
 
 
@@ -111,53 +101,46 @@ ltt_facility * ltt_facility_open(char * pathname, ltt_checksum c)
  *Function name
  *    generateFacility    : generate facility, internal function
  *Input params 
- *    facility            : facilty structure
- *    facName             : facility name
+ *    facility            : LttFacilty structure
+ *    fac                 : facility structure
  *    checksum            : checksum of the facility          
- *    events              : sequence of events belonging to the facility
  ****************************************************************************/
 
-void generateFacility(ltt_facility * facility, char * pathname, 
-                      ltt_checksum checksum, sequence * events)
+void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
 {
-  char * facilityName;
+  char * facilityName = fac->name;
+  sequence * events = &fac->events;
   int i;
-  ltt_eventtype * evType;
-  ltt_field * field;
-  ltt_type * type;
-
-  //get the facility name (strip any leading directory) 
-  facilityName = strrchr(pathname,'/');
-  if(facilityName) facilityName++;    
-  else facilityName = pathname;
+  LttEventType * evType;
+  LttField * field;
+  LttType * type;
   
-  facility->name = g_strdup(facilityName);
-  facility->event_number = events->position;
-  facility->checksum = checksum;
-  facility->usage_count = 0;
+  f->name = g_strdup(facilityName);
+  f->event_number = events->position;
+  f->checksum = checksum;
   
   //initialize inner structures
-  facility->events = g_new(ltt_eventtype*,facility->event_number); 
-  sequence_init(&(facility->all_fields));
-  sequence_init(&(facility->all_unnamed_types));
-  table_init(&(facility->all_named_types));
+  f->events = g_new(LttEventType*,f->event_number); 
+  sequence_init(&(f->all_fields));
+  sequence_init(&(f->all_unnamed_types));
+  table_init(&(f->all_named_types));
 
   //for each event, construct field tree and type graph
   for(i=0;i<events->position;i++){
-    evType = g_new(ltt_eventtype,1);
-    facility->events[i] = evType;
+    evType = g_new(LttEventType,1);
+    f->events[i] = evType;
 
     evType->name = g_strdup(((event*)(events->array[i]))->name);
     evType->description=g_strdup(((event*)(events->array[i]))->description);
     
-    field = g_new(ltt_field, 1);
-    sequence_push(&(facility->all_fields), field);
+    field = g_new(LttField, 1);
+    sequence_push(&(f->all_fields), field);
     evType->root_field = field;
-    evType->facility = facility;
+    evType->facility = f;
     evType->index = i;
 
     field->field_pos = 0;
-    type = lookup_named_type(facility,((event*)(events->array[i]))->type);
+    type = lookup_named_type(f,((event*)(events->array[i]))->type);
     field->field_type = type;
     field->offset_root = 0;
     field->fixed_root = 1;
@@ -171,7 +154,7 @@ void generateFacility(ltt_facility * facility, char * pathname,
     field->current_element = 0;
 
     //construct field tree and type graph
-    constructTypeAndFields(facility,((event*)(events->array[i]))->type,field);
+    constructTypeAndFields(f,((event*)(events->array[i]))->type,field);
   }  
 }
 
@@ -186,8 +169,8 @@ void generateFacility(ltt_facility * facility, char * pathname,
  *    root_field             : root field of the event
  ****************************************************************************/
 
-void constructTypeAndFields(ltt_facility * fac,type_descriptor * td, 
-                            ltt_field * fld)
+void constructTypeAndFields(LttFacility * fac,type_descriptor * td, 
+                            LttField * fld)
 {
   int i;
   type_descriptor * tmpTd;
@@ -206,11 +189,11 @@ void constructTypeAndFields(ltt_facility * fac,type_descriptor * td,
   }else if(td->type == LTT_ARRAY || td->type == LTT_SEQUENCE){
     if(td->type == LTT_ARRAY)
       fld->field_type->element_number = (unsigned)td->size;
-    fld->field_type->element_type = g_new(ltt_type*,1);
+    fld->field_type->element_type = g_new(LttType*,1);
     tmpTd = td->nested_type;
     fld->field_type->element_type[0] = lookup_named_type(fac, tmpTd);
-    fld->child = g_new(ltt_field*, 1);
-    fld->child[0] = g_new(ltt_field, 1);
+    fld->child = g_new(LttField*, 1);
+    fld->child[0] = g_new(LttField, 1);
     sequence_push(&(fac->all_fields), fld->child[0]);
     
     fld->child[0]->field_pos = 0;
@@ -228,12 +211,12 @@ void constructTypeAndFields(ltt_facility * fac,type_descriptor * td,
     constructTypeAndFields(fac, tmpTd, fld->child[0]);
   }else if(td->type == LTT_STRUCT){
     fld->field_type->element_number = td->fields.position;
-    fld->field_type->element_type = g_new(ltt_type*, td->fields.position);
-    fld->child = g_new(ltt_field*, td->fields.position);      
+    fld->field_type->element_type = g_new(LttType*, td->fields.position);
+    fld->child = g_new(LttField*, td->fields.position);      
     for(i=0;i<td->fields.position;i++){
       tmpTd = ((field*)(td->fields.array[i]))->type;
       fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
-      fld->child[i] = g_new(ltt_field,1); 
+      fld->child[i] = g_new(LttField,1); 
       sequence_push(&(fac->all_fields), fld->child[i]);
 
       fld->child[i]->field_pos = i;
@@ -264,26 +247,26 @@ void constructTypeAndFields(ltt_facility * fac,type_descriptor * td,
  *    fac              : facility struct
  *    td               : type descriptor
  *Return value    
- *                     : either find the named type, or create a new ltt_type
+ *                     : either find the named type, or create a new LttType
  ****************************************************************************/
 
-ltt_type * lookup_named_type(ltt_facility *fac, type_descriptor * td)
+LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
 {
-  ltt_type * lttType = NULL;
+  LttType * lttType = NULL;
   int i;
   char * name;
   if(td->type_name){
     for(i=0;i<fac->all_named_types.keys.position;i++){
       name = (char *)(fac->all_named_types.keys.array[i]);
       if(strcmp(name, td->type_name)==0){
-	lttType = (ltt_type*)(fac->all_named_types.values.array[i]);
+	lttType = (LttType*)(fac->all_named_types.values.array[i]);
 	break;
       }
     }
   }
   
   if(!lttType){
-    lttType = g_new(ltt_type,1);
+    lttType = g_new(LttType,1);
     lttType->type_class = td->type;
     if(td->fmt) lttType->fmt = g_strdup(td->fmt);
     else lttType->fmt = NULL;
@@ -316,11 +299,8 @@ ltt_type * lookup_named_type(ltt_facility *fac, type_descriptor * td)
  *    int                     : usage count ?? status
  ****************************************************************************/
 
-int ltt_facility_close(ltt_facility *f)
+int ltt_facility_close(LttFacility *f)
 {
-  //  f->usage_count--;
-  if(f->usage_count > 0) return f->usage_count;
-  
   //release the memory it occupied
   freeFacility(f);
 
@@ -331,7 +311,7 @@ int ltt_facility_close(ltt_facility *f)
  * Functions to release the memory occupied by the facility
  ****************************************************************************/
 
-void freeFacility(ltt_facility * fac)
+void freeFacility(LttFacility * fac)
 {
   int i;
   g_free(fac->name);  //free facility name
@@ -340,6 +320,7 @@ void freeFacility(ltt_facility * fac)
   for(i=0;i<fac->event_number;i++){
     freeEventtype(fac->events[i]);
   }
+  g_free(fac->events);
 
   //free all named types
   freeAllNamedTypes(&(fac->all_named_types));
@@ -354,7 +335,7 @@ void freeFacility(ltt_facility * fac)
   g_free(fac);
 }
 
-void freeEventtype(ltt_eventtype * evType)
+void freeEventtype(LttEventType * evType)
 {
   g_free(evType->name);
   if(evType->description)
@@ -370,7 +351,7 @@ void freeAllNamedTypes(table * named_types)
     g_free((char*)(named_types->keys.array[i]));
     
     //free type
-    freeLttType((ltt_type*)(named_types->values.array[i]));
+    freeLttType((LttType*)(named_types->values.array[i]));
   }
   table_dispose(named_types);
 }
@@ -379,7 +360,7 @@ void freeAllUnamedTypes(sequence * unnamed_types)
 {
   int i;
   for(i=0;i<unnamed_types->position;i++){
-    freeLttType((ltt_type*)(unnamed_types->array[i]));
+    freeLttType((LttType*)(unnamed_types->array[i]));
   }
   sequence_dispose(unnamed_types);
 }
@@ -388,25 +369,33 @@ void freeAllFields(sequence * all_fields)
 {
   int i;
   for(i=0;i<all_fields->position;i++){
-    freeLttField((ltt_field*)(all_fields->array[i]));
+    freeLttField((LttField*)(all_fields->array[i]));
   }
   sequence_dispose(all_fields);
 }
 
-void freeLttType(ltt_type * type)
+//only free current type, not child types
+void freeLttType(LttType * type)
 {
+  int i;
   if(type->element_name)
     g_free(type->element_name);
   if(type->fmt)
     g_free(type->fmt);
-  if(type->enum_strings)
+  if(type->enum_strings){
+    for(i=0;i<type->element_number;i++)
+      g_free(type->enum_strings[i]);
     g_free(type->enum_strings);
-  if(type->element_type)
+  }
+
+  if(type->element_type){
     g_free(type->element_type);
+  }
   g_free(type);
 }
 
-void freeLttField(ltt_field * fld)
+//only free the current field, not child fields
+void freeLttField(LttField * fld)
 {  
   if(fld->child)
     g_free(fld->child);
@@ -422,7 +411,7 @@ void freeLttField(ltt_field * fld)
  *    char *                  : the facility's name
  ****************************************************************************/
 
-char *ltt_facility_name(ltt_facility *f)
+char *ltt_facility_name(LttFacility *f)
 {
   return f->name;
 }
@@ -433,12 +422,26 @@ char *ltt_facility_name(ltt_facility *f)
  *Input params
  *    f                       : the facility that will be closed
  *Return value
- *    ltt_checksum            : the checksum of the facility 
+ *    LttChecksum            : the checksum of the facility 
  ****************************************************************************/
 
-ltt_checksum ltt_facility_checksum(ltt_facility *f)
+LttChecksum ltt_facility_checksum(LttFacility *f)
 {
   return f->checksum;
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_facility_base_id    : obtain the facility base id
+ *Input params
+ *    f                       : the facility
+ *Return value
+ *                            : the base id of the facility
+ ****************************************************************************/
+
+unsigned ltt_facility_base_id(LttFacility *f)
+{
+  return f->base_id;
 }
 
 /*****************************************************************************
@@ -450,7 +453,7 @@ ltt_checksum ltt_facility_checksum(ltt_facility *f)
  *    unsigned                     : the number of the event types 
  ****************************************************************************/
 
-unsigned ltt_facility_eventtype_number(ltt_facility *f)
+unsigned ltt_facility_eventtype_number(LttFacility *f)
 {
   return (unsigned)(f->event_number);
 }
@@ -462,10 +465,10 @@ unsigned ltt_facility_eventtype_number(ltt_facility *f)
  *Input params
  *    f                         : the facility that will be closed
  *Return value
- *    ltt_eventtype *           : the event type required  
+ *    LttEventType *           : the event type required  
  ****************************************************************************/
 
-ltt_eventtype *ltt_facility_eventtype_get(ltt_facility *f, unsigned i)
+LttEventType *ltt_facility_eventtype_get(LttFacility *f, unsigned i)
 {
   return f->events[i];
 }
@@ -479,13 +482,13 @@ ltt_eventtype *ltt_facility_eventtype_get(ltt_facility *f, unsigned i)
  *    f                : the facility that will be closed
  *    name             : the name of the event
  *Return value
- *    ltt_eventtype *  : the event type required  
+ *    LttEventType *  : the event type required  
  ****************************************************************************/
 
-ltt_eventtype *ltt_facility_eventtype_get_by_name(ltt_facility *f, char *name)
+LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, char *name)
 {
   int i;
-  ltt_eventtype * ev;
+  LttEventType * ev;
   for(i=0;i<f->event_number;i++){
     ev = f->events[i];
     if(strcmp(ev->name, name) == 0)break;      

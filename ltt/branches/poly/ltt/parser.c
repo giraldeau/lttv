@@ -19,9 +19,8 @@ This program is distributed in the hope that it will be useful,
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
 */
 
-/* This program reads the ".event" event definitions input files 
-   specified as command line arguments and generates corresponding
-   ".c" and ".h" files required to trace such events in the kernel.
+/* This program reads the ".xml" event definitions input files 
+   and constructs structure for each event.
  
    The program uses a very simple tokenizer, called from a hand written
    recursive descent parser to fill a data structure describing the events.
@@ -31,7 +30,7 @@ This program is distributed in the hope that it will be useful,
    A table of named types is maintained to allow refering to types by name
    when the same type is used at several places. Finally a sequence of
    all types is maintained to facilitate the freeing of all type 
-   information when the processing of an ".event" file is finished. */
+   information when the processing of an ".xml" file is finished. */
 
 #include <stdlib.h> 
 #include <string.h>
@@ -100,7 +99,9 @@ void error_callback(parse_file *in, char *msg)
 
 void * memAlloc(int size)
 {
-  void *addr = malloc(size);
+  void * addr;
+  if(size == 0) return NULL;
+  addr = malloc(size);
   if(!addr){
     printf("Failed to allocate memory");    
     exit(1);
@@ -119,11 +120,173 @@ void * memAlloc(int size)
 
 char *allocAndCopy(char *str)
 {
-  char *addr = (char *)memAlloc(strlen(str)+1);
+  char * addr;
+  if(str == NULL) return NULL;
+  addr = (char *)memAlloc(strlen(str)+1);
   strcpy(addr,str);
   return addr;
 }
 
+/**************************************************************************
+ * Function :
+ *    getNameAttribute,getFormatAttribute,getSizeAttribute,getValueAttribute 
+ *    getValueStrAttribute
+ * Description :
+ *    Read the attribute from the input file.
+ *
+ * Parameters :
+ *    in , input file handle.
+ *
+ * Return values :
+ *    address of the attribute.
+ *
+ **************************************************************************/
+
+char * getNameAttribute(parse_file *in)
+{
+  char * token, car;
+  token = getName(in);
+  if(strcmp("name",token))in->error(in,"name was expected");
+  getEqual(in);
+  
+  car = seekNextChar(in);
+  if(car == EOF)in->error(in,"name was expected");
+  else if(car == '\"')token = getQuotedString(in);
+  else token = getName(in);
+  return token;
+}
+
+char * getFormatAttribute(parse_file *in)
+{
+  char * token;
+
+  //format is an option
+  token = getToken(in); 
+  if(strcmp("/",token) == 0){
+    ungetToken(in);
+    return NULL;
+  }
+
+  if(strcmp("format",token))in->error(in,"format was expected");
+  getEqual(in);
+  token = getQuotedString(in);
+  return token;
+}
+
+int getSizeAttribute(parse_file *in)
+{
+  char * token;
+  getName(in);
+  getEqual(in);
+
+  return getSize(in);
+}
+
+int getValueAttribute(parse_file *in)
+{
+  char * token;
+  getName(in);
+  getEqual(in);
+  
+  return getNumber(in);
+}
+
+//for <label name=label_name value=n/>, value is an option
+char * getValueStrAttribute(parse_file *in)
+{
+  char * token;
+
+  token = getToken(in); 
+  if(strcmp("/",token) == 0){
+    ungetToken(in);
+    return NULL;
+  }
+  
+  if(strcmp("value",token))in->error(in,"value was expected");
+  getEqual(in);
+  token = getToken(in);
+  if(in->type != NUMBER) in->error(in,"number was expected");
+  return token;  
+}
+
+char * getDescription(parse_file *in)
+{
+  long int pos;
+  char * token, car, *str;
+
+  pos = ftell(in->fp);
+
+  getLAnglebracket(in);
+  token = getName(in);
+  if(strcmp("description",token)){
+    fseek(in->fp, pos, SEEK_SET);
+    return NULL;
+  }
+  
+  getRAnglebracket(in);
+
+  pos = 0;
+  while((car = getc(in->fp)) != EOF) {
+    if(car == '<') break;
+    if(car == '\0') continue;
+    in->buffer[pos] = car;
+    pos++;
+  }
+  if(car == EOF)in->error(in,"not a valid description");
+  in->buffer[pos] = '\0';
+
+  str = allocAndCopy(in->buffer);
+
+  getForwardslash(in);
+  token = getName(in);
+  if(strcmp("description", token))in->error(in,"not a valid description");
+  getRAnglebracket(in);
+
+  return str;
+}
+
+/*****************************************************************************
+ *Function name
+ *    parseFacility : generate event list  
+ *Input params 
+ *    in            : input file handle          
+ *    fac           : empty facility
+ *Output params
+ *    fac           : facility filled with event list
+ ****************************************************************************/
+
+void parseFacility(parse_file *in, facility * fac)
+{
+  char * token;
+  event *ev;
+  
+  fac->name = allocAndCopy(getNameAttribute(in));    
+  getRAnglebracket(in);    
+  
+  fac->description = allocAndCopy(getDescription(in));
+  
+  while(1){
+    getLAnglebracket(in);    
+
+    token = getToken(in);
+    if(in->type == ENDFILE)
+      in->error(in,"the definition of the facility is not finished");
+
+    if(strcmp("event",token) == 0){
+      ev = (event*) memAlloc(sizeof(event));
+      sequence_push(&(fac->events),ev);
+      parseEvent(in,ev, &(fac->unnamed_types), &(fac->named_types));    
+    }else if(strcmp("type",token) == 0){
+      parseTypeDefinition(in, &(fac->unnamed_types), &(fac->named_types));
+    }else if(in->type == FORWARDSLASH){
+      break;
+    }else in->error(in,"event or type token expected\n");
+  }
+
+  token = getName(in);
+  if(strcmp("facility",token)) in->error(in,"not the end of the facility");
+  getRAnglebracket(in); //</facility>
+}
 
 /*****************************************************************************
  *Function name
@@ -131,6 +294,8 @@ char *allocAndCopy(char *str)
  *Input params 
  *    in            : input file handle          
  *    ev            : new event                              
+ *    unnamed_types : array of unamed types
+ *    named_types   : array of named types
  *Output params    
  *    ev            : new event (parameters are passed to it)   
  ****************************************************************************/
@@ -141,48 +306,44 @@ void parseEvent(parse_file *in, event * ev, sequence * unnamed_types,
   char *token;
   type_descriptor *t;
 
-  getLParenthesis(in);
-  token = getName(in);
-  ev->name = allocAndCopy(token);
-  getComa(in);
+  //<event name=eventtype_name>
+  ev->name = allocAndCopy(getNameAttribute(in));
+  getRAnglebracket(in);  
 
-  token = getQuotedString(in);
-  ev->description = allocAndCopy(token);
+  //<description>...</descriptio>
+  ev->description = allocAndCopy(getDescription(in)); 
   
-  token = getToken(in); //token either is a ',' or a ')'
-  if(in->type == COMA) token = getName(in);
-  ungetToken(in);
+  //event can have STRUCT, TYPEREF or NOTHING
+  getLAnglebracket(in);
 
-  /* We have a possibly empty list of fields, containing struct implied */
-  if((in->type == NAME && strcmp(token,"field") == 0) || 
-      in->type == RPARENTHESIS) {
-    /* Insert an unnamed struct type */
-    t = (type_descriptor *)memAlloc(sizeof(type_descriptor));
-    t->type_name = NULL;
-    t->type = STRUCT;
-    t->fmt = NULL;
-    if(in->type == NAME) parseFields(in,t, unnamed_types, named_types);
-    else if(in->type == RPARENTHESIS) sequence_init(&(t->fields));      
-    sequence_push(unnamed_types,t);
-    ev->type = t;
-  }
+  token = getToken(in);
+  if(in->type == FORWARDSLASH){ //</event> NOTHING
+    ev->type = NULL;
+  }else if(in->type == NAME){
+    if(strcmp("struct",token)==0 || strcmp("typeref",token)==0){
+      ungetToken(in);
+      ev->type = parseType(in,NULL, unnamed_types, named_types);
+      if(ev->type->type != STRUCT && ev->type->type != NONE) 
+	in->error(in,"type must be a struct");     
+    }else in->error(in, "not a valid type");
 
-  /* Or a complete type declaration but it must be a struct */
-  else if(in->type == NAME){
-    ev->type = parseType(in,NULL, unnamed_types, named_types);
-    if(ev->type->type != STRUCT && ev->type->type != NONE) in->error(in,"type must be a struct");
+    getLAnglebracket(in);
+    getForwardslash(in);    
   }else in->error(in,"not a struct type");
 
-  getRParenthesis(in);
-  getSemiColon(in);
+  token = getName(in);
+  if(strcmp("event",token))in->error(in,"not an event definition");
+  getRAnglebracket(in);  //</event>
 }
 
 /*****************************************************************************
  *Function name
- *    parseField  : get field infomation from buffer 
+ *    parseField    : get field infomation from buffer 
  *Input params 
- *    in          : input file handle
- *    t           : type descriptor
+ *    in            : input file handle
+ *    t             : type descriptor
+ *    unnamed_types : array of unamed types
+ *    named_types   : array of named types
  ****************************************************************************/
 
 void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
@@ -191,28 +352,24 @@ void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
   char * token;
   field *f;
 
-  sequence_init(&(t->fields));
+  f = (field *)memAlloc(sizeof(field));
+  sequence_push(&(t->fields),f);
 
-  token = getToken(in);
-  while(in->type == NAME && strcmp(token,"field") == 0) {
-    f = (field *)memAlloc(sizeof(field));
-    sequence_push(&(t->fields),f);
+  //<field name=field_name> <description> <type> </field>
+  f->name = allocAndCopy(getNameAttribute(in)); 
+  getRAnglebracket(in);
 
-    getLParenthesis(in);
-    f->name = (char *)allocAndCopy(getName(in));
-    getComa(in);
-    f->description = (char *)allocAndCopy(getQuotedString(in));
-    getComa(in);
-    f->type = parseType(in,NULL, unnamed_types, named_types);
-    getRParenthesis(in);
-    
-    token = getToken(in);
-    if(in->type == COMA) token = getName(in);
-    else ungetToken(in); // no more fields, it must be a ')'
-  }
+  f->description = allocAndCopy(getDescription(in));
 
-  if(in->type == NAME && strcmp(token,"field") != 0)
-    in->error(in,"not a field");
+  //<int size=...>
+  getLAnglebracket(in);
+  f->type = parseType(in,NULL, unnamed_types, named_types);
+
+  getLAnglebracket(in);
+  getForwardslash(in);
+  token = getName(in);
+  if(strcmp("field",token))in->error(in,"not a valid field definition");
+  getRAnglebracket(in); //</field>
 }
 
 
@@ -230,6 +387,8 @@ void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
  *Input params 
  *    in               : input file handle
  *    inType           : a type descriptor          
+ *    unnamed_types    : array of unamed types
+ *    named_types      : array of named types
  *Return values  
  *    type_descriptor* : a type descriptor             
  ****************************************************************************/
@@ -237,7 +396,7 @@ void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
 type_descriptor *parseType(parse_file *in, type_descriptor *inType, 
 			   sequence * unnamed_types, table * named_types) 
 {
-  char *token, *car;
+  char *token;
   type_descriptor *t;
 
   if(inType == NULL) {
@@ -253,118 +412,149 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
 
   if(strcmp(token,"struct") == 0) {
     t->type = STRUCT;
-    getLParenthesis(in);
-    parseFields(in,t, unnamed_types, named_types);
-    getRParenthesis(in);
+    getRAnglebracket(in); //<struct>
+    getLAnglebracket(in); //<field name=..>
+    token = getToken(in);
+    sequence_init(&(t->fields));
+    while(strcmp("field",token) == 0){
+      parseFields(in,t, unnamed_types, named_types);
+      
+      //next field
+      getLAnglebracket(in);
+      token = getToken(in);	
+    }
+    if(strcmp("/",token))in->error(in,"not a valid structure definition");
+    token = getName(in);
+    if(strcmp("struct",token)!=0)
+      in->error(in,"not a valid structure definition");
+    getRAnglebracket(in); //</struct>
+  }
+  else if(strcmp(token,"union") == 0) {
+    t->type = UNION;
+    t->size = getSizeAttribute(in);
+    getRAnglebracket(in); //<union typecodesize=isize>
+
+    getLAnglebracket(in); //<field name=..>
+    token = getToken(in);
+    sequence_init(&(t->fields));
+    while(strcmp("field",token) == 0){
+      parseFields(in,t, unnamed_types, named_types);
+      
+      //next field
+      getLAnglebracket(in);
+      token = getToken(in);	
+    }
+    if(strcmp("/",token))in->error(in,"not a valid union definition");
+    token = getName(in);
+    if(strcmp("union",token)!=0)
+      in->error(in,"not a valid union definition");        
+    getRAnglebracket(in); //</union>
   }
   else if(strcmp(token,"array") == 0) {
     t->type = ARRAY;
-    getLParenthesis(in);
-    t->size = getNumber(in);
-    getComa(in);
+    t->size = getValueAttribute(in);
+    getRAnglebracket(in); //<array size=n>
+
+    getLAnglebracket(in); //<type struct> 
     t->nested_type = parseType(in,NULL, unnamed_types, named_types);
-    getRParenthesis(in);
+
+    getLAnglebracket(in); //</array>
+    getForwardslash(in);
+    token = getName(in);
+    if(strcmp("array",token))in->error(in,"not a valid array definition");
+    getRAnglebracket(in);  //</array>
   }
   else if(strcmp(token,"sequence") == 0) {
     t->type = SEQUENCE;
-    getLParenthesis(in);
-    t->size = getSize(in);
-    getComa(in);
+    t->size = getSizeAttribute(in);
+    getRAnglebracket(in); //<array lengthsize=isize>
+
+    getLAnglebracket(in); //<type struct> 
     t->nested_type = parseType(in,NULL, unnamed_types, named_types);
-    getRParenthesis(in);
+
+    getLAnglebracket(in); //</sequence>
+    getForwardslash(in);
+    token = getName(in);
+    if(strcmp("sequence",token))in->error(in,"not a valid sequence definition");
+    getRAnglebracket(in); //</sequence>
   }
   else if(strcmp(token,"enum") == 0) {
+    char * str, *str1;
     t->type = ENUM;
     sequence_init(&(t->labels));
-    getLParenthesis(in);
-    t->size = getSize(in);
-    getComa(in);
-    token = getToken(in);
-    if(in->type == QUOTEDSTRING){
-      t->fmt = allocAndCopy(token);
-      getComa(in);
-    }else ungetToken(in);
-    getLParenthesis(in);
+    t->size = getSizeAttribute(in);
+    t->fmt = allocAndCopy(getFormatAttribute(in));
+    getRAnglebracket(in);
 
-    token = getToken(in);
-    while(in->type != RPARENTHESIS) {
-      if(in->type != NAME) in->error(in,"Name token was expected");
-      car = allocAndCopy(token);
-      token = getToken(in);
-      if(in->type == COMA){
-	sequence_push(&(t->labels),allocAndCopy(car));
-	token = getName(in);
-      }else if(in->type == EQUAL){ //label followed by '=' and a number, e.x. label1 = 1,
-	car = appendString(car, token);
-	token = getToken(in);
-	if(in->type != NUMBER) in->error(in,"Number token was expected");
-	car = appendString(car, token);
-	sequence_push(&(t->labels),allocAndCopy(car));	
-	token = getToken(in);
-	if(in->type == COMA) token = getName(in);
-	else ungetToken(in);
-      }else{
-	sequence_push(&(t->labels),allocAndCopy(car));
-	ungetToken(in);
-      }
-    }  
-    getRParenthesis(in);
-    getRParenthesis(in);
+    //<label name=label1 value=n/>
+    getLAnglebracket(in);
+    token = getToken(in); //"label" or "/"
+    while(strcmp("label",token) == 0){
+      str   = allocAndCopy(getNameAttribute(in));      
+      token = getValueStrAttribute(in);
+      if(token){
+	str1 = appendString(str,"=");
+	free(str);
+	str = appendString(str1,token);
+	free(str1);
+	sequence_push(&(t->labels),allocAndCopy(str));
+	free(str);
+      }else
+	sequence_push(&(t->labels),allocAndCopy(str));
+
+      getForwardslash(in);
+      getRAnglebracket(in);
+      
+      //next label definition
+      getLAnglebracket(in);
+      token = getToken(in); //"label" or "/"      
+    }
+    if(strcmp("/",token))in->error(in, "not a valid enum definition");
+    token = getName(in);
+    if(strcmp("enum",token))in->error(in, "not a valid enum definition");
+    getRAnglebracket(in); //</label>
   }
   else if(strcmp(token,"int") == 0) {
     t->type = INT;
-    getLParenthesis(in);
-    t->size = getSize(in);
-    token = getToken(in);
-    if(in->type == COMA) {
-      token = getQuotedString(in);
-      t->fmt = allocAndCopy(token);
-    }
-    else ungetToken(in);
-    getRParenthesis(in);
+    t->size = getSizeAttribute(in);
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
   }
   else if(strcmp(token,"uint") == 0) {
     t->type = UINT;
-    getLParenthesis(in);
-    t->size = getSize(in);
-    token = getToken(in);
-    if(in->type == COMA) {
-      token = getQuotedString(in);
-      t->fmt = allocAndCopy(token);
-    }
-    else ungetToken(in);
-    getRParenthesis(in);
+    t->size = getSizeAttribute(in);
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
   }
   else if(strcmp(token,"float") == 0) {
     t->type = FLOAT;
-    getLParenthesis(in);
-    t->size = getSize(in);
-    token = getToken(in);
-    if(in->type == COMA) {
-      token = getQuotedString(in);
-      t->fmt = allocAndCopy(token);
-    }
-    else ungetToken(in);
-    getRParenthesis(in);
+    t->size = getSizeAttribute(in);
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
   }
   else if(strcmp(token,"string") == 0) {
     t->type = STRING;
-    getLParenthesis(in);
-    token = getToken(in);
-    if(in->type == QUOTEDSTRING) t->fmt = allocAndCopy(token);
-    else ungetToken(in);
-    getRParenthesis(in);
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
   }
-  else {
-    /* Must be a named type */
+  else if(strcmp(token,"typeref") == 0){
+    // Must be a named type
     if(inType != NULL) 
       in->error(in,"Named type cannot refer to a named type");
     else {
       free(t);
       sequence_pop(unnamed_types);
-      return(find_named_type(token, named_types));
+      token = getNameAttribute(in);
+      t = find_named_type(token, named_types);
+      getForwardslash(in);  //<typeref name=type_name/>
+      getRAnglebracket(in);
+      return t;
     }
-  }
+  }else in->error(in,"not a valid type");
 
   return t;
 }    
@@ -374,6 +564,7 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
  *    find_named_type     : find a named type from hash table 
  *Input params 
  *    name                : type name          
+ *    named_types         : array of named types
  *Return values  
  *    type_descriptor *   : a type descriptor                       
  *****************************************************************************/
@@ -398,6 +589,8 @@ type_descriptor * find_named_type(char *name, table * named_types)
  *    parseTypeDefinition : get type information from type definition 
  *Input params 
  *    in                  : input file handle          
+ *    unnamed_types       : array of unamed types
+ *    named_types         : array of named types
  *****************************************************************************/
 
 void parseTypeDefinition(parse_file * in, sequence * unnamed_types,
@@ -406,21 +599,28 @@ void parseTypeDefinition(parse_file * in, sequence * unnamed_types,
   char *token;
   type_descriptor *t;
 
-  getLParenthesis(in);
-  token = getName(in);
+  token = getNameAttribute(in);
   t = find_named_type(token, named_types);
-  getComa(in);
 
   if(t->type != NONE) in->error(in,"redefinition of named type");
+  getRAnglebracket(in); //<type name=type_name>
+  getLAnglebracket(in); //<struct>
+  token = getName(in);
+  if(strcmp("struct",token))in->error(in,"not a valid type definition");
+  ungetToken(in);
   parseType(in,t, unnamed_types, named_types);
-
-  getRParenthesis(in);
-  getSemiColon(in);
+  
+  //</type>
+  getLAnglebracket(in);
+  getForwardslash(in);
+  token = getName(in);
+  if(strcmp("type",token))in->error(in,"not a valid type definition");  
+  getRAnglebracket(in); //</type>
 }
 
 /**************************************************************************
  * Function :
- *    getComa, getName, getNumber, getLParenthesis, getRParenthesis, getEqual
+ *    getComa, getName, getNumber, getEqual
  * Description :
  *    Read a token from the input file, check its type, return it scontent.
  *
@@ -450,30 +650,30 @@ int getNumber(parse_file * in)
   return atoi(token);
 }
 
-char *getComa(parse_file * in) 
+char *getForwardslash(parse_file * in) 
 {
   char *token;
 
   token = getToken(in);
-  if(in->type != COMA) in->error(in, "Coma token was expected");
+  if(in->type != FORWARDSLASH) in->error(in, "forward slash token was expected");
   return token;
 }
 
-char *getLParenthesis(parse_file * in) 
+char *getLAnglebracket(parse_file * in) 
 {
   char *token;
 
   token = getToken(in);
-  if(in->type != LPARENTHESIS) in->error(in, "Left parenthesis was expected");
+  if(in->type != LANGLEBRACKET) in->error(in, "Left angle bracket was expected");
   return token;
 }
 
-char *getRParenthesis(parse_file * in) 
+char *getRAnglebracket(parse_file * in) 
 {
   char *token;
 
   token = getToken(in);
-  if(in->type != RPARENTHESIS) in->error(in, "Right parenthesis was expected");
+  if(in->type != RANGLEBRACKET) in->error(in, "Right angle bracket was expected");
   return token;
 }
 
@@ -486,15 +686,6 @@ char *getQuotedString(parse_file * in)
   return token;
 }
 
-char * getSemiColon(parse_file *in)
-{
-  char *token;
-
-  token = getToken(in);
-  if(in->type != SEMICOLON) in->error(in, "semicolon was expected");
-  return token;
-}
-
 char * getEqual(parse_file *in)
 {
   char *token;
@@ -502,6 +693,18 @@ char * getEqual(parse_file *in)
   token = getToken(in);
   if(in->type != EQUAL) in->error(in, "equal was expected");
   return token;
+}
+
+char seekNextChar(parse_file *in)
+{
+  char car;
+  while((car = getc(in->fp)) != EOF) {
+    if(!isspace(car)){
+      ungetc(car,in->fp);
+      return car;
+    }
+  }  
+  return EOF;
 }
 
 /******************************************************************
@@ -555,23 +758,18 @@ char *getToken(parse_file * in)
     case EOF:
       in->type = ENDFILE;
       break;
-    case ',':
-      in->type = COMA;
+    case '/':
+      in->type = FORWARDSLASH;
       in->buffer[pos] = car;
       pos++;
       break;
-    case '(':
-      in->type = LPARENTHESIS;
+    case '<':
+      in->type = LANGLEBRACKET;
       in->buffer[pos] = car;
       pos++;
       break;
-    case ')':
-      in->type = RPARENTHESIS;
-      in->buffer[pos] = car;
-      pos++;
-      break;
-    case ';':
-      in->type = SEMICOLON;
+    case '>':
+      in->type = RANGLEBRACKET;
       in->buffer[pos] = car;
       pos++;
       break;
@@ -714,22 +912,20 @@ void checkNamedTypesImplemented(table * named_types)
 void generateChecksum( char* facName, unsigned long * checksum, sequence * events)
 {
   unsigned long crc ;
-  int pos, nestedStruct;
+  int pos;
   event * ev;
   char str[256];
 
   crc = crc32(facName);
   for(pos = 0; pos < events->position; pos++){
     ev = (event *)(events->array[pos]);
-    ev->nested = 0; //by default, event has no nested struct
     crc = partial_crc32(ev->name,crc);    
-    nestedStruct = 0;
+    if(!ev->type) continue; //event without type
     if(ev->type->type != STRUCT){
       sprintf(str,"event '%s' has a type other than STRUCT",ev->name);
       error_callback(NULL, str);
     }
-    crc = getTypeChecksum(crc, ev->type,&nestedStruct);
-    if(nestedStruct ) ev->nested = 1;
+    crc = getTypeChecksum(crc, ev->type);
   }
   *checksum = crc;
 }
@@ -744,14 +940,12 @@ void generateChecksum( char* facName, unsigned long * checksum, sequence * event
  *    unsigned long     : checksum 
  *****************************************************************************/
 
-unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type,
-			      int * nestedStruct)
+unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
 {
   unsigned long crc = aCrc;
   char * str = NULL, buf[16];
-  int flag = 0, pos, max, min;
+  int flag = 0, pos;
   field * fld;
-  data_type dt;
 
   switch(type->type){
     case INT:
@@ -785,6 +979,10 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type,
       str = allocAndCopy("struct");
       flag = 1;
       break;
+    case UNION:
+      str = allocAndCopy("union");
+      flag = 1;
+      break;
     default:
       error_callback(NULL, "named type has no definition");
       break;
@@ -796,25 +994,16 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type,
   if(type->fmt) crc = partial_crc32(type->fmt,crc);
     
   if(type->type == ARRAY || type->type == SEQUENCE){
-    dt = type->nested_type->type;
-    if(dt == ARRAY || dt == SEQUENCE || dt == STRUCT) *nestedStruct += 1;
-    crc = getTypeChecksum(crc,type->nested_type,nestedStruct);
-  }else if(type->type == STRUCT){
-    if(type->fields.position != 0){//not a empty struct
-      max = 0;      
-      for(pos =0; pos < type->fields.position; pos++){
-	min = 0;
-	fld = (field *) type->fields.array[pos];
-	crc = partial_crc32(fld->name,crc);
-	if(fld->type->type == STRUCT) min++;
-	crc = getTypeChecksum(crc, fld->type,&min);
-	if(min>max) max = min;
-      }
-      *nestedStruct += max;
-    }
+    crc = getTypeChecksum(crc,type->nested_type);
+  }else if(type->type == STRUCT || type->type == UNION){
+    for(pos =0; pos < type->fields.position; pos++){
+      fld = (field *) type->fields.array[pos];
+      crc = partial_crc32(fld->name,crc);
+      crc = getTypeChecksum(crc, fld->type);
+    }    
   }else if(type->type == ENUM){
     for(pos = 0; pos < type->labels.position; pos++)
-      crc = partial_crc32((char*)type->labels.array[pos],crc);    
+      crc = partial_crc32((char*)type->labels.array[pos],crc);
   }
 
   return crc;
@@ -975,6 +1164,7 @@ void *table_find_int(table *t, int *key)
 char *appendString(char *s, char *suffix) 
 {
   char *tmp;
+  if(suffix == NULL) return s;
 
   tmp = (char *)memAlloc(strlen(s) + strlen(suffix) + 1);
   strcpy(tmp,s);

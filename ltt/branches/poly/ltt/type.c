@@ -21,7 +21,7 @@ static unsigned floatSizes[] = {
  *    char *             : the name of the event type
  ****************************************************************************/
 
-char *ltt_eventtype_name(ltt_eventtype *et)
+char *ltt_eventtype_name(LttEventType *et)
 {
   return et->name;
 }
@@ -35,9 +35,53 @@ char *ltt_eventtype_name(ltt_eventtype *et)
  *    char *             : the description of the event type
  ****************************************************************************/
 
-char *ltt_eventtype_description(ltt_eventtype *et)
+char *ltt_eventtype_description(LttEventType *et)
 {
   return et->description;
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_eventtype_facility : get the facility which contains the event type
+ *Input params
+ *    et                     : an  event type   
+ *Return value
+ *    LttFacility *          : the facility
+ ****************************************************************************/
+
+LttFacility *ltt_eventtype_facility(LttEventType *et)
+{
+  return et->facility;
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_eventtype_relative_id : get the relative id of the event type
+ *Input params
+ *    et                        : an  event type   
+ *Return value
+ *    unsigned *                : the relative id
+ ****************************************************************************/
+
+unsigned *ltt_eventtype_relative_id(LttEventType *et)
+{
+  return (unsigned*)&et->index;
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_eventtype_id : get the id of the event type
+ *Input params
+ *    et               : an  event type   
+ *Return value
+ *    unsigned *       : the id
+ ****************************************************************************/
+
+unsigned *ltt_eventtype_id(LttEventType *et)
+{
+  unsigned *id = g_new(unsigned,1);
+  *id = et->facility->base_id + et->index;
+  return (unsigned*)id;
 }
 
 /*****************************************************************************
@@ -46,12 +90,26 @@ char *ltt_eventtype_description(ltt_eventtype *et)
  *Input params
  *    et                 : an  event type   
  *Return value
- *    ltt_type *         : the type of the event type
+ *    LttType *         : the type of the event type
  ****************************************************************************/
 
-ltt_type *ltt_eventtype_type(ltt_eventtype *et)
+LttType *ltt_eventtype_type(LttEventType *et)
 {
   return et->root_field->field_type;
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_eventtype_field : get the root filed of the event type
+ *Input params
+ *    et                  : an  event type   
+ *Return value
+ *    LttField *          : the root filed of the event type
+ ****************************************************************************/
+
+LttField *ltt_eventtype_field(LttEventType *et)
+{
+  return et->root_field;
 }
 
 /*****************************************************************************
@@ -63,7 +121,7 @@ ltt_type *ltt_eventtype_type(ltt_eventtype *et)
  *    char *         : the name of the type
  ****************************************************************************/
 
-char *ltt_type_name(ltt_type *t)
+char *ltt_type_name(LttType *t)
 {
   return t->element_name;
 }
@@ -74,10 +132,10 @@ char *ltt_type_name(ltt_type *t)
  *Input params
  *    t              : a type   
  *Return value
- *    ltt_type_enum  : the type class of the type
+ *    LttTypeEnum  : the type class of the type
  ****************************************************************************/
 
-ltt_type_enum ltt_type_class(ltt_type *t)
+LttTypeEnum ltt_type_class(LttType *t)
 {
   return t->type_class;
 }
@@ -94,7 +152,7 @@ ltt_type_enum ltt_type_class(ltt_type *t)
  *    unsigned      : the type size
  ****************************************************************************/
 
-unsigned ltt_type_size(ltt_tracefile * tf, ltt_type *t)
+unsigned ltt_type_size(LttTrace * trace, LttType *t)
 {
   if(t->type_class==LTT_STRUCT || t->type_class==LTT_ARRAY || 
      t->type_class==LTT_STRING) return 0;
@@ -105,7 +163,7 @@ unsigned ltt_type_size(ltt_tracefile * tf, ltt_type *t)
     if(t->size < sizeof(intSizes)/sizeof(unsigned))
       return intSizes[t->size];
     else{
-      ltt_arch_size size = tf->trace_header->arch_size;
+      LttArchSize size = trace->system_description->size;
       if(size == LTT_LP32)
 	return sizeof(int16_t);
       else if(size == LTT_ILP32 || size == LTT_LP64)
@@ -123,10 +181,10 @@ unsigned ltt_type_size(ltt_tracefile * tf, ltt_type *t)
  *Input params
  *    t                     : a type   
  *Return value
- *    ltt_type              : the type of nested element of array or sequence
+ *    LttType              : the type of nested element of array or sequence
  ****************************************************************************/
 
-ltt_type *ltt_type_element_type(ltt_type *t)
+LttType *ltt_type_element_type(LttType *t)
 {
   if(t->type_class != LTT_ARRAY || t->type_class != LTT_SEQUENCE)
     return NULL;
@@ -142,7 +200,7 @@ ltt_type *ltt_type_element_type(ltt_type *t)
  *    unsigned                : the number of elements for arrays
  ****************************************************************************/
 
-unsigned ltt_type_element_number(ltt_type *t)
+unsigned ltt_type_element_number(LttType *t)
 {
   if(t->type_class != LTT_ARRAY)
     return 0;
@@ -158,9 +216,9 @@ unsigned ltt_type_element_number(ltt_type *t)
  *    unsigned               : the number of members for structure
  ****************************************************************************/
 
-unsigned ltt_type_member_number(ltt_type *t)
+unsigned ltt_type_member_number(LttType *t)
 {
-  if(t->type_class != LTT_STRUCT)
+  if(t->type_class != LTT_STRUCT || t->type_class != LTT_UNION)
     return 0;
   return t->element_number;  
 }
@@ -172,10 +230,10 @@ unsigned ltt_type_member_number(ltt_type *t)
  *    t                    : a type   
  *    i                    : index of the member
  *Return value
- *    ltt_type *           : the type of structure member
+ *    LttType *           : the type of structure member
  ****************************************************************************/
 
-ltt_type *ltt_type_member_type(ltt_type *t, unsigned i)
+LttType *ltt_type_member_type(LttType *t, unsigned i)
 {
   if(t->type_class != LTT_STRUCT) return NULL;
   if(i > t->element_number || i == 0 ) return NULL;
@@ -194,7 +252,7 @@ ltt_type *ltt_type_member_type(ltt_type *t, unsigned i)
  *    char *              : symbolic string associated with a value
  ****************************************************************************/
 
-char *ltt_enum_string_get(ltt_type *t, unsigned i)
+char *ltt_enum_string_get(LttType *t, unsigned i)
 {  
   if(t->type_class != LTT_ENUM) return NULL;
   if(i > t->element_number || i == 0 ) return NULL;
@@ -208,10 +266,10 @@ char *ltt_enum_string_get(ltt_type *t, unsigned i)
  *Input params
  *    f                 : a field   
  *Return value
- *    ltt_field *       : the field of the nested element
+ *    LttField *       : the field of the nested element
  ****************************************************************************/
 
-ltt_field *ltt_field_element(ltt_field *f)
+LttField *ltt_field_element(LttField *f)
 {
   if(f->field_type->type_class != LTT_ARRAY ||
      f->field_type->type_class != LTT_SEQUENCE)
@@ -227,10 +285,10 @@ ltt_field *ltt_field_element(ltt_field *f)
  *    f                 : a field   
  *    i                 : index of member field
  *Return value
- *    ltt_field *       : the field of the nested element
+ *    LttField *       : the field of the nested element
  ****************************************************************************/
 
-ltt_field *ltt_field_member(ltt_field *f, unsigned i)
+LttField *ltt_field_member(LttField *f, unsigned i)
 {
   if(f->field_type->type_class != LTT_STRUCT) return NULL;
   if(i==0 || i>f->field_type->element_number) return NULL;
@@ -246,7 +304,7 @@ ltt_field *ltt_field_member(ltt_field *f, unsigned i)
  *    ltt_tyoe *      : the type of field
  ****************************************************************************/
 
-ltt_type *ltt_field_type(ltt_field *f)
+LttType *ltt_field_type(LttField *f)
 {
   return f->field_type;
 }

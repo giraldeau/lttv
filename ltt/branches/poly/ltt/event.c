@@ -1,22 +1,21 @@
 #include <stdio.h>
 #include <asm/types.h>
 #include <linux/byteorder/swab.h>
-
 #include <ltt/LTTTypes.h> 
 #include "parser.h"
 #include <ltt/event.h>
 
 /*****************************************************************************
  *Function name
- *    ltt_facility_eventtype_id: get event type id 
- *                               (base id + position of the event)
+ *    ltt_event_eventtype_id: get event type id 
+ *                            (base id + position of the event)
  *Input params
- *    e                        : an instance of an event type   
+ *    e                     : an instance of an event type   
  *Return value
- *    unsigned                 : event type id
+ *    unsigned              : event type id
  ****************************************************************************/
 
-unsigned ltt_event_eventtype_id(ltt_event *e)
+unsigned ltt_event_eventtype_id(LttEvent *e)
 {
   return (unsigned) e->event_id;
 }
@@ -27,19 +26,14 @@ unsigned ltt_event_eventtype_id(ltt_event *e)
  *Input params
  *    e                  : an instance of an event type   
  *Return value
- *    ltt_facility *     : the facility of the event
+ *    LttFacility *     : the facility of the event
  ****************************************************************************/
 
-ltt_facility *ltt_event_facility(ltt_event *e)
+LttFacility *ltt_event_facility(LttEvent *e)
 {
-  ltt_eventtype * evT;
-  ptr_wrap * ptr;
-  ptr = (ptr_wrap*)g_ptr_array_index(e->tracefile->eventtype_event_id, 
-					  (gint)(e->event_id));
-  evT = (ltt_eventtype*)(ptr->ptr);
-
-  if(!evT) return NULL;
-  return evT->facility;
+  LttTrace * trace = e->tracefile->trace;
+  unsigned id = e->event_id;
+  return ltt_trace_facility_by_id(trace,id);
 }
 
 /*****************************************************************************
@@ -48,15 +42,30 @@ ltt_facility *ltt_event_facility(ltt_event *e)
  *Input params
  *    e                   : an instance of an event type   
  *Return value
- *    ltt_eventtype *     : the event type of the event
+ *    LttEventType *     : the event type of the event
  ****************************************************************************/
 
-ltt_eventtype *ltt_event_eventtype(ltt_event *e)
+LttEventType *ltt_event_eventtype(LttEvent *e)
 {
-  ptr_wrap * ptr;
-  ptr = (ptr_wrap*)g_ptr_array_index(e->tracefile->eventtype_event_id, 
-					  (gint)(e->event_id));
-  return (ltt_eventtype*)(ptr->ptr);
+  LttFacility* facility = ltt_event_facility(e);
+  if(!facility) return NULL;
+  return facility->events[e->event_id - facility->base_id];
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_event_field : get the root field of the event
+ *Input params
+ *    e               : an instance of an event type   
+ *Return value
+ *    LttField *      : the root field of the event
+ ****************************************************************************/
+
+LttField *ltt_event_field(LttEvent *e)
+{
+  LttEventType * event_type = ltt_event_eventtype(e);
+  if(!event_type) return NULL;
+  return event_type->root_field;
 }
 
 /*****************************************************************************
@@ -65,12 +74,12 @@ ltt_eventtype *ltt_event_eventtype(ltt_event *e)
  *Input params
  *    e              : an instance of an event type   
  *Return value
- *    ltt_time       : the time of the event
+ *    LttTime       : the time of the event
  ****************************************************************************/
 
-ltt_time ltt_event_time(ltt_event *e)
+LttTime ltt_event_time(LttEvent *e)
 {
-  return getEventTime(e->tracefile);
+  return e->event_time;
 }
 
 /*****************************************************************************
@@ -79,12 +88,12 @@ ltt_time ltt_event_time(ltt_event *e)
  *Input params
  *    e              : an instance of an event type   
  *Return value
- *    ltt_time       : the cycle count of the event
+ *    LttCycleCount  : the cycle count of the event
  ****************************************************************************/
 
-ltt_cycle_count ltt_event_cycle_count(ltt_event *e)
+LttCycleCount ltt_event_cycle_count(LttEvent *e)
 {
-  return e->cycle_count;
+  return e->event_cycle_count;
 }
 
 /*****************************************************************************
@@ -96,23 +105,9 @@ ltt_cycle_count ltt_event_cycle_count(ltt_event *e)
  *    unsigned       : the cpu id
  ****************************************************************************/
 
-unsigned ltt_event_cpu_id(ltt_event *e)
-{
-  return e->tracefile->trace_header->cpu_id;
-}
-
-/*****************************************************************************
- *Function name
- *    ltt_event_cpu_i: get the name of the system where the event happens
- *Input params
- *    e              : an instance of an event type   
- *Return value
- *    char *         : the name of the system
- ****************************************************************************/
-
-char *ltt_event_system_name(ltt_event *e)
-{
-  return e->tracefile->trace_header->system_name;  
+unsigned ltt_event_cpu_id(LttEvent *e)
+{  
+  return (unsigned)atoi(e->tracefile->name);
 }
 
 /*****************************************************************************
@@ -124,7 +119,7 @@ char *ltt_event_system_name(ltt_event *e)
  *    void *         : pointer to the raw data for the event
  ****************************************************************************/
 
-void *ltt_event_data(ltt_event *e)
+void *ltt_event_data(LttEvent *e)
 {
   return e->data;
 }
@@ -142,7 +137,7 @@ void *ltt_event_data(ltt_event *e)
  *    unsigned       : the number of elements for an array/sequence field
  ****************************************************************************/
 
-unsigned ltt_event_field_element_number(ltt_event *e, ltt_field *f)
+unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
 {
   if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
@@ -160,20 +155,17 @@ unsigned ltt_event_field_element_number(ltt_event *e, ltt_field *f)
  *    e              : an instance of an event type   ????
  *    f              : a field of the instance
  *    i              : the ith element
- *Return value
- *    int            : ???? error number
  ****************************************************************************/
 
-int ltt_event_field_element_select(ltt_event *e, ltt_field *f, unsigned i)
+void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
 {
    if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
-     return -1; //?????
+     return ;
    
-   if(f->field_type->element_number < i || i == 0) return -1; //????
+   if(f->field_type->element_number < i || i == 0) return;
 
    f->current_element = i - 1;
-   return 0;
 }
 
 /*****************************************************************************
@@ -181,12 +173,12 @@ int ltt_event_field_element_select(ltt_event *e, ltt_field *f, unsigned i)
  * conversions
  ****************************************************************************/
 
-unsigned ltt_event_get_unsigned(ltt_event *e, ltt_field *f)
+unsigned ltt_event_get_unsigned(LttEvent *e, LttField *f)
 {
-  ltt_arch_size rSize = e->tracefile->trace_header->arch_size;
-  int revFlag = e->tracefile->my_arch_endian == 
-                e->tracefile->trace_header->arch_endian ? 0:1;
-  ltt_type_enum t = f->field_type->type_class;
+  LttArchSize rSize = e->tracefile->trace->system_description->size;
+  int revFlag = e->tracefile->trace->my_arch_endian == 
+                e->tracefile->trace->system_description->endian ? 0:1;
+  LttTypeEnum t = f->field_type->type_class;
 
   if(t != LTT_UINT || t != LTT_ENUM)
     g_error("The type of the field is not unsigned int\n");
@@ -215,11 +207,11 @@ unsigned ltt_event_get_unsigned(ltt_event *e, ltt_field *f)
   }
 }
 
-int ltt_event_get_int(ltt_event *e, ltt_field *f)
+int ltt_event_get_int(LttEvent *e, LttField *f)
 {
-  ltt_arch_size rSize = e->tracefile->trace_header->arch_size;
-  int revFlag = e->tracefile->my_arch_endian == 
-                e->tracefile->trace_header->arch_endian ? 0:1;
+  LttArchSize rSize = e->tracefile->trace->system_description->size;
+  int revFlag = e->tracefile->trace->my_arch_endian == 
+                e->tracefile->trace->system_description->endian ? 0:1;
 
   if(f->field_type->type_class != LTT_INT)
     g_error("The type of the field is not int\n");
@@ -248,12 +240,12 @@ int ltt_event_get_int(ltt_event *e, ltt_field *f)
   }
 }
 
-unsigned long ltt_event_get_long_unsigned(ltt_event *e, ltt_field *f)
+unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
 {
-  ltt_arch_size rSize = e->tracefile->trace_header->arch_size;
-  int revFlag = e->tracefile->my_arch_endian == 
-                e->tracefile->trace_header->arch_endian ? 0:1;
-  ltt_type_enum t = f->field_type->type_class;
+  LttArchSize rSize = e->tracefile->trace->system_description->size;
+  int revFlag = e->tracefile->trace->my_arch_endian == 
+                e->tracefile->trace->system_description->endian ? 0:1;
+  LttTypeEnum t = f->field_type->type_class;
 
   if(t != LTT_UINT || t != LTT_ENUM)
     g_error("The type of the field is not unsigned long\n");
@@ -275,11 +267,11 @@ unsigned long ltt_event_get_long_unsigned(ltt_event *e, ltt_field *f)
   }
 }
 
-long int ltt_event_get_long_int(ltt_event *e, ltt_field *f)
+long int ltt_event_get_long_int(LttEvent *e, LttField *f)
 {
-  ltt_arch_size rSize = e->tracefile->trace_header->arch_size;
-  int revFlag = e->tracefile->my_arch_endian == 
-                e->tracefile->trace_header->arch_endian ? 0:1;
+  LttArchSize rSize = e->tracefile->trace->system_description->size;
+  int revFlag = e->tracefile->trace->my_arch_endian == 
+                e->tracefile->trace->system_description->endian ? 0:1;
 
   if( f->field_type->type_class != LTT_INT)
     g_error("The type of the field is not long int\n");
@@ -301,10 +293,10 @@ long int ltt_event_get_long_int(ltt_event *e, ltt_field *f)
   }
 }
 
-float ltt_event_get_float(ltt_event *e, ltt_field *f)
+float ltt_event_get_float(LttEvent *e, LttField *f)
 {
-  int revFlag = e->tracefile->my_arch_endian == 
-                e->tracefile->trace_header->arch_endian ? 0:1;
+  int revFlag = e->tracefile->trace->my_arch_endian == 
+                e->tracefile->trace->system_description->endian ? 0:1;
 
   if(f->field_type->type_class != LTT_FLOAT || 
      (f->field_type->type_class == LTT_FLOAT && f->field_size != 4))
@@ -319,10 +311,10 @@ float ltt_event_get_float(ltt_event *e, ltt_field *f)
   }
 }
 
-double ltt_event_get_double(ltt_event *e, ltt_field *f)
+double ltt_event_get_double(LttEvent *e, LttField *f)
 {
-  int revFlag = e->tracefile->my_arch_endian == 
-                e->tracefile->trace_header->arch_endian ? 0:1;
+  int revFlag = e->tracefile->trace->my_arch_endian == 
+                e->tracefile->trace->system_description->endian ? 0:1;
 
   if(f->field_type->type_class != LTT_FLOAT || 
      (f->field_type->type_class == LTT_FLOAT && f->field_size != 8))
@@ -342,7 +334,7 @@ double ltt_event_get_double(ltt_event *e, ltt_field *f)
  * the same tracefile. ????
  ****************************************************************************/
 
-char *ltt_event_get_string(ltt_event *e, ltt_field *f)
+char *ltt_event_get_string(LttEvent *e, LttField *f)
 {
   if(f->field_type->type_class != LTT_STRING)
     g_error("The field contains no string\n");

@@ -1,5 +1,5 @@
-#ifndef TRACEFILE_H
-#define TRACEFILE_H
+#ifndef TRACE_H
+#define TRACE_H
 
 #include <ltt/ltt.h>
 
@@ -18,10 +18,10 @@ void ltt_trace_close(LttTrace *t);
 /* The characteristics of the system on which the trace was obtained
    is described in a LttSystemDescription structure. */
 
-typedef struct _LttSystemDescription {
+struct _LttSystemDescription {
   char *description;
   char *node_name;
-  char *domainname;
+  char *domain_name;
   unsigned nb_cpu;
   LttArchSize size;
   LttArchEndian endian;
@@ -37,9 +37,9 @@ typedef struct _LttSystemDescription {
   unsigned ltt_block_size;
   LttTime trace_start;
   LttTime trace_end;
-} LttSystemDescription;
+};
 
-LttSystemDescription *ltt_trace_system_description(LttTrace *t)
+LttSystemDescription *ltt_trace_system_description(LttTrace *t);
 
 
 /* Functions to discover the facilities in the trace. Once the number

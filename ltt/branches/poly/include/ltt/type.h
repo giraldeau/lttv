@@ -1,8 +1,6 @@
 #ifndef TYPE_H
 #define TYPE_H
 
-#include <ltt/ltt.h>
-
 
 /* Different types allowed */
 
@@ -10,6 +8,8 @@ typedef enum _LttTypeEnum
 { LTT_INT, LTT_UINT, LTT_FLOAT, LTT_STRING, LTT_ENUM, LTT_ARRAY, 
   LTT_SEQUENCE, LTT_STRUCT, LTT_UNION
 } LttTypeEnum;
+
+#include <ltt/ltt.h>
 
 
 /* All event types, data types and fields belong to their trace and 
@@ -41,7 +41,7 @@ char *ltt_type_name(LttType *t);
 
 LttTypeEnum ltt_type_class(LttType *t);
 
-unsigned ltt_type_size(LttTracefile *tf, LttType *t); 
+unsigned ltt_type_size(LttTrace *trace, LttType *t); 
 
 
 /* The type of nested elements for arrays and sequences. */

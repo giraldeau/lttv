@@ -2,49 +2,45 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <dirent.h>
 #include <linux/errno.h>  
 
 #include <ltt/LTTTypes.h>  
 #include "parser.h"
-#include <ltt/tracefile.h>
+#include <ltt/trace.h>
 
-//#include "default.h"  //yxx test
+#define DIR_NAME_SIZE 256
 
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
-void setFieldsOffset(ltt_tracefile * t, ltt_eventtype *evT, void *evD);
+void setFieldsOffset(LttTracefile * t, LttEventType *evT, void *evD);
 
 /* get the size of the field type according to the archtecture's
    size and endian type(info of the archecture) */
-int getFieldtypeSize(ltt_tracefile * t, ltt_eventtype * evT, int offsetRoot,
-		     int offsetParent, ltt_field * fld, void * evD );
+int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
+		     int offsetParent, LttField * fld, void * evD );
 
 /* read a fixed size or a block information from the file (fd) */
 int readFile(int fd, void * buf, size_t size, char * mesg);
-int readBlock(ltt_tracefile * tf, int whichBlock);
+int readBlock(LttTracefile * tf, int whichBlock);
 
 /* calculate cycles per nsec for current block */
-void getCyclePerNsec(ltt_tracefile * t);
-
-/* functions to release the memory occupied by the tables of a tracefile */
-void freeKey (gpointer key, gpointer value, gpointer user_data);
-void freeValue (gpointer key, gpointer value, gpointer user_data);
-void freeFacilityNameTable (gpointer key, gpointer value, gpointer user_data);
+void getCyclePerNsec(LttTracefile * t);
 
 /* reinitialize the info of the block which is already in the buffer */
-void updateTracefile(ltt_tracefile * tf);
+void updateTracefile(LttTracefile * tf);
 
 /* go to the next event */
-int skipEvent(ltt_tracefile * t);
+int skipEvent(LttTracefile * t);
 
-/* compare two time (ltt_time), 0:t1=t2, -1:t1<t2, 1:t1>t2 */
-int timecmp(ltt_time * t1, ltt_time * t2);
+/* compare two time (LttTime), 0:t1=t2, -1:t1<t2, 1:t1>t2 */
+int timecmp(LttTime * t1, LttTime * t2);
 
 /* get an integer number */
 int getIntNumber(int size1, void *evD);
 
 
-/* Time operation macros for ltt_time (struct timespec) */
+/* Time operation macros for LttTime (struct timespec) */
 /*  (T3 = T2 - T1) */
 #define TimeSub(T3, T2, T1) \
 do \
@@ -75,23 +71,25 @@ do \
 
 /*****************************************************************************
  *Function name
- *    ltt_tracefile_open : open a trace file, construct a ltt_tracefile
+ *    ltt_tracefile_open : open a trace file, construct a LttTracefile
  *Input params
- *    pathname           : path name of the trace file
+ *    t                  : the trace containing the tracefile
+ *    fileName           : path name of the trace file
  *Return value
- *    ltt_tracefile *    : the structure represents the opened trace file
+ *                       : a pointer to a tracefile
  ****************************************************************************/ 
 
-ltt_tracefile *ltt_tracefile_open(char * fileName)
+LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
 {
-  ltt_tracefile * tf;
-  struct stat      lTDFStat;    /* Trace data file status */
-  trace_header_event *trace_header;
-  block_header   a_block_header;
+  LttTracefile * tf;
+  struct stat    lTDFStat;    /* Trace data file status */
+  BlockStart     a_block_start;
 
-  tf = g_new(ltt_tracefile, 1);
+  tf = g_new(LttTracefile, 1);  
 
   //open the file
+  tf->name = g_strdup(fileName);
+  tf->trace = t;
   tf->fd = open(fileName, O_RDONLY, 0);
   if(tf->fd < 0){
     g_error("Unable to open input data file %s\n", fileName);
@@ -103,371 +101,587 @@ ltt_tracefile *ltt_tracefile_open(char * fileName)
   }
 
   // Is the file large enough to contain a trace 
-  if(lTDFStat.st_size < sizeof(block_header) + sizeof(trace_header_event)){
+  if(lTDFStat.st_size < sizeof(BlockStart) + EVENT_HEADER_SIZE){
     g_error("The input data file %s does not contain a trace\n", fileName);
   }
   
   //store the size of the file
   tf->file_size = lTDFStat.st_size;
-
-  //read the first block header
-  if(readFile(tf->fd,(void*)&a_block_header, sizeof(block_header),
-              "Unable to read block header"))
-    exit(1);
-  
-  //read the trace header event
-  trace_header = g_new(trace_header_event, 1);
-  if(readFile(tf->fd,(void*)trace_header, sizeof(trace_header_event),
-              "Unable to read trace header event"))
-    exit(1);
-
-  tf->block_number = tf->file_size / trace_header->buffer_size;
-  tf->trace_header = (trace_header_event *)trace_header;
+  tf->block_size = t->system_description->ltt_block_size;
+  tf->block_number = tf->file_size / tf->block_size;
+  tf->which_block = 0;
 
   //allocate memory to contain the info of a block
-  tf->buffer = (void *) g_new(char, trace_header->buffer_size);
+  tf->buffer = (void *) g_new(char, t->system_description->ltt_block_size);
 
-  //read the last block, get the trace end time
-  if(readBlock(tf,tf->block_number)) exit(1);
-  tf->end_time = tf->a_block_footer->time;
-
-  //read the first block, get the trace start time
-  if(tf->block_number != 1)
-    if(readBlock(tf,1)) exit(1);
-  tf->start_time = tf->a_block_header->time;
-
-  //get local machine's data type size and endian type
-  getDataEndianType(&(tf->my_arch_size), &(tf->my_arch_endian));
-
-  //initialize all tables
-  tf->eventtype_number   = 0;
-  tf->facility_number    = 0;
-  tf->index_facility     = g_hash_table_new (g_int_hash, g_int_equal);
-  tf->facility_name      = g_hash_table_new (g_str_hash, g_str_equal);
-  tf->base_id_name       = g_hash_table_new (g_str_hash, g_int_equal);
-  tf->eventtype_event_id = g_ptr_array_new();
+  //read the first block
+  if(readBlock(tf,1)) exit(1);
 
   return tf;
 }
 
+
+/*****************************************************************************
+ *Open control and per cpu tracefiles
+ ****************************************************************************/
+
+void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name)
+{
+  LttTracefile * tf;
+  tf = ltt_tracefile_open(t,tracefile_name);
+  t->per_cpu_tracefile_number++;
+  g_ptr_array_add(t->per_cpu_tracefiles, tf);
+}
+
+void ltt_tracefile_open_control(LttTrace *t, char * control_name)
+{
+  LttTracefile * tf;
+  LttEvent * ev;
+  LttFacility * f;
+  uint16_t evId;
+  void * pos;
+  FacilityLoad fLoad;
+  int i;
+
+  tf = ltt_tracefile_open(t,control_name);
+  t->control_tracefile_number++;
+  g_ptr_array_add(t->control_tracefiles,tf);
+
+  //parse facilities tracefile to get base_id
+  if(strcmp(control_name,"facilities") ==0){
+    while(1){
+      evId = *(uint16_t*)tf->cur_event_pos;    
+      if(evId == TRACE_FACILITY_LOAD){
+	pos = tf->cur_event_pos + EVENT_HEADER_SIZE;
+	fLoad.name = (char*)pos;
+	fLoad.checksum = *(LttChecksum*)(pos + sizeof(pos));
+	fLoad.base_code = *(uint32_t*)(pos + sizeof(pos) + sizeof(LttChecksum));
+
+	for(i=0;i<t->facility_number;i++){
+	  f = (LttFacility*)g_ptr_array_index(t->facilities,i);
+	  if(strcmp(f->name,fLoad.name)==0 && fLoad.checksum==f->checksum){
+	    f->base_id = fLoad.base_code;
+	    break;
+	  }
+	}
+	if(i==t->facility_number)
+	  g_error("Facility: %s, checksum: %d is not founded\n",
+		  fLoad.name,fLoad.checksum);
+
+	ev = ltt_tracefile_read(tf); //get next event
+	if(!ev) break;           //end of tracefile
+      }else if(evId == TRACE_BLOCK_END){
+	//can only reach here if it is the first event
+	g_error("Facilities does not contain any facility_load event\n");
+      }else g_error("Not valid facilities trace file\n");
+    }
+  }
+}
+
 /*****************************************************************************
  *Function name
- *    ltt_tracefile_close: close a trace file, release all facilities if their
- *                         usage count == 0 when close_facilities is true
+ *    ltt_tracefile_close: close a trace file, 
  *Input params
  *    t                  : tracefile which will be closed
- *    close_facilities   : bool to show if the facilities need to be released
- *Return value
- *    int                : ????
  ****************************************************************************/
 
-int ltt_tracefile_close(ltt_tracefile *t, int close_facilities)
+void ltt_tracefile_close(LttTracefile *t)
 {
-  //free index_facility table
-  g_hash_table_foreach (t->index_facility, freeKey, NULL);
-  g_hash_table_destroy(t->index_facility);
-
-  //free base_id_facility table
-  g_hash_table_foreach (t->base_id_name, freeValue, NULL);
-  g_hash_table_destroy(t->base_id_name);
-
-  //free eventtype_event_id array
-  g_ptr_array_free (t->eventtype_event_id, TRUE);
-
-  //free facility_name table
-  g_hash_table_foreach (t->facility_name, freeFacilityNameTable,
-			GINT_TO_POINTER(1));
-  g_hash_table_destroy(t->facility_name);  
-
-  //free tracefile structure
-  g_free(t->trace_header);
+  g_free(t->name);
   g_free(t->buffer);
   g_free(t);
-  return 0;
 }
+
 
 /*****************************************************************************
- * functions to release the memory occupied by the tables of a tracefile
+ *Get system information
  ****************************************************************************/
-
-void freeKey (gpointer key, gpointer value, gpointer user_data)
+void getSystemInfo(LttSystemDescription* des, char * pathname)
 {
-  g_free(key);
-}
+  FILE * fp;
+  int i;
+  int entry_number = 15;
+  char buf[DIR_NAME_SIZE];
+  char description[4*DIR_NAME_SIZE];
+  char * ptr;
 
-void freeValue (gpointer key, gpointer value, gpointer user_data)
-{
-  g_free(value);
-}
-
-void freeFacilityNameTable (gpointer key, gpointer value, gpointer user_data)
-{
-  ltt_facility * fac = (ltt_facility*) value;
-  fac->usage_count--;
-  if(GPOINTER_TO_INT(user_data) != 0)
-    ltt_facility_close(fac);    
-}
-
-/*****************************************************************************
- *Function name
- *    ltt_tracefile_facility_add: increases the facility usage count and also 
- *                                specifies the base of the numeric range
- *                                assigned to the event types in the facility 
- *                                for this tracefile
- *Input params
- *    t                  : tracefile that the facility will be added
- *    f                  : facility that will be attached to the tracefile
- *    base_id            : the id for the first event of the facility in the 
- *                         trace file
- *Return value
- *    int                : ????
- ****************************************************************************/
-
-int ltt_tracefile_facility_add(ltt_tracefile *t,ltt_facility *f,int base_id)
-{
-  int * id, *index;
-  int i, j, k;
-  ltt_eventtype * et;
-  gpointer tmpPtr;
-
-  //increase the facility usage count
-  f->usage_count++;
-  t->eventtype_number += f->event_number;
-  t->facility_number++;
-
-  //insert the facility into index_facility table
-  id = g_new(int,1);
-  *id = t->facility_number;
-  g_hash_table_insert(t->index_facility, (gpointer)id,(gpointer)f);  
-
-  //insert facility name into table: base_id_name
-  id = g_new(int,1);
-  *id = base_id;
-  g_hash_table_insert(t->base_id_name, (gpointer)(f->name), (gpointer)id);
-
-  //insert facility name into table: facility_name
-  g_hash_table_insert(t->facility_name, (gpointer)(f->name), (gpointer)f);
-  
-  //insert eventtype into the array: eventtype_event_id
-  j = base_id + f->event_number;
-  k = t->eventtype_event_id->len;
-  if(j > t->eventtype_event_id->len){
-    for(i=0; i < j - k; i++){
-      tmpPtr = (gpointer)g_new(ptr_wrap, 1);
-      g_ptr_array_add(t->eventtype_event_id,tmpPtr);
-    }
-  }
-
-  //initialize the unused elements: NULL
-  if(j-k > f->event_number){
-    for(i=k; i<base_id; i++){
-      tmpPtr = g_ptr_array_index(t->eventtype_event_id, i);
-      ((ptr_wrap*)tmpPtr)->ptr = NULL;
-    }
-  }
-
-  //initialize the elements with the eventtypes belonging to the facility
-  for(i=0; i<f->event_number; i++){
-    tmpPtr = g_ptr_array_index(t->eventtype_event_id, base_id + i);
-    ((ptr_wrap*)tmpPtr)->ptr = (gpointer)(f->events[i]);
+  fp = fopen(pathname,"r");
+  if(!fp){
+    g_error("Can not open file : %s\n", pathname);
   }
   
-  //update offset
-  for(i=0; i<f->event_number; i++){
-    et = f->events[i];
-    setFieldsOffset(t, et, NULL);
+  while(fgets(buf,DIR_NAME_SIZE, fp)!= NULL){
+    ptr = buf;
+    while(isspace(*ptr)) ptr++;
+    if(strlen(ptr) == 0) continue;     
+    break;
+  }
+  
+  if(strlen(ptr) == 0) g_error("Not a valid file: %s\n", pathname);
+  if(strncmp("<system",ptr,7) !=0)g_error("Not a valid file: %s\n", pathname);
+
+  for(i=0;i<entry_number;i++){
+    if(fgets(buf,DIR_NAME_SIZE, fp)== NULL)
+      g_error("Not a valid file: %s\n", pathname);
+    ptr = buf;
+    while(isspace(*ptr)) ptr++;
+    switch(i){
+      case 0:
+	if(strncmp("node_name=",ptr,10)!=0)
+	  g_error("Not a valid file: %s\n", pathname);
+	des->node_name = g_strdup(ptr+10);
+        break;
+      case 1:
+	if(strncmp("domainname=",ptr,11)!=0)
+	  g_error("Not a valid file: %s\n", pathname);
+	des->domain_name = g_strdup(ptr+11);
+        break;
+      case 2:
+	if(strncmp("cpu=",ptr,4)!=0)
+	  g_error("Not a valid file: %s\n", pathname);
+	des->nb_cpu = (unsigned)atoi(ptr+4);
+        break;
+      case 3:
+	if(strncmp("arch_size=",ptr,10)!=0)
+	  g_error("Not a valid file: %s\n", pathname);
+	if(strcmp(ptr+10,"\"LP32\"") == 0) des->size = LTT_LP32;
+	else if(strcmp(ptr+10,"\"ILP32\"") == 0) des->size = LTT_ILP32;
+	else if(strcmp(ptr+10,"\"LP64\"") == 0) des->size = LTT_LP64;
+	else if(strcmp(ptr+10,"\"ILP64\"") == 0) des->size = LTT_ILP64;
+	else if(strcmp(ptr+10,"\"UNKNOWN\"") == 0) des->size = LTT_UNKNOWN;
+        break;
+      case 4:
+	if(strncmp("endian=",ptr,7)!=0)
+	  g_error("Not a valid file: %s\n", pathname);
+	if(strcmp(ptr+7,"\"LITTLE_ENDIAN\"") == 0)
+	  des->endian = LTT_LITTLE_ENDIAN;
+	else if(strcmp(ptr+7,"\"BIG_ENDIAN\"") == 0) 
+	  des->endian = LTT_BIG_ENDIAN;
+        break;
+      case 5:
+	if(strncmp("kernel_name=",ptr,12)!=0)
+	  g_error("Not a valid file: %s\n", pathname);
+	des->kernel_name = g_strdup(ptr+12);
+        break;
+      case 6:
+	if(strncmp("kernel_release=",ptr,15)!=0)
+	  g_error("Not a valid file: %s\n", pathname);
+	des->kernel_release = g_strdup(ptr+15);
+        break;
+       case 7:
+	 if(strncmp("kernel_version=",ptr,15)!=0)
+	   g_error("Not a valid file: %s\n", pathname);
+	 des->kernel_version = g_strdup(ptr+15);
+	 break;
+       case 8:
+	 if(strncmp("machine=",ptr,8)!=0)
+	   g_error("Not a valid file: %s\n", pathname);
+	 des->machine = g_strdup(ptr+8);
+	 break;
+       case 9:
+	 if(strncmp("processor=",ptr,10)!=0)
+	   g_error("Not a valid file: %s\n", pathname);
+	 des->processor = g_strdup(ptr+10);
+	 break;
+       case 10:
+	 if(strncmp("hardware_platform=",ptr,18)!=0)
+	   g_error("Not a valid file: %s\n", pathname);
+	 des->hardware_platform = g_strdup(ptr+18);
+	 break;
+       case 11:
+	 if(strncmp("operating_system=",ptr,17)!=0)
+	   g_error("Not a valid file: %s\n", pathname);
+	 des->operating_system = g_strdup(ptr+17);
+	 break;
+       case 12:
+	 if(strncmp("ltt_major_version=",ptr,18)!=0)
+	   g_error("Not a valid file: %s\n", pathname);
+	 ptr += 18; 
+	 ptr++;//skip begining "
+	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
+	 des->ltt_major_version = (unsigned)atoi(ptr);
+	 break;
+       case 13:
+	 if(strncmp("ltt_minor_version=",ptr,18)!=0)
+	   g_error("Not a valid file: %s\n", pathname);
+	 ptr += 18; 
+	 ptr++;//skip begining "
+	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
+	 des->ltt_minor_version = (unsigned)atoi(ptr);
+	 break;
+       case 14:
+	 if(strncmp("ltt_block_size=",ptr,15)!=0)
+	   g_error("Not a valid file: %s\n", pathname);
+	 ptr += 15; 
+	 ptr++;//skip begining "
+	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
+	 des->ltt_block_size = (unsigned)atoi(ptr);
+	 break;
+       default:
+	 g_error("Not a valid file: %s\n", pathname);      
+   }
   }
 
+  //get description
+  description[0] = '\0';
+  if(fgets(buf,DIR_NAME_SIZE, fp)== NULL)
+    g_error("Not a valid file: %s\n", pathname);
+  ptr = buf;
+  while(isspace(*ptr)) ptr++;
+  if(*ptr != '>') g_error("Not a valid file: %s\n", pathname);
+  while((ptr=fgets(buf,DIR_NAME_SIZE, fp))!= NULL){
+    ptr = buf;
+    while(isspace(*ptr)) ptr++;
+    if(strncmp("</system>",ptr,9) == 0 )break;
+    strcat(description, buf);
+  }
+  if(!ptr)g_error("Not a valid file: %s\n", pathname);
+  if(description[0] = '\0')des->description = NULL;
+  des->description = g_strdup(description);  
 
-  return 0;
+  fclose(fp);
 }
 
 /*****************************************************************************
- * The following functions used to query the info of the machine where the 
- * tracefile was generated.  A tracefile may be queried for its architecture 
- * type(e.g.,"i386", "powerpc", "powerpcle", "s390", "s390x"), its architecture
- * variant(e.g., "att" versus "sun" for m68k), its operating system (e.g., 
- * "linux","bsd"), its generic architecture, and the machine identity (e.g., 
- * system host name). All character strings belong to the associated tracefile 
- * and are freed when it is closed
+ *The following functions get facility/tracefile information
  ****************************************************************************/
 
-uint32_t ltt_tracefile_arch_type(ltt_tracefile *t)
+void getFacilityInfo(LttTrace *t, char* eventdefs)
 {
-  return t->trace_header->arch_type;
-}  
+  DIR * dir;
+  struct dirent *entry;
+  char * ptr;
+  int i,j;
+  LttFacility * f;
+  LttEventType * et;
+  LttTracefile * tracefile;
 
-uint32_t ltt_tracefile_arch_variant(ltt_tracefile *t)
-{
-  return t->trace_header->arch_variant;
+  dir = opendir(eventdefs);
+  if(!dir) g_error("Can not open directory: %s\n", eventdefs);
+
+  while((entry = readdir(dir)) != NULL){
+    ptr = &entry->d_name[strlen(entry->d_name)-4];
+    if(strcmp(ptr,".xml") != 0) continue;
+    ltt_facility_open(t,entry->d_name);
+  }  
+  closedir(dir);
+  
+  tracefile = (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles,0);
+  for(j=0;j<t->facility_number;j++){
+    f = (LttFacility*)g_ptr_array_index(t->facilities, i);
+    for(i=0; i<f->event_number; i++){
+      et = f->events[i];
+      setFieldsOffset(tracefile, et, NULL);
+    }    
+  }
 }
 
-ltt_arch_size ltt_tracefile_arch_size(ltt_tracefile *t)
+void getControlFileInfo(LttTrace *t, char* control)
 {
-  return t->trace_header->arch_size;
+  DIR * dir;
+  struct dirent *entry;
+
+  dir = opendir(control);
+  if(!dir) g_error("Can not open directory: %s\n", control);
+
+  while((entry = readdir(dir)) != NULL){
+    if(strcmp(entry->d_name,"facilities") != 0 ||
+       strcmp(entry->d_name,"interrupts") != 0 ||
+       strcmp(entry->d_name,"processes") != 0) continue;
+    
+    ltt_tracefile_open_control(t,entry->d_name);
+  }  
+  closedir(dir);
 }
 
-ltt_arch_endian ltt_tracefile_arch_endian(ltt_tracefile *t)
+void getCpuFileInfo(LttTrace *t, char* cpu)
 {
-  return t->trace_header->arch_endian;
-} 
+  DIR * dir;
+  struct dirent *entry;
 
-uint32_t ltt_tracefile_system_type(ltt_tracefile *t)
-{
-  return t->trace_header->system_type;
-}
+  dir = opendir(cpu);
+  if(!dir) g_error("Can not open directory: %s\n", cpu);
 
-char *ltt_tracefile_system_name(ltt_tracefile *t)
-{
-  return t->trace_header->system_name;
+  while((entry = readdir(dir)) != NULL){
+    if(strcmp(entry->d_name,".") != 0 ||
+       strcmp(entry->d_name,"..") != 0 ){
+      ltt_tracefile_open_cpu(t,entry->d_name);
+    }else continue;
+  }  
+  closedir(dir);
 }
 
 /*****************************************************************************
- *Function name
- *    ltt_tracefile_cpu_number: get the number of the cpu
- *Input params
- *    t                       : tracefile
- *Return value
- *    unsigned                : the number of cpu the system has
+ *A trace is specified as a pathname to the directory containing all the
+ *associated data (control tracefiles, per cpu tracefiles, event 
+ *descriptions...).
+ *
+ *When a trace is closed, all the associated facilities, types and fields
+ *are released as well.
  ****************************************************************************/
 
-unsigned ltt_tracefile_cpu_number(ltt_tracefile *t)
+LttTrace *ltt_trace_open(char *pathname)
 {
-  return (unsigned)(t->trace_header->cpu_number);
+  LttTrace  * t;
+  LttSystemDescription * sys_description;
+  char eventdefs[DIR_NAME_SIZE];
+  char info[DIR_NAME_SIZE];
+  char control[DIR_NAME_SIZE];
+  char cpu[DIR_NAME_SIZE];
+  char tmp[DIR_NAME_SIZE];
+  gboolean has_slash = FALSE;
+
+  //establish the pathname to different directories
+  if(pathname[strlen(pathname)-1] == '/')has_slash = TRUE;
+  strcpy(eventdefs,pathname);
+  if(!has_slash)strcat(eventdefs,"/");
+  strcat(eventdefs,"eventdefs/");
+
+  strcpy(info,pathname);
+  if(!has_slash)strcat(info,"/");
+  strcat(info,"info/");
+
+  strcpy(control,pathname);
+  if(!has_slash)strcat(control,"/");
+  strcat(control,"control/");
+
+  strcpy(cpu,pathname);
+  if(!has_slash)strcat(cpu,"/");
+  strcat(cpu,"cpu/");
+
+  //new trace
+  t               = g_new(LttTrace, 1);
+  sys_description = g_new(LttSystemDescription, 1);  
+  t->pathname     = g_strdup(pathname);
+  t->facility_number          = 0;
+  t->control_tracefile_number = 0;
+  t->per_cpu_tracefile_number = 0;
+  t->system_description = sys_description;
+  t->control_tracefiles = g_ptr_array_new();
+  t->per_cpu_tracefiles = g_ptr_array_new();
+  t->facilities         = g_ptr_array_new();
+  getDataEndianType(&(t->my_arch_size), &(t->my_arch_endian));
+
+  //get system description  
+  strcpy(tmp,info);
+  strcat(tmp,"system.xml");
+  getSystemInfo(sys_description, tmp);
+
+  //get control tracefile info
+  getControlFileInfo(t,control);
+
+  //get cpu tracefile info
+  getCpuFileInfo(t,cpu);
+
+  //get facilities info
+  getFacilityInfo(t,eventdefs);
+  
+  return t;
+}
+
+void ltt_trace_close(LttTrace *t)
+{
+  int i;
+  LttTracefile * tf;
+  LttFacility * f;
+
+  g_free(t->pathname);
+ 
+  //free system_description
+  g_free(t->system_description->description);
+  g_free(t->system_description->node_name);
+  g_free(t->system_description->domain_name);
+  g_free(t->system_description->kernel_name);
+  g_free(t->system_description->kernel_release);
+  g_free(t->system_description->kernel_version);
+  g_free(t->system_description->machine);
+  g_free(t->system_description->processor);
+  g_free(t->system_description->hardware_platform);
+  g_free(t->system_description->operating_system);
+  g_free(t->system_description);
+
+  //free control_tracefiles
+  for(i=0;i<t->control_tracefile_number;i++){
+    tf = (LttTracefile*)g_ptr_array_index(t->control_tracefiles,i);
+    ltt_tracefile_close(tf);
+  }
+  g_ptr_array_free(t->control_tracefiles, FALSE);
+
+  //free per_cpu_tracefiles
+  for(i=0;i<t->per_cpu_tracefile_number;i++){
+    tf = (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles,i);
+    ltt_tracefile_close(tf);
+  }
+  g_ptr_array_free(t->per_cpu_tracefiles, FALSE);
+
+  //free facilities
+  for(i=0;i<t->facility_number;i++){
+    f = (LttFacility*)g_ptr_array_index(t->facilities,i);
+    ltt_facility_close(f);
+  }
+  g_ptr_array_free(t->facilities, FALSE);
+
+  g_free(t);
+}
+
+
+/*****************************************************************************
+ *Get the system description of the trace
+ ****************************************************************************/
+
+LttSystemDescription *ltt_trace_system_description(LttTrace *t)
+{
+  return t->system_description;
 }
 
 /*****************************************************************************
- *Function name
- *    ltt_tracefile_cpu_single: does the tracefile contain events only for a 
- *                              single CPU ?
- *Input params
- *    t                       : tracefile
- *Return value
- *    int                     : 1 for YES, 0 for NO
+ * The following functions discover the facilities of the trace
  ****************************************************************************/
 
-int ltt_tracefile_cpu_single(ltt_tracefile *t)
-{
-  if(t->trace_header->cpu_number_used == 1) return 1;
-  else return 0;
-}
-
-/*****************************************************************************
- *Function name
- *    ltt_tracefile_cpu_id: which CPU is contained in the tracefile?
- *Input params
- *    t                   : tracefile
- *Return value
- *    unsigned            : cpu id
- ****************************************************************************/
-
-unsigned ltt_tracefile_cpu_id(ltt_tracefile *t)
-{
-  return (unsigned)(t->trace_header->cpu_id);
-}
-
-/*****************************************************************************
- * The following functions get the times related to the tracefile
- ****************************************************************************/
-
-ltt_time ltt_tracefile_time_start(ltt_tracefile *t)
-{
-  return t->start_time;
-}
-
-ltt_time ltt_tracefile_time_end(ltt_tracefile *t)
-{
-  return t->end_time;
-}
-
-ltt_time ltt_tracefile_duration(ltt_tracefile *t)
-{
-  ltt_time T;
-  TimeSub(T, t->end_time, t->start_time);
-  return T;
-}
-
-/*****************************************************************************
- * The following functions discover the facilities added to the tracefile
- ****************************************************************************/
-
-unsigned ltt_tracefile_facility_number(ltt_tracefile *t)
+unsigned ltt_trace_facility_number(LttTrace *t)
 {
   return (unsigned)(t->facility_number);
 }
 
-ltt_facility *ltt_tracefile_facility_get(ltt_tracefile *t, unsigned i)
+LttFacility *ltt_trace_facility_get(LttTrace *t, unsigned i)
 {
-  gconstpointer ptr = (gconstpointer)(&i);
-  if(i<=0 || i> t->facility_number)return NULL;
-  return (ltt_facility*)g_hash_table_lookup(t->index_facility,ptr);
-}
-
-ltt_facility *ltt_tracefile_facility_get_by_name(ltt_tracefile *t,char *name)
-{
-  ltt_facility * fac;
-  fac=(ltt_facility*)g_hash_table_lookup(t->facility_name,(gconstpointer)name);
-  return fac;
-}
-
-/*****************************************************************************
- * The following functions to discover all the event types in the facilities 
- * added to the tracefile. The event type integer id, unique for the trace, 
- * is used
- ****************************************************************************/
-
-unsigned ltt_tracefile_eventtype_number(ltt_tracefile *t)
-{
-  return t->eventtype_number;
-}
-
-ltt_eventtype *ltt_tracefile_eventtype_get(ltt_tracefile *t, unsigned evId)
-{
-  ptr_wrap * ptr;
-  ptr = (ptr_wrap *)g_ptr_array_index(t->eventtype_event_id, (gint)evId);
-  return (ltt_eventtype *)(ptr->ptr);
+  return (LttFacility*)g_ptr_array_index(t->facilities, i);
 }
 
 /*****************************************************************************
  *Function name
- *    ltt_tracefile_eventtype_id
- *                        : given an event type, find its unique id within 
- *                          the tracefile
+ *    ltt_trace_facility_find : find facilities in the trace
  *Input params
- *    t                   : tracefile
- *    et                  : event type
+ *    t                       : the trace 
+ *    name                    : facility name
+ *Output params
+ *    position                : position of the facility in the trace
  *Return value
- *    unsigned            : id of the event type in the tracefile
+ *                            : the number of facilities
  ****************************************************************************/
 
-unsigned ltt_tracefile_eventtype_id(ltt_tracefile *t, ltt_eventtype *et)
+unsigned ltt_trace_facility_find(LttTrace *t, char *name, unsigned *position)
 {
-  int *id;
-  char *name = et->facility->name;
-  
-  id = (int*)g_hash_table_lookup(t->base_id_name, (gconstpointer)name);
-  if(!id)return 0;
-  return (unsigned)(*id + et->index);
+  int i, count=0;
+  LttFacility * f;
+  for(i=0;i=t->facility_number;i++){
+    f = (LttFacility*)g_ptr_array_index(t->facilities, i);
+    if(strcmp(f->name,name)==0){
+      count++;
+      if(count==1) *position = i;      
+    }else{
+      if(count) break;
+    }
+  }
+  return count;
 }
 
 /*****************************************************************************
- *Function name
- *    ltt_tracefile_eventtype_root_field
- *                        : get the root field associated with an event type
- *                          for the tracefile
- *Input params
- *    t                   : tracefile
- *    id                  : event id
- *Return value
- *    ltt_field *         : root field of the event
+ * Functions to discover all the event types in the trace 
  ****************************************************************************/
 
-ltt_field *ltt_tracefile_eventtype_root_field(ltt_tracefile *t, unsigned id)
+unsigned ltt_trace_eventtype_number(LttTrace *t)
 {
-  ltt_eventtype * et;
-  et = ltt_tracefile_eventtype_get(t, id);
-  if(!et) return NULL;
-  return et->root_field;
+  int i;
+  unsigned count = 0;
+  LttFacility * f;
+  for(i=0;i=t->facility_number;i++){
+    f = (LttFacility*)g_ptr_array_index(t->facilities, i);
+    count += f->event_number;
+  }
+  return count;
+}
+
+LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
+{
+  LttFacility * facility;
+  int i;
+  for(i=0;i<trace->facility_number;i++){
+    facility = (LttFacility*) g_ptr_array_index(trace->facilities,i);
+    if(id >= facility->base_id && 
+       id < facility->base_id + facility->event_number)
+      break;
+  }
+  if(i==trace->facility_number) return NULL;
+  else return facility;
+}
+
+LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned evId)
+{
+  LttFacility * f;
+  f = ltt_trace_facility_by_id(t,evId);
+  if(!f) return NULL;
+  return f->events[evId - f->base_id];
+}
+
+/*****************************************************************************
+ *There is one "per cpu" tracefile for each CPU, numbered from 0 to
+ *the maximum number of CPU in the system. When the number of CPU installed
+ *is less than the maximum, some positions are unused. There are also a
+ *number of "control" tracefiles (facilities, interrupts...). 
+ ****************************************************************************/
+unsigned ltt_trace_control_tracefile_number(LttTrace *t)
+{
+  return t->control_tracefile_number;
+}
+
+unsigned ltt_trace_per_cpu_tracefile_number(LttTrace *t)
+{
+  return t->per_cpu_tracefile_number;
+}
+
+/*****************************************************************************
+ *It is possible to search for the tracefiles by name or by CPU position.
+ *The index within the tracefiles of the same type is returned if found
+ *and a negative value otherwise. 
+ ****************************************************************************/
+
+int ltt_trace_control_tracefile_find(LttTrace *t, char *name)
+{
+  LttTracefile * tracefile;
+  int i;
+  for(i=0;i<t->control_tracefile_number;i++){
+    tracefile = (LttTracefile*)g_ptr_array_index(t->control_tracefiles, i);
+    if(strcmp(tracefile->name, name)==0)break;
+  }
+  if(i == t->control_tracefile_number) return -1;
+  return i;
+}
+
+int ltt_trace_per_cpu_tracefile_find(LttTrace *t, unsigned i)
+{
+  LttTracefile * tracefile;
+  int j, name;
+  for(j=0;j<t->per_cpu_tracefile_number;j++){
+    tracefile = (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles, j);
+    name = atoi(tracefile->name);
+    if(name == (int)i)break;
+  }
+  if(j == t->per_cpu_tracefile_number) return -1;
+  return j;
+}
+
+/*****************************************************************************
+ *Get a specific tracefile 
+ ****************************************************************************/
+
+LttTracefile *ltt_trace_control_tracefile_get(LttTrace *t, unsigned i)
+{
+  return (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles, i);  
+}
+
+LttTracefile *ltt_trace_per_cpu_tracefile_get(LttTrace *t, unsigned i)
+{
+  return (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles, i);
+}
+
+/*****************************************************************************
+ *Get the name of a tracefile
+ ****************************************************************************/
+
+char *ltt_tracefile_name(LttTracefile *tf)
+{
+  return tf->name;
 }
 
 /*****************************************************************************
@@ -477,37 +691,34 @@ ltt_field *ltt_tracefile_eventtype_root_field(ltt_tracefile *t, unsigned id)
  *Input params
  *    t                      : tracefile
  *    time                   : criteria of the time
- *Return value
- *    int                    : error code
- *                             ENOENT, end of the file
- *                             EINVAL, lseek fail
- *                             EIO, can not read from the file
  ****************************************************************************/
 
-int ltt_tracefile_seek_time(ltt_tracefile *t, ltt_time time)
+void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 {
   int err;
-  ltt_time lttTime;
-  int headTime = timecmp(&(t->a_block_header->time), &time);
-  int tailTime = timecmp(&(t->a_block_footer->time), &time);
+  LttTime lttTime;
+  int headTime = timecmp(&(t->a_block_start->time), &time);
+  int tailTime = timecmp(&(t->a_block_end->time), &time);
   
   if(headTime < 0 && tailTime > 0){
     lttTime = getEventTime(t);
     err = timecmp(&lttTime, &time);
-    if(err >= 0){
-      if( ( (t->which_block != 1 && t->which_event != 0) ||
-            (t->which_block == 1 && t->which_event != 1)   ) &&
-          ((t->prev_event_time.tv_sec==0 && t->prev_event_time.tv_nsec==0) ||
-	   timecmp(&t->prev_event_time, &time) >= 0 )  ){
+    if(err > 0){
+      if(t->which_event==1 || timecmp(&t->prev_event_time,&time)<0){
+	return;
+      }else{
 	updateTracefile(t);
 	return ltt_tracefile_seek_time(t, time);
       }
     }else if(err < 0){
       err = t->which_block;
-      if(ltt_tracefile_read(t) == NULL) return ENOENT;      
+      if(ltt_tracefile_read(t) == NULL){
+	g_printf("End of file\n");      
+	return;
+      }
       if(t->which_block == err)
 	return ltt_tracefile_seek_time(t,time);
-    }    
+    }else return;    
   }else if(headTime > 0){
     if(t->which_block == 1){
       updateTracefile(t);      
@@ -516,7 +727,7 @@ int ltt_tracefile_seek_time(ltt_tracefile *t, ltt_time time)
 	   t->prev_block_end_time.tv_nsec == 0  ) ||
 	   timecmp(&(t->prev_block_end_time),&time) > 0 ){
 	err=readBlock(t,t->which_block-1);
-	if(err) return err; 
+	if(err) g_error("Can not read tracefile: %s\n", t->name); 
 	return ltt_tracefile_seek_time(t, time) ;
       }else{
 	updateTracefile(t);
@@ -525,13 +736,15 @@ int ltt_tracefile_seek_time(ltt_tracefile *t, ltt_time time)
   }else if(tailTime <= 0){
     if(t->which_block != t->block_number){
       err=readBlock(t,t->which_block+1);
-      if(err) return err; 
-    }else return ENOENT;    
+      if(err) g_error("Can not read tracefile: %s\n", t->name); 
+    }else {
+      g_printf("End of file\n");      
+      return;      
+    }    
     if(tailTime < 0) return ltt_tracefile_seek_time(t, time);
   }else if(headTime == 0){
     updateTracefile(t);
   }
-  return 0;
 }
 
 /*****************************************************************************
@@ -540,26 +753,32 @@ int ltt_tracefile_seek_time(ltt_tracefile *t, ltt_time time)
  *Input params
  *    t                  : tracefile
  *Return value
- *    ltt_event *        : an event to be processed
+ *    LttEvent *        : an event to be processed
  ****************************************************************************/
 
-ltt_event *ltt_tracefile_read(ltt_tracefile *t)
+LttEvent *ltt_tracefile_read(LttTracefile *t)
 {
-  ltt_event * lttEvent = (ltt_event *)g_new(ltt_event, 1);
-  ltt_eventtype * evT;
-  ltt_facility * fac;
+  LttEvent * lttEvent = (LttEvent *)g_new(LttEvent, 1);
+  int err;
 
   //update the fields of the current event and go to the next event
-  if(skipEvent(t)) return NULL;
+  err = skipEvent(t);
+  if(err == ENOENT) return NULL;
+  if(err == ERANGE) g_error("event id is out of range\n");
+  if(err)g_error("Can not read tracefile\n");
+
+  lttEvent->event_id = (int)(*(uint16_t *)(t->cur_event_pos));
+  if(lttEvent->event_id == TRACE_TIME_HEARTBEAT)
+    t->cur_heart_beat_number++;
 
   t->current_event_time = getEventTime(t);
 
-  lttEvent->event_id = (int)(*(uint8_t *)(t->cur_event_pos));
-  evT = ltt_tracefile_eventtype_get(t, (unsigned)lttEvent->event_id);
-  fac = evT->facility;
-  //  if(evT->index == TRACE_EV_HEARTBEAT && strcmp(fac->name, "default")==0)
-  //    t->cur_heart_beat_number++;
-  lttEvent->cycle_count=*(uint32_t*)(t->cur_event_pos + EVENT_ID_SIZE);
+  lttEvent->time_delta = *(uint32_t*)(t->cur_event_pos + EVENT_ID_SIZE);
+  lttEvent->event_time = t->current_event_time;
+
+  lttEvent->event_cycle_count = ((uint64_t)1)<<32  * t->cur_heart_beat_number 
+                                + lttEvent->time_delta;
+
   lttEvent->tracefile = t;
   lttEvent->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
 
@@ -602,13 +821,13 @@ int readFile(int fd, void * buf, size_t size, char * mesg)
  *    EIO             : can not read from the file
  ****************************************************************************/
 
-int readBlock(ltt_tracefile * tf, int whichBlock)
+int readBlock(LttTracefile * tf, int whichBlock)
 {
   off_t nbBytes;
   uint32_t lostSize;
 
   if(whichBlock - tf->which_block == 1 && tf->which_block != 0){
-    tf->prev_block_end_time = tf->a_block_footer->time;
+    tf->prev_block_end_time = tf->a_block_end->time;
   }else{
     tf->prev_block_end_time.tv_sec = 0;
     tf->prev_block_end_time.tv_nsec = 0;
@@ -616,30 +835,23 @@ int readBlock(ltt_tracefile * tf, int whichBlock)
   tf->prev_event_time.tv_sec = 0;
   tf->prev_event_time.tv_nsec = 0;
 
-  nbBytes=lseek(tf->fd,(off_t)((whichBlock-1)*tf->trace_header->buffer_size),
-                  SEEK_SET);
+  nbBytes=lseek(tf->fd,(off_t)((whichBlock-1)*tf->block_size), SEEK_SET);
   if(nbBytes == -1) return EINVAL;
   
-  if(readFile(tf->fd,tf->buffer,tf->trace_header->buffer_size,
-              "Unable to read a block")) return EIO;
+  if(readFile(tf->fd,tf->buffer,tf->block_size,"Unable to read a block")) 
+    return EIO;
 
+  tf->a_block_start=(BlockStart *) (tf->buffer + EVENT_HEADER_SIZE);
+  lostSize = *(uint32_t*)(tf->buffer + tf->block_size - sizeof(uint32_t));
+  tf->a_block_end=(BlockEnd *)(tf->buffer + tf->block_size - 
+				lostSize + EVENT_HEADER_SIZE); 
 
-  tf->a_block_header=(block_header *) tf->buffer;
-  lostSize = *(uint32_t*)(tf->buffer + tf->trace_header->buffer_size 
-			  - sizeof(uint32_t));
-  /* skip event ID and time delta to get the address of the block foot */
-  tf->a_block_footer=(block_footer *)(tf->buffer+tf->trace_header->buffer_size
-                                   -lostSize+sizeof(uint8_t)+sizeof(uint32_t)); 
   tf->which_block = whichBlock;
-  tf->which_event = 0;
-  tf->first_event_pos = tf->buffer + sizeof(block_header);
-  if(tf->which_block == 1){
-    tf->which_event++;
-    tf->first_event_pos += sizeof(trace_header_event);
-  }
-  tf->cur_event_pos = tf->first_event_pos;
-  tf->current_event_time = tf->a_block_header->time;
+  tf->which_event = 1;
+  tf->cur_event_pos = tf->a_block_start + sizeof(BlockStart); //first event
   tf->cur_heart_beat_number = 0;
+
+  tf->current_event_time = getEventTime(tf);
   
   getCyclePerNsec(tf);
 
@@ -654,12 +866,11 @@ int readBlock(ltt_tracefile * tf, int whichBlock)
  *    tf              : tracefile
  ****************************************************************************/
 
-void updateTracefile(ltt_tracefile * tf)
+void updateTracefile(LttTracefile * tf)
 {
-  if(tf->which_block == 1)tf->which_event = 1;
-  else tf->which_event = 0;
-  tf->cur_event_pos = tf->first_event_pos;
-  tf->current_event_time = tf->a_block_header->time;  
+  tf->which_event = 1;
+  tf->cur_event_pos = tf->a_block_start + sizeof(BlockStart);
+  tf->current_event_time = getEventTime(tf);  
   tf->cur_heart_beat_number = 0;
 
   tf->prev_event_time.tv_sec = 0;
@@ -679,16 +890,16 @@ void updateTracefile(ltt_tracefile * tf)
  *    ERANGE          : event id is out of range
  ****************************************************************************/
 
-int skipEvent(ltt_tracefile * t)
+int skipEvent(LttTracefile * t)
 {
   int evId, err;
   void * evData;
-  ltt_eventtype * evT;
-  ltt_field * rootFld;
+  LttEventType * evT;
+  LttField * rootFld;
 
-  evId   = (int)(*(uint8_t *)(t->cur_event_pos));
+  evId   = (int)(*(uint16_t *)(t->cur_event_pos));
   evData = t->cur_event_pos + EVENT_HEADER_SIZE;
-  evT    = ltt_tracefile_eventtype_get(t,(unsigned)evId);
+  evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
 
   if(evT) rootFld = evT->root_field;
   else return ERANGE;
@@ -706,7 +917,7 @@ int skipEvent(ltt_tracefile * t)
   evT->latest_event = t->which_event;
   
   //the next event is in the next block
-  if(t->which_event == t->a_block_header->event_count - 1){
+  if(evId == TRACE_BLOCK_END){
     if(t->which_block == t->block_number) return ENOENT;
     err = readBlock(t, t->which_block + 1);
     if(err) return err;
@@ -724,18 +935,18 @@ int skipEvent(ltt_tracefile * t)
  *    t               : tracefile
  ****************************************************************************/
 
-void getCyclePerNsec(ltt_tracefile * t)
+void getCyclePerNsec(LttTracefile * t)
 {
-  ltt_time            lBufTotalTime; /* Total time for this buffer */
-  ltt_cycle_count     lBufTotalNSec; /* Total time for this buffer in nsecs */
-  ltt_cycle_count     lBufTotalCycle;/* Total cycles for this buffer */
+  LttTime           lBufTotalTime; /* Total time for this buffer */
+  LttCycleCount     lBufTotalNSec; /* Total time for this buffer in nsecs */
+  LttCycleCount     lBufTotalCycle;/* Total cycles for this buffer */
 
   /* Calculate the total time for this buffer */
-  TimeSub(lBufTotalTime,t->a_block_footer->time, t->a_block_header->time);
+  TimeSub(lBufTotalTime,t->a_block_end->time, t->a_block_start->time);
 
   /* Calculate the total cycles for this bufffer */
-  lBufTotalCycle = t->a_block_footer->cycle_count 
-                   - t->a_block_header->cycle_count;
+  lBufTotalCycle = t->a_block_end->cycle_count 
+                   - t->a_block_start->cycle_count;
 
   /* Convert the total time to nsecs */
   lBufTotalNSec = lBufTotalTime.tv_sec * 1000000000 + lBufTotalTime.tv_nsec;
@@ -749,31 +960,31 @@ void getCyclePerNsec(ltt_tracefile * t)
  *Input params 
  *    tf              : tracefile
  *Return value
- *    ltt_time        : the time of the event
+ *    LttTime        : the time of the event
  ****************************************************************************/
 
-ltt_time getEventTime(ltt_tracefile * tf)
+LttTime getEventTime(LttTracefile * tf)
 {
-  ltt_time        time;
-  ltt_cycle_count cycle_count;      /* cycle count for the current event */
-  ltt_cycle_count lEventTotalCycle; /* Total cycles from start for event */
-  double          lEventNSec;       /* Total usecs from start for event */
-  ltt_time        lTimeOffset;      /* Time offset in struct ltt_time */
+  LttTime       time;
+  LttCycleCount cycle_count;      // cycle count for the current event
+  LttCycleCount lEventTotalCycle; // Total cycles from start for event
+  double        lEventNSec;       // Total usecs from start for event
+  LttTime       lTimeOffset;      // Time offset in struct LttTime
   
-  /* Calculate total time in cycles from start of buffer for this event */
-  cycle_count = *(uint32_t*)(tf->cur_event_pos + EVENT_ID_SIZE);
+  // Calculate total time in cycles from start of buffer for this event 
+  cycle_count = (LttCycleCount)*(uint32_t*)(tf->cur_event_pos + EVENT_ID_SIZE);
   if(tf->cur_heart_beat_number)
     cycle_count += ((uint64_t)1)<<32  * tf->cur_heart_beat_number;
-  lEventTotalCycle=cycle_count-(tf->a_block_header->cycle_count & 0xFFFFFFFF);
+  lEventTotalCycle = cycle_count - tf->a_block_start->cycle_count;
 
-  /* Convert it to nsecs */
+  // Convert it to nsecs
   lEventNSec = lEventTotalCycle / tf->cycle_per_nsec;
   
-  /* Determine offset in struct ltt_time */
+  // Determine offset in struct LttTime 
   lTimeOffset.tv_nsec = (long)lEventNSec % 1000000000;
   lTimeOffset.tv_sec  = (long)lEventNSec / 1000000000;
 
-  TimeAdd(time, tf->a_block_header->time, lTimeOffset);  
+  TimeAdd(time, tf->a_block_start->time, lTimeOffset);  
 
   return time;
 }
@@ -787,9 +998,9 @@ ltt_time getEventTime(ltt_tracefile * tf)
  *    evD             : event data, it may be NULL
  ****************************************************************************/
 
-void setFieldsOffset(ltt_tracefile * t, ltt_eventtype * evT, void * evD)
+void setFieldsOffset(LttTracefile * t, LttEventType * evT, void * evD)
 {
-  ltt_field * rootFld = evT->root_field;
+  LttField * rootFld = evT->root_field;
   //  rootFld->base_address = evD;
 
   rootFld->field_size = getFieldtypeSize(t, evT, 0,0,rootFld, evD);  
@@ -809,15 +1020,17 @@ void setFieldsOffset(ltt_tracefile * t, ltt_eventtype * evT, void * evD)
  *    int             : size of the field
  ****************************************************************************/
 
-int getFieldtypeSize(ltt_tracefile * t, ltt_eventtype * evT, int offsetRoot,
-		     int offsetParent, ltt_field * fld, void * evD)
+int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
+		     int offsetParent, LttField * fld, void * evD)
 {
   int size, size1, element_number, i, offset1, offset2;
-  ltt_type * type = fld->field_type;
+  LttType * type = fld->field_type;
 
-  if(evT->latest_block==t->which_block && evT->latest_event==t->which_event){
-    return fld->field_size;
-  } 
+  if(!t){
+    if(evT->latest_block==t->which_block && evT->latest_event==t->which_event){
+      return fld->field_size;
+    } 
+  }
 
   if(fld->field_fixed == 1){
     if(fld == evT->root_field) return fld->field_size;
@@ -826,7 +1039,7 @@ int getFieldtypeSize(ltt_tracefile * t, ltt_eventtype * evT, int offsetRoot,
   if(type->type_class != LTT_STRUCT && type->type_class != LTT_ARRAY &&
      type->type_class != LTT_SEQUENCE && type->type_class != LTT_STRING){
     if(fld->field_fixed == -1){
-      size = (int) ltt_type_size(t, type);
+      size = (int) ltt_type_size(t->trace, type);
       fld->field_fixed = 1;
     }else size = fld->field_size;
 
@@ -849,7 +1062,7 @@ int getFieldtypeSize(ltt_tracefile * t, ltt_eventtype * evT, int offsetRoot,
     }else size = fld->field_size;
 
   }else if(type->type_class == LTT_SEQUENCE){
-    size1 = (int) ltt_type_size(t, type);
+    size1 = (int) ltt_type_size(t->trace, type);
     if(fld->field_fixed == -1){
       fld->field_fixed = 0;
       size = getFieldtypeSize(t, evT, offsetRoot,0,fld->child[0], NULL);      
@@ -932,9 +1145,9 @@ int getFieldtypeSize(ltt_tracefile * t, ltt_eventtype * evT, int offsetRoot,
  *    int       : 0: t1 == t2; -1: t1 < t2; 1: t1 > t2
  ****************************************************************************/
 
-int timecmp(ltt_time * t1, ltt_time * t2)
+int timecmp(LttTime * t1, LttTime * t2)
 {
-  ltt_time T;
+  LttTime T;
   TimeSub(T, *t1, *t2);
   if(T.tv_sec == 0 && T.tv_nsec == 0) return 0;
   else if(T.tv_sec > 0 || (T.tv_sec==0 && T.tv_nsec > 0)) return 1;
@@ -971,7 +1184,7 @@ int getIntNumber(int size, void *evD)
  *    endian            : endian type, little or big
  ****************************************************************************/
 
-void getDataEndianType(ltt_arch_size * size, ltt_arch_endian * endian)
+void getDataEndianType(LttArchSize * size, LttArchEndian * endian)
 {
   int i = 1;
   char c = (char) i;

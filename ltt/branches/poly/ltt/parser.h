@@ -34,10 +34,9 @@ void *table_find_int(table *t, int *key);
 
 typedef enum _token_type {
   ENDFILE,
-  COMA,
-  LPARENTHESIS,
-  RPARENTHESIS,
-  SEMICOLON,
+  FORWARDSLASH,
+  LANGLEBRACKET,
+  RANGLEBRACKET,
   EQUAL,
   QUOTEDSTRING,
   NUMBER,
@@ -58,14 +57,14 @@ typedef struct _parse_file {
 
 void ungetToken(parse_file * in);
 char *getToken(parse_file *in);
-char *getComa(parse_file *in);
-char *getLParenthesis(parse_file *in);
-char *getRParenthesis(parse_file *in);
-char *getSemiColon(parse_file *in);
+char *getForwardslash(parse_file *in);
+char *getLAnglebracket(parse_file *in);
+char *getRAnglebracket(parse_file *in);
 char *getQuotedString(parse_file *in);
 char *getName(parse_file *in);
-int getNumber(parse_file *in);
-char * getEqual(parse_file *in);
+int   getNumber(parse_file *in);
+char *getEqual(parse_file *in);
+char  seekNextChar(parse_file *in);
 
 void skipComment(parse_file * in);
 void skipEOL(parse_file * in);
@@ -88,6 +87,7 @@ typedef enum _data_type {
   ARRAY,
   SEQUENCE,
   STRUCT,
+  UNION,
   NONE
 } data_type;
 
@@ -120,12 +120,20 @@ typedef struct _event {
   char *name;
   char *description;
   type_descriptor *type; 
-  int nested;
 } event;
 
-int getSize(parse_file *in);
-unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type, int * nestedStruct);
+typedef struct _facility {
+  char * name;
+  char * description;
+  sequence events;
+  sequence unnamed_types;
+  table named_types;
+} facility;
 
+int getSize(parse_file *in);
+unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type);
+
+void parseFacility(parse_file *in, facility * fac);
 void parseEvent(parse_file *in, event *ev, sequence * unnamed_types, table * named_types);
 void parseTypeDefinition(parse_file *in, sequence * unnamed_types, table * named_types);
 type_descriptor *parseType(parse_file *in, type_descriptor *t, sequence * unnamed_types, table * named_types);
@@ -134,6 +142,15 @@ void checkNamedTypesImplemented(table * namedTypes);
 type_descriptor * find_named_type(char *name, table * named_types);
 void generateChecksum(char * facName, unsigned long * checksum, sequence * events);
 
+
+/* get attributes */
+char * getNameAttribute(parse_file *in);
+char * getFormatAttribute(parse_file *in);
+int    getSizeAttribute(parse_file *in);
+int    getValueAttribute(parse_file *in);
+char * getValueStrAttribute(parse_file *in);
+
+char * getDescription(parse_file *in);
 
 
 static char *intOutputTypes[] = {
