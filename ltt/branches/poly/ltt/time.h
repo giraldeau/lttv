@@ -29,9 +29,16 @@ typedef struct _LttTime {
 
 
 #define NANOSECONDS_PER_SECOND 1000000000
+
+/* We give the DIV and MUL constants so we can always multiply, for a
+ * division as well as a multiplication of NANOSECONDS_PER_SECOND */
 /* 2^30/1.07374182400631629848 = 1000000000.0 */ 
-#define DOUBLE_SHIFT_CONST 1.07374182400631629848
+#define DOUBLE_SHIFT_CONST_DIV 1.07374182400631629848
 #define DOUBLE_SHIFT 30
+
+/* 2^30*0.93132257461547851562 = 1000000000.0000000000 */ 
+#define DOUBLE_SHIFT_CONST_MUL 0.93132257461547851562
+
 
 /* 1953125 * 2^9 = NANOSECONDS_PER_SECOND */
 #define LTT_TIME_UINT_SHIFT_CONST 1953125
@@ -109,7 +116,7 @@ static inline double ltt_time_to_double(LttTime t1)
     g_warning("Precision loss in conversion LttTime to double");
 #endif //EXTRA_CHECK
   return ((double)((guint64)t1.tv_sec<<DOUBLE_SHIFT)
-                  / (double)DOUBLE_SHIFT_CONST)
+                  * (double)DOUBLE_SHIFT_CONST_MUL)
                   + (double)t1.tv_nsec;
 }
 
@@ -131,7 +138,7 @@ static inline LttTime ltt_time_from_double(double t1)
 #endif //EXTRA_CHECK
   LttTime res;
   //res.tv_sec = t1/(double)NANOSECONDS_PER_SECOND;
-  res.tv_sec = (guint64)(t1 * DOUBLE_SHIFT_CONST) >> DOUBLE_SHIFT;
+  res.tv_sec = (guint64)(t1 * DOUBLE_SHIFT_CONST_DIV) >> DOUBLE_SHIFT;
   res.tv_nsec = (t1 - (((guint64)res.tv_sec<<LTT_TIME_UINT_SHIFT))
                                * LTT_TIME_UINT_SHIFT_CONST);
   return res;
