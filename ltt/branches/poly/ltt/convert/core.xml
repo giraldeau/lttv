@@ -241,6 +241,22 @@
   </type>
 
 
+  <event name=process_fork>
+    <description>Fork a new process</description>
+    <struct>
+      <field name="event_data1"> <description>Data associated with event</description> <uint size=4/> </field>
+      <field name="event_data2"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=process_exit>
+    <description>Exit from a process</description>
+    <struct>
+      <field name="event_data1"> <description>Data associated with event</description> <uint size=4/> </field>
+      <field name="event_data2"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
 </facility>
 
 

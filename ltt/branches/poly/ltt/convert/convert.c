@@ -9,8 +9,17 @@
 #include "LinuxEvents.h"
 
 #define TRACE_HEARTBEAT_ID  19
+#define PROCESS_FORK_ID     20
+#define PROCESS_EXIT_ID     21
+
 #define INFO_ENTRY          9
 #define OVERFLOW_FIGURE     4294967296
+
+typedef struct _new_process
+{
+  uint32_t  event_data1;     /* Data associated with event */
+  uint32_t  event_data2;    
+} LTT_PACKED_STRUCT new_process;
 
 #define write_to_buffer(DEST, SRC, SIZE) \
 do\
@@ -113,7 +122,7 @@ int main(int argc, char ** argv){
   trace_buffer_start *tBufStart;
   trace_buffer_end *tBufEnd;
   trace_file_system * tFileSys;
-  uint16_t newId, startId;
+  uint16_t newId, startId, tmpId;
   uint8_t  evId;
   uint32_t time_delta, startTimeDelta;
   void * cur_pos, *end_pos;
@@ -124,6 +133,8 @@ int main(int argc, char ** argv){
   gboolean * has_event;
   uint32_t size_lost;
   int reserve_size = sizeof(buffer_start) + sizeof(uint16_t) + 2*sizeof(uint32_t);//lost_size and buffer_end event
+
+  new_process process;
 
   if(argc != 4 && argc != 5){
     printf("need a trace file and cpu number or root directory for the new tracefile\n");
@@ -383,7 +394,6 @@ int main(int argc, char ** argv){
       char       lName[256];             /* Process name */
       FILE *          fProc;
       uint16_t        defaultId;
-      trace_process   process;
       trace_irq_entry irq;
 
       fProc = fopen(argv[2],"r");
@@ -392,13 +402,12 @@ int main(int argc, char ** argv){
       }
 
       while(fscanf(fProc, "PID: %d; PPID: %d; NAME: %s\n", &lPID, &lPPID, lName) > 0){
-	defaultId = TRACE_PROCESS;
-	process.event_sub_id = TRACE_PROCESS_FORK;
+	defaultId = PROCESS_FORK_ID;
 	process.event_data1 = lPID;
 	process.event_data2 = lPPID;
 	write_to_buffer(write_pos_proc,(void*)&defaultId, sizeof(uint16_t));    
 	write_to_buffer(write_pos_proc,(void*)&startTimeDelta, sizeof(uint32_t));
-	write_to_buffer(write_pos_proc,(void*)&process, sizeof(trace_process));	
+	write_to_buffer(write_pos_proc,(void*)&process, sizeof(new_process));	
       }
 
       while(fscanf(fProc, "IRQ: %d; NAME: ", &lIntID) > 0){
@@ -539,9 +548,13 @@ int main(int argc, char ** argv){
 	  timeDelta = time_delta;
 	  subId = *(uint8_t*)cur_pos;
 	  if(subId == TRACE_PROCESS_FORK || subId ==TRACE_PROCESS_EXIT){
-	    write_to_buffer(write_pos_proc,(void*)&newId, sizeof(uint16_t));
+	    if( subId == TRACE_PROCESS_FORK)tmpId = PROCESS_FORK_ID;
+	    else tmpId = PROCESS_EXIT_ID;
+	    write_to_buffer(write_pos_proc,(void*)&tmpId, sizeof(uint16_t));
 	    write_to_buffer(write_pos_proc,(void*)&timeDelta, sizeof(uint32_t));
-	    write_to_buffer(write_pos_proc,cur_pos, event_size);
+
+	    process = *(new_process*)(cur_pos + sizeof(uint8_t));
+	    write_to_buffer(write_pos_proc,(void*)&process, sizeof(new_process));
 	  } 
 	  break;
 	case TRACE_FILE_SYSTEM:
