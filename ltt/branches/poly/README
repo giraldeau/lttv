@@ -1,3 +1,13 @@
+To compile the source tree, simply follow these steps :
+
+- run ./autogen.sh
+- make
+- make install
+
+After running autogen.sh, you can also go in specific subdirectories and
+use make, make install.
+
+
 This is a sample of the suggested tree for Linux Trace Toolkit.
 
 
