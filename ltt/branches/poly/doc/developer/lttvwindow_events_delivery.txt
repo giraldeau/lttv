@@ -304,3 +304,184 @@ Strengths
 
 - Solves all the weaknesses idenfied in the actual boundaryless traceset
 reading.
+
+
+
+
+- Revised Events Requests Servicing Algorithm (v2)
+
+typedef LttvEventsRequestPrio guint;
+
+typedef struct _EventsRequest {
+  gpointer                     viewer_data;
+  gboolean                     servicing;       /* service in progress: TRUE */ 
+  LttvEventsRequestPrio        prio;            /* Ev. Req. priority        */
+  LttTime                      start_time;      /* Unset : { 0, 0 }         */
+  LttvTracesetContextPosition *start_position;  /* Unset : num_traces = 0   */
+  gboolean                     stop_flag;       /* Continue:TRUE Stop:FALSE */
+  LttTime                      end_time;        /* Unset : { 0, 0 }         */
+  guint                        num_events;      /* Unset : G_MAXUINT        */
+  LttvTracesetContextPosition *end_position;    /* Unset : num_traces = 0   */
+  LttvHooks                   *before_traceset; /* Unset : NULL             */
+  LttvHooks                   *before_trace;    /* Unset : NULL             */
+  LttvHooks                   *before_tracefile;/* Unset : NULL             */
+  LttvHooks                   *event;           /* Unset : NULL             */
+  LttvHooksById               *event_by_id;     /* Unset : NULL             */
+  LttvHooks                   *after_tracefile; /* Unset : NULL             */
+  LttvHooks                   *after_trace;     /* Unset : NULL             */
+  LttvHooks                   *after_traceset;  /* Unset : NULL             */
+  LttvHooks                   *before_chunk;    /* Unset : NULL             */
+  LttvHooks                   *after_chunk      /* Unset : NULL             */
+} EventsRequest;
+
+
+The reads are splitted in chunks. After a chunk is over, we want to check if
+there is a GTK Event pending and execute it. It can add or remove events 
+requests from the event requests list. If it happens, we want to start over
+the algorithm from the beginning.
+
+Two levels of priority exists. High priority and low priority. High prio
+requests are serviced first, even if lower priority requests has lower start
+time or position.
+
+
+Data structures necessary :
+
+List of requests added to context : list_in
+List of requests not added to context : list_out
+
+Initial state :
+
+list_in : empty
+list_out : many events requests
+
+
+A. While list_in !empty and list_out !empty and !GTK Event pending
+  1. If list_in is empty (need a seek)
+    1.1 Add requests to list_in
+      1.1.1 Find all time requests with the highest priority and lowest start
+            time in list_out (ltime)
+      1.1.2 Find all position requests with the highest priority and lowest
+            position in list_out (lpos)
+      1.1.3 If lpos.prio > ltime.prio 
+                  || (lpos.prio == ltime.prio && lpos.start time < ltime)
+        - Add lpos to list_in, remove them from list_out
+      1.1.4 Else, (lpos.prio < ltime.prio 
+                        ||(lpos.prio == ltime.prio && lpos.start time >= ltime))
+        - Add ltime to list_in, remove them from list_out
+    1.2 Seek
+      1.2.1 If first request in list_in is a time request
+        1.2.1.1 Seek to that time
+      1.2.2 Else, the first request in list_in is a position request
+        1.2.2.1 If the position is the same than the saved state, restore state
+        1.2.2.1 Else, seek to that position
+    1.3 Add hooks and call begin for all list_in members
+      1.3.1 If !servicing
+          - begin hooks called
+          - servicing = TRUE
+      1.3.2 call before_chunk
+      1.3.3 events hooks added
+  2. Else, list_in is not empty, we continue a read
+    2.1 For each req of list_out
+    - if req.start time == current context time
+      - Add to list_in, remove from list_out
+      - If !servicing
+        - Call begin
+        - servicing = TRUE
+      - Call before_chunk
+      - events hooks added
+    - if req.start position == current position
+      - Add to list_in, remove from list_out
+      - If !servicing
+        - Call begin
+        - servicing = TRUE
+      - Call before_chunk
+      - events hooks added
+
+  3. Find end criterions
+    3.1 End time
+      3.1.1 Find lowest end time in list_in
+      3.1.2 Find lowest start time in list_out (>= than current time*)
+                                * To eliminate lower prio requests
+      3.1.3 Use lowest of both as end time
+    3.2 Number of events
+      3.2.1 Find lowest number of events in list_in
+      3.2.2 Use min(CHUNK_NUM_EVENTS, min num events in list_in) as num_events
+    3.3 End position
+      3.3.1 Find lowest end position in list_in
+      3.3.2 Find lowest start position in list_out (>= than current
+                                                    position)
+      3.3.3 Use lowest of both as end position
+
+  4. Call process traceset middle
+    4.1 Call process traceset middle (Use end criterion found in 3)
+      * note : end criterion can also be viewer's hook returning TRUE
+  5. After process traceset middle
+    - if current context time > traceset.end time
+      - For each req in list_in
+        - Call end for req
+        - Remove events hooks for req
+        - remove req from list_in
+    5.1 For each req in list_in
+          - req.num -= count
+          - if req.num == 0
+            - Call end for req
+            - Remove events hooks for req
+            - remove req from list_in
+          - if current context time > req.end time
+            - Call end for req
+            - Remove events hooks for req
+            - remove req from list_in
+          - if req.end pos == current pos
+            - Call end for req
+            - Remove events hooks for req
+            - remove req from list_in
+          - if req.stop_flag == TRUE
+            - Call end for req
+            - Remove events hooks for req
+            - remove req from list_in
+          - if exists one events requests in list_out that has
+                  higher priority and time != current time
+            - Use current position as start position for req
+            - Remove start time from req
+            - Call after_chunk for req
+            - Remove event hooks for req
+            - Put req back in list_out, remove from list_in
+            - Save current state into saved_state.
+
+B. When interrupted
+  1. for each request in list_in
+    1.1. Use current postition as start position
+    1.2. Remove start time
+    1.3. Call after_chunk
+    1.4. Remove event hooks
+    1.5. Put it back in list_out
+  2. Save current state into saved_state.
+    2.1 Free old saved state.
+    2.2 save current state.
+
+
+
+
+
+Notes :
+End criterions for process traceset middle :
+If the criterion is reached, event is out of boundaries and we return.
+Current time >= End time
+Event count > Number of events
+Current position >= End position
+Last hook list called returned TRUE
+
+The >= for position is necessary to make ensure consistency between start time
+requests and positions requests that happens to be at the exact same start time
+and position.
+
+We only keep one saved state in memory. If, for example, a low priority
+servicing is interrupted, a high priority is serviced, then the low priority
+will use the saved state to start back where it was instead of seeking to the
+time. In the very specific case where a low priority servicing is interrupted,
+and then a high priority servicing on top of it is also interrupted, well, the
+low priority will loose its state and will have to seek back. It should not
+occur often. The solution to it would be to save one state per priority.
+
+
