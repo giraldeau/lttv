@@ -2721,9 +2721,9 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
     GPtrArray *name;
     guint nb,i;
     gchar *module_name;
+    nb = lttv_library_module_number(library);
     LttvModuleInfo *module_info = g_new(LttvModuleInfo,nb);
     name = g_ptr_array_new();
-    nb = lttv_library_module_number(library);
     /* ask for the module name */
 
     for(i=0;i<nb;i++){
