@@ -7,7 +7,7 @@
 #include <glib-object.h>
 #include <gdk/gdk.h>
 #include <gtk/gtkcontainer.h>
-
+#include <lttv/common.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -40,6 +40,7 @@ struct _GtkCustom
   //  GtkWidget * viewport;
   GtkWidget * hScrollbar;  
   GtkAdjustment *hAdjust;
+  mainWindow * mw;
 };
 
 struct _GtkCustomClass
