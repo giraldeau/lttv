@@ -1174,12 +1174,16 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
             }
           }
         }
-        
-        /* - return FALSE (scheduler stopped) */
-        g_debug("Background computation scheduler stopped");
-        g_info("Background computation finished for trace %p", trace);
-        /* FIXME : remove status bar info, need context id and message id */
-        ret_val = FALSE;
+        /* - if list_out is empty */
+        if(g_slist_length(*list_out) == 0) {
+          /* - return FALSE (scheduler stopped) */
+          g_debug("Background computation scheduler stopped");
+          g_info("Background computation finished for trace %p", trace);
+          /* FIXME : remove status bar info, need context id and message id */
+          ret_val = FALSE;
+        } else {
+          ret_val = TRUE;
+        }
       } else {
         /* 3.4 else, end of trace not reached */
         /* - return TRUE (scheduler still registered) */
