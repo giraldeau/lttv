@@ -40,8 +40,8 @@ AC_CHECK_FUNCS([select])
 lttvplugindir="${libdir}/lttv/plugins"
 AC_SUBST(lttvplugindir)
 
-DEFAULT_INCLUDES="-I\$(top_srcdir)/include"
-AC_SUBST(DEFAULT_INCLUDES)
+#DEFAULT_INCLUDES="-I\$(top_srcdir)/include"
+#AC_SUBST(DEFAULT_INCLUDES)
 
 lttvincludedir="${includedir}/lttv"
 AC_SUBST(lttvincludedir)
@@ -54,5 +54,5 @@ AC_CONFIG_FILES([Makefile
                  lttv/plugins/Makefile
 		 lttv/plugins/exemples/Makefile
 		 lttd/Makefile
-		 LibLTT/Makefile])
+		 ltt/Makefile])
 AC_OUTPUT

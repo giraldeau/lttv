@@ -1,1 +1,1 @@
-SUBDIRS = lttv lttd LibLTT
+SUBDIRS = lttv lttd ltt
