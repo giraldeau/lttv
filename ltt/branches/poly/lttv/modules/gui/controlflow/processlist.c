@@ -32,7 +32,7 @@
  *                       Methods to synchronize process list                 *
  *****************************************************************************/
 
-static __inline guint get_cpu_number_from_name(GQuark name);
+static __inline__ guint get_cpu_number_from_name(GQuark name);
   
 /* Enumeration of the columns */
 enum
@@ -443,7 +443,7 @@ GtkWidget *processlist_get_widget(ProcessList *process_list)
 
 
 
-static __inline gint get_cell_height(ProcessList *process_list, GtkTreeView *tree_view)
+static __inline__ gint get_cell_height(ProcessList *process_list, GtkTreeView *tree_view)
 {
   gint height = process_list->cell_height_cache;
   if(height != -1) return height;
@@ -593,7 +593,7 @@ int processlist_remove( ProcessList *process_list,
 }
 
 
-guint processlist_get_height(ProcessList *process_list)
+__inline__ guint processlist_get_height(ProcessList *process_list)
 {
   return get_cell_height(process_list,
                          (GtkTreeView*)process_list->process_list_widget)
@@ -601,7 +601,7 @@ guint processlist_get_height(ProcessList *process_list)
 }
 
 
-__inline gint processlist_get_process_pixels(  ProcessList *process_list,
+__inline__ gint processlist_get_process_pixels(  ProcessList *process_list,
           guint pid, guint cpu, LttTime *birth, guint trace_num,
           guint *y,
           guint *height,
@@ -645,7 +645,7 @@ __inline gint processlist_get_process_pixels(  ProcessList *process_list,
 }
 
 
-__inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
+__inline__ gint processlist_get_pixels_from_data(  ProcessList *process_list,
           ProcessInfo *process_info,
           HashedProcessData *hashed_process_data,
           guint *y,
@@ -667,7 +667,7 @@ __inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
 
 }
 
-static __inline guint get_cpu_number_from_name(GQuark name)
+static __inline__ guint get_cpu_number_from_name(GQuark name)
 {
   const gchar *string;
   char *begin;

@@ -41,8 +41,8 @@ typedef struct _Attribute {
 } Attribute;
 
 
-static __inline LttvAttributeValue address_of_value(LttvAttributeType t,
-                                                    AttributeValue *v)
+static __inline__ LttvAttributeValue address_of_value(LttvAttributeType t,
+                                                      AttributeValue *v)
 {
   LttvAttributeValue va;
 

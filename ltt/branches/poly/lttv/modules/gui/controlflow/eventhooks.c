@@ -271,7 +271,7 @@ int event_selected_hook(void *hook_data, void *call_data)
 }
 
 /* Function that selects the color of status&exemode line */
-static __inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
+static __inline__ PropertiesLine prepare_s_e_line(LttvProcessState *process)
 {
   PropertiesLine prop_line;
   prop_line.line_width = 2;
@@ -318,7 +318,7 @@ static __inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
 }
 
 #if 0
-static __inline PropertiesLine prepare_status_line(LttvProcessState *process)
+static __inline__ PropertiesLine prepare_status_line(LttvProcessState *process)
 {
   PropertiesLine prop_line;
   prop_line.line_width = 2;
@@ -1913,7 +1913,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 }
 
 #if 0
-static __inline PropertiesLine prepare_execmode_line(LttvProcessState *process)
+static __inline__ PropertiesLine prepare_execmode_line(LttvProcessState *process)
 {
   PropertiesLine prop_line;
   prop_line.line_width = 1;
@@ -3080,8 +3080,9 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
      * draw items from the beginning of the read for it. If it is not
      * present, it's a new process and it was not present : it will
      * be added after the state update.  */
+#ifdef EXTRA_CHECK
     g_assert(lttv_traceset_number(tsc->ts) > 0);
-
+#endif //EXTRA_CHECK
     /* tracefiles[0] is ok here, because we draw for every PID, and
      * assume CPU 0 for PID 0 //FIXME */
     LttvTracefileState *tfs =

@@ -113,15 +113,15 @@ int processlist_add(ProcessList *process_list, guint pid, guint cpu, guint ppid,
 int processlist_remove(ProcessList *process_list, guint pid, guint cpu, 
     LttTime *birth, guint trace_num);
 
-guint processlist_get_height(ProcessList *process_list);
+__inline__ guint processlist_get_height(ProcessList *process_list);
 
 // Returns 0 on success
-__inline gint processlist_get_process_pixels(ProcessList *process_list,
+__inline__ gint processlist_get_process_pixels(ProcessList *process_list,
         guint pid, guint cpu, LttTime *birth, guint trace_num,
         guint *y, guint *height,
         HashedProcessData **hashed_process_data);
 
-__inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
+__inline__ gint processlist_get_pixels_from_data(  ProcessList *process_list,
           ProcessInfo *process_info,
           HashedProcessData *hashed_process_data,
           guint *y,

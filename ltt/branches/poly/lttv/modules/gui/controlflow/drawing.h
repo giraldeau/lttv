@@ -134,13 +134,13 @@ void drawing_remove_square(Drawing_t *drawing,
         guint y,
         guint height);
 
-__inline void convert_pixels_to_time(
+__inline__ void convert_pixels_to_time(
     gint width,
     guint x,
     TimeWindow time_window,
     LttTime *time);
 
-__inline void convert_time_to_pixels(
+__inline__ void convert_time_to_pixels(
     TimeWindow time_window,
     LttTime time,
     gint width,

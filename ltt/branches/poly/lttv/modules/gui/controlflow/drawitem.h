@@ -268,11 +268,11 @@ void exec_operations( LttvIAttribute *attributes,
  * different items.
  */
 
-__inline gboolean draw_text( void *hook_data, void *call_data);
-__inline gboolean draw_icon( void *hook_data, void *call_data);
-__inline gboolean draw_line( void *hook_data, void *call_data);
-__inline gboolean draw_arc( void *hook_data, void *call_data);
-__inline gboolean draw_bg( void *hook_data, void *call_data);
+__inline__ gboolean draw_text( void *hook_data, void *call_data);
+__inline__ gboolean draw_icon( void *hook_data, void *call_data);
+__inline__ gboolean draw_line( void *hook_data, void *call_data);
+__inline__ gboolean draw_arc( void *hook_data, void *call_data);
+__inline__ gboolean draw_bg( void *hook_data, void *call_data);
 
 
 #endif // _DRAW_ITEM_H

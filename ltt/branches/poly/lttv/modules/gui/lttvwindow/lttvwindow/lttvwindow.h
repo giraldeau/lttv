@@ -664,7 +664,7 @@ void lttvwindow_events_request_remove_all(Tab            *tab,
  * @return the current tab's time interval.
  */
 
-__inline TimeWindow lttvwindow_get_time_window(Tab *tab);
+__inline__ TimeWindow lttvwindow_get_time_window(Tab *tab);
 
 
 /**

@@ -916,7 +916,7 @@ void lttvwindow_events_request_remove_all(Tab       *tab,
  * @return time window.
  */
 
-__inline TimeWindow lttvwindow_get_time_window(Tab *tab)
+__inline__ TimeWindow lttvwindow_get_time_window(Tab *tab)
 {
   return tab->time_window;
   

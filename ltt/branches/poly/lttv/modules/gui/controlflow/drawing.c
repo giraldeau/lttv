@@ -923,7 +923,7 @@ GtkWidget *drawing_get_widget(Drawing_t *drawing)
  *
  * Convert from window pixel and time interval to an absolute time.
  */
-__inline void convert_pixels_to_time(
+__inline__ void convert_pixels_to_time(
     gint width,
     guint x,
     TimeWindow time_window,
@@ -938,7 +938,7 @@ __inline void convert_pixels_to_time(
 }
 
 
-__inline void convert_time_to_pixels(
+__inline__ void convert_time_to_pixels(
     TimeWindow time_window,
     LttTime time,
     int width,
