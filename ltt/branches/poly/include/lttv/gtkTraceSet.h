@@ -15,7 +15,6 @@
 #include <lttv/hook.h>
 #include <lttv/common.h>
 #include <lttv/stats.h>
-#include <lttv/mainWindow.h>
 
 /**
  * Function to register a view constructor so that main window can generate

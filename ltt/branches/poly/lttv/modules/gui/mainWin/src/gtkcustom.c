@@ -2,6 +2,7 @@
 
 #include <lttv/gtkcustom.h>
 //#include "gtkintl.h"
+#include <lttv/mainWindow.h>
 #include <lttv/gtkTraceSet.h>
 
 static void gtk_custom_class_init (GtkCustomClass    *klass);

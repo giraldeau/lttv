@@ -13,5 +13,9 @@ typedef struct _tab tab;
 typedef GtkWidget * (*lttv_constructor)(mainWindow * main_window);
 typedef lttv_constructor view_constructor;
 
+typedef struct _TimeWindow {
+	LttTime startTime;
+	LttTime Time_Width;
+} TimeWindow;
 
 #endif // COMMON_H

@@ -18,10 +18,6 @@ typedef struct _WindowCreationData {
 	char ** argv;
 } WindowCreationData;
 
-typedef struct _TimeWindow {
-	LttTime startTime;
-	LttTime Time_Width;
-} TimeWindow;
 
 typedef struct _TracesetInfo {
 	gchar* path;

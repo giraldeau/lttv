@@ -28,16 +28,16 @@
 /* global variable */
 //LttvTracesetStats * gTracesetContext = NULL;
 //static LttvTraceset * traceset;
-WindowCreationData  gWinCreationData;
+static WindowCreationData  win_creation_data;
 
 /** Array containing instanced objects. */
-GSList * Main_Window_List = NULL ;
+GSList * g_main_window_list = NULL ;
 
 LttvHooks
   *main_hooks;
 
 /* Initial trace from command line */
-LttvTrace *gInit_Trace = NULL;
+LttvTrace *g_init_trace = NULL;
 
 static char *a_trace;
 
@@ -47,7 +47,7 @@ void lttv_trace_option(void *hook_data)
 
   trace = ltt_trace_open(a_trace);
   if(trace == NULL) g_critical("cannot open trace %s", a_trace);
-  gInit_Trace = lttv_trace_new(trace);
+  g_init_trace = lttv_trace_new(trace);
 }
 
 /*****************************************************************************
@@ -59,11 +59,11 @@ void lttv_trace_option(void *hook_data)
  * This function initializes the GUI.
  */
 
-static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
+static gboolean window_creation_hook(void *hook_data, void *call_data)
 {
-  WindowCreationData* Window_Creation_Data = (WindowCreationData*)hook_data;
+  WindowCreationData* window_creation_data = (WindowCreationData*)hook_data;
 
-  g_critical("GUI Window_Creation_Hook()");
+  g_critical("GUI window_creation_hook()");
 #ifdef ENABLE_NLS
   bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
@@ -71,13 +71,13 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 #endif
 
   gtk_set_locale ();
-  gtk_init (&(Window_Creation_Data->argc), &(Window_Creation_Data->argv));
+  gtk_init (&(window_creation_data->argc), &(window_creation_data->argv));
 
   add_pixmap_directory (PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
   add_pixmap_directory ("pixmaps");
   add_pixmap_directory ("modules/gui/mainWin/pixmaps");
 
-  constructMainWin(NULL, Window_Creation_Data, TRUE);
+  construct_main_window(NULL, window_creation_data, TRUE);
 
   gtk_main ();
 
@@ -102,15 +102,15 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
       LTTV_POINTER, &value));
   g_assert((main_hooks = *(value.v_pointer)) != NULL);
 
-  gWinCreationData.argc = argc;
-  gWinCreationData.argv = argv;
+  win_creation_data.argc = argc;
+  win_creation_data.argv = argv;
   
-  lttv_hooks_add(main_hooks, Window_Creation_Hook, &gWinCreationData);
+  lttv_hooks_add(main_hooks, window_creation_hook, &win_creation_data);
 
 }
 
 void
-mainWindow_free(mainWindow * mw)
+main_window_free(mainWindow * mw)
 { 
   guint i, nb, ref_count;
   LttvTrace * trace;
@@ -151,7 +151,7 @@ g_critical("end remove");
     g_free(mw->Traceset_Info);
     mw->Traceset_Info = NULL;
       
-    Main_Window_List = g_slist_remove(Main_Window_List, mw);
+    g_main_window_list = g_slist_remove(g_main_window_list, mw);
 
     g_hash_table_destroy(mw->hash_menu_item);
     g_hash_table_destroy(mw->hash_toolbar_item);
@@ -162,7 +162,7 @@ g_critical("end remove");
 }
 
 void
-mainWindow_Destructor(mainWindow * mw)
+main_window_destructor(mainWindow * mw)
 {
   if(GTK_IS_WIDGET(mw->MWindow)){
     gtk_widget_destroy(mw->MWindow);
@@ -170,14 +170,14 @@ mainWindow_Destructor(mainWindow * mw)
     //    gtk_widget_destroy(mw->AboutBox);    
     mw = NULL;
   }
-  //mainWindow_free called when the object mw in the widget is unref.
-  //mainWindow_free(mw);
+  //main_window_free called when the object mw in the widget is unref.
+  //main_window_free(mw);
 }
 
 
 void main_window_destroy_walk(gpointer data, gpointer user_data)
 {
-  mainWindow_Destructor((mainWindow*)data);
+  main_window_destructor((mainWindow*)data);
 }
 
 
@@ -195,13 +195,13 @@ G_MODULE_EXPORT void destroy() {
 
   lttv_option_remove("trace");
 
-  lttv_hooks_remove_data(main_hooks, Window_Creation_Hook, &gWinCreationData);
+  lttv_hooks_remove_data(main_hooks, window_creation_hook, &win_creation_data);
 
   g_critical("GUI destroy()");
 
-  if(Main_Window_List){
-    g_slist_foreach(Main_Window_List, main_window_destroy_walk, NULL );
-    g_slist_free(Main_Window_List);
+  if(g_main_window_list){
+    g_slist_foreach(g_main_window_list, main_window_destroy_walk, NULL );
+    g_slist_free(g_main_window_list);
   }
   
 }
