@@ -36,8 +36,6 @@ void
 guicontrolflow_destructor(ControlFlowData *control_flow_data);
 GtkWidget *guicontrolflow_get_widget(ControlFlowData *control_flow_data);
 ProcessList *guicontrolflow_get_process_list(ControlFlowData *control_flow_data);
-TimeWindow *guicontrolflow_get_time_window(ControlFlowData *control_flow_data);
-LttTime *guicontrolflow_get_current_time(ControlFlowData *control_flow_data);
 
 
 #endif // _CFV_H

@@ -32,7 +32,7 @@ extern GSList *g_control_flow_data_list;
 static void control_flow_grab_focus(GtkWidget *widget, gpointer data){
   ControlFlowData * control_flow_data = (ControlFlowData *)data;
   MainWindow * mw = control_flow_data->mw;
-  set_focused_pane(mw, gtk_widget_get_parent(control_flow_data->scrolled_window));
+  lttvwindow_report_focus(mw, gtk_widget_get_parent(control_flow_data->scrolled_window));
 }
 
 
@@ -166,13 +166,13 @@ guicontrolflow_destructor(ControlFlowData *control_flow_data)
   //ProcessList_destroy(control_flow_data->process_list);
   if(control_flow_data->mw != NULL)
   {
-    unreg_update_time_window(update_time_window_hook,
-        control_flow_data,
-        control_flow_data->mw);
+    lttvwindow_unregister_time_window_notify(control_flow_data->mw,
+        update_time_window_hook,
+        control_flow_data);
   
-    unreg_update_current_time(update_current_time_hook,
-        control_flow_data,
-        control_flow_data->mw);
+    lttvwindow_unregister_current_time_notify(control_flow_data->mw,
+        update_current_time_hook,
+        control_flow_data);
   }
   g_info("CFV.c : guicontrolflow_destructor, %p", control_flow_data);
   g_slist_remove(g_control_flow_data_list,control_flow_data);
@@ -188,15 +188,6 @@ ProcessList *guicontrolflow_get_process_list
     (ControlFlowData *control_flow_data)
 {
     return control_flow_data->process_list ;
-}
-
-TimeWindow *guicontrolflow_get_time_window(ControlFlowData *control_flow_data)
-{
-  return &control_flow_data->time_window;
-}
-LttTime *guicontrolflow_get_current_time(ControlFlowData *control_flow_data)
-{
-  return &control_flow_data->current_time;
 }
 
 

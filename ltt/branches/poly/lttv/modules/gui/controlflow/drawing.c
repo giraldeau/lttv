@@ -79,45 +79,39 @@ void drawing_data_request(Drawing_t *drawing,
 {
   if(width < 0) return ;
   if(height < 0) return ;
+
+  const TimeWindow *time_window = lttvwindow_get_time_window(drawing->control_flow_data->mw);
+
   ControlFlowData *control_flow_data =
       (ControlFlowData*)g_object_get_data(
-                G_OBJECT(
-                    drawing->drawing_area),
-                "control_flow_data");
+                 G_OBJECT(drawing->drawing_area), "control_flow_data");
 
   LttTime start, end;
-  LttTime window_end = ltt_time_add(control_flow_data->time_window.time_width,
-                        control_flow_data->time_window.start_time);
+  LttTime window_end = ltt_time_add(time_window->time_width,
+                                    time_window->start_time);
 
   g_debug("req : window_end : %u, %u", window_end.tv_sec, 
-                                      window_end.tv_nsec);
+                                       window_end.tv_nsec);
 
-  g_debug("req : time width : %u, %u", control_flow_data->time_window.time_width.tv_sec, 
-                                control_flow_data->time_window.time_width.tv_nsec);
+  g_debug("req : time width : %u, %u", time_window->time_width.tv_sec, 
+                                       time_window->time_width.tv_nsec);
   
   g_debug("x is : %i, x+width is : %i", x, x+width);
 
   convert_pixels_to_time(drawing->drawing_area->allocation.width, x,
-        &control_flow_data->time_window.start_time,
-        &window_end,
+        time_window->start_time,
+        window_end,
         &start);
 
   convert_pixels_to_time(drawing->drawing_area->allocation.width, x + width,
-        &control_flow_data->time_window.start_time,
-        &window_end,
+        time_window->start_time,
+        window_end,
         &end);
   
   LttvTracesetContext * tsc =
-        get_traceset_context(control_flow_data->mw);
+        lttvwindow_get_traceset_context(control_flow_data->mw);
   LttvTracesetState * tss =
         (LttvTracesetState*)tsc;
-  
-    //send_test_process(
-  //guicontrolflow_get_process_list(drawing->control_flow_data),
-  //drawing);
-  //send_test_drawing(
-  //guicontrolflow_get_process_list(drawing->control_flow_data),
-  //drawing, *pixmap, x, y, width, height);
   
   // Let's call processTrace() !!
   EventRequest event_request; // Variable freed at the end of the function.
@@ -185,8 +179,8 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
    * has updated the time interval before this configure gets
    * executed.
    */
-  get_time_window(drawing->control_flow_data->mw,
-        &drawing->control_flow_data->time_window);
+  //lttvwindow_get_time_window(drawing->control_flow_data->mw,
+  //      &drawing->control_flow_data->time_window);
   
   /* New pixmap, size of the configure event */
   //GdkPixmap *pixmap = gdk_pixmap_new(widget->window,
@@ -306,6 +300,10 @@ static gboolean
 expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 {
   Drawing_t *drawing = (Drawing_t*)user_data;
+  const TimeWindow *time_window = lttvwindow_get_time_window(drawing->control_flow_data->mw);
+  const LttTime* current_time = 
+      lttvwindow_get_current_time(drawing->control_flow_data->mw);
+
   ControlFlowData *control_flow_data =
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
@@ -314,14 +312,12 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   g_debug("drawing expose event");
   
   guint x=0;
-  LttTime* current_time = 
-      guicontrolflow_get_current_time(control_flow_data);
 
-  LttTime window_end = ltt_time_add(control_flow_data->time_window.time_width,
-                      control_flow_data->time_window.start_time);
+  LttTime window_end = ltt_time_add(time_window->time_width,
+                                    time_window->start_time);
 
   convert_time_to_pixels(
-        control_flow_data->time_window.start_time,
+        time_window->start_time,
         window_end,
         *current_time,
         widget->allocation.width,
@@ -366,30 +362,30 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
                 G_OBJECT(widget),
                 "control_flow_data");
   Drawing_t *drawing = control_flow_data->drawing;
-
+  const TimeWindow *time_window = lttvwindow_get_time_window(drawing->control_flow_data->mw);
 
   g_debug("click");
   if(event->button == 1)
   {
     LttTime time;
 
-    LttTime window_end = ltt_time_add(control_flow_data->time_window.time_width,
-                        control_flow_data->time_window.start_time);
+    LttTime window_end = ltt_time_add(time_window->time_width,
+                                      time_window->start_time);
 
 
     /* left mouse button click */
     g_debug("x click is : %f", event->x);
 
     convert_pixels_to_time(widget->allocation.width, (guint)event->x,
-        &control_flow_data->time_window.start_time,
-        &window_end,
+        time_window->start_time,
+        window_end,
         &time);
 
-    set_current_time(control_flow_data->mw, &time);
+    lttvwindow_report_current_time(control_flow_data->mw, &time);
 
   }
 
-  set_focused_pane(control_flow_data->mw, gtk_widget_get_parent(control_flow_data->scrolled_window));
+  lttvwindow_report_focus(control_flow_data->mw, gtk_widget_get_parent(control_flow_data->scrolled_window));
   
   return FALSE;
 }
@@ -517,16 +513,16 @@ GtkWidget *drawing_get_widget(Drawing_t *drawing)
 void convert_pixels_to_time(
     gint width,
     guint x,
-    LttTime *window_time_begin,
-    LttTime *window_time_end,
+    LttTime window_time_begin,
+    LttTime window_time_end,
     LttTime *time)
 {
   LttTime window_time_interval;
   
-  window_time_interval = ltt_time_sub(*window_time_end, 
-            *window_time_begin);
+  window_time_interval = ltt_time_sub(window_time_end, 
+            window_time_begin);
   *time = ltt_time_mul(window_time_interval, (x/(float)width));
-  *time = ltt_time_add(*window_time_begin, *time);
+  *time = ltt_time_add(window_time_begin, *time);
 }
 
 
@@ -737,7 +733,7 @@ static gboolean
 expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 {
   Drawing_t *drawing = (Drawing_t*)user_data;
-
+  const TimeWindow *time_window = lttvwindow_get_time_window(drawing->control_flow_data->mw);
   gchar text[255];
   
   PangoContext *context;
@@ -751,13 +747,13 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   GdkColor background = { 0, 0xffff, 0xffff, 0xffff };
 
   LttTime window_end = 
-    ltt_time_add(drawing->control_flow_data->time_window.time_width,
-                 drawing->control_flow_data->time_window.start_time);
+    ltt_time_add(time_window->time_width,
+                 time_window->start_time);
   LttTime half_width =
-    ltt_time_div(drawing->control_flow_data->time_window.time_width,2.0);
+    ltt_time_div(time_window->time_width,2.0);
   LttTime window_middle =
     ltt_time_add(half_width,
-                 drawing->control_flow_data->time_window.start_time);
+                 time_window->start_time);
   g_debug("ruler expose event");
  
   gdk_draw_rectangle (drawing->ruler->window,
@@ -781,8 +777,8 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 
 
   snprintf(text, 255, "%lus\n%luns",
-    drawing->control_flow_data->time_window.start_time.tv_sec,
-    drawing->control_flow_data->time_window.start_time.tv_nsec);
+    time_window->start_time.tv_sec,
+    time_window->start_time.tv_nsec);
 
   layout = gtk_widget_create_pango_layout(drawing->drawing_area, NULL);
 

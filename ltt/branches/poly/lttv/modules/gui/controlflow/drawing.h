@@ -104,8 +104,8 @@ void drawing_remove_square(Drawing_t *drawing,
 void convert_pixels_to_time(
     gint width,
     guint x,
-    LttTime *window_time_begin,
-    LttTime *window_time_end,
+    LttTime window_time_begin,
+    LttTime window_time_end,
     LttTime *time);
 
 void convert_time_to_pixels(

@@ -431,7 +431,7 @@ void gtk_multi_vpaned_scroll_value_changed(GtkRange *range, gpointer multi_vpane
   if(ltt_time_compare(time,time_window.time_width) < 0){
     time_window.time_width = time;
   }
-  set_time_window(multi_vpaned->mw, &time_window); 
+  lttvwindow_report_time_window(multi_vpaned->mw, &time_window); 
 }
 
 

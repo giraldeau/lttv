@@ -77,11 +77,11 @@ update_dividor
 Things that a viewer can do:
 
 update_status
-set_time_window
+lttvwindow_report_time_window
 set_current_time
-update_traceset?
-update_filter?
-show_viewer?
+update_traceset -> not actually
+update_filter -> not actually
+show_viewer -> makes no sense.
 set_focused_pane
 set_hpane_dividor
 */
@@ -106,7 +106,7 @@ set_hpane_dividor
 #include <lttv/hook.h>
 #include <lttvwindow/common.h>
 #include <lttv/stats.h>
-#include <lttv/filter.h>
+//FIXME (not ready yet) #include <lttv/filter.h>
 
 /**
  * Function to register a view constructor so that main window can generate
@@ -117,7 +117,7 @@ set_hpane_dividor
  * @param view_constructor constructor of the viewer. 
  */
 
-void lttvwindow_viewer_register_toolbar(char ** pixmap, char *tooltip, lttvwindow_viewer_constructor view_constructor);
+void lttvwindow_register_toolbar(char ** pixmap, char *tooltip, lttvwindow_viewer_constructor view_constructor);
 
 
 /**
@@ -128,7 +128,7 @@ void lttvwindow_viewer_register_toolbar(char ** pixmap, char *tooltip, lttvwindo
  * a reference to find out where the pixmap and tooltip are.
  */
 
-void lttvwindow_viewer_unregister_toolbar(lttvwindow_viewer_constructor view_constructor);
+void lttvwindow_unregister_toolbar(lttvwindow_viewer_constructor view_constructor);
 
 
 /**
@@ -140,7 +140,7 @@ void lttvwindow_viewer_unregister_toolbar(lttvwindow_viewer_constructor view_con
  * @param view_constructor constructor of the viewer. 
  */
 
-void lttvwindow_viewer_register_menu(char *menu_path, char *menu_text, lttvwindow_viewer_constructor view_constructor);
+void lttvwindow_register_menu(char *menu_path, char *menu_text, lttvwindow_viewer_constructor view_constructor);
 
 
 /**
@@ -151,7 +151,7 @@ void lttvwindow_viewer_register_menu(char *menu_path, char *menu_text, lttvwindo
  * a reference to find out where the menu_path and menu_text are.
  */
 
-void lttvwindow_viewer_unregister_menu(lttvwindow_viewer_constructor view_constructor);
+void lttvwindow_unregister_menu(lttvwindow_viewer_constructor view_constructor);
 
 
 /**
@@ -163,7 +163,12 @@ void lttvwindow_viewer_unregister_menu(lttvwindow_viewer_constructor view_constr
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_register_time_window_notify(MainWindow * main_win,
+typedef struct _TimeWindowNotifyData {
+  TimeWindow *new_time_window;
+  TimeWindow *old_time_window;
+} TimeWindowNotifyData;
+
+void lttvwindow_register_time_window_notify(MainWindow * main_win,
     LttvHook hook, gpointer hook_data);
 
 
@@ -176,7 +181,7 @@ void lttvwindow_viewer_register_time_window_notify(MainWindow * main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_unregister_time_window_notify(MainWindow * main_win,
+void lttvwindow_unregister_time_window_notify(MainWindow * main_win,
     LttvHook hook, gpointer hook_data);
 
 
@@ -189,7 +194,7 @@ void lttvwindow_viewer_unregister_time_window_notify(MainWindow * main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_register_traceset_notify(MainWindow * main_win,
+void lttvwindow_register_traceset_notify(MainWindow * main_win,
     LttvHook hook, gpointer hook_data);
 
 
@@ -201,7 +206,7 @@ void lttvwindow_viewer_register_traceset_notify(MainWindow * main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_unregister_traceset_notify(MainWindow * main_win,
+void lttvwindow_unregister_traceset_notify(MainWindow * main_win,
               LttvHook hook, gpointer hook_data);
 
 
@@ -214,7 +219,7 @@ void lttvwindow_viewer_unregister_traceset_notify(MainWindow * main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_register_filter_notify(MainWindow *main_win,
+void lttvwindow_register_filter_notify(MainWindow *main_win,
       LttvHook hook, gpointer hook_data);
 
 
@@ -227,7 +232,7 @@ void lttvwindow_viewer_register_filter_notify(MainWindow *main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_unregister_filter_notify(LttvHook hook,  gpointer hook_data,
+void lttvwindow_unregister_filter_notify(LttvHook hook,  gpointer hook_data,
 		       MainWindow * main_win);
 
 
@@ -239,7 +244,7 @@ void lttvwindow_viewer_unregister_filter_notify(LttvHook hook,  gpointer hook_da
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_register_current_time_notify(MainWindow *main_win,
+void lttvwindow_register_current_time_notify(MainWindow *main_win,
             LttvHook hook, gpointer hook_data);
 
 
@@ -251,7 +256,7 @@ void lttvwindow_viewer_register_current_time_notify(MainWindow *main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_unregister_current_time_notify(MainWindow * main_win,
+void lttvwindow_unregister_current_time_notify(MainWindow * main_win,
             LttvHook hook, gpointer hook_data);
 
 
@@ -263,7 +268,7 @@ void lttvwindow_viewer_unregister_current_time_notify(MainWindow * main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_register_show(MainWindow *main_win,
+void lttvwindow_register_show(MainWindow *main_win,
           LttvHook hook, gpointer hook_data);
 
 
@@ -275,83 +280,8 @@ void lttvwindow_viewer_register_show(MainWindow *main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_unregister_show(MainWindow * main_win,
+void lttvwindow_unregister_show(MainWindow * main_win,
               LttvHook hook, gpointer hook_data);
-
-
-
-
-
-
-
-
-/**
- * Update the status bar whenever something changed in the viewer.
- * @param main_win the main window the viewer belongs to.
- * @param info the message which will be shown in the status bar.
- */
-
-void lttvwindow_viewer_report_status(MainWindow *main_win, char *info);
-
-
-/**
- * Function to set the time interval of the current tab.
- * It will be called by a viewer's signal handle associated with 
- * the move_slider signal
- * @param main_win the main window the viewer belongs to.
- * @param time_interval a pointer where time interval is stored.
- */
-
-void lttvwindow_viewer_report_time_window(MainWindow *main_win, TimeWindow *time_window);
-
-/**
- * Function to set the current time/event of the current tab.
- * It will be called by a viewer's signal handle associated with 
- * the button-release-event signal
- * @param main_win the main window the viewer belongs to.
- * @param time a pointer where time is stored.
- */
-
-void lttvwindow_viewer_report_current_time(MainWindow *main_win, LttTime *time);
-
-
-/**
- * Function to set the position of the hpane's dividor (viewer).
- * It will be called by a viewer's signal handle associated with 
- * the motion_notify_event event/signal
- * @param main_win the main window the viewer belongs to.
- * @param position position of the hpane's dividor.
- */
-
-void lttvwindow_viewer_report_dividor(MainWindow *main_win, gint position);
-
-/**
- * Function to redraw each viewer belonging to the current tab, when a traceset
- * change has been made by the viewer.
- * @param main_win the main window the viewer belongs to.
- */
-// FIXME : should never be directly changed by a viewer.
-//void lttvwindow_viewer_report_traceset(MainWindow * main_win);
-
-
-/**
- * Function to show each viewer in the current tab.
- * It will be called by main window after it called process_traceset 
- * @param main_win the main window the viewer belongs to.
- */
-//FIXME : not an API function, belongs to the main window.
-//void lttvwindow_viewer_report_show(MainWindow *main_win);
-
-
-/**
- * Function to set the focused pane (viewer).
- * It will be called by a viewer's signal handle associated with 
- * the grab_focus signal
- * @param main_win the main window the viewer belongs to.
- * @param paned a pointer to a pane where the viewer is contained.
- */
-//FIXME : can we do this through normal GTK signals ?
-//void set_focused_pane(MainWindow *main_win, gpointer paned);
 
 
 /**
@@ -363,7 +293,7 @@ void lttvwindow_viewer_report_dividor(MainWindow *main_win, gint position);
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_register_dividor(MainWindow *main_win,
+void lttvwindow_register_dividor(MainWindow *main_win,
                     LttvHook hook, gpointer hook_data);
 
 
@@ -375,9 +305,60 @@ void lttvwindow_viewer_register_dividor(MainWindow *main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_viewer_unregister_dividor(MainWindow *main_win,
+void lttvwindow_unregister_dividor(MainWindow *main_win,
                     LttvHook hook, gpointer hook_data);
 
+
+
+/**
+ * Update the status bar whenever something changed in the viewer.
+ * @param main_win the main window the viewer belongs to.
+ * @param info the message which will be shown in the status bar.
+ */
+
+void lttvwindow_report_status(MainWindow *main_win, char *info);
+
+
+/**
+ * Function to set the time interval of the current tab.
+ * It will be called by a viewer's signal handle associated with 
+ * the move_slider signal
+ * @param main_win the main window the viewer belongs to.
+ * @param time_interval a pointer where time interval is stored.
+ */
+
+void lttvwindow_report_time_window(MainWindow *main_win, TimeWindow *time_window);
+
+/**
+ * Function to set the current time/event of the current tab.
+ * It will be called by a viewer's signal handle associated with 
+ * the button-release-event signal
+ * @param main_win the main window the viewer belongs to.
+ * @param time a pointer where time is stored.
+ */
+
+void lttvwindow_report_current_time(MainWindow *main_win, LttTime *time);
+
+
+/**
+ * Function to set the position of the hpane's dividor (viewer).
+ * It will be called by a viewer's signal handle associated with 
+ * the motion_notify_event event/signal
+ * @param main_win the main window the viewer belongs to.
+ * @param position position of the hpane's dividor.
+ */
+
+void lttvwindow_report_dividor(MainWindow *main_win, gint position);
+
+/**
+ * Function to set the focused pane (viewer).
+ * It will be called by a viewer's signal handle associated with 
+ * the grab_focus signal
+ * @param main_win the main window the viewer belongs to.
+ * @param paned a pointer to a pane where the viewer is contained.
+ */
+//FIXME : can we do this through normal GTK signals ?
+void lttvwindow_report_focus(MainWindow *main_win, gpointer paned);
 
 /**
  * Function to get the life span of the traceset
@@ -386,7 +367,7 @@ void lttvwindow_viewer_unregister_dividor(MainWindow *main_win,
  * @param end end time of the traceset.
  */
 
-const TimeInterval *lttvwindow_viewer_get_time_span(MainWindow *main_win);
+const TimeInterval *lttvwindow_get_time_span(MainWindow *main_win);
 
 /**
  * Function to get the current time window of the current tab.
@@ -394,7 +375,7 @@ const TimeInterval *lttvwindow_viewer_get_time_span(MainWindow *main_win);
  * @param time_interval a pointer where time interval will be stored.
  */
 
-const TimeWindow *lttvwindow_viewer_get_time_window(MainWindow *main_win);
+const TimeWindow *lttvwindow_get_time_window(MainWindow *main_win);
 
 
 /**
@@ -403,7 +384,7 @@ const TimeWindow *lttvwindow_viewer_get_time_window(MainWindow *main_win);
  * @param time a pointer where time will be stored.
  */
 
-const LttTime *lttvwindow_viewer_get_current_time(MainWindow *main_win);
+const LttTime *lttvwindow_get_current_time(MainWindow *main_win);
 
 /**
  * Function to get the traceset from the current tab.
@@ -411,7 +392,7 @@ const LttTime *lttvwindow_viewer_get_current_time(MainWindow *main_win);
  * @param traceset a pointer to a traceset.
  */
 
-const LttvTraceset *lttvwindow_viewer_get_traceset(MainWindow *main_win);
+const LttvTraceset *lttvwindow_get_traceset(MainWindow *main_win);
 
 
 /**
@@ -420,16 +401,27 @@ const LttvTraceset *lttvwindow_viewer_get_traceset(MainWindow *main_win);
  * @param filter, a pointer to a filter.
  */
 
-const lttv_filter *lttvwindow_viewer_get_filter(MainWindow *main_win);
+//FIXME
+typedef void lttv_filter;
+//FIXME
+const lttv_filter *lttvwindow_get_filter(MainWindow *main_win);
 
 
 /**
  * Function to get the stats of the traceset 
+ * It must be non const so the viewer can modify it. //FIXME really ?
  * @param main_win the main window the viewer belongs to.
  */
 
-LttvTracesetStats* lttvwindow_viewer_get_traceset_stats(MainWindow *main_win);
+LttvTracesetStats* lttvwindow_get_traceset_stats(MainWindow *main_win);
 
-LttvTracesetContext* lttvwindow_viewer_get_traceset_context(MainWindow *main_win);
+/**
+ * Function to get the context of the traceset 
+ * It must be non const so the viewer can add and remove hooks from it.
+ * @param main_win the main window the viewer belongs to.
+ */
+
+
+LttvTracesetContext* lttvwindow_get_traceset_context(MainWindow *main_win);
 
 

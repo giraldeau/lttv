@@ -136,9 +136,9 @@ LttvLibrary *lttv_library_get(unsigned i);
 
 /* Add or remove directory names to the library search path */
 
-void lttv_library_path_add(char *name);
+void lttv_library_path_add(const char *name);
 
-void lttv_library_path_remove(char *name);
+void lttv_library_path_remove(const char *name);
 
 
 /* List the directory names in the library search path */

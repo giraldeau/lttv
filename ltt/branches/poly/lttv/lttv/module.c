@@ -459,14 +459,14 @@ LttvLibrary *lttv_library_get(unsigned i)
 }
 
 
-void lttv_library_path_add(char *name)
+void lttv_library_path_add(const char *name)
 {
   g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Add library path %s", name);
   g_ptr_array_add(library_paths,(char*)g_strdup(name));
 }
 
 
-void lttv_library_path_remove(char *name) 
+void lttv_library_path_remove(const char *name) 
 {
   guint i;
 

@@ -191,7 +191,7 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
     redraw_viewer(mw_data,&time_window);
     set_current_time(mw_data,&(mw_data->current_tab->current_time));
     if(time_interval){
-      set_time_window(mw_data,&t);
+      lttvwindow_report_time_window(mw_data,&t);
     }
   }
 }
@@ -389,7 +389,7 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
   GdkCursor * new;
   GtkWidget* widget;
   LttvTracesetContext *tsc = 
-   LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
+   LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->
                             traceset_context);
 
   //set the cursor to be X shape, indicating that the computer is busy in doing its job
@@ -402,7 +402,7 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
   gdk_window_unstick(win);
  
   //update time window of each viewer, let viewer insert hooks needed by process_traceset
-  set_time_window(mw_data, time_window);
+  lttvwindow_report_time_window(mw_data, time_window);
   
   max_nb_events = get_max_event_number(mw_data);
 
@@ -2049,7 +2049,7 @@ void remove_toolbar_item(gpointer main_win, gpointer user_data)
  * main windows
  */
 
-void main_window_remove_menu_item(lttv_constructor constructor)
+void main_window_remove_menu_item(lttvwindow_viewer_constructor constructor)
 {
   int i;
   LttvMenus * menu;
@@ -2074,7 +2074,7 @@ void main_window_remove_menu_item(lttv_constructor constructor)
   
 }
 
-void main_window_remove_toolbar_item(lttv_constructor constructor)
+void main_window_remove_toolbar_item(lttvwindow_viewer_constructor constructor)
 {
   int i;
   LttvToolbars * toolbar;
