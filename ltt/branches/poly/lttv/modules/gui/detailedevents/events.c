@@ -1454,13 +1454,18 @@ gboolean update_current_time(void * hook_data, void * call_data)
       /* Event is before the list */
     } else {
       /* Event can be in the list */
-      while(gtk_tree_model_iter_next(model, &iter)) {
-        gtk_tree_model_get(model, &iter, TIME_COLUMN, &time, -1);
-        count++;
-        if(time >= nsec){
-          /* found */
-          event_shown = TRUE;
-          break;
+      if(time >= nsec){
+        /* found */
+        event_shown = TRUE;
+      } else {
+        while(gtk_tree_model_iter_next(model, &iter)) {
+          gtk_tree_model_get(model, &iter, TIME_COLUMN, &time, -1);
+          count++;
+          if(time >= nsec){
+            /* found */
+            event_shown = TRUE;
+            break;
+          }
         }
       }
     }
