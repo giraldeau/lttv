@@ -657,11 +657,11 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
                         dash_list,
                         2);
     }
-    
+    gint height_tot = MAX(widget->allocation.height, drawing->height);
     gdk_draw_line(widget->window,
                   drawing->dotted_gc,
-                  cursor_x, event->area.y,
-                  cursor_x, widget->allocation.height);
+                  cursor_x, 0,
+                  cursor_x, height_tot);
   }
   return FALSE;
 }
