@@ -266,7 +266,7 @@ While list_in !empty and list_out !empty
 Notes :
 End criterions for process traceset middle :
 If the criterion is reached, event is out of boundaries and we return.
-Current time > End time
+Current time >= End time
 Event count > Number of events
 Current position >= End position
 

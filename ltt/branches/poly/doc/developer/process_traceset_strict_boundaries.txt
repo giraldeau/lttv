@@ -112,9 +112,14 @@ computation is needed.
 
 - Type LttvTracesetContextPosition
 
+struct _LttvTraceContextPosition {
+  LttEventPosition *tf_pos;          /* Position in each trace           */
+  guint nb_tracefile;                /* Number of tracefiles (check)     */
+}
+
 struct _LttvTracesetContextPosition {
-  LttEventPosition *tracefile_position;  /* Position in each trace/tracefile */
-  guint num_tracefiles;                   /* Number of tracefiles (check)     */
+  LttTraceContextPosition *t_pos;    /* Position in each trace           */
+  guint nb_trace;                    /* Number of traces (check)         */
 }
 
 with interfaces :
@@ -132,7 +137,7 @@ Dependencies :
 
 lttv_process_traceset_seek_position will seek each tracefile to the right
 position. We keep information about number of tracefiles for extra integrity
-checking when reloading the position in the context.
+checking when reloading the position in the context. It also loads the pqueue.
 
 
 
@@ -140,11 +145,11 @@ checking when reloading the position in the context.
 We modify lttv_process_traceset_middle so that it takes as arguments :
 (LttvTracesetContext *self,
 LttTime end,
-unsigned num_events,
+unsigned nb_events,
 const LttvTracesetContextPosition *end_position)
 
 This new version of process traceset middle will call the event hooks for
-events until the first criterion is fulfilled : either the end time is passed,
+events until the first criterion is fulfilled : either the end time is reached,
 the number of events requested is passed or the end position is reached. When
 this function ends, the end position can be extracted from the context, the end
 event is set as described below and the number of events read is returned.
@@ -152,6 +157,7 @@ event is set as described below and the number of events read is returned.
 The end event is a pointer to the last event the hooks has been called for.
 
 - lttv_process_traceset_seek_time : already implemented
+  - now loads the pqueue.
 
 - lttv_process_traceset_begin(LttvTracesetContext *self,
                               LttvHooks       *before_traceset,
