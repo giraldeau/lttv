@@ -11,4 +11,6 @@ from your local machine, the information is saved in 'sysInfo.out' which will
 be read by 'convert' later. If the old tracefile is generated in other machine,
 then the 'sysInfo.out' should be gotten from that machine.
 
+'core.xml' is a facility file, after run 'convert', it needs to be copied to
+'foo_dir/eventdefs' directory
 
