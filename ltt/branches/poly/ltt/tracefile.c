@@ -56,8 +56,9 @@ void setFieldsOffset(LttTracefile *tf,LttEventType *evT,void *evD,LttTrace *t);
 
 /* get the size of the field type according to the archtecture's
    size and endian type(info of the archecture) */
-int getFieldtypeSize(LttTracefile * tf, LttEventType * evT, int offsetRoot,
-		     int offsetParent, LttField *fld, void *evD, LttTrace* t);
+static inline gint getFieldtypeSize(LttTracefile * tf,
+         LttEventType * evT, gint offsetRoot,
+		     gint offsetParent, LttField *fld, void *evD, LttTrace* t);
 
 /* read a fixed size or a block information from the file (fd) */
 int readFile(int fd, void * buf, size_t size, char * mesg);
@@ -1656,22 +1657,26 @@ void setFieldsOffset(LttTracefile *tf,LttEventType *evT,void *evD,LttTrace* t)
  *    int             : size of the field
  ****************************************************************************/
 
-int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
-	     int offsetParent, LttField * fld, void *evD, LttTrace *trace)
+static inline gint getFieldtypeSize(LttTracefile * t,
+       LttEventType * evT, gint offsetRoot,
+	     gint offsetParent, LttField * fld, void *evD, LttTrace *trace)
 {
-  int size, size1, element_number, i, offset1, offset2;
+  gint size, size1, element_number, i, offset1, offset2;
   LttType * type = fld->field_type;
 
-  if(likely(t)){
-    if(unlikely(evT->latest_block==t->which_block &&
-                evT->latest_event==t->which_event)){
-      return fld->field_size;
-    } 
+  if(unlikely(t && evT->latest_block==t->which_block &&
+                   evT->latest_event==t->which_event)){
+    size = fld->field_size;
+    goto end_getFieldtypeSize;
   }
 
-  if(likely(fld->field_fixed == 1)){
-    if(fld == evT->root_field) return fld->field_size;
-  }     
+  if(unlikely(fld->field_fixed == 1)){
+    if(likely(fld == evT->root_field)) {
+      size = fld->field_size;
+      goto end_getFieldtypeSize;
+    }
+  }
+
 
   switch(type->type_class) {
     case LTT_ARRAY:
@@ -1775,106 +1780,15 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
       break;
   }
 
-
-
-#if 0
-  if(type->type_class != LTT_STRUCT && type->type_class != LTT_ARRAY &&
-     type->type_class != LTT_SEQUENCE && type->type_class != LTT_STRING){
-    if(fld->field_fixed == -1){
-      size = (int) ltt_type_size(trace, type);
-      fld->field_fixed = 1;
-    }else size = fld->field_size;
-
-  }else if(type->type_class == LTT_ARRAY){
-    element_number = (int) type->element_number;
-    if(fld->field_fixed == -1){
-      size = getFieldtypeSize(t, evT, offsetRoot,0,fld->child[0], NULL, trace);
-      if(size == 0){ //has string or sequence
-	fld->field_fixed = 0;
-      }else{
-	fld->field_fixed = 1;
-	size *= element_number; 
-      }
-    }else if(fld->field_fixed == 0){// has string or sequence
-      size = 0;
-      for(i=0;i<element_number;i++){
-	size += getFieldtypeSize(t, evT, offsetRoot+size,size, 
-				fld->child[0], evD+size, trace);
-      }      
-    }else size = fld->field_size;
-
-  }else if(type->type_class == LTT_SEQUENCE){
-    size1 = (int) ltt_type_size(trace, type);
-    if(fld->field_fixed == -1){
-      fld->sequ_number_size = size1;
-      fld->field_fixed = 0;
-      size = getFieldtypeSize(t, evT, offsetRoot,0,fld->child[0], NULL, trace);      
-      fld->element_size = size;
-    }else{//0: sequence
-      element_number = getIntNumber(size1,evD);
-      type->element_number = element_number;
-      if(fld->element_size > 0){
-	size = element_number * fld->element_size;
-      }else{//sequence has string or sequence
-	size = 0;
-	for(i=0;i<element_number;i++){
-	  size += getFieldtypeSize(t, evT, offsetRoot+size+size1,size+size1, 
-				   fld->child[0], evD+size+size1, trace);
-	}	
-      }
-      size += size1;
-    }
-
-  }else if(type->type_class == LTT_STRING){
-    size = 0;
-    if(fld->field_fixed == -1){
-      fld->field_fixed = 0;
-    }else{//0: string
-      size = strlen((char*)evD) + 1; //include end : '\0'
-    }
-
-  }else if(type->type_class == LTT_STRUCT){
-    element_number = (int) type->element_number;
-    size = 0;
-    if(fld->field_fixed == -1){      
-      offset1 = offsetRoot;
-      offset2 = 0;
-      for(i=0;i<element_number;i++){
-	size1=getFieldtypeSize(t, evT,offset1,offset2, fld->child[i], NULL, trace);
-	if(size1 > 0 && size >= 0){
-	  size += size1;
-	  if(offset1 >= 0) offset1 += size1;
-	  offset2 += size1;
-	}else{
-	  size = -1;
-	  offset1 = -1;
-	  offset2 = -1;
-	}
-      }
-      if(size == -1){
-	fld->field_fixed = 0;
-	size = 0;
-      }else fld->field_fixed = 1;
-    }else if(fld->field_fixed == 0){
-      offset1 = offsetRoot;
-      offset2 = 0;
-      for(i=0;i<element_number;i++){
-	size=getFieldtypeSize(t,evT,offset1,offset2,fld->child[i],evD+offset2, trace);
-	offset1 += size;
-	offset2 += size;
-      }      
-      size = offset2;
-    }else size = fld->field_size;
-  }
-#endif //0
-
   fld->offset_root     = offsetRoot;
   fld->offset_parent   = offsetParent;
-  if(!evD){
+  if(unlikely(!evD)){
     fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
     fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
   }
   fld->field_size      = size;
+
+end_getFieldtypeSize:
 
   return size;
 }
