@@ -29,6 +29,7 @@ typedef struct _LttTime {
 
 
 #define NANOSECONDS_PER_SECOND 1000000000
+#define SHIFT_CONST 1.07374182400631629848
 
 static const LttTime ltt_time_zero = { 0, 0 };
 
@@ -110,7 +111,8 @@ static inline LttTime ltt_time_from_double(double t1)
     g_warning("Conversion from non precise double to LttTime");
 #endif //EXTRA_CHECK
   LttTime res;
-  res.tv_sec = t1/(double)NANOSECONDS_PER_SECOND;
+  //res.tv_sec = t1/(double)NANOSECONDS_PER_SECOND;
+  res.tv_sec = (guint64)(t1 * SHIFT_CONST) >> 30;
   res.tv_nsec = (t1 - (res.tv_sec*NANOSECONDS_PER_SECOND));
   return res;
 }
