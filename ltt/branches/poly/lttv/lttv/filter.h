@@ -24,6 +24,7 @@
 #include <lttv/state.h>
 #include <lttv/module.h>
 #include <ltt/ltt.h>
+#include <ltt/time.h>
 #include <ltt/event.h>
 
 
@@ -145,6 +146,7 @@ union _LttvFieldValue {
   guint16 v_uint16;
   double v_double;
   char* v_string;
+  LttTime v_ltttime;
 };
 
 /**
@@ -258,32 +260,38 @@ gboolean lttv_apply_op_eq_uint32(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_eq_uint16(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_eq_double(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_eq_string(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_ltttime(gpointer v1, LttvFieldValue v2);
 
 gboolean lttv_apply_op_ne_uint64(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ne_uint32(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ne_uint16(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ne_double(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ne_string(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_ltttime(gpointer v1, LttvFieldValue v2);
 
 gboolean lttv_apply_op_lt_uint64(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_lt_uint32(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_lt_uint16(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_lt_double(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_lt_ltttime(gpointer v1, LttvFieldValue v2);
 
 gboolean lttv_apply_op_le_uint64(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_le_uint32(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_le_uint16(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_le_double(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_le_ltttime(gpointer v1, LttvFieldValue v2);
 
 gboolean lttv_apply_op_gt_uint64(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_gt_uint32(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_gt_uint16(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_gt_double(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_gt_ltttime(gpointer v1, LttvFieldValue v2);
 
 gboolean lttv_apply_op_ge_uint64(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ge_uint32(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ge_uint16(gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ge_double(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ge_ltttime(gpointer v1, LttvFieldValue v2);
 
 /*
  * Cloning

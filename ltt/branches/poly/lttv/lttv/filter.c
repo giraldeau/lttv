@@ -133,7 +133,7 @@ lttv_simple_expression_new() {
   se->field = LTTV_FILTER_UNDEFINED;
   se->op = NULL;
   se->offset = 0;
-  se->value.v_uint64 = 0;
+//  se->value.v_uint64 = 0;
 
   return se;
 }
@@ -349,7 +349,7 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
        }
        break;
      /*
-      * double
+      * Ltttime
       */
      case LTTV_FILTER_STATE_CT:
      case LTTV_FILTER_STATE_IT:
@@ -357,22 +357,22 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
      case LTTV_FILTER_EVENT_TSC:
        switch(op) {
          case LTTV_FIELD_EQ:
-           se->op = lttv_apply_op_eq_double;
+           se->op = lttv_apply_op_eq_ltttime;
            break;
          case LTTV_FIELD_NE:
-           se->op = lttv_apply_op_ne_double;
+           se->op = lttv_apply_op_ne_ltttime;
            break;
          case LTTV_FIELD_LT:
-           se->op = lttv_apply_op_lt_double;
+           se->op = lttv_apply_op_lt_ltttime;
            break;
          case LTTV_FIELD_LE:
-           se->op = lttv_apply_op_le_double;
+           se->op = lttv_apply_op_le_ltttime;
            break;
          case LTTV_FIELD_GT:
-           se->op = lttv_apply_op_gt_double;
+           se->op = lttv_apply_op_gt_ltttime;
            break;
          case LTTV_FIELD_GE:
-           se->op = lttv_apply_op_ge_double;
+           se->op = lttv_apply_op_ge_ltttime;
            break;
          default:
            g_warning("Error encountered in operator assignment");
@@ -421,13 +421,14 @@ gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* val
        g_free(value);
        break;
      /*
-      * double
+      * LttTime
       */
      case LTTV_FILTER_STATE_CT:
      case LTTV_FILTER_STATE_IT:
      case LTTV_FILTER_EVENT_TIME:
      case LTTV_FILTER_EVENT_TSC:
-       se->value.v_double = atof(value);
+       //se->value.v_double = atof(value);
+       se->value.v_ltttime = ltt_time_from_double(atof(value));
        g_free(value);
        break;
      default:
@@ -577,6 +578,21 @@ gboolean lttv_apply_op_eq_string(gpointer v1, LttvFieldValue v2) {
 }
 
 /**
+ *  @fn gboolean lttv_apply_op_eq_ltttime(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_eq_ltttime(gpointer v1, LttvFieldValue v2) {
+  LttTime* r = (LttTime*) v1;
+  return ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec == v2.v_ltttime.tv_nsec));
+}
+
+
+/**
  *  @fn gboolean lttv_apply_op_ne_uint64(gpointer,LttvFieldValue) 
  * 
  *  Applies the 'not equal' operator to the
@@ -647,6 +663,21 @@ gboolean lttv_apply_op_ne_string(gpointer v1, LttvFieldValue v2) {
 }
 
 /**
+ *  @fn gboolean lttv_apply_op_ne_ltttime(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'not equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ne_ltttime(gpointer v1, LttvFieldValue v2) {
+  LttTime* r = (LttTime*) v1;
+  return ((r->tv_sec != v2.v_ltttime.tv_sec) || (r->tv_nsec != v2.v_ltttime.tv_nsec));
+}
+
+
+/**
  *  @fn gboolean lttv_apply_op_lt_uint64(gpointer,LttvFieldValue) 
  * 
  *  Applies the 'lower than' operator to the
@@ -701,6 +732,21 @@ gboolean lttv_apply_op_lt_double(gpointer v1, LttvFieldValue v2) {
   double* r = (double*) v1;
   return (*r < v2.v_double);
 }
+
+/**
+ *  @fn gboolean lttv_apply_op_lt_ltttime(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'lower than' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_lt_ltttime(gpointer v1, LttvFieldValue v2) {
+  LttTime* r = (LttTime*) v1;
+  return ((r->tv_sec < v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec < v2.v_ltttime.tv_nsec)));
+}
+
 
 /**
  *  @fn gboolean lttv_apply_op_le_uint64(gpointer,LttvFieldValue) 
@@ -759,6 +805,21 @@ gboolean lttv_apply_op_le_double(gpointer v1, LttvFieldValue v2) {
 }
 
 /**
+ *  @fn gboolean lttv_apply_op_le_ltttime(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'lower or equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_le_ltttime(gpointer v1, LttvFieldValue v2) {
+  LttTime* r = (LttTime*) v1;
+  return ((r->tv_sec < v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec <= v2.v_ltttime.tv_nsec)));
+}
+
+
+/**
  *  @fn gboolean lttv_apply_op_gt_uint64(gpointer,LttvFieldValue) 
  * 
  *  Applies the 'greater than' operator to the
@@ -815,6 +876,21 @@ gboolean lttv_apply_op_gt_double(gpointer v1, LttvFieldValue v2) {
 }
 
 /**
+ *  @fn gboolean lttv_apply_op_gt_ltttime(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'greater than' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_gt_ltttime(gpointer v1, LttvFieldValue v2) {
+  LttTime* r = (LttTime*) v1;
+  return ((r->tv_sec > v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec > v2.v_ltttime.tv_nsec)));
+}
+
+
+/**
  *  @fn gboolean lttv_apply_op_ge_uint64(gpointer,LttvFieldValue) 
  * 
  *  Applies the 'greater or equal' operator to the
@@ -869,6 +945,21 @@ gboolean lttv_apply_op_ge_double(gpointer v1, LttvFieldValue v2) {
   double* r = (double*) v1;
   return (*r >= v2.v_double);
 }
+
+/**
+ *  @fn gboolean lttv_apply_op_ge_ltttime(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'greater or equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ge_ltttime(gpointer v1, LttvFieldValue v2) {
+  LttTime* r = (LttTime*) v1;
+  return ((r->tv_sec > v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec >= v2.v_ltttime.tv_nsec)));
+}
+
 
 
 /**
@@ -1505,15 +1596,15 @@ lttv_filter_tree_parse(
         case LTTV_FILTER_STATE_CT:
             if(state == NULL) lresult = TRUE;
             else {
-              double val = ltt_time_to_double(state->creation_time);
-              lresult = t->l_child.leaf->op((gpointer)&val,v);
+//              double val = ltt_time_to_double(state->creation_time);
+              lresult = t->l_child.leaf->op((gpointer)&state->creation_time,v);
             }
             break;
         case LTTV_FILTER_STATE_IT:
             if(state == NULL) lresult = TRUE;
             else {
-              double val = ltt_time_to_double(state->insertion_time);
-              lresult = t->l_child.leaf->op((gpointer)&val,v);
+//              double val = ltt_time_to_double(state->insertion_time);
+              lresult = t->l_child.leaf->op((gpointer)&state->insertion_time,v);
             }
             break;
         case LTTV_FILTER_STATE_P_NAME:
@@ -1624,15 +1715,15 @@ lttv_filter_tree_parse(
         case LTTV_FILTER_STATE_CT:
             if(state == NULL) rresult = TRUE;
             else {
-              double val = ltt_time_to_double(state->creation_time);
-              rresult = t->r_child.leaf->op((gpointer)&val,v);
+            //  double val = ltt_time_to_double(state->creation_time);
+              rresult = t->r_child.leaf->op((gpointer)&state->creation_time,v);
             }
             break;
         case LTTV_FILTER_STATE_IT:
             if(state == NULL) rresult = TRUE;
             else {
-              double val = ltt_time_to_double(state->insertion_time);
-              rresult = t->r_child.leaf->op((gpointer)&val,v);
+//              double val = ltt_time_to_double(state->insertion_time);
+              rresult = t->r_child.leaf->op((gpointer)&state->insertion_time,v);
             }
             break;
         case LTTV_FILTER_STATE_P_NAME:
@@ -1673,8 +1764,8 @@ lttv_filter_tree_parse(
         case LTTV_FILTER_EVENT_TIME:
 //            if(event == NULL) rresult = TRUE;
 //            else {
-//                double val = ltt_time_to_double(event->event_time);
-//                rresult = t->r_child.leaf->op((gpointer)&val,v);
+//              double val = ltt_time_to_double(event->event_time);
+//                rresult = t->r_child.leaf->op((gpointer)&event->event_time,v);
 //            }
             rresult = TRUE;
             break;
