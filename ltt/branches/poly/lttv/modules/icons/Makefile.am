@@ -6,4 +6,6 @@
 
 EXTRA_DIST = \
 		hGuiControlFlowInsert.xpm\
-		hGuiEventsInsert.xpm
+		hGuiEventsInsert.xpm\
+		hGuiStatisticInsert.xpm
+

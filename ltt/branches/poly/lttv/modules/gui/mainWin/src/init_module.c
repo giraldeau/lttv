@@ -16,6 +16,7 @@
 #include <lttv/module.h>
 #include <lttv/processTrace.h>
 #include <lttv/state.h>
+#include <lttv/stats.h>
 #include <lttv/menu.h>
 #include <lttv/toolbar.h>
 
@@ -27,7 +28,7 @@
 /* global variable */
 systemView * gSysView;
 
-LttvTracesetState * gTracesetContext = NULL;
+LttvTracesetStats * gTracesetContext = NULL;
 static LttvTraceset * traceset;
 
 /** Array containing instanced objects. */
@@ -118,7 +119,7 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
   mw->CurrentTab = NULL;
   mw->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   if(!gTracesetContext){
-    gTracesetContext = g_object_new(LTTV_TRACESET_STATE_TYPE, NULL);
+    gTracesetContext = g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
     //FIXME: lttv_context_fini should be called some where.
     lttv_context_init(LTTV_TRACESET_CONTEXT(gTracesetContext), traceset);
   }

@@ -14,6 +14,7 @@
 #include <ltt/ltt.h>
 #include <lttv/hook.h>
 #include <lttv/common.h>
+#include <lttv/stats.h>
 
 /**
  * Function to register a view constructor so that main window can generate
@@ -378,3 +379,29 @@ void contextRemoveHooks(mainWindow *main_win ,
  */
 
 void getTracesetTimeSpan(mainWindow *main_win, LttTime * start, LttTime* end);
+
+
+/**
+ * Function to add/remove event hooks for state 
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void stateAddEventHooks(mainWindow *main_win );
+void stateRemoveEventHooks(mainWindow *main_win );
+
+
+/**
+ * Function to add/remove event hooks for stats 
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void statsAddEventHooks(mainWindow *main_win );
+void statsRemoveEventHooks(mainWindow *main_win );
+
+
+/**
+ * Function to get the stats of the traceset 
+ * @param main_win the main window the viewer belongs to.
+ */
+
+LttvTracesetStats* getTracesetStats(mainWindow *main_win);

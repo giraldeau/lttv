@@ -12,6 +12,9 @@
 #include <lttv/menu.h>
 #include <lttv/toolbar.h>
 #include <lttv/gtkTraceSet.h>
+#include <lttv/module.h>
+
+#define PATH_LENGTH     256
 
 extern systemView * gSysView;
 extern LttvTracesetContext * gTracesetContext;
@@ -108,22 +111,20 @@ void get_label_string (GtkWidget * text, gchar * label)
     strcpy(label,gtk_entry_get_text(entry)); 
 }
 
-void get_label(GtkWindow * mw, gchar * str)
+void get_label(GtkWindow * mw, gchar * str, gchar* dialogue_title, gchar * label_str)
 {
   GtkWidget * dialogue;
   GtkWidget * text;
   GtkWidget * label;
   gint id;
 
-  strcpy(str,"Page");     //default label
-
-  dialogue = gtk_dialog_new_with_buttons("Get the name of the tab",mw,
+  dialogue = gtk_dialog_new_with_buttons(dialogue_title,mw,
 					 GTK_DIALOG_MODAL,
 					 GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
 					 GTK_STOCK_CANCEL,GTK_RESPONSE_REJECT,
 					 NULL); 
 
-  label = gtk_label_new("Please input tab's name");
+  label = gtk_label_new(label_str);
   gtk_widget_show(label);
 
   text = gtk_entry_new();
@@ -373,7 +374,7 @@ on_tab_activate                        (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
   GList * list;
-  gchar label[64];
+  gchar label[PATH_LENGTH];
 
   tab * tmpTab;
   GtkWidget * pane;
@@ -415,7 +416,8 @@ on_tab_activate                        (GtkMenuItem     *menuitem,
   gtk_widget_show((GtkWidget*)tmpTab->custom);
   tmpTab->Next = NULL;    
 
-  get_label((GtkWindow*)mwData->MWindow, label);
+  strcpy(label,"Page");
+  get_label((GtkWindow*)mwData->MWindow, label,"Get the name of the tab","Please input tab's name");
   tmpTab->label = gtk_label_new (label);
   gtk_widget_show (tmpTab->label);
 
@@ -606,7 +608,14 @@ void
 on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
+  gchar  str[PATH_LENGTH];
+  mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
   g_printf("Add module search path\n");
+  str[0] = '\0';
+  get_label((GtkWindow*)mwData->MWindow, str, "Add module search path", "Please input a search path:");
+  if(strlen(str)){
+    lttv_module_path_add(str);
+  }
 }
 
 

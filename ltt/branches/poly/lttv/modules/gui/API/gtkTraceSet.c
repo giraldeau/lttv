@@ -18,6 +18,9 @@
 #include <lttv/processTrace.h>
 #include <lttv/toolbar.h>
 #include <lttv/menu.h>
+#include <lttv/state.h>
+#include <lttv/stats.h>
+
 
 /**
  * Internal function parts
@@ -674,4 +677,46 @@ void getTracesetTimeSpan(mainWindow *main_win, LttTime * start, LttTime* end)
 	*end = e;      
     }
   }
+}
+
+
+/**
+ * Function to add/remove event hooks for state 
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void stateAddEventHooks(mainWindow *main_win )
+{
+  lttv_state_add_event_hooks((LttvTracesetState*)main_win->traceset_context);
+}
+
+void stateRemoveEventHooks(mainWindow *main_win )
+{
+  lttv_state_remove_event_hooks((LttvTracesetState*)main_win->traceset_context);
+}
+
+
+/**
+ * Function to add/remove event hooks for stats 
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void statsAddEventHooks(mainWindow *main_win )
+{
+  lttv_stats_add_event_hooks((LttvTracesetStats*)main_win->traceset_context);
+}
+
+void statsRemoveEventHooks(mainWindow *main_win )
+{
+  lttv_stats_remove_event_hooks((LttvTracesetStats*)main_win->traceset_context);
+}
+
+/**
+ * Function to get the stats of the traceset 
+ * @param main_win the main window the viewer belongs to.
+ */
+
+LttvTracesetStats* getTracesetStats(mainWindow *main_win)
+{
+  return (LttvTracesetStats*)main_win->traceset_context;
 }
