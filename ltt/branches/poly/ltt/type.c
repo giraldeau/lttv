@@ -265,7 +265,7 @@ unsigned ltt_type_member_number(LttType *t)
 LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name)
 {
   if(t->type_class != LTT_STRUCT
-      || t->type_class != LTT_UNION){*name = NULL; return NULL;}
+      && t->type_class != LTT_UNION){*name = NULL; return NULL;}
   if(i >= t->element_number){*name = NULL; return NULL;}
   *name = t->element_type[i]->element_name;
   return t->element_type[i];
@@ -322,7 +322,7 @@ LttField *ltt_field_element(LttField *f)
 LttField *ltt_field_member(LttField *f, unsigned i)
 {
   if(f->field_type->type_class != LTT_STRUCT
-      || f->field_type->type_class != LTT_UNION) return NULL;
+      && f->field_type->type_class != LTT_UNION) return NULL;
   if(i >= f->field_type->element_number) return NULL;
   return f->child[i];
 }
