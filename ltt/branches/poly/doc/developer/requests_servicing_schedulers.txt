@@ -61,17 +61,85 @@ specified time intervals.
 
 Background Scheduler
 
-It has its own events requests pool. It services them just like a foreground
-scheduler. The difference comes in that there may be duplicated requests :
-for instance, statistics computation for a trace can be asked by two viewers
-at the same time. Another difference is that the hook_data of theses requests
-will typically be NULL, and the typical hook function will be located in a
-library upon which the viewer depends.
+Right now, to simplify the problem of the background scheduler, we assume that
+the module that loads the extended statistics hooks has been loaded before the
+data is requested and that it is not unloaded until the program stops. We will
+eventually have to deal with the requests removal based on module load/unload,
+but it complicates the problem quite a bit.
 
-A viewer is informed of the completeness of part of its request by its
-after_traceset hook registered along with the events request. This hook is
-called after the end of each chunk : the viewer will see if the computed data
-suits its needs.
+A background scheduler adds hooks located under a global attributes path
+(specified by the viewer who makes the request) to the trace's traceset
+context (the trace is specified by the viewer). Then, it processes the whole
+trace with this context (and hooks).
+
+Typically, a module that extends statistics will register hooks in the global
+attributes tree under /TraceState/Statistics/ModuleName/hook_name . A viewer
+that needs these statistics for a set of traces does a background computation
+request through a call to the main window API function. It must specify all
+types of hooks that must be called for the specified trace.
+
+The background computation requests for a trace are queued. When the idle
+function kicks in to answer these requests, it add the hooks of all the requests
+toghether in the context and starts the read. It also keeps a list of the
+background requests currently serviced.
+
+The read is done from start to end of the trace, calling all the hooks present
+in the context. Only when the read is over, the after_request hooks of the
+currently serviced requests are called and the requests are destroyed.
+
+If there are requests in the waiting queue, they are all added to the current
+pool and processed. It is important to understand that, while a processing is in
+being done, no requests are added to the pool : they wait for their turn in the
+queue.
+
+Every hook that are added to the context by the scheduler comes from global
+attributes, i.e.
+/traces/trace_path/TraceState/Statistics/ModuleName/hook_name
+
+They come with a flag telling either in_progress or ready. If the flag
+ready is set, a viewer knows that the data it needs is already ready and he
+doesn't have to make a request.
+
+If the flag in_progress is set, that means that the data it needs is currently
+being serviced, and it must wait for the current servicing to be finished. It
+tells the lttvwindow API to call a hook when the actual servicing is over (there
+is a special function for this, as it requires to modify the pool of requests
+actually being serviced : we must make sure that no new reading hooks are
+added!).
+
+
+
+
+
+New Global Attributes
+
+When a hook is added to the trace context, The variable
+/traces/trace_path/TraceState/Statistics/ModuleName/hook_name is set.
+
+When a processing is fired, a variable
+/traces/trace_path/TraceState/Statistics/ModuleName/in_progress is set.
+
+When a processing finished, a variable
+/traces/trace_path/TraceState/Statistics/ModuleName/in_progress is unset
+/traces/trace_path/TraceState/Statistics/ModuleName/ready is set
+
+
+
+
+
+Typical Use For a Viewer
+
+When a viewer wants extended information, it must first check if it is ready.
+if not :
+Before a viewer makes a request, it must check the in_prgoress status of the
+hooks.
+
+If the in_progress is unset, it makes the request.
+
+If the in_progress is set, it makes a special request for being informed of the
+end of request.
+
+
 
 
 Hooks Lists
@@ -81,6 +149,9 @@ reference counter for each hook of a hook list. If the same hook is added twice,
 it will be called only once, but it will need two "remove" to be really removed
 from the list. Two hooks are identical if they have the same function pointer
 and hook_data.
+
+
+
 
 
 
@@ -110,6 +181,8 @@ Two global attributes per trace :
 /traces/path_to_trace/LttvTrace
   It is a pointer to the LttvTrace structure.
 /traces/path_to_trace/LttvBackgroundComputation
+/traces/path_to_trace/TraceState/...  hooks to add to background computation
+                                      in_progress and ready flags.
 
 struct _LttvBackgroundComputation {
   GSList *events_requests;
@@ -143,8 +216,4 @@ structure.
 In a ad hoc events request, a pointer to this structure is used as hook_data in
 the hook lists
 
-The typical case for a background computation is that the hook_data will be set
-to NULL instead. No particular hook_data is needed as this type of request does
-only modify trace related data structures which are available through the
-call_data.
 
