@@ -8,6 +8,10 @@
 #include "LTTTypes.h"
 #include "LinuxEvents.h"
 
+#define TRACE_HEARTBEAT_ID  19
+#define INFO_ENTRY          9
+#define OVERFLOW_FIGURE     4294967296
+
 #define write_to_buffer(DEST, SRC, SIZE) \
 do\
 {\
@@ -113,34 +117,34 @@ int main(int argc, char ** argv){
   uint8_t  evId;
   uint32_t time_delta, startTimeDelta;
   void * cur_pos, *end_pos;
-  buffer_start start;
-  buffer_start end;
+  buffer_start start, start_proc, start_intr;
+  buffer_start end, end_proc, end_intr;
   heartbeat beat;
   int beat_count = 0;
   gboolean * has_event;
   uint32_t size_lost;
   int reserve_size = sizeof(buffer_start) + sizeof(uint16_t) + 2*sizeof(uint32_t);//lost_size and buffer_end event
 
-  if(argc != 3 && argc != 4){
+  if(argc != 4 && argc != 5){
     printf("need a trace file and cpu number or root directory for the new tracefile\n");
     exit(1);
   }
 
-  if(argc == 3){
+  if(argc == 4){
     strcpy(foo, "foo");
     strcpy(foo_eventdefs, "foo/eventdefs");
     strcpy(foo_control, "foo/control");
     strcpy(foo_cpu, "foo/cpu");
     strcpy(foo_info, "foo/info");
   }else{
-    strcpy(foo, argv[3]);
-    strcpy(foo_eventdefs, argv[3]);
+    strcpy(foo, argv[4]);
+    strcpy(foo_eventdefs, argv[4]);
     strcat(foo_eventdefs,"/eventdefs");
-    strcpy(foo_control, argv[3]);
+    strcpy(foo_control, argv[4]);
     strcat(foo_control,"/control");
-    strcpy(foo_cpu, argv[3]);
+    strcpy(foo_cpu, argv[4]);
     strcat(foo_cpu,"/cpu");
-    strcpy(foo_info, argv[3]);
+    strcpy(foo_info, argv[4]);
     strcat(foo_info,"/info");
   }
   strcpy(foo_control_facilities, foo_control);
@@ -152,7 +156,7 @@ int main(int argc, char ** argv){
   strcpy(foo_info_system, foo_info);
   strcat(foo_info_system, "/system.xml");
 
-  cpu = atoi(argv[2]);
+  cpu = atoi(argv[3]);
   printf("cpu number = %d\n", cpu);
 
 
@@ -164,7 +168,7 @@ int main(int argc, char ** argv){
     g_error("Unable to open file sysInfo.out\n");
   }
 
-  for(i=0;i<9;i++){
+  for(i=0;i<INFO_ENTRY;i++){
     if(!fgets(buf,BUFFER_SIZE-1,fp))
       g_error("The format of sysInfo.out is not right\n");
     if(strncmp(buf,"node_name=",10)==0){
@@ -362,10 +366,54 @@ int main(int argc, char ** argv){
     //write start block event into processes and interrupts files
     write_to_buffer(write_pos_intr,(void*)&startId, sizeof(uint16_t));    
     write_to_buffer(write_pos_intr,(void*)&startTimeDelta, sizeof(uint32_t));
-    write_to_buffer(write_pos_intr,(void*)&start, sizeof(buffer_start));
+    start_intr = start;
+    start_intr.nanoseconds -= 40;
+    write_to_buffer(write_pos_intr,(void*)&start_intr, sizeof(buffer_start));
+
     write_to_buffer(write_pos_proc,(void*)&startId, sizeof(uint16_t));    
     write_to_buffer(write_pos_proc,(void*)&startTimeDelta, sizeof(uint32_t));
-    write_to_buffer(write_pos_proc,(void*)&start, sizeof(buffer_start));
+    start_proc = start;
+    start_proc.nanoseconds -= 20;
+    write_to_buffer(write_pos_proc,(void*)&start_proc, sizeof(buffer_start));
+
+    //parse *.proc file to get process and irq info
+    if(i == 0){
+      int        lIntID;                 /* Interrupt ID */
+      int        lPID, lPPID;            /* Process PID and Parent PID */
+      char       lName[256];             /* Process name */
+      FILE *          fProc;
+      uint16_t        defaultId;
+      trace_process   process;
+      trace_irq_entry irq;
+
+      fProc = fopen(argv[2],"r");
+      if(!fProc){
+	g_error("Unable to open file %s\n", argv[2]);
+      }
+
+      while(fscanf(fProc, "PID: %d; PPID: %d; NAME: %s\n", &lPID, &lPPID, lName) > 0){
+	defaultId = TRACE_PROCESS;
+	process.event_sub_id = TRACE_PROCESS_FORK;
+	process.event_data1 = lPID;
+	process.event_data2 = lPPID;
+	write_to_buffer(write_pos_proc,(void*)&defaultId, sizeof(uint16_t));    
+	write_to_buffer(write_pos_proc,(void*)&startTimeDelta, sizeof(uint32_t));
+	write_to_buffer(write_pos_proc,(void*)&process, sizeof(trace_process));	
+      }
+
+      while(fscanf(fProc, "IRQ: %d; NAME: ", &lIntID) > 0){
+	/* Read 'til the end of the line */
+	fgets(lName, 200, fProc);
+
+	defaultId =  TRACE_IRQ_ENTRY;
+	irq.irq_id = lIntID;
+	irq.kernel = 1;
+	write_to_buffer(write_pos_intr,(void*)&defaultId, sizeof(uint16_t));    
+	write_to_buffer(write_pos_intr,(void*)&startTimeDelta, sizeof(uint32_t));
+	write_to_buffer(write_pos_intr,(void*)&irq, sizeof(trace_irq_entry));	
+      }
+      fclose(fProc);
+    }
 
     while(1){
       int event_size;
@@ -385,7 +433,7 @@ int main(int argc, char ** argv){
       evId = *(uint8_t *)cur_pos;
       newId = evId;
       if(evId == TRACE_HEARTBEAT) {
-	newId = 19;
+	newId = TRACE_HEARTBEAT_ID;
       }
       cur_pos += sizeof(uint8_t);
       time_delta = *(uint32_t*)cur_pos;
@@ -422,12 +470,22 @@ int main(int argc, char ** argv){
 
 	//write out processes and intrrupts files
 	{
-	  int size_intr =(int) (write_pos_intr - (void*)buf_intr);
-	  int size_proc =(int) (write_pos_proc - (void*)buf_proc);
-	  write_to_buffer(write_pos_intr,(void*)&end,sizeof(buffer_start));   
-	  write_to_buffer(write_pos_proc,(void*)&end,sizeof(buffer_start));   
+	  int size_intr = block_size - (write_pos_intr - (void*)buf_intr);
+	  int size_proc = block_size - (write_pos_proc - (void*)buf_proc);
+	  write_to_buffer(write_pos_intr,(void*)&newId,sizeof(uint16_t));
+	  write_to_buffer(write_pos_intr,(void*)&time_delta, sizeof(uint32_t));     
+	  end_intr = end;
+	  end_intr.nanoseconds += 20;
+	  write_to_buffer(write_pos_intr,(void*)&end_intr,sizeof(buffer_start));   
+
+	  write_to_buffer(write_pos_proc,(void*)&newId,sizeof(uint16_t));
+	  write_to_buffer(write_pos_proc,(void*)&time_delta, sizeof(uint32_t));     
+	  end_proc = end;
+	  end_proc.nanoseconds += 40;
+	  write_to_buffer(write_pos_proc,(void*)&end_proc,sizeof(buffer_start));   
+
 	  write_pos_intr = buf_intr + block_size - sizeof(uint32_t);
-	  write_pos_proc = buf_intr + block_size - sizeof(uint32_t);
+	  write_pos_proc = buf_proc + block_size - sizeof(uint32_t);
   	  write_to_buffer(write_pos_intr,(void*)&size_intr, sizeof(uint32_t));
   	  write_to_buffer(write_pos_proc,(void*)&size_proc, sizeof(uint32_t));
 	  write(fdIntr,(void*)buf_intr,block_size);	  
@@ -454,14 +512,14 @@ int main(int argc, char ** argv){
 	  event_size = sizeof(trace_irq_entry);
 	  timeDelta = time_delta;
 	  write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t)); 
-	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint64_t));
+	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint32_t));
 	  write_to_buffer(write_pos_intr,cur_pos, event_size);
 	  break;
 	case TRACE_IRQ_EXIT:
 	  event_size = 0;
 	  timeDelta = time_delta;
 	  write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));
-	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint64_t));
+	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint32_t));
 	  break;
 	case TRACE_SCHEDCHANGE:
 	  event_size = sizeof(trace_schedchange);
@@ -471,10 +529,10 @@ int main(int argc, char ** argv){
 	  break;
 	case TRACE_SOFT_IRQ:
 	  event_size = sizeof(trace_soft_irq);
-	  timeDelta = time_delta;
-	  write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));
-	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint64_t));
-	  write_to_buffer(write_pos_intr,cur_pos, event_size);
+	  //	  timeDelta = time_delta;
+	  //	  write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));
+	  //	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint32_t));
+	  //	  write_to_buffer(write_pos_intr,cur_pos, event_size);
 	  break;
 	case TRACE_PROCESS:
 	  event_size = sizeof(trace_process);
@@ -482,7 +540,7 @@ int main(int argc, char ** argv){
 	  subId = *(uint8_t*)cur_pos;
 	  if(subId == TRACE_PROCESS_FORK || subId ==TRACE_PROCESS_EXIT){
 	    write_to_buffer(write_pos_proc,(void*)&newId, sizeof(uint16_t));
-	    write_to_buffer(write_pos_proc,(void*)&timeDelta, sizeof(uint64_t));
+	    write_to_buffer(write_pos_proc,(void*)&timeDelta, sizeof(uint32_t));
 	    write_to_buffer(write_pos_proc,cur_pos, event_size);
 	  } 
 	  break;
@@ -508,8 +566,17 @@ int main(int argc, char ** argv){
 	  beat_count++;
 	  beat.seconds = 0;
 	  beat.nanoseconds = 0;
-	  beat.cycle_count = start.cycle_count + beat_count * (0XFFFF+1);
+	  beat.cycle_count = start.cycle_count + beat_count * OVERFLOW_FIGURE;
 	  event_size = 0;
+
+	  end.cycle_count += OVERFLOW_FIGURE;
+
+	  write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));
+	  write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint32_t));
+	  write_to_buffer(write_pos_intr,(void*)&beat, sizeof(heartbeat)); 	    	  
+	  write_to_buffer(write_pos_proc,(void*)&newId, sizeof(uint16_t));
+	  write_to_buffer(write_pos_proc,(void*)&timeDelta, sizeof(uint32_t));
+	  write_to_buffer(write_pos_proc,(void*)&beat, sizeof(heartbeat)); 	    	  
 	  break;
         default:
 	  event_size = -1;

@@ -1,10 +1,11 @@
 The application 'convert' is used to convert an old format tracefile into a new 
-format tracefile. It has three commandline parameters, the first is tracefile 
-name, the second is a number (number of cpu), the last one is root directory
-for the new trace (this can be omitted, by default it is 'foo')
+format tracefile. It has four commandline parameters, the first is tracefile 
+name, the second is process file, the third is a number (number of cpu), 
+the last one is root directory for the new trace (this can be omitted, 
+by default it is 'foo')
 
 The command line looks like this:      
-        convert tracefile_name number_cpu foo_dir
+        convert tracefile_name processfile_name _number_cpu foo_dir
 
 There is also an script file 'sysInfo' which is used to get system information
 from your local machine, the information is saved in 'sysInfo.out' which will 
