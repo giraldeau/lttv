@@ -41,6 +41,9 @@
 #define DIR_NAME_SIZE 256
 #define __UNUSED__ __attribute__((__unused__))
 
+#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+
 
 /* obtain the time of an event */
 
@@ -1235,29 +1238,38 @@ gboolean ltt_tracefile_pre_read_cycles(LttTracefile *tf)
   // Calculate total time in cycles from start of buffer for this event
   cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
   //g_debug("event cycle count %llu", cycle_count);
-  
-  if(unlikely(cycle_count < tf->pre_cycle_count)) tf->count++;
+  gint64 delta_count = (gint64)(cycle_count - tf->pre_cycle_count);
+  LttCycleCount res_delta_count;
   tf->pre_cycle_count = cycle_count;
-  cycle_count += (LttCycleCount)tf->count << 32;  
+  
+  //if(unlikely(cycle_count < tf->pre_cycle_count)) tf->count++;
+  if(unlikely(delta_count < 0)) {
+  //  tf->count++; //increment wrap count
+    // keep in mind that delta_count is negative here.
+    res_delta_count = delta_count + 0x100000000ULL ;
+  } else
+    res_delta_count = (LttCycleCount)delta_count;
+  
+  //cycle_count += (LttCycleCount)tf->count << 32;  
   
   //FIXME (MD)
   //  if(tf->cur_heart_beat_number > tf->count)
   //    cycle_count += (tf->cur_heart_beat_number - tf->count) << 32;  
 
-  tf->cur_cycle_count = cycle_count;
-  //g_debug("cur cycle count %llu", cycle_count);
+  tf->cur_cycle_count = tf->cur_cycle_count + res_delta_count;
+  g_debug("cur cycle count %llu", tf->cur_cycle_count);
 
 
 
 
   if(unlikely(evId == TRACE_BLOCK_START)){
-    //g_debug("BLOCK START");
+    g_debug("BLOCK START");
   }else if(unlikely(evId == TRACE_BLOCK_END)){
-    //g_debug("BLOCK END");
+    g_debug("BLOCK END");
 
     /* The goal of all this pre reading */
     tf->a_block_end->cycle_count = tf->cur_cycle_count;
-    //g_debug("end of block cycle count : %llu", tf->cur_cycle_count);
+    g_debug("end of block cycle count : %llu", tf->cur_cycle_count);
     return FALSE;
   }
 
