@@ -157,8 +157,7 @@ void drawing_data_request(Drawing_t *drawing,
     nb_trace = lttv_traceset_number(traceset);
     // FIXME : eventually request for more traces
     // for(i = 0 ; i < nb_trace ; i++) {
-    g_assert(TRACE_NUMBER < nb_trace);
-    i = TRACE_NUMBER;
+    for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++)
     {
       EventsRequest *events_request = g_new(EventsRequest, 1);
       // Create the hooks
@@ -941,8 +940,13 @@ __inline void convert_time_to_pixels(
   
   time_ll = ltt_time_to_uint64(time);
   interval_ll = ltt_time_to_uint64(window_time_interval);
-
-  *x = (guint)(time_ll * width / interval_ll);
+  
+  if(interval_ll == 0) {
+    g_assert(time_ll == 0);
+    *x = 0;
+  } else {
+    *x = (guint)(time_ll * width / interval_ll);
+  }
   
 }
 

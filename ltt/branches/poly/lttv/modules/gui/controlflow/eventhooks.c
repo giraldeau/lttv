@@ -354,7 +354,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
             return;
-
   guint width = drawing->width;
 
   /* we are in a schedchange, before the state update. We must draw the
@@ -439,42 +438,49 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       g_assert(hashed_process_data->x.middle != -1);
       {
         guint x;
-        DrawContext draw_context;
-
         convert_time_to_pixels(
-            time_window.start_time,
-            end_time,
-            evtime,
-            width,
-            &x);
+                  time_window.start_time,
+                  end_time,
+                  evtime,
+                  width,
+                  &x);
 
-        /* Now create the drawing context that will be used to draw
-         * items related to the last state. */
-        draw_context.drawable = drawing->pixmap;
-        draw_context.gc = drawing->gc;
-        draw_context.pango_layout = drawing->pango_layout;
-        draw_context.drawinfo.start.x = hashed_process_data->x.middle;
-        draw_context.drawinfo.end.x = x;
 
-        draw_context.drawinfo.y.over = y+1;
-        draw_context.drawinfo.y.middle = y+(height/2);
-        draw_context.drawinfo.y.under = y+height;
-
-        draw_context.drawinfo.start.offset.over = 0;
-        draw_context.drawinfo.start.offset.middle = 0;
-        draw_context.drawinfo.start.offset.under = 0;
-        draw_context.drawinfo.end.offset.over = 0;
-        draw_context.drawinfo.end.offset.middle = 0;
-        draw_context.drawinfo.end.offset.under = 0;
-
+        /* Jump over draw if we are at the same x position */
+        if(x == hashed_process_data->x.middle)
         {
-          /* Draw the line */
-          PropertiesLine prop_line = prepare_status_line(process);
-          draw_line((void*)&prop_line, (void*)&draw_context);
+          /* jump */
+        } else {
+          DrawContext draw_context;
 
+          /* Now create the drawing context that will be used to draw
+           * items related to the last state. */
+          draw_context.drawable = drawing->pixmap;
+          draw_context.gc = drawing->gc;
+          draw_context.pango_layout = drawing->pango_layout;
+          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+          draw_context.drawinfo.end.x = x;
+
+          draw_context.drawinfo.y.over = y+1;
+          draw_context.drawinfo.y.middle = y+(height/2);
+          draw_context.drawinfo.y.under = y+height;
+
+          draw_context.drawinfo.start.offset.over = 0;
+          draw_context.drawinfo.start.offset.middle = 0;
+          draw_context.drawinfo.start.offset.under = 0;
+          draw_context.drawinfo.end.offset.over = 0;
+          draw_context.drawinfo.end.offset.middle = 0;
+          draw_context.drawinfo.end.offset.under = 0;
+
+          {
+            /* Draw the line */
+            PropertiesLine prop_line = prepare_status_line(process);
+            draw_line((void*)&prop_line, (void*)&draw_context);
+
+          }
+          /* become the last x position */
+          hashed_process_data->x.middle = x;
         }
-        /* become the last x position */
-        hashed_process_data->x.middle = x;
       }
     }
   }
@@ -544,43 +550,51 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       g_assert(hashed_process_data->x.middle != -1);
       {
         guint x;
-        DrawContext draw_context;
 
         convert_time_to_pixels(
-            time_window.start_time,
-            end_time,
-            evtime,
-            width,
-            &x);
+                  time_window.start_time,
+                  end_time,
+                  evtime,
+                  width,
+                  &x);
 
-        /* Now create the drawing context that will be used to draw
-         * items related to the last state. */
-        draw_context.drawable = drawing->pixmap;
-        draw_context.gc = drawing->gc;
-        draw_context.pango_layout = drawing->pango_layout;
-        draw_context.drawinfo.start.x = hashed_process_data->x.middle;
-        draw_context.drawinfo.end.x = x;
 
-        draw_context.drawinfo.y.over = y+1;
-        draw_context.drawinfo.y.middle = y+(height/2);
-        draw_context.drawinfo.y.under = y+height;
-
-        draw_context.drawinfo.start.offset.over = 0;
-        draw_context.drawinfo.start.offset.middle = 0;
-        draw_context.drawinfo.start.offset.under = 0;
-        draw_context.drawinfo.end.offset.over = 0;
-        draw_context.drawinfo.end.offset.middle = 0;
-        draw_context.drawinfo.end.offset.under = 0;
-
+        /* Jump over draw if we are at the same x position */
+        if(x == hashed_process_data->x.middle)
         {
-          /* Draw the line */
-          PropertiesLine prop_line = prepare_status_line(process);
-          draw_line((void*)&prop_line, (void*)&draw_context);
-        }
+          /* jump */
+        } else {
+          DrawContext draw_context;
 
-        
-        /* become the last x position */
-        hashed_process_data->x.middle = x;
+          /* Now create the drawing context that will be used to draw
+           * items related to the last state. */
+          draw_context.drawable = drawing->pixmap;
+          draw_context.gc = drawing->gc;
+          draw_context.pango_layout = drawing->pango_layout;
+          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+          draw_context.drawinfo.end.x = x;
+
+          draw_context.drawinfo.y.over = y+1;
+          draw_context.drawinfo.y.middle = y+(height/2);
+          draw_context.drawinfo.y.under = y+height;
+
+          draw_context.drawinfo.start.offset.over = 0;
+          draw_context.drawinfo.start.offset.middle = 0;
+          draw_context.drawinfo.start.offset.under = 0;
+          draw_context.drawinfo.end.offset.over = 0;
+          draw_context.drawinfo.end.offset.middle = 0;
+          draw_context.drawinfo.end.offset.under = 0;
+
+          {
+            /* Draw the line */
+            PropertiesLine prop_line = prepare_status_line(process);
+            draw_line((void*)&prop_line, (void*)&draw_context);
+          }
+
+          
+          /* become the last x position */
+          hashed_process_data->x.middle = x;
+        }
       }
     }
   }
@@ -1902,7 +1916,6 @@ int before_execmode_hook(void *hook_data, void *call_data)
   g_assert(hashed_process_data->x.over != -1);
   {
     guint x;
-    DrawContext draw_context;
 
     convert_time_to_pixels(
         time_window.start_time,
@@ -1911,33 +1924,42 @@ int before_execmode_hook(void *hook_data, void *call_data)
         width,
         &x);
 
-    /* Now create the drawing context that will be used to draw
-     * items related to the last state. */
-    draw_context.drawable = drawing->pixmap;
-    draw_context.gc = drawing->gc;
-    draw_context.pango_layout = drawing->pango_layout;
-    draw_context.drawinfo.start.x = hashed_process_data->x.over;
-    draw_context.drawinfo.end.x = x;
 
-    draw_context.drawinfo.y.over = y+1;
-    draw_context.drawinfo.y.middle = y+(height/2);
-    draw_context.drawinfo.y.under = y+height;
-
-    draw_context.drawinfo.start.offset.over = 0;
-    draw_context.drawinfo.start.offset.middle = 0;
-    draw_context.drawinfo.start.offset.under = 0;
-    draw_context.drawinfo.end.offset.over = 0;
-    draw_context.drawinfo.end.offset.middle = 0;
-    draw_context.drawinfo.end.offset.under = 0;
-
+    /* Jump over draw if we are at the same x position */
+    if(x == hashed_process_data->x.over)
     {
-      /* Draw the line */
-      PropertiesLine prop_line = prepare_execmode_line(process);
-      draw_line((void*)&prop_line, (void*)&draw_context);
+      /* jump */
+    } else {
 
+      DrawContext draw_context;
+      /* Now create the drawing context that will be used to draw
+       * items related to the last state. */
+      draw_context.drawable = drawing->pixmap;
+      draw_context.gc = drawing->gc;
+      draw_context.pango_layout = drawing->pango_layout;
+      draw_context.drawinfo.start.x = hashed_process_data->x.over;
+      draw_context.drawinfo.end.x = x;
+
+      draw_context.drawinfo.y.over = y+1;
+      draw_context.drawinfo.y.middle = y+(height/2);
+      draw_context.drawinfo.y.under = y+height;
+
+      draw_context.drawinfo.start.offset.over = 0;
+      draw_context.drawinfo.start.offset.middle = 0;
+      draw_context.drawinfo.start.offset.under = 0;
+      draw_context.drawinfo.end.offset.over = 0;
+      draw_context.drawinfo.end.offset.middle = 0;
+      draw_context.drawinfo.end.offset.under = 0;
+
+      {
+        /* Draw the line */
+        PropertiesLine prop_line = prepare_execmode_line(process);
+        draw_line((void*)&prop_line, (void*)&draw_context);
+
+      }
+      /* become the last x position */
+      hashed_process_data->x.over = x;
     }
-    /* become the last x position */
-    hashed_process_data->x.over = x;
   }
   
   return 0;
@@ -2146,7 +2168,6 @@ int before_process_hook(void *hook_data, void *call_data)
     g_assert(hashed_process_data->x.over != -1);
     {
       guint x;
-      DrawContext draw_context;
 
       convert_time_to_pixels(
           time_window.start_time,
@@ -2155,33 +2176,42 @@ int before_process_hook(void *hook_data, void *call_data)
           width,
           &x);
 
-      /* Now create the drawing context that will be used to draw
-       * items related to the last state. */
-      draw_context.drawable = drawing->pixmap;
-      draw_context.gc = drawing->gc;
-      draw_context.pango_layout = drawing->pango_layout;
-      draw_context.drawinfo.start.x = hashed_process_data->x.middle;
-      draw_context.drawinfo.end.x = x;
 
-      draw_context.drawinfo.y.over = y+1;
-      draw_context.drawinfo.y.middle = y+(height/2);
-      draw_context.drawinfo.y.under = y+height;
-
-      draw_context.drawinfo.start.offset.over = 0;
-      draw_context.drawinfo.start.offset.middle = 0;
-      draw_context.drawinfo.start.offset.under = 0;
-      draw_context.drawinfo.end.offset.over = 0;
-      draw_context.drawinfo.end.offset.middle = 0;
-      draw_context.drawinfo.end.offset.under = 0;
-
+      /* Jump over draw if we are at the same x position */
+      if(x == hashed_process_data->x.middle)
       {
-        /* Draw the line */
-        PropertiesLine prop_line = prepare_status_line(process);
-        draw_line((void*)&prop_line, (void*)&draw_context);
+        /* jump */
+      } else {
+        DrawContext draw_context;
 
+        /* Now create the drawing context that will be used to draw
+         * items related to the last state. */
+        draw_context.drawable = drawing->pixmap;
+        draw_context.gc = drawing->gc;
+        draw_context.pango_layout = drawing->pango_layout;
+        draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+        draw_context.drawinfo.end.x = x;
+
+        draw_context.drawinfo.y.over = y+1;
+        draw_context.drawinfo.y.middle = y+(height/2);
+        draw_context.drawinfo.y.under = y+height;
+
+        draw_context.drawinfo.start.offset.over = 0;
+        draw_context.drawinfo.start.offset.middle = 0;
+        draw_context.drawinfo.start.offset.under = 0;
+        draw_context.drawinfo.end.offset.over = 0;
+        draw_context.drawinfo.end.offset.middle = 0;
+        draw_context.drawinfo.end.offset.under = 0;
+
+        {
+          /* Draw the line */
+          PropertiesLine prop_line = prepare_status_line(process);
+          draw_line((void*)&prop_line, (void*)&draw_context);
+
+        }
+        /* become the last x position */
+        hashed_process_data->x.middle = x;
       }
-      /* become the last x position */
-      hashed_process_data->x.middle = x;
     }
 
   }
@@ -2853,7 +2883,6 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
       g_assert(hashed_process_data->x.over != -1);
       {
         guint x;
-        DrawContext draw_context;
 
         convert_time_to_pixels(
             time_window.start_time,
@@ -2861,6 +2890,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
             evtime,
             width,
             &x);
+
+        DrawContext draw_context;
 
         /* Now create the drawing context that will be used to draw
          * items related to the last state. */
@@ -2880,24 +2911,30 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         draw_context.drawinfo.end.offset.middle = 0;
         draw_context.drawinfo.end.offset.under = 0;
 
+        /* Jump over draw if we are at the same x position */
+        if(x == hashed_process_data->x.over)
         {
+          /* jump */
+        } else {
           draw_context.drawinfo.start.x = hashed_process_data->x.over;
           /* Draw the line */
           PropertiesLine prop_line = prepare_execmode_line(process);
           draw_line((void*)&prop_line, (void*)&draw_context);
 
+          hashed_process_data->x.over = x;
         }
-        hashed_process_data->x.over = x;
-        {
+
+        if(x == hashed_process_data->x.middle) {
+          /* Jump */
+        } else {
           draw_context.drawinfo.start.x = hashed_process_data->x.middle;
           /* Draw the line */
           PropertiesLine prop_line = prepare_status_line(process);
           draw_line((void*)&prop_line, (void*)&draw_context);
 
+           /* become the last x position */
+          hashed_process_data->x.middle = x;
         }
-
-        /* become the last x position */
-        hashed_process_data->x.middle = x;
       }
     }
   }
