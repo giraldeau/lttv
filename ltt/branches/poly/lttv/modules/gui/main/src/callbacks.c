@@ -83,6 +83,9 @@ enum
   N_COLUMNS
 };
 
+/* Construct a selector(filter), which will be associated with a viewer,
+ * and provides an interface for user to select interested events and traces
+ */
 
 LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset)
 {
@@ -134,6 +137,12 @@ LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset)
   return s;
 }
 
+
+/* insert_viewer function constructs an instance of a viewer first,
+ * then inserts the widget of the instance into the container of the
+ * main window
+ */
+
 void
 insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data)
 {
@@ -182,6 +191,11 @@ void insert_viewer(GtkWidget* widget, view_constructor constructor)
   }
 }
 
+
+/* get_label function is used to get user input, it displays an input
+ * box, which allows user to input a string 
+ */
+
 void get_label_string (GtkWidget * text, gchar * label) 
 {
   GtkEntry * entry = (GtkEntry*)text;
@@ -225,6 +239,12 @@ gboolean get_label(MainWindow * mw, gchar * str, gchar* dialogue_title, gchar * 
   return TRUE;
 }
 
+
+/* get_window_data_struct function is actually a lookup function,
+ * given a widget which is in the tree of the main window, it will
+ * return the MainWindow data structure associated with main window
+ */
+
 MainWindow * get_window_data_struct(GtkWidget * widget)
 {
   GtkWidget * mw;
@@ -244,6 +264,10 @@ MainWindow * get_window_data_struct(GtkWidget * widget)
   return mw_data;
 }
 
+
+/* create_new_window function, just constructs a new main window
+ */
+
 void create_new_window(GtkWidget* widget, gpointer user_data, gboolean clone)
 {
   MainWindow * parent = get_window_data_struct(widget);
@@ -256,6 +280,11 @@ void create_new_window(GtkWidget* widget, gpointer user_data, gboolean clone)
     construct_main_window(NULL, parent->win_creation_data);
   }
 }
+
+
+/* move_*_viewer functions move the selected view up/down in 
+ * the current tab
+ */
 
 void move_up_viewer(GtkWidget * widget, gpointer user_data)
 {
@@ -271,12 +300,21 @@ void move_down_viewer(GtkWidget * widget, gpointer user_data)
   gtk_multi_vpaned_widget_move_down(mw->current_tab->multi_vpaned);
 }
 
+
+/* delete_viewer deletes the selected viewer in the current tab
+ */
+
 void delete_viewer(GtkWidget * widget, gpointer user_data)
 {
   MainWindow * mw = get_window_data_struct(widget);
   if(!mw->current_tab) return;
   gtk_multi_vpaned_widget_delete(mw->current_tab->multi_vpaned);
 }
+
+
+/* open_traceset will open a traceset saved in a file
+ * Right now, it is not finished yet, (not working)
+ */
 
 void open_traceset(GtkWidget * widget, gpointer user_data)
 {
@@ -307,6 +345,12 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
 
 }
 
+
+/* get_max_event_number returns the event number limit used by
+ * lttv_process_traceset(LttvTracesetContext, endTime, maxNumEvents)
+ * each viewer can set the limit
+ */
+
 unsigned get_max_event_number(MainWindow * mw_data)
 {
   unsigned nb = 0, *size;
@@ -327,6 +371,12 @@ unsigned get_max_event_number(MainWindow * mw_data)
   return nb;
 }
 
+
+/* redraw_viewer parses the traceset first by calling 
+ * process_traceset_api, then display all viewers of 
+ * the current tab
+ */
+
 void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
 {
   unsigned max_nb_events;
@@ -334,6 +384,7 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
   GdkCursor * new;
   GtkWidget* widget;
 
+  //set the cursor to be X shape, indicating that the computer is busy in doing its job
   new = gdk_cursor_new(GDK_X_CURSOR);
   widget = lookup_widget(mw_data->mwindow, "MToolbar2");
   win = gtk_widget_get_parent_window(widget);  
@@ -354,8 +405,15 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
   //call hooks to show each viewer and let them remove hooks
   show_viewer(mw_data);  
 
+  //set the cursor back to normal
   gdk_window_set_cursor(win, NULL);  
 }
+
+
+/* add_trace_into_traceset_selector, each instance of a viewer has an associated
+ * selector (filter), when a trace is added into traceset, the selector should 
+ * reflect the change. The function is used to update the selector 
+ */
 
 void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * t)
 {
@@ -372,38 +430,46 @@ void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * t)
   w = gtk_multi_vpaned_get_first_widget(paned);  
   while(w){
     s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-
-    trace   = lttv_trace_selector_new(t);
-    lttv_traceset_selector_trace_add(s, trace);
-
-    nb_facility = ltt_trace_facility_number(t);
-    for(k=0;k<nb_facility;k++){
-      fac = ltt_trace_facility_get(t,k);
-      nb_event = (int) ltt_facility_eventtype_number(fac);
-      for(m=0;m<nb_event;m++){
-	et = ltt_facility_eventtype_get(fac,m);
-	eventtype = lttv_eventtype_selector_new(et);
-	lttv_trace_selector_eventtype_add(trace, eventtype);
-      }
-    }
-
-    nb_control = ltt_trace_control_tracefile_number(t);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(t);
-    nb_tracefile = nb_control + nb_per_cpu;
     
-    for(j = 0 ; j < nb_tracefile ; j++) {
-      if(j < nb_control)
-        tf = ltt_trace_control_tracefile_get(t, j);
-      else
-	tf = ltt_trace_per_cpu_tracefile_get(t, j - nb_control);     
-      tracefile = lttv_tracefile_selector_new(tf);  
-      lttv_trace_selector_tracefile_add(trace, tracefile);
-      lttv_eventtype_selector_copy(trace, tracefile);
-    }
+    if(s){
+      trace   = lttv_trace_selector_new(t);
+      lttv_traceset_selector_trace_add(s, trace);
+
+      nb_facility = ltt_trace_facility_number(t);
+      for(k=0;k<nb_facility;k++){
+	fac = ltt_trace_facility_get(t,k);
+	nb_event = (int) ltt_facility_eventtype_number(fac);
+	for(m=0;m<nb_event;m++){
+	  et = ltt_facility_eventtype_get(fac,m);
+	  eventtype = lttv_eventtype_selector_new(et);
+	  lttv_trace_selector_eventtype_add(trace, eventtype);
+	}
+      }
+      
+      nb_control = ltt_trace_control_tracefile_number(t);
+      nb_per_cpu = ltt_trace_per_cpu_tracefile_number(t);
+      nb_tracefile = nb_control + nb_per_cpu;
+      
+      for(j = 0 ; j < nb_tracefile ; j++) {
+	if(j < nb_control)
+	  tf = ltt_trace_control_tracefile_get(t, j);
+	else
+	  tf = ltt_trace_per_cpu_tracefile_get(t, j - nb_control);     
+	tracefile = lttv_tracefile_selector_new(tf);  
+	lttv_trace_selector_tracefile_add(trace, tracefile);
+	lttv_eventtype_selector_copy(trace, tracefile);
+      }
+    }else g_warning("Module does not support filtering\n");
 
     w = gtk_multi_vpaned_get_next_widget(paned);  
   }
 }
+
+
+/* add_trace adds a trace into the current traceset. It first displays a 
+ * directory selection dialogue to let user choose a trace, then recreates
+ * tracset_context, and redraws all the viewer of the current tab 
+ */
 
 void add_trace(GtkWidget * widget, gpointer user_data)
 {
@@ -469,6 +535,12 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   }
 }
 
+
+/* remove_trace_into_traceset_selector, each instance of a viewer has an associated
+ * selector (filter), when a trace is remove from traceset, the selector should 
+ * reflect the change. The function is used to update the selector 
+ */
+
 void remove_trace_from_traceset_selector(GtkMultiVPaned * paned, unsigned i)
 {
   LttvTracesetSelector * s;
@@ -478,12 +550,24 @@ void remove_trace_from_traceset_selector(GtkMultiVPaned * paned, unsigned i)
   w = gtk_multi_vpaned_get_first_widget(paned);  
   while(w){
     s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-    t = lttv_traceset_selector_trace_get(s,i);
-    lttv_traceset_selector_trace_remove(s, i);
-    lttv_trace_selector_destroy(t);
+    if(s){
+      t = lttv_traceset_selector_trace_get(s,i);
+      lttv_traceset_selector_trace_remove(s, i);
+      lttv_trace_selector_destroy(t);
+    }g_warning("Module dose not support filtering\n");
     w = gtk_multi_vpaned_get_next_widget(paned);  
   }
 }
+
+
+/* remove_trace removes a trace from the current traceset if all viewers in 
+ * the current tab are not interested in the trace. It first displays a 
+ * dialogue, which shows all traces in the current traceset, to let user choose 
+ * a trace, then it checks if all viewers unselect the trace, if it is true, 
+ * it will remove the trace,  recreate the traceset_contex,
+ * and redraws all the viewer of the current tab. If there is on trace in the
+ * current traceset, it will delete all viewers of the current tab
+ */
 
 void remove_trace(GtkWidget * widget, gpointer user_data)
 {
@@ -516,16 +600,20 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 	w = gtk_multi_vpaned_get_widget(mw_data->current_tab->multi_vpaned);  
 	if(w){
 	  s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-	  t = lttv_traceset_selector_trace_get(s,i);
-	  lttv_trace_selector_set_selected(t, FALSE);
+	  if(s){
+	    t = lttv_traceset_selector_trace_get(s,i);
+	    lttv_trace_selector_set_selected(t, FALSE);
+	  }
 
 	  //check if other viewers select the trace
 	  w = gtk_multi_vpaned_get_first_widget(mw_data->current_tab->multi_vpaned);  
 	  while(w){
 	    s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-	    t = lttv_traceset_selector_trace_get(s,i);
-	    selected = lttv_trace_selector_get_selected(t);
-	    if(selected)break;
+	    if(s){
+	      t = lttv_traceset_selector_trace_get(s,i);
+	      selected = lttv_trace_selector_get_selected(t);
+	      if(selected)break;
+	    }
 	    w = gtk_multi_vpaned_get_next_widget(mw_data->current_tab->multi_vpaned);  
 	  }
 	}else selected = FALSE;
@@ -573,6 +661,11 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
   g_free(name);
 }
 
+
+/* save will save the traceset to a file
+ * Not implemented yet
+ */
+
 void save(GtkWidget * widget, gpointer user_data)
 {
   g_printf("Save\n");
@@ -582,6 +675,12 @@ void save_as(GtkWidget * widget, gpointer user_data)
 {
   g_printf("Save as\n");
 }
+
+
+/* zoom will change the time_window of all the viewers of the 
+ * current tab, and redisplay them. The main functionality is to 
+ * determine the new time_window of the current tab
+ */
 
 void zoom(GtkWidget * widget, double size)
 {
@@ -669,6 +768,10 @@ on_clone_traceset_activate             (GtkMenuItem     *menuitem,
   create_new_window((GtkWidget*)menuitem, user_data, TRUE);
 }
 
+
+/* create_new_tab calls create_tab to construct a new tab in the main window
+ */
+
 void create_new_tab(GtkWidget* widget, gpointer user_data){
   gchar label[PATH_LENGTH];
   MainWindow * mw_data = get_window_data_struct(widget);
@@ -708,6 +811,9 @@ on_close_activate                      (GtkMenuItem     *menuitem,
 }
 
 
+/* remove the current tab from the main window if it is not the default tab
+ */
+
 void
 on_close_tab_activate                  (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -731,7 +837,7 @@ on_close_tab_activate                  (GtkMenuItem     *menuitem,
     tmp = mw_data->tab;
     while(tmp != mw_data->current_tab){
       tmp = tmp->next;
-      count++;
+      count++;      
     }
   }
 
@@ -901,6 +1007,12 @@ on_trace_facility_activate              (GtkMenuItem     *menuitem,
   g_printf("Trace facility selector: %s\n");  
 }
 
+
+/* Dispaly a file selection dialogue to let user select a module, then call
+ * lttv_module_load(), finally insert tool button and menu entry in the main window
+ * for the loaded  module
+ */
+
 void
 on_load_module_activate                (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -942,6 +1054,10 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
 }
 
 
+/* Display all loaded modules, let user to select a module to unload
+ * by calling lttv_module_unload
+ */
+
 void
 on_unload_module_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -973,6 +1089,9 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
   g_free(name);
 }
 
+
+/* Display a directory dialogue to let user select a path for module searching
+ */
 
 void
 on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
@@ -1213,6 +1332,10 @@ on_MWindow_configure                   (GtkWidget         *widget,
   return FALSE;
 }
 
+
+/* Set current tab
+ */
+
 void
 on_MNotebook_switch_page               (GtkNotebook     *notebook,
                                         GtkNotebookPage *page,
@@ -1228,6 +1351,10 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
   }
   mw->current_tab = tab;
 }
+
+
+/* callback function to check or uncheck the check box (filter)
+ */
 
 void checkbox_changed(GtkTreeView *treeview,
 		      GtkTreePath *arg1,
@@ -1245,6 +1372,10 @@ void checkbox_changed(GtkTreeView *treeview,
   }  
   
 }
+
+
+/* According to user's selection, update selector(filter)
+ */
 
 void update_filter(LttvTracesetSelector *s,  GtkTreeStore *store )
 {
@@ -1307,6 +1438,11 @@ void update_filter(LttvTracesetSelector *s,  GtkTreeStore *store )
     }while(gtk_tree_model_iter_next((GtkTreeModel*)store, &iter));
   }
 }
+
+
+/* Display a dialogue showing all eventtypes and traces, let user to select the interested
+ * eventtypes, tracefiles and traces (filter)
+ */
 
 gboolean get_filter_selection(LttvTracesetSelector *s,char *title, char * column_title)
 {
@@ -1447,16 +1583,30 @@ gboolean get_filter_selection(LttvTracesetSelector *s,char *title, char * column
   return FALSE;
 }
 
+
+/* Select a trace which will be removed from traceset
+ */
+
 char * get_remove_trace(char ** all_trace_name, int nb_trace)
 {
   return get_selection(all_trace_name, nb_trace, 
 		       "Select a trace", "Trace pathname");
 }
+
+
+/* Select a module which will be unloaded
+ */
+
 char * get_unload_module(char ** loaded_module_name, int nb_module)
 {
   return get_selection(loaded_module_name, nb_module, 
 		       "Select an unload module", "Module pathname");
 }
+
+
+/* Display a dialogue which shows all selectable items, let user to 
+ * select one of them
+ */
 
 char * get_selection(char ** loaded_module_name, int nb_module,
 		     char *title, char * column_title)
@@ -1528,6 +1678,10 @@ char * get_selection(char ** loaded_module_name, int nb_module,
   return unload_module_name;
 }
 
+
+/* hash funtions 
+ */
+
 void main_window_destroy_hash_key(gpointer key)
 {
   g_free(key);
@@ -1537,6 +1691,12 @@ void main_window_destroy_hash_data(gpointer data)
 {
 }
 
+
+/* Insert menu entry and tool button into all main windows for modules
+ * It checks whether the menu entry or tool button exists or not,
+ * if they do not exist, then construct the widget and insert them 
+ * into all main windows
+ */
 
 void insert_menu_toolbar_item(MainWindow * mw, gpointer user_data)
 {
@@ -1602,6 +1762,10 @@ void insert_menu_toolbar_item(MainWindow * mw, gpointer user_data)
   }
 }
 
+
+/* Create a main window
+ */
+
 void construct_main_window(MainWindow * parent, WindowCreationData * win_creation_data)
 {
   g_critical("construct_main_window()");
@@ -1663,6 +1827,11 @@ void construct_main_window(MainWindow * parent, WindowCreationData * win_creatio
   g_win_count++;
 }
 
+
+/* Free the memory occupied by a tab structure
+ * destroy the tab
+ */
+
 void tab_destructor(Tab * tab_instance)
 {
   int i, nb, ref_count;
@@ -1704,6 +1873,10 @@ void tab_destructor(Tab * tab_instance)
   g_free(tab_instance);
 }
 
+
+/* Create a tab and insert it into the current main window
+ */
+
 void * create_tab(MainWindow * parent, MainWindow* current_window, 
 		  GtkNotebook * notebook, char * label)
 {
@@ -1712,6 +1885,7 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   MainWindow * mw_data = current_window;
   LttTime tmp_time;
 
+  //create a new tab data structure
   tmp_tab = mw_data->tab;
   while(tmp_tab && tmp_tab->next) tmp_tab = tmp_tab->next;
   if(!tmp_tab){
@@ -1723,6 +1897,7 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
     tmp_tab = tmp_tab->next;
   }
 
+  //construct and initialize the traceset_info
   tmp_tab->traceset_info = g_new(TracesetInfo,1);
   if(parent){
     tmp_tab->traceset_info->traceset = 
@@ -1745,6 +1920,7 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
 	    LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context),
 	                          tmp_tab->traceset_info->traceset);
 
+  //determine the current_time and time_window of the tab
   if(mw_data->current_tab){
     // Will have to read directly at the main window level, as we want
     // to be able to modify a traceset on the fly.
@@ -1786,13 +1962,20 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
 	   tmp_tab,
 	   (GDestroyNotify)tab_destructor);
 
+  //add state update hooks
   lttv_state_add_event_hooks(
        (LttvTracesetState*)tmp_tab->traceset_info->traceset_context);
   
+  //insert tab into notebook
   gtk_notebook_append_page(notebook, (GtkWidget*)tmp_tab->multi_vpaned, tmp_tab->label);  
   list = gtk_container_get_children(GTK_CONTAINER(notebook));
   gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
 }
+
+
+/* Remove menu entry and tool button from main window for the 
+ * unloaded  module
+ */
 
 void remove_menu_item(gpointer main_win, gpointer user_data)
 {
@@ -1826,7 +2009,8 @@ void remove_toolbar_item(gpointer main_win, gpointer user_data)
 }
 
 /**
- * Remove menu and toolbar item when a module unloaded
+ * Remove menu and toolbar item when a module unloaded from all 
+ * main windows
  */
 
 void main_window_remove_menu_item(lttv_constructor constructor)
