@@ -379,7 +379,13 @@ parse_simple_expression(GString* expression) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint64(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_eq_uint64(gpointer v1, char* v2) {
+
+  guint64* r = (guint64*) v1;
+  guint64 l = atoi(v2);
+  return (*r == l);
+  
+}
 
 /**
  *  Applies the 'equal' operator to the
@@ -388,7 +394,11 @@ gboolean lttv_apply_op_eq_uint64(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint32(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_eq_uint32(gpointer v1, char* v2) {
+  guint32* r = (guint32*) v1;
+  guint32 l = atoi(v2);
+  return (*r == l);
+}
 
 /**
  *  Applies the 'equal' operator to the
@@ -397,7 +407,11 @@ gboolean lttv_apply_op_eq_uint32(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint16(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_eq_uint16(gpointer v1, char* v2) {
+  guint16* r = (guint16*) v1;
+  guint16 l = atoi(v2);
+  return (*r == l);
+}
 
 /**
  *  Applies the 'equal' operator to the
@@ -406,7 +420,11 @@ gboolean lttv_apply_op_eq_uint16(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_double(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_eq_double(gpointer v1, char* v2) {
+  double* r = (double*) v1;
+  double l = atof(v2);
+  return (*r == l);
+}
 
 /**
  *  Applies the 'equal' operator to the
@@ -415,7 +433,10 @@ gboolean lttv_apply_op_eq_double(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_string(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_eq_string(gpointer v1, char* v2) {
+  char* r = (char*) v1;
+  return (g_strcasecmp(r,v2));
+}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -424,7 +445,11 @@ gboolean lttv_apply_op_eq_string(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint64(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_ne_uint64(gpointer v1, char* v2) {
+  guint64* r = (guint64*) v1;
+  guint64 l = atoi(v2);
+  return (*r != l);
+}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -433,7 +458,11 @@ gboolean lttv_apply_op_ne_uint64(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint32(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_ne_uint32(gpointer v1, char* v2) {
+  guint32* r = (guint32*) v1;
+  guint32 l = atoi(v2);
+  return (*r != l);
+}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -442,7 +471,11 @@ gboolean lttv_apply_op_ne_uint32(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint16(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_ne_uint16(gpointer v1, char* v2) {
+  guint16* r = (guint16*) v1;
+  guint16 l = atoi(v2);
+  return (*r != l);
+}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -451,7 +484,11 @@ gboolean lttv_apply_op_ne_uint16(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_double(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_ne_double(gpointer v1, char* v2) {
+  double* r = (double*) v1;
+  double l = atof(v2);
+  return (*r != l);
+}
 
 /**
  *  Applies the 'not equal' operator to the
@@ -460,7 +497,10 @@ gboolean lttv_apply_op_ne_double(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_string(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_ne_string(gpointer v1, char* v2) {
+  char* r = (char*) v1;
+  return (!g_strcasecmp(r,v2));
+}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -469,7 +509,11 @@ gboolean lttv_apply_op_ne_string(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint64(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_lt_uint64(gpointer v1, char* v2) {
+  guint64* r = (guint64*) v1;
+  guint64 l = atoi(v2);
+  return (*r < l);
+}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -478,7 +522,11 @@ gboolean lttv_apply_op_lt_uint64(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint32(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_lt_uint32(gpointer v1, char* v2) {
+  guint32* r = (guint32*) v1;
+  guint32 l = atoi(v2);
+  return (*r < l);
+}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -487,7 +535,11 @@ gboolean lttv_apply_op_lt_uint32(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint16(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_lt_uint16(gpointer v1, char* v2) {
+  guint16* r = (guint16*) v1;
+  guint16 l = atoi(v2);
+  return (*r < l);
+}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -496,7 +548,11 @@ gboolean lttv_apply_op_lt_uint16(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_double(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_lt_double(gpointer v1, char* v2) {
+  double* r = (double*) v1;
+  double l = atof(v2);
+  return (*r < l);
+}
 
 /**
  *  Applies the 'lower than' operator to the
@@ -505,7 +561,11 @@ gboolean lttv_apply_op_lt_double(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint64(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_le_uint64(gpointer v1, char* v2) {
+  guint64* r = (guint64*) v1;
+  guint64 l = atoi(v2);
+  return (*r <= l);
+}
 
 /**
  *  Applies the 'lower or equal' operator to the
@@ -514,7 +574,11 @@ gboolean lttv_apply_op_le_uint64(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint32(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_le_uint32(gpointer v1, char* v2) {
+  guint32* r = (guint32*) v1;
+  guint32 l = atoi(v2);
+  return (*r <= l);
+}
 
 /**
  *  Applies the 'lower or equal' operator to the
@@ -523,7 +587,11 @@ gboolean lttv_apply_op_le_uint32(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint16(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_le_uint16(gpointer v1, char* v2) {
+  guint16* r = (guint16*) v1;
+  guint16 l = atoi(v2);
+  return (*r <= l);
+}
 
 /**
  *  Applies the 'lower or equal' operator to the
@@ -532,16 +600,11 @@ gboolean lttv_apply_op_le_uint16(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_double(gpointer v1, char* v2) {}
-
-/**
- *  Applies the 'lower or equal' operator to the
- *  specified structure and value 
- *  @param v1 left member of comparison
- *  @param v2 right member of comparison
- *  @return success/failure of operation
- */
-gboolean lttv_apply_op_gt_uint64(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_le_double(gpointer v1, char* v2) {
+  double* r = (double*) v1;
+  double l = atof(v2);
+  return (*r <= l);
+}
 
 /**
  *  Applies the 'greater than' operator to the
@@ -550,7 +613,11 @@ gboolean lttv_apply_op_gt_uint64(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint32(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_gt_uint64(gpointer v1, char* v2) {
+  guint64* r = (guint64*) v1;
+  guint64 l = atoi(v2);
+  return (*r > l);
+}
 
 /**
  *  Applies the 'greater than' operator to the
@@ -559,7 +626,11 @@ gboolean lttv_apply_op_gt_uint32(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint16(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_gt_uint32(gpointer v1, char* v2) {
+  guint32* r = (guint32*) v1;
+  guint32 l = atoi(v2);
+  return (*r > l);
+}
 
 /**
  *  Applies the 'greater than' operator to the
@@ -568,7 +639,11 @@ gboolean lttv_apply_op_gt_uint16(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_double(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_gt_uint16(gpointer v1, char* v2) {
+  guint16* r = (guint16*) v1;
+  guint16 l = atoi(v2);
+  return (*r > l);
+}
 
 /**
  *  Applies the 'greater than' operator to the
@@ -577,7 +652,11 @@ gboolean lttv_apply_op_gt_double(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint64(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_gt_double(gpointer v1, char* v2) {
+  double* r = (double*) v1;
+  double l = atof(v2);
+  return (*r > l);
+}
 
 /**
  *  Applies the 'greater or equal' operator to the
@@ -586,7 +665,11 @@ gboolean lttv_apply_op_ge_uint64(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint32(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_ge_uint64(gpointer v1, char* v2) {
+  guint64* r = (guint64*) v1;
+  guint64 l = atoi(v2);
+  return (*r >= l);
+}
 
 /**
  *  Applies the 'greater or equal' operator to the
@@ -595,7 +678,11 @@ gboolean lttv_apply_op_ge_uint32(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint16(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_ge_uint32(gpointer v1, char* v2) {
+  guint32* r = (guint32*) v1;
+  guint32 l = atoi(v2);
+  return (*r >= l);
+}
 
 /**
  *  Applies the 'greater or equal' operator to the
@@ -604,7 +691,24 @@ gboolean lttv_apply_op_ge_uint16(gpointer v1, char* v2) {}
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_double(gpointer v1, char* v2) {}
+gboolean lttv_apply_op_ge_uint16(gpointer v1, char* v2) {
+  guint16* r = (guint16*) v1;
+  guint16 l = atoi(v2);
+  return (*r >= l);
+}
+
+/**
+ *  Applies the 'greater or equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ge_double(gpointer v1, char* v2) {
+  double* r = (double*) v1;
+  double l = atof(v2);
+  return (*r >= l);
+}
 
 
 /**
