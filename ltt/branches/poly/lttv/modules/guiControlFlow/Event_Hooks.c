@@ -669,6 +669,7 @@ void update_time_window_hook(void *hook_data, void *call_data)
 				  0, 0,
 				  -1, -1);
 
+			*Old_Time_Window = *New_Time_Window;
 			/* Get new data for the rest. */
 		  drawing_data_request(control_flow_data->Drawing,
 					&control_flow_data->Drawing->Pixmap,
@@ -708,6 +709,7 @@ void update_time_window_hook(void *hook_data, void *call_data)
 					  x, 0,
 					  -1, -1);
 	
+				*Old_Time_Window = *New_Time_Window;
 				/* Get new data for the rest. */
 			  drawing_data_request(control_flow_data->Drawing,
 						&control_flow_data->Drawing->Pixmap,
