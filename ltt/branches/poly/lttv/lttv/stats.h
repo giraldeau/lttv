@@ -122,6 +122,10 @@
 /* The various statistics branch names are GQuarks. They are pre-computed for
    easy and efficient access */
 
+#define LTTV_PRIO_STATS_BEFORE_STATE LTTV_PRIO_STATE-5
+#define LTTV_PRIO_STATS_AFTER_STATE LTTV_PRIO_STATE+5
+
+ 
 extern GQuark
   LTTV_STATS_PROCESS_UNKNOWN,
   LTTV_STATS_PROCESSES,

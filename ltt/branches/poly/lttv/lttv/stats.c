@@ -92,7 +92,8 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
   nb_trace = lttv_traceset_number(ts);
 
   for(i = 0 ; i < nb_trace ; i++) {
-    tcs = (LttvTraceStats *)tc = (LTTV_TRACESET_CONTEXT(self)->traces[i]);
+    tc = (LTTV_TRACESET_CONTEXT(self)->traces[i]);
+    tcs = (LttvTraceStats *)tc;
 
     tcs->stats = lttv_attribute_find_subdir(tcs->parent.parent.t_a,LTTV_STATS);
     tracefiles_stats = lttv_attribute_find_subdir(tcs->parent.parent.t_a, 
@@ -177,7 +178,8 @@ fini(LttvTracesetStats *self)
         ltt_trace_per_cpu_tracefile_number(tc->t);
 
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tfcs = ((LttvTracefileStats *)tfc = tc->tracefiles[j]);
+      tfc = tc->tracefiles[j];
+      tfcs = (LttvTracefileStats *)tfc;
       tfcs->stats = NULL;
       tfcs->current_events_tree = NULL;
       tfcs->current_event_types_tree = NULL;
@@ -789,26 +791,29 @@ lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
     after_hooks = hooks;
 
-    /* Add these hooks to each before_event_by_id hooks list */
+    /* Add these hooks to each event_by_id hooks list */
 
     nb_tracefile = ltt_trace_control_tracefile_number(ts->parent.parent.t) +
         ltt_trace_per_cpu_tracefile_number(ts->parent.parent.t);
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = LTTV_TRACEFILE_STATS(ts->parent.parent.tracefiles[j]);
-      lttv_hooks_add(tfs->parent.parent.after_event, every_event, NULL);
+      lttv_hooks_add(tfs->parent.parent.event, every_event, NULL, 
+                     LTTV_PRIO_DEFAULT);
 
       for(k = 0 ; k < before_hooks->len ; k++) {
         hook = g_array_index(before_hooks, LttvTraceHook, k);
         lttv_hooks_add(lttv_hooks_by_id_find(
-            tfs->parent.parent.before_event_by_id, 
-	    hook.id), hook.h, &g_array_index(before_hooks, LttvTraceHook, k));
+            tfs->parent.parent.event_by_id, 
+	    hook.id), hook.h, &g_array_index(before_hooks, LttvTraceHook, k),
+            LTTV_PRIO_STATS_BEFORE_STATE);
       }
       for(k = 0 ; k < after_hooks->len ; k++) {
         hook = g_array_index(after_hooks, LttvTraceHook, k);
         lttv_hooks_add(lttv_hooks_by_id_find(
-            tfs->parent.parent.after_event_by_id, 
-	    hook.id), hook.h, &g_array_index(after_hooks, LttvTraceHook, k));
+            tfs->parent.parent.event_by_id, 
+	    hook.id), hook.h, &g_array_index(after_hooks, LttvTraceHook, k),
+            LTTV_PRIO_STATS_AFTER_STATE);
       }
     }
     lttv_attribute_find(self->parent.parent.a, LTTV_STATS_BEFORE_HOOKS, 
@@ -849,26 +854,26 @@ lttv_stats_remove_event_hooks(LttvTracesetStats *self)
         LTTV_POINTER, &val);
     after_hooks = *(val.v_pointer);
 
-    /* Add these hooks to each before_event_by_id hooks list */
+    /* Remove these hooks from each event_by_id hooks list */
 
     nb_tracefile = ltt_trace_control_tracefile_number(ts->parent.parent.t) +
         ltt_trace_per_cpu_tracefile_number(ts->parent.parent.t);
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = LTTV_TRACEFILE_STATS(ts->parent.parent.tracefiles[j]);
-      lttv_hooks_remove_data(tfs->parent.parent.after_event, every_event, 
+      lttv_hooks_remove_data(tfs->parent.parent.event, every_event, 
           NULL);
 
       for(k = 0 ; k < before_hooks->len ; k++) {
         hook = g_array_index(before_hooks, LttvTraceHook, k);
         lttv_hooks_remove_data(
-            lttv_hooks_by_id_find(tfs->parent.parent.before_event_by_id, 
+            lttv_hooks_by_id_find(tfs->parent.parent.event_by_id, 
 	    hook.id), hook.h, &g_array_index(before_hooks, LttvTraceHook, k));
       }
       for(k = 0 ; k < after_hooks->len ; k++) {
         hook = g_array_index(after_hooks, LttvTraceHook, k);
         lttv_hooks_remove_data(
-            lttv_hooks_by_id_find(tfs->parent.parent.after_event_by_id, 
+            lttv_hooks_by_id_find(tfs->parent.parent.event_by_id, 
 	    hook.id), hook.h, &g_array_index(after_hooks, LttvTraceHook, k));
       }
     }
