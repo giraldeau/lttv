@@ -22,6 +22,7 @@
 #include <lttv/lttv.h>
 #include <lttv/tracecontext.h>
 #include <lttvwindow/viewer.h>
+#include <lttv/state.h>
 #include <lttv/hook.h>
 
 #include "drawing.h"
@@ -138,7 +139,7 @@ void drawing_data_request(Drawing_t *drawing,
   lttv_hooks_add(after_traceset, after_data_request, &event_request);
   lttv_hooks_add(event, draw_event_hook, &event_request);
   //Modified by xiangxiu: state update hooks are added by the main window
-  //state_add_event_hooks_api(control_flow_data->mw);
+  //lttv_state_add_event_hooks(tsc);
   lttv_hooks_add(after_event, draw_after_hook, &event_request);
 
   //lttv_process_traceset_seek_time(tsc, start);
@@ -156,7 +157,7 @@ void drawing_data_request(Drawing_t *drawing,
      // NULL, NULL, NULL, NULL, NULL, NULL,
       NULL, NULL, NULL, event, after_event);
   //Modified by xiangxiu: state update hooks are removed by the main window
-  //state_remove_event_hooks_api(control_flow_data->mw);
+  //lttv_state_remove_event_hooks(tsc);
 
   lttv_hooks_destroy(after_traceset);
   lttv_hooks_destroy(event);

@@ -55,7 +55,6 @@
 #include <ltt/facility.h>
 #include <string.h>
 
-//#include "mw_api.h"
 #include "gtktreeprivate.h"
 
 #include "hGuiEventsInsert.xpm"
@@ -1283,7 +1282,7 @@ void add_context_hooks(EventViewerData * event_viewer_data,
   }
   
   //add hooks for process_traceset
-  //    context_add_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
+  //    lttv_traceset_context_add_hooks(tsc, NULL, NULL, NULL, NULL, NULL, NULL,
   //        NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);  
 }
 
@@ -1350,7 +1349,7 @@ void remove_context_hooks(EventViewerData * event_viewer_data,
     }
   }
   //remove hooks from context
-  //    context_remove_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
+  //    lttv_traceset_context_remove_hooks(tsc, NULL, NULL, NULL, NULL, NULL, NULL,
   //           NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
 }
 
@@ -1619,15 +1618,12 @@ void get_events(EventViewerData* event_viewer_data, LttTime start,
   int size;
   LttvTracesetContext * tsc = get_traceset_context(event_viewer_data->mw);
 
-  //  context_add_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
-  //      NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
   add_context_hooks(event_viewer_data,tsc);
 
-  process_traceset_api(event_viewer_data->mw, start, end, max_num_events);
+  lttv_process_traceset_seek_time(tsc, start);
+  lttv_process_traceset(tsc, end, max_num_events);
 
   remove_context_hooks(event_viewer_data,tsc);
-  //  context_remove_hooks_api(event_viewer_data->mw, NULL, NULL, NULL, NULL, NULL, NULL,
-  //         NULL, NULL, NULL,event_viewer_data->before_event_hooks,NULL);
 
   size = event_viewer_data->raw_trace_data_queue_tmp->length;
   *real_num_events = size;

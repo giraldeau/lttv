@@ -194,7 +194,7 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
   StatisticViewerData* statistic_viewer_data = g_new(StatisticViewerData,1);
 
   statistic_viewer_data->mw     = parent_window;
-  statistic_viewer_data->stats  = get_traceset_stats_api(statistic_viewer_data->mw);
+  statistic_viewer_data->stats  = get_traceset_stats(statistic_viewer_data->mw);
   statistic_viewer_data->calculate_stats = statistic_insert_traceset_stats((void *)statistic_viewer_data->stats);
 
   reg_update_time_window(statistic_update_time_window,statistic_viewer_data, statistic_viewer_data->mw);
@@ -586,9 +586,7 @@ void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data,
     }
   }  
 
-  //add state and stats hooks
-  //state_add_event_hooks_api(statistic_viewer_data->mw);  //it will be added in the main window
-  stats_add_event_hooks_api(statistic_viewer_data->mw);
+  lttv_stats_add_event_hooks(tsc);
   
 }
 
@@ -633,9 +631,7 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
     }
   }
 
-  //remove state and stats hooks
-  //state_remove_event_hooks_api(statistic_viewer_data->mw); //it will be done in the main window
-  stats_remove_event_hooks_api(statistic_viewer_data->mw);
+  lttv_stats_remove_event_hooks(tsc);
 }
 
 
