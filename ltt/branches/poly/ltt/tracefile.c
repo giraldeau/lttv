@@ -13,12 +13,12 @@
 
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
-void setFieldsOffset(LttTracefile * t, LttEventType *evT, void *evD);
+void setFieldsOffset(LttTracefile *tf,LttEventType *evT,void *evD,LttTrace *t);
 
 /* get the size of the field type according to the archtecture's
    size and endian type(info of the archecture) */
-int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
-		     int offsetParent, LttField * fld, void * evD );
+int getFieldtypeSize(LttTracefile * tf, LttEventType * evT, int offsetRoot,
+		     int offsetParent, LttField *fld, void *evD, LttTrace* t);
 
 /* read a fixed size or a block information from the file (fd) */
 int readFile(int fd, void * buf, size_t size, char * mesg);
@@ -150,9 +150,11 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
   //parse facilities tracefile to get base_id
   if(strcmp(control_name,"facilities") ==0){
     while(1){
-      evId = *(uint16_t*)tf->cur_event_pos;    
-      if(evId == TRACE_FACILITY_LOAD){
-	pos = tf->cur_event_pos + EVENT_HEADER_SIZE;
+      ev = ltt_tracefile_read(tf);
+      if(!ev)return; // end of file
+
+      if(ev->event_id == TRACE_FACILITY_LOAD){
+	pos = ev->data;
 	fLoad.name = (char*)pos;
 	fLoad.checksum = *(LttChecksum*)(pos + sizeof(pos));
 	fLoad.base_code = *(uint32_t*)(pos + sizeof(pos) + sizeof(LttChecksum));
@@ -167,12 +169,10 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
 	if(i==t->facility_number)
 	  g_error("Facility: %s, checksum: %d is not founded\n",
 		  fLoad.name,fLoad.checksum);
-
-	ev = ltt_tracefile_read(tf); //get next event
-	if(!ev) break;           //end of tracefile
-      }else if(evId == TRACE_BLOCK_END){
-	//can only reach here if it is the first event
-	g_error("Facilities does not contain any facility_load event\n");
+      }else if(ev->event_id == TRACE_BLOCK_START){
+	continue;
+      }else if(ev->event_id == TRACE_BLOCK_END){
+	break;
       }else g_error("Not valid facilities trace file\n");
     }
   }
@@ -354,7 +354,6 @@ void getFacilityInfo(LttTrace *t, char* eventdefs)
   int i,j;
   LttFacility * f;
   LttEventType * et;
-  LttTracefile * tracefile;
 
   dir = opendir(eventdefs);
   if(!dir) g_error("Can not open directory: %s\n", eventdefs);
@@ -366,12 +365,11 @@ void getFacilityInfo(LttTrace *t, char* eventdefs)
   }  
   closedir(dir);
   
-  tracefile = (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles,0);
   for(j=0;j<t->facility_number;j++){
     f = (LttFacility*)g_ptr_array_index(t->facilities, i);
     for(i=0; i<f->event_number; i++){
       et = f->events[i];
-      setFieldsOffset(tracefile, et, NULL);
+      setFieldsOffset(NULL, et, NULL, t);
     }    
   }
 }
@@ -704,7 +702,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
     lttTime = getEventTime(t);
     err = timecmp(&lttTime, &time);
     if(err > 0){
-      if(t->which_event==1 || timecmp(&t->prev_event_time,&time)<0){
+      if(t->which_event==2 || timecmp(&t->prev_event_time,&time)<0){
 	return;
       }else{
 	updateTracefile(t);
@@ -723,9 +721,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
     if(t->which_block == 1){
       updateTracefile(t);      
     }else{
-      if( (t->prev_block_end_time.tv_sec == 0 && 
-	   t->prev_block_end_time.tv_nsec == 0  ) ||
-	   timecmp(&(t->prev_block_end_time),&time) > 0 ){
+      if(timecmp(&(t->prev_block_end_time),&time) >= 0 ){
 	err=readBlock(t,t->which_block-1);
 	if(err) g_error("Can not read tracefile: %s\n", t->name); 
 	return ltt_tracefile_seek_time(t, time) ;
@@ -733,7 +729,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 	updateTracefile(t);
       }
     }
-  }else if(tailTime <= 0){
+  }else if(tailTime < 0){
     if(t->which_block != t->block_number){
       err=readBlock(t,t->which_block+1);
       if(err) g_error("Can not read tracefile: %s\n", t->name); 
@@ -744,12 +740,15 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
     if(tailTime < 0) return ltt_tracefile_seek_time(t, time);
   }else if(headTime == 0){
     updateTracefile(t);
+  }else if(tailTime == 0){
+    t->cur_event_pos = t->a_block_end - EVENT_HEADER_SIZE;
+    return;
   }
 }
 
 /*****************************************************************************
  *Function name
- *    ltt_tracefile_read : read the next event 
+ *    ltt_tracefile_read : read the current event, set the pointer to the next
  *Input params
  *    t                  : tracefile
  *Return value
@@ -761,16 +760,11 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
   LttEvent * lttEvent = (LttEvent *)g_new(LttEvent, 1);
   int err;
 
-  //update the fields of the current event and go to the next event
-  err = skipEvent(t);
-  if(err == ENOENT) return NULL;
-  if(err == ERANGE) g_error("event id is out of range\n");
-  if(err)g_error("Can not read tracefile\n");
-
   lttEvent->event_id = (int)(*(uint16_t *)(t->cur_event_pos));
   if(lttEvent->event_id == TRACE_TIME_HEARTBEAT)
     t->cur_heart_beat_number++;
 
+  t->prev_event_time  = t->current_event_time;
   t->current_event_time = getEventTime(t);
 
   lttEvent->time_delta = *(uint32_t*)(t->cur_event_pos + EVENT_ID_SIZE);
@@ -781,6 +775,12 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
 
   lttEvent->tracefile = t;
   lttEvent->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
+
+  //update the fields of the current event and go to the next event
+  err = skipEvent(t);
+  if(err == ENOENT) return NULL;
+  if(err == ERANGE) g_error("event id is out of range\n");
+  if(err)g_error("Can not read tracefile\n");
 
   return lttEvent;
 }
@@ -828,12 +828,16 @@ int readBlock(LttTracefile * tf, int whichBlock)
 
   if(whichBlock - tf->which_block == 1 && tf->which_block != 0){
     tf->prev_block_end_time = tf->a_block_end->time;
+    tf->prev_event_time     = tf->a_block_end->time;
+    tf->current_event_time  = tf->a_block_end->time;
   }else{
     tf->prev_block_end_time.tv_sec = 0;
     tf->prev_block_end_time.tv_nsec = 0;
+    tf->prev_event_time.tv_sec = 0;
+    tf->prev_event_time.tv_nsec = 0;
+    tf->current_event_time.tv_sec = 0;
+    tf->current_event_time.tv_nsec = 0;
   }
-  tf->prev_event_time.tv_sec = 0;
-  tf->prev_event_time.tv_nsec = 0;
 
   nbBytes=lseek(tf->fd,(off_t)((whichBlock-1)*tf->block_size), SEEK_SET);
   if(nbBytes == -1) return EINVAL;
@@ -848,12 +852,12 @@ int readBlock(LttTracefile * tf, int whichBlock)
 
   tf->which_block = whichBlock;
   tf->which_event = 1;
-  tf->cur_event_pos = tf->a_block_start + sizeof(BlockStart); //first event
+  tf->cur_event_pos = tf->buffer;//the beginning of the block, block start ev
   tf->cur_heart_beat_number = 0;
 
-  tf->current_event_time = getEventTime(tf);
-  
   getCyclePerNsec(tf);
+
+  //  tf->current_event_time = getEventTime(tf);  
 
   return 0;  
 }
@@ -869,8 +873,10 @@ int readBlock(LttTracefile * tf, int whichBlock)
 void updateTracefile(LttTracefile * tf)
 {
   tf->which_event = 1;
-  tf->cur_event_pos = tf->a_block_start + sizeof(BlockStart);
-  tf->current_event_time = getEventTime(tf);  
+  tf->cur_event_pos = tf->buffer;
+  //  tf->current_event_time = getEventTime(tf);  
+  tf->current_event_time.tv_sec = 0;  
+  tf->current_event_time.tv_nsec = 0;  
   tf->cur_heart_beat_number = 0;
 
   tf->prev_event_time.tv_sec = 0;
@@ -903,13 +909,11 @@ int skipEvent(LttTracefile * t)
 
   if(evT) rootFld = evT->root_field;
   else return ERANGE;
-
-  t->prev_event_time = getEventTime(t);
   
   //event has string/sequence or the last event is not the same event
   if((evT->latest_block!=t->which_block || evT->latest_event!=t->which_event) 
      && rootFld->field_fixed == 0){
-    setFieldsOffset(t, evT, evData);
+    setFieldsOffset(t, evT, evData, t->trace);
   }
   t->cur_event_pos += EVENT_HEADER_SIZE + rootFld->field_size;
 
@@ -970,7 +974,15 @@ LttTime getEventTime(LttTracefile * tf)
   LttCycleCount lEventTotalCycle; // Total cycles from start for event
   double        lEventNSec;       // Total usecs from start for event
   LttTime       lTimeOffset;      // Time offset in struct LttTime
+  uint16_t      evId;
   
+  evId = *(uint16_t*)tf->cur_event_pos;
+  if(evId == TRACE_BLOCK_START)
+    return tf->a_block_start->time;
+  else if(evId == TRACE_BLOCK_END)
+    return tf->a_block_end->time;
+  
+
   // Calculate total time in cycles from start of buffer for this event 
   cycle_count = (LttCycleCount)*(uint32_t*)(tf->cur_event_pos + EVENT_ID_SIZE);
   if(tf->cur_heart_beat_number)
@@ -998,12 +1010,12 @@ LttTime getEventTime(LttTracefile * tf)
  *    evD             : event data, it may be NULL
  ****************************************************************************/
 
-void setFieldsOffset(LttTracefile * t, LttEventType * evT, void * evD)
+void setFieldsOffset(LttTracefile *tf,LttEventType *evT,void *evD,LttTrace* t)
 {
   LttField * rootFld = evT->root_field;
   //  rootFld->base_address = evD;
 
-  rootFld->field_size = getFieldtypeSize(t, evT, 0,0,rootFld, evD);  
+  rootFld->field_size = getFieldtypeSize(tf, evT, 0,0,rootFld, evD,t);  
 }
 
 /*****************************************************************************
@@ -1021,7 +1033,7 @@ void setFieldsOffset(LttTracefile * t, LttEventType * evT, void * evD)
  ****************************************************************************/
 
 int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
-		     int offsetParent, LttField * fld, void * evD)
+	     int offsetParent, LttField * fld, void *evD, LttTrace *trace)
 {
   int size, size1, element_number, i, offset1, offset2;
   LttType * type = fld->field_type;
@@ -1039,14 +1051,14 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
   if(type->type_class != LTT_STRUCT && type->type_class != LTT_ARRAY &&
      type->type_class != LTT_SEQUENCE && type->type_class != LTT_STRING){
     if(fld->field_fixed == -1){
-      size = (int) ltt_type_size(t->trace, type);
+      size = (int) ltt_type_size(trace, type);
       fld->field_fixed = 1;
     }else size = fld->field_size;
 
   }else if(type->type_class == LTT_ARRAY){
     element_number = (int) type->element_number;
     if(fld->field_fixed == -1){
-      size = getFieldtypeSize(t, evT, offsetRoot,0,fld->child[0], NULL);
+      size = getFieldtypeSize(t, evT, offsetRoot,0,fld->child[0], NULL, trace);
       if(size == 0){ //has string or sequence
 	fld->field_fixed = 0;
       }else{
@@ -1057,15 +1069,15 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
       size = 0;
       for(i=0;i<element_number;i++){
 	size += getFieldtypeSize(t, evT, offsetRoot+size,size, 
-				fld->child[0], evD+size);
+				fld->child[0], evD+size, trace);
       }      
     }else size = fld->field_size;
 
   }else if(type->type_class == LTT_SEQUENCE){
-    size1 = (int) ltt_type_size(t->trace, type);
+    size1 = (int) ltt_type_size(trace, type);
     if(fld->field_fixed == -1){
       fld->field_fixed = 0;
-      size = getFieldtypeSize(t, evT, offsetRoot,0,fld->child[0], NULL);      
+      size = getFieldtypeSize(t, evT, offsetRoot,0,fld->child[0], NULL, trace);      
       fld->element_size = size;
     }else{//0: sequence
       element_number = getIntNumber(size1,evD);
@@ -1076,7 +1088,7 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
 	size = 0;
 	for(i=0;i<element_number;i++){
 	  size += getFieldtypeSize(t, evT, offsetRoot+size+size1,size+size1, 
-				   fld->child[0], evD+size+size1);
+				   fld->child[0], evD+size+size1, trace);
 	}	
       }
       size += size1;
@@ -1097,7 +1109,7 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
       offset1 = offsetRoot;
       offset2 = 0;
       for(i=0;i<element_number;i++){
-	size1=getFieldtypeSize(t, evT,offset1,offset2, fld->child[i], NULL);
+	size1=getFieldtypeSize(t, evT,offset1,offset2, fld->child[i], NULL, trace);
 	if(size1 > 0 && size >= 0){
 	  size += size1;
 	  if(offset1 >= 0) offset1 += size1;
@@ -1116,7 +1128,7 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
       offset1 = offsetRoot;
       offset2 = 0;
       for(i=0;i<element_number;i++){
-	size=getFieldtypeSize(t,evT,offset1,offset2,fld->child[i],evD+offset2);
+	size=getFieldtypeSize(t,evT,offset1,offset2,fld->child[i],evD+offset2, trace);
 	offset1 += size;
 	offset2 += size;
       }      
