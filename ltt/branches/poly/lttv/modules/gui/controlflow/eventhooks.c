@@ -40,7 +40,7 @@
 #include <lttv/hook.h>
 #include <lttvwindow/common.h>
 #include <lttv/state.h>
-#include <lttvwindow/gtktraceset.h>
+#include <lttvwindow/viewer.h>
 
 
 #include "eventhooks.h"

@@ -28,7 +28,7 @@
  * 
  * This plugin adds a Events Viewer functionnality to Linux TraceToolkit
  * GUI when this plugin is loaded. The init and destroy functions add the
- * viewer's insertion menu item and toolbar icon by calling gtkTraceSet's
+ * viewer's insertion menu item and toolbar icon by calling viewer.h's
  * API functions. Then, when a viewer's object is created, the constructor
  * creates ans register through API functions what is needed to interact
  * with the TraceSet window.
@@ -45,7 +45,7 @@
 
 #include <lttv/module.h>
 #include <lttv/hook.h>
-#include <lttvwindow/gtktraceset.h>
+#include <lttvwindow/viewer.h>
 #include <lttv/tracecontext.h>
 #include <lttv/state.h>
 #include <ltt/ltt.h>

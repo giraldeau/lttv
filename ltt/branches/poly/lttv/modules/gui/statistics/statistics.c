@@ -22,7 +22,7 @@
 
 #include <lttv/lttv.h>
 #include <lttv/module.h>
-#include <lttvwindow/gtktraceset.h>
+#include <lttvwindow/viewer.h>
 #include <lttv/tracecontext.h>
 #include <lttv/hook.h>
 #include <lttvwindow/common.h>
