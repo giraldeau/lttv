@@ -10,6 +10,8 @@ AM_PROG_LIBTOOL
 
 AM_PATH_GLIB_2_0(2.0.0, ,AC_MSG_ERROR([glib is required in order to compile LinuxTraceToolkit - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)
 
+AM_PATH_GTK_2_0(2.0.0, ,AC_MSG_ERROR([gtk is required in order to compile GUI - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)
+
 # Checks for programs.
 AC_PROG_CC
 
@@ -59,12 +61,14 @@ AC_CONFIG_FILES([Makefile
                  lttv/Makefile
 		 lttv/modules/Makefile
 		 lttv/modules/gui/Makefile
-		 lttv/modules/text/Makefile
+#		 lttv/modules/gui/API/Makefile
+ 		 lttv/modules/text/Makefile
                  lttv/plugins/Makefile
 		 lttv/plugins/examples/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 include/Makefile
 		 include/ltt/Makefile
+		 include/ltt/convert/Makefile
 		 include/lttv/Makefile])
 AC_OUTPUT
