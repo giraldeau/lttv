@@ -217,3 +217,35 @@ In a ad hoc events request, a pointer to this structure is used as hook_data in
 the hook lists
 
 
+
+Background Requests Servicing Algorithm (v1)
+
+
+list_in : currently serviced requests
+list_out : queue of requests waiting for processing
+
+
+1. Before processing
+  if list_in is empty
+    - Add all requests in list_out to list_in, empty list_out
+    - for each request in list_in
+      - add hooks to context
+      - set hooks'in_progress flag to TRUE
+    - seek trace to start
+
+2. call process traceset middle for a chunk
+  (assert list_in is not empty! : should not even be called in that case)
+
+3. After the chunk
+  3.1 call after_chunk hooks from list_in
+  3.2 if end of trace reached
+    - for each request in list_in
+      - set hooks'in_progress flag to FALSE
+      - set hooks'ready flag to TRUE
+      - call end request
+      - remove hooks from context
+      - remove request
+    - return FALSE (scheduler stopped)
+  3.3 else
+    - return TRUE (scheduler still registered)
+
