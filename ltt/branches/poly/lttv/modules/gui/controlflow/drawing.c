@@ -38,11 +38,17 @@ GdkColor drawing_colors[NUM_COLORS] =
 { /* Pixel, R, G, B */
   { 0, 0, 0, 0 }, /* COL_BLACK */
   { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_WHITE */
-  { 0, 0x0fff, 0xffff, 0xfffF }, /* COL_WAIT_FORK : pale blue */
-  { 0, 0xffff, 0xffff, 0x0000 }, /* COL_WAIT_CPU : yeallow */
-  { 0, 0xffff, 0x0000, 0xffff }, /* COL_ZOMBIE : purple */
-  { 0, 0xffff, 0x0000, 0x0000 }, /* COL_WAIT : red */
-  { 0, 0x0000, 0xffff, 0x0000 }  /* COL_RUN : green */
+  { 0, 0x0FFF, 0xFFFF, 0xFFFF }, /* COL_WAIT_FORK : pale blue */
+  { 0, 0xFFFF, 0xFFFF, 0x0000 }, /* COL_WAIT_CPU : yellow */
+  { 0, 0xFFFF, 0x0000, 0xFFFF }, /* COL_ZOMBIE : purple */
+  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_WAIT : red */
+  { 0, 0x0000, 0xFFFF, 0x0000 }, /* COL_RUN : green */
+  { 0, 0x8800, 0xFFFF, 0x8A00 }, /* COL_USER_MODE : pale green */
+  { 0, 0x09FF, 0x01FF, 0xFFFF }, /* COL_SYSCALL : blue */
+  { 0, 0xF900, 0x4200, 0xFF00 }, /* COL_TRAP : pale purple */
+  { 0, 0xFFFF, 0x5AFF, 0x01FF }, /* COL_IRQ : orange */
+  { 0, 0xFFFF, 0xFFFF, 0xFFFF }  /* COL_MODE_UNKNOWN : white */
+
 };
 
 
@@ -152,7 +158,6 @@ void drawing_data_request(Drawing_t *drawing,
                  after_schedchange_hook,
                  events_request,
                  LTTV_PRIO_STATE+5);
-#if 0
   lttv_hooks_add(event,
                  before_execmode_hook,
                  events_request,
@@ -161,7 +166,6 @@ void drawing_data_request(Drawing_t *drawing,
                  after_execmode_hook,
                  events_request,
                  LTTV_PRIO_STATE+5);
-#endif //0
  lttv_hooks_add(event,
                  after_fork_hook,
                  events_request,
@@ -206,7 +210,9 @@ static void set_last_start(gpointer key, gpointer value, gpointer user_data)
   HashedProcessData *hashed_process_data = (HashedProcessData*)value;
   guint x = (guint)user_data;
 
-  hashed_process_data->x = x;
+  hashed_process_data->x.over = x;
+  hashed_process_data->x.middle = x;
+  hashed_process_data->x.under = x;
 
   return;
 }

@@ -41,6 +41,11 @@ typedef enum _draw_color { COL_BLACK,
                            COL_ZOMBIE,
                            COL_WAIT,
                            COL_RUN,
+                           COL_USER_MODE,
+                           COL_SYSCALL,
+                           COL_TRAP,
+                           COL_IRQ,
+                           COL_MODE_UNKNOWN,
                            NUM_COLORS } draw_color;
 
 extern GdkColor drawing_colors[NUM_COLORS];

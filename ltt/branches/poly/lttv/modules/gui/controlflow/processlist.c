@@ -495,7 +495,9 @@ int processlist_add(  ProcessList *process_list,
    * If it is created after state update, this value (0) will be
    * overriden by the new state before anything is drawn.
    */
-  hashed_process_data->x = 0;
+  hashed_process_data->x.over = 0;
+  hashed_process_data->x.middle = 0;
+  hashed_process_data->x.under = 0;
   
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->list_store, &iter);

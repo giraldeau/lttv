@@ -56,7 +56,11 @@ typedef struct _HashedProcessData {
   GtkTreeRowReference *row_ref;
  // DrawContext *draw_context;
   /* Information on current drawing */
-  guint x; /* last x position saved by after state update */
+  struct {
+    guint over;
+    guint middle;
+    guint under;
+  } x; /* last x position saved by after state update */
 
   // FIXME : add info on last event ?
 

@@ -274,7 +274,8 @@ static __inline PropertiesLine prepare_status_line(LttvProcessState *process)
   prop_line.y = MIDDLE;
   //GdkColormap *colormap = gdk_colormap_get_system();
   
-  g_debug("prepare_status_line for state : %s", g_quark_to_string(process->state->s));
+  g_debug("prepare_status_line for state : %s",
+      g_quark_to_string(process->state->s));
 
   /* color of line : status of the process */
   if(process->state->s == LTTV_STATE_UNNAMED)
@@ -290,7 +291,7 @@ static __inline PropertiesLine prepare_status_line(LttvProcessState *process)
   else if(process->state->s == LTTV_STATE_RUN)
     prop_line.color = drawing_colors[COL_RUN];
   else
-    prop_line.color = drawing_colors[COL_WHITE];
+      prop_line.color = drawing_colors[COL_WHITE];
  
   //gdk_colormap_alloc_color(colormap,
   //                         prop_line.color,
@@ -429,7 +430,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
          * because it must be set by before chunk hook to the damage_begin
          * value.
          */
-        g_assert(hashed_process_data->x != -1);
+        g_assert(hashed_process_data->x.middle != -1);
         {
           guint x;
           DrawContext draw_context;
@@ -446,12 +447,12 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           draw_context.drawable = drawing->pixmap;
           draw_context.gc = drawing->gc;
           draw_context.pango_layout = drawing->pango_layout;
-          draw_context.drawinfo.start.x = hashed_process_data->x;
+          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
           draw_context.drawinfo.end.x = x;
 
-          draw_context.drawinfo.y.over = y;
-          draw_context.drawinfo.y.middle = y+(height/4);
-          draw_context.drawinfo.y.under = y+(height/2)+2;
+          draw_context.drawinfo.y.over = y+1;
+          draw_context.drawinfo.y.middle = y+(height/2);
+          draw_context.drawinfo.y.under = y+height;
 
           draw_context.drawinfo.start.offset.over = 0;
           draw_context.drawinfo.start.offset.middle = 0;
@@ -467,7 +468,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
           }
           /* become the last x position */
-          hashed_process_data->x = x;
+          hashed_process_data->x.middle = x;
         }
       }
     }
@@ -534,7 +535,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
          * because it must be set by before chunk hook to the damage_begin
          * value.
          */
-        g_assert(hashed_process_data->x != -1);
+        g_assert(hashed_process_data->x.middle != -1);
         {
           guint x;
           DrawContext draw_context;
@@ -551,12 +552,12 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           draw_context.drawable = drawing->pixmap;
           draw_context.gc = drawing->gc;
           draw_context.pango_layout = drawing->pango_layout;
-          draw_context.drawinfo.start.x = hashed_process_data->x;
+          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
           draw_context.drawinfo.end.x = x;
 
-          draw_context.drawinfo.y.over = y;
-          draw_context.drawinfo.y.middle = y+(height/4);
-          draw_context.drawinfo.y.under = y+(height/2)+2;
+          draw_context.drawinfo.y.over = y+1;
+          draw_context.drawinfo.y.middle = y+(height/2);
+          draw_context.drawinfo.y.under = y+height;
 
           draw_context.drawinfo.start.offset.over = 0;
           draw_context.drawinfo.start.offset.middle = 0;
@@ -573,18 +574,11 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
           
           /* become the last x position */
-          hashed_process_data->x = x;
+          hashed_process_data->x.middle = x;
         }
       }
     }
-  } else if(strcmp(
-          ltt_eventtype_name(ltt_event_eventtype(e)),"process") == 0) {
-    /* We are in a fork or exit event */
-
-
   }
-
-  
   return 0;
 
 
@@ -1308,7 +1302,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
           end_time,
           evtime,
           width,
-          &hashed_process_data_in->x);
+          &hashed_process_data_in->x.middle);
     }
   }
   return 0;
@@ -1768,6 +1762,311 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 #endif //0
 }
 
+static __inline PropertiesLine prepare_execmode_line(LttvProcessState *process)
+{
+  PropertiesLine prop_line;
+  prop_line.line_width = 1;
+  prop_line.style = GDK_LINE_SOLID;
+  prop_line.y = OVER;
+  //GdkColormap *colormap = gdk_colormap_get_system();
+  
+  /* color of line : execution mode of the process */
+  if(process->state->t == LTTV_STATE_USER_MODE)
+    prop_line.color = drawing_colors[COL_USER_MODE];
+  else if(process->state->t == LTTV_STATE_SYSCALL)
+    prop_line.color = drawing_colors[COL_SYSCALL];
+  else if(process->state->t == LTTV_STATE_TRAP)
+    prop_line.color = drawing_colors[COL_TRAP];
+  else if(process->state->t == LTTV_STATE_IRQ)
+    prop_line.color = drawing_colors[COL_IRQ];
+  else if(process->state->t == LTTV_STATE_MODE_UNKNOWN)
+    prop_line.color = drawing_colors[COL_MODE_UNKNOWN];
+  else
+    prop_line.color = drawing_colors[COL_WHITE];
+ 
+  //gdk_colormap_alloc_color(colormap,
+  //                         prop_line.color,
+  //                         FALSE,
+  //                         TRUE);
+  
+  return prop_line;
+
+}
+
+
+
+/* before_execmode_hook
+ * 
+ * This function basically draw lines and icons. Two types of lines are drawn :
+ * one small (3 pixels?) representing the state of the process and the second
+ * type is thicker (10 pixels?) representing on which CPU a process is running
+ * (and this only in running state).
+ *
+ * Extremums of the lines :
+ * x_min : time of the last event context for this process kept in memory.
+ * x_max : time of the current event.
+ * y : middle of the process in the process list. The process is found in the
+ * list, therefore is it's position in pixels.
+ *
+ * The choice of lines'color is defined by the context of the last event for this
+ * process.
+ */
+
+
+int before_execmode_hook(void *hook_data, void *call_data)
+{
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
+  Drawing_t *drawing = control_flow_data->drawing;
+
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+
+  LttEvent *e;
+  e = tfc->e;
+
+  LttTime evtime = ltt_event_time(e);
+  TimeWindow time_window = 
+    lttvwindow_get_time_window(control_flow_data->tab);
+
+  LttTime end_time = ltt_time_add(time_window.start_time,
+                                    time_window.time_width);
+
+  if(ltt_time_compare(evtime, time_window.start_time) == -1
+        || ltt_time_compare(evtime, end_time) == 1)
+            return;
+
+  guint width = drawing->width;
+
+  if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"syscall_entry") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"syscall_exit") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"trap_entry") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"trap_exit") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"irq_entry") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"irq_exit") == 0
+   ) {
+
+    /* we are in a execmode, before the state update. We must draw the
+     * items corresponding to the state before it changes : now is the right
+     * time to do it.
+     */
+
+    { 
+      /* For the pid */
+      LttvProcessState *process = tfs->process;
+      g_assert(process != NULL);
+
+      guint pid = process->pid;
+
+      /* Well, the process_out existed : we must get it in the process hash
+       * or add it, and draw its items.
+       */
+       /* Add process to process list (if not present) */
+      guint y = 0, height = 0, pl_height = 0;
+      HashedProcessData *hashed_process_data = NULL;
+      ProcessList *process_list = 
+                      guicontrolflow_get_process_list(control_flow_data);
+      LttTime birth = process->creation_time;
+      const gchar *name = g_quark_to_string(process->name);
+      
+      if(processlist_get_process_pixels(process_list,
+              pid,
+              process->last_cpu,
+              &birth,
+              tfc->t_context->index,
+              &y,
+              &height,
+              &hashed_process_data) == 1)
+      {
+        g_assert(pid == 0 || pid != process->ppid);
+        /* Process not present */
+        processlist_add(process_list,
+            pid,
+            process->last_cpu,
+            process->ppid,
+            &birth,
+            tfc->t_context->index,
+            name,
+            &pl_height,
+            &hashed_process_data);
+        processlist_get_process_pixels(process_list,
+                pid,
+                process->last_cpu,
+                &birth,
+                tfc->t_context->index,
+                &y,
+                &height,
+                &hashed_process_data);
+        drawing_insert_square( drawing, y, height);
+      }
+    
+      /* Now, the process is in the state hash and our own process hash.
+       * We definitely can draw the items related to the ending state.
+       */
+      
+      /* Check if the x position is unset. In can have been left unset by
+       * a draw closure from a after chunk hook. This should never happen,
+       * because it must be set by before chunk hook to the damage_begin
+       * value.
+       */
+      g_assert(hashed_process_data->x.over != -1);
+      {
+        guint x;
+        DrawContext draw_context;
+
+        convert_time_to_pixels(
+            time_window.start_time,
+            end_time,
+            evtime,
+            width,
+            &x);
+
+        /* Now create the drawing context that will be used to draw
+         * items related to the last state. */
+        draw_context.drawable = drawing->pixmap;
+        draw_context.gc = drawing->gc;
+        draw_context.pango_layout = drawing->pango_layout;
+        draw_context.drawinfo.start.x = hashed_process_data->x.over;
+        draw_context.drawinfo.end.x = x;
+
+        draw_context.drawinfo.y.over = y+1;
+        draw_context.drawinfo.y.middle = y+(height/2);
+        draw_context.drawinfo.y.under = y+height;
+
+        draw_context.drawinfo.start.offset.over = 0;
+        draw_context.drawinfo.start.offset.middle = 0;
+        draw_context.drawinfo.start.offset.under = 0;
+        draw_context.drawinfo.end.offset.over = 0;
+        draw_context.drawinfo.end.offset.middle = 0;
+        draw_context.drawinfo.end.offset.under = 0;
+
+        {
+          /* Draw the line */
+          PropertiesLine prop_line = prepare_execmode_line(process);
+          draw_line((void*)&prop_line, (void*)&draw_context);
+
+        }
+        /* become the last x position */
+        hashed_process_data->x.over = x;
+      }
+    }
+  }
+  
+  return 0;
+}
+
+/* after_execmode_hook
+ * 
+ * The draw after hook is called by the reading API to have a
+ * particular event drawn on the screen.
+ * @param hook_data ControlFlowData structure of the viewer. 
+ * @param call_data Event context.
+ *
+ * This function adds items to be drawn in a queue for each process.
+ * 
+ */
+int after_execmode_hook(void *hook_data, void *call_data)
+{
+  EventsRequest *events_request = (EventsRequest*)hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
+
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+
+  LttEvent *e;
+  e = tfc->e;
+
+  LttTime evtime = ltt_event_time(e);
+  TimeWindow time_window = 
+    lttvwindow_get_time_window(control_flow_data->tab);
+
+  LttTime end_time = ltt_time_add(time_window.start_time,
+                                    time_window.time_width);
+
+  if(ltt_time_compare(evtime, time_window.start_time) == -1
+        || ltt_time_compare(evtime, end_time) == 1)
+            return;
+
+  guint width = control_flow_data->drawing->width;
+
+  if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"syscall_entry") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"syscall_exit") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"trap_entry") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"trap_exit") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"irq_entry") == 0
+   ||strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"irq_exit") == 0
+   ) {
+
+    g_debug("execmode!");
+    
+    {
+      /* Add process to process list (if not present) */
+      LttvProcessState *process;
+      LttTime birth;
+      guint y = 0, height = 0, pl_height = 0;
+      HashedProcessData *hashed_process_data = NULL;
+
+      ProcessList *process_list =
+        guicontrolflow_get_process_list(control_flow_data);
+      
+
+      /* Find process pid_in in the list... */
+      process = tfs->process;
+      /* It should exist, because we are after the state update. */
+      g_assert(process != NULL);
+
+      guint pid = process->pid;
+
+      birth = process->creation_time;
+      const gchar *name = g_quark_to_string(process->name);
+
+      if(processlist_get_process_pixels(process_list,
+              pid,
+              process->last_cpu,
+              &birth,
+              tfc->t_context->index,
+              &y,
+              &height,
+              &hashed_process_data) == 1)
+      {
+        g_assert(pid == 0 || pid != process->ppid);
+        /* Process not present */
+        processlist_add(process_list,
+            pid,
+            process->last_cpu,
+            process->ppid,
+            &birth,
+            tfc->t_context->index,
+            name,
+            &pl_height,
+            &hashed_process_data);
+        processlist_get_process_pixels(process_list,
+                pid,
+                process->last_cpu,
+                &birth,
+                tfc->t_context->index,
+                &y,
+                &height,
+                &hashed_process_data);
+        drawing_insert_square( control_flow_data->drawing, y, height);
+      }
+
+      convert_time_to_pixels(
+          time_window.start_time,
+          end_time,
+          evtime,
+          width,
+          &hashed_process_data->x.over);
+    }
+  }
+  return 0;
+}
+
+
 /* after_fork_hook
  * 
  * Create the processlist entry for the child process. Put the last
@@ -1869,12 +2168,17 @@ int after_fork_hook(void *hook_data, void *call_data)
         drawing_insert_square( control_flow_data->drawing, y_child, height);
       }
 
+      guint new_x;
       convert_time_to_pixels(
           time_window.start_time,
           end_time,
           evtime,
           width,
-          &hashed_process_data_child->x);
+          &new_x);
+      hashed_process_data_child->x.over = new_x;
+      hashed_process_data_child->x.middle = new_x;
+      hashed_process_data_child->x.under = new_x;
+
     }
   }
   return 0;
@@ -2358,7 +2662,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
        * because it must be set by before chunk hook to the damage_begin
        * value.
        */
-      g_assert(hashed_process_data->x != -1);
+      g_assert(hashed_process_data->x.over != -1);
       {
         guint x;
         DrawContext draw_context;
@@ -2375,12 +2679,11 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         draw_context.drawable = drawing->pixmap;
         draw_context.gc = drawing->gc;
         draw_context.pango_layout = drawing->pango_layout;
-        draw_context.drawinfo.start.x = hashed_process_data->x;
         draw_context.drawinfo.end.x = x;
 
-        draw_context.drawinfo.y.over = y;
-        draw_context.drawinfo.y.middle = y+(height/4);
-        draw_context.drawinfo.y.under = y+(height/2)+2;
+        draw_context.drawinfo.y.over = y+1;
+        draw_context.drawinfo.y.middle = y+(height/2);
+        draw_context.drawinfo.y.under = y+height;
 
         draw_context.drawinfo.start.offset.over = 0;
         draw_context.drawinfo.start.offset.middle = 0;
@@ -2390,6 +2693,15 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         draw_context.drawinfo.end.offset.under = 0;
 
         {
+          draw_context.drawinfo.start.x = hashed_process_data->x.over;
+          /* Draw the line */
+          PropertiesLine prop_line = prepare_execmode_line(process);
+          draw_line((void*)&prop_line, (void*)&draw_context);
+
+        }
+        hashed_process_data->x.over = x;
+        {
+          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
           /* Draw the line */
           PropertiesLine prop_line = prepare_status_line(process);
           draw_line((void*)&prop_line, (void*)&draw_context);
@@ -2399,7 +2711,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         /* special case LTTV_STATE_WAIT : CPU is unknown. */
         
         /* become the last x position */
-        hashed_process_data->x = x;
+        hashed_process_data->x.middle = x;
       }
     }
   }

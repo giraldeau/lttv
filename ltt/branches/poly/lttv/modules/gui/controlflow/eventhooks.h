@@ -83,6 +83,8 @@ int event_selected_hook(void *hook_data, void *call_data);
  */
 int before_schedchange_hook(void *hook_data, void *call_data);
 int after_schedchange_hook(void *hook_data, void *call_data);
+int before_execmode_hook(void *hook_data, void *call_data);
+int after_execmode_hook(void *hook_data, void *call_data);
 int after_fork_hook(void *hook_data, void *call_data);
 
 void draw_closure(gpointer key, gpointer value, gpointer user_data);
