@@ -55,15 +55,17 @@ guicontrolflow(void)
 	Process_List_Widget = 
 		processlist_get_widget(Control_Flow_Data->Process_List);
 	
-	Control_Flow_Data->Inside_HBox_V = gtk_hbox_new(0, 0);
-
-	gtk_box_pack_start(
-		GTK_BOX(Control_Flow_Data->Inside_HBox_V),
-		Process_List_Widget, FALSE, TRUE, 0); // FALSE TRUE
-	gtk_box_pack_start(
-		GTK_BOX(Control_Flow_Data->Inside_HBox_V),
-		Drawing_Widget, TRUE, TRUE, 0);
-
+	//Control_Flow_Data->Inside_HBox_V = gtk_hbox_new(0, 0);
+	Control_Flow_Data->HPaned = gtk_hpaned_new();
+		
+	//gtk_box_pack_start(
+	//	GTK_BOX(Control_Flow_Data->Inside_HBox_V),
+	//	Process_List_Widget, FALSE, TRUE, 0); // FALSE TRUE
+	//gtk_box_pack_start(
+	//	GTK_BOX(Control_Flow_Data->Inside_HBox_V),
+	//	Drawing_Widget, TRUE, TRUE, 0);
+	gtk_paned_pack1(GTK_PANED(Control_Flow_Data->HPaned), Process_List_Widget, FALSE, TRUE);
+	gtk_paned_pack2(GTK_PANED(Control_Flow_Data->HPaned), Drawing_Widget, TRUE, TRUE);
 
 	Control_Flow_Data->VAdjust_C = 
 		GTK_ADJUSTMENT(gtk_adjustment_new(	0.0,	/* Value */
@@ -84,8 +86,8 @@ guicontrolflow(void)
 
 	gtk_scrolled_window_add_with_viewport(
 		GTK_SCROLLED_WINDOW(Control_Flow_Data->Scrolled_Window_VC),
-		Control_Flow_Data->Inside_HBox_V);
-	
+		//Control_Flow_Data->Inside_HBox_V);
+		Control_Flow_Data->HPaned);
 	
 	//g_signal_connect (G_OBJECT (Control_Flow_Data->Drawing_Area_V),
 	//		"expose_event",
@@ -109,7 +111,8 @@ guicontrolflow(void)
 
 	gtk_widget_show(Drawing_Widget);
 	gtk_widget_show(Process_List_Widget);
-	gtk_widget_show(Control_Flow_Data->Inside_HBox_V);
+	//gtk_widget_show(Control_Flow_Data->Inside_HBox_V);
+	gtk_widget_show(Control_Flow_Data->HPaned);
 	gtk_widget_show(Control_Flow_Data->Scrolled_Window_VC);
 	
 	g_object_set_data_full(

@@ -12,8 +12,9 @@ struct _ControlFlowData {
 	Drawing_t *Drawing;
 
 	//GtkWidget *HBox_V;
-	GtkWidget *Inside_HBox_V;
-
+	//GtkWidget *Inside_HBox_V;
+	GtkWidget *HPaned;
+		
 	GtkAdjustment *VAdjust_C ;
 	
 	/* Trace information */
