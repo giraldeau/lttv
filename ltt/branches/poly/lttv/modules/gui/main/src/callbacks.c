@@ -498,19 +498,21 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
       if(strcmp(remove_trace_name,name[i]) == 0){
 	//unselect the trace from the current viewer
 	w = gtk_multi_vpaned_get_widget(mw_data->current_tab->multi_vpaned);  
-	s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-	t = lttv_traceset_selector_trace_get(s,i);
-	lttv_trace_selector_set_selected(t, FALSE);
-
-	//check if other viewers select the trace
-	w = gtk_multi_vpaned_get_first_widget(mw_data->current_tab->multi_vpaned);  
-	while(w){
+	if(w){
 	  s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
 	  t = lttv_traceset_selector_trace_get(s,i);
-	  selected = lttv_trace_selector_get_selected(t);
-	  if(selected)break;
-	  w = gtk_multi_vpaned_get_next_widget(mw_data->current_tab->multi_vpaned);  
-	}
+	  lttv_trace_selector_set_selected(t, FALSE);
+
+	  //check if other viewers select the trace
+	  w = gtk_multi_vpaned_get_first_widget(mw_data->current_tab->multi_vpaned);  
+	  while(w){
+	    s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
+	    t = lttv_traceset_selector_trace_get(s,i);
+	    selected = lttv_trace_selector_get_selected(t);
+	    if(selected)break;
+	    w = gtk_multi_vpaned_get_next_widget(mw_data->current_tab->multi_vpaned);  
+	  }
+	}else selected = FALSE;
 
 	//if no viewer selects the trace, remove it
 	if(!selected){
