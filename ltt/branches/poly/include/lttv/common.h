@@ -14,6 +14,10 @@ typedef struct _TimeInterval TimeInterval;
 typedef GtkWidget * (*lttv_constructor)(mainWindow * main_window);
 typedef lttv_constructor view_constructor;
 
+struct _TimeInterval{
+  LttTime startTime;
+  LttTime endTime;  
+};
 
 
 #endif // COMMON_H

@@ -11,11 +11,6 @@
 #include <lttv/common.h>
 #include <lttv/gtkcustom.h>
 
-struct _TimeInterval{
-  LttTime startTime;
-  LttTime endTime;  
-};
-
 
 struct _mainWindow{
   GtkWidget*      MWindow;            /* Main Window */
