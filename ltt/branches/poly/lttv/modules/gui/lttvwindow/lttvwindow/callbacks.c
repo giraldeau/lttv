@@ -3096,7 +3096,7 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
   lower = adjust->lower;
   upper = adjust->upper;
   ratio = (value - lower) / (upper - lower);
-  g_critical("lower %lu, upper %lu, value %lu, ratio %lu", lower, upper, value, ratio);
+  g_info("lower %lu, upper %lu, value %lu, ratio %lu", lower, upper, value, ratio);
   
   //time = ltt_time_sub(time_span->end_time, time_span->start_time);
   //time = ltt_time_mul(time, (float)ratio);
