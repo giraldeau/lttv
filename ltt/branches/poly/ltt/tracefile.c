@@ -871,7 +871,8 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
       ltt_tracefile_find_time_block(t, time, t->which_block+1, t->block_number);
       return ltt_tracefile_seek_time(t, time);
     }else {
-      g_print("End of file\n");      
+     t->cur_event_pos = t->buffer + t->block_size;
+     g_print("End of file\n");      
       return;      
     }    
   }else if(tailTime == 0){

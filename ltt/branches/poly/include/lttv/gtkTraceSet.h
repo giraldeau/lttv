@@ -190,6 +190,14 @@ void unreg_update_traceset(LttvHook hook, gpointer hook_data,
 
 
 /**
+ * Function to redraw each viewer belonging to the current tab 
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void update_traceset(MainWindow * main_win);
+
+
+/**
  * Function to register a hook function for a viewer to set/update its 
  * filter.
  * It will be called by the constructor of the viewer.
@@ -414,3 +422,5 @@ void stats_remove_event_hooks_api(MainWindow *main_win );
  */
 
 LttvTracesetStats* get_traceset_stats_api(MainWindow *main_win);
+
+LttvTracesetContext* get_traceset_context(MainWindow *main_win);

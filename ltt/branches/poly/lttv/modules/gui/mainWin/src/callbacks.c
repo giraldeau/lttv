@@ -33,7 +33,7 @@ MainWindow * get_window_data_struct(GtkWidget * widget);
 char * get_unload_module(char ** loaded_module_name, int nb_module);
 char * get_remove_trace(char ** all_trace_name, int nb_trace);
 char * get_selection(char ** all_name, int nb, char *title, char * column_title);
-void get_filter_selection(LttvTracesetSelector *s, char *title, char * column_title);
+gboolean get_filter_selection(LttvTracesetSelector *s, char *title, char * column_title);
 void * create_tab(MainWindow * parent, MainWindow * current_window,
 		  GtkNotebook * notebook, char * label);
 
@@ -49,8 +49,8 @@ void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * trace);
 
 LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset);
 
-void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window, unsigned nb_events);
-
+void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window);
+unsigned get_max_event_number(MainWindow * mw_data);
 
 enum {
   CHECKBOX_COLUMN,
@@ -101,25 +101,10 @@ LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset)
 void
 insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data)
 {
-  GdkWindow * win;
-  GdkCursor * new;
   guint val = 20;
-  GtkWidget* widget = menuitem;
 
-  new = gdk_cursor_new(GDK_X_CURSOR);
-  if(GTK_IS_MENU_ITEM(menuitem)){
-    widget = lookup_widget(menuitem, "MToolbar2");
-  }
-  win = gtk_widget_get_parent_window(widget);  
-  gdk_window_set_cursor(win, new);
-  gdk_cursor_unref(new);  
-  gdk_window_stick(win);
-  gdk_window_unstick(win);
- 
   insert_viewer((GtkWidget*)menuitem, (view_constructor)user_data);
   //  selected_hook(&val);
-
-  gdk_window_set_cursor(win, NULL);  
 }
 
 
@@ -130,7 +115,6 @@ void insert_viewer(GtkWidget* widget, view_constructor constructor)
   MainWindow * mw_data;  
   GtkWidget * viewer;
   LttvTracesetSelector  * s;
-  unsigned * size;
   TimeInterval * time_interval;
   TimeWindow  time_window;
 
@@ -146,9 +130,6 @@ void insert_viewer(GtkWidget* widget, view_constructor constructor)
     // Added by MD
     //    g_object_unref(G_OBJECT(viewer));
 
-    size = (unsigned*)g_object_get_data(G_OBJECT(viewer), MAX_NUMBER_EVENT);
-    if(size == NULL) *size = G_MAXULONG;
-
     time_window = mw_data->current_tab->time_window;
     time_interval = (TimeInterval*)g_object_get_data(G_OBJECT(viewer), TRACESET_TIME_SPAN);
     if(time_interval){
@@ -156,7 +137,7 @@ void insert_viewer(GtkWidget* widget, view_constructor constructor)
       time_window.time_width = ltt_time_sub(time_interval->endTime,time_interval->startTime);
     }
 
-    redraw_viewer(mw_data,&time_window, *size);
+    redraw_viewer(mw_data,&time_window);
     set_current_time(mw_data,&(mw_data->current_tab->current_time));
   }
 }
@@ -285,17 +266,54 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
 
 }
 
-void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window, unsigned nb_events)
+unsigned get_max_event_number(MainWindow * mw_data)
 {
+  unsigned nb = 0, *size;
+  GtkWidget * w;
+
+  w = gtk_multi_vpaned_get_first_widget(mw_data->current_tab->multi_vpaned);  
+  while(w){
+    size = (unsigned*)g_object_get_data(G_OBJECT(w), MAX_NUMBER_EVENT);
+    if(size == NULL){
+      nb = G_MAXULONG;
+      break;
+    }else{
+      if(nb < *size)
+	nb = *size;
+    }
+    w = gtk_multi_vpaned_get_next_widget(mw_data->current_tab->multi_vpaned);  
+  }  
+  return nb;
+}
+
+void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
+{
+  unsigned max_nb_events;
+  GdkWindow * win;
+  GdkCursor * new;
+  GtkWidget* widget;
+
+  new = gdk_cursor_new(GDK_X_CURSOR);
+  widget = lookup_widget(mw_data->mwindow, "MToolbar2");
+  win = gtk_widget_get_parent_window(widget);  
+  gdk_window_set_cursor(win, new);
+  gdk_cursor_unref(new);  
+  gdk_window_stick(win);
+  gdk_window_unstick(win);
+ 
   //update time window of each viewer, let viewer insert hooks needed by process_traceset
   set_time_window(mw_data, time_window);
+  
+  max_nb_events = get_max_event_number(mw_data);
 
   process_traceset_api(mw_data, time_window->start_time, 
 		       ltt_time_add(time_window->start_time,time_window->time_width),
-		       nb_events);
+		       max_nb_events);
 
   //call hooks to show each viewer and let them remove hooks
   show_viewer(mw_data);  
+
+  gdk_window_set_cursor(win, NULL);  
 }
 
 void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * t)
@@ -366,7 +384,8 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       gtk_widget_destroy((GtkWidget*)file_selector);
       
       //update current tab
-      redraw_viewer(mw_data, &(mw_data->current_tab->time_window), G_MAXULONG);
+      update_traceset(mw_data);
+      redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
       set_current_time(mw_data,&(mw_data->current_tab->current_time));
       break;
     case GTK_RESPONSE_REJECT:
@@ -458,7 +477,8 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 			    LTTV_TRACESET_CONTEXT(mw_data->current_tab->
 				      traceset_info->traceset_context),traceset);      
 	  //update current tab
-	  redraw_viewer(mw_data, &(mw_data->current_tab->time_window), G_MAXULONG);
+	  update_traceset(mw_data);
+	  redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
 	  set_current_time(mw_data,&(mw_data->current_tab->current_time));
 	}
 	break;
@@ -483,7 +503,7 @@ void zoom(GtkWidget * widget, double size)
 {
   TimeInterval *time_span;
   TimeWindow time_window;
-  LttTime    current_time, time_delta, time_s, time_e;
+  LttTime    current_time, time_delta, time_s, time_e, time_t;
   MainWindow * mw_data = get_window_data_struct(widget);
 
   time_span = LTTV_TRACESET_CONTEXT(mw_data->current_tab->
@@ -500,8 +520,13 @@ void zoom(GtkWidget * widget, double size)
     if(ltt_time_compare(time_window.time_width,time_delta) > 0)
       time_window.time_width = time_delta;        
 
-    time_s = ltt_time_sub(current_time,ltt_time_div(time_window.time_width, 2));
-    time_e = ltt_time_add(current_time,ltt_time_div(time_window.time_width, 2));
+    time_t = ltt_time_div(time_window.time_width, 2);
+    if(ltt_time_compare(current_time, time_t) < 0){
+      time_s = time_span->startTime;
+    } else {
+      time_s = ltt_time_sub(current_time,time_t);
+    }
+    time_e = ltt_time_add(current_time,time_t);
     if(ltt_time_compare(time_span->startTime, time_s) > 0){
       time_s = time_span->startTime;
     }else if(ltt_time_compare(time_span->endTime, time_e) < 0){
@@ -510,7 +535,7 @@ void zoom(GtkWidget * widget, double size)
     }
     time_window.start_time = time_s;    
   }
-  redraw_viewer(mw_data, &time_window, G_MAXULONG);
+  redraw_viewer(mw_data, &time_window);
   set_current_time(mw_data,&(mw_data->current_tab->current_time));
   gtk_multi_vpaned_set_adjust(mw_data->current_tab->multi_vpaned, FALSE);
 }
@@ -774,7 +799,11 @@ on_trace_filter_activate              (GtkMenuItem     *menuitem,
     g_printf("There is no viewer yet\n");      
     return;
   }
-  get_filter_selection(s, "Configure trace and tracefile filter", "Select traces and tracefiles");
+  if(get_filter_selection(s, "Configure trace and tracefile filter", "Select traces and tracefiles")){
+    update_traceset(mw_data);
+    redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
+    set_current_time(mw_data,&(mw_data->current_tab->current_time));
+  }
 }
 
 void
@@ -1109,7 +1138,7 @@ void update_filter(LttvTracesetSelector *s,  GtkTreeStore *store )
   }
 }
 
-void get_filter_selection(LttvTracesetSelector *s,char *title, char * column_title)
+gboolean get_filter_selection(LttvTracesetSelector *s,char *title, char * column_title)
 {
   GtkWidget         * dialogue;
   GtkTreeStore      * store;
@@ -1200,12 +1229,15 @@ void get_filter_selection(LttvTracesetSelector *s,char *title, char * column_tit
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       update_filter(s, store);
+      gtk_widget_destroy(dialogue);
+      return TRUE;
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
     default:
       gtk_widget_destroy(dialogue);
       break;
   }
+  return FALSE;
 }
 
 char * get_remove_trace(char ** all_trace_name, int nb_trace)
@@ -1524,8 +1556,10 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
               LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context)->Time_Span->endTime.tv_sec;
     tmp_time.tv_nsec = 0;
     tmp_tab->time_window.time_width = tmp_time ;
-    tmp_tab->current_time.tv_sec = tmp_time.tv_sec / 2;
-    tmp_tab->current_time.tv_nsec = 0 ;
+    tmp_tab->current_time.tv_sec = 
+       LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context)->Time_Span->startTime.tv_sec;
+    tmp_tab->current_time.tv_nsec = 
+       LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context)->Time_Span->startTime.tv_nsec;
   }
   tmp_tab->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   //  mw_data->current_tab = tmp_tab;

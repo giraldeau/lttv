@@ -361,7 +361,7 @@ void reg_update_traceset(LttvHook hook, gpointer hook_data,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(main_win->attributes,
+  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
 		       "hooks/updatetraceset", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
@@ -386,11 +386,28 @@ void unreg_update_traceset(LttvHook hook, gpointer hook_data,
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(main_win->attributes,
+  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
 		       "hooks/updatetraceset", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
+}
+
+
+/**
+ * Function to redraw each viewer belonging to the current tab 
+ * @param main_win the main window the viewer belongs to.
+ */
+
+void update_traceset(MainWindow * main_win)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
+		       "hooks/updatetraceset", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return;
+  lttv_hooks_call(tmp, NULL);
 }
 
 
@@ -755,4 +772,10 @@ void stats_remove_event_hooks_api(MainWindow *main_win )
 LttvTracesetStats* get_traceset_stats_api(MainWindow *main_win)
 {
   return main_win->current_tab->traceset_info->traceset_context;
+}
+
+
+LttvTracesetContext* get_traceset_context(MainWindow *main_win)
+{
+  return (LttvTracesetContext*)main_win->current_tab->traceset_info->traceset_context;
 }

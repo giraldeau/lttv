@@ -196,6 +196,40 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
     LttvHooks *before_event, 
     LttvHooks *after_event);
 
+void lttv_trace_context_add_hooks(LttvTraceContext *self,
+				  LttvHooks *check_trace, 
+				  LttvHooks *before_trace, 
+				  LttvHooks *after_trace);
+
+void lttv_trace_context_remove_hooks(LttvTraceContext *self,
+				     LttvHooks *check_trace, 
+				     LttvHooks *before_trace, 
+				     LttvHooks *after_trace);
+
+void lttv_tracefile_context_add_hooks(LttvTracefileContext *self,
+				      LttvHooks *check_tracefile,
+				      LttvHooks *before_tracefile,
+				      LttvHooks *after_tracefile,
+				      LttvHooks *check_event, 
+				      LttvHooks *before_event, 
+				      LttvHooks *after_event);
+
+void lttv_tracefile_context_remove_hooks(LttvTracefileContext *self,
+					 LttvHooks *check_tracefile,
+					 LttvHooks *before_tracefile,
+					 LttvHooks *after_tracefile,
+					 LttvHooks *check_event, 
+					 LttvHooks *before_event, 
+					 LttvHooks *after_event);
+
+void lttv_tracefile_context_add_hooks_by_id(LttvTracefileContext *self,
+					    unsigned i,
+					    LttvHooks *before_event_by_id, 
+					    LttvHooks *after_event_by_id);
+
+void lttv_tracefile_context_remove_hooks_by_id(LttvTracefileContext *self,
+					       unsigned i);
+
 typedef struct _LttvTraceHook {
   LttvHook h;
   guint id;
