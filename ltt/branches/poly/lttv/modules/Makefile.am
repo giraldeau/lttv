@@ -17,5 +17,5 @@ libdir = ${lttvplugindir}
 lib_LTLIBRARIES = libguiEvents.la
 libguiEvents_la_LDFLAGS = -module
 libguiEvents_la_SOURCES = guiEvents.c
-libguiEvents_la_HEADERS = gtkrbtree.h gtktreeprivate.h
+noinst_HEADERS = gtkrbtree.h gtktreeprivate.h
 

@@ -25,7 +25,7 @@ libmainwin_la_SOURCES = \
 	callbacks.c \
 	gtkcustom.c
 
-libmainwin_la_HEADERS = \
+noinst_HEADERS = \
 	support.h \
 	interface.h \
 	callbacks.h
