@@ -34,8 +34,8 @@
 
 #include <lttv/module.h>
 #include <lttv/hook.h>
-//#include <lttv/gtkTraceSet.h>
-#include "mw_api.h"
+#include <lttv/gtkTraceSet.h>
+//#include "mw_api.h"
 #include "gtktreeprivate.h"
 
 #include "icons/hGuiEventsInsert.xpm"
