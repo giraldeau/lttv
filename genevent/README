@@ -1,0 +1,14 @@
+The 'genevent' program parses event descriptions and generates 
+the inline functions to record events in the kernel.
+
+Right now, the program can only parse simple structure, if a 
+structure has a nested structure, it will not work.
+
+There are several files in the directory:
+ genevent.c, genevent.h, crc32.tab, parser.c and parser.h
+
+In fact, crc32.tab, parser.c and parser.h are the same files as  
+those in LTT library.
+
+'core.xml' is an example event description file.
+
