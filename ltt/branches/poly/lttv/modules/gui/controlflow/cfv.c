@@ -87,10 +87,12 @@ guicontrolflow(void)
                                    control_flow_data->v_adjust));
 
   
-  //control_flow_data->Inside_HBox_V = gtk_hbox_new(0, 0);
-  control_flow_data->top_widget = control_flow_data->h_paned =
-                                                     gtk_hpaned_new();
-    
+  control_flow_data->h_paned = gtk_hpaned_new();
+  control_flow_data->box = gtk_event_box_new();
+  control_flow_data->top_widget = control_flow_data->box;
+  gtk_container_add(GTK_CONTAINER(control_flow_data->box),
+                    control_flow_data->h_paned);
+      
   gtk_paned_pack1(GTK_PANED(control_flow_data->h_paned),
                   process_list_widget, FALSE, TRUE);
   gtk_paned_pack2(GTK_PANED(control_flow_data->h_paned),
@@ -105,6 +107,7 @@ guicontrolflow(void)
   gtk_widget_show(drawing_widget);
   gtk_widget_show(process_list_widget);
   gtk_widget_show(control_flow_data->h_paned);
+  gtk_widget_show(control_flow_data->box);
   
   g_object_set_data_full(
       G_OBJECT(control_flow_data->top_widget),

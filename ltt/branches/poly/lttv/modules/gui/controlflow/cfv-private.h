@@ -25,6 +25,7 @@ struct _ControlFlowData {
   GtkWidget *top_widget;
   Tab *tab;
 
+  GtkWidget *box; /* box that contains the hpaned. necessary for it to work */
   GtkWidget *h_paned;
 
   ProcessList *process_list;
