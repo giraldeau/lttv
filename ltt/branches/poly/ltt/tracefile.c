@@ -149,7 +149,6 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
       }else if(ev->event_id == TRACE_BLOCK_END){
 	break;
       }else g_error("Not valid facilities trace file\n");
-      g_free(ev);
     }
   }
 }
@@ -705,7 +704,6 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 	  g_print("End of file\n");      
 	  return;
 	}
-	g_free(ev);
 	lttTime = getEventTime(t);
 	err = timecmp(&lttTime, &time);
 	if(err >= 0)return;
@@ -755,7 +753,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 
 LttEvent *ltt_tracefile_read(LttTracefile *t)
 {
-  LttEvent * lttEvent = (LttEvent *)g_new(LttEvent, 1);
+  LttEvent * lttEvent = &t->an_event;
   int err;
 
   if(t->cur_event_pos == t->buffer + t->block_size){

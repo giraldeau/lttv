@@ -137,6 +137,7 @@ struct _LttTracefile{
 
   LttTime prev_block_end_time;       //the end time of previous block
   LttTime prev_event_time;           //the time of the previous event
+  LttEvent an_event;
 };
 
 struct _LttTrace{
