@@ -544,6 +544,8 @@ void zoom(GtkWidget * widget, double size)
   LttTime    current_time, time_delta, time_s, time_e, time_t;
   MainWindow * mw_data = get_window_data_struct(widget);
 
+  if(size == 1) return;
+
   time_span = LTTV_TRACESET_CONTEXT(mw_data->current_tab->
 				    traceset_info->traceset_context)->Time_Span;
   time_window =  mw_data->current_tab->time_window;
@@ -556,7 +558,7 @@ void zoom(GtkWidget * widget, double size)
   }else{
     time_window.time_width = ltt_time_div(time_window.time_width, size);
     if(ltt_time_compare(time_window.time_width,time_delta) > 0)
-      time_window.time_width = time_delta;        
+      time_window.time_width = time_delta;
 
     time_t = ltt_time_div(time_window.time_width, 2);
     if(ltt_time_compare(current_time, time_t) < 0){
