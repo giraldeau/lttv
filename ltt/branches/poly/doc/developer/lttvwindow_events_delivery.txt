@@ -198,6 +198,17 @@ the initial request. This is the expected result. For the background processings
 that call viewer's hooks, they will be removed.
 
 
+A New "Redraw" Button
+
+It will be used to redraw the viewers entirely. It is useful to restart the
+servicing after a "stop" action.
+
+A New "Continue" Button
+
+It will tell the viewers to send requests for damaged areas. It is useful to
+complete the servicing after a "stop" action.
+
+
 
 Implementation
 
