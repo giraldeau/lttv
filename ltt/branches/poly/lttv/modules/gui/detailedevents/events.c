@@ -108,7 +108,7 @@ typedef struct _EventViewerData {
   unsigned     start_event_index;       // the first event shown in the window
   unsigned     end_event_index;         // the last event shown in the window
   unsigned     size;                    // maxi number of events loaded when instance the viewer
-  gboolean     current_time_updated;
+ // gboolean     current_time_updated;
 
   //scroll window containing Tree View
   GtkWidget * scroll_win;
@@ -438,7 +438,7 @@ gui_events(Tab *tab, LttvTracesetSelector * s,char* key )
   /* Set the Selected Event */
   //  tree_v_set_cursor(event_viewer_data);
 
-  event_viewer_data->current_time_updated = FALSE;
+ // event_viewer_data->current_time_updated = FALSE;
   event_viewer_data->size  = RESERVE_SMALL_SIZE;
 
   g_object_set_data_full(
@@ -677,7 +677,7 @@ void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data)
  
     if(ltt_time.tv_sec != current_time.tv_sec ||
        ltt_time.tv_nsec != current_time.tv_nsec){
-      event_viewer_data->current_time_updated = TRUE;
+   //   event_viewer_data->current_time_updated = TRUE;
       lttvwindow_report_current_time(tab,ltt_time);
     }
   }else{
@@ -1247,9 +1247,7 @@ gui_events_destructor(EventViewerData *event_viewer_data)
 
   /* May already been done by GTK window closing */
   if(GTK_IS_WIDGET(event_viewer_data->hbox_v)){
-    gui_events_free(event_viewer_data);
     gtk_widget_destroy(event_viewer_data->hbox_v);
-    event_viewer_data = NULL;
   }
   
   /* Destroy the Tree View */
@@ -1431,11 +1429,10 @@ gboolean update_current_time(void * hook_data, void * call_data)
 {
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
   const LttTime * current_time = (LttTime*)call_data;
-  guint64 nsec = current_time->tv_sec * NANOSECONDS_PER_SECOND 
-                  + current_time->tv_nsec;
+  guint64 nsec = (guint64)current_time->tv_sec * NANOSECONDS_PER_SECOND 
+                  + (guint64)current_time->tv_nsec;
   GtkTreeIter iter;
   guint64 time;
-  int count = -1;
   GtkTreeModel* model = (GtkTreeModel*)event_viewer_data->store_m;
   GList * list;
   EventFields * data, *data1;
@@ -1448,31 +1445,36 @@ gboolean update_current_time(void * hook_data, void * call_data)
   TimeInterval time_span = tsc->time_span;
 
   if(!event_viewer_data->event_fields_queue->head) return FALSE;
-
+#if 0
   if(event_viewer_data->current_time_updated ){
     event_viewer_data->current_time_updated = FALSE;
     return FALSE;
   }
-
+#endif //0
   //check if the event is shown in the current viewer
+  gint count = 0;
+  gboolean event_shown = FALSE;
   if(gtk_tree_model_get_iter_first(model, &iter)){
-    while(1){
-      gtk_tree_model_get(model, &iter, TIME_COLUMN, &time, -1);
-      if(time < nsec){
-  if(!gtk_tree_model_iter_next(model, &iter)){
-    count = -1;
-    break;
-  }
-  count++;
-      }else{
-  break;
+    gtk_tree_model_get(model, &iter, TIME_COLUMN, &time, -1);
+    if(time > nsec){
+      /* Event is before the list */
+    } else {
+      /* Event can be in the list */
+      while(gtk_tree_model_iter_next(model, &iter)) {
+        gtk_tree_model_get(model, &iter, TIME_COLUMN, &time, -1);
+        count++;
+        if(time >= nsec){
+          /* found */
+          event_shown = TRUE;
+          break;
+        }
       }
     }
-    //    event_selected_hook(event_viewer_data, &count);
   }
 
-  //the event is not shown in the current viewer
-  if(count == -1){
+  if(!event_shown)
+  {
+    //the event is not shown in the current viewer
     count = 0;
     //check if the event is in the buffer
     list = event_viewer_data->event_fields_queue->head;
