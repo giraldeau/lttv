@@ -7,9 +7,9 @@
  * Reworked by Mathieu Desnoyers, May 2003
  */
 
-#include "lttv.h"
-#include "module.h"
 #include <popt.h>
+#include <lttv/module.h>
+#include "lttv.h"
 
 /* Table of loaded modules and paths where to search for modules */
 

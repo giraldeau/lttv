@@ -1,4 +1,4 @@
-#include "hook.h"
+#include <lttv/hook.h>
 
 
 typedef struct _lttv_hook_closure {

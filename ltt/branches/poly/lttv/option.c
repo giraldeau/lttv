@@ -1,8 +1,8 @@
 #include <popt.h>
 
+#include <lttv/hook.h>
 #include "lttv.h"
 #include "option.h"
-#include "hook.h"
 
 /* Extensible array of popt command line options. Modules add options as
    they are loaded and initialized. */

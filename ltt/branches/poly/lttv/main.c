@@ -1,10 +1,11 @@
 
+#include <lttv/hook.h>
+#include <lttv/module.h>
+
 #include "lttv.h"
 #include "trace.h"
 #include "attribute.h"
-#include "hook.h"
 #include "option.h"
-#include "module.h"
 
 /* The main program maintains a few central data structures and relies
    on modules for the rest. These data structures may be accessed by modules
