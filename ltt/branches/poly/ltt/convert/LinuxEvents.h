@@ -9,7 +9,7 @@
  *
  * History : 
  *    K.Y., 31/05/1999, Initial typing.
- *
+ *    Mathieu Desnoyers 13-01-2005 : adaptation for multiple version input
  */
 
 #ifndef __TRACE_TOOLKIT_LINUX_HEADER__
@@ -70,7 +70,6 @@
 
 /* The information logged when the tracing is started */
 #define TRACER_MAGIC_NUMBER        0x00D6B7ED     /* That day marks an important historical event ... */
-#define TRACER_SUP_VERSION_MAJOR            2     /* Major version number */
 
 /* Minimum information contained in any trace start event */
 typedef struct _trace_start_any
@@ -83,6 +82,21 @@ typedef struct _trace_start_any
   uint8_t            MinorVersion;     /* Minor version of trace */
 
 } LTT_PACKED_STRUCT trace_start_any;
+
+typedef struct _trace_start_1_14
+{
+  uint32_t           MagicNumber;      /* Magic number to identify a trace */
+  uint32_t           ArchType;         /* Type of architecture */
+  uint32_t           ArchVariant;      /* Variant of the given type of architecture */
+  uint32_t           SystemType;       /* Operating system type */
+  uint8_t            MajorVersion;     /* Major version of trace */
+  uint8_t            MinorVersion;     /* Minor version of trace */
+
+  uint32_t           BufferSize;       /* Size of buffers */
+  trace_event_mask   EventMask;        /* The event mask */
+  trace_event_mask   DetailsMask;      /* Are the event details logged */
+  uint8_t            LogCPUID;         /* Is the CPUID logged */
+} LTT_PACKED_STRUCT trace_start_1_14;
 
 typedef struct _trace_start_2_2
 {
@@ -273,19 +287,26 @@ typedef struct _trace_network
 #define NET_EVENT(X) ((trace_network*)X)
 
 /* Start of trace buffer information */
-typedef struct _trace_buffer_start
+typedef struct _trace_buffer_start_1
+{
+  struct timeval     Time;    /* Time stamp of this buffer */
+  uint32_t           ID;      /* Unique buffer ID */  
+} LTT_PACKED_STRUCT trace_buffer_start_1;
+
+/* Start of trace buffer information */
+typedef struct _trace_buffer_start_2
 {
   struct timeval     Time;    /* Time stamp of this buffer */
   uint32_t           TSC;     /* TSC of this buffer, if applicable */
   uint32_t           ID;      /* Unique buffer ID */
-} LTT_PACKED_STRUCT trace_buffer_start;
+} LTT_PACKED_STRUCT trace_buffer_start_2;
 
 /* End of trace buffer information */
-typedef struct _trace_buffer_end
+typedef struct _trace_buffer_end_2
 {
   struct timeval     Time;    /* Time stamp of this buffer */
   uint32_t           TSC;     /* TSC of this buffer, if applicable */
-} LTT_PACKED_STRUCT trace_buffer_end;
+} LTT_PACKED_STRUCT trace_buffer_end_2;
 
 /* Maximal size a custom event can have */
 #define CUSTOM_EVENT_MAX_SIZE        8192
