@@ -199,7 +199,7 @@ lttv_attribute_find_subdir(LttvAttribute *self, LttvAttributeName name)
   Attribute a;
 
   LttvAttribute *new;
-
+  
   i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
   if(i != 0) {
     a = g_array_index(self->attributes, Attribute, i - 1);

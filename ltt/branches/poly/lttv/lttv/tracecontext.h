@@ -92,6 +92,7 @@ struct _LttvTracesetContext {
   LttvAttribute *ts_a;
   TimeInterval *Time_Span;
   GTree *pqueue;
+  LttEvent *e;    /* Last event read by lttv_process_traceset_middle */
 };
 
 struct _LttvTracesetContextClass {

@@ -28,16 +28,17 @@
  * 
  */
 
-#include <lttvwindow/common.h>
 #include <ltt/ltt.h>
 #include <lttv/lttv.h>
-#include <lttvwindow/mainwindow.h>   
-#include <lttvwindow/viewer.h>
-#include <lttv/tracecontext.h>
-#include <lttvwindow/toolbar.h>
-#include <lttvwindow/menu.h>
 #include <lttv/state.h>
 #include <lttv/stats.h>
+#include <lttv/tracecontext.h>
+#include <lttvwindow/common.h>
+#include <lttvwindow/mainwindow.h>   
+#include <lttvwindow/viewer.h>
+#include <lttvwindow/toolbar.h>
+#include <lttvwindow/menu.h>
+#include <lttvwindow/callbacks.h> // for execute_time_requests
 
 
 /**
@@ -65,9 +66,10 @@ int SetTraceset(MainWindow * main_win, gpointer traceset)
 
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return 1;
+  
 
   lttv_hooks_call(tmp,traceset);
-
+  
   return 0;
 }
 
@@ -115,27 +117,32 @@ void update_traceset(MainWindow * main_win)
   lttv_hooks_call(tmp, NULL);
 }
 
-
-
-/**
- * Function to show each viewer in the current tab.
- * It will be called by main window after it called process_traceset 
- * @param main_win the main window the viewer belongs to.
- */
-
-void show_viewer(MainWindow *main_win)
+void set_time_window_adjustment(MainWindow * main_win, const TimeWindow* new_time_window)
 {
-  LttvAttributeValue value;
-  LttvHooks * tmp;
-  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-           "hooks/showviewer", LTTV_POINTER, &value));
-  tmp = (LttvHooks*)*(value.v_pointer);
-  if(tmp == NULL) return;
-  lttv_hooks_call(tmp, NULL);
+  gtk_multi_vpaned_set_adjust(main_win->current_tab->multi_vpaned, new_time_window, FALSE);
 }
 
 
+void set_time_window(MainWindow * main_win, const TimeWindow *time_window)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
 
+  TimeWindowNotifyData time_window_notify_data;
+  TimeWindow old_time_window = main_win->current_tab->time_window;
+  time_window_notify_data.old_time_window = &old_time_window;
+  main_win->current_tab->time_window = *time_window;
+  time_window_notify_data.new_time_window = 
+                          &(main_win->current_tab->time_window);
+
+  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
+           "hooks/updatetimewindow", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return;
+  lttv_hooks_call(tmp, &time_window_notify_data);
+
+
+}
 
 /**
  * API parts
@@ -372,7 +379,6 @@ void lttvwindow_unregister_filter_notify(LttvHook hook,  gpointer hook_data,
   lttv_hooks_remove_data(tmp, hook, hook_data);
 }
 
-
 /**
  * Function to register a hook function for a viewer to set/update its 
  * current time.
@@ -426,7 +432,7 @@ void lttvwindow_unregister_current_time_notify(MainWindow * main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_register_show(MainWindow *main_win,
+void lttvwindow_register_show_notify(MainWindow *main_win,
           LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -450,7 +456,7 @@ void lttvwindow_register_show(MainWindow *main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_unregister_show(MainWindow * main_win,
+void lttvwindow_unregister_show_notify(MainWindow * main_win,
               LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -531,25 +537,10 @@ void lttvwindow_report_status(MainWindow *main_win, char *info)
 void lttvwindow_report_time_window(MainWindow *main_win,
                                    TimeWindow *time_window)
 {
-  LttvAttributeValue value;
-  LttvHooks * tmp;
-
-  TimeWindowNotifyData time_window_notify_data;
-  TimeWindow old_time_window = main_win->current_tab->time_window;
-  time_window_notify_data.old_time_window = &old_time_window;
-  main_win->current_tab->time_window = *time_window;
-  time_window_notify_data.new_time_window = 
-                          &(main_win->current_tab->time_window);
-
-  gtk_multi_vpaned_set_scroll_value(main_win->current_tab->multi_vpaned,
-            ltt_time_to_double(time_window->start_time)
-            * NANOSECONDS_PER_SECOND );
-  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-           "hooks/updatetimewindow", LTTV_POINTER, &value));
-  tmp = (LttvHooks*)*(value.v_pointer);
-  if(tmp == NULL) return;
-  lttv_hooks_call(tmp, &time_window_notify_data);
+  set_time_window(main_win, time_window);
+  set_time_window_adjustment(main_win, time_window);
 }
+
 
 /**
  * Function to set the current time/event of the current tab.
@@ -602,6 +593,40 @@ void lttvwindow_report_dividor(MainWindow *main_win, gint position)
 void lttvwindow_report_focus(MainWindow *main_win, gpointer paned)
 {
   gtk_multi_vpaned_set_focus((GtkWidget*)main_win->current_tab->multi_vpaned,paned);  
+}
+
+
+/**
+ * Function to request data in a specific time interval to the main window.
+ * The main window will use this time interval and the others present
+ * to get the data from the process trace.
+ * @param main_win the main window the viewer belongs to.
+ * @param paned a pointer to a pane where the viewer is contained.
+ */
+
+void lttvwindow_time_interval_request(MainWindow *main_win,
+          TimeWindow time_requested, guint num_events,
+          LttvHook after_process_traceset,
+          gpointer after_process_traceset_data)
+{
+  TimeRequest time_request;
+
+  time_request.time_window = time_requested;
+  time_request.num_events = num_events;
+  time_request.after_hook = after_process_traceset;
+  time_request.after_hook_data = after_process_traceset_data;
+
+  g_array_append_val(main_win->current_tab->time_requests, time_request);
+  
+  if(!main_win->current_tab->time_request_pending)
+  {
+    /* Redraw has +20 priority. We want a prio higher than that, so +19 */
+    g_idle_add_full((G_PRIORITY_HIGH_IDLE + 19),
+                    (GSourceFunc)execute_time_requests,
+                    main_win,
+                    NULL);
+    main_win->current_tab->time_request_pending = TRUE;
+  }
 }
 
 

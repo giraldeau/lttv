@@ -32,7 +32,7 @@ static void     gtk_multi_vpaned_size_request   (GtkWidget      *widget,
 static void     gtk_multi_vpaned_size_allocate  (GtkWidget      *widget,
 					   GtkAllocation  *allocation);
 
-void gtk_multi_vpaned_scroll_value_changed (GtkRange *range, gpointer multi_vpaned);
+void gtk_multi_vpaned_scroll_value_changed (GtkAdjustment *adjust, gpointer multi_vpaned);
 
 gboolean gtk_multi_vpaned_destroy(GtkObject       *object,
                                   gpointer           user_data)
@@ -168,12 +168,11 @@ void gtk_multi_vpaned_set_focus (GtkWidget * widget, gpointer user_data)
   }
 }
 
-void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, gboolean first_time)
+void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, const TimeWindow *time_window, gboolean first_time)
 {
-  TimeWindow time_window = multi_vpaned->mw->current_tab->time_window;
+  //TimeWindow time_window = multi_vpaned->mw->current_tab->time_window;
   TimeInterval *time_span;
-  double tmp, start;
-  double range = 0;
+  double len, start;
 
   
   if(first_time){
@@ -193,16 +192,17 @@ void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, gboolean first_t
     return;
   }
 
-  start = ltt_time_to_double(time_window.start_time) * NANOSECONDS_PER_SECOND;
-  tmp = multi_vpaned->hadjust->upper - multi_vpaned->hadjust->lower;
+  start = ltt_time_to_double(time_window->start_time) * NANOSECONDS_PER_SECOND;
+  len = multi_vpaned->hadjust->upper - multi_vpaned->hadjust->lower;
 
   multi_vpaned->hadjust->page_increment = ltt_time_to_double(
-		        time_window.time_width) * NANOSECONDS_PER_SECOND;
+		        time_window->time_width) * NANOSECONDS_PER_SECOND;
 
-  if(multi_vpaned->hadjust->page_increment >= tmp - range)
-    multi_vpaned->hadjust->value = multi_vpaned->hadjust->lower;
-  if(start + multi_vpaned->hadjust->page_increment >= multi_vpaned->hadjust->upper - range)
-    multi_vpaned->hadjust->value = start;
+  //if(multi_vpaned->hadjust->page_increment >= len )
+  //  multi_vpaned->hadjust->value = multi_vpaned->hadjust->lower;
+  //if(start + multi_vpaned->hadjust->page_increment >= multi_vpaned->hadjust->upper )
+  //  multi_vpaned->hadjust->value = start;
+  multi_vpaned->hadjust->value = start;
 
   /* page_size to the whole visible area will take care that the
      * scroll value + the shown area will never be more than what is
@@ -211,6 +211,7 @@ void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, gboolean first_t
   multi_vpaned->hadjust->step_increment = multi_vpaned->hadjust->page_increment / 10;
 
   gtk_adjustment_changed (multi_vpaned->hadjust);
+
 }
 
 void gtk_multi_vpaned_widget_add(GtkMultiVPaned * multi_vpaned, GtkWidget * widget1)
@@ -230,14 +231,17 @@ void gtk_multi_vpaned_widget_add(GtkMultiVPaned * multi_vpaned, GtkWidget * widg
     gtk_widget_show(multi_vpaned->hscrollbar);
 
     multi_vpaned->hadjust = gtk_range_get_adjustment(GTK_RANGE(multi_vpaned->hscrollbar));
-    gtk_multi_vpaned_set_adjust(multi_vpaned, TRUE);
+    gtk_multi_vpaned_set_adjust(multi_vpaned, &multi_vpaned->mw->current_tab->time_window, TRUE);
 
     gtk_range_set_update_policy (GTK_RANGE(multi_vpaned->hscrollbar),
 																 GTK_UPDATE_CONTINUOUS);
 																 //changed by Mathieu Desnoyers, was :
                                  // GTK_UPDATE_DISCONTINUOUS);
-    g_signal_connect(G_OBJECT(multi_vpaned->hscrollbar), "value-changed",
+    g_signal_connect(G_OBJECT(multi_vpaned->hadjust), "value-changed",
 		     G_CALLBACK(gtk_multi_vpaned_scroll_value_changed), multi_vpaned);
+    g_signal_connect(G_OBJECT(multi_vpaned->hadjust), "changed",
+		     G_CALLBACK(gtk_multi_vpaned_scroll_value_changed), multi_vpaned);
+
 
     multi_vpaned->vbox = gtk_vbox_new(FALSE,0);
     gtk_widget_show(multi_vpaned->vbox);
@@ -401,16 +405,16 @@ void gtk_multi_vpaned_widget_move_down(GtkMultiVPaned * multi_vpaned)
 void gtk_multi_vpaned_set_scroll_value(GtkMultiVPaned * multi_vpaned, double value)
 {
   gtk_adjustment_set_value(multi_vpaned->hadjust, value);
-  g_signal_stop_emission_by_name(G_OBJECT(multi_vpaned->hscrollbar), "value-changed");  
+  //g_signal_stop_emission_by_name(G_OBJECT(multi_vpaned->hscrollbar), "value-changed");  
 }
 
-void gtk_multi_vpaned_scroll_value_changed(GtkRange *range, gpointer multi_vpaned_arg)
+void gtk_multi_vpaned_scroll_value_changed(GtkAdjustment *adjust, gpointer multi_vpaned_arg)
 {
   TimeWindow time_window;
   TimeInterval *time_span;
   LttTime time;
   GtkMultiVPaned * multi_vpaned = (GtkMultiVPaned*)multi_vpaned_arg;
-  gdouble value = gtk_range_get_value(range);
+  gdouble value = gtk_adjustment_get_value(adjust);
   gdouble upper, lower, ratio;
 
   time_window = multi_vpaned->mw->current_tab->time_window;
@@ -431,7 +435,8 @@ void gtk_multi_vpaned_scroll_value_changed(GtkRange *range, gpointer multi_vpane
   if(ltt_time_compare(time,time_window.time_width) < 0){
     time_window.time_width = time;
   }
-  lttvwindow_report_time_window(multi_vpaned->mw, &time_window); 
+  set_time_window(multi_vpaned->mw, &time_window);
+  // done in expose now call_pending_read_hooks(multi_vpaned->mw);
 }
 
 

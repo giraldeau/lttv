@@ -104,7 +104,13 @@ guicontrolflow(void)
   /* Get trace statistics */
   //control_flow_data->Trace_Statistics = get_trace_statistics(Trace);
 
+  /* Create reading hooks */
+  control_flow_data->event = lttv_hooks_new();
+  control_flow_data->after_event = lttv_hooks_new();
+  control_flow_data->after_traceset = lttv_hooks_new();
+  control_flow_data->event_request = g_new(EventRequest, 1);
 
+  
   gtk_widget_show(drawing_widget);
   gtk_widget_show(process_list_widget);
   gtk_widget_show(control_flow_data->h_paned);
@@ -133,8 +139,8 @@ guicontrolflow(void)
   g_signal_connect (G_OBJECT (process_list_widget), "grab-focus",
         G_CALLBACK (control_flow_grab_focus),
         control_flow_data);
-
-
+  
+  
   return control_flow_data;
 
 }
@@ -166,6 +172,12 @@ guicontrolflow_destructor(ControlFlowData *control_flow_data)
   //ProcessList_destroy(control_flow_data->process_list);
   if(control_flow_data->mw != NULL)
   {
+      /* Delete reading hooks */
+    lttv_hooks_destroy(control_flow_data->event);
+    lttv_hooks_destroy(control_flow_data->after_event);
+    lttv_hooks_destroy(control_flow_data->after_traceset);
+    g_free(control_flow_data->event_request);
+
     lttvwindow_unregister_time_window_notify(control_flow_data->mw,
         update_time_window_hook,
         control_flow_data);

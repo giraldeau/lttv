@@ -99,6 +99,5 @@ gint update_time_window_hook(void *hook_data, void *call_data);
 gint update_current_time_hook(void *hook_data, void *call_data);
 
 
-
-
+gint after_process_traceset_hook(void *hook_data, void *call_data);
 #endif // _EVENT_HOOKS_H

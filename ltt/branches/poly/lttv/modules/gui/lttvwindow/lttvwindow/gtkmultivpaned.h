@@ -76,7 +76,7 @@ void gtk_multi_vpaned_widget_add(GtkMultiVPaned * multi_vpaned, GtkWidget * widg
 void gtk_multi_vpaned_widget_delete(GtkMultiVPaned * multi_vpaned);
 void gtk_multi_vpaned_widget_move_up(GtkMultiVPaned * multi_vpaned);
 void gtk_multi_vpaned_widget_move_down(GtkMultiVPaned * multi_vpaned);
-void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, gboolean first_time);
+void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, const TimeWindow * time_window, gboolean first_time);
 void gtk_multi_vpaned_set_data(GtkMultiVPaned * multi_vpaned, char * key, gpointer value);
 gpointer gtk_multi_vpaned_get_data(GtkMultiVPaned * multi_vpaned, char * key);
 GtkWidget * gtk_multi_vpaned_get_widget(GtkMultiVPaned * multi_vpaned);

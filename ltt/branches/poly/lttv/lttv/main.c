@@ -108,9 +108,9 @@ int main(int argc, char **argv) {
   /* Initialize glib and by default ignore info and debug messages */
 
   g_type_init();
-  //g_type_init_with_debug_flags (G_TYPE_DEBUG_OBJECTS | G_TYPE_DEBUG_SIGNALS);
-  g_log_set_handler(NULL, G_LOG_LEVEL_INFO, ignore_and_drop_message, NULL);
-  g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, ignore_and_drop_message, NULL);
+  g_type_init_with_debug_flags (G_TYPE_DEBUG_OBJECTS | G_TYPE_DEBUG_SIGNALS);
+  //g_log_set_handler(NULL, G_LOG_LEVEL_INFO, ignore_and_drop_message, NULL);
+  //g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, ignore_and_drop_message, NULL);
 
 
   /* Have an attributes subtree to store hooks to be registered by modules. */

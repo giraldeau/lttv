@@ -65,5 +65,9 @@ LttTrace *lttv_trace(LttvTrace *t);
 
 guint lttv_trace_get_ref_number(LttvTrace * t);
 
+guint lttv_trace_ref(LttvTrace * t);
+
+guint lttv_trace_unref(LttvTrace * t);
+
 #endif // TRACESET_H
 

@@ -187,3 +187,19 @@ guint lttv_trace_get_ref_number(LttvTrace * t)
 {
   return t->ref_count;
 }
+
+guint lttv_trace_ref(LttvTrace * t)
+{
+  t->ref_count++;
+  
+  return t->ref_count;
+}
+
+guint lttv_trace_unref(LttvTrace * t)
+{
+  if(t->ref_count > 0)
+    t->ref_count--;
+
+  return t->ref_count;
+}
+

@@ -268,7 +268,7 @@ void lttvwindow_unregister_current_time_notify(MainWindow * main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_register_show(MainWindow *main_win,
+void lttvwindow_register_show_notify(MainWindow *main_win,
           LttvHook hook, gpointer hook_data);
 
 
@@ -280,7 +280,7 @@ void lttvwindow_register_show(MainWindow *main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_unregister_show(MainWindow * main_win,
+void lttvwindow_unregister_show_notify(MainWindow * main_win,
               LttvHook hook, gpointer hook_data);
 
 
@@ -359,6 +359,20 @@ void lttvwindow_report_dividor(MainWindow *main_win, gint position);
  */
 //FIXME : can we do this through normal GTK signals ?
 void lttvwindow_report_focus(MainWindow *main_win, gpointer paned);
+
+
+/**
+ * Function to request data in a specific time interval to the main window.
+ * The main window will use this time interval and the others present
+ * to get the data from the process trace.
+ * @param main_win the main window the viewer belongs to.
+ * @param paned a pointer to a pane where the viewer is contained.
+ */
+
+void lttvwindow_time_interval_request(MainWindow *main_win,
+          TimeWindow time_requested, guint num_events,
+          LttvHook after_process_traceset,
+          gpointer after_process_traceset_data);
 
 /**
  * Function to get the life span of the traceset

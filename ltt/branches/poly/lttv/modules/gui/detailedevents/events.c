@@ -244,7 +244,7 @@ gui_events(MainWindow *parent_window, LttvTracesetSelector * s,char* key )
                 update_time_window, event_viewer_data);
   lttvwindow_register_current_time_notify(event_viewer_data->mw, 
                 update_current_time,event_viewer_data);
-  lttvwindow_register_show(event_viewer_data->mw, 
+  lttvwindow_register_show_notify(event_viewer_data->mw, 
                 show_event_detail,event_viewer_data);
   lttvwindow_register_traceset_notify(event_viewer_data->mw, 
                 traceset_changed,event_viewer_data);
@@ -881,7 +881,11 @@ void get_test_data(double time_value, guint list_height,
       if(!first)break;
       raw_data = (RawTraceData*)g_list_nth_data(first,0);
       end = raw_data->time;
-      end.tv_nsec--;
+      if(end.tv_nsec != 0)
+        end.tv_nsec--;
+      else
+        end.tv_sec--;   // even if tv_sec == 0, wrapping should give a real big
+                        // value, so will read all the trace.
       ltt_event_position_get(raw_data->ep, &block_num, &event_num, &tf);
       if(size !=0){
         if(event_num > minNum){
@@ -1166,7 +1170,7 @@ gui_events_free(EventViewerData *event_viewer_data)
                         update_time_window, event_viewer_data);
     lttvwindow_unregister_current_time_notify(event_viewer_data->mw,
                         update_current_time, event_viewer_data);
-    lttvwindow_unregister_show(event_viewer_data->mw,
+    lttvwindow_unregister_show_notify(event_viewer_data->mw,
                         show_event_detail, event_viewer_data);
     lttvwindow_unregister_traceset_notify(event_viewer_data->mw,
                         traceset_changed, event_viewer_data);

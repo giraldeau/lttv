@@ -173,6 +173,7 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
   /*CHECK why dynamically allocate the time span... and the casing is wroNg*/
   self->Time_Span = g_new(TimeInterval,1);
   lttv_traceset_context_compute_time_span(self, self->Time_Span);
+  self->e = NULL;
 }
 
 
@@ -656,7 +657,11 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self, LttTime end,
   while(TRUE) {
     tfc = NULL;
     g_tree_foreach(pqueue, get_first, &tfc);
-    if(tfc == NULL) return count;
+    if(tfc == NULL)
+    {
+      self->e = event;
+      return count;
+    }
 
     /* Have we reached the maximum number of events specified? However,
        continue for all the events with the same time stamp (CHECK?). Then,
@@ -664,7 +669,10 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self, LttTime end,
 
     if(count >= nb_events && 
         ltt_time_compare(tfc->timestamp, previous_timestamp) != 0) 
-        return count;
+    {
+      self->e = event;
+      return count;
+    }
 
     previous_timestamp = tfc->timestamp;
 

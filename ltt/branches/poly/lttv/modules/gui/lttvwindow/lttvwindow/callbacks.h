@@ -27,6 +27,8 @@ void insert_menu_toolbar_item(MainWindow * mw, gpointer user_data);
 void construct_main_window(MainWindow * parent);
 void main_window_free(MainWindow * mw);
 void main_window_destructor(MainWindow * mw);
+void show_viewer(MainWindow *main_win);
+
 
 /* callback functions*/
 
@@ -229,6 +231,17 @@ on_MWindow_configure                   (GtkWidget         *widget,
                                         GdkEventConfigure *event,
                                         gpointer           user_data);
 
+gboolean    
+on_MWindow_expose                   (GtkWidget         *widget,
+                                        GdkEventExpose *event,
+                                        gpointer           user_data);
+gboolean    
+on_MWindow_after                   (GtkWidget         *widget,
+                                        GdkEvent *event,
+                                        gpointer           user_data);
+
+
+
 void
 on_insert_viewer_test_activate         (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
@@ -241,3 +254,5 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
                                         GtkNotebookPage *page,
                                         guint            page_num,
                                         gpointer         user_data);
+
+gboolean execute_time_requests(MainWindow * mw);

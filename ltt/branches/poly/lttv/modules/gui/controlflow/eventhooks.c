@@ -132,6 +132,7 @@ int draw_event_hook(void *hook_data, void *call_data)
 {
   EventRequest *event_request = (EventRequest*)hook_data;
   ControlFlowData *control_flow_data = event_request->control_flow_data;
+  MainWindow *mw = control_flow_data->mw;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
@@ -143,7 +144,7 @@ int draw_event_hook(void *hook_data, void *call_data)
 
   LttTime evtime = ltt_event_time(e);
   const TimeWindow *time_window = 
-    lttvwindow_get_time_window(control_flow_data->mw);
+    lttvwindow_get_time_window(mw);
 
   LttTime end_time = ltt_time_add(time_window->start_time,
                                     time_window->time_width);
@@ -1186,6 +1187,8 @@ int draw_after_hook(void *hook_data, void *call_data)
 gint update_time_window_hook(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
+  Drawing_t *drawing = control_flow_data->drawing;
+
   const TimeWindowNotifyData *time_window_nofify_data = 
                           ((const TimeWindowNotifyData *)call_data);
 
@@ -1254,14 +1257,6 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           0, 0,
           -1, -1);
       
-      convert_time_to_pixels(
-          *ns,
-          new_end,
-          old_end,
-          width,
-          &x);
-
-      *old_time_window = *new_time_window;
       /* Clear the data request background, but not SAFETY */
       gdk_draw_rectangle (control_flow_data->drawing->pixmap,
           control_flow_data->drawing->drawing_area->style->black_gc,
@@ -1269,6 +1264,12 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           x+SAFETY, 0,
           control_flow_data->drawing->width - x,  // do not overlap
           control_flow_data->drawing->height+SAFETY);
+
+      gtk_widget_queue_draw_area (drawing->drawing_area,
+                                0,0,
+                                control_flow_data->drawing->width - x,
+                                control_flow_data->drawing->height);
+
       /* Get new data for the rest. */
       drawing_data_request(control_flow_data->drawing,
           &control_flow_data->drawing->pixmap,
@@ -1276,12 +1277,6 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           control_flow_data->drawing->width - x,
           control_flow_data->drawing->height);
   
-      drawing_refresh(control_flow_data->drawing,
-          0, 0,
-          control_flow_data->drawing->width,
-          control_flow_data->drawing->height);
-
-
     } else { 
       //if(ns<os<ns+w)
       //if(ns<os && os<ns+w)
@@ -1308,7 +1303,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
             x, 0,
             -1, -1);
   
-        //*old_time_window = *new_time_window;
+        *old_time_window = *new_time_window;
 
         /* Clean the data request background */
         gdk_draw_rectangle (control_flow_data->drawing->pixmap,
@@ -1317,6 +1312,12 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           0, 0,
           x,  // do not overlap
           control_flow_data->drawing->height+SAFETY);
+
+          gtk_widget_queue_draw_area (drawing->drawing_area,
+                                x,0,
+                                control_flow_data->drawing->width - x,
+                                control_flow_data->drawing->height);
+
         /* Get new data for the rest. */
         drawing_data_request(control_flow_data->drawing,
             &control_flow_data->drawing->pixmap,
@@ -1324,42 +1325,40 @@ gint update_time_window_hook(void *hook_data, void *call_data)
             x,
             control_flow_data->drawing->height);
     
-        drawing_refresh(control_flow_data->drawing,
-            0, 0,
-            control_flow_data->drawing->width,
-            control_flow_data->drawing->height);
-        
       } else {
-        g_info("scrolling far");
-        /* Cannot reuse any part of the screen : far jump */
-        //*old_time_window = *new_time_window;
-        
-        
-        gdk_draw_rectangle (control_flow_data->drawing->pixmap,
-          control_flow_data->drawing->drawing_area->style->black_gc,
-          TRUE,
-          0, 0,
-          control_flow_data->drawing->width+SAFETY, // do not overlap
-          control_flow_data->drawing->height+SAFETY);
+        if(ltt_time_compare(*ns,*os) == 0)
+        {
+          g_info("not scrolling");
+        } else {
+          g_info("scrolling far");
+          /* Cannot reuse any part of the screen : far jump */
+          
+          
+          gdk_draw_rectangle (control_flow_data->drawing->pixmap,
+            control_flow_data->drawing->drawing_area->style->black_gc,
+            TRUE,
+            0, 0,
+            control_flow_data->drawing->width+SAFETY, // do not overlap
+            control_flow_data->drawing->height+SAFETY);
 
-        drawing_data_request(control_flow_data->drawing,
-            &control_flow_data->drawing->pixmap,
-            0, 0,
-            control_flow_data->drawing->width,
-            control_flow_data->drawing->height);
-    
-        drawing_refresh(control_flow_data->drawing,
-            0, 0,
-            control_flow_data->drawing->width,
-            control_flow_data->drawing->height);
+          gtk_widget_queue_draw_area (drawing->drawing_area,
+                                0,0,
+                                control_flow_data->drawing->width,
+                                control_flow_data->drawing->height);
+
+          drawing_data_request(control_flow_data->drawing,
+              &control_flow_data->drawing->pixmap,
+              0, 0,
+              control_flow_data->drawing->width,
+              control_flow_data->drawing->height);
+      
+        }
       }
     }
   } else {
     /* Different scale (zoom) */
     g_info("zoom");
 
-    //*old_time_window = *new_time_window;
-  
     gdk_draw_rectangle (control_flow_data->drawing->pixmap,
           control_flow_data->drawing->drawing_area->style->black_gc,
           TRUE,
@@ -1367,6 +1366,10 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           control_flow_data->drawing->width+SAFETY, // do not overlap
           control_flow_data->drawing->height+SAFETY);
 
+    gtk_widget_queue_draw_area (drawing->drawing_area,
+                                0,0,
+                                control_flow_data->drawing->width,
+                                control_flow_data->drawing->height);
   
     drawing_data_request(control_flow_data->drawing,
         &control_flow_data->drawing->pixmap,
@@ -1374,10 +1377,6 @@ gint update_time_window_hook(void *hook_data, void *call_data)
         control_flow_data->drawing->width,
         control_flow_data->drawing->height);
   
-    drawing_refresh(control_flow_data->drawing,
-        0, 0,
-        control_flow_data->drawing->width,
-        control_flow_data->drawing->height);
   }
 
 
@@ -1385,9 +1384,22 @@ gint update_time_window_hook(void *hook_data, void *call_data)
   return 0;
 }
 
+gint after_process_traceset_hook(void *hook_data, void *call_data)
+{
+  ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
+  TimeRequest *time_request = (TimeRequest *)call_data;
+
+  drawing_data_request_end(control_flow_data->drawing,
+                           time_request->time_window);
+  return 0; 
+}
+ 
+
+
 gint update_current_time_hook(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*)hook_data;
+  Drawing_t *drawing = control_flow_data->drawing;
 
   LttTime current_time = *((LttTime*)call_data);
   
@@ -1450,7 +1462,11 @@ gint update_current_time_hook(void *hook_data, void *call_data)
     lttvwindow_report_time_window(control_flow_data->mw, &new_time_window);
     
   }
-  gtk_widget_queue_draw(control_flow_data->drawing->drawing_area);
+  //gtk_widget_queue_draw(control_flow_data->drawing->drawing_area);
+  gtk_widget_queue_draw_area(drawing->drawing_area,
+                             0,0,
+                             drawing->width,
+                             drawing->height);
   
   return 0;
 }
@@ -1660,6 +1676,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
  * for each process
  *    draw closing line
  *    new default prev and current
+ * then finally remove reading hooks.
  */
 int  after_data_request(void *hook_data, void *call_data)
 {
@@ -1675,6 +1692,10 @@ int  after_data_request(void *hook_data, void *call_data)
 
   g_hash_table_foreach(process_list->process_hash, draw_closure,
                         (void*)&closure_data);
+
+  /* Remove reading hooks */
+  // Cannot do this here, will break processtrace!
+  //drawing_data_request_end(control_flow_data->drawing);
   
 }
 

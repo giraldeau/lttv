@@ -25,17 +25,20 @@
 #include "callbacks.h"
 #include "interface.h"
 #include "support.h"
+#include <ltt/trace.h>
+#include <ltt/facility.h>
+#include <ltt/time.h>
+#include <ltt/event.h>
 #include <lttv/lttv.h>
+#include <lttv/module.h>
+#include <lttv/iattribute.h>
+#include <lttv/stats.h>
 #include <lttvwindow/mainwindow.h>
 #include <lttvwindow/menu.h>
 #include <lttvwindow/toolbar.h>
 #include <lttvwindow/viewer.h>
-#include <lttv/module.h>
 #include <lttvwindow/gtkdirsel.h>
-#include <lttv/iattribute.h>
 #include <lttvwindow/lttvfilter.h>
-#include <ltt/trace.h>
-#include <ltt/facility.h>
 
 #define PATH_LENGTH          256
 #define DEFAULT_TIME_WIDTH_S   1
@@ -48,7 +51,7 @@ extern GSList * g_main_window_list;
 
 static int g_win_count = 0;
 
-// MD : keep old directory
+/** MD : keep old directory. */
 static char remember_plugins_dir[PATH_LENGTH] = "";
 static char remember_trace_dir[PATH_LENGTH] = "";
 
@@ -73,7 +76,7 @@ void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * trace);
 
 LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset);
 
-void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window);
+void call_pending_read_hooks(MainWindow * mw_data);
 unsigned get_max_event_number(MainWindow * mw_data);
 
 enum {
@@ -166,7 +169,6 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
   GtkWidget * viewer;
   LttvTracesetSelector  * s;
   TimeInterval * time_interval;
-  TimeWindow  time_window, t;
 
   mw_data = get_window_data_struct(widget);
   if(!mw_data->current_tab) return;
@@ -177,22 +179,17 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
   if(viewer)
   {
     gtk_multi_vpaned_widget_add(multi_vpaned, viewer); 
-    // Added by MD
-    //    g_object_unref(G_OBJECT(viewer));
+    // We unref here, because it is now referenced by the multi_vpaned!
+    g_object_unref(G_OBJECT(viewer));
 
-    time_window = mw_data->current_tab->time_window;
-    time_interval = (TimeInterval*)g_object_get_data(G_OBJECT(viewer), TRACESET_TIME_SPAN);
-    if(time_interval){
-      t = time_window;
-      time_window.start_time = time_interval->startTime;
-      time_window.time_width = ltt_time_sub(time_interval->endTime,time_interval->startTime);
-    }
-
-    redraw_viewer(mw_data,&time_window);
-    lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
-    if(time_interval){
-      lttvwindow_report_time_window(mw_data,&t);
-    }
+    // The viewer will show itself when it receives a show notify
+    // So we call the show notify hooks here. It will
+    // typically add hooks for reading, we call process trace, and the
+    // end of reading hook will call gtk_widget_show and unregister the
+    // hooks.
+    // Note that show notify gets the time_requested through the call_data.
+    //show_viewer(mw_data);
+    // in expose now call_pending_read_hooks(mw_data);
   }
 }
 
@@ -319,6 +316,7 @@ void delete_viewer(GtkWidget * widget, gpointer user_data)
 
 /* open_traceset will open a traceset saved in a file
  * Right now, it is not finished yet, (not working)
+ * FIXME
  */
 
 void open_traceset(GtkWidget * widget, gpointer user_data)
@@ -377,18 +375,37 @@ unsigned get_max_event_number(MainWindow * mw_data)
 }
 
 
-/* redraw_viewer parses the traceset first by calling 
+/* call_pending_read_hooks parses the traceset first by calling 
  * process_traceset, then display all viewers of 
  * the current tab
+ * It will then remove all entries from the time_requests array.
  */
 
-void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
+gint compare_time_request(TimeRequest *a, TimeRequest *b)
+{
+  return ltt_time_compare(a->time_window.start_time, b->time_window.start_time);
+}
+
+void call_pending_read_hooks(MainWindow * mw_data)
 {
   unsigned max_nb_events;
   GdkWindow * win;
   GdkCursor * new;
   GtkWidget* widget;
-  LttvTracesetContext *tsc = 
+  int i;
+  LttvTracesetContext *tsc;
+  
+  /* Current tab check : if no current tab is present, no hooks to call. */
+  /* It makes the expose works.. */
+  if(mw_data->current_tab == NULL)
+    return;
+
+  if(mw_data->current_tab->time_requests->len == 0)
+    return;
+
+  LttvHooks *tmp_hooks = lttv_hooks_new();
+
+  tsc = 
    LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->
                             traceset_context);
 
@@ -400,20 +417,60 @@ void redraw_viewer(MainWindow * mw_data, TimeWindow * time_window)
   gdk_cursor_unref(new);  
   gdk_window_stick(win);
   gdk_window_unstick(win);
- 
-  //update time window of each viewer, let viewer insert hooks needed by process_traceset
-  lttvwindow_report_time_window(mw_data, time_window);
-  
-  max_nb_events = get_max_event_number(mw_data);
 
-  lttv_process_traceset_seek_time(tsc, time_window->start_time);
-  lttv_process_traceset(tsc,
-		       ltt_time_add(time_window->start_time,time_window->time_width),
-		       max_nb_events);
+
+  g_array_sort(mw_data->current_tab->time_requests,
+               (GCompareFunc)compare_time_request);
+
+
+  //update time window of each viewer, let viewer insert hooks needed by process_traceset
+  //lttvwindow_report_time_window(mw_data, time_window);
+  
+  //max_nb_events = get_max_event_number(mw_data);
 
   //call hooks to show each viewer and let them remove hooks
-  show_viewer(mw_data);  
+  //show_viewer(mw_data);  
 
+  // FIXME
+  // call process trace for each time interval
+  // Will have to be combined!
+  g_critical("SIZE time req len  : %d", mw_data->current_tab->time_requests->len);
+  
+  //g_assert(mw_data->current_tab->time_requests->len <= 1); //FIXME
+  /* Go through each time request. As they are already sorted by start_time,
+   * we check with the current event time if processing is needed. */
+  for(i=0; i < mw_data->current_tab->time_requests->len; i++)
+  {
+    g_critical("RUN i %d", i);
+    TimeRequest *time_request = 
+        &g_array_index(mw_data->current_tab->time_requests, TimeRequest, i);
+    LttTime end_time = ltt_time_add( time_request->time_window.start_time,
+                                     time_request->time_window.time_width);
+    
+    if(i == 0 || !(ltt_time_compare(time_request->time_window.start_time, ltt_event_time(tsc->e))<0) )
+    {
+      /* do it if first request or start_time >= last event's time */
+      lttv_process_traceset_seek_time(tsc, time_request->time_window.start_time);
+      lttv_process_traceset(tsc, end_time, time_request->num_events);
+    }
+
+    /* Call the end of process_traceset hook */
+    lttv_hooks_add(tmp_hooks,
+                   time_request->after_hook,
+                   time_request->after_hook_data);
+    lttv_hooks_call(tmp_hooks, time_request);
+    lttv_hooks_remove(tmp_hooks, time_request->after_hook);
+  }
+  
+  /* Free the time requests */
+  g_array_free(mw_data->current_tab->time_requests, TRUE);
+  mw_data->current_tab->time_requests = 
+        g_array_new(FALSE, FALSE, sizeof(TimeRequest));
+  
+  mw_data->current_tab->time_request_pending = FALSE;
+  
+  lttv_hooks_destroy(tmp_hooks);
+  
   //set the cursor back to normal
   gdk_window_set_cursor(win, NULL);  
 }
@@ -485,9 +542,9 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   LttTrace *trace;
   LttvTrace * trace_v;
   LttvTraceset * traceset;
-  LttvTracesetStats* tmp_context;
   const char * dir;
   gint id;
+  gint i;
   MainWindow * mw_data = get_window_data_struct(widget);
   GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
   gtk_dir_selection_hide_fileop_buttons(file_selector);
@@ -500,20 +557,34 @@ void add_trace(GtkWidget * widget, gpointer user_data)
     case GTK_RESPONSE_OK:
       dir = gtk_dir_selection_get_dir (file_selector);
       strncpy(remember_trace_dir, dir, PATH_LENGTH);
-      if(!dir || strlen(dir) ==0){
-	gtk_widget_destroy((GtkWidget*)file_selector);
-	break;
+      if(!dir || strlen(dir) == 0){
+      	gtk_widget_destroy((GtkWidget*)file_selector);
+      	break;
       }
       trace = ltt_trace_open(dir);
       if(trace == NULL) g_critical("cannot open trace %s", dir);
       trace_v = lttv_trace_new(trace);
       traceset = mw_data->current_tab->traceset_info->traceset;
 
-      // Keep the context until the new one is created.
-      tmp_context = mw_data->current_tab->traceset_info->traceset_context;
-      mw_data->current_tab->traceset_info->traceset_context = NULL;
+      //Keep a reference to the traces so they are not freed.
+      for(i=0; i<lttv_traceset_number(traceset); i++)
+      {
+        LttvTrace * trace = lttv_traceset_get(traceset, i);
+        lttv_trace_ref(trace);
+      }
+
+      //remove state update hooks
+      lttv_state_remove_event_hooks(
+         (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
+
+      lttv_context_fini(LTTV_TRACESET_CONTEXT(
+              mw_data->current_tab->traceset_info->traceset_context));
+      g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
+  
 
       lttv_traceset_add(traceset, trace_v);
+
+      /* Create new context */
       mw_data->current_tab->traceset_info->traceset_context =
                             	g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
       lttv_context_init(
@@ -523,37 +594,45 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       //add state update hooks
       lttv_state_add_event_hooks(
       (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
-      if(tmp_context != NULL)
+      //Remove local reference to the traces.
+      for(i=0; i<lttv_traceset_number(traceset); i++)
       {
-        //remove state update hooks
-        lttv_state_remove_event_hooks(
-           (LttvTracesetState*)tmp_context);
-      	lttv_context_fini(LTTV_TRACESET_CONTEXT(tmp_context));
-      	g_object_unref(tmp_context);
+        LttvTrace * trace = lttv_traceset_get(traceset, i);
+        lttv_trace_unref(trace);
       }
 
 
- 
       add_trace_into_traceset_selector(mw_data->current_tab->multi_vpaned, trace);
 
       gtk_widget_destroy((GtkWidget*)file_selector);
       
       //update current tab
-      update_traceset(mw_data);
+      //update_traceset(mw_data);
 
       //get_traceset_time_span(mw_data,LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context)->Time_Span);
-      if(lttv_traceset_number(mw_data->current_tab->traceset_info->traceset) == 1 ||
-	 ltt_time_compare(mw_data->current_tab->current_time,
-             LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context)->Time_Span->startTime)<0){
-	mw_data->current_tab->current_time = 
-           LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context)->Time_Span->startTime;
-	mw_data->current_tab->time_window.start_time = mw_data->current_tab->current_time;
-	mw_data->current_tab->time_window.time_width.tv_sec = DEFAULT_TIME_WIDTH_S;
-	mw_data->current_tab->time_window.time_width.tv_nsec = 0;
+      if(
+       lttv_traceset_number(mw_data->current_tab->traceset_info->traceset) == 1
+       || ltt_time_compare(mw_data->current_tab->current_time,
+            LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->
+                    traceset_context)->Time_Span->startTime)<0)
+      {
+        /* Set initial time if this is the first trace in the traceset */
+      	mw_data->current_tab->current_time = 
+           LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->
+                        traceset_context)->Time_Span->startTime;
+	      mw_data->current_tab->time_window.start_time = 
+           mw_data->current_tab->current_time;
+	      mw_data->current_tab->time_window.time_width.tv_sec = 
+           DEFAULT_TIME_WIDTH_S;
+	      mw_data->current_tab->time_window.time_width.tv_nsec = 0;
       } 
 
-      redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
-      lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
+      /* Call the updatetraceset hooks */
+      
+      SetTraceset(mw_data, (gpointer)traceset);
+      // in expose now call_pending_read_hooks(mw_data);
+      
+      //lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
       break;
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
@@ -602,8 +681,7 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
   LttTrace *trace;
   LttvTrace * trace_v;
   LttvTraceset * traceset;
-  LttvTracesetStats* tmp_context;
-  gint i, nb_trace;
+  gint i, j, nb_trace;
   char ** name, *remove_trace_name;
   MainWindow * mw_data = get_window_data_struct(widget);
   LttvTracesetSelector * s;
@@ -655,37 +733,51 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 	  trace_v = lttv_traceset_get(traceset, i);
 	  if(lttv_trace_get_ref_number(trace_v) <= 1)
 	    ltt_trace_close(lttv_trace(trace_v));
-    
-    // Keep the context until the new one is created.
-    tmp_context = mw_data->current_tab->traceset_info->traceset_context;
-    mw_data->current_tab->traceset_info->traceset_context = NULL;
+
+    //Keep a reference to the traces so they are not freed.
+    for(j=0; j<lttv_traceset_number(traceset); j++)
+    {
+      LttvTrace * trace = lttv_traceset_get(traceset, j);
+      lttv_trace_ref(trace);
+    }
+
+    //remove state update hooks
+    lttv_state_remove_event_hooks(
+         (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
+    lttv_context_fini(LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context));
+    g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
+
     
 	  lttv_traceset_remove(traceset, i);
+    lttv_trace_unref(trace_v);  // Remove local reference
 	  if(!lttv_trace_get_ref_number(trace_v))
 	     lttv_trace_destroy(trace_v);
+    
 	  mw_data->current_tab->traceset_info->traceset_context =
 	    g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
-	    lttv_context_init(
+    lttv_context_init(
 			    LTTV_TRACESET_CONTEXT(mw_data->current_tab->
 				      traceset_info->traceset_context),traceset);      
       //add state update hooks
-      lttv_state_add_event_hooks(
+    lttv_state_add_event_hooks(
       (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
 
-	  if(tmp_context != NULL){
-      //remove state update hooks
-      lttv_state_remove_event_hooks(
-           (LttvTracesetState*)tmp_context);
-	    lttv_context_fini(LTTV_TRACESET_CONTEXT(tmp_context));
-	    g_object_unref(tmp_context);
-	  }
+    //Remove local reference to the traces.
+    for(j=0; j<lttv_traceset_number(traceset); j++)
+    {
+      LttvTrace * trace = lttv_traceset_get(traceset, j);
+      lttv_trace_unref(trace);
+    }
 
-      
+
 	  //update current tab
-	  update_traceset(mw_data);
+	  //update_traceset(mw_data);
 	  if(nb_trace > 1){
-	    redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
-	    lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
+
+      SetTraceset(mw_data, (gpointer)traceset);
+  	  // in expose now call_pending_read_hooks(mw_data);
+
+	    //lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
 	  }else{
 	    if(mw_data->current_tab){
 	      while(mw_data->current_tab->multi_vpaned->num_children){
@@ -704,7 +796,7 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 
 
 /* save will save the traceset to a file
- * Not implemented yet
+ * Not implemented yet FIXME
  */
 
 void save(GtkWidget * widget, gpointer user_data)
@@ -726,44 +818,77 @@ void save_as(GtkWidget * widget, gpointer user_data)
 void zoom(GtkWidget * widget, double size)
 {
   TimeInterval *time_span;
-  TimeWindow time_window;
-  LttTime    current_time, time_delta, time_s, time_e, time_t;
+  TimeWindow new_time_window;
+  LttTime    current_time, time_delta, time_s, time_e, time_tmp;
   MainWindow * mw_data = get_window_data_struct(widget);
 
   if(size == 1) return;
 
   time_span = LTTV_TRACESET_CONTEXT(mw_data->current_tab->
 				    traceset_info->traceset_context)->Time_Span;
-  time_window =  mw_data->current_tab->time_window;
+  new_time_window =  mw_data->current_tab->time_window;
   current_time = mw_data->current_tab->current_time;
   
   time_delta = ltt_time_sub(time_span->endTime,time_span->startTime);
   if(size == 0){
-    time_window.start_time = time_span->startTime;
-    time_window.time_width = time_delta;
+    new_time_window.start_time = time_span->startTime;
+    new_time_window.time_width = time_delta;
   }else{
-    time_window.time_width = ltt_time_div(time_window.time_width, size);
-    if(ltt_time_compare(time_window.time_width,time_delta) > 0)
-      time_window.time_width = time_delta;
+    new_time_window.time_width = ltt_time_div(new_time_window.time_width, size);
+    if(ltt_time_compare(new_time_window.time_width,time_delta) > 0)
+    { /* Case where zoom out is bigger than trace length */
+      new_time_window.start_time = time_span->startTime;
+      new_time_window.time_width = time_delta;
+    }
+    else
+    {
+      /* Center the image on the current time */
+      g_critical("update is HERE");
+      new_time_window.start_time = 
+        ltt_time_sub(current_time, ltt_time_div(new_time_window.time_width, 2.0));
+      /* If on borders, don't fall off */
+      if(ltt_time_compare(new_time_window.start_time, time_span->startTime) <0)
+      {
+        new_time_window.start_time = time_span->startTime;
+      }
+      else 
+      {
+        if(ltt_time_compare(
+           ltt_time_add(new_time_window.start_time, new_time_window.time_width),
+           time_span->endTime) > 0)
+        {
+          new_time_window.start_time = 
+                  ltt_time_sub(time_span->endTime, new_time_window.time_width);
+        }
+      }
+      
+    }
 
-    time_t = ltt_time_div(time_window.time_width, 2);
-    if(ltt_time_compare(current_time, time_t) < 0){
-      time_s = time_span->startTime;
-    } else {
-      time_s = ltt_time_sub(current_time,time_t);
-    }
-    time_e = ltt_time_add(current_time,time_t);
-    if(ltt_time_compare(time_span->startTime, time_s) > 0){
-      time_s = time_span->startTime;
-    }else if(ltt_time_compare(time_span->endTime, time_e) < 0){
-      time_e = time_span->endTime;
-      time_s = ltt_time_sub(time_e,time_window.time_width);
-    }
-    time_window.start_time = time_s;    
+    
+
+    //time_tmp = ltt_time_div(new_time_window.time_width, 2);
+    //if(ltt_time_compare(current_time, time_tmp) < 0){
+    //  time_s = time_span->startTime;
+    //} else {
+    //  time_s = ltt_time_sub(current_time,time_tmp);
+    //}
+    //time_e = ltt_time_add(current_time,time_tmp);
+    //if(ltt_time_compare(time_span->startTime, time_s) > 0){
+    //  time_s = time_span->startTime;
+    //}else if(ltt_time_compare(time_span->endTime, time_e) < 0){
+    //  time_e = time_span->endTime;
+    //  time_s = ltt_time_sub(time_e,new_time_window.time_width);
+    //}
+    //new_time_window.start_time = time_s;    
   }
-  redraw_viewer(mw_data, &time_window);
-  lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
-  gtk_multi_vpaned_set_adjust(mw_data->current_tab->multi_vpaned, FALSE);
+
+  //lttvwindow_report_time_window(mw_data, &new_time_window);
+  //call_pending_read_hooks(mw_data);
+
+  //lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
+  set_time_window(mw_data, &new_time_window);
+  // in expose now call_pending_read_hooks(mw_data);
+  gtk_multi_vpaned_set_adjust(mw_data->current_tab->multi_vpaned, &new_time_window, FALSE);
 }
 
 void zoom_in(GtkWidget * widget, gpointer user_data)
@@ -824,7 +949,7 @@ void create_new_tab(GtkWidget* widget, gpointer user_data){
 
   strcpy(label,"Page");
   if(get_label(mw_data, label,"Get the name of the tab","Please input tab's name"))    
-    create_tab (mw_data, mw_data, notebook, label);
+    create_tab (NULL, mw_data, notebook, label);
 }
 
 void
@@ -1039,9 +1164,10 @@ on_trace_filter_activate              (GtkMenuItem     *menuitem,
     return;
   }
   if(get_filter_selection(s, "Configure trace and tracefile filter", "Select traces and tracefiles")){
-    update_traceset(mw_data);
-    redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
-    lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
+    //FIXME report filter change
+    //update_traceset(mw_data);
+    //call_pending_read_hooks(mw_data);
+    //lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
   }
 }
 
@@ -1379,7 +1505,6 @@ on_MWindow_configure                   (GtkWidget         *widget,
 	*/
   return FALSE;
 }
-
 
 /* Set current tab
  */
@@ -1833,12 +1958,10 @@ void construct_main_window(MainWindow * parent)
   new_window  = create_MWindow();
   gtk_widget_show (new_window);
     
-  new_m_window->attributes = attributes;
-  
   new_m_window->mwindow = new_window;
   new_m_window->tab = NULL;
   new_m_window->current_tab = NULL;
-  new_m_window->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
+  new_m_window->attributes = attributes;
 
   new_m_window->hash_menu_item = g_hash_table_new_full (g_str_hash, g_str_equal,
 					      main_window_destroy_hash_key, 
@@ -1850,7 +1973,6 @@ void construct_main_window(MainWindow * parent)
   insert_menu_toolbar_item(new_m_window, NULL);
   
   g_object_set_data(G_OBJECT(new_window), "mainWindow", (gpointer)new_m_window);    
-
   //create a default tab
   notebook = (GtkNotebook *)lookup_widget(new_m_window->mwindow, "MNotebook");
   if(notebook == NULL){
@@ -1859,7 +1981,7 @@ void construct_main_window(MainWindow * parent)
   }
   //for now there is no name field in LttvTraceset structure
   //Use "Traceset" as the label for the default tab
-  create_tab(parent, new_m_window, notebook,"Traceset");
+  create_tab(parent, new_m_window, notebook, "Traceset");
 
   g_object_set_data_full(
 			G_OBJECT(new_m_window->mwindow),
@@ -1915,7 +2037,8 @@ void tab_destructor(Tab * tab_instance)
       //      lttv_trace_destroy(trace);
     }
   }  
-  lttv_traceset_destroy(tab_instance->traceset_info->traceset); 
+  lttv_traceset_destroy(tab_instance->traceset_info->traceset);
+  g_array_free(tab_instance->time_requests, TRUE);
   g_free(tab_instance->traceset_info);
   g_free(tab_instance);
 }
@@ -1931,7 +2054,7 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   Tab * tmp_tab;
   MainWindow * mw_data = current_window;
   LttTime tmp_time;
-
+  
   //create a new tab data structure
   tmp_tab = mw_data->tab;
   while(tmp_tab && tmp_tab->next) tmp_tab = tmp_tab->next;
@@ -1947,22 +2070,32 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   //construct and initialize the traceset_info
   tmp_tab->traceset_info = g_new(TracesetInfo,1);
   if(parent){
-    tmp_tab->traceset_info->traceset = 
-      lttv_traceset_copy(parent->current_tab->traceset_info->traceset);
-  }else{
+    if(parent->current_tab){
+      tmp_tab->traceset_info->traceset = 
+                      lttv_traceset_new();
+        //FIXME lttv_traceset_copy(parent->current_tab->traceset_info->traceset);
+    }else{
+      tmp_tab->traceset_info->traceset = lttv_traceset_new();
+    }
+
+  }else{  /* Initial window */
     if(mw_data->current_tab){
       tmp_tab->traceset_info->traceset = 
-        lttv_traceset_copy(mw_data->current_tab->traceset_info->traceset);
+                      lttv_traceset_new();
+        //FIXME lttv_traceset_copy(mw_data->current_tab->traceset_info->traceset);
     }else{
       tmp_tab->traceset_info->traceset = lttv_traceset_new();    
       /* Add the command line trace */
-      if(g_init_trace != NULL)
+      if(g_init_trace != NULL){
 	lttv_traceset_add(tmp_tab->traceset_info->traceset, g_init_trace);
+      }
     }
   }
+  
   //FIXME copy not implemented in lower level
   tmp_tab->traceset_info->traceset_context =
     g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+  g_assert(tmp_tab->traceset_info->traceset_context != NULL);
   lttv_context_init(
 	    LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context),
 	                          tmp_tab->traceset_info->traceset);
@@ -1970,7 +2103,6 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   lttv_state_add_event_hooks(
        (LttvTracesetState*)tmp_tab->traceset_info->traceset_context);
   
- 
   //determine the current_time and time_window of the tab
   if(mw_data->current_tab){
     // Will have to read directly at the main window level, as we want
@@ -1996,8 +2128,10 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
     tmp_tab->current_time.tv_nsec = 
        LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context)->Time_Span->startTime.tv_nsec;
   }
+  /* Become the current tab */
+  mw_data->current_tab = tmp_tab;
+
   tmp_tab->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
-  //  mw_data->current_tab = tmp_tab;
   tmp_tab->multi_vpaned = (GtkMultiVPaned*)gtk_multi_vpaned_new();
   tmp_tab->multi_vpaned->mw = mw_data;
   gtk_widget_show((GtkWidget*)tmp_tab->multi_vpaned);
@@ -2006,6 +2140,9 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
 
   tmp_tab->label = gtk_label_new (label);
   gtk_widget_show (tmp_tab->label);
+
+  tmp_tab->time_requests = g_array_new(FALSE, FALSE, sizeof(TimeRequest));
+  tmp_tab->time_request_pending = FALSE;
 
   g_object_set_data_full(
            G_OBJECT(tmp_tab->multi_vpaned),
@@ -2017,8 +2154,9 @@ void * create_tab(MainWindow * parent, MainWindow* current_window,
   gtk_notebook_append_page(notebook, (GtkWidget*)tmp_tab->multi_vpaned, tmp_tab->label);  
   list = gtk_container_get_children(GTK_CONTAINER(notebook));
   gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
-  if(g_list_length(list)>1)
-    gtk_notebook_set_show_tabs(notebook, TRUE);
+  // always show : not if(g_list_length(list)>1)
+  gtk_notebook_set_show_tabs(notebook, TRUE);
+ 
 }
 
 
@@ -2110,3 +2248,45 @@ void main_window_remove_toolbar_item(lttvwindow_viewer_constructor constructor)
     }
   }
 }
+
+/**
+ * Function to show each viewer in the current tab.
+ * It will be called by main window, call show on each registered viewer,
+ * will call process traceset and then it will
+ * @param main_win the main window the viewer belongs to.
+ */
+//FIXME Only one time request maximum for now!
+void show_viewer(MainWindow *main_win)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  int i;
+  LttvTracesetContext * tsc = 
+              (LttvTracesetContext*)main_win->current_tab->
+                                      traceset_info->traceset_context;
+  
+  g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
+           "hooks/showviewer", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL)
+  {
+    g_warning("The viewer(s) did not add any show hook");
+    return;
+  }
+
+  
+  // Call the show, where viewers add hooks to context and fill the
+  // time and number of events requested it the time_requests GArray.
+  lttv_hooks_call(tmp, NULL);
+
+ 
+}
+
+
+gboolean execute_time_requests(MainWindow * mw)
+{
+  call_pending_read_hooks(mw);
+
+  return FALSE; // automatically removed from the list of event sources
+}
+

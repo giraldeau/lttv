@@ -63,7 +63,8 @@ struct _Drawing_t {
   
   PangoLayout *pango_layout;
 
-  gint    height, width, depth;
+  gint      height, width, depth;
+  gboolean  data_injected;
   
 };
 
@@ -72,10 +73,6 @@ void drawing_destroy(Drawing_t *drawing);
 
 GtkWidget *drawing_get_widget(Drawing_t *drawing);
 GtkWidget *drawing_get_drawing_area(Drawing_t *drawing);
-
-//void drawing_Refresh (  Drawing_t *drawing,
-//      guint x, guint y,
-//      guint width, guint height);
 
 void drawing_draw_line( Drawing_t *drawing,
       GdkPixmap *pixmap,
@@ -116,5 +113,9 @@ void convert_time_to_pixels(
     guint *x);
 
 void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window);
+
+void drawing_data_request_end(Drawing_t *drawing,
+                              TimeWindow req_time_window);
+
 
 #endif // _DRAWING_H

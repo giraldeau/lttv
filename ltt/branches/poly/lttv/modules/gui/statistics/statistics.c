@@ -121,7 +121,7 @@ gui_statistic_free(StatisticViewerData *statistic_viewer_data)
   if(statistic_viewer_data){
     lttvwindow_unregister_time_window_notify(statistic_viewer_data->mw,
                             statistic_update_time_window,statistic_viewer_data);
-    lttvwindow_unregister_show(statistic_viewer_data->mw,
+    lttvwindow_unregister_show_notify(statistic_viewer_data->mw,
                             statistic_show_viewer,statistic_viewer_data);
     lttvwindow_unregister_traceset_notify(statistic_viewer_data->mw,
                             statistic_traceset_changed,statistic_viewer_data);
@@ -203,7 +203,7 @@ gui_statistic(MainWindow *parent_window, LttvTracesetSelector * s, char* key)
 
   lttvwindow_register_time_window_notify(statistic_viewer_data->mw,
                           statistic_update_time_window,statistic_viewer_data);
-  lttvwindow_register_show(statistic_viewer_data->mw,
+  lttvwindow_register_show_notify(statistic_viewer_data->mw,
                           statistic_show_viewer,statistic_viewer_data);
   lttvwindow_register_traceset_notify(statistic_viewer_data->mw,
                           statistic_traceset_changed,statistic_viewer_data);
