@@ -4,8 +4,10 @@
 # Created by Mathieu Desnoyers on May 6, 2003
 #
 
-libdir = ${lttplugindir}
+SUBDIRS = exemples
 
-#lib_LTLIBRARIES = samplemodule2.la
-#samplemodule2_la_LDFLAGS = -module
-#samplemodule2_la_SOURCES = samplemodule2.c
+libdir = ${lttvplugindir}
+
+#lib_LTLIBRARIES = sampledep.la
+#sampledep_la_LDFLAGS = -module
+#sampledep_la_SOURCES = sampledep.c

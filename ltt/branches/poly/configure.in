@@ -37,8 +37,8 @@ AC_CHECK_FUNCS([select])
 
 #CPPFLAGS="$CPPFLAGS -I"
 
-lttplugindir="${libdir}/ltt/plugins"
-AC_SUBST(lttplugindir)
+lttvplugindir="${libdir}/lttv/plugins"
+AC_SUBST(lttvplugindir)
 
 DEFAULT_INCLUDES="-I\$(top_srcdir)/include"
 AC_SUBST(DEFAULT_INCLUDES)
@@ -52,6 +52,7 @@ AC_SUBST(lttincludedir)
 AC_CONFIG_FILES([Makefile
                  lttv/Makefile
                  lttv/plugins/Makefile
+		 lttv/plugins/exemples/Makefile
 		 lttd/Makefile
 		 LibLTT/Makefile])
 AC_OUTPUT
