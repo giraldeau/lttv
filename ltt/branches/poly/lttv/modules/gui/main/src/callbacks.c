@@ -881,7 +881,8 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
 	lttv_module_load(str1, mw_data->win_creation_data->argc,mw_data->win_creation_data->argv);
       else
 	lttv_module_load(str1, 0,NULL);
-      g_slist_foreach(g_main_window_list, insert_menu_toolbar_item, NULL);
+      g_slist_foreach(g_main_window_list, (gpointer)insert_menu_toolbar_item,
+          NULL);
       g_strfreev(dir);
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
