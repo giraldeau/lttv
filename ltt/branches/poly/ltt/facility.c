@@ -153,11 +153,12 @@ void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
       field->parent = NULL;
       field->child = NULL;
       field->current_element = 0;
-      
+
       //construct field tree and type graph
       constructTypeAndFields(f,((event*)(events->array[i]))->type,field);
     }else{
-      evType->root_field = NULL;      
+      evType->root_field = NULL;
+      sequence_pop(&(f->all_fields));
       g_free(field);
     }
   }  
