@@ -249,7 +249,7 @@ each viewer through process traceset.
 
 - lttvwindow_events_request
 
-It adds the an EventsRequest struct to the array of time requests
+It adds the an EventsRequest struct to the list of events requests
 pending and registers a pending request for the next g_idle if none is
 registered. The viewer can access this structure during the read as its
 hook_data. Only the stop_flag can be changed by the viewer through the
@@ -275,8 +275,8 @@ typedef struct _EventsRequest {
   LttvHooks                   *after_tracefile; /* Unset : NULL             */
   LttvHooks                   *after_trace;     /* Unset : NULL             */
   LttvHooks                   *after_traceset;  /* Unset : NULL             */
-  LttvHooks                   *before_chunk;    /* Unset : NULL             */
-  LttvHooks                   *after_chunk      /* Unset : NULL             */
+  LttvHooks                   *before_request;  /* Unset : NULL             */
+  LttvHooks                   *after_request    /* Unset : NULL             */
 } EventsRequest;
 
 
@@ -286,7 +286,8 @@ typedef struct _EventsRequest {
 It removes all the events requests from the pool that has their "viewer" field
 maching the viewer pointer given in argument.
 
-It calls the traceset/trace/tracefile end hooks for each request removed.
+It calls the traceset/trace/tracefile end hooks for each request removed if
+they are currently serviced.
 
 
 - lttvwindow_process_pending_requests
@@ -303,7 +304,10 @@ calls. Here is the detailed description of the way it works :
 The reads are splitted in chunks. After a chunk is over, we want to check if
 there is a GTK Event pending and execute it. It can add or remove events 
 requests from the event requests list. If it happens, we want to start over
-the algorithm from the beginning.
+the algorithm from the beginning. The after traceset/trace/tracefile hooks are
+called after each interrupted chunk, and before traceset/trace/tracefile are
+called when the request processing resumes. Before and after request hooks are
+called respectively before and after the request processing.
 
 Two levels of priority exists. High priority and low priority. High prio
 requests are serviced first, even if lower priority requests has lower start
@@ -342,27 +346,27 @@ A. While list_in !empty and list_out !empty and !GTK Event pending
         - If first req in list_in pos != current pos
           - If the position is the same than the saved state, restore state
           - Else, seek to that position
-    1.3 Add hooks and call begin for all list_in members
+    1.3 Add hooks and call before request for all list_in members
       1.3.1 If !servicing
-          - begin hooks called
+          - begin request hooks called
           - servicing = TRUE
-      1.3.2 call before_chunk
+      1.3.2 call before_traceset
       1.3.3 events hooks added
   2. Else, list_in is not empty, we continue a read
     2.1 For each req of list_out
     - if req.start time == current context time
       - Add to list_in, remove from list_out
       - If !servicing
-        - Call begin
+        - Call begin request
         - servicing = TRUE
-      - Call before_chunk
+      - Call before_traceset
       - events hooks added
     - if req.start position == current position
       - Add to list_in, remove from list_out
       - If !servicing
-        - Call begin
+        - Call begin request
         - servicing = TRUE
-      - Call before_chunk
+      - Call before_traceset
       - events hooks added
 
   3. Find end criterions
@@ -386,32 +390,37 @@ A. While list_in !empty and list_out !empty and !GTK Event pending
   5. After process traceset middle
     - if current context time > traceset.end time
       - For each req in list_in
-        - Call end for req
         - Remove events hooks for req
+        - Call end traceset for req
+        - Call end request for req
         - remove req from list_in
     5.1 For each req in list_in
           - req.num -= count
           - if req.num == 0
-            - Call end for req
             - Remove events hooks for req
+            - Call end traceset for req
+            - Call end request for req
             - remove req from list_in
           - if current context time > req.end time
-            - Call end for req
             - Remove events hooks for req
+            - Call end traceset for req
+            - Call end request for req
             - remove req from list_in
           - if req.end pos == current pos
-            - Call end for req
             - Remove events hooks for req
+            - Call end traceset for req
+            - Call end request for req
             - remove req from list_in
           - if req.stop_flag == TRUE
-            - Call end for req
             - Remove events hooks for req
+            - Call end traceset for req
+            - Call end request for req
             - remove req from list_in
           - if exists one events requests in list_out that has
                   higher priority and time != current time
             - Use current position as start position for req
             - Remove start time from req
-            - Call after_chunk for req
+            - Call after_traceset for req
             - Remove event hooks for req
             - Put req back in list_out, remove from list_in
             - Save current state into saved_state.
@@ -420,7 +429,7 @@ B. When interrupted
   1. for each request in list_in
     1.1. Use current postition as start position
     1.2. Remove start time
-    1.3. Call after_chunk
+    1.3. Call after_traceset
     1.4. Remove event hooks
     1.5. Put it back in list_out
   2. Save current state into saved_state.
