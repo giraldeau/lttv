@@ -137,16 +137,17 @@ typedef struct _lttv_expression {
 } lttv_expression;
 
 typedef struct _lttv_filter_tree {
-	lttv_expression* node;
+//	lttv_expression* node;
+  int node;
   lttv_tree_element left;
   lttv_tree_element right;
   union {
     struct lttv_filter_tree* t;
-    lttv_expression* leaf;
+    lttv_simple_expression* leaf;
   } l_child;
   union {
     struct lttv_filter_tree* t;
-    lttv_expression* leaf;
+    lttv_simple_expression* leaf;
   } r_child;
 } lttv_filter_tree;
 
@@ -159,9 +160,13 @@ typedef struct _lttv_filter_t {
 } lttv_filter_t;
 
 
+lttv_simple_expression* lttv_simple_expression_new();
+
 lttv_filter_tree* lttv_filter_tree_new();
 
 void lttv_filter_tree_destroy(lttv_filter_tree* tree);
+
+void lttv_filter_tree_add_node(GPtrArray* stack, lttv_filter_tree* subtree, lttv_logical_op op);
 
 /* Parse field path contained in list */
 gboolean parse_field_path(GPtrArray* fp);
