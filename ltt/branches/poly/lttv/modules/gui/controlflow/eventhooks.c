@@ -431,7 +431,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       HashedProcessData *hashed_process_data = NULL;
       ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process->creation_time;
-      const gchar *name = g_quark_to_string(process->name);
       
       if(processlist_get_process_pixels(process_list,
               pid_out,
@@ -443,6 +442,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
               &hashed_process_data) == 1)
       {
         g_assert(pid_out == 0 || pid_out != process->ppid);
+        const gchar *name = g_quark_to_string(process->name);
         /* Process not present */
         ProcessInfo *process_info;
         processlist_add(process_list,
@@ -591,7 +591,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       HashedProcessData *hashed_process_data = NULL;
       ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process->creation_time;
-      const gchar *name = g_quark_to_string(process->name);
       
       if(processlist_get_process_pixels(process_list,
               pid_in,
@@ -603,6 +602,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
               &hashed_process_data) == 1)
       {
         g_assert(pid_in == 0 || pid_in != process->ppid);
+        const gchar *name = g_quark_to_string(process->name);
         /* Process not present */
         ProcessInfo *process_info;
         processlist_add(process_list,
@@ -1398,7 +1398,6 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   g_assert(process_in != NULL);
 
   birth = process_in->creation_time;
-  const gchar *name = g_quark_to_string(process_in->name);
 
   if(processlist_get_process_pixels(process_list,
           pid_in,
@@ -1410,6 +1409,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
           &hashed_process_data_in) == 1)
   {
     g_assert(pid_in == 0 || pid_in != process_in->ppid);
+    const gchar *name = g_quark_to_string(process_in->name);
     ProcessInfo *process_info;
     /* Process not present */
     processlist_add(process_list,
@@ -1999,7 +1999,6 @@ int before_execmode_hook(void *hook_data, void *call_data)
   HashedProcessData *hashed_process_data = NULL;
   ProcessList *process_list = control_flow_data->process_list;
   LttTime birth = process->creation_time;
-  const gchar *name = g_quark_to_string(process->name);
   
   if(processlist_get_process_pixels(process_list,
           pid,
@@ -2013,6 +2012,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
     g_assert(pid == 0 || pid != process->ppid);
     ProcessInfo *process_info;
     /* Process not present */
+    const gchar *name = g_quark_to_string(process->name);
     processlist_add(process_list,
         pid,
         process->last_cpu,
@@ -2185,7 +2185,6 @@ int after_execmode_hook(void *hook_data, void *call_data)
   guint pid = process->pid;
 
   birth = process->creation_time;
-  const gchar *name = g_quark_to_string(process->name);
 
   if(processlist_get_process_pixels(process_list,
           pid,
@@ -2198,6 +2197,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
   {
     g_assert(pid == 0 || pid != process->ppid);
     /* Process not present */
+    const gchar *name = g_quark_to_string(process->name);
     ProcessInfo *process_info;
     processlist_add(process_list,
         pid,
@@ -2298,7 +2298,6 @@ int before_process_hook(void *hook_data, void *call_data)
     g_assert(process != NULL);
 
     birth = process->creation_time;
-    const gchar *name = g_quark_to_string(process->name);
 
     if(processlist_get_process_pixels(process_list,
             pid,
@@ -2311,6 +2310,7 @@ int before_process_hook(void *hook_data, void *call_data)
     {
       g_assert(pid == 0 || pid != process->ppid);
       /* Process not present */
+      const gchar *name = g_quark_to_string(process->name);
       ProcessInfo *process_info;
       processlist_add(process_list,
           pid,
@@ -2506,7 +2506,6 @@ int after_process_hook(void *hook_data, void *call_data)
     g_assert(process_child != NULL);
 
     birth = process_child->creation_time;
-    const gchar *name = g_quark_to_string(process_child->name);
 
     if(processlist_get_process_pixels(process_list,
             child_pid,
@@ -2519,6 +2518,7 @@ int after_process_hook(void *hook_data, void *call_data)
     {
       g_assert(child_pid == 0 || child_pid != process_child->ppid);
       /* Process not present */
+      const gchar *name = g_quark_to_string(process_child->name);
       ProcessInfo *process_info;
       processlist_add(process_list,
           child_pid,
@@ -2589,7 +2589,6 @@ int after_process_hook(void *hook_data, void *call_data)
     g_assert(process != NULL);
 
     birth = process->creation_time;
-    const gchar *name = g_quark_to_string(process->name);
 
     if(processlist_get_process_pixels(process_list,
             pid,
@@ -2602,6 +2601,7 @@ int after_process_hook(void *hook_data, void *call_data)
     {
       g_assert(pid == 0 || pid != process->ppid);
       /* Process not present */
+      const gchar *name = g_quark_to_string(process->name);
       ProcessInfo *process_info;
       processlist_add(process_list,
           pid,
