@@ -681,8 +681,10 @@ unsigned ltt_trace_eventtype_number(LttTrace *t)
 {
   unsigned int i;
   unsigned count = 0;
+  unsigned int num = t->facility_number;
   LttFacility * f;
-  for(i=0;i<t->facility_number;i++){
+  
+  for(i=0;i<num;i++){
     f = (LttFacility*)g_ptr_array_index(t->facilities, i);
     count += f->event_number;
   }
@@ -696,17 +698,23 @@ LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
 {
   LttFacility * facility = NULL;
   unsigned int i;
+  unsigned int num = trace->facility_number;
+  GPtrArray *facilities = trace->facilities;
 
-  for(i=0;i<trace->facility_number;i++){
+  for(i=0;unlikely(i<num);){
     LttFacility *iter_facility =
-                      (LttFacility*) g_ptr_array_index(trace->facilities,i);
-    if(likely(id >= iter_facility->base_id && 
-       id < iter_facility->base_id + iter_facility->event_number)) {
+                      (LttFacility*) g_ptr_array_index(facilities,i);
+    unsigned base_id = iter_facility->base_id;
+
+    if(likely(id >= base_id && 
+       id < base_id + iter_facility->event_number)) {
       facility = iter_facility;
       break;
+    } else {
+      i++;
     }
   }
-
+  
   return facility;
 }
 
@@ -1767,7 +1775,7 @@ static inline gint getFieldtypeSize(LttTracefile * t,
       }else if(likely(fld->field_fixed == 0)){
         offset1 = offsetRoot;
         offset2 = 0;
-        for(i=0;i<element_number;i++){
+        for(i=0;unlikely(i<element_number);i++){
           size=getFieldtypeSize(t,evT,offset1,offset2,
                                 fld->child[i],evD+offset2, trace);
           offset1 += size;
