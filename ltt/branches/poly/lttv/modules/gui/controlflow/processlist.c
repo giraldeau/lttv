@@ -57,181 +57,64 @@ gint process_sort_func  ( GtkTreeModel *model,
         GtkTreeIter *it_b,
         gpointer user_data)
 {
-  GValue a, b;
+  gchar *a_name;
+  guint a_pid, a_ppid, a_cpu;
+  gulong a_birth_s, a_birth_ns;
+  gulong a_trace;
 
-  memset(&a, 0, sizeof(GValue));
-  memset(&b, 0, sizeof(GValue));
+  gchar *b_name;
+  guint b_pid, b_ppid, b_cpu;
+  gulong b_birth_s, b_birth_ns;
+  gulong b_trace;
+
+  gtk_tree_model_get(model,
+           it_a,
+           0, &a_name,
+           1, &a_pid,
+           2, &a_ppid,
+           3, &a_cpu,
+           4, &a_birth_s,
+           5, &a_birth_ns,
+           6, &a_trace,
+           -1);
+
+  gtk_tree_model_get(model,
+           it_b,
+           0, &b_name,
+           1, &b_pid,
+           2, &b_ppid,
+           3, &b_cpu,
+           4, &b_birth_s,
+           5, &b_birth_ns,
+           6, &b_trace,
+           -1);
+
   
   /* Order by PID */
-  gtk_tree_model_get_value( model,
-          it_a,
-          PID_COLUMN,
-          &a);
+  if(a_pid == 0 &&  b_pid == 0) {
+    /* If 0, order by CPU */
+    if(a_cpu > b_cpu) return 1;
+    if(a_cpu < b_cpu) return 0;
 
-  gtk_tree_model_get_value( model,
-          it_b,
-          PID_COLUMN,
-          &b);
+  } else { /* if not 0, order by pid */
 
-  if(G_VALUE_TYPE(&a) == G_TYPE_UINT
-    && G_VALUE_TYPE(&b) == G_TYPE_UINT )
-  {
-    {
-
-      if(g_value_get_uint(&a) == 0 &&  g_value_get_uint(&b) == 0) {
-
-        GValue cpua, cpub;
-
-        memset(&cpua, 0, sizeof(GValue));
-        memset(&cpub, 0, sizeof(GValue));
-       
-        /* If 0, order by CPU */
-        gtk_tree_model_get_value( model,
-                it_a,
-                CPU_COLUMN,
-                &cpua);
-
-        gtk_tree_model_get_value( model,
-                it_b,
-                CPU_COLUMN,
-                &cpub);
-
-        if(G_VALUE_TYPE(&cpua) == G_TYPE_UINT
-          && G_VALUE_TYPE(&cpub) == G_TYPE_UINT )
-        {
-          if(g_value_get_uint(&cpua) > g_value_get_uint(&cpub))
-          {
-            g_value_unset(&cpua);
-            g_value_unset(&cpub);
-            return 1;
-          }
-          if(g_value_get_uint(&cpua) < g_value_get_uint(&cpub))
-          {
-            g_value_unset(&cpua);
-            g_value_unset(&cpub);
-            return 0;
-          }
-        }
-
-        g_value_unset(&cpua);
-        g_value_unset(&cpub);
-
-      } else { /* if not 0, order by pid */
-      
-        if(g_value_get_uint(&a) > g_value_get_uint(&b))
-        {
-          g_value_unset(&a);
-          g_value_unset(&b);
-          return 1;
-        }
-        if(g_value_get_uint(&a) < g_value_get_uint(&b))
-        {
-          g_value_unset(&a);
-          g_value_unset(&b);
-          return 0;
-        }
-      }
-    }
+    if(a_pid > b_pid) return 1;
+    if(a_pid < b_pid) return 0;
   }
-
-  g_value_unset(&a);
-  g_value_unset(&b);
-
 
   /* Order by birth second */
-  gtk_tree_model_get_value( model,
-          it_a,
-          BIRTH_S_COLUMN,
-          &a);
 
-  gtk_tree_model_get_value( model,
-          it_b,
-          BIRTH_S_COLUMN,
-          &b);
-
-
-  if(G_VALUE_TYPE(&a) == G_TYPE_ULONG
-    && G_VALUE_TYPE(&b) == G_TYPE_ULONG )
-  {
-    if(g_value_get_ulong(&a) > g_value_get_ulong(&b))
-    {
-      g_value_unset(&a);
-      g_value_unset(&b);
-      return 1;
-    }
-    if(g_value_get_ulong(&a) < g_value_get_ulong(&b))
-    {
-      g_value_unset(&a);
-      g_value_unset(&b);
-      return 0;
-    }
-
-  }
-
-  g_value_unset(&a);
-  g_value_unset(&b);
+  if(a_birth_s > b_birth_s) return 1;
+  if(a_birth_s < b_birth_s) return 0;
+  
 
   /* Order by birth nanosecond */
-  gtk_tree_model_get_value( model,
-          it_a,
-          BIRTH_NS_COLUMN,
-          &a);
-
-  gtk_tree_model_get_value( model,
-          it_b,
-          BIRTH_NS_COLUMN,
-          &b);
-
-
-  if(G_VALUE_TYPE(&a) == G_TYPE_ULONG
-    && G_VALUE_TYPE(&b) == G_TYPE_ULONG )
-  {
-    if(g_value_get_ulong(&a) > g_value_get_ulong(&b))
-    {
-      g_value_unset(&a);
-      g_value_unset(&b);
-      return 1;
-    }
-    if(g_value_get_ulong(&a) < g_value_get_ulong(&b))
-    {
-      g_value_unset(&a);
-      g_value_unset(&b);
-      return 0;
-    }
-
-  }
+  if(a_birth_ns > b_birth_ns) return 1;
+  if(a_birth_ns < b_birth_ns) return 0;
   
-  g_value_unset(&a);
-  g_value_unset(&b);
-
   /* Order by trace_num */
-  gtk_tree_model_get_value( model,
-          it_a,
-          TRACE_COLUMN,
-          &a);
-
-  gtk_tree_model_get_value( model,
-          it_b,
-          TRACE_COLUMN,
-          &b);
-
-  if(G_VALUE_TYPE(&a) == G_TYPE_ULONG
-    && G_VALUE_TYPE(&b) == G_TYPE_ULONG )
-  {
-    if(g_value_get_ulong(&a) > g_value_get_ulong(&b))
-    {
-      g_value_unset(&a);
-      g_value_unset(&b);
-      return 1;
-    }
-    if(g_value_get_ulong(&a) < g_value_get_ulong(&b))
-    {
-      g_value_unset(&a);
-      g_value_unset(&b);
-      return 0;
-    }
-
-  }
+  if(a_trace > b_trace) return 1;
+  if(a_trace < b_trace) return 0;
 
   return 0;
 
