@@ -1725,8 +1725,9 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
       }else{//0: string
         /* Hope my implementation is faster than strlen (Mathieu) */
         char *ptr=(char*)evD;
-        while(*ptr != '\0') ptr++;
-        size = ptr - (char*)evD + 1; //include end : '\0'
+        size = 1;
+        while(*ptr != '\0') { size++; ptr++; }
+        //size = ptr - (char*)evD + 1; //include end : '\0'
       }
       break;
       
