@@ -60,8 +60,14 @@ typedef struct _HashedProcessData {
   /* Information on current drawing */
   struct {
     guint over;
+    gboolean over_used;    /* inform the user that information is incomplete */
+    gboolean over_marked;  /* inform the user that information is incomplete */
     guint middle;
+    gboolean middle_used;  /* inform the user that information is incomplete */
+    gboolean middle_marked;/* inform the user that information is incomplete */
     guint under;
+    gboolean under_used;   /* inform the user that information is incomplete */
+    gboolean under_marked; /* inform the user that information is incomplete */
   } x; /* last x position saved by after state update */
 
   // FIXME : add info on last event ?

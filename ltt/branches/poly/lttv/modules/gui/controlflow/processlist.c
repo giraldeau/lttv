@@ -490,8 +490,11 @@ int processlist_add(  ProcessList *process_list,
    * overriden by the new state before anything is drawn.
    */
   hashed_process_data->x.over = 0;
+  hashed_process_data->x.over_used = FALSE;
   hashed_process_data->x.middle = 0;
+  hashed_process_data->x.middle_used = FALSE;
   hashed_process_data->x.under = 0;
+  hashed_process_data->x.under_used = FALSE;
   
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->list_store,

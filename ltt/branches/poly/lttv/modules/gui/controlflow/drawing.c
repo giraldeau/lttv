@@ -384,8 +384,14 @@ static void set_last_start(gpointer key, gpointer value, gpointer user_data)
   guint x = (guint)user_data;
 
   hashed_process_data->x.over = x;
+  hashed_process_data->x.over_used = FALSE;
+  hashed_process_data->x.over_marked = FALSE;
   hashed_process_data->x.middle = x;
+  hashed_process_data->x.middle_used = FALSE;
+  hashed_process_data->x.middle_marked = FALSE;
   hashed_process_data->x.under = x;
+  hashed_process_data->x.under_used = FALSE;
+  hashed_process_data->x.under_marked = FALSE;
 
   return;
 }
