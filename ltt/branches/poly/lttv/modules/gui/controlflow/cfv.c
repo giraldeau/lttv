@@ -33,6 +33,9 @@ static void control_flow_grab_focus(GtkWidget *widget, gpointer data){
   ControlFlowData * control_flow_data = (ControlFlowData *)data;
   Tab * tab = control_flow_data->tab;
   lttvwindow_report_focus(tab, guicontrolflow_get_widget(control_flow_data));
+  //g_assert(GTK_WIDGET_CAN_FOCUS(widget));
+  //gtk_widget_grab_focus(widget);
+  g_debug("FOCUS GRABBED");
 }
 
 
@@ -54,6 +57,14 @@ guicontrolflow(void)
 
   ControlFlowData* control_flow_data = g_new(ControlFlowData,1) ;
 
+  control_flow_data->v_adjust = 
+    GTK_ADJUSTMENT(gtk_adjustment_new(  0.0,  /* Value */
+              0.0,  /* Lower */
+              0.0,  /* Upper */
+              0.0,  /* Step inc. */
+              0.0,  /* Page inc. */
+              0.0));  /* page size */
+
   /* Create the drawing */
   control_flow_data->drawing = drawing_construct(control_flow_data);
   
@@ -71,33 +82,20 @@ guicontrolflow(void)
   process_list_widget = 
     processlist_get_widget(control_flow_data->process_list);
   
+  gtk_tree_view_set_vadjustment(GTK_TREE_VIEW(process_list_widget),
+                                GTK_ADJUSTMENT(
+                                   control_flow_data->v_adjust));
+
+  
   //control_flow_data->Inside_HBox_V = gtk_hbox_new(0, 0);
-  control_flow_data->h_paned = gtk_hpaned_new();
+  control_flow_data->top_widget = control_flow_data->h_paned =
+                                                     gtk_hpaned_new();
     
-  gtk_paned_pack1(GTK_PANED(control_flow_data->h_paned), process_list_widget, FALSE, TRUE);
-  gtk_paned_pack2(GTK_PANED(control_flow_data->h_paned), drawing_widget, TRUE, TRUE);
-
-  control_flow_data->v_adjust = 
-    GTK_ADJUSTMENT(gtk_adjustment_new(  0.0,  /* Value */
-              0.0,  /* Lower */
-              0.0,  /* Upper */
-              0.0,  /* Step inc. */
-              0.0,  /* Page inc. */
-              0.0));  /* page size */
-  
-  control_flow_data->scrolled_window =
-      gtk_scrolled_window_new (NULL,
-      control_flow_data->v_adjust);
-  
-  gtk_scrolled_window_set_policy(
-    GTK_SCROLLED_WINDOW(control_flow_data->scrolled_window) ,
-    GTK_POLICY_NEVER,
-    GTK_POLICY_AUTOMATIC);
-
-  gtk_scrolled_window_add_with_viewport(
-    GTK_SCROLLED_WINDOW(control_flow_data->scrolled_window),
-    control_flow_data->h_paned);
-  
+  gtk_paned_pack1(GTK_PANED(control_flow_data->h_paned),
+                  process_list_widget, FALSE, TRUE);
+  gtk_paned_pack2(GTK_PANED(control_flow_data->h_paned),
+                  drawing_widget, TRUE, TRUE);
+ 
   /* Set the size of the drawing area */
   //drawing_Resize(drawing, h, w);
 
@@ -107,10 +105,9 @@ guicontrolflow(void)
   gtk_widget_show(drawing_widget);
   gtk_widget_show(process_list_widget);
   gtk_widget_show(control_flow_data->h_paned);
-  gtk_widget_show(control_flow_data->scrolled_window);
   
   g_object_set_data_full(
-      G_OBJECT(control_flow_data->scrolled_window),
+      G_OBJECT(control_flow_data->top_widget),
       "control_flow_data",
       control_flow_data,
       (GDestroyNotify)guicontrolflow_destructor);
@@ -129,10 +126,11 @@ guicontrolflow(void)
   //can be configured (and this must happend bedore sending
   //data)
 
-  g_signal_connect (G_OBJECT (process_list_widget), "grab-focus",
-        G_CALLBACK (control_flow_grab_focus),
-        control_flow_data);
-  
+  //g_signal_connect (G_OBJECT (process_list_widget), "grab-focus",
+  //g_signal_connect (G_OBJECT (control_flow_data->scrolled_window), 
+  //      "button-press-event",
+  //      G_CALLBACK (control_flow_grab_focus),
+  //      control_flow_data);
   
   return control_flow_data;
 
@@ -186,6 +184,8 @@ guicontrolflow_destructor(ControlFlowData *control_flow_data)
     
     lttvwindow_events_request_remove_all(control_flow_data->tab,
                                          control_flow_data);
+
+    lttvwindowtraces_background_notify_remove(control_flow_data);
   }
   g_control_flow_data_list = 
          g_slist_remove(g_control_flow_data_list,control_flow_data);
@@ -197,7 +197,7 @@ guicontrolflow_destructor(ControlFlowData *control_flow_data)
 
 GtkWidget *guicontrolflow_get_widget(ControlFlowData *control_flow_data)
 {
-  return control_flow_data->scrolled_window ;
+  return control_flow_data->top_widget ;
 }
 
 ProcessList *guicontrolflow_get_process_list

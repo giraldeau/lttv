@@ -270,7 +270,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     g_debug("out : %s",g_quark_to_string(process_out->state->s));
     
     birth = process_out->creation_time;
-    gchar *name = strdup(g_quark_to_string(process_out->name));
+    const gchar *name = g_quark_to_string(process_out->name);
     HashedProcessData *hashed_process_data_out = NULL;
 
     if(processlist_get_process_pixels(process_list,
@@ -281,25 +281,24 @@ int draw_event_hook(void *hook_data, void *call_data)
             &height,
             &hashed_process_data_out) == 1)
     {
-    /* Process not present */
-    processlist_add(process_list,
-        pid_out,
-        &birth,
-        tfc->t_context->index,
-        name,
-        &pl_height,
-        &hashed_process_data_out);
-    processlist_get_process_pixels(process_list,
-            pid_out,
-            &birth,
-            tfc->t_context->index,
-            &y_out,
-            &height,
-            &hashed_process_data_out);
-    drawing_insert_square( control_flow_data->drawing, y_out, height);
+      /* Process not present */
+      processlist_add(process_list,
+          pid_out,
+          &birth,
+          tfc->t_context->index,
+          name,
+          &pl_height,
+          &hashed_process_data_out);
+      g_assert(processlist_get_process_pixels(process_list,
+              pid_out,
+              &birth,
+              tfc->t_context->index,
+              &y_out,
+              &height,
+              &hashed_process_data_out)==0);
+      drawing_insert_square( control_flow_data->drawing, y_out, height);
     }
-
-    g_free(name);
+    //g_free(name);
     
     /* Find process pid_in in the list... */
     process_in = lttv_state_find_process(tfs, pid_in);
@@ -307,7 +306,7 @@ int draw_event_hook(void *hook_data, void *call_data)
     g_debug("in : %s",g_quark_to_string(process_in->state->s));
 
     birth = process_in->creation_time;
-    name = strdup(g_quark_to_string(process_in->name));
+    name = g_quark_to_string(process_in->name);
     HashedProcessData *hashed_process_data_in = NULL;
 
     if(processlist_get_process_pixels(process_list,
@@ -318,7 +317,7 @@ int draw_event_hook(void *hook_data, void *call_data)
             &height,
             &hashed_process_data_in) == 1)
     {
-    /* Process not present */
+      /* Process not present */
       processlist_add(process_list,
         pid_in,
         &birth,
@@ -336,13 +335,13 @@ int draw_event_hook(void *hook_data, void *call_data)
 
       drawing_insert_square( control_flow_data->drawing, y_in, height);
     }
-    g_free(name);
+    //g_free(name);
 
 
     /* Find pixels corresponding to time of the event. If the time does
      * not fit in the window, show a warning, not supposed to happend. */
     guint x = 0;
-    guint width = control_flow_data->drawing->drawing_area->allocation.width;
+    guint width = control_flow_data->drawing->width;
 
     LttTime time = ltt_event_time(e);
 
@@ -357,7 +356,7 @@ int draw_event_hook(void *hook_data, void *call_data)
         width,
         &x);
     //assert(x <= width);
-    
+    //
     /* draw what represents the event for outgoing process. */
 
     DrawContext *draw_context_out = hashed_process_data_out->draw_context;
@@ -404,8 +403,9 @@ int draw_event_hook(void *hook_data, void *call_data)
 
     if(process_out->state->s == LTTV_STATE_RUN)
     {
-      draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
-      gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
+      //draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+      //gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
+      draw_context_out->gc = control_flow_data->drawing->gc;
 
       PropertiesBG prop_bg;
       prop_bg.color = g_new(GdkColor,1);
@@ -440,7 +440,7 @@ int draw_event_hook(void *hook_data, void *call_data)
       g_debug("calling from draw_event");
       draw_bg((void*)&prop_bg, (void*)draw_context_out);
       g_free(prop_bg.color);
-      gdk_gc_unref(draw_context_out->gc);
+      //gdk_gc_unref(draw_context_out->gc);
     }
 
     draw_context_out->gc = widget->style->black_gc;
@@ -517,8 +517,9 @@ int draw_event_hook(void *hook_data, void *call_data)
     draw_text((void*)&prop_text_out, (void*)draw_context_out);
     //gdk_gc_unref(draw_context_out->gc);
 
-    draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
-    gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
+    //draw_context_out->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+    //gdk_gc_copy(draw_context_out->gc, widget->style->black_gc);
+    draw_context_out->gc = control_flow_data->drawing->gc;
 
     PropertiesLine prop_line_out;
     prop_line_out.color = g_new(GdkColor,1);
@@ -574,7 +575,7 @@ int draw_event_hook(void *hook_data, void *call_data)
   
     draw_line((void*)&prop_line_out, (void*)draw_context_out);
     g_free(prop_line_out.color);
-    gdk_gc_unref(draw_context_out->gc);
+    //gdk_gc_unref(draw_context_out->gc);
     /* Note : finishing line will have to be added when trace read over. */
       
     /* Finally, update the drawing context of the pid_in. */
@@ -625,8 +626,9 @@ int draw_event_hook(void *hook_data, void *call_data)
 
     if(process_in->state->s == LTTV_STATE_RUN)
     {
-      draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
-      gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
+      //draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+      //gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
+      draw_context_in->gc = control_flow_data->drawing->gc;
 
       PropertiesBG prop_bg;
       prop_bg.color = g_new(GdkColor,1);
@@ -661,7 +663,7 @@ int draw_event_hook(void *hook_data, void *call_data)
 
       draw_bg((void*)&prop_bg, (void*)draw_context_in);
       g_free(prop_bg.color);
-      gdk_gc_unref(draw_context_in->gc);
+      //gdk_gc_unref(draw_context_in->gc);
     }
 
     draw_context_in->gc = widget->style->black_gc;
@@ -740,8 +742,9 @@ int draw_event_hook(void *hook_data, void *call_data)
     draw_text((void*)&prop_text_in, (void*)draw_context_in);
     //gdk_gc_unref(draw_context_in->gc);
    
-    draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
-    gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
+    //draw_context_in->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+    //gdk_gc_copy(draw_context_in->gc, widget->style->black_gc);
+    draw_context_in->gc = control_flow_data->drawing->gc;
 
     PropertiesLine prop_line_in;
     prop_line_in.color = g_new(GdkColor,1);
@@ -795,12 +798,12 @@ int draw_event_hook(void *hook_data, void *call_data)
   
     draw_line((void*)&prop_line_in, (void*)draw_context_in);
     g_free(prop_line_in.color);
-    gdk_gc_unref(draw_context_in->gc);
+    //gdk_gc_unref(draw_context_in->gc);
   }
 
   return 0;
 
-  /* Temp dump */
+  /* Text dump */
 #ifdef DONTSHOW
   GString *string = g_string_new("");;
   gboolean field_names = TRUE, state = TRUE;
@@ -890,22 +893,22 @@ int draw_after_hook(void *hook_data, void *call_data)
             &height,
             &hashed_process_data_out) == 1)
     {
-    /* Process not present */
-    processlist_add(process_list,
-        pid_out,
-        &birth,
-        tfc->t_context->index,
-        name,
-        &pl_height,
-        &hashed_process_data_out);
-    processlist_get_process_pixels(process_list,
-            pid_out,
-            &birth,
-            tfc->t_context->index,
-            &y_out,
-            &height,
-            &hashed_process_data_out);
-    drawing_insert_square( control_flow_data->drawing, y_out, height);
+      /* Process not present */
+      processlist_add(process_list,
+          pid_out,
+          &birth,
+          tfc->t_context->index,
+          name,
+          &pl_height,
+          &hashed_process_data_out);
+      processlist_get_process_pixels(process_list,
+              pid_out,
+              &birth,
+              tfc->t_context->index,
+              &y_out,
+              &height,
+              &hashed_process_data_out);
+      drawing_insert_square( control_flow_data->drawing, y_out, height);
     }
 
     g_free(name);
@@ -1336,7 +1339,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
       g_info("scrolling near right");
       /* Scroll right, keep right part of the screen */
       guint x = 0;
-      guint width = control_flow_data->drawing->drawing_area->allocation.width;
+      guint width = control_flow_data->drawing->width;
       convert_time_to_pixels(
           *os,
           old_end,
@@ -1366,9 +1369,9 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           TRUE,
           drawing->damage_begin+SAFETY, 0,
           drawing->damage_end - drawing->damage_begin,  // do not overlap
-          control_flow_data->drawing->height+SAFETY);
+          control_flow_data->drawing->height);
 
-       gtk_widget_queue_draw_area (drawing->drawing_area,
+      gtk_widget_queue_draw_area (drawing->drawing_area,
                                 0,0,
                                 control_flow_data->drawing->width,
                                 control_flow_data->drawing->height);
@@ -1389,7 +1392,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
         g_info("scrolling near left");
         /* Scroll left, keep left part of the screen */
         guint x = 0;
-        guint width = control_flow_data->drawing->drawing_area->allocation.width;
+        guint width = control_flow_data->drawing->width;
         convert_time_to_pixels(
             *ns,
             new_end,
@@ -1406,13 +1409,11 @@ gint update_time_window_hook(void *hook_data, void *call_data)
             x, 0,
             -1, -1);
   
-        *old_time_window = *new_time_window;
-
         if(drawing->damage_begin == drawing->damage_end)
           drawing->damage_end = x;
         else
           drawing->damage_end = 
-            control_flow_data->drawing->drawing_area->allocation.width;
+            control_flow_data->drawing->width;
 
         drawing->damage_begin = 0;
         
@@ -1421,7 +1422,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           TRUE,
           drawing->damage_begin, 0,
           drawing->damage_end - drawing->damage_begin,  // do not overlap
-          control_flow_data->drawing->height+SAFETY);
+          control_flow_data->drawing->height);
 
         gtk_widget_queue_draw_area (drawing->drawing_area,
                                 0,0,
@@ -1450,7 +1451,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
             TRUE,
             0, 0,
             control_flow_data->drawing->width+SAFETY, // do not overlap
-            control_flow_data->drawing->height+SAFETY);
+            control_flow_data->drawing->height);
 
           gtk_widget_queue_draw_area (drawing->drawing_area,
                                 0,0,
@@ -1478,7 +1479,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           TRUE,
           0, 0,
           control_flow_data->drawing->width+SAFETY, // do not overlap
-          control_flow_data->drawing->height+SAFETY);
+          control_flow_data->drawing->height);
 
     gtk_widget_queue_draw_area (drawing->drawing_area,
                                 0,0,
@@ -1507,7 +1508,7 @@ gint traceset_notify(void *hook_data, void *call_data)
   GtkWidget *widget = drawing->drawing_area;
 
   drawing->damage_begin = 0;
-  drawing->damage_end = widget->allocation.width;
+  drawing->damage_end = drawing->width;
 
 
   // Clear the image
@@ -1515,8 +1516,8 @@ gint traceset_notify(void *hook_data, void *call_data)
         widget->style->black_gc,
         TRUE,
         0, 0,
-        widget->allocation.width+SAFETY,
-        widget->allocation.height+SAFETY);
+        drawing->width+SAFETY,
+        drawing->height);
 
 
   if(drawing->damage_begin < drawing->damage_end)
@@ -1526,7 +1527,7 @@ gint traceset_notify(void *hook_data, void *call_data)
                          drawing->damage_begin,
                          0,
                          drawing->damage_end-drawing->damage_begin,
-                         widget->allocation.height);
+                         drawing->height);
   }
 
   gtk_widget_queue_draw_area(drawing->drawing_area,
@@ -1546,7 +1547,7 @@ gint redraw_notify(void *hook_data, void *call_data)
   GtkWidget *widget = drawing->drawing_area;
 
   drawing->damage_begin = 0;
-  drawing->damage_end = widget->allocation.width;
+  drawing->damage_end = drawing->width;
 
 
   // Clear the image
@@ -1554,8 +1555,8 @@ gint redraw_notify(void *hook_data, void *call_data)
         widget->style->black_gc,
         TRUE,
         0, 0,
-        widget->allocation.width+SAFETY,
-        widget->allocation.height+SAFETY);
+        drawing->width+SAFETY,
+        drawing->height);
 
 
   if(drawing->damage_begin < drawing->damage_end)
@@ -1565,7 +1566,7 @@ gint redraw_notify(void *hook_data, void *call_data)
                          drawing->damage_begin,
                          0,
                          drawing->damage_end-drawing->damage_begin,
-                         widget->allocation.height);
+                         drawing->height);
   }
 
   gtk_widget_queue_draw_area(drawing->drawing_area,
@@ -1593,7 +1594,7 @@ gint continue_notify(void *hook_data, void *call_data)
                          drawing->damage_begin,
                          0,
                          drawing->damage_end-drawing->damage_begin,
-                         widget->allocation.height);
+                         drawing->height);
   }
 
   return FALSE;
@@ -1745,7 +1746,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   /* Find pixels corresponding to current time . If the time does
    * not fit in the window, show a warning, not supposed to happend. */
   guint x = 0;
-  guint width = control_flow_data->drawing->drawing_area->allocation.width;
+  guint width = control_flow_data->drawing->width;
 
   TimeWindow time_window =
             lttvwindow_get_time_window(control_flow_data->tab);
@@ -1774,8 +1775,9 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   draw_context->drawable = control_flow_data->drawing->pixmap;
   draw_context->pango_layout = control_flow_data->drawing->pango_layout;
   //draw_context->gc = widget->style->black_gc;
-  draw_context->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
-  gdk_gc_copy(draw_context->gc, widget->style->black_gc);
+  //draw_context->gc = gdk_gc_new(control_flow_data->drawing->pixmap);
+  //gdk_gc_copy(draw_context->gc, widget->style->black_gc);
+  draw_context->gc = control_flow_data->drawing->gc;
  
   if(process != NULL && process->state->s == LTTV_STATE_RUN)
   {
@@ -1879,7 +1881,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
   draw_line((void*)&prop_line, (void*)draw_context);
   g_free(prop_line.color);
-  gdk_gc_unref(draw_context->gc);
+  //gdk_gc_unref(draw_context->gc);
 
   /* Reset draw_context of the process for next request */
 

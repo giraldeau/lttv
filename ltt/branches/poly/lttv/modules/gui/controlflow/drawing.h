@@ -60,7 +60,14 @@ typedef struct _Drawing_t Drawing_t;
 struct _Drawing_t {
   GtkWidget *vbox;
   GtkWidget *drawing_area;
+  //GtkWidget *scrolled_window;
+  GtkWidget *hbox;
+  GtkWidget *viewport;
+  GtkWidget *scrollbar;
+  
+  GtkWidget *ruler_hbox;
   GtkWidget *ruler;
+  GtkWidget *padding;
   GdkPixmap *pixmap;
   ControlFlowData *control_flow_data;
   
@@ -72,6 +79,7 @@ struct _Drawing_t {
   gint      damage_begin, damage_end;
   LttTime   last_start;
   GdkGC     *dotted_gc;
+  GdkGC     *gc;
 };
 
 Drawing_t *drawing_construct(ControlFlowData *control_flow_data);
@@ -119,6 +127,5 @@ void convert_time_to_pixels(
 void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window);
 
 void drawing_data_request_end(EventsRequest *events_request, LttvTracesetState *tss);
-
 
 #endif // _DRAWING_H

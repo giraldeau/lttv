@@ -238,7 +238,6 @@ ProcessList *processlist_construct(void)
   process_list->process_list_widget = 
     gtk_tree_view_new_with_model
     (GTK_TREE_MODEL (process_list->list_store));
-
   g_object_unref (G_OBJECT (process_list->list_store));
 
   gtk_tree_sortable_set_sort_func(
@@ -367,7 +366,7 @@ int processlist_add(  ProcessList *process_list,
       guint pid,
       LttTime *birth,
       guint trace_num,
-      gchar *name,
+      const gchar *name,
       guint *height,
       HashedProcessData **pm_hashed_process_data)
 {
@@ -481,12 +480,16 @@ int processlist_remove( ProcessList *process_list,
           process_list->process_hash,
           &Process_Info))
   {
+    GtkTreePath *tree_path;
+
+    tree_path = gtk_tree_row_reference_get_path(
+                    hashed_process_data->row_ref);
+
     gtk_tree_model_get_iter (
         GTK_TREE_MODEL(process_list->list_store),
-        &iter,
-        gtk_tree_row_reference_get_path(
-          (GtkTreeRowReference*)hashed_process_data->row_ref)
-        );
+        &iter, tree_path);
+ 
+    gtk_tree_path_free(tree_path);
 
     gtk_list_store_remove (process_list->list_store, &iter);
     
@@ -554,6 +557,8 @@ gint processlist_get_process_pixels(  ProcessList *process_list,
         GTK_TREE_VIEW(process_list->process_list_widget));
     *y = *height * path_indices[0];
     *pm_hashed_process_data = hashed_process_data;
+    gtk_tree_path_free(tree_path);
+    
     return 0; 
   } else {
     *pm_hashed_process_data = hashed_process_data;
@@ -579,6 +584,7 @@ gint processlist_get_pixels_from_data(  ProcessList *process_list,
   *height = get_cell_height(
       GTK_TREE_VIEW(process_list->process_list_widget));
   *y = *height * path_indices[0];
+  gtk_tree_path_free(tree_path);
 
   return 0; 
 
