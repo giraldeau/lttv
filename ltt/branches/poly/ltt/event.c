@@ -261,6 +261,66 @@ void ltt_event_position_set(LttEventPosition *ep,
 }
 
 /*****************************************************************************
+ * Function name
+ *    ltt_event_position_compare : compare two positions
+ * Input params
+ *    ep1                    : a pointer to event's position structure
+ *    ep2                    : a pointer to event's position structure
+ * Return
+ *    -1 is ep1 < ep2
+ *    1 if ep1 > ep2
+ *    0 if ep1 == ep2
+ ****************************************************************************/
+
+
+gint ltt_event_position_compare(const LttEventPosition *ep1,
+                                const LttEventPosition *ep2)
+{
+  if(ep1->tf != ep2->tf)
+    g_error("ltt_event_position_compare on different tracefiles makes no sense");
+  if(ep1->block_num < ep2->block_num)
+    return -1;
+  if(ep1->block_num > ep2->block_num)
+    return 1;
+  if(ep1->event_num < ep2->event_num)
+    return -1;
+  if(ep1->event_num > ep2->event_num)
+    return 1;
+  return 0;
+}
+
+/*****************************************************************************
+ * Function name
+ *    ltt_event_event_position_compare : compare two positions, one in event,
+ *    other in position opaque structure.
+ * Input params
+ *    event                  : a pointer to event structure
+ *    ep                     : a pointer to event's position structure
+ * Return
+ *    -1 is event < ep
+ *    1 if event > ep
+ *    0 if event == ep
+ ****************************************************************************/
+
+gint ltt_event_event_position_compare(const LttEvent *event,
+                                      const LttEventPosition *ep)
+{
+  if(event->tf != ep->tf)
+    g_error("ltt_event_position_compare on different tracefiles makes no sense");
+  if(e->which_block < ep->block_num)
+    return -1;
+  if(e->which_block > ep->block_num)
+    return 1;
+  if(e->which_event < ep->event_num)
+    return -1;
+  if(e->which_event > ep->event_num)
+    return 1;
+  return 0;
+}
+
+
+
+/*****************************************************************************
  *Function name
  *    ltt_event_cpu_i: get the cpu id where the event happens
  *Input params

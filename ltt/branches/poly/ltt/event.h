@@ -69,7 +69,11 @@ void ltt_event_position_get(LttEventPosition *ep,
 void ltt_event_position_set(LttEventPosition *ep,
     unsigned block_number, unsigned index_in_block);
 
+gint ltt_event_position_compare(const LttEventPosition *ep1,
+                                const LttEventPosition *ep2);
 
+gint ltt_event_event_position_compare(const LttEvent *event,
+                                      const LttEventPosition *ep);
 /* CPU id of the event */
 
 unsigned ltt_event_cpu_id(LttEvent *e);
