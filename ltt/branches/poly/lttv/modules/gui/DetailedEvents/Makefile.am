@@ -4,9 +4,6 @@
 # Created by Mathieu Desnoyers on May 6, 2003
 #
 
-# the gui subdir comes first : dependency
-SUBDIRS = text gui
-
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
