@@ -135,8 +135,8 @@ do \
   (T2).tv_nsec = (T1).tv_nsec * (FLOAT);  \
   if((T2).tv_nsec >= 1000000000)\
     {\
-    (T2).tv_sec += (T3).tv_nsec / 1000000000;\
-    (T2).tv_nsec = (T3).tv_nsec % 1000000000;\
+    (T2).tv_sec += (T2).tv_nsec / 1000000000;\
+    (T2).tv_nsec = (T2).tv_nsec % 1000000000;\
     }\
 } while(0)
 
