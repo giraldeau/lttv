@@ -1016,7 +1016,7 @@ void
 on_button_new_clicked                  (GtkButton       *button,
                                         gpointer         user_data)
 {
-  create_new_window((GtkWidget*)button, user_data, FALSE);
+  create_new_window((GtkWidget*)button, user_data, TRUE);
 }
 
 void
@@ -1616,7 +1616,7 @@ void construct_main_window(MainWindow * parent, WindowCreationData * win_creatio
   }
   //for now there is no name field in LttvTraceset structure
   //Use "Traceset" as the label for the default tab
-  create_tab(NULL, new_m_window, notebook,"Traceset");
+  create_tab(parent, new_m_window, notebook,"Traceset");
 
   g_object_set_data_full(
 			G_OBJECT(new_m_window->mwindow),
@@ -1658,8 +1658,9 @@ void tab_destructor(Tab * tab_instance)
       ref_count = lttv_trace_get_ref_number(trace);
       if(ref_count <= 1){
 	ltt_trace_close(lttv_trace(trace));
+	lttv_trace_destroy(trace);
       }
-      lttv_trace_destroy(trace);
+      //      lttv_trace_destroy(trace);
     }
   }  
   lttv_traceset_destroy(tab_instance->traceset_info->traceset); 
