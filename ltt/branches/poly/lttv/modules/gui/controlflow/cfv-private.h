@@ -24,11 +24,11 @@ struct _ControlFlowData {
   GtkWidget *scrolled_window;
   MainWindow *mw;
 
-  ProcessList *process_list;
-  Drawing_t *drawing;
-
   GtkWidget *h_paned;
-    
+
+  ProcessList *process_list;
+
+  Drawing_t *drawing;
   GtkAdjustment *v_adjust ;
   
   /* Shown events information */

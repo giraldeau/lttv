@@ -46,7 +46,7 @@ extern GSList *g_control_flow_data_list;
 ControlFlowData *
 guicontrolflow(void)
 {
-  GtkWidget *process_list_widget, *drawing_widget;
+  GtkWidget *process_list_widget, *drawing_widget, *drawing_area;
 
   ControlFlowData* control_flow_data = g_new(ControlFlowData,1) ;
 
@@ -56,6 +56,9 @@ guicontrolflow(void)
   drawing_widget = 
     drawing_get_widget(control_flow_data->drawing);
   
+  drawing_area = 
+    drawing_get_drawing_area(control_flow_data->drawing);
+
   control_flow_data->number_of_process = 0;
 
   /* Create the Process list */
@@ -110,7 +113,7 @@ guicontrolflow(void)
       (GDestroyNotify)guicontrolflow_destructor);
     
   g_object_set_data(
-      G_OBJECT(drawing_widget),
+      G_OBJECT(drawing_area),
       "control_flow_data",
       control_flow_data);
         

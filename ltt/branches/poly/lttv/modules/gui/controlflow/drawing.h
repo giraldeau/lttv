@@ -55,7 +55,9 @@
 typedef struct _Drawing_t Drawing_t;
 
 struct _Drawing_t {
+  GtkWidget *vbox;
   GtkWidget *drawing_area;
+  GtkWidget *ruler;
   GdkPixmap *pixmap;
   ControlFlowData *control_flow_data;
   
@@ -69,7 +71,8 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data);
 void drawing_destroy(Drawing_t *drawing);
 
 GtkWidget *drawing_get_widget(Drawing_t *drawing);
-  
+GtkWidget *drawing_get_drawing_area(Drawing_t *drawing);
+
 //void drawing_Refresh (  Drawing_t *drawing,
 //      guint x, guint y,
 //      guint width, guint height);
@@ -111,5 +114,7 @@ void convert_time_to_pixels(
     LttTime time,
     gint width,
     guint *x);
+
+void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window);
 
 #endif // _DRAWING_H

@@ -1016,6 +1016,11 @@ gint update_time_window_hook(void *hook_data, void *call_data)
     guicontrolflow_get_time_window(control_flow_data);
   TimeWindow *new_time_window = ((TimeWindow*)call_data);
   
+  /* Update the ruler */
+  drawing_update_ruler(control_flow_data->drawing,
+                       new_time_window);
+
+
   /* Two cases : zoom in/out or scrolling */
   
   /* In order to make sure we can reuse the old drawing, the scale must
@@ -1197,6 +1202,8 @@ gint update_time_window_hook(void *hook_data, void *call_data)
         control_flow_data->drawing->height);
   }
 
+
+  
   return 0;
 }
 

@@ -35,6 +35,11 @@
  *                              drawing functions                            *
  *****************************************************************************/
 
+static gboolean
+expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data );
+
+
+
 //FIXME Colors will need to be dynamic. Graphic context part not done so far.
 typedef enum 
 {
@@ -386,10 +391,24 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
 Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
 {
   Drawing_t *drawing = g_new(Drawing_t, 1);
-    
-  drawing->drawing_area = gtk_drawing_area_new ();
+  
   drawing->control_flow_data = control_flow_data;
 
+  drawing->vbox = gtk_vbox_new(FALSE, 1);
+  
+  drawing->ruler = gtk_drawing_area_new ();
+  gtk_widget_set_size_request(drawing->ruler, -1, 27);
+
+  
+  drawing->drawing_area = gtk_drawing_area_new ();
+
+  gtk_box_pack_start(GTK_BOX(drawing->vbox), drawing->ruler, 
+                     FALSE, FALSE, 0);
+  //g_object_unref(G_OBJECT(drawing->ruler));
+  gtk_box_pack_end(GTK_BOX(drawing->vbox), drawing->drawing_area,
+                   TRUE, TRUE, 0);
+  //g_object_unref(G_OBJECT(drawing->drawing_area));
+  
   drawing->pango_layout =
     gtk_widget_create_pango_layout(drawing->drawing_area, NULL);
   
@@ -399,6 +418,12 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
       "Link_drawing_Data",
       drawing,
       (GDestroyNotify)drawing_destroy);
+
+  g_object_set_data(
+      G_OBJECT(drawing->ruler),
+      "drawing",
+      drawing);
+
 
   //gtk_widget_modify_bg( drawing->drawing_area,
   //      GTK_STATE_NORMAL,
@@ -429,7 +454,12 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
         "configure_event",
         G_CALLBACK (configure_event),
         (gpointer)drawing);
-  
+ 
+  g_signal_connect (G_OBJECT(drawing->ruler),
+        "expose_event",
+        G_CALLBACK(expose_ruler),
+        (gpointer)drawing);
+
   g_signal_connect (G_OBJECT(drawing->drawing_area),
         "expose_event",
         G_CALLBACK (expose_event),
@@ -439,7 +469,10 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
         "button-press-event",
         G_CALLBACK (button_press_event),
         (gpointer)drawing);
-
+  
+  gtk_widget_show(drawing->ruler);
+  gtk_widget_show(drawing->drawing_area);
+    
   
   return drawing;
 }
@@ -454,9 +487,14 @@ void drawing_destroy(Drawing_t *drawing)
   g_free(drawing);
 }
 
-GtkWidget *drawing_get_widget(Drawing_t *drawing)
+GtkWidget *drawing_get_drawing_area(Drawing_t *drawing)
 {
   return drawing->drawing_area;
+}
+
+GtkWidget *drawing_get_widget(Drawing_t *drawing)
+{
+  return drawing->vbox;
 }
 
 /* convert_pixels_to_time
@@ -661,6 +699,171 @@ void drawing_remove_square(Drawing_t *drawing,
   //update_rect.width = drawing->width;
   //update_rect.height = drawing->height - y ;
   //gtk_widget_draw( drawing->drawing_area, &update_rect);
+}
+
+void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window)
+{
+  GtkRequisition req;
+  GdkRectangle rect;
+  
+  req.width = drawing->ruler->allocation.width;
+  req.height = drawing->ruler->allocation.height;
+
+ 
+  rect.x = 0;
+  rect.y = 0;
+  rect.width = req.width;
+  rect.height = req.height;
+
+  gtk_widget_queue_draw(drawing->ruler);
+  //gtk_widget_draw( drawing->ruler, &rect);
+}
+
+/* Redraw the ruler */
+static gboolean
+expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
+{
+  Drawing_t *drawing = (Drawing_t*)user_data;
+
+  gchar text[255];
+  
+  PangoContext *context;
+  PangoLayout *layout;
+  PangoAttribute *attribute;
+  PangoFontDescription *FontDesc;
+  gint Font_Size;
+  PangoRectangle ink_rect;
+  guint global_width=0;
+  GdkColor foreground = { 0, 0, 0, 0 };
+  GdkColor background = { 0, 0xffff, 0xffff, 0xffff };
+
+  LttTime window_end = 
+    ltt_time_add(drawing->control_flow_data->time_window.time_width,
+                 drawing->control_flow_data->time_window.start_time);
+  LttTime half_width =
+    ltt_time_div(drawing->control_flow_data->time_window.time_width,2.0);
+  LttTime window_middle =
+    ltt_time_add(half_width,
+                 drawing->control_flow_data->time_window.start_time);
+  g_critical("ruler expose event");
+ 
+  gdk_draw_rectangle (drawing->ruler->window,
+          drawing->ruler->style->white_gc,
+          TRUE,
+          event->area.x, event->area.y,
+          event->area.width,
+          event->area.height);
+
+   GdkGC *gc = gdk_gc_new(drawing->ruler->window);
+   gdk_gc_copy(gc, drawing->ruler->style->black_gc);
+   gdk_gc_set_line_attributes(gc,
+                               2,
+                               GDK_LINE_SOLID,
+                               GDK_CAP_BUTT,
+                               GDK_JOIN_MITER);
+  gdk_draw_line (drawing->ruler->window,
+                  gc,
+                  event->area.x, 1,
+                  event->area.x + event->area.width, 1);
+
+
+  snprintf(text, 255, "%lus\n%luns",
+    drawing->control_flow_data->time_window.start_time.tv_sec,
+    drawing->control_flow_data->time_window.start_time.tv_nsec);
+
+  layout = gtk_widget_create_pango_layout(drawing->drawing_area, NULL);
+
+  context = pango_layout_get_context(layout);
+  FontDesc = pango_context_get_font_description(context);
+
+  pango_font_description_set_size(FontDesc, 6*PANGO_SCALE);
+  pango_layout_context_changed(layout);
+
+  pango_layout_set_text(layout, text, -1);
+  pango_layout_get_pixel_extents(layout, &ink_rect, NULL);
+  global_width += ink_rect.width;
+
+  gdk_draw_layout_with_colors(drawing->ruler->window,
+      gc,
+      0,
+      6,
+      layout, &foreground, &background);
+
+  gdk_gc_set_line_attributes(gc,
+                             2,
+                             GDK_LINE_SOLID,
+                             GDK_CAP_ROUND,
+                             GDK_JOIN_ROUND);
+
+  gdk_draw_line (drawing->ruler->window,
+                   gc,
+                   1, 1,
+                   1, 7);
+
+
+  snprintf(text, 255, "%lus\n%luns", window_end.tv_sec,
+                                     window_end.tv_nsec);
+
+  pango_layout_set_text(layout, text, -1);
+  pango_layout_get_pixel_extents(layout, &ink_rect, NULL);
+  global_width += ink_rect.width;
+
+  if(global_width <= drawing->ruler->allocation.width)
+  {
+    gdk_draw_layout_with_colors(drawing->ruler->window,
+      gc,
+      drawing->ruler->allocation.width - ink_rect.width,
+      6,
+      layout, &foreground, &background);
+
+    gdk_gc_set_line_attributes(gc,
+                               2,
+                               GDK_LINE_SOLID,
+                               GDK_CAP_ROUND,
+                               GDK_JOIN_ROUND);
+
+    gdk_draw_line (drawing->ruler->window,
+                   gc,
+                   drawing->ruler->allocation.width-1, 1,
+                   drawing->ruler->allocation.width-1, 7);
+  }
+
+
+  snprintf(text, 255, "%lus\n%luns", window_middle.tv_sec,
+                                     window_middle.tv_nsec);
+
+  pango_layout_set_text(layout, text, -1);
+  pango_layout_get_pixel_extents(layout, &ink_rect, NULL);
+  global_width += ink_rect.width;
+
+  if(global_width <= drawing->ruler->allocation.width)
+  {
+    gdk_draw_layout_with_colors(drawing->ruler->window,
+      gc,
+      (drawing->ruler->allocation.width - ink_rect.width)/2,
+      6,
+      layout, &foreground, &background);
+
+    gdk_gc_set_line_attributes(gc,
+                               2,
+                               GDK_LINE_SOLID,
+                               GDK_CAP_ROUND,
+                               GDK_JOIN_ROUND);
+
+    gdk_draw_line (drawing->ruler->window,
+                   gc,
+                   drawing->ruler->allocation.width/2, 1,
+                   drawing->ruler->allocation.width/2, 7);
+
+
+
+
+  }
+
+  gdk_gc_unref(gc);
+  g_object_unref(layout);
+   
+  return FALSE;
 }
 
 

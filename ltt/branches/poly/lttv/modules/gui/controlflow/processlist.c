@@ -220,7 +220,7 @@ ProcessList *processlist_construct(void)
   
   
   gtk_tree_view_set_headers_visible(
-    GTK_TREE_VIEW(process_list->process_list_widget), FALSE);
+    GTK_TREE_VIEW(process_list->process_list_widget), TRUE);
 
   /* Create a column, associating the "text" attribute of the
    * cell_renderer to the first column of the model */
