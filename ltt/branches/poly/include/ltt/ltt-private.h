@@ -134,6 +134,7 @@ struct _LttTracefile{
   void * buffer;                     //the buffer containing the block
   double cycle_per_nsec;             //Cycles per nsec
   unsigned cur_heart_beat_number;    //current number of heart beat in the buf
+  LttCycleCount cur_cycle_count;     //current cycle count of the event
 
   LttTime prev_block_end_time;       //the end time of previous block
   LttTime prev_event_time;           //the time of the previous event
@@ -161,6 +162,7 @@ struct _LttEventPosition{
   LttTime       event_time;         //the time of the event
   LttCycleCount event_cycle_count;  //the cycle count of the event
   unsigned      heart_beat_number;  //current number of heart beats  
+  LttTracefile *tf;                 //tracefile containing the event
   gboolean      old_position;       //flag to show if it is the position
                                     //being remembered
 };

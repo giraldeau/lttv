@@ -370,3 +370,11 @@ void contextRemoveHooks(mainWindow *main_win ,
 			LttvHooks *after_event);
 
 
+/**
+ * Function to get the life span of the traceset
+ * @param main_win the main window the viewer belongs to.
+ * @param start start time of the traceset.
+ * @param end end time of the traceset.
+ */
+
+void getTracesetTimeSpan(mainWindow *main_win, LttTime * start, LttTime* end);

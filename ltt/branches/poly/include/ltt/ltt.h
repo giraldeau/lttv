@@ -82,6 +82,8 @@ typedef struct _LttTime {
 
 typedef uint64_t LttCycleCount;
 
+#define NANSECOND_CONST       1000000000
+
 /* Event positions are used to seek within a tracefile based on
    the block number and event position within the block. */
 
@@ -108,11 +110,14 @@ typedef enum _LttArchEndian
 do \
 {\
   (T3).tv_sec  = (T2).tv_sec  - (T1).tv_sec;  \
-  (T3).tv_nsec = (T2).tv_nsec - (T1).tv_nsec; \
-  if((T3).tv_nsec < 0)\
+  if((T2).tv_nsec < (T1).tv_nsec)\
     {\
     (T3).tv_sec--;\
-    (T3).tv_nsec += 1000000000;\
+    (T3).tv_nsec = NANSECOND_CONST - (T1).tv_nsec + (T2).tv_nsec;\
+    }\
+  else\
+    {\
+    (T3).tv_nsec = (T2).tv_nsec - (T1).tv_nsec;\
     }\
 } while(0)
 
@@ -122,10 +127,10 @@ do \
 {\
   (T3).tv_sec  = (T2).tv_sec  + (T1).tv_sec;  \
   (T3).tv_nsec = (T2).tv_nsec + (T1).tv_nsec; \
-  if((T3).tv_nsec >= 1000000000)\
+  if((T3).tv_nsec >= NANSECOND_CONST)\
     {\
-    (T3).tv_sec += (T3).tv_nsec / 1000000000;\
-    (T3).tv_nsec = (T3).tv_nsec % 1000000000;\
+    (T3).tv_sec += (T3).tv_nsec / NANSECOND_CONST;\
+    (T3).tv_nsec = (T3).tv_nsec % NANSECOND_CONST;\
     }\
 } while(0)
 
@@ -138,10 +143,10 @@ do \
 {\
   (T2).tv_sec  = (T1).tv_sec  * (FLOAT);  \
   (T2).tv_nsec = (T1).tv_nsec * (FLOAT);  \
-  if((T2).tv_nsec >= 1000000000)\
+  if((T2).tv_nsec >= NANSECOND_CONST)\
     {\
-    (T2).tv_sec += (T2).tv_nsec / 1000000000;\
-    (T2).tv_nsec = (T2).tv_nsec % 1000000000;\
+    (T2).tv_sec += (T2).tv_nsec / NANSECOND_CONST;\
+    (T2).tv_nsec = (T2).tv_nsec % NANSECOND_CONST;\
     }\
 } while(0)
 

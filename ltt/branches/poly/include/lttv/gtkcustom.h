@@ -39,6 +39,7 @@ struct _GtkCustom
   //  GtkWidget * scrollWindow;
   //  GtkWidget * viewport;
   GtkWidget * hScrollbar;  
+  GtkAdjustment *hAdjust;
 };
 
 struct _GtkCustomClass
