@@ -503,7 +503,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             gdk_draw_point(drawing->pixmap,
                            drawing->gc,
                            x,
-                           y+1);
+                           y+(height/2)-3);
           }
           /* jump */
         } else {
@@ -627,7 +627,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             gdk_draw_point(drawing->pixmap,
                            drawing->gc,
                            x,
-                           y+1);
+                           y+(height/2)-3);
           }
           /* jump */
         } else {
@@ -2016,7 +2016,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
         gdk_draw_point(drawing->pixmap,
                        drawing->gc,
                        x,
-                       y+1);
+                       y+(height/2)-3);
       }
       /* jump */
     } else {
@@ -2288,7 +2288,7 @@ int before_process_hook(void *hook_data, void *call_data)
           gdk_draw_point(drawing->pixmap,
                          drawing->gc,
                          x,
-                         y+1);
+                         y+(height/2)-3);
         }
         /* jump */
       } else {
@@ -3064,7 +3064,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
             gdk_draw_point(drawing->pixmap,
                            drawing->gc,
                            x,
-                           draw_context.drawinfo.y.over);
+                           y+(height/2)-3);
           }
           /* Jump */
         } else {
