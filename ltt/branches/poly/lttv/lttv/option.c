@@ -31,6 +31,9 @@ typedef struct _LttvOption {
   gpointer p;
   LttvOptionHook hook;
   gpointer hook_data;
+
+  /* Keep the order of addition */
+  guint val;
 } LttvOption;
 
 GHashTable *options;
@@ -39,7 +42,12 @@ GHashTable *options;
 static void
 list_options(gpointer key, gpointer value, gpointer user_data)
 {
-  g_ptr_array_add((GPtrArray *)user_data, value);
+  GPtrArray *list = (GPtrArray *)user_data;
+  LttvOption *option = (LttvOption *)value;
+
+  if(list->len < option->val)
+    g_ptr_array_set_size(list, option->val);
+  list->pdata[option->val-1] = option;
 }
 
 
@@ -75,6 +83,7 @@ void lttv_option_add(const char *long_name, const char char_name,
   option->p = p;
   option->hook = h;
   option->hook_data = hook_data;
+  option->val = g_hash_table_size(options) + 1;
   g_hash_table_insert(options, option->long_name, option);
 }
 
@@ -115,7 +124,7 @@ build_popts(GPtrArray **plist, struct poptOption **ppopts, poptContext *pc,
 
   guint i;
 
-  list = g_ptr_array_new();
+  list = g_ptr_array_sized_new(g_hash_table_size(options));
 
   g_hash_table_foreach(options, list_options, list);
 
@@ -123,15 +132,17 @@ build_popts(GPtrArray **plist, struct poptOption **ppopts, poptContext *pc,
 
   popts = g_new(struct poptOption, list->len + 1);
 
+  /* add the options in the reverse order, so last additions are parsed first */
   for(i = 0 ; i < list->len ; i++) {
+    guint index = list->len-1-i;
     option = (LttvOption *)list->pdata[i];
-    popts[i].longName = option->long_name;
-    popts[i].shortName = option->char_name;
-    popts[i].descrip = option->description;
-    popts[i].argDescrip = option->arg_description;
-    popts[i].argInfo = poptToLTT[option->t];
-    popts[i].arg = option->p;
-    popts[i].val = i + 1;
+    popts[index].longName = option->long_name;
+    popts[index].shortName = option->char_name;
+    popts[index].descrip = option->description;
+    popts[index].argDescrip = option->arg_description;
+    popts[index].argInfo = poptToLTT[option->t];
+    popts[index].arg = option->p;
+    popts[index].val = option->val;
   }
 
   /* Terminate the array for popt and create the context */
@@ -170,6 +181,8 @@ void lttv_option_parse(int argc, char **argv)
 
   first_arg = 0;
 
+  guint hash_size = 0;
+
   build_popts(&list, &popts, &c, argc, argv);
 
   /* Parse options while not end of options event */
@@ -183,12 +196,32 @@ void lttv_option_parse(int argc, char **argv)
       option = (LttvOption *)(list->pdata[rc - 1]);
       g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Option %s encountered", 
           option->long_name);
+      hash_size = g_hash_table_size(options);
       if(option->hook != NULL) { 
         g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "Option %s hook called", 
             option->long_name);
         option->hook(option->hook_data);
       }
       i++;
+
+      /* If the size of the option hash changed, add new options
+       * right now. It resolves the conflict of multiple same short
+       * option use.
+       */
+      if(hash_size != g_hash_table_size(options)) {
+        destroy_popts(&list, &popts, &c);
+        build_popts(&list, &popts, &c, argc, argv);
+
+        /* Get back to the same argument */
+
+        first_arg = i;
+        for(i = 0; i < first_arg; i++) {
+          rc = poptGetNextOpt(c);
+          option = (LttvOption *)(list->pdata[rc - 1]);
+          g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, "Option %s rescanned, skipped",
+              option->long_name);
+        }
+      }
     } 
 
     else if(rc == POPT_ERROR_BADOPT && i != first_arg) {
