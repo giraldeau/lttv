@@ -25,7 +25,7 @@
 #include <lttv/hook.h>
 #include <lttv/option.h>
 #include <lttv/module.h>
-#include <lttv/processTrace.h>
+#include <lttv/tracecontext.h>
 #include <lttv/state.h>
 #include <lttv/stats.h>
 #include <ltt/trace.h>

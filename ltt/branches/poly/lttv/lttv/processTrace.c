@@ -17,7 +17,7 @@
  */
 
 
-#include <lttv/processTrace.h>
+#include <lttv/tracecontext.h>
 #include <ltt/event.h>
 #include <ltt/facility.h>
 #include <ltt/trace.h>

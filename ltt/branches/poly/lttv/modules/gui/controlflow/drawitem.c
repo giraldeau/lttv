@@ -102,7 +102,7 @@
 #include <lttv/iattribute.h>
 #include <string.h>
 
-#include <lttv/processTrace.h>
+#include <lttv/tracecontext.h>
 #include <lttv/state.h>
 
 #include "drawitem.h"

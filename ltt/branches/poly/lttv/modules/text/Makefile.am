@@ -5,11 +5,11 @@ LIBS += $(GLIB_LIBS) -lgobject-2.0 -L$(top_srcdir)/ltt -ltraceread
 
 libdir = ${lttvplugindir}
 
-lib_LTLIBRARIES = libtextDump.la libbatchAnalysis.la libbatchtest.la
+lib_LTLIBRARIES = libtextDump.la libbatchAnalysis.la
 libtextDump_la_LDFLAGS = -module
 libtextDump_la_SOURCES = textDump.c
 libbatchAnalysis_la_LDFLAGS = -module
 libbatchAnalysis_la_SOURCES = batchAnalysis.c
-libbatchtest_la_LDFLAGS = -module
-libbatchtest_la_SOURCES = batchtest.c
 
+noinst_HEADERS = \
+	batchanalysis.h

@@ -15,4 +15,14 @@ lib_LTLIBRARIES = libmainwinapi.la
 libmainwinapi_la_SOURCES = toolbar.c menu.c gtktraceset.c
 #libmainwinapi_la_LDFLAGS = -L${top_srcdir}/lttv/modules/gui/API -lcustomBox
 
+lttvguiinclude_HEADERS = \
+	common.h\
+	gtkdirsel.h\
+	gtkmultivpaned.h\
+	gtktraceset.h\
+	lttvfilter.h\
+	mainwindow.h\
+	menu.h\
+	toolbar.h
+
 EXTRA_DIST =

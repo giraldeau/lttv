@@ -20,7 +20,7 @@
 #define STATE_H
 
 #include <glib.h>
-#include <lttv/processTrace.h>
+#include <lttv/tracecontext.h>
 #include <stdio.h>
 
 /* The operating system state, kept during the trace analysis,

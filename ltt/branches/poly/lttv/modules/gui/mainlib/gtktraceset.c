@@ -33,7 +33,7 @@
 #include <lttv/lttv.h>
 #include <lttv/mainwindow.h>   
 #include <lttv/gtktraceset.h>
-#include <lttv/processTrace.h>
+#include <lttv/tracecontext.h>
 #include <lttv/toolbar.h>
 #include <lttv/menu.h>
 #include <lttv/state.h>

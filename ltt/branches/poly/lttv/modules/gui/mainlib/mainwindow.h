@@ -24,7 +24,7 @@
 #include <ltt/ltt.h>
 #include <lttv/attribute.h>
 #include <lttv/traceset.h>
-#include <lttv/processTrace.h>
+#include <lttv/tracecontext.h>
 
 #include <lttv/common.h>
 #include <lttv/gtkmultivpaned.h>
