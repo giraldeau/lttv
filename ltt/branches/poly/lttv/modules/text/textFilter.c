@@ -44,6 +44,11 @@
  *  - why does this module need dependency with batchAnalysis ?
  */
 
+/*
+ *  TODO
+ *  - specify wich hook function will be used to call the core filter
+ */
+
 static char 
   *a_file_name = NULL,
   *a_string = NULL;
@@ -79,17 +84,23 @@ void filter_analyze_file(void *hook_data) {
     return;
   }
   
-  char* tmp;
-  fscanf(a_file,"%s",tmp);
+  char* line = NULL;
+  size_t len = 0;
     
-  if(!a_filter_string->len) {
-    g_string_append(a_filter_string,tmp);
+  if(a_filter_string == NULL) {
+    a_filter_string = g_string_new("");
   }
   else {
     g_string_append(a_filter_string,"&"); /*conjonction between expression*/
-    g_string_append(a_filter_string,tmp);
+  }
+ 
+  while(!feof(a_file)) {
+    getline(&line,&len,a_file);
+    g_string_append(a_filter_string,line);
+    line = NULL;
   }
   
+  lttv_filter_new(a_filter_string->str,NULL);
   fclose(a_file);
 }
 
@@ -102,20 +113,19 @@ void filter_analyze_string(void *hook_data) {
 
   g_print("textFilter::filter_analyze_string\n");
 
-  a_filter_string = g_string_new("");
   /*
 	 * 	User may specify filtering options through static file
 	 * 	and/or command line string.  From these sources, an 
 	 * 	option string is rebuilded and sent to the filter core
 	 */
-//  if(!a_filter_string->len) {
+  if(a_filter_string==NULL) {
+    a_filter_string = g_string_new("");
     g_string_append(a_filter_string,a_string);
-    lttv_filter_new(a_filter_string->str,NULL);
-//  }
-//  else {
-//    g_string_append(a_filter_string,"&"); /*conjonction between expression*/
-//    g_string_append(a_filter_string,a_string);
-//  }
+  }
+  else {
+    g_string_append(a_filter_string,"&"); /*conjonction between expression*/
+    g_string_append(a_filter_string,a_string);
+  }
 
 }
 
@@ -138,8 +148,6 @@ static void init() {
   
   g_print("textFilter::init()\n");	/* debug */
 
-  a_filter_string = g_string_new("");
-  
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());

@@ -174,7 +174,7 @@ lttv_filter_tree *lttv_filter_new(char *expression, LttvTraceState *tfs);
 /* Check if the tracefile or event satisfies the filter. The arguments are
    declared as void * to allow these functions to be used as hooks. */
 
-gboolean lttv_filter_tracefile(lttv_filter_t *filter, LttTracefile *tracefile);
+gboolean lttv_filter_tracefile(lttv_filter_tree *filter, LttTracefile *tracefile);
 
 gboolean lttv_filter_tracestate(lttv_filter_t *filter, LttvTraceState *tracestate);
 
