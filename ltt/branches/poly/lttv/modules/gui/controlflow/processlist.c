@@ -578,10 +578,11 @@ int processlist_remove( ProcessList *process_list,
     g_hash_table_remove(process_list->process_hash,
         &process_info);
 
-    if(hashed_process_data == process_list->current_hash_data[cpu]) {
-      process_list->current_hash_data[cpu] = NULL;
+    if(process_list->current_hash_data != NULL) {
+      if(hashed_process_data == process_list->current_hash_data[cpu]) {
+        process_list->current_hash_data[cpu] = NULL;
+      }
     }
-
     process_list->number_of_process--;
 
     return 0; 
