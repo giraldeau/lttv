@@ -393,11 +393,9 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   LttTime evtime = ltt_event_time(e);
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
-
-  LttTime end_time = time_window.end_time;
 #ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, end_time) == 1)
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 #endif //EXTRA_CHECK
   guint width = drawing->width;
@@ -731,11 +729,11 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(tab);
 
-  LttTime end_time = time_window.end_time;
+  LttTime time_window.end_time = time_window.time_window.end_time;
 
   //if(time < time_beg || time > time_end) return;
   if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, end_time) == 1)
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 
   if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"schedchange") == 0)
@@ -842,7 +840,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
     LttTime time = ltt_event_time(e);
 
-    LttTime window_end = time_window.end_time;
+    LttTime window_end = time_window.time_window.end_time;
     
     convert_time_to_pixels(
         time_window,
@@ -1349,11 +1347,9 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = time_window.end_time;
-
 #ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, end_time) == 1)
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 #endif //EXTRA_CHECK
 
@@ -1458,11 +1454,11 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = time_window.end_time;
+  LttTime time_window.end_time = time_window.time_window.end_time;
 
   //if(time < time_beg || time > time_end) return;
   if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, end_time) == 1)
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 
 
@@ -1571,7 +1567,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 
     //LttTime time = ltt_event_time(e);
 
-    //LttTime window_end = time_window->end_time;
+    //LttTime window_end = time_window->time_window.end_time;
 
     
     //convert_time_to_pixels(
@@ -1961,11 +1957,9 @@ int before_execmode_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = time_window.end_time;
-
 #ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, end_time) == 1)
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 #endif //EXTRA_CHECK
 
@@ -2144,11 +2138,9 @@ int after_execmode_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = time_window.end_time;
-
 #ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, end_time) == 1)
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 #endif //EXTRA_CHECK
 
@@ -2252,11 +2244,9 @@ int before_process_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = time_window.end_time;
-
 #ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, end_time) == 1)
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 #endif //EXTRA_CHECK
 
@@ -2447,11 +2437,9 @@ int after_process_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = time_window.end_time;
-
 #ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, end_time) == 1)
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 #endif //EXTRA_CHECK
 
@@ -3035,11 +3023,9 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = time_window.end_time;
-
 #ifdef EXTRA_CHECK
   if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, end_time) == 1)
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 #endif //EXTRA_CHECK
 
