@@ -78,6 +78,8 @@ typedef struct _EventFields{
 #define RESERVE_SMALL_SIZE_SQUARE    RESERVE_SMALL_SIZE*RESERVE_SMALL_SIZE
 #define RESERVE_SMALL_SIZE_CUBE      RESERVE_SMALL_SIZE*RESERVE_SMALL_SIZE_SQUARE
 
+static const LttTime ltt_time_backward = { 1 , 0 };
+
 typedef enum _ScrollDirection{
   SCROLL_STEP_UP,
   SCROLL_STEP_DOWN,
@@ -895,15 +897,21 @@ static void get_data_wrapped(double time_value, guint list_height,
 
     switch(direction){
       case SCROLL_STEP_UP:
-        g_debug("direction STEP_UP");
+        if(direction == SCROLL_STEP_UP) g_debug("direction STEP_UP");
       case SCROLL_PAGE_UP:
-        g_debug("direction PAGE_UP");
+        if(direction == SCROLL_PAGE_UP) g_debug("direction PAGE_UP");
   if(direction == SCROLL_PAGE_UP){
     backward = list_height>event_viewer_data->start_event_index ? TRUE : FALSE;
   }else{
     backward = event_viewer_data->start_event_index == 0 ? TRUE : FALSE;
   }
   if(backward){
+    first = event_viewer_data->event_fields_queue->head;
+    if(!first)break;
+    event_fields = (EventFields*)first->data;
+    LttTime backward_start = event_fields->time;
+
+    maxNum = RESERVE_SMALL_SIZE_CUBE;
     event_viewer_data->append = FALSE;
     do{
       if(direction == SCROLL_PAGE_UP){
@@ -911,18 +919,16 @@ static void get_data_wrapped(double time_value, guint list_height,
       }else{
         minNum = 1;
       }
-
       first = event_viewer_data->event_fields_queue->head;
       if(!first)break;
       event_fields = (EventFields*)first->data;
       end = event_fields->time;
-      if(end.tv_nsec != 0)
-        end.tv_nsec--;
-      else {
-        g_assert(end.tv_sec != 0);
-        end.tv_sec--;
-        end.tv_nsec = NANOSECONDS_PER_SECOND-1;
-      }
+
+      backward_start = LTT_TIME_MAX(ltt_time_sub(backward_start,
+                                                   ltt_time_backward),
+                              tsc->time_span.start_time);
+
+      /*
       ltt_event_position_get(event_fields->ep, &block_num, &event_num, &tf);
       if(size !=0){
         if(event_num > minNum){
@@ -957,12 +963,14 @@ static void get_data_wrapped(double time_value, guint list_height,
         }       
         maxNum = RESERVE_SMALL_SIZE_CUBE;
       }
+      */
 
       event_viewer_data->current_event_index = event_viewer_data->start_event_index;
-      get_events(event_viewer_data, start, end, maxNum, &size);
+      get_events(event_viewer_data, backward_start, end, maxNum, &size);
       event_viewer_data->start_event_index = event_viewer_data->current_event_index;
 
-      if(size < minNum && (start.tv_sec !=0 || start.tv_nsec !=0))
+      if(size < minNum 
+          && (ltt_time_compare(backward_start, tsc->time_span.start_time)>0))
         need_backward_again = TRUE;
       else need_backward_again = FALSE;
       if(size == 0){
@@ -1688,9 +1696,26 @@ void get_events(EventViewerData* event_viewer_data, LttTime start,
                               NULL,
                               event_viewer_data->event_hooks,
                               NULL);
+  if(event_viewer_data->append == TRUE) {
+    /* append data */
+    lttv_process_traceset_middle(tsc, end, max_num_events, NULL);
+  } else{
+    guint count;
+    LttvTracefileContext *tfc;
+    /* prepend data */
+    do {
+      /* clear the temp list */
+      while(g_queue_pop_head(event_viewer_data->event_fields_queue_tmp));
+      /* read max_num events max */
+      count = lttv_process_traceset_middle(tsc, end, max_num_events, NULL);
+      /* loop if reached the max number of events to read, but not
+       * if end of trace or end time reached.*/
+      tfc = lttv_traceset_context_get_current_tfc(tsc);
+    } while(max_num_events == count 
+             && (tfc != NULL && ltt_time_compare(tfc->timestamp, end) < 0));
 
-  lttv_process_traceset_middle(tsc, end, max_num_events, NULL);
-
+  }
+  
   //remove_context_hooks(event_viewer_data,tsc);
   lttv_process_traceset_end(tsc,
                             NULL,
