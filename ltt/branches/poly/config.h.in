@@ -9,6 +9,18 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `dl' library (-ldl). */
+#undef HAVE_LIBDL
+
+/* Define to 1 if you have the `glib-2.0' library (-lglib-2.0). */
+#undef HAVE_LIBGLIB_2_0
+
+/* Define to 1 if you have the `gmodule-2.0' library (-lgmodule-2.0). */
+#undef HAVE_LIBGMODULE_2_0
+
+/* Define to 1 if you have the `popt' library (-lpopt). */
+#undef HAVE_LIBPOPT
+
 /* Define to 1 if your system has a GNU libc compatible `malloc' function, and
    to 0 otherwise. */
 #undef HAVE_MALLOC

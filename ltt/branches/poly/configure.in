@@ -12,11 +12,10 @@ AM_PROG_LIBTOOL
 AC_PROG_CC
 
 # Checks for libraries.
-# MD : here or at the Makefile level ?
-#AC_CHECK_LIB([popt], [poptGetNextOpt])
-#AC_CHECK_LIB([gmodule-2.0], [g_module_open])
-#AC_CHECK_LIB([dl], [dlopen])
-#AC_CHECK_LIB([glib-2.0], [g_malloc])
+AC_CHECK_LIB([popt], [poptGetNextOpt])
+AC_CHECK_LIB([gmodule-2.0], [g_module_open])
+AC_CHECK_LIB([dl], [dlopen])
+AC_CHECK_LIB([glib-2.0], [g_malloc])
 
 # Checks for header files.
 AC_HEADER_STDC
