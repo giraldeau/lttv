@@ -233,12 +233,12 @@ gint process_sort_func  ( GtkTreeModel *model,
 
 }
 
-guint hash_fct(gconstpointer key)
+static guint hash_fct(gconstpointer key)
 {
   return ((ProcessInfo*)key)->pid;
 }
 
-gboolean equ_fct(gconstpointer a, gconstpointer b)
+static gboolean equ_fct(gconstpointer a, gconstpointer b)
 {
   const ProcessInfo *pa = (const ProcessInfo*)a;
   const ProcessInfo *pb = (const ProcessInfo*)b;
