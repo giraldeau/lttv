@@ -144,10 +144,58 @@ void lttvwindow_events_request
 ( MainWindow                  *main_win,
   EventsRequest               *events_request);
 
+void lttvwindow_events_request
+( MainWindow    *main_win,
+  EventsRequest  events_request);
+
+void lttvwindow_events_request_remove_all
+( MainWindow    *main_win,
+  gpointer       viewer);
+
 
 Internal functions :
 
 - lttvwindow_process_pending_requests
+
+
+Events Requests Removal
+
+A new API function will be necessary to let viewers remove all event requests
+they have made previously. By allowing this, no more out of bound requests will
+be serviced : a viewer that sees its time interval changed before the first
+servicing is completed can clear its previous events requests and make a new
+one for the new interval needed, considering the finished chunks as completed
+area.
+
+It is also very useful for dealing with the viewer destruction case : the viewer
+just has to remove its events requests from the main window before it gets
+destroyed.
+
+
+Permitted GTK Events Between Chunks
+
+All GTK Events will be enabled between chunks. This is due to the fact that the
+background processing and a high priority request are seen as the same case.
+While a background processing is in progress, the whole graphical interface must
+be enabled.
+
+We needed to deal with the coherence of background processing and diverse GTK
+events anyway. This algorithm provides a generalized way to deal with any type
+of request and any GTK events.
+
+
+Background Computation Request
+
+The types of background computation that can be requested by a viewer : state
+computation (main window scope) or viewer specific background computation.
+
+A background computation request is asked via lttvwindow_events_request, with a
+priority field set with a low priority.
+
+If a lttvwindow_events_request_remove_all is done on the viewer pointer, it will
+not affect the state computation as no viewer pointer will have been passed in
+the initial request. This is the expected result. For the background processings
+that call viewer's hooks, they will be removed.
 
 
 
@@ -171,144 +219,6 @@ pending and registers a pending request for the next g_idle if none is
 registered. The viewer can access this structure during the read as its
 hook_data. Only the stop_flag can be changed by the viewer through the
 event hooks.
-
-typedef struct _EventsRequest {
-  gpointer                    viewer_data;
-  LttTime                     start_time,       /* Unset : { 0, 0 }         */
-  LttvTracesetContextPosition start_position,   /* Unset : num_traces = 0   */
-  gboolean                    stop_flag,        /* Continue:TRUE Stop:FALSE */
-  LttTime                     end_time,         /* Unset : { 0, 0 }         */
-  guint                       num_events,       /* Unset : G_MAXUINT        */
-  LttvTracesetContextPosition end_position,     /* Unset : num_traces = 0   */
-  LttvHooks                  *before_traceset,  /* Unset : NULL             */
-  LttvHooks                  *before_trace,     /* Unset : NULL             */
-  LttvHooks                  *before_tracefile, /* Unset : NULL             */
-  LttvHooks                  *event,            /* Unset : NULL             */
-  LttvHooksById              *event_by_id,      /* Unset : NULL             */
-  LttvHooks                  *after_tracefile,  /* Unset : NULL             */
-  LttvHooks                  *after_trace,      /* Unset : NULL             */
-  LttvHooks                  *after_traceset    /* Unset : NULL             */
-} EventsRequest;
-
-
-- lttvwindow_process_pending_requests
-
-This internal function gets called by g_idle, taking care of the pending
-requests. It is responsible for concatenation of time intervals and position
-requests. It does it with the following algorithm organizing process traceset
-calls. Here is the detailed description of the way it works :
-
-
-- Events Requests Servicing Algorithm
-
-Data structures necessary :
-
-List of requests added to context : list_in
-List of requests not added to context : list_out
-
-Initial state :
-
-list_in : empty
-list_out : many events requests
-
-
-While list_in !empty and list_out !empty
-  1. If list_in is empty (need a seek)
-    1.1 Add requests to list_in
-      1.1.1 Find all time requests with the lowest start time in list_out 
-            (ltime)
-      1.1.2 Find all position requests with the lowest position in list_out
-            (lpos)
-      1.1.3 If lpos.start time < ltime
-        - Add lpos to list_in, remove them from list_out
-      1.1.4 Else, (lpos.start time >= ltime)
-        - Add ltime to list_in, remove them from list_out
-    1.2 Seek
-      1.2.1 If first request in list_in is a time request
-        1.2.1.1 Seek to that time
-      1.2.2 Else, the first request in list_in is a position request
-        1.2.2.1 Seek to that position
-    1.3 Call begin for all list_in members
-      (1.3.1 begin hooks called)
-      (1.3.2 middle hooks added)
-  2. Else, list_in is not empty, we continue a read
-    2.1 For each req of list_out
-    - if req.start time == current context time
-      - Add to list_in, remove from list_out
-      - Call begin
-    - if req.start position == current position
-      - Add to list_in, remove from list_out
-      - Call begin
-
-  3. Find end criterions
-    3.1 End time
-      3.1.1 Find lowest end time in list_in
-      3.1.2 Find lowest start time in list_out
-      3.1.3 Use lowest of both as end time
-    3.2 Number of events
-      3.2.1 Find lowest number of events in list_in
-    3.3 End position
-      3.3.1 Find lowest end position in list_in
-      3.3.2 Find lowest start position in list_out
-      3.3.3 Use lowest of both as end position
-
-  4. Call process traceset middle
-    4.1 Call process traceset middle (Use end criterion found in 3)
-      * note : end criterion can also be viewer's hook returning TRUE
-  5. After process traceset middle
-    - if current context time > traceset.end time
-      - For each req in list_in
-        - Call end for req
-        - remove req from list_in
-    5.1 For each req in list_in
-          - req.num -= count
-          - if req.num == 0
-            - Call end for req
-            - remove req from list_in
-          - if current context time > req.end time
-            - Call end for req
-            - remove req from list_in
-          - if req.end pos == current pos
-            - Call end for req
-            - remove req from list_in
-          - if req.stop_flag == TRUE
-            - Call end for req
-            - remove req from list_in
-
-
-
-Notes :
-End criterions for process traceset middle :
-If the criterion is reached, event is out of boundaries and we return.
-Current time >= End time
-Event count > Number of events
-Current position >= End position
-Last hook list called returned TRUE
-
-The >= for position is necessary to make ensure consistency between start time
-requests and positions requests that happens to be at the exact same start time
-and position.
-
-
-
-Weaknesses
-
-- None (nearly?) :)
-
-
-Strengths
-
-- Removes the need for filtering of information supplied to the viewers.
-
-- Viewers have a better control on their data input.
-
-- Solves all the weaknesses idenfied in the actual boundaryless traceset
-reading.
-
-
-
-
-- Revised Events Requests Servicing Algorithm (v2)
 
 typedef LttvEventsRequestPrio guint;
 
@@ -334,6 +244,26 @@ typedef struct _EventsRequest {
   LttvHooks                   *after_chunk      /* Unset : NULL             */
 } EventsRequest;
 
+
+
+- lttvwindow_events_request_remove_all
+
+It removes all the events requests from the pool that has their "viewer" field
+maching the viewer pointer given in argument.
+
+It calls the traceset/trace/tracefile end hooks for each request removed.
+
+
+- lttvwindow_process_pending_requests
+
+This internal function gets called by g_idle, taking care of the pending
+requests. It is responsible for concatenation of time intervals and position
+requests. It does it with the following algorithm organizing process traceset
+calls. Here is the detailed description of the way it works :
+
+
+
+- Revised Events Requests Servicing Algorithm (v2)
 
 The reads are splitted in chunks. After a chunk is over, we want to check if
 there is a GTK Event pending and execute it. It can add or remove events 
@@ -486,4 +416,24 @@ and then a high priority servicing on top of it is also interrupted, well, the
 low priority will loose its state and will have to seek back. It should not
 occur often. The solution to it would be to save one state per priority.
 
+
+
+
+
+
+Weaknesses
+
+- None (nearly?) :)
+
+
+Strengths
+
+- Removes the need for filtering of information supplied to the viewers.
+
+- Viewers have a better control on their data input.
+
+- Solves all the weaknesses idenfied in the actual boundaryless traceset
+reading.
+
+- Background processing available.
 
