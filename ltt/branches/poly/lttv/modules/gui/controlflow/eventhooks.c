@@ -391,13 +391,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-#ifdef EXTRA_CHECK
-  if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
-#endif //EXTRA_CHECK
+
   guint width = drawing->width;
 
   /* we are in a schedchange, before the state update. We must draw the
@@ -483,6 +477,14 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                           evtime) > 0)
       {
         if(hashed_process_data->x.middle_marked == FALSE) {
+          TimeWindow time_window = 
+            lttvwindow_get_time_window(control_flow_data->tab);
+#ifdef EXTRA_CHECK
+          if(ltt_time_compare(evtime, time_window.start_time) == -1
+                || ltt_time_compare(evtime, time_window.end_time) == 1)
+                    return;
+#endif //EXTRA_CHECK
+
           guint x;
           convert_time_to_pixels(
                     time_window,
@@ -499,6 +501,14 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           hashed_process_data->x.middle_marked = TRUE;
         }
       } else {
+          TimeWindow time_window = 
+            lttvwindow_get_time_window(control_flow_data->tab);
+#ifdef EXTRA_CHECK
+          if(ltt_time_compare(evtime, time_window.start_time) == -1
+                || ltt_time_compare(evtime, time_window.end_time) == 1)
+                    return;
+#endif //EXTRA_CHECK
+
         guint x;
         convert_time_to_pixels(
                   time_window,
@@ -628,6 +638,13 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                           evtime) > 0)
       {
         if(hashed_process_data->x.middle_marked == FALSE) {
+          TimeWindow time_window = 
+            lttvwindow_get_time_window(control_flow_data->tab);
+#ifdef EXTRA_CHECK
+          if(ltt_time_compare(evtime, time_window.start_time) == -1
+                || ltt_time_compare(evtime, time_window.end_time) == 1)
+                    return;
+#endif //EXTRA_CHECK
           guint x;
           convert_time_to_pixels(
                     time_window,
@@ -644,6 +661,13 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           hashed_process_data->x.middle_marked = TRUE;
         }
       } else {
+        TimeWindow time_window = 
+          lttvwindow_get_time_window(control_flow_data->tab);
+#ifdef EXTRA_CHECK
+        if(ltt_time_compare(evtime, time_window.start_time) == -1
+              || ltt_time_compare(evtime, time_window.end_time) == 1)
+                  return;
+#endif //EXTRA_CHECK
         guint x;
 
         convert_time_to_pixels(
@@ -1344,14 +1368,6 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-  if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
-#endif //EXTRA_CHECK
 
   guint width = control_flow_data->drawing->width;
 
@@ -1417,6 +1433,15 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   if(ltt_time_compare(hashed_process_data_in->next_good_time,
                           evtime) <= 0)
   {
+    TimeWindow time_window = 
+    lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+    if(ltt_time_compare(evtime, time_window.start_time) == -1
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
+            return;
+#endif //EXTRA_CHECK
+
     guint new_x;
     
     convert_time_to_pixels(
@@ -1954,15 +1979,6 @@ int before_execmode_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-  if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
-#endif //EXTRA_CHECK
-
   guint width = drawing->width;
 
   /* we are in a execmode, before the state update. We must draw the
@@ -2030,6 +2046,14 @@ int before_execmode_hook(void *hook_data, void *call_data)
                       evtime) > 0)
   {
     if(hashed_process_data->x.middle_marked == FALSE) {
+      TimeWindow time_window = 
+        lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+      if(ltt_time_compare(evtime, time_window.start_time) == -1
+            || ltt_time_compare(evtime, time_window.end_time) == 1)
+                return;
+#endif //EXTRA_CHECK
       guint x;
       convert_time_to_pixels(
                 time_window,
@@ -2046,6 +2070,14 @@ int before_execmode_hook(void *hook_data, void *call_data)
       hashed_process_data->x.middle_marked = TRUE;
     }
   } else {
+    TimeWindow time_window = 
+      lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+    if(ltt_time_compare(evtime, time_window.start_time) == -1
+          || ltt_time_compare(evtime, time_window.end_time) == 1)
+              return;
+#endif //EXTRA_CHECK
     guint x;
 
     convert_time_to_pixels(
@@ -2135,15 +2167,6 @@ int after_execmode_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-  if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
-#endif //EXTRA_CHECK
-
   guint width = control_flow_data->drawing->width;
 
   /* Add process to process list (if not present) */
@@ -2197,6 +2220,16 @@ int after_execmode_hook(void *hook_data, void *call_data)
   if(ltt_time_compare(hashed_process_data->next_good_time,
                           evtime) <= 0)
   {
+    TimeWindow time_window = 
+      lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+    if(ltt_time_compare(evtime, time_window.start_time) == -1
+          || ltt_time_compare(evtime, time_window.end_time) == 1)
+              return;
+#endif //EXTRA_CHECK
+
+
     guint new_x;
     
     convert_time_to_pixels(
@@ -2241,15 +2274,6 @@ int before_process_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-  if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
-#endif //EXTRA_CHECK
-
   guint width = control_flow_data->drawing->width;
 
   guint sub_id;
@@ -2321,6 +2345,15 @@ int before_process_hook(void *hook_data, void *call_data)
                         evtime) > 0)
     {
       if(hashed_process_data->x.middle_marked == FALSE) {
+        TimeWindow time_window = 
+          lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+        if(ltt_time_compare(evtime, time_window.start_time) == -1
+              || ltt_time_compare(evtime, time_window.end_time) == 1)
+                  return;
+#endif //EXTRA_CHECK
+
         guint x;
         convert_time_to_pixels(
                   time_window,
@@ -2337,6 +2370,15 @@ int before_process_hook(void *hook_data, void *call_data)
         hashed_process_data->x.middle_marked = TRUE;
       }
     } else {
+    TimeWindow time_window = 
+      lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+    if(ltt_time_compare(evtime, time_window.start_time) == -1
+          || ltt_time_compare(evtime, time_window.end_time) == 1)
+              return;
+#endif //EXTRA_CHECK
+
       guint x;
 
       convert_time_to_pixels(
@@ -2434,15 +2476,6 @@ int after_process_hook(void *hook_data, void *call_data)
   e = tfc->e;
 
   LttTime evtime = ltt_event_time(e);
-  TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-  if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
-#endif //EXTRA_CHECK
-
   guint width = control_flow_data->drawing->width;
 
   guint sub_id;
@@ -2508,6 +2541,15 @@ int after_process_hook(void *hook_data, void *call_data)
     if(ltt_time_compare(hashed_process_data_child->next_good_time,
                           evtime) <= 0)
     {
+      TimeWindow time_window = 
+        lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+      if(ltt_time_compare(evtime, time_window.start_time) == -1
+            || ltt_time_compare(evtime, time_window.end_time) == 1)
+                return;
+#endif //EXTRA_CHECK
+
       guint new_x;
       convert_time_to_pixels(
           time_window,
@@ -2582,6 +2624,15 @@ int after_process_hook(void *hook_data, void *call_data)
     if(ltt_time_compare(hashed_process_data->next_good_time,
                           evtime) <= 0)
     {
+      TimeWindow time_window = 
+        lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+      if(ltt_time_compare(evtime, time_window.start_time) == -1
+            || ltt_time_compare(evtime, time_window.end_time) == 1)
+                return;
+#endif //EXTRA_CHECK
+
       guint new_x;
       convert_time_to_pixels(
           time_window,
@@ -3020,15 +3071,6 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   LttvTracesetContext *tsc = (LttvTracesetContext*)closure_data->tss;
 
   LttTime evtime = closure_data->end_time;
-  TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-  if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
-#endif //EXTRA_CHECK
-
   guint width = drawing->width;
 
   { 
@@ -3084,6 +3126,14 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
       if(ltt_time_compare(hashed_process_data->next_good_time,
                             evtime) <= 0)
       {
+        TimeWindow time_window = 
+          lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+        if(ltt_time_compare(evtime, time_window.start_time) == -1
+              || ltt_time_compare(evtime, time_window.end_time) == 1)
+                  return;
+#endif //EXTRA_CHECK
         guint x;
 
         convert_time_to_pixels(
