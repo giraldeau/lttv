@@ -20,7 +20,7 @@
 #define TOOLBAR_H
 
 #include <lttvwindow/common.h>
-#include <lttvwindow/viewer.h>
+#include <lttvwindow/lttvwindow.h>
 #include <gtk/gtk.h>
 
 typedef GArray LttvToolbars;

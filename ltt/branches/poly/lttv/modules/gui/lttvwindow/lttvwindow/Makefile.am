@@ -23,7 +23,7 @@ liblttvwindow_la_SOURCES = \
 	menu.c\
 	gtkdirsel.c\
 	gtkmultivpaned.c\
-	viewer.c \
+	lttvwindow.c \
 	init_module.c \
 	support.c \
 	interface.c \
@@ -39,7 +39,7 @@ lttvwindowinclude_HEADERS = \
 	common.h\
 	gtkdirsel.h\
 	gtkmultivpaned.h\
-	viewer.h\
+	lttvwindow.h\
 	lttvfilter.h\
 	mainwindow.h\
 	menu.h\

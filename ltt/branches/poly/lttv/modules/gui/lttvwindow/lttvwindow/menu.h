@@ -21,15 +21,15 @@
 
 #include <gtk/gtk.h>
 #include <lttvwindow/common.h>
-#include <lttvwindow/viewer.h>
+#include <lttvwindow/lttvwindow.h>
 
 
 typedef GArray LttvMenus;
 
 typedef struct _LttvMenuClosure {
   lttvwindow_viewer_constructor con;
-  char * menuPath;
-  char * menuText;
+  char * menu_path;
+  char * menu_text;
   GtkWidget *widget;
 } LttvMenuClosure;
 

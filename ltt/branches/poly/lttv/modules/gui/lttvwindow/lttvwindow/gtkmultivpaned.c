@@ -21,7 +21,7 @@
 #include <lttvwindow/gtkmultivpaned.h>
 //#include "gtkintl.h"
 #include <lttvwindow/mainwindow.h>
-#include <lttvwindow/viewer.h>
+#include <lttvwindow/lttvwindow.h>
 
 static void gtk_multi_vpaned_class_init (GtkMultiVPanedClass    *klass);
 static void gtk_multi_vpaned_init       (GtkMultiVPaned         *multi_vpaned);
@@ -170,14 +170,14 @@ void gtk_multi_vpaned_set_focus (GtkWidget * widget, GtkPaned* paned)
 
 void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, const TimeWindow *time_window, gboolean first_time)
 {
-  //TimeWindow time_window = multi_vpaned->mw->current_tab->time_window;
   TimeInterval *time_span;
   double len, start;
+  LttvTracesetContext *tsc = 
+    LTTV_TRACESET_CONTEXT(multi_vpaned->tab->traceset_info->traceset_context);
 
   
   if(first_time){
-    time_span = &LTTV_TRACESET_CONTEXT(multi_vpaned->mw->current_tab->
-                          traceset_info->traceset_context)->time_span ;
+    time_span = &tsc->time_span ;
   
     multi_vpaned->hadjust->lower = ltt_time_to_double(time_span->start_time) * 
                              NANOSECONDS_PER_SECOND;
@@ -231,7 +231,7 @@ void gtk_multi_vpaned_widget_add(GtkMultiVPaned * multi_vpaned, GtkWidget * widg
     gtk_widget_show(multi_vpaned->hscrollbar);
 
     multi_vpaned->hadjust = gtk_range_get_adjustment(GTK_RANGE(multi_vpaned->hscrollbar));
-    gtk_multi_vpaned_set_adjust(multi_vpaned, &multi_vpaned->mw->current_tab->time_window, TRUE);
+    gtk_multi_vpaned_set_adjust(multi_vpaned, &multi_vpaned->tab->time_window, TRUE);
 
     gtk_range_set_update_policy (GTK_RANGE(multi_vpaned->hscrollbar),
 																 GTK_UPDATE_CONTINUOUS);
@@ -416,11 +416,12 @@ void gtk_multi_vpaned_scroll_value_changed(GtkAdjustment *adjust, gpointer multi
   GtkMultiVPaned * multi_vpaned = (GtkMultiVPaned*)multi_vpaned_arg;
   gdouble value = gtk_adjustment_get_value(adjust);
   gdouble upper, lower, ratio;
+  LttvTracesetContext * tsc = 
+    LTTV_TRACESET_CONTEXT(multi_vpaned->tab->traceset_info->traceset_context);
 
-  time_window = multi_vpaned->mw->current_tab->time_window;
+  time_window = multi_vpaned->tab->time_window;
 
-  time_span = &LTTV_TRACESET_CONTEXT(multi_vpaned->mw->current_tab->traceset_info->
-				    traceset_context)->time_span ;
+  time_span = &tsc->time_span ;
   lower = multi_vpaned->hadjust->lower;
   upper = multi_vpaned->hadjust->upper;
   ratio = (value - lower) / (upper - lower);
@@ -435,8 +436,7 @@ void gtk_multi_vpaned_scroll_value_changed(GtkAdjustment *adjust, gpointer multi
   if(ltt_time_compare(time,time_window.time_width) < 0){
     time_window.time_width = time;
   }
-  set_time_window(multi_vpaned->mw, &time_window);
-  // done in expose now call_pending_read_hooks(multi_vpaned->mw);
+  set_time_window(multi_vpaned->tab, &time_window);
 }
 
 
