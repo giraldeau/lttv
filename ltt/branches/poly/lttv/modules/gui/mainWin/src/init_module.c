@@ -14,6 +14,8 @@
 #include <lttv/hook.h>
 #include <lttv/option.h>
 #include <lttv/module.h>
+#include <lttv/processTrace.h>
+#include <lttv/state.h>
 #include <lttv/menu.h>
 #include <lttv/toolbar.h>
 
@@ -25,9 +27,33 @@
 /* global variable */
 systemView * gSysView;
 
-static LttvHooks
-	*main_hooks;
+LttvTracesetState * gTracesetContext = NULL;
+static LttvTraceset * traceset;
 
+/** Array containing instanced objects. */
+GSList * Main_Window_List = NULL ;
+
+static LttvHooks 
+  *before_traceset,
+  *after_traceset,
+  *before_trace,
+  *after_trace,
+  *before_tracefile,
+  *after_tracefile,
+  *before_event,
+  *after_event,
+  *main_hooks;
+
+static char *a_trace;
+
+void lttv_trace_option(void *hook_data)
+{ 
+  LttTrace *trace;
+
+  trace = ltt_trace_open(a_trace);
+  if(trace == NULL) g_critical("cannot open trace %s", a_trace);
+  lttv_traceset_add(traceset, trace);
+}
 
 /*****************************************************************************
  *                 Functions for module loading/unloading                    *
@@ -42,7 +68,6 @@ typedef struct _WindowCreationData {
 	int argc;
 	char ** argv;
 } WindowCreationData;
-
 
 static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 {
@@ -60,9 +85,12 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
   GtkWidget *window1;
   mainWindow * mw = g_new(mainWindow, 1);
   gSysView = g_new(systemView, 1);
-	WindowCreationData *Window_Creation_Data = (WindowCreationData*)call_data;
+  WindowCreationData *Window_Creation_Data = (WindowCreationData*)call_data;
 
-	g_critical("GUI init()");
+  /* Add the object's information to the module's array */
+  Main_Window_List = g_slist_append(Main_Window_List, mw);
+
+  g_critical("GUI init()");
 #ifdef ENABLE_NLS
   bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
@@ -88,7 +116,15 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
   mw->SystemView = gSysView;
   mw->Tab = NULL;
   mw->CurrentTab = NULL;
-  //  mw->Attributes = lttv_attributes_new();
+  mw->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
+  if(!gTracesetContext){
+    gTracesetContext = g_object_new(LTTV_TRACESET_STATE_TYPE, NULL);
+    //FIXME: lttv_context_fini should be called some where.
+    lttv_context_init(LTTV_TRACESET_CONTEXT(gTracesetContext), traceset);
+  }
+  mw->traceset_context = LTTV_TRACESET_CONTEXT(gTracesetContext);
+  mw->traceset = (LTTV_TRACESET_CONTEXT(gTracesetContext))->ts;
+  g_object_ref(gTracesetContext);
 
   //test
   g_assert(lttv_iattribute_find_by_path(attributes,
@@ -146,7 +182,7 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 
   gtk_main ();
 
-	return FALSE;
+  return FALSE;
 }
 
 
@@ -154,21 +190,60 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
 
 G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
-	LttvAttributeValue value;
-	WindowCreationData *Window_Creation_Data = g_new(WindowCreationData, 1);
-	
-	LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  LttvAttributeValue value;
+  WindowCreationData *Window_Creation_Data = g_new(WindowCreationData, 1);
+  
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  
+  lttv_option_add("trace", 't', 
+      "add a trace to the trace set to analyse", 
+      "pathname of the directory containing the trace", 
+      LTTV_OPT_STRING, &a_trace, lttv_trace_option, NULL);
 
-	Window_Creation_Data->argc = argc;
-	Window_Creation_Data->argv = argv;
-	
-	g_assert(lttv_iattribute_find_by_path(
-				attributes,
-				"hooks/main/before",	LTTV_POINTER, &value));
-	
-	g_assert((main_hooks = *(value.v_pointer)) != NULL);
+  traceset = lttv_traceset_new();
 
-	lttv_hooks_add(main_hooks, Window_Creation_Hook, Window_Creation_Data);
+  before_traceset = lttv_hooks_new();
+  after_traceset = lttv_hooks_new();
+  before_trace = lttv_hooks_new();
+  after_trace = lttv_hooks_new();
+  before_tracefile = lttv_hooks_new();
+  after_tracefile = lttv_hooks_new();
+  before_event = lttv_hooks_new();
+  after_event = lttv_hooks_new();
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = before_traceset;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = after_traceset;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = before_trace;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/after",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = after_trace;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/before",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = before_tracefile;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/after",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = after_tracefile;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = before_event;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
+      LTTV_POINTER, &value));
+  *(value.v_pointer) = after_event;
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/before",
+      LTTV_POINTER, &value));
+  g_assert((main_hooks = *(value.v_pointer)) != NULL);
+
+  Window_Creation_Data->argc = argc;
+  Window_Creation_Data->argv = argv;
+  
+  lttv_hooks_add(main_hooks, Window_Creation_Hook, Window_Creation_Data);
 
 }
 
@@ -187,25 +262,46 @@ void destroy_walk(gpointer data, gpointer user_data)
  */
 G_MODULE_EXPORT void destroy() {
 
-	WindowCreationData *Window_Creation_Data;
-	LttvAttributeValue value;
+  WindowCreationData *Window_Creation_Data;
+  LttvAttributeValue value;
 
-	g_critical("GUI destroy()");
-	//int i;
+  guint i, nb;
 
-	//ControlFlowData *Control_Flow_Data;
-	
+  lttv_option_remove("trace");
 
-	//g_slist_foreach(sControl_Flow_Data_List, destroy_walk, NULL );
+  lttv_hooks_destroy(before_traceset);
+  lttv_hooks_destroy(after_traceset);
+  lttv_hooks_destroy(before_trace);
+  lttv_hooks_destroy(after_trace);
+  lttv_hooks_destroy(before_tracefile);
+  lttv_hooks_destroy(after_tracefile);
+  lttv_hooks_destroy(before_event);
+  lttv_hooks_destroy(after_event);
+  lttv_hooks_remove_data(main_hooks, Window_Creation_Hook, NULL);
 
-	lttv_iattribute_find_by_path(LTTV_IATTRIBUTE(lttv_global_attributes()),
-			"/hooks/main/before",	LTTV_POINTER, &value);
+  nb = lttv_traceset_number(traceset);
+  for(i = 0 ; i < nb ; i++) {
+    ltt_trace_close(lttv_traceset_get(traceset, i));
+  }
 
-	//	Window_Creation_Data = lttv_hooks_remove(*(value.v_pointer),													 Window_Creation_Hook);
-      
-	g_free(Window_Creation_Data);
+  lttv_traceset_destroy(traceset); 
+
+  g_critical("GUI destroy()");
 
 
+
+  //ControlFlowData *Control_Flow_Data;
+  
+
+  g_slist_foreach(Main_Window_List, destroy_walk, NULL );
+  
+  
+  //lttv_hooks_remove_data(main_hooks,Window_Creation_Hook, NULL);
+  //lttv_hooks_remove_data(before_traceset, get_traceset_context, NULL);
+
+  //  g_free(Window_Creation_Data);
+
+  g_object_unref(gTracesetContext);
 }
 
 

@@ -13,6 +13,10 @@
 #include <lttv/toolbar.h>
 
 extern systemView * gSysView;
+extern LttvTracesetContext * gTracesetContext;
+
+/** Array containing instanced objects. */
+extern GSList * Main_Window_List;
 
 mainWindow * get_window_data_struct(GtkWidget * widget);
 
@@ -186,6 +190,10 @@ void createNewWindow(GtkWidget* widget, gpointer user_data, gboolean clone)
   }  
     
   newMWindow = g_new(mainWindow, 1);
+
+  /* Add the object's information to the module's array */
+  Main_Window_List = g_slist_append(Main_Window_List, mw);
+
   newWindow  = create_MWindow();
   gtk_widget_show (newWindow);
   
@@ -204,7 +212,10 @@ void createNewWindow(GtkWidget* widget, gpointer user_data, gboolean clone)
   newMWindow->Tab = NULL;
   newMWindow->CurrentTab = NULL;
   newMWindow->SystemView = newSv;
-  //  newMWindow->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
+  newMWindow->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
+  newMWindow->traceset_context = LTTV_TRACESET_CONTEXT(gTracesetContext);
+  newMWindow->traceset = (LTTV_TRACESET_CONTEXT(gTracesetContext))->ts;
+  g_object_ref(gTracesetContext);
 
   //test yxx
   g_assert(lttv_iattribute_find_by_path(attributes,
@@ -370,12 +381,31 @@ on_tab_activate                        (GtkMenuItem     *menuitem,
   tmpTab = mwData->Tab;
   while(tmpTab && tmpTab->Next) tmpTab = tmpTab->Next;
   if(!tmpTab){
+    mwData->CurrentTab = NULL;
     tmpTab = g_new(tab,1);
-    mwData->Tab = tmpTab;
+    tmpTab->traceStartTime.tv_sec  = 0;
+    tmpTab->traceStartTime.tv_nsec = 0;
+    tmpTab->traceEndTime.tv_sec    = G_MAXULONG;
+    tmpTab->traceEndTime.tv_nsec   = G_MAXULONG;
+    tmpTab->startTime.tv_sec       = 0;
+    tmpTab->startTime.tv_nsec      = 0;
+    tmpTab->endTime.tv_sec         = G_MAXULONG;
+    tmpTab->endTime.tv_nsec        = G_MAXULONG;
+    tmpTab->currentTime.tv_sec     = 0;
+    tmpTab->currentTime.tv_nsec    = 0;
+    mwData->Tab = tmpTab;    
   }else{
     tmpTab->Next = g_new(tab,1);
     tmpTab = tmpTab->Next;
   }
+  if(mwData->CurrentTab){
+    tmpTab->traceStartTime = mwData->CurrentTab->traceStartTime;
+    tmpTab->traceEndTime   = mwData->CurrentTab->traceEndTime;
+    tmpTab->startTime      = mwData->CurrentTab->startTime;
+    tmpTab->endTime        = mwData->CurrentTab->endTime;
+    tmpTab->currentTime    = mwData->CurrentTab->currentTime;
+  }
+  tmpTab->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   //  mwData->CurrentTab = tmpTab;
   tmpTab->custom = (GtkCustom*)gtk_custom_new();
   gtk_widget_show((GtkWidget*)tmpTab->custom);
