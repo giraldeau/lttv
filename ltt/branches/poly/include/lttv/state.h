@@ -1,13 +1,14 @@
 #ifndef STATE_H
 #define STATE_H
 
+#include <glib.h>
 #include <lttv/processTrace.h>
 
 /* The operating system state kept during the trace analysis
    contains a subset of the real operating system state, 
    sufficient for the analysis, and possibly organized quite differently.
 
-   The state information is added to LttvTraceSetContext, LttvTraceContext 
+   The state information is added to LttvTracesetContext, LttvTraceContext 
    and LttvTracefileContext objects, used by processTrace, through
    subtyping. The context objects already reflect the multiple tracefiles
    (one per cpu) per trace and multiple traces per trace set. The state
@@ -29,6 +30,15 @@
    like enumerations. */
 
 
+typedef struct _LttvTracesetState LttvTracesetState;
+typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
+
+typedef struct _LttvTraceState LttvTraceState;
+typedef struct _LttvTraceStateClass LttvTraceStateClass;
+
+typedef struct _LttvTracefileState LttvTracefileState;
+typedef struct _LttvTracefileStateClass LttvTracefileStateClass;
+
 gboolean lttv_state_add_event_hooks(LttvTracesetState *self);
 
 gboolean lttv_state_remove_event_hooks(LttvTracesetState *self);
@@ -38,6 +48,12 @@ gboolean lttv_state_remove_event_hooks(LttvTracesetState *self);
    "interrupt request", "fault". */
 
 typedef GQuark LttvInterruptType;
+
+extern LttvInterruptType
+  LTTV_STATE_USER_MODE,
+  LTTV_STATE_SYSCALL,
+  LTTV_STATE_TRAP,
+  LTTV_STATE_IRQ;
 
 
 /* The interrupt number depends on the interrupt type. For user mode or kernel
@@ -55,8 +71,16 @@ typedef GQuark LttvInterruptNumber;
 
 typedef GQuark LttvProcessStatus;
 
+extern LttvProcessStatus
+  LTTV_STATE_UNNAMED,
+  LTTV_STATE_WAIT_FORK,
+  LTTV_STATE_WAIT_CPU,
+  LTTV_STATE_EXIT,
+  LTTV_STATE_WAIT,
+  LTTV_STATE_RUN;
 
-typedef _LttvInterruptState {
+
+typedef struct _LttvInterruptState {
   LttvInterruptType t;
   LttvInterruptNumber n;
   LttvTime entry;
@@ -75,25 +99,22 @@ typedef struct _LttvProcessState {
 } LttvProcessState;
 
 
-/* The LttvTraceSetState, LttvTraceState and LttvTracefileState types
+/* The LttvTracesetState, LttvTraceState and LttvTracefileState types
    inherit from the corresponding Context objects defined in processTrace. */
 
 #define LTTV_TRACESET_STATE_TYPE  (lttv_traceset_state_get_type ())
-#define LTTV_TRACESET_STATE(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACESET_STATE_TYPE, LttvTraceSetState))
-#define LTTV_TRACESET_STATE_CLASS(vtable)  (G_TYPE_CHECK_CLASS_CAST ((vtable), LTTV_TRACESET_STATE_TYPE, LttvTraceSetStateClass))
+#define LTTV_TRACESET_STATE(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACESET_STATE_TYPE, LttvTracesetState))
+#define LTTV_TRACESET_STATE_CLASS(vtable)  (G_TYPE_CHECK_CLASS_CAST ((vtable), LTTV_TRACESET_STATE_TYPE, LttvTracesetStateClass))
 #define LTTV_IS_TRACESET_STATE(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LTTV_TRACESET_STATE_TYPE))
 #define LTTV_IS_TRACESET_STATE_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACESET_STATE_TYPE))
-#define LTTV_TRACESET_STATE_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACESET_STATE_TYPE, LttvTraceSetStateClass))
+#define LTTV_TRACESET_STATE_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACESET_STATE_TYPE, LttvTracesetStateClass))
 
-typedef struct _LttvTraceSetState LttvTraceSetState;
-typedef struct _LttvTraceSetStateClass LttvTraceSetStateClass;
-
-struct _LttvTraceSetState {
-  LttvTraceSetContext parent;
+struct _LttvTracesetState {
+  LttvTracesetContext parent;
 };
 
 struct _LttvTracesetStateClass {
-  LttvTraceSetClass parent;
+  LttvTracesetContextClass parent;
 };
 
 GType lttv_traceset_state_get_type (void);
@@ -105,9 +126,6 @@ GType lttv_traceset_state_get_type (void);
 #define LTTV_IS_TRACE_STATE(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LTTV_TRACE_STATE_TYPE))
 #define LTTV_IS_TRACE_STATE_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACE_STATE_TYPE))
 #define LTTV_TRACE_STATE_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACE_STATE_TYPE, LttvTraceStateClass))
-
-typedef struct _LttvTraceState LttvTraceState;
-typedef struct _LttvTraceStateClass LttvTraceStateClass;
 
 struct _LttvTraceState {
   LttvTraceContext parent;
@@ -129,9 +147,6 @@ GType lttv_trace_state_get_type (void);
 #define LTTV_IS_TRACEFILE_STATE(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LTTV_TRACEFILE_STATE_TYPE))
 #define LTTV_IS_TRACEFILE_STATE_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACEFILE_STATE_TYPE))
 #define LTTV_TRACEFILE_STATE_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACEFILE_STATE_TYPE, LttvTracefileStateClass))
-
-typedef struct _LttvTracefileState LttvTracefileState;
-typedef struct _LttvTracefileStateClass LttvTracefileStateClass;
 
 struct _LttvTracefileState {
   LttvTracefileContext parent;

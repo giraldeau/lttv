@@ -1,8 +1,9 @@
+
 #include <lttv/hook.h>
 
 
 typedef struct _LttvHookClosure {
-  lttv_hook hook;
+  LttvHook hook;
   void *hook_data;
 } LttvHookClosure;
 
@@ -35,6 +36,7 @@ void lttv_hooks_add_list(LttvHooks *h, LttvHooks *list)
 {
   guint i;
 
+  if(list == NULL) return;
   for(i = 0 ; i < list->len; i++) {
     g_array_append_val(h,g_array_index(list, LttvHookClosure, i));
   }
@@ -83,6 +85,7 @@ void lttv_hooks_remove_list(LttvHooks *h, LttvHooks *list)
 
   LttvHookClosure *c, *c_list;
 
+  if(list == NULL) return;
   for(i = 0, j = 0 ; i < h->len && j < list->len ;) {
     c = &g_array_index(h, LttvHookClosure, i);
     c_list = &g_array_index(list, LttvHookClosure, j);
@@ -121,9 +124,9 @@ void lttv_hooks_get(LttvHooks *h, unsigned i, LttvHook *f, void **hook_data)
 }
 
 
-void lttv_hooks_remove_by_position(LttvHooks *h, unsigned i);
+void lttv_hooks_remove_by_position(LttvHooks *h, unsigned i)
 {
-  g_array_remove_index(h, i)
+  g_array_remove_index(h, i);
 }
 
 
@@ -132,6 +135,8 @@ gboolean lttv_hooks_call(LttvHooks *h, void *call_data)
   gboolean ret = FALSE;
 
   LttvHookClosure *c;
+
+  guint i;
 
   if(h != NULL) {
     for(i = 0 ; i < h->len ; i++) {
@@ -146,6 +151,8 @@ gboolean lttv_hooks_call(LttvHooks *h, void *call_data)
 gboolean lttv_hooks_call_check(LttvHooks *h, void *call_data)
 {
   LttvHookClosure *c;
+
+  guint i;
 
   for(i = 0 ; i < h->len ; i++) {
     c = &g_array_index(h, LttvHookClosure, i);
@@ -172,7 +179,7 @@ void lttv_hooks_by_id_destroy(LttvHooksById *h)
 }
 
 
-LttvHooks *lttv_hooks_by_id_find(LttvHooksById *h, unsigned id);
+LttvHooks *lttv_hooks_by_id_find(LttvHooksById *h, unsigned id)
 {
   if(h->len <= id) g_ptr_array_set_size(h, id + 1);
   if(h->pdata[id] == NULL) h->pdata[id] = lttv_hooks_new();

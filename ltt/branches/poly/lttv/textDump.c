@@ -9,6 +9,11 @@
 #include <lttv/attribute.h>
 #include <lttv/iattribute.h>
 #include <lttv/state.h>
+#include <ltt/ltt.h>
+#include <ltt/event.h>
+#include <ltt/type.h>
+#include <ltt/trace.h>
+#include <stdio.h>
 
 static gboolean
   a_field_names,
@@ -24,68 +29,96 @@ static LttvHooks
   *before_event;
 
 
-void init(int argc, char **argv)
-{
-  LttvAttributeValue *value;
+void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
 
-  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  LttType *type;
 
-  a_file_name = NULL;
-  lttv_option_add("output", 'o', 
-      "output file where the text is written", 
-      "file name", 
-      LTTV_OPT_STRING, &a_file_name, NULL, NULL);
+  LttField *element;
 
-  a_field_names = FALSE;
-  lttv_option_add("field_names", 'l', 
-      "write the field names for each event", 
-      "", 
-      LTTV_OPT_NONE, &a_field_names, NULL, NULL);
+  char *name;
 
-  a_state = FALSE;
-  lttv_option_add("process_state", 's', 
-      "write the pid and state for each event", 
-      "", 
-      LTTV_OPT_NONE, &a_state, NULL, NULL);
+  int nb, i;
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
-      LTTV_POINTER, &value));
-  g_assert((before_event = *(value->v_pointer)) != NULL);
-  lttv_hooks_add(before_event, write_event_content, NULL);
+  type = ltt_field_type(f);
+  switch(ltt_type_class(type)) {
+    case LTT_INT:
+      g_string_append_printf(s, " %ld", ltt_event_get_long_int(e,f));
+      break;
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
-      LTTV_POINTER, &value));
-  g_assert((before_trace = *(value->v_pointer)) != NULL);
-  lttv_hooks_add(before_trace, write_trace_header, NULL);
+    case LTT_UINT:
+      g_string_append_printf(s, " %lu", ltt_event_get_long_unsigned(e,f));
+      break;
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
-      LTTV_POINTER, &value));
-  g_assert((before_traceset = *(value->v_pointer)) != NULL);
-  lttv_hooks_add(before_traceset, write_traceset_header, NULL);
+    case LTT_FLOAT:
+      g_string_append_printf(s, " %g", ltt_event_get_double(e,f));
+      break;
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
-      LTTV_POINTER, &value));
-  g_assert((after_traceset = *(value->v_pointer)) != NULL);
-  lttv_hooks_add(after_traceset, write_traceset_footer, NULL);
+    case LTT_STRING:
+      g_string_append_printf(s, " \"%s\"", ltt_event_get_string(e,f));
+      break;
+
+    case LTT_ENUM:
+      g_string_append_printf(s, " %s", ltt_enum_string_get(type,
+          event_get_unsigned(e,f)));
+      break;
+
+    case LTT_ARRAY:
+    case LTT_SEQUENCE:
+      g_string_append_printf(s, " {");
+      nb = ltt_event_field_element_number(e,f);
+      element = ltt_field_element(f);
+      for(i = 0 ; i < nb ; i++) {
+        ltt_event_field_element_select(e,f,i);
+        print_field(e, element, s, field_names);
+      }
+      g_string_append_printf(s, " }");
+      break;
+
+    case LTT_STRUCT:
+      g_string_append_printf(s, " {");
+      nb = ltt_type_member_number(type);
+      for(i = 0 ; i < nb ; i++) {
+        element = ltt_field_member(f,i);
+        if(name) {
+          ltt_type_member_type(type, i, &name);
+          g_string_append_printf(s, " %s = ", field_names);
+        }
+        print_field(e, element, s, field_names);
+      }
+      g_string_append_printf(s, " }");
+      break;
+  }
 }
 
 
-void destroy()
+void lttv_event_to_string(LttEvent *e, LttTracefile *tf, GString *s,
+    gboolean mandatory_fields, gboolean field_names)
 {
-  lttv_option_remove("output");
+  LttFacility *facility;
 
-  lttv_option_remove("field_names");
+  LttEventType *event_type;
 
-  lttv_option_remove("process_state");
+  LttType *type;
 
-  lttv_hooks_remove(before_event, write_event, NULL);
+  LttField *field;
 
-  lttv_hooks_remove(before_trace, write_trace_header, NULL);
+  LttTime time;
 
-  lttv_hooks_remove(before_trace, write_traceset_header, NULL);
+  g_string_set_size(s,0);
 
-  lttv_hooks_remove(before_trace, write_traceset_footer, NULL);
-}
+  facility = ltt_event_facility(e);
+  event_type = ltt_event_eventtype(e);
+  field = ltt_event_field(e);
+
+  if(mandatory_fields) {
+    time = ltt_event_time(e);
+    g_string_append_printf(s,"%s.%s: %ld.%ld (%s)",ltt_facility_name(facility),
+        ltt_eventtype_name(event_type), (long)time.tv_sec, time.tv_nsec,
+        ltt_tracefile_name(tf));
+  }
+
+  print_field(e, field, s, field_names);
+} 
 
 
 /* Insert the hooks before and after each trace and tracefile, and for each
@@ -95,7 +128,7 @@ static FILE *a_file;
 
 static GString *a_string;
 
-static static gboolean write_traceset_header(void *hook_data, void *call_data)
+static gboolean write_traceset_header(void *hook_data, void *call_data)
 {
   LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
 
@@ -106,19 +139,19 @@ static static gboolean write_traceset_header(void *hook_data, void *call_data)
 
   /* Print the trace set header */
   fprintf(a_file,"Trace set contains %d traces\n\n", 
-      lttv_traceset_number(tc->ta);
+      lttv_traceset_number(tc->ts));
 
   return FALSE;
 }
 
 
-static static gboolean write_traceset_footer(void *hook_data, void *call_data)
+static gboolean write_traceset_footer(void *hook_data, void *call_data)
 {
   LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
 
-  if(a_file_name != NULL) a_file = fclose(a_file);
-
   fprintf(a_file,"End trace set\n\n");
+
+  if(a_file_name != NULL) fclose(a_file);
 
   return FALSE;
 }
@@ -150,103 +183,75 @@ static int write_event_content(void *hook_data, void *call_data)
 
   if(a_state) {
     g_string_append_printf(a_string, " %s",
-        g_quark_to_string(tfs->process->state->s);
+        g_quark_to_string(tfs->process->state->s));
   }
 
-  fputs(s, c->fd);
+  fputs(a_string->str, a_file);
   return FALSE;
 }
 
 
-void lttv_event_to_string(LttEvent *e, LttTracefile *tf, g_string *s,
-    gboolean mandatory_fields, gboolean field_names)
+void init(int argc, char **argv)
 {
-  LttFacility *facility;
+  LttvAttributeValue value;
 
-  LttEventType *event_type;
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
-  LttType *type;
+  a_file_name = NULL;
+  lttv_option_add("output", 'o', 
+      "output file where the text is written", 
+      "file name", 
+      LTTV_OPT_STRING, &a_file_name, NULL, NULL);
 
-  LttField *field;
+  a_field_names = FALSE;
+  lttv_option_add("field_names", 'l', 
+      "write the field names for each event", 
+      "", 
+      LTTV_OPT_NONE, &a_field_names, NULL, NULL);
 
-  LttTime time;
+  a_state = FALSE;
+  lttv_option_add("process_state", 's', 
+      "write the pid and state for each event", 
+      "", 
+      LTTV_OPT_NONE, &a_state, NULL, NULL);
 
-  g_string_set_size(s,0);
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+      LTTV_POINTER, &value));
+  g_assert((before_event = *(value.v_pointer)) != NULL);
+  lttv_hooks_add(before_event, write_event_content, NULL);
 
-  facility = lttv_event_facility(e);
-  eventtype = ltt_event_eventtype(e);
-  field = ltt_event_field(e);
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
+      LTTV_POINTER, &value));
+  g_assert((before_trace = *(value.v_pointer)) != NULL);
+  lttv_hooks_add(before_trace, write_trace_header, NULL);
 
-  if(mandatory_fields) {
-    time = ltt_event_time(e);
-    g_string_append_printf(s,"%s.%s: %ld.%ld (%s)",ltt_facility_name(facility),
-        ltt_eventtype_name(eventtype), (long)time.tv_sec, time.tv_nsec,
-        ltt_tracefile_name(tf));
-  }
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
+      LTTV_POINTER, &value));
+  g_assert((before_traceset = *(value.v_pointer)) != NULL);
+  lttv_hooks_add(before_traceset, write_traceset_header, NULL);
 
-  print_field(e,f,s, field_names);
-} 
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
+      LTTV_POINTER, &value));
+  g_assert((after_traceset = *(value.v_pointer)) != NULL);
+  lttv_hooks_add(after_traceset, write_traceset_footer, NULL);
+}
 
 
-void print_field(LttEvent *e, LttField *f, g_string *s, gboolean field_names) {
+void destroy()
+{
+  lttv_option_remove("output");
 
-  LttType *type;
+  lttv_option_remove("field_names");
 
-  LttField *element;
+  lttv_option_remove("process_state");
 
-  char *name;
+  lttv_hooks_remove_data(before_event, write_event_content, NULL);
 
-  int nb, i;
+  lttv_hooks_remove_data(before_trace, write_trace_header, NULL);
 
-  type = ltt_field_type(f);
-  switch(ltt_type_class(type)) {
-    case LTT_INT:
-      g_string_append_printf(s, " %ld", ltt_event_get_long_int(e,f));
-      break;
+  lttv_hooks_remove_data(before_trace, write_traceset_header, NULL);
 
-    case LTT_UINT:
-      g_string_append_printf(s, " %lu", ltt_event_get_long_unsigned(e,f));
-      break;
-
-    case LTT_FLOAT:
-      g_string_append_printf(s, " %g", ltt_event_get_double(e,f));
-      break;
-
-    case LTT_STRING:
-      g_string_append_printf(s, " \"%s\"", ltt_event_get_string(e,f));
-      break;
-
-    case LTT_ENUM:
-      g_string_append_printf(s, " %s", ltt_enum_string_get(type,
-          event_get_unsigned(e,f));
-      break;
-
-    case LTT_ARRAY:
-    case LTT_SEQUENCE:
-      g_string_append_printf(s, " {");
-      nb = ltt_event_field_element_number(e,f);
-      element = ltt_field_element(f);
-      for(i = 0 ; i < nb ; i++) {
-        ltt_event_field_element_select(e,f,i);
-        print_field(e,element,s);
-      }
-      g_string_append_printf(s, " }");
-      break;
-
-    case LTT_STRUCT:
-      g_string_append_printf(s, " {");
-      nb = ltt_type_member_number(type);
-      for(i = 0 ; i < nb ; i++) {
-        element = ltt_field_member(f,i);
-        if(name) {
-          ltt_type_member_type(type, &name);
-          g_string_append_printf(s, " %s = ", field_names);
-        }
-        print_field(e,element,s);
-      }
-      g_string_append_printf(s, " }");
-      break;
-  }
+  lttv_hooks_remove_data(before_trace, write_traceset_footer, NULL);
 }
 
 

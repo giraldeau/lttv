@@ -59,7 +59,7 @@ void lttv_module_path_add(const char *name)
 }
 
 
-static LttvModuleInfo *
+static LttvModule *
 module_load(const char *name, int argc, char **argv) 
 {
   GModule *gm;
@@ -69,6 +69,8 @@ module_load(const char *name, int argc, char **argv)
   int i;
 
   char *pathname;
+
+  const char *module_name;
   
   LttvModuleInit init_function;
 
@@ -97,21 +99,21 @@ module_load(const char *name, int argc, char **argv)
   /* Check if the module was already opened using the hopefully canonical name
      returned by g_module_name. */
 
-  pathname = g_module_name(gm);
+  module_name = g_module_name(gm);
 
-  m = g_hash_table_lookup(modules, pathname);
+  m = g_hash_table_lookup(modules, module_name);
 
   if(m == NULL) {
 
     /* Module loaded for the first time. Insert it in the table and call the
        init function if any. */
 
-    m = g_new(LttvModule);
+    m = g_new(LttvModule, 1);
     m->module = gm;
     m->ref_count = 0;
     m->load_count = 0;
     m->dependents = g_ptr_array_new();
-    g_hash_table_insert(modules, pathname, m);
+    g_hash_table_insert(modules, (gpointer)module_name, m);
 
     if(!g_module_symbol(gm, "init", (gpointer)&init_function)) {
       g_warning("module %s (%s) has no init function", name, pathname);
@@ -132,7 +134,7 @@ module_load(const char *name, int argc, char **argv)
 }
 
 
-LttvModuleInfo *
+LttvModule *
 lttv_module_load(const char *name, int argc, char **argv) 
 {
   LttvModule *m = module_load(name, argc, argv);
@@ -159,7 +161,7 @@ static void module_unload(LttvModule *m)
 
   char *pathname;
 
-  guint len;
+  guint i, len;
 
   /* Decrement the reference count */
 
@@ -261,7 +263,7 @@ lttv_module_unload_all()
   g_hash_table_foreach(modules, list_independent, independent_modules);
 
   for(i = 0 ; i < independent_modules->len ; i++) {
-    m = (LttvModule)independent_modules->pdata[i];
+    m = (LttvModule *)independent_modules->pdata[i];
     while(m->load_count > 0) lttv_module_unload(m);
   }
 

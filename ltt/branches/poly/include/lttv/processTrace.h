@@ -1,6 +1,7 @@
 #ifndef PROCESSTRACE_H
 #define PROCESSTRACE_H
 
+#include <lttv/traceset.h>
 #include <lttv/attribute.h>
 #include <lttv/hook.h>
 #include <ltt/ltt.h>
@@ -45,15 +46,22 @@
    tracefile contexts may be subtyped as needed. Indeed, both the contexts
    and the hooks are defined by the caller. */
 
+
+typedef struct _LttvTracesetContext LttvTracesetContext;
+typedef struct _LttvTracesetContextClass LttvTracesetContextClass;
+
+typedef struct _LttvTraceContext LttvTraceContext;
+typedef struct _LttvTraceContextClass LttvTraceContextClass;
+
+typedef struct _LttvTracefileContext LttvTracefileContext;
+typedef struct _LttvTracefileContextClass LttvTracefileContextClass;
+
 #define LTTV_TRACESET_CONTEXT_TYPE  (lttv_traceset_context_get_type ())
 #define LTTV_TRACESET_CONTEXT(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACESET_CONTEXT_TYPE, LttvTracesetContext))
 #define LTTV_TRACESET_CONTEXT_CLASS(vtable)  (G_TYPE_CHECK_CLASS_CAST ((vtable), LTTV_TRACESET_CONTEXT_TYPE, LttvTracesetContextClass))
 #define LTTV_IS_TRACESET_CONTEXT(obj) (G_TYPE_CHECK_INSTANCE_TYPE ((obj), LTTV_TRACESET_CONTEXT_TYPE))
 #define LTTV_IS_TRACESET_CONTEXT_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACESET_CONTEXT_TYPE))
 #define LTTV_TRACESET_CONTEXT_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACESET_CONTEXT_TYPE, LttvTracesetContextClass))
-
-typedef struct _LttvTracesetContext LttvTracesetContext;
-typedef struct _LttvTracesetContextClass LttvTracesetContextClass;
 
 struct _LttvTracesetContext {
   GObject parent;
@@ -98,15 +106,12 @@ lttv_context_new_tracefile_context(LttvTracesetContext *self);
 #define LTTV_IS_TRACE_CONTEXT_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACE_CONTEXT_TYPE))
 #define LTTV_TRACE_CONTEXT_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACE_CONTEXT_TYPE, LttvTraceContextClass))
 
-typedef struct _LttvTraceContext LttvTraceContext;
-typedef struct _LttvTraceContextClass LttvTraceContextClass;
-
 struct _LttvTraceContext {
   GObject parent;
 
   LttvTracesetContext *ts_context;
   guint index;                /* in ts_context->traces */
-  LttvTrace *t;
+  LttTrace *t;
   LttvHooks *check;
   LttvHooks *before;
   LttvHooks *after;
@@ -128,26 +133,23 @@ GType lttv_trace_context_get_type (void);
 #define LTTV_IS_TRACEFILE_CONTEXT_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACEFILE_CONTEXT_TYPE))
 #define LTTV_TRACEFILE_CONTEXT_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACEFILE_CONTEXT_TYPE, LttvTracefileContextClass))
 
-typedef struct _LttvTracefileContext LttvTracefileContext;
-typedef struct _LttvTracefileContextClass LttvTracefileContextClass;
-
 struct _LttvTracefileContext {
   GObject parent;
 
   LttvTraceContext *t_context;
   gboolean control;
   guint index;                /* in ts_context->control/per_cpu_tracefiles */
-  LttvTracefile *tf;
+  LttTracefile *tf;
   LttvHooks *check;
   LttvHooks *before;
   LttvHooks *after;
-  LttvEvent *e;
+  LttEvent *e;
   LttvHooks *check_event;
   LttvHooks *before_event;
   LttvHooksById *before_event_by_id;
   LttvHooks *after_event;
   LttvHooksById *after_event_by_id;
-  LttTime *time;
+  LttTime timestamp;
   LttvAttribute *a;
 };
 
@@ -157,7 +159,7 @@ struct _LttvTracefileContextClass {
 
 GType lttv_tracefile_context_get_type (void);
 
-void lttv_process_trace(LttvTime start, LttvTime end, LttvTraceset *traceset, 
+void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset, 
     LttvTracesetContext *context);
 
 void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
@@ -166,9 +168,12 @@ void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
     LttvHooks *check_trace, 
     LttvHooks *before_trace, 
     LttvHooks *after_trace, 
+    LttvHooks *check_tracefile,
+    LttvHooks *before_tracefile,
+    LttvHooks *after_tracefile,
     LttvHooks *check_event, 
     LttvHooks *before_event, 
-    LttvHooks *after_event)
+    LttvHooks *after_event);
 
 void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
     LttvHooks *before_traceset, 
@@ -176,8 +181,11 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
     LttvHooks *check_trace, 
     LttvHooks *before_trace, 
     LttvHooks *after_trace, 
+    LttvHooks *check_tracefile,
+    LttvHooks *before_tracefile,
+    LttvHooks *after_tracefile,
     LttvHooks *check_event, 
     LttvHooks *before_event, 
-    LttvHooks *after_event)
+    LttvHooks *after_event);
 
 #endif // PROCESSTRACE_H

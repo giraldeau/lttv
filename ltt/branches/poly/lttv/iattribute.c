@@ -1,6 +1,8 @@
 
+#include <lttv/iattribute.h>
+
 static void
-lttv_iattribute_base_init (gpointer g_class)
+lttv_iattribute_base_init (gpointer klass)
 {
   static gboolean initialized = FALSE;
 
@@ -59,10 +61,10 @@ LttvAttributeType lttv_iattribute_get_by_name(LttvIAttribute *self,
 }
 
 
-void lttv_iattribute_add(LttvIAttribute *self, LttvAttributeName name, 
-    LttvAttributeType t, LttvAttributeValue *v)
+LttvAttributeValue lttv_iattribute_add(LttvIAttribute *self, 
+    LttvAttributeName name, LttvAttributeType t)
 {
-  return LTTV_IATTRIBUTE_GET_CLASS (self)->add (self, name, t, v);
+  return LTTV_IATTRIBUTE_GET_CLASS (self)->add (self, name, t);
 }
 
 
@@ -81,7 +83,7 @@ void lttv_iattribute_remove_by_name(LttvIAttribute *self,
 LttvIAttribute* lttv_iattribute_create_subdir(LttvIAttribute *self, 
       LttvAttributeName name)
 {
-  return LTTV_IATTRIBUTE_GET_CLASS (self)->get_number (self, name);
+  return LTTV_IATTRIBUTE_GET_CLASS (self)->create_subdir (self, name);
 }
 
 
@@ -100,7 +102,7 @@ gboolean lttv_iattribute_find(LttvIAttribute *self, LttvAttributeName name,
   if(found_type == t) return TRUE;
 
   if(found_type == LTTV_NONE) {
-    v = lttv_iattribute_add(self, name, t);
+    *v = lttv_iattribute_add(self, name, t);
     return TRUE;
   }
 
@@ -114,8 +116,6 @@ gboolean lttv_iattribute_find(LttvIAttribute *self, LttvAttributeName name,
 gboolean lttv_iattribute_find_by_path(LttvIAttribute *self, char *path, 
     LttvAttributeType t, LttvAttributeValue *v)
 {
-  char *cursor;
-
   LttvIAttribute *node = self;
 
   LttvAttributeType found_type;
@@ -131,7 +131,7 @@ gboolean lttv_iattribute_find_by_path(LttvIAttribute *self, char *path,
     return FALSE; 
   }
 
-  while(cursor = components;;) {
+  for(cursor = components;;) {
     name = g_quark_from_string(*cursor);
     cursor++;
 
@@ -160,7 +160,7 @@ gboolean lttv_iattribute_find_by_path(LttvIAttribute *self, char *path,
 
 LttvIAttribute *lttv_iattribute_shallow_copy(LttvIAttribute *self)
 {
-  LttvIAttribute copy;
+  LttvIAttribute *copy;
 
   LttvAttributeType t;
 
@@ -172,18 +172,18 @@ LttvIAttribute *lttv_iattribute_shallow_copy(LttvIAttribute *self)
 
   int nb_attributes = lttv_iattribute_get_number(self);
 
-  copy = LTTV_IATTRIBUTE(g_object_new(G_OBJECT_TYPE(self)));
+  copy = LTTV_IATTRIBUTE(g_object_new(G_OBJECT_TYPE(self),NULL));
 
   for(i = 0 ; i < nb_attributes ; i++) {
     t = lttv_iattribute_get(self, i, &name, &v);
     v_copy = lttv_iattribute_add(copy, name, t);
-    lttv_iattribute_copy_value(v_copy, v);
+    lttv_iattribute_copy_value(t, v_copy, v);
   }
 }
 
 LttvIAttribute *lttv_iattribute_deep_copy(LttvIAttribute *self)
 {
-  LttvIAttribute copy, child;
+  LttvIAttribute *copy, *child;
 
   LttvAttributeType t;
 
@@ -195,14 +195,14 @@ LttvIAttribute *lttv_iattribute_deep_copy(LttvIAttribute *self)
 
   int nb_attributes = lttv_iattribute_get_number(self);
 
-  copy = LTTV_IATTRIBUTE(g_object_new(G_OBJECT_TYPE(self)));
+  copy = LTTV_IATTRIBUTE(g_object_new(G_OBJECT_TYPE(self), NULL));
 
   for(i = 0 ; i < nb_attributes ; i++) {
     t = lttv_iattribute_get(self, i, &name, &v);
     v_copy = lttv_iattribute_add(copy, name, t);
-    if(t == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(*(v->v_gobject))) {
-      child = LTTV_IATTRIBUTE(*(v->v_gobject));
-      *(v_copy->v_gobject) = lttv_iattribute_deep_copy(child);
+    if(t == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(*(v.v_gobject))) {
+      child = LTTV_IATTRIBUTE(*(v.v_gobject));
+      *(v_copy.v_gobject) = G_OBJECT(lttv_iattribute_deep_copy(child));
     }
     else lttv_iattribute_copy_value(t, v_copy, v);
   }
@@ -213,43 +213,43 @@ void lttv_iattribute_copy_value(LttvAttributeType t, LttvAttributeValue dest,
 {
   switch(t) {
     case LTTV_INT:
-      *(dest->v_int) = *(src->v_int); 
+      *(dest.v_int) = *(src.v_int); 
       break;
 
     case LTTV_UINT:
-      *(dest->v_uint) = *(src->v_uint); 
+      *(dest.v_uint) = *(src.v_uint); 
       break;
 
     case LTTV_LONG:
-      *(dest->v_long) = *(src->v_long); 
+      *(dest.v_long) = *(src.v_long); 
       break;
 
     case LTTV_ULONG:
-      *(dest->v_ulong) = *(src->v_ulong); 
+      *(dest.v_ulong) = *(src.v_ulong); 
       break;
 
     case LTTV_FLOAT:
-      *(dest->v_float) = *(src->v_float); 
+      *(dest.v_float) = *(src.v_float); 
       break;
 
     case LTTV_DOUBLE: 
-      *(dest->v_double) = *(src->v_double); 
+      *(dest.v_double) = *(src.v_double); 
       break;
 
     case LTTV_TIME: 
-      *(dest->v_time) = *(src->v_time); 
+      *(dest.v_time) = *(src.v_time); 
       break;
 
     case LTTV_POINTER:
-      *(dest->v_pointer) = *(src->v_pointer); 
+      *(dest.v_pointer) = *(src.v_pointer); 
       break;
 
     case LTTV_STRING:
-      *(dest->v_string) = *(src->v_string); 
+      *(dest.v_string) = *(src.v_string); 
       break;
 
     case LTTV_GOBJECT:
-      *(dest->v_gobject) = *(src->v_gobject); 
+      *(dest.v_gobject) = *(src.v_gobject); 
       break;
 
     case LTTV_NONE:

@@ -29,7 +29,7 @@ void lttv_hooks_add(LttvHooks *h, LttvHook f, void *hook_data);
 
 /* Add a list of hooks to the list h */
 
-void lttv_hooks_add(LttvHooks *h, LttvHooks *list);
+void lttv_hooks_add_list(LttvHooks *h, LttvHooks *list);
 
 
 /* Remove a hook from the list. Return the hook data. */
@@ -44,7 +44,7 @@ void lttv_hooks_remove_data(LttvHooks *h, LttvHook f, void *hook_data);
 
 /* Remove a list of hooks from the hooks list in h. */
 
-void lttv_hooks_remove_data(LttvHooks *h, LttvHook *list);
+void lttv_hooks_remove_data_list(LttvHooks *h, LttvHook *list);
 
 
 /* Return the number of hooks in the list */
@@ -77,7 +77,7 @@ gboolean lttv_hooks_call_check(LttvHooks *h, void *call_data);
 /* Sometimes different hooks need to be called based on the case. The
    case is represented by an unsigned integer id */
 
-typedef struct _LttvHooksById LttvHooksById;
+typedef GPtrArray LttvHooksById;
 
 
 /* Create and destroy a hooks by id list */

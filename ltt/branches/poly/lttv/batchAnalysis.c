@@ -5,6 +5,7 @@
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>
 #include <lttv/hook.h>
+#include <lttv/option.h>
 #include <lttv/module.h>
 #include <lttv/processTrace.h>
 #include <lttv/state.h>
@@ -35,18 +36,18 @@ void lttv_trace_option(void *hook_data)
 }
 
 
-static void process_traceset(void *hook_data, void *call_data)
+static gboolean process_traceset(void *hook_data, void *call_data)
 {
   LttvTracesetState *tc;
 
   LttTime start, end;
 
-  tc = g_object_new(LTTV_TRACESET_STATE);
+  tc = g_object_new(LTTV_TRACESET_STATE_TYPE, NULL);
   lttv_context_init(LTTV_TRACESET_CONTEXT(tc), traceset);
 
   lttv_traceset_context_add_hooks(LTTV_TRACESET_CONTEXT(tc),
-  before_traceset, after_traceset, before_trace, after_trace,
-  before_tracefile, after_tracefile, before_event, after_event);
+  before_traceset, after_traceset, NULL, before_trace, after_trace,
+  NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
   lttv_state_add_event_hooks(tc);
 
   start.tv_sec = 0;
@@ -54,10 +55,10 @@ static void process_traceset(void *hook_data, void *call_data)
   end.tv_sec = G_MAXULONG;
   end.tv_nsec = G_MAXULONG;
 
-  lttv_process_trace(start, end, traceset, tc);
+  lttv_process_trace(start, end, traceset, LTTV_TRACESET_CONTEXT(tc));
   lttv_traceset_context_remove_hooks(LTTV_TRACESET_CONTEXT(tc),
-  before_traceset, after_traceset, before_trace, after_trace,
-  before_tracefile, after_tracefile, before_event, after_event);
+  before_traceset, after_traceset, NULL, before_trace, after_trace,
+  NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
 
   lttv_state_remove_event_hooks(tc);
   lttv_context_fini(LTTV_TRACESET_CONTEXT(tc));
@@ -67,14 +68,14 @@ static void process_traceset(void *hook_data, void *call_data)
 
 void init(LttvModule *self, int argc, char **argv)
 {
-  LttvAttribute_value *value;
+  LttvAttributeValue value;
 
-  LttvIAttributes *attributes = LTTV_IATTRIBUTES(lttv_global_attributes());
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
   lttv_option_add("trace", 't', 
       "add a trace to the trace set to analyse", 
       "pathname of the directory containing the trace", 
-      LTTV_OPT_STRING, &aTrace, lttv_trace_option, NULL);
+      LTTV_OPT_STRING, &a_trace, lttv_trace_option, NULL);
 
   traceset = lttv_traceset_new();
 
@@ -89,32 +90,32 @@ void init(LttvModule *self, int argc, char **argv)
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
       LTTV_POINTER, &value));
-  *(value->v_pointer) = before_traceset;
+  *(value.v_pointer) = before_traceset;
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
       LTTV_POINTER, &value));
-  *(value->v_pointer) = after_traceset;
+  *(value.v_pointer) = after_traceset;
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
       LTTV_POINTER, &value));
-  *(value->v_pointer) = before_trace;
+  *(value.v_pointer) = before_trace;
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/after",
       LTTV_POINTER, &value));
-  *(value->v_pointer) = after_trace;
+  *(value.v_pointer) = after_trace;
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/before",
       LTTV_POINTER, &value));
-  *(value->v_pointer) = before_tracefile;
+  *(value.v_pointer) = before_tracefile;
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/after",
       LTTV_POINTER, &value));
-  *(value->v_pointer) = after_tracefile;
+  *(value.v_pointer) = after_tracefile;
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
       LTTV_POINTER, &value));
-  *(value->v_pointer) = before_event;
+  *(value.v_pointer) = before_event;
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
       LTTV_POINTER, &value));
-  *(value->v_pointer) = after_event;
+  *(value.v_pointer) = after_event;
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/before",
       LTTV_POINTER, &value));
-  g_assert((main_hooks = *(value->v_pointer)) != NULL);
+  g_assert((main_hooks = *(value.v_pointer)) != NULL);
   lttv_hooks_add(main_hooks, process_traceset, NULL);
 }
 
@@ -123,7 +124,7 @@ void destroy()
 {
   guint i, nb;
 
-  lttv_hooks_remove(main_hooks, process_traceset, NULL);
+  lttv_hooks_remove_data(main_hooks, process_traceset, NULL);
 
   lttv_option_remove("trace");
 
@@ -137,8 +138,8 @@ void destroy()
   lttv_hooks_destroy(after_event);
 
   nb = lttv_traceset_number(traceset);
-  for(i = 0 ; i < nb, i++) {
-    ltt_trace_close(lttv_traceset_get(traceset);
+  for(i = 0 ; i < nb ; i++) {
+    ltt_trace_close(lttv_traceset_get(traceset, i));
   }
 }
 

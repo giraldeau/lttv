@@ -1,15 +1,16 @@
-#include <popt.h>
 
+#include <popt.h>
+#include <glib.h>
 #include <lttv/option.h>
 
 typedef struct _LttvOption {
-  const char *long_name;
+  char *long_name;
   char char_name;
-  const char *description;
-  const char *arg_description;
+  char *description;
+  char *arg_description;
   LttvOptionType t;
   gpointer p;
-  LttvOptionHook h;
+  LttvOptionHook hook;
   gpointer hook_data;
 } LttvOption;
 
@@ -43,7 +44,7 @@ void lttv_option_destroy()
 {
   LttvOption option;
 
-  GPtrArray list = g_ptr_array_new();
+  GPtrArray *list = g_ptr_array_new();
 
   int i;
 
@@ -76,7 +77,7 @@ void lttv_option_add(const char *long_name, const char char_name,
   option->arg_description = g_strdup(arg_description);
   option->t = t;
   option->p = p;
-  option->h = h;
+  option->hook = h;
   option->hook_data = hook_data;
   g_hash_table_insert(options, option->long_name, option);
 }
@@ -105,7 +106,7 @@ static struct poptOption endOption = { NULL, '\0', 0, NULL, 0};
 
 static void 
 build_popts(GPtrArray **plist, struct poptOption **ppopts, poptContext *pc,
-    int argv, char **argv)
+    int argc, char **argv)
 {
   LttvOption *option;
 
@@ -152,7 +153,7 @@ destroy_popts(GPtrArray **plist, struct poptOption **ppopts, poptContext *pc)
 {
   g_ptr_array_free(*plist, TRUE); *plist = NULL;
   g_free(*ppopts); *ppopts = NULL;
-  poptFreeContext(*c);  
+  poptFreeContext(*pc);  
 }
 
 

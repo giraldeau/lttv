@@ -8,10 +8,10 @@ typedef union _AttributeValue {
   unsigned long dv_ulong;
   float dv_float;
   double dv_double;
-  timespec dv_timespec;
+  LttvTime dv_time;
   gpointer dv_pointer;
   char *dv_string;
-  gobject *dv_gobject;
+  GObject *dv_gobject;
 } AttributeValue;
 
 
@@ -22,34 +22,43 @@ typedef struct _Attribute {
 } Attribute;
 
 
-GType 
-lttv_attribute_get_type (void)
+LttvAttributeValue address_of_value(LttvAttributeType t, AttributeValue *v)
 {
-  static GType type = 0;
-  if (type == 0) {
-    static const GTypeInfo info = {
-      sizeof (LttvAttributeClass),
-      NULL,   /* base_init */
-      NULL,   /* base_finalize */
-      attribute_class_init,   /* class_init */
-      NULL,   /* class_finalize */
-      NULL,   /* class_data */
-      sizeof (LttvAttribute),
-      0,      /* n_preallocs */
-      attribute_instance_init    /* instance_init */
-    };
+  LttvAttributeValue va;
 
-    static const GInterfaceInfo iattribute_info = {
-      (GInterfaceInitFunc) attribute_interface_init,    /* interface_init */
-      NULL,                                       /* interface_finalize */
-      NULL                                        /* interface_data */
-    };
-
-    type = g_type_register_static (G_TYPE_OBJECT, "LttvAttributeType", &info, 
-        0);
-    g_type_add_interface_static (type, LTTV_IATTRIBUTE_TYPE, &iattribute_info);
+  switch(t) {
+  case LTTV_INT: va.v_int = &v->dv_int; break;
+  case LTTV_UINT: va.v_uint = &v->dv_uint; break;
+  case LTTV_LONG: va.v_long = &v->dv_long; break;
+  case LTTV_ULONG: va.v_ulong = &v->dv_ulong; break;
+  case LTTV_FLOAT: va.v_float = &v->dv_float; break;
+  case LTTV_DOUBLE: va.v_double = &v->dv_double; break;
+  case LTTV_TIME: va.v_time = &v->dv_time; break;
+  case LTTV_POINTER: va.v_pointer = &v->dv_pointer; break;
+  case LTTV_STRING: va.v_string = &v->dv_string; break;
+  case LTTV_GOBJECT: va.v_gobject = &v->dv_gobject; break;
   }
-  return type;
+  return va;
+}
+
+
+AttributeValue init_value(LttvAttributeType t)
+{
+  AttributeValue v;
+
+  switch(t) {
+  case LTTV_INT: v.dv_int = 0; break;
+  case LTTV_UINT: v.dv_uint = 0; break;
+  case LTTV_LONG: v.dv_long = 0; break;
+  case LTTV_ULONG: v.dv_ulong = 0; break;
+  case LTTV_FLOAT: v.dv_float = 0; break;
+  case LTTV_DOUBLE: v.dv_double = 0; break;
+  case LTTV_TIME: v.dv_time.tv_sec = 0; v.dv_time.tv_nsec = 0; break;
+  case LTTV_POINTER: v.dv_pointer = NULL; break;
+  case LTTV_STRING: v.dv_string = NULL; break;
+  case LTTV_GOBJECT: v.dv_gobject = NULL; break;
+  }
+  return v;
 }
 
 
@@ -76,7 +85,7 @@ lttv_attribute_get(LttvAttribute *self, unsigned i, LttvAttributeName *name,
 
   a = &g_array_index(self->attributes, Attribute, i);
   *name = a->name;
-  *v = address_of_value(a->type, a->value);
+  *v = address_of_value(a->type, &(a->value));
   return a->type;
 }
 
@@ -89,12 +98,15 @@ lttv_attribute_get_by_name(LttvAttribute *self, LttvAttributeName name,
 
   unsigned i;
 
-  i = (unsigned)g_hash_table_lookup(self->names, (gconstpointer)name);
-  if(i == 0) return LTTV_NONE;
+  gpointer p;
 
+  p = g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  if(p == NULL) return LTTV_NONE;
+
+  i = POINTER_TO_GUINT(p);
   i--;
   a = &g_array_index(self->attributes, Attribute, i);
-  *v = address_of_value(a->type, a->value);
+  *v = address_of_value(a->type, &(a->value));
   return a->type;
 }
 
@@ -107,17 +119,18 @@ lttv_attribute_add(LttvAttribute *self, LttvAttributeName name,
 
   Attribute a, *pa;
 
-  i = (unsigned)g_hash_table_lookup(self->names, (gconstpointer)name);
+  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
   if(i != 0) g_error("duplicate entry in attribute table");
 
-  a->name = name;
-  a->type = t;
-  a->value = init_value(t);
+  a.name = name;
+  a.type = t;
+  a.value = init_value(t);
   g_array_append_val(self->attributes, a);
   i = self->attributes->len - 1;
-  pa = &g_array_index(self->attributes, Attribute, i)
-  g_hash_table_insert(self->names, (gconstpointer)name, (gconstpointer)i + 1);
-  return address_of_value(pa->value, t);
+  pa = &g_array_index(self->attributes, Attribute, i);
+  g_hash_table_insert(self->names, GUINT_TO_POINTER(name), 
+      GUINT_TO_POINTER(i + 1));
+  return address_of_value(t, &(pa->value));
 }
 
 
@@ -132,14 +145,14 @@ lttv_attribute_remove(LttvAttribute *self, unsigned i)
 
   /* Remove the array element and its entry in the name index */
 
-  g_hash_table_remove(self->names, (gconspointer)a->name);
+  g_hash_table_remove(self->names, GUINT_TO_POINTER(a->name));
   g_array_remove_index_fast(self->attributes, i);
 
   /* The element used to replace the removed element has its index entry
      all wrong now. Reinsert it with its new position. */
 
-  g_hash_table_remove(self->names, (gconstpointer)a->name);
-  g_hash_table_insert(self->names, (gconstpointer)a->name, i + 1);
+  g_hash_table_remove(self->names, GUINT_TO_POINTER(a->name));
+  g_hash_table_insert(self->names, GUINT_TO_POINTER(a->name), GUINT_TO_POINTER(i + 1));
 }
 
 void 
@@ -147,7 +160,7 @@ lttv_attribute_remove_by_name(LttvAttribute *self, LttvAttributeName name)
 {
   unsigned i;
 
-  i = (unsigned)g_hash_table_lookup(self->names, (gconstpointer)name);
+  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
   if(i == 0) g_error("remove by name non existent attribute");
 
   lttv_attribute_remove(self, i - 1);
@@ -167,17 +180,17 @@ lttv_attribute_create_subdir(LttvAttribute *self, LttvAttributeName name)
 
   LttvAttribute *new;
 
-  i = (unsigned)g_hash_table_lookup(self->names, (gconstpointer)name);
+  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
   if(i != 0) {
     a = g_array_index(self->attributes, Attribute, i - 1);
-    if(a->type == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(a->value->dv_gobject)) {
-      return LTTV_IATTRIBUTE(a->value->dv_gobject);
+    if(a.type == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(a.value.dv_gobject)) {
+      return LTTV_IATTRIBUTE(a.value.dv_gobject);
     }
     else return NULL;    
   }
-  new = g_object_new(LTTV_ATTRIBUTE_TYPE);
-  *(lttv_attribute_add(self, name, LTTV_GOBJECT)->v_gobject) = new;
-  return new;
+  new = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+  *(lttv_attribute_add(self, name, LTTV_GOBJECT).v_gobject) = G_OBJECT(new);
+  return (LttvIAttribute *)new;
 }
 
 gboolean 
@@ -188,11 +201,11 @@ lttv_attribute_find(LttvAttribute *self, LttvAttributeName name,
 
   Attribute *a;
 
-  i = (unsigned)g_hash_table_lookup(self->names, (gconstpointer)name);
+  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
   if(i != 0) {
     a = &g_array_index(self->attributes, Attribute, i - 1);
     if(a->type != t) return FALSE;
-    *v = address_of_value(a->value, t);
+    *v = address_of_value(t, &(a->value));
     return TRUE;
   }
 
@@ -233,26 +246,12 @@ attribute_interface_init (gpointer g_iface, gpointer iface_data)
 }
 
 
-static guint
-quark_hash(gconstpointer key)
-{
-  return (guint)key;
-}
-
-
-static gboolean
-quark_equal(gconstpointer a, gconstpointer b)
-{
-  return (a == b)
-}
-
 static void
 attribute_instance_init (GTypeInstance *instance, gpointer g_class)
 {
   LttvAttribute *self = (LttvAttribute *)instance;
-  self->names = g_hash_table_new(quark_hash, quark_equal);
-  self->attributes = g_array_new(FALSE, FALSE, 
-      sizeof(Attribute));
+  self->names = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->attributes = g_array_new(FALSE, FALSE, sizeof(Attribute));
 }
 
 
@@ -261,7 +260,7 @@ attribute_finalize (LttvAttribute *self)
 {
   g_hash_table_free(self->names);
   g_array_free(self->attributes, TRUE);
-  G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_ATTRIBUTE_TYPE))->finalize(self);
+  G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_ATTRIBUTE_GET_CLASS(self)))->finalize(G_OBJECT(self));
 }
 
 
@@ -270,6 +269,37 @@ attribute_class_init (LttvAttributeClass *klass)
 {
   GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
 
-  gobject_class->finalize = attribute_finalize;
+  gobject_class->finalize = (void (*)(GObject *self))attribute_finalize;
 }
+
+GType 
+lttv_attribute_get_type (void)
+{
+  static GType type = 0;
+  if (type == 0) {
+    static const GTypeInfo info = {
+      sizeof (LttvAttributeClass),
+      NULL,   /* base_init */
+      NULL,   /* base_finalize */
+      (GClassInitFunc) attribute_class_init,   /* class_init */
+      NULL,   /* class_finalize */
+      NULL,   /* class_data */
+      sizeof (LttvAttribute),
+      0,      /* n_preallocs */
+      (GInstanceInitFunc) attribute_instance_init    /* instance_init */
+    };
+
+    static const GInterfaceInfo iattribute_info = {
+      (GInterfaceInitFunc) attribute_interface_init,    /* interface_init */
+      NULL,                                       /* interface_finalize */
+      NULL                                        /* interface_data */
+    };
+
+    type = g_type_register_static (G_TYPE_OBJECT, "LttvAttributeType", &info, 
+        0);
+    g_type_add_interface_static (type, LTTV_IATTRIBUTE_TYPE, &iattribute_info);
+  }
+  return type;
+}
+
 
