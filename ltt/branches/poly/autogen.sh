@@ -157,6 +157,7 @@ ln -s ../../LibLTT/ltt.h $srcdir/include/ltt/ltt.h
 mkdir $srcdir/include/lttv
 ln -s ../../lttv/module.h $srcdir/include/lttv/module.h
 ln -s ../../lttv/hook.h $srcdir/include/lttv/hook.h
+ln -s ../../lttv/traceWindow.h $srcdir/include/lttv/traceWindow.h
 echo done.
 
 if test x$NOCONFIGURE = x; then
