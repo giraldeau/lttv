@@ -9,10 +9,11 @@ SUBDIRS = convert
 libdir = ${lttlibdir}
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
-LIBS += $(GLIB_LIBS)
+LIBS += $(GLIB_LIBS) $(M_LIBS)
 
 lib_LTLIBRARIES = libtraceread.la
 libtraceread_la_SOURCES = event.c facility.c parser.c tracefile.c type.c
+libtraceread_la_LIBADD = -lm
 noinst_HEADERS = parser.h ltt-private.h
 
 lttinclude_HEADERS = \

@@ -20,13 +20,17 @@
 #include <glib.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 
 #include "processlist.h"
+#include "drawing.h"
 #include "drawitem.h"
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
+/* Preallocated Size of the index_to_pixmap array */
+#define ALLOCATE_PROCESSES 1000
 
 /*****************************************************************************
  *                       Methods to synchronize process list                 *
@@ -264,6 +268,174 @@ void destroy_hash_key(gpointer key);
 void destroy_hash_data(gpointer data);
 
 
+static void update_index_to_pixmap_each(ProcessInfo *key,
+                                        HashedProcessData *value,
+                                        ProcessList *process_list)
+{
+  guint array_index = processlist_get_index_from_data(process_list, value);
+  
+  g_assert(array_index < process_list->index_to_pixmap->len);
+
+  GdkPixmap **pixmap = 
+    (GdkPixmap**)&g_ptr_array_index(process_list->index_to_pixmap, array_index);
+
+  *pixmap = value->pixmap;
+}
+
+
+static void update_index_to_pixmap(ProcessList *process_list)
+{
+  g_ptr_array_set_size(process_list->index_to_pixmap,
+                       g_hash_table_size(process_list->process_hash));
+  g_hash_table_foreach(process_list->process_hash, 
+                       (GHFunc)update_index_to_pixmap_each,
+                       process_list);
+}
+
+
+static void update_pixmap_size_each(ProcessInfo *key,
+                                    HashedProcessData *value,
+                                    guint width)
+{
+  GdkPixmap *old_pixmap = value->pixmap;
+
+  value->pixmap = 
+        gdk_pixmap_new(old_pixmap,
+                       width,
+                       value->height,
+                       -1);
+
+  gdk_pixmap_unref(old_pixmap);
+}
+
+
+void update_pixmap_size(ProcessList *process_list, guint width)
+{
+  g_hash_table_foreach(process_list->process_hash, 
+                       (GHFunc)update_pixmap_size_each,
+                       (gpointer)width);
+}
+
+
+typedef struct _CopyPixmap {
+  GdkDrawable *dest;
+  GdkGC *gc;
+  GdkDrawable *src;
+  gint xsrc, ysrc, xdest, ydest, width, height;
+} CopyPixmap;
+
+static void copy_pixmap_region_each(ProcessInfo *key,
+                                    HashedProcessData *value,
+                                    CopyPixmap *cp)
+{
+  GdkPixmap *src = cp->src;
+  GdkPixmap *dest = cp->dest;
+  
+  if(dest == NULL)
+    dest = value->pixmap;
+  if(src == NULL)
+    src = value->pixmap;
+
+  gdk_draw_drawable (dest,
+      cp->gc,
+      src,
+      cp->xsrc, cp->ysrc,
+      cp->xdest, cp->ydest,
+      cp->width, cp->height);
+}
+
+
+
+
+void copy_pixmap_region(ProcessList *process_list, GdkDrawable *dest,
+    GdkGC *gc, GdkDrawable *src,
+    gint xsrc, gint ysrc,
+    gint xdest, gint ydest, gint width, gint height)
+{
+  CopyPixmap cp = { dest, gc, src, xsrc, ysrc, xdest, ydest, width, height };
+  
+  g_hash_table_foreach(process_list->process_hash, 
+                       (GHFunc)copy_pixmap_region_each,
+                       &cp);
+}
+
+
+
+typedef struct _RectanglePixmap {
+  gboolean filled;
+  gint x, y, width, height;
+  GdkGC *gc;
+} RectanglePixmap;
+
+static void rectangle_pixmap_each(ProcessInfo *key,
+                                  HashedProcessData *value,
+                                  RectanglePixmap *rp)
+{
+  if(rp->height == -1)
+    rp->height = value->height;
+      
+  gdk_draw_rectangle (value->pixmap,
+      rp->gc,
+      rp->filled,
+      rp->x, rp->y,
+      rp->width, rp->height);
+}
+
+
+
+
+void rectangle_pixmap(ProcessList *process_list, GdkGC *gc,
+    gboolean filled, gint x, gint y, gint width, gint height)
+{
+  RectanglePixmap rp = { filled, x, y, width, height, gc };
+  
+  g_hash_table_foreach(process_list->process_hash, 
+                       (GHFunc)rectangle_pixmap_each,
+                       &rp);
+}
+
+
+/* Renders each pixmaps into on big drawable */
+void copy_pixmap_to_screen(ProcessList *process_list,
+    GdkDrawable *dest,
+    GdkGC *gc,
+    gint x, gint y,
+    gint width, gint height)
+{
+  gint cell_height = 
+     get_cell_height(process_list, 
+                     (GtkTreeView*)process_list->process_list_widget);
+  cell_height = 24; //FIXME
+  /* Get indexes */
+  gint begin = floor(y/(double)cell_height);
+  gint end = MIN(ceil((y+height)/(double)cell_height),
+                 process_list->index_to_pixmap->len);
+  gint i;
+  g_warning("begin : %i, end : %i", begin,end);
+  for(i=begin; i<end; i++) {
+    g_assert(i<process_list->index_to_pixmap->len);
+    /* Render the pixmap to the screen */
+    GdkPixmap *pixmap = 
+      (GdkPixmap*)g_ptr_array_index(process_list->index_to_pixmap, i);
+
+    gdk_draw_drawable (dest,
+        gc,
+        pixmap,
+        x, 0,
+        x, i*cell_height,
+        width, cell_height);
+
+  }
+  
+  
+}
+
+
+
+
+
+
+
 
 
 ProcessList *processlist_construct(void)
@@ -274,7 +446,6 @@ ProcessList *processlist_construct(void)
   ProcessList* process_list = g_new(ProcessList,1);
   
   process_list->number_of_process = 0;
-  process_list->cell_height_cache = -1;
 
   process_list->current_hash_data = NULL;
 
@@ -390,6 +561,8 @@ ProcessList *processlist_construct(void)
       process_list,
       (GDestroyNotify)processlist_destroy);
 
+  process_list->index_to_pixmap = g_ptr_array_sized_new(ALLOCATE_PROCESSES);
+  
   return process_list;
 }
 
@@ -398,6 +571,7 @@ void processlist_destroy(ProcessList *process_list)
   g_debug("processlist_destroy %p", process_list);
   g_hash_table_destroy(process_list->process_hash);
   process_list->process_hash = NULL;
+  g_ptr_array_free(process_list->index_to_pixmap, TRUE);
 
   g_free(process_list);
   g_debug("processlist_destroy end");
@@ -412,6 +586,7 @@ static gboolean remove_hash_item(ProcessInfo *process_info,
   iter = hashed_process_data->y_iter;
 
   gtk_list_store_remove (process_list->list_store, &iter);
+  gdk_pixmap_unref(hashed_process_data->pixmap);
 
   if(likely(process_list->current_hash_data != NULL)) {
     if(likely(hashed_process_data ==
@@ -429,6 +604,7 @@ void processlist_clear(ProcessList *process_list)
                               (GHRFunc)remove_hash_item,
                               (gpointer)process_list);
   process_list->number_of_process = 0;
+  update_index_to_pixmap(process_list);
 }
 
 
@@ -449,6 +625,7 @@ void destroy_hash_data(gpointer data)
 }
 
 int processlist_add(  ProcessList *process_list,
+      Drawing_t *drawing,
       guint pid,
       guint cpu,
       guint ppid,
@@ -489,7 +666,7 @@ int processlist_add(  ProcessList *process_list,
   hashed_process_data->x.under_used = FALSE;
   hashed_process_data->x.under_marked = FALSE;
   hashed_process_data->next_good_time = ltt_time_zero;
-  
+ 
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->list_store,
                           &hashed_process_data->y_iter);
@@ -503,27 +680,37 @@ int processlist_add(  ProcessList *process_list,
         BIRTH_NS_COLUMN, birth->tv_nsec,
         TRACE_COLUMN, trace_num,
         -1);
-#if 0
-  hashed_process_data->row_ref = gtk_tree_row_reference_new (
-      GTK_TREE_MODEL(process_list->list_store),
-      gtk_tree_model_get_path(
-        GTK_TREE_MODEL(process_list->list_store),
-        &iter));
-#endif //0
+
   g_hash_table_insert(process_list->process_hash,
         (gpointer)Process_Info,
         (gpointer)hashed_process_data);
   
-  //g_critical ( "iter after : %s", gtk_tree_path_to_string (
-  //    gtk_tree_model_get_path (
-  //        GTK_TREE_MODEL(process_list->list_store),
-  //        &iter)));
   process_list->number_of_process++;
 
-  *height = get_cell_height(process_list,
-                            GTK_TREE_VIEW(process_list->process_list_widget))
-        * process_list->number_of_process ;
+  hashed_process_data->height = get_cell_height(process_list,
+                        (GtkTreeView*)process_list->process_list_widget);
+  hashed_process_data->height = 24; // FIXME
+  g_assert(hashed_process_data->height != 0);
+
+  *height = hashed_process_data->height * process_list->number_of_process;
+
+  hashed_process_data->pixmap = 
+        gdk_pixmap_new(drawing->drawing_area->window,
+                       drawing->alloc_width,
+                       hashed_process_data->height,
+                       -1);
   
+  // Clear the image
+  gdk_draw_rectangle (hashed_process_data->pixmap,
+        drawing->drawing_area->style->black_gc,
+        TRUE,
+        0, 0,
+        drawing->alloc_width,
+        hashed_process_data->height);
+
+  update_index_to_pixmap(process_list);
+
+
   return 0;
 }
 
@@ -564,6 +751,11 @@ int processlist_remove( ProcessList *process_list,
         process_list->current_hash_data[cpu] = NULL;
       }
     }
+    
+    gdk_pixmap_unref(hashed_process_data->pixmap);
+    
+    update_index_to_pixmap(process_list);
+
     process_list->number_of_process--;
 
     return 0; 

@@ -54,7 +54,9 @@ typedef struct _ProcessInfo {
 } ProcessInfo;
 
 typedef struct _HashedProcessData {
-  
+ 
+  GdkPixmap *pixmap;  // Pixmap slice containing drawing buffer for the PID
+  gint height; // height of the pixmap
   GtkTreeIter y_iter; // Access quickly to y pos.
  // DrawContext *draw_context;
   /* Information on current drawing */
@@ -91,10 +93,20 @@ struct _ProcessList {
   /* Current process, one per cpu */
   HashedProcessData **current_hash_data;
 
+  /* Array containing index -> pixmap correspondance. Must be updated
+   * every time the process list is reordered, process added or removed */
+  GPtrArray * index_to_pixmap;
+
 };
 
 
 typedef struct _ProcessList ProcessList;
+
+
+#ifndef TYPE_DRAWING_T_DEFINED
+#define TYPE_DRAWING_T_DEFINED
+typedef struct _Drawing_t Drawing_t;
+#endif //TYPE_DRAWING_T_DEFINED
 
 ProcessList *processlist_construct(void);
 void processlist_destroy(ProcessList *process_list);
@@ -104,7 +116,8 @@ void processlist_clear(ProcessList *process_list);
 
 // out : success (0) and height
 /* CPU num is only used for PID 0 */
-int processlist_add(ProcessList *process_list, guint pid, guint cpu, guint ppid,
+int processlist_add(ProcessList *process_list, Drawing_t * drawing, 
+    guint pid, guint cpu, guint ppid,
     LttTime *birth, guint trace_num, const gchar *name, guint *height,
     ProcessInfo **process_info,
     HashedProcessData **hashed_process_data);
@@ -112,6 +125,26 @@ int processlist_add(ProcessList *process_list, guint pid, guint cpu, guint ppid,
 int processlist_remove(ProcessList *process_list, guint pid, guint cpu, 
     LttTime *birth, guint trace_num);
 
+/* Update the width of each pixmap buffer for each process */
+void update_pixmap_size(ProcessList *process_list, guint width);
+
+
+/* Put src and/or dest to NULL to copy from/to the each PID specific pixmap */
+void copy_pixmap_region(ProcessList *process_list, GdkDrawable *dest,
+    GdkGC *gc, GdkDrawable *src,
+    gint xsrc, gint ysrc,
+    gint xdest, gint ydest, gint width, gint height);
+
+/* If height is -1, the height of each pixmap is used */
+void rectangle_pixmap(ProcessList *process_list, GdkGC *gc,
+    gboolean filled, gint x, gint y, gint width, gint height);
+
+/* Renders each pixmaps into on big drawable */
+void copy_pixmap_to_screen(ProcessList *process_list,
+    GdkDrawable *dest,
+    GdkGC *gc,
+    gint x, gint y,
+    gint width, gint height);
 
 
 
@@ -179,6 +212,24 @@ static inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
 
   return 0; 
 
+}
+
+static inline guint processlist_get_index_from_data(ProcessList *process_list,
+          HashedProcessData *hashed_process_data)
+{
+  gint *path_indices;
+  GtkTreePath *tree_path;
+  guint ret;
+
+  tree_path = gtk_tree_model_get_path((GtkTreeModel*)process_list->list_store,
+                    &hashed_process_data->y_iter);
+  path_indices =  gtk_tree_path_get_indices (tree_path);
+
+  ret = path_indices[0];
+
+  gtk_tree_path_free(tree_path);
+
+  return ret;
 }
 
 

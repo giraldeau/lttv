@@ -419,7 +419,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
        * or add it, and draw its items.
        */
        /* Add process to process list (if not present) */
-      guint y = 0, height = 0, pl_height = 0;
+      guint pl_height = 0;
       HashedProcessData *hashed_process_data = NULL;
       ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process->creation_time;
@@ -435,7 +435,9 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         const gchar *name = g_quark_to_string(process->name);
         /* Process not present */
         ProcessInfo *process_info;
+        Drawing_t *drawing = control_flow_data->drawing;
         processlist_add(process_list,
+            drawing,
             pid_out,
             process->last_cpu_index,
             process->ppid,
@@ -445,11 +447,11 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             &pl_height,
             &process_info,
             &hashed_process_data);
-        processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
-        drawing_insert_square( control_flow_data->drawing, y, height);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
+
       }
   
       /* Now, the process is in the state hash and our own process hash.
@@ -460,10 +462,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                           evtime) > 0)
       {
         if(hashed_process_data->x.middle_marked == FALSE) {
-           processlist_get_pixels_from_data(process_list,
-                      hashed_process_data,
-                      &y,
-                      &height);
     
           TimeWindow time_window = 
             lttvwindow_get_time_window(control_flow_data->tab);
@@ -483,19 +481,13 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
           /* Draw collision indicator */
           gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-          gdk_draw_point(drawing->pixmap,
+          gdk_draw_point(hashed_process_data->pixmap,
                          drawing->gc,
                          x,
-                         y+(height/2)-3);
+                         (hashed_process_data->height/2)-3);
           hashed_process_data->x.middle_marked = TRUE;
         }
       } else {
-         processlist_get_pixels_from_data(process_list,
-                      hashed_process_data,
-                      &y,
-                      &height);
- 
-
         TimeWindow time_window = 
           lttvwindow_get_time_window(control_flow_data->tab);
 #ifdef EXTRA_CHECK
@@ -520,10 +512,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           if(hashed_process_data->x.middle_marked == FALSE) {
             /* Draw collision indicator */
             gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-            gdk_draw_point(drawing->pixmap,
+            gdk_draw_point(hashed_process_data->pixmap,
                            drawing->gc,
                            x,
-                           y+(height/2)-3);
+                           (hashed_process_data->height/2)-3);
             hashed_process_data->x.middle_marked = TRUE;
           }
           /* jump */
@@ -532,15 +524,15 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
           /* Now create the drawing context that will be used to draw
            * items related to the last state. */
-          draw_context.drawable = drawing->pixmap;
+          draw_context.drawable = hashed_process_data->pixmap;
           draw_context.gc = drawing->gc;
           draw_context.pango_layout = drawing->pango_layout;
           draw_context.drawinfo.start.x = hashed_process_data->x.middle;
           draw_context.drawinfo.end.x = x;
 
-          draw_context.drawinfo.y.over = y+1;
-          draw_context.drawinfo.y.middle = y+(height/2);
-          draw_context.drawinfo.y.under = y+height;
+          draw_context.drawinfo.y.over = 1;
+          draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+          draw_context.drawinfo.y.under = hashed_process_data->height;
 
           draw_context.drawinfo.start.offset.over = 0;
           draw_context.drawinfo.start.offset.middle = 0;
@@ -583,7 +575,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
        * or add it, and draw its items.
        */
        /* Add process to process list (if not present) */
-      guint y = 0, height = 0, pl_height = 0;
+      guint pl_height = 0;
       HashedProcessData *hashed_process_data = NULL;
       ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process->creation_time;
@@ -599,7 +591,9 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         const gchar *name = g_quark_to_string(process->name);
         /* Process not present */
         ProcessInfo *process_info;
+        Drawing_t *drawing = control_flow_data->drawing;
         processlist_add(process_list,
+            drawing,
             pid_in,
             process->last_cpu_index,
             process->ppid,
@@ -609,11 +603,11 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             &pl_height,
             &process_info,
             &hashed_process_data);
-        processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
-        drawing_insert_square( control_flow_data->drawing, y, height);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
+
       }
       //We could set the current process and hash here, but will be done
       //by after schedchange hook
@@ -627,10 +621,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       {
         if(hashed_process_data->x.middle_marked == FALSE) {
 
-          processlist_get_pixels_from_data(process_list,
-                  hashed_process_data,
-                  &y,
-                  &height);
           TimeWindow time_window = 
             lttvwindow_get_time_window(control_flow_data->tab);
 #ifdef EXTRA_CHECK
@@ -649,17 +639,13 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
           /* Draw collision indicator */
           gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-          gdk_draw_point(drawing->pixmap,
+          gdk_draw_point(hashed_process_data->pixmap,
                          drawing->gc,
                          x,
-                         y+(height/2)-3);
+                         (hashed_process_data->height/2)-3);
           hashed_process_data->x.middle_marked = TRUE;
         }
       } else {
-        processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
         TimeWindow time_window = 
           lttvwindow_get_time_window(control_flow_data->tab);
 #ifdef EXTRA_CHECK
@@ -685,10 +671,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           if(hashed_process_data->x.middle_marked == FALSE) {
             /* Draw collision indicator */
             gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-            gdk_draw_point(drawing->pixmap,
+            gdk_draw_point(hashed_process_data->pixmap,
                            drawing->gc,
                            x,
-                           y+(height/2)-3);
+                           (hashed_process_data->height/2)-3);
             hashed_process_data->x.middle_marked = TRUE;
           }
           /* jump */
@@ -697,15 +683,15 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
           /* Now create the drawing context that will be used to draw
            * items related to the last state. */
-          draw_context.drawable = drawing->pixmap;
+          draw_context.drawable = hashed_process_data->pixmap;
           draw_context.gc = drawing->gc;
           draw_context.pango_layout = drawing->pango_layout;
           draw_context.drawinfo.start.x = hashed_process_data->x.middle;
           draw_context.drawinfo.end.x = x;
 
-          draw_context.drawinfo.y.over = y+1;
-          draw_context.drawinfo.y.middle = y+(height/2);
-          draw_context.drawinfo.y.under = y+height;
+          draw_context.drawinfo.y.over = 1;
+          draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+          draw_context.drawinfo.y.under = hashed_process_data->height;
 
           draw_context.drawinfo.start.offset.over = 0;
           draw_context.drawinfo.start.offset.middle = 0;
@@ -1371,7 +1357,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   /* Add process to process list (if not present) */
   LttvProcessState *process_in;
   LttTime birth;
-  guint y_in = 0, height = 0, pl_height = 0;
+  guint pl_height = 0;
   HashedProcessData *hashed_process_data_in = NULL;
 
   ProcessList *process_list = control_flow_data->process_list;
@@ -1407,8 +1393,10 @@ int after_schedchange_hook(void *hook_data, void *call_data)
     g_assert(pid_in == 0 || pid_in != process_in->ppid);
     const gchar *name = g_quark_to_string(process_in->name);
     ProcessInfo *process_info;
+    Drawing_t *drawing = control_flow_data->drawing;
     /* Process not present */
     processlist_add(process_list,
+        drawing,
         pid_in,
         process_in->last_cpu_index,
         process_in->ppid,
@@ -1418,11 +1406,10 @@ int after_schedchange_hook(void *hook_data, void *call_data)
         &pl_height,
         &process_info,
         &hashed_process_data_in);
-    processlist_get_pixels_from_data(process_list,
-                hashed_process_data_in,
-                &y_in,
-                &height);
-    drawing_insert_square( control_flow_data->drawing, y_in, height);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
   }
   /* Set the current process */
   process_list->current_hash_data[process_in->last_cpu_index] =
@@ -1431,10 +1418,6 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   if(ltt_time_compare(hashed_process_data_in->next_good_time,
                           evtime) <= 0)
   {
-    processlist_get_pixels_from_data(process_list,
-                hashed_process_data_in,
-                &y_in,
-                &height);
     TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -1995,7 +1978,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
    * or add it, and draw its items.
    */
    /* Add process to process list (if not present) */
-  guint y = 0, height = 0, pl_height = 0;
+  guint pl_height = 0;
   HashedProcessData *hashed_process_data = NULL;
   ProcessList *process_list = control_flow_data->process_list;
   LttTime birth = process->creation_time;
@@ -2013,8 +1996,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
       g_assert(pid == 0 || pid != process->ppid);
       ProcessInfo *process_info;
       /* Process not present */
+      Drawing_t *drawing = control_flow_data->drawing;
       const gchar *name = g_quark_to_string(process->name);
       processlist_add(process_list,
+          drawing,
           pid,
           process->last_cpu_index,
           process->ppid,
@@ -2024,11 +2009,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
           &pl_height,
           &process_info,
           &hashed_process_data);
-      processlist_get_pixels_from_data(process_list,
-                  hashed_process_data,
-                  &y,
-                  &height);
-      drawing_insert_square( control_flow_data->drawing, y, height);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
     }
     /* Set the current process */
     process_list->current_hash_data[process->last_cpu_index] =
@@ -2043,10 +2027,6 @@ int before_execmode_hook(void *hook_data, void *call_data)
                       evtime) > 0))
   {
     if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
-      processlist_get_pixels_from_data(process_list,
-                  hashed_process_data,
-                  &y,
-                  &height);
       TimeWindow time_window = 
         lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2066,17 +2046,13 @@ int before_execmode_hook(void *hook_data, void *call_data)
 
       /* Draw collision indicator */
       gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-      gdk_draw_point(drawing->pixmap,
+      gdk_draw_point(hashed_process_data->pixmap,
                      drawing->gc,
                      x,
-                     y+(height/2)-3);
+                     (hashed_process_data->height/2)-3);
       hashed_process_data->x.middle_marked = TRUE;
     }
   } else {
-    processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
     TimeWindow time_window = 
       lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2103,10 +2079,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
       if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
         /* Draw collision indicator */
         gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-        gdk_draw_point(drawing->pixmap,
+        gdk_draw_point(hashed_process_data->pixmap,
                        drawing->gc,
                        x,
-                       y+(height/2)-3);
+                       (hashed_process_data->height/2)-3);
         hashed_process_data->x.middle_marked = TRUE;
       }
       /* jump */
@@ -2115,15 +2091,15 @@ int before_execmode_hook(void *hook_data, void *call_data)
       DrawContext draw_context;
       /* Now create the drawing context that will be used to draw
        * items related to the last state. */
-      draw_context.drawable = drawing->pixmap;
+      draw_context.drawable = hashed_process_data->pixmap;
       draw_context.gc = drawing->gc;
       draw_context.pango_layout = drawing->pango_layout;
       draw_context.drawinfo.start.x = hashed_process_data->x.middle;
       draw_context.drawinfo.end.x = x;
 
-      draw_context.drawinfo.y.over = y+1;
-      draw_context.drawinfo.y.middle = y+(height/2);
-      draw_context.drawinfo.y.under = y+height;
+      draw_context.drawinfo.y.over = 1;
+      draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+      draw_context.drawinfo.y.under = hashed_process_data->height;
 
       draw_context.drawinfo.start.offset.over = 0;
       draw_context.drawinfo.start.offset.middle = 0;
@@ -2185,7 +2161,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
   /* Add process to process list (if not present) */
   LttvProcessState *process;
   LttTime birth;
-  guint y = 0, height = 0, pl_height = 0;
+  guint pl_height = 0;
   HashedProcessData *hashed_process_data = NULL;
 
   ProcessList *process_list = control_flow_data->process_list;
@@ -2211,9 +2187,11 @@ int after_execmode_hook(void *hook_data, void *call_data)
     {
       g_assert(pid == 0 || pid != process->ppid);
       /* Process not present */
+      Drawing_t *drawing = control_flow_data->drawing;
       const gchar *name = g_quark_to_string(process->name);
       ProcessInfo *process_info;
       processlist_add(process_list,
+          drawing,
           pid,
           process->last_cpu_index,
           process->ppid,
@@ -2223,11 +2201,10 @@ int after_execmode_hook(void *hook_data, void *call_data)
           &pl_height,
           &process_info,
           &hashed_process_data);
-      processlist_get_pixels_from_data(process_list,
-                  hashed_process_data,
-                  &y,
-                  &height);
-      drawing_insert_square( control_flow_data->drawing, y, height);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
     }
     /* Set the current process */
     process_list->current_hash_data[process->last_cpu_index] =
@@ -2237,12 +2214,6 @@ int after_execmode_hook(void *hook_data, void *call_data)
   if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
                           evtime) <= 0))
   {
-#if 0
-    processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
-#endif //0
     TimeWindow time_window = 
       lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2310,7 +2281,7 @@ int before_process_hook(void *hook_data, void *call_data)
     LttvProcessState *process = tfs->process;
     guint pid = process->pid;
     LttTime birth;
-    guint y = 0, height = 0, pl_height = 0;
+    guint pl_height = 0;
     HashedProcessData *hashed_process_data = NULL;
 
     ProcessList *process_list = control_flow_data->process_list;
@@ -2331,9 +2302,11 @@ int before_process_hook(void *hook_data, void *call_data)
       {
         g_assert(pid == 0 || pid != process->ppid);
         /* Process not present */
+        Drawing_t *drawing = control_flow_data->drawing;
         const gchar *name = g_quark_to_string(process->name);
         ProcessInfo *process_info;
         processlist_add(process_list,
+            drawing,
             pid,
             process->last_cpu_index,
             process->ppid,
@@ -2343,11 +2316,10 @@ int before_process_hook(void *hook_data, void *call_data)
             &pl_height,
             &process_info,
             &hashed_process_data);
-        processlist_get_pixels_from_data(process_list,
-                  hashed_process_data,
-                  &y,
-                  &height);
-        drawing_insert_square( control_flow_data->drawing, y, height);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
       }
     }
 
@@ -2359,10 +2331,6 @@ int before_process_hook(void *hook_data, void *call_data)
                         evtime) > 0))
     {
       if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
-        processlist_get_pixels_from_data(process_list,
-                  hashed_process_data,
-                  &y,
-                  &height);
         TimeWindow time_window = 
           lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2382,17 +2350,13 @@ int before_process_hook(void *hook_data, void *call_data)
 
         /* Draw collision indicator */
         gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-        gdk_draw_point(drawing->pixmap,
+        gdk_draw_point(hashed_process_data->pixmap,
                        drawing->gc,
                        x,
-                       y+(height/2)-3);
+                       (hashed_process_data->height/2)-3);
         hashed_process_data->x.middle_marked = TRUE;
       }
     } else {
-      processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
       TimeWindow time_window = 
         lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2419,10 +2383,10 @@ int before_process_hook(void *hook_data, void *call_data)
         if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
           /* Draw collision indicator */
           gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-          gdk_draw_point(drawing->pixmap,
+          gdk_draw_point(hashed_process_data->pixmap,
                          drawing->gc,
                          x,
-                         y+(height/2)-3);
+                         (hashed_process_data->height/2)-3);
           hashed_process_data->x.middle_marked = TRUE;
         }
         /* jump */
@@ -2431,15 +2395,15 @@ int before_process_hook(void *hook_data, void *call_data)
 
         /* Now create the drawing context that will be used to draw
          * items related to the last state. */
-        draw_context.drawable = drawing->pixmap;
+        draw_context.drawable = hashed_process_data->pixmap;
         draw_context.gc = drawing->gc;
         draw_context.pango_layout = drawing->pango_layout;
         draw_context.drawinfo.start.x = hashed_process_data->x.middle;
         draw_context.drawinfo.end.x = x;
 
-        draw_context.drawinfo.y.over = y+1;
-        draw_context.drawinfo.y.middle = y+(height/2);
-        draw_context.drawinfo.y.under = y+height;
+        draw_context.drawinfo.y.over = 1;
+        draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+        draw_context.drawinfo.y.under = hashed_process_data->height;
 
         draw_context.drawinfo.start.offset.over = 0;
         draw_context.drawinfo.start.offset.middle = 0;
@@ -2517,7 +2481,7 @@ int after_process_hook(void *hook_data, void *call_data)
     /* Add process to process list (if not present) */
     LttvProcessState *process_child;
     LttTime birth;
-    guint y_child = 0, height = 0, pl_height = 0;
+    guint pl_height = 0;
     HashedProcessData *hashed_process_data_child = NULL;
 
     ProcessList *process_list = control_flow_data->process_list;
@@ -2538,9 +2502,11 @@ int after_process_hook(void *hook_data, void *call_data)
     {
       g_assert(child_pid == 0 || child_pid != process_child->ppid);
       /* Process not present */
+      Drawing_t *drawing = control_flow_data->drawing;
       const gchar *name = g_quark_to_string(process_child->name);
       ProcessInfo *process_info;
       processlist_add(process_list,
+          drawing,
           child_pid,
           process_child->last_cpu_index,
           process_child->ppid,
@@ -2550,23 +2516,16 @@ int after_process_hook(void *hook_data, void *call_data)
           &pl_height,
           &process_info,
           &hashed_process_data_child);
-      processlist_get_pixels_from_data(process_list,
-                hashed_process_data_child,
-                &y_child,
-                &height);
-      drawing_insert_square( control_flow_data->drawing, y_child, height);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
     }
 
 
     if(likely(ltt_time_compare(hashed_process_data_child->next_good_time,
                           evtime) <= 0))
     {
-#if 0
-      processlist_get_pixels_from_data(process_list,
-                hashed_process_data_child,
-                &y_child,
-                &height);
-#endif //0
       TimeWindow time_window = 
         lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2607,7 +2566,7 @@ int after_process_hook(void *hook_data, void *call_data)
     LttvProcessState *process = tfs->process;
     guint pid = process->pid;
     LttTime birth;
-    guint y = 0, height = 0, pl_height = 0;
+    guint pl_height = 0;
     HashedProcessData *hashed_process_data = NULL;
 
     ProcessList *process_list = control_flow_data->process_list;
@@ -2629,9 +2588,11 @@ int after_process_hook(void *hook_data, void *call_data)
       {
         g_assert(pid == 0 || pid != process->ppid);
         /* Process not present */
+        Drawing_t *drawing = control_flow_data->drawing;
         const gchar *name = g_quark_to_string(process->name);
         ProcessInfo *process_info;
         processlist_add(process_list,
+            drawing,
             pid,
             process->last_cpu_index,
             process->ppid,
@@ -2641,11 +2602,10 @@ int after_process_hook(void *hook_data, void *call_data)
             &pl_height,
             &process_info,
             &hashed_process_data);
-        processlist_get_pixels_from_data(process_list,
-                  hashed_process_data,
-                  &y,
-                  &height);
-        drawing_insert_square( control_flow_data->drawing, y, height);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
       }
 
       /* Set the current process */
@@ -2656,12 +2616,6 @@ int after_process_hook(void *hook_data, void *call_data)
     if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
                           evtime) <= 0))
     {
-#if 0
-      processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
-#endif //0
       TimeWindow time_window = 
         lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2695,6 +2649,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
   Drawing_t *drawing = control_flow_data->drawing;
+  ProcessList *process_list = control_flow_data->process_list;
 
   const TimeWindowNotifyData *time_window_nofify_data = 
                           ((const TimeWindowNotifyData *)call_data);
@@ -2756,13 +2711,14 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           &x);
 
       /* Copy old data to new location */
-      gdk_draw_drawable (control_flow_data->drawing->pixmap,
-          control_flow_data->drawing->drawing_area->style->black_gc,
-          control_flow_data->drawing->pixmap,
-          x, 0,
-          0, 0,
-         control_flow_data->drawing->width-x+SAFETY, -1);
- 
+      copy_pixmap_region(process_list,
+                  NULL,
+                  control_flow_data->drawing->drawing_area->style->black_gc,
+                  NULL,
+                  x, 0,
+                  0, 0,
+                  control_flow_data->drawing->width-x+SAFETY, -1);
+
       if(drawing->damage_begin == drawing->damage_end)
         drawing->damage_begin = control_flow_data->drawing->width-x;
       else
@@ -2771,13 +2727,12 @@ gint update_time_window_hook(void *hook_data, void *call_data)
       drawing->damage_end = control_flow_data->drawing->width;
 
       /* Clear the data request background, but not SAFETY */
-      gdk_draw_rectangle (control_flow_data->drawing->pixmap,
-          //control_flow_data->drawing->drawing_area->style->black_gc,
+      rectangle_pixmap(process_list,
           control_flow_data->drawing->drawing_area->style->black_gc,
           TRUE,
           drawing->damage_begin+SAFETY, 0,
           drawing->damage_end - drawing->damage_begin,  // do not overlap
-          control_flow_data->drawing->height);
+          -1);
       gtk_widget_queue_draw(drawing->drawing_area);
       //gtk_widget_queue_draw_area (drawing->drawing_area,
       //                          0,0,
@@ -2786,7 +2741,6 @@ gint update_time_window_hook(void *hook_data, void *call_data)
 
       /* Get new data for the rest. */
       drawing_data_request(control_flow_data->drawing,
-          &control_flow_data->drawing->pixmap,
           drawing->damage_begin, 0,
           drawing->damage_end - drawing->damage_begin,
           control_flow_data->drawing->height);
@@ -2807,11 +2761,11 @@ gint update_time_window_hook(void *hook_data, void *call_data)
             width,
             &x);
         
-
         /* Copy old data to new location */
-        gdk_draw_drawable (control_flow_data->drawing->pixmap,
+        copy_pixmap_region  (process_list,
+            NULL,
             control_flow_data->drawing->drawing_area->style->black_gc,
-            control_flow_data->drawing->pixmap,
+            NULL,
             0, 0,
             x, 0,
             -1, -1);
@@ -2824,12 +2778,12 @@ gint update_time_window_hook(void *hook_data, void *call_data)
 
         drawing->damage_begin = 0;
         
-        gdk_draw_rectangle (control_flow_data->drawing->pixmap,
+        rectangle_pixmap (process_list,
           control_flow_data->drawing->drawing_area->style->black_gc,
           TRUE,
           drawing->damage_begin, 0,
           drawing->damage_end - drawing->damage_begin,  // do not overlap
-          control_flow_data->drawing->height);
+          -1);
 
         gtk_widget_queue_draw(drawing->drawing_area);
         //gtk_widget_queue_draw_area (drawing->drawing_area,
@@ -2840,7 +2794,6 @@ gint update_time_window_hook(void *hook_data, void *call_data)
 
         /* Get new data for the rest. */
         drawing_data_request(control_flow_data->drawing,
-            &control_flow_data->drawing->pixmap,
             drawing->damage_begin, 0,
             drawing->damage_end - drawing->damage_begin,
             control_flow_data->drawing->height);
@@ -2854,12 +2807,12 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           /* Cannot reuse any part of the screen : far jump */
           
           
-          gdk_draw_rectangle (control_flow_data->drawing->pixmap,
+          rectangle_pixmap (process_list,
             control_flow_data->drawing->drawing_area->style->black_gc,
             TRUE,
             0, 0,
             control_flow_data->drawing->width+SAFETY, // do not overlap
-            control_flow_data->drawing->height);
+            -1);
 
           //gtk_widget_queue_draw_area (drawing->drawing_area,
           //                      0,0,
@@ -2871,7 +2824,6 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           drawing->damage_end = control_flow_data->drawing->width;
 
           drawing_data_request(control_flow_data->drawing,
-              &control_flow_data->drawing->pixmap,
               0, 0,
               control_flow_data->drawing->width,
               control_flow_data->drawing->height);
@@ -2883,12 +2835,12 @@ gint update_time_window_hook(void *hook_data, void *call_data)
     /* Different scale (zoom) */
     g_info("zoom");
 
-    gdk_draw_rectangle (control_flow_data->drawing->pixmap,
+    rectangle_pixmap (process_list,
           control_flow_data->drawing->drawing_area->style->black_gc,
           TRUE,
           0, 0,
           control_flow_data->drawing->width+SAFETY, // do not overlap
-          control_flow_data->drawing->height);
+          -1);
 
     //gtk_widget_queue_draw_area (drawing->drawing_area,
     //                            0,0,
@@ -2900,7 +2852,6 @@ gint update_time_window_hook(void *hook_data, void *call_data)
     drawing->damage_end = control_flow_data->drawing->width;
 
     drawing_data_request(control_flow_data->drawing,
-        &control_flow_data->drawing->pixmap,
         0, 0,
         control_flow_data->drawing->width,
         control_flow_data->drawing->height);
@@ -2939,19 +2890,18 @@ gint redraw_notify(void *hook_data, void *call_data)
   drawing_clear(control_flow_data->drawing);
   processlist_clear(control_flow_data->process_list);
 
-  // Clear the image
-  gdk_draw_rectangle (drawing->pixmap,
+  // Clear the images
+  rectangle_pixmap (control_flow_data->process_list,
         widget->style->black_gc,
         TRUE,
         0, 0,
         drawing->width+SAFETY,
-        drawing->height);
+        -1);
 
 
   if(drawing->damage_begin < drawing->damage_end)
   {
     drawing_data_request(drawing,
-                         &drawing->pixmap,
                          drawing->damage_begin,
                          0,
                          drawing->damage_end-drawing->damage_begin,
@@ -2978,7 +2928,6 @@ gint continue_notify(void *hook_data, void *call_data)
   if(drawing->damage_begin < drawing->damage_end)
   {
     drawing_data_request(drawing,
-                         &drawing->pixmap,
                          drawing->damage_begin,
                          0,
                          drawing->damage_end-drawing->damage_begin,
@@ -3115,7 +3064,6 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
       
       /* Only draw for processes that are currently in the trace states */
 
-      guint y = 0, height = 0;
       ProcessList *process_list = control_flow_data->process_list;
 #ifdef EXTRA_CHECK
       /* Should be alike when background info is ready */
@@ -3123,11 +3071,6 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         g_assert(ltt_time_compare(process->creation_time,
                                   process_info->birth) == 0);
 #endif //EXTRA_CHECK
-      /* process HAS to be present */
-      processlist_get_pixels_from_data(process_list,
-              hashed_process_data,
-              &y,
-              &height);
     
       /* Now, the process is in the state hash and our own process hash.
        * We definitely can draw the items related to the ending state.
@@ -3153,14 +3096,14 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
         /* Now create the drawing context that will be used to draw
          * items related to the last state. */
-        draw_context.drawable = drawing->pixmap;
+        draw_context.drawable = hashed_process_data->pixmap;
         draw_context.gc = drawing->gc;
         draw_context.pango_layout = drawing->pango_layout;
         draw_context.drawinfo.end.x = x;
 
-        draw_context.drawinfo.y.over = y+1;
-        draw_context.drawinfo.y.middle = y+(height/2);
-        draw_context.drawinfo.y.under = y+height;
+        draw_context.drawinfo.y.over = 1;
+        draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+        draw_context.drawinfo.y.under = hashed_process_data->height;
 
         draw_context.drawinfo.start.offset.over = 0;
         draw_context.drawinfo.start.offset.middle = 0;

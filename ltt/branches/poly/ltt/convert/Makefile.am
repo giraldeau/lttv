@@ -1,5 +1,5 @@
 AM_CFLAGS = $(GLIB_CFLAGS) 
-LIBS += $(GLIB_LIBS)
+LIBS += $(GLIB_LIBS) $(M_LIBS)
 
 bin_PROGRAMS = convert
 

@@ -94,7 +94,7 @@ struct _Drawing_t {
   GtkWidget *ruler_hbox;
   GtkWidget *ruler;
   GtkWidget *padding;
-  GdkPixmap *pixmap;
+  //GdkPixmap *pixmap;
   ControlFlowData *control_flow_data;
   
   PangoLayout *pango_layout;
@@ -122,7 +122,6 @@ GtkWidget *drawing_get_drawing_area(Drawing_t *drawing);
 
 
 void drawing_data_request(Drawing_t *drawing,
-      GdkPixmap **pixmap,
       gint x, gint y,
       gint width,
       gint height);

@@ -111,7 +111,6 @@ motion_notify_ruler(GtkWidget *widget, GdkEventMotion *event, gpointer user_data
  * erase drawing already present (SAFETY).
  */
 void drawing_data_request(Drawing_t *drawing,
-      GdkPixmap **pixmap,
       gint x, gint y,
       gint width,
       gint height)
@@ -466,6 +465,7 @@ void drawing_request_expose(EventsRequest *events_request,
 
   drawing->damage_begin = x+width;
 
+  // FIXME ?
   gtk_widget_queue_draw_area ( drawing->drawing_area,
                                x, 0,
                                width, drawing->drawing_area->allocation.height);
@@ -512,15 +512,17 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
     drawing->width = widget->allocation.width;
     
     if(drawing->alloc_width < widget->allocation.width) {
-      if(drawing->pixmap)
-        gdk_pixmap_unref(drawing->pixmap);
+      //if(drawing->pixmap)
+      //  gdk_pixmap_unref(drawing->pixmap);
 
-      drawing->pixmap = gdk_pixmap_new(widget->window,
-                                       drawing->width + SAFETY + EXTRA_ALLOC,
-                                       drawing->height + EXTRA_ALLOC,
-                                       -1);
+      //drawing->pixmap = gdk_pixmap_new(widget->window,
+      //                                 drawing->width + SAFETY + EXTRA_ALLOC,
+      //                                 drawing->height + EXTRA_ALLOC,
+      //                                 -1);
       drawing->alloc_width = drawing->width + SAFETY + EXTRA_ALLOC;
       drawing->alloc_height = drawing->height + EXTRA_ALLOC;
+      update_pixmap_size(drawing->control_flow_data->process_list,
+                         drawing->alloc_width);
     }
     //drawing->height = widget->allocation.height;
 
@@ -529,12 +531,12 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
     
 
     // Clear the image
-    gdk_draw_rectangle (drawing->pixmap,
-          widget->style->black_gc,
-          TRUE,
-          0, 0,
-          drawing->width+SAFETY,
-          drawing->height);
+    //gdk_draw_rectangle (drawing->pixmap,
+    //      widget->style->black_gc,
+    //      TRUE,
+    //      0, 0,
+    //      drawing->width+SAFETY,
+    //      drawing->height);
 
     //g_info("init data request");
 
@@ -553,10 +555,11 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
     drawing->damage_begin = 0;
     drawing->damage_end = widget->allocation.width;
 
-    if(drawing->damage_begin < drawing->damage_end)
+    if((widget->allocation.width != 1 &&
+        widget->allocation.height != 1)
+        && drawing->damage_begin < drawing->damage_end)
     {
       drawing_data_request(drawing,
-                           &drawing->pixmap,
                            drawing->damage_begin,
                            0,
                            drawing->damage_end - drawing->damage_begin,
@@ -592,14 +595,23 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   LttTime window_end = time_window.end_time;
 
   /* update the screen from the pixmap buffer */
+#if 0
   gdk_draw_pixmap(widget->window,
       widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
       drawing->pixmap,
       event->area.x, event->area.y,
       event->area.x, event->area.y,
       event->area.width, event->area.height);
-
+#endif //0
+  copy_pixmap_to_screen(control_flow_data->process_list,
+                        widget->window,
+                        widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+                        event->area.x, event->area.y,
+                        event->area.width, event->area.height);
+                        
+  
   /* Erase the dotted lines left.. */
+#if 0
   if(widget->allocation.height > drawing->height)
   {
     gdk_draw_rectangle (widget->window,
@@ -608,9 +620,8 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
       event->area.x, drawing->height,
       event->area.width,  // do not overlap
       widget->allocation.height - drawing->height);
-g_critical("blah : %u, %u", widget->allocation.height, drawing->height);
   }
-
+#endif //0
   if(ltt_time_compare(time_window.start_time, current_time) <= 0 &&
            ltt_time_compare(window_end, current_time) >= 0)
   {
@@ -825,7 +836,7 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   //    drawing->height,
   //    drawing->depth);
   
-  drawing->pixmap = NULL;
+  //drawing->pixmap = NULL;
 
 //  drawing->pixmap = gdk_pixmap_new(drawing->drawing_area->window,
 //        drawing->drawing_area->allocation.width,
@@ -936,28 +947,37 @@ void drawing_draw_line( Drawing_t *drawing,
 
 void drawing_clear(Drawing_t *drawing)
 { 
-  if (drawing->pixmap)
-    gdk_pixmap_unref(drawing->pixmap);
+  //if (drawing->pixmap)
+  //  gdk_pixmap_unref(drawing->pixmap);
+  ControlFlowData *cfd = drawing->control_flow_data;
 
-  drawing->height = 1;
+  
+  rectangle_pixmap(cfd->process_list,
+      drawing->drawing_area->style->black_gc,
+      TRUE,
+      0, 0,
+      drawing->alloc_width,  // do not overlap
+      -1);
+  
+  //drawing->height = 1;
   /* Allocate a new pixmap with new height */
-  drawing->pixmap = gdk_pixmap_new(drawing->drawing_area->window,
-                                   drawing->width + SAFETY + EXTRA_ALLOC,
-                                   drawing->height + EXTRA_ALLOC,
-                                     -1);
-  drawing->alloc_width = drawing->width + SAFETY + EXTRA_ALLOC;
-  drawing->alloc_height = drawing->height + EXTRA_ALLOC;
+  //drawing->pixmap = gdk_pixmap_new(drawing->drawing_area->window,
+  //                                 drawing->width + SAFETY + EXTRA_ALLOC,
+  //                                 drawing->height + EXTRA_ALLOC,
+  //                                   -1);
+  //drawing->alloc_width = drawing->width + SAFETY + EXTRA_ALLOC;
+  //drawing->alloc_height = drawing->height + EXTRA_ALLOC;
 
-  gtk_widget_set_size_request(drawing->drawing_area,
-                             -1,
-                             drawing->height);
-  gtk_widget_queue_resize_no_redraw(drawing->drawing_area);
+  //gtk_widget_set_size_request(drawing->drawing_area,
+  //                           -1,
+  //                           drawing->height);
+  //gtk_widget_queue_resize_no_redraw(drawing->drawing_area);
   
   /* ask for the buffer to be redrawn */
   gtk_widget_queue_draw ( drawing->drawing_area);
 }
 
-
+#if 0
 /* Insert a square corresponding to a new process in the list */
 /* Applies to whole drawing->width */
 void drawing_insert_square(Drawing_t *drawing,
@@ -980,7 +1000,7 @@ void drawing_insert_square(Drawing_t *drawing,
     reallocate = TRUE;
 
     /* Copy the high region */
-    gdk_draw_drawable (new_pixmap,
+    gdk_draw_pixmap (new_pixmap,
       drawing->drawing_area->style->black_gc,
       drawing->pixmap,
       0, 0,
@@ -1005,7 +1025,7 @@ void drawing_insert_square(Drawing_t *drawing,
     height);
 
   /* copy the bottom of the region */
-  gdk_draw_drawable (new_pixmap,
+  gdk_draw_pixmap (new_pixmap,
     drawing->drawing_area->style->black_gc,
     drawing->pixmap,
     0, y,
@@ -1059,7 +1079,7 @@ void drawing_remove_square(Drawing_t *drawing,
     pixmap = drawing->pixmap;
    
     /* Copy the high region */
-    gdk_draw_drawable (pixmap,
+    gdk_draw_pixmap (pixmap,
       drawing->drawing_area->style->black_gc,
       drawing->pixmap,
       0, 0,
@@ -1067,7 +1087,7 @@ void drawing_remove_square(Drawing_t *drawing,
       drawing->width + SAFETY, y);
 
     /* Copy up the bottom of the region */
-    gdk_draw_drawable (pixmap,
+    gdk_draw_pixmap (pixmap,
       drawing->drawing_area->style->black_gc,
       drawing->pixmap,
       0, y + height,
@@ -1091,6 +1111,7 @@ void drawing_remove_square(Drawing_t *drawing,
                                0, y,
                                drawing->width, MAX(drawing->height-y, 1));
 }
+#endif //0
 
 void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window)
 {
