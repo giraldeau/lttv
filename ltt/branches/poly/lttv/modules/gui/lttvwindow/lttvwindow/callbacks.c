@@ -4500,7 +4500,8 @@ void tab_destructor(Tab * tab)
 	      ltt_trace_close(lttv_trace(trace));
       }
     }
-  }  
+  }
+  lttv_filter_destroy(tab->filter);
   lttv_traceset_destroy(tab->traceset_info->traceset);
   /* Remove the idle events requests processing function of the tab */
   g_idle_remove_by_data(tab);
@@ -4529,8 +4530,15 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   if(copy_tab) {
     tab->traceset_info->traceset = 
       lttv_traceset_copy(copy_tab->traceset_info->traceset);
+    
+    /* Copy the previous tab's filter */
+    /* We can clone the filter, as we copy the trace set also */
+    /* The filter must always be in sync with the trace set */
+    tab->filter = lttv_filter_clone(copy_tab->filter);
+
   } else {
     tab->traceset_info->traceset = lttv_traceset_new();
+    tab->filter = NULL;
   }
 
 #ifdef DEBUG

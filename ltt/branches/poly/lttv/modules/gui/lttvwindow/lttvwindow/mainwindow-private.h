@@ -119,6 +119,9 @@ struct _Tab{
   /* Traceset related information */
   TracesetInfo * traceset_info; 
 
+  /* Filter to apply to the tab's traceset */
+  LttvFilter *filter;
+
   /* A list of time requested for the next process trace */
   GSList *events_requests;
   gboolean events_request_pending;

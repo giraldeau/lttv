@@ -936,16 +936,43 @@ LttTime lttvwindow_get_current_time(Tab *tab)
 
 /**
  * Function to get the filter of the current tab.
- * It will be called by the constructor of the viewer and also be
- * called by a hook funtion of the viewer to update its filter.
- * @param tab viewer's tab 
+ * @param main_win, the main window the viewer belongs to.
  * @param filter, a pointer to a filter.
  */
-const lttv_filter *lttvwindow_get_filter(Tab *tab)
+
+LttvFilter *lttvwindow_get_filter(Tab *tab)
 {
-  //FIXME
-  g_warning("lttvwindow_get_filter not implemented in viewer.c");
+  return tab->filter;
 }
+
+/**
+ * Function to set the filter of the current tab.
+ * It should be called by the filter GUI to tell the
+ * main window to update the filter tab's lttv_filter.
+ *
+ * This function does change the current filter, removing the
+ * old one when necessary, and call the updatefilter hooks
+ * of the registered viewers.
+ *
+ * @param main_win, the main window the viewer belongs to.
+ * @param filter, a pointer to a filter.
+ */
+
+void lttvwindow_report_filter(Tab *tab, LttvFilter *filter)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+
+  lttv_filter_destroy(tab->filter);
+  tab->filter = filter;
+  
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/updatefilter", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return;
+  lttv_hooks_call(tmp, &position);
+}
+
 
 
 /**
