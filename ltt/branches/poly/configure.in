@@ -40,6 +40,10 @@ AC_CHECK_FUNCS([select])
 lttvplugindir="${libdir}/lttv/plugins"
 AC_SUBST(lttvplugindir)
 
+lttlibdir="${libdir}/ltt"
+AC_SUBST(lttlibdir)
+
+
 DEFAULT_INCLUDES="-I\$(top_srcdir)/include"
 AC_SUBST(DEFAULT_INCLUDES)
 
