@@ -141,19 +141,19 @@ Added to the lttvwindow API :
 
 
 - lttvwindow_events_request
-( MainWindow          *main_win,
-  LttTime              start_time,
-  LttvTracesetPosition start_position,
-  LttTime              end_time,
-  guint                num_events,
-  LttvTracesetPosition end_position,
-  LttvHooksById        before_traceset,
-  LttvHooksById        before_trace,
-  LttvHooksById        before_tracefile,
-  LttvHooksById        middle,
-  LttvHooksById        after_tracefile,
-  LttvHooksById        after_trace,
-  LttvHooksById        after_traceset)
+( MainWindow                  *main_win,
+  LttTime                      start_time,
+  LttvTracesetContextPosition  start_position,
+  LttTime                      end_time,
+  guint                        num_events,
+  LttvTracesetContextPosition  end_position,
+  LttvHooksById                before_traceset,
+  LttvHooksById                before_trace,
+  LttvHooksById                before_tracefile,
+  LttvHooksById                middle,
+  LttvHooksById                after_tracefile,
+  LttvHooksById                after_trace,
+  LttvHooksById                after_traceset)
 
 
 Internal functions :
@@ -181,18 +181,18 @@ It adds the EventsRequest struct to the array of time requests pending and
 registers a pending request for the next g_idle if none is registered.
 
 typedef struct _EventsRequest {
-  LttTime              start_time,
-  LttvTracesetPosition start_position,
-  LttTime              end_time,
-  guint                num_events,
-  LttvTracesetPosition end_position,
-  LttvHooksById        before_traceset,
-  LttvHooksById        before_trace,
-  LttvHooksById        before_tracefile,
-  LttvHooksById        middle,
-  LttvHooksById        after_tracefile,
-  LttvHooksById        after_trace,
-  LttvHooksById        after_traceset)
+  LttTime                     start_time,       /* Unset : { 0, 0 }       */
+  LttvTracesetContextPosition start_position,   /* Unset : num_traces = 0 */
+  LttTime                     end_time,         /* Unset : { 0, 0 }       */
+  guint                       num_events,       /* Unset : G_MAXUINT      */
+  LttvTracesetContextPosition end_position,     /* Unset : num_traces = 0 */
+  LttvHooksById              *before_traceset,  /* Unset : NULL           */
+  LttvHooksById              *before_trace,     /* Unset : NULL           */
+  LttvHooksById              *before_tracefile, /* Unset : NULL           */
+  LttvHooksById              *middle,           /* Unset : NULL           */
+  LttvHooksById              *after_tracefile,  /* Unset : NULL           */
+  LttvHooksById              *after_trace,      /* Unset : NULL           */
+  LttvHooksById              *after_traceset    /* Unset : NULL           */
 } EventsRequest;
 
 
