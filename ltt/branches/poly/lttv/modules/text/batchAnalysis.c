@@ -116,6 +116,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   g_object_unref(tscs);
 
   g_info("BatchAnalysis end process traceset");
+  return FALSE;
 }
 
 

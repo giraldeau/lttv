@@ -31,6 +31,7 @@
 #include <ltt/event.h>
 #include <ltt/type.h>
 #include <ltt/trace.h>
+#include <ltt/facility.h>
 #include <stdio.h>
 
 static gboolean
@@ -107,11 +108,26 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
       }
       g_string_append_printf(s, " }");
       break;
+
+    case LTT_UNION:
+      g_string_append_printf(s, " {");
+      nb = ltt_type_member_number(type);
+      for(i = 0 ; i < nb ; i++) {
+        element = ltt_field_member(f,i);
+        if(field_names) {
+          ltt_type_member_type(type, i, &name);
+          g_string_append_printf(s, " %s = ", name);
+        }
+        print_field(e, element, s, field_names);
+      }
+      g_string_append_printf(s, " }");
+      break;
+
   }
 }
 
 
-void lttv_event_to_string(LttEvent *e, LttTracefile *tf, GString *s,
+void lttv_event_to_string(LttEvent *e, GString *s,
     gboolean mandatory_fields, gboolean field_names, LttvTracefileState *tfs)
 { 
   LttFacility *facility;
@@ -185,7 +201,7 @@ print_tree(FILE *fp, GString *indent, LttvAttribute *tree)
         fprintf(fp, "%f\n", *value.v_double);
         break;
       case LTTV_TIME:
-        fprintf(fp, "%10u.%09u\n", value.v_time->tv_sec, 
+        fprintf(fp, "%10lu.%09lu\n", value.v_time->tv_sec, 
             value.v_time->tv_nsec);
         break;
       case LTTV_POINTER:
@@ -236,9 +252,11 @@ print_stats(FILE *fp, LttvTracesetStats *tscs)
   for(i = 0 ; i < nb ; i++) {
     tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
     desc = ltt_trace_system_description(tcs->parent.parent.t);
-    fprintf(fp, "Trace on system %s at time %d secs:\n", 
+    LttTime start_time = ltt_trace_system_description_trace_start_time(desc);
+    fprintf(fp, "Trace on system %s at time %lu.%09lu :\n", 
 	    ltt_trace_system_description_node_name(desc), 
-	    (ltt_trace_system_description_trace_start_time(desc)).tv_sec);
+	    start_time.tv_sec,
+      start_time.tv_nsec);
     saved_length = indent->len;
     g_string_append(indent, "  ");
     print_tree(fp, indent, tcs->stats);
@@ -317,7 +335,7 @@ static int write_event_content(void *hook_data, void *call_data)
 
   e = tfc->e;
 
-  lttv_event_to_string(e, tfc->tf, a_string, TRUE, a_field_names, tfs);
+  lttv_event_to_string(e, a_string, TRUE, a_field_names, tfs);
   g_string_append_printf(a_string,"\n");  
 
   if(a_state) {
