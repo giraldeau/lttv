@@ -59,7 +59,7 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
 
     case LTT_ENUM:
       g_string_append_printf(s, " %s", ltt_enum_string_get(type,
-          ltt_event_get_unsigned(e,f)));
+          ltt_event_get_unsigned(e,f)-1));
       break;
 
     case LTT_ARRAY:
@@ -118,7 +118,8 @@ void lttv_event_to_string(LttEvent *e, LttTracefile *tf, GString *s,
     /* Print the process id and the state/interrupt type of the process */
   }
 
-  print_field(e, field, s, field_names);
+  if(field)
+    print_field(e, field, s, field_names);
 } 
 
 
@@ -181,6 +182,7 @@ static int write_event_content(void *hook_data, void *call_data)
   e = tfc->e;
 
   lttv_event_to_string(e, tfc->tf, a_string, TRUE, a_field_names);
+  g_string_append_printf(a_string,"\n");  
 
   if(a_state) {
     g_string_append_printf(a_string, " %s",
@@ -198,6 +200,8 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+
+  a_string = g_string_new("");
 
   a_file_name = NULL;
   lttv_option_add("output", 'o', 
@@ -246,6 +250,8 @@ G_MODULE_EXPORT void destroy()
   lttv_option_remove("field_names");
 
   lttv_option_remove("process_state");
+
+  g_string_free(a_string, TRUE);
 
   lttv_hooks_remove_data(before_event, write_event_content, NULL);
 

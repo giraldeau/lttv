@@ -33,7 +33,7 @@ lttv_context_new_trace_context(LttvTracesetContext *self)
 LttvTracefileContext *
 lttv_context_new_tracefile_context(LttvTracesetContext *self)
 {
-  LTTV_TRACESET_CONTEXT_GET_CLASS(self)->new_tracefile_context(self);
+  return LTTV_TRACESET_CONTEXT_GET_CLASS(self)->new_tracefile_context(self);
 }
 
 
@@ -365,7 +365,7 @@ lttv_trace_context_get_type(void)
       (GClassInitFunc) trace_context_class_init,   /* class_init */
       NULL,   /* class_finalize */
       NULL,   /* class_data */
-      sizeof (LttvTracesetContext),
+      sizeof (LttvTraceContext),
       0,      /* n_preallocs */
       (GInstanceInitFunc) trace_context_instance_init    /* instance_init */
     };

@@ -141,5 +141,7 @@ G_MODULE_EXPORT void destroy()
   for(i = 0 ; i < nb ; i++) {
     ltt_trace_close(lttv_traceset_get(traceset, i));
   }
+
+  lttv_traceset_destroy(traceset); 
 }
 

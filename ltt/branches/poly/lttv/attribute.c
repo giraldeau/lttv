@@ -151,8 +151,10 @@ lttv_attribute_remove(LttvAttribute *self, unsigned i)
   /* The element used to replace the removed element has its index entry
      all wrong now. Reinsert it with its new position. */
 
-  g_hash_table_remove(self->names, GUINT_TO_POINTER(a->name));
-  g_hash_table_insert(self->names, GUINT_TO_POINTER(a->name), GUINT_TO_POINTER(i + 1));
+  if(self->attributes->len != i){
+    g_hash_table_remove(self->names, GUINT_TO_POINTER(a->name));
+    g_hash_table_insert(self->names, GUINT_TO_POINTER(a->name), GUINT_TO_POINTER(i + 1));
+  }
 }
 
 void 

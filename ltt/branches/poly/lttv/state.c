@@ -106,9 +106,9 @@ traceset_state_instance_init (GTypeInstance *instance, gpointer g_class)
 
 
 static void
-traceset_state_finalize (LttvTracesetContext *self)
+traceset_state_finalize (LttvTracesetState *self)
 {
-  G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_TRACESET_STATE_GET_CLASS(self)))->finalize(G_OBJECT(self));
+  G_OBJECT_CLASS(g_type_class_peek_parent(g_type_class_peek_parent(LTTV_TRACESET_STATE_GET_CLASS(self))))->finalize(G_OBJECT(self));
 }
 
 
@@ -157,9 +157,9 @@ trace_state_instance_init (GTypeInstance *instance, gpointer g_class)
 
 
 static void
-trace_state_finalize (LttvTraceContext *self)
+trace_state_finalize (LttvTraceState *self)
 {
-  G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_TRACE_STATE_GET_CLASS(self)))->finalize(G_OBJECT(self));
+  G_OBJECT_CLASS(g_type_class_peek_parent(g_type_class_peek_parent(LTTV_TRACE_STATE_GET_CLASS(self))))->finalize(G_OBJECT(self));
 }
 
 
@@ -184,7 +184,7 @@ lttv_trace_state_get_type(void)
       (GClassInitFunc) trace_state_class_init,   /* class_init */
       NULL,   /* class_finalize */
       NULL,   /* class_data */
-      sizeof (LttvTracesetState),
+      sizeof (LttvTraceState),
       0,      /* n_preallocs */
       (GInstanceInitFunc) trace_state_instance_init    /* instance_init */
     };
@@ -205,7 +205,7 @@ tracefile_state_instance_init (GTypeInstance *instance, gpointer g_class)
 static void
 tracefile_state_finalize (LttvTracefileState *self)
 {
-  G_OBJECT_CLASS(g_type_class_peek_parent(LTTV_TRACEFILE_STATE_GET_CLASS(self)))->finalize(G_OBJECT(self));
+  G_OBJECT_CLASS(g_type_class_peek_parent(g_type_class_peek_parent(LTTV_TRACEFILE_STATE_GET_CLASS(self))))->finalize(G_OBJECT(self));
 }
 
 
