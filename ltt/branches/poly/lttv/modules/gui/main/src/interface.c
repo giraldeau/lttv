@@ -844,7 +844,7 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, tlbMoveViewerUp, "tlbMoveViewerUp");
   GLADE_HOOKUP_OBJECT (MWindow, tlbMoveViewerDown, "tlbMoveViewerDown");
   GLADE_HOOKUP_OBJECT (MWindow, tlbRemoveViewer, "tlbRemoveViewer");
-  GLADE_HOOKUP_OBJECT (MWindow, MToolbar2, "MToolbar2");
+  //  GLADE_HOOKUP_OBJECT (MWindow, MToolbar2, "MToolbar2");
   GLADE_HOOKUP_OBJECT (MWindow, MNotebook, "MNotebook");
   //  GLADE_HOOKUP_OBJECT (MWindow, label1, "label1");
   GLADE_HOOKUP_OBJECT (MWindow, MStatusbar, "MStatusbar");
