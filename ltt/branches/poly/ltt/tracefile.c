@@ -523,11 +523,11 @@ LttTrace *ltt_trace_open(const char *pathname)
   /* Set the reverse byte order between trace and reader */
   if(sys_description->endian == LTT_LITTLE_ENDIAN 
           && G_BYTE_ORDER != G_LITTLE_ENDIAN) {
-    t->reverse_byte_order = true;
+    t->reverse_byte_order = 1;
   } else if(sys_description->endian == LTT_BIG_ENDIAN
           && G_BYTE_ORDER != G_BIG_ENDIAN) {
-    t->reverse_byte_order = true;
-  } else t->reverse_byte_order = false;
+    t->reverse_byte_order = 1;
+  } else t->reverse_byte_order = 0;
 
   //get facilities info
   if(getFacilityInfo(t,eventdefs)) {
@@ -1086,14 +1086,14 @@ LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event)
     if(unlikely(err))g_error("Can not read tracefile");    
   }
 
-  event->event_id = ltt_get_uint16(t, t->cur_event_pos);
+  event->event_id = ltt_get_uint16(t->trace->reverse_byte_order, t->cur_event_pos);
   if(unlikely(event->event_id == TRACE_TIME_HEARTBEAT))
     t->cur_heart_beat_number++;
 
   t->prev_event_time  = t->current_event_time;
   //  t->current_event_time = getEventTime(t);
 
-  event->time_delta = ltt_get_uint32(t, t->cur_event_pos + EVENT_ID_SIZE);
+  event->time_delta = ltt_get_uint32(t->trace->reverse_byte_order, t->cur_event_pos + EVENT_ID_SIZE);
   event->event_time = t->current_event_time;
   event->event_cycle_count = t->cur_cycle_count;
 
@@ -1204,13 +1204,14 @@ int readBlock(LttTracefile * tf, int whichBlock)
   /* read the whole block to precalculate total of cycles in it */
   tf->count = 0;
   tf->pre_cycle_count = 0;
-  tf->cur_cycle_count = ltt_get_uint32(tf, tf->cur_event_pos + EVENT_ID_SIZE);
+  tf->cur_cycle_count = ltt_get_uint32(tf->trace->reverse_byte_order, tf->cur_event_pos + EVENT_ID_SIZE);
 
   getCyclePerNsec(tf);
 
   tf->overflow_nsec = 
                (-((double)
-               (ltt_get_uint32(tf, tf->a_block_start->cycle_count)&0xFFFFFFFF))
+               (ltt_get_uint32(tf->trace->reverse_byte_order,
+                               &tf->a_block_start->cycle_count)&0xFFFFFFFF))
                                         * tf->nsec_per_cycle);
 
   tf->current_event_time = getEventTime(tf);  
@@ -1238,7 +1239,8 @@ void updateTracefile(LttTracefile * tf)
   tf->count = 0;
 
   tf->overflow_nsec = 
-    (-((double)ltt_get_uint32(tf, tf->a_block_start->cycle_count))
+    (-((double)ltt_get_uint32(tf->trace->reverse_byte_order,
+                              &tf->a_block_start->cycle_count))
                                         * tf->nsec_per_cycle);
 
 }
@@ -1260,7 +1262,7 @@ int skipEvent(LttTracefile * t)
   LttEventType * evT;
   LttField * rootFld;
 
-  evId   = ltt_get_uint16(t, t->cur_event_pos);
+  evId   = ltt_get_uint16(t->trace->reverse_byte_order, t->cur_event_pos);
   evData = t->cur_event_pos + EVENT_HEADER_SIZE;
 
   evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
@@ -1284,7 +1286,8 @@ int skipEvent(LttTracefile * t)
   if(unlikely(evId == TRACE_BLOCK_END)){
     t->cur_event_pos = t->buffer + t->block_size;
   }else{
-    t->cur_cycle_count = ltt_get_uint32(t, t->cur_event_pos + EVENT_ID_SIZE);
+    t->cur_cycle_count = ltt_get_uint32(t->trace->reverse_byte_order,
+                                t->cur_event_pos + EVENT_ID_SIZE);
     t->which_event++;
     t->current_event_time = getEventTime(t);
   }
@@ -1312,8 +1315,10 @@ void getCyclePerNsec(LttTracefile * t)
   lBufTotalTime = ltt_time_sub(t->a_block_end->time, t->a_block_start->time);
 
   /* Calculate the total cycles for this bufffer */
-  lBufTotalCycle  = ltt_get_uint32(t, t->a_block_end->cycle_count);
-  lBufTotalCycle -= ltt_get_uint32(t, t->a_block_start->cycle_count);
+  lBufTotalCycle  = ltt_get_uint32(t->trace->reverse_byte_order,
+                          &t->a_block_end->cycle_count);
+  lBufTotalCycle -= ltt_get_uint32(t->trace->reverse_byte_order,
+                          &t->a_block_start->cycle_count);
 
   /* Convert the total time to double */
   lBufTotalNSec  = ltt_time_to_double(lBufTotalTime);
@@ -1344,9 +1349,11 @@ static inline LttTime getEventTime(LttTracefile * tf)
   LttTime       lTimeOffset;      // Time offset in struct LttTime
   guint16       evId;
 
-  evId = ltt_get_uint16(tf, tf->cur_event_pos);
+  evId = ltt_get_uint16(tf->trace->reverse_byte_order,
+                          tf->cur_event_pos);
   
-  cycle_count = ltt_get_uint32(tf, tf->cur_event_pos + EVENT_ID_SIZE);
+  cycle_count = ltt_get_uint32(tf->trace->reverse_byte_order,
+                          tf->cur_event_pos + EVENT_ID_SIZE);
 
   gboolean comp_count = cycle_count < tf->pre_cycle_count;
 
@@ -1362,8 +1369,10 @@ static inline LttTime getEventTime(LttTracefile * tf)
      lEventNSec = 0;
   } else if(unlikely(evId == TRACE_BLOCK_END)) {
     lEventNSec = ((double)
-          (ltt_get_uint32(tf, tf->a_block_end->cycle_count) 
-           - ltt_get_uint32(tf, tf->a_block_start->cycle_count))
+          (ltt_get_uint32(tf->trace->reverse_byte_order,
+                            &tf->a_block_end->cycle_count) 
+           - ltt_get_uint32(tf->trace->reverse_byte_order,
+                            &tf->a_block_start->cycle_count))
                            * tf->nsec_per_cycle);
   }
 #if 0
@@ -1480,7 +1489,7 @@ static inline gint getFieldtypeSize(LttTracefile * t,
                                   0,fld->child[0], NULL, trace);      
           fld->element_size = size;
         }else{//0: sequence
-          element_number = getIntNumber(t,size1,evD);
+          element_number = getIntNumber(t->trace->reverse_byte_order,size1,evD);
           type->element_number = element_number;
           if(fld->element_size > 0){
             size = element_number * fld->element_size;
@@ -1589,23 +1598,23 @@ end_getFieldtypeSize:
  *    gint64          : a 64 bits integer
  ****************************************************************************/
 
-gint64 getIntNumber(LttTracefile * t, int size, void *evD)
+gint64 getIntNumber(gboolean reverse_byte_order, int size, void *evD)
 {
   gint64 i;
 
   switch(size) {
     case 1: i = *((gint8*)evD); break;
-    case 2: i = ltt_get_int16(t, evD); break;
-    case 4: i = ltt_get_int32(t, evD); break;
-    case 8: i = ltt_get_int64(t, evD); break;
-    default: i = ltt_get_int64(t, evD);
+    case 2: i = ltt_get_int16(reverse_byte_order, evD); break;
+    case 4: i = ltt_get_int32(reverse_byte_order, evD); break;
+    case 8: i = ltt_get_int64(reverse_byte_order, evD); break;
+    default: i = ltt_get_int64(reverse_byte_order, evD);
              g_critical("getIntNumber : integer size %d unknown", size);
              break;
   }
 
   return i;
 }
-
+#if 0
 /*****************************************************************************
  *Function name
  *    getDataEndianType : get the data type size and endian type of the local
@@ -1634,7 +1643,7 @@ void getDataEndianType(LttArchSize * size, LttArchEndian * endian)
     *size = LTT_ILP64;
   else *size = LTT_UNKNOWN;
 }
-
+#endif //0
 /* get the node name of the system */
 
 char * ltt_trace_system_description_node_name (LttSystemDescription * s)

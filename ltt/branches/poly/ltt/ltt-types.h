@@ -23,8 +23,9 @@
  * */
 
 #include <ltt/ltt.h>
-#include <ltt/ltt-private.h>
+//#include <ltt/ltt-private.h>
 #include <glib.h>
+#include <ltt/time.h>
 
 
 /*****************************************************************************
@@ -39,35 +40,52 @@
  *
  ****************************************************************************/
 
-inline gint64 ltt_get_int64(LttTrace t, void *ptr)
+static inline gint64 ltt_get_int64(gboolean reverse_byte_order, void *ptr)
 {
-  return (gint64) (t->reverse_byte_order ? GUINT64_SWAP_LE_BE(ptr): ptr);
+  guint64 value = *(guint64*)ptr;
+  return (gint64) (reverse_byte_order ? GUINT64_SWAP_LE_BE(value): value);
 }
 
 
-inline guint64 ltt_get_uint64(LttTrace t, void *ptr)
+static inline guint64 ltt_get_uint64(gboolean reverse_byte_order, void *ptr)
 {
-  return (guint64) (t->reverse_byte_order ? GUINT64_SWAP_LE_BE(ptr): ptr);
+  guint64 value = *(guint64*)ptr;
+  return (guint64) (reverse_byte_order ? GUINT64_SWAP_LE_BE(value): value);
 }
 
-inline gint32 ltt_get_int32(LttTrace t, void *ptr)
+static inline gint32 ltt_get_int32(gboolean reverse_byte_order, void *ptr)
 {
-  return (gint32) (t->reverse_byte_order ? GUINT32_SWAP_LE_BE(ptr): ptr);
+  guint32 value = *(guint32*)ptr;
+  return (gint32) (reverse_byte_order ? GUINT32_SWAP_LE_BE(value): value);
 }
 
-inline guint32 ltt_get_uint32(LttTrace t, void *ptr)
+static inline guint32 ltt_get_uint32(gboolean reverse_byte_order, void *ptr)
 {
-  return (guint32) (t->reverse_byte_order ? GUINT32_SWAP_LE_BE(ptr): ptr);
+  guint32 value = *(guint32*)ptr;
+  return (guint32) (reverse_byte_order ? GUINT32_SWAP_LE_BE(value): value);
 }
 
-inline gint16 ltt_get_int16(LttTrace t, void *ptr)
+static inline gint16 ltt_get_int16(gboolean reverse_byte_order, void *ptr)
 {
-  return (gint16) (t->reverse_byte_order ? GUINT16_SWAP_LE_BE(ptr): ptr);
+  guint16 value = *(guint16*)ptr;
+  return (gint16) (reverse_byte_order ? GUINT16_SWAP_LE_BE(value): value);
 }
 
-inline guint16 ltt_get_uint16(LttTrace t, void *ptr)
+static inline guint16 ltt_get_uint16(gboolean reverse_byte_order, void *ptr)
 {
-  return (guint16) (t->reverse_byte_order ? GUINT16_SWAP_LE_BE(ptr): ptr);
+  guint16 value = *(guint16*)ptr;
+  return (guint16) (reverse_byte_order ? GUINT16_SWAP_LE_BE(value): value);
+}
+
+static inline LttTime ltt_get_time(gboolean reverse_byte_order, void *ptr)
+{
+  LttTime output;
+
+  output.tv_sec = ltt_get_uint64(reverse_byte_order, ptr);
+  ptr += sizeof(guint64);
+  output.tv_nsec = ltt_get_uint64(reverse_byte_order, ptr);
+
+  return output;
 }
 
 #endif // LTT_TYPES_H

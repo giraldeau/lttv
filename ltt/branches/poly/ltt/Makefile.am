@@ -22,6 +22,7 @@ lttinclude_HEADERS = \
 	ltt.h\
 	time.h\
 	trace.h\
-	type.h
+	type.h\
+	ltt-types.h
 
 EXTRA_DIST = crc32.tab

@@ -146,7 +146,7 @@ void getDataEndianType(LttArchSize * size, LttArchEndian * endian);
 
 /* get an integer number */
 
-gint64 getIntNumber(int size1, void *evD);
+gint64 getIntNumber(gboolean reverse_byte_order, int size1, void *evD);
 
 
 /* get the node name of the system */

@@ -87,7 +87,7 @@ typedef struct _LttSystemDescription LttSystemDescription;
 /* Checksums are used to differentiate facilities which have the same name
    but differ. */
 
-typedef unsigned long LttChecksum;
+typedef guint32 LttChecksum;
 
 
 /* Events are usually stored with the easily obtained CPU clock cycle count,

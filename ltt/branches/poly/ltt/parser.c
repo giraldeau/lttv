@@ -37,7 +37,8 @@ This program is distributed in the hope that it will be useful,
 #include <stdio.h>
 #include <stdarg.h>
 #include <ctype.h>
-#include <linux/errno.h>  
+#include <linux/errno.h>
+#include <glib.h>
 
 
 #include "parser.h"
@@ -912,7 +913,7 @@ int checkNamedTypesImplemented(table * named_types)
  *    checksum          : checksum for the facility
  ****************************************************************************/
 
-int generateChecksum(char* facName, unsigned long * checksum, sequence * events)
+int generateChecksum(char* facName, guint32 * checksum, sequence * events)
 {
   unsigned long crc ;
   int pos;

@@ -28,6 +28,7 @@
 #include "ltt-private.h"
 #include <ltt/event.h>
 #include <ltt/trace.h>
+#include <ltt/ltt-types.h>
 
 
 LttEvent *ltt_event_new()
@@ -49,12 +50,13 @@ void ltt_event_destroy(LttEvent *event)
  *    offsetParent    : offset from the parent
  *    fld             : field
  *    evD             : event data
+ *    reverse_byte_order : 1 or 0
  *Return value
  *    int             : size of the field
  ****************************************************************************/
 
 int ltt_event_refresh_fields(int offsetRoot,int offsetParent, 
-			     LttField * fld, void *evD)
+			     LttField * fld, void *evD, gboolean reverse_byte_order)
 {
   int size, size1, element_number, i, offset1, offset2;
   LttType * type = fld->field_type;
@@ -66,14 +68,14 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
         size = 0;
         for(i=0;i<element_number;i++){
           size += ltt_event_refresh_fields(offsetRoot+size,size, 
-             fld->child[0], evD+size);
+             fld->child[0], evD+size, reverse_byte_order);
         }
       }else size = fld->field_size;
       break;
 
     case LTT_SEQUENCE:
       size1 = fld->sequ_number_size;
-      element_number = getIntNumber(size1,evD);
+      element_number = getIntNumber(reverse_byte_order,size1,evD);
       type->element_number = element_number;
       if(fld->element_size > 0){
         size = element_number * fld->element_size;
@@ -81,7 +83,7 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
         size = 0;
         for(i=0;i<element_number;i++){
           size += ltt_event_refresh_fields(offsetRoot+size+size1,size+size1, 
-                   fld->child[0], evD+size+size1);
+                   fld->child[0], evD+size+size1, reverse_byte_order);
         }	
         size += size1;
       }
@@ -98,7 +100,7 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
         offset2 = 0;
         for(i=0;i<element_number;i++){
           size=ltt_event_refresh_fields(offset1,offset2,
-                                        fld->child[i],evD+offset2);
+                               fld->child[i],evD+offset2, reverse_byte_order);
           offset1 += size;
           offset2 += size;
         }      
@@ -239,7 +241,8 @@ LttField *ltt_event_field(LttEvent *e)
     event_type->latest_event = e->which_event;
     
     if(unlikely(field->field_fixed != 1))
-      ltt_event_refresh_fields(0, 0, field, e->data);
+      ltt_event_refresh_fields(0, 0, field, e->data,
+          e->tracefile->trace->reverse_byte_order);
   }
   return field;
 }
@@ -502,7 +505,8 @@ unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
   
   if(f->field_type->type_class == LTT_ARRAY)
     return f->field_type->element_number;
-  return (unsigned)  getIntNumber(f->sequ_number_size, e + f->offset_root);
+  return (unsigned)  getIntNumber(e->tracefile->trace->reverse_byte_order,
+      f->sequ_number_size, e + f->offset_root);
 }
 
 /*****************************************************************************
@@ -538,7 +542,8 @@ void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
   evD = e->data + f->offset_root;
   size = 0;
   for(k=0;k<i;k++){
-    size += ltt_event_refresh_fields(f->offset_root+size,size, fld, evD+size);
+    size += ltt_event_refresh_fields(f->offset_root+size,size, fld, evD+size,
+                                e->tracefile->trace->reverse_byte_order);
   }
   f->current_element = i - 1;
 }
@@ -550,8 +555,10 @@ void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
 
 guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f)
 {
-  int revFlag = e->tracefile->trace->my_arch_endian == 
-                e->tracefile->trace->system_description->endian ? 0:1;
+  //int revFlag = e->tracefile->trace->my_arch_endian == 
+  //              e->tracefile->trace->system_description->endian ? 0:1;
+  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
+
   LttTypeEnum t = f->field_type->type_class;
 
   g_assert(t == LTT_UINT || t == LTT_ENUM);
@@ -560,17 +567,9 @@ guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f)
     guint8 x = *(guint8 *)(e->data + f->offset_root);
     return (guint32) x;    
   }else if(f->field_size == 2){
-    guint16 x = *(guint16 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (guint32) (revFlag ? GUINT16_FROM_BE(x): x);    
-    else
-      return (guint32) (revFlag ? GUINT16_FROM_LE(x): x);          
+    return (guint32)ltt_get_uint16(reverse_byte_order, e->data + f->offset_root);
   }else if(f->field_size == 4){
-    guint32 x = *(guint32 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (guint32) (revFlag ? GUINT32_FROM_BE(x): x);    
-    else
-      return (guint32) (revFlag ? GUINT32_FROM_LE(x): x);    
+    return (guint32)ltt_get_uint32(reverse_byte_order, e->data + f->offset_root);
   }
 #if 0
   else if(f->field_size == 8){
@@ -587,8 +586,9 @@ guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f)
 
 gint32 ltt_event_get_int(LttEvent *e, LttField *f)
 {
-  int revFlag = e->tracefile->trace->my_arch_endian == 
-                e->tracefile->trace->system_description->endian ? 0:1;
+  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
+  //int revFlag = e->tracefile->trace->my_arch_endian == 
+  //              e->tracefile->trace->system_description->endian ? 0:1;
 
   g_assert(f->field_type->type_class == LTT_INT);
 
@@ -596,17 +596,9 @@ gint32 ltt_event_get_int(LttEvent *e, LttField *f)
     gint8 x = *(gint8 *)(e->data + f->offset_root);
     return (gint32) x;    
   }else if(f->field_size == 2){
-    gint16 x = *(gint16 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (gint32) (revFlag ? GINT16_FROM_BE(x): x);    
-    else
-      return (gint32) (revFlag ? GINT16_FROM_LE(x): x);    
+    return (gint32)ltt_get_int16(reverse_byte_order, e->data + f->offset_root);
   }else if(f->field_size == 4){
-    gint32 x = *(gint32 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (gint32) (revFlag ? GINT32_FROM_BE(x): x);    
-    else
-      return (gint32) (revFlag ? GINT32_FROM_LE(x): x);    
+    return (gint32)ltt_get_int32(reverse_byte_order, e->data + f->offset_root);
   }
 #if 0
   else if(f->field_size == 8){
@@ -623,8 +615,9 @@ gint32 ltt_event_get_int(LttEvent *e, LttField *f)
 
 guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
 {
-  int revFlag = e->tracefile->trace->my_arch_endian == 
-                e->tracefile->trace->system_description->endian ? 0:1;
+  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
+  //int revFlag = e->tracefile->trace->my_arch_endian == 
+  //              e->tracefile->trace->system_description->endian ? 0:1;
   LttTypeEnum t = f->field_type->type_class;
 
   g_assert(t == LTT_UINT || t == LTT_ENUM);
@@ -633,23 +626,11 @@ guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
     guint8 x = *(guint8 *)(e->data + f->offset_root);
     return (guint64) x;    
   }else if(f->field_size == 2){
-    guint16 x = *(guint16 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (guint64) (revFlag ? GUINT16_FROM_BE(x): x);  
-    else
-      return (guint64) (revFlag ? GUINT16_FROM_LE(x): x);    
+    return (guint64)ltt_get_uint16(reverse_byte_order, e->data + f->offset_root);
   }else if(f->field_size == 4){
-    guint32 x = *(guint32 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (guint64) (revFlag ? GUINT32_FROM_BE(x): x);    
-    else
-      return (guint64) (revFlag ? GUINT32_FROM_LE(x): x);    
+    return (guint64)ltt_get_uint32(reverse_byte_order, e->data + f->offset_root);
   }else if(f->field_size == 8){
-    guint64 x = *(guint64 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (guint64) (revFlag ? GUINT64_FROM_BE(x): x);    
-    else
-      return (guint64) (revFlag ? GUINT64_FROM_LE(x): x);    
+    return ltt_get_uint64(reverse_byte_order, e->data + f->offset_root);
   }
   g_critical("ltt_event_get_long_unsigned : field size %i unknown", f->field_size);
   return 0;
@@ -657,8 +638,9 @@ guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
 
 gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
 {
-  int revFlag = e->tracefile->trace->my_arch_endian == 
-                e->tracefile->trace->system_description->endian ? 0:1;
+  //int revFlag = e->tracefile->trace->my_arch_endian == 
+  //              e->tracefile->trace->system_description->endian ? 0:1;
+  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
 
   g_assert( f->field_type->type_class == LTT_INT);
 
@@ -666,23 +648,11 @@ gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
     gint8 x = *(gint8 *)(e->data + f->offset_root);
     return (gint64) x;    
   }else if(f->field_size == 2){
-    gint16 x = *(gint16 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (gint64) (revFlag ? GINT16_FROM_BE(x): x);    
-    else
-      return (gint64) (revFlag ? GINT16_FROM_LE(x): x);    
+    return (gint64)ltt_get_int16(reverse_byte_order, e->data + f->offset_root);
   }else if(f->field_size == 4){
-    gint32 x = *(gint32 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (gint64) (revFlag ? GINT32_FROM_BE(x): x);    
-    else
-      return (gint64) (revFlag ? GINT32_FROM_LE(x): x);    
+    return (gint64)ltt_get_int32(reverse_byte_order, e->data + f->offset_root);
   }else if(f->field_size == 8){
-    gint64 x = *(gint64 *)(e->data + f->offset_root);
-    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
-      return (gint64) (revFlag ? GINT64_FROM_BE(x): x);    
-    else
-      return (gint64) (revFlag ? GINT64_FROM_LE(x): x);    
+    return ltt_get_int64(reverse_byte_order, e->data + f->offset_root);
   }
   g_critical("ltt_event_get_long_int : field size %i unknown", f->field_size);
   return 0;
@@ -690,12 +660,13 @@ gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
 
 float ltt_event_get_float(LttEvent *e, LttField *f)
 {
-  int revFlag = e->tracefile->trace->my_arch_endian == 
-                e->tracefile->trace->system_description->endian ? 0:1;
+  //int revFlag = e->tracefile->trace->my_arch_endian == 
+  //              e->tracefile->trace->system_description->endian ? 0:1;
+  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
 
   g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 4);
 
-  if(revFlag == 0) return *(float *)(e->data + f->offset_root);
+  if(reverse_byte_order == 0) return *(float *)(e->data + f->offset_root);
   else{
     guint32 aInt;
     memcpy((void*)&aInt, e->data + f->offset_root, 4);
@@ -706,12 +677,13 @@ float ltt_event_get_float(LttEvent *e, LttField *f)
 
 double ltt_event_get_double(LttEvent *e, LttField *f)
 {
-  int revFlag = e->tracefile->trace->my_arch_endian == 
-                e->tracefile->trace->system_description->endian ? 0:1;
+  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
+  //int revFlag = e->tracefile->trace->my_arch_endian == 
+  //              e->tracefile->trace->system_description->endian ? 0:1;
 
   g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 8);
 
-  if(revFlag == 0) return *(double *)(e->data + f->offset_root);
+  if(reverse_byte_order == 0) return *(double *)(e->data + f->offset_root);
   else{
     guint64 aInt;
     memcpy((void*)&aInt, e->data + f->offset_root, 8);

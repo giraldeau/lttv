@@ -22,6 +22,8 @@ This program is distributed in the hope that it will be useful,
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <glib.h>
+
 /* Extensible array container */
 
 typedef struct _sequence {
@@ -159,7 +161,7 @@ type_descriptor *parseType(parse_file *in, type_descriptor *t, sequence * unname
 void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types, table * named_types);
 int checkNamedTypesImplemented(table * namedTypes);
 type_descriptor * find_named_type(char *name, table * named_types);
-int generateChecksum(char * facName, unsigned long * checksum, sequence * events);
+int generateChecksum(char * facName, guint32 * checksum, sequence * events);
 
 
 /* get attributes */
