@@ -992,7 +992,7 @@ static gboolean process_fork(LttvTraceHook *trace_hook, LttvTracefileState *s)
   guint child_pid;
 
   /* Child PID */
-  f = trace_hook->f3;
+  f = trace_hook->f2;
   child_pid = ltt_event_get_unsigned(s->parent.e, f);
 
   lttv_state_create_process(s, s->process, child_pid);
