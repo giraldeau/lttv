@@ -325,7 +325,7 @@ list_in : empty
 list_out : many events requests
 
 
-A. While list_in !empty and list_out !empty and !GTK Event pending
+A. While (list_in !empty or list_out !empty) and !GTK Event pending
   1. If list_in is empty (need a seek)
     1.1 Add requests to list_in
       1.1.1 Find all time requests with the highest priority and lowest start
