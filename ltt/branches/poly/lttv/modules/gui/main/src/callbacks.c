@@ -446,6 +446,18 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       
       //update current tab
       update_traceset(mw_data);
+
+      get_traceset_time_span(mw_data,LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context)->Time_Span);
+      if(lttv_traceset_number(mw_data->current_tab->traceset_info->traceset) == 1 ||
+	 ltt_time_compare(mw_data->current_tab->current_time,
+             LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context)->Time_Span->startTime)<0){
+	mw_data->current_tab->current_time = 
+           LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context)->Time_Span->startTime;
+	mw_data->current_tab->time_window.start_time = mw_data->current_tab->current_time;
+	mw_data->current_tab->time_window.time_width.tv_sec = DEFAULT_TIME_WIDTH_S;
+	mw_data->current_tab->time_window.time_width.tv_nsec = 0;
+      } 
+
       redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
       set_current_time(mw_data,&(mw_data->current_tab->current_time));
       break;

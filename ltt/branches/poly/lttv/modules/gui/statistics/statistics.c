@@ -595,8 +595,8 @@ gboolean statistic_traceset_changed(void * hook_data, void * call_data)
 {
   StatisticViewerData *statistic_viewer_data = (StatisticViewerData*) hook_data;
   
-  //  gtk_tree_store_clear (statistic_viewer_data->store_m);  
-  //  statistic_viewer_data->shown = FALSE;
+  gtk_tree_store_clear (statistic_viewer_data->store_m);  
+  statistic_viewer_data->shown = FALSE;
 
   return FALSE;
 }
