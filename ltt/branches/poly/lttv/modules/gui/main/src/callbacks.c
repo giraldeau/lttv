@@ -189,7 +189,7 @@ void get_label_string (GtkWidget * text, gchar * label)
     strcpy(label,gtk_entry_get_text(entry)); 
 }
 
-void get_label(MainWindow * mw, gchar * str, gchar* dialogue_title, gchar * label_str)
+gboolean get_label(MainWindow * mw, gchar * str, gchar* dialogue_title, gchar * label_str)
 {
   GtkWidget * dialogue;
   GtkWidget * text;
@@ -220,8 +220,9 @@ void get_label(MainWindow * mw, gchar * str, gchar* dialogue_title, gchar * labe
     case GTK_RESPONSE_REJECT:
     default:
       gtk_widget_destroy(dialogue);
-      break;
+      return FALSE;
   }
+  return TRUE;
 }
 
 MainWindow * get_window_data_struct(GtkWidget * widget)
@@ -651,9 +652,8 @@ void create_new_tab(GtkWidget* widget, gpointer user_data){
   }
 
   strcpy(label,"Page");
-  get_label(mw_data, label,"Get the name of the tab","Please input tab's name");
-
-  create_tab (mw_data, mw_data, notebook, label);
+  if(get_label(mw_data, label,"Get the name of the tab","Please input tab's name"))    
+    create_tab (mw_data, mw_data, notebook, label);
 }
 
 void
