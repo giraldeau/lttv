@@ -73,7 +73,7 @@ main (int argc, char *argv[])
 
   gConstructor = get_constructor();
   ToolMenuTitle_menu = lookup_widget(mw->MWindow,"ToolMenuTitle_menu");
-  insert_view = gtk_menu_item_new_with_mnemonic (_("insert_view"));
+  insert_view = gtk_menu_item_new_with_mnemonic ("insert_view");
   gtk_widget_show (insert_view);
   gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
   g_signal_connect ((gpointer) insert_view, "activate",
