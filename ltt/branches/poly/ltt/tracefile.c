@@ -816,9 +816,9 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
   for(i=0;i<t->control_tracefile_number;i++){
     tf = g_ptr_array_index(t->control_tracefiles, i);
     readBlock(tf,1);
-    startTmp = tf->a_block_start->time;    
+    startTmp = ltt_get_time(t->reverse_byte_order, &tf->a_block_start->time);
     readBlock(tf,tf->block_number);
-    endTmp = tf->a_block_end->time;
+    endTmp = ltt_get_time(t->reverse_byte_order, &tf->a_block_end->time);
     if(i==0){
       startSmall = startTmp;
       endBig     = endTmp;
@@ -832,9 +832,9 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
   for(i=0;i<t->per_cpu_tracefile_number;i++){
     tf = g_ptr_array_index(t->per_cpu_tracefiles, i);
     readBlock(tf,1);
-    startTmp = tf->a_block_start->time;    
+    startTmp = ltt_get_time(t->reverse_byte_order, &tf->a_block_start->time);
     readBlock(tf,tf->block_number);
-    endTmp = tf->a_block_end->time;
+    endTmp = ltt_get_time(t->reverse_byte_order, &tf->a_block_end->time);
     if(j == 0 && i==0){
       startSmall = startTmp;
       endBig     = endTmp;
@@ -886,22 +886,26 @@ void ltt_tracefile_find_time_block(LttTracefile *t, LttTime time,
   if(err) g_error("Can not read tracefile: %s\n", t->name); 
   if(start_block == end_block)return;
 
-  tailTime = ltt_time_compare(t->a_block_end->time, time);
+  tailTime = ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order,
+                                           &t->a_block_end->time), time);
   if(tailTime >= 0) return;
   
   err=readBlock(t,end_block);
   if(err) g_error("Can not read tracefile: %s\n", t->name); 
   if(start_block+1 == end_block)return;
   
-  headTime = ltt_time_compare(t->a_block_start->time, time);
+  headTime = ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order,
+                                           &t->a_block_start->time), time);
   if(headTime <= 0 ) return;
   
   tmp_block = (end_block + start_block)/2;
   err=readBlock(t,tmp_block);
   if(err) g_error("Can not read tracefile: %s\n", t->name); 
 
-  headTime = ltt_time_compare(t->a_block_start->time, time);
-  tailTime = ltt_time_compare(t->a_block_end->time, time);
+  headTime = ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order,
+                                           &t->a_block_start->time), time);
+  tailTime = ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order,
+                                           &t->a_block_end->time), time);
   if(headTime <= 0 && tailTime >= 0) return;
   
   if(headTime > 0){
@@ -926,14 +930,17 @@ void ltt_tracefile_backward_find_time_block(LttTracefile *t, LttTime time)
   int t_time, h_time, err;
   err=readBlock(t,t->which_block-1);
   if(err) g_error("Can not read tracefile: %s\n", t->name); 
-  h_time = ltt_time_compare(t->a_block_start->time, time);
-  t_time = ltt_time_compare(t->a_block_end->time, time);
+  h_time = ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order,
+                                         &t->a_block_start->time), time);
+  t_time = ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order,
+                                         &t->a_block_end->time), time);
   if(h_time == 0){
     int tmp;
     if(t->which_block == 1) return;
     err=readBlock(t,t->which_block-1);
     if(err) g_error("Can not read tracefile: %s\n", t->name); 
-    tmp = ltt_time_compare(t->a_block_end->time, time);
+    tmp = ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order,
+                                        &t->a_block_end->time), time);
     if(tmp == 0) return ltt_tracefile_seek_time(t, time);
     err=readBlock(t,t->which_block+1);
     if(err) g_error("Can not read tracefile: %s\n", t->name);     
@@ -951,12 +958,16 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 {
   int err;
   LttTime lttTime;
-  int headTime = ltt_time_compare(t->a_block_start->time, time);
-  int tailTime = ltt_time_compare(t->a_block_end->time, time);
+  int headTime = ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order,
+                                               &t->a_block_start->time), time);
+  int tailTime = ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order,
+                                               &t->a_block_end->time), time);
   LttEvent ev;
 
   if(headTime < 0 && tailTime > 0){
-    if(ltt_time_compare(t->a_block_end->time, t->current_event_time) !=0) {
+    if(ltt_time_compare(ltt_get_time(t->trace->reverse_byte_order, 
+                                     &t->a_block_end->time),
+                        t->current_event_time) !=0) {
       lttTime = getEventTime(t);
       err = ltt_time_compare(lttTime, time);
       if(err > 0){
@@ -1172,8 +1183,10 @@ int readBlock(LttTracefile * tf, int whichBlock)
   if((guint)whichBlock == tf->which_block) return 0;
   
   if(likely(whichBlock - tf->which_block == 1 && tf->which_block != 0)){
-    tf->prev_block_end_time = tf->a_block_end->time;
-    tf->prev_event_time     = tf->a_block_end->time;
+    tf->prev_block_end_time = ltt_get_time(tf->trace->reverse_byte_order,
+                                           &tf->a_block_end->time);
+    tf->prev_event_time     = ltt_get_time(tf->trace->reverse_byte_order,
+                                           &tf->a_block_end->time);
   }else{
     tf->prev_block_end_time.tv_sec = 0;
     tf->prev_block_end_time.tv_nsec = 0;
@@ -1210,7 +1223,7 @@ int readBlock(LttTracefile * tf, int whichBlock)
 
   tf->overflow_nsec = 
                (-((double)
-               (ltt_get_uint32(tf->trace->reverse_byte_order,
+               (ltt_get_uint64(tf->trace->reverse_byte_order,
                                &tf->a_block_start->cycle_count)&0xFFFFFFFF))
                                         * tf->nsec_per_cycle);
 
@@ -1239,7 +1252,7 @@ void updateTracefile(LttTracefile * tf)
   tf->count = 0;
 
   tf->overflow_nsec = 
-    (-((double)ltt_get_uint32(tf->trace->reverse_byte_order,
+    (-((double)ltt_get_uint64(tf->trace->reverse_byte_order,
                               &tf->a_block_start->cycle_count))
                                         * tf->nsec_per_cycle);
 
@@ -1312,12 +1325,14 @@ void getCyclePerNsec(LttTracefile * t)
   LttCycleCount     lBufTotalCycle;/* Total cycles for this buffer */
 
   /* Calculate the total time for this buffer */
-  lBufTotalTime = ltt_time_sub(t->a_block_end->time, t->a_block_start->time);
+  lBufTotalTime = ltt_time_sub(
+       ltt_get_time(t->trace->reverse_byte_order, &t->a_block_end->time),
+       ltt_get_time(t->trace->reverse_byte_order, &t->a_block_start->time));
 
   /* Calculate the total cycles for this bufffer */
-  lBufTotalCycle  = ltt_get_uint32(t->trace->reverse_byte_order,
+  lBufTotalCycle  = ltt_get_uint64(t->trace->reverse_byte_order,
                           &t->a_block_end->cycle_count);
-  lBufTotalCycle -= ltt_get_uint32(t->trace->reverse_byte_order,
+  lBufTotalCycle -= ltt_get_uint64(t->trace->reverse_byte_order,
                           &t->a_block_start->cycle_count);
 
   /* Convert the total time to double */
@@ -1369,9 +1384,9 @@ static inline LttTime getEventTime(LttTracefile * tf)
      lEventNSec = 0;
   } else if(unlikely(evId == TRACE_BLOCK_END)) {
     lEventNSec = ((double)
-          (ltt_get_uint32(tf->trace->reverse_byte_order,
+          (ltt_get_uint64(tf->trace->reverse_byte_order,
                             &tf->a_block_end->cycle_count) 
-           - ltt_get_uint32(tf->trace->reverse_byte_order,
+           - ltt_get_uint64(tf->trace->reverse_byte_order,
                             &tf->a_block_start->cycle_count))
                            * tf->nsec_per_cycle);
   }
@@ -1394,7 +1409,8 @@ static inline LttTime getEventTime(LttTracefile * tf)
 
   lTimeOffset = ltt_time_from_uint64(lEventNSec);
   
-  time = ltt_time_add(tf->a_block_start->time, lTimeOffset);  
+  time = ltt_time_add(ltt_get_time(tf->trace->reverse_byte_order,
+                                   &tf->a_block_start->time), lTimeOffset);  
   
   return time;
 }
