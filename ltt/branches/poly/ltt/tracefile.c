@@ -685,6 +685,8 @@ unsigned ltt_trace_eventtype_number(LttTrace *t)
   return count;
 }
 
+/* FIXME : performances could be improved with a better design for this
+ * function */
 LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
 {
   LttFacility * facility = NULL;
@@ -693,8 +695,8 @@ LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
   for(i=0;i<trace->facility_number;i++){
     LttFacility *iter_facility =
                       (LttFacility*) g_ptr_array_index(trace->facilities,i);
-    if(id >= iter_facility->base_id && 
-       id < iter_facility->base_id + iter_facility->event_number) {
+    if(unlikely(id >= iter_facility->base_id && 
+       id < iter_facility->base_id + iter_facility->event_number)) {
       facility = iter_facility;
       break;
     }
@@ -993,13 +995,13 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
 {
   //if we are at the right place, just return
-  if(t->which_block == ep->block_num && t->which_event == ep->event_num)
+  if(likely(t->which_block == ep->block_num && t->which_event == ep->event_num))
     return;
   
-  if(t->which_block == ep->block_num) updateTracefile(t);
+  if(likely(t->which_block == ep->block_num)) updateTracefile(t);
   else readBlock(t,ep->block_num);
   //event offset is available
-  if(ep->old_position){
+  if(likely(ep->old_position)){
     int err;
 
     t->which_event = ep->event_num;
@@ -1019,7 +1021,7 @@ void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
 
     //update the fields of the current event and go to the next event
     err = skipEvent(t);
-    if(err == ERANGE) g_error("event id is out of range\n");
+    if(unlikely(err == ERANGE)) g_error("event id is out of range\n");
       
     return;
   }
@@ -1029,7 +1031,7 @@ void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
   g_warning("using slow O(n) tracefile seek position");
 
   LttEvent event;
-  while(t->which_event < ep->event_num) ltt_tracefile_read(t, &event);
+  while(likely(t->which_event < ep->event_num)) ltt_tracefile_read(t, &event);
 
   return;
 }
@@ -1047,16 +1049,16 @@ LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event)
 {
   int err;
 
-  if(t->cur_event_pos == t->buffer + t->block_size){
-    if(t->which_block == t->block_number){
+  if(unlikely(t->cur_event_pos == t->buffer + t->block_size)){
+    if(unlikely(t->which_block == t->block_number)){
       return NULL;
     }
     err = readBlock(t, t->which_block + 1);
-    if(err)g_error("Can not read tracefile");    
+    if(unlikely(err))g_error("Can not read tracefile");    
   }
 
   event->event_id = (int)(*(guint16 *)(t->cur_event_pos));
-  if(event->event_id == TRACE_TIME_HEARTBEAT)
+  if(unlikely(event->event_id == TRACE_TIME_HEARTBEAT))
     t->cur_heart_beat_number++;
 
   t->prev_event_time  = t->current_event_time;
@@ -1083,7 +1085,7 @@ LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event)
 
   //update the fields of the current event and go to the next event
   err = skipEvent(t);
-  if(err == ERANGE) g_error("event id is out of range\n");
+  if(unlikely(err == ERANGE)) g_error("event id is out of range\n");
 
   return event;
 }
@@ -1133,7 +1135,7 @@ int readBlock(LttTracefile * tf, int whichBlock)
   off_t nbBytes;
   guint32 lostSize;
 
-  if(whichBlock - tf->which_block == 1 && tf->which_block != 0){
+  if(likely(whichBlock - tf->which_block == 1 && tf->which_block != 0)){
     tf->prev_block_end_time = tf->a_block_end->time;
     tf->prev_event_time     = tf->a_block_end->time;
   }else{
@@ -1144,9 +1146,9 @@ int readBlock(LttTracefile * tf, int whichBlock)
   }
 
   nbBytes=lseek(tf->fd,(off_t)((whichBlock-1)*tf->block_size), SEEK_SET);
-  if(nbBytes == -1) return EINVAL;
+  if(unlikely(nbBytes == -1)) return EINVAL;
   
-  if(readFile(tf->fd,tf->buffer,tf->block_size,"Unable to read a block")) 
+  if(unlikely(readFile(tf->fd,tf->buffer,tf->block_size,"Unable to read a block")))
     return EIO;
 
   tf->a_block_start=(BlockStart *) (tf->buffer + EVENT_HEADER_SIZE);
