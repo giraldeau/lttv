@@ -38,7 +38,7 @@ void SetTraceset(MainWindow * main_win, gpointer traceset)
   LttvAttributeValue value;
 
   g_assert(lttv_iattribute_find_by_path(main_win->attributes,
-	   "hooks/updatetraceset", LTTV_POINTER, &value));
+     "hooks/updatetraceset", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL)return;
   lttv_hooks_call(tmp,traceset);
@@ -57,7 +57,7 @@ void SetFilter(MainWindow * main_win, gpointer filter)
   LttvAttributeValue value;
 
   g_assert(lttv_iattribute_find_by_path(main_win->attributes,
-	   "hooks/updatefilter", LTTV_POINTER, &value));
+     "hooks/updatefilter", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
 
   if(tmp == NULL)return;
@@ -86,7 +86,7 @@ void toolbar_item_reg(char ** pixmap, char *tooltip, lttv_constructor view_const
   LttvAttributeValue value;
 
   g_assert(lttv_iattribute_find_by_path(attributes_global,
-	   "viewers/toolbar", LTTV_POINTER, &value));
+     "viewers/toolbar", LTTV_POINTER, &value));
   toolbar = (LttvToolbars*)*(value.v_pointer);
 
   if(toolbar == NULL){    
@@ -112,7 +112,7 @@ void toolbar_item_unreg(lttv_constructor view_constructor)
   LttvAttributeValue value;
 
   g_assert(lttv_iattribute_find_by_path(attributes_global,
-	   "viewers/toolbar", LTTV_POINTER, &value));
+     "viewers/toolbar", LTTV_POINTER, &value));
   toolbar = (LttvToolbars*)*(value.v_pointer);
   
   main_window_remove_toolbar_item(view_constructor);
@@ -137,7 +137,7 @@ void menu_item_reg(char *menu_path, char *menu_text, lttv_constructor view_const
   LttvAttributeValue value;
 
   g_assert(lttv_iattribute_find_by_path(attributes_global,
-	   "viewers/menu", LTTV_POINTER, &value));
+     "viewers/menu", LTTV_POINTER, &value));
   menu = (LttvMenus*)*(value.v_pointer);
   
   if(menu == NULL){    
@@ -212,7 +212,7 @@ void get_traceset_time_span(MainWindow *main_win, TimeInterval *time_interval)
   //time_window->start_time = main_win->current_tab->time_window.start_time;
   //time_window->time_width = main_win->current_tab->time_window.time_width;
   *time_interval = *(LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
-					   traceset_context)->Time_Span);
+             traceset_context)->Time_Span);
 }
 
 
@@ -231,10 +231,10 @@ void set_time_window(MainWindow *main_win, TimeWindow *time_window)
   LttvHooks * tmp;
   main_win->current_tab->time_window = *time_window;
   gtk_multi_vpaned_set_scroll_value(main_win->current_tab->multi_vpaned,
-				    ltt_time_to_double(time_window->start_time)
-				    * NANOSECONDS_PER_SECOND );
+            ltt_time_to_double(time_window->start_time)
+            * NANOSECONDS_PER_SECOND );
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/updatetimewindow", LTTV_POINTER, &value));
+           "hooks/updatetimewindow", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_call(tmp, time_window);
@@ -269,7 +269,7 @@ void set_current_time(MainWindow *main_win, LttTime *time)
   LttvHooks * tmp;
   main_win->current_tab->current_time = *time;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/updatecurrenttime", LTTV_POINTER, &value));
+           "hooks/updatecurrenttime", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
 
   if(tmp == NULL)return;
@@ -313,12 +313,12 @@ void get_filter(MainWindow *main_win, Filter *filter)
  */
 
 void reg_update_time_window(LttvHook hook, gpointer hook_data,
-			   MainWindow * main_win)
+         MainWindow * main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/updatetimewindow", LTTV_POINTER, &value));
+           "hooks/updatetimewindow", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -338,12 +338,12 @@ void reg_update_time_window(LttvHook hook, gpointer hook_data,
  */
 
 void unreg_update_time_window(LttvHook hook, gpointer hook_data,
-			     MainWindow * main_win)
+           MainWindow * main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/updatetimewindow", LTTV_POINTER, &value));
+           "hooks/updatetimewindow", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -360,12 +360,12 @@ void unreg_update_time_window(LttvHook hook, gpointer hook_data,
  */
 
 void reg_update_traceset(LttvHook hook, gpointer hook_data,
-		       MainWindow * main_win)
+           MainWindow * main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/updatetraceset", LTTV_POINTER, &value));
+           "hooks/updatetraceset", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -385,12 +385,12 @@ void reg_update_traceset(LttvHook hook, gpointer hook_data,
  */
 
 void unreg_update_traceset(LttvHook hook, gpointer hook_data,
-			 MainWindow * main_win)
+       MainWindow * main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/updatetraceset", LTTV_POINTER, &value));
+           "hooks/updatetraceset", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -407,7 +407,7 @@ void update_traceset(MainWindow * main_win)
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/updatetraceset", LTTV_POINTER, &value));
+           "hooks/updatetraceset", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_call(tmp, NULL);
@@ -424,12 +424,12 @@ void update_traceset(MainWindow * main_win)
  */
 
 void reg_update_filter(LttvHook hook, gpointer hook_data,
-		     MainWindow *main_win)
+         MainWindow *main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->attributes,
-		       "hooks/updatefilter", LTTV_POINTER, &value));
+           "hooks/updatefilter", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -449,12 +449,12 @@ void reg_update_filter(LttvHook hook, gpointer hook_data,
  */
 
 void unreg_update_filter(LttvHook hook, gpointer hook_data,
-		       MainWindow * main_win)
+           MainWindow * main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->attributes,
-		       "hooks/updatefilter", LTTV_POINTER, &value));
+           "hooks/updatefilter", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -471,12 +471,12 @@ void unreg_update_filter(LttvHook hook, gpointer hook_data,
  */
 
 void reg_update_current_time(LttvHook hook, gpointer hook_data, 
-			  MainWindow *main_win)
+        MainWindow *main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/updatecurrenttime", LTTV_POINTER, &value));
+           "hooks/updatecurrenttime", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -496,12 +496,12 @@ void reg_update_current_time(LttvHook hook, gpointer hook_data,
  */
 
 void unreg_update_current_time(LttvHook hook, gpointer hook_data,
-			    MainWindow * main_win)
+          MainWindow * main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/updatecurrenttime", LTTV_POINTER, &value));
+           "hooks/updatecurrenttime", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -518,12 +518,12 @@ void unreg_update_current_time(LttvHook hook, gpointer hook_data,
  */
 
 void reg_show_viewer(LttvHook hook, gpointer hook_data, 
-		     MainWindow *main_win)
+         MainWindow *main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/showviewer", LTTV_POINTER, &value));
+           "hooks/showviewer", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -543,12 +543,12 @@ void reg_show_viewer(LttvHook hook, gpointer hook_data,
  */
 
 void unreg_show_viewer(LttvHook hook, gpointer hook_data,
-		       MainWindow * main_win)
+           MainWindow * main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/showviewer", LTTV_POINTER, &value));
+           "hooks/showviewer", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -566,7 +566,7 @@ void show_viewer(MainWindow *main_win)
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/showviewer", LTTV_POINTER, &value));
+           "hooks/showviewer", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_call(tmp, NULL);
@@ -597,12 +597,12 @@ void set_focused_pane(MainWindow *main_win, gpointer paned)
  */
 
 void reg_update_dividor(LttvHook hook, gpointer hook_data, 
-		      MainWindow *main_win)
+          MainWindow *main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/hpanedividor", LTTV_POINTER, &value));
+           "hooks/hpanedividor", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL){    
     tmp = lttv_hooks_new();
@@ -622,12 +622,12 @@ void reg_update_dividor(LttvHook hook, gpointer hook_data,
  */
 
 void unreg_update_dividor(LttvHook hook, gpointer hook_data, 
-			MainWindow *main_win)
+      MainWindow *main_win)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/hpanedividor", LTTV_POINTER, &value));
+           "hooks/hpanedividor", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -647,7 +647,7 @@ void set_hpane_dividor(MainWindow *main_win, gint position)
   LttvAttributeValue value;
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
-		       "hooks/hpanedividor", LTTV_POINTER, &value));
+           "hooks/hpanedividor", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_call(tmp, &position);
@@ -663,7 +663,7 @@ void set_hpane_dividor(MainWindow *main_win, gint position)
  */
 
 void process_traceset_api(MainWindow *main_win, LttTime start, 
-			  LttTime end, unsigned maxNumEvents)
+        LttTime end, unsigned maxNumEvents)
 {
   lttv_process_traceset_seek_time(
      LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
@@ -685,25 +685,25 @@ void process_traceset_api(MainWindow *main_win, LttTime start,
  */
 
 void context_add_hooks_api(MainWindow *main_win ,
-			   LttvHooks *before_traceset, 
-			   LttvHooks *after_traceset,
-			   LttvHooks *check_trace, 
-			   LttvHooks *before_trace, 
-			   LttvHooks *after_trace, 
-			   LttvHooks *check_tracefile,
-			   LttvHooks *before_tracefile,
-			   LttvHooks *after_tracefile,
-			   LttvHooks *check_event, 
-			   LttvHooks *before_event, 
-			   LttvHooks *after_event)
+         LttvHooks *before_traceset, 
+         LttvHooks *after_traceset,
+         LttvHooks *check_trace, 
+         LttvHooks *before_trace, 
+         LttvHooks *after_trace, 
+         LttvHooks *check_tracefile,
+         LttvHooks *before_tracefile,
+         LttvHooks *after_tracefile,
+         LttvHooks *check_event, 
+         LttvHooks *before_event, 
+         LttvHooks *after_event)
 {
   LttvTracesetContext * tsc = 
-	  LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
-				traceset_context);
+    LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
+        traceset_context);
   lttv_traceset_context_add_hooks(tsc,before_traceset,after_traceset,
-				  check_trace,before_trace,after_trace,
-				  check_tracefile,before_tracefile,after_tracefile,
-				  check_event,before_event, after_event);
+          check_trace,before_trace,after_trace,
+          check_tracefile,before_tracefile,after_tracefile,
+          check_event,before_event, after_event);
 }
 
 
@@ -716,24 +716,24 @@ void context_add_hooks_api(MainWindow *main_win ,
  */
 
 void context_remove_hooks_api(MainWindow *main_win ,
-			      LttvHooks *before_traceset, 
-			      LttvHooks *after_traceset,
-			      LttvHooks *check_trace, 
-			      LttvHooks *before_trace, 
-			      LttvHooks *after_trace, 
-			      LttvHooks *check_tracefile,
-			      LttvHooks *before_tracefile,
-			      LttvHooks *after_tracefile,
-			      LttvHooks *check_event, 
-			      LttvHooks *before_event, 
-			      LttvHooks *after_event)
+            LttvHooks *before_traceset, 
+            LttvHooks *after_traceset,
+            LttvHooks *check_trace, 
+            LttvHooks *before_trace, 
+            LttvHooks *after_trace, 
+            LttvHooks *check_tracefile,
+            LttvHooks *before_tracefile,
+            LttvHooks *after_tracefile,
+            LttvHooks *check_event, 
+            LttvHooks *before_event, 
+            LttvHooks *after_event)
 {
   LttvTracesetContext * tsc =
         LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->traceset_context);
   lttv_traceset_context_remove_hooks(tsc,before_traceset,after_traceset,
-				     check_trace,before_trace,after_trace,
-				     check_tracefile,before_tracefile,after_tracefile,
-				     check_event,before_event, after_event);
+             check_trace,before_trace,after_trace,
+             check_tracefile,before_tracefile,after_tracefile,
+             check_event,before_event, after_event);
 }
 
 
