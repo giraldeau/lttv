@@ -7,9 +7,9 @@
    with a facility are released when the trace is closed. Each facility
    is characterized by its name and checksum. */
 
-char *ltt_facility_name(ltt_facility *f);
+char *ltt_facility_name(LttFacility *f);
 
-ltt_checksum ltt_facility_checksum(ltt_facility *f);
+LttChecksum ltt_facility_checksum(LttFacility *f);
 
 
 /* Discover the event types within the facility. The event type integer id
@@ -17,12 +17,12 @@ ltt_checksum ltt_facility_checksum(ltt_facility *f);
    type id within the trace is the relative id + the facility base event
    id. */
 
-unsigned ltt_facility_base_id(ltt_facility *f);
+unsigned ltt_facility_base_id(LttFacility *f);
 
-unsigned ltt_facility_eventtype_number(ltt_facility *f);
+unsigned ltt_facility_eventtype_number(LttFacility *f);
 
-ltt_eventtype *ltt_facility_eventtype_get(ltt_facility *f, unsigned i);
+LttEventType *ltt_facility_eventtype_get(LttFacility *f, unsigned i);
 
-ltt_eventtype *ltt_facility_eventtype_get_by_name(ltt_facility *f, char *name);
+LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, char *name);
 
 #endif // FACILITY_H

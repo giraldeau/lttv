@@ -4,97 +4,108 @@
 #include <ltt/ltt.h>
 
 /* A trace is specified as a pathname to the directory containing all the
-   associated data (control tracefile, per cpu tracefiles, event 
+   associated data (control tracefiles, per cpu tracefiles, event 
    descriptions...).
 
    When a trace is closed, all the associated facilities, types and fields
    are released as well. */
 
-ltt_trace *ltt_trace_open(char *pathname);
+LttTrace *ltt_trace_open(char *pathname);
 
-void ltt_trace_close(ltt_trace *t); 
-
-
-/* A trace may be queried for its architecture type (e.g., "i386", 
-   "powerpc", "powerpcle", "s390", "s390x"), its architecture variant 
-   (e.g., "att" versus "sun" for m68k), its operating system (e.g., "linux",
-   "bsd"), its generic architecture, and the machine identity (e.g., system
-   host name). All character strings belong to the associated tracefile 
-   and are freed when it is closed. */
+void ltt_trace_close(LttTrace *t); 
 
 
-char *ltt_tracefile_arch_type(ltt_trace *t); 
+/* The characteristics of the system on which the trace was obtained
+   is described in a LttSystemDescription structure. */
 
-char *ltt_tracefile_arch_variant(ltt_trace *t);
+typedef struct _LttSystemDescription {
+  char *description;
+  char *node_name;
+  char *domainname;
+  unsigned nb_cpu;
+  LttArchSize size;
+  LttArchEndian endian;
+  char *kernel_name;
+  char *kernel_release;
+  char *kernel_version;
+  char *machine;
+  char *processor;
+  char *hardware_platform;
+  char *operating_system;
+  unsigned ltt_major_version;
+  unsigned ltt_minor_version;
+  unsigned ltt_block_size;
+  LttTime trace_start;
+  LttTime trace_end;
+} LttSystemDescription;
 
-char *ltt_tracefile_system_type(ltt_trace *t);
-
-ltt_arch_size ltt_tracefile_arch_size(ltt_trace *t);
-
-ltt_arch_endian ltt_tracefile_arch_endian(ltt_trace *t); 
-
-
-/* Hostname of the system where the trace was recorded */
-
-char *ltt_trace_system_name(ltt_tracefile *t);
-
-
-/* SMP multi-processors have 2 or more CPUs */
-
-unsigned ltt_trace_cpu_number(ltt_trace *t);
-
-
-/* Start and end time of the trace and its duration */
-
-ltt_time ltt_tracefile_time_start(ltt_trace *t);
-
-ltt_time ltt_tracefile_time_end(ltt_trace *t);
-
-ltt_time ltt_tracefile_duration(ltt_tracefile *t);
+LttSystemDescription *ltt_trace_system_description(LttTrace *t)
 
 
-/* Functions to discover the facilities in the trace */
+/* Functions to discover the facilities in the trace. Once the number
+   of facilities is known, they may be accessed by position. Multiple
+   versions of a facility (same name, different checksum) have consecutive
+   positions. */
 
-unsigned ltt_trace_facility_number(ltt_trace *t);
+unsigned ltt_trace_facility_number(LttTrace *t);
 
-ltt_facility *ltt_trace_facility_get(ltt_trace *t, unsigned i);
+LttFacility *ltt_trace_facility_get(LttTrace *t, unsigned i);
 
-ltt_facility *ltt_trace_facility_get_by_name(ltt_trace *t, char *name);
+
+/* Look for a facility by name. It returns the number of facilities found
+   and sets the position argument to the first found. Returning 0, the named
+   facility is unknown, returning 1, the named facility is at the specified
+   position, returning n, the facilities are from position to 
+   position + n - 1. */
+
+unsigned ltt_trace_facility_find(LttTrace *t, char *name, unsigned *position);
 
 
 /* Functions to discover all the event types in the trace */
 
-unsigned ltt_trace_eventtype_number(ltt_tracefile *t);
+unsigned ltt_trace_eventtype_number(LttTrace *t);
 
-ltt_eventtype *ltt_trace_eventtype_get(ltt_tracefile *t, unsigned i);
+LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned i);
 
 
-/* A trace typically contains one "control" tracefile with important events
-   (for all CPUs), and one tracefile with ordinary events per cpu.
-   The tracefiles in a trace may be enumerated for each category
-   (all cpu and per cpu). The total number of tracefiles and of CPUs
-   may also be obtained. */
+/* There is one "per cpu" tracefile for each CPU, numbered from 0 to
+   the maximum number of CPU in the system. When the number of CPU installed
+   is less than the maximum, some positions are unused. There are also a
+   number of "control" tracefiles (facilities, interrupts...). */
 
-unsigned int ltt_trace_tracefile_number(ltt_trace *t);
+unsigned ltt_trace_control_tracefile_number(LttTrace *t);
 
-unsigned int ltt_trace_tracefile_number_per_cpu(ltt_trace *t);
+unsigned ltt_trace_per_cpu_tracefile_number(LttTrace *t);
 
-unsigned int ltt_trace_tracefile_number_all_cpu(ltt_trace *t);
 
-ltt_tracefile *ltt_trace_tracefile_get_per_cpu(ltt_trace *t, unsigned i);
+/* It is possible to search for the tracefiles by name or by CPU position.
+   The index within the tracefiles of the same type is returned if found
+   and a negative value otherwise. */
 
-ltt_tracefile *ltt_trace_tracefile_get_all_cpu(ltt_trace *t, unsigned i);
+int ltt_trace_control_tracefile_find(LttTrace *t, char *name);
 
-char *ltt_tracefile_name(ltt_tracefile *tf);
+int ltt_trace_per_cpu_tracefile_find(LttTrace *t, unsigned i);
+
+
+/* Get a specific tracefile */
+
+LttTracefile *ltt_trace_control_tracefile_get(LttTrace *t, unsigned i);
+
+LttTracefile *ltt_trace_per_cpu_tracefile_get(LttTrace *t, unsigned i);
+
+
+/* Get the name of a tracefile */
+
+char *ltt_tracefile_name(LttTracefile *tf);
 
 
 /* Seek to the first event of the trace with time larger or equal to time */
 
-int ltt_tracefile_seek_time(ltt_tracefile *t, ltt_time time);
+void ltt_tracefile_seek_time(LttTracefile *t, LttTime time);
 
 
 /* Read the next event */
 
-ltt_event *ltt_tracefile_read(ltt_tracefile *t);
+LttEvent *ltt_tracefile_read(LttTracefile *t);
 
 #endif // TRACE_H

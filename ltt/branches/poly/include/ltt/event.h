@@ -12,72 +12,70 @@
 /* Obtain the trace unique integer id associated with the type of 
    this event */
 
-unsigned ltt_event_eventtype_id(ltt_event *e);
+unsigned ltt_event_eventtype_id(LttEvent *e);
 
 
 /* Facility and type for the event */
 
-ltt_facility *ltt_event_facility(ltt_event *e);
+LttFacility *ltt_event_facility(LttEvent *e);
 
-ltt_eventtype *ltt_event_eventtype(ltt_event *e);
+LttEventType *ltt_event_eventtype(LttEvent *e);
 
 
 /* Root field for the event */
 
-ltt_field *ltt_event_field(ltt_event *e);
+LttField *ltt_event_field(LttEvent *e);
 
 
 /* Time and cycle count for the event */
 
-ltt_time ltt_event_time(ltt_event *e);
+LttTime ltt_event_time(LttEvent *e);
 
-ltt_cycle_count ltt_event_cycle_count(ltt_event *e);
+LttCycleCount ltt_event_cycle_count(LttEvent *e);
 
 
-/* CPU id and system name of the event */
+/* CPU id of the event */
 
-unsigned ltt_event_cpu_id(ltt_event *e);
-
-char *ltt_event_system_name(ltt_event *e);
+unsigned ltt_event_cpu_id(LttEvent *e);
 
 
 /* Pointer to the raw data for the event. This should not be used directly
    unless prepared to do all the architecture specific conversions. */
 
-void *ltt_event_data(ltt_event *e);
+void *ltt_event_data(LttEvent *e);
 
 
 /* The number of elements in a sequence field is specific to each event.
    This function returns the number of elements for an array or sequence
    field in an event. */
 
-unsigned ltt_event_field_element_number(ltt_event *e, ltt_field *f);
+unsigned ltt_event_field_element_number(LttEvent *e, LttField *f);
 
 
 /* Set the currently selected element for a sequence or array field. */
 
-int ltt_event_field_element_select(ltt_event *e, ltt_field *f, unsigned i);
+void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i);
 
 
 /* These functions extract data from an event after architecture specific
    conversions. */
 
-unsigned ltt_event_get_unsigned(ltt_event *e, ltt_field *f);
+unsigned ltt_event_get_unsigned(LttEvent *e, LttField *f);
 
-int ltt_event_get_int(ltt_event *e, ltt_field *f);
+int ltt_event_get_int(LttEvent *e, LttField *f);
 
-unsigned long ltt_event_get_long_unsigned(ltt_event *e, ltt_field *f);
+unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f);
 
-long int ltt_event_get_long_int(ltt_event *e, ltt_field *f);
+long int ltt_event_get_long_int(LttEvent *e, LttField *f);
 
-float ltt_event_get_float(ltt_event *e, ltt_field *f);
+float ltt_event_get_float(LttEvent *e, LttField *f);
 
-double ltt_event_get_double(ltt_event *e, ltt_field *f);
+double ltt_event_get_double(LttEvent *e, LttField *f);
 
 
 /* The string obtained is only valid until the next read from
    the same tracefile. */
 
-char *ltt_event_get_string(ltt_event *e, ltt_field *f);
+char *ltt_event_get_string(LttEvent *e, LttField *f);
 
 #endif // EVENT_H
