@@ -40,11 +40,14 @@
 
 #include "icons/hGuiEventsInsert.xpm"
 
+
 /** Array containing instanced objects. Used when module is unloaded */
 static GSList *sEvent_Viewer_Data_List = NULL ;
 
+
 typedef struct _EventViewerData {
 
+  mainWindow * mw;
 	/* Model containing list data */
   GtkListStore *Store_M;
 
@@ -72,9 +75,9 @@ typedef struct _EventViewerData {
 } EventViewerData ;
 
 //! Event Viewer's constructor hook
-GtkWidget *hGuiEvents(GtkWidget *pmParentWindow);
+GtkWidget *hGuiEvents(mainWindow *pmParentWindow);
 //! Event Viewer's constructor
-EventViewerData *GuiEvents(void);
+EventViewerData *GuiEvents(mainWindow *pmParentWindow);
 //! Event Viewer's destructor
 void GuiEvents_Destructor(EventViewerData *Event_Viewer_Data);
 
@@ -108,10 +111,10 @@ G_MODULE_EXPORT void init() {
 	g_critical("GUI Event Viewer init()");
 
 	/* Register the toolbar insert button */
-	//ToolbarItemReg(hGuiEventsInsert_xpm, "Insert Event Viewer", hGuiEvents);
+	ToolbarItemReg(hGuiEventsInsert_xpm, "Insert Event Viewer", hGuiEvents);
 
 	/* Register the menu item insert entry */
-	//MenuItemReg("/", "Insert Event Viewer", hGuiEvents);
+	MenuItemReg("/", "Insert Event Viewer", hGuiEvents);
 }
 
 void destroy_walk(gpointer data, gpointer user_data)
@@ -135,10 +138,10 @@ G_MODULE_EXPORT void destroy() {
 	g_slist_foreach(sEvent_Viewer_Data_List, destroy_walk, NULL );
 	
 	/* Unregister the toolbar insert button */
-	//ToolbarItemUnreg(hGuiEvents);
+	ToolbarItemUnreg(hGuiEvents);
 
 	/* Unregister the menu item insert entry */
-	//MenuItemUnreg(hGuiEvents);
+	MenuItemUnreg(hGuiEvents);
 }
 
 /* Enumeration of the columns */
@@ -163,9 +166,9 @@ enum
  * @return The widget created.
  */
 GtkWidget *
-hGuiEvents(GtkWidget *pmParentWindow)
+hGuiEvents(mainWindow * pmParentWindow)
 {
-	EventViewerData* Event_Viewer_Data = GuiEvents() ;
+	EventViewerData* Event_Viewer_Data = GuiEvents(pmParentWindow) ;
 
 	return Event_Viewer_Data->HBox_V ;
 	
@@ -178,11 +181,13 @@ hGuiEvents(GtkWidget *pmParentWindow)
  * @return The Event viewer data created.
  */
 EventViewerData *
-GuiEvents(void)
+GuiEvents(mainWindow *pmParentWindow)
 {
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
 	EventViewerData* Event_Viewer_Data = g_new(EventViewerData,1) ;
+
+	Event_Viewer_Data->mw = pmParentWindow;
 	
 	/* TEST DATA, TO BE READ FROM THE TRACE */
 	Event_Viewer_Data->Number_Of_Events = 1000 ;
@@ -320,7 +325,7 @@ GuiEvents(void)
   gtk_widget_show(Event_Viewer_Data->VScroll_VC);
 
 	/* Add the object's information to the module's array */
-  g_slist_append(sEvent_Viewer_Data_List, Event_Viewer_Data);
+  sEvent_Viewer_Data_List = g_slist_append(sEvent_Viewer_Data_List, Event_Viewer_Data);
 
 	Event_Viewer_Data->First_Event = -1 ;
 	Event_Viewer_Data->Last_Event = 0 ;
@@ -775,6 +780,7 @@ GuiEvents_Destructor(EventViewerData *Event_Viewer_Data)
 	//gtk_widget_destroy(GTK_WIDGET(Event_Viewer_Data->Store_M));
 
 	g_slist_remove(sEvent_Viewer_Data_List,Event_Viewer_Data);
+	g_free(Event_Viewer_Data);
 }
 
 //FIXME : call hGuiEvents_Destructor for corresponding data upon widget destroy
@@ -798,7 +804,7 @@ tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
 }
 
 
-
+/* it will be registered and called by the main window */
 int Event_Selected_Hook(void *hook_data, void *call_data)
 {
 	EventViewerData *Event_Viewer_Data = (EventViewerData*) hook_data;
@@ -1181,7 +1187,7 @@ static void destroy_cb( GtkWidget *widget,
 }
 
 
-
+/*
 int main(int argc, char **argv)
 {
 	GtkWidget *Window;
@@ -1190,10 +1196,10 @@ int main(int argc, char **argv)
 	EventViewerData *Event_Viewer_Data;
 	guint ev_sel = 444 ;
 	
-	/* Initialize i18n support */
+	// Initialize i18n support 
   gtk_set_locale ();
 
-  /* Initialize the widget set */
+  // Initialize the widget set 
   gtk_init (&argc, &argv);
 
 	init();
@@ -1208,20 +1214,20 @@ int main(int argc, char **argv)
   VBox_V = gtk_vbox_new(0, 0);
 	gtk_container_add (GTK_CONTAINER (Window), VBox_V);
 
-  //ListViewer = hGuiEvents(Window);
+   //ListViewer = hGuiEvents(Window);
   //gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, TRUE, TRUE, 0);
 
   //ListViewer = hGuiEvents(Window);
   //gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, FALSE, TRUE, 0);
 	
-	Event_Viewer_Data = GuiEvents();
+	Event_Viewer_Data = GuiEvents(g_new(mainWindow,1));
 	ListViewer = Event_Viewer_Data->HBox_V;
-  gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, TRUE, TRUE, 0);
-
+	gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, TRUE, TRUE, 0);
+	
   gtk_widget_show (VBox_V);
 	gtk_widget_show (Window);
 
-	Event_Selected_Hook(Event_Viewer_Data, &ev_sel);
+	//	Event_Selected_Hook(Event_Viewer_Data, &ev_sel);
 	
 	gtk_main ();
 
@@ -1234,7 +1240,7 @@ int main(int argc, char **argv)
 	
 	return 0;
 }
-
+*/
 
 /*\@}*/
 

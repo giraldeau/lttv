@@ -6,8 +6,13 @@
 
 SUBDIRS = gui
 
+AM_CFLAGS = $(GLIB_CFLAGS) 
+AM_CFLAGS += $(GTK_CFLAGS)
+LIBS += $(GLIB_LIBS)
+LIBS += $(GTK_LIBS) -lmainWinApi
+
 libdir = ${lttvplugindir}
 
-#lib_LTLIBRARIES = libsimple.la
-#libsimple_la_LDFLAGS = -module
-#libsimple_la_SOURCES = simple.c
+lib_LTLIBRARIES = libguiEvents.la
+libguiEvents_la_LDFLAGS = -module
+libguiEvents_la_SOURCES = guiEvents.c
