@@ -103,20 +103,23 @@ void drawing_data_request(Drawing_t *Drawing,
 	g_critical("req : end : %u, %u", event_request.time_end.tv_sec, 
 																			event_request.time_end.tv_nsec);
 	
-	LttvHooks *event = lttv_hooks_new();
+	//LttvHooks *event = lttv_hooks_new();
+	LttvHooks *after_event = lttv_hooks_new();
 	state_add_event_hooks_api(control_flow_data->Parent_Window);
-	lttv_hooks_add(event, draw_event_hook, &event_request);
+	//lttv_hooks_add(event, draw_event_hook, &event_request);
+	lttv_hooks_add(after_event, draw_after_hook, &event_request);
 
 	lttv_process_traceset_seek_time(tsc, start);
 	lttv_traceset_context_add_hooks(tsc,
 			NULL, NULL, NULL, NULL, NULL, NULL,
-			NULL, NULL, NULL, event, NULL);
+			NULL, NULL, NULL, NULL, after_event);
 	lttv_process_traceset(tsc, end, G_MAXULONG);
 	lttv_traceset_context_remove_hooks(tsc, NULL, NULL, NULL, NULL, NULL, NULL,
-			NULL, NULL, NULL, event, NULL);
+			NULL, NULL, NULL, NULL,after_event);
 
 	state_remove_event_hooks_api(control_flow_data->Parent_Window);
-	lttv_hooks_destroy(event);
+	//lttv_hooks_destroy(event);
+	lttv_hooks_destroy(after_event);
 }
 		      
 /* Callbacks */
@@ -460,7 +463,7 @@ void drawing_insert_square(Drawing_t *Drawing,
 
 	/* add an empty square */
 	gdk_draw_rectangle (Pixmap,
-		Drawing->Drawing_Area_V->style->black_gc,
+		Drawing->Drawing_Area_V->style->white_gc,
 		TRUE,
 		0, y,
 		Drawing->width + SAFETY,	// do not overlap

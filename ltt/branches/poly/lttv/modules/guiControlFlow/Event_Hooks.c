@@ -11,11 +11,13 @@
 #include <gdk/gdk.h>
 #include <glib.h>
 #include <assert.h>
+#include <string.h>
 
 //#include <pango/pango.h>
 
 #include <ltt/event.h>
 #include <ltt/time.h>
+#include <ltt/type.h>
 
 #include <lttv/hook.h>
 #include <lttv/common.h>
@@ -30,379 +32,6 @@
 
 
 #define MAX_PATH_LEN 256
-
-//FIXME : remove this include when tests finished.
-#include <string.h>
-
-void test_draw_item(Drawing_t *Drawing,
-			GdkPixmap *Pixmap) 
-{
-	PropertiesIcon properties_icon;
-	DrawContext draw_context;
-	
-	DrawInfo current, previous;
-	ItemInfo over, middle, under, modify_over, modify_middle, modify_under;
-
-	int i=0,j=0;
-	
-	//for(i=0; i<1024;i=i+15)
-	{
-	//	for(j=0;j<768;j=j+15)
-		{
-			over.x = i;
-			over.y = j;
-
-			current.modify_over = &over;
-	
-			draw_context.drawable = Pixmap;
-			draw_context.gc = Drawing->Drawing_Area_V->style->black_gc;
-
-			draw_context.Current = &current;
-			draw_context.Previous = NULL;
-	
-			properties_icon.icon_name = g_new(char, MAX_PATH_LEN);
-			strncpy(properties_icon.icon_name, 
-				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/mini-display.xpm",
-				MAX_PATH_LEN);
-			properties_icon.width = -1;
-			properties_icon.height = -1;
-			properties_icon.position = OVER;
-			draw_icon(&properties_icon, &draw_context);
-			g_free(properties_icon.icon_name);
-		}
-	}
-
-}
-
-#ifdef NOTUSE
-/* NOTE : no drawing data should be sent there, since the drawing widget
- * has not been initialized */
-void send_test_drawing(ProcessList *Process_List,
-			Drawing_t *Drawing,
-			GdkPixmap *Pixmap,
-			gint x, gint y, // y not used here?
-		  gint width,
-			gint height) // height won't be used here ?
-{
-	int i,j;
-	ProcessInfo Process_Info = {10000, 12000, 55600};
-	//ProcessInfo Process_Info = {156, 14000, 55500};
-	GtkTreeRowReference *got_RowRef;
-	PangoContext *context;
-	PangoLayout *layout;
-	PangoFontDescription *FontDesc;// = pango_font_description_new();
-	gint Font_Size;
-
-	//icon
-	//GdkBitmap *mask = g_new(GdkBitmap, 1);
-	//GdkPixmap *icon_pixmap = g_new(GdkPixmap, 1);
-	GdkGC * gc;
-	// rectangle
-	GdkColor color = { 0, 0xffff, 0x0000, 0x0000 };
-	
-	gc = gdk_gc_new(Pixmap);
-	/* Sent text data */
-	layout = gtk_widget_create_pango_layout(Drawing->Drawing_Area_V,
-			NULL);
-	context = pango_layout_get_context(layout);
-	FontDesc = pango_context_get_font_description(context);
-	Font_Size = pango_font_description_get_size(FontDesc);
-	pango_font_description_set_size(FontDesc, Font_Size-3*PANGO_SCALE);
-	
-	
-
-
-	LttTime birth;
-	birth.tv_sec = 12000;
-	birth.tv_nsec = 55500;
-	g_info("we have : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
-	processlist_get_process_pixels(Process_List,
-					1,
-					&birth,
-					&y,
-					&height);
-	
-	g_info("we draw : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
-	drawing_draw_line(
-		Drawing, Pixmap, x,
-		y+(height/2), x + width, y+(height/2),
-		Drawing->Drawing_Area_V->style->black_gc);
-
-	pango_layout_set_text(layout, "Test", -1);
-	gdk_draw_layout(Pixmap, Drawing->Drawing_Area_V->style->black_gc,
-			0, y+height, layout);
-
-	birth.tv_sec = 14000;
-	birth.tv_nsec = 55500;
-
-	processlist_get_process_pixels(Process_List,
-					156,
-					&birth,
-					&y,
-					&height);
-	
-
-	drawing_draw_line(
-		Drawing, Pixmap, x,
-		y+(height/2), x + width, y+(height/2),
-		Drawing->Drawing_Area_V->style->black_gc);
-
-	g_info("y : %u, height : %u", y, height);
-
-	
-
-	birth.tv_sec = 12000;
-	birth.tv_nsec = 55700;
-
-	processlist_get_process_pixels(Process_List,
-					10,
-					&birth,
-					&y,
-					&height);
-
-	/* Draw rectangle (background color) */
-	gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
-	gdk_gc_set_rgb_fg_color(gc, &color);
-	gdk_draw_rectangle(Pixmap, gc,
-					TRUE,
-					x, y, width, height);
-
-	drawing_draw_line(
-		Drawing, Pixmap, x,
-		y+(height/2), x + width, y+(height/2),
-		Drawing->Drawing_Area_V->style->black_gc);
-
-	
-	/* Draw arc */
-	gdk_draw_arc(Pixmap, Drawing->Drawing_Area_V->style->black_gc,
-							TRUE, 100, y, height/2, height/2, 0, 360*64);
-
-	g_info("y : %u, height : %u", y, height);
-
-	for(i=0; i<10; i++)
-	{
-		birth.tv_sec = i*12000;
-		birth.tv_nsec = i*55700;
-
-		processlist_get_process_pixels(Process_List,
-						i,
-						&birth,
-						&y,
-						&height);
-		
-
-		drawing_draw_line(
-			Drawing, Pixmap, x,
-			y+(height/2), x + width, y+(height/2),
-			Drawing->Drawing_Area_V->style->black_gc);
-
-		g_critical("y : %u, height : %u", y, height);
-
-	}
-
-	birth.tv_sec = 12000;
-	birth.tv_nsec = 55600;
-
-	processlist_get_process_pixels(Process_List,
-					10,
-					&birth,
-					&y,
-					&height);
-	
-
-	drawing_draw_line(
-		Drawing, Pixmap, x,
-		y+(height/2), x + width, y+(height/2),
-		Drawing->Drawing_Area_V->style->black_gc);
-
-	g_info("y : %u, height : %u", y, height);
-	
-
-	/* IMPORTANT : This action uses the cpu heavily! */
-	//icon_pixmap = gdk_pixmap_create_from_xpm(Pixmap, &mask, NULL,
-//				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/move_message.xpm");
-	//				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/mini-display.xpm");
-
-	//		gdk_gc_set_clip_mask(Drawing->Drawing_Area_V->style->black_gc, mask);
-
-//	for(i=x;i<x+width;i=i+15)
-//	{
-//		for(j=0;j<height*20;j=j+15)
-//		{
-			
-			/* Draw icon */
-			//gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
-//			gdk_gc_set_clip_origin(Drawing->Drawing_Area_V->style->black_gc, i, j);
-//			gdk_draw_drawable(Pixmap, 
-//					Drawing->Drawing_Area_V->style->black_gc,
-//					icon_pixmap,
-//					0, 0, i, j, -1, -1);
-
-//		}
-//	}
-
-	test_draw_item(Drawing,Pixmap);
-	
-	//gdk_gc_set_clip_origin(Drawing->Drawing_Area_V->style->black_gc, 0, 0);
-	//gdk_gc_set_clip_mask(Drawing->Drawing_Area_V->style->black_gc, NULL);
-
-	//g_free(icon_pixmap);
-	//g_free(mask);
-
-
-
-
-
-
-	pango_font_description_set_size(FontDesc, Font_Size);
-	g_object_unref(layout);
-	g_free(gc);
-}
-
-void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
-{
-	guint height, y;
-	int i;
-	ProcessInfo Process_Info = {10000, 12000, 55600};
-	//ProcessInfo Process_Info = {156, 14000, 55500};
-	GtkTreeRowReference *got_RowRef;
-
-	LttTime birth;
-
-	if(Process_List->Test_Process_Sent) return;
-
-	birth.tv_sec = 12000;
-	birth.tv_nsec = 55500;
-
-	processlist_add(Process_List,
-			1,
-			&birth,
-			&y);
-	processlist_get_process_pixels(Process_List,
-					1,
-					&birth,
-					&y,
-					&height);
-	drawing_insert_square( Drawing, y, height);
-	
-	//g_critical("y : %u, height : %u", y, height);
-	
-	birth.tv_sec = 14000;
-	birth.tv_nsec = 55500;
-
-	processlist_add(Process_List,
-			156,
-			&birth,
-			&y);
-	processlist_get_process_pixels(Process_List,
-					156,
-					&birth,
-					&y,
-					&height);
-	drawing_insert_square( Drawing, y, height);
-	
-	//g_critical("y : %u, height : %u", y, height);
-	
-	birth.tv_sec = 12000;
-	birth.tv_nsec = 55700;
-
-	processlist_add(Process_List,
-			10,
-			&birth,
-			&height);
-	processlist_get_process_pixels(Process_List,
-					10,
-					&birth,
-					&y,
-					&height);
-	drawing_insert_square( Drawing, y, height);
-	
-	//g_critical("y : %u, height : %u", y, height);
-	
-	//drawing_insert_square( Drawing, height, 5);
-
-	for(i=0; i<10; i++)
-	{
-		birth.tv_sec = i*12000;
-		birth.tv_nsec = i*55700;
-
-		processlist_add(Process_List,
-				i,
-				&birth,
-				&height);
-		processlist_get_process_pixels(Process_List,
-						i,
-						&birth,
-						&y,
-						&height);
-		drawing_insert_square( Drawing, y, height);
-	
-	//	g_critical("y : %u, height : %u", y, height);
-	
-	}
-	//g_critical("height : %u", height);
-
-	birth.tv_sec = 12000;
-	birth.tv_nsec = 55600;
-
-	processlist_add(Process_List,
-			10,
-			&birth,
-			&y);
-	processlist_get_process_pixels(Process_List,
-					10,
-					&birth,
-					&y,
-					&height);
-	drawing_insert_square( Drawing, y, height);
-	
-	//g_critical("y : %u, height : %u", y, height);
-	
-	processlist_add(Process_List,
-			10000,
-			&birth,
-			&height);
-	processlist_get_process_pixels(Process_List,
-					10000,
-					&birth,
-					&y,
-					&height);
-	drawing_insert_square( Drawing, y, height);
-	
-	//g_critical("y : %u, height : %u", y, height);
-	
-	//drawing_insert_square( Drawing, height, 5);
-	//g_critical("height : %u", height);
-
-
-	processlist_get_process_pixels(Process_List,
-				10000,
-				&birth,
-				&y, &height);
-	processlist_remove( 	Process_List,
-				10000,
-				&birth);
-
-	drawing_remove_square( Drawing, y, height);
-	
-	if(got_RowRef = 
-		(GtkTreeRowReference*)g_hash_table_lookup(
-					Process_List->Process_Hash,
-					&Process_Info))
-	{
-		g_critical("key found");
-		g_critical("position in the list : %s",
-			gtk_tree_path_to_string (
-			gtk_tree_row_reference_get_path(
-				(GtkTreeRowReference*)got_RowRef)
-			));
-		
-	}
-
-	Process_List->Test_Process_Sent = TRUE;
-
-}
-#endif//NOTUSE
 
 
 /**
@@ -528,11 +157,12 @@ int draw_event_hook(void *hook_data, void *call_data)
 	
 	/* End of text dump */
 #endif //DONTSHOW
+
 	/* Add process to process list (if not present) and get drawing "y" from
 	 * process position */
 	guint pid = tfs->process->pid;
 	LttTime birth = tfs->process->creation_time;
-	gchar *name = strdup("name");
+	gchar *name = strdup(g_quark_to_string(tfs->process->name));
 	guint y = 0, height = 0, pl_height = 0;
 	HashedProcessData *Hashed_Process_Data = NULL;
 
@@ -598,8 +228,17 @@ int draw_event_hook(void *hook_data, void *call_data)
 	//draw_arc((void*)&prop_arc, (void*)draw_context);
 	//test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->Pixmap);
 	
-	GdkColor colorfg = { 0, 0x0000, 0x0000, 0x0000 };
-	GdkColor colorbg = { 0, 0xffff, 0x0000, 0xffff };
+	//GdkColor colorfg = { 0, 0xffff, 0x0000, 0x0000 };
+	GdkColor colorfg;
+	colorfg.red = 0xffff;
+	colorfg.green = 0x0000;
+	colorfg.blue = 0x0000;
+	//GdkColor colorbg = { 0, 0xffff, 0x0000, 0xffff };
+	GdkColor colorbg;
+	colorbg.red = 0x0000;
+	colorbg.green = 0x0000;
+	colorbg.blue = 0x0000;
+
 	PropertiesText prop_text;
 	prop_text.foreground = &colorfg;
 	prop_text.background = &colorbg;
@@ -631,8 +270,209 @@ int draw_event_hook(void *hook_data, void *call_data)
 int draw_after_hook(void *hook_data, void *call_data)
 {
 	EventRequest *Event_Request = (EventRequest*)hook_data;
+	ControlFlowData *control_flow_data = Event_Request->Control_Flow_Data;
+
+	LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+
 	
-	g_free(Event_Request);
+  LttEvent *e;
+  e = tfc->e;
+
+	if(strcmp(ltt_eventtype_name(ltt_event_eventtype(e)),"schedchange") == 0)
+	{
+		g_critical("schedchange!");
+		
+		/* Add process to process list (if not present) and get drawing "y" from
+		 * process position */
+		guint pid_out, pid_in;
+		LttvProcessState *process_out, *process_in;
+		LttTime birth;
+		guint y_in = 0, y_out = 0, height = 0, pl_height = 0;
+
+		ProcessList *process_list =
+			guicontrolflow_get_process_list(Event_Request->Control_Flow_Data);
+
+
+		LttField *f = ltt_event_field(e);
+		LttField *element;
+		element = ltt_field_member(f,0);
+		pid_out = ltt_event_get_long_unsigned(e,element);
+		element = ltt_field_member(f,1);
+		pid_in = ltt_event_get_long_unsigned(e,element);
+		g_critical("out : %u  in : %u", pid_out, pid_in);
+
+
+		/* Find process pid_out in the list... */
+		process_out = lttv_state_find_process(tfs, pid_out);
+		g_critical("out : %s",g_quark_to_string(process_out->state->s));
+
+		birth = process_out->creation_time;
+		gchar *name = strdup(g_quark_to_string(process_out->name));
+		HashedProcessData *Hashed_Process_Data_out = NULL;
+
+		if(processlist_get_process_pixels(process_list,
+						pid_out,
+						&birth,
+						&y_out,
+						&height,
+						&Hashed_Process_Data_out) == 1)
+		{
+		/* Process not present */
+		processlist_add(process_list,
+				pid_out,
+				&birth,
+				name,
+				&pl_height,
+				&Hashed_Process_Data_out);
+		processlist_get_process_pixels(process_list,
+						pid_out,
+						&birth,
+						&y_out,
+						&height,
+						&Hashed_Process_Data_out);
+		drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y_out, height);
+		}
+
+		g_free(name);
+		
+		/* Find process pid_in in the list... */
+		process_in = lttv_state_find_process(tfs, pid_in);
+		g_critical("in : %s",g_quark_to_string(process_in->state->s));
+
+		birth = process_in->creation_time;
+		name = strdup(g_quark_to_string(process_in->name));
+		HashedProcessData *Hashed_Process_Data_in = NULL;
+
+		if(processlist_get_process_pixels(process_list,
+						pid_in,
+						&birth,
+						&y_in,
+						&height,
+						&Hashed_Process_Data_in) == 1)
+		{
+		/* Process not present */
+			processlist_add(process_list,
+				pid_in,
+				&birth,
+				name,
+				&pl_height,
+				&Hashed_Process_Data_in);
+			processlist_get_process_pixels(process_list,
+						pid_in,
+						&birth,
+						&y_in,
+						&height,
+						&Hashed_Process_Data_in);
+
+			drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y_in, height);
+		}
+		g_free(name);
+
+
+		/* Find pixels corresponding to time of the event. If the time does
+		 * not fit in the window, show a warning, not supposed to happend. */
+		guint x = 0;
+		guint width = control_flow_data->Drawing->Drawing_Area_V->allocation.width;
+
+		LttTime time = ltt_event_time(e);
+
+		LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
+													control_flow_data->Time_Window.start_time);
+
+		
+		convert_time_to_pixels(
+				control_flow_data->Time_Window.start_time,
+				window_end,
+				time,
+				width,
+				&x);
+		
+		assert(x <= width);
+		
+		/* draw what represents the event for outgoing process. */
+
+		DrawContext *draw_context_out = Hashed_Process_Data_out->draw_context;
+		draw_context_out->Current->modify_over->x = x;
+		draw_context_out->Current->modify_over->y = y_out;
+		draw_context_out->drawable = control_flow_data->Drawing->Pixmap;
+		draw_context_out->pango_layout = control_flow_data->Drawing->pango_layout;
+		GtkWidget *widget = control_flow_data->Drawing->Drawing_Area_V;
+		//draw_context_out->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
+		draw_context_out->gc = widget->style->black_gc;
+		
+		//draw_arc((void*)&prop_arc, (void*)draw_context_out);
+		//test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->Pixmap);
+		
+		GdkColor colorfg_out = { 0, 0xffff, 0x0000, 0x0000 };
+		GdkColor colorbg_out = { 0, 0xffff, 0xffff, 0xffff };
+		PropertiesText prop_text_out;
+		prop_text_out.foreground = &colorfg_out;
+		prop_text_out.background = &colorbg_out;
+		prop_text_out.size = 10;
+		prop_text_out.position = OVER;
+
+		/* Print status of the process : U, WF, WC, E, W, R */
+		if(process_out->state->s == LTTV_STATE_UNNAMED)
+			prop_text_out.Text = "U";
+		else if(process_out->state->s == LTTV_STATE_WAIT_FORK)
+			prop_text_out.Text = "WF";
+		else if(process_out->state->s == LTTV_STATE_WAIT_CPU)
+			prop_text_out.Text = "WC";
+		else if(process_out->state->s == LTTV_STATE_EXIT)
+			prop_text_out.Text = "E";
+		else if(process_out->state->s == LTTV_STATE_WAIT)
+			prop_text_out.Text = "W";
+		else if(process_out->state->s == LTTV_STATE_RUN)
+			prop_text_out.Text = "R";
+		else
+			prop_text_out.Text = "U";
+		
+		draw_text((void*)&prop_text_out, (void*)draw_context_out);
+
+		/* Finally, update the drawing context of the pid_in. */
+
+		DrawContext *draw_context_in = Hashed_Process_Data_in->draw_context;
+		draw_context_in->Current->modify_over->x = x;
+		draw_context_in->Current->modify_over->y = y_in;
+		draw_context_in->drawable = control_flow_data->Drawing->Pixmap;
+		draw_context_in->pango_layout = control_flow_data->Drawing->pango_layout;
+		widget = control_flow_data->Drawing->Drawing_Area_V;
+		//draw_context_in->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
+		draw_context_in->gc = widget->style->black_gc;
+		
+		//draw_arc((void*)&prop_arc, (void*)draw_context_in);
+		//test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->Pixmap);
+		
+		GdkColor colorfg_in = { 0, 0x0000, 0xffff, 0x0000 };
+		GdkColor colorbg_in = { 0, 0xffff, 0xffff, 0xffff };
+		PropertiesText prop_text_in;
+		prop_text_in.foreground = &colorfg_in;
+		prop_text_in.background = &colorbg_in;
+		prop_text_in.size = 10;
+		prop_text_in.position = OVER;
+
+		/* Print status of the process : U, WF, WC, E, W, R */
+		if(process_in->state->s == LTTV_STATE_UNNAMED)
+			prop_text_in.Text = "U";
+		else if(process_in->state->s == LTTV_STATE_WAIT_FORK)
+			prop_text_in.Text = "WF";
+		else if(process_in->state->s == LTTV_STATE_WAIT_CPU)
+			prop_text_in.Text = "WC";
+		else if(process_in->state->s == LTTV_STATE_EXIT)
+			prop_text_in.Text = "E";
+		else if(process_in->state->s == LTTV_STATE_WAIT)
+			prop_text_in.Text = "W";
+		else if(process_in->state->s == LTTV_STATE_RUN)
+			prop_text_in.Text = "R";
+		else
+			prop_text_in.Text = "U";
+		
+		draw_text((void*)&prop_text_in, (void*)draw_context_in);
+		
+	}
+
 	return 0;
 }
 
