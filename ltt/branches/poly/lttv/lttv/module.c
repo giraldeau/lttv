@@ -559,6 +559,7 @@ static void destroy()
   locked_libraries = g_new(LttvLibrary *, nb);
 
   for(i = 0 ; i < nb ; i++) {
+    //g_assert(nb == libraries->len);
     l = (LttvLibrary *)(libraries->pdata[i]);
     locked_libraries[i] = l;
     library_lock_loaded(l);
@@ -566,7 +567,16 @@ static void destroy()
       m = (LttvModule *)(l->modules->pdata[j]);
       while(m->info.require_count > 0) lttv_module_release(m);
     }
+    library_unlock_loaded(l);
     while(l->info.load_count > 0) lttv_library_unload(l);
+
+    /* If the number of librairies loaded have changed, restart from the
+     * beginning */
+    if(nb != libraries->len) {
+      i = 0;
+      nb = libraries->len;
+    }
+
   }
 
   for(i = 0 ; i < nb ; i++) {
