@@ -135,6 +135,15 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 {
   Drawing_t *Drawing = (Drawing_t*)user_data;
 
+
+	/* First, get the new time interval of the main window */
+	/* we assume (see documentation) that the main window
+	 * has updated the time interval before this configure gets
+	 * executed.
+	 */
+	get_time_window(Drawing->Control_Flow_Data->Parent_Window,
+			&Drawing->Control_Flow_Data->Time_Window);
+		
   /* New Pixmap, size of the configure event */
   GdkPixmap *Pixmap = gdk_pixmap_new(widget->window,
 			  widget->allocation.width,
@@ -208,8 +217,6 @@ g_critical("missing data");
 //		      widget->allocation.height -
 //		      			Drawing->height);
  
-  
-  
   Drawing->width = widget->allocation.width;
   Drawing->height = widget->allocation.height;
 
