@@ -11,3 +11,10 @@ bin_PROGRAMS = tracevisualizer
 
 tracevisualizer_SOURCES = main.c module.c option.c hook.c attribute.c \
 		 attribute.h lttv.h option.h trace.h
+
+
+#libdir = ${lttvplugindir}
+
+#lib_LTLIBRARIES = libtextDump.la
+#libtextDump_la_LDFLAGS = -module
+#libtextDump_la_SOURCES = textDump.c

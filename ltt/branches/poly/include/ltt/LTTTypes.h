@@ -135,8 +135,8 @@ extern __inline__ int ltt_test_bit(int nr,void *addr)
 /* Trace mask */
 typedef uint64_t trace_event_mask;
 
-/* Boolean stuff */
-#define TRUE  1
-#define FALSE 0
+/* Boolean stuff */ /* Now in glib */
+//#define TRUE  1
+//#define FALSE 0
 
 #endif /* __TRACE_TOOLKIT_TYPES_HEADER__ */

@@ -2,6 +2,10 @@
    before each trace, to print each event, and to print statistics
    after each trace. */
 
+#include <ltt/type.h>
+#include <lttv/attribute.h>
+#include <lttv/hook.h>
+
 void init(int argc, char **argv)
 {
   lttv_attributes *a;

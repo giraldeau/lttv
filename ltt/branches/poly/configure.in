@@ -58,17 +58,20 @@ lttincludedir="${includedir}/ltt"
 AC_SUBST(lttincludedir)
 
 AC_CONFIG_FILES([Makefile
-                 lttv/Makefile
+     lttv/Makefile
 		 lttv/modules/Makefile
-		 lttv/modules/gui/Makefile
-#		 lttv/modules/gui/API/Makefile
- 		 lttv/modules/text/Makefile
-                 lttv/plugins/Makefile
-		 lttv/plugins/examples/Makefile
+		 lttv/modules/examples/Makefile
+		 lttv/modules/coreGUI/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 include/Makefile
 		 include/ltt/Makefile
-		 include/ltt/convert/Makefile
+		 ltt/convert/Makefile
 		 include/lttv/Makefile])
 AC_OUTPUT
+#		 include/ltt/convert/Makefile
+#		 lttv/modules/gui/API/Makefile
+#		 lttv/modules/gui/Makefile
+# 		 lttv/modules/text/Makefile
+#		 lttv/plugins/Makefile
+#		 lttv/plugins/examples/Makefile

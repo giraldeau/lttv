@@ -189,7 +189,7 @@ GuiEvents(void)
 	Event_Viewer_Data->Currently_Selected_Event = FALSE  ;
 	Event_Viewer_Data->Selected_Event = 0;
 
-
+	/* FIXME register Event_Selected_Hook */
 	
 	/* Create a model for storing the data list */
   Event_Viewer_Data->Store_M = gtk_list_store_new (N_COLUMNS,       /* Total number of columns */

@@ -8,6 +8,6 @@ SUBDIRS = examples coreGUI
 
 libdir = ${lttvplugindir}
 
-lib_LTLIBRARIES = libsimple.la
-libsimple_la_LDFLAGS = -module
-libsimple_la_SOURCES = simple.c
+#lib_LTLIBRARIES = libsimple.la
+#libsimple_la_LDFLAGS = -module
+#libsimple_la_SOURCES = simple.c
