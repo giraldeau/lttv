@@ -6,8 +6,8 @@
 /* A hook is a function to call with the supplied hook data, and with 
    call site specific data (e.g., hooks for events are called with a 
    pointer to the current event). */
-
-typedef bool (*lttv_hook)(void *hook_data, void *call_data);
+// MD compile fix: int instead of bool as return value
+typedef int (*lttv_hook)(void *hook_data, void *call_data);
 
 
 /* A list of hooks allows registering hooks to be called later. */
@@ -29,9 +29,9 @@ void lttv_hooks_get(lttv_hooks *h, unsigned i, lttv_hook *f, void **hook_data);
 
 void lttv_hooks_remove_by_position(lttv_hooks *h, unsigned i);
 
-bool lttv_hooks_call(lttv_hooks *h, void *call_data);
+int lttv_hooks_call(lttv_hooks *h, void *call_data);
 
-bool lttv_hooks_call_check(lttv_hooks *h, void *call_data);
+int lttv_hooks_call_check(lttv_hooks *h, void *call_data);
 
 
 /* Sometimes different hooks need to be called based on the case. The

@@ -3,8 +3,11 @@
 |Graphical Plugins|
 |-----------------|
 
-guiEvents.c : Display events for time interval, drawing them using gdk.
-guiControlFlow.c : Display the control flow of the trace for time interval.
+guiEvents.c : Display events for time interval into a list.
+guiControlFlow.c : Display the control flow of the trace for time interval
+                   using gdk and a GtkDrawingArea. Pixmaps for icons are
+		   defined with each event inside the event related
+		   information.
 
 
 |---------------------|

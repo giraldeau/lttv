@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include <linux/errno.h>  
 
-#include "LTTTypes.h"  
+#include <ltt/LTTTypes.h>  
 #include "parser.h"
 #include <ltt/tracefile.h>
 

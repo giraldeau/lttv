@@ -14,12 +14,12 @@ tab or remove it.
 
 It them appears in the current tab. If there are events to display in the
 current time frame selected by the tab, you should already see them in the
-list. You can move the scrollbar on the left side up and down to display
+list. You can move the scrollbar on the right side up and down to display
 the different events in the list. As you can see, this list is limited to
 the currently viewed time interval. In order to see more events in this
 list, you can use a Zoom Extended of the main window (this will show all
 the trace's events). You can also specify the laps of time you want to see
-using Show Time Frame.
+using the main window's Show Time Frame.
 
 One important feature of this plugin is the ability to inform the tab in
 which it resides of the currently selected event. By clicking on an event,

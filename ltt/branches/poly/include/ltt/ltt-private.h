@@ -1,5 +1,11 @@
+#ifndef LTT_PRIVATE_H
+#define LTT_PRIVATE_H
+
 #include <glib.h>
-#include "ltt/ltt.h"
+#include <ltt/ltt.h>
+#include <ltt/LTTTypes.h>
+#include <ltt/type.h>
+
 
 /* structure definition */
 
@@ -103,9 +109,10 @@ struct _ltt_facility{
   ltt_checksum checksum;     //checksum of the facility 
   ltt_eventtype ** events;   //array of event types 
   unsigned usage_count;      //usage count
-  table all_named_types;     //an array of named ltt_type
-  sequence all_unnamed_types;//an array of unnamed ltt_type
-  sequence all_fields;       //an array of fields
+  //FIXME Specify those types
+  //table all_named_types;     //an array of named ltt_type
+  //sequence all_unnamed_types;//an array of unnamed ltt_type
+  //sequence all_fields;       //an array of fields
 };
 
 struct _ltt_tracefile{
@@ -174,3 +181,5 @@ typedef struct _ptr_wrap{
   gpointer ptr;
 } ptr_wrap;
 
+
+#endif /* LTT_PRIVATE_H */

@@ -9,7 +9,7 @@
 
 #include <popt.h>
 #include <lttv/module.h>
-#include "lttv.h"
+#include <lttv/lttv.h>
 
 /* Table of loaded modules and paths where to search for modules */
 
@@ -267,7 +267,7 @@ int lttv_module_unload(lttv_module_info *moduleInfo, loadtype load) {
 }
 
 #define MODULE_I ((lttv_module_info *)modulesStandalone->pdata[i])
-
+//FIXME use g_ptr_array_index instead
 /* unload all the modules in the hash table, calling module_destroy for
  * each of them.
  *

@@ -3,6 +3,7 @@
 
 #include <lttv/attribute.h>
 #include <lttv/hook.h>
+#include <ltt/ltt.h>
 
 /* A traceSet is a set of traces to be analyzed together. */
 

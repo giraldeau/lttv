@@ -2,7 +2,7 @@
 #include <asm/types.h>
 #include <linux/byteorder/swab.h>
 
-#include "LTTTypes.h"  
+#include <ltt/LTTTypes.h> 
 #include "parser.h"
 #include <ltt/event.h>
 

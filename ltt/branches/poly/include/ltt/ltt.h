@@ -1,6 +1,7 @@
 #ifndef LTT_H
 #define LTT_H
 
+#include <ltt/LTTTypes.h>
 
 /* A trace is associated with a tracing session run on a single, possibly
    multi-cpu, system. It is defined as a pathname to a directory containing

@@ -2,11 +2,13 @@
 #include <lttv/hook.h>
 #include <lttv/module.h>
 
-#include "lttv.h"
-#include "trace.h"
-#include "attribute.h"
-#include "option.h"
+#include <lttv/lttv.h>
+#include <lttv/attribute.h>
+#include <lttv/option.h>
 
+#include <lttv/traceSet.h>
+
+#include <ltt/trace.h>
 /* The main program maintains a few central data structures and relies
    on modules for the rest. These data structures may be accessed by modules
    through an exported API */

@@ -30,7 +30,7 @@ inline void lttv_hooks_add(lttv_hooks *h, lttv_hook f, void *hook_data) {
 }
 
 
-void lttv_hooks_call(lttv_hooks *h, void *call_data)
+int lttv_hooks_call(lttv_hooks *h, void *call_data)
 {
   int i;
   lttv_hook_closure * c;
