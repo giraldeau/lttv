@@ -52,4 +52,6 @@ LttvAttribute *lttv_global_attributes();
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
+extern gboolean lttv_profile_memory;
+
 #endif // LTTV_H

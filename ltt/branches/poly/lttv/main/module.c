@@ -187,7 +187,7 @@ lttv_module_require(LttvModule *m, const char *name, int argc, char **argv)
       "Load module %s, as %s is a dependent requiring it", name, 
       g_module_name(m->module));
   module = module_load(name, argc, argv);
-  if(module != NULL) g_ptr_array_add(module->dependents, m);
+  if(module != NULL) g_ptr_array_add(m->dependents, module);
   return module;
 }
 
@@ -210,7 +210,17 @@ static void module_unload(LttvModule *m)
         "Module usage count decremented to %d", m->ref_count);
     return;
   }
-  /* We really have to unload the module, first unload its dependents */
+
+  /* We really have to unload the module. First destroy it. */
+
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, 
+      "Call the destroy function and unload the module");
+  if(!g_module_symbol(m->module, "destroy", (gpointer)&destroy_function)) {
+    g_warning("module (%s) has no destroy function", pathname);
+  }
+  else destroy_function();
+
+  /* Then release the modules required by this module */
 
   len = m->dependents->len;
   g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Unload dependent modules");
@@ -221,14 +231,7 @@ static void module_unload(LttvModule *m)
 
   if(len != m->dependents->len) g_error("dependents list modified");
 
-  /* Unload the module itself */
-
-  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, 
-      "Call the destroy function and unload the module");
-  if(!g_module_symbol(m->module, "destroy", (gpointer)&destroy_function)) {
-    g_warning("module (%s) has no destroy function", pathname);
-  }
-  else destroy_function();
+  /* Finally remove any trace of this module */
 
   g_hash_table_remove(modules, g_module_name(m->module));
   g_ptr_array_free(m->dependents, TRUE);
@@ -310,15 +313,16 @@ lttv_module_unload_all()
 
   LttvModule *m;
 
-  GPtrArray *independent_modules = g_ptr_array_new();
+  GPtrArray *independent_modules;
 
-  g_hash_table_foreach(modules, list_independent, independent_modules);
+  while(g_hash_table_size(modules) != 0) {
+    independent_modules = g_ptr_array_new();
+    g_hash_table_foreach(modules, list_independent, independent_modules);
 
-  for(i = 0 ; i < independent_modules->len ; i++) {
-    m = (LttvModule *)independent_modules->pdata[i];
-    while(m->load_count > 0) lttv_module_unload(m);
+    for(i = 0 ; i < independent_modules->len ; i++) {
+      m = (LttvModule *)independent_modules->pdata[i];
+      lttv_module_unload(m);
+    }
+    g_ptr_array_free(independent_modules, TRUE);
   }
-
-  g_ptr_array_free(independent_modules, TRUE);
-  if(g_hash_table_size(modules) != 0) g_warning("cannot unload all modules"); 
 }

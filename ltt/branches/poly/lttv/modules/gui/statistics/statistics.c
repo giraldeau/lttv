@@ -39,10 +39,7 @@
 
 #include "../icons/hGuiStatisticInsert.xpm"
 
-#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
-
-#define PATH_LENGTH        256
+#define PATH_LENGTH        256  /* CHECK */
 
 static LttvModule *statistic_main_win_module;
 static GPtrArray  * statistic_traceset;
@@ -605,7 +602,7 @@ gboolean statistic_traceset_changed(void * hook_data, void * call_data)
 void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data, 
            LttvTracesetContext * tsc)
 {
-  gint i, j, nbi, nb_tracefile, nb_control, nb_per_cpu;
+  gint i, j, nbi, nb_tracefile;
   LttTrace *trace;
   LttvTraceContext *tc;
   LttvTracefileContext *tfc;
@@ -628,19 +625,14 @@ void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data,
     trace = tc->t;
     //if there are hooks for trace, add them here
 
-    nb_control = ltt_trace_control_tracefile_number(trace);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(trace);
-    nb_tracefile = nb_control + nb_per_cpu;
+    nb_tracefile = ltt_trace_control_tracefile_number(trace) +
+        ltt_trace_per_cpu_tracefile_number(trace);
     
     for(j = 0 ; j < nb_tracefile ; j++) {
       tf_s = lttv_trace_selector_tracefile_get(t_s,j);
       selected = lttv_tracefile_selector_get_selected(tf_s);
       if(!selected) continue;
-      
-      if(j < nb_control)
-  tfc = tc->control_tracefiles[j];
-      else
-  tfc = tc->per_cpu_tracefiles[j - nb_control];
+      tfc = tc->tracefiles[j];
       
       //if there are hooks for tracefile, add them here
       //      lttv_tracefile_context_add_hooks(tfc, NULL,NULL,NULL,NULL,
@@ -657,7 +649,7 @@ void statistic_add_context_hooks(StatisticViewerData * statistic_viewer_data,
 void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data, 
         LttvTracesetContext * tsc)
 {
-  gint i, j, nbi, nb_tracefile, nb_control, nb_per_cpu;
+  gint i, j, nbi, nb_tracefile;
   LttTrace *trace;
   LttvTraceContext *tc;
   LttvTracefileContext *tfc;
@@ -680,19 +672,14 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
     trace = tc->t;
     //if there are hooks for trace, remove them here
 
-    nb_control = ltt_trace_control_tracefile_number(trace);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(trace);
-    nb_tracefile = nb_control + nb_per_cpu;
+    nb_tracefile = ltt_trace_control_tracefile_number(trace) +
+        ltt_trace_per_cpu_tracefile_number(trace);
     
     for(j = 0 ; j < nb_tracefile ; j++) {
       tf_s = lttv_trace_selector_tracefile_get(t_s,j);
       selected = lttv_tracefile_selector_get_selected(tf_s);
       if(!selected) continue;
-      
-      if(j < nb_control)
-  tfc = tc->control_tracefiles[j];
-      else
-  tfc = tc->per_cpu_tracefiles[j - nb_control];
+      tfc = tc->tracefiles[j];
       
       //if there are hooks for tracefile, remove them here
       //      lttv_tracefile_context_remove_hooks(tfc, NULL,NULL,NULL,NULL,

@@ -21,6 +21,7 @@
 
 #include <glib.h>
 #include <lttv/processTrace.h>
+#include <stdio.h>
 
 /* The operating system state, kept during the trace analysis,
    contains a subset of the real operating system state, 
@@ -156,6 +157,7 @@ LttvProcessState *
 lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent, 
     guint pid);
 
+void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp);
 
 /* The LttvTracesetState, LttvTraceState and LttvTracefileState types
    inherit from the corresponding Context objects defined in processTrace. */

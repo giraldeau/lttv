@@ -137,8 +137,7 @@ struct _LttvTraceContext {
   LttvHooks *check;
   LttvHooks *before;
   LttvHooks *after;
-  LttvTracefileContext **control_tracefiles;
-  LttvTracefileContext **per_cpu_tracefiles;
+  LttvTracefileContext **tracefiles;
   LttvAttribute *a;
   LttvAttribute *t_a;
 };
@@ -161,7 +160,7 @@ struct _LttvTracefileContext {
 
   LttvTraceContext *t_context;
   gboolean control;
-  guint index;                /* in ts_context->control/per_cpu_tracefiles */
+  guint index;                /* in ts_context->tracefiles */
   LttTracefile *tf;
   LttvHooks *check;
   LttvHooks *before;

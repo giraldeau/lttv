@@ -1273,7 +1273,7 @@ void add_context_hooks(EventViewerData * event_viewer_data,
            LttvTracesetContext * tsc)
 {
   gint i, j, k, m,n, nbi, id;
-  gint nb_tracefile, nb_control, nb_per_cpu, nb_facility, nb_event;
+  gint nb_tracefile, nb_facility, nb_event;
   LttTrace *trace;
   LttvTraceContext *tc;
   LttvTracefileContext *tfc;
@@ -1299,19 +1299,14 @@ void add_context_hooks(EventViewerData * event_viewer_data,
     trace = tc->t;
     //if there are hooks for trace, add them here
 
-    nb_control = ltt_trace_control_tracefile_number(trace);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(trace);
-    nb_tracefile = nb_control + nb_per_cpu;
+    nb_tracefile = ltt_trace_control_tracefile_number(trace) +
+        ltt_trace_per_cpu_tracefile_number(trace);
     
     for(j = 0 ; j < nb_tracefile ; j++) {
       tf_s = lttv_trace_selector_tracefile_get(t_s,j);
       selected = lttv_tracefile_selector_get_selected(tf_s);
       if(!selected) continue;
-      
-      if(j < nb_control)
-  tfc = tc->control_tracefiles[j];
-      else
-  tfc = tc->per_cpu_tracefiles[j - nb_control];
+      tfc = tc->tracefiles[j];
       
       //if there are hooks for tracefile, add them here
       //      lttv_tracefile_context_add_hooks(tfc, NULL,NULL,NULL,NULL,
@@ -1349,7 +1344,7 @@ void remove_context_hooks(EventViewerData * event_viewer_data,
         LttvTracesetContext * tsc)
 {
   gint i, j, k, m, nbi, n, id;
-  gint nb_tracefile, nb_control, nb_per_cpu, nb_facility, nb_event;
+  gint nb_tracefile, nb_facility, nb_event;
   LttTrace *trace;
   LttvTraceContext *tc;
   LttvTracefileContext *tfc;
@@ -1375,19 +1370,14 @@ void remove_context_hooks(EventViewerData * event_viewer_data,
     trace = tc->t;
     //if there are hooks for trace, remove them here
 
-    nb_control = ltt_trace_control_tracefile_number(trace);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(trace);
-    nb_tracefile = nb_control + nb_per_cpu;
+    nb_tracefile = ltt_trace_control_tracefile_number(trace) +
+        ltt_trace_per_cpu_tracefile_number(trace);
     
     for(j = 0 ; j < nb_tracefile ; j++) {
       tf_s = lttv_trace_selector_tracefile_get(t_s,j);
       selected = lttv_tracefile_selector_get_selected(tf_s);
       if(!selected) continue;
-      
-      if(j < nb_control)
-  tfc = tc->control_tracefiles[j];
-      else
-  tfc = tc->per_cpu_tracefiles[j - nb_control];
+      tfc = tc->tracefiles[j];
       
       //if there are hooks for tracefile, remove them here
       //      lttv_tracefile_context_remove_hooks(tfc, NULL,NULL,NULL,NULL,

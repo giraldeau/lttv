@@ -53,7 +53,7 @@ find_event_tree(LttvTracefileStats *tfcs, GQuark process, GQuark cpu,
 static void
 init(LttvTracesetStats *self, LttvTraceset *ts)
 {
-  guint i, j, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, j, nb_trace, nb_tracefile;
 
   LttvTraceContext *tc;
 
@@ -75,17 +75,11 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
     tcs = (LttvTraceStats *)tc = (LTTV_TRACESET_CONTEXT(self)->traces[i]);
     tcs->stats = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
 
-    nb_control = ltt_trace_control_tracefile_number(tc->t);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
-    nb_tracefile = nb_control + nb_per_cpu;
-    for(j = 0 ; j < nb_tracefile ; j++) {
-      if(j < nb_control) {
-        tfcs = LTTV_TRACEFILE_STATS(tc->control_tracefiles[j]);
-      }
-      else {
-        tfcs = LTTV_TRACEFILE_STATS(tc->per_cpu_tracefiles[j - nb_control]);
-      }
+    nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
+        ltt_trace_per_cpu_tracefile_number(tc->t);
 
+    for(j = 0 ; j < nb_tracefile ; j++) {
+      tfcs = LTTV_TRACEFILE_STATS(tc->tracefiles[j]);
       tfcs->stats = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
       find_event_tree(tfcs, LTTV_STATS_PROCESS_UNKNOWN,
           tfcs->parent.cpu_name, LTTV_STATE_MODE_UNKNOWN, 
@@ -121,17 +115,11 @@ fini(LttvTracesetStats *self)
     tcs = (LttvTraceStats *)tc = (LTTV_TRACESET_CONTEXT(self)->traces[i]);
     lttv_attribute_recursive_free(tcs->stats);
 
-    nb_tracefile = ltt_trace_control_tracefile_number(tc->t);
-    for(j = 0 ; j < nb_tracefile ; j++) {
-      tfcs = (LttvTracefileStats *)tfc = tc->control_tracefiles[j];
-      lttv_attribute_recursive_free(tfcs->stats);
-      tfcs->current_events_tree = NULL;
-      tfcs->current_event_types_tree = NULL;
-    }
+    nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
+        ltt_trace_per_cpu_tracefile_number(tc->t);
 
-    nb_tracefile = ltt_trace_per_cpu_tracefile_number(tc->t);
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tfcs = (LttvTracefileStats *)tfc = tc->per_cpu_tracefiles[j];
+      tfcs = (LttvTracefileStats *)tfc = tc->tracefiles[j];
       lttv_attribute_recursive_free(tfcs->stats);
       tfcs->current_events_tree = NULL;
       tfcs->current_event_types_tree = NULL;
@@ -203,7 +191,7 @@ lttv_traceset_stats_get_type(void)
       (GClassInitFunc) traceset_stats_class_init,   /* class_init */
       NULL,   /* class_finalize */
       NULL,   /* class_data */
-      sizeof (LttvTracesetContext),
+      sizeof (LttvTracesetStats),
       0,      /* n_preallocs */
       (GInstanceInitFunc) traceset_stats_instance_init    /* instance_init */
     };
@@ -631,7 +619,7 @@ lttv_stats_add_event_hooks(LttvTracesetStats *self)
 {
   LttvTraceset *traceset = self->parent.parent.ts;
 
-  guint i, j, k, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, j, k, nb_trace, nb_tracefile;
 
   LttFacility *f;
 
@@ -720,18 +708,11 @@ lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
     /* Add these hooks to each before_event_by_id hooks list */
 
-    nb_control = ltt_trace_control_tracefile_number(ts->parent.parent.t);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(ts->parent.parent.t);
-    nb_tracefile = nb_control + nb_per_cpu;
-    for(j = 0 ; j < nb_tracefile ; j++) {
-      if(j < nb_control) {
-        tfs = LTTV_TRACEFILE_STATS(ts->parent.parent.control_tracefiles[j]);
-      }
-      else {
-        tfs = LTTV_TRACEFILE_STATS(ts->parent.parent.per_cpu_tracefiles[
-            j-nb_control]);
-      }
+    nb_tracefile = ltt_trace_control_tracefile_number(ts->parent.parent.t) +
+        ltt_trace_per_cpu_tracefile_number(ts->parent.parent.t);
 
+    for(j = 0 ; j < nb_tracefile ; j++) {
+      tfs = LTTV_TRACEFILE_STATS(ts->parent.parent.tracefiles[j]);
       lttv_hooks_add(tfs->parent.parent.after_event, every_event, NULL);
 
       for(k = 0 ; k < before_hooks->len ; k++) {
@@ -762,7 +743,7 @@ lttv_stats_remove_event_hooks(LttvTracesetStats *self)
 {
   LttvTraceset *traceset = self->parent.parent.ts;
 
-  guint i, j, k, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, j, k, nb_trace, nb_tracefile;
 
   LttvTraceStats *ts;
 
@@ -788,18 +769,11 @@ lttv_stats_remove_event_hooks(LttvTracesetStats *self)
 
     /* Add these hooks to each before_event_by_id hooks list */
 
-    nb_control = ltt_trace_control_tracefile_number(ts->parent.parent.t);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(ts->parent.parent.t);
-    nb_tracefile = nb_control + nb_per_cpu;
-    for(j = 0 ; j < nb_tracefile ; j++) {
-      if(j < nb_control) {
-        tfs = LTTV_TRACEFILE_STATS(ts->parent.parent.control_tracefiles[j]);
-      }
-      else {
-        tfs =LTTV_TRACEFILE_STATS(ts->parent.parent.per_cpu_tracefiles[
-            j-nb_control]);
-      }
+    nb_tracefile = ltt_trace_control_tracefile_number(ts->parent.parent.t) +
+        ltt_trace_per_cpu_tracefile_number(ts->parent.parent.t);
 
+    for(j = 0 ; j < nb_tracefile ; j++) {
+      tfs = LTTV_TRACEFILE_STATS(ts->parent.parent.tracefiles[j]);
       lttv_hooks_remove_data(tfs->parent.parent.after_event, every_event, 
           NULL);
 

@@ -142,21 +142,19 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
     nb_control = ltt_trace_control_tracefile_number(tc->t);
     nb_per_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
     nb_tracefile = nb_control + nb_per_cpu;
-    tc->control_tracefiles = g_new(LttvTracefileContext *, nb_control);
-    tc->per_cpu_tracefiles = g_new(LttvTracefileContext *, nb_per_cpu);
+    tc->tracefiles = g_new(LttvTracefileContext *, nb_tracefile);
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfc = LTTV_TRACESET_CONTEXT_GET_CLASS(self)->new_tracefile_context(self);
+      tc->tracefiles[j] = tfc;
+      tfc->index = j;
+
       if(j < nb_control) {
-        tc->control_tracefiles[j] = tfc;
         tfc->control = TRUE;
-        tfc->index = j;
         tfc->tf = ltt_trace_control_tracefile_get(tc->t, j);
       }
       else {
-        tc->per_cpu_tracefiles[j - nb_control] = tfc;
         tfc->control = FALSE;
-        tfc->index = j - nb_control;
         tfc->tf = ltt_trace_per_cpu_tracefile_get(tc->t, j - nb_control);
       }
       tfc->t_context = tc;
@@ -180,7 +178,7 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
 
 void fini(LttvTracesetContext *self)
 {
-  guint i, j, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, j, nb_trace, nb_tracefile;
 
   LttvTraceContext *tc;
 
@@ -205,14 +203,11 @@ void fini(LttvTracesetContext *self)
     lttv_hooks_destroy(tc->after);
     g_object_unref(tc->a);
 
-    nb_control = ltt_trace_control_tracefile_number(tc->t);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
-    nb_tracefile = nb_control + nb_per_cpu;
+    nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
+        ltt_trace_per_cpu_tracefile_number(tc->t);
 
     for(j = 0 ; j < nb_tracefile ; j++) {
-      if(j < nb_control) tfc = tc->control_tracefiles[j];
-      else tfc = tc->per_cpu_tracefiles[j - nb_control];
-
+      tfc = tc->tracefiles[j];
       lttv_hooks_destroy(tfc->check);
       lttv_hooks_destroy(tfc->before);
       lttv_hooks_destroy(tfc->after);
@@ -224,8 +219,7 @@ void fini(LttvTracesetContext *self)
       g_object_unref(tfc->a);
       g_object_unref(tfc);
     }
-    g_free(tc->control_tracefiles);
-    g_free(tc->per_cpu_tracefiles);
+    g_free(tc->tracefiles);
     g_object_unref(tc);
   }
   g_free(self->traces);
@@ -247,7 +241,7 @@ void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
 {
   LttvTraceset *ts = self->ts;
 
-  guint i, j, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, j, nb_trace, nb_tracefile;
 
   LttvTraceContext *tc;
 
@@ -264,17 +258,11 @@ void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
     lttv_hooks_add_list(tc->check, check_trace);
     lttv_hooks_add_list(tc->before, before_trace);
     lttv_hooks_add_list(tc->after, after_trace);
-    nb_control = ltt_trace_control_tracefile_number(tc->t);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
-    nb_tracefile = nb_control + nb_per_cpu;
+    nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
+        ltt_trace_per_cpu_tracefile_number(tc->t);
 
     for(j = 0 ; j < nb_tracefile ; j++) {
-      if(j < nb_control) {
-        tfc = tc->control_tracefiles[j];
-      }
-      else {
-        tfc = tc->per_cpu_tracefiles[j-nb_control];
-      }
+      tfc = tc->tracefiles[j];
       lttv_hooks_add_list(tfc->check, check_tracefile);
       lttv_hooks_add_list(tfc->before, before_tracefile);
       lttv_hooks_add_list(tfc->after, after_tracefile);
@@ -301,7 +289,7 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
 {
   LttvTraceset *ts = self->ts;
 
-  guint i, j, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, j, nb_trace, nb_tracefile;
 
   LttvTraceContext *tc;
 
@@ -318,17 +306,11 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
     lttv_hooks_remove_list(tc->check, check_trace);
     lttv_hooks_remove_list(tc->before, before_trace);
     lttv_hooks_remove_list(tc->after, after_trace);
-    nb_control = ltt_trace_control_tracefile_number(tc->t);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
-    nb_tracefile = nb_control + nb_per_cpu;
+    nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
+        ltt_trace_per_cpu_tracefile_number(tc->t);
 
     for(j = 0 ; j < nb_tracefile ; j++) {
-      if(j < nb_control) {
-        tfc = tc->control_tracefiles[j];
-      }
-      else {
-        tfc = tc->per_cpu_tracefiles[j-nb_control];
-      }
+      tfc = tc->tracefiles[j];
       lttv_hooks_remove_list(tfc->check, check_tracefile);
       lttv_hooks_remove_list(tfc->before, before_tracefile);
       lttv_hooks_remove_list(tfc->after, after_tracefile);
@@ -594,7 +576,7 @@ gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
 
 void lttv_process_traceset_begin(LttvTracesetContext *self, LttTime end)
 {
-  guint i, j, nbi, nbj, nb_control, nb_cpu;
+  guint i, j, nbi, nb_tracefile;
 
   LttvTraceContext *tc;
 
@@ -613,24 +595,19 @@ void lttv_process_traceset_begin(LttvTracesetContext *self, LttTime end)
 
     if(!lttv_hooks_call_check(tc->check, tc)) {
       lttv_hooks_call(tc->before, tc);
-      nb_control = ltt_trace_control_tracefile_number(tc->t);
-      nb_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
-      nbj = nb_control + nb_cpu;
+      nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
+          ltt_trace_per_cpu_tracefile_number(tc->t);
 
-      for(j = 0 ; j < nbj ; j++) {
-        if(j < nb_control) {
-          tfc = tc->control_tracefiles[j];
-        }
-        else {
-          tfc = tc->per_cpu_tracefiles[j - nb_control];
-        }
+      for(j = 0 ; j < nb_tracefile ; j++) {
+        tfc = tc->tracefiles[j];
 
         if(!lttv_hooks_call_check(tfc->check, tfc)) {
           lttv_hooks_call(tfc->before, tfc);
 
           if(tfc->e != NULL) {
 	    if(tfc->timestamp.tv_sec < end.tv_sec ||
-	       (tfc->timestamp.tv_sec == end.tv_sec && tfc->timestamp.tv_nsec <= end.tv_nsec)){
+	       (tfc->timestamp.tv_sec == end.tv_sec && 
+               tfc->timestamp.tv_nsec <= end.tv_nsec)) {
 	      g_tree_insert(self->pqueue, &(tfc->timestamp), tfc);
 	    }
           }
@@ -709,7 +686,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self, LttTime end,
 
 void lttv_process_traceset_end(LttvTracesetContext *self)
 {
-  guint i, j, nbi, nbj, nb_control, nb_cpu;
+  guint i, j, nbi, nb_tracefile;
 
   LttvTraceContext *tc;
 
@@ -726,17 +703,11 @@ void lttv_process_traceset_end(LttvTracesetContext *self)
        obtained at the beginning. CHECK if it poses a problem */
 
     if(!lttv_hooks_call_check(tc->check, tc)) {
-      nb_control = ltt_trace_control_tracefile_number(tc->t);
-      nb_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
-      nbj = nb_control + nb_cpu;
+      nb_tracefile = ltt_trace_control_tracefile_number(tc->t) +
+          ltt_trace_per_cpu_tracefile_number(tc->t);
 
-      for(j = 0 ; j < nbj ; j++) {
-        if(j < nb_control) {
-          tfc = tc->control_tracefiles[j];
-        }
-        else {
-          tfc = tc->per_cpu_tracefiles[j - nb_control];
-        }
+      for(j = 0 ; j < nb_tracefile ; j++) {
+        tfc = tc->tracefiles[j];
 
         if(!lttv_hooks_call_check(tfc->check, tfc)) {
           lttv_hooks_call(tfc->after, tfc);
@@ -770,19 +741,17 @@ void lttv_process_traceset(LttvTracesetContext *self, LttTime end,
 
 void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
 {
-  guint i, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, nb_tracefile;
 
   LttvTracefileContext *tfc;
 
   LttEvent *event;
 
-  nb_control = ltt_trace_control_tracefile_number(self->t);
-  nb_per_cpu = ltt_trace_per_cpu_tracefile_number(self->t);
-  nb_tracefile = nb_control + nb_per_cpu;
-  for(i = 0 ; i < nb_tracefile ; i++) {
-    if(i < nb_control) tfc = self->control_tracefiles[i];
-    else tfc = self->per_cpu_tracefiles[i - nb_control];
+  nb_tracefile = ltt_trace_control_tracefile_number(self->t) +
+      ltt_trace_per_cpu_tracefile_number(self->t);
 
+  for(i = 0 ; i < nb_tracefile ; i++) {
+    tfc = self->tracefiles[i];
     ltt_tracefile_seek_time(tfc->tf, start);
     event = ltt_tracefile_read(tfc->tf);
     tfc->e = event;

@@ -26,6 +26,7 @@
 #include <lttv/traceset.h>
 #include <ltt/trace.h>
 #include <stdio.h>
+#include <mcheck.h>
 
 
 void lttv_option_init(int argc, char **argv);
@@ -60,6 +61,8 @@ static gboolean
   a_verbose,
   a_debug;
 
+gboolean lttv_profile_memory;
+
 static int a_argc;
 
 static char **a_argv;
@@ -87,19 +90,42 @@ void ignore_and_drop_message(const gchar *log_domain, GLogLevelFlags log_level,
 
 int main(int argc, char **argv) {
 
+  int i;
+
+  char 
+    *profile_memory_short_option = "-M",
+    *profile_memory_long_option = "--memory";
+
+  gboolean profile_memory = FALSE;
+
   LttvAttributeValue value;
 
-#ifdef MEMDEBUG
-  g_mem_set_vtable(glib_mem_profiler_table);
-  g_message("Memory summary before main");
-  g_mem_profile();
-#endif
 
-  g_log_set_handler(NULL, G_LOG_LEVEL_INFO, ignore_and_drop_message, NULL);
-  g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, ignore_and_drop_message, NULL);
+  /* Before anything else, check if memory profiling is requested */
+
+  for(i = 1 ; i < argc ; i++) {
+    if(*(argv[i]) != '-') break;
+    if(strcmp(argv[i], profile_memory_short_option) == 0 || 
+       strcmp(argv[i], profile_memory_long_option) == 0) {
+      mcheck(0);
+      g_mem_set_vtable(glib_mem_profiler_table);
+      g_message("Memory summary before main");
+      g_mem_profile();
+      profile_memory = TRUE;
+      break;
+    }
+  }
+
+
+  /* Initialize glib and by default ignore info and debug messages */
 
   g_type_init();
   //g_type_init_with_debug_flags (G_TYPE_DEBUG_OBJECTS | G_TYPE_DEBUG_SIGNALS);
+  g_log_set_handler(NULL, G_LOG_LEVEL_INFO, ignore_and_drop_message, NULL);
+  g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, ignore_and_drop_message, NULL);
+
+
+  /* Have an attributes subtree to store hooks to be registered by modules. */
 
   attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
 
@@ -107,6 +133,9 @@ int main(int argc, char **argv) {
   after_options = lttv_hooks_new();
   before_main = lttv_hooks_new();
   after_main = lttv_hooks_new();
+
+
+  /* Create a number of hooks lists */
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/options/before",
       LTTV_POINTER, &value));
@@ -131,9 +160,11 @@ int main(int argc, char **argv) {
   lttv_state_init(argc,argv);
   lttv_stats_init(argc,argv);
 
+
   /* Initialize the module loading */
 
   lttv_module_path_add(PACKAGE_PLUGIN_DIR);
+
 
   /* Add some built-in options */
 
@@ -156,13 +187,32 @@ int main(int argc, char **argv) {
   lttv_option_add("debug",'d', "print debugging messages", "none", 
       LTTV_OPT_NONE, NULL, lttv_debug, NULL);
  
+  lttv_profile_memory = FALSE;
+  lttv_option_add(profile_memory_long_option + 2, 
+      profile_memory_short_option[1], "print memory information", "none", 
+      LTTV_OPT_NONE, &lttv_profile_memory, NULL, NULL);
+
+
+  /* Process the options */
  
   lttv_hooks_call(before_options, NULL);
   lttv_option_parse(argc, argv);
   lttv_hooks_call(after_options, NULL);
 
+
+  /* Memory profiling to be useful must be activated as early as possible */
+
+  if(profile_memory != lttv_profile_memory) 
+    g_error("Memory profiling options must appear before other options");
+
+
+  /* Do the main work */
+
   lttv_hooks_call(before_main, NULL);
   lttv_hooks_call(after_main, NULL);
+
+
+  /* Clean up everything */
 
   lttv_stats_destroy();
   lttv_state_destroy();
@@ -175,10 +225,10 @@ int main(int argc, char **argv) {
   lttv_hooks_destroy(after_main);
   g_object_unref(attributes);
 
-#ifdef MEMDEBUG
+  if(profile_memory) {
     g_message("Memory summary after main");
     g_mem_profile();
-#endif
+  }
 }
 
 
