@@ -1118,6 +1118,157 @@ int readFile(int fd, void * buf, size_t size, char * mesg)
    return 0;
 }
 
+/*****************************************************************************
+ *Function name
+ *    skipEvent_pre_read_cycles : go to the next event,
+ *             update the necessary fields of the current event
+ *             increment the cycle counter, save it at the end.
+ *Input params 
+ *    t         : tracefile
+ *return value 
+ *    0               : success
+ *    ERANGE          : event id is out of range
+ ****************************************************************************/
+
+int skipEvent_pre_read_cycles(LttTracefile * t)
+{
+  int evId;
+  void * evData;
+  LttEventType * evT;
+  LttField * rootFld;
+
+  evId   = (int)(*(guint16 *)(t->cur_event_pos));
+  evData = t->cur_event_pos + EVENT_HEADER_SIZE;
+
+  evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
+    
+  if(likely(evT)) rootFld = evT->root_field;
+  else return ERANGE;
+  
+  if(likely(rootFld)){
+    //event has string/sequence or the last event is not the same event
+    if(likely((evT->latest_block!=t->which_block || evT->latest_event!=t->which_event)
+       && rootFld->field_fixed == 0)){
+      setFieldsOffset(t, evT, evData, t->trace);
+    }
+    t->cur_event_pos += EVENT_HEADER_SIZE + rootFld->field_size;
+  }else t->cur_event_pos += EVENT_HEADER_SIZE;
+    
+  //evT->latest_block = t->which_block;
+  //evT->latest_event = t->which_event;
+  
+  //the next event is in the next block
+  //if(unlikely(evId == TRACE_BLOCK_END)){
+    // Specify end of buffer reached.
+  //  t->cur_event_pos = t->buffer + t->block_size;
+  //}else{
+    //g_critical("COUNT : %lu", t->cur_cycle_count);
+    //t->which_event++;
+   // t->current_event_time = getEventTime(t);
+  //}
+
+  return 0;
+}
+
+
+
+
+/*****************************************************************************
+ *Function name
+ *    ltt_tracefile_pre_read_cycles : 
+ *          read the current event, increment the cycle counter
+ *Input params
+ *    t                  : tracefile
+ *Return value
+ * False : end of bloc reached
+ ****************************************************************************/
+
+gboolean ltt_tracefile_pre_read_cycles(LttTracefile *tf)
+{
+  int err;
+  //LttEvent event;
+
+ // if(unlikely(t->cur_event_pos == t->buffer + t->block_size)){
+    //if(unlikely(t->which_block == t->block_number)){
+    //  return FALSE;
+    //}
+   // return FALSE; // end of bloc reached
+    //err = readBlock(t, t->which_block + 1);
+    //if(unlikely(err))g_error("Can not read tracefile");    
+  //}
+
+  //event.event_id = (int)(*(guint16 *)(t->cur_event_pos));
+  //if(unlikely(event.event_id == TRACE_TIME_HEARTBEAT))
+  //  t->cur_heart_beat_number++;
+
+  //t->prev_event_time  = t->current_event_time;
+  //  t->current_event_time = getEventTime(t);
+
+  //event.time_delta = *(guint32 *)(t->cur_event_pos + EVENT_ID_SIZE);
+  //event.event_time = t->current_event_time;
+  //event.event_cycle_count = t->cur_cycle_count;
+
+  //event.tracefile = t;
+  //event.data = t->cur_event_pos + EVENT_HEADER_SIZE;  
+  //event.which_block = t->which_block;
+  //event.which_event = t->which_event;
+
+  /* This is a workaround for fast position seek */
+  //event.last_event_pos = t->last_event_pos;
+  //event.prev_block_end_time = t->prev_block_end_time;
+  //event.prev_event_time = t->prev_event_time;
+  //event.pre_cycle_count = t->pre_cycle_count;
+  //event.count = t->count;
+  /* end of workaround */
+
+
+  /* Increment the cycle counter for the bloc */
+  LttTime       time;
+  LttCycleCount cycle_count;      // cycle count for the current event
+  LttCycleCount lEventTotalCycle; // Total cycles from start for event
+  LttCycleCount lEventNSec;       // Total nsecs from start for event
+  LttTime       lTimeOffset;      // Time offset in struct LttTime
+  guint16       evId;
+
+  evId = *(guint16 *)tf->cur_event_pos;
+ 
+  // Calculate total time in cycles from start of buffer for this event
+  cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
+  //g_debug("event cycle count %llu", cycle_count);
+  
+  if(unlikely(cycle_count < tf->pre_cycle_count)) tf->count++;
+  tf->pre_cycle_count = cycle_count;
+  cycle_count += (LttCycleCount)tf->count << 32;  
+  
+  //FIXME (MD)
+  //  if(tf->cur_heart_beat_number > tf->count)
+  //    cycle_count += (tf->cur_heart_beat_number - tf->count) << 32;  
+
+  tf->cur_cycle_count = cycle_count;
+  //g_debug("cur cycle count %llu", cycle_count);
+
+
+
+
+  if(unlikely(evId == TRACE_BLOCK_START)){
+    //g_debug("BLOCK START");
+  }else if(unlikely(evId == TRACE_BLOCK_END)){
+    //g_debug("BLOCK END");
+
+    /* The goal of all this pre reading */
+    tf->a_block_end->cycle_count = tf->cur_cycle_count;
+    //g_debug("end of block cycle count : %llu", tf->cur_cycle_count);
+    return FALSE;
+  }
+
+  //update the fields of the current event and go to the next event
+  err = skipEvent_pre_read_cycles(tf);
+  if(unlikely(err == ERANGE)) g_error("event id is out of range\n");
+
+
+  return TRUE;
+}
+
 /****************************************************************************
  *Function name
  *    readBlock       : read a block from the file
@@ -1158,6 +1309,17 @@ int readBlock(LttTracefile * tf, int whichBlock)
   tf->last_event_pos = tf->buffer + tf->block_size - lostSize;
 
   tf->which_block = whichBlock;
+  tf->which_event = 1;
+  tf->cur_event_pos = tf->buffer;//the beginning of the block, block start ev
+  tf->cur_heart_beat_number = 0;
+  
+  /* read the whole block to precalculate total of cycles in it */
+  tf->count = 0;
+  tf->pre_cycle_count = 0;
+  tf->cur_cycle_count = tf->a_block_start->cycle_count;
+  while(likely(ltt_tracefile_pre_read_cycles(tf)));
+
+  /* put back pointer at the beginning */
   tf->which_event = 1;
   tf->cur_event_pos = tf->buffer;//the beginning of the block, block start ev
   tf->cur_heart_beat_number = 0;
@@ -1240,6 +1402,8 @@ int skipEvent(LttTracefile * t)
 /*****************************************************************************
  *Function name
  *    getCyclePerNsec : calculate cycles per nsec for current block
+ *    MD: should have tracefile_read the whole block, so we know the
+ *    total of cycles in it before being called.
  *Input Params
  *    t               : tracefile
  ****************************************************************************/
@@ -1311,8 +1475,9 @@ static inline LttTime getEventTime(LttTracefile * tf)
   tf->pre_cycle_count = cycle_count;
   cycle_count += (LttCycleCount)tf->count << 32;  
   
+  //FIXME (MD)
   //  if(tf->cur_heart_beat_number > tf->count)
-  //    cycle_count += tmpCycleCount * (tf->cur_heart_beat_number - tf->count);  
+  //    cycle_count += (tf->cur_heart_beat_number - tf->count) << 32;  
 
   tf->cur_cycle_count = cycle_count;
 
