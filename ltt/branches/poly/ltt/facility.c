@@ -21,10 +21,7 @@ void generateFacility(LttFacility * f, facility  * fac,
 /* functions to release the memory occupied by a facility */
 void freeFacility(LttFacility * facility);
 void freeEventtype(LttEventType * evType);
-void freeAllNamedTypes(table * named_types);
-void freeAllUnamedTypes(sequence * unnamed_types);
-void freeAllFields(sequence * all_fields);
-void freeLttType(LttType * type);
+void freeLttType(LttType ** type);
 void freeLttField(LttField * fld);
 
 
@@ -121,9 +118,9 @@ void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
   
   //initialize inner structures
   f->events = g_new(LttEventType*,f->event_number); 
-  sequence_init(&(f->all_fields));
-  sequence_init(&(f->all_unnamed_types));
-  table_init(&(f->all_named_types));
+  f->named_types_number = fac->named_types.keys.position;
+  f->named_types = g_new(LttType*, fac->named_types.keys.position);
+  for(i=0;i<fac->named_types.keys.position;i++) f->named_types[i] = NULL;
 
   //for each event, construct field tree and type graph
   for(i=0;i<events->position;i++){
@@ -134,7 +131,6 @@ void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
     evType->description=g_strdup(((event*)(events->array[i]))->description);
     
     field = g_new(LttField, 1);
-    sequence_push(&(f->all_fields), field);
     evType->root_field = field;
     evType->facility = f;
     evType->index = i;
@@ -158,7 +154,6 @@ void generateFacility(LttFacility *f, facility *fac,LttChecksum checksum)
       constructTypeAndFields(f,((event*)(events->array[i]))->type,field);
     }else{
       evType->root_field = NULL;
-      sequence_pop(&(f->all_fields));
       g_free(field);
     }
   }  
@@ -200,7 +195,6 @@ void constructTypeAndFields(LttFacility * fac,type_descriptor * td,
     fld->field_type->element_type[0] = lookup_named_type(fac, tmpTd);
     fld->child = g_new(LttField*, 1);
     fld->child[0] = g_new(LttField, 1);
-    sequence_push(&(fac->all_fields), fld->child[0]);
     
     fld->child[0]->field_pos = 0;
     fld->child[0]->field_type = fld->field_type->element_type[0];
@@ -223,7 +217,6 @@ void constructTypeAndFields(LttFacility * fac,type_descriptor * td,
       tmpTd = ((field*)(td->fields.array[i]))->type;
       fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
       fld->child[i] = g_new(LttField,1); 
-      sequence_push(&(fac->all_fields), fld->child[i]);
 
       fld->child[i]->field_pos = i;
       fld->child[i]->field_type = fld->field_type->element_type[i]; 
@@ -262,11 +255,12 @@ LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
   int i;
   char * name;
   if(td->type_name){
-    for(i=0;i<fac->all_named_types.keys.position;i++){
-      name = (char *)(fac->all_named_types.keys.array[i]);
+    for(i=0;i<fac->named_types_number; i++){
+      if(fac->named_types[i] == NULL) break;
+      name = fac->named_types[i]->element_name;
       if(strcmp(name, td->type_name)==0){
-	lttType = (LttType*)(fac->all_named_types.values.array[i]);
-	break;
+	lttType = fac->named_types[i];
+	break;	
       }
     }
   }
@@ -281,12 +275,10 @@ LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
     lttType->element_type = NULL;
     lttType->element_number = 0;
     if(td->type_name){
-      name = g_strdup(td->type_name);
-      table_insert(&(fac->all_named_types),name,lttType);
-      lttType->element_name = name;
+      lttType->element_name = g_strdup(td->type_name);
+      fac->named_types[i] = lttType;
     }
     else{
-      sequence_push(&(fac->all_unnamed_types), lttType);
       lttType->element_name = NULL;
     }
   }
@@ -329,13 +321,7 @@ void freeFacility(LttFacility * fac)
   g_free(fac->events);
 
   //free all named types
-  freeAllNamedTypes(&(fac->all_named_types));
-
-  //free all unnamed types
-  freeAllUnamedTypes(&(fac->all_unnamed_types));
-
-  //free all fields
-  freeAllFields(&(fac->all_fields));
+  g_free(fac->named_types);
 
   //free the facility itself
   g_free(fac);
@@ -346,65 +332,57 @@ void freeEventtype(LttEventType * evType)
   g_free(evType->name);
   if(evType->description)
     g_free(evType->description); 
+  if(evType->root_field){    
+    freeLttField(evType->root_field);
+  }
+
   g_free(evType);
 }
 
-void freeAllNamedTypes(table * named_types)
+void freeLttType(LttType ** type)
 {
   int i;
-  for(i=0;i<named_types->keys.position;i++){
-    //free the name of the type
-    g_free((char*)(named_types->keys.array[i]));
-    
-    //free type
-    freeLttType((LttType*)(named_types->values.array[i]));
+  if(*type == NULL) return;
+  if((*type)->element_name)
+    g_free((*type)->element_name);
+  if((*type)->fmt)
+    g_free((*type)->fmt);
+  if((*type)->enum_strings){
+    for(i=0;i<(*type)->element_number;i++)
+      g_free((*type)->enum_strings[i]);
+    g_free((*type)->enum_strings);
   }
-  table_dispose(named_types);
+
+  if((*type)->element_type){
+    //    for(i=0;i<(*type)->element_number;i++)
+    //       freeLttType(&((*type)->element_type[i]));   
+    g_free((*type)->element_type);
+  }
+  g_free(*type);
+  *type = NULL;
 }
 
-void freeAllUnamedTypes(sequence * unnamed_types)
-{
-  int i;
-  for(i=0;i<unnamed_types->position;i++){
-    freeLttType((LttType*)(unnamed_types->array[i]));
-  }
-  sequence_dispose(unnamed_types);
-}
-
-void freeAllFields(sequence * all_fields)
-{
-  int i;
-  for(i=0;i<all_fields->position;i++){
-    freeLttField((LttField*)(all_fields->array[i]));
-  }
-  sequence_dispose(all_fields);
-}
-
-//only free current type, not child types
-void freeLttType(LttType * type)
-{
-  int i;
-  if(type->element_name)
-    g_free(type->element_name);
-  if(type->fmt)
-    g_free(type->fmt);
-  if(type->enum_strings){
-    for(i=0;i<type->element_number;i++)
-      g_free(type->enum_strings[i]);
-    g_free(type->enum_strings);
-  }
-
-  if(type->element_type){
-    g_free(type->element_type);
-  }
-  g_free(type);
-}
-
-//only free the current field, not child fields
 void freeLttField(LttField * fld)
-{  
-  if(fld->child)
+{ 
+  int i;
+  int size;
+  
+  if(fld->field_type){
+    if(fld->field_type->type_class == LTT_ARRAY ||
+       fld->field_type->type_class == LTT_SEQUENCE){
+      size = 1;
+    }else if(fld->field_type->type_class == LTT_STRUCT){
+      size = fld->field_type->element_number;
+    }
+    freeLttType(&(fld->field_type));
+  }
+
+  if(fld->child){
+    for(i=0; i<size; i++){
+      if(fld->child[i])freeLttField(fld->child[i]);
+    }
     g_free(fld->child);
+  }
   g_free(fld);
 }
 
