@@ -220,7 +220,7 @@
  *
  * NOTE : use g_quark_to_string to convert a GQuark into a static char *
  */
-#define LTTV_TRACE_STATE_GET_EVENTTYPE_NAME(tse, syscall_number)\
+#define LTTV_TRACE_STATE_GET_SYSCALL_NAME(tse, syscall_number)\
             (tse->syscall_names[syscall_number])
 
 /* LTTV_TRACE_STATE_GET_TRAP_NAME
@@ -242,7 +242,7 @@
  *
  * NOTE : use g_quark_to_string to convert a GQuark into a static char *
  */
-#define LTTV_TRACE_STATE_GET_TRAP_NAME(tse, irq_number)\
+#define LTTV_TRACE_STATE_GET_IRQ_NAME(tse, irq_number)\
             (tse->irq_names[irq_number])
 
 
