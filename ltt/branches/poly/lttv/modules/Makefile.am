@@ -5,17 +5,15 @@
 #
 
 # the gui subdir comes first : dependency
-SUBDIRS = gui
+SUBDIRS = gui guiControlFlow
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
-LIBS += $(GTK_LIBS) -Lgui/API -lmainWinApi -lcustomBox
+LIBS += $(GTK_LIBS) -L${srcdir}/gui/API -lmainWinApi
 
 libdir = ${lttvplugindir}
 
-lib_LTLIBRARIES = libguiEvents.la # libguiControlFlow.la
+lib_LTLIBRARIES = libguiEvents.la
 libguiEvents_la_LDFLAGS = -module
 libguiEvents_la_SOURCES = guiEvents.c
-libguiControlFlow_la_LDFLAGS = -module
-libguiControlFlow_la_SOURCES = guiControlFlow.c

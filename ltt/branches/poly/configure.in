@@ -80,6 +80,7 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/gui/mainWin/Makefile
 		 lttv/modules/gui/mainWin/src/Makefile
 		 lttv/modules/gui/API/Makefile
+		 lttv/modules/guiControlFlow/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 include/Makefile
