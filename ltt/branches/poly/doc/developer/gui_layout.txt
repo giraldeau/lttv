@@ -69,14 +69,12 @@ Here is a short description of each menu entry
                *Dump binary
 * (separator between text tools and graphical tools implies different function
    to register each type of menu entries)
-*Events -> *Insert before : insert or remove this type of viewer
-           *Insert after    before or after the current position
-*ControlFlow -> *Insert before
-                *Insert after
+*Insert Events View : insert this type of viewer
+*Insert ControlFlow View
 - Plugins
-*Load module : ask the user a module to load (text field).
+*Load module : ask the user a module to load (list modules in search path).
 *Unload module : list all modules, click to choose, then unload button.
-*Add module search path : ask user for a new path (text field).
+*Add module search path : ask user for a new path (file selection dialog).
 
 - Options
 //FIXME *Color : change the color of the currently selected element ?
