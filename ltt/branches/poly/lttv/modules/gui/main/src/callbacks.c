@@ -641,14 +641,10 @@ on_clone_traceset_activate             (GtkMenuItem     *menuitem,
   create_new_window((GtkWidget*)menuitem, user_data, TRUE);
 }
 
-
-void
-on_tab_activate                        (GtkMenuItem     *menuitem,
-                                        gpointer         user_data)
-{
+void create_new_tab(GtkWidget* widget, gpointer user_data){
   gchar label[PATH_LENGTH];
-  MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
-  GtkNotebook * notebook = (GtkNotebook *)lookup_widget((GtkWidget*)menuitem, "MNotebook");
+  MainWindow * mw_data = get_window_data_struct(widget);
+  GtkNotebook * notebook = (GtkNotebook *)lookup_widget(widget, "MNotebook");
   if(notebook == NULL){
     g_printf("Notebook does not exist\n");
     return;
@@ -658,6 +654,13 @@ on_tab_activate                        (GtkMenuItem     *menuitem,
   get_label(mw_data, label,"Get the name of the tab","Please input tab's name");
 
   create_tab (mw_data, mw_data, notebook, label);
+}
+
+void
+on_tab_activate                        (GtkMenuItem     *menuitem,
+                                        gpointer         user_data)
+{
+  create_new_tab((GtkWidget*)menuitem, user_data);
 }
 
 
@@ -1016,6 +1019,12 @@ on_button_new_clicked                  (GtkButton       *button,
   create_new_window((GtkWidget*)button, user_data, FALSE);
 }
 
+void
+on_button_new_tab_clicked              (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  create_new_tab((GtkWidget*)button, user_data);
+}
 
 void
 on_button_open_clicked                 (GtkButton       *button,

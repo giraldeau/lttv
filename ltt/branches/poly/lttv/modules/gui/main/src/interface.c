@@ -113,6 +113,7 @@ create_MWindow (void)
   GtkWidget *MToolbar1;
   GtkWidget *tmp_toolbar_icon;
   GtkWidget *tlbEmptyTraceset;
+  GtkWidget *tlbTab;
   //  GtkWidget *tlbOpenTraceset;
   GtkWidget *tlbAddTrace;
   GtkWidget *tlbRemoveTrace;
@@ -405,6 +406,18 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbEmptyTraceset);
   gtk_container_set_border_width (GTK_CONTAINER (tlbEmptyTraceset), 1);
+
+  tmp_toolbar_icon = create_pixmap (MWindow, "filenew.png");
+  tlbTab = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
+                                GTK_TOOLBAR_CHILD_BUTTON,
+                                NULL,
+                                "",
+                                "New tab", NULL,
+                                tmp_toolbar_icon, NULL, NULL);
+  gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
+  gtk_widget_show (tlbTab);
+  gtk_container_set_border_width (GTK_CONTAINER (tlbTab), 1);
+
 /*
   tmp_toolbar_icon = create_pixmap (MWindow, "fileopen.png");
   tlbOpenTraceset = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
@@ -696,6 +709,9 @@ create_MWindow (void)
   g_signal_connect ((gpointer) tlbEmptyTraceset, "clicked",
                     G_CALLBACK (on_button_new_clicked),
                     NULL);
+  g_signal_connect ((gpointer) tlbTab, "clicked",
+                    G_CALLBACK (on_button_new_tab_clicked),
+                    NULL);
 /*
   g_signal_connect ((gpointer) tlbOpenTraceset, "clicked",
                     G_CALLBACK (on_button_open_clicked),
@@ -811,6 +827,7 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, About, "About");
   GLADE_HOOKUP_OBJECT (MWindow, MToolbar1, "MToolbar1");
   GLADE_HOOKUP_OBJECT (MWindow, tlbEmptyTraceset, "tlbEmptyTraceset");
+  GLADE_HOOKUP_OBJECT (MWindow, tlbTab, "tlbTab");
   //  GLADE_HOOKUP_OBJECT (MWindow, tlbOpenTraceset, "tlbOpenTraceset");
   GLADE_HOOKUP_OBJECT (MWindow, tlbAddTrace, "tlbAddTrace");
   GLADE_HOOKUP_OBJECT (MWindow, tlbRemoveTrace, "tlbRemoveTrace");

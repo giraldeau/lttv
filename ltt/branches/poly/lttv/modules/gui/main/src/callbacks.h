@@ -165,7 +165,9 @@ on_about_activate                      (GtkMenuItem     *menuitem,
 void
 on_button_new_clicked                  (GtkButton       *button,
                                         gpointer         user_data);
-
+void
+on_button_new_tab_clicked              (GtkButton       *button,
+                                        gpointer         user_data);
 void
 on_button_open_clicked                 (GtkButton       *button,
                                         gpointer         user_data);
