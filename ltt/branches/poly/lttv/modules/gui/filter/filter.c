@@ -74,10 +74,9 @@ void callback_expression_field(GtkWidget *widget, gpointer data);
 struct _FilterViewerDataLine {
   int row;
   gboolean visible;
+  GtkWidget *f_not_op_box;
   GtkWidget *f_logical_op_box;
   GtkWidget *f_field_box;
-//  GtkWidget *f_struct_box;
-//  GtkWidget *f_subfield_box;
   GtkWidget *f_math_op_box;
   GtkWidget *f_value_field;
 };
@@ -102,6 +101,7 @@ struct _FilterViewerData {
   int rows;
   GPtrArray *f_lines;
 
+  GPtrArray *f_not_op_options;
   GPtrArray *f_logical_op_options;
   GPtrArray *f_field_options;
   GPtrArray *f_math_op_options;
@@ -153,6 +153,10 @@ gui_filter(Tab *tab)
    * Initiating items for
    * combo boxes
    */
+  fvd->f_not_op_options = g_ptr_array_new();
+  g_ptr_array_add(fvd->f_not_op_options,(gpointer) g_string_new(""));
+  g_ptr_array_add(fvd->f_not_op_options,(gpointer) g_string_new("!"));
+  
   fvd->f_logical_op_options = g_ptr_array_new(); //g_array_new(FALSE,FALSE,sizeof(gchar));
   g_ptr_array_add(fvd->f_logical_op_options,(gpointer) g_string_new(""));
   g_ptr_array_add(fvd->f_logical_op_options,(gpointer) g_string_new("&"));
@@ -195,7 +199,7 @@ gui_filter(Tab *tab)
    * starts with 2 rows and 5 columns and 
    * expands when expressions added
    */
-  fvd->f_main_box = gtk_table_new(3,6,FALSE);
+  fvd->f_main_box = gtk_table_new(3,7,FALSE);
   gtk_table_set_row_spacings(GTK_TABLE(fvd->f_main_box),5);
   gtk_table_set_col_spacings(GTK_TABLE(fvd->f_main_box),5);
   
@@ -217,8 +221,8 @@ gui_filter(Tab *tab)
   g_signal_connect (G_OBJECT (fvd->f_process_button), "clicked",
       G_CALLBACK (callback_process_button), (gpointer) fvd); 
   
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_expression_field,0,5,0,1,GTK_FILL,GTK_FILL,0,0);
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_process_button,5,6,0,1,GTK_FILL,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_expression_field,0,6,0,1,GTK_FILL,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_process_button,6,7,0,1,GTK_FILL,GTK_FILL,0,0);
 
 
   
@@ -232,7 +236,7 @@ gui_filter(Tab *tab)
   g_signal_connect (G_OBJECT (fvd->f_add_button), "clicked",
       G_CALLBACK (callback_add_button), (gpointer) fvd);
   
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_add_button,5,6,1,2,GTK_FILL,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_add_button,6,7,1,2,GTK_FILL,GTK_FILL,0,0);
   
   fvd->f_logical_op_junction_box = gtk_combo_box_new_text();
   for(i=0;i<fvd->f_logical_op_options->len;i++) {
@@ -308,10 +312,16 @@ gui_filter_add_line(FilterViewerData* fvd) {
   gtk_widget_show(fvdl->f_subfield_box);
   */
 
+  fvdl->f_not_op_box = gtk_combo_box_new_text();
+  for(i=0;i<fvd->f_not_op_options->len;i++) {
+    GString* s = g_ptr_array_index(fvd->f_not_op_options,i);
+    gtk_combo_box_append_text(GTK_COMBO_BOX(fvdl->f_not_op_box), s->str);
+  }
+
   fvdl->f_field_box = gtk_combo_box_new_text();
   for(i=0;i<fvd->f_field_options->len;i++) {
     GString* s = g_ptr_array_index(fvd->f_field_options,i);
-    g_print("String field: %s\n",s->str);
+//    g_print("String field: %s\n",s->str);
     gtk_combo_box_append_text(GTK_COMBO_BOX(fvdl->f_field_box), s->str);
   }
   
@@ -341,10 +351,11 @@ gui_filter_add_line(FilterViewerData* fvd) {
   
 //  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_struct_box,0,1,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
 //  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_subfield_box,1,2,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_field_box,0,2,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_math_op_box,2,3,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_value_field,3,4,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_logical_op_box,4,5,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_not_op_box,0,1,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_field_box,1,3,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_math_op_box,3,4,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_value_field,4,5,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_logical_op_box,5,6,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
  
   return fvdl;
 }
@@ -355,6 +366,7 @@ void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v) {
   if(v) {
 //    gtk_widget_show(fvdl->f_struct_box);
 //    gtk_widget_show(fvdl->f_subfield_box);
+    gtk_widget_show(fvdl->f_not_op_box);
     gtk_widget_show(fvdl->f_field_box);
     gtk_widget_show(fvdl->f_math_op_box);
     gtk_widget_show(fvdl->f_value_field);
@@ -362,6 +374,7 @@ void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v) {
   } else {
 //    gtk_widget_hide(fvdl->f_struct_box);
 //    gtk_widget_hide(fvdl->f_subfield_box);
+    gtk_widget_hide(fvdl->f_not_op_box);
     gtk_widget_hide(fvdl->f_field_box);
     gtk_widget_hide(fvdl->f_math_op_box);
     gtk_widget_hide(fvdl->f_value_field);
@@ -374,6 +387,7 @@ void gui_filter_line_reset(FilterViewerDataLine *fvdl) {
 
 //  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_struct_box),0);
 //  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_subfield_box),0);
+  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_not_op_box),0);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_field_box),0);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_math_op_box),0);
   gtk_entry_set_text(GTK_COMBO_BOX(fvdl->f_value_field),"");
@@ -496,8 +510,10 @@ void callback_process_button(GtkWidget *widget, gpointer data) {
 
   FilterViewerData *fvd = (FilterViewerData*)data;
 
-  if(strlen(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field))) !=0)
-    lttv_filter_new(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)),NULL);
+  if(strlen(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field))) !=0) {
+    LttvFilter* filter = lttv_filter_new();
+    lttv_filter_append_expression(filter,gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
+  }
 }
 
 /**
@@ -544,6 +560,9 @@ void callback_add_button(GtkWidget *widget, gpointer data) {
   int i;
   for(i=0;i<fvd->f_lines->len;i++) {
     fvdl = (FilterViewerDataLine*)g_ptr_array_index(fvd->f_lines,i);
+ 
+    s = g_ptr_array_index(fvd->f_not_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_not_op_box)));
+    g_string_append(a_filter_string,s->str);
     
     s = g_ptr_array_index(fvd->f_field_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_field_box)));
     g_string_append(a_filter_string,s->str);
