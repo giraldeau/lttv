@@ -79,7 +79,7 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/Makefile
 		 lttv/modules/text/Makefile
 		 lttv/modules/gui/Makefile
-		 lttv/modules/gui/mainLib/Makefile
+		 lttv/modules/gui/mainlib/Makefile
 		 lttv/modules/gui/main/Makefile
 		 lttv/modules/gui/main/src/Makefile
 		 lttv/modules/gui/main/pixmaps/Makefile
