@@ -100,6 +100,8 @@ struct _Drawing_t {
   PangoLayout *pango_layout;
 
   gint      height, width, depth;
+  /* height and width of allocated buffer pixmap */
+  gint      alloc_height, alloc_width;
   
   /* X coordinate of damaged region */
   gint      damage_begin, damage_end; /* damaged region to be exposed,
