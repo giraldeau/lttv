@@ -101,6 +101,9 @@ typedef struct _EventViewerData {
   unsigned     end_event_number;  
   LttvHooks  * before_event_hooks;
 
+  //scroll window containing Tree View
+  GtkWidget * Scroll_Win;
+
   /* Model containing list data */
   GtkListStore *Store_M;
   
@@ -261,6 +264,11 @@ GuiEvents(mainWindow *pmParentWindow)
   RegUpdateTimeInterval(updateTimeInterval,Event_Viewer_Data, Event_Viewer_Data->mw);
   RegUpdateCurrentTime(updateCurrentTime,Event_Viewer_Data, Event_Viewer_Data->mw);
 
+  Event_Viewer_Data->Scroll_Win = gtk_scrolled_window_new (NULL, NULL);
+  gtk_widget_show ( Event_Viewer_Data->Scroll_Win);
+  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(Event_Viewer_Data->Scroll_Win), 
+				 GTK_POLICY_AUTOMATIC, GTK_POLICY_NEVER);
+
   /* TEST DATA, TO BE READ FROM THE TRACE */
   Event_Viewer_Data->Number_Of_Events = RESERVE_SIZE ;
   Event_Viewer_Data->Currently_Selected_Event = FALSE  ;
@@ -369,8 +377,10 @@ GuiEvents(mainWindow *pmParentWindow)
 		    G_CALLBACK (tree_selection_changed_cb),
 		    Event_Viewer_Data);
 	
+  gtk_container_add (GTK_CONTAINER (Event_Viewer_Data->Scroll_Win), Event_Viewer_Data->Tree_V);
+
   Event_Viewer_Data->HBox_V = gtk_hbox_new(0, 0);
-  gtk_box_pack_start(GTK_BOX(Event_Viewer_Data->HBox_V), Event_Viewer_Data->Tree_V, TRUE, TRUE, 0);
+  gtk_box_pack_start(GTK_BOX(Event_Viewer_Data->HBox_V), Event_Viewer_Data->Scroll_Win, TRUE, TRUE, 0);
 
   /* Create vertical scrollbar and pack it */
   Event_Viewer_Data->VScroll_VC = gtk_vscrollbar_new(NULL);
