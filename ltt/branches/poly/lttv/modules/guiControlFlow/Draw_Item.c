@@ -27,10 +27,14 @@
  *
  * Each item has an array of hooks (hook list). Each hook represents an
  * operation to perform. We seek the array each time we want to
- * draw an item. We execute each operation in order.
+ * draw an item. We execute each operation in order. An operation type
+ * is associated with each hook to permit user listing and modification
+ * of these operations. The operation type is also used to find the
+ * corresponding priority for the sorting. Operation type and priorities
+ * are enum and a static int table.
  *
  * The array has to be sorted by priority each time we add a task in it.
- * A priority is associated with each hook. It permits
+ * A priority is associated with each operation type. It permits
  * to perform background color selection before line or text drawing. We also
  * draw lines before text, so the text appears over the lines.
  *
