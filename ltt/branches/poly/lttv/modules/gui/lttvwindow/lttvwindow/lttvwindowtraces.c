@@ -1024,7 +1024,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   /* 2. call process traceset middle for a chunk */
   {
     /*(assert list_in is not empty! : should not even be called in that case)*/
-    LttTime end = { G_MAXUINT, G_MAXUINT };
+    LttTime end = ltt_time_infinite;
     g_assert(g_slist_length(*list_in) != 0);
     
     lttv_process_traceset_middle(tsc, end, CHUNK_NUM_EVENTS, NULL);

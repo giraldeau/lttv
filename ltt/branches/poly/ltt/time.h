@@ -28,13 +28,13 @@ typedef struct _LttTime {
 } LttTime;
 
 
-static const unsigned long NANOSECONDS_PER_SECOND = 1000000000;
+#define NANOSECONDS_PER_SECOND 1000000000
 
-static const LttTime ltt_time_zero = { 0, 0};
+static const LttTime ltt_time_zero = { 0, 0 };
 
 static const LttTime ltt_time_one = { 0, 1 };
 
-static const LttTime ltt_time_infinite = { G_MAXUINT, G_MAXUINT };
+static const LttTime ltt_time_infinite = { G_MAXUINT, NANOSECONDS_PER_SECOND };
 
 static inline LttTime ltt_time_sub(LttTime t1, LttTime t2) 
 {
@@ -109,6 +109,9 @@ static inline int ltt_time_compare(LttTime t1, LttTime t2)
   if(t1.tv_nsec < t2.tv_nsec) return -1;
   return 0;
 }
+
+#define LTT_TIME_MIN(a,b) ((ltt_time_compare((a),(b)) < 0) ? (a) : (b))
+#define LTT_TIME_MAX(a,b) ((ltt_time_compare((a),(b)) > 0) ? (a) : (b))
 
 #define MAX_TV_SEC_TO_DOUBLE 0x7FFFFF
 static inline double ltt_time_to_double(LttTime t1)

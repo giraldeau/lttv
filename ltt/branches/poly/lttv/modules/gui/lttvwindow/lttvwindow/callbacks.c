@@ -1283,8 +1283,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       lttv_traceset_context_position_save(tsc, events_request->start_position);
 
       /* 1.2. Remove start time */
-      events_request->start_time.tv_sec = G_MAXUINT;
-      events_request->start_time.tv_nsec = G_MAXUINT;
+      events_request->start_time = ltt_time_infinite;
       
       /* 1.3. Move from list_in to list_out */
       remove = TRUE;

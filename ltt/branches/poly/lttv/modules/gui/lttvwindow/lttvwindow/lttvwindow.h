@@ -602,15 +602,15 @@ void lttvwindow_report_focus(Tab *tab,
 
 
 /* Structure sent to the events request hook */
-                                                /* Value considered as empty */
+                                                /* Value considered as empty*/
 typedef struct _EventsRequest {
   gpointer                     owner;           /* Owner of the request     */
   gpointer                     viewer_data;     /* Unset : NULL             */
-  gboolean                     servicing;       /* service in progress: TRUE */ 
-  LttTime                      start_time;/* Unset : { G_MAXUINT, G_MAXUINT }*/
+  gboolean                     servicing;       /* service in progress: TRUE*/ 
+  LttTime                      start_time;      /* Unset : ltt_time_infinite*/
   LttvTracesetContextPosition *start_position;  /* Unset : NULL             */
   gboolean                     stop_flag;       /* Continue:TRUE Stop:FALSE */
-  LttTime                      end_time;/* Unset : { G_MAXUINT, G_MAXUINT } */
+  LttTime                      end_time;        /* Unset : ltt_time_infinite*/
   guint                        num_events;      /* Unset : G_MAXUINT        */
   LttvTracesetContextPosition *end_position;    /* Unset : NULL             */
   LttvHooks                   *before_chunk_traceset; /* Unset : NULL       */
