@@ -24,7 +24,7 @@
  * @param view_constructor constructor of the viewer. 
  */
 
-void ToolbarItemReg(GdkPixmap * pixmap, char *tooltip, void *view_constructor);
+void ToolbarItemReg(char ** pixmap, char *tooltip, lttv_constructor view_constructor);
 
 
 /**
@@ -35,7 +35,7 @@ void ToolbarItemReg(GdkPixmap * pixmap, char *tooltip, void *view_constructor);
  * a reference to find out where the pixmap and tooltip are.
  */
 
-void ToolbarItemUnreg(void *view_constructor);
+void ToolbarItemUnreg(lttv_constructor view_constructor);
 
 
 /**
@@ -47,7 +47,7 @@ void ToolbarItemUnreg(void *view_constructor);
  * @param view_constructor constructor of the viewer. 
  */
 
-void MenuItemReg(char *menu_path, char *menu_text, void *view_constructor);
+void MenuItemReg(char *menu_path, char *menu_text, lttv_constructor view_constructor);
 
 
 /**
@@ -58,7 +58,7 @@ void MenuItemReg(char *menu_path, char *menu_text, void *view_constructor);
  * a reference to find out where the menu_path and menu_text are.
  */
 
-void MenuItemUnreg(void *view_constructor);
+void MenuItemUnreg(lttv_constructor view_constructor);
 
 
 /**
