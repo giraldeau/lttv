@@ -19,9 +19,10 @@ lttv_option_type;
 
 typedef void (*lttv_option_hook)(void *hook_data);
 
-void lttv_option_add(char *long_name, char char_name, char *description, 
-    char *argDescription, lttv_option_type t, void *p, 
-    lttv_option_hook h, void *hook_data);
+void lttv_option_add(const char *long_name, const char char_name,
+		const char *description, const char *argDescription,
+		lttv_option_type t, void *p, lttv_option_hook h,
+		void *hook_data);
 
 
 

@@ -63,6 +63,16 @@ void lttv_option_init(int argc, char **argv) {
 
 void lttv_option_destroy() {
 
+  struct poptOption *poption;
+  
+  for(i=0; i<lttv_options_command_popt->len,i++) {
+    poption = &g_array_index (lttv_options_command_popt, struct poptOption, i);
+
+    g_free(poption.longName);
+    g_free(poption.shortName);
+    g_free(poption.descrip);
+    g_free(poption.argDescrip);
+  }
   g_array_free(lttv_options_command_popt,TRUE) ;
   g_array_free(lttv_options_command,TRUE) ;
 
@@ -83,18 +93,19 @@ static int poptToLTT[] = {
 };
 
 
-void lttv_option_add(char *long_name, char char_name, char *description, 
-    char *argDescription, lttv_option_type t, void *p, 
-    lttv_option_hook h, void *hook_data)
+void lttv_option_add(const char *long_name, const char char_name,
+		const char *description, const char *argDescription,
+		const lttv_option_type t, const void *p, 
+		const lttv_option_hook h, void *hook_data)
 {
   struct poptOption poption;
 
   lttv_option option;
 
-  poption.longName = long_name;
+  poption.longName = (char *)g_strdup(long_name);
   poption.shortName = char_name;
-  poption.descrip = description;
-  poption.argDescrip = argDescription;
+  poption.descrip = (char *)g_strdup(description);
+  poption.argDescrip = (char *)g_strdup(argDescription);
   poption.argInfo = poptToLTT[t];
   poption.arg = p;
   poption.val = lttv_options_command->len + 1;
