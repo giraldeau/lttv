@@ -28,22 +28,22 @@
 
 gint compare_tracefile(gconstpointer a, gconstpointer b)
 {
-  gint comparison;
+  gint comparison = 0;
 
   const LttvTracefileContext *trace_a = (const LttvTracefileContext *)a;
-
   const LttvTracefileContext *trace_b = (const LttvTracefileContext *)b;
 
-  if(trace_a == trace_b) return 0;
   comparison = ltt_time_compare(trace_a->timestamp, trace_b->timestamp);
-  if(comparison != 0) return comparison;
-  if(trace_a->index < trace_b->index) return -1;
-  else if(trace_a->index > trace_b->index) return 1;
-  if(trace_a->t_context->index < trace_b->t_context->index) return -1;
-  else if(trace_a->t_context->index > trace_b->t_context->index) return 1;
-  
-  g_assert(FALSE);
-  return 0; /* This should never happen */
+  if(comparison == 0) {
+    if(trace_a->index < trace_b->index) comparison = -1;
+    else if(trace_a->index > trace_b->index) comparison = 1;
+    else if(trace_a->t_context->index < trace_b->t_context->index) 
+      comparison = -1;
+    else if(trace_a->t_context->index > trace_b->t_context->index)
+      comparison = 1;
+  }
+
+  return comparison;
 }
 
 struct _LttvTraceContextPosition {
