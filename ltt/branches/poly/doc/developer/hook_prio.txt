@@ -12,16 +12,12 @@ hooks, eventually sorted by the priority associated to them.
 
 This is a modification to the actual LttvHooks that associates a priority with
 each hook. The container for this type would be a garray, just like hook.c, but
-a lttv_hooks_prio_sort would be called every time a hook is added to a list. It
-would sort the hooks in a hook list by priority : from highest priority (-19) to
-lowest (20). The default priority is 0.
+hooks would be added at the right position in the list, by priority. Hooks in a
+hook list are ordered by priority : from highest priority (0) to
+lowest (99). The default priority is 50 (defined as LTTV_PRIO_DEFAULT).
 
-In order to make lttv_hooks_call aware of the different kind of hooks it has to
-call, the LttvHooksById will be modified to integrate a new "main" list : a
-pointer to a LttvHooks that will be called for any Id.
-
-A new lttv_hooks_by_id_call that will get the hooks from the main and by_id
-lists in the right order will deal with the multiple lists priority problem.
+A new lttv_hooks_call_merge that will get the hooks from two hook lists in the
+right order will deal with the multiple lists priority problem.
 
 
 

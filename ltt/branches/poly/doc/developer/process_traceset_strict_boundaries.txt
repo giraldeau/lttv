@@ -97,11 +97,11 @@ From now on, the state computation will be done in the middle hook call, with a
 priority higher than default. We will define this priority as PRIO_STATE,
 defined to -10.
 
-If state has to be computed, lttv_process_traceset_begin is called to add state
-hooks to the context. Then, the state seek_closest will have to be used to
-restore the nearest state, plus a process_traceset with no hooks present other
-than the state hooks will have to be called to go from the closest state to the
-real time seeked.
+If state has to be computed, lttv_process_traceset_begin has to be  called in
+a first time. It adds the state hooks to the context. Then, the state
+seek_closest will have to be used to restore the nearest state, plus a
+process_traceset with no hooks present other than the state hooks will have to
+be called to go from the closest state to the real time seeked.
 
 The lttv_process_traceset_end will only need to be called if no further state
 computation is needed.
