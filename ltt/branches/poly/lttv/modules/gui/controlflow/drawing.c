@@ -40,6 +40,7 @@ GdkColor drawing_colors[NUM_COLORS] =
   { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_WHITE */
   { 0, 0x0FFF, 0xFFFF, 0xFFFF }, /* COL_WAIT_FORK : pale blue */
   { 0, 0xFFFF, 0xFFFF, 0x0000 }, /* COL_WAIT_CPU : yellow */
+  { 0, 0xFFFF, 0xA000, 0xFCFF }, /* COL_EXIT : pale magenta */
   { 0, 0xFFFF, 0x0000, 0xFFFF }, /* COL_ZOMBIE : purple */
   { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_WAIT : red */
   { 0, 0x0000, 0xFFFF, 0x0000 }, /* COL_RUN : green */
@@ -166,8 +167,12 @@ void drawing_data_request(Drawing_t *drawing,
                  after_execmode_hook,
                  events_request,
                  LTTV_PRIO_STATE+5);
- lttv_hooks_add(event,
-                 after_fork_hook,
+  lttv_hooks_add(event,
+                 before_process_hook,
+                 events_request,
+                 LTTV_PRIO_STATE-5);
+  lttv_hooks_add(event,
+                 after_process_hook,
                  events_request,
                  LTTV_PRIO_STATE+5);
 
@@ -479,6 +484,27 @@ after_expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data
 }
 
 
+void
+tree_row_activated(GtkTreeModel *treemodel,
+                   GtkTreePath *arg1,
+                   GtkTreeViewColumn *arg2,
+                   gpointer user_data)
+{
+  ControlFlowData *cfd = (ControlFlowData*)user_data;
+  Drawing_t *drawing = cfd->drawing;
+  GtkTreeView *treeview = cfd->process_list->process_list_widget;
+  gint *path_indices;
+  gint height;
+  
+  path_indices =  gtk_tree_path_get_indices (arg1);
+
+  height = get_cell_height(
+        GTK_TREE_VIEW(treeview));
+  drawing->horizontal_sel = height * path_indices[0];
+  g_critical("new hor sel : %i", drawing->horizontal_sel);
+}
+
+
 /* mouse click */
 static gboolean
 button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data )
@@ -596,6 +622,7 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   
   drawing->damage_begin = 0;
   drawing->damage_end = 0;
+  drawing->horizontal_sel = -1;
   
   //gtk_widget_set_size_request(drawing->drawing_area->window, 50, 50);
   g_object_set_data_full(

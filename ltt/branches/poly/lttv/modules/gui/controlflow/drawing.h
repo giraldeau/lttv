@@ -38,6 +38,7 @@ typedef enum _draw_color { COL_BLACK,
                            COL_WHITE,
                            COL_WAIT_FORK,
                            COL_WAIT_CPU,
+                           COL_EXIT,
                            COL_ZOMBIE,
                            COL_WAIT,
                            COL_RUN,
@@ -98,6 +99,9 @@ struct _Drawing_t {
   LttTime   last_start;               
   GdkGC     *dotted_gc;
   GdkGC     *gc;
+
+  /* Position of the horizontal selector, -1 for none */
+  gint horizontal_sel;
 };
 
 Drawing_t *drawing_construct(ControlFlowData *control_flow_data);
@@ -153,5 +157,13 @@ void drawing_request_expose(EventsRequest *events_request,
 void drawing_data_request_begin(EventsRequest *events_request,
                                 LttvTracesetState *tss);
 void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss);
+
+
+
+void
+tree_row_activated(GtkTreeModel *treemodel,
+                   GtkTreePath *arg1,
+                   GtkTreeViewColumn *arg2,
+                   gpointer user_data);
 
 #endif // _DRAWING_H

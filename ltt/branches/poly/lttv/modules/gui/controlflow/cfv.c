@@ -97,8 +97,14 @@ guicontrolflow(void)
         "size-allocate",
         G_CALLBACK(header_size_allocate),
         (gpointer)control_flow_data->drawing);
-
-  
+#if 0  /* not ready */
+  g_signal_connect (
+       // G_OBJECT(control_flow_data->process_list->process_list_widget),
+        G_OBJECT(control_flow_data->process_list->list_store),
+        "row-changed",
+        G_CALLBACK (tree_row_activated),
+        (gpointer)control_flow_data);
+#endif //0
   
   control_flow_data->h_paned = gtk_hpaned_new();
   control_flow_data->box = gtk_event_box_new();
