@@ -67,7 +67,7 @@ typedef struct _RawTraceData{
   int pid;
   unsigned entry_length;
   char * event_description;
-  LttEventPosition ep;
+  LttEventPosition *ep;
 } RawTraceData;
 
 #define RESERVE_BIG_SIZE      1000
@@ -835,20 +835,20 @@ void get_test_data(double time_value, guint list_height,
 	    raw_data = (RawTraceData*)g_list_nth_data(first,0);
 	    end = raw_data->time;
 	    end.tv_nsec--;
-	    ltt_event_position_get(&raw_data->ep, &block_num, &event_num, &tf);
+	    ltt_event_position_get(raw_data->ep, &block_num, &event_num, &tf);
 	    if(size !=0){
 	      if(event_num > minNum){
 		backward_num = event_num > RESERVE_SMALL_SIZE 
 		              ? event_num - RESERVE_SMALL_SIZE : 1;
-		ltt_event_position_set(&raw_data->ep, block_num, backward_num);
-		ltt_tracefile_seek_position(tf, &raw_data->ep);
+		ltt_event_position_set(raw_data->ep, block_num, backward_num);
+		ltt_tracefile_seek_position(tf, raw_data->ep);
 		ev = ltt_tracefile_read(tf);
 		start = ltt_event_time(ev);
 		maxNum = G_MAXULONG;
 	      }else{
 		if(block_num > 1){
-		  ltt_event_position_set(&raw_data->ep, block_num-1, 1);
-		  ltt_tracefile_seek_position(tf, &raw_data->ep);
+		  ltt_event_position_set(raw_data->ep, block_num-1, 1);
+		  ltt_tracefile_seek_position(tf, raw_data->ep);
 		  ev = ltt_tracefile_read(tf);
 		  start = ltt_event_time(ev);	    	      
 		}else{
@@ -859,8 +859,8 @@ void get_test_data(double time_value, guint list_height,
 	      }
 	    }else{
 	      if(block_num > count){
-		ltt_event_position_set(&raw_data->ep, block_num-count, 1);
-		ltt_tracefile_seek_position(tf, &raw_data->ep);
+		ltt_event_position_set(raw_data->ep, block_num-count, 1);
+		ltt_tracefile_seek_position(tf, raw_data->ep);
 		ev = ltt_tracefile_read(tf);
 		start = ltt_event_time(ev);	    	      
 	      }else{
@@ -934,13 +934,13 @@ void get_test_data(double time_value, guint list_height,
 	  raw_data = (RawTraceData*)g_list_nth_data(first,0);
 	  end = raw_data->time;
 	  end.tv_nsec--;
-	  ltt_event_position_get(&raw_data->ep, &block_num, &event_num, &tf);
+	  ltt_event_position_get(raw_data->ep, &block_num, &event_num, &tf);
 	  
 	  if(event_num > list_height - size){
 	    backward_num = event_num > RESERVE_SMALL_SIZE 
 	      ? event_num - RESERVE_SMALL_SIZE : 1;
-	    ltt_event_position_set(&raw_data->ep, block_num, backward_num);
-	    ltt_tracefile_seek_position(tf, &raw_data->ep);
+	    ltt_event_position_set(raw_data->ep, block_num, backward_num);
+	    ltt_tracefile_seek_position(tf, raw_data->ep);
 	    ev = ltt_tracefile_read(tf);
 	    start = ltt_event_time(ev);
 	    maxNum = G_MAXULONG;
@@ -1390,11 +1390,12 @@ gboolean parse_event(void *hook_data, void *call_data)
   tmp_raw_trace_data->cpu_id = ltt_event_cpu_id(e);
   tmp_raw_trace_data->event_name = g_strdup(ltt_eventtype_name(ltt_event_eventtype(e)));
   tmp_raw_trace_data->time = time;
+  tmp_raw_trace_data->ep = ltt_event_position_new();
 
   if(prev_raw_trace_data) tmp_raw_trace_data->pid = prev_raw_trace_data->pid;
   else tmp_raw_trace_data->pid = -1;
 
-  tmp_raw_trace_data->entry_length = field == NULL ? 0 : field->field_size;
+  tmp_raw_trace_data->entry_length = field == NULL ? 0 : ltt_field_size(field);
   if(field) get_event_detail(e, field, detail_event);
   tmp_raw_trace_data->event_description  = g_strdup(detail_event->str);
 
@@ -1414,7 +1415,7 @@ gboolean parse_event(void *hook_data, void *call_data)
     }
   }
   
-  ltt_event_position(e, &tmp_raw_trace_data->ep);
+  ltt_event_position(e, tmp_raw_trace_data->ep);
 
   if(event_viewer_data->raw_trace_data_queue_tmp->length >= RESERVE_SMALL_SIZE){
     if(event_viewer_data->append){

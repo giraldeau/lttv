@@ -3,6 +3,7 @@
 #include <ltt/facility.h>
 #include <ltt/trace.h>
 #include <ltt/event.h>
+#include <ltt/type.h>
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -257,7 +258,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
         LTTV_POINTER);
     if(tfcs->parent.e == NULL) *(value.v_pointer) = NULL;
     else {
-      ep = g_new(LttEventPosition, 1);
+      ep = ltt_event_position_new();
       ltt_event_position(tfcs->parent.e, ep);
       *(value.v_pointer) = ep;
     }
@@ -861,7 +862,7 @@ static gboolean block_end(void *hook_data, void *call_data)
 
   LttvTraceState *tcs = (LttvTraceState *)(tfcs->parent.t_context);
 
-  LttEventPosition ep;
+  LttEventPosition *ep = ltt_event_position_new();
 
   guint nb_block, nb_event;
 
@@ -871,9 +872,9 @@ static gboolean block_end(void *hook_data, void *call_data)
 
   LttvAttributeValue value;
 
-  ltt_event_position(tfcs->parent.e, &ep);
+  ltt_event_position(tfcs->parent.e, ep);
 
-  ltt_event_position_get(&ep, &nb_block, &nb_event, &tf);
+  ltt_event_position_get(ep, &nb_block, &nb_event, &tf);
   tcs->nb_event += nb_event - tfcs->saved_position;
   tfcs->saved_position = 0;
   if(tcs->nb_event >= tcs->save_interval) {

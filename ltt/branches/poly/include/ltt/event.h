@@ -43,6 +43,8 @@ LttCycleCount ltt_event_cycle_count(LttEvent *e);
 
 void ltt_event_position(LttEvent *e, LttEventPosition *ep);
 
+LttEventPosition * ltt_event_position_new();
+
 void ltt_event_position_get(LttEventPosition *ep,
     unsigned *block_number, unsigned *index_in_block, LttTracefile ** tf);
 

@@ -20,30 +20,6 @@ char * ltt_trace_name(LttTrace *t);
 void ltt_trace_close(LttTrace *t); 
 
 
-/* The characteristics of the system on which the trace was obtained
-   is described in a LttSystemDescription structure. */
-
-struct _LttSystemDescription {
-  char *description;
-  char *node_name;
-  char *domain_name;
-  unsigned nb_cpu;
-  LttArchSize size;
-  LttArchEndian endian;
-  char *kernel_name;
-  char *kernel_release;
-  char *kernel_version;
-  char *machine;
-  char *processor;
-  char *hardware_platform;
-  char *operating_system;
-  unsigned ltt_major_version;
-  unsigned ltt_minor_version;
-  unsigned ltt_block_size;
-  LttTime trace_start;
-  LttTime trace_end;
-};
-
 LttSystemDescription *ltt_trace_system_description(LttTrace *t);
 
 
@@ -56,6 +32,7 @@ unsigned ltt_trace_facility_number(LttTrace *t);
 
 LttFacility *ltt_trace_facility_get(LttTrace *t, unsigned i);
 
+LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id);
 
 /* Look for a facility by name. It returns the number of facilities found
    and sets the position argument to the first found. Returning 0, the named
@@ -126,5 +103,47 @@ void ltt_tracefile_seek_position(LttTracefile *t,
 /* Read the next event */
 
 LttEvent *ltt_tracefile_read(LttTracefile *t);
+
+/* open tracefile */
+
+LttTracefile * ltt_tracefile_open(LttTrace *t, char * tracefile_name);
+
+void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name);
+
+void ltt_tracefile_open_control(LttTrace *t, char * control_name);
+
+
+/* obtain the time of an event */
+
+LttTime getEventTime(LttTracefile * tf);
+
+
+/* get the data type size and endian type of the local machine */
+
+void getDataEndianType(LttArchSize * size, LttArchEndian * endian);
+
+/* get an integer number */
+
+int getIntNumber(int size1, void *evD);
+
+
+/* get the node name of the system */
+
+char * ltt_trace_system_description_node_name (LttSystemDescription * s);
+
+
+/* get the domain name of the system */
+
+char * ltt_trace_system_description_domain_name (LttSystemDescription * s);
+
+
+/* get the description of the system */
+
+char * ltt_trace_system_description_description (LttSystemDescription * s);
+
+
+/* get the start time of the trace */
+
+LttTime ltt_trace_system_description_trace_start_time(LttSystemDescription *s);
 
 #endif // TRACE_H

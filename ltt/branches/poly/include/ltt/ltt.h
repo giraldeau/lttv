@@ -106,7 +106,10 @@ typedef enum _LttArchEndian
 { LTT_LITTLE_ENDIAN, LTT_BIG_ENDIAN
 } LttArchEndian;
 
-#include <ltt/ltt-private.h>
+typedef enum _LttTypeEnum 
+{ LTT_INT, LTT_UINT, LTT_FLOAT, LTT_STRING, LTT_ENUM, LTT_ARRAY, 
+  LTT_SEQUENCE, LTT_STRUCT, LTT_UNION
+} LttTypeEnum;
 
  
 #endif // LTT_H

@@ -4,8 +4,6 @@
 #include <glib.h>
 #include <sys/types.h>
 #include <ltt/ltt.h>
-#include <ltt/type.h>
-#include <ltt/trace.h>
 
 #define LTT_PACKED_STRUCT __attribute__ ((packed))
 
@@ -170,35 +168,36 @@ struct _LttEventPosition{
                                     //being remembered
 };
 
+/* The characteristics of the system on which the trace was obtained
+   is described in a LttSystemDescription structure. */
+
+struct _LttSystemDescription {
+  char *description;
+  char *node_name;
+  char *domain_name;
+  unsigned nb_cpu;
+  LttArchSize size;
+  LttArchEndian endian;
+  char *kernel_name;
+  char *kernel_release;
+  char *kernel_version;
+  char *machine;
+  char *processor;
+  char *hardware_platform;
+  char *operating_system;
+  unsigned ltt_major_version;
+  unsigned ltt_minor_version;
+  unsigned ltt_block_size;
+  LttTime trace_start;
+  LttTime trace_end;
+};
+
 /*****************************************************************************
  macro for size of some data types
  *****************************************************************************/
 #define EVENT_ID_SIZE     sizeof(guint16)
 #define TIME_DELTA_SIZE   sizeof(guint32)
 #define EVENT_HEADER_SIZE (EVENT_ID_SIZE + TIME_DELTA_SIZE)
-
-
-
-
-/* obtain the time of an event */
-LttTime getEventTime(LttTracefile * tf);
-
-/* get the data type size and endian type of the local machine */
-void getDataEndianType(LttArchSize * size, LttArchEndian * endian);
-
-/* get an integer number */
-int getIntNumber(int size1, void *evD);
-
-/* open facility */
-void ltt_facility_open(LttTrace * t, char * facility_name);
-
-/* get facility by event id */
-LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id);
-
-/* open tracefile */
-LttTracefile * ltt_tracefile_open(LttTrace *t, char * tracefile_name);
-void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name);
-void ltt_tracefile_open_control(LttTrace *t, char * control_name);
 
 
 #endif /* LTT_PRIVATE_H */

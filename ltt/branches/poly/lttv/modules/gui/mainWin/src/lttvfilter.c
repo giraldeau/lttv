@@ -1,6 +1,7 @@
 
 #include <lttv/lttvfilter.h>
 #include <stdio.h>
+#include <ltt/trace.h>
 
 struct _LttvTracesetSelector {
   char      * traceset_name;

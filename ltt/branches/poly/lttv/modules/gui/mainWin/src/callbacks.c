@@ -16,6 +16,7 @@
 #include <lttv/gtkdirsel.h>
 #include <lttv/iattribute.h>
 #include <lttv/lttvfilter.h>
+#include <ltt/trace.h>
 
 #define PATH_LENGTH          256
 #define DEFAULT_TIME_WIDTH_S   1
@@ -378,7 +379,7 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
     trace_v = lttv_traceset_get(mw_data->current_tab->
 				traceset_info->traceset, i);
     trace = lttv_trace(trace_v);
-    name[i] = trace->pathname;
+    name[i] = ltt_trace_name(trace);
   }
 
   remove_trace_name = get_remove_trace(name, nb_trace);

@@ -3,6 +3,8 @@
 #include <stdio.h>
 
 #include "parser.h"
+#include <ltt/ltt.h>
+#include "ltt-private.h"
 #include <ltt/facility.h>
 
 /* search for the (named) type in the table, if it does not exist

@@ -6,7 +6,10 @@
 #include <linux/errno.h>  
 
 #include "parser.h"
+#include <ltt/ltt.h>
+#include "ltt-private.h"
 #include <ltt/trace.h>
+#include <ltt/facility.h>
 
 #define DIR_NAME_SIZE 256
 
@@ -1382,5 +1385,36 @@ void getDataEndianType(LttArchSize * size, LttArchEndian * endian)
   else if(sizeInt == 8 && sizeLong == 8 && sizePointer == 8) 
     *size = LTT_ILP64;
   else *size = LTT_UNKNOWN;
+}
+
+/* get the node name of the system */
+
+char * ltt_trace_system_description_node_name (LttSystemDescription * s)
+{
+  return s->node_name;
+}
+
+
+/* get the domain name of the system */
+
+char * ltt_trace_system_description_domain_name (LttSystemDescription * s)
+{
+  return s->domain_name;
+}
+
+
+/* get the description of the system */
+
+char * ltt_trace_system_description_description (LttSystemDescription * s)
+{
+  return s->description;
+}
+
+
+/* get the start time of the trace */
+
+LttTime ltt_trace_system_description_trace_start_time(LttSystemDescription *s)
+{
+  return s->trace_start;
 }
 

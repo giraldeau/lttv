@@ -2,6 +2,8 @@
 #include <lttv/processTrace.h>
 #include <ltt/event.h>
 #include <ltt/facility.h>
+#include <ltt/trace.h>
+#include <ltt/type.h>
 
 void lttv_context_init(LttvTracesetContext *self, LttvTraceset *ts)
 {

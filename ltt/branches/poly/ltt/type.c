@@ -1,6 +1,8 @@
 #include <stdio.h>
 
 #include "parser.h"
+#include <ltt/ltt.h>
+#include "ltt-private.h"
 #include <ltt/type.h>
 
 static unsigned intSizes[] = {
@@ -315,3 +317,8 @@ LttType *ltt_field_type(LttField *f)
   return f->field_type;
 }
 
+int ltt_field_size(LttField * f)
+{
+  if(!f)return 0;
+  return f->field_size;
+}

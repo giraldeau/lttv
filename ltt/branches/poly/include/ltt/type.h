@@ -4,11 +4,6 @@
 
 /* Different types allowed */
 
-typedef enum _LttTypeEnum 
-{ LTT_INT, LTT_UINT, LTT_FLOAT, LTT_STRING, LTT_ENUM, LTT_ARRAY, 
-  LTT_SEQUENCE, LTT_STRUCT, LTT_UNION
-} LttTypeEnum;
-
 #include <ltt/ltt.h>
 
 
@@ -83,5 +78,7 @@ LttField *ltt_field_element(LttField *f);
 LttField *ltt_field_member(LttField *f, unsigned i);
 
 LttType *ltt_field_type(LttField *f);
+
+int ltt_field_size(LttField * f);
 
 #endif // TYPE_H

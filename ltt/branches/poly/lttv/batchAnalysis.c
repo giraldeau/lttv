@@ -10,6 +10,7 @@
 #include <lttv/processTrace.h>
 #include <lttv/state.h>
 #include <lttv/stats.h>
+#include <ltt/trace.h>
 
 static LttvTraceset *traceset;
 

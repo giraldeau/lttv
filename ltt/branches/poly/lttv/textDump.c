@@ -218,8 +218,9 @@ print_stats(FILE *fp, LttvTracesetStats *tscs)
   for(i = 0 ; i < nb ; i++) {
     tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
     desc = ltt_trace_system_description(tcs->parent.parent.t);
-    fprintf(fp, "Trace on system %s at time %d secs:\n", desc->node_name, 
-        desc->trace_start.tv_sec);
+    fprintf(fp, "Trace on system %s at time %d secs:\n", 
+	    ltt_trace_system_description_node_name(desc), 
+	    (ltt_trace_system_description_trace_start_time(desc)).tv_sec);
     saved_length = indent->len;
     g_string_append(indent, "  ");
     print_tree(fp, indent, tcs->stats);
@@ -279,8 +280,10 @@ static gboolean write_trace_header(void *hook_data, void *call_data)
 
   LttSystemDescription *system = ltt_trace_system_description(tc->t);
 
-  fprintf(a_file,"  Trace from %s in %s\n%s\n\n", system->node_name, 
-      system->domain_name, system->description);
+  fprintf(a_file,"  Trace from %s in %s\n%s\n\n", 
+	  ltt_trace_system_description_node_name(system), 
+	  ltt_trace_system_description_domain_name(system), 
+	  ltt_trace_system_description_description(system));
   return FALSE;
 }
 

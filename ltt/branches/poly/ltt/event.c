@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <asm/types.h>
 #include <linux/byteorder/swab.h>
+
 #include "parser.h"
+#include <ltt/ltt.h>
+#include "ltt-private.h"
 #include <ltt/event.h>
+#include <ltt/trace.h>
 
 /*****************************************************************************
  *Function name
@@ -198,6 +202,11 @@ void ltt_event_position(LttEvent *e, LttEventPosition *ep)
   ep->old_position      = FALSE;
   ep->event_offset      = e->data - e->tracefile->buffer - EVENT_HEADER_SIZE ;
   ep->tf                = e->tracefile;
+}
+
+LttEventPosition * ltt_event_position_new()
+{
+  return g_new(LttEventPosition, 1);
 }
 
 /*****************************************************************************

@@ -24,6 +24,8 @@
 #include "support.h"
 #include <lttv/mainWindow.h>
 #include "callbacks.h"
+#include <ltt/trace.h>
+
 
 /* global variable */
 static WindowCreationData  win_creation_data;

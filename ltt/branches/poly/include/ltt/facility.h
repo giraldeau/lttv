@@ -11,6 +11,8 @@ char *ltt_facility_name(LttFacility *f);
 
 LttChecksum ltt_facility_checksum(LttFacility *f);
 
+/* open facility */
+void ltt_facility_open(LttTrace * t, char * facility_name);
 
 /* Discover the event types within the facility. The event type integer id
    relative to the trace is from 0 to nb_event_types - 1. The event

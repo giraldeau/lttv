@@ -377,7 +377,8 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
     tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
     desc = ltt_trace_system_description(tcs->parent.parent.t);    
     sprintf(trace_str, "Trace on system %s at time %d secs", 
-      	    desc->node_name,desc->trace_start.tv_sec);
+      	    ltt_trace_system_description_node_name(desc),
+	    (ltt_trace_system_description_trace_start_time(desc)).tv_sec);
     
     gtk_tree_store_append (store, &iter, NULL);  
     gtk_tree_store_set (store, &iter,NAME_COLUMN,trace_str,-1);  
