@@ -4,12 +4,12 @@
 |-----------------|
 gui/
 
-Events : Display events for time interval into a list.
-ControlFlow : Display the control flow of the trace for time interval
+detailedevents : Display events for time interval into a list.
+controlflow : Display the control flow of the trace for time interval
                  using gdk and a GtkDrawingArea. Pixmaps for icons are
 		             defined with each event inside the event related
 		             information.
-Statistics :  Display statistics computed from the trace.
+statistics :  Display statistics computed from the trace.
 
 |---------------------|
 |Text Oriented Plugins|
