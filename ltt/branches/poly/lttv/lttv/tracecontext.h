@@ -282,10 +282,15 @@ void lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);
 
+LttvTracesetContextPosition *ltt_traceset_context_position_new();
+
 void lttv_traceset_context_position_save(const LttvTracesetContext *self,
                                     LttvTracesetContextPosition *pos);
 
 void lttv_traceset_context_position_destroy(LttvTracesetContextPosition *pos);
+
+void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
+                                   const LttvTracesetContextPosition *src);
 
 gint lttv_traceset_context_pos_pos_compare(
                               const LttvTracesetContextPosition *pos1,

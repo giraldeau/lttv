@@ -83,11 +83,8 @@ LttvTraceset *lttv_traceset_copy(LttvTraceset *s_orig)
     trace = g_ptr_array_index(s_orig->traces, i);
     trace->ref_count++;
 
-    /*CHECK this used ltt_trace_copy while it may not be needed. Need to
-      define how traces and tracesets are shared */
-    g_ptr_array_add(
-        s->traces,
-	g_ptr_array_index(s_orig->traces, i));
+    g_ptr_array_add(s->traces,
+	                  trace);
   }
   s->a = LTTV_ATTRIBUTE(lttv_iattribute_deep_copy(LTTV_IATTRIBUTE(s_orig->a)));
   return s;
@@ -122,6 +119,14 @@ gint lttv_traceset_save(LttvTraceset *s)
 
 void lttv_traceset_destroy(LttvTraceset *s) 
 {
+  guint i;
+
+  for(i=0;i<s->traces->len;i++) {
+    LttvTrace *trace = g_ptr_array_index(s->traces, i);
+    lttv_trace_unref(trace);
+    if(lttv_trace_get_ref_number(trace) == 0)
+      lttv_trace_destroy(trace);
+  }
   g_ptr_array_free(s->traces, TRUE);
   g_object_unref(s->a);
   g_free(s);

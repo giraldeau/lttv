@@ -849,6 +849,12 @@ lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
 }
 
 
+LttvTracesetContextPosition *ltt_traceset_context_position_new()
+{
+  return g_new(LttvTracesetContextPosition,1);
+}
+
+
 void lttv_traceset_context_position_save(const LttvTracesetContext *self,
                                     LttvTracesetContextPosition *pos)
 {
@@ -905,6 +911,32 @@ void lttv_traceset_context_position_destroy(LttvTracesetContextPosition *pos)
   }
   g_free(pos->t_pos);
 
+}
+
+void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
+                                   const LttvTracesetContextPosition *src)
+{
+  guint nb_trace, nb_tracefile;
+  guint iter_trace, iter_tracefile;
+  
+  nb_trace = dest->nb_trace = src->nb_trace;
+  dest->t_pos = g_new(LttvTraceContextPosition, nb_trace);
+ 
+  for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
+
+    nb_tracefile = dest->t_pos[iter_trace].nb_tracefile =
+                    src->t_pos[iter_trace].nb_tracefile;
+
+    for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
+      dest->t_pos[iter_trace].tf_pos[iter_tracefile] = 
+                      ltt_event_position_new();
+      ltt_event_position_copy(
+              dest->t_pos[iter_trace].tf_pos[iter_tracefile],
+              src->t_pos[iter_trace].tf_pos[iter_tracefile]);
+    }
+  }
+
+  dest->timestamp = src->timestamp;
 }
 
 gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,

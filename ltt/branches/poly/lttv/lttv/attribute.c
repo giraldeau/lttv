@@ -506,6 +506,7 @@ attribute_interface_init (gpointer g_iface, gpointer iface_data)
 
   klass->find_subdir = (LttvIAttribute* (*) (LttvIAttribute *self, 
       LttvAttributeName name)) lttv_attribute_find_subdir;
+
 }
 
 
