@@ -150,6 +150,15 @@ done
 
 conf_flags="--enable-maintainer-mode"
 
+echo -n Creating the system include behavior emulation... 
+mkdir $srcdir/include
+mkdir $srcdir/include/ltt
+ln -s ../../LibLTT/ltt.h $srcdir/include/ltt/ltt.h
+mkdir $srcdir/include/lttv
+ln -s ../../lttv/module.h $srcdir/include/lttv/module.h
+ln -s ../../lttv/hook.h $srcdir/include/lttv/hook.h
+echo done.
+
 if test x$NOCONFIGURE = x; then
   echo Running $srcdir/configure $conf_flags "$@" ...
   $srcdir/configure $conf_flags "$@" \
