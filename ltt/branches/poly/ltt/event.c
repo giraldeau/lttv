@@ -280,7 +280,7 @@ unsigned ltt_event_get_unsigned(LttEvent *e, LttField *f)
                 e->tracefile->trace->system_description->endian ? 0:1;
   LttTypeEnum t = f->field_type->type_class;
 
-  if(t != LTT_UINT || t != LTT_ENUM)
+  if(t != LTT_UINT && t != LTT_ENUM)
     g_error("The type of the field is not unsigned int\n");
 
   if(rSize == LTT_LP32){
@@ -347,7 +347,7 @@ unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
                 e->tracefile->trace->system_description->endian ? 0:1;
   LttTypeEnum t = f->field_type->type_class;
 
-  if(t != LTT_UINT || t != LTT_ENUM)
+  if(t != LTT_UINT && t != LTT_ENUM)
     g_error("The type of the field is not unsigned long\n");
 
   if(rSize == LTT_LP32 || rSize == LTT_ILP32 ){

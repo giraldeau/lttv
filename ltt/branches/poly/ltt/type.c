@@ -186,7 +186,7 @@ unsigned ltt_type_size(LttTrace * trace, LttType *t)
 
 LttType *ltt_type_element_type(LttType *t)
 {
-  if(t->type_class != LTT_ARRAY || t->type_class != LTT_SEQUENCE)
+  if(t->type_class != LTT_ARRAY && t->type_class != LTT_SEQUENCE)
     return NULL;
   return t->element_type[0];
 }
@@ -218,7 +218,7 @@ unsigned ltt_type_element_number(LttType *t)
 
 unsigned ltt_type_member_number(LttType *t)
 {
-  if(t->type_class != LTT_STRUCT || t->type_class != LTT_UNION)
+  if(t->type_class != LTT_STRUCT && t->type_class != LTT_UNION)
     return 0;
   return t->element_number;  
 }
@@ -271,7 +271,7 @@ char *ltt_enum_string_get(LttType *t, unsigned i)
 
 LttField *ltt_field_element(LttField *f)
 {
-  if(f->field_type->type_class != LTT_ARRAY ||
+  if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
     return NULL;
 
