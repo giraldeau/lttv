@@ -1336,7 +1336,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
     list = event_viewer_data->event_fields_queue->head;
     data = (EventFields*)g_list_nth_data(list,0);
     data1 = (EventFields*)g_list_nth_data(list,event_viewer_data->event_fields_queue->length-1);
-
+#if 0
     //the event is in the buffer
     if(ltt_time_compare(data->time, *current_time)<=0 &&
        ltt_time_compare(data1->time, *current_time)>=0){
@@ -1367,10 +1367,11 @@ gboolean update_current_time(void * hook_data, void * call_data)
       //gtk_adjustment_value_changed(event_viewer_data->vadjust_c);
 
     }else{//the event is not in the buffer
+#endif //0
       LttTime start = ltt_time_sub(*current_time, time_span.start_time);
       double position = ltt_time_to_double(start);
       gtk_adjustment_set_value(event_viewer_data->vadjust_c, position);
-    }
+    //}
   }
 
   sprintf(str_path,"%d",count);
