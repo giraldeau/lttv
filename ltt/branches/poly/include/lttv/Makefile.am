@@ -1,3 +1,20 @@
-lttvinclude_HEADERS = hook.h module.h option.h lttv.h iattribute.h \
-		attribute.h processTrace.h state.h traceset.h \
-		batchAnalysis.h filter.h gtkTraceSet.h stats.h textDump.h
+lttvinclude_HEADERS = \
+	attribute.h\
+	batchAnalysis.h\
+	common.h\
+	filter.h\
+	gtkTraceSet.h\
+	gtkcustom.h\
+	hook.h\
+	iattribute.h\
+	lttv.h\
+	mainWindow.h\
+	menu.h\
+	module.h\
+	option.h\
+	processTrace.h\
+	state.h\
+	stats.h\
+	textDump.h\
+	toolbar.h\
+	traceset.h
