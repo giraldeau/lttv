@@ -4,7 +4,7 @@
 #include <gtk/gtk.h>
 #include <lttv/common.h>
 #include <lttv/mainWindow.h>
-#include "Process_List.h"
+#include "process-list.h"
 
 typedef struct _ControlFlowData ControlFlowData;
 

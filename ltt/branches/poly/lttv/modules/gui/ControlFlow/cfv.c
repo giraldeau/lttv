@@ -3,11 +3,11 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
-#include "CFV.h"
-#include "Drawing.h"
-#include "Process_List.h"
-#include "Event_Hooks.h"
-#include "CFV-private.h"
+#include "cfv.h"
+#include "drawing.h"
+#include "process-list.h"
+#include "event-hooks.h"
+#include "cfv-private.h"
 
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
