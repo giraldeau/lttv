@@ -189,7 +189,7 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
     }
 
     redraw_viewer(mw_data,&time_window);
-    set_current_time(mw_data,&(mw_data->current_tab->current_time));
+    lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
     if(time_interval){
       lttvwindow_report_time_window(mw_data,&t);
     }
@@ -534,7 +534,7 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       //update current tab
       update_traceset(mw_data);
 
-      get_traceset_time_span(mw_data,LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context)->Time_Span);
+      //get_traceset_time_span(mw_data,LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context)->Time_Span);
       if(lttv_traceset_number(mw_data->current_tab->traceset_info->traceset) == 1 ||
 	 ltt_time_compare(mw_data->current_tab->current_time,
              LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->traceset_context)->Time_Span->startTime)<0){
@@ -546,7 +546,7 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       } 
 
       redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
-      set_current_time(mw_data,&(mw_data->current_tab->current_time));
+      lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
       break;
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
@@ -672,7 +672,7 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 	  update_traceset(mw_data);
 	  if(nb_trace > 1){
 	    redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
-	    set_current_time(mw_data,&(mw_data->current_tab->current_time));
+	    lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
 	  }else{
 	    if(mw_data->current_tab){
 	      while(mw_data->current_tab->multi_vpaned->num_children){
@@ -749,7 +749,7 @@ void zoom(GtkWidget * widget, double size)
     time_window.start_time = time_s;    
   }
   redraw_viewer(mw_data, &time_window);
-  set_current_time(mw_data,&(mw_data->current_tab->current_time));
+  lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
   gtk_multi_vpaned_set_adjust(mw_data->current_tab->multi_vpaned, FALSE);
 }
 
@@ -1028,7 +1028,7 @@ on_trace_filter_activate              (GtkMenuItem     *menuitem,
   if(get_filter_selection(s, "Configure trace and tracefile filter", "Select traces and tracefiles")){
     update_traceset(mw_data);
     redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
-    set_current_time(mw_data,&(mw_data->current_tab->current_time));
+    lttvwindow_report_current_time(mw_data,&(mw_data->current_tab->current_time));
   }
 }
 

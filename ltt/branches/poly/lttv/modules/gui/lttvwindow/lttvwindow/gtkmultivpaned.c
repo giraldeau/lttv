@@ -170,12 +170,12 @@ void gtk_multi_vpaned_set_focus (GtkWidget * widget, gpointer user_data)
 
 void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, gboolean first_time)
 {
-  TimeWindow time_window;
+  TimeWindow time_window = multi_vpaned->mw->current_tab->time_window;
   TimeInterval *time_span;
   double tmp, start;
   double range = 0;
 
-  get_time_window(multi_vpaned->mw,&time_window);
+  
   if(first_time){
     time_span = LTTV_TRACESET_CONTEXT(multi_vpaned->mw->current_tab->traceset_info->
 				      traceset_context)->Time_Span ;
