@@ -37,7 +37,7 @@ typedef struct _Drawing_t Drawing_t;
 
 struct _Drawing_t {
   GtkWidget *drawing_area;
-  GdkPixmap *Pixmap;
+  GdkPixmap *pixmap;
   ControlFlowData *control_flow_data;
   
   PangoLayout *pango_layout;
@@ -56,7 +56,7 @@ GtkWidget *drawing_get_widget(Drawing_t *Drawing);
 //      guint width, guint height);
 
 void drawing_draw_line( Drawing_t *Drawing,
-      GdkPixmap *Pixmap,
+      GdkPixmap *pixmap,
       guint x1, guint y1,
       guint x2, guint y2,
       GdkGC *GC);

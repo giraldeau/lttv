@@ -46,7 +46,7 @@ static GdkColor CF_Colors [] =
  * erase drawing already present (SAFETY).
  */
 void drawing_data_request(Drawing_t *Drawing,
-      GdkPixmap **Pixmap,
+      GdkPixmap **pixmap,
       gint x, gint y,
       gint width,
       gint height)
@@ -89,7 +89,7 @@ void drawing_data_request(Drawing_t *Drawing,
   //Drawing);
   //send_test_drawing(
   //guicontrolflow_get_process_list(Drawing->control_flow_data),
-  //Drawing, *Pixmap, x, y, width, height);
+  //Drawing, *pixmap, x, y, width, height);
   
   // Let's call processTrace() !!
   EventRequest event_request; // Variable freed at the end of the function.
@@ -159,8 +159,8 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
   get_time_window(Drawing->control_flow_data->mw,
         &Drawing->control_flow_data->time_window);
   
-  /* New Pixmap, size of the configure event */
-  //GdkPixmap *Pixmap = gdk_pixmap_new(widget->window,
+  /* New pixmap, size of the configure event */
+  //GdkPixmap *pixmap = gdk_pixmap_new(widget->window,
   //      widget->allocation.width + SAFETY,
   //      widget->allocation.height + SAFETY,
   //      -1);
@@ -169,13 +169,13 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
   g_critical("New draw size : %i by %i",widget->allocation.width, widget->allocation.height);
   
     
-  if (Drawing->Pixmap)
-    gdk_pixmap_unref(Drawing->Pixmap);
+  if (Drawing->pixmap)
+    gdk_pixmap_unref(Drawing->pixmap);
   
-  /* If no old Pixmap present */
-  //if(Drawing->Pixmap == NULL)
+  /* If no old pixmap present */
+  //if(Drawing->pixmap == NULL)
   {
-    Drawing->Pixmap = gdk_pixmap_new(
+    Drawing->pixmap = gdk_pixmap_new(
     widget->window,
     widget->allocation.width + SAFETY,
     widget->allocation.height + SAFETY,
@@ -187,7 +187,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
     
 
     // Clear the image
-    gdk_draw_rectangle (Drawing->Pixmap,
+    gdk_draw_rectangle (Drawing->pixmap,
           widget->style->white_gc,
           TRUE,
           0, 0,
@@ -200,7 +200,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
     /* Initial data request */
     // Do not need to ask for data of 1 pixel : not synchronized with
     // main window time at this moment.
-    drawing_data_request(Drawing, &Drawing->Pixmap, 0, 0,
+    drawing_data_request(Drawing, &Drawing->pixmap, 0, 0,
         widget->allocation.width,
         widget->allocation.height);
                           
@@ -214,7 +214,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
   }
 #ifdef NOTUSE
 //  /* Draw empty background */ 
-//  gdk_draw_rectangle (Pixmap,
+//  gdk_draw_rectangle (pixmap,
 //          widget->style->black_gc,
 //          TRUE,
 //          0, 0,
@@ -222,20 +222,20 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 //          widget->allocation.height);
   
   /* Copy old data to new pixmap */
-  gdk_draw_drawable (Pixmap,
+  gdk_draw_drawable (pixmap,
     widget->style->white_gc,
-    Drawing->Pixmap,
+    Drawing->pixmap,
     0, 0,
     0, 0,
     -1, -1);
     
-  if (Drawing->Pixmap)
-    gdk_pixmap_unref(Drawing->Pixmap);
+  if (Drawing->pixmap)
+    gdk_pixmap_unref(Drawing->pixmap);
 
-  Drawing->Pixmap = Pixmap;
+  Drawing->pixmap = pixmap;
     
   // Clear the bottom part of the image (SAFETY)
-  gdk_draw_rectangle (Pixmap,
+  gdk_draw_rectangle (pixmap,
           widget->style->white_gc,
           TRUE,
           0, Drawing->height+SAFETY,
@@ -243,7 +243,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
           (widget->allocation.height) - Drawing->height);
 
   // Clear the right part of the image (SAFETY)
-  gdk_draw_rectangle (Pixmap,
+  gdk_draw_rectangle (pixmap,
           widget->style->white_gc,
           TRUE,
           Drawing->width+SAFETY, 0,
@@ -251,7 +251,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
           Drawing->height+SAFETY);
 
   /* Clear the backgound for data request, but not SAFETY */
-  gdk_draw_rectangle (Pixmap,
+  gdk_draw_rectangle (pixmap,
           Drawing->drawing_area->style->white_gc,
           TRUE,
           Drawing->width + SAFETY, 0,
@@ -260,7 +260,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 
   /* Request data for missing space */
   g_info("missing data request");
-  drawing_data_request(Drawing, &Pixmap, Drawing->width, 0,
+  drawing_data_request(Drawing, &pixmap, Drawing->width, 0,
       widget->allocation.width - Drawing->width,
       widget->allocation.height);
                           
@@ -300,14 +300,14 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   
   gdk_draw_pixmap(widget->window,
       widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-      Drawing->Pixmap,
+      Drawing->pixmap,
       event->area.x, event->area.y,
       event->area.x, event->area.y,
       event->area.width, event->area.height);
 
   if(x >= event->area.x && x <= event->area.x+event->area.width)
   {
-    GdkGC *gc = gdk_gc_new(control_flow_data->Drawing->Pixmap);
+    GdkGC *gc = gdk_gc_new(control_flow_data->Drawing->pixmap);
     gdk_gc_copy(gc, widget->style->black_gc);
     
     drawing_draw_line(NULL, widget->window,
@@ -384,15 +384,15 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   //    &(Drawing->height),
   //    -1);
   
-  //Drawing->Pixmap = gdk_pixmap_new(
+  //Drawing->pixmap = gdk_pixmap_new(
   //    Drawing->drawing_area->window,
   //    Drawing->width,
   //    Drawing->height,
   //    Drawing->depth);
   
-  Drawing->Pixmap = NULL;
+  Drawing->pixmap = NULL;
 
-//  Drawing->Pixmap = gdk_pixmap_new(Drawing->drawing_area->window,
+//  Drawing->pixmap = gdk_pixmap_new(Drawing->drawing_area->window,
 //        Drawing->drawing_area->allocation.width,
 //        Drawing->drawing_area->allocation.height,
 //        -1);
@@ -486,7 +486,7 @@ void drawing_refresh (  Drawing_t *Drawing,
     Drawing->drawing_area->window,
     Drawing->drawing_area->
      style->fg_gc[GTK_WIDGET_STATE (Drawing->drawing_area)],
-    GDK_DRAWABLE(Drawing->Pixmap),
+    GDK_DRAWABLE(Drawing->pixmap),
     x, y,
     x, y,
     width, height);
@@ -501,12 +501,12 @@ void drawing_refresh (  Drawing_t *Drawing,
 
 
 void drawing_draw_line( Drawing_t *Drawing,
-      GdkPixmap *Pixmap,
+      GdkPixmap *pixmap,
       guint x1, guint y1,
       guint x2, guint y2,
       GdkGC *GC)
 {
-  gdk_draw_line (Pixmap,
+  gdk_draw_line (pixmap,
       GC,
       x1, y1, x2, y2);
 }
@@ -536,15 +536,15 @@ void drawing_insert_square(Drawing_t *Drawing,
   //GdkRectangle update_rect;
 
   /* Allocate a new pixmap with new height */
-  GdkPixmap *Pixmap = gdk_pixmap_new(Drawing->drawing_area->window,
+  GdkPixmap *pixmap = gdk_pixmap_new(Drawing->drawing_area->window,
         Drawing->width + SAFETY,
         Drawing->height + height + SAFETY,
         -1);
   
   /* Copy the high region */
-  gdk_draw_drawable (Pixmap,
+  gdk_draw_drawable (pixmap,
     Drawing->drawing_area->style->black_gc,
-    Drawing->Pixmap,
+    Drawing->pixmap,
     0, 0,
     0, 0,
     Drawing->width + SAFETY, y);
@@ -553,7 +553,7 @@ void drawing_insert_square(Drawing_t *Drawing,
 
 
   /* add an empty square */
-  gdk_draw_rectangle (Pixmap,
+  gdk_draw_rectangle (pixmap,
     Drawing->drawing_area->style->white_gc,
     TRUE,
     0, y,
@@ -563,9 +563,9 @@ void drawing_insert_square(Drawing_t *Drawing,
 
 
   /* copy the bottom of the region */
-  gdk_draw_drawable (Pixmap,
+  gdk_draw_drawable (pixmap,
     Drawing->drawing_area->style->black_gc,
-    Drawing->Pixmap,
+    Drawing->pixmap,
     0, y,
     0, y + height,
     Drawing->width+SAFETY, Drawing->height - y + SAFETY);
@@ -573,10 +573,10 @@ void drawing_insert_square(Drawing_t *Drawing,
 
 
 
-  if (Drawing->Pixmap)
-    gdk_pixmap_unref(Drawing->Pixmap);
+  if (Drawing->pixmap)
+    gdk_pixmap_unref(Drawing->pixmap);
 
-  Drawing->Pixmap = Pixmap;
+  Drawing->pixmap = pixmap;
   
   Drawing->height+=height;
 
@@ -597,16 +597,16 @@ void drawing_remove_square(Drawing_t *Drawing,
   //GdkRectangle update_rect;
   
   /* Allocate a new pixmap with new height */
-  GdkPixmap *Pixmap = gdk_pixmap_new(
+  GdkPixmap *pixmap = gdk_pixmap_new(
       Drawing->drawing_area->window,
       Drawing->width + SAFETY,
       Drawing->height - height + SAFETY,
       -1);
   
   /* Copy the high region */
-  gdk_draw_drawable (Pixmap,
+  gdk_draw_drawable (pixmap,
     Drawing->drawing_area->style->black_gc,
-    Drawing->Pixmap,
+    Drawing->pixmap,
     0, 0,
     0, 0,
     Drawing->width + SAFETY, y);
@@ -614,18 +614,18 @@ void drawing_remove_square(Drawing_t *Drawing,
 
 
   /* Copy up the bottom of the region */
-  gdk_draw_drawable (Pixmap,
+  gdk_draw_drawable (pixmap,
     Drawing->drawing_area->style->black_gc,
-    Drawing->Pixmap,
+    Drawing->pixmap,
     0, y + height,
     0, y,
     Drawing->width, Drawing->height - y - height + SAFETY);
 
 
-  if (Drawing->Pixmap)
-    gdk_pixmap_unref(Drawing->Pixmap);
+  if (Drawing->pixmap)
+    gdk_pixmap_unref(Drawing->pixmap);
 
-  Drawing->Pixmap = Pixmap;
+  Drawing->pixmap = pixmap;
   
   Drawing->height-=height;
   

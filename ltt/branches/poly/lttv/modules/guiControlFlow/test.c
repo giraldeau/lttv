@@ -187,7 +187,7 @@ void test_draw() {
 /* Event_Hook.c tests */
 
 void test_draw_item(Drawing_t *Drawing,
-			GdkPixmap *Pixmap) 
+			GdkPixmap *pixmap) 
 {
 	PropertiesIcon properties_icon;
 	DrawContext draw_context;
@@ -206,7 +206,7 @@ void test_draw_item(Drawing_t *Drawing,
 
 			current.modify_over = &over;
 	
-			draw_context.drawable = Pixmap;
+			draw_context.drawable = pixmap;
 			draw_context.gc = Drawing->drawing_area->style->black_gc;
 
 			draw_context.current = &current;
@@ -231,7 +231,7 @@ void test_draw_item(Drawing_t *Drawing,
  * has not been initialized */
 void send_test_drawing(ProcessList *process_list,
 			Drawing_t *Drawing,
-			GdkPixmap *Pixmap,
+			GdkPixmap *pixmap,
 			gint x, gint y, // y not used here?
 		  gint width,
 			gint height) // height won't be used here ?
@@ -252,7 +252,7 @@ void send_test_drawing(ProcessList *process_list,
 	// rectangle
 	GdkColor color = { 0, 0xffff, 0x0000, 0x0000 };
 	
-	gc = gdk_gc_new(Pixmap);
+	gc = gdk_gc_new(pixmap);
 	/* Sent text data */
 	layout = gtk_widget_create_pango_layout(Drawing->drawing_area,
 			NULL);
@@ -276,12 +276,12 @@ void send_test_drawing(ProcessList *process_list,
 	
 	g_info("we draw : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
 	drawing_draw_line(
-		Drawing, Pixmap, x,
+		Drawing, pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->drawing_area->style->black_gc);
 
 	pango_layout_set_text(layout, "Test", -1);
-	gdk_draw_layout(Pixmap, Drawing->drawing_area->style->black_gc,
+	gdk_draw_layout(pixmap, Drawing->drawing_area->style->black_gc,
 			0, y+height, layout);
 
 	birth.tv_sec = 14000;
@@ -295,7 +295,7 @@ void send_test_drawing(ProcessList *process_list,
 	
 
 	drawing_draw_line(
-		Drawing, Pixmap, x,
+		Drawing, pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->drawing_area->style->black_gc);
 
@@ -315,18 +315,18 @@ void send_test_drawing(ProcessList *process_list,
 	/* Draw rectangle (background color) */
 	gdk_gc_copy(gc, Drawing->drawing_area->style->black_gc);
 	gdk_gc_set_rgb_fg_color(gc, &color);
-	gdk_draw_rectangle(Pixmap, gc,
+	gdk_draw_rectangle(pixmap, gc,
 					TRUE,
 					x, y, width, height);
 
 	drawing_draw_line(
-		Drawing, Pixmap, x,
+		Drawing, pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->drawing_area->style->black_gc);
 
 	
 	/* Draw arc */
-	gdk_draw_arc(Pixmap, Drawing->drawing_area->style->black_gc,
+	gdk_draw_arc(pixmap, Drawing->drawing_area->style->black_gc,
 							TRUE, 100, y, height/2, height/2, 0, 360*64);
 
 	g_info("y : %u, height : %u", y, height);
@@ -344,7 +344,7 @@ void send_test_drawing(ProcessList *process_list,
 		
 
 		drawing_draw_line(
-			Drawing, Pixmap, x,
+			Drawing, pixmap, x,
 			y+(height/2), x + width, y+(height/2),
 			Drawing->drawing_area->style->black_gc);
 
@@ -363,7 +363,7 @@ void send_test_drawing(ProcessList *process_list,
 	
 
 	drawing_draw_line(
-		Drawing, Pixmap, x,
+		Drawing, pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->drawing_area->style->black_gc);
 
@@ -371,7 +371,7 @@ void send_test_drawing(ProcessList *process_list,
 	
 
 	/* IMPORTANT : This action uses the cpu heavily! */
-	//icon_pixmap = gdk_pixmap_create_from_xpm(Pixmap, &mask, NULL,
+	//icon_pixmap = gdk_pixmap_create_from_xpm(pixmap, &mask, NULL,
 //				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/move_message.xpm");
 	//				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/mini-display.xpm");
 
@@ -385,7 +385,7 @@ void send_test_drawing(ProcessList *process_list,
 			/* Draw icon */
 			//gdk_gc_copy(gc, Drawing->drawing_area->style->black_gc);
 //			gdk_gc_set_clip_origin(Drawing->drawing_area->style->black_gc, i, j);
-//			gdk_draw_drawable(Pixmap, 
+//			gdk_draw_drawable(pixmap, 
 //					Drawing->drawing_area->style->black_gc,
 //					icon_pixmap,
 //					0, 0, i, j, -1, -1);
@@ -393,7 +393,7 @@ void send_test_drawing(ProcessList *process_list,
 //		}
 //	}
 
-	test_draw_item(Drawing,Pixmap);
+	test_draw_item(Drawing,pixmap);
 	
 	//gdk_gc_set_clip_origin(Drawing->drawing_area->style->black_gc, 0, 0);
 	//gdk_gc_set_clip_mask(Drawing->drawing_area->style->black_gc, NULL);
