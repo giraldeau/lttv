@@ -140,20 +140,9 @@ Architecture
 Added to the lttvwindow API :
 
 
-- lttvwindow_events_request
+void lttvwindow_events_request
 ( MainWindow                  *main_win,
-  LttTime                      start_time,
-  LttvTracesetContextPosition  start_position,
-  LttTime                      end_time,
-  guint                        num_events,
-  LttvTracesetContextPosition  end_position,
-  LttvHooksById                before_traceset,
-  LttvHooksById                before_trace,
-  LttvHooksById                before_tracefile,
-  LttvHooksById                middle,
-  LttvHooksById                after_tracefile,
-  LttvHooksById                after_trace,
-  LttvHooksById                after_traceset)
+  EventsRequest                events_request);
 
 
 Internal functions :
