@@ -31,6 +31,7 @@
 #include <glib.h>
 #include <assert.h>
 #include <string.h>
+#include <stdio.h>
 
 //#include <pango/pango.h>
 
@@ -271,7 +272,9 @@ int draw_event_hook(void *hook_data, void *call_data)
 
     DrawContext *draw_context_out = hashed_process_data_out->draw_context;
     draw_context_out->current->modify_over->x = x;
+    draw_context_out->current->modify_under->x = x;
     draw_context_out->current->modify_over->y = y_out;
+    draw_context_out->current->modify_under->y = y_out+(height/2)+2;
     draw_context_out->drawable = control_flow_data->drawing->pixmap;
     draw_context_out->pango_layout = control_flow_data->drawing->pango_layout;
     GtkWidget *widget = control_flow_data->drawing->drawing_area;
@@ -429,7 +432,9 @@ int draw_event_hook(void *hook_data, void *call_data)
 
     DrawContext *draw_context_in = hashed_process_data_in->draw_context;
     draw_context_in->current->modify_over->x = x;
+    draw_context_in->current->modify_under->x = x;
     draw_context_in->current->modify_over->y = y_in;
+    draw_context_in->current->modify_under->y = y_in+(height/2)+2;
     draw_context_in->drawable = control_flow_data->drawing->pixmap;
     draw_context_in->pango_layout = control_flow_data->drawing->pango_layout;
     widget = control_flow_data->drawing->drawing_area;
@@ -739,6 +744,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     DrawContext *draw_context_out = hashed_process_data_out->draw_context;
     //draw_context_out->current->modify_over->x = x;
     draw_context_out->current->modify_over->y = y_out;
+    draw_context_out->current->modify_under->y = y_out+(height/2)+2;
     draw_context_out->drawable = control_flow_data->drawing->pixmap;
     draw_context_out->pango_layout = control_flow_data->drawing->pango_layout;
     GtkWidget *widget = control_flow_data->drawing->drawing_area;
@@ -817,7 +823,7 @@ int draw_after_hook(void *hook_data, void *call_data)
       prop_text_out.text = "U";
     
     draw_text((void*)&prop_text_out, (void*)draw_context_out);
-
+ 
     draw_context_out->current->middle->y = y_out+height/2;
     draw_context_out->current->status = process_out->state->s;
     
@@ -858,6 +864,7 @@ int draw_after_hook(void *hook_data, void *call_data)
     DrawContext *draw_context_in = hashed_process_data_in->draw_context;
     //draw_context_in->current->modify_over->x = x;
     draw_context_in->current->modify_over->y = y_in;
+    draw_context_in->current->modify_under->y = y_in+(height/2)+2;
     draw_context_in->drawable = control_flow_data->drawing->pixmap;
     draw_context_in->pango_layout = control_flow_data->drawing->pango_layout;
     widget = control_flow_data->drawing->drawing_area;
@@ -937,6 +944,27 @@ int draw_after_hook(void *hook_data, void *call_data)
       prop_text_in.text = "U";
     
     draw_text((void*)&prop_text_in, (void*)draw_context_in);
+    
+    if(process_in->state->s == LTTV_STATE_RUN)
+    { 
+      gchar tmp[255];
+      prop_text_in.foreground = &colorfg_in;
+      prop_text_in.background = &colorbg_in;
+      prop_text_in.foreground->red = 0xffff;
+      prop_text_in.foreground->green = 0xffff;
+      prop_text_in.foreground->blue = 0xffff;
+      prop_text_in.size = 6;
+      prop_text_in.position = UNDER;
+
+      prop_text_in.text = g_new(gchar, 260);
+      strcpy(prop_text_in.text, "CPU ");
+      snprintf(tmp, 255, "%u", tfc->index);
+      strcat(prop_text_in.text, tmp);
+
+      draw_text((void*)&prop_text_in, (void*)draw_context_in);
+      g_free(prop_text_in.text);
+    }
+
     
     draw_context_in->current->middle->y = y_in+height/2;
     draw_context_in->current->status = process_in->state->s;
