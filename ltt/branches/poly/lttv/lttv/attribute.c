@@ -329,7 +329,7 @@ lttv_attribute_write_xml(LttvAttribute *self, FILE *fp, int pos, int indent)
   for(i = 0 ; i < nb ; i++) {
     a = &g_array_index(self->attributes, Attribute, i);
     print_indent(fp, pos);
-    fprintf(fp, "<ATTR NAME=\"%s\" ", a->name);
+    fprintf(fp, "<ATTR NAME=\"%s\" ", g_quark_to_string(a->name));
     if(a->type == LTTV_GOBJECT && LTTV_IS_ATTRIBUTE(a->value.dv_gobject)) {
       fprintf(fp, "TYPE=ATTRS>");
       lttv_attribute_write_xml((LttvAttribute *)(a->value.dv_gobject), fp,
