@@ -96,6 +96,7 @@ typedef struct _EventViewerData {
   unsigned     end_event_index;          //the last event shown in the window
   unsigned     size;                     //maxi number of events loaded when instance the viewer
   gboolean     shown;                    //indicate if event detail is shown or not
+  gboolean     current_time_updated;
   char *       filter_key;
 
   //scroll window containing Tree View
@@ -457,6 +458,7 @@ gui_events(MainWindow *parent_window, LttvTracesetSelector * s,char* key )
   //  tree_v_set_cursor(event_viewer_data);
 
   event_viewer_data->shown = FALSE;
+  event_viewer_data->current_time_updated = FALSE;
   event_viewer_data->size  = RESERVE_SMALL_SIZE;
   g_object_set_data(
 		    G_OBJECT(event_viewer_data->hbox_v),
@@ -680,7 +682,7 @@ void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data)
   /* On cursor change, modify the currently selected event by calling
    * the right API function */
   tree_v_get_cursor(event_viewer_data);
-/*  
+  
   gtk_tree_view_get_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v), &path, NULL);
   if(gtk_tree_model_get_iter(model,&iter,path)){
     gtk_tree_model_get(model, &iter, TIME_COLUMN, &time, -1);
@@ -688,12 +690,14 @@ void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data)
     ltt_time.tv_nsec = time % NANOSECONDS_PER_SECOND;
  
     if(ltt_time.tv_sec != event_viewer_data->current_time.tv_sec ||
-       ltt_time.tv_nsec != event_viewer_data->current_time.tv_nsec)
+       ltt_time.tv_nsec != event_viewer_data->current_time.tv_nsec){
+      event_viewer_data->current_time_updated = TRUE;
       set_current_time(event_viewer_data->mw,&ltt_time);
+    }
   }else{
     g_warning("Can not get iter\n");
   }
-*/
+
 }
 
 
@@ -1423,6 +1427,11 @@ gboolean update_current_time(void * hook_data, void * call_data)
   int i, j;
   LttTime t;
 
+  if(event_viewer_data->current_time_updated ){
+    event_viewer_data->current_time_updated = FALSE;
+    return FALSE;
+  }
+
   //check if the event is shown in the current viewer
   if(gtk_tree_model_get_iter_first(model, &iter)){
     while(1){
@@ -1482,6 +1491,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
   sprintf(str_path,"%d\0",count);
   path = gtk_tree_path_new_from_string (str_path);
   gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v), path, NULL, FALSE);
+  g_signal_stop_emission_by_name(G_OBJECT(event_viewer_data->tree_v), "cursor-changed");
   gtk_tree_path_free(path);  
 
   return FALSE;
