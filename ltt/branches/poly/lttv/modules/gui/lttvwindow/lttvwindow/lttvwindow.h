@@ -616,7 +616,7 @@ typedef struct _EventsRequest {
 } EventsRequest;
 
 /* Maximum number of events to proceed at once in a chunk */
-#define CHUNK_NUM_EVENTS 500
+#define CHUNK_NUM_EVENTS 2000
 
 
 /**

@@ -139,6 +139,7 @@ restore_init_state(LttvTraceState *self)
     tfcs->process = lttv_state_create_process(tfcs, NULL,0);
     tfcs->process->state->s = LTTV_STATE_RUN;
     tfcs->process->last_cpu = tfcs->cpu_name;
+    tfcs->process->last_cpu_index = ((LttvTracefileContext*)tfcs)->index;
   }
 }
 
@@ -779,6 +780,7 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
 	
   process->pid = pid;
   process->last_cpu = tfs->cpu_name;
+  process->last_cpu_index = ((LttvTracefileContext*)tfs)->index;
   g_warning("Process %u, core %p", process->pid, process);
   g_hash_table_insert(tcs->processes, process, process);
 
@@ -803,6 +805,7 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
 	  process->creation_time.tv_nsec);
   process->pid_time = g_quark_from_string(buffer);
   process->last_cpu = tfs->cpu_name;
+  process->last_cpu_index = ((LttvTracefileContext*)tfs)->index;
   process->execution_stack = g_array_sized_new(FALSE, FALSE, 
       sizeof(LttvExecutionState), PREALLOCATED_EXECUTION_STACK);
   g_array_set_size(process->execution_stack, 1);
@@ -991,6 +994,7 @@ static gboolean schedchange(void *hook_data, void *call_data)
   s->process = lttv_state_find_process_or_create(s, pid_in);
   s->process->state->s = LTTV_STATE_RUN;
   s->process->last_cpu = s->cpu_name;
+  s->process->last_cpu_index = ((LttvTracefileContext*)s)->index;
   s->process->state->change = s->parent.timestamp;
   return FALSE;
 }

@@ -435,14 +435,12 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process->creation_time;
       
-      if(processlist_get_process_pixels(process_list,
+      hashed_process_data = processlist_get_process_data(process_list,
               pid_out,
               process->last_cpu_index,
               &birth,
-              tfc->t_context->index,
-              &y,
-              &height,
-              &hashed_process_data) == 1)
+              tfc->t_context->index);
+      if(hashed_process_data == NULL)
       {
         g_assert(pid_out == 0 || pid_out != process->ppid);
         const gchar *name = g_quark_to_string(process->name);
@@ -464,7 +462,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                 &height);
         drawing_insert_square( drawing, y, height);
       }
-    
+  
       /* Now, the process is in the state hash and our own process hash.
        * We definitely can draw the items related to the ending state.
        */
@@ -479,6 +477,11 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                           evtime) > 0)
       {
         if(hashed_process_data->x.middle_marked == FALSE) {
+           processlist_get_pixels_from_data(process_list,
+                      hashed_process_data,
+                      &y,
+                      &height);
+    
           TimeWindow time_window = 
             lttvwindow_get_time_window(control_flow_data->tab);
 #ifdef EXTRA_CHECK
@@ -503,12 +506,18 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           hashed_process_data->x.middle_marked = TRUE;
         }
       } else {
-          TimeWindow time_window = 
-            lttvwindow_get_time_window(control_flow_data->tab);
+         processlist_get_pixels_from_data(process_list,
+                      hashed_process_data,
+                      &y,
+                      &height);
+ 
+
+        TimeWindow time_window = 
+          lttvwindow_get_time_window(control_flow_data->tab);
 #ifdef EXTRA_CHECK
-          if(ltt_time_compare(evtime, time_window.start_time) == -1
-                || ltt_time_compare(evtime, time_window.end_time) == 1)
-                    return;
+        if(ltt_time_compare(evtime, time_window.start_time) == -1
+              || ltt_time_compare(evtime, time_window.end_time) == 1)
+                  return;
 #endif //EXTRA_CHECK
 
         guint x;
@@ -594,14 +603,12 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process->creation_time;
       
-      if(processlist_get_process_pixels(process_list,
+      hashed_process_data = processlist_get_process_data(process_list,
               pid_in,
               process->last_cpu_index,
               &birth,
-              tfc->t_context->index,
-              &y,
-              &height,
-              &hashed_process_data) == 1)
+              tfc->t_context->index);
+      if(hashed_process_data == NULL)
       {
         g_assert(pid_in == 0 || pid_in != process->ppid);
         const gchar *name = g_quark_to_string(process->name);
@@ -641,6 +648,11 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                           evtime) > 0)
       {
         if(hashed_process_data->x.middle_marked == FALSE) {
+
+          processlist_get_pixels_from_data(process_list,
+                  hashed_process_data,
+                  &y,
+                  &height);
           TimeWindow time_window = 
             lttvwindow_get_time_window(control_flow_data->tab);
 #ifdef EXTRA_CHECK
@@ -664,6 +676,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           hashed_process_data->x.middle_marked = TRUE;
         }
       } else {
+        processlist_get_pixels_from_data(process_list,
+                hashed_process_data,
+                &y,
+                &height);
         TimeWindow time_window = 
           lttvwindow_get_time_window(control_flow_data->tab);
 #ifdef EXTRA_CHECK
@@ -1403,14 +1419,12 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 
   birth = process_in->creation_time;
 
-  if(processlist_get_process_pixels(process_list,
+  hashed_process_data_in = processlist_get_process_data(process_list,
           pid_in,
           process_in->last_cpu_index,
           &birth,
-          tfc->t_context->index,
-          &y_in,
-          &height,
-          &hashed_process_data_in) == 1)
+          tfc->t_context->index);
+  if(hashed_process_data_in == NULL)
   {
     g_assert(pid_in == 0 || pid_in != process_in->ppid);
     const gchar *name = g_quark_to_string(process_in->name);
@@ -1439,6 +1453,10 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   if(ltt_time_compare(hashed_process_data_in->next_good_time,
                           evtime) <= 0)
   {
+    processlist_get_pixels_from_data(process_list,
+                hashed_process_data_in,
+                &y_in,
+                &height);
     TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2008,19 +2026,13 @@ int before_execmode_hook(void *hook_data, void *call_data)
  
   if(process_list->current_hash_data[tfc->index] != NULL) {
     hashed_process_data = process_list->current_hash_data[tfc->index];
-    processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
   } else {
-    if(processlist_get_process_pixels(process_list,
+    hashed_process_data = processlist_get_process_data(process_list,
             pid,
             process->last_cpu_index,
             &birth,
-            tfc->t_context->index,
-            &y,
-            &height,
-            &hashed_process_data) == 1)
+            tfc->t_context->index);
+    if(hashed_process_data == NULL)
     {
       g_assert(pid == 0 || pid != process->ppid);
       ProcessInfo *process_info;
@@ -2062,6 +2074,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
                       evtime) > 0)
   {
     if(hashed_process_data->x.middle_marked == FALSE) {
+      processlist_get_pixels_from_data(process_list,
+                  hashed_process_data,
+                  &y,
+                  &height);
       TimeWindow time_window = 
         lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2086,6 +2102,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
       hashed_process_data->x.middle_marked = TRUE;
     }
   } else {
+    processlist_get_pixels_from_data(process_list,
+                hashed_process_data,
+                &y,
+                &height);
     TimeWindow time_window = 
       lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2204,19 +2224,13 @@ int after_execmode_hook(void *hook_data, void *call_data)
 
   if(process_list->current_hash_data[tfc->index] != NULL) {
     hashed_process_data = process_list->current_hash_data[tfc->index];
-    processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
   } else {
-    if(processlist_get_process_pixels(process_list,
+    hashed_process_data = processlist_get_process_data(process_list,
             pid,
             process->last_cpu_index,
             &birth,
-            tfc->t_context->index,
-            &y,
-            &height,
-            &hashed_process_data) == 1)
+            tfc->t_context->index);
+    if(hashed_process_data == NULL)
     {
       g_assert(pid == 0 || pid != process->ppid);
       /* Process not present */
@@ -2246,6 +2260,12 @@ int after_execmode_hook(void *hook_data, void *call_data)
   if(ltt_time_compare(hashed_process_data->next_good_time,
                           evtime) <= 0)
   {
+#if 0
+    processlist_get_pixels_from_data(process_list,
+                hashed_process_data,
+                &y,
+                &height);
+#endif //0
     TimeWindow time_window = 
       lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2327,38 +2347,34 @@ int before_process_hook(void *hook_data, void *call_data)
 
     if(process_list->current_hash_data[tfc->index] != NULL) {
       hashed_process_data = process_list->current_hash_data[tfc->index];
-      processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
-    } else  if(processlist_get_process_pixels(process_list,
+    } else {
+      hashed_process_data = processlist_get_process_data(process_list,
             pid,
             process->last_cpu_index,
             &birth,
+            tfc->t_context->index);
+      if(hashed_process_data == NULL)
+      {
+        g_assert(pid == 0 || pid != process->ppid);
+        /* Process not present */
+        const gchar *name = g_quark_to_string(process->name);
+        ProcessInfo *process_info;
+        processlist_add(process_list,
+            pid,
+            process->last_cpu_index,
+            process->ppid,
+            &birth,
             tfc->t_context->index,
-            &y,
-            &height,
-            &hashed_process_data) == 1)
-    {
-      g_assert(pid == 0 || pid != process->ppid);
-      /* Process not present */
-      const gchar *name = g_quark_to_string(process->name);
-      ProcessInfo *process_info;
-      processlist_add(process_list,
-          pid,
-          process->last_cpu_index,
-          process->ppid,
-          &birth,
-          tfc->t_context->index,
-          name,
-          &pl_height,
-          &process_info,
-          &hashed_process_data);
-      processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
-      drawing_insert_square( control_flow_data->drawing, y, height);
+            name,
+            &pl_height,
+            &process_info,
+            &hashed_process_data);
+        processlist_get_pixels_from_data(process_list,
+                  hashed_process_data,
+                  &y,
+                  &height);
+        drawing_insert_square( control_flow_data->drawing, y, height);
+      }
     }
 
     /* Now, the process is in the state hash and our own process hash.
@@ -2376,6 +2392,10 @@ int before_process_hook(void *hook_data, void *call_data)
                         evtime) > 0)
     {
       if(hashed_process_data->x.middle_marked == FALSE) {
+        processlist_get_pixels_from_data(process_list,
+                  hashed_process_data,
+                  &y,
+                  &height);
         TimeWindow time_window = 
           lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2401,13 +2421,17 @@ int before_process_hook(void *hook_data, void *call_data)
         hashed_process_data->x.middle_marked = TRUE;
       }
     } else {
-    TimeWindow time_window = 
-      lttvwindow_get_time_window(control_flow_data->tab);
+      processlist_get_pixels_from_data(process_list,
+                hashed_process_data,
+                &y,
+                &height);
+      TimeWindow time_window = 
+        lttvwindow_get_time_window(control_flow_data->tab);
 
 #ifdef EXTRA_CHECK
-    if(ltt_time_compare(evtime, time_window.start_time) == -1
-          || ltt_time_compare(evtime, time_window.end_time) == 1)
-              return;
+      if(ltt_time_compare(evtime, time_window.start_time) == -1
+            || ltt_time_compare(evtime, time_window.end_time) == 1)
+                return;
 #endif //EXTRA_CHECK
 
       guint x;
@@ -2538,14 +2562,12 @@ int after_process_hook(void *hook_data, void *call_data)
 
     birth = process_child->creation_time;
 
-    if(processlist_get_process_pixels(process_list,
+    hashed_process_data_child = processlist_get_process_data(process_list,
             child_pid,
             process_child->last_cpu_index,
             &birth,
-            tfc->t_context->index,
-            &y_child,
-            &height,
-            &hashed_process_data_child) == 1)
+            tfc->t_context->index);
+    if(hashed_process_data_child == NULL)
     {
       g_assert(child_pid == 0 || child_pid != process_child->ppid);
       /* Process not present */
@@ -2572,6 +2594,12 @@ int after_process_hook(void *hook_data, void *call_data)
     if(ltt_time_compare(hashed_process_data_child->next_good_time,
                           evtime) <= 0)
     {
+#if 0
+      processlist_get_pixels_from_data(process_list,
+                hashed_process_data_child,
+                &y_child,
+                &height);
+#endif //0
       TimeWindow time_window = 
         lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -2623,20 +2651,13 @@ int after_process_hook(void *hook_data, void *call_data)
 
     if(process_list->current_hash_data[tfc->index] != NULL) {
       hashed_process_data = process_list->current_hash_data[tfc->index];
-      processlist_get_pixels_from_data(process_list,
-                hashed_process_data,
-                &y,
-                &height);
-      
     } else {
-      if(processlist_get_process_pixels(process_list,
+      hashed_process_data = processlist_get_process_data(process_list,
               pid,
               process->last_cpu_index,
               &birth,
-              tfc->t_context->index,
-              &y,
-              &height,
-              &hashed_process_data) == 1)
+              tfc->t_context->index);
+      if(hashed_process_data == NULL)
       {
         g_assert(pid == 0 || pid != process->ppid);
         /* Process not present */
@@ -2667,6 +2688,12 @@ int after_process_hook(void *hook_data, void *call_data)
     if(ltt_time_compare(hashed_process_data->next_good_time,
                           evtime) <= 0)
     {
+#if 0
+      processlist_get_pixels_from_data(process_list,
+                hashed_process_data,
+                &y,
+                &height);
+#endif //0
       TimeWindow time_window = 
         lttvwindow_get_time_window(control_flow_data->tab);
 

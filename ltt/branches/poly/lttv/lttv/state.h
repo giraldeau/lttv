@@ -150,6 +150,7 @@ typedef struct _LttvProcessState {
   GArray *execution_stack;         /* Array of LttvExecutionState */
   LttvExecutionState *state;       /* Top of interrupt stack */
   GQuark last_cpu;                /* Last CPU where process was scheduled */
+  guint last_cpu_index;            /* index in the trace for cpu tracefile */
   /* opened file descriptors, address map?... */
 } LttvProcessState;
 
