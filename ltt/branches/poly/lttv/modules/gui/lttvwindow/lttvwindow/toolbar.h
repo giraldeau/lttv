@@ -36,13 +36,13 @@ LttvToolbars *lttv_toolbars_new();
 
 void lttv_toolbars_destroy(LttvToolbars *h);
 
-void lttv_toolbars_add(LttvToolbars *h,
+LttvToolbarClosure lttv_toolbars_add(LttvToolbars *h,
                        lttvwindow_viewer_constructor f,
                        char* tooltip,
                        char ** pixmap,
                        GtkWidget *widget);
 
-gboolean lttv_toolbars_remove(LttvToolbars *h, lttvwindow_viewer_constructor f);
+GtkWidget *lttv_toolbars_remove(LttvToolbars *h, lttvwindow_viewer_constructor f);
 
 unsigned lttv_toolbars_number(LttvToolbars *h);
 

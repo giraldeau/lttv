@@ -1233,8 +1233,6 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
 	str1++;
       }
       lttv_module_require(str1, NULL);
-      g_slist_foreach(g_main_window_list, (gpointer)update_menu_toolbar_constructors,
-          NULL);
       g_strfreev(dir);
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
@@ -1279,9 +1277,6 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
       lttv_library_info(library, &library_info);
       if(strcmp(unload_module_name, library_info.name) == 0){
 	      lttv_library_unload(library);
-        g_slist_foreach(g_main_window_list,
-            (gpointer)update_menu_toolbar_constructors,
-            NULL);
 	break;
       }
     }    
@@ -1876,23 +1871,20 @@ char * get_selection(char ** loaded_module_name, int nb_module,
 }
 
 
-/* Insert or remove all menu entry and tool buttons into all main windows
+/* Insert or remove all menu entry and tool buttons into this main window
  * for modules.
  *
- * It adds them in a hash table as well, so it can keep track of which
- * menu entries and buttons are currently in each main window, for later
- * removal.
  */
 
-void update_menu_toolbar_constructors(MainWindow * mw, gpointer user_data)
+void add_all_menu_toolbar_constructors(MainWindow * mw, gpointer user_data)
 {
   int i;
   GdkPixbuf *pixbuf;
   lttvwindow_viewer_constructor constructor;
   LttvMenus * global_menu, * instance_menu;
   LttvToolbars * global_toolbar, * instance_toolbar;
-  LttvMenuClosure *menu_item_i, *menu_item_j;
-  LttvToolbarClosure *toolbar_item_i, *toolbar_item_j;
+  LttvMenuClosure *menu_item;
+  LttvToolbarClosure *toolbar_item;
   LttvAttributeValue value;
   LttvIAttribute *global_attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvIAttribute *attributes = LTTV_IATTRIBUTES(mw->attributes);
@@ -1926,118 +1918,61 @@ void update_menu_toolbar_constructors(MainWindow * mw, gpointer user_data)
 
   /* Add missing menu entries to window instance */
   for(i=0;i<global_menu->len;i++) {
-    menu_item_i = &g_array_index(global_menu, LttvMenuClosure, i);
+    menu_item = &g_array_index(global_menu, LttvMenuClosure, i);
 
-    for(j=0;j<instance_menu->len;j++) {
-      menu_item_j = &g_array_index(instance_menu, LttvMenuClosure, j);
+    //add menu_item to window instance;
+    constructor = menu_item->con;
+    tool_menu_title_menu = lookup_widget(mw->mwindow,"ToolMenuTitle_menu");
+    new_widget =
+      gtk_menu_item_new_with_mnemonic (menu_item->menuText);
+    gtk_container_add (GTK_CONTAINER (tool_menu_title_menu),
+        new_widget);
+    g_signal_connect ((gpointer) new_widget, "activate",
+        G_CALLBACK (insert_viewer_wrap),
+        constructor);  
+    gtk_widget_show (new_widget);
+    lttv_menus_add(instance_menu, menu_item->con, 
+        menu_item->menu_path,
+        menu_item->menu_text,
+        new_widget);
 
-      if(menu_item_i->con == menu_item_j->con)
-        break;
-    }
-    if(j == instance_menu->len) /* not found */
-    {
-      //add menu_item_i to window instance;
-      constructor = menu_item->con;
-      tool_menu_title_menu = lookup_widget(mw->mwindow,"ToolMenuTitle_menu");
-      new_widget =
-              gtk_menu_item_new_with_mnemonic (menu_item_i->menuText);
-      gtk_container_add (GTK_CONTAINER (tool_menu_title_menu),
-              new_widget);
-      g_signal_connect ((gpointer) new_widget, "activate",
-                          G_CALLBACK (insert_viewer_wrap),
-                          constructor);  
-      gtk_widget_show (new_widget);
-      lttv_menus_add(instance_menu, menu_item_i->con, 
-                        menu_item_i->menu_path,
-                        menu_item_i->menu_text,
-                        new_widget);
-    }
-
-  }
-
-  /* Remove missing menu entries from window instance */
-  for(i=0;i<instance_menu->len;i++) {
-    menu_item_i = &g_array_index(instance_menu, LttvMenuClosure, i);
-
-    for(j=0;j<global_menu->len;j++) {
-      menu_item_j = &g_array_index(global_menu, LttvMenuClosure, j);
-
-      if(menu_item_i->con == menu_item_j->con)
-        break;
-    }
-    if(j == global_menu->len) /* not found */
-    {
-      //remove menu_item_i from window instance;
-      tool_menu_title_menu = lookup_widget(mw->mwindow,"ToolMenuTitle_menu");
-      gtk_container_remove (GTK_CONTAINER (tool_menu_title_menu), 
-                            menu_item_i->widget);
-      lttv_menus_remove(instance_menu, menu_item_i->con);
-    }
   }
 
   /* Add missing toolbar entries to window instance */
   for(i=0;i<global_toolbar->len;i++) {
-    toolbar_item_i = &g_array_index(global_toolbar, LttvToolbarClosure, i);
+    toolbar_item = &g_array_index(global_toolbar, LttvToolbarClosure, i);
 
-    for(j=0;j<instance_toolbar->len;j++) {
-      toolbar_item_j = &g_array_index(instance_toolbar, LttvToolbarClosure, j);
-
-      if(toolbar_item_i->con == toolbar_item_j->con)
-        break;
-    }
-    if(j == instance_toolbar->len) /* not found */
-    {
-      //add toolbar_item_i to window instance;
-      constructor = toolbar_item->con;
-      tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar1");
-      pixbuf = gdk_pixbuf_new_from_xpm_data((const char**)toolbar_item->pixmap);
-      pixmap = gtk_image_new_from_pixbuf(pixbuf);
-      new_widget =
-         gtk_toolbar_append_element (GTK_TOOLBAR (tool_menu_title_menu),
-            GTK_TOOLBAR_CHILD_BUTTON,
-            NULL,
-            "",
-            toolbar_item->tooltip, NULL,
-            pixmap, NULL, NULL);
-      gtk_label_set_use_underline(
-          GTK_LABEL (((GtkToolbarChild*) (
-                           g_list_last (GTK_TOOLBAR 
-                              (tool_menu_title_menu)->children)->data))->label),
-          TRUE);
-      gtk_container_set_border_width (GTK_CONTAINER (new_widget), 1);
-      g_signal_connect ((gpointer) new_widget,
-          "clicked",
-          G_CALLBACK (insert_viewer_wrap),
-          constructor);       
-      gtk_widget_show (new_widget);
-   
-      lttv_toolbars_add(instance_toolbar, toolbar_item_i->con, 
-                        toolbar_item_i->tooltip,
-                        toolbar_item_i->pixmap,
-                        new_widget);
+    //add toolbar_item to window instance;
+    constructor = toolbar_item->con;
+    tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar1");
+    pixbuf = gdk_pixbuf_new_from_xpm_data((const char**)toolbar_item->pixmap);
+    pixmap = gtk_image_new_from_pixbuf(pixbuf);
+    new_widget =
+       gtk_toolbar_append_element (GTK_TOOLBAR (tool_menu_title_menu),
+          GTK_TOOLBAR_CHILD_BUTTON,
+          NULL,
+          "",
+          toolbar_item->tooltip, NULL,
+          pixmap, NULL, NULL);
+    gtk_label_set_use_underline(
+        GTK_LABEL (((GtkToolbarChild*) (
+                         g_list_last (GTK_TOOLBAR 
+                            (tool_menu_title_menu)->children)->data))->label),
+        TRUE);
+    gtk_container_set_border_width (GTK_CONTAINER (new_widget), 1);
+    g_signal_connect ((gpointer) new_widget,
+        "clicked",
+        G_CALLBACK (insert_viewer_wrap),
+        constructor);       
+    gtk_widget_show (new_widget);
  
-    }
+    lttv_toolbars_add(instance_toolbar, toolbar_item->con, 
+                      toolbar_item->tooltip,
+                      toolbar_item->pixmap,
+                      new_widget);
+
   }
 
-  /* Remove missing toolbar entries from window instance */
-  for(i=0;i<instance_toolbar->len;i++) {
-    toolbar_item_i = &g_array_index(instance_toolbar, LttvToolbarClosure, i);
-
-    for(j=0;j<global_toolbar->len;j++) {
-      toolbar_item_j = &g_array_index(global_toolbar, LttvToolbarClosure, j);
-
-      if(toolbar_item_i->con == toolbar_item_j->con)
-        break;
-    }
-    if(j == global_toolbar->len) /* not found */
-    {
-      //remove toolbar_item_i from window instance;
-      tool_menu_title_menu = lookup_widget(mw->mwindow,"ToolMenuTitle_menu");
-      gtk_container_remove (GTK_CONTAINER (tool_menu_title_menu), 
-                            toolbar_item_i->widget);
-      lttv_toolbars_remove(instance_toolbar, toolbar_item_i->con);
-    }
-  }
 }
 
 
@@ -2076,7 +2011,7 @@ void construct_main_window(MainWindow * parent)
            "viewers/toolbar", LTTV_POINTER, &value));
   (LttvToolbars*)*(value.v_pointer) = lttv_toolbars_new();
 
-  update_menu_toolbar_constructors(new_m_window, NULL);
+  add_all_menu_toolbar_constructors(new_m_window, NULL);
   
   g_object_set_data(G_OBJECT(new_window), "mainWindow", (gpointer)new_m_window);    
   //create a default tab

@@ -32,7 +32,7 @@ inline void lttv_toolbars_destroy(LttvToolbars *h) {
   g_array_free(h, TRUE);
 }
 
-inline void lttv_toolbars_add(LttvToolbars *h, lttvwindow_viewer_constructor f, char* tooltip, char ** pixmap, GtkWidget *widget)
+inline LttvToolbarClosure void lttv_toolbars_add(LttvToolbars *h, lttvwindow_viewer_constructor f, char* tooltip, char ** pixmap, GtkWidget *widget)
 {
   LttvToolbarClosure c;
 
@@ -44,20 +44,27 @@ inline void lttv_toolbars_add(LttvToolbars *h, lttvwindow_viewer_constructor f, 
   c.pixmap = pixmap;
   c.widget = widget;
   g_array_append_val(h,c);
+
+  return c;
 }
 
-gboolean lttv_toolbars_remove(LttvToolbars *h, lttvwindow_viewer_constructor f)
+GtkWidget *lttv_toolbars_remove(LttvToolbars *h, lttvwindow_viewer_constructor f)
 {
   LttvToolbarClosure * tmp;
   gint i;
+  GtkWidget *widget;
+
   for(i=0;i<h->len;i++){
     tmp = & g_array_index(h, LttvToolbarClosure, i);
-    if(tmp->con == f)break;
+    if(tmp->con == f) {
+      widget = tmp->widget;
+      break;
+    }
   }
   if(i<h->len){
     g_array_remove_index(h, i);
-    return TRUE;
-  }else return FALSE;
+    return widget;
+  }else return NULL;
 }
 
 unsigned lttv_toolbars_number(LttvToolbars *h)

@@ -144,6 +144,124 @@ void set_time_window(MainWindow * main_win, const TimeWindow *time_window)
 
 }
 
+void add_toolbar_constructor(MainWindow *mw, LttvToolbarClosure *toolbar_c)
+{
+  LttvIAttribute *attributes = LTTV_IATTRIBUTES(mw->attributes);
+  LttvAttributeValue value;
+  LttvToolbars * instance_toolbar;
+  lttvwindow_viewer_constructor constructor;
+  GtkWidget * tool_menu_title_menu, *new_widget, *pixmap;
+  GdkPixbuf *pixbuf;
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/toolbar", LTTV_POINTER, &value));
+  if(*(value.v_pointer) == NULL)
+    (LttvToolbars*)*(value.v_pointer) = lttv_toolbars_new();
+  instance_toolbar = (LttvToolbars*)*(value.v_pointer);
+
+  constructor = toolbar_c->con;
+  tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar1");
+  pixbuf = gdk_pixbuf_new_from_xpm_data((const char**)toolbar_c->pixmap);
+  pixmap = gtk_image_new_from_pixbuf(pixbuf);
+  new_widget =
+     gtk_toolbar_append_element (GTK_TOOLBAR (tool_menu_title_menu),
+        GTK_TOOLBAR_CHILD_BUTTON,
+        NULL,
+        "",
+        toolbar_item->tooltip, NULL,
+        pixmap, NULL, NULL);
+  gtk_label_set_use_underline(
+      GTK_LABEL (((GtkToolbarChild*) (
+                       g_list_last (GTK_TOOLBAR 
+                          (tool_menu_title_menu)->children)->data))->label),
+      TRUE);
+  gtk_container_set_border_width (GTK_CONTAINER (new_widget), 1);
+  g_signal_connect ((gpointer) new_widget,
+      "clicked",
+      G_CALLBACK (insert_viewer_wrap),
+      constructor);       
+  gtk_widget_show (new_widget);
+
+  lttv_toolbars_add(instance_toolbar, toolbar_item_i->con, 
+                    toolbar_item_i->tooltip,
+                    toolbar_item_i->pixmap,
+                    new_widget);
+
+}
+
+void add_menu_constructor(MainWindow *mw, LttvMenuClosure *menu_c)
+{
+  LttvIAttribute *attributes = LTTV_IATTRIBUTES(mw->attributes);
+  LttvAttributeValue value;
+  LttvToolbars * instance_menu;
+  lttvwindow_viewer_constructor constructor;
+  GtkWidget * tool_menu_title_menu, *new_widget;
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/menu", LTTV_POINTER, &value));
+  if(*(value.v_pointer) == NULL)
+    (LttvMenus*)*(value.v_pointer) = lttv_menus_new();
+  instance_menu = (LttvMenus*)*(value.v_pointer);
+
+
+  constructor = menu_item->con;
+  tool_menu_title_menu = lookup_widget(mw->mwindow,"ToolMenuTitle_menu");
+  new_widget =
+          gtk_menu_item_new_with_mnemonic (menu_c->menuText);
+  gtk_container_add (GTK_CONTAINER (tool_menu_title_menu),
+          new_widget);
+  g_signal_connect ((gpointer) new_widget, "activate",
+                      G_CALLBACK (insert_viewer_wrap),
+                      constructor);
+  gtk_widget_show (new_widget);
+  lttv_menus_add(instance_menu, menu_c->con, 
+                    menu_c->menu_path,
+                    menu_c->menu_text,
+                    new_widget);
+}
+
+void remove_toolbar_constructor(MainWindow *mw, lttvwindow_viewer_constructor viewer_constructor)
+{
+  LttvIAttribute *attributes = LTTV_IATTRIBUTES(mw->attributes);
+  LttvAttributeValue value;
+  LttvToolbars * instance_toolbar;
+  lttvwindow_viewer_constructor constructor;
+  GtkWidget * tool_menu_title_menu, *widget;
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/toolbar", LTTV_POINTER, &value));
+  if(*(value.v_pointer) == NULL)
+    (LttvToolbars*)*(value.v_pointer) = lttv_toolbars_new();
+  instance_toolbar = (LttvToolbars*)*(value.v_pointer);
+
+  tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar1");
+  widget = lttv_menus_remove(instance_toolbar, viewer_constructor);
+  gtk_container_remove (GTK_CONTAINER (tool_menu_title_menu), 
+                        widget);
+}
+
+
+void remove_menu_constructor(MainWindow *mw, lttvwindow_viewer_constructor viewer_constructor)
+{
+  LttvIAttribute *attributes = LTTV_IATTRIBUTES(mw->attributes);
+  LttvAttributeValue value;
+  LttvMenus * instance_menu;
+  lttvwindow_viewer_constructor constructor;
+  GtkWidget * tool_menu_title_menu, *widget;
+  LttvMenuClosure *menu_item_i;
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/menu", LTTV_POINTER, &value));
+  if(*(value.v_pointer) == NULL)
+    (LttvMenus*)*(value.v_pointer) = lttv_menus_new();
+  instance_menu = (LttvMenus*)*(value.v_pointer);
+
+  widget = lttv_menus_remove(instance_menu, viewer_constructor);
+  tool_menu_title_menu = lookup_widget(mw->mwindow,"ToolMenuTitle_menu");
+  gtk_container_remove (GTK_CONTAINER (tool_menu_title_menu), widget);
+}
+
+
 /**
  * API parts
  */
@@ -174,6 +292,8 @@ void lttvwindow_register_constructor
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
   LttvMenus * menu;
+  LttvToolbarClosure toolbar_c;
+  LttvMenuClosure menu_c;
   LttvAttributeValue value;
 
   if(pixmap != NULL) {
@@ -185,8 +305,11 @@ void lttvwindow_register_constructor
       toolbar = lttv_toolbars_new();
       *(value.v_pointer) = toolbar;
     }
-    lttv_toolbars_add(toolbar, view_constructor, tooltip, pixmap);
-    main_window_add_toolbars_item(toolbar, view_constructor, tooltip, pixmap);
+    toolbar_c = lttv_toolbars_add(toolbar, view_constructor, tooltip, pixmap);
+
+    g_slist_foreach(g_main_window_list,
+                    (gpointer)add_toolbar_constructor,
+                    &toolbar_c);
   }
 
   if(menu_path != NULL) {
@@ -198,8 +321,11 @@ void lttvwindow_register_constructor
       menu = lttv_menus_new();
       *(value.v_pointer) = menu;
     }
-    lttv_menus_add(menu, view_constructor, menu_path, menu_text);
-    main_window_add_menu_item(menu, view_constructor, menu_path, menu_text);
+    menu_c = lttv_menus_add(menu, view_constructor, menu_path, menu_text);
+
+    g_slist_foreach(g_main_window_list,
+                    (gpointer)add_menu_constructor,
+                    &menu_c);
   }
 }
 
@@ -228,7 +354,9 @@ void lttvwindow_unregister_constructor
   toolbar = (LttvToolbars*)*(value.v_pointer);
   
   if(toolbar != NULL) {
-    main_window_remove_toolbar_item(view_constructor);
+    g_slist_foreach(g_main_window_list,
+                    (gpointer)remove_toolbar_constructor,
+                    view_constructor);
     lttv_toolbars_remove(toolbar, view_constructor);
   }
 
@@ -237,11 +365,11 @@ void lttvwindow_unregister_constructor
   menu = (LttvMenus*)*(value.v_pointer);
   
   if(menu != NULL) {
-    main_window_remove_menu_item(view_constructor);
+    g_slist_foreach(g_main_window_list,
+                    (gpointer)remove_menu_constructor,
+                    view_constructor);
     lttv_menus_remove(menu, view_constructor);
   }
-
-
 }
 
 

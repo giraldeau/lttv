@@ -37,9 +37,9 @@ LttvMenus *lttv_menus_new();
 
 void lttv_menus_destroy(LttvMenus *h);
 
-void lttv_menus_add(LttvMenus *h, lttvwindow_viewer_constructor f, char* menuPath, char * menuText, GtkWidget *widget);
+LttvMenuClosure lttv_menus_add(LttvMenus *h, lttvwindow_viewer_constructor f, char* menuPath, char * menuText, GtkWidget *widget);
 
-gboolean lttv_menus_remove(LttvMenus *h, lttvwindow_viewer_constructor f);
+GtkWidget *lttv_menus_remove(LttvMenus *h, lttvwindow_viewer_constructor f);
 
 unsigned lttv_menus_number(LttvMenus *h);
 
