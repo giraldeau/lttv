@@ -27,7 +27,8 @@
 #include <ltt/event.h>
 
 
-/* A filter expression consists in nested AND, OR and NOT expressions
+/* 
+   A filter expression consists in nested AND, OR and NOT expressions
    involving boolean relation (>, >=, =, !=, <, <=) between event fields and 
    specific values. It is compiled into an efficient data structure which
    is used in functions to check if a given event or tracefile satisfies the
@@ -48,7 +49,6 @@
    fieldComponent = name [ "[" integer "]" ]
 
    value = integer | double | string 
-
 */
 
 /**
@@ -93,33 +93,45 @@ enum _LttvFieldType {
   LTTV_FILTER_EVENT_TIME,             /** event.time (double) */
   LTTV_FILTER_EVENT_TSC,              /** event.tsc (double) */
   LTTV_FILTER_EVENT_FIELD,           
-  LTTV_FILTER_UNDEFINED
-//  LTTV_FILTER_CATEGORY,
-//  LTTV_FILTER_TIME,
-//  LTTV_FILTER_TSC,
-//  LTTV_FILTER_PID,
-//  LTTV_FILTER_PPID,
-//  LTTV_FILTER_C_TIME,
-//  LTTV_FILTER_I_TIME,
-//  LTTV_FILTER_P_NAME,
-//  LTTV_FILTER_EX_MODE,
-//  LTTV_FILTER_EX_SUBMODE,
-//  LTTV_FILTER_P_STATUS,
-//  LTTV_FILTER_CPU
+  LTTV_FILTER_UNDEFINED               /** undefined field */
 } LttvFieldType;
   
 /**
  * 	@enum LttvExpressionOp
+ *  @brief Contains possible operators
+ *
+ *  This enumeration defines the 
+ *  possible operator used to compare 
+ *  right and left member in simple 
+ *  expression
  */
 typedef enum _LttvExpressionOp
 { 
-  LTTV_FIELD_EQ,	  /** equal */
-  LTTV_FIELD_NE,	  /** not equal */
-  LTTV_FIELD_LT,	  /** lower than */
-  LTTV_FIELD_LE,	  /** lower or equal */
-  LTTV_FIELD_GT,	  /** greater than */
-  LTTV_FIELD_GE		  /** greater or equal */
+  LTTV_FIELD_EQ,	                    /** equal */
+  LTTV_FIELD_NE,	                    /** not equal */
+  LTTV_FIELD_LT,	                    /** lower than */
+  LTTV_FIELD_LE,	                    /** lower or equal */
+  LTTV_FIELD_GT,	                    /** greater than */
+  LTTV_FIELD_GE		                    /** greater or equal */
 } LttvExpressionOp;
+
+/**
+ *  @union LttvFieldValue
+ *
+ *  @brief Contains possible field values
+ *  This particular union defines the 
+ *  possible set of values taken by the 
+ *  right member of a simple expression.  
+ *  It is used for comparison whithin the 
+ *  'operators' functions
+ */
+typedef union _LttvFieldValue {
+  guint64 v_uint64;
+  guint32 v_uint32;
+  guint16 v_uint16;
+  double v_double;
+  char* v_string;
+} LttvFieldValue;
 
 /**
  * @enum LttvTreeElement
@@ -129,10 +141,11 @@ typedef enum _LttvExpressionOp
  * types of nodes which build the LttvFilterTree.  
  */
 typedef enum _LttvTreeElement {
-  LTTV_TREE_IDLE,   /** this node does nothing */
-  LTTV_TREE_NODE,   /** this node contains a logical operator */
-  LTTV_TREE_LEAF    /** this node is a leaf and contains a simple expression */
+  LTTV_TREE_IDLE,                     /** this node does nothing */
+  LTTV_TREE_NODE,                     /** this node contains a logical operator */
+  LTTV_TREE_LEAF                      /** this node is a leaf and contains a simple expression */
 } LttvTreeElement;
+
 
 /**
  * @enum LttvSimpleExpression
@@ -148,12 +161,10 @@ typedef enum _LttvTreeElement {
  */
 typedef struct _LttvSimpleExpression
 { 
-//  char *field_name;
-  gint field;
-  gint offset;
-//  LttvExpressionOp op;
-  gboolean (*op)(gpointer,char*);
-  char *value;
+  gint field;                         /** left member of simple expression */                  
+  gint offset;                        /** offset used for dynamic fields */
+  gboolean (*op)(gpointer,char*);     /** operator of simple expression */
+  char *value;                        /** right member of simple expression */
 } LttvSimpleExpression;
 
 /**
@@ -166,10 +177,10 @@ typedef struct _LttvSimpleExpression
  * AND, OR, XOR or NOT
  */
 typedef enum _LttvLogicalOp {
-    LTTV_LOGICAL_OR = 1,         /* 1 */
-    LTTV_LOGICAL_AND = 1<<1,     /* 2 */
-    LTTV_LOGICAL_NOT = 1<<2,     /* 4 */
-    LTTV_LOGICAL_XOR = 1<<3      /* 8 */
+    LTTV_LOGICAL_OR = 1,              /** OR (1) */
+    LTTV_LOGICAL_AND = 1<<1,          /** AND (2) */
+    LTTV_LOGICAL_NOT = 1<<2,          /** NOT (4) */
+    LTTV_LOGICAL_XOR = 1<<3           /** XOR (8) */
 } LttvLogicalOp;
     
 /**
@@ -184,11 +195,11 @@ typedef struct _LttvFilterTree {
   LttvTreeElement left;
   LttvTreeElement right;
   union {
-    struct LttvFilter* t;
+    struct LttvFilterTree* t;
     LttvSimpleExpression* leaf;
   } l_child;
   union {
-    struct LttvFilter* t;
+    struct LttvFilterTree* t;
     LttvSimpleExpression* leaf;
   } r_child;
 } LttvFilterTree;
@@ -207,14 +218,18 @@ typedef struct _LttvFilter {
  * General Data Handling functions
  */
 
-LttvSimpleExpression* lttv_simple_expression_new();
-
 void lttv_filter_tree_add_node(GPtrArray* stack, LttvFilterTree* subtree, LttvLogicalOp op);
 
-gboolean parse_field_path(GPtrArray* fp, LttvSimpleExpression* se);
+/*
+ * Simple Expression
+ */
+LttvSimpleExpression* lttv_simple_expression_new();
 
-gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op);
+gboolean lttv_simple_expression_add_field(GPtrArray* fp, LttvSimpleExpression* se);
 
+gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionOp op);
+
+void lttv_simple_expression_destroy(LttvSimpleExpression* se);
 
 
 /*
@@ -261,22 +276,22 @@ LttvFilterTree* lttv_filter_tree_clone(LttvFilterTree* tree);
 
 LttvFilter* lttv_filter_clone(LttvFilter* filter);
 
-/*
- * Constructors/Destructors
+/* 
+ * LttvFilter 
  */
-
-/* LttvFilter */
 LttvFilter *lttv_filter_new();
 
 gboolean lttv_filter_update(LttvFilter* filter);
 
 void lttv_filter_destroy(LttvFilter* filter);
 
-void lttv_filter_append_expression(LttvFilter* filter, char *expression);
+gboolean lttv_filter_append_expression(LttvFilter* filter, char *expression);
 
 void lttv_filter_clear_expression(LttvFilter* filter);
 
-/* LttvFilterTree */
+/*
+ * LttvFilterTree 
+ */
 LttvFilterTree* lttv_filter_tree_new();
 
 void lttv_filter_tree_destroy(LttvFilterTree* tree);

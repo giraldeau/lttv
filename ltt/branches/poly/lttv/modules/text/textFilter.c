@@ -96,11 +96,9 @@ void filter_analyze_file(void *hook_data) {
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
       LTTV_POINTER, &value));
 
-  g_debug("Filter file string b: %s",((GString*)*(value.v_pointer))->str);
   if(((GString*)*(value.v_pointer))->len != 0) g_string_append_c((GString*)*(value.v_pointer),'&');
   g_string_append((GString*)*(value.v_pointer),a_file_content->str);
-  g_debug("Filter file string a: %s",((GString*)*(value.v_pointer))->str);
-  //  lttv_filter_append_expression(lttvfilter_t,a_filter_string->str);
+  
   fclose(a_file);
 }
 
@@ -131,15 +129,15 @@ void filter_analyze_string(void *hook_data) {
     g_string_append(a_filter_string,a_string);
   }
 */
-//  lttv_filter_append_expression(lttvfilter_t,a_string); 
+  
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
       LTTV_POINTER, &value));
 
-
-  g_debug("Filter string string b: %s",((GString*)*(value.v_pointer))->str);
   if(((GString*)*(value.v_pointer))->len != 0) g_string_append_c((GString*)*(value.v_pointer),'&');
   g_string_append((GString*)*(value.v_pointer),a_string);
-  g_debug("Filter string string a: %s",((GString*)*(value.v_pointer))->str);
+
+  LttvFilter* filter = lttv_filter_new();
+  lttv_filter_append_expression(filter,a_string);
 }
 
 /**
