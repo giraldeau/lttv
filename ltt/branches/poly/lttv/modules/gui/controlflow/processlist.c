@@ -235,7 +235,7 @@ gint process_sort_func  ( GtkTreeModel *model,
 
 static guint hash_fct(gconstpointer key)
 {
-  return ((ProcessInfo*)key)->pid;
+  return ((ProcessInfo*)key)->pid ^ ((ProcessInfo*)key)->cpu;
 }
 
 static gboolean equ_fct(gconstpointer a, gconstpointer b)
@@ -541,7 +541,10 @@ int processlist_remove( ProcessList *process_list,
   GtkTreeIter iter;
   
   Process_Info.pid = pid;
-  Process_Info.cpu = cpu;
+  if(pid == 0)
+    Process_Info.cpu = cpu;
+  else
+    Process_Info.cpu = 0;
   Process_Info.birth = *birth;
   Process_Info.trace_num = trace_num;
 
@@ -587,7 +590,10 @@ __inline gint processlist_get_process_pixels(  ProcessList *process_list,
   HashedProcessData *hashed_process_data = NULL;
 
   Process_Info.pid = pid;
-  Process_Info.cpu = cpu;
+  if(pid == 0)
+    Process_Info.cpu = cpu;
+  else
+    Process_Info.cpu = 0;
   Process_Info.birth = *birth;
   Process_Info.trace_num = trace_num;
 
