@@ -644,7 +644,7 @@ typedef struct _EventsRequest {
 } EventsRequest;
 
 /* Maximum number of events to proceed at once in a chunk */
-#define CHUNK_NUM_EVENTS 50000
+#define CHUNK_NUM_EVENTS 100
 
 
 /**
@@ -689,20 +689,20 @@ void lttvwindow_events_request_remove_all(Tab            *tab,
  * Function to get the current time window of the current tab.
  * 
  * @param tab the tab the viewer belongs to.
- * @return a pointer to the current tab's time interval.
+ * @return the current tab's time interval.
  */
 
-const TimeWindow *lttvwindow_get_time_window(Tab *tab);
+TimeWindow lttvwindow_get_time_window(Tab *tab);
 
 
 /**
  * Function to get the current time of the current tab.
  *
  * @param tab the tab the viewer belongs to.
- * @return a pointer to the current tab's current time.
+ * @return the current tab's current time.
  */
 
-const LttTime *lttvwindow_get_current_time(Tab *tab);
+LttTime lttvwindow_get_current_time(Tab *tab);
 
 
 /**

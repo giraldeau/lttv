@@ -904,12 +904,12 @@ void lttvwindow_events_request_remove_all(Tab       *tab,
  * shown time interval of the viewer and also be called by the constructor
  * of the viewer.
  * @param tab viewer's tab 
- * @param time_interval a pointer where time interval will be stored.
+ * @return time window.
  */
 
-const TimeWindow *lttvwindow_get_time_window(Tab *tab)
+TimeWindow lttvwindow_get_time_window(Tab *tab)
 {
-  return &(tab->time_window);
+  return tab->time_window;
   
 }
 
@@ -919,12 +919,12 @@ const TimeWindow *lttvwindow_get_time_window(Tab *tab)
  * It will be called by a viewer's hook function to update the 
  * current time/event of the viewer.
  * @param tab viewer's tab 
- * @param time a pointer where time will be stored.
+ * @return time
  */
 
-const LttTime *lttvwindow_get_current_time(Tab *tab)
+LttTime lttvwindow_get_current_time(Tab *tab)
 {
-  return &(tab->current_time);
+  return tab->current_time;
 }
 
 

@@ -277,11 +277,12 @@ void gtk_multi_vpaned_widget_add(GtkMultiVPaned * multi_vpaned, GtkWidget * widg
 void gtk_multi_vpaned_widget_delete(GtkMultiVPaned * multi_vpaned)
 {
   GtkPaned * tmp, *prev, *next;
+  GtkWidget *widget;
 
   if(!multi_vpaned->focused_pane) return;
  
-  tmp = (GtkPaned*)multi_vpaned->focused_pane->child2; //widget in vpaned
-  g_object_unref(G_OBJECT(tmp));
+  widget = GTK_WIDGET(multi_vpaned->focused_pane->child2); //widget in vpaned
+  g_object_unref(G_OBJECT(widget));
 
   if(multi_vpaned->focused_pane == multi_vpaned->first_pane &&
      multi_vpaned->focused_pane == multi_vpaned->last_pane){

@@ -417,6 +417,7 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
  *
  */
 
+#define list_out tab->events_requests
 
 gboolean lttvwindow_process_pending_requests(Tab *tab)
 {
@@ -426,20 +427,17 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
   GtkWidget* widget;
   LttvTracesetContext *tsc;
   LttvTracefileContext *tfc;
-  GSList *events_requests = tab->events_requests;
-  GSList *list_out = events_requests;
   GSList *list_in = NULL;
   LttTime end_time;
   guint end_nb_events;
   guint count;
   LttvTracesetContextPosition *end_position;
-    
   
   if(tab == NULL)
     return FALSE;
 
   /* There is no events requests pending : we should never have been called! */
-  g_assert(g_slist_length(events_requests) != 0);
+  g_assert(g_slist_length(list_out) != 0);
 
   tsc = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
 
@@ -452,12 +450,48 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
   gdk_window_stick(win);
   gdk_window_unstick(win);
 
-  g_debug("SIZE events req len  : %d", g_slist_length(events_requests));
+  g_debug("SIZE events req len  : %d", g_slist_length(list_out));
+  
+  /* Preliminary check for no trace in traceset */
+  /* Unregister the routine if empty, empty list_out too */
+  if(lttv_traceset_number(tsc->ts) == 0) {
+
+    /* - For each req in list_out */
+    GSList *iter = list_out;
+
+    while(iter != NULL) {
+
+      gboolean remove = FALSE;
+      gboolean free_data = FALSE;
+      EventsRequest *events_request = (EventsRequest *)iter->data;
+      
+      /* - Call end request for req */
+      if(events_request->servicing == TRUE)
+        lttv_hooks_call(events_request->after_request, (gpointer)tsc);
+      
+      /* - remove req from list_out */
+      /* Destroy the request */
+      remove = TRUE;
+      free_data = TRUE;
+
+      /* Go to next */
+      if(remove)
+      {
+        GSList *remove_iter = iter;
+
+        iter = g_slist_next(iter);
+        if(free_data) g_free(remove_iter->data);
+        list_out = g_slist_remove_link(list_out, remove_iter);
+      } else { // not remove
+        iter = g_slist_next(iter);
+      }
+    }
+  }
   
   /* Events processing algorithm implementation */
   /* A. Servicing loop */
-  while( (g_slist_length(list_in) != 0 || g_slist_length(list_out) != 0)
-         && !gtk_events_pending() ) {
+  while( (g_slist_length(list_in) != 0 || g_slist_length(list_out) != 0)) {
+     /*    && !gtk_events_pending() )  */
 
     /* 1. If list_in is empty (need a seek) */
     if( g_slist_length(list_in) ==  0 ) {
@@ -544,9 +578,9 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                 EventsRequest *event_request_lpos = 
                                       (EventsRequest*)iter->data;
 
-                g_slist_append(list_in, event_request_lpos);
+                list_in = g_slist_append(list_in, event_request_lpos);
                 /* Remove from list_out */
-                g_slist_remove(list_out, event_request_lpos);
+                list_out = g_slist_remove(list_out, event_request_lpos);
               }
             }
           } else {
@@ -558,9 +592,9 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
               EventsRequest *event_request_ltime = 
                                     (EventsRequest*)iter->data;
 
-              g_slist_append(list_in, event_request_ltime);
+              list_in = g_slist_append(list_in, event_request_ltime);
               /* Remove from list_out */
-              g_slist_remove(list_out, event_request_ltime);
+              list_out = g_slist_remove(list_out, event_request_ltime);
             }
           }
         }
@@ -573,22 +607,49 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
         tfc = lttv_traceset_context_get_current_tfc(tsc);
         g_assert(g_slist_length(list_in)>0);
         EventsRequest *events_request = g_slist_nth_data(list_in, 0);
+        guint seek_count;
 
         /* 1.2.1 If first request in list_in is a time request */
         if(events_request->start_position == NULL) {
           /* - If first req in list_in start time != current time */
-          if(tfc != NULL && ltt_time_compare(events_request->start_time,
+          if(tfc == NULL || ltt_time_compare(events_request->start_time,
                               tfc->timestamp) != 0)
             /* - Seek to that time */
-            lttv_process_traceset_seek_time(tsc, events_request->start_time);
+            g_debug("SEEK TIME : %lu, %lu", events_request->start_time.tv_sec,
+              events_request->start_time.tv_nsec);
+            //lttv_process_traceset_seek_time(tsc, events_request->start_time);
+            lttv_state_traceset_seek_time_closest(LTTV_TRACESET_STATE(tsc),
+                                                  events_request->start_time);
+
+            /* Process the traceset with only state hooks */
+            seek_count =
+               lttv_process_traceset_middle(tsc,
+                                            events_request->start_time,
+                                            G_MAXUINT, NULL);
+
+
         } else {
+          LttTime pos_time;
           /* Else, the first request in list_in is a position request */
           /* If first req in list_in pos != current pos */
           g_assert(events_request->start_position != NULL);
           if(lttv_traceset_context_ctx_pos_compare(tsc,
                      events_request->start_position) != 0) {
             /* 1.2.2.1 Seek to that position */
-            lttv_process_traceset_seek_position(tsc, events_request->start_position);
+            g_debug("SEEK POSITION");
+            //lttv_process_traceset_seek_position(tsc, events_request->start_position);
+            pos_time = lttv_traceset_context_position_get_time(events_request->start_position);
+            lttv_state_traceset_seek_time_closest(LTTV_TRACESET_STATE(tsc),
+                                                  pos_time);
+
+            /* Process the traceset with only state hooks */
+            seek_count =
+               lttv_process_traceset_middle(tsc,
+                                            ltt_time_infinite,
+                                            G_MAXUINT,
+                                            events_request->start_position);
+
+
           }
         }
       }
@@ -604,7 +665,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
             /* - begin request hooks called
              * - servicing = TRUE
              */
-            lttv_hooks_call(events_request->before_request, NULL);
+            lttv_hooks_call(events_request->before_request, (gpointer)tsc);
             events_request->servicing = TRUE;
           }
           /* 1.3.2 call before chunk
@@ -619,43 +680,67 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       }
     } else {
       /* 2. Else, list_in is not empty, we continue a read */
-      GSList *iter = NULL;
-      tfc = lttv_traceset_context_get_current_tfc(tsc);
+
+      {
+        /* 2.0 For each req of list_in */
+        GSList *iter = list_in;
     
-      /* 2.1 For each req of list_out */
-      for(iter=list_out;iter!=NULL;iter=g_slist_next(iter)) {
-        EventsRequest *events_request = (EventsRequest*)iter->data;
+        while(iter != NULL) {
 
-        /* if req.start time == current context time 
-         * or req.start position == current position*/
-        if(  ltt_time_compare(events_request->start_time,
-                            tfc->timestamp) == 0 
-           ||
-             (events_request->start_position != NULL 
-             &&
-             lttv_traceset_context_ctx_pos_compare(tsc,
-                     events_request->start_position) == 0)
-           ) {
-          /* - Add to list_in, remove from list_out */
-          g_slist_append(list_in, events_request);
-          g_slist_remove(list_out, events_request);
-
-          /* - If !servicing */
-          if(events_request->servicing == FALSE) {
-            /* - begin request hooks called
-             * - servicing = TRUE
-             */
-            lttv_hooks_call(events_request->before_request, NULL);
-            events_request->servicing = TRUE;
-          }
-          /* call before chunk
-           * events hooks added
+          EventsRequest *events_request = (EventsRequest *)iter->data;
+          
+          /* - Call before chunk
+           * - events hooks added
            */
           lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
-                                           events_request->before_chunk_trace,
-                                           events_request->before_chunk_tracefile,
-                                           events_request->event,
-                                           events_request->event_by_id);
+                                         events_request->before_chunk_trace,
+                                         events_request->before_chunk_tracefile,
+                                         events_request->event,
+                                         events_request->event_by_id);
+
+          iter = g_slist_next(iter);
+        }
+      }
+
+      {
+        GSList *iter = NULL;
+        tfc = lttv_traceset_context_get_current_tfc(tsc);
+      
+        /* 2.1 For each req of list_out */
+        for(iter=list_out;iter!=NULL;iter=g_slist_next(iter)) {
+          EventsRequest *events_request = (EventsRequest*)iter->data;
+
+          /* if req.start time == current context time 
+           * or req.start position == current position*/
+          if(  ltt_time_compare(events_request->start_time,
+                              tfc->timestamp) == 0 
+             ||
+               (events_request->start_position != NULL 
+               &&
+               lttv_traceset_context_ctx_pos_compare(tsc,
+                       events_request->start_position) == 0)
+             ) {
+            /* - Add to list_in, remove from list_out */
+            list_in = g_slist_append(list_in, events_request);
+            list_out = g_slist_remove(list_out, events_request);
+
+            /* - If !servicing */
+            if(events_request->servicing == FALSE) {
+              /* - begin request hooks called
+               * - servicing = TRUE
+               */
+              lttv_hooks_call(events_request->before_request, (gpointer)tsc);
+              events_request->servicing = TRUE;
+            }
+            /* call before chunk
+             * events hooks added
+             */
+            lttv_process_traceset_begin(tsc, events_request->before_chunk_traceset,
+                                             events_request->before_chunk_trace,
+                                             events_request->before_chunk_tracefile,
+                                             events_request->event,
+                                             events_request->event_by_id);
+          }
         }
       }
     }
@@ -742,7 +827,13 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 
     {
       /* 4. Call process traceset middle */
+      g_critical("Calling process traceset middle with %p, %lu sec %lu nsec, %lu nb ev, %p end pos", tsc, end_time.tv_sec, end_time.tv_nsec, end_nb_events, end_position);
       count = lttv_process_traceset_middle(tsc, end_time, end_nb_events, end_position);
+
+      tfc = lttv_traceset_context_get_current_tfc(tsc);
+      g_critical("Context time after middle : %lu, %lu", tfc->timestamp.tv_sec,
+                                                        tfc->timestamp.tv_nsec);
+
     }
     {
       /* 5. After process traceset middle */
@@ -769,7 +860,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                          events_request->event,
                                          events_request->event_by_id);
           /* - Call end request for req */
-          lttv_hooks_call(events_request->after_request, NULL);
+          lttv_hooks_call(events_request->after_request, (gpointer)tsc);
           
           /* - remove req from list_in */
           /* Destroy the request */
@@ -789,7 +880,6 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
           }
         }
       }
-
       {
         /* 5.1 For each req in list_in */
         GSList *iter = list_in;
@@ -816,7 +906,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
           g_assert(tfc != NULL);
           /* - if req.num == 0
            *   or
-           *     current context time > req.end time
+           *     current context time >= req.end time
            *   or
            *     req.end pos == current pos
            *   or
@@ -827,7 +917,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                 events_request->stop_flag == TRUE
               ||
                 ltt_time_compare(tfc->timestamp,
-                                         events_request->end_time) > 0
+                                         events_request->end_time) >= 0
               ||
                   (events_request->start_position != NULL 
                  &&
@@ -835,9 +925,10 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                             events_request->start_position) != 0)
 
               ) {
+            g_assert(events_request->servicing == TRUE);
             /* - Call end request for req
              * - remove req from list_in */
-            lttv_hooks_call(events_request->after_request, NULL);
+            lttv_hooks_call(events_request->after_request, (gpointer)tsc);
             /* - remove req from list_in */
             /* Destroy the request */
             remove = TRUE;
@@ -858,6 +949,8 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
         }
       }
     }
+
+    //if(gtk_events_pending()) break;
   }
 
   /* B. When interrupted between chunks */
@@ -908,14 +1001,18 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 
 
   g_assert(g_slist_length(list_in) == 0);
+
   if( g_slist_length(list_out) == 0 ) {
     /* Put tab's request pending flag back to normal */
     tab->events_request_pending = FALSE;
+    g_critical("remove the idle fct");
     return FALSE; /* Remove the idle function */
   }
+  g_critical("leave the idle fct");
   return TRUE; /* Leave the idle function */
 }
 
+#undef list_out
 
 
 /* add_trace_into_traceset_selector, each instance of a viewer has an associated
@@ -1012,6 +1109,38 @@ static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
             LTTV_TRACESET_CONTEXT(tab->traceset_info->
                                       traceset_context),
             traceset); 
+
+  /* Set the tab's time window and current time if currently 0, 0 */
+  if(tab->time_window.start_time.tv_sec == 0 &&
+                      tab->time_window.start_time.tv_nsec == 0)
+    tab->time_window.start_time = 
+        LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                               time_span.start_time;
+  if(tab->time_window.time_width.tv_sec == 0 &&
+                      tab->time_window.time_width.tv_nsec == 0) {
+    LttTime tmp_time;
+
+    if(DEFAULT_TIME_WIDTH_S <
+            LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                           time_span.end_time.tv_sec)
+      tmp_time.tv_sec = DEFAULT_TIME_WIDTH_S;
+    else
+      tmp_time.tv_sec =
+              LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                           time_span.end_time.tv_sec;
+    tmp_time.tv_nsec = 0;
+    tab->time_window.time_width = tmp_time ;
+  }
+  if(tab->current_time.tv_sec == 0 &&  tab->current_time.tv_nsec == 0) {
+    tab->current_time.tv_sec = 
+       LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                             time_span.start_time.tv_sec;
+    tab->current_time.tv_nsec = 
+       LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                             time_span.start_time.tv_nsec;
+  }
+
+
   //add state update hooks
   lttv_state_add_event_hooks(
   (LttvTracesetState*)tab->traceset_info->traceset_context);
