@@ -1,4 +1,4 @@
-SUBDIRS = modules plugins
+SUBDIRS = modules
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 LIBS += $(GLIB_LIBS)
