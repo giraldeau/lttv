@@ -26,6 +26,8 @@
 #include <ltt/type.h>
 #include <stdio.h>
 
+#define PREALLOCATED_EXECUTION_STACK 10
+
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
   LTTV_STATE_USER_MODE,
@@ -322,8 +324,8 @@ static void copy_process_state(gpointer key, gpointer value,gpointer user_data)
   process = (LttvProcessState *)value;
   new_process = g_new(LttvProcessState, 1);
   *new_process = *process;
-  new_process->execution_stack = g_array_new(FALSE, FALSE, 
-      sizeof(LttvExecutionState));
+  new_process->execution_stack = g_array_sized_new(FALSE, FALSE, 
+      sizeof(LttvExecutionState), PREALLOCATED_EXECUTION_STACK);
   g_array_set_size(new_process->execution_stack,process->execution_stack->len);
   for(i = 0 ; i < process->execution_stack->len; i++) {
     g_array_index(new_process->execution_stack, LttvExecutionState, i) =
@@ -801,8 +803,8 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
 	  process->creation_time.tv_nsec);
   process->pid_time = g_quark_from_string(buffer);
   process->last_cpu = tfs->cpu_name;
-  process->execution_stack = g_array_new(FALSE, FALSE, 
-      sizeof(LttvExecutionState));
+  process->execution_stack = g_array_sized_new(FALSE, FALSE, 
+      sizeof(LttvExecutionState), PREALLOCATED_EXECUTION_STACK);
   g_array_set_size(process->execution_stack, 1);
   es = process->state = &g_array_index(process->execution_stack, 
       LttvExecutionState, 0);
