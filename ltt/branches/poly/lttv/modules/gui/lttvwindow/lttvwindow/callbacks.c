@@ -73,12 +73,6 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
 
 static void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor);
 
-void checkbox_changed(GtkTreeView *treeview,
-		      GtkTreePath *arg1,
-		      GtkTreeViewColumn *arg2,
-		      gpointer user_data);
-void remove_trace_from_traceset_selector(GtkWidget * paned, unsigned i);
-void add_trace_into_traceset_selector(GtkWidget * paned, LttTrace * trace);
 Tab *create_new_tab(GtkWidget* widget, gpointer user_data);
 
 static gboolean lttvwindow_process_pending_requests(Tab *tab);
@@ -429,6 +423,10 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   time_change_manager(tab, new_time_window);
   current_time_change_manager(tab, new_current_time);
 
+  //FIXME : we delete the filter tree, when it should be updated.
+  lttv_filter_tree_destroy(tab->filter);
+  tab->filter = NULL;
+  
 #if 0
   /* Set scrollbar */
   GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
@@ -1779,9 +1777,11 @@ void add_trace(GtkWidget * widget, gpointer user_data)
  * it will remove the trace,  recreate the traceset_contex,
  * and redraws all the viewer of the current tab. If there is on trace in the
  * current traceset, it will delete all viewers of the current tab
+ *
+ * It destroys the filter tree. FIXME... we should request for an update
+ * instead.
  */
 
-// MD : no filter version.
 void remove_trace(GtkWidget *widget, gpointer user_data)
 {
   LttTrace *trace;
