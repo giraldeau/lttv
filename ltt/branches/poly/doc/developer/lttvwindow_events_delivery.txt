@@ -255,6 +255,10 @@ While list_in !empty and list_out !empty
     4.1 Call process traceset middle (Use end criterion found in 3)
       * note : end criterion can also be viewer's hook returning TRUE
   5. After process traceset middle
+    - if current context time > traceset.end time
+      - For each req in list_in
+        - Call end for req
+        - remove req from list_in
     5.1 For each req in list_in
           - req.num -= count
           - if req.num == 0
