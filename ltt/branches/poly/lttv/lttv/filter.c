@@ -31,6 +31,9 @@
 /*
  *  TODO 
  *  - refine switch of expression in multiple uses functions
+ *  - divide expression structure
+ *    - a simple expression -> leaf
+ *    - a logical operator -> node
  *  - add the current simple expression to the tree
  */
 
@@ -123,16 +126,43 @@ gboolean
 parse_field_path(GPtrArray* fp) {
 
   GString* f = NULL;
+  if(fp->len < 2) return FALSE;
   g_assert(f=g_ptr_array_index(fp,0)); //list_first(fp)->data; 
   
   if(g_quark_try_string(f->str) == LTTV_FILTER_EVENT) {
-//    parse_subfield(fp, LTTV_FILTER_EVENT);   
+    f=g_ptr_array_index(fp,1);
+    if(g_quark_try_string(f->str) == LTTV_FILTER_NAME) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_CATEGORY) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_TIME) {
+      // offset = &((LttEvent*)NULL)->event_time);
+    }
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_TSC) {
+      // offset = &((LttEvent*)NULL)->event_cycle_count);
+    }
+    else {  /* core.xml specified options */
 
+    }
   } else if(g_quark_try_string(f->str) == LTTV_FILTER_TRACEFILE) {
-    
+     f=g_ptr_array_index(fp,1);
+    if(g_quark_try_string(f->str) == LTTV_FILTER_NAME) {}
+    else return FALSE;
   } else if(g_quark_try_string(f->str) == LTTV_FILTER_TRACE) {
+    f=g_ptr_array_index(fp,1);
+    if(g_quark_try_string(f->str) == LTTV_FILTER_NAME) {}
+    else return FALSE;
 
   } else if(g_quark_try_string(f->str) == LTTV_FILTER_STATE) {
+    f=g_ptr_array_index(fp,1);
+    if(g_quark_try_string(f->str) == LTTV_FILTER_PID) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_PPID) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_C_TIME) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_I_TIME) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_P_NAME) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_EX_MODE) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_EX_SUBMODE) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_P_STATUS) {}
+    else if(g_quark_try_string(f->str) == LTTV_FILTER_CPU) {}
+    else return FALSE;
 
   } else {
     g_warning("Unrecognized field in filter string");

@@ -38,21 +38,24 @@ FilterViewerData *gui_filter(Tab *tab);
 void gui_filter_destructor(FilterViewerData *fvd);
 gboolean filter_traceset_changed(void * hook_data, void * call_data);
 gboolean filter_viewer_data(void * hook_data, void * call_data); 
-GtkWidget* h_gui_filter(Tab *tab);
+GtkWidget* h_guifilter(Tab *tab);
 void statistic_destroy_walk(gpointer data, gpointer user_data);
   
 struct _FilterViewerData {
   Tab *tab;
 
   // temp widget -- still thinking about a formal structure
-  GtkWidget *vcontainer;
-  GtkWidget *window;
+  GtkWidget *hbox;
+  GtkWidget *f_textwnd;
+  GtkWidget *f_selectwnd;
+  GtkWidget *f_treewnd;
+  
 };
 
 GtkWidget 
 *guifilter_get_widget(FilterViewerData *fvd)
 {
-  return fvd->window;
+  return fvd->hbox;
 }
 
 /**
@@ -75,20 +78,15 @@ gui_filter(Tab *tab)
                                       filter_traceset_changed,
                                       filter_viewer_data);
 //  request_background_data(filter_viewer_data);
-
-  /* Initialize the vertical container */
   
-  fvd->window =  gtk_drawing_area_new();
-
-  gtk_widget_set_size_request(fvd->window,200,200);
-        
-  fvd->vcontainer = gtk_vbox_new (FALSE, 1);
-  gtk_container_set_border_width (GTK_CONTAINER (fvd->vcontainer), 1);
-  gtk_container_add (GTK_CONTAINER (fvd->window), fvd->vcontainer);
-
-  gtk_box_pack_start (GTK_BOX (fvd->vcontainer), fvd->window, TRUE, TRUE, 0);
-  
-//  gtk_widget_show(fvd->window);
+  fvd->f_textwnd = gtk_entry_new(); //gtk_scrolled_window_new (NULL, NULL);
+  gtk_entry_set_text(fvd->f_textwnd,"this is a test");
+  gtk_widget_show (fvd->f_textwnd);
+    
+  fvd->hbox = gtk_hbox_new(0, 0);
+  gtk_box_pack_start(GTK_BOX(fvd->hbox), fvd->f_textwnd, TRUE, TRUE, 0);
+ 
+  gtk_widget_show(fvd->hbox);
   
   g_object_set_data_full(
       G_OBJECT(guifilter_get_widget(fvd)),
@@ -139,10 +137,11 @@ filter_viewer_data(void * hook_data, void * call_data) {
  * @return The widget created.
  */
 GtkWidget *
-h_gui_filter(Tab *tab)
+h_guifilter(Tab *tab)
 {
   FilterViewerData* f = gui_filter(tab) ;
 
+  g_print("FilterViewerData:%p\n",f);
   if(f)
     return guifilter_get_widget(f);
   else return NULL;
@@ -164,7 +163,7 @@ static void init() {
                                   "Insert Filter Module",
                                   hGuiFilterInsert_xpm,
                                   "Insert Filter Module",
-                                  h_gui_filter);
+                                  h_guifilter);
 }
 
 void filter_destroy_walk(gpointer data, gpointer user_data)
@@ -185,7 +184,7 @@ void filter_destroy_walk(gpointer data, gpointer user_data)
  */
 static void destroy() {
   
-  lttvwindow_unregister_constructor(h_gui_filter);
+  lttvwindow_unregister_constructor(h_guifilter);
   
 }
 
