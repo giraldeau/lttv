@@ -130,6 +130,7 @@ void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name)
 {
   LttTracefile * tf;
   tf = ltt_tracefile_open(t,tracefile_name);
+  if(!tf) return;
   t->per_cpu_tracefile_number++;
   g_ptr_array_add(t->per_cpu_tracefiles, tf);
 }
