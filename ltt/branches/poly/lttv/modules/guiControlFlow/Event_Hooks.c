@@ -94,14 +94,14 @@ void send_test_drawing(ProcessList *Process_List,
 	// rectangle
 	GdkColor color = { 0, 0xffff, 0x0000, 0x0000 };
 	
-	//gc = gdk_gc_new(Pixmap);
+	gc = gdk_gc_new(Pixmap);
 	/* Sent text data */
-	//layout = gtk_widget_create_pango_layout(Drawing->Drawing_Area_V,
-	//		NULL);
-	//context = pango_layout_get_context(layout);
-	//FontDesc = pango_context_get_font_description(context);
-	//Font_Size = pango_font_description_get_size(FontDesc);
-	//pango_font_description_set_size(FontDesc, Font_Size-3*PANGO_SCALE);
+	layout = gtk_widget_create_pango_layout(Drawing->Drawing_Area_V,
+			NULL);
+	context = pango_layout_get_context(layout);
+	FontDesc = pango_context_get_font_description(context);
+	Font_Size = pango_font_description_get_size(FontDesc);
+	pango_font_description_set_size(FontDesc, Font_Size-3*PANGO_SCALE);
 	
 	
 
@@ -122,9 +122,9 @@ void send_test_drawing(ProcessList *Process_List,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
 
-	//pango_layout_set_text(layout, "Test", -1);
-	//gdk_draw_layout(Pixmap, Drawing->Drawing_Area_V->style->black_gc,
-	//		0, y+height, layout);
+	pango_layout_set_text(layout, "Test", -1);
+	gdk_draw_layout(Pixmap, Drawing->Drawing_Area_V->style->black_gc,
+			0, y+height, layout);
 
 	birth.tv_sec = 14000;
 	birth.tv_nsec = 55500;
@@ -155,11 +155,11 @@ void send_test_drawing(ProcessList *Process_List,
 					&height);
 
 	/* Draw rectangle (background color) */
-	//gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
-	//gdk_gc_set_rgb_fg_color(gc, &color);
-	//gdk_draw_rectangle(Pixmap, gc,
-	//				TRUE,
-	//				x, y, width, height);
+	gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
+	gdk_gc_set_rgb_fg_color(gc, &color);
+	gdk_draw_rectangle(Pixmap, gc,
+					TRUE,
+					x, y, width, height);
 
 	drawing_draw_line(
 		Drawing, Pixmap, x,
@@ -248,9 +248,9 @@ void send_test_drawing(ProcessList *Process_List,
 
 
 
-	//pango_font_description_set_size(FontDesc, Font_Size);
-	//g_object_unref(layout);
-	//g_object_unref(gc);
+	pango_font_description_set_size(FontDesc, Font_Size);
+	g_object_unref(layout);
+	g_free(gc);
 }
 
 void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
