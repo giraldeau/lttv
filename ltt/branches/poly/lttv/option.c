@@ -215,3 +215,32 @@ void lttv_option_parse(int argc, char **argv)
   destroy_popts(&list, &popts, &c);
 }
 
+static void show_help(LttvOption *option)
+{
+  printf("--%s  -%c  argument: %s\n" , option->long_name,
+																			option->char_name,
+																			option->arg_description);
+  printf("                     %s\n" , option->description);
+
+}
+
+void lttv_option_show_help(void)
+{
+	LttvOption option;
+
+  GPtrArray *list = g_ptr_array_new();
+
+  int i;
+
+  g_hash_table_foreach(options, list_options, list);
+
+	printf("Built-in commands available:\n");
+	printf("\n");
+
+  for(i = 0 ; i < list->len ; i++) {
+    show_help((LttvOption *)list->pdata[i]);
+  }
+  g_ptr_array_free(list, TRUE);
+
+
+}

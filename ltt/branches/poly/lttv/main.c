@@ -7,6 +7,8 @@
 #include <lttv/option.h>
 #include <lttv/traceset.h>
 #include <ltt/trace.h>
+#include <stdio.h>
+
 
 void lttv_option_init(int argc, char **argv);
 void lttv_option_destroy();
@@ -41,6 +43,7 @@ static void lttv_module_option(void *hook_data);
 
 static void lttv_module_path_option(void *hook_data);
 
+static void lttv_help(void);
 
 /* Since everything is done in modules, the main program only takes care
    of the infrastructure. */
@@ -98,7 +101,11 @@ int main(int argc, char **argv) {
       "add a directory to the module search path", 
       "directory to add to the path", LTTV_OPT_STRING, &a_module_path, 
       lttv_module_path_option, NULL);
-
+	
+  lttv_option_add("help",'h', "basic help", "none", 
+      LTTV_OPT_NONE, NULL, lttv_help, NULL);
+ 
+ 
   lttv_hooks_call(before_options, NULL);
   lttv_option_parse(argc, argv);
   lttv_hooks_call(after_options, NULL);
@@ -138,4 +145,12 @@ void lttv_module_option(void *hook_data)
 void lttv_module_path_option(void *hook_data)
 {
   lttv_module_path_add(a_module_path);
+}
+
+void lttv_help()
+{
+	printf("Linux Trace Toolkit Visualizer\n");
+	printf("\n");
+	lttv_option_show_help();
+	printf("\n");
 }
