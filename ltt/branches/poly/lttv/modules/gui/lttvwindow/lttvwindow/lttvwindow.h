@@ -102,12 +102,6 @@ dividor :     This notice links the positions of the horizontal dividors
               typically showing processes, cpus, ...
               
 
-FIXME : Add background computation explanation here
-background_init: prepare for background computation (comes after show_end).
-process_trace for background: done in small chunks in gtk_idle, hooks called.
-background_end: remove the hooks and perhaps update the window.
-
-
 Reporting Changes to the Main Window
 
 In most cases, the enclosing window knows about updates such as described
@@ -122,7 +116,6 @@ consequently call current_time_notify for each of its contained viewers.
 
 Available report methods are :
 
-lttvwindow_report_status : reports the text of the status bar.
 lttvwindow_report_time_window : reports the new time window.
 lttvwindow_report_current_time : reports the new current time.
 lttvwindow_report_dividor : reports the new horizontal dividor's position.
@@ -159,7 +152,7 @@ the main window will look for the stop_flag and remove the EventRequests
 from its lists, calling the process_traceset_end for this request (it
 removes hooks from the context and calls the after hooks).
 
-It no stop_flag is rose, the end timestamp, end position or number
+It no stop_flag is risen, the end timestamp, end position or number
 of events to read has to be reached to determine the end of the
 request. Otherwise, the end of traceset does determine it.
 

@@ -18,6 +18,53 @@
 
 /* This file is the API used to launch any background computation on a trace */
 
+/* lttvwindowtraces
+ *
+ * This API consists in two main parts. The first one is for the background
+ * computation provider and the second is for the viewer which needs this
+ * information.
+ *
+ * A computation provider, i.e. a statistics computation module or a state
+ * computation module, have two things in common : they append data to a trace
+ * in an extensible container (LttvAttributes). This extended information, once
+ * computed, can be kept all along with the trace and does not need to be
+ * recomputed : a computation done on a trace must result in a identical result
+ * each time it is done.
+ *
+ * This API provides functions for computation provider to register their
+ * computation functions (or computation functions insertion and removal
+ * functions). Once the computation provider is registered with its module name,
+ * extended computation for a trace can be requested by any viewer by specifying
+ * the module name, as we will describe in a moment.
+ *
+ * A viewer which needs extended information about a trace must ask for it to be
+ * computed by doing a background computation request. It may also ask to be
+ * notified of the completion of its request by doing a notify request.
+ *
+ * Before asking for the computation, it must check for its readiness. If it is
+ * ready, the information has already been computed, so it is ready to use. If
+ * the information is not ready, in must check whether or not the processing of
+ * this task is in progress. If it is, it must not do any background computation
+ * request. It must only do a background notification request of the current
+ * processing to be informed of its completion. If the information is not ready
+ * and not being processed, then the viewer may do a background computation
+ * request and add a notify request to the notify queue.
+ *
+ * When a context takes control of a trace, it must lock the trace. This is a
+ * way of ensuring that not conflict will occur between two traceset contexts
+ * and shared traces. It will generate an error if a context try to get a lock
+ * on a trace what is not unlocked. Upon every trace locking,
+ * lttv_process_traceset_synchronize_tracefiles should be used to resynchronize
+ * the traces with the trace context information.
+ *
+ * The usefulness of the lock in this framework can be questionable in a
+ * single threaded environment, but can be great in the eventuality of
+ * multiple threads.
+ * 
+ */
+
+
+
 #ifndef LTTVWINDOWTRACES_H
 #define LTTVWINDOWTRACES_H
 
