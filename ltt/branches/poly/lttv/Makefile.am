@@ -11,17 +11,6 @@ bin_PROGRAMS = lttv
 lttv_SOURCES = main.c module.c option.c hook.c attribute.c \
 		iattribute.c processTrace.c state.c traceset.c
 
-lttv_DEPENDENCIES = $(top_includedir)/lttv/lttv.h \
-	$(top_includedir)/lttv/module.h \
-	$(top_includedir)/lttv/option.h \
-	$(top_includedir)/lttv/hook.h \
-	$(top_includedir)/lttv/attribute.h \
-	$(top_includedir)/lttv/iattribute.h \
-	$(top_includedir)/lttv/processTrace.h \
-	$(top_includedir)/lttv/state.h \
-	$(top_includedir)/lttv/traceset.h
-
-
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libtextDump.la libbatchAnalysis.la

@@ -16,13 +16,20 @@ libdir = ${lttvplugindir}
 #bin_PROGRAMS = mainwin
 lib_LTLIBRARIES = libmainwin.la
 
+
 libmainwin_la_LDFLAGS = -module
 libmainwin_la_SOURCES = \
 	init_module.c \
-	support.c support.h \
-	interface.c interface.h \
-	callbacks.c callbacks.h \
-	gtkcustom.c gtkcustom.h
+	support.c \
+	interface.c \
+	callbacks.c \
+	gtkcustom.c
+
+libmainwin_la_HEADERS = \
+	support.h \
+	interface.h \
+	callbacks.h
+
 
 libmainwin_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
 

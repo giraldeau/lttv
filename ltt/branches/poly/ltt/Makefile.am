@@ -12,9 +12,8 @@ AM_CFLAGS = $(GLIB_CFLAGS)
 LIBS += $(GLIB_LIBS)
 
 lib_LTLIBRARIES = libtraceread.la
-libtraceread_la_SOURCES = event.c facility.c parser.c tracefile.c type.c \
-													parser.h
+libtraceread_la_SOURCES = event.c facility.c parser.c tracefile.c type.c
+libtraceread_la_HEADERS = parser.h 
 
-libtraceread_la_DEPENDENCIES = ${top_includedir}/ltt/LTTTypes.h
-															 
+
 EXTRA_DIST = crc32.tab

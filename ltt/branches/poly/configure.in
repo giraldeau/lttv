@@ -74,13 +74,15 @@ lttincludedir="${includedir}/ltt"
 AC_SUBST(lttincludedir)
 
 AC_CONFIG_FILES([Makefile
-     lttv/Makefile
+		 lttv/Makefile
 		 lttv/modules/Makefile
 		 lttv/modules/gui/Makefile
 		 lttv/modules/gui/mainWin/Makefile
 		 lttv/modules/gui/mainWin/src/Makefile
+		 lttv/modules/gui/mainWin/pixmaps/Makefile
 		 lttv/modules/gui/API/Makefile
 		 lttv/modules/guiControlFlow/Makefile
+		 lttv/modules/icons/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 include/Makefile
