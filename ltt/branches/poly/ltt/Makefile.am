@@ -9,3 +9,4 @@ libdir = ${lttlibdir}
 lib_LTLIBRARIES = libtraceread.la
 libtraceread_la_SOURCES = event.c facility.c parser.c tracefile.c type.c \
 		       parser.h LTTTypes.h
+EXTRA_DIST = crc32.tab
