@@ -24,9 +24,9 @@ char *ltt_eventtype_description(LttEventType *et);
 
 LttFacility *ltt_eventtype_facility(LttEventType *et);
 
-unsigned *ltt_eventtype_relative_id(LttEventType *et);
+unsigned ltt_eventtype_relative_id(LttEventType *et);
 
-unsigned *ltt_eventtype_id(LttEventType *et);
+unsigned ltt_eventtype_id(LttEventType *et);
 
 LttType *ltt_eventtype_type(LttEventType *et);
 

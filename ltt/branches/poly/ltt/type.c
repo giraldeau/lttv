@@ -60,12 +60,12 @@ LttFacility *ltt_eventtype_facility(LttEventType *et)
  *Input params
  *    et                        : an  event type   
  *Return value
- *    unsigned *                : the relative id
+ *    unsigned                  : the relative id
  ****************************************************************************/
 
-unsigned *ltt_eventtype_relative_id(LttEventType *et)
+unsigned ltt_eventtype_relative_id(LttEventType *et)
 {
-  return (unsigned*)&et->index;
+  return et->index;
 }
 
 /*****************************************************************************
@@ -74,14 +74,12 @@ unsigned *ltt_eventtype_relative_id(LttEventType *et)
  *Input params
  *    et               : an  event type   
  *Return value
- *    unsigned *       : the id
+ *    unsigned         : the id
  ****************************************************************************/
 
-unsigned *ltt_eventtype_id(LttEventType *et)
+unsigned ltt_eventtype_id(LttEventType *et)
 {
-  unsigned *id = g_new(unsigned,1);
-  *id = et->facility->base_id + et->index;
-  return (unsigned*)id;
+  return et->facility->base_id + et->index;
 }
 
 /*****************************************************************************
