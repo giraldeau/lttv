@@ -190,7 +190,6 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
   }
   lttv_process_traceset_seek_time(self, null_time);
   lttv_traceset_context_compute_time_span(self, &self->time_span);
-  self->e = NULL;
 
   self->pqueue = g_tree_new(compare_tracefile);
 }
@@ -691,17 +690,20 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
 
   LttEvent *event;
 
+  GTree *pqueue = self->ts_context->pqueue;
+
   nb_tracefile = ltt_trace_control_tracefile_number(self->t) +
       ltt_trace_per_cpu_tracefile_number(self->t);
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfc = self->tracefiles[i];
     ltt_tracefile_seek_time(tfc->tf, start);
+    g_tree_remove(pqueue, tfc);
     event = ltt_tracefile_read(tfc->tf);
     tfc->e = event;
     if(event != NULL) {
       tfc->timestamp = ltt_event_time(event);
-      g_tree_insert(self->ts_context->pqueue, tfc, tfc);
+      g_tree_insert(pqueue, tfc, tfc);
     }
   }
 }
@@ -715,15 +717,6 @@ void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start)
 
   LttvTracefileContext *tfc;
 
-  /* Empty the pqueue */
-
-  while(TRUE){
-    tfc = NULL;
-    g_tree_foreach(self->pqueue, get_first, &tfc);
-    if(tfc == NULL) break;
-    g_tree_remove(self->pqueue, &(tfc->timestamp));
-  }
-
   nb_trace = lttv_traceset_number(self->ts);
   for(i = 0 ; i < nb_trace ; i++) {
     tc = self->traces[i];
@@ -731,6 +724,27 @@ void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start)
   }
 }
 
+
+gboolean lttv_process_tracefile_seek_position(LttvTracefileContext *self, 
+                                              const LttEventPosition *pos)
+{
+  LttvTracefileContext *tfc = self;
+
+  LttEvent *event;
+
+  GTree *pqueue = self->t_context->ts_context->pqueue;
+  
+  ltt_tracefile_seek_position(tfc->tf, pos);
+  g_tree_remove(pqueue, tfc);
+  event = ltt_tracefile_read(tfc->tf);
+  tfc->e = event;
+  if(event != NULL) {
+    tfc->timestamp = ltt_event_time(event);
+    g_tree_insert(pqueue, tfc, tfc);
+  }
+
+
+}
 
 gboolean lttv_process_trace_seek_position(LttvTraceContext *self, 
                                         const LttvTraceContextPosition *pos)
@@ -749,13 +763,7 @@ gboolean lttv_process_trace_seek_position(LttvTraceContext *self,
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfc = self->tracefiles[i];
-    ltt_tracefile_seek_position(tfc->tf, pos->tf_pos[i]);
-    event = ltt_tracefile_read(tfc->tf);
-    tfc->e = event;
-    if(event != NULL) {
-      tfc->timestamp = ltt_event_time(event);
-      g_tree_insert(self->ts_context->pqueue, tfc, tfc);
-    }
+    lttv_process_tracefile_seek_position(tfc, pos->tf_pos[i]);
   }
 
   return TRUE;
@@ -777,15 +785,6 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
   
   if(nb_trace != pos->nb_trace)
     return FALSE; /* Error */
-
-  /* Empty the pqueue */
-
-  while(TRUE){
-    tfc = NULL;
-    g_tree_foreach(self->pqueue, get_first, &tfc);
-    if(tfc == NULL) break;
-    g_tree_remove(self->pqueue, &(tfc->timestamp));
-  }
 
   for(i = 0 ; i < nb_trace ; i++) {
     tc = self->traces[i];

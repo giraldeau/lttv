@@ -48,6 +48,9 @@
    contains an execution mode stack (e.g. irq within system call, called
    from user mode). */
 
+/* Priority of state hooks */
+#define LTTV_PRIO_STATE 25
+
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
 

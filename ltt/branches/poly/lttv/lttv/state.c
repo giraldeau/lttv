@@ -448,9 +448,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     if(*(value.v_pointer) == NULL) tfcs->parent.e = NULL;
     else {
       ep = *(value.v_pointer);
-      ltt_tracefile_seek_position(tfcs->parent.tf, ep);
-      tfcs->parent.e = ltt_tracefile_read(tfcs->parent.tf);
-      tfcs->parent.timestamp = ltt_event_time(tfcs->parent.e);
+      lttv_process_tracefile_seek_position(tfcs->parent, ep);
     }
   }
 }
@@ -772,7 +770,8 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
 
   char buffer[128];
 
-  tcs = ((LttvTraceState *)tc = tfs->parent.t_context);
+  tc = tfs->parent.t_context;
+  tcs = (LttvTraceState *)tc;
 	
   process->pid = pid;
   process->last_cpu = tfs->cpu_name;
@@ -1064,7 +1063,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     lttv_trace_find_hook(ts->parent.t, "core", "process_exit", NULL, NULL, 
         NULL, process_exit, &g_array_index(hooks, LttvTraceHook, 8));
 
-    /* Add these hooks to each before_event_by_id hooks list */
+    /* Add these hooks to each event_by_id hooks list */
 
     nb_tracefile = ltt_trace_control_tracefile_number(ts->parent.t) +
         ltt_trace_per_cpu_tracefile_number(ts->parent.t);
@@ -1074,8 +1073,8 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
       for(k = 0 ; k < hooks->len ; k++) {
         hook = g_array_index(hooks, LttvTraceHook, k);
-        lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.after_event_by_id, 
-	  hook.id), hook.h, &g_array_index(hooks, LttvTraceHook, k));
+        lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.event_by_id, 
+	  hook.id), hook.h, &g_array_index(hooks, LttvTraceHook, k), LTTV_PRIO_STATE);
       }
     }
     lttv_attribute_find(self->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
@@ -1106,7 +1105,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
     lttv_attribute_find(self->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
     hooks = *(val.v_pointer);
 
-    /* Add these hooks to each before_event_by_id hooks list */
+    /* Remove these hooks from each event_by_id hooks list */
 
     nb_tracefile = ltt_trace_control_tracefile_number(ts->parent.t) +
         ltt_trace_per_cpu_tracefile_number(ts->parent.t);
@@ -1117,7 +1116,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
       for(k = 0 ; k < hooks->len ; k++) {
         hook = g_array_index(hooks, LttvTraceHook, k);
         lttv_hooks_remove_data(
-            lttv_hooks_by_id_find(tfs->parent.after_event_by_id, 
+            lttv_hooks_by_id_find(tfs->parent.event_by_id, 
 	    hook.id), hook.h, &g_array_index(hooks, LttvTraceHook, k));
       }
     }
@@ -1226,10 +1225,10 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = LTTV_TRACEFILE_STATE(ts->parent.tracefiles[j]);
-      lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.after_event_by_id, 
-	  hook_start.id), hook_start.h, NULL);
-      lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.after_event_by_id, 
-	  hook_end.id), hook_end.h, NULL);
+      lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.event_by_id, 
+	  hook_start.id), hook_start.h, NULL, LTTV_PRIO_STATE);
+      lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.event_by_id, 
+	  hook_end.id), hook_end.h, NULL, LTTV_PRIO_STATE);
     }
   }
 }
@@ -1262,9 +1261,9 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = LTTV_TRACEFILE_STATE(ts->parent.tracefiles[j]);
       lttv_hooks_remove_data(lttv_hooks_by_id_find(
-          tfs->parent.after_event_by_id, hook_start.id), hook_start.h, NULL);
+          tfs->parent.event_by_id, hook_start.id), hook_start.h, NULL);
       lttv_hooks_remove_data(lttv_hooks_by_id_find(
-          tfs->parent.after_event_by_id, hook_end.id), hook_end.h, NULL);
+          tfs->parent.event_by_id, hook_end.id), hook_end.h, NULL);
     }
   }
 }
