@@ -1,5 +1,5 @@
 /* This file is part of the Linux Trace Toolkit viewer
- * Copyright (C) 2003-2004 Xiangxiu Yang
+ * Copyright (C) 2003-2004 Xiangxiu Yang, Mathieu Desnoyers
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -17,6 +17,7 @@
  */
 
 #include <stdio.h>
+#include <glib.h>
 
 #include "parser.h"
 #include <ltt/ltt.h>
@@ -27,8 +28,15 @@ static unsigned intSizes[] = {
   sizeof(int8_t), sizeof(int16_t), sizeof(int32_t), sizeof(int64_t), 
   sizeof(short) };
 
+typedef enum _intSizesNames { SIZE_INT8, SIZE_INT16, SIZE_INT32,
+                              SIZE_INT64, SIZE_SHORT, INT_SIZES_NUMBER }
+                   intSizesNames;
+
+
 static unsigned floatSizes[] = {
   0, 0, sizeof(float), sizeof(double), 0, sizeof(float), sizeof(double) };
+
+#define FLOAT_SIZES_NUMBER 7
 
 
 /*****************************************************************************
@@ -112,8 +120,8 @@ unsigned ltt_eventtype_id(LttEventType *et)
 
 LttType *ltt_eventtype_type(LttEventType *et)
 {
-  if(!et->root_field) return NULL;
-  return et->root_field->field_type;
+  if(unlikely(!et->root_field)) return NULL;
+  else return et->root_field->field_type;
 }
 
 /*****************************************************************************
@@ -173,33 +181,35 @@ LttTypeEnum ltt_type_class(LttType *t)
 
 unsigned ltt_type_size(LttTrace * trace, LttType *t)
 {
-  if(t->type_class==LTT_STRUCT || t->type_class==LTT_ARRAY || 
-     t->type_class==LTT_STRING || t->type_class==LTT_UNION) return 0;
-
-  if(t->type_class == LTT_FLOAT){
-    return floatSizes[t->size];
-  }else{
-    if(t->size < sizeof(intSizes)/sizeof(unsigned))
-      return intSizes[t->size];
-    else{
-      LttArchSize size = trace->system_description->size;
-      if(size == LTT_LP32){
-	      if(t->size == 5)return sizeof(int16_t);
-	      else return sizeof(int32_t);
+  unsigned size;
+  if(unlikely(t->type_class==LTT_STRUCT || t->type_class==LTT_ARRAY || 
+              t->type_class==LTT_STRING || t->type_class==LTT_UNION)) {
+    size = 0;
+  } else {
+    if(t->type_class == LTT_FLOAT){
+      size = floatSizes[t->size];
+    }else{
+      if(likely(t->size < INT_SIZES_NUMBER))
+        size = intSizes[t->size];
+      else{
+        LttArchSize archsize = trace->system_description->size;
+        if(archsize == LTT_LP32){
+          if(t->size == 5) size = intSizes[SIZE_INT16];
+          else size = intSizes[SIZE_INT32];
+        }
+        else if(archsize == LTT_ILP32 || archsize == LTT_LP64){
+          if(t->size == 5) size = intSizes[SIZE_INT32];
+          else{
+            if(archsize == LTT_ILP32) size = intSizes[SIZE_INT32];
+            else size = intSizes[SIZE_INT64];
+          }
+        }
+        else if(archsize == LTT_ILP64) size = intSizes[SIZE_INT64];
       }
-      else if(size == LTT_ILP32 || size == LTT_LP64){
-	      if(t->size == 5)return sizeof(int32_t);
-	      else{
-	        if(size == LTT_ILP32) return sizeof(int32_t);
-	        else return sizeof(int64_t);
-	      }
-      }
-      else if(size == LTT_ILP64)return sizeof(int64_t);	      
     }
   }
-  
-  g_critical("ltt_type_size : Type size %u unknown", t->size);
-  return 0;
+
+  return size;
 }
 
 /*****************************************************************************
@@ -214,9 +224,14 @@ unsigned ltt_type_size(LttTrace * trace, LttType *t)
 
 LttType *ltt_type_element_type(LttType *t)
 {
-  if(t->type_class != LTT_ARRAY && t->type_class != LTT_SEQUENCE)
-    return NULL;
-  return t->element_type[0];
+  LttType *element_type;
+
+  if(unlikely(t->type_class != LTT_ARRAY && t->type_class != LTT_SEQUENCE))
+    element_type = NULL;
+  else
+    element_type = t->element_type[0];
+
+  return element_type;
 }
 
 /*****************************************************************************
@@ -230,9 +245,12 @@ LttType *ltt_type_element_type(LttType *t)
 
 unsigned ltt_type_element_number(LttType *t)
 {
-  if(t->type_class != LTT_ARRAY)
-    return 0;
-  return t->element_number;
+  unsigned ret = 0;
+
+  if(likely(t->type_class == LTT_ARRAY))
+    ret = t->element_number;
+
+  return ret;
 }
 
 /*****************************************************************************
@@ -246,9 +264,12 @@ unsigned ltt_type_element_number(LttType *t)
 
 unsigned ltt_type_member_number(LttType *t)
 {
-  if(t->type_class != LTT_STRUCT && t->type_class != LTT_UNION)
-    return 0;
-  return t->element_number;  
+  unsigned ret = 0;
+  
+  if(likely(t->type_class == LTT_STRUCT || t->type_class == LTT_UNION))
+    ret =t->element_number;
+
+  return ret;
 }
 
 /*****************************************************************************
@@ -264,11 +285,20 @@ unsigned ltt_type_member_number(LttType *t)
 
 LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name)
 {
-  if(t->type_class != LTT_STRUCT
-      && t->type_class != LTT_UNION){*name = NULL; return NULL;}
-  if(i >= t->element_number){*name = NULL; return NULL;}
-  *name = t->element_type[i]->element_name;
-  return t->element_type[i];
+  LttType *member_type = NULL;
+
+  if(unlikely(  (t->type_class != LTT_STRUCT
+                 && t->type_class != LTT_UNION)
+              ||
+                (i >= t->element_number)
+             )) {
+      *name = NULL;
+  } else {
+    *name = t->element_type[i]->element_name;
+    member_type = t->element_type[i];
+  }
+
+  return member_type;
 }
 
 /*****************************************************************************
@@ -284,10 +314,13 @@ LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name)
  ****************************************************************************/
 
 char *ltt_enum_string_get(LttType *t, unsigned i)
-{  
-  if(t->type_class != LTT_ENUM) return NULL;
-  if(i >= t->element_number) return NULL;
-  return t->enum_strings[i];
+{ 
+  char *string = NULL;
+  
+  if(likely(t->type_class == LTT_ENUM && i < t->element_number))
+    string = t->enum_strings[i];
+
+  return string;
 }
 
 /*****************************************************************************
@@ -302,11 +335,13 @@ char *ltt_enum_string_get(LttType *t, unsigned i)
 
 LttField *ltt_field_element(LttField *f)
 {
-  if(f->field_type->type_class != LTT_ARRAY &&
-     f->field_type->type_class != LTT_SEQUENCE)
-    return NULL;
+  LttField *nest = NULL;
+  
+  if(likely(f->field_type->type_class == LTT_ARRAY ||
+              f->field_type->type_class == LTT_SEQUENCE))
+    nest = f->child[0];
 
-  return f->child[0];
+  return nest;
 }
 
 /*****************************************************************************
@@ -321,10 +356,16 @@ LttField *ltt_field_element(LttField *f)
 
 LttField *ltt_field_member(LttField *f, unsigned i)
 {
-  if(f->field_type->type_class != LTT_STRUCT
-      && f->field_type->type_class != LTT_UNION) return NULL;
-  if(i >= f->field_type->element_number) return NULL;
-  return f->child[i];
+  LttField *field_member;
+
+  if(unlikely(   f->field_type->type_class != LTT_STRUCT
+                 && f->field_type->type_class != LTT_UNION)
+              || i >= f->field_type->element_number )
+    field_member = NULL;
+  else
+    field_member = f->child[i];
+
+  return field_member;
 }
 
 /*****************************************************************************
@@ -338,12 +379,12 @@ LttField *ltt_field_member(LttField *f, unsigned i)
 
 LttType *ltt_field_type(LttField *f)
 {
-  if(!f)return NULL;
+  if(unlikely(!f))return NULL;
   return f->field_type;
 }
 
 int ltt_field_size(LttField * f)
 {
-  if(!f)return 0;
+  if(unlikely(!f))return 0;
   return f->field_size;
 }
