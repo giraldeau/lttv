@@ -160,7 +160,7 @@ gboolean draw_text( void *hook_data, void *call_data)
           break;
       }
       /* verify if there is enough space to draw */
-      if(x + width <= draw_context->drawinfo.end.x) {
+      if(unlikely(x + width <= draw_context->drawinfo.end.x)) {
         enough_space = TRUE;
         *offset += width;
       }
@@ -185,14 +185,14 @@ gboolean draw_text( void *hook_data, void *call_data)
           break;
       }
       /* verify if there is enough space to draw */
-      if(x - width >= draw_context->drawinfo.start.x) {
+      if(unlikely(x - width >= draw_context->drawinfo.start.x)) {
         enough_space = TRUE;
         *offset -= width;
       }
       break;
   }
 
-  if(enough_space)
+  if(unlikely(enough_space))
     gdk_draw_layout_with_colors(draw_context->drawable,
               draw_context->gc,
               x,
@@ -220,7 +220,7 @@ gboolean draw_icon( void *hook_data, void *call_data)
   
   g_assert(lttv_iattribute_find_by_path(attributes, icon_name,
       LTTV_POINTER, &value));
-  if(*(value.v_pointer) == NULL)
+  if(unlikely(*(value.v_pointer) == NULL))
   {
     *(value.v_pointer) = icon_info = g_new(IconStruct,1);
     
@@ -258,7 +258,7 @@ gboolean draw_icon( void *hook_data, void *call_data)
           break;
       }
       /* verify if there is enough space to draw */
-      if(x + width <= draw_context->drawinfo.end.x) {
+      if(unlikely(x + width <= draw_context->drawinfo.end.x)) {
         enough_space = TRUE;
         *offset += width;
       }
@@ -283,14 +283,14 @@ gboolean draw_icon( void *hook_data, void *call_data)
           break;
       }
       /* verify if there is enough space to draw */
-      if(x - width >= draw_context->drawinfo.start.x) {
+      if(unlikely(x - width >= draw_context->drawinfo.start.x)) {
         enough_space = TRUE;
         *offset -= width;
       }
       break;
   }
 
-  if(enough_space) {
+  if(unlikely(enough_space)) {
     gdk_gc_set_clip_mask(draw_context->gc, icon_info->mask);
 
     gdk_gc_set_clip_origin(
@@ -391,7 +391,7 @@ gboolean draw_arc( void *hook_data, void *call_data)
           break;
       }
       /* verify if there is enough space to draw */
-      if(x + width <= draw_context->drawinfo.end.x) {
+      if(unlikely(x + width <= draw_context->drawinfo.end.x)) {
         enough_space = TRUE;
         *offset += width;
       }
@@ -416,14 +416,14 @@ gboolean draw_arc( void *hook_data, void *call_data)
           break;
       }
       /* verify if there is enough space to draw */
-      if(x - width >= draw_context->drawinfo.start.x) {
+      if(unlikely(x - width >= draw_context->drawinfo.start.x)) {
         enough_space = TRUE;
         *offset -= width;
       }
       break;
   }
 
-  if(enough_space)
+  if(unlikely(enough_space))
     gdk_draw_arc(draw_context->drawable, draw_context->gc,
           properties->filled,
           x,

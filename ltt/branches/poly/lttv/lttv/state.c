@@ -104,17 +104,21 @@ guint process_hash(gconstpointer key)
 }
 
 
+/* If the hash table hash function is well distributed,
+ * the process_equal should compare different pid */
 gboolean process_equal(gconstpointer a, gconstpointer b)
 {
   const LttvProcessState *process_a, *process_b;
-
+  gboolean ret = TRUE;
+  
   process_a = (const LttvProcessState *)a;
   process_b = (const LttvProcessState *)b;
+  
+  if(likely(process_a->pid != process_b->pid)) ret = FALSE;
+  else if(likely(process_a->pid == 0 && 
+                 process_a->last_cpu != process_b->last_cpu)) ret = FALSE;
 
-  if(process_a->pid != process_b->pid) return FALSE;
-  if(process_a->pid == 0 && 
-      process_a->last_cpu != process_b->last_cpu) return FALSE;
-  return TRUE;
+  return ret;
 }
 
 
@@ -840,7 +844,7 @@ lttv_state_find_process_or_create(LttvTracefileState *tfs, guint pid)
 {
   LttvProcessState *process = lttv_state_find_process(tfs, pid);
 
-  if(process == NULL) process = lttv_state_create_process(tfs, NULL, pid);
+  if(unlikely(process == NULL)) process = lttv_state_create_process(tfs, NULL, pid);
   return process;
 }
 
@@ -964,7 +968,7 @@ static gboolean schedchange(void *hook_data, void *call_data)
   pid_out = ltt_event_get_unsigned(s->parent.e, h->f2);
   state_out = ltt_event_get_unsigned(s->parent.e, h->f3);
 
-  if(s->process != NULL) {
+  if(likely(s->process != NULL)) {
 
     /* We could not know but it was not the idle process executing.
        This should only happen at the beginning, before the first schedule
@@ -972,14 +976,14 @@ static gboolean schedchange(void *hook_data, void *call_data)
        is missing. It is not obvious how we could, after the fact, compensate
        the wrongly attributed statistics. */
 
-    if(s->process->pid != pid_out) {
+    if(unlikely(s->process->pid != pid_out)) {
       g_assert(s->process->pid == 0);
     }
 
-    if(s->process->state->s == LTTV_STATE_EXIT) {
+    if(unlikely(s->process->state->s == LTTV_STATE_EXIT)) {
       s->process->state->s = LTTV_STATE_ZOMBIE;
     } else {
-      if(state_out == 0) s->process->state->s = LTTV_STATE_WAIT_CPU;
+      if(unlikely(state_out == 0)) s->process->state->s = LTTV_STATE_WAIT_CPU;
       else s->process->state->s = LTTV_STATE_WAIT;
     } /* FIXME : we do not remove process here, because the kernel
        * still has them : they may be zombies. We need to know
@@ -1012,7 +1016,7 @@ static gboolean process_fork(LttvTraceHook *trace_hook, LttvTracefileState *s)
 
   zombie_process = lttv_state_find_process(s, child_pid);
 
-  if(zombie_process != NULL) {
+  if(unlikely(zombie_process != NULL)) {
     /* Reutilisation of PID. Only now we are sure that the old PID
      * has been released. FIXME : sould know when release_task happens instead.
      */
@@ -1027,7 +1031,7 @@ static gboolean process_fork(LttvTraceHook *trace_hook, LttvTracefileState *s)
 
 static gboolean process_exit(LttvTraceHook *trace_hook, LttvTracefileState *s)
 {
-  if(s->process != NULL) {
+  if(likely(s->process != NULL)) {
     s->process->state->s = LTTV_STATE_EXIT;
   }
   return FALSE;

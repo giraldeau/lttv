@@ -18,7 +18,7 @@
 
 
 #include <lttv/hook.h>
-
+#include <ltt/compiler.h>
 
 typedef struct _LttvHookClosure {
   LttvHook      hook;
@@ -29,9 +29,10 @@ typedef struct _LttvHookClosure {
 
 gint lttv_hooks_prio_compare(LttvHookClosure *a, LttvHookClosure *b)
 {
-  if(a->prio < b->prio) return -1;
-  if(a->prio > b->prio) return 1;
-  return 0;
+  gint ret=0;
+  if(a->prio < b->prio) ret = -1;
+  else if(a->prio > b->prio) ret = 1;
+  return ret;
 }
 
 
@@ -53,7 +54,7 @@ void lttv_hooks_add(LttvHooks *h, LttvHook f, void *hook_data, LttvHookPrio p)
   LttvHookClosure *c, new_c;
   guint i;
   
-  if(h == NULL)g_error("Null hook added");
+  if(unlikely(h == NULL))g_error("Null hook added");
 
   new_c.hook = f;
   new_c.hook_data = hook_data;
@@ -99,7 +100,8 @@ void lttv_hooks_add_list(LttvHooks *h, const LttvHooks *list)
   LttvHookClosure *c;
   const LttvHookClosure *new_c;
 
-  if(list == NULL) return;
+  if(unlikely(list == NULL)) return;
+
   for(i = 0, j = 0 ; i < list->len; i++) {
     new_c = &g_array_index(list, LttvHookClosure, i);
     gboolean found=FALSE;
@@ -212,7 +214,7 @@ void lttv_hooks_remove_list(LttvHooks *h, LttvHooks *list)
   /* Normally the hooks in h are ordered as in list. If this is not the case,
      try harder here. */
 
-  if(j < list->len) {
+  if(unlikely(j < list->len)) {
     for(; j < list->len ; j++) {
       c_list = &g_array_index(list, LttvHookClosure, j);
       lttv_hooks_remove_data(h, c_list->hook, c_list->hook_data);
@@ -232,7 +234,7 @@ void lttv_hooks_get(LttvHooks *h, unsigned i, LttvHook *f, void **hook_data,
 {
   LttvHookClosure *c;
 
-  if(i >= h->len)
+  if(unlikely(i >= h->len))
   {
     *f = NULL;
     *hook_data = NULL;
@@ -260,7 +262,7 @@ gboolean lttv_hooks_call(LttvHooks *h, void *call_data)
 
   guint i;
 
-  if(h != NULL) {
+  if(likely(h != NULL)) {
     for(i = 0 ; i < h->len ; i++) {
       c = &g_array_index(h, LttvHookClosure, i);
       ret = c->hook(c->hook_data,call_data);
@@ -279,11 +281,18 @@ gboolean lttv_hooks_call_check(LttvHooks *h, void *call_data)
 
   for(i = 0 ; i < h->len ; i++) {
     c = &g_array_index(h, LttvHookClosure, i);
-    if(c->hook(c->hook_data,call_data)) return TRUE;
+    if(unlikely(c->hook(c->hook_data,call_data))) return TRUE;
   }
   return FALSE;
 }
 
+/* Optimised for h1 == NULL, h2 != NULL. This is the case
+ * for optimised computation (with specific by id hooks, but
+ * no main hooks).
+ *
+ * The second case that should occur the most often is
+ * h1 != NULL , h2 == NULL.
+ */
 gboolean lttv_hooks_call_merge(LttvHooks *h1, void *call_data1,
                                LttvHooks *h2, void *call_data2)
 {
@@ -293,8 +302,8 @@ gboolean lttv_hooks_call_merge(LttvHooks *h1, void *call_data1,
 
   guint i, j;
 
-  if(h1 != NULL) {
-    if(h2 != NULL) {
+  if(unlikely(h1 != NULL)) {
+    if(unlikely(h2 != NULL)) {
       for(i = 0, j = 0 ; i < h1->len && j < h2->len ;) {
         c1 = &g_array_index(h1, LttvHookClosure, i);
         c2 = &g_array_index(h2, LttvHookClosure, j);
@@ -327,7 +336,7 @@ gboolean lttv_hooks_call_merge(LttvHooks *h1, void *call_data1,
         sum_ret = sum_ret || ret;
       }
     }
-  } else if(h2 != NULL) { /* h1 == NULL && h2 != NULL */
+  } else if(likely(h2 != NULL)) { /* h1 == NULL && h2 != NULL */
      for(j = 0 ; j < h2->len ; j++) {
       c2 = &g_array_index(h2, LttvHookClosure, j);
       ret = c2->hook(c2->hook_data,call_data2);
@@ -345,8 +354,8 @@ gboolean lttv_hooks_call_check_merge(LttvHooks *h1, void *call_data1,
 
   guint i, j;
 
-  if(h1 != NULL) {
-    if(h2 != NULL) {
+  if(unlikely(h1 != NULL)) {
+    if(unlikely(h2 != NULL)) {
       for(i = 0, j = 0 ; i < h1->len && j < h2->len ;) {
         c1 = &g_array_index(h1, LttvHookClosure, i);
         c2 = &g_array_index(h2, LttvHookClosure, j);
@@ -374,7 +383,7 @@ gboolean lttv_hooks_call_check_merge(LttvHooks *h1, void *call_data1,
         if(c1->hook(c1->hook_data,call_data1)) return TRUE;
       }
     }
-  } else if(h2 != NULL) { /* h1 == NULL && h2 != NULL */
+  } else if(likely(h2 != NULL)) { /* h1 == NULL && h2 != NULL */
     for(j = 0 ; j < h2->len ; j++) {
       c2 = &g_array_index(h2, LttvHookClosure, j);
       if(c2->hook(c2->hook_data,call_data2)) return TRUE;
@@ -402,11 +411,11 @@ void lttv_hooks_by_id_destroy(LttvHooksById *h)
   g_ptr_array_free(h, TRUE);
 }
 
-
+/* Optimised for searching an existing hook */
 LttvHooks *lttv_hooks_by_id_find(LttvHooksById *h, unsigned id)
 {
-  if(h->len <= id) g_ptr_array_set_size(h, id + 1);
-  if(h->pdata[id] == NULL) h->pdata[id] = lttv_hooks_new();
+  if(unlikely(h->len <= id)) g_ptr_array_set_size(h, id + 1);
+  if(unlikely(h->pdata[id] == NULL)) h->pdata[id] = lttv_hooks_new();
   return h->pdata[id];
 }
 
@@ -418,7 +427,7 @@ unsigned lttv_hooks_by_id_max_id(LttvHooksById *h)
 
 void lttv_hooks_by_id_remove(LttvHooksById *h, unsigned id)
 {
-  if(id < h->len && h->pdata[id] != NULL) {
+  if(likely(id < h->len && h->pdata[id] != NULL)) {
     lttv_hooks_destroy((LttvHooks *)h->pdata[id]);
     h->pdata[id] = NULL;
   }

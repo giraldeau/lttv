@@ -26,16 +26,16 @@
 
 
 
-gint compare_tracefile(gconstpointer a, gconstpointer b)
+static gint compare_tracefile(gconstpointer a, gconstpointer b)
 {
   gint comparison = 0;
 
   const LttvTracefileContext *trace_a = (const LttvTracefileContext *)a;
   const LttvTracefileContext *trace_b = (const LttvTracefileContext *)b;
 
-  if(trace_a != trace_b) {
+  if(likely(trace_a != trace_b)) {
     comparison = ltt_time_compare(trace_a->timestamp, trace_b->timestamp);
-    if(comparison == 0) {
+    if(unlikely(comparison == 0)) {
       if(trace_a->index < trace_b->index) comparison = -1;
       else if(trace_a->index > trace_b->index) comparison = 1;
       else if(trace_a->t_context->index < trace_b->t_context->index) 
@@ -667,7 +667,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     tfc = NULL;
     g_tree_foreach(pqueue, get_first, &tfc);
     /* End of traceset : tfc is NULL */
-    if(tfc == NULL)
+    if(unlikely(tfc == NULL))
     {
       return count;
     }
@@ -680,11 +680,11 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
      * break the loop.
      */
 
-    if(last_ret == TRUE ||
-       count >= nb_events ||
+    if(unlikely(last_ret == TRUE ||
+                count >= nb_events ||
      (end_position!=NULL&&lttv_traceset_context_ctx_pos_compare(self,
                                                           end_position) == 0)||
-       ltt_time_compare(end, tfc->timestamp) <= 0)
+       ltt_time_compare(end, tfc->timestamp) <= 0))
     {
       return count;
     }
@@ -700,7 +700,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     last_ret = lttv_hooks_call_merge(tfc->event, tfc,
                         lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
 
-    if(ltt_tracefile_read(tfc->tf, tfc->e) != NULL) {
+    if(likely(ltt_tracefile_read(tfc->tf, tfc->e) != NULL)) {
       tfc->timestamp = ltt_event_time(tfc->e);
 	    g_tree_insert(pqueue, tfc, tfc);
     }
@@ -740,7 +740,7 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
     tfc = self->tracefiles[i];
     ltt_tracefile_seek_time(tfc->tf, start);
     g_tree_remove(pqueue, tfc);
-    if(ltt_tracefile_read(tfc->tf, tfc->e) != NULL) {
+    if(likely(ltt_tracefile_read(tfc->tf, tfc->e) != NULL)) {
       tfc->timestamp = ltt_event_time(tfc->e);
       g_tree_insert(pqueue, tfc, tfc);
     }
@@ -771,7 +771,7 @@ gboolean lttv_process_tracefile_seek_position(LttvTracefileContext *self,
   
   ltt_tracefile_seek_position(tfc->tf, pos);
   g_tree_remove(pqueue, tfc);
-  if(ltt_tracefile_read(tfc->tf, tfc->e) != NULL) {
+  if(likely(ltt_tracefile_read(tfc->tf, tfc->e) != NULL)) {
     tfc->timestamp = ltt_event_time(tfc->e);
     g_tree_insert(pqueue, tfc, tfc);
   }
@@ -862,10 +862,10 @@ lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
   guint nb, pos;
 
   nb = ltt_trace_facility_find(t, facility, &pos);
-  if(nb < 1) g_error("No %s facility", facility);
+  if(unlikely(nb < 1)) g_error("No %s facility", facility);
   f = ltt_trace_facility_get(t, pos);
   et = ltt_facility_eventtype_get_by_name(f, event_type);
-  if(et == NULL) g_error("Event %s does not exist", event_type);
+  if(unlikely(et == NULL)) g_error("Event %s does not exist", event_type);
 
   th->h = h;
   th->id = ltt_eventtype_id(et);
@@ -987,7 +987,7 @@ gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
 
   nb_trace = lttv_traceset_number(self->ts);
 
-  if(pos->nb_trace != nb_trace)
+  if(unlikely(pos->nb_trace != nb_trace))
     g_error("lttv_traceset_context_ctx_pos_compare : nb_trace does not match.");
   
   for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
@@ -995,7 +995,7 @@ gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
     nb_tracefile =  ltt_trace_control_tracefile_number(tc->t) +
                     ltt_trace_per_cpu_tracefile_number(tc->t);
 
-    if(pos->t_pos[iter_trace].nb_tracefile != nb_tracefile)
+    if(unlikely(pos->t_pos[iter_trace].nb_tracefile != nb_tracefile))
       g_error("lttv_traceset_context_ctx_pos_compare : nb_tracefile does not match.");
 
     for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
@@ -1021,13 +1021,13 @@ gint lttv_traceset_context_pos_pos_compare(
   gint ret;
 
   nb_trace = pos1->nb_trace;
-  if(nb_trace != pos2->nb_trace)
+  if(unlikely(nb_trace != pos2->nb_trace))
     g_error("lttv_traceset_context_pos_pos_compare : nb_trace does not match.");
 
   for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
 
     nb_tracefile = pos1->t_pos[iter_trace].nb_tracefile;
-    if(nb_tracefile != pos2->t_pos[iter_trace].nb_tracefile)
+    if(unlikely(nb_tracefile != pos2->t_pos[iter_trace].nb_tracefile))
       g_error("lttv_traceset_context_ctx_pos_compare : nb_tracefile does not match.");
 
     for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {

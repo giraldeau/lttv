@@ -20,7 +20,7 @@
 #define LTT_TIME_H
 
 #include <glib.h>
-
+#include <ltt/compiler.h>
 
 typedef struct _LttTime {
   unsigned long tv_sec;
@@ -42,7 +42,11 @@ static inline LttTime ltt_time_sub(LttTime t1, LttTime t2)
   LttTime res;
   res.tv_sec  = t1.tv_sec  - t2.tv_sec;
   res.tv_nsec = t1.tv_nsec - t2.tv_nsec;
-  if(t1.tv_nsec < t2.tv_nsec) {
+  /* unlikely : given equal chance to be anywhere in t1.tv_nsec, and
+   * higher probability of low value for t2.tv_sec, we will habitually
+   * not wrap.
+   */
+  if(unlikely(t1.tv_nsec < t2.tv_nsec)) {
     res.tv_sec--;
     res.tv_nsec += NANOSECONDS_PER_SECOND;
   }
@@ -55,15 +59,16 @@ static inline LttTime ltt_time_add(LttTime t1, LttTime t2)
   LttTime res;
   res.tv_nsec = t1.tv_nsec + t2.tv_nsec;
   res.tv_sec = t1.tv_sec + t2.tv_sec;
-  if(res.tv_nsec >= NANOSECONDS_PER_SECOND) {
+  /* unlikely : given equal chance to be anywhere in t1.tv_nsec, and
+   * higher probability of low value for t2.tv_sec, we will habitually
+   * not wrap.
+   */
+  if(unlikely(res.tv_nsec >= NANOSECONDS_PER_SECOND)) {
     res.tv_sec++;
     res.tv_nsec -= NANOSECONDS_PER_SECOND;
   }
   return res;
 }
-
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
 
 /* Fastest comparison : t1 > t2 */
 static inline int ltt_time_compare(LttTime t1, LttTime t2)

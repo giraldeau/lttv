@@ -239,27 +239,24 @@ static guint process_list_hash_fct(gconstpointer key)
   return ((pid>>8 ^ pid>>4 ^ pid>>2 ^ pid) ^ ((ProcessInfo*)key)->cpu);
 }
 
+/* If hash is good, should be different */
 static gboolean process_list_equ_fct(gconstpointer a, gconstpointer b)
 {
   const ProcessInfo *pa = (const ProcessInfo*)a;
   const ProcessInfo *pb = (const ProcessInfo*)b;
   
-  if(pa->pid != pb->pid)
-    return 0;
+  gboolean ret = TRUE;
 
-  if((pa->pid == 0 && (pa->cpu != pb->cpu)))
-    return 0;
+  if(likely(pa->pid != pb->pid))
+    ret = FALSE;
+  else if(likely((pa->pid == 0 && (pa->cpu != pb->cpu))))
+    ret = FALSE;
+  else if(unlikely(ltt_time_compare(pa->birth, pb->birth) != 0))
+    ret = FALSE;
+  else if(unlikely(pa->trace_num != pb->trace_num))
+    ret = FALSE;
 
-  if(pa->birth.tv_sec != pb->birth.tv_sec)
-    return 0;
-
-  if(pa->birth.tv_nsec != pb->birth.tv_nsec)
-    return 0;
-
-  if(pa->trace_num != pb->trace_num)
-    return 0;
-
-  return 1;
+  return ret;
 }
 
 void destroy_hash_key(gpointer key);
@@ -416,9 +413,9 @@ static gboolean remove_hash_item(ProcessInfo *process_info,
 
   gtk_list_store_remove (process_list->list_store, &iter);
 
-  if(process_list->current_hash_data != NULL) {
-    if(hashed_process_data ==
-                process_list->current_hash_data[process_info->cpu])
+  if(likely(process_list->current_hash_data != NULL)) {
+    if(likely(hashed_process_data ==
+                process_list->current_hash_data[process_info->cpu]))
       process_list->current_hash_data[process_info->cpu] = NULL;
   }
   return TRUE; /* remove the element from the hash table */
@@ -550,10 +547,11 @@ int processlist_remove( ProcessList *process_list,
   process_info.trace_num = trace_num;
 
 
-  if(hashed_process_data = 
+  hashed_process_data = 
     (HashedProcessData*)g_hash_table_lookup(
           process_list->process_hash,
-          &process_info))
+          &process_info);
+  if(likely(hashed_process_data != NULL))
   {
     iter = hashed_process_data->y_iter;
 
@@ -562,8 +560,8 @@ int processlist_remove( ProcessList *process_list,
     g_hash_table_remove(process_list->process_hash,
         &process_info);
 
-    if(process_list->current_hash_data != NULL) {
-      if(hashed_process_data == process_list->current_hash_data[cpu]) {
+    if(likely(process_list->current_hash_data != NULL)) {
+      if(likely(hashed_process_data == process_list->current_hash_data[cpu])) {
         process_list->current_hash_data[cpu] = NULL;
       }
     }

@@ -2020,7 +2020,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
   ProcessList *process_list = control_flow_data->process_list;
   LttTime birth = process->creation_time;
  
-  if(process_list->current_hash_data[tfc->index] != NULL) {
+  if(likely(process_list->current_hash_data[tfc->index] != NULL)) {
     hashed_process_data = process_list->current_hash_data[tfc->index];
   } else {
     hashed_process_data = processlist_get_process_data(process_list,
@@ -2028,7 +2028,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
             process->last_cpu_index,
             &birth,
             tfc->t_context->index);
-    if(hashed_process_data == NULL)
+    if(unlikely(hashed_process_data == NULL))
     {
       g_assert(pid == 0 || pid != process->ppid);
       ProcessInfo *process_info;
@@ -2066,10 +2066,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
    */
   g_assert(hashed_process_data->x.over != -1);
 
-  if(ltt_time_compare(hashed_process_data->next_good_time,
-                      evtime) > 0)
+  if(likely(ltt_time_compare(hashed_process_data->next_good_time,
+                      evtime) > 0))
   {
-    if(hashed_process_data->x.middle_marked == FALSE) {
+    if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
       processlist_get_pixels_from_data(process_list,
                   hashed_process_data,
                   &y,
@@ -2124,10 +2124,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
 
 
     /* Jump over draw if we are at the same x position */
-    if(x == hashed_process_data->x.middle &&
-             hashed_process_data->x.middle_used)
+    if(unlikely(x == hashed_process_data->x.middle &&
+             hashed_process_data->x.middle_used))
     {
-      if(hashed_process_data->x.middle_marked == FALSE) {
+      if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
         /* Draw collision indicator */
         gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
         gdk_draw_point(drawing->pixmap,
@@ -2226,7 +2226,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
 
   birth = process->creation_time;
 
-  if(process_list->current_hash_data[tfc->index] != NULL) {
+  if(likely(process_list->current_hash_data[tfc->index] != NULL)) {
     hashed_process_data = process_list->current_hash_data[tfc->index];
   } else {
     hashed_process_data = processlist_get_process_data(process_list,
@@ -2234,7 +2234,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
             process->last_cpu_index,
             &birth,
             tfc->t_context->index);
-    if(hashed_process_data == NULL)
+    if(unlikely(hashed_process_data == NULL))
     {
       g_assert(pid == 0 || pid != process->ppid);
       /* Process not present */
@@ -2261,8 +2261,8 @@ int after_execmode_hook(void *hook_data, void *call_data)
                                                hashed_process_data;
   }
 
-  if(ltt_time_compare(hashed_process_data->next_good_time,
-                          evtime) <= 0)
+  if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
+                          evtime) <= 0))
   {
 #if 0
     processlist_get_pixels_from_data(process_list,
@@ -2346,7 +2346,7 @@ int before_process_hook(void *hook_data, void *call_data)
 
     birth = process->creation_time;
 
-    if(process_list->current_hash_data[tfc->index] != NULL) {
+    if(likely(process_list->current_hash_data[tfc->index] != NULL)) {
       hashed_process_data = process_list->current_hash_data[tfc->index];
     } else {
       hashed_process_data = processlist_get_process_data(process_list,
@@ -2354,7 +2354,7 @@ int before_process_hook(void *hook_data, void *call_data)
             process->last_cpu_index,
             &birth,
             tfc->t_context->index);
-      if(hashed_process_data == NULL)
+      if(unlikely(hashed_process_data == NULL))
       {
         g_assert(pid == 0 || pid != process->ppid);
         /* Process not present */
@@ -2389,10 +2389,10 @@ int before_process_hook(void *hook_data, void *call_data)
      */
     g_assert(hashed_process_data->x.over != -1);
 
-    if(ltt_time_compare(hashed_process_data->next_good_time,
-                        evtime) > 0)
+    if(likely(ltt_time_compare(hashed_process_data->next_good_time,
+                        evtime) > 0))
     {
-      if(hashed_process_data->x.middle_marked == FALSE) {
+      if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
         processlist_get_pixels_from_data(process_list,
                   hashed_process_data,
                   &y,
@@ -2447,10 +2447,10 @@ int before_process_hook(void *hook_data, void *call_data)
 
 
       /* Jump over draw if we are at the same x position */
-      if(x == hashed_process_data->x.middle &&
-             hashed_process_data->x.middle_used)
+      if(unlikely(x == hashed_process_data->x.middle &&
+             hashed_process_data->x.middle_used))
       { 
-        if(hashed_process_data->x.middle_marked == FALSE) {
+        if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
           /* Draw collision indicator */
           gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
           gdk_draw_point(drawing->pixmap,
@@ -2568,7 +2568,7 @@ int after_process_hook(void *hook_data, void *call_data)
             process_child->last_cpu_index,
             &birth,
             tfc->t_context->index);
-    if(hashed_process_data_child == NULL)
+    if(likely(hashed_process_data_child == NULL))
     {
       g_assert(child_pid == 0 || child_pid != process_child->ppid);
       /* Process not present */
@@ -2592,8 +2592,8 @@ int after_process_hook(void *hook_data, void *call_data)
     }
 
 
-    if(ltt_time_compare(hashed_process_data_child->next_good_time,
-                          evtime) <= 0)
+    if(likely(ltt_time_compare(hashed_process_data_child->next_good_time,
+                          evtime) <= 0))
     {
 #if 0
       processlist_get_pixels_from_data(process_list,
@@ -2618,17 +2618,17 @@ int after_process_hook(void *hook_data, void *call_data)
           width,
           &new_x);
 
-      if(hashed_process_data_child->x.over != new_x) {
+      if(likely(hashed_process_data_child->x.over != new_x)) {
         hashed_process_data_child->x.over = new_x;
         hashed_process_data_child->x.over_used = FALSE;
         hashed_process_data_child->x.over_marked = FALSE;
       }
-      if(hashed_process_data_child->x.middle != new_x) {
+      if(likely(hashed_process_data_child->x.middle != new_x)) {
         hashed_process_data_child->x.middle = new_x;
         hashed_process_data_child->x.middle_used = FALSE;
         hashed_process_data_child->x.middle_marked = FALSE;
       }
-      if(hashed_process_data_child->x.under != new_x) {
+      if(likely(hashed_process_data_child->x.under != new_x)) {
         hashed_process_data_child->x.under = new_x;
         hashed_process_data_child->x.under_used = FALSE;
         hashed_process_data_child->x.under_marked = FALSE;
@@ -2651,7 +2651,7 @@ int after_process_hook(void *hook_data, void *call_data)
 
     birth = process->creation_time;
 
-    if(process_list->current_hash_data[tfc->index] != NULL) {
+    if(likely(process_list->current_hash_data[tfc->index] != NULL) ){
       hashed_process_data = process_list->current_hash_data[tfc->index];
     } else {
       hashed_process_data = processlist_get_process_data(process_list,
@@ -2659,7 +2659,7 @@ int after_process_hook(void *hook_data, void *call_data)
               process->last_cpu_index,
               &birth,
               tfc->t_context->index);
-      if(hashed_process_data == NULL)
+      if(unlikely(hashed_process_data == NULL))
       {
         g_assert(pid == 0 || pid != process->ppid);
         /* Process not present */
@@ -2687,8 +2687,8 @@ int after_process_hook(void *hook_data, void *call_data)
                                                hashed_process_data;
     }
 
-    if(ltt_time_compare(hashed_process_data->next_good_time,
-                          evtime) <= 0)
+    if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
+                          evtime) <= 0))
     {
 #if 0
       processlist_get_pixels_from_data(process_list,
@@ -2712,7 +2712,7 @@ int after_process_hook(void *hook_data, void *call_data)
           evtime,
           width,
           &new_x);
-      if(hashed_process_data->x.middle != new_x) {
+      if(unlikely(hashed_process_data->x.middle != new_x)) {
         hashed_process_data->x.middle = new_x;
         hashed_process_data->x.middle_used = FALSE;
         hashed_process_data->x.middle_marked = FALSE;
@@ -3164,18 +3164,19 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
     process = lttv_state_find_process(tfs,
                                       process_info->pid);
 
-    if(process != NULL) {
+    if(unlikely(process != NULL)) {
       
       /* Only draw for processes that are currently in the trace states */
 
       guint y = 0, height = 0, pl_height = 0;
       ProcessList *process_list = control_flow_data->process_list;
       LttTime birth = process_info->birth;
-      
+#ifdef EXTRA_CHECK
       /* Should be alike when background info is ready */
       if(control_flow_data->background_info_waiting==0)
         g_assert(ltt_time_compare(process->creation_time,
                                   process_info->birth) == 0);
+#endif //EXTRA_CHECK
       /* process HAS to be present */
       processlist_get_pixels_from_data(process_list,
               hashed_process_data,
@@ -3193,8 +3194,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
        */
       g_assert(hashed_process_data->x.over != -1);
 
-      if(ltt_time_compare(hashed_process_data->next_good_time,
-                            evtime) <= 0)
+      if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
+                            evtime) <= 0))
       {
         TimeWindow time_window = 
           lttvwindow_get_time_window(control_flow_data->tab);
@@ -3243,8 +3244,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         }
 #endif //0
 
-        if(x == hashed_process_data->x.middle &&
-            hashed_process_data->x.middle_used) {
+        if(unlikely(x == hashed_process_data->x.middle &&
+            hashed_process_data->x.middle_used)) {
 #if 0 /* do not mark closure : not missing information */
           if(hashed_process_data->x.middle_marked == FALSE) {
             /* Draw collision indicator */
@@ -3264,7 +3265,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
           draw_line((void*)&prop_line, (void*)&draw_context);
 
            /* become the last x position */
-          if(x != hashed_process_data->x.middle) {
+          if(likely(x != hashed_process_data->x.middle)) {
             hashed_process_data->x.middle = x;
             /* but don't use the pixel */
             hashed_process_data->x.middle_used = FALSE;

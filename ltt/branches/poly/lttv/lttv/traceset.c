@@ -203,7 +203,7 @@ guint lttv_trace_ref(LttvTrace * t)
 
 guint lttv_trace_unref(LttvTrace * t)
 {
-  if(t->ref_count > 0)
+  if(likely(t->ref_count > 0))
     t->ref_count--;
 
   return t->ref_count;

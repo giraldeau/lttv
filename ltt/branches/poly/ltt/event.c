@@ -227,21 +227,19 @@ LttField *ltt_event_field(LttEvent *e)
 {
   LttField * field;
   LttEventType * event_type = ltt_event_eventtype(e);
-  if(!event_type) return NULL;
+  if(unlikely(!event_type)) return NULL;
   field = event_type->root_field;
-  if(!field) return NULL;
+  if(unlikely(!field)) return NULL;
 
   //check if the field need refresh
-  if(e->which_block != event_type->latest_block ||
-     e->which_event != event_type->latest_event){
+  if(likely(e->which_block != event_type->latest_block ||
+            e->which_event != event_type->latest_event)){
 
     event_type->latest_block = e->which_block;
     event_type->latest_event = e->which_event;
     
-    if(field->field_fixed == 1)return field;
-
-    //refresh the field
-    ltt_event_refresh_fields(0, 0, field, e->data);    
+    if(unlikely(field->field_fixed != 1))
+      ltt_event_refresh_fields(0, 0, field, e->data);
   }
   return field;
 }

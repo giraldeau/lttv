@@ -147,7 +147,7 @@ unsigned lttv_hooks_by_id_max_id(LttvHooksById *h);
 static inline LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id)
 {
   LttvHooks *ret;
-  if(id < h->len) ret = h->pdata[id];
+  if(likely(id < h->len)) ret = h->pdata[id];
   else ret = NULL;
 
   return ret;

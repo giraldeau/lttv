@@ -1208,13 +1208,13 @@ int skipEvent(LttTracefile * t)
 
   evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
     
-  if(evT) rootFld = evT->root_field;
+  if(likely(evT)) rootFld = evT->root_field;
   else return ERANGE;
   
-  if(rootFld){
+  if(likely(rootFld)){
     //event has string/sequence or the last event is not the same event
-    if((evT->latest_block!=t->which_block || evT->latest_event!=t->which_event) 
-       && rootFld->field_fixed == 0){
+    if(likely((evT->latest_block!=t->which_block || evT->latest_event!=t->which_event)
+       && rootFld->field_fixed == 0)){
       setFieldsOffset(t, evT, evData, t->trace);
     }
     t->cur_event_pos += EVENT_HEADER_SIZE + rootFld->field_size;
@@ -1224,7 +1224,7 @@ int skipEvent(LttTracefile * t)
   evT->latest_event = t->which_event;
 
   //the next event is in the next block
-  if(evId == TRACE_BLOCK_END){
+  if(unlikely(evId == TRACE_BLOCK_END)){
     t->cur_event_pos = t->buffer + t->block_size;
   }else{
     t->which_event++;
@@ -1290,12 +1290,12 @@ static inline LttTime getEventTime(LttTracefile * tf)
   guint16       evId;
 
   evId = *(guint16 *)tf->cur_event_pos;
-  if(evId == TRACE_BLOCK_START){
+  if(unlikely(evId == TRACE_BLOCK_START)){
     tf->count = 0;
     tf->pre_cycle_count = 0;
     tf->cur_cycle_count = tf->a_block_start->cycle_count;
     return tf->a_block_start->time;
-  }else if(evId == TRACE_BLOCK_END){
+  }else if(unlikely(evId == TRACE_BLOCK_END)){
     tf->count = 0;
     tf->pre_cycle_count = 0;
     tf->cur_cycle_count = tf->a_block_end->cycle_count;
@@ -1305,7 +1305,7 @@ static inline LttTime getEventTime(LttTracefile * tf)
   // Calculate total time in cycles from start of buffer for this event
   cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
   
-  if(cycle_count < tf->pre_cycle_count)tf->count++;
+  if(unlikely(cycle_count < tf->pre_cycle_count)) tf->count++;
   tf->pre_cycle_count = cycle_count;
   cycle_count += (LttCycleCount)tf->count << 32;  
   
@@ -1343,7 +1343,7 @@ void setFieldsOffset(LttTracefile *tf,LttEventType *evT,void *evD,LttTrace* t)
   LttField * rootFld = evT->root_field;
   //  rootFld->base_address = evD;
 
-  if(rootFld)
+  if(likely(rootFld))
     rootFld->field_size = getFieldtypeSize(tf, evT, 0,0,rootFld, evD,t);  
 }
 
@@ -1367,13 +1367,13 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
   int size, size1, element_number, i, offset1, offset2;
   LttType * type = fld->field_type;
 
-  if(t){
-    if(evT->latest_block==t->which_block && evT->latest_event==t->which_event){
+  if(likely(t)){
+    if(unlikely(evT->latest_block==t->which_block && evT->latest_event==t->which_event)){
       return fld->field_size;
     } 
   }
 
-  if(fld->field_fixed == 1){
+  if(likely(fld->field_fixed == 1)){
     if(fld == evT->root_field) return fld->field_size;
   }     
 
@@ -1434,7 +1434,7 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
     case LTT_STRUCT:
       element_number = (int) type->element_number;
       size = 0;
-      if(fld->field_fixed == -1){      
+      if(fld->field_fixed == -1){
         offset1 = offsetRoot;
         offset2 = 0;
         for(i=0;i<element_number;i++){

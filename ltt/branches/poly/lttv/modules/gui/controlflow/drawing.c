@@ -592,7 +592,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
                 "control_flow_data");
-  if(drawing->gc == NULL) {
+  if(unlikely(drawing->gc == NULL)) {
     drawing->gc = gdk_gc_new(drawing->drawing_area->window);
     gdk_gc_copy(drawing->gc, drawing->drawing_area->style->black_gc);
   }
@@ -1007,12 +1007,12 @@ void drawing_insert_square(Drawing_t *drawing,
     drawing->width+SAFETY, drawing->height - y);
 
 
-  if (drawing->pixmap)
+  if(likely(drawing->pixmap))
     gdk_pixmap_unref(drawing->pixmap);
 
   drawing->pixmap = pixmap;
   
-  if(drawing->height==1) drawing->height = height;
+  if(unlikely(drawing->height==1)) drawing->height = height;
   else drawing->height += height;
   
   gtk_widget_set_size_request(drawing->drawing_area,
@@ -1034,7 +1034,7 @@ void drawing_remove_square(Drawing_t *drawing,
 {
   GdkPixmap *pixmap;
 
-  if(drawing->height == height) {
+  if(unlikely(drawing->height == height)) {
     pixmap = gdk_pixmap_new(
         drawing->drawing_area->window,
         drawing->width + SAFETY,
@@ -1068,7 +1068,7 @@ void drawing_remove_square(Drawing_t *drawing,
     drawing->height-=height;
   }
 
-  if (drawing->pixmap)
+  if(likely(drawing->pixmap))
     gdk_pixmap_unref(drawing->pixmap);
 
   drawing->pixmap = pixmap;

@@ -19,6 +19,7 @@
 #include <string.h>
 #include <lttv/attribute.h>
 #include <ltt/ltt.h>
+#include <ltt/compiler.h>
 
 typedef union _AttributeValue {
   int dv_int;
@@ -177,7 +178,7 @@ lttv_attribute_remove(LttvAttribute *self, unsigned i)
   /* The element used to replace the removed element has its index entry
      all wrong now. Reinsert it with its new position. */
 
-  if(self->attributes->len != i){
+  if(likely(self->attributes->len != i)){
     g_hash_table_remove(self->names, GUINT_TO_POINTER(a->name));
     g_hash_table_insert(self->names, GUINT_TO_POINTER(a->name), GUINT_TO_POINTER(i + 1));
   }
@@ -189,7 +190,7 @@ lttv_attribute_remove_by_name(LttvAttribute *self, LttvAttributeName name)
   unsigned i;
 
   i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
-  if(i == 0) g_error("remove by name non existent attribute");
+  if(unlikely(i == 0)) g_error("remove by name non existent attribute");
 
   lttv_attribute_remove(self, i - 1);
 }
@@ -209,9 +210,9 @@ lttv_attribute_find_subdir(LttvAttribute *self, LttvAttributeName name)
   LttvAttribute *new;
   
   i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
-  if(i != 0) {
+  if(likely(i != 0)) {
     a = g_array_index(self->attributes, Attribute, i - 1);
-    if(a.type == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(a.value.dv_gobject)) {
+    if(likely(a.type == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(a.value.dv_gobject))) {
       return LTTV_ATTRIBUTE(a.value.dv_gobject);
     }
     else return NULL;    
@@ -230,9 +231,9 @@ lttv_attribute_find(LttvAttribute *self, LttvAttributeName name,
   Attribute *a;
 
   i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
-  if(i != 0) {
+  if(likely(i != 0)) {
     a = &g_array_index(self->attributes, Attribute, i - 1);
-    if(a->type != t) return FALSE;
+    if(unlikely(a->type != t)) return FALSE;
     *v = address_of_value(t, &(a->value));
     return TRUE;
   }
