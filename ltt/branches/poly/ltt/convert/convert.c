@@ -480,8 +480,20 @@ int main(int argc, char ** argv){
 	//write event_id and time_delta
 	write_to_buffer(write_pos,(void*)&newId,sizeof(uint16_t));
 	write_to_buffer(write_pos,(void*)&time_delta, sizeof(uint32_t));     
-	
+
+  /* Fix (Mathieu) */
+  if(time_delta < (0xFFFFFFFFULL&adaptation_tsc)) {
+    /* Overflow */
+    adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + 0x100000000ULL 
+                                 + (uint64_t)time_delta;
+  } else {
+    /* No overflow */
+    adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + time_delta;
+  }
+
+
 	if(evId == TRACE_BUFFER_END){
+#if 0
     /* Fix (Mathieu) */
     if(time_delta < (0xFFFFFFFFULL&adaptation_tsc)) {
       /* Overflow */
@@ -491,7 +503,7 @@ int main(int argc, char ** argv){
       /* No overflow */
       adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + time_delta;
     }
-
+#endif //0
     end.cycle_count = adaptation_tsc;
 	  int size = (void*)buf_out + block_size - write_pos 
                    - sizeof(buffer_end) - sizeof(uint32_t);
@@ -609,16 +621,6 @@ int main(int argc, char ** argv){
 	    event_size = sizeof(trace_network);
 	    break;
 	  case TRACE_HEARTBEAT:
-      /* Fix (Mathieu) */
-      if(time_delta < (0xFFFFFFFFULL&adaptation_tsc)) {
-        /* Overflow */
-       adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + 0x100000000ULL 
-                                     + (uint64_t)time_delta;
-      } else {
-        /* No overflow */
-        adaptation_tsc = (adaptation_tsc&0xFFFFFFFF00000000ULL) + time_delta;
-      }
-
 	    beat.seconds = 0;
 	    beat.nanoseconds = 0;
 	    beat.cycle_count = adaptation_tsc;
