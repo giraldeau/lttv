@@ -1468,18 +1468,47 @@ static inline LttTime getEventTime(LttTracefile * tf)
   guint16       evId;
 
   evId = *(guint16 *)tf->cur_event_pos;
-  if(unlikely(evId == TRACE_BLOCK_START)){
-    tf->count = 0;
-    tf->pre_cycle_count = 0;
-    tf->cur_cycle_count = tf->a_block_start->cycle_count;
-    return tf->a_block_start->time;
-  }else if(unlikely(evId == TRACE_BLOCK_END)){
-    tf->count = 0;
-    tf->pre_cycle_count = 0;
-    tf->cur_cycle_count = tf->a_block_end->cycle_count;
-    return tf->a_block_end->time;
-  }
+  //if(unlikely(evId == TRACE_BLOCK_START)){
+  //  tf->count = 0;
+  //  tf->pre_cycle_count = 0;
+  //  tf->cur_cycle_count = tf->a_block_start->cycle_count;
+  //  return tf->a_block_start->time;
+  //}//else if(unlikely(evId == TRACE_BLOCK_END)){
+    //tf->count = 0;
+    //tf->pre_cycle_count = 0;
+    //tf->cur_cycle_count = tf->a_block_end->cycle_count;
+    //return tf->a_block_end->time;
+  //}
   
+  // Calculate total time in cycles from start of buffer for this event
+  cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
+  //g_debug("event cycle count %llu", cycle_count);
+  gint64 delta_count = (gint64)(cycle_count - tf->pre_cycle_count);
+  LttCycleCount res_delta_count;
+  tf->pre_cycle_count = cycle_count;
+  
+  //if(unlikely(cycle_count < tf->pre_cycle_count)) tf->count++;
+  if(unlikely(delta_count < 0)) {
+  //  tf->count++; //increment wrap count
+    // keep in mind that delta_count is negative here.
+    res_delta_count = delta_count + 0x100000000ULL ;
+  } else
+    res_delta_count = (LttCycleCount)delta_count;
+  
+  //cycle_count += (LttCycleCount)tf->count << 32;  
+  
+  //FIXME (MD)
+  //  if(tf->cur_heart_beat_number > tf->count)
+  //    cycle_count += (tf->cur_heart_beat_number - tf->count) << 32;  
+
+  tf->cur_cycle_count = tf->cur_cycle_count + res_delta_count;
+  g_debug("cur cycle count %llu", tf->cur_cycle_count);
+
+  lEventTotalCycle = tf->cur_cycle_count;
+
+
+
+#if 0
   // Calculate total time in cycles from start of buffer for this event
   cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
   
@@ -1495,7 +1524,7 @@ static inline LttTime getEventTime(LttTracefile * tf)
 
   lEventTotalCycle  = cycle_count;
   lEventTotalCycle -= tf->a_block_start->cycle_count;
-
+#endif //0
   // Convert it to nsecs
   lEventNSec = (double)lEventTotalCycle * (double)tf->nsec_per_cycle;
   //lEventNSec = (tf->cycles_per_nsec_reciprocal * lEventTotalCycle) >> 16;
