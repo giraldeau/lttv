@@ -660,7 +660,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
     
     gdk_draw_line(widget->window,
                   drawing->dotted_gc,
-                  cursor_x, 0,
+                  cursor_x, event->area.y,
                   cursor_x, widget->allocation.height);
   }
   return FALSE;

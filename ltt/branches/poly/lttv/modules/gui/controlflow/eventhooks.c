@@ -149,6 +149,9 @@ gint background_ready(void *hook_data, void *call_data)
 
     drawing_clear(control_flow_data->drawing);
     processlist_clear(control_flow_data->process_list);
+    gtk_widget_set_size_request(
+      control_flow_data->drawing->drawing_area,
+                -1, processlist_get_height(control_flow_data->process_list));
     redraw_notify(control_flow_data, NULL);
   }
 
@@ -2870,6 +2873,9 @@ gint traceset_notify(void *hook_data, void *call_data)
 
   drawing_clear(control_flow_data->drawing);
   processlist_clear(control_flow_data->process_list);
+  gtk_widget_set_size_request(
+      control_flow_data->drawing->drawing_area,
+                -1, processlist_get_height(control_flow_data->process_list));
   redraw_notify(control_flow_data, NULL);
 
   request_background_data(control_flow_data);
@@ -2889,7 +2895,9 @@ gint redraw_notify(void *hook_data, void *call_data)
   /* fun feature, to be separated someday... */
   drawing_clear(control_flow_data->drawing);
   processlist_clear(control_flow_data->process_list);
-
+  gtk_widget_set_size_request(
+      control_flow_data->drawing->drawing_area,
+                -1, processlist_get_height(control_flow_data->process_list));
   // Clear the images
   rectangle_pixmap (control_flow_data->process_list,
         widget->style->black_gc,
