@@ -49,7 +49,7 @@ typedef struct _ProcessInfo {
   LttTime birth;
   guint trace_num;
 
-  gint height_cache;
+ // gint height_cache;
 
 } ProcessInfo;
 
@@ -87,6 +87,10 @@ struct _ProcessList {
   
   guint number_of_process;
   gint cell_height_cache;
+
+  ProcessInfo *current_process_info;
+  HashedProcessData *current_hash_data;
+
 };
 
 
@@ -102,6 +106,7 @@ void processlist_clear(ProcessList *process_list);
 /* CPU num is only used for PID 0 */
 int processlist_add(ProcessList *process_list, guint pid, guint cpu, guint ppid,
     LttTime *birth, guint trace_num, const gchar *name, guint *height,
+    ProcessInfo **process_info,
     HashedProcessData **hashed_process_data);
 // out : success (0) and height
 int processlist_remove(ProcessList *process_list, guint pid, guint cpu, 

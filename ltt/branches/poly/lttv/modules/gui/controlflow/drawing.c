@@ -410,6 +410,10 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
 
   g_hash_table_foreach(cfd->process_list->process_hash, set_last_start,
                             (gpointer)x);
+
+  cfd->process_list->current_process_info = NULL;
+  cfd->process_list->current_hash_data = NULL;
+
 }
 
 void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)

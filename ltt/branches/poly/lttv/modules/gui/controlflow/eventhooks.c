@@ -428,6 +428,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
      * be added after the state update.  */
     LttvProcessState *process;
     process = lttv_state_find_process(tfs, pid_out);
+    //process = tfs->process;
     
     if(process != NULL) {
       /* Well, the process_out existed : we must get it in the process hash
@@ -451,6 +452,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       {
         g_assert(pid_out == 0 || pid_out != process->ppid);
         /* Process not present */
+        ProcessInfo *process_info;
         processlist_add(process_list,
             pid_out,
             process->last_cpu,
@@ -459,15 +461,13 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             tfc->t_context->index,
             name,
             &pl_height,
+            &process_info,
             &hashed_process_data);
-        processlist_get_process_pixels(process_list,
-                pid_out,
-                process->last_cpu,
-                &birth,
-                tfc->t_context->index,
+        processlist_get_pixels_from_data(process_list,
+                process_info,
+                hashed_process_data,
                 &y,
-                &height,
-                &hashed_process_data);
+                &height);
         drawing_insert_square( drawing, y, height);
       }
     
@@ -596,6 +596,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       {
         g_assert(pid_in == 0 || pid_in != process->ppid);
         /* Process not present */
+        ProcessInfo *process_info;
         processlist_add(process_list,
             pid_in,
             process->last_cpu,
@@ -604,15 +605,13 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             tfc->t_context->index,
             name,
             &pl_height,
+            &process_info,
             &hashed_process_data);
-        processlist_get_process_pixels(process_list,
-                pid_in,
-                process->last_cpu,
-                &birth,
-                tfc->t_context->index,
+        processlist_get_pixels_from_data(process_list,
+                process_info,
+                hashed_process_data,
                 &y,
-                &height,
-                &hashed_process_data);
+                &height);
         drawing_insert_square( drawing, y, height);
       }
     
@@ -1399,6 +1398,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
           &hashed_process_data_in) == 1)
   {
     g_assert(pid_in == 0 || pid_in != process_in->ppid);
+    ProcessInfo *process_info;
     /* Process not present */
     processlist_add(process_list,
         pid_in,
@@ -1408,15 +1408,13 @@ int after_schedchange_hook(void *hook_data, void *call_data)
         tfc->t_context->index,
         name,
         &pl_height,
+        &process_info,
         &hashed_process_data_in);
-    processlist_get_process_pixels(process_list,
-            pid_in,
-            process_in->last_cpu,
-            &birth,
-            tfc->t_context->index,
-            &y_in,
-            &height,
-            &hashed_process_data_in);
+    processlist_get_pixels_from_data(process_list,
+                process_info,
+                hashed_process_data_in,
+                &y_in,
+                &height);
     drawing_insert_square( control_flow_data->drawing, y_in, height);
   }
 
@@ -2003,6 +2001,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
           &hashed_process_data) == 1)
   {
     g_assert(pid == 0 || pid != process->ppid);
+    ProcessInfo *process_info;
     /* Process not present */
     processlist_add(process_list,
         pid,
@@ -2012,15 +2011,13 @@ int before_execmode_hook(void *hook_data, void *call_data)
         tfc->t_context->index,
         name,
         &pl_height,
+        &process_info,
         &hashed_process_data);
-    processlist_get_process_pixels(process_list,
-            pid,
-            process->last_cpu,
-            &birth,
-            tfc->t_context->index,
-            &y,
-            &height,
-            &hashed_process_data);
+    processlist_get_pixels_from_data(process_list,
+                process_info,
+                hashed_process_data,
+                &y,
+                &height);
     drawing_insert_square( drawing, y, height);
   }
 
@@ -2186,6 +2183,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
   {
     g_assert(pid == 0 || pid != process->ppid);
     /* Process not present */
+    ProcessInfo *process_info;
     processlist_add(process_list,
         pid,
         process->last_cpu,
@@ -2194,15 +2192,13 @@ int after_execmode_hook(void *hook_data, void *call_data)
         tfc->t_context->index,
         name,
         &pl_height,
+        &process_info,
         &hashed_process_data);
-    processlist_get_process_pixels(process_list,
-            pid,
-            process->last_cpu,
-            &birth,
-            tfc->t_context->index,
-            &y,
-            &height,
-            &hashed_process_data);
+    processlist_get_pixels_from_data(process_list,
+                process_info,
+                hashed_process_data,
+                &y,
+                &height);
     drawing_insert_square( control_flow_data->drawing, y, height);
   }
   
@@ -2301,6 +2297,7 @@ int before_process_hook(void *hook_data, void *call_data)
     {
       g_assert(pid == 0 || pid != process->ppid);
       /* Process not present */
+      ProcessInfo *process_info;
       processlist_add(process_list,
           pid,
           process->last_cpu,
@@ -2309,15 +2306,13 @@ int before_process_hook(void *hook_data, void *call_data)
           tfc->t_context->index,
           name,
           &pl_height,
+          &process_info,
           &hashed_process_data);
-      processlist_get_process_pixels(process_list,
-              pid,
-              process->last_cpu,
-              &birth,
-              tfc->t_context->index,
-              &y,
-              &height,
-              &hashed_process_data);
+      processlist_get_pixels_from_data(process_list,
+                process_info,
+                hashed_process_data,
+                &y,
+                &height);
       drawing_insert_square( control_flow_data->drawing, y, height);
     }
 
@@ -2503,6 +2498,7 @@ int after_process_hook(void *hook_data, void *call_data)
     {
       g_assert(child_pid == 0 || child_pid != process_child->ppid);
       /* Process not present */
+      ProcessInfo *process_info;
       processlist_add(process_list,
           child_pid,
           process_child->last_cpu,
@@ -2511,15 +2507,13 @@ int after_process_hook(void *hook_data, void *call_data)
           tfc->t_context->index,
           name,
           &pl_height,
+          &process_info,
           &hashed_process_data_child);
-      processlist_get_process_pixels(process_list,
-              child_pid,
-              process_child->last_cpu,
-              &birth,
-              tfc->t_context->index,
-              &y_child,
-              &height,
-              &hashed_process_data_child);
+      processlist_get_pixels_from_data(process_list,
+                process_info,
+                hashed_process_data_child,
+                &y_child,
+                &height);
       drawing_insert_square( control_flow_data->drawing, y_child, height);
     }
 
@@ -2578,6 +2572,7 @@ int after_process_hook(void *hook_data, void *call_data)
     {
       g_assert(pid == 0 || pid != process->ppid);
       /* Process not present */
+      ProcessInfo *process_info;
       processlist_add(process_list,
           pid,
           process->last_cpu,
@@ -2586,15 +2581,13 @@ int after_process_hook(void *hook_data, void *call_data)
           tfc->t_context->index,
           name,
           &pl_height,
+          &process_info,
           &hashed_process_data);
-      processlist_get_process_pixels(process_list,
-              pid,
-              process->last_cpu,
-              &birth,
-              tfc->t_context->index,
-              &y,
-              &height,
-              &hashed_process_data);
+      processlist_get_pixels_from_data(process_list,
+                process_info,
+                hashed_process_data,
+                &y,
+                &height);
       drawing_insert_square( control_flow_data->drawing, y, height);
     }
 

@@ -279,6 +279,9 @@ ProcessList *processlist_construct(void)
   process_list->number_of_process = 0;
   process_list->cell_height_cache = -1;
 
+  process_list->current_process_info = NULL;
+  process_list->current_hash_data = NULL;
+
   /* Create the Process list */
   process_list->list_store = gtk_list_store_new (  N_COLUMNS,
               G_TYPE_STRING,
@@ -414,6 +417,11 @@ static gboolean remove_hash_item(ProcessInfo *process_info,
 
   gtk_list_store_remove (process_list->list_store, &iter);
 
+  if(process_info == process_list->current_process_info)
+    process_list->current_process_info = NULL;
+  if(hashed_process_data == process_list->current_hash_data)
+    process_list->current_hash_data = NULL;
+
   return TRUE; /* remove the element from the hash table */
 }
 
@@ -468,11 +476,13 @@ int processlist_add(  ProcessList *process_list,
       guint trace_num,
       const gchar *name,
       guint *height,
+      ProcessInfo **pm_process_info,
       HashedProcessData **pm_hashed_process_data)
 {
   ProcessInfo *Process_Info = g_new(ProcessInfo, 1);
   HashedProcessData *hashed_process_data = g_new(HashedProcessData, 1);
   *pm_hashed_process_data = hashed_process_data;
+  *pm_process_info = Process_Info;
   
   Process_Info->pid = pid;
   if(pid == 0)
@@ -543,32 +553,37 @@ int processlist_remove( ProcessList *process_list,
       LttTime *birth,
       guint trace_num)
 {
-  ProcessInfo Process_Info;
+  ProcessInfo process_info;
   gint *path_indices;
   HashedProcessData *hashed_process_data;
   GtkTreeIter iter;
   
-  Process_Info.pid = pid;
+  process_info.pid = pid;
   if(pid == 0)
-    Process_Info.cpu = cpu;
+    process_info.cpu = cpu;
   else
-    Process_Info.cpu = 0;
-  Process_Info.birth = *birth;
-  Process_Info.trace_num = trace_num;
+    process_info.cpu = 0;
+  process_info.birth = *birth;
+  process_info.trace_num = trace_num;
 
 
   if(hashed_process_data = 
     (HashedProcessData*)g_hash_table_lookup(
           process_list->process_hash,
-          &Process_Info))
+          &process_info))
   {
     iter = hashed_process_data->y_iter;
 
     gtk_list_store_remove (process_list->list_store, &iter);
     
     g_hash_table_remove(process_list->process_hash,
-        &Process_Info);
-    
+        &process_info);
+
+    if(hashed_process_data == process_list->current_hash_data) {
+      process_list->current_process_info = NULL;
+      process_list->current_hash_data = NULL;
+    }
+
     process_list->number_of_process--;
 
     return 0; 
@@ -592,23 +607,23 @@ __inline gint processlist_get_process_pixels(  ProcessList *process_list,
           guint *height,
           HashedProcessData **pm_hashed_process_data)
 {
-  ProcessInfo Process_Info;
+  ProcessInfo process_info;
   gint *path_indices;
   GtkTreePath *tree_path;
   HashedProcessData *hashed_process_data = NULL;
 
-  Process_Info.pid = pid;
+  process_info.pid = pid;
   if(pid == 0)
-    Process_Info.cpu = cpu;
+    process_info.cpu = cpu;
   else
-    Process_Info.cpu = 0;
-  Process_Info.birth = *birth;
-  Process_Info.trace_num = trace_num;
+    process_info.cpu = 0;
+  process_info.birth = *birth;
+  process_info.trace_num = trace_num;
 
   if(hashed_process_data = 
     (HashedProcessData*)g_hash_table_lookup(
           process_list->process_hash,
-          &Process_Info))
+          &process_info))
   {
     tree_path = gtk_tree_model_get_path(
                     GTK_TREE_MODEL(process_list->list_store),
