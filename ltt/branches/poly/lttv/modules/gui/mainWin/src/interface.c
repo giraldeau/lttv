@@ -107,8 +107,8 @@ create_MWindow (void)
   GtkWidget *tlbRemoveViewer;
   GtkWidget *MToolbar2;
   GtkWidget *MNotebook;
-  GtkWidget *empty_notebook_page;
-  GtkWidget *label1;
+  //  GtkWidget *empty_notebook_page;
+  //  GtkWidget *label1;
   GtkWidget *MStatusbar;
   GtkAccelGroup *accel_group;
 
@@ -525,7 +525,7 @@ create_MWindow (void)
   MNotebook = gtk_notebook_new ();
   gtk_widget_show (MNotebook);
   gtk_box_pack_start (GTK_BOX (MVbox), MNotebook, TRUE, TRUE, 0);
-
+/*
   empty_notebook_page = gtk_vbox_new (FALSE, 0);
   gtk_widget_show (empty_notebook_page);
   gtk_container_add (GTK_CONTAINER (MNotebook), empty_notebook_page);
@@ -534,7 +534,7 @@ create_MWindow (void)
   gtk_widget_show (label1);
   gtk_notebook_set_tab_label (GTK_NOTEBOOK (MNotebook), gtk_notebook_get_nth_page (GTK_NOTEBOOK (MNotebook), 0), label1);
   gtk_label_set_justify (GTK_LABEL (label1), GTK_JUSTIFY_LEFT);
-
+*/
   MStatusbar = gtk_statusbar_new ();
   gtk_widget_show (MStatusbar);
   gtk_box_pack_start (GTK_BOX (MVbox), MStatusbar, FALSE, FALSE, 0);
@@ -762,7 +762,7 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, tlbRemoveViewer, "tlbRemoveViewer");
   GLADE_HOOKUP_OBJECT (MWindow, MToolbar2, "MToolbar2");
   GLADE_HOOKUP_OBJECT (MWindow, MNotebook, "MNotebook");
-  GLADE_HOOKUP_OBJECT (MWindow, label1, "label1");
+  //  GLADE_HOOKUP_OBJECT (MWindow, label1, "label1");
   GLADE_HOOKUP_OBJECT (MWindow, MStatusbar, "MStatusbar");
 
   gtk_window_add_accel_group (GTK_WINDOW (MWindow), accel_group);
