@@ -4,6 +4,7 @@
 #include <gtk/gtk.h>
 #include <lttv/state.h>
 #include <ltt/ltt.h>
+#include "Draw_Item.h"
 
 /* The process list
  *
@@ -26,8 +27,13 @@ typedef struct _ProcessInfo {
 
 } ProcessInfo;
 
+typedef struct _HashedProcessData {
+	
+	GtkTreeRowReference *RowRef;
+	DrawContext *draw_context;
 
-
+} HashedProcessData;
+	
 struct _ProcessList {
 	
 	GtkWidget *Process_List_VC;
@@ -50,7 +56,7 @@ GtkWidget *processlist_get_widget(ProcessList *Process_List);
 
 // out : success (0) and height
 int processlist_add(ProcessList *Process_List, guint pid, LttTime *birth,
-		guint *height);
+		guint *height, HashedProcessData **Hashed_Process_Data);
 // out : success (0) and height
 int processlist_remove(ProcessList *Process_List, guint pid, LttTime *birth);
 
@@ -59,5 +65,6 @@ guint processlist_get_height(ProcessList *Process_List);
 // Returns 0 on success
 gint processlist_get_process_pixels(ProcessList *Process_List,
 				guint pid, LttTime *birth,
-				guint *y, guint *height);
+				guint *y, guint *height,
+				HashedProcessData **Hashed_Process_Data);
 #endif // _PROCESS_LIST_H

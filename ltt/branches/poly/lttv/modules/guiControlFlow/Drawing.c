@@ -70,12 +70,12 @@ void drawing_data_request(Drawing_t *Drawing,
 	
 	g_critical("x is : %i, x+width is : %i", x, x+width);
 
-	convert_pixels_to_time(width, x,
+	convert_pixels_to_time(Drawing->Drawing_Area_V->allocation.width, x,
 				&control_flow_data->Time_Window.start_time,
 				&window_end,
 				&start);
 
-	convert_pixels_to_time(width, x + width,
+	convert_pixels_to_time(Drawing->Drawing_Area_V->allocation.width, x + width,
 				&control_flow_data->Time_Window.start_time,
 				&window_end,
 				&end);
@@ -110,6 +110,7 @@ void drawing_data_request(Drawing_t *Drawing,
 																			event_request.time_end.tv_nsec);
 	
 	LttvHooks *event = lttv_hooks_new();
+	state_add_event_hooks_api(control_flow_data->Parent_Window);
 	lttv_hooks_add(event, draw_event_hook, &event_request);
 
 	lttv_process_traceset_seek_time(tsc, start);
@@ -120,6 +121,7 @@ void drawing_data_request(Drawing_t *Drawing,
 	lttv_traceset_context_remove_hooks(tsc, NULL, NULL, NULL, NULL, NULL, NULL,
 			NULL, NULL, NULL, event, NULL);
 
+	state_remove_event_hooks_api(control_flow_data->Parent_Window);
 	lttv_hooks_destroy(event);
 }
 		      
@@ -176,6 +178,11 @@ g_critical("init data");
 		  0, 0,
 		  -1, -1);
 
+  if (Drawing->Pixmap)
+    gdk_pixmap_unref(Drawing->Pixmap);
+
+  Drawing->Pixmap = Pixmap;
+
    /* Request data for missing space */
 g_critical("missing data");
    drawing_data_request(Drawing, &Pixmap, Drawing->width, 0,
@@ -203,10 +210,6 @@ g_critical("missing data");
  
   
   
-  if (Drawing->Pixmap)
-    gdk_pixmap_unref(Drawing->Pixmap);
-
-  Drawing->Pixmap = Pixmap;
   Drawing->width = widget->allocation.width;
   Drawing->height = widget->allocation.height;
 

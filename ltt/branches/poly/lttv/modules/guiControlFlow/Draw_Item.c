@@ -293,8 +293,8 @@ gboolean draw_arc( void *hook_data, void *call_data)
 							Draw_Context->Current->modify_over->x,
 							Draw_Context->Current->modify_over->y,
 							Properties->size, Properties->size, 0, 360*64);
+			g_critical("I draw arc over, x: %i, y: %i", Draw_Context->Current->modify_over->x, Draw_Context->Current->modify_over->y);
 			Draw_Context->Current->modify_over->x += Properties->size;
-		
 			break;
 		case MIDDLE:
 			gdk_draw_arc(Draw_Context->drawable, Draw_Context->gc,

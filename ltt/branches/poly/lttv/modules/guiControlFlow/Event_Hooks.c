@@ -10,17 +10,23 @@
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 #include <glib.h>
+#include <assert.h>
 
 //#include <pango/pango.h>
 
+#include <ltt/event.h>
+
 #include <lttv/hook.h>
 #include <lttv/common.h>
+#include <lttv/state.h>
+
 
 #include "Event_Hooks.h"
 #include "CFV.h"
 #include "Process_List.h"
 #include "Drawing.h"
 #include "CFV-private.h"
+
 
 #define MAX_PATH_LEN 256
 
@@ -36,16 +42,14 @@ void test_draw_item(Drawing_t *Drawing,
 	DrawInfo current, previous;
 	ItemInfo over, middle, under, modify_over, modify_middle, modify_under;
 
-	int i,j;
+	int i=0,j=0;
 	
-	for(i=0; i<1024;i=i+15)
+	//for(i=0; i<1024;i=i+15)
 	{
-		for(j=0;j<768;j=j+15)
+	//	for(j=0;j<768;j=j+15)
 		{
 			over.x = i;
 			over.y = j;
-			over.ts =  NULL;
-			over.tfs = NULL;
 
 			current.modify_over = &over;
 	
@@ -69,6 +73,7 @@ void test_draw_item(Drawing_t *Drawing,
 
 }
 
+#ifdef NOTUSE
 /* NOTE : no drawing data should be sent there, since the drawing widget
  * has not been initialized */
 void send_test_drawing(ProcessList *Process_List,
@@ -396,7 +401,7 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 	Process_List->Test_Process_Sent = TRUE;
 
 }
-
+#endif//NOTUSE
 
 
 /**
@@ -491,22 +496,22 @@ int draw_before_hook(void *hook_data, void *call_data)
 int draw_event_hook(void *hook_data, void *call_data)
 {
 	EventRequest *Event_Request = (EventRequest*)hook_data;
-	
+	ControlFlowData *control_flow_data = Event_Request->Control_Flow_Data;
 	//static int i=0;
 
 	//i++;
 	//g_critical("%i", i);
-	
-	/* Text dumping if the information */
-	GString *string = g_string_new("");;
-	gboolean field_names = TRUE, state = TRUE;
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+	LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
   LttEvent *e;
-
   e = tfc->e;
+
+	/* Temp dump */
+#ifdef DONTSHOW
+	GString *string = g_string_new("");;
+	gboolean field_names = TRUE, state = TRUE;
 
   lttv_event_to_string(e, tfc->tf, string, TRUE, field_names, tfs);
   g_string_append_printf(string,"\n");  
@@ -521,12 +526,14 @@ int draw_event_hook(void *hook_data, void *call_data)
 	g_string_free(string, TRUE);
 	
 	/* End of text dump */
-
+#endif //DONTSHOW
 	/* Add process to process list (if not present) and get drawing "y" from
 	 * process position */
 	guint pid = tfs->process->pid;
 	LttTime birth = tfs->process->creation_time;
-	guint y = 0, height = 0;
+	guint y = 0, height = 0, pl_height = 0;
+	HashedProcessData *Hashed_Process_Data = NULL;
+
 	ProcessList *process_list =
 		guicontrolflow_get_process_list(Event_Request->Control_Flow_Data);
 	
@@ -534,23 +541,58 @@ int draw_event_hook(void *hook_data, void *call_data)
 					pid,
 					&birth,
 					&y,
-					&height) == 1)
+					&height,
+					&Hashed_Process_Data) == 1)
 	{
 		/* Process not present */
 		processlist_add(process_list,
 				pid,
 				&birth,
-				&y);
+				&pl_height,
+				&Hashed_Process_Data);
 		drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y, height);
 	}
-
+	
 	/* Find pixels corresponding to time of the event. If the time does
 	 * not fit in the window, show a warning, not supposed to happend. */
-	
+	guint x = 0;
+	guint width = control_flow_data->Drawing->Drawing_Area_V->allocation.width;
 
+	LttTime time = ltt_event_time(e);
+
+	LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
+												control_flow_data->Time_Window.start_time);
+
+	
+	convert_time_to_pixels(
+			control_flow_data->Time_Window.start_time,
+			window_end,
+			time,
+			width,
+			&x);
+	
+	assert(x <= width);
+	
 	/* Finally, draw what represents the event. */
+
+	GdkColor color = { 0, 0xffff, 0x0000, 0x0000 };
+	PropertiesArc prop_arc;
+	prop_arc.color = &color;
+	prop_arc.size = 10;
+	prop_arc.filled = TRUE;
+	prop_arc.position = OVER;
+	DrawContext *draw_context = Hashed_Process_Data->draw_context;
+	draw_context->Current->modify_over->x = x;
+	g_critical("x should be %i", x);
+	draw_context->Current->modify_over->y = y;
+	g_critical("y should be %i", y);
+	draw_context->drawable = control_flow_data->Drawing->Pixmap;
+	GtkWidget *widget = control_flow_data->Drawing->Drawing_Area_V;
+	//draw_context->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
+	draw_context->gc = widget->style->black_gc;
 	
-	
+	draw_arc((void*)&prop_arc, (void*)draw_context);
+	//test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->Pixmap);
 	return 0;
 }
 

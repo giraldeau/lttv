@@ -39,6 +39,8 @@ typedef enum _RelPos {
  * draw a line or background.
  *
  */
+
+
 struct _DrawContext {
 	GdkDrawable	*drawable;
 	GdkGC		*gc;
@@ -46,16 +48,6 @@ struct _DrawContext {
 
 	DrawInfo	*Current;
 	DrawInfo	*Previous;
-};
-
-struct _DrawInfo {
-	ItemInfo	*over;
-	ItemInfo	*middle;
-	ItemInfo	*under;
-	
-	ItemInfo	*modify_over;
-	ItemInfo	*modify_middle;
-	ItemInfo	*modify_under;
 };
 
 /* LttvExecutionState is accessible through the LttvTracefileState. Is has
@@ -75,10 +67,20 @@ struct _DrawInfo {
  * LttvTracefileContext, it gives the LttEvent structure, which is needed
  * to get facility name and event name.
  */
-struct _ItemInfo {
-	gint	x, y;
+struct _DrawInfo {
+	ItemInfo	*over;
+	ItemInfo	*middle;
+	ItemInfo	*under;
+	
+	ItemInfo	*modify_over;
+	ItemInfo	*modify_middle;
+	ItemInfo	*modify_under;
 	LttvTraceState		*ts;
 	LttvTracefileState	*tfs;
+};
+
+struct _ItemInfo {
+	gint	x, y;
 };
 
 /*

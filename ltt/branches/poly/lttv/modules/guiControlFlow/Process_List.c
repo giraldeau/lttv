@@ -2,7 +2,7 @@
 #include <gtk/gtk.h>
 #include <glib.h>
 #include "Process_List.h"
-
+#include "Draw_Item.h"
 
 /*****************************************************************************
  *                       Methods to synchronize process list                 *
@@ -299,14 +299,62 @@ void destroy_hash_data(gpointer data)
 int processlist_add(	ProcessList *Process_List,
 			guint pid,
 			LttTime *birth,
-			guint *height)
+			guint *height,
+			HashedProcessData **pmHashed_Process_Data)
 {
 	GtkTreeIter iter ;
 	ProcessInfo *Process_Info = g_new(ProcessInfo, 1);
-	GtkTreeRowReference *RowRef;
-
+	HashedProcessData *Hashed_Process_Data = g_new(HashedProcessData, 1);
+	*pmHashed_Process_Data = Hashed_Process_Data;
+	
 	Process_Info->pid = pid;
 	Process_Info->birth = *birth;
+	
+	Hashed_Process_Data->draw_context = g_new(DrawContext, 1);
+	Hashed_Process_Data->draw_context->drawable = NULL;
+	Hashed_Process_Data->draw_context->gc = NULL;
+	Hashed_Process_Data->draw_context->Current = g_new(DrawInfo,1);
+	Hashed_Process_Data->draw_context->Current->over = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Current->over->x = -1;
+	Hashed_Process_Data->draw_context->Current->over->y = -1;
+	Hashed_Process_Data->draw_context->Current->middle = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Current->middle->x = -1;
+	Hashed_Process_Data->draw_context->Current->middle->y = -1;
+	Hashed_Process_Data->draw_context->Current->under = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Current->under->x = -1;
+	Hashed_Process_Data->draw_context->Current->under->y = -1;
+	Hashed_Process_Data->draw_context->Current->modify_over = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Current->modify_over->x = -1;
+	Hashed_Process_Data->draw_context->Current->modify_over->y = -1;
+	Hashed_Process_Data->draw_context->Current->modify_middle = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Current->modify_middle->x = -1;
+	Hashed_Process_Data->draw_context->Current->modify_middle->y = -1;
+	Hashed_Process_Data->draw_context->Current->modify_under = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Current->modify_under->x = -1;
+	Hashed_Process_Data->draw_context->Current->modify_under->y = -1;
+	Hashed_Process_Data->draw_context->Current->ts = NULL;
+	Hashed_Process_Data->draw_context->Current->tfs = NULL;
+	Hashed_Process_Data->draw_context->Previous = g_new(DrawInfo,1);
+	Hashed_Process_Data->draw_context->Previous->over = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Previous->over->x = -1;
+	Hashed_Process_Data->draw_context->Previous->over->y = -1;
+	Hashed_Process_Data->draw_context->Previous->middle = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Previous->middle->x = -1;
+	Hashed_Process_Data->draw_context->Previous->middle->y = -1;
+	Hashed_Process_Data->draw_context->Previous->under = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Previous->under->x = -1;
+	Hashed_Process_Data->draw_context->Previous->under->y = -1;
+	Hashed_Process_Data->draw_context->Previous->modify_over = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Previous->modify_over->x = -1;
+	Hashed_Process_Data->draw_context->Previous->modify_over->y = -1;
+	Hashed_Process_Data->draw_context->Previous->modify_middle = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Previous->modify_middle->x = -1;
+	Hashed_Process_Data->draw_context->Previous->modify_middle->y = -1;
+	Hashed_Process_Data->draw_context->Previous->modify_under = g_new(ItemInfo,1);
+	Hashed_Process_Data->draw_context->Previous->modify_under->x = -1;
+	Hashed_Process_Data->draw_context->Previous->modify_under->y = -1;
+	Hashed_Process_Data->draw_context->Previous->ts = NULL;
+	Hashed_Process_Data->draw_context->Previous->tfs = NULL;
 	
 	/* Add a new row to the model */
 	gtk_list_store_append (	Process_List->Store_M, &iter);
@@ -320,15 +368,14 @@ int processlist_add(	ProcessList *Process_List,
 				BIRTH_S_COLUMN, birth->tv_sec,
 				BIRTH_NS_COLUMN, birth->tv_nsec,
 				-1);
-	RowRef = gtk_tree_row_reference_new (
+	Hashed_Process_Data->RowRef = gtk_tree_row_reference_new (
 			GTK_TREE_MODEL(Process_List->Store_M),
 			gtk_tree_model_get_path(
 				GTK_TREE_MODEL(Process_List->Store_M),
 				&iter));
-			
 	g_hash_table_insert(	Process_List->Process_Hash,
 				(gpointer)Process_Info,
-				(gpointer)RowRef);
+				(gpointer)Hashed_Process_Data);
 	
 	//g_critical ( "iter after : %s", gtk_tree_path_to_string (
 	//		gtk_tree_model_get_path (
@@ -350,14 +397,15 @@ int processlist_remove(	ProcessList *Process_List,
 {
 	ProcessInfo Process_Info;
 	gint *path_indices;
-	GtkTreeRowReference *got_RowRef;
+	HashedProcessData *Hashed_Process_Data;
 	GtkTreeIter iter;
 	
 	Process_Info.pid = pid;
 	Process_Info.birth = *birth;
 
-	if(got_RowRef = 
-		(GtkTreeRowReference*)g_hash_table_lookup(
+
+	if(Hashed_Process_Data = 
+		(HashedProcessData*)g_hash_table_lookup(
 					Process_List->Process_Hash,
 					&Process_Info))
 	{
@@ -365,11 +413,28 @@ int processlist_remove(	ProcessList *Process_List,
 				GTK_TREE_MODEL(Process_List->Store_M),
 				&iter,
 				gtk_tree_row_reference_get_path(
-					(GtkTreeRowReference*)got_RowRef)
+					(GtkTreeRowReference*)Hashed_Process_Data->RowRef)
 				);
 
 		gtk_list_store_remove (Process_List->Store_M, &iter);
-			
+		
+		g_free(Hashed_Process_Data->draw_context->Previous->modify_under);
+		g_free(Hashed_Process_Data->draw_context->Previous->modify_middle);
+		g_free(Hashed_Process_Data->draw_context->Previous->modify_over);
+		g_free(Hashed_Process_Data->draw_context->Previous->under);
+		g_free(Hashed_Process_Data->draw_context->Previous->middle);
+		g_free(Hashed_Process_Data->draw_context->Previous->over);
+		g_free(Hashed_Process_Data->draw_context->Previous);
+		g_free(Hashed_Process_Data->draw_context->Current->modify_under);
+		g_free(Hashed_Process_Data->draw_context->Current->modify_middle);
+		g_free(Hashed_Process_Data->draw_context->Current->modify_over);
+		g_free(Hashed_Process_Data->draw_context->Current->under);
+		g_free(Hashed_Process_Data->draw_context->Current->middle);
+		g_free(Hashed_Process_Data->draw_context->Current->over);
+		g_free(Hashed_Process_Data->draw_context->Current);
+		g_free(Hashed_Process_Data->draw_context);
+		g_free(Hashed_Process_Data);
+
 		g_hash_table_remove(Process_List->Process_Hash,
 				&Process_Info);
 		
@@ -392,35 +457,35 @@ guint processlist_get_height(ProcessList *Process_List)
 gint processlist_get_process_pixels(	ProcessList *Process_List,
 					guint pid, LttTime *birth,
 					guint *y,
-					guint *height)
+					guint *height,
+					HashedProcessData **pmHashed_Process_Data)
 {
 	ProcessInfo Process_Info;
 	gint *path_indices;
-	GtkTreeRowReference *got_RowRef;
 	GtkTreePath *tree_path;
+	HashedProcessData *Hashed_Process_Data = NULL;
 
 	Process_Info.pid = pid;
 	Process_Info.birth = *birth;
 
-	if(got_RowRef = 
-		(GtkTreeRowReference*)g_hash_table_lookup(
+	if(Hashed_Process_Data = 
+		(HashedProcessData*)g_hash_table_lookup(
 					Process_List->Process_Hash,
 					&Process_Info))
 	{
 		tree_path = gtk_tree_row_reference_get_path(
-										(GtkTreeRowReference*)got_RowRef);
+										Hashed_Process_Data->RowRef);
 		path_indices =	gtk_tree_path_get_indices (tree_path);
-		gtk_tree_path_free(tree_path);
 
 	 	*height = get_cell_height(
 				GTK_TREE_VIEW(Process_List->Process_List_VC));
 		*y = *height * path_indices[0];
-		
+		g_critical("inside, y is %i", *y);
+		*pmHashed_Process_Data = Hashed_Process_Data;
 		return 0;	
 	} else {
+		*pmHashed_Process_Data = Hashed_Process_Data;
 		return 1;
 	}
-
-
 
 }

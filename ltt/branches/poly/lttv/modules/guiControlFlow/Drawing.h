@@ -85,7 +85,7 @@ void convert_time_to_pixels(
 		LttTime window_time_begin,
 		LttTime window_time_end,
 		LttTime time,
-		int width,
+		gint width,
 		guint *x);
 
 #endif // _DRAWING_H
