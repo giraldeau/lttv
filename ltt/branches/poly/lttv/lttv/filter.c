@@ -97,7 +97,6 @@ lttv_simple_expression_new() {
   se->field = LTTV_FILTER_UNDEFINED;
   se->op = NULL;
   se->offset = 0;
-//  se->value.v_uint64 = 0;
 
   return se;
 }
@@ -264,10 +263,10 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
      case LTTV_FILTER_EVENT_NAME:
        switch(op) {
          case LTTV_FIELD_EQ:
-           se->op = lttv_apply_op_eq_string;
+           se->op = lttv_apply_op_eq_quark;
            break;
          case LTTV_FIELD_NE:
-           se->op = lttv_apply_op_ne_string;
+           se->op = lttv_apply_op_ne_quark;
            break;
          default:
            g_warning("Error encountered in operator assignment = or != expected");
@@ -358,18 +357,21 @@ gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* val
 //  g_print("se->value:%s\n",value);
   unsigned i;
   gboolean is_double = FALSE;
-  LttTime t;
-  GString* v; 
+  LttTime t = ltt_time_zero;
+  GString* v;
+  GQuark quark;
   
   switch(se->field) {
      /* 
-      * string
+      * string --> g_quark
       */
      case LTTV_FILTER_TRACE_NAME:
      case LTTV_FILTER_TRACEFILE_NAME:
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_EVENT_NAME:
-       se->value.v_string = value;
+//       se->value.v_string = value;
+       se->value.v_uint32 = g_quark_try_string(value);
+       g_free(value);
        break;
      /* 
       * integer
@@ -407,7 +409,8 @@ gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* val
        }
        /* number can be integer or double */
        if(is_double) t.tv_nsec = atoi(v);
-       else t.tv_nsec = 0;
+       else t.tv_sec = atoi(v);
+       
        g_string_free(v,TRUE);
        
        se->value.v_ltttime = t;
@@ -415,6 +418,7 @@ gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* val
        break;
      default:
        g_warning("Error encountered in value assignation ! Field type = %i",se->field);
+       g_free(value);
        return FALSE;
    }
   
@@ -559,6 +563,21 @@ gboolean lttv_apply_op_eq_string(const gpointer v1, LttvFieldValue v2) {
 }
 
 /**
+ *  @fn gboolean lttv_apply_op_eq_quark(const gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_eq_quark(const gpointer v1, LttvFieldValue v2) {
+  GQuark* r = (GQuark*) v1;
+  g_print("v1:%i v2:%i\n",*r,v2.v_uint32);
+  return (*r == v2.v_uint32);
+}
+
+/**
  *  @fn gboolean lttv_apply_op_eq_ltttime(const gpointer,LttvFieldValue) 
  * 
  *  Applies the 'equal' operator to the
@@ -569,7 +588,8 @@ gboolean lttv_apply_op_eq_string(const gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_eq_ltttime(const gpointer v1, LttvFieldValue v2) {
   LttTime* r = (LttTime*) v1;
-  return ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec == v2.v_ltttime.tv_nsec));
+//  return ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec == v2.v_ltttime.tv_nsec));
+  return ltt_time_compare(*r, v2.v_ltttime)==0?1:0;
 }
 
 
@@ -642,6 +662,21 @@ gboolean lttv_apply_op_ne_string(const gpointer v1, LttvFieldValue v2) {
   char* r = (char*) v1;
   return (g_strcasecmp(r,v2.v_string));
 }
+
+/**
+ *  @fn gboolean lttv_apply_op_ne_quark(const gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'not equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ne_quark(const gpointer v1, LttvFieldValue v2) {
+  GQuark* r = (GQuark*) v1;
+  return (*r != v2.v_uint32);
+}
+
 
 /**
  *  @fn gboolean lttv_apply_op_ne_ltttime(const gpointer,LttvFieldValue) 
@@ -725,7 +760,8 @@ gboolean lttv_apply_op_lt_double(const gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_lt_ltttime(const gpointer v1, LttvFieldValue v2) {
   LttTime* r = (LttTime*) v1;
-  return ((r->tv_sec < v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec < v2.v_ltttime.tv_nsec)));
+//  return ((r->tv_sec < v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec < v2.v_ltttime.tv_nsec)));
+  return ltt_time_compare(*r, v2.v_ltttime)==-1?1:0;
 }
 
 
@@ -796,7 +832,8 @@ gboolean lttv_apply_op_le_double(const gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_le_ltttime(const gpointer v1, LttvFieldValue v2) {
   LttTime* r = (LttTime*) v1;
-  return ((r->tv_sec < v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec <= v2.v_ltttime.tv_nsec)));
+//  return ((r->tv_sec < v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec <= v2.v_ltttime.tv_nsec)));
+  return ltt_time_compare(*r, v2.v_ltttime)<1?1:0;
 }
 
 
@@ -867,7 +904,8 @@ gboolean lttv_apply_op_gt_double(const gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_gt_ltttime(const gpointer v1, LttvFieldValue v2) {
   LttTime* r = (LttTime*) v1;
-  return ((r->tv_sec > v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec > v2.v_ltttime.tv_nsec)));
+//  return ((r->tv_sec > v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec > v2.v_ltttime.tv_nsec)));
+  return ltt_time_compare(*r, v2.v_ltttime)==1?1:0;
 }
 
 
@@ -938,7 +976,8 @@ gboolean lttv_apply_op_ge_double(const gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_ge_ltttime(const gpointer v1, LttvFieldValue v2) {
   LttTime* r = (LttTime*) v1;
-  return ((r->tv_sec > v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec >= v2.v_ltttime.tv_nsec)));
+//  return ((r->tv_sec > v2.v_ltttime.tv_sec) || ((r->tv_sec == v2.v_ltttime.tv_sec) && (r->tv_nsec >= v2.v_ltttime.tv_nsec)));
+  return ltt_time_compare(*r, v2.v_ltttime)>-1?1:0;
 }
 
 
@@ -1615,11 +1654,17 @@ gboolean lttv_filter_tree_parse_branch(
     switch(se->field) {
         case LTTV_FILTER_TRACE_NAME:
             if(trace == NULL) return TRUE;
-            else return se->op((gpointer)ltt_trace_name(trace),v);
+            else {
+                GQuark quark = g_quark_try_string(ltt_trace_name(trace));
+                return se->op((gpointer)&quark,v);
+            }
             break;
         case LTTV_FILTER_TRACEFILE_NAME:
             if(tracefile == NULL) return TRUE;
-            else return se->op((gpointer)ltt_tracefile_name(tracefile),v);
+            else {
+                GQuark quark = g_quark_try_string(ltt_tracefile_name(tracefile));
+                return se->op((gpointer)&quark,v);
+            }
             break;
         case LTTV_FILTER_STATE_PID:
             if(state == NULL) return TRUE;
@@ -1647,7 +1692,8 @@ gboolean lttv_filter_tree_parse_branch(
              */
             if(state == NULL) return TRUE;
             else {
-              return se->op((gpointer)g_quark_to_string(state->name),v);
+              GQuark quark = g_quark_try_string(state->name);
+              return se->op((gpointer)&quark,v);
             }
             break;
         case LTTV_FILTER_STATE_EX_MODE:
@@ -1665,7 +1711,8 @@ gboolean lttv_filter_tree_parse_branch(
         case LTTV_FILTER_STATE_CPU:
             if(context == NULL) return TRUE;
             else {
-              return se->op((gpointer)g_quark_to_string(((LttvTracefileState*)context)->cpu_name),v);
+                /* FIXME: not sure of that one */
+              return se->op((gpointer)g_quark_try_string(((LttvTracefileState*)context)->cpu_name),v);
             }
             break;
         case LTTV_FILTER_EVENT_NAME:
@@ -1673,13 +1720,15 @@ gboolean lttv_filter_tree_parse_branch(
             else {
               LttEventType* et;
               et = ltt_event_eventtype(event);
-              return se->op((gpointer)ltt_eventtype_name(et),v);
+              g_print("v:%s\n",ltt_eventtype_name(et));
+              GQuark quark = g_quark_try_string(ltt_eventtype_name(et));
+              return se->op((gpointer)&quark,v);
             }
             break;
             
         case LTTV_FILTER_EVENT_CATEGORY:
             /*
-             * FIXME: Not yet implemented
+             * TODO: Not yet implemented
              */
             return TRUE;
             break;

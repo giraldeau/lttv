@@ -254,6 +254,7 @@ gboolean lttv_apply_op_eq_uint32(const gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_eq_uint16(const gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_eq_double(const gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_eq_string(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_quark(const gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_eq_ltttime(const gpointer v1, LttvFieldValue v2);
 
 gboolean lttv_apply_op_ne_uint64(const gpointer v1, LttvFieldValue v2);
@@ -261,6 +262,7 @@ gboolean lttv_apply_op_ne_uint32(const gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ne_uint16(const gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ne_double(const gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ne_string(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_quark(const gpointer v1, LttvFieldValue v2);
 gboolean lttv_apply_op_ne_ltttime(const gpointer v1, LttvFieldValue v2);
 
 gboolean lttv_apply_op_lt_uint64(const gpointer v1, LttvFieldValue v2);
