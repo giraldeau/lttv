@@ -7,7 +7,7 @@
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
-LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/API -lmainWinApi
+LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/mainLib -lmainWinApi
 
 libdir = ${lttvplugindir}
 
