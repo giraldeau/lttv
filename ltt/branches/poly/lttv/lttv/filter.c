@@ -17,27 +17,6 @@
  */
 
 /*
-   consist in AND, OR and NOT nested expressions, forming a tree with 
-   simple relations as leaves. The simple relations test is a field
-   in an event is equal, not equal, smaller, smaller or equal, larger, or
-   larger or equal to a specified value. 
-*/
-
-/*
- *  YET TO BE ANSWERED
- *  - the exists an other lttv_filter which conflicts with this one 
- */
-
-/*
- *  TODO 
- *  - refine switch of expression in multiple uses functions
- *    - remove the idle expressions in the tree **** 
- *  - add the current simple expression to the tree
- */
-
-#include <lttv/filter.h>
-
-/*
   read_token
 
   read_expression
@@ -58,8 +37,28 @@
   not(child)
   op(left/right)
   path(component...) -> field
+   
+  consist in AND, OR and NOT nested expressions, forming a tree with 
+  simple relations as leaves. The simple relations test is a field
+  in an event is equal, not equal, smaller, smaller or equal, larger, or
+  larger or equal to a specified value. 
 */
 
+/*
+ *  YET TO BE ANSWERED
+ *  - none yet
+ */
+
+/*
+ *  TODO 
+ *  - refine switch of expression in multiple uses functions
+ *    - remove the idle expressions in the tree **** 
+ *  - add the current simple expression to the tree
+ */
+
+#include <lttv/filter.h>
+
+/*
 GQuark
   LTTV_FILTER_TRACE,
   LTTV_FILTER_TRACESET,
@@ -79,62 +78,18 @@ GQuark
   LTTV_FILTER_EX_SUBMODE,
   LTTV_FILTER_P_STATUS,
   LTTV_FILTER_CPU;
+*/
 
 LttvSimpleExpression* 
 lttv_simple_expression_new() {
 
 }
-
 /**
- *  Assign a new tree for the current expression
- *  or sub expression
- *  @return pointer of LttvFilter
+ * add a node to the current tree
+ * @param stack the tree stack
+ * @param subtree the subtree if available (pointer or NULL)
+ * @param op the logical operator that will form the node
  */
-LttvFilter* lttv_filter_tree_new() {
-  LttvFilter* tree;
-
-  tree = g_new(LttvFilter,1);
-  tree->node = 0; //g_new(lttv_expression,1);
-//  tree->node->type = LTTV_UNDEFINED_EXPRESSION;
-  tree->left = LTTV_TREE_IDLE;
-  tree->right = LTTV_TREE_IDLE;
-
-  return tree;
-}
-
-/**
- *  Destroys the tree and his sub-trees
- *  @param tree Tree which must be destroyed
- */
-void lttv_filter_tree_destroy(LttvFilter* tree) {
-  
-  if(tree == NULL) return;
-
-  if(tree->left == LTTV_TREE_LEAF) g_free(tree->l_child.leaf);
-  else if(tree->left == LTTV_TREE_NODE) lttv_filter_tree_destroy(tree->l_child.t);
-
-  if(tree->right == LTTV_TREE_LEAF) g_free(tree->r_child.leaf);
-  else if(tree->right == LTTV_TREE_NODE) lttv_filter_tree_destroy(tree->r_child.t);
-
-  g_free(tree->node);
-  g_free(tree);
-}
-
-LttvFilter*
-lttv_filter_clone(LttvFilter* tree) {
-
-  if(tree == NULL) return NULL;
-    
-  LttvFilter* newtree = lttv_filter_tree_new();
-
-  /*
-   * TODO : Copy tree into new tree
-   */
-    
-  return newtree;
-    
-}
-
 void
 lttv_filter_tree_add_node(GPtrArray* stack, LttvFilter* subtree, LttvLogicalOp op) {
 
@@ -233,6 +188,95 @@ parse_simple_expression(GString* expression) {
   
 
 }
+
+/**
+ *  Applies the 'equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_eq() {
+
+}
+
+/**
+ *  Applies the 'not equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ne() {
+
+}
+
+/**
+ *  Applies the 'lower than' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_lt() {
+
+}
+
+/**
+ *  Applies the 'lower or equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_le() {
+
+}
+
+/**
+ *  Applies the 'greater than' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_gt() {
+
+}
+
+/**
+ *  Applies the 'greater or equal' operator to the
+ *  specified structure and value
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ge() {
+
+}
+
+
+
+/**
+ * Makes a copy of the current filter tree
+ * @param tree pointer to the current tree
+ * @return new copy of the filter tree
+ */
+LttvFilterTree*
+lttv_filter_tree_clone(LttvFilterTree* tree) {
+
+  
+
+}
+
+/**
+ * Makes a copy of the current filter
+ * @param filter pointer to the current filter
+ * @return new copy of the filter
+ */
+LttvFilter*
+lttv_filter_clone(LttvFilter* filter) {
+
+    
+  LttvFilter* newfilter = g_new(LttvFilter,1); 
+
+  // newfilter->expression = g_new(char,1)
+  strcpy(newfilter->expression,filter->expression);
+
+  newfilter->head = lttv_filter_tree_clone(filter->head);
+  
+  return newfilter;
+    
+}
+
 
 /**
  * 	Creates a new lttv_filter
@@ -525,6 +569,42 @@ void
 lttv_filter_destroy(LttvFilter* filter) {
 
 }
+
+/**
+ *  Assign a new tree for the current expression
+ *  or sub expression
+ *  @return pointer of LttvFilterTree
+ */
+LttvFilterTree* lttv_filter_tree_new() {
+  LttvFilterTree* tree;
+
+  tree = g_new(LttvFilter,1);
+  tree->node = 0; //g_new(lttv_expression,1);
+//  tree->node->type = LTTV_UNDEFINED_EXPRESSION;
+  tree->left = LTTV_TREE_IDLE;
+  tree->right = LTTV_TREE_IDLE;
+
+  return tree;
+}
+
+/**
+ *  Destroys the tree and his sub-trees
+ *  @param tree Tree which must be destroyed
+ */
+void lttv_filter_tree_destroy(LttvFilterTree* tree) {
+  
+  if(tree == NULL) return;
+
+  if(tree->left == LTTV_TREE_LEAF) g_free(tree->l_child.leaf);
+  else if(tree->left == LTTV_TREE_NODE) lttv_filter_tree_destroy(tree->l_child.t);
+
+  if(tree->right == LTTV_TREE_LEAF) g_free(tree->r_child.leaf);
+  else if(tree->right == LTTV_TREE_NODE) lttv_filter_tree_destroy(tree->r_child.t);
+
+  g_free(tree->node);
+  g_free(tree);
+}
+
 
 /**
  * 	Apply the filter to a specific trace
