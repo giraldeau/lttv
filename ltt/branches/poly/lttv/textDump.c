@@ -59,7 +59,7 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
 
     case LTT_ENUM:
       g_string_append_printf(s, " %s", ltt_enum_string_get(type,
-          event_get_unsigned(e,f)));
+          ltt_event_get_unsigned(e,f)));
       break;
 
     case LTT_ARRAY:
@@ -192,7 +192,8 @@ static int write_event_content(void *hook_data, void *call_data)
 }
 
 
-void init(int argc, char **argv)
+//void init(int argc, char **argv)
+G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
 {
   LttvAttributeValue value;
 
@@ -238,7 +239,7 @@ void init(int argc, char **argv)
 }
 
 
-void destroy()
+G_MODULE_EXPORT void destroy()
 {
   lttv_option_remove("output");
 

@@ -591,6 +591,7 @@ lttv_state_add_event_hooks(LttvTracesetState *self)
 			"in", "out", "out_state", schedchange);
     g_array_append_val(hooks, hook_id);
 
+/* for now, in core facility there is no process_fork and process_exit event
     hook_id = find_hook(ts->parent.t, "core", "process_fork", 
 			"child_pid", NULL, NULL, process_fork);
     g_array_append_val(hooks, hook_id);
@@ -598,7 +599,7 @@ lttv_state_add_event_hooks(LttvTracesetState *self)
     hook_id = find_hook(ts->parent.t, "core", "process_exit", 
 			NULL, NULL, NULL, process_exit);
     g_array_append_val(hooks, hook_id);
-
+*/
 
     /* Add these hooks to each before_event_by_id hooks list */
 

@@ -66,7 +66,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 }
 
 
-void init(LttvModule *self, int argc, char **argv)
+G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
 {
   LttvAttributeValue value;
 
@@ -120,7 +120,7 @@ void init(LttvModule *self, int argc, char **argv)
 }
 
 
-void destroy()
+G_MODULE_EXPORT void destroy()
 {
   guint i, nb;
 

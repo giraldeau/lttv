@@ -182,7 +182,7 @@ void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
     lttv_hooks_add_list(tc->before, before_trace);
     lttv_hooks_add_list(tc->after, after_trace);
     nb_control = ltt_trace_control_tracefile_number(tc->t);
-    nb_per_cpu = ltt_trace_control_tracefile_number(tc->t);
+    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
     nb_tracefile = nb_control + nb_per_cpu;
 
     for(j = 0 ; j < nb_tracefile ; j++) {
@@ -190,7 +190,7 @@ void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
         tfc = tc->control_tracefiles[j];
       }
       else {
-        tfc = tc->per_cpu_tracefiles[j];
+        tfc = tc->per_cpu_tracefiles[j-nb_control];
       }
       lttv_hooks_add_list(tfc->check, check_tracefile);
       lttv_hooks_add_list(tfc->before, before_tracefile);
@@ -236,7 +236,7 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
     lttv_hooks_remove_list(tc->before, before_trace);
     lttv_hooks_remove_list(tc->after, after_trace);
     nb_control = ltt_trace_control_tracefile_number(tc->t);
-    nb_per_cpu = ltt_trace_control_tracefile_number(tc->t);
+    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
     nb_tracefile = nb_control + nb_per_cpu;
 
     for(j = 0 ; j < nb_tracefile ; j++) {
@@ -244,7 +244,7 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
         tfc = tc->control_tracefiles[j];
       }
       else {
-        tfc = tc->per_cpu_tracefiles[j];
+        tfc = tc->per_cpu_tracefiles[j-nb_control];
       }
       lttv_hooks_remove_list(tfc->check, check_tracefile);
       lttv_hooks_remove_list(tfc->before, before_tracefile);

@@ -59,6 +59,9 @@ int main(int argc, char **argv) {
   g_mem_profile();
 #endif
 
+  //g_type_init();
+  g_type_init_with_debug_flags (G_TYPE_DEBUG_OBJECTS | G_TYPE_DEBUG_SIGNALS);
+
   attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
 
   before_options = lttv_hooks_new();

@@ -14,7 +14,7 @@ struct _LttvTraceset {
 };
 
 
-LttvTraceset *lttv_trace_set_new() 
+LttvTraceset *lttv_traceset_new() 
 {
   LttvTraceset *s;
 
@@ -22,6 +22,7 @@ LttvTraceset *lttv_trace_set_new()
   s->traces = g_ptr_array_new();
   s->attributes = g_ptr_array_new();
   s->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+  return s;
 }
 
 
