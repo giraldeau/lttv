@@ -23,6 +23,11 @@
 #include <dirent.h>
 #include <linux/errno.h>  
 
+// For realpath
+#include <limits.h>
+#include <stdlib.h>
+
+
 #include "parser.h"
 #include <ltt/ltt.h>
 #include "ltt-private.h"
@@ -385,8 +390,8 @@ void getCpuFileInfo(LttTrace *t, char* cpu)
  *When a trace is closed, all the associated facilities, types and fields
  *are released as well.
  *
- * MD : If pathname is already absolute, we do not add current working
- * directory to it.
+ * MD : Fixed this function so it uses realpath, dealing well with
+ * forgotten cases (.. were not used correctly before).
  *
  ****************************************************************************/
 
@@ -396,27 +401,17 @@ void get_absolute_pathname(const char *pathname, char * abs_pathname)
   size_t size = DIR_NAME_SIZE;
   abs_pathname[0] = '\0';
 
-	if(pathname[0] == '/')
-	{
-    strcat(abs_pathname, pathname);
-		return;
-	}
-
-  if(!getcwd(abs_pathname, size)){
-    g_warning("Can not get current working directory\n");
-    strcat(abs_pathname, pathname);
+  if ( realpath (pathname, abs_pathname) != NULL)
+    return;
+  else
+  {
+    // FIXME : Path is wrong, is it ok to return the pathname unmodified ?
+    strcpy(abs_pathname, pathname);
     return;
   }
 
-  strcat(abs_pathname,"/");
+  return;
   
-  ptr = (char*)pathname;
-  ptr1 = ptr + 1;
-  while(*ptr == '.' && *ptr1 == '.'){
-    ptr += 3;
-    ptr1 = ptr + 1;
-  }
-  strcat(abs_pathname,ptr);
 }
 
 LttTrace *ltt_trace_open(const char *pathname)
@@ -432,7 +427,6 @@ LttTrace *ltt_trace_open(const char *pathname)
   gboolean has_slash = FALSE;
 
   get_absolute_pathname(pathname, abs_path);
-  
   //establish the pathname to different directories
   if(abs_path[strlen(abs_path)-1] == '/')has_slash = TRUE;
   strcpy(eventdefs,abs_path);
