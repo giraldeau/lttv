@@ -308,9 +308,9 @@ h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * ke
 	ControlFlowData *Control_Flow_Data = guicontrolflow() ;
 
 	get_time_window(pmParentWindow,
-			GuiControlFlow_get_Time_Window(Control_Flow_Data));
+			guicontrolflow_get_time_window(Control_Flow_Data));
 	get_current_time(pmParentWindow,
-			GuiControlFlow_get_Current_Time(Control_Flow_Data));
+			guicontrolflow_get_current_time(Control_Flow_Data));
 
 	// Unreg done in the GuiControlFlow_Destructor
 	reg_update_time_window(update_time_window_hook, Control_Flow_Data,

@@ -68,7 +68,7 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
 void destroy_walk(gpointer data, gpointer user_data)
 {
-	GuiControlFlow_Destructor_Full((ControlFlowData*)data);
+	guicontrolflow_destructor_full((ControlFlowData*)data);
 	g_critical("Walk destroy GUI Control Flow Viewer");
 }
 
