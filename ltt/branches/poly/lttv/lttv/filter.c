@@ -107,6 +107,8 @@ LttvFilter* lttv_filter_tree_new() {
  *  @param tree Tree which must be destroyed
  */
 void lttv_filter_tree_destroy(LttvFilter* tree) {
+  
+  if(tree == NULL) return;
 
   if(tree->left == LTTV_TREE_LEAF) g_free(tree->l_child.leaf);
   else if(tree->left == LTTV_TREE_NODE) lttv_filter_tree_destroy(tree->l_child.t);
