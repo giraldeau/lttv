@@ -753,6 +753,8 @@ int main(int argc, char ** argv){
   close(fdProc); 
   fclose(fp);
 
+  g_printf("Conversion completed. Don't forget to copy core.xml to eventdefs directory\n");
+  
   return 0;
 }
 
