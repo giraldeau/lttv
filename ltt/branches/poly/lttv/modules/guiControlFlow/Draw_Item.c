@@ -68,7 +68,8 @@
  * We use the lttv global attributes to keep track of the loaded icons.
  * If we need an icon, we look for it in the icons / icon name pathname.
  * If found, we use the pointer to it. If not, we load the pixmap in
- * memory and set the pointer to the GdkPixmap in the attributes.
+ * memory and set the pointer to the GdkPixmap in the attributes. The
+ * structure pointed to contains the pixmap and the mask bitmap.
  * 
  * Author : Mathieu Desnoyers, October 2003
  */
@@ -79,12 +80,16 @@
 #include <lttv/hook.h>
 #include <lttv/attribute.h>
 #include <lttv/iattribute.h>
+#include <string.h>
 
 #include <lttv/processTrace.h>
 #include <lttv/state.h>
 
 #include "Draw_Item.h"
- 
+
+
+#define MAX_PATH_LEN 256
+
 /* The DrawContext keeps information about the current drawing position and
  * the previous one, so we can use both to draw lines.
  *
@@ -95,10 +100,12 @@
  * the modify_* are used to take into account that we should go forward
  * when we draw a text, an arc or an icon, while it's unneeded when we
  * draw a line or background.
+ *
  */
 struct _DrawContext {
 	GdkDrawable	*drawable;
 	GdkGC		*gc;
+	
 
 	DrawInfo	*Current;
 	DrawInfo	*Previous;
@@ -135,6 +142,14 @@ struct _ItemInfo {
 	gint	x, y;
 	LttvTraceState		*ts;
 	LttvTracefileState	*tfs;
+};
+
+/*
+ * Structure used to keep information about icons.
+ */
+struct _IconStruct {
+	GdkPixmap *pixmap;
+	GdkBitmap *mask;
 };
 
 
@@ -263,26 +278,47 @@ gboolean draw_text( void *hook_data, void *call_data)
 	return 0;
 }
 
+
+/* To speed up the process, search in already loaded icons list first. Only
+ * load it if not present.
+ */
 gboolean draw_icon( void *hook_data, void *call_data)
 {
 	PropertiesIcon *Properties = (PropertiesIcon*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
-	GdkBitmap *mask = g_new(GdkBitmap, 1);
-	GdkPixmap *icon_pixmap = g_new(GdkPixmap, 1);
-	GdkGC *gc = gdk_gc_new(Draw_Context->drawable);
-	gdk_gc_copy(gc, Draw_Context->gc);
-
-	icon_pixmap = gdk_pixmap_create_from_xpm(Draw_Context->drawable, &mask, NULL,
-																						Properties->icon_name);
-
-	gdk_gc_set_clip_mask(gc, mask);
-
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+	LttvAttributeValue value;
+	gchar icon_name[MAX_PATH_LEN] = "icons/";
+	IconStruct *icon_info;
+	
+	strcat(icon_name, Properties->icon_name);
+	
+  g_assert(lttv_iattribute_find_by_path(attributes, icon_name,
+      LTTV_POINTER, &value));
+	if(*(value.v_pointer) == NULL)
+	{
+  	*(value.v_pointer) = icon_info = g_new(IconStruct,1);
+		
+		icon_info->pixmap = gdk_pixmap_create_from_xpm(Draw_Context->drawable,
+													&icon_info->mask, NULL, Properties->icon_name);
+	}
+	else
+	{
+		icon_info = *(value.v_pointer);
+	}
+	
+	gdk_gc_set_clip_mask(Draw_Context->gc, icon_info->mask);
+	
 	switch(Properties->position) {
 		case OVER:
+							gdk_gc_set_clip_origin(
+									Draw_Context->gc,
+									Draw_Context->Current->modify_over->x,
+									Draw_Context->Current->modify_over->y);
 							gdk_draw_drawable(Draw_Context->drawable, 
-									gc,
-									icon_pixmap,
+									Draw_Context->gc,
+									icon_info->pixmap,
 									0, 0,
 									Draw_Context->Current->modify_over->x,
 									Draw_Context->Current->modify_over->y,
@@ -292,21 +328,28 @@ gboolean draw_icon( void *hook_data, void *call_data)
 
 			break;
 		case MIDDLE:
+							gdk_gc_set_clip_origin(
+									Draw_Context->gc,
+									Draw_Context->Current->modify_middle->x,
+									Draw_Context->Current->modify_middle->y);
 							gdk_draw_drawable(Draw_Context->drawable, 
-									gc,
-									icon_pixmap,
+									Draw_Context->gc,
+									icon_info->pixmap,
 									0, 0,
 									Draw_Context->Current->modify_middle->x,
 									Draw_Context->Current->modify_middle->y,
 									Properties->width, Properties->height);
 
-
 							Draw_Context->Current->modify_middle->x += Properties->width;
 			break;
 		case UNDER:
+							gdk_gc_set_clip_origin(
+									Draw_Context->gc,
+									Draw_Context->Current->modify_under->x,
+									Draw_Context->Current->modify_under->y);
 							gdk_draw_drawable(Draw_Context->drawable, 
-									gc,
-									icon_pixmap,
+									Draw_Context->gc,
+									icon_info->pixmap,
 									0, 0,
 									Draw_Context->Current->modify_under->x,
 									Draw_Context->Current->modify_under->y,
@@ -316,7 +359,8 @@ gboolean draw_icon( void *hook_data, void *call_data)
 			break;
 	}
 
-	g_free(gc);
+	gdk_gc_set_clip_origin(Draw_Context->gc, 0, 0);
+	gdk_gc_set_clip_mask(Draw_Context->gc, NULL);
 	
 	return 0;
 }

@@ -5,6 +5,8 @@ typedef struct _DrawContext DrawContext;
 typedef struct _DrawInfo DrawInfo;
 typedef struct _ItemInfo ItemInfo;
 
+typedef struct _IconStruct IconStruct;
+
 typedef struct _DrawOperation DrawOperation;
 
 

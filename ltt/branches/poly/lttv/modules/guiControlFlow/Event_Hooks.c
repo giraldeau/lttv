@@ -22,6 +22,106 @@
 #include "Drawing.h"
 #include "CFV-private.h"
 
+#define MAX_PATH_LEN 256
+
+//FIXME : remove this include when tests finished.
+#include "Draw_Item.h"
+#include <string.h>
+
+struct _DrawContext {
+	GdkDrawable	*drawable;
+	GdkGC		*gc;
+	
+
+	DrawInfo	*Current;
+	DrawInfo	*Previous;
+};
+
+struct _DrawInfo {
+	ItemInfo	*over;
+	ItemInfo	*middle;
+	ItemInfo	*under;
+	
+	ItemInfo	*modify_over;
+	ItemInfo	*modify_middle;
+	ItemInfo	*modify_under;
+};
+
+/* LttvExecutionState is accessible through the LttvTracefileState. Is has
+ * a pointer to the LttvProcessState which points to the top of stack
+ * execution state : LttvExecutionState *state.
+ *
+ * LttvExecutionState contains (useful here):
+ * LttvExecutionMode t,
+ * LttvExecutionSubmode n,
+ * LttvProcessStatus s
+ * 
+ *
+ * LttvTraceState will be used in the case we need the string of the
+ * different processes, eventtype_names, syscall_names, trap_names, irq_names.
+ *
+ * LttvTracefileState also gives the cpu_name and, as it herits from
+ * LttvTracefileContext, it gives the LttEvent structure, which is needed
+ * to get facility name and event name.
+ */
+struct _ItemInfo {
+	gint	x, y;
+	LttvTraceState		*ts;
+	LttvTracefileState	*tfs;
+};
+
+
+
+struct _PropertiesIcon {
+	gchar		*icon_name;
+	gint		width;
+	gint		height;
+	RelPos		position;
+};
+
+
+
+void test_draw_item(Drawing_t *Drawing,
+			GdkPixmap *Pixmap) 
+{
+	PropertiesIcon properties_icon;
+	DrawContext draw_context;
+	
+	DrawInfo current, previous;
+	ItemInfo over, middle, under, modify_over, modify_middle, modify_under;
+
+	int i,j;
+	
+	for(i=0; i<1024;i=i+15)
+	{
+		for(j=0;j<768;j=j+15)
+		{
+			over.x = i;
+			over.y = j;
+			over.ts =  NULL;
+			over.tfs = NULL;
+
+			current.modify_over = &over;
+	
+			draw_context.drawable = Pixmap;
+			draw_context.gc = Drawing->Drawing_Area_V->style->black_gc;
+
+			draw_context.Current = &current;
+			draw_context.Previous = NULL;
+	
+			properties_icon.icon_name = g_new(char, MAX_PATH_LEN);
+			strncpy(properties_icon.icon_name, 
+				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/mini-display.xpm",
+				MAX_PATH_LEN);
+			properties_icon.width = -1;
+			properties_icon.height = -1;
+			properties_icon.position = OVER;
+	
+			draw_icon(&properties_icon, &draw_context);
+		}
+	}
+
+}
 
 /* NOTE : no drawing data should be sent there, since the drawing widget
  * has not been initialized */
@@ -32,7 +132,7 @@ void send_test_drawing(ProcessList *Process_List,
 		   	gint width,
 			gint height) // height won't be used here ?
 {
-	int i;
+	int i,j;
 	ProcessInfo Process_Info = {10000, 12000, 55600};
 	//ProcessInfo Process_Info = {156, 14000, 55500};
 	GtkTreeRowReference *got_RowRef;
@@ -94,21 +194,6 @@ void send_test_drawing(ProcessList *Process_List,
 		Drawing, Pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
-
-
-	/* Draw icon */
-	icon_pixmap = gdk_pixmap_create_from_xpm(Pixmap, &mask, NULL,
-//				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/move_message.xpm");
-				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/mini-display.xpm");
-	gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
-	gdk_gc_set_clip_mask(gc, mask);
-	gdk_draw_drawable(Pixmap, 
-			gc,
-			icon_pixmap,
-			0, 0, 0, 0, -1, -1);
-	
-	g_free(icon_pixmap);
-	g_free(mask);
 
 	g_info("y : %u, height : %u", y, height);
 
@@ -179,6 +264,42 @@ void send_test_drawing(ProcessList *Process_List,
 		Drawing->Drawing_Area_V->style->black_gc);
 
 	g_info("y : %u, height : %u", y, height);
+	
+
+	/* IMPORTANT : This action uses the cpu heavily! */
+	//icon_pixmap = gdk_pixmap_create_from_xpm(Pixmap, &mask, NULL,
+//				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/move_message.xpm");
+	//				"/home/compudj/local/share/LinuxTraceToolkit/pixmaps/mini-display.xpm");
+
+	//		gdk_gc_set_clip_mask(Drawing->Drawing_Area_V->style->black_gc, mask);
+
+//	for(i=x;i<x+width;i=i+15)
+//	{
+//		for(j=0;j<height*20;j=j+15)
+//		{
+			
+			/* Draw icon */
+			//gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
+//			gdk_gc_set_clip_origin(Drawing->Drawing_Area_V->style->black_gc, i, j);
+//			gdk_draw_drawable(Pixmap, 
+//					Drawing->Drawing_Area_V->style->black_gc,
+//					icon_pixmap,
+//					0, 0, i, j, -1, -1);
+
+//		}
+//	}
+	
+	test_draw_item(Drawing,Pixmap);
+	
+	//gdk_gc_set_clip_origin(Drawing->Drawing_Area_V->style->black_gc, 0, 0);
+	//gdk_gc_set_clip_mask(Drawing->Drawing_Area_V->style->black_gc, NULL);
+
+	//g_free(icon_pixmap);
+	//g_free(mask);
+
+
+
+
 
 
 	pango_font_description_set_size(FontDesc, Font_Size);
