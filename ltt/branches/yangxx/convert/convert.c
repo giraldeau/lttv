@@ -97,8 +97,8 @@ int main(int argc, char ** argv){
   trace_buffer_start *tBufStart;
   trace_buffer_end *tBufEnd;
   trace_file_system * tFileSys;
-  uint16_t newId;
-  uint8_t  evId, startId;
+  uint16_t newId, startId;
+  uint8_t  evId;
   uint32_t time_delta, startTimeDelta;
   void * cur_pos, *end_pos;
   buffer_start start;
@@ -212,7 +212,6 @@ int main(int argc, char ** argv){
 
   evId = *(uint8_t *)cur_pos;
   cur_pos += sizeof(uint8_t);
-  time_delta = *(uint32_t*)cur_pos;
   cur_pos += sizeof(uint32_t); 
   tStart = (trace_start*)cur_pos;
 
@@ -262,12 +261,31 @@ int main(int argc, char ** argv){
     int event_count = 0;
     beat_count = 0;
 
+    for(j=1;j<cpu;j++)has_event[j] = FALSE;
     for(j=0;j<cpu;j++) write_pos[j] = buf_out[j];
     write_pos_intr = buf_intr;
     write_pos_fac = buf_fac;
     write_pos_proc = buf_proc;
 
     readFile(fd,(void*)buffer, block_size, "Unable to read block header");
+
+    cur_pos= buffer;
+    evId = *(uint8_t *)cur_pos;
+    cur_pos += sizeof(uint8_t);
+    newId = evId;
+    time_delta = *(uint32_t*)cur_pos;
+    cur_pos += sizeof(uint32_t); 
+    tBufStart = (trace_buffer_start*)cur_pos;
+    cur_pos += sizeof(trace_buffer_start);
+    cur_pos += sizeof(uint16_t); //Skip event size
+
+    startId = newId;
+    startTimeDelta = time_delta;
+    start.seconds = tBufStart->Time.tv_sec;
+    start.nanoseconds = tBufStart->Time.tv_usec;
+    start.cycle_count = tBufStart->TSC;
+    start.block_id = tBufStart->ID;
+    end.block_id = start.block_id;
 
     end_pos = buffer + block_size; //end of the buffer
     size_lost = *(uint32_t*)(end_pos - sizeof(uint32_t));
