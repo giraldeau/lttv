@@ -2,8 +2,8 @@
 
 /* Created by Mathieu Desnoyers, may 2003 */
 
-#include <glib.h>
-#include <gmodule.h>
+#include <glib-2.0/glib.h>
+#include <glib-2.0/gmodule.h>
 
 G_MODULE_EXPORT void init() {
 	g_critical("Sample module init()");

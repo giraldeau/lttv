@@ -1,4 +1,4 @@
-#include <glib.h>
+#include <glib-2.0/glib.h>
 #include "ltt/ltt.h"
 
 /* structure definition */

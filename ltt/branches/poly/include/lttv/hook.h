@@ -1,7 +1,7 @@
 #ifndef HOOK_H
 #define HOOK_H
 
-#include <glib.h>
+#include <glib-2.0/glib.h>
 
 /* A hook is a function to call with the supplied hook data, and with 
    call site specific data (e.g., hooks for events are called with a 
