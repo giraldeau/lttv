@@ -99,63 +99,44 @@ gboolean draw_text( void *hook_data, void *call_data)
 	PangoContext *context;
 	PangoLayout *layout;
 	PangoAttribute *attribute;
-	PangoAttrList* attrib_list;// = pango_attr_list_new();
 	PangoFontDescription *FontDesc;// = pango_font_description_new();
 	gint Font_Size;
 	PangoRectangle ink_rect;
 		
-	//gdk_gc_set_foreground(Draw_Context->gc, Properties->foreground);
-	//gdk_gc_set_background(Draw_Context->gc, Properties->background);
-
 	layout = Draw_Context->pango_layout;
+
 	context = pango_layout_get_context(layout);
 	FontDesc = pango_context_get_font_description(context);
-	attrib_list = pango_layout_get_attributes(layout);
-	if(attrib_list == NULL)
-	{
-		attrib_list = pango_attr_list_new();
-	}
+
 	pango_font_description_set_size(FontDesc, Properties->size*PANGO_SCALE);
 	pango_layout_context_changed(layout);
 
-	attribute = pango_attr_foreground_new(Properties->foreground->red,
-																				Properties->foreground->green,
-																				Properties->foreground->blue);
-	//pango_attr_list_change(attrib_list, attribute);
-	pango_attr_list_change(attrib_list, attribute);
-	//pango_attribute_destroy(attribute);
-	attribute = pango_attr_background_new(Properties->background->red,
-																				Properties->background->green,
-																				Properties->background->blue);
-	pango_attr_list_change(attrib_list, attribute);
-	pango_layout_set_attributes(layout, attrib_list);
-
-	//pango_attr_list_unref(attrib_list);
-
 	pango_layout_set_text(layout, Properties->Text, -1);
 	pango_layout_get_pixel_extents(layout, &ink_rect, NULL);
-	pango_layout_context_changed(layout);
 	switch(Properties->position) {
 		case OVER:
-							gdk_draw_layout(Draw_Context->drawable, Draw_Context->gc,
+							gdk_draw_layout_with_colors(Draw_Context->drawable,
+								Draw_Context->gc,
 								Draw_Context->Current->modify_over->x,
 								Draw_Context->Current->modify_over->y,
-								layout);
+								layout, Properties->foreground, Properties->background);
 							Draw_Context->Current->modify_over->x += ink_rect.width;
 
 			break;
 		case MIDDLE:
-							gdk_draw_layout(Draw_Context->drawable, Draw_Context->gc,
+							gdk_draw_layout_with_colors(Draw_Context->drawable,
+								Draw_Context->gc,
 								Draw_Context->Current->modify_middle->x,
 								Draw_Context->Current->modify_middle->y,
-								layout);
+								layout, Properties->foreground, Properties->background);
 							Draw_Context->Current->modify_middle->x += ink_rect.width;
 			break;
 		case UNDER:
-							gdk_draw_layout(Draw_Context->drawable, Draw_Context->gc,
+							gdk_draw_layout_with_colors(Draw_Context->drawable,
+								Draw_Context->gc,
 								Draw_Context->Current->modify_under->x,
 								Draw_Context->Current->modify_under->y,
-								layout);
+								layout, Properties->foreground, Properties->background);
 							Draw_Context->Current->modify_under->x += ink_rect.width;
 			break;
 	}
