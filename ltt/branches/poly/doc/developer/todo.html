@@ -17,17 +17,19 @@ items.
 <LI> Polish the visual appearance: icons for the tabs and buttons,
      background, lines and labels in the control flow viewer...
 <LI> When a trace is opened, start a background thread to precompute 
-     the system state after each ~100 000 events. Have the option to save
-     the precomputed state when a trace is closed. Use the precomputed
-     state if available when opening a trace or seeking in a trace.
+     the system state and memorize it after each ~100 000 events. 
+     Have the option to save the precomputed state when a trace is closed. 
+     Use the precomputed state if available when opening a trace or 
+     seeking in a trace. Use the same thread for computing statistics.
 <LI> Update module.c to ease changing a module into a builtin feature.
+<LI> Split processTrace into tracecontext and processtrace.
 <LI> Insure that g_info logging is generally available but off by default.
 <LI> Document each header file such that developer documentation can
      be extracted automatically using 
      <A href="http://www.doxygen.org">Doxygen</A>.
 <LI> Complete the user and developer documentation.
 <LI> Test the viewer on large SMP traces. Insure that 2GB files do not cause
-     crashes. Note unduly long delays. 
+     crashes. Note and fix unduly long delays. 
 
 
 </body>

@@ -22,7 +22,7 @@
 #include <glib.h>
 #include <lttv/processTrace.h>
 
-/* The operating system state kept during the trace analysis
+/* The operating system state, kept during the trace analysis,
    contains a subset of the real operating system state, 
    sufficient for the analysis, and possibly organized quite differently.
 
@@ -64,7 +64,7 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self);
 
 void lttv_state_save_remove_event_hooks(LttvTracesetState *self);
 
-void lttv_state_restore_closest_state(LttvTracesetState *self, LttTime t);
+void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t);
 
 /* The LttvProcessState structure defines the current state for each process.
    A process can make system calls (in some rare cases nested) and receive
@@ -182,6 +182,8 @@ struct _LttvTraceState {
   GQuark *syscall_names;
   GQuark *trap_names;
   GQuark *irq_names;
+  gboolean recompute_state_in_seek;
+  gboolean saved_state_available;
 };
 
 struct _LttvTraceStateClass {

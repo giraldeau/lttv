@@ -130,6 +130,8 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     tc = self->parent.traces[i];
     tcs = (LttvTraceState *)tc;
     tcs->save_interval = 100000;
+    tcs->recompute_state_in_seek = false;
+    tcs->saved_state_ready = false;
     fill_name_tables(tcs);
 
     nb_control = ltt_trace_control_tracefile_number(tc->t);
@@ -983,7 +985,7 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
 }
 
 
-void lttv_state_restore_closest_state(LttvTracesetState *self, LttTime t)
+void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 {
   LttvTraceset *traceset = self->parent.ts;
 
@@ -1005,31 +1007,49 @@ void lttv_state_restore_closest_state(LttvTracesetState *self, LttTime t)
   for(i = 0 ; i < nb_trace ; i++) {
     tcs = (LttvTraceState *)self->parent.traces[i];
 
-    saved_states_tree = lttv_attribute_find_subdir(tcs->parent.t_a,
-        LTTV_STATE_SAVED_STATES);
-    min_pos = -1;
-    max_pos = lttv_attribute_get_number(saved_states_tree) - 1;
-    mid_pos = max_pos / 2;
-    while(min_pos < max_pos) {
-      type = lttv_attribute_get(saved_states_tree, mid_pos, &name, &value);
-      g_assert(type == LTTV_GOBJECT);
-      saved_state_tree = *((LttvAttribute **)(value.v_gobject));
-      type = lttv_attribute_get_by_name(saved_state_tree, LTTV_STATE_TIME, 
-          &value);
-      g_assert(type == LTTV_TIME);
-      if(ltt_time_compare(*(value.v_time), t) < 0) {
-        min_pos = mid_pos;
-        closest_tree = saved_state_tree;
-      }
-      else max_pos = mid_pos - 1;
+    if(tcs->recompute_state_in_seek) {
+      if(tcs->saved_state_available) {
+        saved_states_tree = lttv_attribute_find_subdir(tcs->parent.t_a,
+            LTTV_STATE_SAVED_STATES);
+        min_pos = -1;
+        max_pos = lttv_attribute_get_number(saved_states_tree) - 1;
+        mid_pos = max_pos / 2;
+        while(min_pos < max_pos) {
+          type = lttv_attribute_get(saved_states_tree, mid_pos, &name, &value);
+          g_assert(type == LTTV_GOBJECT);
+          saved_state_tree = *((LttvAttribute **)(value.v_gobject));
+          type = lttv_attribute_get_by_name(saved_state_tree, LTTV_STATE_TIME, 
+              &value);
+          g_assert(type == LTTV_TIME);
+          if(ltt_time_compare(*(value.v_time), t) < 0) {
+            min_pos = mid_pos;
+            closest_tree = saved_state_tree;
+          }
+          else max_pos = mid_pos - 1;
 
-      mid_pos = (min_pos + max_pos + 1) / 2;
-    }
-    if(min_pos == -1) {
+          mid_pos = (min_pos + max_pos + 1) / 2;
+        }
+
+        /* restore the closest earlier saved state */
+        if(min_pos != -1) lttv_state_restore(tcs, closest_tree);
+
+        /* there is no earlier saved state, restart at T0 */
+        else {
+          restore_init_state(tcs);
+          lttv_process_trace_seek_time(&(tcs->parent), ltt_time_zero);
+        }
+
+      /* There is no saved state yet we want to have it. Restart at T0 */
+      else {
+        restore_init_state(tcs);
+        lttv_process_trace_seek_time(&(tcs->parent), ltt_time_zero);
+      }
+
+    /* We want to seek quickly without restoring/updating the state */
+    else {
       restore_init_state(tcs);
-      lttv_process_trace_seek_time(&(tcs->parent), ltt_time_zero);
+      lttv_process_trace_seek_time(&(tcs->parent), t);
     }
-    else lttv_state_restore(tcs, closest_tree);
   }
 }
 
