@@ -425,6 +425,10 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
 
   if(tscs->stats == NULL) return;
 
+  ts = tscs->parent.parent.ts;
+  nb = lttv_traceset_number(ts);
+  if(nb == 0)return;
+
   gtk_tree_store_append (store, &iter, NULL);  
   gtk_tree_store_set (store, &iter,
           NAME_COLUMN, "Traceset statistics",
@@ -436,9 +440,6 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
   show_tree(statistic_viewer_data, tscs->stats, &iter);
 
   //show stats for all traces
-  ts = tscs->parent.parent.ts;
-  nb = lttv_traceset_number(ts);
-  
   for(i = 0 ; i < nb ; i++) {
     tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
     desc = ltt_trace_system_description(tcs->parent.parent.t);    

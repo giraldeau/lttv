@@ -805,6 +805,12 @@ gboolean show_event_detail(void * hook_data, void * call_data)
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
   LttvTracesetContext * tsc = get_traceset_context(event_viewer_data->mw);
 
+  if(event_viewer_data->raw_trace_data_queue_tmp->length == 0 &&
+     event_viewer_data->raw_trace_data_queue->length == 0){
+    event_viewer_data->shown = FALSE;
+    return FALSE;
+  }
+
   if(event_viewer_data->shown == FALSE){
     event_viewer_data->shown = TRUE;
     update_raw_data_array(event_viewer_data, 
@@ -1441,6 +1447,8 @@ gboolean update_current_time(void * hook_data, void * call_data)
   char str_path[64];
   int i, j;
   LttTime t;
+
+  if(!event_viewer_data->raw_trace_data_queue->head) return FALSE;
 
   if(event_viewer_data->current_time_updated ){
     event_viewer_data->current_time_updated = FALSE;

@@ -529,7 +529,8 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 	    g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
 	  }
 	  lttv_traceset_remove(traceset, i);
-	  lttv_trace_destroy(trace_v);
+	  if(!lttv_trace_get_ref_number(trace_v))
+	     lttv_trace_destroy(trace_v);
 	  mw_data->current_tab->traceset_info->traceset_context =
 	    g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
 	  lttv_context_init(
@@ -537,8 +538,16 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 				      traceset_info->traceset_context),traceset);      
 	  //update current tab
 	  update_traceset(mw_data);
-	  redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
-	  set_current_time(mw_data,&(mw_data->current_tab->current_time));
+	  if(nb_trace > 1){
+	    redraw_viewer(mw_data, &(mw_data->current_tab->time_window));
+	    set_current_time(mw_data,&(mw_data->current_tab->current_time));
+	  }else{
+	    if(mw_data->current_tab){
+	      while(mw_data->current_tab->multi_vpaned->num_children){
+		gtk_multi_vpaned_widget_delete(mw_data->current_tab->multi_vpaned);
+	      }    
+	    }	    
+	  }
 	}
 	break;
       }

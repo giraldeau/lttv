@@ -80,6 +80,11 @@ static void lttv_traceset_context_compute_time_span(
   LttvTraceContext *tc;
   LttTrace * trace;
 
+  Time_Span->startTime.tv_sec = 0;
+  Time_Span->startTime.tv_nsec = 0;
+  Time_Span->endTime.tv_sec = 0;
+  Time_Span->endTime.tv_nsec = 0;
+  
   for(i=0; i<numTraces;i++){
     tc = self->traces[i];
     trace = tc->t;
