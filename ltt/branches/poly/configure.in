@@ -43,8 +43,15 @@ AC_SUBST(lttplugindir)
 DEFAULT_INCLUDES="-I\$(top_srcdir)/include"
 AC_SUBST(DEFAULT_INCLUDES)
 
+lttvincludedir="${includedir}/lttv"
+AC_SUBST(lttvincludedir)
+
+lttincludedir="${includedir}/ltt"
+AC_SUBST(lttincludedir)
+
 AC_CONFIG_FILES([Makefile
                  lttv/Makefile
                  lttv/plugins/Makefile
-		 lttd/Makefile])
+		 lttd/Makefile
+		 LibLTT/Makefile])
 AC_OUTPUT
