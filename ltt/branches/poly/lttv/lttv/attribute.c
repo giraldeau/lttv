@@ -41,7 +41,8 @@ typedef struct _Attribute {
 } Attribute;
 
 
-LttvAttributeValue address_of_value(LttvAttributeType t, AttributeValue *v)
+static __inline LttvAttributeValue address_of_value(LttvAttributeType t,
+                                                    AttributeValue *v)
 {
   LttvAttributeValue va;
 
@@ -514,12 +515,12 @@ attribute_interface_init (gpointer g_iface, gpointer iface_data)
 
 }
 
-
 static void
 attribute_instance_init (GTypeInstance *instance, gpointer g_class)
 {
   LttvAttribute *self = (LttvAttribute *)instance;
-  self->names = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->names = g_hash_table_new(g_direct_hash,
+                                 g_direct_equal);
   self->attributes = g_array_new(FALSE, FALSE, sizeof(Attribute));
 }
 

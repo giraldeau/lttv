@@ -577,7 +577,7 @@ lttv_tracefile_context_get_type(void)
 
 
 
-gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
+static gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
   *((LttvTracefileContext **)user_data) = (LttvTracefileContext *)value;
   return TRUE;
 }

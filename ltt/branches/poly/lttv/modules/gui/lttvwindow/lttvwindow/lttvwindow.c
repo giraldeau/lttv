@@ -880,10 +880,10 @@ gint find_viewer (const EventsRequest *a, gconstpointer b)
 void lttvwindow_events_request_remove_all(Tab       *tab,
                                           gconstpointer   viewer)
 {
-  GSList *element;
+  GSList *element = tab->events_requests;
   
   while((element = 
-            g_slist_find_custom(tab->events_requests, viewer,
+            g_slist_find_custom(element, viewer,
                                 (GCompareFunc)find_viewer))
               != NULL) {
     EventsRequest *events_request = (EventsRequest *)element->data;
@@ -895,6 +895,8 @@ void lttvwindow_events_request_remove_all(Tab       *tab,
     //}
     g_free(events_request);
     tab->events_requests = g_slist_remove_link(tab->events_requests, element);
+    element = g_slist_next(element);
+    if(element == NULL) break;   /* end of list */
   }
   if(g_slist_length(tab->events_requests) == 0) {
     tab->events_request_pending = FALSE;
