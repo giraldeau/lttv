@@ -271,7 +271,54 @@ int event_selected_hook(void *hook_data, void *call_data)
   
 }
 
+/* Function that selects the color of status&exemode line */
+static __inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
+{
+  PropertiesLine prop_line;
+  prop_line.line_width = 2;
+  prop_line.style = GDK_LINE_SOLID;
+  prop_line.y = MIDDLE;
+  //GdkColormap *colormap = gdk_colormap_get_system();
+  
+  g_debug("prepare_status_line for state : %s",
+      g_quark_to_string(process->state->s));
 
+  if(process->state->s == LTTV_STATE_RUN) {
+    if(process->state->t == LTTV_STATE_USER_MODE)
+      prop_line.color = drawing_colors[COL_RUN_USER_MODE];
+    else if(process->state->t == LTTV_STATE_SYSCALL)
+      prop_line.color = drawing_colors[COL_RUN_SYSCALL];
+    else if(process->state->t == LTTV_STATE_TRAP)
+      prop_line.color = drawing_colors[COL_RUN_TRAP];
+    else if(process->state->t == LTTV_STATE_IRQ)
+      prop_line.color = drawing_colors[COL_RUN_IRQ];
+    else if(process->state->t == LTTV_STATE_MODE_UNKNOWN)
+      prop_line.color = drawing_colors[COL_MODE_UNKNOWN];
+    else
+      g_assert(FALSE);   /* RUNNING MODE UNKNOWN */
+  } else if(process->state->s == LTTV_STATE_WAIT) {
+    /* We don't show if we wait while in user mode, trap, irq or syscall */
+    prop_line.color = drawing_colors[COL_WAIT];
+  } else if(process->state->s == LTTV_STATE_WAIT_CPU) {
+    /* We don't show if we wait for CPU while in user mode, trap, irq
+     * or syscall */
+    prop_line.color = drawing_colors[COL_WAIT_CPU];
+  } else if(process->state->s == LTTV_STATE_ZOMBIE) {
+    prop_line.color = drawing_colors[COL_ZOMBIE];
+  } else if(process->state->s == LTTV_STATE_WAIT_FORK) {
+    prop_line.color = drawing_colors[COL_WAIT_FORK];
+  } else if(process->state->s == LTTV_STATE_EXIT) {
+    prop_line.color = drawing_colors[COL_EXIT];
+  } else if(process->state->s == LTTV_STATE_UNNAMED) {
+    prop_line.color = drawing_colors[COL_UNNAMED];
+  } else
+    g_assert(FALSE);   /* UNKNOWN STATE */
+  
+  return prop_line;
+
+}
+
+#if 0
 static __inline PropertiesLine prepare_status_line(LttvProcessState *process)
 {
   PropertiesLine prop_line;
@@ -309,7 +356,7 @@ static __inline PropertiesLine prepare_status_line(LttvProcessState *process)
   return prop_line;
 
 }
-
+#endif //0
 
 
 /* before_schedchange_hook
@@ -474,7 +521,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
           {
             /* Draw the line */
-            PropertiesLine prop_line = prepare_status_line(process);
+            PropertiesLine prop_line = prepare_s_e_line(process);
             draw_line((void*)&prop_line, (void*)&draw_context);
 
           }
@@ -587,7 +634,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
           {
             /* Draw the line */
-            PropertiesLine prop_line = prepare_status_line(process);
+            PropertiesLine prop_line = prepare_s_e_line(process);
             draw_line((void*)&prop_line, (void*)&draw_context);
           }
 
@@ -1774,6 +1821,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 #endif //0
 }
 
+#if 0
 static __inline PropertiesLine prepare_execmode_line(LttvProcessState *process)
 {
   PropertiesLine prop_line;
@@ -1804,7 +1852,7 @@ static __inline PropertiesLine prepare_execmode_line(LttvProcessState *process)
   return prop_line;
 
 }
-
+#endif //0
 
 
 /* before_execmode_hook
@@ -1926,7 +1974,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
 
 
     /* Jump over draw if we are at the same x position */
-    if(x == hashed_process_data->x.over)
+    if(x == hashed_process_data->x.middle)
     {
       /* jump */
     } else {
@@ -1937,7 +1985,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
       draw_context.drawable = drawing->pixmap;
       draw_context.gc = drawing->gc;
       draw_context.pango_layout = drawing->pango_layout;
-      draw_context.drawinfo.start.x = hashed_process_data->x.over;
+      draw_context.drawinfo.start.x = hashed_process_data->x.middle;
       draw_context.drawinfo.end.x = x;
 
       draw_context.drawinfo.y.over = y+1;
@@ -1953,12 +2001,12 @@ int before_execmode_hook(void *hook_data, void *call_data)
 
       {
         /* Draw the line */
-        PropertiesLine prop_line = prepare_execmode_line(process);
+        PropertiesLine prop_line = prepare_s_e_line(process);
         draw_line((void*)&prop_line, (void*)&draw_context);
 
       }
       /* become the last x position */
-      hashed_process_data->x.over = x;
+      hashed_process_data->x.middle = x;
     }
   }
   
@@ -2205,7 +2253,7 @@ int before_process_hook(void *hook_data, void *call_data)
 
         {
           /* Draw the line */
-          PropertiesLine prop_line = prepare_status_line(process);
+          PropertiesLine prop_line = prepare_s_e_line(process);
           draw_line((void*)&prop_line, (void*)&draw_context);
 
         }
@@ -2910,7 +2958,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         draw_context.drawinfo.end.offset.over = 0;
         draw_context.drawinfo.end.offset.middle = 0;
         draw_context.drawinfo.end.offset.under = 0;
-
+#if 0
         /* Jump over draw if we are at the same x position */
         if(x == hashed_process_data->x.over)
         {
@@ -2923,13 +2971,14 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
           hashed_process_data->x.over = x;
         }
+#endif //0
 
         if(x == hashed_process_data->x.middle) {
           /* Jump */
         } else {
           draw_context.drawinfo.start.x = hashed_process_data->x.middle;
           /* Draw the line */
-          PropertiesLine prop_line = prepare_status_line(process);
+          PropertiesLine prop_line = prepare_s_e_line(process);
           draw_line((void*)&prop_line, (void*)&draw_context);
 
            /* become the last x position */

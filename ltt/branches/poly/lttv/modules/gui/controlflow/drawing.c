@@ -36,7 +36,7 @@
 //FIXME
 #define TRACE_NUMBER 0
 
-
+#if 0 /* colors for two lines representation */
 GdkColor drawing_colors[NUM_COLORS] =
 { /* Pixel, R, G, B */
   { 0, 0, 0, 0 }, /* COL_BLACK */
@@ -54,6 +54,27 @@ GdkColor drawing_colors[NUM_COLORS] =
   { 0, 0xFFFF, 0xFFFF, 0xFFFF }  /* COL_MODE_UNKNOWN : white */
 
 };
+#endif //0
+
+
+GdkColor drawing_colors[NUM_COLORS] =
+{ /* Pixel, R, G, B */
+  { 0, 0, 0, 0 }, /* COL_BLACK */
+  { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_WHITE */
+  { 0, 0x0000, 0xFF00, 0x0000 }, /* COL_RUN_USER_MODE : green */
+  { 0, 0x0100, 0x9E00, 0xFFFF }, /* COL_RUN_SYSCALL : pale blue */
+  { 0, 0xFF00, 0xFF00, 0x0100 }, /* COL_RUN_TRAP : yellow */
+  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_RUN_IRQ : red */
+  { 0, 0xA3FF, 0x0000, 0x0000 }, /* COL_WAIT : dark red */
+  { 0, 0x7700, 0x7700, 0x0000 }, /* COL_WAIT_CPU : dark yellow */
+  { 0, 0x6400, 0x0000, 0x5D00 }, /* COL_ZOMBIE : dark purple */
+  { 0, 0x0700, 0x6400, 0x0000 }, /* COL_WAIT_FORK : dark green */
+  { 0, 0x8900, 0x0000, 0x8400 }, /* COL_EXIT : "less dark" magenta */
+  { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_MODE_UNKNOWN : white */
+  { 0, 0xFFFF, 0xFFFF, 0xFFFF }  /* COL_UNNAMED : white */
+
+};
+
 /*
 RUN+USER MODE green
 RUN+SYSCALL
