@@ -9,10 +9,10 @@ see doc/developer/index.html
 
 Some development libraries are needed for compiling :
 
-gtk 2 development libraries (libgtk2.0-dev)
-glib 2 development libraries (libglib2.0-dev)
-libpopt development libraries (libpopt-dev)
-libpango development libraries (libpango-dev)
+gtk 2 development libraries (libgtk2.0, libgtk2.0-dev)
+glib 2 development libraries (libglib2.0-0, libglib2.0-dev)
+libpopt development libraries (libpopt0, libpopt-dev)
+libpango development libraries (libpango1.0, libpango1.0-dev)
 
 To compile the source tree from a tarball, simply follow these steps :
 
