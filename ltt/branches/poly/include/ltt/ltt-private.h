@@ -146,6 +146,7 @@ struct _LttTrace{
   guint control_tracefile_number;           //the number of control files 
   guint per_cpu_tracefile_number;           //the number of per cpu files 
   LttSystemDescription * system_description;//system description 
+
   GPtrArray *control_tracefiles;            //array of control tracefiles 
   GPtrArray *per_cpu_tracefiles;            //array of per cpu tracefiles 
   GPtrArray *facilities;                    //array of facilities 
@@ -153,6 +154,16 @@ struct _LttTrace{
   LttArchEndian my_arch_endian;             //endian type of the local machine
 };
 
+struct _LttEventPosition{
+  unsigned      block_num;          //block which contains the event 
+  unsigned      event_num;          //event index in the block
+  unsigned      event_offset;       //event position in the block
+  LttTime       event_time;         //the time of the event
+  LttCycleCount event_cycle_count;  //the cycle count of the event
+  unsigned      heart_beat_number;  //current number of heart beats  
+  gboolean      old_position;       //flag to show if it is the position
+                                    //being remembered
+};
 
 /*****************************************************************************
  macro for size of some data types

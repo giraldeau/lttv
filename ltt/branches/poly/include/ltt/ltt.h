@@ -82,6 +82,11 @@ typedef struct _LttTime {
 
 typedef uint64_t LttCycleCount;
 
+/* Event positions are used to seek within a tracefile based on
+   the block number and event position within the block. */
+
+typedef struct _LttEventPosition LttEventPosition;
+
 
 /* Differences between architectures include word sizes, endianess,
    alignment, floating point format and calling conventions. For a

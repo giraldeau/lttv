@@ -34,6 +34,22 @@ LttTime ltt_event_time(LttEvent *e);
 LttCycleCount ltt_event_cycle_count(LttEvent *e);
 
 
+/* Obtain the position of the event within the tracefile. This
+   is used to seek back to this position later or to seek to another
+   position, computed relative to this position. The event position
+   structure is opaque and contains several fields, only two
+   of which are user accessible: block number and event index
+   within the block. */
+
+void ltt_event_position(LttEvent *e, LttEventPosition *ep);
+
+void ltt_event_position_get(LttEventPosition *ep,
+    unsigned *block_number, unsigned *index_in_block);
+
+void ltt_event_position_set(LttEventPosition *ep,
+    unsigned block_number, unsigned index_in_block);
+
+
 /* CPU id of the event */
 
 unsigned ltt_event_cpu_id(LttEvent *e);

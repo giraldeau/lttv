@@ -183,6 +183,57 @@ LttCycleCount ltt_event_cycle_count(LttEvent *e)
 
 /*****************************************************************************
  *Function name
+ *    ltt_event_position : get the event's position
+ *Input params
+ *    e                  : an instance of an event type   
+ *    ep                 : a pointer to event's position structure
+ ****************************************************************************/
+
+void ltt_event_position(LttEvent *e, LttEventPosition *ep)
+{
+  ep->block_num         = e->which_block;
+  ep->event_num         = e->which_event;
+  ep->event_time        = e->event_time;
+  ep->event_cycle_count = e->event_cycle_count;
+  ep->heart_beat_number = e->tracefile->cur_heart_beat_number;
+  ep->old_position      = TRUE;
+  ep->event_offset      = e->data - e->tracefile->buffer - EVENT_HEADER_SIZE ;
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_event_position_get : get the block number and index of the event
+ *Input params
+ *    ep                     : a pointer to event's position structure
+ *    block_number           : the block number of the event
+ *    index_in_block         : the index of the event within the block
+ ****************************************************************************/
+
+void ltt_event_position_get(LttEventPosition *ep,
+    unsigned *block_number, unsigned *index_in_block)
+{
+  *block_number   = ep->block_num;
+  *index_in_block = ep->event_num;
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_event_position_set : set the block number and index of the event
+ *Input params
+ *    ep                     : a pointer to event's position structure
+ *    block_number           : the block number of the event
+ *    index_in_block         : the index of the event within the block
+ ****************************************************************************/
+
+void ltt_event_position_set(LttEventPosition *ep,
+    unsigned block_number, unsigned index_in_block)
+{
+  ep->block_num = block_number;
+  ep->event_num = index_in_block;
+}
+
+/*****************************************************************************
+ *Function name
  *    ltt_event_cpu_i: get the cpu id where the event happens
  *Input params
  *    e              : an instance of an event type   

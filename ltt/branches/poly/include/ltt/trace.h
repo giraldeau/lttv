@@ -99,10 +99,19 @@ LttTracefile *ltt_trace_per_cpu_tracefile_get(LttTrace *t, unsigned i);
 char *ltt_tracefile_name(LttTracefile *tf);
 
 
+/* Get the number of blocks in the tracefile */
+
+unsigned ltt_tracefile_block_number(LttTracefile *tf);
+
+
 /* Seek to the first event of the trace with time larger or equal to time */
 
 void ltt_tracefile_seek_time(LttTracefile *t, LttTime time);
 
+/* Seek to the first event with position equal or larger to ep */
+
+void ltt_tracefile_seek_position(LttTracefile *t,
+    LttEventPosition *ep);
 
 /* Read the next event */
 

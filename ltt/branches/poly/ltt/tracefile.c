@@ -671,6 +671,15 @@ char *ltt_tracefile_name(LttTracefile *tf)
 }
 
 /*****************************************************************************
+ * Get the number of blocks in the tracefile 
+ ****************************************************************************/
+
+unsigned ltt_tracefile_block_number(LttTracefile *tf)
+{
+  return tf->block_number; 
+}
+
+/*****************************************************************************
  *Function name
  *    ltt_tracefile_seek_time: seek to the first event of the trace with time 
  *                             larger or equal to time
@@ -740,6 +749,32 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
     t->prev_event_time.tv_nsec = 0;
     return;
   }
+}
+
+/*****************************************************************************
+ * Seek to the first event with position equal or larger to ep 
+ ****************************************************************************/
+
+void ltt_tracefile_seek_position(LttTracefile *t, LttEventPosition *ep)
+{
+  //if we are at the right place, just return
+  if(t->which_block == ep->block_num && t->which_event == ep->event_num)
+    return;
+  
+  if(t->which_block == ep->block_num) updateTracefile(t);
+  else readBlock(t,ep->block_num);
+
+  //event offset is availiable
+  if(ep->old_position){
+    t->cur_heart_beat_number = ep->heart_beat_number;
+    t->cur_event_pos = t->buffer + ep->event_offset;
+    return;
+  }
+
+  //only block number and event index are availiable
+  while(t->which_event < ep->event_num) ltt_tracefile_read(t);
+
+  return;
 }
 
 /*****************************************************************************
