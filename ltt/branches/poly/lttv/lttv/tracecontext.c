@@ -101,7 +101,7 @@ lttv_context_new_tracefile_context(LttvTracesetContext *self)
  ***************************************************************************/
 static void lttv_traceset_context_compute_time_span(
                                           LttvTracesetContext *self,
-	                              				  TimeInterval time_span)
+	                              				  TimeInterval *time_span)
 {
   LttvTraceset * traceset = self->ts;
   int numTraces = lttv_traceset_number(traceset);
@@ -110,10 +110,10 @@ static void lttv_traceset_context_compute_time_span(
   LttvTraceContext *tc;
   LttTrace * trace;
 
-  time_span.startTime.tv_sec = 0;
-  time_span.startTime.tv_nsec = 0;
-  time_span.endTime.tv_sec = 0;
-  time_span.endTime.tv_nsec = 0;
+  time_span->start_time.tv_sec = 0;
+  time_span->start_time.tv_nsec = 0;
+  time_span->end_time.tv_sec = 0;
+  time_span->end_time.tv_nsec = 0;
   
   for(i=0; i<numTraces;i++){
     tc = self->traces[i];
@@ -122,17 +122,17 @@ static void lttv_traceset_context_compute_time_span(
     ltt_trace_time_span_get(trace, &s, &e);
 
     if(i==0){
-      time_span.startTime = s;
-      time_span.endTime   = e;
+      time_span->start_time = s;
+      time_span->end_time   = e;
     }else{
-      if(s.tv_sec < time_span.startTime.tv_sec 
-          || (s.tv_sec == time_span.startTime.tv_sec 
-               && s.tv_nsec < time_span.startTime.tv_nsec))
-	      time_span.startTime = s;
-      if(e.tv_sec > time_span.endTime.tv_sec
-          || (e.tv_sec == time_span.endTime.tv_sec 
-               && e.tv_nsec > time_span.endTime.tv_nsec))
-        time_span.endTime = e;      
+      if(s.tv_sec < time_span->start_time.tv_sec 
+          || (s.tv_sec == time_span->start_time.tv_sec 
+               && s.tv_nsec < time_span->start_time.tv_nsec))
+	      time_span->start_time = s;
+      if(e.tv_sec > time_span->end_time.tv_sec
+          || (e.tv_sec == time_span->end_time.tv_sec 
+               && e.tv_nsec > time_span->end_time.tv_nsec))
+        time_span->end_time = e;      
     }
   }
 }
@@ -189,7 +189,7 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
     }
   }
   lttv_process_traceset_seek_time(self, null_time);
-  lttv_traceset_context_compute_time_span(self, self->time_span);
+  lttv_traceset_context_compute_time_span(self, &self->time_span);
   self->e = NULL;
 
   self->pqueue = g_tree_new(compare_tracefile);
@@ -622,6 +622,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
   while(TRUE) {
     tfc = NULL;
     g_tree_foreach(pqueue, get_first, &tfc);
+    /* End of traceset : tfc is NULL */
     if(tfc == NULL)
     {
       self->e = event;
@@ -661,10 +662,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     if(event != NULL) {
       tfc->e = event;
       tfc->timestamp = ltt_event_time(event);
-      if(tfc->timestamp.tv_sec < end.tv_sec ||
-	          (tfc->timestamp.tv_sec == end.tv_sec &&
-                tfc->timestamp.tv_nsec <= end.tv_nsec))
-	      g_tree_insert(pqueue, tfc, tfc);
+	    g_tree_insert(pqueue, tfc, tfc);
     }
   }
 }
