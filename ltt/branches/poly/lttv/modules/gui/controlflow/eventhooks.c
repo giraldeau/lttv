@@ -2895,9 +2895,10 @@ gint redraw_notify(void *hook_data, void *call_data)
         widget->style->black_gc,
         TRUE,
         0, 0,
-        drawing->width+SAFETY,
+        drawing->alloc_width,
         -1);
 
+  gtk_widget_queue_draw(drawing->drawing_area);
 
   if(drawing->damage_begin < drawing->damage_end)
   {
@@ -2908,7 +2909,6 @@ gint redraw_notify(void *hook_data, void *call_data)
                          drawing->height);
   }
 
-  gtk_widget_queue_draw(drawing->drawing_area);
   //gtk_widget_queue_draw_area(drawing->drawing_area,
   //                           0,0,
   //                           drawing->width,

@@ -346,19 +346,14 @@ ProcessList *processlist_construct(void)
   process_list->process_list_widget = 
     gtk_tree_view_new_with_model
     (GTK_TREE_MODEL (process_list->list_store));
+
   g_object_unref (G_OBJECT (process_list->list_store));
 
-  gtk_tree_sortable_set_sort_func(
+  gtk_tree_sortable_set_default_sort_func(
       GTK_TREE_SORTABLE(process_list->list_store),
-      PID_COLUMN,
       process_sort_func,
       NULL,
       NULL);
-  
-  gtk_tree_sortable_set_sort_column_id(
-      GTK_TREE_SORTABLE(process_list->list_store),
-      PID_COLUMN,
-      GTK_SORT_ASCENDING);
   
   process_list->process_hash = g_hash_table_new_full(
       process_list_hash_fct, process_list_equ_fct,

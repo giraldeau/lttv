@@ -559,6 +559,15 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
         widget->allocation.height != 1)
         && drawing->damage_begin < drawing->damage_end)
     {
+
+      rectangle_pixmap (drawing->control_flow_data->process_list,
+        drawing->drawing_area->style->black_gc,
+        TRUE,
+        0, 0,
+        drawing->alloc_width, // do not overlap
+        -1);
+
+
       drawing_data_request(drawing,
                            drawing->damage_begin,
                            0,
