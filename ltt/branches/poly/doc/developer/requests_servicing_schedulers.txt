@@ -195,7 +195,7 @@ traces/#
       state/
         in_progress
         ready
-      statistics/
+      stats/
         in_progress
         ready
       modulename1/
@@ -205,6 +205,9 @@ traces/#
     requests_current/   /* Type : BackgroundRequest */
     notify_queue/
     notify_current/
+    computation_traceset/
+    computation_traceset_context/
+
 
 computation/      /* Global background computation hooks */
   state/
@@ -216,22 +219,10 @@ computation/      /* Global background computation hooks */
     after_request
     event_hook
     event_hook_by_id
-  statistics/
+  stats/
     ...
   modulename1/
     ...
-
-
-struct _LttvBackgroundComputation {
-  GSList *events_requests;
- /* A GSList of events request background computation for a trace. */
-  LttvTraceset *ts;
- /* A factice traceset that contains just one trace */
-  LttvTracesetContext *tsc;
- /* The traceset context that reads this trace */
-}
-
-
 
 
 Modify Traceset
@@ -259,8 +250,13 @@ Modify module load/unload
 
 A module that registers global computation hooks in the global attributes upon
 load should unregister them when unloaded. Also, it must remove every background
-computation request for each trace that has its own string as gchar *.
+computation request for each trace that has its own module_name as GQuark.
 
+
+Give an API for calculation modules
+
+Must have an API for module which register calculation hooks. Unregistration
+must also remove all requests made for these hooks.
 
 
 Background Requests Servicing Algorithm (v1)
@@ -275,32 +271,36 @@ notify_out : queue of notifications that comes along with next processing.
 
 
 1. Before processing
-  if list_in is empty
+  - if list_in is empty
     - Add all requests in list_out to list_in, empty list_out
     - for each request in list_in
-      - add hooks to context
       - set hooks'in_progress flag to TRUE
     - seek trace to start
     - Move all notifications from notify_out to notify_in.
+  - for each request in list_in
+    - Call before chunk hooks for list_in
+    - add hooks to context
 
 2. call process traceset middle for a chunk
   (assert list_in is not empty! : should not even be called in that case)
 
 3. After the chunk
-  3.1 call after_chunk hooks from list_in
+  3.1 call after_chunk hooks for list_in
+    - for each request in list_in
+      - Call after chunk hooks for list_in
+      - remove hooks from context
   3.2 for each notify_in
     - if current time >= notify time, call notify and remove from notify_in
     - if current position >= notify position, call notify and remove from
       notify_in
-  3.2 if end of trace reached
+  3.3 if end of trace reached
     - for each request in list_in
       - set hooks'in_progress flag to FALSE
       - set hooks'ready flag to TRUE
-      - remove hooks from context
       - remove request
     - for each notifications in notify_in
       - call notify and remove from notify_in
     - return FALSE (scheduler stopped)
-  3.3 else
+  3.4 else
     - return TRUE (scheduler still registered)
 
