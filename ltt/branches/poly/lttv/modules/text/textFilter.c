@@ -64,7 +64,7 @@ static LttvHooks
  */
 void filter_analyze_file(void *hook_data) {
 
-  g_print("textFilter::filter_analyze_file\n");
+//  g_print("textFilter::filter_analyze_file\n");
  
   LttvAttributeValue value;
 
@@ -75,27 +75,6 @@ void filter_analyze_file(void *hook_data) {
 	 * 	and/or command line string.  From these sources, an 
 	 * 	option string is rebuilded and sent to the filter core
 	 */
-  
-/* OLD CODE
- * GString* a_file_content = g_string_new("");
-  a_file = fopen(a_file_name, "r"); 
-	if(a_file == NULL) { 
-		g_warning("file %s does not exist", a_file_name);
-    return;
-  }
-  
-  char* line = NULL;
-  size_t len = 0;
-
-  while(!feof(a_file)) {
-    len = getline(&line,&len,a_file);
-    g_string_append(a_file_content,line);
-  }
-  free(line);
-
-  fclose(a_file);
-*/  
-  
   if(!g_file_test(a_file_name,G_FILE_TEST_EXISTS)) {
     g_warning("file %s does not exist", a_file_name);
     return;
@@ -122,7 +101,7 @@ void filter_analyze_file(void *hook_data) {
  */
 void filter_analyze_string(void *hook_data) {
 
-  g_print("textFilter::filter_analyze_string\n");
+//  g_print("textFilter::filter_analyze_string\n");
 
   LttvAttributeValue value;
 
@@ -133,16 +112,6 @@ void filter_analyze_string(void *hook_data) {
 	 * 	and/or command line string.  From these sources, an 
 	 * 	option string is rebuilded and sent to the filter core
 	 */
-/*  if(a_filter_string==NULL) {
-    a_filter_string = g_string_new("");
-    g_string_append(a_filter_string,a_string);
-  }
-  else {
-    g_string_append(a_filter_string,"&"); 
-    g_string_append(a_filter_string,a_string);
-  }
-*/
-  
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
       LTTV_POINTER, &value));
 
@@ -151,8 +120,6 @@ void filter_analyze_string(void *hook_data) {
   g_string_append((GString*)*(value.v_pointer),a_string);
   g_string_append_c((GString*)*(value.v_pointer),')');
 
-//  LttvFilter* filter = lttv_filter_new();
-//  lttv_filter_append_expression(filter,a_string);
 }
 
 /**
@@ -160,7 +127,7 @@ void filter_analyze_string(void *hook_data) {
  */
 static void init() {
   
-  g_print("textFilter::init()\n");	/* debug */
+//  g_print("textFilter::init()\n");	/* debug */
 
   LttvAttributeValue value;
 

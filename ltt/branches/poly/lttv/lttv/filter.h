@@ -232,12 +232,6 @@ struct _LttvFilter {
 };
 
 /*
- * General Data Handling functions
- */
-
-void lttv_filter_tree_add_node(GPtrArray* stack, LttvFilterTree* subtree, LttvLogicalOp op);
-
-/*
  * Simple Expression
  */
 LttvSimpleExpression* lttv_simple_expression_new();
@@ -255,51 +249,51 @@ void lttv_simple_expression_destroy(LttvSimpleExpression* se);
  * Logical operators functions
  */
 
-gboolean lttv_apply_op_eq_uint64(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_eq_uint32(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_eq_uint16(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_eq_double(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_eq_string(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_eq_ltttime(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_uint64(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_uint32(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_uint16(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_double(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_string(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_ltttime(const gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_ne_uint64(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_ne_uint32(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_ne_uint16(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_ne_double(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_ne_string(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_ne_ltttime(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_uint64(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_uint32(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_uint16(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_double(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_string(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_ltttime(const gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_lt_uint64(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_lt_uint32(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_lt_uint16(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_lt_double(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_lt_ltttime(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_lt_uint64(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_lt_uint32(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_lt_uint16(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_lt_double(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_lt_ltttime(const gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_le_uint64(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_le_uint32(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_le_uint16(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_le_double(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_le_ltttime(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_le_uint64(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_le_uint32(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_le_uint16(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_le_double(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_le_ltttime(const gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_gt_uint64(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_gt_uint32(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_gt_uint16(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_gt_double(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_gt_ltttime(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_gt_uint64(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_gt_uint32(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_gt_uint16(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_gt_double(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_gt_ltttime(const gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_ge_uint64(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_ge_uint32(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_ge_uint16(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_ge_double(gpointer v1, LttvFieldValue v2);
-gboolean lttv_apply_op_ge_ltttime(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ge_uint64(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ge_uint32(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ge_uint16(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ge_double(const gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ge_ltttime(const gpointer v1, LttvFieldValue v2);
 
 /*
  * Cloning
  */
 
-LttvFilterTree* lttv_filter_tree_clone(LttvFilterTree* tree);
+LttvFilterTree* lttv_filter_tree_clone(const LttvFilterTree* tree);
 
-LttvFilter* lttv_filter_clone(LttvFilter* filter);
+LttvFilter* lttv_filter_clone(const LttvFilter* filter);
 
 /* 
  * LttvFilter 
@@ -322,33 +316,25 @@ LttvFilterTree* lttv_filter_tree_new();
 void lttv_filter_tree_destroy(LttvFilterTree* tree);
 
 gboolean lttv_filter_tree_parse(
-        LttvFilterTree* t,
-        LttEvent* event,
-        LttTracefile* tracefile,
-        LttTrace* trace,
-        LttvProcessState* state,
-        LttvTracefileContext* context);
+        const LttvFilterTree* t,
+        const LttEvent* event,
+        const LttTracefile* tracefile,
+        const LttTrace* trace,
+        const LttvProcessState* state,
+        const LttvTracefileContext* context);
 
-/*
- *  Hook functions
- *  
- *  These hook functions will be the one called when filtering 
- *  an event, a trace, a state, etc.
- */
-
-/* Check if the tracefile or event satisfies the filter. The arguments are
-   declared as void * to allow these functions to be used as hooks. */
-
-gboolean lttv_filter_tracefile(LttvFilter *filter, LttTracefile *tracefile);
-
-gboolean lttv_filter_tracestate(LttvFilter *filter, LttvTraceState *tracestate);
-
-gboolean lttv_filter_event(LttvFilter *filter, LttEvent *event);
+gboolean lttv_filter_tree_parse_branch(
+        const LttvSimpleExpression* se,
+        const LttEvent* event,
+        const LttTracefile* tracefile,
+        const LttTrace* trace,
+        const LttvProcessState* state,
+        const LttvTracefileContext* context);
 
 /*
  *  Debug functions
  */
-void lttv_print_tree(LttvFilterTree* t);
+void lttv_print_tree(const LttvFilterTree* t);
 
 #endif // FILTER_H
 
