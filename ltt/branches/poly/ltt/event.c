@@ -290,7 +290,7 @@ void ltt_event_position(LttEvent *e, LttEventPosition *ep)
   ep->old_position      = TRUE;
   ep->event_offset      = e->data - e->tracefile->buffer - EVENT_HEADER_SIZE ;
   ep->tf                = e->tracefile;
-
+  ep->overflow_nsec     = e->overflow_nsec;
   /* This is a workaround for fast position seek */
   ep->last_event_pos = e->last_event_pos;
   ep->prev_block_end_time = e->prev_block_end_time;
