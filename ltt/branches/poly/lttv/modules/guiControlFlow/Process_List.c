@@ -314,6 +314,7 @@ int processlist_add(	ProcessList *Process_List,
 	Hashed_Process_Data->draw_context = g_new(DrawContext, 1);
 	Hashed_Process_Data->draw_context->drawable = NULL;
 	Hashed_Process_Data->draw_context->gc = NULL;
+	Hashed_Process_Data->draw_context->pango_layout = NULL;
 	Hashed_Process_Data->draw_context->Current = g_new(DrawInfo,1);
 	Hashed_Process_Data->draw_context->Current->over = g_new(ItemInfo,1);
 	Hashed_Process_Data->draw_context->Current->over->x = -1;

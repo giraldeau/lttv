@@ -585,16 +585,45 @@ int draw_event_hook(void *hook_data, void *call_data)
 	prop_arc.size = 10;
 	prop_arc.filled = TRUE;
 	prop_arc.position = OVER;
+
 	DrawContext *draw_context = Hashed_Process_Data->draw_context;
 	draw_context->Current->modify_over->x = x;
 	draw_context->Current->modify_over->y = y;
 	draw_context->drawable = control_flow_data->Drawing->Pixmap;
+	draw_context->pango_layout = control_flow_data->Drawing->pango_layout;
 	GtkWidget *widget = control_flow_data->Drawing->Drawing_Area_V;
 	//draw_context->gc = widget->style->fg_gc[GTK_WIDGET_STATE (widget)];
 	draw_context->gc = widget->style->black_gc;
 	
-	draw_arc((void*)&prop_arc, (void*)draw_context);
+	//draw_arc((void*)&prop_arc, (void*)draw_context);
 	//test_draw_item(control_flow_data->Drawing, control_flow_data->Drawing->Pixmap);
+	
+	GdkColor colorfg = { 0, 0x0000, 0x0000, 0x0000 };
+	GdkColor colorbg = { 0, 0xffff, 0x0000, 0xffff };
+	PropertiesText prop_text;
+	prop_text.foreground = &colorfg;
+	prop_text.background = &colorbg;
+	prop_text.size = 10;
+	prop_text.position = OVER;
+
+	/* Print status of the process : U, WF, WC, E, W, R */
+	if(tfs->process->state->s == LTTV_STATE_UNNAMED)
+		prop_text.Text = "U";
+	else if(tfs->process->state->s == LTTV_STATE_WAIT_FORK)
+		prop_text.Text = "WF";
+	else if(tfs->process->state->s == LTTV_STATE_WAIT_CPU)
+		prop_text.Text = "WC";
+	else if(tfs->process->state->s == LTTV_STATE_EXIT)
+		prop_text.Text = "E";
+	else if(tfs->process->state->s == LTTV_STATE_WAIT)
+		prop_text.Text = "W";
+	else if(tfs->process->state->s == LTTV_STATE_RUN)
+		prop_text.Text = "R";
+	else
+		prop_text.Text = "U";
+	
+	draw_text((void*)&prop_text, (void*)draw_context);
+	
 	return 0;
 }
 

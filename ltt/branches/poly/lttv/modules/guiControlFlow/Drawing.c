@@ -278,6 +278,9 @@ Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data)
 	Drawing->Drawing_Area_V = gtk_drawing_area_new ();
 	Drawing->Control_Flow_Data = Control_Flow_Data;
 
+	Drawing->pango_layout =
+		gtk_widget_create_pango_layout(Drawing->Drawing_Area_V, NULL);
+	
 	//gtk_widget_set_size_request(Drawing->Drawing_Area_V->window, 50, 50);
 	g_object_set_data_full(
 			G_OBJECT(Drawing->Drawing_Area_V),
@@ -327,6 +330,7 @@ void drawing_destroy(Drawing_t *Drawing)
 	// Do not unref here, Drawing_t destroyed by it's widget.
 	//g_object_unref( G_OBJECT(Drawing->Drawing_Area_V));
 		
+	g_free(Drawing->pango_layout);
 	g_free(Drawing);
 }
 

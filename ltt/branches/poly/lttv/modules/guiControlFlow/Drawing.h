@@ -39,9 +39,11 @@ struct _Drawing_t {
 	GtkWidget	*Drawing_Area_V;
 	GdkPixmap	*Pixmap;
 	ControlFlowData	*Control_Flow_Data;
+	
+	PangoLayout *pango_layout;
 
 	gint 		height, width, depth;
-
+	
 };
 
 Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data);

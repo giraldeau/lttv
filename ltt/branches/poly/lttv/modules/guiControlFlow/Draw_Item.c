@@ -105,12 +105,10 @@ gboolean draw_text( void *hook_data, void *call_data)
 	gdk_gc_set_foreground(Draw_Context->gc, Properties->foreground);
 	gdk_gc_set_background(Draw_Context->gc, Properties->background);
 
-	layout = gtk_widget_create_pango_layout(GTK_WIDGET(Draw_Context->drawable), NULL);
+	layout = Draw_Context->pango_layout;
 	context = pango_layout_get_context(layout);
 	FontDesc = pango_context_get_font_description(context);
-	Font_Size = pango_font_description_get_size(FontDesc);
 	pango_font_description_set_size(FontDesc, Properties->size*PANGO_SCALE);
-	
 	
 	pango_layout_set_text(layout, Properties->Text, -1);
 	pango_layout_get_pixel_extents(layout, &ink_rect, NULL);
@@ -139,10 +137,6 @@ gboolean draw_text( void *hook_data, void *call_data)
 			break;
 	}
 
-
-	pango_font_description_set_size(FontDesc, Font_Size);
-	g_free(layout);
-	
 	return 0;
 }
 

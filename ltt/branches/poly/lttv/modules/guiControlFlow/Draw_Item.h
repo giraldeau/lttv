@@ -44,7 +44,7 @@ typedef enum _RelPos {
 struct _DrawContext {
 	GdkDrawable	*drawable;
 	GdkGC		*gc;
-	
+	PangoLayout *pango_layout;
 
 	DrawInfo	*Current;
 	DrawInfo	*Previous;
