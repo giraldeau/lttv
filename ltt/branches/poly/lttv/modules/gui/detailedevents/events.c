@@ -478,12 +478,12 @@ gui_events(MainWindow *parent_window, LttvTracesetSelector * s,char* key )
         G_OBJECT(event_viewer_data->hbox_v),
         MAX_NUMBER_EVENT,
         &event_viewer_data->size);
-  
+/*  
   g_object_set_data(
         G_OBJECT(event_viewer_data->hbox_v),
         TRACESET_TIME_SPAN,
         &event_viewer_data->time_span);
-
+*/
   event_viewer_data->filter_key = g_strdup(key);
   g_object_set_data(
         G_OBJECT(event_viewer_data->hbox_v),
