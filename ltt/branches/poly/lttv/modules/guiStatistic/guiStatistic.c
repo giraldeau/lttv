@@ -156,7 +156,7 @@ GuiStatistic_Destructor(StatisticViewerData *Statistic_Viewer_Data)
     gtk_widget_destroy(Statistic_Viewer_Data->HPaned_V);
     Statistic_Viewer_Data = NULL;
   }
-  GuiStatistic_free(Statistic_Viewer_Data);
+  //GuiStatistic_free(Statistic_Viewer_Data);
 }
 
 

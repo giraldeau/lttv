@@ -42,7 +42,6 @@ typedef struct _TracesetInfo {
 
 struct _mainWindow{
   GtkWidget*      MWindow;            /* Main Window */
-//  systemView *    SystemView;         /* System view displayed in this window*/
 
   /* Status bar information */
   //  guint         MainSBarContextID;    /* Context ID of main status bar */
@@ -57,8 +56,6 @@ struct _mainWindow{
   GtkWidget*           HelpContents;/* Window to display help contents */
   GtkWidget*           AboutBox;    /* Window  about information */
  
-  //LttvTracesetContext * traceset_context; 
-  //LttvTraceset * traceset;  /* trace set associated with the window */
   //  lttv_trace_filter * filter; /* trace filter associated with the window */
 
   /* Traceset related information */
@@ -70,27 +67,16 @@ struct _mainWindow{
   tab * CurrentTab;
 
   WindowCreationData * winCreationData; 
+
+  GHashTable * hash_menu_item;
+  GHashTable * hash_toolbar_item;
 };
 
-
-//struct _systemView{
-//  gpointer             EventDB;
-//  gpointer             SystemInfo;
-//  gpointer             Options;
-//  mainWindow         * Window;
-//  struct _systemView * Next;
-//};
 
 struct _tab{
   GtkWidget * label;
   GtkCustom * custom;
-
-  
- // Will have to read directly at the main window level, as we want
- // to be able to modify a traceset on the fly.
-  //LttTime traceStartTime;
-  //LttTime traceEndTime;
-  
+   
   // startTime is the left of the visible area. Corresponds to the scrollbar
   // value.
   // Time_Width is a zoom dependant value (corresponding to page size)
@@ -102,7 +88,14 @@ struct _tab{
   LttvIAttribute * Attributes;
 
   struct _tab * Next;
+  mainWindow  * mw;
 };
+
+/**
+ * Remove menu and toolbar item when a module unloaded
+ */
+void main_window_remove_menu_item(lttv_constructor view_constructor);
+void main_window_remove_toolbar_item(lttv_constructor view_constructor);
 
 #endif /* _MAIN_WINDOW_ */
 

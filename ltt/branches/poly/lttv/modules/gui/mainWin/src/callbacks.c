@@ -32,7 +32,6 @@ mainWindow * get_window_data_struct(GtkWidget * widget);
 char * get_unload_module(char ** loaded_module_name, int nb_module);
 void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label);
 
-/* test part */
 void insertView(GtkWidget* widget, view_constructor constructor);
 
 enum
@@ -41,16 +40,6 @@ enum
   N_COLUMNS
 };
 
-void
-on_textview1_grab_focus                     (GtkTextView     *text_view,
-					  gpointer         user_data)
-{
-  GtkWidget * widget;
-  GtkCustom * custom = (GtkCustom*)user_data;
-  widget = gtk_widget_get_parent((GtkWidget*)text_view);
-  widget = gtk_widget_get_parent(widget);
-  gtk_custom_set_focus((GtkWidget*)custom, (gpointer)widget);
-}
 
 void
 insertViewTest(GtkMenuItem *menuitem, gpointer user_data)
@@ -59,43 +48,6 @@ insertViewTest(GtkMenuItem *menuitem, gpointer user_data)
   insertView((GtkWidget*)menuitem, (view_constructor)user_data);
   //  selected_hook(&val);
 }
-
-void
-on_insert_viewer_test_activate         (GtkMenuItem     *menuitem,
-                                        gpointer         user_data)
-{
-  GtkWidget *scrolledwindow1, *textview1, *label;
-  static int count = 0;
-  char str[64];
-  GtkCustom * custom;
-  GtkTextBuffer* buf;
-  
-  mainWindow * mwData;  
-  mwData = get_window_data_struct((GtkWidget*)menuitem);
-  if(!mwData->CurrentTab) return;
-  custom = mwData->CurrentTab->custom;
-
-  sprintf(str,"label : %d",++count);
-  scrolledwindow1 = gtk_scrolled_window_new (NULL, NULL);
-  gtk_widget_show (scrolledwindow1);
-  label = gtk_label_new(str);
-  gtk_widget_show(label);
-
-  gtk_custom_widget_add(custom, scrolledwindow1);
-  gtk_widget_set_size_request ((GtkWidget*)scrolledwindow1, 800, 100);
-  
-  textview1 = gtk_text_view_new ();
-  gtk_widget_show (textview1);
-  gtk_container_add (GTK_CONTAINER (scrolledwindow1), textview1);
-  buf =  gtk_text_view_get_buffer((GtkTextView*)textview1);
-  sprintf(str,"text view : %d",count);
-  gtk_text_buffer_set_text(buf,str, -1);
-  
-  g_signal_connect ((gpointer) textview1, "grab_focus",
-		    G_CALLBACK (on_textview1_grab_focus), custom);
-}
-
-/* end of test part */
 
 
 /* internal functions */
@@ -183,12 +135,12 @@ void createNewWindow(GtkWidget* widget, gpointer user_data, gboolean clone)
 {
   mainWindow * parent = get_window_data_struct(widget);
 
-  constructMainWin(parent, NULL);
-
   if(clone){
     g_printf("Clone : use the same traceset\n");
+    constructMainWin(parent, NULL, FALSE);
   }else{
     g_printf("Empty : traceset is set to NULL\n");
+    constructMainWin(NULL, parent->winCreationData, FALSE);
   }
 }
 
@@ -312,7 +264,8 @@ void
 on_close_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Close\n");
+  mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
+  mainWindow_Destructor(mwData);  
 }
 
 
@@ -320,7 +273,30 @@ void
 on_close_tab_activate                  (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Close tab\n");
+  int count = 0;
+  GtkWidget * notebook;
+  tab * tmp;
+  mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
+  notebook = lookup_widget((GtkWidget*)menuitem, "MNotebook");
+  if(notebook == NULL){
+    g_printf("Notebook does not exist\n");
+    return;
+  }
+  
+  if(mwData->Tab == mwData->CurrentTab){
+    //    tmp = mwData->CurrentTab;
+    //    mwData->Tab = mwData->CurrentTab->Next;
+    g_printf("The default TAB can not be deleted\n");
+    return;
+  }else{
+    tmp = mwData->Tab;
+    while(tmp != mwData->CurrentTab){
+      tmp = tmp->Next;
+      count++;
+    }
+  }
+
+  gtk_notebook_remove_page((GtkNotebook*)notebook, count);  
 }
 
 
@@ -360,8 +336,7 @@ void
 on_quit_activate                       (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  mainWindow * mwData = get_window_data_struct((GtkWidget*)menuitem);
-  mainWindow_Destructor(mwData);  
+  gtk_main_quit ();
 }
 
 
@@ -801,6 +776,16 @@ char * get_unload_module(char ** loaded_module_name, int nb_module)
   return unload_module_name;
 }
 
+void destroy_hash_key(gpointer key)
+{
+  g_free(key);
+}
+
+void destroy_hash_data(gpointer data)
+{
+}
+
+
 void insertMenuToolbarItem(mainWindow * mw)
 {
   int i;
@@ -829,6 +814,8 @@ void insertMenuToolbarItem(mainWindow * mw)
       g_signal_connect ((gpointer) insert_view, "activate",
 			G_CALLBACK (insertViewTest),
 			constructor);  
+      g_hash_table_insert(mw->hash_menu_item, g_strdup(menuItem->menuText),
+			  insert_view);
     }
   }
 
@@ -853,24 +840,23 @@ void insertMenuToolbarItem(mainWindow * mw)
       gtk_widget_show (insert_view);
       gtk_container_set_border_width (GTK_CONTAINER (insert_view), 1);
       g_signal_connect ((gpointer) insert_view, "clicked",G_CALLBACK (insertViewTest),constructor);       
+      g_hash_table_insert(mw->hash_toolbar_item, g_strdup(toolbarItem->tooltip),
+			  insert_view);
     }
   }
 }
 
-void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_data)
+void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_data,
+		      gboolean first_window)
 {
   g_critical("constructMainWin()");
-  //  systemView * sv = NULL; /* System view */
-  //systemView * newSv;     /* New system view displayed in the new window */
   GtkWidget  * newWindow; /* New generated main window */
   mainWindow * newMWindow;/* New main window structure */
   GtkNotebook * notebook;
   LttvIAttribute *attributes =
 	  LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   LttvAttributeValue value;
-     
-  //  if(parent) sv = parent->SystemView;
-    
+         
   newMWindow = g_new(mainWindow, 1);
 
   // Add the object's information to the module's array 
@@ -880,18 +866,6 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
   newWindow  = create_MWindow();
   gtk_widget_show (newWindow);
     
-  //newSv = g_new(systemView, 1);
-  //  if(sv){
-  //    while(sv->Next) sv = sv->Next;
-  //    sv->Next = newSv;
-  //  }
-
-  //newSv->EventDB = NULL;
-  //newSv->SystemInfo = NULL;
-  //newSv->Options  = NULL;
-  //newSv->Next = NULL;
-  //newSv->Window = newMWindow;
-  
   newMWindow->Attributes = attributes;
   
   newMWindow->Traceset_Info = g_new(TracesetInfo,1);
@@ -936,7 +910,6 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
   newMWindow->MWindow = newWindow;
   newMWindow->Tab = NULL;
   newMWindow->CurrentTab = NULL;
-  //newMWindow->SystemView = newSv;
   newMWindow->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   if(parent){
     newMWindow->Traceset_Info->traceset = 
@@ -954,7 +927,7 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
     newMWindow->Traceset_Info->traceset = lttv_traceset_new();
 
     /* Add the command line trace */
-    if(gInit_Trace != NULL)
+    if(gInit_Trace != NULL && first_window)
       lttv_traceset_add(newMWindow->Traceset_Info->traceset, gInit_Trace);
     /* NOTE : the context must be recreated if we change the traceset,
      * ie : adding/removing traces */
@@ -967,9 +940,13 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
     newMWindow->winCreationData = win_creation_data;
   }
 
+  newMWindow->hash_menu_item = g_hash_table_new_full (g_str_hash, g_str_equal,
+					      destroy_hash_key, destroy_hash_data);
+  newMWindow->hash_toolbar_item = g_hash_table_new_full (g_str_hash, g_str_equal,
+					      destroy_hash_key, destroy_hash_data);
+
   insertMenuToolbarItem(newMWindow);
   
-  //g_object_set_data(G_OBJECT(newWindow), "systemView", (gpointer)newSv);    
   g_object_set_data(G_OBJECT(newWindow), "mainWindow", (gpointer)newMWindow);    
 
   //create a default tab
@@ -994,7 +971,18 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
 void Tab_Destructor(tab *Tab)
 {
   if(Tab->Attributes)
-    g_object_unref(Tab->Attributes);
+    g_object_unref(Tab->Attributes);  
+
+  if(Tab->mw->Tab == Tab){
+    Tab->mw->Tab = Tab->Next;
+  }else{
+    tab * tmp1, *tmp = Tab->mw->Tab;
+    while(tmp != Tab){
+      tmp1 = tmp;
+      tmp = tmp->Next;
+    }
+    tmp1->Next = Tab->Next;
+  }
   g_free(Tab);
 }
 
@@ -1046,6 +1034,7 @@ void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label)
   tmpTab->custom->mw = mwData;
   gtk_widget_show((GtkWidget*)tmpTab->custom);
   tmpTab->Next = NULL;    
+  tmpTab->mw   = mwData;
 
   tmpTab->label = gtk_label_new (label);
   gtk_widget_show (tmpTab->label);
@@ -1059,4 +1048,83 @@ void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label)
   gtk_notebook_append_page(notebook, (GtkWidget*)tmpTab->custom, tmpTab->label);  
   list = gtk_container_get_children(GTK_CONTAINER(notebook));
   gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
+}
+
+void remove_menu_item(gpointer main_win, gpointer user_data)
+{
+  mainWindow * mw = (mainWindow *) main_win;
+  lttv_menu_closure *menuItem = (lttv_menu_closure *)user_data;
+  GtkWidget * ToolMenuTitle_menu, *insert_view;
+
+  ToolMenuTitle_menu = lookup_widget(mw->MWindow,"ToolMenuTitle_menu");
+  insert_view = (GtkWidget*)g_hash_table_lookup(mw->hash_menu_item,
+						menuItem->menuText);
+  if(insert_view){
+    g_hash_table_remove(mw->hash_menu_item, menuItem->menuText);
+    gtk_container_remove (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
+  }
+}
+
+void remove_toolbar_item(gpointer main_win, gpointer user_data)
+{
+  mainWindow * mw = (mainWindow *) main_win;
+  lttv_toolbar_closure *toolbarItem = (lttv_toolbar_closure *)user_data;
+  GtkWidget * ToolMenuTitle_menu, *insert_view;
+
+
+  ToolMenuTitle_menu = lookup_widget(mw->MWindow,"MToolbar2");
+  insert_view = (GtkWidget*)g_hash_table_lookup(mw->hash_toolbar_item,
+						toolbarItem->tooltip);
+  if(insert_view){
+    g_hash_table_remove(mw->hash_toolbar_item, toolbarItem->tooltip);
+    gtk_container_remove (GTK_CONTAINER (ToolMenuTitle_menu), insert_view);
+  }
+}
+
+/**
+ * Remove menu and toolbar item when a module unloaded
+ */
+void main_window_remove_menu_item(lttv_constructor constructor)
+{
+  int i;
+  LttvMenus * menu;
+  lttv_menu_closure *menuItem;
+  LttvAttributeValue value;
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/menu", LTTV_POINTER, &value));
+  menu = (LttvMenus*)*(value.v_pointer);
+
+  if(menu){
+    for(i=0;i<menu->len;i++){
+      menuItem = &g_array_index(menu, lttv_menu_closure, i);
+      if(menuItem->con != constructor) continue;
+      g_slist_foreach(Main_Window_List, remove_menu_item, menuItem);
+      break;
+    }
+  }
+  
+}
+
+void main_window_remove_toolbar_item(lttv_constructor constructor)
+{
+  int i;
+  LttvToolbars * toolbar;
+  lttv_toolbar_closure *toolbarItem;
+  LttvAttributeValue value;
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/toolbar", LTTV_POINTER, &value));
+  toolbar = (LttvToolbars*)*(value.v_pointer);
+
+  if(toolbar){
+    for(i=0;i<toolbar->len;i++){
+      toolbarItem = &g_array_index(toolbar, lttv_toolbar_closure, i);
+      if(toolbarItem->con != constructor) continue;
+      g_slist_foreach(Main_Window_List, remove_toolbar_item, toolbarItem);
+      break;
+    }
+  }
 }

@@ -27,27 +27,6 @@
  */
 
 /**
- * Function to remove toolbar from the GUI
- * @param view_constructor constructor of the viewer.
- */
-
-void RemoveToolbar(lttv_constructor view_constructor)
-{
-  g_printf("Toolbar for the viewer will be removed\n");
-}
-
-/**
- * Function to remove menu entry from the GUI
- * @param view_constructor constructor of the viewer.
- */
-
-void RemoveMenu(lttv_constructor view_constructor)
-{
-  g_printf("Menu entry for the viewer will be removed\n");
-}
-
-
-/**
  * Function to set/update traceset for the viewers
  * @param main_win main window 
  * @param traceset traceset of the main window.
@@ -136,8 +115,9 @@ void ToolbarItemUnreg(lttv_constructor view_constructor)
 	   "viewers/toolbar", LTTV_POINTER, &value));
   toolbar = (LttvToolbars*)*(value.v_pointer);
   
-  if(lttv_toolbars_remove(toolbar, view_constructor))
-    RemoveToolbar(view_constructor);
+  main_window_remove_toolbar_item(view_constructor);
+
+  lttv_toolbars_remove(toolbar, view_constructor);
 }
 
 
@@ -185,8 +165,9 @@ void MenuItemUnreg(lttv_constructor view_constructor)
                               "viewers/menu", LTTV_POINTER, &value));
   menu = (LttvMenus*)*(value.v_pointer);
 
-  if(lttv_menus_remove(menu, view_constructor))  
-    RemoveMenu(view_constructor);
+  main_window_remove_menu_item(view_constructor);
+
+  lttv_menus_remove(menu, view_constructor);
 }
 
 

@@ -77,7 +77,7 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
   add_pixmap_directory ("pixmaps");
   add_pixmap_directory ("modules/gui/mainWin/pixmaps");
 
-  constructMainWin(NULL, Window_Creation_Data);
+  constructMainWin(NULL, Window_Creation_Data, TRUE);
 
   gtk_main ();
 
@@ -112,43 +112,13 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
 }
 
-//void
-//free_system_view(systemView * SystemView)
-//{
-//  if(!SystemView)return;
-//  //free_EventDB(SystemView->EventDB);
-//  //free_SystemInfo(SystemView->SystemInfo);
-//  //free_Options(SystemView->Options);
-//  if(SystemView->Next)
-//    free_system_view(SystemView->Next);
-//  g_free(SystemView);
-//}
-
-//MD : The tab is now only referenced by the notebook. The destroy will
-//happend when notebook destroyed.
-//void free_tab(tab * Tab)
-//{
-//  if(!Tab) return;
-//  if(Tab->custom->vbox)
-//    gtk_widget_destroy(Tab->custom->vbox);
-//  if(Tab->Attributes)
-//    g_object_unref(Tab->Attributes);
-
-//  if(Tab->Next) free_tab(Tab->Next);
-//  g_free(Tab);
-//  Tab = NULL;
-//}
-
 void
 mainWindow_free(mainWindow * mw)
 { 
   guint i, nb;
 
   if(mw){
-    //should free memory allocated dynamically first
-//    free_system_view(mw->SystemView);
-//    
-    //free_tab(mw->Tab);
+
 g_critical("begin remove");
     lttv_hooks_destroy(mw->Traceset_Info->before_traceset);
     lttv_hooks_destroy(mw->Traceset_Info->after_traceset);
@@ -160,16 +130,17 @@ g_critical("begin remove");
     lttv_hooks_destroy(mw->Traceset_Info->after_event);
 g_critical("end remove");
     
-
     if(mw->Traceset_Info->path != NULL)
       g_free(mw->Traceset_Info->path);
-    if(mw->Traceset_Info->TracesetContext != NULL)
+    if(mw->Traceset_Info->TracesetContext != NULL){
       lttv_context_fini(LTTV_TRACESET_CONTEXT(mw->Traceset_Info->TracesetContext));
+      g_object_unref(mw->Traceset_Info->TracesetContext);
+    }
     if(mw->Traceset_Info->traceset != NULL) {
       nb = lttv_traceset_number(mw->Traceset_Info->traceset);
       for(i = 0 ; i < nb ; i++) {
         ltt_trace_close(
-           lttv_traceset_get(mw->Traceset_Info->traceset, i));
+           lttv_trace(lttv_traceset_get(mw->Traceset_Info->traceset, i)));
       }
     }
 
@@ -181,6 +152,9 @@ g_critical("end remove");
     mw->Traceset_Info = NULL;
       
     Main_Window_List = g_slist_remove(Main_Window_List, mw);
+
+    g_hash_table_destroy(mw->hash_menu_item);
+    g_hash_table_destroy(mw->hash_toolbar_item);
     
     g_free(mw);
     mw = NULL;

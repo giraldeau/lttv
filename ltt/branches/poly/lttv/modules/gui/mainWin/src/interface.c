@@ -71,7 +71,7 @@ create_MWindow (void)
   GtkWidget *MoveViewerDown;
   GtkWidget *RemoveViewer;
   GtkWidget *ToolMenuSeparator;
-  GtkWidget *insert_viewer_test;
+  //  GtkWidget *insert_viewer_test;
   GtkWidget *PluginMenuTitle;
   GtkWidget *PluginMenuTitle_menu;
   GtkWidget *LoadModule;
@@ -283,9 +283,9 @@ create_MWindow (void)
   gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), ToolMenuSeparator);
   gtk_widget_set_sensitive (ToolMenuSeparator, FALSE);
 
-  insert_viewer_test = gtk_menu_item_new_with_mnemonic ("Insert viewer test");
-  gtk_widget_show (insert_viewer_test);
-  gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_viewer_test);
+  //  insert_viewer_test = gtk_menu_item_new_with_mnemonic ("Insert viewer test");
+  //  gtk_widget_show (insert_viewer_test);
+  //  gtk_container_add (GTK_CONTAINER (ToolMenuTitle_menu), insert_viewer_test);
 
   PluginMenuTitle = gtk_menu_item_new_with_mnemonic ("Plugins");
   gtk_widget_show (PluginMenuTitle);
@@ -611,9 +611,9 @@ create_MWindow (void)
   g_signal_connect ((gpointer) RemoveViewer, "activate",
                     G_CALLBACK (on_remove_viewer_activate),
                     NULL);
-  g_signal_connect ((gpointer) insert_viewer_test, "activate",
-                    G_CALLBACK (on_insert_viewer_test_activate),
-                    NULL);
+  //  g_signal_connect ((gpointer) insert_viewer_test, "activate",
+  //                    G_CALLBACK (on_insert_viewer_test_activate),
+  //                    NULL);
   g_signal_connect ((gpointer) LoadModule, "activate",
                     G_CALLBACK (on_load_module_activate),
                     NULL);
@@ -727,7 +727,7 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, MoveViewerDown, "MoveViewerDown");
   GLADE_HOOKUP_OBJECT (MWindow, RemoveViewer, "RemoveViewer");
   GLADE_HOOKUP_OBJECT (MWindow, ToolMenuSeparator, "ToolMenuSeparator");
-  GLADE_HOOKUP_OBJECT (MWindow, insert_viewer_test, "insert_viewer_test");
+  //  GLADE_HOOKUP_OBJECT (MWindow, insert_viewer_test, "insert_viewer_test");
   GLADE_HOOKUP_OBJECT (MWindow, PluginMenuTitle, "PluginMenuTitle");
   GLADE_HOOKUP_OBJECT (MWindow, PluginMenuTitle_menu, "PluginMenuTitle_menu");
   GLADE_HOOKUP_OBJECT (MWindow, LoadModule, "LoadModule");

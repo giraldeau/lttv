@@ -168,7 +168,7 @@ void fini(LttvTracesetContext *self)
   lttv_hooks_destroy(self->before);
   lttv_hooks_destroy(self->after);
   //FIXME : segfault
- // g_object_unref(self->a);
+  g_object_unref(self->a);
 
   nb_trace = lttv_traceset_number(ts);
 
