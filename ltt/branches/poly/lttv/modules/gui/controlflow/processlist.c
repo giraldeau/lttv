@@ -36,21 +36,6 @@
  *                       Methods to synchronize process list                 *
  *****************************************************************************/
 
-//static inline guint get_cpu_number_from_name(GQuark name);
-  
-/* Enumeration of the columns */
-enum
-{
-  PROCESS_COLUMN,
-  PID_COLUMN,
-  PPID_COLUMN,
-  CPU_COLUMN,
-  BIRTH_S_COLUMN,
-  BIRTH_NS_COLUMN,
-  TRACE_COLUMN,
-  N_COLUMNS
-};
-
 
 gint process_sort_func  ( GtkTreeModel *model,
         GtkTreeIter *it_a,
@@ -166,7 +151,7 @@ static void update_index_to_pixmap_each(ProcessInfo *key,
 }
 
 
-static void update_index_to_pixmap(ProcessList *process_list)
+void update_index_to_pixmap(ProcessList *process_list)
 {
   g_ptr_array_set_size(process_list->index_to_pixmap,
                        g_hash_table_size(process_list->process_hash));

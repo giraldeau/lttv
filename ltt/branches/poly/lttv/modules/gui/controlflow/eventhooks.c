@@ -3167,7 +3167,14 @@ int before_chunk(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   LttvTracesetState *tss = (LttvTracesetState*)call_data;
-
+  ControlFlowData *cfd = (ControlFlowData*)events_request->viewer_data;
+  
+  /* Desactivate sort */
+  gtk_tree_sortable_set_sort_column_id(
+      GTK_TREE_SORTABLE(cfd->process_list->list_store),
+      TRACE_COLUMN,
+      GTK_SORT_ASCENDING);
+ 
   drawing_chunk_begin(events_request, tss);
 
   return 0;
@@ -3177,7 +3184,7 @@ int before_request(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   LttvTracesetState *tss = (LttvTracesetState*)call_data;
-
+ 
   drawing_data_request_begin(events_request, tss);
 
   return 0;
@@ -3220,6 +3227,7 @@ int after_request(void *hook_data, void *call_data)
   /* Draw last items */
   g_hash_table_foreach(process_list->process_hash, draw_closure,
                         (void*)&closure_data);
+  
 
   /* Request expose */
   drawing_request_expose(events_request, tss, end_time);
@@ -3268,6 +3276,14 @@ int after_chunk(void *hook_data, void *call_data)
   g_hash_table_foreach(process_list->process_hash, draw_closure,
                         (void*)&closure_data);
 
+  /* Reactivate sort */
+  gtk_tree_sortable_set_sort_column_id(
+      GTK_TREE_SORTABLE(control_flow_data->process_list->list_store),
+      GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
+      GTK_SORT_ASCENDING);
+
+  update_index_to_pixmap(control_flow_data->process_list);
+ 
   /* Request expose */
   drawing_request_expose(events_request, tss, end_time);
 

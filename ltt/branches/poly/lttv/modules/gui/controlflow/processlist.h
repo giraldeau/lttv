@@ -38,8 +38,22 @@
  * provides helper function to convert a process unique identifier to
  *  pixels (in height).
  *
- * //FIXME : connect the scrolled window adjustment with the list.
  */
+
+
+/* Enumeration of the columns */
+enum
+{
+  PROCESS_COLUMN,
+  PID_COLUMN,
+  PPID_COLUMN,
+  CPU_COLUMN,
+  BIRTH_S_COLUMN,
+  BIRTH_NS_COLUMN,
+  TRACE_COLUMN,
+  N_COLUMNS
+};
+
 
 typedef struct _ProcessInfo {
   
@@ -125,6 +139,10 @@ int processlist_add(ProcessList *process_list, Drawing_t * drawing,
 // out : success (0) and height
 int processlist_remove(ProcessList *process_list, guint pid, guint cpu, 
     LttTime *birth, guint trace_num);
+
+
+/* Synchronize the list at the left and the drawing */
+void update_index_to_pixmap(ProcessList *process_list);
 
 /* Update the width of each pixmap buffer for each process */
 void update_pixmap_size(ProcessList *process_list, guint width);
