@@ -464,9 +464,9 @@ int main(int argc, char ** argv){
 	
 	if(evId == TRACE_HEARTBEAT){
 	  if(ltt_log_cpu){
-	    write_to_buffer(write_pos[cpu_id], cur_pos, sizeof(heartbeat)); 	 
+	    write_to_buffer(write_pos[cpu_id],(void*)&beat , sizeof(heartbeat)); 	 
 	  }else{
-	    write_to_buffer(write_pos[0], cur_pos, sizeof(heartbeat)); 	    	  
+	    write_to_buffer(write_pos[0], (void*)&beat, sizeof(heartbeat)); 	    	  
 	  }
 	}
 
