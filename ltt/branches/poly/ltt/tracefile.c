@@ -5,7 +5,6 @@
 #include <dirent.h>
 #include <linux/errno.h>  
 
-#include <ltt/LTTTypes.h>  
 #include "parser.h"
 #include <ltt/trace.h>
 
@@ -108,7 +107,7 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
   LttTracefile * tf;
   LttEvent * ev;
   LttFacility * f;
-  uint16_t evId;
+  guint16 evId;
   void * pos;
   FacilityLoad fLoad;
   int i;
@@ -128,7 +127,7 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
 	pos = ev->data;
 	fLoad.name = (char*)pos;
 	fLoad.checksum = *(LttChecksum*)(pos + strlen(fLoad.name));
-	fLoad.base_code = *(uint32_t*)(pos + strlen(fLoad.name) + sizeof(LttChecksum));
+	fLoad.base_code = *(guint32 *)(pos + strlen(fLoad.name) + sizeof(LttChecksum));
 
 	for(i=0;i<t->facility_number;i++){
 	  f = (LttFacility*)g_ptr_array_index(t->facilities,i);
@@ -856,14 +855,14 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
     if(err)g_error("Can not read tracefile");    
   }
 
-  lttEvent->event_id = (int)(*(uint16_t *)(t->cur_event_pos));
+  lttEvent->event_id = (int)(*(guint16 *)(t->cur_event_pos));
   if(lttEvent->event_id == TRACE_TIME_HEARTBEAT)
     t->cur_heart_beat_number++;
 
   t->prev_event_time  = t->current_event_time;
   //  t->current_event_time = getEventTime(t);
 
-  lttEvent->time_delta = *(uint32_t*)(t->cur_event_pos + EVENT_ID_SIZE);
+  lttEvent->time_delta = *(guint32 *)(t->cur_event_pos + EVENT_ID_SIZE);
   lttEvent->event_time = t->current_event_time;
 
   lttEvent->tracefile = t;
@@ -919,7 +918,7 @@ int readFile(int fd, void * buf, size_t size, char * mesg)
 int readBlock(LttTracefile * tf, int whichBlock)
 {
   off_t nbBytes;
-  uint32_t lostSize;
+  guint32 lostSize;
 
   if(whichBlock - tf->which_block == 1 && tf->which_block != 0){
     tf->prev_block_end_time = tf->a_block_end->time;
@@ -938,7 +937,7 @@ int readBlock(LttTracefile * tf, int whichBlock)
     return EIO;
 
   tf->a_block_start=(BlockStart *) (tf->buffer + EVENT_HEADER_SIZE);
-  lostSize = *(uint32_t*)(tf->buffer + tf->block_size - sizeof(uint32_t));
+  lostSize = *(guint32 *)(tf->buffer + tf->block_size - sizeof(guint32));
   tf->a_block_end=(BlockEnd *)(tf->buffer + tf->block_size - 
 				lostSize + EVENT_HEADER_SIZE); 
   tf->last_event_pos = tf->buffer + tf->block_size - lostSize;
@@ -991,7 +990,7 @@ int skipEvent(LttTracefile * t)
   LttEventType * evT;
   LttField * rootFld;
 
-  evId   = (int)(*(uint16_t *)(t->cur_event_pos));
+  evId   = (int)(*(guint16 *)(t->cur_event_pos));
   evData = t->cur_event_pos + EVENT_HEADER_SIZE;
 
   evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
@@ -1066,12 +1065,12 @@ LttTime getEventTime(LttTracefile * tf)
   LttCycleCount lEventTotalCycle; // Total cycles from start for event
   double        lEventNSec;       // Total usecs from start for event
   LttTime       lTimeOffset;      // Time offset in struct LttTime
-  uint16_t      evId;
-  int64_t       nanoSec, tmpCycleCount = (((uint64_t)1)<<32);
+  guint16       evId;
+  gint64        nanoSec, tmpCycleCount = (((guint64)1)<<32);
   static LttCycleCount preCycleCount = 0;
   static int   count = 0;
 
-  evId = *(uint16_t*)tf->cur_event_pos;
+  evId = *(guint16 *)tf->cur_event_pos;
   if(evId == TRACE_BLOCK_START){
     count = 0;
     preCycleCount = 0;
@@ -1085,7 +1084,7 @@ LttTime getEventTime(LttTracefile * tf)
   }
   
   // Calculate total time in cycles from start of buffer for this event
-  cycle_count = (LttCycleCount)*(uint32_t*)(tf->cur_event_pos + EVENT_ID_SIZE);
+  cycle_count = (LttCycleCount)*(guint32 *)(tf->cur_event_pos + EVENT_ID_SIZE);
   
   if(cycle_count < preCycleCount)count++;
   preCycleCount = cycle_count;
@@ -1273,11 +1272,11 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
 
 int getIntNumber(int size, void *evD)
 {
-  int64_t i;
-  if(size == 1)      i = *(int8_t *)evD;
-  else if(size == 2) i = *(int16_t *)evD;
-  else if(size == 4) i = *(int32_t *)evD;
-  else if(size == 8) i = *(int64_t *)evD;
+  gint64 i;
+  if(size == 1)      i = *(gint8 *)evD;
+  else if(size == 2) i = *(gint16 *)evD;
+  else if(size == 4) i = *(gint32 *)evD;
+  else if(size == 8) i = *(gint64 *)evD;
  
   return (int) i;
 }

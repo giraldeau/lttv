@@ -2,7 +2,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <ltt/LTTTypes.h>  
 #include "parser.h"
 #include <ltt/facility.h>
 

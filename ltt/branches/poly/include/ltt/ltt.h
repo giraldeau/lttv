@@ -2,7 +2,7 @@
 #define LTT_H
 
 #include <ltt/time.h>
-#include <ltt/LTTTypes.h>
+#include <glib.h>
 
 /* A trace is associated with a tracing session run on a single, possibly
    multi-cpu, system. It is defined as a pathname to a directory containing
@@ -83,7 +83,7 @@ typedef struct _TimeInterval{
 } TimeInterval;
 
 
-typedef uint64_t LttCycleCount;
+typedef guint64 LttCycleCount;
 
 
 /* Event positions are used to seek within a tracefile based on

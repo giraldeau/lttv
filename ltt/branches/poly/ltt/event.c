@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <asm/types.h>
 #include <linux/byteorder/swab.h>
-#include <ltt/LTTTypes.h> 
 #include "parser.h"
 #include <ltt/event.h>
 
@@ -337,17 +336,26 @@ unsigned ltt_event_get_unsigned(LttEvent *e, LttField *f)
     g_error("The type of the field is not unsigned int\n");
 
   if(f->field_size == 1){
-    uint8_t x = *(uint8_t*)(e->data + f->offset_root);
+    guint8 x = *(guint8 *)(e->data + f->offset_root);
     return (unsigned int) x;    
   }else if(f->field_size == 2){
-    uint16_t x = *(uint16_t*)(e->data + f->offset_root);
-    return (unsigned int) (revFlag ? BREV16(x): x);    
+    guint16 x = *(guint16 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (unsigned int) (revFlag ? GUINT16_FROM_BE(x): x);    
+    else
+      return (unsigned int) (revFlag ? GUINT16_FROM_LE(x): x);          
   }else if(f->field_size == 4){
-    uint32_t x = *(uint32_t*)(e->data + f->offset_root);
-    return (unsigned int) (revFlag ? BREV32(x): x);    
+    guint32 x = *(guint32 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (unsigned int) (revFlag ? GUINT32_FROM_BE(x): x);    
+    else
+      return (unsigned int) (revFlag ? GUINT32_FROM_LE(x): x);    
   }else if(f->field_size == 8){
-    uint64_t x = *(uint64_t*)(e->data + f->offset_root);
-    return (unsigned int) (revFlag ? BREV64(x): x);    
+    guint64 x = *(guint64 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (unsigned int) (revFlag ? GUINT64_FROM_BE(x): x);    
+    else
+      return (unsigned int) (revFlag ? GUINT64_FROM_LE(x): x);    
   }
 }
 
@@ -360,17 +368,26 @@ int ltt_event_get_int(LttEvent *e, LttField *f)
     g_error("The type of the field is not int\n");
 
   if(f->field_size == 1){
-    int8_t x = *(int8_t*)(e->data + f->offset_root);
+    gint8 x = *(gint8 *)(e->data + f->offset_root);
     return (int) x;    
   }else if(f->field_size == 2){
-    int16_t x = *(int16_t*)(e->data + f->offset_root);
-    return (int) (revFlag ? BREV16(x): x);    
+    gint16 x = *(gint16 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (int) (revFlag ? GINT16_FROM_BE(x): x);    
+    else
+      return (int) (revFlag ? GINT16_FROM_LE(x): x);    
   }else if(f->field_size == 4){
-    int32_t x = *(int32_t*)(e->data + f->offset_root);
-    return (int) (revFlag ? BREV32(x): x);    
+    gint32 x = *(gint32 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (int) (revFlag ? GINT32_FROM_BE(x): x);    
+    else
+      return (int) (revFlag ? GINT32_FROM_LE(x): x);    
   }else if(f->field_size == 8){
-    int64_t x = *(int64_t*)(e->data + f->offset_root);
-    return (int) (revFlag ? BREV64(x): x);    
+    gint64 x = *(gint64 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (int) (revFlag ? GINT64_FROM_BE(x): x);    
+    else
+      return (int) (revFlag ? GINT64_FROM_LE(x): x);    
   }
 }
 
@@ -384,17 +401,26 @@ unsigned long ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
     g_error("The type of the field is not unsigned long\n");
 
   if(f->field_size == 1){
-    uint8_t x = *(uint8_t*)(e->data + f->offset_root);
+    guint8 x = *(guint8 *)(e->data + f->offset_root);
     return (unsigned long) x;    
   }else if(f->field_size == 2){
-    uint16_t x = *(uint16_t*)(e->data + f->offset_root);
-    return (unsigned long) (revFlag ? BREV16(x): x);    
+    guint16 x = *(guint16 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (unsigned long) (revFlag ? GUINT16_FROM_BE(x): x);  
+    else
+      return (unsigned long) (revFlag ? GUINT16_FROM_LE(x): x);    
   }else if(f->field_size == 4){
-    uint32_t x = *(uint32_t*)(e->data + f->offset_root);
-    return (unsigned long) (revFlag ? BREV32(x): x);    
+    guint32 x = *(guint32 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (unsigned long) (revFlag ? GUINT32_FROM_BE(x): x);    
+    else
+      return (unsigned long) (revFlag ? GUINT32_FROM_LE(x): x);    
   }else if(f->field_size == 8){
-    uint64_t x = *(uint64_t*)(e->data + f->offset_root);
-    return (unsigned long) (revFlag ? BREV64(x): x);    
+    guint64 x = *(guint64 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (unsigned long) (revFlag ? GUINT64_FROM_BE(x): x);    
+    else
+      return (unsigned long) (revFlag ? GUINT64_FROM_LE(x): x);    
   }
 }
 
@@ -407,17 +433,26 @@ long int ltt_event_get_long_int(LttEvent *e, LttField *f)
     g_error("The type of the field is not long int\n");
 
   if(f->field_size == 1){
-    int8_t x = *(int8_t*)(e->data + f->offset_root);
+    gint8 x = *(gint8 *)(e->data + f->offset_root);
     return (long) x;    
   }else if(f->field_size == 2){
-    int16_t x = *(int16_t*)(e->data + f->offset_root);
-    return (long) (revFlag ? BREV16(x): x);    
+    gint16 x = *(gint16 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (long) (revFlag ? GINT16_FROM_BE(x): x);    
+    else
+      return (long) (revFlag ? GINT16_FROM_LE(x): x);    
   }else if(f->field_size == 4){
-    int32_t x = *(int32_t*)(e->data + f->offset_root);
-    return (long) (revFlag ? BREV32(x): x);    
+    gint32 x = *(gint32 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (long) (revFlag ? GINT32_FROM_BE(x): x);    
+    else
+      return (long) (revFlag ? GINT32_FROM_LE(x): x);    
   }else if(f->field_size == 8){
-    int64_t x = *(int64_t*)(e->data + f->offset_root);
-    return (long) (revFlag ? BREV64(x): x);    
+    gint64 x = *(gint64 *)(e->data + f->offset_root);
+    if(e->tracefile->trace->my_arch_endian == LTT_LITTLE_ENDIAN)
+      return (long) (revFlag ? GINT64_FROM_BE(x): x);    
+    else
+      return (long) (revFlag ? GINT64_FROM_LE(x): x);    
   }
 }
 
@@ -432,7 +467,7 @@ float ltt_event_get_float(LttEvent *e, LttField *f)
 
   if(revFlag == 0) return *(float *)(e->data + f->offset_root);
   else{
-    uint32_t aInt;
+    guint32 aInt;
     memcpy((void*)&aInt, e->data + f->offset_root, 4);
     aInt = ___swab32(aInt);
     return *((float*)&aInt);
@@ -450,7 +485,7 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
 
   if(revFlag == 0) return *(double *)(e->data + f->offset_root);
   else{
-    uint64_t aInt;
+    guint64 aInt;
     memcpy((void*)&aInt, e->data + f->offset_root, 8);
     aInt = ___swab64(aInt);
     return *((double *)&aInt);

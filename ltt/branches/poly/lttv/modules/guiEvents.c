@@ -1164,10 +1164,10 @@ gboolean update_current_time(void * hook_data, void * call_data)
 {
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
   event_viewer_data->current_time = *(LttTime*)call_data;
-  uint64_t nsec = event_viewer_data->current_time.tv_sec * NANOSECONDS_PER_SECOND 
+  guint64 nsec = event_viewer_data->current_time.tv_sec * NANOSECONDS_PER_SECOND 
                   + event_viewer_data->current_time.tv_nsec;
   GtkTreeIter iter;
-  uint64_t time;
+  guint64 time;
   int count = 0;
   GtkTreeModel* model = (GtkTreeModel*)event_viewer_data->store_m;
 

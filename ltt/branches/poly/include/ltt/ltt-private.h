@@ -2,10 +2,12 @@
 #define LTT_PRIVATE_H
 
 #include <glib.h>
+#include <sys/types.h>
 #include <ltt/ltt.h>
-#include <ltt/LTTTypes.h>
 #include <ltt/type.h>
 #include <ltt/trace.h>
+
+#define LTT_PACKED_STRUCT __attribute__ ((packed))
 
 /* enumeration definition */
 
@@ -22,19 +24,19 @@ typedef enum _BuildinEvent{
 typedef struct _FacilityLoad{
   char * name;
   LttChecksum checksum;
-  uint32_t base_code;
+  guint32     base_code;
 } LTT_PACKED_STRUCT FacilityLoad;
 
 typedef struct _BlockStart {
   LttTime       time;	     //Time stamp of this block
   LttCycleCount cycle_count; //cycle count of the event
-  uint32_t      block_id;    //block id 
+  guint32       block_id;    //block id 
 } LTT_PACKED_STRUCT BlockStart;
 
 typedef struct _BlockEnd {
   LttTime       time;	     //Time stamp of this block
   LttCycleCount cycle_count; //cycle count of the event
-  uint32_t      block_id;    //block id 
+  guint32       block_id;    //block id 
 } LTT_PACKED_STRUCT BlockEnd;
 
 typedef struct _TimeHeartbeat {
@@ -97,8 +99,8 @@ struct _LttField{
 };
 
 struct _LttEvent{
-  uint16_t event_id;
-  uint32_t time_delta;
+  guint16  event_id;
+  guint32  time_delta;
   LttTime event_time;
   LttCycleCount event_cycle_count;
   LttTracefile * tracefile;
@@ -111,7 +113,7 @@ struct _LttFacility{
   char * name;               //facility name 
   int event_number;          //number of events in the facility 
   LttChecksum checksum;      //checksum of the facility 
-  uint32_t base_id;          //base id of the facility
+  guint32  base_id;          //base id of the facility
   LttEventType ** events;    //array of event types 
   LttType ** named_types;
   int  named_types_number;
@@ -171,8 +173,8 @@ struct _LttEventPosition{
 /*****************************************************************************
  macro for size of some data types
  *****************************************************************************/
-#define EVENT_ID_SIZE     sizeof(uint16_t)
-#define TIME_DELTA_SIZE   sizeof(uint32_t)
+#define EVENT_ID_SIZE     sizeof(guint16)
+#define TIME_DELTA_SIZE   sizeof(guint32)
 #define EVENT_HEADER_SIZE (EVENT_ID_SIZE + TIME_DELTA_SIZE)
 
 
