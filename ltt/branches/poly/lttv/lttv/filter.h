@@ -52,8 +52,24 @@
 */
 
 /**
+ * @enum LttvStructType
+ * @brief The lttv structures
+ *
+ * the LttvStructType enumerates 
+ * the possible structures for the 
+ * lttv core filter
+ */
+enum _LttvStructType {
+  LTTV_FILTER_TRACE,
+  LTTV_FILTER_TRACESET,
+  LTTV_FILTER_TRACEFILE,
+  LTTV_FILTER_EVENT,
+  LTTV_FILTER_STATE
+} LttvStructType;
+
+/**
  * @enum LttvFieldType
- * @brief Structures and their fields
+ * @brief Possible fields for the structures
  *
  * the LttvFieldType enum consists on 
  * all the hardcoded structures and 
@@ -61,11 +77,6 @@
  * filters can be applied.
  */
 enum _LttvFieldType {
-  LTTV_FILTER_TRACE,
-  LTTV_FILTER_TRACESET,
-  LTTV_FILTER_TRACEFILE,
-  LTTV_FILTER_STATE,
-  LTTV_FILTER_EVENT,
   LTTV_FILTER_TRACE_NAME,             /** trace.name (char*) */
   LTTV_FILTER_TRACEFILE_NAME,         /** tracefile.name (char*) */
   LTTV_FILTER_STATE_PID,              /** state.pid (guint) */
@@ -204,11 +215,7 @@ gboolean parse_field_path(GPtrArray* fp, LttvSimpleExpression* se);
 
 gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op);
 
-gboolean parse_simple_expression(GString* expression);
 
-void lttv_filter_append_expression(LttvFilter* filter, char *expression);
-
-void lttv_filter_clear_expression(LttvFilter* filter);
 
 /*
  * Logical operators functions
@@ -265,11 +272,21 @@ gboolean lttv_filter_update(LttvFilter* filter);
 
 void lttv_filter_destroy(LttvFilter* filter);
 
+void lttv_filter_append_expression(LttvFilter* filter, char *expression);
+
+void lttv_filter_clear_expression(LttvFilter* filter);
+
 /* LttvFilterTree */
 LttvFilterTree* lttv_filter_tree_new();
 
 void lttv_filter_tree_destroy(LttvFilterTree* tree);
 
+gboolean lttv_filter_tree_parse(
+        LttvFilterTree* t,
+        LttEvent* event,
+        LttTracefile* tracefile,
+        LttTrace* trace,
+        LttvProcessState* state);
 
 /*
  *  Hook functions
@@ -286,6 +303,11 @@ gboolean lttv_filter_tracefile(LttvFilter *filter, LttTracefile *tracefile);
 gboolean lttv_filter_tracestate(LttvFilter *filter, LttvTraceState *tracestate);
 
 gboolean lttv_filter_event(LttvFilter *filter, LttEvent *event);
+
+/*
+ *  Debug functions
+ */
+void lttv_print_tree(LttvFilterTree* t);
 
 #endif // FILTER_H
 
