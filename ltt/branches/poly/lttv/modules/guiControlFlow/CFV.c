@@ -29,7 +29,7 @@ extern GSList *gControl_Flow_Data_List;
 ControlFlowData *
 guicontrolflow(void)
 {
-  GtkWidget *Process_List_Widget, *Drawing_Widget;//, *button;
+  GtkWidget *process_list_Widget, *Drawing_Widget;//, *button;
 
   ControlFlowData* Control_Flow_Data = g_new(ControlFlowData,1) ;
 
@@ -39,40 +39,21 @@ guicontrolflow(void)
   Drawing_Widget = 
     drawing_get_widget(Control_Flow_Data->Drawing);
   
-  /* TEST DATA, TO BE READ FROM THE TRACE */
-  Control_Flow_Data->Number_Of_Events = 1000 ;
-  Control_Flow_Data->Currently_Selected_Event = FALSE  ;
-  Control_Flow_Data->Selected_Event = 0;
-  Control_Flow_Data->Number_Of_Process = 10;
-
-  /* FIXME register Event_Selected_Hook */
-  
-
+  Control_Flow_Data->number_of_process = 0;
 
   /* Create the Process list */
-  Control_Flow_Data->Process_List = processlist_construct();
+  Control_Flow_Data->process_list = processlist_construct();
   
-  Process_List_Widget = 
-    processlist_get_widget(Control_Flow_Data->Process_List);
+  process_list_Widget = 
+    processlist_get_widget(Control_Flow_Data->process_list);
   
   //Control_Flow_Data->Inside_HBox_V = gtk_hbox_new(0, 0);
-  Control_Flow_Data->HPaned = gtk_hpaned_new();
+  Control_Flow_Data->h_paned = gtk_hpaned_new();
     
-  //gtk_box_pack_start(
-  //  GTK_BOX(Control_Flow_Data->Inside_HBox_V),
-  //  Process_List_Widget, FALSE, TRUE, 0); // FALSE TRUE
-  //gtk_box_pack_start(
-  //  GTK_BOX(Control_Flow_Data->Inside_HBox_V),
-  //  Drawing_Widget, TRUE, TRUE, 0);
-  
-  //button = gtk_button_new();
-  //gtk_button_set_relief(button, GTK_RELIEF_NONE);
-  //gtk_container_set_border_width(GTK_CONTAINER(button),0);
-  //gtk_container_add(GTK_CONTAINER(button), Drawing_Widget);
-  gtk_paned_pack1(GTK_PANED(Control_Flow_Data->HPaned), Process_List_Widget, FALSE, TRUE);
-  gtk_paned_pack2(GTK_PANED(Control_Flow_Data->HPaned), Drawing_Widget, TRUE, TRUE);
+  gtk_paned_pack1(GTK_PANED(Control_Flow_Data->h_paned), process_list_Widget, FALSE, TRUE);
+  gtk_paned_pack2(GTK_PANED(Control_Flow_Data->h_paned), Drawing_Widget, TRUE, TRUE);
 
-  Control_Flow_Data->VAdjust_C = 
+  Control_Flow_Data->v_adjust = 
     GTK_ADJUSTMENT(gtk_adjustment_new(  0.0,  /* Value */
               0.0,  /* Lower */
               0.0,  /* Upper */
@@ -80,33 +61,19 @@ guicontrolflow(void)
               0.0,  /* Page inc. */
               0.0));  /* page size */
   
-  Control_Flow_Data->Scrolled_Window_VC =
+  Control_Flow_Data->scrolled_window =
       gtk_scrolled_window_new (NULL,
-      Control_Flow_Data->VAdjust_C);
+      Control_Flow_Data->v_adjust);
   
   gtk_scrolled_window_set_policy(
-    GTK_SCROLLED_WINDOW(Control_Flow_Data->Scrolled_Window_VC) ,
+    GTK_SCROLLED_WINDOW(Control_Flow_Data->scrolled_window) ,
     GTK_POLICY_NEVER,
     GTK_POLICY_AUTOMATIC);
 
   gtk_scrolled_window_add_with_viewport(
-    GTK_SCROLLED_WINDOW(Control_Flow_Data->Scrolled_Window_VC),
-    //Control_Flow_Data->Inside_HBox_V);
-    Control_Flow_Data->HPaned);
+    GTK_SCROLLED_WINDOW(Control_Flow_Data->scrolled_window),
+    Control_Flow_Data->h_paned);
   
-  //g_signal_connect (G_OBJECT (Control_Flow_Data->Drawing_Area_V),
-  //    "expose_event",
-  //    G_CALLBACK (expose_event_cb),
-  //    Control_Flow_Data);
-
-
-  
-  //g_signal_connect (G_OBJECT (Control_Flow_Data->VAdjust_C),
-  //    "value-changed",
-  //                G_CALLBACK (v_scroll_cb),
-  //                Control_Flow_Data);
-
-
   /* Set the size of the drawing area */
   //Drawing_Resize(Drawing, h, w);
 
@@ -115,14 +82,12 @@ guicontrolflow(void)
 
 
   gtk_widget_show(Drawing_Widget);
-  //gtk_widget_show(button);
-  gtk_widget_show(Process_List_Widget);
-  //gtk_widget_show(Control_Flow_Data->Inside_HBox_V);
-  gtk_widget_show(Control_Flow_Data->HPaned);
-  gtk_widget_show(Control_Flow_Data->Scrolled_Window_VC);
+  gtk_widget_show(process_list_Widget);
+  gtk_widget_show(Control_Flow_Data->h_paned);
+  gtk_widget_show(Control_Flow_Data->scrolled_window);
   
   g_object_set_data_full(
-      G_OBJECT(Control_Flow_Data->Scrolled_Window_VC),
+      G_OBJECT(Control_Flow_Data->scrolled_window),
       "Control_Flow_Data",
       Control_Flow_Data,
       (GDestroyNotify)guicontrolflow_destructor);
@@ -151,9 +116,9 @@ guicontrolflow_destructor_full(ControlFlowData *Control_Flow_Data)
 {
   g_info("CFV.c : guicontrolflow_destructor_full, %p", Control_Flow_Data);
   /* May already have been done by GTK window closing */
-  if(GTK_IS_WIDGET(Control_Flow_Data->Scrolled_Window_VC))
-    gtk_widget_destroy(Control_Flow_Data->Scrolled_Window_VC);
-  //Control_Flow_Data->Parent_Window = NULL;
+  if(GTK_IS_WIDGET(Control_Flow_Data->scrolled_window))
+    gtk_widget_destroy(Control_Flow_Data->scrolled_window);
+  //Control_Flow_Data->mw = NULL;
   //FIXME guicontrolflow_destructor(Control_Flow_Data);
 }
 
@@ -164,21 +129,21 @@ guicontrolflow_destructor(ControlFlowData *Control_Flow_Data)
   guint index;
   
   g_info("CFV.c : guicontrolflow_destructor, %p", Control_Flow_Data);
-  g_info("%p, %p, %p", update_time_window_hook, Control_Flow_Data, Control_Flow_Data->Parent_Window);
-  if(GTK_IS_WIDGET(Control_Flow_Data->Scrolled_Window_VC))
+  g_info("%p, %p, %p", update_time_window_hook, Control_Flow_Data, Control_Flow_Data->mw);
+  if(GTK_IS_WIDGET(Control_Flow_Data->scrolled_window))
     g_info("widget still exists");
   
   /* Process List is removed with it's widget */
-  //ProcessList_destroy(Control_Flow_Data->Process_List);
-  if(Control_Flow_Data->Parent_Window != NULL)
+  //ProcessList_destroy(Control_Flow_Data->process_list);
+  if(Control_Flow_Data->mw != NULL)
   {
     unreg_update_time_window(update_time_window_hook,
         Control_Flow_Data,
-        Control_Flow_Data->Parent_Window);
+        Control_Flow_Data->mw);
   
     unreg_update_current_time(update_current_time_hook,
         Control_Flow_Data,
-        Control_Flow_Data->Parent_Window);
+        Control_Flow_Data->mw);
   }
   g_info("CFV.c : guicontrolflow_destructor, %p", Control_Flow_Data);
   g_slist_remove(gControl_Flow_Data_List,Control_Flow_Data);
@@ -187,22 +152,22 @@ guicontrolflow_destructor(ControlFlowData *Control_Flow_Data)
 
 GtkWidget *guicontrolflow_get_widget(ControlFlowData *Control_Flow_Data)
 {
-  return Control_Flow_Data->Scrolled_Window_VC ;
+  return Control_Flow_Data->scrolled_window ;
 }
 
 ProcessList *guicontrolflow_get_process_list
     (ControlFlowData *Control_Flow_Data)
 {
-    return Control_Flow_Data->Process_List ;
+    return Control_Flow_Data->process_list ;
 }
 
 TimeWindow *guicontrolflow_get_time_window(ControlFlowData *Control_Flow_Data)
 {
-  return &Control_Flow_Data->Time_Window;
+  return &Control_Flow_Data->time_window;
 }
 LttTime *guicontrolflow_get_current_time(ControlFlowData *Control_Flow_Data)
 {
-  return &Control_Flow_Data->Current_Time;
+  return &Control_Flow_Data->current_time;
 }
 
 

@@ -36,13 +36,13 @@ typedef struct _HashedProcessData {
   
 struct _ProcessList {
   
-  GtkWidget *Process_List_VC;
+  GtkWidget *process_list_VC;
   GtkListStore *Store_M;
 
   /* A hash table by PID to speed up process position find in the list */
   GHashTable *Process_Hash;
   
-  guint Number_Of_Process;
+  guint number_of_process;
   gboolean Test_Process_Sent;
 
 };
@@ -51,25 +51,25 @@ struct _ProcessList {
 typedef struct _ProcessList ProcessList;
 
 ProcessList *processlist_construct(void);
-void processlist_destroy(ProcessList *Process_List);
-GtkWidget *processlist_get_widget(ProcessList *Process_List);
+void processlist_destroy(ProcessList *process_list);
+GtkWidget *processlist_get_widget(ProcessList *process_list);
 
 // out : success (0) and height
-int processlist_add(ProcessList *Process_List, guint pid, LttTime *birth,
+int processlist_add(ProcessList *process_list, guint pid, LttTime *birth,
     gchar *name,
     guint *height, HashedProcessData **Hashed_Process_Data);
 // out : success (0) and height
-int processlist_remove(ProcessList *Process_List, guint pid, LttTime *birth);
+int processlist_remove(ProcessList *process_list, guint pid, LttTime *birth);
 
-guint processlist_get_height(ProcessList *Process_List);
+guint processlist_get_height(ProcessList *process_list);
 
 // Returns 0 on success
-gint processlist_get_process_pixels(ProcessList *Process_List,
+gint processlist_get_process_pixels(ProcessList *process_list,
         guint pid, LttTime *birth,
         guint *y, guint *height,
         HashedProcessData **Hashed_Process_Data);
 
-gint processlist_get_pixels_from_data(  ProcessList *Process_List,
+gint processlist_get_pixels_from_data(  ProcessList *process_list,
           ProcessInfo *process_info,
           HashedProcessData *Hashed_Process_Data,
           guint *y,

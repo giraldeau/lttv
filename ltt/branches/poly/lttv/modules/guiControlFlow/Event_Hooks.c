@@ -49,7 +49,7 @@ h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * ke
   g_info("h_guicontrolflow, %p, %p, %s", pmParentWindow, s, key);
   ControlFlowData *Control_Flow_Data = guicontrolflow() ;
   
-  Control_Flow_Data->Parent_Window = pmParentWindow;
+  Control_Flow_Data->mw = pmParentWindow;
   TimeWindow *time_window = guicontrolflow_get_time_window(Control_Flow_Data);
   time_window->start_time.tv_sec = 0;
   time_window->start_time.tv_nsec = 0;
@@ -235,12 +235,12 @@ int draw_event_hook(void *hook_data, void *call_data)
 
     LttTime time = ltt_event_time(e);
 
-    LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
-                          control_flow_data->Time_Window.start_time);
+    LttTime window_end = ltt_time_add(control_flow_data->time_window.time_width,
+                          control_flow_data->time_window.start_time);
 
     
     convert_time_to_pixels(
-        control_flow_data->Time_Window.start_time,
+        control_flow_data->time_window.start_time,
         window_end,
         time,
         width,
@@ -612,12 +612,12 @@ int draw_after_hook(void *hook_data, void *call_data)
 
     //LttTime time = ltt_event_time(e);
 
-    //LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
-    //                      control_flow_data->Time_Window.start_time);
+    //LttTime window_end = ltt_time_add(control_flow_data->time_window.time_width,
+    //                      control_flow_data->time_window.start_time);
 
     
     //convert_time_to_pixels(
-    //    control_flow_data->Time_Window.start_time,
+    //    control_flow_data->time_window.start_time,
     //    window_end,
     //    time,
     //    width,
@@ -786,9 +786,9 @@ int draw_after_hook(void *hook_data, void *call_data)
 gint update_time_window_hook(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
-  TimeWindow *Old_Time_Window = 
+  TimeWindow *Old_time_window = 
     guicontrolflow_get_time_window(control_flow_data);
-  TimeWindow *New_Time_Window = ((TimeWindow*)call_data);
+  TimeWindow *New_time_window = ((TimeWindow*)call_data);
   
   /* Two cases : zoom in/out or scrolling */
   
@@ -798,28 +798,28 @@ gint update_time_window_hook(void *hook_data, void *call_data)
    */
 
   g_info("Old time window HOOK : %u, %u to %u, %u",
-      Old_Time_Window->start_time.tv_sec,
-      Old_Time_Window->start_time.tv_nsec,
-      Old_Time_Window->time_width.tv_sec,
-      Old_Time_Window->time_width.tv_nsec);
+      Old_time_window->start_time.tv_sec,
+      Old_time_window->start_time.tv_nsec,
+      Old_time_window->time_width.tv_sec,
+      Old_time_window->time_width.tv_nsec);
 
   g_info("New time window HOOK : %u, %u to %u, %u",
-      New_Time_Window->start_time.tv_sec,
-      New_Time_Window->start_time.tv_nsec,
-      New_Time_Window->time_width.tv_sec,
-      New_Time_Window->time_width.tv_nsec);
+      New_time_window->start_time.tv_sec,
+      New_time_window->start_time.tv_nsec,
+      New_time_window->time_width.tv_sec,
+      New_time_window->time_width.tv_nsec);
 
-  if( New_Time_Window->time_width.tv_sec == Old_Time_Window->time_width.tv_sec
-  && New_Time_Window->time_width.tv_nsec == Old_Time_Window->time_width.tv_nsec)
+  if( New_time_window->time_width.tv_sec == Old_time_window->time_width.tv_sec
+  && New_time_window->time_width.tv_nsec == Old_time_window->time_width.tv_nsec)
   {
     /* Same scale (scrolling) */
     g_info("scrolling");
-    LttTime *ns = &New_Time_Window->start_time;
-    LttTime *os = &Old_Time_Window->start_time;
-    LttTime old_end = ltt_time_add(Old_Time_Window->start_time,
-                                    Old_Time_Window->time_width);
-    LttTime new_end = ltt_time_add(New_Time_Window->start_time,
-                                    New_Time_Window->time_width);
+    LttTime *ns = &New_time_window->start_time;
+    LttTime *os = &Old_time_window->start_time;
+    LttTime old_end = ltt_time_add(Old_time_window->start_time,
+                                    Old_time_window->time_width);
+    LttTime new_end = ltt_time_add(New_time_window->start_time,
+                                    New_time_window->time_width);
     //if(ns<os+w<ns+w)
     //if(ns<os+w && os+w<ns+w)
     //if(ns<old_end && os<ns)
@@ -852,7 +852,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
           width,
           &x);
 
-      *Old_Time_Window = *New_Time_Window;
+      *Old_time_window = *New_time_window;
       /* Clear the data request background, but not SAFETY */
       gdk_draw_rectangle (control_flow_data->Drawing->Pixmap,
           control_flow_data->Drawing->Drawing_Area_V->style->white_gc,
@@ -899,7 +899,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
             x, 0,
             -1, -1);
   
-        *Old_Time_Window = *New_Time_Window;
+        *Old_time_window = *New_time_window;
 
         /* Clean the data request background */
         gdk_draw_rectangle (control_flow_data->Drawing->Pixmap,
@@ -923,7 +923,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
       } else {
         g_info("scrolling far");
         /* Cannot reuse any part of the screen : far jump */
-        *Old_Time_Window = *New_Time_Window;
+        *Old_time_window = *New_time_window;
         
         
         gdk_draw_rectangle (control_flow_data->Drawing->Pixmap,
@@ -949,7 +949,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
     /* Different scale (zoom) */
     g_info("zoom");
 
-    *Old_Time_Window = *New_Time_Window;
+    *Old_time_window = *New_time_window;
   
     gdk_draw_rectangle (control_flow_data->Drawing->Pixmap,
           control_flow_data->Drawing->Drawing_Area_V->style->white_gc,
@@ -984,13 +984,13 @@ gint update_current_time_hook(void *hook_data, void *call_data)
   
   TimeWindow time_window;
   
-  LttTime time_begin = control_flow_data->Time_Window.start_time;
-  LttTime width = control_flow_data->Time_Window.time_width;
+  LttTime time_begin = control_flow_data->time_window.start_time;
+  LttTime width = control_flow_data->time_window.time_width;
   LttTime half_width = ltt_time_div(width,2.0);
   LttTime time_end = ltt_time_add(time_begin, width);
 
   LttvTracesetContext * tsc =
-        get_traceset_context(control_flow_data->Parent_Window);
+        get_traceset_context(control_flow_data->mw);
   
   LttTime trace_start = tsc->Time_Span->startTime;
   LttTime trace_end = tsc->Time_Span->endTime;
@@ -1021,7 +1021,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
     time_window.start_time = time_begin;
     time_window.time_width = width;
 
-    set_time_window(control_flow_data->Parent_Window, &time_window);
+    set_time_window(control_flow_data->mw, &time_window);
   }
   else if(ltt_time_compare(*current_time, time_end) == 1)
   {
@@ -1033,7 +1033,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
     time_window.start_time = time_begin;
     time_window.time_width = width;
 
-    set_time_window(control_flow_data->Parent_Window, &time_window);
+    set_time_window(control_flow_data->mw, &time_window);
     
   }
   gtk_widget_queue_draw(control_flow_data->Drawing->Drawing_Area_V);
@@ -1061,7 +1061,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   /* Get y position of process */
   gint y=0, height=0;
   
-  processlist_get_pixels_from_data( control_flow_data->Process_List,
+  processlist_get_pixels_from_data( control_flow_data->process_list,
           process_info,
           hashed_process_data,
           &y,

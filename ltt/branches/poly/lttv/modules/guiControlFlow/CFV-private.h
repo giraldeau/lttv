@@ -5,33 +5,22 @@
 
 struct _ControlFlowData {
 
-  GtkWidget *Scrolled_Window_VC;
-  MainWindow *Parent_Window;
+  GtkWidget *scrolled_window;
+  MainWindow *mw;
 
-  ProcessList *Process_List;
+  ProcessList *process_list;
   Drawing_t *Drawing;
 
-  //GtkWidget *HBox_V;
-  //GtkWidget *Inside_HBox_V;
-  GtkWidget *HPaned;
+  GtkWidget *h_paned;
     
-  GtkAdjustment *VAdjust_C ;
-  
-  /* Trace information */
-  //TraceSet *Trace_Set;
-  //TraceStatistics *Trace_Statistics;
+  GtkAdjustment *v_adjust ;
   
   /* Shown events information */
-  guint First_Event, Last_Event;
-  TimeWindow Time_Window;
-  LttTime Current_Time;
+  TimeWindow time_window;
+  LttTime current_time;
   
-  
-  /* TEST DATA, TO BE READ FROM THE TRACE */
-  gint Number_Of_Events ;
-  guint Currently_Selected_Event  ;
-  gboolean Selected_Event ;
-  guint Number_Of_Process;
+  //guint Currently_Selected_Event  ;
+  guint number_of_process;
 
 } ;
 

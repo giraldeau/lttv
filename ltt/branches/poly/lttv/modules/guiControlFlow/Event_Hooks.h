@@ -35,7 +35,7 @@ typedef struct _EventRequest
 
 
 
-void send_test_data(ProcessList *Process_List, Drawing_t *Drawing);
+void send_test_data(ProcessList *process_list, Drawing_t *Drawing);
 
 GtkWidget *h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * key);
 

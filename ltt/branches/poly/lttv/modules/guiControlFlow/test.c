@@ -18,7 +18,7 @@ int main(int argc, char **argv)
 	guint ev_sel = 444 ;
 	/* Horizontal scrollbar and it's adjustment */
 	GtkWidget *VScroll_VC;
-  GtkAdjustment *VAdjust_C ;
+  GtkAdjustment *v_adjust ;
 	
 	/* Initialize i18n support */
   gtk_set_locale ();
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   //gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, FALSE, TRUE, 0);
 	
 	Control_Flow_Data = guicontrolflow();
-	CF_Viewer = Control_Flow_Data->Scrolled_Window_VC;
+	CF_Viewer = Control_Flow_Data->scrolled_window;
   gtk_box_pack_start(GTK_BOX(VBox_V), CF_Viewer, TRUE, TRUE, 0);
 
   /* Create horizontal scrollbar and pack it */
@@ -79,7 +79,7 @@ void add_test_process(ControlFlowData *Control_Flow_Data)
 	int i;
 	gchar *process[] = { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten" };
 
-	for(i=0; i<Control_Flow_Data->Number_Of_Process; i++)
+	for(i=0; i<Control_Flow_Data->number_of_process; i++)
 	{
 	  /* Add a new row to the model */
 		gtk_list_store_append (Control_Flow_Data->Store_M, &iter);
@@ -110,7 +110,7 @@ void test_draw(ControlFlowData *Control_Flow_Data)
 
 #ifdef DEBUG
 void test_draw() {
-	gint cell_height = get_cell_height(GTK_TREE_VIEW(Control_Flow_Data->Process_List_VC));
+	gint cell_height = get_cell_height(GTK_TREE_VIEW(Control_Flow_Data->process_list_VC));
 	GdkGC *GC = gdk_gc_new(widget->window);
 	GdkColor color = CF_Colors[GREEN];
 	
@@ -229,7 +229,7 @@ void test_draw_item(Drawing_t *Drawing,
 #ifdef NOTUSE
 /* NOTE : no drawing data should be sent there, since the drawing widget
  * has not been initialized */
-void send_test_drawing(ProcessList *Process_List,
+void send_test_drawing(ProcessList *process_list,
 			Drawing_t *Drawing,
 			GdkPixmap *Pixmap,
 			gint x, gint y, // y not used here?
@@ -268,7 +268,7 @@ void send_test_drawing(ProcessList *Process_List,
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55500;
 	g_info("we have : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 					1,
 					&birth,
 					&y,
@@ -287,7 +287,7 @@ void send_test_drawing(ProcessList *Process_List,
 	birth.tv_sec = 14000;
 	birth.tv_nsec = 55500;
 
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 					156,
 					&birth,
 					&y,
@@ -306,7 +306,7 @@ void send_test_drawing(ProcessList *Process_List,
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55700;
 
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 					10,
 					&birth,
 					&y,
@@ -336,7 +336,7 @@ void send_test_drawing(ProcessList *Process_List,
 		birth.tv_sec = i*12000;
 		birth.tv_nsec = i*55700;
 
-		processlist_get_process_pixels(Process_List,
+		processlist_get_process_pixels(process_list,
 						i,
 						&birth,
 						&y,
@@ -355,7 +355,7 @@ void send_test_drawing(ProcessList *Process_List,
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55600;
 
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 					10,
 					&birth,
 					&y,
@@ -411,7 +411,7 @@ void send_test_drawing(ProcessList *Process_List,
 	g_free(gc);
 }
 
-void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
+void send_test_process(ProcessList *process_list, Drawing_t *Drawing)
 {
 	guint height, y;
 	int i;
@@ -421,16 +421,16 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 
 	LttTime birth;
 
-	if(Process_List->Test_Process_Sent) return;
+	if(process_list->Test_Process_Sent) return;
 
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55500;
 
-	processlist_add(Process_List,
+	processlist_add(process_list,
 			1,
 			&birth,
 			&y);
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 					1,
 					&birth,
 					&y,
@@ -442,11 +442,11 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 	birth.tv_sec = 14000;
 	birth.tv_nsec = 55500;
 
-	processlist_add(Process_List,
+	processlist_add(process_list,
 			156,
 			&birth,
 			&y);
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 					156,
 					&birth,
 					&y,
@@ -458,11 +458,11 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55700;
 
-	processlist_add(Process_List,
+	processlist_add(process_list,
 			10,
 			&birth,
 			&height);
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 					10,
 					&birth,
 					&y,
@@ -478,11 +478,11 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 		birth.tv_sec = i*12000;
 		birth.tv_nsec = i*55700;
 
-		processlist_add(Process_List,
+		processlist_add(process_list,
 				i,
 				&birth,
 				&height);
-		processlist_get_process_pixels(Process_List,
+		processlist_get_process_pixels(process_list,
 						i,
 						&birth,
 						&y,
@@ -497,11 +497,11 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55600;
 
-	processlist_add(Process_List,
+	processlist_add(process_list,
 			10,
 			&birth,
 			&y);
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 					10,
 					&birth,
 					&y,
@@ -510,11 +510,11 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
-	processlist_add(Process_List,
+	processlist_add(process_list,
 			10000,
 			&birth,
 			&height);
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 					10000,
 					&birth,
 					&y,
@@ -527,11 +527,11 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 	//g_critical("height : %u", height);
 
 
-	processlist_get_process_pixels(Process_List,
+	processlist_get_process_pixels(process_list,
 				10000,
 				&birth,
 				&y, &height);
-	processlist_remove( 	Process_List,
+	processlist_remove( 	process_list,
 				10000,
 				&birth);
 
@@ -539,7 +539,7 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 	
 	if(got_RowRef = 
 		(GtkTreeRowReference*)g_hash_table_lookup(
-					Process_List->Process_Hash,
+					process_list->Process_Hash,
 					&Process_Info))
 	{
 		g_critical("key found");
@@ -551,7 +551,7 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 		
 	}
 
-	Process_List->Test_Process_Sent = TRUE;
+	process_list->Test_Process_Sent = TRUE;
 
 }
 #endif//NOTUSE
