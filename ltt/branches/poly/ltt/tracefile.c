@@ -720,7 +720,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
     }else if(err < 0){
       err = t->which_block;
       if(ltt_tracefile_read(t) == NULL){
-	g_printf("End of file\n");      
+	g_print("End of file\n");      
 	return;
       }
       if(t->which_block == err)
@@ -743,7 +743,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
       err=readBlock(t,t->which_block+1);
       if(err) g_error("Can not read tracefile: %s\n", t->name); 
     }else {
-      g_printf("End of file\n");      
+      g_print("End of file\n");      
       return;      
     }    
     if(tailTime < 0) return ltt_tracefile_seek_time(t, time);
