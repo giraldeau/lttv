@@ -471,8 +471,7 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   /* Set the tab's time window and current time if
    * out of bounds */
   if(ltt_time_compare(tab->time_window.start_time, time_span.start_time) < 0
-     || ltt_time_compare(  ltt_time_add(tab->time_window.start_time,
-                                        tab->time_window.time_width),
+     || ltt_time_compare(tab->time_window.end_time,
                            time_span.end_time) > 0) {
     new_time_window.start_time = time_span.start_time;
     
@@ -486,6 +485,8 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
       tmp_time.tv_sec = time_span.end_time.tv_sec;
     tmp_time.tv_nsec = 0;
     new_time_window.time_width = tmp_time ;
+    new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                            new_time_window.time_width) ;
   }
   time_change_manager(tab, new_time_window);
   current_time_change_manager(tab, new_current_time);
@@ -2283,31 +2284,41 @@ void zoom(GtkWidget * widget, double size)
   if(size == 0){
     new_time_window.start_time = time_span.start_time;
     new_time_window.time_width = time_delta;
+    new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                            new_time_window.time_width) ;
   }else{
     new_time_window.time_width = ltt_time_div(new_time_window.time_width, size);
     if(ltt_time_compare(new_time_window.time_width,time_delta) > 0)
     { /* Case where zoom out is bigger than trace length */
       new_time_window.start_time = time_span.start_time;
       new_time_window.time_width = time_delta;
+      new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                            new_time_window.time_width) ;
     }
     else
     {
       /* Center the image on the current time */
       new_time_window.start_time = 
         ltt_time_sub(current_time, ltt_time_div(new_time_window.time_width, 2.0));
+      new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                            new_time_window.time_width) ;
       /* If on borders, don't fall off */
       if(ltt_time_compare(new_time_window.start_time, time_span.start_time) <0)
       {
         new_time_window.start_time = time_span.start_time;
+        new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                            new_time_window.time_width) ;
       }
       else 
       {
-        if(ltt_time_compare(
-           ltt_time_add(new_time_window.start_time, new_time_window.time_width),
-           time_span.end_time) > 0)
+        if(ltt_time_compare(new_time_window.end_time,
+                            time_span.end_time) > 0)
         {
           new_time_window.start_time = 
                   ltt_time_sub(time_span.end_time, new_time_window.time_width);
+
+          new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                                  new_time_window.time_width) ;
         }
       }
       
@@ -3432,8 +3443,7 @@ void time_change_manager               (Tab *tab,
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
   LttTime start_time = new_time_window.start_time;
-  LttTime end_time = ltt_time_add(new_time_window.start_time,
-                                  new_time_window.time_width);
+  LttTime end_time = new_time_window.end_time;
 
   /* Set scrollbar */
   GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
@@ -3567,8 +3577,7 @@ on_MEntry1_value_changed               (GtkSpinButton *spinbutton,
 
   TimeWindow new_time_window = tab->time_window;
  
-  LttTime end_time = ltt_time_add(new_time_window.start_time,
-                                  new_time_window.time_width);
+  LttTime end_time = new_time_window.end_time;
 
   new_time_window.start_time.tv_sec = value;
 
@@ -3589,19 +3598,18 @@ on_MEntry1_value_changed               (GtkSpinButton *spinbutton,
       new_time_window.start_time.tv_nsec = time_span.end_time.tv_nsec-1;
   }
 
-  /* check if end time selected is below or equal */
   if(ltt_time_compare(new_time_window.start_time, end_time) >= 0) {
     /* Then, we must push back end time : keep the same time width
      * if possible, else end traceset time */
-    end_time = LTT_TIME_MIN(time_span.end_time,
-                                  ltt_time_add(new_time_window.start_time,
-                                               new_time_window.time_width)
-                                 );
+    end_time = LTT_TIME_MIN(ltt_time_add(new_time_window.start_time,
+                                         new_time_window.time_width),
+                            time_span.end_time);
   }
 
   /* Fix the time width to fit start time and end time */
   new_time_window.time_width = ltt_time_sub(end_time,
                                             new_time_window.start_time);
+  new_time_window.end_time = end_time;
 
   time_change_manager(tab, new_time_window);
 
@@ -3619,24 +3627,23 @@ on_MEntry2_value_changed               (GtkSpinButton *spinbutton,
 
   TimeWindow new_time_window = tab->time_window;
  
-  LttTime end_time = ltt_time_add(new_time_window.start_time,
-                                  new_time_window.time_width);
+  LttTime end_time = new_time_window.end_time;
 
   new_time_window.start_time.tv_nsec = value;
 
-  /* check if end time selected is below or equal */
   if(ltt_time_compare(new_time_window.start_time, end_time) >= 0) {
     /* Then, we must push back end time : keep the same time width
      * if possible, else end traceset time */
-    end_time = LTT_TIME_MIN(time_span.end_time,
-                                  ltt_time_add(new_time_window.start_time,
-                                               new_time_window.time_width)
-                                 );
+    end_time = LTT_TIME_MIN(ltt_time_add(new_time_window.start_time,
+                                         new_time_window.time_width),
+                            time_span.end_time);
   }
 
   /* Fix the time width to fit start time and end time */
   new_time_window.time_width = ltt_time_sub(end_time,
                                             new_time_window.start_time);
+
+  new_time_window.end_time = end_time;
 
   time_change_manager(tab, new_time_window);
 
@@ -3654,8 +3661,8 @@ on_MEntry3_value_changed               (GtkSpinButton *spinbutton,
 
   TimeWindow new_time_window = tab->time_window;
  
-  LttTime end_time = ltt_time_add(new_time_window.start_time,
-                                  new_time_window.time_width);
+  LttTime end_time = new_time_window.end_time;
+
   end_time.tv_sec = value;
 
   /* end nanoseconds */
@@ -3675,20 +3682,21 @@ on_MEntry3_value_changed               (GtkSpinButton *spinbutton,
       end_time.tv_nsec = time_span.end_time.tv_nsec;
   }
 
-  /* check if end time selected is below or equal */
   if(ltt_time_compare(new_time_window.start_time, end_time) >= 0) {
     /* Then, we must push front start time : keep the same time width
      * if possible, else end traceset time */
-    new_time_window.start_time = LTT_TIME_MAX(time_span.start_time,
-                                        ltt_time_sub(end_time,
-                                                     new_time_window.time_width)
-                                             );
+    new_time_window.start_time = LTT_TIME_MAX(
+                                  ltt_time_sub(end_time,
+                                               new_time_window.time_width),
+                                  time_span.start_time);
   }
 
   /* Fix the time width to fit start time and end time */
   new_time_window.time_width = ltt_time_sub(end_time,
                                             new_time_window.start_time);
 
+  new_time_window.end_time = end_time;
+  
   time_change_manager(tab, new_time_window);
 
 }
@@ -3705,23 +3713,23 @@ on_MEntry4_value_changed               (GtkSpinButton *spinbutton,
 
   TimeWindow new_time_window = tab->time_window;
  
-  LttTime end_time = ltt_time_add(new_time_window.start_time,
-                                  new_time_window.time_width);
+  LttTime end_time = new_time_window.end_time;
+
   end_time.tv_nsec = value;
 
-  /* check if end time selected is below or equal */
   if(ltt_time_compare(new_time_window.start_time, end_time) >= 0) {
     /* Then, we must push front start time : keep the same time width
      * if possible, else end traceset time */
-    new_time_window.start_time = LTT_TIME_MAX(time_span.start_time,
-                                        ltt_time_sub(end_time,
-                                                     new_time_window.time_width)
-                                             );
+    new_time_window.start_time = LTT_TIME_MAX(
+                                ltt_time_sub(end_time,
+                                             new_time_window.time_width),
+                                time_span.start_time);
   }
 
   /* Fix the time width to fit start time and end time */
   new_time_window.time_width = ltt_time_sub(end_time,
                                             new_time_window.start_time);
+  new_time_window.end_time = end_time;
 
   time_change_manager(tab, new_time_window);
 
@@ -3846,6 +3854,9 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
 
   new_time_window.time_width = 
     ltt_time_from_double(page_size);
+
+  new_time_window.end_time = ltt_time_add(new_time_window.start_time, 
+                                          new_time_window.time_width);
 
 
   time_change_manager(tab, new_time_window);

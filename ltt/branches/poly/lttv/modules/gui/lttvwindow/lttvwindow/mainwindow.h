@@ -30,6 +30,7 @@ typedef struct _TracesetInfo TracesetInfo;
 struct _TimeWindow {
 	LttTime start_time;
 	LttTime time_width;
+	LttTime end_time;
 }; 
 
 

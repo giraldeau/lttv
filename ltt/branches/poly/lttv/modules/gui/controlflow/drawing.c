@@ -124,8 +124,7 @@ void drawing_data_request(Drawing_t *drawing,
   //               G_OBJECT(drawing->drawing_area), "control_flow_data");
 
   LttTime start, time_end;
-  LttTime window_end = ltt_time_add(time_window.time_width,
-                                    time_window.start_time);
+  LttTime window_end = time_window.end_time;
 
   g_debug("req : window start_time : %u, %u", time_window.start_time.tv_sec, 
                                        time_window.start_time.tv_nsec);
@@ -397,8 +396,8 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
   TimeWindow time_window = 
     lttvwindow_get_time_window(cfd->tab);
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
+
   guint width = cfd->drawing->width;
   guint x=0;
 
@@ -442,8 +441,8 @@ void drawing_request_expose(EventsRequest *events_request,
 
   g_debug("request expose");
   
-  LttTime window_end = ltt_time_add(time_window.time_width,
-                                    time_window.start_time);
+  LttTime window_end = time_window.end_time;
+
 #if 0
   convert_time_to_pixels(
         time_window.start_time,
@@ -594,9 +593,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 
   guint cursor_x=0;
 
-  LttTime window_end = ltt_time_add(time_window.time_width,
-                                    time_window.start_time);
-
+  LttTime window_end = time_window.end_time;
 
   /* update the screen from the pixmap buffer */
   gdk_draw_pixmap(widget->window,
@@ -694,8 +691,7 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
   {
     LttTime time;
 
-    LttTime window_end = ltt_time_add(time_window.time_width,
-                                      time_window.start_time);
+    LttTime window_end = time_window.end_time;
 
 
     /* left mouse button click */
@@ -1166,9 +1162,7 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   GdkColor foreground = { 0, 0, 0, 0 };
   GdkColor background = { 0, 0xffff, 0xffff, 0xffff };
 
-  LttTime window_end = 
-    ltt_time_add(time_window.time_width,
-                 time_window.start_time);
+  LttTime window_end = time_window.end_time;
   LttTime half_width =
     ltt_time_div(time_window.time_width,2.0);
   LttTime window_middle =

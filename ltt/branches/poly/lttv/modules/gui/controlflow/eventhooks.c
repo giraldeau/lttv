@@ -394,8 +394,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
 
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
@@ -687,8 +686,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(tab);
 
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
+
   //if(time < time_beg || time > time_end) return;
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
@@ -1308,8 +1307,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
 
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
@@ -1415,8 +1413,8 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
+
   //if(time < time_beg || time > time_end) return;
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
@@ -1920,8 +1918,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
 
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
@@ -2080,8 +2077,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
 
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
@@ -2186,8 +2182,7 @@ int before_process_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
 
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
@@ -2358,8 +2353,7 @@ int after_process_hook(void *hook_data, void *call_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
 
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
@@ -2564,10 +2558,8 @@ gint update_time_window_hook(void *hook_data, void *call_data)
     g_info("scrolling");
     LttTime *ns = &new_time_window->start_time;
     LttTime *os = &old_time_window->start_time;
-    LttTime old_end = ltt_time_add(old_time_window->start_time,
-                                    old_time_window->time_width);
-    LttTime new_end = ltt_time_add(new_time_window->start_time,
-                                    new_time_window->time_width);
+    LttTime old_end = old_time_window->end_time;
+    LttTime new_end = new_time_window->end_time;
     //if(ns<os+w<ns+w)
     //if(ns<os+w && os+w<ns+w)
     //if(ns<old_end && os<ns)
@@ -2889,6 +2881,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
   
     new_time_window.start_time = time_begin;
     new_time_window.time_width = width;
+    new_time_window.end_time = ltt_time_add(time_begin, width);
 
     lttvwindow_report_time_window(control_flow_data->tab, new_time_window);
   }
@@ -2903,6 +2896,7 @@ gint update_current_time_hook(void *hook_data, void *call_data)
   
     new_time_window.start_time = time_begin;
     new_time_window.time_width = width;
+    new_time_window.end_time = ltt_time_add(time_begin, width);
 
     lttvwindow_report_time_window(control_flow_data->tab, new_time_window);
     
@@ -2940,8 +2934,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
   TimeWindow time_window = 
     lttvwindow_get_time_window(control_flow_data->tab);
 
-  LttTime end_time = ltt_time_add(time_window.start_time,
-                                    time_window.time_width);
+  LttTime end_time = time_window.end_time;
 
   if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, end_time) == 1)
