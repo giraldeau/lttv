@@ -359,9 +359,8 @@ void lttv_tracefile_context_add_hooks(LttvTracefileContext *self,
   lttv_hooks_add_list(self->event, event);
   if(event_by_id != NULL)
     for(i = 0; i < lttv_hooks_by_id_max_id(event_by_id); i++) {
-      hook = lttv_hooks_by_id_get(self->event_by_id, i);
-      if(hook != NULL)
-        lttv_hooks_remove_list(hook, lttv_hooks_by_id_get(event_by_id, i));
+      hook = lttv_hooks_by_id_find(self->event_by_id, i);
+      lttv_hooks_add_list(hook, lttv_hooks_by_id_get(event_by_id, i));
     }
 
 }
@@ -379,8 +378,9 @@ void lttv_tracefile_context_remove_hooks(LttvTracefileContext *self,
   lttv_hooks_remove_list(self->event, event);
   if(event_by_id != NULL)
     for(i = 0; i < lttv_hooks_by_id_max_id(event_by_id); i++) {
-      hook = lttv_hooks_by_id_find(self->event_by_id, i);
-      lttv_hooks_add_list(hook, lttv_hooks_by_id_get(event_by_id, i));
+      hook = lttv_hooks_by_id_get(self->event_by_id, i);
+      if(hook != NULL)
+        lttv_hooks_remove_list(hook, lttv_hooks_by_id_get(event_by_id, i));
     }
 
   lttv_hooks_call(after_tracefile, self);
