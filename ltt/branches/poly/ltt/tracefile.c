@@ -158,8 +158,8 @@ void ltt_tracefile_open_control(LttTrace *t, char * control_name)
       if(ev->event_id == TRACE_FACILITY_LOAD){
 	pos = ev->data;
 	fLoad.name = (char*)pos;
-	fLoad.checksum = *(LttChecksum*)(pos + sizeof(pos));
-	fLoad.base_code = *(uint32_t*)(pos + sizeof(pos) + sizeof(LttChecksum));
+	fLoad.checksum = *(LttChecksum*)(pos + strlen(fLoad.name));
+	fLoad.base_code = *(uint32_t*)(pos + strlen(fLoad.name) + sizeof(LttChecksum));
 
 	for(i=0;i<t->facility_number;i++){
 	  f = (LttFacility*)g_ptr_array_index(t->facilities,i);
@@ -917,20 +917,32 @@ int skipEvent(LttTracefile * t)
 
   evId   = (int)(*(uint16_t *)(t->cur_event_pos));
   evData = t->cur_event_pos + EVENT_HEADER_SIZE;
-  evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
 
-  if(evT) rootFld = evT->root_field;
-  else return ERANGE;
+  //regard BLOCK_START, END and HEARTBEAT as special case, there are buildin events
+  if(evId != TRACE_BLOCK_START && evId != TRACE_BLOCK_END && evId != TRACE_TIME_HEARTBEAT){
+    evT    = ltt_trace_eventtype_get(t->trace,(unsigned)evId);
+    
+    if(evT) rootFld = evT->root_field;
+    else return ERANGE;
   
-  //event has string/sequence or the last event is not the same event
-  if((evT->latest_block!=t->which_block || evT->latest_event!=t->which_event) 
-     && rootFld->field_fixed == 0){
-    setFieldsOffset(t, evT, evData, t->trace);
+    if(rootFld){
+      //event has string/sequence or the last event is not the same event
+      if((evT->latest_block!=t->which_block || evT->latest_event!=t->which_event) 
+	 && rootFld->field_fixed == 0){
+	setFieldsOffset(t, evT, evData, t->trace);
+      }
+      t->cur_event_pos += EVENT_HEADER_SIZE + rootFld->field_size;
+    }else t->cur_event_pos += EVENT_HEADER_SIZE;
+    
+    evT->latest_block = t->which_block;
+    evT->latest_event = t->which_event;
+  }else{
+    if(evId == TRACE_BLOCK_START || evId == TRACE_BLOCK_END){
+      t->cur_event_pos += sizeof(BlockStart) + EVENT_HEADER_SIZE;
+    }else{
+      t->cur_event_pos += sizeof(TimeHeartbeat) + EVENT_HEADER_SIZE;
+    }
   }
-  t->cur_event_pos += EVENT_HEADER_SIZE + rootFld->field_size;
-
-  evT->latest_block = t->which_block;
-  evT->latest_event = t->which_event;
   
   //the next event is in the next block
   if(evId == TRACE_BLOCK_END){
@@ -1112,7 +1124,7 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
     if(fld->field_fixed == -1){
       fld->field_fixed = 0;
     }else{//0: string
-      size = sizeof((char*)evD) + 1; //include end : '\0'
+      size = strlen((char*)evD) + 1; //include end : '\0'
     }
 
   }else if(type->type_class == LTT_STRUCT){
