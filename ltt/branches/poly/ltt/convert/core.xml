@@ -244,7 +244,7 @@
   <event name=process_fork>
     <description>Fork a new process</description>
     <struct>
-      <field name="event_data1"> <description>Data associated with event</description> <uint size=4/> </field>
+      <field name="child_pid"> <description>Data associated with event</description> <uint size=4/> </field>
       <field name="event_data2"> <description>Data associated with event</description> <uint size=4/> </field>
      </struct>
   </event>
