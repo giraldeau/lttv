@@ -250,9 +250,9 @@ int main(int argc, char ** argv){
 
 
   for(k=0;k<cpu;k++){
-    fd = open(argv[nb_para-1+k], O_RDONLY, 0);
+    fd = open(argv[nb_para-cpu+k], O_RDONLY, 0);
     if(fd < 0){
-      g_error("Unable to open input data file %s\n", argv[nb_para-1+k]);
+      g_error("Unable to open input data file %s\n", argv[nb_para-cpu+k]);
     }
     
     if(fstat(fd, &lTDFStat) < 0){
