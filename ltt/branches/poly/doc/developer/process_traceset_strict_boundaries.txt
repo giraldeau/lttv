@@ -143,7 +143,7 @@ LttTime end,
 unsigned num_events,
 const LttvTracesetContextPosition *end_position)
 
-This new version of process traceset middle will call the middle hooks for
+This new version of process traceset middle will call the event hooks for
 events until the first criterion is fulfilled : either the end time is passed,
 the number of events requested is passed or the end position is reached. When
 this function ends, the end position can be extracted from the context, the end
@@ -154,17 +154,19 @@ The end event is a pointer to the last event the hooks has been called for.
 - lttv_process_traceset_seek_time : already implemented
 
 - lttv_process_traceset_begin(LttvTracesetContext *self,
-                              LttvHooksById       *before_traceset,
-                              LttvHooksById       *before_trace,
-                              LttvHooksById       *before_tracefile,
-                              LttvHooksById       *middle_hooks)
+                              LttvHooks       *before_traceset,
+                              LttvHooks       *before_trace,
+                              LttvHooks       *before_tracefile,
+                              LttvHooks       *event,
+                              LttvHooksById   *event_by_id)
 
 
 - lttv_process_traceset_end(LttvTracesetContext *self,
-                            LttvHooksById       *after_traceset,
-                            LttvHooksById       *after_trace,
-                            LttvHooksById       *after_tracefile,
-                            LttvHooksById       *middle_hooks)
+                            LttvHooks           *after_traceset,
+                            LttvHooks           *after_trace,
+                            LttvHooks           *after_tracefile,
+                            LttvHooks           *event,
+                            LttvHooksById       *event_by_id)
 
 - lttv_traceset_context_add_hooks and lttv_traceset_context_remove_hooks
 
