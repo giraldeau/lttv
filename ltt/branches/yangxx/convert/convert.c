@@ -105,7 +105,6 @@ int main(int argc, char ** argv){
   buffer_start end;
   heartbeat beat;
   int beat_count = 0;
-  int *size_count;
   gboolean * has_event;
   uint32_t size_lost;
   int reserve_size = sizeof(buffer_start) + sizeof(uint16_t) + 2*sizeof(uint32_t);//lost_size and buffer_end event
@@ -243,7 +242,6 @@ int main(int argc, char ** argv){
   buf_out    = g_new(char*,cpu);
   write_pos  = g_new(void*, cpu);
   fdCpu      = g_new(int, cpu); 
-  size_count = g_new(int, cpu);
   has_event  = g_new(gboolean, cpu);
   for(i=0;i<cpu;i++){
     has_event[i] = FALSE;
@@ -267,6 +265,7 @@ int main(int argc, char ** argv){
     write_pos_fac = buf_fac;
     write_pos_proc = buf_proc;
 
+    memset((void*)buffer,0,block_size); 
     readFile(fd,(void*)buffer, block_size, "Unable to read block header");
 
     cur_pos= buffer;
@@ -305,9 +304,6 @@ int main(int argc, char ** argv){
       cur_pos = buffer + sizeof(trace_buffer_start) + sizeof(trace_start) + 2*(sizeof(uint8_t)+sizeof(uint16_t)+sizeof(uint32_t));
     else //other blocks
       cur_pos = buffer + sizeof(trace_buffer_start) + sizeof(uint8_t)+sizeof(uint16_t)+sizeof(uint32_t);
-
-    for(j=0;j<cpu;j++)
-      size_count[j] = sizeof(buffer_start) + sizeof(uint16_t) + sizeof(uint32_t);
 
     //for cpu 0, always make records
     write_to_buffer(write_pos[0],(void*)&startId, sizeof(uint16_t));    
@@ -358,14 +354,14 @@ int main(int argc, char ** argv){
 	    write_to_buffer(write_pos[cpu_id],(void*)&end,sizeof(buffer_start));
 	  for(i=0;i<cpu;i++){
 	    if(has_event[i]){
-	      size = block_size - size_count[i];
+	      size = block_size + ((void*)buf_out[i] - write_pos[i])+ sizeof(uint16_t) + sizeof(uint32_t);
 	      write_pos[i] = buf_out[i] + block_size - sizeof(uint32_t);
 	      write_to_buffer(write_pos[i],(void*)&size, sizeof(uint32_t));
 	      write(fdCpu[i],(void*)buf_out[i], block_size);	    
 	    }
 	  }
 	}else {
-	  int size = block_size - size_count[0];
+	  int size = block_size + ((void*)buf_out[0] - write_pos[0])+ sizeof(uint16_t) + sizeof(uint32_t);
 	  write_to_buffer(write_pos[0],(void*)&end,sizeof(buffer_start));   
 	  write_pos[0] = buf_out[0] + block_size - sizeof(uint32_t);
   	  write_to_buffer(write_pos[0],(void*)&size, sizeof(uint32_t));
@@ -469,27 +465,15 @@ int main(int argc, char ** argv){
       }
       if(evId != TRACE_FILE_SYSTEM && event_size >=0){
 	if(ltt_log_cpu){
-	  size_count[cpu_id] += sizeof(uint16_t) + sizeof(uint32_t) + event_size;
-	  if(size_count[cpu_id] > block_size - reserve_size){
-	    printf("size count exceeds the limit of the buffer\n");
-	    exit(1);
-	  }
 	  write_to_buffer(write_pos[cpu_id], cur_pos, event_size); 
 	}else{
-	  size_count[0] += sizeof(uint16_t) + sizeof(uint32_t) + event_size;
-	  if(size_count[0] > block_size - reserve_size){
-	    printf("size count exceeds the limit of the buffer\n");
-	    exit(1);
-	  }
 	  write_to_buffer(write_pos[0], cur_pos, event_size); 
 	}
 	
 	if(evId == TRACE_HEARTBEAT){
 	  if(ltt_log_cpu){
-	    size_count[cpu_id] += sizeof(heartbeat);
 	    write_to_buffer(write_pos[cpu_id],(void*)&beat , sizeof(heartbeat)); 	 
 	  }else{
-	    size_count[0] +=  sizeof(heartbeat);
 	    write_to_buffer(write_pos[0], (void*)&beat, sizeof(heartbeat)); 	    	  
 	  }
 	}
@@ -505,11 +489,6 @@ int main(int argc, char ** argv){
 	}else nbBytes = 0;
 
 	if(ltt_log_cpu){
-	  size_count[cpu_id] += nbBytes + sizeof(uint16_t) + sizeof(uint32_t)+ event_size;
-	  if(size_count[cpu_id] > block_size - reserve_size){
-	    printf("size count exceeds the limit of the buffer\n");
-	    exit(1);
-	  }
 	  write_to_buffer(write_pos[cpu_id], cur_pos, event_size); 	
 	  cur_pos += event_size + sizeof(char*);
 	  if(nbBytes){
@@ -518,11 +497,6 @@ int main(int argc, char ** argv){
 	    write_to_buffer(write_pos[cpu_id], (void*)&c, 1);
 	  }
 	}else{
-	  size_count[0] += nbBytes + sizeof(uint16_t) + sizeof(uint32_t)+event_size;
-	  if(size_count[0] > block_size - reserve_size){
-	    printf("size count exceeds the limit of the buffer\n");
-	    exit(1);
-	  }
 	  write_to_buffer(write_pos[0], cur_pos, event_size);
 	  cur_pos += event_size + sizeof(char*);
 	  if(nbBytes){
