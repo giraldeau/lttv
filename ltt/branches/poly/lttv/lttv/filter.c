@@ -102,7 +102,7 @@ lttv_filter_tree_add_node(GPtrArray* stack, LttvFilterTree* subtree, LttvLogical
   t2->node = op;
   if(subtree != NULL) {
     t2->left = LTTV_TREE_NODE;
-    t2->l_child.t = (LttvFilterTree*)subtree;
+    t2->l_child.t = subtree;
     subtree = NULL;
     t1->right = LTTV_TREE_NODE;
     t1->r_child.t = t2;
@@ -133,7 +133,7 @@ lttv_simple_expression_new() {
   se->field = LTTV_FILTER_UNDEFINED;
   se->op = NULL;
   se->offset = 0;
-  se->value.v_uint64 = NULL;
+  se->value.v_uint64 = 0;
 
   return se;
 }
@@ -1074,7 +1074,7 @@ lttv_filter_update(LttvFilter* filter) {
       
       case '|':   /* or */
       
-        t1 = (LttvFilter*)g_ptr_array_index(tree_stack,tree_stack->len-1);
+        t1 = (LttvFilterTree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
          while(t1->right != LTTV_TREE_IDLE) {
           g_assert(t1->right == LTTV_TREE_NODE);
           t1 = t1->r_child.t;
@@ -1101,7 +1101,7 @@ lttv_filter_update(LttvFilter* filter) {
       
       case '^':   /* xor */
         
-        t1 = (LttvFilter*)g_ptr_array_index(tree_stack,tree_stack->len-1);
+        t1 = (LttvFilterTree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
         while(t1->right != LTTV_TREE_IDLE) {
           g_assert(t1->right == LTTV_TREE_NODE);
           t1 = t1->r_child.t;
@@ -1135,7 +1135,7 @@ lttv_filter_update(LttvFilter* filter) {
           lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_NE);
           i++;
         } else {  /* ! */
-          t1 = (LttvFilter*)g_ptr_array_index(tree_stack,tree_stack->len-1);
+          t1 = (LttvFilterTree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
           while(t1->right != LTTV_TREE_IDLE) {
              g_assert(t1->right == LTTV_TREE_NODE);
              t1 = t1->r_child.t;
@@ -1346,7 +1346,7 @@ LttvFilterTree*
 lttv_filter_tree_new() {
   LttvFilterTree* tree;
 
-  tree = g_new(LttvFilter,1);
+  tree = g_new(LttvFilterTree,1);
   tree->node = 0; //g_new(lttv_expression,1);
   tree->left = LTTV_TREE_IDLE;
   tree->right = LTTV_TREE_IDLE;
@@ -1414,7 +1414,7 @@ lttv_filter_tree_destroy(LttvFilterTree* tree) {
   if(tree->right == LTTV_TREE_LEAF) lttv_simple_expression_destroy(tree->r_child.leaf);
   else if(tree->right == LTTV_TREE_NODE) lttv_filter_tree_destroy(tree->r_child.t);
 
-  g_free(tree->node);
+//  g_free(tree->node);
   g_free(tree);
 }
 
