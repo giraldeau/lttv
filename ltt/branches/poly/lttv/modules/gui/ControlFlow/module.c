@@ -25,10 +25,10 @@
 #include <lttv/module.h>
 #include <lttv/gtkTraceSet.h>
 
-#include "CFV.h"
-#include "Event_Hooks.h"
+#include "cfv.h"
+#include "eventhooks.h"
 
- #include "../icons/hGuiControlFlowInsert.xpm"
+#include "../icons/hGuiControlFlowInsert.xpm"
 
 static LttvModule *Main_Win_Module;
 

@@ -5,8 +5,8 @@
 
 #include "cfv.h"
 #include "drawing.h"
-#include "process-list.h"
-#include "event-hooks.h"
+#include "processlist.h"
+#include "eventhooks.h"
 #include "cfv-private.h"
 
 

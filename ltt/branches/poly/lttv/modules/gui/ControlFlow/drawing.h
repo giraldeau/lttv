@@ -5,8 +5,8 @@
 #include <gdk/gdk.h>
 #include <gtk/gtk.h>
 #include <ltt/ltt.h>
-#include "CFV.h"
-#include "Draw_Item.h"
+#include "cfv.h"
+#include "drawitem.h"
 
 
 #define SAFETY 50 // safety pixels at right and bottom of pixmap buffer

@@ -6,10 +6,10 @@
 #include <lttv/gtkTraceSet.h>
 #include <lttv/hook.h>
 
-#include "Drawing.h"
-#include "CFV.h"
-#include "CFV-private.h"
-#include "Event_Hooks.h"
+#include "drawing.h"
+#include "cfv.h"
+#include "cfv-private.h"
+#include "eventhooks.h"
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)

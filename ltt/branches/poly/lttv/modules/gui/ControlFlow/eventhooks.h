@@ -1,4 +1,4 @@
-/* Event_hooks.c defines the hooks that are given to processTrace as parameter.
+/* eventhooks.c defines the hooks that are given to processTrace as parameter.
  * These hooks call the drawing API to draw the information on the screen,
  * using information from Context, but mostly state (running, waiting...).
  */
@@ -10,9 +10,10 @@
 #include <gtk/gtk.h>
 #include <lttv/mainWindow.h>
 #include <ltt/time.h>
-#include "Process_List.h"
-#include "Drawing.h"
-#include "CFV.h"
+
+#include "processlist.h"
+#include "drawing.h"
+#include "cfv.h"
 
 
 /* Structure used to store and use information relative to one events refresh

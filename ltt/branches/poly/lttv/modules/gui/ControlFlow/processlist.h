@@ -4,7 +4,8 @@
 #include <gtk/gtk.h>
 #include <lttv/state.h>
 #include <ltt/ltt.h>
-#include "Draw_Item.h"
+
+#include "drawitem.h"
 
 /* The process list
  *

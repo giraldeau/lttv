@@ -1,5 +1,5 @@
 /******************************************************************************
- * Draw_Item.c
+ * drawitem.c
  *
  * This file contains methods responsible for drawing a generic type of data
  * in a drawable. Doing this generically will permit user defined drawing
@@ -85,7 +85,7 @@
 #include <lttv/processTrace.h>
 #include <lttv/state.h>
 
-#include "Draw_Item.h"
+#include "drawitem.h"
 
 
 #define MAX_PATH_LEN 256

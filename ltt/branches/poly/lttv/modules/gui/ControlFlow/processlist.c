@@ -1,8 +1,9 @@
 
 #include <gtk/gtk.h>
 #include <glib.h>
-#include "Process_List.h"
-#include "Draw_Item.h"
+
+#include "processlist.h"
+#include "drawitem.h"
 
 /*****************************************************************************
  *                       Methods to synchronize process list                 *
