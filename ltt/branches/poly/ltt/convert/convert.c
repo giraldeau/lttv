@@ -484,13 +484,13 @@ int main(int argc, char ** argv){
 	  write_to_buffer(write_pos_intr,(void*)&newId,sizeof(uint16_t));
 	  write_to_buffer(write_pos_intr,(void*)&time_delta, sizeof(uint32_t));     
 	  end_intr = end;
-	  end_intr.nanoseconds += 20;
+	  end_intr.nanoseconds -= 40;
 	  write_to_buffer(write_pos_intr,(void*)&end_intr,sizeof(buffer_start));   
 
 	  write_to_buffer(write_pos_proc,(void*)&newId,sizeof(uint16_t));
 	  write_to_buffer(write_pos_proc,(void*)&time_delta, sizeof(uint32_t));     
 	  end_proc = end;
-	  end_proc.nanoseconds += 40;
+	  end_proc.nanoseconds -= 20;
 	  write_to_buffer(write_pos_proc,(void*)&end_proc,sizeof(buffer_start));   
 
 	  write_pos_intr = buf_intr + block_size - sizeof(uint32_t);
