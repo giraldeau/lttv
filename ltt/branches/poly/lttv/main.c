@@ -41,10 +41,6 @@ static void lttv_module_option(void *hook_data);
 
 static void lttv_module_path_option(void *hook_data);
 
-#ifdef MEMDEBUG
-extern struct GMemVTable *glib_mem_profiler_table;
-#endif
-
 
 /* Since everything is done in modules, the main program only takes care
    of the infrastructure. */
@@ -59,8 +55,8 @@ int main(int argc, char **argv) {
   g_mem_profile();
 #endif
 
-  //g_type_init();
-  g_type_init_with_debug_flags (G_TYPE_DEBUG_OBJECTS | G_TYPE_DEBUG_SIGNALS);
+  g_type_init();
+  //g_type_init_with_debug_flags (G_TYPE_DEBUG_OBJECTS | G_TYPE_DEBUG_SIGNALS);
 
   attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
 
