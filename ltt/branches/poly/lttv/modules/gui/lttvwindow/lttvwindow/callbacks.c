@@ -2857,11 +2857,77 @@ on_content_activate                    (GtkMenuItem     *menuitem,
 }
 
 
+static void 
+on_about_close_activate                (GtkButton       *button,
+                                        gpointer         user_data)
+{
+  GtkWidget *about_widget = GTK_WIDGET(user_data);
+
+  gtk_widget_destroy(about_widget);
+}
+
 void
 on_about_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("About...\n");
+  MainWindow *main_window = get_window_data_struct(GTK_WIDGET(menuitem));
+  GtkWidget *window_widget = main_window->mwindow;
+  GtkWidget *about_widget = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  GtkWindow *about_window = GTK_WINDOW(about_widget);
+  gint window_width, window_height;
+  
+  gtk_window_set_title(about_window, "About Linux Trace Toolkit");
+
+  gtk_window_set_resizable(about_window, FALSE);
+  gtk_window_set_transient_for(GTK_WINDOW(window_widget), about_window);
+  gtk_window_set_destroy_with_parent(about_window, TRUE);
+  gtk_window_set_modal(about_window, FALSE);
+
+  /* Put the about window at the center of the screen */
+  gtk_window_get_size(about_window, &window_width, &window_height);
+  gtk_window_move (about_window,
+                   (gdk_screen_width() - window_width)/2,
+                   (gdk_screen_height() - window_height)/2);
+ 
+  GtkWidget *vbox = gtk_vbox_new(FALSE, 1);
+
+  gtk_container_add(GTK_CONTAINER(about_widget), vbox);
+
+    
+  /* Text to show */
+  GtkWidget *label1 = gtk_label_new("");
+  gtk_label_set_markup(GTK_LABEL(label1), "\
+Linux Trace Toolkit");
+  gtk_label_set_justify(GTK_LABEL(label1), GTK_JUSTIFY_CENTER);
+  
+  GtkWidget *label2 = gtk_label_new("");
+  gtk_label_set_markup(GTK_LABEL(label2), "\
+\n\n\
+Project author: Karim Yaghmour\n\
+\n\
+Contributors :\n\
+\n\
+Michel Dagenais (New trace format, lttv main)\n\
+Mathieu Desnoyers (Directory structure, build with automake/conf,\n\
+                   lttv gui, control flow view)\n\
+Benoit Des Ligneris (Cluster adaptation)\n\
+Xang-Xiu Yang (new trace reading library and converter, lttv gui, \n\
+               detailed event list and statistics view)\n\
+Tom Zanussi (RelayFS)");
+  gtk_box_pack_start_defaults(GTK_BOX(vbox), label1);
+  gtk_box_pack_start_defaults(GTK_BOX(vbox), label2);
+
+  GtkWidget *hbox = gtk_hbox_new(TRUE, 0);
+  gtk_box_pack_end(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+  GtkWidget *close_button = gtk_button_new_with_mnemonic("_Close");
+  gtk_box_pack_end(GTK_BOX(hbox), close_button, FALSE, FALSE, 0);
+  gtk_container_set_border_width(GTK_CONTAINER(close_button), 20);
+
+  g_signal_connect(G_OBJECT(close_button), "clicked",
+      G_CALLBACK(on_about_close_activate),
+      (gpointer)about_widget);
+  
+  gtk_widget_show_all(about_widget);
 }
 
 
