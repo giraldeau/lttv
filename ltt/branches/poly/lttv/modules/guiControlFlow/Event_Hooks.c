@@ -15,6 +15,7 @@
 //#include <pango/pango.h>
 
 #include <ltt/event.h>
+#include <ltt/time.h>
 
 #include <lttv/hook.h>
 #include <lttv/common.h>
@@ -608,34 +609,153 @@ int draw_after_hook(void *hook_data, void *call_data)
 
 void update_time_window_hook(void *hook_data, void *call_data)
 {
-	ControlFlowData *Control_Flow_Data = (ControlFlowData*) hook_data;
-	TimeWindow* Time_Window = 
-		guicontrolflow_get_time_window(Control_Flow_Data);
+	ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
+	TimeWindow *Old_Time_Window = 
+		guicontrolflow_get_time_window(control_flow_data);
 	TimeWindow *New_Time_Window = ((TimeWindow*)call_data);
 
-	// As the time interval change will mostly be used for
-	// zoom in and out, it's not useful to keep old drawing
-	// sections, as scale will be changed.
-	
+	/* Two cases : zoom in/out or scrolling */
 
-	*Time_Window = *New_Time_Window;
+	/* In order to make sure we can reuse the old drawing, the scale must
+	 * be the same and the new time interval being partly located in the
+	 * currently shown time interval. (reuse is only for scrolling)
+	 */
+
+	g_info("Old time window HOOK : %u, %u to %u, %u",
+			Old_Time_Window->start_time.tv_sec,
+			Old_Time_Window->start_time.tv_nsec,
+			Old_Time_Window->time_width.tv_sec,
+			Old_Time_Window->time_width.tv_nsec);
+
 	g_info("New time window HOOK : %u, %u to %u, %u",
-			Time_Window->start_time.tv_sec,
-			Time_Window->start_time.tv_nsec,
-			Time_Window->time_width.tv_sec,
-			Time_Window->time_width.tv_nsec);
+			New_Time_Window->start_time.tv_sec,
+			New_Time_Window->start_time.tv_nsec,
+			New_Time_Window->time_width.tv_sec,
+			New_Time_Window->time_width.tv_nsec);
 
-  drawing_data_request(Control_Flow_Data->Drawing,
-			&Control_Flow_Data->Drawing->Pixmap,
-			0, 0,
-			Control_Flow_Data->Drawing->width,
-		   	Control_Flow_Data->Drawing->height);
+	if( New_Time_Window->time_width.tv_sec == Old_Time_Window->time_width.tv_sec
+	&& New_Time_Window->time_width.tv_nsec == Old_Time_Window->time_width.tv_nsec)
+	{
+		/* Same scale (scrolling) */
+		g_info("scrolling");
+		LttTime *ns = &New_Time_Window->start_time;
+		LttTime *os = &Old_Time_Window->start_time;
+		LttTime old_end = ltt_time_add(Old_Time_Window->start_time,
+																		Old_Time_Window->time_width);
+		LttTime new_end = ltt_time_add(New_Time_Window->start_time,
+																		New_Time_Window->time_width);
+		//if(ns<os+w<ns+w)
+		//if(ns<os+w && os+w<ns+w)
+		//if(ns<old_end && os<ns)
+		if(ltt_time_compare(*ns, old_end) == -1
+				&& ltt_time_compare(*os, *ns) == -1)
+		{
+			g_info("scrolling near right");
+			/* Scroll right, keep right part of the screen */
+			guint x = 0;
+			guint width = control_flow_data->Drawing->Drawing_Area_V->allocation.width;
+			convert_time_to_pixels(
+					*os,
+					old_end,
+					*ns,
+					width,
+					&x);
 
-	drawing_refresh(Control_Flow_Data->Drawing,
-			0, 0,
-			Control_Flow_Data->Drawing->width,
-			Control_Flow_Data->Drawing->height);
+		  /* Copy old data to new location */
+		  gdk_draw_drawable (control_flow_data->Drawing->Pixmap,
+				  control_flow_data->Drawing->Drawing_Area_V->style->white_gc,
+				  control_flow_data->Drawing->Pixmap,
+				  x, 0,
+				  0, 0,
+				  -1, -1);
 
+			/* Get new data for the rest. */
+		  drawing_data_request(control_flow_data->Drawing,
+					&control_flow_data->Drawing->Pixmap,
+					x, 0,
+					control_flow_data->Drawing->width - x,
+				 	control_flow_data->Drawing->height);
+	
+			drawing_refresh(control_flow_data->Drawing,
+					0, 0,
+					control_flow_data->Drawing->width,
+					control_flow_data->Drawing->height);
+
+
+		} else { 
+			//if(ns<os<ns+w)
+			//if(ns<os && os<ns+w)
+			//if(ns<os && os<new_end)
+			if(ltt_time_compare(*ns,*os) == -1
+					&& ltt_time_compare(*os,new_end) == -1)
+			{
+				g_info("scrolling near left");
+				/* Scroll left, keep left part of the screen */
+				guint x = 0;
+				guint width = control_flow_data->Drawing->Drawing_Area_V->allocation.width;
+				convert_time_to_pixels(
+						*ns,
+						new_end,
+						*os,
+						width,
+						&x);
+	
+			  /* Copy old data to new location */
+			  gdk_draw_drawable (control_flow_data->Drawing->Pixmap,
+				  	control_flow_data->Drawing->Drawing_Area_V->style->white_gc,
+					  control_flow_data->Drawing->Pixmap,
+					  0, 0,
+					  x, 0,
+					  -1, -1);
+	
+				/* Get new data for the rest. */
+			  drawing_data_request(control_flow_data->Drawing,
+						&control_flow_data->Drawing->Pixmap,
+						0, 0,
+						x,
+					 	control_flow_data->Drawing->height);
+		
+				drawing_refresh(control_flow_data->Drawing,
+						0, 0,
+						control_flow_data->Drawing->width,
+						control_flow_data->Drawing->height);
+				
+			} else {
+				g_info("scrolling far");
+				/* Cannot reuse any part of the screen : far jump */
+				*Old_Time_Window = *New_Time_Window;
+
+			 	drawing_data_request(control_flow_data->Drawing,
+						&control_flow_data->Drawing->Pixmap,
+						0, 0,
+						control_flow_data->Drawing->width,
+					 	control_flow_data->Drawing->height);
+		
+				drawing_refresh(control_flow_data->Drawing,
+						0, 0,
+						control_flow_data->Drawing->width,
+						control_flow_data->Drawing->height);
+			}
+		}
+	} else {
+		/* Different scale (zoom) */
+		g_info("zoom");
+
+		*Old_Time_Window = *New_Time_Window;
+		
+	  drawing_data_request(control_flow_data->Drawing,
+				&control_flow_data->Drawing->Pixmap,
+				0, 0,
+				control_flow_data->Drawing->width,
+			 	control_flow_data->Drawing->height);
+	
+		drawing_refresh(control_flow_data->Drawing,
+				0, 0,
+				control_flow_data->Drawing->width,
+				control_flow_data->Drawing->height);
+	}
+
+	
 }
 
 void update_current_time_hook(void *hook_data, void *call_data)
