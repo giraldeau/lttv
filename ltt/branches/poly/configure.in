@@ -35,7 +35,7 @@ AM_PATH_GTK_2_0(2.0.0, ,AC_MSG_ERROR([gtk is required in order to compile GUI - 
 AC_PROG_CC
 
 # Checks for libraries.
-AC_CHECK_LIB([popt], [poptGetNextOpt], ,AC_MSG_ERROR([libpopt is required in order to compile LinuxTraceToolkit])  )
+AC_CHECK_LIB([popt], [poptGetNextOpt], POPT_LIBS="-lpopt",AC_MSG_ERROR([libpopt is required in order to compile LinuxTraceToolkit])  )
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -69,34 +69,30 @@ AC_CHECK_FUNCS([select])
 
 AM_CONDITIONAL(LTTVSTATIC, test "$enable_lttvstatic" = yes)
 lttvlibdir="${libdir}/lttv"
-AC_SUBST(lttvlibdir)
-
 lttvplugindir="${lttvlibdir}/plugins"
-AC_SUBST(lttvplugindir)
-
 lttlibdir="${libdir}/ltt"
-AC_SUBST(lttlibdir)
-
-
 top_lttvdir="\$(top_srcdir)/lttv"
-AC_SUBST(top_lttvdir)
-
 top_lttvwindowdir="\$(top_srcdir)/lttv/modules/gui/lttvwindow"
-AC_SUBST(top_lttvwindowdir)
 
 DEFAULT_INCLUDES="-I\$(top_srcdir) -I\$(top_lttvdir) -I\$(top_lttvwindowdir)"
-AC_SUBST(DEFAULT_INCLUDES)
 
 #CPPFLAGS="${GLIB_CFLAGS}"
 #AC_SUBST(CPPFLAGS)
 
 lttincludedir="${includedir}/ltt"
-AC_SUBST(lttincludedir)
-
 lttvincludedir="${includedir}/lttv"
-AC_SUBST(lttvincludedir)
-
 lttvwindowincludedir="${includedir}/lttvwindow"
+
+
+AC_SUBST(POPT_LIBS)
+AC_SUBST(lttvlibdir)
+AC_SUBST(lttvplugindir)
+AC_SUBST(lttlibdir)
+AC_SUBST(top_lttvdir)
+AC_SUBST(top_lttvwindowdir)
+AC_SUBST(DEFAULT_INCLUDES)
+AC_SUBST(lttincludedir)
+AC_SUBST(lttvincludedir)
 AC_SUBST(lttvwindowincludedir)
 
 AC_CONFIG_FILES([Makefile
