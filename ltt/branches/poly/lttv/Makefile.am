@@ -9,10 +9,18 @@ bin_PROGRAMS = lttv
 #	-I$(top_srcdir)/include
 #INCLUDES=$(top_srcdir)/include
 
-tracevisualizer_SOURCES = main.c module.c option.c hook.c attribute.c \
+lttv_SOURCES = main.c module.c option.c hook.c attribute.c \
 		iattribute.c processTrace.c state.c traceset.c
-#		lttv.h module.h option.h hook.h attribute.h \
-#                iattribute.h processTrace.h state.h traceset.h
+lttv_DEPENDENCIES = $(DEFAULT_INCLUDES)/lttv/lttv.h \
+										$(DEFAULT_INCLUDES)/lttv/module.h \
+										$(DEFAULT_INCLUDES)/lttv/option.h \
+										$(DEFAULT_INCLUDES)/lttv/hook.h \
+										$(DEFAULT_INCLUDES)/lttv/attribute.h \
+										$(DEFAULT_INCLUDES)/lttv/iattribute.h \
+										$(DEFAULT_INCLUDES)/lttv/processTrace.h \
+										$(DEFAULT_INCLUDES)/lttv/state.h \
+										$(DEFAULT_INCLUDES)/lttv/traceset.h
+
 
 
 libdir = ${lttvplugindir}

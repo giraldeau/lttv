@@ -13,5 +13,8 @@ LIBS += $(GLIB_LIBS)
 
 lib_LTLIBRARIES = libtraceread.la
 libtraceread_la_SOURCES = event.c facility.c parser.c tracefile.c type.c \
-		       parser.h LTTTypes.h
+													parser.h
+
+libtraceread_la_DEPENDENCIES = $(DEFAULT_INCLUDES)/ltt/LTTTypes.h
+															 
 EXTRA_DIST = crc32.tab
