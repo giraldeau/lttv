@@ -152,7 +152,7 @@ int draw_event_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
+  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
   
   LttEvent *e;
   e = tfc->e;
@@ -193,9 +193,10 @@ int draw_event_hook(void *hook_data, void *call_data)
 
 
     /* Find process pid_out in the list... */
-    process_out = lttv_state_find_process(tfs, pid_out);
+    process_out = lttv_state_find_process_from_trace(ts, pid_out);
+    if(process_out == NULL) return 0;
     g_critical("out : %s",g_quark_to_string(process_out->state->s));
-
+    
     birth = process_out->creation_time;
     gchar *name = strdup(g_quark_to_string(process_out->name));
     HashedProcessData *hashed_process_data_out = NULL;
@@ -229,7 +230,8 @@ int draw_event_hook(void *hook_data, void *call_data)
     g_free(name);
     
     /* Find process pid_in in the list... */
-    process_in = lttv_state_find_process(tfs, pid_in);
+    process_in = lttv_state_find_process_from_trace(ts, pid_in);
+    if(process_in == NULL) return 0;
     g_critical("in : %s",g_quark_to_string(process_in->state->s));
 
     birth = process_in->creation_time;
@@ -749,6 +751,7 @@ int draw_after_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
 
   
   LttEvent *e;
@@ -791,7 +794,8 @@ int draw_after_hook(void *hook_data, void *call_data)
 
 
     /* Find process pid_out in the list... */
-    process_out = lttv_state_find_process(tfs, pid_out);
+    process_out = lttv_state_find_process_from_trace(ts, pid_out);
+    if(process_out == NULL) return 0;
     //g_critical("out : %s",g_quark_to_string(process_out->state->s));
 
     birth = process_out->creation_time;
@@ -827,7 +831,8 @@ int draw_after_hook(void *hook_data, void *call_data)
     g_free(name);
     
     /* Find process pid_in in the list... */
-    process_in = lttv_state_find_process(tfs, pid_in);
+    process_in = lttv_state_find_process_from_trace(ts, pid_in);
+    if(process_in == NULL) return 0;
     //g_critical("in : %s",g_quark_to_string(process_in->state->s));
 
     birth = process_in->creation_time;
