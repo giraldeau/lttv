@@ -7,7 +7,7 @@
    call site specific data (e.g., hooks for events are called with a 
    pointer to the current event). */
 
-typedef void (*lttv_hook)(void *hook_data, void *call_data);
+typedef bool (*lttv_hook)(void *hook_data, void *call_data);
 
 
 /* A list of hooks allows registering hooks to be called later. */
@@ -21,7 +21,17 @@ void lttv_hooks_destroy(lttv_hooks *h);
 
 void lttv_hooks_add(lttv_hooks *h, lttv_hook f, void *hook_data);
 
-void lttv_hooks_call(lttv_hooks *h, void *call_data);
+void lttv_hooks_remove(lttv_hooks *h, lttv_hook f, void *hook_data);
+
+unsigned lttv_hooks_number(lttv_hooks *h);
+
+void lttv_hooks_get(lttv_hooks *h, unsigned i, lttv_hook *f, void **hook_data);
+
+void lttv_hooks_remove_by_position(lttv_hooks *h, unsigned i);
+
+bool lttv_hooks_call(lttv_hooks *h, void *call_data);
+
+bool lttv_hooks_call_check(lttv_hooks *h, void *call_data);
 
 
 /* Sometimes different hooks need to be called based on the case. The

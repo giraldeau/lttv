@@ -114,23 +114,54 @@ void *lttv_attributes_get_pointer_pathname(lttv_attributes *a, char *pn);
 void lttv_attributes_set_pointer_pathname(lttv_attributes *a,char *pn,void *p);
 
 
-typedef int (*lttv_key_select)(lttv_key *in, lttv_key *out, void *user_data);
+/* It is often useful to copy over some elements from the source attributes 
+   table to the destination table. While doing so, constraints on each key 
+   component may be used to select the elements of interest. Finally, some 
+   numerical elements may need to be summed, for example summing the number 
+   of page faults over all processes. A flexible function to copy attributes 
+   may be used for all these operations. 
 
-typedef enum _lttv_key_select_action
-{ LTTV_KEEP, LTTV_KEEP_EQUAL, LTTV_KEEP_SMALLER, LTTV_KEEP_GREATER, LTTV_IGNORE
-} lttv_key_select_action;
+   If the key of the element copied already exists in the destination 
+   attributes, numerical values (integer, double or time) are summed and 
+   pointers are replaced.
 
-typedef struct _lttv_key_select_spec_data
+   The lttv_key_select_data structure specifies for each key component the
+   test applied to decide to copy or not the corresponding element. 
+   It contains the relation to apply to each key component, the rel vector, 
+   and the comparison key, both of size length. To decide if an element
+   should be copied, each component of its key is compared with the
+   comparison key, and the relation specified for each component must 
+   be verified. The relation ANY is always verified and the comparison key
+   component is not used. The relation NONE is only verified if the key
+   examined contains fewer components than the position examined. The EQ, NE,
+   LT, LE, GT, GE relations are verified if the key is long enough and the
+   component satisfies the relation with respect to the comparison key.
+   Finally, the CUT relation is satisfied if the key is long enough, but the
+   element is copied with that component removed from its key. All the keys
+   which only differ by that component become identical after being shortened
+   and their numerical values are thus summed when copied. */
+
+typedef enum _lttv_key_select_relation
+{ LTTV_KEY_ANY,   /* Any value is good */
+  LTTV_KEY_NONE,  /* No value is good, i.e. the key must be shorter */
+  LTTV_KEY_EQ,    /* key[n] is equal to match[n] */
+  LTTV_KEY_NE,    /* key[n] is not equal to match[n] */
+  LTTV_KEY_LT,    /* key[n] is lower than match[n] */
+  LTTV_KEY_LE,    /* key[n] is lower or equal than match[n] */
+  LTTV_KEY_GT,    /* key[n] is greater than match[n] */
+  LTTV_KEY_GE,    /* key[n] is greater or equal than match[n] */
+  LTTV_KEY_CUT    /* cut key[n], shortening the key for the copy */
+} lttv_key_select_relation;
+
+typedef struct _lttv_key_select_data
 {
   unsigned length;
-  lttv_key_select_action *spec;
-  lttv_key *match;
-} lttv_key_select_spec_data;
+  lttv_key_select_relation *rel;
+  lttv_key *comparison;
+} lttv_key_select_data;
 
-int lttv_key_select_spec(lttv_key *in, lttv_key *out, void *user_data);
-
-lttv_attributes *lttv_attributes_select(lttv_attributes *a, lttv_key_select f,
-    void *user_data);
+void lttv_attributes_copy(lttv_attributes *src, lttv_attributes *dest, 
+    lttv_key_select_data d);
 
 
 /* Sometimes the attributes must be accessed in bulk, sorted in different
@@ -161,21 +192,28 @@ typedef struct _lttv_attribute {
 } lttv_attribute;
 
 
-/* User defined function used to compare keys in the sort. It returns
-   a negative value if a < b, 0 if a = b, and a positive if a > b. */
-
-typedef int (*lttv_key_compare)(lttv_key *a, lttv_key *b, void *user_data);
-
-int lttv_key_compare_priority(lttv_key *a, lttv_key *b, void *compare_data);
-
-
 /* Obtain all the attributes in an array */
 
 lttv_attribute *lttv_attributes_array_get(lttv_attributes *a);
 
 lttv_attribute *lttv_attribute_array_destroy(lttv_attribute *a);
 
+
+/* The sorting order is determined by the supplied comparison function.
+   The comparison function must return a negative value if a < b, 
+   0 if a = b, and a positive if a > b. */
+
+typedef int (*lttv_key_compare)(lttv_key *a, lttv_key *b, void *user_data);
+
 void lttv_attribute_array_sort(lttv_attribute *a, unsigned size, 
     lttv_key_compare f, void *user_data);
+
+
+/* Sort in lexicographic order using the specified key components as primary,
+   secondary... keys. A vector containing the key components positions is
+   specified. */
+ 
+int lttv_attribute_array_sort_lexicographic(lttv_attribute *a, unsigned size,
+    unsigned *positions, unsigned nb_positions);
 
 #endif // ATTRIBUTE_H

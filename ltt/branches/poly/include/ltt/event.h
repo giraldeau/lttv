@@ -9,7 +9,7 @@
    the memory associated with an event may be reused at each read. */
 
 
-/* Obtain the tracefile unique integer id associated with the type of 
+/* Obtain the trace unique integer id associated with the type of 
    this event */
 
 unsigned ltt_event_eventtype_id(ltt_event *e);
@@ -21,7 +21,11 @@ ltt_facility *ltt_event_facility(ltt_event *e);
 
 ltt_eventtype *ltt_event_eventtype(ltt_event *e);
 
+
+/* Root field for the event */
+
 ltt_field *ltt_event_field(ltt_event *e);
+
 
 /* Time and cycle count for the event */
 

@@ -3,15 +3,34 @@
 
 #include <ltt/ltt.h>
 
-/* All event types and data types belong to their facilities and 
-   are released at the same time. All fields belong to their tracefile and
+
+/* Different types allowed */
+
+typedef enum _ltt_type_enum 
+{ LTT_INT, LTT_UINT, LTT_FLOAT, LTT_STRING, LTT_ENUM, LTT_ARRAY, 
+  LTT_SEQUENCE, LTT_STRUCT
+} ltt_type_enum;
+
+
+/* All event types, data types and fields belong to their trace and 
    are released at the same time. */
+
+/* Obtain the name, description, facility, facility relative id, global id, 
+   type and root field for an eventtype */
 
 char *ltt_eventtype_name(ltt_eventtype *et);
 
 char *ltt_eventtype_description(ltt_eventtype *et);
 
+ltt_facility *ltt_eventtype_facility(ltt_eventtype *et);
+
+unsigned *ltt_eventtype_relative_id(ltt_eventtype *et);
+
+unsigned *ltt_eventtype_id(ltt_eventtype *et);
+
 ltt_type *ltt_eventtype_type(ltt_eventtype *et);
+
+ltt_field *ltt_eventtype_field(ltt_eventtype *et);
 
 
 /* obtain the type name and size. The size is the number of bytes for
@@ -56,7 +75,7 @@ char *ltt_enum_string_get(ltt_type *t, unsigned i);
    sequences simply point to one nested field representing the currently
    selected element among all the (identically typed) elements. For structures,
    a nested field exists for each data member. Each field stores the
-   platform/tracefile specific offset values (for efficient access) and
+   platform/trace specific offset values (for efficient access) and
    points back to the corresponding ltt_type for the rest. */
 
 ltt_field *ltt_field_element(ltt_field *f);
