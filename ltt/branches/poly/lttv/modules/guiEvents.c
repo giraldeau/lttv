@@ -25,6 +25,8 @@
  *          Integrated to LTTng by Mathieu Desnoyers, June 2003
  */
 
+#include <math.h>
+
 #include <glib.h>
 #include <gmodule.h>
 #include <gtk/gtk.h>
@@ -50,7 +52,7 @@ typedef struct _EventViewerData {
   GtkWidget *Tree_V;
   GtkAdjustment *VTree_Adjust_C ;
 	GdkWindow *TreeWindow ;
-
+	
 	/* Vertical scrollbar and it's adjustment */
 	GtkWidget *VScroll_VC;
   GtkAdjustment *VAdjust_C ;
@@ -58,7 +60,8 @@ typedef struct _EventViewerData {
 	/* Selection handler */
 	GtkTreeSelection *Select_C;
 	
-	guint Visible_Events;
+	guint Num_Visible_Events;
+	guint First_Event, Last_Event;
 
 } EventViewerData ;
 
@@ -74,17 +77,16 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer dat
 static void v_scroll_cb (GtkAdjustment *adjustment, gpointer data);
 static void Tree_V_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer data);
 static void Tree_V_size_request_cb (GtkWidget *widget, GtkRequisition *requisition, gpointer data);
+static void Tree_V_cursor_changed_cb (GtkWidget *widget, gpointer data);
+static void Tree_V_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, gpointer data);
 
+static void get_test_data(guint Event_Number, guint List_Height, 
+									 EventViewerData *Event_Viewer_Data);
 
 void add_test_data(EventViewerData *Event_Viewer_Data);
 
 /* TEST DATA, TO BE READ FROM THE TRACE */
 static int Number_Of_Events = 1000;
-
-//FIXME: use the size of the widget to get number of rows.
-static int Number_Of_Rows = 50 ;
-//FIXME
-static int Cell_Height = 52;
 
 /**
  * plugin's init function
@@ -171,7 +173,8 @@ GuiEvents(void)
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
 	EventViewerData* Event_Viewer_Data = g_new(EventViewerData,1) ;
-
+	
+	
 	/* Create a model for storing the data list */
   Event_Viewer_Data->Store_M = gtk_list_store_new (N_COLUMNS,       /* Total number of columns */
                                             G_TYPE_INT,      /* CPUID                  */
@@ -183,7 +186,7 @@ GuiEvents(void)
 	
 	/* Create the viewer widget for the columned list */
 	Event_Viewer_Data->Tree_V = gtk_tree_view_new_with_model (GTK_TREE_MODEL (Event_Viewer_Data->Store_M));
-	
+		
 	g_signal_connect (G_OBJECT (Event_Viewer_Data->Tree_V), "size-allocate",
 	                  G_CALLBACK (Tree_V_size_allocate_cb),
 	                  Event_Viewer_Data);
@@ -191,7 +194,13 @@ GuiEvents(void)
 	                  G_CALLBACK (Tree_V_size_request_cb),
 	                  Event_Viewer_Data);
 	
+		g_signal_connect (G_OBJECT (Event_Viewer_Data->Tree_V), "cursor-changed",
+	                  G_CALLBACK (Tree_V_cursor_changed_cb),
+	                  Event_Viewer_Data);
 	
+		g_signal_connect (G_OBJECT (Event_Viewer_Data->Tree_V), "move-cursor",
+	                  G_CALLBACK (Tree_V_move_cursor_cb),
+	                  Event_Viewer_Data);
 // Use on each column!
 //gtk_tree_view_column_set_sizing(Event_Viewer_Data->Tree_V, GTK_TREE_VIEW_COLUMN_FIXED);
 	
@@ -262,7 +271,7 @@ GuiEvents(void)
 	gtk_tree_selection_set_mode (Event_Viewer_Data->Select_C, GTK_SELECTION_SINGLE);
 	g_signal_connect (G_OBJECT (Event_Viewer_Data->Select_C), "changed",
 	                  G_CALLBACK (tree_selection_changed_cb),
-	                  NULL);
+	                  Event_Viewer_Data);
 	
   Event_Viewer_Data->HBox_V = gtk_hbox_new(0, 0);
   gtk_box_pack_start(GTK_BOX(Event_Viewer_Data->HBox_V), Event_Viewer_Data->Tree_V, TRUE, TRUE, 0);
@@ -297,16 +306,166 @@ GuiEvents(void)
 	/* Add the object's information to the module's array */
   g_slist_append(sEvent_Viewer_Data_List, Event_Viewer_Data);
 
+	Event_Viewer_Data->First_Event = -1 ;
+	Event_Viewer_Data->Last_Event = 0 ;
+
+	Event_Viewer_Data->Num_Visible_Events = 1;
+
 	/* Test data */
-	add_test_data(Event_Viewer_Data);
+	get_test_data((int)Event_Viewer_Data->VAdjust_C->value,
+									 Event_Viewer_Data->Num_Visible_Events, 
+									 Event_Viewer_Data);
 
 	return Event_Viewer_Data;
 }
 
+void Tree_V_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, gpointer data)
+{
+	GtkTreePath *path; // = gtk_tree_path_new();
+	gint *indices;
+	gdouble value;
+	EventViewerData *Event_Viewer_Data = (EventViewerData*)data;
+
+	gtk_tree_view_get_cursor(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), &path, NULL);
+	if(path == NULL)
+	{
+		/* No prior cursor, put it at beginning of page and let the execution do */
+		path = gtk_tree_path_new_from_indices(0, -1);
+		gtk_tree_view_set_cursor(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), path, NULL, FALSE);
+	}
+		
+	indices = gtk_tree_path_get_indices(path);
+
+	g_critical("DEBUG : move cursor step : %u , int : %i , indice : %i", (guint)arg1, arg2, indices[0]) ;
+
+	value = gtk_adjustment_get_value(Event_Viewer_Data->VAdjust_C);
+
+	if(arg1 == GTK_MOVEMENT_DISPLAY_LINES)
+	{
+		/* Move one line */
+		if(arg2 == 1)
+		{
+			/* move one line down */
+			if(indices[0] == Event_Viewer_Data->Num_Visible_Events - 1)
+			{
+				if(value + Event_Viewer_Data->Num_Visible_Events <= Number_Of_Events -1)
+				{
+					g_critical("need 1 event down") ;
+					gtk_adjustment_set_value(Event_Viewer_Data->VAdjust_C, value+1);
+					gtk_tree_path_free(path);
+					path = gtk_tree_path_new_from_indices(Event_Viewer_Data->Num_Visible_Events-1, -1);
+					gtk_tree_view_set_cursor(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), path, NULL, FALSE);
+					g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
+				}
+			}
+		} else {
+			/* Move one line up */
+			if(indices[0] == 0)
+			{
+				if(value - 1 >= 0 )
+				{
+					g_critical("need 1 event up") ;
+					gtk_adjustment_set_value(Event_Viewer_Data->VAdjust_C, value-1);
+					gtk_tree_path_free(path);
+					path = gtk_tree_path_new_from_indices(0, -1);
+					gtk_tree_view_set_cursor(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), path, NULL, FALSE);
+					g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
+				}
+		
+			}
+		}
+
+	}
+
+	if(arg1 == GTK_MOVEMENT_PAGES)
+	{
+		/* Move one page */
+		if(arg2 == 1)
+		{
+			if(Event_Viewer_Data->Num_Visible_Events == 1)
+				value += 1 ;
+			/* move one page down */
+			if(value + Event_Viewer_Data->Num_Visible_Events-1 <= Number_Of_Events )
+			{
+				g_critical("need 1 page down") ;
+
+				gtk_adjustment_set_value(Event_Viewer_Data->VAdjust_C,
+																value+(Event_Viewer_Data->Num_Visible_Events-1));
+				gtk_tree_path_free(path);
+				path = gtk_tree_path_new_from_indices(0, -1);
+				gtk_tree_view_set_cursor(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), path, NULL, FALSE);
+				g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
+			}
+		} else {
+			/* Move one page up */
+			if(Event_Viewer_Data->Num_Visible_Events == 1)
+					value -= 1 ;
+
+			if(indices[0] < Event_Viewer_Data->Num_Visible_Events - 2 )
+			{
+				if(value - (Event_Viewer_Data->Num_Visible_Events-1) >= 0)
+				{
+					g_critical("need 1 page up") ;
+					
+
+					gtk_adjustment_set_value(Event_Viewer_Data->VAdjust_C,
+																	value-(Event_Viewer_Data->Num_Visible_Events-1));
+					gtk_tree_path_free(path);
+					path = gtk_tree_path_new_from_indices(0, -1);
+					gtk_tree_view_set_cursor(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), path, NULL, FALSE);
+					g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
+
+				}
+			}
+		}
+
+	}
+
+	if(arg1 == GTK_MOVEMENT_BUFFER_ENDS)
+	{
+		/* Move to the ends of the buffer */
+		if(arg2 == 1)
+		{
+			/* move end of buffer */
+			g_critical("End of buffer") ;
+			gtk_adjustment_set_value(Event_Viewer_Data->VAdjust_C, Number_Of_Events-Event_Viewer_Data->Num_Visible_Events);
+			gtk_tree_path_free(path);
+			path = gtk_tree_path_new_from_indices(Event_Viewer_Data->Num_Visible_Events-1, -1);
+			gtk_tree_view_set_cursor(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), path, NULL, FALSE);
+			g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
+		} else {
+			/* Move beginning of buffer */
+			g_critical("Beginning of buffer") ;
+			gtk_adjustment_set_value(Event_Viewer_Data->VAdjust_C, 0);
+			gtk_tree_path_free(path);
+			path = gtk_tree_path_new_from_indices(0, -1);
+			gtk_tree_view_set_cursor(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), path, NULL, FALSE);
+			g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
+		}
+
+	}
+
+
+
+	gtk_tree_path_free(path);
+
+}
+
+void Tree_V_cursor_changed_cb (GtkWidget *widget, gpointer data)
+{
+	g_critical("DEBUG : cursor change");
+
+}
+
+
 void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
 {
-	g_critical("DEBUG : scroll signal");
-
+	EventViewerData *Event_Viewer_Data = (EventViewerData*)data;
+	g_critical("DEBUG : scroll signal, value : %f", adjustment->value);
+	
+	get_test_data((int)adjustment->value, Event_Viewer_Data->Num_Visible_Events, 
+									 Event_Viewer_Data);
+	
 }
 
 gint get_cell_height(GtkTreeView *TreeView)
@@ -316,8 +475,8 @@ gint get_cell_height(GtkTreeView *TreeView)
 	GList *Render_List = gtk_tree_view_column_get_cell_renderers(Column);
 	GtkCellRenderer *Renderer = g_list_first(Render_List)->data;
 	
-	gtk_cell_renderer_get_size(Renderer, GTK_WIDGET(TreeView),
-														NULL, NULL, NULL, &width, &height);
+	gtk_tree_view_column_cell_get_size(Column, NULL, NULL, NULL, NULL, &height);
+	g_critical("cell 0 height : %u",height);
 	
 	return height;
 }
@@ -326,18 +485,32 @@ void Tree_V_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer 
 {
 	EventViewerData *Event_Viewer_Data = (EventViewerData*)data;
 	gint Cell_Height = get_cell_height(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V));
-
+	gint Last_Num_Visible_Events = Event_Viewer_Data->Num_Visible_Events;
+	gdouble Exact_Num_Visible;
+	
 	g_critical("size-allocate");
 
-	Event_Viewer_Data->Visible_Events = ( alloc->height -
+	Exact_Num_Visible = ( alloc->height -
 			TREE_VIEW_HEADER_HEIGHT (GTK_TREE_VIEW(Event_Viewer_Data->Tree_V)) )
-				/ Cell_Height ;
-	g_critical("number of events shown : %u",Event_Viewer_Data->Visible_Events);
+				/ (double)Cell_Height ;
+
+	Event_Viewer_Data->Num_Visible_Events = ceil(Exact_Num_Visible) ;
+
+	g_critical("number of events shown : %u",Event_Viewer_Data->Num_Visible_Events);
+	g_critical("ex number of events shown : %f",Exact_Num_Visible);
 
 	Event_Viewer_Data->VAdjust_C->page_increment = 
-				 Event_Viewer_Data->Visible_Events;
+				 floor(Exact_Num_Visible);
 	Event_Viewer_Data->VAdjust_C->page_size =
-				 Event_Viewer_Data->Visible_Events;
+				 floor(Exact_Num_Visible);
+
+	if(Event_Viewer_Data->Num_Visible_Events != Last_Num_Visible_Events)
+	{
+		get_test_data((int)Event_Viewer_Data->VAdjust_C->value,
+										 Event_Viewer_Data->Num_Visible_Events, 
+										 Event_Viewer_Data);
+	}
+
 
 }
 
@@ -355,6 +528,99 @@ void Tree_V_size_request_cb (GtkWidget *widget, GtkRequisition *requisition, gpo
 	
 }
 
+void get_test_data(guint Event_Number, guint List_Height, 
+									 EventViewerData *Event_Viewer_Data)
+{
+	GtkTreeIter iter;
+	int i;
+	GtkTreeModel *model = GTK_TREE_MODEL(Event_Viewer_Data->Store_M);
+	GtkTreePath *Tree_Path;
+	gchar *test_string;
+
+//	if(Event_Number > Event_Viewer_Data->Last_Event ||
+//		 Event_Number + List_Height-1 < Event_Viewer_Data->First_Event ||
+//		 Event_Viewer_Data->First_Event == -1)
+	{
+		/* no event can be reused, clear and start from nothing */
+		gtk_list_store_clear(Event_Viewer_Data->Store_M);
+		for(i=Event_Number; i<Event_Number+List_Height; i++)
+		{
+			if(i>=Number_Of_Events) break;
+		  /* Add a new row to the model */
+			gtk_list_store_append (Event_Viewer_Data->Store_M, &iter);
+			gtk_list_store_set (Event_Viewer_Data->Store_M, &iter,
+													CPUID_COLUMN, 0,
+				  								EVENT_COLUMN, "event irq",
+												  TIME_COLUMN, i,
+												  PID_COLUMN, 100,
+												  ENTRY_LEN_COLUMN, 17,
+												  EVENT_DESCR_COLUMN, "Detailed information",
+													-1);
+		}
+	}
+#ifdef DEBUG //do not use this, it's slower and broken
+//	} else {
+		/* Some events will be reused */
+		if(Event_Number < Event_Viewer_Data->First_Event)
+		{
+			/* scrolling up, prepend events */
+			Tree_Path = gtk_tree_path_new_from_indices
+										(Event_Number+List_Height-1 -
+										 Event_Viewer_Data->First_Event + 1,
+										 -1);
+			for(i=0; i<Event_Viewer_Data->Last_Event-(Event_Number+List_Height-1);
+																				i++)
+			{
+				/* Remove the last events from the list */
+				if(gtk_tree_model_get_iter(model, &iter, Tree_Path))
+					gtk_list_store_remove(Event_Viewer_Data->Store_M, &iter);
+			}
+
+			for(i=Event_Viewer_Data->First_Event-1; i>=Event_Number; i--)
+			{
+				if(i>=Number_Of_Events) break;
+				/* Prepend new events */
+				gtk_list_store_prepend (Event_Viewer_Data->Store_M, &iter);
+				gtk_list_store_set (Event_Viewer_Data->Store_M, &iter,
+														CPUID_COLUMN, 0,
+					  								EVENT_COLUMN, "event irq",
+													  TIME_COLUMN, i,
+													  PID_COLUMN, 100,
+													  ENTRY_LEN_COLUMN, 17,
+													  EVENT_DESCR_COLUMN, "Detailed information",
+														-1);
+			}
+		} else {
+			/* Scrolling down, append events */
+			for(i=Event_Viewer_Data->First_Event; i<Event_Number; i++)
+			{
+				/* Remove these events from the list */
+				gtk_tree_model_get_iter_first(model, &iter);
+				gtk_list_store_remove(Event_Viewer_Data->Store_M, &iter);
+			}
+			for(i=Event_Viewer_Data->Last_Event+1; i<Event_Number+List_Height; i++)
+			{
+				if(i>=Number_Of_Events) break;
+				/* Append new events */
+				gtk_list_store_append (Event_Viewer_Data->Store_M, &iter);
+				gtk_list_store_set (Event_Viewer_Data->Store_M, &iter,
+														CPUID_COLUMN, 0,
+					  								EVENT_COLUMN, "event irq",
+													  TIME_COLUMN, i,
+													  PID_COLUMN, 100,
+													  ENTRY_LEN_COLUMN, 17,
+													  EVENT_DESCR_COLUMN, "Detailed information",
+														-1);
+			}
+
+		}
+	}
+#endif //DEBUG
+	Event_Viewer_Data->First_Event = Event_Number ;
+	Event_Viewer_Data->Last_Event = Event_Number+List_Height-1 ;
+	
+}
+	
 
 void add_test_data(EventViewerData *Event_Viewer_Data)
 {
@@ -402,8 +668,9 @@ GuiEvents_Destructor(EventViewerData *Event_Viewer_Data)
 static void
 tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
 {
+				EventViewerData *Event_Viewer_Data = (EventViewerData*)data;
         GtkTreeIter iter;
-        GtkTreeModel *model;
+				GtkTreeModel *model = GTK_TREE_MODEL(Event_Viewer_Data->Store_M);
         gchar *Event;
 
         if (gtk_tree_selection_get_selected (selection, &model, &iter))
