@@ -394,6 +394,11 @@ void lttv_filter_append_expression(LttvFilter* filter, char *expression) {
   
 }
 
+/**
+ *  Clear the filter expression from the 
+ *  current filter and sets its pointer to NULL
+ *  @param filter pointer to the current LttvFilter
+ */
 void lttv_filter_clear_expression(LttvFilter* filter) {
   
   if(filter->expression != NULL) {
@@ -750,8 +755,34 @@ gboolean lttv_apply_op_ge_double(gpointer v1, char* v2) {
 LttvFilterTree*
 lttv_filter_tree_clone(LttvFilterTree* tree) {
 
-  
+  LttvFilterTree* newtree = lttv_filter_tree_new();  
 
+  newtree->node = tree->node;
+ 
+  newtree->left = tree->left;
+  if(newtree->left == LTTV_TREE_NODE) {
+    newtree->l_child.t = lttv_filter_tree_clone(tree->l_child.t);
+  } else if(newtree->left == LTTV_TREE_LEAF) {
+    newtree->l_child.leaf = lttv_simple_expression_new();
+    newtree->l_child.leaf->field = tree->l_child.leaf->field;
+    newtree->l_child.leaf->offset = tree->l_child.leaf->offset;
+    newtree->l_child.leaf->op = tree->l_child.leaf->op;
+    newtree->l_child.leaf->value = g_strconcat(tree->l_child.leaf->value);
+  }
+ 
+  newtree->right = tree->right;
+  if(newtree->right == LTTV_TREE_NODE) {
+    newtree->r_child.t = lttv_filter_tree_clone(tree->r_child.t);
+  } else if(newtree->right == LTTV_TREE_LEAF) {
+    newtree->r_child.leaf = lttv_simple_expression_new();
+    newtree->r_child.leaf->field = tree->r_child.leaf->field;
+    newtree->r_child.leaf->offset = tree->r_child.leaf->offset;
+    newtree->r_child.leaf->op = tree->r_child.leaf->op;
+    newtree->r_child.leaf->value = g_strconcat(tree->r_child.leaf->value);
+  }
+  
+  return newtree;
+  
 }
 
 /**
@@ -790,6 +821,12 @@ lttv_filter_new() {
     
 }
 
+/**
+ *  Updates the current LttvFilter by building 
+ *  its tree based upon the expression string
+ *  @param filter pointer to the current LttvFilter
+ *  @return Failure/Success of operation
+ */
 gboolean
 lttv_filter_update(LttvFilter* filter) {
     
@@ -1089,6 +1126,10 @@ lttv_filter_update(LttvFilter* filter) {
   
 }
 
+/**
+ *  Destroy the current LttvFilter
+ *  @param filter pointer to the current LttvFilter
+ */
 void
 lttv_filter_destroy(LttvFilter* filter) {
   
