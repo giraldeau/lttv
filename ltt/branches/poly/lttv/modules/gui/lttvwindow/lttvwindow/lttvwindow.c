@@ -41,18 +41,19 @@
 #include <lttvwindow/callbacks.h> // for execute_events_requests
 #include <lttvwindow/support.h>
 
-
 /**
  * Internal function parts
  */
 
 extern GSList * g_main_window_list;
 
-void set_time_window_adjustment(Tab *tab, const TimeWindow* new_time_window)
-{
-  gtk_multi_vpaned_set_adjust(tab->multi_vpaned, new_time_window, FALSE);
-}
-
+/* set_time_window 
+ *
+ * It updates the time window of the tab, then calls the updatetimewindow
+ * hooks of each viewer.
+ *
+ * This is called whenever the scrollbar value changes.
+ */
 
 void set_time_window(Tab *tab, const TimeWindow *time_window)
 {
@@ -69,9 +70,9 @@ void set_time_window(Tab *tab, const TimeWindow *time_window)
   g_assert(lttv_iattribute_find_by_path(tab->attributes,
            "hooks/updatetimewindow", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
-  if(tmp == NULL) return;
-  lttv_hooks_call(tmp, &time_window_notify_data);
+  if(tmp != NULL) lttv_hooks_call(tmp, &time_window_notify_data);
 
+  //gtk_multi_vpaned_set_adjust(tab->multi_vpaned, new_time_window, FALSE);
 
 }
 
@@ -669,19 +670,6 @@ void lttvwindow_unregister_dividor(Tab *tab,
 
 
 /**
- * Update the status bar whenever something changed in the viewer.
- * @param tab viewer's tab 
- * @param info the message which will be shown in the status bar.
- */
-
-void lttvwindow_report_status(Tab *tab, const char *info)
-{ 
-  //FIXME
-  g_warning("update_status not implemented in viewer.c");
-  // Use tab->mw for status
-}
-
-/**
  * Function to set the time interval of the current tab.
  * It will be called by a viewer's signal handle associated with 
  * the move_slider signal
@@ -692,8 +680,45 @@ void lttvwindow_report_status(Tab *tab, const char *info)
 void lttvwindow_report_time_window(Tab *tab,
                                    const TimeWindow *time_window)
 {
-  set_time_window(tab, time_window);
-  set_time_window_adjustment(tab, time_window);
+  //set_time_window(tab, time_window);
+  //set_time_window_adjustment(tab, time_window);
+
+  /* Set scrollbar */
+  LttvTracesetContext *tsc =
+        LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
+      
+  g_object_set(G_OBJECT(adjustment),
+               "lower",
+               ltt_time_to_double(time_span.start_time) 
+                 * NANOSECONDS_PER_SECOND, /* lower */
+               "upper",
+               ltt_time_to_double(time_span.end_time) 
+                 * NANOSECONDS_PER_SECOND, /* upper */
+               "step_increment",
+               ltt_time_to_double(time_window->time_width)
+                             / SCROLL_STEP_PER_PAGE
+                             * NANOSECONDS_PER_SECOND, /* step increment */
+               "page_increment",
+               ltt_time_to_double(time_window->time_width) 
+                 * NANOSECONDS_PER_SECOND, /* page increment */
+               "page_size",
+               ltt_time_to_double(time_window->time_width) 
+                 * NANOSECONDS_PER_SECOND, /* page size */
+               NULL);
+  gtk_adjustment_changed(adjustment);
+
+  //g_object_set(G_OBJECT(adjustment),
+  //             "value",
+  //             ltt_time_to_double(time_window->start_time) 
+  //               * NANOSECONDS_PER_SECOND, /* value */
+  //               NULL);
+  /* Note : the set value will call set_time_window if scrollbar value changed
+   */
+  gtk_adjustment_set_value(adjustment,
+                                   ltt_time_to_double(time_window->start_time)
+                                   * NANOSECONDS_PER_SECOND);
 }
 
 
@@ -749,8 +774,9 @@ void lttvwindow_report_dividor(Tab *tab, gint position)
 
 void lttvwindow_report_focus(Tab *tab, GtkWidget *top_widget)
 {
-  gtk_multi_vpaned_set_focus((GtkWidget*)tab->multi_vpaned,
-                             GTK_PANED(gtk_widget_get_parent(top_widget)));
+  //FIXME
+  //gtk_multi_vpaned_set_focus(tab->multivpaned,
+  //                           GTK_PANED(gtk_widget_get_parent(top_widget)));
 }
 
 
@@ -821,8 +847,12 @@ void lttvwindow_events_request_remove_all(Tab       *tab,
     }
     g_free(events_request);
     tab->events_requests = g_slist_remove_link(tab->events_requests, element);
-
   }
+  if(g_slist_length(tab->events_requests) == 0) {
+    tab->events_request_pending = FALSE;
+    g_idle_remove_by_data(tab);
+  }
+
 }
 
 

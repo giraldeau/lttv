@@ -138,6 +138,15 @@ on_trace_facility_activate              (GtkMenuItem     *menuitem,
 				       gpointer         user_data);
 
 void
+on_load_library_activate                (GtkMenuItem     *menuitem,
+                                         gpointer         user_data);
+
+void
+on_unload_library_activate                (GtkMenuItem     *menuitem,
+                                         gpointer         user_data);
+
+
+void
 on_load_module_activate                (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
 
@@ -146,7 +155,10 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
 
 void
-on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
+on_add_library_search_path_activate     (GtkMenuItem     *menuitem,
+                                        gpointer         user_data);
+void
+on_remove_library_search_path_activate     (GtkMenuItem     *menuitem,
                                         gpointer         user_data);
 
 void

@@ -22,7 +22,6 @@ liblttvwindow_la_SOURCES = \
 	toolbar.c\
 	menu.c\
 	gtkdirsel.c\
-	gtkmultivpaned.c\
 	lttvwindow.c \
 	lttvwindowtraces.c \
 	init_module.c \
@@ -30,6 +29,7 @@ liblttvwindow_la_SOURCES = \
 	interface.c \
 	callbacks.c \
 	lttvfilter.c
+#	gtkmultivpaned.c\
 
 noinst_HEADERS = \
 	support.h \
@@ -39,13 +39,13 @@ noinst_HEADERS = \
 
 lttvwindowinclude_HEADERS = \
 	gtkdirsel.h\
-	gtkmultivpaned.h\
 	lttvwindow.h\
 	lttvwindowtraces.h\
 	lttvfilter.h\
 	mainwindow.h\
 	menu.h\
 	toolbar.h
+#	gtkmultivpaned.h\
 
 liblttvwindow_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
 

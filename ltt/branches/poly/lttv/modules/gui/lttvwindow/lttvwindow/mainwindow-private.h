@@ -27,8 +27,10 @@
 #include <lttv/tracecontext.h>
 #include <lttv/hook.h>
 #include <lttv/stats.h>
-#include <lttvwindow/gtkmultivpaned.h>
+//#include <lttvwindow/gtkmultivpaned.h>
 #include <lttvwindow/mainwindow.h>
+
+#define SCROLL_STEP_PER_PAGE 10.0
 
 struct _TracesetInfo {
   //FIXME? TracesetContext and stats in same or different variable ?
@@ -65,8 +67,12 @@ struct _MainWindow{
 
 
 struct _Tab{
-  GtkWidget * label;
-  GtkMultiVPaned * multi_vpaned;
+  GtkWidget *label;
+  
+  GtkWidget *vbox; /* contains viewer_container and scrollbar */
+  //GtkWidget *multivpaned;
+  GtkWidget *viewer_container;
+  GtkWidget *scrollbar;
    
   // startTime is the left of the visible area. Corresponds to the scrollbar
   // value.

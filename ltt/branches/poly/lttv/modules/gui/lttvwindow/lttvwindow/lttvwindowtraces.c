@@ -213,6 +213,9 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace)
     
     g_assert(trace_v != NULL);
 
+    /* Remove and background computation that could be in progress */
+    g_idle_remove_by_data(trace_v);
+    
     if(trace_v == trace) {
       /* Found */
       LttvAttribute *l_attribute;
@@ -302,6 +305,8 @@ void lttvwindowtraces_background_request_queue
                   (GSourceFunc)lttvwindowtraces_process_pending_requests,
                   trace,
                   NULL);
+  /* FIXME : show message in status bar, need context and message id */
+  g_info("Background computation started for trace %p", trace);
 }
 
 /**
@@ -387,7 +392,7 @@ void lttvwindowtraces_background_notify_queue
   bg_notify->trace = trace;
   bg_notify->notify_time = notify_time;
   if(notify_position != NULL) {
-    bg_notify->notify_position = ltt_traceset_context_position_new();
+    bg_notify->notify_position = lttv_traceset_context_position_new();
     lttv_traceset_context_position_copy(bg_notify->notify_position,
                                         notify_position);
   } else {
@@ -435,7 +440,7 @@ void lttvwindowtraces_background_notify_current
   bg_notify->trace = trace;
   bg_notify->notify_time = notify_time;
   if(notify_position!= NULL) {
-    bg_notify->notify_position = ltt_traceset_context_position_new();
+    bg_notify->notify_position = lttv_traceset_context_position_new();
     lttv_traceset_context_position_copy(bg_notify->notify_position,
                                         notify_position);
   } else {
@@ -445,6 +450,18 @@ void lttvwindowtraces_background_notify_current
   lttv_hooks_add_list(bg_notify->notify, notify);
 
   *slist = g_slist_append(*slist, bg_notify);
+}
+
+
+static void notify_request_free(BackgroundNotify *notify_req)
+{
+  if(notify_req == NULL) return;
+
+  if(notify_req->notify_position != NULL)
+    lttv_traceset_context_position_destroy(notify_req->notify_position);
+  if(notify_req->notify != NULL)
+    lttv_hooks_destroy(notify_req->notify);
+  g_free(notify_req);
 }
 
 /**
@@ -466,7 +483,7 @@ void lttvwindowtraces_background_notify_remove(gpointer owner)
     
     g_assert(trace_v != NULL);
 
-    LttvAttribute *t_a = lttv_trace_attribute(trace_v);
+    attribute = lttv_trace_attribute(trace_v);
 
     g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
                                   LTTV_NOTIFY_QUEUE,
@@ -481,12 +498,8 @@ void lttvwindowtraces_background_notify_remove(gpointer owner)
       if(bg_notify->owner == owner) {
         GSList *rem_iter = iter;
         iter=g_slist_next(iter);
-        if(bg_notify->notify_position != NULL)
-          lttv_traceset_context_position_destroy(
-                        bg_notify->notify_position);
-        lttv_hooks_destroy(bg_notify->notify);
-        g_free(bg_notify); 
-        g_slist_remove_link(*slist, rem_iter);
+        notify_request_free(bg_notify);
+        *slist = g_slist_remove_link(*slist, rem_iter);
       } else {
         iter=g_slist_next(iter);
       }
@@ -505,12 +518,8 @@ void lttvwindowtraces_background_notify_remove(gpointer owner)
       if(bg_notify->owner == owner) {
         GSList *rem_iter = iter;
         iter=g_slist_next(iter);
-        if(bg_notify->notify_position != NULL)
-          lttv_traceset_context_position_destroy(
-                        bg_notify->notify_position);
-        lttv_hooks_destroy(bg_notify->notify);
-        g_free(bg_notify); 
-        g_slist_remove_link(*slist, rem_iter);
+        notify_request_free(bg_notify);
+        *slist = g_slist_remove_link(*slist, rem_iter);
       } else {
         iter=g_slist_next(iter);
       }
@@ -777,7 +786,6 @@ gboolean lttvwindowtraces_get_ready(LttvAttributeName module_name,
 }
 
 
-
 /* lttvwindowtraces_process_pending_requests
  * 
  * This internal function gets called by g_idle, taking care of the pending
@@ -795,6 +803,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   GSList **list_out, **list_in, **notify_in, **notify_out;
   LttvAttributeValue value;
   LttvAttributeType type;
+  gboolean ret_val;
 
   if(trace == NULL)
     return FALSE;
@@ -843,7 +852,22 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   /* There is no events requests pending : we should never have been called! */
   g_assert(g_slist_length(*list_out) != 0 || g_slist_length(*list_in) != 0);
 
+  /* 0.1 Lock traces */
+  {
+    guint iter_trace=0;
+    
+    for(iter_trace=0; 
+        iter_trace<lttv_traceset_number(tsc->ts);
+        iter_trace++) {
+      LttvTrace *trace_v = lttv_traceset_get(tsc->ts,iter_trace);
 
+      if(lttvwindowtraces_lock(trace_v) != 0)
+        return TRUE; /* Cannot get trace lock, try later */
+
+    }
+  }
+  /* 0.2 Sync tracefiles */
+  lttv_process_traceset_synchronize_tracefiles(tsc);
 
   /* 1. Before processing */
   {
@@ -919,7 +943,8 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
             GSList *remove_iter = iter;
 
             iter = g_slist_next(iter);
-            if(free_data) g_free(remove_iter->data);
+            if(free_data) 
+                 notify_request_free((BackgroundNotify*)remove_iter->data);
             *notify_out = g_slist_remove_link(*notify_out, remove_iter);
           } else { // not remove
             iter = g_slist_next(iter);
@@ -1005,7 +1030,8 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
           GSList *remove_iter = iter;
 
           iter = g_slist_next(iter);
-          if(free_data) g_free(remove_iter->data);
+          if(free_data) 
+               notify_request_free((BackgroundNotify*)remove_iter->data);
           *notify_in = g_slist_remove_link(*notify_in, remove_iter);
         } else { // not remove
           iter = g_slist_next(iter);
@@ -1077,7 +1103,8 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
               GSList *remove_iter = iter;
 
               iter = g_slist_next(iter);
-              if(free_data) g_free(remove_iter->data);
+              if(free_data) 
+                    notify_request_free((BackgroundNotify*)remove_iter->data);
               *notify_in = g_slist_remove_link(*notify_in, remove_iter);
             } else { // not remove
               iter = g_slist_next(iter);
@@ -1087,15 +1114,31 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
         
         /* - return FALSE (scheduler stopped) */
         g_debug("Background computation scheduler stopped");
-        return FALSE;
+        g_info("Background computation finished for trace %p", trace);
+        /* FIXME : remove status bar info, need context id and message id */
+        ret_val = FALSE;
       } else {
         /* 3.4 else, end of trace not reached */
         /* - return TRUE (scheduler still registered) */
         g_debug("Background computation left");
-        return TRUE;
+        ret_val = TRUE;
       }
     }
   }
+  /* 4. Unlock traces */
+  {
+    //lttv_process_traceset_get_sync_data(tsc);
+    guint iter_trace;
+    
+    for(iter_trace=0; 
+        iter_trace<lttv_traceset_number(tsc->ts);
+        iter_trace++) {
+      LttvTrace *trace_v = lttv_traceset_get(tsc->ts, iter_trace);
+
+      lttvwindowtraces_unlock(trace_v);
+    }
+  }
+  return ret_val;
 }
 
 
@@ -1357,4 +1400,82 @@ void lttvwindowtraces_unregister_computation_hooks
 
 }
 
+/**
+ * Lock a trace so no other instance can use it.
+ *
+ * @param trace The trace to lock.
+ * @return 0 on success, -1 if cannot get lock.
+ */
+gint lttvwindowtraces_lock(LttvTrace *trace)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+  LttvAttributeValue value;
+  LttvAttributeType type;
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_LOCK,
+                                     &value);
+  /* Verify the absence of the lock. */
+  if(type != LTTV_NONE) {
+    g_critical("Cannot take trace lock");
+    return -1;
+  }
+
+  value = lttv_iattribute_add(LTTV_IATTRIBUTE(attribute),
+                              LTTV_LOCK,
+                              LTTV_INT);
+  /* the value is left unset. The only presence of the attribute is necessary.
+   */
+
+  return 0;
+}
+
+/**
+ * Unlock a trace.
+ *
+ * @param trace The trace to unlock.
+ * @return 0 on success, -1 if cannot unlock (not locked ?).
+ */
+gint lttvwindowtraces_unlock(LttvTrace *trace)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+  LttvAttributeType type;
+  LttvAttributeValue value;
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_LOCK,
+                                     &value);
+  /* Verify the presence of the lock. */
+  if(type == LTTV_NONE) {
+    g_critical("Cannot release trace lock");
+    return -1;
+  }
+
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                         LTTV_LOCK);
+
+  return 0;
+}
+
+/**
+ * Verify if a trace is locked.
+ *
+ * @param trace The trace to verify.
+ * @return TRUE if locked, FALSE is unlocked.
+ */
+gint lttvwindowtraces_get_lock_state(LttvTrace *trace)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+  LttvAttributeType type;
+  LttvAttributeValue value;
+
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_LOCK,
+                                     &value);
+  /* The only presence of the attribute is necessary. */
+  if(type == LTTV_NONE)
+    return FALSE;
+  else
+    return TRUE;
+}
 

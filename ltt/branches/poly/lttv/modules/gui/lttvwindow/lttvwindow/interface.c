@@ -95,9 +95,12 @@ create_MWindow (void)
   //  GtkWidget *insert_viewer_test;
   GtkWidget *PluginMenuTitle;
   GtkWidget *PluginMenuTitle_menu;
+  GtkWidget *LoadLibrary;
+  GtkWidget *UnloadLibrary;
   GtkWidget *LoadModule;
   GtkWidget *UnloadModule;
-  GtkWidget *AddModuleSearchPath;
+  GtkWidget *AddLibrarySearchPath;
+  GtkWidget *RemoveLibrarySearchPath;
   //  GtkWidget *OptionMenuTitle;
   //  GtkWidget *OptionMenuTitle_menu;
   //  GtkWidget *Color;
@@ -333,6 +336,14 @@ create_MWindow (void)
   PluginMenuTitle_menu = gtk_menu_new ();
   gtk_menu_item_set_submenu (GTK_MENU_ITEM (PluginMenuTitle), PluginMenuTitle_menu);
 
+  LoadLibrary = gtk_menu_item_new_with_mnemonic ("Load library");
+  gtk_widget_show (LoadLibrary);
+  gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), LoadLibrary);
+  
+  UnloadLibrary = gtk_menu_item_new_with_mnemonic ("Unload library");
+  gtk_widget_show (UnloadLibrary);
+  gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), UnloadLibrary);
+
   LoadModule = gtk_menu_item_new_with_mnemonic ("Load module");
   gtk_widget_show (LoadModule);
   gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), LoadModule);
@@ -341,9 +352,13 @@ create_MWindow (void)
   gtk_widget_show (UnloadModule);
   gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), UnloadModule);
 
-  AddModuleSearchPath = gtk_menu_item_new_with_mnemonic ("Add module search path");
-  gtk_widget_show (AddModuleSearchPath);
-  gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), AddModuleSearchPath);
+  AddLibrarySearchPath = gtk_menu_item_new_with_mnemonic ("Add library search path");
+  gtk_widget_show (AddLibrarySearchPath);
+  gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), AddLibrarySearchPath);
+  
+  RemoveLibrarySearchPath = gtk_menu_item_new_with_mnemonic ("Remove library search path");
+  gtk_widget_show (RemoveLibrarySearchPath);
+  gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), RemoveLibrarySearchPath);
 /*
   OptionMenuTitle = gtk_menu_item_new_with_mnemonic ("Options");
   gtk_widget_show (OptionMenuTitle);
@@ -716,23 +731,32 @@ create_MWindow (void)
   g_signal_connect ((gpointer) RemoveViewer, "activate",
                     G_CALLBACK (on_remove_viewer_activate),
                     NULL);
-  g_signal_connect ((gpointer) Filter, "activate",
-                    G_CALLBACK (on_trace_filter_activate),
-                    NULL);
+  //g_signal_connect ((gpointer) Filter, "activate",
+  //                  G_CALLBACK (on_trace_filter_activate),
+  //                  NULL);
   //  g_signal_connect ((gpointer) Facility, "activate",
   //                    G_CALLBACK (on_trace_facility_activate),
   //                    NULL);
   //  g_signal_connect ((gpointer) insert_viewer_test, "activate",
   //                    G_CALLBACK (on_insert_viewer_test_activate),
   //                    NULL);
+  g_signal_connect ((gpointer) LoadLibrary, "activate",
+                    G_CALLBACK (on_load_library_activate),
+                    NULL);
+  g_signal_connect ((gpointer) UnloadLibrary, "activate",
+                    G_CALLBACK (on_unload_library_activate),
+                    NULL);
   g_signal_connect ((gpointer) LoadModule, "activate",
                     G_CALLBACK (on_load_module_activate),
                     NULL);
   g_signal_connect ((gpointer) UnloadModule, "activate",
                     G_CALLBACK (on_unload_module_activate),
                     NULL);
-  g_signal_connect ((gpointer) AddModuleSearchPath, "activate",
-                    G_CALLBACK (on_add_module_search_path_activate),
+  g_signal_connect ((gpointer) AddLibrarySearchPath, "activate",
+                    G_CALLBACK (on_add_library_search_path_activate),
+                    NULL);
+  g_signal_connect ((gpointer) RemoveLibrarySearchPath, "activate",
+                    G_CALLBACK (on_remove_library_search_path_activate),
                     NULL);
 /*
   g_signal_connect ((gpointer) Color, "activate",
@@ -864,9 +888,12 @@ create_MWindow (void)
   //  GLADE_HOOKUP_OBJECT (MWindow, insert_viewer_test, "insert_viewer_test");
   GLADE_HOOKUP_OBJECT (MWindow, PluginMenuTitle, "PluginMenuTitle");
   GLADE_HOOKUP_OBJECT (MWindow, PluginMenuTitle_menu, "PluginMenuTitle_menu");
+  GLADE_HOOKUP_OBJECT (MWindow, LoadLibrary, "LoadLibrary");
+  GLADE_HOOKUP_OBJECT (MWindow, UnloadLibrary, "UnloadLibrary");
   GLADE_HOOKUP_OBJECT (MWindow, LoadModule, "LoadModule");
   GLADE_HOOKUP_OBJECT (MWindow, UnloadModule, "UnloadModule");
-  GLADE_HOOKUP_OBJECT (MWindow, AddModuleSearchPath, "AddModuleSearchPath");
+  GLADE_HOOKUP_OBJECT (MWindow, AddLibrarySearchPath, "AddLibrarySearchPath");
+  GLADE_HOOKUP_OBJECT (MWindow, RemoveLibrarySearchPath, "RemoveLibrarySearchPath");
   //  GLADE_HOOKUP_OBJECT (MWindow, OptionMenuTitle, "OptionMenuTitle");
   //  GLADE_HOOKUP_OBJECT (MWindow, OptionMenuTitle_menu, "OptionMenuTitle_menu");
   //  GLADE_HOOKUP_OBJECT (MWindow, Color, "Color");

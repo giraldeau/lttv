@@ -563,17 +563,6 @@ void lttvwindow_unregister_dividor(Tab *tab,
 
 
 /**
- * This method reports the information to show on the status bar in the
- * main window.
- * 
- * @param tab the tab the viewer belongs to.
- * @param info the message which will be shown in the status bar.
- */
-
-void lttvwindow_report_status(Tab *tab, const char *info);
-
-
-/**
  * Function to set the time interval of the current tab.a
  *
  * @param tab the tab the viewer belongs to.

@@ -69,7 +69,8 @@ LttvTraceInfo LTTV_TRACES,
        LTTV_HOOK_ADDER,
        LTTV_HOOK_REMOVER,
        LTTV_IN_PROGRESS,
-       LTTV_READY;
+       LTTV_READY,
+       LTTV_LOCK;
 
 
 /** Array containing instanced objects. */
@@ -164,6 +165,7 @@ static void init() {
   LTTV_HOOK_REMOVER = g_quark_from_string("hook_remover");
   LTTV_IN_PROGRESS = g_quark_from_string("in_progress");
   LTTV_READY = g_quark_from_string("ready");
+  LTTV_LOCK = g_quark_from_string("lock");
 
   g_debug("GUI init()");
 

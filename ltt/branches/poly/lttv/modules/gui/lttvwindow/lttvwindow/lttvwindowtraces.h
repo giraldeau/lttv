@@ -47,7 +47,8 @@ extern LttvTraceInfo LTTV_TRACES,
               LTTV_HOOK_ADDER,
               LTTV_HOOK_REMOVER,
               LTTV_IN_PROGRESS,
-              LTTV_READY;
+              LTTV_READY,
+              LTTV_LOCK;
               
 
 
@@ -229,6 +230,32 @@ void lttvwindowtraces_unregister_computation_hooks
  *                    information.
  */
 void lttvwindowtraces_unregister_requests(LttvAttributeName module_name);
+
+
+/**
+ * Lock a trace so no other instance can use it.
+ *
+ * @param trace The trace to lock.
+ * @return 0 on success, -1 if cannot get lock.
+ */
+gint lttvwindowtraces_lock(LttvTrace *trace);
+
+
+/**
+ * Unlock a trace.
+ *
+ * @param trace The trace to unlock.
+ * @return 0 on success, -1 if cannot unlock (not locked ?).
+ */
+gint lttvwindowtraces_unlock(LttvTrace *trace);
+
+/**
+ * Verify if a trace is locked.
+ *
+ * @param trace The trace to verify.
+ * @return TRUE if locked, FALSE is unlocked.
+ */
+gint lttvwindowtraces_get_lock_state(LttvTrace *trace);
 
 
 #endif //LTTVWINDOWTRACES_H

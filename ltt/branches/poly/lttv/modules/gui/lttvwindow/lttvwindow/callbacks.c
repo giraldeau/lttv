@@ -1,5 +1,5 @@
 /* This file is part of the Linux Trace Toolkit viewer
- * Copyright (C) 2003-2004 XangXiu Yang
+ * Copyright (C) 2003-2004 XangXiu Yang, Mathieu Desnoyers
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -60,6 +60,7 @@ static char remember_trace_dir[PATH_MAX] = "";
 
 
 MainWindow * get_window_data_struct(GtkWidget * widget);
+char * get_load_module(char ** load_module_name, int nb_module);
 char * get_unload_module(char ** loaded_module_name, int nb_module);
 char * get_remove_trace(char ** all_trace_name, int nb_trace);
 char * get_selection(char ** all_name, int nb, char *title, char * column_title);
@@ -74,8 +75,8 @@ void checkbox_changed(GtkTreeView *treeview,
 		      GtkTreePath *arg1,
 		      GtkTreeViewColumn *arg2,
 		      gpointer user_data);
-void remove_trace_from_traceset_selector(GtkMultiVPaned * paned, unsigned i);
-void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * trace);
+void remove_trace_from_traceset_selector(GtkWidget * paned, unsigned i);
+void add_trace_into_traceset_selector(GtkWidget * paned, LttTrace * trace);
 Tab *create_new_tab(GtkWidget* widget, gpointer user_data);
 
 LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset);
@@ -149,6 +150,16 @@ LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset)
 }
 
 
+static gboolean viewer_grab_focus(GtkWidget *widget, GdkEventButton *event,
+                                  gpointer data)
+{
+  GtkWidget *viewer_container = GTK_WIDGET(data);
+
+  g_debug("FOCUS GRABBED");
+  g_object_set_data(G_OBJECT(viewer_container), "focused_viewer", widget);
+}
+
+
 /* insert_viewer function constructs an instance of a viewer first,
  * then inserts the widget of the instance into the container of the
  * main window
@@ -167,7 +178,7 @@ insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data)
 /* internal functions */
 void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
 {
-  GtkMultiVPaned * multi_vpaned;
+  GtkWidget * viewer_container;
   MainWindow * mw_data = get_window_data_struct(widget);
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
   GtkWidget * viewer;
@@ -183,15 +194,27 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
     tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
   }
 
-  multi_vpaned = tab->multi_vpaned;
+  viewer_container = tab->viewer_container;
 
   s = construct_traceset_selector(tab->traceset_info->traceset);
   viewer = (GtkWidget*)constructor(tab, s, "Traceset_Selector");
   if(viewer)
   {
-    gtk_multi_vpaned_widget_add(multi_vpaned, viewer); 
-    // We unref here, because it is now referenced by the multi_vpaned!
-    g_object_unref(G_OBJECT(viewer));
+    //gtk_multivpaned_widget_add(GTK_MULTIVPANED(multivpaned), viewer); 
+    
+    gtk_box_pack_end(GTK_BOX(viewer_container),
+                     viewer,
+                     TRUE,
+                     TRUE,
+                     0);
+
+    g_signal_connect (G_OBJECT(viewer),
+                      "button-press-event",
+                      G_CALLBACK (viewer_grab_focus),
+                      (gpointer)viewer_container);
+    
+    // We unref here, because it is now referenced by the viewer_container!
+    // not for a box ... g_object_unref(G_OBJECT(viewer));
 
     // The viewer will show itself when it receives a show notify
     // So we call the show notify hooks here. It will
@@ -217,16 +240,51 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
 {
   LttvHooks * tmp;
   LttvAttributeValue value;
+  gint retval = 0;
 
+ 
   g_assert( lttv_iattribute_find_by_path(tab->attributes,
      "hooks/updatetraceset", LTTV_POINTER, &value));
 
   tmp = (LttvHooks*)*(value.v_pointer);
-  if(tmp == NULL) return 1;
+  if(tmp == NULL) retval = 1;
+  else lttv_hooks_call(tmp,traceset);
+
+ 
+  /* Set scrollbar */
+  LttvTracesetContext *tsc =
+        LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
+      
+  g_object_set(G_OBJECT(adjustment),
+               "lower",
+               ltt_time_to_double(time_span.start_time) 
+                 * NANOSECONDS_PER_SECOND, /* lower */
+               "upper",
+               ltt_time_to_double(time_span.end_time) 
+                 * NANOSECONDS_PER_SECOND, /* upper */
+               "step_increment",
+               ltt_time_to_double(tab->time_window.time_width)
+                             / SCROLL_STEP_PER_PAGE
+                             * NANOSECONDS_PER_SECOND, /* step increment */
+               "page_increment",
+               ltt_time_to_double(tab->time_window.time_width) 
+                 * NANOSECONDS_PER_SECOND, /* page increment */
+               "page_size",
+               ltt_time_to_double(tab->time_window.time_width) 
+                 * NANOSECONDS_PER_SECOND, /* page size */
+               NULL);
+  gtk_adjustment_changed(adjustment);
+
+  g_object_set(G_OBJECT(adjustment),
+               "value",
+               ltt_time_to_double(tab->time_window.start_time) 
+                 * NANOSECONDS_PER_SECOND, /* value */
+               NULL);
+  gtk_adjustment_value_changed(adjustment);
   
-  lttv_hooks_call(tmp,traceset);
-  
-  return 0;
+  return retval;
 }
 
 /**
@@ -363,29 +421,40 @@ void create_new_window(GtkWidget* widget, gpointer user_data, gboolean clone)
   }
 }
 
+GtkWidget *viewer_container_focus(GtkWidget *container)
+{
+  GtkWidget *widget;
+
+  widget = (GtkWidget*)g_object_get_data(G_OBJECT(container),
+                    "focused_viewer");
+
+  if(widget == NULL) g_debug("no widget focused");
+  return widget;
+
+
+}
+
+gint viewer_container_position(GtkWidget *container, GtkWidget *child)
+{
+
+  if(child == NULL) return -1;
+
+  gint pos;
+  GValue value = { 0, };
+  g_value_init(&value, G_TYPE_INT);
+  gtk_container_child_get_property(GTK_CONTAINER(container),
+                                   child,
+                                   "position",
+                                   &value);
+  pos = g_value_get_int(&value);
+
+  return pos;
+}
+
 
 /* move_*_viewer functions move the selected view up/down in 
  * the current tab
  */
-
-void move_up_viewer(GtkWidget * widget, gpointer user_data)
-{
-  MainWindow * mw = get_window_data_struct(widget);
-  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
-
-  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
-                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
-
-  Tab *tab;
-
-  if(!page) {
-    return;
-  } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
-  }
-
-  gtk_multi_vpaned_widget_move_up(tab->multi_vpaned);
-}
 
 void move_down_viewer(GtkWidget * widget, gpointer user_data)
 {
@@ -394,6 +463,38 @@ void move_down_viewer(GtkWidget * widget, gpointer user_data)
 
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
                       gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+
+  Tab *tab;
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
+  //gtk_multivpaned_widget_move_up(GTK_MULTIVPANED(tab->multivpaned));
+
+  /* change the position in the vbox */
+  GtkWidget *focus_widget;
+  gint position;
+  focus_widget = viewer_container_focus(tab->viewer_container);
+  position = viewer_container_position(tab->viewer_container, focus_widget);
+
+  if(position > 0) {
+    /* can move up one position */
+    gtk_box_reorder_child(GTK_BOX(tab->viewer_container),
+                          focus_widget,
+                          position-1);
+  }
+  
+}
+
+void move_up_viewer(GtkWidget * widget, gpointer user_data)
+{
+  MainWindow * mw = get_window_data_struct(widget);
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
   Tab *tab;
 
   if(!page) {
@@ -402,7 +503,24 @@ void move_down_viewer(GtkWidget * widget, gpointer user_data)
     tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
   }
 
-  gtk_multi_vpaned_widget_move_down(tab->multi_vpaned);
+  //gtk_multivpaned_widget_move_down(GTK_MULTIVPANED(tab->multivpaned));
+  /* change the position in the vbox */
+  GtkWidget *focus_widget;
+  gint position;
+  focus_widget = viewer_container_focus(tab->viewer_container);
+  position = viewer_container_position(tab->viewer_container, focus_widget);
+
+  if(position != -1 &&
+  position <
+       g_list_length(gtk_container_get_children(
+                        GTK_CONTAINER(tab->viewer_container)))-1
+      ) {
+    /* can move down one position */
+    gtk_box_reorder_child(GTK_BOX(tab->viewer_container),
+                          focus_widget,
+                          position+1);
+  }
+ 
 }
 
 
@@ -424,7 +542,14 @@ void delete_viewer(GtkWidget * widget, gpointer user_data)
     tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
   }
 
-  gtk_multi_vpaned_widget_delete(tab->multi_vpaned);
+  //gtk_multivpaned_widget_delete(GTK_MULTIVPANED(tab->multivpaned));
+
+  GtkWidget *focus_widget = viewer_container_focus(tab->viewer_container);
+  
+  if(focus_widget != NULL)
+    gtk_widget_destroy(focus_widget);
+
+  g_object_set_data(G_OBJECT(tab->viewer_container), "focused_viewer", NULL);
 }
 
 
@@ -461,6 +586,39 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
   }
 
 }
+
+static void events_request_free(EventsRequest *events_request)
+{
+  if(events_request == NULL) return;
+
+  if(events_request->start_position != NULL)
+       lttv_traceset_context_position_destroy(events_request->start_position);
+  if(events_request->end_position != NULL)
+       lttv_traceset_context_position_destroy(events_request->end_position);
+  if(events_request->before_chunk_traceset != NULL)
+       lttv_hooks_destroy(events_request->before_chunk_traceset);
+  if(events_request->before_chunk_trace != NULL)
+       lttv_hooks_destroy(events_request->before_chunk_trace);
+  if(events_request->before_chunk_tracefile != NULL)
+       lttv_hooks_destroy(events_request->before_chunk_tracefile);
+  if(events_request->event != NULL)
+       lttv_hooks_destroy(events_request->event);
+  if(events_request->event_by_id != NULL)
+       lttv_hooks_by_id_destroy(events_request->event_by_id);
+  if(events_request->after_chunk_tracefile != NULL)
+       lttv_hooks_destroy(events_request->after_chunk_tracefile);
+  if(events_request->after_chunk_trace != NULL)
+       lttv_hooks_destroy(events_request->after_chunk_trace);
+  if(events_request->after_chunk_traceset != NULL)
+       lttv_hooks_destroy(events_request->after_chunk_traceset);
+  if(events_request->before_request != NULL)
+       lttv_hooks_destroy(events_request->before_request);
+  if(events_request->after_request != NULL)
+       lttv_hooks_destroy(events_request->after_request);
+
+  g_free(events_request);
+}
+
 
 
 /* lttvwindow_process_pending_requests
@@ -502,8 +660,10 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
   guint count;
   LttvTracesetContextPosition *end_position;
   
-  if(tab == NULL)
+  if(tab == NULL) {
+    g_critical("Foreground processing : tab does not exist. Processing removed.");
     return FALSE;
+  }
 
   /* There is no events requests pending : we should never have been called! */
   g_assert(g_slist_length(list_out) != 0);
@@ -551,13 +711,33 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
         GSList *remove_iter = iter;
 
         iter = g_slist_next(iter);
-        if(free_data) g_free(remove_iter->data);
+        if(free_data) events_request_free((EventsRequest*)remove_iter->data);
         list_out = g_slist_remove_link(list_out, remove_iter);
       } else { // not remove
         iter = g_slist_next(iter);
       }
     }
   }
+  
+  /* 0.1 Lock Traces */
+  {
+    guint iter_trace=0;
+    
+    for(iter_trace=0; 
+        iter_trace<lttv_traceset_number(tsc->ts);
+        iter_trace++) {
+      LttvTrace *trace_v = lttv_traceset_get(tsc->ts, iter_trace);
+
+      if(lttvwindowtraces_lock(trace_v) != 0) {
+        g_critical("Foreground processing : Unable to get trace lock");
+        return TRUE; /* Cannot get lock, try later */
+      }
+    }
+  }
+
+  /* 0.2 Seek tracefiles positions to context position */
+  lttv_process_traceset_synchronize_tracefiles(tsc);
+
   
   /* Events processing algorithm implementation */
   /* A. Servicing loop */
@@ -705,18 +885,22 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
           /* If first req in list_in pos != current pos */
           g_assert(events_request->start_position != NULL);
           g_debug("SEEK POS time : %lu, %lu", 
-     lttv_traceset_context_position_get_time(events_request->start_position).tv_sec,
-     lttv_traceset_context_position_get_time(events_request->start_position).tv_nsec);
+                 lttv_traceset_context_position_get_time(
+                      events_request->start_position).tv_sec,
+                 lttv_traceset_context_position_get_time(
+                      events_request->start_position).tv_nsec);
 
           g_debug("SEEK POS context time : %lu, %lu", 
-        lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_sec,
-        lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_nsec);
+               lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_sec,
+               lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_nsec);
+          g_assert(events_request->start_position != NULL);
           if(lttv_traceset_context_ctx_pos_compare(tsc,
                      events_request->start_position) != 0) {
             /* 1.2.2.1 Seek to that position */
             g_debug("SEEK POSITION");
             //lttv_process_traceset_seek_position(tsc, events_request->start_position);
-            pos_time = lttv_traceset_context_position_get_time(events_request->start_position);
+            pos_time = lttv_traceset_context_position_get_time(
+                                     events_request->start_position);
             
             lttv_state_traceset_seek_time_closest(LTTV_TRACESET_STATE(tsc),
                                                   pos_time);
@@ -727,6 +911,8 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                             ltt_time_infinite,
                                             G_MAXUINT,
                                             events_request->start_position);
+            g_assert(lttv_traceset_context_ctx_pos_compare(tsc,
+                         events_request->start_position) == 0);
 
 
           }
@@ -832,7 +1018,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
             GSList *remove_iter = iter;
 
             iter = g_slist_next(iter);
-            if(free_data) g_free(remove_iter->data);
+            if(free_data) events_request_free((EventsRequest*)remove_iter->data);
             list_out = g_slist_remove_link(list_out, remove_iter);
           } else { // not remove
             iter = g_slist_next(iter);
@@ -923,11 +1109,11 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 
     {
       /* 4. Call process traceset middle */
-      g_critical("Calling process traceset middle with %p, %lu sec %lu nsec, %lu nb ev, %p end pos", tsc, end_time.tv_sec, end_time.tv_nsec, end_nb_events, end_position);
+      g_debug("Calling process traceset middle with %p, %lu sec %lu nsec, %lu nb ev, %p end pos", tsc, end_time.tv_sec, end_time.tv_nsec, end_nb_events, end_position);
       count = lttv_process_traceset_middle(tsc, end_time, end_nb_events, end_position);
 
       tfc = lttv_traceset_context_get_current_tfc(tsc);
-      g_critical("Context time after middle : %lu, %lu", tfc->timestamp.tv_sec,
+      g_debug("Context time after middle : %lu, %lu", tfc->timestamp.tv_sec,
                                                         tfc->timestamp.tv_nsec);
 
     }
@@ -969,7 +1155,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
             GSList *remove_iter = iter;
 
             iter = g_slist_next(iter);
-            if(free_data) g_free(remove_iter->data);
+            if(free_data) events_request_free((EventsRequest*)remove_iter->data);
             list_in = g_slist_remove_link(list_in, remove_iter);
           } else { // not remove
             iter = g_slist_next(iter);
@@ -1018,7 +1204,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                   (events_request->end_position != NULL 
                  &&
                   lttv_traceset_context_ctx_pos_compare(tsc,
-                            events_request->end_position) != 0)
+                            events_request->end_position) == 0)
 
               ) {
             g_assert(events_request->servicing == TRUE);
@@ -1037,7 +1223,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
             GSList *remove_iter = iter;
 
             iter = g_slist_next(iter);
-            if(free_data) g_free(remove_iter->data);
+            if(free_data) events_request_free((EventsRequest*)remove_iter->data);
             list_in = g_slist_remove_link(list_in, remove_iter);
           } else { // not remove
             iter = g_slist_next(iter);
@@ -1064,7 +1250,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       /* 1.1. Use current postition as start position */
       if(events_request->start_position != NULL)
         lttv_traceset_context_position_destroy(events_request->start_position);
-      events_request->start_position = ltt_traceset_context_position_new();
+      events_request->start_position = lttv_traceset_context_position_new();
       lttv_traceset_context_position_save(tsc, events_request->start_position);
 
       /* 1.2. Remove start time */
@@ -1082,7 +1268,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
         GSList *remove_iter = iter;
 
         iter = g_slist_next(iter);
-        if(free_data) g_free(remove_iter->data);
+        if(free_data) events_request_free((EventsRequest*)remove_iter->data);
         list_in = g_slist_remove_link(list_in, remove_iter);
       } else { // not remove
         iter = g_slist_next(iter);
@@ -1090,6 +1276,21 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
     }
 
 
+  }
+  
+  /* C Unlock Traces */
+  {
+    //lttv_process_traceset_get_sync_data(tsc);
+    
+    guint iter_trace;
+    
+    for(iter_trace=0; 
+        iter_trace<lttv_traceset_number(tsc->ts);
+        iter_trace++) {
+      LttvTrace *trace_v = lttv_traceset_get(tsc->ts, iter_trace);
+
+      lttvwindowtraces_unlock(trace_v);
+    }
   }
 
 #if 0
@@ -1102,11 +1303,22 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
   if( g_slist_length(list_out) == 0 ) {
     /* Put tab's request pending flag back to normal */
     tab->events_request_pending = FALSE;
-    g_critical("remove the idle fct");
+    g_debug("remove the idle fct");
     return FALSE; /* Remove the idle function */
   }
-  g_critical("leave the idle fct");
+  g_debug("leave the idle fct");
   return TRUE; /* Leave the idle function */
+
+  /* We do not use simili-round-robin, it may require to read 1 meg buffers
+   * again and again if many tracesets use the same tracefiles. */
+  /* Hack for round-robin idle functions */
+  /* It will put the idle function at the end of the pool */
+  /*g_idle_add_full((G_PRIORITY_HIGH_IDLE + 21),
+                  (GSourceFunc)execute_events_requests,
+                  tab,
+                  NULL);
+  return FALSE;
+  */
 }
 
 #undef list_out
@@ -1116,8 +1328,8 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
  * selector (filter), when a trace is added into traceset, the selector should 
  * reflect the change. The function is used to update the selector 
  */
-
-void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * t)
+#if 0
+void add_trace_into_traceset_selector(GtkWidget * paned, LttTrace * t)
 {
   int j, k, m, nb_tracefile, nb_control, nb_per_cpu, nb_facility, nb_event;
   LttvTracesetSelector  * s;
@@ -1129,7 +1341,7 @@ void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * t)
   LttFacility           * fac;
   LttEventType          * et;
 
-  w = gtk_multi_vpaned_get_first_widget(paned);  
+  w = gtk_multivpaned_get_first_widget(GTK_MULTIVPANED(paned));
   while(w){
     s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
     
@@ -1163,10 +1375,10 @@ void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * t)
       }
     }else g_warning("Module does not support filtering\n");
 
-    w = gtk_multi_vpaned_get_next_widget(paned);  
+    w = gtk_multivpaned_get_next_widget(GTK_MULTIVPANED(paned));
   }
 }
-
+#endif //0
 
 static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
 {
@@ -1207,14 +1419,21 @@ static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
                                       traceset_context),
             traceset); 
 
-  /* Set the tab's time window and current time if currently 0, 0 */
-  if(tab->time_window.start_time.tv_sec == 0 &&
-                      tab->time_window.start_time.tv_nsec == 0)
+  /* Set the tab's time window and current time if
+   * out of bounds */
+  TimeInterval time_span = 
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->time_span;
+  if(ltt_time_compare(tab->time_window.start_time, time_span.start_time) < 0
+     || ltt_time_compare(  ltt_time_add(tab->time_window.start_time,
+                                        tab->time_window.time_width),
+                           time_span.end_time) > 0) {
     tab->time_window.start_time = 
         LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
                                time_span.start_time;
-  if(tab->time_window.time_width.tv_sec == 0 &&
-                      tab->time_window.time_width.tv_nsec == 0) {
+    tab->current_time = 
+       LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                             time_span.start_time;
+    
     LttTime tmp_time;
 
     if(DEFAULT_TIME_WIDTH_S <
@@ -1227,17 +1446,9 @@ static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
                            time_span.end_time.tv_sec;
     tmp_time.tv_nsec = 0;
     tab->time_window.time_width = tmp_time ;
+    
   }
-  if(tab->current_time.tv_sec == 0 &&  tab->current_time.tv_nsec == 0) {
-    tab->current_time.tv_sec = 
-       LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
-                             time_span.start_time.tv_sec;
-    tab->current_time.tv_nsec = 
-       LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
-                             time_span.start_time.tv_nsec;
-  }
-
-
+ 
   //add state update hooks
   lttv_state_add_event_hooks(
   (LttvTracesetState*)tab->traceset_info->traceset_context);
@@ -1248,7 +1459,8 @@ static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
     lttv_trace_unref(trace);
   }
 
-  add_trace_into_traceset_selector(tab->multi_vpaned, lttv_trace(trace_v));
+  //FIXME
+  //add_trace_into_traceset_selector(GTK_MULTIVPANED(tab->multivpaned), lttv_trace(trace_v));
 }
 
 /* add_trace adds a trace into the current traceset. It first displays a 
@@ -1335,14 +1547,14 @@ void add_trace(GtkWidget * widget, gpointer user_data)
  * selector (filter), when a trace is remove from traceset, the selector should 
  * reflect the change. The function is used to update the selector 
  */
-
-void remove_trace_from_traceset_selector(GtkMultiVPaned * paned, unsigned i)
+#if 0
+void remove_trace_from_traceset_selector(GtkWidget * paned, unsigned i)
 {
   LttvTracesetSelector * s;
   LttvTraceSelector * t;
   GtkWidget * w; 
   
-  w = gtk_multi_vpaned_get_first_widget(paned);  
+  w = gtk_multivpaned_get_first_widget(GTK_MULTIVPANED(paned));
   while(w){
     s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
     if(s){
@@ -1350,10 +1562,10 @@ void remove_trace_from_traceset_selector(GtkMultiVPaned * paned, unsigned i)
       lttv_traceset_selector_trace_remove(s, i);
       lttv_trace_selector_destroy(t);
     }g_warning("Module dose not support filtering\n");
-    w = gtk_multi_vpaned_get_next_widget(paned);  
+    w = gtk_multivpaned_get_next_widget(GTK_MULTIVPANED(paned));
   }
 }
-
+#endif //0
 
 /* remove_trace removes a trace from the current traceset if all viewers in 
  * the current tab are not interested in the trace. It first displays a 
@@ -1364,6 +1576,97 @@ void remove_trace_from_traceset_selector(GtkMultiVPaned * paned, unsigned i)
  * current traceset, it will delete all viewers of the current tab
  */
 
+// MD : no filter version.
+void remove_trace(GtkWidget *widget, gpointer user_data)
+{
+  LttTrace *trace;
+  LttvTrace * trace_v;
+  LttvTraceset * traceset;
+  gint i, j, nb_trace, index=-1;
+  char ** name, *remove_trace_name;
+  MainWindow * mw_data = get_window_data_struct(widget);
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
+  nb_trace =lttv_traceset_number(tab->traceset_info->traceset); 
+  name = g_new(char*,nb_trace);
+  for(i = 0; i < nb_trace; i++){
+    trace_v = lttv_traceset_get(tab->traceset_info->traceset, i);
+    trace = lttv_trace(trace_v);
+    name[i] = ltt_trace_name(trace);
+  }
+
+  remove_trace_name = get_remove_trace(name, nb_trace);
+
+
+  if(remove_trace_name){
+
+    /* yuk, cut n paste from old code.. should be better (MD)*/
+    for(i = 0; i<nb_trace; i++) {
+      if(strcmp(remove_trace_name,name[i]) == 0){
+        index = i;
+      }
+    }
+    
+    traceset = tab->traceset_info->traceset;
+    //Keep a reference to the traces so they are not freed.
+    for(j=0; j<lttv_traceset_number(traceset); j++)
+    {
+      LttvTrace * trace = lttv_traceset_get(traceset, j);
+      lttv_trace_ref(trace);
+    }
+
+    //remove state update hooks
+    lttv_state_remove_event_hooks(
+         (LttvTracesetState*)tab->traceset_info->traceset_context);
+    lttv_context_fini(LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context));
+    g_object_unref(tab->traceset_info->traceset_context);
+
+    trace_v = lttv_traceset_get(traceset, index);
+
+    if(lttv_trace_get_ref_number(trace_v) <= 2) {
+      /* ref 2 : traceset, local */
+      lttvwindowtraces_remove_trace(trace_v);
+      ltt_trace_close(lttv_trace(trace_v));
+    }
+    
+    lttv_traceset_remove(traceset, index);
+    lttv_trace_unref(trace_v);  // Remove local reference
+
+    if(!lttv_trace_get_ref_number(trace_v))
+       lttv_trace_destroy(trace_v);
+    
+    tab->traceset_info->traceset_context =
+      g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+    lttv_context_init(
+          LTTV_TRACESET_CONTEXT(tab->
+              traceset_info->traceset_context),traceset);      
+      //add state update hooks
+    lttv_state_add_event_hooks(
+      (LttvTracesetState*)tab->traceset_info->traceset_context);
+
+    //Remove local reference to the traces.
+    for(j=0; j<lttv_traceset_number(traceset); j++)
+    {
+      LttvTrace * trace = lttv_traceset_get(traceset, j);
+      lttv_trace_unref(trace);
+    }
+
+    SetTraceset(tab, (gpointer)traceset);
+  }
+  g_free(name);
+}
+
+#if 0
 void remove_trace(GtkWidget * widget, gpointer user_data)
 {
   LttTrace *trace;
@@ -1402,7 +1705,8 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
     for(i=0; i<nb_trace; i++){
       if(strcmp(remove_trace_name,name[i]) == 0){
 	      //unselect the trace from the current viewer
-      	w = gtk_multi_vpaned_get_widget(tab->multi_vpaned);  
+        //FIXME
+      	w = gtk_multivpaned_get_widget(GTK_MULTIVPANED(tab->multivpaned));
       	if(w){
       	  s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
       	  if(s){
@@ -1411,7 +1715,7 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
       	  }
 
           //check if other viewers select the trace
-          w = gtk_multi_vpaned_get_first_widget(tab->multi_vpaned);  
+          w = gtk_multivpaned_get_first_widget(GTK_MULTIVPANED(tab->multivpaned));
           while(w){
             s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
             if(s){
@@ -1419,13 +1723,13 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
               selected = lttv_trace_selector_get_selected(t);
               if(selected)break;
             }
-            w = gtk_multi_vpaned_get_next_widget(tab->multi_vpaned);  
+            w = gtk_multivpaned_get_next_widget(GTK_MULTIVPANED(tab->multivpaned));
           }
         }else selected = FALSE;
 
         //if no viewer selects the trace, remove it
         if(!selected){
-          remove_trace_from_traceset_selector(tab->multi_vpaned, i);
+          remove_trace_from_traceset_selector(GTK_MULTIVPANED(tab->multivpaned), i);
 
           traceset = tab->traceset_info->traceset;
          //Keep a reference to the traces so they are not freed.
@@ -1496,7 +1800,7 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 
   g_free(name);
 }
-
+#endif //0
 
 /* Redraw all the viewers in the current tab */
 void redraw(GtkWidget *widget, gpointer user_data)
@@ -1599,7 +1903,7 @@ void save_as(GtkWidget * widget, gpointer user_data)
 
 void zoom(GtkWidget * widget, double size)
 {
-  TimeInterval *time_span;
+  TimeInterval time_span;
   TimeWindow new_time_window;
   LttTime    current_time, time_delta, time_s, time_e, time_tmp;
   MainWindow * mw_data = get_window_data_struct(widget);
@@ -1619,19 +1923,19 @@ void zoom(GtkWidget * widget, double size)
   if(size == 1) return;
 
   tsc = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
-  time_span = &tsc->time_span;
+  time_span = tsc->time_span;
   new_time_window =  tab->time_window;
   current_time = tab->current_time;
   
-  time_delta = ltt_time_sub(time_span->end_time,time_span->start_time);
+  time_delta = ltt_time_sub(time_span.end_time,time_span.start_time);
   if(size == 0){
-    new_time_window.start_time = time_span->start_time;
+    new_time_window.start_time = time_span.start_time;
     new_time_window.time_width = time_delta;
   }else{
     new_time_window.time_width = ltt_time_div(new_time_window.time_width, size);
     if(ltt_time_compare(new_time_window.time_width,time_delta) > 0)
     { /* Case where zoom out is bigger than trace length */
-      new_time_window.start_time = time_span->start_time;
+      new_time_window.start_time = time_span.start_time;
       new_time_window.time_width = time_delta;
     }
     else
@@ -1640,24 +1944,22 @@ void zoom(GtkWidget * widget, double size)
       new_time_window.start_time = 
         ltt_time_sub(current_time, ltt_time_div(new_time_window.time_width, 2.0));
       /* If on borders, don't fall off */
-      if(ltt_time_compare(new_time_window.start_time, time_span->start_time) <0)
+      if(ltt_time_compare(new_time_window.start_time, time_span.start_time) <0)
       {
-        new_time_window.start_time = time_span->start_time;
+        new_time_window.start_time = time_span.start_time;
       }
       else 
       {
         if(ltt_time_compare(
            ltt_time_add(new_time_window.start_time, new_time_window.time_width),
-           time_span->end_time) > 0)
+           time_span.end_time) > 0)
         {
           new_time_window.start_time = 
-                  ltt_time_sub(time_span->end_time, new_time_window.time_width);
+                  ltt_time_sub(time_span.end_time, new_time_window.time_width);
         }
       }
       
     }
-
-    
 
     //time_tmp = ltt_time_div(new_time_window.time_width, 2);
     //if(ltt_time_compare(current_time, time_tmp) < 0){
@@ -1679,9 +1981,78 @@ void zoom(GtkWidget * widget, double size)
   //call_pending_read_hooks(mw_data);
 
   //lttvwindow_report_current_time(mw_data,&(tab->current_time));
-  set_time_window(tab, &new_time_window);
+  //set_time_window(tab, &new_time_window);
   // in expose now call_pending_read_hooks(mw_data);
-  gtk_multi_vpaned_set_adjust(tab->multi_vpaned, &new_time_window, FALSE);
+  //gtk_multi_vpaned_set_adjust(tab->multi_vpaned, &new_time_window, FALSE);
+  //
+  //
+
+ if(   ltt_time_to_double(new_time_window.time_width)
+                             * NANOSECONDS_PER_SECOND
+                             / SCROLL_STEP_PER_PAGE/* step increment */
+       +
+       ltt_time_to_double(new_time_window.start_time)
+                             * NANOSECONDS_PER_SECOND /* page size */
+                    == 
+       ltt_time_to_double(new_time_window.start_time)
+                             * NANOSECONDS_PER_SECOND /* page size */
+       ) {
+    g_warning("Can not zoom that far due to scrollbar precision");
+ } else if(
+     ltt_time_compare(
+       ltt_time_from_double( 
+            ltt_time_to_double(new_time_window.time_width)
+                                 /SCROLL_STEP_PER_PAGE ),
+       ltt_time_zero)
+     == 0 ) {
+    g_warning("Can not zoom that far due to time nanosecond precision");
+ } else {
+    /* Set scrollbar */
+    GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
+        
+    g_object_set(G_OBJECT(adjustment),
+                 //"value",
+                 //ltt_time_to_double(new_time_window.start_time) 
+                 //  * NANOSECONDS_PER_SECOND, /* value */
+                 "lower",
+                 ltt_time_to_double(time_span.start_time) 
+                   * NANOSECONDS_PER_SECOND, /* lower */
+                 "upper",
+                 ltt_time_to_double(time_span.end_time) 
+                   * NANOSECONDS_PER_SECOND, /* upper */
+                 "step_increment",
+                 ltt_time_to_double(new_time_window.time_width)
+                               / SCROLL_STEP_PER_PAGE
+                               * NANOSECONDS_PER_SECOND, /* step increment */
+                 "page_increment",
+                 ltt_time_to_double(new_time_window.time_width) 
+                   * NANOSECONDS_PER_SECOND, /* page increment */
+                 "page_size",
+                 ltt_time_to_double(new_time_window.time_width) 
+                   * NANOSECONDS_PER_SECOND, /* page size */
+                 NULL);
+    gtk_adjustment_changed(adjustment);
+    //gtk_range_set_adjustment(GTK_RANGE(tab->scrollbar), adjustment);
+    //gtk_adjustment_value_changed(adjustment);
+    g_object_set(G_OBJECT(adjustment),
+                 "value",
+                 ltt_time_to_double(new_time_window.start_time) 
+                   * NANOSECONDS_PER_SECOND, /* value */
+                 NULL);
+    gtk_adjustment_value_changed(adjustment);
+   
+
+    //g_object_set(G_OBJECT(adjustment),
+    //             "value",
+    //             ltt_time_to_double(time_window->start_time) 
+    //               * NANOSECONDS_PER_SECOND, /* value */
+    //               NULL);
+    /* Note : the set value will call set_time_window if scrollbar value changed
+     */
+    //gtk_adjustment_set_value(adjustment,
+    //                         ltt_time_to_double(new_time_window.start_time)
+    //                         * NANOSECONDS_PER_SECOND);
+  }
 }
 
 void zoom_in(GtkWidget * widget, gpointer user_data)
@@ -1955,6 +2326,7 @@ on_remove_viewer_activate              (GtkMenuItem     *menuitem,
   delete_viewer((GtkWidget*)menuitem, user_data);
 }
 
+#if 0
 void
 on_trace_filter_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -1974,7 +2346,7 @@ on_trace_filter_activate              (GtkMenuItem     *menuitem,
     tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
   }
 
-  w = gtk_multi_vpaned_get_widget(tab->multi_vpaned);
+  w = gtk_multivpaned_get_widget(GTK_MULTIVPANED(tab->multivpaned));
   
   s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
   if(!s){
@@ -1988,6 +2360,7 @@ on_trace_filter_activate              (GtkMenuItem     *menuitem,
     //lttvwindow_report_current_time(mw_data,&(tab->current_time));
   }
 }
+#endif //0
 
 void
 on_trace_facility_activate              (GtkMenuItem     *menuitem,
@@ -1997,48 +2370,304 @@ on_trace_facility_activate              (GtkMenuItem     *menuitem,
 }
 
 
+/* Dispaly a file selection dialogue to let user select a library, then call
+ * lttv_library_load().
+ */
+
+void
+on_load_library_activate                (GtkMenuItem     *menuitem,
+                                         gpointer         user_data)
+{
+  GError *error = NULL;
+  MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
+
+  gchar load_module_path_alter[PATH_MAX];
+  {
+    GPtrArray *name;
+    guint nb,i;
+    gchar *load_module_path;
+    name = g_ptr_array_new();
+    nb = lttv_library_path_number();
+    /* ask for the library path */
+
+    for(i=0;i<nb;i++){
+      gchar *path;
+      path = lttv_library_path_get(i);
+      g_ptr_array_add(name, path);
+    }
+
+    load_module_path = get_selection((char **)(name->pdata), name->len,
+                             "Select a library path", "Library paths");
+    if(load_module_path != NULL)
+      strncpy(load_module_path_alter, load_module_path, PATH_MAX-1); // -1 for /
+
+    g_ptr_array_free(name, TRUE);
+
+    if(load_module_path == NULL) return;
+  }
+
+  {
+    /* Make sure the module path ends with a / */
+    gchar *ptr = load_module_path_alter;
+
+    ptr = strchr(ptr, '\0');
+
+    if(*(ptr-1) != '/') {
+      *ptr = '/';
+      *(ptr+1) = '\0';
+    }
+  }
+
+  {
+    /* Ask for the library to load : list files in the previously selected
+     * directory */
+    gchar str[PATH_MAX];
+    gchar ** dir;
+    gint id;
+    GtkFileSelection * file_selector =
+      (GtkFileSelection *)gtk_file_selection_new("Select a module");
+    gtk_file_selection_set_filename(file_selector, load_module_path_alter);
+    gtk_file_selection_hide_fileop_buttons(file_selector);
+    
+    str[0] = '\0';
+    id = gtk_dialog_run(GTK_DIALOG(file_selector));
+    switch(id){
+      case GTK_RESPONSE_ACCEPT:
+      case GTK_RESPONSE_OK:
+        dir = gtk_file_selection_get_selections (file_selector);
+        strncpy(str,dir[0],PATH_MAX);
+        strncpy(remember_plugins_dir,dir[0],PATH_MAX);
+        /* only keep file name */
+        gchar *str1;
+        str1 = strrchr(str,'/');
+        if(str1)str1++;
+        else{
+          str1 = strrchr(str,'\\');
+          str1++;
+        }
+#if 0
+        /* remove "lib" */
+        if(*str1 == 'l' && *(str1+1)== 'i' && *(str1+2)=='b')
+          str1=str1+3;
+         remove info after . */
+        {
+          gchar *str2 = str1;
+
+          str2 = strrchr(str2, '.');
+          if(str2 != NULL) *str2 = '\0';
+        }
+        lttv_module_require(str1, &error);
+#endif //0   
+        lttv_library_load(str1, &error);
+        if(error != NULL) g_warning(error->message);
+        else g_printf("Load library: %s\n", str);
+        g_strfreev(dir);
+      case GTK_RESPONSE_REJECT:
+      case GTK_RESPONSE_CANCEL:
+      default:
+        gtk_widget_destroy((GtkWidget*)file_selector);
+        break;
+    }
+
+  }
+
+
+
+}
+
+
+/* Display all loaded modules, let user to select a module to unload
+ * by calling lttv_module_unload
+ */
+
+void
+on_unload_library_activate              (GtkMenuItem     *menuitem,
+                                        gpointer         user_data)
+{
+  MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
+
+  LttvLibrary *library;
+  {
+    GPtrArray *name;
+    guint nb,i;
+    gchar *lib_name;
+    name = g_ptr_array_new();
+    nb = lttv_library_number();
+    LttvLibraryInfo *lib_info = g_new(LttvLibraryInfo,nb);
+    /* ask for the library name */
+
+    for(i=0;i<nb;i++){
+      LttvLibrary *iter_lib = lttv_library_get(i);
+      lttv_library_info(iter_lib, &lib_info[i]);
+      
+      gchar *path = lib_info[i].name;
+      g_ptr_array_add(name, lib_info[i].name);
+    }
+    lib_name = get_selection((char **)(name->pdata), name->len,
+                             "Select a library", "Libraries");
+    if(lib_name != NULL) {
+      for(i=0;i<nb;i++){
+        if(strcmp(lib_name, lib_info[i].name) == 0) {
+          library = lttv_library_get(i);
+          break;
+        }
+      }
+    }
+    g_ptr_array_free(name, TRUE);
+    g_free(lib_info);
+
+    if(lib_name == NULL) return;
+  }
+  
+  lttv_library_unload(library);
+}
+
+
 /* Dispaly a file selection dialogue to let user select a module, then call
- * lttv_module_load(), finally insert tool button and menu entry in the main window
- * for the loaded  module
+ * lttv_module_require().
  */
 
 void
 on_load_module_activate                (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  char ** dir;
-  gint id;
-  char str[PATH_MAX], *str1;
+  GError *error = NULL;
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
-  GtkFileSelection * file_selector = (GtkFileSelection *)gtk_file_selection_new("Select a module");
-  if(remember_plugins_dir[0] != '\0')
-    gtk_file_selection_set_filename(file_selector, remember_plugins_dir);
-  gtk_file_selection_hide_fileop_buttons(file_selector);
-  
-  str[0] = '\0';
-  id = gtk_dialog_run(GTK_DIALOG(file_selector));
-  switch(id){
-    case GTK_RESPONSE_ACCEPT:
-    case GTK_RESPONSE_OK:
-      dir = gtk_file_selection_get_selections (file_selector);
-      strncpy(str,dir[0],PATH_MAX);
-      strncpy(remember_plugins_dir,dir[0],PATH_MAX);
-      str1 = strrchr(str,'/');
-      if(str1)str1++;
-      else{
-	str1 = strrchr(str,'\\');
-	str1++;
+
+  LttvLibrary *library;
+  {
+    GPtrArray *name;
+    guint nb,i;
+    gchar *lib_name;
+    name = g_ptr_array_new();
+    nb = lttv_library_number();
+    LttvLibraryInfo *lib_info = g_new(LttvLibraryInfo,nb);
+    /* ask for the library name */
+
+    for(i=0;i<nb;i++){
+      LttvLibrary *iter_lib = lttv_library_get(i);
+      lttv_library_info(iter_lib, &lib_info[i]);
+      
+      gchar *path = lib_info[i].name;
+      g_ptr_array_add(name, path);
+    }
+    lib_name = get_selection((char **)(name->pdata), name->len,
+                             "Select a library", "Libraries");
+    if(lib_name != NULL) {
+      for(i=0;i<nb;i++){
+        if(strcmp(lib_name, lib_info[i].name) == 0) {
+          library = lttv_library_get(i);
+          break;
+        }
       }
-      lttv_module_require(str1, NULL);
-      g_strfreev(dir);
-    case GTK_RESPONSE_REJECT:
-    case GTK_RESPONSE_CANCEL:
-    default:
-      gtk_widget_destroy((GtkWidget*)file_selector);
-      break;
+    }
+    g_ptr_array_free(name, TRUE);
+    g_free(lib_info);
+
+    if(lib_name == NULL) return;
   }
-  g_printf("Load module: %s\n", str);
+
+  //LttvModule *module;
+  gchar module_name_out[PATH_MAX];
+  {
+    /* Ask for the module to load : list modules in the selected lib */
+    GPtrArray *name;
+    guint nb,i;
+    gchar *module_name;
+    LttvModuleInfo *module_info = g_new(LttvModuleInfo,nb);
+    name = g_ptr_array_new();
+    nb = lttv_library_module_number(library);
+    /* ask for the module name */
+
+    for(i=0;i<nb;i++){
+      LttvModule *iter_module = lttv_library_module_get(library, i);
+      lttv_module_info(iter_module, &module_info[i]);
+
+      gchar *path = module_info[i].name;
+      g_ptr_array_add(name, path);
+    }
+    module_name = get_selection((char **)(name->pdata), name->len,
+                             "Select a module", "Modules");
+    if(module_name != NULL) {
+      for(i=0;i<nb;i++){
+        if(strcmp(module_name, module_info[i].name) == 0) {
+          strncpy(module_name_out, module_name, PATH_MAX);
+          //module = lttv_library_module_get(i);
+          break;
+        }
+      }
+    }
+
+    g_ptr_array_free(name, TRUE);
+    g_free(module_info);
+
+    if(module_name == NULL) return;
+  }
+  
+  lttv_module_require(module_name_out, &error);
+  if(error != NULL) g_warning(error->message);
+  else g_printf("Load module: %s\n", module_name_out);
+
+
+#if 0
+  {
+
+
+    gchar str[PATH_MAX];
+    gchar ** dir;
+    gint id;
+    GtkFileSelection * file_selector =
+      (GtkFileSelection *)gtk_file_selection_new("Select a module");
+    gtk_file_selection_set_filename(file_selector, load_module_path_alter);
+    gtk_file_selection_hide_fileop_buttons(file_selector);
+    
+    str[0] = '\0';
+    id = gtk_dialog_run(GTK_DIALOG(file_selector));
+    switch(id){
+      case GTK_RESPONSE_ACCEPT:
+      case GTK_RESPONSE_OK:
+        dir = gtk_file_selection_get_selections (file_selector);
+        strncpy(str,dir[0],PATH_MAX);
+        strncpy(remember_plugins_dir,dir[0],PATH_MAX);
+        {
+          /* only keep file name */
+          gchar *str1;
+          str1 = strrchr(str,'/');
+          if(str1)str1++;
+          else{
+            str1 = strrchr(str,'\\');
+            str1++;
+          }
+#if 0
+        /* remove "lib" */
+        if(*str1 == 'l' && *(str1+1)== 'i' && *(str1+2)=='b')
+          str1=str1+3;
+         remove info after . */
+        {
+          gchar *str2 = str1;
+
+          str2 = strrchr(str2, '.');
+          if(str2 != NULL) *str2 = '\0';
+        }
+        lttv_module_require(str1, &error);
+#endif //0   
+        lttv_library_load(str1, &error);
+        if(error != NULL) g_warning(error->message);
+        else g_printf("Load library: %s\n", str);
+        g_strfreev(dir);
+      case GTK_RESPONSE_REJECT:
+      case GTK_RESPONSE_CANCEL:
+      default:
+        gtk_widget_destroy((GtkWidget*)file_selector);
+        break;
+    }
+
+  }
+#endif //0
+
+
 }
+
 
 
 /* Display all loaded modules, let user to select a module to unload
@@ -2049,48 +2678,92 @@ void
 on_unload_module_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  int i;
-  GPtrArray *name;
-  char *unload_module_name;
-  guint nb;
-  LttvLibrary *library;
-  LttvLibraryInfo library_info;
+  GError *error = NULL;
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
-  
-  name  = g_ptr_array_new();
-  nb = lttv_library_number();
 
-  for(i=0;i<nb;i++){
-    library = lttv_library_get(i);
-    lttv_library_info(library, &library_info);
-    if(library_info.load_count > 0) g_ptr_array_add(name, library_info.name);
-  }
+  LttvLibrary *library;
+  {
+    GPtrArray *name;
+    guint nb,i;
+    gchar *lib_name;
+    name = g_ptr_array_new();
+    nb = lttv_library_number();
+    LttvLibraryInfo *lib_info = g_new(LttvLibraryInfo,nb);
+    /* ask for the library name */
 
-  unload_module_name =get_unload_module((char **)(name->pdata), name->len);
-  
-  if(unload_module_name){
     for(i=0;i<nb;i++){
-      library = lttv_library_get(i);
-      lttv_library_info(library, &library_info);
-      if(strcmp(unload_module_name, library_info.name) == 0){
-	      lttv_library_unload(library);
-	break;
+      LttvLibrary *iter_lib = lttv_library_get(i);
+      lttv_library_info(iter_lib, &lib_info[i]);
+      
+      gchar *path = lib_info[i].name;
+      g_ptr_array_add(name, path);
+    }
+    lib_name = get_selection((char **)(name->pdata), name->len,
+                             "Select a library", "Libraries");
+    if(lib_name != NULL) {
+      for(i=0;i<nb;i++){
+        if(strcmp(lib_name, lib_info[i].name) == 0) {
+          library = lttv_library_get(i);
+          break;
+        }
       }
-    }    
+    }
+    g_ptr_array_free(name, TRUE);
+    g_free(lib_info);
+
+    if(lib_name == NULL) return;
   }
 
-  g_ptr_array_free(name, TRUE);
+  LttvModule *module;
+  {
+    /* Ask for the module to load : list modules in the selected lib */
+    GPtrArray *name;
+    guint nb,i;
+    gchar *module_name;
+    LttvModuleInfo *module_info = g_new(LttvModuleInfo,nb);
+    name = g_ptr_array_new();
+    nb = lttv_library_module_number(library);
+    /* ask for the module name */
+
+    for(i=0;i<nb;i++){
+      LttvModule *iter_module = lttv_library_module_get(library, i);
+      lttv_module_info(iter_module, &module_info[i]);
+
+      gchar *path = module_info[i].name;
+      if(module_info[i].use_count > 0) g_ptr_array_add(name, path);
+    }
+    module_name = get_selection((char **)(name->pdata), name->len,
+                             "Select a module", "Modules");
+    if(module_name != NULL) {
+      for(i=0;i<nb;i++){
+        if(strcmp(module_name, module_info[i].name) == 0) {
+          module = lttv_library_module_get(library, i);
+          break;
+        }
+      }
+    }
+
+    g_ptr_array_free(name, TRUE);
+    g_free(module_info);
+
+    if(module_name == NULL) return;
+  }
+  
+  lttv_module_release(module);
+  LttvModuleInfo module_info;
+  lttv_module_info(module, &module_info);
+  g_printf("Release module: %s\n", module_info.name);
 }
 
 
-/* Display a directory dialogue to let user select a path for module searching
+/* Display a directory dialogue to let user select a path for library searching
  */
 
 void
-on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
+on_add_library_search_path_activate     (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select module path");
+  GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select library path");
   const char * dir;
   gint id;
 
@@ -2114,6 +2787,39 @@ on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
   }
 }
 
+
+/* Display a directory dialogue to let user select a path for library searching
+ */
+
+void
+on_remove_library_search_path_activate     (GtkMenuItem     *menuitem,
+                                            gpointer         user_data)
+{
+  MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
+
+  const char *lib_path;
+  {
+    GPtrArray *name;
+    guint nb,i;
+    gchar *lib_name;
+    name = g_ptr_array_new();
+    nb = lttv_library_path_number();
+    /* ask for the library name */
+
+    for(i=0;i<nb;i++){
+      gchar *path = lttv_library_path_get(i);
+      g_ptr_array_add(name, path);
+    }
+    lib_path = get_selection((char **)(name->pdata), name->len,
+                             "Select a library path", "Library paths");
+
+    g_ptr_array_free(name, TRUE);
+
+    if(lib_path == NULL) return;
+  }
+  
+  lttv_library_path_remove(lib_path);
+}
 
 void
 on_color_activate                      (GtkMenuItem     *menuitem,
@@ -2369,6 +3075,49 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
 }
 
 
+void scroll_value_changed_cb(GtkWidget *scrollbar,
+                             gpointer user_data)
+{
+  Tab *tab = (Tab *)user_data;
+  TimeWindow time_window;
+  TimeInterval *time_span;
+  LttTime time;
+  GtkAdjustment *adjust = gtk_range_get_adjustment(GTK_RANGE(scrollbar));
+  gdouble value = gtk_adjustment_get_value(adjust);
+  gdouble upper, lower, ratio, page_size;
+  LttvTracesetContext * tsc = 
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+
+  //time_window = tab->time_window;
+
+  time_span = &tsc->time_span ;
+  lower = adjust->lower;
+  upper = adjust->upper;
+  ratio = (value - lower) / (upper - lower);
+  g_critical("lower %lu, upper %lu, value %lu, ratio %lu", lower, upper, value, ratio);
+  
+  //time = ltt_time_sub(time_span->end_time, time_span->start_time);
+  //time = ltt_time_mul(time, (float)ratio);
+  //time = ltt_time_add(time_span->start_time, time);
+  time = ltt_time_from_double(value/NANOSECONDS_PER_SECOND);
+
+  time_window.start_time = time;
+  
+  page_size = adjust->page_size;
+
+  time_window.time_width = 
+    ltt_time_from_double(page_size/NANOSECONDS_PER_SECOND);
+  //time = ltt_time_sub(time_span->end_time, time);
+  //if(ltt_time_compare(time,time_window.time_width) < 0){
+  //  time_window.time_width = time;
+  //}
+
+  /* call viewer hooks for new time window */
+  set_time_window(tab, &time_window);
+
+}
+
+
 /* callback function to check or uncheck the check box (filter)
  */
 
@@ -2610,13 +3359,25 @@ char * get_remove_trace(char ** all_trace_name, int nb_trace)
 }
 
 
+/* Select a module which will be loaded
+ */
+
+char * get_load_module(char ** load_module_name, int nb_module)
+{
+  return get_selection(load_module_name, nb_module, 
+		       "Select a module to load", "Module name");
+}
+
+
+
+
 /* Select a module which will be unloaded
  */
 
 char * get_unload_module(char ** loaded_module_name, int nb_module)
 {
   return get_selection(loaded_module_name, nb_module, 
-		       "Select an unload module", "Module pathname");
+		       "Select a module to unload", "Module name");
 }
 
 
@@ -2987,8 +3748,27 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   }
   tab->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   tab->interrupted_state = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
-  tab->multi_vpaned = (GtkMultiVPaned*)gtk_multi_vpaned_new();
-  gtk_widget_show((GtkWidget*)tab->multi_vpaned);
+ 
+  tab->vbox = gtk_vbox_new(FALSE, 0);
+  tab->viewer_container = gtk_vbox_new(TRUE, 0);
+  tab->scrollbar = gtk_hscrollbar_new(NULL);
+  //tab->multivpaned = gtk_multi_vpaned_new();
+  
+  gtk_box_pack_start(GTK_BOX(tab->vbox),
+                     tab->viewer_container,
+                     TRUE, /* expand */
+                     TRUE, /* Give the extra space to the child */
+                     0);    /* No padding */
+ 
+  gtk_box_pack_end(GTK_BOX(tab->vbox),
+                   tab->scrollbar,
+                   FALSE, /* Do not expand */
+                   FALSE, /* Fill has no effect here  (expand false) */
+                   0);    /* No padding */
+ 
+  g_object_set_data(G_OBJECT(tab->viewer_container), "focused_viewer", NULL);
+
+
   tab->mw   = mw;
   
   /*{
@@ -3022,7 +3802,12 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
 
 
   tab->label = gtk_label_new (label);
-  gtk_widget_show (tab->label);
+
+  gtk_widget_show(tab->label);
+  gtk_widget_show(tab->scrollbar);
+  gtk_widget_show(tab->viewer_container);
+  gtk_widget_show(tab->vbox);
+  //gtk_widget_show(tab->multivpaned);
 
 
   /* Start with empty events requests list */
@@ -3030,15 +3815,21 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   tab->events_request_pending = FALSE;
 
   g_object_set_data_full(
-           G_OBJECT(tab->multi_vpaned),
+           G_OBJECT(tab->vbox),
            "Tab_Info",
 	         tab,
 	         (GDestroyNotify)tab_destructor);
 
+  g_signal_connect(G_OBJECT(tab->scrollbar), "value-changed",
+      G_CALLBACK(scroll_value_changed_cb), tab);
+  //g_signal_connect(G_OBJECT(tab->scrollbar), "changed",
+  //    G_CALLBACK(scroll_value_changed_cb), tab);
+
+
  //insert tab into notebook
   gtk_notebook_append_page(notebook,
-                          (GtkWidget*)tab->multi_vpaned,
-                          tab->label);  
+                           tab->vbox,
+                           tab->label);  
   list = gtk_container_get_children(GTK_CONTAINER(notebook));
   gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
   // always show : not if(g_list_length(list)>1)
