@@ -46,7 +46,7 @@ static LttvHooks
   *before_traceset,
   *after_traceset,
   *before_trace,
-  *before_event;
+  *event_hook;
 
 
 void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
@@ -370,25 +370,27 @@ static void init()
       "", 
       LTTV_OPT_NONE, &a_process_stats, NULL, NULL);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event",
       LTTV_POINTER, &value));
-  g_assert((before_event = *(value.v_pointer)) != NULL);
-  lttv_hooks_add(before_event, write_event_content, NULL);
+  g_assert((event_hook = *(value.v_pointer)) != NULL);
+  lttv_hooks_add(event_hook, write_event_content, NULL, LTTV_PRIO_DEFAULT);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
       LTTV_POINTER, &value));
   g_assert((before_trace = *(value.v_pointer)) != NULL);
-  lttv_hooks_add(before_trace, write_trace_header, NULL);
+  lttv_hooks_add(before_trace, write_trace_header, NULL, LTTV_PRIO_DEFAULT);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
       LTTV_POINTER, &value));
   g_assert((before_traceset = *(value.v_pointer)) != NULL);
-  lttv_hooks_add(before_traceset, write_traceset_header, NULL);
+  lttv_hooks_add(before_traceset, write_traceset_header, NULL,
+      LTTV_PRIO_DEFAULT);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
       LTTV_POINTER, &value));
   g_assert((after_traceset = *(value.v_pointer)) != NULL);
-  lttv_hooks_add(after_traceset, write_traceset_footer, NULL);
+  lttv_hooks_add(after_traceset, write_traceset_footer, NULL,
+      LTTV_PRIO_DEFAULT);
 }
 
 
@@ -408,7 +410,7 @@ static void destroy()
 
   g_string_free(a_string, TRUE);
 
-  lttv_hooks_remove_data(before_event, write_event_content, NULL);
+  lttv_hooks_remove_data(event_hook, write_event_content, NULL);
 
   lttv_hooks_remove_data(before_trace, write_trace_header, NULL);
 

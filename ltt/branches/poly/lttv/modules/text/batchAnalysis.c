@@ -39,8 +39,7 @@ static LttvHooks
   *after_trace,
   *before_tracefile,
   *after_tracefile,
-  *before_event,
-  *after_event,
+  *event_hook,
   *main_hooks;
 
 static char *a_trace;
@@ -76,9 +75,15 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   lttv_state_add_event_hooks(&tscs->parent);
   if(a_stats) lttv_stats_add_event_hooks(tscs);
 
-  lttv_traceset_context_add_hooks(tc,
-  before_traceset, after_traceset, NULL, before_trace, after_trace,
-  NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+  //lttv_traceset_context_add_hooks(tc,
+  //before_traceset, after_traceset, NULL, before_trace, after_trace,
+  //NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+  lttv_process_traceset_begin(tc,
+                              before_traceset,
+                              before_trace,
+                              before_tracefile,
+                              event_hook,
+                              NULL);
 
   start.tv_sec = 0;
   start.tv_nsec = 0;
@@ -88,13 +93,23 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   g_info("BatchAnalysis process traceset");
 
   lttv_process_traceset_seek_time(tc, start);
-  lttv_process_traceset(tc, end, G_MAXULONG);
+  lttv_process_traceset_middle(tc,
+                               end,
+                               G_MAXULONG,
+                               NULL);
 
   g_info("BatchAnalysis destroy context");
 
-  lttv_traceset_context_remove_hooks(tc,
-  before_traceset, after_traceset, NULL, before_trace, after_trace,
-  NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+  //lttv_traceset_context_remove_hooks(tc,
+  //before_traceset, after_traceset, NULL, before_trace, after_trace,
+  //NULL, before_tracefile, after_tracefile, NULL, before_event, after_event);
+  lttv_process_traceset_end(tc,
+                            after_traceset,
+                            after_trace,
+                            after_tracefile,
+                            event_hook,
+                            NULL);
+
   lttv_state_remove_event_hooks(&tscs->parent);
   if(a_stats) lttv_stats_remove_event_hooks(tscs);
   lttv_context_fini(tc);
@@ -132,8 +147,9 @@ static void init()
   after_trace = lttv_hooks_new();
   before_tracefile = lttv_hooks_new();
   after_tracefile = lttv_hooks_new();
-  before_event = lttv_hooks_new();
-  after_event = lttv_hooks_new();
+  //before_event = lttv_hooks_new();
+  //after_event = lttv_hooks_new();
+  event_hook = lttv_hooks_new();
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
       LTTV_POINTER, &value));
@@ -153,17 +169,20 @@ static void init()
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/tracefile/after",
       LTTV_POINTER, &value));
   *(value.v_pointer) = after_tracefile;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+  //g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/before",
+  //    LTTV_POINTER, &value));
+  //*(value.v_pointer) = before_event;
+  //g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
+  //    LTTV_POINTER, &value));
+  //*(value.v_pointer) = after_event;
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event",
       LTTV_POINTER, &value));
-  *(value.v_pointer) = before_event;
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event/after",
-      LTTV_POINTER, &value));
-  *(value.v_pointer) = after_event;
+  *(value.v_pointer) = event_hook;
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/main/before",
       LTTV_POINTER, &value));
   g_assert((main_hooks = *(value.v_pointer)) != NULL);
-  lttv_hooks_add(main_hooks, process_traceset, NULL);
+  lttv_hooks_add(main_hooks, process_traceset, NULL, LTTV_PRIO_DEFAULT);
 }
 
 
@@ -184,8 +203,9 @@ static void destroy()
   lttv_hooks_destroy(after_trace);
   lttv_hooks_destroy(before_tracefile);
   lttv_hooks_destroy(after_tracefile);
-  lttv_hooks_destroy(before_event);
-  lttv_hooks_destroy(after_event);
+  //lttv_hooks_destroy(before_event);
+  //lttv_hooks_destroy(after_event);
+  lttv_hooks_destroy(event_hook);
   lttv_hooks_remove_data(main_hooks, process_traceset, NULL);
 
   nb = lttv_traceset_number(traceset);
