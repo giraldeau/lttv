@@ -285,19 +285,53 @@ void save_as(GtkWidget * widget, gpointer user_data)
   g_printf("Save as\n");
 }
 
+void zoom(GtkWidget * widget, double size)
+{
+  TimeInterval *time_span;
+  TimeWindow time_window;
+  LttTime    current_time, time_delta, time_s, time_e;
+  MainWindow * mw_data = get_window_data_struct(widget);
+
+  time_span = LTTV_TRACESET_CONTEXT(mw_data->traceset_info->traceset_context)->Time_Span ;
+  time_window =  mw_data->current_tab->time_window;
+  current_time = mw_data->current_tab->current_time;
+  
+  time_delta = ltt_time_sub(time_span->endTime,time_span->startTime);
+  if(size == 0){
+    time_window.start_time = time_span->startTime;
+    time_window.time_width = time_delta;
+  }else{
+    time_window.time_width = ltt_time_div(time_window.time_width, size);
+    if(ltt_time_compare(time_window.time_width,time_delta) > 0)
+      time_window.time_width = time_delta;        
+
+    time_s = ltt_time_sub(current_time,ltt_time_div(time_window.time_width, 2));
+    time_e = ltt_time_add(current_time,ltt_time_div(time_window.time_width, 2));
+    if(ltt_time_compare(time_span->startTime, time_s) > 0){
+      time_s = time_span->startTime;
+    }else if(ltt_time_compare(time_span->endTime, time_e) < 0){
+      time_e = time_span->endTime;
+      time_s = ltt_time_sub(time_e,time_window.time_width);
+    }
+    time_window.start_time = time_s;    
+  }
+  set_time_window(mw_data, &time_window);
+  gtk_custom_set_adjust(mw_data->current_tab->custom, FALSE);
+}
+
 void zoom_in(GtkWidget * widget, gpointer user_data)
 {
-  g_printf("Zoom in\n");
+  zoom(widget, 2);
 }
 
 void zoom_out(GtkWidget * widget, gpointer user_data)
 {
-  g_printf("Zoom out\n");
+  zoom(widget, 0.5);
 }
 
 void zoom_extended(GtkWidget * widget, gpointer user_data)
 {
-  g_printf("Zoom extended\n");
+  zoom(widget, 0);
 }
 
 void go_to_time(GtkWidget * widget, gpointer user_data)

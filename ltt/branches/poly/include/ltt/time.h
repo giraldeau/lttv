@@ -43,13 +43,21 @@ static inline LttTime ltt_time_add(LttTime t1, LttTime t2)
 
 static inline LttTime ltt_time_mul(LttTime t1, float f)
 {
-  double nsec;
   LttTime res;
+  float d = 1.0/f;
+  double sec;
 
-  nsec = (double)t1.tv_nsec * f;
-  res.tv_sec = nsec / NANOSECONDS_PER_SECOND;
-  res.tv_nsec = nsec - res.tv_sec * NANOSECONDS_PER_SECOND;
-  res.tv_sec += t1.tv_sec * f;
+  if(f == 0.0){
+    res.tv_sec = 0;
+    res.tv_nsec = 0;
+  }else{
+    sec = t1.tv_sec / (double)d;
+    res.tv_sec = sec;
+    res.tv_nsec = t1.tv_nsec / (double)d + (sec - res.tv_sec) *
+                  NANOSECONDS_PER_SECOND;
+    res.tv_sec += res.tv_nsec / NANOSECONDS_PER_SECOND;
+    res.tv_nsec %= NANOSECONDS_PER_SECOND;
+  }
   return res;
 }
 
@@ -63,6 +71,8 @@ static inline LttTime ltt_time_div(LttTime t1, float f)
   res.tv_sec = sec;
   res.tv_nsec = t1.tv_nsec / (double)f + (sec - res.tv_sec) *
       NANOSECONDS_PER_SECOND;
+  res.tv_sec += res.tv_nsec / NANOSECONDS_PER_SECOND;
+  res.tv_nsec %= NANOSECONDS_PER_SECOND;
   return res;
 }
 

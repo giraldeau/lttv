@@ -102,13 +102,41 @@ void gtk_custom_set_focus (GtkWidget * widget, gpointer user_data)
   }
 }
 
+void gtk_custom_set_adjust(GtkCustom * custom, gboolean first_time)
+{
+  TimeWindow time_window;
+  TimeInterval *time_span;
+
+  get_time_window(custom->mw,&time_window);
+  if(first_time){
+    time_span = LTTV_TRACESET_CONTEXT(custom->mw->traceset_info->traceset_context)->Time_Span ;
+  
+    custom->hadjust->lower = ltt_time_to_double(time_span->startTime) * 
+                             NANOSECONDS_PER_SECOND;
+    custom->hadjust->value = custom->hadjust->lower;
+    custom->hadjust->upper = ltt_time_to_double(time_span->endTime) *
+                             NANOSECONDS_PER_SECOND;
+  }
+
+  /* Page increment of whole visible area */
+  if(custom->hadjust == NULL){
+    g_warning("Insert a viewer first");
+    return;
+  }
+  custom->hadjust->page_increment = ltt_time_to_double(
+		        time_window.time_width) * NANOSECONDS_PER_SECOND;
+  /* page_size to the whole visible area will take care that the
+     * scroll value + the shown area will never be more than what is
+     * in the trace. */
+  custom->hadjust->page_size = custom->hadjust->page_increment;
+  custom->hadjust->step_increment = custom->hadjust->page_increment / 10;
+
+}
+
 void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
 {
   GtkPaned * tmpPane; 
   GtkWidget * w;
-  TimeWindow Time_Window;
-  LttTime      time;
-  TimeInterval *Time_Span;
   
   g_return_if_fail(GTK_IS_CUSTOM(custom));
   g_object_ref(G_OBJECT(widget1));
@@ -122,23 +150,7 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
     gtk_widget_show(custom->hscrollbar);
 
     custom->hadjust = gtk_range_get_adjustment(GTK_RANGE(custom->hscrollbar));
-    get_time_window(custom->mw,&Time_Window);
-    get_current_time(custom->mw,&time);
-    Time_Span = LTTV_TRACESET_CONTEXT(custom->mw->traceset_info->traceset_context)->Time_Span ;
-
-    custom->hadjust->lower =  ltt_time_to_double(Time_Span->startTime) * 
-        NANOSECONDS_PER_SECOND;
-    custom->hadjust->value = custom->hadjust->lower;
-    custom->hadjust->upper = ltt_time_to_double(Time_Span->endTime) *
-        NANOSECONDS_PER_SECOND;
-    /* Page increment of whole visible area */
-    custom->hadjust->page_increment = ltt_time_to_double(
-        Time_Window.time_width) * NANOSECONDS_PER_SECOND;
-    /* page_size to the whole visible area will take care that the
-     * scroll value + the shown area will never be more than what is
-     * in the trace. */
-    custom->hadjust->page_size = custom->hadjust->page_increment;
-    custom->hadjust->step_increment = custom->hadjust->page_increment / 10;
+    gtk_custom_set_adjust(custom, TRUE);
 
     gtk_range_set_update_policy (GTK_RANGE(custom->hscrollbar),
                                   GTK_UPDATE_DISCONTINUOUS);

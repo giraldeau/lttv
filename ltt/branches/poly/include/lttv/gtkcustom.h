@@ -57,6 +57,7 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1);
 void gtk_custom_widget_delete(GtkCustom * custom);
 void gtk_custom_widget_move_up(GtkCustom * custom);
 void gtk_custom_widget_move_down(GtkCustom * custom);
+void gtk_custom_set_adjust(GtkCustom * custom, gboolean first_time);
 
 
 

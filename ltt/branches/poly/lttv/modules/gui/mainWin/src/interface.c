@@ -41,30 +41,30 @@ create_MWindow (void)
   GtkWidget *CloneTraceset;
   GtkWidget *FileMenuNewSep;
   GtkWidget *Tab;
-  GtkWidget *OpenTraceset;
+  //  GtkWidget *OpenTraceset;
   GtkWidget *Close;
   GtkWidget *CloseTab;
   GtkWidget *FileMenuSeparator1;
   GtkWidget *AddTrace;
   GtkWidget *RemoveTrace;
-  GtkWidget *Save;
-  GtkWidget *SaveAs;
+  //  GtkWidget *Save;
+  //  GtkWidget *SaveAs;
   GtkWidget *FileMenuSeparator2;
   GtkWidget *Quit;
-  GtkWidget *EditMenuTitle;
-  GtkWidget *EditMenuTitle_menu;
-  GtkWidget *Cut;
-  GtkWidget *Copy;
-  GtkWidget *Paste;
-  GtkWidget *Delete;
+  //  GtkWidget *EditMenuTitle;
+  //  GtkWidget *EditMenuTitle_menu;
+  //  GtkWidget *Cut;
+  //  GtkWidget *Copy;
+  //  GtkWidget *Paste;
+  //  GtkWidget *Delete;
   GtkWidget *ViewMenuTitle;
   GtkWidget *ViewMenuTitle_menu;
   GtkWidget *ZoomIn;
   GtkWidget *ZoomOut;
   GtkWidget *ZoomExtended;
   GtkWidget *ViewMenuSeparator;
-  GtkWidget *GoToTime;
-  GtkWidget *ShowTimeFrame;
+  //  GtkWidget *GoToTime;
+  //  GtkWidget *ShowTimeFrame;
   GtkWidget *ToolMenuTitle;
   GtkWidget *ToolMenuTitle_menu;
   GtkWidget *MoveViewerUp;
@@ -77,12 +77,12 @@ create_MWindow (void)
   GtkWidget *LoadModule;
   GtkWidget *UnloadModule;
   GtkWidget *AddModuleSearchPath;
-  GtkWidget *OptionMenuTitle;
-  GtkWidget *OptionMenuTitle_menu;
-  GtkWidget *Color;
-  GtkWidget *OptMenuSeparator;
-  GtkWidget *OpenFilter;
-  GtkWidget *SaveConfiguration;
+  //  GtkWidget *OptionMenuTitle;
+  //  GtkWidget *OptionMenuTitle_menu;
+  //  GtkWidget *Color;
+  //  GtkWidget *OptMenuSeparator;
+  //  GtkWidget *OpenFilter;
+  //  GtkWidget *SaveConfiguration;
   GtkWidget *MenuHelp;
   GtkWidget *HelpMenuTitle;
   GtkWidget *HelpMenu;
@@ -92,16 +92,16 @@ create_MWindow (void)
   GtkWidget *MToolbar1;
   GtkWidget *tmp_toolbar_icon;
   GtkWidget *tlbEmptyTraceset;
-  GtkWidget *tlbOpenTraceset;
+  //  GtkWidget *tlbOpenTraceset;
   GtkWidget *tlbAddTrace;
   GtkWidget *tlbRemoveTrace;
-  GtkWidget *tlbSave;
-  GtkWidget *tlbSaveAs;
+  //  GtkWidget *tlbSave;
+  //  GtkWidget *tlbSaveAs;
   GtkWidget *tlbZoomIn;
   GtkWidget *tlbZoomOut;
   GtkWidget *tlbZoomExtended;
-  GtkWidget *tlbGoToTime;
-  GtkWidget *tlbShowTimeFrame;
+  //  GtkWidget *tlbGoToTime;
+  //  GtkWidget *tlbShowTimeFrame;
   GtkWidget *tlbMoveViewerUp;
   GtkWidget *tlbMoveViewerDown;
   GtkWidget *tlbRemoveViewer;
@@ -161,11 +161,11 @@ create_MWindow (void)
   Tab = gtk_menu_item_new_with_mnemonic ("Tab");
   gtk_widget_show (Tab);
   gtk_container_add (GTK_CONTAINER (FileMenuNewTitle_menu), Tab);
-
+/*
   OpenTraceset = gtk_menu_item_new_with_mnemonic ("Open");
   gtk_widget_show (OpenTraceset);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), OpenTraceset);
-
+*/
   Close = gtk_menu_item_new_with_mnemonic ("Close");
   gtk_widget_show (Close);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), Close);
@@ -186,7 +186,7 @@ create_MWindow (void)
   RemoveTrace = gtk_menu_item_new_with_mnemonic ("Remove Trace");
   gtk_widget_show (RemoveTrace);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), RemoveTrace);
-
+/*
   Save = gtk_menu_item_new_with_mnemonic ("Save");
   gtk_widget_show (Save);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), Save);
@@ -194,7 +194,7 @@ create_MWindow (void)
   SaveAs = gtk_menu_item_new_with_mnemonic ("Save As");
   gtk_widget_show (SaveAs);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), SaveAs);
-
+*/
   FileMenuSeparator2 = gtk_menu_item_new ();
   gtk_widget_show (FileMenuSeparator2);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), FileMenuSeparator2);
@@ -203,7 +203,7 @@ create_MWindow (void)
   Quit = gtk_menu_item_new_with_mnemonic ("Quit");
   gtk_widget_show (Quit);
   gtk_container_add (GTK_CONTAINER (FileMenuTitle_menu), Quit);
-
+/*
   EditMenuTitle = gtk_menu_item_new_with_mnemonic ("_Edit");
   gtk_widget_show (EditMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), EditMenuTitle);
@@ -226,7 +226,7 @@ create_MWindow (void)
   Delete = gtk_image_menu_item_new_from_stock ("gtk-delete", accel_group);
   gtk_widget_show (Delete);
   gtk_container_add (GTK_CONTAINER (EditMenuTitle_menu), Delete);
-
+*/
   ViewMenuTitle = gtk_menu_item_new_with_mnemonic ("_View");
   gtk_widget_show (ViewMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), ViewMenuTitle);
@@ -250,7 +250,7 @@ create_MWindow (void)
   gtk_widget_show (ViewMenuSeparator);
   gtk_container_add (GTK_CONTAINER (ViewMenuTitle_menu), ViewMenuSeparator);
   gtk_widget_set_sensitive (ViewMenuSeparator, FALSE);
-
+/*
   GoToTime = gtk_menu_item_new_with_mnemonic ("Go to time");
   gtk_widget_show (GoToTime);
   gtk_container_add (GTK_CONTAINER (ViewMenuTitle_menu), GoToTime);
@@ -258,7 +258,7 @@ create_MWindow (void)
   ShowTimeFrame = gtk_menu_item_new_with_mnemonic ("Show time frame");
   gtk_widget_show (ShowTimeFrame);
   gtk_container_add (GTK_CONTAINER (ViewMenuTitle_menu), ShowTimeFrame);
-
+*/
   ToolMenuTitle = gtk_menu_item_new_with_mnemonic ("Tools");
   gtk_widget_show (ToolMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), ToolMenuTitle);
@@ -305,7 +305,7 @@ create_MWindow (void)
   AddModuleSearchPath = gtk_menu_item_new_with_mnemonic ("Add module search path");
   gtk_widget_show (AddModuleSearchPath);
   gtk_container_add (GTK_CONTAINER (PluginMenuTitle_menu), AddModuleSearchPath);
-
+/*
   OptionMenuTitle = gtk_menu_item_new_with_mnemonic ("Options");
   gtk_widget_show (OptionMenuTitle);
   gtk_container_add (GTK_CONTAINER (MenuMain), OptionMenuTitle);
@@ -329,7 +329,7 @@ create_MWindow (void)
   SaveConfiguration = gtk_menu_item_new_with_mnemonic ("Save configuration");
   gtk_widget_show (SaveConfiguration);
   gtk_container_add (GTK_CONTAINER (OptionMenuTitle_menu), SaveConfiguration);
-
+*/
   MenuHelp = gtk_menu_bar_new ();
   gtk_widget_show (MenuHelp);
   gtk_box_pack_end (GTK_BOX (MMenuBox), MenuHelp, FALSE, FALSE, 0);
@@ -369,7 +369,7 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbEmptyTraceset);
   gtk_container_set_border_width (GTK_CONTAINER (tlbEmptyTraceset), 1);
-
+/*
   tmp_toolbar_icon = create_pixmap (MWindow, "fileopen.png");
   tlbOpenTraceset = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
                                 GTK_TOOLBAR_CHILD_BUTTON,
@@ -380,7 +380,7 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbOpenTraceset);
   gtk_container_set_border_width (GTK_CONTAINER (tlbOpenTraceset), 1);
-
+*/
   tmp_toolbar_icon = create_pixmap (MWindow, "edit_add_22.png");
   tlbAddTrace = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
                                 GTK_TOOLBAR_CHILD_BUTTON,
@@ -402,7 +402,7 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbRemoveTrace);
   gtk_container_set_border_width (GTK_CONTAINER (tlbRemoveTrace), 1);
-
+/*
   tmp_toolbar_icon = create_pixmap (MWindow, "filesave.png");
   tlbSave = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
                                 GTK_TOOLBAR_CHILD_BUTTON,
@@ -424,7 +424,7 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbSaveAs);
   gtk_container_set_border_width (GTK_CONTAINER (tlbSaveAs), 1);
-
+*/
   gtk_toolbar_append_space (GTK_TOOLBAR (MToolbar1));
 
   tmp_toolbar_icon = create_pixmap (MWindow, "stock_zoom_in_24.png");
@@ -459,7 +459,7 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbZoomExtended);
   gtk_container_set_border_width (GTK_CONTAINER (tlbZoomExtended), 1);
-
+/*
   tmp_toolbar_icon = create_pixmap (MWindow, "gtk-jump-to.png");
   tlbGoToTime = gtk_toolbar_append_element (GTK_TOOLBAR (MToolbar1),
                                 GTK_TOOLBAR_CHILD_BUTTON,
@@ -481,7 +481,7 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbShowTimeFrame);
   gtk_container_set_border_width (GTK_CONTAINER (tlbShowTimeFrame), 1);
-
+*/
   gtk_toolbar_append_space (GTK_TOOLBAR (MToolbar1));
 
   tmp_toolbar_icon = create_pixmap (MWindow, "1uparrow.png");
@@ -551,9 +551,11 @@ create_MWindow (void)
   g_signal_connect ((gpointer) Tab, "activate",
                     G_CALLBACK (on_tab_activate),
                     NULL);
+/*
   g_signal_connect ((gpointer) OpenTraceset, "activate",
                     G_CALLBACK (on_open_activate),
                     NULL);
+*/
   g_signal_connect ((gpointer) Close, "activate",
                     G_CALLBACK (on_close_activate),
                     NULL);
@@ -566,15 +568,18 @@ create_MWindow (void)
   g_signal_connect ((gpointer) RemoveTrace, "activate",
                     G_CALLBACK (on_remove_trace_activate),
                     NULL);
+/*
   g_signal_connect ((gpointer) Save, "activate",
                     G_CALLBACK (on_save_activate),
                     NULL);
   g_signal_connect ((gpointer) SaveAs, "activate",
                     G_CALLBACK (on_save_as_activate),
                     NULL);
+*/
   g_signal_connect ((gpointer) Quit, "activate",
                     G_CALLBACK (on_quit_activate),
                     NULL);
+/*
   g_signal_connect ((gpointer) Cut, "activate",
                     G_CALLBACK (on_cut_activate),
                     NULL);
@@ -587,6 +592,7 @@ create_MWindow (void)
   g_signal_connect ((gpointer) Delete, "activate",
                     G_CALLBACK (on_delete_activate),
                     NULL);
+*/
   g_signal_connect ((gpointer) ZoomIn, "activate",
                     G_CALLBACK (on_zoom_in_activate),
                     NULL);
@@ -596,12 +602,14 @@ create_MWindow (void)
   g_signal_connect ((gpointer) ZoomExtended, "activate",
                     G_CALLBACK (on_zoom_extended_activate),
                     NULL);
+/*
   g_signal_connect ((gpointer) GoToTime, "activate",
-                    G_CALLBACK (on_go_to_time_activate),
-                    NULL);
+		    G_CALLBACK (on_go_to_time_activate),
+		    NULL);
   g_signal_connect ((gpointer) ShowTimeFrame, "activate",
                     G_CALLBACK (on_show_time_frame_activate),
                     NULL);
+*/
   g_signal_connect ((gpointer) MoveViewerUp, "activate",
                     G_CALLBACK (on_move_viewer_up_activate),
                     NULL);
@@ -623,6 +631,7 @@ create_MWindow (void)
   g_signal_connect ((gpointer) AddModuleSearchPath, "activate",
                     G_CALLBACK (on_add_module_search_path_activate),
                     NULL);
+/*
   g_signal_connect ((gpointer) Color, "activate",
                     G_CALLBACK (on_color_activate),
                     NULL);
@@ -632,6 +641,7 @@ create_MWindow (void)
   g_signal_connect ((gpointer) SaveConfiguration, "activate",
                     G_CALLBACK (on_save_configuration_activate),
                     NULL);
+*/
   g_signal_connect ((gpointer) Content, "activate",
                     G_CALLBACK (on_content_activate),
                     NULL);
@@ -641,21 +651,25 @@ create_MWindow (void)
   g_signal_connect ((gpointer) tlbEmptyTraceset, "clicked",
                     G_CALLBACK (on_button_new_clicked),
                     NULL);
+/*
   g_signal_connect ((gpointer) tlbOpenTraceset, "clicked",
                     G_CALLBACK (on_button_open_clicked),
                     NULL);
+*/
   g_signal_connect ((gpointer) tlbAddTrace, "clicked",
                     G_CALLBACK (on_button_add_trace_clicked),
                     NULL);
   g_signal_connect ((gpointer) tlbRemoveTrace, "clicked",
                     G_CALLBACK (on_button_remove_trace_clicked),
                     NULL);
+/*
   g_signal_connect ((gpointer) tlbSave, "clicked",
                     G_CALLBACK (on_button_save_clicked),
                     NULL);
   g_signal_connect ((gpointer) tlbSaveAs, "clicked",
                     G_CALLBACK (on_button_save_as_clicked),
                     NULL);
+*/
   g_signal_connect ((gpointer) tlbZoomIn, "clicked",
                     G_CALLBACK (on_button_zoom_in_clicked),
                     NULL);
@@ -665,12 +679,14 @@ create_MWindow (void)
   g_signal_connect ((gpointer) tlbZoomExtended, "clicked",
                     G_CALLBACK (on_button_zoom_extended_clicked),
                     NULL);
+/*
   g_signal_connect ((gpointer) tlbGoToTime, "clicked",
                     G_CALLBACK (on_button_go_to_time_clicked),
                     NULL);
   g_signal_connect ((gpointer) tlbShowTimeFrame, "clicked",
                     G_CALLBACK (on_button_show_time_frame_clicked),
                     NULL);
+*/
   g_signal_connect ((gpointer) tlbMoveViewerUp, "clicked",
                     G_CALLBACK (on_button_move_up_clicked),
                     NULL);
@@ -697,30 +713,30 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, CloneTraceset, "CloneTraceset");
   GLADE_HOOKUP_OBJECT (MWindow, FileMenuNewSep, "FileMenuNewSep");
   GLADE_HOOKUP_OBJECT (MWindow, Tab, "Tab");
-  GLADE_HOOKUP_OBJECT (MWindow, OpenTraceset, "OpenTraceset");
+  //  GLADE_HOOKUP_OBJECT (MWindow, OpenTraceset, "OpenTraceset");
   GLADE_HOOKUP_OBJECT (MWindow, Close, "Close");
   GLADE_HOOKUP_OBJECT (MWindow, CloseTab, "CloseTab");
   GLADE_HOOKUP_OBJECT (MWindow, FileMenuSeparator1, "FileMenuSeparator1");
   GLADE_HOOKUP_OBJECT (MWindow, AddTrace, "AddTrace");
   GLADE_HOOKUP_OBJECT (MWindow, RemoveTrace, "RemoveTrace");
-  GLADE_HOOKUP_OBJECT (MWindow, Save, "Save");
-  GLADE_HOOKUP_OBJECT (MWindow, SaveAs, "SaveAs");
+  //  GLADE_HOOKUP_OBJECT (MWindow, Save, "Save");
+  //  GLADE_HOOKUP_OBJECT (MWindow, SaveAs, "SaveAs");
   GLADE_HOOKUP_OBJECT (MWindow, FileMenuSeparator2, "FileMenuSeparator2");
   GLADE_HOOKUP_OBJECT (MWindow, Quit, "Quit");
-  GLADE_HOOKUP_OBJECT (MWindow, EditMenuTitle, "EditMenuTitle");
-  GLADE_HOOKUP_OBJECT (MWindow, EditMenuTitle_menu, "EditMenuTitle_menu");
-  GLADE_HOOKUP_OBJECT (MWindow, Cut, "Cut");
-  GLADE_HOOKUP_OBJECT (MWindow, Copy, "Copy");
-  GLADE_HOOKUP_OBJECT (MWindow, Paste, "Paste");
-  GLADE_HOOKUP_OBJECT (MWindow, Delete, "Delete");
+  //  GLADE_HOOKUP_OBJECT (MWindow, EditMenuTitle, "EditMenuTitle");
+  //  GLADE_HOOKUP_OBJECT (MWindow, EditMenuTitle_menu, "EditMenuTitle_menu");
+  //  GLADE_HOOKUP_OBJECT (MWindow, Cut, "Cut");
+  //  GLADE_HOOKUP_OBJECT (MWindow, Copy, "Copy");
+  //  GLADE_HOOKUP_OBJECT (MWindow, Paste, "Paste");
+  //  GLADE_HOOKUP_OBJECT (MWindow, Delete, "Delete");
   GLADE_HOOKUP_OBJECT (MWindow, ViewMenuTitle, "ViewMenuTitle");
   GLADE_HOOKUP_OBJECT (MWindow, ViewMenuTitle_menu, "ViewMenuTitle_menu");
   GLADE_HOOKUP_OBJECT (MWindow, ZoomIn, "ZoomIn");
   GLADE_HOOKUP_OBJECT (MWindow, ZoomOut, "ZoomOut");
   GLADE_HOOKUP_OBJECT (MWindow, ZoomExtended, "ZoomExtended");
   GLADE_HOOKUP_OBJECT (MWindow, ViewMenuSeparator, "ViewMenuSeparator");
-  GLADE_HOOKUP_OBJECT (MWindow, GoToTime, "GoToTime");
-  GLADE_HOOKUP_OBJECT (MWindow, ShowTimeFrame, "ShowTimeFrame");
+  //  GLADE_HOOKUP_OBJECT (MWindow, GoToTime, "GoToTime");
+  //  GLADE_HOOKUP_OBJECT (MWindow, ShowTimeFrame, "ShowTimeFrame");
   GLADE_HOOKUP_OBJECT (MWindow, ToolMenuTitle, "ToolMenuTitle");
   GLADE_HOOKUP_OBJECT (MWindow, ToolMenuTitle_menu, "ToolMenuTitle_menu");
   GLADE_HOOKUP_OBJECT (MWindow, MoveViewerUp, "MoveViewerUp");
@@ -733,12 +749,12 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, LoadModule, "LoadModule");
   GLADE_HOOKUP_OBJECT (MWindow, UnloadModule, "UnloadModule");
   GLADE_HOOKUP_OBJECT (MWindow, AddModuleSearchPath, "AddModuleSearchPath");
-  GLADE_HOOKUP_OBJECT (MWindow, OptionMenuTitle, "OptionMenuTitle");
-  GLADE_HOOKUP_OBJECT (MWindow, OptionMenuTitle_menu, "OptionMenuTitle_menu");
-  GLADE_HOOKUP_OBJECT (MWindow, Color, "Color");
-  GLADE_HOOKUP_OBJECT (MWindow, OptMenuSeparator, "OptMenuSeparator");
-  GLADE_HOOKUP_OBJECT (MWindow, OpenFilter, "OpenFilter");
-  GLADE_HOOKUP_OBJECT (MWindow, SaveConfiguration, "SaveConfiguration");
+  //  GLADE_HOOKUP_OBJECT (MWindow, OptionMenuTitle, "OptionMenuTitle");
+  //  GLADE_HOOKUP_OBJECT (MWindow, OptionMenuTitle_menu, "OptionMenuTitle_menu");
+  //  GLADE_HOOKUP_OBJECT (MWindow, Color, "Color");
+  //  GLADE_HOOKUP_OBJECT (MWindow, OptMenuSeparator, "OptMenuSeparator");
+  //  GLADE_HOOKUP_OBJECT (MWindow, OpenFilter, "OpenFilter");
+  //  GLADE_HOOKUP_OBJECT (MWindow, SaveConfiguration, "SaveConfiguration");
   GLADE_HOOKUP_OBJECT (MWindow, MenuHelp, "MenuHelp");
   GLADE_HOOKUP_OBJECT (MWindow, HelpMenuTitle, "HelpMenuTitle");
   GLADE_HOOKUP_OBJECT (MWindow, HelpMenu, "HelpMenu");
@@ -747,16 +763,16 @@ create_MWindow (void)
   GLADE_HOOKUP_OBJECT (MWindow, About, "About");
   GLADE_HOOKUP_OBJECT (MWindow, MToolbar1, "MToolbar1");
   GLADE_HOOKUP_OBJECT (MWindow, tlbEmptyTraceset, "tlbEmptyTraceset");
-  GLADE_HOOKUP_OBJECT (MWindow, tlbOpenTraceset, "tlbOpenTraceset");
+  //  GLADE_HOOKUP_OBJECT (MWindow, tlbOpenTraceset, "tlbOpenTraceset");
   GLADE_HOOKUP_OBJECT (MWindow, tlbAddTrace, "tlbAddTrace");
   GLADE_HOOKUP_OBJECT (MWindow, tlbRemoveTrace, "tlbRemoveTrace");
-  GLADE_HOOKUP_OBJECT (MWindow, tlbSave, "tlbSave");
-  GLADE_HOOKUP_OBJECT (MWindow, tlbSaveAs, "tlbSaveAs");
+  //  GLADE_HOOKUP_OBJECT (MWindow, tlbSave, "tlbSave");
+  //  GLADE_HOOKUP_OBJECT (MWindow, tlbSaveAs, "tlbSaveAs");
   GLADE_HOOKUP_OBJECT (MWindow, tlbZoomIn, "tlbZoomIn");
   GLADE_HOOKUP_OBJECT (MWindow, tlbZoomOut, "tlbZoomOut");
   GLADE_HOOKUP_OBJECT (MWindow, tlbZoomExtended, "tlbZoomExtended");
-  GLADE_HOOKUP_OBJECT (MWindow, tlbGoToTime, "tlbGoToTime");
-  GLADE_HOOKUP_OBJECT (MWindow, tlbShowTimeFrame, "tlbShowTimeFrame");
+  //  GLADE_HOOKUP_OBJECT (MWindow, tlbGoToTime, "tlbGoToTime");
+  // GLADE_HOOKUP_OBJECT (MWindow, tlbShowTimeFrame, "tlbShowTimeFrame");
   GLADE_HOOKUP_OBJECT (MWindow, tlbMoveViewerUp, "tlbMoveViewerUp");
   GLADE_HOOKUP_OBJECT (MWindow, tlbMoveViewerDown, "tlbMoveViewerDown");
   GLADE_HOOKUP_OBJECT (MWindow, tlbRemoveViewer, "tlbRemoveViewer");
