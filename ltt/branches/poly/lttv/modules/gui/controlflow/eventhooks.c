@@ -276,9 +276,6 @@ static inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
   prop_line.y = MIDDLE;
   //GdkColormap *colormap = gdk_colormap_get_system();
   
-  g_debug("prepare_status_line for state : %s",
-      g_quark_to_string(process->state->s));
-
   if(process->state->s == LTTV_STATE_RUN) {
     if(process->state->t == LTTV_STATE_USER_MODE)
       prop_line.color = drawing_colors[COL_RUN_USER_MODE];
@@ -401,7 +398,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
     pid_out = ltt_event_get_long_unsigned(e,element);
     element = ltt_field_member(f,1);
     pid_in = ltt_event_get_long_unsigned(e,element);
-    g_debug("out : %u  in : %u", pid_out, pid_in);
   }
   
   { 
@@ -905,7 +901,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                             control_flow_data->drawing->damage_begin;
       draw_context_out->previous->under->x =
                             control_flow_data->drawing->damage_begin;
-
       g_debug("out middle x_beg : %u",control_flow_data->drawing->damage_begin);
     }
   
@@ -1390,7 +1385,6 @@ int after_schedchange_hook(void *hook_data, void *call_data)
     pid_out = ltt_event_get_long_unsigned(e,element);
     element = ltt_field_member(f,1);
     pid_in = ltt_event_get_long_unsigned(e,element);
-    g_debug("out : %u  in : %u", pid_out, pid_in);
   }
 
 
