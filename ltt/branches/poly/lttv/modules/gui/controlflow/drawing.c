@@ -324,6 +324,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 
   if(x >= event->area.x && x <= event->area.x+event->area.width)
   {
+    gint8 dash_list[] = { 1, 2 };
     GdkGC *gc = gdk_gc_new(control_flow_data->drawing->pixmap);
     gdk_gc_copy(gc, widget->style->white_gc);
     gdk_gc_set_line_attributes(gc,
@@ -331,6 +332,10 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
                                GDK_LINE_ON_OFF_DASH,
                                GDK_CAP_BUTT,
                                GDK_JOIN_MITER);
+    gdk_gc_set_dashes(gc,
+                      0,
+                      dash_list,
+                      2);
     drawing_draw_line(NULL, widget->window,
                   x, event->area.y,
                   x, event->area.y+event->area.height,
