@@ -366,6 +366,12 @@ void gtk_multi_vpaned_widget_move_down(GtkMultiVPaned * multi_vpaned)
   g_object_unref(G_OBJECT(multi_vpaned->focused_pane));
 }
 
+void gtk_multi_vpaned_set_scroll_value(GtkMultiVPaned * multi_vpaned, double value)
+{
+  gtk_adjustment_set_value(multi_vpaned->hadjust, value);
+  g_signal_stop_emission_by_name(G_OBJECT(multi_vpaned->hscrollbar), "value-changed");  
+}
+
 void gtk_multi_vpaned_scroll_value_changed(GtkRange *range, gpointer multi_vpaned_arg)
 {
   TimeWindow time_window;

@@ -230,6 +230,9 @@ void set_time_window(MainWindow *main_win, TimeWindow *time_window)
   LttvAttributeValue value;
   LttvHooks * tmp;
   main_win->current_tab->time_window = *time_window;
+  gtk_multi_vpaned_set_scroll_value(main_win->current_tab->multi_vpaned,
+				    ltt_time_to_double(time_window->start_time)
+				    * NANOSECONDS_PER_SECOND );
   g_assert(lttv_iattribute_find_by_path(main_win->current_tab->attributes,
 		       "hooks/updatetimewindow", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);

@@ -64,6 +64,7 @@ gpointer gtk_multi_vpaned_get_data(GtkMultiVPaned * multi_vpaned, char * key);
 GtkWidget * gtk_multi_vpaned_get_widget(GtkMultiVPaned * multi_vpaned);
 GtkWidget * gtk_multi_vpaned_get_first_widget(GtkMultiVPaned * multi_vpaned);
 GtkWidget * gtk_multi_vpaned_get_next_widget(GtkMultiVPaned * multi_vpaned);
+void gtk_multi_vpaned_set_scroll_value(GtkMultiVPaned * multi_vpaned, double value);
 
 #ifdef __cplusplus
 }
