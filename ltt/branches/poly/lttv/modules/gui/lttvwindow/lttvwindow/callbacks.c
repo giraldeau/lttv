@@ -480,7 +480,7 @@ GtkWidget *viewer_container_focus(GtkWidget *container)
   GtkWidget *widget;
 
   widget = (GtkWidget*)g_object_get_data(G_OBJECT(container),
-                    "focused_viewer");
+                                         "focused_viewer");
 
   if(widget == NULL) {
     g_debug("no widget focused");
@@ -488,6 +488,9 @@ GtkWidget *viewer_container_focus(GtkWidget *container)
 
     if(children != NULL)
       widget = GTK_WIDGET(children->data);
+      g_object_set_data(G_OBJECT(container),
+                        "focused_viewer",
+                        widget);
   }
   
   return widget;
