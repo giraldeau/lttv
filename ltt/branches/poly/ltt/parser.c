@@ -263,7 +263,7 @@ void parseFacility(parse_file *in, facility * fac)
   fac->name = allocAndCopy(getNameAttribute(in));    
   getRAnglebracket(in);    
   
-  fac->description = allocAndCopy(getDescription(in));
+  fac->description = getDescription(in);
   
   while(1){
     getLAnglebracket(in);    
@@ -311,7 +311,7 @@ void parseEvent(parse_file *in, event * ev, sequence * unnamed_types,
   getRAnglebracket(in);  
 
   //<description>...</descriptio>
-  ev->description = allocAndCopy(getDescription(in)); 
+  ev->description = getDescription(in); 
   
   //event can have STRUCT, TYPEREF or NOTHING
   getLAnglebracket(in);
@@ -359,7 +359,7 @@ void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
   f->name = allocAndCopy(getNameAttribute(in)); 
   getRAnglebracket(in);
 
-  f->description = allocAndCopy(getDescription(in));
+  f->description = getDescription(in);
 
   //<int size=...>
   getLAnglebracket(in);
