@@ -7,15 +7,15 @@
 #include "Drawing.h"
 #include "Process_List.h"
 
-#include "../icons/hGuiControlFlowInsert.xpm"
 
+extern GSList *gControl_Flow_Data_List;
 
 /*****************************************************************************
  *                     Control Flow Viewer class implementation              *
  *****************************************************************************/
 
 
-typedef struct _ControlFlowData {
+struct _ControlFlowData {
 
 	GtkWidget *Drawing_Area_V;
 	GtkWidget *Scrolled_Window_VC;
@@ -29,8 +29,8 @@ typedef struct _ControlFlowData {
 	GtkAdjustment *VAdjust_C ;
 	
 	/* Trace information */
-	TraceSet *Trace_Set;
-	TraceStatistics *Trace_Statistics;
+	//TraceSet *Trace_Set;
+	//TraceStatistics *Trace_Statistics;
 	
 	/* Shown events information */
 	guint First_Event, Last_Event;
@@ -43,11 +43,7 @@ typedef struct _ControlFlowData {
 	gboolean Selected_Event ;
 	guint Number_Of_Process;
 
-} ControlFlowData ;
-
-
-/** Array containing instanced objects. Used when module is unloaded */
-static GSList *sControl_Flow_Data_List = NULL ;
+} ;
 
 
 /**
@@ -79,7 +75,7 @@ GuiControlFlow(void)
 
 
 	/* Create the Process list */
-	//Control_Flow_Data->Process_List = ProcessList();
+	//Control_Flow_Data->Process_List = ProcessList_contruct();
 	
 	//Process_List_Widget = 
 	//	ProcessList_getWidget(Control_Flow_Data->Process_List);
@@ -146,8 +142,9 @@ GuiControlFlow(void)
 			G_OBJECT(Control_Flow_Data->HBox_V),
 			"Control_Flow_Data",
 			Control_Flow_Data,
-			GuiControlFlow_Destructor);
+			(GDestroyNotify)GuiControlFlow_Destructor);
 			
+	g_slist_append(gControl_Flow_Data_List,Control_Flow_Data);
 
 	return Control_Flow_Data;
 
@@ -164,9 +161,13 @@ GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
 	
 	ProcessList_destroy(Control_Flow_Data->Process_List);
 	
-	g_slist_remove(sControl_Flow_Data_List,Control_Flow_Data);
+	g_slist_remove(gControl_Flow_Data_List,Control_Flow_Data);
 }
 
 //FIXME : call hGuiEvents_Destructor for corresponding data upon widget destroy
 
+GtkWidget *GuiControlFlow_get_Widget(ControlFlowData *Control_Flow_Data)
+{
+	return Control_Flow_Data->HBox_V ;
+}
 

@@ -72,10 +72,10 @@ void get_time_from_pixels(
 		guint area_x,
 		guint area_width,
 		guint window_width,
-		ltt_time &window_time_begin,
-		ltt_time &window_time_end,
-		ltt_time &time_begin,
-		ltt_time &time_end)
+		ltt_time *window_time_begin,
+		ltt_time *window_time_end,
+		ltt_time *time_begin,
+		ltt_time *time_end)
 {
 	ltt_time window_time_interval;
 	

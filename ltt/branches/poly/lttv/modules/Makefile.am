@@ -5,12 +5,12 @@
 #
 
 # the gui subdir comes first : dependency
-SUBDIRS = gui # guiControlFlow
+SUBDIRS = gui guiControlFlow
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
-LIBS += $(GTK_LIBS) -L${srcdir}/gui/API -lmainWinApi
+LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/API -lmainWinApi
 
 libdir = ${lttvplugindir}
 

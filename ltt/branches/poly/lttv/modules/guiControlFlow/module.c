@@ -17,12 +17,24 @@
  * Author : Mathieu Desnoyers, June 2003
  */
 
+#include <glib.h>
 #include <gmodule.h>
 #include <lttv/module.h>
-#include <lttv/gtkTraceSet.h>
+//#include <lttv/gtkTraceSet.h>
 
-#include "CFV.h"
-#include "Event_Hooks.h"
+//#include "CFV.h"
+//#include "Event_Hooks.h"
+
+// #include "../icons/hGuiControlFlowInsert.xpm"
+
+LttvModule *Main_Win_Module;
+
+
+/** Array containing instanced objects. Used when module is unloaded */
+//GSList *gControl_Flow_Data_List = NULL ;
+
+
+
 
 /*****************************************************************************
  *                 Functions for module loading/unloading                    *
@@ -33,20 +45,30 @@
  * This function initializes the Control Flow Viewer functionnality through the
  * gtkTraceSet API.
  */
-G_MODULE_EXPORT void init() {
+G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
+
+	Main_Win_Module = lttv_module_require(self, "mainwin", argc, argv);
+	
+	if(Main_Win_Module == NULL)
+	{
+	  g_critical("Can't load Control Flow Viewer : missing mainwin\n");
+	  return;
+	}
+	
 	g_critical("GUI ControlFlow Viewer init()");
 
 	/* Register the toolbar insert button */
-	ToolbarItemReg(guiEventsInsert_xpm, "Insert Control Flow Viewer", guiEvent);
+	//ToolbarItemReg(hGuiControlFlowInsert_xpm, "Insert Control Flow Viewer",
+	//		hGuiControlFlow);
 
 	/* Register the menu item insert entry */
-	MenuItemReg("/", "Insert Control Flow Viewer", guiEvent);
+	//MenuItemReg("/", "Insert Control Flow Viewer", hGuiControlFlow);
 	
 }
 
 void destroy_walk(gpointer data, gpointer user_data)
 {
-	GuiControlFlow_Destructor((ControlFlowData*)data);
+//	GuiControlFlow_Destructor((ControlFlowData*)data);
 }
 
 
@@ -61,16 +83,19 @@ G_MODULE_EXPORT void destroy() {
 	g_critical("GUI Control Flow Viewer destroy()");
 	int i;
 
-	ControlFlowData *Control_Flow_Data;
+//	ControlFlowData *Control_Flow_Data;
 	
 	g_critical("GUI Event Viewer destroy()");
 
-	g_slist_foreach(sControl_Flow_Data_List, destroy_walk, NULL );
+//	g_slist_foreach(gControl_Flow_Data_List, destroy_walk, NULL );
 	
 	/* Unregister the toolbar insert button */
-	//ToolbarItemUnreg(hGuiEvents);
+	//ToolbarItemUnreg(hGuiControlFlow);
 
 	/* Unregister the menu item insert entry */
-	//MenuItemUnreg(hGuiEvents);
-}
+	//MenuItemUnreg(hGuiControlFlow);
+	
 
+	lttv_module_unload(Main_Win_Module);
+	
+}

@@ -7,10 +7,13 @@
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
-LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/API -lmainWinApi -lcustomBox
+LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/API -lmainWinApi
 
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libguiControlFlow.la
 libguiControlFlow_la_LDFLAGS = -module
-libguiControlFlow_la_SOURCES = guiControlFlow.c
+libguiControlFlow_la_SOURCES = module.c
+# CFV.c Event_Hooks.c
+#libguiControlFlow_la_DEPENDENCIES = 	CFV.h \
+#					Event_Hooks.h

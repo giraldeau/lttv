@@ -2,7 +2,7 @@
 #ifndef _EVENT_HOOKS_H
 #define _EVENT_HOOKS_H
 
-GtkWidget *hGuiControlFlow(GtkWidget *pmParentWindow);
+GtkWidget *hGuiControlFlow(mainWindow *pmParentWindow);
 
 int Event_Selected_Hook(void *hook_data, void *call_data);
 

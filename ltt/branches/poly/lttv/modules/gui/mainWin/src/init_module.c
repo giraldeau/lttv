@@ -90,7 +90,7 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
   /* Add the object's information to the module's array */
   Main_Window_List = g_slist_append(Main_Window_List, mw);
 
-  g_critical("GUI init()");
+  g_critical("GUI Window_Creation_Hook()");
 #ifdef ENABLE_NLS
   bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
@@ -194,6 +194,8 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
   WindowCreationData *Window_Creation_Data = g_new(WindowCreationData, 1);
   
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  
+  g_critical("GUI init()");
   
   lttv_option_add("trace", 't', 
       "add a trace to the trace set to analyse", 

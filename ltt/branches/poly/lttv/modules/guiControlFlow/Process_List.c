@@ -23,7 +23,7 @@ enum
 };
 
 
-ProcessList *ProcessList(void)
+ProcessList *ProcessList_construct(void)
 {
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
@@ -95,7 +95,7 @@ gint get_cell_height(GtkTreeView *TreeView)
 	return height;
 }
 
-
+#ifdef 0
 int ProcessList_add(Process *myproc, ProcessList *Process_List, guint *height)
 {
 	// add proc to container
@@ -116,3 +116,4 @@ int ProcessList_remove(Process *myproc, ProcessList *Process_List)
 	
 	return 0;
 }
+#endif

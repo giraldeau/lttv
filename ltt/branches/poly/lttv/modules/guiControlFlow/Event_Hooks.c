@@ -2,8 +2,11 @@
  *                       Hooks to be called by the main window               *
  *****************************************************************************/
 
-#include <lttv/hook.h>
 
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
+#include <lttv/hook.h>
+#include <lttv/common.h>
 
 #include "CFV.h"
 
@@ -16,11 +19,11 @@
  * @return The widget created.
  */
 GtkWidget *
-hGuiControlFlow(GtkWidget *pmParentWindow)
+hGuiControlFlow(mainWindow *pmParentWindow)
 {
 	ControlFlowData* Control_Flow_Data = GuiControlFlow() ;
 
-	return Control_Flow_Data->HBox_V ;
+	return GuiControlFlow_get_Widget(Control_Flow_Data) ;
 	
 }
 
@@ -38,7 +41,7 @@ int Event_Selected_Hook(void *hook_data, void *call_data)
 
 }
 
-
+#ifdef DEBUG
 /* Hook called before drawing. Gets the initial context at the beginning of the
  * drawing interval and copy it to the context in Event_Request.
  */
@@ -87,4 +90,4 @@ int Draw_After_Hook(void *hook_data, void *call_data)
 	g_free(Event_Request);
 	return 0;
 }
-
+#endif
