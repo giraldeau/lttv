@@ -4318,44 +4318,46 @@ void construct_main_window(MainWindow * parent)
  * destroy the tab
  */
 
-void tab_destructor(Tab * tab_instance)
+void tab_destructor(Tab * tab)
 {
   int i, nb, ref_count;
   LttvTrace * trace;
 
-  if(tab_instance->attributes)
-    g_object_unref(tab_instance->attributes);
+  g_object_free(tab->tooltips);
+  
+  if(tab->attributes)
+    g_object_unref(tab->attributes);
 
-  if(tab_instance->interrupted_state)
-    g_object_unref(tab_instance->interrupted_state);
+  if(tab->interrupted_state)
+    g_object_unref(tab->interrupted_state);
 
 
-  if(tab_instance->traceset_info->traceset_context != NULL){
+  if(tab->traceset_info->traceset_context != NULL){
     //remove state update hooks
     lttv_state_remove_event_hooks(
-         (LttvTracesetState*)tab_instance->traceset_info->
+         (LttvTracesetState*)tab->traceset_info->
                               traceset_context);
-    lttv_context_fini(LTTV_TRACESET_CONTEXT(tab_instance->traceset_info->
+    lttv_context_fini(LTTV_TRACESET_CONTEXT(tab->traceset_info->
 					    traceset_context));
-    g_object_unref(tab_instance->traceset_info->traceset_context);
+    g_object_unref(tab->traceset_info->traceset_context);
   }
-  if(tab_instance->traceset_info->traceset != NULL) {
-    nb = lttv_traceset_number(tab_instance->traceset_info->traceset);
+  if(tab->traceset_info->traceset != NULL) {
+    nb = lttv_traceset_number(tab->traceset_info->traceset);
     for(i = 0 ; i < nb ; i++) {
-      trace = lttv_traceset_get(tab_instance->traceset_info->traceset, i);
+      trace = lttv_traceset_get(tab->traceset_info->traceset, i);
       ref_count = lttv_trace_get_ref_number(trace);
       if(ref_count <= 1){
 	      ltt_trace_close(lttv_trace(trace));
       }
     }
   }  
-  lttv_traceset_destroy(tab_instance->traceset_info->traceset);
+  lttv_traceset_destroy(tab->traceset_info->traceset);
   /* Remove the idle events requests processing function of the tab */
-  g_idle_remove_by_data(tab_instance);
+  g_idle_remove_by_data(tab);
 
-  g_slist_free(tab_instance->events_requests);
-  g_free(tab_instance->traceset_info);
-  g_free(tab_instance);
+  g_slist_free(tab->events_requests);
+  g_free(tab->traceset_info);
+  g_free(tab);
 }
 
 
@@ -4449,18 +4451,18 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   {
     tab->MTimebar = gtk_hbox_new(FALSE, 2);
     gtk_widget_show(tab->MTimebar);
-    GtkTooltips *tooltips = gtk_tooltips_new();
+    tab->tooltips = gtk_tooltips_new();
 
     tab->MEventBox1a = gtk_event_box_new();
     gtk_widget_show(tab->MEventBox1a);
-    gtk_tooltips_set_tip(tooltips, tab->MEventBox1a, 
+    gtk_tooltips_set_tip(tab->tooltips, tab->MEventBox1a, 
         "Paste Start and End Times Here", "");
     tab->MText1a = gtk_label_new("Time Frame ");
     gtk_widget_show(tab->MText1a);
     gtk_container_add(GTK_CONTAINER(tab->MEventBox1a), tab->MText1a);
     tab->MEventBox1b = gtk_event_box_new();
     gtk_widget_show(tab->MEventBox1b);
-    gtk_tooltips_set_tip(tooltips, tab->MEventBox1b, 
+    gtk_tooltips_set_tip(tab->tooltips, tab->MEventBox1b, 
         "Paste Start Time Here", "");
     tab->MText1b = gtk_label_new("start: ");
     gtk_widget_show(tab->MText1b);
@@ -4471,7 +4473,7 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     gtk_widget_show(tab->MText3a);
     tab->MEventBox3b = gtk_event_box_new();
     gtk_widget_show(tab->MEventBox3b);
-    gtk_tooltips_set_tip(tooltips, tab->MEventBox3b, 
+    gtk_tooltips_set_tip(tab->tooltips, tab->MEventBox3b, 
         "Paste End Time Here", "");
     tab->MText3b = gtk_label_new("end:");
     gtk_widget_show(tab->MText3b);
@@ -4482,7 +4484,7 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     gtk_widget_show(tab->MText5a);
     tab->MEventBox5b = gtk_event_box_new();
     gtk_widget_show(tab->MEventBox5b);
-    gtk_tooltips_set_tip(tooltips, tab->MEventBox5b, 
+    gtk_tooltips_set_tip(tab->tooltips, tab->MEventBox5b, 
         "Paste Current Time Here", "");
     tab->MText5b = gtk_label_new("Current Time:");
     gtk_widget_show(tab->MText5b);
