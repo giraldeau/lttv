@@ -107,7 +107,7 @@ void gtk_custom_set_adjust(GtkCustom * custom, gboolean first_time)
   TimeWindow time_window;
   TimeInterval *time_span;
   double tmp, start;
-  double range = 5;
+  double range = 0;
 
   get_time_window(custom->mw,&time_window);
   if(first_time){
@@ -134,7 +134,7 @@ void gtk_custom_set_adjust(GtkCustom * custom, gboolean first_time)
 
   if(custom->hadjust->page_increment >= tmp - range)
     custom->hadjust->value = custom->hadjust->lower;
-  if(start + custom->hadjust->page_increment > custom->hadjust->upper - range)
+  if(start + custom->hadjust->page_increment >= custom->hadjust->upper - range)
     custom->hadjust->value = start;
 
   /* page_size to the whole visible area will take care that the
