@@ -197,10 +197,11 @@ g_critical("missing data");
    drawing_data_request(Drawing, &Pixmap, Drawing->width, 0,
 		   	widget->allocation.width - Drawing->width,
 			widget->allocation.height);
-   drawing_data_request(Drawing, &Pixmap, 0, Drawing->height,
-		   Drawing->width,
-		   widget->allocation.height - Drawing->height);
-			                      
+	 // we do not request data vertically!
+//   drawing_data_request(Drawing, &Pixmap, 0, Drawing->height,
+//		   Drawing->width,
+//		   widget->allocation.height - Drawing->height);
+		                      
 //   gdk_draw_rectangle (Pixmap,
 //		      widget->style->white_gc,
 //		      TRUE,
@@ -208,14 +209,14 @@ g_critical("missing data");
 //		      widget->allocation.width -
 //		      			Drawing->width,
 //		      widget->allocation.height);
-
-//    gdk_draw_rectangle (Pixmap,
-//		      widget->style->white_gc,
-//		      TRUE,
-//		      0, Drawing->height,
-//		      Drawing->width,	// do not overlap
-//		      widget->allocation.height -
-//		      			Drawing->height);
+		
+	 	// Clear the bottom part of the image
+    gdk_draw_rectangle (Pixmap,
+		      widget->style->white_gc,
+		      TRUE,
+		      0, Drawing->height,
+		      Drawing->width,	// do not overlap
+		      widget->allocation.height -	Drawing->height);
  
   Drawing->width = widget->allocation.width;
   Drawing->height = widget->allocation.height;
