@@ -79,9 +79,9 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
       nb = ltt_type_member_number(type);
       for(i = 0 ; i < nb ; i++) {
         element = ltt_field_member(f,i);
-        if(name) {
+        if(field_names) {
           ltt_type_member_type(type, i, &name);
-          g_string_append_printf(s, " %s = ", field_names);
+          g_string_append_printf(s, " %s = ", name);
         }
         print_field(e, element, s, field_names);
       }
@@ -115,6 +115,7 @@ void lttv_event_to_string(LttEvent *e, LttTracefile *tf, GString *s,
     g_string_append_printf(s,"%s.%s: %ld.%ld (%s)",ltt_facility_name(facility),
         ltt_eventtype_name(event_type), (long)time.tv_sec, time.tv_nsec,
         ltt_tracefile_name(tf));
+    /* Print the process id and the state/interrupt type of the process */
   }
 
   print_field(e, field, s, field_names);

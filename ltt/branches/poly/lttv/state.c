@@ -78,21 +78,21 @@ fini(LttvTracesetState *self)
 }
 
 
-LttvTracesetContext *
+static LttvTracesetContext *
 new_traceset_context(LttvTracesetContext *self)
 {
   return LTTV_TRACESET_CONTEXT(g_object_new(LTTV_TRACESET_STATE_TYPE, NULL));
 }
 
 
-LttvTraceContext * 
+static LttvTraceContext * 
 new_trace_context(LttvTracesetContext *self)
 {
   return LTTV_TRACE_CONTEXT(g_object_new(LTTV_TRACE_STATE_TYPE, NULL));
 }
 
 
-LttvTracefileContext *
+static LttvTracefileContext *
 new_tracefile_context(LttvTracesetContext *self)
 {
   return LTTV_TRACEFILE_CONTEXT(g_object_new(LTTV_TRACEFILE_STATE_TYPE, NULL));
@@ -272,6 +272,7 @@ static void push_state(LttvTracefileState *tfs, LttvInterruptType t,
   intr->n = state_id;
   intr->entry = intr->last_change = LTTV_TRACEFILE_CONTEXT(tfs)->timestamp;
   intr->s = process->state->s;
+  process->state = intr;
 }
 
 
@@ -512,7 +513,7 @@ find_hook(LttTrace *t, char *facility, char *event,
   et = ltt_facility_eventtype_get_by_name(f, event);
   if(et == NULL) g_error("Event %s does not exist", event);
 
-  hook_id.id = *(ltt_eventtype_id(et)); /* CHECK */
+  hook_id.id = ltt_eventtype_id(et);
   hook_id.h = h;
   hook_id.free_hook_data = FALSE;
   hook_data.f1 = find_field(et, field1);

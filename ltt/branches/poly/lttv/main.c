@@ -101,7 +101,9 @@ int main(int argc, char **argv) {
       lttv_module_path_option, NULL);
 
   lttv_hooks_call(before_options, NULL);
+  lttv_option_parse(argc, argv);
   lttv_hooks_call(after_options, NULL);
+
   lttv_hooks_call(before_main, NULL);
   lttv_hooks_call(after_main, NULL);
 
