@@ -70,6 +70,8 @@ typedef struct _HashedProcessData {
     gboolean under_marked; /* inform the user that information is incomplete */
   } x; /* last x position saved by after state update */
 
+  LttTime next_good_time; /* precalculate the next time where the next
+                             pixel is.*/
   // FIXME : add info on last event ?
 
 } HashedProcessData;

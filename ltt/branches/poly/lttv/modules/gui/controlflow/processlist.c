@@ -491,10 +491,14 @@ int processlist_add(  ProcessList *process_list,
    */
   hashed_process_data->x.over = 0;
   hashed_process_data->x.over_used = FALSE;
+  hashed_process_data->x.over_marked = FALSE;
   hashed_process_data->x.middle = 0;
   hashed_process_data->x.middle_used = FALSE;
+  hashed_process_data->x.middle_marked = FALSE;
   hashed_process_data->x.under = 0;
   hashed_process_data->x.under_used = FALSE;
+  hashed_process_data->x.under_marked = FALSE;
+  hashed_process_data->next_good_time = ltt_time_zero;
   
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->list_store,

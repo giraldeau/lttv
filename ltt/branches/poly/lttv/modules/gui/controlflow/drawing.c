@@ -383,6 +383,7 @@ static void set_last_start(gpointer key, gpointer value, gpointer user_data)
   hashed_process_data->x.under = x;
   hashed_process_data->x.under_used = FALSE;
   hashed_process_data->x.under_marked = FALSE;
+  hashed_process_data->next_good_time = ltt_time_zero;
 
   return;
 }

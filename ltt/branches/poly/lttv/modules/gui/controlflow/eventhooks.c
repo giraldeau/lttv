@@ -481,7 +481,26 @@ int before_schedchange_hook(void *hook_data, void *call_data)
        * value.
        */
       g_assert(hashed_process_data->x.middle != -1);
+      if(ltt_time_compare(hashed_process_data->next_good_time,
+                          evtime) > 0)
       {
+        if(hashed_process_data->x.middle_marked == FALSE) {
+          guint x;
+          convert_time_to_pixels(
+                    time_window,
+                    evtime,
+                    width,
+                    &x);
+
+          /* Draw collision indicator */
+          gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+          gdk_draw_point(drawing->pixmap,
+                         drawing->gc,
+                         x,
+                         y+(height/2)-3);
+          hashed_process_data->x.middle_marked = TRUE;
+        }
+      } else {
         guint x;
         convert_time_to_pixels(
                   time_window,
@@ -536,6 +555,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           hashed_process_data->x.middle = x;
           hashed_process_data->x.middle_used = TRUE;
           hashed_process_data->x.middle_marked = FALSE;
+
+          /* Calculate the next good time */
+          convert_pixels_to_time(width, x+1, time_window,
+                                 &hashed_process_data->next_good_time);
         }
       }
     }
@@ -603,7 +626,27 @@ int before_schedchange_hook(void *hook_data, void *call_data)
        * value.
        */
       g_assert(hashed_process_data->x.middle != -1);
+
+      if(ltt_time_compare(hashed_process_data->next_good_time,
+                          evtime) > 0)
       {
+        if(hashed_process_data->x.middle_marked == FALSE) {
+          guint x;
+          convert_time_to_pixels(
+                    time_window,
+                    evtime,
+                    width,
+                    &x);
+
+          /* Draw collision indicator */
+          gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+          gdk_draw_point(drawing->pixmap,
+                         drawing->gc,
+                         x,
+                         y+(height/2)-3);
+          hashed_process_data->x.middle_marked = TRUE;
+        }
+      } else {
         guint x;
 
         convert_time_to_pixels(
@@ -660,6 +703,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           hashed_process_data->x.middle = x;
           hashed_process_data->x.middle_used = TRUE;
           hashed_process_data->x.middle_marked = FALSE;
+
+          /* Calculate the next good time */
+          convert_pixels_to_time(width, x+1, time_window,
+                                 &hashed_process_data->next_good_time);
         }
       }
     }
@@ -1373,20 +1420,23 @@ int after_schedchange_hook(void *hook_data, void *call_data)
     drawing_insert_square( control_flow_data->drawing, y_in, height);
   }
 
-  guint new_x;
-  
-  convert_time_to_pixels(
-      time_window,
-      evtime,
-      width,
-      &new_x);
+  if(ltt_time_compare(hashed_process_data_in->next_good_time,
+                          evtime) <= 0)
+  {
+    guint new_x;
+    
+    convert_time_to_pixels(
+        time_window,
+        evtime,
+        width,
+        &new_x);
 
-  if(hashed_process_data_in->x.middle != new_x) {
-    hashed_process_data_in->x.middle = new_x;
-    hashed_process_data_in->x.middle_used = FALSE;
-    hashed_process_data_in->x.middle_marked = FALSE;
+    if(hashed_process_data_in->x.middle != new_x) {
+      hashed_process_data_in->x.middle = new_x;
+      hashed_process_data_in->x.middle_used = FALSE;
+      hashed_process_data_in->x.middle_marked = FALSE;
+    }
   }
-
   return 0;
 
 
@@ -1984,7 +2034,27 @@ int before_execmode_hook(void *hook_data, void *call_data)
    * value.
    */
   g_assert(hashed_process_data->x.over != -1);
+
+  if(ltt_time_compare(hashed_process_data->next_good_time,
+                      evtime) > 0)
   {
+    if(hashed_process_data->x.middle_marked == FALSE) {
+      guint x;
+      convert_time_to_pixels(
+                time_window,
+                evtime,
+                width,
+                &x);
+
+      /* Draw collision indicator */
+      gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+      gdk_draw_point(drawing->pixmap,
+                     drawing->gc,
+                     x,
+                     y+(height/2)-3);
+      hashed_process_data->x.middle_marked = TRUE;
+    }
+  } else {
     guint x;
 
     convert_time_to_pixels(
@@ -2040,6 +2110,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
       hashed_process_data->x.middle = x;
       hashed_process_data->x.middle_used = TRUE;
       hashed_process_data->x.middle_marked = FALSE;
+
+      /* Calculate the next good time */
+      convert_pixels_to_time(width, x+1, time_window,
+                             &hashed_process_data->next_good_time);
     }
   }
   
@@ -2132,20 +2206,23 @@ int after_execmode_hook(void *hook_data, void *call_data)
     drawing_insert_square( control_flow_data->drawing, y, height);
   }
   
-  guint new_x;
-  
-  convert_time_to_pixels(
-      time_window,
-      evtime,
-      width,
-      &new_x);
+  if(ltt_time_compare(hashed_process_data->next_good_time,
+                          evtime) <= 0)
+  {
+    guint new_x;
+    
+    convert_time_to_pixels(
+        time_window,
+        evtime,
+        width,
+        &new_x);
 
-  if(hashed_process_data->x.middle != new_x) {
-    hashed_process_data->x.middle = new_x;
-    hashed_process_data->x.middle_used = FALSE;
-    hashed_process_data->x.middle_marked = FALSE;
+    if(hashed_process_data->x.middle != new_x) {
+      hashed_process_data->x.middle = new_x;
+      hashed_process_data->x.middle_used = FALSE;
+      hashed_process_data->x.middle_marked = FALSE;
+    }
   }
-
   return 0;
 }
 
@@ -2254,7 +2331,27 @@ int before_process_hook(void *hook_data, void *call_data)
      * value.
      */
     g_assert(hashed_process_data->x.over != -1);
+
+    if(ltt_time_compare(hashed_process_data->next_good_time,
+                        evtime) > 0)
     {
+      if(hashed_process_data->x.middle_marked == FALSE) {
+        guint x;
+        convert_time_to_pixels(
+                  time_window,
+                  evtime,
+                  width,
+                  &x);
+
+        /* Draw collision indicator */
+        gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+        gdk_draw_point(drawing->pixmap,
+                       drawing->gc,
+                       x,
+                       y+(height/2)-3);
+        hashed_process_data->x.middle_marked = TRUE;
+      }
+    } else {
       guint x;
 
       convert_time_to_pixels(
@@ -2310,6 +2407,10 @@ int before_process_hook(void *hook_data, void *call_data)
         hashed_process_data->x.middle = x;
         hashed_process_data->x.middle_used = TRUE;
         hashed_process_data->x.middle_marked = FALSE;
+
+        /* Calculate the next good time */
+        convert_pixels_to_time(width, x+1, time_window,
+                               &hashed_process_data->next_good_time);
       }
     }
 
@@ -2422,27 +2523,31 @@ int after_process_hook(void *hook_data, void *call_data)
       drawing_insert_square( control_flow_data->drawing, y_child, height);
     }
 
-    guint new_x;
-    convert_time_to_pixels(
-        time_window,
-        evtime,
-        width,
-        &new_x);
+    if(ltt_time_compare(hashed_process_data_child->next_good_time,
+                          evtime) <= 0)
+    {
+      guint new_x;
+      convert_time_to_pixels(
+          time_window,
+          evtime,
+          width,
+          &new_x);
 
-    if(hashed_process_data_child->x.over != new_x) {
-      hashed_process_data_child->x.over = new_x;
-      hashed_process_data_child->x.over_used = FALSE;
-      hashed_process_data_child->x.over_marked = FALSE;
-    }
-    if(hashed_process_data_child->x.middle != new_x) {
-      hashed_process_data_child->x.middle = new_x;
-      hashed_process_data_child->x.middle_used = FALSE;
-      hashed_process_data_child->x.middle_marked = FALSE;
-    }
-    if(hashed_process_data_child->x.under != new_x) {
-      hashed_process_data_child->x.under = new_x;
-      hashed_process_data_child->x.under_used = FALSE;
-      hashed_process_data_child->x.under_marked = FALSE;
+      if(hashed_process_data_child->x.over != new_x) {
+        hashed_process_data_child->x.over = new_x;
+        hashed_process_data_child->x.over_used = FALSE;
+        hashed_process_data_child->x.over_marked = FALSE;
+      }
+      if(hashed_process_data_child->x.middle != new_x) {
+        hashed_process_data_child->x.middle = new_x;
+        hashed_process_data_child->x.middle_used = FALSE;
+        hashed_process_data_child->x.middle_marked = FALSE;
+      }
+      if(hashed_process_data_child->x.under != new_x) {
+        hashed_process_data_child->x.under = new_x;
+        hashed_process_data_child->x.under_used = FALSE;
+        hashed_process_data_child->x.under_marked = FALSE;
+      }
     }
 
   } else if(sub_id == 3) { /* exit */
@@ -2493,18 +2598,21 @@ int after_process_hook(void *hook_data, void *call_data)
       drawing_insert_square( control_flow_data->drawing, y, height);
     }
 
-    guint new_x;
-    convert_time_to_pixels(
-        time_window,
-        evtime,
-        width,
-        &new_x);
-    if(hashed_process_data->x.middle != new_x) {
-      hashed_process_data->x.middle = new_x;
-      hashed_process_data->x.middle_used = FALSE;
-      hashed_process_data->x.middle_marked = FALSE;
+    if(ltt_time_compare(hashed_process_data->next_good_time,
+                          evtime) <= 0)
+    {
+      guint new_x;
+      convert_time_to_pixels(
+          time_window,
+          evtime,
+          width,
+          &new_x);
+      if(hashed_process_data->x.middle != new_x) {
+        hashed_process_data->x.middle = new_x;
+        hashed_process_data->x.middle_used = FALSE;
+        hashed_process_data->x.middle_marked = FALSE;
+      }
     }
-
 
   }
   return 0;
@@ -2996,6 +3104,9 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
        * value.
        */
       g_assert(hashed_process_data->x.over != -1);
+
+      if(ltt_time_compare(hashed_process_data->next_good_time,
+                            evtime) <= 0)
       {
         guint x;
 
@@ -3041,6 +3152,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
         if(x == hashed_process_data->x.middle &&
             hashed_process_data->x.middle_used) {
+#if 0 /* do not mark closure : not missing information */
           if(hashed_process_data->x.middle_marked == FALSE) {
             /* Draw collision indicator */
             gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
@@ -3050,6 +3162,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
                            y+(height/2)-3);
             hashed_process_data->x.middle_marked = TRUE;
           }
+#endif //0
           /* Jump */
         } else {
           draw_context.drawinfo.start.x = hashed_process_data->x.middle;
@@ -3062,6 +3175,10 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
             hashed_process_data->x.middle = x;
             /* but don't use the pixel */
             hashed_process_data->x.middle_used = FALSE;
+
+            /* Calculate the next good time */
+            convert_pixels_to_time(width, x+1, time_window,
+                                  &hashed_process_data->next_good_time);
           }
         }
       }
