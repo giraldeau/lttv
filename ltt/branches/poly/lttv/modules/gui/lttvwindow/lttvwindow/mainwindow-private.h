@@ -58,8 +58,8 @@ struct _MainWindow{
   /* Attributes for trace reading hooks local to the main window */
   LttvIAttribute * attributes;
   
-  Tab * tab;
-  Tab * current_tab;
+  //Tab * tab;
+  //Tab * current_tab;
 
 };
 
@@ -78,7 +78,7 @@ struct _Tab{
   LttTime current_time;
   LttvIAttribute * attributes;
 
-  struct _Tab * next;
+  //struct _Tab * next;
   MainWindow  * mw;
 
   /* Traceset related information */

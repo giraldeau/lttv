@@ -19,7 +19,10 @@
 #ifndef _MAIN_WINDOW_
 #define _MAIN_WINDOW_
 
+#include <glib.h>
 #include <ltt/time.h>
+
+extern GQuark LTTV_TRACES;
 
 typedef struct _MainWindow MainWindow;
 typedef struct _TimeWindow TimeWindow;

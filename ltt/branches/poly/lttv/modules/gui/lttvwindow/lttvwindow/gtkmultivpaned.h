@@ -25,8 +25,7 @@
 #include <glib-object.h>
 #include <gdk/gdk.h>
 #include <gtk/gtkcontainer.h>
-#include <lttvwindow/mainwindow.h>
-
+#include <lttvwindow/mainwindow.h> // for TimeWindow
 
 #ifdef __cplusplus
 extern "C" {
@@ -59,7 +58,6 @@ struct _GtkMultiVPaned
   //  GtkWidget * viewport;
   GtkWidget * hscrollbar;  
   GtkAdjustment *hadjust;
-  Tab *tab;
 };
 
 struct _GtkMultiVPanedClass

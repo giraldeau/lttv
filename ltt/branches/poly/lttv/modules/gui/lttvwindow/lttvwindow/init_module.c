@@ -46,6 +46,8 @@
 #include <ltt/trace.h>
 
 
+GQuark LTTV_TRACES;
+
 /** Array containing instanced objects. */
 GSList * g_main_window_list = NULL ;
 
@@ -57,13 +59,16 @@ LttvTrace *g_init_trace = NULL;
 
 static char *a_trace;
 
+
 void lttv_trace_option(void *hook_data)
 { 
   LttTrace *trace;
+  gchar *path;
 
   trace = ltt_trace_open(a_trace);
   if(trace == NULL) g_critical("cannot open trace %s", a_trace);
   g_init_trace = lttv_trace_new(trace);
+
 }
 
 /*****************************************************************************
@@ -105,8 +110,10 @@ static void init() {
   // Global attributes only used for interaction with main() here.
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   
-  g_debug("GUI init()");
+  LTTV_TRACES = g_quark_from_string("traces/");
   
+  g_debug("GUI init()");
+
   lttv_option_add("trace", 't', 
       "add a trace to the trace set to analyse", 
       "pathname of the directory containing the trace", 

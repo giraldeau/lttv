@@ -172,7 +172,7 @@ void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, const TimeWindow
 {
   TimeInterval *time_span;
   double len, start;
-  Tab *tab = (Tab*)multi_vpaned->tab;
+  Tab *tab = (Tab *)g_object_get_data(G_OBJECT(multi_vpaned), "Tab_Info");
   LttvTracesetContext *tsc = 
     LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
 
@@ -219,7 +219,7 @@ void gtk_multi_vpaned_widget_add(GtkMultiVPaned * multi_vpaned, GtkWidget * widg
 {
   GtkPaned * tmpPane; 
   GtkWidget * w;
-  Tab *tab = (Tab*)multi_vpaned->tab;
+  Tab *tab = (Tab *)g_object_get_data(G_OBJECT(multi_vpaned), "Tab_Info");
   
   g_return_if_fail(GTK_IS_MULTI_VPANED(multi_vpaned));
   g_object_ref(G_OBJECT(widget1));
@@ -418,7 +418,7 @@ void gtk_multi_vpaned_scroll_value_changed(GtkAdjustment *adjust, gpointer multi
   GtkMultiVPaned * multi_vpaned = (GtkMultiVPaned*)multi_vpaned_arg;
   gdouble value = gtk_adjustment_get_value(adjust);
   gdouble upper, lower, ratio;
-  Tab *tab = (Tab*)multi_vpaned->tab;
+  Tab *tab = (Tab *)g_object_get_data(G_OBJECT(multi_vpaned), "Tab_Info");
   LttvTracesetContext * tsc = 
     LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
 

@@ -60,7 +60,7 @@ char * get_unload_module(char ** loaded_module_name, int nb_module);
 char * get_remove_trace(char ** all_trace_name, int nb_trace);
 char * get_selection(char ** all_name, int nb, char *title, char * column_title);
 gboolean get_filter_selection(LttvTracesetSelector *s, char *title, char * column_title);
-void * create_tab(MainWindow * mw, Tab *copy_tab,
+Tab* create_tab(MainWindow * mw, Tab *copy_tab,
 		  GtkNotebook * notebook, char * label);
 
 static void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor);
@@ -72,7 +72,7 @@ void checkbox_changed(GtkTreeView *treeview,
 		      gpointer user_data);
 void remove_trace_from_traceset_selector(GtkMultiVPaned * paned, unsigned i);
 void add_trace_into_traceset_selector(GtkMultiVPaned * paned, LttTrace * trace);
-void create_new_tab(GtkWidget* widget, gpointer user_data);
+Tab *create_new_tab(GtkWidget* widget, gpointer user_data);
 
 LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset);
 
@@ -165,14 +165,18 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
 {
   GtkMultiVPaned * multi_vpaned;
   MainWindow * mw_data = get_window_data_struct(widget);
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
   GtkWidget * viewer;
   LttvTracesetSelector  * s;
   TimeInterval * time_interval;
-  Tab *tab = mw_data->current_tab;
-
-  if(!tab) {
-    create_new_tab(widget, NULL);
-    tab = mw_data->current_tab;
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+  
+  if(!page) {
+    tab = create_new_tab(widget, NULL);
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
   }
 
   multi_vpaned = tab->multi_vpaned;
@@ -294,15 +298,38 @@ void create_new_window(GtkWidget* widget, gpointer user_data, gboolean clone)
 void move_up_viewer(GtkWidget * widget, gpointer user_data)
 {
   MainWindow * mw = get_window_data_struct(widget);
-  if(!mw->current_tab) return;
-  gtk_multi_vpaned_widget_move_up(mw->current_tab->multi_vpaned);
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+
+  Tab *tab;
+
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
+  gtk_multi_vpaned_widget_move_up(tab->multi_vpaned);
 }
 
 void move_down_viewer(GtkWidget * widget, gpointer user_data)
 {
   MainWindow * mw = get_window_data_struct(widget);
-  if(!mw->current_tab) return;
-  gtk_multi_vpaned_widget_move_down(mw->current_tab->multi_vpaned);
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
+  gtk_multi_vpaned_widget_move_down(tab->multi_vpaned);
 }
 
 
@@ -312,8 +339,19 @@ void move_down_viewer(GtkWidget * widget, gpointer user_data)
 void delete_viewer(GtkWidget * widget, gpointer user_data)
 {
   MainWindow * mw = get_window_data_struct(widget);
-  if(!mw->current_tab) return;
-  gtk_multi_vpaned_widget_delete(mw->current_tab->multi_vpaned);
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
+  gtk_multi_vpaned_widget_delete(tab->multi_vpaned);
 }
 
 
@@ -988,15 +1026,20 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   gint id;
   gint i;
   MainWindow * mw_data = get_window_data_struct(widget);
-  Tab *tab = mw_data->current_tab;
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+
+  if(!page) {
+    tab = create_new_tab(widget, NULL);
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
 
   GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
   gtk_dir_selection_hide_fileop_buttons(file_selector);
-  
-  if(!tab) {
-    create_new_tab(widget, NULL);
-    tab = mw_data->current_tab;
-  }
   
   if(remember_trace_dir[0] != '\0')
     gtk_dir_selection_set_filename(file_selector, remember_trace_dir);
@@ -1080,14 +1123,22 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
   gint i, j, nb_trace;
   char ** name, *remove_trace_name;
   MainWindow * mw_data = get_window_data_struct(widget);
-  Tab *tab = mw_data->current_tab;
   LttvTracesetSelector * s;
   LttvTraceSelector * t;
   GtkWidget * w; 
   gboolean selected;
-  
-  if(!tab) return;
-  
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
   nb_trace =lttv_traceset_number(tab->traceset_info->traceset); 
   name = g_new(char*,nb_trace);
   for(i = 0; i < nb_trace; i++){
@@ -1101,90 +1152,92 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
   if(remove_trace_name){
     for(i=0; i<nb_trace; i++){
       if(strcmp(remove_trace_name,name[i]) == 0){
-	//unselect the trace from the current viewer
-	w = gtk_multi_vpaned_get_widget(tab->multi_vpaned);  
-	if(w){
-	  s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-	  if(s){
-	    t = lttv_traceset_selector_trace_get(s,i);
-	    lttv_trace_selector_set_selected(t, FALSE);
-	  }
+	      //unselect the trace from the current viewer
+      	w = gtk_multi_vpaned_get_widget(tab->multi_vpaned);  
+      	if(w){
+      	  s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
+      	  if(s){
+      	    t = lttv_traceset_selector_trace_get(s,i);
+      	    lttv_trace_selector_set_selected(t, FALSE);
+      	  }
 
-	  //check if other viewers select the trace
-	  w = gtk_multi_vpaned_get_first_widget(tab->multi_vpaned);  
-	  while(w){
-	    s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-	    if(s){
-	      t = lttv_traceset_selector_trace_get(s,i);
-	      selected = lttv_trace_selector_get_selected(t);
-	      if(selected)break;
-	    }
-	    w = gtk_multi_vpaned_get_next_widget(tab->multi_vpaned);  
-	  }
-	}else selected = FALSE;
+          //check if other viewers select the trace
+          w = gtk_multi_vpaned_get_first_widget(tab->multi_vpaned);  
+          while(w){
+            s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
+            if(s){
+              t = lttv_traceset_selector_trace_get(s,i);
+              selected = lttv_trace_selector_get_selected(t);
+              if(selected)break;
+            }
+            w = gtk_multi_vpaned_get_next_widget(tab->multi_vpaned);  
+          }
+        }else selected = FALSE;
 
-	//if no viewer selects the trace, remove it
-	if(!selected){
-	  remove_trace_from_traceset_selector(tab->multi_vpaned, i);
+        //if no viewer selects the trace, remove it
+        if(!selected){
+          remove_trace_from_traceset_selector(tab->multi_vpaned, i);
 
-	  traceset = tab->traceset_info->traceset;
-	  trace_v = lttv_traceset_get(traceset, i);
-	  if(lttv_trace_get_ref_number(trace_v) <= 1)
-	    ltt_trace_close(lttv_trace(trace_v));
+          traceset = tab->traceset_info->traceset;
+         //Keep a reference to the traces so they are not freed.
+          for(j=0; j<lttv_traceset_number(traceset); j++)
+          {
+            LttvTrace * trace = lttv_traceset_get(traceset, j);
+            lttv_trace_ref(trace);
+          }
 
-    //Keep a reference to the traces so they are not freed.
-    for(j=0; j<lttv_traceset_number(traceset); j++)
-    {
-      LttvTrace * trace = lttv_traceset_get(traceset, j);
-      lttv_trace_ref(trace);
-    }
-
-    //remove state update hooks
-    lttv_state_remove_event_hooks(
-         (LttvTracesetState*)tab->traceset_info->traceset_context);
-    lttv_context_fini(LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context));
-    g_object_unref(tab->traceset_info->traceset_context);
-
-    
-	  lttv_traceset_remove(traceset, i);
-    lttv_trace_unref(trace_v);  // Remove local reference
-	  if(!lttv_trace_get_ref_number(trace_v))
-	     lttv_trace_destroy(trace_v);
-    
-	  tab->traceset_info->traceset_context =
-	    g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
-    lttv_context_init(
-			    LTTV_TRACESET_CONTEXT(tab->
-				      traceset_info->traceset_context),traceset);      
-      //add state update hooks
-    lttv_state_add_event_hooks(
-      (LttvTracesetState*)tab->traceset_info->traceset_context);
-
-    //Remove local reference to the traces.
-    for(j=0; j<lttv_traceset_number(traceset); j++)
-    {
-      LttvTrace * trace = lttv_traceset_get(traceset, j);
-      lttv_trace_unref(trace);
-    }
+          //remove state update hooks
+          lttv_state_remove_event_hooks(
+               (LttvTracesetState*)tab->traceset_info->traceset_context);
+          lttv_context_fini(LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context));
+          g_object_unref(tab->traceset_info->traceset_context);
 
 
-	  //update current tab
-	  //update_traceset(mw_data);
-	  if(nb_trace > 1){
+          trace_v = lttv_traceset_get(traceset, i);
 
-      SetTraceset(mw_data, (gpointer)traceset);
-  	  // in expose now call_pending_read_hooks(mw_data);
+          if(lttv_trace_get_ref_number(trace_v) <= 1)
+            ltt_trace_close(lttv_trace(trace_v));
+          
+          lttv_traceset_remove(traceset, i);
+          lttv_trace_unref(trace_v);  // Remove local reference
 
-	    //lttvwindow_report_current_time(mw_data,&(tab->current_time));
-	  }else{
-	    if(tab){
-	      while(tab->multi_vpaned->num_children){
-		gtk_multi_vpaned_widget_delete(tab->multi_vpaned);
-	      }    
-	    }	    
-	  }
-	}
-	break;
+          if(!lttv_trace_get_ref_number(trace_v))
+             lttv_trace_destroy(trace_v);
+          
+          tab->traceset_info->traceset_context =
+            g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+          lttv_context_init(
+                LTTV_TRACESET_CONTEXT(tab->
+                    traceset_info->traceset_context),traceset);      
+            //add state update hooks
+          lttv_state_add_event_hooks(
+            (LttvTracesetState*)tab->traceset_info->traceset_context);
+
+          //Remove local reference to the traces.
+          for(j=0; j<lttv_traceset_number(traceset); j++)
+          {
+            LttvTrace * trace = lttv_traceset_get(traceset, j);
+            lttv_trace_unref(trace);
+          }
+
+
+          //update current tab
+          //update_traceset(mw_data);
+          if(nb_trace > 1){
+
+            SetTraceset(mw_data, (gpointer)traceset);
+            // in expose now call_pending_read_hooks(mw_data);
+
+            //lttvwindow_report_current_time(mw_data,&(tab->current_time));
+          }else{
+            if(tab){
+              while(tab->multi_vpaned->num_children){
+          gtk_multi_vpaned_widget_delete(tab->multi_vpaned);
+              }    
+            }	    
+          }
+        }
+        break;
       }
     }
   }
@@ -1219,10 +1272,19 @@ void zoom(GtkWidget * widget, double size)
   TimeWindow new_time_window;
   LttTime    current_time, time_delta, time_s, time_e, time_tmp;
   MainWindow * mw_data = get_window_data_struct(widget);
-  Tab *tab = mw_data->current_tab;
   LttvTracesetContext *tsc;
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
 
-  if(tab==NULL) return;
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
   if(size == 1) return;
 
   tsc = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
@@ -1339,20 +1401,28 @@ on_clone_traceset_activate             (GtkMenuItem     *menuitem,
 /* create_new_tab calls create_tab to construct a new tab in the main window
  */
 
-void create_new_tab(GtkWidget* widget, gpointer user_data){
+Tab *create_new_tab(GtkWidget* widget, gpointer user_data){
   gchar label[PATH_LENGTH];
   MainWindow * mw_data = get_window_data_struct(widget);
 
   GtkNotebook * notebook = (GtkNotebook *)lookup_widget(widget, "MNotebook");
   if(notebook == NULL){
     g_printf("Notebook does not exist\n");
-    return;
+    return NULL;
   }
-  
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *copy_tab;
+
+  if(!page) {
+    copy_tab = NULL;
+  } else {
+    copy_tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
   
   strcpy(label,"Page");
   if(get_label(mw_data, label,"Get the name of the tab","Please input tab's name"))    
-    create_tab (mw_data, NULL, notebook, label);
+    return (create_tab (mw_data, copy_tab, notebook, label));
 }
 
 void
@@ -1401,14 +1471,6 @@ on_close_tab_activate                  (GtkMenuItem     *menuitem,
   
   gtk_notebook_remove_page(GTK_NOTEBOOK(notebook), page_num);
 
-  if( gtk_notebook_get_n_pages(GTK_NOTEBOOK(notebook)) == 0 )
-    mw_data->current_tab = NULL;
-  else {
-    page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
-                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
-    mw_data->current_tab =
-                     (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
-  }
 }
 
 
@@ -1553,10 +1615,18 @@ on_trace_filter_activate              (GtkMenuItem     *menuitem,
 {
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
   LttvTracesetSelector * s;
-  Tab *tab = mw_data->current_tab;
   GtkWidget * w;
-  
-  if(tab == NULL) return ;
+  GtkWidget * notebook = lookup_widget(GTK_WIDGET(menuitem), "MNotebook");
+
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+
+  if(!page) {
+    return;
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
 
   w = gtk_multi_vpaned_get_widget(tab->multi_vpaned);
   
@@ -1891,7 +1961,6 @@ on_MWindow_configure                   (GtkWidget         *widget,
 {
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)widget);
   float width = event->width;
-  Tab * tab = mw_data->tab;
   TimeWindow time_win;
   double ratio;
   TimeInterval *time_span;
@@ -1928,11 +1997,6 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
                                         guint            page_num,
                                         gpointer         user_data)
 {
-  MainWindow * mw_data = get_window_data_struct((GtkWidget*)notebook);
-  GtkWidget *cur_page = gtk_notebook_get_nth_page(notebook, page_num);
-
-  mw_data->current_tab =
-                   (Tab *)g_object_get_data(G_OBJECT(cur_page), "Tab_Info");
 
 }
 
@@ -2380,6 +2444,7 @@ void construct_main_window(MainWindow * parent)
   LttvIAttribute *attributes =
 	  LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   LttvAttributeValue value;
+  Tab *new_tab;
          
   new_m_window = g_new(MainWindow, 1);
 
@@ -2391,8 +2456,6 @@ void construct_main_window(MainWindow * parent)
   gtk_widget_show (new_window);
     
   new_m_window->mwindow = new_window;
-  new_m_window->tab = NULL;
-  new_m_window->current_tab = NULL;
   new_m_window->attributes = attributes;
 
   g_assert(lttv_iattribute_find_by_path(attributes,
@@ -2417,12 +2480,22 @@ void construct_main_window(MainWindow * parent)
   }
   //for now there is no name field in LttvTraceset structure
   //Use "Traceset" as the label for the default tab
-  if(parent)
-    create_tab(new_m_window, parent->current_tab, notebook, "Traceset");
-  else {
-    create_tab(new_m_window, NULL, notebook, "Traceset");
+  if(parent) {
+    GtkWidget * parent_notebook = lookup_widget(parent->mwindow, "MNotebook");
+    GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(parent_notebook),
+                 gtk_notebook_get_current_page(GTK_NOTEBOOK(parent_notebook)));
+    Tab *parent_tab;
+
+    if(!page) {
+      parent_tab = NULL;
+    } else {
+      parent_tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    }
+    new_tab = create_tab(new_m_window, parent_tab, notebook, "Traceset");
+  } else {
+    new_tab = create_tab(new_m_window, NULL, notebook, "Traceset");
     if(g_init_trace != NULL){
-      lttvwindow_add_trace(new_m_window->current_tab,
+      lttvwindow_add_trace(new_tab,
                            g_init_trace);
     }
   }
@@ -2446,17 +2519,6 @@ void tab_destructor(Tab * tab_instance)
   if(tab_instance->interrupted_state)
     g_object_unref(tab_instance->interrupted_state);
 
-
-  if(tab_instance->mw->tab == tab_instance){
-    tab_instance->mw->tab = tab_instance->next;
-  }else{
-    Tab * tmp1, *tmp = tab_instance->mw->tab;
-    while(tmp != tab_instance){
-      tmp1 = tmp;
-      tmp = tmp->next;
-    }
-    tmp1->next = tab_instance->next;
-  }
 
   if(tab_instance->traceset_info->traceset_context != NULL){
     //remove state update hooks
@@ -2492,146 +2554,99 @@ void tab_destructor(Tab * tab_instance)
 /* Create a tab and insert it into the current main window
  */
 
-void * create_tab(MainWindow * mw, Tab *copy_tab, 
+Tab* create_tab(MainWindow * mw, Tab *copy_tab, 
 		  GtkNotebook * notebook, char * label)
 {
   GList * list;
-  Tab * tmp_tab;
+  Tab * tab;
   LttTime tmp_time;
   
   //create a new tab data structure
-  tmp_tab = mw->tab;
-  while(tmp_tab && tmp_tab->next) tmp_tab = tmp_tab->next;
-  if(!tmp_tab){
-    mw->current_tab = NULL;
-    tmp_tab = g_new(Tab,1);
-    mw->tab = tmp_tab;    
-  }else{
-    tmp_tab->next = g_new(Tab,1);
-    tmp_tab = tmp_tab->next;
-  }
+  tab = g_new(Tab,1);
 
   //construct and initialize the traceset_info
-  tmp_tab->traceset_info = g_new(TracesetInfo,1);
+  tab->traceset_info = g_new(TracesetInfo,1);
 
   if(copy_tab) {
-    tmp_tab->traceset_info->traceset = 
+    tab->traceset_info->traceset = 
       lttv_traceset_copy(copy_tab->traceset_info->traceset);
   } else {
-    tmp_tab->traceset_info->traceset = lttv_traceset_new();
+    tab->traceset_info->traceset = lttv_traceset_new();
   }
 
 //FIXME : this is g_debug level
   lttv_attribute_write_xml(
-      lttv_traceset_attribute(tmp_tab->traceset_info->traceset),
+      lttv_traceset_attribute(tab->traceset_info->traceset),
       stdout,
       0, 4);
   fflush(stdout);
 
 
   //FIXME copy not implemented in lower level
-  tmp_tab->traceset_info->traceset_context =
+  tab->traceset_info->traceset_context =
     g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
-  g_assert(tmp_tab->traceset_info->traceset_context != NULL);
+  g_assert(tab->traceset_info->traceset_context != NULL);
   lttv_context_init(
-	    LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context),
-	                          tmp_tab->traceset_info->traceset);
+	    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context),
+	                          tab->traceset_info->traceset);
   //add state update hooks
   lttv_state_add_event_hooks(
-       (LttvTracesetState*)tmp_tab->traceset_info->traceset_context);
+       (LttvTracesetState*)tab->traceset_info->traceset_context);
   
   //determine the current_time and time_window of the tab
-  if(mw->current_tab){
-    // Will have to read directly at the main window level, as we want
-    // to be able to modify a traceset on the fly.
-    tmp_tab->time_window      = mw->current_tab->time_window;
-    tmp_tab->current_time     = mw->current_tab->current_time;
+  if(copy_tab != NULL){
+    tab->time_window      = copy_tab->time_window;
+    tab->current_time     = copy_tab->current_time;
   }else{
-    // Will have to read directly at the main window level, as we want
-    // to be able to modify a traceset on the fly.
-    // get_traceset_time_span(mw_data,&tmp_tab->traceStartTime, &tmp_tab->traceEndTime);
-    tmp_tab->time_window.start_time   = 
-	    LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context)->time_span.start_time;
+    tab->time_window.start_time = 
+	    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                             time_span.start_time;
     if(DEFAULT_TIME_WIDTH_S <
-              LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context)->time_span.end_time.tv_sec)
+              LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                             time_span.end_time.tv_sec)
       tmp_time.tv_sec = DEFAULT_TIME_WIDTH_S;
     else
       tmp_time.tv_sec =
-              LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context)->time_span.end_time.tv_sec;
+              LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                             time_span.end_time.tv_sec;
     tmp_time.tv_nsec = 0;
-    tmp_tab->time_window.time_width = tmp_time ;
-    tmp_tab->current_time.tv_sec = 
-       LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context)->time_span.start_time.tv_sec;
-    tmp_tab->current_time.tv_nsec = 
-       LTTV_TRACESET_CONTEXT(tmp_tab->traceset_info->traceset_context)->time_span.start_time.tv_nsec;
+    tab->time_window.time_width = tmp_time ;
+    tab->current_time.tv_sec = 
+       LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                             time_span.start_time.tv_sec;
+    tab->current_time.tv_nsec = 
+       LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
+                             time_span.start_time.tv_nsec;
   }
-  /* Become the current tab */
-  mw->current_tab = tmp_tab;
+  tab->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
+  tab->interrupted_state = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+  tab->multi_vpaned = (GtkMultiVPaned*)gtk_multi_vpaned_new();
+  gtk_widget_show((GtkWidget*)tab->multi_vpaned);
+  tab->mw   = mw;
 
-  tmp_tab->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
-  tmp_tab->interrupted_state = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
-  tmp_tab->multi_vpaned = (GtkMultiVPaned*)gtk_multi_vpaned_new();
-  tmp_tab->multi_vpaned->tab = mw->current_tab;
-  gtk_widget_show((GtkWidget*)tmp_tab->multi_vpaned);
-  tmp_tab->next = NULL;    
-  tmp_tab->mw   = mw;
-
-  tmp_tab->label = gtk_label_new (label);
-  gtk_widget_show (tmp_tab->label);
+  tab->label = gtk_label_new (label);
+  gtk_widget_show (tab->label);
 
   /* Start with empty events requests list */
-  tmp_tab->events_requests = NULL;
-  tmp_tab->events_request_pending = FALSE;
+  tab->events_requests = NULL;
+  tab->events_request_pending = FALSE;
 
   g_object_set_data_full(
-           G_OBJECT(tmp_tab->multi_vpaned),
+           G_OBJECT(tab->multi_vpaned),
            "Tab_Info",
-	   tmp_tab,
-	   (GDestroyNotify)tab_destructor);
+	         tab,
+	         (GDestroyNotify)tab_destructor);
 
  //insert tab into notebook
-  gtk_notebook_append_page(notebook, (GtkWidget*)tmp_tab->multi_vpaned, tmp_tab->label);  
+  gtk_notebook_append_page(notebook,
+                          (GtkWidget*)tab->multi_vpaned,
+                          tab->label);  
   list = gtk_container_get_children(GTK_CONTAINER(notebook));
   gtk_notebook_set_current_page(notebook,g_list_length(list)-1);
   // always show : not if(g_list_length(list)>1)
   gtk_notebook_set_show_tabs(notebook, TRUE);
  
-}
-
-/**
- * Function to show each viewer in the current tab.
- * It will be called by main window, call show on each registered viewer,
- * will call process traceset and then it will
- * @param main_win the main window the viewer belongs to.
- */
-//FIXME Only one time request maximum for now!
-void show_viewer(MainWindow *main_win)
-{
-  LttvAttributeValue value;
-  LttvHooks * tmp;
-  int i;
-  LttvTracesetContext * tsc;
-  Tab *tab = main_win->current_tab;
-  
-  if(tab == NULL) return ;
-  
-  tsc =(LttvTracesetContext*)tab->traceset_info->traceset_context;
-  
-  g_assert(lttv_iattribute_find_by_path(tab->attributes,
-           "hooks/showviewer", LTTV_POINTER, &value));
-  tmp = (LttvHooks*)*(value.v_pointer);
-  if(tmp == NULL)
-  {
-    g_warning("The viewer(s) did not add any show hook");
-    return;
-  }
-
-  
-  // Call the show, where viewers add hooks to context and fill the
-  // time and number of events requested it the time_requests GArray.
-  lttv_hooks_call(tmp, NULL);
-
- 
+  return tab;
 }
 
 /*
