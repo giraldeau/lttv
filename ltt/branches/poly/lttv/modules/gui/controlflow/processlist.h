@@ -88,6 +88,7 @@ struct _ProcessList {
   guint number_of_process;
   gint cell_height_cache;
 
+  /* FIXME : those current process must be one per CPU !! */
   ProcessInfo *current_process_info;
   HashedProcessData *current_hash_data;
 
