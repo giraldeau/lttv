@@ -49,11 +49,13 @@ typedef struct _ProcessInfo {
   LttTime birth;
   guint trace_num;
 
+  gint height_cache;
+
 } ProcessInfo;
 
 typedef struct _HashedProcessData {
   
-  GtkTreeRowReference *row_ref;
+  GtkTreeIter y_iter; // Access quickly to y pos.
  // DrawContext *draw_context;
   /* Information on current drawing */
   struct {
@@ -76,6 +78,7 @@ struct _ProcessList {
   GHashTable *process_hash;
   
   guint number_of_process;
+  gint cell_height_cache;
 };
 
 
