@@ -224,6 +224,10 @@ Background Requests Servicing Algorithm (v1)
 list_in : currently serviced requests
 list_out : queue of requests waiting for processing
 
+notification lists :
+notify_in : currently checked notifications
+notify_out : queue of notifications that comes along with next processing.
+
 
 1. Before processing
   if list_in is empty
@@ -232,19 +236,25 @@ list_out : queue of requests waiting for processing
       - add hooks to context
       - set hooks'in_progress flag to TRUE
     - seek trace to start
+    - Move all notifications from notify_out to notify_in.
 
 2. call process traceset middle for a chunk
   (assert list_in is not empty! : should not even be called in that case)
 
 3. After the chunk
   3.1 call after_chunk hooks from list_in
+  3.2 for each notify_in
+    - if current time >= notify time, call notify and remove from notify_in
+    - if current position >= notify position, call notify and remove from
+      notify_in
   3.2 if end of trace reached
     - for each request in list_in
       - set hooks'in_progress flag to FALSE
       - set hooks'ready flag to TRUE
-      - call end request
       - remove hooks from context
       - remove request
+    - for each notifications in notify_in
+      - call notify and remove from notify_in
     - return FALSE (scheduler stopped)
   3.3 else
     - return TRUE (scheduler still registered)

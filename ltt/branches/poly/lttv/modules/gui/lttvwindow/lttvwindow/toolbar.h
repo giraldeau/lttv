@@ -19,7 +19,6 @@
 #ifndef TOOLBAR_H
 #define TOOLBAR_H
 
-#include <lttvwindow/common.h>
 #include <lttvwindow/lttvwindow.h>
 #include <gtk/gtk.h>
 

@@ -22,56 +22,59 @@ This file is what every viewer plugin writer should refer to.
 
 Module Related API
 
-A viewer plugin is, before anything, a plugin. As a dynamically loadable 
+A viewer plugin is, before anything, a plugin. As a dynamically loadable
 module, it thus has an init and a destroy function called whenever it is
 loaded/initialized and unloaded/destroyed. A graphical module depends on
-lttvwindow for construction of its viewer instances. In order to achieve this,
-it must register its constructor function to the main window along with
-button description or text menu entry description. A module keeps a list of
-every viewer that currently sits in memory so it can destroy them before the
-module gets unloaded/destroyed.
+lttvwindow for construction of its viewer instances. In order to achieve
+this, it must register its constructor function to the main window along
+with button description or text menu entry description. A module keeps
+a list of every viewer that currently sits in memory so it can destroy
+them before the module gets unloaded/destroyed.
 
-The contructor registration to the main windows adds button and menu entry
-to each main window, thus allowing instanciation of viewers.
+The contructor registration to the main windows adds button and menu
+entry to each main window, thus allowing instanciation of viewers.
 
 
 Main Window
 
-The main window is a container that offers menus, buttons and a notebook. Some
-of those menus and buttons are part of the core of the main window, others
-are dynamically added and removed when modules are loaded/unloaded.
+The main window is a container that offers menus, buttons and a
+notebook. Some of those menus and buttons are part of the core of the
+main window, others are dynamically added and removed when modules are
+loaded/unloaded.
 
-The notebook contains as much tabs as wanted. Each tab is linked with a
-set of traces (traceset). Each trace contains many tracefiles (one per cpu).
-A trace corresponds to a kernel being traced. A traceset corresponds to
-many traces read together. The time span of a traceset goes from the
-earliest start of all the traces to the latest end of all the traces.
+The notebook contains as much tabs as wanted. Each tab is linked with
+a set of traces (traceset). Each trace contains many tracefiles (one
+per cpu).  A trace corresponds to a kernel being traced. A traceset
+corresponds to many traces read together. The time span of a traceset
+goes from the earliest start of all the traces to the latest end of all
+the traces.
 
 Inside each tab are added the viewers. When they interact with the main
 window through the lttvwindow API, they affect the other viewers located
 in the same tab as they are.
 
 The insertion of many viewers in a tab permits a quick look at all the
-information wanted in a glance. The main window does merge the read requests
-from all the viewers in the same tab in a way that every viewer will get exactly
-the events it asked for, while the event reading loop and state update are
-shared. It improves performance of events delivery to the viewers.
+information wanted in a glance. The main window does merge the read
+requests from all the viewers in the same tab in a way that every viewer
+will get exactly the events it asked for, while the event reading loop
+and state update are shared. It improves performance of events delivery
+to the viewers.
 
 
 
 Viewer Instance Related API
 
-The lifetime of a viewer is as follows. The viewer constructor function is
-called each time an instance view is created (one subwindow of this viewer
-type is created by the user either by clicking on the menu item or the button
-corresponding to the viewer). Thereafter, the viewer gets hooks called for
-different purposes by the window containing it. These hooks are detailed
-below. It also has to deal with GTK Events. Finally, it can be destructed by
-having its top level widget unreferenced by the main window or by any
-GTK Event causing a "destroy-event" signal on the its top widget. Another
-possible way for it do be destroyed is if the module gets unloaded. The module
-unload function will have to emit a "destroy" signal on each top level widget
-of all instances of its viewers.
+The lifetime of a viewer is as follows. The viewer constructor function
+is called each time an instance view is created (one subwindow of this
+viewer type is created by the user either by clicking on the menu item
+or the button corresponding to the viewer). Thereafter, the viewer gets
+hooks called for different purposes by the window containing it. These
+hooks are detailed below. It also has to deal with GTK Events. Finally,
+it can be destructed by having its top level widget unreferenced by the
+main window or by any GTK Event causing a "destroy-event" signal on the
+its top widget. Another possible way for it do be destroyed is if the
+module gets unloaded. The module unload function will have to emit a
+"destroy" signal on each top level widget of all instances of its viewers.
 
 
 Notices from Main Window
@@ -107,14 +110,14 @@ background_end: remove the hooks and perhaps update the window.
 
 Reporting Changes to the Main Window
 
-In most cases, the enclosing window knows about updates such as described in the
-Notification section higher. There are a few cases, however, where updates are
-caused by actions known by a view instance. For example, clicking in a view may
-update the current time; all viewers within the same window must be told about
-the new current time to change the currently highlighted time point. A viewer
-reports such events by calling lttvwindow_report_current_time on its lttvwindow.
-The lttvwindow will consequently call current_time_notify for each of its 
-contained viewers.
+In most cases, the enclosing window knows about updates such as described
+in the Notification section higher. There are a few cases, however, where
+updates are caused by actions known by a view instance. For example,
+clicking in a view may update the current time; all viewers within
+the same window must be told about the new current time to change the
+currently highlighted time point. A viewer reports such events by calling
+lttvwindow_report_current_time on its lttvwindow.  The lttvwindow will
+consequently call current_time_notify for each of its contained viewers.
 
 
 Available report methods are :
@@ -130,11 +133,11 @@ lttvwindow_report_focus : One on the widgets in the viewer has the keyboard's
 
 Requesting Events to Main Window
 
-Events can be requested by passing a EventsRequest structure to the main window.
-They will be delivered later when the next g_idle functions will be called.
-Event delivery is done by calling the event hook for this event ID, or the 
-main event hooks. A pointer to the EventsRequest structure is passed as 
-hook_data to the event hooks of the viewers.
+Events can be requested by passing a EventsRequest structure to the main
+window.  They will be delivered later when the next g_idle functions
+will be called.  Event delivery is done by calling the event hook for
+this event ID, or the main event hooks. A pointer to the EventsRequest
+structure is passed as hook_data to the event hooks of the viewers.
 
 EventsRequest consists in 
 - a pointer to the viewer specific data structure
@@ -144,39 +147,39 @@ EventsRequest consists in
 - hook lists to call for traceset/trace/tracefile begin and end, and for each
   event (event hooks and event_by_id hooks).
   
-The main window will deliver events for every EventRequests it has pending
-through an algorithm that guarantee that all events requested, and only them,
-will be delivered to the viewer between the call of the tracefile_begin hooks
-and the call of the tracefile_end hooks.
+The main window will deliver events for every EventRequests it has
+pending through an algorithm that guarantee that all events requested,
+and only them, will be delivered to the viewer between the call of the
+tracefile_begin hooks and the call of the tracefile_end hooks.
 
-If a viewer wants to stop the event request at a certain point inside the event
-hooks, it has to set the stop_flag to TRUE and return TRUE from the hook
-function. Then return value will stop the process traceset. Then, the main
-window will look for the stop_flag and remove the EventRequests from its lists,
-calling the process_traceset_end for this request (it removes hooks from the
-context and calls the after hooks).
+If a viewer wants to stop the event request at a certain point inside the
+event hooks, it has to set the stop_flag to TRUE and return TRUE from the
+hook function. Then return value will stop the process traceset. Then,
+the main window will look for the stop_flag and remove the EventRequests
+from its lists, calling the process_traceset_end for this request (it
+removes hooks from the context and calls the after hooks).
 
-It no stop_flag is rose, the end timestamp, end position or number of events to
-read has to be reached to determine the end of the request. Otherwise,
-the end of traceset does determine it.
+It no stop_flag is rose, the end timestamp, end position or number
+of events to read has to be reached to determine the end of the
+request. Otherwise, the end of traceset does determine it.
 
 
 GTK Events
 
 Events and Signals
 
-GTK is quite different from the other graphical toolkits around there. The main
-difference resides in that there are many X Windows inside one GtkWindow,
-instead of just one. That means that X events are delivered by the glib main 
-loop directly to the widget corresponding to the GdkWindow affected by the X
-event.
+GTK is quite different from the other graphical toolkits around
+there. The main difference resides in that there are many X Windows
+inside one GtkWindow, instead of just one. That means that X events are
+delivered by the glib main loop directly to the widget corresponding to
+the GdkWindow affected by the X event.
 
-Event delivery to a widget emits a signal on that widget. Then, if a handler
-is connected to this widget's signal, it will be executed. There are default
-handlers for signals, connected at class instantiation time. There is also
-the possibility to connect other handlers to these signals, which is what
-should be done in most cases when a viewer needs to interact with X in any
-way.
+Event delivery to a widget emits a signal on that widget. Then, if a
+handler is connected to this widget's signal, it will be executed. There
+are default handlers for signals, connected at class instantiation
+time. There is also the possibility to connect other handlers to these
+signals, which is what should be done in most cases when a viewer needs
+to interact with X in any way.
 
 
 
@@ -209,30 +212,31 @@ The "expose_event"
 
 Provides the exposed region in the GdkEventExpose structure. 
 
-There are two ways of dealing with exposures. The first one is to directly draw
-on the screen and the second one is to draw in a pixmap buffer, and then to 
-update the screen when necessary.
+There are two ways of dealing with exposures. The first one is to directly
+draw on the screen and the second one is to draw in a pixmap buffer,
+and then to update the screen when necessary.
 
-In the first case, the expose event will be responsible for registering hooks to
-process_traceset and require time intervals to the main window. So, in this
-scenario, if a part of the screen is damaged, the trace has to be read to
-redraw the screen.
+In the first case, the expose event will be responsible for registering
+hooks to process_traceset and require time intervals to the main
+window. So, in this scenario, if a part of the screen is damaged, the
+trace has to be read to redraw the screen.
 
-In the second case, with a pixmap buffer, the expose handler is only responsible
-of showing the pixmap buffer on the screen. If the pixmap buffer has never
-been filled with a drawing, the expose handler may ask for it to be filled.
+In the second case, with a pixmap buffer, the expose handler is only
+responsible of showing the pixmap buffer on the screen. If the pixmap
+buffer has never been filled with a drawing, the expose handler may ask
+for it to be filled.
 
-The interest of using events request to the main window instead of reading the
-events directly from the trace comes from the fact that the main window
-does merge requests from the different viewers in the same tab so that the
-read loop and the state update is shared. As viewers will, in the common
-scenario, request the same events, only one pass through the trace that will
-call the right hooks for the right intervals will be done.
+The interest of using events request to the main window instead of reading
+the events directly from the trace comes from the fact that the main
+window does merge requests from the different viewers in the same tab so
+that the read loop and the state update is shared. As viewers will, in
+the common scenario, request the same events, only one pass through the
+trace that will call the right hooks for the right intervals will be done.
 
-When the traceset read is over for a events request, the traceset_end hook is
-called. It has the responsibility of finishing the drawing if some parts
-still need to be drawn and to show it on the screen (if the viewer uses a pixmap
-buffer).
+When the traceset read is over for a events request, the traceset_end
+hook is called. It has the responsibility of finishing the drawing if
+some parts still need to be drawn and to show it on the screen (if the
+viewer uses a pixmap buffer).
 
 It can add dotted lines and such visual effects to enhance the user's
 experience.
@@ -261,9 +265,9 @@ FIXME : explain other important events
 #include <lttv/hook.h>
 #include <lttv/tracecontext.h>
 #include <lttv/stats.h>
-#include <lttvwindow/common.h>
+#include <lttvwindow/mainwindow.h>
+#include <lttvwindow/lttvfilter.h>
 //FIXME (not ready yet) #include <lttv/filter.h>
-
 
 /* Module Related API */
 
@@ -564,6 +568,7 @@ void lttvwindow_report_focus(Tab *tab,
 /* Structure sent to the events request hook */
                                                 /* Value considered as empty */
 typedef struct _EventsRequest {
+  gpointer                     owner;           /* Owner of the request     */
   gpointer                     viewer_data;     /* Unset : NULL             */
   gboolean                     servicing;       /* service in progress: TRUE */ 
   LttTime                      start_time;/* Unset : { G_MAXUINT, G_MAXUINT }*/
@@ -581,8 +586,11 @@ typedef struct _EventsRequest {
   LttvHooks                   *after_chunk_trace;     /* Unset : NULL       */
   LttvHooks                   *after_chunk_traceset;  /* Unset : NULL       */
   LttvHooks                   *before_request;  /* Unset : NULL             */
-  LttvHooks                   *after_request    /* Unset : NULL             */
+  LttvHooks                   *after_request;   /* Unset : NULL             */
 } EventsRequest;
+
+/* Maximum number of events to proceed at once in a chunk */
+#define CHUNK_NUM_EVENTS 50000
 
 
 /**

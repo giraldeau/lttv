@@ -41,6 +41,7 @@
 #include "interface.h"
 #include "support.h"
 #include <lttvwindow/mainwindow.h>
+#include <lttvwindow/mainwindow-private.h>
 #include "callbacks.h"
 #include <ltt/trace.h>
 
@@ -115,25 +116,16 @@ static void init() {
       LTTV_POINTER, &value));
   g_assert((main_hooks = *(value.v_pointer)) != NULL);
 
-  lttv_hooks_add(main_hooks, window_creation_hook, NULL);
+  lttv_hooks_add(main_hooks, window_creation_hook, NULL, LTTV_PRIO_DEFAULT);
 
 }
 
 void
 main_window_destructor(MainWindow * mw)
 {
-  if(GTK_IS_WIDGET(mw->mwindow)){
-    gtk_widget_destroy(mw->mwindow);
-    mw = NULL;
-  }
+  g_assert(GTK_IS_WIDGET(mw->mwindow));
+  gtk_widget_destroy(mw->mwindow);
 }
-
-
-void main_window_destroy_walk(gpointer data, gpointer user_data)
-{
-  main_window_destructor((MainWindow*)data);
-}
-
 
 
 /**
@@ -146,7 +138,8 @@ static void destroy() {
 
   LttvAttributeValue value;  
   LttvTrace *trace;
-
+  GSList *iter = NULL;
+  
   lttv_option_remove("trace");
 
   lttv_hooks_remove_data(main_hooks, window_creation_hook, NULL);
@@ -154,7 +147,9 @@ static void destroy() {
   g_debug("GUI destroy()");
 
   if(g_main_window_list){
-    g_slist_foreach(g_main_window_list, main_window_destroy_walk, NULL );
+    for(iter=g_main_window_list;iter!=NULL;iter=g_slist_next(iter)) {
+        main_window_destructor((MainWindow*)iter->data);
+    }
     g_slist_free(g_main_window_list);
   }
   
@@ -163,4 +158,4 @@ static void destroy() {
 
 LTTV_MODULE("lttvwindow", "Viewer main window", \
     "Viewer with multiple windows, tabs and panes for graphical modules", \
-	    init, destroy, "stats")
+	    init, destroy, "stats", "option")

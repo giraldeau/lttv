@@ -22,7 +22,6 @@
 #define _CFV_H
 
 #include <gtk/gtk.h>
-#include <lttvwindow/common.h>
 #include <lttvwindow/mainwindow.h>
 #include "processlist.h"
 

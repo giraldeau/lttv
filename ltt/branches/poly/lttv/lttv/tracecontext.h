@@ -279,6 +279,9 @@ void lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
     char *field1, char *field2, char *field3, LttvHook h, LttvTraceHook *th);
 
 
+LttvTracefileContext *lttv_traceset_context_get_current_tfc(
+                             LttvTracesetContext *self);
+
 void lttv_traceset_context_position_save(const LttvTracesetContext *self,
                                     LttvTracesetContextPosition *pos);
 
@@ -293,4 +296,6 @@ gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
 
 gint lttv_traceset_context_pos_pos_compare(const LttvTracesetContextPosition *a,
                                           const LttvTracesetContextPosition *b);
+LttTime lttv_traceset_context_position_get_time(
+                                  const LttvTracesetContextPosition *pos);
 #endif // PROCESSTRACE_H

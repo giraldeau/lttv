@@ -131,7 +131,7 @@ removing hooks for the different time intervals requested. That means that hooks
 insertion and removal will be done between each traceset processing based on
 the time intervals and event positions related to each hook. We must therefore
 provide a simple interface for hooks passing between the viewers and the main
-window, make them easier to manage from the main window. A modification to the
+window, making them easier to manage from the main window. A modification to the
 LttvHooks type solves this problem.
 
 
@@ -170,10 +170,10 @@ destroyed.
 
 Permitted GTK Events Between Chunks
 
-All GTK Events will be enabled between chunks. This is due to the fact that the
-background processing and a high priority request are seen as the same case.
-While a background processing is in progress, the whole graphical interface must
-be enabled.
+All GTK Events will be enabled between chunks. A viewer could ask for a
+long computation that has no impact on the display : in that case, it is
+necessary to keep the graphical interface active. While a processing is in
+progress, the whole graphical interface must be enabled.
 
 We needed to deal with the coherence of background processing and diverse GTK
 events anyway. This algorithm provides a generalized way to deal with any type
@@ -182,9 +182,9 @@ of request and any GTK events.
 
 Background Computation Request
 
-The types of background computation that can be requested by a viewer : state
-computation (main window scope) or viewer specific background computation.
-
+A background computation has a trace scope, and is therefore not linked to a
+main window. It is not detailed in this document. 
+see requests_servicing_schedulers.txt
 
 A New "Redraw" Button
 
@@ -255,17 +255,18 @@ typedef struct _EventsRequest {
   LttTime                      end_time;/* Unset : { G_MAXUINT, G_MAXUINT } */
   guint                        num_events;      /* Unset : G_MAXUINT        */
   LttvTracesetContextPosition *end_position;    /* Unset : NULL             */
-  LttvHooks                   *before_traceset; /* Unset : NULL             */
-  LttvHooks                   *before_trace;    /* Unset : NULL             */
-  LttvHooks                   *before_tracefile;/* Unset : NULL             */
+  LttvHooks                   *before_chunk_traceset; /* Unset : NULL       */
+  LttvHooks                   *before_chunk_trace;    /* Unset : NULL       */
+  LttvHooks                   *before_chunk_tracefile;/* Unset : NULL       */
   LttvHooks                   *event;           /* Unset : NULL             */
   LttvHooksById               *event_by_id;     /* Unset : NULL             */
-  LttvHooks                   *after_tracefile; /* Unset : NULL             */
-  LttvHooks                   *after_trace;     /* Unset : NULL             */
-  LttvHooks                   *after_traceset;  /* Unset : NULL             */
+  LttvHooks                   *after_chunk_tracefile; /* Unset : NULL       */
+  LttvHooks                   *after_chunk_trace;     /* Unset : NULL       */
+  LttvHooks                   *after_chunk_traceset;  /* Unset : NULL       */
   LttvHooks                   *before_request;  /* Unset : NULL             */
-  LttvHooks                   *after_request    /* Unset : NULL             */
+  LttvHooks                   *after_request;   /* Unset : NULL             */
 } EventsRequest;
+
 
 - lttvwindow_events_request_remove_all
 
@@ -307,11 +308,7 @@ list_in : empty
 list_out : many events requests
 
 
-// NOT A. While (list_in !empty or list_out !empty) and !GTK Event pending
-
-We do this once, go back to GTK, then get called again...
-We remove the g_idle function when list_in and list_out are empty
-
+A. While (list_in !empty or list_out !empty) and !GTK Event pending
   1. If list_in is empty (need a seek)
     1.1 Add requests to list_in
       1.1.1 Find all time requests with lowest start time in list_out (ltime)
@@ -336,18 +333,12 @@ We remove the g_idle function when list_in and list_out are empty
   2. Else, list_in is not empty, we continue a read
     2.1 For each req of list_out
     - if req.start time == current context time
+              or req.start position == current position
       - Add to list_in, remove from list_out
       - If !servicing
         - Call before request
         - servicing = TRUE
       - Call before chunk
-      - events hooks added
-    - if req.start position == current position
-      - Add to list_in, remove from list_out
-      - If !servicing
-        - Call before request
-        - servicing = TRUE
-      - Call before_chunk
       - events hooks added
 
   3. Find end criterions
@@ -362,7 +353,7 @@ We remove the g_idle function when list_in and list_out are empty
     3.3 End position
       3.3.1 Find lowest end position in list_in
       3.3.2 Find lowest start position in list_out (>= than current
-                                                    position)
+                                                    position *not used)
       3.3.3 Use lowest of both as end position
 
   4. Call process traceset middle
@@ -376,35 +367,24 @@ We remove the g_idle function when list_in and list_out are empty
         - Call end request for req
         - remove req from list_in
     5.1 For each req in list_in
+          - Call end chunk for req
+          - Remove events hooks for req
           - req.num -= count
-          - if req.num == 0
-            - Remove events hooks for req
-            - Call end chunk for req
-            - Call end request for req
-            - remove req from list_in
-          - if current context time > req.end time
-            - Remove events hooks for req
-            - Call end chunk for req
-            - Call end request for req
-            - remove req from list_in
-          - if req.end pos == current pos
-            - Remove events hooks for req
-            - Call end_chunk for req
-            - Call end request for req
-            - remove req from list_in
-          - if req.stop_flag == TRUE
-            - Remove events hooks for req
-            - Call end chunk for req
+          - if   req.num == 0
+               or
+                 current context time > req.end time
+               or
+                 req.end pos == current pos
+               or
+                 req.stop_flag == TRUE
             - Call end request for req
             - remove req from list_in
 
-B. Between each chunk (interrupted or not)
+B. When interrupted between chunks
   1. for each request in list_in
     1.1. Use current postition as start position
     1.2. Remove start time
-    1.3. Call after_chunk_traceset
-    1.4. Remove event hooks
-    1.5. Put it back in list_out
+    1.3. Move from list_in to list_out
 
 
 

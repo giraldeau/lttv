@@ -21,7 +21,7 @@
 
 #include <lttv/lttv.h>
 #include <lttv/tracecontext.h>
-#include <lttvwindow/viewer.h>
+#include <lttvwindow/lttvwindow.h>
 #include <lttv/state.h>
 #include <lttv/hook.h>
 

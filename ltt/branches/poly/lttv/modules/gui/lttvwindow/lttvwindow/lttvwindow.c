@@ -33,8 +33,8 @@
 #include <lttv/state.h>
 #include <lttv/stats.h>
 #include <lttv/tracecontext.h>
-#include <lttvwindow/common.h>
 #include <lttvwindow/mainwindow.h>   
+#include <lttvwindow/mainwindow-private.h>   
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/toolbar.h>
 #include <lttvwindow/menu.h>
@@ -58,7 +58,7 @@ extern GSList * g_main_window_list;
  *  1 : no traceset hooks to update; not an error.
  */
 
-int SetTraceset(Tab * tab, gpointer traceset)
+int SetTraceset(Tab * tab, LttvTraceset *traceset)
 {
   LttvHooks * tmp;
   LttvAttributeValue value;
@@ -751,7 +751,7 @@ void lttvwindow_report_focus(Tab *tab, GtkWidget *top_widget)
 void lttvwindow_events_request(Tab *tab,
                                const EventsRequest  *events_request)
 {
-  EventsRequest *alloc = g_new(sizeof(EventsRequest,1));
+  EventsRequest *alloc = g_new(EventsRequest,1);
   *alloc = *events_request;
 
   tab->events_requests = g_slist_append(tab->events_requests, alloc);
@@ -780,7 +780,7 @@ void lttvwindow_events_request(Tab *tab,
 
 gint find_viewer (const EventsRequest *a, gconstpointer b)
 {
-  return (a->viewer != b);
+  return (a->owner != b);
 }
 
 
@@ -793,7 +793,7 @@ void lttvwindow_events_request_remove_all(Tab       *tab,
             g_slist_find_custom(tab->events_requests, viewer,
                                 (GCompareFunc)find_viewer))
               != NULL) {
-    EventRequest *events_request = (EventsRequest *)element->data;
+    EventsRequest *events_request = (EventsRequest *)element->data;
     if(events_request->servicing == TRUE) {
       lttv_hooks_call(events_request->after_request, NULL);
     }

@@ -87,7 +87,7 @@ void lttv_state_restore(LttvTraceState *self, LttvAttribute *container)
 }
 
 
-void lttv_state__state_saved_free(LttvTraceState *self, 
+void lttv_state_state_saved_free(LttvTraceState *self, 
     LttvAttribute *container)
 {
   LTTV_TRACE_STATE_GET_CLASS(self)->state_saved_free(self, container);

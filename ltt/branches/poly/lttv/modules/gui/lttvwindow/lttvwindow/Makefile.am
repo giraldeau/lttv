@@ -33,10 +33,10 @@ liblttvwindow_la_SOURCES = \
 noinst_HEADERS = \
 	support.h \
 	interface.h \
-	callbacks.h
+	callbacks.h\
+	mainwindow-private.h
 
 lttvwindowinclude_HEADERS = \
-	common.h\
 	gtkdirsel.h\
 	gtkmultivpaned.h\
 	lttvwindow.h\

@@ -19,7 +19,6 @@
 #include <lttv/lttv.h>
 #include <lttvwindow/toolbar.h>
 
-
 inline LttvToolbars *lttv_toolbars_new() {
   return g_array_new(FALSE, FALSE, sizeof(LttvToolbarClosure));
 }

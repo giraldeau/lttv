@@ -17,7 +17,6 @@
  */
 
 #include <gtk/gtk.h>
-#include <lttvwindow/common.h>
 #include <lttvwindow/mainwindow.h>
 
 /* internal functions */
@@ -28,6 +27,9 @@ void construct_main_window(MainWindow * parent);
 void main_window_free(MainWindow * mw);
 void main_window_destructor(MainWindow * mw);
 void show_viewer(MainWindow *main_win);
+
+void insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data);
+gboolean execute_events_requests(Tab *tab);
 
 
 /* callback functions*/
@@ -223,7 +225,7 @@ on_button_delete_viewer_clicked        (GtkButton       *button,
                                         gpointer         user_data);
 
 void
-on_MWindow_destroy                     (GtkObject       *object,
+on_MWindow_destroy                     (GtkWidget       *widget,
                                         gpointer         user_data);
 
 gboolean    

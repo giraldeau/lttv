@@ -25,7 +25,8 @@
 #include <glib-object.h>
 #include <gdk/gdk.h>
 #include <gtk/gtkcontainer.h>
-#include <lttvwindow/common.h>
+#include <lttvwindow/mainwindow.h>
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,7 +39,6 @@ extern "C" {
 #define GTK_IS_MULTI_VPANED(obj   )      (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GTK_TYPE_MULTI_VPANED))
 #define GTK_IS_MULTI_VPANED_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GTK_TYPE_MULTI_VPANED))
 #define GTK_MULTI_VPANED_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), GTK_TYPE_MULTI_VPANED, GtkMultiVPanedClass))
-
 
 typedef struct _GtkMultiVPaned	 GtkMultiVPaned;
 typedef struct _GtkMultiVPanedClass   GtkMultiVPanedClass;
@@ -59,7 +59,7 @@ struct _GtkMultiVPaned
   //  GtkWidget * viewport;
   GtkWidget * hscrollbar;  
   GtkAdjustment *hadjust;
-  MainWindow * mw;
+  Tab *tab;
 };
 
 struct _GtkMultiVPanedClass

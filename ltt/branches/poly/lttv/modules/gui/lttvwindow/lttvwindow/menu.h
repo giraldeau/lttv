@@ -20,7 +20,6 @@
 #define MENU_H
 
 #include <gtk/gtk.h>
-#include <lttvwindow/common.h>
 #include <lttvwindow/lttvwindow.h>
 
 

@@ -45,13 +45,14 @@ gint compare_tracefile(gconstpointer a, gconstpointer b)
 }
 
 struct _LttvTraceContextPosition {
-  LttEventPosition **tf_pos;          /* Position in each trace           */
+  LttEventPosition **tf_pos;         /* Position in each tracefile       */
   guint nb_tracefile;                /* Number of tracefiles (check)     */
 };
 
 struct _LttvTracesetContextPosition {
-  LttvTraceContextPosition *t_pos;    /* Position in each trace           */
+  LttvTraceContextPosition *t_pos;    /* Position in each trace          */
   guint nb_trace;                    /* Number of traces (check)         */
+  LttTime timestamp;                 /* Current time at the saved position */
 };
 
 void lttv_context_init(LttvTracesetContext *self, LttvTraceset *ts)
@@ -188,10 +189,10 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
       tfc->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
     }
   }
+  self->pqueue = g_tree_new(compare_tracefile);
   lttv_process_traceset_seek_time(self, null_time);
   lttv_traceset_context_compute_time_span(self, &self->time_span);
 
-  self->pqueue = g_tree_new(compare_tracefile);
 }
 
 
@@ -860,6 +861,8 @@ void lttv_traceset_context_position_save(const LttvTracesetContext *self,
 
   LttEvent *event;
 
+  LttTime timestamp = self->time_span.end_time;
+
   pos->nb_trace = nb_trace = lttv_traceset_number(self->ts);
   pos->t_pos = g_new(LttvTraceContextPosition, nb_trace);
   
@@ -877,8 +880,11 @@ void lttv_traceset_context_position_save(const LttvTracesetContext *self,
       event = tfc->e;
       ltt_event_position(event, 
                          pos->t_pos[iter_trace].tf_pos[iter_tracefile]);
+      if(ltt_time_compare(tfc->timestamp, timestamp) < 0)
+        timestamp = tfc->timestamp;
     }
   }
+  pos->timestamp = timestamp;
 }
 
 void lttv_traceset_context_position_destroy(LttvTracesetContextPosition *pos)
@@ -974,3 +980,19 @@ gint lttv_traceset_context_pos_pos_compare(
 }
 
 
+LttTime lttv_traceset_context_position_get_time(
+                                  const LttvTracesetContextPosition *pos)
+{
+  return pos->timestamp;
+}
+
+
+LttvTracefileContext *lttv_traceset_context_get_current_tfc(LttvTracesetContext *self)
+{
+  GTree *pqueue = self->pqueue;
+  LttvTracefileContext *tfc;
+
+  g_tree_foreach(pqueue, get_first, &tfc);
+
+  return tfc;
+}

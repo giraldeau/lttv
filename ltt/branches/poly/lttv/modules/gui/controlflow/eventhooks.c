@@ -38,9 +38,8 @@
 
 #include <lttv/lttv.h>
 #include <lttv/hook.h>
-#include <lttvwindow/common.h>
 #include <lttv/state.h>
-#include <lttvwindow/viewer.h>
+#include <lttvwindow/lttvwindow.h>
 
 
 #include "eventhooks.h"

@@ -23,7 +23,7 @@
 struct _ControlFlowData {
 
   GtkWidget *scrolled_window;
-  MainWindow *mw;
+  Tab *tab;
 
   GtkWidget *h_paned;
 
