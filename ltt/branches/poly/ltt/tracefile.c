@@ -1795,10 +1795,8 @@ static inline gint getFieldtypeSize(LttTracefile * t,
           }      
           size = offset2;
         }else size = fld->field_size;
-        if(unlikely(!evD)){
-          fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
-          fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
-        }
+        fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
+        fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
         break;
 
       default:
