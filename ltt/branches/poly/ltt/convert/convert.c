@@ -1,8 +1,11 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <linux/errno.h>  
+#include <errno.h>  
+#include <stdlib.h>
+#include <string.h>
 
 #include <glib.h>
 #include "LTTTypes.h"
@@ -13,8 +16,7 @@
 #define PROCESS_EXIT_ID     21
 
 #define INFO_ENTRY          9
-#define OVERFLOW_FIGURE     0x100000000
-//#define OVERFLOW_FIGURE     0xffffffff
+#define OVERFLOW_FIGURE     0x100000000ULL
 
 typedef struct _new_process
 {
@@ -31,9 +33,12 @@ do\
 
 int readFile(int fd, void * buf, size_t size, char * mesg)
 {
-   ssize_t nbBytes;
-   nbBytes = read(fd, buf, size);
-   if(nbBytes != size){
+   ssize_t nbBytes = read(fd, buf, size);
+   
+   if(nbBytes < 0) {
+     perror("Error in readFile : ");
+     exit(1);
+   } else if((size_t)nbBytes != size) {
      printf("%s\n",mesg);
      exit(1);
    }
@@ -98,7 +103,7 @@ int main(int argc, char ** argv){
   int  ltt_minor_version;
   int  ltt_log_cpu;
   char buf[BUFFER_SIZE];
-  int i,j, k;
+  int i, k;
 
   uint8_t cpu_id;
 
@@ -125,7 +130,7 @@ int main(int argc, char ** argv){
   trace_file_system * tFileSys;
   uint16_t newId, startId, tmpId;
   uint8_t  evId;
-  uint32_t time_delta, startTimeDelta, previous_time_delta;
+  uint32_t time_delta, startTimeDelta;
   void * cur_pos, *end_pos;
   buffer_start start, start_proc, start_intr;
   buffer_start end, end_proc, end_intr;
@@ -307,7 +312,7 @@ int main(int argc, char ** argv){
 
     buf_out = g_new(char, block_size);
     write_pos = buf_out;
-    sprintf(cpuStr,"%s/%d\0",foo_cpu,k);
+    sprintf(cpuStr,"%s/%d",foo_cpu,k);
     fdCpu = open(cpuStr, O_CREAT | O_RDWR | O_TRUNC,S_IRUSR |S_IWUSR | S_IRGRP | S_IROTH); //for cpu k
     if(fdCpu < 0)  g_error("Unable to open  cpu file %d\n", k);    
     lseek(fd,0,SEEK_SET);
@@ -340,7 +345,6 @@ int main(int argc, char ** argv){
 
       startId = newId;
       startTimeDelta = time_delta;
-      previous_time_delta = time_delta;
       start.seconds = tBufStart->Time.tv_sec;
       start.nanoseconds = tBufStart->Time.tv_usec;
       start.cycle_count = tBufStart->TSC;
@@ -439,16 +443,13 @@ int main(int argc, char ** argv){
 	time_delta = *(uint32_t*)cur_pos;
 	cur_pos += sizeof(uint32_t); 
 	
-	if(time_delta < previous_time_delta){
-	  end.cycle_count += OVERFLOW_FIGURE;
-	}
-	previous_time_delta = time_delta;
-
 	//write event_id and time_delta
 	write_to_buffer(write_pos,(void*)&newId,sizeof(uint16_t));
 	write_to_buffer(write_pos,(void*)&time_delta, sizeof(uint32_t));     
 	
 	if(evId == TRACE_BUFFER_END){
+    end.cycle_count = start.cycle_count 
+                         + beat_count * OVERFLOW_FIGURE;
 	  int size = block_size + ((void*)buf_out - write_pos)+ sizeof(uint16_t) + sizeof(uint32_t);
 	  write_to_buffer(write_pos,(void*)&end,sizeof(buffer_start));   
 	  write_pos = buf_out + block_size - sizeof(uint32_t);
@@ -558,10 +559,9 @@ int main(int argc, char ** argv){
 	    beat_count++;
 	    beat.seconds = 0;
 	    beat.nanoseconds = 0;
-	    beat.cycle_count = start.cycle_count + beat_count * OVERFLOW_FIGURE;
+	    beat.cycle_count = (uint64_t)start.cycle_count 
+                         + (uint64_t)beat_count * OVERFLOW_FIGURE;
 	    event_size = 0;
-
-	    //	  end.cycle_count += OVERFLOW_FIGURE;
 	    
 	    write_to_buffer(write_pos_intr,(void*)&newId, sizeof(uint16_t));
 	    write_to_buffer(write_pos_intr,(void*)&timeDelta, sizeof(uint32_t));
@@ -646,5 +646,6 @@ int main(int argc, char ** argv){
   close(fdProc); 
   fclose(fp);
 
+  return 0;
 }
 
