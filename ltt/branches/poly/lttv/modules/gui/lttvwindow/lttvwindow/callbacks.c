@@ -61,7 +61,7 @@ gboolean get_filter_selection(LttvTracesetSelector *s, char *title, char * colum
 void * create_tab(MainWindow * parent, MainWindow * current_window,
 		  GtkNotebook * notebook, char * label);
 
-void insert_viewer(GtkWidget* widget, view_constructor constructor);
+void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor);
 void update_filter(LttvTracesetSelector *s,  GtkTreeStore *store );
 
 void checkbox_changed(GtkTreeView *treeview,
@@ -153,13 +153,13 @@ insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data)
 {
   guint val = 20;
 
-  insert_viewer((GtkWidget*)menuitem, (view_constructor)user_data);
+  insert_viewer((GtkWidget*)menuitem, (lttvwindow_viewer_constructor)user_data);
   //  selected_hook(&val);
 }
 
 
 /* internal functions */
-void insert_viewer(GtkWidget* widget, view_constructor constructor)
+void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
 {
   GtkMultiVPaned * multi_vpaned;
   MainWindow * mw_data;  
@@ -1737,7 +1737,7 @@ void insert_menu_toolbar_item(MainWindow * mw, gpointer user_data)
 {
   int i;
   GdkPixbuf *pixbuf;
-  view_constructor constructor;
+  lttvwindow_viewer_constructor constructor;
   LttvMenus * menu;
   LttvToolbars * toolbar;
   lttv_menu_closure *menu_item;

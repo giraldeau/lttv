@@ -18,8 +18,6 @@
 /* global variable */
 systemView * gSysView;
 
-typedef view_constructor (* constructor)();
-constructor get_constructor = NULL;
 typedef void (*call_Event_Selected_Hook)(void * call_data);
 call_Event_Selected_Hook selected_hook = NULL;
 GModule *gm;

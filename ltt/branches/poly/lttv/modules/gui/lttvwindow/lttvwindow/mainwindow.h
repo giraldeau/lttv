@@ -92,8 +92,8 @@ struct _Tab{
 /**
  * Remove menu and toolbar item when a module unloaded
  */
-void main_window_remove_menu_item(lttv_constructor view_constructor);
-void main_window_remove_toolbar_item(lttv_constructor view_constructor);
+void main_window_remove_menu_item(lttvwindow_viewer_constructor view_constructor);
+void main_window_remove_toolbar_item(lttvwindow_viewer_constructor view_constructor);
 
 #endif /* _MAIN_WINDOW_ */
 

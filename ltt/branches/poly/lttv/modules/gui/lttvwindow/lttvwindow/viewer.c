@@ -97,7 +97,7 @@ void SetFilter(MainWindow * main_win, gpointer filter)
  * @param view_constructor constructor of the viewer. 
  */
 
-void toolbar_item_reg(char ** pixmap, char *tooltip, lttv_constructor view_constructor)
+void toolbar_item_reg(char ** pixmap, char *tooltip, lttvwindow_viewer_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
@@ -123,7 +123,7 @@ void toolbar_item_reg(char ** pixmap, char *tooltip, lttv_constructor view_const
  * a reference to find out where the pixmap and tooltip are.
  */
 
-void toolbar_item_unreg(lttv_constructor view_constructor)
+void toolbar_item_unreg(lttvwindow_viewer_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
@@ -148,7 +148,7 @@ void toolbar_item_unreg(lttv_constructor view_constructor)
  * @param view_constructor constructor of the viewer. 
  */
 
-void menu_item_reg(char *menu_path, char *menu_text, lttv_constructor view_constructor)
+void menu_item_reg(char *menu_path, char *menu_text, lttvwindow_viewer_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvMenus * menu;
@@ -173,7 +173,7 @@ void menu_item_reg(char *menu_path, char *menu_text, lttv_constructor view_const
  * a reference to find out where the menu_path and menu_text are.
  */
 
-void menu_item_unreg(lttv_constructor view_constructor)
+void menu_item_unreg(lttvwindow_viewer_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvMenus * menu;

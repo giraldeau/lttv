@@ -32,7 +32,7 @@ inline void lttv_toolbars_destroy(LttvToolbars *h) {
   g_array_free(h, TRUE);
 }
 
-inline void lttv_toolbars_add(LttvToolbars *h, lttv_constructor f, char* tooltip, char ** pixmap)
+inline void lttv_toolbars_add(LttvToolbars *h, lttvwindow_viewer_constructor f, char* tooltip, char ** pixmap)
 {
   lttv_toolbar_closure c;
 
@@ -45,7 +45,7 @@ inline void lttv_toolbars_add(LttvToolbars *h, lttv_constructor f, char* tooltip
   g_array_append_val(h,c);
 }
 
-gboolean lttv_toolbars_remove(LttvToolbars *h, lttv_constructor f)
+gboolean lttv_toolbars_remove(LttvToolbars *h, lttvwindow_viewer_constructor f)
 {
   lttv_toolbar_closure * tmp;
   gint i;

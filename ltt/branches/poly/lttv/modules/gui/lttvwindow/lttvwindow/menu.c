@@ -32,7 +32,7 @@ inline void lttv_menus_destroy(LttvMenus *h) {
   g_array_free(h, TRUE);
 }
 
-inline void lttv_menus_add(LttvMenus *h, lttv_constructor f, char* menuPath, char* menuText)
+inline void lttv_menus_add(LttvMenus *h, lttvwindow_viewer_constructor f, char* menuPath, char* menuText)
 {
   lttv_menu_closure c;
 
@@ -45,7 +45,7 @@ inline void lttv_menus_add(LttvMenus *h, lttv_constructor f, char* menuPath, cha
   g_array_append_val(h,c);
 }
 
-gboolean lttv_menus_remove(LttvMenus *h, lttv_constructor f)
+gboolean lttv_menus_remove(LttvMenus *h, lttvwindow_viewer_constructor f)
 {
   lttv_menu_closure * tmp;
   gint i;
