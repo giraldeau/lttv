@@ -34,16 +34,16 @@ struct _Drawing_t {
 };
 
 
-Drawing_t *Drawing_construct(ControlFlowData *Control_Flow_Data);
-void Drawing_destroy(Drawing_t *Drawing);
+Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data);
+void drawing_destroy(Drawing_t *Drawing);
 
-GtkWidget *Drawing_getWidget(Drawing_t *Drawing);
+GtkWidget *drawing_get_widget(Drawing_t *Drawing);
 	
 //void Drawing_Refresh (	Drawing_t *Drawing,
 //			guint x, guint y,
 //			guint width, guint height);
 
-void Drawing_draw_line(	Drawing_t *Drawing,
+void drawing_draw_line(	Drawing_t *Drawing,
 			GdkPixmap *Pixmap,
 			guint x1, guint y1,
 			guint x2, guint y2,
@@ -55,12 +55,12 @@ void Drawing_draw_line(	Drawing_t *Drawing,
 //		guint width, guint height);
 
 /* Insert a square corresponding to a new process in the list */
-void Drawing_Insert_Square(Drawing_t *Drawing,
+void drawing_insert_square(Drawing_t *Drawing,
 				guint y,
 				guint height);
 
 /* Remove a square corresponding to a removed process in the list */
-void Drawing_Remove_Square(Drawing_t *Drawing,
+void drawing_remove_square(Drawing_t *Drawing,
 				guint y,
 				guint height);
 

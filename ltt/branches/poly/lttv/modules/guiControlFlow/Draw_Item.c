@@ -203,34 +203,34 @@ struct _PropertiesBG {
 
 
 /* Drawing hook functions */
-gboolean DrawText( void *hook_data, void *call_data)
+gboolean draw_text( void *hook_data, void *call_data)
 {
 	PropertiesText *Properties = (PropertiesText*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 }
 
-gboolean DrawIcon( void *hook_data, void *call_data)
+gboolean draw_icon( void *hook_data, void *call_data)
 {
 	PropertiesIcon *Properties = (PropertiesIcon*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
 }
 
-gboolean DrawLine( void *hook_data, void *call_data)
+gboolean draw_line( void *hook_data, void *call_data)
 {
 	PropertiesLine *Properties = (PropertiesLine*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
 }
 
-gboolean DrawArc( void *hook_data, void *call_data)
+gboolean draw_arc( void *hook_data, void *call_data)
 {
 	PropertiesArc *Properties = (PropertiesArc*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
 }
 
-gboolean DrawBG( void *hook_data, void *call_data)
+gboolean draw_bg( void *hook_data, void *call_data)
 {
 	PropertiesBG *Properties = (PropertiesBG*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;

@@ -44,20 +44,20 @@ struct _ProcessList {
 
 typedef struct _ProcessList ProcessList;
 
-ProcessList *ProcessList_construct(void);
-void ProcessList_destroy(ProcessList *Process_List);
-GtkWidget *ProcessList_getWidget(ProcessList *Process_List);
+ProcessList *processlist_construct(void);
+void processlist_destroy(ProcessList *Process_List);
+GtkWidget *processlist_get_widget(ProcessList *Process_List);
 
 // out : success (0) and height
-int ProcessList_add(ProcessList *Process_List, guint pid, LttTime *birth,
+int processlist_add(ProcessList *Process_List, guint pid, LttTime *birth,
 		guint *height);
 // out : success (0) and height
-int ProcessList_remove(ProcessList *Process_List, guint pid, LttTime *birth);
+int processlist_remove(ProcessList *Process_List, guint pid, LttTime *birth);
 
-guint ProcessList_get_height(ProcessList *Process_List);
+guint processlist_get_height(ProcessList *Process_List);
 
 // Returns 0 on success
-gint ProcessList_get_process_pixels(ProcessList *Process_List,
+gint processlist_get_process_pixels(ProcessList *Process_List,
 				guint pid, LttTime *birth,
 				guint *y, guint *height);
 #endif // _PROCESS_LIST_H

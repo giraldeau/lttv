@@ -15,7 +15,7 @@ typedef struct _PropertiesArc PropertiesArc;
 typedef struct _PropertiesBG PropertiesBG;
 
 
-void Draw_Item(	GdkDrawable *drawable,
+void draw_item(	GdkDrawable *drawable,
 		gint x,
 		gint y,
 		LttvTraceState *ts,
@@ -43,45 +43,45 @@ void Draw_Item(	GdkDrawable *drawable,
  */
 
 /* 
- * The AddOperation has to do a quick sort by priority to keep the operations
+ * The add_operation has to do a quick sort by priority to keep the operations
  * in the right order.
  */
-void AddOperation(	LttvIAttribute *attributes,
+void add_operation(	LttvIAttribute *attributes,
 			gchar *pathname,
 			DrawOperation *Operation);
 
 /* 
- * The DelOperation seeks the array present at pathname (if any) and
+ * The del_operation seeks the array present at pathname (if any) and
  * removes the DrawOperation if present. It returns 0 on success, -1
  * if it fails.
  */
-gint DelOperation(	LttvIAttribute *attributes,
+gint del_operation(	LttvIAttribute *attributes,
 			gchar *pathname,
 			DrawOperation *Operation);
 
 /* 
- * The CleanOperations removes all operations present at a pathname.
+ * The clean_operations removes all operations present at a pathname.
  * returns 0 on success, -1 if it fails.
  */
-gint DelOperations(	LttvIAttribute *attributes,
+gint clean_operations(	LttvIAttribute *attributes,
 			gchar *pathname );
 
 
 /* 
- * The ListOperation gives a pointer to the operation array associated
+ * The list_operations gives a pointer to the operation array associated
  * with the pathname. It will be NULL if no operation is present.
  */
-void ListOperations(	LttvIAttribute *attributes,
+void list_operations(	LttvIAttribute *attributes,
 			gchar *pathname,
 			GArray **Operation);
 
 
 
 /*
- * ExecOperation executes the operations if present in the attributes, or
+ * exec_operation executes the operations if present in the attributes, or
  * do nothing if not present.
  */
-void ExecOperations(	LttvIAttribute *attributes,
+void exec_operations(	LttvIAttribute *attributes,
 			gchar *pathname);
 
 
@@ -125,11 +125,11 @@ PropertiesBG *properties_bg_create(
  * different items.
  */
 
-gboolean DrawText( void *hook_data, void *call_data);
-gboolean DrawIcon( void *hook_data, void *call_data);
-gboolean DrawLine( void *hook_data, void *call_data);
-gboolean DrawArc( void *hook_data, void *call_data);
-gboolean DrawBG( void *hook_data, void *call_data);
+gboolean draw_text( void *hook_data, void *call_data);
+gboolean draw_icon( void *hook_data, void *call_data);
+gboolean draw_line( void *hook_data, void *call_data);
+gboolean draw_arc( void *hook_data, void *call_data);
+gboolean draw_bg( void *hook_data, void *call_data);
 
 
 #endif // _DRAW_ITEM_H

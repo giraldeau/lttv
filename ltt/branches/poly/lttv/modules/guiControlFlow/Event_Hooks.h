@@ -14,14 +14,14 @@
 
 void send_test_data(ProcessList *Process_List, Drawing_t *Drawing);
 
-GtkWidget *hGuiControlFlow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * key);
+GtkWidget *h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * key);
 
-int Event_Selected_Hook(void *hook_data, void *call_data);
+int event_selected_hook(void *hook_data, void *call_data);
 
 /* Hook called before drawing. Gets the initial context at the beginning of the
  * drawing interval and copy it to the context in Event_Request.
  */
-int Draw_Before_Hook(void *hook_data, void *call_data);
+int draw_before_hook(void *hook_data, void *call_data);
 
 /*
  * The draw event hook is called by the reading API to have a
@@ -43,12 +43,12 @@ int Draw_Before_Hook(void *hook_data, void *call_data);
  * The choice of lines'color is defined by the context of the last event for this
  * process.
  */
-int Draw_Event_Hook(void *hook_data, void *call_data);
+int draw_event_hook(void *hook_data, void *call_data);
 
-int Draw_After_Hook(void *hook_data, void *call_data);
+int draw_after_hook(void *hook_data, void *call_data);
 
-void Update_Time_Window_Hook(void *hook_data, void *call_data);
-void Update_Current_Time_Hook(void *hook_data, void *call_data);
+void update_time_window_hook(void *hook_data, void *call_data);
+void update_current_time_hook(void *hook_data, void *call_data);
 
 
 #endif // _EVENT_HOOKS_H

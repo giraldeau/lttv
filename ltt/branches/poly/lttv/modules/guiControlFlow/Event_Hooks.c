@@ -53,14 +53,14 @@ void send_test_drawing(ProcessList *Process_List,
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55500;
 	g_critical("we have : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 					1,
 					&birth,
 					&y,
 					&height);
 	
 	g_critical("we draw : x : %u, y : %u, width : %u, height : %u", x, y, width, height);
-	Drawing_draw_line(
+	drawing_draw_line(
 		Drawing, Pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
@@ -72,14 +72,14 @@ void send_test_drawing(ProcessList *Process_List,
 	birth.tv_sec = 14000;
 	birth.tv_nsec = 55500;
 
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 					156,
 					&birth,
 					&y,
 					&height);
 	
 
-	Drawing_draw_line(
+	drawing_draw_line(
 		Drawing, Pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
@@ -89,14 +89,14 @@ void send_test_drawing(ProcessList *Process_List,
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55700;
 
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 					10,
 					&birth,
 					&y,
 					&height);
 	
 
-	Drawing_draw_line(
+	drawing_draw_line(
 		Drawing, Pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
@@ -108,14 +108,14 @@ void send_test_drawing(ProcessList *Process_List,
 		birth.tv_sec = i*12000;
 		birth.tv_nsec = i*55700;
 
-		ProcessList_get_process_pixels(Process_List,
+		processlist_get_process_pixels(Process_List,
 						i,
 						&birth,
 						&y,
 						&height);
 		
 
-		Drawing_draw_line(
+		drawing_draw_line(
 			Drawing, Pixmap, x,
 			y+(height/2), x + width, y+(height/2),
 			Drawing->Drawing_Area_V->style->black_gc);
@@ -127,14 +127,14 @@ void send_test_drawing(ProcessList *Process_List,
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55600;
 
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 					10,
 					&birth,
 					&y,
 					&height);
 	
 
-	Drawing_draw_line(
+	drawing_draw_line(
 		Drawing, Pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
@@ -162,68 +162,68 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55500;
 
-	ProcessList_add(Process_List,
+	processlist_add(Process_List,
 			1,
 			&birth,
 			&y);
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 					1,
 					&birth,
 					&y,
 					&height);
-	Drawing_Insert_Square( Drawing, y, height);
+	drawing_insert_square( Drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
 	birth.tv_sec = 14000;
 	birth.tv_nsec = 55500;
 
-	ProcessList_add(Process_List,
+	processlist_add(Process_List,
 			156,
 			&birth,
 			&y);
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 					156,
 					&birth,
 					&y,
 					&height);
-	Drawing_Insert_Square( Drawing, y, height);
+	drawing_insert_square( Drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55700;
 
-	ProcessList_add(Process_List,
+	processlist_add(Process_List,
 			10,
 			&birth,
 			&height);
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 					10,
 					&birth,
 					&y,
 					&height);
-	Drawing_Insert_Square( Drawing, y, height);
+	drawing_insert_square( Drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
-	//Drawing_Insert_Square( Drawing, height, 5);
+	//drawing_insert_square( Drawing, height, 5);
 
 	for(i=0; i<10; i++)
 	{
 		birth.tv_sec = i*12000;
 		birth.tv_nsec = i*55700;
 
-		ProcessList_add(Process_List,
+		processlist_add(Process_List,
 				i,
 				&birth,
 				&height);
-		ProcessList_get_process_pixels(Process_List,
+		processlist_get_process_pixels(Process_List,
 						i,
 						&birth,
 						&y,
 						&height);
-		Drawing_Insert_Square( Drawing, y, height);
+		drawing_insert_square( Drawing, y, height);
 	
 	//	g_critical("y : %u, height : %u", y, height);
 	
@@ -233,45 +233,45 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55600;
 
-	ProcessList_add(Process_List,
+	processlist_add(Process_List,
 			10,
 			&birth,
 			&y);
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 					10,
 					&birth,
 					&y,
 					&height);
-	Drawing_Insert_Square( Drawing, y, height);
+	drawing_insert_square( Drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
-	ProcessList_add(Process_List,
+	processlist_add(Process_List,
 			10000,
 			&birth,
 			&height);
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 					10000,
 					&birth,
 					&y,
 					&height);
-	Drawing_Insert_Square( Drawing, y, height);
+	drawing_insert_square( Drawing, y, height);
 	
 	//g_critical("y : %u, height : %u", y, height);
 	
-	//Drawing_Insert_Square( Drawing, height, 5);
+	//drawing_insert_square( Drawing, height, 5);
 	//g_critical("height : %u", height);
 
 
-	ProcessList_get_process_pixels(Process_List,
+	processlist_get_process_pixels(Process_List,
 				10000,
 				&birth,
 				&y, &height);
-	ProcessList_remove( 	Process_List,
+	processlist_remove( 	Process_List,
 				10000,
 				&birth);
 
-	Drawing_Remove_Square( Drawing, y, height);
+	drawing_remove_square( Drawing, y, height);
 	
 	if(got_RowRef = 
 		(GtkTreeRowReference*)g_hash_table_lookup(
@@ -302,10 +302,10 @@ void send_test_process(ProcessList *Process_List, Drawing_t *Drawing)
  * @return The widget created.
  */
 GtkWidget *
-hGuiControlFlow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * key)
+h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * key)
 {
 	g_critical("hGuiControlFlow");
-	ControlFlowData *Control_Flow_Data = GuiControlFlow() ;
+	ControlFlowData *Control_Flow_Data = guicontrolflow() ;
 
 	get_time_window(pmParentWindow,
 			GuiControlFlow_get_Time_Window(Control_Flow_Data));
@@ -331,7 +331,7 @@ int Event_Selected_Hook(void *hook_data, void *call_data)
 //	Control_Flow_Data->Currently_Selected_Event = *Event_Number;
 //	Control_Flow_Data->Selected_Event = TRUE ;
 	
-//	Tree_V_set_cursor(Control_Flow_Data);
+//	tree_v_set_cursor(Control_Flow_Data);
 
 }
 
@@ -339,7 +339,7 @@ int Event_Selected_Hook(void *hook_data, void *call_data)
 /* Hook called before drawing. Gets the initial context at the beginning of the
  * drawing interval and copy it to the context in Event_Request.
  */
-int Draw_Before_Hook(void *hook_data, void *call_data)
+int draw_before_hook(void *hook_data, void *call_data)
 {
 	EventRequest *Event_Request = (EventRequest*)hook_data;
 	EventsContext Events_Context = (EventsContext*)call_data;
@@ -369,7 +369,7 @@ int Draw_Before_Hook(void *hook_data, void *call_data)
  * The choice of lines'color is defined by the context of the last event for this
  * process.
  */
-int Draw_Event_Hook(void *hook_data, void *call_data)
+int draw_event_hook(void *hook_data, void *call_data)
 {
 	EventRequest *Event_Request = (EventRequest*)hook_data;
 	
@@ -377,7 +377,7 @@ int Draw_Event_Hook(void *hook_data, void *call_data)
 }
 
 
-int Draw_After_Hook(void *hook_data, void *call_data)
+int draw_after_hook(void *hook_data, void *call_data)
 {
 	EventRequest *Event_Request = (EventRequest*)hook_data;
 	
@@ -389,7 +389,7 @@ int Draw_After_Hook(void *hook_data, void *call_data)
 
 
 
-void Update_Time_Window_Hook(void *hook_data, void *call_data)
+void update_time_window_hook(void *hook_data, void *call_data)
 {
 	ControlFlowData *Control_Flow_Data = (ControlFlowData*) hook_data;
 	TimeWindow* Time_Window = 
@@ -408,24 +408,24 @@ void Update_Time_Window_Hook(void *hook_data, void *call_data)
 			Time_Window->time_width.tv_sec,
 			Time_Window->time_width.tv_nsec);
 
-   	Drawing_Data_Request(Control_Flow_Data->Drawing,
+   	drawing_data_request(Control_Flow_Data->Drawing,
 			&Control_Flow_Data->Drawing->Pixmap,
 			0, 0,
 			Control_Flow_Data->Drawing->width,
 		   	Control_Flow_Data->Drawing->height);
 
-	Drawing_Refresh(Control_Flow_Data->Drawing,
+	drawing_refresh(Control_Flow_Data->Drawing,
 			0, 0,
 			Control_Flow_Data->Drawing->width,
 			Control_Flow_Data->Drawing->height);
 
 }
 
-void Update_Current_Time_Hook(void *hook_data, void *call_data)
+void update_current_time_hook(void *hook_data, void *call_data)
 {
 	ControlFlowData *Control_Flow_Data = (ControlFlowData*) hook_data;
 	LttTime* Current_Time = 
-		GuiControlFlow_get_Current_Time(Control_Flow_Data);
+		guicontrolflow_get_current_time(Control_Flow_Data);
 	*Current_Time = *((LttTime*)call_data);
 	g_critical("New Current time HOOK : %u, %u", Current_Time->tv_sec,
 							Current_Time->tv_nsec);

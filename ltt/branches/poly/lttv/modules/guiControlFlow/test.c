@@ -44,7 +44,7 @@ int main(int argc, char **argv)
   //ListViewer = hGuiEvents(Window);
   //gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, FALSE, TRUE, 0);
 	
-	Control_Flow_Data = GuiControlFlow();
+	Control_Flow_Data = guicontrolflow();
 	CF_Viewer = Control_Flow_Data->Scrolled_Window_VC;
   gtk_box_pack_start(GTK_BOX(VBox_V), CF_Viewer, TRUE, TRUE, 0);
 
@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
 	g_critical("main loop finished");
   
-	//hGuiEvents_Destructor(ListViewer);
+	//h_guievents_destructor(ListViewer);
 
 	//g_critical("GuiEvents Destructor finished");
 	destroy();

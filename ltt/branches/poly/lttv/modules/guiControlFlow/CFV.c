@@ -24,17 +24,17 @@ extern GSList *gControl_Flow_Data_List;
  * @return The widget created.
  */
 ControlFlowData *
-GuiControlFlow(void)
+guicontrolflow(void)
 {
 	GtkWidget *Process_List_Widget, *Drawing_Widget;
 
 	ControlFlowData* Control_Flow_Data = g_new(ControlFlowData,1) ;
 
 	/* Create the Drawing */
-	Control_Flow_Data->Drawing = Drawing_construct(Control_Flow_Data);
+	Control_Flow_Data->Drawing = drawing_construct(Control_Flow_Data);
 	
 	Drawing_Widget = 
-		Drawing_getWidget(Control_Flow_Data->Drawing);
+		drawing_get_widget(Control_Flow_Data->Drawing);
 	
 	/* TEST DATA, TO BE READ FROM THE TRACE */
 	Control_Flow_Data->Number_Of_Events = 1000 ;
@@ -47,10 +47,10 @@ GuiControlFlow(void)
 
 
 	/* Create the Process list */
-	Control_Flow_Data->Process_List = ProcessList_construct();
+	Control_Flow_Data->Process_List = processlist_construct();
 	
 	Process_List_Widget = 
-		ProcessList_getWidget(Control_Flow_Data->Process_List);
+		processlist_get_widget(Control_Flow_Data->Process_List);
 	
 	Control_Flow_Data->Inside_HBox_V = gtk_hbox_new(0, 0);
 
@@ -113,7 +113,7 @@ GuiControlFlow(void)
 			G_OBJECT(Control_Flow_Data->Scrolled_Window_VC),
 			"Control_Flow_Data",
 			Control_Flow_Data,
-			(GDestroyNotify)GuiControlFlow_Destructor);
+			(GDestroyNotify)guicontrolflow_destructor);
 			
 	gControl_Flow_Data_List = g_slist_append(
 			gControl_Flow_Data_List,
@@ -130,17 +130,17 @@ GuiControlFlow(void)
 
 /* Destroys widget also */
 void
-GuiControlFlow_Destructor_Full(ControlFlowData *Control_Flow_Data)
+guicontrolflow_destructor_full(ControlFlowData *Control_Flow_Data)
 {
 	/* May already have been done by GTK window closing */
 	if(GTK_IS_WIDGET(Control_Flow_Data->Scrolled_Window_VC))
 		gtk_widget_destroy(Control_Flow_Data->Scrolled_Window_VC);
 
-	GuiControlFlow_Destructor(Control_Flow_Data);
+	guicontrolflow_destructor(Control_Flow_Data);
 }
 
 void
-GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
+guicontrolflow_destructor(ControlFlowData *Control_Flow_Data)
 {
 	guint index;
 	
@@ -158,22 +158,22 @@ GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
 	g_free(Control_Flow_Data);
 }
 
-GtkWidget *GuiControlFlow_get_Widget(ControlFlowData *Control_Flow_Data)
+GtkWidget *guicontrolflow_get_widget(ControlFlowData *Control_Flow_Data)
 {
 	return Control_Flow_Data->Scrolled_Window_VC ;
 }
 
-ProcessList *GuiControlFlow_get_Process_List
+ProcessList *guicontrolflow_get_process_list
 		(ControlFlowData *Control_Flow_Data)
 {
 		return Control_Flow_Data->Process_List ;
 }
 
-TimeWindow *GuiControlFlow_get_Time_Window(ControlFlowData *Control_Flow_Data)
+TimeWindow *guicontrolflow_get_time_window(ControlFlowData *Control_Flow_Data)
 {
 	return &Control_Flow_Data->Time_Window;
 }
-LttTime *GuiControlFlow_get_Current_Time(ControlFlowData *Control_Flow_Data)
+LttTime *guicontrolflow_get_current_time(ControlFlowData *Control_Flow_Data)
 {
 	return &Control_Flow_Data->Current_Time;
 }

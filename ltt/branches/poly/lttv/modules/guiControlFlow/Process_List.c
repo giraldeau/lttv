@@ -153,14 +153,14 @@ gboolean equ_fct(gconstpointer a, gconstpointer b)
 	return 1;
 }
 
-void Destroy_hash_key(gpointer key);
+void destroy_hash_key(gpointer key);
 
-void Destroy_hash_data(gpointer data);
-
-
+void destroy_hash_data(gpointer data);
 
 
-ProcessList *ProcessList_construct(void)
+
+
+ProcessList *processlist_construct(void)
 {
 	GtkTreeViewColumn *column;
 	GtkCellRenderer *renderer;
@@ -197,7 +197,7 @@ ProcessList *ProcessList_construct(void)
 	
 	Process_List->Process_Hash = g_hash_table_new_full(
 			hash_fct, equ_fct,
-			Destroy_hash_key, Destroy_hash_data
+			destroy_hash_key, destroy_hash_data
 			);
 	
 	
@@ -251,13 +251,13 @@ ProcessList *ProcessList_construct(void)
 			G_OBJECT(Process_List->Process_List_VC),
 			"Process_List_Data",
 			Process_List,
-			(GDestroyNotify)ProcessList_destroy);
+			(GDestroyNotify)processlist_destroy);
 
 	Process_List->Test_Process_Sent = 0;
 	
 	return Process_List;
 }
-void ProcessList_destroy(ProcessList *Process_List)
+void processlist_destroy(ProcessList *Process_List)
 {
 	g_hash_table_destroy(Process_List->Process_Hash);
 	Process_List->Process_Hash = NULL;
@@ -265,7 +265,7 @@ void ProcessList_destroy(ProcessList *Process_List)
 	g_free(Process_List);
 }
 
-GtkWidget *ProcessList_getWidget(ProcessList *Process_List)
+GtkWidget *processlist_get_widget(ProcessList *Process_List)
 {
 	return Process_List->Process_List_VC;
 }
@@ -285,17 +285,17 @@ gint get_cell_height(GtkTreeView *TreeView)
 	return height;
 }
 
-void Destroy_hash_key(gpointer key)
+void destroy_hash_key(gpointer key)
 {
 	g_free(key);
 }
 
-void Destroy_hash_data(gpointer data)
+void destroy_hash_data(gpointer data)
 {
 	g_free(data);
 }
 
-int ProcessList_add(	ProcessList *Process_List,
+int processlist_add(	ProcessList *Process_List,
 			guint pid,
 			LttTime *birth,
 			guint *height)
@@ -343,7 +343,7 @@ int ProcessList_add(	ProcessList *Process_List,
 	
 }
 
-int ProcessList_remove(	ProcessList *Process_List,
+int processlist_remove(	ProcessList *Process_List,
 			guint pid,
 			LttTime *birth)
 {
@@ -381,14 +381,14 @@ int ProcessList_remove(	ProcessList *Process_List,
 }
 
 
-guint ProcessList_get_height(ProcessList *Process_List)
+guint processlist_get_height(ProcessList *Process_List)
 {
 	return get_cell_height(GTK_TREE_VIEW(Process_List->Process_List_VC))
 				* Process_List->Number_Of_Process ;
 }
 
 
-gint ProcessList_get_process_pixels(	ProcessList *Process_List,
+gint processlist_get_process_pixels(	ProcessList *Process_List,
 					guint pid, LttTime *birth,
 					guint *y,
 					guint *height)

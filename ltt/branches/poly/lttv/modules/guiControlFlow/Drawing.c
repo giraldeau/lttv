@@ -44,10 +44,10 @@ static GdkColor CF_Colors [] =
 /* Function responsible for updating the exposed area.
  * It must call processTrace() to ask for this update.
  */
-void Drawing_Data_Request(Drawing_t *Drawing,
+void drawing_data_request(Drawing_t *Drawing,
 			GdkPixmap **Pixmap,
 			gint x, gint y,
-		   	gint width,
+		  gint width,
 			gint height)
 {
   if(width < 0) return ;
@@ -61,10 +61,10 @@ void Drawing_Data_Request(Drawing_t *Drawing,
 		      height);
 
   send_test_process(
-	GuiControlFlow_get_Process_List(Drawing->Control_Flow_Data),
+	guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
 	Drawing);
   send_test_drawing(
-	GuiControlFlow_get_Process_List(Drawing->Control_Flow_Data),
+	guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
 	Drawing, *Pixmap, x, y, width, height);
   
 }
@@ -101,7 +101,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
 	Drawing->height = widget->allocation.height;
 g_critical("init data");
 	/* Initial data request */
- 	Drawing_Data_Request(Drawing, &Drawing->Pixmap, 0, 0,
+ 	drawing_data_request(Drawing, &Drawing->Pixmap, 0, 0,
 		   	widget->allocation.width,
 			widget->allocation.height);
 
@@ -124,10 +124,10 @@ g_critical("init data");
 
    /* Request data for missing space */
 g_critical("missing data");
-   Drawing_Data_Request(Drawing, &Pixmap, Drawing->width, 0,
+   drawing_data_request(Drawing, &Pixmap, Drawing->width, 0,
 		   	widget->allocation.width - Drawing->width,
 			widget->allocation.height);
-   Drawing_Data_Request(Drawing, &Pixmap, 0, Drawing->height,
+   drawing_data_request(Drawing, &Pixmap, 0, Drawing->height,
 		   Drawing->width,
 		   widget->allocation.height - Drawing->height);
 			                      
@@ -178,7 +178,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   return FALSE;
 }
 
-Drawing_t *Drawing_construct(ControlFlowData *Control_Flow_Data)
+Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data)
 {
 	Drawing_t *Drawing = g_new(Drawing_t, 1);
 		
@@ -228,7 +228,7 @@ Drawing_t *Drawing_construct(ControlFlowData *Control_Flow_Data)
 	return Drawing;
 }
 
-void Drawing_destroy(Drawing_t *Drawing)
+void drawing_destroy(Drawing_t *Drawing)
 {
 
 	// Do not unref here, Drawing_t destroyed by it's widget.
@@ -237,7 +237,7 @@ void Drawing_destroy(Drawing_t *Drawing)
 	g_free(Drawing);
 }
 
-GtkWidget *Drawing_getWidget(Drawing_t *Drawing)
+GtkWidget *drawing_get_widget(Drawing_t *Drawing)
 {
 	return Drawing->Drawing_Area_V;
 }
@@ -284,7 +284,7 @@ void convert_time_to_pixels(
 	
 }
 
-void Drawing_Refresh (	Drawing_t *Drawing,
+void drawing_refresh (	Drawing_t *Drawing,
 			guint x, guint y,
 			guint width, guint height)
 {
@@ -308,7 +308,7 @@ void Drawing_Refresh (	Drawing_t *Drawing,
 }
 
 
-void Drawing_draw_line(	Drawing_t *Drawing,
+void drawing_draw_line(	Drawing_t *Drawing,
 			GdkPixmap *Pixmap,
 			guint x1, guint y1,
 			guint x2, guint y2,
@@ -322,7 +322,7 @@ void Drawing_draw_line(	Drawing_t *Drawing,
 
 
 
-void Drawing_Resize(Drawing_t *Drawing, guint h, guint w)
+void drawing_resize(Drawing_t *Drawing, guint h, guint w)
 {
 	Drawing->height = h ;
 	Drawing->width = w ;
@@ -337,7 +337,7 @@ void Drawing_Resize(Drawing_t *Drawing, guint h, guint w)
 
 /* Insert a square corresponding to a new process in the list */
 /* Applies to whole Drawing->width */
-void Drawing_Insert_Square(Drawing_t *Drawing,
+void drawing_insert_square(Drawing_t *Drawing,
 				guint y,
 				guint height)
 {
@@ -398,7 +398,7 @@ void Drawing_Insert_Square(Drawing_t *Drawing,
 
 
 /* Remove a square corresponding to a removed process in the list */
-void Drawing_Remove_Square(Drawing_t *Drawing,
+void drawing_remove_square(Drawing_t *Drawing,
 				guint y,
 				guint height)
 {
