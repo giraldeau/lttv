@@ -43,11 +43,28 @@ enum
 
 
 void
-insert_viewer_wrap(GtkMenuItem *menuitem, gpointer user_data)
+insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data)
 {
+  GdkWindow * win;
+  GdkCursor * new;
   guint val = 20;
+  GtkWidget* widget = menuitem;
+  MainWindow * mw;
+
+  new = gdk_cursor_new(GDK_X_CURSOR);
+  if(GTK_IS_MENU_ITEM(menuitem)){
+    widget = lookup_widget(menuitem, "MToolbar2");
+  }
+  win = gtk_widget_get_parent_window(widget);  
+  gdk_window_set_cursor(win, new);
+  gdk_cursor_unref(new);  
+  gdk_window_stick(win);
+  gdk_window_unstick(win);
+ 
   insert_viewer((GtkWidget*)menuitem, (view_constructor)user_data);
   //  selected_hook(&val);
+
+  gdk_window_set_cursor(win, NULL);  
 }
 
 

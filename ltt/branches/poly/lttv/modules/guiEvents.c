@@ -783,8 +783,20 @@ void get_test_data(double time_value, guint list_height,
   unsigned  block_num, event_num;
   unsigned size = 1, count = 0;
   gboolean need_backward_again, backward;
-
+  GdkWindow * win;
+  GdkCursor * new;
+  GtkWidget* widget = gtk_widget_get_parent(event_viewer_data->hbox_v);
   
+  if(widget){
+    new = gdk_cursor_new(GDK_X_CURSOR);
+    win = gtk_widget_get_parent_window(widget);  
+    gdk_window_set_cursor(win, new);
+    gdk_cursor_unref(new);  
+    gdk_window_stick(win);
+    gdk_window_unstick(win);
+  }
+
+
   //	if(event_number > event_viewer_data->last_event ||
   //		 event_number + list_height-1 < event_viewer_data->first_event ||
   //		 event_viewer_data->first_event == -1)
@@ -1054,7 +1066,8 @@ void get_test_data(double time_value, guint list_height,
   event_viewer_data->first_event = event_viewer_data->start_event_index ;
   event_viewer_data->last_event = event_viewer_data->end_event_index ;
 
-
+  if(widget)
+     gdk_window_set_cursor(win, NULL);  
 
 }
 	
