@@ -11,9 +11,9 @@ AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS)
 
-lib_LTLIBRARIES = libmainwinapi.la
-libmainwinapi_la_SOURCES = toolbar.c menu.c gtktraceset.c
-#libmainwinapi_la_LDFLAGS = -L${top_srcdir}/lttv/modules/gui/API -lcustomBox
+lib_LTLIBRARIES = liblttvgui.la
+liblttvgui_la_SOURCES = toolbar.c menu.c gtktraceset.c
+#liblttvgui_la_LDFLAGS = -L${top_srcdir}/lttv/modules/gui/lttvgui -lcustomBox
 
 lttvguiinclude_HEADERS = \
 	common.h\

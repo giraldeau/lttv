@@ -687,5 +687,5 @@ static void destroy() {
 
 LTTV_MODULE("guistatistics", "Statistics viewer", \
     "Graphical module to view statistics about processes, CPUs and systems", \
-    init, destroy, "mainwin")
+    init, destroy, "lttvwindow")
 

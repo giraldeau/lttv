@@ -1883,4 +1883,4 @@ static void destroy() {
 
 LTTV_MODULE("guievents", "Detailed events view", \
     "Graphical module to display a detailed event list", \
-	    init, destroy, "mainwin")
+	    init, destroy, "lttvwindow")

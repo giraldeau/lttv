@@ -3,7 +3,7 @@
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
-LIBS += $(GTK_LIBS) -L$(top_srcdir)/lttv/modules/gui/mainlib -lmainwinapi
+LIBS += $(GTK_LIBS) -L$(top_srcdir)/lttv/modules/gui/lttvgui -llttvgui
 
 INCLUDES = \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
@@ -13,12 +13,12 @@ INCLUDES = \
 
 libdir = ${lttvplugindir}
 
-#bin_PROGRAMS = mainwin
-lib_LTLIBRARIES = libmainwin.la
+#bin_PROGRAMS = lttvwindow
+lib_LTLIBRARIES = liblttvwindow.la
 
 
-libmainwin_la_LDFLAGS = -module
-libmainwin_la_SOURCES = \
+liblttvwindow_la_LDFLAGS = -module
+liblttvwindow_la_SOURCES = \
 	init_module.c \
 	support.c \
 	interface.c \
@@ -33,5 +33,5 @@ noinst_HEADERS = \
 	callbacks.h
 
 
-libmainwin_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
+liblttvwindow_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
 

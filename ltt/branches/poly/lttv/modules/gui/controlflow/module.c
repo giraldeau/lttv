@@ -111,4 +111,4 @@ static void destroy() {
 
 LTTV_MODULE("guicontrolflow", "Control flow viewer", \
     "Graphical module to view processes state and control flow", \
-    init, destroy, "mainwin")
+    init, destroy, "lttvwindow")

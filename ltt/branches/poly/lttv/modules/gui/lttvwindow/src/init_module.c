@@ -185,6 +185,6 @@ static void destroy() {
 }
 
 
-LTTV_MODULE("mainwin", "Viewer main window", \
+LTTV_MODULE("lttvwindow", "Viewer main window", \
     "Viewer with multiple windows, tabs and panes for graphical modules", \
 	    init, destroy, "stats")
