@@ -1,10 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = src
-
-EXTRA_DIST = \
-	mainwin.glade \
-	mainwin.gladep
+SUBDIRS = src glade
 
 install-data-local:
 	@$(NORMAL_INSTALL)

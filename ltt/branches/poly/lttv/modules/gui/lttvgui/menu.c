@@ -17,7 +17,7 @@
  */
 
 #include <lttv/lttv.h>
-#include <lttv/menu.h>
+#include <lttvgui/menu.h>
 
 
 inline LttvMenus *lttv_menus_new() {

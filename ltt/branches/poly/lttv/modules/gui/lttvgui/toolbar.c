@@ -17,7 +17,7 @@
  */
 
 #include <lttv/lttv.h>
-#include <lttv/toolbar.h>
+#include <lttvgui/toolbar.h>
 
 
 inline LttvToolbars *lttv_toolbars_new() {

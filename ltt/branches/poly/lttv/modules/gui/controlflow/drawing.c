@@ -21,7 +21,7 @@
 
 #include <lttv/lttv.h>
 #include <lttv/tracecontext.h>
-#include <lttv/gtktraceset.h>
+#include <lttvgui/gtktraceset.h>
 #include <lttv/hook.h>
 
 #include "drawing.h"

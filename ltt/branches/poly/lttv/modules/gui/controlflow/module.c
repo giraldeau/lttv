@@ -40,12 +40,12 @@
 #include <glib.h>
 #include <lttv/lttv.h>
 #include <lttv/module.h>
-#include <lttv/gtktraceset.h>
+#include <lttvgui/gtktraceset.h>
 
 #include "cfv.h"
 #include "eventhooks.h"
 
-#include "../icons/hGuiControlFlowInsert.xpm"
+#include "hGuiControlFlowInsert.xpm"
 
 static LttvModule *Main_Win_Module;
 

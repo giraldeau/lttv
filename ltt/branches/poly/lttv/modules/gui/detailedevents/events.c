@@ -45,7 +45,7 @@
 
 #include <lttv/module.h>
 #include <lttv/hook.h>
-#include <lttv/gtktraceset.h>
+#include <lttvgui/gtktraceset.h>
 #include <lttv/tracecontext.h>
 #include <lttv/state.h>
 #include <ltt/ltt.h>
@@ -58,7 +58,7 @@
 //#include "mw_api.h"
 #include "gtktreeprivate.h"
 
-#include "../icons/hGuiEventsInsert.xpm"
+#include "hGuiEventsInsert.xpm"
 
 
 static LttvHooks  *before_event;

@@ -35,3 +35,5 @@ libguievents_la_LDFLAGS = -module
 libguievents_la_SOURCES = events.c
 noinst_HEADERS = gtkrbtree.h gtktreeprivate.h
 
+EXTRA_DIST = \
+		hGuiEventsInsert.xpm

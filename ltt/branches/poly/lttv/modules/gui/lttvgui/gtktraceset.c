@@ -28,14 +28,14 @@
  * 
  */
 
-#include <lttv/common.h>
+#include <lttvgui/common.h>
 #include <ltt/ltt.h>
 #include <lttv/lttv.h>
-#include <lttv/mainwindow.h>   
-#include <lttv/gtktraceset.h>
+#include <lttvgui/mainwindow.h>   
+#include <lttvgui/gtktraceset.h>
 #include <lttv/tracecontext.h>
-#include <lttv/toolbar.h>
-#include <lttv/menu.h>
+#include <lttvgui/toolbar.h>
+#include <lttvgui/menu.h>
 #include <lttv/state.h>
 #include <lttv/stats.h>
 

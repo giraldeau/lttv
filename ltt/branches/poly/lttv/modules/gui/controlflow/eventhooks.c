@@ -38,9 +38,9 @@
 
 #include <lttv/lttv.h>
 #include <lttv/hook.h>
-#include <lttv/common.h>
+#include <lttvgui/common.h>
 #include <lttv/state.h>
-#include <lttv/gtktraceset.h>
+#include <lttvgui/gtktraceset.h>
 
 
 #include "eventhooks.h"

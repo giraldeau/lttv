@@ -6,5 +6,5 @@
 
 # WARNING : subdirs order is important : mainWin depends on API
 
-SUBDIRS = mainlib main icons controlflow detailedevents statistics
+SUBDIRS = lttvgui lttvwindow controlflow detailedevents statistics
 

@@ -14,3 +14,6 @@ libdir = ${lttvplugindir}
 lib_LTLIBRARIES = libguistatistics.la
 libguistatistics_la_LDFLAGS = -module
 libguistatistics_la_SOURCES = statistics.c
+
+EXTRA_DIST = \
+		hGuiStatisticInsert.xpm

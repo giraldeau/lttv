@@ -59,7 +59,7 @@ set_hpane_dividor
 #include <gtk/gtk.h>
 #include <ltt/ltt.h>
 #include <lttv/hook.h>
-#include <lttv/common.h>
+#include <lttvgui/common.h>
 #include <lttv/stats.h>
 
 /**

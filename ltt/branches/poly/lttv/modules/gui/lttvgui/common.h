@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <ltt/ltt.h>
 #include <gtk/gtk.h>
-#include <lttv/lttvfilter.h>
+#include <lttvgui/lttvfilter.h>
 
 #define MAX_NUMBER_EVENT     "MAX_NUMBER_EVENT"
 #define TRACESET_TIME_SPAN   "TRACESET_TIME_SPAN"

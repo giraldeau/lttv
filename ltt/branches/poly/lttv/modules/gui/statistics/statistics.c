@@ -22,10 +22,10 @@
 
 #include <lttv/lttv.h>
 #include <lttv/module.h>
-#include <lttv/gtktraceset.h>
+#include <lttvgui/gtktraceset.h>
 #include <lttv/tracecontext.h>
 #include <lttv/hook.h>
-#include <lttv/common.h>
+#include <lttvgui/common.h>
 #include <lttv/state.h>
 #include <lttv/stats.h>
 
@@ -36,7 +36,7 @@
 
 #include <string.h>
 
-#include "../icons/hGuiStatisticInsert.xpm"
+#include "hGuiStatisticInsert.xpm"
 
 #define PATH_LENGTH        256  /* CHECK */
 

@@ -17,7 +17,7 @@
  */
 
 
-#include <lttv/lttvfilter.h>
+#include <lttvgui/lttvfilter.h>
 #include <stdio.h>
 #include <ltt/trace.h>
 #include <ltt/type.h>

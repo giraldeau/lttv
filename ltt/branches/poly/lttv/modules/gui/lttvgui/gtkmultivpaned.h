@@ -25,7 +25,7 @@
 #include <glib-object.h>
 #include <gdk/gdk.h>
 #include <gtk/gtkcontainer.h>
-#include <lttv/common.h>
+#include <lttvgui/common.h>
 
 #ifdef __cplusplus
 extern "C" {

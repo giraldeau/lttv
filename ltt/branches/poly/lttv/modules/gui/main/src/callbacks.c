@@ -26,14 +26,14 @@
 #include "interface.h"
 #include "support.h"
 #include <lttv/lttv.h>
-#include <lttv/mainwindow.h>
-#include <lttv/menu.h>
-#include <lttv/toolbar.h>
-#include <lttv/gtktraceset.h>
+#include <lttvgui/mainwindow.h>
+#include <lttvgui/menu.h>
+#include <lttvgui/toolbar.h>
+#include <lttvgui/gtktraceset.h>
 #include <lttv/module.h>
-#include <lttv/gtkdirsel.h>
+#include <lttvgui/gtkdirsel.h>
 #include <lttv/iattribute.h>
-#include <lttv/lttvfilter.h>
+#include <lttvgui/lttvfilter.h>
 #include <ltt/trace.h>
 #include <ltt/facility.h>
 
