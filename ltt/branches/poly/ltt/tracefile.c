@@ -1676,129 +1676,146 @@ static inline gint getFieldtypeSize(LttTracefile * t,
                    evT->latest_event==t->which_event)){
     size = fld->field_size;
     goto end_getFieldtypeSize;
-  }
-
-  /* This likely has been tested with gcov : half of them.. */
-  if(unlikely(fld->field_fixed == 1)){
-    /* tested : none */
-    if(unlikely(fld == evT->root_field)) {
-      size = fld->field_size;
-      goto end_getFieldtypeSize;
+  } else {
+    /* This likely has been tested with gcov : half of them.. */
+    if(unlikely(fld->field_fixed == 1)){
+      /* tested : none */
+      if(unlikely(fld == evT->root_field)) {
+        size = fld->field_size;
+        goto end_getFieldtypeSize;
+      }
     }
-  }
 
-  /* From gcov profiling : half string, half struct, can we gain something from
-   * that ? (Mathieu) */
-  switch(type->type_class) {
-    case LTT_ARRAY:
-      element_number = (int) type->element_number;
-      if(fld->field_fixed == -1){
-        size = getFieldtypeSize(t, evT, offsetRoot,
-                                0,fld->child[0], NULL, trace);
-        if(size == 0){ //has string or sequence
-          fld->field_fixed = 0;
-        }else{
-          fld->field_fixed = 1;
-          size *= element_number; 
-        }
-      }else if(fld->field_fixed == 0){// has string or sequence
-        size = 0;
-        for(i=0;i<element_number;i++){
-          size += getFieldtypeSize(t, evT, offsetRoot+size,size, 
-          fld->child[0], evD+size, trace);
-        }
-      }else size = fld->field_size;
-      break;
-
-    case LTT_SEQUENCE:
-      size1 = (int) ltt_type_size(trace, type);
-      if(fld->field_fixed == -1){
-        fld->sequ_number_size = size1;
-        fld->field_fixed = 0;
-        size = getFieldtypeSize(t, evT, offsetRoot,
-                                0,fld->child[0], NULL, trace);      
-        fld->element_size = size;
-      }else{//0: sequence
-        element_number = getIntNumber(size1,evD);
-        type->element_number = element_number;
-        if(fld->element_size > 0){
-          size = element_number * fld->element_size;
-        }else{//sequence has string or sequence
+    /* From gcov profiling : half string, half struct, can we gain something
+     * from that ? (Mathieu) */
+    switch(type->type_class) {
+      case LTT_ARRAY:
+        element_number = (int) type->element_number;
+        if(fld->field_fixed == -1){
+          size = getFieldtypeSize(t, evT, offsetRoot,
+                                  0,fld->child[0], NULL, trace);
+          if(size == 0){ //has string or sequence
+            fld->field_fixed = 0;
+          }else{
+            fld->field_fixed = 1;
+            size *= element_number; 
+          }
+        }else if(fld->field_fixed == 0){// has string or sequence
           size = 0;
           for(i=0;i<element_number;i++){
-            size += getFieldtypeSize(t, evT, offsetRoot+size+size1,size+size1, 
-                                     fld->child[0], evD+size+size1, trace);
+            size += getFieldtypeSize(t, evT, offsetRoot+size,size, 
+            fld->child[0], evD+size, trace);
           }
+        }else size = fld->field_size;
+        if(unlikely(!evD)){
+          fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
+          fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
         }
-        size += size1;
-      }
-      break;
-      
-    case LTT_STRING:
-      size = 0;
-      if(fld->field_fixed == -1){
-        fld->field_fixed = 0;
-      }else{//0: string
-        /* Hope my implementation is faster than strlen (Mathieu) */
-        char *ptr=(char*)evD;
-        size = 1;
-        /* from gcov : many many strings are empty, make it the common case. */
-        while(unlikely(*ptr != '\0')) { size++; ptr++; }
-        //size = ptr - (char*)evD + 1; //include end : '\0'
-      }
-      break;
-      
-    case LTT_STRUCT:
-      element_number = (int) type->element_number;
-      size = 0;
-      /* tested with gcov */
-      if(unlikely(fld->field_fixed == -1)){
-        offset1 = offsetRoot;
-        offset2 = 0;
-        for(i=0;i<element_number;i++){
-          size1=getFieldtypeSize(t, evT,offset1,offset2,
-                                 fld->child[i], NULL, trace);
-          if(likely(size1 > 0 && size >= 0)){
-            size += size1;
-            if(likely(offset1 >= 0)) offset1 += size1;
-              offset2 += size1;
-          }else{
-            size = -1;
-            offset1 = -1;
-            offset2 = -1;
-          }
-        }
-        if(unlikely(size == -1)){
-           fld->field_fixed = 0;
-           size = 0;
-        }else fld->field_fixed = 1;
-      }else if(likely(fld->field_fixed == 0)){
-        offset1 = offsetRoot;
-        offset2 = 0;
-        for(i=0;unlikely(i<element_number);i++){
-          size=getFieldtypeSize(t,evT,offset1,offset2,
-                                fld->child[i],evD+offset2, trace);
-          offset1 += size;
-          offset2 += size;
-        }      
-        size = offset2;
-      }else size = fld->field_size;
-      break;
 
-    default:
-      if(unlikely(fld->field_fixed == -1)){
-        size = (int) ltt_type_size(trace, type);
-        fld->field_fixed = 1;
-      }else size = fld->field_size;
-      break;
+        break;
+
+      case LTT_SEQUENCE:
+        size1 = (int) ltt_type_size(trace, type);
+        if(fld->field_fixed == -1){
+          fld->sequ_number_size = size1;
+          fld->field_fixed = 0;
+          size = getFieldtypeSize(t, evT, offsetRoot,
+                                  0,fld->child[0], NULL, trace);      
+          fld->element_size = size;
+        }else{//0: sequence
+          element_number = getIntNumber(size1,evD);
+          type->element_number = element_number;
+          if(fld->element_size > 0){
+            size = element_number * fld->element_size;
+          }else{//sequence has string or sequence
+            size = 0;
+            for(i=0;i<element_number;i++){
+              size += getFieldtypeSize(t, evT, offsetRoot+size+size1,size+size1, 
+                                       fld->child[0], evD+size+size1, trace);
+            }
+          }
+          size += size1;
+        }
+        if(unlikely(!evD)){
+          fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
+          fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
+        }
+
+        break;
+        
+      case LTT_STRING:
+        size = 0;
+        if(fld->field_fixed == -1){
+          fld->field_fixed = 0;
+        }else{//0: string
+          /* Hope my implementation is faster than strlen (Mathieu) */
+          char *ptr=(char*)evD;
+          size = 1;
+          /* from gcov : many many strings are empty, make it the common case.*/
+          while(unlikely(*ptr != '\0')) { size++; ptr++; }
+          //size = ptr - (char*)evD + 1; //include end : '\0'
+        }
+        fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
+        fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
+
+        break;
+        
+      case LTT_STRUCT:
+        element_number = (int) type->element_number;
+        size = 0;
+        /* tested with gcov */
+        if(unlikely(fld->field_fixed == -1)){
+          offset1 = offsetRoot;
+          offset2 = 0;
+          for(i=0;i<element_number;i++){
+            size1=getFieldtypeSize(t, evT,offset1,offset2,
+                                   fld->child[i], NULL, trace);
+            if(likely(size1 > 0 && size >= 0)){
+              size += size1;
+              if(likely(offset1 >= 0)) offset1 += size1;
+                offset2 += size1;
+            }else{
+              size = -1;
+              offset1 = -1;
+              offset2 = -1;
+            }
+          }
+          if(unlikely(size == -1)){
+             fld->field_fixed = 0;
+             size = 0;
+          }else fld->field_fixed = 1;
+        }else if(likely(fld->field_fixed == 0)){
+          offset1 = offsetRoot;
+          offset2 = 0;
+          for(i=0;unlikely(i<element_number);i++){
+            size=getFieldtypeSize(t,evT,offset1,offset2,
+                                  fld->child[i],evD+offset2, trace);
+            offset1 += size;
+            offset2 += size;
+          }      
+          size = offset2;
+        }else size = fld->field_size;
+        if(unlikely(!evD)){
+          fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
+          fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
+        }
+        break;
+
+      default:
+        if(unlikely(fld->field_fixed == -1)){
+          size = (int) ltt_type_size(trace, type);
+          fld->field_fixed = 1;
+        }else size = fld->field_size;
+        if(unlikely(!evD)){
+          fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
+          fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
+        }
+        break;
+    }
   }
 
   fld->offset_root     = offsetRoot;
   fld->offset_parent   = offsetParent;
-  if(unlikely(!evD)){
-    fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
-    fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
-  }
   fld->field_size      = size;
 
 end_getFieldtypeSize:
