@@ -421,6 +421,10 @@ void add_trace(GtkWidget * widget, gpointer user_data)
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       dir = gtk_dir_selection_get_dir (file_selector);
+      if(!dir || strlen(dir) ==0){
+	gtk_widget_destroy((GtkWidget*)file_selector);
+	break;
+      }
       trace = ltt_trace_open(dir);
       if(trace == NULL) g_critical("cannot open trace %s", dir);
       trace_v = lttv_trace_new(trace);
