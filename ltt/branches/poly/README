@@ -1,15 +1,25 @@
-To compile the source tree, simply follow these steps :
+* Compiling
 
-- run ./autogen.sh
+Some development libraries are needed for compiling :
+
+gtk 2 development libraries (libgtk2.0-dev)
+glib 2 development libraries (libglib2.0-dev)
+libpopt development libraries (libpopt-dev)
+
+
+To compile the source tree from a tarball, simply follow these steps :
+
+- run ./configure
 - make
 - make install
 
-After running autogen.sh, you can also go in specific subdirectories and
+After running ./configure, you can also go in specific subdirectories and
 use make, make install.
 
 
-This is a sample of the suggested tree for Linux Trace Toolkit.
+* Source Tree Structure
 
+This is a sample of the suggested tree for Linux Trace Toolkit.
 
 LibLTT : Libraries used for LTT.
 README : This file. Introduction pointing to specific resources in the tree.
@@ -22,3 +32,22 @@ lttd :   Linux Trace Toolkit daemon.
 lttv :   Linux Trace Toolkit visualizer/analyzer.
 lttv/plugins :  Linux Trace Toolkit visualizer plugins.
 specs :  RPM config files.
+
+
+* For Developers
+
+This source tree is based on the autotools suite from GNU to simplify
+portability. Here are some things you should have on your system in order to
+compile the subversion repository tree :
+
+
+GNU autotools (automake-1,7, autoconf2.50, autoheader2.50)
+(make sure your system wide "automake" points to version 1.7!)
+GNU Libtool
+(for more information, go to http://www.gnu.org/software/autoconf/)
+
+If you get the tree from the repository, you will need to use the autogen.sh
+script. It calls all the GNU tools needed to prepare the tree configuration.
+
+
+Mathieu Desnoyers 
