@@ -62,12 +62,20 @@ void drawing_data_request(Drawing_t *Drawing,
 	LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
 												control_flow_data->Time_Window.start_time);
 
-	convert_pixels_to_time(Drawing, x,
+	g_critical("req : window_end : %u, %u", window_end.tv_sec, 
+																			window_end.tv_nsec);
+
+	g_critical("req : time width : %u, %u", control_flow_data->Time_Window.time_width.tv_sec, 
+																control_flow_data->Time_Window.time_width.tv_nsec);
+	
+	g_critical("x is : %i, x+width is : %i", x, x+width);
+
+	convert_pixels_to_time(width, x,
 				&control_flow_data->Time_Window.start_time,
 				&window_end,
 				&start);
 
-	convert_pixels_to_time(Drawing, x + width,
+	convert_pixels_to_time(width, x + width,
 				&control_flow_data->Time_Window.start_time,
 				&window_end,
 				&end);
@@ -82,9 +90,9 @@ void drawing_data_request(Drawing_t *Drawing,
 		      width,	// do not overlap
 		      height);
 
-  send_test_process(
-	guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
-	Drawing);
+  //send_test_process(
+	//guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
+	//Drawing);
   //send_test_drawing(
 	//guicontrolflow_get_process_list(Drawing->Control_Flow_Data),
 	//Drawing, *Pixmap, x, y, width, height);
@@ -95,6 +103,12 @@ void drawing_data_request(Drawing_t *Drawing,
 	event_request.time_begin = start;
 	event_request.time_end = end;
 
+	g_critical("req : start : %u, %u", event_request.time_begin.tv_sec, 
+																			event_request.time_begin.tv_nsec);
+
+	g_critical("req : end : %u, %u", event_request.time_end.tv_sec, 
+																			event_request.time_end.tv_nsec);
+	
 	LttvHooks *event = lttv_hooks_new();
 	lttv_hooks_add(event, draw_event_hook, &event_request);
 
@@ -286,7 +300,7 @@ GtkWidget *drawing_get_widget(Drawing_t *Drawing)
  * Convert from window pixel and time interval to an absolute time.
  */
 void convert_pixels_to_time(
-		Drawing_t *Drawing,
+		gint width,
 		guint x,
 		LttTime *window_time_begin,
 		LttTime *window_time_end,
@@ -296,7 +310,7 @@ void convert_pixels_to_time(
 	
 	window_time_interval = ltt_time_sub(*window_time_end, 
             *window_time_begin);
-	*time = ltt_time_mul(window_time_interval, (x/(float)Drawing->width));
+	*time = ltt_time_mul(window_time_interval, (x/(float)width));
 	*time = ltt_time_add(*window_time_begin, *time);
 }
 
@@ -306,7 +320,7 @@ void convert_time_to_pixels(
 		LttTime window_time_begin,
 		LttTime window_time_end,
 		LttTime time,
-		Drawing_t *Drawing,
+		int width,
 		guint *x)
 {
 	LttTime window_time_interval;
@@ -319,7 +333,7 @@ void convert_time_to_pixels(
 	interval_float = ltt_time_to_double(window_time_interval);
 	time_float = ltt_time_to_double(time);
 
-	*x = (guint)(time_float/interval_float * Drawing->width);
+	*x = (guint)(time_float/interval_float * width);
 	
 }
 

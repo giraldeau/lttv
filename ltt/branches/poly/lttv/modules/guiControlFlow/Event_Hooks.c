@@ -492,6 +492,64 @@ int draw_event_hook(void *hook_data, void *call_data)
 {
 	EventRequest *Event_Request = (EventRequest*)hook_data;
 	
+	//static int i=0;
+
+	//i++;
+	//g_critical("%i", i);
+	
+	/* Text dumping if the information */
+	GString *string = g_string_new("");;
+	gboolean field_names = TRUE, state = TRUE;
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+
+  LttEvent *e;
+
+  e = tfc->e;
+
+  lttv_event_to_string(e, tfc->tf, string, TRUE, field_names, tfs);
+  g_string_append_printf(string,"\n");  
+
+  if(state) {
+    g_string_append_printf(string, " %s",
+        g_quark_to_string(tfs->process->state->s));
+  }
+
+  g_info("%s",string->str);
+
+	g_string_free(string, TRUE);
+	
+	/* End of text dump */
+
+	/* Add process to process list (if not present) and get drawing "y" from
+	 * process position */
+	guint pid = tfs->process->pid;
+	LttTime birth = tfs->process->creation_time;
+	guint y = 0, height = 0;
+	ProcessList *process_list =
+		guicontrolflow_get_process_list(Event_Request->Control_Flow_Data);
+	
+	if(processlist_get_process_pixels(process_list,
+					pid,
+					&birth,
+					&y,
+					&height) == 1)
+	{
+		/* Process not present */
+		processlist_add(process_list,
+				pid,
+				&birth,
+				&y);
+		drawing_insert_square( Event_Request->Control_Flow_Data->Drawing, y, height);
+	}
+
+	/* Find pixels corresponding to time of the event. If the time does
+	 * not fit in the window, show a warning, not supposed to happend. */
+	
+
+	/* Finally, draw what represents the event. */
+	
 	
 	return 0;
 }

@@ -75,7 +75,7 @@ void drawing_remove_square(Drawing_t *Drawing,
 //void Drawing_Resize(Drawing_t *Drawing, guint h, guint w);
 
 void convert_pixels_to_time(
-		Drawing_t *Drawing,
+		gint width,
 		guint x,
 		LttTime *window_time_begin,
 		LttTime *window_time_end,
@@ -85,7 +85,7 @@ void convert_time_to_pixels(
 		LttTime window_time_begin,
 		LttTime window_time_end,
 		LttTime time,
-		Drawing_t *Drawing,
+		int width,
 		guint *x);
 
 #endif // _DRAWING_H
