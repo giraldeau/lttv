@@ -159,7 +159,7 @@ void lttv_options_command_parse(void *hook_data, void *call_data)
       c = poptGetContext("lttv", command_argc, (const char**)command_argv,
           (struct poptOption *)lttv_options_command_popt->data,0);
       g_array_remove_index(lttv_options_command_popt,
-		  lttv_options_command_popt->len);
+		  lttv_options_command_popt->len -1);
 
       /* Cut out the already parsed elements */
       if(lastrc != -1)
