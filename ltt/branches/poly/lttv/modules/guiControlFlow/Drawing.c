@@ -6,6 +6,11 @@
 
 #include <lttv/processTrace.h>
 
+
+#define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+
+
 /*****************************************************************************
  *                              Drawing functions                            *
  *****************************************************************************/
@@ -288,6 +293,7 @@ void drawing_refresh (	Drawing_t *Drawing,
 			guint x, guint y,
 			guint width, guint height)
 {
+	g_info("Drawing.c : drawing_refresh %u, %u, %u, %u", x, y, width, height);
 	GdkRectangle update_rect;
 
 	gdk_draw_drawable(

@@ -46,6 +46,9 @@ void send_test_drawing(ProcessList *Process_List,
 	GdkPixmap *icon_pixmap = g_new(GdkPixmap, 1);
 	GdkGC * gc = gdk_gc_new(Pixmap);
 	
+	// rectangle
+	GdkColor color = { 0, 0xffff, 0x0000, 0x0000 };
+	
 	/* Sent text data */
 	layout = gtk_widget_create_pango_layout(Drawing->Drawing_Area_V,
 			NULL);
@@ -106,9 +109,10 @@ void send_test_drawing(ProcessList *Process_List,
 	
 	g_free(icon_pixmap);
 	g_free(mask);
-	g_free(gc);
 
 	g_info("y : %u, height : %u", y, height);
+
+	
 
 	birth.tv_sec = 12000;
 	birth.tv_nsec = 55700;
@@ -118,12 +122,23 @@ void send_test_drawing(ProcessList *Process_List,
 					&birth,
 					&y,
 					&height);
-	
+
+	/* Draw rectangle (background color) */
+	gdk_gc_copy(gc, Drawing->Drawing_Area_V->style->black_gc);
+	gdk_gc_set_rgb_fg_color(gc, &color);
+	gdk_draw_rectangle(Pixmap, gc,
+					TRUE,
+					x, y, width, height);
 
 	drawing_draw_line(
 		Drawing, Pixmap, x,
 		y+(height/2), x + width, y+(height/2),
 		Drawing->Drawing_Area_V->style->black_gc);
+
+	
+	/* Draw arc */
+	gdk_draw_arc(Pixmap, Drawing->Drawing_Area_V->style->black_gc,
+							TRUE, 100, y, 5, 5, 0, 360*64);
 
 	g_info("y : %u, height : %u", y, height);
 
@@ -167,6 +182,7 @@ void send_test_drawing(ProcessList *Process_List,
 
 
 	pango_font_description_set_size(FontDesc, Font_Size);
+	g_free(gc);
 	g_free(layout);
 	//g_free(context);
 }
@@ -434,7 +450,7 @@ void update_time_window_hook(void *hook_data, void *call_data)
 			Time_Window->time_width.tv_sec,
 			Time_Window->time_width.tv_nsec);
 
-   	drawing_data_request(Control_Flow_Data->Drawing,
+  drawing_data_request(Control_Flow_Data->Drawing,
 			&Control_Flow_Data->Drawing->Pixmap,
 			0, 0,
 			Control_Flow_Data->Drawing->width,
