@@ -1,6 +1,6 @@
 
-#include <lttv/lttv.h>
-#include <lttv/trace.h>
+#include "lttv.h"
+#include "trace.h"
 
 
 /* The main program maintains a few central data structures and relies
@@ -11,7 +11,7 @@
    they are loaded and initialized. */
 
 
-lttv_attributes *attributes_global;
+static lttv_attributes *attributes_global;
 
 static lttv_hooks
   *hooks_init_after,

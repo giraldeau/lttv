@@ -1,20 +1,17 @@
 #ifndef LTTV_H
 #define LTTV_H
 
-
-#include <lttv/attribute.h>
-#include <lttv/hook.h>
-#include <lttv/option.h>
-#include <lttv/module.h>
 /* Initial draft by Michel Dagenais May 2003
  * Reworked by Mathieu Desnoyers, May 2003
  */
+
 
 /* The modules in the visualizer communicate with the main module and
    with each other through attributes. There is a global set of attributes as
    well as attributes attached to each trace set, trace and tracefile. */
 
 lttv_attributes *lttv_global_attributes();
+
 
 
 /* Modules are allowed to define new command line options.

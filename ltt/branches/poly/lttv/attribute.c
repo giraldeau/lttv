@@ -1,4 +1,4 @@
-#include <lttv/attribute.h>
+#include "attribute.h"
 
 inline lttv_string_id lttv_string_id_from_string(const char *s) {
   return g_quark_from_string(s);

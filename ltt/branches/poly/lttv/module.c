@@ -8,7 +8,7 @@
  */
 
 #include <lttv/lttv.h>
-#include <lttv/module.h>
+#include "module.h"
 #include <popt.h>
 
 /* Table of loaded modules and paths where to search for modules */
