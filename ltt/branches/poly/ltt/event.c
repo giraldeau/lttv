@@ -263,6 +263,7 @@ void ltt_event_position_set(LttEventPosition *ep,
 /*****************************************************************************
  * Function name
  *    ltt_event_position_compare : compare two positions
+ *    A NULL value is infinite.
  * Input params
  *    ep1                    : a pointer to event's position structure
  *    ep2                    : a pointer to event's position structure
@@ -278,6 +279,13 @@ gint ltt_event_position_compare(const LttEventPosition *ep1,
 {
   if(ep1->tf != ep2->tf)
     g_error("ltt_event_position_compare on different tracefiles makes no sense");
+  if(ep1 == NULL && ep2 == NULL)
+      return 0;
+  if(ep1 != NULL && ep2 == NULL)
+      return -1;
+  if(ep1 == NULL && ep2 != NULL)
+      return 1;
+    
   if(ep1->block_num < ep2->block_num)
     return -1;
   if(ep1->block_num > ep2->block_num)
@@ -305,8 +313,15 @@ gint ltt_event_position_compare(const LttEventPosition *ep1,
 gint ltt_event_event_position_compare(const LttEvent *event,
                                       const LttEventPosition *ep)
 {
-  g_assert(event->tracefile == ep->tf);
+  if(event == NULL && ep == NULL)
+      return 0;
+  if(event != NULL && ep == NULL)
+      return -1;
+  if(event == NULL && ep != NULL)
+      return 1;
 
+  g_assert(event->tracefile == ep->tf);
+ 
   if(event->which_block < ep->block_num)
     return -1;
   if(event->which_block > ep->block_num)
@@ -330,7 +345,10 @@ gint ltt_event_event_position_compare(const LttEvent *event,
 void ltt_event_position_copy(LttEventPosition *dest,
                              const LttEventPosition *src)
 {
-  *dest = *src;
+  if(src == NULL)
+    dest = NULL;
+  else
+    *dest = *src;
 }
 
 

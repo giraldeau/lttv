@@ -526,7 +526,8 @@ LttTrace *ltt_trace_open(const char *pathname)
   }
   
   //get control tracefile info
-  
+  getControlFileInfo(t,control);
+  /*
   if(getControlFileInfo(t,control)) {
     g_ptr_array_free(t->facilities, TRUE);
     g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
@@ -535,7 +536,7 @@ LttTrace *ltt_trace_open(const char *pathname)
     g_free(t->pathname);
     g_free(t);
     return NULL;
-  }
+  }*/ // With fatal error
 
   //get cpu tracefile info
   if(getCpuFileInfo(t,cpu)) {
