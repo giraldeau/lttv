@@ -9,7 +9,7 @@ typedef union _AttributeValue {
   unsigned long dv_ulong;
   float dv_float;
   double dv_double;
-  LttvTime dv_time;
+  LttTime dv_time;
   gpointer dv_pointer;
   char *dv_string;
   GObject *dv_gobject;
@@ -274,7 +274,7 @@ void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src)
           *value.v_double += a->value.dv_double;
           break;
         case LTTV_TIME:
-          TimeAdd(*value.v_time, *value.v_time, a->value.dv_time);
+          *value.v_time = ltt_time_add(*value.v_time, a->value.dv_time);
           break;
         case LTTV_POINTER:
           break;

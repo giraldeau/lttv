@@ -244,9 +244,7 @@ GtkWidget *Drawing_getWidget(Drawing_t *Drawing)
 
 /* get_time_from_pixels
  *
- * Get the time interval from window time and pixels, and pixels requested. This
- * function uses TimeMul, which should only be used if the float value is lower
- * that 4, and here it's always lower than 1, so it's ok.
+ * Get the time interval from window time and pixels, and pixels requested.
  */
 void convert_pixels_to_time(
 		Drawing_t *Drawing,
@@ -257,13 +255,10 @@ void convert_pixels_to_time(
 {
 	LttTime window_time_interval;
 	
-	TimeSub(window_time_interval, *window_time_end, *window_time_begin);
-
-	
-	TimeMul(*time, window_time_interval,
-			(x/(float)Drawing->width));
-	TimeAdd(*time, *window_time_begin, *time);
-	
+	window_time_interval = ltt_time_sub(*window_time_end, 
+            *window_time_begin);
+	*time = ltt_time_mul(window_time_interval, (x/(float)Drawing->width));
+	*time = ltt_time_add(*window_time_begin, *time);
 }
 
 
@@ -278,14 +273,12 @@ void convert_time_to_pixels(
 	LttTime window_time_interval;
 	float interval_float, time_float;
 	
-	TimeSub(window_time_interval, window_time_end, window_time_begin);
+	window_time_interval = ltt_time_sub(window_time_end,window_time_begin);
 	
-	TimeSub(time, time, window_time_begin);
+	time = ltt_time_sub(time, window_time_begin);
 	
-	interval_float = (window_time_interval.tv_sec * NANSECOND_CONST)
-			+ window_time_interval.tv_nsec;
-	time_float = (time.tv_sec * NANSECOND_CONST)
-			+ time.tv_nsec;
+	interval_float = ltt_time_to_double(window_time_interval);
+	time_float = ltt_time_to_double(time);
 
 	*x = (guint)(time_float/interval_float * Drawing->width);
 	

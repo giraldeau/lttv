@@ -12,7 +12,22 @@
    and LttvTracefileContext objects, used by processTrace, through
    subtyping. The context objects already reflect the multiple tracefiles
    (one per cpu) per trace and multiple traces per trace set. The state
-   objects defined here simply add fields to the relevant context objects. */
+   objects defined here simply add fields to the relevant context objects. 
+
+   There is no traceset specific state yet. It may eventually contains such
+   things as clock differences over time.
+
+   The trace state currently consists in a process table. 
+
+   The tracefile level state relates to the associated cpu. It contains the
+   position of the current event in the tracefile (since the state depends on
+   which events have been processed) and a pointer to the current process,
+   in the process table, being run on that cpu.
+
+   For each process in the process table, various informations such as exec 
+   file name, pid, ppid and creation time are stored. Each process state also
+   contains an execution mode stack (e.g. irq within system call, called
+   from user mode). */
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
@@ -23,9 +38,15 @@ typedef struct _LttvTraceStateClass LttvTraceStateClass;
 typedef struct _LttvTracefileState LttvTracefileState;
 typedef struct _LttvTracefileStateClass LttvTracefileStateClass;
 
-gboolean lttv_state_add_event_hooks(LttvTracesetState *self);
+void lttv_state_add_event_hooks(LttvTracesetState *self);
 
-gboolean lttv_state_remove_event_hooks(LttvTracesetState *self);
+void lttv_state_remove_event_hooks(LttvTracesetState *self);
+
+void lttv_state_save_add_event_hooks(LttvTracesetState *self);
+
+void lttv_state_save_remove_event_hooks(LttvTracesetState *self);
+
+void lttv_state_restore_closest_state(LttvTracesetState *self, LttTime t);
 
 /* The LttvProcessState structure defines the current state for each process.
    A process can make system calls (in some rare cases nested) and receive
@@ -137,6 +158,7 @@ struct _LttvTraceState {
   LttvTraceContext parent;
 
   GHashTable *processes;  /* LttvProcessState objects indexed by pid */
+  guint nb_event, save_interval;
   /* Block/char devices, locks, memory pages... */
   GQuark *eventtype_names;
   GQuark *syscall_names;
@@ -146,9 +168,20 @@ struct _LttvTraceState {
 
 struct _LttvTraceStateClass {
   LttvTraceContextClass parent;
+
+  void (*state_save) (LttvTraceState *self, LttvAttribute *container);
+  void (*state_restore) (LttvTraceState *self, LttvAttribute *container);
+  void (*state_saved_free) (LttvTraceState *self, LttvAttribute *container);
 };
 
 GType lttv_trace_state_get_type (void);
+
+void lttv_state_save(LttvTraceState *self, LttvAttribute *container);
+
+void lttv_state_restore(LttvTraceState *self, LttvAttribute *container);
+
+void lttv_state_saved_state_free(LttvTraceState *self, 
+    LttvAttribute *container);
 
 
 #define LTTV_TRACEFILE_STATE_TYPE  (lttv_tracefile_state_get_type ())
@@ -163,6 +196,7 @@ struct _LttvTracefileState {
 
   LttvProcessState *process;
   GQuark cpu_name;
+  guint saved_position;
 };
 
 struct _LttvTracefileStateClass {

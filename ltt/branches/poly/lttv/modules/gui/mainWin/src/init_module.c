@@ -37,15 +37,17 @@ LttvHooks
   *main_hooks;
 
 /* Initial trace from command line */
-LttTrace *gInit_Trace = NULL;
+LttvTrace *gInit_Trace = NULL;
 
 static char *a_trace;
 
 void lttv_trace_option(void *hook_data)
 { 
-  gInit_Trace = ltt_trace_open(a_trace);
-  if(gInit_Trace == NULL) g_critical("cannot open trace %s", a_trace);
-  g_critical("lttv_trace_option : Init_Trace is %p", gInit_Trace);
+  LttTrace *trace;
+
+  trace = ltt_trace_open(a_trace);
+  if(trace == NULL) g_critical("cannot open trace %s", a_trace);
+  gInit_Trace = lttv_trace_new(trace);
 }
 
 /*****************************************************************************
@@ -215,6 +217,7 @@ void destroy_walk(gpointer data, gpointer user_data)
 G_MODULE_EXPORT void destroy() {
 
   LttvAttributeValue value;  
+  LttvTrace *trace;
 
   lttv_option_remove("trace");
 

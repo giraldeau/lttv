@@ -3,7 +3,7 @@
 
 
 #include <glib-object.h>
-#include <time.h>
+#include <ltt/time.h>
 
 /* The content of a data structure may be seen as an array of pairs of
    attribute name and value. This simple model allows generic navigation 
@@ -11,8 +11,6 @@
    represented by unique integer identifiers, GQuarks. */
 
 typedef GQuark LttvAttributeName;
-
-typedef struct timespec LttvTime;
 
 typedef enum _LttvAttributeType {
   LTTV_INT, LTTV_UINT, LTTV_LONG, LTTV_ULONG, LTTV_FLOAT, LTTV_DOUBLE, 
@@ -26,7 +24,7 @@ typedef union LttvAttributeValue {
   unsigned long *v_ulong;
   float *v_float;
   double *v_double;
-  LttvTime *v_time;
+  LttTime *v_time;
   gpointer *v_pointer;
   char **v_string;
   GObject **v_gobject;

@@ -71,6 +71,7 @@ struct _LttvTracesetContext {
   LttvHooks *after;
   LttvTraceContext **traces;
   LttvAttribute *a;
+  LttvAttribute *ts_a;
   TimeInterval *Time_Span;
 };
 
@@ -113,12 +114,14 @@ struct _LttvTraceContext {
   LttvTracesetContext *ts_context;
   guint index;                /* in ts_context->traces */
   LttTrace *t;
+  LttvTrace *vt;
   LttvHooks *check;
   LttvHooks *before;
   LttvHooks *after;
   LttvTracefileContext **control_tracefiles;
   LttvTracefileContext **per_cpu_tracefiles;
   LttvAttribute *a;
+  LttvAttribute *t_a;
 };
 
 struct _LttvTraceContextClass {
@@ -160,8 +163,12 @@ struct _LttvTracefileContextClass {
 
 GType lttv_tracefile_context_get_type (void);
 
-void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset, 
-    LttvTracesetContext *context, unsigned maxNumEvents);
+void lttv_process_traceset(LttvTracesetContext *self, LttTime end, 
+    unsigned maxNumEvents);
+
+void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start);
+
+void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start);
 
 void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
     LttvHooks *before_traceset, 

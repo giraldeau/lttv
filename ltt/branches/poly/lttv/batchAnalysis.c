@@ -34,7 +34,7 @@ void lttv_trace_option(void *hook_data)
 
   trace = ltt_trace_open(a_trace);
   if(trace == NULL) g_critical("cannot open trace %s", a_trace);
-  lttv_traceset_add(traceset, trace);
+  lttv_traceset_add(traceset, lttv_trace_new(trace));
 }
 
 
@@ -68,7 +68,8 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   g_info("BatchAnalysis process traceset");
 
-  lttv_process_trace(start, end, traceset, tc, G_MAXULONG);
+  lttv_process_traceset_seek_time(tc, start);
+  lttv_process_traceset(tc, end, G_MAXULONG);
 
   g_info("BatchAnalysis destroy context");
 
@@ -151,6 +152,8 @@ G_MODULE_EXPORT void destroy()
 {
   guint i, nb;
 
+  LttvTrace *trace;
+
   g_info("Destroy batchAnalysis.c");
 
   lttv_option_remove("trace");
@@ -168,7 +171,9 @@ G_MODULE_EXPORT void destroy()
 
   nb = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb ; i++) {
-    ltt_trace_close(lttv_traceset_get(traceset, i));
+    trace = lttv_traceset_get(traceset, i);
+    ltt_trace_close(lttv_trace(trace));
+    lttv_trace_destroy(trace);
   }
 
   lttv_traceset_destroy(traceset); 

@@ -11,7 +11,12 @@
 struct _LttvTraceset {
   char * filename;
   GPtrArray *traces;
-  GPtrArray *attributes;
+  LttvAttribute *a;
+};
+
+
+struct _LttvTrace {
+  LttTrace *t;
   LttvAttribute *a;
 };
 
@@ -23,10 +28,20 @@ LttvTraceset *lttv_traceset_new()
   s = g_new(LttvTraceset, 1);
   s->filename = NULL;
   s->traces = g_ptr_array_new();
-  s->attributes = g_ptr_array_new();
   s->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
   return s;
 }
+
+LttvTrace *lttv_trace_new(LttTrace *t) 
+{
+  LttvTrace *new_trace;
+
+  new_trace = g_new(LttvTrace, 1);
+  new_trace->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+  new_trace->t = t;
+  return new_trace;
+}
+
 
 LttvTraceset *lttv_traceset_copy(LttvTraceset *s_orig) 
 {
@@ -38,18 +53,12 @@ LttvTraceset *lttv_traceset_copy(LttvTraceset *s_orig)
   s->traces = g_ptr_array_new();
   for(i=0;i<s_orig->traces->len;i++)
   {
+    /*CHECK this used ltt_trace_copy while it may not be needed. Need to
+      define how traces and tracesets are shared */
     g_ptr_array_add(
         s->traces,
-	ltt_trace_copy(g_ptr_array_index(s_orig->traces, i)));
+	g_ptr_array_index(s_orig->traces, i));
   }
-  s->attributes = g_ptr_array_new();
-  for(i=0;i<s_orig->attributes->len;i++)
-  {
-    g_ptr_array_add(
-        s->attributes,
-        lttv_iattribute_deep_copy(g_ptr_array_index(s_orig->attributes, i)));
-  }
- 
   s->a = LTTV_ATTRIBUTE(lttv_iattribute_deep_copy(LTTV_IATTRIBUTE(s_orig->a)));
   return s;
 }
@@ -80,23 +89,24 @@ gint lttv_traceset_save(LttvTraceset *s)
   fclose(tf);
   return 0;
 }
+
 void lttv_traceset_destroy(LttvTraceset *s) 
 {
-  int i, nb;
-
-  for(i = 0 ; i < s->attributes->len ; i++) {
-    g_object_unref((LttvAttribute *)s->attributes->pdata[i]);
-  }
-  g_ptr_array_free(s->attributes, TRUE);
   g_ptr_array_free(s->traces, TRUE);
   g_object_unref(s->a);
   g_free(s);
 }
 
-void lttv_traceset_add(LttvTraceset *s, LttTrace *t) 
+void lttv_trace_destroy(LttvTrace *t) 
+{
+  g_object_unref(t->a);
+  g_free(t);
+}
+
+
+void lttv_traceset_add(LttvTraceset *s, LttvTrace *t) 
 {
   g_ptr_array_add(s->traces, t);
-  g_ptr_array_add(s->attributes, g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
 }
 
 
@@ -106,18 +116,16 @@ unsigned lttv_traceset_number(LttvTraceset *s)
 }
 
 
-LttTrace *lttv_traceset_get(LttvTraceset *s, unsigned i) 
+LttvTrace *lttv_traceset_get(LttvTraceset *s, unsigned i) 
 {
   g_assert(s->traces->len > i);
-  return ((LttTrace *)s->traces->pdata[i]);
+  return ((LttvTrace *)s->traces->pdata[i]);
 }
 
 
 void lttv_traceset_remove(LttvTraceset *s, unsigned i) 
 {
   g_ptr_array_remove_index(s->traces, i);
-  g_object_unref(s->attributes->pdata[i]);
-  g_ptr_array_remove_index(s->attributes,i);
 }
 
 
@@ -130,7 +138,14 @@ LttvAttribute *lttv_traceset_attribute(LttvTraceset *s)
 }
 
 
-LttvAttribute *lttv_traceset_trace_attribute(LttvTraceset *s, unsigned i)
+LttvAttribute *lttv_trace_attribute(LttvTrace *t)
 {
-  return (LttvAttribute *)s->attributes->pdata[i];
+  return t->a;
 }
+
+
+LttTrace *lttv_trace(LttvTrace *t)
+{
+  return t->t;
+}
+

@@ -107,7 +107,6 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
   GtkWidget * w;
   TimeWindow Time_Window;
   LttTime      time;
-  double       tmpValue;
   TimeInterval *Time_Span;
   
   g_return_if_fail(GTK_IS_CUSTOM(custom));
@@ -126,30 +125,19 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
     GetCurrentTime(custom->mw,&time);
     Time_Span = LTTV_TRACESET_CONTEXT(custom->mw->Traceset_Info->TracesetContext)->Time_Span ;
 
-    tmpValue               = Time_Span->startTime.tv_sec;
-    tmpValue              *= NANSECOND_CONST;
-    tmpValue              += Time_Span->startTime.tv_nsec;
-    custom->hAdjust->lower = tmpValue;
-    custom->hAdjust->value = tmpValue;
-    tmpValue               = Time_Span->endTime.tv_sec;
-    tmpValue              *= NANSECOND_CONST;
-    tmpValue              += Time_Span->endTime.tv_nsec;
-    custom->hAdjust->upper = tmpValue;
-    //tmpValue               = time.tv_sec;
-    //tmpValue              *= NANSECOND_CONST;
-    //tmpValue              += time.tv_nsec;
-    //custom->hAdjust->value = tmpValue;
-    /* Step increment to 1/10 of visible area */
-    tmpValue               = Time_Window.Time_Width.tv_sec;
-    tmpValue              *= NANSECOND_CONST;
-    tmpValue              += Time_Window.Time_Width.tv_nsec;
-    custom->hAdjust->step_increment = tmpValue / 10;
+    custom->hAdjust->lower =  ltt_time_to_double(Time_Span->startTime) * 
+        NANOSECONDS_PER_SECOND;
+    custom->hAdjust->value = custom->hAdjust->lower;
+    custom->hAdjust->upper = ltt_time_to_double(Time_Span->endTime) *
+        NANOSECONDS_PER_SECOND;
     /* Page increment of whole visible area */
-    custom->hAdjust->page_increment = tmpValue;
+    custom->hAdjust->page_increment = ltt_time_to_double(
+        Time_Window.Time_Width) * NANOSECONDS_PER_SECOND;
     /* page_size to the whole visible area will take care that the
      * scroll value + the shown area will never be more than what is
      * in the trace. */
-    custom->hAdjust->page_size = tmpValue;
+    custom->hAdjust->page_size = custom->hAdjust->page_increment;
+    custom->hAdjust->step_increment = custom->hAdjust->page_increment / 10;
 
     gtk_range_set_update_policy (GTK_RANGE(custom->hScrollbar),
                                   GTK_UPDATE_DISCONTINUOUS);
@@ -320,8 +308,7 @@ void gtk_custom_scroll_value_changed(GtkRange *range, gpointer custom_arg)
   LttTime time;
   GtkCustom * custom = (GtkCustom*)custom_arg;
   gdouble value = gtk_range_get_value(range);
-  time.tv_sec  = value / NANSECOND_CONST;
-  time.tv_nsec = (value / NANSECOND_CONST - time.tv_sec) * NANSECOND_CONST; 
+  time = ltt_time_from_double(value / NANOSECONDS_PER_SECOND);
   SetCurrentTime(custom->mw, &time);
   g_warning("The current time is second :%d, nanosecond : %d\n", time.tv_sec, time.tv_nsec);
 }

@@ -439,7 +439,7 @@ GuiEvents(mainWindow *pmParentWindow)
   getTracesetTimeSpan(Event_Viewer_Data->mw, &Event_Viewer_Data->time_span);
   
   time_value = Event_Viewer_Data->time_span.endTime.tv_sec - Event_Viewer_Data->time_span.startTime.tv_sec;
-  time_value *= NANSECOND_CONST;
+  time_value *= NANOSECONDS_PER_SECOND;
   time_value += (double)Event_Viewer_Data->time_span.endTime.tv_nsec - Event_Viewer_Data->time_span.startTime.tv_nsec;
   Event_Viewer_Data->VAdjust_C->upper = time_value;
 
@@ -688,8 +688,8 @@ void Tree_V_cursor_changed_cb (GtkWidget *widget, gpointer data)
   gtk_tree_view_get_cursor(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), &path, NULL);
   if(gtk_tree_model_get_iter(model,&iter,path)){
     gtk_tree_model_get(model, &iter, TIME_COLUMN, &time, -1);
-    ltt_time.tv_sec = time / NANSECOND_CONST;
-    ltt_time.tv_nsec = time % NANSECOND_CONST;
+    ltt_time.tv_sec = time / NANOSECONDS_PER_SECOND;
+    ltt_time.tv_nsec = time % NANOSECONDS_PER_SECOND;
  
     if(ltt_time.tv_sec != Event_Viewer_Data->current_time.tv_sec ||
        ltt_time.tv_nsec != Event_Viewer_Data->current_time.tv_nsec)
@@ -941,14 +941,14 @@ void get_test_data(double time_value, guint List_Height,
 	end.tv_sec = G_MAXULONG;
 	end.tv_nsec = G_MAXULONG;
 	start = Event_Viewer_Data->time_span.startTime;
-	value = (int)(time_value / NANSECOND_CONST);
+	value = (int)(time_value / NANOSECONDS_PER_SECOND);
 	start.tv_sec += value;
-	value = time_value / NANSECOND_CONST - value;
-	value *= NANSECOND_CONST;
+	value = time_value / NANOSECONDS_PER_SECOND - value;
+	value *= NANOSECONDS_PER_SECOND;
 	start.tv_nsec += value;
-	if(start.tv_nsec > NANSECOND_CONST){
+	if(start.tv_nsec > NANOSECONDS_PER_SECOND){
 	  start.tv_sec++;
-	  start.tv_nsec -= NANSECOND_CONST;
+	  start.tv_nsec -= NANOSECONDS_PER_SECOND;
 	}
 	Event_Viewer_Data->previous_value = time_value;
 	get_events(Event_Viewer_Data, start, end, RESERVE_SMALL_SIZE,&size);
@@ -990,7 +990,7 @@ void get_test_data(double time_value, guint List_Height,
       raw_data = (RawTraceData*)g_list_nth_data(first,Event_Number);
       value = raw_data->time.tv_sec;
       value -= Event_Viewer_Data->time_span.startTime.tv_sec;
-      value *= NANSECOND_CONST;
+      value *= NANOSECONDS_PER_SECOND;
       value -= Event_Viewer_Data->time_span.startTime.tv_nsec;
       value += raw_data->time.tv_nsec;
       Event_Viewer_Data->VAdjust_C->value = value;
@@ -1014,7 +1014,7 @@ void get_test_data(double time_value, guint List_Height,
 
 	// Add a new row to the model 
 	real_data = raw_data->time.tv_sec;
-	real_data *= NANSECOND_CONST;
+	real_data *= NANOSECONDS_PER_SECOND;
 	real_data += raw_data->time.tv_nsec;
 	gtk_list_store_append (Event_Viewer_Data->Store_M, &iter);
 	gtk_list_store_set (Event_Viewer_Data->Store_M, &iter,
@@ -1215,7 +1215,7 @@ gboolean updateCurrentTime(void * hook_data, void * call_data)
 {
   EventViewerData *Event_Viewer_Data = (EventViewerData*) hook_data;
   Event_Viewer_Data->current_time = *(LttTime*)call_data;
-  uint64_t nsec = Event_Viewer_Data->current_time.tv_sec * NANSECOND_CONST 
+  uint64_t nsec = Event_Viewer_Data->current_time.tv_sec * NANOSECONDS_PER_SECOND 
                   + Event_Viewer_Data->current_time.tv_nsec;
   GtkTreeIter iter;
   uint64_t time;

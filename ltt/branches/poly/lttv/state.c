@@ -2,6 +2,7 @@
 #include <lttv/state.h>
 #include <ltt/facility.h>
 #include <ltt/trace.h>
+#include <ltt/event.h>
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -23,6 +24,12 @@ LttvProcessStatus
   LTTV_STATE_RUN;
 
 static GQuark
+  LTTV_STATE_TRACEFILES,
+  LTTV_STATE_PROCESSES,
+  LTTV_STATE_PROCESS,
+  LTTV_STATE_EVENT,
+  LTTV_STATE_SAVED_STATES,
+  LTTV_STATE_TIME,
   LTTV_STATE_HOOKS;
 
 
@@ -30,10 +37,60 @@ static void fill_name_tables(LttvTraceState *tcs);
 
 static void free_name_tables(LttvTraceState *tcs);
 
-static void remove_all_processes(GHashTable *processes);
+static void lttv_state_free_process_table(GHashTable *processes);
 
-LttvProcessState *create_process(LttvTracefileState *tfs, 
+static LttvProcessState *create_process(LttvTracefileState *tfs, 
 				 LttvProcessState *parent, guint pid);
+
+void lttv_state_save(LttvTraceState *self, LttvAttribute *container)
+{
+  LTTV_TRACE_STATE_GET_CLASS(self)->state_save(self, container);
+}
+
+
+void lttv_state_restore(LttvTraceState *self, LttvAttribute *container)
+{
+  LTTV_TRACE_STATE_GET_CLASS(self)->state_restore(self, container);
+}
+
+
+void lttv_state_saved_state_free(LttvTraceState *self, 
+    LttvAttribute *container)
+{
+  LTTV_TRACE_STATE_GET_CLASS(self)->state_restore(self, container);
+}
+
+
+static void
+restore_init_state(LttvTraceState *self)
+{
+  guint i, nb_control, nb_per_cpu, nb_tracefile;
+
+  LttvTracefileState *tfcs;
+  
+  LttTime null_time = {0,0};
+
+  if(self->processes != NULL) lttv_state_free_process_table(self->processes);
+  self->processes = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->nb_event = 0;
+
+  nb_control = ltt_trace_control_tracefile_number(self->parent.t);
+  nb_per_cpu = ltt_trace_per_cpu_tracefile_number(self->parent.t);
+  nb_tracefile = nb_control + nb_per_cpu;
+  for(i = 0 ; i < nb_tracefile ; i++) {
+    if(i < nb_control) {
+      tfcs = LTTV_TRACEFILE_STATE(self->parent.control_tracefiles[i]);
+    }
+    else {
+      tfcs = LTTV_TRACEFILE_STATE(self->parent.per_cpu_tracefiles[i - nb_control]);
+    }
+
+    tfcs->parent.timestamp = null_time;
+    tfcs->saved_position = 0;
+    tfcs->process = create_process(tfcs, NULL,0);
+  }
+}
+
 
 static void
 init(LttvTracesetState *self, LttvTraceset *ts)
@@ -46,8 +103,6 @@ init(LttvTracesetState *self, LttvTraceset *ts)
 
   LttvTracefileState *tfcs;
   
-  LttTime timestamp = {0,0};
-
   LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek(LTTV_TRACESET_CONTEXT_TYPE))->
       init((LttvTracesetContext *)self, ts);
 
@@ -55,7 +110,7 @@ init(LttvTracesetState *self, LttvTraceset *ts)
   for(i = 0 ; i < nb_trace ; i++) {
     tc = self->parent.traces[i];
     tcs = (LttvTraceState *)tc;
-    tcs->processes = g_hash_table_new(g_direct_hash, g_direct_equal);
+    tcs->save_interval = 100000;
     fill_name_tables(tcs);
 
     nb_control = ltt_trace_control_tracefile_number(tc->t);
@@ -68,11 +123,10 @@ init(LttvTracesetState *self, LttvTraceset *ts)
       else {
         tfcs = LTTV_TRACEFILE_STATE(tc->per_cpu_tracefiles[j - nb_control]);
       }
-
-      tfcs->parent.timestamp = timestamp;
-      tfcs->process = create_process(tfcs, NULL,0);
       tfcs->cpu_name= g_quark_from_string(ltt_tracefile_name(tfcs->parent.tf));
     }
+    tcs->processes = NULL;
+    restore_init_state(tcs);
   }
 }
 
@@ -89,8 +143,8 @@ fini(LttvTracesetState *self)
   nb_trace = lttv_traceset_number(LTTV_TRACESET_CONTEXT(self)->ts);
   for(i = 0 ; i < nb_trace ; i++) {
     tcs = (LttvTraceState *)(LTTV_TRACESET_CONTEXT(self)->traces[i]);
-    remove_all_processes(tcs->processes);
-    g_hash_table_destroy(tcs->processes);
+    lttv_state_free_process_table(tcs->processes);
+    tcs->processes = NULL;
     free_name_tables(tcs);
   }
   LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek(LTTV_TRACESET_CONTEXT_TYPE))->
@@ -119,149 +173,202 @@ new_tracefile_context(LttvTracesetContext *self)
 }
 
 
-static void
-traceset_state_instance_init (GTypeInstance *instance, gpointer g_class)
+static void copy_process_state(gpointer key, gpointer value,gpointer user_data)
 {
-}
+  LttvProcessState *process, *new_process;
 
+  GHashTable *new_processes = (GHashTable *)user_data;
 
-static void
-traceset_state_finalize (LttvTracesetState *self)
-{
-  G_OBJECT_CLASS(g_type_class_peek(LTTV_TRACESET_CONTEXT_TYPE))->
-      finalize(G_OBJECT(self));
-}
+  guint i;
 
-
-static void
-traceset_state_class_init (LttvTracesetContextClass *klass)
-{
-  GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
-
-  gobject_class->finalize = (void (*)(GObject *self)) traceset_state_finalize;
-  klass->init = (void (*)(LttvTracesetContext *self, LttvTraceset *ts))init;
-  klass->fini = (void (*)(LttvTracesetContext *self))fini;
-  klass->new_traceset_context = new_traceset_context;
-  klass->new_trace_context = new_trace_context;
-  klass->new_tracefile_context = new_tracefile_context;
-}
-
-
-GType 
-lttv_traceset_state_get_type(void)
-{
-  static GType type = 0;
-  if (type == 0) {
-    static const GTypeInfo info = {
-      sizeof (LttvTracesetStateClass),
-      NULL,   /* base_init */
-      NULL,   /* base_finalize */
-      (GClassInitFunc) traceset_state_class_init,   /* class_init */
-      NULL,   /* class_finalize */
-      NULL,   /* class_data */
-      sizeof (LttvTracesetContext),
-      0,      /* n_preallocs */
-      (GInstanceInitFunc) traceset_state_instance_init    /* instance_init */
-    };
-
-    type = g_type_register_static (LTTV_TRACESET_CONTEXT_TYPE, "LttvTracesetStateType", 
-        &info, 0);
+  process = (LttvProcessState *)value;
+  new_process = g_new(LttvProcessState, 1);
+  *new_process = *process;
+  new_process->execution_stack = g_array_new(FALSE, FALSE, 
+      sizeof(LttvExecutionState));
+  g_array_set_size(new_process->execution_stack,process->execution_stack->len);
+  for(i = 0 ; i < process->execution_stack->len; i++) {
+    g_array_index(new_process->execution_stack, LttvExecutionState, i) =
+        g_array_index(process->execution_stack, LttvExecutionState, i);
   }
-  return type;
+  new_process->state = &g_array_index(new_process->execution_stack, 
+      LttvExecutionState, new_process->execution_stack->len - 1);
+  g_hash_table_insert(new_processes, GUINT_TO_POINTER(new_process->pid), 
+      new_process);
 }
 
 
-static void
-trace_state_instance_init (GTypeInstance *instance, gpointer g_class)
+static GHashTable *lttv_state_copy_process_table(GHashTable *processes)
 {
+  GHashTable *new_processes = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+  g_hash_table_foreach(processes, copy_process_state, new_processes);
+  return new_processes;
 }
 
 
-static void
-trace_state_finalize (LttvTraceState *self)
+/* The saved state for each trace contains a member "processes", which
+   stores a copy of the process table, and a member "tracefiles" with
+   one entry per tracefile. Each tracefile has a "process" member pointing
+   to the current process and a "position" member storing the tracefile
+   position (needed to seek to the current "next" event. */
+
+static void state_save(LttvTraceState *self, LttvAttribute *container)
 {
-  G_OBJECT_CLASS(g_type_class_peek(LTTV_TRACE_CONTEXT_TYPE))->
-      finalize(G_OBJECT(self));
-}
+  guint i, nb_control, nb_per_cpu, nb_tracefile;
 
+  LttvTracefileState *tfcs;
 
-static void
-trace_state_class_init (LttvTraceContextClass *klass)
-{
-  GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
+  LttvAttribute *tracefiles_tree, *tracefile_tree;
 
-  gobject_class->finalize = (void (*)(GObject *self)) trace_state_finalize;
-}
+  LttvAttributeType type;
 
+  LttvAttributeValue value;
 
-GType 
-lttv_trace_state_get_type(void)
-{
-  static GType type = 0;
-  if (type == 0) {
-    static const GTypeInfo info = {
-      sizeof (LttvTraceStateClass),
-      NULL,   /* base_init */
-      NULL,   /* base_finalize */
-      (GClassInitFunc) trace_state_class_init,   /* class_init */
-      NULL,   /* class_finalize */
-      NULL,   /* class_data */
-      sizeof (LttvTraceState),
-      0,      /* n_preallocs */
-      (GInstanceInitFunc) trace_state_instance_init    /* instance_init */
-    };
+  LttvAttributeName name;
 
-    type = g_type_register_static (LTTV_TRACE_CONTEXT_TYPE, 
-        "LttvTraceStateType", &info, 0);
+  LttEventPosition *ep;
+
+  tracefiles_tree = lttv_attribute_find_subdir(container, 
+      LTTV_STATE_TRACEFILES);
+
+  value = lttv_attribute_add(container, LTTV_STATE_PROCESSES,
+      LTTV_POINTER);
+  *(value.v_pointer) = lttv_state_copy_process_table(self->processes);
+
+  nb_control = ltt_trace_control_tracefile_number(self->parent.t);
+  nb_per_cpu = ltt_trace_per_cpu_tracefile_number(self->parent.t);
+  nb_tracefile = nb_control + nb_per_cpu;
+
+  for(i = 0 ; i < nb_tracefile ; i++) {
+    if(i < nb_control) 
+        tfcs = (LttvTracefileState *)self->parent.control_tracefiles[i];
+    else tfcs = (LttvTracefileState *)
+        self->parent.per_cpu_tracefiles[i - nb_control];
+
+    tracefile_tree = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+    value = lttv_attribute_add(tracefiles_tree, i, 
+        LTTV_GOBJECT);
+    *(value.v_gobject) = (GObject *)tracefile_tree;
+    value = lttv_attribute_add(tracefile_tree, LTTV_STATE_PROCESS, 
+        LTTV_UINT);
+    *(value.v_uint) = tfcs->process->pid;
+    value = lttv_attribute_add(tracefile_tree, LTTV_STATE_EVENT, 
+        LTTV_POINTER);
+    if(tfcs->parent.e == NULL) *(value.v_pointer) = NULL;
+    else {
+      ep = g_new(LttEventPosition, 1);
+      ltt_event_position(tfcs->parent.e, ep);
+      *(value.v_pointer) = ep;
+    }
   }
-  return type;
 }
 
 
-static void
-tracefile_state_instance_init (GTypeInstance *instance, gpointer g_class)
+static void state_restore(LttvTraceState *self, LttvAttribute *container)
 {
-}
+  guint i, nb_control, nb_per_cpu, nb_tracefile;
 
+  LttvTracefileState *tfcs;
 
-static void
-tracefile_state_finalize (LttvTracefileState *self)
-{
-  G_OBJECT_CLASS(g_type_class_peek(LTTV_TRACEFILE_CONTEXT_TYPE))->
-      finalize(G_OBJECT(self));
-}
+  LttvAttribute *tracefiles_tree, *tracefile_tree;
 
+  LttvAttributeType type;
 
-static void
-tracefile_state_class_init (LttvTracefileStateClass *klass)
-{
-  GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
+  LttvAttributeValue value;
 
-  gobject_class->finalize = (void (*)(GObject *self)) tracefile_state_finalize;
-}
+  LttvAttributeName name;
 
+  LttEventPosition *ep;
 
-GType 
-lttv_tracefile_state_get_type(void)
-{
-  static GType type = 0;
-  if (type == 0) {
-    static const GTypeInfo info = {
-      sizeof (LttvTracefileStateClass),
-      NULL,   /* base_init */
-      NULL,   /* base_finalize */
-      (GClassInitFunc) tracefile_state_class_init,   /* class_init */
-      NULL,   /* class_finalize */
-      NULL,   /* class_data */
-      sizeof (LttvTracefileState),
-      0,      /* n_preallocs */
-      (GInstanceInitFunc) tracefile_state_instance_init    /* instance_init */
-    };
+  tracefiles_tree = lttv_attribute_find_subdir(container, 
+      LTTV_STATE_TRACEFILES);
 
-    type = g_type_register_static (LTTV_TRACEFILE_CONTEXT_TYPE, 
-        "LttvTracefileStateType", &info, 0);
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_PROCESSES, 
+      &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_process_table(self->processes);
+  self->processes = lttv_state_copy_process_table(*(value.v_pointer));
+
+  nb_control = ltt_trace_control_tracefile_number(self->parent.t);
+  nb_per_cpu = ltt_trace_per_cpu_tracefile_number(self->parent.t);
+  nb_tracefile = nb_control + nb_per_cpu;
+
+  for(i = 0 ; i < nb_tracefile ; i++) {
+    if(i < nb_control) tfcs = (LttvTracefileState *)
+        self->parent.control_tracefiles[i];
+    else tfcs = (LttvTracefileState *)
+        self->parent.per_cpu_tracefiles[i - nb_control];
+
+    type = lttv_attribute_get(tracefiles_tree, i, &name, &value);
+    g_assert(type == LTTV_GOBJECT);
+    tracefile_tree = *((LttvAttribute **)(value.v_gobject));
+
+    type = lttv_attribute_get_by_name(tracefile_tree, LTTV_STATE_PROCESS, 
+        &value);
+    g_assert(type == LTTV_UINT);
+    tfcs->process = lttv_state_find_process(tfcs, *(value.v_uint));
+    type = lttv_attribute_get_by_name(tracefile_tree, LTTV_STATE_EVENT, 
+        &value);
+    g_assert(type == LTTV_POINTER);
+    if(*(value.v_pointer) == NULL) tfcs->parent.e = NULL;
+    else {
+      ep = *(value.v_pointer);
+      ltt_tracefile_seek_position(tfcs->parent.tf, ep);
+      tfcs->parent.e = ltt_tracefile_read(tfcs->parent.tf);
+      tfcs->parent.timestamp = ltt_event_time(tfcs->parent.e);
+    }
   }
-  return type;
+}
+
+
+static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
+{
+  guint i, nb_control, nb_per_cpu, nb_tracefile;
+
+  LttvTracefileState *tfcs;
+
+  LttvAttribute *tracefiles_tree, *tracefile_tree;
+
+  LttvAttributeType type;
+
+  LttvAttributeValue value;
+
+  LttvAttributeName name;
+
+  LttEventPosition *ep;
+
+  tracefiles_tree = lttv_attribute_find_subdir(container, 
+      LTTV_STATE_TRACEFILES);
+  lttv_attribute_remove_by_name(container, LTTV_STATE_TRACEFILES);
+
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_PROCESSES, 
+      &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_process_table(*(value.v_pointer));
+  *(value.v_pointer) = NULL;
+  lttv_attribute_remove_by_name(container, LTTV_STATE_PROCESSES);
+
+  nb_control = ltt_trace_control_tracefile_number(self->parent.t);
+  nb_per_cpu = ltt_trace_per_cpu_tracefile_number(self->parent.t);
+  nb_tracefile = nb_control + nb_per_cpu;
+
+  for(i = 0 ; i < nb_tracefile ; i++) {
+    if(i < nb_control) tfcs = (LttvTracefileState *)
+        self->parent.control_tracefiles[i];
+    else tfcs = (LttvTracefileState *)
+        self->parent.per_cpu_tracefiles[i - nb_control];
+
+    type = lttv_attribute_get(tracefiles_tree, i, &name, &value);
+    g_assert(type == LTTV_GOBJECT);
+    tracefile_tree = *((LttvAttribute **)(value.v_gobject));
+
+    type = lttv_attribute_get_by_name(tracefile_tree, LTTV_STATE_EVENT, 
+        &value);
+    g_assert(type == LTTV_POINTER);
+    if(*(value.v_pointer) != NULL) g_free(*(value.v_pointer));
+  }
+  lttv_attribute_recursive_free(tracefiles_tree);
 }
 
 
@@ -412,7 +519,7 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
 }
 
 
-LttvProcessState *create_process(LttvTracefileState *tfs, 
+static LttvProcessState *create_process(LttvTracefileState *tfs, 
     LttvProcessState *parent, guint pid)
 {
   LttvProcessState *process = g_new(LttvProcessState, 1);
@@ -458,7 +565,8 @@ LttvProcessState *create_process(LttvTracefileState *tfs,
 }
 
 
-LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs, guint pid)
+LttvProcessState *lttv_state_find_process(LttvTracefileState *tfs, 
+    guint pid)
 {
   LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
   LttvProcessState *process = g_hash_table_lookup(ts->processes, 
@@ -485,9 +593,10 @@ static void free_process_state(gpointer key, gpointer value,gpointer user_data)
 }
 
 
-static void remove_all_processes(GHashTable *processes)
+static void lttv_state_free_process_table(GHashTable *processes)
 {
   g_hash_table_foreach(processes, free_process_state, NULL);
+  g_hash_table_destroy(processes);
 }
 
 
@@ -621,21 +730,15 @@ static gboolean process_exit(void *hook_data, void *call_data)
 }
 
 
-lttv_state_add_event_hooks(LttvTracesetState *self)
+void lttv_state_add_event_hooks(LttvTracesetState *self)
 {
   LttvTraceset *traceset = self->parent.ts;
 
   guint i, j, k, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
 
-  LttFacility *f;
-
-  LttEventType *et;
-
   LttvTraceState *ts;
 
   LttvTracefileState *tfs;
-
-  void *hook_data;
 
   GArray *hooks;
 
@@ -705,7 +808,7 @@ lttv_state_add_event_hooks(LttvTracesetState *self)
 }
 
 
-lttv_state_remove_event_hooks(LttvTracesetState *self)
+void lttv_state_remove_event_hooks(LttvTracesetState *self)
 {
   LttvTraceset *traceset = self->parent.ts;
 
@@ -714,8 +817,6 @@ lttv_state_remove_event_hooks(LttvTracesetState *self)
   LttvTraceState *ts;
 
   LttvTracefileState *tfs;
-
-  void *hook_data;
 
   GArray *hooks;
 
@@ -754,6 +855,315 @@ lttv_state_remove_event_hooks(LttvTracesetState *self)
 }
 
 
+static gboolean block_end(void *hook_data, void *call_data)
+{
+  LttvTracefileState *tfcs = (LttvTracefileState *)call_data;
+
+  LttvTraceState *tcs = (LttvTraceState *)(tfcs->parent.t_context);
+
+  LttEventPosition ep;
+
+  guint nb_block, nb_event;
+
+  LttTracefile *tf;
+
+  LttvAttribute *saved_states_tree, *saved_state_tree;
+
+  LttvAttributeValue value;
+
+  ltt_event_position(tfcs->parent.e, &ep);
+
+  ltt_event_position_get(&ep, &nb_block, &nb_event, &tf);
+  tcs->nb_event += nb_event - tfcs->saved_position;
+  tfcs->saved_position = 0;
+  if(tcs->nb_event >= tcs->save_interval) {
+    saved_states_tree = lttv_attribute_find_subdir(tcs->parent.t_a, 
+        LTTV_STATE_SAVED_STATES);
+    saved_state_tree = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+    value = lttv_attribute_add(saved_states_tree, 
+        lttv_attribute_get_number(saved_states_tree), LTTV_GOBJECT);
+    *(value.v_gobject) = (GObject *)saved_state_tree;
+    value = lttv_attribute_add(saved_state_tree, LTTV_STATE_TIME, LTTV_TIME);
+    *(value.v_time) = tfcs->parent.timestamp;
+    lttv_state_save(tcs, saved_state_tree);
+    tcs->nb_event = 0;
+  }
+  return FALSE;
+}
+
+
+void lttv_state_save_add_event_hooks(LttvTracesetState *self)
+{
+  LttvTraceset *traceset = self->parent.ts;
+
+  guint i, j, k, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+
+  LttvTraceState *ts;
+
+  LttvTracefileState *tfs;
+
+  LttvTraceHook hook;
+
+  nb_trace = lttv_traceset_number(traceset);
+  for(i = 0 ; i < nb_trace ; i++) {
+    ts = (LttvTraceState *)self->parent.traces[i];
+    lttv_trace_find_hook(ts->parent.t, "core","block_end",NULL, 
+	NULL, NULL, block_end, &hook);
+
+    nb_control = ltt_trace_control_tracefile_number(ts->parent.t);
+    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(ts->parent.t);
+    nb_tracefile = nb_control + nb_per_cpu;
+    for(j = 0 ; j < nb_tracefile ; j++) {
+      if(j < nb_control) {
+        tfs = LTTV_TRACEFILE_STATE(ts->parent.control_tracefiles[j]);
+      }
+      else {
+        tfs =LTTV_TRACEFILE_STATE(ts->parent.per_cpu_tracefiles[j-nb_control]);
+      }
+
+      lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.after_event_by_id, 
+	  hook.id), hook.h, NULL);
+    }
+  }
+}
+
+
+void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
+{
+  LttvTraceset *traceset = self->parent.ts;
+
+  guint i, j, k, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+
+  LttvTraceState *ts;
+
+  LttvTracefileState *tfs;
+
+  LttvTraceHook hook;
+
+  nb_trace = lttv_traceset_number(traceset);
+  for(i = 0 ; i < nb_trace ; i++) {
+    ts = LTTV_TRACE_STATE(self->parent.traces[i]);
+    lttv_trace_find_hook(ts->parent.t, "core","block_end",NULL, 
+	NULL, NULL, block_end, &hook);
+
+    nb_control = ltt_trace_control_tracefile_number(ts->parent.t);
+    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(ts->parent.t);
+    nb_tracefile = nb_control + nb_per_cpu;
+    for(j = 0 ; j < nb_tracefile ; j++) {
+      if(j < nb_control) {
+        tfs = LTTV_TRACEFILE_STATE(ts->parent.control_tracefiles[j]);
+      }
+      else {
+        tfs =LTTV_TRACEFILE_STATE(ts->parent.per_cpu_tracefiles[j-nb_control]);
+      }
+
+      lttv_hooks_remove_data(lttv_hooks_by_id_find(
+          tfs->parent.after_event_by_id, hook.id), hook.h, NULL);
+    }
+  }
+}
+
+
+void lttv_state_restore_closest_state(LttvTracesetState *self, LttTime t)
+{
+  LttvTraceset *traceset = self->parent.ts;
+
+  guint i, j, nb_trace, nb_saved_state;
+
+  int min_pos, mid_pos, max_pos;
+
+  LttvTraceState *tcs;
+
+  LttvAttributeValue value;
+
+  LttvAttributeType type;
+
+  LttvAttributeName name;
+
+  LttvAttribute *saved_states_tree, *saved_state_tree, *closest_tree;
+
+  nb_trace = lttv_traceset_number(traceset);
+  for(i = 0 ; i < nb_trace ; i++) {
+    tcs = (LttvTraceState *)self->parent.traces[i];
+
+    saved_states_tree = lttv_attribute_find_subdir(tcs->parent.t_a,
+        LTTV_STATE_SAVED_STATES);
+    min_pos = -1;
+    max_pos = lttv_attribute_get_number(saved_states_tree) - 1;
+    mid_pos = max_pos / 2;
+    while(min_pos < max_pos) {
+      type = lttv_attribute_get(saved_states_tree, mid_pos, &name, &value);
+      g_assert(type == LTTV_GOBJECT);
+      saved_state_tree = *((LttvAttribute **)(value.v_gobject));
+      type = lttv_attribute_get_by_name(saved_state_tree, LTTV_STATE_TIME, 
+          &value);
+      g_assert(type == LTTV_TIME);
+      if(ltt_time_compare(*(value.v_time), t) < 0) {
+        min_pos = mid_pos;
+        closest_tree = saved_state_tree;
+      }
+      else max_pos = mid_pos - 1;
+
+      mid_pos = (min_pos + max_pos + 1) / 2;
+    }
+    if(min_pos == -1) {
+      restore_init_state(tcs);
+      lttv_process_trace_seek_time(&(tcs->parent), ltt_time_zero);
+    }
+    else lttv_state_restore(tcs, closest_tree);
+  }
+}
+
+
+static void
+traceset_state_instance_init (GTypeInstance *instance, gpointer g_class)
+{
+}
+
+
+static void
+traceset_state_finalize (LttvTracesetState *self)
+{
+  G_OBJECT_CLASS(g_type_class_peek(LTTV_TRACESET_CONTEXT_TYPE))->
+      finalize(G_OBJECT(self));
+}
+
+
+static void
+traceset_state_class_init (LttvTracesetContextClass *klass)
+{
+  GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
+
+  gobject_class->finalize = (void (*)(GObject *self)) traceset_state_finalize;
+  klass->init = (void (*)(LttvTracesetContext *self, LttvTraceset *ts))init;
+  klass->fini = (void (*)(LttvTracesetContext *self))fini;
+  klass->new_traceset_context = new_traceset_context;
+  klass->new_trace_context = new_trace_context;
+  klass->new_tracefile_context = new_tracefile_context;
+}
+
+
+GType 
+lttv_traceset_state_get_type(void)
+{
+  static GType type = 0;
+  if (type == 0) {
+    static const GTypeInfo info = {
+      sizeof (LttvTracesetStateClass),
+      NULL,   /* base_init */
+      NULL,   /* base_finalize */
+      (GClassInitFunc) traceset_state_class_init,   /* class_init */
+      NULL,   /* class_finalize */
+      NULL,   /* class_data */
+      sizeof (LttvTracesetContext),
+      0,      /* n_preallocs */
+      (GInstanceInitFunc) traceset_state_instance_init    /* instance_init */
+    };
+
+    type = g_type_register_static (LTTV_TRACESET_CONTEXT_TYPE, "LttvTracesetStateType", 
+        &info, 0);
+  }
+  return type;
+}
+
+
+static void
+trace_state_instance_init (GTypeInstance *instance, gpointer g_class)
+{
+}
+
+
+static void
+trace_state_finalize (LttvTraceState *self)
+{
+  G_OBJECT_CLASS(g_type_class_peek(LTTV_TRACE_CONTEXT_TYPE))->
+      finalize(G_OBJECT(self));
+}
+
+
+static void
+trace_state_class_init (LttvTraceStateClass *klass)
+{
+  GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
+
+  gobject_class->finalize = (void (*)(GObject *self)) trace_state_finalize;
+  klass->state_save = state_save;
+  klass->state_restore = state_restore;
+  klass->state_saved_free = state_saved_free;
+}
+
+
+GType 
+lttv_trace_state_get_type(void)
+{
+  static GType type = 0;
+  if (type == 0) {
+    static const GTypeInfo info = {
+      sizeof (LttvTraceStateClass),
+      NULL,   /* base_init */
+      NULL,   /* base_finalize */
+      (GClassInitFunc) trace_state_class_init,   /* class_init */
+      NULL,   /* class_finalize */
+      NULL,   /* class_data */
+      sizeof (LttvTraceState),
+      0,      /* n_preallocs */
+      (GInstanceInitFunc) trace_state_instance_init    /* instance_init */
+    };
+
+    type = g_type_register_static (LTTV_TRACE_CONTEXT_TYPE, 
+        "LttvTraceStateType", &info, 0);
+  }
+  return type;
+}
+
+
+static void
+tracefile_state_instance_init (GTypeInstance *instance, gpointer g_class)
+{
+}
+
+
+static void
+tracefile_state_finalize (LttvTracefileState *self)
+{
+  G_OBJECT_CLASS(g_type_class_peek(LTTV_TRACEFILE_CONTEXT_TYPE))->
+      finalize(G_OBJECT(self));
+}
+
+
+static void
+tracefile_state_class_init (LttvTracefileStateClass *klass)
+{
+  GObjectClass *gobject_class = G_OBJECT_CLASS(klass);
+
+  gobject_class->finalize = (void (*)(GObject *self)) tracefile_state_finalize;
+}
+
+
+GType 
+lttv_tracefile_state_get_type(void)
+{
+  static GType type = 0;
+  if (type == 0) {
+    static const GTypeInfo info = {
+      sizeof (LttvTracefileStateClass),
+      NULL,   /* base_init */
+      NULL,   /* base_finalize */
+      (GClassInitFunc) tracefile_state_class_init,   /* class_init */
+      NULL,   /* class_finalize */
+      NULL,   /* class_data */
+      sizeof (LttvTracefileState),
+      0,      /* n_preallocs */
+      (GInstanceInitFunc) tracefile_state_instance_init    /* instance_init */
+    };
+
+    type = g_type_register_static (LTTV_TRACEFILE_CONTEXT_TYPE, 
+        "LttvTracefileStateType", &info, 0);
+  }
+  return type;
+}
+
+
 void lttv_state_init(int argc, char **argv)
 {
   LTTV_STATE_UNNAMED = g_quark_from_string("unnamed");
@@ -769,6 +1179,12 @@ void lttv_state_init(int argc, char **argv)
   LTTV_STATE_EXIT = g_quark_from_string("exiting");
   LTTV_STATE_WAIT = g_quark_from_string("wait for I/O");
   LTTV_STATE_RUN = g_quark_from_string("running");
+  LTTV_STATE_TRACEFILES = g_quark_from_string("tracefiles");
+  LTTV_STATE_PROCESSES = g_quark_from_string("processes");
+  LTTV_STATE_PROCESS = g_quark_from_string("process");
+  LTTV_STATE_EVENT = g_quark_from_string("event");
+  LTTV_STATE_SAVED_STATES = g_quark_from_string("saved states");
+  LTTV_STATE_TIME = g_quark_from_string("time");
   LTTV_STATE_HOOKS = g_quark_from_string("saved state hooks");
 }
 

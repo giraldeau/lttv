@@ -92,23 +92,28 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
 
   LttvTracefileContext *tfc;
 
+  LttTime null_time = {0, 0};
+
   nb_trace = lttv_traceset_number(ts);
   self->ts = ts;
   self->traces = g_new(LttvTraceContext *, nb_trace);
   self->before = lttv_hooks_new();
   self->after = lttv_hooks_new();
   self->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+  self->ts_a = lttv_traceset_attribute(ts);
   for(i = 0 ; i < nb_trace ; i++) {
     tc = LTTV_TRACESET_CONTEXT_GET_CLASS(self)->new_trace_context(self);
     self->traces[i] = tc;
 
     tc->ts_context = self;
     tc->index = i;
-    tc->t = lttv_traceset_get(ts, i);
+    tc->vt = lttv_traceset_get(ts, i);
+    tc->t = lttv_trace(tc->vt);
     tc->check = lttv_hooks_new();
     tc->before = lttv_hooks_new();
     tc->after = lttv_hooks_new();
     tc->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+    tc->t_a = lttv_trace_attribute(tc->vt);
     nb_control = ltt_trace_control_tracefile_number(tc->t);
     nb_per_cpu = ltt_trace_per_cpu_tracefile_number(tc->t);
     nb_tracefile = nb_control + nb_per_cpu;
@@ -141,6 +146,8 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
       tfc->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
     }
   }
+  lttv_process_traceset_seek_time(self, null_time);
+  /*CHECK why dynamically allocate the time span... and the casing is wroNg*/
   self->Time_Span = g_new(TimeInterval,1);
   lttv_traceset_context_compute_time_span(self, self->Time_Span);
 }
@@ -480,11 +487,7 @@ lttv_tracefile_context_get_type(void)
 
 gint compare_tracefile(gconstpointer a, gconstpointer b)
 {
-  if(((LttvTime *)a)->tv_sec > ((LttvTime *)b)->tv_sec) return 1;
-  if(((LttvTime *)a)->tv_sec < ((LttvTime *)b)->tv_sec) return -1;
-  if(((LttvTime *)a)->tv_nsec > ((LttvTime *)b)->tv_nsec) return 1;
-  if(((LttvTime *)a)->tv_nsec < ((LttvTime *)b)->tv_nsec) return -1;
-  return 0;
+  return ltt_time_compare(*((LttTime *)a), *((LttTime *)b));
 }
 
 
@@ -494,8 +497,8 @@ gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
 }
 
 
-void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset, 
-    LttvTracesetContext *context, unsigned maxNumEvents)
+void lttv_process_traceset(LttvTracesetContext *self, LttTime end, 
+    unsigned maxNumEvents)
 {
   GPtrArray *traces = g_ptr_array_new();
 
@@ -514,19 +517,20 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
   LttvTracefileContext *tfc;
 
   LttEvent *event;
+
   unsigned count = 0;
-  LttTime preTimestamp;
+
+  LttTime previous_timestamp = {0, 0};
 
   /* Call all before_traceset, before_trace, and before_tracefile hooks.
      For all qualifying tracefiles, seek to the start time, create a context,
      read one event and insert in the pqueue based on the event time. */
 
-  lttv_hooks_call(context->before, context);
-  nbi = lttv_traceset_number(traceset);
-  //  nbi = ltt_trace_set_number(traceset);
+  lttv_hooks_call(self->before, self);
+  nbi = lttv_traceset_number(self->ts);
 
   for(i = 0 ; i < nbi ; i++) {
-    tc = context->traces[i];
+    tc = self->traces[i];
     trace = tc->t;
 
     if(!lttv_hooks_call_check(tc->check, tc)) {
@@ -550,12 +554,7 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
           g_ptr_array_add(tracefiles, tfc);
           lttv_hooks_call(tfc->before, tfc);
 
-          ltt_tracefile_seek_time(tracefile, start);
-          event = ltt_tracefile_read(tracefile);
-          tfc->e = event;
-
           if(event != NULL) {
-            tfc->timestamp = ltt_event_time(event);
             g_tree_insert(pqueue, &(tfc->timestamp), tfc);
           }
         }
@@ -573,14 +572,14 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
     g_tree_foreach(pqueue, get_first, &tfc);
     if(tfc == NULL) break;
 
-    /* Get the tracefile with an event for the smallest time found. If two
-       or more tracefiles have events for the same time, hope that lookup
-       and remove are consistent. */
+    /* Have we reached the maximum number of events specified? However,
+       continue for all the events with the same time stamp (CHECK?). Then,
+       empty the queue and break from the loop. */
 
     count++;
     if(count > maxNumEvents){
-      if(tfc->timestamp.tv_sec == preTimestamp.tv_sec &&
-	 tfc->timestamp.tv_nsec == preTimestamp.tv_nsec) {
+      if(tfc->timestamp.tv_sec == previous_timestamp.tv_sec &&
+	 tfc->timestamp.tv_nsec == previous_timestamp.tv_nsec) {
 	count--;
       }else{	
 	while(TRUE){
@@ -592,7 +591,12 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
 	break;
       }
     }
-    preTimestamp = tfc->timestamp;
+    previous_timestamp = tfc->timestamp;
+
+
+    /* Get the tracefile with an event for the smallest time found. If two
+       or more tracefiles have events for the same time, hope that lookup
+       and remove are consistent. */
 
     tfc = g_tree_lookup(pqueue, &(tfc->timestamp));
     g_tree_remove(pqueue, &(tfc->timestamp));
@@ -632,7 +636,7 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
   }
 
   g_assert(j == tracefiles->len);
-  lttv_hooks_call(context->after, context);
+  lttv_hooks_call(self->after, self);
 
   /* Free the traces, tracefiles and pqueue */
 
@@ -640,6 +644,44 @@ void lttv_process_trace(LttTime start, LttTime end, LttvTraceset *traceset,
   g_ptr_array_free(traces, TRUE);
   g_tree_destroy(pqueue);
 }
+
+
+void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
+{
+  guint i, nb_control, nb_per_cpu, nb_tracefile;
+
+  LttvTracefileContext *tfc;
+
+  LttEvent *event;
+
+  nb_control = ltt_trace_control_tracefile_number(self->t);
+  nb_per_cpu = ltt_trace_per_cpu_tracefile_number(self->t);
+  nb_tracefile = nb_control + nb_per_cpu;
+  for(i = 0 ; i < nb_tracefile ; i++) {
+    if(i < nb_control) tfc = self->control_tracefiles[i];
+    else tfc = self->per_cpu_tracefiles[i - nb_control];
+
+    ltt_tracefile_seek_time(tfc->tf, start);
+    event = ltt_tracefile_read(tfc->tf);
+    tfc->e = event;
+    if(event != NULL) tfc->timestamp = ltt_event_time(event);
+  }
+}
+
+
+void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start)
+{
+  guint i, nb_trace;
+
+  LttvTraceContext *tc;
+
+  nb_trace = lttv_traceset_number(self->ts);
+  for(i = 0 ; i < nb_trace ; i++) {
+    tc = self->traces[i];
+    lttv_process_trace_seek_time(tc, start);
+  }
+}
+
 
 static LttField *
 find_field(LttEventType *et, const char *field)

@@ -33,10 +33,6 @@ void updateTracefile(LttTracefile * tf);
 /* go to the next event */
 int skipEvent(LttTracefile * t);
 
-/* compare two time (LttTime), 0:t1=t2, -1:t1<t2, 1:t1>t2 */
-int timecmp(LttTime * t1, LttTime * t2);
-
-
 
 /*****************************************************************************
  *Function name
@@ -693,8 +689,8 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
       j = 1;
       continue;
     }
-    if(timecmp(&startSmall,&startTmp) > 0) startSmall = startTmp;
-    if(timecmp(&endBig,&endTmp) < 0) endBig = endTmp;
+    if(ltt_time_compare(startSmall,startTmp) > 0) startSmall = startTmp;
+    if(ltt_time_compare(endBig,endTmp) < 0) endBig = endTmp;
   }
 
   for(i=0;i<t->per_cpu_tracefile_number;i++){
@@ -708,8 +704,8 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
       endBig     = endTmp;
       continue;
     }
-    if(timecmp(&startSmall,&startTmp) > 0) startSmall = startTmp;
-    if(timecmp(&endBig,&endTmp) < 0) endBig = endTmp;
+    if(ltt_time_compare(startSmall,startTmp) > 0) startSmall = startTmp;
+    if(ltt_time_compare(endBig,endTmp) < 0) endBig = endTmp;
   }
 
   *start = startSmall;
@@ -748,16 +744,16 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 {
   int err;
   LttTime lttTime;
-  int headTime = timecmp(&(t->a_block_start->time), &time);
-  int tailTime = timecmp(&(t->a_block_end->time), &time);
+  int headTime = ltt_time_compare(t->a_block_start->time, time);
+  int tailTime = ltt_time_compare(t->a_block_end->time, time);
   LttEvent * ev;
 
   if(headTime < 0 && tailTime > 0){
-    if(timecmp(&(t->a_block_end->time),&(t->current_event_time)) !=0){
+    if(ltt_time_compare(t->a_block_end->time, t->current_event_time) !=0) {
       lttTime = getEventTime(t);
-      err = timecmp(&lttTime, &time);
+      err = ltt_time_compare(lttTime, time);
       if(err > 0){
-	if(t->which_event==2 || timecmp(&t->prev_event_time,&time)<0){
+	if(t->which_event==2 || (&t->prev_event_time,&time)<0){
 	  return;
 	}else{
 	  updateTracefile(t);
@@ -771,7 +767,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
 	    return;
 	  }
 	  lttTime = getEventTime(t);
-	  err = timecmp(&lttTime, &time);
+	  err = ltt_time_compare(lttTime, time);
 	  if(err >= 0)return;
 	}
       }else return;    
@@ -783,7 +779,7 @@ void ltt_tracefile_seek_time(LttTracefile *t, LttTime time)
     if(t->which_block == 1){
       updateTracefile(t);      
     }else{
-      if(timecmp(&(t->prev_block_end_time),&time) >= 0 ){
+      if(ltt_time_compare(t->prev_block_end_time, time) >= 0 ){
 	err=readBlock(t,t->which_block-1);
 	if(err) g_error("Can not read tracefile: %s\n", t->name); 
 	return ltt_tracefile_seek_time(t, time) ;
@@ -1038,7 +1034,7 @@ void getCyclePerNsec(LttTracefile * t)
   LttCycleCount     lBufTotalCycle;/* Total cycles for this buffer */
 
   /* Calculate the total time for this buffer */
-  TimeSub(lBufTotalTime,t->a_block_end->time, t->a_block_start->time);
+  lBufTotalTime = ltt_time_sub(t->a_block_end->time, t->a_block_start->time);
 
   /* Calculate the total cycles for this bufffer */
   lBufTotalCycle  = t->a_block_end->cycle_count;
@@ -1046,7 +1042,7 @@ void getCyclePerNsec(LttTracefile * t)
 
   /* Convert the total time to nsecs */
   lBufTotalNSec  = lBufTotalTime.tv_sec;
-  lBufTotalNSec *= NANSECOND_CONST; 
+  lBufTotalNSec *= NANOSECONDS_PER_SECOND; 
   lBufTotalNSec += lBufTotalTime.tv_nsec;
   
   t->cycle_per_nsec = (double)lBufTotalCycle / (double)lBufTotalNSec;
@@ -1106,10 +1102,10 @@ LttTime getEventTime(LttTracefile * tf)
   nanoSec    = lEventNSec;
 
   // Determine offset in struct LttTime 
-  lTimeOffset.tv_nsec = nanoSec % NANSECOND_CONST;
-  lTimeOffset.tv_sec  = nanoSec / NANSECOND_CONST;
+  lTimeOffset.tv_nsec = nanoSec % NANOSECONDS_PER_SECOND;
+  lTimeOffset.tv_sec  = nanoSec / NANOSECONDS_PER_SECOND;
 
-  TimeAdd(time, tf->a_block_start->time, lTimeOffset);  
+  time = ltt_time_add(tf->a_block_start->time, lTimeOffset);  
   
   return time;
 }
@@ -1262,24 +1258,6 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
   return size;
 }
 
-/*****************************************************************************
- *Function name
- *    timecmp   : compare two time
- *Input params 
- *    t1        : first time
- *    t2        : second time
- *Return value
- *    int       : 0: t1 == t2; -1: t1 < t2; 1: t1 > t2
- ****************************************************************************/
-
-int timecmp(LttTime * t1, LttTime * t2)
-{
-  if(t1->tv_sec < t2->tv_sec) return -1;
-  if(t1->tv_sec > t2->tv_sec) return 1;
-  if(t1->tv_nsec < t2->tv_nsec) return -1;
-  if(t1->tv_nsec > t2->tv_nsec) return 1;
-  return 0;
-}
 
 /*****************************************************************************
  *Function name

@@ -54,7 +54,7 @@ static void lttv_verbose(void *hook_data);
 
 static void lttv_debug(void *hook_data);
 
-static void lttv_help(void);
+static void lttv_help(void *hook_data);
 
 /* Since everything is done in modules, the main program only takes care
    of the infrastructure. */
@@ -182,7 +182,7 @@ void lttv_debug(void *hook_data)
   g_info("Logging set to include DEBUG level messages");
 }
 
-void lttv_help()
+void lttv_help(void *hook_data)
 {
 	printf("Linux Trace Toolkit Visualizer\n");
 	printf("\n");
@@ -190,8 +190,32 @@ void lttv_help()
 	printf("\n");
 }
 
-/* remove countEvents.c, add alias to init to allow static/dynamic loading 
-   MODULE_INFO(name, init, destroy, { require} ). This info could be used
-   by module_load and as a constructor function when not a module
-   -> check constructor functions versus dynamic loading and init section
-   -> have a list of available modules builtin as default or mandatory */
+/* 
+
+- Make it easier to change modules from builtin to externally loaded.
+
+    have: MODULE_INFO(name, init, destroy, { require} ) in each module.
+    Maintain the list of builtin modules and search these first (or 
+    optionally last). Add the lib prefix if needed to avoid having to
+    specify libbatchAnalysis instead of batchAnalysis.
+
+- Define formally traceset/trace in the GUI for the user and decide how
+   trace/traceset sharing goes in the application.
+
+- Use appropriately the new functions in time.h
+
+- remove the separate tracefiles (control/per cpu) arrays/loops in context.
+
+- split processTrace into context.c and processTrace.c
+
+- check spelling conventions.
+
+- get all the copyright notices.
+
+- remove all the warnings.
+
+- get all the .h files properly doxygen commented to produce useful documents.
+
+- have an intro/architecture document.
+
+- write a tutorial */

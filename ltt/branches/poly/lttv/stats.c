@@ -327,9 +327,9 @@ static void mode_change(LttvTracefileStats *tfcs)
 
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_CPU_TIME, 
       LTTV_TIME, &cpu_time);
-  TimeSub(delta, tfcs->parent.parent.timestamp, 
+  delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
       tfcs->parent.process->state->change);
-  TimeAdd(*(cpu_time.v_time), *(cpu_time.v_time), delta);
+  *(cpu_time.v_time) = ltt_time_add(*(cpu_time.v_time), delta);
 }
 
 
@@ -341,15 +341,15 @@ static void mode_end(LttvTracefileStats *tfcs)
 
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_ELAPSED_TIME, 
       LTTV_TIME, &elapsed_time);
-  TimeSub(delta, tfcs->parent.parent.timestamp, 
+  delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
       tfcs->parent.process->state->entry);
-  TimeAdd(*(elapsed_time.v_time), *(elapsed_time.v_time), delta);
+  *(elapsed_time.v_time) = ltt_time_add(*(elapsed_time.v_time), delta);
 
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_CPU_TIME, 
       LTTV_TIME, &cpu_time);
-  TimeSub(delta, tfcs->parent.parent.timestamp, 
+  delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
       tfcs->parent.process->state->change);
-  TimeAdd(*(cpu_time.v_time), *(cpu_time.v_time), delta);
+  *(cpu_time.v_time) = ltt_time_add(*(cpu_time.v_time), delta);
 }
 
 

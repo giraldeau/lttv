@@ -316,6 +316,8 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
 
   g_info("Init textDump.c");
 
+  lttv_module_require(self, "libbatchAnalysis", argc, argv);
+
   a_string = g_string_new("");
 
   a_file_name = NULL;

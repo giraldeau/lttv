@@ -1,6 +1,7 @@
 #ifndef LTT_H
 #define LTT_H
 
+#include <ltt/time.h>
 #include <ltt/LTTTypes.h>
 
 /* A trace is associated with a tracing session run on a single, possibly
@@ -70,15 +71,10 @@ typedef unsigned long LttChecksum;
 
 
 /* Events are usually stored with the easily obtained CPU clock cycle count,
-   ltt_cycle_count. This can be converted to the real time value, ltt_time,
+   ltt_cycle_count. This can be converted to the real time value, LttTime,
    using linear interpolation between regularly sampled values (e.g. a few 
    times per second) of the real time clock with their corresponding 
    cycle count values. */
-
-typedef struct _LttTime {
-  unsigned long tv_sec;
-  unsigned long tv_nsec;
-} LttTime;
 
 
 typedef struct _TimeInterval{
@@ -89,7 +85,6 @@ typedef struct _TimeInterval{
 
 typedef uint64_t LttCycleCount;
 
-#define NANSECOND_CONST       1000000000
 
 /* Event positions are used to seek within a tracefile based on
    the block number and event position within the block. */
@@ -110,55 +105,6 @@ typedef enum _LttArchSize
 typedef enum _LttArchEndian
 { LTT_LITTLE_ENDIAN, LTT_BIG_ENDIAN
 } LttArchEndian;
-
-/* Time operation macros for LttTime (struct timespec) */
-/*  (T3 = T2 - T1) */
-#define TimeSub(T3, T2, T1) \
-do \
-{\
-  (T3).tv_sec  = (T2).tv_sec  - (T1).tv_sec;  \
-  if((T2).tv_nsec < (T1).tv_nsec)\
-    {\
-    (T3).tv_sec--;\
-    (T3).tv_nsec = NANSECOND_CONST - (T1).tv_nsec + (T2).tv_nsec;\
-    }\
-  else\
-    {\
-    (T3).tv_nsec = (T2).tv_nsec - (T1).tv_nsec;\
-    }\
-} while(0)
-
-/*  (T3 = T2 + T1) */
-#define TimeAdd(T3, T2, T1) \
-do \
-{\
-  (T3).tv_sec  = (T2).tv_sec  + (T1).tv_sec;  \
-  (T3).tv_nsec = (T2).tv_nsec + (T1).tv_nsec; \
-  if((T3).tv_nsec >= NANSECOND_CONST)\
-    {\
-    (T3).tv_sec += (T3).tv_nsec / NANSECOND_CONST;\
-    (T3).tv_nsec = (T3).tv_nsec % NANSECOND_CONST;\
-    }\
-} while(0)
-
-/*  (T2 = T1 * FLOAT) */
-/* WARNING : use this multiplicator carefully : on 32 bits, multiplying
- * by more than 4 could overflow the tv_nsec.
- */
-#define TimeMul(T2, T1, FLOAT) \
-do \
-{\
-  (T2).tv_sec  = (T1).tv_sec  * (FLOAT);  \
-  (T2).tv_nsec = (T1).tv_nsec * (FLOAT);  \
-  if((T2).tv_nsec >= NANSECOND_CONST)\
-    {\
-    (T2).tv_sec += (T2).tv_nsec / NANSECOND_CONST;\
-    (T2).tv_nsec = (T2).tv_nsec % NANSECOND_CONST;\
-    }\
-} while(0)
-
-
-
 
 #include <ltt/ltt-private.h>
 
