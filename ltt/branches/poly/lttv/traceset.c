@@ -18,6 +18,7 @@ struct _LttvTraceset {
 struct _LttvTrace {
   LttTrace *t;
   LttvAttribute *a;
+  guint ref_count;
 };
 
 
@@ -39,6 +40,7 @@ LttvTrace *lttv_trace_new(LttTrace *t)
   new_trace = g_new(LttvTrace, 1);
   new_trace->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
   new_trace->t = t;
+  new_trace->ref_count = 0;
   return new_trace;
 }
 
@@ -47,12 +49,16 @@ LttvTraceset *lttv_traceset_copy(LttvTraceset *s_orig)
 {
   int i;
   LttvTraceset *s;
+  LttvTrace * trace;
 
   s = g_new(LttvTraceset, 1);
   s->filename = NULL;
   s->traces = g_ptr_array_new();
   for(i=0;i<s_orig->traces->len;i++)
   {
+    trace = g_ptr_array_index(s_orig->traces, i);
+    trace->ref_count++;
+
     /*CHECK this used ltt_trace_copy while it may not be needed. Need to
       define how traces and tracesets are shared */
     g_ptr_array_add(
@@ -106,6 +112,7 @@ void lttv_trace_destroy(LttvTrace *t)
 
 void lttv_traceset_add(LttvTraceset *s, LttvTrace *t) 
 {
+  t->ref_count++;
   g_ptr_array_add(s->traces, t);
 }
 
@@ -125,6 +132,10 @@ LttvTrace *lttv_traceset_get(LttvTraceset *s, unsigned i)
 
 void lttv_traceset_remove(LttvTraceset *s, unsigned i) 
 {
+  LttvTrace * t;
+  g_assert(s->traces->len > i);
+  t = (LttvTrace *)s->traces->pdata[i];
+  t->ref_count--;
   g_ptr_array_remove_index(s->traces, i);
 }
 
@@ -149,3 +160,7 @@ LttTrace *lttv_trace(LttvTrace *t)
   return t->t;
 }
 
+guint lttv_trace_get_ref_number(LttvTrace * t)
+{
+  return t->ref_count;
+}

@@ -30,6 +30,8 @@ static int gWinCount = 0;
 
 mainWindow * get_window_data_struct(GtkWidget * widget);
 char * get_unload_module(char ** loaded_module_name, int nb_module);
+char * get_remove_trace(char ** all_trace_name, int nb_trace);
+char * get_selection(char ** all_name, int nb, char *title, char * column_title);
 void * create_tab(GtkWidget* parent, GtkNotebook * notebook, char * label);
 
 void insertView(GtkWidget* widget, view_constructor constructor);
@@ -167,18 +169,110 @@ void delete_viewer(GtkWidget * widget, gpointer user_data)
 
 void open_traceset(GtkWidget * widget, gpointer user_data)
 {
-  g_printf("Open a trace set\n");
+  char ** dir;
+  gint id;
+  LttvTraceset * traceset;
+  mainWindow * mwData = get_window_data_struct(widget);
+  GtkFileSelection * fileSelector = 
+    (GtkFileSelection *)gtk_file_selection_new("Select a traceset");
+
+  gtk_file_selection_hide_fileop_buttons(fileSelector);
   
+  id = gtk_dialog_run(GTK_DIALOG(fileSelector));
+  switch(id){
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_OK:
+      dir = gtk_file_selection_get_selections (fileSelector);
+      traceset = lttv_traceset_load(dir[0]);
+      g_printf("Open a trace set %s\n", dir[0]); 
+      //Not finished yet
+      g_strfreev(dir);
+    case GTK_RESPONSE_REJECT:
+    case GTK_RESPONSE_CANCEL:
+    default:
+      gtk_widget_destroy((GtkWidget*)fileSelector);
+      break;
+  }
 
 }
 
 void add_trace(GtkWidget * widget, gpointer user_data)
 {
+  LttTrace *trace;
+  LttvTrace * trace_v;
+  LttvTraceset * traceset;
+  char * dir;
+  gint id;
+  mainWindow * mwData = get_window_data_struct(widget);
+  GtkDirSelection * fileSelector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
+  gtk_dir_selection_hide_fileop_buttons(fileSelector);
+  
+  id = gtk_dialog_run(GTK_DIALOG(fileSelector));
+  switch(id){
+    case GTK_RESPONSE_ACCEPT:
+    case GTK_RESPONSE_OK:
+      dir = gtk_dir_selection_get_dir (fileSelector);
+      trace = ltt_trace_open(dir);
+      if(trace == NULL) g_critical("cannot open trace %s", dir);
+      trace_v = lttv_trace_new(trace);
+      traceset = mwData->Traceset_Info->traceset;
+      if(mwData->Traceset_Info->TracesetContext != NULL){
+	lttv_context_fini(LTTV_TRACESET_CONTEXT(mwData->Traceset_Info->TracesetContext));
+	g_object_unref(mwData->Traceset_Info->TracesetContext);
+      }
+      lttv_traceset_add(traceset, trace_v);
+      mwData->Traceset_Info->TracesetContext =
+  	g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+      lttv_context_init(
+	LTTV_TRACESET_CONTEXT(mwData->Traceset_Info->TracesetContext),traceset);      
+    case GTK_RESPONSE_REJECT:
+    case GTK_RESPONSE_CANCEL:
+    default:
+      gtk_widget_destroy((GtkWidget*)fileSelector);
+      break;
+  }
+
   g_printf("add a trace to a trace set\n");
 }
 
 void remove_trace(GtkWidget * widget, gpointer user_data)
 {
+  LttTrace *trace;
+  LttvTrace * trace_v;
+  LttvTraceset * traceset;
+  gint i, nb_trace;
+  char ** name, *remove_trace_name;
+  mainWindow * mwData = get_window_data_struct(widget);
+  
+  nb_trace =lttv_traceset_number(mwData->Traceset_Info->traceset); 
+  name = g_new(char*,nb_trace);
+  for(i = 0; i < nb_trace; i++){
+    trace_v = lttv_traceset_get(mwData->Traceset_Info->traceset, i);
+    trace = lttv_trace(trace_v);
+    name[i] = trace->pathname;
+  }
+
+  remove_trace_name = get_remove_trace(name, nb_trace);
+
+  if(remove_trace_name){
+    for(i=0; i<nb_trace; i++){
+      if(strcmp(remove_trace_name,name[i]) == 0){
+	traceset = mwData->Traceset_Info->traceset;
+	if(mwData->Traceset_Info->TracesetContext != NULL){
+	  lttv_context_fini(LTTV_TRACESET_CONTEXT(mwData->Traceset_Info->TracesetContext));
+	  g_object_unref(mwData->Traceset_Info->TracesetContext);
+	}
+	lttv_traceset_remove(traceset, i);
+	mwData->Traceset_Info->TracesetContext =
+	  g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+	lttv_context_init(
+	  LTTV_TRACESET_CONTEXT(mwData->Traceset_Info->TracesetContext),traceset);      
+	break;
+      }
+    }
+  }
+
+  g_free(name);
   g_printf("remove a trace from a trace set\n");
 }
 
@@ -716,7 +810,19 @@ on_MNotebook_switch_page               (GtkNotebook     *notebook,
   mw->CurrentTab = Tab;
 }
 
+char * get_remove_trace(char ** all_trace_name, int nb_trace)
+{
+  return get_selection(all_trace_name, nb_trace, 
+		       "Select a trace", "Trace pathname");
+}
 char * get_unload_module(char ** loaded_module_name, int nb_module)
+{
+  return get_selection(loaded_module_name, nb_module, 
+		       "Select an unload module", "Module pathname");
+}
+
+char * get_selection(char ** loaded_module_name, int nb_module,
+		     char *title, char * column_title)
 {
   GtkWidget         * dialogue;
   GtkWidget         * scroll_win;
@@ -729,7 +835,7 @@ char * get_unload_module(char ** loaded_module_name, int nb_module)
   gint                id, i;
   char              * unload_module_name = NULL;
 
-  dialogue = gtk_dialog_new_with_buttons("Select an unload module",
+  dialogue = gtk_dialog_new_with_buttons(title,
 					 NULL,
 					 GTK_DIALOG_MODAL,
 					 GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
@@ -748,7 +854,7 @@ char * get_unload_module(char ** loaded_module_name, int nb_module)
   g_object_unref (G_OBJECT (store));
 		
   renderer = gtk_cell_renderer_text_new ();
-  column   = gtk_tree_view_column_new_with_attributes ("MODULE NAME",
+  column   = gtk_tree_view_column_new_with_attributes (column_title,
 						     renderer,
 						     "text", MODULE_COLUMN,
 						     NULL);
@@ -785,12 +891,12 @@ char * get_unload_module(char ** loaded_module_name, int nb_module)
   return unload_module_name;
 }
 
-void destroy_hash_key(gpointer key)
+void main_window_destroy_hash_key(gpointer key)
 {
   g_free(key);
 }
 
-void destroy_hash_data(gpointer data)
+void main_window_destroy_hash_data(gpointer data)
 {
 }
 
@@ -954,9 +1060,11 @@ void constructMainWin(mainWindow * parent, WindowCreationData * win_creation_dat
   }
 
   newMWindow->hash_menu_item = g_hash_table_new_full (g_str_hash, g_str_equal,
-					      destroy_hash_key, destroy_hash_data);
+					      main_window_destroy_hash_key, 
+					      main_window_destroy_hash_data);
   newMWindow->hash_toolbar_item = g_hash_table_new_full (g_str_hash, g_str_equal,
-					      destroy_hash_key, destroy_hash_data);
+					      main_window_destroy_hash_key, 
+					      main_window_destroy_hash_data);
 
   insertMenuToolbarItem(newMWindow, NULL);
   
@@ -1097,6 +1205,7 @@ void remove_toolbar_item(gpointer main_win, gpointer user_data)
 /**
  * Remove menu and toolbar item when a module unloaded
  */
+
 void main_window_remove_menu_item(lttv_constructor constructor)
 {
   int i;
@@ -1113,7 +1222,9 @@ void main_window_remove_menu_item(lttv_constructor constructor)
     for(i=0;i<menu->len;i++){
       menuItem = &g_array_index(menu, lttv_menu_closure, i);
       if(menuItem->con != constructor) continue;
-      g_slist_foreach(Main_Window_List, remove_menu_item, menuItem);
+      if(Main_Window_List){
+	g_slist_foreach(Main_Window_List, remove_menu_item, menuItem);
+      }
       break;
     }
   }
@@ -1136,7 +1247,9 @@ void main_window_remove_toolbar_item(lttv_constructor constructor)
     for(i=0;i<toolbar->len;i++){
       toolbarItem = &g_array_index(toolbar, lttv_toolbar_closure, i);
       if(toolbarItem->con != constructor) continue;
-      g_slist_foreach(Main_Window_List, remove_toolbar_item, toolbarItem);
+      if(Main_Window_List){
+	g_slist_foreach(Main_Window_List, remove_toolbar_item, toolbarItem);
+      }
       break;
     }
   }

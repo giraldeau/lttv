@@ -171,13 +171,12 @@ static LttvModule *Main_Win_Module;
  */
 G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
-	Main_Win_Module = lttv_module_require(self, "mainwin", argc, argv);
-	
-	if(Main_Win_Module == NULL)
-	{
-	  g_critical("Can't load Control Flow Viewer : missing mainwin\n");
-	  return;
-	}
+  Main_Win_Module = lttv_module_require(self, "mainwin", argc, argv);
+  
+  if(Main_Win_Module == NULL){
+    g_critical("Can't load Control Flow Viewer : missing mainwin\n");
+    return;
+  }
 	
 
   g_critical("GUI Event Viewer init()");
@@ -190,7 +189,7 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
   
 }
 
-void destroy_walk(gpointer data, gpointer user_data)
+void event_destroy_walk(gpointer data, gpointer user_data)
 {
   GuiEvents_Destructor((EventViewerData*)data);
 }
@@ -208,9 +207,10 @@ G_MODULE_EXPORT void destroy() {
   
   g_critical("GUI Event Viewer destroy()");
 
-  g_slist_foreach(sEvent_Viewer_Data_List, destroy_walk, NULL );
-
-  g_slist_free(sEvent_Viewer_Data_List);
+  if(sEvent_Viewer_Data_List){
+    g_slist_foreach(sEvent_Viewer_Data_List, event_destroy_walk, NULL );
+    g_slist_free(sEvent_Viewer_Data_List);
+  }
 
   /* Unregister the toolbar insert button */
   ToolbarItemUnreg(hGuiEvents);

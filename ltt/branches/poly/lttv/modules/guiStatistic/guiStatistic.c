@@ -43,8 +43,8 @@ void GuiStatistic_free(StatisticViewerData *Statistic_Viewer_Data);
 void grab_focus(GtkWidget *widget, gpointer data);
 static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
 
-void Destroy_hash_key(gpointer key);
-void Destroy_hash_data(gpointer data);
+void statistic_destroy_hash_key(gpointer key);
+void statistic_destroy_hash_data(gpointer data);
 
 void get_traceset_stats(StatisticViewerData * Statistic_Viewer_Data);
 void show_traceset_stats(StatisticViewerData * Statistic_Viewer_Data);
@@ -108,7 +108,7 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
   
 }
 
-void destroy_walk(gpointer data, gpointer user_data)
+void statistic_destroy_walk(gpointer data, gpointer user_data)
 {
   GuiStatistic_Destructor((StatisticViewerData*)data);
 }
@@ -123,9 +123,11 @@ G_MODULE_EXPORT void destroy() {
   int i;
   
   g_critical("GUI Statistic Viewer destroy()");
-  g_slist_foreach(gStatistic_Viewer_Data_List, destroy_walk, NULL );
 
-  g_slist_free(gStatistic_Viewer_Data_List);
+  if(gStatistic_Viewer_Data_List){
+    g_slist_foreach(gStatistic_Viewer_Data_List, statistic_destroy_walk, NULL );    
+    g_slist_free(gStatistic_Viewer_Data_List);
+  }
 
   /* Unregister the toolbar insert button */
   ToolbarItemUnreg(hGuiStatistic);
@@ -197,7 +199,8 @@ GuiStatistic(mainWindow *pmParentWindow)
   Statistic_Viewer_Data->stats  = getTracesetStats(Statistic_Viewer_Data->mw);
 
   Statistic_Viewer_Data->Statistic_Hash = g_hash_table_new_full(g_str_hash, g_str_equal,
-								Destroy_hash_key, Destroy_hash_data);
+								statistic_destroy_hash_key,
+								statistic_destroy_hash_data);
 
   Statistic_Viewer_Data->HPaned_V  = gtk_hpaned_new();
   Statistic_Viewer_Data->Store_M = gtk_tree_store_new (N_COLUMNS, G_TYPE_STRING);
@@ -313,12 +316,12 @@ tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
     }
 }
 
-void Destroy_hash_key(gpointer key)
+void statistic_destroy_hash_key(gpointer key)
 {
   g_free(key);
 }
 
-void Destroy_hash_data(gpointer data)
+void statistic_destroy_hash_data(gpointer data)
 {
   //  g_free(data);
 }

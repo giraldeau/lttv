@@ -43,5 +43,7 @@ LttvAttribute *lttv_trace_attribute(LttvTrace *t);
 
 LttTrace *lttv_trace(LttvTrace *t);
 
+guint lttv_trace_get_ref_number(LttvTrace * t);
+
 #endif // TRACESET_H
 

@@ -84,9 +84,6 @@ static gboolean Window_Creation_Hook(void *hook_data, void *call_data)
   return FALSE;
 }
 
-
-
-
 G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 
   LttvAttributeValue value;
@@ -115,7 +112,8 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 void
 mainWindow_free(mainWindow * mw)
 { 
-  guint i, nb;
+  guint i, nb, ref_count;
+  LttvTrace * trace;
 
   if(mw){
 
@@ -139,8 +137,10 @@ g_critical("end remove");
     if(mw->Traceset_Info->traceset != NULL) {
       nb = lttv_traceset_number(mw->Traceset_Info->traceset);
       for(i = 0 ; i < nb ; i++) {
-        ltt_trace_close(
-           lttv_trace(lttv_traceset_get(mw->Traceset_Info->traceset, i)));
+	trace = lttv_traceset_get(mw->Traceset_Info->traceset, i);
+	ref_count = lttv_trace_get_ref_number(trace);
+	if(ref_count <= 1)
+	  ltt_trace_close(lttv_trace(trace));
       }
     }
 
@@ -175,7 +175,7 @@ mainWindow_Destructor(mainWindow * mw)
 }
 
 
-void destroy_walk(gpointer data, gpointer user_data)
+void main_window_destroy_walk(gpointer data, gpointer user_data)
 {
   mainWindow_Destructor((mainWindow*)data);
 }
@@ -199,8 +199,10 @@ G_MODULE_EXPORT void destroy() {
 
   g_critical("GUI destroy()");
 
-  g_slist_foreach(Main_Window_List, destroy_walk, NULL );
-  g_slist_free(Main_Window_List);
+  if(Main_Window_List){
+    g_slist_foreach(Main_Window_List, main_window_destroy_walk, NULL );
+    g_slist_free(Main_Window_List);
+  }
   
 }
 
