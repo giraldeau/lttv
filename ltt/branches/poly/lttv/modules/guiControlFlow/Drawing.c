@@ -110,7 +110,8 @@ void drawing_data_request(Drawing_t *Drawing,
 	LttvHooks *after_traceset = lttv_hooks_new();
 	lttv_hooks_add(after_traceset, after_data_request, &event_request);
 	lttv_hooks_add(event, draw_event_hook, &event_request);
-	state_add_event_hooks_api(control_flow_data->Parent_Window);
+	//Modified by xiangxiu: state update hooks are added by the main window
+	//state_add_event_hooks_api(control_flow_data->Parent_Window);
 	lttv_hooks_add(after_event, draw_after_hook, &event_request);
 
 	lttv_process_traceset_seek_time(tsc, start);
@@ -126,7 +127,8 @@ void drawing_data_request(Drawing_t *Drawing,
 			//NULL, after_traceset, NULL, NULL, NULL, NULL,
 			NULL, NULL, NULL, NULL, NULL, NULL,
 			NULL, after_traceset, NULL, event, after_event);
-	state_remove_event_hooks_api(control_flow_data->Parent_Window);
+	//Modified by xiangxiu: state update hooks are removed by the main window
+	//state_remove_event_hooks_api(control_flow_data->Parent_Window);
 
 	lttv_hooks_destroy(after_traceset);
 	lttv_hooks_destroy(event);

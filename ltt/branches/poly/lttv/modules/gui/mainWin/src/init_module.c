@@ -113,6 +113,11 @@ void
 main_window_free(MainWindow * mw)
 { 
   if(mw){
+    while(mw->tab){
+      lttv_state_remove_event_hooks(
+           (LttvTracesetState*)mw->tab->traceset_info->traceset_context);
+      mw->tab = mw->tab->next;
+    }
     g_object_unref(mw->attributes);
     g_main_window_list = g_slist_remove(g_main_window_list, mw);
 
