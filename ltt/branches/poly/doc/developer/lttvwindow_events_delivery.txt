@@ -233,7 +233,6 @@ requests until there is no more request left.
 
 
 
-
 Implementation
 
 
@@ -258,15 +257,16 @@ event hooks.
 typedef LttvEventsRequestPrio guint;
 
 typedef struct _EventsRequest {
-  gpointer                     viewer_data;
+  gpointer                     owner;           /* Owner of the request     */
+  gpointer                     viewer_data;     /* Unset : NULL             */
   gboolean                     servicing;       /* service in progress: TRUE */ 
   LttvEventsRequestPrio        prio;            /* Ev. Req. priority        */
-  LttTime                      start_time;      /* Unset : { 0, 0 }         */
-  LttvTracesetContextPosition *start_position;  /* Unset : num_traces = 0   */
+  LttTime                      start_time;/* Unset : { G_MAXUINT, G_MAXUINT }*/
+  LttvTracesetContextPosition *start_position;  /* Unset : NULL             */
   gboolean                     stop_flag;       /* Continue:TRUE Stop:FALSE */
-  LttTime                      end_time;        /* Unset : { 0, 0 }         */
+  LttTime                      end_time;/* Unset : { G_MAXUINT, G_MAXUINT } */
   guint                        num_events;      /* Unset : G_MAXUINT        */
-  LttvTracesetContextPosition *end_position;    /* Unset : num_traces = 0   */
+  LttvTracesetContextPosition *end_position;    /* Unset : NULL             */
   LttvHooks                   *before_traceset; /* Unset : NULL             */
   LttvHooks                   *before_trace;    /* Unset : NULL             */
   LttvHooks                   *before_tracefile;/* Unset : NULL             */
@@ -279,12 +279,10 @@ typedef struct _EventsRequest {
   LttvHooks                   *after_request    /* Unset : NULL             */
 } EventsRequest;
 
-
-
 - lttvwindow_events_request_remove_all
 
-It removes all the events requests from the pool that has their "viewer" field
-maching the viewer pointer given in argument.
+It removes all the events requests from the pool that has their "owner" field
+maching the owner pointer given as argument.
 
 It calls the traceset/trace/tracefile end hooks for each request removed if
 they are currently serviced.
@@ -305,13 +303,9 @@ The reads are splitted in chunks. After a chunk is over, we want to check if
 there is a GTK Event pending and execute it. It can add or remove events 
 requests from the event requests list. If it happens, we want to start over
 the algorithm from the beginning. The after traceset/trace/tracefile hooks are
-called after each interrupted chunk, and before traceset/trace/tracefile are
+called after each chunk, and before traceset/trace/tracefile are
 called when the request processing resumes. Before and after request hooks are
 called respectively before and after the request processing.
-
-Two levels of priority exists. High priority and low priority. High prio
-requests are serviced first, even if lower priority requests has lower start
-time or position.
 
 
 Data structures necessary :
@@ -325,18 +319,18 @@ list_in : empty
 list_out : many events requests
 
 
-A. While (list_in !empty or list_out !empty) and !GTK Event pending
+// NOT A. While (list_in !empty or list_out !empty) and !GTK Event pending
+
+We do this once, go back to GTK, then get called again...
+We remove the g_idle function when list_in and list_out are empty
+
   1. If list_in is empty (need a seek)
     1.1 Add requests to list_in
-      1.1.1 Find all time requests with the highest priority and lowest start
-            time in list_out (ltime)
-      1.1.2 Find all position requests with the highest priority and lowest
-            position in list_out (lpos)
-      1.1.3 If lpos.prio > ltime.prio 
-                  || (lpos.prio == ltime.prio && lpos.start time < ltime)
+      1.1.1 Find all time requests with lowest start time in list_out (ltime)
+      1.1.2 Find all position requests with lowest position in list_out (lpos)
+      1.1.3 If lpos.start time < ltime
         - Add lpos to list_in, remove them from list_out
-      1.1.4 Else, (lpos.prio < ltime.prio 
-                        ||(lpos.prio == ltime.prio && lpos.start time >= ltime))
+      1.1.4 Else, (lpos.start time >= ltime)
         - Add ltime to list_in, remove them from list_out
     1.2 Seek
       1.2.1 If first request in list_in is a time request
@@ -344,8 +338,7 @@ A. While (list_in !empty or list_out !empty) and !GTK Event pending
           - Seek to that time
       1.2.2 Else, the first request in list_in is a position request
         - If first req in list_in pos != current pos
-          - If the position is the same than the saved state, restore state
-          - Else, seek to that position
+          - seek to that position
     1.3 Add hooks and call before request for all list_in members
       1.3.1 If !servicing
           - begin request hooks called
@@ -373,7 +366,7 @@ A. While (list_in !empty or list_out !empty) and !GTK Event pending
     3.1 End time
       3.1.1 Find lowest end time in list_in
       3.1.2 Find lowest start time in list_out (>= than current time*)
-                                * To eliminate lower prio requests
+                                * To eliminate lower prio requests (not used)
       3.1.3 Use lowest of both as end time
     3.2 Number of events
       3.2.1 Find lowest number of events in list_in
@@ -416,14 +409,6 @@ A. While (list_in !empty or list_out !empty) and !GTK Event pending
             - Call end traceset for req
             - Call end request for req
             - remove req from list_in
-          - if exists one events requests in list_out that has
-                  higher priority and time != current time
-            - Use current position as start position for req
-            - Remove start time from req
-            - Call after_traceset for req
-            - Remove event hooks for req
-            - Put req back in list_out, remove from list_in
-            - Save current state into saved_state.
 
 B. When interrupted
   1. for each request in list_in
@@ -432,11 +417,6 @@ B. When interrupted
     1.3. Call after_traceset
     1.4. Remove event hooks
     1.5. Put it back in list_out
-  2. Save current state into saved_state.
-    2.1 Free old saved state.
-    2.2 save current state.
-
-
 
 
 
@@ -467,11 +447,7 @@ occur often. The solution to it would be to save one state per priority.
 
 Weaknesses
 
-- There is a possibility that we must use seek if more than one interruption
-  occurs, i.e. low priority interrupted by addition of high priority, and then
-  high priority interrupted. The seek will be necessary for the low priority.
-  It could be a good idea to keep one saved_state per priority ?
-
+- ?
 
 Strengths
 

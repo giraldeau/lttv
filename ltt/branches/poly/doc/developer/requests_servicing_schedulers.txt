@@ -68,8 +68,10 @@ at the same time. Another difference is that the hook_data of theses requests
 will typically be NULL, and the typical hook function will be located in a
 library upon which the viewer depends.
 
-A viewer is informed of the completeness of its request by its after_request
-hook registered along with the events request.
+A viewer is informed of the completeness of part of its request by its
+after_traceset hook registered along with the events request. This hook is
+called after the end of each chunk : the viewer will see if the computed data
+suits its needs.
 
 
 Hooks Lists
@@ -80,6 +82,56 @@ it will be called only once, but it will need two "remove" to be really removed
 from the list. Two hooks are identical if they have the same function pointer
 and hook_data.
 
+
+
+Implementation
+
+Ad Hoc Computation
+
+see lttvwindow_events_delivery.txt
+
+
+Hooks Lists
+
+need new ref_count field with each hook
+lttv_hook_add and lttv_hook_add_list must compare addition with present and
+increment ref counter if already present.
+
+lttv_hook_remove and remove_with_data must decrement ref_count is >1, or remove
+the element otherwise (==1).
+
+
+
+Background Scheduler
+
+Global traces
+
+Two global attributes per trace : 
+/traces/path_to_trace/LttvTrace
+  It is a pointer to the LttvTrace structure.
+/traces/path_to_trace/LttvBackgroundComputation
+
+struct _LttvBackgroundComputation {
+  GSList *events_requests;
+ /* A GSList * to the first events request of background computation for a
+  * trace. */
+  LttvTraceset *ts;
+ /* A factice traceset that contains just one trace */
+  LttvTracesetContext *tsc;
+ /* The traceset context that reads this trace */
+}
+
+
+
+
+Modify Traceset
+Points to the global traces. Opens new one only when no instance of the pathname
+exists.
+
+Modify LttvTrace ?
+
+Modify trace opening / close to make them create and destroy
+LttvBackgroundComputation (and call end requests hooks for servicing requests ?)
 
 EventsRequest Structure
 
@@ -95,6 +147,4 @@ The typical case for a background computation is that the hook_data will be set
 to NULL instead. No particular hook_data is needed as this type of request does
 only modify trace related data structures which are available through the
 call_data.
-
-
 
