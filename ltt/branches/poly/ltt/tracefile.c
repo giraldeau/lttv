@@ -8,7 +8,7 @@
 #include "parser.h"
 #include <ltt/tracefile.h>
 
-#include "default.h"  //yxx test
+//#include "default.h"  //yxx test
 
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
@@ -557,8 +557,8 @@ ltt_event *ltt_tracefile_read(ltt_tracefile *t)
   lttEvent->event_id = (int)(*(uint8_t *)(t->cur_event_pos));
   evT = ltt_tracefile_eventtype_get(t, (unsigned)lttEvent->event_id);
   fac = evT->facility;
-  if(evT->index == TRACE_EV_HEARTBEAT && strcmp(fac->name, "default")==0)
-    t->cur_heart_beat_number++;
+  //  if(evT->index == TRACE_EV_HEARTBEAT && strcmp(fac->name, "default")==0)
+  //    t->cur_heart_beat_number++;
   lttEvent->cycle_count=*(uint32_t*)(t->cur_event_pos + EVENT_ID_SIZE);
   lttEvent->tracefile = t;
   lttEvent->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
