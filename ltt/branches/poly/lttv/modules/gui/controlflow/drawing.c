@@ -144,6 +144,8 @@ void drawing_data_request(Drawing_t *drawing,
   convert_pixels_to_time(drawing->width, x+width,
         time_window,
         &time_end);
+  time_end = ltt_time_add(time_end, ltt_time_one); // because main window
+                                                   // doesn't deliver end time.
 
   lttvwindow_events_request_remove_all(tab,
                                        control_flow_data);
