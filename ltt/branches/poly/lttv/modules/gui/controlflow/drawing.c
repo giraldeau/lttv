@@ -603,6 +603,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
       event->area.x, event->area.y,
       event->area.width, event->area.height);
 #endif //0
+  drawing->height = processlist_get_height(control_flow_data->process_list);
   copy_pixmap_to_screen(control_flow_data->process_list,
                         widget->window,
                         widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
@@ -611,7 +612,6 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
                         
   
   /* Erase the dotted lines left.. */
-#if 0
   if(widget->allocation.height > drawing->height)
   {
     gdk_draw_rectangle (widget->window,
@@ -621,7 +621,6 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
       event->area.width,  // do not overlap
       widget->allocation.height - drawing->height);
   }
-#endif //0
   if(ltt_time_compare(time_window.start_time, current_time) <= 0 &&
            ltt_time_compare(window_end, current_time) >= 0)
   {
