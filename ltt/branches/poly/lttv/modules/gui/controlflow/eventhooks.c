@@ -25,11 +25,11 @@
 #include <lttv/gtkTraceSet.h>
 
 
-#include "Event_Hooks.h"
-#include "CFV.h"
-#include "Process_List.h"
-#include "Drawing.h"
-#include "CFV-private.h"
+#include "eventhooks.h"
+#include "cfv.h"
+#include "processlist.h"
+#include "drawing.h"
+#include "cfv-private.h"
 
 
 #define MAX_PATH_LEN 256
