@@ -24,7 +24,7 @@
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
-LIBS += $(M_LIBS) $(GLIB_LIBS)
+LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/lttvwindow/lttvwindow -llttvwindow
 
 libdir = ${lttvplugindir}
@@ -33,7 +33,6 @@ lib_LTLIBRARIES = libguicontrolflow.la
 libguicontrolflow_la_LDFLAGS = -module
 libguicontrolflow_la_SOURCES = 	module.c eventhooks.c cfv.c processlist.c\
 				drawing.c drawitem.c
-libguicontrolflow_la_LIBADD = -lm
 
 noinst_HEADERS = 	eventhooks.h cfv.h processlist.h\
 				drawing.h drawitem.h

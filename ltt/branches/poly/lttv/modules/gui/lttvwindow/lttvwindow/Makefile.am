@@ -2,7 +2,7 @@
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
-LIBS += $(M_LIBS) $(GLIB_LIBS)
+LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS)
 
 INCLUDES = \
@@ -43,5 +43,5 @@ lttvwindowinclude_HEADERS = \
 	menu.h\
 	toolbar.h
 
-liblttvwindow_la_LIBADD = -lm @PACKAGE_LIBS@ $(INTLLIBS)
+liblttvwindow_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
 

@@ -6,7 +6,7 @@
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
-LIBS += $(M_LIBS) $(GLIB_LIBS)
+LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/lttvwindow/lttvwindow -llttvwindow
 
 libdir = ${lttvplugindir}
@@ -14,7 +14,6 @@ libdir = ${lttvplugindir}
 lib_LTLIBRARIES = libguistatistics.la
 libguistatistics_la_LDFLAGS = -module
 libguistatistics_la_SOURCES = statistics.c
-libguistatistics_la_LIBADD = -lm
 
 EXTRA_DIST = \
 		hGuiStatisticInsert.xpm

@@ -25,7 +25,7 @@
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
-LIBS += $(M_LIBS) $(GLIB_LIBS)
+LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/lttvwindow/lttvwindow -llttvwindow
 
 libdir = ${lttvplugindir}
@@ -33,7 +33,6 @@ libdir = ${lttvplugindir}
 lib_LTLIBRARIES = libguievents.la
 libguievents_la_LDFLAGS = -module
 libguievents_la_SOURCES = events.c
-libguievents_la_LIBADD = -lm
 
 EXTRA_DIST = \
 		hGuiEventsInsert.xpm
