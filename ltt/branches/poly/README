@@ -24,6 +24,13 @@ After running ./configure, you can also go in specific subdirectories and
 use make, make install.
 
 
+* Quick Start
+
+- Create a trace
+- Convert it
+- Run ./lttv -m guievents -m guicontrolflow -m guievents -t path_to_trace
+
+
 * Source Tree Structure
 
 This is a sample of the suggested tree for Linux Trace Toolkit.
@@ -40,6 +47,7 @@ lttv:   Linux Trace Toolkit trace analysis tool and viewer.
 lttv/modules:  Linux Trace Toolkit analysis tool and viewer plugin modules.
 specs:  RPM config files (currently empty).
 
+
 * The rest of the tools
 
 You must use the lastest versions of patches for the Linux Kernel. That includes
@@ -50,6 +58,7 @@ the TraceToolkit package)
 
 Once your traces are created, you must use the convert tool to create a trace in
 the proper format from them.
+
 
 * For Developers
 
