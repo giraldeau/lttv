@@ -485,6 +485,7 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   LttTrace *trace;
   LttvTrace * trace_v;
   LttvTraceset * traceset;
+  LttvTracesetStats* tmp_context;
   const char * dir;
   gint id;
   MainWindow * mw_data = get_window_data_struct(widget);
@@ -507,25 +508,31 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       if(trace == NULL) g_critical("cannot open trace %s", dir);
       trace_v = lttv_trace_new(trace);
       traceset = mw_data->current_tab->traceset_info->traceset;
-      if(mw_data->current_tab->traceset_info->traceset_context != NULL){
-      //remove state update hooks
-      lttv_state_remove_event_hooks(
-           (LttvTracesetState*)mw_data->current_tab->traceset_info->
-                                traceset_context);
-    	lttv_context_fini(LTTV_TRACESET_CONTEXT(mw_data->current_tab->
-		    				traceset_info->traceset_context));
-    	g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
-      }
+
+      // Keep the context until the new one is created.
+      tmp_context = mw_data->current_tab->traceset_info->traceset_context;
+      mw_data->current_tab->traceset_info->traceset_context = NULL;
+
       lttv_traceset_add(traceset, trace_v);
       mw_data->current_tab->traceset_info->traceset_context =
-  	g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+                            	g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
       lttv_context_init(
-	LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->
-			      traceset_context),traceset); 
+              	LTTV_TRACESET_CONTEXT(mw_data->current_tab->traceset_info->
+			                                    traceset_context),
+                traceset); 
       //add state update hooks
       lttv_state_add_event_hooks(
       (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
-  
+      if(tmp_context != NULL)
+      {
+        //remove state update hooks
+        lttv_state_remove_event_hooks(
+           (LttvTracesetState*)tmp_context);
+      	lttv_context_fini(LTTV_TRACESET_CONTEXT(tmp_context));
+      	g_object_unref(tmp_context);
+      }
+
+
  
       add_trace_into_traceset_selector(mw_data->current_tab->multi_vpaned, trace);
 
@@ -595,6 +602,7 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
   LttTrace *trace;
   LttvTrace * trace_v;
   LttvTraceset * traceset;
+  LttvTracesetStats* tmp_context;
   gint i, nb_trace;
   char ** name, *remove_trace_name;
   MainWindow * mw_data = get_window_data_struct(widget);
@@ -647,16 +655,11 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
 	  trace_v = lttv_traceset_get(traceset, i);
 	  if(lttv_trace_get_ref_number(trace_v) <= 1)
 	    ltt_trace_close(lttv_trace(trace_v));
-
-	  if(mw_data->current_tab->traceset_info->traceset_context != NULL){
-      //remove state update hooks
-      lttv_state_remove_event_hooks(
-           (LttvTracesetState*)mw_data->current_tab->traceset_info->
-                                traceset_context);
-	    lttv_context_fini(LTTV_TRACESET_CONTEXT(mw_data->current_tab->
-						    traceset_info->traceset_context));
-	    g_object_unref(mw_data->current_tab->traceset_info->traceset_context);
-	  }
+    
+    // Keep the context until the new one is created.
+    tmp_context = mw_data->current_tab->traceset_info->traceset_context;
+    mw_data->current_tab->traceset_info->traceset_context = NULL;
+    
 	  lttv_traceset_remove(traceset, i);
 	  if(!lttv_trace_get_ref_number(trace_v))
 	     lttv_trace_destroy(trace_v);
@@ -668,6 +671,16 @@ void remove_trace(GtkWidget * widget, gpointer user_data)
       //add state update hooks
       lttv_state_add_event_hooks(
       (LttvTracesetState*)mw_data->current_tab->traceset_info->traceset_context);
+
+	  if(tmp_context != NULL){
+      //remove state update hooks
+      lttv_state_remove_event_hooks(
+           (LttvTracesetState*)tmp_context);
+	    lttv_context_fini(LTTV_TRACESET_CONTEXT(tmp_context));
+	    g_object_unref(tmp_context);
+	  }
+
+      
 	  //update current tab
 	  update_traceset(mw_data);
 	  if(nb_trace > 1){
