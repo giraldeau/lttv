@@ -11,6 +11,6 @@ LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/mainlib -lmainWinApi
 
 libdir = ${lttvplugindir}
 
-lib_LTLIBRARIES = libguiStatistic.la
+lib_LTLIBRARIES = libguistatistics.la
 libguiStatistic_la_LDFLAGS = -module
-libguiStatistic_la_SOURCES = guiStatistic.c
+libguiStatistic_la_SOURCES = statistics.c
