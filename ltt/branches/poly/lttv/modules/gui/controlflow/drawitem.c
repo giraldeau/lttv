@@ -111,7 +111,7 @@
 #define MAX_PATH_LEN 256
 
 /* drawing hook functions */
-__inline__ gboolean draw_text( void *hook_data, void *call_data)
+gboolean draw_text( void *hook_data, void *call_data)
 {
   PropertiesText *properties = (PropertiesText*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
@@ -206,7 +206,7 @@ __inline__ gboolean draw_text( void *hook_data, void *call_data)
 /* To speed up the process, search in already loaded icons list first. Only
  * load it if not present.
  */
-__inline__ gboolean draw_icon( void *hook_data, void *call_data)
+gboolean draw_icon( void *hook_data, void *call_data)
 {
   PropertiesIcon *properties = (PropertiesIcon*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
@@ -311,7 +311,7 @@ __inline__ gboolean draw_icon( void *hook_data, void *call_data)
   return 0;
 }
 
-__inline__ gboolean draw_line( void *hook_data, void *call_data)
+gboolean draw_line( void *hook_data, void *call_data)
 {
   PropertiesLine *properties = (PropertiesLine*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
@@ -357,7 +357,7 @@ __inline__ gboolean draw_line( void *hook_data, void *call_data)
   return 0;
 }
 
-__inline__ gboolean draw_arc( void *hook_data, void *call_data)
+gboolean draw_arc( void *hook_data, void *call_data)
 {
   PropertiesArc *properties = (PropertiesArc*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;
@@ -433,7 +433,7 @@ __inline__ gboolean draw_arc( void *hook_data, void *call_data)
   return 0;
 }
 
-__inline__ gboolean draw_bg( void *hook_data, void *call_data)
+gboolean draw_bg( void *hook_data, void *call_data)
 {
   PropertiesBG *properties = (PropertiesBG*)hook_data;
   DrawContext *draw_context = (DrawContext*)call_data;

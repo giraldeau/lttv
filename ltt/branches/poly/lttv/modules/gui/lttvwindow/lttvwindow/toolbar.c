@@ -19,19 +19,21 @@
 #include <lttv/lttv.h>
 #include <lttvwindow/toolbar.h>
 
-inline LttvToolbars *lttv_toolbars_new() {
+LttvToolbars *lttv_toolbars_new() {
   return g_array_new(FALSE, FALSE, sizeof(LttvToolbarClosure));
 }
 
 /* MD: delete elements of the array also, but don't free pointed addresses
  * (functions).
  */
-inline void lttv_toolbars_destroy(LttvToolbars *h) {
+void lttv_toolbars_destroy(LttvToolbars *h) {
   g_debug("lttv_toolbars_destroy");
   g_array_free(h, TRUE);
 }
 
-inline LttvToolbarClosure lttv_toolbars_add(LttvToolbars *h, lttvwindow_viewer_constructor f, char* tooltip, char ** pixmap, GtkWidget *widget)
+LttvToolbarClosure lttv_toolbars_add(LttvToolbars *h,
+    lttvwindow_viewer_constructor f,
+    char* tooltip, char ** pixmap, GtkWidget *widget)
 {
   LttvToolbarClosure c;
 

@@ -924,50 +924,6 @@ GtkWidget *drawing_get_widget(Drawing_t *drawing)
   return drawing->vbox;
 }
 
-/* convert_pixels_to_time
- *
- * Convert from window pixel and time interval to an absolute time.
- */
-__inline__ void convert_pixels_to_time(
-    gint width,
-    guint x,
-    TimeWindow time_window,
-    LttTime *time)
-{
-  double time_d;
-  
-  time_d = time_window.time_width_double;
-  time_d = time_d / (double)width * (double)x;
-  *time = ltt_time_from_double(time_d);
-  *time = ltt_time_add(time_window.start_time, *time);
-}
-
-
-__inline__ void convert_time_to_pixels(
-    TimeWindow time_window,
-    LttTime time,
-    int width,
-    guint *x)
-{
-  double time_d;
-#ifdef EXTRA_CHECK 
-  g_assert(ltt_time_compare(window_time_begin, time) <= 0 &&
-           ltt_time_compare(window_time_end, time) >= 0);
-#endif //EXTRA_CHECK
-  
-  time = ltt_time_sub(time, time_window.start_time);
-  
-  time_d = ltt_time_to_double(time);
-  
-  if(time_window.time_width_double == 0.0) {
-    g_assert(time_d == 0.0);
-    *x = 0;
-  } else {
-    *x = (guint)(time_d / time_window.time_width_double * (double)width);
-  }
-  
-}
-
 void drawing_draw_line( Drawing_t *drawing,
       GdkPixmap *pixmap,
       guint x1, guint y1,

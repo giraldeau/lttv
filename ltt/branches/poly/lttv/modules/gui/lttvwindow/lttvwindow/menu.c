@@ -20,19 +20,21 @@
 #include <lttvwindow/menu.h>
 
 
-inline LttvMenus *lttv_menus_new() {
+LttvMenus *lttv_menus_new() {
   return g_array_new(FALSE, FALSE, sizeof(LttvMenuClosure));
 }
 
 /* MD: delete elements of the array also, but don't free pointed addresses
  * (functions).
  */
-inline void lttv_menus_destroy(LttvMenus *h) {
+void lttv_menus_destroy(LttvMenus *h) {
   g_debug("lttv_menus_destroy()");
   g_array_free(h, TRUE);
 }
 
-inline LttvMenuClosure lttv_menus_add(LttvMenus *h, lttvwindow_viewer_constructor f, char* menu_path, char* menu_text, GtkWidget *widget)
+LttvMenuClosure lttv_menus_add(LttvMenus *h,
+    lttvwindow_viewer_constructor f,
+    char* menu_path, char* menu_text, GtkWidget *widget)
 {
   LttvMenuClosure c;
 

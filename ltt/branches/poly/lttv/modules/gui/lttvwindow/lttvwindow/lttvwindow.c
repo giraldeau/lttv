@@ -906,23 +906,6 @@ void lttvwindow_events_request_remove_all(Tab       *tab,
 }
 
 
-
-/**
- * Function to get the current time interval shown on the current tab.
- * It will be called by a viewer's hook function to update the 
- * shown time interval of the viewer and also be called by the constructor
- * of the viewer.
- * @param tab viewer's tab 
- * @return time window.
- */
-
-__inline__ TimeWindow lttvwindow_get_time_window(Tab *tab)
-{
-  return tab->time_window;
-  
-}
-
-
 /**
  * Function to get the current time/event of the current tab.
  * It will be called by a viewer's hook function to update the 

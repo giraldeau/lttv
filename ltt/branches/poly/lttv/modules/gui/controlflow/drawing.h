@@ -134,18 +134,6 @@ void drawing_remove_square(Drawing_t *drawing,
         guint y,
         guint height);
 
-__inline__ void convert_pixels_to_time(
-    gint width,
-    guint x,
-    TimeWindow time_window,
-    LttTime *time);
-
-__inline__ void convert_time_to_pixels(
-    TimeWindow time_window,
-    LttTime time,
-    gint width,
-    guint *x);
-
 void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window);
 
 void drawing_request_expose(EventsRequest *events_request,
@@ -163,5 +151,52 @@ tree_row_activated(GtkTreeModel *treemodel,
                    GtkTreePath *arg1,
                    GtkTreeViewColumn *arg2,
                    gpointer user_data);
+
+
+/* convert_pixels_to_time
+ *
+ * Convert from window pixel and time interval to an absolute time.
+ */
+inline void convert_pixels_to_time(
+    gint width,
+    guint x,
+    TimeWindow time_window,
+    LttTime *time)
+{
+  double time_d;
+  
+  time_d = time_window.time_width_double;
+  time_d = time_d / (double)width * (double)x;
+  *time = ltt_time_from_double(time_d);
+  *time = ltt_time_add(time_window.start_time, *time);
+}
+
+
+inline void convert_time_to_pixels(
+    TimeWindow time_window,
+    LttTime time,
+    int width,
+    guint *x)
+{
+  double time_d;
+#ifdef EXTRA_CHECK 
+  g_assert(ltt_time_compare(window_time_begin, time) <= 0 &&
+           ltt_time_compare(window_time_end, time) >= 0);
+#endif //EXTRA_CHECK
+  
+  time = ltt_time_sub(time, time_window.start_time);
+  
+  time_d = ltt_time_to_double(time);
+  
+  if(time_window.time_width_double == 0.0) {
+    g_assert(time_d == 0.0);
+    *x = 0;
+  } else {
+    *x = (guint)(time_d / time_window.time_width_double * (double)width);
+  }
+  
+}
+
+
 
 #endif // _DRAWING_H
