@@ -618,22 +618,22 @@ int main(int argc, char ** argv){
 
 
   //write to system.xml
-  fprintf(fp,"<system\n");
-  fprintf(fp,"node_name=\"%s\"\n", node_name);
-  fprintf(fp,"domainname=\"%s\"\n", domainname);
-  fprintf(fp,"cpu=%d\n", cpu);
-  fprintf(fp,"arch_size=\"%s\"\n", arch_size);
-  fprintf(fp,"endian=\"%s\"\n",endian);
-  fprintf(fp,"kernel_name=\"%s\"\n",kernel_name);
-  fprintf(fp,"kernel_release=\"%s\"\n",kernel_release);
-  fprintf(fp,"kernel_version=\"%s\"\n",kernel_version);
-  fprintf(fp,"machine=\"%s\"\n",machine);
-  fprintf(fp,"processor=\"%s\"\n",processor);
-  fprintf(fp,"hardware_platform=\"%s\"\n",hardware_platform);
-  fprintf(fp,"operating_system=\"%s\"\n",operating_system);
-  fprintf(fp,"ltt_major_version=%d\n",ltt_major_version);
-  fprintf(fp,"ltt_minor_version=%d\n",ltt_minor_version);
-  fprintf(fp,"ltt_block_size=%d\n",ltt_block_size);
+  fprintf(fp,"<system \n");
+  fprintf(fp,"node_name=\"%s\" \n", node_name);
+  fprintf(fp,"domainname=\"%s\" \n", domainname);
+  fprintf(fp,"cpu=\"%d\" \n", cpu);
+  fprintf(fp,"arch_size=\"%s\" \n", arch_size);
+  fprintf(fp,"endian=\"%s\" \n",endian);
+  fprintf(fp,"kernel_name=\"%s\" \n",kernel_name);
+  fprintf(fp,"kernel_release=\"%s\" \n",kernel_release);
+  fprintf(fp,"kernel_version=\"%s\" \n",kernel_version);
+  fprintf(fp,"machine=\"%s\" \n",machine);
+  fprintf(fp,"processor=\"%s\" \n",processor);
+  fprintf(fp,"hardware_platform=\"%s\" \n",hardware_platform);
+  fprintf(fp,"operating_system=\"%s\" \n",operating_system);
+  fprintf(fp,"ltt_major_version=\"%d\" \n",ltt_major_version);
+  fprintf(fp,"ltt_minor_version=\"%d\" \n",ltt_minor_version);
+  fprintf(fp,"ltt_block_size=\"%d\" \n",ltt_block_size);
   fprintf(fp,">\n");
   fprintf(fp,"This is just a test\n");
   fprintf(fp,"</system>\n");

@@ -36,6 +36,85 @@ void updateTracefile(LttTracefile * tf);
 int skipEvent(LttTracefile * t);
 
 
+/* Functions to parse system.xml file (using glib xml parser) */
+static void parser_start_element (GMarkupParseContext  *context,
+				  const gchar          *element_name,
+				  const gchar         **attribute_names,
+				  const gchar         **attribute_values,
+				  gpointer              user_data,
+				  GError              **error)
+{
+  int i=0;
+  LttSystemDescription* des = (LttSystemDescription* )user_data;
+  if(strcmp("system", element_name)){
+    g_warning("This is not system.xml file\n");
+    exit(1);
+  }
+  
+  while(attribute_names[i]){
+    if(strcmp("node_name", attribute_names[i])==0){
+	des->node_name = g_strdup(attribute_values[i]);      
+    }else if(strcmp("domainname", attribute_names[i])==0){
+	des->domain_name = g_strdup(attribute_values[i]);      
+    }else if(strcmp("cpu", attribute_names[i])==0){
+	des->nb_cpu = atoi(attribute_values[i]);      
+    }else if(strcmp("arch_size", attribute_names[i])==0){
+	if(strcmp(attribute_values[i],"LP32") == 0) des->size = LTT_LP32;
+	else if(strcmp(attribute_values[i],"ILP32") == 0) des->size = LTT_ILP32;
+	else if(strcmp(attribute_values[i],"LP64") == 0) des->size = LTT_LP64;
+	else if(strcmp(attribute_values[i],"ILP64") == 0) des->size = LTT_ILP64;
+	else if(strcmp(attribute_values[i],"UNKNOWN") == 0) des->size = LTT_UNKNOWN;
+    }else if(strcmp("endian", attribute_names[i])==0){
+	if(strcmp(attribute_values[i],"LITTLE_ENDIAN") == 0)
+	  des->endian = LTT_LITTLE_ENDIAN;
+	else if(strcmp(attribute_values[i],"BIG_ENDIAN") == 0) 
+	  des->endian = LTT_BIG_ENDIAN;
+    }else if(strcmp("kernel_name", attribute_names[i])==0){
+	des->kernel_name = g_strdup(attribute_values[i]);      
+    }else if(strcmp("kernel_release", attribute_names[i])==0){
+	des->kernel_release = g_strdup(attribute_values[i]);      
+    }else if(strcmp("kernel_version", attribute_names[i])==0){
+	des->kernel_version = g_strdup(attribute_values[i]);      
+    }else if(strcmp("machine", attribute_names[i])==0){
+	des->machine = g_strdup(attribute_values[i]);      
+    }else if(strcmp("processor", attribute_names[i])==0){
+	des->processor = g_strdup(attribute_values[i]);      
+    }else if(strcmp("hardware_platform", attribute_names[i])==0){
+	des->hardware_platform = g_strdup(attribute_values[i]);      
+    }else if(strcmp("operating_system", attribute_names[i])==0){
+	des->operating_system = g_strdup(attribute_values[i]);      
+    }else if(strcmp("ltt_major_version", attribute_names[i])==0){
+	des->ltt_major_version = atoi(attribute_values[i]);      
+    }else if(strcmp("ltt_minor_version", attribute_names[i])==0){
+	des->ltt_minor_version = atoi(attribute_values[i]);      
+    }else if(strcmp("ltt_block_size", attribute_names[i])==0){
+	des->ltt_block_size = atoi(attribute_values[i]);      
+    }else{
+      g_warning("Not a valid attribute\n");
+      exit(1);      
+    }
+    i++;
+  }
+}
+
+static void parser_end_element   (GMarkupParseContext  *context,
+				  const gchar          *element_name,
+				  gpointer              user_data,
+				  GError              **error)
+{
+}
+
+static void  parser_characters   (GMarkupParseContext  *context,
+				  const gchar          *text,
+				  gsize                 text_len,
+				  gpointer              user_data,
+				  GError              **error)
+{
+  LttSystemDescription* des = (LttSystemDescription* )user_data;
+  des->description = g_strdup(text);
+}
+
+
 /*****************************************************************************
  *Function name
  *    ltt_tracefile_open : open a trace file, construct a LttTracefile
@@ -173,147 +252,33 @@ void ltt_tracefile_close(LttTracefile *t)
 void getSystemInfo(LttSystemDescription* des, char * pathname)
 {
   FILE * fp;
-  int i;
-  int entry_number = 15;
   char buf[DIR_NAME_SIZE];
   char description[4*DIR_NAME_SIZE];
-  char * ptr;
+
+  GMarkupParseContext * context;
+  GError * error;
+  GMarkupParser markup_parser =
+    {
+      parser_start_element,
+      parser_end_element,
+      parser_characters,
+      NULL,  /*  passthrough  */
+      NULL   /*  error        */
+    };
 
   fp = fopen(pathname,"r");
   if(!fp){
     g_error("Can not open file : %s\n", pathname);
   }
   
-  while(fgets(buf,DIR_NAME_SIZE, fp)!= NULL){
-    ptr = buf;
-    while(isspace(*ptr)) ptr++;
-    if(strlen(ptr) == 0) continue;     
-    break;
-  }
+  context = g_markup_parse_context_new(&markup_parser, 0, des,NULL);
   
-  if(strlen(ptr) == 0) g_error("Not a valid file: %s\n", pathname);
-  if(strncmp("<system",ptr,7) !=0)g_error("Not a valid file: %s\n", pathname);
-
-  for(i=0;i<entry_number;i++){
-    if(fgets(buf,DIR_NAME_SIZE, fp)== NULL)
-      g_error("Not a valid file: %s\n", pathname);
-    buf[strlen(buf)-1] = '\0';
-    ptr = buf;
-    while(isspace(*ptr)) ptr++;
-    switch(i){
-      case 0:
-	if(strncmp("node_name=",ptr,10)!=0)
-	  g_error("Not a valid file: %s\n", pathname);
-	des->node_name = g_strdup(ptr+10);
-        break;
-      case 1:
-	if(strncmp("domainname=",ptr,11)!=0)
-	  g_error("Not a valid file: %s\n", pathname);
-	des->domain_name = g_strdup(ptr+11);
-        break;
-      case 2:
-	if(strncmp("cpu=",ptr,4)!=0)
-	  g_error("Not a valid file: %s\n", pathname);
-	des->nb_cpu = (unsigned)atoi(ptr+4);
-        break;
-      case 3:
-	if(strncmp("arch_size=",ptr,10)!=0)
-	  g_error("Not a valid file: %s\n", pathname);
-	if(strcmp(ptr+10,"\"LP32\"") == 0) des->size = LTT_LP32;
-	else if(strcmp(ptr+10,"\"ILP32\"") == 0) des->size = LTT_ILP32;
-	else if(strcmp(ptr+10,"\"LP64\"") == 0) des->size = LTT_LP64;
-	else if(strcmp(ptr+10,"\"ILP64\"") == 0) des->size = LTT_ILP64;
-	else if(strcmp(ptr+10,"\"UNKNOWN\"") == 0) des->size = LTT_UNKNOWN;
-        break;
-      case 4:
-	if(strncmp("endian=",ptr,7)!=0)
-	  g_error("Not a valid file: %s\n", pathname);
-	if(strcmp(ptr+7,"\"LITTLE_ENDIAN\"") == 0)
-	  des->endian = LTT_LITTLE_ENDIAN;
-	else if(strcmp(ptr+7,"\"BIG_ENDIAN\"") == 0) 
-	  des->endian = LTT_BIG_ENDIAN;
-        break;
-      case 5:
-	if(strncmp("kernel_name=",ptr,12)!=0)
-	  g_error("Not a valid file: %s\n", pathname);
-	des->kernel_name = g_strdup(ptr+12);
-        break;
-      case 6:
-	if(strncmp("kernel_release=",ptr,15)!=0)
-	  g_error("Not a valid file: %s\n", pathname);
-	des->kernel_release = g_strdup(ptr+15);
-        break;
-       case 7:
-	 if(strncmp("kernel_version=",ptr,15)!=0)
-	   g_error("Not a valid file: %s\n", pathname);
-	 des->kernel_version = g_strdup(ptr+15);
-	 break;
-       case 8:
-	 if(strncmp("machine=",ptr,8)!=0)
-	   g_error("Not a valid file: %s\n", pathname);
-	 des->machine = g_strdup(ptr+8);
-	 break;
-       case 9:
-	 if(strncmp("processor=",ptr,10)!=0)
-	   g_error("Not a valid file: %s\n", pathname);
-	 des->processor = g_strdup(ptr+10);
-	 break;
-       case 10:
-	 if(strncmp("hardware_platform=",ptr,18)!=0)
-	   g_error("Not a valid file: %s\n", pathname);
-	 des->hardware_platform = g_strdup(ptr+18);
-	 break;
-       case 11:
-	 if(strncmp("operating_system=",ptr,17)!=0)
-	   g_error("Not a valid file: %s\n", pathname);
-	 des->operating_system = g_strdup(ptr+17);
-	 break;
-       case 12:
-	 if(strncmp("ltt_major_version=",ptr,18)!=0)
-	   g_error("Not a valid file: %s\n", pathname);
-	 ptr += 18; 
-	 //	 ptr++;//skip begining "
-	 //	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
-	 des->ltt_major_version = (unsigned)atoi(ptr);
-	 break;
-       case 13:
-	 if(strncmp("ltt_minor_version=",ptr,18)!=0)
-	   g_error("Not a valid file: %s\n", pathname);
-	 ptr += 18; 
-	 //	 ptr++;//skip begining "
-	 //	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
-	 des->ltt_minor_version = (unsigned)atoi(ptr);
-	 break;
-       case 14:
-	 if(strncmp("ltt_block_size=",ptr,15)!=0)
-	   g_error("Not a valid file: %s\n", pathname);
-	 ptr += 15; 
-	 //	 ptr++;//skip begining "
-	 //	 ptr[strlen(ptr)-1] = '\0'; //get rid of the ending "
-	 des->ltt_block_size = (unsigned)atoi(ptr);
-	 break;
-       default:
-	 g_error("Not a valid file: %s\n", pathname);      
-   }
+  while(fgets(buf,DIR_NAME_SIZE, fp) != NULL){
+    if(!g_markup_parse_context_parse(context, buf, DIR_NAME_SIZE, &error)){
+      g_warning("Can not parse xml file: \n%s\n", error->message);
+      exit(1);
+    }
   }
-
-  //get description
-  description[0] = '\0';
-  if(fgets(buf,DIR_NAME_SIZE, fp)== NULL)
-    g_error("Not a valid file: %s\n", pathname);
-  ptr = buf;
-  while(isspace(*ptr)) ptr++;
-  if(*ptr != '>') g_error("Not a valid file: %s\n", pathname);
-  while((ptr=fgets(buf,DIR_NAME_SIZE, fp))!= NULL){
-    ptr = buf;
-    while(isspace(*ptr)) ptr++;
-    if(strncmp("</system>",ptr,9) == 0 )break;
-    strcat(description, buf);
-  }
-  if(!ptr)g_error("Not a valid file: %s\n", pathname);
-  if(description[0] = '\0')des->description = NULL;
-  des->description = g_strdup(description);  
-
   fclose(fp);
 }
 
