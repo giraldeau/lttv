@@ -2159,6 +2159,7 @@ gtk_dir_selection_populate (GtkDirSelection *fs,
 	  g_free (escaped);
 
 	  gtk_label_set_text_with_mnemonic (GTK_LABEL (fs->selection_text), sel_text);
+	  gtk_entry_set_text (GTK_ENTRY (fs->selection_entry), cmpl_reference_position (cmpl_state));
 	  g_free (sel_text);
 	}
 

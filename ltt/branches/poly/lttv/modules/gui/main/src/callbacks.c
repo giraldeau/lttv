@@ -48,6 +48,10 @@ extern GSList * g_main_window_list;
 
 static int g_win_count = 0;
 
+// MD : keep old directory
+static char remember_dir[PATH_LENGTH] = "";
+
+
 MainWindow * get_window_data_struct(GtkWidget * widget);
 char * get_unload_module(char ** loaded_module_name, int nb_module);
 char * get_remove_trace(char ** all_trace_name, int nb_trace);
@@ -1026,6 +1030,8 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
   char str[PATH_LENGTH], *str1;
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
   GtkFileSelection * file_selector = (GtkFileSelection *)gtk_file_selection_new("Select a module");
+  if(remember_dir[0] != '\0')
+    gtk_file_selection_set_filename(file_selector, remember_dir);
   gtk_file_selection_hide_fileop_buttons(file_selector);
   
   str[0] = '\0';
@@ -1034,7 +1040,8 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       dir = gtk_file_selection_get_selections (file_selector);
-      sprintf(str,dir[0]);
+      strncpy(str,dir[0],PATH_LENGTH);
+      strncpy(remember_dir,dir[0],PATH_LENGTH);
       str1 = strrchr(str,'/');
       if(str1)str1++;
       else{
@@ -1109,12 +1116,16 @@ on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
   gint id;
 
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
+  if(remember_dir[0] != '\0')
+    gtk_dir_selection_set_filename(file_selector, remember_dir);
 
   id = gtk_dialog_run(GTK_DIALOG(file_selector));
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       dir = gtk_dir_selection_get_dir (file_selector);
+      strncpy(remember_dir,dir,PATH_LENGTH);
+      strncat(remember_dir,"/",PATH_LENGTH);
       lttv_library_path_add(dir);
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
