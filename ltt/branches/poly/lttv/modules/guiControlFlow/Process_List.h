@@ -68,4 +68,11 @@ gint processlist_get_process_pixels(ProcessList *Process_List,
 				guint pid, LttTime *birth,
 				guint *y, guint *height,
 				HashedProcessData **Hashed_Process_Data);
+
+gint processlist_get_pixels_from_data(	ProcessList *Process_List,
+					ProcessInfo *process_info,
+					HashedProcessData *Hashed_Process_Data,
+					guint *y,
+					guint *height);
+
 #endif // _PROCESS_LIST_H

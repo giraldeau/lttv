@@ -334,8 +334,7 @@ int processlist_add(	ProcessList *Process_List,
 	Hashed_Process_Data->draw_context->Current->modify_under = g_new(ItemInfo,1);
 	Hashed_Process_Data->draw_context->Current->modify_under->x = -1;
 	Hashed_Process_Data->draw_context->Current->modify_under->y = -1;
-	Hashed_Process_Data->draw_context->Current->ts = NULL;
-	Hashed_Process_Data->draw_context->Current->tfs = NULL;
+	Hashed_Process_Data->draw_context->Current->status = LTTV_STATE_UNNAMED;
 	Hashed_Process_Data->draw_context->Previous = g_new(DrawInfo,1);
 	Hashed_Process_Data->draw_context->Previous->over = g_new(ItemInfo,1);
 	Hashed_Process_Data->draw_context->Previous->over->x = -1;
@@ -355,8 +354,7 @@ int processlist_add(	ProcessList *Process_List,
 	Hashed_Process_Data->draw_context->Previous->modify_under = g_new(ItemInfo,1);
 	Hashed_Process_Data->draw_context->Previous->modify_under->x = -1;
 	Hashed_Process_Data->draw_context->Previous->modify_under->y = -1;
-	Hashed_Process_Data->draw_context->Previous->ts = NULL;
-	Hashed_Process_Data->draw_context->Previous->tfs = NULL;
+	Hashed_Process_Data->draw_context->Previous->status = LTTV_STATE_UNNAMED;
 	
 	/* Add a new row to the model */
 	gtk_list_store_append (	Process_List->Store_M, &iter);
@@ -488,5 +486,27 @@ gint processlist_get_process_pixels(	ProcessList *Process_List,
 		*pmHashed_Process_Data = Hashed_Process_Data;
 		return 1;
 	}
+
+}
+
+
+gint processlist_get_pixels_from_data(	ProcessList *Process_List,
+					ProcessInfo *process_info,
+					HashedProcessData *Hashed_Process_Data,
+					guint *y,
+					guint *height)
+{
+	gint *path_indices;
+	GtkTreePath *tree_path;
+
+	tree_path = gtk_tree_row_reference_get_path(
+									Hashed_Process_Data->RowRef);
+	path_indices =	gtk_tree_path_get_indices (tree_path);
+
+	*height = get_cell_height(
+			GTK_TREE_VIEW(Process_List->Process_List_VC));
+	*y = *height * path_indices[0];
+
+	return 0;	
 
 }

@@ -235,8 +235,11 @@ gboolean draw_line( void *hook_data, void *call_data)
 {
 	PropertiesLine *Properties = (PropertiesLine*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
-
-	gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
+	//GdkGC *gc = gdk_gc_new(Draw_Context->drawable);
+	
+	//gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
+	gdk_gc_set_rgb_fg_color(Draw_Context->gc, Properties->color);
+	//gdk_gc_set_foreground(gc, Properties->color);
 	gdk_gc_set_line_attributes(	Draw_Context->gc,
 															Properties->line_width,
 															Properties->style,
@@ -273,7 +276,9 @@ gboolean draw_line( void *hook_data, void *call_data)
 
 			break;
 	}
-
+	
+	//gdk_gc_unref(gc);
+	
 	return 0;
 }
 
@@ -282,7 +287,8 @@ gboolean draw_arc( void *hook_data, void *call_data)
 	PropertiesArc *Properties = (PropertiesArc*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
-	gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
+	//gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
+	gdk_gc_set_rgb_fg_color(Draw_Context->gc, Properties->color);
 
 	switch(Properties->position) {
 		case OVER:
@@ -322,7 +328,8 @@ gboolean draw_bg( void *hook_data, void *call_data)
 	PropertiesBG *Properties = (PropertiesBG*)hook_data;
 	DrawContext *Draw_Context = (DrawContext*)call_data;
 
-	gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
+	//gdk_gc_set_foreground(Draw_Context->gc, Properties->color);
+	gdk_gc_set_rgb_fg_color(Draw_Context->gc, Properties->color);
 
 
 	gdk_draw_rectangle(Draw_Context->drawable, Draw_Context->gc,

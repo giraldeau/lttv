@@ -1,6 +1,8 @@
 #ifndef _DRAW_ITEM_H
 #define _DRAW_ITEM_H
 
+#include <lttv/state.h>
+
 typedef struct _DrawContext DrawContext;
 typedef struct _DrawInfo DrawInfo;
 typedef struct _ItemInfo ItemInfo;
@@ -75,8 +77,7 @@ struct _DrawInfo {
 	ItemInfo	*modify_over;
 	ItemInfo	*modify_middle;
 	ItemInfo	*modify_under;
-	LttvTraceState		*ts;
-	LttvTracefileState	*tfs;
+	LttvProcessStatus status;
 };
 
 struct _ItemInfo {

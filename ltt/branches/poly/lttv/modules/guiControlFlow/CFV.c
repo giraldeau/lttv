@@ -29,7 +29,7 @@ extern GSList *gControl_Flow_Data_List;
 ControlFlowData *
 guicontrolflow(void)
 {
-	GtkWidget *Process_List_Widget, *Drawing_Widget;
+	GtkWidget *Process_List_Widget, *Drawing_Widget;//, *button;
 
 	ControlFlowData* Control_Flow_Data = g_new(ControlFlowData,1) ;
 
@@ -64,6 +64,11 @@ guicontrolflow(void)
 	//gtk_box_pack_start(
 	//	GTK_BOX(Control_Flow_Data->Inside_HBox_V),
 	//	Drawing_Widget, TRUE, TRUE, 0);
+	
+	//button = gtk_button_new();
+	//gtk_button_set_relief(button, GTK_RELIEF_NONE);
+	//gtk_container_set_border_width(GTK_CONTAINER(button),0);
+	//gtk_container_add(GTK_CONTAINER(button), Drawing_Widget);
 	gtk_paned_pack1(GTK_PANED(Control_Flow_Data->HPaned), Process_List_Widget, FALSE, TRUE);
 	gtk_paned_pack2(GTK_PANED(Control_Flow_Data->HPaned), Drawing_Widget, TRUE, TRUE);
 
@@ -110,6 +115,7 @@ guicontrolflow(void)
 
 
 	gtk_widget_show(Drawing_Widget);
+	//gtk_widget_show(button);
 	gtk_widget_show(Process_List_Widget);
 	//gtk_widget_show(Control_Flow_Data->Inside_HBox_V);
 	gtk_widget_show(Control_Flow_Data->HPaned);

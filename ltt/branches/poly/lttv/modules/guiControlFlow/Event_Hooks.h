@@ -24,6 +24,7 @@ typedef struct _EventRequest
 {
 	ControlFlowData *Control_Flow_Data;
 	LttTime time_begin, time_end;
+	gint	x_begin, x_end;
 	/* Fill the Events_Context during the initial expose, before calling for
 	 * events.
 	 */
@@ -68,6 +69,11 @@ int draw_before_hook(void *hook_data, void *call_data);
 int draw_event_hook(void *hook_data, void *call_data);
 
 int draw_after_hook(void *hook_data, void *call_data);
+
+void draw_closure(gpointer key, gpointer value, gpointer user_data);
+
+int  after_data_request(void *hook_data, void *call_data);
+
 
 void update_time_window_hook(void *hook_data, void *call_data);
 void update_current_time_hook(void *hook_data, void *call_data);

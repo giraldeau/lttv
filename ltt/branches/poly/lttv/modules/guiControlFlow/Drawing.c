@@ -96,6 +96,8 @@ void drawing_data_request(Drawing_t *Drawing,
 	event_request.Control_Flow_Data = control_flow_data;
 	event_request.time_begin = start;
 	event_request.time_end = end;
+	event_request.x_begin = x;
+	event_request.x_end = x+width;
 
 	g_critical("req : start : %u, %u", event_request.time_begin.tv_sec, 
 																			event_request.time_begin.tv_nsec);
@@ -105,21 +107,32 @@ void drawing_data_request(Drawing_t *Drawing,
 	
 	LttvHooks *event = lttv_hooks_new();
 	LttvHooks *after_event = lttv_hooks_new();
+	LttvHooks *after_traceset = lttv_hooks_new();
+	lttv_hooks_add(after_traceset, after_data_request, &event_request);
 	lttv_hooks_add(event, draw_event_hook, &event_request);
 	state_add_event_hooks_api(control_flow_data->Parent_Window);
 	lttv_hooks_add(after_event, draw_after_hook, &event_request);
 
 	lttv_process_traceset_seek_time(tsc, start);
+	// FIXME : would like to place the after_traceset hook after the traceset,
+	// but the traceset context state is not valid anymore.
 	lttv_traceset_context_add_hooks(tsc,
+	//		NULL, after_traceset, NULL, NULL, NULL, NULL,
 			NULL, NULL, NULL, NULL, NULL, NULL,
-			NULL, NULL, NULL, event, after_event);
+			NULL, after_traceset, NULL, event, after_event);
 	lttv_process_traceset(tsc, end, G_MAXULONG);
-	lttv_traceset_context_remove_hooks(tsc, NULL, NULL, NULL, NULL, NULL, NULL,
-			NULL, NULL, NULL, event, after_event);
+	//after_data_request((void*)&event_request,(void*)tsc);
+	lttv_traceset_context_remove_hooks(tsc,
+			//NULL, after_traceset, NULL, NULL, NULL, NULL,
+			NULL, NULL, NULL, NULL, NULL, NULL,
+			NULL, after_traceset, NULL, event, after_event);
 	state_remove_event_hooks_api(control_flow_data->Parent_Window);
 
+	lttv_hooks_destroy(after_traceset);
 	lttv_hooks_destroy(event);
 	lttv_hooks_destroy(after_event);
+
+	
 }
 		      
 /* Callbacks */
@@ -262,8 +275,27 @@ static gboolean
 expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 {
   Drawing_t *Drawing = (Drawing_t*)user_data;
-  g_critical("drawing expose event");
+	ControlFlowData *control_flow_data =
+			(ControlFlowData*)g_object_get_data(
+								G_OBJECT(widget),
+								"Control_Flow_Data");
 
+  g_critical("drawing expose event");
+	
+	guint x=0;
+	LttTime* Current_Time = 
+			guicontrolflow_get_current_time(control_flow_data);
+
+	LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
+											control_flow_data->Time_Window.start_time);
+
+	convert_time_to_pixels(
+				control_flow_data->Time_Window.start_time,
+				window_end,
+				*Current_Time,
+				widget->allocation.width,
+				&x);
+	
   gdk_draw_pixmap(widget->window,
 		  widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
 		  Drawing->Pixmap,
@@ -271,8 +303,57 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 		  event->area.x, event->area.y,
 		  event->area.width, event->area.height);
 
+	if(x >= event->area.x && x <= event->area.x+event->area.width)
+	{
+		GdkGC *gc = gdk_gc_new(control_flow_data->Drawing->Pixmap);
+		gdk_gc_copy(gc, widget->style->black_gc);
+		
+		drawing_draw_line(NULL, widget->window,
+									x, event->area.y,
+									x, event->area.y+event->area.height,
+									gc);
+		gdk_gc_unref(gc);
+	}
   return FALSE;
 }
+
+/* mouse click */
+static gboolean
+button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data )
+{
+	ControlFlowData *control_flow_data =
+			(ControlFlowData*)g_object_get_data(
+								G_OBJECT(widget),
+								"Control_Flow_Data");
+	Drawing_t *Drawing = control_flow_data->Drawing;
+
+
+	g_critical("click");
+	if(event->button == 1)
+	{
+		LttTime time;
+
+		LttTime window_end = ltt_time_add(control_flow_data->Time_Window.time_width,
+												control_flow_data->Time_Window.start_time);
+
+
+		/* left mouse button click */
+		g_critical("x click is : %f", event->x);
+
+		convert_pixels_to_time(widget->allocation.width, (guint)event->x,
+				&control_flow_data->Time_Window.start_time,
+				&window_end,
+				&time);
+
+		set_current_time(control_flow_data->Parent_Window, &time);
+
+	}
+	
+	return FALSE;
+}
+
+
+
 
 Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data)
 {
@@ -314,6 +395,8 @@ Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data)
 //			  Drawing->Drawing_Area_V->allocation.height,
 //			  -1);
 
+	gtk_widget_add_events(Drawing->Drawing_Area_V, GDK_BUTTON_PRESS_MASK);
+	
 	g_signal_connect (G_OBJECT(Drawing->Drawing_Area_V),
 				"configure_event",
 				G_CALLBACK (configure_event),
@@ -324,6 +407,12 @@ Drawing_t *drawing_construct(ControlFlowData *Control_Flow_Data)
 				G_CALLBACK (expose_event),
 				(gpointer)Drawing);
 
+	g_signal_connect (G_OBJECT(Drawing->Drawing_Area_V),
+				"button-press-event",
+				G_CALLBACK (button_press_event),
+				(gpointer)Drawing);
+
+	
 	return Drawing;
 }
 
