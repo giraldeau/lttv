@@ -57,9 +57,9 @@ parse_simple_expression(GString* expression) {
 	
 	unsigned i;
 
-	for(i=0;i<strlen(expression);i++) {
-
-	}
+//	for(i=0;i<strlen(expression);i++) {
+//
+//	}
 }
 
 /**
@@ -99,70 +99,69 @@ lttv_filter_new(char *expression, LttvTrace *t) {
 	/*
 	 *	Parse entire expression and construct
 	 *	the binary tree.  There are two steps 
-   *	in browsing that string
-   *	  1. finding boolean ops ( &,|,^,! ) and parenthesis
-   *	  2. finding simple expressions
-   *	    - field path
-   *	    - op ( >, <, =, >=, <=, !=)
-   *	    - value
-	 */
+      	 *	in browsing that string
+      	 *	  1. finding boolean ops ( &,|,^,! ) and parenthesis
+      	 *	  2. finding simple expressions
+      	 *	    - field path
+      	 *	    - op ( >, <, =, >=, <=, !=)
+      	 *	    - value
+	*/
+
 	for(i=0;i<strlen(expression);i++) {
 		switch(expression[i]) {
-      /*
-       *  boolean operators
-       */
+		       	/*
+			 *   boolean operators
+			 */
 			case '&':		/* and */
-				parse_simple_expression(currentOption);
-				g_print("%s\n",&currentOption);
-				currentOption = g_string_new("");
+				parse_simple_expression(current_option);
+				g_print("%s\n",&current_option);
+				current_option = g_string_new("");
 				break;
 			case '|':		/* or */
-				g_print("%s\n",currentOption);
-				currentOption = g_string_new("");
+				g_print("%s\n",current_option);
+				current_option = g_string_new("");
 				break;
 			case '^':		/* xor */
-				g_print("%s\n",currentOption);
-				currentOption = g_string_new("");
+				g_print("%s\n",current_option);
+				current_option = g_string_new("");
 				break;
 			case '!':		/* not, or not equal (math op) */
-        if(expression[i+1] == '=') {  /* != */
-          current_expression.op = LTTV_FIELD_NE;
-          i++;
-        } else {  /* ! */
-  				g_print("%s\n",currentOption);
-  				currentOption = g_string_new("");
-        }
-        break;
+			        if(expression[i+1] == '=') {  /* != */
+			          current_expression.op = LTTV_FIELD_NE;
+			          i++;
+			        } else {  /* ! */
+				  g_print("%s\n",current_option);
+  			 	  current_option = g_string_new("");
+        			}
+        			break;
 			case '(':		/* start of parenthesis */
 				p++;
 				break;
 			case ')':		/* end of parenthesis */
 				p--;
 				break;
-      /*
-       *  mathematic operators
-       */
-      case '<':   /* lower, lower or equal */
-        if(expression[i+1] == '=') { /* <= */
-          i++;
-          current_expression.op = LTTV_FIELD_LE;                  
-        } else current_expression.op = LTTV_FIELD_LT;
-        break;
-      case '>':   /* higher, higher or equal */
-        if(expression[i+1] == '=') { /* >= */
-          i++;
-          current_expression.op = LTTV_FIELD_GE;                  
-        } else current_expression.op = LTTV_FIELD_GT;
-        break;
-      case '=':   /* equal */
-        current_expression.op = LTTV_FIELD_EQ;
-        break;
-      case 
+
+	  		/*	
+			 *	mathematic operators
+			 */
+			case '<':   /* lower, lower or equal */
+				if(expression[i+1] == '=') { /* <= */
+			  	  i++;
+			  	  current_expression.op = LTTV_FIELD_LE;                  
+				} else current_expression.op = LTTV_FIELD_LT;
+				break;
+		        case '>':   /* higher, higher or equal */
+				if(expression[i+1] == '=') { /* >= */
+			  	  i++;
+			  	  current_expression.op = LTTV_FIELD_GE;                  
+				} else current_expression.op = LTTV_FIELD_GT;
+				break;
+		        case '=':   /* equal */
+				current_expression.op = LTTV_FIELD_EQ;
+				break;
 			default:		/* concatening current string */
-				g_string_append_c(currentOption,expression[i]); 				
+			  	g_string_append_c(current_option,expression[i]); 				
 		}
-		
-		
 	}
 	
 	if( p>0 ) { 
