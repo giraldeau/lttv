@@ -34,6 +34,16 @@
 #include <time.h>
 typedef time_t ltt_time;
 
+typedef struct _ltt_time_interval
+{
+	ltt_time time_begin, time_end;
+} ltt_time_interval;
+
+
+/*****************************************************************************
+ *                         Definition of structures                          *
+ *****************************************************************************/
+
 typedef struct _DrawingAreaInfo {
 
 	guint height, width;
@@ -43,25 +53,30 @@ typedef struct _DrawingAreaInfo {
 typedef struct _ControlFlowData {
 
 	GtkWidget *Drawing_Area_V;
-	GtkWidget *Drawing_Scrolled_Window_VC;
-	GtkAdjustment *VAdjust_Draw_C;
+	GtkWidget *Scrolled_Window_VC;
 	
 	GtkWidget *Process_List_VC;
-	GtkWidget *Process_Scrolled_Window_VC;
 	
   /* Model containing list data */
 	GtkListStore *Store_M;
 	
 	GtkWidget *HBox_V;
+	GtkWidget *Inside_HBox_V;
 
   GtkAdjustment *VAdjust_C ;
 	
+	/* Trace information */
+	TraceSet *Trace_Set;
+	TraceStatistics *Trace_Statistics;
+	
+	/* Shown events information */
 	guint First_Event, Last_Event;
-	ltt_time Begin_time, End_Time;
+	ltt_time Begin_Time, End_Time;
+	
 	
 	/* Drawing Area Info */
 	DrawingAreaInfo Drawing_Area_Info;
-	
+
 	/* TEST DATA, TO BE READ FROM THE TRACE */
 	gint Number_Of_Events ;
 	guint Currently_Selected_Event  ;
@@ -70,11 +85,29 @@ typedef struct _ControlFlowData {
 
 } ControlFlowData ;
 
+/* Structure used to store and use information relative to one events refresh
+ * request. Typically filled in by the expose event callback, then passed to the
+ * library call, then used by the drawing hooks. Then, once all the events are
+ * sent, it is freed by the hook called after the reading.
+ */
+typedef struct _EventRequest
+{
+	ControlFlowData *Control_Flow_Data;
+	ltt_time time_begin, time_end;
+	/* Fill the Events_Context during the initial expose, before calling for
+	 * events.
+	 */
+	GArray Events_Context; //FIXME
+} EventRequest ;
+
 
 /** Array containing instanced objects. Used when module is unloaded */
 static GSList *sControl_Flow_Data_List = NULL ;
 
 
+/*****************************************************************************
+ *                         Function prototypes                               *
+ *****************************************************************************/
 //! Control Flow Viewer's constructor hook
 GtkWidget *hGuiControlFlow(GtkWidget *pmParentWindow);
 //! Control Flow Viewer's constructor
@@ -84,6 +117,16 @@ void GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data);
 
 
 static int Event_Selected_Hook(void *hook_data, void *call_data);
+
+static lttv_hooks
+	*Draw_Before_Hooks,
+	*Draw_Event_Hooks,
+	*Draw_After_Hooks;
+
+Draw_Before_Hook(void *hook_data, void *call_data)
+Draw_Event_Hook(void *hook_data, void *call_data)
+Draw_After_Hook(void *hook_data, void *call_data)
+
 
 //void Tree_V_set_cursor(ControlFlowData *Control_Flow_Data);
 //void Tree_V_get_cursor(ControlFlowData *Control_Flow_Data);
@@ -110,7 +153,9 @@ void Drawing_Area_Init(ControlFlowData *Control_Flow_Data);
 
 
 
-
+/*****************************************************************************
+ *                 Functions for module loading/unloading                    *
+ *****************************************************************************/
 /**
  * plugin's init function
  *
@@ -126,6 +171,15 @@ G_MODULE_EXPORT void init() {
 	/* Register the menu item insert entry */
 	//MenuItemReg("/", "Insert Control Flow Viewer", guiEvent);
 
+	/* Setup the hooks */
+	Draw_Before_Hooks = lttv_hooks_new();
+	Draw_Event_Hooks = lttv_hooks_new();
+	Draw_After_Hooks = lttv_hooks_new();
+	
+	lttv_hooks_add(Draw_Before_Hooks, Draw_Before_Hook, NULL);
+	lttv_hooks_add(Draw_Event_Hooks, Draw_Event_Hook, NULL);
+	lttv_hooks_add(Draw_After_Hooks, Draw_After_Hook, NULL);
+	
 }
 
 void destroy_walk(gpointer data, gpointer user_data)
@@ -151,6 +205,10 @@ G_MODULE_EXPORT void destroy() {
 
 	g_slist_foreach(sControl_Flow_Data_List, destroy_walk, NULL );
 	
+	lttv_hooks_destroy(Draw_Before_Hooks);
+	lttv_hooks_destroy(Draw_Event_Hooks);
+	lttv_hooks_destroy(Draw_After_Hooks);
+	
 	/* Unregister the toolbar insert button */
 	//ToolbarItemUnreg(hGuiEvents);
 
@@ -158,23 +216,10 @@ G_MODULE_EXPORT void destroy() {
 	//MenuItemUnreg(hGuiEvents);
 }
 
-/**
- * Event Viewer's constructor hook
- *
- * This constructor is given as a parameter to the menuitem and toolbar button
- * registration. It creates the list.
- * @param pmParentWindow A pointer to the parent window.
- * @return The widget created.
- */
-GtkWidget *
-hGuiControlFlow(GtkWidget *pmParentWindow)
-{
-	ControlFlowData* Control_Flow_Data = GuiControlFlow() ;
 
-	return Control_Flow_Data->HBox_V ;
-	
-}
-
+/*****************************************************************************
+ *                     Control Flow Viewer class implementation              *
+ *****************************************************************************/
 
 
 /* Enumeration of the columns */
@@ -204,6 +249,7 @@ GuiControlFlow(void)
 	ControlFlowData* Control_Flow_Data = g_new(ControlFlowData,1) ;
 	Control_Flow_Data->Drawing_Area_V = gtk_drawing_area_new ();
 
+	
 	/* TEST DATA, TO BE READ FROM THE TRACE */
 	Control_Flow_Data->Number_Of_Events = 1000 ;
 	Control_Flow_Data->Currently_Selected_Event = FALSE  ;
@@ -239,107 +285,38 @@ GuiControlFlow(void)
 
 
 
-	/* Create the two scrolled windows with the same adjustment */
-	Control_Flow_Data->Process_Scrolled_Window_VC = gtk_scrolled_window_new(NULL, NULL);
+	Control_Flow_Data->Inside_HBox_V = gtk_hbox_new(0, 0);
 
-	Control_Flow_Data->VAdjust_C = gtk_scrolled_window_get_vadjustment(
-										GTK_SCROLLED_WINDOW(Control_Flow_Data->Process_Scrolled_Window_VC));
+	gtk_box_pack_start(GTK_BOX(Control_Flow_Data->Inside_HBox_V), Control_Flow_Data->Process_List_VC, FALSE, TRUE, 0);
+	gtk_box_pack_start(GTK_BOX(Control_Flow_Data->Inside_HBox_V), Control_Flow_Data->Drawing_Area_V, TRUE, TRUE, 0);
 
-	gtk_scrolled_window_set_policy(
-			GTK_SCROLLED_WINDOW(Control_Flow_Data->Process_Scrolled_Window_VC),
-			GTK_POLICY_NEVER,
-		//	GTK_POLICY_NEVER);
-			GTK_POLICY_AUTOMATIC);
+
+	Control_Flow_Data->VAdjust_C = GTK_ADJUSTMENT(gtk_adjustment_new(0.0,	/* Value */
+																										0.0,	/* Lower */
+																										0.0,	/* Upper */
+																										0.0,			/* Step inc. */
+																										0.0,			/* Page inc. */
+																										0.0	));	/* page size */
 	
 
+	Control_Flow_Data->Scrolled_Window_VC = gtk_scrolled_window_new (NULL,
+																						Control_Flow_Data->VAdjust_C);
+	gtk_scrolled_window_set_policy( GTK_SCROLLED_WINDOW(Control_Flow_Data->Scrolled_Window_VC) ,
+																	GTK_POLICY_NEVER,
+																	GTK_POLICY_AUTOMATIC);
 
-	Control_Flow_Data->Drawing_Scrolled_Window_VC = gtk_scrolled_window_new(NULL,Control_Flow_Data->VAdjust_C);
-	//Control_Flow_Data->Drawing_Scrolled_Window_VC = gtk_scrolled_window_new(NULL,NULL);
-	gtk_scrolled_window_set_policy(
-			GTK_SCROLLED_WINDOW(Control_Flow_Data->Drawing_Scrolled_Window_VC),
-			GTK_POLICY_NEVER,
-		//	GTK_POLICY_NEVER);
-			GTK_POLICY_AUTOMATIC);
+	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(Control_Flow_Data->Scrolled_Window_VC),
+										Control_Flow_Data->Inside_HBox_V);
 	
-	Control_Flow_Data->VAdjust_Draw_C = gtk_scrolled_window_get_vadjustment(
-										GTK_SCROLLED_WINDOW(Control_Flow_Data->Drawing_Scrolled_Window_VC));
-
-	gtk_container_add(GTK_CONTAINER(Control_Flow_Data->Process_Scrolled_Window_VC),
-							Control_Flow_Data->Process_List_VC);
-
-
-	gtk_scrolled_window_add_with_viewport(GTK_SCROLLED_WINDOW(Control_Flow_Data->Drawing_Scrolled_Window_VC),
-							Control_Flow_Data->Drawing_Area_V);
-
 	
-	Control_Flow_Data->HBox_V = gtk_hbox_new(0, 0);
-
-
-
-	
-	/* Pack the list and the drawing area in the hbox */
-
-	gtk_box_pack_start(GTK_BOX(Control_Flow_Data->HBox_V), Control_Flow_Data->Process_Scrolled_Window_VC, TRUE, TRUE, 0);
-	gtk_box_pack_start(GTK_BOX(Control_Flow_Data->HBox_V), Control_Flow_Data->Drawing_Scrolled_Window_VC, TRUE, TRUE, 0);
-
-
 	g_signal_connect (G_OBJECT (Control_Flow_Data->Drawing_Area_V), "expose_event",  
 	                  G_CALLBACK (expose_event_cb), Control_Flow_Data);
 
 
 	
-#ifdef DEBUG
-	g_signal_connect (G_OBJECT (drawing_area), "expose_event",
-                          G_CALLBACK (expose_event_callback), Control_Flow_Data);
-
-
-
-  Control_Flow_Data->VAdjust_C = gtk_range_get_adjustment(GTK_RANGE(Control_Flow_Data->VScroll_VC));
-
 	g_signal_connect (G_OBJECT (Control_Flow_Data->VAdjust_C), "value-changed",
 	                  G_CALLBACK (v_scroll_cb),
 	                  Control_Flow_Data);
-	/* Set the upper bound to the last event number */
-	Control_Flow_Data->VAdjust_C->lower = 0;
-	Control_Flow_Data->VAdjust_C->upper = Control_Flow_Data->Number_Of_Events;
-	Control_Flow_Data->VAdjust_C->value = 0;
-	Control_Flow_Data->VAdjust_C->step_increment = 1;
-	Control_Flow_Data->VAdjust_C->page_increment = 
-				 Control_Flow_Data->VTree_Adjust_C->upper;
-	Control_Flow_Data->VAdjust_C->page_size =
-				 Control_Flow_Data->VTree_Adjust_C->upper;
-	g_critical("value : %u",Control_Flow_Data->VTree_Adjust_C->upper);
-
-
-
-
-	/* Add the object's information to the module's array */
-  g_slist_append(sControl_Flow_Data_List, Control_Flow_Data);
-
-	Control_Flow_Data->First_Event = -1 ;
-	Control_Flow_Data->Last_Event = 0 ;
-
-	Control_Flow_Data->Num_Visible_Events = 1;
-
-	/* Test data */
-	get_test_data((int)Control_Flow_Data->VAdjust_C->value,
-									 Control_Flow_Data->Num_Visible_Events, 
-									 Control_Flow_Data);
-
-	/* Set the Selected Event */
-	//Tree_V_set_cursor(Control_Flow_Data);
-#endif //DEBUG	
-
-
-	g_signal_connect (G_OBJECT (Control_Flow_Data->VAdjust_C), "value-changed",
-	                  G_CALLBACK (v_scroll_cb),
-	                  Control_Flow_Data);
-	g_signal_connect (G_OBJECT (Control_Flow_Data->VAdjust_Draw_C), "value-changed",
-	                  G_CALLBACK (v_scroll_cb),
-	                  Control_Flow_Data);
-
-
-
 
 	add_test_process(Control_Flow_Data);
 
@@ -348,21 +325,68 @@ GuiControlFlow(void)
 	/* Set the size of the drawing area */
 	Drawing_Area_Init(Control_Flow_Data);
 
-	
+	/* Get trace statistics */
+	Control_Flow_Data->Trace_Statistics = get_trace_statistics(Trace);
 
 
 	gtk_widget_show(Control_Flow_Data->Drawing_Area_V);
 	gtk_widget_show(Control_Flow_Data->Process_List_VC);
-	gtk_widget_show(Control_Flow_Data->Process_Scrolled_Window_VC);
-	gtk_widget_show(Control_Flow_Data->Drawing_Scrolled_Window_VC);
-	gtk_widget_show(Control_Flow_Data->HBox_V);
-
+	gtk_widget_show(Control_Flow_Data->Inside_HBox_V);
+	gtk_widget_show(Control_Flow_Data->Scrolled_Window_VC);
 
 	test_draw(Control_Flow_Data);
 
 	return Control_Flow_Data;
 
 }
+
+void
+GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
+{
+	guint index;
+
+	/* May already been done by GTK window closing */
+	if(GTK_IS_WIDGET(Control_Flow_Data->HBox_V))
+		gtk_widget_destroy(Control_Flow_Data->HBox_V);
+	
+	/* Destroy the Tree View */
+	//gtk_widget_destroy(Control_Flow_Data->Tree_V);
+	
+  /*  Clear raw event list */
+	//gtk_list_store_clear(Control_Flow_Data->Store_M);
+	//gtk_widget_destroy(GTK_WIDGET(Control_Flow_Data->Store_M));
+
+	g_slist_remove(sControl_Flow_Data_List,Control_Flow_Data);
+}
+
+//FIXME : call hGuiEvents_Destructor for corresponding data upon widget destroy
+
+
+
+/*****************************************************************************
+ *                              Drawing functions                            *
+ *****************************************************************************/
+
+typedef enum 
+{
+	RED,
+	GREEN,
+	BLUE,
+	WHITE,
+	BLACK
+
+} ControlFlowColors;
+
+/* Vector of unallocated colors */
+static GdkColor CF_Colors [] = 
+{
+	{ 0, 0xffff, 0x0000, 0x0000 },	// RED
+	{ 0, 0x0000, 0xffff, 0x0000 },	// GREEN
+	{ 0, 0x0000, 0x0000, 0xffff },	// BLUE
+	{ 0, 0xffff, 0xffff, 0xffff },	// WHITE
+	{ 0, 0x0000, 0x0000, 0x0000 }		// BLACK
+};
+
 
 gint get_cell_height(GtkTreeView *TreeView)
 {
@@ -378,77 +402,53 @@ gint get_cell_height(GtkTreeView *TreeView)
 }
 
 
+/* get_time_from_pixels
+ *
+ * Get the time interval from window time and pixels, and pixels requested. This
+ * function uses TimeMul, which should only be used if the float value is lower
+ * that 4, and here it's always lower than 1, so it's ok.
+ */
+void get_time_from_pixels(guint area_x, guint area_width,
+													guint window_width,
+													ltt_time &window_time_begin, ltt_time &window_time_end,
+													ltt_time &time_begin, ltt_time &time_end)
+{
+	ltt_time window_time_interval;
+	
+	TimeSub(window_time_interval, window_time_end, window_time_begin);
+
+	
+	TimeMul(time_begin, window_time_interval, (area_x/(float)window_width));
+	TimeAdd(time_begin, window_time_begin, time_begin);
+	
+	TimeMul(time_end, window_time_interval, (area_width/(float)window_width));
+	TimeAdd(time_end, time_begin, time_end);
+	
+}
+
 void Drawing_Area_Init(ControlFlowData *Control_Flow_Data)
 {
 	DrawingAreaInfo *Drawing_Area_Info = &Control_Flow_Data->Drawing_Area_Info;
 	guint w;
-	//GdkWindow *Tree_View_Window = gtk_tree_view_get_bin_window(
-	//													GTK_TREE_VIEW(Control_Flow_Data->Process_List_VC));
-	//GdkRectangle visible_rect ;
+
 	w = 500;
 	
 
-	//gdk_drawable_get_size(Tree_View_Window, NULL, &h);
-	//gdk_drawable_get_size(GTK_TREE_VIEW(Control_Flow_Data->Process_List_VC)->priv->bin_window, NULL, &h);
-	//gtk_widget_get_size_request(GTK_WIDGET(Control_Flow_Data->Process_Scrolled_Window_VC), NULL, &h);
-	//gdk_window_get_geometry(Tree_View_Window, NULL, NULL, &w, &h, NULL);
-	//gtk_tree_view_get_visible_rect(GTK_TREE_VIEW(Control_Flow_Data->Process_List_VC), &visible_rect);
-	//h = visible_rect.height;
-	/* 4 is probably the 2 pixels that the outside cells does not have */
 	Drawing_Area_Info->height =
 		get_cell_height(GTK_TREE_VIEW(Control_Flow_Data->Process_List_VC))
-				* Control_Flow_Data->Number_Of_Process - 4 ;
+				* Control_Flow_Data->Number_Of_Process ;
+	
+	gtk_widget_modify_bg(Control_Flow_Data->Drawing_Area_V,
+											 GTK_STATE_NORMAL,
+											 &CF_Colors[BLACK]);
+											 
 	
 	gtk_widget_set_size_request (Control_Flow_Data->Drawing_Area_V,
 					w,
 					Drawing_Area_Info->height);
-
+	
 	
 }
-
-
-void expose_event_cb (GtkWidget *widget, GdkEventExpose *expose, gpointer data)
-{
-	ControlFlowData *Control_Flow_Data = (ControlFlowData*)data;
-
-	g_critical("expose");
-
-	/* When redrawing, use widget->allocation.width to get the width of
-	 * drawable area. */
-	Control_Flow_Data->Drawing_Area_Info.width = widget->allocation.width;
-	
-	test_draw(Control_Flow_Data);
-
-	//gdk_draw_arc (widget->window,
-  //              widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
-  //              TRUE,
-  //              //0, 0, widget->allocation.width, widget->allocation.height,
-  //              0, 0, widget->allocation.width,
-	//							Control_Flow_Data->Drawing_Area_Info.height,
-  //              0, 64 * 360);
-
-	
-	//Drawing_Area_Init(Control_Flow_Data);
-
-
-}
-
-
-void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
-{
-	ControlFlowData *Control_Flow_Data = (ControlFlowData*)data;
-	GtkTreePath *Tree_Path;
-
-	g_critical("DEBUG : scroll signal, value : %f", adjustment->value);
-	
-	//get_test_data((int)adjustment->value, Control_Flow_Data->Num_Visible_Events, 
-	//								 Control_Flow_Data);
-	
-	
-
-}
-
-
 
 
 
@@ -485,469 +485,25 @@ void test_draw(ControlFlowData *Control_Flow_Data)
 }
 
 
-/*void Tree_V_set_cursor(ControlFlowData *Control_Flow_Data)
+/*****************************************************************************
+ *                       Hooks to be called by the main window               *
+ *****************************************************************************/
+/**
+ * Event Viewer's constructor hook
+ *
+ * This constructor is given as a parameter to the menuitem and toolbar button
+ * registration. It creates the list.
+ * @param pmParentWindow A pointer to the parent window.
+ * @return The widget created.
+ */
+GtkWidget *
+hGuiControlFlow(GtkWidget *pmParentWindow)
 {
-	GtkTreePath *path;
+	ControlFlowData* Control_Flow_Data = GuiControlFlow() ;
 
-	if(Control_Flow_Data->Selected_Event && Control_Flow_Data->First_Event != -1)
-	{
-		gtk_adjustment_set_value(Control_Flow_Data->VAdjust_C,
-														 Control_Flow_Data->Currently_Selected_Event);
-		
-		path = gtk_tree_path_new_from_indices(
-								Control_Flow_Data->Currently_Selected_Event-
-								Control_Flow_Data->First_Event,
-								-1);
-
-		gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), path, NULL, FALSE);
-		gtk_tree_path_free(path);
-	}
-}
-
-void Tree_V_get_cursor(ControlFlowData *Control_Flow_Data)
-{
-	GtkTreePath *path;
-	gint *indices;
-	
-	gtk_tree_view_get_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), &path, NULL);
-	indices = gtk_tree_path_get_indices(path);
-
-	if(indices != NULL)
-	{
-		Control_Flow_Data->Selected_Event = TRUE;
-		Control_Flow_Data->Currently_Selected_Event =
-					Control_Flow_Data->First_Event + indices[0];
-
-	} else {
-		Control_Flow_Data->Selected_Event = FALSE;
-		Control_Flow_Data->Currently_Selected_Event = 0;
-	}
-	g_critical("DEBUG : Event Selected : %i , num: %u", Control_Flow_Data->Selected_Event,  Control_Flow_Data->Currently_Selected_Event) ;
-
-	gtk_tree_path_free(path);
-
-}
-*/
-
-#ifdef DEBUG
-void Tree_V_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1, gint arg2, gpointer data)
-{
-	GtkTreePath *path; // = gtk_tree_path_new();
-	gint *indices;
-	gdouble value;
-	ControlFlowData *Control_Flow_Data = (ControlFlowData*)data;
-
-	gtk_tree_view_get_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), &path, NULL);
-	if(path == NULL)
-	{
-		/* No prior cursor, put it at beginning of page and let the execution do */
-		path = gtk_tree_path_new_from_indices(0, -1);
-		gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), path, NULL, FALSE);
-	}
-		
-	indices = gtk_tree_path_get_indices(path);
-
-	g_critical("DEBUG : move cursor step : %u , int : %i , indice : %i", (guint)arg1, arg2, indices[0]) ;
-
-	value = gtk_adjustment_get_value(Control_Flow_Data->VAdjust_C);
-
-	if(arg1 == GTK_MOVEMENT_DISPLAY_LINES)
-	{
-		/* Move one line */
-		if(arg2 == 1)
-		{
-			/* move one line down */
-			if(indices[0] == Control_Flow_Data->Num_Visible_Events - 1)
-			{
-				if(value + Control_Flow_Data->Num_Visible_Events <= 
-														Control_Flow_Data->Number_Of_Events -1)
-				{
-					g_critical("need 1 event down") ;
-					Control_Flow_Data->Currently_Selected_Event += 1;
-					gtk_adjustment_set_value(Control_Flow_Data->VAdjust_C, value+1);
-					//gtk_tree_path_free(path);
-					//path = gtk_tree_path_new_from_indices(Control_Flow_Data->Num_Visible_Events-1, -1);
-					//gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), path, NULL, FALSE);
-					g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
-				}
-			}
-		} else {
-			/* Move one line up */
-			if(indices[0] == 0)
-			{
-				if(value - 1 >= 0 )
-				{
-					g_critical("need 1 event up") ;
-					Control_Flow_Data->Currently_Selected_Event -= 1;
-					gtk_adjustment_set_value(Control_Flow_Data->VAdjust_C, value-1);
-					//gtk_tree_path_free(path);
-					//path = gtk_tree_path_new_from_indices(0, -1);
-					//gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), path, NULL, FALSE);
-					g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
-				}
-		
-			}
-		}
-
-	}
-
-	if(arg1 == GTK_MOVEMENT_PAGES)
-	{
-		/* Move one page */
-		if(arg2 == 1)
-		{
-			if(Control_Flow_Data->Num_Visible_Events == 1)
-				value += 1 ;
-			/* move one page down */
-			if(value + Control_Flow_Data->Num_Visible_Events-1 <= 
-											Control_Flow_Data->Number_Of_Events )
-			{
-				g_critical("need 1 page down") ;
-
-				Control_Flow_Data->Currently_Selected_Event += Control_Flow_Data->Num_Visible_Events-1;
-				gtk_adjustment_set_value(Control_Flow_Data->VAdjust_C,
-																value+(Control_Flow_Data->Num_Visible_Events-1));
-				//gtk_tree_path_free(path);
-				//path = gtk_tree_path_new_from_indices(0, -1);
-				//gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), path, NULL, FALSE);
-				g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
-			}
-		} else {
-			/* Move one page up */
-			if(Control_Flow_Data->Num_Visible_Events == 1)
-					value -= 1 ;
-
-			if(indices[0] < Control_Flow_Data->Num_Visible_Events - 2 )
-			{
-				if(value - (Control_Flow_Data->Num_Visible_Events-1) >= 0)
-				{
-					g_critical("need 1 page up") ;
-					
-					Control_Flow_Data->Currently_Selected_Event -= Control_Flow_Data->Num_Visible_Events-1;
-
-					gtk_adjustment_set_value(Control_Flow_Data->VAdjust_C,
-																	value-(Control_Flow_Data->Num_Visible_Events-1));
-					//gtk_tree_path_free(path);
-					//path = gtk_tree_path_new_from_indices(0, -1);
-					//gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), path, NULL, FALSE);
-					g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
-
-				} else {
-					/* Go to first Event */
-					g_critical("need 1 page up") ;
-
-					Control_Flow_Data->Currently_Selected_Event == 0 ;
-					gtk_adjustment_set_value(Control_Flow_Data->VAdjust_C,
-																	0);
-					//gtk_tree_path_free(path);
-					//path = gtk_tree_path_new_from_indices(0, -1);
-					//gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), path, NULL, FALSE);
-					g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
-
-				}
-			}
-			
-		}
-
-	}
-
-	if(arg1 == GTK_MOVEMENT_BUFFER_ENDS)
-	{
-		/* Move to the ends of the buffer */
-		if(arg2 == 1)
-		{
-			/* move end of buffer */
-			g_critical("End of buffer") ;
-			Control_Flow_Data->Currently_Selected_Event = Control_Flow_Data->Number_Of_Events-1 ;
-			gtk_adjustment_set_value(Control_Flow_Data->VAdjust_C, 
-					Control_Flow_Data->Number_Of_Events -
-						Control_Flow_Data->Num_Visible_Events);
-			//gtk_tree_path_free(path);
-			//path = gtk_tree_path_new_from_indices(Control_Flow_Data->Num_Visible_Events-1, -1);
-			//gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), path, NULL, FALSE);
-			g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
-		} else {
-			/* Move beginning of buffer */
-			g_critical("Beginning of buffer") ;
-			Control_Flow_Data->Currently_Selected_Event = 0 ;
-			gtk_adjustment_set_value(Control_Flow_Data->VAdjust_C, 0);
-			//gtk_tree_path_free(path);
-			//path = gtk_tree_path_new_from_indices(0, -1);
-			//gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), path, NULL, FALSE);
-			g_signal_stop_emission_by_name(G_OBJECT(widget), "move-cursor");
-		}
-
-	}
-
-
-	gtk_tree_path_free(path);
-}
-
-void Tree_V_cursor_changed_cb (GtkWidget *widget, gpointer data)
-{
-	ControlFlowData *Control_Flow_Data = (ControlFlowData*) data;
-
-	g_critical("DEBUG : cursor change");
-	/* On cursor change, modify the currently selected event by calling
-	 * the right API function */
-	Tree_V_get_cursor(Control_Flow_Data);
-}
-
-
-void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
-{
-	ControlFlowData *Control_Flow_Data = (ControlFlowData*)data;
-	GtkTreePath *Tree_Path;
-
-	g_critical("DEBUG : scroll signal, value : %f", adjustment->value);
-	
-	get_test_data((int)adjustment->value, Control_Flow_Data->Num_Visible_Events, 
-									 Control_Flow_Data);
-	
-	
-	if(Control_Flow_Data->Currently_Selected_Event
-								>= Control_Flow_Data->First_Event
-								&&
-		 Control_Flow_Data->Currently_Selected_Event
-		 						<= Control_Flow_Data->Last_Event
-								&&
-		 Control_Flow_Data->Selected_Event)
-	{
-
-		Tree_Path = gtk_tree_path_new_from_indices(
-								Control_Flow_Data->Currently_Selected_Event-
-								Control_Flow_Data->First_Event,
-								-1);
-
-		gtk_tree_view_set_cursor(GTK_TREE_VIEW(Control_Flow_Data->Tree_V), Tree_Path,
-																NULL, FALSE);
-		gtk_tree_path_free(Tree_Path);
-	}
-
-
-}
-
-gint get_cell_height(GtkTreeView *TreeView)
-{
-	gint height, width;
-	GtkTreeViewColumn *Column = gtk_tree_view_get_column(TreeView, 0);
-	GList *Render_List = gtk_tree_view_column_get_cell_renderers(Column);
-	GtkCellRenderer *Renderer = g_list_first(Render_List)->data;
-	
-	gtk_tree_view_column_cell_get_size(Column, NULL, NULL, NULL, NULL, &height);
-	g_critical("cell 0 height : %u",height);
-	
-	return height;
-}
-
-void Tree_V_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer data)
-{
-	ControlFlowData *Control_Flow_Data = (ControlFlowData*)data;
-	gint Cell_Height = get_cell_height(GTK_TREE_VIEW(Control_Flow_Data->Tree_V));
-	gint Last_Num_Visible_Events = Control_Flow_Data->Num_Visible_Events;
-	gdouble Exact_Num_Visible;
-	
-	g_critical("size-allocate");
-
-	Exact_Num_Visible = ( alloc->height -
-			TREE_VIEW_HEADER_HEIGHT (GTK_TREE_VIEW(Control_Flow_Data->Tree_V)) )
-				/ (double)Cell_Height ;
-
-	Control_Flow_Data->Num_Visible_Events = ceil(Exact_Num_Visible) ;
-
-	g_critical("number of events shown : %u",Control_Flow_Data->Num_Visible_Events);
-	g_critical("ex number of events shown : %f",Exact_Num_Visible);
-
-	Control_Flow_Data->VAdjust_C->page_increment = 
-				 floor(Exact_Num_Visible);
-	Control_Flow_Data->VAdjust_C->page_size =
-				 floor(Exact_Num_Visible);
-
-	if(Control_Flow_Data->Num_Visible_Events != Last_Num_Visible_Events)
-	{
-		get_test_data((int)Control_Flow_Data->VAdjust_C->value,
-										 Control_Flow_Data->Num_Visible_Events, 
-										 Control_Flow_Data);
-	}
-
-
-}
-
-void Tree_V_size_request_cb (GtkWidget *widget, GtkRequisition *requisition, gpointer data)
-{
-	gint h;
-	ControlFlowData *Control_Flow_Data = (ControlFlowData*)data;
-	gint Cell_Height = get_cell_height(GTK_TREE_VIEW(Control_Flow_Data->Tree_V));
-	
-	g_critical("size-request");
-
-	h = Cell_Height + TREE_VIEW_HEADER_HEIGHT
-											(GTK_TREE_VIEW(Control_Flow_Data->Tree_V));
-	requisition->height = h;
+	return Control_Flow_Data->HBox_V ;
 	
 }
-
-#endif //DEBUG
-
-void get_test_data(guint Event_Number, guint List_Height, 
-									 ControlFlowData *Control_Flow_Data)
-{
-	//GtkTreeIter iter;
-	int i;
-	//GtkTreeModel *model = GTK_TREE_MODEL(Control_Flow_Data->Store_M);
-	//GtkTreePath *Tree_Path;
-	gchar *test_string;
-
-//	if(Event_Number > Control_Flow_Data->Last_Event ||
-//		 Event_Number + List_Height-1 < Control_Flow_Data->First_Event ||
-//		 Control_Flow_Data->First_Event == -1)
-	{
-		/* no event can be reused, clear and start from nothing */
-		//gtk_list_store_clear(Control_Flow_Data->Store_M);
-		for(i=Event_Number; i<Event_Number+List_Height; i++)
-		{
-			if(i>=Control_Flow_Data->Number_Of_Events) break;
-		  /* Add a new row to the model */
-		//	gtk_list_store_append (Control_Flow_Data->Store_M, &iter);
-		//	gtk_list_store_set (Control_Flow_Data->Store_M, &iter,
-		//											CPUID_COLUMN, 0,
-		//		  								EVENT_COLUMN, "event irq",
-		//										  TIME_COLUMN, i,
-		//										  PID_COLUMN, 100,
-		//										  ENTRY_LEN_COLUMN, 17,
-		//										  EVENT_DESCR_COLUMN, "Detailed information",
-		//											-1);
-		}
-	}
-#ifdef DEBUG //do not use this, it's slower and broken
-//	} else {
-		/* Some events will be reused */
-		if(Event_Number < Control_Flow_Data->First_Event)
-		{
-			/* scrolling up, prepend events */
-			Tree_Path = gtk_tree_path_new_from_indices
-										(Event_Number+List_Height-1 -
-										 Control_Flow_Data->First_Event + 1,
-										 -1);
-			for(i=0; i<Control_Flow_Data->Last_Event-(Event_Number+List_Height-1);
-																				i++)
-			{
-				/* Remove the last events from the list */
-				if(gtk_tree_model_get_iter(model, &iter, Tree_Path))
-					gtk_list_store_remove(Control_Flow_Data->Store_M, &iter);
-			}
-
-			for(i=Control_Flow_Data->First_Event-1; i>=Event_Number; i--)
-			{
-				if(i>=Control_Flow_Data->Number_Of_Events) break;
-				/* Prepend new events */
-				gtk_list_store_prepend (Control_Flow_Data->Store_M, &iter);
-				gtk_list_store_set (Control_Flow_Data->Store_M, &iter,
-														CPUID_COLUMN, 0,
-					  								EVENT_COLUMN, "event irq",
-													  TIME_COLUMN, i,
-													  PID_COLUMN, 100,
-													  ENTRY_LEN_COLUMN, 17,
-													  EVENT_DESCR_COLUMN, "Detailed information",
-														-1);
-			}
-		} else {
-			/* Scrolling down, append events */
-			for(i=Control_Flow_Data->First_Event; i<Event_Number; i++)
-			{
-				/* Remove these events from the list */
-				gtk_tree_model_get_iter_first(model, &iter);
-				gtk_list_store_remove(Control_Flow_Data->Store_M, &iter);
-			}
-			for(i=Control_Flow_Data->Last_Event+1; i<Event_Number+List_Height; i++)
-			{
-				if(i>=Control_Flow_Data->Number_Of_Events) break;
-				/* Append new events */
-				gtk_list_store_append (Control_Flow_Data->Store_M, &iter);
-				gtk_list_store_set (Control_Flow_Data->Store_M, &iter,
-														CPUID_COLUMN, 0,
-					  								EVENT_COLUMN, "event irq",
-													  TIME_COLUMN, i,
-													  PID_COLUMN, 100,
-													  ENTRY_LEN_COLUMN, 17,
-													  EVENT_DESCR_COLUMN, "Detailed information",
-														-1);
-			}
-
-		}
-	}
-#endif //DEBUG
-	Control_Flow_Data->First_Event = Event_Number ;
-	Control_Flow_Data->Last_Event = Event_Number+List_Height-1 ;
-	
-
-
-}
-	
-#ifdef DEBUG
-void add_test_data(ControlFlowData *Control_Flow_Data)
-{
-	GtkTreeIter iter;
-	int i;
-	
-	for(i=0; i<10; i++)
-	{
-	  /* Add a new row to the model */
-		gtk_list_store_append (Control_Flow_Data->Store_M, &iter);
-		gtk_list_store_set (Control_Flow_Data->Store_M, &iter,
-												CPUID_COLUMN, 0,
-			  								EVENT_COLUMN, "event irq",
-											  TIME_COLUMN, i,
-											  PID_COLUMN, 100,
-											  ENTRY_LEN_COLUMN, 17,
-											  EVENT_DESCR_COLUMN, "Detailed information",
-												-1);
-	}
-							
-}
-	
-#endif //DEBUG
-void
-GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
-{
-	guint index;
-
-	/* May already been done by GTK window closing */
-	if(GTK_IS_WIDGET(Control_Flow_Data->HBox_V))
-		gtk_widget_destroy(Control_Flow_Data->HBox_V);
-	
-	/* Destroy the Tree View */
-	//gtk_widget_destroy(Control_Flow_Data->Tree_V);
-	
-  /*  Clear raw event list */
-	//gtk_list_store_clear(Control_Flow_Data->Store_M);
-	//gtk_widget_destroy(GTK_WIDGET(Control_Flow_Data->Store_M));
-
-	g_slist_remove(sControl_Flow_Data_List,Control_Flow_Data);
-}
-
-//FIXME : call hGuiEvents_Destructor for corresponding data upon widget destroy
-
-#ifdef DEBUG
-static void
-tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
-{
-				ControlFlowData *Control_Flow_Data = (ControlFlowData*)data;
-        GtkTreeIter iter;
-				GtkTreeModel *model = GTK_TREE_MODEL(Control_Flow_Data->Store_M);
-        gchar *Event;
-
-        if (gtk_tree_selection_get_selected (selection, &model, &iter))
-        {
-                gtk_tree_model_get (model, &iter, EVENT_COLUMN, &Event, -1);
-
-                g_print ("Event selected :  %s\n", Event);
-
-                g_free (Event);
-        }
-}
-#endif //DEBUG
-
 
 int Event_Selected_Hook(void *hook_data, void *call_data)
 {
@@ -964,6 +520,179 @@ int Event_Selected_Hook(void *hook_data, void *call_data)
 }
 
 
+/* Hook called before drawing. Gets the initial context at the beginning of the
+ * drawing interval and copy it to the context in Event_Request.
+ */
+Draw_Before_Hook(void *hook_data, void *call_data)
+{
+	EventRequest *Event_Request = (EventRequest*)hook_data;
+	EventsContext Events_Context = (EventsContext*)call_data;
+	
+	Event_Request->Events_Context = Events_Context;
+}
+
+/*
+ * The draw event hook is called by the reading API to have a
+ * particular event drawn on the screen.
+ * @param hook_data ControlFlowData structure of the viewer. 
+ * @param call_data Event context.
+ *
+ * This function basically draw lines and icons. Two types of lines are drawn :
+ * one small (3 pixels?) representing the state of the process and the second
+ * type is thicker (10 pixels?) representing on which CPU a process is running
+ * (and this only in running state).
+ *
+ * Extremums of the lines :
+ * x_min : time of the last event context for this process kept in memory.
+ * x_max : time of the current event.
+ * y : middle of the process in the process list. The process is found in the
+ * list, therefore is it's position in pixels.
+ *
+ * The choice of lines'color is defined by the context of the last event for this
+ * process.
+ */
+Draw_Event_Hook(void *hook_data, void *call_data)
+{
+	EventRequest *Event_Request = (EventRequest*)hook_data;
+
+}
+
+
+Draw_After_Hook(void *hook_data, void *call_data)
+{
+	EventRequest *Event_Request = (EventRequest*)hook_data;
+	
+	g_free(Event_Request);
+}
+
+/*****************************************************************************
+ *                       Callbacks used for the viewer                       *
+ *****************************************************************************/
+void expose_event_cb (GtkWidget *widget, GdkEventExpose *expose, gpointer data)
+{
+	ControlFlowData *Control_Flow_Data = (ControlFlowData*)data;
+
+	EventRequest *Event_Request = g_new(sizeof(EventRequest));
+	
+	Event_Request->Control_Flow_Data = Control_Flow_Data;
+	
+	/* Calculate, from pixels in expose, the time interval to get data */
+	
+	get_time_from_pixels(expose->area.x, expose->area.width,
+													Control_Flow_Data->Drawing_Area_Info.width,
+													&Control_Flow_Data->Begin_Time, &Control_Flow_Data->End_Time,
+													&Event_Request->time_begin, &Event_Request->time_end)
+	
+	/* Look in statistics of the trace the processes present during the
+	 * whole time interval _shown on the screen_. Modify the list of 
+	 * processes to match it. NOTE : modify, not recreate. If recreation is
+	 * needed,keep a pointer to the currently selected event in the list.
+	 */
+	
+	/* Call the reading API to have events sent to drawing hooks */
+	lttv_trace_set_process( Control_Flow_Data->Trace_Set,
+													Draw_Before_Hooks,
+													Draw_Event_Hooks,
+													Draw_After_Hooks,
+													NULL, //FIXME : filter here
+													Event_Request->time_begin,
+													Event_Request->time_end);
+
+}
+
+#ifdef DEBUG
+void test_draw() {
+	gint cell_height = get_cell_height(GTK_TREE_VIEW(Control_Flow_Data->Process_List_VC));
+	GdkGC *GC = gdk_gc_new(widget->window);
+	GdkColor color = CF_Colors[GREEN];
+	
+	gdk_color_alloc (gdk_colormap_get_system () , &color);
+	
+	g_critical("expose");
+
+	/* When redrawing, use widget->allocation.width to get the width of
+	 * drawable area. */
+	Control_Flow_Data->Drawing_Area_Info.width = widget->allocation.width;
+	
+	test_draw(Control_Flow_Data);
+	
+	gdk_gc_copy(GC,widget->style->white_gc);
+	gdk_gc_set_foreground(GC,&color);
+	
+	//gdk_draw_arc (widget->window,
+  //              widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+  //              TRUE,
+  //              //0, 0, widget->allocation.width, widget->allocation.height,
+  //              0, 0, widget->allocation.width,
+	//							Control_Flow_Data->Drawing_Area_Info.height,
+  //              0, 64 * 360);
+
+	
+	//Drawing_Area_Init(Control_Flow_Data);
+	
+	// 2 pixels for the box around the drawing area, 1 pixel for off-by-one
+	// (starting from 0)
+	//gdk_gc_copy (&GC, widget->style->fg_gc[GTK_WIDGET_STATE (widget)]);
+
+	gdk_gc_set_line_attributes(GC,12, GDK_LINE_SOLID, GDK_CAP_NOT_LAST,GDK_JOIN_MITER);
+	
+	gdk_draw_line (widget->window,
+                 GC,
+								 0, (cell_height-1)/2,
+								 widget->allocation.width, (cell_height-1)/2);
+
+	color = CF_Colors[BLUE];
+	
+	gdk_color_alloc (gdk_colormap_get_system () , &color);
+	
+	gdk_gc_set_foreground(GC,&color);
+
+
+		gdk_gc_set_line_attributes(GC,3, GDK_LINE_SOLID, GDK_CAP_NOT_LAST,GDK_JOIN_MITER);
+	
+	gdk_draw_line (widget->window,
+                 GC,
+								 0, (cell_height-1)/2,
+								 widget->allocation.width,(cell_height-1)/2);
+	
+
+
+
+
+
+	g_object_unref(GC);
+	
+	//gdk_colormap_alloc_colors(gdk_colormap_get_system(), TRUE, 
+		
+	//gdk_gc_set_line_attributes(GC,5, GDK_LINE_SOLID, GDK_CAP_NOT_LAST,GDK_JOIN_MITER);
+	//gdk_gc_set_foreground(GC, 
+
+	//gdk_draw_line (widget->window,
+  //               GC,
+	//							 0, (2*cell_height)-2-1,
+	//							 50, (2*cell_height)-2-1);
+
+}
+#endif //DEBUG
+
+void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
+{
+	ControlFlowData *Control_Flow_Data = (ControlFlowData*)data;
+	GtkTreePath *Tree_Path;
+
+	g_critical("DEBUG : scroll signal, value : %f", adjustment->value);
+	
+	//get_test_data((int)adjustment->value, Control_Flow_Data->Num_Visible_Events, 
+	//								 Control_Flow_Data);
+	
+	
+
+}
+
+
+
+
+
 
 static void destroy_cb( GtkWidget *widget,
 		                        gpointer   data )
@@ -971,6 +700,11 @@ static void destroy_cb( GtkWidget *widget,
 	    gtk_main_quit ();
 }
 
+
+
+/*****************************************************************************
+ *                                test routines                              *
+ *****************************************************************************/
 
 
 int main(int argc, char **argv)
@@ -1010,7 +744,7 @@ int main(int argc, char **argv)
   //gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, FALSE, TRUE, 0);
 	
 	Control_Flow_Data = GuiControlFlow();
-	CF_Viewer = Control_Flow_Data->HBox_V;
+	CF_Viewer = Control_Flow_Data->Scrolled_Window_VC;
   gtk_box_pack_start(GTK_BOX(VBox_V), CF_Viewer, TRUE, TRUE, 0);
 
   /* Create horizontal scrollbar and pack it */
