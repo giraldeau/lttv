@@ -3,7 +3,7 @@
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
-LIBS += $(GTK_LIBS) -lcustomBox
+LIBS += $(GTK_LIBS)
 
 INCLUDES = \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
@@ -17,7 +17,7 @@ libdir = ${lttvplugindir}
 lib_LTLIBRARIES = liblttvwindow.la
 
 
-liblttvwindow_la_LDFLAGS = -module
+#liblttvwindow_la_LDFLAGS = -module
 liblttvwindow_la_SOURCES = \
 	toolbar.c\
 	menu.c\
@@ -35,7 +35,7 @@ noinst_HEADERS = \
 	interface.h \
 	callbacks.h
 
-lttvguiinclude_HEADERS = \
+lttvwindowinclude_HEADERS = \
 	common.h\
 	gtkdirsel.h\
 	gtkmultivpaned.h\
