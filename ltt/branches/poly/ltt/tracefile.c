@@ -962,6 +962,7 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
 
   lttEvent->time_delta = *(guint32 *)(t->cur_event_pos + EVENT_ID_SIZE);
   lttEvent->event_time = t->current_event_time;
+  lttEvent->event_cycle_count = t->cur_cycle_count;
 
   lttEvent->tracefile = t;
   lttEvent->data = t->cur_event_pos + EVENT_HEADER_SIZE;  
@@ -971,8 +972,6 @@ LttEvent *ltt_tracefile_read(LttTracefile *t)
   //update the fields of the current event and go to the next event
   err = skipEvent(t);
   if(err == ERANGE) g_error("event id is out of range\n");
-
-  lttEvent->event_cycle_count = t->cur_cycle_count;
 
   return lttEvent;
 }
@@ -1161,10 +1160,10 @@ LttTime getEventTime(LttTracefile * tf)
   LttTime       time;
   LttCycleCount cycle_count;      // cycle count for the current event
   LttCycleCount lEventTotalCycle; // Total cycles from start for event
-  double        lEventNSec;       // Total usecs from start for event
+  LttCycleCount lEventNSec;       // Total usecs from start for event
   LttTime       lTimeOffset;      // Time offset in struct LttTime
   guint16       evId;
-  gint64        nanoSec, tmpCycleCount = (((guint64)1)<<32);
+  LttCycleCount tmpCycleCount = (((LttCycleCount)1)<<32);
 
   evId = *(guint16 *)tf->cur_event_pos;
   if(evId == TRACE_BLOCK_START){
@@ -1195,12 +1194,11 @@ LttTime getEventTime(LttTracefile * tf)
   lEventTotalCycle -= tf->a_block_start->cycle_count;
 
   // Convert it to nsecs
-  lEventNSec = lEventTotalCycle / tf->cycle_per_nsec;
-  nanoSec    = lEventNSec;
+  lEventNSec = (double)lEventTotalCycle / (double)tf->cycle_per_nsec;
 
   // Determine offset in struct LttTime 
-  lTimeOffset.tv_nsec = nanoSec % NANOSECONDS_PER_SECOND;
-  lTimeOffset.tv_sec  = nanoSec / NANOSECONDS_PER_SECOND;
+  lTimeOffset.tv_nsec = lEventNSec % NANOSECONDS_PER_SECOND;
+  lTimeOffset.tv_sec  = lEventNSec / NANOSECONDS_PER_SECOND;
 
   time = ltt_time_add(tf->a_block_start->time, lTimeOffset);  
   

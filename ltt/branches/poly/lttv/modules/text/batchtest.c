@@ -31,6 +31,7 @@
 #include <lttv/stats.h>
 #include <ltt/trace.h>
 #include <ltt/event.h>
+#include <ltt/type.h>
 
 static LttvTraceset *traceset;
 
@@ -187,6 +188,16 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   LttTime time, previous_time;
 
+  long long unsigned cycle_count, start_count, delta_cycle;
+
+  long long unsigned start_nsec, end_nsec, delta_nsec, added_nsec, added_nsec2;
+
+  double cycle_per_nsec, nsec_per_cycle;
+
+  long long interpolated_nsec, interpolated_nsec2, end_nsec_sec, end_nsec_nsec;
+
+  LttTime start_time;
+
   LttEventPosition *event_position;
 
   LttTime zero_time = ltt_time_zero;
@@ -219,24 +230,49 @@ static gboolean process_traceset(void *hook_data, void *call_data)
           facility = ltt_event_facility(event);
           event_type = ltt_event_eventtype(event);
           time = ltt_event_time(event);
+          cycle_count = ltt_event_cycle_count(event);
           ltt_event_position(event, event_position);
           ltt_event_position_get(event_position, &nb_block, &nb_event, &tf);
-          fprintf(fp,"%s.%s: %lu.%09lu position %u/%u\n", 
+          fprintf(fp,"%s.%s: %llu %lu.%09lu position %u/%u\n", 
               ltt_facility_name(facility), ltt_eventtype_name(event_type), 
-		  (long)time.tv_sec, time.tv_nsec, nb_block, nb_event);
-
-          if(ltt_time_compare(time, previous_time) == 0) nb_equal++;
-	  else if(nb_equal > 0) {
-            g_warning("Consecutive %d events with time %lu.%lu",
-	        nb_equal + 1, previous_time.tv_sec, previous_time.tv_nsec);
-            nb_equal = 0;
-	  }
+	      cycle_count, (unsigned long)time.tv_sec, 
+              (unsigned long)time.tv_nsec, 
+              nb_block, nb_event);
 
           if(ltt_time_compare(time, previous_time) < 0) {
             g_warning("Time decreasing trace %d tracefile %d position %u/%u",
 		      i, j, nb_block, nb_event);
           }
-          previous_time = time;
+
+          if(strcmp(ltt_eventtype_name(event_type),"block_start") == 0) {
+            start_count = cycle_count;
+            start_time = time;
+          }
+          else if(strcmp(ltt_eventtype_name(event_type),"block_end") == 0) {
+            delta_cycle = cycle_count - start_count;
+            end_nsec_sec = (long long unsigned)time.tv_sec * (long long unsigned)1000000000;
+            end_nsec_nsec = time.tv_nsec;
+            end_nsec = end_nsec_sec + end_nsec_nsec;
+            start_nsec = (long long unsigned)start_time.tv_sec * (long long unsigned)1000000000 + (long long unsigned)start_time.tv_nsec;
+            delta_nsec = end_nsec - start_nsec;
+            cycle_per_nsec = (double)delta_cycle / (double)delta_nsec;
+            nsec_per_cycle = (double)delta_nsec / (double)delta_cycle;
+            added_nsec = (double)delta_cycle * nsec_per_cycle;
+            interpolated_nsec = start_nsec + added_nsec;
+            added_nsec2 = (double)delta_cycle / cycle_per_nsec;
+            interpolated_nsec2 = start_nsec + added_nsec2;
+
+            fprintf(fp,"Time: start_count %llu, end_count %llu, delta_cycle %llu, start_nsec %llu, end_nsec_sec %llu, end_nsec_nsec %llu, end_nsec %llu, delta_nsec %llu, cycle_per_nsec %.25f, nsec_per_cycle %.25f, added_nsec %llu, added_nsec2 %llu, interpolated_nsec %llu, interpolated_nsec2 %llu\n", start_count, cycle_count, delta_cycle, start_nsec, end_nsec_sec, end_nsec_nsec, end_nsec, delta_nsec, cycle_per_nsec, nsec_per_cycle, added_nsec, added_nsec2, interpolated_nsec, interpolated_nsec2);
+          }
+          else {
+            if(ltt_time_compare(time, previous_time) == 0) nb_equal++;
+	    else if(nb_equal > 0) {
+              g_warning("Consecutive %d events with time %lu.%09lu",
+	          nb_equal + 1, previous_time.tv_sec, previous_time.tv_nsec);
+              nb_equal = 0;
+	    }
+            previous_time = time;
+          }
         }
         fclose(fp);
       }
