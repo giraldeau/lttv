@@ -95,7 +95,7 @@ Description of new context API useage
 
 From now on, the state computation will be done in the middle hook call, with a
 priority higher than default. We will define this priority as PRIO_STATE,
-defined to -10.
+defined to 25.
 
 If state has to be computed, lttv_process_traceset_begin has to be  called in
 a first time. It adds the state hooks to the context. Then, the state
@@ -150,9 +150,10 @@ const LttvTracesetContextPosition *end_position)
 
 This new version of process traceset middle will call the event hooks for
 events until the first criterion is fulfilled : either the end time is reached,
-the number of events requested is passed or the end position is reached. When
-this function ends, the end position can be extracted from the context, the end
-event is set as described below and the number of events read is returned.
+the number of events requested is passed, the end position is reached or the
+last event hook list called returned TRUE. When this function ends, the end
+position can be extracted from the context, the end event is set as described
+below and the number of events read is returned.
 
 The end event is a pointer to the last event the hooks has been called for.
 
