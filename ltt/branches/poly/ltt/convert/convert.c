@@ -137,7 +137,8 @@ int main(int argc, char ** argv){
   new_process process;
 
   if(argc < 4){
-    printf("Not enough parameters\n");
+    printf("Usage : ./convert processfile_name number_of_cpu tracefile1 tracefile2 ... trace_creation_directory\n");
+		printf("For more details, see README.\n");
     exit(1);
   }
 
