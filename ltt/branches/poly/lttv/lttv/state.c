@@ -986,8 +986,19 @@ static gboolean schedchange(void *hook_data, void *call_data)
 }
 
 
-static gboolean process_fork(void *hook_data, void *call_data)
+static gboolean process_fork(LttvTraceHook *trace_hook, LttvTracefileState *s)
 {
+  LttField *f;
+  guint child_pid;
+
+  /* Child PID */
+  f = trace_hook->f3;
+  child_pid = ltt_event_get_unsigned(s->parent.e, f);
+
+  lttv_state_create_process(s, s->process, child_pid);
+
+  return FALSE;
+#if 0
   LttField *f = ((LttvTraceHook *)hook_data)->f1;
 
   LttvTracefileState *s = (LttvTracefileState *)call_data;
@@ -997,17 +1008,43 @@ static gboolean process_fork(void *hook_data, void *call_data)
   child_pid = ltt_event_get_unsigned(s->parent.e, f);
   lttv_state_create_process(s, s->process, child_pid);
   return FALSE;
+#endif //0
 }
 
 
-static gboolean process_exit(void *hook_data, void *call_data)
+static gboolean process_exit(LttvTraceHook *trace_hook, LttvTracefileState *s)
 {
+  if(s->process != NULL) {
+    s->process->state->s = LTTV_STATE_EXIT;
+  }
+  return FALSE;
+ 
+#if 0
   LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   if(s->process != NULL) {
     s->process->state->s = LTTV_STATE_EXIT;
   }
   return FALSE;
+#endif //0
+}
+
+gboolean process(void *hook_data, void *call_data)
+{
+  LttvTraceHook *trace_hook = (LttvTraceHook *)hook_data;
+  LttField *f = trace_hook->f1;
+
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  
+  guint sub_id = ltt_event_get_unsigned(s->parent.e, f);
+
+  /* CHECK : do not hardcode the sub_id values here ? */
+  if(sub_id == 2) {
+    return process_fork(trace_hook, s);
+  } else if(sub_id == 3) {
+    return process_exit(trace_hook, s);
+  }
+  return 0;
 }
 
 
@@ -1058,12 +1095,17 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     lttv_trace_find_hook(ts->parent.t, "core", "schedchange", "in", "out", 
         "out_state", schedchange, &g_array_index(hooks, LttvTraceHook, 6));
 
+    lttv_trace_find_hook(ts->parent.t, "core", "process", "event_sub_id", 
+        "event_data1", "event_data2", process,
+        &g_array_index(hooks, LttvTraceHook, 7));
+
+#if 0
     lttv_trace_find_hook(ts->parent.t, "core", "process_fork", "child_pid", 
         NULL, NULL, process_fork, &g_array_index(hooks, LttvTraceHook, 7));
 
     lttv_trace_find_hook(ts->parent.t, "core", "process_exit", NULL, NULL, 
         NULL, process_exit, &g_array_index(hooks, LttvTraceHook, 8));
-
+#endif //0
     /* Add these hooks to each event_by_id hooks list */
 
     nb_tracefile = ltt_trace_control_tracefile_number(ts->parent.t) +
