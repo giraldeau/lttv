@@ -2,6 +2,9 @@
 #ifndef _EVENT_HOOKS_H
 #define _EVENT_HOOKS_H
 
+#include <gtk/gtk.h>
+#include <lttv/mainWindow.h>
+
 GtkWidget *hGuiControlFlow(mainWindow *pmParentWindow);
 
 int Event_Selected_Hook(void *hook_data, void *call_data);

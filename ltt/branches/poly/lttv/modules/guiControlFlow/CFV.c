@@ -23,7 +23,7 @@ struct _ControlFlowData {
 	ProcessList *Process_List;
 	Drawing_t *Drawing;
 
-	GtkWidget *HBox_V;
+	//GtkWidget *HBox_V;
 	GtkWidget *Inside_HBox_V;
 
 	GtkAdjustment *VAdjust_C ;
@@ -98,7 +98,6 @@ GuiControlFlow(void)
 							0.0,	/* Page inc. */
 							0.0));	/* page size */
 	
-
 	Control_Flow_Data->Scrolled_Window_VC =
 			gtk_scrolled_window_new (NULL,
 			Control_Flow_Data->VAdjust_C);
@@ -133,13 +132,13 @@ GuiControlFlow(void)
 	//Control_Flow_Data->Trace_Statistics = get_trace_statistics(Trace);
 
 
-	gtk_widget_show(Control_Flow_Data->Drawing_Area_V);
-	gtk_widget_show(Process_List_Widget);
+	//gtk_widget_show(Control_Flow_Data->Drawing_Area_V);
+	//gtk_widget_show(Process_List_Widget);
 	gtk_widget_show(Control_Flow_Data->Inside_HBox_V);
 	gtk_widget_show(Control_Flow_Data->Scrolled_Window_VC);
-
+	
 	g_object_set_data_full(
-			G_OBJECT(Control_Flow_Data->HBox_V),
+			G_OBJECT(Control_Flow_Data->Scrolled_Window_VC),
 			"Control_Flow_Data",
 			Control_Flow_Data,
 			(GDestroyNotify)GuiControlFlow_Destructor);
@@ -156,10 +155,10 @@ GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
 	guint index;
 
 	/* May already been done by GTK window closing */
-	if(GTK_IS_WIDGET(Control_Flow_Data->HBox_V))
-		gtk_widget_destroy(Control_Flow_Data->HBox_V);
+	if(GTK_IS_WIDGET(Control_Flow_Data->Scrolled_Window_VC))
+		gtk_widget_destroy(Control_Flow_Data->Scrolled_Window_VC);
 	
-	ProcessList_destroy(Control_Flow_Data->Process_List);
+	//ProcessList_destroy(Control_Flow_Data->Process_List);
 	
 	g_slist_remove(gControl_Flow_Data_List,Control_Flow_Data);
 }
@@ -168,6 +167,6 @@ GuiControlFlow_Destructor(ControlFlowData *Control_Flow_Data)
 
 GtkWidget *GuiControlFlow_get_Widget(ControlFlowData *Control_Flow_Data)
 {
-	return Control_Flow_Data->HBox_V ;
+	return Control_Flow_Data->Scrolled_Window_VC ;
 }
 

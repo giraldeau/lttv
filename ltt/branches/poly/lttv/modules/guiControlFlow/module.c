@@ -20,18 +20,18 @@
 #include <glib.h>
 #include <gmodule.h>
 #include <lttv/module.h>
-//#include <lttv/gtkTraceSet.h>
+#include <lttv/gtkTraceSet.h>
 
-//#include "CFV.h"
-//#include "Event_Hooks.h"
+#include "CFV.h"
+#include "Event_Hooks.h"
 
-// #include "../icons/hGuiControlFlowInsert.xpm"
+ #include "../icons/hGuiControlFlowInsert.xpm"
 
 static LttvModule *Main_Win_Module;
 
 
 /** Array containing instanced objects. Used when module is unloaded */
-//GSList *gControl_Flow_Data_List = NULL ;
+GSList *gControl_Flow_Data_List = NULL ;
 
 
 
@@ -58,17 +58,18 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
 	g_critical("GUI ControlFlow Viewer init()");
 
 	/* Register the toolbar insert button */
-	//ToolbarItemReg(hGuiControlFlowInsert_xpm, "Insert Control Flow Viewer",
-	//		hGuiControlFlow);
+	ToolbarItemReg(hGuiControlFlowInsert_xpm, "Insert Control Flow Viewer",
+			hGuiControlFlow);
 
 	/* Register the menu item insert entry */
-	//MenuItemReg("/", "Insert Control Flow Viewer", hGuiControlFlow);
+	MenuItemReg("/", "Insert Control Flow Viewer", hGuiControlFlow);
 	
 }
 
 void destroy_walk(gpointer data, gpointer user_data)
 {
-//	GuiControlFlow_Destructor((ControlFlowData*)data);
+	GuiControlFlow_Destructor((ControlFlowData*)data);
+	g_critical("Walk destroy GUI Control Flow Viewer");
 }
 
 
@@ -83,16 +84,14 @@ G_MODULE_EXPORT void destroy() {
 	g_critical("GUI Control Flow Viewer destroy()");
 	int i;
 
-//	ControlFlowData *Control_Flow_Data;
+	ControlFlowData *Control_Flow_Data;
 	
-	g_critical("GUI Event Viewer destroy()");
-
-//	g_slist_foreach(gControl_Flow_Data_List, destroy_walk, NULL );
+	g_slist_foreach(gControl_Flow_Data_List, destroy_walk, NULL );
 	
 	/* Unregister the toolbar insert button */
-	//ToolbarItemUnreg(hGuiControlFlow);
+	ToolbarItemUnreg(hGuiControlFlow);
 
 	/* Unregister the menu item insert entry */
-	//MenuItemUnreg(hGuiControlFlow);
+	MenuItemUnreg(hGuiControlFlow);
 	
 }

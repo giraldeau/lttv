@@ -8,6 +8,7 @@
 #include <lttv/hook.h>
 #include <lttv/common.h>
 
+#include "Event_Hooks.h"
 #include "CFV.h"
 
 /**
@@ -21,7 +22,8 @@
 GtkWidget *
 hGuiControlFlow(mainWindow *pmParentWindow)
 {
-	ControlFlowData* Control_Flow_Data = GuiControlFlow() ;
+	g_critical("hGuiControlFlow");
+	ControlFlowData *Control_Flow_Data = GuiControlFlow() ;
 
 	return GuiControlFlow_get_Widget(Control_Flow_Data) ;
 	
