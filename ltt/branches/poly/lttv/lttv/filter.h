@@ -89,47 +89,65 @@ typedef enum _lttv_expression_op
 typedef enum _lttv_expression_type
 { 
   LTTV_EXPRESSION,
-  LTTV_SIMPLE_EXPRESSION
+  LTTV_SIMPLE_EXPRESSION,
+  LTTV_EXPRESSION_OP,
+  LTTV_UNDEFINED_EXPRESSION
 } lttv_expression_type;
+
+typedef enum _lttv_tree_element {
+  LTTV_TREE_UNDEFINED,
+  LTTV_TREE_NODE,
+  LTTV_TREE_LEAF
+} lttv_tree_element;
 
 typedef struct _lttv_simple_expression
 { 
-  lttv_expression_op op;
   char *field_name;
+  lttv_expression_op op;
   char *value;
 } lttv_simple_expression;
 
 typedef enum _lttv_logical_op {
-    OR = 1,         /* 1 */
-    AND = 1<<1,     /* 2 */
-    NOT = 1<<2,     /* 4 */
-    XOR = 1<<3      /* 8 */
+    LTTV_LOGICAL_OR = 1,         /* 1 */
+    LTTV_LOGICAL_AND = 1<<1,     /* 2 */
+    LTTV_LOGICAL_NOT = 1<<2,     /* 4 */
+    LTTV_LOGICAL_XOR = 1<<3      /* 8 */
 } lttv_logical_op;
     
 /*
  * Ah .. that's my tree
  */
-typedef struct _lttv_expression 
-{ 
+//typedef struct _lttv_expression 
+//{ 
 //  gboolean simple_expression;
-  int op;
+//  int op;
+//  lttv_expression_type type;
+//  union {
+//    struct lttv_expression *e;
+ //   lttv_field_relation *se;  /* --> simple expression */
+//  } e;
+//} lttv_expression;
+
+typedef struct _lttv_expression {
   lttv_expression_type type;
   union {
-    struct lttv_expression *e;
- //   lttv_field_relation *se;  /* --> simple expression */
+    lttv_simple_expression *se;
+    int op;
   } e;
 } lttv_expression;
 
-
-//typedef union _lttv_expression {
-//  lttv_simple_expression se;
-//  
-//} lttv_expression;
-
 typedef struct _lttv_filter_tree {
 	lttv_expression* node;
-	struct lttv_filter_tree* r_child;
-	struct lttv_filter_tree* l_child;
+  lttv_tree_element left;
+  lttv_tree_element right;
+  union {
+    struct lttv_filter_tree* t;
+    lttv_expression* leaf;
+  } l_child;
+  union {
+    struct lttv_filter_tree* t;
+    lttv_expression* leaf;
+  } r_child;
 } lttv_filter_tree;
 
 /**
@@ -140,15 +158,18 @@ typedef struct _lttv_filter_t {
 	lttv_filter_tree* tree;	
 } lttv_filter_t;
 
-/* Parse field path contained in list */
-gboolean parse_field_path(GList* fp);
 
+lttv_filter_tree* lttv_filter_tree_new();
+
+void lttv_filter_tree_destroy(lttv_filter_tree* tree);
+
+/* Parse field path contained in list */
+gboolean parse_field_path(GPtrArray* fp);
 
 gboolean parse_simple_expression(GString* expression);
 
 /* Compile the filter expression into an efficient data structure */
-lttv_filter_t *lttv_filter_new(char *expression, LttvTraceState *tfs);
-
+lttv_filter_tree *lttv_filter_new(char *expression, LttvTraceState *tfs);
 
 /* Check if the tracefile or event satisfies the filter. The arguments are
    declared as void * to allow these functions to be used as hooks. */

@@ -25,7 +25,7 @@
 
 /*
  *  YET TO BE ANSWERED
- *  - nothing for now
+ *  - the exists an other lttv_filter which conflicts with this one 
  */
 
 #include <lttv/filter.h>
@@ -73,6 +73,38 @@ GQuark
   LTTV_FILTER_P_STATUS,
   LTTV_FILTER_CPU;
   
+/**
+ *  Assign a new tree for the current expression
+ *  or sub expression
+ *  @return pointer of lttv_filter_tree
+ */
+lttv_filter_tree* lttv_filter_tree_new() {
+  lttv_filter_tree* tree;
+
+  tree = g_new(lttv_filter_tree,1);
+  tree->node = g_new(lttv_expression,1);
+  tree->node->type = LTTV_UNDEFINED_EXPRESSION;
+  tree->left = LTTV_TREE_UNDEFINED;
+  tree->right = LTTV_TREE_UNDEFINED;
+
+  return tree;
+}
+
+/**
+ *  Destroys the tree and his sub-trees
+ *  @param tree Tree which must be destroyed
+ */
+void lttv_filter_tree_destroy(lttv_filter_tree* tree) {
+
+  if(tree->left == LTTV_TREE_LEAF) g_free(tree->l_child.leaf);
+  else if(tree->left == LTTV_TREE_NODE) lttv_filter_tree_destroy(tree->l_child.t);
+
+  if(tree->right == LTTV_TREE_LEAF) g_free(tree->r_child.leaf);
+  else if(tree->right == LTTV_TREE_NODE) lttv_filter_tree_destroy(tree->r_child.t);
+
+  g_free(tree->node);
+  g_free(tree);
+}
 
 /**
  *  Parse through filtering field hierarchy as specified 
@@ -82,9 +114,10 @@ GQuark
  *  @return success/failure of operation
  */
 gboolean
-parse_field_path(GList* fp) {
+parse_field_path(GPtrArray* fp) {
 
-  GString* f = g_list_first(fp)->data; 
+  GString* f = NULL;
+  g_assert(f=g_ptr_array_index(fp,0)); //list_first(fp)->data; 
   
   if(g_quark_try_string(f->str) == LTTV_FILTER_EVENT) {
 //    parse_subfield(fp, LTTV_FILTER_EVENT);   
@@ -123,7 +156,7 @@ parse_simple_expression(GString* expression) {
  * 	@param t pointer to the current LttvTrace
  * 	@return the current lttv_filter or NULL if error
  */
-lttv_filter_t*
+lttv_filter_tree*
 lttv_filter_new(char *expression, LttvTraceState *tcs) {
 
   g_print("filter::lttv_filter_new()\n");		/* debug */
@@ -133,29 +166,32 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
     p_nesting=0,	/* parenthesis nesting value */
     b=0;	/* current breakpoint in expression string */
 	
+  /* 
+   * Main tree & Tree concatening list 
+   * each element of the list
+   * is a sub tree created 
+   * by the use of parenthesis in the 
+   * global expression.  The final tree 
+   * will be the one created at the root of 
+   * the list
+   */
+  lttv_filter_tree* tree = NULL; 
+  lttv_filter_tree* subtree = NULL;
+  lttv_filter_tree* current_tree = NULL;
+  GPtrArray *tree_list = g_ptr_array_new();
+  g_ptr_array_add( tree_list,(gpointer) tree );
+  
   /* temporary values */
   GString *a_field_component = g_string_new(""); 
-  GList *a_field_path = NULL;
+  GPtrArray *a_field_path = NULL;
+    
   lttv_simple_expression a_simple_expression;
   
-  /*	
-   *  1. parse expression
-   *  2. construct binary tree
-   *  3. return corresponding filter
-   */
-
-  /*
-   * 	Binary tree memory allocation
-   * 	- based upon a preliminary block size
-   */
-//  gulong size = (strlen(expression)/AVERAGE_EXPRESSION_LENGTH)*MAX_FACTOR;
-//  tree = g_malloc(size*sizeof(lttv_filter_tree));
-    
   /*
    *	Parse entire expression and construct
    *	the binary tree.  There are two steps 
    *	in browsing that string
-   *	  1. finding boolean ops ( &,|,^,! ) and parenthesis
+   *	  1. finding boolean ops " &,|,^,! " and parenthesis " {,(,[,],),} "
    *	  2. finding simple expressions
    *	    - field path ( separated by dots )
    *	    - op ( >, <, =, >=, <=, !=)
@@ -164,6 +200,10 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
    *	string is parsed in this loop for a 
    *	O(n) complexity order.
    */
+
+  a_field_path = g_ptr_array_new();
+  g_ptr_array_set_size(a_field_path,2);   /* by default, recording 2 field expressions */
+
   for(i=0;i<strlen(expression);i++) {
     g_print("%s\n",a_field_component->str);
     switch(expression[i]) {
@@ -171,10 +211,25 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
        *   logical operators
        */
       case '&':   /* and */
-      case '|':   /* or */
-      case '^':   /* xor */
-        g_list_append( a_field_path, a_field_component );
+        a_simple_expression.value = a_field_component->str;
         a_field_component = g_string_new("");
+        lttv_filter_tree* t;
+        t = lttv_filter_tree_new();
+        t->node->type = LTTV_EXPRESSION_OP;
+        t->node->e.op = LTTV_LOGICAL_AND;
+        if(subtree != NULL) { 
+          t->left = LTTV_TREE_NODE;
+          t->l_child.t = subtree;
+          subtree = NULL;
+        } else {
+          t->left = LTTV_TREE_LEAF;
+          t->l_child.leaf = g_new(lttv_simple_expression,1);
+        }
+        
+        break;
+      case '|':   /* or */
+        break;
+      case '^':   /* xor */
         break;
       case '!':   /* not, or not equal (math op) */
         if(expression[i+1] == '=') {  /* != */
@@ -189,11 +244,34 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
       case '[':
       case '{':
         p_nesting++;      /* incrementing parenthesis nesting value */
+        lttv_filter_tree* subtree = lttv_filter_tree_new();
+        g_ptr_array_add( tree_list,(gpointer) subtree );
         break;
       case ')':   /* end of parenthesis */
       case ']':
       case '}':
         p_nesting--;      /* decrementing parenthesis nesting value */
+        a_simple_expression.value = a_field_component->str;
+        a_field_component = g_string_new("");
+        if(p_nesting<0 || tree_list->len<2) {
+          g_warning("Wrong filtering options, the string\n\"%s\"\n\
+                     is not valid due to parenthesis incorrect use",expression);	
+          return NULL;
+        }
+      /*  lttv_filter_tree *sub1 = g_ptr_array_index(tree_list,tree_list->len-1);
+        lttv_filter_tree *sub2 = g_ptr_array_index(tree_list,tree_list->len);
+        if(sub1->left == LTTV_TREE_UNDEFINED){ 
+          sub1->l_child.t = sub2;
+          sub1->left = LTTV_TREE_NODE;
+        } else if(sub1->right == LTTV_TREE_UNDEFINED){
+          sub1->r_child.t = sub2; 
+          sub1->right = LTTV_TREE_NODE;
+        } else g_error("error during tree assignation");
+        g_ptr_array_remove_index(tree_list,tree_list->len);
+        break;
+        */
+        subtree = g_ptr_array_index(tree_list,tree_list->len);
+        g_ptr_array_remove_index(tree_list,tree_list->len);
         break;
 
       /*	
@@ -202,23 +280,29 @@ lttv_filter_new(char *expression, LttvTraceState *tcs) {
       case '<':   /* lower, lower or equal */
         if(expression[i+1] == '=') { /* <= */
           i++;
-          a_simple_expression.op = LTTV_FIELD_LE;                  
+          a_simple_expression.op = LTTV_FIELD_LE; 
         } else a_simple_expression.op = LTTV_FIELD_LT;
+        g_ptr_array_add( a_field_path,(gpointer) a_field_component );
+        a_field_component = g_string_new("");         
         break;
       case '>':   /* higher, higher or equal */
         if(expression[i+1] == '=') {  /* >= */
           i++;
-          a_simple_expression.op = LTTV_FIELD_GE;                  
+          a_simple_expression.op = LTTV_FIELD_GE;        
         } else a_simple_expression.op = LTTV_FIELD_GT;
+        g_ptr_array_add( a_field_path,(gpointer) a_field_component );
+        a_field_component = g_string_new("");         
         break;
       case '=':   /* equal */
         a_simple_expression.op = LTTV_FIELD_EQ;
+        g_ptr_array_add( a_field_path,(gpointer) a_field_component );
+        a_field_component = g_string_new("");         
         break;
       /*
        *  Field concatening caracter
        */
       case '.':   /* dot */
-        g_list_append( a_field_path, a_field_component );
+        g_ptr_array_add( a_field_path,(gpointer) a_field_component );
         a_field_component = g_string_new("");
         break;
       default:    /* concatening current string */
