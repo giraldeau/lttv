@@ -133,7 +133,7 @@ lttv_simple_expression_new() {
   se->field = LTTV_FILTER_UNDEFINED;
   se->op = NULL;
   se->offset = 0;
-  se->value = NULL;
+//  se->value = NULL;
 
   return se;
 }
@@ -149,7 +149,7 @@ lttv_simple_expression_new() {
  *  @return success/failure of operation
  */
 gboolean
-lttv_simple_expression_add_field(GPtrArray* fp, LttvSimpleExpression* se) {
+lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
 
   GString* f = NULL;
   
@@ -380,7 +380,7 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
        }
        break;
      default:
-       g_warning("Error encountered in operator assignment ! Bad field type ...");
+       g_warning("Error encountered in operator assignation ! Field type:%i",se->field);
        return FALSE;
    }
   
@@ -389,16 +389,67 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
 }
 
 /**
+ *  @fn void lttv_simple_expression_assign_value(LttvSimpleExpression*,char*)
+ *
+ *  Assign the value field to the current LttvSimpleExpression
+ *  @param se pointer to the current LttvSimpleExpression
+ *  @param value string value for simple expression
+ */
+gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
+
+  g_print("se->value:%s\n",value);
+  
+  switch(se->field) {
+     /* 
+      * string
+      */
+     case LTTV_FILTER_TRACE_NAME:
+     case LTTV_FILTER_TRACEFILE_NAME:
+     case LTTV_FILTER_STATE_P_NAME:
+     case LTTV_FILTER_EVENT_NAME:
+       se->value.v_string = value;
+       break;
+     /* 
+      * integer
+      */
+     case LTTV_FILTER_STATE_PID:
+     case LTTV_FILTER_STATE_PPID:
+     case LTTV_FILTER_STATE_EX_MODE:
+     case LTTV_FILTER_STATE_EX_SUBMODE:
+     case LTTV_FILTER_STATE_P_STATUS:
+       se->value.v_uint64 = atoi(value);
+       g_free(value);
+       break;
+     /*
+      * double
+      */
+     case LTTV_FILTER_STATE_CT:
+     case LTTV_FILTER_STATE_IT:
+     case LTTV_FILTER_EVENT_TIME:
+     case LTTV_FILTER_EVENT_TSC:
+       se->value.v_double = atof(value);
+       g_free(value);
+       break;
+     default:
+       g_warning("Error encountered in value assignation ! Field type = %i",se->field);
+       return FALSE;
+   }
+  
+  return TRUE;
+  
+}
+
+/**
  *  @fn void lttv_simple_expression_destroy(LttvSimpleExpression*)
  *
- *  Desallocate memory for the current 
+ *  Disallocate memory for the current 
  *  simple expression
  *  @param se pointer to the current LttvSimpleExpression
  */
 void
 lttv_simple_expression_destroy(LttvSimpleExpression* se) {
   
-  g_free(se->value);
+ // g_free(se->value);
   g_free(se);
 
 }
@@ -453,11 +504,10 @@ lttv_struct_type(gint ft) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint64(gpointer v1, char* v2) {
+gboolean lttv_apply_op_eq_uint64(gpointer v1, LttvFieldValue v2) {
 
   guint64* r = (guint64*) v1;
-  guint64 l = atoi(v2);
-  return (*r == l);
+  return (*r == v2.v_uint64);
   
 }
 
@@ -470,10 +520,9 @@ gboolean lttv_apply_op_eq_uint64(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint32(gpointer v1, char* v2) {
+gboolean lttv_apply_op_eq_uint32(gpointer v1, LttvFieldValue v2) {
   guint32* r = (guint32*) v1;
-  guint32 l = atoi(v2);
-  return (*r == l);
+  return (*r == v2.v_uint32);
 }
 
 /**
@@ -485,10 +534,9 @@ gboolean lttv_apply_op_eq_uint32(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_uint16(gpointer v1, char* v2) {
+gboolean lttv_apply_op_eq_uint16(gpointer v1, LttvFieldValue v2) {
   guint16* r = (guint16*) v1;
-  guint16 l = atoi(v2);
-  return (*r == l);
+  return (*r == v2.v_uint16);
 }
 
 /**
@@ -500,10 +548,9 @@ gboolean lttv_apply_op_eq_uint16(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_double(gpointer v1, char* v2) {
+gboolean lttv_apply_op_eq_double(gpointer v1, LttvFieldValue v2) {
   double* r = (double*) v1;
-  double l = atof(v2);
-  return (*r == l);
+  return (*r == v2.v_double);
 }
 
 /**
@@ -515,9 +562,9 @@ gboolean lttv_apply_op_eq_double(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_eq_string(gpointer v1, char* v2) {
+gboolean lttv_apply_op_eq_string(gpointer v1, LttvFieldValue v2) {
   char* r = (char*) v1;
-  return (!g_strcasecmp(r,v2));
+  return (!g_strcasecmp(r,v2.v_string));
 }
 
 /**
@@ -529,10 +576,9 @@ gboolean lttv_apply_op_eq_string(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint64(gpointer v1, char* v2) {
+gboolean lttv_apply_op_ne_uint64(gpointer v1, LttvFieldValue v2) {
   guint64* r = (guint64*) v1;
-  guint64 l = atoi(v2);
-  return (*r != l);
+  return (*r != v2.v_uint64);
 }
 
 /**
@@ -544,10 +590,9 @@ gboolean lttv_apply_op_ne_uint64(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint32(gpointer v1, char* v2) {
+gboolean lttv_apply_op_ne_uint32(gpointer v1, LttvFieldValue v2) {
   guint32* r = (guint32*) v1;
-  guint32 l = atoi(v2);
-  return (*r != l);
+  return (*r != v2.v_uint32);
 }
 
 /**
@@ -559,10 +604,9 @@ gboolean lttv_apply_op_ne_uint32(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_uint16(gpointer v1, char* v2) {
+gboolean lttv_apply_op_ne_uint16(gpointer v1, LttvFieldValue v2) {
   guint16* r = (guint16*) v1;
-  guint16 l = atoi(v2);
-  return (*r != l);
+  return (*r != v2.v_uint16);
 }
 
 /**
@@ -574,10 +618,9 @@ gboolean lttv_apply_op_ne_uint16(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_double(gpointer v1, char* v2) {
+gboolean lttv_apply_op_ne_double(gpointer v1, LttvFieldValue v2) {
   double* r = (double*) v1;
-  double l = atof(v2);
-  return (*r != l);
+  return (*r != v2.v_double);
 }
 
 /**
@@ -589,9 +632,9 @@ gboolean lttv_apply_op_ne_double(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ne_string(gpointer v1, char* v2) {
+gboolean lttv_apply_op_ne_string(gpointer v1, LttvFieldValue v2) {
   char* r = (char*) v1;
-  return (g_strcasecmp(r,v2));
+  return (g_strcasecmp(r,v2.v_string));
 }
 
 /**
@@ -603,10 +646,9 @@ gboolean lttv_apply_op_ne_string(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint64(gpointer v1, char* v2) {
+gboolean lttv_apply_op_lt_uint64(gpointer v1, LttvFieldValue v2) {
   guint64* r = (guint64*) v1;
-  guint64 l = atoi(v2);
-  return (*r < l);
+  return (*r < v2.v_uint64);
 }
 
 /**
@@ -618,10 +660,9 @@ gboolean lttv_apply_op_lt_uint64(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint32(gpointer v1, char* v2) {
+gboolean lttv_apply_op_lt_uint32(gpointer v1, LttvFieldValue v2) {
   guint32* r = (guint32*) v1;
-  guint32 l = atoi(v2);
-  return (*r < l);
+  return (*r < v2.v_uint32);
 }
 
 /**
@@ -633,10 +674,9 @@ gboolean lttv_apply_op_lt_uint32(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_uint16(gpointer v1, char* v2) {
+gboolean lttv_apply_op_lt_uint16(gpointer v1, LttvFieldValue v2) {
   guint16* r = (guint16*) v1;
-  guint16 l = atoi(v2);
-  return (*r < l);
+  return (*r < v2.v_uint16);
 }
 
 /**
@@ -648,10 +688,9 @@ gboolean lttv_apply_op_lt_uint16(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_lt_double(gpointer v1, char* v2) {
+gboolean lttv_apply_op_lt_double(gpointer v1, LttvFieldValue v2) {
   double* r = (double*) v1;
-  double l = atof(v2);
-  return (*r < l);
+  return (*r < v2.v_double);
 }
 
 /**
@@ -663,10 +702,9 @@ gboolean lttv_apply_op_lt_double(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint64(gpointer v1, char* v2) {
+gboolean lttv_apply_op_le_uint64(gpointer v1, LttvFieldValue v2) {
   guint64* r = (guint64*) v1;
-  guint64 l = atoi(v2);
-  return (*r <= l);
+  return (*r <= v2.v_uint64);
 }
 
 /**
@@ -678,10 +716,9 @@ gboolean lttv_apply_op_le_uint64(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint32(gpointer v1, char* v2) {
+gboolean lttv_apply_op_le_uint32(gpointer v1, LttvFieldValue v2) {
   guint32* r = (guint32*) v1;
-  guint32 l = atoi(v2);
-  return (*r <= l);
+  return (*r <= v2.v_uint32);
 }
 
 /**
@@ -693,10 +730,9 @@ gboolean lttv_apply_op_le_uint32(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_uint16(gpointer v1, char* v2) {
+gboolean lttv_apply_op_le_uint16(gpointer v1, LttvFieldValue v2) {
   guint16* r = (guint16*) v1;
-  guint16 l = atoi(v2);
-  return (*r <= l);
+  return (*r <= v2.v_uint16);
 }
 
 /**
@@ -708,10 +744,9 @@ gboolean lttv_apply_op_le_uint16(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_le_double(gpointer v1, char* v2) {
+gboolean lttv_apply_op_le_double(gpointer v1, LttvFieldValue v2) {
   double* r = (double*) v1;
-  double l = atof(v2);
-  return (*r <= l);
+  return (*r <= v2.v_double);
 }
 
 /**
@@ -723,10 +758,9 @@ gboolean lttv_apply_op_le_double(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint64(gpointer v1, char* v2) {
+gboolean lttv_apply_op_gt_uint64(gpointer v1, LttvFieldValue v2) {
   guint64* r = (guint64*) v1;
-  guint64 l = atoi(v2);
-  return (*r > l);
+  return (*r > v2.v_uint64);
 }
 
 /**
@@ -738,10 +772,9 @@ gboolean lttv_apply_op_gt_uint64(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint32(gpointer v1, char* v2) {
+gboolean lttv_apply_op_gt_uint32(gpointer v1, LttvFieldValue v2) {
   guint32* r = (guint32*) v1;
-  guint32 l = atoi(v2);
-  return (*r > l);
+  return (*r > v2.v_uint32);
 }
 
 /**
@@ -753,10 +786,9 @@ gboolean lttv_apply_op_gt_uint32(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_uint16(gpointer v1, char* v2) {
+gboolean lttv_apply_op_gt_uint16(gpointer v1, LttvFieldValue v2) {
   guint16* r = (guint16*) v1;
-  guint16 l = atoi(v2);
-  return (*r > l);
+  return (*r > v2.v_uint16);
 }
 
 /**
@@ -768,10 +800,9 @@ gboolean lttv_apply_op_gt_uint16(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_gt_double(gpointer v1, char* v2) {
+gboolean lttv_apply_op_gt_double(gpointer v1, LttvFieldValue v2) {
   double* r = (double*) v1;
-  double l = atof(v2);
-  return (*r > l);
+  return (*r > v2.v_double);
 }
 
 /**
@@ -783,10 +814,9 @@ gboolean lttv_apply_op_gt_double(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint64(gpointer v1, char* v2) {
+gboolean lttv_apply_op_ge_uint64(gpointer v1, LttvFieldValue v2) {
   guint64* r = (guint64*) v1;
-  guint64 l = atoi(v2);
-  return (*r >= l);
+  return (*r >= v2.v_uint64);
 }
 
 /**
@@ -798,10 +828,9 @@ gboolean lttv_apply_op_ge_uint64(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint32(gpointer v1, char* v2) {
+gboolean lttv_apply_op_ge_uint32(gpointer v1, LttvFieldValue v2) {
   guint32* r = (guint32*) v1;
-  guint32 l = atoi(v2);
-  return (*r >= l);
+  return (*r >= v2.v_uint32);
 }
 
 /**
@@ -813,10 +842,9 @@ gboolean lttv_apply_op_ge_uint32(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_uint16(gpointer v1, char* v2) {
+gboolean lttv_apply_op_ge_uint16(gpointer v1, LttvFieldValue v2) {
   guint16* r = (guint16*) v1;
-  guint16 l = atoi(v2);
-  return (*r >= l);
+  return (*r >= v2.v_uint16);
 }
 
 /**
@@ -828,10 +856,9 @@ gboolean lttv_apply_op_ge_uint16(gpointer v1, char* v2) {
  *  @param v2 right member of comparison
  *  @return success/failure of operation
  */
-gboolean lttv_apply_op_ge_double(gpointer v1, char* v2) {
+gboolean lttv_apply_op_ge_double(gpointer v1, LttvFieldValue v2) {
   double* r = (double*) v1;
-  double l = atof(v2);
-  return (*r >= l);
+  return (*r >= v2.v_double);
 }
 
 
@@ -857,7 +884,8 @@ lttv_filter_tree_clone(LttvFilterTree* tree) {
     newtree->l_child.leaf->field = tree->l_child.leaf->field;
     newtree->l_child.leaf->offset = tree->l_child.leaf->offset;
     newtree->l_child.leaf->op = tree->l_child.leaf->op;
-    newtree->l_child.leaf->value = g_strconcat(tree->l_child.leaf->value);
+    /* FIXME: special case for string copy ! */
+    newtree->l_child.leaf->value = tree->l_child.leaf->value;
   }
  
   newtree->right = tree->right;
@@ -868,7 +896,7 @@ lttv_filter_tree_clone(LttvFilterTree* tree) {
     newtree->r_child.leaf->field = tree->r_child.leaf->field;
     newtree->r_child.leaf->offset = tree->r_child.leaf->offset;
     newtree->r_child.leaf->op = tree->r_child.leaf->op;
-    newtree->r_child.leaf->value = g_strconcat(tree->r_child.leaf->value);
+    newtree->r_child.leaf->value = tree->r_child.leaf->value;
   }
   
   return newtree;
@@ -1011,7 +1039,10 @@ lttv_filter_update(LttvFilter* filter) {
       case '&':   /* and */
    
         t1 = (LttvFilterTree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
-        while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
+        while(t1->right != LTTV_TREE_IDLE) {
+          g_assert(t1->right == LTTV_TREE_NODE);
+          t1 = t1->r_child.t;
+        }
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_AND;
         if(subtree != NULL) {   /* append subtree to current tree */
@@ -1021,20 +1052,25 @@ lttv_filter_update(LttvFilter* filter) {
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2;
         } else {  /* append a simple expression */
-          a_simple_expression->value = g_string_free(a_field_component,FALSE);
+          lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
+         // a_simple_expression->value = g_string_free(a_field_component,FALSE);
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
           t1->right = LTTV_TREE_NODE;
-          t1->r_child.t = t2; 
+          t1->r_child.t = t2;
+          g_print("t1:%p t1->child:%p\n",t1,t1->r_child.t);
         }
         break;
       
       case '|':   /* or */
       
         t1 = (LttvFilter*)g_ptr_array_index(tree_stack,tree_stack->len-1);
-        while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
+         while(t1->right != LTTV_TREE_IDLE) {
+          g_assert(t1->right == LTTV_TREE_NODE);
+          t1 = t1->r_child.t;
+        }
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_OR;
         if(subtree != NULL) {   /* append subtree to current tree */
@@ -1044,7 +1080,8 @@ lttv_filter_update(LttvFilter* filter) {
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2;
         } else {    /* append a simple expression */
-          a_simple_expression->value = g_string_free(a_field_component,FALSE);
+          lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
+          //a_simple_expression->value = g_string_free(a_field_component,FALSE);
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
@@ -1057,7 +1094,10 @@ lttv_filter_update(LttvFilter* filter) {
       case '^':   /* xor */
         
         t1 = (LttvFilter*)g_ptr_array_index(tree_stack,tree_stack->len-1);
-        while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
+        while(t1->right != LTTV_TREE_IDLE) {
+          g_assert(t1->right == LTTV_TREE_NODE);
+          t1 = t1->r_child.t;
+        }
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_XOR;
         if(subtree != NULL) {   /* append subtree to current tree */
@@ -1067,7 +1107,8 @@ lttv_filter_update(LttvFilter* filter) {
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2;
         } else {    /* append a simple expression */
-          a_simple_expression->value = g_string_free(a_field_component,FALSE);
+          lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
+          //a_simple_expression->value = g_string_free(a_field_component,FALSE);
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
@@ -1081,13 +1122,16 @@ lttv_filter_update(LttvFilter* filter) {
         
         if(filter->expression[i+1] == '=') {  /* != */
           g_ptr_array_add( a_field_path,(gpointer) a_field_component );
-          lttv_simple_expression_add_field(a_field_path,a_simple_expression);
+          lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
           a_field_component = g_string_new("");         
           lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_NE);
           i++;
         } else {  /* ! */
           t1 = (LttvFilter*)g_ptr_array_index(tree_stack,tree_stack->len-1);
-          while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
+          while(t1->right != LTTV_TREE_IDLE) {
+             g_assert(t1->right == LTTV_TREE_NODE);
+             t1 = t1->r_child.t;
+          }
           t2 = lttv_filter_tree_new();
           t2->node = LTTV_LOGICAL_NOT;
           t1->right = LTTV_TREE_NODE;
@@ -1120,25 +1164,31 @@ lttv_filter_update(LttvFilter* filter) {
         
         if(subtree != NULL) {   /* append subtree to current tree */
           t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-          while(t1->right != LTTV_TREE_IDLE && t1->right != LTTV_TREE_LEAF) {
-              g_assert(t1!=NULL && t1->r_child.t != NULL);
-              t1 = t1->r_child.t;
+          while(t1->right != LTTV_TREE_IDLE) {
+             g_assert(t1->right == LTTV_TREE_NODE);
+             t1 = t1->r_child.t;
           }
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = subtree;
           subtree = g_ptr_array_index(tree_stack,tree_stack->len-1);
           g_ptr_array_remove_index(tree_stack,tree_stack->len-1);
         } else {    /* assign subtree as current tree */
-          a_simple_expression->value = g_string_free(a_field_component,FALSE);
+          lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
+          //a_simple_expression->value = g_string_free(a_field_component,FALSE);
           a_field_component = g_string_new("");
           t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-          while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
+          g_print("here\n");
+          while(t1->right != LTTV_TREE_IDLE) {
+             g_print("while right:%i %p->child:%p\n",t1->right,t1,t1->r_child.t);
+             g_assert(t1->right == LTTV_TREE_NODE);
+             g_assert(t1->r_child.t != NULL);
+             t1 = t1->r_child.t;
+          }
+          g_print("here2\n");
           t1->right = LTTV_TREE_LEAF;
           t1->r_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
-          subtree = g_ptr_array_index(tree_stack,tree_stack->len-1);
-          g_assert(subtree != NULL);
-          g_ptr_array_remove_index(tree_stack,tree_stack->len-1);
+          subtree = g_ptr_array_remove_index(tree_stack,tree_stack->len-1);
         }
         break;
 
@@ -1148,7 +1198,7 @@ lttv_filter_update(LttvFilter* filter) {
       case '<':   /* lower, lower or equal */
         
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );
-        lttv_simple_expression_add_field(a_field_path,a_simple_expression);
+        lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
         if(filter->expression[i+1] == '=') { /* <= */
           i++;
@@ -1159,7 +1209,7 @@ lttv_filter_update(LttvFilter* filter) {
       case '>':   /* higher, higher or equal */
         
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );   
-        lttv_simple_expression_add_field(a_field_path,a_simple_expression);
+        lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
         if(filter->expression[i+1] == '=') {  /* >= */
           i++;
@@ -1170,7 +1220,7 @@ lttv_filter_update(LttvFilter* filter) {
       case '=':   /* equal */
         
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );
-        lttv_simple_expression_add_field(a_field_path,a_simple_expression);
+        lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
         lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_EQ);
         break;
@@ -1216,14 +1266,17 @@ lttv_filter_update(LttvFilter* filter) {
   
   /*  processing last element of expression   */
   t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-  while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
+  while(t1->right != LTTV_TREE_IDLE) {
+    g_assert(t1->right == LTTV_TREE_NODE);
+    t1 = t1->r_child.t;
+  }
   if(subtree != NULL) {  /* add the subtree */
-    g_print("there right!\n");
     t1->right = LTTV_TREE_NODE;
     t1->r_child.t = subtree;
     subtree = NULL;
   } else {  /* add a leaf */
-    a_simple_expression->value = g_string_free(a_field_component,FALSE);
+    lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
+    //a_simple_expression->value = g_string_free(a_field_component,FALSE);
     a_field_component = NULL;
     t1->right = LTTV_TREE_LEAF;
     t1->r_child.leaf = a_simple_expression;
@@ -1418,8 +1471,8 @@ lttv_filter_tree_parse(
   if(t->left == LTTV_TREE_NODE) lresult = lttv_filter_tree_parse(t->l_child.t,event,tracefile,trace,state);
   else if(t->left == LTTV_TREE_LEAF) {
     //g_print("%p: left is %i %p %s\n",t,t->l_child.leaf->field,t->l_child.leaf->op,t->l_child.leaf->value);
-    char* v;
-    g_assert(v = t->l_child.leaf->value);
+    LttvFieldValue v;
+    v = t->l_child.leaf->value;
     switch(t->l_child.leaf->field) {
         
         case LTTV_FILTER_TRACE_NAME:
@@ -1537,8 +1590,8 @@ lttv_filter_tree_parse(
   if(t->right == LTTV_TREE_NODE) rresult = lttv_filter_tree_parse(t->r_child.t,event,tracefile,trace,state);
   else if(t->right == LTTV_TREE_LEAF) {
     //g_print("%p: right is %i %p %s\n",t,t->r_child.leaf->field,t->r_child.leaf->op,t->r_child.leaf->value);
-    char* v;
-    g_assert(v = t->r_child.leaf->value);
+    LttvFieldValue v;
+    v = t->r_child.leaf->value;
     switch(t->r_child.leaf->field) {
         
         case LTTV_FILTER_TRACE_NAME:
@@ -1680,14 +1733,12 @@ lttv_print_tree(LttvFilterTree* t) {
   if(t->left == LTTV_TREE_NODE) lttv_print_tree(t->l_child.t);
   else if(t->left == LTTV_TREE_LEAF) {
 //    g_assert(t->l_child.leaf->value != NULL);
-    g_print("%p: left is %i %p %s\n",t,t->l_child.leaf->field,t->l_child.leaf->op,t->l_child.leaf->value);
+    g_print("%p: left is %i %p value\n",t,t->l_child.leaf->field,t->l_child.leaf->op);
   }
-  g_print("1\n");
   if(t->right == LTTV_TREE_NODE) lttv_print_tree(t->r_child.t);
   else if(t->right == LTTV_TREE_LEAF) {
-    fprintf(stderr,"leaf!\n");
 //    g_assert(t->r_child.leaf->value != NULL);
-    fprintf(stderr,"%p: right is %i %p %s\n",t,t->r_child.leaf->field,t->r_child.leaf->op,t->r_child.leaf->value);
+    g_print("%p: right is %i %p value\n",t,t->r_child.leaf->field,t->r_child.leaf->op);
   }
  
 }

@@ -161,10 +161,11 @@ typedef enum _LttvTreeElement {
  */
 typedef struct _LttvSimpleExpression
 { 
-  gint field;                         /** left member of simple expression */                  
-  gint offset;                        /** offset used for dynamic fields */
-  gboolean (*op)(gpointer,char*);     /** operator of simple expression */
-  char *value;                        /** right member of simple expression */
+  gint field;                               /** left member of simple expression */                  
+  gint offset;                              /** offset used for dynamic fields */
+  gboolean (*op)(gpointer,LttvFieldValue);  /** operator of simple expression */
+//  char *value;                           
+  LttvFieldValue value;                     /** right member of simple expression */
 } LttvSimpleExpression;
 
 /**
@@ -229,6 +230,8 @@ gboolean lttv_simple_expression_add_field(GPtrArray* fp, LttvSimpleExpression* s
 
 gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionOp op);
 
+gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value);
+
 void lttv_simple_expression_destroy(LttvSimpleExpression* se);
 
 
@@ -236,37 +239,37 @@ void lttv_simple_expression_destroy(LttvSimpleExpression* se);
  * Logical operators functions
  */
 
-gboolean lttv_apply_op_eq_uint64(gpointer v1, char* v2);
-gboolean lttv_apply_op_eq_uint32(gpointer v1, char* v2);
-gboolean lttv_apply_op_eq_uint16(gpointer v1, char* v2);
-gboolean lttv_apply_op_eq_double(gpointer v1, char* v2);
-gboolean lttv_apply_op_eq_string(gpointer v1, char* v2);
+gboolean lttv_apply_op_eq_uint64(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_uint32(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_uint16(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_double(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_eq_string(gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_ne_uint64(gpointer v1, char* v2);
-gboolean lttv_apply_op_ne_uint32(gpointer v1, char* v2);
-gboolean lttv_apply_op_ne_uint16(gpointer v1, char* v2);
-gboolean lttv_apply_op_ne_double(gpointer v1, char* v2);
-gboolean lttv_apply_op_ne_string(gpointer v1, char* v2);
+gboolean lttv_apply_op_ne_uint64(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_uint32(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_uint16(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_double(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ne_string(gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_lt_uint64(gpointer v1, char* v2);
-gboolean lttv_apply_op_lt_uint32(gpointer v1, char* v2);
-gboolean lttv_apply_op_lt_uint16(gpointer v1, char* v2);
-gboolean lttv_apply_op_lt_double(gpointer v1, char* v2);
+gboolean lttv_apply_op_lt_uint64(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_lt_uint32(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_lt_uint16(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_lt_double(gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_le_uint64(gpointer v1, char* v2);
-gboolean lttv_apply_op_le_uint32(gpointer v1, char* v2);
-gboolean lttv_apply_op_le_uint16(gpointer v1, char* v2);
-gboolean lttv_apply_op_le_double(gpointer v1, char* v2);
+gboolean lttv_apply_op_le_uint64(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_le_uint32(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_le_uint16(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_le_double(gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_gt_uint64(gpointer v1, char* v2);
-gboolean lttv_apply_op_gt_uint32(gpointer v1, char* v2);
-gboolean lttv_apply_op_gt_uint16(gpointer v1, char* v2);
-gboolean lttv_apply_op_gt_double(gpointer v1, char* v2);
+gboolean lttv_apply_op_gt_uint64(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_gt_uint32(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_gt_uint16(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_gt_double(gpointer v1, LttvFieldValue v2);
 
-gboolean lttv_apply_op_ge_uint64(gpointer v1, char* v2);
-gboolean lttv_apply_op_ge_uint32(gpointer v1, char* v2);
-gboolean lttv_apply_op_ge_uint16(gpointer v1, char* v2);
-gboolean lttv_apply_op_ge_double(gpointer v1, char* v2);
+gboolean lttv_apply_op_ge_uint64(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ge_uint32(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ge_uint16(gpointer v1, LttvFieldValue v2);
+gboolean lttv_apply_op_ge_double(gpointer v1, LttvFieldValue v2);
 
 /*
  * Cloning
