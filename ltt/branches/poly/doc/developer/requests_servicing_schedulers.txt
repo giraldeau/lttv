@@ -1,0 +1,98 @@
+Linux Trace Toolkit
+
+Requests Servicing Schedulers
+
+
+Mathieu Desnoyers, 07/06/2004
+
+
+In the LTT graphical interface, two main types of events requests may occur :
+
+- events requests made by a viewer concerning a traceset for a ad hoc
+  computation.
+- events requests made by a viewer concerning a trace for a precomputation.
+
+
+Ad Hoc Computation
+
+The ad hoc computation must be serviced immediately : they are directly
+responding to events requests that must be serviced to complete the graphical
+widgets'data. This kind of computation may lead to incomplete result as long as
+precomputation are not finished. Once precomputation is over, the widgets will
+be redrawn if they needed such information. A ad hoc computation is done on a
+traceset : the workspace of a tab.
+
+Precomputation 
+
+Traces are global objects. Only one instance of a trace is opened for all the
+program. Precomputation will append data to the traces attributes (states,
+statistics). It must inform the widgets which asked for such states or
+statistics of their availability. Only one precomputation must be launched for
+each trace and no duplication of precomputation must be done.
+
+
+Schedulers
+
+There is one tracesetcontext per traceset. Each reference to a trace by a
+traceset also has its own tracecontext. Each trace, by itself, has its own
+tracecontext.
+
+Let's define a scheduler as a g_idle events request servicing function.
+
+There is one scheduler per traceset context (registered when there are requests
+to answer). There is also one scheduler per autonomous trace context (not
+related to any traceset context).
+
+A scheduler processes requests for a specific traceset or trace by combining
+time intervals of the requests. It is interruptible by any GTK event. A
+precomputation scheduler has a lower priority than a ad hoc computation
+scheduler. That means that no precomputation will be performed until there is
+no more ad hoc compuation pending. When a scheduler is interrupted, it makes no
+assumption about the presence or absence of the current requests in its pool
+when it starts back.
+
+
+Foreground Scheduler
+
+There can be one foreground scheduler per traceset (one traceset per tab). It
+simply calls the hooks given by the events requests of the viewers for the
+specified time intervals.
+
+
+Background Scheduler
+
+It has its own events requests pool. It services them just like a foreground
+scheduler. The difference comes in that there may be duplicated requests :
+for instance, statistics computation for a trace can be asked by two viewers
+at the same time. Another difference is that the hook_data of theses requests
+will typically be NULL, and the typical hook function will be located in a
+library upon which the viewer depends.
+
+
+
+Hooks Lists
+
+In order to answer the problems of background processing, we need to add a
+reference counter for each hook of a hook list. If the same hook is added twice,
+it will be called only once, but it will need two "remove" to be really removed
+from the list. Two hooks are identical if they have the same function pointer
+and hook_data.
+
+
+EventsRequest Structure
+
+This structure is the element of the events requests pools. The viewer field is
+used as an ownership identifier as well as pointer to the data structure upon
+which the action applies. Typically, this is a pointer to the viewer's data
+structure.
+
+In a ad hoc events request, a pointer to this structure is used as hook_data in
+the hook lists
+
+The typical case for a background computation is that the hook_data will be set
+to NULL instead. No particular hook_data is needed as this type of request does
+only modify trace related data structures which are available through the
+call_data.
+
+
+
