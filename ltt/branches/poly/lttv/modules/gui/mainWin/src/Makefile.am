@@ -11,6 +11,8 @@ INCLUDES = \
 	@PACKAGE_CFLAGS@ \
 	$(DEFAULT_INCLUDES)
 
+libdir = ${lttvplugindir}
+
 #bin_PROGRAMS = mainwin
 lib_LTLIBRARIES = libmainwin.la
 

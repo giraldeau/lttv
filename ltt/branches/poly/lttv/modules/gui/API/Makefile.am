@@ -4,7 +4,7 @@
 # Created by Mathieu Desnoyers on May 6, 2003
 #
 
-libdir = ${lttlibdir}
+libdir = ${lttvlibdir}
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
