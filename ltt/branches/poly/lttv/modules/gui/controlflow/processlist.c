@@ -378,6 +378,11 @@ ProcessList *processlist_construct(void)
       NULL,
       &process_list->cell_height);
   
+  guint ypad;
+  g_object_get(G_OBJECT(renderer), "ypad", &ypad, NULL);
+
+  process_list->cell_height += ypad;
+  
   column = gtk_tree_view_column_new_with_attributes ( "Process",
                 renderer,
                 "text",
