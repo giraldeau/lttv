@@ -141,10 +141,6 @@ Added to the lttvwindow API :
 
 
 void lttvwindow_events_request
-( MainWindow                  *main_win,
-  EventsRequest               *events_request);
-
-void lttvwindow_events_request
 ( MainWindow    *main_win,
   EventsRequest  events_request);
 
