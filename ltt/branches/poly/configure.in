@@ -44,7 +44,7 @@ lttlibdir="${libdir}/ltt"
 AC_SUBST(lttlibdir)
 
 
-DEFAULT_INCLUDES="-I\$(top_srcdir)/include"
+DEFAULT_INCLUDES="-I\$(top_srcdir)/include -I\$(includedir)/glib-2.0"
 AC_SUBST(DEFAULT_INCLUDES)
 
 lttvincludedir="${includedir}/lttv"
