@@ -39,6 +39,7 @@
 #include <lttv/module.h>
 #include <lttv/iattribute.h>
 #include <lttv/stats.h>
+#include <lttv/filter.h>
 #include <lttvwindow/mainwindow.h>
 #include <lttvwindow/mainwindow-private.h>
 #include <lttvwindow/menu.h>
@@ -46,7 +47,6 @@
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
 #include <lttvwindow/gtkdirsel.h>
-#include <lttvwindow/lttvfilter.h>
 
 
 #define DEFAULT_TIME_WIDTH_S   1
@@ -68,12 +68,10 @@ char * get_load_module(char ** load_module_name, int nb_module);
 char * get_unload_module(char ** loaded_module_name, int nb_module);
 char * get_remove_trace(char ** all_trace_name, int nb_trace);
 char * get_selection(char ** all_name, int nb, char *title, char * column_title);
-gboolean get_filter_selection(LttvTracesetSelector *s, char *title, char * column_title);
 Tab* create_tab(MainWindow * mw, Tab *copy_tab,
 		  GtkNotebook * notebook, char * label);
 
 static void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor);
-void update_filter(LttvTracesetSelector *s,  GtkTreeStore *store );
 
 void checkbox_changed(GtkTreeView *treeview,
 		      GtkTreePath *arg1,
@@ -82,8 +80,6 @@ void checkbox_changed(GtkTreeView *treeview,
 void remove_trace_from_traceset_selector(GtkWidget * paned, unsigned i);
 void add_trace_into_traceset_selector(GtkWidget * paned, LttTrace * trace);
 Tab *create_new_tab(GtkWidget* widget, gpointer user_data);
-
-LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset);
 
 static gboolean lttvwindow_process_pending_requests(Tab *tab);
 
@@ -98,60 +94,6 @@ enum
   MODULE_COLUMN,
   N_COLUMNS
 };
-
-/* Construct a selector(filter), which will be associated with a viewer,
- * and provides an interface for user to select interested events and traces
- */
-
-LttvTracesetSelector * construct_traceset_selector(LttvTraceset * traceset)
-{
-  LttvTracesetSelector  * s;
-  LttvTraceSelector     * trace;
-  LttvTracefileSelector * tracefile;
-  LttvEventtypeSelector * eventtype;
-  int i, j, k, m;
-  int nb_trace, nb_tracefile, nb_control, nb_per_cpu, nb_facility, nb_event;
-  LttvTrace * trace_v;
-  LttTrace  * t;
-  LttTracefile *tf;
-  LttFacility * fac;
-  LttEventType * et;
-
-  s = lttv_traceset_selector_new(lttv_traceset_name(traceset));
-  nb_trace = lttv_traceset_number(traceset);
-  for(i=0;i<nb_trace;i++){
-    trace_v = lttv_traceset_get(traceset, i);
-    t       = lttv_trace(trace_v);
-    trace   = lttv_trace_selector_new(t);
-    lttv_traceset_selector_trace_add(s, trace);
-
-    nb_facility = ltt_trace_facility_number(t);
-    for(k=0;k<nb_facility;k++){
-      fac = ltt_trace_facility_get(t,k);
-      nb_event = (int) ltt_facility_eventtype_number(fac);
-      for(m=0;m<nb_event;m++){
-	et = ltt_facility_eventtype_get(fac,m);
-	eventtype = lttv_eventtype_selector_new(et);
-	lttv_trace_selector_eventtype_add(trace, eventtype);
-      }
-    }
-
-    nb_control = ltt_trace_control_tracefile_number(t);
-    nb_per_cpu = ltt_trace_per_cpu_tracefile_number(t);
-    nb_tracefile = nb_control + nb_per_cpu;
-
-    for(j = 0 ; j < nb_tracefile ; j++) {
-      if(j < nb_control)
-        tf = ltt_trace_control_tracefile_get(t, j);
-      else
-        tf = ltt_trace_per_cpu_tracefile_get(t, j - nb_control);     
-      tracefile = lttv_tracefile_selector_new(tf);  
-      lttv_trace_selector_tracefile_add(trace, tracefile);
-      lttv_eventtype_selector_copy(trace, tracefile);
-    }
-  } 
-  return s;
-}
 
 /* Pasting routines */
 
@@ -414,7 +356,6 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
   MainWindow * mw_data = get_window_data_struct(widget);
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
   GtkWidget * viewer;
-  LttvTracesetSelector  * s;
   TimeInterval * time_interval;
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
                       gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
@@ -428,7 +369,6 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
 
   viewer_container = tab->viewer_container;
 
-  s = construct_traceset_selector(tab->traceset_info->traceset);
   viewer = (GtkWidget*)constructor(tab);
   if(viewer)
   {
@@ -1699,62 +1639,6 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 #undef list_out
 
 
-/* add_trace_into_traceset_selector, each instance of a viewer has an associated
- * selector (filter), when a trace is added into traceset, the selector should 
- * reflect the change. The function is used to update the selector 
- */
-#if 0
-void add_trace_into_traceset_selector(GtkWidget * paned, LttTrace * t)
-{
-  int j, k, m, nb_tracefile, nb_control, nb_per_cpu, nb_facility, nb_event;
-  LttvTracesetSelector  * s;
-  LttvTraceSelector     * trace;
-  LttvTracefileSelector * tracefile;
-  LttvEventtypeSelector * eventtype;
-  LttTracefile          * tf;
-  GtkWidget             * w;
-  LttFacility           * fac;
-  LttEventType          * et;
-
-  w = gtk_multivpaned_get_first_widget(GTK_MULTIVPANED(paned));
-  while(w){
-    s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-    
-    if(s){
-      trace   = lttv_trace_selector_new(t);
-      lttv_traceset_selector_trace_add(s, trace);
-
-      nb_facility = ltt_trace_facility_number(t);
-      for(k=0;k<nb_facility;k++){
-	fac = ltt_trace_facility_get(t,k);
-	nb_event = (int) ltt_facility_eventtype_number(fac);
-	for(m=0;m<nb_event;m++){
-	  et = ltt_facility_eventtype_get(fac,m);
-	  eventtype = lttv_eventtype_selector_new(et);
-	  lttv_trace_selector_eventtype_add(trace, eventtype);
-	}
-      }
-      
-      nb_control = ltt_trace_control_tracefile_number(t);
-      nb_per_cpu = ltt_trace_per_cpu_tracefile_number(t);
-      nb_tracefile = nb_control + nb_per_cpu;
-      
-      for(j = 0 ; j < nb_tracefile ; j++) {
-	if(j < nb_control)
-	  tf = ltt_trace_control_tracefile_get(t, j);
-	else
-	  tf = ltt_trace_per_cpu_tracefile_get(t, j - nb_control);     
-	tracefile = lttv_tracefile_selector_new(tf);  
-	lttv_trace_selector_tracefile_add(trace, tracefile);
-	lttv_eventtype_selector_copy(trace, tracefile);
-      }
-    }else g_warning("Module does not support filtering\n");
-
-    w = gtk_multivpaned_get_next_widget(GTK_MULTIVPANED(paned));
-  }
-}
-#endif //0
-
 static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
 {
   LttvTraceset *traceset = tab->traceset_info->traceset;
@@ -1887,31 +1771,6 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       break;
   }
 }
-
-
-/* remove_trace_into_traceset_selector, each instance of a viewer has an associated
- * selector (filter), when a trace is remove from traceset, the selector should 
- * reflect the change. The function is used to update the selector 
- */
-#if 0
-void remove_trace_from_traceset_selector(GtkWidget * paned, unsigned i)
-{
-  LttvTracesetSelector * s;
-  LttvTraceSelector * t;
-  GtkWidget * w; 
-  
-  w = gtk_multivpaned_get_first_widget(GTK_MULTIVPANED(paned));
-  while(w){
-    s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-    if(s){
-      t = lttv_traceset_selector_trace_get(s,i);
-      lttv_traceset_selector_trace_remove(s, i);
-      lttv_trace_selector_destroy(t);
-    }g_warning("Module dose not support filtering\n");
-    w = gtk_multivpaned_get_next_widget(GTK_MULTIVPANED(paned));
-  }
-}
-#endif //0
 
 /* remove_trace removes a trace from the current traceset if all viewers in 
  * the current tab are not interested in the trace. It first displays a 
@@ -2602,42 +2461,6 @@ on_remove_viewer_activate              (GtkMenuItem     *menuitem,
   delete_viewer((GtkWidget*)menuitem, user_data);
 }
 
-#if 0
-void
-on_trace_filter_activate              (GtkMenuItem     *menuitem,
-                                        gpointer         user_data)
-{
-  MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
-  LttvTracesetSelector * s;
-  GtkWidget * w;
-  GtkWidget * notebook = lookup_widget(GTK_WIDGET(menuitem), "MNotebook");
-
-  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
-                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
-  Tab *tab;
-
-  if(!page) {
-    return;
-  } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
-  }
-
-  w = gtk_multivpaned_get_widget(GTK_MULTIVPANED(tab->multivpaned));
-  
-  s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
-  if(!s){
-    g_info("There is no viewer yet\n");      
-    return;
-  }
-  if(get_filter_selection(s, "Configure trace and tracefile filter", "Select traces and tracefiles")){
-    //FIXME report filter change
-    //update_traceset(mw_data);
-    //call_pending_read_hooks(mw_data);
-    //lttvwindow_report_current_time(mw_data,&(tab->current_time));
-  }
-}
-#endif //0
-
 void
 on_trace_facility_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
@@ -3102,14 +2925,6 @@ on_color_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
   g_info("Color\n");
-}
-
-
-void
-on_filter_activate                     (GtkMenuItem     *menuitem,
-                                        gpointer         user_data)
-{
-  g_info("Filter\n");
 }
 
 
@@ -3900,236 +3715,9 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
 }
 
 
-/* callback function to check or uncheck the check box (filter)
- */
-
-void checkbox_changed(GtkTreeView *treeview,
-		      GtkTreePath *arg1,
-		      GtkTreeViewColumn *arg2,
-		      gpointer user_data)
-{
-  GtkTreeStore * store = (GtkTreeStore *)gtk_tree_view_get_model (treeview);
-  GtkTreeIter iter;
-  gboolean value;
-
-  if (gtk_tree_model_get_iter ((GtkTreeModel *)store, &iter, arg1)){
-    gtk_tree_model_get ((GtkTreeModel *)store, &iter, CHECKBOX_COLUMN, &value, -1);
-    value = value? FALSE : TRUE;
-    gtk_tree_store_set (GTK_TREE_STORE (store), &iter, CHECKBOX_COLUMN, value, -1);    
-  }  
-  
-}
-
-
-/* According to user's selection, update selector(filter)
- */
-
-void update_filter(LttvTracesetSelector *s,  GtkTreeStore *store )
-{
-  GtkTreeIter iter, child_iter, child_iter1, child_iter2;
-  int i, j, k, nb_eventtype;
-  LttvTraceSelector     * trace;
-  LttvTracefileSelector * tracefile;
-  LttvEventtypeSelector * eventtype;
-  gboolean value, value1, value2;
-
-  if(gtk_tree_model_get_iter_first((GtkTreeModel*)store, &iter)){
-    i = 0;
-    do{
-      trace = lttv_traceset_selector_trace_get(s, i);
-      nb_eventtype = lttv_trace_selector_eventtype_number(trace);
-      gtk_tree_model_get ((GtkTreeModel*)store, &iter, CHECKBOX_COLUMN, &value,-1);
-      if(value){
-	j = 0;
-	if(gtk_tree_model_iter_children ((GtkTreeModel*)store, &child_iter, &iter)){
-	  do{
-	    if(j<1){//eventtype selector for trace
-	      gtk_tree_model_get ((GtkTreeModel*)store, &child_iter, CHECKBOX_COLUMN, &value2,-1);
-	      if(value2){
-		k=0;
-		if(gtk_tree_model_iter_children ((GtkTreeModel*)store, &child_iter1, &child_iter)){
-		  do{
-		    eventtype = lttv_trace_selector_eventtype_get(trace,k);
-		    gtk_tree_model_get ((GtkTreeModel*)store, &child_iter1, CHECKBOX_COLUMN, &value2,-1);
-		    lttv_eventtype_selector_set_selected(eventtype,value2);
-		    k++;
-		  }while(gtk_tree_model_iter_next((GtkTreeModel*)store, &child_iter1));
-		}
-	      }
-	    }else{ //tracefile selector
-	      tracefile = lttv_trace_selector_tracefile_get(trace, j - 1);
-	      gtk_tree_model_get ((GtkTreeModel*)store, &child_iter, CHECKBOX_COLUMN, &value1,-1);
-	      lttv_tracefile_selector_set_selected(tracefile,value1);
-	      if(value1){
-		gtk_tree_model_iter_children((GtkTreeModel*)store, &child_iter1, &child_iter); //eventtype selector
-		gtk_tree_model_get ((GtkTreeModel*)store, &child_iter1, CHECKBOX_COLUMN, &value2,-1);
-		if(value2){
-		  k = 0;
-		  if(gtk_tree_model_iter_children ((GtkTreeModel*)store, &child_iter2, &child_iter1)){
-		    do{//eventtype selector for tracefile
-		      eventtype = lttv_tracefile_selector_eventtype_get(tracefile,k);
-		      gtk_tree_model_get ((GtkTreeModel*)store, &child_iter2, CHECKBOX_COLUMN, &value2,-1);
-		      lttv_eventtype_selector_set_selected(eventtype,value2);
-		      k++;
-		    }while(gtk_tree_model_iter_next((GtkTreeModel*)store, &child_iter2));
-		  }
-		}
-	      }
-	    }
-	    j++;
-	  }while(gtk_tree_model_iter_next((GtkTreeModel*)store, &child_iter));
-	}
-      }
-      lttv_trace_selector_set_selected(trace,value);
-      i++;
-    }while(gtk_tree_model_iter_next((GtkTreeModel*)store, &iter));
-  }
-}
-
-
 /* Display a dialogue showing all eventtypes and traces, let user to select the interested
  * eventtypes, tracefiles and traces (filter)
  */
-
-gboolean get_filter_selection(LttvTracesetSelector *s,char *title, char * column_title)
-{
-  GtkWidget         * dialogue;
-  GtkTreeStore      * store;
-  GtkWidget         * tree;
-  GtkWidget         * scroll_win;
-  GtkCellRenderer   * renderer;
-  GtkTreeViewColumn * column;
-  GtkTreeIter         iter, child_iter, child_iter1, child_iter2;
-  int i, j, k, id, nb_trace, nb_tracefile, nb_eventtype;
-  LttvTraceSelector     * trace;
-  LttvTracefileSelector * tracefile;
-  LttvEventtypeSelector * eventtype;
-  char * name;
-  gboolean checked;
-
-  dialogue = gtk_dialog_new_with_buttons(title,
-					 NULL,
-					 GTK_DIALOG_MODAL,
-					 GTK_STOCK_OK,GTK_RESPONSE_ACCEPT,
-					 GTK_STOCK_CANCEL,GTK_RESPONSE_REJECT,
-					 NULL); 
-  gtk_window_set_default_size((GtkWindow*)dialogue, 300, 500);
-
-  store = gtk_tree_store_new (TOTAL_COLUMNS, G_TYPE_BOOLEAN, G_TYPE_STRING);
-  tree  = gtk_tree_view_new_with_model (GTK_TREE_MODEL (store));
-  g_object_unref (G_OBJECT (store));
-  g_signal_connect (G_OBJECT (tree), "row-activated",
-		    G_CALLBACK (checkbox_changed),
-  		    NULL);  
-
-
-  renderer = gtk_cell_renderer_toggle_new ();
-  gtk_cell_renderer_toggle_set_radio((GtkCellRendererToggle *)renderer, FALSE);
-
-  g_object_set (G_OBJECT (renderer),"activatable", TRUE, NULL);
-
-  column   = gtk_tree_view_column_new_with_attributes ("Checkbox",
-				  		       renderer,
-						       "active", CHECKBOX_COLUMN,
-						       NULL);
-  gtk_tree_view_column_set_alignment (column, 0.5);
-  gtk_tree_view_column_set_fixed_width (column, 20);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (tree), column);
-
-  renderer = gtk_cell_renderer_text_new ();
-  column   = gtk_tree_view_column_new_with_attributes (column_title,
-				  		       renderer,
-						       "text", NAME_COLUMN,
-						       NULL);
-  gtk_tree_view_column_set_alignment (column, 0.0);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (tree), column);
-  gtk_tree_view_set_headers_visible(GTK_TREE_VIEW (tree), FALSE);
-
-  scroll_win = gtk_scrolled_window_new (NULL, NULL);
-  gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll_win), 
-				 GTK_POLICY_AUTOMATIC,GTK_POLICY_AUTOMATIC);
-  gtk_container_add (GTK_CONTAINER (scroll_win), tree);
-
-  gtk_box_pack_start(GTK_BOX(GTK_DIALOG(dialogue)->vbox), scroll_win,TRUE, TRUE,0);
-
-  gtk_widget_show(scroll_win);
-  gtk_widget_show(tree);
-  
-  nb_trace = lttv_traceset_selector_trace_number(s);
-  for(i=0;i<nb_trace;i++){
-    trace = lttv_traceset_selector_trace_get(s, i);
-    name  = lttv_trace_selector_get_name(trace);    
-    gtk_tree_store_append (store, &iter, NULL);
-    checked = lttv_trace_selector_get_selected(trace);
-    gtk_tree_store_set (store, &iter, 
-			CHECKBOX_COLUMN,checked,
-			NAME_COLUMN,name,
-			-1);
-
-    gtk_tree_store_append (store, &child_iter, &iter);      
-    gtk_tree_store_set (store, &child_iter, 
-			CHECKBOX_COLUMN, checked,
-			NAME_COLUMN,"eventtype",
-			-1);
-    
-    nb_eventtype = lttv_trace_selector_eventtype_number(trace);
-    for(j=0;j<nb_eventtype;j++){
-      eventtype = lttv_trace_selector_eventtype_get(trace,j);
-      name      = lttv_eventtype_selector_get_name(eventtype);    
-      checked   = lttv_eventtype_selector_get_selected(eventtype);
-      gtk_tree_store_append (store, &child_iter1, &child_iter);      
-      gtk_tree_store_set (store, &child_iter1, 
-			  CHECKBOX_COLUMN, checked,
-			  NAME_COLUMN,name,
-			  -1);
-    }
-
-    nb_tracefile = lttv_trace_selector_tracefile_number(trace);
-    for(j=0;j<nb_tracefile;j++){
-      tracefile = lttv_trace_selector_tracefile_get(trace, j);
-      name      = lttv_tracefile_selector_get_name(tracefile);    
-      gtk_tree_store_append (store, &child_iter, &iter);
-      checked = lttv_tracefile_selector_get_selected(tracefile);
-      gtk_tree_store_set (store, &child_iter, 
-			  CHECKBOX_COLUMN, checked,
-			  NAME_COLUMN,name,
-			  -1);
-
-      gtk_tree_store_append (store, &child_iter1, &child_iter);      
-      gtk_tree_store_set (store, &child_iter1, 
-			  CHECKBOX_COLUMN, checked,
-			  NAME_COLUMN,"eventtype",
-			  -1);
-    
-      for(k=0;k<nb_eventtype;k++){
-	eventtype = lttv_tracefile_selector_eventtype_get(tracefile,k);
-	name      = lttv_eventtype_selector_get_name(eventtype);    
-	checked   = lttv_eventtype_selector_get_selected(eventtype);
-	gtk_tree_store_append (store, &child_iter2, &child_iter1);      
-	gtk_tree_store_set (store, &child_iter2, 
-			    CHECKBOX_COLUMN, checked,
-			    NAME_COLUMN,name,
-			    -1);
-      }
-    }
-  }
-
-  id = gtk_dialog_run(GTK_DIALOG(dialogue));
-  switch(id){
-    case GTK_RESPONSE_ACCEPT:
-    case GTK_RESPONSE_OK:
-      update_filter(s, store);
-      gtk_widget_destroy(dialogue);
-      return TRUE;
-    case GTK_RESPONSE_REJECT:
-    case GTK_RESPONSE_CANCEL:
-    default:
-      gtk_widget_destroy(dialogue);
-      break;
-  }
-  return FALSE;
-}
-
 
 /* Select a trace which will be removed from traceset
  */

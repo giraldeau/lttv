@@ -27,6 +27,7 @@
 #include <lttv/tracecontext.h>
 #include <lttv/hook.h>
 #include <lttv/stats.h>
+#include <lttv/filter.h>
 //#include <lttvwindow/gtkmultivpaned.h>
 #include <lttvwindow/mainwindow.h>
 

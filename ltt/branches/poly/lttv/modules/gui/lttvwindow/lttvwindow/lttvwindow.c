@@ -970,7 +970,7 @@ void lttvwindow_report_filter(Tab *tab, LttvFilter *filter)
            "hooks/updatefilter", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
-  lttv_hooks_call(tmp, &position);
+  lttv_hooks_call(tmp, filter);
 }
 
 
