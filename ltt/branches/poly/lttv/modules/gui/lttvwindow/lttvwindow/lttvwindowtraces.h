@@ -153,4 +153,78 @@ void lttvwindowtraces_background_notify_current
 void lttvwindowtraces_background_notify_remove(gpointer owner);
 
 
+/**
+ * Tells if the information computed by a module for a trace is ready.
+ *
+ * Must be checked before a background processing request.
+ *
+ * @param module_name A GQuark : the name of the module which computes the
+ *                    information.
+ * @param trace The trace for which the information is verified.
+ */
+
+gboolean lttvwindowtraces_get_ready(LttvAttributeName module_name,
+                                    LttvTrace *trace);
+
+/**
+ * Tells if the information computed by a module for a trace is being processed.
+ * 
+ * Must be checked before a background processing request.
+ *
+ * If it is effectively processed, the typical thing to do is to call
+ * lttvwindowtraces_background_notify_current to be notified when the current
+ * processing will be over.
+ *
+ * @param module_name A GQuark : the name of the module which computes the
+ *                    information.
+ * @param trace The trace for which the information is verified.
+ */
+
+gboolean lttvwindowtraces_get_in_progress(LttvAttributeName module_name,
+                                    LttvTrace *trace);
+
+/**
+ * Register the background computation hooks for a specific module. It adds the
+ * computation hooks to the global attrubutes, under "computation/module name"
+ *
+ * @param module_name A GQuark : the name of the module which computes the
+ *                    information.
+ */
+void lttvwindowtraces_register_computation_hooks(LttvAttributeName module_name,
+                                          LttvHooks *before_chunk_traceset,
+                                          LttvHooks *before_chunk_trace,
+                                          LttvHooks *before_chunk_tracefile,
+                                          LttvHooks *after_chunk_traceset,
+                                          LttvHooks *after_chunk_trace,
+                                          LttvHooks *after_chunk_tracefile,
+                                          LttvHooks *before_request,
+                                          LttvHooks *after_request,
+                                          LttvHooks *event_hook,
+                                          LttvHooksById *event_hook_by_id);
+/**
+ * Unregister the background computation hooks for a specific module.
+ *
+ * It also removes all the requests than can be currently processed by the
+ * background computation algorithm for all the traces (list_in and list_out).
+ *
+ * @param module_name A GQuark : the name of the module which computes the
+ *                    information.
+ */
+
+void lttvwindowtraces_unregister_computation_hooks
+                                     (LttvAttributeName module_name);
+
+
+/**
+ * It removes all the requests than can be currently processed by the
+ * background computation algorithm for all the traces (list_in and list_out).
+ *
+ * Leaves the flag to in_progress or none.. depending if current or queue
+ *
+ * @param module_name A GQuark : the name of the module which computes the
+ *                    information.
+ */
+void lttvwindowtraces_unregister_requests(LttvAttributeName module_name);
+
+
 #endif //LTTVWINDOWTRACES_H

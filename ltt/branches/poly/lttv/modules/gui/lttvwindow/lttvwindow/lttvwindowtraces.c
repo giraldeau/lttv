@@ -1051,3 +1051,245 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
     }
   }
 }
+
+
+
+/**
+ * Register the background computation hooks for a specific module. It adds the
+ * computation hooks to the global attrubutes, under "computation/module name"
+ *
+ * @param module_name A GQuark : the name of the module which computes the
+ *                    information.
+ */
+void lttvwindowtraces_register_computation_hooks(LttvAttributeName module_name,
+                                          LttvHooks *before_chunk_traceset,
+                                          LttvHooks *before_chunk_trace,
+                                          LttvHooks *before_chunk_tracefile,
+                                          LttvHooks *after_chunk_traceset,
+                                          LttvHooks *after_chunk_trace,
+                                          LttvHooks *after_chunk_tracefile,
+                                          LttvHooks *before_request,
+                                          LttvHooks *after_request,
+                                          LttvHooks *event_hook,
+                                          LttvHooksById *event_hook_by_id)
+{
+  LttvAttribute *g_attribute = lttv_global_attributes();
+  LttvAttribute *attribute;
+  LttvAttributeValue value;
+
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
+                                LTTV_COMPUTATION)));
+
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
+                                module_name)));
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_BEFORE_CHUNK_TRACESET,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = before_chunk_traceset;
+  
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_BEFORE_CHUNK_TRACE,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = before_chunk_trace;
+  
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_BEFORE_CHUNK_TRACEFILE,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = before_chunk_tracefile;
+  
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_AFTER_CHUNK_TRACESET,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = after_chunk_traceset;
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_AFTER_CHUNK_TRACE,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = after_chunk_trace;
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_AFTER_CHUNK_TRACEFILE,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = after_chunk_tracefile;
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_BEFORE_REQUEST,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = before_request;
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_AFTER_REQUEST,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = after_request;
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_EVENT_HOOK,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = event_hook;
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_EVENT_HOOK_BY_ID,
+                                LTTV_POINTER,
+                                &value));
+  *(value.v_pointer) = event_hook_by_id;
+
+}
+
+
+/**
+ * It removes all the requests than can be currently processed by the
+ * background computation algorithm for all the traces (list_in and list_out).
+ *
+ * Leaves the flag to in_progress or none.. depending if current or queue
+ *
+ * @param module_name A GQuark : the name of the module which computes the
+ *                    information.
+ */
+void lttvwindowtraces_unregister_requests(LttvAttributeName module_name)
+{
+  guint i;
+
+  for(i=0;i<lttvwindowtraces_get_number();i++) {
+    LttvTrace *trace_v = lttvwindowtraces_get_trace(i);
+    g_assert(trace_v != NULL);
+    LttTrace *trace;
+    LttvAttribute *attribute = lttv_trace_attribute(trace_v);
+    LttvAttributeValue value;
+    GSList *queue, *current;
+    GSList *iter;
+    
+    g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                  LTTV_REQUESTS_QUEUE,
+                                  LTTV_POINTER,
+                                  &value));
+    queue = (GSList*)*(value.v_pointer);
+    
+    iter = queue;
+    while(iter != NULL) {
+      gboolean remove = FALSE;
+      gboolean free_data = FALSE;
+
+      BackgroundRequest *bg_req = (BackgroundRequest*)iter->data;
+
+      if(bg_req->module_name == module_name) {
+        remove = TRUE;
+        free_data = TRUE;
+      }
+
+      /* Go to next */
+      if(remove)
+      {
+        GSList *remove_iter = iter;
+
+        iter = g_slist_next(iter);
+        if(free_data) g_free(remove_iter->data);
+        queue = g_slist_remove_link(queue, remove_iter);
+      } else { // not remove
+        iter = g_slist_next(iter);
+      }
+    }
+    
+        
+    g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                  LTTV_REQUESTS_CURRENT,
+                                  LTTV_POINTER,
+                                  &value));
+    current = (GSList*)*(value.v_pointer);
+    
+    iter = current;
+    while(iter != NULL) {
+      gboolean remove = FALSE;
+      gboolean free_data = FALSE;
+
+      BackgroundRequest *bg_req = (BackgroundRequest*)iter->data;
+
+      if(bg_req->module_name == module_name) {
+        remove = TRUE;
+        free_data = TRUE;
+      }
+
+      /* Go to next */
+      if(remove)
+      {
+        GSList *remove_iter = iter;
+
+        iter = g_slist_next(iter);
+        if(free_data) g_free(remove_iter->data);
+        current = g_slist_remove_link(current, remove_iter);
+      } else { // not remove
+        iter = g_slist_next(iter);
+      }
+    }
+  }
+}
+
+
+/**
+ * Unregister the background computation hooks for a specific module.
+ *
+ * It also removes all the requests than can be currently processed by the
+ * background computation algorithm for all the traces (list_in and list_out).
+ *
+ * @param module_name A GQuark : the name of the module which computes the
+ *                    information.
+ */
+
+void lttvwindowtraces_unregister_computation_hooks
+                                     (LttvAttributeName module_name)
+{
+  LttvAttribute *g_attribute = lttv_global_attributes();
+  LttvAttribute *attribute;
+
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
+                                LTTV_COMPUTATION)));
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(attribute),
+                                module_name)));
+
+
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_EVENT_HOOK_BY_ID);
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_EVENT_HOOK);
+
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_AFTER_REQUEST);
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_BEFORE_REQUEST);
+
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_AFTER_CHUNK_TRACEFILE);
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_AFTER_CHUNK_TRACE);
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_AFTER_CHUNK_TRACESET);
+
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_BEFORE_CHUNK_TRACEFILE);
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_BEFORE_CHUNK_TRACE);
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_BEFORE_CHUNK_TRACESET);
+  /* finally, remove module name */
+  g_assert(attribute = 
+      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
+                                LTTV_COMPUTATION)));
+  lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
+                                     module_name);
+
+}
+
+
