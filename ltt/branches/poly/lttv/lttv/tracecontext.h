@@ -74,6 +74,9 @@ typedef struct _LttvTraceContextClass LttvTraceContextClass;
 typedef struct _LttvTracefileContext LttvTracefileContext;
 typedef struct _LttvTracefileContextClass LttvTracefileContextClass;
 
+typedef struct _LttvTracesetContextPosition LttvTracesetContextPosition;
+typedef struct _LttvTraceContextPosition LttvTraceContextPosition;
+
 #define LTTV_TRACESET_CONTEXT_TYPE  (lttv_traceset_context_get_type ())
 #define LTTV_TRACESET_CONTEXT(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACESET_CONTEXT_TYPE, LttvTracesetContext))
 #define LTTV_TRACESET_CONTEXT_CLASS(vtable)  (G_TYPE_CHECK_CLASS_CAST ((vtable), LTTV_TRACESET_CONTEXT_TYPE, LttvTracesetContextClass))
@@ -85,12 +88,10 @@ struct _LttvTracesetContext {
   GObject parent;
 
   LttvTraceset *ts;
-  LttvHooks *before;
-  LttvHooks *after;
   LttvTraceContext **traces;
   LttvAttribute *a;
   LttvAttribute *ts_a;
-  TimeInterval *Time_Span;
+  TimeInterval time_span;
   GTree *pqueue;
   LttEvent *e;    /* Last event read by lttv_process_traceset_middle */
 };
@@ -135,9 +136,6 @@ struct _LttvTraceContext {
   guint index;                /* in ts_context->traces */
   LttTrace *t;
   LttvTrace *vt;
-  LttvHooks *check;
-  LttvHooks *before;
-  LttvHooks *after;
   LttvTracefileContext **tracefiles;
   LttvAttribute *a;
   LttvAttribute *t_a;
@@ -163,15 +161,9 @@ struct _LttvTracefileContext {
   gboolean control;
   guint index;                /* in ts_context->tracefiles */
   LttTracefile *tf;
-  LttvHooks *check;
-  LttvHooks *before;
-  LttvHooks *after;
   LttEvent *e;
-  LttvHooks *check_event;
-  LttvHooks *before_event;
-  LttvHooksById *before_event_by_id;
-  LttvHooks *after_event;
-  LttvHooksById *after_event_by_id;
+  LttvHooks *event;
+  LttvHooksById *event_by_id;
   LttTime timestamp;
   LttvAttribute *a;
 };
@@ -189,80 +181,81 @@ GType lttv_tracefile_context_get_type (void);
 void lttv_process_traceset(LttvTracesetContext *self, LttTime end, 
     unsigned nb_events);
 
-/* Process traceset can also be done in smaller pieces calling begin, middle
-   repeatedly, and end. The middle function return the number of events 
-   processed. It may be larger than nb_events if several events have the 
-   same timestamp. It will be smaller than nb_events if the end time
-   is reached. */
+/* Process traceset can also be done in smaller pieces calling begin,
+ * then seek and middle repeatedly, and end. The middle function return the
+ * number of events processed. It will be smaller than nb_events if the end time
+ * or end position is reached. */
 
-void lttv_process_traceset_begin(LttvTracesetContext *self, LttTime end);
 
-guint lttv_process_traceset_middle(LttvTracesetContext *self, LttTime end, 
-    unsigned nb_events);
+void lttv_process_traceset_begin(LttvTracesetContext *self,
+                                 LttvHooks       *before_traceset,
+                                 LttvHooks       *before_trace,
+                                 LttvHooks       *before_tracefile,
+                                 LttvHooks       *event,
+                                 LttvHooksById   *event_by_id);
 
-void lttv_process_traceset_end(LttvTracesetContext *self);
+
+guint lttv_process_traceset_middle(LttvTracesetContext *self,
+                              LttTime end, 
+                              unsigned nb_events,
+                              const LttvTracesetContextPosition *end_position);
+
+void lttv_process_traceset_end(LttvTracesetContext *self,
+                               LttvHooks           *after_traceset,
+                               LttvHooks           *after_trace,
+                               LttvHooks           *after_tracefile,
+                               LttvHooks           *event,
+                               LttvHooksById       *event_by_id);
 
 
 void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start);
 
+gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self, 
+                                        const LttvTracesetContextPosition *pos);
+
 void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start);
 
 void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
-    LttvHooks *before_traceset, 
-    LttvHooks *after_traceset,
-    LttvHooks *check_trace, 
+    LttvHooks *before_traceset,
     LttvHooks *before_trace, 
-    LttvHooks *after_trace, 
-    LttvHooks *check_tracefile,
     LttvHooks *before_tracefile,
-    LttvHooks *after_tracefile,
-    LttvHooks *check_event, 
-    LttvHooks *before_event, 
-    LttvHooks *after_event);
+    LttvHooks *event,
+    LttvHooksById *event_by_id);
 
 void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
-    LttvHooks *before_traceset, 
     LttvHooks *after_traceset,
-    LttvHooks *check_trace, 
-    LttvHooks *before_trace, 
     LttvHooks *after_trace, 
-    LttvHooks *check_tracefile,
-    LttvHooks *before_tracefile,
     LttvHooks *after_tracefile,
-    LttvHooks *check_event, 
-    LttvHooks *before_event, 
-    LttvHooks *after_event);
+    LttvHooks *event, 
+    LttvHooksById *event_by_id);
 
 void lttv_trace_context_add_hooks(LttvTraceContext *self,
-				  LttvHooks *check_trace, 
-				  LttvHooks *before_trace, 
-				  LttvHooks *after_trace);
+    LttvHooks *before_trace, 
+    LttvHooks *before_tracefile,
+    LttvHooks *event, 
+    LttvHooksById *event_by_id);
 
 void lttv_trace_context_remove_hooks(LttvTraceContext *self,
-				     LttvHooks *check_trace, 
-				     LttvHooks *before_trace, 
-				     LttvHooks *after_trace);
+    LttvHooks *after_trace, 
+    LttvHooks *after_tracefile,
+    LttvHooks *event, 
+    LttvHooksById *event_by_id);
 
 void lttv_tracefile_context_add_hooks(LttvTracefileContext *self,
-				      LttvHooks *check_tracefile,
-				      LttvHooks *before_tracefile,
-				      LttvHooks *after_tracefile,
-				      LttvHooks *check_event, 
-				      LttvHooks *before_event, 
-				      LttvHooks *after_event);
+          LttvHooks *before_tracefile,
+          LttvHooks *event, 
+          LttvHooksById *event_by_id);
+
 
 void lttv_tracefile_context_remove_hooks(LttvTracefileContext *self,
-					 LttvHooks *check_tracefile,
-					 LttvHooks *before_tracefile,
-					 LttvHooks *after_tracefile,
-					 LttvHooks *check_event, 
-					 LttvHooks *before_event, 
-					 LttvHooks *after_event);
+           LttvHooks *after_tracefile,
+           LttvHooks *event, 
+           LttvHooksById *event_by_id);
+
 
 void lttv_tracefile_context_add_hooks_by_id(LttvTracefileContext *self,
 					    unsigned i,
-					    LttvHooks *before_event_by_id, 
-					    LttvHooks *after_event_by_id);
+					    LttvHooks *event_by_id);
 
 void lttv_tracefile_context_remove_hooks_by_id(LttvTracefileContext *self,
 					       unsigned i);
@@ -286,4 +279,19 @@ typedef struct _LttvTraceHook {
 void lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
     char *field1, char *field2, char *field3, LttvHook h, LttvTraceHook *th);
 
+
+void lttv_traceset_context_position_save(const LttvTracesetContext *self,
+                                    LttvTracesetContextPosition *pos);
+
+void lttv_traceset_context_position_destroy(LttvTracesetContextPosition *pos);
+
+gint lttv_traceset_context_pos_pos_compare(
+                              const LttvTracesetContextPosition *pos1,
+                              const LttvTracesetContextPosition *pos2);
+
+gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
+                                        const LttvTracesetContextPosition *pos);
+
+gint lttv_traceset_context_pos_pos_compare(const LttvTracesetContextPosition *a,
+                                          const LttvTracesetContextPosition *b);
 #endif // PROCESSTRACE_H
