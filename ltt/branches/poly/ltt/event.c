@@ -267,6 +267,8 @@ void ltt_event_position_get(LttEventPosition *ep,
 /*****************************************************************************
  *Function name
  *    ltt_event_position_set : set the block number and index of the event
+ *    It does put the old_position gboolean to FALSE, as it is impossible
+ *    to know the quick position to seek in the tracefile.
  *Input params
  *    ep                     : a pointer to event's position structure
  *    block_number           : the block number of the event
@@ -276,8 +278,12 @@ void ltt_event_position_get(LttEventPosition *ep,
 void ltt_event_position_set(LttEventPosition *ep,
     unsigned block_number, unsigned index_in_block)
 {
+  if(ep->block_num != block_number || ep->event_num != index_in_block)
+    ep->old_position = FALSE;
+
   ep->block_num = block_number;
-  ep->event_num = index_in_block;  
+  ep->event_num = index_in_block;
+  
 }
 
 /*****************************************************************************
