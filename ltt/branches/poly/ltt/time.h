@@ -213,7 +213,7 @@ static inline LttTime ltt_time_div(LttTime t1, double d)
 
 static inline guint64 ltt_time_to_uint64(LttTime t1)
 {
-  return (guint64)((t1.tv_sec*LTT_TIME_UINT_SHIFT_CONST) >> LTT_TIME_UINT_SHIFT)
+  return (((guint64)t1.tv_sec*LTT_TIME_UINT_SHIFT_CONST) << LTT_TIME_UINT_SHIFT)
                        + (guint64)t1.tv_nsec;
 }
 
