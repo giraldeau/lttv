@@ -612,6 +612,8 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
 
   unsigned count = 0;
 
+  gboolean last_ret = FALSE; /* return value of the last hook list called */
+
   /* Get the next event from the pqueue, call its hooks, 
      reinsert in the pqueue the following event from the same tracefile 
      unless the tracefile is finished or the event is later than the 
@@ -634,7 +636,8 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
      * break the loop.
      */
 
-    if(count >= nb_events ||
+    if(last_ret == TRUE ||
+       count >= nb_events ||
        lttv_traceset_context_ctx_pos_compare(self,
                                              end_position) >= 0 ||
        ltt_time_compare(tfc->timestamp, end) >= 0)
@@ -651,7 +654,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     count++;
 
     id = ltt_event_eventtype_id(tfc->e);
-    lttv_hooks_call_merge(tfc->event, tfc,
+    last_ret = lttv_hooks_call_merge(tfc->event, tfc,
                         lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
 
     event = ltt_tracefile_read(tfc->tf);
