@@ -238,23 +238,30 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
 
 int SetTraceset(Tab * tab, LttvTraceset *traceset)
 {
-  LttvHooks * tmp;
-  LttvAttributeValue value;
-  gint retval = 0;
-
- 
-  g_assert( lttv_iattribute_find_by_path(tab->attributes,
-     "hooks/updatetraceset", LTTV_POINTER, &value));
-
-  tmp = (LttvHooks*)*(value.v_pointer);
-  if(tmp == NULL) retval = 1;
-  else lttv_hooks_call(tmp,traceset);
-
- 
-  /* Set scrollbar */
   LttvTracesetContext *tsc =
         LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
+
+  /* Set the tab's time window and current time if
+   * out of bounds */
+  if(ltt_time_compare(tab->time_window.start_time, time_span.start_time) < 0
+     || ltt_time_compare(  ltt_time_add(tab->time_window.start_time,
+                                        tab->time_window.time_width),
+                           time_span.end_time) > 0) {
+    tab->time_window.start_time = time_span.start_time;
+    tab->current_time = time_span.start_time;
+    
+    LttTime tmp_time;
+
+    if(DEFAULT_TIME_WIDTH_S < time_span.end_time.tv_sec)
+      tmp_time.tv_sec = DEFAULT_TIME_WIDTH_S;
+    else
+      tmp_time.tv_sec = time_span.end_time.tv_sec;
+    tmp_time.tv_nsec = 0;
+    tab->time_window.time_width = tmp_time ;
+  }
+  
+  /* Set scrollbar */
   GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
   LttTime upper = ltt_time_sub(time_span.end_time, time_span.start_time);
       
@@ -284,7 +291,21 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
                    * NANOSECONDS_PER_SECOND, /* value */
                NULL);
   gtk_adjustment_value_changed(adjustment);
-  
+
+  /* Finally, call the update hooks of the viewers */
+  LttvHooks * tmp;
+  LttvAttributeValue value;
+  gint retval = 0;
+
+ 
+  g_assert( lttv_iattribute_find_by_path(tab->attributes,
+     "hooks/updatetraceset", LTTV_POINTER, &value));
+
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) retval = 1;
+  else lttv_hooks_call(tmp,traceset);
+
+ 
   return retval;
 }
 
@@ -1428,36 +1449,7 @@ static void lttvwindow_add_trace(Tab *tab, LttvTrace *trace_v)
                                       traceset_context),
             traceset); 
 
-  /* Set the tab's time window and current time if
-   * out of bounds */
-  TimeInterval time_span = 
-    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->time_span;
-  if(ltt_time_compare(tab->time_window.start_time, time_span.start_time) < 0
-     || ltt_time_compare(  ltt_time_add(tab->time_window.start_time,
-                                        tab->time_window.time_width),
-                           time_span.end_time) > 0) {
-    tab->time_window.start_time = 
-        LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
-                               time_span.start_time;
-    tab->current_time = 
-       LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
-                             time_span.start_time;
-    
-    LttTime tmp_time;
 
-    if(DEFAULT_TIME_WIDTH_S <
-            LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
-                           time_span.end_time.tv_sec)
-      tmp_time.tv_sec = DEFAULT_TIME_WIDTH_S;
-    else
-      tmp_time.tv_sec =
-              LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->
-                           time_span.end_time.tv_sec;
-    tmp_time.tv_nsec = 0;
-    tab->time_window.time_width = tmp_time ;
-    
-  }
- 
   //add state update hooks
   lttv_state_add_event_hooks(
   (LttvTracesetState*)tab->traceset_info->traceset_context);
@@ -1642,17 +1634,18 @@ void remove_trace(GtkWidget *widget, gpointer user_data)
 
     trace_v = lttv_traceset_get(traceset, index);
 
-    if(lttv_trace_get_ref_number(trace_v) <= 2) {
-      /* ref 2 : traceset, local */
-      lttvwindowtraces_remove_trace(trace_v);
-      ltt_trace_close(lttv_trace(trace_v));
-    }
-    
     lttv_traceset_remove(traceset, index);
     lttv_trace_unref(trace_v);  // Remove local reference
 
-    if(!lttv_trace_get_ref_number(trace_v))
-       lttv_trace_destroy(trace_v);
+    if(lttv_trace_get_ref_number(trace_v) <= 1) {
+      /* ref 1 : lttvwindowtraces only*/
+      ltt_trace_close(lttv_trace(trace_v));
+      /* lttvwindowtraces_remove_trace takes care of destroying
+       * the traceset linked with the trace_v and also of destroying
+       * the trace_v at the same time.
+       */
+      lttvwindowtraces_remove_trace(trace_v);
+    }
     
     tab->traceset_info->traceset_context =
       g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);

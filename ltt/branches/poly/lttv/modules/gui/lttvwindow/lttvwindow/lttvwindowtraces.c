@@ -255,9 +255,10 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace)
       g_object_unref(tss);
       lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
                                      LTTV_COMPUTATION_TRACESET_CONTEXT);
-      lttv_traceset_destroy(ts);
       lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
                                      LTTV_COMPUTATION_TRACESET);
+      /* Destroy the traceset and the trace also */
+      lttv_traceset_destroy(ts);
 
       /* finally, remove the global attribute */
       lttv_attribute_remove(attribute, i);
