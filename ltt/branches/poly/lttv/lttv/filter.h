@@ -19,6 +19,8 @@
 #ifndef FILTER_H
 #define FILTER_H
 
+#include <lttv/traceset.h>
+
 /* A filter expression consists in nested AND, OR and NOT expressions
    involving boolean relation (>, >=, =, !=, <, <=) between event fields and 
    specific values. It is compiled into an efficient data structure which
@@ -43,21 +45,23 @@
 
 */
 
-
+/**
+ * @struct lttv_filter
+ * ( will later contain a binary tree of filtering options )
+ */
 typedef struct _lttv_filter lttv_filter;
-
 
 /* Compile the filter expression into an efficient data structure */
 
-lttv_filter *lttv_filter_new(char *expression, lttv_trace *t);
+lttv_filter *lttv_filter_new(char *expression, LttvTrace *t);
 
 
 /* Check if the tracefile or event satisfies the filter. The arguments are
    declared as void * to allow these functions to be used as hooks. */
 
-bool lttv_filter_tracefile(void *filter, void *tracefile);
+gboolean lttv_filter_tracefile(lttv_filter *filter, void *tracefile);
 
-bool lttv_filter_event(void *filter, void *event);
+gboolean lttv_filter_event(lttv_filter *filter, void *event);
 
 #endif // FILTER_H
 

@@ -20,15 +20,16 @@ lttvinclude_HEADERS = \
 	state.h\
 	stats.h\
 	tracecontext.h\
-	traceset.h
-
-noinst_HEADERS = \
+	traceset.h\
 	filter.h
+
+#noinst_HEADERS = \
+#	filter.h
 
 lttv_SOURCES = batchtest.c main.c module.c option.c \
                hook.c attribute.c \
                iattribute.c state.c stats.c \
-	       tracecontext.c traceset.c
+	       tracecontext.c traceset.c filter.c
 
 if LTTVSTATIC
   lttv_LDFLAGS = -profile -static
