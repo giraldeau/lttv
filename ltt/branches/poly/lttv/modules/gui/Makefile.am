@@ -4,5 +4,7 @@
 # Created by Mathieu Desnoyers on May 6, 2003
 #
 
-SUBDIRS = mainWin API
+# WARNING : subdirs order is important : mainWin depends on API
+
+SUBDIRS = API mainWin
 
