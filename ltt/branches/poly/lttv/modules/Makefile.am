@@ -4,10 +4,10 @@
 # Created by Mathieu Desnoyers on May 6, 2003
 #
 
-SUBDIRS = examples
+SUBDIRS = examples coreGUI
 
 libdir = ${lttvplugindir}
 
-#lib_LTLIBRARIES = sampledep.la
-#sampledep_la_LDFLAGS = -module
-#sampledep_la_SOURCES = sampledep.c
+lib_LTLIBRARIES = libsimple.la
+libsimple_la_LDFLAGS = -module
+libsimple_la_SOURCES = simple.c

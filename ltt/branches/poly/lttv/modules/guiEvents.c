@@ -1,7 +1,7 @@
-/*! \defgroup guiEvents libguiEvents: The GUI Events display plugin */
+//*! \defgroup GuiEvents libGuiEvents: The GUI Events display plugin */
 /*\@{*/
 
-/*! \file guiEvents.c
+/*! \file GuiEvents.c
  * \brief Graphical plugin for showing events.
  *
  * This plugin lists all the events contained in the current time interval
@@ -14,24 +14,76 @@
  * creates ans register through API functions what is needed to interact
  * with the TraceSet window.
  *
+ * Coding standard :
+ * pm : parameter
+ * l  : local
+ * g  : global
+ * s  : static
+ * h  : hook
+ * 
  * Author : Karim Yaghmour
  *          Integrated to LTTng by Mathieu Desnoyers, June 2003
  */
 
 #include <glib.h>
 #include <gmodule.h>
-#include <gtk.h>
-#include <gdk.h>
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
 
 #include <lttv/module.h>
+//#include <lttv/gtkTraceSet.h>
+#include "mw_api.h"
 
-#include "icons/guiEventsInsert.xpm"
+#include "icons/hGuiEventsInsert.xpm"
 
 /** Array containing instanced objects. Used when module is unloaded */
-static GPtrArray *RawTracesArray = NULL;
+static GSList *sEvent_Viewer_Data_List = NULL ;
 
+typedef struct _EventViewerData {
+
+	/* Model containing list data */
+  GtkListStore *Store_M;
+
+	GtkWidget *HBox_V;
+	/* Widget to display the data in a columned list */
+  GtkWidget *Tree_V;
+  GtkAdjustment *VTree_Adjust_C ;
+	GdkWindow *TreeWindow ;
+
+	/* Vertical scrollbar and it's adjustment */
+	GtkWidget *VScroll_VC;
+  GtkAdjustment *VAdjust_C ;
+	
+	/* Selection handler */
+	GtkTreeSelection *Select_C;
+	
+	guint Visible_Events;
+
+} EventViewerData ;
+
+//! Event Viewer's constructor hook
+GtkWidget *hGuiEvents(GtkWidget *pmParentWindow);
 //! Event Viewer's constructor
-GtkWidget *guiEvents(GtkWidget *ParentWindow);
+EventViewerData *GuiEvents(void);
+//! Event Viewer's destructor
+void GuiEvents_Destructor(EventViewerData *Event_Viewer_Data);
+
+/* Prototype for selection handler callback */
+static void tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data);
+static void v_scroll_cb (GtkAdjustment *adjustment, gpointer data);
+static void Tree_V_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer data);
+static void Tree_V_size_request_cb (GtkWidget *widget, GtkRequisition *requisition, gpointer data);
+
+
+void add_test_data(EventViewerData *Event_Viewer_Data);
+
+/* TEST DATA, TO BE READ FROM THE TRACE */
+static int Number_Of_Events = 1000;
+
+//FIXME: use the size of the widget to get number of rows.
+static int Number_Of_Rows = 50 ;
+//FIXME
+static int Cell_Height = 52;
 
 /**
  * plugin's init function
@@ -43,12 +95,15 @@ G_MODULE_EXPORT void init() {
 	g_critical("GUI Event Viewer init()");
 
 	/* Register the toolbar insert button */
-	ToolbarItemReg(guiEventsInsert_xpm, "Insert Event Viewer", guiEvent);
+	//ToolbarItemReg(hGuiEventsInsert_xpm, "Insert Event Viewer", hGuiEvents);
 
 	/* Register the menu item insert entry */
-	MenuItemReg("/", "Insert Event Viewer", guiEvent);
+	//MenuItemReg("/", "Insert Event Viewer", hGuiEvents);
+}
 
-	RawTracesArray = g_ptr_array_new();
+void destroy_walk(gpointer data, gpointer user_data)
+{
+	GuiEvents_Destructor((EventViewerData*)data);
 }
 
 /**
@@ -59,90 +114,310 @@ G_MODULE_EXPORT void init() {
  */
 G_MODULE_EXPORT void destroy() {
 	int i;
+
+	EventViewerData *Event_Viewer_Data;
 	
 	g_critical("GUI Event Viewer destroy()");
 
-	for(i=0 ; i<RawTracesArray->len ; i++) {
-		gtk_widget_destroy((Widget *)g_ptr_array_index(RawTracesArray,i));
-	}
+	g_slist_foreach(sEvent_Viewer_Data_List, destroy_walk, NULL );
 	
-	g_ptr_array_free(RawTracesArray);
-
 	/* Unregister the toolbar insert button */
-	ToolbarItemUnreg(guiEvent);
+	//ToolbarItemUnreg(hGuiEvents);
 
 	/* Unregister the menu item insert entry */
-	MenuItemUnreg(guiEvents);
+	//MenuItemUnreg(hGuiEvents);
+}
+
+/* Enumeration of the columns */
+enum
+{
+	CPUID_COLUMN,
+	EVENT_COLUMN,
+	TIME_COLUMN,
+	PID_COLUMN,
+	ENTRY_LEN_COLUMN,
+	EVENT_DESCR_COLUMN,
+	N_COLUMNS
+};
+
+
+/**
+ * Event Viewer's constructor hook
+ *
+ * This constructor is given as a parameter to the menuitem and toolbar button
+ * registration. It creates the list.
+ * @param pmParentWindow A pointer to the parent window.
+ * @return The widget created.
+ */
+GtkWidget *
+hGuiEvents(GtkWidget *pmParentWindow)
+{
+	EventViewerData* Event_Viewer_Data = GuiEvents() ;
+
+	return Event_Viewer_Data->HBox_V ;
+	
 }
 
 /**
  * Event Viewer's constructor
  *
- * This constructor is given as a parameter to the menuitem and toolbar button
- * registration. It creates the drawing widget.
- * @param ParentWindow A pointer to the parent window.
- * @return The widget created.
+ * This constructor is used to create EventViewerData data structure.
+ * @return The Event viewer data created.
  */
-static GtkWidget *
-guiEvents(GtkWidget *ParentWindow)
+EventViewerData *
+GuiEvents(void)
 {
+	GtkTreeViewColumn *column;
+	GtkCellRenderer *renderer;
+	EventViewerData* Event_Viewer_Data = g_new(EventViewerData,1) ;
+	gint width, height;
+	/* Create a model for storing the data list */
+  Event_Viewer_Data->Store_M = gtk_list_store_new (N_COLUMNS,       /* Total number of columns */
+                                            G_TYPE_INT,      /* CPUID                  */
+																						G_TYPE_STRING,   /* Event                   */
+            	                              G_TYPE_INT,      /* Time                    */
+              	                            G_TYPE_INT,      /* PID                     */
+                	                          G_TYPE_INT,      /* Entry length            */
+                  	                        G_TYPE_STRING);  /* Event's description     */
+	
+	/* Create the viewer widget for the columned list */
+	Event_Viewer_Data->Tree_V = gtk_tree_view_new_with_model (GTK_TREE_MODEL (Event_Viewer_Data->Store_M));
+	
+	g_signal_connect (G_OBJECT (Event_Viewer_Data->Tree_V), "size-allocate",
+	                  G_CALLBACK (Tree_V_size_allocate_cb),
+	                  Event_Viewer_Data);
+		g_signal_connect (G_OBJECT (Event_Viewer_Data->Tree_V), "size-request",
+	                  G_CALLBACK (Tree_V_size_request_cb),
+	                  Event_Viewer_Data);
+	
+	
+// Use on each column!
+//gtk_tree_view_column_set_sizing(Event_Viewer_Data->Tree_V, GTK_TREE_VIEW_COLUMN_FIXED);
+	
+	/* The view now holds a reference.  We can get rid of our own
+	 * reference */
+	g_object_unref (G_OBJECT (Event_Viewer_Data->Store_M));
 	
 
-  /* Create raw trace list and pack it */
-  pWindow->RTCList  = gtk_clist_new_with_titles(RTCLIST_NB_COLUMNS, RTCListTitles);
-  gtk_clist_set_selection_mode(GTK_CLIST(pWindow->RTCList), GTK_SELECTION_SINGLE);
-  gtk_box_pack_start(GTK_BOX(pWindow->RTHBox), pWindow->RTCList, TRUE, TRUE, 0);
+  /* Create a column, associating the "text" attribute of the
+   * cell_renderer to the first column of the model */
+	/* Columns alignment : 0.0 : Left    0.5 : Center   1.0 : Right */
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("CPUID",
+																											renderer,
+                                                      "text", CPUID_COLUMN,
+                                                      NULL);
+	gtk_tree_view_column_set_alignment (column, 0.0);
+	gtk_tree_view_column_set_fixed_width (column, 45);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (Event_Viewer_Data->Tree_V), column);
+
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("Event",
+																											renderer,
+                                                      "text", EVENT_COLUMN,
+                                                      NULL);
+	gtk_tree_view_column_set_alignment (column, 0.0);
+	gtk_tree_view_column_set_fixed_width (column, 120);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (Event_Viewer_Data->Tree_V), column);
+
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("Time",
+																											renderer,
+                                                      "text", TIME_COLUMN,
+                                                      NULL);
+	gtk_tree_view_column_set_alignment (column, 1.0);
+	gtk_tree_view_column_set_fixed_width (column, 120);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (Event_Viewer_Data->Tree_V), column);
+
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("PID",
+																											renderer,
+                                                      "text", PID_COLUMN,
+                                                      NULL);
+	gtk_tree_view_column_set_alignment (column, 1.0);
+	gtk_tree_view_column_set_fixed_width (column, 45);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (Event_Viewer_Data->Tree_V), column);
+
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("Entry Length",
+																											renderer,
+                                                      "text", ENTRY_LEN_COLUMN,
+                                                      NULL);
+	gtk_tree_view_column_set_alignment (column, 1.0);
+	gtk_tree_view_column_set_fixed_width (column, 60);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (Event_Viewer_Data->Tree_V), column);
+
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("Event's Description",
+																											renderer,
+                                                      "text", EVENT_DESCR_COLUMN,
+                                                      NULL);
+	gtk_tree_view_column_set_alignment (column, 0.0);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (Event_Viewer_Data->Tree_V), column);
+
+
+	gtk_cell_renderer_get_size(renderer, GTK_WIDGET(Event_Viewer_Data->Tree_V), NULL, NULL, NULL, &width, &height);
+	g_critical("first size h : %i",height);
+	/* Setup the selection handler */
+	Event_Viewer_Data->Select_C = gtk_tree_view_get_selection (GTK_TREE_VIEW (Event_Viewer_Data->Tree_V));
+	gtk_tree_selection_set_mode (Event_Viewer_Data->Select_C, GTK_SELECTION_SINGLE);
+	g_signal_connect (G_OBJECT (Event_Viewer_Data->Select_C), "changed",
+	                  G_CALLBACK (tree_selection_changed_cb),
+	                  NULL);
+	
+  Event_Viewer_Data->HBox_V = gtk_hbox_new(0, 0);
+  gtk_box_pack_start(GTK_BOX(Event_Viewer_Data->HBox_V), Event_Viewer_Data->Tree_V, TRUE, TRUE, 0);
 
   /* Create vertical scrollbar and pack it */
-  pWindow->RTVScroll  = gtk_vscrollbar_new(NULL);
-  gtk_box_pack_start(GTK_BOX(pWindow->RTHBox), pWindow->RTVScroll, FALSE, TRUE, 0);
-
-  /* Get the vertical scrollbar's adjustment */
-  pWindow->RTVAdjust = gtk_range_get_adjustment(GTK_RANGE(pWindow->RTVScroll));
-
-  /* Configure the columns of the list */
-  gtk_clist_set_column_justification(GTK_CLIST(pWindow->RTCList), 0, GTK_JUSTIFY_LEFT);
-  gtk_clist_set_column_justification(GTK_CLIST(pWindow->RTCList), 1, GTK_JUSTIFY_LEFT);
-  gtk_clist_set_column_justification(GTK_CLIST(pWindow->RTCList), 2, GTK_JUSTIFY_RIGHT);
-  gtk_clist_set_column_justification(GTK_CLIST(pWindow->RTCList), 3, GTK_JUSTIFY_RIGHT);
-  gtk_clist_set_column_justification(GTK_CLIST(pWindow->RTCList), 4, GTK_JUSTIFY_RIGHT);
-  gtk_clist_set_column_justification(GTK_CLIST(pWindow->RTCList), 5, GTK_JUSTIFY_LEFT);
-  gtk_clist_set_column_width(GTK_CLIST(pWindow->RTCList), 0, 45);
-  gtk_clist_set_column_width(GTK_CLIST(pWindow->RTCList), 1, 120);
-  gtk_clist_set_column_width(GTK_CLIST(pWindow->RTCList), 2, 120);
-  gtk_clist_set_column_width(GTK_CLIST(pWindow->RTCList), 3, 45);
-  gtk_clist_set_column_width(GTK_CLIST(pWindow->RTCList), 4, 60);
-
-
+  Event_Viewer_Data->VScroll_VC = gtk_vscrollbar_new(NULL);
+  gtk_box_pack_start(GTK_BOX(Event_Viewer_Data->HBox_V), Event_Viewer_Data->VScroll_VC, FALSE, TRUE, 0);
 	
+  /* Get the vertical scrollbar's adjustment */
+  Event_Viewer_Data->VAdjust_C = gtk_range_get_adjustment(GTK_RANGE(Event_Viewer_Data->VScroll_VC));
+	Event_Viewer_Data->VTree_Adjust_C = gtk_tree_view_get_vadjustment(
+															GTK_TREE_VIEW (Event_Viewer_Data->Tree_V));
+
+	g_signal_connect (G_OBJECT (Event_Viewer_Data->VAdjust_C), "value-changed",
+	                  G_CALLBACK (v_scroll_cb),
+	                  Event_Viewer_Data);
+	/* Set the upper bound to the last event number */
+	Event_Viewer_Data->VAdjust_C->lower = 0;
+	Event_Viewer_Data->VAdjust_C->upper = Number_Of_Events;
+	Event_Viewer_Data->VAdjust_C->value = 0;
+	Event_Viewer_Data->VAdjust_C->step_increment = 1;
+	Event_Viewer_Data->VAdjust_C->page_increment = 
+				 Event_Viewer_Data->VTree_Adjust_C->upper;
+	//FIXME change page size dynamically to fit event list size
+	Event_Viewer_Data->VAdjust_C->page_size =
+				 Event_Viewer_Data->VTree_Adjust_C->upper;
+	g_critical("value : %u",Event_Viewer_Data->VTree_Adjust_C->upper);
   /*  Raw event trace */
-  gtk_widget_show(pmWindow->RTHBox);
-  gtk_widget_show(pmWindow->RTCList);
-  gtk_widget_show(pmWindow->RTVScroll);
+  gtk_widget_show(Event_Viewer_Data->HBox_V);
+  gtk_widget_show(Event_Viewer_Data->Tree_V);
+  gtk_widget_show(Event_Viewer_Data->VScroll_VC);
 
+	/* Add the object's information to the module's array */
+  g_slist_append(sEvent_Viewer_Data_List, Event_Viewer_Data);
 
+	/* Test data */
+	add_test_data(Event_Viewer_Data);
+
+	return Event_Viewer_Data;
 }
 
-static GtkWidget
-~guiEvents(GtkWidget *guiEvents)
+void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
 {
-  /*  Clear raw event trace */
-  gtk_clist_clear(GTK_CLIST(pSysView->Window->RTCList));
-  gtk_widget_queue_resize(pSysView->Window->RTCList);
-
-  /* Reset the CList adjustment */
-  pSysView->Window->RTVAdjust->lower          = 0;
-  pSysView->Window->RTVAdjust->upper          = 0;
-  pSysView->Window->RTVAdjust->step_increment = 0;
-  pSysView->Window->RTVAdjust->page_increment = 0;
-  pSysView->Window->RTVAdjust->page_size      = 0;
-  gtk_adjustment_changed(GTK_ADJUSTMENT(pSysView->Window->RTVAdjust));
+	g_critical("DEBUG : scroll signal");
 
 }
+
+void Tree_V_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer data)
+{
+	EventViewerData *Event_Viewer_Data = (EventViewerData*)data;
+	
+	g_critical("size-allocate");
+
+	Event_Viewer_Data->Visible_Events = alloc->y ;
+	g_critical("num of event shown : %u",Event_Viewer_Data->Visible_Events);
+	
+	
+}
+
+void Tree_V_size_request_cb (GtkWidget *widget, GtkRequisition *requisition, gpointer data)
+{
+	gint w, h;
+	gint height, width;
+
+	EventViewerData *Event_Viewer_Data = (EventViewerData*)data;
+	GtkTreeViewColumn *Column = gtk_tree_view_get_column(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V), 1);
+	GList *Render_List = gtk_tree_view_column_get_cell_renderers(Column);
+	GtkCellRenderer *Renderer = g_list_first(Render_List)->data;
+	
+	g_critical("size-request");
+
+	//gtk_tree_view_column_cell_get_size(Column, NULL, NULL, NULL, &width, &height);
+	//h = height;
+	//gtk_cell_renderer_get_size(Renderer, GTK_WIDGET(Event_Viewer_Data->Tree_V), NULL, NULL, NULL, &width, &height);
+	//h += height;
+	//gtk_cell_renderer_get_fixed_size(Renderer,w,h);
+
+	gtk_tree_view_tree_to_widget_coords(GTK_TREE_VIEW(Event_Viewer_Data->Tree_V),
+				1,1,&width, &height);
+	w = width;
+	h = height;
+	//requisition->height = Cell_Height;
+	requisition->height = 46;
+	g_critical("width : %i height : %i", w, h); 
+	
+	
+}
+
+
+void add_test_data(EventViewerData *Event_Viewer_Data)
+{
+	GtkTreeIter iter;
+	int i;
+	
+	for(i=0; i<10; i++)
+	{
+	  /* Add a new row to the model */
+		gtk_list_store_append (Event_Viewer_Data->Store_M, &iter);
+		gtk_list_store_set (Event_Viewer_Data->Store_M, &iter,
+												CPUID_COLUMN, 0,
+			  								EVENT_COLUMN, "event irq",
+											  TIME_COLUMN, i,
+											  PID_COLUMN, 100,
+											  ENTRY_LEN_COLUMN, 17,
+											  EVENT_DESCR_COLUMN, "Detailed information",
+												-1);
+	}
+							
+}
+	
+
+void
+GuiEvents_Destructor(EventViewerData *Event_Viewer_Data)
+{
+	guint index;
+
+	/* May already been done by GTK window closing */
+	if(GTK_IS_WIDGET(Event_Viewer_Data->HBox_V))
+		gtk_widget_destroy(Event_Viewer_Data->HBox_V);
+	
+	/* Destroy the Tree View */
+	//gtk_widget_destroy(Event_Viewer_Data->Tree_V);
+	
+  /*  Clear raw event list */
+	//gtk_list_store_clear(Event_Viewer_Data->Store_M);
+	//gtk_widget_destroy(GTK_WIDGET(Event_Viewer_Data->Store_M));
+
+	g_slist_remove(sEvent_Viewer_Data_List,Event_Viewer_Data);
+}
+
+//FIXME : call hGuiEvents_Destructor for corresponding data upon widget destroy
+
+static void
+tree_selection_changed_cb (GtkTreeSelection *selection, gpointer data)
+{
+        GtkTreeIter iter;
+        GtkTreeModel *model;
+        gchar *Event;
+
+        if (gtk_tree_selection_get_selected (selection, &model, &iter))
+        {
+                gtk_tree_model_get (model, &iter, EVENT_COLUMN, &Event, -1);
+
+                g_print ("Event selected :  %s\n", Event);
+
+                g_free (Event);
+        }
+}
+
+
 
 
 /* Imported code from LTT 0.9.6pre2 tracevisualizer */
-
+#ifdef DEBUG
 
 /******************************************************************
  * Function :
@@ -158,7 +433,7 @@ static GtkWidget
  *    Based on gtk_clist_set_row_data_full() version 1.2.3.
  *    Much faster than using gtk_clist_set_row_data_full().
  ******************************************************************/
-void WDI_gtk_clist_set_last_row_data_full(GtkCList*         pmClist,
+static void WDI_gtk_clist_set_last_row_data_full(GtkCList*         pmClist,
 					  gpointer          pmData,
 					  GtkDestroyNotify  pmDestroy)
 {
@@ -183,7 +458,7 @@ void WDI_gtk_clist_set_last_row_data_full(GtkCList*         pmClist,
  * History :
  * Note :
  ******************************************************************/
-void SHRTEventSelect(GtkWidget*      pmCList,
+static void SHRTEventSelect(GtkWidget*      pmCList,
 		     gint            pmRow,
 		     gint            pmColumn,
 		     GdkEventButton* pmEvent,
@@ -209,7 +484,7 @@ void SHRTEventSelect(GtkWidget*      pmCList,
  * History :
  * Note :
  ******************************************************************/
-void SHRTEventButtonPress(GtkWidget*      pmCList,
+static void SHRTEventButtonPress(GtkWidget*      pmCList,
 			  GdkEventButton* pmEvent,
 			  gpointer        pmData)
 {
@@ -249,7 +524,7 @@ void SHRTEventButtonPress(GtkWidget*      pmCList,
  * History :
  * Note :
  ******************************************************************/
-void SHRTVAdjustValueChanged(GtkAdjustment*  pmVAdjust,
+static void SHRTVAdjustValueChanged(GtkAdjustment*  pmVAdjust,
 			     gpointer        pmData)
 {
   event        lEvent;          /* Event used for searching */
@@ -327,7 +602,7 @@ void SHRTVAdjustValueChanged(GtkAdjustment*  pmVAdjust,
  *    the connect. This means that the handlers will get a pointer
  *    to the window in the data argument.
  ******************************************************************/
-void WDConnectSignals(systemView* pmSysView)
+static void WDConnectSignals(systemView* pmSysView)
 {
   /* Raw event Popup menu */
   gtk_signal_connect(GTK_OBJECT(pmSysView->Window->RawGotoProcess),
@@ -374,7 +649,7 @@ void WDConnectSignals(systemView* pmSysView)
  *    K.Y., 18/06/99, Initial typing.
  * Note :
  ******************************************************************/
-void WDFillEventList(GtkWidget*  pmList,
+static void WDFillEventList(GtkWidget*  pmList,
 		     db*         pmTraceDB,
 		     systemInfo* pmSystem,
 		     event*      pmEvent,
@@ -494,7 +769,62 @@ void WDFillEventList(GtkWidget*  pmList,
   gtk_clist_thaw(GTK_CLIST(pmList));
 }
 
+#endif //DEBUG
 
+static void destroy_cb( GtkWidget *widget,
+		                        gpointer   data )
+{ 
+	    gtk_main_quit ();
+}
+
+
+
+int main(int argc, char **argv)
+{
+	GtkWidget *Window;
+	GtkWidget *ListViewer;
+	GtkWidget *VBox_V;
+	EventViewerData *Event_Viewer_Data;
+
+	/* Initialize i18n support */
+  gtk_set_locale ();
+
+  /* Initialize the widget set */
+  gtk_init (&argc, &argv);
+
+	init();
+
+  Window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_set_title (GTK_WINDOW (Window), ("Test Window"));
+	
+	g_signal_connect (G_OBJECT (Window), "destroy",
+			G_CALLBACK (destroy_cb), NULL);
+
+
+  VBox_V = gtk_vbox_new(0, 0);
+	gtk_container_add (GTK_CONTAINER (Window), VBox_V);
+
+  ListViewer = hGuiEvents(Window);
+  gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, TRUE, TRUE, 0);
+
+  ListViewer = hGuiEvents(Window);
+  gtk_box_pack_start(GTK_BOX(VBox_V), ListViewer, FALSE, TRUE, 0);
+
+  gtk_widget_show (VBox_V);
+	gtk_widget_show (Window);
+
+	gtk_main ();
+
+	g_critical("main loop finished");
+  
+	//hGuiEvents_Destructor(ListViewer);
+
+	//g_critical("GuiEvents Destructor finished");
+	destroy();
+	
+	return 0;
+}
 
 
 /*\@}*/
+
