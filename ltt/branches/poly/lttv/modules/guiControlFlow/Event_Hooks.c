@@ -616,9 +616,9 @@ void update_time_window_hook(void *hook_data, void *call_data)
 	TimeWindow *Old_Time_Window = 
 		guicontrolflow_get_time_window(control_flow_data);
 	TimeWindow *New_Time_Window = ((TimeWindow*)call_data);
-
+	
 	/* Two cases : zoom in/out or scrolling */
-
+	
 	/* In order to make sure we can reuse the old drawing, the scale must
 	 * be the same and the new time interval being partly located in the
 	 * currently shown time interval. (reuse is only for scrolling)
@@ -752,7 +752,7 @@ void update_time_window_hook(void *hook_data, void *call_data)
 				/* Cannot reuse any part of the screen : far jump */
 				*Old_Time_Window = *New_Time_Window;
 				
-
+				
 				gdk_draw_rectangle (control_flow_data->Drawing->Pixmap,
 	 				control_flow_data->Drawing->Drawing_Area_V->style->white_gc,
 		      TRUE,

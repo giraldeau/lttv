@@ -1124,8 +1124,11 @@ on_MWindow_configure                   (GtkWidget         *widget,
   double ratio;
   TimeInterval *time_span;
   LttTime time;
-
-  while(tab){
+	
+	// MD : removed time width modification upon resizing of the main window.
+	// The viewers will redraw themselves completely, without time interval
+	// modification.
+/*  while(tab){
     if(mw_data->window_width){
       time_span = LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context)->Time_Span ;
       time_win = tab->time_window;
@@ -1140,6 +1143,7 @@ on_MWindow_configure                   (GtkWidget         *widget,
   }
 
   mw_data->window_width = (int)width;
+	*/
   return FALSE;
 }
 
