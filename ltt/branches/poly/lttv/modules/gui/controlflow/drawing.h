@@ -138,11 +138,13 @@ __inline void convert_pixels_to_time(
     gint width,
     guint x,
     LttTime window_time_begin,
+    LttTime window_time_interval,
     LttTime window_time_end,
     LttTime *time);
 
 __inline void convert_time_to_pixels(
     LttTime window_time_begin,
+    LttTime window_time_interval,
     LttTime window_time_end,
     LttTime time,
     gint width,

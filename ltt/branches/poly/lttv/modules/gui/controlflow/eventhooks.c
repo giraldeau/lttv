@@ -484,6 +484,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         guint x;
         convert_time_to_pixels(
                   time_window.start_time,
+                  time_window.time_width,
                   end_time,
                   evtime,
                   width,
@@ -608,6 +609,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
         convert_time_to_pixels(
                   time_window.start_time,
+                  time_window.time_width,
                   end_time,
                   evtime,
                   width,
@@ -803,6 +805,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
     
     convert_time_to_pixels(
         time_window.start_time,
+        time_window.time_width,
         window_end,
         time,
         width,
@@ -1379,6 +1382,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   
   convert_time_to_pixels(
       time_window.start_time,
+      time_window.time_width,
       end_time,
       evtime,
       width,
@@ -1532,6 +1536,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
     
     //convert_time_to_pixels(
     //    time_window->start_time,
+    //    time_window.time_width,
     //    window_end,
     //    time,
     //    width,
@@ -1992,6 +1997,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
 
     convert_time_to_pixels(
         time_window.start_time,
+        time_window.time_width,
         end_time,
         evtime,
         width,
@@ -2138,6 +2144,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
   
   convert_time_to_pixels(
       time_window.start_time,
+      time_window.time_width,
       end_time,
       evtime,
       width,
@@ -2260,6 +2267,7 @@ int before_process_hook(void *hook_data, void *call_data)
 
       convert_time_to_pixels(
           time_window.start_time,
+          time_window.time_width,
           end_time,
           evtime,
           width,
@@ -2425,6 +2433,7 @@ int after_process_hook(void *hook_data, void *call_data)
     guint new_x;
     convert_time_to_pixels(
         time_window.start_time,
+        time_window.time_width,
         end_time,
         evtime,
         width,
@@ -2497,6 +2506,7 @@ int after_process_hook(void *hook_data, void *call_data)
     guint new_x;
     convert_time_to_pixels(
         time_window.start_time,
+        time_window.time_width,
         end_time,
         evtime,
         width,
@@ -2557,7 +2567,9 @@ gint update_time_window_hook(void *hook_data, void *call_data)
     /* Same scale (scrolling) */
     g_info("scrolling");
     LttTime *ns = &new_time_window->start_time;
+    LttTime *nw = &new_time_window->time_width;
     LttTime *os = &old_time_window->start_time;
+    LttTime *ow = &old_time_window->time_width;
     LttTime old_end = old_time_window->end_time;
     LttTime new_end = new_time_window->end_time;
     //if(ns<os+w<ns+w)
@@ -2572,6 +2584,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
       guint width = control_flow_data->drawing->width;
       convert_time_to_pixels(
           *os,
+          *ow,
           old_end,
           *ns,
           width,
@@ -2625,6 +2638,7 @@ gint update_time_window_hook(void *hook_data, void *call_data)
         guint width = control_flow_data->drawing->width;
         convert_time_to_pixels(
             *ns,
+            *nw,
             new_end,
             *os,
             width,
@@ -2999,6 +3013,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
         convert_time_to_pixels(
             time_window.start_time,
+            time_window.time_width,
             end_time,
             evtime,
             width,

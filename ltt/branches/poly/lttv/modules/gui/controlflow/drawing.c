@@ -139,11 +139,13 @@ void drawing_data_request(Drawing_t *drawing,
 
   convert_pixels_to_time(drawing->width, x,
         time_window.start_time,
+        time_window.time_width,
         window_end,
         &start);
 
   convert_pixels_to_time(drawing->width, x+width,
         time_window.start_time,
+        time_window.time_width,
         window_end,
         &time_end);
 
@@ -405,6 +407,7 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
 
   convert_time_to_pixels(
           time_window.start_time,
+          time_window.time_width,
           end_time,
           events_request->start_time,
           width,
@@ -446,6 +449,7 @@ void drawing_request_expose(EventsRequest *events_request,
 #if 0
   convert_time_to_pixels(
         time_window.start_time,
+        time_window.time_width,
         window_end,
         cfd->drawing->last_start,
         drawing->width,
@@ -454,6 +458,7 @@ void drawing_request_expose(EventsRequest *events_request,
 #endif //0
   convert_time_to_pixels(
         time_window.start_time,
+        time_window.time_width,
         window_end,
         end_time,
         drawing->width,
@@ -610,6 +615,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
     /* Draw the dotted lines */
     convert_time_to_pixels(
           time_window.start_time,
+          time_window.time_width,
           window_end,
           current_time,
           drawing->width,
@@ -699,6 +705,7 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
 
     convert_pixels_to_time(drawing->width, (guint)event->x,
         time_window.start_time,
+        time_window.time_width,
         window_end,
         &time);
 
@@ -927,14 +934,12 @@ __inline void convert_pixels_to_time(
     gint width,
     guint x,
     LttTime window_time_begin,
+    LttTime window_time_interval,
     LttTime window_time_end,
     LttTime *time)
 {
-  LttTime window_time_interval;
   double time_d;
   
-  window_time_interval = ltt_time_sub(window_time_end, 
-            window_time_begin);
   time_d = ltt_time_to_double(window_time_interval);
   time_d = time_d / (double)width * (double)x;
   *time = ltt_time_from_double(time_d);
@@ -944,18 +949,17 @@ __inline void convert_pixels_to_time(
 
 __inline void convert_time_to_pixels(
     LttTime window_time_begin,
+    LttTime window_time_interval,
     LttTime window_time_end,
     LttTime time,
     int width,
     guint *x)
 {
-  LttTime window_time_interval;
   double time_d, interval_d;
 #ifdef EXTRA_CHECK 
   g_assert(ltt_time_compare(window_time_begin, time) <= 0 &&
            ltt_time_compare(window_time_end, time) >= 0);
 #endif //EXTRA_CHECK
-  window_time_interval = ltt_time_sub(window_time_end,window_time_begin);
   
   time = ltt_time_sub(time, window_time_begin);
   
