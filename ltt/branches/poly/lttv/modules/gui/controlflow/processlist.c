@@ -416,9 +416,11 @@ static gboolean remove_hash_item(ProcessInfo *process_info,
 
   gtk_list_store_remove (process_list->list_store, &iter);
 
-  if(hashed_process_data == process_list->current_hash_data[process_info->cpu])
-    process_list->current_hash_data[process_info->cpu] = NULL;
-
+  if(process_list->current_hash_data != NULL) {
+    if(hashed_process_data ==
+                process_list->current_hash_data[process_info->cpu])
+      process_list->current_hash_data[process_info->cpu] = NULL;
+  }
   return TRUE; /* remove the element from the hash table */
 }
 
