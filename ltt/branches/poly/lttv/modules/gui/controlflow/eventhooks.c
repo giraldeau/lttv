@@ -385,7 +385,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -1340,7 +1340,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -1952,7 +1952,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -2135,7 +2135,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -2243,7 +2243,7 @@ int before_process_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -2438,7 +2438,7 @@ int after_process_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)LTTV_TRACEFILE_CONTEXT(tfs)->t_context;
+  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -3180,7 +3180,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 int before_chunk(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
-  LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
+  LttvTracesetState *tss = (LttvTracesetState*)call_data;
 
   drawing_chunk_begin(events_request, tss);
 
@@ -3190,7 +3190,7 @@ int before_chunk(void *hook_data, void *call_data)
 int before_request(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
-  LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
+  LttvTracesetState *tss = (LttvTracesetState*)call_data;
 
   drawing_data_request_begin(events_request, tss);
 
@@ -3211,8 +3211,8 @@ int after_request(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
-  LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
-  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(call_data);
+  LttvTracesetState *tss = (LttvTracesetState*)call_data;
+  LttvTracesetContext *tsc = (LttvTracesetContext*)call_data;
   
   ProcessList *process_list = control_flow_data->process_list;
   LttTime end_time = events_request->end_time;
@@ -3240,8 +3240,8 @@ int after_chunk(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
-  LttvTracesetState *tss = LTTV_TRACESET_STATE(call_data);
-  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(call_data);
+  LttvTracesetState *tss = (LttvTracesetState*)call_data;
+  LttvTracesetContext *tsc = (LttvTracesetContext*)call_data;
   LttvTracefileContext *tfc = lttv_traceset_context_get_current_tfc(tsc);
   LttTime end_time;
   
