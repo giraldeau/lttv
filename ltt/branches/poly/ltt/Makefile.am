@@ -4,6 +4,8 @@
 # Created by Mathieu Desnoyers on May 6, 2003
 #
 
+SUBDIRS = convert
+
 libdir = ${lttlibdir}
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
