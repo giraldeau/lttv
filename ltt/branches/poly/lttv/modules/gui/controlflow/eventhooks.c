@@ -3127,6 +3127,7 @@ typedef struct _ClosureData {
   EventsRequest *events_request;
   LttvTracesetState *tss;
   LttTime end_time;
+  guint x_end;
 } ClosureData;
   
 
@@ -3205,13 +3206,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 #endif //EXTRA_CHECK
         Drawing_t *drawing = control_flow_data->drawing;
         guint width = drawing->width;
-        guint x;
 
-        convert_time_to_pixels(
-            time_window,
-            evtime,
-            width,
-            &x);
+        guint x = closure_data->x_end;
 
         DrawContext draw_context;
 
@@ -3329,6 +3325,16 @@ int after_request(void *hook_data, void *call_data)
   closure_data.tss = tss;
   closure_data.end_time = end_time;
 
+  TimeWindow time_window = 
+          lttvwindow_get_time_window(control_flow_data->tab);
+  guint width = control_flow_data->drawing->width;
+  convert_time_to_pixels(
+            time_window,
+            end_time,
+            width,
+            &closure_data.x_end);
+
+
   /* Draw last items */
   g_hash_table_foreach(process_list->process_hash, draw_closure,
                         (void*)&closure_data);
@@ -3366,6 +3372,15 @@ int after_chunk(void *hook_data, void *call_data)
   closure_data.events_request = (EventsRequest*)hook_data;
   closure_data.tss = tss;
   closure_data.end_time = end_time;
+
+  TimeWindow time_window = 
+          lttvwindow_get_time_window(control_flow_data->tab);
+  guint width = control_flow_data->drawing->width;
+  convert_time_to_pixels(
+            time_window,
+            end_time,
+            width,
+            &closure_data.x_end);
 
   /* Draw last items */
   g_hash_table_foreach(process_list->process_hash, draw_closure,
