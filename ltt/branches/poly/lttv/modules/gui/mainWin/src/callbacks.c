@@ -11,6 +11,7 @@
 #include <lttv/mainWindow.h>
 #include <lttv/menu.h>
 #include <lttv/toolbar.h>
+#include <lttv/gtkTraceSet.h>
 
 extern systemView * gSysView;
 extern LttvTracesetContext * gTracesetContext;
@@ -386,16 +387,6 @@ on_tab_activate                        (GtkMenuItem     *menuitem,
   if(!tmpTab){
     mwData->CurrentTab = NULL;
     tmpTab = g_new(tab,1);
-    tmpTab->traceStartTime.tv_sec  = 0;
-    tmpTab->traceStartTime.tv_nsec = 0;
-    tmpTab->traceEndTime.tv_sec    = G_MAXULONG;
-    tmpTab->traceEndTime.tv_nsec   = G_MAXULONG;
-    tmpTab->startTime.tv_sec       = 0;
-    tmpTab->startTime.tv_nsec      = 0;
-    tmpTab->endTime.tv_sec         = G_MAXULONG;
-    tmpTab->endTime.tv_nsec        = G_MAXULONG;
-    tmpTab->currentTime.tv_sec     = 0;
-    tmpTab->currentTime.tv_nsec    = 0;
     mwData->Tab = tmpTab;    
   }else{
     tmpTab->Next = g_new(tab,1);
@@ -407,10 +398,16 @@ on_tab_activate                        (GtkMenuItem     *menuitem,
     tmpTab->startTime      = mwData->CurrentTab->startTime;
     tmpTab->endTime        = mwData->CurrentTab->endTime;
     tmpTab->currentTime    = mwData->CurrentTab->currentTime;
+  }else{
+    getTracesetTimeSpan(mwData,&tmpTab->traceStartTime, &tmpTab->traceEndTime);
+    tmpTab->startTime   = tmpTab->traceStartTime;
+    tmpTab->endTime     = tmpTab->traceEndTime;
+    tmpTab->currentTime = tmpTab->traceStartTime;
   }
   tmpTab->Attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
   //  mwData->CurrentTab = tmpTab;
   tmpTab->custom = (GtkCustom*)gtk_custom_new();
+  tmpTab->custom->mw = mwData;
   gtk_widget_show((GtkWidget*)tmpTab->custom);
   tmpTab->Next = NULL;    
 

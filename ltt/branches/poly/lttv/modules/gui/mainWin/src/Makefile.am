@@ -1,5 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 
+AM_CFLAGS = $(GLIB_CFLAGS) 
+AM_CFLAGS += $(GTK_CFLAGS)
+LIBS += $(GLIB_LIBS)
+LIBS += $(GTK_LIBS) -L../../API -lmainWinApi
+
 INCLUDES = \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \

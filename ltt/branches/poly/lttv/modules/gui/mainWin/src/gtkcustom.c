@@ -2,6 +2,7 @@
 
 #include <lttv/gtkcustom.h>
 //#include "gtkintl.h"
+#include <lttv/gtkTraceSet.h>
 
 static void gtk_custom_class_init (GtkCustomClass    *klass);
 static void gtk_custom_init       (GtkCustom         *custom);
@@ -11,6 +12,8 @@ static void     gtk_custom_size_request   (GtkWidget      *widget,
 					   GtkRequisition *requisition);
 static void     gtk_custom_size_allocate  (GtkWidget      *widget,
 					   GtkAllocation  *allocation);
+
+void gtk_custom_scroll_value_changed (GtkRange *range, gpointer custom);
 
 GType
 gtk_custom_get_type (void)
@@ -102,6 +105,9 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
 {
   GtkPaned * tmpPane; 
   GtkWidget * w;
+  TimeInterval timeInterval;
+  LttTime      time;
+  double       tmpValue;
 
   g_return_if_fail(GTK_IS_CUSTOM(custom));
   g_object_ref(G_OBJECT(widget1));
@@ -113,7 +119,31 @@ void gtk_custom_widget_add(GtkCustom * custom, GtkWidget * widget1)
 
     custom->hScrollbar = gtk_hscrollbar_new (NULL);
     gtk_widget_show(custom->hScrollbar);
-    
+
+    custom->hAdjust = gtk_range_get_adjustment(GTK_RANGE(custom->hScrollbar));
+    GetTimeInterval(custom->mw,&timeInterval);
+    GetCurrentTime(custom->mw,&time);
+
+    tmpValue               = timeInterval.startTime.tv_sec;
+    tmpValue              *= NANSECOND_CONST;
+    tmpValue              += timeInterval.startTime.tv_nsec;
+    custom->hAdjust->lower = tmpValue;
+    tmpValue               = timeInterval.endTime.tv_sec;
+    tmpValue              *= NANSECOND_CONST;
+    tmpValue              += timeInterval.endTime.tv_nsec;
+    custom->hAdjust->upper = tmpValue;
+    tmpValue               = time.tv_sec;
+    tmpValue              *= NANSECOND_CONST;
+    tmpValue              += time.tv_nsec;
+    custom->hAdjust->value = tmpValue;
+    custom->hAdjust->step_increment = 1;
+    custom->hAdjust->page_increment = 100000000;
+    custom->hAdjust->page_size = 100000000;
+
+    gtk_range_set_update_policy (GTK_RANGE(custom->hScrollbar), GTK_UPDATE_DISCONTINUOUS);
+    g_signal_connect(G_OBJECT(custom->hScrollbar), "value-changed",
+		     G_CALLBACK(gtk_custom_scroll_value_changed), custom);
+
     custom->vbox = gtk_vbox_new(FALSE,0);
     gtk_widget_show(custom->vbox);
     
@@ -271,6 +301,17 @@ void gtk_custom_widget_move_down(GtkCustom * custom)
   if(prev)g_object_unref(G_OBJECT(prev));
   g_object_unref(G_OBJECT(next));
   g_object_unref(G_OBJECT(custom->focusedPane));
+}
+
+void gtk_custom_scroll_value_changed(GtkRange *range, gpointer custom_arg)
+{
+  LttTime time;
+  GtkCustom * custom = (GtkCustom*)custom_arg;
+  gdouble value = gtk_range_get_value(range);
+  time.tv_sec  = value / NANSECOND_CONST;
+  time.tv_nsec = (value / NANSECOND_CONST - time.tv_sec) * NANSECOND_CONST; 
+  SetCurrentTime(custom->mw, &time);
+  g_warning("The current time is second :%d, nanosecond : %d\n", time.tv_sec, time.tv_nsec);
 }
 
 
