@@ -32,7 +32,7 @@ inline void lttv_toolbars_destroy(LttvToolbars *h) {
   g_array_free(h, TRUE);
 }
 
-inline LttvToolbarClosure void lttv_toolbars_add(LttvToolbars *h, lttvwindow_viewer_constructor f, char* tooltip, char ** pixmap, GtkWidget *widget)
+inline LttvToolbarClosure lttv_toolbars_add(LttvToolbars *h, lttvwindow_viewer_constructor f, char* tooltip, char ** pixmap, GtkWidget *widget)
 {
   LttvToolbarClosure c;
 

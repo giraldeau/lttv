@@ -63,8 +63,6 @@ struct _MainWindow{
   Tab * tab;
   Tab * current_tab;
 
-  GHashTable * hash_menu_item;
-  GHashTable * hash_toolbar_item;
 };
 
 
@@ -92,12 +90,6 @@ struct _Tab{
   GArray *time_requests;
   gboolean time_request_pending;
 };
-
-/**
- * Remove menu and toolbar item when a module unloaded
- */
-void main_window_remove_menu_item(lttvwindow_viewer_constructor view_constructor);
-void main_window_remove_toolbar_item(lttvwindow_viewer_constructor view_constructor);
 
 #endif /* _MAIN_WINDOW_ */
 

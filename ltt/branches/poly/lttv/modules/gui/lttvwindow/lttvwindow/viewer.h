@@ -559,25 +559,23 @@ void lttvwindow_report_dividor(MainWindow *main_win, gint position);
 void lttvwindow_report_focus(MainWindow *main_win, 
                              GtkWidget  *top_widget);
 
-
-
 /* Structure sent to the time request hook */
                                                 /* Value considered as empty */
 typedef struct _EventsRequest {
-  LttTime                     start_time,       /* Unset : { 0, 0 }         */
-  LttvTracesetContextPosition start_position,   /* Unset : num_traces = 0   */
-  gboolean                    stop_flag,        /* Continue:TRUE Stop:FALSE */
-  LttTime                     end_time,         /* Unset : { 0, 0 }         */
-  guint                       num_events,       /* Unset : G_MAXUINT        */
-  LttvTracesetContextPosition end_position,     /* Unset : num_traces = 0   */
-  LttvHooks                  *before_traceset,  /* Unset : NULL             */
-  LttvHooks                  *before_trace,     /* Unset : NULL             */
-  LttvHooks                  *before_tracefile, /* Unset : NULL             */
-  LttvHooks                  *event,            /* Unset : NULL             */
-  LttvHooksById              *event_by_id,      /* Unset : NULL             */
-  LttvHooks                  *after_tracefile,  /* Unset : NULL             */
-  LttvHooks                  *after_trace,      /* Unset : NULL             */
-  LttvHooks                  *after_traceset    /* Unset : NULL             */
+  LttTime                      start_time;       /* Unset : { 0, 0 }         */
+  LttvTracesetContextPosition *start_position;   /* Unset : num_traces = 0   */
+  gboolean                     stop_flag;        /* Continue:TRUE Stop:FALSE */
+  LttTime                      end_time;         /* Unset : { 0, 0 }         */
+  guint                        num_events;       /* Unset : G_MAXUINT        */
+  LttvTracesetContextPosition *end_position;     /* Unset : num_traces = 0   */
+  LttvHooks                   *before_traceset;  /* Unset : NULL             */
+  LttvHooks                   *before_trace;     /* Unset : NULL             */
+  LttvHooks                   *before_tracefile; /* Unset : NULL             */
+  LttvHooks                   *event;            /* Unset : NULL             */
+  LttvHooksById               *event_by_id;      /* Unset : NULL             */
+  LttvHooks                   *after_tracefile;  /* Unset : NULL             */
+  LttvHooks                   *after_trace;      /* Unset : NULL             */
+  LttvHooks                   *after_traceset;   /* Unset : NULL             */
 } EventsRequest;
 
 

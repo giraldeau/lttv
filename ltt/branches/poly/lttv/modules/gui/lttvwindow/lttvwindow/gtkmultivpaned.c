@@ -156,7 +156,7 @@ void gtk_multi_vpaned_set_focus (GtkWidget * widget, GtkPaned* paned)
 
   pane = multi_vpaned->first_pane;
   while(1){
-    if((GtkWidget*)pane == (GtkWidget*)user_data){
+    if((GtkWidget*)pane == GTK_WIDGET(paned)){
       multi_vpaned->focused_pane = pane;
       break;
     }
@@ -176,13 +176,13 @@ void gtk_multi_vpaned_set_adjust(GtkMultiVPaned * multi_vpaned, const TimeWindow
 
   
   if(first_time){
-    time_span = LTTV_TRACESET_CONTEXT(multi_vpaned->mw->current_tab->traceset_info->
-				      traceset_context)->Time_Span ;
+    time_span = &LTTV_TRACESET_CONTEXT(multi_vpaned->mw->current_tab->
+                          traceset_info->traceset_context)->time_span ;
   
-    multi_vpaned->hadjust->lower = ltt_time_to_double(time_span->startTime) * 
+    multi_vpaned->hadjust->lower = ltt_time_to_double(time_span->start_time) * 
                              NANOSECONDS_PER_SECOND;
     multi_vpaned->hadjust->value = multi_vpaned->hadjust->lower;
-    multi_vpaned->hadjust->upper = ltt_time_to_double(time_span->endTime) *
+    multi_vpaned->hadjust->upper = ltt_time_to_double(time_span->end_time) *
                              NANOSECONDS_PER_SECOND;
   }
 
@@ -419,19 +419,19 @@ void gtk_multi_vpaned_scroll_value_changed(GtkAdjustment *adjust, gpointer multi
 
   time_window = multi_vpaned->mw->current_tab->time_window;
 
-  time_span = LTTV_TRACESET_CONTEXT(multi_vpaned->mw->current_tab->traceset_info->
-				    traceset_context)->Time_Span ;
+  time_span = &LTTV_TRACESET_CONTEXT(multi_vpaned->mw->current_tab->traceset_info->
+				    traceset_context)->time_span ;
   lower = multi_vpaned->hadjust->lower;
   upper = multi_vpaned->hadjust->upper;
   ratio = (value - lower) / (upper - lower);
   
-  time = ltt_time_sub(time_span->endTime, time_span->startTime);
+  time = ltt_time_sub(time_span->end_time, time_span->start_time);
   time = ltt_time_mul(time, (float)ratio);
-  time = ltt_time_add(time_span->startTime, time);
+  time = ltt_time_add(time_span->start_time, time);
 
   time_window.start_time = time;
 
-  time = ltt_time_sub(time_span->endTime, time);
+  time = ltt_time_sub(time_span->end_time, time);
   if(ltt_time_compare(time,time_window.time_width) < 0){
     time_window.time_width = time;
   }

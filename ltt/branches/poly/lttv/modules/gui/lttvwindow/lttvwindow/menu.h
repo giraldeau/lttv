@@ -19,8 +19,9 @@
 #ifndef MENU_H
 #define MENU_H
 
-#include <lttvwindow/common.h>
 #include <gtk/gtk.h>
+#include <lttvwindow/common.h>
+#include <lttvwindow/viewer.h>
 
 
 typedef GArray LttvMenus;

@@ -120,36 +120,12 @@ static void init() {
 }
 
 void
-main_window_free(MainWindow * mw)
-{ 
-  if(mw){
-    while(mw->tab){
-      lttv_state_remove_event_hooks(
-           (LttvTracesetState*)mw->tab->traceset_info->traceset_context);
-      mw->tab = mw->tab->next;
-    }
-    g_object_unref(mw->attributes);
-    g_main_window_list = g_slist_remove(g_main_window_list, mw);
-
-    g_hash_table_destroy(mw->hash_menu_item);
-    g_hash_table_destroy(mw->hash_toolbar_item);
-    
-    g_free(mw);
-    mw = NULL;
-  }
-}
-
-void
 main_window_destructor(MainWindow * mw)
 {
   if(GTK_IS_WIDGET(mw->mwindow)){
     gtk_widget_destroy(mw->mwindow);
-    //    gtk_widget_destroy(mw->HelpContents);
-    //    gtk_widget_destroy(mw->AboutBox);    
     mw = NULL;
   }
-  //main_window_free called when the object mw in the widget is unref.
-  //main_window_free(mw);
 }
 
 
