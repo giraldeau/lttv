@@ -712,8 +712,6 @@ void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
       //             NULL, FALSE);
       gtk_tree_path_free(tree_path);
     }
- 
-  
 }
 
 gint get_cell_height(GtkTreeView *TreeView)
@@ -1531,6 +1529,7 @@ gboolean traceset_changed(void * hook_data, void * call_data)
 
   end = ltt_time_sub(time_span.end_time, time_span.start_time);
   event_viewer_data->vadjust_c->upper = ltt_time_to_double(end) * NANOSECONDS_PER_SECOND;
+  g_signal_emit_by_name(event_viewer_data->vadjust_c, "value-changed");
   //  event_viewer_data->vadjust_c->value = 0;
 
   return FALSE;
