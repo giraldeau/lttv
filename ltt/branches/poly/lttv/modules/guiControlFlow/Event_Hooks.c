@@ -15,6 +15,8 @@
 #include "Process_List.h"
 #include "Drawing.h"
 
+/* NOTE : no draing data should be sent there, as the drawing widget
+ * has not been initialized */
 void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 {
 	guint height, size;
@@ -31,7 +33,7 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 			1,
 			&birth,
 			&height);
-	Drawing_Insert_Square( Drawing, height, 5);
+	//Drawing_Insert_Square( Drawing, height, 5);
 	
 	g_critical("height : %u", height);
 	
@@ -42,7 +44,7 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 			156,
 			&birth,
 			&height);
-	Drawing_Insert_Square( Drawing, height, 5);
+	//Drawing_Insert_Square( Drawing, height, 5);
 
 	g_critical("height : %u", height);
 
@@ -53,7 +55,7 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 			10,
 			&birth,
 			&height);
-	Drawing_Insert_Square( Drawing, height, 5);
+	//Drawing_Insert_Square( Drawing, height, 5);
 
 	for(i=0; i<10; i++)
 	{
@@ -64,7 +66,7 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 				i,
 				&birth,
 				&height);
-	Drawing_Insert_Square( Drawing, height, 5);
+	//Drawing_Insert_Square( Drawing, height, 5);
 
 	}
 	g_critical("height : %u", height);
@@ -76,14 +78,14 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 			10,
 			&birth,
 			&height);
-	Drawing_Insert_Square( Drawing, height, 5);
+	//Drawing_Insert_Square( Drawing, height, 5);
 	g_critical("height : %u", height);
 
 	ProcessList_add(Process_List,
 			10000,
 			&birth,
 			&height);
-	Drawing_Insert_Square( Drawing, height, 5);
+	//Drawing_Insert_Square( Drawing, height, 5);
 	g_critical("height : %u", height);
 
 
@@ -95,7 +97,7 @@ void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 				10000,
 				&birth);
 
-	Drawing_Remove_Square( Drawing, height, 5);
+	//Drawing_Remove_Square( Drawing, height, 5);
 	
 	if(got_RowRef = 
 		(GtkTreeRowReference*)g_hash_table_lookup(
