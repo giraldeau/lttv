@@ -58,7 +58,7 @@ AC_SUBST(lttlibdir)
 top_includedir="\$(top_srcdir)/include"
 AC_SUBST(top_includedir)
 
-DEFAULT_INCLUDES="-I\$(top_includedir)"
+DEFAULT_INCLUDES="-I\$(top_includedir) -I\$(top_srcdir)"
 AC_SUBST(DEFAULT_INCLUDES)
 
 #CPPFLAGS="${GLIB_CFLAGS}"
@@ -73,6 +73,10 @@ AC_SUBST(lttincludedir)
 AC_CONFIG_FILES([Makefile
      lttv/Makefile
 		 lttv/modules/Makefile
+		 lttv/modules/gui/Makefile
+		 lttv/modules/gui/mainWin/Makefile
+		 lttv/modules/gui/mainWin/src/Makefile
+		 lttv/modules/gui/API/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 include/Makefile
