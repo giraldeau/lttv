@@ -111,6 +111,7 @@ int main(int argc, char ** argv){
   int  ltt_major_version=0;
   int  ltt_minor_version=0;
   int  ltt_log_cpu;
+  guint ltt_trace_start_size;
   char buf[BUFFER_SIZE];
   int i, k;
 
@@ -133,7 +134,7 @@ int main(int argc, char ** argv){
   char * buffer, *buf_out, cpuStr[4*BUFFER_SIZE];
   char * buf_fac, * buf_intr, * buf_proc;
   void * write_pos, *write_pos_fac, * write_pos_intr, *write_pos_proc;
-  trace_start *tStart;
+  trace_start_any *tStart;
   trace_buffer_start *tBufStart;
   trace_buffer_end *tBufEnd;
   trace_file_system * tFileSys;
@@ -146,7 +147,9 @@ int main(int argc, char ** argv){
   heartbeat beat;
   uint64_t adaptation_tsc;    // (Mathieu)
   uint32_t size_lost;
-  int reserve_size = sizeof(buffer_start) + sizeof(uint16_t) + 2*sizeof(uint32_t);//lost_size and buffer_end event
+  int reserve_size = sizeof(buffer_start) + 
+                     sizeof(buffer_end) + //buffer_end event
+                     sizeof(uint32_t);  //lost size
   int nb_para;
 
   new_process process;
@@ -291,8 +294,14 @@ int main(int argc, char ** argv){
 
     evId = *(uint8_t *)cur_pos;
     cur_pos += sizeof(uint8_t);
-    cur_pos += sizeof(uint32_t); 
-    tStart = (trace_start*)cur_pos;
+    if(*(uint32_t*)cur_pos != TRACER_MAGIC_NUMBER)
+      g_error("Trace magic number does not match : %lx, should be %lx",
+               (uint32_t*)cur_pos, TRACER_MAGIC_NUMBER);
+    cur_pos += sizeof(uint32_t);
+    tStart = (trace_start_any*)cur_pos;
+    if(tStart->MajorVersion != TRACER_SUP_VERSION_MAJOR)
+      g_error("Trace Major number does match : %hu, should be %u",
+               tStart->MajorVersion, TRACER_SUP_VERSION_MAJOR);
 
     startId = newId;
     startTimeDelta = time_delta;
@@ -303,10 +312,27 @@ int main(int argc, char ** argv){
     start.block_id = tBufStart->ID;
     end.block_id = start.block_id;
 
-    ltt_major_version = tStart->MajorVersion;
-    ltt_minor_version = tStart->MinorVersion;
-    ltt_block_size    = tStart->BufferSize;
-    ltt_log_cpu       = tStart->LogCPUID;
+    if(tStart->MinorVersion == 2) {
+      trace_start_2_2* tStart_2_2 = (trace_start_2_2*)tStart;
+      ltt_major_version = tStart_2_2->MajorVersion;
+      ltt_minor_version = tStart_2_2->MinorVersion;
+      ltt_block_size    = tStart_2_2->BufferSize;
+      ltt_log_cpu       = tStart_2_2->LogCPUID;
+      ltt_trace_start_size = sizeof(trace_start_2_2);
+    } else if(tStart->MinorVersion == 3) {
+      trace_start_2_3* tStart_2_3 = (trace_start_2_3*)tStart;
+      ltt_major_version = tStart_2_3->MajorVersion;
+      ltt_minor_version = tStart_2_3->MinorVersion;
+      ltt_block_size    = tStart_2_3->BufferSize;
+      ltt_log_cpu       = tStart_2_3->LogCPUID;
+      ltt_trace_start_size = sizeof(trace_start_2_3);
+    /* We do not use the flight recorder information for now, because we
+     * never use the .proc file anyway */
+    } else {
+      ltt_trace_start_size = 0;
+      g_error("Minor version unknown : %hu. Supported minors : 2, 3",
+               tStart->MinorVersion);
+    }
 
     block_size = ltt_block_size;//FIXME
     block_number = file_size/ltt_block_size;
@@ -380,7 +406,7 @@ int main(int argc, char ** argv){
         //the first block
         adaptation_tsc = (uint64_t)tBufStart->TSC;
 	      cur_pos = buffer + sizeof(trace_buffer_start) 
-                         + sizeof(trace_start) 
+                         + ltt_trace_start_size 
                          + 2*(sizeof(uint8_t)
                          + sizeof(uint16_t)+sizeof(uint32_t));
       } else {

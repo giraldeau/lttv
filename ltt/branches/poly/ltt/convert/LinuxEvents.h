@@ -71,8 +71,20 @@
 /* The information logged when the tracing is started */
 #define TRACER_MAGIC_NUMBER        0x00D6B7ED     /* That day marks an important historical event ... */
 #define TRACER_SUP_VERSION_MAJOR            2     /* Major version number */
-#define TRACER_SUP_VERSION_MINOR            2     /* Minor version number */
-typedef struct _trace_start
+
+/* Minimum information contained in any trace start event */
+typedef struct _trace_start_any
+{
+  uint32_t           MagicNumber;      /* Magic number to identify a trace */
+  uint32_t           ArchType;         /* Type of architecture */
+  uint32_t           ArchVariant;      /* Variant of the given type of architecture */
+  uint32_t           SystemType;       /* Operating system type */
+  uint8_t            MajorVersion;     /* Major version of trace */
+  uint8_t            MinorVersion;     /* Minor version of trace */
+
+} LTT_PACKED_STRUCT trace_start_any;
+
+typedef struct _trace_start_2_2
 {
   uint32_t           MagicNumber;      /* Magic number to identify a trace */
   uint32_t           ArchType;         /* Type of architecture */
@@ -85,10 +97,27 @@ typedef struct _trace_start
   trace_event_mask   EventMask;        /* The event mask */
   trace_event_mask   DetailsMask;      /* Are the event details logged */
   uint8_t            LogCPUID;         /* Is the CPUID logged */
-  uint8_t            UseTSC;	       /* Are we using TSCs or time deltas */
+  uint8_t            UseTSC;	         /* Are we using TSCs or time deltas */
 
-} LTT_PACKED_STRUCT trace_start;
-#define START_EVENT(X) ((trace_start*)X)
+} LTT_PACKED_STRUCT trace_start_2_2;
+
+typedef struct _trace_start_2_3
+{
+  uint32_t           MagicNumber;      /* Magic number to identify a trace */
+  uint32_t           ArchType;         /* Type of architecture */
+  uint32_t           ArchVariant;      /* Variant of the given type of architecture */
+  uint32_t           SystemType;       /* Operating system type */
+  uint8_t            MajorVersion;     /* Major version of trace */
+  uint8_t            MinorVersion;     /* Minor version of trace */
+
+  uint32_t           BufferSize;       /* Size of buffers */
+  trace_event_mask   EventMask;        /* The event mask */
+  trace_event_mask   DetailsMask;      /* Are the event details logged */
+  uint8_t            LogCPUID;         /* Is the CPUID logged */
+  uint8_t            UseTSC;	         /* Are we using TSCs or time deltas */
+  
+  uint8_t            FlightRecorder;   /* Is this a flight recorder trace ? */
+} LTT_PACKED_STRUCT trace_start_2_3;
 
 /*  TRACE_SYSCALL_ENTRY */
 typedef struct _trace_syscall_entry
