@@ -1,5 +1,4 @@
-//#include <lttv/menu.h>
-#include "menu.h"
+#include <lttv/menu.h>
 
 
 inline LttvMenus *lttv_menus_new() {

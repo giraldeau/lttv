@@ -1,5 +1,4 @@
-//#include <lttv/toolbar.h>
-#include "toolbar.h"
+#include <lttv/toolbar.h>
 
 
 inline LttvToolbars *lttv_toolbars_new() {
@@ -13,7 +12,7 @@ inline void lttv_toolbars_destroy(LttvToolbars *h) {
   g_array_free(h, TRUE);
 }
 
-inline void lttv_toolbars_add(LttvToolbars *h, lttv_constructor f, char* tooltip, GdkPixmap * pixmap)
+inline void lttv_toolbars_add(LttvToolbars *h, lttv_constructor f, char* tooltip, char ** pixmap)
 {
   lttv_toolbar_closure c;
 

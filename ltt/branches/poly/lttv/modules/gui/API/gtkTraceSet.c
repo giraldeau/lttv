@@ -16,8 +16,8 @@
 #include <lttv/mainWindow.h>   
 #include <lttv/gtkTraceSet.h>
 #include <lttv/processTrace.h>
-#include "toolbar.h"
-#include "menu.h"
+#include <lttv/toolbar.h>
+#include <lttv/menu.h>
 
 /**
  * Internal function parts
@@ -28,7 +28,7 @@
  * @param view_constructor constructor of the viewer.
  */
 
-void RemoveToolbar(void *view_constructor)
+void RemoveToolbar(lttv_constructor view_constructor)
 {
   g_printf("Toolbar for the viewer will be removed\n");
 }
@@ -38,7 +38,7 @@ void RemoveToolbar(void *view_constructor)
  * @param view_constructor constructor of the viewer.
  */
 
-void RemoveMenu(void *view_constructor)
+void RemoveMenu(lttv_constructor view_constructor)
 {
   g_printf("Menu entry for the viewer will be removed\n");
 }
@@ -97,7 +97,7 @@ void SetFilter(mainWindow * main_win, gpointer filter)
  * @param view_constructor constructor of the viewer. 
  */
 
-void ToolbarItemReg(GdkPixmap * pixmap, char *tooltip, void *view_constructor)
+void ToolbarItemReg(char ** pixmap, char *tooltip, lttv_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
@@ -123,7 +123,7 @@ void ToolbarItemReg(GdkPixmap * pixmap, char *tooltip, void *view_constructor)
  * a reference to find out where the pixmap and tooltip are.
  */
 
-void ToolbarItemUnreg(void *view_constructor)
+void ToolbarItemUnreg(lttv_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvToolbars * toolbar;
@@ -147,7 +147,7 @@ void ToolbarItemUnreg(void *view_constructor)
  * @param view_constructor constructor of the viewer. 
  */
 
-void MenuItemReg(char *menu_path, char *menu_text, void *view_constructor)
+void MenuItemReg(char *menu_path, char *menu_text, lttv_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvMenus * menu;
@@ -172,14 +172,14 @@ void MenuItemReg(char *menu_path, char *menu_text, void *view_constructor)
  * a reference to find out where the menu_path and menu_text are.
  */
 
-void MenuItemUnreg(void *view_constructor)
+void MenuItemUnreg(lttv_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
   LttvMenus * menu;
   LttvAttributeValue value;
 
   g_assert(lttv_iattribute_find_by_path(attributes_global,
-			       "viewers/menu", LTTV_POINTER, &value));
+                              "viewers/menu", LTTV_POINTER, &value));
   menu = (LttvMenus*)*(value.v_pointer);
 
   if(lttv_menus_remove(menu, view_constructor))  

@@ -11,6 +11,6 @@ AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS)
 
-lib_LTLIBRARIES = libmainwindowapi.la
-libmainwindowapi_la_SOURCES = toolbar.c menu.c gtkTraceSet.c    
+lib_LTLIBRARIES = libmainWinApi.la
+libmainWinApi_la_SOURCES = toolbar.c menu.c gtkTraceSet.c
 EXTRA_DIST =
