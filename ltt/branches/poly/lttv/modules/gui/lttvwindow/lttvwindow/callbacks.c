@@ -879,6 +879,8 @@ static void events_request_free(EventsRequest *events_request)
        lttv_traceset_context_position_destroy(events_request->start_position);
   if(events_request->end_position != NULL)
        lttv_traceset_context_position_destroy(events_request->end_position);
+  if(events_request->hooks != NULL)
+    g_array_free(events_request->hooks, TRUE);
   if(events_request->before_chunk_traceset != NULL)
        lttv_hooks_destroy(events_request->before_chunk_traceset);
   if(events_request->before_chunk_trace != NULL)

@@ -1613,7 +1613,8 @@ void get_events(EventViewerData* event_viewer_data, LttTime start,
   events_request->end_time = ltt_time_infinite;
   events_request->num_events = max_num_events;
   events_request->end_position = NULL;
-  events_request->trace = 0;  /* FIXME */
+  events_request->trace = -1;  /* FIXME */
+  events_request->hooks = NULL;  /* FIXME */
   events_request->before_chunk_traceset = NULL;
   events_request->before_chunk_trace = NULL;
   events_request->before_chunk_tracefile = NULL;

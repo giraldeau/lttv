@@ -602,6 +602,7 @@ typedef struct _EventsRequest {
   guint                        num_events;      /* Unset : G_MAXUINT        */
   LttvTracesetContextPosition *end_position;    /* Unset : NULL             */
   gint                         trace;           /* unset : -1               */
+  GArray                      *hooks;           /* Unset : NULL             */
   LttvHooks                   *before_chunk_traceset; /* Unset : NULL       */
   LttvHooks                   *before_chunk_trace;    /* Unset : NULL       */
   LttvHooks                   *before_chunk_tracefile;/* Unset : NULL       */

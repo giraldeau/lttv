@@ -33,6 +33,9 @@
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
+//FIXME
+#define TRACE_NUMBER 0
+
 
 GdkColor drawing_colors[NUM_COLORS] =
 { /* Pixel, R, G, B */
@@ -85,12 +88,11 @@ void drawing_data_request(Drawing_t *drawing,
   }
 
 
-  
+  Tab *tab = drawing->control_flow_data->tab;
   TimeWindow time_window =
-              lttvwindow_get_time_window(drawing->control_flow_data->tab);
+              lttvwindow_get_time_window(tab);
 
   ControlFlowData *control_flow_data = drawing->control_flow_data;
-  Tab *tab = control_flow_data->tab;
   //    (ControlFlowData*)g_object_get_data(
   //               G_OBJECT(drawing->drawing_area), "control_flow_data");
 
@@ -118,39 +120,203 @@ void drawing_data_request(Drawing_t *drawing,
         time_window.start_time,
         window_end,
         &time_end);
-  
-  EventsRequest *events_request = g_new(EventsRequest, 1);
-  // Create the hooks
-  LttvHooks *event = lttv_hooks_new();
-  LttvHooks *before_chunk_traceset = lttv_hooks_new();
-  LttvHooks *after_chunk_traceset = lttv_hooks_new();
-  LttvHooks *before_request_hook = lttv_hooks_new();
-  LttvHooks *after_request_hook = lttv_hooks_new();
 
-  lttv_hooks_add(before_chunk_traceset,
-                 before_chunk,
-                 events_request,
-                 LTTV_PRIO_DEFAULT);
+  lttvwindow_events_request_remove_all(tab,
+                                       control_flow_data);
 
-  lttv_hooks_add(after_chunk_traceset,
-                 after_chunk,
-                 events_request,
-                 LTTV_PRIO_DEFAULT);
+  {
+    /* find the tracehooks */
+    LttvTracesetContext *tsc = lttvwindow_get_traceset_context(tab);
 
-  lttv_hooks_add(before_request_hook,
-                 before_request,
-                 events_request,
-                 LTTV_PRIO_DEFAULT);
+    LttvTraceset *traceset = tsc->ts;
 
-  lttv_hooks_add(after_request_hook,
-                 after_request,
-                 events_request,
-                 LTTV_PRIO_DEFAULT);
+    guint i, k, nb_trace;
 
-  /* FIXME : hooks are registered global instead of by ID.
-   * This is due to the lack of granularity of main window's events requests.
-   * Should be fixed for gain of performance.
-   */
+    LttvTraceState *ts;
+
+    LttvTracefileState *tfs;
+
+    GArray *hooks;
+
+    LttvTraceHook hook;
+
+    LttvAttributeValue val;
+
+    nb_trace = lttv_traceset_number(traceset);
+    // FIXME : eventually request for more traces
+    // for(i = 0 ; i < nb_trace ; i++) {
+    g_assert(TRACE_NUMBER < nb_trace);
+    i = TRACE_NUMBER;
+    {
+      EventsRequest *events_request = g_new(EventsRequest, 1);
+      // Create the hooks
+      //LttvHooks *event = lttv_hooks_new();
+      LttvHooksById *event_by_id = lttv_hooks_by_id_new();
+      LttvHooks *before_chunk_traceset = lttv_hooks_new();
+      LttvHooks *after_chunk_traceset = lttv_hooks_new();
+      LttvHooks *before_request_hook = lttv_hooks_new();
+      LttvHooks *after_request_hook = lttv_hooks_new();
+
+      lttv_hooks_add(before_chunk_traceset,
+                     before_chunk,
+                     events_request,
+                     LTTV_PRIO_DEFAULT);
+
+      lttv_hooks_add(after_chunk_traceset,
+                     after_chunk,
+                     events_request,
+                     LTTV_PRIO_DEFAULT);
+
+      lttv_hooks_add(before_request_hook,
+                     before_request,
+                     events_request,
+                     LTTV_PRIO_DEFAULT);
+
+      lttv_hooks_add(after_request_hook,
+                     after_request,
+                     events_request,
+                     LTTV_PRIO_DEFAULT);
+
+
+      ts = (LttvTraceState *)tsc->traces[i];
+
+      /* Find the eventtype id for the following events and register the
+         associated by id hooks. */
+
+      hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
+      g_array_set_size(hooks, 16);
+
+      /* before hooks */
+      
+      lttv_trace_find_hook(ts->parent.t, "core","syscall_entry","syscall_id", 
+    NULL, NULL, before_execmode_hook, &g_array_index(hooks, LttvTraceHook, 0));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "syscall_exit", NULL, NULL, 
+          NULL, before_execmode_hook, &g_array_index(hooks, LttvTraceHook, 1));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "trap_entry", "trap_id",
+    NULL, NULL, before_execmode_hook, &g_array_index(hooks, LttvTraceHook, 2));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "trap_exit", NULL, NULL, NULL, 
+          before_execmode_hook, &g_array_index(hooks, LttvTraceHook, 3));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "irq_entry", "irq_id", NULL, 
+          NULL, before_execmode_hook, &g_array_index(hooks, LttvTraceHook, 4));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "irq_exit", NULL, NULL, NULL, 
+          before_execmode_hook, &g_array_index(hooks, LttvTraceHook, 5));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "schedchange", "in", "out", 
+        "out_state", before_schedchange_hook, 
+        &g_array_index(hooks, LttvTraceHook, 6));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "process", "event_sub_id", 
+          "event_data1", "event_data2", before_process_hook,
+          &g_array_index(hooks, LttvTraceHook, 7));
+
+#if 0
+      lttv_trace_find_hook(ts->parent.t, "core", "process_fork", "child_pid", 
+          NULL, NULL, process_fork, &g_array_index(hooks, LttvTraceHook, 7));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "process_exit", NULL, NULL, 
+          NULL, process_exit, &g_array_index(hooks, LttvTraceHook, 8));
+#endif //0
+
+      /* after hooks */
+      
+      lttv_trace_find_hook(ts->parent.t, "core","syscall_entry","syscall_id", 
+    NULL, NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 8));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "syscall_exit", NULL, NULL, 
+          NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 9));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "trap_entry", "trap_id",
+    NULL, NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 10));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "trap_exit", NULL, NULL, NULL, 
+          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 11));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "irq_entry", "irq_id", NULL, 
+          NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 12));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "irq_exit", NULL, NULL, NULL, 
+          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 13));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "schedchange", "in", "out", 
+        "out_state", after_schedchange_hook, 
+        &g_array_index(hooks, LttvTraceHook, 14));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "process", "event_sub_id", 
+          "event_data1", "event_data2", after_process_hook,
+          &g_array_index(hooks, LttvTraceHook, 15));
+
+#if 0
+      lttv_trace_find_hook(ts->parent.t, "core", "process_fork", "child_pid", 
+          NULL, NULL, process_fork, &g_array_index(hooks, LttvTraceHook, 7));
+
+      lttv_trace_find_hook(ts->parent.t, "core", "process_exit", NULL, NULL, 
+          NULL, process_exit, &g_array_index(hooks, LttvTraceHook, 8));
+#endif //0
+
+
+      
+      /* Add these hooks to each event_by_id hooks list */
+
+      /* add before */
+      for(k = 0 ; k < hooks->len/2 ; k++) {
+        hook = g_array_index(hooks, LttvTraceHook, k);
+        lttv_hooks_add(lttv_hooks_by_id_find(event_by_id, 
+                        hook.id), hook.h,
+                        events_request,
+                        LTTV_PRIO_STATE-5);
+      }
+
+      /* add after */
+      for(k = hooks->len/2 ; k < hooks->len ; k++) {
+        hook = g_array_index(hooks, LttvTraceHook, k);
+        lttv_hooks_add(lttv_hooks_by_id_find(event_by_id, 
+                       hook.id), hook.h,
+                       events_request,
+                       LTTV_PRIO_STATE+5);
+      }
+
+      events_request->hooks = hooks;
+
+      // Fill the events request
+      events_request->owner = control_flow_data;
+      events_request->viewer_data = control_flow_data;
+      events_request->servicing = FALSE;
+      events_request->start_time = start;
+      events_request->start_position = NULL;
+      events_request->stop_flag = FALSE;
+      events_request->end_time = time_end;
+      events_request->num_events = G_MAXUINT;
+      events_request->end_position = NULL;
+      events_request->trace = i;    /* FIXME */
+      events_request->before_chunk_traceset = before_chunk_traceset;
+      events_request->before_chunk_trace = NULL;
+      events_request->before_chunk_tracefile = NULL;
+      events_request->event = NULL;
+      events_request->event_by_id = event_by_id;
+      events_request->after_chunk_tracefile = NULL;
+      events_request->after_chunk_trace = NULL;
+      events_request->after_chunk_traceset = after_chunk_traceset;
+      events_request->before_request = before_request_hook;
+      events_request->after_request = after_request_hook;
+
+      g_debug("req : start : %u, %u", start.tv_sec, 
+                                          start.tv_nsec);
+
+      g_debug("req : end : %u, %u", time_end.tv_sec, 
+                                         time_end.tv_nsec);
+
+      lttvwindow_events_request(tab, events_request);
+
+    }
+
+  }
+
+#if 0
   lttv_hooks_add(event,
                  before_schedchange_hook,
                  events_request,
@@ -175,38 +341,8 @@ void drawing_data_request(Drawing_t *drawing,
                  after_process_hook,
                  events_request,
                  LTTV_PRIO_STATE+5);
+#endif //0
 
-  // Fill the events request
-  events_request->owner = control_flow_data;
-  events_request->viewer_data = control_flow_data;
-  events_request->servicing = FALSE;
-  events_request->start_time = start;
-  events_request->start_position = NULL;
-  events_request->stop_flag = FALSE;
-  events_request->end_time = time_end;
-  events_request->num_events = G_MAXUINT;
-  events_request->end_position = NULL;
-  events_request->trace = 0;    /* FIXME */
-  events_request->before_chunk_traceset = before_chunk_traceset;
-  events_request->before_chunk_trace = NULL;
-  events_request->before_chunk_tracefile = NULL;
-  events_request->event = event;
-  events_request->event_by_id = NULL;
-  events_request->after_chunk_tracefile = NULL;
-  events_request->after_chunk_trace = NULL;
-  events_request->after_chunk_traceset = after_chunk_traceset;
-  events_request->before_request = before_request_hook;
-  events_request->after_request = after_request_hook;
-
-  g_debug("req : start : %u, %u", start.tv_sec, 
-                                      start.tv_nsec);
-
-  g_debug("req : end : %u, %u", time_end.tv_sec, 
-                                     time_end.tv_nsec);
-
-  lttvwindow_events_request_remove_all(tab,
-                                       control_flow_data);
-  lttvwindow_events_request(tab, events_request);
 }
  
 
