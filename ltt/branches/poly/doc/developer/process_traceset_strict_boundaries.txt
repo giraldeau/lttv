@@ -154,13 +154,17 @@ The end event is a pointer to the last event the hooks has been called for.
 - lttv_process_traceset_seek_time : already implemented
 
 - lttv_process_traceset_begin(LttvTracesetContext *self,
-                              LttvHooksById *begin_hooks,
-                              LttvHooksById *middle_hooks)
+                              LttvHooksById       *before_traceset,
+                              LttvHooksById       *before_trace,
+                              LttvHooksById       *before_tracefile,
+                              LttvHooksById       *middle_hooks)
 
 
 - lttv_process_traceset_end(LttvTracesetContext *self,
-                              LttvHooksById *end_hooks,
-                              LttvHooksById *middle_hooks)
+                            LttvHooksById       *after_traceset,
+                            LttvHooksById       *after_trace,
+                            LttvHooksById       *after_tracefile,
+                            LttvHooksById       *middle_hooks)
 
 - lttv_traceset_context_add_hooks and lttv_traceset_context_remove_hooks
 
