@@ -97,7 +97,7 @@ void insertView(GtkWidget* widget, view_constructor constructor)
   {
     gtk_custom_widget_add(custom, viewer); 
     // Added by MD
-    g_object_unref(G_OBJECT(viewer));
+    //    g_object_unref(G_OBJECT(viewer));
   }
 }
 

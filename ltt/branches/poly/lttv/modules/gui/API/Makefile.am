@@ -11,8 +11,7 @@ AM_CFLAGS += $(GTK_CFLAGS)
 LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS)
 
-lib_LTLIBRARIES = libcustomBox.la libmainWinApi.la
-libcustomBox_la_SOURCES = gtkcustomhbox.c
+lib_LTLIBRARIES = libmainWinApi.la
 libmainWinApi_la_SOURCES = toolbar.c menu.c gtkTraceSet.c
 #libmainWinApi_la_LDFLAGS = -L${top_srcdir}/lttv/modules/gui/API -lcustomBox
 

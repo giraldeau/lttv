@@ -35,7 +35,6 @@
 #include <lttv/module.h>
 #include <lttv/hook.h>
 #include <lttv/gtkTraceSet.h>
-#include <lttv/gtkcustomhbox.h>
 #include <lttv/processTrace.h>
 #include <lttv/state.h>
 #include <ltt/ltt.h>
@@ -60,7 +59,6 @@ gboolean updateTimeInterval(void * hook_data, void * call_data);
 gboolean updateCurrentTime(void * hook_data, void * call_data);
 void remove_item_from_queue(GQueue * q, gboolean fromHead);
 void remove_all_items_from_queue(GQueue * q);
-void remove_instance(GtkCustomHBox * box);
 
 typedef struct _RawTraceData{
   unsigned  cpu_id;
@@ -100,7 +98,6 @@ typedef struct _EventViewerData {
   LttTime      trace_end;
   unsigned     start_event_index;        //the first event shown in the window
   unsigned     end_event_index;          //the last event shown in the window
-  GtkWidget *  instance_container;       //box to contain all widgets
 
   //scroll window containing Tree View
   GtkWidget * Scroll_Win;
@@ -137,6 +134,7 @@ GtkWidget *hGuiEvents(mainWindow *pmParentWindow);
 EventViewerData *GuiEvents(mainWindow *pmParentWindow);
 //! Event Viewer's destructor
 void GuiEvents_Destructor(EventViewerData *Event_Viewer_Data);
+void GuiEvents_free(EventViewerData *Event_Viewer_Data);
 
 static int Event_Selected_Hook(void *hook_data, void *call_data);
 
@@ -247,7 +245,7 @@ hGuiEvents(mainWindow * pmParentWindow)
   EventViewerData* Event_Viewer_Data = GuiEvents(pmParentWindow) ;
 
   if(Event_Viewer_Data)
-    return Event_Viewer_Data->instance_container;
+    return Event_Viewer_Data->HBox_V;
   else return NULL;
 	
 }
@@ -397,10 +395,8 @@ GuiEvents(mainWindow *pmParentWindow)
 	
   gtk_container_add (GTK_CONTAINER (Event_Viewer_Data->Scroll_Win), Event_Viewer_Data->Tree_V);
 
-  Event_Viewer_Data->instance_container = gtk_custom_hbox_new(0, 0, remove_instance);  
   Event_Viewer_Data->HBox_V = gtk_hbox_new(0, 0);
   gtk_box_pack_start(GTK_BOX(Event_Viewer_Data->HBox_V), Event_Viewer_Data->Scroll_Win, TRUE, TRUE, 0);
-  gtk_box_pack_start(GTK_BOX(Event_Viewer_Data->instance_container), Event_Viewer_Data->HBox_V, TRUE, TRUE, 0);
 
   /* Create vertical scrollbar and pack it */
   Event_Viewer_Data->VScroll_VC = gtk_vscrollbar_new(NULL);
@@ -426,7 +422,6 @@ GuiEvents(mainWindow *pmParentWindow)
   //    Event_Viewer_Data->VTree_Adjust_C->upper;
   g_critical("value : %u",Event_Viewer_Data->VTree_Adjust_C->upper);
   /*  Raw event trace */
-  gtk_widget_show(Event_Viewer_Data->instance_container);
   gtk_widget_show(Event_Viewer_Data->HBox_V);
   gtk_widget_show(Event_Viewer_Data->Tree_V);
   gtk_widget_show(Event_Viewer_Data->VScroll_VC);
@@ -466,6 +461,13 @@ GuiEvents(mainWindow *pmParentWindow)
 
   /* Set the Selected Event */
   //  Tree_V_set_cursor(Event_Viewer_Data);
+
+
+  g_object_set_data_full(
+			G_OBJECT(Event_Viewer_Data->HBox_V),
+			"Event_Viewer_Data",
+			Event_Viewer_Data,
+			(GDestroyNotify)GuiEvents_free);
   
   return Event_Viewer_Data;
 }
@@ -1135,6 +1137,8 @@ GuiEvents_free(EventViewerData *Event_Viewer_Data)
   UnregUpdateTimeInterval(updateTimeInterval,Event_Viewer_Data, Event_Viewer_Data->mw);
   UnregUpdateCurrentTime(updateCurrentTime,Event_Viewer_Data, Event_Viewer_Data->mw);
 
+  sEvent_Viewer_Data_List = g_slist_remove(sEvent_Viewer_Data_List, Event_Viewer_Data);
+  g_warning("Delete Event data\n");
   g_free(Event_Viewer_Data);
 }
 
@@ -1144,8 +1148,8 @@ GuiEvents_Destructor(EventViewerData *Event_Viewer_Data)
   guint index;
 
   /* May already been done by GTK window closing */
-  if(GTK_IS_WIDGET(Event_Viewer_Data->instance_container))
-    gtk_widget_destroy(Event_Viewer_Data->instance_container);
+  if(GTK_IS_WIDGET(Event_Viewer_Data->HBox_V))
+    gtk_widget_destroy(Event_Viewer_Data->HBox_V);
   
   /* Destroy the Tree View */
   //gtk_widget_destroy(Event_Viewer_Data->Tree_V);
@@ -1154,6 +1158,7 @@ GuiEvents_Destructor(EventViewerData *Event_Viewer_Data)
   //gtk_list_store_clear(Event_Viewer_Data->Store_M);
   //gtk_widget_destroy(GTK_WIDGET(Event_Viewer_Data->Store_M));
   
+  g_warning("Delete Event data from destroy\n");
   GuiEvents_free(Event_Viewer_Data);
 }
 
@@ -1234,7 +1239,7 @@ gboolean updateCurrentTime(void * hook_data, void * call_data)
 void Tree_V_grab_focus(GtkWidget *widget, gpointer data){
   EventViewerData *Event_Viewer_Data = (EventViewerData *)data;
   mainWindow * mw = Event_Viewer_Data->mw;
-  SetFocusedPane(mw, gtk_widget_get_parent(Event_Viewer_Data->instance_container));
+  SetFocusedPane(mw, gtk_widget_get_parent(Event_Viewer_Data->HBox_V));
 }
 
 void get_events(EventViewerData* Event_Viewer_Data, LttTime start, 
@@ -1497,20 +1502,6 @@ void remove_all_items_from_queue(GQueue *q)
   while((data = (RawTraceData *)g_queue_pop_head(q)) != NULL){
     g_free(data);
   }  
-}
-
-void remove_instance(GtkCustomHBox * box){
-  int i;
-  EventViewerData *Event_Viewer_Data ;
-  
-  for(i=0;i<g_slist_length(sEvent_Viewer_Data_List);i++){
-    Event_Viewer_Data = (EventViewerData *)g_slist_nth_data(sEvent_Viewer_Data_List, i);
-    if((void*)box == (void*)Event_Viewer_Data->instance_container){
-      sEvent_Viewer_Data_List = g_slist_remove(sEvent_Viewer_Data_List, Event_Viewer_Data);
-      GuiEvents_free(Event_Viewer_Data);
-      break;
-    }
-  }
 }
 
 
