@@ -107,11 +107,8 @@ struct _LttFacility{
   LttChecksum checksum;      //checksum of the facility 
   uint32_t base_id;          //base id of the facility
   LttEventType ** events;    //array of event types 
-
-  //FIXME Specify those types
-  table all_named_types;     //an array of named LttType
-  sequence all_unnamed_types;//an array of unnamed LttType
-  sequence all_fields;       //an array of fields
+  LttType ** named_types;
+  int  named_types_number;
 };
 
 struct _LttTracefile{
