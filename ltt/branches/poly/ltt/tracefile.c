@@ -1186,8 +1186,8 @@ LttTime getEventTime(LttTracefile * tf)
   tf->pre_cycle_count = cycle_count;
   cycle_count += tmpCycleCount * tf->count;  
   
-  if(tf->cur_heart_beat_number > tf->count)
-    cycle_count += tmpCycleCount * (tf->cur_heart_beat_number - tf->count);  
+  //  if(tf->cur_heart_beat_number > tf->count)
+  //    cycle_count += tmpCycleCount * (tf->cur_heart_beat_number - tf->count);  
 
   tf->cur_cycle_count = cycle_count;
 
