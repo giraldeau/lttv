@@ -16,7 +16,7 @@
  * MA 02111-1307, USA.
  */
 
-
+#include <string.h>
 #include <lttv/tracecontext.h>
 #include <ltt/event.h>
 #include <ltt/facility.h>
@@ -30,9 +30,9 @@ gint compare_tracefile(gconstpointer a, gconstpointer b)
 {
   gint comparison;
 
-  LttvTracefileContext *trace_a = (LttvTracefileContext *)a;
+  const LttvTracefileContext *trace_a = (const LttvTracefileContext *)a;
 
-  LttvTracefileContext *trace_b = (LttvTracefileContext *)b;
+  const LttvTracefileContext *trace_b = (const LttvTracefileContext *)b;
 
   if(trace_a == trace_b) return 0;
   comparison = ltt_time_compare(trace_a->timestamp, trace_b->timestamp);
@@ -41,7 +41,9 @@ gint compare_tracefile(gconstpointer a, gconstpointer b)
   else if(trace_a->index > trace_b->index) return 1;
   if(trace_a->t_context->index < trace_b->t_context->index) return -1;
   else if(trace_a->t_context->index > trace_b->t_context->index) return 1;
+  
   g_assert(FALSE);
+  return 0; /* This should never happen */
 }
 
 struct _LttvTraceContextPosition {
@@ -465,7 +467,8 @@ lttv_traceset_context_get_type(void)
       NULL,   /* class_data */
       sizeof (LttvTracesetContext),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) traceset_context_instance_init /* instance_init */
+      (GInstanceInitFunc) traceset_context_instance_init, /* instance_init */
+      NULL    /* Value handling */
     };
 
     type = g_type_register_static (G_TYPE_OBJECT, "LttvTracesetContextType", 
@@ -513,7 +516,8 @@ lttv_trace_context_get_type(void)
       NULL,   /* class_data */
       sizeof (LttvTraceContext),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) trace_context_instance_init    /* instance_init */
+      (GInstanceInitFunc) trace_context_instance_init,    /* instance_init */
+      NULL    /* Value handling */
     };
 
     type = g_type_register_static (G_TYPE_OBJECT, "LttvTraceContextType", 
@@ -561,7 +565,8 @@ lttv_tracefile_context_get_type(void)
       NULL,   /* class_data */
       sizeof (LttvTracefileContext),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) tracefile_context_instance_init    /* instance_init */
+      (GInstanceInitFunc) tracefile_context_instance_init,    /* instance_init */
+      NULL    /* Value handling */
     };
 
     type = g_type_register_static (G_TYPE_OBJECT, "LttvTracefileContextType", 
@@ -748,8 +753,6 @@ void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start)
 
   LttvTraceContext *tc;
 
-  LttvTracefileContext *tfc;
-
   nb_trace = lttv_traceset_number(self->ts);
   for(i = 0 ; i < nb_trace ; i++) {
     tc = self->traces[i];
@@ -763,8 +766,6 @@ gboolean lttv_process_tracefile_seek_position(LttvTracefileContext *self,
 {
   LttvTracefileContext *tfc = self;
 
-  LttEvent *event;
-
   GTree *pqueue = self->t_context->ts_context->pqueue;
   
   ltt_tracefile_seek_position(tfc->tf, pos);
@@ -774,7 +775,7 @@ gboolean lttv_process_tracefile_seek_position(LttvTracefileContext *self,
     g_tree_insert(pqueue, tfc, tfc);
   }
 
-
+  return TRUE;
 }
 
 gboolean lttv_process_trace_seek_position(LttvTraceContext *self, 
@@ -783,8 +784,6 @@ gboolean lttv_process_trace_seek_position(LttvTraceContext *self,
   guint i, nb_tracefile;
 
   LttvTracefileContext *tfc;
-
-  LttEvent *event;
 
   nb_tracefile = ltt_trace_control_tracefile_number(self->t) +
       ltt_trace_per_cpu_tracefile_number(self->t);
@@ -809,8 +808,6 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
   gboolean sum_ret = TRUE;
 
   LttvTraceContext *tc;
-
-  LttvTracefileContext *tfc;
 
   nb_trace = lttv_traceset_number(self->ts);
   
@@ -861,9 +858,7 @@ lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
 
   LttEventType *et;
 
-  guint nb, pos, i;
-
-  char *name;
+  guint nb, pos;
 
   nb = ltt_trace_facility_find(t, facility, &pos);
   if(nb < 1) g_error("No %s facility", facility);
@@ -929,7 +924,7 @@ void lttv_traceset_context_position_save(const LttvTracesetContext *self,
 
 void lttv_traceset_context_position_destroy(LttvTracesetContextPosition *pos)
 {
-  guint nb_trace, nb_tracefile;
+  guint nb_trace;
   guint iter_trace, iter_tracefile;
   
   nb_trace = pos->nb_trace;
@@ -1005,11 +1000,9 @@ gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
     for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
       tfc = tc->tracefiles[iter_tracefile];
       event = tfc->e;
-      if(
-          ret =
-            ltt_event_event_position_compare(event, 
-                            pos->t_pos[iter_trace].tf_pos[iter_tracefile])
-          != 0)
+      ret = ltt_event_event_position_compare(event, 
+                             pos->t_pos[iter_trace].tf_pos[iter_tracefile]);
+      if(ret != 0)
         return ret;
     }
   }
@@ -1037,11 +1030,10 @@ gint lttv_traceset_context_pos_pos_compare(
       g_error("lttv_traceset_context_ctx_pos_compare : nb_tracefile does not match.");
 
     for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
-      if(ret = 
-          ltt_event_position_compare(
+      ret = ltt_event_position_compare(
                 pos1->t_pos[iter_trace].tf_pos[iter_tracefile],
-                pos2->t_pos[iter_trace].tf_pos[iter_tracefile])
-          != 0)
+                pos2->t_pos[iter_trace].tf_pos[iter_tracefile]);
+      if(ret != 0) 
         return ret;
     }
   }

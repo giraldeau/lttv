@@ -198,7 +198,8 @@ GType lttv_traceset_state_get_type (void);
 struct _LttvTraceState {
   LttvTraceContext parent;
 
-  GHashTable *processes;  /* LttvProcessState objects indexed by pid */
+  GHashTable *processes;  /* LttvProcessState objects indexed by pid and
+                             last_cpu */
   guint nb_event, save_interval;
   /* Block/char devices, locks, memory pages... */
   GQuark *eventtype_names;

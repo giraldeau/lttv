@@ -19,7 +19,7 @@
 /* This module inserts a hook in the program main loop. This hook processes 
    all the events in the main tracefile while testing the speed and
    functionality of the state and stats computations. */
-
+#include <string.h>
 
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>
@@ -32,6 +32,9 @@
 #include <ltt/trace.h>
 #include <ltt/event.h>
 #include <ltt/type.h>
+#include <ltt/facility.h>
+
+#define __UNUSED__ __attribute__((__unused__))
 
 static LttvTraceset *traceset;
 
@@ -84,7 +87,7 @@ typedef struct _save_state {
 } SaveState;
 
 
-static void lttv_trace_option(void *hook_data)
+static void lttv_trace_option(void __UNUSED__ *hook_data)
 { 
   LttTrace *trace;
 
@@ -105,7 +108,7 @@ static double run_one_test(LttvTracesetState *ts, LttTime start, LttTime end)
 {
   double t0, t1;
 
-  int i;
+  unsigned int i;
 
   //lttv_traceset_context_add_hooks(&ts->parent,
   //before_traceset, after_traceset, NULL, before_trace, after_trace,
@@ -144,7 +147,7 @@ static double run_one_test(LttvTracesetState *ts, LttTime start, LttTime end)
 }
 
 
-gboolean trace_event(void *hook_data, void *call_data)
+gboolean trace_event(void __UNUSED__ *hook_data, void *call_data)
 {
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
@@ -154,7 +157,7 @@ gboolean trace_event(void *hook_data, void *call_data)
 
   ltt_event_position(tfs->parent.e, a_event_position);
   ltt_event_position_get(a_event_position, &nb_block, &nb_event, &tf);
-  fprintf(stderr,"Event %s %lu.%09lu [%lu %lu]\n",
+  fprintf(stderr,"Event %s %lu.%09lu [%u %u]\n",
       ltt_eventtype_name(ltt_event_eventtype(tfs->parent.e)),
       tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec,
       nb_block, nb_event);
@@ -162,7 +165,7 @@ gboolean trace_event(void *hook_data, void *call_data)
 }
 
 
-gboolean count_event(void *hook_data, void *call_data)
+gboolean count_event(void *hook_data, void __UNUSED__ *call_data)
 {
   guint *pcount = (guint *)hook_data;
 
@@ -173,7 +176,7 @@ gboolean count_event(void *hook_data, void *call_data)
 
 gboolean save_state_copy_event(void *hook_data, void *call_data)
 {
-  SaveState *save_state = (SaveState *)hook_data;
+  SaveState __UNUSED__ *save_state = (SaveState *)hook_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
@@ -233,7 +236,8 @@ gboolean save_state_event(void *hook_data, void *call_data)
 }
 
 
-static gboolean process_traceset(void *hook_data, void *call_data)
+static gboolean process_traceset(void __UNUSED__ *hook_data, 
+                                 void __UNUSED__ *call_data)
 {
   LttvTracesetStats *tscs;
 
@@ -257,13 +261,14 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   LttFacility *facility;
 
-  LttType *type;
-
   LttEventType *event_type;
 
   LttTime time, previous_time;
 
-  long long unsigned cycle_count, start_count, delta_cycle;
+  /* start_count is always initialized in this function _if_ there is always
+   * a block_start before a block_end.
+   */
+  long long unsigned cycle_count, start_count=0, delta_cycle;
 
   long long unsigned start_nsec, end_nsec, delta_nsec, added_nsec, added_nsec2;
 
@@ -505,10 +510,11 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   /* Seek a few times to each saved position */
 
   if((a_test7 && a_test3) || a_test_all) {
-    int i, j;
-
-    for(i = 0 ; i < a_seek_number ; i++) {
-      for(j = save_state.position - 1 ; j >= 0 ; j--) {
+    g_assert(a_seek_number >= 0);
+    for(i = 0 ; i < (guint)a_seek_number ; i++) {
+      gint reverse_j; /* just to make sure j is unsigned */
+      for(reverse_j = save_state.position - 1 ; reverse_j >= 0 ; reverse_j--) {
+        j = (guint)reverse_j;
         lttv_state_add_event_hooks(ts);
         t = run_one_test(ts, save_state.write_time[j], 
             save_state.write_time[j]);
@@ -547,6 +553,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   }
 
   g_info("BatchTest end process traceset");
+  return 0;
 }
 
 

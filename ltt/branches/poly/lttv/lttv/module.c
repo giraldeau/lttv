@@ -70,7 +70,7 @@ static GQuark lttv_module_error;
 
 static void init();
 
-static finish_destroy();
+static void finish_destroy();
 
 static void module_release(LttvModule *m);
 
@@ -129,16 +129,17 @@ static void library_remove(LttvLibrary *l)
   LttvModule *m;
 
   GPtrArray *modules;
-
+  GPtrArray **modules_ptr = &modules; /* for strict aliasing */
   guint i;
 
   char *key;
+  char **key_ptr = &key; /* for strict aliasing */
 
   for(i = 0 ; i < l->modules->len ; i++) {
     m = (LttvModule *)(l->modules->pdata[i]);
 
     g_hash_table_lookup_extended(modules_by_name, m->info.name, 
-				 (gpointer *)&key, (gpointer *)&modules);
+				 (gpointer *)key_ptr, (gpointer *)modules_ptr);
     g_assert(modules != NULL);
     g_ptr_array_remove(modules, m);
     if(modules->len == 0) {
@@ -162,11 +163,12 @@ static void library_remove(LttvLibrary *l)
 
 static LttvLibrary *library_load(char *name, GError **error)
 {
-  GModule *gm;
+  GModule *gm = NULL;
 
   int i, nb;
 
-  char *path, *pathname;
+  /* path is always initialized, checked */
+  char *path = NULL, *pathname;
 
   LttvLibrary *l;
 
@@ -234,7 +236,7 @@ LttvLibrary *lttv_library_load(char *name, GError **error)
 
 static void library_unload(LttvLibrary *l)
 {
-  guint i, len;
+  guint i;
 
   GModule *gm;
 
@@ -522,7 +524,7 @@ static void init()
 }
 
 
-static finish_destroy()
+static void finish_destroy()
 {
   guint i;
 

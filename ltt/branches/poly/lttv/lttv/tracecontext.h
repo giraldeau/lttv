@@ -308,5 +308,8 @@ gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
 LttTime lttv_traceset_context_position_get_time(
                                       const LttvTracesetContextPosition *pos);
 
+gboolean lttv_process_tracefile_seek_position(LttvTracefileContext *self, 
+                                              const LttEventPosition *pos);
+
 
 #endif // PROCESSTRACE_H

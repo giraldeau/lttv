@@ -71,7 +71,7 @@ LttvTrace *lttv_trace_new(LttTrace *t)
 
 LttvTraceset *lttv_traceset_copy(LttvTraceset *s_orig) 
 {
-  int i;
+  guint i;
   LttvTraceset *s;
   LttvTrace * trace;
 

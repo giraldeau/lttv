@@ -49,10 +49,8 @@ static GQuark
   LTTV_STATS_BEFORE_HOOKS,
   LTTV_STATS_AFTER_HOOKS;
 
-static void remove_all_processes(GHashTable *processes);
-
 static void
-find_event_tree(LttvTracefileStats *tfcs, GQuark process, GQuark cpu,
+find_event_tree(LttvTracefileStats *tfcs, GQuark pid_time, GQuark cpu,
     GQuark mode, GQuark sub_mode, LttvAttribute **events_tree, 
     LttvAttribute **event_types_tree);
 
@@ -252,11 +250,13 @@ lttv_traceset_stats_get_type(void)
       NULL,   /* class_data */
       sizeof (LttvTracesetStats),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) traceset_stats_instance_init    /* instance_init */
+      (GInstanceInitFunc) traceset_stats_instance_init,    /* instance_init */
+      NULL    /* Value handling */
     };
 
-    type = g_type_register_static (LTTV_TRACESET_STATE_TYPE, "LttvTracesetStatsType", 
-        &info, 0);
+    type = g_type_register_static (LTTV_TRACESET_STATE_TYPE,
+                                   "LttvTracesetStatsType", 
+                                   &info, 0);
   }
   return type;
 }
@@ -299,7 +299,8 @@ lttv_trace_stats_get_type(void)
       NULL,   /* class_data */
       sizeof (LttvTraceStats),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) trace_stats_instance_init    /* instance_init */
+      (GInstanceInitFunc) trace_stats_instance_init,    /* instance_init */
+      NULL    /* Value handling */
     };
 
     type = g_type_register_static (LTTV_TRACE_STATE_TYPE, 
@@ -346,7 +347,8 @@ lttv_tracefile_stats_get_type(void)
       NULL,   /* class_data */
       sizeof (LttvTracefileStats),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) tracefile_stats_instance_init    /* instance_init */
+      (GInstanceInitFunc) tracefile_stats_instance_init,    /* instance_init */
+      NULL    /* Value handling */
     };
 
     type = g_type_register_static (LTTV_TRACEFILE_STATE_TYPE, 
@@ -357,21 +359,25 @@ lttv_tracefile_stats_get_type(void)
 
 
 static void
-find_event_tree(LttvTracefileStats *tfcs, GQuark process, GQuark cpu,
-    GQuark mode, GQuark sub_mode, LttvAttribute **events_tree, 
-    LttvAttribute **event_types_tree)
+find_event_tree(LttvTracefileStats *tfcs,
+                GQuark pid_time,
+                GQuark cpu,
+                GQuark mode,
+                GQuark sub_mode,
+                LttvAttribute **events_tree, 
+                LttvAttribute **event_types_tree)
 {
   LttvAttribute *a;
 
   LttvTraceStats *tcs = LTTV_TRACE_STATS(tfcs->parent.parent.t_context);
   a = lttv_attribute_find_subdir(tcs->stats, LTTV_STATS_PROCESSES);
-  a = lttv_attribute_find_subdir(a, tfcs->parent.process->pid_time);
+  a = lttv_attribute_find_subdir(a, pid_time);
   a = lttv_attribute_find_subdir(a, LTTV_STATS_CPU);
-  a = lttv_attribute_find_subdir(a, tfcs->parent.cpu_name);
+  a = lttv_attribute_find_subdir(a, cpu);
   a = lttv_attribute_find_subdir(a, LTTV_STATS_MODE_TYPES);
-  a = lttv_attribute_find_subdir(a, tfcs->parent.process->state->t);
+  a = lttv_attribute_find_subdir(a, mode);
   a = lttv_attribute_find_subdir(a, LTTV_STATS_SUBMODES);
-  a = lttv_attribute_find_subdir(a, tfcs->parent.process->state->n);
+  a = lttv_attribute_find_subdir(a, sub_mode);
   *events_tree = a;
   a = lttv_attribute_find_subdir(a, LTTV_STATS_EVENT_TYPES);
   *event_types_tree = a;
@@ -382,7 +388,8 @@ static void update_event_tree(LttvTracefileStats *tfcs)
 {
   LttvExecutionState *es = tfcs->parent.process->state;
 
-  find_event_tree(tfcs, tfcs->parent.process->pid_time, tfcs->parent.cpu_name, 
+  find_event_tree(tfcs, tfcs->parent.process->pid_time,
+      tfcs->parent.cpu_name, 
       es->t, es->n, &(tfcs->current_events_tree), 
       &(tfcs->current_event_types_tree));
 }
@@ -709,7 +716,7 @@ lttv_stats_sum_traceset(LttvTracesetStats *self)
 
 
 // Hook wrapper. call_data is a traceset context.
-gint lttv_stats_hook_add_event_hooks(void *hook_data, void *call_data)
+gboolean lttv_stats_hook_add_event_hooks(void *hook_data, void *call_data)
 {
    LttvTracesetStats *tss = (LttvTracesetStats*)call_data;
 
@@ -718,7 +725,7 @@ gint lttv_stats_hook_add_event_hooks(void *hook_data, void *call_data)
    return 0;
 }
 
-lttv_stats_add_event_hooks(LttvTracesetStats *self)
+void lttv_stats_add_event_hooks(LttvTracesetStats *self)
 {
   LttvTraceset *traceset = self->parent.parent.ts;
 
@@ -844,7 +851,7 @@ lttv_stats_add_event_hooks(LttvTracesetStats *self)
 }
 
 // Hook wrapper. call_data is a traceset context.
-gint lttv_stats_hook_remove_event_hooks(void *hook_data, void *call_data)
+gboolean lttv_stats_hook_remove_event_hooks(void *hook_data, void *call_data)
 {
    LttvTracesetStats *tss = (LttvTracesetStats*)call_data;
 
@@ -853,7 +860,7 @@ gint lttv_stats_hook_remove_event_hooks(void *hook_data, void *call_data)
    return 0;
 }
 
-lttv_stats_remove_event_hooks(LttvTracesetStats *self)
+void lttv_stats_remove_event_hooks(LttvTracesetStats *self)
 {
   LttvTraceset *traceset = self->parent.parent.ts;
 

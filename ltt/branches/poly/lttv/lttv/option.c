@@ -107,7 +107,7 @@ static int poptToLTT[] = {
   POPT_ARG_NONE, POPT_ARG_STRING, POPT_ARG_INT, POPT_ARG_LONG
 };
 
-static struct poptOption endOption = { NULL, '\0', 0, NULL, 0};
+static struct poptOption endOption = { NULL, '\0', 0, NULL, 0, NULL, NULL };
 
 
 static void 
@@ -134,15 +134,15 @@ build_popts(GPtrArray **plist, struct poptOption **ppopts, poptContext *pc,
 
   /* add the options in the reverse order, so last additions are parsed first */
   for(i = 0 ; i < list->len ; i++) {
-    guint index = list->len-1-i;
+    guint reverse_i = list->len-1-i;
     option = (LttvOption *)list->pdata[i];
-    popts[index].longName = option->long_name;
-    popts[index].shortName = option->char_name;
-    popts[index].descrip = option->description;
-    popts[index].argDescrip = option->arg_description;
-    popts[index].argInfo = poptToLTT[option->t];
-    popts[index].arg = option->p;
-    popts[index].val = option->val;
+    popts[reverse_i].longName = option->long_name;
+    popts[reverse_i].shortName = option->char_name;
+    popts[reverse_i].descrip = option->description;
+    popts[reverse_i].argDescrip = option->arg_description;
+    popts[reverse_i].argInfo = poptToLTT[option->t];
+    popts[reverse_i].arg = option->p;
+    popts[reverse_i].val = option->val;
   }
 
   /* Terminate the array for popt and create the context */
@@ -271,11 +271,9 @@ static void show_help(LttvOption *option)
 
 void lttv_option_show_help(void)
 {
-	LttvOption option;
-
   GPtrArray *list = g_ptr_array_new();
 
-  int i;
+  guint i;
 
   g_hash_table_foreach(options, list_options, list);
 
@@ -286,8 +284,6 @@ void lttv_option_show_help(void)
     show_help((LttvOption *)list->pdata[i]);
   }
   g_ptr_array_free(list, TRUE);
-
-
 }
 
 static void init()
@@ -299,11 +295,9 @@ static void init()
 
 static void destroy()
 {
-  LttvOption option;
-
   GPtrArray *list = g_ptr_array_new();
 
-  int i;
+  guint i;
 
   g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Destroy option.c");
   g_hash_table_foreach(options, list_options, list);

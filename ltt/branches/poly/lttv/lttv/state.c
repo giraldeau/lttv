@@ -96,16 +96,16 @@ void lttv_state_state_saved_free(LttvTraceState *self,
 
 guint process_hash(gconstpointer key) 
 {
-  return ((LttvProcessState *)key)->pid;
+  return ((const LttvProcessState *)key)->pid;
 }
 
 
 gboolean process_equal(gconstpointer a, gconstpointer b)
 {
-  LttvProcessState *process_a, *process_b;
+  const LttvProcessState *process_a, *process_b;
 
-  process_a = (LttvProcessState *)a;
-  process_b = (LttvProcessState *)b;
+  process_a = (const LttvProcessState *)a;
+  process_b = (const LttvProcessState *)b;
 
   if(process_a->pid != process_b->pid) return FALSE;
   if(process_a->pid == 0 && 
@@ -188,7 +188,7 @@ init(LttvTracesetState *self, LttvTraceset *ts)
 static void
 fini(LttvTracesetState *self)
 {
-  guint i, j, nb_trace;
+  guint i, nb_trace;
 
   LttvTraceState *tcs;
 
@@ -201,9 +201,10 @@ fini(LttvTracesetState *self)
     tcs = (LttvTraceState *)(LTTV_TRACESET_CONTEXT(self)->traces[i]);
     lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_TRACE_STATE_USE_COUNT, 
         LTTV_UINT, &v);
+
+    g_assert(*(v.v_uint) != 0);
     (*v.v_uint)--;
 
-    g_assert(*(v.v_uint) >= 0);
     if(*(v.v_uint) == 0) {
       free_name_tables(tcs);
       free_max_time(tcs);
@@ -729,7 +730,7 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
   guint depth = process->execution_stack->len;
 
   if(process->state->t != t){
-    g_info("Different execution mode type (%d.%09d): ignore it\n",
+    g_info("Different execution mode type (%lu.%09lu): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
     g_info("process state has %s when pop_int is %s\n",
 		    g_quark_to_string(process->state->t),
@@ -743,7 +744,7 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
   }
 
   if(depth == 1){
-    g_info("Trying to pop last state on stack (%d.%09d): ignore it\n",
+    g_info("Trying to pop last state on stack (%lu.%09lu): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
     return;
   }
@@ -1254,6 +1255,8 @@ static gboolean block_end(void *hook_data, void *call_data)
   self->saved_position = 0;
   *(tcs->max_time_state_recomputed_in_seek) = self->parent.timestamp;
   g_free(ep);
+
+  return FALSE;
 }
 
 
@@ -1261,7 +1264,7 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
 {
   LttvTraceset *traceset = self->parent.ts;
 
-  guint i, j, k, nb_trace, nb_tracefile;
+  guint i, j, nb_trace, nb_tracefile;
 
   LttvTraceState *ts;
 
@@ -1304,7 +1307,7 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
 {
   LttvTraceset *traceset = self->parent.ts;
 
-  guint i, j, k, nb_trace, nb_tracefile;
+  guint i, j, nb_trace, nb_tracefile;
 
   LttvTraceState *ts;
 
@@ -1347,7 +1350,7 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 {
   LttvTraceset *traceset = self->parent.ts;
 
-  guint i, j, nb_trace, nb_saved_state;
+  guint i, nb_trace;
 
   int min_pos, mid_pos, max_pos;
 
@@ -1452,7 +1455,8 @@ lttv_traceset_state_get_type(void)
       NULL,   /* class_data */
       sizeof (LttvTracesetState),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) traceset_state_instance_init    /* instance_init */
+      (GInstanceInitFunc) traceset_state_instance_init,    /* instance_init */
+      NULL    /* value handling */
     };
 
     type = g_type_register_static (LTTV_TRACESET_CONTEXT_TYPE, "LttvTracesetStateType", 
@@ -1502,7 +1506,8 @@ lttv_trace_state_get_type(void)
       NULL,   /* class_data */
       sizeof (LttvTraceState),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) trace_state_instance_init    /* instance_init */
+      (GInstanceInitFunc) trace_state_instance_init,    /* instance_init */
+      NULL    /* value handling */
     };
 
     type = g_type_register_static (LTTV_TRACE_CONTEXT_TYPE, 
@@ -1549,7 +1554,8 @@ lttv_tracefile_state_get_type(void)
       NULL,   /* class_data */
       sizeof (LttvTracefileState),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) tracefile_state_instance_init    /* instance_init */
+      (GInstanceInitFunc) tracefile_state_instance_init,    /* instance_init */
+      NULL    /* value handling */
     };
 
     type = g_type_register_static (LTTV_TRACEFILE_CONTEXT_TYPE, 

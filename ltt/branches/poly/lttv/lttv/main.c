@@ -26,6 +26,7 @@
 #include <lttv/traceset.h>
 #include <ltt/trace.h>
 #include <stdio.h>
+#include <string.h>
 
 
 /* The main program maintains a few central data structures and relies
@@ -147,9 +148,9 @@ int main(int argc, char **argv) {
   GError *error = NULL;
 
   LttvModule *module_module = lttv_module_require("module", &error);
-  if(error != NULL) g_error(error->message);
+  if(error != NULL) g_error("%s", error->message);
   LttvModule *module_option = lttv_module_require("option", &error);
-  if(error != NULL) g_error(error->message);
+  if(error != NULL) g_error("%s", error->message);
 
   /* Initialize the module loading */
 
@@ -237,7 +238,7 @@ void lttv_module_option(void *hook_data)
   GError *error = NULL;
 
   lttv_module_require(a_module, &error);
-  if(error != NULL) g_error(error->message);
+  if(error != NULL) g_error("%s", error->message);
 }
 
 

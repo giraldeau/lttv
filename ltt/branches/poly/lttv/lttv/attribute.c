@@ -16,6 +16,7 @@
  * MA 02111-1307, USA.
  */
 
+#include <string.h>
 #include <lttv/attribute.h>
 #include <ltt/ltt.h>
 
@@ -55,6 +56,7 @@ LttvAttributeValue address_of_value(LttvAttributeType t, AttributeValue *v)
   case LTTV_POINTER: va.v_pointer = &v->dv_pointer; break;
   case LTTV_STRING: va.v_string = &v->dv_string; break;
   case LTTV_GOBJECT: va.v_gobject = &v->dv_gobject; break;
+  case LTTV_NONE: break;
   }
   return va;
 }
@@ -75,6 +77,7 @@ AttributeValue init_value(LttvAttributeType t)
   case LTTV_POINTER: v.dv_pointer = NULL; break;
   case LTTV_STRING: v.dv_string = NULL; break;
   case LTTV_GOBJECT: v.dv_gobject = NULL; break;
+  case LTTV_NONE: break;
   }
   return v;
 }
@@ -360,7 +363,7 @@ lttv_attribute_write_xml(LttvAttribute *self, FILE *fp, int pos, int indent)
           fprintf(fp, "TYPE=DOUBLE VALUE=%f/>\n", a->value.dv_double);
           break;
         case LTTV_TIME:
-          fprintf(fp, "TYPE=TIME SEC=%u NSEC=%u/>\n", a->value.dv_time.tv_sec,
+          fprintf(fp, "TYPE=TIME SEC=%lu NSEC=%lu/>\n", a->value.dv_time.tv_sec,
               a->value.dv_time.tv_nsec);
           break;
         case LTTV_POINTER:
@@ -386,9 +389,7 @@ lttv_attribute_write_xml(LttvAttribute *self, FILE *fp, int pos, int indent)
 void 
 lttv_attribute_read_xml(LttvAttribute *self, FILE *fp)
 {
-  int i, nb, res;
-
-  Attribute *a;
+  int res;
 
   char buffer[256], type[10];
 
@@ -437,12 +438,12 @@ lttv_attribute_read_xml(LttvAttribute *self, FILE *fp)
     }
     else if(strcmp(type, "DOUBLE") == 0) {
       value = lttv_attribute_add(self, name, LTTV_DOUBLE);
-      res = fscanf(fp, " VALUE=%f/>", value.v_double);
+      res = fscanf(fp, " VALUE=%lf/>", value.v_double);
       g_assert(res == 1);
     }
     else if(strcmp(type, "TIME") == 0) {
       value = lttv_attribute_add(self, name, LTTV_TIME);
-      res = fscanf(fp, " SEC=%u NSEC=%u/>", &(value.v_time->tv_sec), 
+      res = fscanf(fp, " SEC=%lu NSEC=%lu/>", &(value.v_time->tv_sec), 
           &(value.v_time->tv_nsec));
       g_assert(res == 2);
     }
@@ -560,7 +561,8 @@ lttv_attribute_get_type (void)
       NULL,   /* class_data */
       sizeof (LttvAttribute),
       0,      /* n_preallocs */
-      (GInstanceInitFunc) attribute_instance_init    /* instance_init */
+      (GInstanceInitFunc) attribute_instance_init,    /* instance_init */
+      NULL    /* value handling */
     };
 
     static const GInterfaceInfo iattribute_info = {
