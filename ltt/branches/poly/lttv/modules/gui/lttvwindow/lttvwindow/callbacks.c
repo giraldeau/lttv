@@ -660,7 +660,7 @@ MainWindow * get_window_data_struct(GtkWidget * widget)
 
   mw = lookup_widget(widget, "MWindow");
   if(mw == NULL){
-    g_printf("Main window does not exist\n");
+    g_info("Main window does not exist\n");
     return NULL;
   }
   
@@ -681,10 +681,10 @@ void create_new_window(GtkWidget* widget, gpointer user_data, gboolean clone)
   MainWindow * parent = get_window_data_struct(widget);
 
   if(clone){
-    g_printf("Clone : use the same traceset\n");
+    g_info("Clone : use the same traceset\n");
     construct_main_window(parent);
   }else{
-    g_printf("Empty : traceset is set to NULL\n");
+    g_info("Empty : traceset is set to NULL\n");
     construct_main_window(NULL);
   }
 }
@@ -859,7 +859,7 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
     case GTK_RESPONSE_OK:
       dir = gtk_file_selection_get_selections (file_selector);
       traceset = lttv_traceset_load(dir[0]);
-      g_printf("Open a trace set %s\n", dir[0]); 
+      g_info("Open a trace set %s\n", dir[0]); 
       //Not finished yet
       g_strfreev(dir);
     case GTK_RESPONSE_REJECT:
@@ -2234,12 +2234,12 @@ void stop_processing(GtkWidget *widget, gpointer user_data)
 
 void save(GtkWidget * widget, gpointer user_data)
 {
-  g_printf("Save\n");
+  g_info("Save\n");
 }
 
 void save_as(GtkWidget * widget, gpointer user_data)
 {
-  g_printf("Save as\n");
+  g_info("Save as\n");
 }
 
 
@@ -2348,12 +2348,12 @@ void zoom_extended(GtkWidget * widget, gpointer user_data)
 
 void go_to_time(GtkWidget * widget, gpointer user_data)
 {
-  g_printf("Go to time\n");  
+  g_info("Go to time\n");  
 }
 
 void show_time_frame(GtkWidget * widget, gpointer user_data)
 {
-  g_printf("Show time frame\n");  
+  g_info("Show time frame\n");  
 }
 
 
@@ -2384,7 +2384,7 @@ Tab *create_new_tab(GtkWidget* widget, gpointer user_data){
 
   GtkNotebook * notebook = (GtkNotebook *)lookup_widget(widget, "MNotebook");
   if(notebook == NULL){
-    g_printf("Notebook does not exist\n");
+    g_info("Notebook does not exist\n");
     return NULL;
   }
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
@@ -2440,7 +2440,7 @@ on_close_tab_activate                  (GtkWidget       *widget,
   MainWindow * mw_data = get_window_data_struct(widget);
   notebook = lookup_widget(widget, "MNotebook");
   if(notebook == NULL){
-    g_printf("Notebook does not exist\n");
+    g_info("Notebook does not exist\n");
     return;
   }
 
@@ -2457,7 +2457,7 @@ on_close_tab_X_clicked                 (GtkWidget       *widget,
   gint page_num;
   GtkWidget *notebook = lookup_widget(widget, "MNotebook");
   if(notebook == NULL){
-    g_printf("Notebook does not exist\n");
+    g_info("Notebook does not exist\n");
     return;
   }
  
@@ -2511,7 +2511,7 @@ void
 on_cut_activate                        (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Cut\n");
+  g_info("Cut\n");
 }
 
 
@@ -2519,7 +2519,7 @@ void
 on_copy_activate                       (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Copye\n");
+  g_info("Copye\n");
 }
 
 
@@ -2527,7 +2527,7 @@ void
 on_paste_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Paste\n");
+  g_info("Paste\n");
 }
 
 
@@ -2535,7 +2535,7 @@ void
 on_delete_activate                     (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Delete\n");
+  g_info("Delete\n");
 }
 
 
@@ -2626,7 +2626,7 @@ on_trace_filter_activate              (GtkMenuItem     *menuitem,
   
   s = g_object_get_data(G_OBJECT(w), "Traceset_Selector");
   if(!s){
-    g_printf("There is no viewer yet\n");      
+    g_info("There is no viewer yet\n");      
     return;
   }
   if(get_filter_selection(s, "Configure trace and tracefile filter", "Select traces and tracefiles")){
@@ -2642,7 +2642,7 @@ void
 on_trace_facility_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Trace facility selector: %s\n");  
+  g_info("Trace facility selector: %s\n");  
 }
 
 
@@ -2736,7 +2736,7 @@ on_load_library_activate                (GtkMenuItem     *menuitem,
 #endif //0   
         lttv_library_load(str1, &error);
         if(error != NULL) g_warning("%s", error->message);
-        else g_printf("Load library: %s\n", str);
+        else g_info("Load library: %s\n", str);
         g_strfreev(dir);
       case GTK_RESPONSE_REJECT:
       case GTK_RESPONSE_CANCEL:
@@ -2881,7 +2881,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
   
   lttv_module_require(module_name_out, &error);
   if(error != NULL) g_warning("%s", error->message);
-  else g_printf("Load module: %s", module_name_out);
+  else g_info("Load module: %s", module_name_out);
 
 
 #if 0
@@ -2928,7 +2928,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
 #endif //0   
         lttv_library_load(str1, &error);
         if(error != NULL) g_warning(error->message);
-        else g_printf("Load library: %s\n", str);
+        else g_info("Load library: %s\n", str);
         g_strfreev(dir);
       case GTK_RESPONSE_REJECT:
       case GTK_RESPONSE_CANCEL:
@@ -3026,7 +3026,7 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
   
   LttvModuleInfo module_info;
   lttv_module_info(module, &module_info);
-  g_printf("Release module: %s\n", module_info.name);
+  g_info("Release module: %s\n", module_info.name);
  
   lttv_module_release(module);
 }
@@ -3101,7 +3101,7 @@ void
 on_color_activate                      (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Color\n");
+  g_info("Color\n");
 }
 
 
@@ -3109,7 +3109,7 @@ void
 on_filter_activate                     (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Filter\n");
+  g_info("Filter\n");
 }
 
 
@@ -3117,7 +3117,7 @@ void
 on_save_configuration_activate         (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Save configuration\n");
+  g_info("Save configuration\n");
 }
 
 
@@ -3125,7 +3125,7 @@ void
 on_content_activate                    (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_printf("Content\n");
+  g_info("Content\n");
 }
 
 
@@ -3378,7 +3378,7 @@ on_MWindow_destroy                     (GtkWidget       *widget,
   g_object_unref(main_window->attributes);
   g_main_window_list = g_slist_remove(g_main_window_list, main_window);
 
-  g_printf("There are now : %d windows\n",g_slist_length(g_main_window_list));
+  g_info("There are now : %d windows\n",g_slist_length(g_main_window_list));
   if(g_slist_length(g_main_window_list) == 0)
     gtk_main_quit ();
 }
@@ -4217,7 +4217,7 @@ char * get_selection(char ** loaded_module_name, int nb_module,
   }
 
   id = gtk_dialog_run(GTK_DIALOG(dialogue));
-  GtkTreeModel **store_model = &store;  /* for strict aliasing */
+  GtkTreeModel **store_model = (GtkTreeModel**)&store;  /* for strict aliasing */
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
@@ -4382,7 +4382,7 @@ void construct_main_window(MainWindow * parent)
   //create a default tab
   notebook = (GtkNotebook *)lookup_widget(new_m_window->mwindow, "MNotebook");
   if(notebook == NULL){
-    g_printf("Notebook does not exist\n");
+    g_info("Notebook does not exist\n");
     return;
   }
   //gtk_notebook_popup_enable (GTK_NOTEBOOK(notebook));
@@ -4456,7 +4456,7 @@ void construct_main_window(MainWindow * parent)
     }
   }
 
-  g_printf("There are now : %d windows\n",g_slist_length(g_main_window_list));
+  g_info("There are now : %d windows\n",g_slist_length(g_main_window_list));
 }
 
 
