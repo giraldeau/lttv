@@ -31,12 +31,6 @@
 #include <lttv/hook.h>
 #include <lttv/stats.h>
 
-typedef struct _WindowCreationData {
-	int argc;
-	char ** argv;
-} WindowCreationData;
-
-
 typedef struct _TracesetInfo {
   //FIXME? TracesetContext and stats in same or different variable ?
   LttvTracesetStats * traceset_context;
@@ -68,8 +62,6 @@ struct _MainWindow{
   
   Tab * tab;
   Tab * current_tab;
-
-  WindowCreationData * win_creation_data; 
 
   GHashTable * hash_menu_item;
   GHashTable * hash_toolbar_item;

@@ -45,9 +45,6 @@
 #include <ltt/trace.h>
 
 
-/* global variable */
-static WindowCreationData  win_creation_data;
-
 /** Array containing instanced objects. */
 GSList * g_main_window_list = NULL ;
 
@@ -79,8 +76,6 @@ void lttv_trace_option(void *hook_data)
 
 static gboolean window_creation_hook(void *hook_data, void *call_data)
 {
-  WindowCreationData* window_creation_data = (WindowCreationData*)hook_data;
-
   g_debug("GUI window_creation_hook()");
 #ifdef ENABLE_NLS
   bindtextdomain (GETTEXT_PACKAGE, PACKAGE_LOCALE_DIR);
@@ -89,20 +84,20 @@ static gboolean window_creation_hook(void *hook_data, void *call_data)
 #endif
 
   gtk_set_locale ();
-  gtk_init (&(window_creation_data->argc), &(window_creation_data->argv));
+  gtk_init (&lttv_argc, &lttv_argv);
 
   add_pixmap_directory (PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
   add_pixmap_directory ("pixmaps");
   add_pixmap_directory ("../modules/gui/main/pixmaps");
 
-  construct_main_window(NULL, window_creation_data);
+  construct_main_window(NULL);
 
   gtk_main ();
 
   return FALSE;
 }
 
-G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
+static void init() {
 
   LttvAttributeValue value;
  
@@ -120,10 +115,7 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
       LTTV_POINTER, &value));
   g_assert((main_hooks = *(value.v_pointer)) != NULL);
 
-  win_creation_data.argc = argc;
-  win_creation_data.argv = argv;
-  
-  lttv_hooks_add(main_hooks, window_creation_hook, &win_creation_data);
+  lttv_hooks_add(main_hooks, window_creation_hook, NULL);
 
 }
 
@@ -174,14 +166,14 @@ void main_window_destroy_walk(gpointer data, gpointer user_data)
  * This function releases the memory reserved by the module and unregisters
  * everything that has been registered in the gtkTraceSet API.
  */
-G_MODULE_EXPORT void destroy() {
+static void destroy() {
 
   LttvAttributeValue value;  
   LttvTrace *trace;
 
   lttv_option_remove("trace");
 
-  lttv_hooks_remove_data(main_hooks, window_creation_hook, &win_creation_data);
+  lttv_hooks_remove_data(main_hooks, window_creation_hook, NULL);
 
   g_debug("GUI destroy()");
 
@@ -193,5 +185,6 @@ G_MODULE_EXPORT void destroy() {
 }
 
 
-
-
+LTTV_MODULE("mainwin", "Viewer main window", \
+    "Viewer with multiple windows, tabs and panes for graphical modules", \
+	    init, destroy, "stats")

@@ -3,13 +3,16 @@
 /* Created by Mathieu Desnoyers, may 2003 */
 
 #include <glib.h>
-#include <gmodule.h>
+#include <lttv/module.h>
 
-G_MODULE_EXPORT void init() {
+static void init() {
 	g_critical("Sample module init()");
 }
 
-G_MODULE_EXPORT void destroy() {
+static void destroy() {
 	g_critical("Sample module destroy()");
 }
-	
+
+
+LTTV_MODULE("sampledep", "Medium...", "Long...", init, destroy, {})
+

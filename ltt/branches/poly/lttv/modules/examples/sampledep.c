@@ -3,18 +3,19 @@
 /* Created by Mathieu Desnoyers, may 2003 */
 
 #include <glib.h>
-#include <gmodule.h>
 
 /* Include module.h from lttv headers for module loading */
 #include <lttv/module.h>
 
-G_MODULE_EXPORT void init(int argc, char * argv[], LttvModule *self) {
+static void init() {
 	g_critical("Sample module dependant init()");
-
-	lttv_module_require(self, "samplemodule",argc,argv);
 }
 
-G_MODULE_EXPORT void destroy() {
+static void destroy() {
 	g_critical("Sample module dependant destroy()");
 }
-	
+
+
+LTTV_MODULE("sampledep", "Medium desc...", "Long desc...", init, destroy, \
+	    { "samplemodule" })
+

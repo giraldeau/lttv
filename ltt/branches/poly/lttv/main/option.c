@@ -19,6 +19,7 @@
 
 #include <popt.h>
 #include <glib.h>
+#include <lttv/module.h>
 #include <lttv/option.h>
 
 typedef struct _LttvOption {
@@ -49,32 +50,6 @@ free_option(LttvOption *option)
   g_free(option->description);
   g_free(option->arg_description);
   g_free(option);
-}
-
-
-void lttv_option_init(int argc, char **argv)
-{
-  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Init option.c");
-  options = g_hash_table_new(g_str_hash, g_str_equal);
-}
-
-
-void lttv_option_destroy()
-{
-  LttvOption option;
-
-  GPtrArray *list = g_ptr_array_new();
-
-  int i;
-
-  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Destroy option.c");
-  g_hash_table_foreach(options, list_options, list);
-  g_hash_table_destroy(options);
-
-  for(i = 0 ; i < list->len ; i++) {
-    free_option((LttvOption *)list->pdata[i]);
-  }
-  g_ptr_array_free(list, TRUE);
 }
 
 
@@ -251,6 +226,7 @@ void lttv_option_parse(int argc, char **argv)
   destroy_popts(&list, &popts, &c);
 }
 
+/* CHECK */
 static void show_help(LttvOption *option)
 {
   printf("--%s  -%c  argument: %s\n" , option->long_name,
@@ -281,3 +257,31 @@ void lttv_option_show_help(void)
 
 }
 
+static void init()
+{
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Init option.c");
+  options = g_hash_table_new(g_str_hash, g_str_equal);
+}
+
+
+static void destroy()
+{
+  LttvOption option;
+
+  GPtrArray *list = g_ptr_array_new();
+
+  int i;
+
+  g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Destroy option.c");
+  g_hash_table_foreach(options, list_options, list);
+  g_hash_table_destroy(options);
+
+  for(i = 0 ; i < list->len ; i++) {
+    free_option((LttvOption *)list->pdata[i]);
+  }
+  g_ptr_array_free(list, TRUE);
+}
+
+LTTV_MODULE("option", "Command line options processing", \
+    "Functions to add, remove and parse command line options", \
+    init, destroy)

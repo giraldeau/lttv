@@ -24,7 +24,7 @@
 
 void create_new_window(GtkWidget* widget, gpointer user_data, gboolean clone);
 void insert_menu_toolbar_item(MainWindow * mw, gpointer user_data);
-void construct_main_window(MainWindow * parent, WindowCreationData *win_creation_data);
+void construct_main_window(MainWindow * parent);
 void main_window_free(MainWindow * mw);
 void main_window_destructor(MainWindow * mw);
 

@@ -329,15 +329,13 @@ static int write_event_content(void *hook_data, void *call_data)
 }
 
 
-G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
+static void init()
 {
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
   g_info("Init textDump.c");
-
-  lttv_module_require(self, "libbatchAnalysis", argc, argv);
 
   a_string = g_string_new("");
 
@@ -393,7 +391,7 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
 }
 
 
-G_MODULE_EXPORT void destroy()
+static void destroy()
 {
   g_info("Destroy textDump");
 
@@ -417,6 +415,11 @@ G_MODULE_EXPORT void destroy()
 
   lttv_hooks_remove_data(before_trace, write_traceset_footer, NULL);
 }
+
+
+LTTV_MODULE("textDump", "Print events in a file", \
+	    "Produce a detailed text printout of a trace", \
+	    init, destroy, "stats", "batchAnalysis")
 
 
 

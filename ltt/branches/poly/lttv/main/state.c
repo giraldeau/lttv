@@ -17,6 +17,8 @@
  */
 
 
+#include <lttv/lttv.h>
+#include <lttv/module.h>
 #include <lttv/state.h>
 #include <ltt/facility.h>
 #include <ltt/trace.h>
@@ -150,7 +152,10 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     tcs->save_interval = 50000;
     lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_SAVED_STATES_TIME, 
         LTTV_POINTER, &v);
-    if(*(v.v_pointer) == NULL) *(v.v_pointer) = g_new(LttTime,1);
+    if(*(v.v_pointer) == NULL) {
+      *(v.v_pointer) = g_new(LttTime,1);
+      *((LttTime *)*(v.v_pointer)) = time_zero;
+    }
     tcs->max_time_state_recomputed_in_seek = (LttTime *)*(v.v_pointer);
 
     fill_name_tables(tcs);
@@ -263,7 +268,9 @@ void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp)
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = (LttvTracefileState *)self->parent.tracefiles[i];
-    fprintf(fp, "  <TRACEFILE PID=%u", tfcs->process->pid);
+    fprintf(fp, "  <TRACEFILE PID=%u TIMESTAMP_S=%lu TIMESTAMP_NS=%lu", 
+        tfcs->process->pid, tfcs->parent.timestamp.tv_sec, 
+        tfcs->parent.timestamp.tv_nsec);
     if(tfcs->parent.e == NULL) fprintf(fp,"/>\n");
     else {
       ltt_event_position(tfcs->parent.e, ep);
@@ -359,6 +366,12 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
       ep = ltt_event_position_new();
       ltt_event_position(tfcs->parent.e, ep);
       *(value.v_pointer) = ep;
+
+      guint nb_block, nb_event;
+      LttTracefile *tf;
+      ltt_event_position_get(ep, &nb_block, &nb_event, &tf);
+      g_debug("Block %u event %u time %lu.%lu", nb_block, nb_event,
+          tfcs->parent.timestamp.tv_sec, tfcs->parent.timestamp.tv_nsec);
     }
   }
 }
@@ -583,12 +596,12 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
   guint depth = process->execution_stack->len - 1;
 
   if(process->state->t != t){
-    g_warning("Different execution mode type (%d.%09d): ignore it\n",
+    g_info("Different execution mode type (%d.%09d): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
-    g_warning("process state has %s when pop_int is %s\n",
+    g_info("process state has %s when pop_int is %s\n",
 		    g_quark_to_string(process->state->t),
 		    g_quark_to_string(t));
-    g_warning("{ %u, %u, %s, %s }\n",
+    g_info("{ %u, %u, %s, %s }\n",
 		    process->pid,
 		    process->ppid,
 		    g_quark_to_string(process->name),
@@ -597,7 +610,7 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
   }
 
   if(depth == 0){
-    g_warning("Trying to pop last state on stack (%d.%09d): ignore it\n",
+    g_info("Trying to pop last state on stack (%d.%09d): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
     return;
   }
@@ -970,7 +983,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
 }
 
 
-static gboolean block_end(void *hook_data, void *call_data)
+static gboolean block_start(void *hook_data, void *call_data)
 {
   LttvTracefileState *self = (LttvTracefileState *)call_data;
 
@@ -1015,9 +1028,33 @@ static gboolean block_end(void *hook_data, void *call_data)
     *(value.v_time) = self->parent.timestamp;
     lttv_state_save(tcs, saved_state_tree);
     tcs->nb_event = 0;
+    g_debug("Saving state at time %lu.%lu", self->parent.timestamp.tv_sec,
+	    self->parent.timestamp.tv_nsec);
   }
   *(tcs->max_time_state_recomputed_in_seek) = self->parent.timestamp;
   return FALSE;
+}
+
+
+static gboolean block_end(void *hook_data, void *call_data)
+{
+  LttvTracefileState *self = (LttvTracefileState *)call_data;
+
+  LttvTraceState *tcs = (LttvTraceState *)(self->parent.t_context);
+
+  LttTracefile *tf;
+
+  LttEventPosition *ep;
+
+  guint nb_block, nb_event;
+
+  ep = ltt_event_position_new();
+  ltt_event_position(self->parent.e, ep);
+  ltt_event_position_get(ep, &nb_block, &nb_event, &tf);
+  tcs->nb_event += nb_event - self->saved_position + 1;
+  self->saved_position = 0;
+  *(tcs->max_time_state_recomputed_in_seek) = self->parent.timestamp;
+  g_free(ep);
 }
 
 
@@ -1031,13 +1068,15 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
 
   LttvTracefileState *tfs;
 
-  LttvTraceHook hook;
+  LttvTraceHook hook_start, hook_end;
 
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceState *)self->parent.traces[i];
+    lttv_trace_find_hook(ts->parent.t, "core","block_start",NULL, 
+	NULL, NULL, block_start, &hook_start);
     lttv_trace_find_hook(ts->parent.t, "core","block_end",NULL, 
-	NULL, NULL, block_end, &hook);
+	NULL, NULL, block_end, &hook_end);
 
     nb_tracefile = ltt_trace_control_tracefile_number(ts->parent.t) +
         ltt_trace_per_cpu_tracefile_number(ts->parent.t);
@@ -1045,7 +1084,9 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = LTTV_TRACEFILE_STATE(ts->parent.tracefiles[j]);
       lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.after_event_by_id, 
-	  hook.id), hook.h, NULL);
+	  hook_start.id), hook_start.h, NULL);
+      lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.after_event_by_id, 
+	  hook_end.id), hook_end.h, NULL);
     }
   }
 }
@@ -1061,13 +1102,16 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
 
   LttvTracefileState *tfs;
 
-  LttvTraceHook hook;
+  LttvTraceHook hook_start, hook_end;
 
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = LTTV_TRACE_STATE(self->parent.traces[i]);
+    lttv_trace_find_hook(ts->parent.t, "core","block_start",NULL, 
+	NULL, NULL, block_start, &hook_start);
+
     lttv_trace_find_hook(ts->parent.t, "core","block_end",NULL, 
-	NULL, NULL, block_end, &hook);
+	NULL, NULL, block_end, &hook_end);
 
     nb_tracefile = ltt_trace_control_tracefile_number(ts->parent.t) +
         ltt_trace_per_cpu_tracefile_number(ts->parent.t);
@@ -1075,7 +1119,9 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = LTTV_TRACEFILE_STATE(ts->parent.tracefiles[j]);
       lttv_hooks_remove_data(lttv_hooks_by_id_find(
-          tfs->parent.after_event_by_id, hook.id), hook.h, NULL);
+          tfs->parent.after_event_by_id, hook_start.id), hook_start.h, NULL);
+      lttv_hooks_remove_data(lttv_hooks_by_id_find(
+          tfs->parent.after_event_by_id, hook_end.id), hook_end.h, NULL);
     }
   }
 }
@@ -1295,7 +1341,7 @@ lttv_tracefile_state_get_type(void)
 }
 
 
-void lttv_state_init(int argc, char **argv)
+static void module_init()
 {
   LTTV_STATE_UNNAMED = g_quark_from_string("unnamed");
   LTTV_STATE_MODE_UNKNOWN = g_quark_from_string("unknown execution mode");
@@ -1320,10 +1366,14 @@ void lttv_state_init(int argc, char **argv)
   LTTV_STATE_HOOKS = g_quark_from_string("saved state hooks");
 }
 
-void lttv_state_destroy() 
+static void module_destroy() 
 {
 }
 
+
+LTTV_MODULE("state", "State computation", \
+    "Update the system state, possibly saving it at intervals", \
+    module_init, module_destroy)
 
 
 

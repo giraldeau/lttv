@@ -17,7 +17,6 @@
  */
 
 #include <glib.h>
-#include <gmodule.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
@@ -114,59 +113,6 @@ struct _StatisticViewerData{
   //hash 
   GHashTable *statistic_hash;
 };
-
-
-/**
- * plugin's init function
- *
- * This function initializes the Statistic Viewer functionnality through the
- * gtkTraceSet API.
- */
-G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
-
-  statistic_main_win_module = lttv_module_require(self, "mainwin", argc, argv);
-  
-  if(statistic_main_win_module == NULL){
-      g_critical("Can't load Statistic Viewer : missing mainwin\n");
-      return;
-  }
-
-  statistic_traceset = g_ptr_array_new ();
-
-  /* Register the toolbar insert button */
-  toolbar_item_reg(hGuiStatisticInsert_xpm, "Insert Statistic Viewer", h_gui_statistic);
-  
-  /* Register the menu item insert entry */
-  menu_item_reg("/", "Insert Statistic Viewer", h_gui_statistic);
-  
-}
-
-void statistic_destroy_walk(gpointer data, gpointer user_data)
-{
-  gui_statistic_destructor((StatisticViewerData*)data);
-}
-
-/**
- * plugin's destroy function
- *
- * This function releases the memory reserved by the module and unregisters
- * everything that has been registered in the gtkTraceSet API.
- */
-G_MODULE_EXPORT void destroy() {
-  int i;
-  
-  if(g_statistic_viewer_data_list){
-    g_slist_foreach(g_statistic_viewer_data_list, statistic_destroy_walk, NULL );    
-    g_slist_free(g_statistic_viewer_data_list);
-  }
-  g_ptr_array_free (statistic_traceset, TRUE);
-
-  /* Unregister the toolbar insert button */
-  toolbar_item_unreg(h_gui_statistic);
-  
-  /* Unregister the menu item insert entry */
-  menu_item_unreg(h_gui_statistic);
-}
 
 
 void
@@ -692,4 +638,54 @@ void statistic_remove_context_hooks(StatisticViewerData * statistic_viewer_data,
   stats_remove_event_hooks_api(statistic_viewer_data->mw);
 }
 
+
+/**
+ * plugin's init function
+ *
+ * This function initializes the Statistic Viewer functionnality through the
+ * gtkTraceSet API.
+ */
+static void init() {
+
+  statistic_traceset = g_ptr_array_new ();
+
+  /* Register the toolbar insert button */
+  toolbar_item_reg(hGuiStatisticInsert_xpm, "Insert Statistic Viewer", h_gui_statistic);
+  
+  /* Register the menu item insert entry */
+  menu_item_reg("/", "Insert Statistic Viewer", h_gui_statistic);
+  
+}
+
+void statistic_destroy_walk(gpointer data, gpointer user_data)
+{
+  gui_statistic_destructor((StatisticViewerData*)data);
+}
+
+/**
+ * plugin's destroy function
+ *
+ * This function releases the memory reserved by the module and unregisters
+ * everything that has been registered in the gtkTraceSet API.
+ */
+static void destroy() {
+  int i;
+  
+  if(g_statistic_viewer_data_list){
+    g_slist_foreach(g_statistic_viewer_data_list, statistic_destroy_walk, NULL );    
+    g_slist_free(g_statistic_viewer_data_list);
+  }
+  g_ptr_array_free (statistic_traceset, TRUE);
+
+  /* Unregister the toolbar insert button */
+  toolbar_item_unreg(h_gui_statistic);
+  
+  /* Unregister the menu item insert entry */
+  menu_item_unreg(h_gui_statistic);
+}
+
+
+LTTV_MODULE("guistatistics", "Statistics viewer", \
+    "Graphical module to view statistics about processes, CPUs and systems", \
+    init, destroy, "mainwin")
 

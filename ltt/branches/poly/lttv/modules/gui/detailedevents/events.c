@@ -40,7 +40,6 @@
 #include <math.h>
 
 #include <glib.h>
-#include <gmodule.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
 
@@ -186,57 +185,6 @@ static void get_events(EventViewerData* event_viewer_data, LttTime start,
 static gboolean parse_event(void *hook_data, void *call_data);
 
 static LttvModule *main_win_module;
-
-/**
- * plugin's init function
- *
- * This function initializes the Event Viewer functionnality through the
- * gtkTraceSet API.
- */
-G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
-
-  main_win_module = lttv_module_require(self, "mainwin", argc, argv);
-  
-  if(main_win_module == NULL){
-    g_critical("Can't load Control Flow Viewer : missing mainwin\n");
-    return;
-  }
-  
-  /* Register the toolbar insert button */
-  toolbar_item_reg(hGuiEventsInsert_xpm, "Insert Event Viewer", h_gui_events);
-  
-  /* Register the menu item insert entry */
-  menu_item_reg("/", "Insert Event Viewer", h_gui_events);
-  
-}
-
-void event_destroy_walk(gpointer data, gpointer user_data)
-{
-  gui_events_destructor((EventViewerData*)data);
-}
-
-/**
- * plugin's destroy function
- *
- * This function releases the memory reserved by the module and unregisters
- * everything that has been registered in the gtkTraceSet API.
- */
-G_MODULE_EXPORT void destroy() {
-  int i;
-  
-  EventViewerData *event_viewer_data;
-  
-  if(g_event_viewer_data_list){
-    g_slist_foreach(g_event_viewer_data_list, event_destroy_walk, NULL );
-    g_slist_free(g_event_viewer_data_list);
-  }
-
-  /* Unregister the toolbar insert button */
-  toolbar_item_unreg(h_gui_events);
-  
-  /* Unregister the menu item insert entry */
-  menu_item_unreg(h_gui_events);
-}
 
 /* Enumeration of the columns */
 enum
@@ -1888,3 +1836,51 @@ void remove_all_items_from_queue(GQueue *q)
 }
 
 
+/**
+ * plugin's init function
+ *
+ * This function initializes the Event Viewer functionnality through the
+ * gtkTraceSet API.
+ */
+static void init() {
+
+  /* Register the toolbar insert button */
+  toolbar_item_reg(hGuiEventsInsert_xpm, "Insert Event Viewer", h_gui_events);
+  
+  /* Register the menu item insert entry */
+  menu_item_reg("/", "Insert Event Viewer", h_gui_events);
+  
+}
+
+void event_destroy_walk(gpointer data, gpointer user_data)
+{
+  gui_events_destructor((EventViewerData*)data);
+}
+
+/**
+ * plugin's destroy function
+ *
+ * This function releases the memory reserved by the module and unregisters
+ * everything that has been registered in the gtkTraceSet API.
+ */
+static void destroy() {
+  int i;
+  
+  EventViewerData *event_viewer_data;
+  
+  if(g_event_viewer_data_list){
+    g_slist_foreach(g_event_viewer_data_list, event_destroy_walk, NULL );
+    g_slist_free(g_event_viewer_data_list);
+  }
+
+  /* Unregister the toolbar insert button */
+  toolbar_item_unreg(h_gui_events);
+  
+  /* Unregister the menu item insert entry */
+  menu_item_unreg(h_gui_events);
+}
+
+
+LTTV_MODULE("guievents", "Detailed events view", \
+    "Graphical module to display a detailed event list", \
+	    init, destroy, "mainwin")

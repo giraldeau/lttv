@@ -26,6 +26,11 @@
 
 LttvAttribute *lttv_global_attributes();
 
+extern gboolean lttv_profile_memory;
+
+extern int lttv_argc;
+
+extern char **lttv_argv;
 
 /* A number of global attributes are initialized before modules are
    loaded, for example hooks lists. More global attributes are defined
@@ -51,7 +56,5 @@ LttvAttribute *lttv_global_attributes();
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
-
-extern gboolean lttv_profile_memory;
 
 #endif // LTTV_H

@@ -26,20 +26,7 @@
 #include <lttv/traceset.h>
 #include <ltt/trace.h>
 #include <stdio.h>
-#include <mcheck.h>
 
-
-void lttv_option_init(int argc, char **argv);
-void lttv_option_destroy();
-
-void lttv_module_init(int argc, char **argv);
-void lttv_module_destroy();
-
-void lttv_state_init(int argc, char **argv);
-void lttv_state_destroy();
-
-void lttv_stats_init(int argc, char **argv);
-void lttv_stats_destroy();
 
 /* The main program maintains a few central data structures and relies
    on modules for the rest. These data structures may be accessed by modules
@@ -63,9 +50,9 @@ static gboolean
 
 gboolean lttv_profile_memory;
 
-static int a_argc;
+int lttv_argc;
 
-static char **a_argv;
+char **lttv_argv;
 
 static void lttv_module_option(void *hook_data);
 
@@ -100,6 +87,8 @@ int main(int argc, char **argv) {
 
   LttvAttributeValue value;
 
+  lttv_argc = argc;
+  lttv_argv = argv;
 
   /* Before anything else, check if memory profiling is requested */
 
@@ -107,7 +96,6 @@ int main(int argc, char **argv) {
     if(*(argv[i]) != '-') break;
     if(strcmp(argv[i], profile_memory_short_option) == 0 || 
        strcmp(argv[i], profile_memory_long_option) == 0) {
-      mcheck(0);
       g_mem_set_vtable(glib_mem_profiler_table);
       g_message("Memory summary before main");
       g_mem_profile();
@@ -153,17 +141,16 @@ int main(int argc, char **argv) {
 
   /* Initialize the command line options processing */
 
-  a_argc = argc;
-  a_argv = argv;
-  lttv_option_init(argc,argv);
-  lttv_module_init(argc,argv);
-  lttv_state_init(argc,argv);
-  lttv_stats_init(argc,argv);
+  GError *error = NULL;
 
+  LttvModule *module_module = lttv_module_require("module", &error);
+  if(error != NULL) g_error(error->message);
+  LttvModule *module_option = lttv_module_require("option", &error);
+  if(error != NULL) g_error(error->message);
 
   /* Initialize the module loading */
 
-  lttv_module_path_add(PACKAGE_PLUGIN_DIR);
+  lttv_library_path_add(PACKAGE_PLUGIN_DIR);
 
 
   /* Add some built-in options */
@@ -214,10 +201,8 @@ int main(int argc, char **argv) {
 
   /* Clean up everything */
 
-  lttv_stats_destroy();
-  lttv_state_destroy();
-  lttv_module_destroy();
-  lttv_option_destroy();
+  lttv_module_release(module_option);
+  lttv_module_release(module_module);
 
   lttv_hooks_destroy(before_options);
   lttv_hooks_destroy(after_options);
@@ -229,6 +214,7 @@ int main(int argc, char **argv) {
     g_message("Memory summary after main");
     g_mem_profile();
   }
+  return 0;
 }
 
 
@@ -240,13 +226,16 @@ LttvAttribute *lttv_global_attributes()
 
 void lttv_module_option(void *hook_data)
 { 
-  lttv_module_load(a_module,a_argc,a_argv);
+  GError *error = NULL;
+
+  lttv_module_require(a_module, &error);
+  if(error != NULL) g_error(error->message);
 }
 
 
 void lttv_module_path_option(void *hook_data)
 {
-  lttv_module_path_add(a_module_path);
+  lttv_library_path_add(a_module_path);
 }
 
 
@@ -271,13 +260,6 @@ void lttv_help(void *hook_data)
 }
 
 /* 
-
-- Make it easier to change modules from builtin to externally loaded.
-
-    have: MODULE_INFO(name, init, destroy, { require} ) in each module.
-    Maintain the list of builtin modules and search these first (or 
-    optionally last). Add the lib prefix if needed to avoid having to
-    specify libbatchAnalysis instead of batchAnalysis.
 
 - Define formally traceset/trace in the GUI for the user and decide how
    trace/traceset sharing goes in the application.

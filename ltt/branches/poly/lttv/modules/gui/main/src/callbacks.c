@@ -21,7 +21,6 @@
 #endif
 
 #include <gtk/gtk.h>
-#include <gmodule.h>
 
 #include "callbacks.h"
 #include "interface.h"
@@ -275,10 +274,10 @@ void create_new_window(GtkWidget* widget, gpointer user_data, gboolean clone)
 
   if(clone){
     g_printf("Clone : use the same traceset\n");
-    construct_main_window(parent, NULL);
+    construct_main_window(parent);
   }else{
     g_printf("Empty : traceset is set to NULL\n");
-    construct_main_window(NULL, parent->win_creation_data);
+    construct_main_window(NULL);
   }
 }
 
@@ -1042,10 +1041,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
 	str1 = strrchr(str,'\\');
 	str1++;
       }
-      if(mw_data->win_creation_data)
-	lttv_module_load(str1, mw_data->win_creation_data->argc,mw_data->win_creation_data->argv);
-      else
-	lttv_module_load(str1, 0,NULL);
+      lttv_module_require(str1, NULL);
       g_slist_foreach(g_main_window_list, (gpointer)insert_menu_toolbar_item,
           NULL);
       g_strfreev(dir);
@@ -1068,30 +1064,36 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
   int i;
-  char **name, *unload_module_name;
+  GPtrArray *name;
+  char *unload_module_name;
   guint nb;
-  LttvModule ** modules, *module;
+  LttvLibrary *library;
+  LttvLibraryInfo library_info;
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
   
-  modules = lttv_module_list(&nb);
-  name  = g_new(char*, nb);
+  name  = g_ptr_array_new();
+  nb = lttv_library_number();
+
   for(i=0;i<nb;i++){
-    module = modules[i];
-    name[i] = lttv_module_name(module);
+    library = lttv_library_get(i);
+    lttv_library_info(library, &library_info);
+    if(library_info.load_count > 0) g_ptr_array_add(name, library_info.name);
   }
 
-  unload_module_name =get_unload_module(name,nb);
+  unload_module_name =get_unload_module((char **)(name->pdata), name->len);
   
   if(unload_module_name){
     for(i=0;i<nb;i++){
-      if(strcmp(unload_module_name, name[i]) == 0){
-	lttv_module_unload(modules[i]);
+      library = lttv_library_get(i);
+      lttv_library_info(library, &library_info);
+      if(strcmp(unload_module_name, library_info.name) == 0){
+	lttv_library_unload(library);
 	break;
       }
     }    
   }
 
-  g_free(name);
+  g_ptr_array_free(name, TRUE);
 }
 
 
@@ -1113,7 +1115,7 @@ on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       dir = gtk_dir_selection_get_dir (file_selector);
-      lttv_module_path_add(dir);
+      lttv_library_path_add(dir);
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
     default:
@@ -1764,7 +1766,7 @@ void insert_menu_toolbar_item(MainWindow * mw, gpointer user_data)
 /* Create a main window
  */
 
-void construct_main_window(MainWindow * parent, WindowCreationData * win_creation_data)
+void construct_main_window(MainWindow * parent)
 {
   g_debug("construct_main_window()");
   GtkWidget  * new_window; /* New generated main window */
@@ -1789,11 +1791,6 @@ void construct_main_window(MainWindow * parent, WindowCreationData * win_creatio
   new_m_window->tab = NULL;
   new_m_window->current_tab = NULL;
   new_m_window->attributes = LTTV_IATTRIBUTE(g_object_new(LTTV_ATTRIBUTE_TYPE, NULL));
-  if(parent){
-    new_m_window->win_creation_data = parent->win_creation_data;
-  }else{
-    new_m_window->win_creation_data = win_creation_data;
-  }
 
   new_m_window->hash_menu_item = g_hash_table_new_full (g_str_hash, g_str_equal,
 					      main_window_destroy_hash_key, 

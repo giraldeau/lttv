@@ -104,7 +104,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 }
 
 
-G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
+static void init()
 {
   LttvAttributeValue value;
 
@@ -167,7 +167,7 @@ G_MODULE_EXPORT void init(LttvModule *self, int argc, char **argv)
 }
 
 
-G_MODULE_EXPORT void destroy()
+static void destroy()
 {
   guint i, nb;
 
@@ -198,3 +198,7 @@ G_MODULE_EXPORT void destroy()
   lttv_traceset_destroy(traceset); 
 }
 
+
+LTTV_MODULE("batchAnalysis", "Batch processing of a trace", \
+    "Run through a trace calling all the registered hooks", \
+    init, destroy, "state", "stats", "option")

@@ -18,6 +18,7 @@
 
 
 #include <stdio.h>
+#include <lttv/module.h>
 #include <lttv/stats.h>
 #include <lttv/lttv.h>
 #include <ltt/facility.h>
@@ -798,27 +799,6 @@ lttv_stats_remove_event_hooks(LttvTracesetStats *self)
 }
 
 
-void lttv_stats_init(int argc, char **argv)
-{
-  LTTV_STATS_PROCESS_UNKNOWN = g_quark_from_string("unknown process");
-  LTTV_STATS_PROCESSES = g_quark_from_string("processes");
-  LTTV_STATS_CPU = g_quark_from_string("cpu");
-  LTTV_STATS_MODE_TYPES = g_quark_from_string("mode_types");
-  LTTV_STATS_MODES = g_quark_from_string("modes");
-  LTTV_STATS_SUBMODES = g_quark_from_string("submodes");
-  LTTV_STATS_EVENT_TYPES = g_quark_from_string("event_types");
-  LTTV_STATS_CPU_TIME = g_quark_from_string("cpu time");
-  LTTV_STATS_ELAPSED_TIME = g_quark_from_string("elapsed time");
-  LTTV_STATS_EVENTS = g_quark_from_string("events");
-  LTTV_STATS_EVENTS_COUNT = g_quark_from_string("events count");
-  LTTV_STATS_BEFORE_HOOKS = g_quark_from_string("saved stats before hooks");
-  LTTV_STATS_AFTER_HOOKS = g_quark_from_string("saved stats after hooks");
-}
-
-void lttv_stats_destroy() 
-{
-}
-
 void lttv_stats_save_attribute(LttvAttribute *attr, char *indent, FILE * fp)
 {
   LttvAttributeType type;
@@ -1124,7 +1104,7 @@ gboolean lttv_stats_load_statistics(LttvTracesetStats *self)
   char filename[BUF_SIZE];
 
   GMarkupParseContext * context;
-  GError * error;
+  GError * error = NULL;
   GMarkupParser markup_parser =
     {
       stats_parser_start_element,
@@ -1171,3 +1151,30 @@ gboolean lttv_stats_load_statistics(LttvTracesetStats *self)
 
   return TRUE;
 }
+
+
+static void module_init()
+{
+  LTTV_STATS_PROCESS_UNKNOWN = g_quark_from_string("unknown process");
+  LTTV_STATS_PROCESSES = g_quark_from_string("processes");
+  LTTV_STATS_CPU = g_quark_from_string("cpu");
+  LTTV_STATS_MODE_TYPES = g_quark_from_string("mode_types");
+  LTTV_STATS_MODES = g_quark_from_string("modes");
+  LTTV_STATS_SUBMODES = g_quark_from_string("submodes");
+  LTTV_STATS_EVENT_TYPES = g_quark_from_string("event_types");
+  LTTV_STATS_CPU_TIME = g_quark_from_string("cpu time");
+  LTTV_STATS_ELAPSED_TIME = g_quark_from_string("elapsed time");
+  LTTV_STATS_EVENTS = g_quark_from_string("events");
+  LTTV_STATS_EVENTS_COUNT = g_quark_from_string("events count");
+  LTTV_STATS_BEFORE_HOOKS = g_quark_from_string("saved stats before hooks");
+  LTTV_STATS_AFTER_HOOKS = g_quark_from_string("saved stats after hooks");
+}
+
+static void module_destroy() 
+{
+}
+
+
+LTTV_MODULE("stats", "Compute processes statistics", \
+    "Accumulate statistics for event types, processes and CPUs", \
+    module_init, module_destroy, "state");

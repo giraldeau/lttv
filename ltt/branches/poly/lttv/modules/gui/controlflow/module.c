@@ -38,7 +38,6 @@
  */
 
 #include <glib.h>
-#include <gmodule.h>
 #include <lttv/lttv.h>
 #include <lttv/module.h>
 #include <lttv/gtktraceset.h>
@@ -66,16 +65,8 @@ GSList *g_control_flow_data_list = NULL ;
  * This function initializes the Control Flow Viewer functionnality through the
  * gtkTraceSet API.
  */
-G_MODULE_EXPORT void init(LttvModule *self, int argc, char *argv[]) {
+static void init() {
 
-  Main_Win_Module = lttv_module_require(self, "mainwin", argc, argv);
-  
-  if(Main_Win_Module == NULL)
-  {
-    g_critical("Can't load Control Flow Viewer : missing mainwin\n");
-    return;
-  }
-  
   g_info("GUI ControlFlow Viewer init()");
 
   /* Register the toolbar insert button */
@@ -101,7 +92,7 @@ void destroy_walk(gpointer data, gpointer user_data)
  * This function releases the memory reserved by the module and unregisters
  * everything that has been registered in the gtkTraceSet API.
  */
-G_MODULE_EXPORT void destroy() {
+static void destroy() {
   g_info("GUI Control Flow Viewer destroy()");
   int i;
 
@@ -116,3 +107,8 @@ G_MODULE_EXPORT void destroy() {
   menu_item_unreg(h_guicontrolflow);
   
 }
+
+
+LTTV_MODULE("guicontrolflow", "Control flow viewer", \
+    "Graphical module to view processes state and control flow", \
+    init, destroy, "mainwin")
