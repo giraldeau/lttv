@@ -53,9 +53,6 @@ static char
   *a_file_name = NULL,
   *a_string = NULL;
 
-GString
-  *a_filter_string = NULL;
-
 static LttvHooks
   *before_traceset,
   *event_hook;
@@ -71,12 +68,17 @@ void filter_analyze_file(void *hook_data) {
 
   g_print("textFilter::filter_analyze_file\n");
  
+  LttvAttributeValue value;
+
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+
   /*
 	 * 	User may specify filtering options through static file
 	 * 	and/or command line string.  From these sources, an 
 	 * 	option string is rebuilded and sent to the filter core
 	 */
-	a_file = fopen(a_file_name, "r"); 
+  GString* a_file_content = g_string_new("");
+  a_file = fopen(a_file_name, "r"); 
 	if(a_file == NULL) { 
 		g_warning("file %s does not exist", a_file_name);
     return;
@@ -84,22 +86,21 @@ void filter_analyze_file(void *hook_data) {
   
   char* line = NULL;
   size_t len = 0;
-    
-  if(a_filter_string == NULL) {
-    a_filter_string = g_string_new("");
-  }
-  else {
-    g_string_append(a_filter_string,"&"); /*conjonction between expression*/
-  }
 
   while(!feof(a_file)) {
-    getline(&line,&len,a_file);
-    g_string_append(a_filter_string,line);
-    line = NULL;
+    len = getline(&line,&len,a_file);
+    g_string_append(a_file_content,line);
   }
- 
-//  lttv_filter_append_expression(lttvfilter_t,a_filter_string->str);
+  free(line);
   
+  g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
+      LTTV_POINTER, &value));
+
+  g_debug("Filter file string b: %s",((GString*)*(value.v_pointer))->str);
+  if(((GString*)*(value.v_pointer))->len != 0) g_string_append_c((GString*)*(value.v_pointer),'&');
+  g_string_append((GString*)*(value.v_pointer),a_file_content->str);
+  g_debug("Filter file string a: %s",((GString*)*(value.v_pointer))->str);
+  //  lttv_filter_append_expression(lttvfilter_t,a_filter_string->str);
   fclose(a_file);
 }
 
@@ -112,12 +113,16 @@ void filter_analyze_string(void *hook_data) {
 
   g_print("textFilter::filter_analyze_string\n");
 
+  LttvAttributeValue value;
+
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  
   /*
 	 * 	User may specify filtering options through static file
 	 * 	and/or command line string.  From these sources, an 
 	 * 	option string is rebuilded and sent to the filter core
 	 */
-  if(a_filter_string==NULL) {
+/*  if(a_filter_string==NULL) {
     a_filter_string = g_string_new("");
     g_string_append(a_filter_string,a_string);
   }
@@ -125,21 +130,16 @@ void filter_analyze_string(void *hook_data) {
     g_string_append(a_filter_string,"&"); 
     g_string_append(a_filter_string,a_string);
   }
-
+*/
 //  lttv_filter_append_expression(lttvfilter_t,a_string); 
+  g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
+      LTTV_POINTER, &value));
 
-}
 
-/**
- * filter to current event depending on the 
- * filter options tree
- * @param hook_data the hook data
- * @param call_data the call data
- * @return success/error of operation
- */
-static gboolean filter_event_content(void *hook_data, void *call_data) {
-
-	g_print("textFilter::filter_event_content\n");	/* debug */
+  g_debug("Filter string string b: %s",((GString*)*(value.v_pointer))->str);
+  if(((GString*)*(value.v_pointer))->len != 0) g_string_append_c((GString*)*(value.v_pointer),'&');
+  g_string_append((GString*)*(value.v_pointer),a_string);
+  g_debug("Filter string string a: %s",((GString*)*(value.v_pointer))->str);
 }
 
 /**
@@ -153,10 +153,15 @@ static void init() {
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
+  g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
+      LTTV_POINTER, &value));
+  
+  *(value.v_pointer) = g_string_new("");
+
   g_info("Init textFilter.c");
  
   a_string = NULL;
-  lttv_option_add("string", 's', 
+  lttv_option_add("expression", 'e', 
       "filters a string issued by the user on the command line", 
       "string", 
       LTTV_OPT_STRING, &a_string, filter_analyze_string, NULL);
@@ -167,22 +172,7 @@ static void init() {
       "browse the filter options contained in specified file", 
       "file name", 
       LTTV_OPT_STRING, &a_file_name, filter_analyze_file, NULL);
-  
-  /*
-   * 	Note to myself !
-   * 	LttvAttributeValue::v_pointer is a gpointer* --> void**
-   *	see union LttvAttributeValue for more info 
-   */
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event",
-      LTTV_POINTER, &value));
-  g_assert((event_hook = *(value.v_pointer)) != NULL);
-  lttv_hooks_add(event_hook, filter_event_content, NULL, LTTV_PRIO_DEFAULT);
 
-//  g_assert(lttv_iattribute_find_by_path(attributes,"hooks/trace/before",
-//	LTTV_POINTER, &value));
-//  g_assert((before_traceset = *(value.v_pointer)) != NULL);
-//  lttv_hooks_add(before_traceset, parse_filter_options, NULL, LTTV_PRIO_DEFAULT);
-  
 }
 
 /**
@@ -191,18 +181,23 @@ static void init() {
 static void destroy() {
   g_info("Destroy textFilter");
 
-  lttv_option_remove("string");
+  lttv_option_remove("expression");
 
   lttv_option_remove("filename");
 
-  lttv_hooks_remove_data(event_hook, filter_event_content, NULL);
+  LttvAttributeValue value;
 
-//  lttv_hooks_remove_data(before_traceset, parse_filter_options, NULL);
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
+      LTTV_POINTER, &value));
+ 
+  g_string_free((GString*)*(value.v_pointer),TRUE);
   
 }
 
 
 LTTV_MODULE("textFilter", "Filters traces", \
 	    "Filter the trace following commands issued by user input", \
-	    init, destroy, "batchAnalysis", "option")
+	    init, destroy, "option")
 

@@ -50,6 +50,8 @@ static LttvHooks
   *before_trace,
   *event_hook;
 
+extern LttvFilter *a_lttv_filter;
+
 void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
 
   LttType *type;
@@ -338,7 +340,7 @@ static int write_event_content(void *hook_data, void *call_data)
   /*
    * call to the filter if available
    */
-  //  lttv_filter_tree_parse(f->head,e,NULL,NULL,NULL);
+  lttv_filter_tree_parse(a_lttv_filter->head,e,NULL,NULL,NULL);
   
   lttv_event_to_string(e, a_string, TRUE, a_field_names, tfs);
   g_string_append_printf(a_string,"\n");  

@@ -152,9 +152,10 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
 //      GString* f2 = g_ptr_array_index(fp,i);
 //      g_print("%i=%s",i,f2->str); 
 //  }
+  
   if(fp->len < 2) return FALSE;
-  g_assert(f=g_ptr_array_index(fp,0)); //list_first(fp)->data; 
- 
+  g_assert(f=g_ptr_array_remove_index(fp,0)); //list_first(fp)->data; 
+  
   /*
    * Parse through the specified 
    * hardcoded fields.
@@ -173,11 +174,12 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
      * Possible values:
      *  trace.name
      */
-    f=g_ptr_array_index(fp,1);
+    g_string_free(f,TRUE);
+    f=g_ptr_array_remove_index(fp,0);
     if(!g_strcasecmp(f->str,"name")) {
       se->field = LTTV_FILTER_TRACE_NAME;    
     }
-    else return FALSE;
+//    else return FALSE;
   } else if(!g_strcasecmp(f->str,"traceset") ) {
     /* 
      * FIXME: not yet implemented !
@@ -187,11 +189,12 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
      * Possible values:
      *  tracefile.name
      */
-    f=g_ptr_array_index(fp,1);
+    g_string_free(f,TRUE);
+    f=g_ptr_array_remove_index(fp,0);
     if(!g_strcasecmp(f->str,"name")) {
       se->field = LTTV_FILTER_TRACEFILE_NAME;
     }
-    else return FALSE;
+//    else return FALSE;
   } else if(!g_strcasecmp(f->str,"state") ) {
     /*
      * Possible values:
@@ -205,7 +208,8 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
      *  state.process_status
      *  state.cpu
      */
-    f=g_ptr_array_index(fp,1);
+    g_string_free(f,TRUE);
+    f=g_ptr_array_remove_index(fp,0);
     if(!g_strcasecmp(f->str,"pid") ) { 
       se->field = LTTV_FILTER_STATE_PID; 
     }
@@ -233,7 +237,7 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
     else if(!g_strcasecmp(f->str,"cpu") ) {
       se->field = LTTV_FILTER_STATE_CPU;
     }
-    else return FALSE;
+//    else return FALSE;
   } else if(!g_strcasecmp(f->str,"event") ) {
     /*
      * Possible values:
@@ -242,7 +246,8 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
      *  event.time
      *  event.tsc
      */
-    f=g_ptr_array_index(fp,1);
+    g_string_free(f,TRUE);
+    f=g_ptr_array_remove_index(fp,0);
     if(!g_strcasecmp(f->str,"name") ) {
       se->field = LTTV_FILTER_EVENT_NAME;
     }
@@ -266,12 +271,13 @@ parse_field_path(GPtrArray* fp, LttvSimpleExpression* se) {
     }
   } else {
     g_warning("Unrecognized field in filter string");
-    return FALSE;
+//    return FALSE;
   }
 
-  /* free the pointer array */
-  g_ptr_array_free(fp,FALSE);
+  g_string_free(f,TRUE);
+  g_assert(fp->len == 0);
   
+  if(se->field == LTTV_FILTER_UNDEFINED) return FALSE;  
   return TRUE;  
 }
 
@@ -287,7 +293,7 @@ gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op) {
 //  g_print("se->offset = %i\n",se->offset);
 //  g_print("se->op = %p\n",se->op);
 //  g_print("se->value = %s\n",se->value);
-    
+   
   switch(se->field) {
      /* char */
      case LTTV_FILTER_TRACE_NAME:
@@ -302,7 +308,7 @@ gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op) {
            se->op = lttv_apply_op_eq_string;
            break;
          default:
-           g_warning("Error encountered in operator assignment");
+           g_warning("Error encountered in operator assignment = or != expected");
            return FALSE;
        }
        break;
@@ -364,7 +370,7 @@ gboolean assign_operator(LttvSimpleExpression* se, LttvExpressionOp op) {
        }
        break;
      default:
-       g_warning("Error encountered in operator assignment");
+       g_warning("Error encountered in operator assignment ! Bad field type ...");
        return FALSE;
    }
   
@@ -909,14 +915,11 @@ lttv_filter_update(LttvFilter* filter) {
   a_field_path = g_ptr_array_new();
 //  g_ptr_array_set_size(a_field_path,2);   /* by default, recording 2 field expressions */
 
-  
+
+  g_print("expression: %s\n",filter->expression);
+  g_print("strlen(expression): %i\n",strlen(filter->expression));
   for(i=0;i<strlen(filter->expression);i++) {
     // debug
-    int t;
-//    for(t=0;t<a_field_path->len;t++) { 
-//        GString* t3 = g_ptr_array_index(a_field_path,t);
-//        g_print("%i=%s ",t,t3->str); 
-//    }
     g_print("%c ",filter->expression[i]);
     switch(filter->expression[i]) {
       /*
@@ -935,7 +938,7 @@ lttv_filter_update(LttvFilter* filter) {
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2;
         } else {  /* append a simple expression */
-          a_simple_expression->value = a_field_component->str;
+          a_simple_expression->value = g_string_free(a_field_component,FALSE);
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
@@ -958,7 +961,7 @@ lttv_filter_update(LttvFilter* filter) {
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2;
         } else {    /* append a simple expression */
-          a_simple_expression->value = a_field_component->str;
+          a_simple_expression->value = g_string_free(a_field_component,FALSE);
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
@@ -981,7 +984,7 @@ lttv_filter_update(LttvFilter* filter) {
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = t2;
         } else {    /* append a simple expression */
-          a_simple_expression->value = a_field_component->str;
+          a_simple_expression->value = g_string_free(a_field_component,FALSE);
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
@@ -1043,7 +1046,7 @@ lttv_filter_update(LttvFilter* filter) {
           subtree = g_ptr_array_index(tree_stack,tree_stack->len-1);
           g_ptr_array_remove_index(tree_stack,tree_stack->len-1);
         } else {    /* assign subtree as current tree */
-          a_simple_expression->value = a_field_component->str;
+          a_simple_expression->value = g_string_free(a_field_component,FALSE);
           a_field_component = g_string_new("");
           t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
           while(t1->right != LTTV_TREE_IDLE) t1 = t1->r_child.t;
@@ -1105,7 +1108,8 @@ lttv_filter_update(LttvFilter* filter) {
         break;
       
       default:    /* concatening current string */
-        g_string_append_c(a_field_component,filter->expression[i]); 				
+       // fprintf(stderr,"%i>> %p:%s et %p\n",i,a_field_component,a_field_component->str,filter->expression[i]);
+        g_string_append_c(a_field_component,filter->expression[i]);
     }
   }
 
@@ -1133,21 +1137,25 @@ lttv_filter_update(LttvFilter* filter) {
     t1->r_child.t = subtree;
     subtree = NULL;
   } else {  /* add a leaf */
-    a_simple_expression->value = a_field_component->str;
-    a_field_component = g_string_new("");
+    a_simple_expression->value = g_string_free(a_field_component,FALSE);
+//    a_field_component = g_string_new("");
     t1->right = LTTV_TREE_LEAF;
     t1->r_child.leaf = a_simple_expression;
     /*
      * FIXME: is it really necessary to reallocate 
      *        LttvSimpleExpression at this point ??
      */
-    a_simple_expression = lttv_simple_expression_new();
+//    a_simple_expression = lttv_simple_expression_new();
   }
+  
+  /* free the pointer array */
+  g_assert(a_field_path->len == 0);
+  g_ptr_array_free(a_field_path,TRUE);
   
   g_assert(tree != NULL);
   g_assert(subtree == NULL); 
   
-  lttv_print_tree(filter->head) ;
+//  lttv_print_tree(filter->head) ;
 
   g_print("ended update tree!\n");
   return TRUE;
@@ -1294,7 +1302,8 @@ lttv_filter_tree_parse(
    *     -Result of left branchwill not affect exploration of 
    *      right branch
    */
-
+  g_print("filter::lttv_parse_tree(...)\n");
+    
   gboolean lresult = FALSE, rresult = FALSE;
   
   /*
@@ -1555,20 +1564,21 @@ lttv_filter_tree_parse(
 void
 lttv_print_tree(LttvFilterTree* t) {
 
-  g_print("node:%p lchild:%p rchild:%p\n",t,
+  g_print("node:%p lchild:%p rchild:%p\n",t, //t->l_child.t,t->r_child.t);
           (t->left==LTTV_TREE_NODE)?t->l_child.t:NULL,
           (t->right==LTTV_TREE_NODE)?t->r_child.t:NULL);
   g_print("node type: %i / [left] %i / [right] %i\n",t->node,t->left,t->right);
   if(t->left == LTTV_TREE_NODE) lttv_print_tree(t->l_child.t);
   else if(t->left == LTTV_TREE_LEAF) {
-    g_assert(t->l_child.leaf->value != NULL);
+//    g_assert(t->l_child.leaf->value != NULL);
     g_print("%p: left is %i %p %s\n",t,t->l_child.leaf->field,t->l_child.leaf->op,t->l_child.leaf->value);
   }
   g_print("1\n");
   if(t->right == LTTV_TREE_NODE) lttv_print_tree(t->r_child.t);
   else if(t->right == LTTV_TREE_LEAF) {
-    g_assert(t->r_child.leaf->value != NULL);
-    g_print("%p: right is %i %p %s\n",t,t->r_child.leaf->field,t->r_child.leaf->op,t->r_child.leaf->value);
+    fprintf(stderr,"leaf!\n");
+//    g_assert(t->r_child.leaf->value != NULL);
+    fprintf(stderr,"%p: right is %i %p %s\n",t,t->r_child.leaf->field,t->r_child.leaf->op,t->r_child.leaf->value);
   }
   g_print("end\n");
  
