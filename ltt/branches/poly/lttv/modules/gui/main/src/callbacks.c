@@ -49,7 +49,8 @@ extern GSList * g_main_window_list;
 static int g_win_count = 0;
 
 // MD : keep old directory
-static char remember_dir[PATH_LENGTH] = "";
+static char remember_plugins_dir[PATH_LENGTH] = "";
+static char remember_trace_dir[PATH_LENGTH] = "";
 
 
 MainWindow * get_window_data_struct(GtkWidget * widget);
@@ -485,12 +486,15 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   MainWindow * mw_data = get_window_data_struct(widget);
   GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
   gtk_dir_selection_hide_fileop_buttons(file_selector);
+  if(remember_trace_dir[0] != '\0')
+    gtk_dir_selection_set_filename(file_selector, remember_trace_dir);
   
   id = gtk_dialog_run(GTK_DIALOG(file_selector));
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       dir = gtk_dir_selection_get_dir (file_selector);
+      strncpy(remember_trace_dir, dir, PATH_LENGTH);
       if(!dir || strlen(dir) ==0){
 	gtk_widget_destroy((GtkWidget*)file_selector);
 	break;
@@ -1030,8 +1034,8 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
   char str[PATH_LENGTH], *str1;
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
   GtkFileSelection * file_selector = (GtkFileSelection *)gtk_file_selection_new("Select a module");
-  if(remember_dir[0] != '\0')
-    gtk_file_selection_set_filename(file_selector, remember_dir);
+  if(remember_plugins_dir[0] != '\0')
+    gtk_file_selection_set_filename(file_selector, remember_plugins_dir);
   gtk_file_selection_hide_fileop_buttons(file_selector);
   
   str[0] = '\0';
@@ -1041,7 +1045,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
     case GTK_RESPONSE_OK:
       dir = gtk_file_selection_get_selections (file_selector);
       strncpy(str,dir[0],PATH_LENGTH);
-      strncpy(remember_dir,dir[0],PATH_LENGTH);
+      strncpy(remember_plugins_dir,dir[0],PATH_LENGTH);
       str1 = strrchr(str,'/');
       if(str1)str1++;
       else{
@@ -1116,16 +1120,16 @@ on_add_module_search_path_activate     (GtkMenuItem     *menuitem,
   gint id;
 
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
-  if(remember_dir[0] != '\0')
-    gtk_dir_selection_set_filename(file_selector, remember_dir);
+  if(remember_plugins_dir[0] != '\0')
+    gtk_dir_selection_set_filename(file_selector, remember_plugins_dir);
 
   id = gtk_dialog_run(GTK_DIALOG(file_selector));
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
       dir = gtk_dir_selection_get_dir (file_selector);
-      strncpy(remember_dir,dir,PATH_LENGTH);
-      strncat(remember_dir,"/",PATH_LENGTH);
+      strncpy(remember_plugins_dir,dir,PATH_LENGTH);
+      strncat(remember_plugins_dir,"/",PATH_LENGTH);
       lttv_library_path_add(dir);
     case GTK_RESPONSE_REJECT:
     case GTK_RESPONSE_CANCEL:
