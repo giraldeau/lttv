@@ -23,7 +23,7 @@ liblttvwindow_la_SOURCES = \
 	menu.c\
 	gtkdirsel.c\
 	gtkmultivpaned.c\
-	gtktraceset.c \
+	viewer.c \
 	init_module.c \
 	support.c \
 	interface.c \
