@@ -144,6 +144,99 @@ void set_time_window(MainWindow * main_win, const TimeWindow *time_window)
 
 }
 
+
+/* Remove menu entry and tool button from main window for the 
+ * unloaded  module
+ */
+
+void remove_menu_item(gpointer main_win, gpointer user_data)
+{
+  MainWindow * mw = (MainWindow *) main_win;
+  lttv_menu_closure *menu_item = (lttv_menu_closure *)user_data;
+  GtkWidget * tool_menu_title_menu, *insert_view;
+
+  tool_menu_title_menu = lookup_widget(mw->mwindow,"ToolMenuTitle_menu");
+  insert_view = (GtkWidget*)g_hash_table_lookup(mw->hash_menu_item,
+						menu_item->menuText);
+  if(insert_view){
+    g_hash_table_remove(mw->hash_menu_item, menu_item->menuText);
+    gtk_container_remove (GTK_CONTAINER (tool_menu_title_menu), insert_view);
+  }
+}
+
+void remove_toolbar_item(gpointer main_win, gpointer user_data)
+{
+  MainWindow * mw = (MainWindow *) main_win;
+  lttv_toolbar_closure *toolbar_item = (lttv_toolbar_closure *)user_data;
+  GtkWidget * tool_menu_title_menu, *insert_view;
+
+
+  tool_menu_title_menu = lookup_widget(mw->mwindow,"MToolbar1");
+  insert_view = (GtkWidget*)g_hash_table_lookup(mw->hash_toolbar_item,
+						toolbar_item->tooltip);
+  if(insert_view){
+    g_hash_table_remove(mw->hash_toolbar_item, toolbar_item->tooltip);
+    gtk_container_remove (GTK_CONTAINER (tool_menu_title_menu), insert_view);
+  }
+}
+
+/**
+ * Remove menu and toolbar item when a module unloaded from all 
+ * main windows
+ */
+
+void main_window_remove_menu_item(lttvwindow_viewer_constructor constructor)
+{
+  int i;
+  LttvMenus * menu;
+  lttv_menu_closure *menu_item;
+  LttvAttributeValue value;
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/menu", LTTV_POINTER, &value));
+  menu = (LttvMenus*)*(value.v_pointer);
+
+  if(menu){
+    for(i=0;i<menu->len;i++){
+      menu_item = &g_array_index(menu, lttv_menu_closure, i);
+      if(menu_item->con != constructor) continue;
+      if(g_main_window_list){
+	g_slist_foreach(g_main_window_list, remove_menu_item, menu_item);
+      }
+      break;
+    }
+  }
+  
+}
+
+void main_window_remove_toolbar_item(lttvwindow_viewer_constructor constructor)
+{
+  int i;
+  LttvToolbars * toolbar;
+  lttv_toolbar_closure *toolbar_item;
+  LttvAttributeValue value;
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+
+  g_assert(lttv_iattribute_find_by_path(attributes,
+	   "viewers/toolbar", LTTV_POINTER, &value));
+  toolbar = (LttvToolbars*)*(value.v_pointer);
+
+  if(toolbar){
+    for(i=0;i<toolbar->len;i++){
+      toolbar_item = &g_array_index(toolbar, lttv_toolbar_closure, i);
+      if(toolbar_item->con != constructor) continue;
+      if(g_main_window_list){
+	g_slist_foreach(g_main_window_list, remove_toolbar_item, toolbar_item);
+      }
+      break;
+    }
+  }
+}
+
+
+
+
 /**
  * API parts
  */
@@ -632,27 +725,6 @@ void lttvwindow_time_interval_request(MainWindow *main_win,
     main_win->current_tab->time_request_pending = TRUE;
   }
 }
-
-
-
-/**
- * Function to get the current time interval of the current traceset.
- * It will be called by a viewer's hook function to update the 
- * time interval of the viewer and also be called by the constructor
- * of the viewer.
- * @param main_win the main window the viewer belongs to.
- * @param time_interval a pointer where time interval will be stored.
- */
-
-const TimeInterval *lttvwindow_get_time_span(MainWindow *main_win)
-{
-  //time_window->start_time = main_win->current_tab->time_window.start_time;
-  //time_window->time_width = main_win->current_tab->time_window.time_width;
-  return (LTTV_TRACESET_CONTEXT(main_win->current_tab->traceset_info->
-             traceset_context)->Time_Span);
-}
-
-
 
 /**
  * Function to get the current time interval shown on the current tab.

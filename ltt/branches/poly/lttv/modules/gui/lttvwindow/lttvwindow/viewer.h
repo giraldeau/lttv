@@ -32,6 +32,30 @@ every viewer that currently sits in memory so it can destroy them before the
 module gets unloaded/destroyed.
 
 
+Main Window
+
+The main window is a container that offers menus, buttons and a notebook. Some
+of those menus and buttons are part of the core of the main window, others
+are dynamically added and removed when modules are loaded/unloaded.
+
+The notebook contains as much tabs as wanted. Each tab is linked with a
+set of traces (traceset). Each trace contains many tracefiles (one per cpu).
+A trace corresponds to a kernel being traced. A traceset corresponds to
+many traces read together. The time span of a traceset goes from the
+earliest start of all the traces to the latest end of all the traces.
+
+Inside each tab are added the viewers. When they interact with the main
+window through the lttvwindow API, they affect the other viewers located
+in the same tab as they are.
+
+The insertion of many viewers in a tab permits a quick look at all the
+information wanted in a glance. The main window does merge the read requests
+from all the viewers in the same tab in a way that every viewer will get exactly
+the events it asked for, while the event reading loop and state update are
+shared. It improves performance of events delivery to the viewers.
+
+
+
 Viewer Instance Related API
 
 The lifetime of a viewer is as follows. The viewer constructor function is
@@ -105,15 +129,17 @@ Requesting Events to Main Window
 
 Events can be requested by passing a EventsRequest structure to the main window.
 They will be delivered later when the next g_idle functions will be called.
-Event delivery is done by calling the middle hook for this event ID, or the 
-main middle hooks.
+Event delivery is done by calling the event hook for this event ID, or the 
+main event hooks. A pointer to the EventsRequest structure is passed as 
+hook_data to the event hooks of the viewers.
 
 EventsRequest consists in 
+- a pointer to the viewer specific data structure
 - a start timestamp or position
 - a stop_flag, ending the read process when set to TRUE
 - a end timestamp and/or position and/or number of events to read
 - hook lists to call for traceset/trace/tracefile begin and end, and for each
-  event (middle).
+  event (event hooks and event_by_id hooks).
   
 The main window will deliver events for every EventRequests it has pending
 through an algorithm that guarantee that all events requested, and only them,
@@ -193,6 +219,18 @@ In the second case, with a pixmap buffer, the expose handler is only responsible
 of showing the pixmap buffer on the screen. If the pixmap buffer has never
 been filled with a drawing, the expose handler may ask for it to be filled.
 
+The interest of using events request to the main window instead of reading the
+events directly from the trace comes from the fact that the main window
+does merge requests from the different viewers in the same tab so that the
+read loop and the state update is shared. As viewers will, in the common
+scenario, request the same events, only one pass through the trace that will
+call the right hooks for the right intervals will be done.
+
+When the traceset read is over for a events request, the traceset_end hook is
+called. It has the responsibility of finishing the drawing if some parts
+still need to be drawn and to show it on the screen (if the viewer uses a pixmap
+buffer).
+
 It can add dotted lines and such visual effects to enhance the user's
 experience.
 
@@ -215,9 +253,11 @@ FIXME : explain other important events
 
 #include <gtk/gtk.h>
 #include <ltt/ltt.h>
+#include <ltt/time.h>
 #include <lttv/hook.h>
-#include <lttvwindow/common.h>
+#include <lttv/tracecontext.h>
 #include <lttv/stats.h>
+#include <lttvwindow/common.h>
 //FIXME (not ready yet) #include <lttv/filter.h>
 
 
@@ -541,18 +581,20 @@ void lttvwindow_report_focus(MainWindow *main_win,
 /* Structure sent to the time request hook */
                                                 /* Value considered as empty */
 typedef struct _EventsRequest {
-  LttTime                     start_time,       /* Unset : { 0, 0 }          */
-  LttvTracesetContextPosition start_position,   /* Unset : num_traces = 0    */
-  LttTime                     end_time,         /* Unset : { 0, 0 }          */
-  guint                       num_events,       /* Unset : G_MAXUINT         */
-  LttvTracesetContextPosition end_position,     /* Unset : num_traces = 0    */
-  LttvHooksById              *before_traceset,  /* Unset : NULL              */
-  LttvHooksById              *before_trace,     /* Unset : NULL              */
-  LttvHooksById              *before_tracefile, /* Unset : NULL              */
-  LttvHooksById              *middle,           /* Unset : NULL              */
-  LttvHooksById              *after_tracefile,  /* Unset : NULL              */
-  LttvHooksById              *after_trace,      /* Unset : NULL              */
-  LttvHooksById              *after_traceset    /* Unset : NULL              */
+  LttTime                     start_time,       /* Unset : { 0, 0 }         */
+  LttvTracesetContextPosition start_position,   /* Unset : num_traces = 0   */
+  gboolean                    stop_flag,        /* Continue:TRUE Stop:FALSE */
+  LttTime                     end_time,         /* Unset : { 0, 0 }         */
+  guint                       num_events,       /* Unset : G_MAXUINT        */
+  LttvTracesetContextPosition end_position,     /* Unset : num_traces = 0   */
+  LttvHooks                  *before_traceset,  /* Unset : NULL             */
+  LttvHooks                  *before_trace,     /* Unset : NULL             */
+  LttvHooks                  *before_tracefile, /* Unset : NULL             */
+  LttvHooks                  *event,            /* Unset : NULL             */
+  LttvHooksById              *event_by_id,      /* Unset : NULL             */
+  LttvHooks                  *after_tracefile,  /* Unset : NULL             */
+  LttvHooks                  *after_trace,      /* Unset : NULL             */
+  LttvHooks                  *after_traceset    /* Unset : NULL             */
 } EventsRequest;
 
 
@@ -576,15 +618,6 @@ typedef struct _EventsRequest {
 
 void lttvwindow_events_request(MainWindow    *main_win,
                                EventsRequest  events_request);
-
-/**
- * Function to get the life span of the traceset
- *
- * @param main_win the main window the viewer belongs to.
- * @return pointer to a time interval : the life span of the traceset.
- */
-
-const TimeInterval *lttvwindow_get_time_span(MainWindow *main_win);
 
 /**
  * Function to get the current time window of the current tab.
