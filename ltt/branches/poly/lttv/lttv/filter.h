@@ -76,7 +76,7 @@ extern GQuark
 /**
  * 	@enum lttv_expression_op
  */
-typedef enum _lttv_expression_op
+typedef enum _LttvExpressionOp
 { 
   LTTV_FIELD_EQ,	/** equal */
   LTTV_FIELD_NE,	/** not equal */
@@ -84,35 +84,38 @@ typedef enum _lttv_expression_op
   LTTV_FIELD_LE,	/** lower or equal */
   LTTV_FIELD_GT,	/** greater than */
   LTTV_FIELD_GE		/** greater or equal */
-} lttv_expression_op;
+} LttvExpressionOp;
 
-typedef enum _lttv_expression_type
+/*
+ * FIXME: Unused enum ?
+ */
+typedef enum _LttvExpressionType
 { 
   LTTV_EXPRESSION,
   LTTV_SIMPLE_EXPRESSION,
   LTTV_EXPRESSION_OP,
   LTTV_UNDEFINED_EXPRESSION
-} lttv_expression_type;
+} LttvExpressionType;
 
-typedef enum _lttv_tree_element {
+typedef enum _LttvTreeElement {
   LTTV_TREE_IDLE,
   LTTV_TREE_NODE,
   LTTV_TREE_LEAF
-} lttv_tree_element;
+} LttvTreeElement;
 
-typedef struct _lttv_simple_expression
+typedef struct _LttvSimpleExpression
 { 
   char *field_name;
-  lttv_expression_op op;
+  LttvExpressionOp op;
   char *value;
-} lttv_simple_expression;
+} LttvSimpleExpression;
 
-typedef enum _lttv_logical_op {
+typedef enum _LttvLogicalOp {
     LTTV_LOGICAL_OR = 1,         /* 1 */
     LTTV_LOGICAL_AND = 1<<1,     /* 2 */
     LTTV_LOGICAL_NOT = 1<<2,     /* 4 */
     LTTV_LOGICAL_XOR = 1<<3      /* 8 */
-} lttv_logical_op;
+} LttvLogicalOp;
     
 /*
  * Ah .. that's my tree
@@ -128,47 +131,50 @@ typedef enum _lttv_logical_op {
 //  } e;
 //} lttv_expression;
 
-typedef struct _lttv_expression {
-  lttv_expression_type type;
+/*
+ * FIXME: Unused struct
+ */
+typedef struct _LttvExpression {
+  LttvExpressionType type;
   union {
-    lttv_simple_expression *se;
+    LttvSimpleExpression *se;
     int op;
   } e;
-} lttv_expression;
+} LttvExpression;
 
-typedef struct _lttv_filter_tree {
+typedef struct _LttvFilter {
 //	lttv_expression* node;
-  int node;
-  lttv_tree_element left;
-  lttv_tree_element right;
+  int node;                         /** value of LttvLogicalOp */
+  LttvTreeElement left;
+  LttvTreeElement right;
   union {
-    struct lttv_filter_tree* t;
-    lttv_simple_expression* leaf;
+    struct LttvFilter* t;
+    LttvSimpleExpression* leaf;
   } l_child;
   union {
-    struct lttv_filter_tree* t;
-    lttv_simple_expression* leaf;
+    struct LttvFilter* t;
+    LttvSimpleExpression* leaf;
   } r_child;
-} lttv_filter_tree;
+} LttvFilter;
 
 /**
  * @struct lttv_filter
  * ( will later contain a binary tree of filtering options )
  */
-typedef struct _lttv_filter_t {
-	lttv_filter_tree* tree;	
-} lttv_filter_t;
+//typedef struct _lttv_filter_t {
+//	lttv_filter_tree* tree;	
+//} lttv_filter_t;
 
 
-lttv_simple_expression* lttv_simple_expression_new();
+LttvSimpleExpression* lttv_simple_expression_new();
 
-lttv_filter_tree* lttv_filter_tree_new();
+LttvFilter* lttv_filter_tree_new();
 
-void lttv_filter_tree_destroy(lttv_filter_tree* tree);
+void lttv_filter_tree_destroy(LttvFilter* tree);
 
-lttv_filter* lttv_filter_clone(lttv_filter* tree);
+LttvFilter* lttv_filter_clone(LttvFilter* tree);
 
-void lttv_filter_tree_add_node(GPtrArray* stack, lttv_filter_tree* subtree, lttv_logical_op op);
+void lttv_filter_tree_add_node(GPtrArray* stack, LttvFilter* subtree, LttvLogicalOp op);
 
 /* Parse field path contained in list */
 gboolean parse_field_path(GPtrArray* fp);
@@ -176,18 +182,18 @@ gboolean parse_field_path(GPtrArray* fp);
 gboolean parse_simple_expression(GString* expression);
 
 /* Compile the filter expression into an efficient data structure */
-lttv_filter_tree *lttv_filter_new(char *expression, LttvTraceState *tfs);
+LttvFilter *lttv_filter_new(char *expression, LttvTraceState *tfs);
 
-void lttv_filter_destroy(lttv_filter* filter);
+void lttv_filter_destroy(LttvFilter* filter);
 
 /* Check if the tracefile or event satisfies the filter. The arguments are
    declared as void * to allow these functions to be used as hooks. */
 
-gboolean lttv_filter_tracefile(lttv_filter_tree *filter, LttTracefile *tracefile);
+gboolean lttv_filter_tracefile(LttvFilter *filter, LttTracefile *tracefile);
 
-gboolean lttv_filter_tracestate(lttv_filter_t *filter, LttvTraceState *tracestate);
+gboolean lttv_filter_tracestate(LttvFilter *filter, LttvTraceState *tracestate);
 
-gboolean lttv_filter_event(lttv_filter_t *filter, LttEvent *event);
+gboolean lttv_filter_event(LttvFilter *filter, LttEvent *event);
 
 #endif // FILTER_H
 

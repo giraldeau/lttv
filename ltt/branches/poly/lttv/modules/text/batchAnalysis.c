@@ -47,7 +47,7 @@ static char *a_trace;
 
 static gboolean a_stats;
 
-static lttv_filter *a_lttv_filter;
+static LttvFilter *a_lttv_filter;
 
 extern GString *a_filter_string;
 

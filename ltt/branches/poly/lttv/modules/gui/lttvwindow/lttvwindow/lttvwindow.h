@@ -685,7 +685,7 @@ LttTime lttvwindow_get_current_time(Tab *tab);
  * @param filter, a pointer to a filter.
  */
 
-lttv_filter *lttvwindow_get_filter(Tab *tab);
+LttvFilter *lttvwindow_get_filter(Tab *tab);
 
 /**
  * Function to set the filter of the current tab.
@@ -700,7 +700,7 @@ lttv_filter *lttvwindow_get_filter(Tab *tab);
  * @param filter, a pointer to a filter.
  */
 
-void lttvwindow_report_filter(Tab *tab, lttv_filter *filter);
+void lttvwindow_report_filter(Tab *tab, LttvFilter *filter);
 
 
 
