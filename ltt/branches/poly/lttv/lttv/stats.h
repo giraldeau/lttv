@@ -150,10 +150,17 @@ typedef struct _LttvTraceStatsClass LttvTraceStatsClass;
 typedef struct _LttvTracefileStats LttvTracefileStats;
 typedef struct _LttvTracefileStatsClass LttvTracefileStatsClass;
 
+
+
+// Hook wrapper. call_data is a trace context.
+gint lttv_stats_hook_add_event_hooks(void *hook_data, void *call_data);
 gboolean lttv_stats_add_event_hooks(LttvTracesetStats *self);
 
+// Hook wrapper. call_data is a trace context.
+gint lttv_stats_hook_remove_event_hooks(void *hook_data, void *call_data);
 gboolean lttv_stats_remove_event_hooks(LttvTracesetStats *self);
 
+gboolean lttv_stats_sum_traceset_hook(void *hook_data, void *call_data);
 void lttv_stats_sum_traceset(LttvTracesetStats *self);
 
 void lttv_stats_sum_trace(LttvTraceStats *self);

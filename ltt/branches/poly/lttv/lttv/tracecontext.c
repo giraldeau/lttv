@@ -184,6 +184,7 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
         tfc->tf = ltt_trace_per_cpu_tracefile_get(tc->t, j - nb_control);
       }
       tfc->t_context = tc;
+      tfc->e = ltt_event_new();
       tfc->event = lttv_hooks_new();
       tfc->event_by_id = lttv_hooks_by_id_new();
       tfc->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
@@ -223,6 +224,7 @@ void fini(LttvTracesetContext *self)
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfc = tc->tracefiles[j];
+      ltt_event_destroy(tfc->e);
       lttv_hooks_destroy(tfc->event);
       lttv_hooks_by_id_destroy(tfc->event_by_id);
       g_object_unref(tfc->a);
@@ -646,8 +648,6 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
 
   LttvTracefileContext *tfc;
 
-  LttEvent *event;
-
   unsigned count = 0;
 
   gboolean last_ret = FALSE; /* return value of the last hook list called */
@@ -694,10 +694,8 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     last_ret = lttv_hooks_call_merge(tfc->event, tfc,
                         lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
 
-    event = ltt_tracefile_read(tfc->tf);
-    if(event != NULL) {
-      tfc->e = event;
-      tfc->timestamp = ltt_event_time(event);
+    if(ltt_tracefile_read(tfc->tf, tfc->e) != NULL) {
+      tfc->timestamp = ltt_event_time(tfc->e);
 	    g_tree_insert(pqueue, tfc, tfc);
     }
   }
@@ -727,8 +725,6 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
 
   LttvTracefileContext *tfc;
 
-  LttEvent *event;
-
   GTree *pqueue = self->ts_context->pqueue;
 
   nb_tracefile = ltt_trace_control_tracefile_number(self->t) +
@@ -738,10 +734,8 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
     tfc = self->tracefiles[i];
     ltt_tracefile_seek_time(tfc->tf, start);
     g_tree_remove(pqueue, tfc);
-    event = ltt_tracefile_read(tfc->tf);
-    tfc->e = event;
-    if(event != NULL) {
-      tfc->timestamp = ltt_event_time(event);
+    if(ltt_tracefile_read(tfc->tf, tfc->e) != NULL) {
+      tfc->timestamp = ltt_event_time(tfc->e);
       g_tree_insert(pqueue, tfc, tfc);
     }
   }
@@ -775,10 +769,8 @@ gboolean lttv_process_tracefile_seek_position(LttvTracefileContext *self,
   
   ltt_tracefile_seek_position(tfc->tf, pos);
   g_tree_remove(pqueue, tfc);
-  event = ltt_tracefile_read(tfc->tf);
-  tfc->e = event;
-  if(event != NULL) {
-    tfc->timestamp = ltt_event_time(event);
+  if(ltt_tracefile_read(tfc->tf, tfc->e) != NULL) {
+    tfc->timestamp = ltt_event_time(tfc->e);
     g_tree_insert(pqueue, tfc, tfc);
   }
 

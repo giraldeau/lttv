@@ -253,7 +253,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   LttTracefile *tracefile, *tf;
 
-  LttEvent *event;
+  LttEvent *event = ltt_event_new();
 
   LttFacility *facility;
 
@@ -300,7 +300,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
         ltt_tracefile_seek_time(tracefile, zero_time);
         previous_time = zero_time;
         nb_equal = 0;
-        while((event = ltt_tracefile_read(tracefile)) != NULL) {
+        while((ltt_tracefile_read(tracefile, event)) != NULL) {
           facility = ltt_event_facility(event);
           event_type = ltt_event_eventtype(event);
           time = ltt_event_time(event);
@@ -539,6 +539,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   g_free(a_event_position);
   lttv_context_fini(tc);
   g_object_unref(tscs);
+  ltt_event_destroy(event);
 
   if(lttv_profile_memory) {
     g_message("Memory summary at the end of batchtest");

@@ -121,8 +121,6 @@ restore_init_state(LttvTraceState *self)
 
   LttvTracefileState *tfcs;
   
-  LttTime null_time = {0,0};
-
   if(self->processes != NULL) lttv_state_free_process_table(self->processes);
   self->processes = g_hash_table_new(process_hash, process_equal);
   self->nb_event = 0;
@@ -132,7 +130,7 @@ restore_init_state(LttvTraceState *self)
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = LTTV_TRACEFILE_STATE(self->parent.tracefiles[i]);
-    tfcs->parent.timestamp = null_time;
+    ltt_trace_time_span_get(self->parent.t, &tfcs->parent.timestamp, NULL);
     tfcs->saved_position = 0;
     tfcs->process = lttv_state_create_process(tfcs, NULL,0);
     tfcs->process->state->s = LTTV_STATE_RUN;
@@ -808,6 +806,7 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
   es->t = LTTV_STATE_USER_MODE;
   es->n = LTTV_STATE_SUBMODE_NONE;
   es->entry = tfs->parent.timestamp;
+  g_assert(tfs->parent.timestamp.tv_sec != 0);
   es->change = tfs->parent.timestamp;
   es->s = LTTV_STATE_WAIT_FORK;
 
@@ -1254,6 +1253,8 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
 
   LttvTraceHook hook_start, hook_end;
 
+  lttv_state_add_event_hooks(self);
+  
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceState *)self->parent.traces[i];
@@ -1317,6 +1318,8 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
           tfs->parent.event_by_id, hook_end.id), hook_end.h, NULL);
     }
   }
+  
+  lttv_state_remove_event_hooks(self);
 }
 
 gint lttv_state_save_hook_remove_event_hooks(void *hook_data, void *call_data)

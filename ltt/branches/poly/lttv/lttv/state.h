@@ -28,7 +28,7 @@
    sufficient for the analysis, and possibly organized quite differently.
 
    The state information is added to LttvTracesetContext, LttvTraceContext 
-   and LttvTracefileContext objects, used by processTrace, through
+   and LttvTracefileContext objects, used by process_traceset, through
    subtyping. The context objects already reflect the multiple tracefiles
    (one per cpu) per trace and multiple traces per trace set. The state
    objects defined here simply add fields to the relevant context objects. 
@@ -149,7 +149,6 @@ typedef struct _LttvProcessState {
   GQuark last_cpu;                /* Last CPU where process was scheduled */
   /* opened file descriptors, address map?... */
 } LttvProcessState;
-
 
 LttvProcessState *
 lttv_state_find_process(LttvTracefileState *tfs, guint pid);

@@ -80,9 +80,12 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
   LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek(LTTV_TRACESET_STATE_TYPE))->
       init((LttvTracesetContext *)self, ts);
 
-  self->stats =lttv_attribute_find_subdir(self->parent.parent.ts_a,LTTV_STATS);
-  lttv_attribute_find(self->parent.parent.ts_a, LTTV_STATS_USE_COUNT, 
-        LTTV_UINT, &v);
+  self->stats = lttv_attribute_find_subdir(
+                      lttv_traceset_attribute(self->parent.parent.ts),
+                      LTTV_STATS);
+  lttv_attribute_find(lttv_traceset_attribute(self->parent.parent.ts),
+                      LTTV_STATS_USE_COUNT, 
+                      LTTV_UINT, &v);
 
   *(v.v_uint)++;
   if(*(v.v_uint) == 1) { 
@@ -120,7 +123,6 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
     }
   }
 }
-
 
 static void
 fini(LttvTracesetStats *self)
@@ -575,7 +577,7 @@ gboolean every_event(void *hook_data, void *call_data)
 void
 lttv_stats_sum_trace(LttvTraceStats *self)
 {
-  LttvTraceStats *tcs;
+  LttvAttribute *sum_container = self->stats;
 
   LttvAttributeType type;
 
@@ -594,16 +596,18 @@ lttv_stats_sum_trace(LttvTraceStats *self)
       *cpu_events_tree, *process_modes_tree, *trace_cpu_tree, 
       *trace_modes_tree;
 
-  main_tree = self->stats;
+  main_tree = sum_container;
 
-  lttv_attribute_find(self->parent.parent.t_a, LTTV_STATS_SUMMED, 
-      LTTV_UINT, &value);
+  lttv_attribute_find(sum_container,
+                      LTTV_STATS_SUMMED, 
+                      LTTV_UINT, &value);
   if(*(value.v_uint) != 0) return;
   *(value.v_uint) = 1;
 
   processes_tree = lttv_attribute_find_subdir(main_tree, 
-      LTTV_STATS_PROCESSES);
-  trace_modes_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_MODES);
+                                              LTTV_STATS_PROCESSES);
+  trace_modes_tree = lttv_attribute_find_subdir(main_tree,
+                                                LTTV_STATS_MODES);
   nb_process = lttv_attribute_get_number(processes_tree);
 
   for(i = 0 ; i < nb_process ; i++) {
@@ -665,10 +669,17 @@ lttv_stats_sum_trace(LttvTraceStats *self)
 }
 
 
+gboolean lttv_stats_sum_traceset_hook(void *hook_data, void *call_data)
+{
+  lttv_stats_sum_traceset((LttvTracesetStats *)call_data);
+  return 0;
+}
+
 void
 lttv_stats_sum_traceset(LttvTracesetStats *self)
 {
   LttvTraceset *traceset = self->parent.parent.ts;
+  LttvAttribute *sum_container = self->stats;
 
   LttvTraceStats *tcs;
 
@@ -678,12 +689,12 @@ lttv_stats_sum_traceset(LttvTracesetStats *self)
 
   LttvAttributeValue value;
 
-  lttv_attribute_find(self->parent.parent.ts_a, LTTV_STATS_SUMMED, 
+  lttv_attribute_find(sum_container, LTTV_STATS_SUMMED, 
       LTTV_UINT, &value);
   if(*(value.v_uint) != 0) return;
   *(value.v_uint) = 1;
 
-  traceset_modes_tree = lttv_attribute_find_subdir(self->stats, 
+  traceset_modes_tree = lttv_attribute_find_subdir(sum_container, 
       LTTV_STATS_MODES);
   nb_trace = lttv_traceset_number(traceset);
 
@@ -696,6 +707,16 @@ lttv_stats_sum_traceset(LttvTracesetStats *self)
   }
 }
 
+
+// Hook wrapper. call_data is a traceset context.
+gint lttv_stats_hook_add_event_hooks(void *hook_data, void *call_data)
+{
+   LttvTracesetStats *tss = (LttvTracesetStats*)call_data;
+
+   lttv_stats_add_event_hooks(tss);
+
+   return 0;
+}
 
 lttv_stats_add_event_hooks(LttvTracesetStats *self)
 {
@@ -719,6 +740,8 @@ lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
   LttvAttributeValue val;
 
+  lttv_state_add_event_hooks(&self->parent);
+  
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceStats *)self->parent.parent.traces[i];
@@ -822,6 +845,15 @@ lttv_stats_add_event_hooks(LttvTracesetStats *self)
   }
 }
 
+// Hook wrapper. call_data is a traceset context.
+gint lttv_stats_hook_remove_event_hooks(void *hook_data, void *call_data)
+{
+   LttvTracesetStats *tss = (LttvTracesetStats*)call_data;
+
+   lttv_stats_remove_event_hooks(tss);
+
+   return 0;
+}
 
 lttv_stats_remove_event_hooks(LttvTracesetStats *self)
 {
@@ -878,6 +910,7 @@ lttv_stats_remove_event_hooks(LttvTracesetStats *self)
     g_array_free(before_hooks, TRUE);
     g_array_free(after_hooks, TRUE);
   }
+  lttv_state_remove_event_hooks(&self->parent);
 }
 
 
