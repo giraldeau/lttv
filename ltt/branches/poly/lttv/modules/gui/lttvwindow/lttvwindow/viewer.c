@@ -367,8 +367,9 @@ void lttvwindow_register_filter_notify(MainWindow *main_win,
  * @param main_win the main window the viewer belongs to.
  */
 
-void lttvwindow_unregister_filter_notify(LttvHook hook,  gpointer hook_data,
-		       MainWindow * main_win)
+void lttvwindow_unregister_filter_notify(MainWindow * main_win,
+                                         LttvHook hook,
+                                         gpointer hook_data)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
@@ -520,7 +521,7 @@ void lttvwindow_unregister_dividor(MainWindow *main_win,
  * @param info the message which will be shown in the status bar.
  */
 
-void lttvwindow_report_status(MainWindow *main_win, char *info)
+void lttvwindow_report_status(MainWindow *main_win, const char *info)
 { 
   //FIXME
   g_warning("update_status not implemented in viewer.c");
@@ -535,7 +536,7 @@ void lttvwindow_report_status(MainWindow *main_win, char *info)
  */
 
 void lttvwindow_report_time_window(MainWindow *main_win,
-                                   TimeWindow *time_window)
+                                   const TimeWindow *time_window)
 {
   set_time_window(main_win, time_window);
   set_time_window_adjustment(main_win, time_window);
@@ -550,7 +551,8 @@ void lttvwindow_report_time_window(MainWindow *main_win,
  * @param time a pointer where time is stored.
  */
 
-void lttvwindow_report_current_time(MainWindow *main_win, LttTime *time)
+void lttvwindow_report_current_time(MainWindow *main_win,
+                                    const LttTime *time)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
@@ -560,7 +562,7 @@ void lttvwindow_report_current_time(MainWindow *main_win, LttTime *time)
   tmp = (LttvHooks*)*(value.v_pointer);
 
   if(tmp == NULL)return;
-  lttv_hooks_call(tmp, time);
+  lttv_hooks_call(tmp, &main_win->current_tab->current_time);
 }
 
 /**
@@ -587,12 +589,14 @@ void lttvwindow_report_dividor(MainWindow *main_win, gint position)
  * It will be called by a viewer's signal handle associated with 
  * the grab_focus signal
  * @param main_win the main window the viewer belongs to.
- * @param paned a pointer to a pane where the viewer is contained.
+ * @param top_widget the top widget containing all the other widgets of the
+ *                   viewer.
  */
 
-void lttvwindow_report_focus(MainWindow *main_win, gpointer paned)
+void lttvwindow_report_focus(MainWindow *main_win, GtkWidget *top_widget)
 {
-  gtk_multi_vpaned_set_focus((GtkWidget*)main_win->current_tab->multi_vpaned,paned);  
+  gtk_multi_vpaned_set_focus((GtkWidget*)main_win->current_tab->multi_vpaned,
+                             gtk_widget_get_parent(top_widget));  
 }
 
 
@@ -681,18 +685,6 @@ const LttTime *lttvwindow_get_current_time(MainWindow *main_win)
   return &(main_win->current_tab->current_time);
 }
 
-
-/**
- * Function to get the traceset from the current tab.
- * It will be called by the constructor of the viewer and also be
- * called by a hook funtion of the viewer to update its traceset.
- * @param main_win the main window the viewer belongs to.
- * @param traceset a pointer to a traceset.
- */
-const LttvTraceset *lttvwindow_get_traceset(MainWindow *main_win)
-{
-  return main_win->current_tab->traceset_info->traceset;
-}
 
 /**
  * Function to get the filter of the current tab.

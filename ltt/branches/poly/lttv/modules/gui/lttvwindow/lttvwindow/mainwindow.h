@@ -93,13 +93,6 @@ struct _Tab{
   gboolean time_request_pending;
 };
 
-typedef struct _TimeRequest {
-  TimeWindow  time_window;
-  guint num_events;
-  LttvHook after_hook;
-  gpointer after_hook_data;
-} TimeRequest;
-
 /**
  * Remove menu and toolbar item when a module unloaded
  */

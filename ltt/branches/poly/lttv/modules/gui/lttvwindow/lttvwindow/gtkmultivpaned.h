@@ -71,7 +71,7 @@ struct _GtkMultiVPanedClass
 GType	   gtk_multi_vpaned_get_type (void) G_GNUC_CONST;
 GtkWidget* gtk_multi_vpaned_new (void);
 
-void gtk_multi_vpaned_set_focus (GtkWidget * widget, gpointer user_data);     
+void gtk_multi_vpaned_set_focus (GtkWidget * widget, GtkPaned *Paned);     
 void gtk_multi_vpaned_widget_add(GtkMultiVPaned * multi_vpaned, GtkWidget * widget1);
 void gtk_multi_vpaned_widget_delete(GtkMultiVPaned * multi_vpaned);
 void gtk_multi_vpaned_widget_move_up(GtkMultiVPaned * multi_vpaned);

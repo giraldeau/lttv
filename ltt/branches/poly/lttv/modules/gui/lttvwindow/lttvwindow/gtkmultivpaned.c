@@ -147,9 +147,9 @@ gpointer gtk_multi_vpaned_get_data(GtkMultiVPaned * multi_vpaned,char * key)
   return g_object_get_data(G_OBJECT(multi_vpaned->focused_pane), key);
 }
 
-void gtk_multi_vpaned_set_focus (GtkWidget * widget, gpointer user_data)
+void gtk_multi_vpaned_set_focus (GtkWidget * widget, GtkPaned* paned)
 {
-  GtkMultiVPaned * multi_vpaned = (GtkMultiVPaned*) widget;
+  GtkMultiVPaned * multi_vpaned = GTK_MULTI_VPANED(widget);
   GtkPaned * pane;
   if(!multi_vpaned->first_pane) return;
   
