@@ -326,7 +326,8 @@ gboolean lttv_filter_tree_parse(
         LttEvent* event,
         LttTracefile* tracefile,
         LttTrace* trace,
-        LttvProcessState* state);
+        LttvProcessState* state,
+        LttvTracefileContext* context);
 
 /*
  *  Hook functions

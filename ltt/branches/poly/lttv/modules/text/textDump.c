@@ -340,7 +340,7 @@ static int write_event_content(void *hook_data, void *call_data)
   /*
    * call to the filter if available
    */
-  if(!lttv_filter_tree_parse(a_lttv_filter->head,e,NULL,NULL,NULL)) {
+  if(!lttv_filter_tree_parse(a_lttv_filter->head,e,tfc->t_context->t,tfc->tf,tfs->process,tfc)) {
       return FALSE;
   }
   

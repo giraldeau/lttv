@@ -58,6 +58,7 @@
  */
 
 #include <lttv/filter.h>
+#include <ltt/time.h>
 
 /*
 GQuark
@@ -398,6 +399,10 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
 gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
 
 //  g_print("se->value:%s\n",value);
+  unsigned i;
+  gboolean is_double = FALSE;
+  LttTime t;
+  GString* v; 
   
   switch(se->field) {
      /* 
@@ -428,7 +433,27 @@ gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* val
      case LTTV_FILTER_EVENT_TIME:
      case LTTV_FILTER_EVENT_TSC:
        //se->value.v_double = atof(value);
-       se->value.v_ltttime = ltt_time_from_double(atof(value));
+       /*
+        * parsing logic could be optimised,
+        * but as for now, simpler this way
+        */
+       v = g_string_new("");
+       for(i=0;i<strlen(value);i++) {
+          if(value[i] == '.') { 
+              /* cannot specify number with more than one '.' */
+              if(is_double) return FALSE; 
+              else is_double = TRUE;
+              t.tv_sec = atoi(v);
+              g_string_free(v,TRUE);
+              v = g_string_new("");
+          } else g_string_append_c(v,value[i]);
+       }
+       /* number can be integer or double */
+       if(is_double) t.tv_nsec = atoi(v);
+       else t.tv_nsec = 0;
+       g_string_free(v,TRUE);
+       
+       se->value.v_ltttime = t;
        g_free(value);
        break;
      default:
@@ -573,7 +598,6 @@ gboolean lttv_apply_op_eq_double(gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_eq_string(gpointer v1, LttvFieldValue v2) {
   char* r = (char*) v1;
-  g_print("v1:%s = v2:%s\n",r,v2.v_string);
   return (!g_strcasecmp(r,v2.v_string));
 }
 
@@ -673,7 +697,7 @@ gboolean lttv_apply_op_ne_string(gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_ne_ltttime(gpointer v1, LttvFieldValue v2) {
   LttTime* r = (LttTime*) v1;
-  return ((r->tv_sec != v2.v_ltttime.tv_sec) || (r->tv_nsec != v2.v_ltttime.tv_nsec));
+  return ltt_time_compare(*r, v2.v_ltttime)!=0?1:0;
 }
 
 
@@ -1525,7 +1549,8 @@ lttv_filter_tree_parse(
         LttEvent* event,
         LttTracefile* tracefile,
         LttTrace* trace,
-        LttvProcessState* state
+        LttvProcessState* state,
+        LttvTracefileContext* context
         /*,...*/) 
 {
 
@@ -1563,14 +1588,14 @@ lttv_filter_tree_parse(
    *     -Result of left branch will not affect exploration of 
    *      right branch
    */
-  g_print("filter::lttv_parse_tree(...)\n");
+//  g_print("filter::lttv_parse_tree(...)\n");
     
   gboolean lresult = FALSE, rresult = FALSE;
   
   /*
    * Parse left branch
    */
-  if(t->left == LTTV_TREE_NODE) lresult = lttv_filter_tree_parse(t->l_child.t,event,tracefile,trace,state);
+  if(t->left == LTTV_TREE_NODE) lresult = lttv_filter_tree_parse(t->l_child.t,event,tracefile,trace,state,context);
   else if(t->left == LTTV_TREE_LEAF) {
     //g_print("%p: left is %i %p %s\n",t,t->l_child.leaf->field,t->l_child.leaf->op,t->l_child.leaf->value);
     LttvFieldValue v;
@@ -1596,22 +1621,23 @@ lttv_filter_tree_parse(
         case LTTV_FILTER_STATE_CT:
             if(state == NULL) lresult = TRUE;
             else {
-//              double val = ltt_time_to_double(state->creation_time);
               lresult = t->l_child.leaf->op((gpointer)&state->creation_time,v);
             }
             break;
         case LTTV_FILTER_STATE_IT:
             if(state == NULL) lresult = TRUE;
             else {
-//              double val = ltt_time_to_double(state->insertion_time);
               lresult = t->l_child.leaf->op((gpointer)&state->insertion_time,v);
             }
             break;
         case LTTV_FILTER_STATE_P_NAME:
             /*
-             * FIXME: Yet to be done ( I think ? )
+             * All 'unnamed' for the moment  
              */
-            lresult = TRUE;
+            if(state == NULL) lresult = TRUE;
+            else {
+              lresult = t->l_child.leaf->op((gpointer)g_quark_to_string(state->name),v);
+            }
             break;
         case LTTV_FILTER_STATE_EX_MODE:
             if(state == NULL) lresult = TRUE;
@@ -1626,14 +1652,18 @@ lttv_filter_tree_parse(
             else lresult = t->l_child.leaf->op((gpointer)&state->state->s,v);
             break;
         case LTTV_FILTER_STATE_CPU:
-            /*
-             * FIXME: What is the comparison value ?
-             */
-            lresult = TRUE;
+            if(context == NULL) lresult = TRUE;
+            else {
+              lresult = t->l_child.leaf->op((gpointer)g_quark_to_string(((LttvTracefileState*)context)->cpu_name),v);
+            }
             break;
         case LTTV_FILTER_EVENT_NAME:
             if(event == NULL) lresult = TRUE;
-            else lresult = t->l_child.leaf->op((gpointer)ltt_event_eventtype(event),v);
+            else {
+              LttEventType* et;
+              et = ltt_event_eventtype(event);
+              lresult = t->l_child.leaf->op((gpointer)ltt_eventtype_name(et),v);
+            }
             break;
             
         case LTTV_FILTER_EVENT_CATEGORY:
@@ -1643,12 +1673,11 @@ lttv_filter_tree_parse(
             lresult = TRUE;
             break;
         case LTTV_FILTER_EVENT_TIME:
-//            if(event == NULL) lresult = TRUE;
-//            else {
-//                double val = ltt_time_to_double(event->event_time);
-//                lresult = t->l_child.leaf->op((gpointer)&val,v);
-//            }
-            lresult = TRUE;
+            if(event == NULL) lresult = TRUE;
+            else {
+                LttTime time = ltt_event_time(event);
+                lresult = t->l_child.leaf->op((gpointer)&t,v);
+            }
             break;
         case LTTV_FILTER_EVENT_TSC:
 //          if(event == NULL) lresult = TRUE;
@@ -1689,7 +1718,7 @@ lttv_filter_tree_parse(
   /*
    * Parse right branch
    */
-  if(t->right == LTTV_TREE_NODE) rresult = lttv_filter_tree_parse(t->r_child.t,event,tracefile,trace,state);
+  if(t->right == LTTV_TREE_NODE) rresult = lttv_filter_tree_parse(t->r_child.t,event,tracefile,trace,state,context);
   else if(t->right == LTTV_TREE_LEAF) {
     //g_print("%p: right is %i %p %s\n",t,t->r_child.leaf->field,t->r_child.leaf->op,t->r_child.leaf->value);
     LttvFieldValue v;
@@ -1730,7 +1759,10 @@ lttv_filter_tree_parse(
             /*
              * FIXME: Yet to be done ( I think ? )
              */
-            rresult = TRUE;
+            if(state == NULL) rresult = TRUE;
+            else {
+              rresult = t->r_child.leaf->op((gpointer)g_quark_to_string(state->name),v);
+            }
             break;
         case LTTV_FILTER_STATE_EX_MODE:
             if(state == NULL) rresult = TRUE;
@@ -1748,13 +1780,19 @@ lttv_filter_tree_parse(
             /*
              * FIXME: What is the comparison value ?
              */
-            rresult = TRUE;
+            if(context == NULL) rresult = TRUE;
+            else {
+              rresult = t->r_child.leaf->op((gpointer)g_quark_to_string(((LttvTracefileState*)context)->cpu_name),v);
+            }
             break;
         case LTTV_FILTER_EVENT_NAME:
-            if(event == NULL) rresult = TRUE;
-            else rresult = t->r_child.leaf->op((gpointer)ltt_event_eventtype(event),v);
-            break;
-            
+           if(event == NULL) rresult = TRUE;
+           else {
+              LttEventType* et;
+              et = ltt_event_eventtype(event);
+              rresult = t->r_child.leaf->op((gpointer)ltt_eventtype_name(et),v);
+           }
+           break;
         case LTTV_FILTER_EVENT_CATEGORY:
             /*
              * FIXME: Not yet implemented
@@ -1762,12 +1800,11 @@ lttv_filter_tree_parse(
             rresult = TRUE;
             break;
         case LTTV_FILTER_EVENT_TIME:
-//            if(event == NULL) rresult = TRUE;
-//            else {
-//              double val = ltt_time_to_double(event->event_time);
-//                rresult = t->r_child.leaf->op((gpointer)&event->event_time,v);
-//            }
-            rresult = TRUE;
+            if(event == NULL) rresult = TRUE;
+            else {
+                LttTime time = ltt_event_time(event);
+                rresult = t->r_child.leaf->op((gpointer)&t,v);
+            }
             break;
         case LTTV_FILTER_EVENT_TSC:
 //          if(event == NULL) rresult = TRUE;
@@ -1857,7 +1894,7 @@ lttv_print_tree(LttvFilterTree* t) {
 gboolean
 lttv_filter_tracefile(LttvFilter *filter, LttTracefile *tracefile) {
 
-  return lttv_filter_tree_parse(filter->head,NULL,tracefile,NULL,NULL);
+  return lttv_filter_tree_parse(filter->head,NULL,tracefile,NULL,NULL,NULL);
   
 }
 
