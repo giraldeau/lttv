@@ -1162,11 +1162,11 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
 
 int timecmp(LttTime * t1, LttTime * t2)
 {
-  LttTime T;
-  TimeSub(T, *t1, *t2);
-  if(T.tv_sec == 0 && T.tv_nsec == 0) return 0;
-  else if(T.tv_sec > 0 || (T.tv_sec==0 && T.tv_nsec > 0)) return 1;
-  else return -1;
+  if(t1->tv_sec < t2->tv_sec) return -1;
+  if(t1->tv_sec > t2->tv_sec) return 1;
+  if(t1->tv_nsec < t2->tv_nsec) return -1;
+  if(t1->tv_nsec > t2->tv_nsec) return 1;
+  return 0;
 }
 
 /*****************************************************************************
