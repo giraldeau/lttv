@@ -2163,14 +2163,7 @@ typedef struct _ClosureData {
  * 
  * - For each CPU of the trace
  *   - Search in trace states by PID and CPU key
- *     - For each ProcessState found
- *       - If state is not LTTV_STATE_WAIT
- *        - Then this process state is the current one for this PID.
- *        - Stop search.
  * - If no ProcessState found, return NULL.
- * - If all ProcessState were in LTTV_STATE_WAIT state, return one of
- *   them arbitrarily.
- *   Than means state is LTTV_STATE_WAIT, CPU unknown.
  */
 static LttvProcessState *find_process(LttvTraceState *tstate, guint pid)
 {
@@ -2185,11 +2178,9 @@ static LttvProcessState *find_process(LttvTraceState *tstate, guint pid)
     LttvProcessState *state = lttv_state_find_process_from_trace(tstate,
                                                                  cpu_name,
                                                                  pid);
-    
     if(state != NULL) {
       real_state = state;
-      if(state->state->s != LTTV_STATE_WAIT)
-        break;
+      break;
     }
   }
   return real_state;
