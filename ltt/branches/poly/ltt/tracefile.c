@@ -1657,7 +1657,8 @@ int getFieldtypeSize(LttTracefile * t, LttEventType * evT, int offsetRoot,
   LttType * type = fld->field_type;
 
   if(likely(t)){
-    if(unlikely(evT->latest_block==t->which_block && evT->latest_event==t->which_event)){
+    if(unlikely(evT->latest_block==t->which_block &&
+                evT->latest_event==t->which_event)){
       return fld->field_size;
     } 
   }

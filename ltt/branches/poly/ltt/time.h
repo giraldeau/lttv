@@ -207,11 +207,16 @@ static inline LttTime ltt_time_from_uint64(guint64 t1)
 #ifdef EXTRA_CHECK
   g_assert(t1 <= MAX_TV_SEC_TO_UINT64);
   if(t1 > MAX_TV_SEC_TO_UINT64)
-    g_warning("Conversion from non precise uint64 to LttTime");
+    g_warning("Conversion from uint64 to non precise LttTime");
 #endif //EXTRA_CHECK
   LttTime res;
-  res.tv_sec = t1/NANOSECONDS_PER_SECOND;
-  res.tv_nsec = (t1 - res.tv_sec*NANOSECONDS_PER_SECOND);
+  if(unlikely(t1 >= NANOSECONDS_PER_SECOND)) {
+    res.tv_sec = t1/NANOSECONDS_PER_SECOND;
+    res.tv_nsec = (t1 - res.tv_sec*NANOSECONDS_PER_SECOND);
+  } else {
+    res.tv_sec = 0;
+    res.tv_nsec = (guint32)t1;
+  }
   return res;
 }
 
