@@ -32,7 +32,7 @@
  *                       Methods to synchronize process list                 *
  *****************************************************************************/
 
-static __inline__ guint get_cpu_number_from_name(GQuark name);
+//static __inline__ guint get_cpu_number_from_name(GQuark name);
   
 /* Enumeration of the columns */
 enum
@@ -279,7 +279,6 @@ ProcessList *processlist_construct(void)
   process_list->number_of_process = 0;
   process_list->cell_height_cache = -1;
 
-  process_list->current_process_info = NULL;
   process_list->current_hash_data = NULL;
 
   /* Create the Process list */
@@ -417,10 +416,8 @@ static gboolean remove_hash_item(ProcessInfo *process_info,
 
   gtk_list_store_remove (process_list->list_store, &iter);
 
-  if(process_info == process_list->current_process_info)
-    process_list->current_process_info = NULL;
-  if(hashed_process_data == process_list->current_hash_data)
-    process_list->current_hash_data = NULL;
+  if(hashed_process_data == process_list->current_hash_data[process_info->cpu])
+    process_list->current_hash_data[process_info->cpu] = NULL;
 
   return TRUE; /* remove the element from the hash table */
 }
@@ -518,7 +515,7 @@ int processlist_add(  ProcessList *process_list,
         PROCESS_COLUMN, name,
         PID_COLUMN, pid,
         PPID_COLUMN, ppid,
-        CPU_COLUMN, get_cpu_number_from_name(cpu),
+        CPU_COLUMN, cpu,
         BIRTH_S_COLUMN, birth->tv_sec,
         BIRTH_NS_COLUMN, birth->tv_nsec,
         TRACE_COLUMN, trace_num,
@@ -579,9 +576,8 @@ int processlist_remove( ProcessList *process_list,
     g_hash_table_remove(process_list->process_hash,
         &process_info);
 
-    if(hashed_process_data == process_list->current_hash_data) {
-      process_list->current_process_info = NULL;
-      process_list->current_hash_data = NULL;
+    if(hashed_process_data == process_list->current_hash_data[cpu]) {
+      process_list->current_hash_data[cpu] = NULL;
     }
 
     process_list->number_of_process--;
@@ -646,7 +642,6 @@ __inline__ gint processlist_get_process_pixels(  ProcessList *process_list,
 
 
 __inline__ gint processlist_get_pixels_from_data(  ProcessList *process_list,
-          ProcessInfo *process_info,
           HashedProcessData *hashed_process_data,
           guint *y,
           guint *height)
@@ -667,6 +662,7 @@ __inline__ gint processlist_get_pixels_from_data(  ProcessList *process_list,
 
 }
 
+#if 0
 static __inline__ guint get_cpu_number_from_name(GQuark name)
 {
   const gchar *string;
@@ -684,4 +680,4 @@ static __inline__ guint get_cpu_number_from_name(GQuark name)
 
   return cpu;
 }
-
+#endif //0

@@ -18,6 +18,7 @@
 
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
+#include <string.h>
 
 #include <lttv/lttv.h>
 #include <lttv/tracecontext.h>
@@ -413,9 +414,6 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
   g_hash_table_foreach(cfd->process_list->process_hash, set_last_start,
                             (gpointer)x);
 
-  cfd->process_list->current_process_info = NULL;
-  cfd->process_list->current_hash_data = NULL;
-
 }
 
 void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
@@ -424,7 +422,12 @@ void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
   ControlFlowData *cfd = events_request->viewer_data;
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
   LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
+  guint num_cpu = 
+    ltt_trace_per_cpu_tracefile_number(tss->parent.traces[TRACE_NUMBER]->t);
 
+  cfd->process_list->current_hash_data = g_new(HashedProcessData*,num_cpu);
+  memset(cfd->process_list->current_hash_data, 0,
+         sizeof(HashedProcessData*)*num_cpu);
   //cfd->drawing->last_start = LTT_TIME_MIN(current_time,
   //                                        events_request->end_time);
 }

@@ -44,7 +44,7 @@
 typedef struct _ProcessInfo {
   
   guint pid;
-  GQuark cpu; /* only for PID 0 */
+  guint cpu;
   guint ppid;
   LttTime birth;
   guint trace_num;
@@ -88,9 +88,8 @@ struct _ProcessList {
   guint number_of_process;
   gint cell_height_cache;
 
-  /* FIXME : those current process must be one per CPU !! */
-  ProcessInfo *current_process_info;
-  HashedProcessData *current_hash_data;
+  /* Current process, one per cpu */
+  HashedProcessData **current_hash_data;
 
 };
 
@@ -122,7 +121,6 @@ __inline__ gint processlist_get_process_pixels(ProcessList *process_list,
         HashedProcessData **hashed_process_data);
 
 __inline__ gint processlist_get_pixels_from_data(  ProcessList *process_list,
-          ProcessInfo *process_info,
           HashedProcessData *hashed_process_data,
           guint *y,
           guint *height);
