@@ -5,72 +5,68 @@
 #include <ltt/ltt.h>
 #include <ltt/LTTTypes.h>
 #include <ltt/type.h>
+#include <ltt/trace.h>
+
+/* enumeration definition */
+
+typedef enum _BuildinEvent{
+  TRACE_FACILITY_LOAD = 0,
+  TRACE_BLOCK_START   = 17,
+  TRACE_BLOCK_END     = 18,
+  TRACE_TIME_HEARTBEAT= 22
+} BuildinEvent;
 
 
 /* structure definition */
 
-typedef struct _trace_header_event {
-  //information of the machine type
-  uint32_t arch_type;	        /* Type of architecture */
-  uint32_t arch_variant;        /* Variant of the given type of architecture */
-  uint32_t system_type;	        /* Operating system type */
-  char system_name[32];         /* system name */
-  //  uint32_t magic_number;    /* Magic number to identify a trace */ 
-  ltt_arch_size arch_size;      /* data type size */
-  ltt_arch_endian arch_endian;  /* endian type : little or big */
+typedef struct _FacilityLoad{
+  char * name;
+  LttChecksum checksum;
+  uint32_t base_code;
+} LTT_PACKED_STRUCT FacilityLoad;
 
-  //format of fields
-  uint8_t  time_size;        /* time size */
-  uint8_t  time_granul;      /* time granularity */
-  uint8_t  id_size;          /* size of combined facility/event ids */
+typedef struct _BlockStart {
+  LttTime       time;	     //Time stamp of this block
+  LttCycleCount cycle_count; //cycle count of the event
+  uint32_t      block_id;    //block id 
+} LTT_PACKED_STRUCT BlockStart;
 
-  //other elements
-  uint32_t ip_addr;          /* IP of the machine */
-  uint8_t  cpu_number;       /* number of CPU */
-  uint8_t  cpu_id;           /* cpu id */
-  uint8_t  cpu_number_used;  /* the number of the cpu used in the tracefile */
-  uint32_t buffer_size;	     /* Size of blocks */
-} LTT_PACKED_STRUCT trace_header_event;
+typedef struct _BlockEnd {
+  LttTime       time;	     //Time stamp of this block
+  LttCycleCount cycle_count; //cycle count of the event
+  uint32_t      block_id;    //block id 
+} LTT_PACKED_STRUCT BlockEnd;
 
-
-typedef struct _block_header {
-  ltt_time  time;	       /* Time stamp of this block */
-  ltt_cycle_count cycle_count; /* cycle count of the event */
-  uint32_t event_count;        /* event count */
-} LTT_PACKED_STRUCT block_header;
+typedef struct _TimeHeartbeat {
+  LttTime       time;	     //Time stamp of this block
+  LttCycleCount cycle_count; //cycle count of the event
+} LTT_PACKED_STRUCT TimeHeartbeat;
 
 
-typedef struct _block_footer {
-  uint32_t unused_bytes;       /* unused bytes at the end of the block */
-  ltt_time time;	       /* Time stamp of this block */
-  ltt_cycle_count cycle_count; /* cycle count of the event */
-} LTT_PACKED_STRUCT block_footer;
-
-
-struct _ltt_type{
-  char * element_name;              //elements name of the struct or type name
+struct _LttType{
+  char * element_name;             //elements name of the struct or type name
   char * fmt;
   int size;
-  ltt_type_enum type_class;         //which type
-  char ** enum_strings;             //for enum labels
-  struct _ltt_type ** element_type; //for array, sequence and struct
-  unsigned element_number;          //the number of elements 
-                                    //for enum, array, sequence and structure
+  LttTypeEnum type_class;          //which type
+  char ** enum_strings;            //for enum labels
+  struct _LttType ** element_type; //for array, sequence and struct
+  unsigned element_number;         //the number of elements 
+                                   //for enum, array, sequence and structure
 };
 
-struct _ltt_eventtype{
+struct _LttEventType{
   char * name;
   char * description;
-  int index;                 //id of the event type within the facility
-  ltt_facility * facility;   //the facility that contains the event type
-  ltt_field * root_field;    //root field
-  int latest_block;          //the latest block using the event type
-  int latest_event;          //the latest event using the event type
+  int index;              //id of the event type within the facility
+  LttFacility * facility; //the facility that contains the event type
+  LttField * root_field;  //root field
+  int latest_block;       //the latest block using the event type
+  int latest_event;       //the latest event using the event type
 };
 
-struct _ltt_field{
+struct _LttField{
   unsigned field_pos;        //field position within its parent
-  ltt_type * field_type;     //field type, if it is root field
+  LttType * field_type;      //field type, if it is root field
                              //then it must be struct type
 
   off_t offset_root;         //offset from the root, -1:uninitialized 
@@ -89,97 +85,97 @@ struct _ltt_field{
                              //1: field has no string or sequenc
                              //-1: uninitialize
 
-  struct _ltt_field * parent;
-  struct _ltt_field ** child;//for array, sequence and struct: 
+  struct _LttField * parent;
+  struct _LttField ** child; //for array, sequence and struct: 
                              //list of fields, it may have only one
                              //field if the element is not a struct 
   unsigned current_element;  //which element is currently processed
 };
 
-struct _ltt_event{
-  int event_id;
-  ltt_cycle_count cycle_count;
-  ltt_tracefile * tracefile;
-  void * data;                //event data
+struct _LttEvent{
+  uint16_t event_id;
+  uint32_t time_delta;
+  LttTime event_time;
+  LttCycleCount event_cycle_count;
+  LttTracefile * tracefile;
+  void * data;               //event data
 };
 
-struct _ltt_facility{
+struct _LttFacility{
   char * name;               //facility name 
   int event_number;          //number of events in the facility 
-  ltt_checksum checksum;     //checksum of the facility 
-  ltt_eventtype ** events;   //array of event types 
-  unsigned usage_count;      //usage count
+  LttChecksum checksum;      //checksum of the facility 
+  uint32_t base_id;          //base id of the facility
+  LttEventType ** events;    //array of event types 
+
   //FIXME Specify those types
-  //table all_named_types;     //an array of named ltt_type
-  //sequence all_unnamed_types;//an array of unnamed ltt_type
-  //sequence all_fields;       //an array of fields
+  table all_named_types;     //an array of named LttType
+  sequence all_unnamed_types;//an array of unnamed LttType
+  sequence all_fields;       //an array of fields
 };
 
-struct _ltt_tracefile{
-  int fd;                            /* file descriptor */
-  off_t file_size;                   /* file size */
-  int block_number;                  /* number of blocks in the file */
-  int which_block;                   /* which block the current block is */
-  int which_event;                   /* which event of the current block 
-                                        is currently processed */
-  ltt_time current_event_time;       /* time of the current event */
-  trace_header_event * trace_header; /* the first event in the first block */
-  block_header * a_block_header;     /* block header of the block*/
-  block_footer * a_block_footer;     /* block footer of the block*/
-  void * first_event_pos;            /* the position of the first event */
-  void * cur_event_pos;              /* the position of the current event */
-  void * buffer;                     /* the buffer containing the block */ 
-  double cycle_per_nsec;             /* Cycles per nsec */ 
-  unsigned int cur_heart_beat_number;/* the number of heart beat so far 
-                                        in the block */
+struct _LttTracefile{
+  char * name;                       //tracefile name
+  LttTrace * trace;                  //trace containing the tracefile
+  int fd;                            //file descriptor 
+  off_t file_size;                   //file size
+  unsigned block_size;               //block_size
+  int block_number;                  //number of blocks in the file
+  int which_block;                   //which block the current block is
+  int which_event;                   //which event of the current block 
+                                     //is currently processed 
+  LttTime current_event_time;        //time of the current event
+  BlockStart * a_block_start;        //block start of the block
+  BlockEnd   * a_block_end;          //block end of the block
+  void * cur_event_pos;              //the position of the current event
+  void * buffer;                     //the buffer containing the block
+  double cycle_per_nsec;             //Cycles per nsec
+  unsigned cur_heart_beat_number;    //current number of heart beat in the buf
 
-  ltt_time start_time;               /* trace start time */
-  ltt_time end_time;                 /* trace end time */
-  ltt_time prev_block_end_time;      /* the end time of previous block */
-  ltt_time prev_event_time;          /* the time of the previous event */
-
-  int   eventtype_number;            /* the number of event type 
-					in the tracefile */
-  int   facility_number;             /* the number of the facility in 
-					the tracefile */
-  GHashTable * index_facility;       /* facility index and facility pair */
-  GHashTable * facility_name;        /* name and facility pair */
-  GHashTable * base_id_name;         /* facility name and base id pair*/
-
-  GPtrArray * eventtype_event_id;    /* an array of eventtypes accessed 
-					by event id */
-
-  ltt_arch_size my_arch_size;        /* data type size of the local machine */
-  ltt_arch_endian my_arch_endian;    /* endian type of the local machine */
+  LttTime prev_block_end_time;       //the end time of previous block
+  LttTime prev_event_time;           //the time of the previous event
 };
 
-
-
+struct _LttTrace{
+  char * pathname;                          //the pathname of the trace
+  guint facility_number;                    //the number of facilities 
+  guint control_tracefile_number;           //the number of control files 
+  guint per_cpu_tracefile_number;           //the number of per cpu files 
+  LttSystemDescription * system_description;//system description 
+  GPtrArray *control_tracefiles;            //array of control tracefiles 
+  GPtrArray *per_cpu_tracefiles;            //array of per cpu tracefiles 
+  GPtrArray *facilities;                    //array of facilities 
+  LttArchSize my_arch_size;                 //data size of the local machine
+  LttArchEndian my_arch_endian;             //endian type of the local machine
+};
 
 
 /*****************************************************************************
  macro for size of some data types
  *****************************************************************************/
-#define EVENT_ID_SIZE     sizeof(int8_t)
-#define CYCLE_COUNT_SIZE   sizeof(ltt_cycle_count)
-//event id and time delta(cycle count)
-//yxx disable during the test
-//#define EVENT_HEADER_SIZE (EVENT_ID_SIZE + CYCLE_COUNT_SIZE)
-#define EVENT_HEADER_SIZE (EVENT_ID_SIZE + sizeof(uint32_t))
+#define EVENT_ID_SIZE     sizeof(uint16_t)
+#define TIME_DELTA_SIZE   sizeof(uint32_t)
+#define EVENT_HEADER_SIZE (EVENT_ID_SIZE + TIME_DELTA_SIZE)
 
 
 
 
 /* obtain the time of an event */
-ltt_time getEventTime(ltt_tracefile * tf);
+LttTime getEventTime(LttTracefile * tf);
 
 /* get the data type size and endian type of the local machine */
-void getDataEndianType(ltt_arch_size * size, ltt_arch_endian * endian);
+void getDataEndianType(LttArchSize * size, LttArchEndian * endian);
 
+/* open facility */
+void ltt_facility_open(LttTrace * t, char * facility_name);
 
-typedef struct _ptr_wrap{
-  gpointer ptr;
-} ptr_wrap;
+/* get facility by event id */
+LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id);
+
+/* open tracefile */
+LttTracefile * ltt_tracefile_open(LttTrace *t, char * tracefile_name);
+void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name);
+void ltt_tracefile_open_control(LttTrace *t, char * control_name);
 
 
 #endif /* LTT_PRIVATE_H */
