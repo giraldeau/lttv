@@ -1,0 +1,19 @@
+<system 
+node_name="thales.casi.polymtl.ca" 
+domainname="casi.polymtl.ca" 
+cpu="2" 
+arch_size="ILP32" 
+endian="LITTLE_ENDIAN" 
+kernel_name="Linux" 
+kernel_release="2.5.44-ltt2" 
+kernel_version="#2 SMP Tue Jul 22 09:46:56 EDT 2003" 
+machine="i686" 
+processor="i686" 
+hardware_platform="i386" 
+operating_system="GNU/Linux" 
+ltt_major_version="2" 
+ltt_minor_version="2" 
+ltt_block_size="1000000" 
+>
+This is just a test
+</system>
