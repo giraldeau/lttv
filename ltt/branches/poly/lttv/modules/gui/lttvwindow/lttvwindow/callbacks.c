@@ -4367,7 +4367,7 @@ void tab_destructor(Tab * tab)
   int i, nb, ref_count;
   LttvTrace * trace;
 
-  g_object_unref(tab->tooltips);
+  gtk_object_destroy(GTK_OBJECT(tab->tooltips));
   
   if(tab->attributes)
     g_object_unref(tab->attributes);
