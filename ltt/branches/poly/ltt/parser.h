@@ -157,9 +157,9 @@ void parseEvent(parse_file *in, event_t *ev, sequence * unnamed_types, table * n
 void parseTypeDefinition(parse_file *in, sequence * unnamed_types, table * named_types);
 type_descriptor *parseType(parse_file *in, type_descriptor *t, sequence * unnamed_types, table * named_types);
 void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types, table * named_types);
-void checkNamedTypesImplemented(table * namedTypes);
+int checkNamedTypesImplemented(table * namedTypes);
 type_descriptor * find_named_type(char *name, table * named_types);
-void generateChecksum(char * facName, unsigned long * checksum, sequence * events);
+int generateChecksum(char * facName, unsigned long * checksum, sequence * events);
 
 
 /* get attributes */

@@ -88,9 +88,9 @@ void ltt_facility_open(LttTrace * t, char * pathname)
       parseFacility(&in, fac);
 
       //check if any namedType is not defined
-      checkNamedTypesImplemented(&fac->named_types);
+      g_assert(checkNamedTypesImplemented(&fac->named_types) == 0);
     
-      generateChecksum(fac->name, &checksum, &fac->events);
+      g_assert(generateChecksum(fac->name, &checksum, &fac->events) == 0);
 
       f = g_new(LttFacility,1);    
       f->base_id = 0;

@@ -43,6 +43,21 @@ This program is distributed in the hope that it will be useful,
 #include "parser.h"
 
 
+static int ltt_isalpha(char c)
+{
+  int i,j;
+  if(c == '_')return 1;
+  i = c - 'a';
+  j = c - 'A';
+  if((i>=0 && i<26) || (j>=0 && j<26)) return 1;
+  return 0;
+}
+
+static int ltt_isalnum(char c)
+{
+  return (ltt_isalpha(c) || isdigit(c));
+}
+
 /*****************************************************************************
  *Function name
  *    getSize    : translate from string to integer
@@ -86,7 +101,6 @@ void error_callback(parse_file *in, char *msg)
     printf("Error in file %s, line %d: %s\n", in->name, in->lineno, msg);
   else
     printf("%s\n",msg);
-  exit(1);
 }
 
 /*****************************************************************************
@@ -816,11 +830,11 @@ char *getToken(parse_file * in)
         if(pos == BUFFER_SIZE) in->error(in, "number token too large");
         in->type = NUMBER;
       }    
-      else if(isalpha(car)) {
+      else if(ltt_isalpha(car)) {
         in->buffer[0] = car;
         pos = 1;
         while((car = getc(fp)) != EOF && pos < BUFFER_SIZE) {
-          if(!isalnum(car)) {
+          if(!ltt_isalnum(car)) {
             ungetc(car,fp);
             break;
           }
@@ -867,9 +881,10 @@ void skipEOL(parse_file * in)
 /*****************************************************************************
  *Function name
  *    checkNamedTypesImplemented : check if all named types have definition
+ *    returns -1 on error, 0 if ok
  ****************************************************************************/
 
-void checkNamedTypesImplemented(table * named_types)
+int checkNamedTypesImplemented(table * named_types)
 {
   type_descriptor *t;
   int pos;
@@ -878,10 +893,13 @@ void checkNamedTypesImplemented(table * named_types)
   for(pos = 0 ; pos < named_types->values.position; pos++) {
     t = (type_descriptor *) named_types->values.array[pos];
     if(t->type == NONE){
-      sprintf(str,"named type '%s' has no definition",(char*)named_types->keys.array[pos]);
-      error_callback(NULL,str);   
+      sprintf(str,"named type '%s' has no definition",
+              (char*)named_types->keys.array[pos]);
+      error_callback(NULL,str);
+      return -1;
     }
   }
+  return 0;
 }
 
 
@@ -894,7 +912,7 @@ void checkNamedTypesImplemented(table * named_types)
  *    checksum          : checksum for the facility
  ****************************************************************************/
 
-void generateChecksum( char* facName, unsigned long * checksum, sequence * events)
+int generateChecksum(char* facName, unsigned long * checksum, sequence * events)
 {
   unsigned long crc ;
   int pos;
@@ -909,10 +927,12 @@ void generateChecksum( char* facName, unsigned long * checksum, sequence * event
     if(ev->type->type != STRUCT){
       sprintf(str,"event '%s' has a type other than STRUCT",ev->name);
       error_callback(NULL, str);
+      return -1;
     }
     crc = getTypeChecksum(crc, ev->type);
   }
   *checksum = crc;
+  return 0;
 }
 
 /*****************************************************************************
