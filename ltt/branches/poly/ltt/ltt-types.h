@@ -41,33 +41,33 @@
 
 inline gint64 ltt_get_int64(LttTrace t, void *ptr)
 {
-  return (gint64) (t->reverse_byte_order ? GUINT64_SWAP_LE_BE(x): x);
+  return (gint64) (t->reverse_byte_order ? GUINT64_SWAP_LE_BE(ptr): ptr);
 }
 
 
 inline guint64 ltt_get_uint64(LttTrace t, void *ptr)
 {
-  return (guint64) (t->reverse_byte_order ? GUINT64_SWAP_LE_BE(x): x);
+  return (guint64) (t->reverse_byte_order ? GUINT64_SWAP_LE_BE(ptr): ptr);
 }
 
 inline gint32 ltt_get_int32(LttTrace t, void *ptr)
 {
-  return (gint32) (t->reverse_byte_order ? GUINT32_SWAP_LE_BE(x): x);
+  return (gint32) (t->reverse_byte_order ? GUINT32_SWAP_LE_BE(ptr): ptr);
 }
 
 inline guint32 ltt_get_uint32(LttTrace t, void *ptr)
 {
-  return (guint32) (t->reverse_byte_order ? GUINT32_SWAP_LE_BE(x): x);
+  return (guint32) (t->reverse_byte_order ? GUINT32_SWAP_LE_BE(ptr): ptr);
 }
 
 inline gint16 ltt_get_int16(LttTrace t, void *ptr)
 {
-  return (gint16) (t->reverse_byte_order ? GUINT16_SWAP_LE_BE(x): x);
+  return (gint16) (t->reverse_byte_order ? GUINT16_SWAP_LE_BE(ptr): ptr);
 }
 
 inline guint16 ltt_get_uint16(LttTrace t, void *ptr)
 {
-  return (guint16) (t->reverse_byte_order ? GUINT16_SWAP_LE_BE(x): x);
+  return (guint16) (t->reverse_byte_order ? GUINT16_SWAP_LE_BE(ptr): ptr);
 }
 
 #endif // LTT_TYPES_H
