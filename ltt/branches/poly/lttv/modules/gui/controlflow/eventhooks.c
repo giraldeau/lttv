@@ -391,6 +391,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         
         if(processlist_get_process_pixels(process_list,
                 pid_out,
+                process->last_cpu,
                 &birth,
                 tfc->t_context->index,
                 &y,
@@ -401,6 +402,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           /* Process not present */
           processlist_add(process_list,
               pid_out,
+              process->last_cpu,
               process->ppid,
               &birth,
               tfc->t_context->index,
@@ -409,6 +411,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
               &hashed_process_data);
           processlist_get_process_pixels(process_list,
                   pid_out,
+                  process->last_cpu,
                   &birth,
                   tfc->t_context->index,
                   &y,
@@ -493,6 +496,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         
         if(processlist_get_process_pixels(process_list,
                 pid_in,
+                process->last_cpu,
                 &birth,
                 tfc->t_context->index,
                 &y,
@@ -503,6 +507,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           /* Process not present */
           processlist_add(process_list,
               pid_in,
+              process->last_cpu,
               process->ppid,
               &birth,
               tfc->t_context->index,
@@ -511,6 +516,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
               &hashed_process_data);
           processlist_get_process_pixels(process_list,
                   pid_in,
+                  process->last_cpu,
                   &birth,
                   tfc->t_context->index,
                   &y,
@@ -1268,6 +1274,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 
       if(processlist_get_process_pixels(process_list,
               pid_in,
+              process_in->last_cpu,
               &birth,
               tfc->t_context->index,
               &y_in,
@@ -1278,6 +1285,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
         /* Process not present */
         processlist_add(process_list,
             pid_in,
+            process_in->last_cpu,
             process_in->ppid,
             &birth,
             tfc->t_context->index,
@@ -1286,6 +1294,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
             &hashed_process_data_in);
         processlist_get_process_pixels(process_list,
                 pid_in,
+                process_in->last_cpu,
                 &birth,
                 tfc->t_context->index,
                 &y_in,
@@ -1831,6 +1840,7 @@ int after_fork_hook(void *hook_data, void *call_data)
 
       if(processlist_get_process_pixels(process_list,
               child_pid,
+              process_child->last_cpu,
               &birth,
               tfc->t_context->index,
               &y_child,
@@ -1841,6 +1851,7 @@ int after_fork_hook(void *hook_data, void *call_data)
         /* Process not present */
         processlist_add(process_list,
             child_pid,
+            process_child->last_cpu,
             process_child->ppid,
             &birth,
             tfc->t_context->index,
@@ -1849,6 +1860,7 @@ int after_fork_hook(void *hook_data, void *call_data)
             &hashed_process_data_child);
         processlist_get_process_pixels(process_list,
                 child_pid,
+                process_child->last_cpu,
                 &birth,
                 tfc->t_context->index,
                 &y_child,
@@ -2328,6 +2340,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
       /* process HAS to be present */
       g_assert(processlist_get_process_pixels(process_list,
               process_info->pid,
+              process_info->cpu,
               &birth,
               process_info->trace_num,
               &y,

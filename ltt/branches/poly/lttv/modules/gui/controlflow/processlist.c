@@ -18,6 +18,8 @@
 
 #include <gtk/gtk.h>
 #include <glib.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "processlist.h"
 #include "drawitem.h"
@@ -30,12 +32,15 @@
  *                       Methods to synchronize process list                 *
  *****************************************************************************/
 
+static guint get_cpu_number_from_name(GQuark name);
+  
 /* Enumeration of the columns */
 enum
 {
   PROCESS_COLUMN,
   PID_COLUMN,
   PPID_COLUMN,
+  CPU_COLUMN,
   BIRTH_S_COLUMN,
   BIRTH_NS_COLUMN,
   TRACE_COLUMN,
@@ -67,17 +72,61 @@ gint process_sort_func  ( GtkTreeModel *model,
   if(G_VALUE_TYPE(&a) == G_TYPE_UINT
     && G_VALUE_TYPE(&b) == G_TYPE_UINT )
   {
-    if(g_value_get_uint(&a) > g_value_get_uint(&b))
     {
-      g_value_unset(&a);
-      g_value_unset(&b);
-      return 1;
-    }
-    if(g_value_get_uint(&a) < g_value_get_uint(&b))
-    {
-      g_value_unset(&a);
-      g_value_unset(&b);
-      return 0;
+
+      if(g_value_get_uint(&a) == 0 &&  g_value_get_uint(&b) == 0) {
+
+        GValue cpua, cpub;
+
+        memset(&cpua, 0, sizeof(GValue));
+        memset(&cpub, 0, sizeof(GValue));
+       
+        /* If 0, order by CPU */
+        gtk_tree_model_get_value( model,
+                it_a,
+                CPU_COLUMN,
+                &cpua);
+
+        gtk_tree_model_get_value( model,
+                it_b,
+                CPU_COLUMN,
+                &cpub);
+
+        if(G_VALUE_TYPE(&cpua) == G_TYPE_UINT
+          && G_VALUE_TYPE(&cpub) == G_TYPE_UINT )
+        {
+          if(g_value_get_uint(&cpua) > g_value_get_uint(&cpub))
+          {
+            g_value_unset(&cpua);
+            g_value_unset(&cpub);
+            return 1;
+          }
+          if(g_value_get_uint(&cpua) < g_value_get_uint(&cpub))
+          {
+            g_value_unset(&cpua);
+            g_value_unset(&cpub);
+            return 0;
+          }
+        }
+
+        g_value_unset(&cpua);
+        g_value_unset(&cpub);
+
+      } else { /* if not 0, order by pid */
+      
+        if(g_value_get_uint(&a) > g_value_get_uint(&b))
+        {
+          g_value_unset(&a);
+          g_value_unset(&b);
+          return 1;
+        }
+        if(g_value_get_uint(&a) < g_value_get_uint(&b))
+        {
+          g_value_unset(&a);
+          g_value_unset(&b);
+          return 0;
+        }
+      }
     }
   }
 
@@ -139,13 +188,12 @@ gint process_sort_func  ( GtkTreeModel *model,
       g_value_unset(&b);
       return 1;
     }
-    // Final condition
-    //if(g_value_get_ulong(&a) < g_value_get_ulong(&b))
-    //{
-    //  g_value_unset(&a);
-    //  g_value_unset(&b);
-    //  return 0;
-    //}
+    if(g_value_get_ulong(&a) < g_value_get_ulong(&b))
+    {
+      g_value_unset(&a);
+      g_value_unset(&b);
+      return 0;
+    }
 
   }
   
@@ -181,8 +229,6 @@ gint process_sort_func  ( GtkTreeModel *model,
 
   }
 
-
-
   return 0;
 
 }
@@ -194,18 +240,22 @@ guint hash_fct(gconstpointer key)
 
 gboolean equ_fct(gconstpointer a, gconstpointer b)
 {
-  if(((ProcessInfo*)a)->pid != ((ProcessInfo*)b)->pid)
-    return 0;
-//  g_critical("compare %u and %u",((ProcessInfo*)a)->pid,((ProcessInfo*)b)->pid);
-  if(((ProcessInfo*)a)->birth.tv_sec != ((ProcessInfo*)b)->birth.tv_sec)
-    return 0;
-//  g_critical("compare %u and %u",((ProcessInfo*)a)->birth.tv_sec,((ProcessInfo*)b)->birth.tv_sec);
+  const ProcessInfo *pa = (const ProcessInfo*)a;
+  const ProcessInfo *pb = (const ProcessInfo*)b;
 
-  if(((ProcessInfo*)a)->birth.tv_nsec != ((ProcessInfo*)b)->birth.tv_nsec)
+  if(pa->pid != pb->pid)
     return 0;
-//  g_critical("compare %u and %u",((ProcessInfo*)a)->birth.tv_nsec,((ProcessInfo*)b)->birth.tv_nsec);
 
-  if(((ProcessInfo*)a)->trace_num != ((ProcessInfo*)b)->trace_num)
+  if((pa->pid == 0 && (pa->cpu != pb->cpu)))
+    return 0;
+
+  if(pa->birth.tv_sec != pb->birth.tv_sec)
+    return 0;
+
+  if(pa->birth.tv_nsec != pb->birth.tv_nsec)
+    return 0;
+
+  if(pa->trace_num != pb->trace_num)
     return 0;
 
   return 1;
@@ -230,6 +280,7 @@ ProcessList *processlist_construct(void)
   /* Create the Process list */
   process_list->list_store = gtk_list_store_new (  N_COLUMNS,
               G_TYPE_STRING,
+              G_TYPE_UINT,
               G_TYPE_UINT,
               G_TYPE_UINT,
               G_TYPE_ULONG,
@@ -291,6 +342,14 @@ ProcessList *processlist_construct(void)
                 renderer,
                 "text",
                 PPID_COLUMN,
+                NULL);
+  gtk_tree_view_append_column (
+    GTK_TREE_VIEW (process_list->process_list_widget), column);
+  
+  column = gtk_tree_view_column_new_with_attributes ( "CPU",
+                renderer,
+                "text",
+                CPU_COLUMN,
                 NULL);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
@@ -408,6 +467,7 @@ void destroy_hash_data(gpointer data)
 
 int processlist_add(  ProcessList *process_list,
       guint pid,
+      guint cpu,
       guint ppid,
       LttTime *birth,
       guint trace_num,
@@ -421,6 +481,10 @@ int processlist_add(  ProcessList *process_list,
   *pm_hashed_process_data = hashed_process_data;
   
   Process_Info->pid = pid;
+  if(pid == 0)
+    Process_Info->cpu = cpu;
+  else
+    Process_Info->cpu = 0;
   Process_Info->ppid = ppid;
   Process_Info->birth = *birth;
   Process_Info->trace_num = trace_num;
@@ -433,53 +497,6 @@ int processlist_add(  ProcessList *process_list,
    */
   hashed_process_data->x = 0;
   
-#if 0
-  hashed_process_data->draw_context = g_new(DrawContext, 1);
-  hashed_process_data->draw_context->drawable = NULL;
-  hashed_process_data->draw_context->gc = NULL;
-  hashed_process_data->draw_context->pango_layout = NULL;
-  hashed_process_data->draw_context->current = g_new(DrawInfo,1);
-  hashed_process_data->draw_context->current->over = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->current->over->x = -1;
-  hashed_process_data->draw_context->current->over->y = -1;
-  hashed_process_data->draw_context->current->middle = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->current->middle->x = -1;
-  hashed_process_data->draw_context->current->middle->y = -1;
-  hashed_process_data->draw_context->current->under = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->current->under->x = -1;
-  hashed_process_data->draw_context->current->under->y = -1;
-  hashed_process_data->draw_context->current->modify_over = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->current->modify_over->x = -1;
-  hashed_process_data->draw_context->current->modify_over->y = -1;
-  hashed_process_data->draw_context->current->modify_middle = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->current->modify_middle->x = -1;
-  hashed_process_data->draw_context->current->modify_middle->y = -1;
-  hashed_process_data->draw_context->current->modify_under = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->current->modify_under->x = -1;
-  hashed_process_data->draw_context->current->modify_under->y = -1;
-  hashed_process_data->draw_context->current->status = LTTV_STATE_UNNAMED;
-  hashed_process_data->draw_context->previous = g_new(DrawInfo,1);
-  hashed_process_data->draw_context->previous->over = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->previous->over->x = -1;
-  hashed_process_data->draw_context->previous->over->y = -1;
-  hashed_process_data->draw_context->previous->middle = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->previous->middle->x = -1;
-  hashed_process_data->draw_context->previous->middle->y = -1;
-  hashed_process_data->draw_context->previous->under = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->previous->under->x = -1;
-  hashed_process_data->draw_context->previous->under->y = -1;
-  hashed_process_data->draw_context->previous->modify_over = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->previous->modify_over->x = -1;
-  hashed_process_data->draw_context->previous->modify_over->y = -1;
-  hashed_process_data->draw_context->previous->modify_middle = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->previous->modify_middle->x = -1;
-  hashed_process_data->draw_context->previous->modify_middle->y = -1;
-  hashed_process_data->draw_context->previous->modify_under = g_new(ItemInfo,1);
-  hashed_process_data->draw_context->previous->modify_under->x = -1;
-  hashed_process_data->draw_context->previous->modify_under->y = -1;
-  hashed_process_data->draw_context->previous->status = LTTV_STATE_UNNAMED;
-#endif //0
-
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->list_store, &iter);
   //g_critical ( "iter before : %s", gtk_tree_path_to_string (
@@ -490,6 +507,7 @@ int processlist_add(  ProcessList *process_list,
         PROCESS_COLUMN, name,
         PID_COLUMN, pid,
         PPID_COLUMN, ppid,
+        CPU_COLUMN, get_cpu_number_from_name(cpu),
         BIRTH_S_COLUMN, birth->tv_sec,
         BIRTH_NS_COLUMN, birth->tv_nsec,
         TRACE_COLUMN, trace_num,
@@ -499,7 +517,7 @@ int processlist_add(  ProcessList *process_list,
       gtk_tree_model_get_path(
         GTK_TREE_MODEL(process_list->list_store),
         &iter));
-  g_hash_table_insert(  process_list->process_hash,
+  g_hash_table_insert(process_list->process_hash,
         (gpointer)Process_Info,
         (gpointer)hashed_process_data);
   
@@ -519,6 +537,7 @@ int processlist_add(  ProcessList *process_list,
 
 int processlist_remove( ProcessList *process_list,
       guint pid,
+      guint cpu,
       LttTime *birth,
       guint trace_num)
 {
@@ -528,6 +547,7 @@ int processlist_remove( ProcessList *process_list,
   GtkTreeIter iter;
   
   Process_Info.pid = pid;
+  Process_Info.cpu = cpu;
   Process_Info.birth = *birth;
   Process_Info.trace_num = trace_num;
 
@@ -570,7 +590,7 @@ guint processlist_get_height(ProcessList *process_list)
 
 
 gint processlist_get_process_pixels(  ProcessList *process_list,
-          guint pid, LttTime *birth, guint trace_num,
+          guint pid, guint cpu, LttTime *birth, guint trace_num,
           guint *y,
           guint *height,
           HashedProcessData **pm_hashed_process_data)
@@ -581,6 +601,7 @@ gint processlist_get_process_pixels(  ProcessList *process_list,
   HashedProcessData *hashed_process_data = NULL;
 
   Process_Info.pid = pid;
+  Process_Info.cpu = cpu;
   Process_Info.birth = *birth;
   Process_Info.trace_num = trace_num;
 
@@ -629,3 +650,23 @@ gint processlist_get_pixels_from_data(  ProcessList *process_list,
   return 0; 
 
 }
+
+static guint get_cpu_number_from_name(GQuark name)
+{
+  /* remember / */
+  const gchar *string;
+  char *begin;
+  guint cpu;
+
+  string = g_quark_to_string(name);
+
+  begin = strrchr(string, '/');
+  begin++;
+
+  g_assert(begin != '\0');
+
+  cpu = strtoul(begin, NULL, 10);
+
+  return cpu;
+}
+
