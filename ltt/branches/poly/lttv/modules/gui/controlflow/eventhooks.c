@@ -378,12 +378,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
-  Drawing_t *drawing = control_flow_data->drawing;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -456,7 +454,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                 hashed_process_data,
                 &y,
                 &height);
-        drawing_insert_square( drawing, y, height);
+        drawing_insert_square( control_flow_data->drawing, y, height);
       }
   
       /* Now, the process is in the state hash and our own process hash.
@@ -485,7 +483,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                 || ltt_time_compare(evtime, time_window.end_time) == 1)
                     return;
 #endif //EXTRA_CHECK
-          
+          Drawing_t *drawing = control_flow_data->drawing;
           guint width = drawing->width;
           guint x;
           convert_time_to_pixels(
@@ -516,6 +514,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
               || ltt_time_compare(evtime, time_window.end_time) == 1)
                   return;
 #endif //EXTRA_CHECK
+        Drawing_t *drawing = control_flow_data->drawing;
         guint width = drawing->width;
         guint x;
         convert_time_to_pixels(
@@ -625,7 +624,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                 hashed_process_data,
                 &y,
                 &height);
-        drawing_insert_square( drawing, y, height);
+        drawing_insert_square( control_flow_data->drawing, y, height);
       }
       //We could set the current process and hash here, but will be done
       //by after schedchange hook
@@ -657,6 +656,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                 || ltt_time_compare(evtime, time_window.end_time) == 1)
                     return;
 #endif //EXTRA_CHECK
+          Drawing_t *drawing = control_flow_data->drawing;
           guint width = drawing->width;
           guint x;
           convert_time_to_pixels(
@@ -685,6 +685,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
               || ltt_time_compare(evtime, time_window.end_time) == 1)
                   return;
 #endif //EXTRA_CHECK
+        Drawing_t *drawing = control_flow_data->drawing;
         guint width = drawing->width;
         guint x;
 
@@ -1380,7 +1381,6 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -1463,8 +1463,8 @@ int after_schedchange_hook(void *hook_data, void *call_data)
         || ltt_time_compare(evtime, time_window.end_time) == 1)
             return;
 #endif //EXTRA_CHECK
-
-    guint width = control_flow_data->drawing->width;
+    Drawing_t *drawing = control_flow_data->drawing;
+    guint width = drawing->width;
     guint new_x;
     
     convert_time_to_pixels(
@@ -1991,12 +1991,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
-  Drawing_t *drawing = control_flow_data->drawing;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -2050,7 +2048,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
                   hashed_process_data,
                   &y,
                   &height);
-      drawing_insert_square( drawing, y, height);
+      drawing_insert_square( control_flow_data->drawing, y, height);
     }
     /* Set the current process */
     process_list->current_hash_data[process->last_cpu_index] =
@@ -2084,6 +2082,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
             || ltt_time_compare(evtime, time_window.end_time) == 1)
                 return;
 #endif //EXTRA_CHECK
+      Drawing_t *drawing = control_flow_data->drawing;
       guint width = drawing->width;
       guint x;
       convert_time_to_pixels(
@@ -2113,6 +2112,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
           || ltt_time_compare(evtime, time_window.end_time) == 1)
               return;
 #endif //EXTRA_CHECK
+    Drawing_t *drawing = control_flow_data->drawing;
     guint width = drawing->width;
     guint x;
 
@@ -2203,7 +2203,6 @@ int after_execmode_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -2279,7 +2278,8 @@ int after_execmode_hook(void *hook_data, void *call_data)
           || ltt_time_compare(evtime, time_window.end_time) == 1)
               return;
 #endif //EXTRA_CHECK
-    guint width = control_flow_data->drawing->width;
+    Drawing_t *drawing = control_flow_data->drawing;
+    guint width = drawing->width;
     guint new_x;
     
     convert_time_to_pixels(
@@ -2313,12 +2313,10 @@ int before_process_hook(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
-  Drawing_t *drawing = control_flow_data->drawing;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -2407,7 +2405,7 @@ int before_process_hook(void *hook_data, void *call_data)
               || ltt_time_compare(evtime, time_window.end_time) == 1)
                   return;
 #endif //EXTRA_CHECK
-
+        Drawing_t *drawing = control_flow_data->drawing;
         guint width = drawing->width;
         guint x;
         convert_time_to_pixels(
@@ -2437,6 +2435,7 @@ int before_process_hook(void *hook_data, void *call_data)
             || ltt_time_compare(evtime, time_window.end_time) == 1)
                 return;
 #endif //EXTRA_CHECK
+      Drawing_t *drawing = control_flow_data->drawing;
       guint width = drawing->width;
       guint x;
 
@@ -2525,12 +2524,10 @@ int after_process_hook(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
-  Drawing_t *drawing = control_flow_data->drawing;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  LttvTraceState *ts =(LttvTraceState *)((LttvTracefileContext*)tfs)->t_context;
 
   LttEvent *e;
   e = tfc->e;
@@ -2612,7 +2609,7 @@ int after_process_hook(void *hook_data, void *call_data)
             || ltt_time_compare(evtime, time_window.end_time) == 1)
                 return;
 #endif //EXTRA_CHECK
-
+      Drawing_t *drawing = control_flow_data->drawing;
       guint width = drawing->width;
       guint new_x;
       convert_time_to_pixels(
@@ -2707,7 +2704,7 @@ int after_process_hook(void *hook_data, void *call_data)
             || ltt_time_compare(evtime, time_window.end_time) == 1)
                 return;
 #endif //EXTRA_CHECK
-
+      Drawing_t *drawing = control_flow_data->drawing;
       guint width = drawing->width;
       guint new_x;
       convert_time_to_pixels(
@@ -3141,10 +3138,9 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
     
   EventsRequest *events_request = closure_data->events_request;
   ControlFlowData *control_flow_data = events_request->viewer_data;
-  Drawing_t *drawing = control_flow_data->drawing;
 
   LttvTracesetState *tss = closure_data->tss;
-  LttvTracesetContext *tsc = (LttvTracesetContext*)closure_data->tss;
+  LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
 
   LttTime evtime = closure_data->end_time;
 
@@ -3207,6 +3203,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
               || ltt_time_compare(evtime, time_window.end_time) == 1)
                   return;
 #endif //EXTRA_CHECK
+        Drawing_t *drawing = control_flow_data->drawing;
         guint width = drawing->width;
         guint x;
 
