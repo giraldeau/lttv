@@ -238,7 +238,7 @@ While list_in !empty and list_out !empty
       (1.3.2 middle hooks added)
   2. Else, list_in is not empty, we continue a read
     2.1 For each req of list_out
-    - if req.start time == current time
+    - if req.start time == current context time
       - Add to list_in, remove from list_out
       - Call begin
     - if req.start position == current position
@@ -265,7 +265,7 @@ While list_in !empty and list_out !empty
           - if req.num == 0
             - Call end for req
             - remove req from list_in
-          - if req.end time == current time
+          - if current context time > req.end time
             - Call end for req
             - remove req from list_in
           - if req.end pos == current pos
