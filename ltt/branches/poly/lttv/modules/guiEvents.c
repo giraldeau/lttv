@@ -802,6 +802,35 @@ gboolean show_event_detail(void * hook_data, void * call_data)
   return FALSE;
 }
 
+void insert_data_into_model(EventViewerData *event_viewer_data, int start, int end)
+{
+  int i;
+  guint64 real_data;
+  RawTraceData * raw_data;
+  GList * first;
+  GtkTreeIter iter;
+
+  first = event_viewer_data->raw_trace_data_queue->head;
+  for(i=start; i<end; i++){
+    if(i>=event_viewer_data->number_of_events) break;    
+    raw_data = (RawTraceData*)g_list_nth_data(first, i);
+    
+    // Add a new row to the model 
+    real_data = raw_data->time.tv_sec;
+    real_data *= NANOSECONDS_PER_SECOND;
+    real_data += raw_data->time.tv_nsec;
+    gtk_list_store_append (event_viewer_data->store_m, &iter);
+    gtk_list_store_set (event_viewer_data->store_m, &iter,
+			CPUID_COLUMN, raw_data->cpu_id,
+			EVENT_COLUMN, raw_data->event_name,
+			TIME_COLUMN, real_data,
+			PID_COLUMN, raw_data->pid,
+			ENTRY_LEN_COLUMN, raw_data->entry_length,
+			EVENT_DESCR_COLUMN, raw_data->event_description,
+			-1);
+  }
+}
+
 void get_test_data(double time_value, guint list_height, 
 		   EventViewerData *event_viewer_data)
 {
@@ -1047,39 +1076,7 @@ void get_test_data(double time_value, guint list_height,
       goto LAST;
     }else gtk_widget_show(event_viewer_data->vscroll_vc);
 
-    for(i=event_number; i<event_number+list_height; i++)
-      {
-	guint64 real_data;
-
-	if(i>=event_viewer_data->number_of_events) break;
-       
-	raw_data = (RawTraceData*)g_list_nth_data(first, i);
-
-	// Add a new row to the model 
-	real_data = raw_data->time.tv_sec;
-	real_data *= NANOSECONDS_PER_SECOND;
-	real_data += raw_data->time.tv_nsec;
-	gtk_list_store_append (event_viewer_data->store_m, &iter);
-	gtk_list_store_set (event_viewer_data->store_m, &iter,
-			    CPUID_COLUMN, raw_data->cpu_id,
-			    EVENT_COLUMN, raw_data->event_name,
-			    TIME_COLUMN, real_data,
-			    PID_COLUMN, raw_data->pid,
-			    ENTRY_LEN_COLUMN, raw_data->entry_length,
-			    EVENT_DESCR_COLUMN, raw_data->event_description,
-			    -1);
-/*
-	gtk_list_store_append (event_viewer_data->store_m, &iter);
-	gtk_list_store_set (event_viewer_data->store_m, &iter,
-			    CPUID_COLUMN, 0,
-			    EVENT_COLUMN, "event irq",
-			    TIME_COLUMN, i,
-			    PID_COLUMN, 100,
-			    ENTRY_LEN_COLUMN, 17,
-			    EVENT_DESCR_COLUMN, "Detailed information",
-			    -1);
-*/
-      }
+    insert_data_into_model(event_viewer_data,event_number, event_number+list_height);
   }
 #ifdef DEBUG //do not use this, it's slower and broken
   //	} else {
@@ -1417,16 +1414,22 @@ gboolean update_current_time(void * hook_data, void * call_data)
                   + event_viewer_data->current_time.tv_nsec;
   GtkTreeIter iter;
   guint64 time;
-  int count = 0;
+  int count = -1;
   GtkTreeModel* model = (GtkTreeModel*)event_viewer_data->store_m;
+  GList * list;
+  RawTraceData * data, *data1;
+  GtkTreePath* path;
+  char str_path[64];
+  int i, j;
 
-
+  //check if the event is shown in the current viewer
   if(gtk_tree_model_get_iter_first(model, &iter)){
     while(1){
       gtk_tree_model_get(model, &iter, TIME_COLUMN, &time, -1);
       if(time < nsec){
 	if(!gtk_tree_model_iter_next(model, &iter)){
-	  return TRUE;
+	  count = -1;
+	  break;
 	}
 	count++;
       }else{
@@ -1435,6 +1438,47 @@ gboolean update_current_time(void * hook_data, void * call_data)
     }
     //    event_selected_hook(event_viewer_data, &count);
   }
+
+  //the event is not shown in the current viewer
+  if(count == -1){
+    count = 0;
+    //check if the event is in the buffer
+    list = event_viewer_data->raw_trace_data_queue->head;
+    data = (RawTraceData*)g_list_nth_data(list,0);
+    data1 = (RawTraceData*)g_list_nth_data(list,event_viewer_data->raw_trace_data_queue->length-1);
+
+    //the event is in the buffer
+    if(ltt_time_compare(data->time, event_viewer_data->current_time)<=0 &&
+       ltt_time_compare(data1->time, event_viewer_data->current_time)>=0){
+      for(i=0;i<event_viewer_data->raw_trace_data_queue->length;i++){
+	data = (RawTraceData*)g_list_nth_data(list,i);
+	if(ltt_time_compare(data->time, event_viewer_data->current_time) < 0){
+	  count++;
+	  continue;
+	}
+	break;
+      }
+      if(event_viewer_data->raw_trace_data_queue->length-count < event_viewer_data->num_visible_events){
+	j = event_viewer_data->raw_trace_data_queue->length - event_viewer_data->num_visible_events;
+	count -= j;
+      }else{
+	j = count;
+	count = 0;
+      }
+      insert_data_into_model(event_viewer_data,j, j+event_viewer_data->num_visible_events);      
+    }else{//the event is not in the buffer
+      LttTime start = ltt_time_sub(event_viewer_data->current_time, event_viewer_data->time_span.startTime);
+      double position = ltt_time_to_double(start) * NANOSECONDS_PER_SECOND;
+      get_test_data(position,
+		    event_viewer_data->num_visible_events, 
+		    event_viewer_data);      
+    }
+  }
+
+  sprintf(str_path,"%d\0",count);
+  path = gtk_tree_path_new_from_string (str_path);
+  gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v), path, NULL, FALSE);
+  gtk_tree_path_free(path);  
 
   return FALSE;
 }
@@ -1502,7 +1546,7 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
 	  }	  
 	}
 
-	for(i=0;i<event_viewer_data->raw_trace_data_queue_tmp->length-1;i++){
+	for(i=0;i<event_viewer_data->raw_trace_data_queue_tmp->length;i++){
 	  data = (RawTraceData*)g_list_nth_data(tmpList,i);
 	  len = data->pid==0 ? -2 : data->pid;
 	  if(data->cpu_id+1 > tmp_pid_array->len){
@@ -1518,7 +1562,7 @@ void update_raw_data_array(EventViewerData* event_viewer_data, unsigned size)
 	  }	  
 	}
       }else{
-	for(i=0;i<event_viewer_data->raw_trace_data_queue->length-1;i++){
+	for(i=0;i<event_viewer_data->raw_trace_data_queue->length;i++){
 	  data = (RawTraceData*)g_list_nth_data(list,i);
 	  len = data->pid==0 ? -2 : data->pid;
 	  if(data->cpu_id+1 > pid_array->len){
