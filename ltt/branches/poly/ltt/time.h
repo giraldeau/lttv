@@ -62,15 +62,17 @@ static inline LttTime ltt_time_add(LttTime t1, LttTime t2)
   return res;
 }
 
+#define likely(x) __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
 
 /* Fastest comparison : t1 > t2 */
 static inline int ltt_time_compare(LttTime t1, LttTime t2)
 {
   int ret=0;
-  if(t1.tv_sec > t2.tv_sec) ret = 1;
-  else if(t1.tv_sec < t2.tv_sec) ret = -1;
-  else if(t1.tv_nsec > t2.tv_nsec) ret = 1;
-  else if(t1.tv_nsec < t2.tv_nsec) ret = -1;
+  if(likely(t1.tv_sec > t2.tv_sec)) ret = 1;
+  else if(unlikely(t1.tv_sec < t2.tv_sec)) ret = -1;
+  else if(likely(t1.tv_nsec > t2.tv_nsec)) ret = 1;
+  else if(unlikely(t1.tv_nsec < t2.tv_nsec)) ret = -1;
   
   return ret;
 }

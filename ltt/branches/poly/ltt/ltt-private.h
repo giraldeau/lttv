@@ -160,7 +160,8 @@ struct _LttTracefile{
   BlockEnd   * a_block_end;          //block end of the block
   void * cur_event_pos;              //the position of the current event
   void * buffer;                     //the buffer containing the block
-  double cycle_per_nsec;             //Cycles per nsec
+  double nsec_per_cycle;             //Nsec per cycle
+  //LttCycleCount cycles_per_nsec_reciprocal; // Optimisation for speed
   unsigned cur_heart_beat_number;    //current number of heart beat in the buf
   LttCycleCount cur_cycle_count;     //current cycle count of the event
   void * last_event_pos;

@@ -1245,8 +1245,8 @@ int skipEvent(LttTracefile * t)
 void getCyclePerNsec(LttTracefile * t)
 {
   LttTime           lBufTotalTime; /* Total time for this buffer */
-  LttCycleCount     lBufTotalNSec; /* Total time for this buffer in nsecs */
-  LttCycleCount     lBufTotalCycle;/* Total cycles for this buffer */
+  double            lBufTotalNSec; /* Total time for this buffer in nsecs */
+  double            lBufTotalCycle;/* Total cycles for this buffer */
 
   /* Calculate the total time for this buffer */
   lBufTotalTime = ltt_time_sub(t->a_block_end->time, t->a_block_start->time);
@@ -1256,16 +1256,24 @@ void getCyclePerNsec(LttTracefile * t)
   lBufTotalCycle -= t->a_block_start->cycle_count;
 
   /* Convert the total time to nsecs */
-  lBufTotalNSec  = lBufTotalTime.tv_sec;
-  lBufTotalNSec *= NANOSECONDS_PER_SECOND; 
-  lBufTotalNSec += lBufTotalTime.tv_nsec;
+  lBufTotalNSec  = ltt_time_to_double(lBufTotalTime);
   
-  t->cycle_per_nsec = (double)lBufTotalCycle / (double)lBufTotalNSec;
+  t->nsec_per_cycle = (double)lBufTotalNSec / (double)lBufTotalCycle;
+  /* See : http://www.azillionmonkeys.com/qed/adiv.html */
+  // precalculate the reciprocal, so divisions will be really fast.
+  // 2^32-1 == 0xFFFFFFFFULL
+  //{
+  //  double int_res = lBufTotalCycle/lBufTotalNSec;
+  //  t->cycles_per_nsec_reciprocal = 
+  //            ((0xFFFF+int_res)/int_res);
+  //}
+
 }
 
 /****************************************************************************
  *Function name
  *    getEventTime    : obtain the time of an event 
+ *                      NOTE : this function _really_ is on critical path.
  *Input params 
  *    tf              : tracefile
  *Return value
@@ -1277,7 +1285,7 @@ static inline LttTime getEventTime(LttTracefile * tf)
   LttTime       time;
   LttCycleCount cycle_count;      // cycle count for the current event
   LttCycleCount lEventTotalCycle; // Total cycles from start for event
-  double        lEventNSec;       // Total nsecs from start for event
+  LttCycleCount lEventNSec;       // Total nsecs from start for event
   LttTime       lTimeOffset;      // Time offset in struct LttTime
   guint16       evId;
 
@@ -1310,8 +1318,9 @@ static inline LttTime getEventTime(LttTracefile * tf)
   lEventTotalCycle -= tf->a_block_start->cycle_count;
 
   // Convert it to nsecs
-  lEventNSec = (double)lEventTotalCycle / (double)tf->cycle_per_nsec;
-
+  lEventNSec = (double)lEventTotalCycle * (double)tf->nsec_per_cycle;
+  //lEventNSec = (tf->cycles_per_nsec_reciprocal * lEventTotalCycle) >> 16;
+  
   // Determine offset in struct LttTime 
   lTimeOffset = ltt_time_from_double(lEventNSec);
 
