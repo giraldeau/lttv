@@ -142,7 +142,7 @@ Added to the lttvwindow API :
 
 void lttvwindow_events_request
 ( MainWindow                  *main_win,
-  EventsRequest                events_request);
+  EventsRequest               *events_request);
 
 
 Internal functions :
@@ -166,22 +166,27 @@ each viewer through process traceset.
 
 - lttvwindow_events_request
 
-It adds the EventsRequest struct to the array of time requests pending and
-registers a pending request for the next g_idle if none is registered.
+It adds the a pointer to the EventsRequest struct to the array of time requests
+pending and registers a pending request for the next g_idle if none is
+registered. The viewer has to keep a reference to this structure in its own
+instance data structure. Only the stop_flag can be changed by the viewer
+through the event hooks.
 
 typedef struct _EventsRequest {
-  LttTime                     start_time,       /* Unset : { 0, 0 }       */
-  LttvTracesetContextPosition start_position,   /* Unset : num_traces = 0 */
-  LttTime                     end_time,         /* Unset : { 0, 0 }       */
-  guint                       num_events,       /* Unset : G_MAXUINT      */
-  LttvTracesetContextPosition end_position,     /* Unset : num_traces = 0 */
-  LttvHooksById              *before_traceset,  /* Unset : NULL           */
-  LttvHooksById              *before_trace,     /* Unset : NULL           */
-  LttvHooksById              *before_tracefile, /* Unset : NULL           */
-  LttvHooksById              *middle,           /* Unset : NULL           */
-  LttvHooksById              *after_tracefile,  /* Unset : NULL           */
-  LttvHooksById              *after_trace,      /* Unset : NULL           */
-  LttvHooksById              *after_traceset    /* Unset : NULL           */
+  LttTime                     start_time,       /* Unset : { 0, 0 }         */
+  LttvTracesetContextPosition start_position,   /* Unset : num_traces = 0   */
+  gboolean                    stop_flag,        /* Continue:TRUE Stop:FALSE */
+  LttTime                     end_time,         /* Unset : { 0, 0 }         */
+  guint                       num_events,       /* Unset : G_MAXUINT        */
+  LttvTracesetContextPosition end_position,     /* Unset : num_traces = 0   */
+  LttvHooks                  *before_traceset,  /* Unset : NULL             */
+  LttvHooks                  *before_trace,     /* Unset : NULL             */
+  LttvHooks                  *before_tracefile, /* Unset : NULL             */
+  LttvHooks                  *event,            /* Unset : NULL             */
+  LttvHooksById              *event_by_id,      /* Unset : NULL             */
+  LttvHooks                  *after_tracefile,  /* Unset : NULL             */
+  LttvHooks                  *after_trace,      /* Unset : NULL             */
+  LttvHooks                  *after_traceset    /* Unset : NULL             */
 } EventsRequest;
 
 
@@ -248,6 +253,7 @@ While list_in !empty and list_out !empty
 
   4. Call process traceset middle
     4.1 Call process traceset middle (Use end criterion found in 3)
+      * note : end criterion can also be viewer's hook returning TRUE
   5. After process traceset middle
     5.1 For each req in list_in
           - req.num -= count
@@ -260,6 +266,9 @@ While list_in !empty and list_out !empty
           - if req.end pos == current pos
             - Call end for req
             - remove req from list_in
+          - if req.stop_flag == TRUE
+            - Call end for req
+            - remove req from list_in
 
 
 
@@ -269,6 +278,7 @@ If the criterion is reached, event is out of boundaries and we return.
 Current time >= End time
 Event count > Number of events
 Current position >= End position
+Last hook list called returned TRUE
 
 The >= for position is necessary to make ensure consistency between start time
 requests and positions requests that happens to be at the exact same start time
