@@ -89,7 +89,7 @@ LttvTraceset *lttv_traceset_copy(LttvTraceset *s_orig)
         s->traces,
 	g_ptr_array_index(s_orig->traces, i));
   }
-  s->a = LTTV_ATTRIBUTE(lttv_iattribute_deep_copy((LttvIAttribute*)s_orig->a));
+  s->a = LTTV_ATTRIBUTE(lttv_iattribute_deep_copy(LTTV_IATTRIBUTE(s_orig->a)));
   return s;
 }
 
