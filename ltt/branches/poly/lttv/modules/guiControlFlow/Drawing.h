@@ -36,7 +36,7 @@
 typedef struct _Drawing_t Drawing_t;
 
 struct _Drawing_t {
-  GtkWidget *Drawing_Area_V;
+  GtkWidget *drawing_area;
   GdkPixmap *Pixmap;
   ControlFlowData *control_flow_data;
   

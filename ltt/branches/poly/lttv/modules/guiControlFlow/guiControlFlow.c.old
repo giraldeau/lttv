@@ -53,7 +53,7 @@ typedef struct _EventRequest
  *                         Function prototypes                               *
  *****************************************************************************/
 //! Control Flow Viewer's constructor hook
-GtkWidget *hGuiControlFlow(GtkWidget *pmParentWindow);
+GtkWidget *hGuiControlFlow(GtkWidget *mw);
 //! Control Flow Viewer's constructor
 ControlFlowData *GuiControlFlow(void);
 //! Control Flow Viewer's destructor
@@ -87,7 +87,7 @@ static void expose_event_cb (GtkWidget *widget, GdkEventExpose *expose, gpointer
 
 void add_test_process(ControlFlowData *control_flow_data);
 
-static void get_test_data(guint Event_Number, guint List_Height, 
+static void get_test_data(guint event_number, guint List_Height, 
 									 ControlFlowData *control_flow_data);
 
 void add_test_data(ControlFlowData *control_flow_data);

@@ -37,12 +37,12 @@ typedef struct _EventRequest
 
 void send_test_data(ProcessList *process_list, Drawing_t *Drawing);
 
-GtkWidget *h_guicontrolflow(MainWindow *pmParentWindow, LttvTracesetSelector * s, char * key);
+GtkWidget *h_guicontrolflow(MainWindow *mw, LttvTracesetSelector * s, char * key);
 
 int event_selected_hook(void *hook_data, void *call_data);
 
 /* Hook called before drawing. Gets the initial context at the beginning of the
- * drawing interval and copy it to the context in Event_Request.
+ * drawing interval and copy it to the context in event_request.
  */
 int draw_before_hook(void *hook_data, void *call_data);
 

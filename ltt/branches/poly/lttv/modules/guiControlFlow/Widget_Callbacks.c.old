@@ -5,16 +5,16 @@ void expose_event_cb (GtkWidget *widget, GdkEventExpose *expose, gpointer data)
 {
 	ControlFlowData *control_flow_data = (ControlFlowData*)data;
 
-	EventRequest *Event_Request = g_new(sizeof(EventRequest));
+	EventRequest *event_request = g_new(sizeof(EventRequest));
 	
-	Event_Request->control_flow_data = control_flow_data;
+	event_request->control_flow_data = control_flow_data;
 	
 	/* Calculate, from pixels in expose, the time interval to get data */
 	
 	get_time_from_pixels(expose->area.x, expose->area.width,
 													control_flow_data->Drawing_Area_Info.width,
 													&control_flow_data->Begin_Time, &control_flow_data->End_Time,
-													&Event_Request->time_begin, &Event_Request->time_end)
+													&event_request->time_begin, &event_request->time_end)
 	
 	/* Look in statistics of the trace the processes present during the
 	 * whole time interval _shown on the screen_. Modify the list of 
@@ -28,8 +28,8 @@ void expose_event_cb (GtkWidget *widget, GdkEventExpose *expose, gpointer data)
 													Draw_Event_Hooks,
 													Draw_After_Hooks,
 													NULL, //FIXME : filter here
-													Event_Request->time_begin,
-													Event_Request->time_end);
+													event_request->time_begin,
+													event_request->time_end);
 
 }
 

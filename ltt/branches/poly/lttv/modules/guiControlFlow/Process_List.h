@@ -40,7 +40,7 @@ struct _ProcessList {
   GtkListStore *Store_M;
 
   /* A hash table by PID to speed up process position find in the list */
-  GHashTable *Process_Hash;
+  GHashTable *process_hash;
   
   guint number_of_process;
   gboolean Test_Process_Sent;
@@ -57,7 +57,7 @@ GtkWidget *processlist_get_widget(ProcessList *process_list);
 // out : success (0) and height
 int processlist_add(ProcessList *process_list, guint pid, LttTime *birth,
     gchar *name,
-    guint *height, HashedProcessData **Hashed_Process_Data);
+    guint *height, HashedProcessData **hashed_process_data);
 // out : success (0) and height
 int processlist_remove(ProcessList *process_list, guint pid, LttTime *birth);
 
@@ -67,11 +67,11 @@ guint processlist_get_height(ProcessList *process_list);
 gint processlist_get_process_pixels(ProcessList *process_list,
         guint pid, LttTime *birth,
         guint *y, guint *height,
-        HashedProcessData **Hashed_Process_Data);
+        HashedProcessData **hashed_process_data);
 
 gint processlist_get_pixels_from_data(  ProcessList *process_list,
           ProcessInfo *process_info,
-          HashedProcessData *Hashed_Process_Data,
+          HashedProcessData *hashed_process_data,
           guint *y,
           guint *height);
 

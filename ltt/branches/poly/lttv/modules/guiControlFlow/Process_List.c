@@ -195,7 +195,7 @@ ProcessList *processlist_construct(void)
       PID_COLUMN,
       GTK_SORT_ASCENDING);
   
-  process_list->Process_Hash = g_hash_table_new_full(
+  process_list->process_hash = g_hash_table_new_full(
       hash_fct, equ_fct,
       destroy_hash_key, destroy_hash_data
       );
@@ -259,8 +259,8 @@ ProcessList *processlist_construct(void)
 }
 void processlist_destroy(ProcessList *process_list)
 {
-  g_hash_table_destroy(process_list->Process_Hash);
-  process_list->Process_Hash = NULL;
+  g_hash_table_destroy(process_list->process_hash);
+  process_list->process_hash = NULL;
 
   g_free(process_list);
 }
@@ -301,60 +301,60 @@ int processlist_add(  ProcessList *process_list,
       LttTime *birth,
       gchar *name,
       guint *height,
-      HashedProcessData **pmHashed_Process_Data)
+      HashedProcessData **pmhashed_process_data)
 {
   GtkTreeIter iter ;
   ProcessInfo *Process_Info = g_new(ProcessInfo, 1);
-  HashedProcessData *Hashed_Process_Data = g_new(HashedProcessData, 1);
-  *pmHashed_Process_Data = Hashed_Process_Data;
+  HashedProcessData *hashed_process_data = g_new(HashedProcessData, 1);
+  *pmhashed_process_data = hashed_process_data;
   
   Process_Info->pid = pid;
   Process_Info->birth = *birth;
   
-  Hashed_Process_Data->draw_context = g_new(DrawContext, 1);
-  Hashed_Process_Data->draw_context->drawable = NULL;
-  Hashed_Process_Data->draw_context->gc = NULL;
-  Hashed_Process_Data->draw_context->pango_layout = NULL;
-  Hashed_Process_Data->draw_context->current = g_new(DrawInfo,1);
-  Hashed_Process_Data->draw_context->current->over = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->current->over->x = -1;
-  Hashed_Process_Data->draw_context->current->over->y = -1;
-  Hashed_Process_Data->draw_context->current->middle = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->current->middle->x = -1;
-  Hashed_Process_Data->draw_context->current->middle->y = -1;
-  Hashed_Process_Data->draw_context->current->under = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->current->under->x = -1;
-  Hashed_Process_Data->draw_context->current->under->y = -1;
-  Hashed_Process_Data->draw_context->current->modify_over = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->current->modify_over->x = -1;
-  Hashed_Process_Data->draw_context->current->modify_over->y = -1;
-  Hashed_Process_Data->draw_context->current->modify_middle = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->current->modify_middle->x = -1;
-  Hashed_Process_Data->draw_context->current->modify_middle->y = -1;
-  Hashed_Process_Data->draw_context->current->modify_under = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->current->modify_under->x = -1;
-  Hashed_Process_Data->draw_context->current->modify_under->y = -1;
-  Hashed_Process_Data->draw_context->current->status = LTTV_STATE_UNNAMED;
-  Hashed_Process_Data->draw_context->previous = g_new(DrawInfo,1);
-  Hashed_Process_Data->draw_context->previous->over = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->previous->over->x = -1;
-  Hashed_Process_Data->draw_context->previous->over->y = -1;
-  Hashed_Process_Data->draw_context->previous->middle = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->previous->middle->x = -1;
-  Hashed_Process_Data->draw_context->previous->middle->y = -1;
-  Hashed_Process_Data->draw_context->previous->under = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->previous->under->x = -1;
-  Hashed_Process_Data->draw_context->previous->under->y = -1;
-  Hashed_Process_Data->draw_context->previous->modify_over = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->previous->modify_over->x = -1;
-  Hashed_Process_Data->draw_context->previous->modify_over->y = -1;
-  Hashed_Process_Data->draw_context->previous->modify_middle = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->previous->modify_middle->x = -1;
-  Hashed_Process_Data->draw_context->previous->modify_middle->y = -1;
-  Hashed_Process_Data->draw_context->previous->modify_under = g_new(ItemInfo,1);
-  Hashed_Process_Data->draw_context->previous->modify_under->x = -1;
-  Hashed_Process_Data->draw_context->previous->modify_under->y = -1;
-  Hashed_Process_Data->draw_context->previous->status = LTTV_STATE_UNNAMED;
+  hashed_process_data->draw_context = g_new(DrawContext, 1);
+  hashed_process_data->draw_context->drawable = NULL;
+  hashed_process_data->draw_context->gc = NULL;
+  hashed_process_data->draw_context->pango_layout = NULL;
+  hashed_process_data->draw_context->current = g_new(DrawInfo,1);
+  hashed_process_data->draw_context->current->over = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->current->over->x = -1;
+  hashed_process_data->draw_context->current->over->y = -1;
+  hashed_process_data->draw_context->current->middle = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->current->middle->x = -1;
+  hashed_process_data->draw_context->current->middle->y = -1;
+  hashed_process_data->draw_context->current->under = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->current->under->x = -1;
+  hashed_process_data->draw_context->current->under->y = -1;
+  hashed_process_data->draw_context->current->modify_over = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->current->modify_over->x = -1;
+  hashed_process_data->draw_context->current->modify_over->y = -1;
+  hashed_process_data->draw_context->current->modify_middle = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->current->modify_middle->x = -1;
+  hashed_process_data->draw_context->current->modify_middle->y = -1;
+  hashed_process_data->draw_context->current->modify_under = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->current->modify_under->x = -1;
+  hashed_process_data->draw_context->current->modify_under->y = -1;
+  hashed_process_data->draw_context->current->status = LTTV_STATE_UNNAMED;
+  hashed_process_data->draw_context->previous = g_new(DrawInfo,1);
+  hashed_process_data->draw_context->previous->over = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->previous->over->x = -1;
+  hashed_process_data->draw_context->previous->over->y = -1;
+  hashed_process_data->draw_context->previous->middle = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->previous->middle->x = -1;
+  hashed_process_data->draw_context->previous->middle->y = -1;
+  hashed_process_data->draw_context->previous->under = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->previous->under->x = -1;
+  hashed_process_data->draw_context->previous->under->y = -1;
+  hashed_process_data->draw_context->previous->modify_over = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->previous->modify_over->x = -1;
+  hashed_process_data->draw_context->previous->modify_over->y = -1;
+  hashed_process_data->draw_context->previous->modify_middle = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->previous->modify_middle->x = -1;
+  hashed_process_data->draw_context->previous->modify_middle->y = -1;
+  hashed_process_data->draw_context->previous->modify_under = g_new(ItemInfo,1);
+  hashed_process_data->draw_context->previous->modify_under->x = -1;
+  hashed_process_data->draw_context->previous->modify_under->y = -1;
+  hashed_process_data->draw_context->previous->status = LTTV_STATE_UNNAMED;
   
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->Store_M, &iter);
@@ -368,14 +368,14 @@ int processlist_add(  ProcessList *process_list,
         BIRTH_S_COLUMN, birth->tv_sec,
         BIRTH_NS_COLUMN, birth->tv_nsec,
         -1);
-  Hashed_Process_Data->RowRef = gtk_tree_row_reference_new (
+  hashed_process_data->RowRef = gtk_tree_row_reference_new (
       GTK_TREE_MODEL(process_list->Store_M),
       gtk_tree_model_get_path(
         GTK_TREE_MODEL(process_list->Store_M),
         &iter));
-  g_hash_table_insert(  process_list->Process_Hash,
+  g_hash_table_insert(  process_list->process_hash,
         (gpointer)Process_Info,
-        (gpointer)Hashed_Process_Data);
+        (gpointer)hashed_process_data);
   
   //g_critical ( "iter after : %s", gtk_tree_path_to_string (
   //    gtk_tree_model_get_path (
@@ -397,45 +397,45 @@ int processlist_remove( ProcessList *process_list,
 {
   ProcessInfo Process_Info;
   gint *path_indices;
-  HashedProcessData *Hashed_Process_Data;
+  HashedProcessData *hashed_process_data;
   GtkTreeIter iter;
   
   Process_Info.pid = pid;
   Process_Info.birth = *birth;
 
 
-  if(Hashed_Process_Data = 
+  if(hashed_process_data = 
     (HashedProcessData*)g_hash_table_lookup(
-          process_list->Process_Hash,
+          process_list->process_hash,
           &Process_Info))
   {
     gtk_tree_model_get_iter (
         GTK_TREE_MODEL(process_list->Store_M),
         &iter,
         gtk_tree_row_reference_get_path(
-          (GtkTreeRowReference*)Hashed_Process_Data->RowRef)
+          (GtkTreeRowReference*)hashed_process_data->RowRef)
         );
 
     gtk_list_store_remove (process_list->Store_M, &iter);
     
-    g_free(Hashed_Process_Data->draw_context->previous->modify_under);
-    g_free(Hashed_Process_Data->draw_context->previous->modify_middle);
-    g_free(Hashed_Process_Data->draw_context->previous->modify_over);
-    g_free(Hashed_Process_Data->draw_context->previous->under);
-    g_free(Hashed_Process_Data->draw_context->previous->middle);
-    g_free(Hashed_Process_Data->draw_context->previous->over);
-    g_free(Hashed_Process_Data->draw_context->previous);
-    g_free(Hashed_Process_Data->draw_context->current->modify_under);
-    g_free(Hashed_Process_Data->draw_context->current->modify_middle);
-    g_free(Hashed_Process_Data->draw_context->current->modify_over);
-    g_free(Hashed_Process_Data->draw_context->current->under);
-    g_free(Hashed_Process_Data->draw_context->current->middle);
-    g_free(Hashed_Process_Data->draw_context->current->over);
-    g_free(Hashed_Process_Data->draw_context->current);
-    g_free(Hashed_Process_Data->draw_context);
-    g_free(Hashed_Process_Data);
+    g_free(hashed_process_data->draw_context->previous->modify_under);
+    g_free(hashed_process_data->draw_context->previous->modify_middle);
+    g_free(hashed_process_data->draw_context->previous->modify_over);
+    g_free(hashed_process_data->draw_context->previous->under);
+    g_free(hashed_process_data->draw_context->previous->middle);
+    g_free(hashed_process_data->draw_context->previous->over);
+    g_free(hashed_process_data->draw_context->previous);
+    g_free(hashed_process_data->draw_context->current->modify_under);
+    g_free(hashed_process_data->draw_context->current->modify_middle);
+    g_free(hashed_process_data->draw_context->current->modify_over);
+    g_free(hashed_process_data->draw_context->current->under);
+    g_free(hashed_process_data->draw_context->current->middle);
+    g_free(hashed_process_data->draw_context->current->over);
+    g_free(hashed_process_data->draw_context->current);
+    g_free(hashed_process_data->draw_context);
+    g_free(hashed_process_data);
 
-    g_hash_table_remove(process_list->Process_Hash,
+    g_hash_table_remove(process_list->process_hash,
         &Process_Info);
     
     process_list->number_of_process--;
@@ -458,32 +458,32 @@ gint processlist_get_process_pixels(  ProcessList *process_list,
           guint pid, LttTime *birth,
           guint *y,
           guint *height,
-          HashedProcessData **pmHashed_Process_Data)
+          HashedProcessData **pmhashed_process_data)
 {
   ProcessInfo Process_Info;
   gint *path_indices;
   GtkTreePath *tree_path;
-  HashedProcessData *Hashed_Process_Data = NULL;
+  HashedProcessData *hashed_process_data = NULL;
 
   Process_Info.pid = pid;
   Process_Info.birth = *birth;
 
-  if(Hashed_Process_Data = 
+  if(hashed_process_data = 
     (HashedProcessData*)g_hash_table_lookup(
-          process_list->Process_Hash,
+          process_list->process_hash,
           &Process_Info))
   {
     tree_path = gtk_tree_row_reference_get_path(
-                    Hashed_Process_Data->RowRef);
+                    hashed_process_data->RowRef);
     path_indices =  gtk_tree_path_get_indices (tree_path);
 
     *height = get_cell_height(
         GTK_TREE_VIEW(process_list->process_list_VC));
     *y = *height * path_indices[0];
-    *pmHashed_Process_Data = Hashed_Process_Data;
+    *pmhashed_process_data = hashed_process_data;
     return 0; 
   } else {
-    *pmHashed_Process_Data = Hashed_Process_Data;
+    *pmhashed_process_data = hashed_process_data;
     return 1;
   }
 
@@ -492,7 +492,7 @@ gint processlist_get_process_pixels(  ProcessList *process_list,
 
 gint processlist_get_pixels_from_data(  ProcessList *process_list,
           ProcessInfo *process_info,
-          HashedProcessData *Hashed_Process_Data,
+          HashedProcessData *hashed_process_data,
           guint *y,
           guint *height)
 {
@@ -500,7 +500,7 @@ gint processlist_get_pixels_from_data(  ProcessList *process_list,
   GtkTreePath *tree_path;
 
   tree_path = gtk_tree_row_reference_get_path(
-                  Hashed_Process_Data->RowRef);
+                  hashed_process_data->RowRef);
   path_indices =  gtk_tree_path_get_indices (tree_path);
 
   *height = get_cell_height(
