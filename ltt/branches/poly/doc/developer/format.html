@@ -41,9 +41,11 @@ facilities used. The syntax is a simple subset of XML; XML is widely
 known and easily parsed or hand edited. Each file contains one or more
 <FACILITY NAME=name>...</FACILITY> elements. Indeed, several
 facilities may have the same name but different content (and thus will
-generate a different checksum), typically when the event descriptions
-for a given facility change from one version to the next, if a module
-is recompiled and reloaded during a trace.
+generate a different checksum). It typically happens when, while tracing
+is enabled, a module using the named facility is unloaded, modified
+(along with the description of some events), recompiled and reloaded.
+Then, the trace will contain events from two different, similarly named,
+facility versions.
 
 <P>
 A small number of events are predefined, part of the "builtin" facility, 

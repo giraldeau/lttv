@@ -1,9 +1,11 @@
-Project author : Karim Yaghmour
+Project author: Karim Yaghmour
 
 Contributors :
 
-Michel Dagenais (Coordination of other contributions)
-Tom Zanussi (RelayFS)
+Michel Dagenais (New trace format, lttv main)
+Mathieu Desnoyers (Directory structure, build with automake/conf,
+                   lttv gui, control flow view)
 Benoit Des Ligneris (Cluster adaptation)
-Xang-Xiu Yang (LibLTT API, modular user interface) 
-Mathieu Desnoyers (Modular user interface, modular tools, packaging)
+Xang-Xiu Yang (new trace reading library and converter, lttv gui, 
+               detailed event list and statistics view)
+Tom Zanussi (RelayFS)

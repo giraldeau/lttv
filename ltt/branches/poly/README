@@ -1,3 +1,10 @@
+
+This package contains the trace reading library and trace viewing tools for
+the new Linux Trace Toolkit trace format. The associated kernel files to
+generate the new traces are not yet included. In the meantime, a converter
+from the old trace format to the new is provided. For more detailed information
+see doc/developer/index.html
+
 * Compiling
 
 Some development libraries are needed for compiling :
@@ -21,17 +28,17 @@ use make, make install.
 
 This is a sample of the suggested tree for Linux Trace Toolkit.
 
-LibLTT : Libraries used for LTT.
-README : This file. Introduction pointing to specific resources in the tree.
-debian : debian config files.
-doc :    LTT Documentation.
-doc/user :      User related documentation.
-doc/developer : Developer related documentation.
-kernel : LTT kernel patches.
-lttd :   Linux Trace Toolkit daemon.
-lttv :   Linux Trace Toolkit visualizer/analyzer.
-lttv/plugins :  Linux Trace Toolkit visualizer plugins.
-specs :  RPM config files.
+ltt: new trace format reading library (and converter).
+README: This file.
+debian: debian config files (currently empty).
+doc:    Documentation.
+doc/user:      User related documentation.
+doc/developer: Developer related documentation.
+kernel: Linux Trace Toolkit kernel code (currently empty).
+lttd:   Linux Trace Toolkit daemon (currently empty).
+lttv:   Linux Trace Toolkit trace analysis tool and viewer.
+lttv/modules:  Linux Trace Toolkit analysis tool and viewer plugin modules.
+specs:  RPM config files (currently empty).
 
 
 * For Developers
