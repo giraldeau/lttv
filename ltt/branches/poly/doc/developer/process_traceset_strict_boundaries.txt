@@ -8,14 +8,16 @@ Mathieu Desnoyers 17-05-2004
 The goal of this document is to describe the typical behavior of viewers when
 they request data to a process traceset. After the implementation of three
 viewers, with different needs, the idea of their need for a trace processing API
-is getting clearer.
+is getting clearer. We then describe a new API for process traceset that would
+better suits the needs of those viewers.
 
 They are splitted in two different categories : the first one is the one where
 the viewers select the events they need by specifying a time interval in the
-traceset and the second one is where the viewers specify a start event by it's
+traceset and the second one is where the viewers specify a start event by its
 position in the traceset and a certain amount of events it needs.
 
-
+This is a simplified case study : we look at the direct interaction between
+graphical viewers and process traceset, without the main window as a negociator.
 
 Control Flow Viewer
 
@@ -34,63 +36,85 @@ tracefile (one cpu), but the way events are read through each trace
 (monothically increasing time) makes it a little bit more difficult to specify
 how to increment event position. We will determine how it could be done simply.
 
-Let's define an event position. It's composed of a tracefile number, a bloc
-number and an index in the bloc.
+Let's define an event position. It's a pointer to a position into each
+tracefile. It's only meaningful when associated with a context. Comparisons
+between positions are done by looking comparing saved positions for each
+tracefile, until a difference is found.
 
-A viewer could ask for a specific event position as a start event. It would
-specify a number of events it needs. As a first call, it could ask for tracefile
-0, bloc 0, event 0. Afterward, it can reuse information from events delivered to
-keep track of the next events it needs.
+A viewer could use a start time as a start event. It would specify a number of
+events it needs. As a first call, it could ask for the start time of the
+traceset. Afterward, it can save the position of the context after the last
+event has been delivered in its after traceset function.
 
 Now, let's see how process traceset could handle it. It would seek in the
 traceset, searching the position number.
 (need a new lttv_process_traceset_seek_position)
 
-Then, the viewer could simply call a process traceset function specifying a
-number of events to get.
+Then, the viewer could simply call a process traceset middle function
+specifying a number of events to get.
 
 The whole concept of numbering events would be hidden in the order in which the
 process traceset gets the events in a monothically increasing time.
-
-We sould specify that a request from such a viewer should be of one more event
-than needed : it would use the last event position to seek in the traceset for
-the next read. So, for example, a request for 50 events would ask for 51,
-keeping the event position of event 51.
 
 
 
 2. Architecture
 
-Two different sets of API functions offered to read tracesets :
+API to seek/read traceset will be extended to fully support both start time,
+start position, end time, end position and number of events as possible
+boundaries for reading.
 
 lttv_process_traceset_seek_time
-lttv_process_traceset_middle_time
-
 lttv_process_traceset_seek_position
-lttv_process_traceset_middle_position
+
+lttv_process_traceset_middle
+
+It must be modified to end when it encounters the first criterion : number of
+events to read reached, end time reached, end position reached.
+
 lttv_traceset_context_position_save
-
-
-Of course, the typical use will be to call the seek_time with the middle_time,
-and similarly for position functions, but the architecture does permit viewers
-to mix calls to _time and _position functions.
 
 The position_save saves a position that can be used later to seek back to this
 exact same position, with event granularity. This implies that the
 process_traceset must deliver events with the same timestamp in a deterministic
-manner.
+manner. This is actually done by using tracefile and trace numbers in the
+context in the comparison function.
 
 
-3. Implementation in tracecontext.c
+
+Description of new context API useage
+
+1. seek
+2. begin  -> add middle hooks
+          -> call begin hooks by id
+3. middle -> call middle hooks by id
+4. end    -> call end hooks by id
+          -> remove middle hooks
+
+3. Impact on State
+
+From now on, the state computation will be done in the middle hook call, with a
+priority higher than default. We will define this priority as PRIO_STATE,
+defined to -10.
+
+If state has to be computed, lttv_process_traceset_begin is called to add state
+hooks to the context. Then, the state seek_closest will have to be used to
+restore the nearest state, plus a process_traceset with no hooks present other
+than the state hooks will have to be called to go from the closest state to the
+real time seeked.
+
+The lttv_process_traceset_end will only need to be called if no further state
+computation is needed.
+
+
+4. Implementation in tracecontext.c
 
 
 - Type LttvTracesetContextPosition
 
 struct _LttvTracesetContextPosition {
-  LttEventPosition **tracefile_position;  /* Position in each trace/tracefile */
-  guint num_traces;                       /* Number of traces (for check)     */
+  LttEventPosition *tracefile_position;  /* Position in each trace/tracefile */
   guint num_tracefiles;                   /* Number of tracefiles (check)     */
-  GTree *pqueue;                          /* Copy of context pqueue           */
 }
 
 with interfaces :
@@ -102,41 +126,46 @@ lttv_traceset_context_position_save
 
 Dependencies :
 
-- lttv_process_traceset_seek_position
-  - lttv_process_trace_seek_position
+- lttv_process_traceset_seek_position(LttvTracesetContext *self,
+                                const LttvTracesetContextPosition *position);
     - ltt_tracefile_seek_position : already implemented
 
-lttv_process_traceset_seek_position will seek each trace to the right position.
-Each trace will seek all of its tracesets to the right position. We keep
-information about number of traces and tracefiles for extra integrity checking
-when reloading the context.
-
-lttv_process_traceset_seek_position(LttvTracesetContext *self,
-                                const LttvTracesetContextPosition *position);
+lttv_process_traceset_seek_position will seek each tracefile to the right
+position. We keep information about number of tracefiles for extra integrity
+checking when reloading the position in the context.
 
 
-- lttv_process_traceset_middle_position
+
+- lttv_process_traceset_middle
 We modify lttv_process_traceset_middle so that it takes as arguments :
-(LttvTracesetContext *self, 
-const LttvTracesetContextPosition *end_position, 
-unsigned max_num_events)
+(LttvTracesetContext *self,
+LttTime end,
+unsigned num_events,
+const LttvTracesetContextPosition *end_position)
 
-It's a simplification of the original function that will just read events until
-the first criterion is fulfilled : the end_position is reached (we do not
-deliver the event at the end_position) or the maximum number of events specified
-is reached (we deliver the last event, corresponding to the maximum number of
-events). The first event in the LttvTracesetContextPosition's pqueue will be
-used as end_event.
+This new version of process traceset middle will call the middle hooks for
+events until the first criterion is fulfilled : either the end time is passed,
+the number of events requested is passed or the end position is reached. When
+this function ends, the end position can be extracted from the context, the end
+event is set as described below and the number of events read is returned.
+
+The end event is a pointer to the last event the hooks has been called for.
 
 - lttv_process_traceset_seek_time : already implemented
 
-- lttv_process_traceset_middle_time
-It's basically the same function as lttv_process_traceset_middle. We keep the
-nb_events as a limit of events to read. We also keep the fact that, when the
-maximum number of events is triggered, we also read the events that has the same
-timestamp. This is useful for not losing events. The fact is that a viewer that
-rely on time to select events it needs cannot have the granularity it needs to
-select specific events from a bunch of events with the same time stamp.
+- lttv_process_traceset_begin(LttvTracesetContext *self,
+                              LttvHooksById *begin_hooks,
+                              LttvHooksById *middle_hooks)
+
+
+- lttv_process_traceset_end(LttvTracesetContext *self,
+                              LttvHooksById *end_hooks,
+                              LttvHooksById *middle_hooks)
+
+- lttv_traceset_context_add_hooks and lttv_traceset_context_remove_hooks
+
+These functions now become internal to tracecontext.c
+
 
 
 
