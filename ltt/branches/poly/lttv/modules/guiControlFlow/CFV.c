@@ -147,7 +147,12 @@ GuiControlFlow(void)
 			
 	g_slist_append(gControl_Flow_Data_List,Control_Flow_Data);
 
-	send_test_data(Control_Flow_Data->Process_List);
+	//FIXME : data sent too fast. The widget must be 
+	//inserted in the main window before the Drawing area
+	//can be configured (and this must happend bedore sending
+	//data)
+	send_test_data(Control_Flow_Data->Process_List,
+			Control_Flow_Data->Drawing);
 	
 	return Control_Flow_Data;
 

@@ -349,7 +349,7 @@ void Drawing_Insert_Square(Drawing_t *Drawing,
 
 	/* add an empty square */
 	gdk_draw_rectangle (Pixmap,
-		Drawing->Drawing_Area_V->style->white_gc,
+		Drawing->Drawing_Area_V->style->black_gc,
 		TRUE,
 		0, y,
 		Drawing->width,	// do not overlap

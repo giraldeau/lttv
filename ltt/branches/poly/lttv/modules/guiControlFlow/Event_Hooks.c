@@ -13,10 +13,11 @@
 #include "Event_Hooks.h"
 #include "CFV.h"
 #include "Process_List.h"
+#include "Drawing.h"
 
-void send_test_data(ProcessList *Process_List)
+void send_test_data(ProcessList *Process_List, Drawing_t *Drawing)
 {
-	guint height;
+	guint height, size;
 	int i;
 	ProcessInfo Process_Info = {10000, 12000, 55600};
 	//ProcessInfo Process_Info = {156, 14000, 55500};
@@ -30,7 +31,8 @@ void send_test_data(ProcessList *Process_List)
 			1,
 			&birth,
 			&height);
-
+	Drawing_Insert_Square( Drawing, height, 5);
+	
 	g_critical("height : %u", height);
 	
 	birth.tv_sec = 14000;
@@ -40,6 +42,7 @@ void send_test_data(ProcessList *Process_List)
 			156,
 			&birth,
 			&height);
+	Drawing_Insert_Square( Drawing, height, 5);
 
 	g_critical("height : %u", height);
 
@@ -50,6 +53,7 @@ void send_test_data(ProcessList *Process_List)
 			10,
 			&birth,
 			&height);
+	Drawing_Insert_Square( Drawing, height, 5);
 
 	for(i=0; i<10; i++)
 	{
@@ -60,6 +64,7 @@ void send_test_data(ProcessList *Process_List)
 				i,
 				&birth,
 				&height);
+	Drawing_Insert_Square( Drawing, height, 5);
 
 	}
 	g_critical("height : %u", height);
@@ -71,18 +76,26 @@ void send_test_data(ProcessList *Process_List)
 			10,
 			&birth,
 			&height);
+	Drawing_Insert_Square( Drawing, height, 5);
 	g_critical("height : %u", height);
 
 	ProcessList_add(Process_List,
 			10000,
 			&birth,
 			&height);
+	Drawing_Insert_Square( Drawing, height, 5);
 	g_critical("height : %u", height);
 
 
+	ProcessList_get_process_pixels(Process_List,
+				10000,
+				&birth,
+				&height, &size);
 	ProcessList_remove( 	Process_List,
 				10000,
 				&birth);
+
+	Drawing_Remove_Square( Drawing, height, 5);
 	
 	if(got_RowRef = 
 		(GtkTreeRowReference*)g_hash_table_lookup(
