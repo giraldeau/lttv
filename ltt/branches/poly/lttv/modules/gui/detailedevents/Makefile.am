@@ -12,7 +12,7 @@ LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/mainlib -lmainWinApi
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libguievents.la
-libguiEvents_la_LDFLAGS = -module
-libguiEvents_la_SOURCES = events.c
+libguievents_la_LDFLAGS = -module
+libguievents_la_SOURCES = events.c
 noinst_HEADERS = gtkrbtree.h gtktreeprivate.h
 

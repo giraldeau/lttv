@@ -11,9 +11,9 @@ LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/mainlib -lmainWinApi
 
 libdir = ${lttvplugindir}
 
-lib_LTLIBRARIES = libguiControlFlow.la
-libguiControlFlow_la_LDFLAGS = -module
-libguiControlFlow_la_SOURCES = 	module.c eventhooks.c cfv.c processlist.c\
+lib_LTLIBRARIES = libguicontrolflow.la
+libguicontrolflow_la_LDFLAGS = -module
+libguicontrolflow_la_SOURCES = 	module.c eventhooks.c cfv.c processlist.c\
 				drawing.c drawitem.c
 
 noinst_HEADERS = 	eventhooks.h cfv.h cfv-private.h processlist.h\
