@@ -128,17 +128,17 @@ do
         echo "Running xml-i18n-toolize..."
 	xml-i18n-toolize --copy --force --automake
       fi
-      if grep "^AM_PROG_LIBTOOL" configure.in >/dev/null; then
-	if test -z "$NO_LIBTOOLIZE" ; then 
-	  echo "Running libtoolize..."
-	  libtoolize --force --copy
-	fi
-      fi
       echo "Running aclocal-1.7 $aclocalinclude ..."
       aclocal-1.7 $aclocalinclude
       if grep "^AM_CONFIG_HEADER" configure.in >/dev/null; then
 	echo "Running autoheader..."
 	autoheader
+      fi
+      if grep "^AM_PROG_LIBTOOL" configure.in >/dev/null; then
+	if test -z "$NO_LIBTOOLIZE" ; then 
+	  echo "Running libtoolize..."
+	  libtoolize --force --copy
+	fi
       fi
       echo "Running automake --gnu $am_opt ..."
       automake --add-missing --gnu $am_opt
