@@ -927,7 +927,7 @@ void drawing_destroy(Drawing_t *drawing)
     gdk_gc_unref(drawing->gc);
   
   g_free(drawing->pango_layout);
-  if(!drawing->dotted_gc) gdk_gc_unref(drawing->dotted_gc);
+  if(drawing->dotted_gc != NULL) gdk_gc_unref(drawing->dotted_gc);
   g_free(drawing);
   g_info("drawing_destroy end");
 }
