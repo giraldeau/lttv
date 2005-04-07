@@ -1,5 +1,5 @@
 /* This file is part of the Linux Trace Toolkit viewer
- * Copyright (C) 2003-2004 Simon Bouvier-Zappa
+ * Copyright (C) 2005 Simon Bouvier-Zappa
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -71,14 +71,22 @@ void callback_add_button(GtkWidget *widget, gpointer data);
 void callback_logical_op_box(GtkWidget *widget, gpointer data);
 void callback_expression_field(GtkWidget *widget, gpointer data);
 
+/**
+ *  @struct _FilterViewerDataLine
+ *
+ *  @brief Defines a simple expression
+ *  This structures defines a simple
+ *  expression whithin the main filter 
+ *  viewer data
+ */
 struct _FilterViewerDataLine {
-  int row;
-  gboolean visible;
-  GtkWidget *f_not_op_box;
-  GtkWidget *f_logical_op_box;
-  GtkWidget *f_field_box;
-  GtkWidget *f_math_op_box;
-  GtkWidget *f_value_field;
+  int row;                            /** row number */
+  gboolean visible;                   /** visible state */
+  GtkWidget *f_not_op_box;            /** '!' operator (GtkComboBox) */
+  GtkWidget *f_logical_op_box;        /** '&,|,^' operators (GtkComboBox) */
+  GtkWidget *f_field_box;             /** field types (GtkComboBox) */
+  GtkWidget *f_math_op_box;           /** '>,>=,<,<=,=,!=' operators (GtkComboBox) */
+  GtkWidget *f_value_field;           /** expression's value (GtkComboBox) */
 };
 
 /**
@@ -88,33 +96,28 @@ struct _FilterViewerDataLine {
 struct _FilterViewerData {
   Tab *tab;
 
-  GtkWidget *f_main_box;
+  GtkWidget *f_main_box;                /** main container */
 
-  GtkWidget *f_hbox1;
-  GtkWidget *f_hbox2;
+  GtkWidget *f_expression_field;        /** entire expression (GtkEntry) */
+  GtkWidget *f_process_button;          /** process expression button (GtkButton) */
+
+  GtkWidget *f_logical_op_junction_box; /** linking operator box (GtkComboBox) */
+
+  int rows;                             /** number of rows */
+  GPtrArray *f_lines;                   /** array of FilterViewerDataLine */
+
+  GPtrArray *f_not_op_options;          /** array of operators types for not_op box */
+  GPtrArray *f_logical_op_options;      /** array of operators types for logical_op box */
+  GPtrArray *f_field_options;           /** array of field types for field box */
+  GPtrArray *f_math_op_options;         /** array of operators types for math_op box */
   
-  GtkWidget *f_expression_field;
-  GtkWidget *f_process_button;
-
-  GtkWidget *f_logical_op_junction_box;
-
-  int rows;
-  GPtrArray *f_lines;
-
-  GPtrArray *f_not_op_options;
-  GPtrArray *f_logical_op_options;
-  GPtrArray *f_field_options;
-  GPtrArray *f_math_op_options;
-  
-  GtkWidget *f_add_button;
-  
-  GtkWidget *f_textwnd;
-  GtkWidget *f_selectwnd;
-  GtkWidget *f_treewnd;
+  GtkWidget *f_add_button;              /** add expression to current expression (GtkButton) */
   
 };
 
 /**
+ *  @fn guifilter_get_widget(FilterViewerData*)
+ * 
  *  This function returns the current main widget 
  *  used by this module
  *  @param fvd the module struct
@@ -127,9 +130,11 @@ GtkWidget
 }
 
 /**
- * Constructor is used to create FilterViewerData data structure.
- * @param the tab structure used by the widget
- * @return The Filter viewer data created.
+ *  @fn gui_filter(Tab*)
+ * 
+ *  Constructor is used to create FilterViewerData data structure.
+ *  @param the tab structure used by the widget
+ *  @return The Filter viewer data created.
  */
 FilterViewerData*
 gui_filter(Tab *tab)
@@ -272,6 +277,8 @@ gui_filter(Tab *tab)
 }
 
 /**
+ *  @fn gui_filter_add_line(FilterViewerData*)
+ * 
  *  Adds a filter option line on the module tab
  *  @param fvd The filter module structure 
  *  @return The line structure
@@ -284,33 +291,6 @@ gui_filter_add_line(FilterViewerData* fvd) {
   unsigned i;
   fvdl->row = fvd->rows;
   fvdl->visible = TRUE;
-
-  /*
-  fvdl->f_struct_box = gtk_combo_box_new_text();
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_struct_box), "");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_struct_box), "event");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_struct_box), "tracefile");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_struct_box), "trace");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_struct_box), "state");
-  gtk_widget_show(fvdl->f_struct_box);
-
-  fvdl->f_subfield_box = gtk_combo_box_new_text();
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "name");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "category");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "time");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "tsc");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "pid");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "ppid");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "creation time");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "insertion time");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "process name");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "execution mode");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "execution submode");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "process status");
-  gtk_combo_box_append_text (GTK_COMBO_BOX (fvdl->f_subfield_box), "cpu");
-  gtk_widget_show(fvdl->f_subfield_box);
-  */
 
   fvdl->f_not_op_box = gtk_combo_box_new_text();
   for(i=0;i<fvd->f_not_op_options->len;i++) {
@@ -349,8 +329,6 @@ gui_filter_add_line(FilterViewerData* fvd) {
   gui_filter_line_reset(fvdl);
   gui_filter_line_set_visible(fvdl,TRUE);
   
-//  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_struct_box,0,1,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
-//  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_subfield_box,1,2,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
   gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_not_op_box,0,1,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
   gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_field_box,1,3,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
   gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvdl->f_math_op_box,3,4,fvd->rows+1,fvd->rows+2,GTK_SHRINK,GTK_FILL,0,0);
@@ -360,20 +338,23 @@ gui_filter_add_line(FilterViewerData* fvd) {
   return fvdl;
 }
 
+/**
+ *  @fn gui_filter_line_set_visible(FilterViewerDataLine*,gboolean)
+ *
+ *  Change visible state of current FilterViewerDataLine
+ *  @param fvdl pointer to the current FilterViewerDataLine
+ *  @param v TRUE: sets visible, FALSE: sets invisible
+ */
 void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v) {
 
   fvdl->visible = v;
   if(v) {
-//    gtk_widget_show(fvdl->f_struct_box);
-//    gtk_widget_show(fvdl->f_subfield_box);
     gtk_widget_show(fvdl->f_not_op_box);
     gtk_widget_show(fvdl->f_field_box);
     gtk_widget_show(fvdl->f_math_op_box);
     gtk_widget_show(fvdl->f_value_field);
     gtk_widget_show(fvdl->f_logical_op_box);
   } else {
-//    gtk_widget_hide(fvdl->f_struct_box);
-//    gtk_widget_hide(fvdl->f_subfield_box);
     gtk_widget_hide(fvdl->f_not_op_box);
     gtk_widget_hide(fvdl->f_field_box);
     gtk_widget_hide(fvdl->f_math_op_box);
@@ -383,10 +364,15 @@ void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v) {
   
 }
 
+/**
+ *  @fn gui_filter_line_reset(FilterViewerDataLine*)
+ *
+ *  Sets selections of all boxes in current FilterViewerDataLine 
+ *  to default value (0)
+ *  @param fvdl pointer to current FilterViewerDataLine
+ */
 void gui_filter_line_reset(FilterViewerDataLine *fvdl) {
 
-//  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_struct_box),0);
-//  gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_subfield_box),0);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_not_op_box),0);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_field_box),0);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_math_op_box),0);
@@ -395,6 +381,8 @@ void gui_filter_line_reset(FilterViewerDataLine *fvdl) {
 }
 
 /**
+ *  @fn gui_filter_destructor(FilterViewerData*)
+ * 
  *  Destructor for the filter gui module
  *  @param fvd The module structure
  */
@@ -418,6 +406,8 @@ gui_filter_destructor(FilterViewerData *fvd)
 }
 
 /**
+ *  @fn filter_traceset_changed(void*,void*)
+ * 
  *  Hook function
  *  @param hook_data The hook data
  *  @param call_data The call data
@@ -430,6 +420,8 @@ filter_traceset_changed(void * hook_data, void * call_data) {
 }
 
 /**
+ *  @fn filter_viewer_data(void*,void*)
+ * 
  *  Hook function
  *  @param hook_data The hook data
  *  @param call_data The call data
@@ -442,12 +434,14 @@ filter_viewer_data(void * hook_data, void * call_data) {
 }
 
 /**
- * Filter Module's constructor hook
+ *  @fn h_guifilter(Tab*)
+ * 
+ *  Filter Module's constructor hook
  *
- * This constructor is given as a parameter to the menuitem and toolbar button
- * registration. It creates the list.
- * @param tab A pointer to the parent window.
- * @return The widget created.
+ *  This constructor is given as a parameter to the menuitem and toolbar button
+ *  registration. It creates the list.
+ *  @param tab A pointer to the parent window.
+ *  @return The widget created.
  */
 GtkWidget *
 h_guifilter(Tab *tab)
@@ -462,8 +456,10 @@ h_guifilter(Tab *tab)
 }
 
 /**
- * This function initializes the Filter Viewer functionnality through the
- * gtkTraceSet API.
+ *  @fn init()
+ * 
+ *  This function initializes the Filter Viewer functionnality through the
+ *  gtkTraceSet API.
  */
 static void init() {
 
@@ -476,6 +472,8 @@ static void init() {
 }
 
 /**
+ *  @fn filter_destroy_walk(gpointer,gpointer)
+ * 
  *  Initiate the destruction of the current gui module
  *  on the GTK Interface
  */
@@ -490,10 +488,11 @@ void filter_destroy_walk(gpointer data, gpointer user_data)
 }
 
 /**
- * plugin's destroy function
+ *  @fn destroy()
+ *  @brief plugin's destroy function
  *
- * This function releases the memory reserved by the module and unregisters
- * everything that has been registered in the gtkTraceSet API.
+ *  This function releases the memory reserved by the module and unregisters
+ *  everything that has been registered in the gtkTraceSet API.
  */
 static void destroy() {
   
@@ -502,6 +501,8 @@ static void destroy() {
 }
 
 /**
+ *  @fn callback_process_button(GtkWidget*,gpointer)
+ * 
  *  The Process Button callback function
  *  @param widget The Button widget passed to the callback function
  *  @param data Data sent along with the callback function
@@ -513,10 +514,13 @@ void callback_process_button(GtkWidget *widget, gpointer data) {
   if(strlen(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field))) !=0) {
     LttvFilter* filter = lttv_filter_new();
     lttv_filter_append_expression(filter,gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
+    SetFilter(fvd->tab,filter);
   }
 }
 
 /**
+ *  @fn callback_expression_field(GtkWidget*,gpointer)
+ * 
  *  The Add Button callback function
  *  @param widget The Button widget passed to the callback function
  *  @param data Data sent along with the callback function
@@ -534,6 +538,8 @@ void callback_expression_field(GtkWidget *widget, gpointer data) {
 
 
 /**
+ *  @fn callback_add_button(GtkWidget*,gpointer)
+ * 
  *  The Add Button callback function
  *  @param widget The Button widget passed to the callback function
  *  @param data Data sent along with the callback function
@@ -587,6 +593,8 @@ void callback_add_button(GtkWidget *widget, gpointer data) {
 }
 
 /**
+ *  @fn callback_logical_op_box(GtkWidget*,gpointer)
+ * 
  *  The logical op box callback function 
  *  @param widget The Button widget passed to the callback function
  *  @param data Data sent along with the callback function

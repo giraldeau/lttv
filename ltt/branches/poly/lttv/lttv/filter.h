@@ -1,5 +1,5 @@
 /* This file is part of the Linux Trace Toolkit viewer
- * Copyright (C) 2003-2004 Michel Dagenais
+ * Copyright (C) 2003-2005 Michel Dagenais and Simon Bouvier-Zappa
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as

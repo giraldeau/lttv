@@ -53,6 +53,7 @@
 #include <lttv/hook.h>
 #include <lttv/tracecontext.h>
 #include <lttv/state.h>
+#include <lttv/filter.h>
 #include <lttvwindow/lttvwindow.h>
 
 #include "hGuiEventsInsert.xpm"
@@ -1389,7 +1390,7 @@ gboolean traceset_changed(void * hook_data, void * call_data)
   LttvTracesetContext * tsc =
         lttvwindow_get_traceset_context(event_viewer_data->tab);
   TimeInterval time_span = tsc->time_span;
-  
+ 
   LttTime end;
   remove_all_items_from_queue(event_viewer_data->event_fields_queue);
   gtk_list_store_clear(event_viewer_data->store_m);

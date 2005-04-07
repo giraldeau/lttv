@@ -1,5 +1,5 @@
 /* This file is part of the Linux Trace Toolkit viewer
- * Copyright (C) 2003-2005 Michel Dagenais
+ * Copyright (C) 2003-2005 Michel Dagenais and Simon Bouvier-Zappa
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -370,7 +370,7 @@ gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* val
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_EVENT_NAME:
 //       se->value.v_string = value;
-       se->value.v_uint32 = g_quark_try_string(value);
+       se->value.v_uint32 = g_quark_to_string(value);
        g_free(value);
        break;
      /* 
@@ -1655,14 +1655,14 @@ gboolean lttv_filter_tree_parse_branch(
         case LTTV_FILTER_TRACE_NAME:
             if(trace == NULL) return TRUE;
             else {
-                GQuark quark = g_quark_try_string(ltt_trace_name(trace));
+                GQuark quark = g_quark_to_string(ltt_trace_name(trace));
                 return se->op((gpointer)&quark,v);
             }
             break;
         case LTTV_FILTER_TRACEFILE_NAME:
             if(tracefile == NULL) return TRUE;
             else {
-                GQuark quark = g_quark_try_string(ltt_tracefile_name(tracefile));
+                GQuark quark = g_quark_to_string(ltt_tracefile_name(tracefile));
                 return se->op((gpointer)&quark,v);
             }
             break;
@@ -1692,7 +1692,7 @@ gboolean lttv_filter_tree_parse_branch(
              */
             if(state == NULL) return TRUE;
             else {
-              GQuark quark = g_quark_try_string(state->name);
+              GQuark quark = g_quark_to_string(state->name);
               return se->op((gpointer)&quark,v);
             }
             break;
@@ -1712,7 +1712,7 @@ gboolean lttv_filter_tree_parse_branch(
             if(context == NULL) return TRUE;
             else {
                 /* FIXME: not sure of that one */
-              return se->op((gpointer)g_quark_try_string(((LttvTracefileState*)context)->cpu_name),v);
+              return se->op((gpointer)g_quark_to_string(((LttvTracefileState*)context)->cpu_name),v);
             }
             break;
         case LTTV_FILTER_EVENT_NAME:
@@ -1721,7 +1721,7 @@ gboolean lttv_filter_tree_parse_branch(
               LttEventType* et;
               et = ltt_event_eventtype(event);
               g_print("v:%s\n",ltt_eventtype_name(et));
-              GQuark quark = g_quark_try_string(ltt_eventtype_name(et));
+              GQuark quark = g_quark_to_string(ltt_eventtype_name(et));
               return se->op((gpointer)&quark,v);
             }
             break;
