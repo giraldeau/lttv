@@ -19,6 +19,33 @@
 #ifndef FILTER_H
 #define FILTER_H
 
+/*! \file lttv/lttv/filter.h
+ *  \brief Defines the core filter of application 
+ *
+ *  A filter expression consists in nested AND, OR and NOT expressions
+ *  involving boolean relation (>, >=, =, !=, <, <=) between event fields and 
+ *  specific values. It is compiled into an efficient data structure which
+ *  is used in functions to check if a given event or tracefile satisfies the
+ *  filter.
+ * 
+ *  The grammar for filters is:
+ * 
+ *  filter = expression
+ * 
+ *  expression = "(" expression ")" | "!" expression | 
+ *              expression "&&" expression | expression "||" expression |
+ *              simpleExpression
+ *
+ *  simpleExpression = fieldPath op value
+ *
+ *  fieldPath = fieldComponent [ "." fieldPath ]
+ *
+ *  fieldComponent = name [ "[" integer "]" ]
+ *
+ *  value = integer | double | string 
+ */
+
+
 #include <lttv/traceset.h>
 #include <lttv/tracecontext.h>
 #include <lttv/state.h>
@@ -26,31 +53,6 @@
 #include <ltt/ltt.h>
 #include <ltt/time.h>
 #include <ltt/event.h>
-
-
-/* 
-   A filter expression consists in nested AND, OR and NOT expressions
-   involving boolean relation (>, >=, =, !=, <, <=) between event fields and 
-   specific values. It is compiled into an efficient data structure which
-   is used in functions to check if a given event or tracefile satisfies the
-   filter.
-
-   The grammar for filters is:
-
-   filter = expression
-
-   expression = "(" expression ")" | "!" expression | 
-                expression "&&" expression | expression "||" expression |
-                simpleExpression
-
-   simpleExpression = fieldPath op value
-
-   fieldPath = fieldComponent [ "." fieldPath ]
-
-   fieldComponent = name [ "[" integer "]" ]
-
-   value = integer | double | string 
-*/
 
 /* structures prototypes */
 typedef enum _LttvStructType LttvStructType; 
@@ -67,7 +69,7 @@ typedef struct _LttvFilter LttvFilter;
 
 
 /**
- * @enum LttvStructType
+ * @enum _LttvStructType
  * @brief The lttv structures
  *
  * the LttvStructType enumerates 
@@ -75,15 +77,15 @@ typedef struct _LttvFilter LttvFilter;
  * lttv core filter
  */
 enum _LttvStructType {
-  LTTV_FILTER_TRACE,
-  LTTV_FILTER_TRACESET,
-  LTTV_FILTER_TRACEFILE,
-  LTTV_FILTER_EVENT,
-  LTTV_FILTER_STATE
+  LTTV_FILTER_TRACE,                /**< trace (LttTrace) */
+  LTTV_FILTER_TRACESET,             /**< traceset */
+  LTTV_FILTER_TRACEFILE,            /**< tracefile (LttTracefile) */
+  LTTV_FILTER_EVENT,                /**< event (LttEvent) */
+  LTTV_FILTER_STATE                 /**< state (LttvProcessState) */
 };
 
 /**
- * @enum LttvFieldType
+ * @enum _LttvFieldType
  * @brief Possible fields for the structures
  *
  * the LttvFieldType enum consists on 
@@ -92,27 +94,27 @@ enum _LttvStructType {
  * filters can be applied.
  */
 enum _LttvFieldType {
-  LTTV_FILTER_TRACE_NAME,             /** trace.name (char*) */
-  LTTV_FILTER_TRACEFILE_NAME,         /** tracefile.name (char*) */
-  LTTV_FILTER_STATE_PID,              /** state.pid (guint) */
-  LTTV_FILTER_STATE_PPID,             /** state.ppid (guint) */
-  LTTV_FILTER_STATE_CT,               /** state.creation_time (double) */
-  LTTV_FILTER_STATE_IT,               /** state.insertion_time (double) */
-  LTTV_FILTER_STATE_P_NAME,           /** state.process_name (char*) */
-  LTTV_FILTER_STATE_EX_MODE,          /** state.execution_mode (LttvExecutionMode) */
-  LTTV_FILTER_STATE_EX_SUBMODE,       /** state.execution_submode (LttvExecutionSubmode) */
-  LTTV_FILTER_STATE_P_STATUS,         /** state.process_status (LttvProcessStatus) */
-  LTTV_FILTER_STATE_CPU,              /** state.cpu (?last_cpu?) */
-  LTTV_FILTER_EVENT_NAME,             /** event.name (char*) */
-  LTTV_FILTER_EVENT_CATEGORY,         /** FIXME: not implemented */
-  LTTV_FILTER_EVENT_TIME,             /** event.time (double) */
-  LTTV_FILTER_EVENT_TSC,              /** event.tsc (double) */
-  LTTV_FILTER_EVENT_FIELD,           
-  LTTV_FILTER_UNDEFINED               /** undefined field */
+  LTTV_FILTER_TRACE_NAME,             /**< trace.name (char*) */
+  LTTV_FILTER_TRACEFILE_NAME,         /**< tracefile.name (char*) */
+  LTTV_FILTER_STATE_PID,              /**< state.pid (guint) */
+  LTTV_FILTER_STATE_PPID,             /**< state.ppid (guint) */
+  LTTV_FILTER_STATE_CT,               /**< state.creation_time (double) */
+  LTTV_FILTER_STATE_IT,               /**< state.insertion_time (double) */
+  LTTV_FILTER_STATE_P_NAME,           /**< state.process_name (char*) */
+  LTTV_FILTER_STATE_EX_MODE,          /**< state.execution_mode (LttvExecutionMode) */
+  LTTV_FILTER_STATE_EX_SUBMODE,       /**< state.execution_submode (LttvExecutionSubmode) */
+  LTTV_FILTER_STATE_P_STATUS,         /**< state.process_status (LttvProcessStatus) */
+  LTTV_FILTER_STATE_CPU,              /**< state.cpu (?last_cpu?) */
+  LTTV_FILTER_EVENT_NAME,             /**< event.name (char*) */
+  LTTV_FILTER_EVENT_CATEGORY,         /**< FIXME: not implemented */
+  LTTV_FILTER_EVENT_TIME,             /**< event.time (double) */
+  LTTV_FILTER_EVENT_TSC,              /**< event.tsc (double) */
+  LTTV_FILTER_EVENT_FIELD,            /**< dynamic field, specified in core.xml */
+  LTTV_FILTER_UNDEFINED               /**< undefined field */
 };
   
 /**
- * 	@enum LttvExpressionOp
+ * 	@enum _LttvExpressionOp
  *  @brief Contains possible operators
  *
  *  This enumeration defines the 
@@ -122,18 +124,18 @@ enum _LttvFieldType {
  */
 enum _LttvExpressionOp
 { 
-  LTTV_FIELD_EQ,	                    /** equal */
-  LTTV_FIELD_NE,	                    /** not equal */
-  LTTV_FIELD_LT,	                    /** lower than */
-  LTTV_FIELD_LE,	                    /** lower or equal */
-  LTTV_FIELD_GT,	                    /** greater than */
-  LTTV_FIELD_GE		                    /** greater or equal */
+  LTTV_FIELD_EQ,	                    /**< equal */
+  LTTV_FIELD_NE,	                    /**< not equal */
+  LTTV_FIELD_LT,	                    /**< lower than */
+  LTTV_FIELD_LE,	                    /**< lower or equal */
+  LTTV_FIELD_GT,	                    /**< greater than */
+  LTTV_FIELD_GE		                    /**< greater or equal */
 };
 
 /**
- *  @union LttvFieldValue
- *
+ *  @union _LttvFieldValue
  *  @brief Contains possible field values
+ *
  *  This particular union defines the 
  *  possible set of values taken by the 
  *  right member of a simple expression.  
@@ -141,30 +143,30 @@ enum _LttvExpressionOp
  *  'operators' functions
  */
 union _LttvFieldValue {
-  guint64 v_uint64;
-  guint32 v_uint32;
-  guint16 v_uint16;
-  double v_double;
-  char* v_string;
-  LttTime v_ltttime;
+  guint64 v_uint64;                   /**< unsigned int of 64 bytes */
+  guint32 v_uint32;                   /**< unsigned int of 32 bytes */
+  guint16 v_uint16;                   /**< unsigned int of 16 bytes */
+  double v_double;                    /**< double */
+  char* v_string;                     /**< string */
+  LttTime v_ltttime;                  /**< LttTime */
 };
 
 /**
- * @enum LttvTreeElement
+ * @enum _LttvTreeElement
  * @brief element types for the tree nodes
  *
  * LttvTreeElement defines the possible 
  * types of nodes which build the LttvFilterTree.  
  */
 enum _LttvTreeElement {
-  LTTV_TREE_IDLE,                     /** this node does nothing */
-  LTTV_TREE_NODE,                     /** this node contains a logical operator */
-  LTTV_TREE_LEAF                      /** this node is a leaf and contains a simple expression */
+  LTTV_TREE_IDLE,                     /**< this node does nothing */
+  LTTV_TREE_NODE,                     /**< this node contains a logical operator */
+  LTTV_TREE_LEAF                      /**< this node is a leaf and contains a simple expression */
 };
 
 
 /**
- * @struct LttvSimpleExpression
+ * @struct _LttvSimpleExpression
  * @brief simple expression structure
  *
  * An LttvSimpleExpression is the base 
@@ -177,15 +179,14 @@ enum _LttvTreeElement {
  */
 struct _LttvSimpleExpression
 { 
-  gint field;                               /** left member of simple expression */                  
-  gint offset;                              /** offset used for dynamic fields */
-  gboolean (*op)(gpointer,LttvFieldValue);  /** operator of simple expression */
-//  char *value;                           
-  LttvFieldValue value;                     /** right member of simple expression */
+  gint field;                               /**< left member of simple expression */                  
+  gint offset;                              /**< offset used for dynamic fields */
+  gboolean (*op)(gpointer,LttvFieldValue);  /**< operator of simple expression */
+  LttvFieldValue value;                     /**< right member of simple expression */
 };
 
 /**
- * @enum LttvLogicalOp
+ * @enum _LttvLogicalOp
  * @brief logical operators
  * 
  * Contains the possible values taken 
@@ -194,41 +195,45 @@ struct _LttvSimpleExpression
  * AND, OR, XOR or NOT
  */
 enum _LttvLogicalOp {
-    LTTV_LOGICAL_OR = 1,              /** OR (1) */
-    LTTV_LOGICAL_AND = 1<<1,          /** AND (2) */
-    LTTV_LOGICAL_NOT = 1<<2,          /** NOT (4) */
-    LTTV_LOGICAL_XOR = 1<<3           /** XOR (8) */
+    LTTV_LOGICAL_OR = 1,              /**< OR (1) */
+    LTTV_LOGICAL_AND = 1<<1,          /**< AND (2) */
+    LTTV_LOGICAL_NOT = 1<<2,          /**< NOT (4) */
+    LTTV_LOGICAL_XOR = 1<<3           /**< XOR (8) */
 };
     
 /**
- *  @struct LttvFilterTree
+ *  @struct _LttvFilterTree
+ *  @brief The filtering tree
+ *  
  *  The filtering tree is used to represent the 
  *  expression string in its entire hierarchy 
  *  composed of simple expressions and logical 
  *  operators
  */
 struct _LttvFilterTree {
-  int node;                         /** value of LttvLogicalOp */
-  LttvTreeElement left;
-  LttvTreeElement right;
+  int node;                         /**< value of LttvLogicalOp */
+  LttvTreeElement left;             /**< nature of left branch (node/leaf) */
+  LttvTreeElement right;            /**< nature of right branch (node/leaf) */
   union {
-    LttvFilterTree* t;
-    LttvSimpleExpression* leaf;
-  } l_child;
+    LttvFilterTree* t;              
+    LttvSimpleExpression* leaf;     
+  } l_child;                        /**< left branch of tree */
   union {
-    LttvFilterTree* t;
-    LttvSimpleExpression* leaf;
-  } r_child;
+    LttvFilterTree* t;              
+    LttvSimpleExpression* leaf;     
+  } r_child;                        /**< right branch of tree */
 };
 
 /**
- * @struct lttv_filter
+ * @struct _LttvFilter
+ * @brief The filter
+ * 
  * Contains a binary tree of filtering options along 
  * with the expression itself.
  */
 struct _LttvFilter {
-  char *expression;
-  LttvFilterTree *head;
+  char *expression;                 /**< filtering expression string */
+  LttvFilterTree *head;             /**< tree associated to expression */
 };
 
 /*
@@ -236,7 +241,7 @@ struct _LttvFilter {
  */
 LttvSimpleExpression* lttv_simple_expression_new();
 
-gboolean lttv_simple_expression_add_field(GPtrArray* fp, LttvSimpleExpression* se);
+gboolean lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se);
 
 gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionOp op);
 

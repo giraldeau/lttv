@@ -16,9 +16,13 @@
  * MA 02111-1307, USA.
  */
 
-/* 
- * The text filter facility will prompt for user filter option 
- * and transmit them to the lttv core 
+/*! \file lttv/modules/text/textFilter.c
+ *  \brief Textual prompt for user filtering expression.
+ *  
+ *  The text filter facility will prompt for user filter option 
+ *  and transmit them to the lttv core.  User can either specify 
+ *  a filtering string with the command line or/and specify a 
+ *  file containing filtering expressions.
  */
 
 #include <lttv/lttv.h>
@@ -64,8 +68,6 @@ static LttvHooks
  */
 void filter_analyze_file(void *hook_data) {
 
-//  g_print("textFilter::filter_analyze_file\n");
- 
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
@@ -101,8 +103,6 @@ void filter_analyze_file(void *hook_data) {
  */
 void filter_analyze_string(void *hook_data) {
 
-//  g_print("textFilter::filter_analyze_string\n");
-
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
@@ -127,8 +127,6 @@ void filter_analyze_string(void *hook_data) {
  */
 static void init() {
   
-//  g_print("textFilter::init()\n");	/* debug */
-
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());

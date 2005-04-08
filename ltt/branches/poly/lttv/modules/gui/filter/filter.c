@@ -31,19 +31,22 @@
 
 #include "hGuiFilterInsert.xpm"
 
-/*
- * TODO
- * - connect the gui filter to the core filter
- */
-
-/*
- * NOTE 
- * The version of gtk-2.0 currently installed on 
- * my desktop misses some function of the newer 
- * gtk+ api.
+/*! \file lttv/modules/gui/filter/filter.c
+ *  \brief Graphic filter interface.
  *
- * For the time being, I'll use the older api 
- * to keep compatibility with most systems.
+ *  The gui filter facility gives the user an easy to use 
+ *  basic interface to construct and modify at will a filter 
+ *  expression.  User may either decide to write it himself in 
+ *  expression text entry or add simple expressions using the 
+ *  many choices boxes.
+ *  
+ *  NOTE: 
+ *  The version of gtk-2.0 currently installed on 
+ *  my desktop misses some function of the newer 
+ *  gtk+ api.
+ *
+ *  For the time being, I'll use the older api 
+ *  to keep compatibility with most systems.
  */
 
 typedef struct _FilterViewerData FilterViewerData;
@@ -80,60 +83,62 @@ void callback_expression_field(GtkWidget *widget, gpointer data);
  *  viewer data
  */
 struct _FilterViewerDataLine {
-  int row;                            /** row number */
-  gboolean visible;                   /** visible state */
-  GtkWidget *f_not_op_box;            /** '!' operator (GtkComboBox) */
-  GtkWidget *f_logical_op_box;        /** '&,|,^' operators (GtkComboBox) */
-  GtkWidget *f_field_box;             /** field types (GtkComboBox) */
-  GtkWidget *f_math_op_box;           /** '>,>=,<,<=,=,!=' operators (GtkComboBox) */
-  GtkWidget *f_value_field;           /** expression's value (GtkComboBox) */
+  int row;                            /**< row number */
+  gboolean visible;                   /**< visible state */
+  GtkWidget *f_not_op_box;            /**< '!' operator (GtkComboBox) */
+  GtkWidget *f_logical_op_box;        /**< '&,|,^' operators (GtkComboBox) */
+  GtkWidget *f_field_box;             /**< field types (GtkComboBox) */
+  GtkWidget *f_math_op_box;           /**< '>,>=,<,<=,=,!=' operators (GtkComboBox) */
+  GtkWidget *f_value_field;           /**< expression's value (GtkComboBox) */
 };
 
 /**
- * @struct _FilterViewerData
- * Main struct for the filter gui module
+ *  @struct _FilterViewerData
+ *  
+ *  @brief Main structure of gui filter
+ *  Main struct for the filter gui module
  */
 struct _FilterViewerData {
-  Tab *tab;
+  Tab *tab;                             /**< current tab of module */
 
-  GtkWidget *f_main_box;                /** main container */
+  GtkWidget *f_main_box;                /**< main container */
 
-  GtkWidget *f_expression_field;        /** entire expression (GtkEntry) */
-  GtkWidget *f_process_button;          /** process expression button (GtkButton) */
+  GtkWidget *f_expression_field;        /**< entire expression (GtkEntry) */
+  GtkWidget *f_process_button;          /**< process expression button (GtkButton) */
 
-  GtkWidget *f_logical_op_junction_box; /** linking operator box (GtkComboBox) */
+  GtkWidget *f_logical_op_junction_box; /**< linking operator box (GtkComboBox) */
 
-  int rows;                             /** number of rows */
-  GPtrArray *f_lines;                   /** array of FilterViewerDataLine */
+  int rows;                             /**< number of rows */
+  GPtrArray *f_lines;                   /**< array of FilterViewerDataLine */
 
-  GPtrArray *f_not_op_options;          /** array of operators types for not_op box */
-  GPtrArray *f_logical_op_options;      /** array of operators types for logical_op box */
-  GPtrArray *f_field_options;           /** array of field types for field box */
-  GPtrArray *f_math_op_options;         /** array of operators types for math_op box */
+  GPtrArray *f_not_op_options;          /**< array of operators types for not_op box */
+  GPtrArray *f_logical_op_options;      /**< array of operators types for logical_op box */
+  GPtrArray *f_field_options;           /**< array of field types for field box */
+  GPtrArray *f_math_op_options;         /**< array of operators types for math_op box */
   
-  GtkWidget *f_add_button;              /** add expression to current expression (GtkButton) */
+  GtkWidget *f_add_button;              /**< add expression to current expression (GtkButton) */
   
 };
 
 /**
- *  @fn guifilter_get_widget(FilterViewerData*)
+ *  @fn GtkWidget* guifilter_get_widget(FilterViewerData*)
  * 
  *  This function returns the current main widget 
  *  used by this module
  *  @param fvd the module struct
  *  @return The main widget
  */
-GtkWidget 
-*guifilter_get_widget(FilterViewerData *fvd)
+GtkWidget*
+guifilter_get_widget(FilterViewerData *fvd)
 {
   return fvd->f_main_box;
 }
 
 /**
- *  @fn gui_filter(Tab*)
+ *  @fn FilterViewerData* gui_filter(Tab*)
  * 
  *  Constructor is used to create FilterViewerData data structure.
- *  @param the tab structure used by the widget
+ *  @param tab The tab structure used by the widget
  *  @return The Filter viewer data created.
  */
 FilterViewerData*
@@ -277,7 +282,7 @@ gui_filter(Tab *tab)
 }
 
 /**
- *  @fn gui_filter_add_line(FilterViewerData*)
+ *  @fn FilterViewerDataLine* gui_filter_add_line(FilterViewerData*)
  * 
  *  Adds a filter option line on the module tab
  *  @param fvd The filter module structure 
@@ -339,13 +344,14 @@ gui_filter_add_line(FilterViewerData* fvd) {
 }
 
 /**
- *  @fn gui_filter_line_set_visible(FilterViewerDataLine*,gboolean)
+ *  @fn void gui_filter_line_set_visible(FilterViewerDataLine*,gboolean)
  *
  *  Change visible state of current FilterViewerDataLine
  *  @param fvdl pointer to the current FilterViewerDataLine
  *  @param v TRUE: sets visible, FALSE: sets invisible
  */
-void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v) {
+void 
+gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v) {
 
   fvdl->visible = v;
   if(v) {
@@ -365,13 +371,14 @@ void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v) {
 }
 
 /**
- *  @fn gui_filter_line_reset(FilterViewerDataLine*)
+ *  @fn void gui_filter_line_reset(FilterViewerDataLine*)
  *
  *  Sets selections of all boxes in current FilterViewerDataLine 
  *  to default value (0)
  *  @param fvdl pointer to current FilterViewerDataLine
  */
-void gui_filter_line_reset(FilterViewerDataLine *fvdl) {
+void 
+gui_filter_line_reset(FilterViewerDataLine *fvdl) {
 
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_not_op_box),0);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_field_box),0);
@@ -381,7 +388,7 @@ void gui_filter_line_reset(FilterViewerDataLine *fvdl) {
 }
 
 /**
- *  @fn gui_filter_destructor(FilterViewerData*)
+ *  @fn void gui_filter_destructor(FilterViewerData*)
  * 
  *  Destructor for the filter gui module
  *  @param fvd The module structure
@@ -406,7 +413,7 @@ gui_filter_destructor(FilterViewerData *fvd)
 }
 
 /**
- *  @fn filter_traceset_changed(void*,void*)
+ *  @fn gboolean filter_traceset_changed(void*,void*)
  * 
  *  Hook function
  *  @param hook_data The hook data
@@ -420,7 +427,7 @@ filter_traceset_changed(void * hook_data, void * call_data) {
 }
 
 /**
- *  @fn filter_viewer_data(void*,void*)
+ *  @fn gboolean filter_viewer_data(void*,void*)
  * 
  *  Hook function
  *  @param hook_data The hook data
@@ -434,7 +441,7 @@ filter_viewer_data(void * hook_data, void * call_data) {
 }
 
 /**
- *  @fn h_guifilter(Tab*)
+ *  @fn GtkWidget* h_guifilter(Tab*)
  * 
  *  Filter Module's constructor hook
  *
@@ -456,7 +463,7 @@ h_guifilter(Tab *tab)
 }
 
 /**
- *  @fn init()
+ *  @fn static void init()
  * 
  *  This function initializes the Filter Viewer functionnality through the
  *  gtkTraceSet API.
@@ -472,12 +479,13 @@ static void init() {
 }
 
 /**
- *  @fn filter_destroy_walk(gpointer,gpointer)
+ *  @fn void filter_destroy_walk(gpointer,gpointer)
  * 
  *  Initiate the destruction of the current gui module
  *  on the GTK Interface
  */
-void filter_destroy_walk(gpointer data, gpointer user_data)
+void 
+filter_destroy_walk(gpointer data, gpointer user_data)
 {
   FilterViewerData *fvd = (FilterViewerData*)data;
 
@@ -488,7 +496,7 @@ void filter_destroy_walk(gpointer data, gpointer user_data)
 }
 
 /**
- *  @fn destroy()
+ *  @fn static void destroy()
  *  @brief plugin's destroy function
  *
  *  This function releases the memory reserved by the module and unregisters
@@ -501,13 +509,14 @@ static void destroy() {
 }
 
 /**
- *  @fn callback_process_button(GtkWidget*,gpointer)
+ *  @fn void callback_process_button(GtkWidget*,gpointer)
  * 
  *  The Process Button callback function
  *  @param widget The Button widget passed to the callback function
  *  @param data Data sent along with the callback function
  */
-void callback_process_button(GtkWidget *widget, gpointer data) {
+void 
+callback_process_button(GtkWidget *widget, gpointer data) {
 
   FilterViewerData *fvd = (FilterViewerData*)data;
 
@@ -519,13 +528,14 @@ void callback_process_button(GtkWidget *widget, gpointer data) {
 }
 
 /**
- *  @fn callback_expression_field(GtkWidget*,gpointer)
+ *  @fn void callback_expression_field(GtkWidget*,gpointer)
  * 
  *  The Add Button callback function
  *  @param widget The Button widget passed to the callback function
  *  @param data Data sent along with the callback function
  */
-void callback_expression_field(GtkWidget *widget, gpointer data) {
+void 
+callback_expression_field(GtkWidget *widget, gpointer data) {
 
   FilterViewerData *fvd = (FilterViewerData*)data;
 
@@ -538,13 +548,14 @@ void callback_expression_field(GtkWidget *widget, gpointer data) {
 
 
 /**
- *  @fn callback_add_button(GtkWidget*,gpointer)
+ *  @fn void callback_add_button(GtkWidget*,gpointer)
  * 
  *  The Add Button callback function
  *  @param widget The Button widget passed to the callback function
  *  @param data Data sent along with the callback function
  */
-void callback_add_button(GtkWidget *widget, gpointer data) {
+void 
+callback_add_button(GtkWidget *widget, gpointer data) {
 
   g_print("filter::callback_add_button()\n");
 
@@ -593,13 +604,14 @@ void callback_add_button(GtkWidget *widget, gpointer data) {
 }
 
 /**
- *  @fn callback_logical_op_box(GtkWidget*,gpointer)
+ *  @fn void callback_logical_op_box(GtkWidget*,gpointer)
  * 
  *  The logical op box callback function 
  *  @param widget The Button widget passed to the callback function
  *  @param data Data sent along with the callback function
  */
-void callback_logical_op_box(GtkWidget *widget, gpointer data) {
+void 
+callback_logical_op_box(GtkWidget *widget, gpointer data) {
  
   g_print("filter::callback_logical_op_box()\n");
 
