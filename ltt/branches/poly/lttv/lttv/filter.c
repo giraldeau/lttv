@@ -421,14 +421,14 @@ void
 lttv_simple_expression_destroy(LttvSimpleExpression* se) {
   
  // g_free(se->value);
-  switch(se->field) {
-     case LTTV_FILTER_TRACE_NAME:
-     case LTTV_FILTER_TRACEFILE_NAME:
-     case LTTV_FILTER_STATE_P_NAME:
-     case LTTV_FILTER_EVENT_NAME:
-       g_free(se->value.v_string);
-       break;
-  }
+//  switch(se->field) {
+//     case LTTV_FILTER_TRACE_NAME:
+//     case LTTV_FILTER_TRACEFILE_NAME:
+//     case LTTV_FILTER_STATE_P_NAME:
+//     case LTTV_FILTER_EVENT_NAME:
+//       g_free(se->value.v_string);
+//       break;
+//  }
   g_free(se);
 
 }
@@ -1452,7 +1452,8 @@ gboolean lttv_filter_append_expression(LttvFilter* filter, const char *expressio
     g_string_append_c(s,'&');
   }
   g_string_append(s,expression);
-  
+ 
+  g_free(filter->expression);
   filter->expression = g_string_free(s,FALSE);
   
   /* TRUE if construction of tree proceeded without errors */
