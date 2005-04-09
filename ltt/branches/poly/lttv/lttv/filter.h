@@ -311,7 +311,7 @@ gboolean lttv_filter_update(LttvFilter* filter);
 
 void lttv_filter_destroy(LttvFilter* filter);
 
-gboolean lttv_filter_append_expression(LttvFilter* filter, char *expression);
+gboolean lttv_filter_append_expression(LttvFilter* filter, const char *expression);
 
 void lttv_filter_clear_expression(LttvFilter* filter);
 

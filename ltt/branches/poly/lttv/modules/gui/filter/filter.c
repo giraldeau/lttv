@@ -40,12 +40,9 @@
  *  expression text entry or add simple expressions using the 
  *  many choices boxes.
  *  
- *  NOTE: 
- *  The version of gtk-2.0 currently installed on 
+ *  \note The version of gtk-2.0 currently installed on 
  *  my desktop misses some function of the newer 
- *  gtk+ api.
- *
- *  For the time being, I'll use the older api 
+ *  gtk+ api.  For the time being, I'll use the older api 
  *  to keep compatibility with most systems.
  */
 
@@ -61,8 +58,6 @@ void gui_filter_destructor(FilterViewerData *fvd);
 FilterViewerDataLine* gui_filter_add_line(FilterViewerData *fvd);
 void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v);
 void gui_filter_line_reset(FilterViewerDataLine *fvdl);
-gboolean filter_traceset_changed(void * hook_data, void * call_data);
-gboolean filter_viewer_data(void * hook_data, void * call_data); 
 GtkWidget* h_guifilter(Tab *tab);
 void filter_destroy_walk(gpointer data, gpointer user_data);
   
@@ -154,9 +149,9 @@ gui_filter(Tab *tab)
 
   fvd->tab  = tab;
 
-  lttvwindow_register_traceset_notify(fvd->tab,
-                                      filter_traceset_changed,
-                                      filter_viewer_data);
+//  lttvwindow_register_traceset_notify(fvd->tab,
+//                                      filter_traceset_changed,
+//                                     filter_viewer_data);
 //  request_background_data(filter_viewer_data);
  
   /*
@@ -383,7 +378,7 @@ gui_filter_line_reset(FilterViewerDataLine *fvdl) {
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_not_op_box),0);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_field_box),0);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_math_op_box),0);
-  gtk_entry_set_text(GTK_COMBO_BOX(fvdl->f_value_field),"");
+  gtk_entry_set_text(GTK_ENTRY(fvdl->f_value_field),"");
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvdl->f_logical_op_box),0);
 }
 
@@ -402,43 +397,16 @@ gui_filter_destructor(FilterViewerData *fvd)
   if(GTK_IS_WIDGET(guifilter_get_widget(fvd))){
     g_info("widget still exists");
   }
-  if(tab != NULL) {
-    lttvwindow_unregister_traceset_notify(fvd->tab,
-                                          filter_traceset_changed,
-                                          filter_viewer_data);
-  }
+//  if(tab != NULL) {
+//    lttvwindow_unregister_traceset_notify(fvd->tab,
+//                                          filter_traceset_changed,
+//                                          filter_viewer_data);
+//  }
   lttvwindowtraces_background_notify_remove(fvd);
 
   g_free(fvd);
 }
 
-/**
- *  @fn gboolean filter_traceset_changed(void*,void*)
- * 
- *  Hook function
- *  @param hook_data The hook data
- *  @param call_data The call data
- *  @return Success/Failure of operation
- */
-gboolean
-filter_traceset_changed(void * hook_data, void * call_data) {
-
-  return FALSE;
-}
-
-/**
- *  @fn gboolean filter_viewer_data(void*,void*)
- * 
- *  Hook function
- *  @param hook_data The hook data
- *  @param call_data The call data
- *  @return Success/Failure of operation
- */
-gboolean
-filter_viewer_data(void * hook_data, void * call_data) {
-
-  return FALSE;
-}
 
 /**
  *  @fn GtkWidget* h_guifilter(Tab*)
@@ -455,7 +423,6 @@ h_guifilter(Tab *tab)
 {
   FilterViewerData* f = gui_filter(tab) ;
 
-  g_print("FilterViewerData:%p\n",f);
   if(f)
     return guifilter_get_widget(f);
   else return NULL;
@@ -490,6 +457,7 @@ filter_destroy_walk(gpointer data, gpointer user_data)
   FilterViewerData *fvd = (FilterViewerData*)data;
 
   g_debug("CFV.c : filter_destroy_walk, %p", fvd);
+
   /* May already have been done by GTK window closing */
   if(GTK_IS_WIDGET(guifilter_get_widget(fvd)))
     gtk_widget_destroy(guifilter_get_widget(fvd));
@@ -518,11 +486,15 @@ static void destroy() {
 void 
 callback_process_button(GtkWidget *widget, gpointer data) {
 
+  g_debug("callback_process_button(): Processing expression");
+  
   FilterViewerData *fvd = (FilterViewerData*)data;
 
   if(strlen(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field))) !=0) {
     LttvFilter* filter = lttv_filter_new();
-    lttv_filter_append_expression(filter,gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
+    GString* s = g_string_new(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
+    lttv_filter_append_expression(filter,s->str);
+    g_string_free(s,TRUE);
     SetFilter(fvd->tab,filter);
   }
 }
@@ -536,7 +508,7 @@ callback_process_button(GtkWidget *widget, gpointer data) {
  */
 void 
 callback_expression_field(GtkWidget *widget, gpointer data) {
-
+  
   FilterViewerData *fvd = (FilterViewerData*)data;
 
   if(strlen(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field))) !=0) {
@@ -557,24 +529,33 @@ callback_expression_field(GtkWidget *widget, gpointer data) {
 void 
 callback_add_button(GtkWidget *widget, gpointer data) {
 
-  g_print("filter::callback_add_button()\n");
+  g_debug("callback_add_button(): processing simple expressions");
 
+  unsigned i;
+  
   FilterViewerData *fvd = (FilterViewerData*)data;
   FilterViewerDataLine *fvdl = NULL;
   GString* a_filter_string = g_string_new("");
 
+  /*
+   * adding linking operator to 
+   * string
+   */
   GString* s;
   s = g_ptr_array_index(fvd->f_logical_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvd->f_logical_op_junction_box)));
-  g_print("s:%p\n",s);
-  g_print("string:%s\n",s);
   g_string_append(a_filter_string,s->str);
-  gtk_combo_box_set_active(fvd->f_logical_op_junction_box,0);
+  gtk_combo_box_set_active(GTK_COMBO_BOX(fvd->f_logical_op_junction_box),0);
 
-  g_print("passe junction\n");
-  
+  /* begin expression */
   g_string_append_c(a_filter_string,'(');
 
-  int i;
+  /*
+   * For each simple expression, add the resulting string 
+   * to the filter string
+   *
+   * Each simple expression takes the following schema
+   * [not operator '!',' '] [field type] [math operator '<','<=','>','>=','=','!='] [value]
+   */
   for(i=0;i<fvd->f_lines->len;i++) {
     fvdl = (FilterViewerDataLine*)g_ptr_array_index(fvd->f_lines,i);
  
@@ -592,10 +573,14 @@ callback_add_button(GtkWidget *widget, gpointer data) {
     s = g_ptr_array_index(fvd->f_logical_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_logical_op_box)));
     g_string_append(a_filter_string,s->str);
     
+    /*
+     * resetting simple expression lines
+     */
     gui_filter_line_reset(fvdl);
     if(i) gui_filter_line_set_visible(fvdl,FALSE); // Only keep the first line
   }
 
+  /* end expression */
   g_string_append_c(a_filter_string,')');
 
   g_string_prepend(a_filter_string,gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
@@ -613,7 +598,7 @@ callback_add_button(GtkWidget *widget, gpointer data) {
 void 
 callback_logical_op_box(GtkWidget *widget, gpointer data) {
  
-  g_print("filter::callback_logical_op_box()\n");
+  g_debug("callback_logical_op_box(): adding new simple expression");
 
   FilterViewerData *fvd = (FilterViewerData*)data;
   FilterViewerDataLine *fvdl = NULL;
@@ -622,7 +607,7 @@ callback_logical_op_box(GtkWidget *widget, gpointer data) {
   for(i=0;i<fvd->f_lines->len;i++) {
     fvdl = (FilterViewerDataLine*)g_ptr_array_index(fvd->f_lines,i);
     if(fvdl->f_logical_op_box == widget) {
-      if(gtk_combo_box_get_active(fvdl->f_logical_op_box) == 0) return;
+      if(gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_logical_op_box)) == 0) return;
       if(i==fvd->f_lines->len-1) {  /* create a new line */
         fvd->rows++;
         FilterViewerDataLine* fvdl2 = gui_filter_add_line(fvd);

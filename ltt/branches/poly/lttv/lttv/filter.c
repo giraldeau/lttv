@@ -27,7 +27,8 @@
  *  Fields specified in a simple expression can take following 
  *  values
  *
- *  LttvTracefileContext{}\ 
+ *  \verbatim
+ *  LttvTracefileContext{} 
  *  |->event\ 
  *  | |->name (String, converted to GQuark)
  *  | |->category (String, not yet implemented)
@@ -52,7 +53,8 @@
  *    |->execution_mode (LttvExecutionMode)
  *    |->execution_submode (LttvExecutionSubmode)
  *    |->process_status (LttvProcessStatus)
- *    |->cpu (GQuark)   
+ *    |->cpu (GQuark)
+ *  \endverbatim
  */
 
 /*
@@ -335,7 +337,6 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
  */
 gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
 
-//  g_print("se->value:%s\n",value);
   unsigned i;
   gboolean is_double = FALSE;
   LttTime t = ltt_time_zero;
@@ -1439,21 +1440,21 @@ lttv_filter_tree_new() {
  *  @param expression string that must be appended
  *  @return Success/Failure of operation
  */
-gboolean lttv_filter_append_expression(LttvFilter* filter, char *expression) {
+gboolean lttv_filter_append_expression(LttvFilter* filter, const char *expression) {
 
   if(expression == NULL) return FALSE;
-  if(filter == NULL) {
-    filter = lttv_filter_new(); 
-    filter->expression = expression;
-  } else if(filter->expression == NULL) {
-    filter->expression = expression;
-  } else {
-    filter->expression = g_strconcat(filter->expression,"&",expression);
-    
-    /* clear expression */
-    g_free(expression);
-  }
+  if(filter == NULL) return FALSE;
 
+  GString* s = g_string_new("");
+  if(filter->expression != NULL) {
+    g_string_append(s,filter->expression);
+    g_string_append_c(s,'&');
+  }
+  g_string_append(s,expression);
+  
+  filter->expression = g_string_free(s,FALSE);
+  
+  /* TRUE if construction of tree proceeded without errors */
   return lttv_filter_update(filter);
   
 }
