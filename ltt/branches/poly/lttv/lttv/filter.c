@@ -262,9 +262,6 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
       */
      case LTTV_FILTER_STATE_PID:
      case LTTV_FILTER_STATE_PPID:
-     case LTTV_FILTER_STATE_EX_MODE:
-     case LTTV_FILTER_STATE_EX_SUBMODE:
-     case LTTV_FILTER_STATE_P_STATUS:
      case LTTV_FILTER_EVENT_TSC:
        switch(op) {
          case LTTV_FIELD_EQ:
@@ -287,6 +284,28 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
            break;
          default:
            g_warning("Error encountered in operator assignment");
+           return FALSE;
+       }
+       break;
+     /*
+      * Enums
+      * can only be compared with 'equal' or 'not equal' operators
+      *
+      * unsigned int of 16 bits are used here since enums 
+      * should not over 2^16-1 values
+      */
+     case LTTV_FILTER_STATE_EX_MODE:
+     case LTTV_FILTER_STATE_EX_SUBMODE:
+     case LTTV_FILTER_STATE_P_STATUS:
+       switch(op) {
+         case LTTV_FIELD_EQ:
+           se->op = lttv_apply_op_eq_uint16;
+           break;
+         case LTTV_FIELD_NE:
+           se->op = lttv_apply_op_ne_uint16;
+           break;
+         default:
+           g_warning("Error encountered in operator assignment = or != expected");
            return FALSE;
        }
        break;
