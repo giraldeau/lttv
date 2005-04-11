@@ -63,8 +63,7 @@ static LttvHooks
 
 /**
  * filters the file input from user
- * @param hook_data the hook data
- * @return success/failure of operation
+ * @param hook_data the hook data, unused
  */
 void filter_analyze_file(void *hook_data) {
 
@@ -98,8 +97,7 @@ void filter_analyze_file(void *hook_data) {
 
 /**
  * filters the string input from user
- * @param hook_data the hook data
- * @return success/failure of operation
+ * @param hook_data the hook data, unused
  */
 void filter_analyze_string(void *hook_data) {
 
@@ -120,6 +118,43 @@ void filter_analyze_string(void *hook_data) {
   g_string_append((GString*)*(value.v_pointer),a_string);
   g_string_append_c((GString*)*(value.v_pointer),')');
 
+}
+
+/**
+ * Output all filter commands on console 
+ * @param hook_data the hook data
+ */
+void filter_list_commands(void *hook_data) {
+
+  g_print("[field] [op] [value]\n\n");
+
+  g_print("*** Possible fields ***\n");
+  g_print("event.name (string)\n");
+  g_print("event.category (string)\n");
+  g_print("event.time (double)\n");
+  g_print("event.tsc (integer)\n");
+  g_print("tracefile.name (string)\n");
+  g_print("trace.name (string)\n");
+  g_print("state.pid (integer)\n");
+  g_print("state.ppid (integer)\n");
+  g_print("state.creation_time (double)\n");
+  g_print("trace.insertion_time (double)\n");
+  g_print("trace.process_name (string)\n");
+  g_print("trace.execution_mode (string)\n");
+  g_print("trace.execution_submode (string)\n");
+  g_print("trace.process_status (string)\n");
+  g_print("trace.cpu (string)\n\n");
+  
+  g_print("*** Possible operators ***\n");
+  g_print("equal '='\n");
+  g_print("not equal '!='\n");
+  g_print("greater '>'\n");
+  g_print("greater or equal '>='\n");
+  g_print("lower '<'\n");
+  g_print("lower or equal '<='\n");
+ 
+  g_print("*** Possible values ***\n");
+  g_print("string, integer, double");
 }
 
 /**
@@ -151,6 +186,11 @@ static void init() {
       "file name", 
       LTTV_OPT_STRING, &a_file_name, filter_analyze_file, NULL);
 
+  lttv_option_add("list", 'l',
+      "list all possible filter commands for module",
+      "list commands",
+      LTTV_OPT_NONE, NULL, filter_list_commands, NULL);
+  
 }
 
 /**
@@ -162,6 +202,8 @@ static void destroy() {
   lttv_option_remove("expression");
 
   lttv_option_remove("filename");
+
+  lttv_option_remove("list");
 
   LttvAttributeValue value;
 
