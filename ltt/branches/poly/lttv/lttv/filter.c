@@ -60,8 +60,15 @@
 /*
  *  \todo 
  *  - refine switch of expression in multiple uses functions
- *  - remove the idle expressions in the tree  
+ *  - remove the idle expressions in the tree 
+ *  - replace string for enum value for corresponding value
  */
+
+#define TEST
+#ifdef TEST
+#include <time.h>
+#include <sys/time.h>
+#endif
 
 #include <lttv/filter.h>
 
@@ -234,7 +241,8 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
  *  @param op current operator
  *  @return success/failure of operation
  */
-gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionOp op) {
+gboolean 
+lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionOp op) {
      
   switch(se->field) {
      /* 
@@ -245,6 +253,9 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_EVENT_NAME:
      case LTTV_FILTER_STATE_CPU:
+     case LTTV_FILTER_STATE_EX_MODE:
+     case LTTV_FILTER_STATE_EX_SUBMODE:
+     case LTTV_FILTER_STATE_P_STATUS:
        switch(op) {
          case LTTV_FIELD_EQ:
            se->op = lttv_apply_op_eq_quark;
@@ -289,26 +300,26 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
        break;
      /*
       * Enums
+      * Entered as string, converted to enum
+      * 
       * can only be compared with 'equal' or 'not equal' operators
       *
       * unsigned int of 16 bits are used here since enums 
-      * should not over 2^16-1 values
+      * should not go over 2^16-1 values
       */
-     case LTTV_FILTER_STATE_EX_MODE:
-     case LTTV_FILTER_STATE_EX_SUBMODE:
-     case LTTV_FILTER_STATE_P_STATUS:
-       switch(op) {
-         case LTTV_FIELD_EQ:
-           se->op = lttv_apply_op_eq_uint16;
-           break;
-         case LTTV_FIELD_NE:
-           se->op = lttv_apply_op_ne_uint16;
-           break;
-         default:
-           g_warning("Error encountered in operator assignment = or != expected");
-           return FALSE;
-       }
-       break;
+//      case /*NOTHING*/:
+//       switch(op) {
+//         case LTTV_FIELD_EQ:
+//           se->op = lttv_apply_op_eq_uint16;
+//           break;
+//         case LTTV_FIELD_NE:
+//           se->op = lttv_apply_op_ne_uint16;
+//           break;
+//         default:
+//           g_warning("Error encountered in operator assignment = or != expected");
+//           return FALSE;
+//       }
+//       break;
      /*
       * Ltttime
       */
@@ -355,7 +366,8 @@ gboolean lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvEx
  *  @param se pointer to the current LttvSimpleExpression
  *  @param value string value for simple expression
  */
-gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
+gboolean 
+lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
 
   unsigned i;
   gboolean is_double = FALSE;
@@ -365,25 +377,26 @@ gboolean lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* val
   
   switch(se->field) {
      /* 
-      * string --> g_quark
+      * Strings
+      * entered as strings, converted to Quarks
       */
      case LTTV_FILTER_TRACE_NAME:
      case LTTV_FILTER_TRACEFILE_NAME:
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_EVENT_NAME:
      case LTTV_FILTER_STATE_CPU:
-//       se->value.v_string = value;
+     case LTTV_FILTER_STATE_EX_MODE:
+     case LTTV_FILTER_STATE_EX_SUBMODE:
+     case LTTV_FILTER_STATE_P_STATUS:
+      // se->value.v_string = value;
        se->value.v_uint32 = g_quark_from_string(value);
        g_free(value);
        break;
      /* 
-      * integer
+      * integer -- supposed to be uint64
       */
      case LTTV_FILTER_STATE_PID:
      case LTTV_FILTER_STATE_PPID:
-     case LTTV_FILTER_STATE_EX_MODE:
-     case LTTV_FILTER_STATE_EX_SUBMODE:
-     case LTTV_FILTER_STATE_P_STATUS:
      case LTTV_FILTER_EVENT_TSC:
        se->value.v_uint64 = atoi(value);
        g_free(value);
@@ -1142,6 +1155,12 @@ lttv_filter_update(LttvFilter* filter) {
    *    2. the subtree is completed, allocate a new subtree
    *    3. pop the tree value from the tree stack
    */
+ 
+#ifdef TEST
+  struct timeval starttime;
+  struct timeval endtime;
+  gettimeofday(&starttime, NULL);
+#endif
   
   for(i=0;i<strlen(filter->expression);i++) {
     // debug
@@ -1404,6 +1423,16 @@ lttv_filter_update(LttvFilter* filter) {
   
   g_assert(filter->head != NULL); /* tree should exist */
   g_assert(subtree == NULL); /* remaining subtree should be included in main tree */
+ 
+#ifdef TEST
+  gettimeofday(&endtime, NULL);
+
+  /* Calcul du temps de l'algorithme */
+  double time1 = starttime.tv_sec + (starttime.tv_usec/1000000.0);
+  double time2 = endtime.tv_sec + (endtime.tv_usec/1000000.0);
+// g_print("Tree build took %.10f ms for strlen of %i\n",(time2-time1)*1000,strlen(filter->expression));
+  g_print("%.10f %i\n",(time2-time1)*1000,strlen(filter->expression));
+#endif
   
   /* debug */
   g_print("+++++++++++++++ BEGIN PRINT ++++++++++++++++\n");
@@ -1460,7 +1489,8 @@ lttv_filter_tree_new() {
  *  @param expression string that must be appended
  *  @return Success/Failure of operation
  */
-gboolean lttv_filter_append_expression(LttvFilter* filter, const char *expression) {
+gboolean 
+lttv_filter_append_expression(LttvFilter* filter, const char *expression) {
 
   if(expression == NULL) return FALSE;
   if(filter == NULL) return FALSE;
@@ -1487,7 +1517,8 @@ gboolean lttv_filter_append_expression(LttvFilter* filter, const char *expressio
  *  current filter and sets its pointer to NULL
  *  @param filter pointer to the current LttvFilter
  */
-void lttv_filter_clear_expression(LttvFilter* filter) {
+void 
+lttv_filter_clear_expression(LttvFilter* filter) {
   
   if(filter->expression != NULL) {
     g_free(filter->expression);
@@ -1635,7 +1666,8 @@ lttv_filter_tree_parse(
  *  @param context current LttvTracefileContext, NULL if not used
  *  @return response of filter
  */
-gboolean lttv_filter_tree_parse_branch(
+gboolean 
+lttv_filter_tree_parse_branch(
         const LttvSimpleExpression* se,
         const LttEvent* event,
         const LttTracefile* tracefile,
