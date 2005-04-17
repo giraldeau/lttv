@@ -1190,15 +1190,8 @@ lttv_filter_update(LttvFilter* filter) {
           t3->node = LTTV_LOGICAL_NOT;
           t2->left = LTTV_TREE_NODE;
           t2->l_child.t = t3;
-//          g_print("%i\n",t2->left);
-//          g_print("*************************************\n");
-//          lttv_print_tree(t2,0);
-//          g_print("*************************************\n");
-//          lttv_print_tree(t3,0);
-//          g_print("*************************************\n");
           t2 = t3;
           not = 0;
-//          g_print("ici t1:%p t2:%p t3:%p\n",t1,t2,t3);
         }
         if(subtree != NULL) {   /* append subtree to current tree */
           t2->left = LTTV_TREE_NODE;
@@ -1673,7 +1666,9 @@ lttv_filter_tree_parse(
   else if(t->right == LTTV_TREE_LEAF) {
       rresult = lttv_filter_tree_parse_branch(t->r_child.leaf,event,tracefile,trace,state,context);
   }
-   
+
+  g_print("t:%p rresult:%i lresult:%i\n",t,rresult,lresult);
+  
   /*
    * Apply and return the 
    * logical link between the 
