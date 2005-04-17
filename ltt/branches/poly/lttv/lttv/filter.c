@@ -588,7 +588,7 @@ gboolean lttv_apply_op_eq_string(const gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_eq_quark(const gpointer v1, LttvFieldValue v2) {
   GQuark* r = (GQuark*) v1;
-  g_print("v1:%i v2:%i\n",*r,v2.v_uint32);
+//  g_print("v1:%i v2:%i\n",*r,v2.v_uint32);
   return (*r == v2.v_uint32);
 }
 
@@ -1667,7 +1667,6 @@ lttv_filter_tree_parse(
       rresult = lttv_filter_tree_parse_branch(t->r_child.leaf,event,tracefile,trace,state,context);
   }
 
-  g_print("t:%p rresult:%i lresult:%i\n",t,rresult,lresult);
   
   /*
    * Apply and return the 
