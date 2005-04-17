@@ -341,7 +341,7 @@ gboolean lttv_filter_tree_parse_branch(
 /*
  *  Debug functions
  */
-void lttv_print_tree(const LttvFilterTree* t);
+void lttv_print_tree(const LttvFilterTree* t, const int count);
 
 #endif // FILTER_H
 

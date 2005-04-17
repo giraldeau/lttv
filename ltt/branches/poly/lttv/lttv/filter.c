@@ -61,10 +61,9 @@
  *  \todo 
  *  - refine switch of expression in multiple uses functions
  *  - remove the idle expressions in the tree 
- *  - replace string for enum value for corresponding value
  */
 
-#define TEST
+//#define TEST
 #ifdef TEST
 #include <time.h>
 #include <sys/time.h>
@@ -1089,14 +1088,16 @@ lttv_filter_update(LttvFilter* filter) {
   
   int	
     i, 
-    p_nesting=0;	/* parenthesis nesting value */
-
+    p_nesting=0,	/* parenthesis nesting value */
+    not=0;
+    
   /* trees */
   LttvFilterTree
     *tree = lttv_filter_tree_new(),   /* main tree */
     *subtree = NULL,                  /* buffer for subtrees */
     *t1,                              /* buffer #1 */
-    *t2;                              /* buffer #2 */
+    *t2,                              /* buffer #2 */
+    *t3;                              /* buffer #3 */
 
   /* 
    * the filter
@@ -1164,35 +1165,51 @@ lttv_filter_update(LttvFilter* filter) {
   
   for(i=0;i<strlen(filter->expression);i++) {
     // debug
-    //g_print("%c ",filter->expression[i]);
+//    g_print("%c\n ",filter->expression[i]);
     
     switch(filter->expression[i]) {
       /*
        *   logical operators
        */
       case '&':   /* and */
-   
+    
+        /* get current tree in tree stack */
         t1 = (LttvFilterTree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
+
+        /* get current node at absolute right */
         while(t1->right != LTTV_TREE_IDLE) {
           g_assert(t1->right == LTTV_TREE_NODE);
           t1 = t1->r_child.t;
         }
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_AND;
+        t1->right = LTTV_TREE_NODE;
+        t1->r_child.t = t2;
+        if(not) {   /* add not operator to tree */
+          t3 = lttv_filter_tree_new();
+          t3->node = LTTV_LOGICAL_NOT;
+          t2->left = LTTV_TREE_NODE;
+          t2->l_child.t = t3;
+//          g_print("%i\n",t2->left);
+//          g_print("*************************************\n");
+//          lttv_print_tree(t2,0);
+//          g_print("*************************************\n");
+//          lttv_print_tree(t3,0);
+//          g_print("*************************************\n");
+          t2 = t3;
+          not = 0;
+//          g_print("ici t1:%p t2:%p t3:%p\n",t1,t2,t3);
+        }
         if(subtree != NULL) {   /* append subtree to current tree */
           t2->left = LTTV_TREE_NODE;
           t2->l_child.t = subtree;
           subtree = NULL;
-          t1->right = LTTV_TREE_NODE;
-          t1->r_child.t = t2;
         } else {  /* append a simple expression */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
-          t1->right = LTTV_TREE_NODE;
-          t1->r_child.t = t2;
         }
         break;
       
@@ -1205,20 +1222,26 @@ lttv_filter_update(LttvFilter* filter) {
         }
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_OR;
-        if(subtree != NULL) {   /* append subtree to current tree */
+        t1->right = LTTV_TREE_NODE;
+        t1->r_child.t = t2;
+        if(not) { // add not operator to tree
+          t3 = lttv_filter_tree_new();
+          t3->node = LTTV_LOGICAL_NOT;
+          t2->left = LTTV_TREE_NODE;
+          t2->l_child.t = t3;
+          t2 = t3;
+          not = 0;
+       }
+       if(subtree != NULL) {   /* append subtree to current tree */
           t2->left = LTTV_TREE_NODE;
           t2->l_child.t = subtree;
           subtree = NULL;
-          t1->right = LTTV_TREE_NODE;
-          t1->r_child.t = t2;
-        } else {    /* append a simple expression */
+       } else {    /* append a simple expression */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new();
-          t1->right = LTTV_TREE_NODE;
-          t1->r_child.t = t2; 
         }
         break;
       
@@ -1231,20 +1254,26 @@ lttv_filter_update(LttvFilter* filter) {
         }
         t2 = lttv_filter_tree_new();
         t2->node = LTTV_LOGICAL_XOR;
+        t1->right = LTTV_TREE_NODE;
+        t1->r_child.t = t2;
+        if(not) { // add not operator to tree
+          t3 = lttv_filter_tree_new();
+          t3->node = LTTV_LOGICAL_NOT;
+          t2->left = LTTV_TREE_NODE;
+          t2->l_child.t = t3;
+          t2 = t3;
+          not = 0;
+        }
         if(subtree != NULL) {   /* append subtree to current tree */
           t2->left = LTTV_TREE_NODE;
           t2->l_child.t = subtree;
           subtree = NULL;
-          t1->right = LTTV_TREE_NODE;
-          t1->r_child.t = t2;
         } else {    /* append a simple expression */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
-          t1->right = LTTV_TREE_NODE;
-          t1->r_child.t = t2; 
         }
         break;
       
@@ -1257,15 +1286,7 @@ lttv_filter_update(LttvFilter* filter) {
           lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_NE);
           i++;
         } else {  /* ! */
-          t1 = (LttvFilterTree*)g_ptr_array_index(tree_stack,tree_stack->len-1);
-          while(t1->right != LTTV_TREE_IDLE) {
-             g_assert(t1->right == LTTV_TREE_NODE);
-             t1 = t1->r_child.t;
-          }
-          t2 = lttv_filter_tree_new();
-          t2->node = LTTV_LOGICAL_NOT;
-          t1->right = LTTV_TREE_NODE;
-          t1->r_child.t = t2;
+          not=1;
         }
         break;
       
@@ -1275,6 +1296,13 @@ lttv_filter_update(LttvFilter* filter) {
         
         p_nesting++;      /* incrementing parenthesis nesting value */
         t1 = lttv_filter_tree_new();
+        if(not) { /* add not operator to tree */
+          t3 = lttv_filter_tree_new();
+          t3->node = LTTV_LOGICAL_NOT;
+          t1->right = LTTV_TREE_NODE;
+          t1->r_child.t = t3;
+          not = 0;
+        }
         g_ptr_array_add( tree_stack,(gpointer) t1 );
         break;
       
@@ -1291,13 +1319,21 @@ lttv_filter_update(LttvFilter* filter) {
   
         /* there must at least be the root tree left in the array */
         g_assert(tree_stack->len>0);
-        
+ 
+        t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
+        while(t1->right != LTTV_TREE_IDLE) {
+           t1 = t1->r_child.t;
+        }
+        if(not) { // add not operator to tree
+          g_print("ici");
+          t3 = lttv_filter_tree_new();
+          t3->node = LTTV_LOGICAL_NOT;
+          t1->right = LTTV_TREE_NODE;
+          t1->r_child.t = t3;
+          t1 = t3;
+          not = 0;
+        }
         if(subtree != NULL) {   /* append subtree to current tree */
-          t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-          while(t1->right != LTTV_TREE_IDLE) {
-             g_assert(t1->right == LTTV_TREE_NODE);
-             t1 = t1->r_child.t;
-          }
           t1->right = LTTV_TREE_NODE;
           t1->r_child.t = subtree;
           subtree = g_ptr_array_index(tree_stack,tree_stack->len-1);
@@ -1305,12 +1341,6 @@ lttv_filter_update(LttvFilter* filter) {
         } else {    /* assign subtree as current tree */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
-          t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
-          while(t1->right != LTTV_TREE_IDLE) {
-             g_assert(t1->right == LTTV_TREE_NODE);
-             g_assert(t1->r_child.t != NULL);
-             t1 = t1->r_child.t;
-          }
           t1->right = LTTV_TREE_LEAF;
           t1->r_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
@@ -1388,11 +1418,21 @@ lttv_filter_update(LttvFilter* filter) {
   if(tree_stack->len != 1) /* only root tree should remain */ 
     return FALSE;
   
-  /*  processing last element of expression   */
+  /*  
+   *  processing last element of expression   
+   */
   t1 = g_ptr_array_index(tree_stack,tree_stack->len-1);
   while(t1->right != LTTV_TREE_IDLE) {
     g_assert(t1->right == LTTV_TREE_NODE);
     t1 = t1->r_child.t;
+  }
+  if(not) { // add not operator to tree
+     t3 = lttv_filter_tree_new();
+     t3->node = LTTV_LOGICAL_NOT;
+     t1->right = LTTV_TREE_NODE;
+     t1->r_child.t = t3;
+     t1 = t3;
+     not = 0;
   }
   if(subtree != NULL) {  /* add the subtree */
     t1->right = LTTV_TREE_NODE;
@@ -1436,7 +1476,7 @@ lttv_filter_update(LttvFilter* filter) {
   
   /* debug */
   g_print("+++++++++++++++ BEGIN PRINT ++++++++++++++++\n");
-  lttv_print_tree(filter->head) ;
+  lttv_print_tree(filter->head,0) ;
   g_print("+++++++++++++++ END PRINT ++++++++++++++++++\n");
   
   /* success */
@@ -1642,7 +1682,8 @@ lttv_filter_tree_parse(
   switch(t->node) {
     case LTTV_LOGICAL_OR: return (lresult | rresult);
     case LTTV_LOGICAL_AND: return (lresult & rresult);
-    case LTTV_LOGICAL_NOT: return (!rresult);
+    case LTTV_LOGICAL_NOT: 
+      return (t->left==LTTV_TREE_LEAF)?!lresult:((t->right==LTTV_TREE_LEAF)?!rresult:TRUE);
     case LTTV_LOGICAL_XOR: return (lresult ^ rresult);
     case 0: return (rresult);
     default: 
@@ -1804,21 +1845,28 @@ lttv_filter_tree_parse_branch(
  *  @param t the pointer to the current LttvFilterTree
  */
 void
-lttv_print_tree(const LttvFilterTree* t) {
+lttv_print_tree(const LttvFilterTree* t, const int count) {
 
-  g_print("node:%p lchild:%p rchild:%p\n",t, //t->l_child.t,t->r_child.t);
+  g_print("node:%p lchild:%p rchild:%p depth:%i\n",t, //t->l_child.t,t->r_child.t);
           (t->left==LTTV_TREE_NODE)?t->l_child.t:NULL,
-          (t->right==LTTV_TREE_NODE)?t->r_child.t:NULL);
-  g_print("node type: %i / [left] %i / [right] %i\n",t->node,t->left,t->right);
-  if(t->left == LTTV_TREE_NODE) lttv_print_tree(t->l_child.t);
-  else if(t->left == LTTV_TREE_LEAF) {
-    g_print("%p: left is %i %p value\n",t,t->l_child.leaf->field,t->l_child.leaf->op);
+          (t->right==LTTV_TREE_NODE)?t->r_child.t:NULL,
+          count);
+  g_print("logic operator: %s\n",(t->node&1)?"OR":((t->node&2)?"AND":((t->node&4)?"NOT":((t->node&8)?"XOR":"IDLE"))));
+  g_print("|-> left branch %p is a %s\n",t->l_child.t,(t->left==LTTV_TREE_NODE)?"NODE":((t->left==LTTV_TREE_LEAF)?"LEAF":"IDLE"));
+  if(t->left == LTTV_TREE_LEAF) {
+    g_print("| |-> field type number: %i\n",t->l_child.leaf->field);
+    g_print("| |-> offset is: %i\n",t->l_child.leaf->offset);
+    g_print("| |-> operator function is: %p\n",t->l_child.leaf->op);
   }
-  if(t->right == LTTV_TREE_NODE) lttv_print_tree(t->r_child.t);
-  else if(t->right == LTTV_TREE_LEAF) {
-    g_print("%p: right is %i %p value\n",t,t->r_child.leaf->field,t->r_child.leaf->op);
+  g_print("|-> right branch %p is a %s\n",t->r_child.t,(t->right==LTTV_TREE_NODE)?"NODE":((t->right==LTTV_TREE_LEAF)?"LEAF":"IDLE"));
+  if(t->right == LTTV_TREE_LEAF) {
+    g_print("| |-> field type number: %i\n",t->r_child.leaf->field);
+    g_print("| |-> offset is: %i\n",t->r_child.leaf->offset);
+    g_print("| |-> operator function is: %p\n",t->r_child.leaf->op);
   }
- 
+
+  if(t->left == LTTV_TREE_NODE) lttv_print_tree(t->l_child.t,count+1);
+  if(t->right == LTTV_TREE_NODE) lttv_print_tree(t->r_child.t,count+1);
 }
 
 /**
