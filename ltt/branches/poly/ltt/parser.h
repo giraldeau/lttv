@@ -69,32 +69,34 @@ typedef enum _token_type {
 
 /* State associated with a file being parsed */
 typedef struct _parse_file {
-  char *name;
-  FILE * fp;
+  gchar *name;
+  int fd;
+  guint64 pos;
+  GIOChannel *channel;
   int lineno;
-  char *buffer;
+  gchar *buffer;
   token_type type; 
   int unget;
   void (*error) (struct _parse_file *, char *);
 } parse_file;
 
 void ungetToken(parse_file * in);
-char *getToken(parse_file *in);
-char *getForwardslash(parse_file *in);
-char *getLAnglebracket(parse_file *in);
-char *getRAnglebracket(parse_file *in);
-char *getQuotedString(parse_file *in);
-char *getName(parse_file *in);
+gchar *getToken(parse_file *in);
+gchar *getForwardslash(parse_file *in);
+gchar *getLAnglebracket(parse_file *in);
+gchar *getRAnglebracket(parse_file *in);
+gchar *getQuotedString(parse_file *in);
+gchar *getName(parse_file *in);
 int   getNumber(parse_file *in);
-char *getEqual(parse_file *in);
-char  seekNextChar(parse_file *in);
+gchar *getEqual(parse_file *in);
+GIOStatus seekNextChar(parse_file *in, gunichar *car);
 
 void skipComment(parse_file * in);
 void skipEOL(parse_file * in);
 
 /* Some constants */
 
-static const int BUFFER_SIZE = 1024;
+#define BUFFER_SIZE 1024
 
 
 /* Events data types */
@@ -187,9 +189,6 @@ static char *floatOutputTypes[] = {
 
 /* Dynamic memory allocation and freeing */
 
-void * memAlloc(int size);
-char *allocAndCopy(char * str);
-char *appendString(char *s, char *suffix);
 void freeTypes(sequence *t);
 void freeType(type_descriptor * td);
 void freeEvents(sequence *t);

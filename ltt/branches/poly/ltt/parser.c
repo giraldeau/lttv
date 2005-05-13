@@ -4,7 +4,9 @@ parser.c: Generate helper declarations and functions to trace events
   from an event description file.
 
 Copyright (C) 2002, Xianxiu Yang
-Copyright (C) 2002, Michel Dagenais 
+Copyright (C) 2002, Michel Dagenais
+Copyright (C) 2005, Mathieu Desnoyers
+
 This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
 the Free Software Foundation; version 2 of the License.
@@ -43,22 +45,6 @@ This program is distributed in the hope that it will be useful,
 
 #include "parser.h"
 
-
-static int ltt_isalpha(char c)
-{
-  int i,j;
-  if(c == '_')return 1;
-  i = c - 'a';
-  j = c - 'A';
-  if((i>=0 && i<26) || (j>=0 && j<26)) return 1;
-  return 0;
-}
-
-static int ltt_isalnum(char c)
-{
-  return (ltt_isalpha(c) || isdigit(c));
-}
-
 /*****************************************************************************
  *Function name
  *    getSize    : translate from string to integer
@@ -70,19 +56,19 @@ static int ltt_isalnum(char c)
 
 int getSize(parse_file *in)
 {
-  char *token;
+  gchar *token;
 
   token = getToken(in);
   if(in->type == NUMBER) {
-    if(strcmp(token,"1") == 0) return 0;
-    else if(strcmp(token,"2") == 0) return 1;
-    else if(strcmp(token,"4") == 0) return 2;
-    else if(strcmp(token,"8") == 0) return 3;
+    if(g_ascii_strcasecmp(token,"1") == 0) return 0;
+    else if(g_ascii_strcasecmp(token,"2") == 0) return 1;
+    else if(g_ascii_strcasecmp(token,"4") == 0) return 2;
+    else if(g_ascii_strcasecmp(token,"8") == 0) return 3;
   }
   else if(in->type == NAME) {
-    if(strcmp(token,"short") == 0) return 4;
-    else if(strcmp(token,"medium") == 0) return 5;
-    else if(strcmp(token,"long") == 0) return 6;
+    if(g_ascii_strcasecmp(token,"short") == 0) return 4;
+    else if(g_ascii_strcasecmp(token,"medium") == 0) return 5;
+    else if(g_ascii_strcasecmp(token,"long") == 0) return 6;
   }
   in->error(in,"incorrect size specification");
   return -1;
@@ -99,48 +85,9 @@ int getSize(parse_file *in)
 void error_callback(parse_file *in, char *msg)
 {
   if(in)
-    printf("Error in file %s, line %d: %s\n", in->name, in->lineno, msg);
+    g_printf("Error in file %s, line %d: %s\n", in->name, in->lineno, msg);
   else
     printf("%s\n",msg);
-}
-
-/*****************************************************************************
- *Function name
- *    memAlloc  : allocate memory                    
- *Input params 
- *    size      : required memory size               
- *return value 
- *    void *    : pointer to allocate memory or NULL 
- ****************************************************************************/
-
-void * memAlloc(int size)
-{
-  void * addr;
-  if(size == 0) return NULL;
-  addr = malloc(size);
-  if(!addr){
-    printf("Failed to allocate memory");    
-    exit(1);
-  }
-  return addr;	  
-}
-
-/*****************************************************************************
- *Function name
- *    allocAndCopy : allocate memory and initialize it  
- *Input params 
- *    str          : string to be put in memory         
- *return value 
- *    char *       : pointer to allocate memory or NULL
- ****************************************************************************/
-
-char *allocAndCopy(char *str)
-{
-  char * addr;
-  if(str == NULL) return NULL;
-  addr = (char *)memAlloc(strlen(str)+1);
-  strcpy(addr,str);
-  return addr;
 }
 
 /**************************************************************************
@@ -158,16 +105,20 @@ char *allocAndCopy(char *str)
  *
  **************************************************************************/
 
-char * getNameAttribute(parse_file *in)
+gchar * getNameAttribute(parse_file *in)
 {
-  char * token, car;
+  gchar * token;
+  gunichar car;
+  GIOStatus status;
+  
   token = getName(in);
-  if(strcmp("name",token))in->error(in,"name was expected");
+  if(g_ascii_strcasecmp("name",token))in->error(in,"name was expected");
   getEqual(in);
   
-  car = seekNextChar(in);
-  if(car == EOF)in->error(in,"name was expected");
-  else if(car == '\"')token = getQuotedString(in);
+  status = seekNextChar(in, &car);
+  if(status == G_IO_STATUS_EOF || status == G_IO_STATUS_ERROR)
+    in->error(in,"name was expected");
+  else if(car == '\"') token = getQuotedString(in);
   else token = getName(in);
   return token;
 }
@@ -178,12 +129,12 @@ char * getFormatAttribute(parse_file *in)
 
   //format is an option
   token = getToken(in); 
-  if(strcmp("/",token) == 0 || strcmp(">",token) == 0){
+  if(g_ascii_strcasecmp("/",token) == 0 || g_ascii_strcasecmp(">",token) == 0){
     ungetToken(in);
     return NULL;
   }
 
-  if(strcmp("format",token))in->error(in,"format was expected");
+  if(g_ascii_strcasecmp("format",token))in->error(in,"format was expected");
   getEqual(in);
   token = getQuotedString(in);
   return token;
@@ -213,12 +164,12 @@ char * getValueStrAttribute(parse_file *in)
   char * token;
 
   token = getToken(in); 
-  if(strcmp("/",token) == 0){
+  if(g_ascii_strcasecmp("/",token) == 0){
     ungetToken(in);
     return NULL;
   }
   
-  if(strcmp("value",token))in->error(in,"value was expected");
+  if(g_ascii_strcasecmp("value",token))in->error(in,"value was expected");
   getEqual(in);
   token = getToken(in);
   if(in->type != NUMBER) in->error(in,"number was expected");
@@ -227,22 +178,35 @@ char * getValueStrAttribute(parse_file *in)
 
 char * getDescription(parse_file *in)
 {
-  long int pos;
-  char * token, car, *str;
+  gint64 pos;
+  gchar * token, *str;
+  gunichar car;
+  GError * error = NULL;
 
-  pos = ftell(in->fp);
+  pos = in->pos;
 
   getLAnglebracket(in);
   token = getName(in);
-  if(strcmp("description",token)){
-    fseek(in->fp, pos, SEEK_SET);
+  if(g_ascii_strcasecmp("description",token)){
+    g_io_channel_seek_position(in->channel, pos-(in->pos), G_SEEK_CUR, &error);
+    if(error != NULL) {
+      g_warning("Can not seek file: \n%s\n", error->message);
+      g_error_free(error);
+    } else in->pos = pos;
+
     return NULL;
   }
   
   getRAnglebracket(in);
 
   pos = 0;
-  while((car = getc(in->fp)) != EOF) {
+  while((g_io_channel_read_unichar(in->channel, &car, &error))
+            != G_IO_STATUS_EOF) {
+    if(error != NULL) {
+      g_warning("Can not seek file: \n%s\n", error->message);
+      g_error_free(error);
+    } else in->pos++;
+
     if(car == '<') break;
     if(car == '\0') continue;
     in->buffer[pos] = car;
@@ -251,11 +215,11 @@ char * getDescription(parse_file *in)
   if(car == EOF)in->error(in,"not a valid description");
   in->buffer[pos] = '\0';
 
-  str = allocAndCopy(in->buffer);
+  str = g_strdup(in->buffer);
 
   getForwardslash(in);
   token = getName(in);
-  if(strcmp("description", token))in->error(in,"not a valid description");
+  if(g_ascii_strcasecmp("description", token))in->error(in,"not a valid description");
   getRAnglebracket(in);
 
   return str;
@@ -276,7 +240,7 @@ void parseFacility(parse_file *in, facility_t * fac)
   char * token;
   event_t *ev;
   
-  fac->name = allocAndCopy(getNameAttribute(in));    
+  fac->name = g_strdup(getNameAttribute(in));    
   getRAnglebracket(in);    
   
   fac->description = getDescription(in);
@@ -288,11 +252,11 @@ void parseFacility(parse_file *in, facility_t * fac)
     if(in->type == ENDFILE)
       in->error(in,"the definition of the facility is not finished");
 
-    if(strcmp("event",token) == 0){
-      ev = (event_t*) memAlloc(sizeof(event_t));
+    if(g_ascii_strcasecmp("event",token) == 0){
+      ev = (event_t*) g_new(event_t,1);
       sequence_push(&(fac->events),ev);
       parseEvent(in,ev, &(fac->unnamed_types), &(fac->named_types));    
-    }else if(strcmp("type",token) == 0){
+    }else if(g_ascii_strcasecmp("type",token) == 0){
       parseTypeDefinition(in, &(fac->unnamed_types), &(fac->named_types));
     }else if(in->type == FORWARDSLASH){
       break;
@@ -300,7 +264,7 @@ void parseFacility(parse_file *in, facility_t * fac)
   }
 
   token = getName(in);
-  if(strcmp("facility",token)) in->error(in,"not the end of the facility");
+  if(g_ascii_strcasecmp("facility",token)) in->error(in,"not the end of the facility");
   getRAnglebracket(in); //</facility>
 }
 
@@ -322,7 +286,7 @@ void parseEvent(parse_file *in, event_t * ev, sequence * unnamed_types,
   char *token;
 
   //<event name=eventtype_name>
-  ev->name = allocAndCopy(getNameAttribute(in));
+  ev->name = g_strdup(getNameAttribute(in));
   getRAnglebracket(in);  
 
   //<description>...</descriptio>
@@ -335,7 +299,7 @@ void parseEvent(parse_file *in, event_t * ev, sequence * unnamed_types,
   if(in->type == FORWARDSLASH){ //</event> NOTHING
     ev->type = NULL;
   }else if(in->type == NAME){
-    if(strcmp("struct",token)==0 || strcmp("typeref",token)==0){
+    if(g_ascii_strcasecmp("struct",token)==0 || g_ascii_strcasecmp("typeref",token)==0){
       ungetToken(in);
       ev->type = parseType(in,NULL, unnamed_types, named_types);
       if(ev->type->type != STRUCT && ev->type->type != NONE) 
@@ -347,7 +311,7 @@ void parseEvent(parse_file *in, event_t * ev, sequence * unnamed_types,
   }else in->error(in,"not a struct type");
 
   token = getName(in);
-  if(strcmp("event",token))in->error(in,"not an event definition");
+  if(g_ascii_strcasecmp("event",token))in->error(in,"not an event definition");
   getRAnglebracket(in);  //</event>
 }
 
@@ -367,11 +331,11 @@ void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
   char * token;
   type_fields *f;
 
-  f = (type_fields *)memAlloc(sizeof(type_fields));
+  f = g_new(type_fields,1);
   sequence_push(&(t->fields),f);
 
   //<field name=field_name> <description> <type> </field>
-  f->name = allocAndCopy(getNameAttribute(in)); 
+  f->name = g_strdup(getNameAttribute(in)); 
   getRAnglebracket(in);
 
   f->description = getDescription(in);
@@ -383,7 +347,7 @@ void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
   getLAnglebracket(in);
   getForwardslash(in);
   token = getName(in);
-  if(strcmp("field",token))in->error(in,"not a valid field definition");
+  if(g_ascii_strcasecmp("field",token))in->error(in,"not a valid field definition");
   getRAnglebracket(in); //</field>
 }
 
@@ -415,7 +379,7 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
   type_descriptor *t;
 
   if(inType == NULL) {
-    t = (type_descriptor *) memAlloc(sizeof(type_descriptor));
+    t = g_new(type_descriptor,1);
     t->type_name = NULL;
     t->type = NONE;
     t->fmt = NULL;
@@ -425,26 +389,26 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
 
   token = getName(in);
 
-  if(strcmp(token,"struct") == 0) {
+  if(g_ascii_strcasecmp(token,"struct") == 0) {
     t->type = STRUCT;
     getRAnglebracket(in); //<struct>
     getLAnglebracket(in); //<field name=..>
     token = getToken(in);
     sequence_init(&(t->fields));
-    while(strcmp("field",token) == 0){
+    while(g_ascii_strcasecmp("field",token) == 0){
       parseFields(in,t, unnamed_types, named_types);
       
       //next field
       getLAnglebracket(in);
       token = getToken(in);	
     }
-    if(strcmp("/",token))in->error(in,"not a valid structure definition");
+    if(g_ascii_strcasecmp("/",token))in->error(in,"not a valid structure definition");
     token = getName(in);
-    if(strcmp("struct",token)!=0)
+    if(g_ascii_strcasecmp("struct",token)!=0)
       in->error(in,"not a valid structure definition");
     getRAnglebracket(in); //</struct>
   }
-  else if(strcmp(token,"union") == 0) {
+  else if(g_ascii_strcasecmp(token,"union") == 0) {
     t->type = UNION;
     t->size = getSizeAttribute(in);
     getRAnglebracket(in); //<union typecodesize=isize>
@@ -452,20 +416,20 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
     getLAnglebracket(in); //<field name=..>
     token = getToken(in);
     sequence_init(&(t->fields));
-    while(strcmp("field",token) == 0){
+    while(g_ascii_strcasecmp("field",token) == 0){
       parseFields(in,t, unnamed_types, named_types);
       
       //next field
       getLAnglebracket(in);
       token = getToken(in);	
     }
-    if(strcmp("/",token))in->error(in,"not a valid union definition");
+    if(g_ascii_strcasecmp("/",token))in->error(in,"not a valid union definition");
     token = getName(in);
-    if(strcmp("union",token)!=0)
+    if(g_ascii_strcasecmp("union",token)!=0)
       in->error(in,"not a valid union definition");        
     getRAnglebracket(in); //</union>
   }
-  else if(strcmp(token,"array") == 0) {
+  else if(g_ascii_strcasecmp(token,"array") == 0) {
     t->type = ARRAY;
     t->size = getValueAttribute(in);
     getRAnglebracket(in); //<array size=n>
@@ -476,10 +440,10 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
     getLAnglebracket(in); //</array>
     getForwardslash(in);
     token = getName(in);
-    if(strcmp("array",token))in->error(in,"not a valid array definition");
+    if(g_ascii_strcasecmp("array",token))in->error(in,"not a valid array definition");
     getRAnglebracket(in);  //</array>
   }
-  else if(strcmp(token,"sequence") == 0) {
+  else if(g_ascii_strcasecmp(token,"sequence") == 0) {
     t->type = SEQUENCE;
     t->size = getSizeAttribute(in);
     getRAnglebracket(in); //<array lengthsize=isize>
@@ -490,31 +454,29 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
     getLAnglebracket(in); //</sequence>
     getForwardslash(in);
     token = getName(in);
-    if(strcmp("sequence",token))in->error(in,"not a valid sequence definition");
+    if(g_ascii_strcasecmp("sequence",token))in->error(in,"not a valid sequence definition");
     getRAnglebracket(in); //</sequence>
   }
-  else if(strcmp(token,"enum") == 0) {
+  else if(g_ascii_strcasecmp(token,"enum") == 0) {
     char * str, *str1;
     t->type = ENUM;
     sequence_init(&(t->labels));
     t->size = getSizeAttribute(in);
-    t->fmt = allocAndCopy(getFormatAttribute(in));
+    t->fmt = g_strdup(getFormatAttribute(in));
     getRAnglebracket(in);
 
     //<label name=label1 value=n/>
     getLAnglebracket(in);
     token = getToken(in); //"label" or "/"
-    while(strcmp("label",token) == 0){
-      str   = allocAndCopy(getNameAttribute(in));      
+    while(g_ascii_strcasecmp("label",token) == 0){
+      str1   = g_strdup(getNameAttribute(in));      
       token = getValueStrAttribute(in);
       if(token){
-	str1 = appendString(str,"=");
-	free(str);
-	str = appendString(str1,token);
-	free(str1);
-	sequence_push(&(t->labels),str);
+	      str = g_strconcat(str1,"=",token,NULL);
+      	g_free(str1);
+      	sequence_push(&(t->labels),str);
       }else
-	sequence_push(&(t->labels),str);
+      	sequence_push(&(t->labels),str1);
 
       getForwardslash(in);
       getRAnglebracket(in);
@@ -523,44 +485,44 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
       getLAnglebracket(in);
       token = getToken(in); //"label" or "/"      
     }
-    if(strcmp("/",token))in->error(in, "not a valid enum definition");
+    if(g_ascii_strcasecmp("/",token))in->error(in, "not a valid enum definition");
     token = getName(in);
-    if(strcmp("enum",token))in->error(in, "not a valid enum definition");
+    if(g_ascii_strcasecmp("enum",token))in->error(in, "not a valid enum definition");
     getRAnglebracket(in); //</label>
   }
-  else if(strcmp(token,"int") == 0) {
+  else if(g_ascii_strcasecmp(token,"int") == 0) {
     t->type = INT;
     t->size = getSizeAttribute(in);
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    t->fmt  = g_strdup(getFormatAttribute(in));
     getForwardslash(in);
     getRAnglebracket(in); 
   }
-  else if(strcmp(token,"uint") == 0) {
+  else if(g_ascii_strcasecmp(token,"uint") == 0) {
     t->type = UINT;
     t->size = getSizeAttribute(in);
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    t->fmt  = g_strdup(getFormatAttribute(in));
     getForwardslash(in);
     getRAnglebracket(in); 
   }
-  else if(strcmp(token,"float") == 0) {
+  else if(g_ascii_strcasecmp(token,"float") == 0) {
     t->type = FLOAT;
     t->size = getSizeAttribute(in);
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    t->fmt  = g_strdup(getFormatAttribute(in));
     getForwardslash(in);
     getRAnglebracket(in); 
   }
-  else if(strcmp(token,"string") == 0) {
+  else if(g_ascii_strcasecmp(token,"string") == 0) {
     t->type = STRING;
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    t->fmt  = g_strdup(getFormatAttribute(in));
     getForwardslash(in);
     getRAnglebracket(in); 
   }
-  else if(strcmp(token,"typeref") == 0){
+  else if(g_ascii_strcasecmp(token,"typeref") == 0){
     // Must be a named type
     if(inType != NULL) 
       in->error(in,"Named type cannot refer to a named type");
     else {
-      free(t);
+      g_free(t);
       sequence_pop(unnamed_types);
       token = getNameAttribute(in);
       t = find_named_type(token, named_types);
@@ -583,18 +545,18 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
  *    type_descriptor *   : a type descriptor                       
  *****************************************************************************/
 
-type_descriptor * find_named_type(char *name, table * named_types)
+type_descriptor * find_named_type(gchar *name, table * named_types)
 { 
   type_descriptor *t;
 
   t = table_find(named_types,name);
   if(t == NULL) {
-    t = (type_descriptor *)memAlloc(sizeof(type_descriptor));
-    t->type_name = allocAndCopy(name);
+    t = g_new(type_descriptor,1);
+    t->type_name = g_strdup(name);
     t->type = NONE;
     t->fmt = NULL;
     table_insert(named_types,t->type_name,t);
-    //    table_insert(named_types,allocAndCopy(name),t);
+    //    table_insert(named_types,g_strdup(name),t);
   }
   return t;
 }  
@@ -621,7 +583,7 @@ void parseTypeDefinition(parse_file * in, sequence * unnamed_types,
   getRAnglebracket(in); //<type name=type_name>
   getLAnglebracket(in); //<struct>
   token = getName(in);
-  if(strcmp("struct",token))in->error(in,"not a valid type definition");
+  if(g_ascii_strcasecmp("struct",token))in->error(in,"not a valid type definition");
   ungetToken(in);
   parseType(in,t, unnamed_types, named_types);
   
@@ -629,7 +591,7 @@ void parseTypeDefinition(parse_file * in, sequence * unnamed_types,
   getLAnglebracket(in);
   getForwardslash(in);
   token = getName(in);
-  if(strcmp("type",token))in->error(in,"not a valid type definition");  
+  if(g_ascii_strcasecmp("type",token))in->error(in,"not a valid type definition");  
   getRAnglebracket(in); //</type>
 }
 
@@ -710,17 +672,37 @@ char * getEqual(parse_file *in)
   return token;
 }
 
-char seekNextChar(parse_file *in)
+gunichar seekNextChar(parse_file *in, gunichar *car)
 {
-  char car;
-  while((car = getc(in->fp)) != EOF) {
-    if(!isspace(car)){
-      ungetc(car,in->fp);
-      return car;
+  GError * error = NULL;
+  GIOStatus status;
+
+  do {
+
+    status = g_io_channel_read_unichar(in->channel, car, &error);
+    
+    if(error != NULL) {
+      g_warning("Can not read file: \n%s\n", error->message);
+      g_error_free(error);
+      break;
     }
-  }  
-  return EOF;
+    in->pos++;
+   
+    if(!g_unichar_isspace(*car)) {
+      g_io_channel_seek_position(in->channel, -1, G_SEEK_CUR, &error);
+      if(error != NULL) {
+        g_warning("Can not seek file: \n%s\n", error->message);
+        g_error_free(error);
+      }
+      in->pos--;
+      break;
+    }
+
+  } while(status != G_IO_STATUS_EOF && status != G_IO_STATUS_ERROR);
+
+  return status;
 }
+
 
 /******************************************************************
  * Function :
@@ -742,11 +724,11 @@ void ungetToken(parse_file * in)
   in->unget = 1;
 }
 
-char *getToken(parse_file * in)
+gchar *getToken(parse_file * in)
 {
-  FILE *fp = in->fp;
-  char car, car1;
+  gunichar car, car1;
   int pos = 0, escaped;
+  GError * error = NULL;
 
   if(in->unget == 1) {
     in->unget = 0;
@@ -755,20 +737,35 @@ char *getToken(parse_file * in)
 
   /* skip whitespace and comments */
 
-  while((car = getc(fp)) != EOF) {
+  while((g_io_channel_read_unichar(in->channel, &car, &error))
+      != G_IO_STATUS_EOF) {
+
+    if(error != NULL) {
+      g_warning("Can not read file: \n%s\n", error->message);
+      g_error_free(error);
+    } else in->pos++;
+
     if(car == '/') {
-      car1 = getc(fp); 
+      g_io_channel_read_unichar(in->channel, &car1, &error);
+      if(error != NULL) {
+        g_warning("Can not read file: \n%s\n", error->message);
+        g_error_free(error);
+      } else in->pos++;
+
       if(car1 == '*') skipComment(in);
       else if(car1 == '/') skipEOL(in);
-      else { 
-        car1 = ungetc(car1,fp);
+      else {
+        g_io_channel_seek_position(in->channel, -1, G_SEEK_CUR, &error);
+        if(error != NULL) {
+          g_warning("Can not seek file: \n%s\n", error->message);
+          g_error_free(error);
+        } else in->pos--;
         break;
       }
     }
     else if(car == '\n') in->lineno++;
-    else if(!isspace(car)) break;
+    else if(!g_unichar_isspace(car)) break;
   }
-
   switch(car) {
     case EOF:
       in->type = ENDFILE;
@@ -795,10 +792,17 @@ char *getToken(parse_file * in)
       break;
     case '"':
       escaped = 0;
-      while((car = getc(fp)) != EOF && pos < BUFFER_SIZE) {
+      while(g_io_channel_read_unichar(in->channel, &car, &error)
+                  != G_IO_STATUS_EOF && pos < BUFFER_SIZE) {
+
+        if(error != NULL) {
+          g_warning("Can not read file: \n%s\n", error->message);
+          g_error_free(error);
+        } else in->pos++;
+
         if(car == '\\' && escaped == 0) {
-	  in->buffer[pos] = car;
-	  pos++;
+	        in->buffer[pos] = car;
+      	  pos++;
           escaped = 1;
           continue;
         }
@@ -816,33 +820,67 @@ char *getToken(parse_file * in)
       in->type = QUOTEDSTRING;
       break;
     default:
-      if(isdigit(car)) {
+      if(g_unichar_isdigit(car)) {
         in->buffer[pos] = car;
         pos++;
-        while((car = getc(fp)) != EOF && pos < BUFFER_SIZE) {
+        while(g_io_channel_read_unichar(in->channel, &car, &error)
+                    != G_IO_STATUS_EOF && pos < BUFFER_SIZE) {
+
+          if(error != NULL) {
+            g_warning("Can not read file: \n%s\n", error->message);
+            g_error_free(error);
+          } else in->pos++;
+
           if(!isdigit(car)) {
-            ungetc(car,fp);
+            g_io_channel_seek_position(in->channel, -1, G_SEEK_CUR, &error);
+            if(error != NULL) {
+              g_warning("Can not seek file: \n%s\n", error->message);
+              g_error_free(error);
+            } else in->pos--;
             break;
           }
           in->buffer[pos] = car;
           pos++;
         }
-	if(car == EOF) ungetc(car,fp);
+	      if(car == EOF) {
+          g_io_channel_seek_position(in->channel, -1, G_SEEK_CUR, &error);
+          if(error != NULL) {
+            g_warning("Can not seek file: \n%s\n", error->message);
+            g_error_free(error);
+          } else in->pos--;
+        }
         if(pos == BUFFER_SIZE) in->error(in, "number token too large");
         in->type = NUMBER;
       }    
-      else if(ltt_isalpha(car)) {
+      else if(g_unichar_isalpha(car)) {
         in->buffer[0] = car;
         pos = 1;
-        while((car = getc(fp)) != EOF && pos < BUFFER_SIZE) {
-          if(!ltt_isalnum(car)) {
-            ungetc(car,fp);
+        while(g_io_channel_read_unichar(in->channel, &car, &error)
+                              != G_IO_STATUS_EOF && pos < BUFFER_SIZE) {
+
+          if(error != NULL) {
+            g_warning("Can not read file: \n%s\n", error->message);
+            g_error_free(error);
+          } else in->pos++;
+
+          if(!(g_unichar_isalnum(car) || car == '_')) {
+            g_io_channel_seek_position(in->channel, -1, G_SEEK_CUR, &error);
+            if(error != NULL) {
+              g_warning("Can not seek file: \n%s\n", error->message);
+              g_error_free(error);
+            } else in->pos--;
             break;
           }
           in->buffer[pos] = car;
           pos++;
         }
-	if(car == EOF) ungetc(car,fp);
+	      if(car == EOF) {
+          g_io_channel_seek_position(in->channel, -1, G_SEEK_CUR, &error);
+          if(error != NULL) {
+            g_warning("Can not seek file: \n%s\n", error->message);
+            g_error_free(error);
+          } else in->pos--;
+        }
         if(pos == BUFFER_SIZE) in->error(in, "name token too large");
         in->type = NAME;
       }
@@ -854,14 +892,35 @@ char *getToken(parse_file * in)
 
 void skipComment(parse_file * in)
 {
-  char car;
-  while((car = getc(in->fp)) != EOF) {
+  gunichar car;
+  GError * error = NULL;
+
+  while(g_io_channel_read_unichar(in->channel, &car, &error)
+                                    != G_IO_STATUS_EOF) {
+
+    if(error != NULL) {
+      g_warning("Can not read file: \n%s\n", error->message);
+      g_error_free(error);
+    } else in->pos++;
+
     if(car == '\n') in->lineno++;
     else if(car == '*') {
-      car = getc(in->fp);
+
+      g_io_channel_read_unichar(in->channel, &car, &error);
+      if(error != NULL) {
+        g_warning("Can not read file: \n%s\n", error->message);
+        g_error_free(error);
+      } else in->pos++;
+
       if(car ==EOF) break;
       if(car == '/') return;
-      ungetc(car,in->fp);
+
+      g_io_channel_seek_position(in->channel, -1, G_SEEK_CUR, &error);
+      if(error != NULL) {
+        g_warning("Can not seek file: \n%s\n", error->message);
+        g_error_free(error);
+      } else in->pos--;
+
     }
   }
   if(car == EOF) in->error(in,"comment begining with '/*' has no ending '*/'");
@@ -869,14 +928,27 @@ void skipComment(parse_file * in)
 
 void skipEOL(parse_file * in)
 {
-  char car;
-  while((car = getc(in->fp)) != EOF) {
+  gunichar car;
+  GError * error = NULL;
+
+  while(g_io_channel_read_unichar(in->channel, &car, &error)
+                                          != G_IO_STATUS_EOF) {
     if(car == '\n') {
-      ungetc(car,in->fp);
+      g_io_channel_seek_position(in->channel, -1, G_SEEK_CUR, &error);
+      if(error != NULL) {
+        g_warning("Can not seek file: \n%s\n", error->message);
+        g_error_free(error);
+      } else in->pos--;
       break;
     }
   }
-  if(car == EOF)ungetc(car, in->fp);
+  if(car == EOF) {
+    g_io_channel_seek_position(in->channel, -1, G_SEEK_CUR, &error);
+    if(error != NULL) {
+      g_warning("Can not seek file: \n%s\n", error->message);
+      g_error_free(error);
+    } else in->pos--;
+  }
 }
 
 /*****************************************************************************
@@ -964,29 +1036,29 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
       str = floatOutputTypes[type->size];
       break;
     case STRING:
-      str = allocAndCopy("string");
+      str = g_strdup("string");
       flag = 1;
       break;
     case ENUM:
-      str = appendString("enum ", uintOutputTypes[type->size]);
+      str = g_strconcat("enum ", uintOutputTypes[type->size], NULL);
       flag = 1;
       break;
     case ARRAY:
       sprintf(buf,"%d",type->size);
-      str = appendString("array ",buf);
+      str = g_strconcat("array ",buf, NULL);
       flag = 1;
       break;
     case SEQUENCE:
       sprintf(buf,"%d",type->size);
-      str = appendString("sequence ",buf);
+      str = g_strconcat("sequence ",buf, NULL);
       flag = 1;
       break;
     case STRUCT:
-      str = allocAndCopy("struct");
+      str = g_strdup("struct");
       flag = 1;
       break;
     case UNION:
-      str = allocAndCopy("union");
+      str = g_strdup("union");
       flag = 1;
       break;
     default:
@@ -995,7 +1067,7 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
   }
 
   crc = partial_crc32(str,crc);
-  if(flag) free(str);
+  if(flag) g_free(str);
 
   if(type->fmt) crc = partial_crc32(type->fmt,crc);
     
@@ -1022,19 +1094,19 @@ void freeType(type_descriptor * tp)
   int pos2;
   type_fields *f;
 
-  if(tp->fmt != NULL) free(tp->fmt);
+  if(tp->fmt != NULL) g_free(tp->fmt);
   if(tp->type == ENUM) {
     for(pos2 = 0; pos2 < tp->labels.position; pos2++) {
-      free(tp->labels.array[pos2]);
+      g_free(tp->labels.array[pos2]);
     }
     sequence_dispose(&(tp->labels));
   }
   if(tp->type == STRUCT) {
     for(pos2 = 0; pos2 < tp->fields.position; pos2++) {
       f = (type_fields *) tp->fields.array[pos2];
-      free(f->name);
-      free(f->description);
-      free(f);
+      g_free(f->name);
+      g_free(f->description);
+      g_free(f);
     }
     sequence_dispose(&(tp->fields));
   }
@@ -1046,10 +1118,10 @@ void freeNamedType(table * t)
   type_descriptor * td;
 
   for(pos = 0 ; pos < t->keys.position; pos++) {
-    free((char *)t->keys.array[pos]);
+    g_free((char *)t->keys.array[pos]);
     td = (type_descriptor*)t->values.array[pos];
     freeType(td);
-    free(td);
+    g_free(td);
   }
 }
 
@@ -1061,7 +1133,7 @@ void freeTypes(sequence *t)
   for(pos = 0 ; pos < t->position; pos++) {
     tp = (type_descriptor *)t->array[pos];
     freeType(tp);
-    free(tp);
+    g_free(tp);
   }
 }
 
@@ -1072,9 +1144,9 @@ void freeEvents(sequence *t)
 
   for(pos = 0 ; pos < t->position; pos++) {
     ev = (event_t *) t->array[pos];
-    free(ev->name);
-    free(ev->description);
-    free(ev);
+    g_free(ev->name);
+    g_free(ev->description);
+    g_free(ev);
   }
 
 }
@@ -1086,13 +1158,13 @@ void sequence_init(sequence *t)
 {
   t->size = 10;
   t->position = 0;
-  t->array = (void **)memAlloc(t->size * sizeof(void *));
+  t->array = g_new(void*, t->size);
 }
 
 void sequence_dispose(sequence *t) 
 {
   t->size = 0;
-  free(t->array);
+  g_free(t->array);
   t->array = NULL;
 }
 
@@ -1102,10 +1174,10 @@ void sequence_push(sequence *t, void *elem)
 
   if(t->position >= t->size) {
     tmp = t->array;
-    t->array = (void **)memAlloc(t->size * 2 * sizeof(void *));
+    t->array = g_new(void*, 2*t->size);
     memcpy(t->array, tmp, t->size * sizeof(void *));
     t->size = t->size * 2;
-    free(tmp);
+    g_free(tmp);
   }
   t->array[t->position] = elem;
   t->position++;
@@ -1141,7 +1213,7 @@ void *table_find(table *t, char *key)
 {
   int pos;
   for(pos = 0 ; pos < t->keys.position; pos++) {
-    if(strcmp((char *)key,(char *)t->keys.array[pos]) == 0)
+    if(g_ascii_strcasecmp((char *)key,(char *)t->keys.array[pos]) == 0)
       return(t->values.array[pos]);
   }
   return NULL;
@@ -1161,20 +1233,6 @@ void *table_find_int(table *t, int *key)
       return(t->values.array[pos]);
   }
   return NULL;
-}
-
-
-/* Concatenate strings */
-
-char *appendString(char *s, char *suffix) 
-{
-  char *tmp;
-  if(suffix == NULL) return s;
-
-  tmp = (char *)memAlloc(strlen(s) + strlen(suffix) + 1);
-  strcpy(tmp,s);
-  strcat(tmp,suffix);  
-  return tmp;
 }
 
 

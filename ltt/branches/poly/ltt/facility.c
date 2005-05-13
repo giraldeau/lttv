@@ -19,11 +19,19 @@
 #include <stdlib.h> 
 #include <string.h>
 #include <stdio.h>
+#include <glib/gstdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+
 
 #include "parser.h"
 #include <ltt/ltt.h>
 #include "ltt-private.h"
 #include <ltt/facility.h>
+
+#define g_close close
 
 /* search for the (named) type in the table, if it does not exist
    create a new one */
@@ -53,31 +61,36 @@ void freeLttNamedType(LttType * type);
  *    pathname                : the path name of the facility   
  ****************************************************************************/
 
-void ltt_facility_open(LttTrace * t, char * pathname)
+void ltt_facility_open(LttTrace * t, gchar * pathname)
 {
-  char *token;
+  gchar *token;
   parse_file in;
-  char buffer[BUFFER_SIZE];
+  gsize length;
   facility_t * fac;
   LttFacility * f;
   LttChecksum checksum;
+  GError * error = NULL;
+  gchar buffer[BUFFER_SIZE];
 
-  in.buffer = buffer;
+  in.buffer = &(buffer[0]);
   in.lineno = 0;
   in.error = error_callback;
   in.name = pathname;
 
-  in.fp = fopen(in.name, "r");
-  if(!in.fp ) in.error(&in,"cannot open input file");
+  in.fd = g_open(in.name, O_RDONLY, 0);
+  if(in.fd < 0 ) in.error(&in,"cannot open input file");
+
+  in.channel = g_io_channel_unix_new(in.fd);
+  in.pos = 0;
 
   while(1){
     token = getToken(&in);
     if(in.type == ENDFILE) break;
     
-    if(strcmp(token, "<")) in.error(&in,"not a facility file");
+    if(g_ascii_strcasecmp(token, "<")) in.error(&in,"not a facility file");
     token = getName(&in);
-    
-    if(strcmp("facility",token) == 0) {
+
+    if(g_ascii_strcasecmp("facility",token) == 0) {
       fac = g_new(facility_t, 1);
       fac->name = NULL;
       fac->description = NULL;
@@ -99,8 +112,8 @@ void ltt_facility_open(LttTrace * t, char * pathname)
       t->facility_number++;
       g_ptr_array_add(t->facilities,f);
 
-      free(fac->name);
-      free(fac->description);
+      g_free(fac->name);
+      g_free(fac->description);
       freeEvents(&fac->events);
       sequence_dispose(&fac->events);
       freeNamedType(&fac->named_types);
@@ -111,7 +124,14 @@ void ltt_facility_open(LttTrace * t, char * pathname)
     }
     else in.error(&in,"facility token was expected");
   }
-  fclose(in.fp);
+
+  g_io_channel_shutdown(in.channel, FALSE, &error); /* No flush */
+  if(error != NULL) {
+    g_warning("Can not close file: \n%s\n", error->message);
+    g_error_free(error);
+  }
+
+  g_close(in.fd);
 }
 
 
@@ -287,13 +307,13 @@ LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
 {
   LttType * lttType = NULL;
   unsigned int i=0;
-  char * name;
+  gchar * name;
 
   if(td->type_name){
     for(i=0;i<fac->named_types_number; i++){
       if(fac->named_types[i] == NULL) break;
       name = fac->named_types[i]->type_name;
-      if(strcmp(name, td->type_name)==0){
+      if(g_ascii_strcasecmp(name, td->type_name)==0){
 	      lttType = fac->named_types[i];	
 	//	if(lttType->element_name) g_free(lttType->element_name);
 	//	lttType->element_name = NULL;
@@ -449,7 +469,7 @@ void freeLttField(LttField * fld)
  *    char *                  : the facility's name
  ****************************************************************************/
 
-char *ltt_facility_name(LttFacility *f)
+gchar *ltt_facility_name(LttFacility *f)
 {
   return f->name;
 }
@@ -523,14 +543,14 @@ LttEventType *ltt_facility_eventtype_get(LttFacility *f, unsigned i)
  *    LttEventType *  : the event type required  
  ****************************************************************************/
 
-LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, char *name)
+LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, gchar *name)
 {
   unsigned int i;
   LttEventType * ev = NULL;
   
   for(i=0;i<f->event_number;i++){
     LttEventType *iter_ev = f->events[i];
-    if(strcmp(iter_ev->name, name) == 0) {
+    if(g_ascii_strcasecmp(iter_ev->name, name) == 0) {
       ev = iter_ev;
       break;
     }

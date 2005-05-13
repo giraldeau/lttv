@@ -130,6 +130,6 @@ double ltt_event_get_double(LttEvent *e, LttField *f);
 /* The string obtained is only valid until the next read from
    the same tracefile. */
 
-char *ltt_event_get_string(LttEvent *e, LttField *f);
+gchar *ltt_event_get_string(LttEvent *e, LttField *f);
 
 #endif // EVENT_H

@@ -32,7 +32,7 @@
    
    */
 
-LttTrace *ltt_trace_open(const char *pathname);
+LttTrace *ltt_trace_open(const gchar *pathname);
 
 /* copy reopens a trace 
  *
@@ -40,7 +40,7 @@ LttTrace *ltt_trace_open(const char *pathname);
  */
 LttTrace *ltt_trace_copy(LttTrace *self);
 
-char * ltt_trace_name(LttTrace *t);
+gchar * ltt_trace_name(LttTrace *t);
 
 void ltt_trace_close(LttTrace *t); 
 
@@ -65,7 +65,7 @@ LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id);
    position, returning n, the facilities are from position to 
    position + n - 1. */
 
-unsigned ltt_trace_facility_find(LttTrace *t, char *name, unsigned *position);
+unsigned ltt_trace_facility_find(LttTrace *t, gchar *name, unsigned *position);
 
 
 /* Functions to discover all the event types in the trace */
@@ -133,11 +133,11 @@ LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event);
 
 /* open tracefile */
 
-LttTracefile * ltt_tracefile_open(LttTrace *t, char * tracefile_name);
+LttTracefile * ltt_tracefile_open(LttTrace *t, gchar * tracefile_name);
 
-void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name);
+void ltt_tracefile_open_cpu(LttTrace *t, gchar * tracefile_name);
 
-gint ltt_tracefile_open_control(LttTrace *t, char * control_name);
+gint ltt_tracefile_open_control(LttTrace *t, gchar * control_name);
 
 
 /* get the data type size and endian type of the local machine */
@@ -151,17 +151,17 @@ gint64 getIntNumber(gboolean reverse_byte_order, int size1, void *evD);
 
 /* get the node name of the system */
 
-char * ltt_trace_system_description_node_name (LttSystemDescription * s);
+gchar * ltt_trace_system_description_node_name (LttSystemDescription * s);
 
 
 /* get the domain name of the system */
 
-char * ltt_trace_system_description_domain_name (LttSystemDescription * s);
+gchar * ltt_trace_system_description_domain_name (LttSystemDescription * s);
 
 
 /* get the description of the system */
 
-char * ltt_trace_system_description_description (LttSystemDescription * s);
+gchar * ltt_trace_system_description_description (LttSystemDescription * s);
 
 
 /* get the start time of the trace */
@@ -173,6 +173,6 @@ LttTracefile *ltt_tracefile_new();
 void ltt_tracefile_destroy(LttTracefile *tf);
 void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src);
 
-void get_absolute_pathname(const char *pathname, char * abs_pathname);
+void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname);
 
 #endif // TRACE_H

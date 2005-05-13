@@ -48,7 +48,7 @@ static unsigned floatSizes[] = {
  *    char *             : the name of the event type
  ****************************************************************************/
 
-char *ltt_eventtype_name(LttEventType *et)
+gchar *ltt_eventtype_name(LttEventType *et)
 {
   return et->name;
 }
@@ -62,7 +62,7 @@ char *ltt_eventtype_name(LttEventType *et)
  *    char *             : the description of the event type
  ****************************************************************************/
 
-char *ltt_eventtype_description(LttEventType *et)
+gchar *ltt_eventtype_description(LttEventType *et)
 {
   return et->description;
 }
@@ -147,7 +147,7 @@ LttField *ltt_eventtype_field(LttEventType *et)
  *    char *         : the name of the type
  ****************************************************************************/
 
-char *ltt_type_name(LttType *t)
+gchar *ltt_type_name(LttType *t)
 {
   return t->element_name;
 }
@@ -283,7 +283,7 @@ unsigned ltt_type_member_number(LttType *t)
  *    LttType *           : the type of structure member
  ****************************************************************************/
 
-LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name)
+LttType *ltt_type_member_type(LttType *t, unsigned i, gchar ** name)
 {
   LttType *member_type = NULL;
 
@@ -315,7 +315,7 @@ LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name)
 
 char *ltt_enum_string_get(LttType *t, unsigned i)
 { 
-  char *string = NULL;
+  gchar *string = NULL;
   
   if(likely(t->type_class == LTT_ENUM && i < t->element_number))
     string = t->enum_strings[i];

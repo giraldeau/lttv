@@ -25,12 +25,12 @@
    with a facility are released when the trace is closed. Each facility
    is characterized by its name and checksum. */
 
-char *ltt_facility_name(LttFacility *f);
+gchar *ltt_facility_name(LttFacility *f);
 
 LttChecksum ltt_facility_checksum(LttFacility *f);
 
 /* open facility */
-void ltt_facility_open(LttTrace * t, char * facility_name);
+void ltt_facility_open(LttTrace * t, gchar * facility_name);
 
 /* Discover the event types within the facility. The event type integer id
    relative to the trace is from 0 to nb_event_types - 1. The event
@@ -43,7 +43,7 @@ unsigned ltt_facility_eventtype_number(LttFacility *f);
 
 LttEventType *ltt_facility_eventtype_get(LttFacility *f, unsigned i);
 
-LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, char *name);
+LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, gchar *name);
 
 int ltt_facility_close(LttFacility *f);
 

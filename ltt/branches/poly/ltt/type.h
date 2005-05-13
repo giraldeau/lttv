@@ -31,9 +31,9 @@
 /* Obtain the name, description, facility, facility relative id, global id, 
    type and root field for an eventtype */
 
-char *ltt_eventtype_name(LttEventType *et);
+gchar *ltt_eventtype_name(LttEventType *et);
 
-char *ltt_eventtype_description(LttEventType *et);
+gchar *ltt_eventtype_description(LttEventType *et);
 
 LttFacility *ltt_eventtype_facility(LttEventType *et);
 
@@ -50,7 +50,7 @@ LttField *ltt_eventtype_field(LttEventType *et);
    primitive types (INT, UINT, FLOAT, ENUM), or the size for the unsigned
    integer length count for sequences. */
  
-char *ltt_type_name(LttType *t);
+gchar *ltt_type_name(LttType *t);
 
 LttTypeEnum ltt_type_class(LttType *t);
 
@@ -80,7 +80,7 @@ LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name);
 /* For enumerations, obtain the symbolic string associated with a value
    (0 to n - 1 for an enumeration of n elements). */
 
-char *ltt_enum_string_get(LttType *t, unsigned i);
+gchar *ltt_enum_string_get(LttType *t, unsigned i);
 
 
 /* The fields form a tree representing a depth first search of the 

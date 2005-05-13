@@ -38,7 +38,7 @@ typedef enum _BuildinEvent{
 /* structure definition */
 
 typedef struct _FacilityLoad{
-  char * name;
+  gchar * name;
   LttChecksum checksum;
   guint32     base_code;
 } LTT_PACKED_STRUCT FacilityLoad;
@@ -62,20 +62,20 @@ typedef struct _TimeHeartbeat {
 
 
 struct _LttType{
-  char * type_name;                //type name if it is a named type
-  char * element_name;             //elements name of the struct
-  char * fmt;
+  gchar * type_name;                //type name if it is a named type
+  gchar * element_name;             //elements name of the struct
+  gchar * fmt;
   unsigned int size;
   LttTypeEnum type_class;          //which type
-  char ** enum_strings;            //for enum labels
+  gchar ** enum_strings;            //for enum labels
   struct _LttType ** element_type; //for array, sequence and struct
   unsigned element_number;         //the number of elements 
                                    //for enum, array, sequence and structure
 };
 
 struct _LttEventType{
-  char * name;
-  char * description;
+  gchar * name;
+  gchar * description;
   int index;              //id of the event type within the facility
   LttFacility * facility; //the facility that contains the event type
   LttField * root_field;  //root field
@@ -139,7 +139,7 @@ struct _LttField{
 
 
 struct _LttFacility{
-  char * name;               //facility name 
+  gchar * name;               //facility name 
   unsigned int event_number;          //number of events in the facility 
   LttChecksum checksum;      //checksum of the facility 
   guint32  base_id;          //base id of the facility
@@ -149,7 +149,7 @@ struct _LttFacility{
 };
 
 struct _LttTracefile{
-  char * name;                       //tracefile name
+  gchar * name;                       //tracefile name
   LttTrace * trace;                  //trace containing the tracefile
   int fd;                            //file descriptor 
   off_t file_size;                   //file size
@@ -183,7 +183,7 @@ struct _LttTracefile{
 };
 
 struct _LttTrace{
-  char * pathname;                          //the pathname of the trace
+  gchar * pathname;                          //the pathname of the trace
   guint facility_number;                    //the number of facilities 
   guint control_tracefile_number;           //the number of control files 
   guint per_cpu_tracefile_number;           //the number of per cpu files 
@@ -221,19 +221,19 @@ struct _LttEventPosition{
    is described in a LttSystemDescription structure. */
 
 struct _LttSystemDescription {
-  char *description;
-  char *node_name;
-  char *domain_name;
+  gchar *description;
+  gchar *node_name;
+  gchar *domain_name;
   unsigned nb_cpu;
   LttArchSize size;
   LttArchEndian endian;
-  char *kernel_name;
-  char *kernel_release;
-  char *kernel_version;
-  char *machine;
-  char *processor;
-  char *hardware_platform;
-  char *operating_system;
+  gchar *kernel_name;
+  gchar *kernel_release;
+  gchar *kernel_version;
+  gchar *machine;
+  gchar *processor;
+  gchar *hardware_platform;
+  gchar *operating_system;
   unsigned ltt_major_version;
   unsigned ltt_minor_version;
   unsigned ltt_block_size;

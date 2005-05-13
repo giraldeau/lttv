@@ -90,7 +90,7 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
       break;
 
     case LTT_STRING:
-      size = strlen((char*)evD) + 1; //include end : '\0'
+      size = strlen((gchar*)evD) + 1; //include end : '\0'
       break;
 
     case LTT_STRUCT:
@@ -452,7 +452,7 @@ void ltt_event_position_copy(LttEventPosition *dest,
 
 unsigned ltt_event_cpu_id(LttEvent *e)
 { 
-  char * c1, * c2, * c3;
+  gchar * c1, * c2, * c3;
   c1 = strrchr(e->tracefile->name,'\\');
   c2 = strrchr(e->tracefile->name,'/');
   if(c1 == NULL && c2 == NULL){
@@ -701,5 +701,5 @@ char *ltt_event_get_string(LttEvent *e, LttField *f)
 {
   g_assert(f->field_type->type_class == LTT_STRING);
 
-  return (char*)g_strdup((char*)(e->data + f->offset_root));
+  return (gchar*)g_strdup((gchar*)(e->data + f->offset_root));
 }

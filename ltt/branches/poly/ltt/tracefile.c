@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <math.h>
+#include <glib/gstdio.h>
 
 // For realpath
 #include <limits.h>
@@ -46,6 +47,7 @@
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
+#define g_close close
 
 /* obtain the time of an event */
 
@@ -63,7 +65,7 @@ static inline gint getFieldtypeSize(LttTracefile * tf,
 		     gint offsetParent, LttField *fld, void *evD, LttTrace* t);
 
 /* read a fixed size or a block information from the file (fd) */
-int readFile(int fd, void * buf, size_t size, char * mesg);
+int readFile(int fd, void * buf, size_t size, gchar * mesg);
 int readBlock(LttTracefile * tf, int whichBlock);
 
 /* calculate cycles per nsec for current block */
@@ -162,7 +164,7 @@ static void  parser_characters   (GMarkupParseContext __UNUSED__ *context,
  *                       : a pointer to a tracefile
  ****************************************************************************/ 
 
-LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
+LttTracefile* ltt_tracefile_open(LttTrace * t, gchar * fileName)
 {
   LttTracefile * tf;
   struct stat    lTDFStat;    /* Trace data file status */
@@ -172,7 +174,7 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
   //open the file
   tf->name = g_strdup(fileName);
   tf->trace = t;
-  tf->fd = open(fileName, O_RDONLY, 0);
+  tf->fd = g_open(fileName, O_RDONLY, 0);
   if(tf->fd < 0){
     g_warning("Unable to open input data file %s\n", fileName);
     g_free(tf->name);
@@ -184,7 +186,7 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
   if(fstat(tf->fd, &lTDFStat) < 0){
     g_warning("Unable to get the status of the input data file %s\n", fileName);
     g_free(tf->name);
-    close(tf->fd);
+    g_close(tf->fd);
     g_free(tf);
     return NULL;
   }
@@ -193,7 +195,7 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
   if(lTDFStat.st_size < (off_t)(sizeof(BlockStart) + EVENT_HEADER_SIZE)){
     g_print("The input data file %s does not contain a trace\n", fileName);
     g_free(tf->name);
-    close(tf->fd);
+    g_close(tf->fd);
     g_free(tf);
     return NULL;
   }
@@ -205,7 +207,7 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
   tf->which_block = 0;
 
   //allocate memory to contain the info of a block
-  tf->buffer = (void *) g_new(char, t->system_description->ltt_block_size);
+  tf->buffer = (void *) g_new(gchar, t->system_description->ltt_block_size);
 
   //read the first block
   if(readBlock(tf,1)) exit(1);
@@ -218,7 +220,7 @@ LttTracefile* ltt_tracefile_open(LttTrace * t, char * fileName)
  *Open control and per cpu tracefiles
  ****************************************************************************/
 
-void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name)
+void ltt_tracefile_open_cpu(LttTrace *t, gchar * tracefile_name)
 {
   LttTracefile * tf;
   tf = ltt_tracefile_open(t,tracefile_name);
@@ -227,7 +229,7 @@ void ltt_tracefile_open_cpu(LttTrace *t, char * tracefile_name)
   g_ptr_array_add(t->per_cpu_tracefiles, tf);
 }
 
-gint ltt_tracefile_open_control(LttTrace *t, char * control_name)
+gint ltt_tracefile_open_control(LttTrace *t, gchar * control_name)
 {
   LttTracefile * tf;
   LttEvent ev;
@@ -251,7 +253,7 @@ gint ltt_tracefile_open_control(LttTrace *t, char * control_name)
 
       if(ev.event_id == TRACE_FACILITY_LOAD){
 	pos = ev.data;
-	fLoad.name = (char*)pos;
+	fLoad.name = (gchar*)pos;
 	fLoad.checksum = *(LttChecksum*)(pos + strlen(fLoad.name));
 	fLoad.base_code = *(guint32 *)(pos + strlen(fLoad.name) + sizeof(LttChecksum));
 
@@ -299,10 +301,12 @@ void ltt_tracefile_close(LttTracefile *t)
 /*****************************************************************************
  *Get system information
  ****************************************************************************/
-gint getSystemInfo(LttSystemDescription* des, char * pathname)
+gint getSystemInfo(LttSystemDescription* des, gchar * pathname)
 {
-  FILE * fp;
-  char buf[DIR_NAME_SIZE];
+  int fd;
+  GIOChannel *iochan;
+  gchar *buf = NULL;
+  gsize length;
 
   GMarkupParseContext * context;
   GError * error = NULL;
@@ -315,27 +319,52 @@ gint getSystemInfo(LttSystemDescription* des, char * pathname)
       NULL   /*  error        */
     };
 
-  fp = fopen(pathname,"r");
-  if(!fp){
+  fd = g_open(pathname, O_RDONLY, 0);
+  if(fd == -1){
     g_warning("Can not open file : %s\n", pathname);
     return -1;
   }
   
+  iochan = g_io_channel_unix_new(fd);
+  
   context = g_markup_parse_context_new(&markup_parser, 0, des,NULL);
   
-  while(fgets(buf,DIR_NAME_SIZE, fp) != NULL){
-    if(!g_markup_parse_context_parse(context, buf, DIR_NAME_SIZE, &error)){
+  //while(fgets(buf,DIR_NAME_SIZE, fp) != NULL){
+  while(g_io_channel_read_line(iochan, &buf, &length, NULL, &error)
+      != G_IO_STATUS_EOF) {
+
+    if(error != NULL) {
+      g_warning("Can not read xml file: \n%s\n", error->message);
+      g_error_free(error);
+    }
+    if(!g_markup_parse_context_parse(context, buf, length, &error)){
       if(error != NULL) {
         g_warning("Can not parse xml file: \n%s\n", error->message);
         g_error_free(error);
       }
       g_markup_parse_context_free(context);
-      fclose(fp);
+
+      g_io_channel_shutdown(iochan, FALSE, &error); /* No flush */
+      if(error != NULL) {
+        g_warning("Can not close file: \n%s\n", error->message);
+        g_error_free(error);
+      }
+
+      close(fd);
       return -1;
     }
   }
   g_markup_parse_context_free(context);
-  fclose(fp);
+
+  g_io_channel_shutdown(iochan, FALSE, &error); /* No flush */
+  if(error != NULL) {
+    g_warning("Can not close file: \n%s\n", error->message);
+    g_error_free(error);
+  }
+
+  g_close(fd);
+
+  g_free(buf);
   return 0;
 }
 
@@ -343,30 +372,31 @@ gint getSystemInfo(LttSystemDescription* des, char * pathname)
  *The following functions get facility/tracefile information
  ****************************************************************************/
 
-gint getFacilityInfo(LttTrace *t, char* eventdefs)
+gint getFacilityInfo(LttTrace *t, gchar* eventdefs)
 {
-  DIR * dir;
-  struct dirent *entry;
-  char * ptr;
+  GDir * dir;
+  const gchar * name;
   unsigned int i,j;
   LttFacility * f;
   LttEventType * et;
-  char name[DIR_NAME_SIZE];
+  gchar fullname[DIR_NAME_SIZE];
+  GError * error = NULL;
 
-  dir = opendir(eventdefs);
-  if(!dir) {
-    g_warning("Can not open directory: %s\n", eventdefs);
+  dir = g_dir_open(eventdefs, 0, &error);
+
+  if(error != NULL) {
+    g_warning("Can not open directory: %s, %s\n", eventdefs, error->message);
+    g_error_free(error);
     return -1;
   }
 
-  while((entry = readdir(dir)) != NULL){
-    ptr = &entry->d_name[strlen(entry->d_name)-4];
-    if(strcmp(ptr,".xml") != 0) continue;
-    strcpy(name,eventdefs);
-    strcat(name,entry->d_name);
-    ltt_facility_open(t,name);
-  }  
-  closedir(dir);
+  while((name = g_dir_read_name(dir)) != NULL){
+    if(!g_pattern_match_simple("*.xml", name)) continue;
+    strcpy(fullname,eventdefs);
+    strcat(fullname,name);
+    ltt_facility_open(t,fullname);
+  }
+  g_dir_close(dir);
   
   for(j=0;j<t->facility_number;j++){
     f = (LttFacility*)g_ptr_array_index(t->facilities, j);
@@ -378,54 +408,60 @@ gint getFacilityInfo(LttTrace *t, char* eventdefs)
   return 0;
 }
 
-gint getControlFileInfo(LttTrace *t, char* control)
+gint getControlFileInfo(LttTrace *t, gchar* control)
 {
-  DIR * dir;
-  struct dirent *entry;
-  char name[DIR_NAME_SIZE];
+  GDir * dir;
+  const gchar *name;
+  gchar fullname[DIR_NAME_SIZE];
+  GError * error = NULL;
 
-  dir = opendir(control);
-  if(!dir) {
-    g_warning("Can not open directory: %s\n", control);
+  dir = g_dir_open(control, 0, &error);
+
+  if(error != NULL) {
+    g_warning("Can not open directory: %s, %s\n", control, error->message);
+    g_error_free(error);
     return -1;
   }
 
-  while((entry = readdir(dir)) != NULL){
-    if(strcmp(entry->d_name,"facilities") != 0 &&
-       strcmp(entry->d_name,"interrupts") != 0 &&
-       strcmp(entry->d_name,"processes") != 0) continue;
+  while((name = g_dir_read_name(dir)) != NULL){
+    if(strcmp(name,"facilities") != 0 &&
+       strcmp(name,"interrupts") != 0 &&
+       strcmp(name,"processes") != 0) continue;
     
-    strcpy(name,control);
-    strcat(name,entry->d_name);
-    if(ltt_tracefile_open_control(t,name))
+    strcpy(fullname,control);
+    strcat(fullname,name);
+    if(ltt_tracefile_open_control(t,fullname)) {
+      g_dir_close(dir);
       return -1;
+    }
   }  
-  closedir(dir);
+  g_dir_close(dir);
   return 0;
 }
 
 gint getCpuFileInfo(LttTrace *t, char* cpu)
 {
-  DIR * dir;
-  struct dirent *entry;
-  char name[DIR_NAME_SIZE];
+  GDir * dir;
+  const gchar * name;
+  gchar fullname[DIR_NAME_SIZE];
+  GError * error = NULL;
 
-  dir = opendir(cpu);
-  if(!dir) {
-    g_warning("Can not open directory: %s\n", cpu);
+  dir = g_dir_open(cpu, 0, &error);
+
+  if(error != NULL) {
+    g_warning("Can not open directory: %s, %s\n", cpu, error->message);
+    g_error_free(error);
     return -1;
   }
 
-  while((entry = readdir(dir)) != NULL){
-    if(strcmp(entry->d_name,".") != 0 &&
-       strcmp(entry->d_name,"..") != 0 &&
-       strcmp(entry->d_name,".svn") != 0){      
-      strcpy(name,cpu);
-      strcat(name,entry->d_name);
-      ltt_tracefile_open_cpu(t,name);
+  while((name = g_dir_read_name(dir)) != NULL){
+    if(strcmp(name,".svn") != 0){     /* . and .. already excluded */
+      strcpy(fullname,cpu);
+      strcat(fullname,name);
+      ltt_tracefile_open_cpu(t,fullname);
     }else continue;
   }  
-  closedir(dir);
+  g_dir_close(dir);
   return 0;
 }
 
@@ -448,7 +484,7 @@ gint getCpuFileInfo(LttTrace *t, char* cpu)
  * forgotten cases (.. were not used correctly before).
  *
  ****************************************************************************/
-void get_absolute_pathname(const char *pathname, char * abs_pathname)
+void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname)
 {
   abs_pathname[0] = '\0';
 
@@ -463,16 +499,16 @@ void get_absolute_pathname(const char *pathname, char * abs_pathname)
   return;
 }
 
-LttTrace *ltt_trace_open(const char *pathname)
+LttTrace *ltt_trace_open(const gchar *pathname)
 {
   LttTrace  * t;
   LttSystemDescription * sys_description;
-  char eventdefs[DIR_NAME_SIZE];
-  char info[DIR_NAME_SIZE];
-  char control[DIR_NAME_SIZE];
-  char cpu[DIR_NAME_SIZE];
-  char tmp[DIR_NAME_SIZE];
-  char abs_path[DIR_NAME_SIZE];
+  gchar eventdefs[DIR_NAME_SIZE];
+  gchar info[DIR_NAME_SIZE];
+  gchar control[DIR_NAME_SIZE];
+  gchar cpu[DIR_NAME_SIZE];
+  gchar tmp[DIR_NAME_SIZE];
+  gchar abs_path[DIR_NAME_SIZE];
   gboolean has_slash = FALSE;
 
   get_absolute_pathname(pathname, abs_path);
