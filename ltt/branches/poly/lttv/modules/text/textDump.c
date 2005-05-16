@@ -50,8 +50,6 @@ static LttvHooks
   *before_trace,
   *event_hook;
 
-extern LttvFilter *a_lttv_filter;
-
 void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
 
   LttType *type;
@@ -329,18 +327,29 @@ static gboolean write_trace_header(void *hook_data, void *call_data)
 
 static int write_event_content(void *hook_data, void *call_data)
 {
+  LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
+  
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
   LttEvent *e;
 
+  LttvAttributeValue value_filter;
+
+  LttvFilter *filter;
+
   e = tfc->e;
+
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "filter/lttv_filter",
+      LTTV_POINTER, &value_filter));
+  filter = (LttvFilter*)*(value_filter.v_pointer);
 
   /*
    * call to the filter if available
    */
-  if(!lttv_filter_tree_parse(a_lttv_filter->head,e,tfc->t_context->t,tfc->tf,tfs->process,tfc)) {
+  if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,tfc->t_context->t,tfs->process,tfc)) {
       return FALSE;
   }
   

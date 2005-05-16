@@ -47,8 +47,6 @@ static char *a_trace;
 
 static gboolean a_stats;
 
-LttvFilter *a_lttv_filter;
-
 void lttv_trace_option(void *hook_data)
 { 
   LttTrace *trace;
@@ -61,7 +59,7 @@ void lttv_trace_option(void *hook_data)
 
 static gboolean process_traceset(void *hook_data, void *call_data)
 {
-  LttvAttributeValue value;
+  LttvAttributeValue value_expression, value_filter;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
@@ -83,12 +81,15 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   if(a_stats) lttv_stats_add_event_hooks(tscs);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
-      LTTV_POINTER, &value));
+      LTTV_POINTER, &value_expression));
 
-  a_lttv_filter = lttv_filter_new();
-  g_debug("Filter string: %s",((GString*)*(value.v_pointer))->str);
+  g_assert(lttv_iattribute_find_by_path(attributes, "filter/lttv_filter",
+      LTTV_POINTER, &value_filter));
+
+  *(value_filter.v_pointer) = lttv_filter_new();
+  g_debug("Filter string: %s",((GString*)*(value_expression.v_pointer))->str);
   
-  g_assert(lttv_filter_append_expression(a_lttv_filter,((GString*)*(value.v_pointer))->str));
+  g_assert(lttv_filter_append_expression(*(value_filter.v_pointer),((GString*)*(value_expression.v_pointer))->str));
   
   //lttv_traceset_context_add_hooks(tc,
   //before_traceset, after_traceset, NULL, before_trace, after_trace,
@@ -125,7 +126,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
                             event_hook,
                             NULL);
 
-  lttv_filter_destroy(a_lttv_filter);
+  lttv_filter_destroy(*(value_filter.v_pointer));
   lttv_state_remove_event_hooks(&tscs->parent);
   if(a_stats) lttv_stats_remove_event_hooks(tscs);
   lttv_context_fini(tc);
