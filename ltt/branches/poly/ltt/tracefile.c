@@ -25,7 +25,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <math.h>
-#include <glib/gstdio.h>
+#include <glib.h>
 
 // For realpath
 #include <limits.h>
