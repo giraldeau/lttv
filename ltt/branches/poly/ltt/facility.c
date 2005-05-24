@@ -31,6 +31,10 @@
 #include "ltt-private.h"
 #include <ltt/facility.h>
 
+#ifndef g_open
+#define g_open open
+#endif
+
 #define g_close close
 
 /* search for the (named) type in the table, if it does not exist

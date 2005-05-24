@@ -41,6 +41,11 @@
 #include <ltt/type.h>
 #include <ltt/ltt-types.h>
 
+#ifndef g_open
+#define g_open open
+#endif
+
+
 #define DIR_NAME_SIZE 256
 #define __UNUSED__ __attribute__((__unused__))
 
