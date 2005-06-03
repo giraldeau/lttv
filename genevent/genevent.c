@@ -45,7 +45,6 @@ This program is distributed in the hope that it will be useful,
 #include "parser.h"
 #include "genevent.h"
 
-
 /* Named types may be referenced from anywhere */
 
 facility * fac;
@@ -124,8 +123,8 @@ int main(int argc, char** argv)
  *    name         : name of event definition file
  ****************************************************************************/
 void generateFile(char *name){
-  char *cName, *hName, *tmp;
-  FILE * cFp, *hFp;
+  char *loadName, *hName, *tmp, *tmp2;
+  FILE * lFp, *hFp;
   int nbEvent;
   unsigned long checksum=0;
 
@@ -141,12 +140,18 @@ void generateFile(char *name){
   }else{
     tmp = name;
   }
-  
-  cName = appendString(tmp,".c");
-  hName = appendString(tmp,".h");
-  cFp = fopen(cName,"w");
-  if(!cFp){
-    printf("Cannot open the file : %s\n",cName);
+
+  loadName = appendString("ltt-facility-loader-", tmp);
+  tmp2 = appendString(loadName,".h");
+  free(loadName);
+  loadName = tmp2;
+  hName = appendString("ltt-facility-", tmp);
+  tmp2 = appendString(hName,".h");
+  free(hName);
+  hName = tmp2;
+  lFp = fopen(loadName,"w");
+  if(!lFp){
+    printf("Cannot open the file : %s\n",loadName);
     exit(1);
   }
 
@@ -156,7 +161,7 @@ void generateFile(char *name){
      exit(1);
   }
   
-  free(cName);
+  free(loadName);
   free(hName);
 
   generateChecksum(fac->name, &checksum, &(fac->events));
@@ -169,11 +174,14 @@ void generateFile(char *name){
   generateStructFunc(hFp, fac->name,checksum);
 	fprintf(hFp, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
 
-  /* generate .c file, calls to register the facility at init time */
-  generateCfile(cFp,fac->name,nbEvent,checksum);
+  /* generate .h file, calls to register the facility at init time */
+	fprintf(lFp, "#ifndef _LTT_FACILITY_LOADER_%s_H_\n",fac->capname);
+	fprintf(lFp, "#define _LTT_FACILITY_LOADER_%s_H_\n\n",fac->capname);
+  generateLoaderfile(lFp,fac->name,nbEvent,checksum);
+	fprintf(lFp, "#endif //_LTT_FACILITY_LOADER_%s_H_\n",fac->capname);
 
   fclose(hFp);
-  fclose(cFp);
+  fclose(lFp);
 }
 
 
@@ -564,30 +572,23 @@ char * getTypeStr(type_descriptor * td){
 
 /*****************************************************************************
  *Function name
- *    generateCfile     : generate a .c file 
+ *    generateLoaderfile: generate a facility loaded .h file 
  *Input Params
  *    fp                : file to be written to
  *    facName           : name of facility
  *    nbEvent           : number of events in the facility
  *    checksum          : checksum for the facility
  ****************************************************************************/
-void generateCfile(FILE * fp, char * facName, int nbEvent, unsigned long checksum){
+void generateLoaderfile(FILE * fp, char * facName, int nbEvent, unsigned long checksum){
   //will be removed later
-  fprintf(fp,"typedef unsigned int trace_facility_t;\n\n");
+  fprintf(fp,"ltt_facility_t\tltt_facility_%s_%X;\n\n", facName, checksum);
 
-  fprintf(fp,"static unsigned long checksum = %lu;\n\n",checksum);
-  fprintf(fp,"/* facility handle */\n");
-  fprintf(fp,"trace_facility_t facility_%s;\n\n",facName);
-
-  fprintf(fp,"static void __init facility_%s_init(){\n",facName);  
-  fprintf(fp,"\tfacility_%s =  trace_register_facility_by_checksum(\"%s\", checksum,%d);\n",facName,facName,nbEvent);
-  fprintf(fp,"}\n\n");
-
-  fprintf(fp,"static void __exit facility_%s_exit(){\n",facName);  
-  fprintf(fp,"}\n\n");
-
-  fprintf(fp,"module_init(facility_%s_init);\n",facName);
-  fprintf(fp,"module_exit(facility_%s_exit);\n",facName);  
+  fprintf(fp,"EXPORT_SYMBOL(ltt_facility_%s_%X);\n\n",facName, checksum);
+  fprintf(fp,"#define LTT_FACILITY_SYMBOL\t\t\t\tltt_facility_%s_%X\n",
+      facName, checksum);
+  fprintf(fp,"#define LTT_FACILITY_CHECKSUM\t\t\t0x%X\n", checksum);
+  fprintf(fp,"#define LTT_FACILITY_NAME\t\t\t\t\t\"%s\"\n", facName);
+  fprintf(fp,"#define LTT_FACILITY_NUM_EVENTS\t\t%d\n\n", nbEvent);
 }
 
 
