@@ -222,6 +222,7 @@ void generateEnumEvent(FILE *fp, char *facName, int * nbEvent, unsigned long che
  *    hasStrSeq         : string or sequence present?
  *    structCount       : struct postfix
  ****************************************************************************/
+
 static void
 printStruct(FILE * fp, int len, void ** array, char * name, char * facName,
 	     int * whichTypeFirst, int * hasStrSeq, int * structCount)
@@ -235,34 +236,32 @@ printStruct(FILE * fp, int len, void ** array, char * name, char * facName,
     fld  = (field *)array[pos];
     td = fld->type;
     if( td->type != STRING && td->type != SEQUENCE &&
-	 td->type != ARRAY) {
+	      td->type != ARRAY) {
       if (*whichTypeFirst == 0) {
         *whichTypeFirst = 1; //struct first
       }
       if (flag == 0) {
         flag = 1;
 
-	 fprintf(fp,"struct %s_%s",
-		  name, facName);
-	 if (structCount) {
-	   fprintf(fp, "_%d {\n",
-		    ++*structCount);
-	 } else {
-	   fprintf(fp, " {\n");
-	 }
+        fprintf(fp,"struct %s_%s",name, facName);
+        if (structCount) {
+	        fprintf(fp, "_%d {\n",++*structCount);
+        } else {
+          fprintf(fp, " {\n");
+        }
       }
-      fprintf(fp, "\t%s %s; /* %s */\n",
-		getTypeStr(td),fld->name,fld->description );
+      fprintf(fp, "\t%s %s; /* %s */\n", 
+          getTypeStr(td),fld->name,fld->description );
     } else {
-      if (*whichTypeFirst == 0) {
+        if (*whichTypeFirst == 0) {
         //string or sequence or array first
-	 *whichTypeFirst = 2;
-      }
-      (*hasStrSeq)++;
-      if(flag) {
-        fprintf(fp,"} __attribute__ ((packed));\n\n");
-      }
-      flag = 0;
+          *whichTypeFirst = 2;
+        }
+        (*hasStrSeq)++;
+        if(flag) {
+          fprintf(fp,"} __attribute__ ((packed));\n\n");
+        }
+        flag = 0;
     }
   }
 

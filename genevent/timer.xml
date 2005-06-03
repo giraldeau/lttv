@@ -16,13 +16,13 @@
     <description>An interval timer is set.</description>
      <struct>
       <field name="which"> <description>kind of interval timer.</description>
-			<typeref name=itimer_kind>
+			<typeref name=itimer_kind/>
       </field>
       <field name="interval"> <description>timer interval.</description>
-			<typeref name=timeval>
+			<typeref name=timeval/>
       </field>
       <field name="value"> <description>current value.</description>
-			<typeref name=timeval>
+			<typeref name=timeval/>
       </field>
      </struct>
   </event>

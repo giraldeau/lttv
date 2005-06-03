@@ -27,8 +27,10 @@
 
   <event name=block_end>
     <description>Block end timestamp</description>
-    <field name="timestamp"><typeref name=timestamp/></field>
-    <field name="block_id"><uint size=4/></field>
+    <struct>
+      <field name="timestamp"><typeref name=timestamp/></field>
+      <field name="block_id"><uint size=4/></field>
+    </struct>
   </event>
 
   <type name=timestamp>

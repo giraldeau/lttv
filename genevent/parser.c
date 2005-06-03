@@ -679,7 +679,7 @@ void parseTypeDefinition(parse_file * in, sequence * unnamed_types,
   getRAnglebracket(in); //<type name=type_name>
   getLAnglebracket(in); //<struct>
   token = getName(in);
-  if(strcmp("struct",token))in->error(in,"not a valid type definition");
+  //MD ??if(strcmp("struct",token))in->error(in,"not a valid type definition");
   ungetToken(in);
   parseType(in,t, unnamed_types, named_types);
   

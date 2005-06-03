@@ -1,14 +1,15 @@
 <facility name=ipc>
   <description>The ipc facility contains events related to Inter Process Communication</description>
-
+	
   <event name=call>
-    <descriptiona>IPC call</description>
+
+    <description>IPC call</description>
     <struct>
       <field name="call_number"> <description>Number of IPC call</description> <uint size=4/> </field>
+
       <field name="first"> <description>First argument</description> <int size=4/> </field>
     </struct>
   </event>
-
   <event name=msg_create>
     <description>Get an IPC message queue identifier</description>
     <struct>
