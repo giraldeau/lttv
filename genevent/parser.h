@@ -68,8 +68,6 @@ char  seekNextChar(parse_file *in);
 
 void skipComment(parse_file * in);
 void skipEOL(parse_file * in);
-int isalpha(char car);
-int isalnum(char car);
 
 /* Some constants */
 
@@ -81,6 +79,12 @@ static const int BUFFER_SIZE = 1024;
 typedef enum _data_type {
   INT,
   UINT,
+	POINTER,
+	LONG,
+	ULONG,
+	SIZE_T,
+	SSIZE_T,
+	OFF_T,
   FLOAT,
   STRING,
   ENUM,
@@ -90,7 +94,6 @@ typedef enum _data_type {
   UNION,
   NONE
 } data_type;
-
 
 /* Event type descriptors */
 
@@ -124,6 +127,7 @@ typedef struct _event {
 
 typedef struct _facility {
   char * name;
+	char * capname;
   char * description;
   sequence events;
   sequence unnamed_types;

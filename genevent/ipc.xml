@@ -1,0 +1,36 @@
+<facility name=ipc>
+  <description>The ipc facility contains events related to Inter Process Communication</description>
+
+  <event name=call>
+    <descriptiona>IPC call</description>
+    <struct>
+      <field name="call_number"> <description>Number of IPC call</description> <uint size=4/> </field>
+      <field name="first"> <description>First argument</description> <int size=4/> </field>
+    </struct>
+  </event>
+
+  <event name=msg_create>
+    <description>Get an IPC message queue identifier</description>
+    <struct>
+      <field name="id"> <description>Message queue identifier</description><long/> </field>
+      <field name="flags"> <description>Message flags</description> <int size=4/> </field>
+    </struct>
+  </event>
+
+  <event name=sem_create>
+    <description>Get an IPC semaphore identifier</description>
+    <struct>
+      <field name="id"> <description>Semaphore identifier</description> <long/> </field>
+      <field name="flags"> <description>Semaphore flags</description> <int size=4/> </field>
+    </struct>
+  </event>
+
+  <event name=shm_create>
+    <description>Get an IPC shared memory identifier</description>
+    <struct>
+      <field name="id"> <description>Shared memory identifier</description> <long/> </field>
+      <field name="flags"> <description>Shared memory flags</description> <int size=4/> </field>
+    </struct>
+  </event>
+
+</facility>

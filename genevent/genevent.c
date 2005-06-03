@@ -36,6 +36,7 @@ This program is distributed in the hope that it will be useful,
 
 #include <stdlib.h> 
 #include <string.h>
+#include <ctype.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <linux/errno.h>  
@@ -43,6 +44,7 @@ This program is distributed in the hope that it will be useful,
 
 #include "parser.h"
 #include "genevent.h"
+
 
 /* Named types may be referenced from anywhere */
 
@@ -80,18 +82,19 @@ int main(int argc, char** argv)
       token = getName(&in);
     
       if(strcmp("facility",token) == 0) {
-	fac = memAlloc(sizeof(facility));
-	fac->name = NULL;
-	fac->description = NULL;
-	sequence_init(&(fac->events));
-	table_init(&(fac->named_types));
-	sequence_init(&(fac->unnamed_types));
-	
-	parseFacility(&in, fac);
-	
-	//check if any namedType is not defined
-	checkNamedTypesImplemented(&fac->named_types);
-      }else in.error(&in,"facility token was expected");
+				fac = memAlloc(sizeof(facility));
+				fac->name = NULL;
+				fac->description = NULL;
+				sequence_init(&(fac->events));
+				table_init(&(fac->named_types));
+				sequence_init(&(fac->unnamed_types));
+				
+				parseFacility(&in, fac);
+				
+				//check if any namedType is not defined
+				checkNamedTypesImplemented(&fac->named_types);
+      }
+			else in.error(&in,"facility token was expected");
 
       generateFile(argv[i]);
 
@@ -159,8 +162,12 @@ void generateFile(char *name){
   generateChecksum(fac->name, &checksum, &(fac->events));
 
   /* generate .h file, event enumeration then structures and functions */
-  generateEnumEvent(hFp, fac->name, &nbEvent);
-  generateStructFunc(hFp, fac->name);
+	fprintf(hFp, "#ifndef _LTT_FACILITY_%s_H_\n",fac->capname);
+	fprintf(hFp, "#define _LTT_FACILITY_%s_H_\n\n",fac->capname);
+  generateEnumEvent(hFp, fac->name, &nbEvent, checksum);
+  generateTypeDefs(hFp);
+  generateStructFunc(hFp, fac->name,checksum);
+	fprintf(hFp, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
 
   /* generate .c file, calls to register the facility at init time */
   generateCfile(cFp,fac->name,nbEvent,checksum);
@@ -179,22 +186,19 @@ void generateFile(char *name){
  *Output Params
  *    nbEvent           : number of events in the facility
  ****************************************************************************/
-void generateEnumEvent(FILE *fp, char *facName, int * nbEvent) {
+void generateEnumEvent(FILE *fp, char *facName, int * nbEvent, unsigned long checksum) {
   int pos = 0;
 
-  //will be removed later
-  fprintf(fp,"typedef unsigned int trace_facility_t;\n\n");
-  fprintf(fp,"extern int trace_new(trace_facility_t fID, u8 eID, int length, char * buf);\n\n");
-
+  fprintf(fp,"#include <linux/ltt-log.h>\n\n");
 
   fprintf(fp,"/****  facility handle  ****/\n\n");
-  fprintf(fp,"extern trace_facility_t facility_%s;\n\n\n",facName);
+  fprintf(fp,"extern trace_facility_t ltt_facility_%s_%X;\n\n\n",facName, checksum);
 
   fprintf(fp,"/****  event type  ****/\n\n");
   fprintf(fp,"enum %s_event {\n",facName);
 
   for(pos = 0; pos < fac->events.position;pos++) {
-    fprintf(fp,"  %s", ((event *)(fac->events.array[pos]))->name);
+    fprintf(fp,"\t%s", ((event *)(fac->events.array[pos]))->name);
     if(pos != fac->events.position-1) fprintf(fp,",\n");
   }
   fprintf(fp,"\n};\n\n\n");
@@ -202,6 +206,93 @@ void generateEnumEvent(FILE *fp, char *facName, int * nbEvent) {
   //  fprintf(fp,"/****  number of events in the facility  ****/\n\n");
   //  fprintf(fp,"int nbEvents_%s = %d;\n\n\n",facName, fac->events.position);
   *nbEvent = fac->events.position;
+}
+
+
+/*****************************************************************************
+ *Function name
+ *    printStruct       : Generic struct printing function
+ *Input Params
+ *    fp                : file to be written to
+ *    len               : number of fields
+ *    array             : array of field info
+ *    name              : basic struct name
+ *    facName           : name of facility
+ *    whichTypeFirst    : struct or array/sequence first
+ *    hasStrSeq         : string or sequence present?
+ *    structCount       : struct postfix
+ ****************************************************************************/
+static void
+printStruct(FILE * fp, int len, void ** array, char * name, char * facName,
+	     int * whichTypeFirst, int * hasStrSeq, int * structCount)
+{
+  int flag = 0;
+  int pos;
+  field * fld;
+  type_descriptor * td;
+
+  for (pos = 0; pos < len; pos++) {
+    fld  = (field *)array[pos];
+    td = fld->type;
+    if( td->type != STRING && td->type != SEQUENCE &&
+	 td->type != ARRAY) {
+      if (*whichTypeFirst == 0) {
+        *whichTypeFirst = 1; //struct first
+      }
+      if (flag == 0) {
+        flag = 1;
+
+	 fprintf(fp,"struct %s_%s",
+		  name, facName);
+	 if (structCount) {
+	   fprintf(fp, "_%d {\n",
+		    ++*structCount);
+	 } else {
+	   fprintf(fp, " {\n");
+	 }
+      }
+      fprintf(fp, "\t%s %s; /* %s */\n",
+		getTypeStr(td),fld->name,fld->description );
+    } else {
+      if (*whichTypeFirst == 0) {
+        //string or sequence or array first
+	 *whichTypeFirst = 2;
+      }
+      (*hasStrSeq)++;
+      if(flag) {
+        fprintf(fp,"} __attribute__ ((packed));\n\n");
+      }
+      flag = 0;
+    }
+  }
+
+  if(flag) {
+    fprintf(fp,"} __attribute__ ((packed));\n\n");
+  }
+}
+
+
+/*****************************************************************************
+ *Function name
+ *    generateHfile     : Create the typedefs
+ *Input Params
+ *    fp                : file to be written to
+ ****************************************************************************/
+void
+generateTypeDefs(FILE * fp)
+{
+  int pos, tmp = 1;
+
+  fprintf(fp, "/****  Basic Type Definitions  ****/\n\n");
+
+  for (pos = 0; pos < fac->named_types.values.position; pos++) {
+    type_descriptor * type =
+      (type_descriptor*)fac->named_types.values.array[pos];
+    printStruct(fp, type->fields.position, type->fields.array,
+                "", type->type_name, &tmp, &tmp, NULL);
+    fprintf(fp, "typedef struct _%s %s;\n\n",
+            type->type_name, type->type_name);
+  }
 }
 
 
@@ -217,7 +308,7 @@ void generateEnumDefinition(FILE * fp, type_descriptor * type){
 
   fprintf(fp,"enum {\n");
   for(pos = 0; pos < type->labels.position; pos++){
-    fprintf(fp,"  %s", type->labels.array[pos]);
+    fprintf(fp,"\t%s", type->labels.array[pos]);
     if (pos != type->labels.position - 1) fprintf(fp,",\n");
   }
   fprintf(fp,"\n};\n\n\n");
@@ -230,7 +321,7 @@ void generateEnumDefinition(FILE * fp, type_descriptor * type){
  *    fp                : file to be written to
  *    facName           : name of facility
  ****************************************************************************/
-void generateStructFunc(FILE * fp, char * facName){
+void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
   event * ev;
   field * fld;
   type_descriptor * td;
@@ -243,7 +334,7 @@ void generateStructFunc(FILE * fp, char * facName){
     fprintf(fp,"/****  structure and trace function for event: %s  ****/\n\n",ev->name);
     if(ev->type == 0){ // event without type
       fprintf(fp,"static inline void trace_%s_%s(void){\n",facName,ev->name);
-      fprintf(fp,"  trace_new(facility_%s, %s, 0, NULL);\n",facName,ev->name);
+      fprintf(fp,"\tltt_log_event(ltt_facility_%s_%X, %s, 0, NULL);\n",facName,checksum,ev->name);
       fprintf(fp,"};\n\n\n");
       continue;
     }
@@ -257,30 +348,11 @@ void generateStructFunc(FILE * fp, char * facName){
     //default: no string, array or sequence in the event
     hasStrSeq = 0;
     whichTypeFirst = 0;
-    
-    //structure for kernel
-    flag = 0;
     structCount = 0;
-    for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-      fld  = (field *)ev->type->fields.array[pos1];
-      td = fld->type;
-      if( td->type != STRING && td->type != SEQUENCE && td->type != ARRAY){
-	if(whichTypeFirst == 0) whichTypeFirst = 1; //struct first
-	if(flag == 0){
-	  flag = 1;	    
-	  fprintf(fp,"struct %s_%s_%d{\n",ev->name,facName,++structCount);
-	}
-	fprintf(fp, "  %s %s; /* %s */\n",getTypeStr(td),fld->name,fld->description );
-      }else{
-	if(whichTypeFirst == 0) whichTypeFirst = 2; //string or sequence or array first
-	hasStrSeq++;
-	if(flag)
-	  fprintf(fp,"} __attribute__ ((packed));\n\n");
-	flag = 0;
-      }       
-    }
-    if(flag)
-      fprintf(fp,"} __attribute__ ((packed));\n\n");
+
+    //structure for kernel
+    printStruct(fp, ev->type->fields.position, ev->type->fields.array,
+		  ev->name, facName, &whichTypeFirst, &hasStrSeq, &structCount);
 
     //trace function : function name and parameters
     seqCount = 0;
@@ -301,7 +373,7 @@ void generateStructFunc(FILE * fp, char * facName){
     fprintf(fp,"){\n");
 
     //length of buffer : length of all structures
-    fprintf(fp,"  int bufLength = ");
+    fprintf(fp,"\tint bufLength = ");
     for(pos1=0;pos1<structCount;pos1++){
       fprintf(fp,"sizeof(struct %s_%s_%d)",ev->name, facName,pos1+1);
       if(pos1 != structCount-1) fprintf(fp," + ");
@@ -325,24 +397,24 @@ void generateStructFunc(FILE * fp, char * facName){
     fprintf(fp,";\n");
 
     //allocate buffer
-    fprintf(fp,"  char buff[bufLength];\n");
+    fprintf(fp,"\tchar buff[bufLength];\n");
 
     //declare a char pointer if needed
-    if(structCount + hasStrSeq > 1) fprintf(fp,"  char * ptr = buff;\n");
+    if(structCount + hasStrSeq > 1) fprintf(fp,"\tchar * ptr = buff;\n");
     
     //allocate memory for new struct and initialize it
     if(whichTypeFirst == 1){ //struct first
       for(pos1=0;pos1<structCount;pos1++){	
-	if(pos1==0) fprintf(fp,"  struct %s_%s_1 * __1 = (struct %s_%s_1 *)buff;\n",ev->name, facName,ev->name, facName);
-	else fprintf(fp,"  struct %s_%s_%d  __%d;\n",ev->name, facName,pos1+1,pos1+1);	
+	if(pos1==0) fprintf(fp,"\tstruct %s_%s_1 * __1 = (struct %s_%s_1 *)buff;\n",ev->name, facName,ev->name, facName);
+	else fprintf(fp,"\tstruct %s_%s_%d  __%d;\n",ev->name, facName,pos1+1,pos1+1);
       }      
     }else if(whichTypeFirst == 2){
       for(pos1=0;pos1<structCount;pos1++)
-	fprintf(fp,"  struct %s_%s_%d  __%d;\n",ev->name, facName,pos1+1,pos1+1);
+	fprintf(fp,"\tstruct %s_%s_%d  __%d;\n",ev->name, facName,pos1+1,pos1+1);
     }
     fprintf(fp,"\n");
 
-    if(structCount) fprintf(fp,"  //initialize structs\n");
+    if(structCount) fprintf(fp,"\t//initialize structs\n");
     flag = 0;
     structCount = 0;
     for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
@@ -354,16 +426,16 @@ void generateStructFunc(FILE * fp, char * facName){
 	  structCount++;
 	  if(structCount > 1) fprintf(fp,"\n");
 	}
-	if(structCount == 1 && whichTypeFirst == 1) fprintf(fp, "  __1->%s =  %s;\n",fld->name,fld->name );
-	else fprintf(fp, "  __%d.%s =  %s;\n",structCount ,fld->name,fld->name);	
+	if(structCount == 1 && whichTypeFirst == 1) fprintf(fp, "\t__1->%s =  %s;\n",fld->name,fld->name );
+	else fprintf(fp, "\t__%d.%s =  %s;\n",structCount ,fld->name,fld->name);
       }else flag = 0;
     }
     if(structCount) fprintf(fp,"\n");
 
     //set ptr to the end of first struct if needed;
     if(whichTypeFirst == 1 && structCount + hasStrSeq > 1){
-      fprintf(fp,"\n  //set ptr to the end of the first struct\n");
-      fprintf(fp,"  ptr +=  sizeof(struct %s_%s_1);\n\n",ev->name, facName); 
+      fprintf(fp,"\n\t//set ptr to the end of the first struct\n");
+      fprintf(fp,"\tptr +=  sizeof(struct %s_%s_1);\n\n",ev->name, facName);
     }
 
     //copy struct, sequence and string to buffer
@@ -378,39 +450,39 @@ void generateStructFunc(FILE * fp, char * facName){
 	if(flag == 0) structCount++;	
 	flag++;	
 	if((structCount > 1 || whichTypeFirst == 2) && flag == 1){
-	  fprintf(fp,"  //copy struct to buffer\n");
-	  fprintf(fp,"  memcpy(ptr, &__%d, sizeof(struct %s_%s_%d));\n",structCount, ev->name, facName,structCount);
-	  fprintf(fp,"  ptr +=  sizeof(struct %s_%s_%d);\n\n",ev->name, facName,structCount); 
+	  fprintf(fp,"\t//copy struct to buffer\n");
+	  fprintf(fp,"\tmemcpy(ptr, &__%d, sizeof(struct %s_%s_%d));\n",structCount, ev->name, facName,structCount);
+	  fprintf(fp,"\tptr +=  sizeof(struct %s_%s_%d);\n\n",ev->name, facName,structCount);
 	}
       }else if(td->type == SEQUENCE){
 	flag = 0;
-	fprintf(fp,"  //copy sequence length and sequence to buffer\n");
-	fprintf(fp,"  *ptr = seqLength_%d;\n",++seqCount);
-	fprintf(fp,"  ptr += sizeof(%s);\n",uintOutputTypes[td->size]);
-	fprintf(fp,"  memcpy(ptr, %s, sizeof(%s) * seqLength_%d);\n",fld->name, getTypeStr(td), seqCount);
-	fprintf(fp,"  ptr += sizeof(%s) * seqLength_%d;\n\n",getTypeStr(td), seqCount );
+	fprintf(fp,"\t//copy sequence length and sequence to buffer\n");
+	fprintf(fp,"\t*ptr = seqLength_%d;\n",++seqCount);
+	fprintf(fp,"\tptr += sizeof(%s);\n",uintOutputTypes[td->size]);
+	fprintf(fp,"\tmemcpy(ptr, %s, sizeof(%s) * seqLength_%d);\n",fld->name, getTypeStr(td), seqCount);
+	fprintf(fp,"\tptr += sizeof(%s) * seqLength_%d;\n\n",getTypeStr(td), seqCount );
       }else if(td->type==STRING){
 	flag = 0;
-	fprintf(fp,"  //copy string to buffer\n");
-	fprintf(fp,"  if(strLength_%d > 0){\n",++strCount);
-	fprintf(fp,"    memcpy(ptr, %s, strLength_%d + 1);\n", fld->name, strCount);
-	fprintf(fp,"    ptr += strLength_%d + 1;\n",strCount);	
-	fprintf(fp,"  }else{\n");
-	fprintf(fp,"    *ptr = '\\0';\n");
-	fprintf(fp,"    ptr += 1;\n");
-	fprintf(fp,"  }\n\n");
+	fprintf(fp,"\t//copy string to buffer\n");
+	fprintf(fp,"\tif(strLength_%d > 0){\n",++strCount);
+	fprintf(fp,"\t\tmemcpy(ptr, %s, strLength_%d + 1);\n", fld->name, strCount);
+	fprintf(fp,"\t\tptr += strLength_%d + 1;\n",strCount);
+	fprintf(fp,"\t}else{\n");
+	fprintf(fp,"\t\t*ptr = '\\0';\n");
+	fprintf(fp,"\t\tptr += 1;\n");
+	fprintf(fp,"\t}\n\n");
       }else if(td->type==ARRAY){
 	flag = 0;
-	fprintf(fp,"  //copy array to buffer\n");
-	fprintf(fp,"  memcpy(ptr, %s, sizeof(%s) * %d);\n", fld->name, getTypeStr(td), td->size);
-	fprintf(fp,"  ptr += sizeof(%s) * %d;\n\n",getTypeStr(td), td->size);
+	fprintf(fp,"\t//copy array to buffer\n");
+	fprintf(fp,"\tmemcpy(ptr, %s, sizeof(%s) * %d);\n", fld->name, getTypeStr(td), td->size);
+	fprintf(fp,"\tptr += sizeof(%s) * %d;\n\n",getTypeStr(td), td->size);
       }      
     }    
     if(structCount + seqCount > 1) fprintf(fp,"\n");
 
     //call trace function
-    fprintf(fp,"\n  //call trace function\n");
-    fprintf(fp,"  trace_new(facility_%s, %s, bufLength, buff);\n",facName,ev->name);
+    fprintf(fp,"\n\t//call trace function\n");
+    fprintf(fp,"\tltt_log_event(ltt_facility_%s_%X, %s, bufLength, buff);\n",facName,checksum,ev->name);
     fprintf(fp,"};\n\n\n");
   }
 
@@ -432,6 +504,18 @@ char * getTypeStr(type_descriptor * td){
       return intOutputTypes[td->size];
     case UINT:
       return uintOutputTypes[td->size];
+    case POINTER:
+      return "void *";
+    case LONG:
+      return "long";
+    case ULONG:
+      return "unsigned long";
+    case SIZE_T:
+      return "size_t";
+    case SSIZE_T:
+      return "ssize_t";
+    case OFF_T:
+      return "off_t";
     case FLOAT:
       return floatOutputTypes[td->size];
     case STRING:
@@ -443,18 +527,30 @@ char * getTypeStr(type_descriptor * td){
       t = td->nested_type;
       switch(t->type){
         case INT:
-	  return intOutputTypes[t->size];
+      	  return intOutputTypes[t->size];
         case UINT:
-	  return uintOutputTypes[t->size];
+      	  return uintOutputTypes[t->size];
+        case POINTER:
+          return "void *";
+        case LONG:
+          return "long";
+        case ULONG:
+          return "unsigned long";
+        case SIZE_T:
+          return "size_t";
+        case SSIZE_T:
+          return "ssize_t";
+        case OFF_T:
+          return "off_t";
         case FLOAT:
-	  return floatOutputTypes[t->size];
+	        return floatOutputTypes[t->size];
         case STRING:
-	  return "char";
+      	  return "char";
         case ENUM:
-	  return uintOutputTypes[t->size];
+      	  return uintOutputTypes[t->size];
         default :
-	  error_callback(NULL,"Nested struct is not supportted");
-	  break;	
+      	  error_callback(NULL,"Nested struct is not supportted");
+      	  break;	
       }
       break;
     case STRUCT: //for now we do not support nested struct
@@ -485,7 +581,7 @@ void generateCfile(FILE * fp, char * facName, int nbEvent, unsigned long checksu
   fprintf(fp,"trace_facility_t facility_%s;\n\n",facName);
 
   fprintf(fp,"static void __init facility_%s_init(){\n",facName);  
-  fprintf(fp,"  facility_%s =  trace_register_facility_by_checksum(\"%s\", checksum,%d);\n",facName,facName,nbEvent);
+  fprintf(fp,"\tfacility_%s =  trace_register_facility_by_checksum(\"%s\", checksum,%d);\n",facName,facName,nbEvent);
   fprintf(fp,"}\n\n");
 
   fprintf(fp,"static void __exit facility_%s_exit(){\n",facName);  

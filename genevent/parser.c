@@ -42,6 +42,35 @@ This program is distributed in the hope that it will be useful,
 #include "parser.h"
 
 
+/* helper function  */
+void strupper(char *string)
+{
+  char *ptr = string;
+  
+  while(*ptr != '\0') {
+    *ptr = toupper(*ptr);
+		ptr++;
+  }
+}
+
+
+int getSizeindex(int value)
+{ 
+  switch(value) {
+    case 1:
+      return 0;
+    case 2:
+      return 1;
+    case 4:
+      return 2;
+    case 8:
+      return 3;
+    default:
+      printf("Error : unknown value size %d\n", value);
+      exit(-1);
+  }
+}
+
 /*****************************************************************************
  *Function name
  *    getSize    : translate from string to integer
@@ -261,6 +290,8 @@ void parseFacility(parse_file *in, facility * fac)
   event *ev;
   
   fac->name = allocAndCopy(getNameAttribute(in));    
+  fac->capname = allocAndCopy(fac->name);
+	strupper(fac->capname);
   getRAnglebracket(in);    
   
   fac->description = getDescription(in);
@@ -523,6 +554,48 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
   else if(strcmp(token,"uint") == 0) {
     t->type = UINT;
     t->size = getSizeAttribute(in);
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"pointer") == 0) {
+    t->type = POINTER;
+    t->size = 0;
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"long") == 0) {
+    t->type = LONG;
+    t->size = 0;
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"ulong") == 0) {
+    t->type = ULONG;
+    t->size = 0;
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"size_t") == 0) {
+    t->type = SIZE_T;
+    t->size = 0;
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"ssize_t") == 0) {
+    t->type = SSIZE_T;
+    t->size = 0;
+    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"off_t") == 0) {
+    t->type = OFF_T;
+    t->size = 0;
     t->fmt  = allocAndCopy(getFormatAttribute(in));
     getForwardslash(in);
     getRAnglebracket(in); 
@@ -820,7 +893,7 @@ char *getToken(parse_file * in)
         in->buffer[0] = car;
         pos = 1;
         while((car = getc(fp)) != EOF && pos < BUFFER_SIZE) {
-          if(!isalnum(car)) {
+          if(!(isalnum(car) || car == '_')) {
             ungetc(car,fp);
             break;
           }
@@ -862,21 +935,6 @@ void skipEOL(parse_file * in)
     }
   }
   if(car == EOF)ungetc(car, in->fp);
-}
-
-int isalpha(char c)
-{
-  int i,j;
-  if(c == '_')return 1;
-  i = c - 'a';
-  j = c - 'A';
-  if((i>=0 && i<26) || (j>=0 && j<26)) return 1;
-  return 0;
-}
-
-int isalnum(char c)
-{
-  return (isalpha(c) || isdigit(c));
 }
 
 /*****************************************************************************
@@ -953,6 +1011,30 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
       break;
     case UINT:
       str = uintOutputTypes[type->size];
+      break;
+    case POINTER:
+      str = allocAndCopy("void *");
+			flag = 1;
+      break;
+    case LONG:
+      str = allocAndCopy("long");
+			flag = 1;
+      break;
+    case ULONG:
+      str = allocAndCopy("unsigned long");
+			flag = 1;
+      break;
+    case SIZE_T:
+      str = allocAndCopy("size_t");
+			flag = 1;
+      break;
+    case SSIZE_T:
+      str = allocAndCopy("ssize_t");
+			flag = 1;
+      break;
+    case OFF_T:
+      str = allocAndCopy("off_t");
+			flag = 1;
       break;
     case FLOAT:
       str = floatOutputTypes[type->size];

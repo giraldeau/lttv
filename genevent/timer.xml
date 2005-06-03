@@ -1,0 +1,51 @@
+<facility name=timer>
+  <description>The timer facility has events related to timer events in the kernel.</description>
+
+  <event name=expired>
+    <description>A timer or itimer has expired.</description>
+     <struct>
+      <field name="pid"> <description>PID of the process to wake up.</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=softirq>
+    <description>The timer softirq is currently runned.</description>
+  </event>
+
+  <event name=set_itimer>
+    <description>An interval timer is set.</description>
+     <struct>
+      <field name="which"> <description>kind of interval timer.</description>
+			<typeref name=itimer_kind>
+      </field>
+      <field name="interval"> <description>timer interval.</description>
+			<typeref name=timeval>
+      </field>
+      <field name="value"> <description>current value.</description>
+			<typeref name=timeval>
+      </field>
+     </struct>
+  </event>
+
+  <type name=itimer_kind>
+    <enum size=4>
+      <label name=ITIMER_REAL value=0/> <description>decrements in real time,
+      and delivers SIGALRM upon expiration.</description>
+      <label name=ITIMER_VIRTUAL value=1/> <description>decrements only when the
+      process is executing, and delivers SIGVTALRM upon expiration.</description>
+      <label name=ITIMER_PROF value=2/> <description>decrements both when the
+      process executes and when the system is executing on behalf of the
+      process. Coupled with ITIMER_VIRTUAL, this timer is usually used to
+      profile the time spent by the application in user and kernel space.
+      SIGPROF is delivered upon expiration.</description>
+    </enum>
+  </type>
+
+  <type name=timeval>
+    <struct>
+      <field name="seconds"><uint size=4/></field>
+      <field name="microseconds"><uint size=4/></field>
+    </struct>
+  </type>
+	
+</facility>

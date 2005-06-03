@@ -1,0 +1,26 @@
+<facility name=heartbeat>
+  <description>The heartbeat facility has event related to heartbeat timer</description>
+
+  <event name=time_heartbeat>
+    <description>System time values sent periodically to detect cycle counter
+     rollovers. Useful when only the 32 LSB of the TSC are saved in events
+     header : we save the full 64 bits in this event.
+    </description>
+    <typeref name=timestamp/>
+  </event>
+
+  <type name=timestamp>
+    <struct>
+      <field name=time><typeref name=timespec/></field>
+      <field name="cycle_count"><uint size=8/></field>
+    </struct>
+  </type>
+
+  <type name=timespec>
+    <struct>
+      <field name="seconds"><uint size=4/></field>
+      <field name="nanoseconds"><uint size=4/></field>
+    </struct>
+  </type>
+	
+</facility>
