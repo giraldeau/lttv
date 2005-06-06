@@ -513,6 +513,7 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
     char * str, *str1;
     t->type = ENUM;
     sequence_init(&(t->labels));
+    sequence_init(&(t->labels_description));
     t->size = getSizeAttribute(in);
     t->fmt = allocAndCopy(getFormatAttribute(in));
     getRAnglebracket(in);
@@ -524,17 +525,22 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
       str   = allocAndCopy(getNameAttribute(in));      
       token = getValueStrAttribute(in);
       if(token){
-	str1 = appendString(str,"=");
-	free(str);
-	str = appendString(str1,token);
-	free(str1);
-	sequence_push(&(t->labels),str);
-      }else
-	sequence_push(&(t->labels),str);
+      	str1 = appendString(str,"=");
+      	free(str);
+      	str = appendString(str1,token);
+      	free(str1);
+      	sequence_push(&(t->labels),str);
+      }
+      else
+      	sequence_push(&(t->labels),str);
 
       getForwardslash(in);
       getRAnglebracket(in);
       
+      //read description if any. May be NULL.
+      str = allocAndCopy(getDescription(in));
+			sequence_push(&(t->labels_description),str);
+			      
       //next label definition
       getLAnglebracket(in);
       token = getToken(in); //"label" or "/"      
@@ -542,7 +548,7 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
     if(strcmp("/",token))in->error(in, "not a valid enum definition");
     token = getName(in);
     if(strcmp("enum",token))in->error(in, "not a valid enum definition");
-    getRAnglebracket(in); //</label>
+      getRAnglebracket(in); //</label>
   }
   else if(strcmp(token,"int") == 0) {
     t->type = INT;

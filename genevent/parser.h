@@ -103,6 +103,7 @@ typedef struct _type_descriptor {
   char *fmt;
   int size;
   sequence labels; // for enumeration
+	sequence labels_description;
   sequence fields; // for structure
   struct _type_descriptor *nested_type; // for array and sequence 
 } type_descriptor;

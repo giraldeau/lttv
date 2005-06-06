@@ -175,10 +175,7 @@ void generateFile(char *name){
 	fprintf(hFp, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
 
   /* generate .h file, calls to register the facility at init time */
-	fprintf(lFp, "#ifndef _LTT_FACILITY_LOADER_%s_H_\n",fac->capname);
-	fprintf(lFp, "#define _LTT_FACILITY_LOADER_%s_H_\n\n",fac->capname);
-  generateLoaderfile(lFp,fac->name,nbEvent,checksum);
-	fprintf(lFp, "#endif //_LTT_FACILITY_LOADER_%s_H_\n",fac->capname);
+  generateLoaderfile(lFp,fac->name,nbEvent,checksum,fac->capname);
 
   fclose(hFp);
   fclose(lFp);
@@ -316,9 +313,13 @@ void generateEnumDefinition(FILE * fp, type_descriptor * type){
   fprintf(fp,"enum {\n");
   for(pos = 0; pos < type->labels.position; pos++){
     fprintf(fp,"\t%s", type->labels.array[pos]);
-    if (pos != type->labels.position - 1) fprintf(fp,",\n");
+    if (pos != type->labels.position - 1) fprintf(fp,",");
+		if(type->labels_description.array[pos] != NULL)
+			fprintf(fp,"\t/* %s */\n",type->labels_description.array[pos]);
+		else
+			fprintf(fp,"\n");
   }
-  fprintf(fp,"\n};\n\n\n");
+  fprintf(fp,"};\n\n\n");
 }
 
 /*****************************************************************************
@@ -579,8 +580,11 @@ char * getTypeStr(type_descriptor * td){
  *    nbEvent           : number of events in the facility
  *    checksum          : checksum for the facility
  ****************************************************************************/
-void generateLoaderfile(FILE * fp, char * facName, int nbEvent, unsigned long checksum){
-  //will be removed later
+void generateLoaderfile(FILE * fp, char * facName, int nbEvent, unsigned long checksum, char *capname){
+	fprintf(fp, "#ifndef _LTT_FACILITY_LOADER_%s_H_\n",capname);
+	fprintf(fp, "#define _LTT_FACILITY_LOADER_%s_H_\n\n",capname);
+  fprintf(fp,"#include <linux/ltt-facilities.h>\n", facName, checksum);
+  fprintf(fp,"#include <linux/module.h>\n\n", facName, checksum);
   fprintf(fp,"ltt_facility_t\tltt_facility_%s_%X;\n\n", facName, checksum);
 
   fprintf(fp,"EXPORT_SYMBOL(ltt_facility_%s_%X);\n\n",facName, checksum);
@@ -589,6 +593,7 @@ void generateLoaderfile(FILE * fp, char * facName, int nbEvent, unsigned long ch
   fprintf(fp,"#define LTT_FACILITY_CHECKSUM\t\t\t0x%X\n", checksum);
   fprintf(fp,"#define LTT_FACILITY_NAME\t\t\t\t\t\"%s\"\n", facName);
   fprintf(fp,"#define LTT_FACILITY_NUM_EVENTS\t\t%d\n\n", nbEvent);
+	fprintf(fp, "#endif //_LTT_FACILITY_LOADER_%s_H_\n",capname);
 }
 
 
