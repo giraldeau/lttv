@@ -514,6 +514,7 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
     t->type = ENUM;
     sequence_init(&(t->labels));
     sequence_init(&(t->labels_description));
+		t->already_printed = 0;
     t->size = getSizeAttribute(in);
     t->fmt = allocAndCopy(getFormatAttribute(in));
     getRAnglebracket(in);

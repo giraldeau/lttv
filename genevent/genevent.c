@@ -197,7 +197,8 @@ void generateEnumEvent(FILE *fp, char *facName, int * nbEvent, unsigned long che
   fprintf(fp,"#include <linux/ltt-log.h>\n\n");
 
   fprintf(fp,"/****  facility handle  ****/\n\n");
-  fprintf(fp,"extern trace_facility_t ltt_facility_%s_%X;\n\n\n",facName, checksum);
+  fprintf(fp,"extern trace_facility_t ltt_facility_%s_%X;\n",facName, checksum);
+  fprintf(fp,"extern trace_facility_t ltt_facility_%s;\n\n\n",facName, checksum);
 
   fprintf(fp,"/****  event type  ****/\n\n");
   fprintf(fp,"enum %s_event {\n",facName);
@@ -310,6 +311,8 @@ generateTypeDefs(FILE * fp)
 void generateEnumDefinition(FILE * fp, type_descriptor * type){
   int pos;
 
+	if(type->already_printed) return;
+	
   fprintf(fp,"enum {\n");
   for(pos = 0; pos < type->labels.position; pos++){
     fprintf(fp,"\t%s", type->labels.array[pos]);
@@ -320,6 +323,8 @@ void generateEnumDefinition(FILE * fp, type_descriptor * type){
 			fprintf(fp,"\n");
   }
   fprintf(fp,"};\n\n\n");
+
+	type->already_printed = 1;
 }
 
 /*****************************************************************************
@@ -585,10 +590,14 @@ void generateLoaderfile(FILE * fp, char * facName, int nbEvent, unsigned long ch
 	fprintf(fp, "#define _LTT_FACILITY_LOADER_%s_H_\n\n",capname);
   fprintf(fp,"#include <linux/ltt-facilities.h>\n", facName, checksum);
   fprintf(fp,"#include <linux/module.h>\n\n", facName, checksum);
+  fprintf(fp,"ltt_facility_t\tltt_facility_%s;\n", facName, checksum);
   fprintf(fp,"ltt_facility_t\tltt_facility_%s_%X;\n\n", facName, checksum);
 
+  fprintf(fp,"EXPORT_SYMBOL(ltt_facility_%s);\n\n",facName, checksum);
   fprintf(fp,"EXPORT_SYMBOL(ltt_facility_%s_%X);\n\n",facName, checksum);
-  fprintf(fp,"#define LTT_FACILITY_SYMBOL\t\t\t\tltt_facility_%s_%X\n",
+  fprintf(fp,"#define LTT_FACILITY_SYMBOL\t\t\t\tltt_facility_%s\n",
+      facName);
+  fprintf(fp,"#define LTT_FACILITY_CHECKSUM_SYMBOL\t\t\t\tltt_facility_%s_%X\n",
       facName, checksum);
   fprintf(fp,"#define LTT_FACILITY_CHECKSUM\t\t\t0x%X\n", checksum);
   fprintf(fp,"#define LTT_FACILITY_NAME\t\t\t\t\t\"%s\"\n", facName);
