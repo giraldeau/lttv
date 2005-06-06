@@ -2,7 +2,7 @@
   <description>The socket facility contains events related to sockets</description>
 
   <event name=call>
-    <descriptiona>Generic socket call : FIXME : should be more detailed.</description>
+    <description>Generic socket call : FIXME : should be more detailed.</description>
     <struct>
       <field name="call_number"> <description>Number of socket call</description> <int size=4/> </field>
     </struct>

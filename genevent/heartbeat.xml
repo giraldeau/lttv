@@ -11,16 +11,10 @@
 
   <type name=timestamp>
     <struct>
-      <field name=time><typeref name=timespec/></field>
+      <field name="seconds"><uint size=4/></field>
+      <field name="nanoseconds"><uint size=4/></field>
       <field name="cycle_count"><uint size=8/></field>
     </struct>
   </type>
 
-  <type name=timespec>
-    <struct>
-      <field name="seconds"><uint size=4/></field>
-      <field name="nanoseconds"><uint size=4/></field>
-    </struct>
-  </type>
-	
 </facility>

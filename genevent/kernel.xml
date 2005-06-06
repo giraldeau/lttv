@@ -67,8 +67,6 @@
     <description>Exit from an IRQ</description>
   </event>
 
-
-
   <type name=tasklet_priority>
     <enum size=1>
       <label name=LOW value=0/> <description>Low priority tasklet</description>
