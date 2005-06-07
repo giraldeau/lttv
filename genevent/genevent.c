@@ -427,7 +427,9 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\tunsigned long flags;\n");
     fprintf(fp, "\tstruct %s_%s_1* __1;\n\n", ev->name, facName);
 
-		fprintf(fp, "\tread_lock(&ltt_traces.traces_rwlock, flags);\n");
+		fprintf(fp, "\tread_lock(&ltt_traces.traces_rwlock);\n\n");
+		fprintf(fp,
+				"\tif(ltt_traces.num_active_traces == 0) goto unlock_traces;\n\n");
 
     fprintf(fp, 
         "\tindex = ltt_get_index_from_facility(ltt_facility_%s_%X,\n"\
@@ -436,10 +438,12 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp,"\n");
 
     fprintf(fp, "\t/* Disable interrupts. */\n");
-    fprintf(fp, "\tlocal_irq_save(flags);\n");
+    fprintf(fp, "\tlocal_irq_save(flags);\n\n");
 
+		/* For each trace */
     fprintf(fp, "\tlist_for_each_entry(trace, &ltt_traces.head, list) {\n");
-    
+    fprintf(fp, "\t\tif(!trace->active) goto skip_trace;\n\n");
+		
 		fprintf(fp, "\t\tunsigned int header_length = "
 								"ltt_get_event_header_size(trace);\n");
 		fprintf(fp, "\t\tunsigned int event_length = header_length + length;\n");
@@ -578,13 +582,15 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\t\trelay_commit(channel->rchan, buff, event_length);\n");
 
    /* End of traces iteration */
+    fprintf(fp, "skip_trace:\n\n");
     fprintf(fp, "\t}\n\n");
 
     fprintf(fp, "\t/* Re-enable interrupts */\n");
     fprintf(fp, "\tlocal_irq_restore(flags);\n");
     fprintf(fp, "\tpreempt_check_resched();\n");
-
-    
+		
+		fprintf(fp, "\n");
+    fprintf(fp, "unlock_traces:\n");
     fprintf(fp, "\tread_unlock(&ltt_traces.traces_rwlock);\n");
     //call trace function
     //fprintf(fp,"\n\t//call trace function\n");
