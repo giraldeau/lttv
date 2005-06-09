@@ -275,6 +275,7 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 	struct pollfd *pollfd;
 	int i;
 	int num_rdy;
+	int high_prio;
 
 	pollfd = malloc(fd_pairs->num_pairs * sizeof(struct pollfd));
 
@@ -284,7 +285,8 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 	}
 
 	while(1) {
-		
+		high_prio = 0;
+
 		num_rdy = poll(pollfd, fd_pairs->num_pairs, -1);
 		if(num_rdy == -1) {
 			perror("Poll error");
@@ -306,16 +308,19 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 					break;
 				case POLLPRI:
 					/* Take care of high priority channels first. */
+					high_prio = 1;
 					break;
-				default:
+			}
 		}
 
-		for(i=0;i<fd_pairs->num_pairs;i++) {
-			switch(pollfd[i].revents) {
-				case POLLIN:
-					/* Take care of low priority channels. */
-					break;
-				default:
+		if(!high_prio) {
+			for(i=0;i<fd_pairs->num_pairs;i++) {
+				switch(pollfd[i].revents) {
+					case POLLIN:
+						/* Take care of low priority channels. */
+						break;
+				}
+			}
 		}
 
 	}
