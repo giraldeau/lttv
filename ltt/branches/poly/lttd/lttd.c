@@ -18,7 +18,8 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
-
+#include <fcntl.h>
+#include <sys/poll.h>
 
 enum {
 	GET_SUBBUF,
@@ -40,13 +41,14 @@ struct channel_trace_fd {
 static char *trace_name = NULL;
 static char *channel_name = NULL;
 static int	daemon_mode = 0;
-
+static int	append_mode = 0;
 
 /* Args :
  *
  * -t directory		Directory name of the trace to write to. Will be created.
  * -c directory		Root directory of the relayfs trace channels.
  * -d          		Run in background (daemon).
+ * -a							Trace append mode.
  */
 void show_arguments(void)
 {
@@ -56,6 +58,7 @@ void show_arguments(void)
 				 "              It will be created.\n");
 	printf("-c directory  Root directory of the relayfs trace channels.\n");
 	printf("-d            Run in background (daemon).\n");
+	printf("-a            Append to an possibly existing trace.\n");
 	printf("\n");
 }
 
@@ -78,21 +81,28 @@ int parse_arguments(int argc, char **argv)
 		}
 	}
 
-	while(argn < argc-1) {
+	while(argn < argc) {
 
 		switch(argv[argn][0]) {
 			case '-':
 				switch(argv[argn][1]) {
 					case 't':
-						trace_name = argv[argn+1];
-						argn++;
+						if(argn+1 < argc) {
+							trace_name = argv[argn+1];
+							argn++;
+						}
 						break;
 					case 'c':
-						channel_name = argv[argn+1];
-						argn++;
+						if(argn+1 < argc) {
+							channel_name = argv[argn+1];
+							argn++;
+						}
 						break;
 					case 'd':
 						daemon_mode = 1;
+						break;
+					case 'a':
+						append_mode = 1;
 						break;
 					default:
 						printf("Invalid argument '%s'.\n", argv[argn]);
@@ -157,8 +167,12 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 	printf("Creating trace subdirectory %s\n", subtrace_name);
 	ret = mkdir(subtrace_name, S_IRWXU|S_IRWXG|S_IRWXO);
 	if(ret == -1) {
-		perror(subtrace_name);
-		return -1;
+		if(errno == EEXIST && append_mode) {
+			printf("Appending to directory %s as resquested\n", subtrace_name);
+		} else {
+			perror(subtrace_name);
+			return -1;
+		}
 	}
 
 	strncpy(path_channel, subchannel_name, PATH_MAX-1);
@@ -193,8 +207,46 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 			printf("Entering channel subdirectory...\n");
 			ret = open_channel_trace_pairs(path_channel, path_trace, fd_pairs);
 			if(ret < 0) continue;
+		} else if(S_ISREG(stat_buf.st_mode)) {
+			printf("Opening file.\n");
+			
+			fd_pairs->pair = realloc(fd_pairs->pair,
+					++fd_pairs->num_pairs * sizeof(struct fd_pair));
+
+			/* Open the channel in read mode */
+			fd_pairs->pair[fd_pairs->num_pairs-1].channel = 
+				open(path_channel, O_RDONLY | O_NONBLOCK);
+			if(fd_pairs->pair[fd_pairs->num_pairs-1].channel == -1) {
+				perror(path_channel);
+			}
+			/* Open the trace in write mode, only append if append_mode */
+			ret = stat(path_trace, &stat_buf);
+			if(ret == 0) {
+				if(append_mode) {
+					printf("Appending to file %s as resquested\n", path_trace);
+
+					fd_pairs->pair[fd_pairs->num_pairs-1].trace = 
+						open(path_trace, O_WRONLY|O_APPEND,
+								S_IRWXU|S_IRWXG|S_IRWXO);
+
+					if(fd_pairs->pair[fd_pairs->num_pairs-1].trace == -1) {
+						perror(path_trace);
+					}
+				} else {
+					printf("File %s exists, cannot open. Try append mode.\n", path_trace);
+					return -1;
+				}
+			} else {
+				if(errno == ENOENT) {
+					fd_pairs->pair[fd_pairs->num_pairs-1].trace = 
+						open(path_trace, O_WRONLY|O_CREAT|O_EXCL,
+								S_IRWXU|S_IRWXG|S_IRWXO);
+					if(fd_pairs->pair[fd_pairs->num_pairs-1].trace == -1) {
+						perror(path_trace);
+					}
+				}
+			}
 		}
-		
 	}
 	
 	closedir(channel_dir);
@@ -202,16 +254,90 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 	return 0;
 }
 
+/* read_channels
+ *
+ * Read the realyfs channels and write them in the paired tracefiles.
+ *
+ * @fd_pairs : paired channels and trace files.
+ *
+ * returns 0 on success, -1 on error.
+ *
+ * Note that the high priority polled channels are consumed first. We then poll
+ * again to see if these channels are still in priority. Only when no
+ * high priority channel is left, we start reading low priority channels.
+ *
+ * Note that a channel is considered high priority when the buffer is almost
+ * full.
+ */
 
 int read_channels(struct channel_trace_fd *fd_pairs)
 {
+	struct pollfd *pollfd;
+	int i;
+	int num_rdy;
+
+	pollfd = malloc(fd_pairs->num_pairs * sizeof(struct pollfd));
+
+	for(i=0;i<fd_pairs->num_pairs;i++) {
+		pollfd[i].fd = fd_pairs->pair[i].channel;
+		pollfd[i].events = POLLIN|POLLPRI;
+	}
+
+	while(1) {
+		
+		num_rdy = poll(pollfd, fd_pairs->num_pairs, -1);
+		if(num_rdy == -1) {
+			perror("Poll error");
+			return -1;
+		}
+
+		printf("Data received\n");
+
+		for(i=0;i<fd_pairs->num_pairs;i++) {
+			switch(pollfd[i].revents) {
+				case POLLERR:
+					printf("Error returned in polling fd %d.\n", pollfd[i].fd);
+					break;
+				case POLLHUP:
+					printf("Polling fd %d tells it has hung up.\n", pollfd[i].fd);
+					break;
+				case POLLNVAL:
+					printf("Polling fd %d tells fd is not open.\n", pollfd[i].fd);
+					break;
+				case POLLPRI:
+					/* Take care of high priority channels first. */
+					break;
+				default:
+		}
+
+		for(i=0;i<fd_pairs->num_pairs;i++) {
+			switch(pollfd[i].revents) {
+				case POLLIN:
+					/* Take care of low priority channels. */
+					break;
+				default:
+		}
+
+	}
+
+	free(pollfd);
+
 	return 0;
 }
 
 
 void close_channel_trace_pairs(struct channel_trace_fd *fd_pairs)
 {
+	int i;
+	int ret;
 
+	for(i=0;i<fd_pairs->num_pairs;i++) {
+		ret = close(fd_pairs->pair[i].channel);
+		if(ret == -1) perror("Close error on channel");
+		ret = close(fd_pairs->pair[i].trace);
+		if(ret == -1) perror("Close error on trace");
+	}
+	free(fd_pairs->pair);
 }
 
 int main(int argc, char ** argv)
@@ -243,13 +369,12 @@ int main(int argc, char ** argv)
 	}
 
 	if(ret = open_channel_trace_pairs(channel_name, trace_name, &fd_pairs))
-		goto end_main;
+		goto close_channel;
 
 	ret = read_channels(&fd_pairs);
 
+close_channel:
 	close_channel_trace_pairs(&fd_pairs);
-
-end_main:
 
 	return ret;
 }
