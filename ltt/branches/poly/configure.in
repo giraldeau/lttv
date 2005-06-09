@@ -31,6 +31,8 @@ AM_PATH_GLIB_2_0(2.4.0, ,AC_MSG_ERROR([glib is required in order to compile Linu
 
 AM_PATH_GTK_2_0(2.4.0, ,AC_MSG_ERROR([gtk is required in order to compile GUI - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)
 
+AC_SYS_LARGEFILE
+
 # Checks for programs.
 AC_PROG_CC
 
