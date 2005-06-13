@@ -194,8 +194,6 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 		return ENOENT;
 	}
 
-	//FIXME : check if the directory already exist, and ask the user if he wants
-	//to append to the traces.
 	printf("Creating trace subdirectory %s\n", subtrace_name);
 	ret = mkdir(subtrace_name, S_IRWXU|S_IRWXG|S_IRWXO);
 	if(ret == -1) {
@@ -255,7 +253,7 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 			ret = stat(path_trace, &stat_buf);
 			if(ret == 0) {
 				if(append_mode) {
-					printf("Appending to file %s as resquested\n", path_trace);
+					printf("Appending to file %s as requested\n", path_trace);
 
 					fd_pairs->pair[fd_pairs->num_pairs-1].trace = 
 						open(path_trace, O_WRONLY|O_APPEND,
@@ -304,7 +302,7 @@ int read_subbuffer(struct fd_pair *pair)
 				pair->mmap + (subbuf_index * pair->subbuf_size),
 				pair->subbuf_size));
 	
-	if(ret != 0) {
+	if(ret < 0) {
 		perror("Error in writing to file");
 		goto error;
 	}
