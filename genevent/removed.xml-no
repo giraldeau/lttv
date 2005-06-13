@@ -1,0 +1,19 @@
+  <event name=block_start>
+    <description>Block start timestamp</description>
+    <struct>
+     <field name="seconds"><uint size=4/></field>
+     <field name="nanoseconds"><uint size=4/></field>
+     <field name="cycle_count"><uint size=8/></field>
+     <field name="block_id"><uint size=4/></field>
+    </struct>
+  </event>
+
+  <event name=block_end>
+    <description>Block end timestamp</description>
+    <struct>
+      <field name="seconds"><uint size=4/></field>
+      <field name="nanoseconds"><uint size=4/></field>
+      <field name="cycle_count"><uint size=8/></field>
+      <field name="block_id"><uint size=4/></field>
+    </struct>
+  </event>
