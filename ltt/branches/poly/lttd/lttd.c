@@ -10,16 +10,34 @@
  * 	Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
  */
 
+#define _GNU_SOURCE
 #include <stdio.h>
+#include <unistd.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/poll.h>
+#include <sys/mman.h>
+#include <signal.h>
+
+/* Relayfs IOCTL */
+#include <asm/ioctl.h>
+#include <asm/types.h>
+
+/* Get the next sub buffer that can be read. */
+#define RELAYFS_GET_SUBBUF        _IOR(0xF4, 0x00,__u32)
+/* Release the oldest reserved (by "get") sub buffer. */
+#define RELAYFS_PUT_SUBBUF        _IO(0xF4, 0x01)
+/* returns the number of sub buffers in the per cpu channel. */
+#define RELAYFS_GET_N_SUBBUFS     _IOR(0xF4, 0x02,__u32)
+/* returns the size of the sub buffers. */
+#define RELAYFS_GET_SUBBUF_SIZE   _IOR(0xF4, 0x03,__u32)
+
+
 
 enum {
 	GET_SUBBUF,
@@ -31,6 +49,9 @@ enum {
 struct fd_pair {
 	int channel;
 	int trace;
+	unsigned int n_subbufs;
+	unsigned int subbuf_size;
+	void *mmap;
 };
 
 struct channel_trace_fd {
@@ -42,6 +63,7 @@ static char *trace_name = NULL;
 static char *channel_name = NULL;
 static int	daemon_mode = 0;
 static int	append_mode = 0;
+volatile static int	quit_program = 0;	/* For signal handler */
 
 /* Args :
  *
@@ -141,6 +163,16 @@ void show_info(void)
 	printf("Writing to trace directory : %s\n", trace_name);
 	printf("\n");
 }
+
+
+/* signal handling */
+
+static void handler(int signo)
+{
+	printf("Signal %d received : exiting cleanly\n", signo);
+	quit_program = 1;
+}
+
 
 
 int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
@@ -254,6 +286,42 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 	return 0;
 }
 
+
+int read_subbuffer(struct fd_pair *pair)
+{
+	unsigned int	subbuf_index;
+	int ret;
+
+
+	ret = ioctl(pair->channel, RELAYFS_GET_SUBBUF, 
+								&subbuf_index);
+	if(ret != 0) {
+		perror("Error in reserving sub buffer");
+		goto error;
+	}
+
+	ret = TEMP_FAILURE_RETRY(write(pair->trace,
+				pair->mmap + (subbuf_index * pair->subbuf_size),
+				pair->subbuf_size));
+	
+	if(ret != 0) {
+		perror("Error in writing to file");
+		goto error;
+	}
+
+
+	ret = ioctl(pair->channel, RELAYFS_PUT_SUBBUF);
+	if(ret != 0) {
+		perror("Error in unreserving sub buffer");
+		goto error;
+	}
+
+	return 0;
+error:
+	return -1;
+}
+
+
 /* read_channels
  *
  * Read the realyfs channels and write them in the paired tracefiles.
@@ -273,12 +341,48 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 int read_channels(struct channel_trace_fd *fd_pairs)
 {
 	struct pollfd *pollfd;
-	int i;
-	int num_rdy;
+	int i,j;
+	int num_rdy, num_hup;
 	int high_prio;
+	int ret;
 
+	/* Get the subbuf sizes and number */
+
+	for(i=0;i<fd_pairs->num_pairs;i++) {
+		struct fd_pair *pair = &fd_pairs->pair[i];
+
+		ret = ioctl(pair->channel, RELAYFS_GET_N_SUBBUFS, 
+							&pair->n_subbufs);
+		if(ret != 0) {
+			perror("Error in getting the number of subbuffers");
+			goto end;
+		}
+		ret = ioctl(pair->channel, RELAYFS_GET_SUBBUF_SIZE, 
+							&pair->subbuf_size);
+		if(ret != 0) {
+			perror("Error in getting the size of the subbuffers");
+			goto end;
+		}
+	}
+
+	/* Mmap each FD */
+	for(i=0;i<fd_pairs->num_pairs;i++) {
+		struct fd_pair *pair = &fd_pairs->pair[i];
+
+		pair->mmap = mmap(0, pair->subbuf_size * pair->n_subbufs, PROT_READ,
+				MAP_SHARED, pair->channel, 0);
+		if(pair->mmap == MAP_FAILED) {
+			perror("Mmap error");
+			goto munmap;
+		}
+	}
+
+
+	/* Start polling the FD */
+	
 	pollfd = malloc(fd_pairs->num_pairs * sizeof(struct pollfd));
 
+	/* Note : index in pollfd is the same index as fd_pair->pair */
 	for(i=0;i<fd_pairs->num_pairs;i++) {
 		pollfd[i].fd = fd_pairs->pair[i].channel;
 		pollfd[i].events = POLLIN|POLLPRI;
@@ -286,11 +390,21 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 
 	while(1) {
 		high_prio = 0;
-
+		num_hup = 0; 
+#ifdef DEBUG
+		printf("Press a key for next poll...\n");
+		char buf[1];
+		read(STDIN_FILENO, &buf, 1);
+		printf("Next poll :\n");
+#endif //DEBUG
+		
+		/* Have we received a signal ? */
+		if(quit_program) break;
+		
 		num_rdy = poll(pollfd, fd_pairs->num_pairs, -1);
 		if(num_rdy == -1) {
 			perror("Poll error");
-			return -1;
+			goto free_fd;
 		}
 
 		printf("Data received\n");
@@ -299,25 +413,34 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 			switch(pollfd[i].revents) {
 				case POLLERR:
 					printf("Error returned in polling fd %d.\n", pollfd[i].fd);
+					num_hup++;
 					break;
 				case POLLHUP:
 					printf("Polling fd %d tells it has hung up.\n", pollfd[i].fd);
+					num_hup++;
 					break;
 				case POLLNVAL:
 					printf("Polling fd %d tells fd is not open.\n", pollfd[i].fd);
+					num_hup++;
 					break;
 				case POLLPRI:
+					printf("Urgent read on fd %d\n", pollfd[i].fd);
 					/* Take care of high priority channels first. */
 					high_prio = 1;
+					ret |= read_subbuffer(&fd_pairs->pair[i]);
 					break;
 			}
 		}
+		/* If every FD has hung up, we end the read loop here */
+		if(num_hup == fd_pairs->num_pairs) break;
 
 		if(!high_prio) {
 			for(i=0;i<fd_pairs->num_pairs;i++) {
 				switch(pollfd[i].revents) {
 					case POLLIN:
 						/* Take care of low priority channels. */
+						printf("Normal read on fd %d\n", pollfd[i].fd);
+						ret |= read_subbuffer(&fd_pairs->pair[i]);
 						break;
 				}
 			}
@@ -325,9 +448,26 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 
 	}
 
+free_fd:
 	free(pollfd);
 
-	return 0;
+	/* munmap only the successfully mmapped indexes */
+	i = fd_pairs->num_pairs;
+munmap:
+		/* Munmap each FD */
+	for(j=0;j<i;j++) {
+		struct fd_pair *pair = &fd_pairs->pair[j];
+		int err_ret;
+
+		err_ret = munmap(pair->mmap, pair->subbuf_size * pair->n_subbufs);
+		if(err_ret != 0) {
+			perror("Error in munmap");
+		}
+		ret |= err_ret;
+	}
+
+end:
+	return ret;
 }
 
 
@@ -350,6 +490,7 @@ int main(int argc, char ** argv)
 	int ret;
 	pid_t pid;
 	struct channel_trace_fd fd_pairs = { NULL, 0 };
+	struct sigaction act;
 	
 	ret = parse_arguments(argc, argv);
 
@@ -373,6 +514,18 @@ int main(int argc, char ** argv)
 		/* else, we are the child, continue... */
 	}
 
+	/* Connect the signal handlers */
+	act.sa_handler = handler;
+	act.sa_flags = 0;
+	sigemptyset(&(act.sa_mask));
+	sigaddset(&(act.sa_mask), SIGTERM);
+	sigaddset(&(act.sa_mask), SIGQUIT);
+	sigaddset(&(act.sa_mask), SIGINT);
+	sigaction(SIGTERM, &act, NULL);
+	sigaction(SIGQUIT, &act, NULL);
+	sigaction(SIGINT, &act, NULL);
+
+	//return 0;
 	if(ret = open_channel_trace_pairs(channel_name, trace_name, &fd_pairs))
 		goto close_channel;
 
