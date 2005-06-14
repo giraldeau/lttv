@@ -101,6 +101,7 @@ AC_SUBST(lttvwindowincludedir)
 
 AC_CONFIG_FILES([Makefile
      libltt/Makefile
+     lttctl/Makefile
 		 lttv/Makefile
 		 lttv/lttv/Makefile
 		 lttv/modules/Makefile
