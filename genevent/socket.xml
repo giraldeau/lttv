@@ -5,12 +5,14 @@
     <description>Generic socket call : FIXME : should be more detailed.</description>
     <struct>
       <field name="call_number"> <description>Number of socket call</description> <int size=4/> </field>
+      <field name="first_argument"> <description>First argument of socket call</description> <ulong/> </field>
     </struct>
   </event>
 
   <event name=create>
     <description>Create a socket</description>
     <struct>
+      <field name="socket"> <description>Socket structure address</description> <pointer/> </field>
       <field name="family"> <description>Socket family</description> <int size=4/> </field>
       <field name="type"> <description>Socket type</description> <int size=4/> </field>
       <field name="protocol"> <description>Socket protocol</description> <int size=4/> </field>
