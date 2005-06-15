@@ -6,7 +6,7 @@
     <struct>
       <field name="order"> <description>Order of the page to allocate</description> <uint size=4/> </field>
       <field name="address"> <description>Assigned page address, or 0 if
-			failed.</description> <ulong/> </field>
+			failed.</description> <pointer/> </field>
      </struct>
   </event>
 
@@ -14,35 +14,35 @@
     <description>Page free</description>
     <struct>
       <field name="order"> <description>Order of the page to free</description> <uint size=4/> </field>
-      <field name="address"> <description>Address of the page to free.</description> <ulong/> </field>
+      <field name="address"> <description>Address of the page to free.</description> <pointer/> </field>
      </struct>
   </event>
 
   <event name=swap_in>
     <description>Page swapped into memory</description>
     <struct>
-      <field name="address"> <description>Address of the page to swap in.</description> <ulong/> </field>
+      <field name="address"> <description>Address of the page to swap in.</description> <pointer/> </field>
      </struct>
   </event>
 
   <event name=swap_out>
     <description>Page swapped to disk</description>
     <struct>
-      <field name="address"> <description>Address of the page to swap out.</description> <ulong/> </field>
+      <field name="address"> <description>Address of the page to swap out.</description> <pointer/> </field>
      </struct>
   </event>
 
   <event name=page_wait_start>
     <description>Staring to wait for a page</description>
     <struct>
-      <field name="address"> <description>Address of the page we wait for.</description> <ulong/> </field>
+      <field name="address"> <description>Address of the page we wait for.</description> <pointer/> </field>
      </struct>
   </event>
 
   <event name=page_wait_end>
     <description>Ending wait for a page</description>
     <struct>
-      <field name="address"> <description>Address of the page we wait for.</description> <ulong/> </field>
+      <field name="address"> <description>Address of the page we wait for.</description> <pointer/> </field>
      </struct>
   </event>
 

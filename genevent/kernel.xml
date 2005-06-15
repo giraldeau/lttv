@@ -44,6 +44,7 @@
     <struct>
       <field name="priority"> <description>Tasklet priority</description> <typeref name=tasklet_priority/> </field>
       <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+      <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
      </struct>
   </event>
 
@@ -52,6 +53,7 @@
     <struct>
       <field name="priority"> <description>Tasklet priority</description> <typeref name=tasklet_priority/> </field>
       <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+      <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
      </struct>
   </event>
 

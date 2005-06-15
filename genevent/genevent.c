@@ -507,7 +507,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\t\t\t/* Buffer is full*/\n");
     fprintf(fp, "\t\t\t/* for debug BUG(); */\n"); // DEBUG!
     fprintf(fp, "\t\t\tchannel->events_lost[smp_processor_id()]++;\n");
-    fprintf(fp, "\t\t\tgoto commit_work;\n");
+    fprintf(fp, "\t\t\tbreak;\n");	 /* don't commit a NULL reservation! */
     fprintf(fp, "\t\t}\n");
 		
 		/* DEBUG */
@@ -634,8 +634,6 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 			}
     if(structCount + seqCount > 1) fprintf(fp,"\n");
 
-    fprintf(fp,"\n");
-    fprintf(fp,"commit_work:\n");
     fprintf(fp,"\n");
     fprintf(fp, "\t\t/* Commit the work */\n");
     fprintf(fp, "\t\trelay_commit(channel->rchan->buf[smp_processor_id()],\n"
