@@ -2,30 +2,51 @@
 <body>
 Here the status of the work in progress for LTT experimental<br>
 <br>
+* Done<br>
+<br>
+<br>
+remove ltt-headers.h<br>
+remove ltt-log.h<br>
+<br>
 * TODO<br>
+Fix the locking of module hooks.<br>
+Per cpu read lock on trace structure.<br>
 <br>
 <br>
-
-
-
-
+<br>
+* TODO (low priority)<br>
+<br>
+<br>
+Integrate header generation (genevent) in kernel build system.<br>
+<br>
 * Need to be discussed<br>
+Drop ltt-module-register and ltt-module-unregister, use exported variables.<br>
+RelayFS ioctl interface vs control through LTT netlink interface.<br>
+drop ltt_filter_control, use functions pointers instead.<br>
 <br>
 <br>
-
-
-
-
-
+Merge facilities headers into one big header.<br>
+Change the name of XML files from XML to something else.<br>
+Remove ltt-base.c.<br>
+<br>
 * Not planned for integration<br>
 <br>
 <br>
-
-
-
-
-
-Mathieu Desnoyers
+<br>
+* Next experimental release patch division :<br>
+<br>
+ltt-instrumentation.diff<br>
+        - ltt-configmenu.diff (put in ltt-core.diff)<br>
+ltt-facilities-headers.diff<br>
+ltt-facilities-loader.diff<br>
+ltt-facilities.diff<br>
+ltt-instrumentation.diff<br>
+ltt-relayfs.diff<br>
+ltt-time.diff<br>
+ltt-core.diff<br>
+<br>
+<br>
+Mathieu Desnoyers<br>
 
 
 </body>
