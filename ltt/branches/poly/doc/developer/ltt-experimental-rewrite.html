@@ -5,16 +5,20 @@ Here the status of the work in progress for LTT experimental<br>
 * Done<br>
 remove ltt-headers.h<br>
 remove ltt-log.h<br>
+Put trace->active later in _ltt_trace_start()<br>
+ltt_trace_create() remove sleep in spinlock use GFP_ATOMIC kmalloc<br>
 <br>
 <br>
 * TODO<br>
 Fix the locking of module hooks.<br>
-Per cpu read lock on trace structure.<br>
+Per cpu read lock on trace structure OR use list rcu.<br>
+Remove the callback struct from the trace struct.<br>
 <br>
 <br>
 <br>
 * TODO (low priority)<br>
 Integrate header generation (genevent) in kernel build system.<br>
+Multithreaded lttd.<br>
 <br>
 * Need to be discussed<br>
 Drop ltt-module-register and ltt-module-unregister, use exported variables.<br>
