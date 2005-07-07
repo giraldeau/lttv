@@ -7,11 +7,12 @@ remove ltt-headers.h<br>
 remove ltt-log.h<br>
 Put trace->active later in _ltt_trace_start()<br>
 ltt_trace_create() remove sleep in spinlock use GFP_ATOMIC kmalloc<br>
+Fix the locking of module hooks.<br>
+Fix the traps -> disable nested logging for now.<br>
+Use per cpu spinlock on trace list.<br>
 <br>
 <br>
 * TODO<br>
-Fix the locking of module hooks.<br>
-Per cpu read lock on trace structure OR use list rcu.<br>
 <br>
 <br>
 <br>
