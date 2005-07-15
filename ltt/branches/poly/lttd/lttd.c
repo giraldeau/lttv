@@ -11,6 +11,7 @@
  */
 
 #define _GNU_SOURCE
+#include <config.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -63,6 +64,7 @@ static char *trace_name = NULL;
 static char *channel_name = NULL;
 static int	daemon_mode = 0;
 static int	append_mode = 0;
+static int	sig_parent = 0;
 volatile static int	quit_program = 0;	/* For signal handler */
 
 /* Args :
@@ -71,6 +73,7 @@ volatile static int	quit_program = 0;	/* For signal handler */
  * -c directory		Root directory of the relayfs trace channels.
  * -d          		Run in background (daemon).
  * -a							Trace append mode.
+ * -s							Send SIGIO to parent when ready for IO.
  */
 void show_arguments(void)
 {
@@ -81,6 +84,7 @@ void show_arguments(void)
 	printf("-c directory  Root directory of the relayfs trace channels.\n");
 	printf("-d            Run in background (daemon).\n");
 	printf("-a            Append to an possibly existing trace.\n");
+	printf("-s            Send SIGIO to parent when ready for IO.\n");
 	printf("\n");
 }
 
@@ -125,6 +129,9 @@ int parse_arguments(int argc, char **argv)
 						break;
 					case 'a':
 						append_mode = 1;
+						break;
+					case 's':
+						sig_parent = 1;
 						break;
 					default:
 						printf("Invalid argument '%s'.\n", argv[argn]);
@@ -248,6 +255,8 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 				open(path_channel, O_RDONLY | O_NONBLOCK);
 			if(fd_pairs->pair[fd_pairs->num_pairs-1].channel == -1) {
 				perror(path_channel);
+				fd_pairs->num_pairs--;
+				continue;
 			}
 			/* Open the trace in write mode, only append if append_mode */
 			ret = stat(path_trace, &stat_buf);
@@ -288,35 +297,39 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 int read_subbuffer(struct fd_pair *pair)
 {
 	unsigned int	subbuf_index;
-	int ret;
+	int err, ret;
 
 
-	ret = ioctl(pair->channel, RELAYFS_GET_SUBBUF, 
+	err = ioctl(pair->channel, RELAYFS_GET_SUBBUF, 
 								&subbuf_index);
-	if(ret != 0) {
+	printf("index : %u\n", subbuf_index);
+	if(err != 0) {
 		perror("Error in reserving sub buffer");
-		goto error;
+		ret = -EPERM;
+		goto get_error;
 	}
-
-	ret = TEMP_FAILURE_RETRY(write(pair->trace,
+	
+	err = TEMP_FAILURE_RETRY(write(pair->trace,
 				pair->mmap + (subbuf_index * pair->subbuf_size),
 				pair->subbuf_size));
-	
-	if(ret < 0) {
+
+	if(err < 0) {
 		perror("Error in writing to file");
-		goto error;
+		ret = err;
+		goto write_error;
 	}
 
 
-	ret = ioctl(pair->channel, RELAYFS_PUT_SUBBUF);
-	if(ret != 0) {
+write_error:
+	err = ioctl(pair->channel, RELAYFS_PUT_SUBBUF);
+	if(err != 0) {
 		perror("Error in unreserving sub buffer");
-		goto error;
+		ret = -EPERM;
+		goto get_error;
 	}
 
-	return 0;
-error:
-	return -1;
+get_error:
+	return ret;
 }
 
 
@@ -344,6 +357,11 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 	int high_prio;
 	int ret;
 
+	if(fd_pairs->num_pairs <= 0) {
+		printf("No channel to read\n");
+		goto end;
+	}
+	
 	/* Get the subbuf sizes and number */
 
 	for(i=0;i<fd_pairs->num_pairs;i++) {
@@ -386,6 +404,9 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 		pollfd[i].events = POLLIN|POLLPRI;
 	}
 
+	/* Signal the parent that ready for IO */
+	if(sig_parent) kill(getppid(), SIGIO);
+
 	while(1) {
 		high_prio = 0;
 		num_hup = 0; 
@@ -393,7 +414,7 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 		printf("Press a key for next poll...\n");
 		char buf[1];
 		read(STDIN_FILENO, &buf, 1);
-		printf("Next poll :\n");
+		printf("Next poll (polling %d fd) :\n", fd_pairs->num_pairs);
 #endif //DEBUG
 		
 		/* Have we received a signal ? */
