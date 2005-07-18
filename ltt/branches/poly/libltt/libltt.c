@@ -23,8 +23,10 @@
  * 	
  */
 
-#include <ltt/libltt.h>
-
+#include <libltt/libltt.h>
+#include <linux/netlink.h>
+#include <errno.h>
+#include <stdio.h>
 
 /* Private interface */
 
@@ -54,23 +56,23 @@ struct lttctl_errmap_t {
 	int errcode;
 	char *message;
 } lttctl_errmap[] = {
-	{ IPQ_ERR_NONE, "Unknown error" },
-	{ IPQ_ERR_IMPL, "Implementation error" },
-	{ IPQ_ERR_HANDLE, "Unable to create netlink handle" },
-	{ IPQ_ERR_SOCKET, "Unable to create netlink socket" },
-	{ IPQ_ERR_BIND, "Unable to bind netlink socket" },
-	{ IPQ_ERR_BUFFER, "Unable to allocate buffer" },
-	{ IPQ_ERR_RECV, "Failed to receive netlink message" },
-	{ IPQ_ERR_NLEOF, "Received EOF on netlink socket" },
-	{ IPQ_ERR_ADDRLEN, "Invalid peer address length" },
-	{ IPQ_ERR_STRUNC, "Sent message truncated" },
-	{ IPQ_ERR_RTRUNC, "Received message truncated" },
-	{ IPQ_ERR_NLRECV, "Received error from netlink" },
-	{ IPQ_ERR_SEND, "Failed to send netlink message" },
-	{ IPQ_ERR_SUPP, "Operation not supported" },
-	{ IPQ_ERR_RECVBUF, "Receive buffer size invalid" },
-	{ IPQ_ERR_TIMEOUT, "Timeout"},
-	{ IPQ_ERR_PROTOCOL, "Invalid protocol specified" }
+	{ LTTCTL_ERR_NONE, "Unknown error" },
+	{ LTTCTL_ERR_IMPL, "Implementation error" },
+	{ LTTCTL_ERR_HANDLE, "Unable to create netlink handle" },
+	{ LTTCTL_ERR_SOCKET, "Unable to create netlink socket" },
+	{ LTTCTL_ERR_BIND, "Unable to bind netlink socket" },
+	{ LTTCTL_ERR_BUFFER, "Unable to allocate buffer" },
+	{ LTTCTL_ERR_RECV, "Failed to receive netlink message" },
+	{ LTTCTL_ERR_NLEOF, "Received EOF on netlink socket" },
+	{ LTTCTL_ERR_ADDRLEN, "Invalid peer address length" },
+	{ LTTCTL_ERR_STRUNC, "Sent message truncated" },
+	{ LTTCTL_ERR_RTRUNC, "Received message truncated" },
+	{ LTTCTL_ERR_NLRECV, "Received error from netlink" },
+	{ LTTCTL_ERR_SEND, "Failed to send netlink message" },
+	{ LTTCTL_ERR_SUPP, "Operation not supported" },
+	{ LTTCTL_ERR_RECVBUF, "Receive buffer size invalid" },
+	{ LTTCTL_ERR_TIMEOUT, "Timeout"},
+	{ LTTCTL_ERR_PROTOCOL, "Invalid protocol specified" }
 };
 
 static int lttctl_errno = LTTCTL_ERR_NONE;
@@ -89,6 +91,8 @@ static ssize_t lttctl_netlink_sendmsg(const struct lttctl_handle *h,
 
 static char *lttctl_strerror(int errcode);
 
+void lttctl_perror(const char *s);
+
 static ssize_t lttctl_netlink_sendto(const struct lttctl_handle *h,
                                   const void *msg, size_t len)
 {
@@ -96,6 +100,7 @@ static ssize_t lttctl_netlink_sendto(const struct lttctl_handle *h,
 	                    (struct sockaddr *)&h->peer, sizeof(h->peer));
 	if (status < 0)
 		lttctl_errno = LTTCTL_ERR_SEND;
+	
 	return status;
 }
 
@@ -116,8 +121,9 @@ static ssize_t lttctl_netlink_recvfrom(const struct lttctl_handle *h,
 	int addrlen, status;
 	struct nlmsghdr *nlh;
 
-	if (len < sizeof(struct nlmsgerr)) {
+	if (len < sizeof(struct nlmsghdr)) {
 		lttctl_errno = LTTCTL_ERR_RECVBUF;
+		lttctl_perror("Netlink recvfrom");
 		return -1;
 	}
 	addrlen = sizeof(h->peer);
@@ -141,40 +147,51 @@ static ssize_t lttctl_netlink_recvfrom(const struct lttctl_handle *h,
 		ret = select(h->fd+1, &read_fds, NULL, NULL, &tv);
 		if (ret < 0) {
 			if (errno == EINTR) {
+				printf("eintr\n");
 				return 0;
 			} else {
-				lttctl_errno = lttctl_ERR_RECV;
+				lttctl_errno = LTTCTL_ERR_RECV;
+				lttctl_perror("Netlink recvfrom");
 				return -1;
 			}
 		}
 		if (!FD_ISSET(h->fd, &read_fds)) {
-			lttctl_errno = lttctl_ERR_TIMEOUT;
+			lttctl_errno = LTTCTL_ERR_TIMEOUT;
+			printf("timeout\n");
 			return 0;
 		}
 	}
 	status = recvfrom(h->fd, buf, len, 0,
 	                      (struct sockaddr *)&h->peer, &addrlen);
+	
 	if (status < 0) {
 		lttctl_errno = LTTCTL_ERR_RECV;
+		lttctl_perror("Netlink recvfrom");
 		return status;
 	}
 	if (addrlen != sizeof(h->peer)) {
 		lttctl_errno = LTTCTL_ERR_RECV;
+		lttctl_perror("Netlink recvfrom");
 		return -1;
 	}
 	if (h->peer.nl_pid != 0) {
 		lttctl_errno = LTTCTL_ERR_RECV;
+		lttctl_perror("Netlink recvfrom");
 		return -1;
 	}
 	if (status == 0) {
 		lttctl_errno = LTTCTL_ERR_NLEOF;
+		lttctl_perror("Netlink recvfrom");
 		return -1;
 	}
 	nlh = (struct nlmsghdr *)buf;
 	if (nlh->nlmsg_flags & MSG_TRUNC || nlh->nlmsg_len > status) {
 		lttctl_errno = LTTCTL_ERR_RTRUNC;
+		lttctl_perror("Netlink recvfrom");
 		return -1;
 	}
+	
+
 	return status;
 }
 
@@ -187,6 +204,23 @@ static char *lttctl_strerror(int errcode)
 }
 
 
+char *lttctl_errstr(void)
+{
+	return lttctl_strerror(lttctl_errno);
+}
+
+void lttctl_perror(const char *s)
+{
+	if (s)
+		fputs(s, stderr);
+	else
+		fputs("ERROR", stderr);
+	if (lttctl_errno)
+		fprintf(stderr, ": %s", lttctl_errstr());
+	if (errno)
+		fprintf(stderr, ": %s", strerror(errno));
+	fputc('\n', stderr);
+}
 
 /* public interface */
 
@@ -200,8 +234,9 @@ struct lttctl_handle *lttctl_create_handle(void)
 
 	h = (struct lttctl_handle *)malloc(sizeof(struct lttctl_handle));
 	if (h == NULL) {
-		lttctl_errno = lttctl_ERR_HANDLE;
-		return NULL;
+		lttctl_errno = LTTCTL_ERR_HANDLE;
+		lttctl_perror("Create handle");
+		goto alloc_error;
 	}
 	
 	memset(h, 0, sizeof(struct lttctl_handle));
@@ -210,9 +245,8 @@ struct lttctl_handle *lttctl_create_handle(void)
         
 	if (h->fd == -1) {
 		lttctl_errno = LTTCTL_ERR_SOCKET;
-		close(h->fd);
-		free(h);
-		return NULL;
+		lttctl_perror("Create handle");
+		goto socket_error;
 	}
 	memset(&h->local, 0, sizeof(struct sockaddr_nl));
 	h->local.nl_family = AF_NETLINK;
@@ -221,15 +255,22 @@ struct lttctl_handle *lttctl_create_handle(void)
 	status = bind(h->fd, (struct sockaddr *)&h->local, sizeof(h->local));
 	if (status == -1) {
 		lttctl_errno = LTTCTL_ERR_BIND;
-		close(h->fd);
-		free(h);
-		return NULL;
+		lttctl_perror("Create handle");
+		goto bind_error;
 	}
 	memset(&h->peer, 0, sizeof(struct sockaddr_nl));
 	h->peer.nl_family = AF_NETLINK;
 	h->peer.nl_pid = 0;
 	h->peer.nl_groups = 0;
 	return h;
+	
+	/* Error condition */
+bind_error:
+socket_error:
+		close(h->fd);
+alloc_error:
+		free(h);
+	return NULL;
 }
 
 /*
@@ -246,37 +287,68 @@ int lttctl_destroy_handle(struct lttctl_handle *h)
 }
 
 
-int lttctl_create_trace(const struct ipq_handle *h,
+int lttctl_create_trace(const struct lttctl_handle *h,
 		char *name, enum trace_mode mode)
 {
+	int err;
+	
 	struct {
 		struct nlmsghdr	nlh;
 		lttctl_peer_msg_t	msg;
 	} req;
+	struct {
+		struct nlmsghdr	nlh;
+		struct nlmsgerr	nlerr;
+		lttctl_peer_msg_t	msg;
+	} ack;
 
 	memset(&req, 0, sizeof(req));
-	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(req));
-	req.nlh.nlmsg_flags = NLM_F_REQUEST;
+	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(lttctl_peer_msg_t));
+	req.nlh.nlmsg_flags = NLM_F_REQUEST|NLM_F_ACK;
 	req.nlh.nlmsg_type = LTTCTLM_CONTROL;
 	req.nlh.nlmsg_pid = h->local.nl_pid;
+	req.nlh.nlmsg_seq = 0;
 
 	strncpy(req.msg.trace_name, name, NAME_MAX);
 	req.msg.op = OP_CREATE;
 	req.msg.args.mode = mode;
 
-	return lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
+	err = lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
+	if(err < 0) goto senderr;
+
+	err = lttctl_netlink_recvfrom(h, (void*)&ack, sizeof(ack), 0);
+	if(err < 0) goto senderr;
+
+	err = ack.nlerr.error;
+	if(err != 0) {
+		errno = err;
+		lttctl_perror("Create Trace Error");
+		return -1;
+	}
+
+	return 0;
+
+senderr:
+	lttctl_perror("Create Trace Error");
+	return err;
 }
 
-int lttctl_destroy_trace(const struct ipq_handle *h,
+int lttctl_destroy_trace(const struct lttctl_handle *h,
 		char *name)
 {
 	struct {
 		struct nlmsghdr	nlh;
 		lttctl_peer_msg_t	msg;
 	} req;
+	struct {
+		struct nlmsghdr	nlh;
+		struct nlmsgerr	nlerr;
+		lttctl_peer_msg_t	msg;
+	} ack;
+	int err;
 
 	memset(&req, 0, sizeof(req));
-	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(req));
+	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(lttctl_peer_msg_t));
 	req.nlh.nlmsg_flags = NLM_F_REQUEST;
 	req.nlh.nlmsg_type = LTTCTLM_CONTROL;
 	req.nlh.nlmsg_pid = h->local.nl_pid;
@@ -284,19 +356,44 @@ int lttctl_destroy_trace(const struct ipq_handle *h,
 	strncpy(req.msg.trace_name, name, NAME_MAX);
 	req.msg.op = OP_DESTROY;
 
-	return lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
+	err = lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
+	if(err < 0) goto senderr;
+
+	err = lttctl_netlink_recvfrom(h, (void*)&ack, sizeof(ack), 0);
+	if(err < 0) goto senderr;
+
+	err = ack.nlerr.error;
+	if(err != 0) {
+		errno = err;
+		lttctl_perror("Destroy Trace Channels Error");
+		return -1;
+	}
+
+	return 0;
+
+senderr:
+	lttctl_perror("Destroy Trace Channels Error");
+	return err;
+
 }
 
-int lttctl_start(const struct ipq_handle *h,
+int lttctl_start(const struct lttctl_handle *h,
 		char *name)
 {
 	struct {
 		struct nlmsghdr	nlh;
 		lttctl_peer_msg_t	msg;
 	} req;
+	struct {
+		struct nlmsghdr	nlh;
+		struct nlmsgerr	nlerr;
+		lttctl_peer_msg_t	msg;
+	} ack;
+
+	int err;
 
 	memset(&req, 0, sizeof(req));
-	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(req));
+	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(lttctl_peer_msg_t));
 	req.nlh.nlmsg_flags = NLM_F_REQUEST;
 	req.nlh.nlmsg_type = LTTCTLM_CONTROL;
 	req.nlh.nlmsg_pid = h->local.nl_pid;
@@ -304,19 +401,43 @@ int lttctl_start(const struct ipq_handle *h,
 	strncpy(req.msg.trace_name, name, NAME_MAX);
 	req.msg.op = OP_START;
 
-	return lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
+	err = lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
+	if(err < 0) goto senderr;
+
+	err = lttctl_netlink_recvfrom(h, (void*)&ack, sizeof(ack), 0);
+	if(err < 0) goto senderr;
+
+	err = ack.nlerr.error;
+	if(err != 0) {
+		errno = err;
+		lttctl_perror("Start Trace Error");
+		return -1;
+	}
+
+	return 0;
+
+senderr:
+	lttctl_perror("Start Trace Error");
+	return err;
+
 }
 
-int lttctl_stop(const struct ipq_handle *h,
+int lttctl_stop(const struct lttctl_handle *h,
 		char *name)
 {
 	struct {
 		struct nlmsghdr	nlh;
 		lttctl_peer_msg_t	msg;
 	} req;
+	struct {
+		struct nlmsghdr	nlh;
+		struct nlmsgerr	nlerr;
+		lttctl_peer_msg_t	msg;
+	} ack;
+	int err;
 
 	memset(&req, 0, sizeof(req));
-	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(req));
+	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(lttctl_peer_msg_t));
 	req.nlh.nlmsg_flags = NLM_F_REQUEST;
 	req.nlh.nlmsg_type = LTTCTLM_CONTROL;
 	req.nlh.nlmsg_pid = h->local.nl_pid;
@@ -324,5 +445,22 @@ int lttctl_stop(const struct ipq_handle *h,
 	strncpy(req.msg.trace_name, name, NAME_MAX);
 	req.msg.op = OP_STOP;
 
-	return lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
+	err = lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
+	if(err < 0) goto senderr;
+
+	err = lttctl_netlink_recvfrom(h, (void*)&ack, sizeof(ack), 0);
+	if(err < 0) goto senderr;
+
+	err = ack.nlerr.error;
+	if(err != 0) {
+		errno = err;
+		lttctl_perror("Stop Trace Error");
+		return -1;
+	}
+
+	return 0;
+
+senderr:
+	lttctl_perror("Stop Trace Error");
+	return err;
 }
