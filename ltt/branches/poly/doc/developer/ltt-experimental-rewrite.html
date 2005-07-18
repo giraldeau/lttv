@@ -11,10 +11,10 @@ Fix the locking of module hooks.<br>
 Fix the traps -> disable nested logging for now.<br>
 Use per cpu spinlock on trace list.<br>
 Finish the control module, libltt and lttctl : netlink interface<br>
+Finish integrating lttctl with lttd.<br>
 <br>
 <br>
 * TODO<br>
-Finish integrating lttctl with lttd.<br>
 Add information in the buffer header : buffer size, etc etc...<br>
 	-> this information is so small that we can repeat it. Makes flight recorder
 	easier to decode.<br>
@@ -25,6 +25,8 @@ Add trace start structure to facility channel.<br>
 * TODO (low priority)<br>
 Integrate header generation (genevent) in kernel build system.<br>
 Multithreaded lttd.<br>
+Find a different way to printk from instrumentation : forbidden from schedule
+and wakeup (causes a deadlock).<br>
 <br>
 * Need to be discussed<br>
 Drop ltt-module-register and ltt-module-unregister, use exported variables.<br>
