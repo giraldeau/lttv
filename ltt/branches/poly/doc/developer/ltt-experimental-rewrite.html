@@ -10,10 +10,15 @@ ltt_trace_create() remove sleep in spinlock use GFP_ATOMIC kmalloc<br>
 Fix the locking of module hooks.<br>
 Fix the traps -> disable nested logging for now.<br>
 Use per cpu spinlock on trace list.<br>
+Finish the control module, libltt and lttctl : netlink interface<br>
 <br>
 <br>
 * TODO<br>
-Finish the control module, libltt and lttctl : netlink interface<br>
+Finish integrating lttctl with lttd.<br>
+Add information in the buffer header : buffer size, etc etc...<br>
+	-> this information is so small that we can repeat it. Makes flight recorder
+	easier to decode.<br>
+Add trace start structure to facility channel.<br>
 <br>
 <br>
 <br>
