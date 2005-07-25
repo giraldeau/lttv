@@ -4122,7 +4122,8 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     /* Copy the previous tab's filter */
     /* We can clone the filter, as we copy the trace set also */
     /* The filter must always be in sync with the trace set */
-    tab->filter = lttv_filter_clone(copy_tab->filter);
+		if(copy_tab->filter != NULL)
+	    tab->filter = lttv_filter_clone(copy_tab->filter);
 
   } else {
     tab->traceset_info->traceset = lttv_traceset_new();
