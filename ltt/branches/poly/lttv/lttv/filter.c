@@ -1042,7 +1042,9 @@ lttv_filter_tree_clone(const LttvFilterTree* tree) {
  */
 LttvFilter*
 lttv_filter_clone(const LttvFilter* filter) {
-    
+ 
+	if(!filter) return NULL;
+
   LttvFilter* newfilter = g_new(LttvFilter,1); 
 
   strcpy(newfilter->expression,filter->expression);
@@ -1486,8 +1488,12 @@ lttv_filter_update(LttvFilter* filter) {
 void
 lttv_filter_destroy(LttvFilter* filter) {
   
-  g_free(filter->expression);
-  lttv_filter_tree_destroy(filter->head);
+	if(!filter) return;
+
+	if(filter->expression)
+	  g_free(filter->expression);
+	if(filter->head)
+	  lttv_filter_tree_destroy(filter->head);
   g_free(filter);
   
 }
