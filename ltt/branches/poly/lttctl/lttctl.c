@@ -32,9 +32,12 @@ static enum trace_ctl_op op = CTL_OP_NONE;
 static char *channel_root = NULL;
 static char *trace_root = NULL;
 
+static int sigio_received = 0;
+
 void handler(int signo)
 {
 	printf("signal %d received\n", signo);
+	sigio_received = 1;
 }
 
 
@@ -220,12 +223,13 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	sigaddset(&(act.sa_mask), SIGIO);
 	sigaction(SIGIO, &act, NULL);
 	
+	sigio_received = 0;
+	
 	pid = fork();
 
 	if(pid > 0) {
-		//sleep(1);
 		/* parent */
-		pause();
+		while(!sigio_received) pause();
 
 		/* Now the trace is created, go on and create the supplementary files... */
 		printf("Creating supplementary trace files\n");
