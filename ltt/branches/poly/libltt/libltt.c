@@ -24,6 +24,7 @@
  */
 
 #include <linux/socket.h>
+#include <linux/in.h> // for broken Fedora Core 3
 #include <linux/types.h>
 #include <linux/time.h>
 #include <linux/netlink.h>
@@ -31,6 +32,7 @@
 #include <asm/socket.h>
 #include <errno.h>
 #include <stdio.h>
+
 
 /* Private interface */
 
