@@ -28,6 +28,7 @@
 #include <linux/time.h>
 #include <linux/netlink.h>
 #include <libltt/libltt.h>
+#include <asm/socket.h>
 #include <errno.h>
 #include <stdio.h>
 
