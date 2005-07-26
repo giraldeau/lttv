@@ -2,6 +2,10 @@
 
 /* Created by Mathieu Desnoyers, may 2003 */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <glib.h>
 #include <lttv/module.h>
 

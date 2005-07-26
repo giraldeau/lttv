@@ -19,6 +19,9 @@
 /* This module inserts a hook in the program main loop. This hook processes 
    all the events in the main tracefile. */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>

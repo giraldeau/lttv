@@ -37,6 +37,10 @@
  * Author : Mathieu Desnoyers, June 2003
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <glib.h>
 #include <lttv/lttv.h>
 #include <lttv/module.h>

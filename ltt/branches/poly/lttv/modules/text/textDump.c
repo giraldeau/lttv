@@ -20,6 +20,10 @@
    before each trace, to print each event, and to print statistics
    after each trace. */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <lttv/lttv.h>
 #include <lttv/option.h>
 #include <lttv/module.h>

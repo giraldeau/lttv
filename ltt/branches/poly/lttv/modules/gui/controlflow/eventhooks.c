@@ -45,6 +45,9 @@
  * line/background.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 //#define PANGO_ENABLE_BACKEND
 #include <gtk/gtk.h>

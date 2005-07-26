@@ -16,6 +16,9 @@
  * MA 02111-1307, USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 #include <lttv/iattribute.h>
 

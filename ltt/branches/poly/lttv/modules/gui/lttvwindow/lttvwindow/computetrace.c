@@ -16,6 +16,9 @@
  * MA 02111-1307, USA.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
 
 /* This file does not even compile yet. It is a starting point to compute
    some values in the background. This is why process_trace was split in

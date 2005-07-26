@@ -20,6 +20,10 @@
 
 /* module.c : Implementation of the module loading/unloading mechanism. */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <lttv/module.h>
 #include <gmodule.h>
 

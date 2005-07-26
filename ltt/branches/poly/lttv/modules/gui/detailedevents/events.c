@@ -37,6 +37,10 @@
  *           Inspired from original LTT, made by Karim Yaghmour
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <math.h>
 
 #include <glib.h>

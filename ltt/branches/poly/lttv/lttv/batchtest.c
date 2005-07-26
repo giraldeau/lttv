@@ -19,8 +19,12 @@
 /* This module inserts a hook in the program main loop. This hook processes 
    all the events in the main tracefile while testing the speed and
    functionality of the state and stats computations. */
-#include <string.h>
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <string.h>
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>
 #include <lttv/hook.h>

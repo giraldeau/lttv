@@ -34,6 +34,10 @@ This program is distributed in the hope that it will be useful,
    all types is maintained to facilitate the freeing of all type 
    information when the processing of an ".xml" file is finished. */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdlib.h> 
 #include <string.h>
 #include <stdio.h>

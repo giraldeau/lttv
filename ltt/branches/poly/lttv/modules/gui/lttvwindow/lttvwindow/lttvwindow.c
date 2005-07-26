@@ -28,6 +28,10 @@
  * 
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <ltt/ltt.h>
 #include <lttv/lttv.h>
 #include <lttv/state.h>

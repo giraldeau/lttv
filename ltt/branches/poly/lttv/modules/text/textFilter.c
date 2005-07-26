@@ -25,6 +25,10 @@
  *  file containing filtering expressions.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <lttv/lttv.h>
 #include <lttv/option.h>
 #include <lttv/module.h>

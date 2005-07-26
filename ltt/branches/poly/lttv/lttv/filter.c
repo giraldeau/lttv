@@ -63,6 +63,10 @@
  *  - remove the idle expressions in the tree 
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 //#define TEST
 #ifdef TEST
 #include <time.h>

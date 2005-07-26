@@ -8,6 +8,10 @@
  * 	Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <libltt/libltt.h>
 #include <errno.h>
 #include <stdio.h>

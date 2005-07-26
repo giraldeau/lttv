@@ -10,8 +10,11 @@
  * 	Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
  */
 
-#define _GNU_SOURCE
+#ifdef HAVE_CONFIG_H
 #include <config.h>
+#endif
+
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
