@@ -24,6 +24,7 @@
 
 #include <linux/limits.h>
 #include <asm/types.h>
+#include <sys/socket.h>
 #include <linux/netlink.h>
 
 #ifndef NETLINK_LTT
