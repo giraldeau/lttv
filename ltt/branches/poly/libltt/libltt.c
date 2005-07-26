@@ -23,10 +23,6 @@
  * 	
  */
 
-#include <linux/types.h>
-#include <sys/socket.h> // for broken Fedora Core 3
-#include <sys/time.h>
-#include <linux/netlink.h>
 #include <libltt/libltt.h>
 #include <errno.h>
 #include <stdio.h>

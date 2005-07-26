@@ -23,6 +23,7 @@
 #define _LIBLTT_H
 
 #include <linux/limits.h>
+#include <asm/types.h>
 #include <linux/netlink.h>
 
 #ifndef NETLINK_LTT
