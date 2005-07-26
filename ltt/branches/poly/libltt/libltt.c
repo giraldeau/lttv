@@ -24,6 +24,7 @@
  */
 
 #include <libltt/libltt.h>
+#include <asm/types.h>
 #include <linux/netlink.h>
 #include <errno.h>
 #include <stdio.h>
