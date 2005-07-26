@@ -23,9 +23,10 @@
  * 	
  */
 
-#include <libltt/libltt.h>
-#include <asm/types.h>
+#include <linux/socket.h>
+#include <linux/types.h>
 #include <linux/netlink.h>
+#include <libltt/libltt.h>
 #include <errno.h>
 #include <stdio.h>
 
