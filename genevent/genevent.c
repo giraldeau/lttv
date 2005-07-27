@@ -191,14 +191,18 @@ void generateFile(char *name){
   /* generate .h file, event enumeration then structures and functions */
   fprintf(iFp, "#ifndef _LTT_FACILITY_ID_%s_H_\n",fac->capname);
   fprintf(iFp, "#define _LTT_FACILITY_ID_%s_H_\n\n",fac->capname);
+  fprintf(iFp, "#ifdef CONFIG_LTT\n");
   generateEnumEvent(iFp, fac->name, &nbEvent, checksum);
+  fprintf(iFp, "#endif //CONFIG_LTT\n");
   fprintf(iFp, "#endif //_LTT_FACILITY_ID_%s_H_\n",fac->capname);
 
 
   fprintf(hFp, "#ifndef _LTT_FACILITY_%s_H_\n",fac->capname);
   fprintf(hFp, "#define _LTT_FACILITY_%s_H_\n\n",fac->capname);
+  //fprintf(hFp, "#ifdef CONFIG_LTT\n");
   generateTypeDefs(hFp, fac->name);
   generateStructFunc(hFp, fac->name,checksum);
+  //fprintf(hFp, "#endif //CONFIG_LTT\n");
   fprintf(hFp, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
 
   /* generate .h file, calls to register the facility at init time */
@@ -329,9 +333,6 @@ generateTypeDefs(FILE * fp, char *facName)
   fprintf(fp,"#include <linux/spinlock.h>\n");
   fprintf(fp,"#include <linux/ltt/ltt-facility-id-%s.h>\n\n", facName);
   fprintf(fp,"#include <linux/ltt-core.h>\n");
-  fprintf(fp,"#ifdef CONFIG_UML\n");
-  fprintf(fp,"#include \"irq_user.h\"\n");
-  fprintf(fp,"#endif //CONFIG_UML\n");
 
   fprintf(fp, "/****  Basic Type Definitions  ****/\n\n");
 
@@ -418,6 +419,33 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
       printStruct(fp, ev->type->fields.position, ev->type->fields.array,
         ev->name, facName, &whichTypeFirst, &hasStrSeq, &structCount);
 
+
+    //trace function : function name and parameters : stub function.
+    seqCount = 0;
+    strCount = 0;
+		fprintf(fp, "#ifndef CONFIG_LTT\n");
+    fprintf(fp,"static inline void trace_%s_%s(",facName,ev->name);
+    if(ev->type == 0)
+      fprintf(fp, "void");
+    else
+      for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
+        fld  = (field *)ev->type->fields.array[pos1];
+        td = fld->type;
+        if(td->type == ARRAY ){
+          fprintf(fp,"%s * %s",getTypeStr(td), fld->name);
+        }else if(td->type == STRING){
+          fprintf(fp,"short int strlength_%d, %s * %s",
+              ++strCount, getTypeStr(td), fld->name);
+       }else if(td->type == SEQUENCE){
+          fprintf(fp,"%s seqlength_%d, %s * %s",
+              uintOutputTypes[td->size], ++seqCount,getTypeStr(td), fld->name);
+       }else fprintf(fp,"%s %s",getTypeStr(td), fld->name);     
+       if(pos1 != ev->type->fields.position - 1) fprintf(fp,", ");
+      }
+    fprintf(fp,")\n{\n");
+    fprintf(fp,"}\n");
+		fprintf(fp,"#else\n");
+
     //trace function : function name and parameters
     seqCount = 0;
     strCount = 0;
@@ -441,6 +469,8 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
       }
     fprintf(fp,")\n{\n");
 
+
+	
     //length of buffer : length of all structures
 		fprintf(fp,"\tint length = ");
     if(ev->type == 0) fprintf(fp, "0");
@@ -482,21 +512,28 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\tunsigned int header_length;\n");
     fprintf(fp, "\tunsigned int event_length;\n");
     fprintf(fp, "\tint resret;\n");
+    fprintf(fp, "\tunsigned char _offset;\n");
+		fprintf(fp, "\tstruct rchan_buf *buf;\n");
 
 		if(ev->type != 0)
       fprintf(fp, "\tstruct %s_%s_1* __1;\n\n", ev->name, facName);
+
+		/* Warning : this is done prior to taking locks : 
+		 * setting this value must be done at the end of the trace activation.
+		 * (we don't care for trace removal, as the list of traces is protected : it
+		 * just won't iterate on any trace). */
+    fprintf(fp,
+        "\tif(ltt_traces.num_active_traces == 0) return;\n\n");
 
     fprintf(fp, "\t/* Disable interrupts. */\n");
     fprintf(fp, "\tlocal_irq_save(_flags);\n");
     fprintf(fp, "\tpreempt_disable();\n\n");
 
 		fprintf(fp, "\tltt_nesting[smp_processor_id()]++;\n");
-		fprintf(fp, "\tif(ltt_nesting[smp_processor_id] > 1) goto unlock;\n");
+		fprintf(fp, "\tbarrier();\n");
+		fprintf(fp, "\tif(ltt_nesting[smp_processor_id()] > 1) goto unlock;\n");
     fprintf(fp, "\tspin_lock(&ltt_traces.locks[smp_processor_id()]);\n\n");
 		
-    fprintf(fp,
-        "\tif(ltt_traces.num_active_traces == 0) goto unlock_traces;\n\n");
-
     fprintf(fp, 
         "\tindex = ltt_get_index_from_facility(ltt_facility_%s_%X,\n"\
             "\t\t\t\tevent_%s);\n",
@@ -507,12 +544,16 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\tlist_for_each_entry(trace, &ltt_traces.head, list) {\n");
     fprintf(fp, "\t\tif(!trace->active) continue;\n\n");
     
+    fprintf(fp, "\t\tchannel = ltt_get_channel_from_index(trace, index);\n");
+		fprintf(fp, "\t\tbuf = channel->rchan->buf[smp_processor_id()];\n");
+		/* Warning : not atomic reservation : event size depends on the current
+		 * address for alignment */
     fprintf(fp, "\t\theader_length = "
-                "ltt_get_event_header_size(trace);\n");
+                "ltt_get_event_header_size(trace, channel,"
+								"buf->data + buf->offset, &_offset);\n");
     fprintf(fp, "\t\tevent_length = header_length + length;\n");
    
     /* Reserve the channel */
-    fprintf(fp, "\t\tchannel = ltt_get_channel_from_index(trace, index);\n");
     fprintf(fp, "\t\tbuff = relay_reserve(channel->rchan, event_length, &resret);\n");
     fprintf(fp, "\t\tif(buff == NULL) {\n");
     fprintf(fp, "\t\t\t/* Buffer is full*/\n");
@@ -530,7 +571,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     /* Write the header */
     fprintf(fp, "\n");
     fprintf(fp, "\t\tltt_write_event_header(trace, channel, buff, \n"
-                "\t\t\t\tltt_facility_%s_%X, event_%s, length);\n",
+                "\t\t\t\tltt_facility_%s_%X, event_%s, length, _offset);\n",
                 facName, checksum, ev->name);
     fprintf(fp, "\n");
     
@@ -589,10 +630,10 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 			}
     if(structCount) fprintf(fp,"\n");
     //set ptr to the end of first struct if needed;
-    if(structCount + hasStrSeq > 1){
-      fprintf(fp,"\n\t\t//set ptr to the end of the first struct\n");
-      fprintf(fp,"\t\tptr +=  sizeof(struct %s_%s_1);\n\n",ev->name, facName);
-    }
+    //if(structCount + hasStrSeq > 1){
+    //  fprintf(fp,"\n\t\t//set ptr to the end of the first struct\n");
+    //  fprintf(fp,"\t\tptr +=  sizeof(struct %s_%s_1);\n\n",ev->name, facName);
+    //}
 
     //copy struct, sequence and string to buffer
     seqCount = 0;
@@ -651,25 +692,31 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\t\t/* Commit the work */\n");
     fprintf(fp, "\t\trelay_commit(channel->rchan->buf[smp_processor_id()],\n"
         "\t\t\t\tbuff, event_length);\n");
+    fprintf(fp, "\t\tltt_write_commit_counter("
+				"channel->rchan->buf[smp_processor_id()],\n"
+        "\t\t\t\tbuff);\n");
 
    /* End of traces iteration */
     fprintf(fp, "\t}\n\n");
 
     fprintf(fp, "\n");
-    fprintf(fp, "unlock_traces:\n");
-    fprintf(fp, "\tread_unlock(&ltt_traces.traces_rwlock);\n");
+		// The generated preempt_check_resched is not dangerous because
+		// interrupts are disabled.
+    fprintf(fp, "\tspin_unlock(&ltt_traces.locks[smp_processor_id()]);\n");
 
     fprintf(fp, "unlock:\n");
+		fprintf(fp, "\tbarrier();\n");
 		fprintf(fp, "\tltt_nesting[smp_processor_id()]--;\n");
     fprintf(fp, "\t/* Re-enable interrupts */\n");
     fprintf(fp, "\tlocal_irq_restore(_flags);\n");
-    fprintf(fp, "\tpreempt_enable();\n");
+    fprintf(fp, "\tpreempt_enable_no_resched();\n");
     //fprintf(fp, "\tpreempt_check_resched();\n");
     
     //call trace function
     //fprintf(fp,"\n\t//call trace function\n");
     //fprintf(fp,"\tltt_log_event(ltt_facility_%s_%X, %s, bufLength, buff);\n",facName,checksum,ev->name);
-    fprintf(fp,"}\n\n\n");
+    fprintf(fp,"}\n");
+		fprintf(fp, "#endif //CONFIG_LTT\n\n");
   }
 
 }
