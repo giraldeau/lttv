@@ -268,7 +268,8 @@ void generateEnumEvent(FILE *fp, char *facName, int * nbEvent, unsigned long che
 
 static void
 printStruct(FILE * fp, int len, void ** array, char * name, char * facName,
-       int * whichTypeFirst, int * hasStrSeq, int * structCount)
+       int * whichTypeFirst, int * hasStrSeq, int * structCount,
+       type_descriptor *type)
 {
   int flag = 0;
   int pos;
@@ -313,7 +314,16 @@ printStruct(FILE * fp, int len, void ** array, char * name, char * facName,
   }
 
   if(flag) {
-    fprintf(fp,"} __attribute__ ((packed));\n\n");
+    if(type->alignment == 0)
+      fprintf(fp,"} __attribute__ ((packed));\n\n");
+    else {
+      if(type->alignment != 1 && type->alignment != 2
+          && type->alignment != 4 && type->alignment != 8) {
+        printf("Wrong alignment %i, using packed.\n", type->alignment);
+        fprintf(fp,"} __attribute__ ((packed));\n\n");
+      } else
+        fprintf(fp,"} __attribute__ ((aligned(%i)));\n\n", type->alignment);
+    }
   }
 }
 
@@ -334,6 +344,7 @@ generateTypeDefs(FILE * fp, char *facName)
   fprintf(fp,"#include <linux/ltt/ltt-facility-id-%s.h>\n\n", facName);
   fprintf(fp,"#include <linux/ltt-core.h>\n");
 
+#if 0 //broken
   fprintf(fp, "/****  Basic Type Definitions  ****/\n\n");
 
   for (pos = 0; pos < fac->named_types.values.position; pos++) {
@@ -344,6 +355,7 @@ generateTypeDefs(FILE * fp, char *facName)
     fprintf(fp, "typedef struct _%s %s;\n\n",
             type->type_name, type->type_name);
   }
+#endif //0
 }
 
 
@@ -417,7 +429,8 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     //structure for kernel
     if(ev->type != 0)
       printStruct(fp, ev->type->fields.position, ev->type->fields.array,
-        ev->name, facName, &whichTypeFirst, &hasStrSeq, &structCount);
+        ev->name, facName, &whichTypeFirst, &hasStrSeq, &structCount,
+        ev->type);
 
 
     //trace function : function name and parameters : stub function.

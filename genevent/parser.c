@@ -37,6 +37,7 @@ This program is distributed in the hope that it will be useful,
 #include <stdio.h>
 #include <stdarg.h>
 #include <linux/errno.h>  
+#include <assert.h>
 
 
 #include "parser.h"
@@ -114,6 +115,7 @@ void error_callback(parse_file *in, char *msg)
     printf("Error in file %s, line %d: %s\n", in->name, in->lineno, msg);
   else
     printf("%s\n",msg);
+  assert(0);
   exit(1);
 }
 
@@ -158,69 +160,188 @@ char *allocAndCopy(char *str)
 
 /**************************************************************************
  * Function :
- *    getNameAttribute,getFormatAttribute,getSizeAttribute,getValueAttribute 
- *    getValueStrAttribute
+ *    getTypeAttributes
  * Description :
  *    Read the attribute from the input file.
  *
  * Parameters :
  *    in , input file handle.
- *
- * Return values :
- *    address of the attribute.
+ *    t , the type descriptor to fill.
  *
  **************************************************************************/
 
-char * getNameAttribute(parse_file *in)
-{
-  char * token, car;
-  token = getName(in);
-  if(strcmp("name",token))in->error(in,"name was expected");
-  getEqual(in);
-  
-  car = seekNextChar(in);
-  if(car == EOF)in->error(in,"name was expected");
-  else if(car == '\"')token = getQuotedString(in);
-  else token = getName(in);
-  return token;
-}
-
-char * getFormatAttribute(parse_file *in)
+void getTypeAttributes(parse_file *in, type_descriptor *t)
 {
   char * token;
+  char car;
 
-  //format is an option
-  token = getToken(in); 
-  if(strcmp("/",token) == 0 || strcmp(">",token) == 0){
-    ungetToken(in);
-    return NULL;
+  t->fmt = NULL;
+  t->size = -1;
+  t->alignment = 0;
+  
+  while(1) {
+    token = getToken(in); 
+    if(strcmp("/",token) == 0 || strcmp(">",token) == 0){
+      ungetToken(in);
+      break;
+    }
+    
+    if(!strcmp("format",token)) {
+      getEqual(in);
+      t->fmt = allocAndCopy(getQuotedString(in));
+    //} else if(!strcmp("name",token)) {
+     // getEqual(in);
+     // car = seekNextChar(in);
+     // if(car == EOF) in->error(in,"name was expected");
+     // else if(car == '\"') t->type_name = allocAndCopy(getQuotedString(in));
+     // else t->type_name = allocAndCopy(getName(in));
+    } else if(!strcmp("size",token)) {
+      getEqual(in);
+      t->size = getSize(in);
+    } else if(!strcmp("align",token)) {
+      getEqual(in);
+      t->alignment = getNumber(in);
+    }
   }
-
-  if(strcmp("format",token))in->error(in,"format was expected");
-  getEqual(in);
-  token = getQuotedString(in);
-  return token;
 }
 
-int getSizeAttribute(parse_file *in)
+/**************************************************************************
+ * Function :
+ *    getEventAttributes
+ * Description :
+ *    Read the attribute from the input file.
+ *
+ * Parameters :
+ *    in , input file handle.
+ *    ev , the event to fill.
+ *
+ **************************************************************************/
+
+void getEventAttributes(parse_file *in, event *ev)
 {
   char * token;
-  getName(in);
-  getEqual(in);
-
-  return getSize(in);
-}
-
-int getValueAttribute(parse_file *in)
-{
-  char * token;
-  getName(in);
-  getEqual(in);
+  char car;
   
-  return getNumber(in);
+  ev->name = NULL;
+
+  while(1) {
+    token = getToken(in); 
+    if(strcmp("/",token) == 0 || strcmp(">",token) == 0){
+      ungetToken(in);
+      break;
+    }
+
+    if(!strcmp("name",token)) {
+      getEqual(in);
+      car = seekNextChar(in);
+      if(car == EOF) in->error(in,"name was expected");
+      else if(car == '\"') ev->name = allocAndCopy(getQuotedString(in));
+      else ev->name = allocAndCopy(getName(in));
+    }
+  }
 }
 
-//for <label name=label_name value=n/>, value is an option
+/**************************************************************************
+ * Function :
+ *    getFacilityAttributes
+ * Description :
+ *    Read the attribute from the input file.
+ *
+ * Parameters :
+ *    in , input file handle.
+ *    fac , the facility to fill.
+ *
+ **************************************************************************/
+
+void getFacilityAttributes(parse_file *in, facility *fac)
+{
+  char * token;
+  char car;
+  
+  fac->name = NULL;
+
+  while(1) {
+    token = getToken(in); 
+    if(strcmp("/",token) == 0 || strcmp(">",token) == 0){
+      ungetToken(in);
+      break;
+    }
+
+    if(!strcmp("name",token)) {
+      getEqual(in);
+      car = seekNextChar(in);
+      if(car == EOF) in->error(in,"name was expected");
+      else if(car == '\"') fac->name = allocAndCopy(getQuotedString(in));
+      else fac->name = allocAndCopy(getName(in));
+    }
+  }
+}
+
+/**************************************************************************
+ * Function :
+ *    getFieldAttributes
+ * Description :
+ *    Read the attribute from the input file.
+ *
+ * Parameters :
+ *    in , input file handle.
+ *    f , the field to fill.
+ *
+ **************************************************************************/
+
+void getFieldAttributes(parse_file *in, field *f)
+{
+  char * token;
+  char car;
+
+  f->name = NULL;
+
+  while(1) {
+    token = getToken(in); 
+    if(strcmp("/",token) == 0 || strcmp(">",token) == 0){
+      ungetToken(in);
+      break;
+    }
+
+    if(!strcmp("name",token)) {
+      getEqual(in);
+      car = seekNextChar(in);
+      if(car == EOF) in->error(in,"name was expected");
+      else if(car == '\"') f->name = allocAndCopy(getQuotedString(in));
+      else f->name = allocAndCopy(getName(in));
+    }
+  }
+}
+
+char *getNameAttribute(parse_file *in)
+{
+  char * token;
+  char *name = NULL;
+  char car;
+  
+  while(1) {
+    token = getToken(in); 
+    if(strcmp("/",token) == 0 || strcmp(">",token) == 0){
+      ungetToken(in);
+      break;
+    }
+
+    if(!strcmp("name",token)) {
+      getEqual(in);
+      car = seekNextChar(in);
+      if(car == EOF) in->error(in,"name was expected");
+      else if(car == '\"') name = allocAndCopy(getQuotedString(in));
+      else name = allocAndCopy(getName(in));
+    }
+  }
+  if(name == NULL) in->error(in, "Name was expected");
+  return name;
+  
+}
+
+
+
+//for <label name=label_name value=n format="..."/>, value is an option
 char * getValueStrAttribute(parse_file *in)
 {
   char * token;
@@ -289,7 +410,9 @@ void parseFacility(parse_file *in, facility * fac)
   char * token;
   event *ev;
   
-  fac->name = allocAndCopy(getNameAttribute(in));    
+  getFacilityAttributes(in, fac);
+  if(fac->name == NULL) in->error(in, "Attribute not named");
+
   fac->capname = allocAndCopy(fac->name);
 	strupper(fac->capname);
   getRAnglebracket(in);    
@@ -338,7 +461,8 @@ void parseEvent(parse_file *in, event * ev, sequence * unnamed_types,
   type_descriptor *t;
 
   //<event name=eventtype_name>
-  ev->name = allocAndCopy(getNameAttribute(in));
+  getEventAttributes(in, ev);
+  if(ev->name == NULL) in->error(in, "Event not named");
   getRAnglebracket(in);  
 
   //<description>...</descriptio>
@@ -387,7 +511,8 @@ void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
   sequence_push(&(t->fields),f);
 
   //<field name=field_name> <description> <type> </field>
-  f->name = allocAndCopy(getNameAttribute(in)); 
+  getFieldAttributes(in, f);
+  if(f->name == NULL) in->error(in, "Field not named");
   getRAnglebracket(in);
 
   f->description = getDescription(in);
@@ -443,6 +568,7 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
 
   if(strcmp(token,"struct") == 0) {
     t->type = STRUCT;
+    getTypeAttributes(in, t);
     getRAnglebracket(in); //<struct>
     getLAnglebracket(in); //<field name=..>
     token = getToken(in);
@@ -462,7 +588,8 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
   }
   else if(strcmp(token,"union") == 0) {
     t->type = UNION;
-    t->size = getSizeAttribute(in);
+    getTypeAttributes(in, t);
+    if(t->size == -1) in->error(in, "Union has empty size");
     getRAnglebracket(in); //<union typecodesize=isize>
 
     getLAnglebracket(in); //<field name=..>
@@ -483,11 +610,12 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
   }
   else if(strcmp(token,"array") == 0) {
     t->type = ARRAY;
-    t->size = getValueAttribute(in);
+    getTypeAttributes(in, t);
+    if(t->size == -1) in->error(in, "Array has empty size");
     getRAnglebracket(in); //<array size=n>
 
     getLAnglebracket(in); //<type struct> 
-    t->nested_type = parseType(in,NULL, unnamed_types, named_types);
+    t->nested_type = parseType(in, NULL, unnamed_types, named_types);
 
     getLAnglebracket(in); //</array>
     getForwardslash(in);
@@ -497,7 +625,8 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
   }
   else if(strcmp(token,"sequence") == 0) {
     t->type = SEQUENCE;
-    t->size = getSizeAttribute(in);
+    getTypeAttributes(in, t);
+    if(t->size == -1) in->error(in, "Sequence has empty size");
     getRAnglebracket(in); //<array lengthsize=isize>
 
     getLAnglebracket(in); //<type struct> 
@@ -515,8 +644,8 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
     sequence_init(&(t->labels));
     sequence_init(&(t->labels_description));
 		t->already_printed = 0;
-    t->size = getSizeAttribute(in);
-    t->fmt = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
+    if(t->size == -1) in->error(in, "Sequence has empty size");
     getRAnglebracket(in);
 
     //<label name=label1 value=n/>
@@ -553,70 +682,63 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
   }
   else if(strcmp(token,"int") == 0) {
     t->type = INT;
-    t->size = getSizeAttribute(in);
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
+    if(t->size == -1) in->error(in, "int has empty size");
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"uint") == 0) {
     t->type = UINT;
-    t->size = getSizeAttribute(in);
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
+    if(t->size == -1) in->error(in, "uint has empty size");
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"pointer") == 0) {
     t->type = POINTER;
-    t->size = 0;
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"long") == 0) {
     t->type = LONG;
-    t->size = 0;
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"ulong") == 0) {
     t->type = ULONG;
-    t->size = 0;
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"size_t") == 0) {
     t->type = SIZE_T;
-    t->size = 0;
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"ssize_t") == 0) {
     t->type = SSIZE_T;
-    t->size = 0;
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"off_t") == 0) {
     t->type = OFF_T;
-    t->size = 0;
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"float") == 0) {
     t->type = FLOAT;
-    t->size = getSizeAttribute(in);
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"string") == 0) {
     t->type = STRING;
-    t->fmt  = allocAndCopy(getFormatAttribute(in));
+    getTypeAttributes(in, t);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
@@ -680,11 +802,12 @@ void parseTypeDefinition(parse_file * in, sequence * unnamed_types,
   type_descriptor *t;
 
   token = getNameAttribute(in);
+  if(token == NULL) in->error(in, "Type has empty name");
   t = find_named_type(token, named_types);
 
   if(t->type != NONE) in->error(in,"redefinition of named type");
   getRAnglebracket(in); //<type name=type_name>
-  getLAnglebracket(in); //<struct>
+  getLAnglebracket(in); //<
   token = getName(in);
   //MD ??if(strcmp("struct",token))in->error(in,"not a valid type definition");
   ungetToken(in);
