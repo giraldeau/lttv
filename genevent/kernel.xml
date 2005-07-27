@@ -5,7 +5,7 @@
     <description>System call entry</description>
     <struct>
       <field name="syscall_id"> <description>Syscall entry number in entry.S</description> <uint size=1/> </field>
-      <field name="address"> <description>Address from which call was made</description> <uint size=4/> </field>
+      <field name="address"> <description>Address from which call was made</description> <pointer/> </field>
      </struct>
   </event>
 	
