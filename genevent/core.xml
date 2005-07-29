@@ -7,6 +7,9 @@
       <field name="name"><string/></field>
       <field name="checksum"><uint size=4/></field>
       <field name="id"><uint size=4/></field>
+      <field name="long_size"><uint size=4/></field>
+      <field name="pointer_size"><uint size=4/></field>
+      <field name="size_t_size"><uint size=4/></field>
     </struct>
   </event>
 

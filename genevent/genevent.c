@@ -484,48 +484,21 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 
 
 	
-    //length of buffer : length of all structures
-		fprintf(fp,"\tint length = ");
-    if(ev->type == 0) fprintf(fp, "0");
-
-    for(pos1=0;pos1<structCount;pos1++){
-      fprintf(fp,"sizeof(struct %s_%s_%d)",ev->name, facName,pos1+1);
-      if(pos1 != structCount-1) fprintf(fp," + ");
-    }
-
-    //length of buffer : length of all arrays, sequences and strings
-    seqCount = 0;
-    strCount = 0;
-    flag = 0;
-		if(ev->type != 0)
-			for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-				fld  = (field *)ev->type->fields.array[pos1];
-				td = fld->type;
-				if(td->type == SEQUENCE || td->type==STRING || td->type==ARRAY){
-					if(structCount || flag > 0) fprintf(fp," + ");    
-					if(td->type == SEQUENCE) 
-						fprintf(fp,"sizeof(%s) + sizeof(%s) * seqlength_%d",
-								uintOutputTypes[td->size], getTypeStr(td), ++seqCount);
-					else if(td->type==STRING) fprintf(fp,"strlength_%d + 1", ++strCount);
-					else if(td->type==ARRAY) 
-						fprintf(fp,"sizeof(%s) * %d", getTypeStr(td),td->size);
-					if(structCount == 0) flag = 1;
-				}
-			}
-    fprintf(fp,";\n");
-
     //allocate buffer
     // MD no more need. fprintf(fp,"\tchar buff[buflength];\n");
     // write directly to the channel
+		fprintf(fp, "\tint length;\n");
     fprintf(fp, "\tunsigned int index;\n");
     fprintf(fp, "\tstruct ltt_channel_struct *channel;\n");
     fprintf(fp, "\tstruct ltt_trace_struct *trace;\n");
     fprintf(fp, "\tunsigned long _flags;\n");
     fprintf(fp, "\tvoid *buff;\n");
+    fprintf(fp, "\tvoid *offset_ptr;\n");
     fprintf(fp, "\tunsigned int header_length;\n");
     fprintf(fp, "\tunsigned int event_length;\n");
     fprintf(fp, "\tint resret;\n");
     fprintf(fp, "\tunsigned char _offset;\n");
+    fprintf(fp, "\tunsigned char length_offset;\n");
 		fprintf(fp, "\tstruct rchan_buf *buf;\n");
 
 		if(ev->type != 0)
@@ -556,15 +529,72 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     /* For each trace */
     fprintf(fp, "\tlist_for_each_entry(trace, &ltt_traces.head, list) {\n");
     fprintf(fp, "\t\tif(!trace->active) continue;\n\n");
-    
+
+     //length of buffer : length of all structures
+		fprintf(fp,"\t\tlength = 0;\n");
+		fprintf(fp,"\t\tlength_offset = 0;\n");
+ //   if(ev->type == 0) fprintf(fp, "0");
+   
     fprintf(fp, "\t\tchannel = ltt_get_channel_from_index(trace, index);\n");
 		fprintf(fp, "\t\tbuf = channel->rchan->buf[smp_processor_id()];\n");
 		/* Warning : not atomic reservation : event size depends on the current
 		 * address for alignment */
+    // Replaces _offset
     fprintf(fp, "\t\theader_length = "
                 "ltt_get_event_header_size(trace, channel,"
 								"buf->data + buf->offset, &_offset);\n");
-    fprintf(fp, "\t\tevent_length = header_length + length;\n");
+
+    for(pos1=0;pos1<structCount;pos1++){
+
+      if(ev->type->alignment > 1) {
+        fprintf(fp,"\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1) ;\n",
+            ev->type->alignment, ev->type->alignment, ev->type->alignment);
+      }
+      fprintf(fp,"\t\tlength+=sizeof(struct %s_%s_%d);\n",ev->name,
+          facName,pos1+1);
+//      if(pos1 != structCount-1) fprintf(fp," + ");
+    }
+
+    //length of buffer : length of all arrays, sequences and strings
+    seqCount = 0;
+    strCount = 0;
+    flag = 0;
+		if(ev->type != 0)
+			for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
+				fld  = (field *)ev->type->fields.array[pos1];
+				td = fld->type;
+				if(td->type == SEQUENCE || td->type==STRING || td->type==ARRAY){
+					if(td->type == SEQUENCE) {
+            if(td->alignment > 1) {
+              fprintf(fp,"\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
+                      td->alignment, td->alignment, td->alignment);
+            }
+						fprintf(fp,
+                "\t\tlength+=sizeof(%s) + (sizeof(%s) * seqlength_%d);\n",
+								uintOutputTypes[td->size], getTypeStr(td), ++seqCount);
+          } else if(td->type==STRING) {
+            if(td->alignment > 1) {
+              fprintf(fp,"\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
+                 td->alignment, td->alignment, td->alignment);
+            }
+            fprintf(fp,"length+=strlength_%d + 1;\n",
+                                                ++strCount);
+          }
+					else if(td->type==ARRAY) {
+            if(td->alignment > 1) {
+              fprintf(fp,"\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+                 td->alignment, td->alignment, td->alignment);
+            }
+						fprintf(fp,"\t\tlength+=sizeof(%s) * %d;\n",
+                getTypeStr(td),td->size);
+					if(structCount == 0) flag = 1;
+          }
+				}
+			}
+    fprintf(fp,";\n");
+
+    fprintf(fp, "\t\tevent_length = _offset + header_length + "
+                "length_offset + length;\n");
    
     /* Reserve the channel */
     fprintf(fp, "\t\tbuff = relay_reserve(channel->rchan, event_length, &resret);\n");
@@ -587,21 +617,29 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
                 "\t\t\t\tltt_facility_%s_%X, event_%s, length, _offset);\n",
                 facName, checksum, ev->name);
     fprintf(fp, "\n");
-    
+    fprintf(fp, "\t\tchar *ptr = (char*)buff + _offset + header_length;\n");
+
+   
     //declare a char pointer if needed : starts at the end of the structs.
-    if(structCount + hasStrSeq > 1) {
-      fprintf(fp,"\t\tchar * ptr = (char*)buff + header_length");
-      for(pos1=0;pos1<structCount;pos1++){
-        fprintf(fp," + sizeof(struct %s_%s_%d)",ev->name, facName,pos1+1);
-      }
-      if(structCount + hasStrSeq > 1) fprintf(fp,";\n");
-    }
+    //if(structCount + hasStrSeq > 1) {
+    //  fprintf(fp,"\t\tchar * ptr = (char*)buff + header_length");
+    //  for(pos1=0;pos1<structCount;pos1++){
+    //    fprintf(fp," + sizeof(struct %s_%s_%d)",ev->name, facName,pos1+1);
+    //  }
+    //  if(structCount + hasStrSeq > 1) fprintf(fp,";\n");
+    //}
 
     // Declare an alias pointer of the struct type to the beginning
     // of the reserved area, just after the event header.
-		if(ev->type != 0)
-      fprintf(fp, "\t\t__1 = (struct %s_%s_1 *)(buff + header_length);\n",
+    if(ev->type != 0) {
+      if(ev->type->alignment > 1) {
+        fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+              ev->type->alignment, ev->type->alignment, ev->type->alignment);
+      }
+    
+      fprintf(fp, "\t\t__1 = (struct %s_%s_1 *)(ptr);\n",
           ev->name, facName);
+    }
     //allocate memory for new struct and initialize it
     //if(whichTypeFirst == 1){ //struct first
       //for(pos1=0;pos1<structCount;pos1++){  
@@ -673,17 +711,30 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 				if(td->type == SEQUENCE){
 					flag = 0;
 					fprintf(fp,"\t\t//copy sequence length and sequence to buffer\n");
+
+          if(td->alignment > 1) {
+            fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+                    td->alignment, td->alignment, td->alignment);
+          }
 					fprintf(fp,"\t\t*ptr = seqlength_%d;\n",++seqCount);
 					fprintf(fp,"\t\tptr += sizeof(%s);\n",uintOutputTypes[td->size]);
+          if(td->alignment > 1) {
+            fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+                    td->alignment, td->alignment, td->alignment);
+          }
 					fprintf(fp,"\t\tmemcpy(ptr, %s, sizeof(%s) * seqlength_%d);\n",
 						fld->name, getTypeStr(td), seqCount);
-					 fprintf(fp,"\t\tptr += sizeof(%s) * seqlength_%d;\n\n",
+					fprintf(fp,"\t\tptr += sizeof(%s) * seqlength_%d;\n\n",
 						getTypeStr(td), seqCount);
 				}
 				else if(td->type==STRING){
 					flag = 0;
 					fprintf(fp,"\t\t//copy string to buffer\n");
 					fprintf(fp,"\t\tif(strlength_%d > 0){\n",++strCount);
+          if(td->alignment > 1) {
+            fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+                    td->alignment, td->alignment, td->alignment);
+          }
 					fprintf(fp,"\t\t\tmemcpy(ptr, %s, strlength_%d + 1);\n",
 							fld->name, strCount);
 					fprintf(fp,"\t\t\tptr += strlength_%d + 1;\n",strCount);
@@ -694,6 +745,10 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 				}else if(td->type==ARRAY){
 					flag = 0;
 					fprintf(fp,"\t//copy array to buffer\n");
+          if(td->alignment > 1) {
+            fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+                    td->alignment, td->alignment, td->alignment);
+          }
 					fprintf(fp,"\tmemcpy(ptr, %s, sizeof(%s) * %d);\n",
 							fld->name, getTypeStr(td), td->size);
 					fprintf(fp,"\tptr += sizeof(%s) * %d;\n\n", getTypeStr(td), td->size);
