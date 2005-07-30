@@ -540,8 +540,12 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 		 * address for alignment */
 		/* NOTE : using cmpxchg in reserve with repeat for atomicity */
     // Replaces _offset
+		/* NOTE2 : as the read old address from memory must come before any
+		 * protected event, let's add a memory barrier() to make sure the compiler
+		 * will not reorder this read. */
 		fprintf(fp, "\t\tdo {\n");
 		fprintf(fp, "\t\t\told_address = buf->data + buf->offset;\n");
+		fprintf(fp, "\t\t\tbarrier();\n");
     fprintf(fp, "\t\t\tchar *ptr = (char*)old_address;\n");
 
 
@@ -602,7 +606,12 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 
     fprintf(fp, "\t\t\tevent_length = (unsigned long)ptr -"
 				"(unsigned long)old_address;\n");
-
+		
+		/* let's put some protection before the cmpxchg : the space reservation and
+		 * the get TSC are not dependant from each other. I don't want the compiler
+		 * to reorder those in the wrong order. And relay_reserve is inline, so
+		 * _yes_, the compiler could mess it up. */
+		fprintf(fp, "\t\t\tbarrier();\n");
 		fprintf(fp, "\t\t\tbuff = relay_reserve(channel->rchan, event_length, "
 												"old_address);\n");
 		fprintf(fp, "\n");
