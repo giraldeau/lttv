@@ -493,13 +493,14 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\tstruct ltt_trace_struct *trace;\n");
     fprintf(fp, "\tunsigned long _flags;\n");
     fprintf(fp, "\tvoid *buff;\n");
-    fprintf(fp, "\tvoid *offset_ptr;\n");
+    fprintf(fp, "\tvoid *old_address;\n");
     fprintf(fp, "\tunsigned int header_length;\n");
     fprintf(fp, "\tunsigned int event_length;\n");
-    fprintf(fp, "\tint resret;\n");
     fprintf(fp, "\tunsigned char _offset;\n");
     fprintf(fp, "\tunsigned char length_offset;\n");
 		fprintf(fp, "\tstruct rchan_buf *buf;\n");
+		fprintf(fp, "\tstruct timeval delta;\n");
+		fprintf(fp, "\tu64 tsc;\n");
 
 		if(ev->type != 0)
       fprintf(fp, "\tstruct %s_%s_1* __1;\n\n", ev->name, facName);
@@ -537,20 +538,28 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
    
     fprintf(fp, "\t\tchannel = ltt_get_channel_from_index(trace, index);\n");
 		fprintf(fp, "\t\tbuf = channel->rchan->buf[smp_processor_id()];\n");
+		fprintf(fp, "\n");
 		/* Warning : not atomic reservation : event size depends on the current
 		 * address for alignment */
+		/* NOTE : using cmpxchg in reserve with repeat for atomicity */
     // Replaces _offset
-    fprintf(fp, "\t\theader_length = "
-                "ltt_get_event_header_size(trace, channel,"
-								"buf->data + buf->offset, &_offset);\n");
+		fprintf(fp, "\t\tdo {\n");
+		fprintf(fp, "\t\t\told_address = buf->data + buf->offset;\n");
+    fprintf(fp, "\t\t\theader_length = ltt_get_event_header_data(trace, "
+																																"channel,\n"
+								"\t\t\t\t\t\t\t\t\t\told_address, &_offset, &delta, &tsc);\n");
+
+    if(ev->type != 0)
+      fprintf(fp, "\t\t\tchar *ptr = (char*)old_address + " 
+																	"_offset + header_length;\n");
 
     for(pos1=0;pos1<structCount;pos1++){
 
       if(ev->type->alignment > 1) {
-        fprintf(fp,"\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1) ;\n",
+        fprintf(fp,"\t\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1) ;\n",
             ev->type->alignment, ev->type->alignment, ev->type->alignment);
       }
-      fprintf(fp,"\t\tlength+=sizeof(struct %s_%s_%d);\n",ev->name,
+      fprintf(fp,"\t\t\tlength+=sizeof(struct %s_%s_%d);\n",ev->name,
           facName,pos1+1);
 //      if(pos1 != structCount-1) fprintf(fp," + ");
     }
@@ -566,15 +575,15 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 				if(td->type == SEQUENCE || td->type==STRING || td->type==ARRAY){
 					if(td->type == SEQUENCE) {
             if(td->alignment > 1) {
-              fprintf(fp,"\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
+              fprintf(fp,"\t\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
                       td->alignment, td->alignment, td->alignment);
             }
 						fprintf(fp,
-                "\t\tlength+=sizeof(%s) + (sizeof(%s) * seqlength_%d);\n",
+                "\t\t\tlength+=sizeof(%s) + (sizeof(%s) * seqlength_%d);\n",
 								uintOutputTypes[td->size], getTypeStr(td), ++seqCount);
           } else if(td->type==STRING) {
             if(td->alignment > 1) {
-              fprintf(fp,"\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
+              fprintf(fp,"\t\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
                  td->alignment, td->alignment, td->alignment);
             }
             fprintf(fp,"length+=strlength_%d + 1;\n",
@@ -582,10 +591,10 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
           }
 					else if(td->type==ARRAY) {
             if(td->alignment > 1) {
-              fprintf(fp,"\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+              fprintf(fp,"\t\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
                  td->alignment, td->alignment, td->alignment);
             }
-						fprintf(fp,"\t\tlength+=sizeof(%s) * %d;\n",
+						fprintf(fp,"\t\t\tlength+=sizeof(%s) * %d;\n",
                 getTypeStr(td),td->size);
 					if(structCount == 0) flag = 1;
           }
@@ -593,11 +602,18 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 			}
     fprintf(fp,";\n");
 
-    fprintf(fp, "\t\tevent_length = _offset + header_length + "
+    fprintf(fp, "\t\t\tevent_length = _offset + header_length + "
                 "length_offset + length;\n");
-   
+
+		fprintf(fp, "\t\t\tbuff = relay_reserve(channel->rchan, event_length, "
+												"old_address);\n");
+		fprintf(fp, "\n");
+ 		fprintf(fp, "\t\t} while(PTR_ERR(buff) == -EAGAIN);\n");
+		fprintf(fp, "\n");
+
+  
     /* Reserve the channel */
-    fprintf(fp, "\t\tbuff = relay_reserve(channel->rchan, event_length, &resret);\n");
+    //fprintf(fp, "\t\tbuff = relay_reserve(channel->rchan, event_length);\n");
     fprintf(fp, "\t\tif(buff == NULL) {\n");
     fprintf(fp, "\t\t\t/* Buffer is full*/\n");
     fprintf(fp, "\t\t\t/* for debug BUG(); */\n"); // DEBUG!
@@ -606,10 +622,10 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\t\t}\n");
 		
 		/* DEBUG */
-    fprintf(fp, "\t\tif(resret == 1) {\n");
-		fprintf(fp, "printk(\"f%%lu e\%%u \", ltt_facility_%s_%X, event_%s);",
-				facName, checksum, ev->name);
-    fprintf(fp, "\t\t}\n");
+    //fprintf(fp, "\t\tif(resret == 1) {\n");
+		//fprintf(fp, "printk(\"f%%lu e\%%u \", ltt_facility_%s_%X, event_%s);",
+		//		facName, checksum, ev->name);
+    //fprintf(fp, "\t\t}\n");
 
     /* Write the header */
     fprintf(fp, "\n");
@@ -617,7 +633,9 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
                 "\t\t\t\tltt_facility_%s_%X, event_%s, length, _offset);\n",
                 facName, checksum, ev->name);
     fprintf(fp, "\n");
-    fprintf(fp, "\t\tchar *ptr = (char*)buff + _offset + header_length;\n");
+
+    if(ev->type != 0)
+      fprintf(fp, "\t\tchar *ptr = (char*)buff + _offset + header_length;\n");
 
    
     //declare a char pointer if needed : starts at the end of the structs.
