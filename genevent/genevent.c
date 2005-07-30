@@ -45,9 +45,13 @@ This program is distributed in the hope that it will be useful,
 #include "parser.h"
 #include "genevent.h"
 
+#define max(a,b) ((a)<(b))?(b):(a)
+
 /* Named types may be referenced from anywhere */
 
 facility * fac;
+
+unsigned alignment = 0;
 
 int main(int argc, char** argv)
 {
@@ -58,6 +62,10 @@ int main(int argc, char** argv)
 
   if(argc < 2){
     printf("At least one event definition file is needed\n");
+    printf("You may specify the default alignment for a facility with\n");
+    printf("  -a x , where x is the desired alignment in bytes.\n");
+    printf("The alignment value will affect all the following xml files.\n");
+    printf("i.e. genevent -a 8 core.xml -a 4 kernel.xml is valid.\n");
     exit(1);
   }
 
@@ -65,6 +73,15 @@ int main(int argc, char** argv)
   in.error = error_callback;
 
   for(i = 1 ; i < argc ; i++) {
+
+		if(strcmp("-a", argv[i])==0) {
+			if(i < argc-1) {
+				printf("Error : missing argument to -a\n");
+				exit(1);
+			} else i++;
+			alignment = atoi(argv[i]);
+		}
+		
     in.lineno = 0;
     in.name = allocAndCopy(argv[i]);
 
@@ -314,15 +331,17 @@ printStruct(FILE * fp, int len, void ** array, char * name, char * facName,
   }
 
   if(flag) {
-    if(type->alignment == 0)
+		unsigned align = max(alignment, type->alignment);
+		
+    if(align == 0)
       fprintf(fp,"} __attribute__ ((packed));\n\n");
     else {
-      if(type->alignment != 1 && type->alignment != 2
-          && type->alignment != 4 && type->alignment != 8) {
-        printf("Wrong alignment %i, using packed.\n", type->alignment);
+      if(align != 1 && align != 2
+          && align != 4 && align != 8) {
+        printf("Wrong alignment %i, using packed.\n", align);
         fprintf(fp,"} __attribute__ ((packed));\n\n");
       } else
-        fprintf(fp,"} __attribute__ ((aligned(%i)));\n\n", type->alignment);
+        fprintf(fp,"} __attribute__ ((aligned(%i)));\n\n", align);
     }
   }
 }
@@ -557,9 +576,10 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 
     for(pos1=0;pos1<structCount;pos1++){
 
-      if(ev->type->alignment > 1) {
+			unsigned align = max(alignment, ev->type->alignment);
+      if(align > 1) {
         fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1) ;\n",
-            ev->type->alignment, ev->type->alignment, ev->type->alignment);
+            align, align, align);
       }
       fprintf(fp,"\t\t\tptr += sizeof(struct %s_%s_%d);\n",ev->name,
           facName,pos1+1);
@@ -576,25 +596,34 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 				td = fld->type;
 				if(td->type == SEQUENCE || td->type==STRING || td->type==ARRAY){
 					if(td->type == SEQUENCE) {
-            if(td->alignment > 1) {
-              fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
-                      td->alignment, td->alignment, td->alignment);
-            }
-						fprintf(fp,
-                "\t\t\tptr += sizeof(%s) + (sizeof(%s) * seqlength_%d);\n",
-								uintOutputTypes[td->size], getTypeStr(td), ++seqCount);
+
+						unsigned align = max(alignment, td->alignment);
+						if(align > 1) {
+							fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+											align, align, align);
+						}
+						fprintf(fp,"\t\tptr += sizeof(%s);\n",uintOutputTypes[td->size]);
+						if(align > 1) {
+							fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+											align, align, align);
+						}
+						fprintf(fp,"\t\tptr += sizeof(%s) * seqlength_%d;\n\n",
+							getTypeStr(td), seqCount);
+
           } else if(td->type==STRING) {
-            if(td->alignment > 1) {
+						unsigned align = max(alignment, td->alignment);
+            if(align > 1) {
               fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
-                 td->alignment, td->alignment, td->alignment);
+                 align, align, align);
             }
             fprintf(fp,"ptr += strlength_%d + 1;\n",
                                                 ++strCount);
           }
 					else if(td->type==ARRAY) {
-            if(td->alignment > 1) {
+						unsigned align = max(alignment, td->alignment);
+            if(align > 1) {
               fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-                 td->alignment, td->alignment, td->alignment);
+                 align, align, align);
             }
 						fprintf(fp,"\t\t\tptr += sizeof(%s) * %d;\n",
                 getTypeStr(td),td->size);
@@ -660,9 +689,10 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     // Declare an alias pointer of the struct type to the beginning
     // of the reserved area, just after the event header.
     if(ev->type != 0) {
-      if(ev->type->alignment > 1) {
+			unsigned align = max(alignment, td->alignment);
+      if(align > 1) {
         fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-              ev->type->alignment, ev->type->alignment, ev->type->alignment);
+              align, align, align);
       }
     
       fprintf(fp, "\t\t__1 = (struct %s_%s_1 *)(ptr);\n",
@@ -740,15 +770,16 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 					flag = 0;
 					fprintf(fp,"\t\t//copy sequence length and sequence to buffer\n");
 
-          if(td->alignment > 1) {
+					unsigned align = max(alignment, td->alignment);
+          if(align > 1) {
             fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-                    td->alignment, td->alignment, td->alignment);
+                    align, align, align);
           }
 					fprintf(fp,"\t\t*ptr = seqlength_%d;\n",++seqCount);
 					fprintf(fp,"\t\tptr += sizeof(%s);\n",uintOutputTypes[td->size]);
-          if(td->alignment > 1) {
+          if(align > 1) {
             fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-                    td->alignment, td->alignment, td->alignment);
+                    align, align, align);
           }
 					fprintf(fp,"\t\tmemcpy(ptr, %s, sizeof(%s) * seqlength_%d);\n",
 						fld->name, getTypeStr(td), seqCount);
@@ -759,9 +790,10 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 					flag = 0;
 					fprintf(fp,"\t\t//copy string to buffer\n");
 					fprintf(fp,"\t\tif(strlength_%d > 0){\n",++strCount);
-          if(td->alignment > 1) {
+					unsigned align = max(alignment, td->alignment);
+          if(align > 1) {
             fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-                    td->alignment, td->alignment, td->alignment);
+                    align, align, align);
           }
 					fprintf(fp,"\t\t\tmemcpy(ptr, %s, strlength_%d + 1);\n",
 							fld->name, strCount);
@@ -773,9 +805,10 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 				}else if(td->type==ARRAY){
 					flag = 0;
 					fprintf(fp,"\t//copy array to buffer\n");
-          if(td->alignment > 1) {
+					unsigned align = max(alignment, td->alignment);
+          if(align > 1) {
             fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-                    td->alignment, td->alignment, td->alignment);
+                    align, align, align);
           }
 					fprintf(fp,"\tmemcpy(ptr, %s, sizeof(%s) * %d);\n",
 							fld->name, getTypeStr(td), td->size);
