@@ -75,59 +75,59 @@ int main(int argc, char** argv)
   for(i = 1 ; i < argc ; i++) {
 
 		if(strcmp("-a", argv[i])==0) {
-			if(i < argc-1) {
+			if(i >= argc-1) {
 				printf("Error : missing argument to -a\n");
 				exit(1);
 			} else i++;
 			alignment = atoi(argv[i]);
-		}
+		} else {
 		
-    in.lineno = 0;
-    in.name = allocAndCopy(argv[i]);
+			in.lineno = 0;
+			in.name = allocAndCopy(argv[i]);
 
-    in.fp = fopen(in.name, "r");
-    if(!in.fp ){
-      in.error(&in,"cannot open facility input file");
-    }
+			in.fp = fopen(in.name, "r");
+			if(!in.fp ){
+				in.error(&in,"cannot open facility input file");
+			}
 
-    while(1){
-      token = getToken(&in);
-      if(in.type == ENDFILE) break;
+			while(1){
+				token = getToken(&in);
+				if(in.type == ENDFILE) break;
 
-      if(strcmp(token, "<")) in.error(&in,"not a facility file");
-      token = getName(&in);
-    
-      if(strcmp("facility",token) == 0) {
-        fac = memAlloc(sizeof(facility));
-        fac->name = NULL;
-        fac->description = NULL;
-        sequence_init(&(fac->events));
-        table_init(&(fac->named_types));
-        sequence_init(&(fac->unnamed_types));
-        
-        parseFacility(&in, fac);
-        
-        //check if any namedType is not defined
-        checkNamedTypesImplemented(&fac->named_types);
-      }
-      else in.error(&in,"facility token was expected");
+				if(strcmp(token, "<")) in.error(&in,"not a facility file");
+				token = getName(&in);
+			
+				if(strcmp("facility",token) == 0) {
+					fac = memAlloc(sizeof(facility));
+					fac->name = NULL;
+					fac->description = NULL;
+					sequence_init(&(fac->events));
+					table_init(&(fac->named_types));
+					sequence_init(&(fac->unnamed_types));
+					
+					parseFacility(&in, fac);
+					
+					//check if any namedType is not defined
+					checkNamedTypesImplemented(&fac->named_types);
+				}
+				else in.error(&in,"facility token was expected");
 
-      generateFile(argv[i]);
+				generateFile(argv[i]);
 
-      free(fac->name);
-      free(fac->description);
-      freeEvents(&fac->events);
-      sequence_dispose(&fac->events);
-      freeNamedType(&fac->named_types);
-      table_dispose(&fac->named_types);
-      freeTypes(&fac->unnamed_types);
-      sequence_dispose(&fac->unnamed_types);      
-      free(fac);      
-    }
+				free(fac->name);
+				free(fac->description);
+				freeEvents(&fac->events);
+				sequence_dispose(&fac->events);
+				freeNamedType(&fac->named_types);
+				table_dispose(&fac->named_types);
+				freeTypes(&fac->unnamed_types);
+				sequence_dispose(&fac->unnamed_types);      
+				free(fac);      
+			}
 
-    free(in.name);
-    fclose(in.fp);
-
+			free(in.name);
+			fclose(in.fp);
+		}
   }
   return 0;
 }
