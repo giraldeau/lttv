@@ -37,6 +37,7 @@ enum trace_op {
 	OP_DESTROY,
 	OP_START,
 	OP_STOP,
+	OP_ALIGN,
 	OP_NONE
 };
 
@@ -44,6 +45,19 @@ enum trace_mode {
 	LTT_TRACE_NORMAL,
 	LTT_TRACE_FLIGHT
 };
+
+typedef struct lttctl_peer_msg {
+	char trace_name[NAME_MAX];
+	enum trace_op op;
+	union {
+    struct {
+      enum trace_mode mode;
+      unsigned subbuf_size;
+      unsigned n_subbufs;
+    } new_trace;
+    unsigned alignment;
+	} args;
+} lttctl_peer_msg_t;
 
 
 struct lttctl_handle
@@ -54,14 +68,6 @@ struct lttctl_handle
   struct sockaddr_nl peer;
 };
 
-typedef struct lttctl_peer_msg {
-	char trace_name[NAME_MAX];
-	enum trace_op op;
-	union {
-		enum trace_mode mode;
-	} args;
-} lttctl_peer_msg_t;
-
 typedef struct lttctl_resp_msg {
 	int err;
 } lttctl_resp_msg_t;
@@ -71,8 +77,8 @@ struct lttctl_handle *lttctl_create_handle(void);
 int lttctl_destroy_handle(struct lttctl_handle *h);
 
 
-int lttctl_create_trace(const struct lttctl_handle * handle,
-		char *name, enum trace_mode mode);
+int lttctl_create_trace(const struct lttctl_handle *h,
+		char *name, enum trace_mode mode, unsigned subbuf_size, unsigned n_subbufs);
 
 int lttctl_destroy_trace(const struct lttctl_handle *handle, char *name);
 
