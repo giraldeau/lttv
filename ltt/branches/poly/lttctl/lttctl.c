@@ -323,6 +323,8 @@ int main(int argc, char ** argv)
   	case CTL_OP_CREATE:
 			ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size,
 																n_subbufs);
+			if(alignment != 0)
+				ret |= lttctl_align(handle, trace_name, alignment);
 			break;
 		case CTL_OP_DESTROY:
 			ret = lttctl_destroy_trace(handle, trace_name);
@@ -336,6 +338,8 @@ int main(int argc, char ** argv)
 		case CTL_OP_DAEMON:
 			ret = lttctl_daemon(handle, trace_name);
 			break;
+		case CTL_OP_ALIGN:
+			ret = lttctl_align(handle, trace_name, alignment);
 		case CTL_OP_NONE:
 			break;
 	}
