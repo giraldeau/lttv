@@ -1,5 +1,16 @@
 <html>
 <body>
+Progress in LTTV :<br>
+* Done<br>
+Buffer aligned on page boudary -> use valloc.<br>
+per struct <struct align=x> support added to genevent (partial).<br>
+<br>
+*TODO<br>
+Read current trace header and buffer header.<br>
+migrate align to lttv parser.<br>
+Add offset align generation for structs to genevent.<br>
+<br>
+<br>
 Here the status of the work in progress for LTT experimental<br>
 <br>
 * Done<br>
@@ -19,9 +30,6 @@ Add information in the buffer header : buffer size, etc etc...<br>
 	easier to decode.<br>
 Add trace start structure to buffer start header.<br>
 fix genevent : take no lock if num traces active is 0.<br>
-<br>
-<br>
-* TODO<br>
 Add type information per facility : it will help having a standard way
 to understand information coming from both kernel space and user space, and deal
 easily with 64 bits kernel with 64 and 32 bits processes (and with size_t know
@@ -30,6 +38,10 @@ another).<br>
 fix structures alignment, array and sequences too. -> trace dynamic.<br>
 add per facility alignment (inside structures).<br>
 add control of alignment.<br>
+add control for subbuffer size and number of subbuffers.<br>
+<br>
+<br>
+* TODO<br>
 add user space tracing.<br>
 <br>
 <br>
