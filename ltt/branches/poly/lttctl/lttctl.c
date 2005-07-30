@@ -26,15 +26,19 @@ enum trace_ctl_op {
 	CTL_OP_START,
 	CTL_OP_STOP,
 	CTL_OP_DAEMON,
+	CTL_OP_ALIGN,
 	CTL_OP_NONE
 };
 
 static char *trace_name = NULL;
 static char *mode_name = NULL;
+static unsigned subbuf_size = 0;
+static unsigned n_subbufs = 0;
 static enum trace_mode mode = LTT_TRACE_NORMAL;
 static enum trace_ctl_op op = CTL_OP_NONE;
 static char *channel_root = NULL;
 static char *trace_root = NULL;
+static unsigned alignment = 0;
 
 static int sigio_received = 0;
 
@@ -64,6 +68,9 @@ void show_arguments(void)
 	printf("              (optionnaly, you can set LTT_DAEMON env. var.)\n");
 	printf("-t            Trace root path. (ex. /root/traces/example_trace)\n");
 	printf("-l            LTT channels root path. (ex. /mnt/relayfs/ltt)\n");
+	printf("-a            Alignment of a new or existing trace\n");
+	printf("-z            Size of the subbuffers\n");
+	printf("-x            Number of subbuffers\n");
 	printf("\n");
 }
 
@@ -117,7 +124,7 @@ int parse_arguments(int argc, char **argv)
 								ret = -1;
 							}
 						} else {
-								printf("Specify a mode after -c.\n", argv[argn]);
+								printf("Specify a mode after -c.\n");
 								printf("\n");
 								ret = -1;
 						}
@@ -131,6 +138,37 @@ int parse_arguments(int argc, char **argv)
 					case 'q':
 						op = CTL_OP_STOP;
 						break;
+					case 'a':
+						if(op == CTL_OP_NONE) op = CTL_OP_ALIGN;
+						if(argn+1 < argc) {
+							alignment = (unsigned)atoi(argv[argn+1]);
+							argn++;
+						} else {
+							printf("Specify an alignment after -a.\n");
+							printf("\n");
+							ret = -1;
+						}
+						break;
+					case 'z':
+						if(argn+1 < argc) {
+							subbuf_size = (unsigned)atoi(argv[argn+1]);
+							argn++;
+						} else {
+							printf("Specify a number of subbuffers after -z.\n");
+							printf("\n");
+							ret = -1;
+						}
+						break;
+					case 'x':
+						if(argn+1 < argc) {
+							n_subbufs = (unsigned)atoi(argv[argn+1]);
+							argn++;
+						} else {
+							printf("Specify a subbuffer size after -x.\n");
+							printf("\n");
+							ret = -1;
+						}
+						break;
 					case 'd':
 						op = CTL_OP_DAEMON;
 						break;
@@ -139,7 +177,7 @@ int parse_arguments(int argc, char **argv)
 							trace_root = argv[argn+1];
 							argn++;
 						} else {
-							printf("Specify a trace root path after -t.\n", argv[argn]);
+							printf("Specify a trace root path after -t.\n");
 							printf("\n");
 							ret = -1;
 						}
@@ -149,7 +187,7 @@ int parse_arguments(int argc, char **argv)
 							channel_root = argv[argn+1];
 							argn++;
 						} else {
-							printf("Specify a channel root path after -l.\n", argv[argn]);
+							printf("Specify a channel root path after -l.\n");
 							printf("\n");
 							ret = -1;
 						}
@@ -219,7 +257,7 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	strcat(channel_path, trace_name);
 
 	
-	ret = lttctl_create_trace(handle, trace_name, mode);
+	ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size, n_subbufs);
 	if(ret != 0) goto create_error;
 
 	act.sa_handler = handler;
@@ -283,7 +321,8 @@ int main(int argc, char ** argv)
 	
 	switch(op) {
   	case CTL_OP_CREATE:
-			ret = lttctl_create_trace(handle, trace_name, mode);
+			ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size,
+																n_subbufs);
 			break;
 		case CTL_OP_DESTROY:
 			ret = lttctl_destroy_trace(handle, trace_name);
