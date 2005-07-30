@@ -487,7 +487,6 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     //allocate buffer
     // MD no more need. fprintf(fp,"\tchar buff[buflength];\n");
     // write directly to the channel
-		fprintf(fp, "\tint length;\n");
     fprintf(fp, "\tunsigned int index;\n");
     fprintf(fp, "\tstruct ltt_channel_struct *channel;\n");
     fprintf(fp, "\tstruct ltt_trace_struct *trace;\n");
@@ -495,9 +494,9 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\tvoid *buff;\n");
     fprintf(fp, "\tvoid *old_address;\n");
     fprintf(fp, "\tunsigned int header_length;\n");
-    fprintf(fp, "\tunsigned int event_length;\n");
+    fprintf(fp, "\tunsigned int event_length;\n");	// total size (incl hdr)
+		fprintf(fp, "\tunsigned int length;\n");	// Size of the event var data.
     fprintf(fp, "\tunsigned char _offset;\n");
-    fprintf(fp, "\tunsigned char length_offset;\n");
 		fprintf(fp, "\tstruct rchan_buf *buf;\n");
 		fprintf(fp, "\tstruct timeval delta;\n");
 		fprintf(fp, "\tu64 tsc;\n");
@@ -532,8 +531,6 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\t\tif(!trace->active) continue;\n\n");
 
      //length of buffer : length of all structures
-		fprintf(fp,"\t\tlength = 0;\n");
-		fprintf(fp,"\t\tlength_offset = 0;\n");
  //   if(ev->type == 0) fprintf(fp, "0");
    
     fprintf(fp, "\t\tchannel = ltt_get_channel_from_index(trace, index);\n");
@@ -545,21 +542,22 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     // Replaces _offset
 		fprintf(fp, "\t\tdo {\n");
 		fprintf(fp, "\t\t\told_address = buf->data + buf->offset;\n");
+    fprintf(fp, "\t\t\tchar *ptr = (char*)old_address;\n");
+
+
     fprintf(fp, "\t\t\theader_length = ltt_get_event_header_data(trace, "
 																																"channel,\n"
 								"\t\t\t\t\t\t\t\t\t\told_address, &_offset, &delta, &tsc);\n");
 
-    if(ev->type != 0)
-      fprintf(fp, "\t\t\tchar *ptr = (char*)old_address + " 
-																	"_offset + header_length;\n");
+    fprintf(fp, "\t\t\tptr += _offset + header_length;\n");
 
     for(pos1=0;pos1<structCount;pos1++){
 
       if(ev->type->alignment > 1) {
-        fprintf(fp,"\t\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1) ;\n",
+        fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1) ;\n",
             ev->type->alignment, ev->type->alignment, ev->type->alignment);
       }
-      fprintf(fp,"\t\t\tlength+=sizeof(struct %s_%s_%d);\n",ev->name,
+      fprintf(fp,"\t\t\tptr += sizeof(struct %s_%s_%d);\n",ev->name,
           facName,pos1+1);
 //      if(pos1 != structCount-1) fprintf(fp," + ");
     }
@@ -575,26 +573,26 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 				if(td->type == SEQUENCE || td->type==STRING || td->type==ARRAY){
 					if(td->type == SEQUENCE) {
             if(td->alignment > 1) {
-              fprintf(fp,"\t\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
+              fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
                       td->alignment, td->alignment, td->alignment);
             }
 						fprintf(fp,
-                "\t\t\tlength+=sizeof(%s) + (sizeof(%s) * seqlength_%d);\n",
+                "\t\t\tptr += sizeof(%s) + (sizeof(%s) * seqlength_%d);\n",
 								uintOutputTypes[td->size], getTypeStr(td), ++seqCount);
           } else if(td->type==STRING) {
             if(td->alignment > 1) {
-              fprintf(fp,"\t\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
+              fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
                  td->alignment, td->alignment, td->alignment);
             }
-            fprintf(fp,"length+=strlength_%d + 1;\n",
+            fprintf(fp,"ptr += strlength_%d + 1;\n",
                                                 ++strCount);
           }
 					else if(td->type==ARRAY) {
             if(td->alignment > 1) {
-              fprintf(fp,"\t\t\tlength_offset+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+              fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
                  td->alignment, td->alignment, td->alignment);
             }
-						fprintf(fp,"\t\t\tlength+=sizeof(%s) * %d;\n",
+						fprintf(fp,"\t\t\tptr += sizeof(%s) * %d;\n",
                 getTypeStr(td),td->size);
 					if(structCount == 0) flag = 1;
           }
@@ -602,8 +600,8 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 			}
     fprintf(fp,";\n");
 
-    fprintf(fp, "\t\t\tevent_length = _offset + header_length + "
-                "length_offset + length;\n");
+    fprintf(fp, "\t\t\tevent_length = (unsigned long)ptr -"
+				"(unsigned long)old_address;\n");
 
 		fprintf(fp, "\t\t\tbuff = relay_reserve(channel->rchan, event_length, "
 												"old_address);\n");
@@ -629,8 +627,11 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 
     /* Write the header */
     fprintf(fp, "\n");
+		fprintf(fp,"\t\tlength = event_length - header_length;\n");
+    fprintf(fp, "\n");
     fprintf(fp, "\t\tltt_write_event_header(trace, channel, buff, \n"
-                "\t\t\t\tltt_facility_%s_%X, event_%s, length, _offset);\n",
+                "\t\t\t\tltt_facility_%s_%X, event_%s, length, _offset,\n"
+								"\t\t\t\t&delta, &tsc);\n",
                 facName, checksum, ev->name);
     fprintf(fp, "\n");
 
