@@ -69,7 +69,7 @@ void show_arguments(void)
 	printf("-t            Trace root path. (ex. /root/traces/example_trace)\n");
 	printf("-l            LTT channels root path. (ex. /mnt/relayfs/ltt)\n");
 	printf("-a            Alignment of a new or existing trace\n");
-	printf("-z            Size of the subbuffers\n");
+	printf("-z            Size of the subbuffers (will be rounded to next page size)\n");
 	printf("-x            Number of subbuffers\n");
 	printf("\n");
 }
