@@ -1359,6 +1359,13 @@ LttEvent *ltt_tracefile_read(LttTracefile *tf)
         g_error("Can not map block");
         return NULL;
       }
+      /* seek to the first event */
+      err = ltt_seek_next_event(tf);
+      if(unlikely(err == ERANGE)) {
+        g_error("event id is out of range\n");
+        return NULL;
+      }
+
       pos = tf->event.offset;
     }
   }
