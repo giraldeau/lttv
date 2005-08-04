@@ -1177,7 +1177,20 @@ void ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
       g_error("Can not map block");
       goto fail;
     }
-    if(ltt_time_compare(time, tf->buffer.start.timestamp) < 0) {
+    if(high == low) {
+      /* We cannot divide anymore : this is what would happen if the time
+       * requested was exactly between two consecutive buffers'end and start 
+       * timestamps. This is also what would happend if we didn't deal with out
+       * of span cases prior in this function. */
+      /* The event is right in the buffer!
+       * (or in the next buffer first event) */
+      while(1) {
+        ltt_tracefile_read(tf);
+        if(ltt_time_compare(time, tf->event.event_time) >= 0)
+          break;
+      }
+
+    } if(ltt_time_compare(time, tf->buffer.start.timestamp) < 0) {
       /* go to lower part */
       high = block_num;
     } else if(ltt_time_compare(time, tf->buffer.end.timestamp) > 0) {
