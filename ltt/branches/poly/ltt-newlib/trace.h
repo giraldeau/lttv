@@ -124,16 +124,21 @@ unsigned ltt_tracefile_block_number(LttTracefile *tf);
 
 /* Seek to the first event of the trace with time larger or equal to time */
 
-void ltt_tracefile_seek_time(LttTracefile *t, LttTime time);
+int ltt_tracefile_seek_time(LttTracefile *t, LttTime time);
 
 /* Seek to the first event with position equal or larger to ep */
 
-void ltt_tracefile_seek_position(LttTracefile *t,
+int ltt_tracefile_seek_position(LttTracefile *t,
     const LttEventPosition *ep);
 
 /* Read the next event */
 
-LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event);
+int ltt_tracefile_read(LttTracefile *t);
+
+/* ltt_tracefile_read cut down in pieces */
+int ltt_tracefile_read_seek(LttTracefile *t);
+int ltt_tracefile_read_update_event(LttTracefile *t);
+int ltt_tracefile_read_op(LttTracefile *t);
 
 /* open tracefile */
 

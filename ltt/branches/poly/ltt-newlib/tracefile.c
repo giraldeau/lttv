@@ -82,18 +82,14 @@ static inline gint getFieldtypeSize(LttTracefile * tf,
          LttEventType * evT, gint offsetRoot,
 		     gint offsetParent, LttField *fld, void *evD, LttTrace* t);
 
-/* read a fixed size or a block information from the file (fd) */
+/* map a fixed size or a block information from the file (fd) */
 int map_block(LttTracefile * tf, unsigned int block_num);
 
 /* calculate cycles per nsec for current block */
 void getCyclePerNsec(LttTracefile * t);
 
-/* reinitialize the info of the block which is already in the buffer */
-void updateTracefile(LttTracefile * tf);
-
 /* go to the next event */
-int skipEvent(LttTracefile * t);
-
+static int ltt_seek_next_event(LttTracefile *tf);
 
 /* Functions to parse system.xml file (using glib xml parser) */
 static void parser_start_element (GMarkupParseContext  __UNUSED__ *context,
@@ -529,6 +525,7 @@ void ltt_tracefile_group_destroy(gpointer data)
     if(tf->cpu_online)
       ltt_tracefile_close(tf);
   }
+  g_array_free(group, TRUE);
 }
 
 gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
@@ -617,7 +614,7 @@ static int open_tracefiles(LttTrace *trace, char *root_path, GData *tracefiles)
       /* Add the per cpu tracefile to the named group */
       unsigned int old_len = group->len;
       if(num+1 > old_len)
-        g_array_set_size(group, num+1);
+        group = g_array_set_size(group, num+1);
       tf = &g_array_index (group, LttTracefile, num);
 
       if(ltt_tracefile_open(trace, path, tf)) {
@@ -638,11 +635,229 @@ static int open_tracefiles(LttTrace *trace, char *root_path, GData *tracefiles)
 	return 0;
 }
 
+/* ltt_get_facility_description
+ *
+ * Opens the trace corresponding to the requested facility (identified by fac_id
+ * and checksum).
+ *
+ * The name searched is : %trace root%/eventdefs/facname_checksum.xml
+ *
+ * Returns 0 on success, or 1 on failure.
+ */
+
+static int ltt_get_facility_description(LttFacility *f, 
+                                        LttTrace *t)
+{
+  char desc_file_name[PATH_MAX];
+  char *text;
+  guint textlen;
+  gint err;
+
+  text = g_quark_to_string(t->pathname);
+  textlen = strlen(text);
+  
+  if(textlen >= PATH_MAX) goto name_error;
+  strcpy(desc_file_name, text);
+
+  text = "/eventdefs/";
+  textlen+=strlen(text);
+  if(textlen >= PATH_MAX) goto name_error;
+  strcat(desc_file_name, text);
+  
+  text = g_quark_to_string(f->name);
+  textlen+=strlen(text);
+  if(textlen >= PATH_MAX) goto name_error;
+  strcat(desc_file_name, text);
+
+  text = "_";
+  textlen+=strlen(text);
+  if(textlen >= PATH_MAX) goto name_error;
+  strcat(desc_file_name, text);
+
+  err = snprintf(desc_file_name+textlen, PATH_MAX-textlen-1,
+      "%u", f->checksum);
+  if(err) goto name_error;
+
+  textlen=strlen(desc_file_name);
+  
+  text = ".xml";
+  textlen+=strlen(text);
+  if(textlen >= PATH_MAX) goto name_error;
+  strcat(desc_file_name, text);
+ 
+  err = ltt_facility_open(f, t, desc_file_name);
+  if(err) goto facility_error;
+  
+  return 0;
+
+facility_error:
+name_error:
+  return 1;
+}
+
+static void ltt_tracefile_ids_destroy(gpointer data)
+{
+  GArray *fac_ids = (GArray *)data;
+  int i;
+  LttFacility *fac;
+
+  for(i=0; i<group->len; i++) {
+    fac = &g_array_index (fac_ids, LttFacility, i);
+    ltt_facility_close(fac);
+  }
+
+  g_array_free(array, TRUE);
+}
+
+
+/* Presumes the tracefile is already seeked at the beginning. It makes sense,
+ * because it must be done just after the opening */
+static int ltt_process_facility_tracefile(LttTracefile *tf)
+{
+  int err;
+  LttFacility *fac;
+  GArray *fac_ids;
+  
+  while(1) {
+    err = ltt_tracefile_read_seek(tf);
+    if(err == EPERM) goto seek_error;;
+    else if(err == ERANGE) break; /* End of tracefile */
+
+    err = ltt_tracefile_read_update_event(tf);
+    if(err) goto update_error;
+
+    /* We are on a facility load/or facility unload/ or heartbeat event */
+    /* The rules are :
+     * * facility 0 is hardcoded : this is the core facility. It will be shown
+     *   in the facility array though, and is shown as "loaded builtin" in the
+     *   trace.
+     * It contains event :
+     *  0 : facility load
+     *  1 : facility unload
+     *  2 : state dump facility load
+     * Facility 1 : (heartbeat)
+     *  0 : heartbeat
+     */
+    if(tf->event.facility_id > 1) { /* Should only contain core and heartbeat
+                                       facilities */
+      g_warning("Error in processing facility file %s, "
+          "should not contain facility id  %u.", g_quark_to_string(tf->name),
+          tf->event.facility_id);
+      err = EPERM;
+      goto fac_id_error;
+    } else if(tf->event.facility_id == 0) {
+    
+      // FIXME align
+      switch((enum ltt_core_events)tf->event.event_id) {
+        case LTT_EVENT_FACILITY_LOAD:
+          struct LttFacilityLoad *fac_load_data =
+            (struct LttFacilityLoad *)tf->event.data;
+          char *fac_name = 
+            (char*)(tf->event.data + sizeof(struct LttFacilityLoad));
+          fac = &g_array_index (tf->facilities_by_num, LttTracefile,
+              tf->event.);
+          g_assert(fac->exists == 0);
+          fac->name = g_quark_from_string(fac_name);
+          fac->checksum = ltt_get_uint32(LTT_GET_BO(tf),
+                          fac_load_data->checksum);
+          fac->id = ltt_get_uint8(LTT_GET_BO(tf), fac_load_data->id);
+          fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
+                          fac_load_data->pointer_size);
+          fac->size_t_size = ltt_get_uin32(LTT_GET_BO(tf),
+                          fac_load_data->size_t_size);
+          fac->alignment = ltt_get_uint32(LTT_GET_BO(tf),
+                          fac_load_data->alignment);
+
+          if(ltt_get_facility_description(fac, tf->trace))
+            goto facility_error;
+
+          fac->exists = 1;
+
+          fac_ids = g_datalist_get_data(tf->facilities_by_name, fac->name);
+          if(fac_ids == NULL) {
+            fac_ids = g_array_sized_new (FALSE, TRUE, sizeof(guint), 1);
+            g_datalist_set_data_full(tf->facilities_by_name, fac->name,
+                                     fac_ids, ltt_fac_ids_destroy);
+          }
+          g_array_append_val(fac_ids, fac->id);
+
+          break;
+        case LTT_EVENT_FACILITY_UNLOAD:
+          /* We don't care about unload : facilities ID are valid for the whole
+           * trace. They simply won't be used after the unload. */
+          break;
+        case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
+          struct LttFacilityLoad *fac_load_data =
+            (struct LttFacilityLoad *)tf->event.data;
+          char *fac_name = 
+            (char*)(tf->event.data + sizeof(struct LttFacilityLoad));
+          fac = &g_array_index (tf->facilities_by_num, LttTracefile,
+              tf->event.);
+          g_assert(fac->exists == 0);
+          fac->name = g_quark_from_string(fac_name);
+          fac->checksum = ltt_get_uint32(LTT_GET_BO(tf),
+                          fac_load_data->checksum);
+          fac->id = ltt_get_uint8(LTT_GET_BO(tf), fac_load_data->id);
+          fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
+                          fac_load_data->pointer_size);
+          fac->size_t_size = ltt_get_uin32(LTT_GET_BO(tf),
+                          fac_load_data->size_t_size);
+          fac->alignment = ltt_get_uint32(LTT_GET_BO(tf),
+                          fac_load_data->alignment);
+          fac->events;
+          fac->named_types;
+          fac->named_types_number;
+          fac->exists = 1;
+          
+          fac_ids = g_datalist_get_data(tf->facilities_by_name, fac->name);
+          if(fac_ids == NULL) {
+            fac_ids = g_array_sized_new (FALSE, TRUE, sizeof(guint), 1);
+            g_datalist_set_data_full(tf->facilities_by_name, fac->name,
+                                     fac_ids, ltt_fac_ids_destroy);
+          }
+          g_array_append_val(fac_ids, fac->id);
+
+          break;
+        default:
+          g_warning("Error in processing facility file %s, "
+              "unknown event id %hhu in core facility.",
+              g_quark_to_string(tf->name),
+              tf->event.event_id);
+          err = EPERM;
+          goto event_id_error;
+      }
+    } else if(tf->event.facility_id == 1) {
+
+      switch((enum ltt_heartbeat_events)tf->event.event_id) {
+        case LTT_EVENT_HEARTBEAT:
+          break;
+        default:
+          g_warning("Error in processing facility file %s, "
+              "unknown event id %hhu in heartbeat facility.",
+              g_quark_to_string(tf->name),
+              tf->event.event_id);
+          err = EPERM;
+          goto event_id_error;
+      }
+    }
+  }
+  return 0;
+
+  /* Error handling */
+facility_error:
+event_id_error:
+fac_id_error:
+update_error:
+seek_error:
+  return err;
+}
+
+
 LttTrace *ltt_trace_open(const gchar *pathname)
 {
   gchar abs_path[PATH_MAX];
   LttTrace  * t;
-  LttTracefile tf;
+  LttTracefile *tf;
   GArray *group;
   int i;
   
@@ -657,6 +872,15 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   if(open_tracefiles(t, abs_path, t->tracefiles))
     goto open_error;
   
+  /* Prepare the facilities containers : array and mapping */
+  /* Array is zeroed : the "exists" field is set to false by default */
+  t->facilities_by_num = g_array_sized_new (FALSE, 
+                                            TRUE, sizeof(LttFacility),
+                                            NUM_FACILITIES);
+  t->facilities_by_num = g_array_set_size(t->facilities_by_num, NUM_FACILITIES);
+
+  g_datalist_init(t->tracefiles_by_name);
+  
   /* Load trace XML event descriptions */
   //TODO
   
@@ -669,8 +893,8 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
-    //TODO
-    process_facility_tracefile(tf);
+    if(ltt_process_facility_tracefile(tf))
+      goto facilities_error;
   }
 
   
@@ -679,113 +903,17 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 
   /* Error handling */
 facilities_error:
+  g_datalist_free(t->tracefiles_by_name);
+  g_array_free(t->facilities_by_num, TRUE);
 open_error:
   g_datalist_clear(t->tracefiles);
   g_free(t);
 alloc_error:
   return NULL;
 
-
-
-  LttSystemDescription * sys_description;
-  gchar eventdefs[DIR_NAME_SIZE];
-  gchar info[DIR_NAME_SIZE];
-  gchar cpu[DIR_NAME_SIZE];
-  gchar tmp[DIR_NAME_SIZE];
-  gboolean has_slash = FALSE;
-
-  //establish the pathname to different directories
-  if(abs_path[strlen(abs_path)-1] == '/')has_slash = TRUE;
-  strcpy(eventdefs,abs_path);
-  if(!has_slash)strcat(eventdefs,"/");
-  strcat(eventdefs,"eventdefs/");
-
-  strcpy(info,abs_path);
-  if(!has_slash)strcat(info,"/");
-  strcat(info,"info/");
-
-  strcpy(control,abs_path);
-  if(!has_slash)strcat(control,"/");
-  strcat(control,"control/");
-
-  strcpy(cpu,abs_path);
-  if(!has_slash)strcat(cpu,"/");
-  strcat(cpu,"cpu/");
-
-  //new trace
-  sys_description = g_new(LttSystemDescription, 1);  
-  t               = g_new(LttTrace, 1);
-  t->pathname     = g_strdup(abs_path);
-  t->facility_number          = 0;
-  t->control_tracefile_number = 0;
-  t->per_cpu_tracefile_number = 0;
-  t->system_description = sys_description;
-  t->control_tracefiles = g_ptr_array_new();
-  t->per_cpu_tracefiles = g_ptr_array_new();
-  t->facilities         = g_ptr_array_new();
-  //getDataEndianType(&(t->my_arch_size), &(t->my_arch_endian));
-  
-  //get system description  
-  strcpy(tmp,info);
-  strcat(tmp,"system.xml");
-  if(getSystemInfo(sys_description, tmp)) {
-    g_ptr_array_free(t->facilities, TRUE);
-    g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
-    g_ptr_array_free(t->control_tracefiles, TRUE);
-    g_free(sys_description);
-    g_free(t->pathname);
-    g_free(t);
-    return NULL;
-  }
-  
-  /* Set the reverse byte order between trace and reader */
-  if(sys_description->endian == LTT_LITTLE_ENDIAN 
-          && G_BYTE_ORDER != G_LITTLE_ENDIAN) {
-    t->reverse_byte_order = 1;
-  } else if(sys_description->endian == LTT_BIG_ENDIAN
-          && G_BYTE_ORDER != G_BIG_ENDIAN) {
-    t->reverse_byte_order = 1;
-  } else t->reverse_byte_order = 0;
-
-  //get facilities info
-  if(getFacilityInfo(t,eventdefs)) {
-    g_ptr_array_free(t->facilities, TRUE);
-    g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
-    g_ptr_array_free(t->control_tracefiles, TRUE);
-    g_free(sys_description);
-    g_free(t->pathname);
-    g_free(t);
-    return NULL;
-  }
-  
-  //get control tracefile info
-  getControlFileInfo(t,control);
-  /*
-  if(getControlFileInfo(t,control)) {
-    g_ptr_array_free(t->facilities, TRUE);
-    g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
-    g_ptr_array_free(t->control_tracefiles, TRUE);
-    g_free(sys_description);
-    g_free(t->pathname);
-    g_free(t);
-    return NULL;
-  }*/ // With fatal error
-
-  //get cpu tracefile info
-  if(getCpuFileInfo(t,cpu)) {
-    g_ptr_array_free(t->facilities, TRUE);
-    g_ptr_array_free(t->per_cpu_tracefiles, TRUE);
-    g_ptr_array_free(t->control_tracefiles, TRUE);
-    g_free(sys_description);
-    g_free(t->pathname);
-    g_free(t);
-    return NULL;
-  }
-
-  return t;
 }
 
-char * ltt_trace_name(LttTrace *t)
+GQuark ltt_trace_name(LttTrace *t)
 {
   return t->pathname;
 }
@@ -801,6 +929,7 @@ LttTrace *ltt_trace_copy(LttTrace *self)
   return ltt_trace_open(self->pathname);
 }
 
+//FIXME TODO
 void ltt_trace_close(LttTrace *t)
 {
   unsigned int i;
@@ -853,51 +982,22 @@ void ltt_trace_close(LttTrace *t)
  *Get the system description of the trace
  ****************************************************************************/
 
-LttSystemDescription *ltt_trace_system_description(LttTrace *t)
+LttFacility *ltt_trace_facility_by_id(LttTrace *t, guint8 id)
 {
-  return t->system_description;
+  g_assert(index < t->facilities_by_num->len);
+  return &g_array_index(t->facilities_by_num, LttFacility, id);
 }
 
-/*****************************************************************************
- * The following functions discover the facilities of the trace
- ****************************************************************************/
-
-unsigned ltt_trace_facility_number(LttTrace *t)
+/* ltt_trace_facility_get_by_name
+ *
+ * Returns the GArray of facility indexes. All the fac_ids that matches the
+ * requested facility name.
+ *
+ * If name is not found, returns NULL.
+ */
+GArray *ltt_trace_facility_get_by_name(LttTrace *t, GQuark name)
 {
-  return (unsigned)(t->facility_number);
-}
-
-LttFacility *ltt_trace_facility_get(LttTrace *t, unsigned i)
-{
-  return (LttFacility*)g_ptr_array_index(t->facilities, i);
-}
-
-/*****************************************************************************
- *Function name
- *    ltt_trace_facility_find : find facilities in the trace
- *Input params
- *    t                       : the trace 
- *    name                    : facility name
- *Output params
- *    position                : position of the facility in the trace
- *Return value
- *                            : the number of facilities
- ****************************************************************************/
-
-unsigned ltt_trace_facility_find(LttTrace *t, char *name, unsigned *position)
-{
-  unsigned int i, count=0;
-  LttFacility * f;
-  for(i=0;i<t->facility_number;i++){
-    f = (LttFacility*)g_ptr_array_index(t->facilities, i);
-    if(strcmp(f->name,name)==0){
-      count++;
-      if(count==1) *position = i;      
-    }else{
-      if(count) break;
-    }
-  }
-  return count;
+  return g_datalist_id_get_data(t->facilities_by_name, name);
 }
 
 /*****************************************************************************
@@ -918,33 +1018,6 @@ unsigned ltt_trace_eventtype_number(LttTrace *t)
   return count;
 }
 
-/* FIXME : performances could be improved with a better design for this
- * function : sequential search through a container has never been the
- * best on the critical path. */
-LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id)
-{
-  LttFacility * facility = NULL;
-  unsigned int i;
-  unsigned int num = trace->facility_number;
-  GPtrArray *facilities = trace->facilities;
-
-  for(i=0;unlikely(i<num);){
-    LttFacility *iter_facility =
-                      (LttFacility*) g_ptr_array_index(facilities,i);
-    unsigned base_id = iter_facility->base_id;
-
-    if(likely(id >= base_id && 
-       id < base_id + iter_facility->event_number)) {
-      facility = iter_facility;
-      break;
-    } else {
-      i++;
-    }
-  }
-  
-  return facility;
-}
-
 LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned evId)
 {
   LttEventType *event_type;
@@ -958,68 +1031,19 @@ LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned evId)
   return event_type;
 }
 
+#if 0
 /*****************************************************************************
- *There is one "per cpu" tracefile for each CPU, numbered from 0 to
- *the maximum number of CPU in the system. When the number of CPU installed
- *is less than the maximum, some positions are unused. There are also a
- *number of "control" tracefiles (facilities, interrupts...). 
- ****************************************************************************/
-unsigned ltt_trace_control_tracefile_number(LttTrace *t)
-{
-  return t->control_tracefile_number;
-}
-
-unsigned ltt_trace_per_cpu_tracefile_number(LttTrace *t)
-{
-  return t->per_cpu_tracefile_number;
-}
-
-/*****************************************************************************
- *It is possible to search for the tracefiles by name or by CPU position.
- *The index within the tracefiles of the same type is returned if found
- *and a negative value otherwise. 
+ * ltt_trace_find_tracefile
+ *
+ * Find a tracefile by name and index in the group.
+ *
+ * Returns a pointer to the tracefiles, else NULL.
  ****************************************************************************/
 
-int ltt_trace_control_tracefile_find(LttTrace *t, const gchar *name)
+LttTracefile *ltt_trace_find_tracefile(LttTrace *t, const gchar *name)
 {
-  LttTracefile * tracefile;
-  unsigned int i;
-  for(i=0;i<t->control_tracefile_number;i++){
-    tracefile = (LttTracefile*)g_ptr_array_index(t->control_tracefiles, i);
-    if(strcmp(tracefile->name, name)==0)break;
-  }
-  if(i == t->control_tracefile_number) return -1;
-  return i;
 }
-
-/* not really useful. We just have to know that cpu tracefiles
- * comes before control tracefiles.
- */
-int ltt_trace_per_cpu_tracefile_find(LttTrace *t, const gchar *name)
-{
-  LttTracefile * tracefile;
-  unsigned int i;
-  for(i=0;i<t->per_cpu_tracefile_number;i++){
-    tracefile = (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles, i);
-    if(strcmp(tracefile->name, name)==0)break;
-  }
-  if(i == t->per_cpu_tracefile_number) return -1;
-  return i;
-}
-
-/*****************************************************************************
- *Get a specific tracefile 
- ****************************************************************************/
-
-LttTracefile *ltt_trace_control_tracefile_get(LttTrace *t, unsigned i)
-{
-  return (LttTracefile*)g_ptr_array_index(t->control_tracefiles, i);  
-}
-
-LttTracefile *ltt_trace_per_cpu_tracefile_get(LttTrace *t, unsigned i)
-{
-  return (LttTracefile*)g_ptr_array_index(t->per_cpu_tracefiles, i);
-}
+#endif //0
 
 /*****************************************************************************
  * Get the start time and end time of the trace 
@@ -1091,7 +1115,7 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
  *Get the name of a tracefile
  ****************************************************************************/
 
-char *ltt_tracefile_name(LttTracefile *tf)
+GQuark ltt_tracefile_name(LttTracefile *tf)
 {
   return tf->name;
 }
@@ -1100,7 +1124,7 @@ char *ltt_tracefile_name(LttTracefile *tf)
  * Get the number of blocks in the tracefile 
  ****************************************************************************/
 
-unsigned ltt_tracefile_block_number(LttTracefile *tf)
+guint ltt_tracefile_block_number(LttTracefile *tf)
 {
   return tf->block_number; 
 }
@@ -1129,10 +1153,14 @@ unsigned ltt_tracefile_block_number(LttTracefile *tf)
  * You MUST NOT do a ltt_tracefile_read right after a ltt_tracefile_seek_time :
  * you will jump over an event if you do.
  *
+ * Return value : 0 : no error, the tf->event can be used
+ *                otherwise : this is an error.
+ *
  * */
 
-void ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
+int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
 {
+  int ret = 0;
   int err;
   unsigned int block_num, high, low;
 
@@ -1146,7 +1174,7 @@ void ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
  /* If the time is lower or equal the beginning of the trace,
   * go to the first event. */
   if(ltt_time_compare(time, tf->buffer.start.timestamp) <= 0) {
-    ltt_tracefile_read(tf)
+    ret = ltt_tracefile_read(tf)
     goto found; /* There is either no event in the trace or the event points
                    to the first event in the trace */
   }
@@ -1159,10 +1187,14 @@ void ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
 
  /* If the time is after the end of the trace, get the last event. */
   if(ltt_time_compare(time, tf->buffer.end.timestamp) >= 0) {
-    /* While the ltt_tracefile_read_event doesn't return NULL, continue reading
+    /* While the ltt_tracefile_read doesn't return ERANGE or EPERM,
+     * continue reading.
      */
-    while(ltt_tracefile_read(tf));
-    goto found;
+    while(1) {
+      ret = ltt_tracefile_read(tf);
+      if(ret == ERANGE) goto found; /* ERANGE or EPERM */
+      else if(ret) goto fail;
+    }
   }
 
   /* Binary search the block */
@@ -1185,7 +1217,10 @@ void ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
       /* The event is right in the buffer!
        * (or in the next buffer first event) */
       while(1) {
-        ltt_tracefile_read(tf);
+        ret = ltt_tracefile_read(tf);
+        if(ret == ERANGE) goto found; /* ERANGE or EPERM */
+        else if(ret) goto fail;
+
         if(ltt_time_compare(time, tf->event.event_time) >= 0)
           break;
       }
@@ -1200,6 +1235,9 @@ void ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
                (or in the next buffer first event) */
       while(1) {
         ltt_tracefile_read(tf);
+        if(ret == ERANGE) goto found; /* ERANGE or EPERM */
+        else if(ret) goto fail;
+
         if(ltt_time_compare(time, tf->event.event_time) >= 0)
           break;
       }
@@ -1208,13 +1246,13 @@ void ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
   }
 
 found:
-  
-  return;
+  return 0;
 
   /* Error handling */
 fail:
   g_error("ltt_tracefile_seek_time failed on tracefile %s", 
       g_quark_to_string(tf->name));
+  return EPERM;
 }
 
 
@@ -1234,68 +1272,16 @@ int ltt_tracefile_seek_position(LttTracefile *tf, const LttEventPosition *ep) {
 
   tf->event.offset = ep->offset;
 
-  if(!ltt_tracefile_read(tf)) goto fail;
-  
+  err = ltt_tracefile_read_update_event(tf);
+  if(err) goto fail;
+  err = ltt_tracefile_read_op(tf);
+  if(err) goto fail;
+
   return;
 
 fail:
   g_error("ltt_tracefile_seek_time failed on tracefile %s", 
       g_quark_to_string(tf->name));
-}
-
-
-
-/*****************************************************************************
- * Seek to the first event with position equal or larger to ep 
- *
- * Modified by Mathieu Desnoyers to used faster offset position instead of
- * re-reading the whole buffer.
- ****************************************************************************/
-
-void ltt_tracefile_seek_position(LttTracefile *t, const LttEventPosition *ep)
-{
-  //if we are at the right place, just return
-  if(likely(t->which_block == ep->block_num && t->which_event == ep->event_num))
-    return;
-  
-  if(likely(t->which_block == ep->block_num)) updateTracefile(t);
-  else readBlock(t,ep->block_num);
-  //event offset is available
-  if(likely(ep->old_position)){
-    int err;
-
-    t->which_event = ep->event_num;
-    t->cur_event_pos = t->buffer + ep->event_offset;
-    t->prev_event_time = ep->event_time;
-    t->current_event_time = ep->event_time;
-    t->cur_heart_beat_number = ep->heart_beat_number;
-    t->cur_cycle_count = ep->event_cycle_count;
-
-    /* This is a workaround for fast position seek */
-    t->last_event_pos = ep->last_event_pos;
-    t->prev_block_end_time = ep->prev_block_end_time;
-    t->prev_event_time = ep->prev_event_time;
-    t->pre_cycle_count = ep->pre_cycle_count;
-    t->count = ep->count;
-    t->overflow_nsec = ep->overflow_nsec;
-    t->last_heartbeat = ep->last_heartbeat;
-    /* end of workaround */
-
-    //update the fields of the current event and go to the next event
-    err = skipEvent(t);
-    if(unlikely(err == ERANGE)) g_error("event id is out of range\n");
-      
-    return;
-  }
-
-  //only block number and event index are available
-  //MD: warning : this is slow!
-  g_warning("using slow O(n) tracefile seek position");
-
-  LttEvent event;
-  while(likely(t->which_event < ep->event_num)) ltt_tracefile_read(t, &event);
-
-  return;
 }
 
 /* Calculate the real event time based on the buffer boundaries */
@@ -1312,63 +1298,113 @@ LttTime ltt_interpolate_time(LttTracefile *tf, LttEvent *event)
   return time;
 }
 
-
 /*****************************************************************************
  *Function name
  *    ltt_tracefile_read : Read the next event in the tracefile
  *Input params
  *    t                  : tracefile
  *Return value
- *    LttEvent *        : an event to be processed
- *    Note : it points to the current tf->event. It will be overwritten
- *    by the next call to ltt_tracefile_read or any map_block.
  *
- *    Returns NULL on end of trace (or error).
- *
+ *    Returns 0 if an event can be used in tf->event.
+ *    Returns ERANGE on end of trace. The event in tf->event still can be used.
+ *    Returns EPERM on error.
  *
  *    This function does make the tracefile event structure point to the event
- *    currently pointed to by the 
+ *    currently pointed to by the tf->event.
+ *
+ *    Note : you must call a ltt_tracefile_seek to the beginning of the trace to
+ *    reinitialize it after an error if you want results to be coherent.
+ *    It would be the case if a end of trace last buffer has no event : the end
+ *    of trace wouldn't be returned, but an error.
+ *    We make the assumption there is at least one event per buffer.
  ****************************************************************************/
 
-LttEvent *ltt_tracefile_read(LttTracefile *tf)
+int ltt_tracefile_read(LttTracefile *tf)
+{
+  int err;
+
+  err = ltt_tracefile_read_seek(tf);
+  if(err) return err;
+  err = ltt_tracefile_read_update_event(tf);
+  if(err) return err;
+  err = ltt_tracefile_read_op(tf);
+  if(err) return err;
+
+  return 0;
+}
+
+int ltt_tracefile_read_seek(LttTracefile *tf)
+{
+  int err;
+
+  /* Get next buffer until we finally have an event, or end of trace */
+  while(1) {
+    err = ltt_seek_next_event(tf);
+    if(unlikely(err == ENOPROTOOPT)) {
+      return EPERM;
+    }
+
+    /* Are we at the end of the buffer ? */
+    if(err == ERANGE) {
+      if(unlikely(tf->buffer.index == tf->num_blocks-1)){ /* end of trace ? */
+        return ERANGE;
+      } else {
+        /* get next block */
+        err = map_block(tf, tf->buffer.index + 1);
+        if(unlikely(err)) {
+          g_error("Can not map block");
+          return EPERM;
+        }
+      }
+    } else break; /* We found an event ! */
+  }
+  
+  return 0;
+}
+
+
+/* do specific operation on events */
+int ltt_tracefile_read_op(LttTracefile *tf)
 {
   int err;
   LttFacility *f;
   void * pos;
- 
-  /* Skip the current event to go to the next, or point to the
-   * t->buffer.head + t->buffer.lost_size if we were on the last
-   * event of a buffer.
-   */
-  err = ltt_seek_next_event(tf);
-  if(unlikely(err == ERANGE)) {
-    g_error("event id is out of range\n");
-    return NULL;
-  }
+  LttEvent *event;
 
-  pos = tf->event.offset;
+  event = &tf->event;
 
-  /* Are we at the end of the buffer ? */
-  if(unlikely(pos == tf->buffer.head + tf->buffer.lost_size)) {
-    if(unlikely(tf->buffer.index == tf->num_blocks-1)){ /* end of trace ? */
-      return NULL;
-    } else {
-      /* get next block */
-      err = map_block(tf, tf->buffer.index + 1);
-      if(unlikely(err)) {
-        g_error("Can not map block");
-        return NULL;
-      }
-      /* seek to the first event */
-      err = ltt_seek_next_event(tf);
-      if(unlikely(err == ERANGE)) {
-        g_error("event id is out of range\n");
-        return NULL;
-      }
+   /* do event specific operation */
 
-      pos = tf->event.offset;
+  /* do something if its an heartbeat event : increment the heartbeat count */
+  if(event->facility_id != 0) { /* except core */
+    f = (LttFacility*)g_ptr_array_index(tf->trace->facilities,
+                                          event->facility_id);
+    g_assert(f != NULL);
+
+    if(unlikely(ltt_facility_name(f)
+          != LTT_FACILITY_NAME_HEARTBEAT)) {
+      LttEventType *et = ltt_facility_eventtype_get_by_name(f, 
+                    LTT_EVENT_NAME_HEARTBEAT);
+      if(et->id == event->event_id)
+        t->cur_heart_beat_number++;
     }
   }
+  
+  return 0;
+}
+
+
+/* same as ltt_tracefile_read, but does not seek to the next event nor call
+ * event specific operation. */
+int ltt_tracefile_read_update_event(LttTracefile *tf)
+{
+  int err;
+  LttFacility *f;
+  void * pos;
+  LttEvent *event;
+ 
+  event = &tf->event;
+  pos = event->offset;
 
   /* Read event header */
   
@@ -1376,23 +1412,25 @@ LttEvent *ltt_tracefile_read(LttTracefile *tf)
   
   if(tf->trace->has_tsc) {
     event->time.timestamp = ltt_get_uint32(LTT_GET_BO(t),
-                                          tf->cur_event_pos);
+                                          pos);
     /* 32 bits -> 64 bits tsc */
+    /* note : still works for seek and non seek cases. */
     if(event->time.timestamp < (0xFFFFFFFFULL&tf->buffer.tsc)) {
       tf->buffer.tsc = ((tf->buffer.tsc&0xFFFFFFFF00000000ULL)
                           + 0x100000000ULL)
                               | (guint64)event->time.timestamp;
-
-      event->event_time = ltt_interpolate_time(tf, event);
     } else {
       /* no overflow */
       tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
                               | (guint64)event->time.timestamp;
     }
+
+    event->event_time = ltt_interpolate_time(tf, event);
+
     pos += sizeof(uint32);
   } else {
     event->time.delta = ltt_get_uint32(LTT_GET_BO(tf),
-                                          tf->cur_event_pos);
+                                          pos);
     tf->buffer.tsc = 0;
 
     event->event_time = ltt_time_add(tf->buffer.begin.timestamp,
@@ -1412,55 +1450,9 @@ LttEvent *ltt_tracefile_read(LttTracefile *tf)
 
   event->data = pos;
 
-  /* do event specific operation */
-
-  /* do something if its an heartbeat event : increment the heartbeat count */
-  if(event->facility_id != 0) { /* except core */
-    f = (LttFacility*)g_ptr_array_index(tf->trace->facilities,
-                                          event->facility_id);
-    g_assert(f != NULL);
-
-    if(unlikely(ltt_facility_name(f)
-          != LTT_FACILITY_NAME_HEARTBEAT)) {
-      LttEventType *et = ltt_facility_eventtype_get_by_name(f, 
-                    LTT_EVENT_NAME_HEARTBEAT);
-      if(et->id == event->event_id)
-        t->cur_heart_beat_number++;
-
-    }
-  }
-  
-  return event;
+  return 0;
 }
 
-/****************************************************************************
- *Function name
- *    readFile    : wrap function to read from a file
- *Input Params
- *    fd          : file descriptor
- *    buf         : buf to contain the content
- *    size        : number of bytes to be read
- *    mesg        : message to be printed if some thing goes wrong
- *return value 
- *    0           : success
- *    EIO         : can not read from the file
- ****************************************************************************/
-#if 0
-int readFile(int fd, void * buf, size_t size, char * mesg)
-{
-   ssize_t nbBytes = read(fd, buf, size);
-
-   if((size_t)nbBytes != size) {
-     if(nbBytes < 0) {
-       perror("Error in readFile : ");
-     } else {
-       g_warning("%s",mesg);
-     }
-     return EIO;
-   }
-   return 0;
-}
-#endif //0
 
 /****************************************************************************
  *Function name
@@ -1536,32 +1528,6 @@ map_error:
 
 }
 
-/*****************************************************************************
- *Function name
- *    updateTracefile : reinitialize the info of the block which is already 
- *                      in the buffer
- *Input params 
- *    tf              : tracefile
- ****************************************************************************/
-
-void updateTracefile(LttTracefile * tf)
-{
-  tf->which_event = 1;
-  tf->cur_event_pos = tf->buffer;
-  tf->current_event_time = getEventTime(tf);  
-  tf->cur_heart_beat_number = 0;
-
-  tf->prev_event_time.tv_sec = 0;
-  tf->prev_event_time.tv_nsec = 0;
-  tf->count = 0;
-
-  tf->overflow_nsec = 
-    (-((double)ltt_get_uint64(tf->trace->reverse_byte_order,
-                              &tf->a_block_start->cycle_count))
-                                        * tf->nsec_per_cycle);
-
-}
-
 /* Take the tf current event offset and use the event facility id and event id
  * to figure out where is the next event offset.
  *
@@ -1571,9 +1537,11 @@ void updateTracefile(LttTracefile * tf)
  *
  * Returns 0 on success
  *         ERANGE if we are at the end of the buffer.
+ *         ENOPROTOOPT if an error occured when getting the current event size.
  */
 static int ltt_seek_next_event(LttTracefile *tf)
 {
+  int ret = 0;
   void *pos;
   
   /* seek over the buffer header if we are at the buffer start */
@@ -1582,24 +1550,28 @@ static int ltt_seek_next_event(LttTracefile *tf)
     goto found;
   }
 
-  /* if we are at the end of a buffer, generate an error, not supposed to
-   * happen. */
-  if(tf->event.offset == tf->buffer.head + tf->buffer.lost_size)
-    goto error;
+  
+  if(tf->event.offset == tf->buffer.head + tf->buffer.lost_size) {
+    ret = ERANGE;
+    goto found;
+  }
 
   pos = tf->event.data;
 
+  /* FIXME : do this function. Remember to hardcode the sizes of heartbeat and
+   * core */
   pos += ltt_facility_get_event_size(tf->event.facility_id, tf->event.event_id);
+  on error : goto error;
 
   tf->event.offset = pos;
 
 found:
-  return 0;
+  return ret;
 
 error:
   g_error("Error in ltt_seek_next_event for tracefile %s",
       g_quark_to_string(tf->name));
-  return ERANGE;
+  return ENOPROTOOPT;
 }
 
 
@@ -1847,36 +1819,7 @@ gint64 getIntNumber(gboolean reverse_byte_order, int size, void *evD)
 
   return i;
 }
-#if 0
-/*****************************************************************************
- *Function name
- *    getDataEndianType : get the data type size and endian type of the local
- *                        machine
- *Input params 
- *    size              : size of data type
- *    endian            : endian type, little or big
- ****************************************************************************/
 
-void getDataEndianType(LttArchSize * size, LttArchEndian * endian)
-{
-  int i = 1;
-  char c = (char) i;
-  int sizeInt=sizeof(int), sizeLong=sizeof(long), sizePointer=sizeof(void *);
-
-  if(c == 1) *endian = LTT_LITTLE_ENDIAN;
-  else *endian = LTT_BIG_ENDIAN;
-
-  if(sizeInt == 2 && sizeLong == 4 && sizePointer == 4) 
-    *size = LTT_LP32;
-  else if(sizeInt == 4 && sizeLong == 4 && sizePointer == 4) 
-    *size = LTT_ILP32;
-  else if(sizeInt == 4 && sizeLong == 8 && sizePointer == 8) 
-    *size = LTT_LP64;
-  else if(sizeInt == 8 && sizeLong == 8 && sizePointer == 8) 
-    *size = LTT_ILP64;
-  else *size = LTT_UNKNOWN;
-}
-#endif //0
 /* get the node name of the system */
 
 char * ltt_trace_system_description_node_name (LttSystemDescription * s)

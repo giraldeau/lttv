@@ -30,6 +30,26 @@
 
 #define LTT_PACKED_STRUCT __attribute__ ((packed))
 
+#define NUM_FACILITIES 256
+
+/* Hardcoded facilities */
+#define LTT_FACILITY_CORE 0
+
+/* Hardcoded events */
+enum ltt_core_events {
+    LTT_EVENT_FACILITY_LOAD,
+    LTT_EVENT_FACILITY_UNLOAD,
+    LTT_EVENT_STATE_DUMP_FACILITY_LOAD
+};
+
+/* Hardcoded events */
+enum ltt_heartbeat_events {
+    LTT_EVENT_HEARTBEAT
+};
+
+
+
+
 #if 0
 /* enumeration definition */
 
@@ -67,6 +87,22 @@ typedef guint8 uint8_t;
 typedef guint16 uint16_t;
 typedef guint32 uint32_t;
 typedef guint64 uint64_t;
+
+/* Hardcoded facility load event : this plus an following "name" string */
+struct LttFacilityLoad {
+  guint32 checksum;
+  guint32 id;
+  guint32 long_size;
+  guint32 pointer_size;
+  guint32 size_t_size;
+  guint32 alignment;
+};
+
+struct LttFacilityUnload {
+  guint32 id;
+};
+
+
 
 typedef struct _TimeHeartbeat {
   LttTime       time;       //Time stamp of this block
@@ -130,13 +166,11 @@ struct _LttType{
 };
 
 struct _LttEventType{
-  gchar * name;
+  GQuark name;
   gchar * description;
-  int index;              //id of the event type within the facility
+  guint index;              //id of the event type within the facility
   LttFacility * facility; //the facility that contains the event type
   LttField * root_field;  //root field
-  //unsigned int latest_block;       //the latest block using the event type
-  //unsigned int latest_event;       //the latest event using the event type
 };
 
 struct _LttEvent{
@@ -199,12 +233,26 @@ struct _LttField{
 struct _LttFacility{
   //gchar * name;               //facility name 
   GQuark name;
-  unsigned int event_number;          //number of events in the facility 
   guint32 checksum;      //checksum of the facility 
-  //guint32  base_id;          //base id of the facility
+  guint32  id;          //id of the facility
+ 
+  guint32 pointer_size;
+  guint32 size_t_size;
+  guint32 alignment;
+
+
   LttEventType ** events;    //array of event types 
+  unsigned int event_number;          //number of events in the facility 
   LttType ** named_types;
   unsigned int named_types_number;
+
+  GArray *events;
+  GData *events_by_name;
+ // GArray *named_types;
+  //GData *named_types_by_name;
+  GData *named_types;
+  
+  unsigned char exists; /* 0 does not exist, 1 exists */
 };
 
 typedef struct _LttBuffer {
@@ -258,12 +306,13 @@ struct _LttTracefile{
 
 struct _LttTrace{
   GQuark pathname;                          //the pathname of the trace
-  guint facility_number;                    //the number of facilities 
   //LttSystemDescription * system_description;//system description 
 
-  //GPtrArray *control_tracefiles;            //array of control tracefiles 
-  //GPtrArray *per_cpu_tracefiles;            //array of per cpu tracefiles 
-  GPtrArray *facilities;                    //array of facilities 
+  GArray *facilities_by_num;            /* fac_id as index in array */
+  GData *facilities_by_name;            /* fac name (GQuark) as index */
+                                        /* Points to array of fac_id of all the
+                                         * facilities that has this name. */
+
   guint8    ltt_major_version;
   guint8    ltt_minor_version;
   guint8    flight_recorder;
