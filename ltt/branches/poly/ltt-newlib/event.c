@@ -241,6 +241,9 @@ LttField *ltt_event_field(LttEvent *e)
   field = event_type->root_field;
   if(unlikely(!field)) return NULL;
 
+  get_field_type_size(e->tracefile, event_type, 0, 0,
+      field, e->data);
+  
   return field;
 }
 
@@ -391,7 +394,7 @@ void *ltt_event_data(LttEvent *e)
  *Return value
  *    unsigned       : the number of elements for an array/sequence field
  ****************************************************************************/
-unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
+guint64 ltt_event_field_element_number(LttEvent *e, LttField *f)
 {
   if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
@@ -399,8 +402,8 @@ unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
   
   if(f->field_type->type_class == LTT_ARRAY)
     return f->field_type->element_number;
-  return (unsigned)  get_unsigned(LTT_GET_BO(e->tracefile),
-      f->sequ_number_size, e + f->offset_root);
+  return get_unsigned(LTT_GET_BO(e->tracefile), f->sequ_number_size,
+      e + f->offset_root);
 }
 
 /*****************************************************************************
@@ -411,34 +414,36 @@ unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
  *Input params
  *    e              : an instance of an event type
  *    f              : a field of the instance
- *    i              : the ith element
+ *    i              : the ith element (0, ...)
  ****************************************************************************/
 void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
 {
   unsigned element_number;
-  LttField *fld;
+  LttField *field;
   unsigned int k;
   size_t size;
-  void *data;
  
   if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
     return ;
 
   element_number  = ltt_event_field_element_number(e,f);
-  /* Sanity check for i : 1..n only, and must be lower or equal element_number
+  /* Sanity check for i : 0..n-1 only, and must be lower or equal element_number
    */
-  if(element_number < i || i == 0) return;
+  if(i >= element_number) return;
   
-  fld = f->child[0];
+  field = f->child[0];
   
-  data = e->data + f->offset_root;
-  size = 0;
-  for(k=0;k<i;k++){
-    size += ltt_event_refresh_fields(f->offset_root+size,size, fld, evD+size,
-                                LTT_GET_BO(e->tracefile));
+  if(f->field_type->type_class == LTT_SEQUENCE)
+    size = f->sequ_number_size;
+  else
+    size = 0;
+
+  for(k=0;k<=i;k++){
+    size += get_field_type_size(e->tracefile, event_type,
+                f->offset_root+size, size, field, e->data);
   }
-  f->current_element = i - 1;
+  f->current_element = i;
 }
 
 /*****************************************************************************
