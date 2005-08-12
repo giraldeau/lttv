@@ -35,19 +35,13 @@
 /* Hardcoded facilities */
 #define LTT_FACILITY_CORE 0
 
-/* Hardcoded events */
+/* Hardcoded core events */
 enum ltt_core_events {
     LTT_EVENT_FACILITY_LOAD,
     LTT_EVENT_FACILITY_UNLOAD,
-    LTT_EVENT_STATE_DUMP_FACILITY_LOAD
-};
-
-/* Hardcoded events */
-enum ltt_heartbeat_events {
+    LTT_EVENT_STATE_DUMP_FACILITY_LOAD,
     LTT_EVENT_HEARTBEAT
 };
-
-
 
 
 #if 0
@@ -100,6 +94,15 @@ struct LttFacilityLoad {
 
 struct LttFacilityUnload {
   guint32 id;
+};
+
+struct LttStateDumpFacilityLoad {
+  guint32 checksum;
+  guint32 id;
+  guint32 long_size;
+  guint32 pointer_size;
+  guint32 size_t_size;
+  guint32 alignment;
 };
 
 
@@ -173,13 +176,20 @@ struct _LttEventType{
   LttField * root_field;  //root field
 };
 
+/* Structure LttEvent and LttEventPosition must begin with the _exact_ same
+ * fields in the exact same order. LttEventPosition is a parent of LttEvent. */
 struct _LttEvent{
   
-  /* Where is this event ? */
+  /* Begin of LttEventPosition fields */
   LttTracefile  *tracefile;
   unsigned int  block;
   void          *offset;
+
+  /* Timekeeping */
+  uint64_t                tsc;       /* Current timestamp counter */
   
+  /* End of LttEventPosition fields */
+
 	union {											/* choice by trace has_tsc */
 	  guint32  timestamp;				/* truncated timestamp */
   	guint32  delta;
@@ -194,43 +204,59 @@ struct _LttEvent{
 
   int      count;                    //the number of overflow of cycle count
   gint64 overflow_nsec;              //precalculated nsec for overflows
-  TimeHeartbeat * last_heartbeat;    //last heartbeat
+};
+
+struct _LttEventPosition{
+  LttTracefile  *tracefile;
+  unsigned int  block;
+  void          *offset;
+  
+  /* Timekeeping */
+  uint64_t                tsc;       /* Current timestamp counter */
 };
 
 
+enum field_status { FIELD_UNKNOWN, FIELD_VARIABLE, FIELD_FIXED };
+
 struct _LttField{
-  unsigned field_pos;        //field position within its parent
+  //guint field_pos;           //field position within its parent
   LttType * field_type;      //field type, if it is root field
                              //then it must be struct type
 
   off_t offset_root;         //offset from the root, -1:uninitialized 
-  short fixed_root;          //offset fixed according to the root
+  enum field_status fixed_root;          //offset fixed according to the root
                              //-1:uninitialized, 0:unfixed, 1:fixed
   off_t offset_parent;       //offset from the parent,-1:uninitialized
-  short fixed_parent;        //offset fixed according to its parent
+  enum field_status fixed_parent;        //offset fixed according to its parent
                              //-1:uninitialized, 0:unfixed, 1:fixed
   //  void * base_address;       //base address of the field  ????
   
-  int  field_size;           //>0: size of the field, 
-                             //0 : uncertain
-                             //-1: uninitialize
-  int sequ_number_size;      //the size of unsigned used to save the
+  guint field_size;     //      //>0: size of the field, 
+                          //   //0 : uncertain
+                           //  //-1: uninitialize
+  enum field_status fixed_size;
+
+  /* for sequence */
+  gint sequ_number_size;      //the size of unsigned used to save the
                              //number of elements in the sequence
 
-  int element_size;          //the element size of the sequence
-  int field_fixed;           //0: field has string or sequence
+  gint element_size;          //the element size of the sequence
+  //int field_fixed;           //0: field has string or sequence
                              //1: field has no string or sequenc
                              //-1: uninitialize
 
   struct _LttField * parent;
-  struct _LttField ** child; //for array, sequence and struct: 
+  struct _LttField ** child; //for array, sequence, struct and union: 
                              //list of fields, it may have only one
-                             //field if the element is not a struct 
+                             //field if the element is not a struct or
+                             //union
   unsigned current_element;  //which element is currently processed
+                             // Used for sequences and arrays.
 };
 
 
 struct _LttFacility{
+  LttTrace  *trace;
   //gchar * name;               //facility name 
   GQuark name;
   guint32 checksum;      //checksum of the facility 
@@ -241,10 +267,10 @@ struct _LttFacility{
   guint32 alignment;
 
 
-  LttEventType ** events;    //array of event types 
-  unsigned int event_number;          //number of events in the facility 
-  LttType ** named_types;
-  unsigned int named_types_number;
+  //LttEventType ** events;    //array of event types 
+  //unsigned int event_number;          //number of events in the facility 
+  //LttType ** named_types;
+  //unsigned int named_types_number;
 
   GArray *events;
   GData *events_by_name;
@@ -277,6 +303,7 @@ typedef struct _LttBuffer {
 struct _LttTracefile{
   gboolean cpu_online;               //is the cpu online ?
   GQuark name;                       //tracefile name
+  guint cpu_num;                     //cpu number of the tracefile
   LttTrace * trace;                  //trace containing the tracefile
   int fd;                            //file descriptor 
   off_t file_size;                   //file size
@@ -323,15 +350,6 @@ struct _LttTrace{
   GData     *tracefiles;                    //tracefiles groups
 };
 
-struct _LttEventPosition{
-  LttTracefile  *tracefile;
-  unsigned int  block;
-  void          *offset;
-  
-  /* Timekeeping */
-  uint64_t                tsc;       /* Current timestamp counter */
-};
-
 /* The characteristics of the system on which the trace was obtained
    is described in a LttSystemDescription structure. */
 
@@ -349,7 +367,6 @@ struct _LttSystemDescription {
   gchar *processor;
   gchar *hardware_platform;
   gchar *operating_system;
-  //unsigned ltt_block_size;
   LttTime trace_start;
   LttTime trace_end;
 };

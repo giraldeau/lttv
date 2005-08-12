@@ -154,9 +154,7 @@ gint ltt_tracefile_open_control(LttTrace *t, gchar * control_name);
 void getDataEndianType(LttArchSize * size, LttArchEndian * endian);
 
 /* get an integer number */
-
-gint64 getIntNumber(gboolean reverse_byte_order, int size1, void *evD);
-
+gint64 get_int(gboolean reverse_byte_order, gint size, void *data);
 
 /* get the node name of the system */
 

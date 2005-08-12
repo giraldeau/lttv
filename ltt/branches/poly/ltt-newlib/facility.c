@@ -255,10 +255,10 @@ void constructTypeAndFields(LttFacility * fac, type_descriptor * td,
 
   if(td->type == LTT_ENUM){
     fld->field_type->element_number = td->labels.position;
-    fld->field_type->enum_strings = g_new(char*,td->labels.position);
+    fld->field_type->enum_strings = g_new(GQuark,td->labels.position);
     for(i=0;i<td->labels.position;i++){
       fld->field_type->enum_strings[i] 
-                          = g_strdup(((char*)(td->labels.array[i])));
+                     = g_quark_from_string(((char*)(td->labels.array[i])));
     }
   }else if(td->type == LTT_ARRAY || td->type == LTT_SEQUENCE){
     if(td->type == LTT_ARRAY)
@@ -419,8 +419,6 @@ void freeLttType(LttType ** type)
   if((*type)->fmt)
     g_free((*type)->fmt);
   if((*type)->enum_strings){
-    for(i=0;i<(*type)->element_number;i++)
-      g_free((*type)->enum_strings[i]);
     g_free((*type)->enum_strings);
   }
 
