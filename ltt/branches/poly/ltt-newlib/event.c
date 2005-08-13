@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <glib.h>
 
 #include <asm/types.h>
 #include <linux/byteorder/swab.h>
@@ -411,6 +412,8 @@ guint64 ltt_event_field_element_number(LttEvent *e, LttField *f)
  *    ltt_event_field_element_select
  *                   : Set the currently selected element for a sequence or
  *                     array field
+ *                     O(1) if fields are of fixed size, else O(n) if fields are
+ *                     of variable size.
  *Input params
  *    e              : an instance of an event type
  *    f              : a field of the instance
@@ -422,12 +425,14 @@ void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
   LttField *field;
   unsigned int k;
   size_t size;
+  LttEventType *event_type;
  
   if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
     return ;
 
   element_number  = ltt_event_field_element_number(e,f);
+  event_type = ltt_event_eventtype(e);
   /* Sanity check for i : 0..n-1 only, and must be lower or equal element_number
    */
   if(i >= element_number) return;
@@ -438,10 +443,18 @@ void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
     size = f->sequ_number_size;
   else
     size = 0;
+  
+  if(field->fixed_size == FIELD_FIXED) {
+      size += field->field_size * i;
 
-  for(k=0;k<=i;k++){
-    size += get_field_type_size(e->tracefile, event_type,
-                f->offset_root+size, size, field, e->data);
+      get_field_type_size(e->tracefile, event_type,
+                  f->offset_root+size, size, field, e->data);
+
+  } else {
+    for(k=0;k<=i;k++){
+      size += get_field_type_size(e->tracefile, event_type,
+                  f->offset_root+size, size, field, e->data);
+    }
   }
   f->current_element = i;
 }
