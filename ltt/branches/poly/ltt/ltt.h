@@ -87,7 +87,7 @@ typedef struct _LttSystemDescription LttSystemDescription;
 /* Checksums are used to differentiate facilities which have the same name
    but differ. */
 
-typedef guint32 LttChecksum;
+//typedef guint32 LttChecksum;
 
 
 /* Events are usually stored with the easily obtained CPU clock cycle count,
@@ -127,7 +127,8 @@ typedef enum _LttArchEndian
 } LttArchEndian;
 
 typedef enum _LttTypeEnum 
-{ LTT_INT, LTT_UINT, LTT_FLOAT, LTT_STRING, LTT_ENUM, LTT_ARRAY, 
+{ LTT_INT, LTT_UINT, LTT_POINTER, LTT_LONG, LTT_ULONG, LTT_SIZE_T, 
+  LTT_SSIZE_T, LTT_OFF_T, LTT_FLOAT, LTT_STRING, LTT_ENUM, LTT_ARRAY, 
   LTT_SEQUENCE, LTT_STRUCT, LTT_UNION
 } LttTypeEnum;
 

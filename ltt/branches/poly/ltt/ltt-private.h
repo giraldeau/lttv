@@ -23,8 +23,28 @@
 #include <sys/types.h>
 #include <ltt/ltt.h>
 
+#define LTT_MAGIC_NUMBER 0x00D6B7ED
+#define LTT_REV_MAGIC_NUMBER 0xEDB7D600
+
+#define NSEC_PER_USEC 1000
+
 #define LTT_PACKED_STRUCT __attribute__ ((packed))
 
+#define NUM_FACILITIES 256
+
+/* Hardcoded facilities */
+#define LTT_FACILITY_CORE 0
+
+/* Hardcoded core events */
+enum ltt_core_events {
+    LTT_EVENT_FACILITY_LOAD,
+    LTT_EVENT_FACILITY_UNLOAD,
+    LTT_EVENT_STATE_DUMP_FACILITY_LOAD,
+    LTT_EVENT_HEARTBEAT
+};
+
+
+#if 0
 /* enumeration definition */
 
 typedef enum _BuildinEvent{
@@ -44,177 +64,290 @@ typedef struct _FacilityLoad{
 } LTT_PACKED_STRUCT FacilityLoad;
 
 typedef struct _BlockStart {
-  LttTime       time;	     //Time stamp of this block
+  LttTime       time;       //Time stamp of this block
   LttCycleCount cycle_count; //cycle count of the event
   guint32       block_id;    //block id 
 } LTT_PACKED_STRUCT BlockStart;
 
 typedef struct _BlockEnd {
-  LttTime       time;	     //Time stamp of this block
+  LttTime       time;       //Time stamp of this block
   LttCycleCount cycle_count; //cycle count of the event
   guint32       block_id;    //block id 
 } LTT_PACKED_STRUCT BlockEnd;
+#endif //0
+
+
+typedef guint8 uint8_t;
+typedef guint16 uint16_t;
+typedef guint32 uint32_t;
+typedef guint64 uint64_t;
+
+/* Hardcoded facility load event : this plus an following "name" string */
+struct LttFacilityLoad {
+  guint32 checksum;
+  guint32 id;
+  guint32 long_size;
+  guint32 pointer_size;
+  guint32 size_t_size;
+  guint32 alignment;
+};
+
+struct LttFacilityUnload {
+  guint32 id;
+};
+
+struct LttStateDumpFacilityLoad {
+  guint32 checksum;
+  guint32 id;
+  guint32 long_size;
+  guint32 pointer_size;
+  guint32 size_t_size;
+  guint32 alignment;
+};
+
+
 
 typedef struct _TimeHeartbeat {
-  LttTime       time;	     //Time stamp of this block
-  LttCycleCount cycle_count; //cycle count of the event
+  LttTime       time;       //Time stamp of this block
+  uint64_t cycle_count; //cycle count of the event
 } LTT_PACKED_STRUCT TimeHeartbeat;
+
+struct ltt_event_header_hb {
+  uint32_t      timestamp;
+  unsigned char  facility_id;
+  unsigned char event_id;
+  uint16_t      event_size;
+} __attribute((aligned(8)));
+
+struct ltt_event_header_nohb {
+  uint64_t      timestamp;
+  unsigned char  facility_id;
+  unsigned char event_id;
+  uint16_t      event_size;
+} __attribute((aligned(8)));
+
+struct ltt_trace_header {
+  uint32_t        magic_number;
+  uint32_t        arch_type;
+  uint32_t        arch_variant;
+  uint8_t         arch_size;
+  //uint32_t        system_type;
+  uint8_t          major_version;
+  uint8_t          minor_version;
+  uint8_t          flight_recorder;
+  uint8_t          has_heartbeat;
+  uint8_t          has_alignment;  /* Event header alignment */
+	uint8_t					 has_tsc;
+} __attribute((aligned(8)));
+
+
+struct ltt_block_start_header {
+  struct { 
+    struct timeval          timestamp;
+    uint64_t                cycle_count;
+  } begin;
+  struct {
+    struct timeval          timestamp;
+    uint64_t                cycle_count;
+  } end;
+  uint32_t                lost_size;  /* Size unused at the end of the buffer */
+  uint32_t                buf_size;   /* The size of this sub-buffer */
+  struct ltt_trace_header trace;
+} __attribute((aligned(8)));
 
 
 struct _LttType{
-  gchar * type_name;                //type name if it is a named type
-  gchar * element_name;             //elements name of the struct
+  GQuark type_name;                //type name if it is a named type
+  GQuark element_name;             //elements name of the struct
   gchar * fmt;
   unsigned int size;
   LttTypeEnum type_class;          //which type
-  gchar ** enum_strings;            //for enum labels
+  GQuark * enum_strings;            //for enum labels
   struct _LttType ** element_type; //for array, sequence and struct
   unsigned element_number;         //the number of elements 
                                    //for enum, array, sequence and structure
 };
 
 struct _LttEventType{
-  gchar * name;
+  GQuark name;
   gchar * description;
-  int index;              //id of the event type within the facility
+  guint index;              //id of the event type within the facility
   LttFacility * facility; //the facility that contains the event type
   LttField * root_field;  //root field
-  unsigned int latest_block;       //the latest block using the event type
-  unsigned int latest_event;       //the latest event using the event type
 };
 
+/* Structure LttEvent and LttEventPosition must begin with the _exact_ same
+ * fields in the exact same order. LttEventPosition is a parent of LttEvent. */
 struct _LttEvent{
-  guint16  event_id;
-  guint32  time_delta;
-  LttTime event_time;
-  LttCycleCount event_cycle_count;
-  LttTracefile * tracefile;
-  void * data;               //event data
-  unsigned int which_block;           //the current block of the event
-  unsigned int which_event;           //the position of the event
-  /* This is a workaround for fast position seek */
-  void * last_event_pos;
+  
+  /* Begin of LttEventPosition fields */
+  LttTracefile  *tracefile;
+  unsigned int  block;
+  void          *offset;
 
-  LttTime prev_block_end_time;       //the end time of previous block
-  LttTime prev_event_time;           //the time of the previous event
-  LttCycleCount pre_cycle_count;     //previous cycle count of the event
+  /* Timekeeping */
+  uint64_t                tsc;       /* Current timestamp counter */
+  
+  /* End of LttEventPosition fields */
+
+	union {											/* choice by trace has_tsc */
+	  guint32  timestamp;				/* truncated timestamp */
+  	LttTime  delta;
+	} time;
+
+  unsigned char facility_id;	/* facility ID are never reused. */
+  unsigned char event_id;
+
+  LttTime event_time;
+
+  void * data;               //event data
+
   int      count;                    //the number of overflow of cycle count
   gint64 overflow_nsec;              //precalculated nsec for overflows
-  TimeHeartbeat * last_heartbeat;    //last heartbeat
+};
 
-  /* end of workaround */
+struct _LttEventPosition{
+  LttTracefile  *tracefile;
+  unsigned int  block;
+  void          *offset;
+  
+  /* Timekeeping */
+  uint64_t                tsc;       /* Current timestamp counter */
 };
 
 
+enum field_status { FIELD_UNKNOWN, FIELD_VARIABLE, FIELD_FIXED };
+
 struct _LttField{
-  unsigned field_pos;        //field position within its parent
+  //guint field_pos;           //field position within its parent
   LttType * field_type;      //field type, if it is root field
                              //then it must be struct type
 
   off_t offset_root;         //offset from the root, -1:uninitialized 
-  short fixed_root;          //offset fixed according to the root
+  enum field_status fixed_root;          //offset fixed according to the root
                              //-1:uninitialized, 0:unfixed, 1:fixed
   off_t offset_parent;       //offset from the parent,-1:uninitialized
-  short fixed_parent;        //offset fixed according to its parent
+  enum field_status fixed_parent;        //offset fixed according to its parent
                              //-1:uninitialized, 0:unfixed, 1:fixed
   //  void * base_address;       //base address of the field  ????
   
-  int  field_size;           //>0: size of the field, 
-                             //0 : uncertain
-                             //-1: uninitialize
-  int sequ_number_size;      //the size of unsigned used to save the
+  guint field_size;     //      //>0: size of the field, 
+                          //   //0 : uncertain
+                           //  //-1: uninitialize
+  enum field_status fixed_size;
+
+  /* for sequence */
+  gint sequ_number_size;      //the size of unsigned used to save the
                              //number of elements in the sequence
 
-  int element_size;          //the element size of the sequence
-  int field_fixed;           //0: field has string or sequence
+  gint element_size;          //the element size of the sequence
+  //int field_fixed;           //0: field has string or sequence
                              //1: field has no string or sequenc
                              //-1: uninitialize
 
   struct _LttField * parent;
-  struct _LttField ** child; //for array, sequence and struct: 
+  struct _LttField ** child; //for array, sequence, struct and union: 
                              //list of fields, it may have only one
-                             //field if the element is not a struct 
+                             //field if the element is not a struct or
+                             //union
   unsigned current_element;  //which element is currently processed
+                             // Used for sequences and arrays.
 };
 
 
 struct _LttFacility{
-  gchar * name;               //facility name 
-  unsigned int event_number;          //number of events in the facility 
-  LttChecksum checksum;      //checksum of the facility 
-  guint32  base_id;          //base id of the facility
-  LttEventType ** events;    //array of event types 
-  LttType ** named_types;
-  unsigned int named_types_number;
+  LttTrace  *trace;
+  //gchar * name;               //facility name 
+  GQuark name;
+  guint32 checksum;      //checksum of the facility 
+  guint32  id;          //id of the facility
+ 
+  guint32 pointer_size;
+  guint32 size_t_size;
+  guint32 alignment;
+
+
+  //LttEventType ** events;    //array of event types 
+  //unsigned int event_number;          //number of events in the facility 
+  //LttType ** named_types;
+  //unsigned int named_types_number;
+
+  GArray *events;
+  GData *events_by_name;
+ // GArray *named_types;
+  //GData *named_types_by_name;
+  GData *named_types;
+  
+  unsigned char exists; /* 0 does not exist, 1 exists */
 };
 
+typedef struct _LttBuffer {
+  void * head;
+  unsigned int index;
+
+  struct {
+    LttTime                 timestamp;
+    uint64_t                cycle_count;
+  } begin;
+  struct {
+    LttTime                 timestamp;
+    uint64_t                cycle_count;
+  } end;
+  uint32_t                lost_size; /* Size unused at the end of the buffer */
+
+  /* Timekeeping */
+  uint64_t                tsc;       /* Current timestamp counter */
+  double                  nsecs_per_cycle;
+} LttBuffer;
+
 struct _LttTracefile{
-  gchar * name;                       //tracefile name
+  gboolean cpu_online;               //is the cpu online ?
+  GQuark name;                       //tracefile name
+  guint cpu_num;                     //cpu number of the tracefile
   LttTrace * trace;                  //trace containing the tracefile
   int fd;                            //file descriptor 
   off_t file_size;                   //file size
   unsigned block_size;               //block_size
-  unsigned int block_number;         //number of blocks in the file
-  unsigned int which_block;          //which block the current block is
-  unsigned int which_event;          //which event of the current block 
-                                     //is currently processed 
-  LttTime current_event_time;        //time of the current event
-  BlockStart * a_block_start;        //block start of the block- trace endian
-  BlockEnd   * a_block_end;          //block end of the block - trace endian
-  TimeHeartbeat * last_heartbeat;    //last heartbeat
-  void * cur_event_pos;              //the position of the current event
-  void * buffer;                     //the buffer containing the block
-  double nsec_per_cycle;             //Nsec per cycle
-  guint64 one_overflow_nsec;         //nsec for one overflow
-  gint64 overflow_nsec;              //precalculated nsec for overflows
-                                     //can be negative to include value
-                                     //of block start cycle count.
-                                     //incremented at each overflow while
-                                     //reading.
-  //LttCycleCount cycles_per_nsec_reciprocal; // Optimisation for speed
-  unsigned cur_heart_beat_number;    //current number of heart beat in the buf
-  LttCycleCount cur_cycle_count;     //current cycle count of the event
-  void * last_event_pos;
+  unsigned int num_blocks;           //number of blocks in the file
+  gboolean  reverse_bo;              //must we reverse byte order ?
 
-  LttTime prev_block_end_time;       //the end time of previous block
-  LttTime prev_event_time;           //the time of the previous event
-  LttCycleCount pre_cycle_count;     //previous cycle count of the event
-  unsigned int      count;           //the number of overflow of cycle count
+	/* Current event */
+  LttEvent event;                    //Event currently accessible in the trace
+
+	/* Current block */
+  LttBuffer buffer;                  //current buffer
+  guint32 buf_size;                  /* The size of blocks */
+
+	/* Time flow */
+  //unsigned int      count;           //the number of overflow of cycle count
+  //double nsec_per_cycle;             //Nsec per cycle
+  //TimeHeartbeat * last_heartbeat;    //last heartbeat
+
+  //LttCycleCount cycles_per_nsec_reciprocal; // Optimisation for speed
+  //void * last_event_pos;
+
+  //LttTime prev_block_end_time;       //the end time of previous block
+  //LttTime prev_event_time;           //the time of the previous event
+  //LttCycleCount pre_cycle_count;     //previous cycle count of the event
 };
 
 struct _LttTrace{
-  gchar * pathname;                          //the pathname of the trace
-  guint facility_number;                    //the number of facilities 
-  guint control_tracefile_number;           //the number of control files 
-  guint per_cpu_tracefile_number;           //the number of per cpu files 
-  LttSystemDescription * system_description;//system description 
+  GQuark pathname;                          //the pathname of the trace
+  //LttSystemDescription * system_description;//system description 
 
-  GPtrArray *control_tracefiles;            //array of control tracefiles 
-  GPtrArray *per_cpu_tracefiles;            //array of per cpu tracefiles 
-  GPtrArray *facilities;                    //array of facilities 
-  gboolean reverse_byte_order;              //must we reverse BO ?
-};
+  GArray *facilities_by_num;            /* fac_id as index in array */
+  GData *facilities_by_name;            /* fac name (GQuark) as index */
+                                        /* Points to array of fac_id of all the
+                                         * facilities that has this name. */
 
-struct _LttEventPosition{
-  unsigned      block_num;          //block which contains the event 
-  unsigned      event_num;          //event index in the block
-  unsigned      event_offset;       //event position in the block
-  LttTime       event_time;         //the time of the event
-  LttCycleCount event_cycle_count;  //the cycle count of the event
-  unsigned      heart_beat_number;  //current number of heart beats  
-  LttTracefile *tf;                 //tracefile containing the event
-  gboolean      old_position;       //flag to show if it is the position
-                                    //being remembered
-  /* This is a workaround for fast position seek */
-  void * last_event_pos;
+  guint8    ltt_major_version;
+  guint8    ltt_minor_version;
+  guint8    flight_recorder;
+  guint8    has_heartbeat;
+ // guint8    alignment;
+	guint8		has_tsc;
 
-  LttTime prev_block_end_time;       //the end time of previous block
-  LttTime prev_event_time;           //the time of the previous event
-  LttCycleCount pre_cycle_count;     //previous cycle count of the event
-  int      count;                    //the number of overflow of cycle count
-  gint64 overflow_nsec;              //precalculated nsec for overflows
-  TimeHeartbeat * last_heartbeat;    //last heartbeat
-  /* end of workaround */
+  GData     *tracefiles;                    //tracefiles groups
 };
 
 /* The characteristics of the system on which the trace was obtained
@@ -234,9 +367,6 @@ struct _LttSystemDescription {
   gchar *processor;
   gchar *hardware_platform;
   gchar *operating_system;
-  unsigned ltt_major_version;
-  unsigned ltt_minor_version;
-  unsigned ltt_block_size;
   LttTime trace_start;
   LttTime trace_end;
 };
@@ -244,9 +374,13 @@ struct _LttSystemDescription {
 /*****************************************************************************
  macro for size of some data types
  *****************************************************************************/
-#define EVENT_ID_SIZE     sizeof(guint16)
-#define TIME_DELTA_SIZE   sizeof(guint32)
-#define EVENT_HEADER_SIZE (EVENT_ID_SIZE + TIME_DELTA_SIZE)
+// alignment -> dynamic!
+
+//#define TIMESTAMP_SIZE    sizeof(guint32)
+//#define EVENT_ID_SIZE     sizeof(guint16)
+//#define EVENT_HEADER_SIZE (TIMESTAMP_SIZE + EVENT_ID_SIZE)
+
+#define LTT_GET_BO(t) ((t)->reverse_bo)
 
 
 #endif /* LTT_PRIVATE_H */

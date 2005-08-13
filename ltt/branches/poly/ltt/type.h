@@ -31,7 +31,7 @@
 /* Obtain the name, description, facility, facility relative id, global id, 
    type and root field for an eventtype */
 
-gchar *ltt_eventtype_name(LttEventType *et);
+GQuark ltt_eventtype_name(LttEventType *et);
 
 gchar *ltt_eventtype_description(LttEventType *et);
 
@@ -39,7 +39,7 @@ LttFacility *ltt_eventtype_facility(LttEventType *et);
 
 unsigned ltt_eventtype_relative_id(LttEventType *et);
 
-unsigned ltt_eventtype_id(LttEventType *et);
+guint8 ltt_eventtype_id(LttEventType *et);
 
 LttType *ltt_eventtype_type(LttEventType *et);
 
@@ -50,7 +50,7 @@ LttField *ltt_eventtype_field(LttEventType *et);
    primitive types (INT, UINT, FLOAT, ENUM), or the size for the unsigned
    integer length count for sequences. */
  
-gchar *ltt_type_name(LttType *t);
+GQuark ltt_type_name(LttType *t);
 
 LttTypeEnum ltt_type_class(LttType *t);
 
@@ -74,13 +74,13 @@ unsigned ltt_type_member_number(LttType *t);
 
 /* The type of a data member in a structure. */
 
-LttType *ltt_type_member_type(LttType *t, unsigned i, char ** name);
+LttType *ltt_type_member_type(LttType *t, unsigned i, GQuark *name);
 
 
 /* For enumerations, obtain the symbolic string associated with a value
    (0 to n - 1 for an enumeration of n elements). */
 
-gchar *ltt_enum_string_get(LttType *t, unsigned i);
+GQuark ltt_enum_string_get(LttType *t, unsigned i);
 
 
 /* The fields form a tree representing a depth first search of the 

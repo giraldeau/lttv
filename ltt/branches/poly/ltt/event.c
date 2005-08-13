@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <glib.h>
 
 #include <asm/types.h>
 #include <linux/byteorder/swab.h>
@@ -46,6 +47,8 @@ void ltt_event_destroy(LttEvent *event)
 }
 
 
+#if 0
+/* Use get_field_type_size instead */
 /*****************************************************************************
  *Function name
  *    ltt_event_refresh_fields   : refresh fields of an event 
@@ -172,6 +175,8 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
 
   return size;
 }
+#endif //0
+
 
 /*****************************************************************************
  *Function name
@@ -217,7 +222,7 @@ LttEventType *ltt_event_eventtype(LttEvent *e)
 {
   LttFacility* facility = ltt_event_facility(e);
   if(!facility) return NULL;
-  return facility->events[e->event_id - facility->base_id];
+  return &g_array_index(facility->events, LttEventType, e->event_id);
 }
 
 /*****************************************************************************
@@ -237,17 +242,9 @@ LttField *ltt_event_field(LttEvent *e)
   field = event_type->root_field;
   if(unlikely(!field)) return NULL;
 
-  //check if the field need refresh
-  if(likely(e->which_block != event_type->latest_block ||
-            e->which_event != event_type->latest_event)){
-
-    event_type->latest_block = e->which_block;
-    event_type->latest_event = e->which_event;
-    
-    if(unlikely(field->field_fixed != 1))
-      ltt_event_refresh_fields(0, 0, field, e->data,
-          e->tracefile->trace->reverse_byte_order);
-  }
+  get_field_type_size(e->tracefile, event_type, 0, 0,
+      field, e->data);
+  
   return field;
 }
 
@@ -276,7 +273,7 @@ LttTime ltt_event_time(LttEvent *e)
 
 LttCycleCount ltt_event_cycle_count(LttEvent *e)
 {
-  return e->event_cycle_count;
+  return e->tsc;
 }
 
 /*****************************************************************************
@@ -289,24 +286,10 @@ LttCycleCount ltt_event_cycle_count(LttEvent *e)
 
 void ltt_event_position(LttEvent *e, LttEventPosition *ep)
 {
-  ep->block_num         = e->which_block;
-  ep->event_num         = e->which_event;
-  ep->event_time        = e->event_time;
-  ep->event_cycle_count = e->event_cycle_count;
-  ep->heart_beat_number = e->tracefile->cur_heart_beat_number;
-  ep->old_position      = TRUE;
-  ep->event_offset      = e->data - e->tracefile->buffer - EVENT_HEADER_SIZE ;
-  ep->tf                = e->tracefile;
-  ep->overflow_nsec     = e->overflow_nsec;
-  /* This is a workaround for fast position seek */
-  ep->last_event_pos = e->last_event_pos;
-  ep->prev_block_end_time = e->prev_block_end_time;
-  ep->prev_event_time = e->prev_event_time;
-  ep->pre_cycle_count = e->pre_cycle_count;
-  ep->count = e->count;
-  ep->last_heartbeat = e->last_heartbeat;
-
-  /* end of workaround */
+  ep->tracefile = e->tracefile;
+  ep->block = e->block;
+  ep->offset = e->offset;
+  ep->tsc = e->tsc;
 }
 
 LttEventPosition * ltt_event_position_new()
@@ -314,44 +297,6 @@ LttEventPosition * ltt_event_position_new()
   return g_new(LttEventPosition, 1);
 }
 
-/*****************************************************************************
- *Function name
- *    ltt_event_position_get : get the block number and index of the event
- *Input params
- *    ep                     : a pointer to event's position structure
- *    block_number           : the block number of the event
- *    index_in_block         : the index of the event within the block
- ****************************************************************************/
-
-void ltt_event_position_get(LttEventPosition *ep,
-    unsigned *block_number, unsigned *index_in_block, LttTracefile ** tf)
-{
-  *block_number   = ep->block_num;
-  *index_in_block = ep->event_num;
-  *tf             = ep->tf;
-}
-
-/*****************************************************************************
- *Function name
- *    ltt_event_position_set : set the block number and index of the event
- *    It does put the old_position gboolean to FALSE, as it is impossible
- *    to know the quick position to seek in the tracefile.
- *Input params
- *    ep                     : a pointer to event's position structure
- *    block_number           : the block number of the event
- *    index_in_block         : the index of the event within the block
- ****************************************************************************/
-
-void ltt_event_position_set(LttEventPosition *ep,
-    unsigned block_number, unsigned index_in_block)
-{
-  if(ep->block_num != block_number || ep->event_num != index_in_block)
-    ep->old_position = FALSE;
-
-  ep->block_num = block_number;
-  ep->event_num = index_in_block;
-  
-}
 
 /*****************************************************************************
  * Function name
@@ -370,58 +315,23 @@ void ltt_event_position_set(LttEventPosition *ep,
 gint ltt_event_position_compare(const LttEventPosition *ep1,
                                 const LttEventPosition *ep2)
 {
-  if(ep1->tf != ep2->tf)
-    g_error("ltt_event_position_compare on different tracefiles makes no sense");
   if(ep1 == NULL && ep2 == NULL)
       return 0;
   if(ep1 != NULL && ep2 == NULL)
       return -1;
   if(ep1 == NULL && ep2 != NULL)
       return 1;
-    
-  if(ep1->block_num < ep2->block_num)
-    return -1;
-  if(ep1->block_num > ep2->block_num)
-    return 1;
-  if(ep1->event_num < ep2->event_num)
-    return -1;
-  if(ep1->event_num > ep2->event_num)
-    return 1;
-  return 0;
-}
 
-/*****************************************************************************
- * Function name
- *    ltt_event_event_position_compare : compare two positions, one in event,
- *    other in position opaque structure.
- * Input params
- *    event                  : a pointer to event structure
- *    ep                     : a pointer to event's position structure
- * Return
- *    -1 is event < ep
- *    1 if event > ep
- *    0 if event == ep
- ****************************************************************************/
-
-gint ltt_event_event_position_compare(const LttEvent *event,
-                                      const LttEventPosition *ep)
-{
-  if(event == NULL && ep == NULL)
-      return 0;
-  if(event != NULL && ep == NULL)
-      return -1;
-  if(event == NULL && ep != NULL)
-      return 1;
-
-  g_assert(event->tracefile == ep->tf);
- 
-  if(event->which_block < ep->block_num)
+   if(ep1->tracefile != ep2->tracefile)
+    g_error("ltt_event_position_compare on different tracefiles makes no sense");
+   
+  if(ep1->block < ep2->block)
     return -1;
-  if(event->which_block > ep->block_num)
+  if(ep1->block > ep2->block)
     return 1;
-  if(event->which_event < ep->event_num)
+  if(ep1->offset < ep2->offset)
     return -1;
-  if(event->which_event > ep->event_num)
+  if(ep1->offset > ep2->offset)
     return 1;
   return 0;
 }
@@ -455,23 +365,8 @@ void ltt_event_position_copy(LttEventPosition *dest,
  ****************************************************************************/
 
 unsigned ltt_event_cpu_id(LttEvent *e)
-{ 
-  gchar * c1, * c2, * c3;
-  c1 = strrchr(e->tracefile->name,'\\');
-  c2 = strrchr(e->tracefile->name,'/');
-  if(c1 == NULL && c2 == NULL){
-    return (unsigned)atoi(e->tracefile->name);
-  }else if(c1 == NULL){
-    c2++;
-    return (unsigned)atoi(c2);    
-  }else if(c2 == NULL){
-    c1++;
-    return (unsigned)atoi(c1);    
-  }else{
-    c3 = (c1 > c2) ? c1 : c2;
-    c3++;
-    return (unsigned)atoi(c3);        
-  }
+{
+  return e->tracefile->cpu_num;
 }
 
 /*****************************************************************************
@@ -500,8 +395,7 @@ void *ltt_event_data(LttEvent *e)
  *Return value
  *    unsigned       : the number of elements for an array/sequence field
  ****************************************************************************/
-
-unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
+guint64 ltt_event_field_element_number(LttEvent *e, LttField *f)
 {
   if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
@@ -509,8 +403,8 @@ unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
   
   if(f->field_type->type_class == LTT_ARRAY)
     return f->field_type->element_number;
-  return (unsigned)  getIntNumber(e->tracefile->trace->reverse_byte_order,
-      f->sequ_number_size, e + f->offset_root);
+  return get_unsigned(LTT_GET_BO(e->tracefile), f->sequ_number_size,
+      e + f->offset_root);
 }
 
 /*****************************************************************************
@@ -518,50 +412,60 @@ unsigned ltt_event_field_element_number(LttEvent *e, LttField *f)
  *    ltt_event_field_element_select
  *                   : Set the currently selected element for a sequence or
  *                     array field
+ *                     O(1) if fields are of fixed size, else O(n) if fields are
+ *                     of variable size.
  *Input params
  *    e              : an instance of an event type
  *    f              : a field of the instance
- *    i              : the ith element
+ *    i              : the ith element (0, ...)
  ****************************************************************************/
-
 void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i)
 {
   unsigned element_number;
-  LttField *fld;
+  LttField *field;
   unsigned int k;
-  int size;
-  void *evD;
+  size_t size;
+  LttEventType *event_type;
  
   if(f->field_type->type_class != LTT_ARRAY &&
      f->field_type->type_class != LTT_SEQUENCE)
     return ;
 
   element_number  = ltt_event_field_element_number(e,f);
-  /* Sanity check for i : 1..n only, and must be lower or equal element_number
+  event_type = ltt_event_eventtype(e);
+  /* Sanity check for i : 0..n-1 only, and must be lower or equal element_number
    */
-  if(element_number < i || i == 0) return;
+  if(i >= element_number) return;
   
-  fld = f->child[0];
+  field = f->child[0];
   
-  evD = e->data + f->offset_root;
-  size = 0;
-  for(k=0;k<i;k++){
-    size += ltt_event_refresh_fields(f->offset_root+size,size, fld, evD+size,
-                                e->tracefile->trace->reverse_byte_order);
+  if(f->field_type->type_class == LTT_SEQUENCE)
+    size = f->sequ_number_size;
+  else
+    size = 0;
+  
+  if(field->fixed_size == FIELD_FIXED) {
+      size += field->field_size * i;
+
+      get_field_type_size(e->tracefile, event_type,
+                  f->offset_root+size, size, field, e->data);
+
+  } else {
+    for(k=0;k<=i;k++){
+      size += get_field_type_size(e->tracefile, event_type,
+                  f->offset_root+size, size, field, e->data);
+    }
   }
-  f->current_element = i - 1;
+  f->current_element = i;
 }
 
 /*****************************************************************************
  * These functions extract data from an event after architecture specific
  * conversions
  ****************************************************************************/
-
 guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f)
 {
-  //int revFlag = e->tracefile->trace->my_arch_endian == 
-  //              e->tracefile->trace->system_description->endian ? 0:1;
-  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
+  gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
   LttTypeEnum t = f->field_type->type_class;
 
@@ -590,9 +494,7 @@ guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f)
 
 gint32 ltt_event_get_int(LttEvent *e, LttField *f)
 {
-  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
-  //int revFlag = e->tracefile->trace->my_arch_endian == 
-  //              e->tracefile->trace->system_description->endian ? 0:1;
+  gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
   g_assert(f->field_type->type_class == LTT_INT);
 
@@ -619,9 +521,8 @@ gint32 ltt_event_get_int(LttEvent *e, LttField *f)
 
 guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
 {
-  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
-  //int revFlag = e->tracefile->trace->my_arch_endian == 
-  //              e->tracefile->trace->system_description->endian ? 0:1;
+  gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
+
   LttTypeEnum t = f->field_type->type_class;
 
   g_assert(t == LTT_UINT || t == LTT_ENUM);
@@ -644,7 +545,7 @@ gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
 {
   //int revFlag = e->tracefile->trace->my_arch_endian == 
   //              e->tracefile->trace->system_description->endian ? 0:1;
-  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
+  gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
   g_assert( f->field_type->type_class == LTT_INT);
 
@@ -664,9 +565,7 @@ gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
 
 float ltt_event_get_float(LttEvent *e, LttField *f)
 {
-  //int revFlag = e->tracefile->trace->my_arch_endian == 
-  //              e->tracefile->trace->system_description->endian ? 0:1;
-  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
+  gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
   g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 4);
 
@@ -681,9 +580,7 @@ float ltt_event_get_float(LttEvent *e, LttField *f)
 
 double ltt_event_get_double(LttEvent *e, LttField *f)
 {
-  gboolean reverse_byte_order = e->tracefile->trace->reverse_byte_order;
-  //int revFlag = e->tracefile->trace->my_arch_endian == 
-  //              e->tracefile->trace->system_description->endian ? 0:1;
+  gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
   g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 8);
 
@@ -700,7 +597,6 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
  * The string obtained is only valid until the next read from
  * the same tracefile.
  ****************************************************************************/
-
 char *ltt_event_get_string(LttEvent *e, LttField *f)
 {
   g_assert(f->field_type->type_class == LTT_STRING);

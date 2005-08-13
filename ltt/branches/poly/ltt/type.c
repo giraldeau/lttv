@@ -49,10 +49,10 @@ static unsigned floatSizes[] = {
  *Input params
  *    et                 : an  event type   
  *Return value
- *    char *             : the name of the event type
+ *    GQuark             : the name of the event type
  ****************************************************************************/
 
-gchar *ltt_eventtype_name(LttEventType *et)
+GQuark ltt_eventtype_name(LttEventType *et)
 {
   return et->name;
 }
@@ -87,20 +87,6 @@ LttFacility *ltt_eventtype_facility(LttEventType *et)
 
 /*****************************************************************************
  *Function name
- *    ltt_eventtype_relative_id : get the relative id of the event type
- *Input params
- *    et                        : an  event type   
- *Return value
- *    unsigned                  : the relative id
- ****************************************************************************/
-
-unsigned ltt_eventtype_relative_id(LttEventType *et)
-{
-  return et->index;
-}
-
-/*****************************************************************************
- *Function name
  *    ltt_eventtype_id : get the id of the event type
  *Input params
  *    et               : an  event type   
@@ -108,9 +94,9 @@ unsigned ltt_eventtype_relative_id(LttEventType *et)
  *    unsigned         : the id
  ****************************************************************************/
 
-unsigned ltt_eventtype_id(LttEventType *et)
+guint8 ltt_eventtype_id(LttEventType *et)
 {
-  return et->facility->base_id + et->index;
+  return et->index;
 }
 
 /*****************************************************************************
@@ -151,7 +137,7 @@ LttField *ltt_eventtype_field(LttEventType *et)
  *    char *         : the name of the type
  ****************************************************************************/
 
-gchar *ltt_type_name(LttType *t)
+GQuark ltt_type_name(LttType *t)
 {
   return t->element_name;
 }
@@ -173,47 +159,58 @@ LttTypeEnum ltt_type_class(LttType *t)
 /*****************************************************************************
  *Function name
  *    ltt_type_size : obtain the type size. The size is the number of bytes 
- *                    for primitive types (INT, UINT, FLOAT, ENUM), or the 
- *                    size for the unsigned integer length count for sequences
+ *                    for primitive types (INT, UINT, FLOAT, ENUM)
+ *                    or the size for the unsigned integer length count for
+ *                    sequences
  *Input params
  *    tf            : trace file
  *    t             : a type   
  *Return value
- *    unsigned      : the type size
+ *                  : the type size
  *    returns 0 if erroneous, and show a critical warning message.
  ****************************************************************************/
 
-unsigned ltt_type_size(LttTrace * trace, LttType *t)
+size_t ltt_type_size(LttTrace * trace, LttType *t)
 {
-  unsigned size;
-  if(unlikely(t->type_class==LTT_STRUCT || t->type_class==LTT_ARRAY || 
-              t->type_class==LTT_STRING || t->type_class==LTT_UNION)) {
-    size = 0;
-  } else {
-    if(t->type_class == LTT_FLOAT){
-      size = floatSizes[t->size];
-    }else{
+  size_t size;
+
+  switch(t->type_class) {
+
+    case LTT_INT:
+    case LTT_UINT:
+    case LTT_SEQUENCE:
+    case LTT_ENUM:
       if(likely(t->size < INT_SIZES_NUMBER))
         size = intSizes[t->size];
-      else{
-        LttArchSize archsize = trace->system_description->size;
-        if(archsize == LTT_LP32){
-          if(t->size == 5) size = intSizes[SIZE_INT16];
-          else size = intSizes[SIZE_INT32];
-        }
-        else if(archsize == LTT_ILP32 || archsize == LTT_LP64){
-          if(t->size == 5) size = intSizes[SIZE_INT32];
-          else{
-            if(archsize == LTT_ILP32) size = intSizes[SIZE_INT32];
-            else size = intSizes[SIZE_INT64];
-          }
-        }
-        else if(archsize == LTT_ILP64) size = intSizes[SIZE_INT64];
-      }
-    }
+      else
+        goto error;
+      break;
+    case LTT_FLOAT:
+      if(likely(t->size < FLOAT_SIZES_NUMBER))
+        size = floatSizes[t->size];
+      else
+        goto error;
+      break;
+    case LTT_POINTER:
+    case LTT_LONG:
+    case LTT_ULONG:
+    case LTT_SIZE_T:
+    case LTT_SSIZE_T:
+    case LTT_OFF_T:
+    case LTT_STRING:
+    case LTT_ARRAY:
+    case LTT_STRUCT:
+    case LTT_UNION:
+      goto error;
+      break;
   }
 
   return size;
+
+
+error:
+  g_warning("no size known for the type");
+  return 0;
 }
 
 /*****************************************************************************
@@ -287,7 +284,7 @@ unsigned ltt_type_member_number(LttType *t)
  *    LttType *           : the type of structure member
  ****************************************************************************/
 
-LttType *ltt_type_member_type(LttType *t, unsigned i, gchar ** name)
+LttType *ltt_type_member_type(LttType *t, unsigned i, GQuark *name)
 {
   LttType *member_type = NULL;
 
@@ -296,7 +293,7 @@ LttType *ltt_type_member_type(LttType *t, unsigned i, gchar ** name)
               ||
                 (i >= t->element_number)
              )) {
-      *name = NULL;
+      *name = 0;
   } else {
     *name = t->element_type[i]->element_name;
     member_type = t->element_type[i];
@@ -317,14 +314,12 @@ LttType *ltt_type_member_type(LttType *t, unsigned i, gchar ** name)
  *    char *              : symbolic string associated with a value
  ****************************************************************************/
 
-char *ltt_enum_string_get(LttType *t, unsigned i)
+GQuark ltt_enum_string_get(LttType *t, unsigned i)
 { 
-  gchar *string = NULL;
-  
   if(likely(t->type_class == LTT_ENUM && i < t->element_number))
-    string = t->enum_strings[i];
-
-  return string;
+    return t->enum_strings[i];
+  else
+    return 0;
 }
 
 /*****************************************************************************

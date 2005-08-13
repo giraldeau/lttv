@@ -21,6 +21,10 @@
 
 #include <ltt/ltt.h>
 
+
+extern GQuark LTT_FACILITY_NAME_HEARTBEAT,
+              LTT_EVENT_NAME_HEARTBEAT;
+
 /* A trace is specified as a pathname to the directory containing all the
    associated data (control tracefiles, per cpu tracefiles, event 
    descriptions...).
@@ -40,7 +44,7 @@ LttTrace *ltt_trace_open(const gchar *pathname);
  */
 LttTrace *ltt_trace_copy(LttTrace *self);
 
-gchar * ltt_trace_name(LttTrace *t);
+GQuark ltt_trace_name(LttTrace *t);
 
 void ltt_trace_close(LttTrace *t); 
 
@@ -57,7 +61,7 @@ unsigned ltt_trace_facility_number(LttTrace *t);
 
 LttFacility *ltt_trace_facility_get(LttTrace *t, unsigned i);
 
-LttFacility * ltt_trace_facility_by_id(LttTrace * trace, unsigned id);
+LttFacility * ltt_trace_facility_by_id(LttTrace * trace, guint8 id);
 
 /* Look for a facility by name. It returns the number of facilities found
    and sets the position argument to the first found. Returning 0, the named
@@ -75,34 +79,6 @@ unsigned ltt_trace_eventtype_number(LttTrace *t);
 LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned i);
 
 
-/* There is one "per cpu" tracefile for each CPU, numbered from 0 to
-   the maximum number of CPU in the system. When the number of CPU installed
-   is less than the maximum, some positions are unused. There are also a
-   number of "control" tracefiles (facilities, interrupts...). */
-
-unsigned ltt_trace_control_tracefile_number(LttTrace *t);
-
-unsigned ltt_trace_per_cpu_tracefile_number(LttTrace *t);
-
-
-/* It is possible to search for the tracefiles by name or by CPU tracefile
- * name.
- * The index within the tracefiles of the same type is returned if found
- * and a negative value otherwise.
- */
-
-int ltt_trace_control_tracefile_find(LttTrace *t, const gchar *name);
-
-int ltt_trace_per_cpu_tracefile_find(LttTrace *t, const gchar *name);
-
-
-/* Get a specific tracefile */
-
-LttTracefile *ltt_trace_control_tracefile_get(LttTrace *t, unsigned i);
-
-LttTracefile *ltt_trace_per_cpu_tracefile_get(LttTrace *t, unsigned i);
-
-
 /* Get the start time and end time of the trace */
 
 void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end);
@@ -110,7 +86,7 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end);
 
 /* Get the name of a tracefile */
 
-char *ltt_tracefile_name(LttTracefile *tf);
+GQuark ltt_tracefile_name(LttTracefile *tf);
 
 
 /* Get the number of blocks in the tracefile */
@@ -120,34 +96,32 @@ unsigned ltt_tracefile_block_number(LttTracefile *tf);
 
 /* Seek to the first event of the trace with time larger or equal to time */
 
-void ltt_tracefile_seek_time(LttTracefile *t, LttTime time);
+int ltt_tracefile_seek_time(LttTracefile *t, LttTime time);
 
 /* Seek to the first event with position equal or larger to ep */
 
-void ltt_tracefile_seek_position(LttTracefile *t,
+int ltt_tracefile_seek_position(LttTracefile *t,
     const LttEventPosition *ep);
 
 /* Read the next event */
 
-LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event);
+int ltt_tracefile_read(LttTracefile *t);
+
+/* ltt_tracefile_read cut down in pieces */
+int ltt_tracefile_read_seek(LttTracefile *t);
+int ltt_tracefile_read_update_event(LttTracefile *t);
+int ltt_tracefile_read_op(LttTracefile *t);
 
 /* open tracefile */
 
-LttTracefile * ltt_tracefile_open(LttTrace *t, gchar * tracefile_name);
-
-void ltt_tracefile_open_cpu(LttTrace *t, gchar * tracefile_name);
-
-gint ltt_tracefile_open_control(LttTrace *t, gchar * control_name);
-
+gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf);
 
 /* get the data type size and endian type of the local machine */
 
 void getDataEndianType(LttArchSize * size, LttArchEndian * endian);
 
 /* get an integer number */
-
-gint64 getIntNumber(gboolean reverse_byte_order, int size1, void *evD);
-
+gint64 get_int(gboolean reverse_byte_order, gint size, void *data);
 
 /* get the node name of the system */
 
@@ -174,5 +148,7 @@ void ltt_tracefile_destroy(LttTracefile *tf);
 void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src);
 
 void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname);
+
+
 
 #endif // TRACE_H
