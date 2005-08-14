@@ -30,8 +30,6 @@
 
 #define LTT_PACKED_STRUCT __attribute__ ((packed))
 
-#define NUM_FACILITIES 256
-
 /* Hardcoded facilities */
 #define LTT_FACILITY_CORE 0
 
@@ -201,6 +199,7 @@ struct _LttEvent{
   LttTime event_time;
 
   void * data;               //event data
+  guint  data_size;
 
   int      count;                    //the number of overflow of cycle count
   gint64 overflow_nsec;              //precalculated nsec for overflows

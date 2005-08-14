@@ -67,6 +67,8 @@
    contained information (byte offsets) may vary with the architecture
    associated to the trace. */
    
+#define NUM_FACILITIES 256
+
 typedef struct _LttTrace LttTrace;
 
 typedef struct _LttTracefile LttTracefile;

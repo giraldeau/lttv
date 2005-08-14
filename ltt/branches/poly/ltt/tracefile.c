@@ -181,7 +181,7 @@ static void  parser_characters   (GMarkupParseContext __UNUSED__ *context,
   des->description = g_strdup(text);
 }
 #endif //0
-static inline LttFacility *ltt_trace_get_facility_by_num(LttTrace *t,
+LttFacility *ltt_trace_get_facility_by_num(LttTrace *t,
     guint num)
 {
   g_assert(num < t->facilities_by_num->len);
@@ -542,6 +542,26 @@ int get_tracefile_name_number(const gchar *raw_name,
 }
 
 
+GData *ltt_trace_get_tracefiles_groups(LttTrace *trace)
+{
+  return trace->tracefiles;
+}
+
+
+void compute_tracefile_group(GArray *group,
+                             struct compute_tracefile_group_args args)
+{
+  int i;
+  LttTracefile *tf;
+
+  for(i=0; i<group->len; i++) {
+    tf = &g_array_index (group, LttTracefile, i);
+    if(tf->cpu_online)
+      args.func(tf, args.func_args);
+  }
+}
+
+
 void ltt_tracefile_group_destroy(gpointer data)
 {
   GArray *group = (GArray *)data;
@@ -820,7 +840,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->trace = tf->trace;
           fac->exists = 1;
 
-          fac_ids = g_datalist_id_get_data(&tf->trace->facilities_by_name, fac->name);
+          fac_ids = g_datalist_id_get_data(&tf->trace->facilities_by_name,
+                                fac->name);
           if(fac_ids == NULL) {
             fac_ids = g_array_sized_new (FALSE, TRUE, sizeof(guint), 1);
             g_datalist_id_set_data_full(&tf->trace->facilities_by_name,
@@ -1446,6 +1467,10 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 
   event->data = pos;
 
+  /* get the data size and update the event fields with the current
+   * information */
+  event->data_size = ltt_update_event_size(tf);
+
   return 0;
 }
 
@@ -1526,45 +1551,47 @@ map_error:
 
 }
 
-ssize_t ltt_get_event_size(LttTracefile *tf)
+/* It will update the fields offsets too */
+void ltt_update_event_size(LttTracefile *tf)
 {
   ssize_t size = 0;
 
   /* Specific handling of core events : necessary to read the facility control
    * tracefile. */
-  if(unlikely(tf->event.facility_id == LTT_FACILITY_CORE)) {
-    switch((enum ltt_core_events)tf->event.event_id) {
-  case LTT_EVENT_FACILITY_LOAD:
-    size = sizeof(struct LttFacilityLoad);
-    break;
-  case LTT_EVENT_FACILITY_UNLOAD:
-    size = sizeof(struct LttFacilityUnload);
-    break;
-  case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
-    size = sizeof(struct LttStateDumpFacilityLoad);
-    break;
-  case LTT_EVENT_HEARTBEAT:
-    size = sizeof(TimeHeartbeat);
-    break;
-  default:
-    g_warning("Error in getting event size : tracefile %s, "
-        "unknown event id %hhu in core facility.",
-        g_quark_to_string(tf->name),
-        tf->event.event_id);
-    goto event_id_error;
+  LttFacility *f = ltt_trace_get_facility_by_num(tf->trace, 
+                                          tf->event.facility_id);
 
+  if(unlikely(f == NULL)) {
+    if(likely(tf->event.facility_id == LTT_FACILITY_CORE)) {
+      switch((enum ltt_core_events)tf->event.event_id) {
+    case LTT_EVENT_FACILITY_LOAD:
+      size = sizeof(struct LttFacilityLoad);
+      break;
+    case LTT_EVENT_FACILITY_UNLOAD:
+      size = sizeof(struct LttFacilityUnload);
+      break;
+    case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
+      size = sizeof(struct LttStateDumpFacilityLoad);
+      break;
+    case LTT_EVENT_HEARTBEAT:
+      size = sizeof(TimeHeartbeat);
+      break;
+    default:
+      g_warning("Error in getting event size : tracefile %s, "
+          "unknown event id %hhu in core facility.",
+          g_quark_to_string(tf->name),
+          tf->event.event_id);
+      goto event_id_error;
+
+      }
     }
-
   } else {
-    LttFacility *f = ltt_trace_get_facility_by_num(tf->trace, 
-                                            tf->event.facility_id);
     LttEventType *event_type = 
       ltt_facility_eventtype_get(f, tf->event.event_id);
     size = get_fields_offsets(tf, event_type, tf->event.data);
   }
-
-  return size;
   
+  tf->event.data_size = size;
 event_id_error:
   return -1;
 }
@@ -1601,10 +1628,9 @@ static int ltt_seek_next_event(LttTracefile *tf)
 
   pos = tf->event.data;
 
-  event_size = ltt_get_event_size(tf);
-  if(event_size < 0) goto error;
+  if(tf->event.data_size < 0) goto error;
 
-  pos += (size_t)event_size;
+  pos += (size_t)tf->event.data_size;
   
   tf->event.offset = pos;
 
@@ -1960,6 +1986,139 @@ size_t get_field_type_size(LttTracefile *tf, LttEventType *event_type,
 
   return size;
 }
+
+
+/*****************************************************************************
+ *Function name
+ *    check_fields_compatibility : Check for compatibility between two fields :
+ *    do they use the same inner structure ?
+ *Input params 
+ *    event_type1     : event type
+ *    event_type2     : event type
+ *    field1          : field
+ *    field2          : field
+ *Returns : 0 if identical
+ *          1 if not.
+ ****************************************************************************/
+gint check_fields_compatibility(LttEventType *event_type1,
+    LttEventType *event_type2,
+    LttField *field1, LttField *field2)
+{
+  guint different = 0;
+  enum field_status local_fixed_root, local_fixed_parent;
+  guint i;
+  LttType *type1;
+  LttType *type2;
+  
+  if(field1 == NULL) {
+    if(field2 == NULL) goto end;
+    else {
+      different = 1;
+      goto end;
+    }
+  } else if(field2 == NULL) {
+    different = 1;
+    goto end;
+  }
+  
+  g_assert(field1->fixed_root != FIELD_UNKNOWN);
+  g_assert(field2->fixed_root != FIELD_UNKNOWN);
+  g_assert(field1->fixed_parent != FIELD_UNKNOWN);
+  g_assert(field2->fixed_parent != FIELD_UNKNOWN);
+  g_assert(field1->fixed_size != FIELD_UNKNOWN);
+  g_assert(field2->fixed_size != FIELD_UNKNOWN);
+
+  type1 = field1->field_type;
+  type2 = field2->field_type;
+
+  size_t current_root_offset;
+  size_t current_offset;
+  enum field_status current_child_status, final_child_status;
+  size_t max_size;
+
+  if(type1->type_class != type2->type_class) {
+    different = 1;
+    goto end;
+  }
+  if(type1->element_name != type2->element_name) {
+    different = 1;
+    goto end;
+  }
+    
+  switch(type1->type_class) {
+    case LTT_INT:
+    case LTT_UINT:
+    case LTT_FLOAT:
+    case LTT_POINTER:
+    case LTT_LONG:
+    case LTT_ULONG:
+    case LTT_SIZE_T:
+    case LTT_SSIZE_T:
+    case LTT_OFF_T:
+      if(field1->field_size != field2->field_size) {
+        different = 1;
+        goto end;
+      }
+      break;
+    case LTT_ENUM:
+      if(type1->element_number != type2->element_number) {
+        different = 1;
+        goto end;
+      }
+      for(i=0;i<type1->element_number;i++) {
+        if(type1->enum_strings[i] != type2->enum_strings[i]) {
+          different = 1;
+          goto end;
+        }
+      }
+      break;
+    case LTT_SEQUENCE:
+      /* Two elements : size and child */
+      g_assert(type1->element_number != type2->element_number);
+      for(i=0;i<type1->element_number;i++) {
+        if(check_fields_compatibility(event_type1, event_type2,
+          field1->child[0], field2->child[0])) {
+          different = 1;
+          goto end;
+        }
+      }
+      break;
+    case LTT_STRING:
+      break;
+    case LTT_ARRAY:
+      if(field1->field_size != field2->field_size) {
+        different = 1;
+        goto end;
+      }
+      /* Two elements : size and child */
+      g_assert(type1->element_number != type2->element_number);
+      for(i=0;i<type1->element_number;i++) {
+        if(check_fields_compatibility(event_type1, event_type2,
+          field1->child[0], field2->child[0])) {
+          different = 1;
+          goto end;
+        }
+      }
+      break;
+    case LTT_STRUCT:
+    case LTT_UNION:
+      if(type1->element_number != type2->element_number) {
+        different = 1;
+        break;
+      }
+      for(i=0;i<type1->element_number;i++) {
+        if(check_fields_compatibility(event_type1, event_type2,
+          field1->child[0], field2->child[0])) {
+          different = 1;
+          goto end;
+        }
+      }
+      break;
+  }
+end:
+  return different;
+}
+
 
 
 

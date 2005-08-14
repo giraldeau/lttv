@@ -63,14 +63,8 @@ LttFacility *ltt_trace_facility_get(LttTrace *t, unsigned i);
 
 LttFacility * ltt_trace_facility_by_id(LttTrace * trace, guint8 id);
 
-/* Look for a facility by name. It returns the number of facilities found
-   and sets the position argument to the first found. Returning 0, the named
-   facility is unknown, returning 1, the named facility is at the specified
-   position, returning n, the facilities are from position to 
-   position + n - 1. */
-
-unsigned ltt_trace_facility_find(LttTrace *t, gchar *name, unsigned *position);
-
+/* Returns an array of indexes (guint) that matches the facility name */
+GArray *ltt_trace_facility_get_by_name(LttTrace *t, GQuark name);
 
 /* Functions to discover all the event types in the trace */
 
@@ -149,6 +143,23 @@ void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src);
 
 void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname);
 
+GData *ltt_trace_get_tracefiles_groups(LttTrace *trace);
 
+typedef void (*ForEachTraceFileFunc)(LttTracefile *tf, gpointer func_args);
+
+struct compute_tracefile_group_args {
+  ForEachTraceFileFunc func;
+  gpointer func_args;
+};
+
+void compute_tracefile_group(GArray *group,
+                             struct compute_tracefile_group_args args);
+
+LttFacility *ltt_trace_get_facility_by_num(LttTrace *t, guint num);
+
+
+gint check_fields_compatibility(LttEventType *event_type1,
+    LttEventType *event_type2,
+    LttField *field1, LttField *field2);
 
 #endif // TRACE_H
