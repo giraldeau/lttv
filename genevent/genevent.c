@@ -511,7 +511,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\tstruct ltt_trace_struct *trace;\n");
     fprintf(fp, "\tunsigned long _flags;\n");
     fprintf(fp, "\tvoid *buff;\n");
-    fprintf(fp, "\tvoid *old_address;\n");
+    fprintf(fp, "\tunsigned old_offset;\n");
     fprintf(fp, "\tunsigned int header_length;\n");
     fprintf(fp, "\tunsigned int event_length;\n");	// total size (incl hdr)
 		fprintf(fp, "\tunsigned int length;\n");	// Size of the event var data.
@@ -519,6 +519,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 		fprintf(fp, "\tstruct rchan_buf *buf;\n");
 		fprintf(fp, "\tstruct timeval delta;\n");
 		fprintf(fp, "\tu64 tsc;\n");
+		fprintf(fp, "\tchar *ptr;\n");
 
 		if(ev->type != 0)
       fprintf(fp, "\tstruct %s_%s_1* __1;\n\n", ev->name, facName);
@@ -563,14 +564,14 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 		 * protected event, let's add a memory barrier() to make sure the compiler
 		 * will not reorder this read. */
 		fprintf(fp, "\t\tdo {\n");
-		fprintf(fp, "\t\t\told_address = buf->data + buf->offset;\n");
+		fprintf(fp, "\t\t\told_offset = buf->offset;\n");
 		fprintf(fp, "\t\t\tbarrier();\n");
-    fprintf(fp, "\t\t\tchar *ptr = (char*)old_address;\n");
+    fprintf(fp, "\t\t\tptr = (char*)buf->data + old_offset;\n");
 
 
     fprintf(fp, "\t\t\theader_length = ltt_get_event_header_data(trace, "
 																																"channel,\n"
-								"\t\t\t\t\t\t\t\t\t\told_address, &_offset, &delta, &tsc);\n");
+								"\t\t\t\t\t\t\t\t\t\tptr, &_offset, &delta, &tsc);\n");
 
     fprintf(fp, "\t\t\tptr += _offset + header_length;\n");
 
@@ -631,10 +632,8 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
           }
 				}
 			}
-    fprintf(fp,";\n");
-
     fprintf(fp, "\t\t\tevent_length = (unsigned long)ptr -"
-				"(unsigned long)old_address;\n");
+				"(unsigned long)(buf->data + old_offset);\n");
 		
 		/* let's put some protection before the cmpxchg : the space reservation and
 		 * the get TSC are not dependant from each other. I don't want the compiler
@@ -642,7 +641,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 		 * _yes_, the compiler could mess it up. */
 		fprintf(fp, "\t\t\tbarrier();\n");
 		fprintf(fp, "\t\t\tbuff = relay_reserve(channel->rchan, event_length, "
-												"old_address);\n");
+												"old_offset);\n");
 		fprintf(fp, "\n");
  		fprintf(fp, "\t\t} while(PTR_ERR(buff) == -EAGAIN);\n");
 		fprintf(fp, "\n");
@@ -665,7 +664,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 
     /* Write the header */
     fprintf(fp, "\n");
-		fprintf(fp,"\t\tlength = event_length - header_length;\n");
+		fprintf(fp,"\t\tlength = event_length - _offset - header_length;\n");
     fprintf(fp, "\n");
     fprintf(fp, "\t\tltt_write_event_header(trace, channel, buff, \n"
                 "\t\t\t\tltt_facility_%s_%X, event_%s, length, _offset,\n"
@@ -984,7 +983,8 @@ void generateCfile(FILE * fp, char * filefacname){
   fprintf(fp, "\t.name = ltt_facility_name,\n");
   fprintf(fp, "\t.num_events = LTT_FACILITY_NUM_EVENTS,\n");
   fprintf(fp, "\t.checksum = LTT_FACILITY_CHECKSUM,\n");
-  fprintf(fp, "\t.symbol = SYMBOL_STRING(LTT_FACILITY_SYMBOL)\n");
+  fprintf(fp, "\t.symbol = SYMBOL_STRING(LTT_FACILITY_SYMBOL),\n");
+  fprintf(fp, "\t.alignment = %u\n", alignment);	/* default alignment */
   fprintf(fp, "};\n");
   fprintf(fp, "\n");
   fprintf(fp, "#ifndef MODULE\n");
