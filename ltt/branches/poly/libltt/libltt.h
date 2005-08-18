@@ -37,7 +37,6 @@ enum trace_op {
 	OP_DESTROY,
 	OP_START,
 	OP_STOP,
-	OP_ALIGN,
 	OP_NONE
 };
 
@@ -55,7 +54,6 @@ typedef struct lttctl_peer_msg {
       unsigned subbuf_size;
       unsigned n_subbufs;
     } new_trace;
-    unsigned alignment;
 	} args;
 } lttctl_peer_msg_t;
 
