@@ -26,7 +26,6 @@ enum trace_ctl_op {
 	CTL_OP_START,
 	CTL_OP_STOP,
 	CTL_OP_DAEMON,
-	CTL_OP_ALIGN,
 	CTL_OP_NONE
 };
 
@@ -38,7 +37,6 @@ static enum trace_mode mode = LTT_TRACE_NORMAL;
 static enum trace_ctl_op op = CTL_OP_NONE;
 static char *channel_root = NULL;
 static char *trace_root = NULL;
-static unsigned alignment = 0;
 
 static int sigio_received = 0;
 
@@ -68,7 +66,6 @@ void show_arguments(void)
 	printf("              (optionnaly, you can set LTT_DAEMON env. var.)\n");
 	printf("-t            Trace root path. (ex. /root/traces/example_trace)\n");
 	printf("-l            LTT channels root path. (ex. /mnt/relayfs/ltt)\n");
-	printf("-a            Alignment of a new or existing trace\n");
 	printf("-z            Size of the subbuffers (will be rounded to next page size)\n");
 	printf("-x            Number of subbuffers\n");
 	printf("\n");
@@ -137,17 +134,6 @@ int parse_arguments(int argc, char **argv)
 						break;
 					case 'q':
 						op = CTL_OP_STOP;
-						break;
-					case 'a':
-						if(op == CTL_OP_NONE) op = CTL_OP_ALIGN;
-						if(argn+1 < argc) {
-							alignment = (unsigned)atoi(argv[argn+1]);
-							argn++;
-						} else {
-							printf("Specify an alignment after -a.\n");
-							printf("\n");
-							ret = -1;
-						}
 						break;
 					case 'z':
 						if(argn+1 < argc) {
@@ -323,9 +309,6 @@ int main(int argc, char ** argv)
   	case CTL_OP_CREATE:
 			ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size,
 																n_subbufs);
-			if(alignment != 0)
-				ret |= lttctl_align(handle, trace_name, alignment);
-			break;
 		case CTL_OP_DESTROY:
 			ret = lttctl_destroy_trace(handle, trace_name);
 			break;
@@ -338,8 +321,6 @@ int main(int argc, char ** argv)
 		case CTL_OP_DAEMON:
 			ret = lttctl_daemon(handle, trace_name);
 			break;
-		case CTL_OP_ALIGN:
-			ret = lttctl_align(handle, trace_name, alignment);
 		case CTL_OP_NONE:
 			break;
 	}
