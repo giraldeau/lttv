@@ -602,6 +602,8 @@ guint8 ltt_facility_eventtype_number(LttFacility *f)
 
 LttEventType *ltt_facility_eventtype_get(LttFacility *f, guint8 i)
 {
+  if(!f->exists) return NULL;
+
   g_assert(i < f->events->len);
   return &g_array_index(f->events, LttEventType, i);
 }
