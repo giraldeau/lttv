@@ -937,6 +937,7 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   LttTracefile *tf;
   GArray *group;
   int i;
+  struct ltt_block_start_header *header;
   
   t = g_new(LttTrace, 1);
   if(!t) goto alloc_error;
@@ -966,13 +967,26 @@ LttTrace *ltt_trace_open(const gchar *pathname)
     goto facilities_error;
   }
 
+  /* Get the trace information for the control/facility 0 tracefile */
+  g_assert(group->len > 0);
+  tf = &g_array_index (group, LttTracefile, 0);
+  header = (struct ltt_block_start_header*)tf->buffer.head;
+  t->arch_type = ltt_get_uint32(LTT_GET_BO(tf), &header->trace.arch_type);
+  t->arch_variant = ltt_get_uint32(LTT_GET_BO(tf), &header->trace.arch_variant);
+  t->arch_size = header->trace.arch_size;
+  t->ltt_major_version = header->trace.major_version;
+  t->ltt_minor_version = header->trace.minor_version;
+  t->flight_recorder = header->trace.flight_recorder;
+  t->has_heartbeat = header->trace.has_heartbeat;
+  t->has_alignment = header->trace.has_alignment;
+  t->has_tsc = header->trace.has_tsc;
+  
+  
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
     if(ltt_process_facility_tracefile(tf))
       goto facilities_error;
   }
-
-  
   
   return t;
 
@@ -1451,25 +1465,30 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   //TODO align
   
   if(tf->trace->has_tsc) {
-    event->time.timestamp = ltt_get_uint32(LTT_GET_BO(tf),
-                                          pos);
-    /* 32 bits -> 64 bits tsc */
-    /* note : still works for seek and non seek cases. */
-    if(event->time.timestamp < (0xFFFFFFFFULL&tf->buffer.tsc)) {
-      tf->buffer.tsc = ((tf->buffer.tsc&0xFFFFFFFF00000000ULL)
-                          + 0x100000000ULL)
-                              | (guint64)event->time.timestamp;
-      event->tsc = tf->buffer.tsc;
+    if(tf->trace->has_heartbeat) {
+      event->time.timestamp = ltt_get_uint32(LTT_GET_BO(tf),
+                                            pos);
+      /* 32 bits -> 64 bits tsc */
+      /* note : still works for seek and non seek cases. */
+      if(event->time.timestamp < (0xFFFFFFFFULL&tf->buffer.tsc)) {
+        tf->buffer.tsc = ((tf->buffer.tsc&0xFFFFFFFF00000000ULL)
+                            + 0x100000000ULL)
+                                | (guint64)event->time.timestamp;
+        event->tsc = tf->buffer.tsc;
+      } else {
+        /* no overflow */
+        tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
+                                | (guint64)event->time.timestamp;
+        event->tsc = tf->buffer.tsc;
+      }
+      pos += sizeof(guint32);
     } else {
-      /* no overflow */
-      tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
-                              | (guint64)event->time.timestamp;
-      event->tsc = tf->buffer.tsc;
+      event->tsc = ltt_get_uint64(LTT_GET_BO(tf), pos);
+      tf->buffer.tsc = event->tsc;
+      pos += sizeof(guint64);
     }
-
+    
     event->event_time = ltt_interpolate_time(tf, event);
-
-    pos += sizeof(guint32);
   } else {
     event->time.delta.tv_sec = 0;
     event->time.delta.tv_nsec = ltt_get_uint32(LTT_GET_BO(tf),

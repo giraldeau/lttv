@@ -86,7 +86,7 @@ typedef guint16 uint16_t;
 typedef guint32 uint32_t;
 typedef guint64 uint64_t;
 
-/* Hardcoded facility load event : this plus an following "name" string */
+/* Hardcoded facility load event : this plus an preceding "name" string */
 struct LttFacilityLoad {
   guint32 checksum;
   guint32 id;
@@ -94,11 +94,11 @@ struct LttFacilityLoad {
   guint32 pointer_size;
   guint32 size_t_size;
   guint32 alignment;
-};
+} LTT_PACKED_STRUCT;
 
 struct LttFacilityUnload {
   guint32 id;
-};
+} LTT_PACKED_STRUCT;
 
 struct LttStateDumpFacilityLoad {
   guint32 checksum;
@@ -107,9 +107,7 @@ struct LttStateDumpFacilityLoad {
   guint32 pointer_size;
   guint32 size_t_size;
   guint32 alignment;
-};
-
-
+} LTT_PACKED_STRUCT;
 
 typedef struct _TimeHeartbeat {
   LttTime       time;       //Time stamp of this block
@@ -121,14 +119,14 @@ struct ltt_event_header_hb {
   unsigned char  facility_id;
   unsigned char event_id;
   uint16_t      event_size;
-} __attribute((aligned(8)));
+} LTT_PACKED_STRUCT;
 
 struct ltt_event_header_nohb {
   uint64_t      timestamp;
   unsigned char  facility_id;
   unsigned char event_id;
   uint16_t      event_size;
-} __attribute((aligned(8)));
+} LTT_PACKED_STRUCT;
 
 struct ltt_trace_header {
   uint32_t        magic_number;
@@ -142,7 +140,7 @@ struct ltt_trace_header {
   uint8_t          has_heartbeat;
   uint8_t          has_alignment;  /* Event header alignment */
 	uint8_t					 has_tsc;
-} __attribute((aligned(8)));
+} LTT_PACKED_STRUCT;
 
 
 struct ltt_block_start_header {
@@ -157,7 +155,7 @@ struct ltt_block_start_header {
   uint32_t                lost_size;  /* Size unused at the end of the buffer */
   uint32_t                buf_size;   /* The size of this sub-buffer */
   struct ltt_trace_header trace;
-} __attribute((aligned(8)));
+} LTT_PACKED_STRUCT;
 
 
 struct _LttType{
@@ -345,11 +343,14 @@ struct _LttTrace{
                                         /* Points to array of fac_id of all the
                                          * facilities that has this name. */
 
+  guint32   arch_type;
+  guint32   arch_variant;
+  guint8    arch_size;
   guint8    ltt_major_version;
   guint8    ltt_minor_version;
   guint8    flight_recorder;
   guint8    has_heartbeat;
- // guint8    alignment;
+  guint8    has_alignment;
 	guint8		has_tsc;
 
   GData     *tracefiles;                    //tracefiles groups
