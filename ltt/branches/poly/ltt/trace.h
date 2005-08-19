@@ -145,7 +145,7 @@ void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src);
 
 void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname);
 
-GData *ltt_trace_get_tracefiles_groups(LttTrace *trace);
+GData **ltt_trace_get_tracefiles_groups(LttTrace *trace);
 
 typedef void (*ForEachTraceFileFunc)(LttTracefile *tf, gpointer func_args);
 
@@ -154,8 +154,10 @@ struct compute_tracefile_group_args {
   gpointer func_args;
 };
 
-void compute_tracefile_group(GArray *group,
-                             struct compute_tracefile_group_args args);
+
+void compute_tracefile_group(GQuark key_id,
+                             GArray *group,
+                             struct compute_tracefile_group_args *args);
 
 LttFacility *ltt_trace_get_facility_by_num(LttTrace *t, guint num);
 

@@ -366,14 +366,14 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
 
   a_event_position = ltt_event_position_new();
 
-  GData *tracefiles_groups;
+  GData **tracefiles_groups;
 
   if(a_dump_tracefiles != NULL) {
     for(i = 0 ; i < lttv_traceset_number(traceset) ; i++) {
       trace = lttv_trace(lttv_traceset_get(traceset, i));
       tracefiles_groups = ltt_trace_get_tracefiles_groups(trace);
 
-      g_datalist_foreach(&tracefiles_groups, 
+      g_datalist_foreach(tracefiles_groups, 
                             (GDataForeachFunc)compute_tracefile_group,
                             compute_tracefile);
       

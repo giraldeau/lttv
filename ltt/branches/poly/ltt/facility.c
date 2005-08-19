@@ -620,6 +620,6 @@ LttEventType *ltt_facility_eventtype_get(LttFacility *f, guint8 i)
 
 LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, GQuark name)
 {
-  LttEventType *et = g_datalist_get_data(f->events_by_name, name);
+  LttEventType *et = g_datalist_get_data(&f->events_by_name, name);
 }
 

@@ -205,7 +205,7 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   //open the file
   tf->name = g_quark_from_string(fileName);
   tf->trace = t;
-  tf->fd = g_open(fileName, O_RDONLY, 0);
+  tf->fd = open(fileName, O_RDONLY);
   if(tf->fd < 0){
     g_warning("Unable to open input data file %s\n", fileName);
     goto end;
@@ -227,11 +227,11 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   /* Multiple of pages aligned head */
   tf->buffer.head = mmap(0, sizeof(struct ltt_block_start_header), PROT_READ, 
       MAP_PRIVATE, tf->fd, 0);
-  if(tf->buffer.head == NULL) {
+  if(tf->buffer.head == MAP_FAILED) {
     perror("Error in allocating memory for buffer of tracefile");
     goto close_file;
   }
-  g_assert(((guint)tf->buffer.head & (8-1)) == 0); // make sure it's aligned.
+  g_assert( ( (guint)tf->buffer.head&(8-1) ) == 0); // make sure it's aligned.
   
   header = (struct ltt_block_start_header*)tf->buffer.head;
   
@@ -262,7 +262,7 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 unmap_file:
   munmap(tf->buffer.head, sizeof(struct ltt_block_start_header));
 close_file:
-  g_close(tf->fd);
+  close(tf->fd);
 end:
   return -1;
 }
@@ -346,7 +346,7 @@ void ltt_tracefile_close(LttTracefile *t)
 {
   if(t->buffer.head != NULL)
     munmap(t->buffer.head, t->buf_size);
-  g_close(t->fd);
+  close(t->fd);
 }
 
 
@@ -537,14 +537,15 @@ int get_tracefile_name_number(const gchar *raw_name,
 }
 
 
-GData *ltt_trace_get_tracefiles_groups(LttTrace *trace)
+GData **ltt_trace_get_tracefiles_groups(LttTrace *trace)
 {
-  return trace->tracefiles;
+  return &trace->tracefiles;
 }
 
 
-void compute_tracefile_group(GArray *group,
-                             struct compute_tracefile_group_args args)
+void compute_tracefile_group(GQuark key_id,
+                             GArray *group,
+                             struct compute_tracefile_group_args *args)
 {
   int i;
   LttTracefile *tf;
@@ -552,7 +553,7 @@ void compute_tracefile_group(GArray *group,
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
     if(tf->cpu_online)
-      args.func(tf, args.func_args);
+      args->func(tf, args->func_args);
   }
 }
 
@@ -589,19 +590,28 @@ gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
  * GData : permits to access them using their tracefile group pathname.
  * i.e. access control/modules tracefile group by index :
  * "control/module".
+ * 
+ * relative path is the path relative to the trace root
+ * root path is the full path
  *
  * A tracefile group is simply an array where all the per cpu tracefiles sits.
  */
 
-static int open_tracefiles(LttTrace *trace, char *root_path, GData *tracefiles)
+static int open_tracefiles(LttTrace *trace, char *root_path,
+    char *relative_path)
 {
 	DIR *dir = opendir(root_path);
 	struct dirent *entry;
 	struct stat stat_buf;
 	int ret;
+  
 	char path[PATH_MAX];
 	int path_len;
 	char *path_ptr;
+
+  int rel_path_len;
+  char rel_path[PATH_MAX];
+  char *rel_path_ptr;
 
 	if(dir == NULL) {
 		perror(root_path);
@@ -614,11 +624,18 @@ static int open_tracefiles(LttTrace *trace, char *root_path, GData *tracefiles)
 	path_len++;
 	path_ptr = path + path_len;
 
+  strncpy(rel_path, relative_path, PATH_MAX-1);
+  rel_path_len = strlen(rel_path);
+  rel_path[rel_path_len] = '/';
+  rel_path_len++;
+  rel_path_ptr = rel_path + rel_path_len;
+  
 	while((entry = readdir(dir)) != NULL) {
 
 		if(entry->d_name[0] == '.') continue;
 		
 		strncpy(path_ptr, entry->d_name, PATH_MAX - path_len);
+		strncpy(rel_path_ptr, entry->d_name, PATH_MAX - rel_path_len);
 		
 		ret = stat(path, &stat_buf);
 		if(ret == -1) {
@@ -631,7 +648,7 @@ static int open_tracefiles(LttTrace *trace, char *root_path, GData *tracefiles)
 		if(S_ISDIR(stat_buf.st_mode)) {
 
 			g_debug("Entering subdirectory...\n");
-			ret = open_tracefiles(trace, path, tracefiles);
+			ret = open_tracefiles(trace, path, rel_path);
 			if(ret < 0) continue;
 		} else if(S_ISREG(stat_buf.st_mode)) {
 			g_debug("Opening file.\n");
@@ -642,16 +659,19 @@ static int open_tracefiles(LttTrace *trace, char *root_path, GData *tracefiles)
       LttTracefile *tf;
       guint len;
       
-      if(get_tracefile_name_number(path, &name, &num))
+      if(get_tracefile_name_number(rel_path, &name, &num))
         continue; /* invalid name */
-
-      group = g_datalist_id_get_data(&tracefiles, name);
+      
+      g_debug("Tracefile name is %s and number is %u", 
+          g_quark_to_string(name), num);
+      
+      group = g_datalist_id_get_data(&trace->tracefiles, name);
       if(group == NULL) {
         /* Elements are automatically cleared when the array is allocated.
          * It makes the cpu_online variable set to 0 : cpu offline, by default.
          */
         group = g_array_sized_new (FALSE, TRUE, sizeof(LttTracefile), 10);
-        g_datalist_id_set_data_full(&tracefiles, name,
+        g_datalist_id_set_data_full(&trace->tracefiles, name,
                                  group, ltt_tracefile_group_destroy);
       }
       /* Add the per cpu tracefile to the named group */
@@ -665,7 +685,7 @@ static int open_tracefiles(LttTrace *trace, char *root_path, GData *tracefiles)
         g_array_set_size(group, old_len);
 
         if(!ltt_tracefile_group_has_cpu_online(group))
-          g_datalist_id_remove_data(&tracefiles, name);
+          g_datalist_id_remove_data(&trace->tracefiles, name);
 
         continue; /* error opening the tracefile : bad magic number ? */
       }
@@ -926,7 +946,7 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 
   /* Open all the tracefiles */
   g_datalist_init(&t->tracefiles);
-  if(open_tracefiles(t, abs_path, t->tracefiles))
+  if(open_tracefiles(t, abs_path, ""))
     goto open_error;
   
   /* Prepare the facilities containers : array and mapping */
@@ -942,6 +962,7 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   group = g_datalist_id_get_data(&t->tracefiles, LTT_TRACEFILE_NAME_FACILITIES);
   if(group == NULL) {
     g_error("Trace %s has no facility tracefile", abs_path);
+    g_assert(0);
     goto facilities_error;
   }
 
@@ -1499,14 +1520,15 @@ static gint map_block(LttTracefile * tf, guint block_num)
     munmap(tf->buffer.head, tf->buf_size);
   
   /* Multiple of pages aligned head */
-  tf->buffer.head = mmap(0, tf->block_size, PROT_READ, tf->fd, MAP_PRIVATE,
+  tf->buffer.head = mmap(0, tf->block_size, PROT_READ, MAP_PRIVATE, tf->fd,
                             (off_t)tf->block_size * (off_t)block_num);
 
-  if(tf->buffer.head == NULL) {
+  if(tf->buffer.head == MAP_FAILED) {
     perror("Error in allocating memory for buffer of tracefile");
+    g_assert(0);
     goto map_error;
   }
-  g_assert(((guint)tf->buffer.head) & (8-1) == 0); // make sure it's aligned.
+  g_assert( ( (guint)tf->buffer.head&(8-1) ) == 0); // make sure it's aligned.
   
 
   tf->buffer.index = block_num;
@@ -1563,29 +1585,27 @@ void ltt_update_event_size(LttTracefile *tf)
   LttFacility *f = ltt_trace_get_facility_by_num(tf->trace, 
                                           tf->event.facility_id);
 
-  if(unlikely(f == NULL)) {
-    if(likely(tf->event.facility_id == LTT_FACILITY_CORE)) {
-      switch((enum ltt_core_events)tf->event.event_id) {
-    case LTT_EVENT_FACILITY_LOAD:
-      size = sizeof(struct LttFacilityLoad);
-      break;
-    case LTT_EVENT_FACILITY_UNLOAD:
-      size = sizeof(struct LttFacilityUnload);
-      break;
-    case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
-      size = sizeof(struct LttStateDumpFacilityLoad);
-      break;
-    case LTT_EVENT_HEARTBEAT:
-      size = sizeof(TimeHeartbeat);
-      break;
-    default:
-      g_warning("Error in getting event size : tracefile %s, "
-          "unknown event id %hhu in core facility.",
-          g_quark_to_string(tf->name),
-          tf->event.event_id);
-      goto event_id_error;
+  if(likely(tf->event.facility_id == LTT_FACILITY_CORE)) {
+    switch((enum ltt_core_events)tf->event.event_id) {
+  case LTT_EVENT_FACILITY_LOAD:
+    size = sizeof(struct LttFacilityLoad);
+    break;
+  case LTT_EVENT_FACILITY_UNLOAD:
+    size = sizeof(struct LttFacilityUnload);
+    break;
+  case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
+    size = sizeof(struct LttStateDumpFacilityLoad);
+    break;
+  case LTT_EVENT_HEARTBEAT:
+    size = sizeof(TimeHeartbeat);
+    break;
+  default:
+    g_warning("Error in getting event size : tracefile %s, "
+        "unknown event id %hhu in core facility.",
+        g_quark_to_string(tf->name),
+        tf->event.event_id);
+    goto event_id_error;
 
-      }
     }
   } else {
     LttEventType *event_type = 
@@ -2276,6 +2296,6 @@ static void __attribute__((constructor)) init(void)
   LTT_FACILITY_NAME_HEARTBEAT = g_quark_from_string("heartbeat");
   LTT_EVENT_NAME_HEARTBEAT = g_quark_from_string("heartbeat");
   
-  LTT_TRACEFILE_NAME_FACILITIES = g_quark_from_string("control/facilities");
+  LTT_TRACEFILE_NAME_FACILITIES = g_quark_from_string("/control/facilities");
 }
 
