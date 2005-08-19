@@ -23,6 +23,12 @@
 #include <sys/types.h>
 #include <ltt/ltt.h>
 
+
+#ifndef max
+#define max(a,b) ((a)>(b)?(a):(b))
+#endif
+
+
 #define LTT_MAGIC_NUMBER 0x00D6B7ED
 #define LTT_REV_MAGIC_NUMBER 0xEDB7D600
 
@@ -181,7 +187,7 @@ struct _LttEvent{
   /* Begin of LttEventPosition fields */
   LttTracefile  *tracefile;
   unsigned int  block;
-  void          *offset;
+  unsigned int  offset;
 
   /* Timekeeping */
   uint64_t                tsc;       /* Current timestamp counter */
@@ -208,7 +214,7 @@ struct _LttEvent{
 struct _LttEventPosition{
   LttTracefile  *tracefile;
   unsigned int  block;
-  void          *offset;
+  unsigned int  offset;
   
   /* Timekeeping */
   uint64_t                tsc;       /* Current timestamp counter */

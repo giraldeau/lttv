@@ -78,6 +78,9 @@ static gboolean
   a_test7,
   a_test_all;
 
+static GQuark QUARK_BLOCK_START,
+              QUARK_BLOCK_END;
+
 LttEventPosition *a_event_position;
 
 typedef struct _save_state {
@@ -155,16 +158,18 @@ gboolean trace_event(void __UNUSED__ *hook_data, void *call_data)
 {
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
-  guint nb_block, nb_event;
+  guint nb_block, offset;
+
+  guint64 tsc;
 
   LttTracefile *tf;
-
-  ltt_event_position(tfs->parent.e, a_event_position);
-  ltt_event_position_get(a_event_position, &nb_block, &nb_event, &tf);
-  fprintf(stderr,"Event %s %lu.%09lu [%u %u]\n",
-      ltt_eventtype_name(ltt_event_eventtype(tfs->parent.e)),
+  LttEvent *e = ltt_tracefile_get_event(tfs->parent.tf);
+  ltt_event_position(e, a_event_position);
+  ltt_event_position_get(a_event_position, &tf, &nb_block, &offset, &tsc);
+  fprintf(stderr,"Event %s %lu.%09lu [%u %u tsc %llu]\n",
+      g_quark_to_string(ltt_eventtype_name(ltt_event_eventtype(e))),
       tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec,
-      nb_block, nb_event);
+      nb_block, offset, tsc);
   return FALSE;
 }
 
@@ -186,12 +191,15 @@ gboolean save_state_copy_event(void *hook_data, void *call_data)
 
   LttvTraceState *ts = (LttvTraceState *)tfs->parent.t_context;
 
+  LttEvent *e = ltt_tracefile_get_event(tfs->parent.tf);
+
   GString *filename;
 
   FILE *fp;
 
-  if(ts->nb_event == 0 && strcmp(ltt_eventtype_name(
-      ltt_event_eventtype(tfs->parent.e)), "block_start") == 0) {
+  if(ts->nb_event == 0 && 
+      ltt_eventtype_name(ltt_event_eventtype(e)) 
+                            == QUARK_BLOCK_START) {
     if(a_save_sample != NULL) {
       filename = g_string_new("");
       g_string_printf(filename, "%s.copy.%lu.%09lu.xml", a_save_sample, 
@@ -240,39 +248,111 @@ gboolean save_state_event(void *hook_data, void *call_data)
 }
 
 
+
+static void compute_tracefile(LttTracefile *tracefile)
+{
+  GString *filename;
+  guint i, j, nb_equal, nb_block, offset;
+  guint64 tsc;
+  FILE *fp;
+  LttTime time, previous_time;
+  LttEvent *event = ltt_event_new();
+  LttFacility *facility;
+  LttEventType *event_type;
+  int err;
+
+  /* start_count is always initialized in this function _if_ there is always
+   * a block_start before a block_end.
+   */
+  long long unsigned cycle_count, start_count=0, delta_cycle;
+
+
+  filename = g_string_new("");
+  g_string_printf(filename, "%s.%u.%u.trace", a_dump_tracefiles, i, j);
+  fp = fopen(filename->str, "w");
+  if(fp == NULL) g_error("Cannot open %s", filename->str);
+  g_string_free(filename, TRUE);
+  err = ltt_tracefile_seek_time(tracefile, ltt_time_zero);
+  if(err) goto close;
+  
+  previous_time = ltt_time_zero;
+  nb_equal = 0;
+
+  do {
+    LttTracefile *tf_pos;
+    facility = ltt_event_facility(event);
+    event_type = ltt_event_eventtype(event);
+    time = ltt_event_time(event);
+    ltt_event_position(event, a_event_position);
+    ltt_event_position_get(a_event_position, &tf_pos, &nb_block, &offset, &tsc);
+    fprintf(fp,"%s.%s: %llu %lu.%09lu position %u/%u\n", 
+        ltt_facility_name(facility), ltt_eventtype_name(event_type), 
+        tsc, (unsigned long)time.tv_sec, 
+        (unsigned long)time.tv_nsec, 
+        nb_block, offset);
+
+    if(ltt_time_compare(time, previous_time) < 0) {
+      g_warning("Time decreasing trace %d tracefile %d position %u/%u",
+    i, j, nb_block, offset);
+    }
+
+#if 0 //FIXME
+    if(ltt_eventtype_name(event_type) == QUARK_BLOCK_START) {
+      start_count = cycle_count;
+      start_time = time;
+    }
+    else if(ltt_eventtype_name(event_type) == QUARK_BLOCK_END) {
+      delta_cycle = cycle_count - start_count;
+      end_nsec_sec = (long long unsigned)time.tv_sec * (long long unsigned)1000000000;
+      end_nsec_nsec = time.tv_nsec;
+      end_nsec = end_nsec_sec + end_nsec_nsec;
+      start_nsec = (long long unsigned)start_time.tv_sec * (long long unsigned)1000000000 + (long long unsigned)start_time.tv_nsec;
+      delta_nsec = end_nsec - start_nsec;
+      cycle_per_nsec = (double)delta_cycle / (double)delta_nsec;
+      nsec_per_cycle = (double)delta_nsec / (double)delta_cycle;
+      added_nsec = (double)delta_cycle * nsec_per_cycle;
+      interpolated_nsec = start_nsec + added_nsec;
+      added_nsec2 = (double)delta_cycle / cycle_per_nsec;
+      interpolated_nsec2 = start_nsec + added_nsec2;
+
+      fprintf(fp,"Time: start_count %llu, end_count %llu, delta_cycle %llu, start_nsec %llu, end_nsec_sec %llu, end_nsec_nsec %llu, end_nsec %llu, delta_nsec %llu, cycle_per_nsec %.25f, nsec_per_cycle %.25f, added_nsec %llu, added_nsec2 %llu, interpolated_nsec %llu, interpolated_nsec2 %llu\n", start_count, cycle_count, delta_cycle, start_nsec, end_nsec_sec, end_nsec_nsec, end_nsec, delta_nsec, cycle_per_nsec, nsec_per_cycle, added_nsec, added_nsec2, interpolated_nsec, interpolated_nsec2);
+    }
+    else {
+#endif //0
+      if(ltt_time_compare(time, previous_time) == 0) nb_equal++;
+      else if(nb_equal > 0) {
+        g_warning("Consecutive %d events with time %lu.%09lu",
+                   nb_equal + 1, previous_time.tv_sec, previous_time.tv_nsec);
+        nb_equal = 0;
+      }
+      previous_time = time;
+    //}
+  } while((!ltt_tracefile_read(tracefile)));
+
+close:
+  fclose(fp);
+  ltt_event_destroy(event);
+}
+
 static gboolean process_traceset(void __UNUSED__ *hook_data, 
                                  void __UNUSED__ *call_data)
 {
+  GString *filename;
   LttvTracesetStats *tscs;
 
   LttvTracesetState *ts;
 
   LttvTracesetContext *tc;
 
-  GString *filename;
-
   FILE *fp;
 
   double t;
 
-  guint i, j, count, nb_control, nb_tracefile, nb_block, nb_event, nb_equal;
+  //guint count, nb_control, nb_tracefile, nb_block, nb_event;
+  //guint i, j, count, nb_control, nb_tracefile, nb_block, nb_event, nb_equal;
+  guint i, j, count;
 
   LttTrace *trace;
-
-  LttTracefile *tracefile, *tf;
-
-  LttEvent *event = ltt_event_new();
-
-  LttFacility *facility;
-
-  LttEventType *event_type;
-
-  LttTime time, previous_time;
-
-  /* start_count is always initialized in this function _if_ there is always
-   * a block_start before a block_end.
-   */
-  long long unsigned cycle_count, start_count=0, delta_cycle;
 
   long long unsigned start_nsec, end_nsec, delta_nsec, added_nsec, added_nsec2;
 
@@ -282,83 +362,21 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
 
   LttTime start_time;
 
-  LttTime zero_time = ltt_time_zero;
-
   LttTime max_time = { G_MAXULONG, G_MAXULONG };
 
   a_event_position = ltt_event_position_new();
 
+  GData *tracefiles_groups;
+
   if(a_dump_tracefiles != NULL) {
     for(i = 0 ; i < lttv_traceset_number(traceset) ; i++) {
       trace = lttv_trace(lttv_traceset_get(traceset, i));
-      nb_control = ltt_trace_control_tracefile_number(trace);
-      nb_tracefile = nb_control + ltt_trace_per_cpu_tracefile_number(trace);
-      for(j = 0 ; j < nb_tracefile ; j++) {
-        if(j < nb_control) {
-          tracefile = ltt_trace_control_tracefile_get(trace,j);
-        }
-        else {
-          tracefile = ltt_trace_per_cpu_tracefile_get(trace,j - nb_control);
-        }
+      tracefiles_groups = ltt_trace_get_tracefiles_groups(trace);
 
-        filename = g_string_new("");
-        g_string_printf(filename, "%s.%u.%u.trace", a_dump_tracefiles, i, j);
-        fp = fopen(filename->str, "w");
-        if(fp == NULL) g_error("Cannot open %s", filename->str);
-        g_string_free(filename, TRUE);
-        ltt_tracefile_seek_time(tracefile, zero_time);
-        previous_time = zero_time;
-        nb_equal = 0;
-        while((ltt_tracefile_read(tracefile, event)) != NULL) {
-          facility = ltt_event_facility(event);
-          event_type = ltt_event_eventtype(event);
-          time = ltt_event_time(event);
-          cycle_count = ltt_event_cycle_count(event);
-          ltt_event_position(event, a_event_position);
-          ltt_event_position_get(a_event_position, &nb_block, &nb_event, &tf);
-          fprintf(fp,"%s.%s: %llu %lu.%09lu position %u/%u\n", 
-              ltt_facility_name(facility), ltt_eventtype_name(event_type), 
-	      cycle_count, (unsigned long)time.tv_sec, 
-              (unsigned long)time.tv_nsec, 
-              nb_block, nb_event);
-
-          if(ltt_time_compare(time, previous_time) < 0) {
-            g_warning("Time decreasing trace %d tracefile %d position %u/%u",
-		      i, j, nb_block, nb_event);
-          }
-
-          if(strcmp(ltt_eventtype_name(event_type),"block_start") == 0) {
-            start_count = cycle_count;
-            start_time = time;
-          }
-          else if(strcmp(ltt_eventtype_name(event_type),"block_end") == 0) {
-            delta_cycle = cycle_count - start_count;
-            end_nsec_sec = (long long unsigned)time.tv_sec * (long long unsigned)1000000000;
-            end_nsec_nsec = time.tv_nsec;
-            end_nsec = end_nsec_sec + end_nsec_nsec;
-            start_nsec = (long long unsigned)start_time.tv_sec * (long long unsigned)1000000000 + (long long unsigned)start_time.tv_nsec;
-            delta_nsec = end_nsec - start_nsec;
-            cycle_per_nsec = (double)delta_cycle / (double)delta_nsec;
-            nsec_per_cycle = (double)delta_nsec / (double)delta_cycle;
-            added_nsec = (double)delta_cycle * nsec_per_cycle;
-            interpolated_nsec = start_nsec + added_nsec;
-            added_nsec2 = (double)delta_cycle / cycle_per_nsec;
-            interpolated_nsec2 = start_nsec + added_nsec2;
-
-            fprintf(fp,"Time: start_count %llu, end_count %llu, delta_cycle %llu, start_nsec %llu, end_nsec_sec %llu, end_nsec_nsec %llu, end_nsec %llu, delta_nsec %llu, cycle_per_nsec %.25f, nsec_per_cycle %.25f, added_nsec %llu, added_nsec2 %llu, interpolated_nsec %llu, interpolated_nsec2 %llu\n", start_count, cycle_count, delta_cycle, start_nsec, end_nsec_sec, end_nsec_nsec, end_nsec, delta_nsec, cycle_per_nsec, nsec_per_cycle, added_nsec, added_nsec2, interpolated_nsec, interpolated_nsec2);
-          }
-          else {
-            if(ltt_time_compare(time, previous_time) == 0) nb_equal++;
-	    else if(nb_equal > 0) {
-              g_warning("Consecutive %d events with time %lu.%09lu",
-	          nb_equal + 1, previous_time.tv_sec, previous_time.tv_nsec);
-              nb_equal = 0;
-	    }
-            previous_time = time;
-          }
-        }
-        fclose(fp);
-      }
+      g_datalist_foreach(&tracefiles_groups, 
+                            (GDataForeachFunc)compute_tracefile_group,
+                            compute_tracefile);
+      
     }
   }
 
@@ -375,7 +393,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
   if(a_test1 || a_test_all) {
     count = 0;
     lttv_hooks_add(event_hook, count_event, &count, LTTV_PRIO_DEFAULT);
-    t = run_one_test(ts, zero_time, max_time);
+    t = run_one_test(ts, ltt_time_zero, max_time);
     lttv_hooks_remove_data(event_hook, count_event, &count);
     g_warning(
         "Processing trace while counting events (%u events in %g seconds)",
@@ -386,7 +404,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
 
   if(a_test2 || a_test_all) {
     lttv_state_add_event_hooks(ts);
-    t = run_one_test(ts, zero_time, max_time);
+    t = run_one_test(ts, ltt_time_zero, max_time);
     lttv_state_remove_event_hooks(ts);
     g_warning("Processing trace while updating state (%g seconds)", t);
   }
@@ -410,7 +428,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
       lttv_state_add_event_hooks(ts);
       lttv_hooks_add(event_hook, save_state_event, &save_state,
                         LTTV_PRIO_DEFAULT);
-      t = run_one_test(ts, zero_time, max_time);
+      t = run_one_test(ts, ltt_time_zero, max_time);
       lttv_state_remove_event_hooks(ts);
       lttv_hooks_remove_data(event_hook, save_state_event, &save_state);
       g_warning("Processing while updating/writing state (%g seconds)", t);
@@ -426,7 +444,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     }
 
     lttv_stats_add_event_hooks(tscs);
-    t = run_one_test(ts, zero_time, max_time);
+    t = run_one_test(ts, ltt_time_zero, max_time);
     lttv_stats_remove_event_hooks(tscs);
     g_warning("Processing trace while counting stats (%g seconds)", t);
 
@@ -461,7 +479,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
 
     lttv_state_add_event_hooks(ts);
     lttv_stats_add_event_hooks(tscs);
-    t = run_one_test(ts, zero_time, max_time);
+    t = run_one_test(ts, ltt_time_zero, max_time);
     lttv_state_remove_event_hooks(ts);
     lttv_stats_remove_event_hooks(tscs);
     g_warning(
@@ -497,7 +515,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     if(a_save_state_copy)
         lttv_hooks_add(event_hook, save_state_copy_event, &save_state,
                           LTTV_PRIO_DEFAULT);
-    t = run_one_test(ts, zero_time, max_time);
+    t = run_one_test(ts, ltt_time_zero, max_time);
     lttv_state_remove_event_hooks(ts);
     lttv_state_save_remove_event_hooks(ts);
     if(a_save_state_copy)
@@ -549,7 +567,6 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
   g_free(a_event_position);
   lttv_context_fini(tc);
   g_object_unref(tscs);
-  ltt_event_destroy(event);
 
   if(lttv_profile_memory) {
     g_message("Memory summary at the end of batchtest");
@@ -569,6 +586,11 @@ static void init()
 
   g_info("Init batchtest.c");
 
+  /* Init GQuarks */
+  QUARK_BLOCK_START = g_quark_from_string("block_start");
+  QUARK_BLOCK_END = g_quark_from_string("block_end");
+
+  
   lttv_option_add("trace", 't', 
       "add a trace to the trace set to analyse", 
       "pathname of the directory containing the trace", 

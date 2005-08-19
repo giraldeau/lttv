@@ -55,6 +55,9 @@ extern char **lttv_argv;
 */
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+
+#ifndef g_debug
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+#endif
 
 #endif // LTTV_H

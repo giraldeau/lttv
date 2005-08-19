@@ -19,7 +19,6 @@
 #ifndef EVENT_H
 #define EVENT_H
 
-#include <glib.h>
 #include <ltt/ltt.h>
 
 LttEvent *ltt_event_new();
@@ -97,7 +96,7 @@ void *ltt_event_data(LttEvent *e);
    instance. This function returns the number of elements for an array or 
    sequence field in an event. */
 
-guint64 ltt_event_field_element_number(LttEvent *e, LttField *f);
+unsigned ltt_event_field_element_number(LttEvent *e, LttField *f);
 
 
 /* Set the currently selected element for a sequence or array field. */

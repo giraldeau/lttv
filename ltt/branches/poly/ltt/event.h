@@ -21,6 +21,7 @@
 
 #include <glib.h>
 #include <ltt/ltt.h>
+#include <sys/types.h>
 
 LttEvent *ltt_event_new();
 
@@ -34,14 +35,15 @@ void ltt_event_destroy(LttEvent *event);
 /* Obtain the trace unique integer id associated with the type of 
    this event */
 
-unsigned ltt_event_eventtype_id(LttEvent *e);
+unsigned ltt_event_eventtype_id(const LttEvent *e);
 
+unsigned ltt_event_facility_id(const LttEvent *e);
 
 /* Facility and type for the event */
 
-LttFacility *ltt_event_facility(LttEvent *e);
+LttFacility *ltt_event_facility(const LttEvent *e);
 
-LttEventType *ltt_event_eventtype(LttEvent *e);
+LttEventType *ltt_event_eventtype(const LttEvent *e);
 
 
 /* Root field for the event */
@@ -51,9 +53,9 @@ LttField *ltt_event_field(LttEvent *e);
 
 /* Time and cycle count for the event */
 
-LttTime ltt_event_time(LttEvent *e);
+LttTime ltt_event_time(const LttEvent *e);
 
-LttCycleCount ltt_event_cycle_count(LttEvent *e);
+LttCycleCount ltt_event_cycle_count(const LttEvent *e);
 
 
 /* Obtain the position of the event within the tracefile. This
@@ -67,17 +69,11 @@ void ltt_event_position(LttEvent *e, LttEventPosition *ep);
 
 LttEventPosition * ltt_event_position_new();
 
-void ltt_event_position_get(LttEventPosition *ep,
-    unsigned *block_number, unsigned *index_in_block, LttTracefile ** tf);
-
-void ltt_event_position_set(LttEventPosition *ep,
-    unsigned block_number, unsigned index_in_block);
+void ltt_event_position_get(LttEventPosition *ep, LttTracefile **tf,
+        guint *block, guint *offset, guint64 *tsc);
 
 gint ltt_event_position_compare(const LttEventPosition *ep1,
                                 const LttEventPosition *ep2);
-
-gint ltt_event_event_position_compare(const LttEvent *event,
-                                      const LttEventPosition *ep);
 
 void ltt_event_position_copy(LttEventPosition *dest,
                              const LttEventPosition *src);
@@ -132,5 +128,12 @@ double ltt_event_get_double(LttEvent *e, LttField *f);
    the same tracefile. */
 
 gchar *ltt_event_get_string(LttEvent *e, LttField *f);
+
+size_t get_field_type_size(LttTracefile *tf,
+    LttEventType *event_type,
+    off_t offset_root, off_t offset_parent,
+    LttField *field, void *data);
+
+
 
 #endif // EVENT_H

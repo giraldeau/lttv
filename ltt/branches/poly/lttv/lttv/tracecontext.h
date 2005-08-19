@@ -135,7 +135,8 @@ struct _LttvTraceContext {
   guint index;                /* in ts_context->traces */
   LttTrace *t;
   LttvTrace *vt;
-  LttvTracefileContext **tracefiles;
+  //LttvTracefileContext **tracefiles;
+  GArray *tracefiles;
   LttvAttribute *a;
   LttvAttribute *t_a;
 };
@@ -157,10 +158,10 @@ struct _LttvTracefileContext {
   GObject parent;
 
   LttvTraceContext *t_context;
-  gboolean control;
+ // gboolean control;
   guint index;                /* in ts_context->tracefiles */
   LttTracefile *tf;
-  LttEvent *e;
+ // LttEvent *e;
   LttvHooks *event;
   LttvHooksById *event_by_id;
   LttTime timestamp;
@@ -265,14 +266,32 @@ void lttv_tracefile_context_add_hooks_by_id(LttvTracefileContext *self,
 void lttv_tracefile_context_remove_hooks_by_id(LttvTracefileContext *self,
 					       unsigned i);
 
+/* A LttvTraceHook has two arrays of LttvTraceHookByFacility,
+ * indexed by facility ID and a simple array used to walk all the hooks */
 typedef struct _LttvTraceHook {
+  GArray *fac_index;
+  GArray *fac_list;
+} LttvTraceHook;
+
+typedef struct _LttvTraceHookByFacility {
   LttvHook h;
   guint id;
   LttField *f1;
   LttField *f2;
   LttField *f3;
-} LttvTraceHook;
+} LttvTraceHookByFacility;
 
+
+/* Get the first facility corresponding to the name. As the types must be
+ * compatible, it is relevant to use the field name and sizes of the first
+ * facility to create data structures and assume the data will be compatible
+ * thorough the trace */
+LttvTraceHookByFacility *lttv_trace_hook_get_first(LttvTraceHook *th);
+
+LttvTraceHookByFacility *lttv_trace_hook_get_fac(
+    LttvTraceHook *th, guint facility_id);
+
+void lttv_trace_hook_destroy(LttvTraceHook *th);
 
 /* Search in the trace for the id of the named event type within the named
    facility. Then, find the three (if non null) named fields. All that
@@ -281,8 +300,8 @@ typedef struct _LttvTraceHook {
    registering a hook using this structure as event data;
    it already contains the (up to three) needed fields handles. */
  
-void lttv_trace_find_hook(LttTrace *t, char *facility, char *event_type,
-    char *field1, char *field2, char *field3, LttvHook h, LttvTraceHook *th);
+gint lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event_type,
+    GQuark field1, GQuark field2, GQuark field3, LttvHook h, LttvTraceHook *th);
 
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);

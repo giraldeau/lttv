@@ -51,6 +51,43 @@
 /* Priority of state hooks */
 #define LTTV_PRIO_STATE 25
 
+#define LTTV_STATE_SAVE_INTERVAL 50000
+
+/* Facilities Quarks */
+
+extern GQuark
+    LTT_FACILITY_KERNEL,
+    LTT_FACILITY_PROCESS;
+
+/* Events Quarks */
+
+extern GQuark 
+    LTT_EVENT_SYSCALL_ENTRY,
+    LTT_EVENT_SYSCALL_EXIT,
+    LTT_EVENT_TRAP_ENTRY,
+    LTT_EVENT_TRAP_EXIT,
+    LTT_EVENT_IRQ_ENTRY,
+    LTT_EVENT_IRQ_EXIT,
+    LTT_EVENT_SCHEDCHANGE,
+    LTT_EVENT_FORK,
+    LTT_EVENT_EXIT,
+    LTT_EVENT_FREE;
+
+/* Fields Quarks */
+
+extern GQuark 
+    LTT_FIELD_SYSCALL_ID,
+    LTT_FIELD_TRAP_ID,
+    LTT_FIELD_IRQ_ID,
+    LTT_FIELD_OUT,
+    LTT_FIELD_IN,
+    LTT_FIELD_OUT_STATE,
+    LTT_FIELD_PARENT_PID,
+    LTT_FIELD_CHILD_PID,
+    LTT_FIELD_PID;
+
+extern GQuark LTT_EVENT_SYSCALL_ENTRY;
+
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
 
@@ -238,7 +275,7 @@ struct _LttvTracefileState {
 
   LttvProcessState *process;
   GQuark cpu_name;
-  guint saved_position;
+//  guint saved_position;
 };
 
 struct _LttvTracefileStateClass {

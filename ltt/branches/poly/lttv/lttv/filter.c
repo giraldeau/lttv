@@ -1726,16 +1726,14 @@ lttv_filter_tree_parse_branch(
         case LTTV_FILTER_TRACE_NAME:
             if(trace == NULL) return TRUE;
             else {
-                char* trace_name = ltt_trace_name(trace);
-                GQuark quark = g_quark_from_string(trace_name);
+                GQuark quark = ltt_trace_name(trace);
                 return se->op((gpointer)&quark,v);
             }
             break;
         case LTTV_FILTER_TRACEFILE_NAME:
             if(tracefile == NULL) return TRUE;
             else {
-                char* tracefile_name = ltt_tracefile_name(tracefile);
-                GQuark quark = g_quark_from_string(tracefile_name);
+                GQuark quark = ltt_tracefile_name(tracefile);
                 return se->op((gpointer)&quark,v);
             }
             break;
@@ -1794,8 +1792,7 @@ lttv_filter_tree_parse_branch(
             else {
               LttEventType* et;
               et = ltt_event_eventtype(event);
-              char* event_name = ltt_eventtype_name(et);
-              GQuark quark = g_quark_from_string(event_name);
+              GQuark quark = ltt_eventtype_name(et);
               return se->op((gpointer)&quark,v);
             }
             break;

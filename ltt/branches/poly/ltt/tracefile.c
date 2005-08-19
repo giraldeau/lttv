@@ -79,7 +79,7 @@ static inline LttTime getEventTime(LttTracefile * tf);
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
 void set_fields_offsets(LttTracefile *tf, LttEventType *event_type);
-size_t get_fields_offsets(LttTracefile *tf, LttEventType *event_type, void *data);
+//size_t get_fields_offsets(LttTracefile *tf, LttEventType *event_type, void *data);
 
 /* get the size of the field type according to 
  * The facility size information. */
@@ -89,13 +89,6 @@ static inline void preset_field_type_size(LttTracefile *tf,
     enum field_status *fixed_root, enum field_status *fixed_parent,
     LttField *field);
 
-
-static inline size_t get_field_type_size(LttTracefile *tf,
-    LttEventType *event_type,
-    off_t offset_root, off_t offset_parent,
-    LttField *field, void *data);
-
-
 /* map a fixed size or a block information from the file (fd) */
 static gint map_block(LttTracefile * tf, guint block_num);
 
@@ -104,6 +97,8 @@ static double calc_nsecs_per_cycle(LttTracefile * t);
 
 /* go to the next event */
 static int ltt_seek_next_event(LttTracefile *tf);
+
+void ltt_update_event_size(LttTracefile *tf);
 
 #if 0
 /* Functions to parse system.xml file (using glib xml parser) */
@@ -252,7 +247,7 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   tf->block_size = header->buf_size;
   tf->num_blocks = tf->file_size / tf->block_size;
 
-  vfree(tf->buffer.head);
+  munmap(tf->buffer.head, sizeof(struct ltt_block_start_header));
   tf->buffer.head = NULL;
 
   //read the first block
@@ -829,7 +824,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->id = ltt_get_uint32(LTT_GET_BO(tf), &fac_load_data->id);
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->pointer_size);
-          fac->size_t_size = ltt_get_uin32(LTT_GET_BO(tf),
+          fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->size_t_size);
           fac->alignment = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->alignment);
@@ -866,10 +861,10 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->name = g_quark_from_string(fac_name);
           fac->checksum = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->checksum);
-          fac->id = ltt_get_uint8(LTT_GET_BO(tf), &fac_load_data->id);
+          fac->id = fac_load_data->id;
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->pointer_size);
-          fac->size_t_size = ltt_get_uin32(LTT_GET_BO(tf),
+          fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->size_t_size);
           fac->alignment = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->alignment);
@@ -1323,6 +1318,15 @@ LttTime ltt_interpolate_time(LttTracefile *tf, LttEvent *event)
   return time;
 }
 
+
+/* Get the current event of the tracefile : valid until the next read */
+LttEvent *ltt_tracefile_get_event(LttTracefile *tf)
+{
+  return &tf->event;
+}
+
+
+
 /*****************************************************************************
  *Function name
  *    ltt_tracefile_read : Read the next event in the tracefile
@@ -1419,7 +1423,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   LttEvent *event;
  
   event = &tf->event;
-  pos = event->offset;
+  pos = tf->buffer.head + event->offset;
 
   /* Read event header */
   
@@ -1457,19 +1461,17 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
     pos += sizeof(guint32);
   }
 
-  event->facility_id = ltt_get_uint8(LTT_GET_BO(tf),
-													pos);
+  event->facility_id = *(guint8*)pos;
   pos += sizeof(guint8);
 
-  event->event_id = ltt_get_uint8(LTT_GET_BO(tf),
-													pos);
+  event->event_id = *(guint8*)pos;
   pos += sizeof(guint8);
 
   event->data = pos;
 
   /* get the data size and update the event fields with the current
    * information */
-  event->data_size = ltt_update_event_size(tf);
+  ltt_update_event_size(tf);
 
   return 0;
 }
@@ -1542,7 +1544,7 @@ static gint map_block(LttTracefile * tf, guint block_num)
    * it means that the event read must get the first event. */
   tf->event.tracefile = tf;
   tf->event.block = block_num;
-  tf->event.offset = tf->buffer.head;
+  tf->event.offset = 0;
   
   return 0;
 
@@ -1588,12 +1590,16 @@ void ltt_update_event_size(LttTracefile *tf)
   } else {
     LttEventType *event_type = 
       ltt_facility_eventtype_get(f, tf->event.event_id);
-    size = get_fields_offsets(tf, event_type, tf->event.data);
+    size = get_field_type_size(tf, event_type,
+        0, 0, event_type->root_field, tf->event.data);
   }
   
   tf->event.data_size = size;
+  
+  return;
+
 event_id_error:
-  return -1;
+  tf->event.data_size = 0;
 }
 
 
@@ -1615,13 +1621,13 @@ static int ltt_seek_next_event(LttTracefile *tf)
   ssize_t event_size;
   
   /* seek over the buffer header if we are at the buffer start */
-  if(tf->event.offset == tf->buffer.head) {
+  if(tf->event.offset == 0) {
     tf->event.offset += sizeof(struct ltt_block_start_header);
     goto found;
   }
 
   
-  if(tf->event.offset == tf->buffer.head + tf->buffer.lost_size) {
+  if(tf->event.offset == tf->buffer.lost_size) {
     ret = ERANGE;
     goto found;
   }
@@ -1632,7 +1638,7 @@ static int ltt_seek_next_event(LttTracefile *tf)
 
   pos += (size_t)tf->event.data_size;
   
-  tf->event.offset = pos;
+  tf->event.offset = pos - tf->buffer.head;
 
 found:
   return ret;
@@ -1855,136 +1861,6 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
       break;
   }
 
-}
-
-
-/*****************************************************************************
- *Function name
- *    get_field_type_size : set the fixed and dynamic sizes of the field type
- *    from the data read.
- *Input params 
- *    tf              : tracefile
- *    event_type      : event type
- *    offset_root     : offset from the root
- *    offset_parent   : offset from the parent
- *    field           : field
- *    data            : a pointer to the event data.
- *Returns the field type size.
- ****************************************************************************/
-size_t get_field_type_size(LttTracefile *tf, LttEventType *event_type,
-    off_t offset_root, off_t offset_parent,
-    LttField *field, void *data)
-{
-  size_t size = 0;
-  guint i;
-  LttType *type;
-  
-  g_assert(field->fixed_root != FIELD_UNKNOWN);
-  g_assert(field->fixed_parent != FIELD_UNKNOWN);
-  g_assert(field->fixed_size != FIELD_UNKNOWN);
-
-  field->offset_root = offset_root;
-  field->offset_parent = offset_parent;
-  
-  type = field->field_type;
-
-  switch(type->type_class) {
-    case LTT_INT:
-    case LTT_UINT:
-    case LTT_FLOAT:
-    case LTT_ENUM:
-    case LTT_POINTER:
-    case LTT_LONG:
-    case LTT_ULONG:
-    case LTT_SIZE_T:
-    case LTT_SSIZE_T:
-    case LTT_OFF_T:
-      g_assert(field->fixed_size == FIELD_FIXED);
-      size = field->field_size;
-      break;
-    case LTT_SEQUENCE:
-      {
-        gint seqnum = ltt_get_uint(LTT_GET_BO(tf),
-                        field->sequ_number_size,
-                        data + offset_root);
-
-        if(field->child[0]->fixed_size == FIELD_FIXED) {
-          size = field->sequ_number_size + 
-            (seqnum * get_field_type_size(tf, event_type,
-                                          offset_root, offset_parent,
-                                          field->child[0], data));
-        } else {
-          size += field->sequ_number_size;
-          for(i=0;i<seqnum;i++) {
-            size_t child_size;
-            child_size = get_field_type_size(tf, event_type,
-                                    offset_root, offset_parent,
-                                    field->child[0], data);
-            offset_root += child_size;
-            offset_parent += child_size;
-            size += child_size;
-          }
-        }
-        field->field_size = size;
-      }
-      break;
-    case LTT_STRING:
-      size = strlen((char*)(data+offset_root)) + 1;// length + \0
-      field->field_size = size;
-      break;
-    case LTT_ARRAY:
-      if(field->fixed_size == FIELD_FIXED)
-        size = field->field_size;
-      else {
-        for(i=0;i<field->field_type->element_number;i++) {
-          size_t child_size;
-          child_size = get_field_type_size(tf, event_type,
-                                  offset_root, offset_parent,
-                                  field->child[0], data);
-          offset_root += child_size;
-          offset_parent += child_size;
-          size += child_size;
-        }
-        field->field_size = size;
-      }
-      break;
-    case LTT_STRUCT:
-      if(field->fixed_size == FIELD_FIXED)
-        size = field->field_size;
-      else {
-        size_t current_root_offset = offset_root;
-        size_t current_offset = 0;
-        size_t child_size = 0;
-        for(i=0;i<type->element_number;i++) {
-          child_size = get_field_type_size(tf,
-                     event_type, current_root_offset, current_offset, 
-                     field->child[i], data);
-          current_offset += child_size;
-          current_root_offset += child_size;
-          
-        }
-        size = current_offset;
-        field->field_size = size;
-      }
-      break;
-    case LTT_UNION:
-      if(field->fixed_size == FIELD_FIXED)
-        size = field->field_size;
-      else {
-        size_t current_root_offset = field->offset_root;
-        size_t current_offset = 0;
-        for(i=0;i<type->element_number;i++) {
-          size = get_field_type_size(tf, event_type,
-                 current_root_offset, current_offset, 
-                 field->child[i], data);
-          size = max(size, field->child[i]->field_size);
-        }
-        field->field_size = size;
-      }
-      break;
-  }
-
-  return size;
 }
 
 
@@ -2290,7 +2166,7 @@ end_getFieldtypeSize:
 
 /*****************************************************************************
  *Function name
- *    get_int    : get an integer number
+ *    ltt_get_int    : get an integer number
  *Input params 
  *    reverse_byte_order: must we reverse the byte order ?
  *    size            : the size of the integer
@@ -2299,7 +2175,7 @@ end_getFieldtypeSize:
  *    gint64          : a 64 bits integer
  ****************************************************************************/
 
-gint64 get_int(gboolean reverse_byte_order, gint size, void *data)
+gint64 ltt_get_int(gboolean reverse_byte_order, gint size, void *data)
 {
   gint64 val;
 
@@ -2318,7 +2194,7 @@ gint64 get_int(gboolean reverse_byte_order, gint size, void *data)
 
 /*****************************************************************************
  *Function name
- *    get_uint    : get an unsigned integer number
+ *    ltt_get_uint    : get an unsigned integer number
  *Input params 
  *    reverse_byte_order: must we reverse the byte order ?
  *    size            : the size of the integer
@@ -2327,7 +2203,7 @@ gint64 get_int(gboolean reverse_byte_order, gint size, void *data)
  *    guint64         : a 64 bits unsigned integer
  ****************************************************************************/
 
-guint64 get_uint(gboolean reverse_byte_order, gint size, void *data)
+guint64 ltt_get_uint(gboolean reverse_byte_order, gint size, void *data)
 {
   guint64 val;
 

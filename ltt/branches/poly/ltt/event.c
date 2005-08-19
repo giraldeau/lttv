@@ -35,7 +35,6 @@
 #include <ltt/trace.h>
 #include <ltt/ltt-types.h>
 
-
 LttEvent *ltt_event_new()
 {
   return g_new(LttEvent, 1);
@@ -188,7 +187,7 @@ int ltt_event_refresh_fields(int offsetRoot,int offsetParent,
  *    unsigned              : event type id
  ****************************************************************************/
 
-unsigned ltt_event_eventtype_id(LttEvent *e)
+unsigned ltt_event_eventtype_id(const LttEvent *e)
 {
   return (unsigned) e->event_id;
 }
@@ -202,11 +201,25 @@ unsigned ltt_event_eventtype_id(LttEvent *e)
  *    LttFacility *     : the facility of the event
  ****************************************************************************/
 
-LttFacility *ltt_event_facility(LttEvent *e)
+LttFacility *ltt_event_facility(const LttEvent *e)
 {
   LttTrace * trace = e->tracefile->trace;
   unsigned id = e->event_id;
   return ltt_trace_facility_by_id(trace,id);
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_event_facility_id : get the facility id of the event
+ *Input params
+ *    e                  : an instance of an event type   
+ *Return value
+ *    unsigned          : the facility of the event
+ ****************************************************************************/
+
+unsigned ltt_event_facility_id(const LttEvent *e)
+{
+  return e->facility_id;
 }
 
 /*****************************************************************************
@@ -218,7 +231,7 @@ LttFacility *ltt_event_facility(LttEvent *e)
  *    LttEventType *     : the event type of the event
  ****************************************************************************/
 
-LttEventType *ltt_event_eventtype(LttEvent *e)
+LttEventType *ltt_event_eventtype(const LttEvent *e)
 {
   LttFacility* facility = ltt_event_facility(e);
   if(!facility) return NULL;
@@ -257,7 +270,7 @@ LttField *ltt_event_field(LttEvent *e)
  *    LttTime       : the time of the event
  ****************************************************************************/
 
-LttTime ltt_event_time(LttEvent *e)
+LttTime ltt_event_time(const LttEvent *e)
 {
   return e->event_time;
 }
@@ -271,10 +284,33 @@ LttTime ltt_event_time(LttEvent *e)
  *    LttCycleCount  : the cycle count of the event
  ****************************************************************************/
 
-LttCycleCount ltt_event_cycle_count(LttEvent *e)
+LttCycleCount ltt_event_cycle_count(const LttEvent *e)
 {
   return e->tsc;
 }
+
+
+
+/*****************************************************************************
+ *Function name
+ *    ltt_event_position_get : get the event position data
+ *Input params
+ *    e                  : an instance of an event type   
+ *    ep                 : a pointer to event's position structure
+ *    tf                 : tracefile pointer
+ *    block              : current block
+ *    offset             : current offset
+ *    tsc                : current tsc
+ ****************************************************************************/
+void ltt_event_position_get(LttEventPosition *ep, LttTracefile **tf,
+        guint *block, guint *offset, guint64 *tsc)
+{
+  *tf = ep->tracefile;
+  *block = ep->block;
+  *offset = ep->offset;
+  *tsc = ep->tsc;
+}
+
 
 /*****************************************************************************
  *Function name
@@ -403,7 +439,7 @@ guint64 ltt_event_field_element_number(LttEvent *e, LttField *f)
   
   if(f->field_type->type_class == LTT_ARRAY)
     return f->field_type->element_number;
-  return get_unsigned(LTT_GET_BO(e->tracefile), f->sequ_number_size,
+  return ltt_get_uint(LTT_GET_BO(e->tracefile), f->sequ_number_size,
       e + f->offset_root);
 }
 
@@ -603,3 +639,135 @@ char *ltt_event_get_string(LttEvent *e, LttField *f)
 
   return (gchar*)g_strdup((gchar*)(e->data + f->offset_root));
 }
+
+
+/*****************************************************************************
+ *Function name
+ *    get_field_type_size : set the fixed and dynamic sizes of the field type
+ *    from the data read.
+ *Input params 
+ *    tf              : tracefile
+ *    event_type      : event type
+ *    offset_root     : offset from the root
+ *    offset_parent   : offset from the parent
+ *    field           : field
+ *    data            : a pointer to the event data.
+ *Returns the field type size.
+ ****************************************************************************/
+size_t get_field_type_size(LttTracefile *tf, LttEventType *event_type,
+    off_t offset_root, off_t offset_parent,
+    LttField *field, void *data)
+{
+  size_t size = 0;
+  guint i;
+  LttType *type;
+  
+  g_assert(field->fixed_root != FIELD_UNKNOWN);
+  g_assert(field->fixed_parent != FIELD_UNKNOWN);
+  g_assert(field->fixed_size != FIELD_UNKNOWN);
+
+  field->offset_root = offset_root;
+  field->offset_parent = offset_parent;
+  
+  type = field->field_type;
+
+  switch(type->type_class) {
+    case LTT_INT:
+    case LTT_UINT:
+    case LTT_FLOAT:
+    case LTT_ENUM:
+    case LTT_POINTER:
+    case LTT_LONG:
+    case LTT_ULONG:
+    case LTT_SIZE_T:
+    case LTT_SSIZE_T:
+    case LTT_OFF_T:
+      g_assert(field->fixed_size == FIELD_FIXED);
+      size = field->field_size;
+      break;
+    case LTT_SEQUENCE:
+      {
+        gint seqnum = ltt_get_uint(LTT_GET_BO(tf),
+                        field->sequ_number_size,
+                        data + offset_root);
+
+        if(field->child[0]->fixed_size == FIELD_FIXED) {
+          size = field->sequ_number_size + 
+            (seqnum * get_field_type_size(tf, event_type,
+                                          offset_root, offset_parent,
+                                          field->child[0], data));
+        } else {
+          size += field->sequ_number_size;
+          for(i=0;i<seqnum;i++) {
+            size_t child_size;
+            child_size = get_field_type_size(tf, event_type,
+                                    offset_root, offset_parent,
+                                    field->child[0], data);
+            offset_root += child_size;
+            offset_parent += child_size;
+            size += child_size;
+          }
+        }
+        field->field_size = size;
+      }
+      break;
+    case LTT_STRING:
+      size = strlen((char*)(data+offset_root)) + 1;// length + \0
+      field->field_size = size;
+      break;
+    case LTT_ARRAY:
+      if(field->fixed_size == FIELD_FIXED)
+        size = field->field_size;
+      else {
+        for(i=0;i<field->field_type->element_number;i++) {
+          size_t child_size;
+          child_size = get_field_type_size(tf, event_type,
+                                  offset_root, offset_parent,
+                                  field->child[0], data);
+          offset_root += child_size;
+          offset_parent += child_size;
+          size += child_size;
+        }
+        field->field_size = size;
+      }
+      break;
+    case LTT_STRUCT:
+      if(field->fixed_size == FIELD_FIXED)
+        size = field->field_size;
+      else {
+        size_t current_root_offset = offset_root;
+        size_t current_offset = 0;
+        size_t child_size = 0;
+        for(i=0;i<type->element_number;i++) {
+          child_size = get_field_type_size(tf,
+                     event_type, current_root_offset, current_offset, 
+                     field->child[i], data);
+          current_offset += child_size;
+          current_root_offset += child_size;
+          
+        }
+        size = current_offset;
+        field->field_size = size;
+      }
+      break;
+    case LTT_UNION:
+      if(field->fixed_size == FIELD_FIXED)
+        size = field->field_size;
+      else {
+        size_t current_root_offset = field->offset_root;
+        size_t current_offset = 0;
+        for(i=0;i<type->element_number;i++) {
+          size = get_field_type_size(tf, event_type,
+                 current_root_offset, current_offset, 
+                 field->child[i], data);
+          size = max(size, field->child[i]->field_size);
+        }
+        field->field_size = size;
+      }
+      break;
+  }
+
+  return size;
+}
+
+

@@ -21,10 +21,6 @@
 
 #include <ltt/ltt.h>
 
-
-extern GQuark LTT_FACILITY_NAME_HEARTBEAT,
-              LTT_EVENT_NAME_HEARTBEAT;
-
 /* A trace is specified as a pathname to the directory containing all the
    associated data (control tracefiles, per cpu tracefiles, event 
    descriptions...).
@@ -124,21 +120,16 @@ unsigned ltt_tracefile_block_number(LttTracefile *tf);
 
 /* Seek to the first event of the trace with time larger or equal to time */
 
-int ltt_tracefile_seek_time(LttTracefile *t, LttTime time);
+void ltt_tracefile_seek_time(LttTracefile *t, LttTime time);
 
 /* Seek to the first event with position equal or larger to ep */
 
-int ltt_tracefile_seek_position(LttTracefile *t,
+void ltt_tracefile_seek_position(LttTracefile *t,
     const LttEventPosition *ep);
 
 /* Read the next event */
 
-int ltt_tracefile_read(LttTracefile *t);
-
-/* ltt_tracefile_read cut down in pieces */
-int ltt_tracefile_read_seek(LttTracefile *t);
-int ltt_tracefile_read_update_event(LttTracefile *t);
-int ltt_tracefile_read_op(LttTracefile *t);
+LttEvent *ltt_tracefile_read(LttTracefile *t, LttEvent *event);
 
 /* open tracefile */
 
@@ -154,7 +145,9 @@ gint ltt_tracefile_open_control(LttTrace *t, gchar * control_name);
 void getDataEndianType(LttArchSize * size, LttArchEndian * endian);
 
 /* get an integer number */
-gint64 get_int(gboolean reverse_byte_order, gint size, void *data);
+
+gint64 getIntNumber(gboolean reverse_byte_order, int size1, void *evD);
+
 
 /* get the node name of the system */
 
@@ -181,7 +174,5 @@ void ltt_tracefile_destroy(LttTracefile *tf);
 void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src);
 
 void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname);
-
-
 
 #endif // TRACE_H

@@ -21,7 +21,6 @@
 
 #include <ltt/ltt.h>
 
-
 extern GQuark LTT_FACILITY_NAME_HEARTBEAT,
               LTT_EVENT_NAME_HEARTBEAT;
 
@@ -105,6 +104,9 @@ int ltt_tracefile_read(LttTracefile *t);
 int ltt_tracefile_read_seek(LttTracefile *t);
 int ltt_tracefile_read_update_event(LttTracefile *t);
 int ltt_tracefile_read_op(LttTracefile *t);
+
+/* Get the current event of the tracefile : valid until the next read */
+LttEvent *ltt_tracefile_get_event(LttTracefile *tf);
 
 /* open tracefile */
 
