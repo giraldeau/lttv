@@ -350,7 +350,7 @@ void lttv_trace_context_add_hooks(LttvTraceContext *self,
   nb_tracefile = self->tracefiles->len;
 
   for(i = 0 ; i < nb_tracefile ; i++) {
-    tfc = &g_array_index(self->tracefiles, LttvTracefileContext, i);
+    tfc = g_array_index(self->tracefiles, LttvTracefileContext*, i);
     lttv_tracefile_context_add_hooks(tfc,
                                      before_tracefile,
                                      event,
@@ -373,7 +373,7 @@ void lttv_trace_context_remove_hooks(LttvTraceContext *self,
   nb_tracefile = self->tracefiles->len;
 
   for(i = 0 ; i < nb_tracefile ; i++) {
-    tfc = &g_array_index(self->tracefiles, LttvTracefileContext, i);
+    tfc = g_array_index(self->tracefiles, LttvTracefileContext*, i);
     lttv_tracefile_context_remove_hooks(tfc,
                                         after_tracefile,
                                         event,
@@ -935,7 +935,7 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
   fac_id = g_array_index(facilities, guint, 0);
   f = ltt_trace_get_facility_by_num(t, fac_id);
 
-  et = ltt_facility_eventtype_get_by_name(f, ltt_eventtype_name(et));
+  et = ltt_facility_eventtype_get_by_name(f, event);
   if(unlikely(et == NULL)) goto event_error;
   
   thf = &g_array_index(th->fac_index, LttvTraceHookByFacility, fac_id);

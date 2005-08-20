@@ -265,8 +265,8 @@ void lttv_debug(void *hook_data)
 
 void lttv_fatal(void *hook_data)
 {
-  //g_log_set_always_fatal(G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL);
-  g_log_set_always_fatal(G_LOG_LEVEL_CRITICAL);
+  g_log_set_always_fatal(G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL);
+  //g_log_set_always_fatal(G_LOG_LEVEL_CRITICAL);
   g_info("Critical log from glib will abort execution");
 }
 

@@ -268,6 +268,7 @@ struct _LttFacility{
   guint32  id;          //id of the facility
  
   guint32 pointer_size;
+  guint32 long_size;
   guint32 size_t_size;
   guint32 alignment;
 

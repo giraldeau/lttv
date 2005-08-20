@@ -113,8 +113,8 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
     nb_tracefile = tc->tracefiles->len;
 
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tfcs = LTTV_TRACEFILE_STATS(&g_array_index(tc->tracefiles,
-                      LttvTracefileContext, j));
+      tfcs = LTTV_TRACEFILE_STATS(g_array_index(tc->tracefiles,
+                      LttvTracefileContext*, j));
       tfcs->stats = lttv_attribute_find_subdir(tracefiles_stats, 
           tfcs->parent.cpu_name);
       find_event_tree(tfcs, LTTV_STATS_PROCESS_UNKNOWN,
@@ -177,8 +177,8 @@ fini(LttvTracesetStats *self)
     nb_tracefile = tc->tracefiles->len;
 
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tfc = &g_array_index(tc->tracefiles,
-                                  LttvTracefileContext, j);
+      tfc = g_array_index(tc->tracefiles,
+                                  LttvTracefileContext*, j);
       tfcs = (LttvTracefileStats *)tfc;
       tfcs->stats = NULL;
       tfcs->current_events_tree = NULL;
@@ -954,8 +954,8 @@ void lttv_stats_remove_event_hooks(LttvTracesetStats *self)
     nb_tracefile = ts->parent.parent.tracefiles->len;
 
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tfs = LTTV_TRACEFILE_STATS(&g_array_index(ts->parent.parent.tracefiles,
-                                  LttvTracefileContext, j));
+      tfs = LTTV_TRACEFILE_STATS(g_array_index(ts->parent.parent.tracefiles,
+                                  LttvTracefileContext*, j));
       lttv_hooks_remove_data(tfs->parent.parent.event, every_event, 
           NULL);
 

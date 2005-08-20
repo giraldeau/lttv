@@ -90,7 +90,7 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   //in.fd = g_open(in.name, O_RDONLY, 0);
   //if(in.fd < 0 ) {
   in.fp = fopen(in.name, "r");
-  if(in.fp < 0 ) {
+  if(in.fp == NULL) {
     g_warning("cannot open facility description file %s",
         in.name);
     return 1;
@@ -254,17 +254,35 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td,
   type_descriptor_t * tmpTd;
 
   switch(td->type) {
-  case LTT_ENUM:
-    fld->field_type->element_number = td->labels.position;
-    fld->field_type->enum_strings = g_new(GQuark,td->labels.position);
-    for(i=0;i<td->labels.position;i++){
-      fld->field_type->enum_strings[i] 
-                     = g_quark_from_string(((char*)(td->labels.array[i])));
-    }
-    break;
-  case LTT_ARRAY:
-    fld->field_type->element_number = (unsigned)td->size;
-  case LTT_SEQUENCE:
+    case INT:
+    case UINT:
+    case FLOAT:
+      fld->field_type->size = td->size;
+      break;
+    case POINTER:
+    case LONG:
+    case ULONG:
+    case SIZE_T:
+    case SSIZE_T:
+    case OFF_T:
+      fld->field_type->size = 0;
+      break;
+    case STRING:
+      fld->field_type->size = 0;
+      break;
+    case ENUM:
+      fld->field_type->element_number = td->labels.position;
+      fld->field_type->enum_strings = g_new(GQuark,td->labels.position);
+      for(i=0;i<td->labels.position;i++){
+        fld->field_type->enum_strings[i] 
+                       = g_quark_from_string(((char*)(td->labels.array[i])));
+      }
+      fld->field_type->size = td->size;
+      break;
+
+    case ARRAY:
+      fld->field_type->element_number = (unsigned)td->size;
+    case SEQUENCE:
     fld->field_type->element_type = g_new(LttType*,1);
     tmpTd = td->nested_type;
     fld->field_type->element_type[0] = lookup_named_type(fac, tmpTd);
@@ -283,8 +301,9 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td,
     fld->child[0]->current_element = 0;
     construct_types_and_fields(fac, tmpTd, fld->child[0]);
     break;
-  case LTT_STRUCT:
-  case LTT_UNION:
+
+  case STRUCT:
+  case UNION:
     fld->field_type->element_number = td->fields.position;
 
     g_assert(fld->field_type->element_type == NULL);
@@ -314,8 +333,8 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td,
       fld->child[i]->current_element = 0;
       construct_types_and_fields(fac, tmpTd, fld->child[i]);
     }    
-
     break;
+
   default:
     g_error("construct_types_and_fields : unknown type");
   }
@@ -420,15 +439,20 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor * td,
 
 LttType * lookup_named_type(LttFacility *fac, type_descriptor_t * td)
 {
-  GQuark name = g_quark_from_string(td->type_name);
+  LttType *type = NULL;
+  GQuark name = 0;
   
-  LttType *type = g_datalist_id_get_data(&fac->named_types, name);
-
+  if(td->type_name != NULL) {
+    /* Named type */
+    name = g_quark_from_string(td->type_name);
+  
+    type = g_datalist_id_get_data(&fac->named_types, name);
+  }
+  
   if(type == NULL){
+    /* Create the type */
     type = g_new(LttType,1);
     type->type_name = name;
-    g_datalist_id_set_data_full(&fac->named_types, name,
-        type, (GDestroyNotify)freeLttNamedType);
     type->type_class = td->type;
     if(td->fmt) type->fmt = g_strdup(td->fmt);
     else type->fmt = NULL;
@@ -436,8 +460,11 @@ LttType * lookup_named_type(LttFacility *fac, type_descriptor_t * td)
     type->enum_strings = NULL;
     type->element_type = NULL;
     type->element_number = 0;
+    
+    if(td->type_name != NULL)
+      g_datalist_id_set_data_full(&fac->named_types, name,
+                  type, (GDestroyNotify)freeLttNamedType);
   }
-
   return type;
 }
 
@@ -496,6 +523,7 @@ void freeLttType(LttType ** type)
 {
   unsigned int i;
   if(*type == NULL) return;
+  if((*type)->type_name != 0) return; //this is a named type.
   //if((*type)->type_name){
   //  return; //this is a named type
   //}
@@ -625,6 +653,6 @@ LttEventType *ltt_facility_eventtype_get(LttFacility *f, guint8 i)
 
 LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, GQuark name)
 {
-  LttEventType *et = g_datalist_get_data(&f->events_by_name, name);
+  LttEventType *et = g_datalist_id_get_data(&f->events_by_name, name);
 }
 

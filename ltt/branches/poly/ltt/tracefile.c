@@ -619,6 +619,7 @@ static int open_tracefiles(LttTrace *trace, char *root_path,
   int rel_path_len;
   char rel_path[PATH_MAX];
   char *rel_path_ptr;
+  LttTracefile tmp_tf;
 
 	if(dir == NULL) {
 		perror(root_path);
@@ -658,8 +659,6 @@ static int open_tracefiles(LttTrace *trace, char *root_path,
 			ret = open_tracefiles(trace, path, rel_path);
 			if(ret < 0) continue;
 		} else if(S_ISREG(stat_buf.st_mode)) {
-			g_debug("Opening file.\n");
-
 			GQuark name;
       guint num;
       GArray *group;
@@ -669,9 +668,19 @@ static int open_tracefiles(LttTrace *trace, char *root_path,
       if(get_tracefile_name_number(rel_path, &name, &num))
         continue; /* invalid name */
       
+			g_debug("Opening file.\n");
+      if(ltt_tracefile_open(trace, path, &tmp_tf)) {
+        g_info("Error opening tracefile %s", path);
+
+        continue; /* error opening the tracefile : bad magic number ? */
+      }
+
       g_debug("Tracefile name is %s and number is %u", 
           g_quark_to_string(name), num);
       
+      tmp_tf.cpu_online = 1;
+      tmp_tf.cpu_num = num;
+
       group = g_datalist_id_get_data(&trace->tracefiles, name);
       if(group == NULL) {
         /* Elements are automatically cleared when the array is allocated.
@@ -681,23 +690,13 @@ static int open_tracefiles(LttTrace *trace, char *root_path,
         g_datalist_id_set_data_full(&trace->tracefiles, name,
                                  group, ltt_tracefile_group_destroy);
       }
+
       /* Add the per cpu tracefile to the named group */
       unsigned int old_len = group->len;
       if(num+1 > old_len)
         group = g_array_set_size(group, num+1);
-      tf = &g_array_index (group, LttTracefile, num);
+      g_array_index (group, LttTracefile, num) = tmp_tf;
 
-      if(ltt_tracefile_open(trace, path, tf)) {
-        g_info("Error opening tracefile %s", path);
-        g_array_set_size(group, old_len);
-
-        if(!ltt_tracefile_group_has_cpu_online(group))
-          g_datalist_id_remove_data(&trace->tracefiles, name);
-
-        continue; /* error opening the tracefile : bad magic number ? */
-      }
-      tf->cpu_online = 1;
-      tf->cpu_num = num;
 		}
 	}
 	
@@ -724,8 +723,6 @@ static int ltt_get_facility_description(LttFacility *f,
   const gchar *text;
   guint textlen;
   gint err;
-  int i, j;
-  LttEventType *et;
 
   text = g_quark_to_string(t->pathname);
   textlen = strlen(text);
@@ -761,17 +758,6 @@ static int ltt_get_facility_description(LttFacility *f,
  
   err = ltt_facility_open(f, t, desc_file_name);
   if(err) goto facility_error;
-  
-  for(i=0;i<t->facilities_by_num->len;i++){
-    f = &g_array_index(t->facilities_by_num, LttFacility, i);
-    if(f->exists) {
-      for(j=0; j<f->events->len; j++){
-        et = &g_array_index(f->events, LttEventType, j);
-        set_fields_offsets(fac_tf, et);
-      }
-    }
-  }
-
 
   return 0;
 
@@ -783,13 +769,6 @@ name_error:
 static void ltt_fac_ids_destroy(gpointer data)
 {
   GArray *fac_ids = (GArray *)data;
-  int i;
-  LttFacility *fac;
-
-  for(i=0; i<fac_ids->len; i++) {
-    fac = &g_array_index (fac_ids, LttFacility, i);
-    ltt_facility_close(fac);
-  }
 
   g_array_free(fac_ids, TRUE);
 }
@@ -802,6 +781,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
   int err;
   LttFacility *fac;
   GArray *fac_ids;
+  guint i;
+  LttEventType *et;
   
   while(1) {
     err = ltt_tracefile_read_seek(tf);
@@ -853,15 +834,24 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->id = ltt_get_uint32(LTT_GET_BO(tf), &fac_load_data->id);
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->pointer_size);
+          fac->long_size = ltt_get_uint32(LTT_GET_BO(tf),
+                          &fac_load_data->long_size);
           fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->size_t_size);
           fac->alignment = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->alignment);
 
           if(ltt_get_facility_description(fac, tf->trace, tf))
-            goto facility_error;
+            continue; /* error opening description */
           
           fac->trace = tf->trace;
+
+          /* Preset the field offsets */
+          for(i=0; i<fac->events->len; i++){
+            et = &g_array_index(fac->events, LttEventType, i);
+            set_fields_offsets(tf, et);
+          }
+
           fac->exists = 1;
 
           fac_ids = g_datalist_id_get_data(&tf->trace->facilities_by_name,
@@ -896,14 +886,22 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->id = fac_state_dump_load_data->id;
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->pointer_size);
+          fac->long_size = ltt_get_uint32(LTT_GET_BO(tf),
+                          &fac_state_dump_load_data->long_size);
           fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->size_t_size);
           fac->alignment = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->alignment);
           if(ltt_get_facility_description(fac, tf->trace, tf))
-            goto facility_error;
+            continue; /* error opening description */
           
           fac->trace = tf->trace;
+
+          /* Preset the field offsets */
+          for(i=0; i<fac->events->len; i++){
+            et = &g_array_index(fac->events, LttEventType, i);
+            set_fields_offsets(tf, et);
+          }
 
           fac->exists = 1;
           
@@ -1033,6 +1031,15 @@ LttTrace *ltt_trace_copy(LttTrace *self)
 
 void ltt_trace_close(LttTrace *t)
 {
+  guint i;
+  LttFacility *fac;
+
+  for(i=0; i<t->facilities_by_num->len; i++) {
+    fac = &g_array_index (t->facilities_by_num, LttFacility, i);
+    if(fac->exists)
+      ltt_facility_close(fac);
+  }
+
   g_datalist_clear(&t->facilities_by_name);
   g_array_free(t->facilities_by_num, TRUE);
   g_datalist_clear(&t->tracefiles);
@@ -1720,11 +1727,6 @@ static int ltt_seek_next_event(LttTracefile *tf)
   }
 
   
-  if(tf->event.offset == tf->block_size - tf->buffer.lost_size) {
-    ret = ERANGE;
-    goto found;
-  }
-
   pos = tf->event.data;
 
   if(tf->event.data_size < 0) goto error;
@@ -1732,6 +1734,11 @@ static int ltt_seek_next_event(LttTracefile *tf)
   pos += (size_t)tf->event.data_size;
   
   tf->event.offset = pos - tf->buffer.head;
+  
+  if(tf->event.offset == tf->block_size - tf->buffer.lost_size) {
+    ret = ERANGE;
+    goto found;
+  }
 
 found:
   return ret;
@@ -1863,7 +1870,7 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
       break;
     case LTT_LONG:
     case LTT_ULONG:
-      field->field_size = (off_t)event_type->facility->pointer_size; 
+      field->field_size = (off_t)event_type->facility->long_size; 
       field->fixed_size = FIELD_FIXED;
       break;
     case LTT_SIZE_T:

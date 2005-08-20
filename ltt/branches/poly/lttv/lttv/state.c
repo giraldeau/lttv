@@ -172,8 +172,8 @@ restore_init_state(LttvTraceState *self)
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs =
-      LTTV_TRACEFILE_STATE(&g_array_index(self->parent.tracefiles,
-                                          LttvTracefileContext, i));
+      LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
+                                          LttvTracefileContext*, i));
     ltt_trace_time_span_get(self->parent.t, &tfcs->parent.timestamp, NULL);
 //    tfcs->saved_position = 0;
     tfcs->process = lttv_state_create_process(tfcs, NULL,0);
@@ -221,8 +221,8 @@ init(LttvTracesetState *self, LttvTraceset *ts)
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfcs = 
-          LTTV_TRACEFILE_STATE(&g_array_index(tc->tracefiles,
-                                          LttvTracefileContext, j));
+          LTTV_TRACEFILE_STATE(g_array_index(tc->tracefiles,
+                                          LttvTracefileContext*, j));
       tfcs->cpu_name = ltt_tracefile_name(tfcs->parent.tf);
     }
     tcs->processes = NULL;
@@ -338,8 +338,8 @@ void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp)
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
-          LTTV_TRACEFILE_STATE(&g_array_index(self->parent.tracefiles,
-                                          LttvTracefileContext, i));
+          LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
+                                          LttvTracefileContext*, i));
     fprintf(fp, "  <TRACEFILE PID=%u TIMESTAMP_S=%lu TIMESTAMP_NS=%lu", 
         tfcs->process->pid, tfcs->parent.timestamp.tv_sec, 
         tfcs->parent.timestamp.tv_nsec);
@@ -425,8 +425,8 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
-          LTTV_TRACEFILE_STATE(&g_array_index(self->parent.tracefiles,
-                                          LttvTracefileContext, i));
+          LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
+                                          LttvTracefileContext*, i));
     tracefile_tree = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
     value = lttv_attribute_add(tracefiles_tree, i, 
         LTTV_GOBJECT);
@@ -484,8 +484,8 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
-          LTTV_TRACEFILE_STATE(&g_array_index(self->parent.tracefiles,
-                                          LttvTracefileContext, i));
+          LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
+                                          LttvTracefileContext*, i));
     type = lttv_attribute_get(tracefiles_tree, i, &name, &value);
     g_assert(type == LTTV_GOBJECT);
     tracefile_tree = *((LttvAttribute **)(value.v_gobject));
@@ -539,8 +539,8 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
-          LTTV_TRACEFILE_STATE(&g_array_index(self->parent.tracefiles,
-                                          LttvTracefileContext, i));
+          LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
+                                          LttvTracefileContext*, i));
     type = lttv_attribute_get(tracefiles_tree, i, &name, &value);
     g_assert(type == LTTV_GOBJECT);
     tracefile_tree = *((LttvAttribute **)(value.v_gobject));
@@ -857,7 +857,7 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
   process->pid = pid;
   process->last_cpu = tfs->cpu_name;
   process->last_cpu_index = ((LttvTracefileContext*)tfs)->index;
-  g_warning("Process %u, core %p", process->pid, process);
+  g_info("Process %u, core %p", process->pid, process);
   g_hash_table_insert(tcs->processes, process, process);
 
   if(parent) {
@@ -1320,8 +1320,8 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = 
-          LTTV_TRACEFILE_STATE(&g_array_index(ts->parent.tracefiles,
-                                          LttvTracefileContext, j));
+          LTTV_TRACEFILE_STATE(g_array_index(ts->parent.tracefiles,
+                                          LttvTracefileContext*, j));
 
       for(k = 0 ; k < hooks->len ; k++) {
         hook = &g_array_index(hooks, LttvTraceHook, k);
@@ -1523,8 +1523,8 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = 
-          LTTV_TRACEFILE_STATE(&g_array_index(ts->parent.tracefiles,
-                                          LttvTracefileContext, j));
+          LTTV_TRACEFILE_STATE(g_array_index(ts->parent.tracefiles,
+                                          LttvTracefileContext*, j));
       lttv_hooks_add(tfs->parent.event,
                      state_save_event_hook,
                      event_count,
@@ -1603,8 +1603,8 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = 
-          LTTV_TRACEFILE_STATE(&g_array_index(ts->parent.tracefiles,
-                                          LttvTracefileContext, j));
+          LTTV_TRACEFILE_STATE(g_array_index(ts->parent.tracefiles,
+                                          LttvTracefileContext*, j));
       event_count = lttv_hooks_remove(tfs->parent.event,
                         state_save_event_hook);
       g_free(event_count);
