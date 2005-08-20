@@ -1209,12 +1209,12 @@ guint ltt_tracefile_block_number(LttTracefile *tf)
  * the time passed in parameter.
  *
  * If the time parameter is outside the tracefile time span, seek to the first
- * or the last event of the tracefile.
+ * event or if after, return ERANGE.
  *
  * If the time parameter is before the first event, we have to seek specially to
  * there.
  *
- * If the time is after the end of the trace, get the last event. 
+ * If the time is after the end of the trace, return ERANGE.
  *
  * Do a binary search to find the right block, then a sequential search in the
  * block to find the event. 
@@ -1229,6 +1229,7 @@ guint ltt_tracefile_block_number(LttTracefile *tf)
  * you will jump over an event if you do.
  *
  * Return value : 0 : no error, the tf->event can be used
+ *                ERANGE : time if after the last event of the trace
  *                otherwise : this is an error.
  *
  * */
@@ -1250,6 +1251,8 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
   * go to the first event. */
   if(ltt_time_compare(time, tf->buffer.begin.timestamp) <= 0) {
     ret = ltt_tracefile_read(tf);
+    if(ret == ERANGE) goto range;
+    else if (ret) goto fail;
     goto found; /* There is either no event in the trace or the event points
                    to the first event in the trace */
   }
@@ -1260,16 +1263,9 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
     goto fail;
   }
 
- /* If the time is after the end of the trace, get the last event. */
-  if(ltt_time_compare(time, tf->buffer.end.timestamp) >= 0) {
-    /* While the ltt_tracefile_read doesn't return ERANGE or EPERM,
-     * continue reading.
-     */
-    while(1) {
-      ret = ltt_tracefile_read(tf);
-      if(ret == ERANGE) goto found; /* ERANGE or EPERM */
-      else if(ret) goto fail;
-    }
+ /* If the time is after the end of the trace, return ERANGE. */
+  if(ltt_time_compare(time, tf->buffer.end.timestamp) > 0) {
+    goto range;
   }
 
   /* Binary search the block */
@@ -1293,14 +1289,14 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
        * (or in the next buffer first event) */
       while(1) {
         ret = ltt_tracefile_read(tf);
-        if(ret == ERANGE) goto found; /* ERANGE or EPERM */
+        if(ret == ERANGE) goto range; /* ERANGE or EPERM */
         else if(ret) goto fail;
 
         if(ltt_time_compare(time, tf->event.event_time) >= 0)
           break;
       }
 
-    } if(ltt_time_compare(time, tf->buffer.begin.timestamp) < 0) {
+    } else if(ltt_time_compare(time, tf->buffer.begin.timestamp) < 0) {
       /* go to lower part */
       high = block_num;
     } else if(ltt_time_compare(time, tf->buffer.end.timestamp) > 0) {
@@ -1309,8 +1305,8 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
     } else {/* The event is right in the buffer!
                (or in the next buffer first event) */
       while(1) {
-        ltt_tracefile_read(tf);
-        if(ret == ERANGE) goto found; /* ERANGE or EPERM */
+        ret = ltt_tracefile_read(tf);
+        if(ret == ERANGE) goto range; /* ERANGE or EPERM */
         else if(ret) goto fail;
 
         if(ltt_time_compare(time, tf->event.event_time) >= 0)
@@ -1322,6 +1318,8 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
 
 found:
   return 0;
+range:
+  return ERANGE;
 
   /* Error handling */
 fail:
@@ -1678,9 +1676,13 @@ void ltt_update_event_size(LttTracefile *tf)
           g_quark_to_string(tf->name));
       goto event_type_error;
     }
+    
+    if(event_type->root_field)
+      size = get_field_type_size(tf, event_type,
+          0, 0, event_type->root_field, tf->event.data);
+    else
+      size = 0;
 
-    size = get_field_type_size(tf, event_type,
-        0, 0, event_type->root_field, tf->event.data);
     g_debug("Event root field : f.e %hhu.%hhu size %lu", tf->event.facility_id,
         tf->event.event_id, size);
   }
@@ -1888,10 +1890,14 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
         field->child[0]);
       field->fixed_size = FIELD_VARIABLE;
       field->field_size = 0;
+      *fixed_root = FIELD_VARIABLE;
+      *fixed_parent = FIELD_VARIABLE;
       break;
     case LTT_STRING:
       field->fixed_size = FIELD_VARIABLE;
       field->field_size = 0;
+      *fixed_root = FIELD_VARIABLE;
+      *fixed_parent = FIELD_VARIABLE;
       break;
     case LTT_ARRAY:
       local_fixed_root = FIELD_VARIABLE;
@@ -1901,10 +1907,13 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
         &local_fixed_root, &local_fixed_parent,
         field->child[0]);
       field->fixed_size = field->child[0]->fixed_size;
-      if(field->fixed_size == FIELD_FIXED)
+      if(field->fixed_size == FIELD_FIXED) {
         field->field_size = type->element_number * field->child[0]->field_size;
-      else
+      } else {
         field->field_size = 0;
+        *fixed_root = FIELD_VARIABLE;
+        *fixed_parent = FIELD_VARIABLE;
+      }
       break;
     case LTT_STRUCT:
       current_root_offset = field->offset_root;

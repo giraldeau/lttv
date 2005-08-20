@@ -348,7 +348,7 @@ void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp)
     else {
       ltt_event_position(e, ep);
       ltt_event_position_get(ep, &tf, &nb_block, &offset, &tsc);
-      fprintf(fp, " BLOCK=%lu OFFSET=%lu TSC=%llu/>\n", nb_block, offset,
+      fprintf(fp, " BLOCK=%u OFFSET=%u TSC=%llu/>\n", nb_block, offset,
           tsc);
     }
   }
@@ -447,7 +447,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
       guint64 tsc;
       LttTracefile *tf;
       ltt_event_position_get(ep, &tf, &nb_block, &offset, &tsc);
-      g_debug("Block %lu offset %lu tsc %llu time %lu.%lu", nb_block, offset,
+      g_debug("Block %u offset %u tsc %llu time %lu.%lu", nb_block, offset,
           tsc,
           tfcs->parent.timestamp.tv_sec, tfcs->parent.timestamp.tv_nsec);
     }
@@ -470,6 +470,8 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
   LttvAttributeName name;
 
   LttEventPosition *ep;
+
+  LttvTracesetContext *tsc = self->parent.ts_context;
 
   tracefiles_tree = lttv_attribute_find_subdir(container, 
       LTTV_STATE_TRACEFILES);
@@ -502,7 +504,15 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     g_assert(*(value.v_pointer) != NULL);
     ep = *(value.v_pointer);
     g_assert(tfcs->parent.t_context != NULL);
-    lttv_process_tracefile_seek_position(LTTV_TRACEFILE_CONTEXT(tfcs), ep);
+    
+    g_tree_destroy(tsc->pqueue);
+    tsc->pqueue = g_tree_new(compare_tracefile);
+    
+    LttvTracefileContext *tfc = LTTV_TRACEFILE_CONTEXT(tfcs);
+    
+    g_assert(ltt_tracefile_seek_position(tfc->tf, ep) == 0);
+    tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
+    g_tree_insert(tsc->pqueue, tfc, tfc);
   }
 }
 

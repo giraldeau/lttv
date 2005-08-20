@@ -1188,12 +1188,12 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type)
       flag = 1;
       break;
     case ARRAY:
-      sprintf(buf,"%d\0",type->size);
+      sprintf(buf,"%d",type->size);
       str = appendString("array ",buf);
       flag = 1;
       break;
     case SEQUENCE:
-      sprintf(buf,"%d\0",type->size);
+      sprintf(buf,"%d",type->size);
       str = appendString("sequence ",buf);
       flag = 1;
       break;

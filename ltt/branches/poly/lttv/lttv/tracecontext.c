@@ -26,11 +26,12 @@
 #include <ltt/facility.h>
 #include <ltt/trace.h>
 #include <ltt/type.h>
+#include <errno.h>
 
 
 
 
-static gint compare_tracefile(gconstpointer a, gconstpointer b)
+gint compare_tracefile(gconstpointer a, gconstpointer b)
 {
   gint comparison = 0;
 
@@ -51,14 +52,10 @@ static gint compare_tracefile(gconstpointer a, gconstpointer b)
   return comparison;
 }
 
-struct _LttvTraceContextPosition {
-  LttEventPosition **tf_pos;         /* Position in each tracefile       */
-  guint nb_tracefile;                /* Number of tracefiles (check)     */
-};
-
 struct _LttvTracesetContextPosition {
-  LttvTraceContextPosition *t_pos;    /* Position in each trace          */
-  guint nb_trace;                    /* Number of traces (check)         */
+  GArray *ep;                        /* Array of LttEventPosition */
+  GArray *tfc;                       /* Array of corresponding
+                                        TracefileContext* */
   LttTime timestamp;                 /* Current time at the saved position */
 };
 
@@ -620,44 +617,6 @@ static gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
 }
 
 
-/* Put all the tracefiles at the tracefile context position */
-void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *self)
-{
-  guint iter_trace, nb_trace;
-
-  LttvTraceContext *tc;
-
-  nb_trace = lttv_traceset_number(self->ts);
-  
-  for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
-    tc = self->traces[iter_trace];
-    {
-      /* each trace */
-      guint iter_tf, nb_tracefile;
-
-      LttvTracefileContext *tfc;
-
-      nb_tracefile = tc->tracefiles->len;
-
-      for(iter_tf = 0 ; iter_tf < nb_tracefile ; iter_tf++) {
-        tfc = g_array_index(tc->tracefiles, LttvTracefileContext*, iter_tf);
-        {
-          /* each tracefile */
-          //ltt_tracefile_copy(tfc->tf_sync_data, tfc->tf);
-          LttEventPosition *ep = ltt_event_position_new();
-
-          ltt_event_position(ltt_tracefile_get_event(tfc->tf), ep);
-          
-          ltt_tracefile_seek_position(tfc->tf, ep);
-          g_free(ep);
-        }
-      }
-    }
-  }
-}
-
-
-
 void lttv_process_traceset_begin(LttvTracesetContext *self,
                                  LttvHooks       *before_traceset,
                                  LttvHooks       *before_trace,
@@ -763,6 +722,9 @@ void lttv_process_traceset_end(LttvTracesetContext *self,
                                      event_by_id);
 }
 
+/* Subtile modification : 
+ * if tracefile has no event at or after the time requested, it is not put in
+ * the queue, as the next read would fail. */
 void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
 {
   guint i, nb_tracefile;
@@ -778,10 +740,13 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfc = g_array_index(self->tracefiles, LttvTracefileContext*, i);
     ret = ltt_tracefile_seek_time(tfc->tf, start);
-    if(ret) g_error("error in lttv_process_trace_seek_time seek");
+    if(ret == EPERM) g_error("error in lttv_process_trace_seek_time seek");
     g_tree_remove(pqueue, tfc);
-    tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
-    g_tree_insert(pqueue, tfc, tfc);
+
+    if(ret == 0) { /* not ERANGE especially */
+      tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
+      g_tree_insert(pqueue, tfc, tfc);
+    }
   }
 }
 
@@ -800,62 +765,25 @@ void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start)
 }
 
 
-gboolean lttv_process_tracefile_seek_position(LttvTracefileContext *self, 
-                                              const LttEventPosition *pos)
-{
-  LttvTracefileContext *tfc = self;
-
-  GTree *pqueue = self->t_context->ts_context->pqueue;
-  
-  ltt_tracefile_seek_position(tfc->tf, pos);
-  g_tree_remove(pqueue, tfc);
-  tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
-  g_tree_insert(pqueue, tfc, tfc);
-
-  return TRUE;
-}
-
-gboolean lttv_process_trace_seek_position(LttvTraceContext *self, 
-                                        const LttvTraceContextPosition *pos)
-{
-  guint i, nb_tracefile;
-
-  LttvTracefileContext *tfc;
-
-  nb_tracefile = self->tracefiles->len;
-
-  if(nb_tracefile != pos->nb_tracefile)
-    return FALSE; /* Error */
-
-  for(i = 0 ; i < nb_tracefile ; i++) {
-    tfc = g_array_index(self->tracefiles, LttvTracefileContext*, i);
-    lttv_process_tracefile_seek_position(tfc, pos->tf_pos[i]);
-  }
-
-  return TRUE;
-}
-
-
-
 gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self, 
                                         const LttvTracesetContextPosition *pos)
 {
-  guint i, nb_trace;
-  gboolean sum_ret = TRUE;
-
+  guint i;
   LttvTraceContext *tc;
+  LttvTracefileContext *tfc;
 
-  nb_trace = lttv_traceset_number(self->ts);
+  g_tree_destroy(self->pqueue);
+  self->pqueue = g_tree_new(compare_tracefile);
   
-  if(nb_trace != pos->nb_trace)
-    return FALSE; /* Error */
-
-  for(i = 0 ; i < nb_trace ; i++) {
-    tc = self->traces[i];
-    sum_ret = sum_ret && lttv_process_trace_seek_position(tc, &pos->t_pos[i]);
+  for(i=0;i<pos->ep->len; i++) {
+    LttEventPosition *ep = g_array_index(pos->ep, LttEventPosition*, i);
+    LttvTracefileContext *tfc = 
+      g_array_index(pos->tfc, LttvTracefileContext*, i);
+    g_assert(ltt_tracefile_seek_position(tfc->tf, ep) == 0);
+    tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
+    g_tree_insert(self->pqueue, tfc, tfc);
   }
-
-  return sum_ret;
+  return TRUE;
 }
 
 
@@ -1006,139 +934,90 @@ void lttv_trace_hook_destroy(LttvTraceHook *th)
 
 LttvTracesetContextPosition *lttv_traceset_context_position_new()
 {
-  return g_new(LttvTracesetContextPosition,1);
+  LttvTracesetContextPosition *pos = g_new(LttvTracesetContextPosition,1);
+  pos->ep = g_array_sized_new(FALSE, TRUE, sizeof(LttEventPosition*),
+                              10);
+  pos->tfc = g_array_sized_new(FALSE, TRUE, sizeof(LttvTracefileContext*),
+                              10);
+  pos->timestamp = ltt_time_infinite;
+  return pos;
 }
 
+gboolean traverse_get_tfc(gpointer key, gpointer value, gpointer data)
+{
+  LttvTracefileContext *tfc = (LttvTracefileContext *)value;
+  LttvTracesetContextPosition *pos = (LttvTracesetContextPosition *)data;
 
+  LttEvent *event = ltt_tracefile_get_event(tfc->tf);
+  LttEventPosition *ep = ltt_event_position_new();
+  
+  ltt_event_position(event, ep);
+
+  g_array_append_val(pos->ep, ep);
+  g_array_append_val(pos->tfc, tfc);
+
+  if(ltt_time_compare(tfc->timestamp, pos->timestamp) < 0)
+    pos->timestamp = tfc->timestamp;
+  
+  return 0;
+}
+
+/* Subtile modification :
+ * only save the tracefiles that are loaded in the pqueue */
 void lttv_traceset_context_position_save(const LttvTracesetContext *self,
                                     LttvTracesetContextPosition *pos)
 {
-  guint nb_trace, nb_tracefile;
-  guint iter_trace, iter_tracefile;
-  
-  LttvTraceContext *tc;
-  
-  LttvTracefileContext *tfc;
-
-  LttEvent *event;
-
-  LttTime timestamp = self->time_span.end_time;
-
-  pos->nb_trace = nb_trace = lttv_traceset_number(self->ts);
-  pos->t_pos = g_new(LttvTraceContextPosition, nb_trace);
-  
-  for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
-    tc = self->traces[iter_trace];
-
-    nb_tracefile = tc->tracefiles->len;
-    pos->t_pos[iter_trace].nb_tracefile = nb_tracefile;
-      
-    pos->t_pos[iter_trace].tf_pos = g_new(LttEventPosition*, nb_tracefile);
-    for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
-      tfc = g_array_index(tc->tracefiles, LttvTracefileContext*,
-                            iter_tracefile);
-      event = ltt_tracefile_get_event(tfc->tf);
-      if(event!=NULL) {
-        pos->t_pos[iter_trace].tf_pos[iter_tracefile] 
-                                                = ltt_event_position_new();
-        ltt_event_position(event, 
-                           pos->t_pos[iter_trace].tf_pos[iter_tracefile]);
-      } else {
-        pos->t_pos[iter_trace].tf_pos[iter_tracefile] = NULL;
-      }
-      if(ltt_time_compare(tfc->timestamp, timestamp) < 0)
-        timestamp = tfc->timestamp;
-    }
-  }
-  pos->timestamp = timestamp;
+  g_tree_foreach(self->pqueue, traverse_get_tfc, pos);
 }
 
 void lttv_traceset_context_position_destroy(LttvTracesetContextPosition *pos)
 {
-  guint nb_trace;
-  guint iter_trace, iter_tracefile;
-  
-  nb_trace = pos->nb_trace;
-  
-  for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
-    for(iter_tracefile = 0; iter_tracefile < 
-                        pos->t_pos[iter_trace].nb_tracefile;
-                        iter_tracefile++) {
-      if(pos->t_pos[iter_trace].tf_pos[iter_tracefile] != NULL)
-        g_free(pos->t_pos[iter_trace].tf_pos[iter_tracefile]);
-    }
-    g_free(pos->t_pos[iter_trace].tf_pos);
-  }
-  g_free(pos->t_pos);
-
+  int i;
+  for(i=0;i<pos->ep->len;i++)
+    g_free(g_array_index(pos->ep, LttEventPosition*, i));
+  g_array_free(pos->ep, TRUE);
+  g_array_free(pos->tfc, TRUE);
+  g_free(pos);
 }
 
 void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
                                    const LttvTracesetContextPosition *src)
 {
-  guint nb_trace, nb_tracefile;
-  guint iter_trace, iter_tracefile;
+  int i;
   
-  nb_trace = dest->nb_trace = src->nb_trace;
-  dest->t_pos = g_new(LttvTraceContextPosition, nb_trace);
- 
-  for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
-
-    nb_tracefile = src->t_pos[iter_trace].nb_tracefile;
-    
-    dest->t_pos[iter_trace].nb_tracefile = nb_tracefile;
-
-    dest->t_pos[iter_trace].tf_pos = g_new(LttEventPosition*, nb_tracefile);
-
-    for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
-      dest->t_pos[iter_trace].tf_pos[iter_tracefile] = 
-                      ltt_event_position_new();
-      if(src->t_pos[iter_trace].tf_pos[iter_tracefile] != NULL)
-        ltt_event_position_copy(
-              dest->t_pos[iter_trace].tf_pos[iter_tracefile],
-              src->t_pos[iter_trace].tf_pos[iter_tracefile]);
-      else
-        dest->t_pos[iter_trace].tf_pos[iter_tracefile] = NULL;
-    }
+  g_array_set_size(dest->ep, src->ep->len);
+  g_array_set_size(dest->tfc, src->tfc->len);
+  
+  for(i=0;i<src->ep->len;i++) {
+    g_array_index(dest->ep, LttEventPosition*, i) = ltt_event_position_new();
+    ltt_event_position_copy(
+        g_array_index(dest->ep, LttEventPosition*, i),
+        g_array_index(src->ep, LttEventPosition*, i));
   }
-
+  for(i=0;i<src->tfc->len;i++) {
+    g_array_index(dest->tfc, LttvTracefileContext*, i) =
+                    g_array_index(src->tfc, LttvTracefileContext*, i);
+  }
   dest->timestamp = src->timestamp;
 }
 
 gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
                                         const LttvTracesetContextPosition *pos)
 {
-  guint nb_trace, nb_tracefile;
-  guint iter_trace, iter_tracefile;
-  gint ret;
+  int i;
+  int ret;
 
-  LttvTraceContext *tc;
-  
-  LttvTracefileContext *tfc;
+  for(i=0;i<pos->ep->len;i++) {
+    LttEventPosition *ep = g_array_index(pos->ep, LttEventPosition*, i);
+    LttvTracefileContext *tfc = 
+      g_array_index(pos->tfc, LttvTracefileContext*, i);
 
-  LttEvent *event;
+    LttEvent *event = ltt_tracefile_get_event(tfc->tf);
 
-  nb_trace = lttv_traceset_number(self->ts);
+    ret = ltt_event_position_compare((LttEventPosition*)event, 
+                                      ep);
+    if(ret != 0) return ret;
 
-  if(unlikely(pos->nb_trace != nb_trace))
-    g_error("lttv_traceset_context_ctx_pos_compare : nb_trace does not match.");
-  
-  for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
-    tc = self->traces[iter_trace];
-    nb_tracefile = tc->tracefiles->len;
-
-    if(unlikely(pos->t_pos[iter_trace].nb_tracefile != nb_tracefile))
-      g_error("lttv_traceset_context_ctx_pos_compare : nb_tracefile does not match.");
-
-    for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
-      tfc = g_array_index(tc->tracefiles, LttvTracefileContext*,
-                            iter_tracefile);
-      event = ltt_tracefile_get_event(tfc->tf);
-      ret = ltt_event_position_compare((LttEventPosition*)event, 
-                             pos->t_pos[iter_trace].tf_pos[iter_tracefile]);
-      if(ret != 0)
-        return ret;
-    }
   }
   return 0;
 }
@@ -1148,30 +1027,25 @@ gint lttv_traceset_context_pos_pos_compare(
                                   const LttvTracesetContextPosition *pos1,
                                   const LttvTracesetContextPosition *pos2)
 {
-  guint nb_trace, nb_tracefile;
-  guint iter_trace, iter_tracefile;
+  int i, j;
+  int ret;
   
-  gint ret;
+  for(i=0;i<pos1->ep->len;i++) {
+    LttEventPosition *ep1 = g_array_index(pos1->ep, LttEventPosition*, i);
+    LttTracefile *tf1 = ltt_event_position_tracefile(ep1);
+    
+    for(j=0;j<pos2->ep->len;j++) {
+      LttEventPosition *ep2 = g_array_index(pos2->ep, LttEventPosition*, j);
+      LttTracefile *tf2 = ltt_event_position_tracefile(ep2);
 
-  nb_trace = pos1->nb_trace;
-  if(unlikely(nb_trace != pos2->nb_trace))
-    g_error("lttv_traceset_context_pos_pos_compare : nb_trace does not match.");
-
-  for(iter_trace = 0 ; iter_trace < nb_trace ; iter_trace++) {
-
-    nb_tracefile = pos1->t_pos[iter_trace].nb_tracefile;
-    if(unlikely(nb_tracefile != pos2->t_pos[iter_trace].nb_tracefile))
-      g_error("lttv_traceset_context_ctx_pos_compare : nb_tracefile does not match.");
-
-    for(iter_tracefile = 0; iter_tracefile < nb_tracefile; iter_tracefile++) {
-      ret = ltt_event_position_compare(
-                pos1->t_pos[iter_trace].tf_pos[iter_tracefile],
-                pos2->t_pos[iter_trace].tf_pos[iter_tracefile]);
-      if(ret != 0) 
-        return ret;
+      if(tf1 == tf2) {
+        ret = ltt_event_position_compare(ep1, ep2);
+        if(ret != 0) return ret;
+      }
     }
   }
   return 0;
+
 }
 
 

@@ -204,8 +204,12 @@ unsigned ltt_event_eventtype_id(const LttEvent *e)
 LttFacility *ltt_event_facility(const LttEvent *e)
 {
   LttTrace * trace = e->tracefile->trace;
-  unsigned id = e->event_id;
-  return ltt_trace_facility_by_id(trace,id);
+  unsigned id = e->facility_id;
+  LttFacility *facility = ltt_trace_facility_by_id(trace,id);
+  
+  g_assert(facility->exists);
+
+  return facility;
 }
 
 /*****************************************************************************
@@ -390,6 +394,12 @@ void ltt_event_position_copy(LttEventPosition *dest,
     *dest = *src;
 }
 
+
+
+LttTracefile *ltt_event_position_tracefile(LttEventPosition *ep)
+{
+  return ep->tracefile;
+}
 
 /*****************************************************************************
  *Function name

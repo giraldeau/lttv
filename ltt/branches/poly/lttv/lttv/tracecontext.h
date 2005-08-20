@@ -181,12 +181,6 @@ GType lttv_tracefile_context_get_type (void);
 void lttv_process_traceset(LttvTracesetContext *self, LttTime end, 
     unsigned nb_events);
 
-/* Save the complete tracefile information in the context */
-//void lttv_process_traceset_get_sync_data(LttvTracesetContext *self);
-
-/* Put all the tracefiles at the tracefile context position */
-void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *self);
-
 /* Process traceset can also be done in smaller pieces calling begin,
  * then seek and middle repeatedly, and end. The middle function return the
  * number of events processed. It will be smaller than nb_events if the end time
@@ -327,8 +321,6 @@ gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
 LttTime lttv_traceset_context_position_get_time(
                                       const LttvTracesetContextPosition *pos);
 
-gboolean lttv_process_tracefile_seek_position(LttvTracefileContext *self, 
-                                              const LttEventPosition *pos);
-
+gint compare_tracefile(gconstpointer a, gconstpointer b);
 
 #endif // PROCESSTRACE_H

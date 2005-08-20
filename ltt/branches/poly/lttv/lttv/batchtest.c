@@ -249,14 +249,14 @@ gboolean save_state_event(void *hook_data, void *call_data)
 
 
 
-static void compute_tracefile(LttTracefile *tracefile)
+static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
 {
   GString *filename;
   guint i, j, nb_equal, nb_block, offset;
   guint64 tsc;
   FILE *fp;
   LttTime time, previous_time;
-  LttEvent *event = ltt_event_new();
+  LttEvent *event = ltt_tracefile_get_event(tracefile);
   LttFacility *facility;
   LttEventType *event_type;
   int err;
@@ -285,11 +285,14 @@ static void compute_tracefile(LttTracefile *tracefile)
     time = ltt_event_time(event);
     ltt_event_position(event, a_event_position);
     ltt_event_position_get(a_event_position, &tf_pos, &nb_block, &offset, &tsc);
-    fprintf(fp,"%s.%s: %llu %lu.%09lu position %u/%u\n", 
-        ltt_facility_name(facility), ltt_eventtype_name(event_type), 
+    //fprintf(fp,"%s.%s: %llu %lu.%09lu position %u/%u\n", 
+    fprintf(fp, "%s.%s: %llu %lu.%09lu position %u/%u, tracefile %s\n", 
+        g_quark_to_string(ltt_facility_name(facility)),
+        g_quark_to_string(ltt_eventtype_name(event_type)),
         tsc, (unsigned long)time.tv_sec, 
         (unsigned long)time.tv_nsec, 
-        nb_block, offset);
+        nb_block, offset,
+        g_quark_to_string(ltt_tracefile_name(tracefile)));
 
     if(ltt_time_compare(time, previous_time) < 0) {
       g_warning("Time decreasing trace %d tracefile %d position %u/%u",
@@ -331,7 +334,6 @@ static void compute_tracefile(LttTracefile *tracefile)
 
 close:
   fclose(fp);
-  ltt_event_destroy(event);
 }
 
 static gboolean process_traceset(void __UNUSED__ *hook_data, 
@@ -368,6 +370,11 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
 
   GData **tracefiles_groups;
 
+  struct compute_tracefile_group_args args;
+
+  args.func = compute_tracefile;
+  args.func_args = NULL;
+  
   if(a_dump_tracefiles != NULL) {
     for(i = 0 ; i < lttv_traceset_number(traceset) ; i++) {
       trace = lttv_trace(lttv_traceset_get(traceset, i));
@@ -375,7 +382,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
 
       g_datalist_foreach(tracefiles_groups, 
                             (GDataForeachFunc)compute_tracefile_group,
-                            compute_tracefile);
+                            &args);
       
     }
   }

@@ -302,7 +302,7 @@ int main(int argc, char ** argv){
     cur_pos += sizeof(uint32_t); //skip time delta
     tStart = (trace_start_any*)cur_pos;
     if(tStart->MagicNumber != TRACER_MAGIC_NUMBER)
-      g_error("Trace magic number does not match : %lx, should be %lx",
+      g_error("Trace magic number does not match : %x, should be %x",
                tStart->MagicNumber, TRACER_MAGIC_NUMBER);
     if(tStart->MajorVersion != TRACER_SUP_VERSION_MAJOR)
       g_error("Trace Major number does match : %hu, should be %u",
