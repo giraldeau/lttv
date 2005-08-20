@@ -71,6 +71,11 @@ GQuark LTT_TRACEFILE_NAME_FACILITIES;
 
 #define g_close close
 
+/* Those macros must be called from within a function where page_size is a known
+ * variable */
+#define PAGE_MASK (~(page_size-1))
+#define PAGE_ALIGN(addr)  (((addr)+page_size-1)&PAGE_MASK)
+
 /* obtain the time of an event */
 
 static inline LttTime getEventTime(LttTracefile * tf);
@@ -201,6 +206,7 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 {
   struct stat    lTDFStat;    /* Trace data file status */
   struct ltt_block_start_header *header;
+  int page_size = getpagesize();
 
   //open the file
   tf->name = g_quark_from_string(fileName);
@@ -225,7 +231,8 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   
   /* Temporarily map the buffer start header to get trace information */
   /* Multiple of pages aligned head */
-  tf->buffer.head = mmap(0, sizeof(struct ltt_block_start_header), PROT_READ, 
+  tf->buffer.head = mmap(0,
+      PAGE_ALIGN(sizeof(struct ltt_block_start_header)), PROT_READ, 
       MAP_PRIVATE, tf->fd, 0);
   if(tf->buffer.head == MAP_FAILED) {
     perror("Error in allocating memory for buffer of tracefile");
@@ -244,10 +251,10 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
     
   //store the size of the file
   tf->file_size = lTDFStat.st_size;
-  tf->block_size = header->buf_size;
+  tf->block_size = ltt_get_uint32(LTT_GET_BO(tf), &header->buf_size);
   tf->num_blocks = tf->file_size / tf->block_size;
 
-  munmap(tf->buffer.head, sizeof(struct ltt_block_start_header));
+  munmap(tf->buffer.head, PAGE_ALIGN(sizeof(struct ltt_block_start_header)));
   tf->buffer.head = NULL;
 
   //read the first block
@@ -260,7 +267,7 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 
   /* Error */
 unmap_file:
-  munmap(tf->buffer.head, sizeof(struct ltt_block_start_header));
+  munmap(tf->buffer.head, PAGE_ALIGN(sizeof(struct ltt_block_start_header)));
 close_file:
   close(tf->fd);
 end:
@@ -826,15 +833,16 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
     } else if(tf->event.facility_id == LTT_FACILITY_CORE) {
     
       struct LttFacilityLoad *fac_load_data;
+      struct LttStateDumpFacilityLoad *fac_state_dump_load_data;
       char *fac_name;
 
       // FIXME align
       switch((enum ltt_core_events)tf->event.event_id) {
         case LTT_EVENT_FACILITY_LOAD:
+          fac_name = (char*)(tf->event.data);
           fac_load_data =
-            (struct LttFacilityLoad *)tf->event.data;
-          fac_name = 
-            (char*)(tf->event.data + sizeof(struct LttFacilityLoad));
+            (struct LttFacilityLoad *)
+                (tf->event.data + strlen(fac_name) + 1);
           fac = &g_array_index (tf->trace->facilities_by_num, LttFacility,
               ltt_get_uint32(LTT_GET_BO(tf), &fac_load_data->id));
           g_assert(fac->exists == 0);
@@ -871,12 +879,12 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
            * trace. They simply won't be used after the unload. */
           break;
         case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
-          fac_load_data =
-            (struct LttFacilityLoad *)tf->event.data;
-          fac_name = 
-            (char*)(tf->event.data + sizeof(struct LttFacilityLoad));
+          fac_name = (char*)(tf->event.data);
+          fac_state_dump_load_data =
+            (struct LtttStateDumpFacilityLoad *)
+                (tf->event.data + strlen(fac_name) + 1);
           fac = &g_array_index (tf->trace->facilities_by_num, LttFacility,
-              ltt_get_uint32(LTT_GET_BO(tf), &fac_load_data->id));
+              ltt_get_uint32(LTT_GET_BO(tf), &fac_state_dump_load_data->id));
           g_assert(fac->exists == 0);
           fac->name = g_quark_from_string(fac_name);
           fac->checksum = ltt_get_uint32(LTT_GET_BO(tf),
@@ -1507,6 +1515,9 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   event->event_id = *(guint8*)pos;
   pos += sizeof(guint8);
 
+  event->event_size = ltt_get_uint16(LTT_GET_BO(tf), pos);
+  pos += sizeof(guint16);
+  
   event->data = pos;
 
   /* get the data size and update the event fields with the current
@@ -1531,16 +1542,19 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 
 static gint map_block(LttTracefile * tf, guint block_num)
 {
+  int page_size = getpagesize();
   struct ltt_block_start_header *header;
 
   g_assert(block_num < tf->num_blocks);
 
   if(tf->buffer.head != NULL)
-    munmap(tf->buffer.head, tf->buf_size);
+    munmap(tf->buffer.head, PAGE_ALIGN(tf->buf_size));
   
   /* Multiple of pages aligned head */
-  tf->buffer.head = mmap(0, tf->block_size, PROT_READ, MAP_PRIVATE, tf->fd,
-                            (off_t)tf->block_size * (off_t)block_num);
+  tf->buffer.head = mmap(0,
+      PAGE_ALIGN(tf->block_size),
+      PROT_READ, MAP_PRIVATE, tf->fd,
+      PAGE_ALIGN((off_t)tf->block_size * (off_t)block_num));
 
   if(tf->buffer.head == MAP_FAILED) {
     perror("Error in allocating memory for buffer of tracefile");
@@ -1607,14 +1621,17 @@ void ltt_update_event_size(LttTracefile *tf)
   if(likely(tf->event.facility_id == LTT_FACILITY_CORE)) {
     switch((enum ltt_core_events)tf->event.event_id) {
   case LTT_EVENT_FACILITY_LOAD:
-    size = strlen((char*)tf->event.data);
+    size = strlen((char*)tf->event.data) + 1;
+    g_debug("Event facility load of facility %s", (char*)tf->event.data);
     size += sizeof(struct LttFacilityLoad);
     break;
   case LTT_EVENT_FACILITY_UNLOAD:
     size = sizeof(struct LttFacilityUnload);
     break;
   case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
-    size = strlen((char*)tf->event.data);
+    size = strlen((char*)tf->event.data) + 1;
+    g_debug("Event facility load state dump of facility %s",
+        (char*)tf->event.data);
     size += sizeof(struct LttStateDumpFacilityLoad);
     break;
   case LTT_EVENT_HEARTBEAT:
@@ -1656,6 +1673,9 @@ void ltt_update_event_size(LttTracefile *tf)
   
   tf->event.data_size = size;
   
+  /* Check consistency between kernel and LTTV structure sizes */
+  g_assert(tf->event.data_size == tf->event.event_size);
+  
   return;
 
 facility_error:
@@ -1685,11 +1705,15 @@ static int ltt_seek_next_event(LttTracefile *tf)
   /* seek over the buffer header if we are at the buffer start */
   if(tf->event.offset == 0) {
     tf->event.offset += sizeof(struct ltt_block_start_header);
+
+    if(tf->event.offset == tf->block_size - tf->buffer.lost_size) {
+      ret = ERANGE;
+    }
     goto found;
   }
 
   
-  if(tf->event.offset == tf->buffer.lost_size) {
+  if(tf->event.offset == tf->block_size - tf->buffer.lost_size) {
     ret = ERANGE;
     goto found;
   }

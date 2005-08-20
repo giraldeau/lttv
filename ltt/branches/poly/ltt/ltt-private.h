@@ -43,8 +43,8 @@
 enum ltt_core_events {
     LTT_EVENT_FACILITY_LOAD,
     LTT_EVENT_FACILITY_UNLOAD,
-    LTT_EVENT_STATE_DUMP_FACILITY_LOAD,
-    LTT_EVENT_HEARTBEAT
+    LTT_EVENT_HEARTBEAT,
+    LTT_EVENT_STATE_DUMP_FACILITY_LOAD
 };
 
 
@@ -204,6 +204,8 @@ struct _LttEvent{
 
   void * data;               //event data
   guint  data_size;
+  guint  event_size;         //event_size field of the header : 
+                             //used to verify data_size from facility.
 
   int      count;                    //the number of overflow of cycle count
   gint64 overflow_nsec;              //precalculated nsec for overflows
