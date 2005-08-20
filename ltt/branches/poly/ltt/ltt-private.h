@@ -308,6 +308,7 @@ typedef struct _LttBuffer {
 
 struct _LttTracefile{
   gboolean cpu_online;               //is the cpu online ?
+  GQuark long_name;                  //tracefile complete filename
   GQuark name;                       //tracefile name
   guint cpu_num;                     //cpu number of the tracefile
   LttTrace * trace;                  //trace containing the tracefile

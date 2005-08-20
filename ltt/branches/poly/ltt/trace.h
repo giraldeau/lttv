@@ -81,6 +81,11 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end);
 
 GQuark ltt_tracefile_name(LttTracefile *tf);
 
+/* get the cpu number of the tracefile */
+
+guint ltt_tracefile_num(LttTracefile *tf);
+
+LttTrace *ltt_tracefile_get_trace(LttTracefile *tf);
 
 /* Get the number of blocks in the tracefile */
 

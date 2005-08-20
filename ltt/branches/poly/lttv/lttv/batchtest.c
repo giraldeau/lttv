@@ -248,11 +248,20 @@ gboolean save_state_event(void *hook_data, void *call_data)
 }
 
 
+static void sanitize_name(gchar *name)
+{
+  while(*name != '\0') {
+    if(*name == '/') *name = '_';
+    name++;
+  }
+  
+}
+
 
 static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
 {
   GString *filename;
-  guint i, j, nb_equal, nb_block, offset;
+  guint nb_equal, nb_block, offset;
   guint64 tsc;
   FILE *fp;
   LttTime time, previous_time;
@@ -260,6 +269,7 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
   LttFacility *facility;
   LttEventType *event_type;
   int err;
+  gchar mod_name[PATH_MAX];
 
   /* start_count is always initialized in this function _if_ there is always
    * a block_start before a block_end.
@@ -268,7 +278,12 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
 
 
   filename = g_string_new("");
-  g_string_printf(filename, "%s.%u.%u.trace", a_dump_tracefiles, i, j);
+  strcpy(mod_name, g_quark_to_string(ltt_tracefile_name(tracefile)));
+  
+  sanitize_name(mod_name);
+  
+  g_string_printf(filename, "%s.%s.%u.trace", a_dump_tracefiles,
+      mod_name, ltt_tracefile_num(tracefile));
   fp = fopen(filename->str, "w");
   if(fp == NULL) g_error("Cannot open %s", filename->str);
   g_string_free(filename, TRUE);
@@ -295,8 +310,9 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
         g_quark_to_string(ltt_tracefile_name(tracefile)));
 
     if(ltt_time_compare(time, previous_time) < 0) {
-      g_warning("Time decreasing trace %d tracefile %d position %u/%u",
-    i, j, nb_block, offset);
+      g_warning("Time decreasing trace %s tracefile %s position %u/%u",
+    g_quark_to_string(ltt_trace_name(ltt_tracefile_get_trace(tracefile))),
+    g_quark_to_string(ltt_tracefile_name(tracefile)), nb_block, offset);
     }
 
 #if 0 //FIXME

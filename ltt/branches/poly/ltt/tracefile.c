@@ -209,7 +209,7 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   int page_size = getpagesize();
 
   //open the file
-  tf->name = g_quark_from_string(fileName);
+  tf->long_name = g_quark_from_string(fileName);
   tf->trace = t;
   tf->fd = open(fileName, O_RDONLY);
   if(tf->fd < 0){
@@ -272,6 +272,11 @@ close_file:
   close(tf->fd);
 end:
   return -1;
+}
+
+LttTrace *ltt_tracefile_get_trace(LttTracefile *tf)
+{
+  return tf->trace;
 }
 
 #if 0
@@ -680,6 +685,7 @@ static int open_tracefiles(LttTrace *trace, char *root_path,
       
       tmp_tf.cpu_online = 1;
       tmp_tf.cpu_num = num;
+      tmp_tf.name = name;
 
       group = g_datalist_id_get_data(&trace->tracefiles, name);
       if(group == NULL) {
@@ -1193,6 +1199,12 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
 GQuark ltt_tracefile_name(LttTracefile *tf)
 {
   return tf->name;
+}
+
+
+guint ltt_tracefile_num(LttTracefile *tf)
+{
+  return tf->cpu_num;
 }
 
 /*****************************************************************************
