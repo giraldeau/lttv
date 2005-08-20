@@ -49,14 +49,14 @@ This program is distributed in the hope that it will be useful,
 
 /* Named types may be referenced from anywhere */
 
-facility * fac;
+facility_t * fac;
 
 unsigned alignment = 0;
 
 int main(int argc, char** argv)
 {
   char *token;
-  parse_file in;
+  parse_file_t in;
   char buffer[BUFFER_SIZE];
   int i;
 
@@ -98,7 +98,7 @@ int main(int argc, char** argv)
 				token = getName(&in);
 			
 				if(strcmp("facility",token) == 0) {
-					fac = memAlloc(sizeof(facility));
+					fac = memAlloc(sizeof(facility_t));
 					fac->name = NULL;
 					fac->description = NULL;
 					sequence_init(&(fac->events));
@@ -139,7 +139,8 @@ int main(int argc, char** argv)
  *Input Params
  *    name         : name of event definition file
  ****************************************************************************/
-void generateFile(char *name){
+void generateFile(char *name)
+{
   char *loadName, *hName, *hIdName, *cName, *tmp, *tmp2;
   FILE * lFp, *hFp, *iFp, *cFp;
   int nbEvent;
@@ -245,7 +246,8 @@ void generateFile(char *name){
  *Output Params
  *    nbEvent           : number of events in the facility
  ****************************************************************************/
-void generateEnumEvent(FILE *fp, char *facName, int * nbEvent, unsigned long checksum) {
+void generateEnumEvent(FILE *fp, char *facName, int * nbEvent,
+                       unsigned long checksum) {
   int pos = 0;
 
   fprintf(fp,"#include <linux/ltt-facilities.h>\n\n");
@@ -258,7 +260,7 @@ void generateEnumEvent(FILE *fp, char *facName, int * nbEvent, unsigned long che
   fprintf(fp,"enum %s_event {\n",facName);
 
   for(pos = 0; pos < fac->events.position;pos++) {
-    fprintf(fp,"\tevent_%s", ((event *)(fac->events.array[pos]))->name);
+    fprintf(fp,"\tevent_%s", ((event_t *)(fac->events.array[pos]))->name);
     if(pos != fac->events.position-1) fprintf(fp,",\n");
   }
   fprintf(fp,"\n};\n\n\n");
@@ -286,15 +288,15 @@ void generateEnumEvent(FILE *fp, char *facName, int * nbEvent, unsigned long che
 static void
 printStruct(FILE * fp, int len, void ** array, char * name, char * facName,
        int * whichTypeFirst, int * hasStrSeq, int * structCount,
-       type_descriptor *type)
+       type_descriptor_t *type)
 {
   int flag = 0;
   int pos;
-  field * fld;
-  type_descriptor * td;
+  field_t * fld;
+  type_descriptor_t * td;
 
   for (pos = 0; pos < len; pos++) {
-    fld  = (field *)array[pos];
+    fld  = (field_t *)array[pos];
     td = fld->type;
     if( td->type == STRING || td->type == SEQUENCE ||
         td->type == ARRAY) {
@@ -369,7 +371,7 @@ generateTypeDefs(FILE * fp, char *facName)
  *    fp                    : file to be written to
  *    fHead                 : enum type
  ****************************************************************************/
-void generateEnumDefinition(FILE * fp, type_descriptor * type){
+void generateEnumDefinition(FILE * fp, type_descriptor_t * type){
   int pos;
 
   if(type->already_printed) return;
@@ -396,15 +398,15 @@ void generateEnumDefinition(FILE * fp, type_descriptor * type){
  *    facName           : name of facility
  ****************************************************************************/
 void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
-  event * ev;
-  field * fld;
-  type_descriptor * td;
+  event_t * ev;
+  field_t * fld;
+  type_descriptor_t * td;
   int pos, pos1;
   int hasStrSeq, flag, structCount, seqCount,strCount, whichTypeFirst=0;
   int args_empty;
 
   for(pos = 0; pos < fac->events.position; pos++){
-    ev = (event *) fac->events.array[pos];
+    ev = (event_t *) fac->events.array[pos];
     //yxx    if(ev->nested)continue;
     fprintf(fp,"/****  structure and trace function for event: %s  ****/\n\n",
         ev->name);
@@ -421,7 +423,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     //twice.
     if(ev->type != 0)
       for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-        fld = (field *)ev->type->fields.array[pos1];
+        fld = (field_t *)ev->type->fields.array[pos1];
         if(fld->type->type == ENUM) generateEnumDefinition(fp, fld->type);      
       }
       
@@ -460,7 +462,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     
     if(ev->type != 0) {
       for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-        fld  = (field *)ev->type->fields.array[pos1];
+        fld  = (field_t *)ev->type->fields.array[pos1];
         td = fld->type;
         if(!args_empty) fprintf(fp, ", ");
         if(td->type == ARRAY ){
@@ -508,7 +510,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 
     if(ev->type != 0) {
       for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-        fld  = (field *)ev->type->fields.array[pos1];
+        fld  = (field_t *)ev->type->fields.array[pos1];
         td = fld->type;
         if(!args_empty) fprintf(fp, ", ");
         if(td->type == ARRAY ){
@@ -629,7 +631,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     flag = 0;
 		if(ev->type != 0)
 			for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-				fld  = (field *)ev->type->fields.array[pos1];
+				fld  = (field_t *)ev->type->fields.array[pos1];
 				td = fld->type;
 				if(td->type == SEQUENCE || td->type==STRING || td->type==ARRAY){
 					if(td->type == SEQUENCE) {
@@ -719,7 +721,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     structCount = 0;
 		if(ev->type != 0)
 			for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-				fld  = (field *)ev->type->fields.array[pos1];
+				fld  = (field_t *)ev->type->fields.array[pos1];
 				td = fld->type;
 	//      if(td->type != STRING && td->type != SEQUENCE && td->type != ARRAY){
 	//        if(flag == 0) structCount++;  
@@ -831,7 +833,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     //structCount = 0;
 		if(ev->type != 0)
 			for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-				fld  = (field *)ev->type->fields.array[pos1];
+				fld  = (field_t *)ev->type->fields.array[pos1];
 				td = fld->type;
 				if(td->type != ARRAY && td->type != SEQUENCE && td->type != STRING){
 					//if(flag == 0){
@@ -896,8 +898,8 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
  *Return Values
  *    char *            : type string
  ****************************************************************************/
-char * getTypeStr(type_descriptor * td){
-  type_descriptor * t ;
+char * getTypeStr(type_descriptor_t * td){
+  type_descriptor_t * t ;
 
   switch(td->type){
     case INT:
