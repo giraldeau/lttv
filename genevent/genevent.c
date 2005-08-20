@@ -417,6 +417,7 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
   type_descriptor * td;
   int pos, pos1;
   int hasStrSeq, flag, structCount, seqCount,strCount, whichTypeFirst=0;
+  int args_empty;
 
   for(pos = 0; pos < fac->events.position; pos++){
     ev = (event *) fac->events.array[pos];
@@ -457,23 +458,46 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     strCount = 0;
 		fprintf(fp, "#ifndef CONFIG_LTT\n");
     fprintf(fp,"static inline void trace_%s_%s(",facName,ev->name);
-    if(ev->type == 0)
-      fprintf(fp, "void");
-    else
+
+    args_empty = 1;
+
+    /* Does it support per trace tracing ? */
+    if(ev->per_trace) {
+      fprintf(fp, "struct ltt_trace_struct *dest_trace");
+      args_empty = 0;
+    }
+    
+    /* Does it support per tracefile tracing ? */
+    if(ev->per_tracefile) {
+      if(!args_empty) fprintf(fp, ", ");
+      fprintf(fp, "unsigned int tracefile_index");
+      args_empty = 0;
+    }
+    
+    if(ev->type != 0) {
       for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
         fld  = (field *)ev->type->fields.array[pos1];
         td = fld->type;
+        if(!args_empty) fprintf(fp, ", ");
         if(td->type == ARRAY ){
           fprintf(fp,"%s * %s",getTypeStr(td), fld->name);
+          args_empty = 0;
         }else if(td->type == STRING){
           fprintf(fp,"short int strlength_%d, %s * %s",
               ++strCount, getTypeStr(td), fld->name);
-       }else if(td->type == SEQUENCE){
+          args_empty = 0;
+        }else if(td->type == SEQUENCE){
           fprintf(fp,"%s seqlength_%d, %s * %s",
               uintOutputTypes[td->size], ++seqCount,getTypeStr(td), fld->name);
-       }else fprintf(fp,"%s %s",getTypeStr(td), fld->name);     
-       if(pos1 != ev->type->fields.position - 1) fprintf(fp,", ");
+          args_empty = 0;
+        }else {
+          fprintf(fp,"%s %s",getTypeStr(td), fld->name);     
+          args_empty = 0;
+        }
       }
+    }
+    if(args_empty) fprintf(fp, "void");
+
     fprintf(fp,")\n{\n");
     fprintf(fp,"}\n");
 		fprintf(fp,"#else\n");
@@ -482,26 +506,47 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     seqCount = 0;
     strCount = 0;
     fprintf(fp,"static inline void trace_%s_%s(",facName,ev->name);
-    if(ev->type == 0)
-      fprintf(fp, "void");
-    else
+
+    args_empty = 1;
+
+    /* Does it support per trace tracing ? */
+    if(ev->per_trace) {
+      fprintf(fp, "struct ltt_trace_struct *dest_trace");
+      args_empty = 0;
+    }
+    
+    /* Does it support per tracefile tracing ? */
+    if(ev->per_tracefile) {
+      if(!args_empty) fprintf(fp, ", ");
+      fprintf(fp, "unsigned int tracefile_index");
+      args_empty = 0;
+    }
+
+    if(ev->type != 0) {
       for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
         fld  = (field *)ev->type->fields.array[pos1];
         td = fld->type;
+        if(!args_empty) fprintf(fp, ", ");
         if(td->type == ARRAY ){
           fprintf(fp,"%s * %s",getTypeStr(td), fld->name);
+          args_empty = 0;
         }else if(td->type == STRING){
           fprintf(fp,"short int strlength_%d, %s * %s",
               ++strCount, getTypeStr(td), fld->name);
-       }else if(td->type == SEQUENCE){
+          args_empty = 0;
+        }else if(td->type == SEQUENCE){
           fprintf(fp,"%s seqlength_%d, %s * %s",
               uintOutputTypes[td->size], ++seqCount,getTypeStr(td), fld->name);
-       }else fprintf(fp,"%s %s",getTypeStr(td), fld->name);     
-       if(pos1 != ev->type->fields.position - 1) fprintf(fp,", ");
+          args_empty = 0;
+        }else {
+          fprintf(fp,"%s %s",getTypeStr(td), fld->name);     
+          args_empty = 0;
+        }
       }
+    }
+    if(args_empty) fprintf(fp, "void");
+
     fprintf(fp,")\n{\n");
-
-
 	
     //allocate buffer
     // MD no more need. fprintf(fp,"\tchar buff[buflength];\n");
@@ -540,16 +585,23 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 		fprintf(fp, "\tif(ltt_nesting[smp_processor_id()] > 1) goto unlock;\n");
     fprintf(fp, "\tspin_lock(&ltt_traces.locks[smp_processor_id()]);\n\n");
 		
-    fprintf(fp, 
+    if(ev->per_tracefile) {
+      fprintf(fp, "\tindex = tracefile_index;\n");
+    } else {
+      fprintf(fp, 
         "\tindex = ltt_get_index_from_facility(ltt_facility_%s_%X,\n"\
             "\t\t\t\tevent_%s);\n",
         facName, checksum, ev->name);
+    }
     fprintf(fp,"\n");
 
     /* For each trace */
     fprintf(fp, "\tlist_for_each_entry(trace, &ltt_traces.head, list) {\n");
     fprintf(fp, "\t\tif(!trace->active) continue;\n\n");
 
+    if(ev->per_trace) {
+      fprintf(fp, "\t\tif(dest_trace != trace) continue;\n\n");
+    }
      //length of buffer : length of all structures
  //   if(ev->type == 0) fprintf(fp, "0");
    
@@ -673,77 +725,10 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\n");
 
     if(ev->type != 0)
-      fprintf(fp, "\t\tchar *ptr = (char*)buff + _offset + header_length;\n");
-
-   
-    //declare a char pointer if needed : starts at the end of the structs.
-    //if(structCount + hasStrSeq > 1) {
-    //  fprintf(fp,"\t\tchar * ptr = (char*)buff + header_length");
-    //  for(pos1=0;pos1<structCount;pos1++){
-    //    fprintf(fp," + sizeof(struct %s_%s_%d)",ev->name, facName,pos1+1);
-    //  }
-    //  if(structCount + hasStrSeq > 1) fprintf(fp,";\n");
-    //}
-
-    // Declare an alias pointer of the struct type to the beginning
-    // of the reserved area, just after the event header.
-    if(ev->type != 0) {
-			unsigned align = max(alignment, td->alignment);
-      if(align > 1) {
-        fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-              align, align, align);
-      }
-    
-      fprintf(fp, "\t\t__1 = (struct %s_%s_1 *)(ptr);\n",
-          ev->name, facName);
-    }
-    //allocate memory for new struct and initialize it
-    //if(whichTypeFirst == 1){ //struct first
-      //for(pos1=0;pos1<structCount;pos1++){  
-      //  if(pos1==0) fprintf(fp,
-      //      "\tstruct %s_%s_1 * __1 = (struct %s_%s_1 *)buff;\n",
-      //      ev->name, facName,ev->name, facName);
-  //MD disabled      else fprintf(fp,
-  //          "\tstruct %s_%s_%d  __%d;\n",
-  //          ev->name, facName,pos1+1,pos1+1);
-      //}      
-    //}else if(whichTypeFirst == 2){
-     // for(pos1=0;pos1<structCount;pos1++)
-     //   fprintf(fp,"\tstruct %s_%s_%d  __%d;\n",
-     //       ev->name, facName,pos1+1,pos1+1);
-    //}
-    fprintf(fp,"\n");
-
-    if(structCount) fprintf(fp,"\t\t//initialize structs\n");
-    //flag = 0;
-    //structCount = 0;
-		if(ev->type != 0)
-			for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-				fld  = (field *)ev->type->fields.array[pos1];
-				td = fld->type;
-				if(td->type != ARRAY && td->type != SEQUENCE && td->type != STRING){
-					//if(flag == 0){
-					//  flag = 1;  
-					//  structCount++;
-					//  if(structCount > 1) fprintf(fp,"\n");
-					//}
-					fprintf(fp, "\t\t__1->%s = %s;\n", fld->name, fld->name );
-
-				//if(structCount == 1 && whichTypeFirst == 1)
-				//  fprintf(fp, "\t__1->%s =  %s;\n",fld->name,fld->name );
-				//else 
-				//  fprintf(fp, "\t__%d.%s =  %s;\n",structCount ,fld->name,fld->name);
-				}
-				//else flag = 0;
-			}
-    if(structCount) fprintf(fp,"\n");
-    //set ptr to the end of first struct if needed;
-    //if(structCount + hasStrSeq > 1){
-    //  fprintf(fp,"\n\t\t//set ptr to the end of the first struct\n");
-    //  fprintf(fp,"\t\tptr +=  sizeof(struct %s_%s_1);\n\n",ev->name, facName);
-    //}
+      fprintf(fp, "\t\tptr = (char*)buff + _offset + header_length;\n");
 
     //copy struct, sequence and string to buffer
+    //FIXME : they always come before the structs.
     seqCount = 0;
     strCount = 0;
     flag = 0;
@@ -815,6 +800,76 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 				}      
 			}
     if(structCount + seqCount > 1) fprintf(fp,"\n");
+
+
+
+
+    //declare a char pointer if needed : starts at the end of the structs.
+    //if(structCount + hasStrSeq > 1) {
+    //  fprintf(fp,"\t\tchar * ptr = (char*)buff + header_length");
+    //  for(pos1=0;pos1<structCount;pos1++){
+    //    fprintf(fp," + sizeof(struct %s_%s_%d)",ev->name, facName,pos1+1);
+    //  }
+    //  if(structCount + hasStrSeq > 1) fprintf(fp,";\n");
+    //}
+
+    // Declare an alias pointer of the struct type to the beginning
+    // of the reserved area, just after the event header.
+    if(ev->type != 0) {
+			unsigned align = max(alignment, td->alignment);
+      if(align > 1) {
+        fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+              align, align, align);
+      }
+    
+      fprintf(fp, "\t\t__1 = (struct %s_%s_1 *)(ptr);\n",
+          ev->name, facName);
+    }
+    //allocate memory for new struct and initialize it
+    //if(whichTypeFirst == 1){ //struct first
+      //for(pos1=0;pos1<structCount;pos1++){  
+      //  if(pos1==0) fprintf(fp,
+      //      "\tstruct %s_%s_1 * __1 = (struct %s_%s_1 *)buff;\n",
+      //      ev->name, facName,ev->name, facName);
+  //MD disabled      else fprintf(fp,
+  //          "\tstruct %s_%s_%d  __%d;\n",
+  //          ev->name, facName,pos1+1,pos1+1);
+      //}      
+    //}else if(whichTypeFirst == 2){
+     // for(pos1=0;pos1<structCount;pos1++)
+     //   fprintf(fp,"\tstruct %s_%s_%d  __%d;\n",
+     //       ev->name, facName,pos1+1,pos1+1);
+    //}
+    fprintf(fp,"\n");
+
+    if(structCount) fprintf(fp,"\t\t//initialize structs\n");
+    //flag = 0;
+    //structCount = 0;
+		if(ev->type != 0)
+			for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
+				fld  = (field *)ev->type->fields.array[pos1];
+				td = fld->type;
+				if(td->type != ARRAY && td->type != SEQUENCE && td->type != STRING){
+					//if(flag == 0){
+					//  flag = 1;  
+					//  structCount++;
+					//  if(structCount > 1) fprintf(fp,"\n");
+					//}
+					fprintf(fp, "\t\t__1->%s = %s;\n", fld->name, fld->name );
+
+				//if(structCount == 1 && whichTypeFirst == 1)
+				//  fprintf(fp, "\t__1->%s =  %s;\n",fld->name,fld->name );
+				//else 
+				//  fprintf(fp, "\t__%d.%s =  %s;\n",structCount ,fld->name,fld->name);
+				}
+				//else flag = 0;
+			}
+    if(structCount) fprintf(fp,"\n");
+    //set ptr to the end of first struct if needed;
+    //if(structCount + hasStrSeq > 1){
+    //  fprintf(fp,"\n\t\t//set ptr to the end of the first struct\n");
+    //  fprintf(fp,"\t\tptr +=  sizeof(struct %s_%s_1);\n\n",ev->name, facName);
+    //}
 
     fprintf(fp,"\n");
     fprintf(fp, "\t\t/* Commit the work */\n");

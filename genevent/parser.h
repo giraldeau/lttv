@@ -126,6 +126,8 @@ typedef struct _event {
   char *name;
   char *description;
   type_descriptor *type; 
+  int  per_trace;   /* Is the event able to be logged to a specific trace ? */
+  int  per_tracefile;  /* Must we log this event in a specific tracefile ? */
 } event;
 
 typedef struct _facility {

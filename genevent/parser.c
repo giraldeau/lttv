@@ -223,6 +223,8 @@ void getEventAttributes(parse_file *in, event *ev)
   char car;
   
   ev->name = NULL;
+  ev->per_trace = 0;
+  ev->per_tracefile = 0;
 
   while(1) {
     token = getToken(in); 
@@ -237,7 +239,12 @@ void getEventAttributes(parse_file *in, event *ev)
       if(car == EOF) in->error(in,"name was expected");
       else if(car == '\"') ev->name = allocAndCopy(getQuotedString(in));
       else ev->name = allocAndCopy(getName(in));
+    } else if(!strcmp("per_trace", token)) {
+      ev->per_trace = 1;
+    } else if(!strcmp("per_tracefile", token)) {
+      ev->per_tracefile = 1;
     }
+
   }
 }
 

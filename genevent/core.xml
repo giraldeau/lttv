@@ -21,7 +21,7 @@
     </struct>
   </event>
 
-  <event name=time_heartbeat>
+  <event name=time_heartbeat per_tracefile>
     <description>System time values sent periodically to detect cycle counter
      rollovers. Useful when only the 32 LSB of the TSC are saved in events
      header : we save the full 64 bits in this event.
@@ -29,7 +29,7 @@
     <typeref name=timestamp/>
   </event>
   
-  <event name=state_dump_facility_load>
+  <event name=state_dump_facility_load per_trace>
     <description>Facility is loaded while in state dump</description>
     <struct>
       <field name="name"><string/></field>
