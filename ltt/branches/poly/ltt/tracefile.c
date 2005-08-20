@@ -750,7 +750,7 @@ static int ltt_get_facility_description(LttFacility *f,
 
   err = snprintf(desc_file_name+textlen, PATH_MAX-textlen-1,
       "%u", f->checksum);
-  if(err) goto name_error;
+  if(err < 0) goto name_error;
 
   textlen=strlen(desc_file_name);
   
@@ -820,17 +820,16 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
      *  0 : facility load
      *  1 : facility unload
      *  2 : state dump facility load
-     * Facility 1 : (heartbeat)
-     *  0 : heartbeat
+     *  3 : heartbeat
      */
-    if(tf->event.facility_id > 1) { /* Should only contain core and heartbeat
-                                       facilities */
+    if(tf->event.facility_id != LTT_FACILITY_CORE) {
+      /* Should only contain core facility */
       g_warning("Error in processing facility file %s, "
           "should not contain facility id  %u.", g_quark_to_string(tf->name),
           tf->event.facility_id);
       err = EPERM;
       goto fac_id_error;
-    } else if(tf->event.facility_id == LTT_FACILITY_CORE) {
+    } else {
     
       struct LttFacilityLoad *fac_load_data;
       struct LttStateDumpFacilityLoad *fac_state_dump_load_data;
@@ -840,6 +839,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
       switch((enum ltt_core_events)tf->event.event_id) {
         case LTT_EVENT_FACILITY_LOAD:
           fac_name = (char*)(tf->event.data);
+          g_debug("Doing LTT_EVENT_FACILITY_LOAD of facility %s",
+              fac_name);
           fac_load_data =
             (struct LttFacilityLoad *)
                 (tf->event.data + strlen(fac_name) + 1);
@@ -875,27 +876,30 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
 
           break;
         case LTT_EVENT_FACILITY_UNLOAD:
+          g_debug("Doing LTT_EVENT_FACILITY_UNLOAD");
           /* We don't care about unload : facilities ID are valid for the whole
            * trace. They simply won't be used after the unload. */
           break;
         case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
           fac_name = (char*)(tf->event.data);
+          g_debug("Doing LTT_EVENT_STATE_DUMP_FACILITY_LOAD of facility %s",
+              fac_name);
           fac_state_dump_load_data =
-            (struct LtttStateDumpFacilityLoad *)
+            (struct LttStateDumpFacilityLoad *)
                 (tf->event.data + strlen(fac_name) + 1);
           fac = &g_array_index (tf->trace->facilities_by_num, LttFacility,
               ltt_get_uint32(LTT_GET_BO(tf), &fac_state_dump_load_data->id));
           g_assert(fac->exists == 0);
           fac->name = g_quark_from_string(fac_name);
           fac->checksum = ltt_get_uint32(LTT_GET_BO(tf),
-                          &fac_load_data->checksum);
-          fac->id = fac_load_data->id;
+                          &fac_state_dump_load_data->checksum);
+          fac->id = fac_state_dump_load_data->id;
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
-                          &fac_load_data->pointer_size);
+                          &fac_state_dump_load_data->pointer_size);
           fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
-                          &fac_load_data->size_t_size);
+                          &fac_state_dump_load_data->size_t_size);
           fac->alignment = ltt_get_uint32(LTT_GET_BO(tf),
-                          &fac_load_data->alignment);
+                          &fac_state_dump_load_data->alignment);
           if(ltt_get_facility_description(fac, tf->trace, tf))
             goto facility_error;
           
@@ -934,6 +938,7 @@ event_id_error:
 fac_id_error:
 update_error:
 seek_error:
+  g_warning("An error occured in facility tracefile parsing");
   return err;
 }
 
@@ -1622,19 +1627,21 @@ void ltt_update_event_size(LttTracefile *tf)
     switch((enum ltt_core_events)tf->event.event_id) {
   case LTT_EVENT_FACILITY_LOAD:
     size = strlen((char*)tf->event.data) + 1;
-    g_debug("Event facility load of facility %s", (char*)tf->event.data);
+    g_debug("Update Event facility load of facility %s", (char*)tf->event.data);
     size += sizeof(struct LttFacilityLoad);
     break;
   case LTT_EVENT_FACILITY_UNLOAD:
+    g_debug("Update Event facility unload");
     size = sizeof(struct LttFacilityUnload);
     break;
   case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
     size = strlen((char*)tf->event.data) + 1;
-    g_debug("Event facility load state dump of facility %s",
+    g_debug("Update Event facility load state dump of facility %s",
         (char*)tf->event.data);
     size += sizeof(struct LttStateDumpFacilityLoad);
     break;
   case LTT_EVENT_HEARTBEAT:
+    g_debug("Update Event heartbeat");
     size = sizeof(TimeHeartbeat);
     break;
   default:
