@@ -299,13 +299,9 @@ printStruct(FILE * fp, int len, void ** array, char * name, char * facName,
     if( td->type == STRING || td->type == SEQUENCE ||
         td->type == ARRAY) {
         (*hasStrSeq)++;
-		}
-//      if (*whichTypeFirst == 0) {
-//        *whichTypeFirst = 1; //struct first
-//      }
+		} else {
       if (flag == 0) {
         flag = 1;
-
         fprintf(fp,"struct %s_%s",name, facName);
         if (structCount) {
           fprintf(fp, "_%d {\n",++*structCount);
@@ -315,19 +311,7 @@ printStruct(FILE * fp, int len, void ** array, char * name, char * facName,
       }
       fprintf(fp, "\t%s %s; /* %s */\n", 
           getTypeStr(td),fld->name,fld->description );
-#if 0
-    } else {
-        if (*whichTypeFirst == 0) {
-        //string or sequence or array first
-          *whichTypeFirst = 2;
-        }
-        (*hasStrSeq)++;
-        if(flag) {
-          fprintf(fp,"} __attribute__ ((packed));\n\n");
-        }
-        flag = 0;
     }
-#endif //0
   }
 
   if(flag) {
