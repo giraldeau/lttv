@@ -44,10 +44,10 @@
 
 /* search for the (named) type in the table, if it does not exist
    create a new one */
-LttType * lookup_named_type(LttFacility *fac, type_descriptor * td);
+LttType * lookup_named_type(LttFacility *fac, type_descriptor_t * td);
 
 /* construct directed acyclic graph for types, and tree for fields */
-void construct_types_and_fields(LttFacility * fac,type_descriptor * td, 
+void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td, 
                             LttField * fld);
 
 /* generate the facility according to the events belongin to it */
@@ -75,10 +75,10 @@ void freeLttNamedType(LttType * type);
 int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
 {
   gchar *token;
-  parse_file in;
+  parse_file_t in;
   gsize length;
   facility_t * fac;
-  guint32 checksum;
+  unsigned long checksum;
   GError * error = NULL;
   gchar buffer[BUFFER_SIZE];
 
@@ -87,15 +87,17 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   in.error = error_callback;
   in.name = pathname;
 
-  in.fd = g_open(in.name, O_RDONLY, 0);
-  if(in.fd < 0 ) {
+  //in.fd = g_open(in.name, O_RDONLY, 0);
+  //if(in.fd < 0 ) {
+  in.fp = fopen(in.name, "r");
+  if(in.fp < 0 ) {
     g_warning("cannot open facility description file %s",
         in.name);
     return 1;
   }
 
-  in.channel = g_io_channel_unix_new(in.fd);
-  in.pos = 0;
+  //in.channel = g_io_channel_unix_new(in.fd);
+  //in.pos = 0;
 
   while(1){
     token = getToken(&in);
@@ -115,9 +117,9 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
       parseFacility(&in, fac);
 
       //check if any namedType is not defined
-      g_assert(checkNamedTypesImplemented(&fac->named_types) == 0);
+      checkNamedTypesImplemented(&fac->named_types);
     
-      g_assert(generateChecksum(fac->name, &checksum, &fac->events) == 0);
+      generateChecksum(fac->name, &checksum, &fac->events);
 
       generateFacility(f, fac, checksum);
 
@@ -138,13 +140,14 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   }
 
  parse_error:
-  g_io_channel_shutdown(in.channel, FALSE, &error); /* No flush */
-  if(error != NULL) {
-    g_warning("Can not close file: \n%s\n", error->message);
-    g_error_free(error);
-  }
+  //g_io_channel_shutdown(in.channel, FALSE, &error); /* No flush */
+  //if(error != NULL) {
+  fclose(in.fp);
+  //  g_warning("Can not close file: \n%s\n", error->message);
+  //  g_error_free(error);
+  //}
 
-  g_close(in.fd);
+  //g_close(in.fd);
 }
 
 
@@ -160,7 +163,7 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
 void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
 {
   char * facilityName = fac->name;
-  sequence * events = &fac->events;
+  sequence_t * events = &fac->events;
   int i;
   //LttEventType * evType;
   LttEventType * event_type;
@@ -244,11 +247,11 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
  ****************************************************************************/
 
 
-void construct_types_and_fields(LttFacility * fac, type_descriptor * td, 
+void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td, 
                             LttField * fld)
 {
   int i, flag;
-  type_descriptor * tmpTd;
+  type_descriptor_t * tmpTd;
 
   switch(td->type) {
   case LTT_ENUM:
@@ -289,7 +292,7 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor * td,
 
     fld->child = g_new(LttField*, td->fields.position);      
     for(i=0;i<td->fields.position;i++){
-      tmpTd = ((type_fields*)(td->fields.array[i]))->type;
+      tmpTd = ((field_t*)(td->fields.array[i]))->type;
 
     	fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
       fld->child[i] = g_new(LttField,1); 
@@ -298,7 +301,7 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor * td,
       fld->child[i]->field_type = fld->field_type->element_type[i]; 
 
       fld->child[i]->field_type->element_name 
-	          = g_quark_from_string(((type_fields*)(td->fields.array[i]))->name);
+	          = g_quark_from_string(((field_t*)(td->fields.array[i]))->name);
 
       fld->child[i]->offset_root = 0;
       fld->child[i]->fixed_root = FIELD_UNKNOWN;
@@ -415,7 +418,7 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor * td,
  *                     : either find the named type, or create a new LttType
  ****************************************************************************/
 
-LttType * lookup_named_type(LttFacility *fac, type_descriptor * td)
+LttType * lookup_named_type(LttFacility *fac, type_descriptor_t * td)
 {
   GQuark name = g_quark_from_string(td->type_name);
   

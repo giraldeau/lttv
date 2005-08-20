@@ -81,7 +81,7 @@ int getSizeindex(int value)
  *    size                           
  *****************************************************************************/
 
-int getSize(parse_file *in)
+int getSize(parse_file_t *in)
 {
   char *token;
 
@@ -109,7 +109,7 @@ int getSize(parse_file *in)
  *    msg             : message to be printed                  
  ****************************************************************************/
 
-void error_callback(parse_file *in, char *msg)
+void error_callback(parse_file_t *in, char *msg)
 {
   if(in)
     printf("Error in file %s, line %d: %s\n", in->name, in->lineno, msg);
@@ -170,7 +170,7 @@ char *allocAndCopy(char *str)
  *
  **************************************************************************/
 
-void getTypeAttributes(parse_file *in, type_descriptor *t)
+void getTypeAttributes(parse_file_t *in, type_descriptor_t *t)
 {
   char * token;
   char car;
@@ -217,7 +217,7 @@ void getTypeAttributes(parse_file *in, type_descriptor *t)
  *
  **************************************************************************/
 
-void getEventAttributes(parse_file *in, event *ev)
+void getEventAttributes(parse_file_t *in, event_t *ev)
 {
   char * token;
   char car;
@@ -260,7 +260,7 @@ void getEventAttributes(parse_file *in, event *ev)
  *
  **************************************************************************/
 
-void getFacilityAttributes(parse_file *in, facility *fac)
+void getFacilityAttributes(parse_file_t *in, facility_t *fac)
 {
   char * token;
   char car;
@@ -296,7 +296,7 @@ void getFacilityAttributes(parse_file *in, facility *fac)
  *
  **************************************************************************/
 
-void getFieldAttributes(parse_file *in, field *f)
+void getFieldAttributes(parse_file_t *in, field_t *f)
 {
   char * token;
   char car;
@@ -320,7 +320,7 @@ void getFieldAttributes(parse_file *in, field *f)
   }
 }
 
-char *getNameAttribute(parse_file *in)
+char *getNameAttribute(parse_file_t *in)
 {
   char * token;
   char *name = NULL;
@@ -349,7 +349,7 @@ char *getNameAttribute(parse_file *in)
 
 
 //for <label name=label_name value=n format="..."/>, value is an option
-char * getValueStrAttribute(parse_file *in)
+char * getValueStrAttribute(parse_file_t *in)
 {
   char * token;
 
@@ -366,7 +366,7 @@ char * getValueStrAttribute(parse_file *in)
   return token;  
 }
 
-char * getDescription(parse_file *in)
+char * getDescription(parse_file_t *in)
 {
   long int pos;
   char * token, car, *str;
@@ -412,10 +412,10 @@ char * getDescription(parse_file *in)
  *    fac           : facility filled with event list
  ****************************************************************************/
 
-void parseFacility(parse_file *in, facility * fac)
+void parseFacility(parse_file_t *in, facility_t * fac)
 {
   char * token;
-  event *ev;
+  event_t *ev;
   
   getFacilityAttributes(in, fac);
   if(fac->name == NULL) in->error(in, "Attribute not named");
@@ -434,7 +434,7 @@ void parseFacility(parse_file *in, facility * fac)
       in->error(in,"the definition of the facility is not finished");
 
     if(strcmp("event",token) == 0){
-      ev = (event*) memAlloc(sizeof(event));
+      ev = (event_t*) memAlloc(sizeof(event_t));
       sequence_push(&(fac->events),ev);
       parseEvent(in,ev, &(fac->unnamed_types), &(fac->named_types));    
     }else if(strcmp("type",token) == 0){
@@ -461,11 +461,11 @@ void parseFacility(parse_file *in, facility * fac)
  *    ev            : new event (parameters are passed to it)   
  ****************************************************************************/
 
-void parseEvent(parse_file *in, event * ev, sequence * unnamed_types, 
-		table * named_types) 
+void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types, 
+		table_t * named_types) 
 {
   char *token;
-  type_descriptor *t;
+  type_descriptor_t *t;
 
   //<event name=eventtype_name>
   getEventAttributes(in, ev);
@@ -508,13 +508,14 @@ void parseEvent(parse_file *in, event * ev, sequence * unnamed_types,
  *    named_types   : array of named types
  ****************************************************************************/
 
-void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
-		 table * named_types) 
+void parseFields(parse_file_t *in, type_descriptor_t *t,
+    sequence_t * unnamed_types,
+		table_t * named_types) 
 {
   char * token;
-  field *f;
+  field_t *f;
 
-  f = (field *)memAlloc(sizeof(field));
+  f = (field_t *)memAlloc(sizeof(field_t));
   sequence_push(&(t->fields),f);
 
   //<field name=field_name> <description> <type> </field>
@@ -556,14 +557,14 @@ void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types,
  *    type_descriptor* : a type descriptor             
  ****************************************************************************/
 
-type_descriptor *parseType(parse_file *in, type_descriptor *inType, 
-			   sequence * unnamed_types, table * named_types) 
+type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType, 
+			   sequence_t * unnamed_types, table_t * named_types) 
 {
   char *token;
-  type_descriptor *t;
+  type_descriptor_t *t;
 
   if(inType == NULL) {
-    t = (type_descriptor *) memAlloc(sizeof(type_descriptor));
+    t = (type_descriptor_t *) memAlloc(sizeof(type_descriptor_t));
     t->type_name = NULL;
     t->type = NONE;
     t->fmt = NULL;
@@ -777,13 +778,13 @@ type_descriptor *parseType(parse_file *in, type_descriptor *inType,
  *    type_descriptor *   : a type descriptor                       
  *****************************************************************************/
 
-type_descriptor * find_named_type(char *name, table * named_types)
+type_descriptor_t * find_named_type(char *name, table_t * named_types)
 { 
-  type_descriptor *t;
+  type_descriptor_t *t;
 
   t = table_find(named_types,name);
   if(t == NULL) {
-    t = (type_descriptor *)memAlloc(sizeof(type_descriptor));
+    t = (type_descriptor_t *)memAlloc(sizeof(type_descriptor_t));
     t->type_name = allocAndCopy(name);
     t->type = NONE;
     t->fmt = NULL;
@@ -802,11 +803,11 @@ type_descriptor * find_named_type(char *name, table * named_types)
  *    named_types         : array of named types
  *****************************************************************************/
 
-void parseTypeDefinition(parse_file * in, sequence * unnamed_types,
-			 table * named_types)
+void parseTypeDefinition(parse_file_t * in, sequence_t * unnamed_types,
+			 table_t * named_types)
 {
   char *token;
-  type_descriptor *t;
+  type_descriptor_t *t;
 
   token = getNameAttribute(in);
   if(token == NULL) in->error(in, "Type has empty name");
@@ -842,7 +843,7 @@ void parseTypeDefinition(parse_file * in, sequence * unnamed_types,
  *
  **************************************************************************/
 
-char *getName(parse_file * in) 
+char *getName(parse_file_t * in) 
 {
   char *token;
 
@@ -851,7 +852,7 @@ char *getName(parse_file * in)
   return token;
 }
 
-int getNumber(parse_file * in) 
+int getNumber(parse_file_t * in) 
 {
   char *token;
 
@@ -860,7 +861,7 @@ int getNumber(parse_file * in)
   return atoi(token);
 }
 
-char *getForwardslash(parse_file * in) 
+char *getForwardslash(parse_file_t * in) 
 {
   char *token;
 
@@ -869,7 +870,7 @@ char *getForwardslash(parse_file * in)
   return token;
 }
 
-char *getLAnglebracket(parse_file * in) 
+char *getLAnglebracket(parse_file_t * in) 
 {
   char *token;
 
@@ -878,7 +879,7 @@ char *getLAnglebracket(parse_file * in)
   return token;
 }
 
-char *getRAnglebracket(parse_file * in) 
+char *getRAnglebracket(parse_file_t * in) 
 {
   char *token;
 
@@ -887,7 +888,7 @@ char *getRAnglebracket(parse_file * in)
   return token;
 }
 
-char *getQuotedString(parse_file * in) 
+char *getQuotedString(parse_file_t * in) 
 {
   char *token;
 
@@ -896,7 +897,7 @@ char *getQuotedString(parse_file * in)
   return token;
 }
 
-char * getEqual(parse_file *in)
+char * getEqual(parse_file_t *in)
 {
   char *token;
 
@@ -905,7 +906,7 @@ char * getEqual(parse_file *in)
   return token;
 }
 
-char seekNextChar(parse_file *in)
+char seekNextChar(parse_file_t *in)
 {
   char car;
   while((car = getc(in->fp)) != EOF) {
@@ -932,12 +933,12 @@ char seekNextChar(parse_file *in)
  *
  ******************************************************************/
 
-void ungetToken(parse_file * in)
+void ungetToken(parse_file_t * in)
 {
   in->unget = 1;
 }
 
-char *getToken(parse_file * in)
+char *getToken(parse_file_t * in)
 {
   FILE *fp = in->fp;
   char car, car1;
@@ -1047,7 +1048,7 @@ char *getToken(parse_file * in)
   return in->buffer;
 }
 
-void skipComment(parse_file * in)
+void skipComment(parse_file_t * in)
 {
   char car;
   while((car = getc(in->fp)) != EOF) {
@@ -1062,7 +1063,7 @@ void skipComment(parse_file * in)
   if(car == EOF) in->error(in,"comment begining with '/*' has no ending '*/'");
 }
 
-void skipEOL(parse_file * in)
+void skipEOL(parse_file_t * in)
 {
   char car;
   while((car = getc(in->fp)) != EOF) {
@@ -1079,16 +1080,17 @@ void skipEOL(parse_file * in)
  *    checkNamedTypesImplemented : check if all named types have definition
  ****************************************************************************/
 
-void checkNamedTypesImplemented(table * named_types)
+void checkNamedTypesImplemented(table_t * named_types)
 {
-  type_descriptor *t;
+  type_descriptor_t *t;
   int pos;
   char str[256];
 
   for(pos = 0 ; pos < named_types->values.position; pos++) {
-    t = (type_descriptor *) named_types->values.array[pos];
+    t = (type_descriptor_t *) named_types->values.array[pos];
     if(t->type == NONE){
-      sprintf(str,"named type '%s' has no definition",(char*)named_types->keys.array[pos]);
+      sprintf(str,"named type '%s' has no definition",
+          (char*)named_types->keys.array[pos]);
       error_callback(NULL,str);   
     }
   }
@@ -1104,16 +1106,17 @@ void checkNamedTypesImplemented(table * named_types)
  *    checksum          : checksum for the facility
  ****************************************************************************/
 
-void generateChecksum( char* facName, unsigned long * checksum, sequence * events)
+void generateChecksum(char* facName,
+    unsigned long * checksum, sequence_t * events)
 {
   unsigned long crc ;
   int pos;
-  event * ev;
+  event_t * ev;
   char str[256];
 
   crc = crc32(facName);
   for(pos = 0; pos < events->position; pos++){
-    ev = (event *)(events->array[pos]);
+    ev = (event_t *)(events->array[pos]);
     crc = partial_crc32(ev->name,crc);    
     if(!ev->type) continue; //event without type
     if(ev->type->type != STRUCT){
@@ -1135,12 +1138,12 @@ void generateChecksum( char* facName, unsigned long * checksum, sequence * event
  *    unsigned long     : checksum 
  *****************************************************************************/
 
-unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
+unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type)
 {
   unsigned long crc = aCrc;
   char * str = NULL, buf[16];
   int flag = 0, pos;
-  field * fld;
+  field_t * fld;
 
   switch(type->type){
     case INT:
@@ -1216,7 +1219,7 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
     crc = getTypeChecksum(crc,type->nested_type);
   }else if(type->type == STRUCT || type->type == UNION){
     for(pos =0; pos < type->fields.position; pos++){
-      fld = (field *) type->fields.array[pos];
+      fld = (field_t *) type->fields.array[pos];
       crc = partial_crc32(fld->name,crc);
       crc = getTypeChecksum(crc, fld->type);
     }    
@@ -1230,10 +1233,10 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type)
 
 
 /* Event type descriptors */
-void freeType(type_descriptor * tp)
+void freeType(type_descriptor_t * tp)
 {
   int pos2;
-  field *f;
+  field_t *f;
 
   if(tp->fmt != NULL) free(tp->fmt);
   if(tp->type == ENUM) {
@@ -1244,7 +1247,7 @@ void freeType(type_descriptor * tp)
   }
   if(tp->type == STRUCT) {
     for(pos2 = 0; pos2 < tp->fields.position; pos2++) {
-      f = (field *) tp->fields.array[pos2];
+      f = (field_t *) tp->fields.array[pos2];
       free(f->name);
       free(f->description);
       free(f);
@@ -1253,39 +1256,39 @@ void freeType(type_descriptor * tp)
   }
 }
 
-void freeNamedType(table * t)
+void freeNamedType(table_t * t)
 {
   int pos;
-  type_descriptor * td;
+  type_descriptor_t * td;
 
   for(pos = 0 ; pos < t->keys.position; pos++) {
     free((char *)t->keys.array[pos]);
-    td = (type_descriptor*)t->values.array[pos];
+    td = (type_descriptor_t*)t->values.array[pos];
     freeType(td);
     free(td);
   }
 }
 
-void freeTypes(sequence *t) 
+void freeTypes(sequence_t *t) 
 {
   int pos, pos2;
-  type_descriptor *tp;
-  field *f;
+  type_descriptor_t *tp;
+  field_t *f;
 
   for(pos = 0 ; pos < t->position; pos++) {
-    tp = (type_descriptor *)t->array[pos];
+    tp = (type_descriptor_t *)t->array[pos];
     freeType(tp);
     free(tp);
   }
 }
 
-void freeEvents(sequence *t) 
+void freeEvents(sequence_t *t) 
 {
   int pos;
-  event *ev;
+  event_t *ev;
 
   for(pos = 0 ; pos < t->position; pos++) {
-    ev = (event *) t->array[pos];
+    ev = (event_t *) t->array[pos];
     free(ev->name);
     free(ev->description);
     free(ev);
@@ -1296,21 +1299,21 @@ void freeEvents(sequence *t)
 
 /* Extensible array */
 
-void sequence_init(sequence *t) 
+void sequence_init(sequence_t *t) 
 {
   t->size = 10;
   t->position = 0;
   t->array = (void **)memAlloc(t->size * sizeof(void *));
 }
 
-void sequence_dispose(sequence *t) 
+void sequence_dispose(sequence_t *t) 
 {
   t->size = 0;
   free(t->array);
   t->array = NULL;
 }
 
-void sequence_push(sequence *t, void *elem) 
+void sequence_push(sequence_t *t, void *elem) 
 {
   void **tmp;
 
@@ -1325,7 +1328,7 @@ void sequence_push(sequence *t, void *elem)
   t->position++;
 }
 
-void *sequence_pop(sequence *t) 
+void *sequence_pop(sequence_t *t) 
 {
   return t->array[t->position--];
 }
@@ -1333,25 +1336,25 @@ void *sequence_pop(sequence *t)
 
 /* Hash table API, implementation is just linear search for now */
 
-void table_init(table *t) 
+void table_init(table_t *t) 
 {
   sequence_init(&(t->keys));
   sequence_init(&(t->values));
 }
 
-void table_dispose(table *t) 
+void table_dispose(table_t *t) 
 {
   sequence_dispose(&(t->keys));
   sequence_dispose(&(t->values));
 }
 
-void table_insert(table *t, char *key, void *value) 
+void table_insert(table_t *t, char *key, void *value) 
 {
   sequence_push(&(t->keys),key);
   sequence_push(&(t->values),value);
 }
 
-void *table_find(table *t, char *key) 
+void *table_find(table_t *t, char *key) 
 {
   int pos;
   for(pos = 0 ; pos < t->keys.position; pos++) {
@@ -1361,13 +1364,13 @@ void *table_find(table *t, char *key)
   return NULL;
 }
 
-void table_insert_int(table *t, int *key, void *value)
+void table_insert_int(table_t *t, int *key, void *value)
 {
   sequence_push(&(t->keys),key);
   sequence_push(&(t->values),value);
 }
 
-void *table_find_int(table *t, int *key)
+void *table_find_int(table_t *t, int *key)
 {
   int pos;
   for(pos = 0 ; pos < t->keys.position; pos++) {

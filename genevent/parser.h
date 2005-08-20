@@ -7,27 +7,27 @@ typedef struct _sequence {
   int size;
   int position;
   void **array;
-} sequence;
+} sequence_t;
 
-void sequence_init(sequence *t);
-void sequence_dispose(sequence *t);
-void sequence_push(sequence *t, void *elem);
-void *sequence_pop(sequence *t);
+void sequence_init(sequence_t *t);
+void sequence_dispose(sequence_t *t);
+void sequence_push(sequence_t *t, void *elem);
+void *sequence_pop(sequence_t *t);
 
 
 /* Hash table */
 
 typedef struct _table {
-  sequence keys;
-  sequence values;
-} table;
+  sequence_t keys;
+  sequence_t values;
+} table_t;
 
-void table_init(table *t);
-void table_dispose(table *t);
-void table_insert(table *t, char *key, void *value);
-void *table_find(table *t, char *key);
-void table_insert_int(table *t, int *key, void *value);
-void *table_find_int(table *t, int *key);
+void table_init(table_t *t);
+void table_dispose(table_t *t);
+void table_insert(table_t *t, char *key, void *value);
+void *table_find(table_t *t, char *key);
+void table_insert_int(table_t *t, int *key, void *value);
+void *table_find_int(table_t *t, int *key);
 
 
 /* Token types */
@@ -41,7 +41,7 @@ typedef enum _token_type {
   QUOTEDSTRING,
   NUMBER,
   NAME
-} token_type;
+} token_type_t;
 
 
 /* State associated with a file being parsed */
@@ -50,24 +50,24 @@ typedef struct _parse_file {
   FILE * fp;
   int lineno;
   char *buffer;
-  token_type type; 
+  token_type_t type; 
   int unget;
   void (*error) (struct _parse_file *, char *);
-} parse_file;
+} parse_file_t;
 
-void ungetToken(parse_file * in);
-char *getToken(parse_file *in);
-char *getForwardslash(parse_file *in);
-char *getLAnglebracket(parse_file *in);
-char *getRAnglebracket(parse_file *in);
-char *getQuotedString(parse_file *in);
-char *getName(parse_file *in);
-int   getNumber(parse_file *in);
-char *getEqual(parse_file *in);
-char  seekNextChar(parse_file *in);
+void ungetToken(parse_file_t * in);
+char *getToken(parse_file_t *in);
+char *getForwardslash(parse_file_t *in);
+char *getLAnglebracket(parse_file_t *in);
+char *getRAnglebracket(parse_file_t *in);
+char *getQuotedString(parse_file_t *in);
+char *getName(parse_file_t *in);
+int   getNumber(parse_file_t *in);
+char *getEqual(parse_file_t *in);
+char  seekNextChar(parse_file_t *in);
 
-void skipComment(parse_file * in);
-void skipEOL(parse_file * in);
+void skipComment(parse_file_t * in);
+void skipEOL(parse_file_t * in);
 
 /* Some constants */
 
@@ -93,22 +93,22 @@ typedef enum _data_type {
   STRUCT,
   UNION,
   NONE
-} data_type;
+} data_type_t;
 
 /* Event type descriptors */
 
 typedef struct _type_descriptor {
   char * type_name; //used for named type
-  data_type type;
+  data_type_t type;
   char *fmt;
   int size;
-  sequence labels; // for enumeration
-	sequence labels_description;
+  sequence_t labels; // for enumeration
+	sequence_t labels_description;
 	int	already_printed;
-  sequence fields; // for structure
+  sequence_t fields; // for structure
   struct _type_descriptor *nested_type; // for array and sequence 
   int alignment;
-} type_descriptor;
+} type_descriptor_t;
 
 
 /* Fields within types */
@@ -116,8 +116,8 @@ typedef struct _type_descriptor {
 typedef struct _field{
   char *name;
   char *description;
-  type_descriptor *type;
-} field;
+  type_descriptor_t *type;
+} field_t;
 
 
 /* Events definitions */
@@ -125,41 +125,46 @@ typedef struct _field{
 typedef struct _event {  
   char *name;
   char *description;
-  type_descriptor *type; 
+  type_descriptor_t *type; 
   int  per_trace;   /* Is the event able to be logged to a specific trace ? */
   int  per_tracefile;  /* Must we log this event in a specific tracefile ? */
-} event;
+} event_t;
 
 typedef struct _facility {
   char * name;
 	char * capname;
   char * description;
-  sequence events;
-  sequence unnamed_types;
-  table named_types;
-} facility;
+  sequence_t events;
+  sequence_t unnamed_types;
+  table_t named_types;
+} facility_t;
 
-int getSize(parse_file *in);
-unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor * type);
+int getSize(parse_file_t *in);
+unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type);
 
-void parseFacility(parse_file *in, facility * fac);
-void parseEvent(parse_file *in, event *ev, sequence * unnamed_types, table * named_types);
-void parseTypeDefinition(parse_file *in, sequence * unnamed_types, table * named_types);
-type_descriptor *parseType(parse_file *in, type_descriptor *t, sequence * unnamed_types, table * named_types);
-void parseFields(parse_file *in, type_descriptor *t, sequence * unnamed_types, table * named_types);
-void checkNamedTypesImplemented(table * namedTypes);
-type_descriptor * find_named_type(char *name, table * named_types);
-void generateChecksum(char * facName, unsigned long * checksum, sequence * events);
+void parseFacility(parse_file_t *in, facility_t * fac);
+void parseEvent(parse_file_t *in, event_t *ev, sequence_t * unnamed_types,
+    table_t * named_types);
+void parseTypeDefinition(parse_file_t *in,
+    sequence_t * unnamed_types, table_t * named_types);
+type_descriptor_t *parseType(parse_file_t *in,
+    type_descriptor_t *t, sequence_t * unnamed_types, table_t * named_types);
+void parseFields(parse_file_t *in, type_descriptor_t *t,
+    sequence_t * unnamed_types, table_t * named_types);
+void checkNamedTypesImplemented(table_t * namedTypes);
+type_descriptor_t * find_named_type(char *name, table_t * named_types);
+void generateChecksum(char * facName,
+    unsigned long * checksum, sequence_t * events);
 
 
 /* get attributes */
-char * getNameAttribute(parse_file *in);
-char * getFormatAttribute(parse_file *in);
-int    getSizeAttribute(parse_file *in);
-int    getValueAttribute(parse_file *in);
-char * getValueStrAttribute(parse_file *in);
+char * getNameAttribute(parse_file_t *in);
+char * getFormatAttribute(parse_file_t *in);
+int    getSizeAttribute(parse_file_t *in);
+int    getValueAttribute(parse_file_t *in);
+char * getValueStrAttribute(parse_file_t *in);
 
-char * getDescription(parse_file *in);
+char * getDescription(parse_file_t *in);
 
 
 static char *intOutputTypes[] = {
@@ -178,11 +183,11 @@ static char *floatOutputTypes[] = {
 void * memAlloc(int size);
 char *allocAndCopy(char * str);
 char *appendString(char *s, char *suffix);
-void freeTypes(sequence *t);
-void freeType(type_descriptor * td);
-void freeEvents(sequence *t);
-void freeNamedType(table * t);
-void error_callback(parse_file *in, char *msg);
+void freeTypes(sequence_t *t);
+void freeType(type_descriptor_t * td);
+void freeEvents(sequence_t *t);
+void freeNamedType(table_t * t);
+void error_callback(parse_file_t *in, char *msg);
 
 
 //checksum part
