@@ -542,6 +542,8 @@ int get_tracefile_name_number(const gchar *raw_name,
   
   strncpy(char_name, raw_name, underscore_pos);
   
+  char_name[underscore_pos] = '\0';
+  
   *name = g_quark_from_string(char_name);
   *num = cpu_num;
   
@@ -609,21 +611,21 @@ gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
  * A tracefile group is simply an array where all the per cpu tracefiles sits.
  */
 
-static int open_tracefiles(LttTrace *trace, char *root_path,
-    char *relative_path)
+static int open_tracefiles(LttTrace *trace, gchar *root_path,
+    gchar *relative_path)
 {
 	DIR *dir = opendir(root_path);
 	struct dirent *entry;
 	struct stat stat_buf;
 	int ret;
   
-	char path[PATH_MAX];
+	gchar path[PATH_MAX];
 	int path_len;
-	char *path_ptr;
+	gchar *path_ptr;
 
   int rel_path_len;
-  char rel_path[PATH_MAX];
-  char *rel_path_ptr;
+  gchar rel_path[PATH_MAX];
+  gchar *rel_path_ptr;
   LttTracefile tmp_tf;
 
 	if(dir == NULL) {
