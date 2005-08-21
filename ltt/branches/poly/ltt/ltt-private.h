@@ -314,7 +314,7 @@ struct _LttTracefile{
   LttTrace * trace;                  //trace containing the tracefile
   int fd;                            //file descriptor 
   off_t file_size;                   //file size
-  unsigned block_size;               //block_size
+  //unsigned block_size;               //block_size
   unsigned int num_blocks;           //number of blocks in the file
   gboolean  reverse_bo;              //must we reverse byte order ?
 

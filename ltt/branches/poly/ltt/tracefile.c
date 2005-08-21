@@ -251,10 +251,16 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
     
   //store the size of the file
   tf->file_size = lTDFStat.st_size;
-  tf->block_size = ltt_get_uint32(LTT_GET_BO(tf), &header->buf_size);
-  tf->num_blocks = tf->file_size / tf->block_size;
+  tf->buf_size = ltt_get_uint32(LTT_GET_BO(tf), &header->buf_size);
+  tf->num_blocks = tf->file_size / tf->buf_size;
 
-  munmap(tf->buffer.head, PAGE_ALIGN(sizeof(struct ltt_block_start_header)));
+  if(munmap(tf->buffer.head,
+        PAGE_ALIGN(sizeof(struct ltt_block_start_header)))) {
+    g_warning("unmap size : %u\n",
+        PAGE_ALIGN(sizeof(struct ltt_block_start_header)));
+    perror("munmap error");
+    g_assert(0);
+  }
   tf->buffer.head = NULL;
 
   //read the first block
@@ -267,7 +273,13 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 
   /* Error */
 unmap_file:
-  munmap(tf->buffer.head, PAGE_ALIGN(sizeof(struct ltt_block_start_header)));
+  if(munmap(tf->buffer.head,
+        PAGE_ALIGN(sizeof(struct ltt_block_start_header)))) {
+    g_warning("unmap size : %u\n",
+        PAGE_ALIGN(sizeof(struct ltt_block_start_header)));
+    perror("munmap error");
+    g_assert(0);
+  }
 close_file:
   close(tf->fd);
 end:
@@ -356,8 +368,16 @@ gint ltt_tracefile_open_control(LttTrace *t, gchar * control_name)
 
 void ltt_tracefile_close(LttTracefile *t)
 {
+  int page_size = getpagesize();
+
   if(t->buffer.head != NULL)
-    munmap(t->buffer.head, t->buf_size);
+    if(munmap(t->buffer.head, PAGE_ALIGN(t->buf_size))) {
+    g_warning("unmap size : %u\n",
+        PAGE_ALIGN(t->buf_size));
+    perror("munmap error");
+    g_assert(0);
+  }
+
   close(t->fd);
 }
 
@@ -1572,14 +1592,21 @@ static gint map_block(LttTracefile * tf, guint block_num)
 
   g_assert(block_num < tf->num_blocks);
 
-  if(tf->buffer.head != NULL)
-    munmap(tf->buffer.head, PAGE_ALIGN(tf->buf_size));
+  if(tf->buffer.head != NULL) {
+    if(munmap(tf->buffer.head, PAGE_ALIGN(tf->buf_size))) {
+    g_warning("unmap size : %u\n",
+        PAGE_ALIGN(tf->buf_size));
+      perror("munmap error");
+      g_assert(0);
+    }
+  }
+    
   
   /* Multiple of pages aligned head */
   tf->buffer.head = mmap(0,
-      PAGE_ALIGN(tf->block_size),
+      PAGE_ALIGN(tf->buf_size),
       PROT_READ, MAP_PRIVATE, tf->fd,
-      PAGE_ALIGN((off_t)tf->block_size * (off_t)block_num));
+      PAGE_ALIGN((off_t)tf->buf_size * (off_t)block_num));
 
   if(tf->buffer.head == MAP_FAILED) {
     perror("Error in allocating memory for buffer of tracefile");
@@ -1616,7 +1643,7 @@ static gint map_block(LttTracefile * tf, guint block_num)
   /* FIXME
    * eventually support variable buffer size : will need a partial pre-read of
    * the headers to create an index when we open the trace... eventually. */
-  g_assert(tf->block_size  == ltt_get_uint32(LTT_GET_BO(tf), 
+  g_assert(tf->buf_size  == ltt_get_uint32(LTT_GET_BO(tf), 
                                              &header->buf_size));
   
   /* Now that the buffer is mapped, calculate the time interpolation for the
@@ -1702,7 +1729,8 @@ void ltt_update_event_size(LttTracefile *tf)
     else
       size = 0;
 
-    g_debug("Event root field : f.e %hhu.%hhu size %lu", tf->event.facility_id,
+    g_debug("Event root field : f.e %hhu.%hhu size %zd",
+        tf->event.facility_id,
         tf->event.event_id, size);
   }
   
@@ -1741,7 +1769,7 @@ static int ltt_seek_next_event(LttTracefile *tf)
   if(tf->event.offset == 0) {
     tf->event.offset += sizeof(struct ltt_block_start_header);
 
-    if(tf->event.offset == tf->block_size - tf->buffer.lost_size) {
+    if(tf->event.offset == tf->buf_size - tf->buffer.lost_size) {
       ret = ERANGE;
     }
     goto found;
@@ -1756,7 +1784,7 @@ static int ltt_seek_next_event(LttTracefile *tf)
   
   tf->event.offset = pos - tf->buffer.head;
   
-  if(tf->event.offset == tf->block_size - tf->buffer.lost_size) {
+  if(tf->event.offset == tf->buf_size - tf->buffer.lost_size) {
     ret = ERANGE;
     goto found;
   }
