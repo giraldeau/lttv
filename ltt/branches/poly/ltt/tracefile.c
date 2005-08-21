@@ -1423,7 +1423,8 @@ LttEvent *ltt_tracefile_get_event(LttTracefile *tf)
  *Return value
  *
  *    Returns 0 if an event can be used in tf->event.
- *    Returns ERANGE on end of trace. The event in tf->event still can be used.
+ *    Returns ERANGE on end of trace. The event in tf->event still can be used
+ *    (if the last block was not empty).
  *    Returns EPERM on error.
  *
  *    This function does make the tracefile event structure point to the event
@@ -1813,14 +1814,12 @@ static double calc_nsecs_per_cycle(LttTracefile * tf)
   LttCycleCount     lBufTotalCycle;/* Total cycles for this buffer */
 
   /* Calculate the total time for this buffer */
-  lBufTotalTime = ltt_time_sub(
-       ltt_get_time(LTT_GET_BO(tf), &tf->buffer.end.timestamp),
-       ltt_get_time(LTT_GET_BO(tf), &tf->buffer.begin.timestamp));
+  lBufTotalTime = ltt_time_sub(tf->buffer.end.timestamp,
+                               tf->buffer.begin.timestamp);
 
   /* Calculate the total cycles for this bufffer */
-  lBufTotalCycle  = ltt_get_uint64(LTT_GET_BO(tf), &tf->buffer.end.cycle_count);
-  lBufTotalCycle -= ltt_get_uint64(LTT_GET_BO(tf),
-                     &tf->buffer.begin.cycle_count);
+  lBufTotalCycle  = tf->buffer.end.cycle_count;
+  lBufTotalCycle -= tf->buffer.begin.cycle_count;
 
   /* Convert the total time to double */
   lBufTotalNSec  = ltt_time_to_double(lBufTotalTime);
