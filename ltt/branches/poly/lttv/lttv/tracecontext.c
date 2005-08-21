@@ -39,7 +39,7 @@ gint compare_tracefile(gconstpointer a, gconstpointer b)
   const LttvTracefileContext *trace_b = (const LttvTracefileContext *)b;
 
   if(likely(trace_a != trace_b)) {
-    comparison = ltt_time_compare(trace_a->timestamp, trace_b->timestamp);
+    comparison = ltt_time_compare(trace_b->timestamp, trace_a->timestamp);
     if(unlikely(comparison == 0)) {
       if(trace_a->index < trace_b->index) comparison = -1;
       else if(trace_a->index > trace_b->index) comparison = 1;
@@ -48,10 +48,7 @@ gint compare_tracefile(gconstpointer a, gconstpointer b)
       else if(trace_a->t_context->index > trace_b->t_context->index)
         comparison = 1;
     }
-  } else {
-    comparison = 0;
   }
-
   return comparison;
 }
 
@@ -617,13 +614,26 @@ lttv_tracefile_context_get_type(void)
 
 
 static gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
+  g_assert(key == value);
   *((LttvTracefileContext **)user_data) = (LttvTracefileContext *)value;
   return TRUE;
 }
 
 static gboolean test_tree(gpointer key, gpointer value, gpointer user_data) {
 
-  g_assert(((LttvTracefileContext *)user_data) != (LttvTracefileContext *)value);
+  LttvTracefileContext *tfc = (LttvTracefileContext *)key;
+
+  g_debug("Tracefile name %s, time %lu.%lu, tfi %u, ti %u",
+      g_quark_to_string(ltt_tracefile_name(tfc->tf)),
+      tfc->timestamp.tv_sec, tfc->timestamp.tv_nsec,
+      tfc->index, tfc->t_context->index);
+
+  if(((LttvTracefileContext *)user_data) == (LttvTracefileContext *)value) {
+    g_assert(compare_tracefile(user_data, value) == 0);
+  } else
+    g_assert(compare_tracefile(user_data, value) != 0);
+  
+  //g_assert(((LttvTracefileContext *)user_data) != (LttvTracefileContext *)value);
   return FALSE;
 }
 
@@ -703,9 +713,14 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
        or more tracefiles have events for the same time, hope that lookup
        and remove are consistent. */
     
+    g_debug("test tree before remove");
+    g_tree_foreach(pqueue, test_tree, tfc);
+
     g_tree_remove(pqueue, tfc);
 
+    g_debug("test tree after remove");
     g_tree_foreach(pqueue, test_tree, tfc);
+
     count++;
     
     e = ltt_tracefile_get_event(tfc->tf);
@@ -718,8 +733,9 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     read_ret = ltt_tracefile_read(tfc->tf);
 
     if(likely(!read_ret)) {
-      g_debug("got someting");
+      g_debug("An event is ready");
       tfc->timestamp = ltt_event_time(e);
+      
 	    g_tree_insert(pqueue, tfc, tfc);
     } else {
       if(read_ret == ERANGE)
@@ -765,9 +781,11 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfc = g_array_index(self->tracefiles, LttvTracefileContext*, i);
+
+    g_tree_remove(pqueue, tfc);
+    
     ret = ltt_tracefile_seek_time(tfc->tf, start);
     if(ret == EPERM) g_error("error in lttv_process_trace_seek_time seek");
-    g_tree_remove(pqueue, tfc);
 
     if(ret == 0) { /* not ERANGE especially */
       tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
