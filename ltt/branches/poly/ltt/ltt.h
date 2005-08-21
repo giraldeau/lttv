@@ -68,6 +68,7 @@
    associated to the trace. */
    
 #define NUM_FACILITIES 256
+#define FACILITIES_BITS 8
 #define AVG_EVENTS_PER_FACILITIES 10
 
 typedef struct _LttTrace LttTrace;
