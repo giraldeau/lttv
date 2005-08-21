@@ -282,6 +282,7 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
   
   sanitize_name(mod_name);
   
+  g_warning("test %s test", g_quark_to_string(ltt_tracefile_name(tracefile)));
   g_string_printf(filename, "%s.%s.%u.trace", a_dump_tracefiles,
       mod_name, ltt_tracefile_num(tracefile));
   fp = fopen(filename->str, "w");
@@ -310,9 +311,13 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
         g_quark_to_string(ltt_tracefile_name(tracefile)));
 
     if(ltt_time_compare(time, previous_time) < 0) {
-      g_warning("Time decreasing trace %s tracefile %s position %u/%u",
+      g_warning("Time decreasing trace %s tracefile %s cpu %u position %u/%u",
     g_quark_to_string(ltt_trace_name(ltt_tracefile_get_trace(tracefile))),
-    g_quark_to_string(ltt_tracefile_name(tracefile)), nb_block, offset);
+    g_quark_to_string(ltt_tracefile_name(tracefile)), 
+    ltt_tracefile_num(tracefile), nb_block, offset);
+      g_warning("last time %lu.%lu vs current %lu.%lu",
+    previous_time.tv_sec, previous_time.tv_nsec,
+    time.tv_sec, time.tv_nsec);
     }
 
 #if 0 //FIXME

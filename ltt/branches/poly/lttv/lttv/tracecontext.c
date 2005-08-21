@@ -679,7 +679,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
      */
 
     if(unlikely(last_ret == TRUE ||
-                count >= nb_events ||
+                ((count >= nb_events) && (nb_events != G_MAXULONG)) ||
      (end_position!=NULL&&lttv_traceset_context_ctx_pos_compare(self,
                                                           end_position) == 0)||
        ltt_time_compare(end, tfc->timestamp) <= 0))
@@ -844,7 +844,7 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
 
   GArray *facilities;
 
-  guint i, fac_id;
+  guint i, fac_id, ev_id;
 
   LttvTraceHookByFacility *thf, *first_thf;
 
@@ -872,8 +872,10 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
   g_array_index(th->fac_list, LttvTraceHookByFacility*, 0)
         = thf;
 
+  ev_id = ltt_eventtype_id(et);
+  
   thf->h = h;
-  thf->id = ltt_eventtype_id(et);
+  thf->id = GET_HOOK_ID(fac_id, ev_id);
   thf->f1 = find_field(et, field1);
   thf->f2 = find_field(et, field2);
   thf->f3 = find_field(et, field3);
@@ -891,8 +893,9 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
     thf = &g_array_index(th->fac_index, LttvTraceHookByFacility, fac_id);
     g_array_index(th->fac_list, LttvTraceHookByFacility*, i)
           = thf;
+    ev_id = ltt_eventtype_id(et);
     thf->h = h;
-    thf->id = ltt_eventtype_id(et);
+    thf->id = GET_HOOK_ID(fac_id, ev_id);
     thf->f1 = find_field(et, field1);
     if(check_fields_compatibility(first_et, et,
         first_thf->f1, thf->f1))

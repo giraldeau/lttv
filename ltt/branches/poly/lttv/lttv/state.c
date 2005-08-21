@@ -968,9 +968,7 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf =
-        lttv_trace_hook_get_fac((LttvTraceHook *)hook_data, 
-                                 ltt_event_facility_id(e));
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   LttField *f = thf->f1;
 
   LttvExecutionSubmode submode;
@@ -995,9 +993,7 @@ static gboolean trap_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf =
-        lttv_trace_hook_get_fac((LttvTraceHook *)hook_data, 
-                                 ltt_event_facility_id(e));
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   LttField *f = thf->f1;
 
   LttvExecutionSubmode submode;
@@ -1024,9 +1020,7 @@ static gboolean irq_entry(void *hook_data, void *call_data)
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   guint8 fac_id = ltt_event_facility_id(e);
   guint8 ev_id = ltt_event_eventtype_id(e);
-  LttvTraceHookByFacility *thf =
-        lttv_trace_hook_get_fac((LttvTraceHook *)hook_data, 
-                                 ltt_event_facility_id(e));
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
  // g_assert(lttv_trace_hook_get_first((LttvTraceHook *)hook_data)->f1 != NULL);
   g_assert(thf->f1 != NULL);
  // g_assert(thf == lttv_trace_hook_get_first((LttvTraceHook *)hook_data));
@@ -1056,9 +1050,7 @@ static gboolean schedchange(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf =
-        lttv_trace_hook_get_fac((LttvTraceHook *)hook_data, 
-                                 ltt_event_facility_id(e));
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   guint pid_in, pid_out, state_out;
 
   pid_out = ltt_event_get_unsigned(e, thf->f1);
@@ -1104,9 +1096,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf =
-        lttv_trace_hook_get_fac((LttvTraceHook *)hook_data, 
-                                 ltt_event_facility_id(e));
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   LttField *f;
   guint parent_pid;
   guint child_pid;
@@ -1141,9 +1131,7 @@ static gboolean process_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf =
-        lttv_trace_hook_get_fac((LttvTraceHook *)hook_data, 
-                                 ltt_event_facility_id(e));
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   LttField *f;
   guint pid;
 
@@ -1162,9 +1150,7 @@ static gboolean process_free(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf =
-        lttv_trace_hook_get_fac((LttvTraceHook *)hook_data, 
-                                 ltt_event_facility_id(e));
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   guint release_pid;
   LttvProcessState *process;
 
@@ -1298,7 +1284,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
           lttv_hooks_add(
             lttv_hooks_by_id_find(tfs->parent.event_by_id, thf->id),
             thf->h,
-            hook,
+            thf,
             LTTV_PRIO_STATE);
         }
       }
@@ -1358,7 +1344,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
           lttv_hooks_remove_data(
             lttv_hooks_by_id_find(tfs->parent.event_by_id, thf->id),
                     thf->h,
-                    &g_array_index(hooks, LttvTraceHook, k));
+                    thf);
         }
         lttv_trace_hook_destroy(&g_array_index(hooks, LttvTraceHook, k));
       }

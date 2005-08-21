@@ -522,9 +522,7 @@ gboolean before_schedchange(void *hook_data, void *call_data)
 
   LttEvent *e = ltt_tracefile_get_event(tfcs->parent.parent.tf);
 
-  LttvTraceHookByFacility *thf =
-        lttv_trace_hook_get_fac((LttvTraceHook *)hook_data, 
-                                 ltt_event_facility_id(e));
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
 
   guint pid_in, pid_out, state_out;
 
@@ -902,7 +900,7 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
           lttv_hooks_add(
               lttv_hooks_by_id_find(tfs->parent.parent.event_by_id, thf->id),
               thf->h,
-              &g_array_index(before_hooks, LttvTraceHook, k),
+              thf,
               LTTV_PRIO_STATS_BEFORE_STATE);
         }
       }
@@ -913,7 +911,7 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
           lttv_hooks_add(
               lttv_hooks_by_id_find(tfs->parent.parent.event_by_id, thf->id),
               thf->h,
-              &g_array_index(after_hooks, LttvTraceHook, k),
+              thf,
               LTTV_PRIO_STATS_AFTER_STATE);
         }
       }
@@ -984,7 +982,7 @@ void lttv_stats_remove_event_hooks(LttvTracesetStats *self)
           lttv_hooks_remove_data(
               lttv_hooks_by_id_find(tfs->parent.parent.event_by_id, thf->id),
               thf->h,
-              &g_array_index(before_hooks, LttvTraceHook, k));
+              thf);
         }
       }
       for(k = 0 ; k < after_hooks->len ; k++) {
@@ -994,7 +992,7 @@ void lttv_stats_remove_event_hooks(LttvTracesetStats *self)
           lttv_hooks_remove_data(
               lttv_hooks_by_id_find(tfs->parent.parent.event_by_id, thf->id),
               thf->h,
-              &g_array_index(after_hooks, LttvTraceHook, k));
+              thf);
         }
       }
     }

@@ -128,6 +128,9 @@ typedef struct _LttvHooksById {
   GArray *array;
 } LttvHooksById;
 
+/* macro to calculate the hook ID of a facility/event pair. */
+#define GET_HOOK_ID(fac_id, ev_id) \
+  ( (guint)fac_id | ((guint)ev_id << (8*sizeof(NUM_FACILITIES))) )
 
 /* Create and destroy a hooks by id list */
 
