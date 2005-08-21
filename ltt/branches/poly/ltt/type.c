@@ -357,12 +357,17 @@ LttField *ltt_field_member(LttField *f, unsigned i)
 {
   LttField *field_member;
 
+  g_assert(f->field_type->type_class == LTT_STRUCT ||
+              f->field_type->type_class == LTT_UNION);
+  g_assert(i < f->field_type->element_number);
+#if 0
   if(unlikely(   f->field_type->type_class != LTT_STRUCT
                  && f->field_type->type_class != LTT_UNION)
               || i >= f->field_type->element_number )
     field_member = NULL;
   else
-    field_member = f->child[i];
+#endif //0
+  field_member = f->child[i];
 
   return field_member;
 }

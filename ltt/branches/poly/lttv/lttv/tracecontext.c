@@ -385,18 +385,19 @@ void lttv_tracefile_context_add_hooks(LttvTracefileContext *self,
           LttvHooks *event, 
           LttvHooksById *event_by_id)
 {
-  guint i;
+  guint i, index;
 
   LttvHooks *hook;
   
   lttv_hooks_call(before_tracefile, self);
   lttv_hooks_add_list(self->event, event);
-  if(event_by_id != NULL)
-    for(i = 0; i < lttv_hooks_by_id_max_id(event_by_id); i++) {
-      hook = lttv_hooks_by_id_find(self->event_by_id, i);
-      lttv_hooks_add_list(hook, lttv_hooks_by_id_get(event_by_id, i));
+  if(event_by_id != NULL) {
+    for(i = 0; i < event_by_id->array->len; i++) {
+      index = g_array_index(event_by_id->array, guint, i);
+      hook = lttv_hooks_by_id_find(self->event_by_id, index);
+      lttv_hooks_add_list(hook, lttv_hooks_by_id_get(event_by_id, index));
     }
-
+  }
 }
 
 void lttv_tracefile_context_remove_hooks(LttvTracefileContext *self,
@@ -404,18 +405,19 @@ void lttv_tracefile_context_remove_hooks(LttvTracefileContext *self,
            LttvHooks *event, 
            LttvHooksById *event_by_id)
 {
-  guint i;
+  guint i, index;
 
   LttvHooks *hook;
   
-
   lttv_hooks_remove_list(self->event, event);
-  if(event_by_id != NULL)
-    for(i = 0; i < lttv_hooks_by_id_max_id(event_by_id); i++) {
-      hook = lttv_hooks_by_id_get(self->event_by_id, i);
+  if(event_by_id != NULL) {
+    for(i = 0; i < event_by_id->array->len; i++) {
+      index = g_array_index(event_by_id->array, guint, i);
+      hook = lttv_hooks_by_id_get(self->event_by_id, index);
       if(hook != NULL)
-        lttv_hooks_remove_list(hook, lttv_hooks_by_id_get(event_by_id, i));
+        lttv_hooks_remove_list(hook, lttv_hooks_by_id_get(event_by_id, index));
     }
+  }
 
   lttv_hooks_call(after_tracefile, self);
 }
@@ -869,6 +871,7 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
   thf = &g_array_index(th->fac_index, LttvTraceHookByFacility, fac_id);
   g_array_index(th->fac_list, LttvTraceHookByFacility*, 0)
         = thf;
+
   thf->h = h;
   thf->id = ltt_eventtype_id(et);
   thf->f1 = find_field(et, field1);

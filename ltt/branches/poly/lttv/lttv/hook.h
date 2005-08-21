@@ -123,7 +123,10 @@ gboolean lttv_hooks_call_check_merge(LttvHooks *h1, void *call_data1,
 /* Sometimes different hooks need to be called based on the case. The
    case is represented by an unsigned integer id */
 
-typedef GPtrArray LttvHooksById;
+typedef struct _LttvHooksById {
+  GPtrArray *index;
+  GArray *array;
+} LttvHooksById;
 
 
 /* Create and destroy a hooks by id list */
@@ -148,7 +151,7 @@ unsigned lttv_hooks_by_id_max_id(LttvHooksById *h);
 static inline LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id)
 {
   LttvHooks *ret;
-  if(likely(id < h->len)) ret = h->pdata[id];
+  if(likely(id < h->index->len)) ret = h->index->pdata[id];
   else ret = NULL;
 
   return ret;

@@ -22,6 +22,7 @@
 
 #include <lttv/hook.h>
 #include <ltt/compiler.h>
+#include <ltt/ltt.h>
 
 typedef struct _LttvHookClosure {
   LttvHook      hook;
@@ -397,10 +398,20 @@ gboolean lttv_hooks_call_check_merge(LttvHooks *h1, void *call_data1,
 
 }
 
+/* Two pointer arrays : 
+ * * one indexed by id for quick search : 
+ *  size : max id
+ *  typically 4 bytes * 256 facilities * 10 events = 10kbytes
+ * * another array that keeps a list of used numbers (for later deletion)
+ *  size : number of ids used.
+ */
 
 LttvHooksById *lttv_hooks_by_id_new() 
 {
-  return g_ptr_array_new();
+  LttvHooksById *h = g_new(LttvHooksById, 1);
+  h->index = g_ptr_array_sized_new(NUM_FACILITIES * AVG_EVENTS_PER_FACILITIES);
+  h->array = g_array_sized_new(FALSE, FALSE, sizeof(guint), 50);
+  return h;
 }
 
 
@@ -408,31 +419,42 @@ void lttv_hooks_by_id_destroy(LttvHooksById *h)
 {
   guint i;
 
-  for(i = 0 ; i < h->len ; i++) {
-    if(h->pdata[i] != NULL) lttv_hooks_destroy((LttvHooks *)(h->pdata[i]));
+  for(i = 0 ; i < h->array->len ; i++) {
+    guint index = g_array_index(h->array, guint, i);
+    if(h->index->pdata[index] != NULL) { /* hook may have been removed */
+      lttv_hooks_destroy(h->index->pdata[index]);
+      h->index->pdata[index] = NULL;  /* Must be there in case of 
+                                         multiple addition of the same index */
+    }
   }
-  g_ptr_array_free(h, TRUE);
+  g_ptr_array_free(h->index, TRUE);
+  g_array_free(h->array, TRUE);
 }
 
 /* Optimised for searching an existing hook */
 LttvHooks *lttv_hooks_by_id_find(LttvHooksById *h, unsigned id)
 {
-  if(unlikely(h->len <= id)) g_ptr_array_set_size(h, id + 1);
-  if(unlikely(h->pdata[id] == NULL)) h->pdata[id] = lttv_hooks_new();
-  return h->pdata[id];
+  if(unlikely(h->index->len <= id)) g_ptr_array_set_size(h->index, id + 1);
+  if(unlikely(h->index->pdata[id] == NULL)) {
+    h->index->pdata[id] = lttv_hooks_new();
+    g_array_append_val(h->array, id);
+  }
+  return h->index->pdata[id];
 }
 
 
 unsigned lttv_hooks_by_id_max_id(LttvHooksById *h)
 {
-  return h->len;
+  return h->index->len;
 }
 
+/* We don't bother removing the used slot array id : lttv_hooks_by_id_destroy is
+ * almost never called and is able to deal with used slot repetition. */
 void lttv_hooks_by_id_remove(LttvHooksById *h, unsigned id)
 {
-  if(likely(id < h->len && h->pdata[id] != NULL)) {
-    lttv_hooks_destroy((LttvHooks *)h->pdata[id]);
-    h->pdata[id] = NULL;
+  if(likely(id < h->index->len && h->index->pdata[id] != NULL)) {
+    lttv_hooks_destroy((LttvHooks *)h->index->pdata[id]);
+    h->index->pdata[id] = NULL;
   }
 }
 

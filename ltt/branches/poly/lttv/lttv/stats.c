@@ -761,6 +761,8 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
   LttvAttributeValue val;
 
+  gint ret;
+
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceStats *)self->parent.parent.traces[i];
@@ -771,98 +773,114 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 7);
     g_array_set_size(hooks, 7);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
         LTT_FIELD_SYSCALL_ID, 0, 0,
         before_syscall_entry, 
         &g_array_index(hooks, LttvTraceHook, 0));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_EXIT,
         0, 0, 0,
         before_syscall_exit, 
         &g_array_index(hooks, LttvTraceHook, 1));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
         before_trap_entry, 
         &g_array_index(hooks, LttvTraceHook, 2));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_EXIT,
         0, 0, 0,
         before_trap_exit, &g_array_index(hooks, LttvTraceHook, 3));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
         LTT_FIELD_IRQ_ID, 0, 0,
         before_irq_entry, &g_array_index(hooks, LttvTraceHook, 4));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
         0, 0, 0,
         before_irq_exit, &g_array_index(hooks, LttvTraceHook, 5));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
         LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
         before_schedchange, 
         &g_array_index(hooks, LttvTraceHook, 6));
+    g_assert(!ret);
 
     before_hooks = hooks;
 
     hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 9);
     g_array_set_size(hooks, 9);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
         LTT_FIELD_SYSCALL_ID, 0, 0,
         after_syscall_entry, 
         &g_array_index(hooks, LttvTraceHook, 0));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_EXIT,
         0, 0, 0,
         after_syscall_exit, 
         &g_array_index(hooks, LttvTraceHook, 1));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_ENTRY, 
         LTT_FIELD_TRAP_ID, 0, 0,
         after_trap_entry, &g_array_index(hooks, LttvTraceHook, 2));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_EXIT,
         0, 0, 0,
         after_trap_exit, &g_array_index(hooks, LttvTraceHook, 3));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY, 
         LTT_FIELD_IRQ_ID, 0, 0,
         after_irq_entry, &g_array_index(hooks, LttvTraceHook, 4));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
         0, 0, 0,
         after_irq_exit, &g_array_index(hooks, LttvTraceHook, 5));
+    g_assert(!ret);
 
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_FORK, 
         LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, 0,
         process_fork, 
         &g_array_index(hooks, LttvTraceHook, 6));
+    g_assert(!ret);
 
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
         LTT_FIELD_PID, 0, 0,
         process_exit, &g_array_index(hooks, LttvTraceHook, 7));
+    g_assert(!ret);
     
-    lttv_trace_find_hook(ts->parent.parent.t,
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_FREE,
         LTT_FIELD_PID, 0, 0,
         process_free, &g_array_index(hooks, LttvTraceHook, 7));
+    g_assert(!ret);
 
 
     after_hooks = hooks;
