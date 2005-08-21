@@ -48,7 +48,10 @@ gint compare_tracefile(gconstpointer a, gconstpointer b)
       else if(trace_a->t_context->index > trace_b->t_context->index)
         comparison = 1;
     }
+  } else {
+    comparison = 0;
   }
+
   return comparison;
 }
 
@@ -618,6 +621,13 @@ static gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
   return TRUE;
 }
 
+static gboolean test_tree(gpointer key, gpointer value, gpointer user_data) {
+
+  g_assert(((LttvTracefileContext *)user_data) != (LttvTracefileContext *)value);
+  return FALSE;
+}
+
+
 
 void lttv_process_traceset_begin(LttvTracesetContext *self,
                                  LttvHooks       *before_traceset,
@@ -646,13 +656,15 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
 {
   GTree *pqueue = self->pqueue;
 
-  guint id;
+  guint fac_id, ev_id, id;
 
   LttvTracefileContext *tfc;
 
   LttEvent *e;
   
   unsigned count = 0;
+
+  guint read_ret = FALSE;
 
   gboolean last_ret = FALSE; /* return value of the last hook list called */
 
@@ -690,18 +702,30 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     /* Get the tracefile with an event for the smallest time found. If two
        or more tracefiles have events for the same time, hope that lookup
        and remove are consistent. */
-
+    
     g_tree_remove(pqueue, tfc);
+
+    g_tree_foreach(pqueue, test_tree, tfc);
     count++;
     
     e = ltt_tracefile_get_event(tfc->tf);
-    id = ltt_event_eventtype_id(e);
+    fac_id = ltt_event_facility_id(e);
+    ev_id = ltt_event_eventtype_id(e);
+    id = GET_HOOK_ID(fac_id, ev_id);
     last_ret = lttv_hooks_call_merge(tfc->event, tfc,
                         lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
 
-    if(likely(!ltt_tracefile_read(tfc->tf))) {
+    read_ret = ltt_tracefile_read(tfc->tf);
+
+    if(likely(!read_ret)) {
+      g_debug("got someting");
       tfc->timestamp = ltt_event_time(e);
 	    g_tree_insert(pqueue, tfc, tfc);
+    } else {
+      if(read_ret == ERANGE)
+        g_debug("End of trace");
+      else
+        g_error("Error happened in lttv_process_traceset_middle");
     }
   }
 }
