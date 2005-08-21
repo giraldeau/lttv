@@ -1377,7 +1377,8 @@ LttTime ltt_interpolate_time(LttTracefile *tf, LttEvent *event)
   g_assert(tf->trace->has_tsc);
 
   time = ltt_time_from_uint64(
-      (guint64)tf->buffer.tsc*tf->buffer.nsecs_per_cycle);
+      (guint64)(tf->buffer.tsc - tf->buffer.begin.cycle_count) * 
+                                          tf->buffer.nsecs_per_cycle);
   time = ltt_time_add(tf->buffer.begin.timestamp, time);
 
   return time;
@@ -1593,11 +1594,15 @@ static gint map_block(LttTracefile * tf, guint block_num)
   tf->buffer.begin.timestamp = ltt_get_time(LTT_GET_BO(tf),
                                               &header->begin.timestamp);
   tf->buffer.begin.timestamp.tv_nsec *= NSEC_PER_USEC;
+  g_warning("block %u begin : %lu.%lu", block_num,
+      tf->buffer.begin.timestamp.tv_sec, tf->buffer.begin.timestamp.tv_nsec);
   tf->buffer.begin.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->begin.cycle_count);
   tf->buffer.end.timestamp = ltt_get_time(LTT_GET_BO(tf),
                                               &header->end.timestamp);
   tf->buffer.end.timestamp.tv_nsec *= NSEC_PER_USEC;
+  g_warning("block %u end : %lu.%lu", block_num,
+      tf->buffer.end.timestamp.tv_sec, tf->buffer.end.timestamp.tv_nsec);
   tf->buffer.end.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->end.cycle_count);
   tf->buffer.lost_size = ltt_get_uint32(LTT_GET_BO(tf),
