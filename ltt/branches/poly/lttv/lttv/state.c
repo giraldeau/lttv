@@ -1051,11 +1051,12 @@ static gboolean schedchange(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
-  guint pid_in, pid_out, state_out;
+  guint pid_in, pid_out;
+  gint state_out;
 
   pid_out = ltt_event_get_unsigned(e, thf->f1);
   pid_in = ltt_event_get_unsigned(e, thf->f2);
-  state_out = ltt_event_get_unsigned(e, thf->f3);
+  state_out = ltt_event_get_int(e, thf->f3);
 
   if(likely(s->process != NULL)) {
 
