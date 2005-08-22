@@ -961,7 +961,7 @@ void lttv_stats_remove_event_hooks(LttvTracesetStats *self)
 
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
-    ts = LTTV_TRACE_STATS(self->parent.parent.traces[i]);
+    ts = (LttvTraceStats*)self->parent.parent.traces[i];
     lttv_attribute_find(self->parent.parent.a, LTTV_STATS_BEFORE_HOOKS, 
         LTTV_POINTER, &val);
     before_hooks = *(val.v_pointer);
