@@ -92,7 +92,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   *(value_filter.v_pointer) = lttv_filter_new();
   g_debug("Filter string: %s",((GString*)*(value_expression.v_pointer))->str);
   
-  g_assert(lttv_filter_append_expression(*(value_filter.v_pointer),((GString*)*(value_expression.v_pointer))->str));
+  lttv_filter_append_expression(*(value_filter.v_pointer),((GString*)*(value_expression.v_pointer))->str);
   
   //lttv_traceset_context_add_hooks(tc,
   //before_traceset, after_traceset, NULL, before_trace, after_trace,

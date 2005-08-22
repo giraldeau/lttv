@@ -366,9 +366,9 @@ static int write_event_content(void *hook_data, void *call_data)
   /*
    * call to the filter if available
    */
-  if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,tfc->t_context->t,tfs->process,tfc)) {
+  if(filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,tfc->t_context->t,tfs->process,tfc))
       return FALSE;
-  }
   
   lttv_event_to_string(e, a_string, TRUE, a_field_names, tfs);
   g_string_append_printf(a_string,"\n");  

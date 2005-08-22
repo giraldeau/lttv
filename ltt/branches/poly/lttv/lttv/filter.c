@@ -1537,6 +1537,7 @@ lttv_filter_append_expression(LttvFilter* filter, const char *expression) {
 
   if(expression == NULL) return FALSE;
   if(filter == NULL) return FALSE;
+  if(expression[0] == '\0') return FALSE;  /* Empty expression */
 
   GString* s = g_string_new("");
   if(filter->expression != NULL) {
