@@ -986,8 +986,10 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 
   /* Open all the tracefiles */
   g_datalist_init(&t->tracefiles);
-  if(open_tracefiles(t, abs_path, ""))
+  if(open_tracefiles(t, abs_path, "")) {
+    g_warning("Error opening tracefile %s", abs_path);
     goto open_error;
+  }
   
   /* Prepare the facilities containers : array and mapping */
   /* Array is zeroed : the "exists" field is set to false by default */
@@ -1327,7 +1329,7 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
         else if(ret) goto fail;
 
         if(ltt_time_compare(time, tf->event.event_time) >= 0)
-          break;
+          goto found;
       }
 
     } else if(ltt_time_compare(time, tf->buffer.begin.timestamp) < 0) {
@@ -1624,14 +1626,14 @@ static gint map_block(LttTracefile * tf, guint block_num)
   tf->buffer.begin.timestamp = ltt_get_time(LTT_GET_BO(tf),
                                               &header->begin.timestamp);
   tf->buffer.begin.timestamp.tv_nsec *= NSEC_PER_USEC;
-  g_warning("block %u begin : %lu.%lu", block_num,
+  g_debug("block %u begin : %lu.%lu", block_num,
       tf->buffer.begin.timestamp.tv_sec, tf->buffer.begin.timestamp.tv_nsec);
   tf->buffer.begin.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->begin.cycle_count);
   tf->buffer.end.timestamp = ltt_get_time(LTT_GET_BO(tf),
                                               &header->end.timestamp);
   tf->buffer.end.timestamp.tv_nsec *= NSEC_PER_USEC;
-  g_warning("block %u end : %lu.%lu", block_num,
+  g_debug("block %u end : %lu.%lu", block_num,
       tf->buffer.end.timestamp.tv_sec, tf->buffer.end.timestamp.tv_nsec);
   tf->buffer.end.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->end.cycle_count);

@@ -165,7 +165,7 @@ static void init_tracefile_context(LttTracefile *tracefile,
 static void
 init(LttvTracesetContext *self, LttvTraceset *ts)
 {
-  guint i, j, nb_trace, nb_control, nb_per_cpu, nb_tracefile;
+  guint i, j, nb_trace;
 
   LttvTraceContext *tc;
 
@@ -192,13 +192,14 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
                         sizeof(LttvTracefileContext*), 10);
 
     tracefiles_groups = ltt_trace_get_tracefiles_groups(tc->t);
+    if(tracefiles_groups != NULL) {
+      args.func = (ForEachTraceFileFunc)init_tracefile_context;
+      args.func_args = tc;
 
-    args.func = (ForEachTraceFileFunc)init_tracefile_context;
-    args.func_args = tc;
-
-    g_datalist_foreach(tracefiles_groups, 
-                          (GDataForeachFunc)compute_tracefile_group,
-                          &args);
+      g_datalist_foreach(tracefiles_groups, 
+                            (GDataForeachFunc)compute_tracefile_group,
+                            &args);
+    }
       
 #if 0
     nb_control = ltt_trace_control_tracefile_number(tc->t);

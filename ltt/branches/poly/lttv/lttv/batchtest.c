@@ -99,8 +99,11 @@ static void lttv_trace_option(void __UNUSED__ *hook_data)
   LttTrace *trace;
 
   trace = ltt_trace_open(a_trace);
-  if(trace == NULL) g_critical("cannot open trace %s", a_trace);
-  lttv_traceset_add(traceset, lttv_trace_new(trace));
+  if(trace == NULL) {
+    g_critical("cannot open trace %s", a_trace);
+  } else {
+    lttv_traceset_add(traceset, lttv_trace_new(trace));
+  }
 }
 
 static double get_time() 

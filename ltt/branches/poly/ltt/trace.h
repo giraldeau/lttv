@@ -150,6 +150,7 @@ void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src);
 
 void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname);
 
+/* May return a NULL tracefile group */
 GData **ltt_trace_get_tracefiles_groups(LttTrace *trace);
 
 typedef void (*ForEachTraceFileFunc)(LttTracefile *tf, gpointer func_args);
