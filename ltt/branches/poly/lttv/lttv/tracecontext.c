@@ -247,8 +247,6 @@ void fini(LttvTracesetContext *self)
 
   LttvTraceset *ts = self->ts;
 
-  //FIXME : segfault
-
   g_tree_destroy(self->pqueue);
   g_object_unref(self->a);
 
@@ -903,7 +901,7 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
   LttvTraceHookByFacility *thf, *first_thf;
 
   facilities = ltt_trace_facility_get_by_name(t, facility);
-  
+
   if(unlikely(facilities == NULL)) goto facility_error;
 
   th->fac_index = g_array_sized_new(FALSE, TRUE,

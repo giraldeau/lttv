@@ -204,7 +204,7 @@ init(LttvTracesetState *self, LttvTraceset *ts)
   nb_trace = lttv_traceset_number(ts);
   for(i = 0 ; i < nb_trace ; i++) {
     tc = self->parent.traces[i];
-    tcs = (LttvTraceState *)tc;
+    tcs = LTTV_TRACE_STATE(tc);
     tcs->save_interval = LTTV_STATE_SAVE_INTERVAL;
     lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_TRACE_STATE_USE_COUNT, 
         LTTV_UINT, &v);
@@ -648,7 +648,7 @@ create_name_tables(LttvTraceState *tcs)
 
   GQuark f_name, e_name;
 
-  LttvTraceHook *h;
+  LttvTraceHook h;
 
   LttvTraceHookByFacility *thf;
 
@@ -681,15 +681,15 @@ create_name_tables(LttvTraceState *tcs)
   if(lttv_trace_find_hook(tcs->parent.t,
       LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
       LTT_FIELD_SYSCALL_ID, 0, 0,
-      NULL, h))
+      NULL, &h))
     return;
   
-  thf = lttv_trace_hook_get_first(h);
+  thf = lttv_trace_hook_get_first(&h);
   
   t = ltt_field_type(thf->f1);
   nb = ltt_type_element_number(t);
   
-  lttv_trace_hook_destroy(h);
+  lttv_trace_hook_destroy(&h);
 
   /* CHECK syscalls should be an enum but currently are not!  
   name_tables->syscall_names = g_new(GQuark, nb);
@@ -709,15 +709,15 @@ create_name_tables(LttvTraceState *tcs)
   if(lttv_trace_find_hook(tcs->parent.t, LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
-        NULL, h))
+        NULL, &h))
     return;
 
-  thf = lttv_trace_hook_get_first(h);
+  thf = lttv_trace_hook_get_first(&h);
 
   t = ltt_field_type(thf->f1);
   nb = ltt_type_element_number(t);
 
-  lttv_trace_hook_destroy(h);
+  lttv_trace_hook_destroy(&h);
 
   /*
   name_tables->trap_names = g_new(GQuark, nb);
@@ -736,15 +736,15 @@ create_name_tables(LttvTraceState *tcs)
   if(lttv_trace_find_hook(tcs->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
         LTT_FIELD_IRQ_ID, 0, 0,
-        NULL, h))
+        NULL, &h))
     return;
   
-  thf = lttv_trace_hook_get_first(h);
+  thf = lttv_trace_hook_get_first(&h);
   
   t = ltt_field_type(thf->f1);
   nb = ltt_type_element_number(t);
 
-  lttv_trace_hook_destroy(h);
+  lttv_trace_hook_destroy(&h);
 
   /*
   name_tables->irq_names = g_new(GQuark, nb);
@@ -1330,7 +1330,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
 
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
-    ts = (LttvTraceState*)self->parent.traces[i];
+    ts = LTTV_TRACE_STATE(self->parent.traces[i]);
     lttv_attribute_find(self->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
     hooks = *(val.v_pointer);
 

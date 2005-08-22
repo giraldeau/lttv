@@ -97,8 +97,8 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
   nb_trace = lttv_traceset_number(ts);
 
   for(i = 0 ; i < nb_trace ; i++) {
-    tc = (LTTV_TRACESET_CONTEXT(self)->traces[i]);
-    tcs = (LttvTraceStats *)tc;
+    tc = self->parent.parent.traces[i];
+    tcs = LTTV_TRACE_STATS(tc);
 
     tcs->stats = lttv_attribute_find_subdir(tcs->parent.parent.t_a,LTTV_STATS);
     tracefiles_stats = lttv_attribute_find_subdir(tcs->parent.parent.t_a, 

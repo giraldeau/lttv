@@ -426,7 +426,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     lttv_hooks_add(event_hook, count_event, &count, LTTV_PRIO_DEFAULT);
     t = run_one_test(ts, ltt_time_zero, max_time);
     lttv_hooks_remove_data(event_hook, count_event, &count);
-    g_warning(
+    g_message(
         "Processing trace while counting events (%u events in %g seconds)",
 	count, t);
   }
@@ -437,7 +437,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     lttv_state_add_event_hooks(ts);
     t = run_one_test(ts, ltt_time_zero, max_time);
     lttv_state_remove_event_hooks(ts);
-    g_warning("Processing trace while updating state (%g seconds)", t);
+    g_message("Processing trace while updating state (%g seconds)", t);
   }
 
   /* Run through all events computing the state and writing it out 
@@ -477,7 +477,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     lttv_stats_add_event_hooks(tscs);
     t = run_one_test(ts, ltt_time_zero, max_time);
     lttv_stats_remove_event_hooks(tscs);
-    g_warning("Processing trace while counting stats (%g seconds)", t);
+    g_message("Processing trace while counting stats (%g seconds)", t);
 
     if(lttv_profile_memory) {
       g_message("Memory summary after computing stats");
@@ -513,7 +513,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     t = run_one_test(ts, ltt_time_zero, max_time);
     lttv_state_remove_event_hooks(ts);
     lttv_stats_remove_event_hooks(tscs);
-    g_warning(
+    g_message(
         "Processing trace while counting state and stats (%g seconds)", t);
 
     if(lttv_profile_memory) {
@@ -552,7 +552,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     if(a_save_state_copy)
         lttv_hooks_remove_data(event_hook,save_state_copy_event, &save_state);
 
-    g_warning("Processing trace while updating/saving state (%g seconds)", t);
+    g_message("Processing trace while updating/saving state (%g seconds)", t);
 
     if(lttv_profile_memory) {
       g_message("Memory summary after computing/saving state");
@@ -572,7 +572,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
         t = run_one_test(ts, save_state.write_time[j], 
             save_state.write_time[j]);
         lttv_state_remove_event_hooks(ts);
-        g_warning("Seeking to %lu.%lu (%g seconds)", 
+        g_message("Seeking to %lu.%lu (%g seconds)", 
             save_state.write_time[j].tv_sec, save_state.write_time[j].tv_nsec,
             t);
 
