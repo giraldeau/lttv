@@ -68,6 +68,7 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
 
   LttvTracefileContext *tfc;
 
+  LttvTracefileContext **tfs;
   LttvTracefileStats *tfcs;
   
   LttTime timestamp = {0,0};
@@ -113,8 +114,9 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
     nb_tracefile = tc->tracefiles->len;
 
     for(j = 0 ; j < nb_tracefile ; j++) {
-      tfcs = LTTV_TRACEFILE_STATS(g_array_index(tc->tracefiles,
-                      LttvTracefileContext*, j));
+      tfs = &g_array_index(tc->tracefiles,
+                      LttvTracefileContext*, j);
+      tfcs = LTTV_TRACEFILE_STATS(*tfs);
       tfcs->stats = lttv_attribute_find_subdir(tracefiles_stats, 
           tfcs->parent.cpu_name);
       find_event_tree(tfcs, LTTV_STATS_PROCESS_UNKNOWN,
@@ -372,7 +374,7 @@ find_event_tree(LttvTracefileStats *tfcs,
 {
   LttvAttribute *a;
 
-  LttvTraceStats *tcs = LTTV_TRACE_STATS(tfcs->parent.parent.t_context);
+  LttvTraceStats *tcs = (LttvTraceStats*)tfcs->parent.parent.t_context;
   a = lttv_attribute_find_subdir(tcs->stats, LTTV_STATS_PROCESSES);
   a = lttv_attribute_find_subdir(a, pid_time);
   a = lttv_attribute_find_subdir(a, LTTV_STATS_CPU);
