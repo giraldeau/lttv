@@ -60,22 +60,31 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
 
   LttField *element;
 
-  char *name;
+  GQuark name;
 
   int nb, i;
 
   type = ltt_field_type(f);
   switch(ltt_type_class(type)) {
     case LTT_INT:
+    case LTT_LONG:
+    case LTT_SSIZE_T:
       g_string_append_printf(s, " %lld", ltt_event_get_long_int(e,f));
       break;
 
     case LTT_UINT:
+    case LTT_ULONG:
+    case LTT_SIZE_T:
+    case LTT_OFF_T:
       g_string_append_printf(s, " %llu", ltt_event_get_long_unsigned(e,f));
       break;
 
     case LTT_FLOAT:
       g_string_append_printf(s, " %g", ltt_event_get_double(e,f));
+      break;
+
+    case LTT_POINTER:
+      g_string_append_printf(s, " 0x%llx", ltt_event_get_long_unsigned(e,f));
       break;
 
     case LTT_STRING:
@@ -106,7 +115,7 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
         element = ltt_field_member(f,i);
         if(field_names) {
           ltt_type_member_type(type, i, &name);
-          g_string_append_printf(s, " %s = ", name);
+          g_string_append_printf(s, " %s = ", g_quark_to_string(name));
         }
         print_field(e, element, s, field_names);
       }
@@ -120,7 +129,7 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
         element = ltt_field_member(f,i);
         if(field_names) {
           ltt_type_member_type(type, i, &name);
-          g_string_append_printf(s, " %s = ", name);
+          g_string_append_printf(s, " %s = ", g_quark_to_string(name));
         }
         print_field(e, element, s, field_names);
       }
@@ -153,8 +162,9 @@ void lttv_event_to_string(LttEvent *e, GString *s,
   if(mandatory_fields) {
     time = ltt_event_time(e);
     g_string_append_printf(s,"%s.%s: %ld.%09ld (%s)",
-        ltt_facility_name(facility),
-        ltt_eventtype_name(event_type), (long)time.tv_sec, time.tv_nsec,
+        g_quark_to_string(ltt_facility_name(facility)),
+        g_quark_to_string(ltt_eventtype_name(event_type)),
+        (long)time.tv_sec, time.tv_nsec,
         g_quark_to_string(tfs->cpu_name));
     /* Print the process id and the state/interrupt type of the process */
     g_string_append_printf(s,", %u, %u,  %s", tfs->process->pid,
@@ -255,12 +265,14 @@ print_stats(FILE *fp, LttvTracesetStats *tscs)
 
   for(i = 0 ; i < nb ; i++) {
     tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
+#if 0 //FIXME
     desc = ltt_trace_system_description(tcs->parent.parent.t);
     LttTime start_time = ltt_trace_system_description_trace_start_time(desc);
     fprintf(fp, "Trace on system %s at time %lu.%09lu :\n", 
 	    ltt_trace_system_description_node_name(desc), 
 	    start_time.tv_sec,
       start_time.tv_nsec);
+#endif //FIXME
     saved_length = indent->len;
     g_string_append(indent, "  ");
     print_tree(fp, indent, tcs->stats);
@@ -318,13 +330,14 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
 static gboolean write_trace_header(void *hook_data, void *call_data)
 {
   LttvTraceContext *tc = (LttvTraceContext *)call_data;
-
+#if 0 //FIXME
   LttSystemDescription *system = ltt_trace_system_description(tc->t);
 
   fprintf(a_file,"  Trace from %s in %s\n%s\n\n", 
 	  ltt_trace_system_description_node_name(system), 
 	  ltt_trace_system_description_domain_name(system), 
 	  ltt_trace_system_description_description(system));
+#endif //0
   return FALSE;
 }
 
@@ -343,7 +356,7 @@ static int write_event_content(void *hook_data, void *call_data)
 
   LttvFilter *filter;
 
-  e = tfc->e;
+  e = ltt_tracefile_get_event(tfc->tf);
 
 
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/lttv_filter",

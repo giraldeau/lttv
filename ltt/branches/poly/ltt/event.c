@@ -571,7 +571,8 @@ guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
 
   LttTypeEnum t = f->field_type->type_class;
 
-  g_assert(t == LTT_UINT || t == LTT_ENUM);
+  g_assert(t == LTT_UINT || t == LTT_ENUM 
+      || t == LTT_ULONG || LTT_SIZE_T || LTT_OFF_T || LTT_POINTER);
 
   if(f->field_size == 1){
     guint8 x = *(guint8 *)(e->data + f->offset_root);
@@ -593,7 +594,9 @@ gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
   //              e->tracefile->trace->system_description->endian ? 0:1;
   gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
-  g_assert( f->field_type->type_class == LTT_INT);
+  g_assert( f->field_type->type_class == LTT_INT
+      || f->field_type->type_class == LTT_LONG
+      || f->field_type->type_class == LTT_SSIZE_T);
 
   if(f->field_size == 1){
     gint8 x = *(gint8 *)(e->data + f->offset_root);

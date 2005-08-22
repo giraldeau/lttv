@@ -1725,7 +1725,7 @@ void ltt_update_event_size(LttTracefile *tf)
           g_quark_to_string(tf->name));
       goto event_type_error;
     }
-    
+ 
     if(event_type->root_field)
       size = get_field_type_size(tf, event_type,
           0, 0, event_type->root_field, tf->event.data);
@@ -1741,7 +1741,7 @@ void ltt_update_event_size(LttTracefile *tf)
   
   /* Check consistency between kernel and LTTV structure sizes */
   g_assert(tf->event.data_size == tf->event.event_size);
-  
+
   return;
 
 facility_error:

@@ -214,7 +214,7 @@ void drawing_data_request(Drawing_t *drawing,
          associated by id hooks. */
 
       hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
-      g_array_set_size(hooks, 10);
+      hooks = g_array_set_size(hooks, 10);
 
       /* before hooks */
       
