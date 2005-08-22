@@ -372,7 +372,9 @@ static void copy_process_state(gpointer key, gpointer value,gpointer user_data)
   *new_process = *process;
   new_process->execution_stack = g_array_sized_new(FALSE, FALSE, 
       sizeof(LttvExecutionState), PREALLOCATED_EXECUTION_STACK);
-  g_array_set_size(new_process->execution_stack,process->execution_stack->len);
+  new_process->execution_stack = 
+              g_array_set_size(new_process->execution_stack,
+                  process->execution_stack->len);
   for(i = 0 ; i < process->execution_stack->len; i++) {
     g_array_index(new_process->execution_stack, LttvExecutionState, i) =
         g_array_index(process->execution_stack, LttvExecutionState, i);
@@ -800,7 +802,6 @@ free_name_tables(LttvTraceState *tcs)
   g_free(name_tables);
 } 
 
-
 static void push_state(LttvTracefileState *tfs, LttvExecutionMode t, 
     guint state_id)
 {
@@ -810,7 +811,12 @@ static void push_state(LttvTracefileState *tfs, LttvExecutionMode t,
 
   guint depth = process->execution_stack->len;
 
-  g_array_set_size(process->execution_stack, depth + 1);
+  process->execution_stack = 
+    g_array_set_size(process->execution_stack, depth + 1);
+  /* Keep in sync */
+  process->state =
+    &g_array_index(process->execution_stack, LttvExecutionState, depth - 1);
+    
   es = &g_array_index(process->execution_stack, LttvExecutionState, depth);
   es->t = t;
   es->n = state_id;
@@ -846,7 +852,8 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
     return;
   }
 
-  g_array_set_size(process->execution_stack, depth - 1);
+  process->execution_stack = 
+    g_array_set_size(process->execution_stack, depth - 1);
   process->state = &g_array_index(process->execution_stack, LttvExecutionState,
       depth - 2);
   process->state->change = tfs->parent.timestamp;
@@ -900,7 +907,7 @@ lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent,
   process->last_cpu_index = ((LttvTracefileContext*)tfs)->index;
   process->execution_stack = g_array_sized_new(FALSE, FALSE, 
       sizeof(LttvExecutionState), PREALLOCATED_EXECUTION_STACK);
-  g_array_set_size(process->execution_stack, 1);
+  process->execution_stack = g_array_set_size(process->execution_stack, 1);
   es = process->state = &g_array_index(process->execution_stack, 
       LttvExecutionState, 0);
   es->t = LTTV_STATE_USER_MODE;
@@ -1212,7 +1219,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
        associated by id hooks. */
 
     hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 10);
-    g_array_set_size(hooks, 10);
+    hooks = g_array_set_size(hooks, 10);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_ENTRY,

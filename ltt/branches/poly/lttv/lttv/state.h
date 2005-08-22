@@ -186,6 +186,9 @@ typedef struct _LttvProcessState {
   GQuark pid_time;
   GArray *execution_stack;         /* Array of LttvExecutionState */
   LttvExecutionState *state;       /* Top of interrupt stack */
+      /* WARNING : each time the execution_stack size is modified, the state
+       * must be reget : g_array_set_size can have to move the array.
+       * (Mathieu) */
   GQuark last_cpu;                /* Last CPU where process was scheduled */
   guint last_cpu_index;            /* index in the trace for cpu tracefile */
   /* opened file descriptors, address map?... */
