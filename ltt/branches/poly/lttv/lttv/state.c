@@ -1079,9 +1079,11 @@ static gboolean schedchange(void *hook_data, void *call_data)
        is missing. It is not obvious how we could, after the fact, compensate
        the wrongly attributed statistics. */
 
-    if(unlikely(s->process->pid != pid_out)) {
-      g_assert(s->process->pid == 0);
-    }
+    //This test only makes sense once the state is known and if there is no
+    //missing events.
+    //if(unlikely(s->process->pid != pid_out)) {
+    //  g_assert(s->process->pid == 0);
+    //}
 
     if(unlikely(s->process->state->s == LTTV_STATE_EXIT)) {
       s->process->state->s = LTTV_STATE_ZOMBIE;
