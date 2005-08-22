@@ -436,9 +436,11 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
     *(value.v_uint) = tfcs->process->pid;
     value = lttv_attribute_add(tracefile_tree, LTTV_STATE_EVENT, 
         LTTV_POINTER);
-    LttEvent *e = ltt_tracefile_get_event(tfcs->parent.tf);
-    if(e == NULL) *(value.v_pointer) = NULL;
-    else {
+    /* Only save the position of the tfs is in the pqueue */
+    if(!g_tree_lookup(self->parent.ts_context->pqueue, &tfcs->parent)) {
+      *(value.v_pointer) = NULL;
+    } else {
+      LttEvent *e = ltt_tracefile_get_event(tfcs->parent.tf);
       ep = ltt_event_position_new();
       ltt_event_position(e, ep);
       *(value.v_pointer) = ep;
@@ -510,9 +512,13 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     
     LttvTracefileContext *tfc = LTTV_TRACEFILE_CONTEXT(tfcs);
     
-    g_assert(ltt_tracefile_seek_position(tfc->tf, ep) == 0);
-    tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
-    g_tree_insert(tsc->pqueue, tfc, tfc);
+    if(ep != NULL) {
+      g_assert(ltt_tracefile_seek_position(tfc->tf, ep) == 0);
+      tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
+      g_tree_insert(tsc->pqueue, tfc, tfc);
+    } else {
+      tfc->timestamp = ltt_time_infinite;
+    }
   }
 }
 
@@ -1347,9 +1353,10 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
                     thf->h,
                     thf);
         }
-        lttv_trace_hook_destroy(&g_array_index(hooks, LttvTraceHook, k));
       }
     }
+    for(k = 0 ; k < hooks->len ; k++)
+      lttv_trace_hook_destroy(&g_array_index(hooks, LttvTraceHook, k));
     g_array_free(hooks, TRUE);
   }
 }
