@@ -191,6 +191,71 @@ guint ltt_trace_get_num_cpu(LttTrace *t)
 }
 
 
+/* trace can be NULL
+ *
+ * Return value : 0 success, 1 bad tracefile
+ */
+int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
+{
+  guint32 *magic_number = (guint32*)header;
+  struct ltt_trace_header_any *any = (struct ltt_trace_header_any *)header;
+
+  if(*magic_number == LTT_MAGIC_NUMBER)
+    tf->reverse_bo = 0;
+  else if(*magic_number == LTT_REV_MAGIC_NUMBER)
+    tf->reverse_bo = 1;
+  else  /* invalid magic number, bad tracefile ! */
+    return 1;
+    
+  /* Get float byte order : might be different from int byte order
+   * (or is set to 0 if the trace has no float (kernel trace)) */
+  tf->float_word_order = any->float_word_order;
+
+  if(t) {
+    t->arch_type = ltt_get_uint32(LTT_GET_BO(tf),
+                          &any->arch_type);
+    t->arch_variant = ltt_get_uint32(LTT_GET_BO(tf),
+        &any->arch_variant);
+    t->arch_size = any->arch_size;
+    t->ltt_major_version = any->major_version;
+    t->ltt_minor_version = any->minor_version;
+    t->flight_recorder = any->flight_recorder;
+    t->has_heartbeat = any->has_heartbeat;
+    t->has_alignment = any->has_alignment;
+    t->has_tsc = any->has_tsc;
+  }
+ 
+
+  switch(any->major_version) {
+
+  case 0:
+    switch(any->minor_version) {
+    case 3:
+      {
+        struct ltt_trace_header_0_3 *header_0_3 = 
+                (struct ltt_trace_header_0_3 *)header;
+
+      }
+      break;
+    default:
+        g_warning("Unsupported trace version : %hhu.%hhu",
+            any->major_version, any->minor_version);
+      return 1;
+    }
+    break;
+
+  default:
+    g_warning("Unsupported trace version : %hhu.%hhu",
+            any->major_version, any->minor_version);
+    return 1;
+  }
+
+
+  return 0;
+}
+
+
+
 /*****************************************************************************
  *Function name
  *    ltt_tracefile_open : open a trace file, construct a LttTracefile
@@ -242,15 +307,7 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   
   header = (struct ltt_block_start_header*)tf->buffer.head;
   
-  if(header->trace.magic_number == LTT_MAGIC_NUMBER)
-    tf->reverse_bo = 0;
-  else if(header->trace.magic_number == LTT_REV_MAGIC_NUMBER)
-    tf->reverse_bo = 1;
-  else  /* invalid magic number, bad tracefile ! */
-    goto unmap_file;
-  /* Get float byte order : might be different from int byte order
-   * (or is set to 0 if the trace has no float (kernel trace)) */
-  tf->float_word_order = header->trace.float_word_order;
+  if(parse_trace_header(header->trace, tf, NULL)) goto unmap_file;
     
   //store the size of the file
   tf->file_size = lTDFStat.st_size;
@@ -1048,15 +1105,7 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   g_assert(group->len > 0);
   tf = &g_array_index (group, LttTracefile, 0);
   header = (struct ltt_block_start_header*)tf->buffer.head;
-  t->arch_type = ltt_get_uint32(LTT_GET_BO(tf), &header->trace.arch_type);
-  t->arch_variant = ltt_get_uint32(LTT_GET_BO(tf), &header->trace.arch_variant);
-  t->arch_size = header->trace.arch_size;
-  t->ltt_major_version = header->trace.major_version;
-  t->ltt_minor_version = header->trace.minor_version;
-  t->flight_recorder = header->trace.flight_recorder;
-  t->has_heartbeat = header->trace.has_heartbeat;
-  t->has_alignment = header->trace.has_alignment;
-  t->has_tsc = header->trace.has_tsc;
+  g_assert(parse_trace_header(header->trace, tf, t) == 0);
 
   t->num_cpu = group->len;
   

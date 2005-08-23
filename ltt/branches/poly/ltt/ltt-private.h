@@ -137,20 +137,40 @@ struct ltt_event_header_nohb {
   uint16_t      event_size;
 } LTT_PACKED_STRUCT;
 
-struct ltt_trace_header {
+
+/* Block and trace headers */
+
+struct ltt_trace_header_any {
   uint32_t        magic_number;
   uint32_t        arch_type;
   uint32_t        arch_variant;
   uint32_t        float_word_order;
   uint8_t         arch_size;
-  //uint32_t        system_type;
-  uint8_t          major_version;
-  uint8_t          minor_version;
-  uint8_t          flight_recorder;
-  uint8_t          has_heartbeat;
-  uint8_t          has_alignment;  /* Event header alignment */
-	uint8_t					 has_tsc;
+  uint8_t         major_version;
+  uint8_t         minor_version;
+  uint8_t         flight_recorder;
+  uint8_t         has_heartbeat;
+  uint8_t         has_alignment;  /* Event header alignment */
+	uint8_t			    has_tsc;
 } LTT_PACKED_STRUCT;
+
+
+/* For version 0.3 */
+
+struct ltt_trace_header_0_3 {
+  uint32_t        magic_number;
+  uint32_t        arch_type;
+  uint32_t        arch_variant;
+  uint32_t        float_word_order;
+  uint8_t         arch_size;
+  uint8_t         major_version;
+  uint8_t         minor_version;
+  uint8_t         flight_recorder;
+  uint8_t         has_heartbeat;
+  uint8_t         has_alignment;  /* Event header alignment */
+	uint8_t				 has_tsc;
+} LTT_PACKED_STRUCT;
+
 
 
 struct ltt_block_start_header {
@@ -164,8 +184,12 @@ struct ltt_block_start_header {
   } end;
   uint32_t                lost_size;  /* Size unused at the end of the buffer */
   uint32_t                buf_size;   /* The size of this sub-buffer */
-  struct ltt_trace_header trace;
+  char                    trace[0];
 } LTT_PACKED_STRUCT;
+
+
+
+
 
 
 struct _LttType{
