@@ -140,13 +140,13 @@ void lttvwindowtraces_add_trace(LttvTrace *trace)
   struct stat buf;
   gchar attribute_path[PATH_MAX];
 
-  if(stat(ltt_trace_name(lttv_trace(trace)), &buf)) {
+  if(stat(g_quark_to_string(ltt_trace_name(lttv_trace(trace))), &buf)) {
     g_warning("lttvwindowtraces_add_trace: Trace %s not found",
-        ltt_trace_name(lttv_trace(trace)));
+        g_quark_to_string(ltt_trace_name(lttv_trace(trace))));
     return;
   }
   g_assert(
-      snprintf(attribute_path, PATH_MAX, "%lu:%lu", buf.st_dev, buf.st_ino) >= 0);
+      snprintf(attribute_path, PATH_MAX, "%llu:%llu", buf.st_dev, buf.st_ino) >= 0);
   
   g_assert(attribute = 
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
@@ -224,7 +224,7 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace)
       /* Found */
       LttvAttribute *l_attribute;
 
-      /* create new traceset and tracesetcontext */
+      /* destroy traceset and tracesetcontext */
       LttvTraceset *ts;
       LttvTracesetStats *tss;
       
@@ -880,7 +880,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
  
   /* There is no events requests pending : we should never have been called! */
   g_assert(g_slist_length(*list_out) != 0 || g_slist_length(*list_in) != 0);
-
+#if 0
   /* 0.1 Lock traces */
   {
     guint iter_trace=0;
@@ -897,7 +897,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   }
   /* 0.2 Sync tracefiles */
   lttv_process_traceset_synchronize_tracefiles(tsc);
-
+#endif //0
   /* 1. Before processing */
   {
     /* if list_in is empty */
@@ -1214,6 +1214,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
       }
     }
   }
+#if 0
   /* 4. Unlock traces */
   {
     //lttv_process_traceset_get_sync_data(tsc);
@@ -1227,6 +1228,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
       lttvwindowtraces_unlock(trace_v);
     }
   }
+#endif //0
   return ret_val;
 }
 

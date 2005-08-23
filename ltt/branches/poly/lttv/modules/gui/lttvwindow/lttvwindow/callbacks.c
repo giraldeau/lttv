@@ -424,7 +424,7 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   current_time_change_manager(tab, new_current_time);
 
   //FIXME : we delete the filter tree, when it should be updated.
-  lttv_filter_tree_destroy(tab->filter);
+  lttv_filter_destroy(tab->filter);
   tab->filter = NULL;
   
 #if 0
@@ -939,7 +939,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       }
     }
   }
-  
+#if 0
   /* 0.1 Lock Traces */
   {
     guint iter_trace=0;
@@ -958,7 +958,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 
   /* 0.2 Seek tracefiles positions to context position */
   lttv_process_traceset_synchronize_tracefiles(tsc);
-
+#endif //0
   
   /* Events processing algorithm implementation */
   /* Warning : the gtk_events_pending takes a LOT of cpu time. So what we do
@@ -1590,7 +1590,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 
 
   }
-  
+#if 0
   /* C Unlock Traces */
   {
     //lttv_process_traceset_get_sync_data(tsc);
@@ -1605,7 +1605,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       lttvwindowtraces_unlock(trace_v);
     }
   }
-
+#endif //0
 #if 0
   //set the cursor back to normal
   gdk_window_set_cursor(win, NULL);  
@@ -1735,19 +1735,21 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       	break;
       }
       get_absolute_pathname(dir, abs_path);
-      trace_v = lttvwindowtraces_get_trace_by_name(abs_path);
-      if(trace_v == NULL) {
+      // Mathieu : modify to not share traces anymore : mmap uses so much less
+      // memory than a full buffer read...
+//      trace_v = lttvwindowtraces_get_trace_by_name(abs_path);
+//      if(trace_v == NULL) {
         trace = ltt_trace_open(abs_path);
         if(trace == NULL) {
           g_warning("cannot open trace %s", abs_path);
         } else {
           trace_v = lttv_trace_new(trace);
-          lttvwindowtraces_add_trace(trace_v);
+          //lttvwindowtraces_add_trace(trace_v);
           lttvwindow_add_trace(tab, trace_v);
         }
-      } else {
-        lttvwindow_add_trace(tab, trace_v);
-      }
+//      } else {
+//        lttvwindow_add_trace(tab, trace_v);
+//      }
 
       gtk_widget_destroy((GtkWidget*)file_selector);
       
@@ -1841,15 +1843,15 @@ void remove_trace(GtkWidget *widget, gpointer user_data)
     lttv_traceset_remove(traceset, index);
     lttv_trace_unref(trace_v);  // Remove local reference
 
-    if(lttv_trace_get_ref_number(trace_v) <= 1) {
+//    if(lttv_trace_get_ref_number(trace_v) <= 1) {
       /* ref 1 : lttvwindowtraces only*/
       ltt_trace_close(lttv_trace(trace_v));
       /* lttvwindowtraces_remove_trace takes care of destroying
        * the traceset linked with the trace_v and also of destroying
        * the trace_v at the same time.
        */
-      lttvwindowtraces_remove_trace(trace_v);
-    }
+//      lttvwindowtraces_remove_trace(trace_v);
+//    }
     
     tab->traceset_info->traceset_context =
       g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
@@ -2259,6 +2261,8 @@ Tab *create_new_tab(GtkWidget* widget, gpointer user_data){
   strcpy(label,"Page");
   if(get_label(mw_data, label,"Get the name of the tab","Please input tab's name"))    
     return (create_tab (mw_data, copy_tab, notebook, label));
+  else
+    return NULL;
 }
 
 void
@@ -3809,7 +3813,7 @@ char * get_selection(char ** loaded_module_name, int nb_module,
   }
 
   id = gtk_dialog_run(GTK_DIALOG(dialogue));
-  GtkTreeModel **store_model = (GtkTreeModel**)&store;  /* for strict aliasing */
+  GtkTreeModel **store_model = (GtkTreeModel*)store;
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
