@@ -679,6 +679,8 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path,
 		
 		g_debug("Tracefile file or directory : %s\n", path);
 		
+    if(strcmp(rel_path, "/eventdefs") == 0) continue;
+    
 		if(S_ISDIR(stat_buf.st_mode)) {
 
 			g_debug("Entering subdirectory...\n");
