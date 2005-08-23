@@ -3356,7 +3356,6 @@ attach_dir (CompletionDirSent *sent,
 
   cmpl_state->directory_storage =
     g_list_prepend (cmpl_state->directory_storage, new_dir);
-
   new_dir->sent = sent;
   new_dir->fullname = g_strdup (dir_name);
   new_dir->fullname_len = strlen (dir_name);

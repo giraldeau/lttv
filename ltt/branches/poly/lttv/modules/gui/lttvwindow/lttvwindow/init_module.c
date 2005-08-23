@@ -243,11 +243,6 @@ static void destroy() {
   LttvTrace *trace;
   GSList *iter = NULL;
   
-  lttvwindowtraces_unregister_requests(g_quark_from_string("stats"));
-  lttvwindowtraces_unregister_requests(g_quark_from_string("state"));
-  lttvwindowtraces_unregister_computation_hooks(g_quark_from_string("stats"));
-  lttvwindowtraces_unregister_computation_hooks(g_quark_from_string("state"));
-
   lttv_option_remove("trace");
 
   lttv_hooks_remove_data(main_hooks, window_creation_hook, NULL);

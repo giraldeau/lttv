@@ -331,6 +331,18 @@ static void connect_focus_recursive(GtkWidget *widget,
                     (gpointer)viewer);
 }
 
+/* Stop all the processings and call gtk_main_quit() */
+static void mainwindow_quit()
+{
+  lttvwindowtraces_unregister_requests(g_quark_from_string("stats"));
+  lttvwindowtraces_unregister_requests(g_quark_from_string("state"));
+  lttvwindowtraces_unregister_computation_hooks(g_quark_from_string("stats"));
+  lttvwindowtraces_unregister_computation_hooks(g_quark_from_string("state"));
+
+  gtk_main_quit();
+}
+
+
 /* insert_viewer function constructs an instance of a viewer first,
  * then inserts the widget of the instance into the container of the
  * main window
@@ -1735,21 +1747,19 @@ void add_trace(GtkWidget * widget, gpointer user_data)
       	break;
       }
       get_absolute_pathname(dir, abs_path);
-      // Mathieu : modify to not share traces anymore : mmap uses so much less
-      // memory than a full buffer read...
-//      trace_v = lttvwindowtraces_get_trace_by_name(abs_path);
-//      if(trace_v == NULL) {
+      trace_v = lttvwindowtraces_get_trace_by_name(abs_path);
+      if(trace_v == NULL) {
         trace = ltt_trace_open(abs_path);
         if(trace == NULL) {
           g_warning("cannot open trace %s", abs_path);
         } else {
           trace_v = lttv_trace_new(trace);
-          //lttvwindowtraces_add_trace(trace_v);
+          lttvwindowtraces_add_trace(trace_v);
           lttvwindow_add_trace(tab, trace_v);
         }
-//      } else {
-//        lttvwindow_add_trace(tab, trace_v);
-//      }
+      } else {
+        lttvwindow_add_trace(tab, trace_v);
+      }
 
       gtk_widget_destroy((GtkWidget*)file_selector);
       
@@ -1843,15 +1853,15 @@ void remove_trace(GtkWidget *widget, gpointer user_data)
     lttv_traceset_remove(traceset, index);
     lttv_trace_unref(trace_v);  // Remove local reference
 
-//    if(lttv_trace_get_ref_number(trace_v) <= 1) {
+    if(lttv_trace_get_ref_number(trace_v) <= 1) {
       /* ref 1 : lttvwindowtraces only*/
       ltt_trace_close(lttv_trace(trace_v));
       /* lttvwindowtraces_remove_trace takes care of destroying
        * the traceset linked with the trace_v and also of destroying
        * the trace_v at the same time.
        */
-//      lttvwindowtraces_remove_trace(trace_v);
-//    }
+      lttvwindowtraces_remove_trace(trace_v);
+    }
     
     tab->traceset_info->traceset_context =
       g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
@@ -2366,7 +2376,7 @@ void
 on_quit_activate                       (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  gtk_main_quit ();
+  mainwindow_quit();
 }
 
 
@@ -3203,7 +3213,7 @@ on_MWindow_destroy                     (GtkWidget       *widget,
 
   g_info("There are now : %d windows\n",g_slist_length(g_main_window_list));
   if(g_slist_length(g_main_window_list) == 0)
-    gtk_main_quit ();
+    mainwindow_quit();
 }
 
 gboolean    
@@ -3813,7 +3823,7 @@ char * get_selection(char ** loaded_module_name, int nb_module,
   }
 
   id = gtk_dialog_run(GTK_DIALOG(dialogue));
-  GtkTreeModel **store_model = (GtkTreeModel*)store;
+  GtkTreeModel **store_model = (GtkTreeModel**)&store;
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:

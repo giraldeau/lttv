@@ -80,7 +80,7 @@ LttvTrace *lttvwindowtraces_get_trace_by_name(gchar *path)
 
     trace = lttv_trace(trace_v);
     g_assert(trace != NULL);
-    name = ltt_trace_name(trace);
+    name = g_quark_to_string(ltt_trace_name(trace));
 
     if(strcmp(name, path) == 0) {
       /* Found */
@@ -880,7 +880,6 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
  
   /* There is no events requests pending : we should never have been called! */
   g_assert(g_slist_length(*list_out) != 0 || g_slist_length(*list_in) != 0);
-#if 0
   /* 0.1 Lock traces */
   {
     guint iter_trace=0;
@@ -897,7 +896,6 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   }
   /* 0.2 Sync tracefiles */
   lttv_process_traceset_synchronize_tracefiles(tsc);
-#endif //0
   /* 1. Before processing */
   {
     /* if list_in is empty */
@@ -1214,10 +1212,9 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
       }
     }
   }
-#if 0
   /* 4. Unlock traces */
   {
-    //lttv_process_traceset_get_sync_data(tsc);
+    lttv_process_traceset_get_sync_data(tsc);
     guint iter_trace;
     
     for(iter_trace=0; 
@@ -1228,7 +1225,6 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
       lttvwindowtraces_unlock(trace_v);
     }
   }
-#endif //0
   return ret_val;
 }
 
