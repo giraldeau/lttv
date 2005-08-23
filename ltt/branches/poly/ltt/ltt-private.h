@@ -345,7 +345,8 @@ struct _LttTrace{
   GArray *facilities_by_num;            /* fac_id as index in array */
   GData *facilities_by_name;            /* fac name (GQuark) as index */
                                         /* Points to array of fac_id of all the
-                                         * facilities that has this name. */
+                                        * facilities that has this name. */
+  guint     num_cpu;
 
   guint32   arch_type;
   guint32   arch_variant;

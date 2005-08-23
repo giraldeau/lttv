@@ -185,6 +185,11 @@ LttFacility *ltt_trace_get_facility_by_num(LttTrace *t,
 
 }
 
+guint ltt_trace_get_num_cpu(LttTrace *t)
+{
+  return t->num_cpu;
+}
+
 
 /*****************************************************************************
  *Function name
@@ -966,8 +971,14 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   LttTrace  * t;
   LttTracefile *tf;
   GArray *group;
-  int i;
+  int i, ret;
   struct ltt_block_start_header *header;
+	DIR *dir;
+	struct dirent *entry;
+  guint control_found = 0;
+  guint eventdefs_found = 0;
+	struct stat stat_buf;
+  gchar path[PATH_MAX];
   
   t = g_new(LttTrace, 1);
   if(!t) goto alloc_error;
@@ -975,11 +986,40 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   get_absolute_pathname(pathname, abs_path);
   t->pathname = g_quark_from_string(abs_path);
 
-  /* Open all the tracefiles */
   g_datalist_init(&t->tracefiles);
+
+  /* Test to see if it looks like a trace */
+	dir = opendir(abs_path);
+	if(dir == NULL) {
+		perror(abs_path);
+		goto open_error;
+	}
+	while((entry = readdir(dir)) != NULL) {
+    strcpy(path, abs_path);
+    strcat(path, "/");
+    strcat(path, entry->d_name);
+		ret = stat(path, &stat_buf);
+		if(ret == -1) {
+			perror(path);
+			continue;
+		}
+		if(S_ISDIR(stat_buf.st_mode)) {
+      if(strcmp(entry->d_name, "control") == 0) {
+        control_found = 1;
+      }
+      if(strcmp(entry->d_name, "eventdefs") == 0) {
+        eventdefs_found = 1;
+      }
+    }
+  }
+  closedir(dir);
+  
+  if(!control_found || !eventdefs_found) goto find_error;
+  
+  /* Open all the tracefiles */
   if(open_tracefiles(t, abs_path, "")) {
     g_warning("Error opening tracefile %s", abs_path);
-    goto open_error;
+    goto find_error;
   }
   
   /* Prepare the facilities containers : array and mapping */
@@ -1012,7 +1052,8 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   t->has_heartbeat = header->trace.has_heartbeat;
   t->has_alignment = header->trace.has_alignment;
   t->has_tsc = header->trace.has_tsc;
-  
+
+  t->num_cpu = group->len;
   
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
@@ -1026,8 +1067,9 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 facilities_error:
   g_datalist_clear(&t->facilities_by_name);
   g_array_free(t->facilities_by_num, TRUE);
-open_error:
+find_error:
   g_datalist_clear(&t->tracefiles);
+open_error:
   g_free(t);
 alloc_error:
   return NULL;

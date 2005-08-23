@@ -47,6 +47,7 @@ GQuark ltt_trace_name(const LttTrace *t);
 
 void ltt_trace_close(LttTrace *t); 
 
+guint ltt_trace_get_num_cpu(LttTrace *t);
 
 LttSystemDescription *ltt_trace_system_description(LttTrace *t);
 
