@@ -52,6 +52,7 @@ AC_HEADER_STDC
 
 pkg_modules="gtk+-2.0 >= 2.0.0"
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
+PACKAGE_CFLAGS="-Wall -Wformat"
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
 

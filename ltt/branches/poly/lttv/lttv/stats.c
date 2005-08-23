@@ -745,15 +745,9 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
   guint i, j, k, l, nb_trace, nb_tracefile;
 
-  LttFacility *f;
-
-  LttEventType *et;
-
   LttvTraceStats *ts;
 
   LttvTracefileStats *tfs;
-
-  void *hook_data;
 
   GArray *hooks, *before_hooks, *after_hooks;
 

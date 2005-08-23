@@ -74,6 +74,9 @@
 #endif
 
 #include <lttv/filter.h>
+#include <ltt/trace.h>
+#include <stdlib.h>
+#include <string.h>
 
 /**
  * @fn LttvSimpleExpression* lttv_simple_expression_new()
@@ -109,7 +112,7 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
   GString* f = NULL;
   
   if(fp->len < 2) return FALSE;
-  g_assert(f=g_ptr_array_remove_index(fp,0)); 
+  g_assert((f=g_ptr_array_remove_index(fp,0))); 
   
   /*
    * Parse through the specified 
@@ -376,7 +379,6 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
   gboolean is_double = FALSE;
   LttTime t = ltt_time_zero;
   GString* v;
-  GQuark quark;
   
   switch(se->field) {
      /* 

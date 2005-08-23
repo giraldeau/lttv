@@ -165,7 +165,7 @@ static void init_tracefile_context(LttTracefile *tracefile,
 static void
 init(LttvTracesetContext *self, LttvTraceset *ts)
 {
-  guint i, j, nb_trace;
+  guint i, nb_trace;
 
   LttvTraceContext *tc;
 
@@ -819,8 +819,6 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
                                         const LttvTracesetContextPosition *pos)
 {
   guint i;
-  LttvTraceContext *tc;
-  LttvTracefileContext *tfc;
 
   g_tree_destroy(self->pqueue);
   self->pqueue = g_tree_new(compare_tracefile);
