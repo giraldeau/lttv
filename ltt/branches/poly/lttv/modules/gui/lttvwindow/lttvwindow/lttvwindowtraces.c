@@ -161,6 +161,7 @@ void lttvwindowtraces_add_trace(LttvTrace *trace)
   /* create new traceset and tracesetcontext */
   LttvTraceset *ts;
   LttvTracesetStats *tss;
+  LttvTracesetContextPosition *sync_position;
   
   attribute = lttv_trace_attribute(trace);
   g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
@@ -180,6 +181,14 @@ void lttvwindowtraces_add_trace(LttvTrace *trace)
   *(value.v_pointer) = tss;
   
   lttv_context_init(LTTV_TRACESET_CONTEXT(tss), ts);
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_COMPUTATION_SYNC_POSITION,
+                                LTTV_POINTER,
+                                &value));
+
+  sync_position = lttv_traceset_context_position_new();
+  *(value.v_pointer) = sync_position;
 
   value = lttv_attribute_add(attribute,
                      LTTV_REQUESTS_QUEUE,
@@ -227,6 +236,7 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace)
       /* destroy traceset and tracesetcontext */
       LttvTraceset *ts;
       LttvTracesetStats *tss;
+      LttvTracesetContextPosition *sync_position;
       
       l_attribute = lttv_trace_attribute(trace);
 
@@ -249,6 +259,17 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace)
                                     &value));
       ts = (LttvTraceset*)*(value.v_pointer);
      
+      g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(l_attribute),
+                                    LTTV_COMPUTATION_SYNC_POSITION,
+                                    LTTV_POINTER,
+                                    &value));
+      sync_position = (LttvTracesetContextPosition*)*(value.v_pointer);
+
+      lttv_traceset_context_position_destroy(sync_position);
+      
+      lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(l_attribute),
+                                     LTTV_COMPUTATION_SYNC_POSITION);
+
       g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(l_attribute),
                                     LTTV_COMPUTATION_TRACESET_CONTEXT,
                                     LTTV_POINTER,
@@ -827,6 +848,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   LttvTracesetContext *tsc;
   LttvTracesetStats *tss;
   LttvTraceset *ts;
+  LttvTracesetContextPosition *sync_position;
   LttvAttribute *attribute;
   LttvAttribute *g_attribute = lttv_global_attributes();
   GSList **list_out, **list_in, **notify_in, **notify_out;
@@ -877,6 +899,12 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   tss = (LttvTracesetStats*)*(value.v_pointer);
   g_assert(LTTV_IS_TRACESET_CONTEXT(tsc));
   g_assert(LTTV_IS_TRACESET_STATS(tss));
+  
+  type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),
+                                     LTTV_COMPUTATION_SYNC_POSITION,
+                                     &value);
+  g_assert(type == LTTV_POINTER);
+  sync_position = (LttvTracesetContextPosition*)*(value.v_pointer);
  
   /* There is no events requests pending : we should never have been called! */
   g_assert(g_slist_length(*list_out) != 0 || g_slist_length(*list_in) != 0);
@@ -895,7 +923,8 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
     }
   }
   /* 0.2 Sync tracefiles */
-  lttv_process_traceset_synchronize_tracefiles(tsc);
+  g_assert(lttv_process_traceset_seek_position(tsc, sync_position) == 0);
+ // lttv_process_traceset_synchronize_tracefiles(tsc);
   /* 1. Before processing */
   {
     /* if list_in is empty */
@@ -1214,7 +1243,8 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
   }
   /* 4. Unlock traces */
   {
-    lttv_process_traceset_get_sync_data(tsc);
+ //   lttv_process_traceset_get_sync_data(tsc);
+    lttv_traceset_context_position_save(tsc, sync_position);
     guint iter_trace;
     
     for(iter_trace=0; 

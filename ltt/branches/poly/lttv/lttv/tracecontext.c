@@ -178,7 +178,7 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
   self->traces = g_new(LttvTraceContext *, nb_trace);
   self->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
   self->ts_a = lttv_traceset_attribute(ts);
-  self->sync_position = lttv_traceset_context_position_new();
+ // self->sync_position = lttv_traceset_context_position_new();
   for(i = 0 ; i < nb_trace ; i++) {
     tc = LTTV_TRACESET_CONTEXT_GET_CLASS(self)->new_trace_context(self);
     self->traces[i] = tc;
@@ -250,7 +250,7 @@ void fini(LttvTracesetContext *self)
 
   g_tree_destroy(self->pqueue);
   g_object_unref(self->a);
-  lttv_traceset_context_position_destroy(self->sync_position);
+ // lttv_traceset_context_position_destroy(self->sync_position);
 
   nb_trace = lttv_traceset_number(ts);
 
@@ -1184,7 +1184,7 @@ LttvTracefileContext *lttv_traceset_context_get_current_tfc(LttvTracesetContext 
 
   return tfc;
 }
-
+#if 0
 /* lttv_process_traceset_synchronize_tracefiles
  *
  * Use the sync_position field of the trace set context to synchronize each
@@ -1205,5 +1205,5 @@ void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc)
   lttv_traceset_context_position_save(tsc, tsc->sync_position);
 }
 
-
+#endif //0
 

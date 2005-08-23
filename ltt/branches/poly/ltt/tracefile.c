@@ -248,6 +248,9 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
     tf->reverse_bo = 1;
   else  /* invalid magic number, bad tracefile ! */
     goto unmap_file;
+  /* Get float byte order : might be different from int byte order
+   * (or is set to 0 if the trace has no float (kernel trace)) */
+  tf->float_word_order = header->trace.float_word_order;
     
   //store the size of the file
   tf->file_size = lTDFStat.st_size;

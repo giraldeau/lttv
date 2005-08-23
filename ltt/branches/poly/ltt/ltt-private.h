@@ -141,6 +141,7 @@ struct ltt_trace_header {
   uint32_t        magic_number;
   uint32_t        arch_type;
   uint32_t        arch_variant;
+  uint32_t        float_word_order;
   uint8_t         arch_size;
   //uint32_t        system_type;
   uint8_t          major_version;

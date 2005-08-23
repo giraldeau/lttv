@@ -57,6 +57,7 @@ LttvTraceInfo LTTV_TRACES,
        LTTV_NOTIFY_CURRENT,
        LTTV_COMPUTATION_TRACESET,
        LTTV_COMPUTATION_TRACESET_CONTEXT,
+       LTTV_COMPUTATION_SYNC_POSITION,
        LTTV_BEFORE_CHUNK_TRACESET,
        LTTV_BEFORE_CHUNK_TRACE,
        LTTV_BEFORE_CHUNK_TRACEFILE,
@@ -153,6 +154,8 @@ static void init() {
   LTTV_COMPUTATION_TRACESET = g_quark_from_string("computation_traceset");
   LTTV_COMPUTATION_TRACESET_CONTEXT =
                         g_quark_from_string("computation_traceset_context");
+  LTTV_COMPUTATION_SYNC_POSITION =
+                        g_quark_from_string("computation_sync_position");
   LTTV_BEFORE_CHUNK_TRACESET = g_quark_from_string("before_chunk_traceset");
   LTTV_BEFORE_CHUNK_TRACE = g_quark_from_string("before_chunk_trace");
   LTTV_BEFORE_CHUNK_TRACEFILE = g_quark_from_string("before_chunk_tracefile");
