@@ -26,7 +26,7 @@
 #include <glib.h>
 
 #include <asm/types.h>
-#include <linux/byteorder/swab.h>
+#include <byteswap.h>
 
 #include "parser.h"
 #include <ltt/ltt.h>
@@ -620,10 +620,12 @@ float ltt_event_get_float(LttEvent *e, LttField *f)
 
   if(reverse_byte_order == 0) return *(float *)(e->data + f->offset_root);
   else{
-    guint32 aInt;
-    memcpy((void*)&aInt, e->data + f->offset_root, 4);
-    aInt = ___swab32(aInt);
-    return ((float)aInt);
+//    guint32 aInt;
+    void *ptr = e->data + f->offset_root;
+//    memcpy((void*)&aInt, e->data + f->offset_root, 4);
+//    aInt = bswap_32();
+//    return ((float)aInt);
+    return *(float*)bswap_32(*(guint32*)ptr);
   }
 }
 
@@ -635,10 +637,12 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
 
   if(reverse_byte_order == 0) return *(double *)(e->data + f->offset_root);
   else{
-    guint64 aInt;
-    memcpy((void*)&aInt, e->data + f->offset_root, 8);
-    aInt = ___swab64(aInt);
-    return ((double)aInt);
+    void *ptr = e->data + f->offset_root;
+    return *(double*)bswap_64(*(guint64*)ptr);
+    //guint64 aInt;
+    //memcpy((void*)&aInt, e->data + f->offset_root, 8);
+    //aInt = ___swab64(aInt);
+    //return ((double)aInt);
   }
 }
 
