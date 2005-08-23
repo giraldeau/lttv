@@ -28,6 +28,7 @@
 #include <ltt/facility.h>
 #include <ltt/trace.h>
 #include <ltt/event.h>
+#include <ltt/type.h>
 
 #define BUF_SIZE 256
 

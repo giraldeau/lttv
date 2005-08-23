@@ -1034,7 +1034,7 @@ alloc_error:
 
 }
 
-GQuark ltt_trace_name(LttTrace *t)
+GQuark ltt_trace_name(const LttTrace *t)
 {
   return t->pathname;
 }

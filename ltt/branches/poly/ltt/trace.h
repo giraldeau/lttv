@@ -43,7 +43,7 @@ LttTrace *ltt_trace_open(const gchar *pathname);
  */
 LttTrace *ltt_trace_copy(LttTrace *self);
 
-GQuark ltt_trace_name(LttTrace *t);
+GQuark ltt_trace_name(const LttTrace *t);
 
 void ltt_trace_close(LttTrace *t); 
 

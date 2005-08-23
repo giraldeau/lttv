@@ -423,14 +423,14 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
               /* cannot specify number with more than one '.' */
               if(is_double) return FALSE; 
               else is_double = TRUE;
-              t.tv_sec = atoi(v);
+              t.tv_sec = atoi(v->str);
               g_string_free(v,TRUE);
               v = g_string_new("");
           } else g_string_append_c(v,value[i]);
        }
        /* number can be integer or double */
-       if(is_double) t.tv_nsec = atoi(v);
-       else t.tv_sec = atoi(v);
+       if(is_double) t.tv_nsec = atoi(v->str);
+       else t.tv_sec = atoi(v->str);
        
        g_string_free(v,TRUE);
        

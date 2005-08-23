@@ -930,6 +930,7 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
   thf->f3 = find_field(et, field3);
   
   first_thf = thf;
+  first_et = et;
 
   /* Check for type compatibility too */
   for(i=1;i<facilities->len;i++) {
@@ -1078,7 +1079,7 @@ gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
                                         const LttvTracesetContextPosition *pos)
 {
   int i;
-  int ret;
+  int ret = 0;
 
   for(i=0;i<pos->ep->len;i++) {
     LttEventPosition *ep = g_array_index(pos->ep, LttEventPosition*, i);
