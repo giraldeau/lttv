@@ -74,12 +74,12 @@ void freeLttNamedType(LttType * type);
 
 int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
 {
+  int ret = 0;
   gchar *token;
   parse_file_t in;
-  gsize length;
   facility_t * fac;
   unsigned long checksum;
-  GError * error = NULL;
+  //GError * error = NULL;
   gchar buffer[BUFFER_SIZE];
 
   in.buffer = &(buffer[0]);
@@ -93,7 +93,8 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   if(in.fp == NULL) {
     g_warning("cannot open facility description file %s",
         in.name);
-    return 1;
+    ret = 1;
+    goto open_error;
   }
 
   //in.channel = g_io_channel_unix_new(in.fd);
@@ -135,6 +136,7 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
     }
     else {
       g_warning("facility token was expected in file %s", in.name);
+      ret = 1;
       goto parse_error;
     }
   }
@@ -143,11 +145,13 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   //g_io_channel_shutdown(in.channel, FALSE, &error); /* No flush */
   //if(error != NULL) {
   fclose(in.fp);
+open_error:
   //  g_warning("Can not close file: \n%s\n", error->message);
   //  g_error_free(error);
   //}
 
   //g_close(in.fd);
+  return ret;
 }
 
 
@@ -250,7 +254,7 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
 void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td, 
                             LttField * fld)
 {
-  int i, flag;
+  int i;
   type_descriptor_t * tmpTd;
 
   switch(td->type) {
@@ -654,5 +658,6 @@ LttEventType *ltt_facility_eventtype_get(LttFacility *f, guint8 i)
 LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, GQuark name)
 {
   LttEventType *et = g_datalist_id_get_data(&f->events_by_name, name);
+  return et;
 }
 

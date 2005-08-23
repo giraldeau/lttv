@@ -47,9 +47,5 @@ LttEventType *ltt_facility_eventtype_get_by_name(LttFacility *f, GQuark name);
 
 void ltt_facility_close(LttFacility *f);
 
-/* Reserved facility names */
-
-static const char *ltt_facility_name_core = "core";
-
 #endif // FACILITY_H
 

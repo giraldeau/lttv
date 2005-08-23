@@ -172,4 +172,8 @@ gint check_fields_compatibility(LttEventType *event_type1,
     LttEventType *event_type2,
     LttField *field1, LttField *field2);
 
+gint64 ltt_get_int(gboolean reverse_byte_order, gint size, void *data);
+
+guint64 ltt_get_uint(gboolean reverse_byte_order, gint size, void *data);
+
 #endif // TRACE_H

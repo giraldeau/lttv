@@ -38,9 +38,22 @@ This program is distributed in the hope that it will be useful,
 #include <stdarg.h>
 #include <linux/errno.h>  
 #include <assert.h>
-
+#include <ctype.h>
 
 #include "parser.h"
+
+
+static char *intOutputTypes[] = {
+  "int8_t", "int16_t", "int32_t", "int64_t", "short int", "int", "long int" };
+
+static char *uintOutputTypes[] = {
+  "uint8_t", "uint16_t", "uint32_t", "uint64_t", "unsigned short int", 
+  "unsigned int", "unsigned long int" };
+
+static char *floatOutputTypes[] = {
+  "undef", "undef", "float", "double", "undef", "float", "double" };
+
+
 
 
 /* helper function  */
@@ -173,7 +186,6 @@ char *allocAndCopy(char *str)
 void getTypeAttributes(parse_file_t *in, type_descriptor_t *t)
 {
   char * token;
-  char car;
 
   t->fmt = NULL;
   t->size = -1;
@@ -465,7 +477,6 @@ void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types,
 		table_t * named_types) 
 {
   char *token;
-  type_descriptor_t *t;
 
   //<event name=eventtype_name>
   getEventAttributes(in, ev);
@@ -1271,9 +1282,8 @@ void freeNamedType(table_t * t)
 
 void freeTypes(sequence_t *t) 
 {
-  int pos, pos2;
+  int pos;
   type_descriptor_t *tp;
-  field_t *f;
 
   for(pos = 0 ; pos < t->position; pos++) {
     tp = (type_descriptor_t *)t->array[pos];

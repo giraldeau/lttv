@@ -167,17 +167,6 @@ char * getValueStrAttribute(parse_file_t *in);
 char * getDescription(parse_file_t *in);
 
 
-static char *intOutputTypes[] = {
-  "int8_t", "int16_t", "int32_t", "int64_t", "short int", "int", "long int" };
-
-static char *uintOutputTypes[] = {
-  "uint8_t", "uint16_t", "uint32_t", "uint64_t", "unsigned short int", 
-  "unsigned int", "unsigned long int" };
-
-static char *floatOutputTypes[] = {
-  "undef", "undef", "float", "double", "undef", "float", "double" };
-
-
 /* Dynamic memory allocation and freeing */
 
 void * memAlloc(int size);

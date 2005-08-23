@@ -76,11 +76,6 @@ GQuark LTT_TRACEFILE_NAME_FACILITIES;
 #define PAGE_MASK (~(page_size-1))
 #define PAGE_ALIGN(addr)  (((addr)+page_size-1)&PAGE_MASK)
 
-/* obtain the time of an event */
-
-static inline LttTime getEventTime(LttTracefile * tf);
-
-
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
 void set_fields_offsets(LttTracefile *tf, LttEventType *event_type);
@@ -540,7 +535,6 @@ int get_tracefile_name_number(const gchar *raw_name,
 {
   guint raw_name_len = strlen(raw_name);
   gchar char_name[PATH_MAX];
-  gchar *digit_begin;
   int i;
   int underscore_pos;
   long int cpu_num;
@@ -689,8 +683,6 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path,
 			GQuark name;
       guint num;
       GArray *group;
-      LttTracefile *tf;
-      guint len;
       
       if(get_tracefile_name_number(rel_path, &name, &num))
         continue; /* invalid name */
@@ -959,7 +951,6 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
   return 0;
 
   /* Error handling */
-facility_error:
 event_id_error:
 fac_id_error:
 update_error:
@@ -1157,7 +1148,6 @@ LttTracefile *ltt_trace_find_tracefile(LttTrace *t, const gchar *name)
 static void ltt_tracefile_time_span_get(LttTracefile *tf,
                                         LttTime *start, LttTime *end)
 {
-  struct ltt_block_start_header * header;
   int err;
 
   err = map_block(tf, 0);
@@ -1386,11 +1376,12 @@ int ltt_tracefile_seek_position(LttTracefile *tf, const LttEventPosition *ep) {
   err = ltt_tracefile_read_op(tf);
   if(err) goto fail;
 
-  return;
+  return 0;
 
 fail:
   g_error("ltt_tracefile_seek_time failed on tracefile %s", 
       g_quark_to_string(tf->name));
+  return 1;
 }
 
 /* Calculate the real event time based on the buffer boundaries */
@@ -1486,9 +1477,6 @@ int ltt_tracefile_read_seek(LttTracefile *tf)
 /* do specific operation on events */
 int ltt_tracefile_read_op(LttTracefile *tf)
 {
-  int err;
-  LttFacility *f;
-  void * pos;
   LttEvent *event;
 
   event = &tf->event;
@@ -1508,8 +1496,6 @@ int ltt_tracefile_read_op(LttTracefile *tf)
  * event specific operation. */
 int ltt_tracefile_read_update_event(LttTracefile *tf)
 {
-  int err;
-  LttFacility *f;
   void * pos;
   LttEvent *event;
  
@@ -1766,7 +1752,6 @@ static int ltt_seek_next_event(LttTracefile *tf)
 {
   int ret = 0;
   void *pos;
-  ssize_t event_size;
   
   /* seek over the buffer header if we are at the buffer start */
   if(tf->event.offset == 0) {
@@ -2038,7 +2023,6 @@ gint check_fields_compatibility(LttEventType *event_type1,
     LttField *field1, LttField *field2)
 {
   guint different = 0;
-  enum field_status local_fixed_root, local_fixed_parent;
   guint i;
   LttType *type1;
   LttType *type2;
@@ -2063,11 +2047,6 @@ gint check_fields_compatibility(LttEventType *event_type1,
 
   type1 = field1->field_type;
   type2 = field2->field_type;
-
-  size_t current_root_offset;
-  size_t current_offset;
-  enum field_status current_child_status, final_child_status;
-  size_t max_size;
 
   if(type1->type_class != type2->type_class) {
     different = 1;

@@ -151,9 +151,6 @@ int main(int argc, char ** argv){
   heartbeat beat;
   uint64_t adaptation_tsc;    // (Mathieu)
   uint32_t size_lost;
-  int reserve_size = sizeof(buffer_start) + 
-                     sizeof(buffer_end) + //buffer_end event
-                     sizeof(uint32_t);  //lost size
   int nb_para;
 
   new_process process;
@@ -318,7 +315,7 @@ int main(int argc, char ** argv){
     end.block_id = start.block_id;
 
 
-    g_printf("Trace version %hu.%hu detected\n",
+    g_message("Trace version %hu.%hu detected\n",
              tStart->MajorVersion,
              tStart->MinorVersion);
     if(tStart->MinorVersion == 2) {
@@ -335,7 +332,7 @@ int main(int argc, char ** argv){
          * with TRACE_SYSCALL_ENTRY.
          */
         g_warning("This is a 2.3 trace format that has a 2.2 tag. Please upgrade your kernel");
-        g_printf("Processing the trace as a 2.3 format\n");
+        g_message("Processing the trace as a 2.3 format\n");
 
         tStart->MinorVersion = 3;
       }
@@ -757,7 +754,7 @@ int main(int argc, char ** argv){
   close(fdProc); 
   fclose(fp);
 
-  g_printf("Conversion completed. Don't forget to copy core.xml to eventdefs directory\n");
+  g_message("Conversion completed. Don't forget to copy core.xml to eventdefs directory\n");
   
   return 0;
 }
