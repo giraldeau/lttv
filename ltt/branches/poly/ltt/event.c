@@ -622,7 +622,8 @@ float ltt_event_get_float(LttEvent *e, LttField *f)
   if(reverse_byte_order == 0) return *(float *)(e->data + f->offset_root);
   else{
     void *ptr = e->data + f->offset_root;
-    return *(float*)bswap_32(*(guint32*)ptr);
+    guint32 value = bswap_32(*(guint32*)ptr);
+    return *(float*)&value;
   }
 }
 
@@ -636,7 +637,8 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
   if(reverse_byte_order == 0) return *(double *)(e->data + f->offset_root);
   else {
     void *ptr = e->data + f->offset_root;
-    return *(double*)bswap_64(*(guint64*)ptr);
+    guint64 value = bswap_64(*(guint64*)ptr);
+    return *(double*)&value;
   }
 }
 
