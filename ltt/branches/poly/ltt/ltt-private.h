@@ -47,7 +47,6 @@
 #define LTT_GET_FLOAT_BO(t) \
   (((t)->float_word_order==__BYTE_ORDER)?0:1)
 
-
 /* Hardcoded core events */
 enum ltt_core_events {
     LTT_EVENT_FACILITY_LOAD,
@@ -186,10 +185,6 @@ struct ltt_block_start_header {
   uint32_t                buf_size;   /* The size of this sub-buffer */
   char                    trace[0];
 } LTT_PACKED_STRUCT;
-
-
-
-
 
 
 struct _LttType{
@@ -352,6 +347,8 @@ struct _LttTracefile{
   unsigned int num_blocks;           //number of blocks in the file
   gboolean  reverse_bo;              //must we reverse byte order ?
   gboolean  float_word_order;        //what is the byte order of floats ?
+
+  size_t    buffer_header_size;
 
 	/* Current event */
   LttEvent event;                    //Event currently accessible in the trace
