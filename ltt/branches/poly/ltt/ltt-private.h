@@ -22,6 +22,7 @@
 #include <glib.h>
 #include <sys/types.h>
 #include <ltt/ltt.h>
+#include <endian.h>
 
 
 #ifndef max
@@ -38,6 +39,14 @@
 
 /* Hardcoded facilities */
 #define LTT_FACILITY_CORE 0
+ 
+/* Byte ordering */
+#define LTT_GET_BO(t) ((t)->reverse_bo)
+
+#define LTT_HAS_FLOAT(t) ((t)->float_word_order!=0)
+#define LTT_GET_FLOAT_BO(t) \
+  (((t)->float_word_order==__BYTE_ORDER)?0:1)
+
 
 /* Hardcoded core events */
 enum ltt_core_events {
@@ -317,6 +326,7 @@ struct _LttTracefile{
   //unsigned block_size;               //block_size
   unsigned int num_blocks;           //number of blocks in the file
   gboolean  reverse_bo;              //must we reverse byte order ?
+  gboolean  float_word_order;        //what is the byte order of floats ?
 
 	/* Current event */
   LttEvent event;                    //Event currently accessible in the trace
@@ -390,8 +400,6 @@ struct _LttSystemDescription {
 //#define TIMESTAMP_SIZE    sizeof(guint32)
 //#define EVENT_ID_SIZE     sizeof(guint16)
 //#define EVENT_HEADER_SIZE (TIMESTAMP_SIZE + EVENT_ID_SIZE)
-
-#define LTT_GET_BO(t) ((t)->reverse_bo)
 
 
 #endif /* LTT_PRIVATE_H */

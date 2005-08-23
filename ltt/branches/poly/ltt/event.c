@@ -614,35 +614,29 @@ gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
 
 float ltt_event_get_float(LttEvent *e, LttField *f)
 {
-  gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
+  g_assert(LTT_HAS_FLOAT(e->tracefile));
+  gboolean reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
 
   g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 4);
 
   if(reverse_byte_order == 0) return *(float *)(e->data + f->offset_root);
   else{
-//    guint32 aInt;
     void *ptr = e->data + f->offset_root;
-//    memcpy((void*)&aInt, e->data + f->offset_root, 4);
-//    aInt = bswap_32();
-//    return ((float)aInt);
     return *(float*)bswap_32(*(guint32*)ptr);
   }
 }
 
 double ltt_event_get_double(LttEvent *e, LttField *f)
 {
-  gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
+  g_assert(LTT_HAS_FLOAT(e->tracefile));
+  gboolean reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
 
   g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 8);
 
   if(reverse_byte_order == 0) return *(double *)(e->data + f->offset_root);
-  else{
+  else {
     void *ptr = e->data + f->offset_root;
     return *(double*)bswap_64(*(guint64*)ptr);
-    //guint64 aInt;
-    //memcpy((void*)&aInt, e->data + f->offset_root, 8);
-    //aInt = ___swab64(aInt);
-    //return ((double)aInt);
   }
 }
 
