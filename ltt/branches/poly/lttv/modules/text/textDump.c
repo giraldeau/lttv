@@ -92,8 +92,9 @@ void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
       break;
 
     case LTT_ENUM:
-      g_string_append_printf(s, " %s", ltt_enum_string_get(type,
-          ltt_event_get_unsigned(e,f)-1));
+      g_string_append_printf(s, " %s", 
+          g_quark_to_string(ltt_enum_string_get(type,
+          ltt_event_get_unsigned(e,f)-1)));
       break;
 
     case LTT_ARRAY:
