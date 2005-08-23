@@ -93,6 +93,9 @@ struct _LttvTracesetContext {
   LttvAttribute *ts_a;
   TimeInterval time_span;
   GTree *pqueue;
+
+  LttvTracesetContextPosition *sync_position;   /* position at which to sync the
+                                                   trace context */
 };
 
 struct _LttvTracesetContextClass {
@@ -273,6 +276,7 @@ typedef struct _LttvTraceHookByFacility {
   LttField *f1;
   LttField *f2;
   LttField *f3;
+  gpointer hook_data;
 } LttvTraceHookByFacility;
 
 
@@ -295,7 +299,8 @@ void lttv_trace_hook_destroy(LttvTraceHook *th);
    it already contains the (up to three) needed fields handles. */
  
 gint lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event_type,
-    GQuark field1, GQuark field2, GQuark field3, LttvHook h, LttvTraceHook *th);
+    GQuark field1, GQuark field2, GQuark field3, LttvHook h,
+    gpointer hook_data, LttvTraceHook *th);
 
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);
@@ -322,5 +327,12 @@ LttTime lttv_traceset_context_position_get_time(
                                       const LttvTracesetContextPosition *pos);
 
 gint compare_tracefile(gconstpointer a, gconstpointer b);
+
+
+/* Synchronisation helpers : save/restore synchronization between ltt traces and
+ * a traceset context. */
+void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *tsc);
+
+void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc);
 
 #endif // PROCESSTRACE_H

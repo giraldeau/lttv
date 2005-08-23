@@ -51,6 +51,8 @@
 
 #include "hGuiControlFlowInsert.xpm"
 
+GQuark LTT_NAME_CPU;
+
 /** Array containing instanced objects. Used when module is unloaded */
 GSList *g_control_flow_data_list = NULL ;
 
@@ -75,6 +77,8 @@ static void init() {
                                   hGuiControlFlowInsert_xpm,
                                   "Insert Control Flow Viewer",
                                   h_guicontrolflow);
+
+  LTT_NAME_CPU = g_quark_from_string("/cpu");
 }
 
 void destroy_walk(gpointer data, gpointer user_data)

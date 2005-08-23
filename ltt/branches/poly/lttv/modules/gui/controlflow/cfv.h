@@ -25,6 +25,8 @@
 #include <lttvwindow/mainwindow.h>
 #include "processlist.h"
 
+extern GQuark LTT_NAME_CPU;
+
 
 #ifndef TYPE_DRAWING_T_DEFINED
 #define TYPE_DRAWING_T_DEFINED

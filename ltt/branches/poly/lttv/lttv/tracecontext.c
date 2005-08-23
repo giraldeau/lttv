@@ -178,6 +178,7 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
   self->traces = g_new(LttvTraceContext *, nb_trace);
   self->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
   self->ts_a = lttv_traceset_attribute(ts);
+  self->sync_position = lttv_traceset_context_position_new();
   for(i = 0 ; i < nb_trace ; i++) {
     tc = LTTV_TRACESET_CONTEXT_GET_CLASS(self)->new_trace_context(self);
     self->traces[i] = tc;
@@ -249,6 +250,7 @@ void fini(LttvTracesetContext *self)
 
   g_tree_destroy(self->pqueue);
   g_object_unref(self->a);
+  lttv_traceset_context_position_destroy(self->sync_position);
 
   nb_trace = lttv_traceset_number(ts);
 
@@ -828,14 +830,15 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
     LttvTracefileContext **tfc = 
       &g_array_index(pos->tfc, LttvTracefileContext*, i);
     if(*ep != NULL) {
-      g_assert(ltt_tracefile_seek_position((*tfc)->tf, *ep) == 0);
+      if(ltt_tracefile_seek_position((*tfc)->tf, *ep) != 0)
+        return 1;
       (*tfc)->timestamp = ltt_event_time(ltt_tracefile_get_event((*tfc)->tf));
       g_tree_insert(self->pqueue, (*tfc), (*tfc));
     } else {
       (*tfc)->timestamp = ltt_time_infinite;
     }
   }
-  return TRUE;
+  return 0;
 }
 
 
@@ -886,7 +889,8 @@ LttvTraceHookByFacility *lttv_trace_hook_get_first(LttvTraceHook *th)
 /* Returns 0 on success, -1 if fails. */
 gint
 lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event, 
-    GQuark field1, GQuark field2, GQuark field3, LttvHook h, LttvTraceHook *th)
+    GQuark field1, GQuark field2, GQuark field3, LttvHook h, gpointer hook_data,
+    LttvTraceHook *th)
 {
   LttFacility *f;
 
@@ -928,6 +932,7 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
   thf->f1 = find_field(et, field1);
   thf->f2 = find_field(et, field2);
   thf->f3 = find_field(et, field3);
+  thf->hook_data = hook_data;
   
   first_thf = thf;
   first_et = et;
@@ -959,6 +964,7 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
     if(check_fields_compatibility(first_et, et,
         first_thf->f3, thf->f3))
       goto type_error;
+    thf->hook_data = hook_data;
   }
 
   return 0;
@@ -1080,7 +1086,14 @@ gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
 {
   int i;
   int ret = 0;
-
+  
+  if(pos->ep->len == 0) {
+    if(lttv_traceset_number(self->ts) == 0) return 0;
+    else return 1;
+  }
+  if(lttv_traceset_number(self->ts) == 0)
+    return -1;
+  
   for(i=0;i<pos->ep->len;i++) {
     LttEventPosition *ep = g_array_index(pos->ep, LttEventPosition*, i);
     LttvTracefileContext *tfc = 
@@ -1113,6 +1126,13 @@ gint lttv_traceset_context_pos_pos_compare(
 {
   int i, j;
   int ret;
+  
+  if(pos1->ep->len == 0) {
+    if(pos2->ep->len == 0) return 0;
+    else return 1;
+  }
+  if(pos2->ep->len == 0)
+    return -1;
   
   for(i=0;i<pos1->ep->len;i++) {
     LttEventPosition *ep1 = g_array_index(pos1->ep, LttEventPosition*, i);
@@ -1164,3 +1184,26 @@ LttvTracefileContext *lttv_traceset_context_get_current_tfc(LttvTracesetContext 
 
   return tfc;
 }
+
+/* lttv_process_traceset_synchronize_tracefiles
+ *
+ * Use the sync_position field of the trace set context to synchronize each
+ * tracefile with the previously saved position.
+ *
+ * If no previous position has been saved, it simply does nothing.
+ */
+void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *tsc)
+{
+  g_assert(lttv_process_traceset_seek_position(tsc, tsc->sync_position) == 0);
+}
+
+
+
+
+void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc)
+{
+  lttv_traceset_context_position_save(tsc, tsc->sync_position);
+}
+
+
+
