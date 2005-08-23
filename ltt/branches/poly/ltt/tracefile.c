@@ -232,8 +232,6 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
     switch(any->minor_version) {
     case 3:
       {
-        struct ltt_trace_header_0_3 *header_0_3 = 
-                (struct ltt_trace_header_0_3 *)header;
         tf->buffer_header_size =
          sizeof(struct ltt_block_start_header) 
             + sizeof(struct ltt_trace_header_0_3);
@@ -292,8 +290,8 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 
   // Is the file large enough to contain a trace 
   if(lTDFStat.st_size <
-      (off_t)(sizeof(struct ltt_block_start_header 
-                     + sizeof(ltt_trace_header_any)))){
+      (off_t)(sizeof(struct ltt_block_start_header) 
+                     + sizeof(struct ltt_trace_header_any))){
     g_print("The input data file %s does not contain a trace\n", fileName);
     goto close_file;
   }
@@ -301,8 +299,8 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   /* Temporarily map the buffer start header to get trace information */
   /* Multiple of pages aligned head */
   tf->buffer.head = mmap(0,
-      PAGE_ALIGN(sizeof(struct ltt_block_start_header
-          + sizeof(struct ltt_trace_header_any))), PROT_READ, 
+      PAGE_ALIGN(sizeof(struct ltt_block_start_header)
+          + sizeof(struct ltt_trace_header_any)), PROT_READ, 
       MAP_PRIVATE, tf->fd, 0);
   if(tf->buffer.head == MAP_FAILED) {
     perror("Error in allocating memory for buffer of tracefile");
@@ -320,11 +318,11 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   tf->num_blocks = tf->file_size / tf->buf_size;
 
   if(munmap(tf->buffer.head,
-        PAGE_ALIGN(sizeof(struct ltt_block_start_header
-            + sizeof(struct ltt_trace_header_any))))) {
+        PAGE_ALIGN(sizeof(struct ltt_block_start_header)
+            + sizeof(struct ltt_trace_header_any)))) {
     g_warning("unmap size : %u\n",
-        PAGE_ALIGN(sizeof(struct ltt_block_start_header
-            + sizeof(struct ltt_trace_header_any))));
+        PAGE_ALIGN(sizeof(struct ltt_block_start_header)
+            + sizeof(struct ltt_trace_header_any)));
     perror("munmap error");
     g_assert(0);
   }
@@ -341,11 +339,11 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   /* Error */
 unmap_file:
   if(munmap(tf->buffer.head,
-        PAGE_ALIGN(sizeof(struct ltt_block_start_header
-            + sizeof(struct ltt_trace_header_any))))) {
+        PAGE_ALIGN(sizeof(struct ltt_block_start_header)
+            + sizeof(struct ltt_trace_header_any)))) {
     g_warning("unmap size : %u\n",
-        PAGE_ALIGN(sizeof(struct ltt_block_start_header
-            + sizeof(struct ltt_trace_header_any))));
+        PAGE_ALIGN(sizeof(struct ltt_block_start_header)
+            + sizeof(struct ltt_trace_header_any)));
     perror("munmap error");
     g_assert(0);
   }
@@ -1860,8 +1858,8 @@ static int ltt_seek_next_event(LttTracefile *tf)
   
   /* seek over the buffer header if we are at the buffer start */
   if(tf->event.offset == 0) {
-    tf->event.offset += sizeof(struct ltt_block_start_header 
-        + tf->buffer_header_size);
+    tf->event.offset += sizeof(struct ltt_block_start_header)
+        + tf->buffer_header_size;
 
     if(tf->event.offset == tf->buf_size - tf->buffer.lost_size) {
       ret = ERANGE;
