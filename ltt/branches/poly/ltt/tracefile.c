@@ -310,7 +310,10 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   
   header = (struct ltt_block_start_header*)tf->buffer.head;
   
-  if(parse_trace_header(header->trace, tf, NULL)) goto unmap_file;
+  if(parse_trace_header(header->trace, tf, NULL)) {
+    g_warning("parse_trace_header error");
+    goto unmap_file;
+  }
     
   //store the size of the file
   tf->file_size = lTDFStat.st_size;
@@ -1112,7 +1115,8 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   g_assert(group->len > 0);
   tf = &g_array_index (group, LttTracefile, 0);
   header = (struct ltt_block_start_header*)tf->buffer.head;
-  g_assert(parse_trace_header(header->trace, tf, t) == 0);
+  g_assert(parse_trace_header(header->trace,
+                                  tf, t) == 0);
 
   t->num_cpu = group->len;
   
@@ -1858,8 +1862,7 @@ static int ltt_seek_next_event(LttTracefile *tf)
   
   /* seek over the buffer header if we are at the buffer start */
   if(tf->event.offset == 0) {
-    tf->event.offset += sizeof(struct ltt_block_start_header)
-        + tf->buffer_header_size;
+    tf->event.offset += tf->buffer_header_size;
 
     if(tf->event.offset == tf->buf_size - tf->buffer.lost_size) {
       ret = ERANGE;

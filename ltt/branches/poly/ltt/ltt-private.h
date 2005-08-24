@@ -183,7 +183,7 @@ struct ltt_block_start_header {
   } end;
   uint32_t                lost_size;  /* Size unused at the end of the buffer */
   uint32_t                buf_size;   /* The size of this sub-buffer */
-  char                    trace[0];
+  struct ltt_trace_header_any trace[0];
 } LTT_PACKED_STRUCT;
 
 
