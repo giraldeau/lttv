@@ -176,12 +176,38 @@ gboolean trace_event(void __UNUSED__ *hook_data, void *call_data)
   return FALSE;
 }
 
+static LttTime count_previous_time = { 0, 0 };
 
 gboolean count_event(void *hook_data, void __UNUSED__ *call_data)
 {
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  LttTracefile *tracefile = tfs->parent.tf;
+  guint nb_block, offset;
+  LttTracefile *tf_pos;
+  guint64 tsc;
+  LttEvent * event = ltt_tracefile_get_event(tracefile);
+  LttTime time;
   guint *pcount = (guint *)hook_data;
 
   (*pcount)++;
+  
+  time = ltt_event_time(event);
+  ltt_event_position(event, a_event_position);
+  ltt_event_position_get(a_event_position, &tf_pos, &nb_block, &offset, &tsc);
+  
+  if(ltt_time_compare(time, count_previous_time) < 0) {
+    g_warning("Time decreasing trace %s tracefile %s cpu %u position %u/%u",
+  g_quark_to_string(ltt_trace_name(ltt_tracefile_get_trace(tracefile))),
+  g_quark_to_string(ltt_tracefile_name(tracefile)), 
+  ltt_tracefile_num(tracefile), nb_block, offset);
+    g_warning("last time %lu.%lu vs current %lu.%lu",
+  count_previous_time.tv_sec, count_previous_time.tv_nsec,
+  time.tv_sec, time.tv_nsec);
+  } 
+  count_previous_time = time;
+
+
+
   return FALSE;
 }
 
