@@ -1883,6 +1883,7 @@ static int ltt_seek_next_event(LttTracefile *tf)
     ret = ERANGE;
     goto found;
   }
+  g_assert(tf->event.offset < tf->buf_size - tf->buffer.lost_size);
 
 found:
   return ret;

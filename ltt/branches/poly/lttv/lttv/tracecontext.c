@@ -659,6 +659,8 @@ void lttv_process_traceset_begin(LttvTracesetContext *self,
   
 }
 
+enum read_state { LAST_NONE, LAST_OK, LAST_EMPTY };
+
 /* Note : a _middle must be preceded from a _seek or another middle */
 guint lttv_process_traceset_middle(LttvTracesetContext *self,
                               LttTime end,
@@ -675,7 +677,9 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
   
   unsigned count = 0;
 
-  guint read_ret = FALSE;
+  guint read_ret;
+
+  enum read_state last_read_state = LAST_NONE;
 
   gboolean last_ret = FALSE; /* return value of the last hook list called */
 
@@ -709,7 +713,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     {
       return count;
     }
-
+    
     /* Get the tracefile with an event for the smallest time found. If two
        or more tracefiles have events for the same time, hope that lookup
        and remove are consistent. */
@@ -725,15 +729,20 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     g_tree_foreach(pqueue, test_tree, tfc);
 #endif //DEBUG
 
-    count++;
-    
     e = ltt_tracefile_get_event(tfc->tf);
-    fac_id = ltt_event_facility_id(e);
-    ev_id = ltt_event_eventtype_id(e);
-    id = GET_HOOK_ID(fac_id, ev_id);
-    last_ret = lttv_hooks_call_merge(tfc->event, tfc,
-                        lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
 
+    if(last_read_state != LAST_EMPTY) {
+      /* Only call hooks if the last read has given an event or if we are at the
+       * first pass (not if last read returned end of tracefile) */
+      count++;
+      
+      fac_id = ltt_event_facility_id(e);
+      ev_id = ltt_event_eventtype_id(e);
+      id = GET_HOOK_ID(fac_id, ev_id);
+      last_ret = lttv_hooks_call_merge(tfc->event, tfc,
+                          lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
+    }
+    
     read_ret = ltt_tracefile_read(tfc->tf);
 
     if(likely(!read_ret)) {
@@ -741,12 +750,14 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
       tfc->timestamp = ltt_event_time(e);
       
 	    g_tree_insert(pqueue, tfc, tfc);
+      last_read_state = LAST_OK;
     } else {
       tfc->timestamp = ltt_time_infinite;
 
-      if(read_ret == ERANGE)
+      if(read_ret == ERANGE) {
+        last_read_state = LAST_EMPTY;
         g_debug("End of trace");
-      else
+      } else
         g_error("Error happened in lttv_process_traceset_middle");
     }
   }
