@@ -1431,10 +1431,10 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
 
     } else if(ltt_time_compare(time, tf->buffer.begin.timestamp) < 0) {
       /* go to lower part */
-      high = block_num;
+      high = block_num - 1;
     } else if(ltt_time_compare(time, tf->buffer.end.timestamp) > 0) {
       /* go to higher part */
-      low = block_num;
+      low = block_num + 1;
     } else {/* The event is right in the buffer!
                (or in the next buffer first event) */
       while(1) {
