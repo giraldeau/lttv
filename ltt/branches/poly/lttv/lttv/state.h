@@ -189,20 +189,25 @@ typedef struct _LttvProcessState {
       /* WARNING : each time the execution_stack size is modified, the state
        * must be reget : g_array_set_size can have to move the array.
        * (Mathieu) */
-  GQuark last_cpu;                /* Last CPU where process was scheduled */
-  guint last_cpu_index;            /* index in the trace for cpu tracefile */
+  guint cpu;                /* CPU where process is scheduled (being either in
+                               the active or inactive runqueue)*/
+//  guint  last_tracefile_index;    /* index in the trace for cpu tracefile */
   /* opened file descriptors, address map?... */
 } LttvProcessState;
 
-LttvProcessState *
-lttv_state_find_process(LttvTracefileState *tfs, guint pid);
+#define ANY_CPU 0 /* For clarity sake : a call to lttv_state_find_process for
+                     a PID != 0 will search on any cpu automatically. */
 
 LttvProcessState *
-lttv_state_find_process_or_create(LttvTracefileState *tfs, guint pid);
+lttv_state_find_process(LttvTraceState *ts, guint cpu, guint pid);
 
 LttvProcessState *
-lttv_state_create_process(LttvTracefileState *tfs, LttvProcessState *parent, 
-    guint pid);
+lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
+    LttTime *timestamp);
+
+LttvProcessState *
+lttv_state_create_process(LttvTraceState *ts, LttvProcessState *parent, 
+    guint cpu, guint pid, const LttTime *timestamp);
 
 void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp);
 
@@ -246,6 +251,10 @@ struct _LttvTraceState {
   GQuark *trap_names;
   GQuark *irq_names;
   LttTime *max_time_state_recomputed_in_seek;
+
+  /* Array of per cpu running process */
+  LttvProcessState **running_process;
+  
 };
 
 struct _LttvTraceStateClass {
@@ -276,8 +285,8 @@ void lttv_state_state_saved_free(LttvTraceState *self,
 struct _LttvTracefileState {
   LttvTracefileContext parent;
 
-  LttvProcessState *process;
-  GQuark cpu_name;
+  //LttvProcessState *process;
+  GQuark tracefile_name;
 //  guint saved_position;
 };
 

@@ -119,9 +119,10 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
                       LttvTracefileContext*, j);
       tfcs = LTTV_TRACEFILE_STATS(*tfs);
       tfcs->stats = lttv_attribute_find_subdir(tracefiles_stats, 
-          tfcs->parent.cpu_name);
+          ltt_tracefile_long_name(tfcs->parent.parent.tf));
       find_event_tree(tfcs, LTTV_STATS_PROCESS_UNKNOWN,
-          tfcs->parent.cpu_name, LTTV_STATE_MODE_UNKNOWN, 
+          ltt_tracefile_long_name(tfcs->parent.parent.tf),
+          LTTV_STATE_MODE_UNKNOWN, 
           LTTV_STATE_SUBMODE_UNKNOWN, &tfcs->current_events_tree,
           &tfcs->current_event_types_tree);
     }
@@ -392,10 +393,13 @@ find_event_tree(LttvTracefileStats *tfcs,
 
 static void update_event_tree(LttvTracefileStats *tfcs) 
 {
-  LttvExecutionState *es = tfcs->parent.process->state;
+  LttvTraceState *ts = (LttvTraceState *)tfcs->parent.parent.t_context;
+  guint cpu = ltt_tracefile_num(tfcs->parent.parent.tf);
+  LttvProcessState *process = ts->running_process[cpu];
+  LttvExecutionState *es = process->state;
 
-  find_event_tree(tfcs, tfcs->parent.process->pid_time,
-      tfcs->parent.cpu_name, 
+  find_event_tree(tfcs, process->pid_time,
+      ltt_tracefile_long_name(tfcs->parent.parent.tf), 
       es->t, es->n, &(tfcs->current_events_tree), 
       &(tfcs->current_event_types_tree));
 }
@@ -403,6 +407,9 @@ static void update_event_tree(LttvTracefileStats *tfcs)
 
 static void mode_change(LttvTracefileStats *tfcs)
 {
+  LttvTraceState *ts = (LttvTraceState *)tfcs->parent.parent.t_context;
+  guint cpu = ltt_tracefile_num(tfcs->parent.parent.tf);
+  LttvProcessState *process = ts->running_process[cpu];
   LttvAttributeValue cpu_time; 
 
   LttTime delta;
@@ -410,13 +417,16 @@ static void mode_change(LttvTracefileStats *tfcs)
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_CPU_TIME, 
       LTTV_TIME, &cpu_time);
   delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
-      tfcs->parent.process->state->change);
+      process->state->change);
   *(cpu_time.v_time) = ltt_time_add(*(cpu_time.v_time), delta);
 }
 
 
 static void mode_end(LttvTracefileStats *tfcs)
 {
+  LttvTraceState *ts = (LttvTraceState *)tfcs->parent.parent.t_context;
+  guint cpu = ltt_tracefile_num(tfcs->parent.parent.tf);
+  LttvProcessState *process = ts->running_process[cpu];
   LttvAttributeValue elapsed_time, cpu_time; 
 
   LttTime delta;
@@ -424,13 +434,13 @@ static void mode_end(LttvTracefileStats *tfcs)
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_ELAPSED_TIME, 
       LTTV_TIME, &elapsed_time);
   delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
-      tfcs->parent.process->state->entry);
+      process->state->entry);
   *(elapsed_time.v_time) = ltt_time_add(*(elapsed_time.v_time), delta);
 
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_CPU_TIME, 
       LTTV_TIME, &cpu_time);
   delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
-      tfcs->parent.process->state->change);
+      process->state->change);
   *(cpu_time.v_time) = ltt_time_add(*(cpu_time.v_time), delta);
 }
 
@@ -523,6 +533,8 @@ gboolean before_schedchange(void *hook_data, void *call_data)
 {
   LttvTracefileStats *tfcs = (LttvTracefileStats *)call_data;
 
+  LttvTraceState *ts = (LttvTraceState*)tfcs->parent.parent.t_context;
+
   LttEvent *e = ltt_tracefile_get_event(tfcs->parent.parent.tf);
 
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
@@ -543,9 +555,11 @@ gboolean before_schedchange(void *hook_data, void *call_data)
 
   /* get the information for the process scheduled in */
 
-  process = lttv_state_find_process_or_create(&(tfcs->parent), pid_in);
+  process = lttv_state_find_process_or_create(ts, 
+      ANY_CPU, pid_in, &tfcs->parent.parent.timestamp);
 
-  find_event_tree(tfcs, process->pid_time, tfcs->parent.cpu_name, 
+  find_event_tree(tfcs, process->pid_time,
+      ltt_tracefile_long_name(tfcs->parent.parent.tf), 
       process->state->t, process->state->n, &(tfcs->current_events_tree), 
       &(tfcs->current_event_types_tree));
 

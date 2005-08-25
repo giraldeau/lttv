@@ -1113,6 +1113,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                lttv_process_traceset_middle(tsc,
                                             events_request->start_time,
                                             G_MAXUINT, NULL);
+ //           g_assert(seek_count < 50000);
 
 
         } else {

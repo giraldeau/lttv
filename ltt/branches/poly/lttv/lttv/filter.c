@@ -75,6 +75,7 @@
 
 #include <lttv/filter.h>
 #include <ltt/trace.h>
+#include <ltt/type.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -1785,9 +1786,11 @@ lttv_filter_tree_parse_branch(
         case LTTV_FILTER_STATE_CPU:
             if(context == NULL) return TRUE;
             else {
-              /* FIXME: not sure of that one */
-              GQuark quark = ((LttvTracefileState*)context)->cpu_name;
-              return se->op((gpointer)&quark,v);
+              /* FIXME: not sure of that one  Mathieu : fixed.*/
+ //             GQuark quark = ((LttvTracefileState*)context)->cpu_name;
+ //                return se->op((gpointer)&quark,v);
+              if(state == NULL) return TRUE;
+              else return se->op((gpointer)&state->cpu,v);
             }
             break;
         case LTTV_FILTER_EVENT_NAME:

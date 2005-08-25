@@ -80,7 +80,8 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end);
 
 /* Get the name of a tracefile */
 
-GQuark ltt_tracefile_name(LttTracefile *tf);
+GQuark ltt_tracefile_name(const LttTracefile *tf);
+GQuark ltt_tracefile_long_name(const LttTracefile *tf);
 
 /* get the cpu number of the tracefile */
 

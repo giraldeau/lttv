@@ -125,11 +125,11 @@ static gboolean process_list_equ_fct(gconstpointer a, gconstpointer b)
 
   if(likely(pa->pid != pb->pid))
     ret = FALSE;
-  else if(likely((pa->pid == 0 && (pa->cpu != pb->cpu))))
+  if(likely((pa->pid == 0 && (pa->cpu != pb->cpu))))
     ret = FALSE;
-  else if(unlikely(ltt_time_compare(pa->birth, pb->birth) != 0))
+  if(unlikely(ltt_time_compare(pa->birth, pb->birth) != 0))
     ret = FALSE;
-  else if(unlikely(pa->trace_num != pb->trace_num))
+  if(unlikely(pa->trace_num != pb->trace_num))
     ret = FALSE;
 
   return ret;

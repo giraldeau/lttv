@@ -1317,10 +1317,16 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
  *Get the name of a tracefile
  ****************************************************************************/
 
-GQuark ltt_tracefile_name(LttTracefile *tf)
+GQuark ltt_tracefile_name(const LttTracefile *tf)
 {
   return tf->name;
 }
+
+GQuark ltt_tracefile_long_name(const LttTracefile *tf)
+{
+  return tf->long_name;
+}
+
 
 
 guint ltt_tracefile_num(LttTracefile *tf)
@@ -1719,15 +1725,15 @@ static gint map_block(LttTracefile * tf, guint block_num)
   tf->buffer.begin.timestamp = ltt_get_time(LTT_GET_BO(tf),
                                               &header->begin.timestamp);
   tf->buffer.begin.timestamp.tv_nsec *= NSEC_PER_USEC;
-  g_debug("block %u begin : %lu.%lu", block_num,
-      tf->buffer.begin.timestamp.tv_sec, tf->buffer.begin.timestamp.tv_nsec);
+  //g_debug("block %u begin : %lu.%lu", block_num,
+  //    tf->buffer.begin.timestamp.tv_sec, tf->buffer.begin.timestamp.tv_nsec);
   tf->buffer.begin.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->begin.cycle_count);
   tf->buffer.end.timestamp = ltt_get_time(LTT_GET_BO(tf),
                                               &header->end.timestamp);
   tf->buffer.end.timestamp.tv_nsec *= NSEC_PER_USEC;
-  g_debug("block %u end : %lu.%lu", block_num,
-      tf->buffer.end.timestamp.tv_sec, tf->buffer.end.timestamp.tv_nsec);
+  //g_debug("block %u end : %lu.%lu", block_num,
+  //    tf->buffer.end.timestamp.tv_sec, tf->buffer.end.timestamp.tv_nsec);
   tf->buffer.end.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->end.cycle_count);
   tf->buffer.lost_size = ltt_get_uint32(LTT_GET_BO(tf),
@@ -1774,21 +1780,21 @@ void ltt_update_event_size(LttTracefile *tf)
     switch((enum ltt_core_events)tf->event.event_id) {
   case LTT_EVENT_FACILITY_LOAD:
     size = strlen((char*)tf->event.data) + 1;
-    g_debug("Update Event facility load of facility %s", (char*)tf->event.data);
+    //g_debug("Update Event facility load of facility %s", (char*)tf->event.data);
     size += sizeof(struct LttFacilityLoad);
     break;
   case LTT_EVENT_FACILITY_UNLOAD:
-    g_debug("Update Event facility unload");
+    //g_debug("Update Event facility unload");
     size = sizeof(struct LttFacilityUnload);
     break;
   case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
     size = strlen((char*)tf->event.data) + 1;
-    g_debug("Update Event facility load state dump of facility %s",
-        (char*)tf->event.data);
+    //g_debug("Update Event facility load state dump of facility %s",
+    //    (char*)tf->event.data);
     size += sizeof(struct LttStateDumpFacilityLoad);
     break;
   case LTT_EVENT_HEARTBEAT:
-    g_debug("Update Event heartbeat");
+    //g_debug("Update Event heartbeat");
     size = sizeof(TimeHeartbeat);
     break;
   default:
@@ -1825,9 +1831,9 @@ void ltt_update_event_size(LttTracefile *tf)
     else
       size = 0;
 
-    g_debug("Event root field : f.e %hhu.%hhu size %zd",
-        tf->event.facility_id,
-        tf->event.event_id, size);
+    //g_debug("Event root field : f.e %hhu.%hhu size %zd",
+    //    tf->event.facility_id,
+    //    tf->event.event_id, size);
   }
   
   tf->event.data_size = size;

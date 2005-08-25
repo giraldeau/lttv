@@ -808,7 +808,10 @@ void lttv_process_traceset_end(LttvTracesetContext *self,
 
 /* Subtile modification : 
  * if tracefile has no event at or after the time requested, it is not put in
- * the queue, as the next read would fail. */
+ * the queue, as the next read would fail.
+ *
+ * Don't forget to empty the traceset pqueue before calling this.
+ */
 void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
 {
   guint i, nb_tracefile;
@@ -818,9 +821,6 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
   LttvTracefileContext **tfc;
 
   nb_tracefile = self->tracefiles->len;
-
-  g_tree_destroy(self->ts_context->pqueue);
-  self->ts_context->pqueue = g_tree_new(compare_tracefile);
 
   GTree *pqueue = self->ts_context->pqueue;
 
@@ -857,6 +857,9 @@ void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start)
   guint i, nb_trace;
 
   LttvTraceContext *tc;
+
+  g_tree_destroy(self->pqueue);
+  self->pqueue = g_tree_new(compare_tracefile);
 
   nb_trace = lttv_traceset_number(self->ts);
   for(i = 0 ; i < nb_trace ; i++) {
