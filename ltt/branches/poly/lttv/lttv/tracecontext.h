@@ -94,8 +94,8 @@ struct _LttvTracesetContext {
   TimeInterval time_span;
   GTree *pqueue;
 
- // LttvTracesetContextPosition *sync_position;   /* position at which to sync the
- //                                                  trace context */
+  LttvTracesetContextPosition *sync_position;   /* position at which to sync the
+                                                   trace context */
 };
 
 struct _LttvTracesetContextClass {
@@ -331,8 +331,8 @@ gint compare_tracefile(gconstpointer a, gconstpointer b);
 
 /* Synchronisation helpers : save/restore synchronization between ltt traces and
  * a traceset context. */
-//void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *tsc);
+void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *tsc);
 
-//void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc);
+void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc);
 
 #endif // PROCESSTRACE_H

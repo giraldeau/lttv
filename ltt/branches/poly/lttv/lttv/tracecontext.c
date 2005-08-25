@@ -56,7 +56,10 @@ struct _LttvTracesetContextPosition {
   GArray *ep;                        /* Array of LttEventPosition */
   GArray *tfc;                       /* Array of corresponding
                                         TracefileContext* */
-  LttTime timestamp;                 /* Current time at the saved position */
+  LttTime timestamp;                 /* Current time at the saved position */ 
+                                     /* If ltt_time_infinite : no position is
+                                      * set, else, a position is set (may be end
+                                      * of trace, with ep->len == 0) */
 };
 
 void lttv_context_init(LttvTracesetContext *self, LttvTraceset *ts)
@@ -178,7 +181,7 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
   self->traces = g_new(LttvTraceContext *, nb_trace);
   self->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
   self->ts_a = lttv_traceset_attribute(ts);
- // self->sync_position = lttv_traceset_context_position_new();
+  self->sync_position = lttv_traceset_context_position_new();
   for(i = 0 ; i < nb_trace ; i++) {
     tc = LTTV_TRACESET_CONTEXT_GET_CLASS(self)->new_trace_context(self);
     self->traces[i] = tc;
@@ -250,7 +253,7 @@ void fini(LttvTracesetContext *self)
 
   g_tree_destroy(self->pqueue);
   g_object_unref(self->a);
- // lttv_traceset_context_position_destroy(self->sync_position);
+  lttv_traceset_context_position_destroy(self->sync_position);
 
   nb_trace = lttv_traceset_number(ts);
 
@@ -832,21 +835,24 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
                                         const LttvTracesetContextPosition *pos)
 {
   guint i;
-
-  g_tree_destroy(self->pqueue);
-  self->pqueue = g_tree_new(compare_tracefile);
   
-  for(i=0;i<pos->ep->len; i++) {
-    LttEventPosition **ep = &g_array_index(pos->ep, LttEventPosition*, i);
-    LttvTracefileContext **tfc = 
-      &g_array_index(pos->tfc, LttvTracefileContext*, i);
-    if(*ep != NULL) {
-      if(ltt_tracefile_seek_position((*tfc)->tf, *ep) != 0)
-        return 1;
-      (*tfc)->timestamp = ltt_event_time(ltt_tracefile_get_event((*tfc)->tf));
-      g_tree_insert(self->pqueue, (*tfc), (*tfc));
-    } else {
-      (*tfc)->timestamp = ltt_time_infinite;
+  /* If a position is set, seek the traceset to this position */
+  if(ltt_time_compare(pos->timestamp, ltt_time_infinite) != 0) {
+    g_tree_destroy(self->pqueue);
+    self->pqueue = g_tree_new(compare_tracefile);
+    
+    for(i=0;i<pos->ep->len; i++) {
+      LttEventPosition **ep = &g_array_index(pos->ep, LttEventPosition*, i);
+      LttvTracefileContext **tfc = 
+        &g_array_index(pos->tfc, LttvTracefileContext*, i);
+      if(*ep != NULL) {
+        if(ltt_tracefile_seek_position((*tfc)->tf, *ep) != 0)
+          return 1;
+        (*tfc)->timestamp = ltt_event_time(ltt_tracefile_get_event((*tfc)->tf));
+        g_tree_insert(self->pqueue, (*tfc), (*tfc));
+      } else {
+        (*tfc)->timestamp = ltt_time_infinite;
+      }
     }
   }
   return 0;
@@ -1195,7 +1201,7 @@ LttvTracefileContext *lttv_traceset_context_get_current_tfc(LttvTracesetContext 
 
   return tfc;
 }
-#if 0
+
 /* lttv_process_traceset_synchronize_tracefiles
  *
  * Use the sync_position field of the trace set context to synchronize each
@@ -1215,6 +1221,4 @@ void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc)
 {
   lttv_traceset_context_position_save(tsc, tsc->sync_position);
 }
-
-#endif //0
 

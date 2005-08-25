@@ -1379,7 +1379,7 @@ static gboolean state_save_event_hook(void *hook_data, void *call_data)
   if(likely((*event_count)++ < LTTV_STATE_SAVE_INTERVAL))
     return FALSE;
   else
-    event_count = 0;
+    *event_count = 0;
   
   LttvTracefileState *self = (LttvTracefileState *)call_data;
 
@@ -1548,10 +1548,9 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
     ts = (LttvTraceState *)self->parent.traces[i];
     nb_tracefile = ts->parent.tracefiles->len;
 
-    guint *event_count = g_new(guint, 1);
-    *event_count = 0;
-
     for(j = 0 ; j < nb_tracefile ; j++) {
+      guint *event_count = g_new(guint, 1);
+      *event_count = 0;
       tfs = 
           LTTV_TRACEFILE_STATE(g_array_index(ts->parent.tracefiles,
                                           LttvTracefileContext*, j));
