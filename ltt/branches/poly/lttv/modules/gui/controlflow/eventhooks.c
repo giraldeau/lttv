@@ -256,7 +256,7 @@ h_guicontrolflow(Tab *tab)
   lttvwindow_register_continue_notify(tab,
                                       continue_notify,
                                       control_flow_data);
-  //request_background_data(control_flow_data);
+  request_background_data(control_flow_data);
   
 
   return guicontrolflow_get_widget(control_flow_data) ;
@@ -1952,6 +1952,7 @@ static inline PropertiesLine prepare_execmode_line(LttvProcessState *process)
 
 int before_execmode_hook(void *hook_data, void *call_data)
 {
+  return 0; //DISABLED
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
   EventsRequest *events_request = (EventsRequest*)thf->hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
@@ -2259,6 +2260,7 @@ int after_execmode_hook(void *hook_data, void *call_data)
 
 int before_process_exit_hook(void *hook_data, void *call_data)
 {
+  return 0; //DISABLED
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
   EventsRequest *events_request = (EventsRequest*)thf->hook_data;
 
@@ -2445,6 +2447,7 @@ int before_process_exit_hook(void *hook_data, void *call_data)
 
 int before_process_release_hook(void *hook_data, void *call_data)
 {
+  return 0; //DISABLED
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
   EventsRequest *events_request = (EventsRequest*)thf->hook_data;
 
@@ -3001,6 +3004,7 @@ int before_process_hook(void *hook_data, void *call_data)
  */
 int after_process_fork_hook(void *hook_data, void *call_data)
 {
+  return 0; //DISABLED
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
   EventsRequest *events_request = (EventsRequest*)thf->hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
@@ -3120,6 +3124,7 @@ int after_process_fork_hook(void *hook_data, void *call_data)
  */
 int after_process_exit_hook(void *hook_data, void *call_data)
 {
+  return 0; //DISABLED
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
   EventsRequest *events_request = (EventsRequest*)thf->hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;

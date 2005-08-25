@@ -951,7 +951,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       }
     }
   }
-#if 0
+  
   /* 0.1 Lock Traces */
   {
     guint iter_trace=0;
@@ -969,8 +969,9 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
   }
 
   /* 0.2 Seek tracefiles positions to context position */
+  //g_assert(lttv_process_traceset_seek_position(tsc, sync_position) == 0);
   lttv_process_traceset_synchronize_tracefiles(tsc);
-#endif //0
+  
   
   /* Events processing algorithm implementation */
   /* Warning : the gtk_events_pending takes a LOT of cpu time. So what we do
@@ -1602,10 +1603,10 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 
 
   }
-#if 0
   /* C Unlock Traces */
   {
-    //lttv_process_traceset_get_sync_data(tsc);
+    lttv_process_traceset_get_sync_data(tsc);
+    //lttv_traceset_context_position_save(tsc, sync_position);
     
     guint iter_trace;
     
@@ -1617,7 +1618,6 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       lttvwindowtraces_unlock(trace_v);
     }
   }
-#endif //0
 #if 0
   //set the cursor back to normal
   gdk_window_set_cursor(win, NULL);  
