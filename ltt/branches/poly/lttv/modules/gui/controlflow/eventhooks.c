@@ -256,7 +256,7 @@ h_guicontrolflow(Tab *tab)
   lttvwindow_register_continue_notify(tab,
                                       continue_notify,
                                       control_flow_data);
-  //request_background_data(control_flow_data);
+  request_background_data(control_flow_data);
   
 
   return guicontrolflow_get_widget(control_flow_data) ;
