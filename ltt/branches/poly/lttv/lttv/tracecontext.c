@@ -623,6 +623,10 @@ static gboolean get_first(gpointer key, gpointer value, gpointer user_data) {
   return TRUE;
 }
 
+#ifdef DEBUG
+// Test to see if pqueue is traversed in the right order.
+static LttTime test_time;
+
 static gboolean test_tree(gpointer key, gpointer value, gpointer user_data) {
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)key;
@@ -631,15 +635,22 @@ static gboolean test_tree(gpointer key, gpointer value, gpointer user_data) {
       g_quark_to_string(ltt_tracefile_name(tfc->tf)),
       tfc->timestamp.tv_sec, tfc->timestamp.tv_nsec,
       tfc->index, tfc->t_context->index);
+  
+  if(user_data != NULL) {
+    if(((LttvTracefileContext *)user_data) == (LttvTracefileContext *)value) {
+      g_assert(compare_tracefile(user_data, value) == 0);
+    } else
+      g_assert(compare_tracefile(user_data, value) != 0);
+  }
+  g_assert(ltt_time_compare(test_time, tfc->timestamp) <= 0);
+  test_time.tv_sec = tfc->timestamp.tv_sec;
+  test_time.tv_nsec = tfc->timestamp.tv_nsec;
 
-  if(((LttvTracefileContext *)user_data) == (LttvTracefileContext *)value) {
-    g_assert(compare_tracefile(user_data, value) == 0);
-  } else
-    g_assert(compare_tracefile(user_data, value) != 0);
   
   //g_assert(((LttvTracefileContext *)user_data) != (LttvTracefileContext *)value);
   return FALSE;
 }
+#endif //DEBUG
 
 
 
@@ -722,12 +733,16 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
        and remove are consistent. */
  
 #ifdef DEBUG
+    test_time.tv_sec = 0;
+    test_time.tv_nsec = 0;
     g_debug("test tree before remove");
     g_tree_foreach(pqueue, test_tree, tfc);
 #endif //DEBUG
     g_tree_remove(pqueue, tfc);
 
 #ifdef DEBUG
+    test_time.tv_sec = 0;
+    test_time.tv_nsec = 0;
     g_debug("test tree after remove");
     g_tree_foreach(pqueue, test_tree, tfc);
 #endif //DEBUG
@@ -751,8 +766,15 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     if(likely(!read_ret)) {
       g_debug("An event is ready");
       tfc->timestamp = ltt_event_time(e);
-      
+      g_assert(ltt_time_compare(tfc->timestamp, ltt_time_infinite) != 0);
 	    g_tree_insert(pqueue, tfc, tfc);
+#ifdef DEBUG
+      test_time.tv_sec = 0;
+      test_time.tv_nsec = 0;
+      g_debug("test tree after event ready");
+      g_tree_foreach(pqueue, test_tree, NULL);
+#endif //DEBUG
+
       last_read_state = LAST_OK;
     } else {
       tfc->timestamp = ltt_time_infinite;
@@ -795,25 +817,38 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
   
   LttvTracefileContext **tfc;
 
-  GTree *pqueue = self->ts_context->pqueue;
-
   nb_tracefile = self->tracefiles->len;
+
+  g_tree_destroy(self->ts_context->pqueue);
+  self->ts_context->pqueue = g_tree_new(compare_tracefile);
+
+  GTree *pqueue = self->ts_context->pqueue;
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfc = &g_array_index(self->tracefiles, LttvTracefileContext*, i);
 
-    g_tree_remove(pqueue, *tfc);
+    //g_tree_remove(pqueue, *tfc);
     
     ret = ltt_tracefile_seek_time((*tfc)->tf, start);
     if(ret == EPERM) g_error("error in lttv_process_trace_seek_time seek");
 
     if(ret == 0) { /* not ERANGE especially */
       (*tfc)->timestamp = ltt_event_time(ltt_tracefile_get_event((*tfc)->tf));
+      g_assert(ltt_time_compare((*tfc)->timestamp, ltt_time_infinite) != 0);
       g_tree_insert(pqueue, (*tfc), (*tfc));
     } else {
       (*tfc)->timestamp = ltt_time_infinite;
     }
   }
+#ifdef DEBUG
+  test_time.tv_sec = 0;
+  test_time.tv_nsec = 0;
+  g_debug("test tree after seek_time");
+  g_tree_foreach(pqueue, test_tree, NULL);
+#endif //DEBUG
+
+
+
 }
 
 
@@ -849,12 +884,22 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
         if(ltt_tracefile_seek_position((*tfc)->tf, *ep) != 0)
           return 1;
         (*tfc)->timestamp = ltt_event_time(ltt_tracefile_get_event((*tfc)->tf));
+        g_assert(ltt_time_compare((*tfc)->timestamp, ltt_time_infinite) != 0);
         g_tree_insert(self->pqueue, (*tfc), (*tfc));
       } else {
         (*tfc)->timestamp = ltt_time_infinite;
       }
     }
   }
+#ifdef DEBUG
+  test_time.tv_sec = 0;
+  test_time.tv_nsec = 0;
+  g_debug("test tree after seek_position");
+  g_tree_foreach(self->pqueue, test_tree, NULL);
+#endif //DEBUG
+
+
+
   return 0;
 }
 

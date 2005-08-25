@@ -488,6 +488,9 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
 
   nb_tracefile = self->parent.tracefiles->len;
 
+  g_tree_destroy(tsc->pqueue);
+  tsc->pqueue = g_tree_new(compare_tracefile);
+ 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
           LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
@@ -505,18 +508,16 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     type = lttv_attribute_get_by_name(tracefile_tree, LTTV_STATE_EVENT, 
         &value);
     g_assert(type == LTTV_POINTER);
-    g_assert(*(value.v_pointer) != NULL);
+    //g_assert(*(value.v_pointer) != NULL);
     ep = *(value.v_pointer);
     g_assert(tfcs->parent.t_context != NULL);
-    
-    g_tree_destroy(tsc->pqueue);
-    tsc->pqueue = g_tree_new(compare_tracefile);
     
     LttvTracefileContext *tfc = LTTV_TRACEFILE_CONTEXT(tfcs);
     
     if(ep != NULL) {
       g_assert(ltt_tracefile_seek_position(tfc->tf, ep) == 0);
       tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
+      g_assert(ltt_time_compare(tfc->timestamp, ltt_time_infinite) != 0);
       g_tree_insert(tsc->pqueue, tfc, tfc);
     } else {
       tfc->timestamp = ltt_time_infinite;
