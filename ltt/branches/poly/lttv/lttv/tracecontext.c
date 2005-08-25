@@ -764,7 +764,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     read_ret = ltt_tracefile_read(tfc->tf);
 
     if(likely(!read_ret)) {
-      g_debug("An event is ready");
+      //g_debug("An event is ready");
       tfc->timestamp = ltt_event_time(e);
       g_assert(ltt_time_compare(tfc->timestamp, ltt_time_infinite) != 0);
 	    g_tree_insert(pqueue, tfc, tfc);
@@ -1066,7 +1066,7 @@ LttvTracesetContextPosition *lttv_traceset_context_position_new()
   return pos;
 }
 
-/* Save all positions, the ones not in the pqueue will have NULL
+/* Save all positions, the ones with infinite time will have NULL
  * ep. */
 void lttv_traceset_context_position_save(const LttvTracesetContext *self,
                                     LttvTracesetContextPosition *pos)

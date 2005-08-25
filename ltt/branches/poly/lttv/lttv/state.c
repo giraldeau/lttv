@@ -438,8 +438,10 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
     *(value.v_uint) = tfcs->process->pid;
     value = lttv_attribute_add(tracefile_tree, LTTV_STATE_EVENT, 
         LTTV_POINTER);
-    /* Only save the position of the tfs is in the pqueue */
-    if(!g_tree_lookup(self->parent.ts_context->pqueue, &tfcs->parent)) {
+    /* Only save the position if the tfs has not infinite time. */
+    //if(!g_tree_lookup(self->parent.ts_context->pqueue, &tfcs->parent)
+    //    && current_tfcs != tfcs) {
+    if(ltt_time_compare(tfcs->parent.timestamp, ltt_time_infinite) == 0) {
       *(value.v_pointer) = NULL;
     } else {
       LttEvent *e = ltt_tracefile_get_event(tfcs->parent.tf);
@@ -1549,9 +1551,10 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
     ts = (LttvTraceState *)self->parent.traces[i];
     nb_tracefile = ts->parent.tracefiles->len;
 
+    guint *event_count = g_new(guint, 1);
+    *event_count = 0;
+
     for(j = 0 ; j < nb_tracefile ; j++) {
-      guint *event_count = g_new(guint, 1);
-      *event_count = 0;
       tfs = 
           LTTV_TRACEFILE_STATE(g_array_index(ts->parent.tracefiles,
                                           LttvTracefileContext*, j));
@@ -1637,9 +1640,9 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
                                           LttvTracefileContext*, j));
       event_count = lttv_hooks_remove(tfs->parent.event,
                         state_save_event_hook);
-      g_free(event_count);
 
     }
+    g_free(event_count);
   }
 }
 
