@@ -1007,7 +1007,7 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
     fac_id = g_array_index(facilities, guint, i);
     f = ltt_trace_get_facility_by_num(t, fac_id);
 
-    et = ltt_facility_eventtype_get_by_name(f, ltt_eventtype_name(et));
+    et = ltt_facility_eventtype_get_by_name(f, event);
     if(unlikely(et == NULL)) goto event_error;
     
     thf = &g_array_index(th->fac_index, LttvTraceHookByFacility, fac_id);
@@ -1037,8 +1037,8 @@ lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event,
 type_error:
   goto free;
 event_error:
-  g_error("Event type %s does not exist", 
-      g_quark_to_string(ltt_eventtype_name(et)));
+  g_error("Event type does not exist for event %s", 
+      g_quark_to_string(event));
   goto free;
 facility_error:
   g_error("No %s facility", g_quark_to_string(facility));

@@ -35,7 +35,8 @@
 
 GQuark
     LTT_FACILITY_KERNEL,
-    LTT_FACILITY_PROCESS;
+    LTT_FACILITY_PROCESS,
+    LTT_FACILITY_FS;
 
 /* Events Quarks */
 
@@ -49,7 +50,8 @@ GQuark
     LTT_EVENT_SCHEDCHANGE,
     LTT_EVENT_FORK,
     LTT_EVENT_EXIT,
-    LTT_EVENT_FREE;
+    LTT_EVENT_FREE,
+    LTT_EVENT_EXEC;
 
 /* Fields Quarks */
 
@@ -62,7 +64,8 @@ GQuark
     LTT_FIELD_OUT_STATE,
     LTT_FIELD_PARENT_PID,
     LTT_FIELD_CHILD_PID,
-    LTT_FIELD_PID;
+    LTT_FIELD_PID,
+    LTT_FIELD_FILENAME;
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -1279,6 +1282,28 @@ static gboolean process_free(void *hook_data, void *call_data)
   return FALSE;
 }
 
+
+static gboolean process_exec(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  gchar *name;
+  guint cpu = ltt_tracefile_num(s->parent.tf);
+  LttvProcessState *process = ts->running_process[cpu];
+
+  /* PID of the process to release */
+  name = ltt_event_get_string(e, thf->f1);
+
+  process->name = g_quark_from_string(name);
+
+  return FALSE;
+}
+
+
+
+
 gint lttv_state_hook_add_event_hooks(void *hook_data, void *call_data)
 {
   LttvTracesetState *tss = (LttvTracesetState*)(call_data);
@@ -1315,8 +1340,8 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 10);
-    hooks = g_array_set_size(hooks, 10);
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 11);
+    hooks = g_array_set_size(hooks, 11);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
@@ -1377,6 +1402,13 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         LTT_FIELD_PID, 0, 0,
         process_free, NULL, &g_array_index(hooks, LttvTraceHook, 9));
     g_assert(!ret);
+
+    ret = lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_FS, LTT_EVENT_EXEC,
+        LTT_FIELD_FILENAME, 0, 0,
+        process_exec, NULL, &g_array_index(hooks, LttvTraceHook, 10));
+    g_assert(!ret);
+
 
 
     /* Add these hooks to each event_by_id hooks list */
@@ -2009,6 +2041,7 @@ static void module_init()
   
   LTT_FACILITY_KERNEL     = g_quark_from_string("kernel");
   LTT_FACILITY_PROCESS    = g_quark_from_string("process");
+  LTT_FACILITY_FS    = g_quark_from_string("fs");
 
   
   LTT_EVENT_SYSCALL_ENTRY = g_quark_from_string("syscall_entry");
@@ -2021,6 +2054,7 @@ static void module_init()
   LTT_EVENT_FORK          = g_quark_from_string("fork");
   LTT_EVENT_EXIT          = g_quark_from_string("exit");
   LTT_EVENT_FREE          = g_quark_from_string("free");
+  LTT_EVENT_EXEC          = g_quark_from_string("exec");
 
 
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");
@@ -2032,6 +2066,7 @@ static void module_init()
   LTT_FIELD_PARENT_PID    = g_quark_from_string("parent_pid");
   LTT_FIELD_CHILD_PID     = g_quark_from_string("child_pid");
   LTT_FIELD_PID           = g_quark_from_string("pid");
+  LTT_FIELD_FILENAME      = g_quark_from_string("filename");
   
 }
 

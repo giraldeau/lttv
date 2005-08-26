@@ -218,7 +218,7 @@ void drawing_data_request(Drawing_t *drawing,
          associated by id hooks. */
 
       hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
-      hooks = g_array_set_size(hooks, 12);
+      hooks = g_array_set_size(hooks, 13);
 
       /* before hooks */
       
@@ -368,6 +368,14 @@ void drawing_data_request(Drawing_t *drawing,
           &g_array_index(hooks, LttvTraceHook, 11));
       g_assert(!ret);
 
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_FS, LTT_EVENT_EXEC,
+          0, 0, 0,
+          after_fs_exec_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, 12));
+      g_assert(!ret);
+
 
 
 #if 0
@@ -394,7 +402,7 @@ void drawing_data_request(Drawing_t *drawing,
       }
 
       /* add after */
-      for(k = 9 ; k < 12 ; k++) {
+      for(k = 9 ; k < 13 ; k++) {
         hook = &g_array_index(hooks, LttvTraceHook, k);
         for(l=0;l<hook->fac_list->len;l++) {
           thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);

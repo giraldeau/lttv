@@ -512,6 +512,16 @@ void destroy_hash_data(gpointer data)
   g_free(data);
 }
 
+
+void processlist_set_name(ProcessList *process_list,
+    GQuark name,
+    HashedProcessData *hashed_process_data)
+{
+  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
+        PROCESS_COLUMN, g_quark_to_string(name),
+        -1);
+}
+
 int processlist_add(  ProcessList *process_list,
       Drawing_t *drawing,
       guint pid,
@@ -519,7 +529,7 @@ int processlist_add(  ProcessList *process_list,
       guint ppid,
       LttTime *birth,
       guint trace_num,
-      const gchar *name,
+      GQuark name,
       guint *height,
       ProcessInfo **pm_process_info,
       HashedProcessData **pm_hashed_process_data)
@@ -560,7 +570,7 @@ int processlist_add(  ProcessList *process_list,
                           &hashed_process_data->y_iter);
 
   gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
-        PROCESS_COLUMN, name,
+        PROCESS_COLUMN, g_quark_to_string(name),
         PID_COLUMN, pid,
         PPID_COLUMN, ppid,
         CPU_COLUMN, cpu,

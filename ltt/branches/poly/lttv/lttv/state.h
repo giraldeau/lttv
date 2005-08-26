@@ -57,7 +57,8 @@
 
 extern GQuark
     LTT_FACILITY_KERNEL,
-    LTT_FACILITY_PROCESS;
+    LTT_FACILITY_PROCESS,
+    LTT_FACILITY_FS;
 
 /* Events Quarks */
 
@@ -71,7 +72,8 @@ extern GQuark
     LTT_EVENT_SCHEDCHANGE,
     LTT_EVENT_FORK,
     LTT_EVENT_EXIT,
-    LTT_EVENT_FREE;
+    LTT_EVENT_FREE,
+    LTT_EVENT_EXEC;
 
 /* Fields Quarks */
 
@@ -84,7 +86,8 @@ extern GQuark
     LTT_FIELD_OUT_STATE,
     LTT_FIELD_PARENT_PID,
     LTT_FIELD_CHILD_PID,
-    LTT_FIELD_PID;
+    LTT_FIELD_PID,
+    LTT_FIELD_NAME;
 
 extern GQuark LTT_EVENT_SYSCALL_ENTRY;
 
