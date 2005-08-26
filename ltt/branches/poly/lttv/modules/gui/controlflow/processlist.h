@@ -188,7 +188,7 @@ static inline HashedProcessData *processlist_get_process_data(
   if(pid == 0)
     process_info.cpu = cpu;
   else
-    process_info.cpu = 0;
+    process_info.cpu = ANY_CPU;
   process_info.birth = *birth;
   process_info.trace_num = trace_num;
 

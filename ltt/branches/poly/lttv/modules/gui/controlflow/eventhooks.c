@@ -415,7 +415,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
     LttvProcessState *process = ts->running_process[cpu];
     /* unknown state, bad current pid */
     if(process->pid != pid_out)
-      process = lttv_state_find_process(ts, ANY_CPU, pid_out);
+      process = lttv_state_find_process(ts,
+          ltt_tracefile_num(tfc->tf), pid_out);
     
     if(process != NULL) {
       /* Well, the process_out existed : we must get it in the process hash
@@ -570,10 +571,11 @@ int before_schedchange_hook(void *hook_data, void *call_data)
      * present, it's a new process and it was not present : it will
      * be added after the state update.  */
     LttvProcessState *process;
-    process = lttv_state_find_process(ts, ANY_CPU, pid_in);
+    process = lttv_state_find_process(ts,
+        ltt_tracefile_num(tfc->tf), pid_in);
     
     if(process != NULL) {
-      /* Well, the process_out existed : we must get it in the process hash
+      /* Well, the process existed : we must get it in the process hash
        * or add it, and draw its items.
        */
        /* Add process to process list (if not present) */
