@@ -1076,7 +1076,10 @@ void lttv_traceset_context_position_save(const LttvTracesetContext *self,
 {
   guint i;
   guint num_traces = lttv_traceset_number(self->ts);
-
+  
+  pos->tfc = g_array_set_size(pos->tfc, 0);
+  pos->ep = g_array_set_size(pos->ep, 0);
+  
   for(i=0; i<num_traces;i++) {
     GArray * tracefiles = self->traces[i]->tracefiles;
     guint j;
@@ -1125,8 +1128,8 @@ void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
   int i;
   LttEventPosition **src_ep, **dest_ep;
   
-  g_array_set_size(dest->ep, src->ep->len);
-  g_array_set_size(dest->tfc, src->tfc->len);
+  dest->ep = g_array_set_size(dest->ep, src->ep->len);
+  dest->tfc = g_array_set_size(dest->tfc, src->tfc->len);
   
   for(i=0;i<src->ep->len;i++) {
     src_ep = &g_array_index(src->ep, LttEventPosition*, i);

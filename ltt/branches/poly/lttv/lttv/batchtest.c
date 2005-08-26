@@ -76,6 +76,7 @@ static gboolean
   a_test5,
   a_test6,
   a_test7,
+  a_test8,
   a_test_all;
 
 static GQuark QUARK_BLOCK_START,
@@ -618,6 +619,36 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     }
   }
 
+  /* Seek at specified interval, using states computed in 6, making
+   * sure that there is no more than the number of events between
+   * state save interval to read before getting there.
+   */
+
+  if((a_test8 && a_test6) || a_test_all) {
+    g_message("Running test 8 : check save interval");
+    LttTime time = tc->time_span.start_time;
+    LttTime interval;
+    interval.tv_sec = 0;
+    interval.tv_nsec = 175674987;
+    guint count;
+
+    while(ltt_time_compare(time, tc->time_span.end_time) < 0) {
+      //g_message("Seeking at time %u.%u", time.tv_sec, time.tv_nsec);
+      lttv_process_traceset_seek_time(&ts->parent, ltt_time_zero);
+      lttv_state_traceset_seek_time_closest(ts, time);
+      /* We add no hook to the traceset, not necessary */
+      count = lttv_process_traceset_middle(&ts->parent,
+          time, G_MAXUINT, NULL);
+      g_info("Number of events to jump over : %u", count);
+      
+      if(count > LTTV_STATE_SAVE_INTERVAL)
+        g_warning("Oops! Save interval is %u and it took %u events to seek to a time %lu.%lu supposed to be closer from the last saved state.",
+            LTTV_STATE_SAVE_INTERVAL, count, time.tv_sec, time.tv_nsec);
+      time = ltt_time_add(time, interval);
+    }
+
+  }
+
   if(a_trace_event) lttv_hooks_remove_data(event_hook, trace_event, NULL);
 
   g_free(save_state.write_time);
@@ -723,6 +754,10 @@ static void init()
   lttv_option_add("test7", '7', "Test seeking to positions written out in 3", 
       "", LTTV_OPT_NONE, &a_test7, NULL, NULL);
 
+  a_test8 = FALSE;
+  lttv_option_add("test8", '8', "Test seeking to positions using saved states computed at 6 : check if number of events fits", 
+      "", LTTV_OPT_NONE, &a_test8, NULL, NULL);
+
   a_test_all = FALSE;
   lttv_option_add("testall", 'a', "Run all tests ", "", 
       LTTV_OPT_NONE, &a_test_all, NULL, NULL);
@@ -797,6 +832,7 @@ static void destroy()
   lttv_option_remove("test5");
   lttv_option_remove("test6");
   lttv_option_remove("test7");
+  lttv_option_remove("test8");
   lttv_option_remove("testall");
 
   lttv_hooks_destroy(before_traceset);

@@ -467,7 +467,8 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
   value = lttv_attribute_add(container, LTTV_STATE_RUNNING_PROCESS, 
                              LTTV_POINTER);
   *(value.v_pointer) = running_process;
-
+  
+  g_info("State save");
   
   nb_tracefile = self->parent.tracefiles->len;
 
@@ -501,7 +502,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
       guint64 tsc;
       LttTracefile *tf;
       ltt_event_position_get(ep, &tf, &nb_block, &offset, &tsc);
-      g_debug("Block %u offset %u tsc %llu time %lu.%lu", nb_block, offset,
+      g_info("Block %u offset %u tsc %llu time %lu.%lu", nb_block, offset,
           tsc,
           tfcs->parent.timestamp.tv_sec, tfcs->parent.timestamp.tv_nsec);
     }
@@ -584,6 +585,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
       tfc->timestamp = ltt_event_time(ltt_tracefile_get_event(tfc->tf));
       g_assert(ltt_time_compare(tfc->timestamp, ltt_time_infinite) != 0);
       g_tree_insert(tsc->pqueue, tfc, tfc);
+      g_info("Restoring state for a tf at time %lu.%lu", tfc->timestamp.tv_sec, tfc->timestamp.tv_nsec);
     } else {
       tfc->timestamp = ltt_time_infinite;
     }
@@ -623,7 +625,7 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
 
   /* Free running processes array */
   nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
-  type = lttv_attribute_get_by_name(tracefile_tree, LTTV_STATE_RUNNING_PROCESS, 
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RUNNING_PROCESS, 
         &value);
   g_assert(type == LTTV_POINTER);
   running_process = *(value.v_pointer);
@@ -1412,6 +1414,7 @@ gint lttv_state_hook_remove_event_hooks(void *hook_data, void *call_data)
   return 0;
 }
 
+static guint test_event_count = 0;
 void lttv_state_remove_event_hooks(LttvTracesetState *self)
 {
   LttvTraceset *traceset = self->parent.ts;
@@ -1461,9 +1464,9 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
       lttv_trace_hook_destroy(&g_array_index(hooks, LttvTraceHook, k));
     g_array_free(hooks, TRUE);
   }
+  g_info("EVENT COUNT TEST : %u", test_event_count);
 }
 
-static guint test_event_count = 0;
 static gboolean state_save_event_hook(void *hook_data, void *call_data)
 {
   guint *event_count = (guint*)hook_data;
@@ -1735,7 +1738,6 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
     }
     g_free(event_count);
   }
-  g_info("EVENT COUNT TEST : %u", test_event_count);
 }
 
 gint lttv_state_save_hook_remove_event_hooks(void *hook_data, void *call_data)
@@ -1755,6 +1757,8 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 
   int min_pos, mid_pos, max_pos;
 
+  guint call_rest = 0;
+
   LttvTraceState *tcs;
 
   LttvAttributeValue value;
@@ -1767,6 +1771,8 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 
   g_tree_destroy(self->parent.pqueue);
   self->parent.pqueue = g_tree_new(compare_tracefile);
+  
+  g_info("Entering seek_time_closest for time %lu.%lu", t.tv_sec, t.tv_nsec);
   
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
@@ -1800,6 +1806,7 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
       /* restore the closest earlier saved state */
       if(min_pos != -1) {
         lttv_state_restore(tcs, closest_tree);
+        call_rest = 1;
       }
 
       /* There is no saved state, yet we want to have it. Restart at T0 */
@@ -1814,6 +1821,7 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
       lttv_process_trace_seek_time(&(tcs->parent), t);
     }
   }
+  if(!call_rest) g_info("NOT Calling restore");
 }
 
 
