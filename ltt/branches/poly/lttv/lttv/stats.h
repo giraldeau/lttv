@@ -165,6 +165,9 @@ void lttv_stats_sum_traceset(LttvTracesetStats *self);
 
 void lttv_stats_sum_trace(LttvTraceStats *self);
 
+/* Reset all statistics containers */
+void lttv_stats_reset(LttvTracesetStats *self);
+
 
 /* The LttvTracesetStats, LttvTraceStats and LttvTracefileStats types
    inherit from the corresponding State objects defined in state.h.. */

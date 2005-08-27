@@ -1446,7 +1446,6 @@ gint lttv_state_hook_remove_event_hooks(void *hook_data, void *call_data)
   return 0;
 }
 
-static guint test_event_count = 0;
 void lttv_state_remove_event_hooks(LttvTracesetState *self)
 {
   LttvTraceset *traceset = self->parent.ts;
@@ -1496,14 +1495,12 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
       lttv_trace_hook_destroy(&g_array_index(hooks, LttvTraceHook, k));
     g_array_free(hooks, TRUE);
   }
-  g_info("EVENT COUNT TEST : %u", test_event_count);
 }
 
 static gboolean state_save_event_hook(void *hook_data, void *call_data)
 {
   guint *event_count = (guint*)hook_data;
 
-  test_event_count++;
   /* Only save at LTTV_STATE_SAVE_INTERVAL */
   if(likely((*event_count)++ < LTTV_STATE_SAVE_INTERVAL))
     return FALSE;

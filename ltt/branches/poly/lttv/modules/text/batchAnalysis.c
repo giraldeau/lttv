@@ -117,7 +117,6 @@ static gboolean process_traceset(void *hook_data, void *call_data)
                                G_MAXULONG,
                                NULL);
 
-  g_info("BatchAnalysis destroy context");
 
   //lttv_traceset_context_remove_hooks(tc,
   //before_traceset, after_traceset, NULL, before_trace, after_trace,
@@ -128,6 +127,8 @@ static gboolean process_traceset(void *hook_data, void *call_data)
                             after_tracefile,
                             event_hook,
                             NULL);
+
+  g_info("BatchAnalysis destroy context");
 
   lttv_filter_destroy(*(value_filter.v_pointer));
   lttv_state_remove_event_hooks(&tscs->parent);

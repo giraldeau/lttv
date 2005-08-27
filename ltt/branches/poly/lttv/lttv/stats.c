@@ -58,8 +58,8 @@ find_event_tree(LttvTracefileStats *tfcs, GQuark pid_time, GQuark cpu,
     GQuark mode, GQuark sub_mode, LttvAttribute **events_tree, 
     LttvAttribute **event_types_tree);
 
-static void
-init(LttvTracesetStats *self, LttvTraceset *ts)
+
+static void lttv_stats_init(LttvTracesetStats *self)
 {
   guint i, j, nb_trace, nb_tracefile;
 
@@ -80,8 +80,7 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
     *stats_tree,
     *tracefiles_stats;
 
-  LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek(LTTV_TRACESET_STATE_TYPE))->
-      init((LttvTracesetContext *)self, ts);
+  LttvTraceset *ts = self->parent.parent.ts;
 
   self->stats = lttv_attribute_find_subdir(
                       lttv_traceset_attribute(self->parent.parent.ts),
@@ -127,10 +126,10 @@ init(LttvTracesetStats *self, LttvTraceset *ts)
           &tfcs->current_event_types_tree);
     }
   }
+
 }
 
-static void
-fini(LttvTracesetStats *self)
+static void lttv_stats_fini(LttvTracesetStats *self)
 {
   guint i, j, nb_trace, nb_tracefile;
 
@@ -189,6 +188,32 @@ fini(LttvTracesetStats *self)
       tfcs->current_event_types_tree = NULL;
     }
   }
+}
+
+
+void lttv_stats_reset(LttvTracesetStats *self)
+{
+  lttv_stats_fini(self);
+  lttv_stats_init(self);
+}
+
+
+
+static void
+init(LttvTracesetStats *self, LttvTraceset *ts)
+{
+  LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek(LTTV_TRACESET_STATE_TYPE))->
+      init((LttvTracesetContext *)self, ts);
+  
+  lttv_stats_init(self);
+}
+
+
+static void
+fini(LttvTracesetStats *self)
+{
+  lttv_stats_fini(self);
+
   LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek(LTTV_TRACESET_STATE_TYPE))->
       fini((LttvTracesetContext *)self);
 }

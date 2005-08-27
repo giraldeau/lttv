@@ -154,6 +154,10 @@ void lttv_event_to_string(LttEvent *e, GString *s,
 
   LttTime time;
 
+  guint cpu = ltt_tracefile_num(tfs->parent.tf);
+  LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
+  LttvProcessState *process = ts->running_process[cpu];
+
   g_string_set_size(s,0);
 
   facility = ltt_event_facility(e);
@@ -166,11 +170,11 @@ void lttv_event_to_string(LttEvent *e, GString *s,
         g_quark_to_string(ltt_facility_name(facility)),
         g_quark_to_string(ltt_eventtype_name(event_type)),
         (long)time.tv_sec, time.tv_nsec,
-        g_quark_to_string(tfs->cpu_name));
+        g_quark_to_string(ltt_tracefile_name(tfs->parent.tf)));
     /* Print the process id and the state/interrupt type of the process */
-    g_string_append_printf(s,", %u, %u,  %s", tfs->process->pid,
-		    tfs->process->ppid,
-		    g_quark_to_string(tfs->process->state->t));
+    g_string_append_printf(s,", %u, %u,  %s", process->pid,
+		    process->ppid,
+		    g_quark_to_string(process->state->t));
   }
 
   if(field)
@@ -357,8 +361,11 @@ static int write_event_content(void *hook_data, void *call_data)
 
   LttvFilter *filter;
 
-  e = ltt_tracefile_get_event(tfc->tf);
+  guint cpu = ltt_tracefile_num(tfs->parent.tf);
+  LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
+  LttvProcessState *process = ts->running_process[cpu];
 
+  e = ltt_tracefile_get_event(tfc->tf);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/lttv_filter",
       LTTV_POINTER, &value_filter));
@@ -368,7 +375,8 @@ static int write_event_content(void *hook_data, void *call_data)
    * call to the filter if available
    */
   if(filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,tfc->t_context->t,tfs->process,tfc))
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+                               tfc->t_context->t,process,tfc))
       return FALSE;
   
   lttv_event_to_string(e, a_string, TRUE, a_field_names, tfs);
@@ -376,7 +384,7 @@ static int write_event_content(void *hook_data, void *call_data)
 
   if(a_state) {
     g_string_append_printf(a_string, " %s ",
-        g_quark_to_string(tfs->process->state->s));
+        g_quark_to_string(process->state->s));
   }
 
   fputs(a_string->str, a_file);

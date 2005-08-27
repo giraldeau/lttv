@@ -438,13 +438,14 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
   //show stats for all traces
   for(i = 0 ; i < nb ; i++) {
     tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
+#if 0 //FIXME
     desc = ltt_trace_system_description(tcs->parent.parent.t);    
     LttTime start_time = ltt_trace_system_description_trace_start_time(desc);
     sprintf(trace_str, "Trace on system %s at time %lu.%09lu", 
             ltt_trace_system_description_node_name(desc),
             start_time.tv_sec,
             start_time.tv_nsec);
-    
+#endif //0
     gtk_tree_store_append (store, &iter, NULL);  
     gtk_tree_store_set (store, &iter,NAME_COLUMN,trace_str,-1);  
     path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
