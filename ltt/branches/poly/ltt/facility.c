@@ -86,6 +86,7 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   in.lineno = 0;
   in.error = error_callback;
   in.name = pathname;
+  in.unget = 0;
 
   //in.fd = g_open(in.name, O_RDONLY, 0);
   //if(in.fd < 0 ) {
