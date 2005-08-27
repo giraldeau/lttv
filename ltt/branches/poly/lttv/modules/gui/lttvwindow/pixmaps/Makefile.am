@@ -26,4 +26,5 @@ EXTRA_DIST =  \
 	stock_redo_24.png\
 	stock_refresh_24.png\
 	close.png\
-	stock_jump_to_24.png
+	stock_jump_to_24.png\
+	lttv-color-list.png

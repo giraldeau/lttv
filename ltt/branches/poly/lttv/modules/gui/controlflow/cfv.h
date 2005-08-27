@@ -50,7 +50,7 @@ struct _ControlFlowData {
 
   Drawing_t *drawing;
   GtkAdjustment *v_adjust ;
-  
+
   /* Shown events information */
 //  TimeWindow time_window;
 //  LttTime current_time;
@@ -61,7 +61,6 @@ struct _ControlFlowData {
                                     in order to have all the info ready. */
 
 } ;
-
 
 /* Control Flow Data constructor */
 ControlFlowData *guicontrolflow(void);

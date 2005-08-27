@@ -59,6 +59,8 @@ void send_test_data(ProcessList *process_list, Drawing_t *drawing);
 
 GtkWidget *h_guicontrolflow(Tab *tab);
 
+GtkWidget *h_legend(Tab *tab);
+
 int event_selected_hook(void *hook_data, void *call_data);
 
 /*
@@ -113,5 +115,7 @@ gint update_current_time_hook(void *hook_data, void *call_data);
 gint traceset_notify(void *hook_data, void *call_data);
 gint redraw_notify(void *hook_data, void *call_data);
 gint continue_notify(void *hook_data, void *call_data);
+
+void legend_destructor(GtkWindow *legend);
 
 #endif // _EVENT_HOOKS_H

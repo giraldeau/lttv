@@ -48,7 +48,6 @@ header_size_allocate(GtkWidget *widget,
 }
 
 
-
 /*****************************************************************************
  *                     Control Flow Viewer class implementation              *
  *****************************************************************************/
@@ -151,7 +150,6 @@ guicontrolflow(void)
   //inserted in the main window before the drawing area
   //can be configured (and this must happend bedore sending
   //data)
-
   
   return control_flow_data;
 

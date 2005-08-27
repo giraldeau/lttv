@@ -69,6 +69,7 @@
 #include <lttv/state.h>
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
+#include <lttvwindow/support.h>
 
 
 #include "eventhooks.h"
@@ -78,6 +79,8 @@
 
 
 #define MAX_PATH_LEN 256
+
+extern GSList *g_legend_list;
 
 #if 0
 typedef struct _ProcessAddClosure {
@@ -262,6 +265,46 @@ h_guicontrolflow(Tab *tab)
   return guicontrolflow_get_widget(control_flow_data) ;
   
 }
+
+void legend_destructor(GtkWindow *legend)
+{
+  g_legend_list = g_slist_remove(g_legend_list, legend);
+}
+
+/* Create a popup legend */
+GtkWidget *
+h_legend(Tab *tab)
+{
+  g_info("h_legend, %p", tab);
+
+  GtkWindow *legend = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
+ 
+  g_legend_list = g_slist_append(
+      g_legend_list,
+      legend);
+ 
+  g_object_set_data_full(
+      G_OBJECT(legend),
+      "legend",
+      legend,
+      (GDestroyNotify)legend_destructor);
+  
+  gtk_window_set_title(legend, "Control Flow View Legend");
+
+  GtkWidget *pixmap = create_pixmap(GTK_WIDGET(legend), "lttv-color-list.png");
+  
+ // GtkImage *image = GTK_IMAGE(gtk_image_new_from_pixmap(
+ //                               GDK_PIXMAP(pixmap), NULL));
+  
+  gtk_container_add(GTK_CONTAINER(legend), GTK_WIDGET(pixmap));
+
+  gtk_widget_show(GTK_WIDGET(pixmap));
+  gtk_widget_show(GTK_WIDGET(legend));
+  
+
+  return NULL; /* This is a popup window */
+}
+
 
 int event_selected_hook(void *hook_data, void *call_data)
 {
