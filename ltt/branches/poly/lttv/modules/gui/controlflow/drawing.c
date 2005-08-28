@@ -412,7 +412,7 @@ void drawing_data_request(Drawing_t *drawing,
                          LTTV_PRIO_STATE+5);
         }
       }
-
+      
       events_request->hooks = hooks;
 
       // Fill the events request
