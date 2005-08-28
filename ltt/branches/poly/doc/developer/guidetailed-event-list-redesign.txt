@@ -60,6 +60,9 @@ case where the events were not directly available, it would have to update the
 buffer in the foreground and only then show the requested events.
 
 
+Important note : this design doesn't support filtering of events, which is
+                 an important downside.
+
 
 
 * If we want the viewer to be able to show information without preparsing :
