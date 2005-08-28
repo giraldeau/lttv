@@ -897,7 +897,8 @@ void lttvwindow_events_request_remove_all(Tab       *tab,
     //if(events_request->servicing == TRUE) {
     //  lttv_hooks_call(events_request->after_request, NULL);
     //}
-    g_free(events_request);
+    events_request_free(events_request);
+    //g_free(events_request);
     tab->events_requests = g_slist_remove_link(tab->events_requests, element);
     element = g_slist_next(element);
     if(element == NULL) break;   /* end of list */
@@ -994,3 +995,46 @@ LttvTracesetContext* lttvwindow_get_traceset_context(Tab *tab)
 {
   return (LttvTracesetContext*)tab->traceset_info->traceset_context;
 }
+
+
+void events_request_free(EventsRequest *events_request)
+{
+  if(events_request == NULL) return;
+
+  if(events_request->start_position != NULL)
+       lttv_traceset_context_position_destroy(events_request->start_position);
+  if(events_request->end_position != NULL)
+       lttv_traceset_context_position_destroy(events_request->end_position);
+  if(events_request->hooks != NULL) {
+    guint i;
+    GArray *hooks = events_request->hooks;
+    for(i=0;i<hooks->len;i++) {
+      lttv_trace_hook_destroy(&g_array_index(hooks, LttvTraceHook, i));
+    }
+    g_array_free(events_request->hooks, TRUE);
+  }
+  if(events_request->before_chunk_traceset != NULL)
+       lttv_hooks_destroy(events_request->before_chunk_traceset);
+  if(events_request->before_chunk_trace != NULL)
+       lttv_hooks_destroy(events_request->before_chunk_trace);
+  if(events_request->before_chunk_tracefile != NULL)
+       lttv_hooks_destroy(events_request->before_chunk_tracefile);
+  if(events_request->event != NULL)
+       lttv_hooks_destroy(events_request->event);
+  if(events_request->event_by_id != NULL)
+       lttv_hooks_by_id_destroy(events_request->event_by_id);
+  if(events_request->after_chunk_tracefile != NULL)
+       lttv_hooks_destroy(events_request->after_chunk_tracefile);
+  if(events_request->after_chunk_trace != NULL)
+       lttv_hooks_destroy(events_request->after_chunk_trace);
+  if(events_request->after_chunk_traceset != NULL)
+       lttv_hooks_destroy(events_request->after_chunk_traceset);
+  if(events_request->before_request != NULL)
+       lttv_hooks_destroy(events_request->before_request);
+  if(events_request->after_request != NULL)
+       lttv_hooks_destroy(events_request->after_request);
+
+  g_free(events_request);
+}
+
+

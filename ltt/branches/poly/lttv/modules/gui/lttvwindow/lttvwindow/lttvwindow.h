@@ -239,8 +239,8 @@ FIXME : explain other important events
 */
 
 
-#ifndef VIEWER_H
-#define VIEWER_H
+#ifndef LTTVWINDOW_H
+#define LTTVWINDOW_H
 
 /*! \file lttvwindow.h
  * \brief API used by the graphical viewers to interact with their top window.
@@ -750,4 +750,7 @@ void set_time_window(Tab *tab, const TimeWindow *time_window);
 
 void set_current_time(Tab *tab, const LttTime *current_time);
 
-#endif //VIEWER_H
+
+void events_request_free(EventsRequest *events_request);
+
+#endif //LTTVWINDOW_H

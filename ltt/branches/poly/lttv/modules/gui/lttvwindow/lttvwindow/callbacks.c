@@ -821,42 +821,6 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
 
 }
 
-static void events_request_free(EventsRequest *events_request)
-{
-  if(events_request == NULL) return;
-
-  if(events_request->start_position != NULL)
-       lttv_traceset_context_position_destroy(events_request->start_position);
-  if(events_request->end_position != NULL)
-       lttv_traceset_context_position_destroy(events_request->end_position);
-  if(events_request->hooks != NULL)
-    g_array_free(events_request->hooks, TRUE);
-  if(events_request->before_chunk_traceset != NULL)
-       lttv_hooks_destroy(events_request->before_chunk_traceset);
-  if(events_request->before_chunk_trace != NULL)
-       lttv_hooks_destroy(events_request->before_chunk_trace);
-  if(events_request->before_chunk_tracefile != NULL)
-       lttv_hooks_destroy(events_request->before_chunk_tracefile);
-  if(events_request->event != NULL)
-       lttv_hooks_destroy(events_request->event);
-  if(events_request->event_by_id != NULL)
-       lttv_hooks_by_id_destroy(events_request->event_by_id);
-  if(events_request->after_chunk_tracefile != NULL)
-       lttv_hooks_destroy(events_request->after_chunk_tracefile);
-  if(events_request->after_chunk_trace != NULL)
-       lttv_hooks_destroy(events_request->after_chunk_trace);
-  if(events_request->after_chunk_traceset != NULL)
-       lttv_hooks_destroy(events_request->after_chunk_traceset);
-  if(events_request->before_request != NULL)
-       lttv_hooks_destroy(events_request->before_request);
-  if(events_request->after_request != NULL)
-       lttv_hooks_destroy(events_request->after_request);
-
-  g_free(events_request);
-}
-
-
-
 /* lttvwindow_process_pending_requests
  * 
  * This internal function gets called by g_idle, taking care of the pending
@@ -4202,6 +4166,10 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   tab->viewer_container = gtk_vbox_new(TRUE, 2);
   tab->scrollbar = gtk_hscrollbar_new(NULL);
   //tab->multivpaned = gtk_multi_vpaned_new();
+  tab->time_window.start_time = ltt_time_zero;
+  tab->time_window.end_time = ltt_time_zero;
+  tab->time_window.time_width = ltt_time_zero;
+  tab->current_time = ltt_time_zero;
   
   gtk_box_pack_start(GTK_BOX(tab->vbox),
                      tab->viewer_container,
