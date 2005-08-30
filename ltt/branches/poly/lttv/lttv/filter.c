@@ -1612,7 +1612,6 @@ lttv_filter_tree_parse(
         const LttEvent* event,
         const LttTracefile* tracefile,
         const LttTrace* trace,
-        const LttvProcessState* state,
         const LttvTracefileContext* context
         /*,...*/) 
 {
@@ -1653,12 +1652,22 @@ lttv_filter_tree_parse(
    */
     
   gboolean lresult = FALSE, rresult = FALSE;
+
+  LttvProcessState* state;
+  
+  if(LTTV_IS_TRACESET_STATE(context)) {
+    guint cpu = ltt_tracefile_num(context->tf);
+    LttvTraceState *ts = (LttvTraceState*)context->t_context;
+    state = ts->running_process[cpu];
+  } else {
+    state = NULL;
+  }
   
   /*
    * Parse left branch
    */
   if(t->left == LTTV_TREE_NODE) {
-      lresult = lttv_filter_tree_parse(t->l_child.t,event,tracefile,trace,state,context);
+      lresult = lttv_filter_tree_parse(t->l_child.t,event,tracefile,trace,context);
   }
   else if(t->left == LTTV_TREE_LEAF) {
       lresult = lttv_filter_tree_parse_branch(t->l_child.leaf,event,tracefile,trace,state,context);
@@ -1675,7 +1684,7 @@ lttv_filter_tree_parse(
    * Parse right branch
    */
   if(t->right == LTTV_TREE_NODE) {
-      rresult = lttv_filter_tree_parse(t->r_child.t,event,tracefile,trace,state,context);
+      rresult = lttv_filter_tree_parse(t->r_child.t,event,tracefile,trace,context);
   }
   else if(t->right == LTTV_TREE_LEAF) {
       rresult = lttv_filter_tree_parse_branch(t->r_child.leaf,event,tracefile,trace,state,context);

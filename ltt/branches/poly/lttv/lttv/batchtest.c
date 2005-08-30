@@ -77,6 +77,7 @@ static gboolean
   a_test6,
   a_test7,
   a_test8,
+  a_test9,
   a_test_all;
 
 static GQuark QUARK_BLOCK_START,
@@ -649,6 +650,84 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
 
   }
 
+  if(a_test9 || a_test_all) {
+    /* Run seek_forward and seek_backward test */
+    LttvTracesetContextPosition *saved_pos = 
+      lttv_traceset_context_position_new();
+    guint count;
+    LttvTracesetContext *tsc = &ts->parent;
+    g_message("Running test 9 : seek_forward and seek_backward");
+    lttv_process_traceset_seek_time(tsc, ltt_time_zero);
+
+    count = lttv_process_traceset_seek_n_forward(tsc, 500, NULL);
+    g_assert(count == 500);
+    lttv_traceset_context_position_save(tsc, saved_pos);
+    count = lttv_process_traceset_seek_n_forward(tsc, 150000, NULL);
+    g_assert(count == 150000);
+    count = lttv_process_traceset_seek_n_backward(tsc, 150000,
+        seek_back_default_offset, lttv_process_traceset_seek_time, NULL);
+    g_assert(count == 150000);
+    if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos)) {
+      g_warning("Problem with seek_n ! Positions differ. (1)");
+    }
+    
+    lttv_process_traceset_seek_n_forward(tsc, 500, NULL);
+    lttv_traceset_context_position_save(tsc, saved_pos);
+    lttv_process_traceset_seek_n_forward(tsc, 15000, NULL);
+    lttv_process_traceset_seek_n_backward(tsc, 15005,
+        seek_back_default_offset, lttv_process_traceset_seek_time, NULL);
+    lttv_process_traceset_seek_n_forward(tsc, 5, NULL);
+    if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos)) {
+      g_warning("Problem with seek_n ! Positions differ. (2)");
+    }
+    
+    lttv_process_traceset_seek_time(tsc, ltt_time_infinite);
+    
+    count = lttv_process_traceset_seek_n_forward(tsc, 15000, NULL);
+    if(count > 0)
+      g_warning("Problem with seek_n ! Forward at end of traceset.");
+    
+    lttv_process_traceset_seek_time(tsc, ltt_time_infinite);
+
+    lttv_traceset_context_position_save(tsc, saved_pos);
+    lttv_process_traceset_seek_n_backward(tsc, 300,
+        seek_back_default_offset, lttv_process_traceset_seek_time, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 299, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 1, NULL);
+
+    if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos)) {
+      g_warning("Problem with seek_n ! Positions differ. (4)");
+    }
+    
+    /* try a volountary error */
+    lttv_process_traceset_seek_time(tsc, ltt_time_infinite);
+
+    lttv_traceset_context_position_save(tsc, saved_pos);
+    lttv_process_traceset_seek_n_backward(tsc, 301,
+        seek_back_default_offset, lttv_process_traceset_seek_time, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 299, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 1, NULL);
+
+    if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos) == 0) {
+      g_warning("Problem with seek_n ! Positions _should_ differ. (5)");
+    }
+
+    /* Try a seek by closest time : Hint : try this one with and without states
+     * computed. */
+    lttv_process_traceset_seek_time(tsc, ltt_time_zero);
+    count = lttv_process_traceset_seek_n_forward(tsc, 200000, NULL);
+    lttv_traceset_context_position_save(tsc, saved_pos);
+    lttv_process_traceset_seek_n_backward(tsc, 100301,
+        //seek_back_default_offset, lttv_state_traceset_seek_time_closest, NULL);
+        seek_back_default_offset, lttv_process_traceset_seek_time, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 100301, NULL);
+    
+    if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos)) {
+      g_warning("Problem with seek_n with state seek time! Positions differ. (6)");
+    }
+
+    lttv_traceset_context_position_destroy(saved_pos);
+  }
   if(a_trace_event) lttv_hooks_remove_data(event_hook, trace_event, NULL);
 
   g_free(save_state.write_time);
@@ -757,6 +836,11 @@ static void init()
   a_test8 = FALSE;
   lttv_option_add("test8", '8', "Test seeking to positions using saved states computed at 6 : check if number of events fits", 
       "", LTTV_OPT_NONE, &a_test8, NULL, NULL);
+  
+  a_test9 = FALSE;
+  lttv_option_add("test9", '9', "Test seeking backward/forward positions", 
+      "", LTTV_OPT_NONE, &a_test9, NULL, NULL);
+
 
   a_test_all = FALSE;
   lttv_option_add("testall", 'a', "Run all tests ", "", 
@@ -833,6 +917,7 @@ static void destroy()
   lttv_option_remove("test6");
   lttv_option_remove("test7");
   lttv_option_remove("test8");
+  lttv_option_remove("test9");
   lttv_option_remove("testall");
 
   lttv_hooks_destroy(before_traceset);

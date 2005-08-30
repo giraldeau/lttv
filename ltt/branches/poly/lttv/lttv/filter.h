@@ -65,8 +65,11 @@ typedef union _LttvFieldValue LttvFieldValue;
 
 typedef struct _LttvSimpleExpression LttvSimpleExpression;
 typedef struct _LttvFilterTree LttvFilterTree;
-typedef struct _LttvFilter LttvFilter;
 
+#ifndef LTTVFILTER_TYPE_DEFINED
+typedef struct _LttvFilter LttvFilter;
+#define LTTVFILTER_TYPE_DEFINED
+#endif
 
 /**
  * @enum _LttvStructType
@@ -327,7 +330,6 @@ gboolean lttv_filter_tree_parse(
         const LttEvent* event,
         const LttTracefile* tracefile,
         const LttTrace* trace,
-        const LttvProcessState* state,
         const LttvTracefileContext* context);
 
 gboolean lttv_filter_tree_parse_branch(

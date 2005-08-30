@@ -26,6 +26,7 @@
 #include <ltt/facility.h>
 #include <ltt/trace.h>
 #include <ltt/type.h>
+#include <lttv/filter.h>
 #include <errno.h>
 
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -1077,6 +1078,11 @@ void lttv_traceset_context_position_save(const LttvTracesetContext *self,
   guint i;
   guint num_traces = lttv_traceset_number(self->ts);
   
+  for(i=0;i<pos->ep->len;i++){
+    LttEventPosition *ep = g_array_index(pos->ep, LttEventPosition*, i);
+    if(ep != NULL) g_free(ep);
+  }
+  
   pos->tfc = g_array_set_size(pos->tfc, 0);
   pos->ep = g_array_set_size(pos->ep, 0);
 
@@ -1137,7 +1143,7 @@ void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
     src_ep = &g_array_index(src->ep, LttEventPosition*, i);
     dest_ep = &g_array_index(dest->ep, LttEventPosition*, i);
     if(*src_ep != NULL) {
-      *dest_ep = ltt_event_position_new();
+      if(*dest_ep == NULL) *dest_ep = ltt_event_position_new();
       ltt_event_position_copy(
           *dest_ep,
           *src_ep);
@@ -1280,7 +1286,9 @@ struct seek_back_data {
                          overwrite at this position : this is a circular array. 
                        */
   guint events_found;
+  guint n;             /* number of events requested */
   GPtrArray *array; /* array of LttvTracesetContextPositions pointers */
+  LttvFilter *filter;
 };
 
 static gint seek_back_event_hook(void *hook_data, void* call_data)
@@ -1289,25 +1297,28 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext*)call_data;
   LttvTracesetContext *tsc = tfc->t_context->ts_context;
   LttvTracesetContextPosition *pos;
-  
-  if(sd->events_found < sd->array->len) {
-    pos = (LttvTracesetContextPosition*)g_ptr_array_index (sd->array,
-                                                           sd->events_found);
-  } else {
-    pos = (LttvTracesetContextPosition*)g_ptr_array_index (sd->array,
-                                                           sd->first_event);
+
+  if(sd->filter != NULL) {
+    if(!lttv_filter_tree_parse(sd->filter->head,
+          ltt_tracefile_get_event(tfc->tf),
+          tfc->tf,
+          tfc->t_context->t,
+          tfc))
+      return FALSE;
   }
+  
+  pos = (LttvTracesetContextPosition*)g_ptr_array_index (sd->array,
+                                                         sd->first_event);
 
   lttv_traceset_context_position_save(tsc, pos);
 
   if(sd->first_event >= sd->array->len - 1) sd->first_event = 0;
   else sd->first_event++;
 
-  sd->events_found = min(sd->array->len, sd->events_found + 1);
+  sd->events_found = min(sd->n, sd->events_found + 1);
 
   return FALSE;
 }
-
 
 /* Seek back n events back from the current position.
  *
@@ -1315,6 +1326,11 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
  * @self          The trace set context
  * @n             number of events to jump over
  * @first_offset  The initial offset value used. Hint : try about 100000ns.
+ *                never put first_offset at ltt_time_zero.
+ * @time_seeker   Function pointer of the function to use to seek time :
+ *                either lttv_process_traceset_seek_time
+ *                    or lttv_state_traceset_seek_time_closest
+ * @filter        The filter to call.
  *
  * Return value : the number of events found (might be lower than the number
  * requested if beginning of traceset is reached).
@@ -1331,12 +1347,18 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
  * contain any hook, as process_traceset_middle is used in this routine.
  */
 guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
-                                            guint n, LttTime first_offset)
+                                            guint n, LttTime first_offset,
+                                            seek_time_fct time_seeker,
+                                            LttvFilter *filter)
 {
+  if(lttv_traceset_number(self->ts) == 0) return 0;
+  g_assert(ltt_time_compare(first_offset, ltt_time_zero) != 0);
+  
   guint i;
   LttvTracesetContextPosition *next_iter_end_pos =
                                 lttv_traceset_context_position_new();
   LttvTracesetContextPosition *end_pos = lttv_traceset_context_position_new();
+  LttvTracesetContextPosition *saved_pos = lttv_traceset_context_position_new();
   LttTime time;
   LttTime time_offset;
   struct seek_back_data sd;
@@ -1345,12 +1367,15 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   sd.first_event = 0;
   sd.events_found = 0;
   sd.array = g_ptr_array_sized_new(n);
+  sd.filter = filter;
+  sd.n = n;
   g_ptr_array_set_size(sd.array, n);
   for(i=0;i<n;i++) {
     g_ptr_array_index (sd.array, i) = lttv_traceset_context_position_new();
   }
-                            
+ 
   lttv_traceset_context_position_save(self, next_iter_end_pos);
+  lttv_traceset_context_position_save(self, saved_pos);
   /* Get the current time from which we will offset */
   time = lttv_traceset_context_position_get_time(next_iter_end_pos);
   /* the position saved might be end of traceset... */
@@ -1367,7 +1392,6 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
     /* stop criteria : - n events found
      *                 - time < beginning of trace */
     if(ltt_time_compare(time, self->time_span.start_time) < 0) break;
-    if(sd.events_found == n) break;
 
     lttv_traceset_context_position_copy(end_pos, next_iter_end_pos);
 
@@ -1375,8 +1399,13 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
     /* this time becomes the new reference time */
     time = ltt_time_sub(time, time_offset);
     
-    lttv_process_traceset_seek_time(self, time);
+    time_seeker(self, time);
     lttv_traceset_context_position_save(self, next_iter_end_pos);
+    /* Resync the time in case of a seek_closest */
+    time = lttv_traceset_context_position_get_time(next_iter_end_pos);
+    if(ltt_time_compare(time, self->time_span.end_time) > 0) {
+      time = self->time_span.end_time;
+    }
 
     /* Process the traceset, calling a hook which adds events 
      * to the array, overwriting the tail. It changes first_event and
@@ -1386,6 +1415,25 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
     lttv_process_traceset_middle(self, ltt_time_infinite,
         G_MAXUINT, end_pos);
 
+    if(sd.events_found < n) {
+      if(sd.first_event > 0) {
+        /* Save the first position */
+        LttvTracesetContextPosition *pos =
+          (LttvTracesetContextPosition*)g_ptr_array_index (sd.array, 0);
+        lttv_traceset_context_position_copy(saved_pos, pos);
+      }
+      g_assert(n-sd.events_found <= sd.array->len);
+      /* Change array size to n - events_found */
+      for(i=n-sd.events_found;i<sd.array->len;i++) {
+        LttvTracesetContextPosition *pos =
+          (LttvTracesetContextPosition*)g_ptr_array_index (sd.array, i);
+        lttv_traceset_context_position_destroy(pos);
+      }
+      g_ptr_array_set_size(sd.array, n-sd.events_found);
+      sd.first_event = 0;
+      
+    } else break; /* Second end criterion : n events found */
+    
     time_offset = ltt_time_mul(time_offset, BACKWARD_SEEK_MUL);
   }
   
@@ -1394,15 +1442,19 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   
   lttv_process_traceset_end(self, NULL, NULL, NULL, hooks, NULL);
 
-  if(sd.events_found > 0) {
+  if(sd.events_found >= n) {
     /* Seek the traceset to the first event in the circular array */
     LttvTracesetContextPosition *pos =
       (LttvTracesetContextPosition*)g_ptr_array_index (sd.array,
                                                        sd.first_event);
     g_assert(lttv_process_traceset_seek_position(self, pos) == 0);
+  } else {
+    /* Will seek to the last saved position : in the worst case, it will be the
+     * original position (if events_found is 0) */
+    g_assert(lttv_process_traceset_seek_position(self, saved_pos) == 0);
   }
   
-  for(i=0;i<n;i++) {
+  for(i=0;i<sd.array->len;i++) {
     LttvTracesetContextPosition *pos =
       (LttvTracesetContextPosition*)g_ptr_array_index (sd.array, i);
     lttv_traceset_context_position_destroy(pos);
@@ -1411,6 +1463,8 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
 
   lttv_hooks_destroy(hooks);
 
+  lttv_traceset_context_position_destroy(saved_pos);
+
   return sd.events_found;
 }
 
@@ -1418,12 +1472,23 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
 struct seek_forward_data {
   guint event_count;  /* event counter */
   guint n;            /* requested number of events to jump over */
+  LttvFilter *filter;
 };
 
 static gint seek_forward_event_hook(void *hook_data, void* call_data)
 {
   struct seek_forward_data *sd = (struct seek_forward_data*)hook_data;
+  LttvTracefileContext *tfc = (LttvTracefileContext*)call_data;
 
+  if(sd->filter != NULL) {
+    if(!lttv_filter_tree_parse(sd->filter->head,
+          ltt_tracefile_get_event(tfc->tf),
+          tfc->tf,
+          tfc->t_context->t,
+          tfc))
+      return FALSE;
+  }
+ 
   sd->event_count++;
 
   if(sd->event_count >= sd->n)
@@ -1435,17 +1500,19 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
 /* Seek back n events forward from the current position
  *
  * Parameters :
- * @self the trace set context
- * @n    number of events to jump over
+ * @self   the trace set context
+ * @n      number of events to jump over
+ * @filter filter to call.
  *
  * returns : the number of events jumped over (may be less than requested if end
  * of traceset reached) */
 guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
-                                          guint n)
+                                          guint n, LttvFilter *filter)
 {
   struct seek_forward_data sd;
   sd.event_count = 0;
   sd.n = n;
+  sd.filter = filter;
   LttvHooks *hooks = lttv_hooks_new();
 
   lttv_hooks_add(hooks, seek_forward_event_hook, &sd, LTTV_PRIO_DEFAULT);

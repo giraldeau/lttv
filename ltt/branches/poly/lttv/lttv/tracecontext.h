@@ -77,6 +77,11 @@ typedef struct _LttvTracefileContextClass LttvTracefileContextClass;
 typedef struct _LttvTracesetContextPosition LttvTracesetContextPosition;
 typedef struct _LttvTraceContextPosition LttvTraceContextPosition;
 
+#ifndef LTTVFILTER_TYPE_DEFINED
+typedef struct _LttvFilter LttvFilter;
+#define LTTVFILTER_TYPE_DEFINED
+#endif
+
 #define LTTV_TRACESET_CONTEXT_TYPE  (lttv_traceset_context_get_type ())
 #define LTTV_TRACESET_CONTEXT(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACESET_CONTEXT_TYPE, LttvTracesetContext))
 #define LTTV_TRACESET_CONTEXT_CLASS(vtable)  (G_TYPE_CHECK_CLASS_CAST ((vtable), LTTV_TRACESET_CONTEXT_TYPE, LttvTracesetContextClass))
@@ -341,10 +346,19 @@ void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc);
 #define BACKWARD_SEEK_MUL 2 /* Multiplication factor of time_offset between
                                backward seek iterations */
 
-guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
-                                           guint n);
+static const LttTime seek_back_default_offset = { 0, 100000 };
 
+guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
+                                           guint n,
+                                           LttvFilter *filter);
+typedef void (*seek_time_fct)(LttvTracesetContext *self, LttTime start);
+
+/* If first_offset is ltt_time_zero, it will choose a default value */
 guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
-                                           guint n, LttTime first_offset);
+                                            guint n,
+                                            LttTime first_offset,
+                                            seek_time_fct,
+                                            LttvFilter *filter);
+
 
 #endif // PROCESSTRACE_H
