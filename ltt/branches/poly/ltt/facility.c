@@ -126,6 +126,7 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
       generateFacility(f, fac, checksum);
 
       g_free(fac->name);
+      free(fac->capname);
       g_free(fac->description);
       freeEvents(&fac->events);
       sequence_dispose(&fac->events);
