@@ -1276,6 +1276,11 @@ static gboolean process_free(void *hook_data, void *call_data)
   if(likely(process != NULL)) {
     /* release_task is happening at kernel level : we can now safely release
      * the data structure of the process */
+    guint num_cpus = ltt_trace_get_num_cpu(ts->parent.t);
+    guint i;
+    for(i=0; i< num_cpus; i++) {
+      g_assert(process != ts->running_process[i]);
+    }
     exit_process(s, process);
   }
 

@@ -237,8 +237,8 @@ LttvLibrary *lttv_library_load(char *name, GError **error)
   return l;
 }
 
-
-static void library_unload(LttvLibrary *l)
+/* Returns < 0 if still in use, 0 if freed */
+static gint library_unload(LttvLibrary *l)
 {
   guint i;
 
@@ -249,13 +249,13 @@ static void library_unload(LttvLibrary *l)
   if(l->locked_loaded > 0) {
     g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Unload library %s: locked loaded", 
         l->info.name);
-    return;
+    return 1;
   }
 
   if(l->info.load_count > 0) {
     g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO, "Unload library %s: load count %d", 
 	l->info.name, l->info.load_count);
-    return;
+    return l->info.load_count;
   }
 
   /* Check if all its modules have been released */
@@ -265,7 +265,7 @@ static void library_unload(LttvLibrary *l)
     if(m->info.use_count > 0) {
       g_log(G_LOG_DOMAIN, G_LOG_LEVEL_INFO,"Unload library %s: module %s used",
 	   l->info.name, m->info.name);
-      return;
+      return 1;
     }
   }
 
@@ -278,15 +278,21 @@ static void library_unload(LttvLibrary *l)
   /* insure that module.c will be finalized */
 
   finish_destroy();
+  return 0;
 }
 
 
-void lttv_library_unload(LttvLibrary *l)
+gint lttv_library_unload(LttvLibrary *l)
 {
   /* In the case where we wait for a module to release, the load count is 0
    * and should not be decremented. */
-  if(l->info.load_count != 0) l->info.load_count--;
-  library_unload(l);
+  if(l->info.load_count != 0) {
+    l->info.load_count--;
+    return l->info.load_count;
+  } else {
+    library_unload(l);
+    return 0;
+  }
 }
 
 
@@ -296,10 +302,10 @@ static void library_lock_loaded(LttvLibrary *l)
 }
 
 
-static void library_unlock_loaded(LttvLibrary *l)
+static gint library_unlock_loaded(LttvLibrary *l)
 {
   l->locked_loaded--;
-  library_unload(l);
+  return library_unload(l);
 }
 
 
@@ -571,8 +577,8 @@ static void destroy()
       m = (LttvModule *)(l->modules->pdata[j]);
       while(m->info.require_count > 0) lttv_module_release(m);
     }
-    library_unlock_loaded(l);
-    while(l->info.load_count > 0) lttv_library_unload(l);
+    if(library_unlock_loaded(l) > 0)
+      while(lttv_library_unload(l) > 0);
 
     /* If the number of librairies loaded have changed, restart from the
      * beginning */

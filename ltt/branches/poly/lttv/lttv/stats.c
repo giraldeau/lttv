@@ -89,7 +89,7 @@ static void lttv_stats_init(LttvTracesetStats *self)
                       LTTV_STATS_USE_COUNT, 
                       LTTV_UINT, &v);
 
-  *(v.v_uint)++;
+  (*(v.v_uint))++;
   if(*(v.v_uint) == 1) { 
     g_assert(lttv_attribute_get_number(self->stats) == 0);
   }
@@ -106,7 +106,7 @@ static void lttv_stats_init(LttvTracesetStats *self)
     lttv_attribute_find(tcs->parent.parent.t_a, LTTV_STATS_USE_COUNT, 
         LTTV_UINT, &v);
 
-    *(v.v_uint)++;
+    (*(v.v_uint))++;
     if(*(v.v_uint) == 1) { 
       g_assert(lttv_attribute_get_number(tcs->stats) == 0);
     }
@@ -151,7 +151,7 @@ static void lttv_stats_fini(LttvTracesetStats *self)
 
   lttv_attribute_find(self->parent.parent.ts_a, LTTV_STATS_USE_COUNT, 
         LTTV_UINT, &v);
-  *(v.v_uint)--;
+  (*(v.v_uint))--;
 
   if(*(v.v_uint) == 0) {
     lttv_attribute_remove_by_name(self->parent.parent.ts_a, LTTV_STATS);
@@ -166,7 +166,7 @@ static void lttv_stats_fini(LttvTracesetStats *self)
 
     lttv_attribute_find(tcs->parent.parent.t_a, LTTV_STATS_USE_COUNT, 
         LTTV_UINT, &v);
-    *(v.v_uint)--;
+    (*(v.v_uint))--;
 
     if(*(v.v_uint) == 0) { 
       lttv_attribute_remove_by_name(tcs->parent.parent.t_a,LTTV_STATS);

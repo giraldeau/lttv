@@ -335,4 +335,16 @@ void lttv_process_traceset_synchronize_tracefiles(LttvTracesetContext *tsc);
 
 void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc);
 
+/* Seek n events forward and backward (without filtering) : only use these where
+ * necessary : the seek backward is costy. */
+
+#define BACKWARD_SEEK_MUL 2 /* Multiplication factor of time_offset between
+                               backward seek iterations */
+
+guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
+                                           guint n);
+
+guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
+                                           guint n, LttTime first_offset);
+
 #endif // PROCESSTRACE_H

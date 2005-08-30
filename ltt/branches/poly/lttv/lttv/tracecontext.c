@@ -28,7 +28,7 @@
 #include <ltt/type.h>
 #include <errno.h>
 
-
+#define min(a,b) (((a)<(b))?(a):(b))
 
 
 gint compare_tracefile(gconstpointer a, gconstpointer b)
@@ -1079,6 +1079,8 @@ void lttv_traceset_context_position_save(const LttvTracesetContext *self,
   
   pos->tfc = g_array_set_size(pos->tfc, 0);
   pos->ep = g_array_set_size(pos->ep, 0);
+
+  pos->timestamp = ltt_time_infinite;
   
   for(i=0; i<num_traces;i++) {
     GArray * tracefiles = self->traces[i]->tracefiles;
@@ -1272,4 +1274,198 @@ void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc)
 {
   lttv_traceset_context_position_save(tsc, tsc->sync_position);
 }
+
+struct seek_back_data {
+  guint first_event;   /* Index of the first event in the array : we will always
+                         overwrite at this position : this is a circular array. 
+                       */
+  guint events_found;
+  GPtrArray *array; /* array of LttvTracesetContextPositions pointers */
+};
+
+static gint seek_back_event_hook(void *hook_data, void* call_data)
+{
+  struct seek_back_data *sd = (struct seek_back_data*)hook_data;
+  LttvTracefileContext *tfc = (LttvTracefileContext*)call_data;
+  LttvTracesetContext *tsc = tfc->t_context->ts_context;
+  LttvTracesetContextPosition *pos;
+  
+  if(sd->events_found < sd->array->len) {
+    pos = (LttvTracesetContextPosition*)g_ptr_array_index (sd->array,
+                                                           sd->events_found);
+  } else {
+    pos = (LttvTracesetContextPosition*)g_ptr_array_index (sd->array,
+                                                           sd->first_event);
+  }
+
+  lttv_traceset_context_position_save(tsc, pos);
+
+  if(sd->first_event >= sd->array->len - 1) sd->first_event = 0;
+  else sd->first_event++;
+
+  sd->events_found = min(sd->array->len, sd->events_found + 1);
+
+  return FALSE;
+}
+
+
+/* Seek back n events back from the current position.
+ *
+ * Parameters :
+ * @self          The trace set context
+ * @n             number of events to jump over
+ * @first_offset  The initial offset value used. Hint : try about 100000ns.
+ *
+ * Return value : the number of events found (might be lower than the number
+ * requested if beginning of traceset is reached).
+ *
+ * The first search will go back first_offset and try to find the last n events
+ * matching the filter. If there are not enough, it will try to go back from the
+ * new trace point from first_offset*2, and so on, until beginning of trace or n
+ * events are found.
+ *
+ * Note : this function does not take in account the LttvFilter : use the
+ * similar function found in state.c instead.
+ *
+ * Note2 : the caller must make sure that the LttvTracesetContext does not
+ * contain any hook, as process_traceset_middle is used in this routine.
+ */
+guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
+                                            guint n, LttTime first_offset)
+{
+  guint i;
+  LttvTracesetContextPosition *next_iter_end_pos =
+                                lttv_traceset_context_position_new();
+  LttvTracesetContextPosition *end_pos = lttv_traceset_context_position_new();
+  LttTime time;
+  LttTime time_offset;
+  struct seek_back_data sd;
+  LttvHooks *hooks = lttv_hooks_new();
+  
+  sd.first_event = 0;
+  sd.events_found = 0;
+  sd.array = g_ptr_array_sized_new(n);
+  g_ptr_array_set_size(sd.array, n);
+  for(i=0;i<n;i++) {
+    g_ptr_array_index (sd.array, i) = lttv_traceset_context_position_new();
+  }
+                            
+  lttv_traceset_context_position_save(self, next_iter_end_pos);
+  /* Get the current time from which we will offset */
+  time = lttv_traceset_context_position_get_time(next_iter_end_pos);
+  /* the position saved might be end of traceset... */
+  if(ltt_time_compare(time, self->time_span.end_time) > 0) {
+    time = self->time_span.end_time;
+  }
+  time_offset = first_offset;
+ 
+  lttv_hooks_add(hooks, seek_back_event_hook, &sd, LTTV_PRIO_DEFAULT);
+  
+  lttv_process_traceset_begin(self, NULL, NULL, NULL, hooks, NULL);
+
+  while(1) {
+    /* stop criteria : - n events found
+     *                 - time < beginning of trace */
+    if(ltt_time_compare(time, self->time_span.start_time) < 0) break;
+    if(sd.events_found == n) break;
+
+    lttv_traceset_context_position_copy(end_pos, next_iter_end_pos);
+
+    /* We must seek the traceset back to time - time_offset */
+    /* this time becomes the new reference time */
+    time = ltt_time_sub(time, time_offset);
+    
+    lttv_process_traceset_seek_time(self, time);
+    lttv_traceset_context_position_save(self, next_iter_end_pos);
+
+    /* Process the traceset, calling a hook which adds events 
+     * to the array, overwriting the tail. It changes first_event and
+     * events_found too. */
+    /* We would like to have a clean context here : no other hook than our's */
+    
+    lttv_process_traceset_middle(self, ltt_time_infinite,
+        G_MAXUINT, end_pos);
+
+    time_offset = ltt_time_mul(time_offset, BACKWARD_SEEK_MUL);
+  }
+  
+  lttv_traceset_context_position_destroy(end_pos);
+  lttv_traceset_context_position_destroy(next_iter_end_pos);
+  
+  lttv_process_traceset_end(self, NULL, NULL, NULL, hooks, NULL);
+
+  if(sd.events_found > 0) {
+    /* Seek the traceset to the first event in the circular array */
+    LttvTracesetContextPosition *pos =
+      (LttvTracesetContextPosition*)g_ptr_array_index (sd.array,
+                                                       sd.first_event);
+    g_assert(lttv_process_traceset_seek_position(self, pos) == 0);
+  }
+  
+  for(i=0;i<n;i++) {
+    LttvTracesetContextPosition *pos =
+      (LttvTracesetContextPosition*)g_ptr_array_index (sd.array, i);
+    lttv_traceset_context_position_destroy(pos);
+  }
+  g_ptr_array_free(sd.array, TRUE);
+
+  lttv_hooks_destroy(hooks);
+
+  return sd.events_found;
+}
+
+
+struct seek_forward_data {
+  guint event_count;  /* event counter */
+  guint n;            /* requested number of events to jump over */
+};
+
+static gint seek_forward_event_hook(void *hook_data, void* call_data)
+{
+  struct seek_forward_data *sd = (struct seek_forward_data*)hook_data;
+
+  sd->event_count++;
+
+  if(sd->event_count >= sd->n)
+    return TRUE;
+  else
+    return FALSE;
+}
+
+/* Seek back n events forward from the current position
+ *
+ * Parameters :
+ * @self the trace set context
+ * @n    number of events to jump over
+ *
+ * returns : the number of events jumped over (may be less than requested if end
+ * of traceset reached) */
+guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
+                                          guint n)
+{
+  struct seek_forward_data sd;
+  sd.event_count = 0;
+  sd.n = n;
+  LttvHooks *hooks = lttv_hooks_new();
+
+  lttv_hooks_add(hooks, seek_forward_event_hook, &sd, LTTV_PRIO_DEFAULT);
+
+  lttv_process_traceset_begin(self, NULL, NULL, NULL, hooks, NULL);
+  
+  /* it will end on the end of traceset, or the fact that the
+   * hook returns TRUE.
+   */
+  lttv_process_traceset_middle(self, ltt_time_infinite,
+        G_MAXUINT, NULL);
+
+  /* Here, our position is either the end of traceset, or the exact position
+   * after n events : leave it like this. */
+
+  lttv_process_traceset_end(self, NULL, NULL, NULL, hooks, NULL);
+
+  lttv_hooks_destroy(hooks);
+
+  return sd.event_count;
+}
+
 

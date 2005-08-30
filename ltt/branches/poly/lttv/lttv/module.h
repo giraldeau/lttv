@@ -111,7 +111,8 @@ LttvModule *lttv_module_prerequisite_get(LttvModule *m, unsigned i);
 
 LttvLibrary *lttv_library_load(char *name, GError **error);
 
-void lttv_library_unload(LttvLibrary *l);
+/* Returns 0 if library is unloaded, > 0 otherwise */
+gint lttv_library_unload(LttvLibrary *l);
 
 
 /* Obtain information about the library */
