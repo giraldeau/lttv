@@ -835,7 +835,7 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfc = &g_array_index(self->tracefiles, LttvTracefileContext*, i);
 
-    //g_tree_remove(pqueue, *tfc);
+    g_tree_remove(pqueue, *tfc);
     
     ret = ltt_tracefile_seek_time((*tfc)->tf, start);
     if(ret == EPERM) g_error("error in lttv_process_trace_seek_time seek");
@@ -866,8 +866,8 @@ void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start)
 
   LttvTraceContext *tc;
 
-  g_tree_destroy(self->pqueue);
-  self->pqueue = g_tree_new(compare_tracefile);
+  //g_tree_destroy(self->pqueue);
+  //self->pqueue = g_tree_new(compare_tracefile);
 
   nb_trace = lttv_traceset_number(self->ts);
   for(i = 0 ; i < nb_trace ; i++) {
@@ -881,16 +881,33 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
                                         const LttvTracesetContextPosition *pos)
 {
   guint i;
-  
-  /* If a position is set, seek the traceset to this position */
+   /* If a position is set, seek the traceset to this position */
   if(ltt_time_compare(pos->timestamp, ltt_time_infinite) != 0) {
-    g_tree_destroy(self->pqueue);
-    self->pqueue = g_tree_new(compare_tracefile);
+
+    /* Test to see if the traces has been added to the trace set :
+     * It should NEVER happen. Clear all positions if a new trace comes in. */
+    /* FIXME I know this test is not optimal : should keep a number of
+     * tracefiles variable in the traceset.. eventually */
+    guint num_traces = lttv_traceset_number(self->ts);
+    guint tf_count = 0;
+    for(i=0; i<num_traces;i++) {
+      GArray * tracefiles = self->traces[i]->tracefiles;
+      guint j;
+      guint num_tracefiles = tracefiles->len;
+      for(j=0;j<num_tracefiles;j++)
+        tf_count++;
+    }
+    g_assert(tf_count == pos->tfcp->len);
+     
+
+    //g_tree_destroy(self->pqueue);
+    //self->pqueue = g_tree_new(compare_tracefile);
     
     for(i=0;i<pos->tfcp->len; i++) {
       LttvTracefileContextPosition *tfcp = 
         &g_array_index(pos->tfcp, LttvTracefileContextPosition, i);
-      
+
+      g_tree_remove(self->pqueue, tfcp->tfc);
       
       if(tfcp->used == TRUE) {
         if(ltt_tracefile_seek_position(tfcp->tfc->tf, tfcp->event) != 0)

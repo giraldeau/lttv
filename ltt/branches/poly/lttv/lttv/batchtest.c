@@ -740,9 +740,13 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     lttv_process_traceset_seek_time(tsc, ltt_time_zero);
     count = lttv_process_traceset_seek_n_forward(tsc, 200000, NULL);
     lttv_traceset_context_position_save(tsc, saved_pos);
+    t0 = get_time();
     lttv_process_traceset_seek_n_backward(tsc, 100301,
         seek_back_default_offset,
         (seek_time_fct)lttv_state_traceset_seek_time_closest, NULL);
+    t1 = get_time();
+    g_message("Seek backward 100301 events (with seek closest) in %g seconds",
+                t1 - t0);
     count = lttv_process_traceset_seek_n_forward(tsc, 100301, NULL);
     
     if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos)) {

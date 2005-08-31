@@ -561,8 +561,8 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
  
   nb_tracefile = self->parent.tracefiles->len;
 
-  g_tree_destroy(tsc->pqueue);
-  tsc->pqueue = g_tree_new(compare_tracefile);
+  //g_tree_destroy(tsc->pqueue);
+  //tsc->pqueue = g_tree_new(compare_tracefile);
  
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
@@ -586,6 +586,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     g_assert(tfcs->parent.t_context != NULL);
     
     LttvTracefileContext *tfc = LTTV_TRACEFILE_CONTEXT(tfcs);
+    g_tree_remove(tsc->pqueue, tfc);
     
     if(ep != NULL) {
       g_assert(ltt_tracefile_seek_position(tfc->tf, ep) == 0);
@@ -1879,8 +1880,8 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 
   LttvAttribute *saved_states_tree, *saved_state_tree, *closest_tree;
 
-  g_tree_destroy(self->parent.pqueue);
-  self->parent.pqueue = g_tree_new(compare_tracefile);
+  //g_tree_destroy(self->parent.pqueue);
+  //self->parent.pqueue = g_tree_new(compare_tracefile);
   
   g_info("Entering seek_time_closest for time %lu.%lu", t.tv_sec, t.tv_nsec);
   
