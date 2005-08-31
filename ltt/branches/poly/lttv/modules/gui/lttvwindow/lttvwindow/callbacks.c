@@ -3588,6 +3588,22 @@ void current_time_change_manager       (Tab *tab,
   tab->current_time_manager_lock = FALSE;
 }
 
+void current_position_change_manager(Tab *tab,
+                                     LttvTracesetContextPosition *pos)
+{
+  LttvTracesetContext *tsc =
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+
+  g_assert(lttv_process_traceset_seek_position(tsc, pos) == 0);
+  LttTime new_time = lttv_traceset_context_position_get_time(pos);
+  
+  current_time_change_manager(tab, new_time);
+  
+  set_current_position(tab, pos);
+}
+
+
 void
 on_MEntry5_value_changed               (GtkSpinButton *spinbutton,
                                         gpointer user_data)

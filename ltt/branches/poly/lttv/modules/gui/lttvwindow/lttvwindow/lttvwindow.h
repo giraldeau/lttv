@@ -516,6 +516,37 @@ void lttvwindow_unregister_current_time_notify(Tab *tab,
                                                LttvHook    hook,
                                                gpointer    hook_data);
 
+/**
+ * Function to register a hook function for a viewer to set/update its 
+ * current position.
+ * 
+ * @param tab the tab the viewer belongs to.
+ * @param hook hook function of the viewer that updates the current time. The
+ *             call_data is a LttTime* representing the new current time.
+ * @param hook_data hook data associated with the hook function. It will
+ *                  be typically a pointer to the viewer's data structure.
+ */
+
+void lttvwindow_register_current_position_notify(Tab *tab,
+                                             LttvHook    hook,
+                                             gpointer    hook_data);
+
+
+/**
+ * Function to unregister a viewer's hook function which is used to 
+ * set/update the current position of the viewer.
+ * @param tab the tab the viewer belongs to.
+ * @param hook hook function of the viewer that updates the current time. The
+ *             call_data is a LttTime* representing the new current time.
+ * @param hook_data hook data associated with the hook function. It will
+ *                  be typically a pointer to the viewer's data structure.
+ */
+
+void lttvwindow_unregister_current_position_notify(Tab *tab,
+                                               LttvHook    hook,
+                                               gpointer    hook_data);
+
+
 
 /**
  * Function to register a hook function for a viewer to set/update the 
@@ -566,16 +597,27 @@ void lttvwindow_report_time_window(Tab *tab,
                                    TimeWindow time_window);
 
 /**
- * Function to set the current time/event of the current tab.
+ * Function to set the current time of the current tab.
  * It will be called by a viewer's signal handle associated with 
  * the button-release-event signal
  * @param tab the tab the viewer belongs to.
- * @param new current time.
+ * @param time current time.
  */
 
 void lttvwindow_report_current_time(Tab *tab, 
                                     LttTime time);
 
+
+/**
+ * Function to set the current event of the current tab.
+ * It will be called by a viewer's signal handle associated with 
+ * the button-release-event signal
+ * @param tab the tab the viewer belongs to.
+ * @param pos the current position.
+ */
+
+void lttvwindow_report_current_position(Tab *tab,
+                                        LttvTracesetContextPosition *pos);
 
 /**
  * Function to set the position of the hpane's dividor (viewer).

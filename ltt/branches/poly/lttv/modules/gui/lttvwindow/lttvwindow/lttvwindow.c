@@ -101,6 +101,27 @@ void set_current_time(Tab *tab, const LttTime *current_time)
   if(tmp != NULL) lttv_hooks_call(tmp, &tab->current_time);
 }
 
+/* set_current_position
+ *
+ * It updates the current time of the tab, then calls the updatetimewindow
+ * hooks of each viewer.
+ *
+ * This is called whenever the current time value changes.
+ */
+
+void set_current_position(Tab *tab, const LttvTracesetContextPosition *pos)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+
+  tab->current_time = lttv_traceset_context_position_get_time(pos);
+
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/updatecurrentposition", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp != NULL) lttv_hooks_call(tmp, &pos);
+}
+
 void add_toolbar_constructor(MainWindow *mw, LttvToolbarClosure *toolbar_c)
 {
   LttvIAttribute *attributes = mw->attributes;
@@ -600,7 +621,7 @@ void lttvwindow_unregister_filter_notify(Tab *tab,
 }
 
 /**
- * Function to register a hook function for a viewer to set/update its 
+ * function to register a hook function for a viewer to set/update its 
  * current time.
  * @param tab viewer's tab 
  * @param hook hook function of the viewer.
@@ -624,7 +645,7 @@ void lttvwindow_register_current_time_notify(Tab *tab,
 
 
 /**
- * Function to unregister a viewer's hook function which is used to 
+ * function to unregister a viewer's hook function which is used to 
  * set/update the current time of the viewer.
  * @param tab viewer's tab 
  * @param hook hook function of the viewer.
@@ -638,6 +659,50 @@ void lttvwindow_unregister_current_time_notify(Tab *tab,
   LttvHooks * tmp;
   g_assert(lttv_iattribute_find_by_path(tab->attributes,
            "hooks/updatecurrenttime", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL) return;
+  lttv_hooks_remove_data(tmp, hook, hook_data);
+}
+
+/**
+ * function to register a hook function for a viewer to set/update its 
+ * current position.
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_register_current_position_notify(Tab *tab,
+            LttvHook hook, gpointer hook_data)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/updatecurrentposition", LTTV_POINTER, &value));
+  tmp = (LttvHooks*)*(value.v_pointer);
+  if(tmp == NULL){    
+    tmp = lttv_hooks_new();
+    *(value.v_pointer) = tmp;
+  }
+  lttv_hooks_add(tmp, hook, hook_data, LTTV_PRIO_DEFAULT);
+}
+
+
+/**
+ * function to unregister a viewer's hook function which is used to 
+ * set/update the current position of the viewer.
+ * @param tab viewer's tab 
+ * @param hook hook function of the viewer.
+ * @param hook_data hook data associated with the hook function.
+ */
+
+void lttvwindow_unregister_current_position_notify(Tab *tab,
+            LttvHook hook, gpointer hook_data)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  g_assert(lttv_iattribute_find_by_path(tab->attributes,
+           "hooks/updatecurrentposition", LTTV_POINTER, &value));
   tmp = (LttvHooks*)*(value.v_pointer);
   if(tmp == NULL) return;
   lttv_hooks_remove_data(tmp, hook, hook_data);
@@ -794,7 +859,7 @@ void lttvwindow_report_time_window(Tab *tab,
 
 
 /**
- * Function to set the current time/event of the current tab.
+ * Function to set the current time of the current tab.
  * It will be called by a viewer's signal handle associated with 
  * the button-release-event signal
  * @param tab viewer's tab 
@@ -809,6 +874,24 @@ void lttvwindow_report_current_time(Tab *tab,
   
   current_time_change_manager(tab, time);
 }
+
+/**
+ * Function to set the current event of the current tab.
+ * It will be called by a viewer's signal handle associated with 
+ * the button-release-event signal
+ * @param tab viewer's tab 
+ * @param time a pointer where time is stored.
+ */
+
+void lttvwindow_report_current_position(Tab *tab,
+                                        LttvTracesetContextPosition *pos)
+{
+  LttvAttributeValue value;
+  LttvHooks * tmp;
+  
+  current_position_change_manager(tab, pos);
+}
+
 
 /**
  * Function to set the position of the hpane's dividor (viewer).

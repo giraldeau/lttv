@@ -20,7 +20,8 @@
 
 /* print.c
  *
- * Event printing routines. */
+ * Event printing routines.
+ */
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
