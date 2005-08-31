@@ -311,7 +311,8 @@ LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);
 
 
-LttvTracesetContextPosition *lttv_traceset_context_position_new();
+LttvTracesetContextPosition *lttv_traceset_context_position_new(
+    const LttvTracesetContext *self);
 
 void lttv_traceset_context_position_save(const LttvTracesetContext *self,
                                     LttvTracesetContextPosition *pos);
@@ -346,7 +347,7 @@ void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc);
 #define BACKWARD_SEEK_MUL 2 /* Multiplication factor of time_offset between
                                backward seek iterations */
 
-static const LttTime seek_back_default_offset = { 0, 100000 };
+static const LttTime seek_back_default_offset = { 0, 100000000 };
 
 guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
                                            guint n,

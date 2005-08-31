@@ -174,10 +174,14 @@ restore_init_state(LttvTraceState *self)
   self->nb_event = 0;
 
   /* Seek time to beginning */
-  g_tree_destroy(self->parent.ts_context->pqueue);
-  self->parent.ts_context->pqueue = g_tree_new(compare_tracefile);
+  // Mathieu : fix : don't seek traceset here : causes inconsistency in seek
+  // closest. It's the tracecontext job to seek the trace to the beginning
+  // anyway : the init state might be used at the middle of the trace as well...
+  //g_tree_destroy(self->parent.ts_context->pqueue);
+  //self->parent.ts_context->pqueue = g_tree_new(compare_tracefile);
   
-  lttv_process_trace_seek_time(&self->parent, ltt_time_zero);
+  
+  //lttv_process_trace_seek_time(&self->parent, ltt_time_zero);
 
   nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
   

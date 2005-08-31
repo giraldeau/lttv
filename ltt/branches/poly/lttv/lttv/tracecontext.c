@@ -53,10 +53,15 @@ gint compare_tracefile(gconstpointer a, gconstpointer b)
   return comparison;
 }
 
+typedef struct _LttvTracefileContextPosition {
+  LttEventPosition *event;
+  LttvTracefileContext *tfc;
+  gboolean used; /* Tells if the tfc is at end of traceset position */
+} LttvTracefileContextPosition;
+
+
 struct _LttvTracesetContextPosition {
-  GArray *ep;                        /* Array of LttEventPosition */
-  GArray *tfc;                       /* Array of corresponding
-                                        TracefileContext* */
+  GArray *tfcp;                      /* Array of LttvTracefileContextPosition */
   LttTime timestamp;                 /* Current time at the saved position */ 
                                      /* If ltt_time_infinite : no position is
                                       * set, else, a position is set (may be end
@@ -182,7 +187,6 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
   self->traces = g_new(LttvTraceContext *, nb_trace);
   self->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
   self->ts_a = lttv_traceset_attribute(ts);
-  self->sync_position = lttv_traceset_context_position_new();
   for(i = 0 ; i < nb_trace ; i++) {
     tc = LTTV_TRACESET_CONTEXT_GET_CLASS(self)->new_trace_context(self);
     self->traces[i] = tc;
@@ -235,6 +239,7 @@ init(LttvTracesetContext *self, LttvTraceset *ts)
 #endif //0
 
   }
+  self->sync_position = lttv_traceset_context_position_new(self);
   self->pqueue = g_tree_new(compare_tracefile);
   lttv_process_traceset_seek_time(self, ltt_time_zero);
   lttv_traceset_context_compute_time_span(self, &self->time_span);
@@ -880,18 +885,22 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
     g_tree_destroy(self->pqueue);
     self->pqueue = g_tree_new(compare_tracefile);
     
-    for(i=0;i<pos->ep->len; i++) {
-      LttEventPosition **ep = &g_array_index(pos->ep, LttEventPosition*, i);
-      LttvTracefileContext **tfc = 
-        &g_array_index(pos->tfc, LttvTracefileContext*, i);
-      if(*ep != NULL) {
-        if(ltt_tracefile_seek_position((*tfc)->tf, *ep) != 0)
+    for(i=0;i<pos->tfcp->len; i++) {
+      LttvTracefileContextPosition *tfcp = 
+        &g_array_index(pos->tfcp, LttvTracefileContextPosition, i);
+      
+      
+      if(tfcp->used == TRUE) {
+        if(ltt_tracefile_seek_position(tfcp->tfc->tf, tfcp->event) != 0)
           return 1;
-        (*tfc)->timestamp = ltt_event_time(ltt_tracefile_get_event((*tfc)->tf));
-        g_assert(ltt_time_compare((*tfc)->timestamp, ltt_time_infinite) != 0);
-        g_tree_insert(self->pqueue, (*tfc), (*tfc));
+        tfcp->tfc->timestamp =
+          ltt_event_time(ltt_tracefile_get_event(tfcp->tfc->tf));
+        g_assert(ltt_time_compare(tfcp->tfc->timestamp,
+                                  ltt_time_infinite) != 0);
+        g_tree_insert(self->pqueue, tfcp->tfc, tfcp->tfc);
+
       } else {
-        (*tfc)->timestamp = ltt_time_infinite;
+        tfcp->tfc->timestamp = ltt_time_infinite;
       }
     }
   }
@@ -1059,33 +1068,49 @@ void lttv_trace_hook_destroy(LttvTraceHook *th)
 }
 
 
-LttvTracesetContextPosition *lttv_traceset_context_position_new()
+
+
+LttvTracesetContextPosition *lttv_traceset_context_position_new(
+                                        const LttvTracesetContext *self)
 {
-  LttvTracesetContextPosition *pos = g_new(LttvTracesetContextPosition,1);
-  pos->ep = g_array_sized_new(FALSE, TRUE, sizeof(LttEventPosition*),
-                              10);
-  pos->tfc = g_array_sized_new(FALSE, TRUE, sizeof(LttvTracefileContext*),
-                              10);
+  guint num_traces = lttv_traceset_number(self->ts);
+  guint tf_count = 0;
+  guint i;
+  
+  for(i=0; i<num_traces;i++) {
+    GArray * tracefiles = self->traces[i]->tracefiles;
+    guint j;
+    guint num_tracefiles = tracefiles->len;
+    for(j=0;j<num_tracefiles;j++)
+      tf_count++;
+  }
+  LttvTracesetContextPosition *pos =
+          g_new(LttvTracesetContextPosition, 1);
+  pos->tfcp = g_array_sized_new(FALSE, TRUE,
+                                sizeof(LttvTracefileContextPosition),
+                                tf_count);
+  g_array_set_size(pos->tfcp, tf_count);
+  for(i=0;i<pos->tfcp->len;i++) {
+    LttvTracefileContextPosition *tfcp = 
+      &g_array_index(pos->tfcp, LttvTracefileContextPosition, i);
+    tfcp->event = ltt_event_position_new();
+  }
+
   pos->timestamp = ltt_time_infinite;
   return pos;
 }
 
 /* Save all positions, the ones with infinite time will have NULL
  * ep. */
+/* note : a position must be destroyed when a trace is added/removed from a
+ * traceset */
 void lttv_traceset_context_position_save(const LttvTracesetContext *self,
                                     LttvTracesetContextPosition *pos)
 {
   guint i;
   guint num_traces = lttv_traceset_number(self->ts);
+  guint tf_count = 0;
   
-  for(i=0;i<pos->ep->len;i++){
-    LttEventPosition *ep = g_array_index(pos->ep, LttEventPosition*, i);
-    if(ep != NULL) g_free(ep);
-  }
-  
-  pos->tfc = g_array_set_size(pos->tfc, 0);
-  pos->ep = g_array_set_size(pos->ep, 0);
-
   pos->timestamp = ltt_time_infinite;
   
   for(i=0; i<num_traces;i++) {
@@ -1094,22 +1119,27 @@ void lttv_traceset_context_position_save(const LttvTracesetContext *self,
     guint num_tracefiles = tracefiles->len;
 
     for(j=0;j<num_tracefiles;j++) {
+      g_assert(tf_count < pos->tfcp->len);
       LttvTracefileContext **tfc = &g_array_index(tracefiles,
           LttvTracefileContext*, j);
+      LttvTracefileContextPosition *tfcp = 
+        &g_array_index(pos->tfcp, LttvTracefileContextPosition, tf_count);
 
-      LttEvent *event = ltt_tracefile_get_event((*tfc)->tf);
-      LttEventPosition *ep;
+      tfcp->tfc = *tfc;
 
       if(ltt_time_compare((*tfc)->timestamp, ltt_time_infinite) != 0) {
-        ep = ltt_event_position_new();
-        ltt_event_position(event, ep);
+        LttEvent *event = ltt_tracefile_get_event((*tfc)->tf);
+        ltt_event_position(event, tfcp->event);
         if(ltt_time_compare((*tfc)->timestamp, pos->timestamp) < 0)
           pos->timestamp = (*tfc)->timestamp;
+        tfcp->used = TRUE;
       } else {
-        ep = NULL;
+        tfcp->used = FALSE;
       }
-      g_array_append_val(pos->tfc, *tfc);
-      g_array_append_val(pos->ep, ep);
+      
+      //g_array_append_val(pos->tfc, *tfc);
+      //g_array_append_val(pos->ep, ep);
+      tf_count++;
     }
 
   }
@@ -1118,15 +1148,15 @@ void lttv_traceset_context_position_save(const LttvTracesetContext *self,
 void lttv_traceset_context_position_destroy(LttvTracesetContextPosition *pos)
 {
   int i;
-  LttEventPosition **ep;
   
-  for(i=0;i<pos->ep->len;i++) {
-    ep = &g_array_index(pos->ep, LttEventPosition*, i);
-    if(*ep != NULL)
-      g_free(*ep);
+  for(i=0;i<pos->tfcp->len;i++) {
+    LttvTracefileContextPosition *tfcp = 
+      &g_array_index(pos->tfcp, LttvTracefileContextPosition, i);
+    g_free(tfcp->event);
+    tfcp->event = NULL;
+    tfcp->used = FALSE;
   }
-  g_array_free(pos->ep, TRUE);
-  g_array_free(pos->tfc, TRUE);
+  g_array_free(pos->tfcp, TRUE);
   g_free(pos);
 }
 
@@ -1134,25 +1164,24 @@ void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
                                    const LttvTracesetContextPosition *src)
 {
   int i;
-  LttEventPosition **src_ep, **dest_ep;
+  LttvTracefileContextPosition *src_tfcp, *dest_tfcp;
   
-  dest->ep = g_array_set_size(dest->ep, src->ep->len);
-  dest->tfc = g_array_set_size(dest->tfc, src->tfc->len);
+  g_assert(src->tfcp->len == src->tfcp->len);
   
-  for(i=0;i<src->ep->len;i++) {
-    src_ep = &g_array_index(src->ep, LttEventPosition*, i);
-    dest_ep = &g_array_index(dest->ep, LttEventPosition*, i);
-    if(*src_ep != NULL) {
-      if(*dest_ep == NULL) *dest_ep = ltt_event_position_new();
+  for(i=0;i<src->tfcp->len;i++) {
+    src_tfcp = 
+      &g_array_index(src->tfcp, LttvTracefileContextPosition, i);
+    dest_tfcp = 
+      &g_array_index(dest->tfcp, LttvTracefileContextPosition, i);
+    
+    dest_tfcp->used = src_tfcp->used;
+    dest_tfcp->tfc = src_tfcp->tfc;
+
+    if(src_tfcp->used) {
       ltt_event_position_copy(
-          *dest_ep,
-          *src_ep);
-    } else
-      *dest_ep = NULL;
-  }
-  for(i=0;i<src->tfc->len;i++) {
-    g_array_index(dest->tfc, LttvTracefileContext*, i) =
-                    g_array_index(src->tfc, LttvTracefileContext*, i);
+          dest_tfcp->event,
+          src_tfcp->event);
+    }
   }
   dest->timestamp = src->timestamp;
 }
@@ -1163,30 +1192,29 @@ gint lttv_traceset_context_ctx_pos_compare(const LttvTracesetContext *self,
   int i;
   int ret = 0;
   
-  if(pos->ep->len == 0) {
+  if(pos->tfcp->len == 0) {
     if(lttv_traceset_number(self->ts) == 0) return 0;
     else return 1;
   }
   if(lttv_traceset_number(self->ts) == 0)
     return -1;
   
-  for(i=0;i<pos->ep->len;i++) {
-    LttEventPosition *ep = g_array_index(pos->ep, LttEventPosition*, i);
-    LttvTracefileContext *tfc = 
-      g_array_index(pos->tfc, LttvTracefileContext*, i);
+  for(i=0;i<pos->tfcp->len;i++) {
+    LttvTracefileContextPosition *tfcp = 
+      &g_array_index(pos->tfcp, LttvTracefileContextPosition, i);
     
-    if(ep == NULL) {
-      if(ltt_time_compare(tfc->timestamp, ltt_time_infinite) != 0) {
+    if(tfcp->used == FALSE) {
+      if(ltt_time_compare(tfcp->tfc->timestamp, ltt_time_infinite) < 0) {
         ret = -1;
       }
     } else {
-      if(ltt_time_compare(tfc->timestamp, ltt_time_infinite) == 0) {
+      if(ltt_time_compare(tfcp->tfc->timestamp, ltt_time_infinite) == 0) {
         ret = 1;
       } else {
-        LttEvent *event = ltt_tracefile_get_event(tfc->tf);
+        LttEvent *event = ltt_tracefile_get_event(tfcp->tfc->tf);
 
         ret = ltt_event_position_compare((LttEventPosition*)event, 
-                                          ep);
+                                          tfcp->event);
       }
     }
     if(ret != 0) return ret;
@@ -1203,40 +1231,40 @@ gint lttv_traceset_context_pos_pos_compare(
   int i, j;
   int ret;
   
-  if(pos1->ep->len == 0) {
-    if(pos2->ep->len == 0) return 0;
+  if(pos1->tfcp->len == 0) {
+    if(pos2->tfcp->len == 0) return 0;
     else return 1;
   }
-  if(pos2->ep->len == 0)
+  if(pos2->tfcp->len == 0)
     return -1;
   
-  for(i=0;i<pos1->ep->len;i++) {
-    LttEventPosition *ep1 = g_array_index(pos1->ep, LttEventPosition*, i);
-    LttvTracefileContext *tfc1 = g_array_index(pos1->tfc,
-                                      LttvTracefileContext*, i);
+  for(i=0;i<pos1->tfcp->len;i++) {
+    LttvTracefileContextPosition *tfcp1 = 
+      &g_array_index(pos1->tfcp, LttvTracefileContextPosition, i);
     
-    if(ep1 != NULL) {
-      for(j=0;j<pos2->ep->len;j++) {
-        LttEventPosition *ep2 = g_array_index(pos2->ep, LttEventPosition*, j);
-        LttvTracefileContext *tfc2 = g_array_index(pos2->tfc,
-                                           LttvTracefileContext*, j);
-        if(tfc1 == tfc2) {
-          if(ep2 != NULL)
-            ret = ltt_event_position_compare(ep1, ep2);
+    if(tfcp1->used == TRUE) {
+      for(j=0;j<pos2->tfcp->len;j++) {
+        LttvTracefileContextPosition *tfcp2 = 
+          &g_array_index(pos2->tfcp, LttvTracefileContextPosition, j);
+
+        if(tfcp1->tfc == tfcp2->tfc) {
+          if(tfcp2->used == TRUE)
+            ret = ltt_event_position_compare(tfcp1->event, tfcp2->event);
           else
             ret = -1;
 
           if(ret != 0) return ret;
         }
       }
+
     } else {
-      for(j=0;j<pos2->ep->len;j++) {
-        LttEventPosition *ep2 = g_array_index(pos2->ep, LttEventPosition*, j);
-        LttvTracefileContext *tfc2 = g_array_index(pos2->tfc,
-                                           LttvTracefileContext*, j);
-        if(tfc1 == tfc2) {
-          if(ep2 != NULL) ret = 1;
-        }
+      for(j=0;j<pos2->tfcp->len;j++) {
+        LttvTracefileContextPosition *tfcp2 = 
+          &g_array_index(pos2->tfcp, LttvTracefileContextPosition, j);
+
+        if(tfcp1->tfc == tfcp2->tfc)
+          if(tfcp2->used == TRUE) ret = 1;
+        if(ret != 0) return ret;
       }
     }
   }
@@ -1325,7 +1353,7 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
  * Parameters :
  * @self          The trace set context
  * @n             number of events to jump over
- * @first_offset  The initial offset value used. Hint : try about 100000ns.
+ * @first_offset  The initial offset value used.
  *                never put first_offset at ltt_time_zero.
  * @time_seeker   Function pointer of the function to use to seek time :
  *                either lttv_process_traceset_seek_time
@@ -1356,9 +1384,11 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   
   guint i;
   LttvTracesetContextPosition *next_iter_end_pos =
-                                lttv_traceset_context_position_new();
-  LttvTracesetContextPosition *end_pos = lttv_traceset_context_position_new();
-  LttvTracesetContextPosition *saved_pos = lttv_traceset_context_position_new();
+                                lttv_traceset_context_position_new(self);
+  LttvTracesetContextPosition *end_pos =
+    lttv_traceset_context_position_new(self);
+  LttvTracesetContextPosition *saved_pos =
+    lttv_traceset_context_position_new(self);
   LttTime time;
   LttTime time_offset;
   struct seek_back_data sd;
@@ -1371,7 +1401,7 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   sd.n = n;
   g_ptr_array_set_size(sd.array, n);
   for(i=0;i<n;i++) {
-    g_ptr_array_index (sd.array, i) = lttv_traceset_context_position_new();
+    g_ptr_array_index (sd.array, i) = lttv_traceset_context_position_new(self);
   }
  
   lttv_traceset_context_position_save(self, next_iter_end_pos);
