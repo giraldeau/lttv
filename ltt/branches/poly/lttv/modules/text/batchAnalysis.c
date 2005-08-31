@@ -207,7 +207,6 @@ static void init()
   lttv_hooks_add(main_hooks, process_traceset, NULL, LTTV_PRIO_DEFAULT);
 }
 
-
 static void destroy()
 {
   guint i, nb;
@@ -240,7 +239,6 @@ static void destroy()
 
   lttv_traceset_destroy(traceset); 
 }
-
 
 LTTV_MODULE("batchAnalysis", "Batch processing of a trace", \
     "Run through a trace calling all the registered hooks", \

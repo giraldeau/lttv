@@ -1,5 +1,6 @@
 /* This file is part of the Linux Trace Toolkit viewer
  * Copyright (C) 2003-2004 Michel Dagenais
+ *               2005 Mathieu Desnoyers
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -32,6 +33,7 @@
 #include <lttv/iattribute.h>
 #include <lttv/stats.h>
 #include <lttv/filter.h>
+#include <lttv/print.h>
 #include <ltt/ltt.h>
 #include <ltt/event.h>
 #include <ltt/type.h>
@@ -53,133 +55,6 @@ static LttvHooks
   *after_traceset,
   *before_trace,
   *event_hook;
-
-void print_field(LttEvent *e, LttField *f, GString *s, gboolean field_names) {
-
-  LttType *type;
-
-  LttField *element;
-
-  GQuark name;
-
-  int nb, i;
-
-  type = ltt_field_type(f);
-  switch(ltt_type_class(type)) {
-    case LTT_INT:
-    case LTT_LONG:
-    case LTT_SSIZE_T:
-      g_string_append_printf(s, " %lld", ltt_event_get_long_int(e,f));
-      break;
-
-    case LTT_UINT:
-    case LTT_ULONG:
-    case LTT_SIZE_T:
-    case LTT_OFF_T:
-      g_string_append_printf(s, " %llu", ltt_event_get_long_unsigned(e,f));
-      break;
-
-    case LTT_FLOAT:
-      g_string_append_printf(s, " %g", ltt_event_get_double(e,f));
-      break;
-
-    case LTT_POINTER:
-      g_string_append_printf(s, " 0x%llx", ltt_event_get_long_unsigned(e,f));
-      break;
-
-    case LTT_STRING:
-      g_string_append_printf(s, " \"%s\"", ltt_event_get_string(e,f));
-      break;
-
-    case LTT_ENUM:
-      g_string_append_printf(s, " %s", 
-          g_quark_to_string(ltt_enum_string_get(type,
-          ltt_event_get_unsigned(e,f)-1)));
-      break;
-
-    case LTT_ARRAY:
-    case LTT_SEQUENCE:
-      g_string_append_printf(s, " {");
-      nb = ltt_event_field_element_number(e,f);
-      element = ltt_field_element(f);
-      for(i = 0 ; i < nb ; i++) {
-        ltt_event_field_element_select(e,f,i);
-        print_field(e, element, s, field_names);
-      }
-      g_string_append_printf(s, " }");
-      break;
-
-    case LTT_STRUCT:
-      g_string_append_printf(s, " {");
-      nb = ltt_type_member_number(type);
-      for(i = 0 ; i < nb ; i++) {
-        element = ltt_field_member(f,i);
-        if(field_names) {
-          ltt_type_member_type(type, i, &name);
-          g_string_append_printf(s, " %s = ", g_quark_to_string(name));
-        }
-        print_field(e, element, s, field_names);
-      }
-      g_string_append_printf(s, " }");
-      break;
-
-    case LTT_UNION:
-      g_string_append_printf(s, " {");
-      nb = ltt_type_member_number(type);
-      for(i = 0 ; i < nb ; i++) {
-        element = ltt_field_member(f,i);
-        if(field_names) {
-          ltt_type_member_type(type, i, &name);
-          g_string_append_printf(s, " %s = ", g_quark_to_string(name));
-        }
-        print_field(e, element, s, field_names);
-      }
-      g_string_append_printf(s, " }");
-      break;
-
-  }
-}
-
-
-void lttv_event_to_string(LttEvent *e, GString *s,
-    gboolean mandatory_fields, gboolean field_names, LttvTracefileState *tfs)
-{ 
-  LttFacility *facility;
-
-  LttEventType *event_type;
-
-  LttType *type;
-
-  LttField *field;
-
-  LttTime time;
-
-  guint cpu = ltt_tracefile_num(tfs->parent.tf);
-  LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
-  LttvProcessState *process = ts->running_process[cpu];
-
-  g_string_set_size(s,0);
-
-  facility = ltt_event_facility(e);
-  event_type = ltt_event_eventtype(e);
-  field = ltt_event_field(e);
-
-  if(mandatory_fields) {
-    time = ltt_event_time(e);
-    g_string_append_printf(s,"%s.%s: %ld.%09ld (%s)",
-        g_quark_to_string(ltt_facility_name(facility)),
-        g_quark_to_string(ltt_eventtype_name(event_type)),
-        (long)time.tv_sec, time.tv_nsec,
-        g_quark_to_string(ltt_tracefile_name(tfs->parent.tf)));
-    /* Print the process id and the state/interrupt type of the process */
-    g_string_append_printf(s,", %u, %u,  %s", process->pid,
-		    process->ppid,
-		    g_quark_to_string(process->state->t));
-  }
-
-  if(field)
-    print_field(e, field, s, field_names);
-} 
 
 
 static void 
@@ -376,7 +251,7 @@ static int write_event_content(void *hook_data, void *call_data)
    */
   if(filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-                               tfc->t_context->t,process,tfc))
+                               tfc->t_context->t,tfc))
       return FALSE;
   
   lttv_event_to_string(e, a_string, TRUE, a_field_names, tfs);
@@ -455,7 +330,6 @@ static void init()
       LTTV_PRIO_DEFAULT);
 }
 
-
 static void destroy()
 {
   g_info("Destroy textDump");
@@ -484,5 +358,5 @@ static void destroy()
 
 LTTV_MODULE("textDump", "Print events in a file", \
 	    "Produce a detailed text printout of a trace", \
-	    init, destroy, "stats", "batchAnalysis", "option")
+	    init, destroy, "stats", "batchAnalysis", "option", "print")
 

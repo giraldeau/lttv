@@ -1544,7 +1544,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
       /* 1.1. Use current postition as start position */
       if(events_request->start_position != NULL)
         lttv_traceset_context_position_destroy(events_request->start_position);
-      events_request->start_position = lttv_traceset_context_position_new();
+      events_request->start_position = lttv_traceset_context_position_new(tsc);
       lttv_traceset_context_position_save(tsc, events_request->start_position);
 
       /* 1.2. Remove start time */

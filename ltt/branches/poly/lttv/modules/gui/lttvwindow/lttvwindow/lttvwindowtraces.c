@@ -428,6 +428,11 @@ void lttvwindowtraces_background_notify_queue
                                 &value));
   slist = (GSList**)(value.v_pointer);
  
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_COMPUTATION_TRACESET_CONTEXT,
+                                LTTV_POINTER,
+                                &value));
+  LttvTracesetContext *tsc = (LttvTracesetContext*)(value.v_pointer);
 
   bg_notify = g_new(BackgroundNotify,1);
 
@@ -435,7 +440,7 @@ void lttvwindowtraces_background_notify_queue
   bg_notify->trace = trace;
   bg_notify->notify_time = notify_time;
   if(notify_position != NULL) {
-    bg_notify->notify_position = lttv_traceset_context_position_new();
+    bg_notify->notify_position = lttv_traceset_context_position_new(tsc);
     lttv_traceset_context_position_copy(bg_notify->notify_position,
                                         notify_position);
   } else {
@@ -477,13 +482,20 @@ void lttvwindowtraces_background_notify_current
                                 &value));
   slist = (GSList**)(value.v_pointer);
 
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_COMPUTATION_TRACESET_CONTEXT,
+                                LTTV_POINTER,
+                                &value));
+  LttvTracesetContext *tsc = (LttvTracesetContext*)(value.v_pointer);
+
+
   bg_notify = g_new(BackgroundNotify,1);
 
   bg_notify->owner = owner;
   bg_notify->trace = trace;
   bg_notify->notify_time = notify_time;
   if(notify_position!= NULL) {
-    bg_notify->notify_position = lttv_traceset_context_position_new();
+    bg_notify->notify_position = lttv_traceset_context_position_new(tsc);
     lttv_traceset_context_position_copy(bg_notify->notify_position,
                                         notify_position);
   } else {

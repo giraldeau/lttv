@@ -534,7 +534,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       
       hashed_process_data = processlist_get_process_data(process_list,
               pid_in,
-              process->cpu,
+              ltt_tracefile_num(tfc->tf),
               &birth,
               tfc->t_context->index);
       if(hashed_process_data == NULL)
@@ -546,7 +546,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         processlist_add(process_list,
             drawing,
             pid_in,
-            process->cpu,
+            ltt_tracefile_num(tfc->tf),
             process->ppid,
             &birth,
             tfc->t_context->index,
@@ -668,7 +668,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                                  &hashed_process_data->next_good_time);
         }
       }
-    }
+    } else
+      g_warning("Cannot find pin_in in schedchange %u", pid_in);
   }
   return 0;
 
