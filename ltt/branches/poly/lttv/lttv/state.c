@@ -887,6 +887,25 @@ free_name_tables(LttvTraceState *tcs)
   g_free(name_tables);
 } 
 
+#ifdef HASH_TABLE_DEBUG
+
+static void test_process(gpointer key, gpointer value, gpointer user_data)
+{
+  LttvProcessState *process = (LttvProcessState *)value;
+  
+  /* Test for process corruption */
+  guint stack_len = process->execution_stack->len;
+}
+
+static void hash_table_check(GHashTable *table)
+{
+  g_hash_table_foreach(table, test_process, NULL);
+}
+
+
+#endif
+
+
 static void push_state(LttvTracefileState *tfs, LttvExecutionMode t, 
     guint state_id)
 {
@@ -894,6 +913,10 @@ static void push_state(LttvTracefileState *tfs, LttvExecutionMode t,
   
   guint cpu = ltt_tracefile_num(tfs->parent.tf);
   LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
+
+#ifdef HASH_TABLE_DEBUG
+  hash_table_check(ts->processes);
+#endif
   LttvProcessState *process = ts->running_process[cpu];
 
   guint depth = process->execution_stack->len;
@@ -1224,14 +1247,25 @@ static gboolean process_fork(void *hook_data, void *call_data)
   f = thf->f2;
   child_pid = ltt_event_get_unsigned(e, f);
 
+  /* Mathieu : it seems like the process might have been scheduled in before the
+   * fork, and, in a rare case, might be the current process. This might happen
+   * in a SMP case where we don't have enough precision on the clocks */
+#if 0
   zombie_process = lttv_state_find_process(ts, ANY_CPU, child_pid);
 
   if(unlikely(zombie_process != NULL)) {
     /* Reutilisation of PID. Only now we are sure that the old PID
      * has been released. FIXME : should know when release_task happens instead.
      */
+    guint num_cpus = ltt_trace_get_num_cpu(ts->parent.t);
+    guint i;
+    for(i=0; i< num_cpus; i++) {
+      g_assert(process != ts->running_process[i]);
+    }
+
     exit_process(s, zombie_process);
   }
+#endif //0
   g_assert(process->pid != child_pid);
   // FIXME : Add this test in the "known state" section
   // g_assert(process->pid == parent_pid);
@@ -1274,6 +1308,8 @@ static gboolean process_free(void *hook_data, void *call_data)
 
   /* PID of the process to release */
   release_pid = ltt_event_get_unsigned(e, thf->f1);
+  
+  g_assert(release_pid != 0);
 
   process = lttv_state_find_process(ts, ANY_CPU, release_pid);
 
