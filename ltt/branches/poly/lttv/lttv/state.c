@@ -1238,6 +1238,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
   guint cpu = ltt_tracefile_num(s->parent.tf);
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
+  LttvProcessState *child_process;
 
   /* Parent PID */
   f = thf->f1;
@@ -1269,7 +1270,18 @@ static gboolean process_fork(void *hook_data, void *call_data)
   g_assert(process->pid != child_pid);
   // FIXME : Add this test in the "known state" section
   // g_assert(process->pid == parent_pid);
-  lttv_state_create_process(ts, process, cpu, child_pid, &s->parent.timestamp);
+  child_process = lttv_state_find_process(ts, ANY_CPU, child_pid);
+  if(child_process == NULL) {
+    lttv_state_create_process(ts, process, cpu,
+                              child_pid, &s->parent.timestamp);
+  } else {
+    /* The process has already been created :  due to time imprecision between
+     * multiple CPUs : it has been scheduled in before creation.
+     *
+     * Simply put a correct parent.
+     */
+    child_process->ppid = process->pid;
+  }
 
   return FALSE;
 }
