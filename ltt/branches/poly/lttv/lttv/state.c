@@ -1597,6 +1597,15 @@ static gboolean state_save_event_hook(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean state_save_after_trace_hook(void *hook_data, void *call_data)
+{
+  LttvTraceState *tcs = (LttvTraceState *)(call_data);
+  
+  *(tcs->max_time_state_recomputed_in_seek) = tcs->parent.time_span.end_time;
+
+  return FALSE;
+}
+
 #if 0
 static gboolean block_start(void *hook_data, void *call_data)
 {
@@ -1745,6 +1754,10 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
 
     }
   }
+  
+  lttv_process_traceset_begin(&self->parent,
+                NULL, NULL, NULL, NULL, NULL);
+  
 }
 
 gint lttv_state_save_hook_add_event_hooks(void *hook_data, void *call_data)
@@ -1805,7 +1818,19 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
 
   LttvTracefileState *tfs;
 
+  LttvHooks *after_trace = lttv_hooks_new();
+  
+  lttv_hooks_add(after_trace,
+                 state_save_after_trace_hook,
+                 NULL,
+                 LTTV_PRIO_STATE);
+
+  
+  lttv_process_traceset_end(&self->parent,
+                NULL, after_trace, NULL, NULL, NULL);
  
+  lttv_hooks_destroy(after_trace);
+  
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
 
@@ -1820,7 +1845,6 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
                                           LttvTracefileContext*, j));
       event_count = lttv_hooks_remove(tfs->parent.event,
                         state_save_event_hook);
-
     }
     g_free(event_count);
   }

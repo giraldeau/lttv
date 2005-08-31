@@ -134,6 +134,8 @@ static void lttv_traceset_context_compute_time_span(
     trace = tc->t;
 
     ltt_trace_time_span_get(trace, &s, &e);
+    tc->time_span.start_time = s;
+    tc->time_span.end_time = e;
 
     if(i==0){
       time_span->start_time = s;

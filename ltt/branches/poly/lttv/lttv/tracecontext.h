@@ -147,6 +147,7 @@ struct _LttvTraceContext {
   GArray *tracefiles;
   LttvAttribute *a;
   LttvAttribute *t_a;
+  TimeInterval time_span;
 };
 
 struct _LttvTraceContextClass {
