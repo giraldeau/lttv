@@ -1431,7 +1431,7 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
         if(ret == ERANGE) goto range; /* ERANGE or EPERM */
         else if(ret) goto fail;
 
-        if(ltt_time_compare(time, tf->event.event_time) >= 0)
+        if(ltt_time_compare(time, tf->event.event_time) <= 0)
           goto found;
       }
 
@@ -1448,7 +1448,7 @@ int ltt_tracefile_seek_time(LttTracefile *tf, LttTime time)
         if(ret == ERANGE) goto range; /* ERANGE or EPERM */
         else if(ret) goto fail;
 
-        if(ltt_time_compare(time, tf->event.event_time) >= 0)
+        if(ltt_time_compare(time, tf->event.event_time) <= 0)
           break;
       }
       goto found;
