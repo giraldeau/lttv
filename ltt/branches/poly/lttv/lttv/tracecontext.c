@@ -1458,7 +1458,8 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
     }
     /* if we have the same time twice, it means we are at the beginning of the
      * trace, and we seek back at the same position */
-    if(ltt_time_compare(last_time, time) == 0) break;
+    if(ltt_time_compare(last_time, time) == 0 
+        && ltt_time_compare(time, self->time_span.start_time) == 0) break;
     last_time = time;
 
     /* Process the traceset, calling a hook which adds events 
