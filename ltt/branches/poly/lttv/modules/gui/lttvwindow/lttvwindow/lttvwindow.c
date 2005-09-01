@@ -1027,11 +1027,12 @@ LttTime lttvwindow_get_current_time(Tab *tab)
  * @param main_win, the main window the viewer belongs to.
  * @param filter, a pointer to a filter.
  */
-
+#if 0
 LttvFilter *lttvwindow_get_filter(Tab *tab)
 {
   return tab->filter;
 }
+#endif //0
 
 /**
  * Function to set the filter of the current tab.

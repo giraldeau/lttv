@@ -499,7 +499,8 @@ callback_process_button(GtkWidget *widget, gpointer data) {
     GString* s = g_string_new(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
     lttv_filter_append_expression(filter,s->str);
     g_string_free(s,TRUE);
-    SetFilter(fvd->tab,filter);
+    //SetFilter(fvd->tab,filter);
+    lttvwindow_report_filter(fvd->tab, filter);
   }
 }
 

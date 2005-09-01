@@ -125,6 +125,8 @@ typedef struct _EventViewerData {
   LttvTracesetContextPosition *first_event;  /* Time of the first event shown */
   LttvTracesetContextPosition *last_event;  /* Time of the first event shown */
 
+  LttvFilter *main_win_filter;
+
 } EventViewerData ;
 
 /** hook functions for update time interval, current time ... */
@@ -132,6 +134,7 @@ gboolean update_current_time(void * hook_data, void * call_data);
 gboolean update_current_position(void * hook_data, void * call_data);
 //gboolean show_event_detail(void * hook_data, void * call_data);
 gboolean traceset_changed(void * hook_data, void * call_data);
+gboolean filter_changed(void * hook_data, void * call_data);
 
 //! Event Viewer's constructor hook
 GtkWidget *h_gui_events(Tab *tab);
@@ -232,6 +235,8 @@ gui_events(Tab *tab)
                 update_current_position,event_viewer_data);
   lttvwindow_register_traceset_notify(tab, 
                 traceset_changed,event_viewer_data);
+  lttvwindow_register_filter_notify(tab,
+                filter_changed, event_viewer_data);
 
   event_viewer_data->scroll_win = gtk_scrolled_window_new (NULL, NULL);
   gtk_widget_show (event_viewer_data->scroll_win);
@@ -245,6 +250,8 @@ gui_events(Tab *tab)
     lttv_traceset_context_position_new(tsc);
   event_viewer_data->last_event =
     lttv_traceset_context_position_new(tsc);
+
+  event_viewer_data->main_win_filter = NULL;
 
   /* Create a model for storing the data list */
   event_viewer_data->store_m = gtk_list_store_new (
@@ -978,7 +985,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
     if(relative_position > 0) {
       guint count;
       count = lttv_process_traceset_seek_n_forward(tsc, relative_position,
-          lttvwindow_get_filter(event_viewer_data->tab));
+          event_viewer_data->main_win_filter);
     } else if(relative_position < 0) {
       guint count;
       
@@ -993,7 +1000,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
       count = lttv_process_traceset_seek_n_backward(tsc, abs(relative_position),
           time_diff,
           (seek_time_fct)lttv_state_traceset_seek_time_closest,
-          lttvwindow_get_filter(event_viewer_data->tab));
+          event_viewer_data->main_win_filter);
     } /* else 0 : do nothing : we are already at the beginning position */
 
     lttv_traceset_context_position_destroy(pos);
@@ -1078,7 +1085,7 @@ int event_hook(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext*)call_data;
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
 
-  LttvFilter *filter = lttvwindow_get_filter(event_viewer_data->tab);
+  LttvFilter *filter = event_viewer_data->main_win_filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
           tfc->t_context->t,tfc))
@@ -1225,6 +1232,19 @@ gboolean traceset_changed(void * hook_data, void * call_data)
   return FALSE;
 }
 
+gboolean filter_changed(void * hook_data, void * call_data)
+{
+  EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
+  LttvTracesetContext * tsc =
+        lttvwindow_get_traceset_context(event_viewer_data->tab);
+
+  event_viewer_data->main_win_filter = 
+    (LttvFilter*)call_data;
+  g_signal_emit_by_name(event_viewer_data->vadjust_c, "value-changed");
+
+  return FALSE;
+}
+
 
 
 
@@ -1260,6 +1280,8 @@ void gui_events_free(EventViewerData *event_viewer_data)
     //                    show_event_detail, event_viewer_data);
     lttvwindow_unregister_traceset_notify(tab,
                         traceset_changed, event_viewer_data);
+    lttvwindow_unregister_filter_notify(tab,
+                        filter_changed, event_viewer_data);
 
     g_event_viewer_data_list = g_slist_remove(g_event_viewer_data_list,
         event_viewer_data);

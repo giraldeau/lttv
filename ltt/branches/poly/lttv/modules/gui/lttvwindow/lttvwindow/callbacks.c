@@ -514,7 +514,7 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
  *  0 : filters updated
  *  1 : no filter hooks to update; not an error.
  */
-
+#if 0
 int SetFilter(Tab * tab, gpointer filter)
 {
   LttvHooks * tmp;
@@ -530,7 +530,7 @@ int SetFilter(Tab * tab, gpointer filter)
 
   return 0;
 }
-
+#endif //0
 
 
 /**
@@ -3238,6 +3238,8 @@ void time_change_manager               (Tab *tab,
   LttTime start_time = new_time_window.start_time;
   LttTime end_time = new_time_window.end_time;
 
+  g_assert(ltt_time_compare(start_time, end_time) < 0);
+  
   /* Set scrollbar */
   GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
   LttTime upper = ltt_time_sub(time_span.end_time, time_span.start_time);
