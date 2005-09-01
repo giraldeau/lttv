@@ -929,6 +929,13 @@ int event_hook(void *hook_data, void *call_data)
   EventViewerData *event_viewer_data = (EventViewerData*)hook_data;
   LttvTracefileContext *tfc = (LttvTracefileContext*)call_data;
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
+
+  LttvFilter *filter = lttvwindow_get_filter(event_viewer_data->tab);
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
+
   LttFacility *facility = ltt_event_facility(e);
   LttEventType *event_type = ltt_event_eventtype(e);
   LttField *field = ltt_event_field(e);
@@ -941,7 +948,7 @@ int event_hook(void *hook_data, void *call_data)
   GtkTreeIter iter;
 
   GString *desc = g_string_new("");
-
+  
   LttvTracesetContextPosition *pos =
     lttv_traceset_context_position_new(tfc->t_context->ts_context);
 
