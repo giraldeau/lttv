@@ -1248,7 +1248,7 @@ gint lttv_traceset_context_pos_pos_compare(
                                   const LttvTracesetContextPosition *pos2)
 {
   int i, j;
-  int ret;
+  int ret = 0;
   
   if(pos1->tfcp->len == 0) {
     if(pos2->tfcp->len == 0) return 0;
@@ -1410,6 +1410,7 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
     lttv_traceset_context_position_new(self);
   LttTime time;
   LttTime time_offset;
+  LttTime last_time = ltt_time_infinite;
   struct seek_back_data sd;
   LttvHooks *hooks = lttv_hooks_new();
   
@@ -1455,6 +1456,10 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
     if(ltt_time_compare(time, self->time_span.end_time) > 0) {
       time = self->time_span.end_time;
     }
+    /* if we have the same time twice, it means we are at the beginning of the
+     * trace, and we seek back at the same position */
+    if(ltt_time_compare(last_time, time) == 0) break;
+    last_time = time;
 
     /* Process the traceset, calling a hook which adds events 
      * to the array, overwriting the tail. It changes first_event and
