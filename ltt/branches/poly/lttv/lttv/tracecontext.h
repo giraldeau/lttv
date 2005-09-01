@@ -348,7 +348,7 @@ void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc);
 #define BACKWARD_SEEK_MUL 2 /* Multiplication factor of time_offset between
                                backward seek iterations */
 
-static const LttTime seek_back_default_offset = { 0, 1000000 };
+static const LttTime seek_back_default_offset = { 1, 0 };
 
 guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
                                            guint n,

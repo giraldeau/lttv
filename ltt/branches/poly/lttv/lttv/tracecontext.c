@@ -1409,8 +1409,8 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   LttvTracesetContextPosition *saved_pos =
     lttv_traceset_context_position_new(self);
   LttTime time;
+  LttTime asked_time;
   LttTime time_offset;
-  LttTime last_time = ltt_time_infinite;
   struct seek_back_data sd;
   LttvHooks *hooks = lttv_hooks_new();
   
@@ -1432,6 +1432,7 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   if(ltt_time_compare(time, self->time_span.end_time) > 0) {
     time = self->time_span.end_time;
   }
+  asked_time = time;
   time_offset = first_offset;
  
   lttv_hooks_add(hooks, seek_back_event_hook, &sd, LTTV_PRIO_DEFAULT);
@@ -1440,14 +1441,15 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
 
   while(1) {
     /* stop criteria : - n events found
-     *                 - time < beginning of trace */
-    if(ltt_time_compare(time, self->time_span.start_time) < 0) break;
+     *                 - asked_time < beginning of trace */
+    if(ltt_time_compare(asked_time, self->time_span.start_time) < 0) break;
 
     lttv_traceset_context_position_copy(end_pos, next_iter_end_pos);
 
     /* We must seek the traceset back to time - time_offset */
     /* this time becomes the new reference time */
     time = ltt_time_sub(time, time_offset);
+    asked_time = time;
     
     time_seeker(self, time);
     lttv_traceset_context_position_save(self, next_iter_end_pos);
@@ -1456,11 +1458,6 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
     if(ltt_time_compare(time, self->time_span.end_time) > 0) {
       time = self->time_span.end_time;
     }
-    /* if we have the same time twice, it means we are at the beginning of the
-     * trace, and we seek back at the same position */
-    if(ltt_time_compare(last_time, time) == 0 
-        && ltt_time_compare(time, self->time_span.start_time) == 0) break;
-    last_time = time;
 
     /* Process the traceset, calling a hook which adds events 
      * to the array, overwriting the tail. It changes first_event and
