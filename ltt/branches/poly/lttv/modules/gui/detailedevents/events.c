@@ -715,7 +715,7 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection,
 {
   g_debug("tree sel changed cb");
   EventViewerData *event_viewer_data = (EventViewerData*) data;
-
+#if 0
     /* Set the cursor to currently selected event */
   GtkTreeModel* model = GTK_TREE_MODEL(event_viewer_data->store_m);
   GtkTreeIter iter;
@@ -743,6 +743,7 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection,
     }
    gtk_tree_path_free(tree_path);
   }
+#endif //0
 }
 
 
@@ -962,6 +963,8 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
       /* There is nothing in the list : simply seek to the time value. */
       lttv_state_traceset_seek_time_closest((LttvTracesetState*)tsc,
           time);
+      lttv_process_traceset_middle(tsc, time, G_MAXUINT,
+                                   NULL);
     }
     
   /* Note that, as we mess with the tsc position, this function CANNOT be called
@@ -984,10 +987,30 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
     } /* else 0 : do nothing : we are already at the beginning position */
 
     lttv_traceset_context_position_destroy(pos);
+
+    /* Save the first event position */
+    lttv_traceset_context_position_save(tsc, event_viewer_data->first_event);
+    
+    time = lttv_traceset_context_position_get_time(
+                                            event_viewer_data->first_event);
+    LttTime time_val = ltt_time_sub(time,
+                        tsc->time_span.start_time);
+    event_viewer_data->previous_value = ltt_time_to_double(time_val);
+    
+    lttv_state_traceset_seek_time_closest((LttvTracesetState*)tsc, time);
+    lttv_process_traceset_middle(tsc, ltt_time_infinite, G_MAXUINT,
+                                 event_viewer_data->first_event);
+
   } else {
     /* Seek by time */
     lttv_state_traceset_seek_time_closest((LttvTracesetState*)tsc,
           time);
+    lttv_process_traceset_middle(tsc, time, G_MAXUINT,
+                                 NULL);
+    LttTime time_val = ltt_time_sub(time,
+                        tsc->time_span.start_time);
+    event_viewer_data->previous_value = ltt_time_to_double(time_val);
+    lttv_traceset_context_position_save(tsc, event_viewer_data->first_event);
   }
  
   /* Clear the model (don't forget to free the TCS positions!) */
@@ -1000,13 +1023,6 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   }
   g_ptr_array_set_size(event_viewer_data->pos, 0);
   
-  /* Save the first event position */
-  lttv_traceset_context_position_save(tsc, event_viewer_data->first_event);
-  
-  time = ltt_time_sub(
-      lttv_traceset_context_position_get_time(event_viewer_data->first_event),
-                      tsc->time_span.start_time);
-  event_viewer_data->previous_value = ltt_time_to_double(time);
 
   /* Mathieu :
    * I make the choice not to use the mainwindow lttvwindow API here : it will
@@ -1015,7 +1031,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
    * seek time closest for nothing, as we only have few events to read. 
    */
   /* FIXME : use seek time closest and middle to have a good state. */
-
+  
   lttv_process_traceset_begin(tsc,
       NULL, NULL, NULL, event_viewer_data->event_hooks, NULL);
   
@@ -1037,8 +1053,8 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   gtk_adjustment_set_value(event_viewer_data->vadjust_c,
       event_viewer_data->previous_value);
   
-  g_signal_emit_by_name(G_OBJECT (event_viewer_data->select_c),
-      "changed");
+  //g_signal_emit_by_name(G_OBJECT (event_viewer_data->select_c),
+  //    "changed");
   
 
   return;
