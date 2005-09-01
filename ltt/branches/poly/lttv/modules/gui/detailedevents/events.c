@@ -981,8 +981,18 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
           lttvwindow_get_filter(event_viewer_data->tab));
     } else if(relative_position < 0) {
       guint count;
+      
+      /* Get an idea of currently shown event dispersion */
+      LttTime first_event_time =
+        lttv_traceset_context_position_get_time(event_viewer_data->first_event);
+      LttTime last_event_time =
+        lttv_traceset_context_position_get_time(event_viewer_data->last_event);
+      LttTime time_diff = ltt_time_sub(last_event_time, first_event_time);
+      if(ltt_time_compare(time_diff, ltt_time_zero) == 0)
+        time_diff = seek_back_default_offset;
       count = lttv_process_traceset_seek_n_backward(tsc, abs(relative_position),
-          seek_back_default_offset, lttv_process_traceset_seek_time,
+          time_diff,
+          (seek_time_fct)lttv_state_traceset_seek_time_closest,
           lttvwindow_get_filter(event_viewer_data->tab));
     } /* else 0 : do nothing : we are already at the beginning position */
 
@@ -1040,7 +1050,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   lttv_process_traceset_end(tsc,
       NULL, NULL, NULL, event_viewer_data->event_hooks, NULL);
   
-  /* Get the end position time */
+  /* Get the end position */
   if(event_viewer_data->pos->len > 0) {
     LttvTracesetContextPosition *cur_pos = 
       (LttvTracesetContextPosition*)g_ptr_array_index(event_viewer_data->pos,
