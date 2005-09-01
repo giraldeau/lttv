@@ -909,6 +909,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
    * we are already at the right read position. It would be costier to use the
    * seek time closest for nothing, as we only have few events to read. 
    */
+  /* FIXME : use seek time closest and middle to have a good state. */
 
   lttv_process_traceset_begin(tsc,
       NULL, NULL, NULL, event_viewer_data->event_hooks, NULL);
@@ -951,6 +952,8 @@ int event_hook(void *hook_data, void *call_data)
   
   LttvTracesetContextPosition *pos =
     lttv_traceset_context_position_new(tfc->t_context->ts_context);
+
+  lttv_traceset_context_position_save(tfc->t_context->ts_context, pos);
 
   if(field)
     lttv_print_field(e, field, desc, TRUE);
