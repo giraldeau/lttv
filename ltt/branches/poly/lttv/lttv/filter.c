@@ -53,7 +53,7 @@
  *    |->execution_mode (LttvExecutionMode)
  *    |->execution_submode (LttvExecutionSubmode)
  *    |->process_status (LttvProcessStatus)
- *    |->cpu (GQuark)
+ *    |->cpu (guint)
  *  \endverbatim
  */
 
@@ -259,7 +259,6 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
      case LTTV_FILTER_TRACEFILE_NAME:
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_EVENT_NAME:
-     case LTTV_FILTER_STATE_CPU:
      case LTTV_FILTER_STATE_EX_MODE:
      case LTTV_FILTER_STATE_EX_SUBMODE:
      case LTTV_FILTER_STATE_P_STATUS:
@@ -278,8 +277,6 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
      /* 
       * integer
       */
-     case LTTV_FILTER_STATE_PID:
-     case LTTV_FILTER_STATE_PPID:
      case LTTV_FILTER_EVENT_TSC:
        switch(op) {
          case LTTV_FIELD_EQ:
@@ -305,6 +302,37 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
            return FALSE;
        }
        break;
+     /* 
+      * 32 bits unsigned integers
+      */
+     case LTTV_FILTER_STATE_CPU:
+     case LTTV_FILTER_STATE_PID:
+     case LTTV_FILTER_STATE_PPID:
+       switch(op) {
+         case LTTV_FIELD_EQ:
+           se->op = lttv_apply_op_eq_uint32;
+           break;
+         case LTTV_FIELD_NE:
+           se->op = lttv_apply_op_ne_uint32;
+           break;
+         case LTTV_FIELD_LT:
+           se->op = lttv_apply_op_lt_uint32;
+           break;
+         case LTTV_FIELD_LE:
+           se->op = lttv_apply_op_le_uint32;
+           break;
+         case LTTV_FIELD_GT:
+           se->op = lttv_apply_op_gt_uint32;
+           break;
+         case LTTV_FIELD_GE:
+           se->op = lttv_apply_op_ge_uint32;
+           break;
+         default:
+           g_warning("Error encountered in operator assignment");
+           return FALSE;
+       }
+       break;
+
      /*
       * Enums
       * Entered as string, converted to enum
@@ -390,7 +418,6 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
      case LTTV_FILTER_TRACEFILE_NAME:
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_EVENT_NAME:
-     case LTTV_FILTER_STATE_CPU:
      case LTTV_FILTER_STATE_EX_MODE:
      case LTTV_FILTER_STATE_EX_SUBMODE:
      case LTTV_FILTER_STATE_P_STATUS:
@@ -401,10 +428,17 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
      /* 
       * integer -- supposed to be uint64
       */
-     case LTTV_FILTER_STATE_PID:
-     case LTTV_FILTER_STATE_PPID:
      case LTTV_FILTER_EVENT_TSC:
        se->value.v_uint64 = atoi(value);
+       g_free(value);
+       break;
+     /*
+      * 32 bits integer
+      */
+     case LTTV_FILTER_STATE_PID:
+     case LTTV_FILTER_STATE_PPID:
+     case LTTV_FILTER_STATE_CPU:
+       se->value.v_uint32 = atoi(value);
        g_free(value);
        break;
      /*
@@ -1655,13 +1689,9 @@ lttv_filter_tree_parse(
 
   LttvProcessState* state;
   
-  if(LTTV_IS_TRACESET_STATE(context)) {
-    guint cpu = ltt_tracefile_num(context->tf);
-    LttvTraceState *ts = (LttvTraceState*)context->t_context;
-    state = ts->running_process[cpu];
-  } else {
-    state = NULL;
-  }
+  guint cpu = ltt_tracefile_num(context->tf);
+  LttvTraceState *ts = (LttvTraceState*)context->t_context;
+  state = ts->running_process[cpu];
   
   /*
    * Parse left branch
