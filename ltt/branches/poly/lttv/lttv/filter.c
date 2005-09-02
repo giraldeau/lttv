@@ -45,8 +45,8 @@
  *  |->trace
  *  | |->name (String, converted to GQuark)
  *  |->state
- *    |->pid (uint64)
- *    |->ppid (uint64)
+ *    |->pid (guint)
+ *    |->ppid (guint)
  *    |->creation_time (LttTime)
  *    |->insertion_time (LttTime)
  *    |->process_name (String, converted to GQuark)
@@ -303,29 +303,29 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
        }
        break;
      /* 
-      * 32 bits unsigned integers
+      * unsigned integers
       */
      case LTTV_FILTER_STATE_CPU:
      case LTTV_FILTER_STATE_PID:
      case LTTV_FILTER_STATE_PPID:
        switch(op) {
          case LTTV_FIELD_EQ:
-           se->op = lttv_apply_op_eq_uint32;
+           se->op = lttv_apply_op_eq_uint;
            break;
          case LTTV_FIELD_NE:
-           se->op = lttv_apply_op_ne_uint32;
+           se->op = lttv_apply_op_ne_uint;
            break;
          case LTTV_FIELD_LT:
-           se->op = lttv_apply_op_lt_uint32;
+           se->op = lttv_apply_op_lt_uint;
            break;
          case LTTV_FIELD_LE:
-           se->op = lttv_apply_op_le_uint32;
+           se->op = lttv_apply_op_le_uint;
            break;
          case LTTV_FIELD_GT:
-           se->op = lttv_apply_op_gt_uint32;
+           se->op = lttv_apply_op_gt_uint;
            break;
          case LTTV_FIELD_GE:
-           se->op = lttv_apply_op_ge_uint32;
+           se->op = lttv_apply_op_ge_uint;
            break;
          default:
            g_warning("Error encountered in operator assignment");
@@ -433,12 +433,12 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
        g_free(value);
        break;
      /*
-      * 32 bits integer
+      * unsigned integers
       */
      case LTTV_FILTER_STATE_PID:
      case LTTV_FILTER_STATE_PPID:
      case LTTV_FILTER_STATE_CPU:
-       se->value.v_uint32 = atoi(value);
+       se->value.v_uint = atoi(value);
        g_free(value);
        break;
      /*
@@ -547,6 +547,22 @@ lttv_struct_type(gint ft) {
 }
 
 /**
+ *  @fn gboolean lttv_apply_op_eq_uint(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_eq_uint(const gpointer v1, LttvFieldValue v2) {
+
+  guint* r = (guint*) v1;
+  return (*r == v2.v_uint);
+  
+}
+
+/**
  *  @fn gboolean lttv_apply_op_eq_uint64(gpointer,LttvFieldValue) 
  * 
  *  Applies the 'equal' operator to the
@@ -647,6 +663,19 @@ gboolean lttv_apply_op_eq_ltttime(const gpointer v1, LttvFieldValue v2) {
   return ltt_time_compare(*r, v2.v_ltttime)==0?1:0;
 }
 
+/**
+ *  @fn gboolean lttv_apply_op_ne_uint(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'not equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ne_uint(const gpointer v1, LttvFieldValue v2) {
+  guint* r = (guint*) v1;
+  return (*r != v2.v_uint);
+}
 
 /**
  *  @fn gboolean lttv_apply_op_ne_uint64(gpointer,LttvFieldValue) 
@@ -747,6 +776,19 @@ gboolean lttv_apply_op_ne_ltttime(const gpointer v1, LttvFieldValue v2) {
   return ltt_time_compare(*r, v2.v_ltttime)!=0?1:0;
 }
 
+/**
+ *  @fn gboolean lttv_apply_op_lt_uint(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'lower than' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_lt_uint(const gpointer v1, LttvFieldValue v2) {
+  guint* r = (guint*) v1;
+  return (*r < v2.v_uint);
+}
 
 /**
  *  @fn gboolean lttv_apply_op_lt_uint64(gpointer,LttvFieldValue) 
@@ -819,6 +861,19 @@ gboolean lttv_apply_op_lt_ltttime(const gpointer v1, LttvFieldValue v2) {
   return ltt_time_compare(*r, v2.v_ltttime)==-1?1:0;
 }
 
+/**
+ *  @fn gboolean lttv_apply_op_le_uint(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'lower or equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_le_uint(const gpointer v1, LttvFieldValue v2) {
+  guint* r = (guint*) v1;
+  return (*r <= v2.v_uint);
+}
 
 /**
  *  @fn gboolean lttv_apply_op_le_uint64(gpointer,LttvFieldValue) 
@@ -893,6 +948,20 @@ gboolean lttv_apply_op_le_ltttime(const gpointer v1, LttvFieldValue v2) {
 
 
 /**
+ *  @fn gboolean lttv_apply_op_gt_uint(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'greater than' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_gt_uint(const gpointer v1, LttvFieldValue v2) {
+  guint* r = (guint*) v1;
+  return (*r > v2.v_uint);
+}
+
+/**
  *  @fn gboolean lttv_apply_op_gt_uint64(gpointer,LttvFieldValue) 
  * 
  *  Applies the 'greater than' operator to the
@@ -963,6 +1032,19 @@ gboolean lttv_apply_op_gt_ltttime(const gpointer v1, LttvFieldValue v2) {
   return ltt_time_compare(*r, v2.v_ltttime)==1?1:0;
 }
 
+/**
+ *  @fn gboolean lttv_apply_op_ge_uint(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'greater or equal' operator to the
+ *  specified structure and value 
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ge_uint(const gpointer v1, LttvFieldValue v2) {
+  guint* r = (guint*) v1;
+  return (*r >= v2.v_uint);
+}
 
 /**
  *  @fn gboolean lttv_apply_op_ge_uint64(gpointer,LttvFieldValue) 
