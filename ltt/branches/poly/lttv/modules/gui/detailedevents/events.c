@@ -1565,6 +1565,8 @@ void gui_events_free(EventViewerData *event_viewer_data)
     lttvwindow_unregister_redraw_notify(tab,
                 redraw_notify, event_viewer_data);
 
+    lttvwindowtraces_background_notify_remove(event_viewer_data);
+
     g_event_viewer_data_list = g_slist_remove(g_event_viewer_data_list,
         event_viewer_data);
     g_free(event_viewer_data);
