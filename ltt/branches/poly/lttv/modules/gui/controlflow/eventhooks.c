@@ -113,7 +113,7 @@ gint background_ready(void *hook_data, void *call_data)
 /* Request background computation. Verify if it is in progress or ready first.
  * Only for each trace in the tab's traceset.
  */
-void request_background_data(ControlFlowData *control_flow_data)
+static void request_background_data(ControlFlowData *control_flow_data)
 {
   LttvTracesetContext * tsc =
         lttvwindow_get_traceset_context(control_flow_data->tab);
