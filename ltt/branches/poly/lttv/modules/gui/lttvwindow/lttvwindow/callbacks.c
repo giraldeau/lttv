@@ -49,7 +49,7 @@
 #include <lttvwindow/gtkdirsel.h>
 
 
-#define DEFAULT_TIME_WIDTH_S   1
+static LttTime lttvwindow_default_time_width = { 1, 0 };
 #define CLIP_BUF 256 // size of clipboard buffer
 
 extern LttvTrace *g_init_trace ;
@@ -421,12 +421,13 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
     new_current_time = time_span.start_time;
     
     LttTime tmp_time;
-
-    if(DEFAULT_TIME_WIDTH_S < time_span.end_time.tv_sec)
-      tmp_time.tv_sec = DEFAULT_TIME_WIDTH_S;
+    
+    if(ltt_time_compare(lttvwindow_default_time_width,
+          ltt_time_sub(time_span.end_time, time_span.start_time)) < 0)
+      tmp_time = lttvwindow_default_time_width;
     else
-      tmp_time.tv_sec = time_span.end_time.tv_sec;
-    tmp_time.tv_nsec = 0;
+      tmp_time = time_span.end_time;
+
     new_time_window.time_width = tmp_time ;
     new_time_window.time_width_double = ltt_time_to_double(tmp_time);
     new_time_window.end_time = ltt_time_add(new_time_window.start_time,
@@ -4122,10 +4123,16 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     /* We can clone the filter, as we copy the trace set also */
     /* The filter must always be in sync with the trace set */
     tab->filter = lttv_filter_clone(copy_tab->filter);
-
+    tab->time_window = copy_tab->time_window;
+    tab->current_time = copy_tab->current_time;
   } else {
     tab->traceset_info->traceset = lttv_traceset_new();
     tab->filter = NULL;
+    tab->time_window.start_time = ltt_time_zero;
+    tab->time_window.time_width = lttvwindow_default_time_width;
+    tab->time_window.end_time = ltt_time_add(tab->time_window.start_time,
+        tab->time_window.time_width);
+    tab->current_time = ltt_time_zero;
   }
 
 #ifdef DEBUG
@@ -4184,11 +4191,7 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   tab->viewer_container = gtk_vbox_new(TRUE, 2);
   tab->scrollbar = gtk_hscrollbar_new(NULL);
   //tab->multivpaned = gtk_multi_vpaned_new();
-  tab->time_window.start_time = ltt_time_zero;
-  tab->time_window.end_time = ltt_time_zero;
-  tab->time_window.time_width = ltt_time_zero;
-  tab->current_time = ltt_time_zero;
-  
+ 
   gtk_box_pack_start(GTK_BOX(tab->vbox),
                      tab->viewer_container,
                      TRUE, /* expand */
