@@ -503,10 +503,6 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   time_change_manager(tab, new_time_window);
   current_time_change_manager(tab, new_current_time);
 
-  if(tab->filter)
-    lttv_filter_update(tab->filter);
- 
- 
   return retval;
 }
 
