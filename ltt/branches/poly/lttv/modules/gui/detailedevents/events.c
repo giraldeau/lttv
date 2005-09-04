@@ -1,5 +1,6 @@
 /* This file is part of the Linux Trace Toolkit viewer
  * Copyright (C) 2003-2004 Mathieu Desnoyers and XangXiu Yang
+ *               2005 Mathieu Desnoyers
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License Version 2 as
@@ -35,6 +36,8 @@
  *
  * Authors : Mathieu Desnoyers and XangXiu Yang, June to December 2003
  *           Inspired from original LTT, made by Karim Yaghmour
+ *
+ *           Mostly rewritten by Mathieu Desnoyers, August 2005.
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1132,6 +1135,15 @@ int event_hook(void *hook_data, void *call_data)
   
   g_string_free(desc, TRUE);
 
+  if(lttv_traceset_context_pos_pos_compare(pos, 
+        event_viewer_data->currently_selected_position) == 0) {
+    GtkTreePath *path = gtk_tree_path_new_from_indices(
+                        event_viewer_data->pos->len - 1, -1);
+    gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
+                           path, NULL, FALSE);
+    gtk_tree_path_free(path);
+  }
+
   if(event_viewer_data->pos->len >= event_viewer_data->num_visible_events)
     return TRUE;
   else
@@ -1140,6 +1152,24 @@ int event_hook(void *hook_data, void *call_data)
 
 
 
+static void event_update_selection(EventViewerData *event_viewer_data)
+{
+  guint i;
+  GPtrArray *positions = event_viewer_data->pos;
+
+  for(i=0;i<positions->len;i++) {
+    LttvTracesetContextPosition *cur_pos = 
+      (LttvTracesetContextPosition*)g_ptr_array_index(positions, i);
+    if(lttv_traceset_context_pos_pos_compare(cur_pos, 
+          event_viewer_data->currently_selected_position) == 0) {
+      GtkTreePath *path = gtk_tree_path_new_from_indices(i, -1);
+      gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
+                             path, NULL, FALSE);
+      gtk_tree_path_free(path);
+    }
+  }
+}
+
 
 gboolean update_current_time(void * hook_data, void * call_data)
 {
@@ -1147,6 +1177,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
   const LttTime * current_time = (LttTime*)call_data;
   LttvTracesetContext * tsc =
         lttvwindow_get_traceset_context(event_viewer_data->tab);
+  GtkTreePath *path;
   
   /* If the currently selected event time != current time, set the first event
    * with this time as currently selected. */
@@ -1171,9 +1202,13 @@ gboolean update_current_time(void * hook_data, void * call_data)
     ||
      lttv_traceset_context_pos_pos_compare(
         event_viewer_data->currently_selected_position,
-        event_viewer_data->last_event) > 0)
+        event_viewer_data->last_event) > 0) {
     gtk_adjustment_set_value(event_viewer_data->vadjust_c, new_value);
- 
+  } else {
+      /* Simply update the current time : it is in the list */
+      event_update_selection(event_viewer_data);
+  }
+  
   return FALSE;
 }
 
@@ -1203,6 +1238,9 @@ gboolean update_current_position(void * hook_data, void * call_data)
       time = ltt_time_sub(time, tsc->time_span.start_time);
       double new_value = ltt_time_to_double(time);
       gtk_adjustment_set_value(event_viewer_data->vadjust_c, new_value);
+    } else {
+      /* Simply update the current time : it is in the list */
+      event_update_selection(event_viewer_data);
     }
 
   }
