@@ -63,6 +63,7 @@
 #include <lttv/filter.h>
 #include <lttv/print.h>
 #include <lttvwindow/lttvwindow.h>
+#include <lttvwindow/lttvwindowtraces.h>
 
 #include "hGuiEventsInsert.xpm"
 
@@ -132,6 +133,8 @@ typedef struct _EventViewerData {
 
   LttvFilter *main_win_filter;
 
+  gint background_info_waiting;
+
 } EventViewerData ;
 
 /** hook functions for update time interval, current time ... */
@@ -140,6 +143,8 @@ gboolean update_current_position(void * hook_data, void * call_data);
 //gboolean show_event_detail(void * hook_data, void * call_data);
 gboolean traceset_changed(void * hook_data, void * call_data);
 gboolean filter_changed(void * hook_data, void * call_data);
+
+static void request_background_data(EventViewerData *event_viewer_data);
 
 //! Event Viewer's constructor hook
 GtkWidget *h_gui_events(Tab *tab);
@@ -169,6 +174,7 @@ static void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data);
 static void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1,
     gint arg2, gpointer data);
 
+static gint redraw_notify(void *hook_data, void *call_data);
 
 static void get_events(double time, EventViewerData *event_viewer_data);
 
@@ -242,6 +248,9 @@ gui_events(Tab *tab)
                 traceset_changed,event_viewer_data);
   lttvwindow_register_filter_notify(tab,
                 filter_changed, event_viewer_data);
+  lttvwindow_register_redraw_notify(tab,
+                redraw_notify, event_viewer_data);
+  
 
   event_viewer_data->scroll_win = gtk_scrolled_window_new (NULL, NULL);
   gtk_widget_show (event_viewer_data->scroll_win);
@@ -483,11 +492,88 @@ gui_events(Tab *tab)
       event_viewer_data,
       (GDestroyNotify)gui_events_free);
   
+  event_viewer_data->background_info_waiting = 0;
+
+  request_background_data(event_viewer_data);
+  
 
   return event_viewer_data;
 }
 
 
+
+static gint background_ready(void *hook_data, void *call_data)
+{
+  EventViewerData *event_viewer_data = (EventViewerData *)hook_data;
+  LttvTrace *trace = (LttvTrace*)call_data;
+
+  event_viewer_data->background_info_waiting--;
+
+  if(event_viewer_data->background_info_waiting == 0) {
+    g_message("event viewer : background computation data ready.");
+
+    redraw_notify(event_viewer_data, NULL);
+  }
+
+  return 0;
+}
+
+
+static void request_background_data(EventViewerData *event_viewer_data)
+{
+  LttvTracesetContext * tsc =
+        lttvwindow_get_traceset_context(event_viewer_data->tab);
+  gint num_traces = lttv_traceset_number(tsc->ts);
+  gint i;
+  LttvTrace *trace;
+
+  LttvHooks *background_ready_hook = 
+    lttv_hooks_new();
+  lttv_hooks_add(background_ready_hook, background_ready, event_viewer_data,
+      LTTV_PRIO_DEFAULT);
+  event_viewer_data->background_info_waiting = 0;
+  
+  for(i=0;i<num_traces;i++) {
+    trace = lttv_traceset_get(tsc->ts, i);
+
+    if(lttvwindowtraces_get_ready(g_quark_from_string("state"),trace)==FALSE) {
+
+      if(lttvwindowtraces_get_in_progress(g_quark_from_string("state"),
+                                          trace) == FALSE) {
+        /* We first remove requests that could have been done for the same
+         * information. Happens when two viewers ask for it before servicing
+         * starts.
+         */
+        lttvwindowtraces_background_request_remove(trace, "state");
+        lttvwindowtraces_background_request_queue(trace,
+                                                  "state");
+        lttvwindowtraces_background_notify_queue(event_viewer_data,
+                                                 trace,
+                                                 ltt_time_infinite,
+                                                 NULL,
+                                                 background_ready_hook);
+        event_viewer_data->background_info_waiting++;
+      } else { /* in progress */
+      
+        lttvwindowtraces_background_notify_current(event_viewer_data,
+                                                   trace,
+                                                   ltt_time_infinite,
+                                                   NULL,
+                                                   background_ready_hook);
+        event_viewer_data->background_info_waiting++;
+      }
+    } else {
+      /* Data ready. Be its nature, this viewer doesn't need to have
+       * its data ready hook called htere, because a background
+       * request is always linked with a redraw.
+       */
+    }
+    
+  }
+
+  lttv_hooks_destroy(background_ready_hook);
+
+}
 
 static gboolean
 header_size_allocate(GtkWidget *widget,
@@ -1043,13 +1129,13 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   ScrollDirection direction;
   gint relative_position;
   
-  if(value < 0.0) {
+  if(value < -0.8) {
     if(value >= -1.0) direction = SCROLL_STEP_UP;
     else {
       if(value >= -2.0) direction = SCROLL_PAGE_UP;
       else direction = SCROLL_JUMP;
     }
-  } else if(value > 0.0) {
+  } else if(value > 0.8) {
     if(value <= 1.0) direction = SCROLL_STEP_DOWN;
     else {
       if(value <= 2.0) direction = SCROLL_PAGE_DOWN;
@@ -1436,8 +1522,12 @@ gboolean filter_changed(void * hook_data, void * call_data)
 }
 
 
+gint redraw_notify(void *hook_data, void *call_data)
+{
+  EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
 
-
+  get_events(event_viewer_data->vadjust_c->value, event_viewer_data);
+}
 
 void gui_events_free(EventViewerData *event_viewer_data)
 {
@@ -1472,6 +1562,8 @@ void gui_events_free(EventViewerData *event_viewer_data)
                         traceset_changed, event_viewer_data);
     lttvwindow_unregister_filter_notify(tab,
                         filter_changed, event_viewer_data);
+    lttvwindow_unregister_redraw_notify(tab,
+                redraw_notify, event_viewer_data);
 
     g_event_viewer_data_list = g_slist_remove(g_event_viewer_data_list,
         event_viewer_data);
