@@ -1250,11 +1250,13 @@ gint lttv_traceset_context_pos_pos_compare(
   int i, j;
   int ret = 0;
   
-  if(pos1->tfcp->len == 0) {
-    if(pos2->tfcp->len == 0) return 0;
-    else return 1;
+  if(ltt_time_compare(pos1->timestamp, ltt_time_infinite) == 0) {
+    if(ltt_time_compare(pos2->timestamp, ltt_time_infinite) == 0)
+      return 0;
+    else 
+      return 1;
   }
-  if(pos2->tfcp->len == 0)
+  if(ltt_time_compare(pos2->timestamp, ltt_time_infinite) == 0)
     return -1;
   
   for(i=0;i<pos1->tfcp->len;i++) {
