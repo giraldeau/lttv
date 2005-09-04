@@ -124,6 +124,8 @@ typedef struct _EventViewerData {
   gint num_visible_events;
   
   LttvTracesetContextPosition *currently_selected_position;
+  gboolean update_cursor; /* Speed optimisation : do not update cursor when 
+                             unnecessary */
 
   LttvTracesetContextPosition *first_event;  /* Time of the first event shown */
   LttvTracesetContextPosition *last_event;  /* Time of the first event shown */
@@ -255,6 +257,8 @@ gui_events(Tab *tab)
     lttv_traceset_context_position_new(tsc);
 
   event_viewer_data->main_win_filter = NULL;
+
+  event_viewer_data->update_cursor = TRUE;
 
   /* Create a model for storing the data list */
   event_viewer_data->store_m = gtk_list_store_new (
@@ -601,8 +605,10 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
           /* Must get down one event and select the last one */
           gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(
                 GTK_TREE_VIEW(event_viewer_data->tree_v)));
+          event_viewer_data->update_cursor = FALSE;
           gtk_adjustment_set_value(event_viewer_data->vadjust_c,
               gtk_adjustment_get_value(event_viewer_data->vadjust_c) + 1);
+          event_viewer_data->update_cursor = TRUE;
           path = gtk_tree_path_new_from_indices(
               event_viewer_data->pos->len - 1, -1);
           gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
@@ -629,8 +635,10 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
           /* Must get up one event and select the first one */
           gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(
                 GTK_TREE_VIEW(event_viewer_data->tree_v)));
+          event_viewer_data->update_cursor = FALSE;
           gtk_adjustment_set_value(event_viewer_data->vadjust_c,
               gtk_adjustment_get_value(event_viewer_data->vadjust_c) - 1);
+          event_viewer_data->update_cursor = TRUE;
           path = gtk_tree_path_new_from_indices(
               0, -1);
           gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
@@ -654,8 +662,10 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
           gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(
                 GTK_TREE_VIEW(event_viewer_data->tree_v)));
           
+          event_viewer_data->update_cursor = FALSE;
           gtk_adjustment_set_value(event_viewer_data->vadjust_c,
               gtk_adjustment_get_value(event_viewer_data->vadjust_c) + 2);
+          event_viewer_data->update_cursor = TRUE;
 
           path = gtk_tree_path_new_from_indices(
               event_viewer_data->pos->len - 1, -1);
@@ -679,8 +689,10 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
           gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(
                 GTK_TREE_VIEW(event_viewer_data->tree_v)));
           
+          event_viewer_data->update_cursor = FALSE;
           gtk_adjustment_set_value(event_viewer_data->vadjust_c,
               gtk_adjustment_get_value(event_viewer_data->vadjust_c) - 2);
+          event_viewer_data->update_cursor = TRUE;
 
           path = gtk_tree_path_new_from_indices(
               0, -1);
@@ -1169,12 +1181,10 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   
 
   /* Mathieu :
-   * I make the choice not to use the mainwindow lttvwindow API here : it will
-   * be faster to read the events ourself from lttv_process_traceset_middle, as
-   * we are already at the right read position. It would be costier to use the
-   * seek time closest for nothing, as we only have few events to read. 
+   * I make the choice not to use the mainwindow lttvwindow API here : the idle
+   * loop might have a too low priority, and we want good update while
+   * scrolling.
    */
-  /* FIXME : use seek time closest and middle to have a good state. */
   
   lttv_process_traceset_begin(tsc,
       NULL, NULL, NULL, event_viewer_data->event_hooks, NULL);
@@ -1259,15 +1269,17 @@ int event_hook(void *hook_data, void *call_data)
   
   g_string_free(desc, TRUE);
 
-  if(lttv_traceset_context_pos_pos_compare(pos, 
-        event_viewer_data->currently_selected_position) == 0) {
-    GtkTreePath *path = gtk_tree_path_new_from_indices(
-                        event_viewer_data->pos->len - 1, -1);
-    gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
-                           path, NULL, FALSE);
-    gtk_tree_path_free(path);
+  if(event_viewer_data->update_cursor) {
+    if(lttv_traceset_context_pos_pos_compare(pos, 
+          event_viewer_data->currently_selected_position) == 0) {
+      GtkTreePath *path = gtk_tree_path_new_from_indices(
+                          event_viewer_data->pos->len - 1, -1);
+      gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
+                             path, NULL, FALSE);
+      gtk_tree_path_free(path);
+    }
   }
-
+  
   if(event_viewer_data->pos->len >= event_viewer_data->num_visible_events -1 )
     return TRUE;
   else
