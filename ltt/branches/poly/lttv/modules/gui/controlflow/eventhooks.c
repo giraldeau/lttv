@@ -88,7 +88,7 @@ extern GSList *g_legend_list;
  * Wait for all the awaited computations to be over.
  */
 
-gint background_ready(void *hook_data, void *call_data)
+static gint background_ready(void *hook_data, void *call_data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData *)hook_data;
   LttvTrace *trace = (LttvTrace*)call_data;
