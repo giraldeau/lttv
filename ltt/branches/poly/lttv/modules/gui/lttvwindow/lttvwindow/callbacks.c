@@ -408,8 +408,8 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   LttvTracesetContext *tsc =
         LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
   TimeInterval time_span = tsc->time_span;
-  TimeWindow new_time_window;
-  LttTime new_current_time;
+  TimeWindow new_time_window = tab->time_window;
+  LttTime new_current_time = tab->current_time;
 
   /* Set the tab's time window and current time if
    * out of bounds */
@@ -423,7 +423,9 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
     LttTime tmp_time;
     
     if(ltt_time_compare(lttvwindow_default_time_width,
-          ltt_time_sub(time_span.end_time, time_span.start_time)) < 0)
+          ltt_time_sub(time_span.end_time, time_span.start_time)) < 0
+        ||
+       ltt_time_compare(time_span.end_time, time_span.start_time) == 0)
       tmp_time = lttvwindow_default_time_width;
     else
       tmp_time = time_span.end_time;
@@ -433,13 +435,9 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
     new_time_window.end_time = ltt_time_add(new_time_window.start_time,
                                             new_time_window.time_width) ;
   }
-  time_change_manager(tab, new_time_window);
-  current_time_change_manager(tab, new_current_time);
 
-  //FIXME : we delete the filter tree, when it should be updated.
-  lttv_filter_destroy(tab->filter);
-  tab->filter = NULL;
-  
+ 
+ 
 #if 0
   /* Set scrollbar */
   GtkAdjustment *adjustment = gtk_range_get_adjustment(GTK_RANGE(tab->scrollbar));
@@ -502,6 +500,12 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   if(tmp == NULL) retval = 1;
   else lttv_hooks_call(tmp,traceset);
 
+  time_change_manager(tab, new_time_window);
+  current_time_change_manager(tab, new_current_time);
+
+  if(tab->filter)
+    lttv_filter_update(tab->filter);
+ 
  
   return retval;
 }
@@ -1787,7 +1791,7 @@ void remove_trace(GtkWidget *widget, gpointer user_data)
   for(i = 0; i < nb_trace; i++){
     trace_v = lttv_traceset_get(tab->traceset_info->traceset, i);
     trace = lttv_trace(trace_v);
-    name[i] = ltt_trace_name(trace);
+    name[i] = g_quark_to_string(ltt_trace_name(trace));
   }
 
   remove_trace_name = get_remove_trace(name, nb_trace);
@@ -4123,18 +4127,10 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     /* We can clone the filter, as we copy the trace set also */
     /* The filter must always be in sync with the trace set */
     tab->filter = lttv_filter_clone(copy_tab->filter);
-    tab->time_window = copy_tab->time_window;
-    tab->current_time = copy_tab->current_time;
   } else {
     tab->traceset_info->traceset = lttv_traceset_new();
     tab->filter = NULL;
-    tab->time_window.start_time = ltt_time_zero;
-    tab->time_window.time_width = lttvwindow_default_time_width;
-    tab->time_window.end_time = ltt_time_add(tab->time_window.start_time,
-        tab->time_window.time_width);
-    tab->current_time = ltt_time_zero;
   }
-
 #ifdef DEBUG
   lttv_attribute_write_xml(
       lttv_traceset_attribute(tab->traceset_info->traceset),
@@ -4197,6 +4193,11 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
                      TRUE, /* expand */
                      TRUE, /* Give the extra space to the child */
                      0);    /* No padding */
+  
+//  if(copy_tab) {
+//    tab->time_window = copy_tab->time_window;
+//    tab->current_time = copy_tab->current_time;
+//  }
 
   /* Create the timebar */
   {
@@ -4440,6 +4441,25 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   // always show : not if(g_list_length(list)>1)
   gtk_notebook_set_show_tabs(notebook, TRUE);
  
+  if(copy_tab) {
+    lttvwindow_report_time_window(tab, copy_tab->time_window);
+    lttvwindow_report_current_time(tab, copy_tab->current_time);
+  } else {
+    TimeWindow time_window;
+
+    time_window.start_time = ltt_time_zero;
+    time_window.end_time = ltt_time_add(time_window.start_time,
+        lttvwindow_default_time_width);
+    time_window.time_width = lttvwindow_default_time_width;
+    time_window.time_width_double = ltt_time_to_double(time_window.time_width);
+
+    lttvwindow_report_time_window(tab, time_window);
+    lttvwindow_report_current_time(tab, ltt_time_zero);
+  }
+ 
+  LttvTraceset *traceset = tab->traceset_info->traceset;
+  SetTraceset(tab, traceset);
+
   return tab;
 }
 

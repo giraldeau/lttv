@@ -1226,7 +1226,23 @@ gboolean traceset_changed(void * hook_data, void * call_data)
 
   end = ltt_time_sub(time_span.end_time, time_span.start_time);
   event_viewer_data->vadjust_c->upper = ltt_time_to_double(end);
-  g_signal_emit_by_name(event_viewer_data->vadjust_c, "value-changed");
+
+  /* Reset the positions */
+  lttv_traceset_context_position_destroy(
+      event_viewer_data->currently_selected_position);
+  lttv_traceset_context_position_destroy(
+      event_viewer_data->first_event);
+  lttv_traceset_context_position_destroy(
+      event_viewer_data->last_event);
+ 
+  event_viewer_data->currently_selected_position =
+    lttv_traceset_context_position_new(tsc);
+  event_viewer_data->first_event =
+    lttv_traceset_context_position_new(tsc);
+  event_viewer_data->last_event =
+    lttv_traceset_context_position_new(tsc);
+
+  get_events(event_viewer_data->vadjust_c->value, event_viewer_data);
   //  event_viewer_data->vadjust_c->value = 0;
 
   return FALSE;
@@ -1240,7 +1256,7 @@ gboolean filter_changed(void * hook_data, void * call_data)
 
   event_viewer_data->main_win_filter = 
     (LttvFilter*)call_data;
-  g_signal_emit_by_name(event_viewer_data->vadjust_c, "value-changed");
+  get_events(event_viewer_data->vadjust_c->value, event_viewer_data);
 
   return FALSE;
 }
