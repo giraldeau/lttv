@@ -449,6 +449,7 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
             start_time.tv_sec,
             start_time.tv_nsec);
 #endif //0
+    sprintf(trace_str, g_quark_to_string(ltt_trace_name(tcs->parent.parent.t)));
     gtk_tree_store_append (store, &iter, NULL);  
     gtk_tree_store_set (store, &iter,NAME_COLUMN,trace_str,-1);  
     path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
