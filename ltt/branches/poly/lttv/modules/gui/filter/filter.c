@@ -103,6 +103,8 @@ struct _FilterViewerDataLine {
 struct _FilterViewerData {
   Tab *tab;                             /**< current tab of module */
 
+  GtkWidget *f_window;                  /**< filter window */
+  
   GtkWidget *f_main_box;                /**< main container */
 
   GtkWidget *f_expression_field;        /**< entire expression (GtkEntry) */
@@ -119,7 +121,8 @@ struct _FilterViewerData {
   GPtrArray *f_math_op_options;         /**< array of operators types for math_op box */
   
   GtkWidget *f_add_button;              /**< add expression to current expression (GtkButton) */
-  
+ 
+  gchar *name;                          /**< Name of the window in the main window */
 };
 
 /**
@@ -206,6 +209,8 @@ gui_filter(Tab *tab)
   g_ptr_array_add(fvd->f_math_op_options,(gpointer) g_string_new(">="));
   
 
+  fvd->f_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+
   /* 
    * Initiating GtkTable layout 
    * starts with 2 rows and 5 columns and 
@@ -214,6 +219,8 @@ gui_filter(Tab *tab)
   fvd->f_main_box = gtk_table_new(3,7,FALSE);
   gtk_table_set_row_spacings(GTK_TABLE(fvd->f_main_box),5);
   gtk_table_set_col_spacings(GTK_TABLE(fvd->f_main_box),5);
+  
+  gtk_container_add(GTK_CONTAINER(fvd->f_window), GTK_WIDGET(fvd->f_main_box));
   
   /*
    *  First half of the filter window
@@ -273,6 +280,7 @@ gui_filter(Tab *tab)
    * show main container 
    */
   gtk_widget_show(fvd->f_main_box);
+  gtk_widget_show(fvd->f_window);
   
   
   g_object_set_data_full(
@@ -417,6 +425,10 @@ gui_filter_destructor(FilterViewerData *fvd)
   lttvwindowtraces_background_notify_remove(fvd);
   
   g_filter_list = g_slist_remove(g_filter_list, fvd);
+ 
+  main_window_remove_child_window(tab, fvd->name);
+  
+  g_free(fvd->name);
   
   g_free(fvd);
 }
@@ -436,10 +448,14 @@ GtkWidget *
 h_guifilter(Tab *tab)
 {
   FilterViewerData* f = gui_filter(tab) ;
+  f->name = g_new(gchar, 256);
+
+  snprintf(f->name, 256, "guifilter %p", f);
 
   if(f)
-    return guifilter_get_widget(f);
-  else return NULL;
+    main_window_add_child_window(tab, f,
+        f->name, (GDestroyNotify)gui_filter_destructor);
+  return NULL;
   
 }
 

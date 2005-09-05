@@ -792,7 +792,19 @@ void set_time_window(Tab *tab, const TimeWindow *time_window);
 
 void set_current_time(Tab *tab, const LttTime *current_time);
 
-
 void events_request_free(EventsRequest *events_request);
+
+/* main_window_add_child_window
+ *
+ * Add the widget as a data to the main window : it will close a floating window
+ * with its main window by calling the destroy_fct.
+ */
+
+void main_window_add_child_window(Tab *tab, gpointer data,
+    const gchar *name, GDestroyNotify descroy_fct);
+
+
+void main_window_remove_child_window(Tab *tab,
+    const gchar *name);
 
 #endif //LTTVWINDOW_H
