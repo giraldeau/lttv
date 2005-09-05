@@ -35,6 +35,9 @@
 
 #include "hGuiFilterInsert.xpm"
 
+
+GSList *g_filter_list = NULL ;
+
 /*! \file lttv/modules/gui/filter/filter.c
  *  \brief Graphic filter interface.
  *
@@ -278,6 +281,9 @@ gui_filter(Tab *tab)
       fvd,
       (GDestroyNotify)gui_filter_destructor);
 
+  g_filter_list = g_slist_append(
+      g_filter_list,
+      fvd);
   
   return fvd;
 }
@@ -409,7 +415,9 @@ gui_filter_destructor(FilterViewerData *fvd)
 //                                          filter_viewer_data);
 //  }
   lttvwindowtraces_background_notify_remove(fvd);
-
+  
+  g_filter_list = g_slist_remove(g_filter_list, fvd);
+  
   g_free(fvd);
 }
 
@@ -477,6 +485,8 @@ filter_destroy_walk(gpointer data, gpointer user_data)
  *  everything that has been registered in the gtkTraceSet API.
  */
 static void destroy() {
+ 
+  g_slist_foreach(g_filter_list, filter_destroy_walk, NULL );
   
   lttvwindow_unregister_constructor(h_guifilter);
   
