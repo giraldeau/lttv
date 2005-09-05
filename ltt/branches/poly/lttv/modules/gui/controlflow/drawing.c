@@ -1244,8 +1244,6 @@ void drawing_update_ruler(Drawing_t *drawing, TimeWindow *time_window)
 static gboolean
 expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 {
-  /* ruler desactivated */
-  return 0;
   Drawing_t *drawing = (Drawing_t*)user_data;
   TimeWindow time_window = lttvwindow_get_time_window(drawing->control_flow_data->tab);
   gchar text[255];
