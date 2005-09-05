@@ -136,7 +136,7 @@ struct _FilterViewerData {
 GtkWidget*
 guifilter_get_widget(FilterViewerData *fvd)
 {
-  return fvd->f_main_box;
+  return fvd->f_window;
 }
 
 /**
