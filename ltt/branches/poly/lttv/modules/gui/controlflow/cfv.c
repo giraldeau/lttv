@@ -119,7 +119,9 @@ guicontrolflow(void)
                   process_list_widget, FALSE, TRUE);
   gtk_paned_pack2(GTK_PANED(control_flow_data->h_paned),
                   drawing_widget, TRUE, TRUE);
- 
+  
+  gtk_container_set_border_width(GTK_CONTAINER(control_flow_data->box), 1);
+  
   /* Set the size of the drawing area */
   //drawing_Resize(drawing, h, w);
 

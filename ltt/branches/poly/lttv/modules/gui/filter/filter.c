@@ -258,6 +258,8 @@ gui_filter(Tab *tab)
  
   gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_logical_op_junction_box,0,1,1,2,GTK_SHRINK,GTK_FILL,0,0);
 
+  gtk_container_set_border_width(GTK_CONTAINER(fvd->f_main_box), 1);
+  
   /* initialize a new line */
   fvd->f_lines = g_ptr_array_new();
   fvd->rows = 1;

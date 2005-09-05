@@ -434,6 +434,8 @@ gui_events(Tab *tab)
   gtk_box_pack_start(GTK_BOX(event_viewer_data->hbox_v),
       event_viewer_data->scroll_win, TRUE, TRUE, 0);
 
+  gtk_container_set_border_width(GTK_CONTAINER(event_viewer_data->hbox_v), 1);
+
   /* Create vertical scrollbar and pack it */
   event_viewer_data->vscroll_vc = gtk_vscrollbar_new(NULL);
   gtk_range_set_update_policy (GTK_RANGE(event_viewer_data->vscroll_vc),

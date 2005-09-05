@@ -336,6 +336,9 @@ gui_statistic(Tab *tab)
   gtk_container_add (GTK_CONTAINER (statistic_viewer_data->scroll_win_text), statistic_viewer_data->text_v);
   gtk_paned_pack2(GTK_PANED(statistic_viewer_data->hpaned_v), statistic_viewer_data->scroll_win_text, TRUE, FALSE);
 
+  gtk_container_set_border_width(
+      GTK_CONTAINER(statistic_viewer_data->hpaned_v), 1);
+  
   gtk_widget_show(statistic_viewer_data->scroll_win_tree);
   gtk_widget_show(statistic_viewer_data->scroll_win_text);
   gtk_widget_show(statistic_viewer_data->tree_v);
