@@ -687,7 +687,7 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
         LttvTracesetContextPosition *end_pos = 
           (LttvTracesetContextPosition*)g_ptr_array_index(
                                              event_viewer_data->pos,
-                                             event_viewer_data->pos->len - 1);
+                                             event_viewer_data->pos->len-1);
         if(lttv_traceset_context_pos_pos_compare(end_pos, 
               event_viewer_data->currently_selected_position) == 0) {
           /* Must get down one event and select the last one */
@@ -703,12 +703,6 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
                                    path, NULL, FALSE);
           gtk_tree_path_free(path);
         }
-#if 0       
-          GtkTreePath *path = gtk_tree_path_new_from_indices(i, -1);
-          gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
-                                 path, NULL, FALSE);
-          gtk_tree_path_free(path);
-#endif //0
       }
 
     } else {
@@ -743,7 +737,7 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
         LttvTracesetContextPosition *end_pos = 
           (LttvTracesetContextPosition*)g_ptr_array_index(
                                              event_viewer_data->pos,
-                                             event_viewer_data->pos->len - 1);
+                                             event_viewer_data->pos->len-1);
         if(lttv_traceset_context_pos_pos_compare(end_pos, 
               event_viewer_data->currently_selected_position) == 0) {
           /* Must get down one page and select the last one */
@@ -1368,7 +1362,7 @@ int event_hook(void *hook_data, void *call_data)
     }
   }
   
-  if(event_viewer_data->pos->len >= event_viewer_data->num_visible_events -1 )
+  if(event_viewer_data->pos->len >= event_viewer_data->num_visible_events )
     return TRUE;
   else
     return FALSE;
