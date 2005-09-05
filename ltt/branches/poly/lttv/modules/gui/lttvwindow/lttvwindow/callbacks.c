@@ -2976,10 +2976,11 @@ on_about_activate                      (GtkMenuItem     *menuitem,
 Contributors :\n\
 \n\
 Michel Dagenais (New trace format, lttv main)\n\
-Mathieu Desnoyers (Directory structure, build with automake/conf,\n\
+Mathieu Desnoyers (Kernel Tracer Directory structure, build with automake/conf,\n\
                    lttv gui, control flow view, gui cooperative trace reading\n\
                    scheduler with interruptible foreground and background\n\
-                   computation, detailed event list)\n\
+                   computation, detailed event list (rewrite), trace reading\n\
+                   library (rewrite))\n\
 Benoit Des Ligneris, Eric Clement (Cluster adaptation, work in progress)\n\
 Xang-Xiu Yang (new trace reading library and converter, lttv gui, \n\
                detailed event list and statistics view)\n\

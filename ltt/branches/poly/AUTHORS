@@ -3,12 +3,13 @@ Linux Trace Toolkit Viewer
 Contributors :
 
 Michel Dagenais (New trace format, lttv main)
-Mathieu Desnoyers (Directory structure, build with automake/conf,
+Mathieu Desnoyers (Kernel Tracer, Directory structure, build with automake/conf,
                    lttv gui, control flow view, gui cooperative trace reading
                    scheduler with interruptible foreground and background
-                   computation, detailed event list)
+                   computation, detailed event list (rewrite), trace reading
+                   library (rewrite))
 Benoit Des Ligneris, Éric Clement (Cluster adaptation, work in progress)
-Xang-Xiu Yang (new trace reading library and converter, lttv gui, 
+Xang-Xiu Yang (trace reading library and converter, lttv gui, 
                detailed event list and statistics view)
 Tom Zanussi (RelayFS)
 
