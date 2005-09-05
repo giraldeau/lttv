@@ -233,6 +233,10 @@ main_window_destructor(MainWindow * mw)
   gtk_widget_destroy(mw->mwindow);
 }
 
+static void destroy_walk(gpointer data, gpointer user_data)
+{
+  main_window_destructor((MainWindow*)data);
+}
 
 /**
  * plugin's destroy function
@@ -252,12 +256,9 @@ static void destroy() {
 
   g_debug("GUI destroy()");
 
-  if(g_main_window_list){
-    for(iter=g_main_window_list;iter!=NULL;iter=g_slist_next(iter)) {
-        main_window_destructor((MainWindow*)iter->data);
-    }
-    g_slist_free(g_main_window_list);
-  }
+  g_slist_foreach(g_main_window_list, destroy_walk, NULL);
+  
+  g_slist_free(g_main_window_list);
   
 }
 
