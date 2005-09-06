@@ -46,7 +46,6 @@
 #include <lttvwindow/toolbar.h>
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
-#include <lttvwindow/gtkdirsel.h>
 
 
 static LttTime lttvwindow_default_time_width = { 1, 0 };

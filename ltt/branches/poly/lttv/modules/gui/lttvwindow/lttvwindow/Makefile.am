@@ -33,7 +33,6 @@ noinst_HEADERS = \
 	mainwindow-private.h
 
 lttvwindowinclude_HEADERS = \
-	gtkdirsel.h\
 	lttvwindow.h\
 	lttvwindowtraces.h\
 	mainwindow.h\
