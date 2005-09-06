@@ -19,7 +19,6 @@ lib_LTLIBRARIES = liblttvwindow.la
 liblttvwindow_la_SOURCES = \
 	toolbar.c\
 	menu.c\
-	gtkdirsel.c\
 	lttvwindow.c \
 	lttvwindowtraces.c \
 	init_module.c \

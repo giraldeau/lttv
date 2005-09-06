@@ -1698,18 +1698,21 @@ void add_trace(GtkWidget * widget, gpointer user_data)
     tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
   }
 
-  GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
-  gtk_dir_selection_hide_fileop_buttons(file_selector);
+  //GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
+  GtkFileSelection * file_selector = (GtkFileSelection *)gtk_file_selection_new("Select a trace");
+  gtk_widget_hide( (file_selector)->file_list->parent) ;
+  gtk_file_selection_hide_fileop_buttons(file_selector);
   
   if(remember_trace_dir[0] != '\0')
-    gtk_dir_selection_set_filename(file_selector, remember_trace_dir);
+    gtk_file_selection_set_filename(file_selector, remember_trace_dir);
   
   id = gtk_dialog_run(GTK_DIALOG(file_selector));
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
-      dir = gtk_dir_selection_get_dir (file_selector);
+      dir = gtk_file_selection_get_filename (file_selector);
       strncpy(remember_trace_dir, dir, PATH_MAX);
+      strncat(remember_trace_dir, "/", PATH_MAX);
       if(!dir || strlen(dir) == 0){
       	gtk_widget_destroy((GtkWidget*)file_selector);
       	break;
@@ -2844,19 +2847,21 @@ void
 on_add_library_search_path_activate     (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select library path");
+  //GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select library path");
+  GtkFileSelection * file_selector = (GtkFileSelection *)gtk_file_selection_new("Select a trace");
+  gtk_widget_hide( (file_selector)->file_list->parent) ;
   const char * dir;
   gint id;
 
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
   if(remember_plugins_dir[0] != '\0')
-    gtk_dir_selection_set_filename(file_selector, remember_plugins_dir);
+    gtk_file_selection_set_filename(file_selector, remember_plugins_dir);
 
   id = gtk_dialog_run(GTK_DIALOG(file_selector));
   switch(id){
     case GTK_RESPONSE_ACCEPT:
     case GTK_RESPONSE_OK:
-      dir = gtk_dir_selection_get_dir (file_selector);
+      dir = gtk_file_selection_get_filename (file_selector);
       strncpy(remember_plugins_dir,dir,PATH_MAX);
       strncat(remember_plugins_dir,"/",PATH_MAX);
       lttv_library_path_add(dir);
