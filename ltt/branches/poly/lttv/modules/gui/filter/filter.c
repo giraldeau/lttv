@@ -149,7 +149,7 @@ guifilter_get_widget(FilterViewerData *fvd)
 FilterViewerData*
 gui_filter(Tab *tab)
 {
-  g_print("filter::gui_filter()");
+  g_debug("filter::gui_filter()");
 
   unsigned i;
   GtkCellRenderer *renderer;
