@@ -1593,9 +1593,9 @@ lttv_filter_update(LttvFilter* filter) {
 #endif
   
   /* debug */
-  g_print("+++++++++++++++ BEGIN PRINT ++++++++++++++++\n");
+  g_debug("+++++++++++++++ BEGIN PRINT ++++++++++++++++\n");
   lttv_print_tree(filter->head,0) ;
-  g_print("+++++++++++++++ END PRINT ++++++++++++++++++\n");
+  g_debug("+++++++++++++++ END PRINT ++++++++++++++++++\n");
   
   /* success */
   return TRUE;
@@ -1975,22 +1975,22 @@ lttv_filter_tree_parse_branch(
 void
 lttv_print_tree(const LttvFilterTree* t, const int count) {
 
-  g_print("node:%p lchild:%p rchild:%p depth:%i\n",t, //t->l_child.t,t->r_child.t);
+  g_debug("node:%p lchild:%p rchild:%p depth:%i\n",t, //t->l_child.t,t->r_child.t);
           (t->left==LTTV_TREE_NODE)?t->l_child.t:NULL,
           (t->right==LTTV_TREE_NODE)?t->r_child.t:NULL,
           count);
-  g_print("logic operator: %s\n",(t->node&1)?"OR":((t->node&2)?"AND":((t->node&4)?"NOT":((t->node&8)?"XOR":"IDLE"))));
-  g_print("|-> left branch %p is a %s\n",t->l_child.t,(t->left==LTTV_TREE_NODE)?"NODE":((t->left==LTTV_TREE_LEAF)?"LEAF":"IDLE"));
+  g_debug("logic operator: %s\n",(t->node&1)?"OR":((t->node&2)?"AND":((t->node&4)?"NOT":((t->node&8)?"XOR":"IDLE"))));
+  g_debug("|-> left branch %p is a %s\n",t->l_child.t,(t->left==LTTV_TREE_NODE)?"NODE":((t->left==LTTV_TREE_LEAF)?"LEAF":"IDLE"));
   if(t->left == LTTV_TREE_LEAF) {
-    g_print("| |-> field type number: %i\n",t->l_child.leaf->field);
-    g_print("| |-> offset is: %i\n",t->l_child.leaf->offset);
-    g_print("| |-> operator function is: %p\n",t->l_child.leaf->op);
+    g_debug("| |-> field type number: %i\n",t->l_child.leaf->field);
+    g_debug("| |-> offset is: %i\n",t->l_child.leaf->offset);
+    g_debug("| |-> operator function is: %p\n",t->l_child.leaf->op);
   }
-  g_print("|-> right branch %p is a %s\n",t->r_child.t,(t->right==LTTV_TREE_NODE)?"NODE":((t->right==LTTV_TREE_LEAF)?"LEAF":"IDLE"));
+  g_debug("|-> right branch %p is a %s\n",t->r_child.t,(t->right==LTTV_TREE_NODE)?"NODE":((t->right==LTTV_TREE_LEAF)?"LEAF":"IDLE"));
   if(t->right == LTTV_TREE_LEAF) {
-    g_print("| |-> field type number: %i\n",t->r_child.leaf->field);
-    g_print("| |-> offset is: %i\n",t->r_child.leaf->offset);
-    g_print("| |-> operator function is: %p\n",t->r_child.leaf->op);
+    g_debug("| |-> field type number: %i\n",t->r_child.leaf->field);
+    g_debug("| |-> offset is: %i\n",t->r_child.leaf->offset);
+    g_debug("| |-> operator function is: %p\n",t->r_child.leaf->op);
   }
 
   if(t->left == LTTV_TREE_NODE) lttv_print_tree(t->l_child.t,count+1);
