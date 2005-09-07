@@ -523,15 +523,18 @@ callback_process_button(GtkWidget *widget, gpointer data) {
   g_debug("callback_process_button(): Processing expression");
   
   FilterViewerData *fvd = (FilterViewerData*)data;
+  LttvFilter* filter;
 
   if(strlen(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field))) !=0) {
-    LttvFilter* filter = lttv_filter_new();
+    filter = lttv_filter_new();
     GString* s = g_string_new(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
     lttv_filter_append_expression(filter,s->str);
     g_string_free(s,TRUE);
     //SetFilter(fvd->tab,filter);
-    lttvwindow_report_filter(fvd->tab, filter);
+  } else {
+    filter = NULL;
   }
+  lttvwindow_report_filter(fvd->tab, filter);
 }
 
 /**
