@@ -927,17 +927,18 @@ void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data)
 
   /* On cursor change, modify the currently selected event by calling
    * the right API function */
-  tree_v_get_cursor(event_viewer_data);
   
-  gtk_tree_view_get_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
-      &path, NULL);
-  if(gtk_tree_model_get_iter(model,&iter,path)){
-    gtk_tree_model_get(model, &iter, POSITION_COLUMN, &pos, -1);
-    
-    if(event_viewer_data->report_position)
-      lttvwindow_report_current_position(tab, pos);
-  }else{
-    g_warning("Can not get iter\n");
+  
+  if(event_viewer_data->report_position) {
+    gtk_tree_view_get_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
+        &path, NULL);
+    if(gtk_tree_model_get_iter(model,&iter,path)){
+      gtk_tree_model_get(model, &iter, POSITION_COLUMN, &pos, -1);
+      
+        lttvwindow_report_current_position(tab, pos);
+    }else{
+      g_warning("Can not get iter\n");
+    }
   }
 }
 
@@ -1410,8 +1411,8 @@ gboolean update_current_time(void * hook_data, void * call_data)
   if(ltt_time_compare(pos_time, *current_time) != 0) {
     
     lttv_state_traceset_seek_time_closest((LttvTracesetState*)tsc,
-        pos_time);
-    lttv_process_traceset_middle(tsc, pos_time, G_MAXUINT,
+        *current_time);
+    lttv_process_traceset_middle(tsc, *current_time, G_MAXUINT,
                                    NULL);
     /* Little trick : seek 0 events forward to get the first event
      * that passes the filter. The trick is to have a match function that
