@@ -547,13 +547,13 @@ gboolean callback_enter_check(GtkWidget *widget,
     GdkEventKey *event,
     gpointer user_data)
 {
-  g_debug("typed : %x", event->keyval);
+ g_debug("typed : %x", event->keyval);
  switch(event->keyval) {
    case GDK_Return:
    case GDK_KP_Enter:
    case GDK_ISO_Enter:
    case GDK_3270_Enter:
-     callback_expression_field(widget, user_data);
+     callback_process_button(widget, user_data);
      break;
    default:
      break;
