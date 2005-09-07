@@ -703,7 +703,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
 
   //enum read_state last_read_state = LAST_NONE;
 
-  gboolean last_ret = FALSE; /* return value of the last hook list called */
+  gint last_ret = 0; /* return value of the last hook list called */
 
   /* Get the next event from the pqueue, call its hooks, 
      reinsert in the pqueue the following event from the same tracefile 

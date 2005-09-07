@@ -297,10 +297,10 @@ gboolean lttv_hooks_call_check(LttvHooks *h, void *call_data)
  * The second case that should occur the most often is
  * h1 != NULL , h2 == NULL.
  */
-gboolean lttv_hooks_call_merge(LttvHooks *h1, void *call_data1,
+gint lttv_hooks_call_merge(LttvHooks *h1, void *call_data1,
                                LttvHooks *h2, void *call_data2)
 {
-  gboolean ret, sum_ret = FALSE;
+  gint ret, sum_ret = 0;
 
   LttvHookClosure *c1, *c2;
 
@@ -313,12 +313,12 @@ gboolean lttv_hooks_call_merge(LttvHooks *h1, void *call_data1,
         c2 = &g_array_index(h2, LttvHookClosure, j);
         if(c1->prio <= c2->prio) {
           ret = c1->hook(c1->hook_data,call_data1);
-          sum_ret = sum_ret || ret;
+          sum_ret = sum_ret | ret;
           i++;
         }
         else {
           ret = c2->hook(c2->hook_data,call_data2);
-          sum_ret = sum_ret || ret;
+          sum_ret = sum_ret | ret;
           j++;
         }
       }
@@ -326,25 +326,25 @@ gboolean lttv_hooks_call_merge(LttvHooks *h1, void *call_data1,
       for(;i < h1->len; i++) {
         c1 = &g_array_index(h1, LttvHookClosure, i);
         ret = c1->hook(c1->hook_data,call_data1);
-        sum_ret = sum_ret || ret;
+        sum_ret = sum_ret | ret;
       }
       for(;j < h2->len; j++) {
         c2 = &g_array_index(h2, LttvHookClosure, j);
         ret = c2->hook(c2->hook_data,call_data2);
-        sum_ret = sum_ret || ret;
+        sum_ret = sum_ret | ret;
       }
     } else {  /* h1 != NULL && h2 == NULL */
       for(i = 0 ; i < h1->len ; i++) {
         c1 = &g_array_index(h1, LttvHookClosure, i);
         ret = c1->hook(c1->hook_data,call_data1);
-        sum_ret = sum_ret || ret;
+        sum_ret = sum_ret | ret;
       }
     }
   } else if(likely(h2 != NULL)) { /* h1 == NULL && h2 != NULL */
      for(j = 0 ; j < h2->len ; j++) {
       c2 = &g_array_index(h2, LttvHookClosure, j);
       ret = c2->hook(c2->hook_data,call_data2);
-      sum_ret = sum_ret || ret;
+      sum_ret = sum_ret | ret;
     }
   }
 
