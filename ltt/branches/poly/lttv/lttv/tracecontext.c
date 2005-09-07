@@ -766,11 +766,21 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     fac_id = ltt_event_facility_id(e);
     ev_id = ltt_event_eventtype_id(e);
     id = GET_HOOK_ID(fac_id, ev_id);
+    /* Hooks : 
+     * return values : 0 : continue read, 1 : go to next position and stop read,
+     * 2 : stay at the current position and stop read */
     last_ret = lttv_hooks_call_merge(tfc->event, tfc,
                         lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
+
+   if(unlikely(read_ret == 2)) {
+      /* This is a case where we want to stay at this position and stop read. */
+	    g_tree_insert(pqueue, tfc, tfc);
+      return count - 1;
+    }
     
     read_ret = ltt_tracefile_read(tfc->tf);
-
+    
+   
     if(likely(!read_ret)) {
       //g_debug("An event is ready");
       tfc->timestamp = ltt_event_time(e);
@@ -1543,12 +1553,13 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
       return FALSE;
   }
  
-  sd->event_count++;
 
   if(sd->event_count >= sd->n)
-    return TRUE;
-  else
+    return 2; /* Stay at the same position */
+  else {
+    sd->event_count++;
     return FALSE;
+  }
 }
 
 /* Seek back n events forward from the current position
