@@ -24,6 +24,7 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
+#include <gdk/gdkkeysyms.h>
 
 #include <lttv/lttv.h>
 #include <lttv/module.h>
@@ -72,6 +73,9 @@ void filter_destroy_walk(gpointer data, gpointer user_data);
  * Callback functions
  */
 void callback_process_button(GtkWidget *widget, gpointer data);
+gboolean callback_enter_check(GtkWidget *widget,
+    GdkEventKey *event,
+    gpointer user_data);
 void callback_add_button(GtkWidget *widget, gpointer data);
 void callback_logical_op_box(GtkWidget *widget, gpointer data);
 void callback_expression_field(GtkWidget *widget, gpointer data);
@@ -230,6 +234,8 @@ gui_filter(Tab *tab)
    *  - processing button
    */
   fvd->f_expression_field = gtk_entry_new(); //gtk_scrolled_window_new (NULL, NULL);
+  g_signal_connect (G_OBJECT(fvd->f_expression_field),
+      "key-press-event", G_CALLBACK (callback_enter_check), (gpointer)fvd);
 //  gtk_entry_set_text(GTK_ENTRY(fvd->f_expression_field),"state.cpu>0");
   gtk_widget_show (fvd->f_expression_field);
 
@@ -535,6 +541,24 @@ callback_process_button(GtkWidget *widget, gpointer data) {
     filter = NULL;
   }
   lttvwindow_report_filter(fvd->tab, filter);
+}
+
+gboolean callback_enter_check(GtkWidget *widget,
+    GdkEventKey *event,
+    gpointer user_data)
+{
+  g_debug("typed : %x", event->keyval);
+ switch(event->keyval) {
+   case GDK_Return:
+   case GDK_KP_Enter:
+   case GDK_ISO_Enter:
+   case GDK_3270_Enter:
+     callback_expression_field(widget, user_data);
+     break;
+   default:
+     break;
+ }
+ return FALSE;
 }
 
 /**
