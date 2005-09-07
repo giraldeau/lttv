@@ -77,6 +77,7 @@
 #include <lttv/filter.h>
 #include <ltt/trace.h>
 #include <ltt/type.h>
+#include <ltt/facility.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -263,6 +264,7 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
      case LTTV_FILTER_TRACEFILE_NAME:
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_EVENT_NAME:
+     case LTTV_FILTER_EVENT_FACILITY:
      case LTTV_FILTER_STATE_EX_MODE:
      case LTTV_FILTER_STATE_EX_SUBMODE:
      case LTTV_FILTER_STATE_P_STATUS:
@@ -422,6 +424,7 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
      case LTTV_FILTER_TRACEFILE_NAME:
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_EVENT_NAME:
+     case LTTV_FILTER_EVENT_FACILITY:
      case LTTV_FILTER_STATE_EX_MODE:
      case LTTV_FILTER_STATE_EX_SUBMODE:
      case LTTV_FILTER_STATE_P_STATUS:
