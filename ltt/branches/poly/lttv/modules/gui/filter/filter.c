@@ -190,6 +190,7 @@ gui_filter(Tab *tab)
    */
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("tracefile.name"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("trace.name"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.process_name"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.pid"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.ppid"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.creation_time"));
