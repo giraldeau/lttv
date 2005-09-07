@@ -1017,10 +1017,19 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   //process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)tfs)->tf);
   process->execution_stack = g_array_sized_new(FALSE, FALSE, 
       sizeof(LttvExecutionState), PREALLOCATED_EXECUTION_STACK);
-  process->execution_stack = g_array_set_size(process->execution_stack, 1);
+  process->execution_stack = g_array_set_size(process->execution_stack, 2);
   es = process->state = &g_array_index(process->execution_stack, 
       LttvExecutionState, 0);
   es->t = LTTV_STATE_USER_MODE;
+  es->n = LTTV_STATE_SUBMODE_NONE;
+  es->entry = *timestamp;
+  //g_assert(timestamp->tv_sec != 0);
+  es->change = *timestamp;
+  es->s = LTTV_STATE_RUN;
+
+  es = process->state = &g_array_index(process->execution_stack, 
+      LttvExecutionState, 1);
+  es->t = LTTV_STATE_SYSCALL;
   es->n = LTTV_STATE_SUBMODE_NONE;
   es->entry = *timestamp;
   //g_assert(timestamp->tv_sec != 0);
