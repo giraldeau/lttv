@@ -772,7 +772,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     last_ret = lttv_hooks_call_merge(tfc->event, tfc,
                         lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
 
-   if(unlikely(read_ret == 2)) {
+   if(unlikely(last_ret == 2)) {
       /* This is a case where we want to stay at this position and stop read. */
 	    g_tree_insert(pqueue, tfc, tfc);
       return count - 1;
