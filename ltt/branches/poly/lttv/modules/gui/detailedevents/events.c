@@ -127,6 +127,8 @@ typedef struct _EventViewerData {
   LttvTracesetContextPosition *currently_selected_position;
   gboolean update_cursor; /* Speed optimisation : do not update cursor when 
                              unnecessary */
+  gboolean report_position; /* do not report position when in current_time
+                               update */
 
   LttvTracesetContextPosition *first_event;  /* Time of the first event shown */
   LttvTracesetContextPosition *last_event;  /* Time of the first event shown */
@@ -268,6 +270,7 @@ gui_events(Tab *tab)
   event_viewer_data->main_win_filter = lttvwindow_get_filter(tab);
 
   event_viewer_data->update_cursor = TRUE;
+  event_viewer_data->report_position = TRUE;
 
   /* Create a model for storing the data list */
   event_viewer_data->store_m = gtk_list_store_new (
@@ -930,8 +933,9 @@ void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data)
       &path, NULL);
   if(gtk_tree_model_get_iter(model,&iter,path)){
     gtk_tree_model_get(model, &iter, POSITION_COLUMN, &pos, -1);
- 
-    lttvwindow_report_current_position(tab, pos);
+    
+    if(event_viewer_data->report_position)
+      lttvwindow_report_current_position(tab, pos);
   }else{
     g_warning("Can not get iter\n");
   }
@@ -1405,7 +1409,21 @@ gboolean update_current_time(void * hook_data, void * call_data)
       event_viewer_data->currently_selected_position);
   if(ltt_time_compare(pos_time, *current_time) != 0) {
     
+    lttv_state_traceset_seek_time_closest((LttvTracesetState*)tsc,
+        pos_time);
+    lttv_process_traceset_middle(tsc, pos_time, G_MAXUINT,
+                                   NULL);
+    /* Little trick : seek 0 events forward to get the first event
+     * that passes the filter. The trick is to have a match function that
+     * returns 2 : it makes the read stop and keep the last position */
+    guint count;
+    count = lttv_process_traceset_seek_n_forward(tsc, 0,
+          event_viewer_data->main_win_filter);
+
+#if 0
     lttv_process_traceset_seek_time(tsc, *current_time);
+#endif //0
+
     lttv_traceset_context_position_save(tsc,
         event_viewer_data->currently_selected_position);
     pos_time = lttv_traceset_context_position_get_time(
@@ -1415,6 +1433,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
   LttTime time = ltt_time_sub(pos_time, tsc->time_span.start_time);
   double new_value = ltt_time_to_double(time);
  
+  event_viewer_data->report_position = FALSE;
   /* Change the viewed area if does not match */
   if(lttv_traceset_context_pos_pos_compare(
         event_viewer_data->currently_selected_position,
@@ -1425,9 +1444,10 @@ gboolean update_current_time(void * hook_data, void * call_data)
         event_viewer_data->last_event) > 0) {
     gtk_adjustment_set_value(event_viewer_data->vadjust_c, new_value);
   } else {
-      /* Simply update the current time : it is in the list */
-      event_update_selection(event_viewer_data);
+    /* Simply update the current time : it is in the list */
+    event_update_selection(event_viewer_data);
   }
+  event_viewer_data->report_position = TRUE;
   
   return FALSE;
 }
@@ -1446,7 +1466,6 @@ gboolean update_current_position(void * hook_data, void * call_data)
     lttv_traceset_context_position_copy(
         event_viewer_data->currently_selected_position, current_pos);
 
-  
     /* Change the viewed area if does not match */
     if(lttv_traceset_context_pos_pos_compare(
           event_viewer_data->currently_selected_position,
