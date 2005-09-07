@@ -134,6 +134,7 @@ void filter_list_commands(void *hook_data) {
 
   g_print("*** Possible fields ***\n");
   g_print("event.name (string)\n");
+  g_print("event.facility (string)\n");
   g_print("event.category (string)\n");
   g_print("event.time (double)\n");
   g_print("event.tsc (integer)\n");

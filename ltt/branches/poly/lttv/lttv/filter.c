@@ -31,6 +31,7 @@
  *  LttvTracefileContext{} 
  *  |->event\ 
  *  | |->name (String, converted to GQuark)
+ *  | |->facility (String, converted to GQuark)
  *  | |->category (String, not yet implemented)
  *  | |->time (LttTime)
  *  | |->tsc (LttCycleCount --> uint64)
@@ -206,6 +207,9 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
     f=g_ptr_array_remove_index(fp,0);
     if(!g_strcasecmp(f->str,"name") ) {
       se->field = LTTV_FILTER_EVENT_NAME;
+    }
+    else if(!g_strcasecmp(f->str,"facility") ) {
+      se->field = LTTV_FILTER_EVENT_FACILITY;
     }
     else if(!g_strcasecmp(f->str,"category") ) {
       /*
@@ -535,6 +539,7 @@ lttv_struct_type(gint ft) {
             return LTTV_FILTER_STATE;
             break;
         case LTTV_FILTER_EVENT_NAME:
+        case LTTV_FILTER_EVENT_FACILITY:
         case LTTV_FILTER_EVENT_CATEGORY:
         case LTTV_FILTER_EVENT_TIME:
         case LTTV_FILTER_EVENT_TSC:
@@ -1923,7 +1928,15 @@ lttv_filter_tree_parse_branch(
               return se->op((gpointer)&quark,v);
             }
             break;
-            
+         case LTTV_FILTER_EVENT_FACILITY:
+            if(event == NULL) return TRUE;
+            else {
+              LttFacility* fac;
+              fac = ltt_event_facility(event);
+              GQuark quark = ltt_facility_name(fac);
+              return se->op((gpointer)&quark,v);
+            }
+            break;
         case LTTV_FILTER_EVENT_CATEGORY:
             /*
              * TODO: Not yet implemented

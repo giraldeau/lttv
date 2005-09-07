@@ -182,6 +182,7 @@ gui_filter(Tab *tab)
   fvd->f_field_options = g_ptr_array_new(); //g_array_new(FALSE,FALSE,16);
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new(""));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.name"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.facility"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.category"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.time"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.tsc"));

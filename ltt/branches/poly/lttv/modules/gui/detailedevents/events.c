@@ -1374,6 +1374,7 @@ static void event_update_selection(EventViewerData *event_viewer_data)
 {
   guint i;
   GPtrArray *positions = event_viewer_data->pos;
+  g_info("event_update_selection");
 
   for(i=0;i<positions->len;i++) {
     LttvTracesetContextPosition *cur_pos = 
@@ -1391,6 +1392,7 @@ static void event_update_selection(EventViewerData *event_viewer_data)
 
 gboolean update_current_time(void * hook_data, void * call_data)
 {
+  g_info("update_current_time");
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
   const LttTime * current_time = (LttTime*)call_data;
   LttvTracesetContext * tsc =
@@ -1432,6 +1434,7 @@ gboolean update_current_time(void * hook_data, void * call_data)
 
 gboolean update_current_position(void * hook_data, void * call_data)
 {
+  g_info("update_current_position");
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
   const LttvTracesetContextPosition *current_pos =
     (LttvTracesetContextPosition*)call_data;
