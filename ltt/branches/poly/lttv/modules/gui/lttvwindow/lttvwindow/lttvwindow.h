@@ -487,6 +487,18 @@ void lttvwindow_unregister_filter_notify(Tab *tab,
 
 
 /**
+ * Function to get the current filter of the main window : useful at viewer
+ * instanciation.
+ * 
+ * @param tab the tab the viewer belongs to.
+ *
+ * returns : the current filter.
+ */
+
+
+LttvFilter *lttvwindow_get_filter(Tab *tab);
+
+/**
  * Function to register a hook function for a viewer to set/update its 
  * current time.
  * 

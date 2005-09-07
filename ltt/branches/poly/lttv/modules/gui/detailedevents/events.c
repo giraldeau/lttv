@@ -265,7 +265,7 @@ gui_events(Tab *tab)
   event_viewer_data->last_event =
     lttv_traceset_context_position_new(tsc);
 
-  event_viewer_data->main_win_filter = NULL;
+  event_viewer_data->main_win_filter = lttvwindow_get_filter(tab);
 
   event_viewer_data->update_cursor = TRUE;
 
