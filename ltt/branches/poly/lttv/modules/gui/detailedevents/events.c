@@ -935,10 +935,13 @@ void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data)
     if(gtk_tree_model_get_iter(model,&iter,path)){
       gtk_tree_model_get(model, &iter, POSITION_COLUMN, &pos, -1);
       
+      if(lttv_traceset_context_pos_pos_compare(pos, 
+            event_viewer_data->currently_selected_position) != 0)
         lttvwindow_report_current_position(tab, pos);
     }else{
       g_warning("Can not get iter\n");
     }
+    gtk_tree_path_free(path);
   }
 }
 
@@ -1236,6 +1239,9 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
     
     time = lttv_traceset_context_position_get_time(
                                             event_viewer_data->first_event);
+    //if(ltt_time_compare(time, tsc->time_span.end_time) > 0)
+    //  time = tsc->time_span.end_time;
+
     LttTime time_val = ltt_time_sub(time,
                         tsc->time_span.start_time);
     event_viewer_data->previous_value = ltt_time_to_double(time_val);
