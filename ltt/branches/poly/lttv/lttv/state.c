@@ -1338,10 +1338,19 @@ static gboolean process_free(void *hook_data, void *call_data)
   if(likely(process != NULL)) {
     /* release_task is happening at kernel level : we can now safely release
      * the data structure of the process */
+    //This test is fun, though, as it may happen that 
+    //at time t : CPU 0 : process_free
+    //at time t+150ns : CPU 1 : schedule out
+    //Clearly due to time imprecision, we disable it. (Mathieu)
+    //If this weird case happen, we have no choice but to put the 
+    //Currently running process on the cpu to 0.
     guint num_cpus = ltt_trace_get_num_cpu(ts->parent.t);
     guint i;
     for(i=0; i< num_cpus; i++) {
-      g_assert(process != ts->running_process[i]);
+      //g_assert(process != ts->running_process[i]);
+      if(process == ts->running_process[i]) {
+        ts->running_process[i] = lttv_state_find_process(ts, i, 0);
+      }
     }
     exit_process(s, process);
   }

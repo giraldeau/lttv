@@ -1585,7 +1585,7 @@ guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
   lttv_process_traceset_begin(self, NULL, NULL, NULL, hooks, NULL);
   
   /* it will end on the end of traceset, or the fact that the
-   * hook returns TRUE.
+   * hook returns 2.
    */
   lttv_process_traceset_middle(self, ltt_time_infinite,
         G_MAXUINT, NULL);
