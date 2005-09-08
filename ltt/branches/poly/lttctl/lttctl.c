@@ -19,6 +19,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <signal.h>
+#include <dirent.h>
+#include <string.h>
+#include <sys/stat.h>
+
+/* Buffer for file copy : 4k seems optimal. */
+#define BUF_SIZE 4194304
 
 enum trace_ctl_op {
 	CTL_OP_CREATE,
@@ -63,7 +69,8 @@ void show_arguments(void)
 	//											"none exists.\n");
 	printf("-q            Stop tracing.\n");
 	printf("-d            Create trace, spawn a lttd daemon, start tracing.\n");
-	printf("              (optionnaly, you can set LTT_DAEMON env. var.)\n");
+	printf("              (optionnaly, you can set LTT_DAEMON\n");
+	printf("              and the LTT_FACILITIES env. vars.)\n");
 	printf("-t            Trace root path. (ex. /root/traces/example_trace)\n");
 	printf("-l            LTT channels root path. (ex. /mnt/relayfs/ltt)\n");
 	printf("-z            Size of the subbuffers (will be rounded to next page size)\n");
@@ -234,9 +241,17 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	pid_t pid;
 	int ret;
 	char *lttd_path = getenv("LTT_DAEMON");
+	char *facilities_path = getenv("LTT_FACILITIES");
 	struct sigaction act;
+  char eventdefs_path[PATH_MAX];
+  char eventdefs_file[PATH_MAX];
+  char facilities_file[PATH_MAX];
+  char read_buf[BUF_SIZE];
+  struct dirent *entry;
 
 	if(lttd_path == NULL) lttd_path = "lttd";
+	if(facilities_path == NULL) facilities_path =
+          "/usr/share/LinuxTraceToolkitViewer/facilities";
 	
 	strcat(channel_path, channel_root);
 	strcat(channel_path, "/");
@@ -260,7 +275,67 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 		while(!sigio_received) pause();
 
 		/* Now the trace is created, go on and create the supplementary files... */
+    
 		printf("Creating supplementary trace files\n");
+    size_t trace_root_len = strlen(trace_root);
+    strncpy(eventdefs_path, trace_root, PATH_MAX);
+    strncat(eventdefs_path, "/eventdefs/", PATH_MAX - trace_root_len);
+    size_t eventdefs_path_len = strlen(eventdefs_path);
+    ret = mkdir(eventdefs_path, S_IRWXU|S_IRWXG|S_IRWXO);
+    if(ret) {
+      perror("Cannot create eventdefs directory");
+      goto start_error;
+    }
+    
+    
+    DIR *facilities_dir = opendir(facilities_path);
+    
+    while((entry = readdir(facilities_dir)) != NULL) {
+      if(entry->d_name[0] == '.') continue;
+		  
+      printf("Appending facility file %s\n", entry->d_name);
+      strncpy(eventdefs_file, eventdefs_path, PATH_MAX);
+      strncat(eventdefs_file, entry->d_name, PATH_MAX - eventdefs_path_len);
+      /* Append to the file */
+      FILE *dest = fopen(eventdefs_file, "a");
+      if(!dest) {
+        perror("Cannot create eventdefs file");
+        continue;
+      }
+      strncpy(facilities_file, facilities_path, PATH_MAX);
+      size_t facilities_dir_len = strlen(facilities_path);
+      strncat(facilities_file, "/", PATH_MAX - facilities_dir_len);
+      strncat(facilities_file, entry->d_name, PATH_MAX - facilities_dir_len-1);
+      FILE *src = fopen(facilities_file, "r");
+      if(!src) {
+        perror("Cannot open eventdefs file for reading");
+        goto close_dest;
+      }
+
+      do {
+        size_t read_size, write_size;
+        read_size = fread(read_buf, sizeof(char), BUF_SIZE, src);
+        if(ferror(src)) {
+          perror("Cannot read eventdefs file");
+          goto close_src;
+        }
+        write_size = fwrite(read_buf, sizeof(char), read_size, dest);
+        if(ferror(dest)) {
+          perror("Cannot write eventdefs file");
+          goto close_src;
+        }
+      } while(!feof(src));
+
+      /* Add spacing between facilities */
+      fwrite("\n", 1, 1, dest);
+      
+close_src:
+      fclose(src);
+close_dest:
+      fclose(dest);
+    }
+
+    closedir(facilities_dir);
 
 	} else if(pid == 0) {
 		/* child */
