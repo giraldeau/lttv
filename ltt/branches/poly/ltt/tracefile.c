@@ -804,7 +804,7 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path,
 
 /* ltt_get_facility_description
  *
- * Opens the trace corresponding to the requested facility (identified by fac_id
+ * Opens the file corresponding to the requested facility (identified by fac_id
  * and checksum).
  *
  * The name searched is : %trace root%/eventdefs/facname_checksum.xml
@@ -836,7 +836,7 @@ static int ltt_get_facility_description(LttFacility *f,
   textlen+=strlen(text);
   if(textlen >= PATH_MAX) goto name_error;
   strcat(desc_file_name, text);
-
+#if 0
   text = "_";
   textlen+=strlen(text);
   if(textlen >= PATH_MAX) goto name_error;
@@ -848,11 +848,12 @@ static int ltt_get_facility_description(LttFacility *f,
 
   textlen=strlen(desc_file_name);
   
+#endif //0
   text = ".xml";
   textlen+=strlen(text);
   if(textlen >= PATH_MAX) goto name_error;
   strcat(desc_file_name, text);
- 
+
   err = ltt_facility_open(f, t, desc_file_name);
   if(err) goto facility_error;
 

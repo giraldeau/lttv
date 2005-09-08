@@ -69,6 +69,8 @@ void freeLttNamedType(LttType * type);
  *    t                       : the trace containing the facilities
  *    pathname                : the path name of the facility   
  *
+ *  Open the facility corresponding to the right checksum.
+ * 
  *returns 0 on success, 1 on error.
  ****************************************************************************/
 
@@ -79,8 +81,8 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   parse_file_t in;
   facility_t * fac;
   unsigned long checksum;
-  //GError * error = NULL;
   gchar buffer[BUFFER_SIZE];
+  gboolean generated = FALSE;
 
   in.buffer = &(buffer[0]);
   in.lineno = 0;
@@ -88,8 +90,6 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   in.name = pathname;
   in.unget = 0;
 
-  //in.fd = g_open(in.name, O_RDONLY, 0);
-  //if(in.fd < 0 ) {
   in.fp = fopen(in.name, "r");
   if(in.fp == NULL) {
     g_warning("cannot open facility description file %s",
@@ -97,9 +97,6 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
     ret = 1;
     goto open_error;
   }
-
-  //in.channel = g_io_channel_unix_new(in.fd);
-  //in.pos = 0;
 
   while(1){
     token = getToken(&in);
@@ -122,8 +119,11 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
       checkNamedTypesImplemented(&fac->named_types);
     
       generateChecksum(fac->name, &checksum, &fac->events);
-
-      generateFacility(f, fac, checksum);
+  
+      if(checksum == f->checksum) {
+        generateFacility(f, fac, checksum);
+        generated = TRUE;
+      }
 
       g_free(fac->name);
       free(fac->capname);
@@ -142,17 +142,14 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
       goto parse_error;
     }
   }
-
+  
  parse_error:
-  //g_io_channel_shutdown(in.channel, FALSE, &error); /* No flush */
-  //if(error != NULL) {
   fclose(in.fp);
 open_error:
-  //  g_warning("Can not close file: \n%s\n", error->message);
-  //  g_error_free(error);
-  //}
 
-  //g_close(in.fd);
+  if(!generated)
+    g_warning("Cannot find facility %s, checksum 0x%X", f->name, f->checksum);
+
   return ret;
 }
 
