@@ -209,9 +209,7 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 	printf("Creating trace subdirectory %s\n", subtrace_name);
 	ret = mkdir(subtrace_name, S_IRWXU|S_IRWXG|S_IRWXO);
 	if(ret == -1) {
-		if(errno == EEXIST && append_mode) {
-			printf("Appending to directory %s as resquested\n", subtrace_name);
-		} else {
+		if(errno != EEXIST) {
 			perror(subtrace_name);
       open_ret = -1;
 			goto end;
