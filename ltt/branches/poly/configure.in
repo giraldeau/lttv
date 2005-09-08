@@ -126,5 +126,6 @@ AC_CONFIG_FILES([Makefile
      doc/user/Makefile
      doc/user/user_guide/Makefile
      doc/user/user_guide/docbook/Makefile
-     doc/user/user_guide/html/Makefile])
+     doc/user/user_guide/html/Makefile
+     facilities/Makefile])
 AC_OUTPUT
