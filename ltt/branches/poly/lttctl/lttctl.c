@@ -268,6 +268,7 @@ int create_eventdefs(void)
     printf("trace_root is %s\n", trace_root);
     goto error;
   }
+  ret = 0;
   
   size_t trace_root_len = strlen(trace_root);
   strncpy(eventdefs_path, trace_root, PATH_MAX);
@@ -278,6 +279,7 @@ int create_eventdefs(void)
     perror("Cannot create eventdefs directory");
     goto error;
   }
+  ret = 0;
   
   DIR *facilities_dir = opendir(facilities_path);
   
