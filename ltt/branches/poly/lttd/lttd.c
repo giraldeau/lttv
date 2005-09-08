@@ -198,10 +198,12 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 	char path_trace[PATH_MAX];
 	int path_trace_len;
 	char *path_trace_ptr;
+  int open_ret = 0;
 
 	if(channel_dir == NULL) {
 		perror(subchannel_name);
-		return ENOENT;
+		open_ret = ENOENT;
+    goto end;
 	}
 
 	printf("Creating trace subdirectory %s\n", subtrace_name);
@@ -211,7 +213,8 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 			printf("Appending to directory %s as resquested\n", subtrace_name);
 		} else {
 			perror(subtrace_name);
-			return -1;
+      open_ret = -1;
+			goto end;
 		}
 	}
 
@@ -276,7 +279,8 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 					}
 				} else {
 					printf("File %s exists, cannot open. Try append mode.\n", path_trace);
-					return -1;
+					open_ret = -1;
+          goto end;
 				}
 			} else {
 				if(errno == ENOENT) {
@@ -291,9 +295,10 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 		}
 	}
 	
+end:
 	closedir(channel_dir);
 
-	return 0;
+	return open_ret;
 }
 
 
