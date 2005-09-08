@@ -135,6 +135,7 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
       freeTypes(&fac->unnamed_types);
       sequence_dispose(&fac->unnamed_types);      
       g_free(fac);
+      if(generated) break; /* use the first good match */
     }
     else {
       g_warning("facility token was expected in file %s", in.name);
