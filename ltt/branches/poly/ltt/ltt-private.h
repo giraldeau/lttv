@@ -170,16 +170,35 @@ struct ltt_trace_header_0_3 {
 	uint8_t				 has_tsc;
 } LTT_PACKED_STRUCT;
 
+/* For version 0.4 */
+
+struct ltt_trace_header_0_4 {
+  uint32_t        magic_number;
+  uint32_t        arch_type;
+  uint32_t        arch_variant;
+  uint32_t        float_word_order;
+  uint8_t         arch_size;
+  uint8_t         major_version;
+  uint8_t         minor_version;
+  uint8_t         flight_recorder;
+  uint8_t         has_heartbeat;
+  uint8_t         has_alignment;  /* Event header alignment */
+	uint8_t         has_tsc;
+  uint64_t        start_monotonic;
+  struct timespec start_time;
+} LTT_PACKED_STRUCT;
 
 
 struct ltt_block_start_header {
   struct { 
-    struct timeval          timestamp;
+    uint64_t                timestamp;
     uint64_t                cycle_count;
+    uint64_t                freq;
   } begin;
   struct {
-    struct timeval          timestamp;
+    uint64_t                timestamp;
     uint64_t                cycle_count;
+    uint64_t                freq;
   } end;
   uint32_t                lost_size;  /* Size unused at the end of the buffer */
   uint32_t                buf_size;   /* The size of this sub-buffer */
@@ -323,16 +342,19 @@ typedef struct _LttBuffer {
   struct {
     LttTime                 timestamp;
     uint64_t                cycle_count;
+    uint64_t                freq; /* Frequency in khz */
   } begin;
   struct {
     LttTime                 timestamp;
     uint64_t                cycle_count;
+    uint64_t                freq; /* Frequency in khz */
   } end;
   uint32_t                lost_size; /* Size unused at the end of the buffer */
 
   /* Timekeeping */
   uint64_t                tsc;       /* Current timestamp counter */
-  double                  nsecs_per_cycle;
+  uint64_t                freq; /* Frequency in khz */
+  double                  nsecs_per_cycle;  /* Precalculated from freq */
 } LttBuffer;
 
 struct _LttTracefile{
@@ -389,6 +411,8 @@ struct _LttTrace{
   guint8    has_heartbeat;
   guint8    has_alignment;
 	guint8		has_tsc;
+  uint64_t  start_monotonic;
+  LttTime   start_time;
 
   GData     *tracefiles;                    //tracefiles groups
 };

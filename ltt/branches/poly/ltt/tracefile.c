@@ -235,10 +235,28 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
         tf->buffer_header_size =
          sizeof(struct ltt_block_start_header) 
             + sizeof(struct ltt_trace_header_0_3);
+        g_warning("Unsupported trace version : %hhu.%hhu",
+              any->major_version, any->minor_version);
+        return 1;
+      }
+      break;
+    case 4:
+      {
+        struct ltt_trace_header_0_4 *vheader =
+          (struct ltt_trace_header_0_4 *)header;
+        tf->buffer_header_size =
+         sizeof(struct ltt_block_start_header) 
+            + sizeof(struct ltt_trace_header_0_4);
+        if(t) {
+          t->start_monotonic = ltt_get_uint64(LTT_GET_BO(tf),
+                                              &vheader->start_monotonic);
+          t->start_time = ltt_get_time(LTT_GET_BO(tf),
+                                       &vheader->start_time);
+        }
       }
       break;
     default:
-        g_warning("Unsupported trace version : %hhu.%hhu",
+      g_warning("Unsupported trace version : %hhu.%hhu",
             any->major_version, any->minor_version);
       return 1;
     }
@@ -1723,25 +1741,37 @@ static gint map_block(LttTracefile * tf, guint block_num)
 
   header = (struct ltt_block_start_header*)tf->buffer.head;
 
-  tf->buffer.begin.timestamp = ltt_get_time(LTT_GET_BO(tf),
-                                              &header->begin.timestamp);
-  tf->buffer.begin.timestamp.tv_nsec *= NSEC_PER_USEC;
+  tf->buffer.begin.timestamp = ltt_time_add(
+                                ltt_time_from_uint64(
+                                 ltt_get_uint64(LTT_GET_BO(tf),
+                                  &header->begin.timestamp)
+                                    - tf->trace->start_monotonic),
+                                  tf->trace->start_time);
   //g_debug("block %u begin : %lu.%lu", block_num,
   //    tf->buffer.begin.timestamp.tv_sec, tf->buffer.begin.timestamp.tv_nsec);
   tf->buffer.begin.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->begin.cycle_count);
-  tf->buffer.end.timestamp = ltt_get_time(LTT_GET_BO(tf),
-                                              &header->end.timestamp);
-  tf->buffer.end.timestamp.tv_nsec *= NSEC_PER_USEC;
+  tf->buffer.begin.freq = ltt_get_uint64(LTT_GET_BO(tf),
+                                         &header->begin.freq);
+  tf->buffer.end.timestamp = ltt_time_add(
+                                ltt_time_from_uint64(
+                                 ltt_get_uint64(LTT_GET_BO(tf),
+                                  &header->end.timestamp)
+                                    - tf->trace->start_monotonic),
+                                  tf->trace->start_time);
+
   //g_debug("block %u end : %lu.%lu", block_num,
   //    tf->buffer.end.timestamp.tv_sec, tf->buffer.end.timestamp.tv_nsec);
   tf->buffer.end.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->end.cycle_count);
+  tf->buffer.end.freq = ltt_get_uint64(LTT_GET_BO(tf),
+                                       &header->end.freq);
   tf->buffer.lost_size = ltt_get_uint32(LTT_GET_BO(tf),
-                                              &header->lost_size);
+                                        &header->lost_size);
   
   tf->buffer.tsc =  tf->buffer.begin.cycle_count;
   tf->event.tsc = tf->buffer.tsc;
+  tf->buffer.freq = tf->buffer.begin.freq;
 
   /* FIXME
    * eventually support variable buffer size : will need a partial pre-read of
@@ -1905,29 +1935,21 @@ error:
 /*****************************************************************************
  *Function name
  *    calc_nsecs_per_cycle : calculate nsecs per cycle for current block
+ *
+ *    1.0 / (freq(khz) *1000)  * 1000000000
  *Input Params
  *    t               : tracefile
  ****************************************************************************/
-
+/* from timer_tsc.c */
+#define CYC2NS_SCALE_FACTOR 10
 static double calc_nsecs_per_cycle(LttTracefile * tf)
 {
-  LttTime           lBufTotalTime; /* Total time for this buffer */
-  double            lBufTotalNSec; /* Total time for this buffer in nsecs */
-  LttCycleCount     lBufTotalCycle;/* Total cycles for this buffer */
-
-  /* Calculate the total time for this buffer */
-  lBufTotalTime = ltt_time_sub(tf->buffer.end.timestamp,
-                               tf->buffer.begin.timestamp);
-
-  /* Calculate the total cycles for this bufffer */
-  lBufTotalCycle  = tf->buffer.end.cycle_count;
-  lBufTotalCycle -= tf->buffer.begin.cycle_count;
-
-  /* Convert the total time to double */
-  lBufTotalNSec  = ltt_time_to_double(lBufTotalTime);
+  //return 1e6 / (double)tf->buffer.freq;
+  guint64 cpu_mhz = tf->buffer.freq / 1000;
+  guint64 cyc2ns_scale = (1000 << CYC2NS_SCALE_FACTOR)/cpu_mhz;
   
-  return lBufTotalNSec / (double)lBufTotalCycle;
-
+  return cyc2ns_scale >> CYC2NS_SCALE_FACTOR;
+ // return 1e6 / (double)tf->buffer.freq;
 }
 #if 0
 void setFieldsOffset(LttTracefile *tf, LttEventType *evT,void *evD)

@@ -148,8 +148,11 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   fclose(in.fp);
 open_error:
 
-  if(!generated)
-    g_warning("Cannot find facility %s, checksum 0x%X", f->name, f->checksum);
+  if(!generated) {
+    g_warning("Cannot find facility %s, checksum 0x%X",
+        g_quark_to_string(f->name), f->checksum);
+    ret = 1;
+  }
 
   return ret;
 }
