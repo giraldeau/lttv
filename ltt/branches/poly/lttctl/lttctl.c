@@ -420,6 +420,7 @@ int main(int argc, char ** argv)
   	case CTL_OP_CREATE:
 			ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size,
 																n_subbufs);
+      break;
 		case CTL_OP_DESTROY:
 			ret = lttctl_destroy_trace(handle, trace_name);
 			break;
