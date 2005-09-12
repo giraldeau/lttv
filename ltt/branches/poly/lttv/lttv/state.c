@@ -1273,7 +1273,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
     guint num_cpus = ltt_trace_get_num_cpu(ts->parent.t);
     guint i;
     for(i=0; i< num_cpus; i++) {
-      g_assert(process != ts->running_process[i]);
+      g_assert(zombie_process != ts->running_process[i]);
     }
 
     exit_process(s, zombie_process);
