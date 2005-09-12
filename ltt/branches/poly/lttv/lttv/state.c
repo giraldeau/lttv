@@ -1260,8 +1260,10 @@ static gboolean process_fork(void *hook_data, void *call_data)
 
   /* Mathieu : it seems like the process might have been scheduled in before the
    * fork, and, in a rare case, might be the current process. This might happen
-   * in a SMP case where we don't have enough precision on the clocks */
-#if 0
+   * in a SMP case where we don't have enough precision on the clocks.
+   *
+   * Test reenabled after precision fixes on time. (Mathieu) */
+  
   zombie_process = lttv_state_find_process(ts, ANY_CPU, child_pid);
 
   if(unlikely(zombie_process != NULL)) {
@@ -1276,7 +1278,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
 
     exit_process(s, zombie_process);
   }
-#endif //0
+
   g_assert(process->pid != child_pid);
   // FIXME : Add this test in the "known state" section
   // g_assert(process->pid == parent_pid);
