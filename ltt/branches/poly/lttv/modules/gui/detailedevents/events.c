@@ -1196,7 +1196,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
                                                     0);
       lttv_traceset_context_position_copy(pos, first_pos);
 
-      if(relative_position > 0) {
+      if(relative_position >= 0) {
         LttTime first_event_time = 
             lttv_traceset_context_position_get_time(
                               pos);
@@ -1206,7 +1206,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
                                    G_MAXUINT,
                                    pos);
        
-      } else if(relative_position <= 0) {
+      } else if(relative_position < 0) {
         g_assert(lttv_process_traceset_seek_position(tsc, pos) == 0); 
       }
     } else {
