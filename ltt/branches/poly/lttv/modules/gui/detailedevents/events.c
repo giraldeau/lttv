@@ -133,6 +133,8 @@ typedef struct _EventViewerData {
   LttvTracesetContextPosition *first_event;  /* Time of the first event shown */
   LttvTracesetContextPosition *last_event;  /* Time of the first event shown */
 
+  LttvTracesetContextPosition *current_time_get_first; 
+
   LttvFilter *main_win_filter;
 
   gint background_info_waiting;
@@ -1413,6 +1415,23 @@ static void event_update_selection(EventViewerData *event_viewer_data)
   }
 }
 
+static int current_time_get_first_event_hook(void *hook_data, void *call_data)
+{
+  EventViewerData *event_viewer_data = (EventViewerData*)hook_data;
+  LttvTracefileContext *tfc = (LttvTracefileContext*)call_data;
+  LttEvent *e = ltt_tracefile_get_event(tfc->tf);
+
+  LttvFilter *filter = event_viewer_data->main_win_filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
+
+  lttv_traceset_context_position_save(tfc->t_context->ts_context, 
+      event_viewer_data->current_time_get_first);
+  return TRUE;
+}
+
 
 gboolean update_current_time(void * hook_data, void * call_data)
 {
@@ -1433,20 +1452,31 @@ gboolean update_current_time(void * hook_data, void * call_data)
         *current_time);
     lttv_process_traceset_middle(tsc, *current_time, G_MAXUINT,
                                    NULL);
-    /* Little trick : seek 0 events forward to get the first event
-     * that passes the filter. The trick is to have a match function that
-     * returns 2 : it makes the read stop and keep the last position */
-    // We don't care : this will be taken care of by the _middle.
-    //guint count;
-    //count = lttv_process_traceset_seek_n_forward(tsc, 0,
-    //      event_viewer_data->main_win_filter);
 
-#if 0
-    lttv_process_traceset_seek_time(tsc, *current_time);
-#endif //0
+    /* Get the first event that passes in the filter */
+    event_viewer_data->current_time_get_first =
+                lttv_traceset_context_position_new(tsc);
+    LttvHooks *hooks = lttv_hooks_new();
+    lttv_hooks_add(hooks,
+                   current_time_get_first_event_hook,
+                   event_viewer_data,
+                   LTTV_PRIO_DEFAULT);
 
-    lttv_traceset_context_position_save(tsc,
-        event_viewer_data->currently_selected_position);
+    lttv_process_traceset_begin(tsc,
+        NULL, NULL, NULL, hooks, NULL);
+    
+    lttv_process_traceset_middle(tsc, ltt_time_infinite, G_MAXUINT, NULL);
+    
+    lttv_process_traceset_end(tsc,
+        NULL, NULL, NULL, hooks, NULL);
+   
+    lttv_hooks_destroy(hooks);
+
+    lttv_traceset_context_position_copy(
+        event_viewer_data->currently_selected_position,
+        event_viewer_data->current_time_get_first);
+    lttv_traceset_context_position_destroy(
+        event_viewer_data->current_time_get_first);
     pos_time = lttv_traceset_context_position_get_time(
         event_viewer_data->currently_selected_position);
   }
