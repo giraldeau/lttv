@@ -259,6 +259,8 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
                                               &vheader->start_monotonic);
           t->start_time = ltt_get_time(LTT_GET_BO(tf),
                                        &vheader->start_time);
+          t->start_time_from_tsc = ltt_time_from_uint64(
+              (double)t->start_tsc * 1000000.0 / (double)t->start_freq);
         }
       }
       break;
@@ -1532,10 +1534,11 @@ LttTime ltt_interpolate_time(LttTracefile *tf, LttEvent *event)
 
 //  time = ltt_time_from_uint64(
 //      cycles_2_ns(tf, (guint64)(tf->buffer.tsc - tf->buffer.begin.cycle_count)));
-  time = ltt_time_from_uint64((tf->buffer.tsc - tf->trace->start_tsc) * 1000000
+  time = ltt_time_from_uint64(
+      (double)(tf->buffer.tsc - tf->trace->start_tsc) * 1000000.0
                                   / (double)tf->trace->start_freq);
   //time = ltt_time_add(tf->buffer.begin.timestamp, time);
-  time = ltt_time_add(tf->trace->start_time, time);
+  time = ltt_time_add(tf->trace->start_time_from_tsc, time);
 
   return time;
 }
@@ -1766,10 +1769,10 @@ static gint map_block(LttTracefile * tf, guint block_num)
                                          &header->begin.freq);
   tf->buffer.begin.timestamp = ltt_time_add(
                                 ltt_time_from_uint64(
-                                  (tf->buffer.begin.cycle_count
-                                  - tf->trace->start_tsc) * 1000000
+                                  (double)(tf->buffer.begin.cycle_count
+                                  - tf->trace->start_tsc) * 1000000.0
                                     / (double)tf->trace->start_freq),
-                                tf->trace->start_time);
+                                tf->trace->start_time_from_tsc);
 #if 0
 
   tf->buffer.end.timestamp = ltt_time_add(
@@ -1789,10 +1792,10 @@ static gint map_block(LttTracefile * tf, guint block_num)
                                         &header->lost_size);
   tf->buffer.end.timestamp = ltt_time_add(
                                 ltt_time_from_uint64(
-                                  (tf->buffer.end.cycle_count
-                                  - tf->trace->start_tsc) * 1000000
+                                  (double)(tf->buffer.end.cycle_count
+                                  - tf->trace->start_tsc) * 1000000.0
                                     / (double)tf->trace->start_freq),
-                                tf->trace->start_time);
+                                tf->trace->start_time_from_tsc);
  
   tf->buffer.tsc =  tf->buffer.begin.cycle_count;
   tf->event.tsc = tf->buffer.tsc;

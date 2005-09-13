@@ -418,6 +418,7 @@ struct _LttTrace{
   uint64_t  start_tsc;
   uint64_t  start_monotonic;
   LttTime   start_time;
+  LttTime   start_time_from_tsc;
 
   GData     *tracefiles;                    //tracefiles groups
 };
