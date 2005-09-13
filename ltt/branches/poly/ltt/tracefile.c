@@ -93,7 +93,10 @@ static inline void preset_field_type_size(LttTracefile *tf,
 static gint map_block(LttTracefile * tf, guint block_num);
 
 /* calculate nsec per cycles for current block */
-static double calc_nsecs_per_cycle(LttTracefile * t);
+#if 0
+static guint32 calc_nsecs_per_cycle(LttTracefile * t);
+static guint64 cycles_2_ns(LttTracefile *tf, guint64 cycles);
+#endif //0
 
 /* go to the next event */
 static int ltt_seek_next_event(LttTracefile *tf);
@@ -248,6 +251,10 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
          sizeof(struct ltt_block_start_header) 
             + sizeof(struct ltt_trace_header_0_4);
         if(t) {
+          t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
+                                         &vheader->start_freq);
+          t->start_tsc = ltt_get_uint64(LTT_GET_BO(tf),
+                                        &vheader->start_tsc);
           t->start_monotonic = ltt_get_uint64(LTT_GET_BO(tf),
                                               &vheader->start_monotonic);
           t->start_time = ltt_get_time(LTT_GET_BO(tf),
@@ -1523,10 +1530,12 @@ LttTime ltt_interpolate_time(LttTracefile *tf, LttEvent *event)
 
   g_assert(tf->trace->has_tsc);
 
-  time = ltt_time_from_uint64(
-      (guint64)(tf->buffer.tsc - tf->buffer.begin.cycle_count) * 
-                                          tf->buffer.nsecs_per_cycle);
-  time = ltt_time_add(tf->buffer.begin.timestamp, time);
+//  time = ltt_time_from_uint64(
+//      cycles_2_ns(tf, (guint64)(tf->buffer.tsc - tf->buffer.begin.cycle_count)));
+  time = ltt_time_from_uint64((tf->buffer.tsc - tf->trace->start_tsc) * 1000000
+                                  / (double)tf->trace->start_freq);
+  //time = ltt_time_add(tf->buffer.begin.timestamp, time);
+  time = ltt_time_add(tf->trace->start_time, time);
 
   return time;
 }
@@ -1741,25 +1750,35 @@ static gint map_block(LttTracefile * tf, guint block_num)
 
   header = (struct ltt_block_start_header*)tf->buffer.head;
 
+#if 0
   tf->buffer.begin.timestamp = ltt_time_add(
                                 ltt_time_from_uint64(
                                  ltt_get_uint64(LTT_GET_BO(tf),
                                   &header->begin.timestamp)
                                     - tf->trace->start_monotonic),
                                   tf->trace->start_time);
+#endif //0
   //g_debug("block %u begin : %lu.%lu", block_num,
   //    tf->buffer.begin.timestamp.tv_sec, tf->buffer.begin.timestamp.tv_nsec);
   tf->buffer.begin.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->begin.cycle_count);
   tf->buffer.begin.freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &header->begin.freq);
+  tf->buffer.begin.timestamp = ltt_time_add(
+                                ltt_time_from_uint64(
+                                  (tf->buffer.begin.cycle_count
+                                  - tf->trace->start_tsc) * 1000000
+                                    / (double)tf->trace->start_freq),
+                                tf->trace->start_time);
+#if 0
+
   tf->buffer.end.timestamp = ltt_time_add(
                                 ltt_time_from_uint64(
                                  ltt_get_uint64(LTT_GET_BO(tf),
                                   &header->end.timestamp)
                                     - tf->trace->start_monotonic),
                                   tf->trace->start_time);
-
+#endif //0
   //g_debug("block %u end : %lu.%lu", block_num,
   //    tf->buffer.end.timestamp.tv_sec, tf->buffer.end.timestamp.tv_nsec);
   tf->buffer.end.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
@@ -1768,7 +1787,13 @@ static gint map_block(LttTracefile * tf, guint block_num)
                                        &header->end.freq);
   tf->buffer.lost_size = ltt_get_uint32(LTT_GET_BO(tf),
                                         &header->lost_size);
-  
+  tf->buffer.end.timestamp = ltt_time_add(
+                                ltt_time_from_uint64(
+                                  (tf->buffer.end.cycle_count
+                                  - tf->trace->start_tsc) * 1000000
+                                    / (double)tf->trace->start_freq),
+                                tf->trace->start_time);
+ 
   tf->buffer.tsc =  tf->buffer.begin.cycle_count;
   tf->event.tsc = tf->buffer.tsc;
   tf->buffer.freq = tf->buffer.begin.freq;
@@ -1782,7 +1807,8 @@ static gint map_block(LttTracefile * tf, guint block_num)
   /* Now that the buffer is mapped, calculate the time interpolation for the
    * block. */
   
-  tf->buffer.nsecs_per_cycle = calc_nsecs_per_cycle(tf);
+//  tf->buffer.nsecs_per_cycle = calc_nsecs_per_cycle(tf);
+  //tf->buffer.cyc2ns_scale = calc_nsecs_per_cycle(tf);
  
   /* Make the current event point to the beginning of the buffer :
    * it means that the event read must get the first event. */
@@ -1931,7 +1957,7 @@ error:
   return ENOPROTOOPT;
 }
 
-
+#if 0
 /*****************************************************************************
  *Function name
  *    calc_nsecs_per_cycle : calculate nsecs per cycle for current block
@@ -1942,15 +1968,22 @@ error:
  ****************************************************************************/
 /* from timer_tsc.c */
 #define CYC2NS_SCALE_FACTOR 10
-static double calc_nsecs_per_cycle(LttTracefile * tf)
+static guint32 calc_nsecs_per_cycle(LttTracefile * tf)
 {
   //return 1e6 / (double)tf->buffer.freq;
-  guint64 cpu_mhz = tf->buffer.freq / 1000;
-  guint64 cyc2ns_scale = (1000 << CYC2NS_SCALE_FACTOR)/cpu_mhz;
+  guint32 cpu_mhz = tf->buffer.freq / 1000;
+  guint32 cyc2ns_scale = (1000 << CYC2NS_SCALE_FACTOR)/cpu_mhz;
   
-  return cyc2ns_scale >> CYC2NS_SCALE_FACTOR;
+  return cyc2ns_scale;
  // return 1e6 / (double)tf->buffer.freq;
 }
+
+static guint64 cycles_2_ns(LttTracefile *tf, guint64 cycles)
+{
+  return (cycles * tf->buffer.cyc2ns_scale) >> CYC2NS_SCALE_FACTOR;
+}
+#endif //0
+
 #if 0
 void setFieldsOffset(LttTracefile *tf, LttEventType *evT,void *evD)
 {

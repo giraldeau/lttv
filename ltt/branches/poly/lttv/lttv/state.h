@@ -168,7 +168,8 @@ extern LttvProcessStatus
   LTTV_STATE_EXIT,
   LTTV_STATE_ZOMBIE,
   LTTV_STATE_WAIT,
-  LTTV_STATE_RUN;
+  LTTV_STATE_RUN,
+  LTTV_STATE_DEAD;
 
 
 typedef struct _LttvExecutionState {

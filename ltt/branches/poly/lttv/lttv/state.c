@@ -85,7 +85,8 @@ LttvProcessStatus
   LTTV_STATE_EXIT,
   LTTV_STATE_ZOMBIE,
   LTTV_STATE_WAIT,
-  LTTV_STATE_RUN;
+  LTTV_STATE_RUN,
+  LTTV_STATE_DEAD;
 
 static GQuark
   LTTV_STATE_TRACEFILES,
@@ -1211,18 +1212,16 @@ static gboolean schedchange(void *hook_data, void *call_data)
 
     if(unlikely(process->state->s == LTTV_STATE_EXIT)) {
       process->state->s = LTTV_STATE_ZOMBIE;
+      process->state->change = s->parent.timestamp;
     } else {
       if(unlikely(state_out == 0)) process->state->s = LTTV_STATE_WAIT_CPU;
       else process->state->s = LTTV_STATE_WAIT;
-    } /* FIXME : we do not remove process here, because the kernel
-       * still has them : they may be zombies. We need to know
-       * exactly when release_task is executed on the PID to 
-       * know when the zombie is destroyed.
-       */
-    //else
-    //  exit_process(s, process);
+      process->state->change = s->parent.timestamp;
+    }
 
-    process->state->change = s->parent.timestamp;
+    if(state_out == 32)
+       exit_process(s, process); /* EXIT_DEAD */
+          /* see sched.h for states */
   }
   process = ts->running_process[cpu] =
               lttv_state_find_process_or_create(
@@ -1263,7 +1262,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
    * in a SMP case where we don't have enough precision on the clocks.
    *
    * Test reenabled after precision fixes on time. (Mathieu) */
-  
+#if 0 
   zombie_process = lttv_state_find_process(ts, ANY_CPU, child_pid);
 
   if(unlikely(zombie_process != NULL)) {
@@ -1278,7 +1277,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
 
     exit_process(s, zombie_process);
   }
-
+#endif //0
   g_assert(process->pid != child_pid);
   // FIXME : Add this test in the "known state" section
   // g_assert(process->pid == parent_pid);
@@ -1288,10 +1287,13 @@ static gboolean process_fork(void *hook_data, void *call_data)
                               child_pid, &s->parent.timestamp);
   } else {
     /* The process has already been created :  due to time imprecision between
-     * multiple CPUs : it has been scheduled in before creation.
+     * multiple CPUs : it has been scheduled in before creation. Note that we
+     * shouldn't have this kind of imprecision.
      *
      * Simply put a correct parent.
      */
+    g_assert(0); /* This is a problematic case : the process has been created
+                    before the fork event */
     child_process->ppid = process->pid;
   }
 
@@ -1346,15 +1348,21 @@ static gboolean process_free(void *hook_data, void *call_data)
     //Clearly due to time imprecision, we disable it. (Mathieu)
     //If this weird case happen, we have no choice but to put the 
     //Currently running process on the cpu to 0.
+    //I re-enable it following time precision fixes. (Mathieu)
+    //Well, in the case where an process is freed by a process on another CPU
+    //and still scheduled, it happens that this is the schedchange that will
+    //drop the last reference count. Do not free it here!
     guint num_cpus = ltt_trace_get_num_cpu(ts->parent.t);
     guint i;
     for(i=0; i< num_cpus; i++) {
       //g_assert(process != ts->running_process[i]);
       if(process == ts->running_process[i]) {
-        ts->running_process[i] = lttv_state_find_process(ts, i, 0);
+        //ts->running_process[i] = lttv_state_find_process(ts, i, 0);
+        break;
       }
     }
-    exit_process(s, process);
+    if(i == num_cpus) /* process is not scheduled */
+      exit_process(s, process);
   }
 
   return FALSE;
@@ -2124,6 +2132,7 @@ static void module_init()
   LTTV_STATE_ZOMBIE = g_quark_from_string("zombie");
   LTTV_STATE_WAIT = g_quark_from_string("wait for I/O");
   LTTV_STATE_RUN = g_quark_from_string("running");
+  LTTV_STATE_DEAD = g_quark_from_string("dead");
   LTTV_STATE_TRACEFILES = g_quark_from_string("tracefiles");
   LTTV_STATE_PROCESSES = g_quark_from_string("processes");
   LTTV_STATE_PROCESS = g_quark_from_string("process");

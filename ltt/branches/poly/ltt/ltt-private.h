@@ -184,6 +184,8 @@ struct ltt_trace_header_0_4 {
   uint8_t         has_heartbeat;
   uint8_t         has_alignment;  /* Event header alignment */
 	uint8_t         has_tsc;
+  uint64_t        start_freq;
+  uint64_t        start_tsc;
   uint64_t        start_monotonic;
   struct timespec start_time;
 } LTT_PACKED_STRUCT;
@@ -354,7 +356,8 @@ typedef struct _LttBuffer {
   /* Timekeeping */
   uint64_t                tsc;       /* Current timestamp counter */
   uint64_t                freq; /* Frequency in khz */
-  double                  nsecs_per_cycle;  /* Precalculated from freq */
+  //double                  nsecs_per_cycle;  /* Precalculated from freq */
+  guint32                 cyc2ns_scale;
 } LttBuffer;
 
 struct _LttTracefile{
@@ -411,6 +414,8 @@ struct _LttTrace{
   guint8    has_heartbeat;
   guint8    has_alignment;
 	guint8		has_tsc;
+  uint64_t  start_freq;
+  uint64_t  start_tsc;
   uint64_t  start_monotonic;
   LttTime   start_time;
 
