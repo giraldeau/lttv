@@ -2555,10 +2555,16 @@ char * ltt_trace_system_description_description (LttSystemDescription * s)
 }
 
 
-/* get the start time of the trace */
+/* get the NTP corrected start time of the trace */
 LttTime ltt_trace_start_time(LttTrace *t)
 {
   return t->start_time;
+}
+
+/* get the monotonic start time of the trace */
+LttTime ltt_trace_start_time_monotonic(LttTrace *t)
+{
+  return t->start_time_from_tsc;
 }
 
 LttTracefile *ltt_tracefile_new()

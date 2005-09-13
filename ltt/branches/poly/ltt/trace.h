@@ -141,9 +141,13 @@ gchar * ltt_trace_system_description_domain_name (LttSystemDescription * s);
 gchar * ltt_trace_system_description_description (LttSystemDescription * s);
 
 
-/* get the start time of the trace */
+/* get the NTP start time of the trace */
 
 LttTime ltt_trace_start_time(LttTrace *t);
+
+/* get the monotonic start time of the trace */
+
+LttTime ltt_trace_start_time_monotonic(LttTrace *t);
 
 /* copy tracefile info over another. Used for sync. */
 LttTracefile *ltt_tracefile_new();
