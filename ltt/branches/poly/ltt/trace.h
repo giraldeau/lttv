@@ -143,7 +143,7 @@ gchar * ltt_trace_system_description_description (LttSystemDescription * s);
 
 /* get the start time of the trace */
 
-LttTime ltt_trace_system_description_trace_start_time(LttSystemDescription *s);
+LttTime ltt_trace_start_time(LttTrace *t);
 
 /* copy tracefile info over another. Used for sync. */
 LttTracefile *ltt_tracefile_new();
