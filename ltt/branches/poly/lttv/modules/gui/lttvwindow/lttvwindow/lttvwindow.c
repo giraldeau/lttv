@@ -1121,19 +1121,9 @@ void events_request_free(EventsRequest *events_request)
 }
 
 
-void main_window_add_child_window(Tab *tab, gpointer data,
-    const gchar *name, GDestroyNotify destroy_fct)
-{
-  g_object_set_data_full(G_OBJECT(tab->mw->mwindow),
-      name,
-      data,
-      destroy_fct);
-}
 
-void main_window_remove_child_window(Tab *tab,
-    const gchar *name)
+GtkWidget *main_window_get_widget(Tab *tab)
 {
-  /* Might return NULL if called from the descructor upon main window close */
-  g_object_steal_data(G_OBJECT(tab->mw->mwindow), name);
+  return tab->mw->mwindow;
 }
 

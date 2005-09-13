@@ -159,6 +159,16 @@ void lttvwindowtraces_background_request_queue
 void lttvwindowtraces_background_request_remove
                      (LttvTrace *trace, gchar *module_name);
                      
+
+                     
+/**
+ * Find a background request in a trace
+ *
+ */
+
+gboolean lttvwindowtraces_background_request_find
+                     (LttvTrace *trace, gchar *module_name);
+                     
 /**
  * Register a callback to be called when requested data is passed in the next
  * queued background processing.

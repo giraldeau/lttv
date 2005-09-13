@@ -63,10 +63,13 @@ static char remember_trace_dir[PATH_MAX] = "";
 
 
 MainWindow * get_window_data_struct(GtkWidget * widget);
-char * get_load_module(char ** load_module_name, int nb_module);
-char * get_unload_module(char ** loaded_module_name, int nb_module);
-char * get_remove_trace(char ** all_trace_name, int nb_trace);
-char * get_selection(char ** all_name, int nb, char *title, char * column_title);
+char * get_load_module(MainWindow *mw,
+    char ** load_module_name, int nb_module);
+char * get_unload_module(MainWindow *mw,
+    char ** loaded_module_name, int nb_module);
+char * get_remove_trace(MainWindow *mw, char ** all_trace_name, int nb_trace);
+char * get_selection(MainWindow *mw,
+    char ** all_name, int nb, char *title, char * column_title);
 Tab* create_tab(MainWindow * mw, Tab *copy_tab,
 		  GtkNotebook * notebook, char * label);
 
@@ -803,6 +806,9 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
 
   gtk_file_selection_hide_fileop_buttons(file_selector);
   
+  gtk_window_set_transient_for(GTK_WINDOW(file_selector),
+      GTK_WINDOW(mw_data->mwindow));
+
   id = gtk_dialog_run(GTK_DIALOG(file_selector));
   switch(id){
     case GTK_RESPONSE_ACCEPT:
@@ -1701,6 +1707,8 @@ void add_trace(GtkWidget * widget, gpointer user_data)
   GtkFileSelection * file_selector = (GtkFileSelection *)gtk_file_selection_new("Select a trace");
   gtk_widget_hide( (file_selector)->file_list->parent) ;
   gtk_file_selection_hide_fileop_buttons(file_selector);
+  gtk_window_set_transient_for(GTK_WINDOW(file_selector),
+      GTK_WINDOW(mw_data->mwindow));
   
   if(remember_trace_dir[0] != '\0')
     gtk_file_selection_set_filename(file_selector, remember_trace_dir);
@@ -1792,7 +1800,7 @@ void remove_trace(GtkWidget *widget, gpointer user_data)
     name[i] = g_quark_to_string(ltt_trace_name(trace));
   }
 
-  remove_trace_name = get_remove_trace(name, nb_trace);
+  remove_trace_name = get_remove_trace(mw_data, name, nb_trace);
 
 
   if(remove_trace_name){
@@ -2479,7 +2487,8 @@ on_load_library_activate                (GtkMenuItem     *menuitem,
       g_ptr_array_add(name, path);
     }
 
-    load_module_path = get_selection((char **)(name->pdata), name->len,
+    load_module_path = get_selection(mw_data,
+                             (char **)(name->pdata), name->len,
                              "Select a library path", "Library paths");
     if(load_module_path != NULL)
       strncpy(load_module_path_alter, load_module_path, PATH_MAX-1); // -1 for /
@@ -2512,6 +2521,9 @@ on_load_library_activate                (GtkMenuItem     *menuitem,
     gtk_file_selection_set_filename(file_selector, load_module_path_alter);
     gtk_file_selection_hide_fileop_buttons(file_selector);
     
+    gtk_window_set_transient_for(GTK_WINDOW(file_selector),
+        GTK_WINDOW(mw_data->mwindow));
+
     str[0] = '\0';
     id = gtk_dialog_run(GTK_DIALOG(file_selector));
     switch(id){
@@ -2586,7 +2598,7 @@ on_unload_library_activate              (GtkMenuItem     *menuitem,
     gchar *path = lib_info[i].name;
     g_ptr_array_add(name, path);
   }
-  lib_name = get_selection((char **)(name->pdata), name->len,
+  lib_name = get_selection(mw_data, (char **)(name->pdata), name->len,
                            "Select a library", "Libraries");
   if(lib_name != NULL) {
     for(i=0;i<nb;i++){
@@ -2633,7 +2645,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
       gchar *path = lib_info[i].name;
       g_ptr_array_add(name, path);
     }
-    lib_name = get_selection((char **)(name->pdata), name->len,
+    lib_name = get_selection(mw_data,(char **)(name->pdata), name->len,
                              "Select a library", "Libraries");
     if(lib_name != NULL) {
       for(i=0;i<nb;i++){
@@ -2668,7 +2680,7 @@ on_load_module_activate                (GtkMenuItem     *menuitem,
       gchar *path = module_info[i].name;
       g_ptr_array_add(name, path);
     }
-    module_name = get_selection((char **)(name->pdata), name->len,
+    module_name = get_selection(mw_data, (char **)(name->pdata), name->len,
                              "Select a module", "Modules");
     if(module_name != NULL) {
       for(i=0;i<nb;i++){
@@ -2780,7 +2792,7 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
       gchar *path = lib_info[i].name;
       g_ptr_array_add(name, path);
     }
-    lib_name = get_selection((char **)(name->pdata), name->len,
+    lib_name = get_selection(mw_data, (char **)(name->pdata), name->len,
                              "Select a library", "Libraries");
     if(lib_name != NULL) {
       for(i=0;i<nb;i++){
@@ -2814,7 +2826,7 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
       gchar *path = module_info[i].name;
       if(module_info[i].use_count > 0) g_ptr_array_add(name, path);
     }
-    module_name = get_selection((char **)(name->pdata), name->len,
+    module_name = get_selection(mw_data, (char **)(name->pdata), name->len,
                              "Select a module", "Modules");
     if(module_name != NULL) {
       for(i=0;i<nb;i++){
@@ -2846,13 +2858,17 @@ void
 on_add_library_search_path_activate     (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
+  MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
   //GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select library path");
   GtkFileSelection * file_selector = (GtkFileSelection *)gtk_file_selection_new("Select a trace");
   gtk_widget_hide( (file_selector)->file_list->parent) ;
+
+  gtk_window_set_transient_for(GTK_WINDOW(file_selector),
+      GTK_WINDOW(mw_data->mwindow));
+
   const char * dir;
   gint id;
 
-  MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
   if(remember_plugins_dir[0] != '\0')
     gtk_file_selection_set_filename(file_selector, remember_plugins_dir);
 
@@ -2895,7 +2911,7 @@ on_remove_library_search_path_activate     (GtkMenuItem     *menuitem,
       gchar *path = lttv_library_path_get(i);
       g_ptr_array_add(name, path);
     }
-    lib_path = get_selection((char **)(name->pdata), name->len,
+    lib_path = get_selection(mw_data, (char **)(name->pdata), name->len,
                              "Select a library path", "Library paths");
 
     g_ptr_array_free(name, TRUE);
@@ -3727,9 +3743,10 @@ void scroll_value_changed_cb(GtkWidget *scrollbar,
 /* Select a trace which will be removed from traceset
  */
 
-char * get_remove_trace(char ** all_trace_name, int nb_trace)
+char * get_remove_trace(MainWindow *mw_data, 
+    char ** all_trace_name, int nb_trace)
 {
-  return get_selection(all_trace_name, nb_trace, 
+  return get_selection(mw_data, all_trace_name, nb_trace, 
 		       "Select a trace", "Trace pathname");
 }
 
@@ -3737,9 +3754,10 @@ char * get_remove_trace(char ** all_trace_name, int nb_trace)
 /* Select a module which will be loaded
  */
 
-char * get_load_module(char ** load_module_name, int nb_module)
+char * get_load_module(MainWindow *mw_data, 
+    char ** load_module_name, int nb_module)
 {
-  return get_selection(load_module_name, nb_module, 
+  return get_selection(mw_data, load_module_name, nb_module, 
 		       "Select a module to load", "Module name");
 }
 
@@ -3749,9 +3767,10 @@ char * get_load_module(char ** load_module_name, int nb_module)
 /* Select a module which will be unloaded
  */
 
-char * get_unload_module(char ** loaded_module_name, int nb_module)
+char * get_unload_module(MainWindow *mw_data,
+    char ** loaded_module_name, int nb_module)
 {
-  return get_selection(loaded_module_name, nb_module, 
+  return get_selection(mw_data, loaded_module_name, nb_module, 
 		       "Select a module to unload", "Module name");
 }
 
@@ -3760,8 +3779,9 @@ char * get_unload_module(char ** loaded_module_name, int nb_module)
  * select one of them
  */
 
-char * get_selection(char ** loaded_module_name, int nb_module,
-		     char *title, char * column_title)
+char * get_selection(MainWindow *mw_data,
+    char ** loaded_module_name, int nb_module,
+	  char *title, char * column_title)
 {
   GtkWidget         * dialogue;
   GtkWidget         * scroll_win;
@@ -3781,6 +3801,8 @@ char * get_selection(char ** loaded_module_name, int nb_module,
 					 GTK_STOCK_CANCEL,GTK_RESPONSE_REJECT,
 					 NULL); 
   gtk_window_set_default_size((GtkWindow*)dialogue, 500, 200);
+  gtk_window_set_transient_for(GTK_WINDOW(dialogue), 
+      GTK_WINDOW(mw_data->mwindow));
 
   scroll_win = gtk_scrolled_window_new (NULL, NULL);
   gtk_widget_show ( scroll_win);

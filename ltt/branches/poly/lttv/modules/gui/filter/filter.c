@@ -126,7 +126,6 @@ struct _FilterViewerData {
   
   GtkWidget *f_add_button;              /**< add expression to current expression (GtkButton) */
  
-  gchar *name;                          /**< Name of the window in the main window */
 };
 
 /**
@@ -216,6 +215,9 @@ gui_filter(Tab *tab)
   
 
   fvd->f_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_transient_for(GTK_WINDOW(fvd->f_window),
+      GTK_WINDOW(main_window_get_widget(tab)));
+  gtk_window_set_destroy_with_parent(GTK_WINDOW(fvd->f_window), TRUE);
 
   /* 
    * Initiating GtkTable layout 
@@ -434,10 +436,6 @@ gui_filter_destructor(FilterViewerData *fvd)
   
   g_filter_list = g_slist_remove(g_filter_list, fvd);
  
-  main_window_remove_child_window(tab, fvd->name);
-  
-  g_free(fvd->name);
-  
   g_free(fvd);
 }
 
@@ -456,15 +454,8 @@ GtkWidget *
 h_guifilter(Tab *tab)
 {
   FilterViewerData* f = gui_filter(tab) ;
-  f->name = g_new(gchar, 256);
 
-  snprintf(f->name, 256, "guifilter %p", f);
-
-  if(f)
-    main_window_add_child_window(tab, f,
-        f->name, (GDestroyNotify)gui_filter_destructor);
   return NULL;
-  
 }
 
 /**

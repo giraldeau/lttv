@@ -45,6 +45,7 @@ typedef struct _BackgroundRequest {
                                     where all standard hooks under computation/.
                                     i.e. modulename */
   LttvTrace *trace; /* trace concerned */
+  GtkWidget *dialog;  /* Dialog linked with the request, may be NULL */
 } BackgroundRequest;
 
 typedef struct _BackgroundNotify {
@@ -293,6 +294,12 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace)
   }
 }
 
+static void destroy_dialog(BackgroundRequest *bg_req)
+{
+  gtk_widget_destroy(bg_req->dialog);
+  bg_req->dialog = NULL;
+}
+
 
 /**
  * Function to request data from a specific trace
@@ -349,7 +356,18 @@ void lttvwindowtraces_background_request_queue
                   trace,
                   NULL);
   /* FIXME : show message in status bar, need context and message id */
-  g_info("Background computation started for trace %p", trace);
+  g_info("Background computation for %s started for trace %p", module_name,
+      trace);
+  GtkWidget *dialog = 
+    gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, 
+      "Background computation for %s started for trace %s", 
+      module_name,
+      g_quark_to_string(ltt_trace_name(lttv_trace(trace))));
+  g_signal_connect_swapped (dialog, "response",
+      G_CALLBACK (destroy_dialog),
+      bg_req);
+  bg_req->dialog = dialog;
+  gtk_widget_show(dialog);
 }
 
 /**
@@ -398,6 +416,37 @@ void lttvwindowtraces_background_request_remove
   }
 }
  
+/**
+ * Find a background request in a trace
+ *
+ */
+
+gboolean lttvwindowtraces_background_request_find
+                     (LttvTrace *trace, gchar *module_name)
+{
+  LttvAttribute *attribute = lttv_trace_attribute(trace);
+  LttvAttributeValue value;
+  GSList *iter = NULL;
+  GSList **slist;
+
+  g_assert(lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+                                LTTV_REQUESTS_QUEUE,
+                                LTTV_POINTER,
+                                &value));
+  slist = (GSList**)(value.v_pointer);
+
+  for(iter=*slist;iter!=NULL;) {
+    BackgroundRequest *bg_req = 
+              (BackgroundRequest *)iter->data;
+
+    if(bg_req->module_name == g_quark_from_string(module_name)) {
+      return TRUE;
+    } else {
+      iter=g_slist_next(iter);
+    }
+  }
+  return FALSE;
+}
  
 /**
  * Register a callback to be called when requested data is passed in the next
@@ -1245,6 +1294,19 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
             LttvHooks *after_request = (LttvHooks*)*(value.v_pointer);
 
             if(after_request != NULL) lttv_hooks_call(after_request, tsc);
+            
+            if(bg_req->dialog != NULL)
+              gtk_widget_destroy(bg_req->dialog);
+            GtkWidget *dialog = 
+              gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, 
+                "Background computation %s finished for trace %s", 
+                g_quark_to_string(bg_req->module_name),
+                g_quark_to_string(ltt_trace_name(lttv_trace(bg_req->trace))));
+            g_signal_connect_swapped (dialog, "response",
+                G_CALLBACK (gtk_widget_destroy),
+                dialog);
+            gtk_widget_show(dialog);
+
             /* - remove request */
             remove = TRUE;
             free_data = TRUE;
@@ -1303,6 +1365,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
           g_debug("Background computation scheduler stopped");
           g_info("Background computation finished for trace %p", trace);
           /* FIXME : remove status bar info, need context id and message id */
+
           ret_val = FALSE;
         } else {
           ret_val = TRUE;

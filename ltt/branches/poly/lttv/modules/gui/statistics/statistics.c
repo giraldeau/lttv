@@ -168,9 +168,8 @@ static void request_background_data(StatisticViewerData *svd)
          * information. Happens when two viewers ask for it before servicing
          * starts.
          */
-        lttvwindowtraces_background_request_remove(trace, "stats");
-        lttvwindowtraces_background_request_queue(trace,
-                                                  "stats");
+        if(!lttvwindowtraces_background_request_find(trace, "stats"))
+          lttvwindowtraces_background_request_queue(trace, "stats");
         lttvwindowtraces_background_notify_queue(svd,
                                                  trace,
                                                  ltt_time_infinite,

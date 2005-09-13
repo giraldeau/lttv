@@ -138,9 +138,8 @@ static void request_background_data(ControlFlowData *control_flow_data)
          * information. Happens when two viewers ask for it before servicing
          * starts.
          */
-        lttvwindowtraces_background_request_remove(trace, "state");
-        lttvwindowtraces_background_request_queue(trace,
-                                                  "state");
+        if(!lttvwindowtraces_background_request_find(trace, "state"))
+          lttvwindowtraces_background_request_queue(trace, "state");
         lttvwindowtraces_background_notify_queue(control_flow_data,
                                                  trace,
                                                  ltt_time_infinite,

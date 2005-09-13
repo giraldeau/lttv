@@ -549,9 +549,8 @@ static void request_background_data(EventViewerData *event_viewer_data)
          * information. Happens when two viewers ask for it before servicing
          * starts.
          */
-        lttvwindowtraces_background_request_remove(trace, "state");
-        lttvwindowtraces_background_request_queue(trace,
-                                                  "state");
+        if(!lttvwindowtraces_background_request_find(trace, "state"))
+          lttvwindowtraces_background_request_queue(trace, "state");
         lttvwindowtraces_background_notify_queue(event_viewer_data,
                                                  trace,
                                                  ltt_time_infinite,
