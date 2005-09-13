@@ -1188,13 +1188,27 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
     LttvTracesetContextPosition *pos =
         lttv_traceset_context_position_new(tsc);
     
-  /* Remember the beginning position */
+    /* Remember the beginning position */
     if(event_viewer_data->pos->len > 0) {
       LttvTracesetContextPosition *first_pos = 
-        (LttvTracesetContextPosition*)g_ptr_array_index(event_viewer_data->pos,
-                                                        0);
+        (LttvTracesetContextPosition*)g_ptr_array_index(
+                                                    event_viewer_data->pos,
+                                                    0);
       lttv_traceset_context_position_copy(pos, first_pos);
-      g_assert(lttv_process_traceset_seek_position(tsc, pos) == 0); 
+
+      if(relative_position > 0) {
+        LttTime first_event_time = 
+            lttv_traceset_context_position_get_time(
+                              pos);
+        lttv_state_traceset_seek_time_closest((LttvTracesetState*)tsc,
+          first_event_time);
+        lttv_process_traceset_middle(tsc, ltt_time_infinite,
+                                   G_MAXUINT,
+                                   pos);
+       
+      } else if(relative_position <= 0) {
+        g_assert(lttv_process_traceset_seek_position(tsc, pos) == 0); 
+      }
     } else {
       /* There is nothing in the list : simply seek to the time value. */
       lttv_state_traceset_seek_time_closest((LttvTracesetState*)tsc,
@@ -1423,9 +1437,10 @@ gboolean update_current_time(void * hook_data, void * call_data)
     /* Little trick : seek 0 events forward to get the first event
      * that passes the filter. The trick is to have a match function that
      * returns 2 : it makes the read stop and keep the last position */
-    guint count;
-    count = lttv_process_traceset_seek_n_forward(tsc, 0,
-          event_viewer_data->main_win_filter);
+    // We don't care : this will be taken care of by the _middle.
+    //guint count;
+    //count = lttv_process_traceset_seek_n_forward(tsc, 0,
+    //      event_viewer_data->main_win_filter);
 
 #if 0
     lttv_process_traceset_seek_time(tsc, *current_time);

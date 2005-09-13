@@ -772,12 +772,14 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     last_ret = lttv_hooks_call_merge(tfc->event, tfc,
                         lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
 
+#if 0
+    /* This is buggy : it won't work well with state computation */
    if(unlikely(last_ret == 2)) {
       /* This is a case where we want to stay at this position and stop read. */
 	    g_tree_insert(pqueue, tfc, tfc);
       return count - 1;
     }
-    
+#endif //0
     read_ret = ltt_tracefile_read(tfc->tf);
     
    
@@ -1544,25 +1546,20 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
   struct seek_forward_data *sd = (struct seek_forward_data*)hook_data;
   LttvTracefileContext *tfc = (LttvTracefileContext*)call_data;
 
-  if(sd->filter != NULL) {
-    if(!lttv_filter_tree_parse(sd->filter->head,
+  if(sd->filter == NULL || lttv_filter_tree_parse(sd->filter->head,
           ltt_tracefile_get_event(tfc->tf),
           tfc->tf,
           tfc->t_context->t,
-          tfc))
-      return FALSE;
-  }
- 
-
-  if(sd->event_count >= sd->n)
-    return 2; /* Stay at the same position */
-  else {
+          tfc)) {
     sd->event_count++;
-    return FALSE;
+    if(sd->event_count >= sd->n)
+      return TRUE;
   }
+  return FALSE;
 }
 
-/* Seek back n events forward from the current position
+/* Seek back n events forward from the current position (1 to n)
+ * 0 is ok too, but it will actually do nothing.
  *
  * Parameters :
  * @self   the trace set context
@@ -1578,6 +1575,9 @@ guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
   sd.event_count = 0;
   sd.n = n;
   sd.filter = filter;
+  
+  if(sd.event_count >= sd.n) return sd.event_count;
+  
   LttvHooks *hooks = lttv_hooks_new();
 
   lttv_hooks_add(hooks, seek_forward_event_hook, &sd, LTTV_PRIO_DEFAULT);
@@ -1585,13 +1585,15 @@ guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
   lttv_process_traceset_begin(self, NULL, NULL, NULL, hooks, NULL);
   
   /* it will end on the end of traceset, or the fact that the
-   * hook returns 2.
+   * hook returns TRUE.
    */
   lttv_process_traceset_middle(self, ltt_time_infinite,
         G_MAXUINT, NULL);
 
   /* Here, our position is either the end of traceset, or the exact position
-   * after n events : leave it like this. */
+   * after n events : leave it like this. This might be placed on an event that
+   * will be filtered out, we don't care : all we know is that the following
+   * event filtered in will be the right one. */
 
   lttv_process_traceset_end(self, NULL, NULL, NULL, hooks, NULL);
 
