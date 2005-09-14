@@ -35,6 +35,9 @@
 #include <lttvwindow/lttvwindowtraces.h>
 
 #include "hTraceControlInsert.xpm"
+#include "TraceControlStart.xpm"
+#include "TraceControlPause.xpm"
+#include "TraceControlStop.xpm"
 
 
 GSList *g_control_list = NULL ;
@@ -119,11 +122,40 @@ gui_control(Tab *tab)
    * starts with 2 rows and 5 columns and 
    * expands when expressions added
    */
-  tcd->f_main_box = gtk_table_new(13,2,FALSE);
+  tcd->f_main_box = gtk_table_new(14,7,FALSE);
   gtk_table_set_row_spacings(GTK_TABLE(tcd->f_main_box),5);
   gtk_table_set_col_spacings(GTK_TABLE(tcd->f_main_box),5);
   
   gtk_container_add(GTK_CONTAINER(tcd->f_window), GTK_WIDGET(tcd->f_main_box));
+  
+  /*
+   * start/pause/stop buttons
+   */
+  GdkPixbuf *pixbuf;
+  GtkWidget *image;
+  pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlStart_xpm);
+  image = gtk_image_new_from_pixbuf(pixbuf);
+  GtkWidget *start_button = gtk_button_new_with_label("start");
+  gtk_button_set_image(GTK_BUTTON(start_button), image);
+  gtk_button_set_alignment(GTK_BUTTON(start_button), 0.0, 0.0);
+  gtk_widget_show (start_button);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),start_button,6,7,0,1,GTK_FILL,GTK_FILL,2,2);
+  
+  pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlPause_xpm);
+  image = gtk_image_new_from_pixbuf(pixbuf);
+  GtkWidget *pause_button = gtk_button_new_with_label("pause");
+  gtk_button_set_image(GTK_BUTTON(pause_button), image);
+  gtk_button_set_alignment(GTK_BUTTON(pause_button), 0.0, 0.0);
+  gtk_widget_show (pause_button);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),pause_button,6,7,1,2,GTK_FILL,GTK_FILL,2,2);
+
+  pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlStop_xpm);
+  image = gtk_image_new_from_pixbuf(pixbuf);
+  GtkWidget *stop_button = gtk_button_new_with_label("stop");
+  gtk_button_set_image(GTK_BUTTON(stop_button), image);
+  gtk_button_set_alignment(GTK_BUTTON(stop_button), 0.0, 0.0);
+  gtk_widget_show (stop_button);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),stop_button,6,7,2,3,GTK_FILL,GTK_FILL,2,2);
   
   /*
    *  First half of the filter window
@@ -134,11 +166,107 @@ gui_control(Tab *tab)
   gtk_widget_show (username_label);
   GtkWidget *username_entry = gtk_entry_new();
   gtk_entry_set_text(GTK_ENTRY(username_entry),"root");
-
   gtk_widget_show (username_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),username_label,0,2,0,1,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),username_entry,2,6,0,1,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
 
-  gtk_table_attach( GTK_TABLE(tcd->f_main_box),username_label,0,6,0,1,GTK_FILL,GTK_FILL,0,0);
-  gtk_table_attach( GTK_TABLE(tcd->f_main_box),username_entry,6,7,0,1,GTK_FILL,GTK_FILL,0,0);
+
+
+  GtkWidget *password_label = gtk_label_new("Password:");
+  gtk_widget_show (password_label);
+  GtkWidget *password_entry = gtk_entry_new();
+  gtk_entry_set_visibility(GTK_ENTRY(password_entry), FALSE);
+  gtk_widget_show (password_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),password_label,0,2,1,2,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),password_entry,2,6,1,2,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+
+  GtkWidget *channel_dir_label = gtk_label_new("Channel directory:");
+  gtk_widget_show (channel_dir_label);
+  GtkWidget *channel_dir_entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(channel_dir_entry),"/mnt/relayfs/ltt");
+  gtk_widget_show (channel_dir_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),channel_dir_label,0,2,2,3,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),channel_dir_entry,2,6,2,3,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+  GtkWidget *trace_dir_label = gtk_label_new("Trace directory:");
+  gtk_widget_show (trace_dir_label);
+  GtkWidget *trace_dir_entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(trace_dir_entry),"/tmp/trace1");
+  gtk_widget_show (trace_dir_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),trace_dir_label,0,2,3,4,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),trace_dir_entry,2,6,3,4,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+  GtkWidget *trace_name_label = gtk_label_new("Trace name:");
+  gtk_widget_show (trace_name_label);
+  GtkWidget *trace_name_entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(trace_name_entry),"trace");
+  gtk_widget_show (trace_name_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),trace_name_label,0,2,4,5,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),trace_name_entry,2,6,4,5,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+  GtkWidget *trace_mode_label = gtk_label_new("Trace mode ");
+  gtk_widget_show (trace_mode_label);
+  GtkWidget *trace_mode_combo = gtk_combo_box_new_text();
+  gtk_combo_box_append_text(GTK_COMBO_BOX(trace_mode_combo), 
+      "normal");
+  gtk_combo_box_append_text(GTK_COMBO_BOX(trace_mode_combo), 
+      "flight recorder");
+  gtk_combo_box_set_active(GTK_COMBO_BOX(trace_mode_combo), 0);
+  gtk_widget_show (trace_mode_combo);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),trace_mode_label,0,2,5,6,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),trace_mode_combo,2,6,5,6,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+  GtkWidget *start_daemon_label = gtk_label_new("Start daemon ");
+  gtk_widget_show (start_daemon_label);
+  GtkWidget *start_daemon_check = gtk_check_button_new();
+  gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(start_daemon_check), TRUE);
+  gtk_widget_show (start_daemon_check);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),start_daemon_label,0,2,6,7,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),start_daemon_check,2,6,6,7,GTK_FILL,GTK_FILL,0,0);
+
+  GtkWidget *optional_label = gtk_label_new("Optional fields ");
+  gtk_widget_show (optional_label);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),optional_label,0,6,7,8,GTK_FILL,GTK_FILL,2,2);
+
+  GtkWidget *subbuf_size_label = gtk_label_new("Subbuffer size:");
+  gtk_widget_show (subbuf_size_label);
+  GtkWidget *subbuf_size_entry = gtk_entry_new();
+  gtk_widget_show (subbuf_size_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),subbuf_size_label,0,2,8,9,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),subbuf_size_entry,2,6,8,9,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+  GtkWidget *subbuf_num_label = gtk_label_new("Number of subbuffers:");
+  gtk_widget_show (subbuf_num_label);
+  GtkWidget *subbuf_num_entry = gtk_entry_new();
+  gtk_widget_show (subbuf_num_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),subbuf_num_label,0,2,9,10,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),subbuf_num_entry,2,6,9,10,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+  GtkWidget *lttctl_path_label = gtk_label_new("path to lttctl:");
+  gtk_widget_show (lttctl_path_label);
+  GtkWidget *lttctl_path_entry = gtk_entry_new();
+  gtk_widget_show (lttctl_path_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),lttctl_path_label,0,2,10,11,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),lttctl_path_entry,2,6,10,11,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+
+  GtkWidget *lttd_path_label = gtk_label_new("path to lttd:");
+  gtk_widget_show (lttd_path_label);
+  GtkWidget *lttd_path_entry = gtk_entry_new();
+  gtk_widget_show (lttd_path_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),lttd_path_label,0,2,11,12,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),lttd_path_entry,2,6,11,12,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+  
+  GtkWidget *fac_path_label = gtk_label_new("path to facilities:");
+  gtk_widget_show (fac_path_label);
+  GtkWidget *fac_path_entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(fac_path_entry),"/usr/share/LinuxTraceToolkitViewer/facilities");
+  gtk_widget_set_size_request(fac_path_entry, 250, -1);
+  gtk_widget_show (fac_path_entry);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),fac_path_label,0,2,12,13,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->f_main_box),fac_path_entry,2,6,12,13,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
 
 
   /* 
