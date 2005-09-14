@@ -23,4 +23,30 @@
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
  
+
+/*
+ * Check at compile time that something is of a particular type.
+ * Always evaluates to 1 so you may use it easily in comparisons.
+ */
+#define typecheck(type,x) \
+({  type __dummy; \
+  typeof(x) __dummy2; \
+  (void)(&__dummy == &__dummy2); \
+  1; \
+})
+
+/* Deal with 32 wrap correctly */
+#define guint32_after(a,b) \
+  (typecheck(guint32, a) && \
+   typecheck(guint32, b) && \
+   ((gint32)(b) - (gint32)(a) < 0))
+#define guint32_before(a,b)  guint32_after(b,a)
+
+#define guint32_after_eq(a,b) \
+  (typecheck(guint32, a) && \
+   typecheck(guint32, b) && \
+   ((gint32)(b) - (gint32)(a) <= 0))
+#define guint32_before_eq(a,b)  guint32_after_eq(b,a)
+
+
 #endif //COMPILER_H
