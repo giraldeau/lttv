@@ -1914,8 +1914,10 @@ gint update_time_window_hook(void *hook_data, void *call_data)
         control_flow_data->drawing->height);
   }
 
+  /* Update directly when scrolling */
+  gdk_window_process_updates(control_flow_data->drawing->drawing_area->window,
+      TRUE);
 
-  
   return 0;
 }
 
@@ -2076,8 +2078,11 @@ gint update_current_time_hook(void *hook_data, void *call_data)
     
   }
   gtk_widget_queue_draw(control_flow_data->drawing->drawing_area);
-                             
   
+  /* Update directly when scrolling */
+  gdk_window_process_updates(control_flow_data->drawing->drawing_area->window,
+      TRUE);
+                             
   return 0;
 }
 
