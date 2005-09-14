@@ -646,7 +646,6 @@ void tree_v_get_cursor(EventViewerData *event_viewer_data)
 #endif //0
 }
 
-
 /* Filter out the key repeats that come too fast */
 static gboolean key_handler(GtkWidget *widget, GdkEventKey *event,
     gpointer user_data)
@@ -656,7 +655,7 @@ static gboolean key_handler(GtkWidget *widget, GdkEventKey *event,
   g_debug("event time : %u , last time : %u", event->time,
       evd->last_tree_update_time);
   
-  if(event->time < evd->last_tree_update_time)
+  if(guint32_before(event->time, evd->last_tree_update_time))
     return TRUE;
   else
     return FALSE;
