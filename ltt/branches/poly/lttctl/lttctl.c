@@ -27,8 +27,10 @@
 #define BUF_SIZE 4194304
 
 enum trace_ctl_op {
+  CTL_OP_CREATE_START,
 	CTL_OP_CREATE,
 	CTL_OP_DESTROY,
+  CTL_OP_STOP_DESTROY,
 	CTL_OP_START,
 	CTL_OP_STOP,
 	CTL_OP_DAEMON,
@@ -62,10 +64,12 @@ void show_arguments(void)
 	printf("Please use the following arguments :\n");
 	printf("\n");
 	printf("-n name       Name of the trace.\n");
+	printf("-b            Create trace channels and start tracing (no daemon).\n");
 	printf("-c            Create trace channels.\n");
 	printf("-m mode       Normal or flight recorder mode.\n");
 	printf("              Mode values : normal (default) or flight.\n");
 	printf("-r            Destroy trace channels.\n");
+	printf("-R            Stop tracing and destroy trace channels.\n");
 	printf("-s            Start tracing.\n");
 	//printf("              Note : will automatically create a normal trace if "
 	//											"none exists.\n");
@@ -116,6 +120,8 @@ int parse_arguments(int argc, char **argv)
 						}
 
 						break;
+          case 'b':
+            op = CTL_OP_CREATE_START;
 					case 'c':
 						op = CTL_OP_CREATE;
             break;
@@ -140,6 +146,9 @@ int parse_arguments(int argc, char **argv)
 						break;
 					case 'r':
 						op = CTL_OP_DESTROY;
+						break;
+					case 'R':
+						op = CTL_OP_STOP_DESTROY;
 						break;
 					case 's':
 						op = CTL_OP_START;
@@ -420,12 +429,23 @@ int main(int argc, char ** argv)
 	if(handle == NULL) return -1;
 	
 	switch(op) {
+    case CTL_OP_CREATE_START:
+			ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size,
+																n_subbufs);
+      if(!ret)
+        ret = lttctl_start(handle, trace_name);
+      break;
   	case CTL_OP_CREATE:
 			ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size,
 																n_subbufs);
       break;
 		case CTL_OP_DESTROY:
 			ret = lttctl_destroy_trace(handle, trace_name);
+			break;
+		case CTL_OP_STOP_DESTROY:
+			ret = lttctl_stop(handle, trace_name);
+      if(!ret)
+  			ret = lttctl_destroy_trace(handle, trace_name);
 			break;
 		case CTL_OP_START:
 			ret = lttctl_start(handle, trace_name);
