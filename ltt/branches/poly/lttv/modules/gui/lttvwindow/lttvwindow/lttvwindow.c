@@ -938,8 +938,10 @@ void lttvwindow_events_request(Tab *tab,
   if(!tab->events_request_pending)
   {
     /* Redraw has +20 priority. We want to let the redraw be done while we do
-     * our job.  */
-    g_idle_add_full((G_PRIORITY_HIGH_IDLE + 21),
+     * our job. Mathieu : test with high prio higher than events for better
+     * scrolling. */
+    //g_idle_add_full((G_PRIORITY_HIGH_IDLE + 21),
+    g_idle_add_full((G_PRIORITY_DEFAULT - 2),
                     (GSourceFunc)execute_events_requests,
                     tab,
                     NULL);
