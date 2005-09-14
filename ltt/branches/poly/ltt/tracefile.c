@@ -259,6 +259,8 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
                                               &vheader->start_monotonic);
           t->start_time = ltt_get_time(LTT_GET_BO(tf),
                                        &vheader->start_time);
+          t->start_time.tv_nsec *= 1000; /* microsec to nanosec */
+
           t->start_time_from_tsc = ltt_time_from_uint64(
               (double)t->start_tsc * 1000000.0 / (double)t->start_freq);
         }
