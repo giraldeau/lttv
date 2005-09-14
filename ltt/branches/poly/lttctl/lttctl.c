@@ -62,7 +62,8 @@ void show_arguments(void)
 	printf("Please use the following arguments :\n");
 	printf("\n");
 	printf("-n name       Name of the trace.\n");
-	printf("-c mode       Create trace channels in mode normal or flight recorder.\n");
+	printf("-c            Create trace channels.\n");
+	printf("-m mode       Normal or flight recorder mode.\n");
 	printf("              Mode values : normal (default) or flight.\n");
 	printf("-r            Destroy trace channels.\n");
 	printf("-s            Start tracing.\n");
@@ -117,6 +118,8 @@ int parse_arguments(int argc, char **argv)
 						break;
 					case 'c':
 						op = CTL_OP_CREATE;
+            break;
+					case 'm':
 						if(argn+1 < argc) {
 							mode_name = argv[argn+1];
 							argn++;
@@ -130,7 +133,7 @@ int parse_arguments(int argc, char **argv)
 								ret = -1;
 							}
 						} else {
-								printf("Specify a mode after -c.\n");
+								printf("Specify a mode after -m.\n");
 								printf("\n");
 								ret = -1;
 						}
