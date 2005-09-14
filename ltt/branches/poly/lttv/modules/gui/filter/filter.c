@@ -215,6 +215,7 @@ gui_filter(Tab *tab)
   
 
   fvd->f_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+  gtk_window_set_title(GTK_WINDOW(fvd->f_window), "LTTV Filter");
   gtk_window_set_transient_for(GTK_WINDOW(fvd->f_window),
       GTK_WINDOW(main_window_get_widget(tab)));
   gtk_window_set_destroy_with_parent(GTK_WINDOW(fvd->f_window), TRUE);

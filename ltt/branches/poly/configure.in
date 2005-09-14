@@ -115,6 +115,7 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/gui/detailedevents/Makefile
 		 lttv/modules/gui/statistics/Makefile
      lttv/modules/gui/filter/Makefile
+     lttv/modules/gui/tracecontrol/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
 		 ltt/convert/Makefile
