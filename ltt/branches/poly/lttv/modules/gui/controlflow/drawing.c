@@ -571,6 +571,9 @@ void drawing_request_expose(EventsRequest *events_request,
                                x, 0,
                                width, drawing->drawing_area->allocation.height);
  
+  /* Update directly when scrolling */
+  gdk_window_process_updates(drawing->drawing_area->window,
+      TRUE);
 }
 
 
