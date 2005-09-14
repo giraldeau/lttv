@@ -3621,6 +3621,8 @@ void current_position_change_manager(Tab *tab,
 
   g_assert(lttv_process_traceset_seek_position(tsc, pos) == 0);
   LttTime new_time = lttv_traceset_context_position_get_time(pos);
+  /* Put the context in a state coherent position */
+  lttv_state_traceset_seek_time_closest((LttvTracesetState*)tsc, ltt_time_zero);
   
   current_time_change_manager(tab, new_time);
   
