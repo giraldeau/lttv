@@ -6,6 +6,7 @@
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
+AM_CFLAGS += -DPACKAGE_DATA_DIR=\""$(datadir)"\"
 LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/lttvwindow/lttvwindow -llttvwindow
 
