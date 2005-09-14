@@ -139,6 +139,8 @@ typedef struct _EventViewerData {
 
   gint background_info_waiting;
 
+  guint32 last_tree_update_time; /* To filter out repeat keys */
+
 } EventViewerData ;
 
 /** hook functions for update time interval, current time ... */
@@ -177,6 +179,8 @@ static void tree_v_size_request_cb (GtkWidget *widget,
 static void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data);
 static void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1,
     gint arg2, gpointer data);
+static gboolean key_handler(GtkWidget *widget, GdkEventKey *event,
+    gpointer user_data);
 
 static gint redraw_notify(void *hook_data, void *call_data);
 
@@ -274,6 +278,8 @@ gui_events(Tab *tab)
   event_viewer_data->update_cursor = TRUE;
   event_viewer_data->report_position = TRUE;
 
+  event_viewer_data->last_tree_update_time = 0;
+
   /* Create a model for storing the data list */
   event_viewer_data->store_m = gtk_list_store_new (
     N_COLUMNS,      /* Total number of columns     */
@@ -308,6 +314,10 @@ gui_events(Tab *tab)
   g_signal_connect (G_OBJECT (event_viewer_data->tree_v), "move-cursor",
         G_CALLBACK (tree_v_move_cursor_cb),
         event_viewer_data);
+
+  g_signal_connect (G_OBJECT(event_viewer_data->tree_v), "key-press-event",
+      G_CALLBACK(key_handler),
+      event_viewer_data);
 
   // Use on each column!
   //gtk_tree_view_column_set_sizing(event_viewer_data->tree_v,
@@ -637,6 +647,20 @@ void tree_v_get_cursor(EventViewerData *event_viewer_data)
 }
 
 
+/* Filter out the key repeats that come too fast */
+static gboolean key_handler(GtkWidget *widget, GdkEventKey *event,
+    gpointer user_data)
+{
+  EventViewerData *evd = (EventViewerData *)user_data;
+ 
+  g_debug("event time : %u , last time : %u", event->time,
+      evd->last_tree_update_time);
+  
+  if(event->time < evd->last_tree_update_time)
+    return TRUE;
+  else
+    return FALSE;
+}
 
 void tree_v_move_cursor_cb (GtkWidget *widget,
                             GtkMovementStep arg1,
@@ -983,7 +1007,13 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection,
 #endif //0
 }
 
-
+#if 0
+static gint key_snooper(GtkWidget *grab_widget, GdkEventKey *event,
+    gpointer func_data)
+{
+  return TRUE;
+}
+#endif //0
 
 /* This callback may be recalled after a step up/down, but we don't want to lose
  * the exact position : what we do is that we only set the value if it has
@@ -1011,7 +1041,12 @@ void v_scroll_cb (GtkAdjustment *adjustment, gpointer data)
   
   //LttTime old_time = event_viewer_data->first_event;
   
+
+  //gint snoop = gtk_key_snooper_install(key_snooper, NULL);
+  
   get_events(adjustment->value, event_viewer_data);
+
+  //gtk_key_snooper_remove(snoop);
 #if 0 
   LttTime time = ltt_time_sub(event_viewer_data->first_event,
                               tsc->time_span.start_time);
@@ -1318,6 +1353,9 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   //g_signal_emit_by_name(G_OBJECT (event_viewer_data->select_c),
   //    "changed");
   
+  event_viewer_data->last_tree_update_time = 
+    gdk_x11_get_server_time(
+        gtk_widget_get_parent_window(event_viewer_data->tree_v));
 
   return;
 }
