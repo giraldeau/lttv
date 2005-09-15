@@ -329,13 +329,14 @@ int lttctl_create_trace(const struct lttctl_handle *h,
 	if(err != 0) {
 		errno = err;
 		lttctl_perror("Create Trace Error");
-		return -1;
+		return err;
 	}
 
 	return 0;
 
 senderr:
 	lttctl_perror("Create Trace Error");
+  err = EPERM;
 	return err;
 }
 
@@ -372,13 +373,14 @@ int lttctl_destroy_trace(const struct lttctl_handle *h,
 	if(err != 0) {
 		errno = err;
 		lttctl_perror("Destroy Trace Channels Error");
-		return -1;
+		return err;
 	}
 
 	return 0;
 
 senderr:
 	lttctl_perror("Destroy Trace Channels Error");
+  err = EPERM;
 	return err;
 
 }
@@ -417,12 +419,13 @@ int lttctl_start(const struct lttctl_handle *h,
 	if(err != 0) {
 		errno = err;
 		lttctl_perror("Start Trace Error");
-		return -1;
+		return err;
 	}
 
 	return 0;
 
 senderr:
+  err = EPERM;
 	lttctl_perror("Start Trace Error");
 	return err;
 
@@ -461,12 +464,13 @@ int lttctl_stop(const struct lttctl_handle *h,
 	if(err != 0) {
 		errno = err;
 		lttctl_perror("Stop Trace Error");
-		return -1;
+		return err;
 	}
 
 	return 0;
 
 senderr:
+  err = EPERM;
 	lttctl_perror("Stop Trace Error");
 	return err;
 }
