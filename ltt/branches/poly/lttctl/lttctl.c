@@ -43,6 +43,7 @@ static char *trace_name = NULL;
 static char *mode_name = NULL;
 static unsigned subbuf_size = 0;
 static unsigned n_subbufs = 0;
+static unsigned append_trace = 0;
 static enum trace_mode mode = LTT_TRACE_NORMAL;
 static enum trace_ctl_op op = CTL_OP_NONE;
 static char *channel_root = NULL;
@@ -83,6 +84,7 @@ void show_arguments(void)
 	printf("-z            Size of the subbuffers (will be rounded to next page size)\n");
 	printf("-x            Number of subbuffers\n");
 	printf("-e            Get XML facilities description\n");
+	printf("-a            Append to trace\n");
 	printf("\n");
 }
 
@@ -203,6 +205,9 @@ int parse_arguments(int argc, char **argv)
 							ret = -1;
 						}
 						break;
+          case 'a':
+            append_trace = 1;
+            break;
 					default:
 						printf("Invalid argument '%s'.\n", argv[argn]);
 						printf("\n");
@@ -288,7 +293,7 @@ int create_eventdefs(void)
   strncat(eventdefs_path, "/eventdefs/", PATH_MAX - trace_root_len);
   size_t eventdefs_path_len = strlen(eventdefs_path);
   ret = mkdir(eventdefs_path, S_IRWXU|S_IRWXG|S_IRWXO);
-  if(ret == -1 && errno != EEXIST) {
+  if(ret == -1 && (!append_trace || errno != EEXIST)) {
     perror("Cannot create eventdefs directory");
     goto error;
   }
@@ -398,9 +403,13 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 
 	} else if(pid == 0) {
 		/* child */
-    
-		int ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
-                     channel_path, "-d", NULL);
+    int ret;
+    if(append_trace) 
+  		ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
+                       channel_path, "-d", "-a", NULL);
+    else
+  		ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
+                       channel_path, "-d", NULL);
 		if(ret) {
 			perror("Error in executing the lttd daemon");
 			exit(-1);
