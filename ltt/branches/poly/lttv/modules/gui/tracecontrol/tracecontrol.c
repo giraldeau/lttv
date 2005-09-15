@@ -408,12 +408,13 @@ gui_control_destructor(ControlData *tcd)
   g_free(tcd);
 }
 
-static void execute_command(const gchar *command, const gchar *username,
+static int execute_command(const gchar *command, const gchar *username,
     const gchar *password, const gchar *lttd_path, const gchar *fac_path)
 {
   pid_t pid;
   int fdpty;
   pid = forkpty(&fdpty, NULL, NULL, NULL);
+  int retval = 0;
 
   if(pid > 0) {
     /* parent */
@@ -536,10 +537,12 @@ wait_child:
     
     ret = waitpid(pid, &status, 0);
 
-    if(WIFEXITED(ret))
-      if(WEXITSTATUS(ret) != 0)
-       g_warning("An error occured in the su command : %s",
-           strerror(WEXITSTATUS(ret)));
+    if(WIFEXITED(status))
+      if(WEXITSTATUS(status) != 0) {
+        retval = WEXITSTATUS(status);
+        g_warning("An error occured in the su command : %s",
+            strerror(retval));
+      }
 
     g_info("Child exited.");
 
@@ -562,6 +565,7 @@ wait_child:
     g_warning("Error happened when forking for su");
   }
 
+  return retval;
 }
 
 
@@ -714,8 +718,25 @@ void start_clicked (GtkButton *button, gpointer user_data)
   }
 
   
-  execute_command(args, username, password, lttd_path, fac_path);
+  int retval = execute_command(args, username, password, lttd_path, fac_path);
 
+  if(retval) {
+    gchar msg[256];
+    guint msg_left = 256;
+
+    strcpy(msg, "A problem occured when executing the su command : ");
+    msg_left = 256 - strlen(msg) - 1;
+    strncat(msg, strerror(retval), msg_left);
+    GtkWidget *dialogue = 
+      gtk_message_dialog_new(
+        GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button))),
+        GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_ERROR,
+        GTK_BUTTONS_OK,
+        msg);
+    gtk_dialog_run(GTK_DIALOG(dialogue));
+    gtk_widget_destroy(dialogue);
+  }
   
 }
 
@@ -773,8 +794,25 @@ void pause_clicked (GtkButton *button, gpointer user_data)
   strncat(args, "-q", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-  execute_command(args, username, password, lttd_path, fac_path);
+  int retval = execute_command(args, username, password, lttd_path, fac_path);
+  if(retval) {
+    gchar msg[256];
+    guint msg_left = 256;
 
+    strcpy(msg, "A problem occured when executing the su command : ");
+    msg_left = 256 - strlen(msg) - 1;
+    strncat(msg, strerror(retval), msg_left);
+    GtkWidget *dialogue = 
+      gtk_message_dialog_new(
+        GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button))),
+        GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_ERROR,
+        GTK_BUTTONS_OK,
+        msg);
+    gtk_dialog_run(GTK_DIALOG(dialogue));
+    gtk_widget_destroy(dialogue);
+  }
+ 
 }
 
 void unpause_clicked (GtkButton *button, gpointer user_data)
@@ -830,7 +868,25 @@ void unpause_clicked (GtkButton *button, gpointer user_data)
   strncat(args, "-s", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-  execute_command(args, username, password, lttd_path, fac_path);
+  int retval = execute_command(args, username, password, lttd_path, fac_path);
+  if(retval) {
+    gchar msg[256];
+    guint msg_left = 256;
+
+    strcpy(msg, "A problem occured when executing the su command : ");
+    msg_left = 256 - strlen(msg) - 1;
+    strncat(msg, strerror(retval), msg_left);
+    GtkWidget *dialogue = 
+      gtk_message_dialog_new(
+        GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button))),
+        GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_ERROR,
+        GTK_BUTTONS_OK,
+        msg);
+    gtk_dialog_run(GTK_DIALOG(dialogue));
+    gtk_widget_destroy(dialogue);
+  }
+ 
 }
 
 void stop_clicked (GtkButton *button, gpointer user_data)
@@ -887,8 +943,26 @@ void stop_clicked (GtkButton *button, gpointer user_data)
   strncat(args, "-R", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-  execute_command(args, username, password, lttd_path, fac_path);
+  int retval = execute_command(args, username, password, lttd_path, fac_path);
+  if(retval) {
+    gchar msg[256];
+    guint msg_left = 256;
 
+    strcpy(msg, "A problem occured when executing the su command : ");
+    msg_left = 256 - strlen(msg) - 1;
+    strncat(msg, strerror(retval), msg_left);
+    GtkWidget *dialogue =
+      gtk_message_dialog_new(
+        GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button))),
+        GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_ERROR,
+        GTK_BUTTONS_OK,
+        msg);
+    gtk_dialog_run(GTK_DIALOG(dialogue));
+    gtk_widget_destroy(dialogue);
+    return;
+  }
+ 
 
   /* Ask to the user if he wants to open the trace in a new window */
   GtkWidget *dialogue;
