@@ -42,7 +42,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#define MAX_ARGS 26 /* Max number of args for lttctl */
+#define MAX_ARGS_LEN PATH_MAX * 10
 
 GSList *g_control_list = NULL ;
 
@@ -379,7 +379,7 @@ void start_clicked (GtkButton *button, gpointer user_data)
     trace_mode = "flight";
   
   gboolean start_daemon =
-    gtk_toggle_button_get_mode(GTK_TOGGLE_BUTTON(tcd->start_daemon_check));
+    gtk_toggle_button_get_active(GTK_TOGGLE_BUTTON(tcd->start_daemon_check));
   
   const gchar *subbuf_size =
     gtk_entry_get_text(GTK_ENTRY(tcd->subbuf_size_entry));
@@ -398,15 +398,108 @@ void start_clicked (GtkButton *button, gpointer user_data)
 
   } else if(pid == 0) {
     /* child */
-    char *argv[MAX_ARGS];
-    if(strcmp(lttctl_path, "") == 0)
-      lttctl_path = "lttctl";
+    gchar args[MAX_ARGS_LEN];
+    gint args_left = MAX_ARGS_LEN - 1; /* for \0 */
+
+    /* Setup environment variables */
     if(strcmp(lttd_path, "") != 0)
       setenv("LTT_DAEMON", lttd_path, 1);
     if(strcmp(fac_path, "") != 0)
       setenv("LTT_FACILITIES", fac_path, 1);
+   
+    /* Setup arguments to su */
+    if(strcmp(lttctl_path, "") == 0) {
+      strncpy(args, "lttctl", args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    } else {
+      strncpy(args, lttctl_path, args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    }
 
-    system("echo blah");
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* channel dir */
+    strncat(args, "-l ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    strncat(args, channel_dir, args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* trace dir */
+    strncat(args, "-t ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    strncat(args, trace_dir, args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    
+    /* name */
+    strncat(args, "-n ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    strncat(args, trace_name, args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* trace mode */
+    strncat(args, "-m ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    strncat(args, trace_mode, args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* Start daemon ? */
+    if(start_daemon) {
+      strncat(args, "-d", args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    } else {
+      /* Simply create the channel and then start tracing */
+      strncat(args, "-b", args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    }
+    
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* optional arguments */
+    /* subbuffer size */
+    if(strcmp(subbuf_size, "") != 0) {
+      strncat(args, "-z ", args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+      strncat(args, subbuf_size, args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    }
+
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* number of subbuffers */
+    if(strcmp(subbuf_num, "") != 0) {
+      strncat(args, "-x ", args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+      strncat(args, subbuf_num, args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    }
+    
+    g_message("Executing (as %s) : %s", username, args);
+    
+    //execlp("su", "-p", );
+    //exit(-1): /* not supposed to happen! */
+    system(args);
     exit(0);
     
     //gint ret = execvp();
