@@ -41,6 +41,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <pty.h>
+#include <utmp.h>
+#include <sys/wait.h>
+#include <sys/select.h>
 
 #define MAX_ARGS_LEN PATH_MAX * 10
 
@@ -72,6 +76,7 @@ void control_destroy_walk(gpointer data, gpointer user_data);
 static void start_clicked (GtkButton *button, gpointer user_data);
 static void pause_clicked (GtkButton *button, gpointer user_data);
 static void stop_clicked (GtkButton *button, gpointer user_data);
+
 
 /**
  *  @struct _ControlData
@@ -160,6 +165,8 @@ gui_control(Tab *tab)
   gtk_table_set_col_spacings(GTK_TABLE(tcd->main_box),5);
   
   gtk_container_add(GTK_CONTAINER(tcd->window), GTK_WIDGET(tcd->main_box));
+  
+  GList *focus_chain = NULL;
   
   /*
    * start/pause/stop buttons
@@ -279,6 +286,7 @@ gui_control(Tab *tab)
   tcd->lttctl_path_label = gtk_label_new("path to lttctl:");
   gtk_widget_show (tcd->lttctl_path_label);
   tcd->lttctl_path_entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(tcd->lttctl_path_entry),PACKAGE_BIN_DIR "/lttctl");
   gtk_widget_show (tcd->lttctl_path_entry);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttctl_path_label,0,2,10,11,GTK_FILL,GTK_FILL,2,2);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttctl_path_entry,2,6,10,11,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
@@ -287,6 +295,7 @@ gui_control(Tab *tab)
   tcd->lttd_path_label = gtk_label_new("path to lttd:");
   gtk_widget_show (tcd->lttd_path_label);
   tcd->lttd_path_entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(tcd->lttd_path_entry),PACKAGE_BIN_DIR "/lttd");
   gtk_widget_show (tcd->lttd_path_entry);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_path_label,0,2,11,12,GTK_FILL,GTK_FILL,2,2);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_path_entry,2,6,11,12,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
@@ -300,6 +309,42 @@ gui_control(Tab *tab)
   gtk_widget_show (tcd->fac_path_entry);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_label,0,2,12,13,GTK_FILL,GTK_FILL,2,2);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_entry,2,6,12,13,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+
+  GtkWidget *start_button;
+  GtkWidget *pause_button;
+  GtkWidget *stop_button;
+
+  GtkWidget *username_entry;
+  GtkWidget *password_entry;
+  GtkWidget *channel_dir_entry;
+  GtkWidget *trace_dir_entry;
+  GtkWidget *trace_name_entry;
+  GtkWidget *trace_mode_combo;
+  GtkWidget *start_daemon_check;
+  GtkWidget *subbuf_size_entry;
+  GtkWidget *subbuf_num_entry;
+  GtkWidget *lttctl_path_entry;
+  GtkWidget *lttd_path_entry;
+  GtkWidget *fac_path_entry;
+
+  focus_chain = g_list_append (focus_chain, tcd->username_entry);
+  focus_chain = g_list_append (focus_chain, tcd->password_entry);
+  focus_chain = g_list_append (focus_chain, tcd->start_button);
+  focus_chain = g_list_append (focus_chain, tcd->pause_button);
+  focus_chain = g_list_append (focus_chain, tcd->stop_button);
+  focus_chain = g_list_append (focus_chain, tcd->channel_dir_entry);
+  focus_chain = g_list_append (focus_chain, tcd->trace_dir_entry);
+  focus_chain = g_list_append (focus_chain, tcd->trace_name_entry);
+  focus_chain = g_list_append (focus_chain, tcd->trace_mode_combo);
+  focus_chain = g_list_append (focus_chain, tcd->start_daemon_check);
+  focus_chain = g_list_append (focus_chain, tcd->subbuf_size_entry);
+  focus_chain = g_list_append (focus_chain, tcd->subbuf_num_entry);
+  focus_chain = g_list_append (focus_chain, tcd->lttctl_path_entry);
+  focus_chain = g_list_append (focus_chain, tcd->lttd_path_entry);
+  focus_chain = g_list_append (focus_chain, tcd->fac_path_entry);
+
+  gtk_container_set_focus_chain(GTK_CONTAINER(tcd->main_box), focus_chain);
 
   g_signal_connect(G_OBJECT(tcd->start_button), "clicked",
       (GCallback)start_clicked, tcd);
@@ -390,10 +435,72 @@ void start_clicked (GtkButton *button, gpointer user_data)
   const gchar *lttd_path = gtk_entry_get_text(GTK_ENTRY(tcd->lttd_path_entry));
   const gchar *fac_path = gtk_entry_get_text(GTK_ENTRY(tcd->fac_path_entry));
 
-  pid_t pid = fork();
+  //pid_t pid = fork();
+  pid_t pid;
+  int fdpty;
+  pid = forkpty(&fdpty, NULL, NULL, NULL);
 
   if(pid > 0) {
     /* parent */
+    gchar buf[256];
+    int status;
+    ssize_t count;
+    /* discuss with su */
+    struct timeval timeout;
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 0;
+    int nbdes;
+    fd_set readfds;
+    FD_ZERO(&readfds);
+    FD_SET(fdpty, &readfds);
+
+    nbdes = select(fdpty+1, &readfds, NULL, NULL, &timeout);
+
+    if(nbdes > 0) {
+      do {
+        count = read (fdpty, buf, 256);
+        if(count > 0) {
+          buf[count] = '\0';
+          printf("%s", buf);
+        }
+      } while(select(fdpty+1, &readfds, NULL, NULL, &timeout) > 0);
+
+    } else if(nbdes == -1) {
+      perror("Timeout occured when waiting for su password prompt");
+      return;
+    } else {
+      g_warning("No data within 2 seconds when waiting for su prompt");
+      return;
+    }
+
+    g_info("Got su prompt, now writing password...");
+    sleep(1);
+    int ret;
+    ret = write(fdpty, password, strlen(password));
+    if(ret < 0) perror("Error in write");
+    ret = write(fdpty, "\n", 1);
+    if(ret < 0) perror("Error in write");
+    fsync(fdpty);
+
+    FD_ZERO(&readfds);
+    FD_SET(fdpty, &readfds);
+    do {
+      if (select(fdpty+1, &readfds, NULL, NULL, &timeout) < 0) {
+        g_warning("Cannot read from child pipe");
+        return;
+      }
+      if(FD_ISSET(fdpty, &readfds)) {
+        count = read(fdpty, buf, 256);
+        buf[count] = '\0';
+        printf("%s", buf);
+      } else FD_SET(fdpty, &readfds);
+      usleep(200);
+    } while(!(ret = waitpid(pid, &status, WNOHANG)));
+
+   if(WIFEXITED(ret))
+     if(WEXITSTATUS(ret) != 0)
+      g_warning("An error occured in the su command, exit code : %hhu",
+          WEXITSTATUS(ret));
 
 
   } else if(pid == 0) {
@@ -408,17 +515,11 @@ void start_clicked (GtkButton *button, gpointer user_data)
       setenv("LTT_FACILITIES", fac_path, 1);
    
     /* Setup arguments to su */
-    if(strcmp(lttctl_path, "") == 0) {
-      strncpy(args, "lttctl", args_left);
-      args_left = MAX_ARGS_LEN - strlen(args) - 1;
-    } else {
-      strncpy(args, lttctl_path, args_left);
-      args_left = MAX_ARGS_LEN - strlen(args) - 1;
-    }
-
-    /* space */
-    strncat(args, " ", args_left);
+    strncpy(args, "\"", args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    
+    if(strcmp(lttctl_path, "") == 0)
+      lttctl_path = "lttctl";
 
     /* channel dir */
     strncat(args, "-l ", args_left);
@@ -470,43 +571,47 @@ void start_clicked (GtkButton *button, gpointer user_data)
       args_left = MAX_ARGS_LEN - strlen(args) - 1;
     }
     
-    /* space */
-    strncat(args, " ", args_left);
-    args_left = MAX_ARGS_LEN - strlen(args) - 1;
-
     /* optional arguments */
     /* subbuffer size */
     if(strcmp(subbuf_size, "") != 0) {
+      /* space */
+      strncat(args, " ", args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
       strncat(args, "-z ", args_left);
       args_left = MAX_ARGS_LEN - strlen(args) - 1;
       strncat(args, subbuf_size, args_left);
       args_left = MAX_ARGS_LEN - strlen(args) - 1;
     }
 
-    /* space */
-    strncat(args, " ", args_left);
-    args_left = MAX_ARGS_LEN - strlen(args) - 1;
-
     /* number of subbuffers */
     if(strcmp(subbuf_num, "") != 0) {
+      /* space */
+      strncat(args, " ", args_left);
+      args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
       strncat(args, "-x ", args_left);
       args_left = MAX_ARGS_LEN - strlen(args) - 1;
       strncat(args, subbuf_num, args_left);
       args_left = MAX_ARGS_LEN - strlen(args) - 1;
     }
     
-    g_message("Executing (as %s) : %s", username, args);
+    strncat(args, "\"", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
     
-    //execlp("su", "-p", );
-    //exit(-1): /* not supposed to happen! */
-    system(args);
-    exit(0);
+    //printf("Executing (as %s) : %s %s\n", username, lttctl_path, args);
+    
+    execlp("su", "su", "-p", "-c", lttctl_path, username, args, NULL);
+    exit(-1); /* not supposed to happen! */
+    //system(args);
+    //system("echo blah");
+    //exit(0);
     
     //gint ret = execvp();
   
   } else {
     /* error */
-
+    g_warning("Error happened when forking for su");
   }
   
 }
