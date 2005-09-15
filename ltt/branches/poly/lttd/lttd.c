@@ -513,7 +513,6 @@ void close_channel_trace_pairs(struct channel_trace_fd *fd_pairs)
 int main(int argc, char ** argv)
 {
 	int ret;
-	pid_t pid;
 	struct channel_trace_fd fd_pairs = { NULL, 0 };
 	struct sigaction act;
 	
@@ -526,18 +525,13 @@ int main(int argc, char ** argv)
 	show_info();
 
 	if(daemon_mode) {
-		pid = fork();
-		
-		if(pid > 0) {
-			/* parent */
-			return 0;
-		} else if(pid < 0) {
-			/* error */
-			printf("An error occured while forking.\n");
-			return -1;
-		}
-		/* else, we are the child, continue... */
-	}
+		ret = daemon(0, 0);
+    
+    if(ret == -1) {
+      perror("An error occured while daemonizing.");
+      exit(-1);
+    }
+  }
 
 	/* Connect the signal handlers */
 	act.sa_handler = handler;
