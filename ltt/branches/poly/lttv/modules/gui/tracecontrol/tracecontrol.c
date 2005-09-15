@@ -44,7 +44,7 @@
 #include <pty.h>
 #include <utmp.h>
 #include <sys/wait.h>
-#include <sys/select.h>
+#include <sys/poll.h>
 
 #define MAX_ARGS_LEN PATH_MAX * 10
 
@@ -304,7 +304,7 @@ gui_control(Tab *tab)
   tcd->fac_path_label = gtk_label_new("path to facilities:");
   gtk_widget_show (tcd->fac_path_label);
   tcd->fac_path_entry = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(tcd->fac_path_entry),PACKAGE_DATA_DIR "/facilities");
+  gtk_entry_set_text(GTK_ENTRY(tcd->fac_path_entry),PACKAGE_DATA_DIR "/" PACKAGE "/facilities");
   gtk_widget_set_size_request(tcd->fac_path_entry, 250, -1);
   gtk_widget_show (tcd->fac_path_entry);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_label,0,2,12,13,GTK_FILL,GTK_FILL,2,2);
@@ -449,32 +449,63 @@ void start_clicked (GtkButton *button, gpointer user_data)
     struct timeval timeout;
     timeout.tv_sec = 1;
     timeout.tv_usec = 0;
-    int nbdes;
-    fd_set readfds;
-    FD_ZERO(&readfds);
-    FD_SET(fdpty, &readfds);
 
-    nbdes = select(fdpty+1, &readfds, NULL, NULL, &timeout);
+    struct pollfd pollfd;
+    int num_rdy;
+    int num_hup = 0;
 
-    if(nbdes > 0) {
-      do {
-        count = read (fdpty, buf, 256);
-        if(count > 0) {
-          buf[count] = '\0';
-          printf("%s", buf);
-        }
-      } while(select(fdpty+1, &readfds, NULL, NULL, &timeout) > 0);
 
-    } else if(nbdes == -1) {
-      perror("Timeout occured when waiting for su password prompt");
-      return;
-    } else {
-      g_warning("No data within 2 seconds when waiting for su prompt");
-      return;
+    /* Read the output from the child terminal before the prompt. If no data in
+     * 200 ms, we stop reading to give the password */
+    g_info("Reading from child console...");
+    while(1) {
+      pollfd.fd = fdpty;
+      pollfd.events = POLLIN|POLLPRI;
+
+      num_rdy = poll(&pollfd, 1, 200);
+#if 0
+      if(num_rdy == -1) {
+        perror("Poll error");
+        goto wait_child;
+      }
+#endif //0
+      
+      /* Timeout : stop waiting for chars */
+      if(num_rdy == 0) break;
+
+      switch(pollfd.revents) {
+        case POLLERR:
+          g_warning("Error returned in polling fd\n");
+          num_hup++;
+          break;
+        case POLLHUP:
+          g_info("Polling FD : hung up.");
+          num_hup++;
+          break;
+        case POLLNVAL:
+          g_warning("Polling fd tells it is not open");
+          num_hup++;
+          break;
+        case POLLPRI:
+        case POLLIN:
+          count = read (fdpty, buf, 256);
+          if(count > 0) {
+            buf[count] = '\0';
+            printf("%s", buf);
+          } else if(count == -1) {
+            perror("Error in read");
+            goto wait_child;
+          }
+          break;
+      }
+      if(num_hup > 0) {
+        g_warning("Child hung up too fast");
+        goto wait_child;
+      }
     }
-
+    
+    /* Write the password */
     g_info("Got su prompt, now writing password...");
-    sleep(1);
     int ret;
     ret = write(fdpty, password, strlen(password));
     if(ret < 0) perror("Error in write");
@@ -482,26 +513,60 @@ void start_clicked (GtkButton *button, gpointer user_data)
     if(ret < 0) perror("Error in write");
     fsync(fdpty);
 
-    FD_ZERO(&readfds);
-    FD_SET(fdpty, &readfds);
-    do {
-      if (select(fdpty+1, &readfds, NULL, NULL, &timeout) < 0) {
-        g_warning("Cannot read from child pipe");
-        return;
+    /* Take the output from the terminal and show it on the real console */
+    g_info("Getting data from child terminal...");
+    while(1) {
+      int num_hup = 0;
+      pollfd.fd = fdpty;
+      pollfd.events = POLLIN|POLLPRI;
+
+      num_rdy = poll(&pollfd, 1, -1);
+#if 0
+      if(num_rdy == -1) {
+        perror("Poll error");
+        goto wait_child;
       }
-      if(FD_ISSET(fdpty, &readfds)) {
-        count = read(fdpty, buf, 256);
-        buf[count] = '\0';
-        printf("%s", buf);
-      } else FD_SET(fdpty, &readfds);
-      usleep(200);
-    } while(!(ret = waitpid(pid, &status, WNOHANG)));
+#endif //0
+      if(num_rdy == 0) break;
 
-   if(WIFEXITED(ret))
-     if(WEXITSTATUS(ret) != 0)
-      g_warning("An error occured in the su command, exit code : %hhu",
-          WEXITSTATUS(ret));
+      switch(pollfd.revents) {
+        case POLLERR:
+          g_warning("Error returned in polling fd\n");
+          num_hup++;
+          break;
+        case POLLHUP:
+          g_info("Polling FD : hung up.");
+          num_hup++;
+          break;
+        case POLLNVAL:
+          g_warning("Polling fd tells it is not open");
+          num_hup++;
+          break;
+        case POLLPRI:
+        case POLLIN:
+          count = read (fdpty, buf, 256);
+          if(count > 0) {
+            buf[count] = '\0';
+            printf("%s", buf);
+          } else if(count == -1) {
+            perror("Error in read");
+            goto wait_child;
+          }
+          break;
+      }
+      if(num_hup > 0) goto wait_child;
+    }
+wait_child:
+    g_info("Waiting for child exit...");
+    
+    ret = waitpid(pid, &status, 0);
 
+    if(WIFEXITED(ret))
+      if(WEXITSTATUS(ret) != 0)
+       g_warning("An error occured in the su command : %s",
+           strerror(WEXITSTATUS(ret)));
+
+    g_info("Child exited.");
 
   } else if(pid == 0) {
     /* child */
@@ -515,11 +580,26 @@ void start_clicked (GtkButton *button, gpointer user_data)
       setenv("LTT_FACILITIES", fac_path, 1);
    
     /* Setup arguments to su */
-    strncpy(args, "\"", args_left);
-    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    //strncpy(args, "\'", args_left);
+    //args_left = MAX_ARGS_LEN - strlen(args) - 1;
     
+    /* Command */
+    strncat(args, "exec", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
     if(strcmp(lttctl_path, "") == 0)
-      lttctl_path = "lttctl";
+      strncat(args, "lttctl", args_left);
+    else
+      strncat(args, lttctl_path, args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
     /* channel dir */
     strncat(args, "-l ", args_left);
@@ -595,13 +675,13 @@ void start_clicked (GtkButton *button, gpointer user_data)
       strncat(args, subbuf_num, args_left);
       args_left = MAX_ARGS_LEN - strlen(args) - 1;
     }
+   
+    //strncat(args, "\'", args_left);
+    //args_left = MAX_ARGS_LEN - strlen(args) - 1;
     
-    strncat(args, "\"", args_left);
-    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    g_message("Executing (as %s) : %s\n", username, args);
     
-    //printf("Executing (as %s) : %s %s\n", username, lttctl_path, args);
-    
-    execlp("su", "su", "-p", "-c", lttctl_path, username, args, NULL);
+    execlp("su", "su", "-p", "-c", args, username, NULL);
     exit(-1); /* not supposed to happen! */
     //system(args);
     //system("echo blah");

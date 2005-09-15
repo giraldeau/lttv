@@ -17,6 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <signal.h>
 #include <dirent.h>
@@ -47,12 +48,12 @@ static enum trace_ctl_op op = CTL_OP_NONE;
 static char *channel_root = NULL;
 static char *trace_root = NULL;
 
-static int sigio_received = 0;
+static int sigchld_received = 0;
 
-void handler(int signo)
+void sigchld_handler(int signo)
 {
 	printf("signal %d received\n", signo);
-	sigio_received = 1;
+	sigchld_received = 1;
 }
 
 
@@ -272,7 +273,7 @@ int create_eventdefs(void)
   struct dirent *entry;
 	char *facilities_path = getenv("LTT_FACILITIES");
 	if(facilities_path == NULL) facilities_path =
-          "/usr/share/LinuxTraceToolkitViewer/facilities";
+          PACKAGE_DATA_DIR "/" PACKAGE "/facilities";
 
   ret = mkdir(trace_root, S_IRWXU|S_IRWXG|S_IRWXO);
   if(ret == -1 && errno != EEXIST) {
@@ -295,6 +296,12 @@ int create_eventdefs(void)
   
   DIR *facilities_dir = opendir(facilities_path);
   
+  if(facilities_dir == NULL) {
+    perror("Cannot open facilities directory");
+    ret = -1;
+    goto error;
+  }
+
   while((entry = readdir(facilities_dir)) != NULL) {
     if(entry->d_name[0] == '.') continue;
     
@@ -342,7 +349,7 @@ close_dest:
 
   closedir(facilities_dir);
 
-  error:
+error:
   return ret;
 
 }
@@ -356,7 +363,8 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	char *lttd_path = getenv("LTT_DAEMON");
 	struct sigaction act;
 
-	if(lttd_path == NULL) lttd_path = "lttd";
+	if(lttd_path == NULL) lttd_path = 
+    PACKAGE_BIN_DIR "/lttd";
 	
 	strcat(channel_path, channel_root);
 	strcat(channel_path, "/");
@@ -366,29 +374,33 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size, n_subbufs);
 	if(ret != 0) goto create_error;
 
-	act.sa_handler = handler;
+	act.sa_handler = sigchld_handler;
 	sigemptyset(&(act.sa_mask));
-	sigaddset(&(act.sa_mask), SIGIO);
-	sigaction(SIGIO, &act, NULL);
-	
-	sigio_received = 0;
+	sigaddset(&(act.sa_mask), SIGCHLD);
+	sigaction(SIGCHLD, &act, NULL);
 	
 	pid = fork();
 
 	if(pid > 0) {
+    int status;
 		/* parent */
-		while(!sigio_received) pause();
+		while(!(sigchld_received)) pause();
 
-		/* Now the trace is created, go on and create the supplementary files... */
-    
+    waitpid(pid, &status, 0);
+    ret = 0;
+    if(WIFEXITED(status))
+      ret = WEXITSTATUS(status);
+    if(ret) goto start_error;
+
 		printf("Creating supplementary trace files\n");
     ret = create_eventdefs();
     if(ret) goto start_error;
 
 	} else if(pid == 0) {
 		/* child */
-		int ret = 
-			execlp(lttd_path, lttd_path, "-t", trace_root, "-c", channel_path, "-s", NULL);
+    
+		int ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
+                     channel_path, "-d", NULL);
 		if(ret) {
 			perror("Error in executing the lttd daemon");
 			exit(-1);
@@ -406,6 +418,7 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 
 	/* error handling */
 start_error:
+  printf("Trace start error\n");
 	ret |= lttctl_destroy_trace(handle, trace_name);
 create_error:
 	return ret;

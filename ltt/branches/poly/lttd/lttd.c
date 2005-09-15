@@ -67,7 +67,6 @@ static char *trace_name = NULL;
 static char *channel_name = NULL;
 static int	daemon_mode = 0;
 static int	append_mode = 0;
-static int	sig_parent = 0;
 volatile static int	quit_program = 0;	/* For signal handler */
 
 /* Args :
@@ -76,7 +75,7 @@ volatile static int	quit_program = 0;	/* For signal handler */
  * -c directory		Root directory of the relayfs trace channels.
  * -d          		Run in background (daemon).
  * -a							Trace append mode.
- * -s							Send SIGIO to parent when ready for IO.
+ * -s							Send SIGUSR1 to parent when ready for IO.
  */
 void show_arguments(void)
 {
@@ -87,7 +86,6 @@ void show_arguments(void)
 	printf("-c directory  Root directory of the relayfs trace channels.\n");
 	printf("-d            Run in background (daemon).\n");
 	printf("-a            Append to an possibly existing trace.\n");
-	printf("-s            Send SIGIO to parent when ready for IO.\n");
 	printf("\n");
 }
 
@@ -132,9 +130,6 @@ int parse_arguments(int argc, char **argv)
 						break;
 					case 'a':
 						append_mode = 1;
-						break;
-					case 's':
-						sig_parent = 1;
 						break;
 					default:
 						printf("Invalid argument '%s'.\n", argv[argn]);
@@ -409,9 +404,6 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 		pollfd[i].fd = fd_pairs->pair[i].channel;
 		pollfd[i].events = POLLIN|POLLPRI;
 	}
-
-	/* Signal the parent that ready for IO */
-	if(sig_parent) kill(getppid(), SIGIO);
 
 	while(1) {
 		high_prio = 0;
