@@ -3964,7 +3964,7 @@ void add_all_menu_toolbar_constructors(MainWindow * mw, gpointer user_data)
 /* Create a main window
  */
 
-void construct_main_window(MainWindow * parent)
+MainWindow *construct_main_window(MainWindow * parent)
 {
   g_debug("construct_main_window()");
   GtkWidget  * new_window; /* New generated main window */
@@ -4004,7 +4004,9 @@ void construct_main_window(MainWindow * parent)
   notebook = (GtkNotebook *)lookup_widget(new_m_window->mwindow, "MNotebook");
   if(notebook == NULL){
     g_info("Notebook does not exist\n");
-    return;
+    /* FIXME : destroy partially created widgets */
+    g_free(new_m_window);
+    return NULL;
   }
   //gtk_notebook_popup_enable (GTK_NOTEBOOK(notebook));
   //for now there is no name field in LttvTraceset structure
@@ -4078,6 +4080,8 @@ void construct_main_window(MainWindow * parent)
   }
 
   g_info("There are now : %d windows\n",g_slist_length(g_main_window_list));
+
+  return new_m_window;
 }
 
 
@@ -4498,5 +4502,51 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
 gboolean execute_events_requests(Tab *tab)
 {
   return ( lttvwindow_process_pending_requests(tab) );
+}
+
+
+void create_main_window_with_trace(gchar *path)
+{
+  if(path == NULL) return;
+
+  /* Create window */
+  MainWindow *mw = construct_main_window(NULL);
+  GtkWidget *widget = mw->mwindow;
+
+  GtkWidget * notebook = lookup_widget(widget, "MNotebook");
+  GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
+                      gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  Tab *tab;
+  
+  if(!page) {
+    tab = create_new_tab(widget, NULL);
+  } else {
+    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+  }
+
+  /* Add trace */
+  gchar abs_path[PATH_MAX];
+  LttvTrace *trace_v;
+  LttTrace *trace;
+
+  get_absolute_pathname(path, abs_path);
+  trace_v = lttvwindowtraces_get_trace_by_name(abs_path);
+  if(trace_v == NULL) {
+    trace = ltt_trace_open(abs_path);
+    if(trace == NULL) {
+      g_warning("cannot open trace %s", abs_path);
+    } else {
+      trace_v = lttv_trace_new(trace);
+      lttvwindowtraces_add_trace(trace_v);
+      lttvwindow_add_trace(tab, trace_v);
+    }
+  } else {
+    lttvwindow_add_trace(tab, trace_v);
+  }
+
+  LttvTraceset *traceset;
+
+  traceset = tab->traceset_info->traceset;
+  SetTraceset(tab, traceset);
 }
 

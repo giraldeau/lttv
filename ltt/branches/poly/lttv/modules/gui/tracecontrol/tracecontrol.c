@@ -846,6 +846,7 @@ void stop_clicked (GtkButton *button, gpointer user_data)
   
   const gchar *lttctl_path =
     gtk_entry_get_text(GTK_ENTRY(tcd->lttctl_path_entry));
+  const gchar *trace_dir = gtk_entry_get_text(GTK_ENTRY(tcd->trace_dir_entry));
 
   /* Setup arguments to su */
   /* child */
@@ -888,6 +889,37 @@ void stop_clicked (GtkButton *button, gpointer user_data)
 
   execute_command(args, username, password, lttd_path, fac_path);
 
+
+  /* Ask to the user if he wants to open the trace in a new window */
+  GtkWidget *dialogue;
+  GtkWidget *label;
+  gint id;
+  
+  dialogue = gtk_dialog_new_with_buttons("Open trace ?",
+      GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button))),
+      GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+      GTK_STOCK_YES,GTK_RESPONSE_ACCEPT,
+      GTK_STOCK_NO,GTK_RESPONSE_REJECT,
+      NULL);
+  label = gtk_label_new("Do you want to open the trace in LTTV ?");
+  gtk_widget_show(label);
+
+  gtk_container_add(GTK_CONTAINER(GTK_DIALOG(dialogue)->vbox),
+      label);
+
+  id = gtk_dialog_run(GTK_DIALOG(dialogue));
+
+  switch(id){
+    case GTK_RESPONSE_ACCEPT:
+      {
+        create_main_window_with_trace(trace_dir);
+      }
+      break;
+    case GTK_RESPONSE_REJECT:
+    default:
+      break;
+  }
+  gtk_widget_destroy(dialogue);
 
 }
 
