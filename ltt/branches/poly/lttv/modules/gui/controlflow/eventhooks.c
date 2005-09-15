@@ -182,7 +182,7 @@ GtkWidget *
 h_guicontrolflow(Tab *tab)
 {
   g_info("h_guicontrolflow, %p", tab);
-  ControlFlowData *control_flow_data = guicontrolflow() ;
+  ControlFlowData *control_flow_data = guicontrolflow(tab) ;
   
   control_flow_data->tab = tab;
   
@@ -1926,6 +1926,12 @@ gint traceset_notify(void *hook_data, void *call_data)
   ControlFlowData *control_flow_data = (ControlFlowData*) hook_data;
   Drawing_t *drawing = control_flow_data->drawing;
 
+  if(unlikely(drawing->gc == NULL)) {
+    return FALSE;
+  }
+  if(drawing->dotted_gc == NULL) {
+    return FALSE;
+  }
 
   drawing_clear(control_flow_data->drawing);
   processlist_clear(control_flow_data->process_list);

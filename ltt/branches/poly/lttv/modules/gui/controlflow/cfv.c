@@ -60,11 +60,13 @@ header_size_allocate(GtkWidget *widget,
  * @return The widget created.
  */
 ControlFlowData *
-guicontrolflow(void)
+guicontrolflow(Tab *tab)
 {
   GtkWidget *process_list_widget, *drawing_widget, *drawing_area;
 
   ControlFlowData* control_flow_data = g_new(ControlFlowData,1) ;
+
+  control_flow_data->tab = tab;
 
   control_flow_data->v_adjust = 
     GTK_ADJUSTMENT(gtk_adjustment_new(  0.0,  /* Value */

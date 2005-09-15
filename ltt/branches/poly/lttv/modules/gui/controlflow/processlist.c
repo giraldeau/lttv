@@ -287,7 +287,8 @@ void copy_pixmap_to_screen(ProcessList *process_list,
     g_assert(i<process_list->index_to_pixmap->len);
     /* Render the pixmap to the screen */
     GdkPixmap *pixmap = 
-      (GdkPixmap*)g_ptr_array_index(process_list->index_to_pixmap, i);
+      //(GdkPixmap*)g_ptr_array_index(process_list->index_to_pixmap, i);
+      GDK_PIXMAP(g_ptr_array_index(process_list->index_to_pixmap, i));
 
     gdk_draw_drawable (dest,
         gc,

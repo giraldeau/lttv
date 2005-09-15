@@ -122,6 +122,7 @@ void drawing_data_request(Drawing_t *drawing,
   if(width < 0) return ;
   if(height < 0) return ;
 
+
   Tab *tab = drawing->control_flow_data->tab;
   TimeWindow time_window =
               lttvwindow_get_time_window(tab);
@@ -627,6 +628,7 @@ configure_event( GtkWidget *widget, GdkEventConfigure *event,
       drawing->alloc_height = drawing->height + EXTRA_ALLOC;
       update_pixmap_size(drawing->control_flow_data->process_list,
                          drawing->alloc_width);
+      update_index_to_pixmap(drawing->control_flow_data->process_list);
     }
     //drawing->height = widget->allocation.height;
 
@@ -693,11 +695,12 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
                 "control_flow_data");
+#if 0
   if(unlikely(drawing->gc == NULL)) {
     drawing->gc = gdk_gc_new(drawing->drawing_area->window);
     gdk_gc_copy(drawing->gc, drawing->drawing_area->style->black_gc);
   }
-
+#endif //0
   TimeWindow time_window = 
       lttvwindow_get_time_window(control_flow_data->tab);
   LttTime current_time = 
@@ -717,9 +720,16 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
       event->area.width, event->area.height);
 #endif //0
   drawing->height = processlist_get_height(control_flow_data->process_list);
+#if 0
   copy_pixmap_to_screen(control_flow_data->process_list,
                         widget->window,
                         widget->style->fg_gc[GTK_WIDGET_STATE (widget)],
+                        event->area.x, event->area.y,
+                        event->area.width, event->area.height);
+#endif //0
+  copy_pixmap_to_screen(control_flow_data->process_list,
+                        widget->window,
+                        drawing->gc,
                         event->area.x, event->area.y,
                         event->area.width, event->area.height);
                         
@@ -744,7 +754,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
           drawing->width,
           &cursor_x);
 
-
+#if 0
     if(drawing->dotted_gc == NULL) {
 
       drawing->dotted_gc = gdk_gc_new(drawing->drawing_area->window);
@@ -761,6 +771,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
                         dash_list,
                         2);
     }
+#endif //0
     gint height_tot = MAX(widget->allocation.height, drawing->height);
     gdk_draw_line(widget->window,
                   drawing->dotted_gc,
@@ -907,8 +918,6 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   drawing->pango_layout =
     gtk_widget_create_pango_layout(drawing->drawing_area, NULL);
 
-  drawing->dotted_gc = NULL;
-
   drawing->height = 1;
   drawing->width = 1;
   drawing->depth = 0;
@@ -1011,6 +1020,50 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   gdk_colormap_alloc_colors(colormap, drawing_colors, NUM_COLORS, FALSE,
                             TRUE, success);
   
+  drawing->gc =
+    gdk_gc_new(GDK_DRAWABLE(main_window_get_widget(control_flow_data->tab)->window));
+  drawing->dotted_gc =
+    gdk_gc_new(GDK_DRAWABLE(main_window_get_widget(control_flow_data->tab)->window));
+
+  gdk_gc_copy(drawing->gc,
+      main_window_get_widget(control_flow_data->tab)->style->black_gc);
+  gdk_gc_copy(drawing->dotted_gc,
+      main_window_get_widget(control_flow_data->tab)->style->white_gc);
+  
+  gint8 dash_list[] = { 1, 2 };
+  gdk_gc_set_line_attributes(drawing->dotted_gc,
+                             1,
+                             GDK_LINE_ON_OFF_DASH,
+                             GDK_CAP_BUTT,
+                             GDK_JOIN_MITER);
+  gdk_gc_set_dashes(drawing->dotted_gc,
+                    0,
+                    dash_list,
+                    2);
+
+  drawing->ruler_gc_butt = 
+    gdk_gc_new(GDK_DRAWABLE(main_window_get_widget(control_flow_data->tab)->window));
+  gdk_gc_copy(drawing->ruler_gc_butt, 
+      main_window_get_widget(control_flow_data->tab)->style->black_gc);
+  drawing->ruler_gc_round = 
+    gdk_gc_new(GDK_DRAWABLE(main_window_get_widget(control_flow_data->tab)->window));
+  gdk_gc_copy(drawing->ruler_gc_round, 
+      main_window_get_widget(control_flow_data->tab)->style->black_gc);
+
+
+  gdk_gc_set_line_attributes(drawing->ruler_gc_butt,
+                               2,
+                               GDK_LINE_SOLID,
+                               GDK_CAP_BUTT,
+                               GDK_JOIN_MITER);
+
+  gdk_gc_set_line_attributes(drawing->ruler_gc_round,
+                             2,
+                             GDK_LINE_SOLID,
+                             GDK_CAP_ROUND,
+                             GDK_JOIN_ROUND);
+
+  
   return drawing;
 }
 
@@ -1032,6 +1085,9 @@ void drawing_destroy(Drawing_t *drawing)
   
   g_free(drawing->pango_layout);
   if(drawing->dotted_gc != NULL) gdk_gc_unref(drawing->dotted_gc);
+  if(drawing->ruler_gc_butt != NULL) gdk_gc_unref(drawing->ruler_gc_butt);
+  if(drawing->ruler_gc_round != NULL) gdk_gc_unref(drawing->ruler_gc_round);
+
   g_free(drawing);
   g_info("drawing_destroy end");
 }
@@ -1274,15 +1330,8 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
           event->area.width,
           event->area.height);
 
-   GdkGC *gc = gdk_gc_new(drawing->ruler->window);
-   gdk_gc_copy(gc, drawing->ruler->style->black_gc);
-   gdk_gc_set_line_attributes(gc,
-                               2,
-                               GDK_LINE_SOLID,
-                               GDK_CAP_BUTT,
-                               GDK_JOIN_MITER);
   gdk_draw_line (drawing->ruler->window,
-                  gc,
+                  drawing->ruler_gc_butt,
                   event->area.x, 1,
                   event->area.x + event->area.width, 1);
 
@@ -1304,19 +1353,13 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   global_width += ink_rect.width;
 
   gdk_draw_layout_with_colors(drawing->ruler->window,
-      gc,
+      drawing->ruler_gc_butt,
       0,
       6,
       layout, &foreground, &background);
 
-  gdk_gc_set_line_attributes(gc,
-                             2,
-                             GDK_LINE_SOLID,
-                             GDK_CAP_ROUND,
-                             GDK_JOIN_ROUND);
-
   gdk_draw_line (drawing->ruler->window,
-                   gc,
+                   drawing->ruler_gc_round,
                    1, 1,
                    1, 7);
 
@@ -1331,19 +1374,13 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   if(global_width <= drawing->ruler->allocation.width)
   {
     gdk_draw_layout_with_colors(drawing->ruler->window,
-      gc,
+      drawing->ruler_gc_butt,
       drawing->ruler->allocation.width - ink_rect.width,
       6,
       layout, &foreground, &background);
 
-    gdk_gc_set_line_attributes(gc,
-                               2,
-                               GDK_LINE_SOLID,
-                               GDK_CAP_ROUND,
-                               GDK_JOIN_ROUND);
-
     gdk_draw_line (drawing->ruler->window,
-                   gc,
+                   drawing->ruler_gc_butt,
                    drawing->ruler->allocation.width-1, 1,
                    drawing->ruler->allocation.width-1, 7);
   }
@@ -1359,19 +1396,13 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   if(global_width <= drawing->ruler->allocation.width)
   {
     gdk_draw_layout_with_colors(drawing->ruler->window,
-      gc,
+      drawing->ruler_gc_butt,
       (drawing->ruler->allocation.width - ink_rect.width)/2,
       6,
       layout, &foreground, &background);
 
-    gdk_gc_set_line_attributes(gc,
-                               2,
-                               GDK_LINE_SOLID,
-                               GDK_CAP_ROUND,
-                               GDK_JOIN_ROUND);
-
     gdk_draw_line (drawing->ruler->window,
-                   gc,
+                   drawing->ruler_gc_butt,
                    drawing->ruler->allocation.width/2, 1,
                    drawing->ruler->allocation.width/2, 7);
 
@@ -1380,7 +1411,6 @@ expose_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
 
   }
 
-  gdk_gc_unref(gc);
   g_object_unref(layout);
    
   return FALSE;

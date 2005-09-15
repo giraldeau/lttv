@@ -63,7 +63,7 @@ struct _ControlFlowData {
 } ;
 
 /* Control Flow Data constructor */
-ControlFlowData *guicontrolflow(void);
+ControlFlowData *guicontrolflow(Tab *tab);
 void
 guicontrolflow_destructor_full(ControlFlowData *control_flow_data);
 void

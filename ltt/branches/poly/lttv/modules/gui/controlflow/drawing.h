@@ -109,6 +109,8 @@ struct _Drawing_t {
   LttTime   last_start;               
   GdkGC     *dotted_gc;
   GdkGC     *gc;
+  GdkGC     *ruler_gc_butt;
+  GdkGC     *ruler_gc_round;
 
   /* Position of the horizontal selector, -1 for none */
   gint horizontal_sel;

@@ -45,6 +45,7 @@
 #include <utmp.h>
 #include <sys/wait.h>
 #include <sys/poll.h>
+#include <errno.h>
 
 #define MAX_ARGS_LEN PATH_MAX * 10
 
@@ -536,13 +537,18 @@ wait_child:
     g_info("Waiting for child exit...");
     
     ret = waitpid(pid, &status, 0);
-
-    if(WIFEXITED(status))
-      if(WEXITSTATUS(status) != 0) {
-        retval = WEXITSTATUS(status);
-        g_warning("An error occured in the su command : %s",
-            strerror(retval));
-      }
+    
+    if(ret == -1) {
+      g_warning("An error occured in wait : %s",
+          strerror(errno));
+    } else {
+      if(WIFEXITED(status))
+        if(WEXITSTATUS(status) != 0) {
+          retval = WEXITSTATUS(status);
+          g_warning("An error occured in the su command : %s",
+              strerror(retval));
+        }
+    }
 
     g_info("Child exited.");
 
