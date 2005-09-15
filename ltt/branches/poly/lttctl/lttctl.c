@@ -93,8 +93,8 @@ void show_arguments(void)
  *
  * Parses the command line arguments.
  *
- * Returns 1 if the arguments were correct, but doesn't ask for program
- * continuation. Returns -1 if the arguments are incorrect, or 0 if OK.
+ * Returns -1 if the arguments were correct, but doesn't ask for program
+ * continuation. Returns EINVAL if the arguments are incorrect, or 0 if OK.
  */
 int parse_arguments(int argc, char **argv)
 {
@@ -103,7 +103,7 @@ int parse_arguments(int argc, char **argv)
 	
 	if(argc == 2) {
 		if(strcmp(argv[1], "-h") == 0) {
-			return 1;
+			return -1;
 		}
 	}
 
@@ -119,7 +119,7 @@ int parse_arguments(int argc, char **argv)
 						} else {
 							printf("Specify a trace name after -n.\n", argv[argn]);
 							printf("\n");
-							ret = -1;
+							ret = EINVAL;
 						}
 
 						break;
@@ -139,12 +139,12 @@ int parse_arguments(int argc, char **argv)
 							else {
 								printf("Invalid mode '%s'.\n", argv[argn]);
 								printf("\n");
-								ret = -1;
+								ret = EINVAL;
 							}
 						} else {
 								printf("Specify a mode after -m.\n");
 								printf("\n");
-								ret = -1;
+								ret = EINVAL;
 						}
 						break;
 					case 'r':
@@ -166,7 +166,7 @@ int parse_arguments(int argc, char **argv)
 						} else {
 							printf("Specify a number of subbuffers after -z.\n");
 							printf("\n");
-							ret = -1;
+							ret = EINVAL;
 						}
 						break;
 					case 'x':
@@ -176,7 +176,7 @@ int parse_arguments(int argc, char **argv)
 						} else {
 							printf("Specify a subbuffer size after -x.\n");
 							printf("\n");
-							ret = -1;
+							ret = EINVAL;
 						}
 						break;
 					case 'd':
@@ -192,7 +192,7 @@ int parse_arguments(int argc, char **argv)
 						} else {
 							printf("Specify a trace root path after -t.\n");
 							printf("\n");
-							ret = -1;
+							ret = EINVAL;
 						}
 						break;
 					case 'l':
@@ -202,7 +202,7 @@ int parse_arguments(int argc, char **argv)
 						} else {
 							printf("Specify a channel root path after -l.\n");
 							printf("\n");
-							ret = -1;
+							ret = EINVAL;
 						}
 						break;
           case 'a':
@@ -211,13 +211,13 @@ int parse_arguments(int argc, char **argv)
 					default:
 						printf("Invalid argument '%s'.\n", argv[argn]);
 						printf("\n");
-						ret = -1;
+						ret = EINVAL;
 				}
 				break;
 			default:
 				printf("Invalid argument '%s'.\n", argv[argn]);
 				printf("\n");
-				ret = -1;
+				ret = EINVAL;
 		}
 		argn++;
 	}
@@ -225,25 +225,25 @@ int parse_arguments(int argc, char **argv)
 	if(op != CTL_OP_DESCRIPTION && trace_name == NULL) {
 		printf("Please specify a trace name.\n");
 		printf("\n");
-		ret = -1;
+		ret = EINVAL;
 	}
 
 	if(op == CTL_OP_NONE) {
 		printf("Please specify an operation.\n");
 		printf("\n");
-		ret = -1;
+		ret = EINVAL;
 	}
 
 	if(op == CTL_OP_DAEMON) {
 		if(trace_root == NULL) {
 			printf("Please specify -t trace_root_path with the -d option.\n");
 			printf("\n");
-			ret = -1;
+			ret = EINVAL;
 		}
 		if(channel_root == NULL) {
 			printf("Please specify -l ltt_root_path with the -d option.\n");
 			printf("\n");
-			ret = -1;
+			ret = EINVAL;
 		}
 	}
 
@@ -251,7 +251,7 @@ int parse_arguments(int argc, char **argv)
     if(trace_root == NULL) {
 			printf("Please specify -t trace_root_path with the -e option.\n");
 			printf("\n");
-			ret = -1;
+			ret = EINVAL;
     }
   }
 
@@ -284,6 +284,7 @@ int create_eventdefs(void)
   if(ret == -1 && errno != EEXIST) {
     perror("Cannot create trace_root directory");
     printf("trace_root is %s\n", trace_root);
+    ret = errno;
     goto error;
   }
   ret = 0;
@@ -295,6 +296,7 @@ int create_eventdefs(void)
   ret = mkdir(eventdefs_path, S_IRWXU|S_IRWXG|S_IRWXO);
   if(ret == -1 && (!append_trace || errno != EEXIST)) {
     perror("Cannot create eventdefs directory");
+    ret = errno;
     goto error;
   }
   ret = 0;
@@ -303,7 +305,7 @@ int create_eventdefs(void)
   
   if(facilities_dir == NULL) {
     perror("Cannot open facilities directory");
-    ret = -1;
+    ret = EEXIST;
     goto error;
   }
 
@@ -326,6 +328,7 @@ int create_eventdefs(void)
     FILE *src = fopen(facilities_file, "r");
     if(!src) {
       perror("Cannot open eventdefs file for reading");
+      ret = errno;
       goto close_dest;
     }
 
@@ -334,11 +337,13 @@ int create_eventdefs(void)
       read_size = fread(read_buf, sizeof(char), BUF_SIZE, src);
       if(ferror(src)) {
         perror("Cannot read eventdefs file");
+        ret = errno;
         goto close_src;
       }
       write_size = fwrite(read_buf, sizeof(char), read_size, dest);
       if(ferror(dest)) {
         perror("Cannot write eventdefs file");
+        ret = errno;
         goto close_src;
       }
     } while(!feof(src));
@@ -412,12 +417,11 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
                        channel_path, "-d", NULL);
 		if(ret) {
 			perror("Error in executing the lttd daemon");
-			exit(-1);
+			exit(errno);
 		}
 	} else {
 		/* error */
 		perror("Error in forking for lttd daemon");
-
 	}
 
 	ret = lttctl_start(handle, trace_name);
@@ -441,8 +445,8 @@ int main(int argc, char ** argv)
 	ret = parse_arguments(argc, argv);
 
 	if(ret != 0) show_arguments();
-	if(ret < 0) return EINVAL;
-	if(ret > 0) return 0;
+	if(ret == EINVAL) return EINVAL;
+	if(ret == -1) return 0;
 
 	show_info();
 	
