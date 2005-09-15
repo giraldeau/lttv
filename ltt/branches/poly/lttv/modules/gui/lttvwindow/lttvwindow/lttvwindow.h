@@ -712,6 +712,22 @@ void lttvwindow_events_request_remove_all(Tab            *tab,
 
 
 /**
+ * Function to see if there are events request pending.
+ *
+ * It tells if events requests are pending. Useful for checks in some events,
+ * i.e. detailed event list scrolling.
+ * 
+ * @param tab the tab the viewer belongs to.
+ * @param viewer a pointer to the viewer data structure
+ * @return : TRUE is events requests are pending, else FALSE.
+ */
+
+gboolean lttvwindow_events_request_pending(Tab            *tab);
+
+
+
+
+/**
  * Function to get the current time interval shown on the current tab.
  * It will be called by a viewer's hook function to update the 
  * shown time interval of the viewer and also be called by the constructor

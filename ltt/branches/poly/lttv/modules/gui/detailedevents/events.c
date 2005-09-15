@@ -686,6 +686,9 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
   //indices = gtk_tree_path_get_indices(path);
   
   //value = gtk_adjustment_get_value(event_viewer_data->vadjust_c);
+ 
+  /* If events request pending, do nothing*/
+  if(lttvwindow_events_request_pending(event_viewer_data->tab)) return;
   
   /* If no prior position... */
   if(ltt_time_compare(
