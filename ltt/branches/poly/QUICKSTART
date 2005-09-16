@@ -1,0 +1,116 @@
+
+QUICKSTART
+
+How to use LTTng and LTTV in a few lines :
+
+These operations are made for installing LTTng 0.2 on a linux 2.6.12-rc2-mm2
+kernel. Change the versions to fit your needs.
+
+
+* Getting the LTTng packages
+
+su -
+mkdir /usr/src/lttng
+cd /usr/src/lttng
+(see http://ltt.polymtl.ca/lttng for package listing)
+wget http://ltt.polymtl.ca/lttng/lttng-modules-0.2.tar.bz2
+wget http://ltt.polymtl.ca/lttng/patch-2.6.12-rc4-mm2-lttng-0.2.bz2
+bzip2 -cd lttng-modules-0.2.tar.bz2 | tar xvof -
+
+
+* Getting LTTng kernel sources
+
+su -
+cd /usr/src
+wget http://kernel.org/pub/linux/kernel/v2.6/testing/linux-2.6.12-rc4.tar.bz2
+wget http://kernel.org/pub/linux/kernel/people/akpm/patches/2.6/2.6.12-rc4/2.6.12-rc4-mm2/2.6.12-rc4-mm2.bz2
+bzip2 -cd linux-2.6.12-rc4.tar.bz2 | tar xvof -
+cd linux-2.6.12-rc4
+bzip2 -cd ../2.6.12-rc4-mm2.bz2 | patch -p1
+bzip2 -cd /usr/src/lttng/patch-2.6.12-rc4-mm2-lttng-0.2.bz2 | patch -p1
+cd ..
+mv linux-2.6.12-rc4 linux-2.6.12-rc4-mm2-lttng-0.2
+
+
+* Installing a LTTng kernel
+
+su -
+cd /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2
+make menuconfig
+  General setup
+    * Linux Trace Toolkit Instrumentation Support
+    M or * Linux Trace Toolkit Tracer
+    do NOT activate (not ready yet) :
+        Align Linux Trace Toolkit Traces
+        Activate Linux Trace Toolkit Heartbeat Timer
+make install
+reboot
+
+
+* Install the ltt-modules
+
+su -
+cd /usr/src/lttng/lttng-modules-0.2
+KERNELDIR=/usr/src/linux-2.6.12-rc4-mm2-lttng-0.2 make
+KERNELDIR=/usr/src/linux-2.6.12-rc4-mm2-lttng-0.2 make modules_install
+
+note : at this stage, you might want to execute
+modprobe ltt-control
+
+and you might also want to do this :
+echo ltt-control >> /etc/modules
+
+
+* Getting and installing the LTTV package
+
+su -
+cd /usr/src
+wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.5-16092005.tar.gz
+gzip -cd LinuxTraceToolkitViewer-0.5-16092005.tar.gz | tar xvof -
+cd LinuxTraceToolkitViewer-0.5-16092005
+./configure
+make
+make install
+
+* Use LTTV
+
+lttv-gui (or /usr/local/bin/lttv-gui)
+  - Spot the "Trace Control" icon : click on it
+    - enter the root password
+    - click "start"
+    - click "stop"
+    - Yes
+      * You should now see a trace
+
+
+* Getting and installing genevent
+
+u -
+cd /usr/src
+wget http://ltt.polymtl.ca/packages/genevent-0.1.tar.gz
+gzip -cd genevent-0.1.tar.gz | tar xvof -
+cd genevent-0.1
+make
+make install
+
+
+* Add new events to the kernel with genevent
+
+su -
+cd /usr/local/share/LinuxTraceToolkitViewer/facilities
+cp process.xml yourfacility.xml
+  * edit yourfacility.xml to fit your needs.
+cd /tmp
+/usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/yourfacility.xml
+cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
+         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt
+cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
+         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/ltt
+  * edit the kernel file you want to instrument
+    - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
+      of the file.
+    - Add a call to the tracing functions. See their names and parameters in
+      /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt/ltt-facility-yourfacility.h
+    
+
+
