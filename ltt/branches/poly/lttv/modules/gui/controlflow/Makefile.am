@@ -38,4 +38,4 @@ noinst_HEADERS = 	eventhooks.h cfv.h processlist.h\
 				drawing.h drawitem.h
 
 EXTRA_DIST = \
-		hGuiControlFlowInsert.xpm
+		hGuiControlFlowInsert.xpm hLegendInsert.xpm

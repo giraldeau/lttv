@@ -18,6 +18,7 @@ libguitracecontrol_la_LDFLAGS = -module
 libguitracecontrol_la_SOURCES = tracecontrol.c
 
 EXTRA_DIST = \
-    hTraceControlInsert.xpm
+    hTraceControlInsert.xpm TraceControlStart.xpm TraceControlPause.xpm \
+		TraceControlStop.xpm
     
 
