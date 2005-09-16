@@ -7,7 +7,7 @@ CFLAGS = -g -o
 all: genevent
 
 install: genevent
-	cp genevent /usr/local/bin
+	cp -f genevent /usr/local/bin
 
 genevent:genevent.o parser.o 
 	$(CC) $(CFLAGS) $@ genevent.o parser.o
