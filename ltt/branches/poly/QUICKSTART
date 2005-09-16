@@ -45,6 +45,7 @@ make menuconfig
     do NOT activate (not ready yet) :
         Align Linux Trace Toolkit Traces
         Activate Linux Trace Toolkit Heartbeat Timer
+              IMPORTANT : This is enabled by default : you must disable it!
 make install
 reboot
 
