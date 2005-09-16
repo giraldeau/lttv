@@ -16,7 +16,7 @@ mkdir /usr/src/lttng
 cd /usr/src/lttng
 (see http://ltt.polymtl.ca/lttng for package listing)
 wget http://ltt.polymtl.ca/lttng/lttng-modules-0.2.tar.bz2
-wget http://ltt.polymtl.ca/lttng/patch-2.6.12-rc4-mm2-lttng-0.2.bz2
+wget http://ltt.polymtl.ca/lttng/patch-2.6.12-rc4-mm2-lttng-0.3.bz2
 bzip2 -cd lttng-modules-0.2.tar.bz2 | tar xvof -
 
 
@@ -29,15 +29,15 @@ wget http://kernel.org/pub/linux/kernel/people/akpm/patches/2.6/2.6.12-rc4/2.6.1
 bzip2 -cd linux-2.6.12-rc4.tar.bz2 | tar xvof -
 cd linux-2.6.12-rc4
 bzip2 -cd ../2.6.12-rc4-mm2.bz2 | patch -p1
-bzip2 -cd /usr/src/lttng/patch-2.6.12-rc4-mm2-lttng-0.2.bz2 | patch -p1
+bzip2 -cd /usr/src/lttng/patch-2.6.12-rc4-mm2-lttng-0.3.bz2 | patch -p1
 cd ..
-mv linux-2.6.12-rc4 linux-2.6.12-rc4-mm2-lttng-0.2
+mv linux-2.6.12-rc4 linux-2.6.12-rc4-mm2-lttng-0.3
 
 
 * Installing a LTTng kernel
 
 su -
-cd /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2
+cd /usr/src/linux-2.6.12-rc4-mm2-lttng-0.3
 make menuconfig
   General setup
     * Linux Trace Toolkit Instrumentation Support
@@ -56,8 +56,8 @@ reboot
 
 su -
 cd /usr/src/lttng/lttng-modules-0.2
-KERNELDIR=/usr/src/linux-2.6.12-rc4-mm2-lttng-0.2 make
-KERNELDIR=/usr/src/linux-2.6.12-rc4-mm2-lttng-0.2 make modules_install
+KERNELDIR=/usr/src/linux-2.6.12-rc4-mm2-lttng-0.3 make
+KERNELDIR=/usr/src/linux-2.6.12-rc4-mm2-lttng-0.3 make modules_install
 
 note : at this stage, you might want to execute
 modprobe ltt-control
@@ -108,14 +108,14 @@ cp process.xml yourfacility.xml
 cd /tmp
 /usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/yourfacility.xml
 cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
-         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt
+         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.3/include/linux/ltt
 cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
-         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/ltt
+         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.3/ltt
   * edit the kernel file you want to instrument
     - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
       of the file.
     - Add a call to the tracing functions. See their names and parameters in
-      /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt/ltt-facility-yourfacility.h
+      /usr/src/linux-2.6.12-rc4-mm2-lttng-0.3/include/linux/ltt/ltt-facility-yourfacility.h
     
 
 
