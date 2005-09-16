@@ -47,6 +47,7 @@ make menuconfig
         Activate Linux Trace Toolkit Heartbeat Timer
               IMPORTANT : This is enabled by default : you must disable it!
 make install
+make modules_install
 reboot
 
 
