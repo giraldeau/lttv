@@ -87,7 +87,7 @@ lttv-gui (or /usr/local/bin/lttv-gui)
 
 * Getting and installing genevent
 
-u -
+su -
 cd /usr/src
 wget http://ltt.polymtl.ca/packages/genevent-0.1.tar.gz
 gzip -cd genevent-0.1.tar.gz | tar xvof -
