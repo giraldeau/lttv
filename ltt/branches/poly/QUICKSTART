@@ -73,6 +73,10 @@ make menuconfig
 make
 make install
 make modules_install
+
+Depending on your boot loader, you may want to execute :
+update-grub or lilo
+
 reboot
 
 
