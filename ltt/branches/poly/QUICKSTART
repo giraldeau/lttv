@@ -117,7 +117,8 @@ make install
 * Use graphical LTTV
 
 lttv-gui (or /usr/local/bin/lttv-gui)
-  - Spot the "Trace Control" icon : click on it
+  - Spot the "Tracing Control" icon : click on it
+      (it's a traffic light icon)
     - enter the root password
     - click "start"
     - click "stop"
