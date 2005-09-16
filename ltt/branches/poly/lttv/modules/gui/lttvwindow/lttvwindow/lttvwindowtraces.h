@@ -70,6 +70,7 @@
 
 #include <ltt/time.h>
 #include <glib.h>
+#include <gtk/gtk.h>
 
 typedef GQuark LttvTraceInfo;
 
@@ -131,13 +132,14 @@ void lttvwindowtraces_remove_trace(LttvTrace *trace);
  *
  * The memory allocated for the request will be managed by the API.
  * 
+ * @param tab parent Window
  * @param trace the trace to compute
  * @param module_name the name of the module which registered global computation
  *                    hooks.
  */
 
 void lttvwindowtraces_background_request_queue
-                     (LttvTrace *trace, gchar *module_name);
+                     (GtkWidget *widget, LttvTrace *trace, gchar *module_name);
 
 /**
  * Remove a background request from a trace.

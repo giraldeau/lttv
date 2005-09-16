@@ -38,7 +38,9 @@
 #include <lttv/tracecontext.h>
 #include <lttvwindow/lttvwindowtraces.h>
 #include <lttvwindow/lttvwindow.h> // for CHUNK_NUM_EVENTS
+#include <lttvwindow/mainwindow-private.h> /* for main window structure */
 
+extern GSList * g_main_window_list;
 
 typedef struct _BackgroundRequest {
   LttvAttributeName module_name; /* Hook path in global attributes,
@@ -46,6 +48,7 @@ typedef struct _BackgroundRequest {
                                     i.e. modulename */
   LttvTrace *trace; /* trace concerned */
   GtkWidget *dialog;  /* Dialog linked with the request, may be NULL */
+  GtkWidget *parent_window; /* Parent window the dialog must be transient for */
 } BackgroundRequest;
 
 typedef struct _BackgroundNotify {
@@ -306,13 +309,14 @@ static void destroy_dialog(BackgroundRequest *bg_req)
  *
  * The memory allocated for the request will be managed by the API.
  * 
+ * @param widget the current Window
  * @param trace the trace to compute
  * @param module_name the name of the module which registered global computation
  *                    hooks.
  */
 
 void lttvwindowtraces_background_request_queue
-                     (LttvTrace *trace, gchar *module_name)
+                     (GtkWidget *widget, LttvTrace *trace, gchar *module_name)
 {
   BackgroundRequest *bg_req;
   LttvAttribute *attribute = lttv_trace_attribute(trace);
@@ -359,14 +363,21 @@ void lttvwindowtraces_background_request_queue
   g_info("Background computation for %s started for trace %p", module_name,
       trace);
   GtkWidget *dialog = 
-    gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, 
+    gtk_message_dialog_new(
+      GTK_WINDOW(widget),
+      GTK_DIALOG_DESTROY_WITH_PARENT,
+      GTK_MESSAGE_INFO, GTK_BUTTONS_OK, 
       "Background computation for %s started for trace %s", 
       module_name,
       g_quark_to_string(ltt_trace_name(lttv_trace(trace))));
+  gtk_window_set_transient_for(GTK_WINDOW(dialog), GTK_WINDOW(widget));
   g_signal_connect_swapped (dialog, "response",
       G_CALLBACK (destroy_dialog),
       bg_req);
   bg_req->dialog = dialog;
+  /* the parent window might vanish : only use this pointer for a 
+   * comparison with existing windows */
+  bg_req->parent_window = gtk_widget_get_toplevel(widget);
   gtk_widget_show(dialog);
 }
 
@@ -932,6 +943,12 @@ gboolean lttvwindowtraces_get_ready(LttvAttributeName module_name,
     return TRUE;
 }
 
+static gint find_window_widget(MainWindow *a, GtkWidget *b)
+{
+  if(a->mwindow == b) return 0;
+  else return -1;
+}
+
 
 /* lttvwindowtraces_process_pending_requests
  * 
@@ -1297,11 +1314,24 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
             
             if(bg_req->dialog != NULL)
               gtk_widget_destroy(bg_req->dialog);
+            GtkWidget *parent_window;
+            if(g_slist_find_custom(g_main_window_list,
+                  bg_req->parent_window,
+                  (GCompareFunc)find_window_widget))
+              parent_window = GTK_WIDGET(bg_req->parent_window);
+            else
+              parent_window = NULL;
+
             GtkWidget *dialog = 
-              gtk_message_dialog_new(NULL, 0, GTK_MESSAGE_INFO, GTK_BUTTONS_OK, 
+              gtk_message_dialog_new(GTK_WINDOW(parent_window),
+                GTK_DIALOG_DESTROY_WITH_PARENT,
+                GTK_MESSAGE_INFO, GTK_BUTTONS_OK, 
                 "Background computation %s finished for trace %s", 
                 g_quark_to_string(bg_req->module_name),
                 g_quark_to_string(ltt_trace_name(lttv_trace(bg_req->trace))));
+            if(parent_window != NULL)
+              gtk_window_set_transient_for(GTK_WINDOW(dialog),
+                  GTK_WINDOW(parent_window));
             g_signal_connect_swapped (dialog, "response",
                 G_CALLBACK (gtk_widget_destroy),
                 dialog);

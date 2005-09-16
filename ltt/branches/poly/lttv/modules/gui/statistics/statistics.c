@@ -169,7 +169,8 @@ static void request_background_data(StatisticViewerData *svd)
          * starts.
          */
         if(!lttvwindowtraces_background_request_find(trace, "stats"))
-          lttvwindowtraces_background_request_queue(trace, "stats");
+          lttvwindowtraces_background_request_queue(
+              main_window_get_widget(svd->tab), trace, "stats");
         lttvwindowtraces_background_notify_queue(svd,
                                                  trace,
                                                  ltt_time_infinite,

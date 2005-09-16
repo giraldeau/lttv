@@ -562,7 +562,8 @@ static void request_background_data(EventViewerData *event_viewer_data)
          * starts.
          */
         if(!lttvwindowtraces_background_request_find(trace, "state"))
-          lttvwindowtraces_background_request_queue(trace, "state");
+          lttvwindowtraces_background_request_queue(
+              main_window_get_widget(event_viewer_data->tab), trace, "state");
         lttvwindowtraces_background_notify_queue(event_viewer_data,
                                                  trace,
                                                  ltt_time_infinite,
