@@ -954,7 +954,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
                 (tf->event.data + strlen(fac_name) + 1);
           fac = &g_array_index (tf->trace->facilities_by_num, LttFacility,
               ltt_get_uint32(LTT_GET_BO(tf), &fac_load_data->id));
-          g_assert(fac->exists == 0);
+          /* facility may already exist if trace is paused/unpaused */
+          if(fac->exists) continue;
           fac->name = g_quark_from_string(fac_name);
           fac->checksum = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->checksum);
@@ -1006,7 +1007,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
                 (tf->event.data + strlen(fac_name) + 1);
           fac = &g_array_index (tf->trace->facilities_by_num, LttFacility,
               ltt_get_uint32(LTT_GET_BO(tf), &fac_state_dump_load_data->id));
-          g_assert(fac->exists == 0);
+          /* facility may already exist if trace is paused/unpaused */
+          if(fac->exists) continue;
           fac->name = g_quark_from_string(fac_name);
           fac->checksum = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->checksum);
