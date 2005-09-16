@@ -4526,6 +4526,17 @@ void create_main_window_with_trace(gchar *path)
     trace = ltt_trace_open(abs_path);
     if(trace == NULL) {
       g_warning("cannot open trace %s", abs_path);
+
+      GtkWidget *dialogue = 
+        gtk_message_dialog_new(
+          GTK_WINDOW(gtk_widget_get_toplevel(widget)),
+          GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
+          GTK_MESSAGE_ERROR,
+          GTK_BUTTONS_OK,
+          "Cannot open trace : maybe you should enter in the directory"
+          "to select it ?");
+      gtk_dialog_run(GTK_DIALOG(dialogue));
+      gtk_widget_destroy(dialogue);
     } else {
       trace_v = lttv_trace_new(trace);
       lttvwindowtraces_add_trace(trace_v);
