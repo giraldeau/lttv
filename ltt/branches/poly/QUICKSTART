@@ -101,6 +101,8 @@ cd /usr/src
 wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.5-16092005.tar.gz
 gzip -cd LinuxTraceToolkitViewer-0.5-16092005.tar.gz | tar xvof -
 cd LinuxTraceToolkitViewer-0.5-16092005
+(refer to README to see the development libraries that must be installed on you
+system)
 ./configure
 make
 make install
