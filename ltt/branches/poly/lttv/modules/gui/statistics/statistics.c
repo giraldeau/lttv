@@ -284,8 +284,7 @@ gui_statistic(Tab *tab)
   lttvwindow_register_traceset_notify(statistic_viewer_data->tab,
                                       statistic_traceset_changed,
                                       statistic_viewer_data);
-  request_background_data(statistic_viewer_data);
-  
+ 
   statistic_viewer_data->statistic_hash = g_hash_table_new_full(g_str_hash,
                                                   g_str_equal,
                                                   statistic_destroy_hash_key,
@@ -356,6 +355,8 @@ gui_statistic(Tab *tab)
       g_statistic_viewer_data_list,
       statistic_viewer_data);
 
+  request_background_data(statistic_viewer_data);
+ 
   return statistic_viewer_data;
 }
 
