@@ -282,9 +282,9 @@ int create_eventdefs(void)
 
   ret = mkdir(trace_root, S_IRWXU|S_IRWXG|S_IRWXO);
   if(ret == -1 && errno != EEXIST) {
+    ret = errno;
     perror("Cannot create trace_root directory");
     printf("trace_root is %s\n", trace_root);
-    ret = errno;
     goto error;
   }
   ret = 0;
@@ -295,8 +295,8 @@ int create_eventdefs(void)
   size_t eventdefs_path_len = strlen(eventdefs_path);
   ret = mkdir(eventdefs_path, S_IRWXU|S_IRWXG|S_IRWXO);
   if(ret == -1 && (!append_trace || errno != EEXIST)) {
-    perror("Cannot create eventdefs directory");
     ret = errno;
+    perror("Cannot create eventdefs directory");
     goto error;
   }
   ret = 0;
@@ -327,8 +327,8 @@ int create_eventdefs(void)
     strncat(facilities_file, entry->d_name, PATH_MAX - facilities_dir_len-1);
     FILE *src = fopen(facilities_file, "r");
     if(!src) {
-      perror("Cannot open eventdefs file for reading");
       ret = errno;
+      perror("Cannot open eventdefs file for reading");
       goto close_dest;
     }
 
@@ -336,14 +336,14 @@ int create_eventdefs(void)
       size_t read_size, write_size;
       read_size = fread(read_buf, sizeof(char), BUF_SIZE, src);
       if(ferror(src)) {
-        perror("Cannot read eventdefs file");
         ret = errno;
+        perror("Cannot read eventdefs file");
         goto close_src;
       }
       write_size = fwrite(read_buf, sizeof(char), read_size, dest);
       if(ferror(dest)) {
-        perror("Cannot write eventdefs file");
         ret = errno;
+        perror("Cannot write eventdefs file");
         goto close_src;
       }
     } while(!feof(src));
@@ -416,8 +416,9 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
   		ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
                        channel_path, "-d", NULL);
 		if(ret) {
+      ret = errno;
 			perror("Error in executing the lttd daemon");
-			exit(errno);
+			exit(ret);
 		}
 	} else {
 		/* error */
