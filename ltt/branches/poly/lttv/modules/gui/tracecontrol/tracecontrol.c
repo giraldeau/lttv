@@ -435,6 +435,7 @@ static int execute_command(const gchar *command, const gchar *username,
     /* Read the output from the child terminal before the prompt. If no data in
      * 200 ms, we stop reading to give the password */
     g_info("Reading from child console...");
+    sleep(1); /* make sure the child is ready */
     while(1) {
       pollfd.fd = fdpty;
       pollfd.events = POLLIN|POLLPRI;
