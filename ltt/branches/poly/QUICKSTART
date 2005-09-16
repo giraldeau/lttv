@@ -6,6 +6,8 @@ How to use LTTng and LTTV in a few lines :
 These operations are made for installing LTTng 0.2 on a linux 2.6.12-rc2-mm2
 kernel. Change the versions to fit your needs.
 
+Author : Mathieu Desnoyers, September 2005
+
 
 * Getting the LTTng packages
 
