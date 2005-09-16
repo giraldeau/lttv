@@ -3,11 +3,35 @@ QUICKSTART
 
 How to use LTTng and LTTV in a few lines :
 
+This document is made of four parts : The first one explains how to install
+LTTng and LTTV from Debian and RPM binary packages, the second one explains how
+to install LTTng and LTTV from sources and the third one describes the steps
+to follow to trace a system and view it. The fourth and last part explains
+briefly how to add a new trace point to the kernel.
+
+What you will typically want is to read sections 1 and 3 : install LTTng from
+binary packages and use it. If there are no packages ready for your system, you
+will have to install from sources (section 2) instead.
+
 These operations are made for installing LTTng 0.2 on a linux 2.6.12-rc2-mm2
 kernel. Change the versions to fit your needs.
 
 Author : Mathieu Desnoyers, September 2005
 
+
+
+***********************************************************
+** Section 1 * Installation from Debian or RPM packages  **
+***********************************************************
+
+No Debian or RPM packages are ready yet.
+
+TODO
+
+
+***********************************************************
+** Section 2 * Installation from sources                 **
+***********************************************************
 
 * Getting the LTTng packages
 
@@ -77,7 +101,14 @@ cd LinuxTraceToolkitViewer-0.5-16092005
 make
 make install
 
-* Use LTTV
+
+
+
+***********************************************************
+** Section 3 * Using LTTV                                **
+***********************************************************
+
+* Use graphical LTTV
 
 lttv-gui (or /usr/local/bin/lttv-gui)
   - Spot the "Trace Control" icon : click on it
@@ -87,6 +118,23 @@ lttv-gui (or /usr/local/bin/lttv-gui)
     - Yes
       * You should now see a trace
 
+* Use text mode LTTV
+
+Fell free to look in /usr/local/lib/lttv/plugins to see all the text and
+graphical plugins available.
+
+For example, a simple trace dump in text format is available with :
+
+lttv -m textDump -t /tmp/trace
+
+see lttv -m textDump --help for detailed command line options of textDump.
+
+
+
+
+***********************************************************
+** Section 4 * Adding new instrumentations with genevent **
+***********************************************************
 
 * Getting and installing genevent
 
