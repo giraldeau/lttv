@@ -1737,7 +1737,7 @@ void add_trace(GtkWidget * widget, gpointer user_data)
               GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
               GTK_MESSAGE_ERROR,
               GTK_BUTTONS_OK,
-              "Cannot open trace : maybe you should enter in the trace"
+              "Cannot open trace : maybe you should enter in the trace "
               "directory to select it ?");
           gtk_dialog_run(GTK_DIALOG(dialogue));
           gtk_widget_destroy(dialogue);
