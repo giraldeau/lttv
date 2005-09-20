@@ -438,7 +438,7 @@ static int execute_command(const gchar *command, const gchar *username,
     sleep(1); /* make sure the child is ready */
     while(1) {
       pollfd.fd = fdpty;
-      pollfd.events = POLLIN|POLLPRI;
+      pollfd.events = POLLIN|POLLPRI|POLLERR|POLLHUP|POLLNVAL;
 
       num_rdy = poll(&pollfd, 1, 200);
 #if 0
@@ -496,7 +496,7 @@ static int execute_command(const gchar *command, const gchar *username,
     while(1) {
       int num_hup = 0;
       pollfd.fd = fdpty;
-      pollfd.events = POLLIN|POLLPRI;
+      pollfd.events = POLLIN|POLLPRI|POLLERR|POLLHUP|POLLNVAL;
 
       num_rdy = poll(&pollfd, 1, -1);
 #if 0
