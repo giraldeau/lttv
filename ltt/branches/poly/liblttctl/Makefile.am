@@ -1,6 +1,6 @@
 
-lib_LTLIBRARIES = libltt.la
-libltt_la_SOURCES = libltt.c
+lib_LTLIBRARIES = liblttctl.la
+liblttctl_la_SOURCES = liblttctl.c
 
-lttinclude_HEADERS = \
-	libltt.h
+liblttctlinclude_HEADERS = \
+	liblttctl.h

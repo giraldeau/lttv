@@ -6,6 +6,6 @@ bin_PROGRAMS = lttctl
 
 lttctl_SOURCES = \
 	lttctl.c
-lttctl_DEPENDENCIES = ../libltt/libltt.la
+lttctl_DEPENDENCIES = ../liblttctl/liblttctl.la
 lttctl_LDADD = $(lttctl_DEPENDENCIES)
 

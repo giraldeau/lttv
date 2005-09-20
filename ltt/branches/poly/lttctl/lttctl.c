@@ -12,7 +12,7 @@
 #include <config.h>
 #endif
 
-#include <libltt/libltt.h>
+#include <liblttctl/liblttctl.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
