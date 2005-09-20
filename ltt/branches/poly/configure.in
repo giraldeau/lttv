@@ -106,7 +106,7 @@ AC_SUBST(lttvincludedir)
 AC_SUBST(lttvwindowincludedir)
 
 AC_CONFIG_FILES([Makefile
-     libltt/Makefile
+     liblttctl/Makefile
      lttctl/Makefile
 		 lttv/Makefile
 		 lttv/lttv/Makefile
@@ -123,7 +123,6 @@ AC_CONFIG_FILES([Makefile
      lttv/modules/gui/tracecontrol/Makefile
 		 lttd/Makefile
 		 ltt/Makefile
-		 ltt/convert/Makefile
      doc/Makefile
      doc/developer/Makefile
      doc/developer/developer_guide/Makefile
