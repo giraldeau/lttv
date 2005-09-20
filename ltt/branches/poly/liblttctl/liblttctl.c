@@ -30,6 +30,12 @@
 #include <liblttctl/lttctl.h>
 #include <errno.h>
 #include <stdio.h>
+#include <error.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <string.h>
+
 
 
 /* Private interface */

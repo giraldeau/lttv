@@ -132,7 +132,8 @@ lttv-gui (or /usr/local/bin/lttv-gui)
 
 * Use text mode LTTng to control tracing
 
-The tracing can be controlled from a terminal by using the lttctl command.
+The tracing can be controlled from a terminal by using the lttctl command (as
+root).
 
 Start tracing :
 

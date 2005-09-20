@@ -1,9 +1,7 @@
 
 This package contains the trace reading library and trace viewing tools for
-the new Linux Trace Toolkit trace format. The associated kernel files to
-generate the new traces are not yet included. In the meantime, a converter
-from the old trace format to the new is provided. For more detailed information
-see doc/developer/index.html
+the new Linux Trace Toolkit trace format. It also contains the lttd, lttctl and
+liblttctl programs which are necessary to obtain a trace.
 
 * Compiling
 
@@ -18,7 +16,7 @@ libpango development libraries (libpango1.0, libpango1.0-dev)
 
 To compile the source tree from a tarball, simply follow these steps :
 
-- run ./configure
+- ./configure
 - make
 - make install
 
@@ -28,38 +26,24 @@ use make, make install.
 
 * Quick Start
 
-- Create a trace
-- Convert it
-- Run ./lttv -m guievents -m guicontrolflow -m guievents -t path_to_trace
-
+See QUICKSTART
 
 * Source Tree Structure
 
-This is a sample of the suggested tree for Linux Trace Toolkit.
+Here is the tree structure of the Linux Trace Toolkit Viewer package.
 
-ltt: new trace format reading library (and converter).
+ltt: new trace format reading library.
 README: This file.
 debian: debian config files (currently empty).
 doc:    Documentation.
 doc/user:      User related documentation.
 doc/developer: Developer related documentation.
-kernel: Linux Trace Toolkit kernel code (currently empty).
-lttd:   Linux Trace Toolkit daemon (currently empty).
+liblttctl:    Library to communicate with the kernel tracer control module.
+lttctl:       Command line program to use the liblttctl library.
+lttd:   Linux Trace Toolkit daemon.
 lttv:   Linux Trace Toolkit trace analysis tool and viewer.
 lttv/modules:  Linux Trace Toolkit analysis tool and viewer plugin modules.
 specs:  RPM config files (currently empty).
-
-
-* The rest of the tools
-
-You must use the lastest versions of patches for the Linux Kernel. That includes
-relayfs and ltt patches, available on the ltt-dev mailing list at
-http://www.listserv.shafik.org/pipermail/ltt-dev/. You will find there the
-lastest version of the trace daemon that must be used to create the traces. (in
-the TraceToolkit package)
-
-Once your traces are created, you must use the convert tool to create a trace in
-the proper format from them.
 
 
 * For Developers
