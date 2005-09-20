@@ -3,4 +3,4 @@
 
 SUBDIRS = libltt ltt lttctl lttv lttd doc facilities
 
-
+EXTRA_DIST = QUICKSTART
