@@ -111,10 +111,10 @@ make install
 
 
 ***********************************************************
-** Section 3 * Using LTTV                                **
+** Section 3 * Using LTTng and LTTV                      **
 ***********************************************************
 
-* Use graphical LTTV
+* Use graphical LTTV to control tracing and analyse traces
 
 lttv-gui (or /usr/local/bin/lttv-gui)
   - Spot the "Tracing Control" icon : click on it
@@ -124,6 +124,21 @@ lttv-gui (or /usr/local/bin/lttv-gui)
     - click "stop"
     - Yes
       * You should now see a trace
+
+* Use text mode LTTng to control tracing
+
+The tracing can be controlled from a terminal by using the lttctl command.
+
+Start tracing :
+
+lttctl -n trace -d -l /mnt/relayfs/ltt -t /tmp/trace1
+
+Stop tracing and destroy trace channels :
+
+lttctl -n trace -R
+
+see lttctl --help for details.
+
 
 * Use text mode LTTV
 
