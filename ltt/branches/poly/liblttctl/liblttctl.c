@@ -27,7 +27,7 @@
 #include <config.h>
 #endif
 
-#include <libltt/libltt.h>
+#include <liblttctl/lttctl.h>
 #include <errno.h>
 #include <stdio.h>
 
