@@ -74,6 +74,11 @@ make
 make install
 make modules_install
 
+The first time you use relayfs, you have to specify a mount point in you system:
+mkdir /mnt/relayfs
+echo "relayfs         /mnt/relayfs    relayfs rw              0       0" \
+   >> /etc/fstab
+
 Depending on your boot loader, you may want to execute :
 update-grub or lilo
 
