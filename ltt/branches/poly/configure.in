@@ -77,9 +77,9 @@ AC_CHECK_FUNCS([select])
 #CPPFLAGS="$CPPFLAGS -I"
 
 AM_CONDITIONAL(LTTVSTATIC, test "$enable_lttvstatic" = yes)
-lttvlibdir="${libdir}/lttv"
+#lttvlibdir="${libdir}/lttv"
 lttvplugindir="${lttvlibdir}/plugins"
-lttlibdir="${libdir}/ltt"
+#lttlibdir="${libdir}/ltt"
 top_lttvdir="\$(top_srcdir)/lttv"
 top_lttvwindowdir="\$(top_srcdir)/lttv/modules/gui/lttvwindow"
 
@@ -95,9 +95,9 @@ lttctlincludedir="${includedir}/liblttctl"
 
 AC_SUBST(POPT_LIBS)
 AC_SUBST(UTIL_LIBS)
-AC_SUBST(lttvlibdir)
+#AC_SUBST(lttvlibdir)
 AC_SUBST(lttvplugindir)
-AC_SUBST(lttlibdir)
+#AC_SUBST(lttlibdir)
 AC_SUBST(top_lttvdir)
 AC_SUBST(top_lttvwindowdir)
 AC_SUBST(DEFAULT_INCLUDES)
