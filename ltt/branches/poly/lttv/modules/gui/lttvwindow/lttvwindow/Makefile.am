@@ -11,7 +11,7 @@ INCLUDES = \
 	@PACKAGE_CFLAGS@ \
 	$(DEFAULT_INCLUDES)
 
-libdir = ${lttvplugindir}
+#libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = liblttvwindow.la
 
