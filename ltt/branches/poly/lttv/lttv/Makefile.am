@@ -50,6 +50,14 @@ lttv_real_SOURCES = batchtest.c main.c module.c option.c \
                iattribute.c state.c stats.c \
 	       tracecontext.c traceset.c filter.c print.c
 
+#man_MANS = lttv.1
+#EXTRA_DIST = lttv.1
+
+#install-data-hook:
+#	cd $(DESTDIR)$(mandir)/man1 && \
+#		$(LN_S) -f lttv.1 lttv-gui.1 \
+#		$(LN_S) -f lttv.1 lttv.real.1
+
 if LTTVSTATIC
   lttv_real_LDFLAGS = -profile -static
 endif

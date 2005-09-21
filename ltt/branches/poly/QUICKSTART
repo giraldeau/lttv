@@ -137,7 +137,7 @@ root).
 
 Start tracing :
 
-lttctl -n trace -d -l /mnt/relayfs/ltt -t /tmp/trace1
+lttctl -n trace -d -l /mnt/relayfs/ltt -t /tmp/trace
 
 Stop tracing and destroy trace channels :
 
