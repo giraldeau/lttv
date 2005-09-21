@@ -1054,7 +1054,7 @@ void generateCfile(FILE * fp, char * filefacname){
   fprintf(fp, "\tprintk(KERN_INFO \"LTT : ltt-facility-%s init dynamic\\n\");\n", filefacname);
   fprintf(fp, "\n");
   fprintf(fp, "\tLTT_FACILITY_SYMBOL = ltt_facility_dynamic_register(&facility);\n");
-  fprintf(fp, "\tLTT_FACILITY_SYMBOL_CHECKSUM = LTT_FACILITY_SYMBOL;\n");
+  fprintf(fp, "\tLTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;\n");
   fprintf(fp, "\n");
   fprintf(fp, "\treturn LTT_FACILITY_SYMBOL;\n");
   fprintf(fp, "}\n");
