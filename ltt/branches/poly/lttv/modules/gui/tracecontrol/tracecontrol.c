@@ -352,6 +352,8 @@ gui_control(Tab *tab)
 
   gtk_container_set_focus_chain(GTK_CONTAINER(tcd->main_box), focus_chain);
 
+  g_list_free(focus_chain);
+
   g_signal_connect(G_OBJECT(tcd->start_button), "clicked",
       (GCallback)start_clicked, tcd);
   g_signal_connect(G_OBJECT(tcd->pause_button), "clicked", 
@@ -590,8 +592,15 @@ void start_clicked (GtkButton *button, gpointer user_data)
   const gchar *trace_name =
     gtk_entry_get_text(GTK_ENTRY(tcd->trace_name_entry));
   
-  const gchar *trace_mode_sel =
-    gtk_combo_box_get_active_text(GTK_COMBO_BOX(tcd->trace_mode_combo));
+  const gchar *trace_mode_sel;
+  GtkTreeIter iter;
+  
+  gtk_combo_box_get_active_iter(GTK_COMBO_BOX(tcd->trace_mode_combo), &iter);
+  gtk_tree_model_get(
+      gtk_combo_box_get_model(GTK_COMBO_BOX(tcd->trace_mode_combo)),
+      &iter, 0, &trace_mode_sel, -1);
+  //const gchar *trace_mode_sel =
+    //2.6+ gtk_combo_box_get_active_text(GTK_COMBO_BOX(tcd->trace_mode_combo));
   const gchar *trace_mode;
   if(strcmp(trace_mode_sel, "normal") == 0)
     trace_mode = "normal";
