@@ -117,7 +117,7 @@ int parse_arguments(int argc, char **argv)
 							trace_name = argv[argn+1];
 							argn++;
 						} else {
-							printf("Specify a trace name after -n.\n", argv[argn]);
+							printf("Specify a trace name after -n.\n");
 							printf("\n");
 							ret = EINVAL;
 						}
