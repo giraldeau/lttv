@@ -1866,7 +1866,7 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
     ts = (LttvTraceState *)self->parent.traces[i];
     nb_tracefile = ts->parent.tracefiles->len;
 
-    guint *event_count;
+    guint *event_count = NULL;
 
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfs = 
@@ -1875,7 +1875,7 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
       event_count = lttv_hooks_remove(tfs->parent.event,
                         state_save_event_hook);
     }
-    g_free(event_count);
+    if(event_count) g_free(event_count);
   }
 }
 
