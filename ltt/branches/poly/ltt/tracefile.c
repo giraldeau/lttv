@@ -1012,7 +1012,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->name = g_quark_from_string(fac_name);
           fac->checksum = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->checksum);
-          fac->id = fac_state_dump_load_data->id;
+          fac->id = ltt_get_uint32(LTT_GET_BO(tf),
+                          &fac_state_dump_load_data->id);
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->pointer_size);
           fac->long_size = ltt_get_uint32(LTT_GET_BO(tf),
