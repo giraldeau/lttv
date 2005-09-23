@@ -55,7 +55,14 @@ apt-get install lttv lttv-doc
   * note : the packages are signed by myself. I am not considered a trusted
     Debian source yet, so warnings are normal.
 
+Packages are only available for i386. If you want to create packages for other
+platforms, do :
 
+apt-get source lttv
+cd lttv-0.6.7
+dpkg-buildpackage -rfakeroot
+
+You should then have your .deb files created for your architecture.
 
 
 
