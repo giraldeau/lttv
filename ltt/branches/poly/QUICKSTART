@@ -37,9 +37,26 @@ Author : Mathieu Desnoyers, September 2005
 ** Section 1 * Installation from Debian or RPM packages  **
 ***********************************************************
 
-No Debian or RPM packages are ready yet.
+No RPM packages are ready yet.
+No Debian kernel LTTng patch is ready yet.
 
-TODO
+You can use the ltt.polymtl.ca apt source to get LTTV for Debian :
+
+Add the following two sources to your /etc/apt/sources.list :
+
+deb http://ltt.polymtl.ca/packages/debian experimental main
+deb-src http://ltt.polymtl.ca/packages/debian experimental main
+
+Then, perform the following :
+
+su -
+apt-get update
+apt-get install lttv lttv-doc
+  * note : the packages are signed by myself. I am not considered a trusted
+    Debian source yet, so warnings are normal.
+
+
+
 
 
 ***********************************************************
