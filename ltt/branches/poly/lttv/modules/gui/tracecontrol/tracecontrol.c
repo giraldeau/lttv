@@ -181,7 +181,8 @@ gui_control(Tab *tab)
   pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlStart_xpm);
   image = gtk_image_new_from_pixbuf(pixbuf);
   tcd->start_button = gtk_button_new_with_label("start");
-  gtk_button_set_image(GTK_BUTTON(tcd->start_button), image);
+  //2.6 gtk_button_set_image(GTK_BUTTON(tcd->start_button), image);
+  g_object_set(G_OBJECT(tcd->start_button), "image", image, NULL);
   gtk_button_set_alignment(GTK_BUTTON(tcd->start_button), 0.0, 0.0);
   gtk_widget_show (tcd->start_button);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->start_button,6,7,0,1,GTK_FILL,GTK_FILL,2,2);
@@ -189,7 +190,8 @@ gui_control(Tab *tab)
   pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlPause_xpm);
   image = gtk_image_new_from_pixbuf(pixbuf);
   tcd->pause_button = gtk_button_new_with_label("pause");
-  gtk_button_set_image(GTK_BUTTON(tcd->pause_button), image);
+  //2.6 gtk_button_set_image(GTK_BUTTON(tcd->pause_button), image);
+  g_object_set(G_OBJECT(tcd->pause_button), "image", image, NULL);
   gtk_button_set_alignment(GTK_BUTTON(tcd->pause_button), 0.0, 0.0);
   gtk_widget_show (tcd->pause_button);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->pause_button,6,7,1,2,GTK_FILL,GTK_FILL,2,2);
@@ -197,7 +199,8 @@ gui_control(Tab *tab)
   pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlPause_xpm);
   image = gtk_image_new_from_pixbuf(pixbuf);
   tcd->unpause_button = gtk_button_new_with_label("unpause");
-  gtk_button_set_image(GTK_BUTTON(tcd->unpause_button), image);
+  //2.6 gtk_button_set_image(GTK_BUTTON(tcd->unpause_button), image);
+  g_object_set(G_OBJECT(tcd->unpause_button), "image", image, NULL);
   gtk_button_set_alignment(GTK_BUTTON(tcd->unpause_button), 0.0, 0.0);
   gtk_widget_show (tcd->unpause_button);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->unpause_button,6,7,2,3,GTK_FILL,GTK_FILL,2,2);
@@ -205,7 +208,8 @@ gui_control(Tab *tab)
   pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlStop_xpm);
   image = gtk_image_new_from_pixbuf(pixbuf);
   tcd->stop_button = gtk_button_new_with_label("stop");
-  gtk_button_set_image(GTK_BUTTON(tcd->stop_button), image);
+  //2.6 gtk_button_set_image(GTK_BUTTON(tcd->stop_button), image);
+  g_object_set(G_OBJECT(tcd->stop_button), "image", image, NULL);
   gtk_button_set_alignment(GTK_BUTTON(tcd->stop_button), 0.0, 0.0);
   gtk_widget_show (tcd->stop_button);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->stop_button,6,7,3,4,GTK_FILL,GTK_FILL,2,2);
