@@ -224,9 +224,9 @@ see lttv -m textDump --help for detailed command line options of textDump.
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/genevent-0.1.tar.gz
-gzip -cd genevent-0.1.tar.gz | tar xvof -
-cd genevent-0.1
+wget http://ltt.polymtl.ca/packages/genevent-0.2.tar.gz
+gzip -cd genevent-0.2.tar.gz | tar xvof -
+cd genevent-0.2
 make
 make install
 
