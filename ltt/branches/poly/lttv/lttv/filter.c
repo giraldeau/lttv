@@ -74,6 +74,7 @@
 #include <sys/time.h>
 #endif
 
+#include <lttv/lttv.h>
 #include <lttv/filter.h>
 #include <ltt/trace.h>
 #include <ltt/type.h>
