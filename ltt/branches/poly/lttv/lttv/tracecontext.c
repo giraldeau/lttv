@@ -21,6 +21,7 @@
 #endif
 
 #include <string.h>
+#include <lttv/lttv.h>
 #include <lttv/tracecontext.h>
 #include <ltt/event.h>
 #include <ltt/facility.h>
