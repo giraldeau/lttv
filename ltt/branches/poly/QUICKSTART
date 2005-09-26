@@ -29,6 +29,19 @@ installation with Debian or RPM packages. In the case of an installation from
 sources, the dependencies are listed.
 
 
+** Current development status **
+
+LTTng : 
+supported architectures : 
+Intel Pentium (UP/SMP) with TSC
+
+LTTV :
+supported architectures :
+Intel i386 and better
+PowerPC
+
+
+
 Author : Mathieu Desnoyers, September 2005
 
 
