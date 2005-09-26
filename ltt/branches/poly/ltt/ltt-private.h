@@ -193,12 +193,12 @@ struct ltt_trace_header_0_4 {
 
 struct ltt_block_start_header {
   struct { 
-    uint64_t                timestamp;
+    struct timeval          timestamp;
     uint64_t                cycle_count;
     uint64_t                freq;
   } begin;
   struct {
-    uint64_t                timestamp;
+    struct timeval          timestamp;
     uint64_t                cycle_count;
     uint64_t                freq;
   } end;
