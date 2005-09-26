@@ -81,7 +81,7 @@ packages for other platforms, do :
 su -
 cd /usr/src
 apt-get source lttv
-cd lttv-0.6.7
+cd lttv-0.6.8
 dpkg-buildpackage -rfakeroot
 
 You should then have your LTTV .deb files created for your architecture.
@@ -245,9 +245,9 @@ echo ltt-control >> /etc/modules
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.6.5-21092005.tar.gz
-gzip -cd LinuxTraceToolkitViewer-0.6.5-21092005.tar.gz | tar xvof -
-cd LinuxTraceToolkitViewer-0.6.5-21092005
+wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.6.8-26092005.tar.gz
+gzip -cd LinuxTraceToolkitViewer-0.6.8-26092005.tar.gz | tar xvof -
+cd LinuxTraceToolkitViewer-0.6.8-26092005
 (refer to README to see the development libraries that must be installed on you
 system)
 ./configure
