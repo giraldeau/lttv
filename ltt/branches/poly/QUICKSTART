@@ -51,7 +51,6 @@ Author : Mathieu Desnoyers, September 2005
 ***********************************************************
 
 No RPM packages are ready yet.
-No Debian kernel LTTng patch is ready yet.
 
 You can use the ltt.polymtl.ca apt source to get LTTV for Debian :
 
