@@ -7,6 +7,9 @@ the inline functions to record events in the kernel.
 Right now, the program can only parse simple structure, if a 
 structure has a nested structure, it will not work.
 
+Genevent will soon go through a rewrite, but for now, the strings should be put
+at the beginning of a structure : they will be put there anyways.
+
 There are several files in the directory:
  genevent.c, genevent.h, crc32.tab, parser.c and parser.h
 

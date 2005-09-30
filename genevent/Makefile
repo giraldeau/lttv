@@ -21,6 +21,6 @@ parser.o: parser.c parser.h
 .PHONY: clean
 
 clean:
-	rm -rf *.o *~ *#
+	rm -rf *.o *~ *# genevent
 
 
