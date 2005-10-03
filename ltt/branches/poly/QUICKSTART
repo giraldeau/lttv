@@ -50,7 +50,16 @@ Author : Mathieu Desnoyers, September 2005
 ** Section 1 * Installation from Debian or RPM packages  **
 ***********************************************************
 
-No RPM packages are ready yet.
+* Install from RPM packages on Fedora Core 4 :
+
+Get LTTV RPM from :
+
+http://ltt.polymtl.ca/packages/fedora/RPMS
+
+No RPM packages for LTTng are ready yet.
+
+
+* Install from Deb packages on Debian :
 
 You can use the ltt.polymtl.ca apt source to get LTTV for Debian :
 
