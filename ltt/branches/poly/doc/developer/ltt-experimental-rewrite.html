@@ -25,10 +25,15 @@ per struct (struct align=x) support added to genevent (partial).<br>
 Add offset align generation for structs to genevent.<br>
 make lttv aware of the per facility long, void* and size_t types.<br>
 Read current trace header and buffer header.<br>
+redo lib tracefile : too much problems in there.<br>
+modify the rest of LTTV to match the API changes.<br>
+debian package<br>
+RPM package<br>
 <br>
 <big>LTT Next Generation Roadmap<small><br>
 <br>
 * TODO<br>
+(1) create RPM packages for lttng kernel
 (1) make LTT tracing code completely atomic (thus remove locks)<br>
 (2) add efficient and secure user space tracing. (1 month)<br>
 (3) integrate LTTng State Dump : missing irq and process state.<br>
@@ -65,6 +70,9 @@ add control of alignment.<br>
 add control for subbuffer size and number of subbuffers.<br>
 Add reserve - get TSC - alignment atomicity through the use of cmpxchg.<br>
 Add configurable alignment (LTT_ALIGNMENT).<br>
+Get ultra-precise logging with use of TSC (only) : only one do_gettimeofday
+read, and then we don't want the time flow to be altered by ntp.<br>
+Debian kernel package<br>
 <br>
 <br>
 <br>
