@@ -5,14 +5,18 @@ Progress in LTTV :<br>
 Buffer aligned on page boundary -> use valloc.<br>
 per struct (struct align=x) support added to genevent (partial).<br>
 Add offset align generation for structs to genevent.<br>
+make lttv aware of the per facility long, void* and size_t types.<br>
+Read current trace header and buffer header.<br>
 <br>
 *TODO<br>
-Read current trace header and buffer header.<br>
 migrate align to lttv parser.<br>
-make lttv aware of the per facility long, void* and size_t types.<br>
+create a event rate graphical view : Will be useful in conjonction with the
+  filter.<br>
+create an analysis of function time (like a precise gprof)<br>
+  -> with gcc -f inline-functions<br>
 <br>
 <br>
-Here the status of the work in progress for LTT experimental<br>
+Here the status of the work in progress for LTT Next Generation<br>
 <br>
 * Done<br>
 remove ltt-headers.h<br>
@@ -45,9 +49,11 @@ Add configurable alignment (LTT_ALIGNMENT).<br>
 <br>
 <br>
 * TODO<br>
-add user space tracing.<br>
+add efficient and secure user space tracing. (1 month)<br>
+integrate LTTng State Dump : missing irq and process state.<br>
 add genevent full functionnality : alignment, array, sequences, nested
 structures.<br>
+add gcc -finstrument-functions instrumentation<br>
 <br>
 <br>
 <br>
@@ -70,16 +76,13 @@ Remove the callback struct from the trace struct.<br>
 <br>
 <br>
 <br>
-* Next experimental release patch division :<br>
+* lttng patch division (0.4.2+) :<br>
 <br>
 ltt-instrumentation.diff<br>
-        - ltt-configmenu.diff (put in ltt-core.diff)<br>
 ltt-facilities-headers.diff<br>
 ltt-facilities-loader.diff<br>
 ltt-facilities.diff<br>
-ltt-instrumentation.diff<br>
 ltt-relayfs.diff<br>
-ltt-time.diff<br>
 ltt-core.diff<br>
 <br>
 <br>
