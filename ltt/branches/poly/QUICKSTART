@@ -153,11 +153,24 @@ configuration menu, but there are alternatives.
 
 Prerequisites for LTTV 0.6.x installation are :
 
-gtk 2.4 or better development libraries (libgtk2.0, libgtk2.0-dev)
-glib 2.4 or better development libraries (libglib2.0-0, libglib2.0-dev)
-libpopt development libraries (libpopt0, libpopt-dev)
-libpango development libraries (libpango1.0, libpango1.0-dev)
-libc6 development librairies (libc6, libc6-dev)
+gcc 3.2 or better
+gtk 2.4 or better development libraries
+  (Debian : libgtk2.0, libgtk2.0-dev)
+  (Fedora : gtk2, gtk2-devel)
+  note : For Fedora users : this might require at least core 3 from Fedora,
+  or you might have to compile your own GTK2 library.
+glib 2.4 or better development libraries
+  (Debian : libglib2.0-0, libglib2.0-dev)
+  (Fedora : glib2, glib2-devel)
+libpopt development libraries
+  (Debian : libpopt0, libpopt-dev)
+  (Fedora : popt)
+libpango development libraries
+  (Debian : libpango1.0, libpango1.0-dev)
+  (Fedora : pango, pango-devel)
+libc6 development librairies 
+  (Debian : libc6, libc6-dev)
+  (Fedora : glibc, glibc)
 
 
 * Getting the LTTng packages

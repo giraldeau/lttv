@@ -5,16 +5,13 @@ liblttctl programs which are necessary to obtain a trace.
 
 * Compiling
 
-gcc 3.2 or higher
-GTK 2.4 or better : For Fedora users : this might require at least core 3
-  from Fedora, or you might have to compile your own GTK2 library.
-
-Some development libraries are needed for compiling :
-
-gtk 2 development libraries
+gcc 3.2 or better
+gtk 2.4 or better development libraries
   (Debian : libgtk2.0, libgtk2.0-dev)
   (Fedora : gtk2, gtk2-devel)
-glib 2 development libraries
+  note : For Fedora users : this might require at least core 3 from Fedora,
+  or you might have to compile your own GTK2 library.
+glib 2.4 or better development libraries
   (Debian : libglib2.0-0, libglib2.0-dev)
   (Fedora : glib2, glib2-devel)
 libpopt development libraries
@@ -26,6 +23,7 @@ libpango development libraries
 libc6 development librairies 
   (Debian : libc6, libc6-dev)
   (Fedora : glibc, glibc)
+
 
 To compile the source tree from a tarball, simply follow these steps :
 
