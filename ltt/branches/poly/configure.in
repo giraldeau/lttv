@@ -115,6 +115,7 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/text/Makefile
 		 lttv/modules/gui/Makefile
 		 lttv/modules/gui/lttvwindow/Makefile
+		 lttv/modules/gui/interrupts/Makefile
 		 lttv/modules/gui/lttvwindow/lttvwindow/Makefile
 		 lttv/modules/gui/lttvwindow/pixmaps/Makefile
 		 lttv/modules/gui/controlflow/Makefile

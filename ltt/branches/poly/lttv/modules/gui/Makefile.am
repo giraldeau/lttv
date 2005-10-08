@@ -6,5 +6,6 @@
 
 # WARNING : subdirs order is important : mainWin depends on API
 
-SUBDIRS = lttvwindow controlflow detailedevents statistics filter tracecontrol
+SUBDIRS = lttvwindow controlflow detailedevents statistics filter tracecontrol interrupts
+
 
