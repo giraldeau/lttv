@@ -390,7 +390,7 @@ gboolean parse_event(void *hook_data, void *call_data){
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
   //e = tfc->e; 
-  e=  e = ltt_tracefile_get_event(tfc->tf);
+  e = ltt_tracefile_get_event(tfc->tf);
   
   field = ltt_event_field(e);
   event_time = ltt_event_time(e);
@@ -481,7 +481,7 @@ static void init() {
                                   hInterruptsInsert_xpm,
                                   "Insert Interrupts View",
                                   interrupts);
-  printf("out: init()\n");				  
+   
 }
 
 void interrupt_destroy_walk(gpointer data, gpointer user_data){
