@@ -1,11 +1,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
 <head>
-  <title>The new LTT trace format</title>
+  <title>The LTTng trace format</title>
 </head>
   <body>
 
-<h1>The new LTT trace format</h1>
+<h1>The LTTng trace format</h1>
+
+<P>
+This document describes the LTTng trace format. It should be used only by
+developers who code the LTTng tracer or the traceread LTTV library, as this
+library offers all the necessary abstractions on top of the raw trace data.
 
 <P>
 A trace is contained in a directory tree. To send a trace remotely,
@@ -18,21 +23,36 @@ $ tree foo
 foo/
 |-- eventdefs
 |   |-- core.xml
-|   |-- net.xml
-|   |-- ipv4.xml
-|   `-- ide.xml
+|   |-- fs.xml
+|		|-- ipc.xml
+|   |-- kernel.xml
+|   |-- memory.xml
+|   |-- network.xml
+|   |-- process.xml
+|   |-- s390_kernel.xml
+|   |-- socket.xml
+|   |-- timer.xml
+|   `-- ...
 |-- info
 |   |-- bookmarks.xml
 |   `-- system.xml
 |-- control
-|   |-- facilities
-|   |-- interrupts
-|   `-- processes
-`-- cpu
-    |-- 0
-    |-- 1
-    |-- 2
-    `-- 3
+|   |-- facilities_0
+|   |-- facilities_1
+|   |-- facilities_...
+|   |-- interrupts_0
+|   |-- interrupts_1
+|   |-- interrupts_...
+|   |-- modules_0
+|   |-- modules_1
+|   |-- modules_...
+|   `-- processes_0
+|   `-- processes_1
+|   `-- processes_...
+|-- cpu_0
+|-- cpu_1
+`-- cpu_...
+
 </TT></PRE>
 
 <P>
@@ -48,20 +68,22 @@ Then, the trace will contain events from two different, similarly named,
 facility versions.
 
 <P>
-A small number of events are predefined, part of the "builtin" facility, 
-and are not present there. These "builtin" events include "facility_load", 
-"block_start", "block_end" and "time_heartbeat".
+A small number of events are predefined, part of the "core" facility, 
+and are not present there. These "core" events include "facility_load", 
+"facility_unload", "time_heartbeat" and "state_dump_facility_load".
 
 <P>
-The cpu directory contains a tracefile for each cpu, numbered from 0, 
-in .trace format. A uniprocessor thus only contains the file cpu/0. 
+The root directory contains a tracefile for each cpu, numbered from 0, 
+in .trace format. A uniprocessor thus only contains the file cpu_0. 
 A multi-processor with some unused (possibly hotplug) CPU slots may have some
 unused CPU numbers. For instance a 8 way SMP board with 6 CPUs randomly 
 installed may produce tracefiles named 0, 1, 2, 4, 6, 7.
 
 <P>
-The files in the control directory also follow the .trace format. 
-The "facilities" file only contains "builtin" facility_load events
+The files in the control directory also follow the .trace format and are also
+per cpu. 
+The "facilities" file only contains "core" facility_load, facility_unload,
+time_heartbeat and state_dump_facility_load events
 and is used to determine the facilities used and the code range assigned 
 to each facility. The other control files contain the initial system
 state and various subsequent important events, for example process 
@@ -81,22 +103,148 @@ during trace analysis (statistics, index...).
 <H2>Trace format</H2>
 
 <P>
-Each tracefile is divided into equal size blocks with an uint32 at the block 
-end giving the offset to the last event in the block. Events are packed
-sequentially in the block starting at offset 0 with a "block_start" event
-and ending, at the offset stored in the last 4 bytes of the block, with a
-block_end event. Both the block_start and block_end events
-contain the kernel timestamp (timespec binary structure, 
-uint32 seconds, uint32 nanoseconds), the cycle counter (uint64 cycles), 
-and the buffer id (uint64).
+Each tracefile is divided into equal size blocks with a header at the beginning
+of the block. Events are packed sequentially in the block starting right after
+the block header.
+<P>
+Each block consists of :
+<PRE><TT>
+block start/end header
+trace header
+event 1 header
+event 1 variable length data
+event 2 header
+event 2 variable length data
+....
+padding
+</TT></PRE>
 
 <P>
-Each event consists in an event type id (uint16 which is the event type id 
-within the facility + the facility base id), a time delta (uint32 in cycles
-or nanoseconds, depending on configuration, since the last time value, in the 
-block header or in a "time_heartbeat" event) and the event type specific data.
-All values are packed in native byte order binary format.
+The block start/end header
 
+<PRE><TT>
+begin
+	* the beginning of buffer information
+	timestamp
+		* Used only when no TSC is available.
+		uint32 seconds
+		uint32 microseconds
+	uint64 cycle_count
+		* TSC at the beginning of the buffer
+	uint64 freq
+		* frequency of the CPUs at the beginning of the buffer.
+end
+	* the end of buffer information
+	timestamp
+		* Used only when no TSC is available.
+		uint32 seconds
+		uint32 microseconds
+	uint64 cycle_count
+		* TSC at the beginning of the buffer
+	uint64 freq
+		* frequency of the CPUs at the beginning of the buffer.
+uint32 lost_size
+	* number of bytes of padding at the end of the buffer.
+uint32 buf_size
+	* size of the sub-buffer.
+</TT></PRE>
+
+
+
+<P>
+The trace header
+
+<PRE><TT>
+uint32 magic_number
+	* 0x00D6B7ED, used to check the trace byte order vs host byte order.
+uint32 arch_type
+	* Architecture type of the traced machine.
+uint32 arch_variant
+	* Architecture variant of the traced machine. May be unused on some arch.
+uint32 float_word_order
+	* Byte order of floats and doubles, sometimes different from integer byte
+	  order. Useful only for user space traces.
+uint8 arch_size
+	* Size (in bytes) of the void * on the traced machine.
+uint8 major_version
+	* major version of the trace.
+uint8 minor_version
+	* minor version of the trace.
+uint8 flight_recorder
+	* Is flight recorder mode activated ? If yes, data might be missing
+	  (overwritten) in the trace.
+uint8	has_heartbeat
+	* Does this trace have heartbeat timer event activated ?
+		Yes (1) -> Event header has 32 bits TSC
+		No (0) -> Event header has 64 bits TSC
+uint8 has_alignment
+	* Is the information in this trace aligned ?
+		Yes (1) -> aligned on min(arch size, atomic data size).
+		No (0) -> data is packed.
+uint8 has_tsc
+	* Does the traced machine has a working TSC ?
+		Yes (1) -> event time is calculated from :
+			trace_start_time + ((event_tsc - trace_start_tsc) * freq)
+		No (0) -> event time is calculated from :
+			trace_start_time 
+			+ (buffer start timestamp - trace start_monotonic) 
+			+ (event_time_delta)
+			(not supported)
+uint64 start_freq
+	* CPUs clock frequency at the beginnig of the trace.
+uint64 start_tsc
+	* TSC at the beginning of the trace.
+uint64 start_monotonic
+	* monotonically increasing time at the beginning of the trace.
+		(currently not supported)
+start_time
+	* Real time at the beginning of the trace (as given by date, adjusted by NTP)
+		This is the only time reference with the real world : the rest of the trace
+		has monotonically increasing time from this point (with TSC difference and
+		clock frequency).
+	uint32 seconds
+	uint32 nanoseconds
+</TT></PRE>
+
+
+<P>
+Event header
+
+<P>
+Event headers differs depending on those conditions : does the traced system has
+a heartbeat timer ? Is tracing alignment activated ?
+
+<P>
+Event header :
+<PRE><TT>
+{ uint32 timestamp
+	or
+	uint64 timestamp }
+	* if has_heartbeat : 32 LSB of the cycle counter at the event record time.
+	* else : 64 bits complete cycle counter.
+	* note : if there is no working TSC (has_tsc == 0), then this field contains
+	  either the complete monotonically increasing time or the time delta from the
+		previous heartbeat event. (unsupported)
+uint8 facility_id
+	* Numerical ID of the facility corresponding to the event. See the facility
+	  tracefile to know which facility ID matches which facility name and
+		description.
+uint8 event_id
+	* Numerical ID of the event inside the facility.
+uint16 event_size
+	* Size of the variable length data that follows this header.
+</TT></PRE>
+
+<P>
+Event header alignment
+
+<P>
+If trace alignment is activated (has_alignment), the event header is aligned
+on the architecture size (void pointer size). In addition, a padding is
+automatically added after the event header so the variable length data is
+automatically aligned on the architecture size.
+
+<P>
 
 <H2>System description</H2>
 
