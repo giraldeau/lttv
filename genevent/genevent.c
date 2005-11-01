@@ -540,13 +540,11 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\tunsigned int index;\n");
     fprintf(fp, "\tstruct ltt_channel_struct *channel;\n");
     fprintf(fp, "\tstruct ltt_trace_struct *trace;\n");
-    fprintf(fp, "\tunsigned long _flags;\n");
     fprintf(fp, "\tvoid *buff;\n");
-    fprintf(fp, "\tunsigned old_offset;\n");
-    fprintf(fp, "\tunsigned int header_length;\n");
-    fprintf(fp, "\tunsigned int event_length;\n");	// total size (incl hdr)
-		fprintf(fp, "\tunsigned int length;\n");	// Size of the event var data.
-    fprintf(fp, "\tunsigned char _offset;\n");
+    fprintf(fp, "\tunsigned int slot_size;\n");	// total size (incl hdr)
+		fprintf(fp, "\tunsigned int data_size;\n");	// Size of the event var data.
+		fprintf(fp, "\tunsigned int before_hdr_pad;\n");// Dynamic padding before event header
+		fprintf(fp, "\tunsigned int after_hdr_pad;\n");	// Dynamic padding after event header
 		fprintf(fp, "\tstruct rchan_buf *buf;\n");
 		fprintf(fp, "\tstruct timeval delta;\n");
 		fprintf(fp, "\tu64 tsc;\n");
@@ -561,67 +559,19 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 		 * just won't iterate on any trace). */
     fprintf(fp,
         "\tif(ltt_traces.num_active_traces == 0) return;\n\n");
-
-    fprintf(fp, "\t/* Disable interrupts. */\n");
-    fprintf(fp, "\tlocal_irq_save(_flags);\n");
-    fprintf(fp, "\tpreempt_disable();\n\n");
-
-		fprintf(fp, "\tltt_nesting[smp_processor_id()]++;\n");
-		fprintf(fp, "\tbarrier();\n");
-		fprintf(fp, "\tif(ltt_nesting[smp_processor_id()] > 1) goto unlock;\n");
-    fprintf(fp, "\tspin_lock(&ltt_traces.locks[smp_processor_id()]);\n\n");
 		
-    if(ev->per_tracefile) {
-      fprintf(fp, "\tindex = tracefile_index;\n");
-    } else {
-      fprintf(fp, 
-        "\tindex = ltt_get_index_from_facility(ltt_facility_%s_%X,\n"\
-            "\t\t\t\tevent_%s);\n",
-        facName, checksum, ev->name);
-    }
-    fprintf(fp,"\n");
-
-    /* For each trace */
-    fprintf(fp, "\tlist_for_each_entry(trace, &ltt_traces.head, list) {\n");
-    fprintf(fp, "\t\tif(!trace->active) continue;\n\n");
-
-    if(ev->per_trace) {
-      fprintf(fp, "\t\tif(dest_trace != trace) continue;\n\n");
-    }
-     //length of buffer : length of all structures
- //   if(ev->type == 0) fprintf(fp, "0");
-   
-    fprintf(fp, "\t\tchannel = ltt_get_channel_from_index(trace, index);\n");
-		fprintf(fp, "\t\tbuf = channel->rchan->buf[smp_processor_id()];\n");
-		fprintf(fp, "\n");
-		/* Warning : not atomic reservation : event size depends on the current
-		 * address for alignment */
-		/* NOTE : using cmpxchg in reserve with repeat for atomicity */
-    // Replaces _offset
-		/* NOTE2 : as the read old address from memory must come before any
-		 * protected event, let's add a memory barrier() to make sure the compiler
-		 * will not reorder this read. */
-		fprintf(fp, "\t\tdo {\n");
-		fprintf(fp, "\t\t\told_offset = buf->offset;\n");
-		fprintf(fp, "\t\t\tbarrier();\n");
-    fprintf(fp, "\t\t\tptr = (char*)buf->data + old_offset;\n");
-
-
-    fprintf(fp, "\t\t\theader_length = ltt_get_event_header_data(trace, "
-																																"channel,\n"
-								"\t\t\t\t\t\t\t\t\t\tptr, &_offset, &delta, &tsc);\n");
-
-    fprintf(fp, "\t\t\tptr += _offset + header_length;\n");
+    /* Calculate event variable len + event alignment offset.
+     * Assume that the padding for alignment starts at a void*
+     * address. */
+		fprintf(fp, "\t\tdata_size = 0;\n");
 
     for(pos1=0;pos1<structCount;pos1++){
-
-			unsigned align = max(alignment, ev->type->alignment);
-      if(align > 1) {
-        fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1) ;\n",
-            align, align, align);
+			if(ev->type->alignment > 1) {
+        fprintf(fp,"\t\t\tdata_size += ltt_align(data_size, %u);\n",
+						ev->type->alignment);
       }
-      fprintf(fp,"\t\t\tptr += sizeof(struct %s_%s_%d);\n",ev->name,
-          facName,pos1+1);
+      fprintf(fp,"\t\t\tdata_size += sizeof(struct %s_%s_%d);\n",
+					ev->name,facName,pos1+1);
 //      if(pos1 != structCount-1) fprintf(fp," + ");
     }
 
@@ -636,85 +586,184 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 				if(td->type == SEQUENCE || td->type==STRING || td->type==ARRAY){
 					if(td->type == SEQUENCE) {
 
-						unsigned align = max(alignment, td->alignment);
-						if(align > 1) {
-							fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-											align, align, align);
+						if(td->alignment > 1) {
+							fprintf(fp,"\t\t\tdata_size += ltt_align(data_size, %u);\n",
+									td->alignment);
 						}
-						fprintf(fp,"\t\tptr += sizeof(%s);\n",uintOutputTypes[td->size]);
-						if(align > 1) {
-							fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-											align, align, align);
+						fprintf(fp,"\t\t\tdata_size += sizeof(%s);\n",
+								uintOutputTypes[td->size]);
+
+						if(td->alignment > 1) {
+							fprintf(fp,"\t\tdata_size += ltt_align(data_size, %u);\n",
+									td->alignment);
 						}
-						fprintf(fp,"\t\tptr += sizeof(%s) * seqlength_%d;\n\n",
-							getTypeStr(td), seqCount);
+						fprintf(fp,"\t\tdata_size += sizeof(%s) * seqlength_%d;\n",
+								getTypeStr(td), seqCount);
 
           } else if(td->type==STRING) {
-						unsigned align = max(alignment, td->alignment);
-            if(align > 1) {
-              fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1)) ;\n",
-                 align, align, align);
+            if(td->alignment > 1) {
+							fprintf(fp,"\t\tdata_size += ltt_align(data_size, %u);\n",
+									td->alignment);
             }
-            fprintf(fp,"ptr += strlength_%d + 1;\n",
-                                                ++strCount);
+						strCount++;
+						fprintf(fp,"\t\tdata_size += strlength_%d + 1;\n",
+								strCount);
           }
 					else if(td->type==ARRAY) {
-						unsigned align = max(alignment, td->alignment);
-            if(align > 1) {
-              fprintf(fp,"\t\t\tptr += (%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-                 align, align, align);
+            if(td->alignment > 1) {
+							fprintf(fp,"\t\tdata_size += ltt_align(data_size, %u);\n",
+									td->alignment);
             }
-						fprintf(fp,"\t\t\tptr += sizeof(%s) * %d;\n",
-                getTypeStr(td),td->size);
+						fprintf(fp,"\t\tdata_size += sizeof(%s) * %d;\n",
+								getTypeStr(td), td->size);
+
 					if(structCount == 0) flag = 1;
           }
 				}
 			}
-    fprintf(fp, "\t\t\tevent_length = (unsigned long)ptr -"
-				"(unsigned long)(buf->data + old_offset);\n");
 		
-		/* let's put some protection before the cmpxchg : the space reservation and
-		 * the get TSC are not dependant from each other. I don't want the compiler
-		 * to reorder those in the wrong order. And relay_reserve is inline, so
-		 * _yes_, the compiler could mess it up. */
-		fprintf(fp, "\t\t\tbarrier();\n");
-		fprintf(fp, "\t\t\tbuff = relay_reserve(channel->rchan, event_length, "
-												"old_offset);\n");
-		fprintf(fp, "\n");
- 		fprintf(fp, "\t\t} while(PTR_ERR(buff) == -EAGAIN);\n");
+		/* We use preempt_disable instead of rcu_read_lock because we want to
+		 * use preempt_enable_no_resched : the only way to be called from the
+		 * scheduler code safely! */
+    fprintf(fp, "\tpreempt_disable();\n\n");
+		fprintf(fp, "\tltt_nesting[smp_processor_id()]++;\n");
+		fprintf(fp, "\tif(ltt_nesting[smp_processor_id()] > 1) goto unlock;\n");
+		
+    if(ev->per_tracefile) {
+      fprintf(fp, "\tindex = tracefile_index;\n");
+    } else {
+      fprintf(fp, 
+        "\tindex = ltt_get_index_from_facility(ltt_facility_%s_%X,\n"\
+            "\t\t\t\tevent_%s);\n",
+        facName, checksum, ev->name);
+    }
+    fprintf(fp,"\n");
+
+    /* For each trace */
+    fprintf(fp, "\tlist_for_each_entry_rcu(trace, &ltt_traces.head, list) {\n");
+    fprintf(fp, "\t\tif(!trace->active) continue;\n\n");
+
+    if(ev->per_trace) {
+      fprintf(fp, "\t\tif(dest_trace != trace) continue;\n\n");
+    }
+     //length of buffer : length of all structures
+ //   if(ev->type == 0) fprintf(fp, "0");
+   
+    fprintf(fp, "\t\tchannel = ltt_get_channel_from_index(trace, index);\n");
+		fprintf(fp, "\t\tbuf = channel->rchan->buf[smp_processor_id()];\n");
 		fprintf(fp, "\n");
 
-  
-    /* Reserve the channel */
-    //fprintf(fp, "\t\tbuff = relay_reserve(channel->rchan, event_length);\n");
-    fprintf(fp, "\t\tif(buff == NULL) {\n");
-    fprintf(fp, "\t\t\t/* Buffer is full*/\n");
-    fprintf(fp, "\t\t\t/* for debug BUG(); */\n"); // DEBUG!
-    fprintf(fp, "\t\t\tchannel->events_lost[smp_processor_id()]++;\n");
-    fprintf(fp, "\t\t\tbreak;\n");	 /* don't commit a NULL reservation! */
-    fprintf(fp, "\t\t}\n");
-		
-		/* DEBUG */
-    //fprintf(fp, "\t\tif(resret == 1) {\n");
-		//fprintf(fp, "printk(\"f%%lu e\%%u \", ltt_facility_%s_%X, event_%s);",
-		//		facName, checksum, ev->name);
-    //fprintf(fp, "\t\t}\n");
+
+    /* Relay reserve */
+		fprintf(fp, "\t\tslot_size = 0;\n");
+		fprintf(fp, "\t\tbuff = ltt_reserve_slot(trace, buf, event_length, &slot_size, &tsc,\n"
+			"\t\t&before_hdr_pad, &after_hdr_pad);\n");
+    /* If error, return */
+		fprintf(fp, "if(!buff) return;\n");
+
+    /* write data */
 
     /* Write the header */
-    fprintf(fp, "\n");
-		fprintf(fp,"\t\tlength = event_length - _offset - header_length;\n");
+		/* FIXME : delta is not set ! */
     fprintf(fp, "\n");
     fprintf(fp, "\t\tltt_write_event_header(trace, channel, buff, \n"
-                "\t\t\t\tltt_facility_%s_%X, event_%s, length, _offset,\n"
+                "\t\t\t\tltt_facility_%s_%X, event_%s, data_size, before_hdr_pad,\n"
 								"\t\t\t\t&delta, &tsc);\n",
                 facName, checksum, ev->name);
     fprintf(fp, "\n");
 
-    if(ev->type != 0)
-      fprintf(fp, "\t\tptr = (char*)buff + _offset + header_length;\n");
+    if(ev->type != 0) {
+      fprintf(fp,"\t\tptr = (char*)buff + before_hdr_pad + header_length + after_hdr_pad;\n");
 
-    //copy struct, sequence and string to buffer
-    //FIXME : they always come before the structs.
+			/* Write structures */
+			for(pos1=0;pos1<structCount;pos1++){
+				if(ev->type->alignment > 1) {
+					fprintf(fp,"\t\tptr += ltt_align((unsigned long)ptr, %u);\n",
+							ev->type->alignment);
+				}
+				fprintf(fp,"\t\t__%d = (struct %s_%s_%d *)(ptr);\n",
+						pos1+1, ev->name,facName,pos1+1);
+
+				fprintf(fp,"\t\t/* initialize structs */\n");
+
+				for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
+					fld  = (field_t *)ev->type->fields.array[pos1];
+					td = fld->type;
+					if(td->type != ARRAY && td->type != SEQUENCE && td->type != STRING){
+						fprintf(fp, "\t\t__%d->%s = %s;\n", pos1+1, fld->name, fld->name);
+					}
+				}
+				if(structCount) fprintf(fp,"\n");
+			}
+
+		}
+
+
+    //declare a char pointer if needed : starts at the end of the structs.
+    //if(structCount + hasStrSeq > 1) {
+    //  fprintf(fp,"\t\tchar * ptr = (char*)buff + header_length");
+    //  for(pos1=0;pos1<structCount;pos1++){
+    //    fprintf(fp," + sizeof(struct %s_%s_%d)",ev->name, facName,pos1+1);
+    //  }
+    //  if(structCount + hasStrSeq > 1) fprintf(fp,";\n");
+    //}
+
+    // Declare an alias pointer of the struct type to the beginning
+    // of the reserved area, just after the event header.
+    if(ev->type != 0) {
+
+			unsigned align = max(alignment, td->alignment);
+      if(align > 1) {
+        fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
+              align, align, align);
+      }
+    
+      fprintf(fp, "\t\t__1 = (struct %s_%s_1 *)(ptr);\n",
+          ev->name, facName);
+    }
+    //allocate memory for new struct and initialize it
+    //if(whichTypeFirst == 1){ //struct first
+      //for(pos1=0;pos1<structCount;pos1++){  
+      //  if(pos1==0) fprintf(fp,
+      //      "\tstruct %s_%s_1 * __1 = (struct %s_%s_1 *)buff;\n",
+      //      ev->name, facName,ev->name, facName);
+  //MD disabled      else fprintf(fp,
+  //          "\tstruct %s_%s_%d  __%d;\n",
+  //          ev->name, facName,pos1+1,pos1+1);
+      //}      
+    //}else if(whichTypeFirst == 2){
+     // for(pos1=0;pos1<structCount;pos1++)
+     //   fprintf(fp,"\tstruct %s_%s_%d  __%d;\n",
+     //       ev->name, facName,pos1+1,pos1+1);
+    //}
+    fprintf(fp,"\n");
+
+    if(structCount) fprintf(fp,"\t\t//initialize structs\n");
+    //flag = 0;
+    //structCount = 0;
+		if(ev->type != 0)
+			for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
+				fld  = (field_t *)ev->type->fields.array[pos1];
+				td = fld->type;
+				if(td->type != ARRAY && td->type != SEQUENCE && td->type != STRING){
+					//if(flag == 0){
+					//  flag = 1;  
+					//  structCount++;
+					//  if(structCount > 1) fprintf(fp,"\n");
+					//}
+					fprintf(fp, "\t\t__1->%s = %s;\n", fld->name, fld->name );
+
+				//if(structCount == 1 && whichTypeFirst == 1)
+				//  fprintf(fp, "\t__1->%s =  %s;\n",fld->name,fld->name );
+				//else 
+				//  fprintf(fp, "\t__%d.%s =  %s;\n",structCount ,fld->name,fld->name);
+				}
+				//else flag = 0;
+			}
+    if(structCount) fprintf(fp,"\n");
+
+
+    //copy sequence and string to buffer
     seqCount = 0;
     strCount = 0;
     flag = 0;
@@ -790,67 +839,46 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
 
 
 
-    //declare a char pointer if needed : starts at the end of the structs.
-    //if(structCount + hasStrSeq > 1) {
-    //  fprintf(fp,"\t\tchar * ptr = (char*)buff + header_length");
-    //  for(pos1=0;pos1<structCount;pos1++){
-    //    fprintf(fp," + sizeof(struct %s_%s_%d)",ev->name, facName,pos1+1);
-    //  }
-    //  if(structCount + hasStrSeq > 1) fprintf(fp,";\n");
-    //}
+    /* commit */
+		ltt_commit_slot(buf, buff, slot_size);
+		
 
-    // Declare an alias pointer of the struct type to the beginning
-    // of the reserved area, just after the event header.
-    if(ev->type != 0) {
-			unsigned align = max(alignment, td->alignment);
-      if(align > 1) {
-        fprintf(fp,"\t\tptr+=(%u - ((unsigned int)ptr&(%u-1)))&(%u-1);\n",
-              align, align, align);
-      }
-    
-      fprintf(fp, "\t\t__1 = (struct %s_%s_1 *)(ptr);\n",
-          ev->name, facName);
-    }
-    //allocate memory for new struct and initialize it
-    //if(whichTypeFirst == 1){ //struct first
-      //for(pos1=0;pos1<structCount;pos1++){  
-      //  if(pos1==0) fprintf(fp,
-      //      "\tstruct %s_%s_1 * __1 = (struct %s_%s_1 *)buff;\n",
-      //      ev->name, facName,ev->name, facName);
-  //MD disabled      else fprintf(fp,
-  //          "\tstruct %s_%s_%d  __%d;\n",
-  //          ev->name, facName,pos1+1,pos1+1);
-      //}      
-    //}else if(whichTypeFirst == 2){
-     // for(pos1=0;pos1<structCount;pos1++)
-     //   fprintf(fp,"\tstruct %s_%s_%d  __%d;\n",
-     //       ev->name, facName,pos1+1,pos1+1);
-    //}
-    fprintf(fp,"\n");
 
-    if(structCount) fprintf(fp,"\t\t//initialize structs\n");
-    //flag = 0;
-    //structCount = 0;
-		if(ev->type != 0)
-			for(pos1 = 0; pos1 < ev->type->fields.position; pos1++){
-				fld  = (field_t *)ev->type->fields.array[pos1];
-				td = fld->type;
-				if(td->type != ARRAY && td->type != SEQUENCE && td->type != STRING){
-					//if(flag == 0){
-					//  flag = 1;  
-					//  structCount++;
-					//  if(structCount > 1) fprintf(fp,"\n");
-					//}
-					fprintf(fp, "\t\t__1->%s = %s;\n", fld->name, fld->name );
 
-				//if(structCount == 1 && whichTypeFirst == 1)
-				//  fprintf(fp, "\t__1->%s =  %s;\n",fld->name,fld->name );
-				//else 
-				//  fprintf(fp, "\t__%d.%s =  %s;\n",structCount ,fld->name,fld->name);
-				}
-				//else flag = 0;
-			}
-    if(structCount) fprintf(fp,"\n");
+#if 0
+		fprintf(fp, "\t\tdo {\n");
+		fprintf(fp, "\t\t\told_offset = buf->offset;\n");
+    fprintf(fp, "\t\t\tptr = (char*)buf->data + old_offset;\n");
+
+
+    fprintf(fp, "\t\t\theader_length = ltt_get_event_header_data(trace, "
+																																"channel,\n"
+								"\t\t\t\t\t\t\t\t\t\tptr, &_offset, &delta, &tsc);\n");
+
+    fprintf(fp, "\t\t\tptr += _offset + header_length;\n");
+
+		fprintf(fp, "\t\t\tbuff = relay_reserve(channel->rchan, event_length, "
+												"old_offset);\n");
+		fprintf(fp, "\n");
+ 		fprintf(fp, "\t\t} while(PTR_ERR(buff) == -EAGAIN);\n");
+		fprintf(fp, "\n");
+
+  
+    /* Reserve the channel */
+    //fprintf(fp, "\t\tbuff = relay_reserve(channel->rchan, event_length);\n");
+    fprintf(fp, "\t\tif(buff == NULL) {\n");
+    fprintf(fp, "\t\t\t/* Buffer is full*/\n");
+    fprintf(fp, "\t\t\t/* for debug BUG(); */\n"); // DEBUG!
+    fprintf(fp, "\t\t\tchannel->events_lost[smp_processor_id()]++;\n");
+    fprintf(fp, "\t\t\tbreak;\n");	 /* don't commit a NULL reservation! */
+    fprintf(fp, "\t\t}\n");
+		
+		/* DEBUG */
+    //fprintf(fp, "\t\tif(resret == 1) {\n");
+		//fprintf(fp, "printk(\"f%%lu e\%%u \", ltt_facility_%s_%X, event_%s);",
+		//		facName, checksum, ev->name);
+    //fprintf(fp, "\t\t}\n");
+
     //set ptr to the end of first struct if needed;
     //if(structCount + hasStrSeq > 1){
     //  fprintf(fp,"\n\t\t//set ptr to the end of the first struct\n");
@@ -864,20 +892,15 @@ void generateStructFunc(FILE * fp, char * facName, unsigned long checksum){
     fprintf(fp, "\t\tltt_write_commit_counter("
 				"channel->rchan->buf[smp_processor_id()],\n"
         "\t\t\t\tbuff);\n");
+#endif //0
 
    /* End of traces iteration */
     fprintf(fp, "\t}\n\n");
 
     fprintf(fp, "\n");
-		// The generated preempt_check_resched is not dangerous because
-		// interrupts are disabled.
-    fprintf(fp, "\tspin_unlock(&ltt_traces.locks[smp_processor_id()]);\n");
 
     fprintf(fp, "unlock:\n");
-		fprintf(fp, "\tbarrier();\n");
 		fprintf(fp, "\tltt_nesting[smp_processor_id()]--;\n");
-    fprintf(fp, "\t/* Re-enable interrupts */\n");
-    fprintf(fp, "\tlocal_irq_restore(_flags);\n");
     fprintf(fp, "\tpreempt_enable_no_resched();\n");
     //fprintf(fp, "\tpreempt_check_resched();\n");
     
