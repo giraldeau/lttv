@@ -297,13 +297,13 @@ end:
 
 int read_subbuffer(struct fd_pair *pair)
 {
-	unsigned int	subbuf_index;
+	unsigned int	consumed_old;
 	int err, ret;
 
 
 	err = ioctl(pair->channel, RELAYFS_GET_SUBBUF, 
-								&subbuf_index);
-	printf("index : %u\n", subbuf_index);
+								&consumed_old);
+	printf("cookie : %u\n", consumed_old);
 	if(err != 0) {
 		perror("Error in reserving sub buffer");
 		ret = -EPERM;
@@ -311,7 +311,7 @@ int read_subbuffer(struct fd_pair *pair)
 	}
 	
 	err = TEMP_FAILURE_RETRY(write(pair->trace,
-				pair->mmap + (subbuf_index * pair->subbuf_size),
+				pair->mmap + (consumed_old & (~(pair->subbuf_size-1))),
 				pair->subbuf_size));
 
 	if(err < 0) {
@@ -322,10 +322,15 @@ int read_subbuffer(struct fd_pair *pair)
 
 
 write_error:
-	err = ioctl(pair->channel, RELAYFS_PUT_SUBBUF);
+	err = ioctl(pair->channel, RELAYFS_PUT_SUBBUF, &consumed_old);
 	if(err != 0) {
-		perror("Error in unreserving sub buffer");
-		ret = -EPERM;
+		if(errno == -EFAULT) {
+			perror("Error in unreserving sub buffer");
+			ret = -EFAULT;
+		} else if(errno == -EIO) {
+			perror("Reader has been pushed by the writer, last subbuffer corrupted.");
+			ret = -EIO;
+		}
 		goto get_error;
 	}
 
