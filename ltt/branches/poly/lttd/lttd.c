@@ -35,7 +35,7 @@
 /* Get the next sub buffer that can be read. */
 #define RELAYFS_GET_SUBBUF        _IOR(0xF4, 0x00,__u32)
 /* Release the oldest reserved (by "get") sub buffer. */
-#define RELAYFS_PUT_SUBBUF        _IO(0xF4, 0x01)
+#define RELAYFS_PUT_SUBBUF        _IOW(0xF4, 0x01,__u32)
 /* returns the number of sub buffers in the per cpu channel. */
 #define RELAYFS_GET_N_SUBBUFS     _IOR(0xF4, 0x02,__u32)
 /* returns the size of the sub buffers. */
