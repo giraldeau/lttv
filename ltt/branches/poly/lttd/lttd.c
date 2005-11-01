@@ -329,6 +329,7 @@ write_error:
 			ret = -EFAULT;
 		} else if(errno == -EIO) {
 			perror("Reader has been pushed by the writer, last subbuffer corrupted.");
+			/* FIXME : we may delete the last written buffer if we wish. */
 			ret = -EIO;
 		}
 		goto get_error;
