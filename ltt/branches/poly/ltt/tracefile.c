@@ -2170,6 +2170,8 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
           max_size = max(max_size, field->child[i]->field_size);
       }
       if(final_child_status != FIELD_FIXED) {
+				g_error("LTTV does not support variable size fields in unions.");
+				/* This will stop the application. */
         *fixed_root = final_child_status;
         *fixed_parent = final_child_status;
         field->field_size = 0;
