@@ -1,0 +1,39 @@
+
+Mathieu Desnoyers -- November 2005
+
+This is a complete rework of genevent.
+
+The 'genevent' program parses event descriptions and generates 
+the inline functions to record events in the kernel.
+
+There are several files in the directory:
+ genevent.c, genevent.h, crc32.tab, parser.c and parser.h
+
+In fact, crc32.tab, parser.c and parser.h are the same files as  
+those in LTT library.
+
+Here is a brief description of how to use genevent.
+
+make
+make install
+
+
+* Add new events to the kernel with genevent
+
+su -
+cd /usr/local/share/LinuxTraceToolkitViewer/facilities
+cp process.xml yourfacility.xml
+  * edit yourfacility.xml to fit your needs.
+cd /tmp
+/usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/yourfacility.xml
+cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
+         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt
+cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
+         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/ltt
+  * edit the kernel file you want to instrument
+    - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
+      of the file.
+    - Add a call to the tracing functions. See their names and parameters in
+      /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt/ltt-facility-yourfacility.h
+
+
