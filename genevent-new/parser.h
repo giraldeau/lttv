@@ -131,7 +131,8 @@ typedef struct _field{
 typedef struct _event {  
   char *name;
   char *description;
-  type_descriptor_t *type; 
+  //type_descriptor_t *type; 
+	sequence_t fields;	/* event fields */
   int  per_trace;   /* Is the event able to be logged to a specific trace ? */
   int  per_tracefile;  /* Must we log this event in a specific tracefile ? */
 } event_t;
@@ -156,7 +157,7 @@ void parseTypeDefinition(parse_file_t *in,
     sequence_t * unnamed_types, table_t * named_types);
 type_descriptor_t *parseType(parse_file_t *in,
     type_descriptor_t *t, sequence_t * unnamed_types, table_t * named_types);
-void parseFields(parse_file_t *in, type_descriptor_t *t,
+void parseFields(parse_file_t *in, field_t *f,
     sequence_t * unnamed_types, table_t * named_types);
 void checkNamedTypesImplemented(table_t * namedTypes);
 type_descriptor_t * find_named_type(char *name, table_t * named_types);

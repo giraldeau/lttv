@@ -468,36 +468,62 @@ void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types,
 		table_t * named_types) 
 {
   char *token;
+	field_t *f;
 
+	sequence_init(&(ev->fields));
   //<event name=eventtype_name>
   getEventAttributes(in, ev);
   if(ev->name == NULL) in->error(in, "Event not named");
   getRAnglebracket(in);  
 
-  //<description>...</descriptio>
+  //<description>...</description>
   ev->description = getDescription(in); 
   
-  //event can have STRUCT, TYPEREF or NOTHING
-  getLAnglebracket(in);
+	int got_end = 0;
+	/* Events can have multiple fields. each field form at least a function
+	 * parameter of the logging function. */
+	while(!got_end) {
+		getLAnglebracket(in);
+		token = getToken(in);
+		
+		switch(in->type) {
+		case FORWARDSLASH:	/* </event> */
+			token = getName(in);
+			if(strcmp("event",token))in->error(in,"not an event definition");
+			getRAnglebracket(in);  //</event>
+			got_end = 1;
+			break;
+		case NAME: /* a field */
+			if(strcmp("field",token))in->error(in,"expecting a field");
+			f = (field_t *)memAlloc(sizeof(field_t));
+			sequence_push(&(ev->fields),f);
+			parseFields(in, f, unnamed_types, named_types);
+			break;
+		default:
+			in->error(in, "expecting </event> or <field >");
+			break;
+		}
+	}
+#if 0
+		if(in->type == FORWARDSLASH){ //</event> NOTHING
+			ev->type = NULL;
+		}else if(in->type == NAME){
+			if(strcmp("struct",token)==0 || strcmp("typeref",token)==0){
+				ungetToken(in);
+				ev->type = parseType(in,NULL, unnamed_types, named_types);
+				if(ev->type->type != STRUCT && ev->type->type != NONE) 
+		in->error(in,"type must be a struct");     
+			}else in->error(in, "not a valid type");
 
-  token = getToken(in);
-  if(in->type == FORWARDSLASH){ //</event> NOTHING
-    ev->type = NULL;
-  }else if(in->type == NAME){
-    if(strcmp("struct",token)==0 || strcmp("typeref",token)==0){
-      ungetToken(in);
-      ev->type = parseType(in,NULL, unnamed_types, named_types);
-      if(ev->type->type != STRUCT && ev->type->type != NONE) 
-	in->error(in,"type must be a struct");     
-    }else in->error(in, "not a valid type");
-
-    getLAnglebracket(in);
-    getForwardslash(in);    
-  }else in->error(in,"not a struct type");
-
-  token = getName(in);
-  if(strcmp("event",token))in->error(in,"not an event definition");
-  getRAnglebracket(in);  //</event>
+			getLAnglebracket(in);
+			getForwardslash(in);    
+		}else in->error(in,"not a struct type");
+		getLAnglebracket(in);
+		getForwardslash(in);    
+		token = getName(in);
+		if(strcmp("event",token))in->error(in,"not an event definition");
+		getRAnglebracket(in);  //</event>
+#endif //0
 }
 
 /*****************************************************************************
@@ -505,20 +531,16 @@ void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types,
  *    parseField    : get field infomation from buffer 
  *Input params 
  *    in            : input file handle
- *    t             : type descriptor
+ *    f             : field
  *    unnamed_types : array of unamed types
  *    named_types   : array of named types
  ****************************************************************************/
 
-void parseFields(parse_file_t *in, type_descriptor_t *t,
+void parseFields(parse_file_t *in, field_t *f,
     sequence_t * unnamed_types,
 		table_t * named_types) 
 {
   char * token;
-  field_t *f;
-
-  f = (field_t *)memAlloc(sizeof(field_t));
-  sequence_push(&(t->fields),f);
 
   //<field name=field_name> <description> <type> </field>
   getFieldAttributes(in, f);
@@ -564,6 +586,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
 {
   char *token;
   type_descriptor_t *t;
+	field_t *f;
 
   if(inType == NULL) {
     t = (type_descriptor_t *) memAlloc(sizeof(type_descriptor_t));
@@ -584,7 +607,10 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     token = getToken(in);
     sequence_init(&(t->fields));
     while(strcmp("field",token) == 0){
-      parseFields(in,t, unnamed_types, named_types);
+			f = (field_t *)memAlloc(sizeof(field_t));
+			sequence_push(&(t->fields),f);
+
+      parseFields(in, f, unnamed_types, named_types);
       
       //next field
       getLAnglebracket(in);
@@ -605,7 +631,9 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     token = getToken(in);
     sequence_init(&(t->fields));
     while(strcmp("field",token) == 0){
-      parseFields(in,t, unnamed_types, named_types);
+			f = (field_t *)memAlloc(sizeof(field_t));
+			sequence_push(&(t->fields),f);
+      parseFields(in, f, unnamed_types, named_types);
       
       //next field
       getLAnglebracket(in);
@@ -1159,18 +1187,16 @@ void generateChecksum(char* facName,
   unsigned long crc ;
   int pos;
   event_t * ev;
-  char str[256];
 
   crc = crc32(facName);
   for(pos = 0; pos < events->position; pos++){
     ev = (event_t *)(events->array[pos]);
-    crc = partial_crc32(ev->name,crc);    
-    if(!ev->type) continue; //event without type
-    if(ev->type->type != STRUCT){
-      sprintf(str,"event '%s' has a type other than STRUCT",ev->name);
-      error_callback(NULL, str);
-    }
-    crc = getTypeChecksum(crc, ev->type);
+    crc = partial_crc32(ev->name, crc);
+		for(unsigned int i = 0; i < ev->fields.position; i++) {
+			field_t *f = (field_t*)ev->fields.array[i];
+      crc = partial_crc32(f->name, crc);
+      crc = getTypeChecksum(crc, f->type);
+		}
   }
   *checksum = crc;
 }
@@ -1362,6 +1388,7 @@ void freeEvents(sequence_t *t)
     ev = (event_t *) t->array[pos];
     free(ev->name);
     free(ev->description);
+		sequence_dispose(&ev->fields);
     free(ev);
   }
 

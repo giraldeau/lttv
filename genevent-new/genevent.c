@@ -255,7 +255,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			}
 			fprintf(fd, "#define LTTNG_ARRAY_SIZE_%s %llu\n", basename,
 					td->size);
-			print_type(td->nested_type, fd, tabs, basename, "");
+			if(print_type(td->nested_type, fd, tabs, basename, "")) return 1;
 			fprintf(fd, " lttng_array_%s[LTTNG_ARRAY_SIZE_%s];\n", basename,
 					basename);
 			fprintf(fd, "\n");
@@ -274,7 +274,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			print_tabs(1, fd);
 			fprintf(fd, "unsigned int len;\n");
 			print_tabs(1, fd);
-			print_type(td->nested_type, fd, tabs, basename, "");
+			if(print_type(td->nested_type, fd, tabs, basename, "")) return 1;
 			fprintf(fd, " *array;\n");
 			fprintf(fd, "};\n");
 			fprintf(fd, "\n");
@@ -296,7 +296,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				field_t *field = (field_t*)(td->fields.array[i]);
 				type_descriptor_t *type = field->type;
 				print_tabs(1, fd);
-				print_type(type, fd, tabs, basename, field->name);
+				if(print_type(type, fd, tabs, basename, field->name)) return 1;
 				fprintf(fd, " ");
 				fprintf(fd, "%s", field->name);
 				fprintf(fd, ";\n");
@@ -311,8 +311,8 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				type_descriptor_t *type = field->type;
 				if(type->type_name == NULL) {
 					/* Not a named nested type : we must print its declaration first */
-					//if(print_type_declaration(type,
-					//													fd,	0, basename, field->name)) return 1;
+					if(print_type_declaration(type,
+																		fd,	0, basename, field->name)) return 1;
 				}
 			}
 			fprintf(fd, "union lttng_%s", basename);
@@ -321,7 +321,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				field_t *field = (field_t*)(td->fields.array[i]);
 				type_descriptor_t *type = field->type;
 				print_tabs(1, fd);
-				print_type(type, fd, tabs, basename, field->name);
+				if(print_type(type, fd, tabs, basename, field->name)) return 1;
 				fprintf(fd, " ");
 				fprintf(fd, "%s", field->name);
 				fprintf(fd, ";\n");
@@ -337,7 +337,38 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	return 0;
 }
 
+/* Print the logging function of an event. This is the core of genevent */
+int print_event_logging_function(char *basename, event_t *event, FILE *fd)
+{
+	fprintf(fd, "static inline void trace_%s(\n", basename);
+	for(unsigned int j = 0; j < event->fields.position; j++) {
+		/* For each field, print the function argument */
+		field_t *f = (field_t*)event->fields.array[j];
+		type_descriptor_t *t = f->type;
+		print_tabs(2, fd);
+		if(print_type(t, fd, 0, basename, f->name)) return 1;
+		fprintf(fd, " %s", f->name);
+		if(j < event->fields.position-1) {
+			fprintf(fd, ",");
+			fprintf(fd, "\n");
+		}
+	}
+	if(event->fields.position == 0) {
+		print_tabs(2, fd);
+		fprintf(fd, "void");
+	}
+	fprintf(fd,")\n");
+	fprintf(fd, "#ifndef CONFIG_LTT\n");
+	fprintf(fd, "{\n");
+	fprintf(fd, "}\n");
+	fprintf(fd,"#else\n");
+	fprintf(fd, "{\n");
 
+
+	fprintf(fd, "}\n");
+	fprintf(fd, "#endif //CONFIG_LTT\n\n");
+	return 0;
+}
 
 
 /* ltt-facility-name.h : main logging header.
@@ -347,8 +378,10 @@ void print_log_header_head(facility_t *fac, FILE *fd)
 {
 	fprintf(fd, "#ifndef _LTT_FACILITY_%s_H_\n", fac->capname);
 	fprintf(fd, "#define _LTT_FACILITY_%s_H_\n\n", fac->capname);
+	fprintf(fd, "\n");
+	fprintf(fd, "/* Facility activation at compile time. */\n");
+	fprintf(fd, "#ifdef CONFIG_LTT_FACILITY_%s\n\n", fac->capname);
 }
-
 
 
 
@@ -368,13 +401,46 @@ int print_log_header_types(facility_t *fac, FILE *fd)
 
 int print_log_header_events(facility_t *fac, FILE *fd)
 {
+	sequence_t *events = &fac->events;
+	char basename[PATH_MAX];
+	unsigned int facname_len;
+	
+	strncpy(basename, fac->name, PATH_MAX);
+	facname_len = strlen(basename);
+	strncat(basename, "_", PATH_MAX-facname_len);
+	facname_len = strlen(basename);
 
+	for(unsigned int i = 0; i < events->position; i++) {
+		event_t *event = (event_t*)events->array[i];
+		strncpy(&basename[facname_len], event->name, PATH_MAX-facname_len);
+		
+		/* For each event, print structure, and then logging function */
+		fprintf(fd, "/* Event %s structures */\n",
+				event->name);
+		for(unsigned int j = 0; j < event->fields.position; j++) {
+			/* For each unnamed type, print the definition */
+			field_t *f = (field_t*)event->fields.array[j];
+			type_descriptor_t *t = f->type;
+			if(t->type_name == NULL)
+				if((print_type_declaration(t, fd, 0, basename, f->name))) return 1;
+		}
+		fprintf(fd, "\n");
+
+		fprintf(fd, "/* Event %s logging function */\n",
+				event->name);
+
+		if(print_event_logging_function(basename, event, fd)) return 1;
+
+		fprintf(fd, "\n");
+	}
+	
 	return 0;
 }
 
 
 void print_log_header_tail(facility_t *fac, FILE *fd)
 {
+	fprintf(fd, "#endif //CONFIG_LTT_FACILITY_%s\n\n", fac->capname);
 	fprintf(fd, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
 }
 	
