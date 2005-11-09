@@ -77,9 +77,15 @@ static const int BUFFER_SIZE = 1024;
 /* Events data types */
 
 typedef enum _data_type {
+  INT_FIXED,
+  UINT_FIXED,
+	POINTER,
+	CHAR,
+	UCHAR,
+	SHORT,
+	USHORT,
   INT,
   UINT,
-	POINTER,
 	LONG,
 	ULONG,
 	SIZE_T,
@@ -101,7 +107,7 @@ typedef struct _type_descriptor {
   char * type_name; //used for named type
   data_type_t type;
   char *fmt;
-  int size;
+  unsigned long long size;
   sequence_t labels; // for enumeration
 	sequence_t labels_description;
 	int	already_printed;
@@ -139,7 +145,8 @@ typedef struct _facility {
   table_t named_types;
 } facility_t;
 
-int getSize(parse_file_t *in);
+int getSizeindex(unsigned int value);
+unsigned long long int getSize(parse_file_t *in);
 unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type);
 
 void parseFacility(parse_file_t *in, facility_t * fac);
@@ -204,6 +211,15 @@ crc32(const char *s)
 {
   return partial_crc32(s, 0xffffffff) ^ 0xffffffff;
 }
+
+
+extern char *intOutputTypes[];
+
+extern char *uintOutputTypes[];
+
+extern char *floatOutputTypes[];
+
+
 
 
 #endif // PARSER_H

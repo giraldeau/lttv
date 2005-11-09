@@ -55,6 +55,9 @@
  * to know the structure's alignment.
  */
 
+#define _GNU_SOURCE
+#include <limits.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -62,7 +65,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <stdlib.h>
+#include <assert.h>
 
 #include "genevent.h"
 #include "parser.h"
@@ -71,9 +74,29 @@
 #define TRUE 1
 #define FALSE (!TRUE)
 
+/* Debugging printf */
+#ifdef DEBUG
+#define dprintf(...) \
+	do {\
+		printf(__FILE__ ",%u,%s: ",\
+				__LINE__, __func__);\
+		printf(__VA_ARGS__);\
+	} while(0)
+#else
+#define dprintf(...)
+#endif
+
+
 /* Code printing */
 
+void print_tabs(unsigned int tabs, FILE *fd)
+{
+	for(unsigned int i = 0; i<tabs;i++)
+		fprintf(fd, "\t");
+}
+
 /* Type size checking */
+/* Uses #error in the generated code to signal error and stop the compiler */
 int print_check(int fd);
 
 
@@ -83,6 +106,416 @@ int print_types(int fd);
 
 /* Print events */
 int print_events(int fd);
+
+
+/* print type.
+ *
+ * Copied from construct_types_and_fields in LTTV facility.c */
+
+int print_type(type_descriptor_t * td, FILE *fd, unsigned int tabs,
+		char *nest_name, char *field_name)
+{
+	char basename[PATH_MAX];
+	unsigned int basename_len = 0;
+
+	strcpy(basename, nest_name);
+	basename_len = strlen(basename);
+	
+	/* For a named type, we use the type_name directly */
+	if(td->type_name != NULL) {
+		strncpy(basename, td->type_name, PATH_MAX);
+		basename_len = strlen(basename);
+	} else {
+		/* For a unnamed type, there must be a field name */
+		if(basename_len != 0) {
+			strncat(basename, "_", PATH_MAX - basename_len);
+			basename_len = strlen(basename);
+		}
+		strncat(basename, field_name, PATH_MAX - basename_len);
+	}
+
+	switch(td->type) {
+		case INT_FIXED:
+			fprintf(fd, "%s", intOutputTypes[getSizeindex(td->size)]);
+			break;
+		case UINT_FIXED:
+			fprintf(fd, "%s", uintOutputTypes[getSizeindex(td->size)]);
+			break;
+		case CHAR:
+			fprintf(fd, "signed char");
+			break;
+		case UCHAR:
+			fprintf(fd, "unsigned char");
+			break;
+		case SHORT:
+			fprintf(fd, "short");
+			break;
+		case USHORT:
+			fprintf(fd, "unsigned short");
+			break;
+		case INT:
+			fprintf(fd, "int");
+			break;
+		case UINT:
+			fprintf(fd, "unsigned int");
+			break;
+		case FLOAT:
+			fprintf(fd, "%s", floatOutputTypes[getSizeindex(td->size)]);
+			break;
+		case POINTER:
+			fprintf(fd, "void *");
+			break;
+		case LONG:
+			fprintf(fd, "long");
+			break;
+		case ULONG:
+			fprintf(fd, "unsigned long");
+			break;
+		case SIZE_T:
+			fprintf(fd, "size_t");
+			break;
+		case SSIZE_T:
+			fprintf(fd, "ssize_t");
+			break;
+		case OFF_T:
+			fprintf(fd, "off_t");
+			break;
+		case STRING:
+			fprintf(fd, "char *");
+			break;
+		case ENUM:
+			fprintf(fd, "enum lttng_%s", basename);
+			break;
+		case ARRAY:
+			fprintf(fd, "lttng_array_%s", basename);
+			break;
+		case SEQUENCE:
+			fprintf(fd, "lttng_sequence_%s", basename);
+			break;
+	case STRUCT:
+			fprintf(fd, "struct lttng_%s", basename);
+			break;
+	case UNION:
+			fprintf(fd, "union lttng_%s", basename);
+			break;
+	default:
+	 	 	printf("print_type : unknown type\n");
+			return 1;
+	}
+
+	return 0;
+}
+
+/* print type declaration.
+ *
+ * Copied from construct_types_and_fields in LTTV facility.c */
+
+int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
+		char *nest_name, char *field_name)
+{
+	char basename[PATH_MAX];
+	unsigned int basename_len = 0;
+	
+	strcpy(basename, nest_name);
+	basename_len = strlen(basename);
+	
+	/* For a named type, we use the type_name directly */
+	if(td->type_name != NULL) {
+		strncpy(basename, td->type_name, PATH_MAX);
+		basename_len = strlen(basename);
+	} else {
+		/* For a unnamed type, there must be a field name */
+		if(basename_len != 0) {
+			strncat(basename, "_", PATH_MAX - basename_len);
+			basename_len = strlen(basename);
+		}
+		strncat(basename, field_name, PATH_MAX - basename_len);
+		dprintf("%s\n", field_name);
+	}
+
+	switch(td->type) {
+		case ENUM:
+			fprintf(fd, "enum lttng_%s", basename);
+			fprintf(fd, " {\n");
+			for(unsigned int i=0;i<td->labels.position;i++){
+				print_tabs(1, fd);
+				fprintf(fd, "LTTNG_%s", ((char*)(td->labels.array[i])));
+				fprintf(fd, ",\n");
+			}
+			fprintf(fd, "};\n");
+			fprintf(fd, "\n");
+			break;
+
+		case ARRAY:
+			assert(td->size >= 0);
+			if(td->nested_type->type_name == NULL) {
+				/* Not a named nested type : we must print its declaration first */
+				if(print_type_declaration(td->nested_type,
+																	fd,	0, basename, "")) return 1;
+			}
+			fprintf(fd, "#define LTTNG_ARRAY_SIZE_%s %llu\n", basename,
+					td->size);
+			print_type(td->nested_type, fd, tabs, basename, "");
+			fprintf(fd, " lttng_array_%s[LTTNG_ARRAY_SIZE_%s];\n", basename,
+					basename);
+			fprintf(fd, "\n");
+			break;
+		case SEQUENCE:
+			if(td->nested_type->type_name == NULL) {
+				/* Not a named nested type : we must print its declaration first */
+				if(print_type_declaration(td->nested_type,
+																	fd,	0, basename, "")) return 1;
+			}
+			fprintf(fd, "typedef struct lttng_sequence_%s lttng_sequence_%s;\n",
+					basename,
+					basename);
+			fprintf(fd, "struct lttng_sequence_%s", basename);
+			fprintf(fd, " {\n");
+			print_tabs(1, fd);
+			fprintf(fd, "unsigned int len;\n");
+			print_tabs(1, fd);
+			print_type(td->nested_type, fd, tabs, basename, "");
+			fprintf(fd, " *array;\n");
+			fprintf(fd, "};\n");
+			fprintf(fd, "\n");
+		break;
+
+	case STRUCT:
+			for(unsigned int i=0;i<td->fields.position;i++){
+				field_t *field = (field_t*)(td->fields.array[i]);
+				type_descriptor_t *type = field->type;
+				if(type->type_name == NULL) {
+					/* Not a named nested type : we must print its declaration first */
+					if(print_type_declaration(type,
+																		fd,	0, basename, field->name)) return 1;
+				}
+			}
+			fprintf(fd, "struct lttng_%s", basename);
+			fprintf(fd, " {\n");
+			for(unsigned int i=0;i<td->fields.position;i++){
+				field_t *field = (field_t*)(td->fields.array[i]);
+				type_descriptor_t *type = field->type;
+				print_tabs(1, fd);
+				print_type(type, fd, tabs, basename, field->name);
+				fprintf(fd, " ");
+				fprintf(fd, "%s", field->name);
+				fprintf(fd, ";\n");
+			}
+			fprintf(fd, "};\n");
+			fprintf(fd, "\n");
+			break;
+	case UNION:
+			/* TODO : Do not allow variable length fields in a union */
+			for(unsigned int i=0;i<td->fields.position;i++){
+				field_t *field = (field_t*)(td->fields.array[i]);
+				type_descriptor_t *type = field->type;
+				if(type->type_name == NULL) {
+					/* Not a named nested type : we must print its declaration first */
+					//if(print_type_declaration(type,
+					//													fd,	0, basename, field->name)) return 1;
+				}
+			}
+			fprintf(fd, "union lttng_%s", basename);
+			fprintf(fd, " {\n");
+			for(unsigned i=0;i<td->fields.position;i++){
+				field_t *field = (field_t*)(td->fields.array[i]);
+				type_descriptor_t *type = field->type;
+				print_tabs(1, fd);
+				print_type(type, fd, tabs, basename, field->name);
+				fprintf(fd, " ");
+				fprintf(fd, "%s", field->name);
+				fprintf(fd, ";\n");
+			}
+			fprintf(fd, "};\n");
+			fprintf(fd, "\n");
+			break;
+	default:
+		dprintf("print_type_declaration : unknown type or nothing to declare.\n");
+		break;
+	}
+
+	return 0;
+}
+
+
+
+
+/* ltt-facility-name.h : main logging header.
+ * log_header */
+
+void print_log_header_head(facility_t *fac, FILE *fd)
+{
+	fprintf(fd, "#ifndef _LTT_FACILITY_%s_H_\n", fac->capname);
+	fprintf(fd, "#define _LTT_FACILITY_%s_H_\n\n", fac->capname);
+}
+
+
+
+
+int print_log_header_types(facility_t *fac, FILE *fd)
+{
+	sequence_t *types = &fac->named_types.values;
+	fprintf(fd, "/* Named types */\n");
+	fprintf(fd, "\n");
+	
+	for(unsigned int i = 0; i < types->position; i++) {
+		/* For each named type, print the definition */
+		if((print_type_declaration(types->array[i], fd,
+						0, "", ""))) return 1;
+	}
+	return 0;
+}
+
+int print_log_header_events(facility_t *fac, FILE *fd)
+{
+
+	return 0;
+}
+
+
+void print_log_header_tail(facility_t *fac, FILE *fd)
+{
+	fprintf(fd, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
+}
+	
+int print_log_header(facility_t *fac)
+{
+	char filename[PATH_MAX];
+	unsigned int filename_size = 0;
+	FILE *fd;
+	dprintf("%s\n", fac->name);
+
+	strcpy(filename, "ltt-facility-");
+	filename_size = strlen(filename);
+	
+	strncat(filename, fac->name, PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+
+	strncat(filename, ".h", PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+	
+
+	fd = fopen(filename, "w");
+	if(fd == NULL) {
+		printf("Error opening file %s for writing : %s\n",
+				filename, strerror(errno));
+		return errno;
+	}
+
+	/* Print file head */
+	print_log_header_head(fac, fd);
+
+	/* print named types in declaration order */
+	if(print_log_header_types(fac, fd)) return 1;
+
+	/* Print events */
+	if(print_log_header_events(fac, fd)) return 1;
+	
+	/* Print file tail */
+	print_log_header_tail(fac, fd);
+
+	
+	fclose(fd);
+	
+	return 0;
+}
+
+
+/* ltt-facility-id-name.h : facility id.
+ * log_id_header */
+int print_id_header(facility_t *fac)
+{
+	char filename[PATH_MAX];
+	unsigned int filename_size = 0;
+	FILE *fd;
+	dprintf("%s\n", fac->name);
+
+	strcpy(filename, "ltt-facility-id-");
+	filename_size = strlen(filename);
+	
+	strncat(filename, fac->name, PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+
+	strncat(filename, ".h", PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+	
+
+	fd = fopen(filename, "w");
+	if(fd == NULL) {
+		printf("Error opening file %s for writing : %s\n",
+				filename, strerror(errno));
+		return errno;
+	}
+
+	fclose(fd);
+
+	return 0;
+}
+
+
+/* ltt-facility-loader-name.h : facility specific loader info.
+ * loader_header */
+int print_loader_header(facility_t *fac)
+{
+	char filename[PATH_MAX];
+	unsigned int filename_size = 0;
+	FILE *fd;
+	dprintf("%s\n", fac->name);
+
+	strcpy(filename, "ltt-facility-loader-");
+	filename_size = strlen(filename);
+	
+	strncat(filename, fac->name, PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+
+	strncat(filename, ".h", PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+	
+
+	fd = fopen(filename, "w");
+	if(fd == NULL) {
+		printf("Error opening file %s for writing : %s\n",
+				filename, strerror(errno));
+		return errno;
+	}
+
+	fclose(fd);
+
+	return 0;
+}
+
+/* ltt-facility-loader-name.c : generic faciilty loader
+ * loader_c */
+int print_loader_c(facility_t *fac)
+{
+	char filename[PATH_MAX];
+	unsigned int filename_size = 0;
+	FILE *fd;
+	dprintf("%s\n", fac->name);
+
+	strcpy(filename, "ltt-facility-loader-");
+	filename_size = strlen(filename);
+	
+	strncat(filename, fac->name, PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+
+	strncat(filename, ".c", PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+	
+
+	fd = fopen(filename, "w");
+	if(fd == NULL) {
+		printf("Error opening file %s for writing : %s\n",
+				filename, strerror(errno));
+		return errno;
+	}
+
+
+	fclose(fd);
+
+	return 0;
+}
+
 
 
 /* open facility */
@@ -241,17 +674,25 @@ int main(int argc, char **argv)
 	/* generate the output C files */
 
 
-	/* ltt-facility-name.h : main logging header */
+	/* ltt-facility-name.h : main logging header.
+	 * log_header */
+	err = print_log_header(fac);
+	if(err)	return err;
+
+	/* ltt-facility-id-name.h : facility id.
+	 * log_id_header */
+	err = print_id_header(fac);
+	if(err)	return err;
 	
+	/* ltt-facility-loader-name.h : facility specific loader info.
+	 * loader_header */
+	err = print_loader_header(fac);
+	if(err)	return err;
 
-	/* ltt-facility-id-name.h : facility id. */
-	
-
-	/* ltt-facility-loader-name.h : facility specific loader info. */
-
-	/* ltt-facility-loader-name.c : generic faciilty loader */
-
-
+	/* ltt-facility-loader-name.c : generic faciilty loader
+	 * loader_c */
+	err = print_loader_c(fac);
+	if(err)	return err;
 
 	/* close the facility */
 	ltt_facility_close(fac);

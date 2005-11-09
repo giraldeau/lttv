@@ -43,15 +43,14 @@ This program is distributed in the hope that it will be useful,
 #include "parser.h"
 
 
-static char *intOutputTypes[] = {
-  "int8_t", "int16_t", "int32_t", "int64_t", "short int", "int", "long int" };
+char *intOutputTypes[] = {
+  "int8_t", "int16_t", "int32_t", "int64_t" };
 
-static char *uintOutputTypes[] = {
-  "uint8_t", "uint16_t", "uint32_t", "uint64_t", "unsigned short int", 
-  "unsigned int", "unsigned long int" };
+char *uintOutputTypes[] = {
+  "uint8_t", "uint16_t", "uint32_t", "uint64_t" };
 
-static char *floatOutputTypes[] = {
-  "undef", "undef", "float", "double", "undef", "float", "double" };
+char *floatOutputTypes[] = {
+  "undef", "undef", "float", "double" };
 
 
 
@@ -68,7 +67,7 @@ void strupper(char *string)
 }
 
 
-int getSizeindex(int value)
+int getSizeindex(unsigned int value)
 { 
   switch(value) {
     case 1:
@@ -94,21 +93,13 @@ int getSizeindex(int value)
  *    size                           
  *****************************************************************************/
 
-int getSize(parse_file_t *in)
+unsigned long long int getSize(parse_file_t *in)
 {
   char *token;
 
   token = getToken(in);
   if(in->type == NUMBER) {
-    if(strcmp(token,"1") == 0) return 0;
-    else if(strcmp(token,"2") == 0) return 1;
-    else if(strcmp(token,"4") == 0) return 2;
-    else if(strcmp(token,"8") == 0) return 3;
-  }
-  else if(in->type == NAME) {
-    if(strcmp(token,"short") == 0) return 4;
-    else if(strcmp(token,"medium") == 0) return 5;
-    else if(strcmp(token,"long") == 0) return 6;
+		return strtoull(token, NULL, 0);
   }
   in->error(in,"incorrect size specification");
   return -1;
@@ -188,7 +179,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t)
   char * token;
 
   t->fmt = NULL;
-  t->size = -1;
+  t->size = 0;
   t->alignment = 0;
   
   while(1) {
@@ -207,7 +198,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t)
      // if(car == EOF) in->error(in,"name was expected");
      // else if(car == '\"') t->type_name = allocAndCopy(getQuotedString(in));
      // else t->type_name = allocAndCopy(getName(in));
-    } else if(!strcmp("size",token)) {
+    } else if(!strcmp("size",token) || !strcmp("lengthsize", token)) {
       getEqual(in);
       t->size = getSize(in);
     } else if(!strcmp("align",token)) {
@@ -608,8 +599,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   else if(strcmp(token,"union") == 0) {
     t->type = UNION;
     getTypeAttributes(in, t);
-    if(t->size == -1) in->error(in, "Union has empty size");
-    getRAnglebracket(in); //<union typecodesize=isize>
+    getRAnglebracket(in); //<union>
 
     getLAnglebracket(in); //<field name=..>
     token = getToken(in);
@@ -630,7 +620,8 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   else if(strcmp(token,"array") == 0) {
     t->type = ARRAY;
     getTypeAttributes(in, t);
-    if(t->size == -1) in->error(in, "Array has empty size");
+    if(t->size == 0) in->error(in, "Array has empty size");
+    getForwardslash(in);
     getRAnglebracket(in); //<array size=n>
 
     getLAnglebracket(in); //<type struct> 
@@ -645,8 +636,9 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   else if(strcmp(token,"sequence") == 0) {
     t->type = SEQUENCE;
     getTypeAttributes(in, t);
-    if(t->size == -1) in->error(in, "Sequence has empty size");
-    getRAnglebracket(in); //<array lengthsize=isize>
+    if(t->size == 0) in->error(in, "Sequence has empty lengthsize");
+    getForwardslash(in);
+    getRAnglebracket(in); //<sequence lengthsize=isize>
 
     getLAnglebracket(in); //<type struct> 
     t->nested_type = parseType(in,NULL, unnamed_types, named_types);
@@ -664,7 +656,11 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     sequence_init(&(t->labels_description));
 		t->already_printed = 0;
     getTypeAttributes(in, t);
-    if(t->size == -1) in->error(in, "Sequence has empty size");
+    //if(t->size == 0) in->error(in, "Sequence has empty size");
+		//Mathieu : we fix enum size to 4 bytes. GCC is always like this.
+		//fox copy optimisation.
+    if(t->size != 0) in->error(in, "Enum has fixed size of 4.");
+		t->size = 4;
     getRAnglebracket(in);
 
     //<label name=label1 value=n/>
@@ -699,20 +695,57 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     if(strcmp("enum",token))in->error(in, "not a valid enum definition");
       getRAnglebracket(in); //</label>
   }
+  else if(strcmp(token,"int_fixed") == 0) {
+    t->type = INT_FIXED;
+    getTypeAttributes(in, t);
+    if(t->size == 0) in->error(in, "int has empty size");
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"uint_fixed") == 0) {
+    t->type = UINT_FIXED;
+    getTypeAttributes(in, t);
+    if(t->size == 0) in->error(in, "uint has empty size");
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"char") == 0) {
+    t->type = CHAR;
+    getTypeAttributes(in, t);
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"uchar") == 0) {
+    t->type = UCHAR;
+    getTypeAttributes(in, t);
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"short") == 0) {
+    t->type = SHORT;
+    getTypeAttributes(in, t);
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
+  else if(strcmp(token,"ushort") == 0) {
+    t->type = USHORT;
+    getTypeAttributes(in, t);
+    getForwardslash(in);
+    getRAnglebracket(in); 
+  }
   else if(strcmp(token,"int") == 0) {
     t->type = INT;
     getTypeAttributes(in, t);
-    if(t->size == -1) in->error(in, "int has empty size");
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"uint") == 0) {
     t->type = UINT;
     getTypeAttributes(in, t);
-    if(t->size == -1) in->error(in, "uint has empty size");
     getForwardslash(in);
     getRAnglebracket(in); 
   }
+
   else if(strcmp(token,"pointer") == 0) {
     t->type = POINTER;
     getTypeAttributes(in, t);
@@ -877,7 +910,10 @@ char *getForwardslash(parse_file_t * in)
   char *token;
 
   token = getToken(in);
-  if(in->type != FORWARDSLASH) in->error(in, "forward slash token was expected");
+  //if(in->type != FORWARDSLASH) in->error(in, "forward slash token was expected");
+	/* Mathieu : final / is optional now. */
+  if(in->type != FORWARDSLASH) ungetToken(in);
+
   return token;
 }
 
@@ -1157,14 +1193,38 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type)
   field_t * fld;
 
   switch(type->type){
-    case INT:
-      str = intOutputTypes[type->size];
+    case INT_FIXED:
+      str = intOutputTypes[getSizeindex(type->size)];
       break;
-    case UINT:
-      str = uintOutputTypes[type->size];
+    case UINT_FIXED:
+      str = uintOutputTypes[getSizeindex(type->size)];
       break;
     case POINTER:
       str = allocAndCopy("void *");
+			flag = 1;
+      break;
+    case CHAR:
+      str = allocAndCopy("signed char");
+			flag = 1;
+      break;
+    case UCHAR:
+      str = allocAndCopy("unsigned char");
+			flag = 1;
+      break;
+    case SHORT:
+      str = allocAndCopy("short");
+			flag = 1;
+      break;
+    case USHORT:
+      str = allocAndCopy("unsigned short");
+			flag = 1;
+      break;
+    case INT:
+      str = allocAndCopy("int");
+			flag = 1;
+      break;
+    case UINT:
+      str = allocAndCopy("uint");
 			flag = 1;
       break;
     case LONG:
@@ -1188,23 +1248,24 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type)
 			flag = 1;
       break;
     case FLOAT:
-      str = floatOutputTypes[type->size];
+      str = floatOutputTypes[getSizeindex(type->size)];
       break;
     case STRING:
       str = allocAndCopy("string");
       flag = 1;
       break;
     case ENUM:
-      str = appendString("enum ", uintOutputTypes[type->size]);
+      //str = appendString("enum ", uintOutputTypes[getSizeindex(type->size)]);
+      str = allocAndCopy("enum");
       flag = 1;
       break;
     case ARRAY:
-      sprintf(buf,"%d",type->size);
+      sprintf(buf,"%llu", type->size);
       str = appendString("array ",buf);
       flag = 1;
       break;
     case SEQUENCE:
-      sprintf(buf,"%d",type->size);
+      sprintf(buf,"%llu", type->size);
       str = appendString("sequence ",buf);
       flag = 1;
       break;
