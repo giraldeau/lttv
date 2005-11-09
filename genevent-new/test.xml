@@ -56,7 +56,16 @@
   </event>
 
 	<event name=big_array>
-	<field name="myarray"><array size=10000><pointer></array></field>
+	<field name="myarray"><array size=10000>
+			<array size = 2>
+				<struct>
+					<field name=a><pointer></field>
+					<field name=b><union>
+													<field name=c><pointer></field>
+												</union>
+					</field>
+				</struct>
+			</array></array></field>
 	</event>
 
   <type name=tasklet_priority>

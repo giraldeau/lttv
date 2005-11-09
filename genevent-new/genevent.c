@@ -127,7 +127,9 @@ int print_type(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		basename_len = strlen(basename);
 	} else {
 		/* For a unnamed type, there must be a field name */
-		if(basename_len != 0) {
+		if((basename_len != 0)
+				&& (basename[basename_len-1] != '_')
+				&& (field_name[0] != '\0')) {
 			strncat(basename, "_", PATH_MAX - basename_len);
 			basename_len = strlen(basename);
 		}
@@ -216,7 +218,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	char basename[PATH_MAX];
 	unsigned int basename_len = 0;
 	
-	strcpy(basename, nest_name);
+	strncpy(basename, nest_name, PATH_MAX);
 	basename_len = strlen(basename);
 	
 	/* For a named type, we use the type_name directly */
@@ -224,13 +226,15 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		strncpy(basename, td->type_name, PATH_MAX);
 		basename_len = strlen(basename);
 	} else {
-		/* For a unnamed type, there must be a field name */
-		if(basename_len != 0) {
+		/* For a unnamed type, there must be a field name, except for
+		 * the array. */
+		if((basename_len != 0)
+				&& (basename[basename_len-1] != '_'
+				&& (field_name[0] != '\0'))) {
 			strncat(basename, "_", PATH_MAX - basename_len);
 			basename_len = strlen(basename);
 		}
 		strncat(basename, field_name, PATH_MAX - basename_len);
-		dprintf("%s\n", field_name);
 	}
 
 	switch(td->type) {
@@ -247,6 +251,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			break;
 
 		case ARRAY:
+			dprintf("%s\n", basename);
 			assert(td->size >= 0);
 			if(td->nested_type->type_name == NULL) {
 				/* Not a named nested type : we must print its declaration first */
