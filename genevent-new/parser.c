@@ -174,7 +174,8 @@ char *allocAndCopy(char *str)
  *
  **************************************************************************/
 
-void getTypeAttributes(parse_file_t *in, type_descriptor_t *t)
+void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
+			   sequence_t * unnamed_types, table_t * named_types) 
 {
   char * token;
 
@@ -198,7 +199,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t)
      // if(car == EOF) in->error(in,"name was expected");
      // else if(car == '\"') t->type_name = allocAndCopy(getQuotedString(in));
      // else t->type_name = allocAndCopy(getName(in));
-    } else if(!strcmp("size",token) || !strcmp("lengthsize", token)) {
+    } else if(!strcmp("size",token)) {
       getEqual(in);
       t->size = getSize(in);
     } else if(!strcmp("align",token)) {
@@ -601,7 +602,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
 
   if(strcmp(token,"struct") == 0) {
     t->type = STRUCT;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getRAnglebracket(in); //<struct>
     getLAnglebracket(in); //<field name=..>
     token = getToken(in);
@@ -624,7 +625,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"union") == 0) {
     t->type = UNION;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getRAnglebracket(in); //<union>
 
     getLAnglebracket(in); //<field name=..>
@@ -647,7 +648,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"array") == 0) {
     t->type = ARRAY;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     if(t->size == 0) in->error(in, "Array has empty size");
     getForwardslash(in);
     getRAnglebracket(in); //<array size=n>
@@ -663,14 +664,33 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"sequence") == 0) {
     t->type = SEQUENCE;
-    getTypeAttributes(in, t);
-    if(t->size == 0) in->error(in, "Sequence has empty lengthsize");
-    getForwardslash(in);
-    getRAnglebracket(in); //<sequence lengthsize=isize>
+    //getTypeAttributes(in, t, unnamed_types, named_types);
+    //getForwardslash(in);
+    getRAnglebracket(in); //<sequence>
 
-    getLAnglebracket(in); //<type struct> 
-    t->nested_type = parseType(in,NULL, unnamed_types, named_types);
+    getLAnglebracket(in); //<type sequence> 
+    t->length_type = parseType(in, NULL, unnamed_types, named_types);
 
+    getLAnglebracket(in); //<type sequence> 
+
+    t->nested_type = parseType(in, NULL, unnamed_types, named_types);
+
+    if(t->length_type == NULL) in->error(in, "Sequence has no length type");
+		switch(t->length_type->type) {
+			case UINT_FIXED :
+			case UCHAR :
+			case USHORT :
+			case UINT :
+			case ULONG :
+			case SIZE_T :
+			case OFF_T :
+				break;
+			default:
+				in->error(in, "Wrong length type for sequence");
+		}
+
+		
+    if(t->nested_type == NULL) in->error(in, "Sequence has no nested type");
     getLAnglebracket(in); //</sequence>
     getForwardslash(in);
     token = getName(in);
@@ -683,7 +703,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     sequence_init(&(t->labels));
     sequence_init(&(t->labels_description));
 		t->already_printed = 0;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     //if(t->size == 0) in->error(in, "Sequence has empty size");
 		//Mathieu : we fix enum size to 4 bytes. GCC is always like this.
 		//fox copy optimisation.
@@ -725,100 +745,100 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"int_fixed") == 0) {
     t->type = INT_FIXED;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     if(t->size == 0) in->error(in, "int has empty size");
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"uint_fixed") == 0) {
     t->type = UINT_FIXED;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     if(t->size == 0) in->error(in, "uint has empty size");
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"char") == 0) {
     t->type = CHAR;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"uchar") == 0) {
     t->type = UCHAR;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"short") == 0) {
     t->type = SHORT;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"ushort") == 0) {
     t->type = USHORT;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"int") == 0) {
     t->type = INT;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"uint") == 0) {
     t->type = UINT;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
 
   else if(strcmp(token,"pointer") == 0) {
     t->type = POINTER;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"long") == 0) {
     t->type = LONG;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"ulong") == 0) {
     t->type = ULONG;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"size_t") == 0) {
     t->type = SIZE_T;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"ssize_t") == 0) {
     t->type = SSIZE_T;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"off_t") == 0) {
     t->type = OFF_T;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"float") == 0) {
     t->type = FLOAT;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"string") == 0) {
     t->type = STRING;
-    getTypeAttributes(in, t);
+    getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }

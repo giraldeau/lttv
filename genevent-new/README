@@ -48,7 +48,7 @@ to the slowest.
 	a unsigned int len and const unsigned char *name.
 
 	you must use a sequence to declare this efficiently :
-	<sequence lengthtype=<uint>/><char></sequence>
+	<sequence><uint><char></sequence>
 		
 3 - The C code presents a \0 terminated string.
 	

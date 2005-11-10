@@ -113,6 +113,7 @@ typedef struct _type_descriptor {
 	int	already_printed;
   sequence_t fields; // for structure
   struct _type_descriptor *nested_type; // for array and sequence 
+	struct _type_descriptor *length_type; // for sequence
   int alignment;
 } type_descriptor_t;
 
