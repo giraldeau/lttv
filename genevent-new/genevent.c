@@ -100,14 +100,6 @@ void print_tabs(unsigned int tabs, FILE *fd)
 int print_check(int fd);
 
 
-/* Print types */
-int print_types(int fd);
-
-
-/* Print events */
-int print_events(int fd);
-
-
 /* print type.
  *
  * Copied from construct_types_and_fields in LTTV facility.c */
@@ -208,6 +200,127 @@ int print_type(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	return 0;
 }
 
+/* Print logging function argument */
+int print_arg(type_descriptor_t * td, FILE *fd, unsigned int tabs,
+		char *nest_name, char *field_name)
+{
+	char basename[PATH_MAX];
+	unsigned int basename_len = 0;
+
+	strcpy(basename, nest_name);
+	basename_len = strlen(basename);
+	
+	/* For a named type, we use the type_name directly */
+	if(td->type_name != NULL) {
+		strncpy(basename, td->type_name, PATH_MAX);
+		basename_len = strlen(basename);
+	} else {
+		/* For a unnamed type, there must be a field name */
+		if((basename_len != 0)
+				&& (basename[basename_len-1] != '_')
+				&& (field_name[0] != '\0')) {
+			strncat(basename, "_", PATH_MAX - basename_len);
+			basename_len = strlen(basename);
+		}
+		strncat(basename, field_name, PATH_MAX - basename_len);
+	}
+
+	print_tabs(tabs, fd);
+
+	switch(td->type) {
+		case INT_FIXED:
+			fprintf(fd, "%s", intOutputTypes[getSizeindex(td->size)]);
+			fprintf(fd, " %s", field_name);
+			break;
+		case UINT_FIXED:
+			fprintf(fd, "%s", uintOutputTypes[getSizeindex(td->size)]);
+			fprintf(fd, " %s", field_name);
+			break;
+		case CHAR:
+			fprintf(fd, "signed char");
+			fprintf(fd, " %s", field_name);
+			break;
+		case UCHAR:
+			fprintf(fd, "unsigned char");
+			fprintf(fd, " %s", field_name);
+			break;
+		case SHORT:
+			fprintf(fd, "short");
+			fprintf(fd, " %s", field_name);
+			break;
+		case USHORT:
+			fprintf(fd, "unsigned short");
+			fprintf(fd, " %s", field_name);
+			break;
+		case INT:
+			fprintf(fd, "int");
+			fprintf(fd, " %s", field_name);
+			break;
+		case UINT:
+			fprintf(fd, "unsigned int");
+			fprintf(fd, " %s", field_name);
+			break;
+		case FLOAT:
+			fprintf(fd, "%s", floatOutputTypes[getSizeindex(td->size)]);
+			fprintf(fd, " %s", field_name);
+			break;
+		case POINTER:
+			fprintf(fd, "void *");
+			fprintf(fd, " %s", field_name);
+			break;
+		case LONG:
+			fprintf(fd, "long");
+			fprintf(fd, " %s", field_name);
+			break;
+		case ULONG:
+			fprintf(fd, "unsigned long");
+			fprintf(fd, " %s", field_name);
+			break;
+		case SIZE_T:
+			fprintf(fd, "size_t");
+			fprintf(fd, " %s", field_name);
+			break;
+		case SSIZE_T:
+			fprintf(fd, "ssize_t");
+			fprintf(fd, " %s", field_name);
+			break;
+		case OFF_T:
+			fprintf(fd, "off_t");
+			fprintf(fd, " %s", field_name);
+			break;
+		case STRING:
+			fprintf(fd, "char *");
+			fprintf(fd, " %s", field_name);
+			break;
+		case ENUM:
+			fprintf(fd, "enum lttng_%s", basename);
+			fprintf(fd, " %s", field_name);
+			break;
+		case ARRAY:
+			fprintf(fd, "lttng_array_%s", basename);
+			fprintf(fd, " %s", field_name);
+			break;
+		case SEQUENCE:
+			fprintf(fd, "lttng_sequence_%s *", basename);
+			fprintf(fd, " %s", field_name);
+			break;
+	case STRUCT:
+			fprintf(fd, "struct lttng_%s *", basename);
+			fprintf(fd, " %s", field_name);
+			break;
+	case UNION:
+			fprintf(fd, "union lttng_%s *", basename);
+			fprintf(fd, " %s", field_name);
+			break;
+	default:
+	 	 	printf("print_type : unknown type\n");
+			return 1;
+	}
+
+	return 0;
+}
+
+
 /* print type declaration.
  *
  * Copied from construct_types_and_fields in LTTV facility.c */
@@ -260,6 +373,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			}
 			fprintf(fd, "#define LTTNG_ARRAY_SIZE_%s %llu\n", basename,
 					td->size);
+			fprintf(fd, "typedef ");
 			if(print_type(td->nested_type, fd, tabs, basename, "")) return 1;
 			fprintf(fd, " lttng_array_%s[LTTNG_ARRAY_SIZE_%s];\n", basename,
 					basename);
@@ -350,9 +464,7 @@ int print_event_logging_function(char *basename, event_t *event, FILE *fd)
 		/* For each field, print the function argument */
 		field_t *f = (field_t*)event->fields.array[j];
 		type_descriptor_t *t = f->type;
-		print_tabs(2, fd);
-		if(print_type(t, fd, 0, basename, f->name)) return 1;
-		fprintf(fd, " %s", f->name);
+		if(print_arg(t, fd, 2, basename, f->name)) return 1;
 		if(j < event->fields.position-1) {
 			fprintf(fd, ",");
 			fprintf(fd, "\n");
@@ -368,7 +480,25 @@ int print_event_logging_function(char *basename, event_t *event, FILE *fd)
 	fprintf(fd, "}\n");
 	fprintf(fd,"#else\n");
 	fprintf(fd, "{\n");
+	/* Print the function variables */
+	
+	/* Calculate event variable len + event alignment offset.
+	 * Assume that the padding for alignment starts at a void*
+	 * address. */
 
+	/* Take locks : make sure the trace does not vanish while we write on
+	 * it. A simple preemption disabling is enough (using rcu traces). */
+	
+	/* For each trace */
+	
+	/* Relay reserve */
+	/* If error, increment counter and return */
+	
+	/* write data */
+		
+	/* commit */
+	
+	/* Release locks */
 
 	fprintf(fd, "}\n");
 	fprintf(fd, "#endif //CONFIG_LTT\n\n");
