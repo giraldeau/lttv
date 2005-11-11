@@ -169,6 +169,10 @@ static inline size_t lttng_get_size_sequence_mystruct_mysequence(
 	locsize = sizeof(double);
 	size += ltt_align(size, locsize) + (obj->len * locsize);
 
+	/* Realign on arch size */
+	locsize = sizeof(void *);
+	size += ltt_align(size, locsize);
+
 	return size;
 }
 
