@@ -1,12 +1,24 @@
-#ifndef _LTT_FACILITY_TEST_H_
-#define _LTT_FACILITY_TEST_H_
+
+#include <assert.h>
+#include <sys/types.h>
+#include <stdint.h>
+#include <stdlib.h>
+
+#define min(a,b) (((a)<(b))?a:b)
+#define max(a,b) (((a)>(b))?a:b)
+#define BUG_ON(a) assert(!(a))
+
+/* Calculate the offset needed to align the type */
+static inline unsigned int ltt_align(size_t align_drift,
+																		 size_t size_of_type)
+{
+	size_t alignment = min(sizeof(void*), size_of_type);
+
+	return ((alignment - align_drift) & (alignment-1));
+}
 
 
-/* Facility activation at compile time. */
-#ifdef CONFIG_LTT_FACILITY_TEST
-
-/* Named types */
-
+/* TEMPLATE */
 
 enum lttng_tasklet_priority {
 	LTTNG_LOW,
@@ -370,182 +382,32 @@ void lttng_write_mystruct(void **to,
 
 
 
-/* Event syscall_entry structures */
 
-/* Event syscall_entry logging function */
-static inline void trace_test_syscall_entry(
-		unsigned int syscall_id,
-		void * address)
-#ifndef CONFIG_LTT
+
+void main()
 {
+	struct lttng_mystruct test;
+	test.mysequence.len = 20;
+	test.mysequence.array = malloc(20);
+
+	size_t size = lttng_get_size_mystruct(&test);
+	size_t align = lttng_get_alignment_mystruct(&test);
+
+	void *buf = malloc(align + size);
+	void *to = buf;
+	void *from = &test;
+	size_t len = 0;
+
+	lttng_write_mystruct(&to, &from, &len, &test);
+	/* Final flush */
+	/* Flush pending memcpy */
+	if(len != 0) {
+		memcpy(to, from, len);
+		to += len;
+		from += len;
+		len = 0;
+	}
+	
+	free(test.mysequence.array);
+	free(buf);
 }
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event syscall_exit structures */
-
-/* Event syscall_exit logging function */
-static inline void trace_test_syscall_exit(
-		void)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event trap_entry structures */
-
-/* Event trap_entry logging function */
-static inline void trace_test_trap_entry(
-		unsigned int trap_id,
-		void * address)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event trap_exit structures */
-
-/* Event trap_exit logging function */
-static inline void trace_test_trap_exit(
-		void)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event soft_irq_entry structures */
-
-/* Event soft_irq_entry logging function */
-static inline void trace_test_soft_irq_entry(
-		void * softirq_id)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event soft_irq_exit structures */
-
-/* Event soft_irq_exit logging function */
-static inline void trace_test_soft_irq_exit(
-		void * softirq_id)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event tasklet_entry structures */
-
-/* Event tasklet_entry logging function */
-static inline void trace_test_tasklet_entry(
-		enum lttng_tasklet_priority priority,
-		void * address,
-		unsigned long data)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event tasklet_exit structures */
-
-/* Event tasklet_exit logging function */
-static inline void trace_test_tasklet_exit(
-		enum lttng_tasklet_priority priority,
-		void * address,
-		unsigned long data)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event irq_entry structures */
-
-/* Event irq_entry logging function */
-static inline void trace_test_irq_entry(
-		unsigned int irq_id,
-		enum lttng_irq_mode mode)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event irq_exit structures */
-
-/* Event irq_exit logging function */
-static inline void trace_test_irq_exit(
-		void)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-/* Event big_array structures */
-union lttng_test_big_array_myarray_b {
-	void * c;
-};
-
-struct lttng_test_big_array_myarray {
-	void * a;
-	union lttng_test_big_array_myarray_b b;
-};
-
-#define LTTNG_ARRAY_SIZE_test_big_array_myarray 2
-typedef struct lttng_test_big_array_myarray lttng_array_test_big_array_myarray[LTTNG_ARRAY_SIZE_test_big_array_myarray];
-
-#define LTTNG_ARRAY_SIZE_test_big_array_myarray 10000
-typedef lttng_array_test_big_array_myarray lttng_array_test_big_array_myarray[LTTNG_ARRAY_SIZE_test_big_array_myarray];
-
-
-/* Event big_array logging function */
-static inline void trace_test_big_array(
-		lttng_array_test_big_array_myarray myarray)
-#ifndef CONFIG_LTT
-{
-}
-#else
-{
-}
-#endif //CONFIG_LTT
-
-
-#endif //CONFIG_LTT_FACILITY_TEST
-
-#endif //_LTT_FACILITY_TEST_H_
