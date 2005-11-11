@@ -3,6 +3,7 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define min(a,b) (((a)<(b))?a:b)
 #define max(a,b) (((a)>(b))?a:b)
@@ -74,7 +75,7 @@ static inline void lttng_write_mystruct2(
 		size_t *len,
 		struct lttng_mystruct2 *obj)
 {
-	size_t align, size, varalign;
+	size_t align, size;
 
 	align = lttng_get_alignment_mystruct2(obj);
 	size = lttng_get_size_mystruct2(obj);
