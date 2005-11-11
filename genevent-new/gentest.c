@@ -398,7 +398,7 @@ static inline void lttng_write_mystruct(
 
 	/* Variable length field */
 	lttng_write_sequence_mystruct_mysequence(to_base, to, from, len, &obj->mysequence);
-	*to = 0;	/* Force the compiler to know it's 0 */
+	//*to = 0;	/* Force the compiler to know it's 0 */
 	/* After this previous write, we are sure that *to is 0, and *to_base is
 	 * aligned on the architecture size : to rest of alignment will be calculated
 	 * statically. */
