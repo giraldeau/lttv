@@ -222,7 +222,7 @@ static inline void lttng_write_sequence_mystruct_mysequence(
 	*to = ltt_align(*to, sizeof(void *));
 	*to_base = *to_base+*to;
 	*to = 0;
-	
+
 	/* Put source *from just after the C sequence */
 	*from = obj+1;
 }
@@ -390,10 +390,10 @@ static inline void lttng_write_mystruct(
 
 	/* Variable length field */
 	lttng_write_sequence_mystruct_mysequence(to_base, to, from, len, &obj->mysequence);
+	*to = 0;	/* Force the compiler to know it's 0 */
 	/* After this previous write, we are sure that *to is 0, and *to_base is
 	 * aligned on the architecture size : to rest of alignment will be calculated
 	 * statically. */
-
 
 	lttng_write_mystruct_myunion(to_base, to, from, len, &obj->myunion);
 
