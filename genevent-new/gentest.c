@@ -37,8 +37,8 @@ struct lttng_mystruct2 {
 };
 
 
-size_t lttng_get_size_mystruct2(
-		struct lttng_mystruct2 *obj)
+static inline size_t lttng_get_size_mystruct2(
+		struct lttng_mystruct2 * obj)
 {
 	size_t size=0, locsize;
 	
@@ -53,7 +53,7 @@ size_t lttng_get_size_mystruct2(
 	return sizeof(struct lttng_mystruct2);
 }
 
-size_t lttng_get_alignment_mystruct2(
+static inline size_t lttng_get_alignment_mystruct2(
 		struct lttng_mystruct2 *obj)
 {
 	size_t align=0, localign;
@@ -67,23 +67,29 @@ size_t lttng_get_alignment_mystruct2(
 	return align;
 }
 
-void lttng_write_mystruct2(void **to,
+static inline size_t lttng_write_mystruct2(
+		void *buf,
+		size_t *to,
 		void **from,
 		size_t *len,
 		struct lttng_mystruct2 *obj)
 {
-	size_t align, size;
+	size_t align, size, varalign;
 
 	align = lttng_get_alignment_mystruct2(obj);
 	size = lttng_get_size_mystruct2(obj);
 
 	if(*len == 0) {
-		*to += ltt_align((size_t)(*to), align);	/* align output */
+		varalign = ltt_align(*to, align);	/* align output */
+		*to += varalign;
 	} else {
-		*len += ltt_align((size_t)(*to+*len), align);	/* C alignment, ok to do a memcpy of it */
+		varalign = ltt_align(*to+*len, align);	/* C alignment, ok to do a memcpy of it */
+		*len += varalign;
 	}
 	
 	*len += size;
+
+	return varalign+size;
 }
 
 
@@ -91,7 +97,7 @@ void lttng_write_mystruct2(void **to,
 #define LTTNG_ARRAY_SIZE_mystruct_myarray 10
 typedef uint64_t lttng_array_mystruct_myarray[LTTNG_ARRAY_SIZE_mystruct_myarray];
 
-size_t lttng_get_size_array_mystruct_myarray(
+static inline size_t lttng_get_size_array_mystruct_myarray(
 		lttng_array_mystruct_myarray obj)
 {
 	size_t size=0, locsize;
@@ -107,7 +113,7 @@ size_t lttng_get_size_array_mystruct_myarray(
 	return size;
 }
 
-size_t lttng_get_alignment_array_mystruct_myarray(
+static inline size_t lttng_get_alignment_array_mystruct_myarray(
 		lttng_array_mystruct_myarray obj)
 {
 	size_t align=0, localign;
@@ -119,23 +125,29 @@ size_t lttng_get_alignment_array_mystruct_myarray(
 }
 
 
-void lttng_write_array_mystruct_myarray(void **to,
+static inline size_t lttng_write_array_mystruct_myarray(
+		void *buf,
+		size_t *to,
 		void **from,
 		size_t *len,
 		lttng_array_mystruct_myarray obj)
 {
-	size_t align, size;
+	size_t align, size, varalign;
 	
 	align = lttng_get_alignment_array_mystruct_myarray(obj);
 	size = lttng_get_size_array_mystruct_myarray(obj);
 
 	if(*len == 0) {
-		*to += ltt_align((size_t)(*to), align);	/* align output */
+		varalign = ltt_align(*to, align);	/* align output */
+		*to += varalign;
 	} else {
-		*len += ltt_align((size_t)(*to+*len), align);	/* C alignment, ok to do a memcpy of it */
+		varalign = ltt_align(*to+*len, align);	/* C alignment, ok to do a memcpy of it */
+		*len += varalign;
 	}
 	
 	*len += size;
+
+	return varalign + size; /* offset in the from */
 }
 
 
@@ -146,7 +158,7 @@ struct lttng_sequence_mystruct_mysequence {
 };
 
 
-size_t lttng_get_size_sequence_mystruct_mysequence(
+static inline size_t lttng_get_size_sequence_mystruct_mysequence(
 																 lttng_sequence_mystruct_mysequence *obj)
 {
 	size_t size=0, locsize;
@@ -160,7 +172,7 @@ size_t lttng_get_size_sequence_mystruct_mysequence(
 	return size;
 }
 
-size_t lttng_get_alignment_sequence_mystruct_mysequence(
+static inline size_t lttng_get_alignment_sequence_mystruct_mysequence(
 																 lttng_sequence_mystruct_mysequence *obj)
 {
 	size_t align=0, localign;
@@ -175,18 +187,22 @@ size_t lttng_get_alignment_sequence_mystruct_mysequence(
 }
 
 
-void lttng_write_sequence_mystruct_mysequence(void **to,
+static inline size_t lttng_write_sequence_mystruct_mysequence(
+		void *buf,
+		size_t *to,
 		void **from,
 		size_t *len,
 		lttng_sequence_mystruct_mysequence *obj)
 {
-	size_t align, size;
+	size_t align;
+	size_t size=0;
 	void *varfrom;
 	size_t varlen=0;
+	size_t varalign=0;
 	
 	/* Flush pending memcpy */
 	if(*len != 0) {
-		memcpy(*to, *from, *len);
+		memcpy(buf+*to, *from, *len);
 		*to += *len;
 		*len = 0;
 	}
@@ -195,25 +211,32 @@ void lttng_write_sequence_mystruct_mysequence(void **to,
 	//no need size = lttng_get_size_sequence_mystruct_mysequence(obj);
 
 	/* Align output */
-	*to += ltt_align((size_t)(*to), align);
+	varalign = ltt_align((size_t)(*to), align);
+	size += varalign;
 	
 	/* Copy members */
-	*to += ltt_align((size_t)*to, sizeof(unsigned int));
+	varalign = ltt_align(size, sizeof(unsigned int));
+	size += varalign;
 	varfrom = &obj->len;
 	varlen += sizeof(unsigned int);
-	memcpy(*to, varfrom, varlen);
-	*to += varlen;
+	memcpy(buf+*to+size, varfrom, varlen);
+	size += varlen;
 	varlen = 0;
 
-	*to += ltt_align((size_t)*to, sizeof(double));
+	varalign = ltt_align(size, sizeof(double));
+	size += varalign;
 	varfrom = obj->array;
 	varlen += obj->len * sizeof(double);
-	memcpy(*to, varfrom, varlen);
-	*to += varlen;
+	memcpy(buf+*to+size, varfrom, varlen);
+	size += varlen;
 	varlen = 0;
+
+	*to += size;
 
 	/* Put source *from just after the C sequence */
 	*from = obj+1;
+
+	return size;
 }
 
 
@@ -224,7 +247,7 @@ union lttng_mystruct_myunion {
 };
 
 
-size_t lttng_get_size_mystruct_myunion(
+static inline size_t lttng_get_size_mystruct_myunion(
 																 union lttng_mystruct_myunion *obj)
 {
 	size_t size=0, locsize;
@@ -241,7 +264,7 @@ size_t lttng_get_size_mystruct_myunion(
 }
 
 
-size_t lttng_get_alignment_mystruct_myunion(
+static inline size_t lttng_get_alignment_mystruct_myunion(
 																 union lttng_mystruct_myunion *obj)
 {
 	size_t align=0, localign;
@@ -256,23 +279,29 @@ size_t lttng_get_alignment_mystruct_myunion(
 }
 
 
-void lttng_write_mystruct_myunion(void **to,
+static inline size_t lttng_write_mystruct_myunion(
+		void *buf,
+		size_t *to,
 		void **from,
 		size_t *len,
 		union lttng_mystruct_myunion *obj)
 {
-	size_t align, size;
+	size_t align, size, varalign;
 	
 	align = lttng_get_alignment_mystruct_myunion(obj);
 	size = lttng_get_size_mystruct_myunion(obj);
 
 	if(*len == 0) {
-		*to += ltt_align((size_t)(*to), align);	/* align output */
+		varalign = ltt_align(*to, align);	/* align output */
+		*to += varalign;
 	} else {
-		*len += ltt_align((size_t)(*to+*len), align);	/* C alignment, ok to do a memcpy of it */
+		varalign = ltt_align(*to+*len, align);	/* C alignment, ok to do a memcpy of it */
+		*len += varalign;
 	}
 	
 	*len += size;
+
+	return varalign + size;
 }
 
 
@@ -285,7 +314,7 @@ struct lttng_mystruct {
 	union lttng_mystruct_myunion myunion;
 };
 
-size_t lttng_get_size_mystruct(
+static inline size_t lttng_get_size_mystruct(
 		struct lttng_mystruct *obj)
 {
 	size_t size=0, locsize, localign;
@@ -316,7 +345,7 @@ size_t lttng_get_size_mystruct(
 }
 
 
-size_t lttng_get_alignment_mystruct(
+static inline size_t lttng_get_alignment_mystruct(
 		struct lttng_mystruct *obj)
 {
 	size_t align=0, localign;
@@ -342,39 +371,45 @@ size_t lttng_get_alignment_mystruct(
 	return align;
 }
 
-void lttng_write_mystruct(void **to,
+static inline void lttng_write_mystruct(
+		void *buf,
+		size_t *to,
 		void **from,
 		size_t *len,
 		struct lttng_mystruct *obj)
 {
-	size_t align, size;
+	size_t align, size=0, locsize;
 	
 	align = lttng_get_alignment_mystruct(obj);
 	// no need : contains variable size fields.
 	// locsize = lttng_get_size_mystruct(obj);
 
 	if(*len == 0) {
-		*to += ltt_align((size_t)(*to), align);	/* align output */
+		*to += ltt_align(*to, align);	/* align output */
 	} else {
-		*len += ltt_align((size_t)(*to+*len), align);	/* C alignment, ok to do a memcpy of it */
+		*len += ltt_align(*to+*len, align);	/* C alignment, ok to do a memcpy of it */
 	}
 	
 	/* Contains variable sized fields : must explode the structure */
 	
-	size = sizeof(unsigned int);
-	*len += ltt_align((size_t)(*to+*len), size) + size;
+	locsize = sizeof(unsigned int);
+	locsize += ltt_align(size, locsize) + locsize;
+	*len += locsize;
+	size += locsize;
 	
-	size = sizeof(enum lttng_irq_mode);
-	*len += ltt_align((size_t)(*to+*len), size) + size;
+	locsize = sizeof(enum lttng_irq_mode);
+	locsize += ltt_align(size, locsize) + locsize;
+	*len += locsize;
+	size += locsize;
 
-	lttng_write_mystruct2(to, from, len, &obj->teststr);
+	size += lttng_write_mystruct2(buf, to, from, len, &obj->teststr);
 
-	lttng_write_array_mystruct_myarray(to, from, len, obj->myarray);
+	size += lttng_write_array_mystruct_myarray(buf, to, from, len, obj->myarray);
 
 	/* Variable length field */
-	lttng_write_sequence_mystruct_mysequence(to, from, len, &obj->mysequence);
+	size += lttng_write_sequence_mystruct_mysequence(buf, to, from, len, &obj->mysequence);
 	
-	lttng_write_mystruct_myunion(to, from, len, &obj->myunion);
+	size += lttng_write_mystruct_myunion(buf, to, from, len, &obj->myunion);
 
 	/* Don't forget to flush last write..... */
 }
@@ -384,7 +419,8 @@ void lttng_write_mystruct(void **to,
 
 
 
-void main()
+//void main()
+void test()
 {
 	struct lttng_mystruct test;
 	test.mysequence.len = 20;
@@ -394,15 +430,15 @@ void main()
 	size_t align = lttng_get_alignment_mystruct(&test);
 
 	void *buf = malloc(align + size);
-	void *to = buf;
+	size_t to = 0;
 	void *from = &test;
 	size_t len = 0;
 
-	lttng_write_mystruct(&to, &from, &len, &test);
+	lttng_write_mystruct(buf, &to, &from, &len, &test);
 	/* Final flush */
 	/* Flush pending memcpy */
 	if(len != 0) {
-		memcpy(to, from, len);
+		memcpy(buf+to, from, len);
 		to += len;
 		from += len;
 		len = 0;
