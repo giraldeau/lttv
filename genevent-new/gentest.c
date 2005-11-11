@@ -9,8 +9,10 @@
 #define max(a,b) (((a)>(b))?a:b)
 #define BUG_ON(a) assert(!(a))
 
+#define force_inline inline __attribute__((always_inline))
+
 /* Calculate the offset needed to align the type */
-static inline unsigned int ltt_align(size_t align_drift,
+static force_inline unsigned int ltt_align(size_t align_drift,
 																		 size_t size_of_type)
 {
 	size_t alignment = min(sizeof(void*), size_of_type);
@@ -38,7 +40,7 @@ struct lttng_mystruct2 {
 };
 
 
-static inline size_t lttng_get_size_mystruct2(
+static force_inline size_t lttng_get_size_mystruct2(
 		struct lttng_mystruct2 * obj)
 {
 	size_t size=0, locsize;
@@ -54,7 +56,7 @@ static inline size_t lttng_get_size_mystruct2(
 	return sizeof(struct lttng_mystruct2);
 }
 
-static inline size_t lttng_get_alignment_mystruct2(
+static force_inline size_t lttng_get_alignment_mystruct2(
 		struct lttng_mystruct2 *obj)
 {
 	size_t align=0, localign;
@@ -68,7 +70,7 @@ static inline size_t lttng_get_alignment_mystruct2(
 	return align;
 }
 
-static inline void lttng_write_mystruct2(
+static force_inline void lttng_write_mystruct2(
 		void **to_base,
 		size_t *to,
 		void **from,
@@ -94,7 +96,7 @@ static inline void lttng_write_mystruct2(
 #define LTTNG_ARRAY_SIZE_mystruct_myarray 10
 typedef uint64_t lttng_array_mystruct_myarray[LTTNG_ARRAY_SIZE_mystruct_myarray];
 
-static inline size_t lttng_get_size_array_mystruct_myarray(
+static force_inline size_t lttng_get_size_array_mystruct_myarray(
 		lttng_array_mystruct_myarray obj)
 {
 	size_t size=0, locsize;
@@ -110,7 +112,7 @@ static inline size_t lttng_get_size_array_mystruct_myarray(
 	return size;
 }
 
-static inline size_t lttng_get_alignment_array_mystruct_myarray(
+static force_inline size_t lttng_get_alignment_array_mystruct_myarray(
 		lttng_array_mystruct_myarray obj)
 {
 	size_t align=0, localign;
@@ -122,7 +124,7 @@ static inline size_t lttng_get_alignment_array_mystruct_myarray(
 }
 
 
-static inline void lttng_write_array_mystruct_myarray(
+static force_inline void lttng_write_array_mystruct_myarray(
 		void **to_base,
 		size_t *to,
 		void **from,
@@ -151,7 +153,7 @@ struct lttng_sequence_mystruct_mysequence {
 };
 
 
-static inline size_t lttng_get_size_sequence_mystruct_mysequence(
+static force_inline size_t lttng_get_size_sequence_mystruct_mysequence(
 																 lttng_sequence_mystruct_mysequence *obj)
 {
 	size_t size=0, locsize;
@@ -165,7 +167,7 @@ static inline size_t lttng_get_size_sequence_mystruct_mysequence(
 	return size;
 }
 
-static inline size_t lttng_get_alignment_sequence_mystruct_mysequence(
+static force_inline size_t lttng_get_alignment_sequence_mystruct_mysequence(
 																 lttng_sequence_mystruct_mysequence *obj)
 {
 	size_t align=0, localign;
@@ -180,7 +182,7 @@ static inline size_t lttng_get_alignment_sequence_mystruct_mysequence(
 }
 
 
-static inline void lttng_write_sequence_mystruct_mysequence(
+static force_inline void lttng_write_sequence_mystruct_mysequence(
 		void **to_base,
 		size_t *to,
 		void **from,
@@ -236,7 +238,7 @@ union lttng_mystruct_myunion {
 };
 
 
-static inline size_t lttng_get_size_mystruct_myunion(
+static force_inline size_t lttng_get_size_mystruct_myunion(
 																 union lttng_mystruct_myunion *obj)
 {
 	size_t size=0, locsize;
@@ -253,7 +255,7 @@ static inline size_t lttng_get_size_mystruct_myunion(
 }
 
 
-static inline size_t lttng_get_alignment_mystruct_myunion(
+static force_inline size_t lttng_get_alignment_mystruct_myunion(
 																 union lttng_mystruct_myunion *obj)
 {
 	size_t align=0, localign;
@@ -268,7 +270,7 @@ static inline size_t lttng_get_alignment_mystruct_myunion(
 }
 
 
-static inline void lttng_write_mystruct_myunion(
+static force_inline void lttng_write_mystruct_myunion(
 		void **to_base,
 		size_t *to,
 		void **from,
@@ -299,7 +301,7 @@ struct lttng_mystruct {
 	union lttng_mystruct_myunion myunion;
 };
 
-static inline size_t lttng_get_size_mystruct(
+static force_inline size_t lttng_get_size_mystruct(
 		struct lttng_mystruct *obj)
 {
 	size_t size=0, locsize, localign;
@@ -330,7 +332,7 @@ static inline size_t lttng_get_size_mystruct(
 }
 
 
-static inline size_t lttng_get_alignment_mystruct(
+static force_inline size_t lttng_get_alignment_mystruct(
 		struct lttng_mystruct *obj)
 {
 	size_t align=0, localign;
@@ -356,7 +358,7 @@ static inline size_t lttng_get_alignment_mystruct(
 	return align;
 }
 
-static inline void lttng_write_mystruct(
+static force_inline void lttng_write_mystruct(
 		void **to_base,
 		size_t *to,
 		void **from,
