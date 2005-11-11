@@ -429,6 +429,7 @@ void test()
 	size_t size = lttng_get_size_mystruct(&test);
 	size_t align = lttng_get_alignment_mystruct(&test);
 
+	/* the buffer is allocated on arch_size alignment */
 	void *buf = malloc(align + size);
 	size_t to = 0;
 	void *from = &test;
