@@ -13,7 +13,7 @@
 #define max(a,b) (((a)>(b))?a:b)
 #define BUG_ON(a) assert(!(a))
 
-// Useful outsize __KERNEL__. Not used here because inline is already redefined.
+// Useful outside __KERNEL__. Not used here because inline is already redefined.
 #define force_inline inline __attribute__((always_inline))
 
 /* Calculate the offset needed to align the type */
