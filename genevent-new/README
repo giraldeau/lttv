@@ -44,7 +44,7 @@ to the slowest.
 		size.
 
 	A typical use for this case is filenames in the Linux kernel. The
-	dentry strucure has a d_name members, which is a struct qstr containing
+	dentry strucure has a d_name member, which is a struct qstr containing
 	a unsigned int len and const unsigned char *name.
 
 	you must use a sequence to declare this efficiently :

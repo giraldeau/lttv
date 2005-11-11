@@ -498,7 +498,7 @@ void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types,
 			if(strcmp("field",token))in->error(in,"expecting a field");
 			f = (field_t *)memAlloc(sizeof(field_t));
 			sequence_push(&(ev->fields),f);
-			parseFields(in, f, unnamed_types, named_types);
+			parseFields(in, f, unnamed_types, named_types, 1);
 			break;
 		default:
 			in->error(in, "expecting </event> or <field >");
@@ -535,30 +535,40 @@ void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types,
  *    f             : field
  *    unnamed_types : array of unamed types
  *    named_types   : array of named types
+ *    tag						: is field surrounded by a <field> </field> tag ?
  ****************************************************************************/
 
 void parseFields(parse_file_t *in, field_t *f,
     sequence_t * unnamed_types,
-		table_t * named_types) 
+		table_t * named_types,
+		int tag) 
 {
   char * token;
+	if(tag) {
+		//<field name=field_name> <description> <type> </field>
+		getFieldAttributes(in, f);
+		if(f->name == NULL) in->error(in, "Field not named");
+		getRAnglebracket(in);
 
-  //<field name=field_name> <description> <type> </field>
-  getFieldAttributes(in, f);
-  if(f->name == NULL) in->error(in, "Field not named");
-  getRAnglebracket(in);
-
-  f->description = getDescription(in);
+		f->description = getDescription(in);
+	}
 
   //<int size=...>
   getLAnglebracket(in);
   f->type = parseType(in,NULL, unnamed_types, named_types);
 
-  getLAnglebracket(in);
-  getForwardslash(in);
-  token = getName(in);
-  if(strcmp("field",token))in->error(in,"not a valid field definition");
-  getRAnglebracket(in); //</field>
+	/* Those will be set later by preset_field_type_size */
+	f->fixed_root = FIELD_UNKNOWN;
+	f->fixed_parent = FIELD_UNKNOWN;
+	f->fixed_size = FIELD_UNKNOWN;
+
+	if(tag) {
+		getLAnglebracket(in);
+		getForwardslash(in);
+		token = getName(in);
+		if(strcmp("field",token))in->error(in,"not a valid field definition");
+		getRAnglebracket(in); //</field>
+	}
 }
 
 
@@ -611,7 +621,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
 			f = (field_t *)memAlloc(sizeof(field_t));
 			sequence_push(&(t->fields),f);
 
-      parseFields(in, f, unnamed_types, named_types);
+      parseFields(in, f, unnamed_types, named_types, 1);
       
       //next field
       getLAnglebracket(in);
@@ -634,7 +644,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     while(strcmp("field",token) == 0){
 			f = (field_t *)memAlloc(sizeof(field_t));
 			sequence_push(&(t->fields),f);
-      parseFields(in, f, unnamed_types, named_types);
+      parseFields(in, f, unnamed_types, named_types, 1);
       
       //next field
       getLAnglebracket(in);
@@ -648,13 +658,20 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"array") == 0) {
     t->type = ARRAY;
+    sequence_init(&(t->fields));
     getTypeAttributes(in, t, unnamed_types, named_types);
     if(t->size == 0) in->error(in, "Array has empty size");
     getForwardslash(in);
     getRAnglebracket(in); //<array size=n>
 
-    getLAnglebracket(in); //<type struct> 
-    t->nested_type = parseType(in, NULL, unnamed_types, named_types);
+    getLAnglebracket(in); //<subtype> 
+		/* subfield */
+		f = (field_t *)memAlloc(sizeof(field_t));
+		sequence_push(&(t->fields),f);
+    parseFields(in, f, unnamed_types, named_types, 0);
+
+    //getLAnglebracket(in); //<type struct> 
+    //t->nested_type = parseType(in, NULL, unnamed_types, named_types);
 
     getLAnglebracket(in); //</array>
     getForwardslash(in);
@@ -664,19 +681,33 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"sequence") == 0) {
     t->type = SEQUENCE;
+    sequence_init(&(t->fields));
     //getTypeAttributes(in, t, unnamed_types, named_types);
     //getForwardslash(in);
     getRAnglebracket(in); //<sequence>
 
-    getLAnglebracket(in); //<type sequence> 
-    t->length_type = parseType(in, NULL, unnamed_types, named_types);
+    getLAnglebracket(in); //<sequence size type> 
+		/* subfield */
+		f = (field_t *)memAlloc(sizeof(field_t));
+		sequence_push(&(t->fields),f);
+    parseFields(in, f, unnamed_types, named_types, 0);
 
-    getLAnglebracket(in); //<type sequence> 
+    getLAnglebracket(in); //<subtype> 
+		/* subfield */
+		f = (field_t *)memAlloc(sizeof(field_t));
+		sequence_push(&(t->fields),f);
+    parseFields(in, f, unnamed_types, named_types, 0);
 
-    t->nested_type = parseType(in, NULL, unnamed_types, named_types);
+    //getLAnglebracket(in); //<type sequence> 
+    //t->length_type = parseType(in, NULL, unnamed_types, named_types);
 
-    if(t->length_type == NULL) in->error(in, "Sequence has no length type");
-		switch(t->length_type->type) {
+    //getLAnglebracket(in); //<type sequence> 
+
+    //t->nested_type = parseType(in, NULL, unnamed_types, named_types);
+
+    if(t->fields.position < 1) in->error(in, "Sequence has no length type");
+    if(t->fields.position < 2) in->error(in, "Sequence has no subtype");
+		switch(((field_t*)t->fields.array[0])->type->type) {
 			case UINT_FIXED :
 			case UCHAR :
 			case USHORT :
@@ -689,8 +720,6 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
 				in->error(in, "Wrong length type for sequence");
 		}
 
-		
-    if(t->nested_type == NULL) in->error(in, "Sequence has no nested type");
     getLAnglebracket(in); //</sequence>
     getForwardslash(in);
     token = getName(in);
@@ -759,24 +788,28 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"char") == 0) {
     t->type = CHAR;
+		t->size = 1;
     getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"uchar") == 0) {
     t->type = UCHAR;
+		t->size = 1;
     getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"short") == 0) {
     t->type = SHORT;
+		t->size = 2;
     getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"ushort") == 0) {
     t->type = USHORT;
+		t->size = 2;
     getTypeAttributes(in, t, unnamed_types, named_types);
     getForwardslash(in);
     getRAnglebracket(in); 
@@ -844,17 +877,14 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"typeref") == 0){
     // Must be a named type
-    if(inType != NULL) 
-      in->error(in,"Named type cannot refer to a named type");
-    else {
-      free(t);
-      sequence_pop(unnamed_types);
-      token = getNameAttribute(in);
-      t = find_named_type(token, named_types);
-      getForwardslash(in);  //<typeref name=type_name/>
-      getRAnglebracket(in);
-      return t;
-    }
+		free(t);
+		sequence_pop(unnamed_types);
+		token = getNameAttribute(in);
+		t = find_named_type(token, named_types);
+		if(t == NULL) in->error(in,"Named referred to must be pre-declared.");
+		getForwardslash(in);  //<typeref name=type_name/>
+		getRAnglebracket(in);
+		return t;
   }else in->error(in,"not a valid type");
 
   return t;

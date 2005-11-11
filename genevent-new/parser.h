@@ -101,25 +101,21 @@ typedef enum _data_type {
   NONE
 } data_type_t;
 
-/* Event type descriptors */
-
 typedef struct _type_descriptor {
   char * type_name; //used for named type
   data_type_t type;
   char *fmt;
-  unsigned long long size;
+  size_t size;
   sequence_t labels; // for enumeration
 	sequence_t labels_description;
 	int	already_printed;
-  sequence_t fields; // for structure
-  struct _type_descriptor *nested_type; // for array and sequence 
-	struct _type_descriptor *length_type; // for sequence
+  sequence_t fields; // for structure, array and sequence
   int alignment;
 } type_descriptor_t;
 
 
-/* Fields within types */
 
+/* Fields within types or events */
 typedef struct _field{
   char *name;
   char *description;
