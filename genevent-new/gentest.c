@@ -112,9 +112,9 @@ static inline size_t lttng_get_size_array_mystruct_myarray(
 	BUG_ON(ltt_align(size, locsize) != 0);
 	size += LTTNG_ARRAY_SIZE_mystruct_myarray * locsize;
 
-	BUG_ON(size != LTTNG_ARRAY_SIZE_mystruct_myarray * sizeof(uint64_t));
+	BUG_ON(sizeof(lttng_array_mystruct_myarray) != size);
 
-	return size;
+	return sizeof(lttng_array_mystruct_myarray);
 }
 
 static inline size_t lttng_get_alignment_array_mystruct_myarray(
@@ -260,7 +260,7 @@ static inline size_t lttng_get_size_mystruct_myunion(
 
 	BUG_ON(size != sizeof(union lttng_mystruct_myunion));
 
-	return size;
+	return sizeof(union lttng_mystruct_myunion);
 }
 
 
