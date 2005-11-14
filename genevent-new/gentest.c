@@ -44,7 +44,7 @@ struct lttng_mystruct2 {
 	//struct lttng_mystruct teststr1;
 };
 
-
+#if 0
 static inline size_t lttng_get_size_mystruct2(
 		struct lttng_mystruct2 * obj)
 {
@@ -60,6 +60,7 @@ static inline size_t lttng_get_size_mystruct2(
 
 	return sizeof(struct lttng_mystruct2);
 }
+#endif //0
 
 static inline size_t lttng_get_alignment_mystruct2(
 		struct lttng_mystruct2 *obj)
@@ -76,7 +77,8 @@ static inline size_t lttng_get_alignment_mystruct2(
 }
 
 static inline void lttng_write_mystruct2(
-		void **to_base,
+		void *buffer,
+		size_t *to_base,
 		size_t *to,
 		void **from,
 		size_t *len,
@@ -85,7 +87,8 @@ static inline void lttng_write_mystruct2(
 	size_t align, size;
 
 	align = lttng_get_alignment_mystruct2(obj);
-	size = lttng_get_size_mystruct2(obj);
+	//size = lttng_get_size_mystruct2(obj);
+	size = sizeof(struct lttng_mystruct2);
 
 	if(*len == 0) {
 		*to += ltt_align(*to, align);	/* align output */
@@ -101,6 +104,7 @@ static inline void lttng_write_mystruct2(
 #define LTTNG_ARRAY_SIZE_mystruct_myarray 10
 typedef uint64_t lttng_array_mystruct_myarray[LTTNG_ARRAY_SIZE_mystruct_myarray];
 
+#if 0
 static inline size_t lttng_get_size_array_mystruct_myarray(
 		lttng_array_mystruct_myarray obj)
 {
@@ -116,6 +120,7 @@ static inline size_t lttng_get_size_array_mystruct_myarray(
 
 	return sizeof(lttng_array_mystruct_myarray);
 }
+#endif //0
 
 static inline size_t lttng_get_alignment_array_mystruct_myarray(
 		lttng_array_mystruct_myarray obj)
@@ -130,7 +135,8 @@ static inline size_t lttng_get_alignment_array_mystruct_myarray(
 
 
 static inline void lttng_write_array_mystruct_myarray(
-		void **to_base,
+		void *buffer,
+		size_t *to_base,
 		size_t *to,
 		void **from,
 		size_t *len,
@@ -139,7 +145,8 @@ static inline void lttng_write_array_mystruct_myarray(
 	size_t align, size;
 	
 	align = lttng_get_alignment_array_mystruct_myarray(obj);
-	size = lttng_get_size_array_mystruct_myarray(obj);
+	//size = lttng_get_size_array_mystruct_myarray(obj);
+	size = sizeof(lttng_array_mystruct_myarray);
 
 	if(*len == 0) {
 		*to += ltt_align(*to, align);	/* align output */
@@ -148,6 +155,13 @@ static inline void lttng_write_array_mystruct_myarray(
 	}
 	
 	*len += size;
+#if 0
+	/* For varlen child : let the child align itself. */
+	for(unsigned int i=0; i<LTTNG_ARRAY_SIZE_mystruct_myarray; i++) {
+		lttng_write_child(buffer, to_base, to, from, len, obj[i]);
+	}
+#endif //0
+
 }
 
 
@@ -157,7 +171,7 @@ struct lttng_sequence_mystruct_mysequence {
 	double *array;
 };
 
-
+#if 0
 static inline size_t lttng_get_size_sequence_mystruct_mysequence(
 																 lttng_sequence_mystruct_mysequence *obj)
 {
@@ -175,6 +189,7 @@ static inline size_t lttng_get_size_sequence_mystruct_mysequence(
 
 	return size;
 }
+#endif //0
 
 static inline size_t lttng_get_alignment_sequence_mystruct_mysequence(
 																 lttng_sequence_mystruct_mysequence *obj)
@@ -192,22 +207,23 @@ static inline size_t lttng_get_alignment_sequence_mystruct_mysequence(
 
 
 static inline void lttng_write_sequence_mystruct_mysequence(
-		void **to_base,
+		void *buffer,
+		size_t *to_base,
 		size_t *to,
 		void **from,
 		size_t *len,
 		lttng_sequence_mystruct_mysequence *obj)
 {
 	size_t align;
-	void *varfrom;
-	size_t varlen=0;
+	size_t size;
 	
 	/* Flush pending memcpy */
 	if(*len != 0) {
-		memcpy(*to_base+*to, *from, *len);
-		*to += *len;
-		*len = 0;
+		if(buffer != NULL)
+			memcpy(buffer+*to_base+*to, *from, *len);
 	}
+	*to += *len;
+	*len = 0;
 
 	align = lttng_get_alignment_sequence_mystruct_mysequence(obj);
 	//no need size = lttng_get_size_sequence_mystruct_mysequence(obj);
@@ -216,19 +232,25 @@ static inline void lttng_write_sequence_mystruct_mysequence(
 	*to += ltt_align(*to, align);	/* *len = 0 in this function */
 	
 	/* Copy members */
-	*to += ltt_align(*to, sizeof(unsigned int));
-	varfrom = &obj->len;
-	varlen += sizeof(unsigned int);
-	memcpy(*to_base+*to, varfrom, varlen);
-	*to += varlen;
-	varlen = 0;
+	size = sizeof(unsigned int);
+	*to += ltt_align(*to, size);
+	if(buffer != NULL)
+		memcpy(buffer+*to_base+*to, &obj->len, size);
+	*to += size;
 
-	*to += ltt_align(*to, sizeof(double));
-	varfrom = obj->array;
-	varlen += obj->len * sizeof(double);
-	memcpy(*to_base+*to, varfrom, varlen);
-	*to += varlen;
-	varlen = 0;
+	size =  sizeof(double);
+	*to += ltt_align(*to, size);
+	size = obj->len * sizeof(double);
+	if(buffer != NULL)
+		memcpy(buffer+*to_base+*to, obj->array, size);
+	*to += size;
+#if 0
+	/* If varlen child : let child align itself */
+	for(unsigned int i=0; i<obj->len; i++) {
+		lttng_write_child(buffer, to_base, to, from, len, obj->array[i]);
+	}
+#endif //0
+	
 
 	/* Realign the *to_base on arch size, set *to to 0 */
 	*to = ltt_align(*to, sizeof(void *));
@@ -246,7 +268,7 @@ union lttng_mystruct_myunion {
 	unsigned long myulong;
 };
 
-
+#if 0
 static inline size_t lttng_get_size_mystruct_myunion(
 																 union lttng_mystruct_myunion *obj)
 {
@@ -262,7 +284,7 @@ static inline size_t lttng_get_size_mystruct_myunion(
 
 	return sizeof(union lttng_mystruct_myunion);
 }
-
+#endif //0
 
 static inline size_t lttng_get_alignment_mystruct_myunion(
 																 union lttng_mystruct_myunion *obj)
@@ -280,7 +302,8 @@ static inline size_t lttng_get_alignment_mystruct_myunion(
 
 
 static inline void lttng_write_mystruct_myunion(
-		void **to_base,
+		void *buffer,
+		size_t *to_base,
 		size_t *to,
 		void **from,
 		size_t *len,
@@ -289,7 +312,8 @@ static inline void lttng_write_mystruct_myunion(
 	size_t align, size;
 	
 	align = lttng_get_alignment_mystruct_myunion(obj);
-	size = lttng_get_size_mystruct_myunion(obj);
+	//size = lttng_get_size_mystruct_myunion(obj);
+	size = sizeof(union lttng_mystruct_myunion);
 
 	if(*len == 0) {
 		*to += ltt_align(*to, align);	/* align output */
@@ -310,6 +334,7 @@ struct lttng_mystruct {
 	union lttng_mystruct_myunion myunion;
 };
 
+#if 0
 static inline size_t lttng_get_size_mystruct(
 		struct lttng_mystruct *obj)
 {
@@ -339,7 +364,7 @@ static inline size_t lttng_get_size_mystruct(
 
 	return size;
 }
-
+#endif //0
 
 static inline size_t lttng_get_alignment_mystruct(
 		struct lttng_mystruct *obj)
@@ -368,7 +393,8 @@ static inline size_t lttng_get_alignment_mystruct(
 }
 
 static inline void lttng_write_mystruct(
-		void **to_base,
+		void *buffer,
+		size_t *to_base,
 		size_t *to,
 		void **from,
 		size_t *len,
@@ -396,18 +422,17 @@ static inline void lttng_write_mystruct(
 	size += ltt_align(*to+*len, size) + size;
 	*len += size;
 
-	lttng_write_mystruct2(to_base, to, from, len, &obj->teststr);
+	lttng_write_mystruct2(buffer, to_base, to, from, len, &obj->teststr);
 
-	lttng_write_array_mystruct_myarray(to_base, to, from, len, obj->myarray);
+	lttng_write_array_mystruct_myarray(buffer, to_base, to, from, len, obj->myarray);
 
 	/* Variable length field */
-	lttng_write_sequence_mystruct_mysequence(to_base, to, from, len, &obj->mysequence);
-	//*to = 0;	/* Force the compiler to know it's 0 */
+	lttng_write_sequence_mystruct_mysequence(buffer, to_base, to, from, len, &obj->mysequence);
 	/* After this previous write, we are sure that *to is 0, and *to_base is
 	 * aligned on the architecture size : to rest of alignment will be calculated
 	 * statically. */
 
-	lttng_write_mystruct_myunion(to_base, to, from, len, &obj->myunion);
+	lttng_write_mystruct_myunion(buffer, to_base, to, from, len, &obj->myunion);
 
 	/* Don't forget to flush last write..... */
 }
@@ -424,25 +449,35 @@ void test()
 	test.mysequence.len = 20;
 	test.mysequence.array = malloc(20);
 
-	size_t size = lttng_get_size_mystruct(&test);
-	size_t align = lttng_get_alignment_mystruct(&test);
-
-	void *buf = malloc(align + size);
-	void *to_base = buf;	/* the buffer is allocated on arch_size alignment */
+	//size_t size = lttng_get_size_mystruct(&test);
+	//size_t align = lttng_get_alignment_mystruct(&test);
+	//
+	size_t to_base = 0;	/* the buffer is allocated on arch_size alignment */
 	size_t to = 0;
 	void *from = &test;
 	size_t len = 0;
 
-	lttng_write_mystruct(&to_base, &to, &from, &len, &test);
+	/* Get size */
+	lttng_write_mystruct(NULL, &to_base, &to, &from, &len, &test);
+	/* Size = to_base + to + len */
+	
+	void *buffer = malloc(to_base + to + len);
+	to_base = 0;	/* the buffer is allocated on arch_size alignment */
+	to = 0;
+	from = &test;
+	len = 0;
+
+	lttng_write_mystruct(buffer, &to_base, &to, &from, &len, &test);
 	/* Final flush */
 	/* Flush pending memcpy */
 	if(len != 0) {
-		memcpy(to_base+to, from, len);
+		// Assert buffer != NULL */
+		memcpy(buffer+to_base+to, from, len);
 		to += len;
 		from += len;
 		len = 0;
 	}
 	
 	free(test.mysequence.array);
-	free(buf);
+	free(buffer);
 }
