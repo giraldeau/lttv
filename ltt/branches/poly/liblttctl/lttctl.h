@@ -28,7 +28,7 @@
 #include <linux/netlink.h>
 
 #ifndef NETLINK_LTT
-#define NETLINK_LTT 12
+#define NETLINK_LTT 31
 #endif
 
 
