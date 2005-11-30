@@ -25,22 +25,13 @@ The % symbol marks who is interested in the realisation of the item.<br>
 (10) Add cancel button to LTTV filter GUI window.
 <br>
 <br>
-* Done<br>
-per struct (struct align=x) support added to genevent (partial).<br>
-Add offset align generation for structs to genevent.<br>
-make lttv aware of the per facility long, void* and size_t types.<br>
-Read current trace header and buffer header.<br>
-redo lib tracefile : too much problems in there.<br>
-modify the rest of LTTV to match the API changes.<br>
-debian package<br>
-RPM package<br>
-<br>
 <big>LTT Next Generation Roadmap<small><br>
 <br>
 * TODO<br>
 (1) add genevent full functionnality : alignment, array, sequences, nested
 structures.<br>
 	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>>">Mathieu Desnoyers</A><br>
+(1) Use 2.6.14 RelayFS control files.<br>
 (1) port LTTng to 2.6.14 kernel. (depends on genevent rewrite)<br>
 (2) add efficient and secure user space tracing. (1 month)<br>
 (3) integrate LTTng State Dump : missing irq and process state.<br>
@@ -64,41 +55,6 @@ ARM<BR>
 S/390<BR>
 <br>
 <br>
-* Done<br>
-remove ltt-headers.h<br>
-remove ltt-log.h<br>
-Put trace->active later in _ltt_trace_start()<br>
-ltt_trace_create() remove sleep in spinlock use GFP_ATOMIC kmalloc<br>
-Fix the locking of module hooks.<br>
-Fix the traps -> disable nested logging for now.<br>
-Use per cpu spinlock on trace list.<br>
-Finish the control module, libltt and lttctl : netlink interface<br>
-Finish integrating lttctl with lttd.<br>
-fix lttctl signal waiting : use a flag.<br>
-Add ltt_write_commit_counter call to genevent.<br>
-Add information in the buffer header : buffer size, etc etc...<br>
-	-> this information is so small that we can repeat it. Makes flight recorder
-	easier to decode.<br>
-Add trace start structure to buffer start header.<br>
-fix genevent : take no lock if num traces active is 0.<br>
-Add type information per facility : it will help having a standard way
-to understand information coming from both kernel space and user space, and deal
-easily with 64 bits kernel with 64 and 32 bits processes (and with size_t know
-at compile time which can differ inside the same process from one library to
-another).<br>
-fix structures alignment, array and sequences too. -> trace dynamic.<br>
-add per facility alignment (inside structures).<br>
-add control of alignment.<br>
-add control for subbuffer size and number of subbuffers.<br>
-Add reserve - get TSC - alignment atomicity through the use of cmpxchg.<br>
-Add configurable alignment (LTT_ALIGNMENT).<br>
-Get ultra-precise logging with use of TSC (only) : only one do_gettimeofday
-read, and then we don't want the time flow to be altered by ntp.<br>
-Debian kernel package<br>
-make LTT tracing code completely atomic (thus remove locks)<br>
-Buffer aligned on page boundary -> use valloc.<br>
-<br>
-<br>
 <br>
 * TODO (low priority)<br>
 enhance RPM packages for lttng kernel<br>
@@ -109,7 +65,6 @@ and wakeup (causes a deadlock).<br>
 <br>
 * Need to be discussed<br>
 Drop ltt-module-register and ltt-module-unregister, use exported variables.<br>
-RelayFS ioctl interface vs control through LTT netlink interface.<br>
 drop ltt_filter_control, use functions pointers instead.<br>
 Merge facilities headers into one big header.<br>
 Change the name of XML files from XML to something else.<br>
