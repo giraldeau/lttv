@@ -22,7 +22,6 @@ for the TODO items :<br>
 <br>
 <br>
 * Done<br>
-Buffer aligned on page boundary -> use valloc.<br>
 per struct (struct align=x) support added to genevent (partial).<br>
 Add offset align generation for structs to genevent.<br>
 make lttv aware of the per facility long, void* and size_t types.<br>
@@ -35,15 +34,16 @@ RPM package<br>
 <big>LTT Next Generation Roadmap<small><br>
 <br>
 * TODO<br>
-(1) make LTT tracing code completely atomic (thus remove locks)<br>
-(1) port LTTng to 2.6.14 kernel.<br>
+(1) add genevent full functionnality : alignment, array, sequences, nested
+structures.<br>
+	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>>">Jean-Hugues Deschenes</A><br>
+(1) port LTTng to 2.6.14 kernel. (depends on genevent rewrite)<br>
 (2) add efficient and secure user space tracing. (1 month)<br>
 (3) integrate LTTng State Dump : missing irq and process state.<br>
 	# <A HREF="mailto:Jean-Hugues Deschenes <jean-hugues.deschenes@polymtl.ca>">Jean-Hugues Deschenes</A><br>
-(9) add genevent full functionnality : alignment, array, sequences, nested
-structures.<br>
 (7) add gcc -finstrument-functions instrumentation<br>
 (3) port LTTng to x86_64, PPC, alpha, user-mode Linux, Xen, MIPS, ARM, S/390.
+(depends on 2.6.14 port)
 <br>
 <br>
 * Done<br>
@@ -77,6 +77,8 @@ Add configurable alignment (LTT_ALIGNMENT).<br>
 Get ultra-precise logging with use of TSC (only) : only one do_gettimeofday
 read, and then we don't want the time flow to be altered by ntp.<br>
 Debian kernel package<br>
+make LTT tracing code completely atomic (thus remove locks)<br>
+Buffer aligned on page boundary -> use valloc.<br>
 <br>
 <br>
 <br>
