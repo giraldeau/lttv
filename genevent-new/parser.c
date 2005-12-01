@@ -558,11 +558,6 @@ void parseFields(parse_file_t *in, field_t *f,
   getLAnglebracket(in);
   f->type = parseType(in,NULL, unnamed_types, named_types);
 
-	/* Those will be set later by preset_field_type_size */
-	f->fixed_root = FIELD_UNKNOWN;
-	f->fixed_parent = FIELD_UNKNOWN;
-	f->fixed_size = FIELD_UNKNOWN;
-
 	if(tag) {
 		getLAnglebracket(in);
 		getForwardslash(in);
@@ -665,7 +660,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     getForwardslash(in);
     getRAnglebracket(in); //<array size=n>
 
-    getLAnglebracket(in); //<subtype> 
+    //getLAnglebracket(in); //<subtype> 
 		/* subfield */
 		f = (field_t *)memAlloc(sizeof(field_t));
 		sequence_push(&(t->fields),f);
@@ -687,13 +682,13 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     //getForwardslash(in);
     getRAnglebracket(in); //<sequence>
 
-    getLAnglebracket(in); //<sequence size type> 
+    //getLAnglebracket(in); //<sequence size type> 
 		/* subfield */
 		f = (field_t *)memAlloc(sizeof(field_t));
 		sequence_push(&(t->fields),f);
     parseFields(in, f, unnamed_types, named_types, 0);
 
-    getLAnglebracket(in); //<subtype> 
+    //getLAnglebracket(in); //<subtype> 
 		/* subfield */
 		f = (field_t *)memAlloc(sizeof(field_t));
 		sequence_push(&(t->fields),f);
@@ -1337,12 +1332,12 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type)
       flag = 1;
       break;
     case ARRAY:
-      sprintf(buf,"%llu", type->size);
+      sprintf(buf,"%zu", type->size);
       str = appendString("array ",buf);
       flag = 1;
       break;
     case SEQUENCE:
-      sprintf(buf,"%llu", type->size);
+      sprintf(buf,"%zu", type->size);
       str = appendString("sequence ",buf);
       flag = 1;
       break;
@@ -1364,9 +1359,12 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type)
 
   if(type->fmt) crc = partial_crc32(type->fmt,crc);
     
-  if(type->type == ARRAY || type->type == SEQUENCE){
-    crc = getTypeChecksum(crc,type->nested_type);
-  }else if(type->type == STRUCT || type->type == UNION){
+  if(type->type == ARRAY){
+    crc = getTypeChecksum(crc,((field_t*)type->fields.array[0])->type);
+  } else if(type->type ==SEQUENCE) {
+    crc = getTypeChecksum(crc,((field_t*)type->fields.array[0])->type);
+    crc = getTypeChecksum(crc,((field_t*)type->fields.array[1])->type);
+	} else if(type->type == STRUCT || type->type == UNION){
     for(pos =0; pos < type->fields.position; pos++){
       fld = (field_t *) type->fields.array[pos];
       crc = partial_crc32(fld->name,crc);
