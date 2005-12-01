@@ -543,11 +543,13 @@ int print_type_alignment(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		 * the array. */
 		if((basename_len != 0)
 				&& (basename[basename_len-1] != '_'
+				&& field_name != NULL
 				&& (field_name[0] != '\0'))) {
 			strncat(basename, "_", PATH_MAX - basename_len);
 			basename_len = strlen(basename);
 		}
-		strncat(basename, field_name, PATH_MAX - basename_len);
+		if(field_name != NULL)
+			strncat(basename, field_name, PATH_MAX - basename_len);
 	}
 	
 	switch(td->type) {
@@ -664,17 +666,17 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			break;
 		case SEQUENCE:
 			print_tabs(tabs, fd);
-			fprintf(fd, "lttng_write_%s(buffer, to_base, to, from, len, obj->%s)", basename,
+			fprintf(fd, "lttng_write_%s(buffer, to_base, to, from, len, &obj->%s)", basename,
 					field_name);
 			break;
 		case STRUCT:
 			print_tabs(tabs, fd);
-			fprintf(fd, "lttng_write_struct_%s(buffer, to_base, to, from, len, obj->%s)", basename,
+			fprintf(fd, "lttng_write_struct_%s(buffer, to_base, to, from, len, &obj->%s)", basename,
 					field_name);
 			break;
 		case UNION:
 			print_tabs(tabs, fd);
-			fprintf(fd, "lttng_write_union_%s(buffer, to_base, to, from, len, obj->%s)", basename,
+			fprintf(fd, "lttng_write_union_%s(buffer, to_base, to, from, len, &obj->%s)", basename,
 					field_name);
 			break;
 		case ARRAY:
@@ -825,6 +827,7 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 			break;
 		default:
 			printf("print_type_alignment_fct : type has no alignment function.\n");
+			return 0;
 			break;
 	}
 
@@ -868,25 +871,34 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		strncat(basename, field_name, PATH_MAX - basename_len);
 	}
 	
+	switch(td->type) {
+		case SEQUENCE:
+		case STRUCT:
+		case UNION:
+		case ARRAY:
+			break;
+		default:
+			printf("print_type_write_fct : type has no write function.\n");
+			return 0;
+			break;
+	}
+	
 	/* Print header */
 	switch(td->type) {
 		case SEQUENCE:
-			fprintf(fd, "static inline size_t lttng_get_alignment_sequence_%s(\n",
+			fprintf(fd, "static inline void lttng_write_sequence_%s(\n",
 					basename);
-
-			fprintf(fd, "lttng_get_alignment_sequence_%s(&obj->%s)", basename,
-					field_name);
 			break;
 		case STRUCT:
-			fprintf(fd, "lttng_get_alignment_struct_%s(&obj->%s)", basename,
+			fprintf(fd, "static inline void lttng_write_struct_%s(\n", basename,
 					field_name);
 			break;
 		case UNION:
-			fprintf(fd, "lttng_get_alignment_union_%s(&obj->%s)", basename,
+			fprintf(fd, "static inline void lttng_write_union_%s(\n", basename,
 					field_name);
 			break;
 		case ARRAY:
-			fprintf(fd, "lttng_get_alignment_array_%s(obj->%s)", basename,
+			fprintf(fd, "static inline void lttng_write_array_%s(\n", basename,
 					field_name);
 			break;
 		default:
@@ -959,7 +971,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	}
 	
 	print_tabs(1, fd);
-	fprintf(fd, "align = \n");
+	fprintf(fd, "align = ");
 	if(print_type_alignment(td, fd, 0, basename, field_name)) return 1;
 	fprintf(fd, ";\n");
 	fprintf(fd, "\n");
@@ -1346,6 +1358,12 @@ int print_log_header_types(facility_t *fac, FILE *fd)
 		/* For each named type, print the definition */
 		if((print_type_declaration(types->array[i], fd,
 						0, "", ""))) return 1;
+		/* Print also the align function */
+		if((print_type_alignment_fct(types->array[i], fd,
+						0, "", ""))) return 1;
+		/* Print also the write function */
+		if((print_type_write_fct(types->array[i], fd,
+						0, "", ""))) return 1;
 	}
 	return 0;
 }
@@ -1372,9 +1390,15 @@ int print_log_header_events(facility_t *fac, FILE *fd)
 			/* For each unnamed type, print the definition */
 			field_t *f = (field_t*)event->fields.array[j];
 			type_descriptor_t *t = f->type;
-			if(t->type_name == NULL)
+			if(t->type_name == NULL) {
 				if((print_type_declaration(t, fd, 0, basename, f->name))) return 1;
+				/* Print also the align function */
+				if((print_type_alignment_fct(t, fd, 0, basename, f->name))) return 1;
+				/* Print also the write function */
+				if((print_type_write_fct(t, fd, 0, basename, f->name))) return 1;
+			}
 		}
+
 		fprintf(fd, "\n");
 
 		fprintf(fd, "/* Event %s logging function */\n",

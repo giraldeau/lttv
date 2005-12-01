@@ -1,6 +1,57 @@
 <facility name=test>
   <description>The kernel facility has events related to kernel execution status.</description>
 
+
+  <type name=tasklet_priority>
+    <enum>
+      <label name=LOW value=0/> <description>Low priority tasklet</description>
+      <label name=HIGH value=1/> <description>High priority tasklet</description>
+    </enum>
+  </type>
+
+  <type name=irq_mode>
+    <enum>
+      <label name=user value=0/> <description>User context</description>
+      <label name=kernel value=1/> <description>Kernel context</description>
+    </enum>
+  </type>
+	
+	<type name=mystruct2>
+		<struct>
+      <field name="irq_id"> <description>IRQ number</description> <uint size=4/> </field>
+      <field name="mode"> <description>Are we executing kernel code</description> <typeref name=irq_mode/> </field>
+		</struct>
+	</type>
+
+	<type name=mystruct>
+		<struct>
+      <field name="irq_id"> <description>IRQ number</description> <uint size=4/> </field>
+      <field name="mode"> <description>Are we executing kernel code</description> <typeref name=irq_mode/> </field>
+			
+			<field name="teststr"><typeref name=mystruct2/></field>
+			<field name="myarray">
+			<array size=10/>
+			<uint_fixed size=8/>
+			</array>
+			</field>
+			<field name="mysequence">
+			<sequence>
+				<uint>
+				<float size=8/>
+			</sequence>
+			</field>
+			<field name="myunion">
+			<union>
+				<field name="myfloat"><float size=8/></field>
+				<field name="myulong"><ulong></field>
+			</union>
+			</field>
+		</struct>
+	</type>
+
+
+
+
   <event name=syscall_entry>
     <description>System call entry</description>
     <field name="syscall_id"> <description>Syscall entry number in entry.S</description> <uint size=1/> </field>
@@ -70,53 +121,5 @@
 		</array>
 	</field>
 	</event>
-
-  <type name=tasklet_priority>
-    <enum>
-      <label name=LOW value=0/> <description>Low priority tasklet</description>
-      <label name=HIGH value=1/> <description>High priority tasklet</description>
-    </enum>
-  </type>
-
-  <type name=irq_mode>
-    <enum>
-      <label name=user value=0/> <description>User context</description>
-      <label name=kernel value=1/> <description>Kernel context</description>
-    </enum>
-  </type>
-	
-	<type name=mystruct2>
-		<struct>
-      <field name="irq_id"> <description>IRQ number</description> <uint size=4/> </field>
-      <field name="mode"> <description>Are we executing kernel code</description> <typeref name=irq_mode/> </field>
-			<field name="teststr1"> <typeref name=mystruct/> </field>
-		</struct>
-	</type>
-
-	<type name=mystruct>
-		<struct>
-      <field name="irq_id"> <description>IRQ number</description> <uint size=4/> </field>
-      <field name="mode"> <description>Are we executing kernel code</description> <typeref name=irq_mode/> </field>
-			
-			<field name="teststr"><typeref name=mystruct2/></field>
-			<field name="myarray">
-			<array size=10/>
-			<uint_fixed size=8/>
-			</array>
-			</field>
-			<field name="mysequence">
-			<sequence>
-				<uint>
-				<float size=8/>
-			</sequence>
-			</field>
-			<field name="myunion">
-			<union>
-				<field name="myfloat"><float size=8/></field>
-				<field name="myulong"><ulong></field>
-			</union>
-			</field>
-		</struct>
-	</type>
 
 </facility>

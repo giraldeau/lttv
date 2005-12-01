@@ -901,16 +901,22 @@ type_descriptor_t * find_named_type(char *name, table_t * named_types)
   type_descriptor_t *t;
 
   t = table_find(named_types,name);
-  if(t == NULL) {
-    t = (type_descriptor_t *)memAlloc(sizeof(type_descriptor_t));
-    t->type_name = allocAndCopy(name);
-    t->type = NONE;
-    t->fmt = NULL;
-    table_insert(named_types,t->type_name,t);
-    //    table_insert(named_types,allocAndCopy(name),t);
-  }
+
   return t;
-}  
+}
+
+type_descriptor_t * create_named_type(char *name, table_t * named_types)
+{
+  type_descriptor_t *t;
+
+	t = (type_descriptor_t *)memAlloc(sizeof(type_descriptor_t));
+	t->type_name = allocAndCopy(name);
+	t->type = NONE;
+	t->fmt = NULL;
+	table_insert(named_types,t->type_name,t);
+	//    table_insert(named_types,allocAndCopy(name),t);
+	return t;
+}
 
 /*****************************************************************************
  *Function name
@@ -929,7 +935,7 @@ void parseTypeDefinition(parse_file_t * in, sequence_t * unnamed_types,
 
   token = getNameAttribute(in);
   if(token == NULL) in->error(in, "Type has empty name");
-  t = find_named_type(token, named_types);
+  t = create_named_type(token, named_types);
 
   if(t->type != NONE) in->error(in,"redefinition of named type");
   getRAnglebracket(in); //<type name=type_name>
