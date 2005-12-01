@@ -1228,7 +1228,7 @@ void checkNamedTypesImplemented(table_t * named_types)
  ****************************************************************************/
 
 void generateChecksum(char* facName,
-    unsigned long * checksum, sequence_t * events)
+    unsigned int * checksum, sequence_t * events)
 {
   unsigned long crc ;
   int pos;

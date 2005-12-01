@@ -654,7 +654,7 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			if(print_type(td, fd, 0, basename, "")) return 1;
 			fprintf(fd, ");\n");
 			print_tabs(tabs, fd);
-			fprintf(fd, "size += ltt_align(*to+*len, size) + size;");
+			fprintf(fd, "size += ltt_align(*to+*len, size) + size;\n");
 			print_tabs(tabs, fd);
 			fprintf(fd, "*len += size;");
 			break;
@@ -1167,11 +1167,11 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "void *from;");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t len = 0;\n");
-	fprintf(fd, "\n");
+	print_tabs(1, fd);
 	fprintf(fd, "size_t slot_size;\n");
-	fprintf(fd, "\n");
+	print_tabs(1, fd);
 	fprintf(fd, "cycles_t tsc;\n");
-	fprintf(fd, "\n");
+	print_tabs(1, fd);
 	fprintf(fd, "size_t before_hdr_pad, size_t after_hdr_pad;\n");
 	fprintf(fd, "\n");
 	
@@ -1189,9 +1189,9 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "/* size = to_base + to + len */\n");
 	print_tabs(1, fd);
-	fprintf(fd, "/* Assume that the padding for alignment starts at a void*\n");
+	fprintf(fd, "/* Assume that the padding for alignment starts at a\n");
 	print_tabs(1, fd);
-	fprintf(fd, "/* address. */\n");
+	fprintf(fd, " * sizeof(void *) address. */\n");
 	fprintf(fd, "\n");
 
 	for(unsigned int i=0;i<event->fields.position;i++){
@@ -1201,6 +1201,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 				fd, 1, basename, field->name)) return 1;
 		fprintf(fd, "\n");
 	}
+	fprintf(fd, "\n");
 
 	/* Take locks : make sure the trace does not vanish while we write on
 	 * it. A simple preemption disabling is enough (using rcu traces). */
@@ -1218,7 +1219,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		print_tabs(1, fd);
 		fprintf(fd, 
 			"index = ltt_get_index_from_facility(ltt_facility_%s_%X,\n"\
-					"\t\t\t\tevent_%s);\n",
+					"\t\t\t\t\t\tevent_%s);\n",
 				fac->name, fac->checksum, event->name);
 	}
 	fprintf(fd,"\n");
@@ -1248,8 +1249,11 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(2, fd);
 	fprintf(fd, "slot_size = 0;\n");
 	print_tabs(2, fd);
-	fprintf(fd, "buffer = ltt_reserve_slot(trace, relayfs_buf, to_base + to + len, &slot_size, &tsc,\n"
-		"\t\t&before_hdr_pad, &after_hdr_pad);\n");
+	fprintf(fd, "buffer = ltt_reserve_slot(trace, relayfs_buf,\n");
+	print_tabs(3, fd);
+	fprintf(fd, "to_base + to + len, &slot_size, &tsc,\n");
+	print_tabs(3, fd);
+	fprintf(fd, "&before_hdr_pad, &after_hdr_pad);\n");
 	/* If error, return */
 	print_tabs(2, fd);
 	fprintf(fd, "if(!buffer) return;\n\n");
@@ -1261,8 +1265,20 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		type_descriptor_t *type = field->type;
 
 		/* Set from */
-		print_tabs(3, fd);
-		fprintf(fd, "from = %s;\n", field->name);
+		print_tabs(2, fd);
+		switch(type->type) {
+			case SEQUENCE:
+			case UNION:
+			case ARRAY:
+			case STRUCT:
+			case STRING:
+				fprintf(fd, "from = %s;\n", field->name);
+				break;
+			default:
+				fprintf(fd, "from = &%s;\n", field->name);
+				break;
+		}
+
 
 		if(print_type_write(type,
 				fd, 2, basename, field->name)) return 1;

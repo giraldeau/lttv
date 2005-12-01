@@ -141,7 +141,7 @@ typedef struct _facility {
   sequence_t events;
   sequence_t unnamed_types;
   table_t named_types;
-	unsigned long checksum;
+	unsigned int checksum;
 } facility_t;
 
 int getSizeindex(unsigned int value);
@@ -162,7 +162,7 @@ void parseFields(parse_file_t *in, field_t *f,
 void checkNamedTypesImplemented(table_t * namedTypes);
 type_descriptor_t * find_named_type(char *name, table_t * named_types);
 void generateChecksum(char * facName,
-    unsigned long * checksum, sequence_t * events);
+    unsigned int * checksum, sequence_t * events);
 
 
 /* get attributes */
