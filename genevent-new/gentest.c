@@ -322,6 +322,8 @@ static inline void lttng_write_mystruct_myunion(
 	}
 	
 	*len += size;
+
+	/* Assert : no varlen child. */
 }
 
 
@@ -428,9 +430,9 @@ static inline void lttng_write_mystruct(
 
 	/* Variable length field */
 	lttng_write_sequence_mystruct_mysequence(buffer, to_base, to, from, len, &obj->mysequence);
-	/* After this previous write, we are sure that *to is 0, and *to_base is
-	 * aligned on the architecture size : to rest of alignment will be calculated
-	 * statically. */
+	/* After this previous write, we are sure that *to is 0, *len is 0 and 
+	 * *to_base is aligned on the architecture size : to rest of alignment will
+	 * be calculated statically. */
 
 	lttng_write_mystruct_myunion(buffer, to_base, to, from, len, &obj->myunion);
 
