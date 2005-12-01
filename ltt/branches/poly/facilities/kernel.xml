@@ -3,10 +3,8 @@
 
   <event name=syscall_entry>
     <description>System call entry</description>
-    <struct>
-      <field name="syscall_id"> <description>Syscall entry number in entry.S</description> <uint size=1/> </field>
-      <field name="address"> <description>Address from which call was made</description> <pointer/> </field>
-     </struct>
+    <field name="syscall_id"> <description>Syscall entry number in entry.S</description> <uint size=1/> </field>
+    <field name="address"> <description>Address from which call was made</description> <pointer/> </field>
   </event>
 	
 	<event name=syscall_exit>
@@ -15,10 +13,8 @@
 	
   <event name=trap_entry>
     <description>Entry in a trap</description>
-    <struct>
-      <field name="trap_id"> <description>Trap number</description> <uint size=2/> </field>
-      <field name="address"> <description>Address where trap occured</description> <pointer/> </field>
-     </struct>
+    <field name="trap_id"> <description>Trap number</description> <uint size=2/> </field>
+    <field name="address"> <description>Address where trap occured</description> <pointer/> </field>
   </event>
 
   <event name=trap_exit>
@@ -27,42 +23,32 @@
 
   <event name=soft_irq_entry>
     <description>Soft IRQ entry</description>
-    <struct>
-      <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
-     </struct>
+    <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
   </event>
 
   <event name=soft_irq_exit>
     <description>Soft IRQ exit</description>
-    <struct>
-      <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
-     </struct>
+    <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
   </event>
 
   <event name=tasklet_entry>
     <description>Tasklet entry</description>
-    <struct>
-      <field name="priority"> <description>Tasklet priority</description> <typeref name=tasklet_priority/> </field>
-      <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
-      <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
-     </struct>
+    <field name="priority"> <description>Tasklet priority</description> <typeref name=tasklet_priority/> </field>
+    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
   </event>
 
   <event name=tasklet_exit>
     <description>Tasklet exit</description>
-    <struct>
-      <field name="priority"> <description>Tasklet priority</description> <typeref name=tasklet_priority/> </field>
-      <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
-      <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
-     </struct>
+    <field name="priority"> <description>Tasklet priority</description> <typeref name=tasklet_priority/> </field>
+    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
   </event>
 
   <event name=irq_entry>
     <description>Entry in an irq</description>
-    <struct>
-      <field name="irq_id"> <description>IRQ number</description> <uint size=4/> </field>
-      <field name="mode"> <description>Are we executing kernel code</description> <typeref name=irq_mode/> </field>
-     </struct>
+    <field name="irq_id"> <description>IRQ number</description> <uint size=4/> </field>
+    <field name="mode"> <description>Are we executing kernel code</description> <typeref name=irq_mode/> </field>
   </event>
 
   <event name=irq_exit>
@@ -70,14 +56,14 @@
   </event>
 
   <type name=tasklet_priority>
-    <enum size=1>
+    <enum>
       <label name=LOW value=0/> <description>Low priority tasklet</description>
       <label name=HIGH value=1/> <description>High priority tasklet</description>
     </enum>
   </type>
 
   <type name=irq_mode>
-    <enum size=1>
+    <enum>
       <label name=user value=0/> <description>User context</description>
       <label name=kernel value=1/> <description>Kernel context</description>
     </enum>

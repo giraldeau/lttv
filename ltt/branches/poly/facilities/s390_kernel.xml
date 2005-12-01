@@ -3,10 +3,8 @@
 
   <event name=trap_entry>
     <description>Entry in a trap</description>
-    <struct>
-      <field name="trap_id"> <description>Trap number</description> <uint size=8/> </field>
-      <field name="address"> <description>Address where trap occured</description> <pointer/> </field>
-     </struct>
+    <field name="trap_id"> <description>Trap number</description> <uint size=8/> </field>
+    <field name="address"> <description>Address where trap occured</description> <pointer/> </field>
   </event>
 
 </facility>

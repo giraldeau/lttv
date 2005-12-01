@@ -4,79 +4,61 @@
 
   <event name=fork>
     <description>Process fork</description>
-    <struct>
-      <field name="parent_pid"> <description>PID of the parent process</description> <uint size=4/> </field>
-      <field name="child_pid"> <description>PID of the child process</description> <uint size=4/> </field>
-     </struct>
+    <field name="parent_pid"> <description>PID of the parent process</description> <uint size=4/> </field>
+    <field name="child_pid"> <description>PID of the child process</description> <uint size=4/> </field>
   </event>
 	
   <event name=kernel_thread>
     <description>Just created a new kernel thread</description>
-    <struct>
-      <field name="pid"> <description>PID of the kernel thread</description> <uint size=4/> </field>
-      <field name="function"> <description>Function called</description> <pointer/> </field>
-     </struct>
+    <field name="pid"> <description>PID of the kernel thread</description> <uint size=4/> </field>
+    <field name="function"> <description>Function called</description> <pointer/> </field>
   </event>
 
 
   <event name=exit>
     <description>Process exit</description>
-    <struct>
-      <field name="pid"> <description>PID of the process</description> <uint size=4/> </field>
-     </struct>
+    <field name="pid"> <description>PID of the process</description> <uint size=4/> </field>
   </event>
 
   <event name=wait>
     <description>Process wait</description>
-    <struct>
-      <field name="parent_pid"> <description>PID of the waiting process</description> <uint size=4/> </field>
-      <field name="child_pid"> <description>PID of the process waited for</description> <uint size=4/> </field>
-     </struct>
+    <field name="parent_pid"> <description>PID of the waiting process</description> <uint size=4/> </field>
+    <field name="child_pid"> <description>PID of the process waited for</description> <uint size=4/> </field>
   </event>
 
   <event name=free>
     <description>Process kernel data structure free (end of life of a zombie)</description>
-    <struct>
-      <field name="pid"> <description>PID of the freed process</description> <uint size=4/> </field>
-     </struct>
+    <field name="pid"> <description>PID of the freed process</description> <uint size=4/> </field>
   </event>
 
   <event name=kill>
     <description>Process kill system call</description>
-    <struct>
-      <field name="pid"> <description>PID of the process</description> <uint size=4/> </field>
-      <field name="target_pid"> <description>PID of the process to kill</description> <uint size=4/> </field>
-      <field name="signal"> <description>Signal number</description> <typeref name=signal_name/> </field>
-     </struct>
+    <field name="pid"> <description>PID of the process</description> <uint size=4/> </field>
+    <field name="target_pid"> <description>PID of the process to kill</description> <uint size=4/> </field>
+    <field name="signal"> <description>Signal number</description> <typeref name=signal_name/> </field>
   </event>
 
   <event name=signal>
     <description>Process signal reception</description>
-    <struct>
-      <field name="pid"> <description>PID of the receiving process</description> <uint size=4/> </field>
-      <field name="signal"> <description>Signal number</description> <typeref name=signal_name/> </field>
-     </struct>
+    <field name="pid"> <description>PID of the receiving process</description> <uint size=4/> </field>
+    <field name="signal"> <description>Signal number</description> <typeref name=signal_name/> </field>
   </event>
 
   <event name=wakeup>
     <description>Process wakeup</description>
-    <struct>
-      <field name="pid"> <description>PID of the receiving process</description> <uint size=4/> </field>
-      <field name="state"> <description>State of the awakened process. -1 unrunnable, 0 runnable, >0 stopped.</description> <int size=4/> </field>
-     </struct>
+    <field name="pid"> <description>PID of the receiving process</description> <uint size=4/> </field>
+    <field name="state"> <description>State of the awakened process. -1 unrunnable, 0 runnable, >0 stopped.</description> <int size=4/> </field>
   </event>
 
   <event name=schedchange>
     <description>Scheduling change</description>
-    <struct>
-      <field name="out"> <description>Outgoing process</description> <uint size=4/> </field>
-      <field name="in"> <description>Incoming process</description> <uint size=4/> </field>
-      <field name="out_state"> <description>Outgoing process' state. -1 unrunnable, 0 runnable, >0 stopped.</description> <int size=4/> </field>
-     </struct>
+    <field name="out"> <description>Outgoing process</description> <uint size=4/> </field>
+    <field name="in"> <description>Incoming process</description> <uint size=4/> </field>
+    <field name="out_state"> <description>Outgoing process' state. -1 unrunnable, 0 runnable, >0 stopped.</description> <int size=4/> </field>
   </event>
 
   <type name=signal_name>
-    <enum size=4>
+    <enum>
       <label name=SIGHUP value=1/> <description>Hangup (POSIX).</description>
       <label name=SIGINT value=2/> <description>Interrupt (ANSI).</description>
       <label name=SIGQUIT value=3/> <description>Quit (POSIX).</description>

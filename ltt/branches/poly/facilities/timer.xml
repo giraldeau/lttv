@@ -3,9 +3,7 @@
 
   <event name=expired>
     <description>A timer or itimer has expired.</description>
-     <struct>
-      <field name="pid"> <description>PID of the process to wake up.</description> <uint size=4/> </field>
-     </struct>
+    <field name="pid"> <description>PID of the process to wake up.</description> <uint size=4/> </field>
   </event>
 
   <event name=softirq>
@@ -14,18 +12,16 @@
 
   <event name=set_itimer>
     <description>An interval timer is set.</description>
-     <struct>
-      <field name="which"> <description>kind of interval timer.</description>
-			<typeref name=itimer_kind/></field>
-     <field name="interval_seconds"><uint size=4/></field>
-      <field name="interval_microseconds"><uint size=4/></field>
-      <field name="value_seconds"><uint size=4/></field>
-      <field name="value_microseconds"><uint size=4/></field>
-     </struct>
+    <field name="which"> <description>kind of interval timer.</description>
+	    <typeref name=itimer_kind/></field>
+    <field name="interval_seconds"><uint size=4/></field>
+    <field name="interval_microseconds"><uint size=4/></field>
+    <field name="value_seconds"><uint size=4/></field>
+    <field name="value_microseconds"><uint size=4/></field>
   </event>
 
   <type name=itimer_kind>
-    <enum size=4>
+    <enum>
       <label name=ITIMER_REAL value=0/> <description>decrements in real time,
       and delivers SIGALRM upon expiration.</description>
       <label name=ITIMER_VIRTUAL value=1/> <description>decrements only when the
