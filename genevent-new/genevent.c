@@ -890,16 +890,13 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					basename);
 			break;
 		case STRUCT:
-			fprintf(fd, "static inline void lttng_write_struct_%s(\n", basename,
-					field_name);
+			fprintf(fd, "static inline void lttng_write_struct_%s(\n", basename);
 			break;
 		case UNION:
-			fprintf(fd, "static inline void lttng_write_union_%s(\n", basename,
-					field_name);
+			fprintf(fd, "static inline void lttng_write_union_%s(\n", basename);
 			break;
 		case ARRAY:
-			fprintf(fd, "static inline void lttng_write_array_%s(\n", basename,
-					field_name);
+			fprintf(fd, "static inline void lttng_write_array_%s(\n", basename);
 			break;
 		default:
 			printf("print_type_write_fct : type has no write function.\n");
@@ -1180,6 +1177,8 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "size_t len = 0;\n");
 	print_tabs(1, fd);
+	fprintf(fd, "size_t reserve_size;\n");
+	print_tabs(1, fd);
 	fprintf(fd, "size_t slot_size;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "cycles_t tsc;\n");
@@ -1213,6 +1212,10 @@ int print_event_logging_function(char *basename, facility_t *fac,
 				fd, 1, basename, field->name)) return 1;
 		fprintf(fd, "\n");
 	}
+	print_tabs(1, fd);
+	fprintf(fd, "reserve_size = to_base + to + len;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "to_base = to = len = 0;\n");
 	fprintf(fd, "\n");
 
 	/* Take locks : make sure the trace does not vanish while we write on
@@ -1263,7 +1266,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(2, fd);
 	fprintf(fd, "buffer = ltt_reserve_slot(trace, relayfs_buf,\n");
 	print_tabs(3, fd);
-	fprintf(fd, "to_base + to + len, &slot_size, &tsc,\n");
+	fprintf(fd, "reserve_size, &slot_size, &tsc,\n");
 	print_tabs(3, fd);
 	fprintf(fd, "&before_hdr_pad, &after_hdr_pad);\n");
 	/* If error, return */
