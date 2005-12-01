@@ -451,7 +451,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			print_tabs(1, fd);
 			if(print_type(((field_t*)td->fields.array[0])->type,
 						fd, tabs, basename, "")) return 1;
-			fprintf(fd, "len;\n");
+			fprintf(fd, " len;\n");
 			print_tabs(1, fd);
 			if(print_type(((field_t*)td->fields.array[1])->type,
 						fd, tabs, basename, "")) return 1;

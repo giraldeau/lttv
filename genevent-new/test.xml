@@ -30,21 +30,21 @@
 			
 			<field name="teststr"><typeref name=mystruct2/></field>
 			<field name="myarray">
-			<array size=10/>
-			<uint_fixed size=8/>
-			</array>
+				<array size=10/>
+					<uint_fixed size=8/>
+				</array>
 			</field>
 			<field name="mysequence">
-			<sequence>
-				<uint>
-				<float size=8/>
-			</sequence>
+				<sequence>
+					<uint>
+					<float size=8/>
+				</sequence>
 			</field>
 			<field name="myunion">
-			<union>
-				<field name="myfloat"><float size=8/></field>
-				<field name="myulong"><ulong></field>
-			</union>
+				<union>
+					<field name="myfloat"><float size=8/></field>
+					<field name="myulong"><ulong></field>
+				</union>
 			</field>
 		</struct>
 	</type>
