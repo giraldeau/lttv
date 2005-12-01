@@ -456,7 +456,8 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			if(print_type(((field_t*)td->fields.array[1])->type,
 						fd, tabs, basename, "")) return 1;
 			fprintf(fd, " *array;\n");
-			fprintf(fd, "};\n");
+			fprintf(fd, "};\n");	/* We do not LTT_ALIGN, because we never copy
+															 it to the buffer directly. */
 			fprintf(fd, "\n");
 		break;
 
@@ -481,11 +482,10 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				fprintf(fd, "%s", field->name);
 				fprintf(fd, ";\n");
 			}
-			fprintf(fd, "};\n");
+			fprintf(fd, "} LTT_ALIGN;\n");
 			fprintf(fd, "\n");
 			break;
 	case UNION:
-			/* TODO : Do not allow variable length fields in a union */
 			for(unsigned int i=0;i<td->fields.position;i++){
 				field_t *field = (field_t*)(td->fields.array[i]);
 				type_descriptor_t *type = field->type;
@@ -506,7 +506,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				fprintf(fd, "%s", field->name);
 				fprintf(fd, ";\n");
 			}
-			fprintf(fd, "};\n");
+			fprintf(fd, "} LTT_ALIGN;\n");
 			fprintf(fd, "\n");
 			break;
 	default:
