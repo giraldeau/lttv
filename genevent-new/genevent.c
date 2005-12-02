@@ -169,7 +169,7 @@ int print_type(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, "off_t");
 			break;
 		case STRING:
-			fprintf(fd, "char *");
+			fprintf(fd, "const char *");
 			break;
 		case ENUM:
 			fprintf(fd, "enum lttng_%s", basename);
@@ -283,7 +283,7 @@ int print_arg(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, " %s", field_name);
 			break;
 		case STRING:
-			fprintf(fd, "char *");
+			fprintf(fd, "const char *");
 			fprintf(fd, " %s", field_name);
 			break;
 		case ENUM:
@@ -552,52 +552,75 @@ int print_type_alignment(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			strncat(basename, field_name, PATH_MAX - basename_len);
 	}
 	
-	switch(td->type) {
-		case INT_FIXED:
-		case UINT_FIXED:
-		case CHAR:
-		case UCHAR:
-		case SHORT:
-		case USHORT:
-		case INT:
-		case UINT:
-		case FLOAT:
-		case POINTER:
-		case LONG:
-		case ULONG:
-		case SIZE_T:
-		case SSIZE_T:
-		case OFF_T:
-		case ENUM:
-			fprintf(fd, "sizeof(");
-			if(print_type(td, fd, 0, basename, "")) return 1;
-			fprintf(fd, ")");
-			break;
-		case STRING:
-			fprintf(fd, "sizeof(char)");
-			break;
-		case SEQUENCE:
-			fprintf(fd, "lttng_get_alignment_sequence_%s(&obj->%s)", basename,
-					field_name);
-			break;
-		case STRUCT:
-			fprintf(fd, "lttng_get_alignment_struct_%s(&obj->%s)", basename,
-					field_name);
-			break;
-		case UNION:
-			fprintf(fd, "lttng_get_alignment_union_%s(&obj->%s)", basename,
-					field_name);
-			break;
-		case ARRAY:
-			fprintf(fd, "lttng_get_alignment_array_%s(obj->%s)", basename,
-					field_name);
-			break;
-		case NONE:
-			printf("error : type NONE unexpected\n");
-			return 1;
-			break;
+	if(field_name[0] == '\0') {
+		/* We are in a write function : it's the obj that we must align. */
+		switch(td->type) {
+			case SEQUENCE:
+				fprintf(fd, "lttng_get_alignment_sequence_%s(obj)", basename);
+				break;
+			case STRUCT:
+				fprintf(fd, "lttng_get_alignment_struct_%s(obj)", basename);
+				break;
+			case UNION:
+				fprintf(fd, "lttng_get_alignment_union_%s(obj)", basename);
+				break;
+			case ARRAY:
+				fprintf(fd, "lttng_get_alignment_array_%s(obj)", basename);
+				break;
+			default:
+				printf("error : type unexpected\n");
+				return 1;
+				break;
+		}
+	} else {
+		
+		switch(td->type) {
+			case INT_FIXED:
+			case UINT_FIXED:
+			case CHAR:
+			case UCHAR:
+			case SHORT:
+			case USHORT:
+			case INT:
+			case UINT:
+			case FLOAT:
+			case POINTER:
+			case LONG:
+			case ULONG:
+			case SIZE_T:
+			case SSIZE_T:
+			case OFF_T:
+			case ENUM:
+				fprintf(fd, "sizeof(");
+				if(print_type(td, fd, 0, basename, "")) return 1;
+				fprintf(fd, ")");
+				break;
+			case STRING:
+				fprintf(fd, "sizeof(char)");
+				break;
+			case SEQUENCE:
+				fprintf(fd, "lttng_get_alignment_sequence_%s(&obj->%s)", basename,
+						field_name);
+				break;
+			case STRUCT:
+				fprintf(fd, "lttng_get_alignment_struct_%s(&obj->%s)", basename,
+						field_name);
+				break;
+			case UNION:
+				fprintf(fd, "lttng_get_alignment_union_%s(&obj->%s)", basename,
+						field_name);
+				break;
+			case ARRAY:
+				fprintf(fd, "lttng_get_alignment_array_%s(obj->%s)", basename,
+						field_name);
+				break;
+			case NONE:
+				printf("error : type NONE unexpected\n");
+				return 1;
+				break;
+		}
 	}
-
+	
 	return 0;
 }
 
@@ -991,9 +1014,11 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		fprintf(fd, "/* Contains only fixed size fields : use compiler sizeof() */\n");
 		fprintf(fd, "\n");
 		print_tabs(1, fd);
-		fprintf(fd, "*len += sizeof(");
+		fprintf(fd, "size = sizeof(");
 		if(print_type(td, fd, 0, basename, field_name)) return 1;
 		fprintf(fd, ");\n");
+		print_tabs(1, fd);
+		fprintf(fd, "*len += size;\n");
 	} else {
 		/* The type contains nested variable size subtypes :
 		 * we must write field by field. */
@@ -1064,7 +1089,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				fprintf(fd, "*from = obj+1;\n");
 				break;
 			case STRING:
-				fprintf(fd, "size = strlen(obj);\n");
+				fprintf(fd, "size = strlen(obj) + 1; /* Include '\0' */\n");
 				print_tabs(1, fd);
 				fprintf(fd, "if(buffer != NULL)\n");
 				print_tabs(2, fd);
@@ -1137,17 +1162,37 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		event_t *event, FILE *fd)
 {
 	fprintf(fd, "static inline void trace_%s(\n", basename);
+	int	has_argument = 0;
+
+  /* Does it support per trace tracing ? */
+  if(event->per_trace) {
+		print_tabs(2, fd);
+    fprintf(fd, "struct ltt_trace_struct *dest_trace");
+		has_argument = 1;
+  }
+  
+  /* Does it support per tracefile tracing ? */
+  if(event->per_tracefile) {
+		if(has_argument) {
+			fprintf(fd, ",");
+			fprintf(fd, "\n");
+		}
+    fprintf(fd, "unsigned int tracefile_index");
+		has_argument = 1;
+  }
+
 	for(unsigned int j = 0; j < event->fields.position; j++) {
 		/* For each field, print the function argument */
 		field_t *f = (field_t*)event->fields.array[j];
 		type_descriptor_t *t = f->type;
-		if(print_arg(t, fd, 2, basename, f->name)) return 1;
-		if(j < event->fields.position-1) {
+		if(has_argument) {
 			fprintf(fd, ",");
 			fprintf(fd, "\n");
 		}
+		if(print_arg(t, fd, 2, basename, f->name)) return 1;
+		has_argument = 1;
 	}
-	if(event->fields.position == 0) {
+	if(!has_argument) {
 		print_tabs(2, fd);
 		fprintf(fd, "void");
 	}
@@ -1347,6 +1392,9 @@ void print_log_header_head(facility_t *fac, FILE *fd)
 {
 	fprintf(fd, "#ifndef _LTT_FACILITY_%s_H_\n", fac->capname);
 	fprintf(fd, "#define _LTT_FACILITY_%s_H_\n\n", fac->capname);
+  fprintf(fd, "#include <linux/types.h>\n");
+  fprintf(fd, "#include <linux/ltt/ltt-facility-id-%s.h>\n", fac->name);
+  fprintf(fd, "#include <linux/ltt-core.h>\n");
 	fprintf(fd, "\n");
 }
 
