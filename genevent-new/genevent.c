@@ -526,7 +526,7 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
  * (possibly)). */
 
 int print_type_alignment(type_descriptor_t * td, FILE *fd, unsigned int tabs,
-		char *nest_name, char *field_name)
+		char *nest_name, char *field_name, char *obj_prefix)
 {
 	char basename[PATH_MAX];
 	unsigned int basename_len = 0;
@@ -556,16 +556,20 @@ int print_type_alignment(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		/* We are in a write function : it's the obj that we must align. */
 		switch(td->type) {
 			case SEQUENCE:
-				fprintf(fd, "lttng_get_alignment_sequence_%s(obj)", basename);
+				fprintf(fd, "lttng_get_alignment_sequence_%s(%s)", basename,
+						obj_prefix);
 				break;
 			case STRUCT:
-				fprintf(fd, "lttng_get_alignment_struct_%s(obj)", basename);
+				fprintf(fd, "lttng_get_alignment_struct_%s(%s)", basename,
+						obj_prefix);
 				break;
 			case UNION:
-				fprintf(fd, "lttng_get_alignment_union_%s(obj)", basename);
+				fprintf(fd, "lttng_get_alignment_union_%s(%s)", basename,
+						obj_prefix);
 				break;
 			case ARRAY:
-				fprintf(fd, "lttng_get_alignment_array_%s(obj)", basename);
+				fprintf(fd, "lttng_get_alignment_array_%s(%s)", basename,
+						obj_prefix);
 				break;
 			default:
 				printf("error : type unexpected\n");
@@ -599,20 +603,20 @@ int print_type_alignment(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				fprintf(fd, "sizeof(char)");
 				break;
 			case SEQUENCE:
-				fprintf(fd, "lttng_get_alignment_sequence_%s(&obj->%s)", basename,
-						field_name);
+				fprintf(fd, "lttng_get_alignment_sequence_%s(&%s%s)", basename,
+						obj_prefix, field_name);
 				break;
 			case STRUCT:
-				fprintf(fd, "lttng_get_alignment_struct_%s(&obj->%s)", basename,
-						field_name);
+				fprintf(fd, "lttng_get_alignment_struct_%s(&%s%s)", basename,
+						obj_prefix, field_name);
 				break;
 			case UNION:
-				fprintf(fd, "lttng_get_alignment_union_%s(&obj->%s)", basename,
-						field_name);
+				fprintf(fd, "lttng_get_alignment_union_%s(&%s%s)", basename,
+						obj_prefix, field_name);
 				break;
 			case ARRAY:
-				fprintf(fd, "lttng_get_alignment_array_%s(obj->%s)", basename,
-						field_name);
+				fprintf(fd, "lttng_get_alignment_array_%s(%s%s)", basename,
+						obj_prefix, field_name);
 				break;
 			case NONE:
 				printf("error : type NONE unexpected\n");
@@ -632,7 +636,7 @@ int print_type_alignment(type_descriptor_t * td, FILE *fd, unsigned int tabs,
  * (possibly)). */
 
 int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
-		char *nest_name, char *field_name)
+		char *nest_name, char *field_name, char *obj_prefix)
 {
 	char basename[PATH_MAX];
 	unsigned int basename_len = 0;
@@ -685,27 +689,33 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			break;
 		case STRING:
 			print_tabs(tabs, fd);
-			fprintf(fd, "lttng_write_string_%s(buffer, to_base, to, from, len, obj->%s);\n", basename, field_name);
+			fprintf(fd,
+					"lttng_write_string_%s(buffer, to_base, to, from, len, %s%s);\n",
+					basename, obj_prefix, field_name);
 			break;
 		case SEQUENCE:
 			print_tabs(tabs, fd);
-			fprintf(fd, "lttng_write_%s(buffer, to_base, to, from, len, &obj->%s)", basename,
-					field_name);
+			fprintf(fd,
+					"lttng_write_%s(buffer, to_base, to, from, len, &%s%s)",
+					basename, obj_prefix, field_name);
 			break;
 		case STRUCT:
 			print_tabs(tabs, fd);
-			fprintf(fd, "lttng_write_struct_%s(buffer, to_base, to, from, len, &obj->%s)", basename,
-					field_name);
+			fprintf(fd,
+					"lttng_write_struct_%s(buffer, to_base, to, from, len, &%s%s)",
+					basename, obj_prefix, field_name);
 			break;
 		case UNION:
 			print_tabs(tabs, fd);
-			fprintf(fd, "lttng_write_union_%s(buffer, to_base, to, from, len, &obj->%s)", basename,
-					field_name);
+			fprintf(fd,
+					"lttng_write_union_%s(buffer, to_base, to, from, len, &%s%s)",
+					basename, obj_prefix, field_name);
 			break;
 		case ARRAY:
 			print_tabs(tabs, fd);
-			fprintf(fd, "lttng_write_array_%s(buffer, to_base, to, from, len, obj->%s)", basename,
-					field_name);
+			fprintf(fd,
+					"lttng_write_array_%s(buffer, to_base, to, from, len, %s%s)",
+					basename, obj_prefix, field_name);
 			break;
 		case NONE:
 			printf("Error : type NONE unexpected\n");
@@ -766,7 +776,7 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 			print_tabs(1, fd);
 			fprintf(fd, "localign = ");
 			if(print_type_alignment(((field_t*)td->fields.array[0])->type,
-						fd, 0, basename, ((field_t*)td->fields.array[0])->name)) return 1;
+						fd, 0, basename, "len", "obj->")) return 1;
 			fprintf(fd, ";\n");
 			print_tabs(1, fd);
 			fprintf(fd, "align = max(align, localign);\n");
@@ -774,7 +784,7 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 			print_tabs(1, fd);
 			fprintf(fd, "localign = ");
 			if(print_type_alignment(((field_t*)td->fields.array[1])->type,
-						fd, 0, basename, ((field_t*)td->fields.array[1])->name)) return 1;
+						fd, 0, basename, "array[0]", "obj->")) return 1;
 			fprintf(fd, ";\n");
 			print_tabs(1, fd);
 			fprintf(fd, "align = max(align, localign);\n");
@@ -798,7 +808,8 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 				type_descriptor_t *type = field->type;
 				print_tabs(1, fd);
 				fprintf(fd, "localign = ");
-				if(print_type_alignment(type, fd, 0, basename, field->name)) return 1;
+				if(print_type_alignment(type, fd, 0, basename, field->name, "obj->"))
+					return 1;
 				fprintf(fd, ";\n");
 				print_tabs(1, fd);
 				fprintf(fd, "align = max(align, localign);\n");
@@ -824,7 +835,8 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 				type_descriptor_t *type = field->type;
 				print_tabs(1, fd);
 				fprintf(fd, "localign = ");
-				if(print_type_alignment(type, fd, 0, basename, field->name)) return 1;
+				if(print_type_alignment(type, fd, 0, basename, field->name, "obj->"))
+					return 1;
 				fprintf(fd, ";\n");
 				print_tabs(1, fd);
 				fprintf(fd, "align = max(align, localign);\n");
@@ -845,7 +857,8 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 			print_tabs(1, fd);
 			fprintf(fd, "return \n");
 			if(print_type_alignment(((field_t*)td->fields.array[0])->type,
-						fd, 0, basename, ((field_t*)td->fields.array[0])->name)) return 1;
+						fd, 0, basename, "", "obj[0]"))
+				return 1;
 			fprintf(fd, ";\n");
 			break;
 		default:
@@ -992,7 +1005,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	
 	print_tabs(1, fd);
 	fprintf(fd, "align = ");
-	if(print_type_alignment(td, fd, 0, basename, field_name)) return 1;
+	if(print_type_alignment(td, fd, 0, basename, "", "obj->")) return 1;
 	fprintf(fd, ";\n");
 	fprintf(fd, "\n");
 	print_tabs(1, fd);
@@ -1030,13 +1043,14 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			case SEQUENCE:
 				print_tabs(1, fd);
 				fprintf(fd, "/* Copy members */\n");
-				print_tabs(1, fd);
-				fprintf(fd, "size = sizeof(\n");
+//				print_tabs(1, fd);
+//				fprintf(fd, "size = sizeof(\n");
 				if(print_type_write(((field_t*)td->fields.array[0])->type,
-						fd, 1, basename, ((field_t*)td->fields.array[0])->name)) return 1;
-				fprintf(fd, ");\n");
-				print_tabs(1, fd);
-				fprintf(fd, "*to += ltt_align(*to, size);\n");
+						fd, 1, basename, "len", "obj->")) return 1;
+				fprintf(fd, "\n");
+//				fprintf(fd, ");\n");
+//				print_tabs(1, fd);
+//				fprintf(fd, "*to += ltt_align(*to, size);\n");
 				print_tabs(1, fd);
 				fprintf(fd, "if(buffer != NULL)\n");
 				print_tabs(2, fd);
@@ -1048,12 +1062,12 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				/* Write the child : varlen child or not ? */
 				if(has_type_fixed_size(((field_t*)td->fields.array[1])->type)) {
 					/* Fixed size len child : use a multiplication of its size */
-					print_tabs(1, fd);
-					fprintf(fd, "size = sizeof(\n");
+//					print_tabs(1, fd);
+//					fprintf(fd, "size = sizeof(\n");
 					if(print_type_write(((field_t*)td->fields.array[1])->type,
-							fd, 1, basename, ((field_t*)td->fields.array[1])->name)) return 1;
-					fprintf(fd, ");\n");
-					print_tabs(1, fd);
+							fd, 1, basename, "array[0]", "obj->")) return 1;
+//					fprintf(fd, ");\n");
+//					print_tabs(1, fd);
 					fprintf(fd, "*to += ltt_align(*to, size);\n");
 					print_tabs(1, fd);
 					fprintf(fd, "size = obj->len * size;\n");
@@ -1070,7 +1084,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					print_tabs(1, fd);
 					fprintf(fd, "for(unsigned int i=0; i<obj->len; i++) {\n");
 					if(print_type_write(((field_t*)td->fields.array[1])->type,
-							fd, 2, basename, ((field_t*)td->fields.array[1])->name)) return 1;
+							fd, 2, basename, "array[i]", "obj->")) return 1;
 					print_tabs(1, fd);
 					fprintf(fd, "}\n");
 				}
@@ -1115,7 +1129,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					field_t *field = (field_t*)(td->fields.array[i]);
 					type_descriptor_t *type = field->type;
 					if(print_type_write(type,
-							fd, 1, basename, field->name)) return 1;
+							fd, 1, basename, field->name, "obj->")) return 1;
 					fprintf(fd, "\n");
 				}
 				break;
@@ -1134,8 +1148,8 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					fprintf(fd, "/* Variable length child : iter. */\n");
 					print_tabs(1, fd);
 					fprintf(fd, "for(unsigned int i=0; i<LTTNG_ARRAY_SIZE_%s; i++) {\n", basename);
-					if(print_type_write(((field_t*)td->fields.array[1])->type,
-							fd, 2, basename, ((field_t*)td->fields.array[1])->name)) return 1;
+					if(print_type_write(((field_t*)td->fields.array[0])->type,
+							fd, 2, basename, "", "obj->array[i]")) return 1;
 					print_tabs(1, fd);
 					fprintf(fd, "}\n");
 				}
@@ -1256,7 +1270,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		field_t *field = (field_t*)(event->fields.array[i]);
 		type_descriptor_t *type = field->type;
 		if(print_type_write(type,
-				fd, 1, basename, field->name)) return 1;
+				fd, 1, basename, field->name, "")) return 1;
 		fprintf(fd, "\n");
 	}
 	print_tabs(1, fd);
@@ -1343,7 +1357,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 
 
 		if(print_type_write(type,
-				fd, 2, basename, field->name)) return 1;
+				fd, 2, basename, field->name, "")) return 1;
 		fprintf(fd, "\n");
 		
 		/* Don't forget to flush pending memcpy */
