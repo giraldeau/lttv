@@ -570,6 +570,8 @@ int print_type_alignment(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			case ARRAY:
 				fprintf(fd, "lttng_get_alignment_array_%s(%s)", basename,
 						obj_prefix);
+			case STRING:
+				fprintf(fd, "sizeof(char)");
 				break;
 			default:
 				printf("error : type unexpected\n");
@@ -696,25 +698,25 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		case SEQUENCE:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_sequence%s(buffer, to_base, to, from, len, &%s%s)",
+					"lttng_write_sequence_%s(buffer, to_base, to, from, len, &%s%s);",
 					basename, obj_prefix, field_name);
 			break;
 		case STRUCT:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_struct_%s(buffer, to_base, to, from, len, &%s%s)",
+					"lttng_write_struct_%s(buffer, to_base, to, from, len, &%s%s);",
 					basename, obj_prefix, field_name);
 			break;
 		case UNION:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_union_%s(buffer, to_base, to, from, len, &%s%s)",
+					"lttng_write_union_%s(buffer, to_base, to, from, len, &%s%s);",
 					basename, obj_prefix, field_name);
 			break;
 		case ARRAY:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_array_%s(buffer, to_base, to, from, len, %s%s)",
+					"lttng_write_array_%s(buffer, to_base, to, from, len, %s%s);",
 					basename, obj_prefix, field_name);
 			break;
 		case NONE:
@@ -912,6 +914,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		case STRUCT:
 		case UNION:
 		case ARRAY:
+		case STRING:
 			break;
 		default:
 			dprintf("print_type_write_fct : type has no write function.\n");
@@ -933,6 +936,9 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			break;
 		case ARRAY:
 			fprintf(fd, "static inline void lttng_write_array_%s(\n", basename);
+			break;
+		case STRING:
+			fprintf(fd, "static inline void lttng_write_string_%s(\n", basename);
 			break;
 		default:
 			printf("print_type_write_fct : type has no write function.\n");
@@ -963,6 +969,9 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, " *obj)\n");
 			break;
 		case ARRAY:
+			fprintf(fd, " obj)\n");
+			break;
+		case STRING:
 			fprintf(fd, " obj)\n");
 			break;
 		default:
@@ -1098,11 +1107,13 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				print_tabs(1, fd);
 				fprintf(fd, "*to = 0;\n");
 				fprintf(fd, "\n");
+				print_tabs(1, fd);
 				fprintf(fd, "/* Put source *from just after the C sequence */\n");
 				print_tabs(1, fd);
 				fprintf(fd, "*from = obj+1;\n");
 				break;
 			case STRING:
+				print_tabs(1, fd);
 				fprintf(fd, "size = strlen(obj) + 1; /* Include final NULL char. */\n");
 				print_tabs(1, fd);
 				fprintf(fd, "if(buffer != NULL)\n");
@@ -1120,9 +1131,10 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				print_tabs(1, fd);
 				fprintf(fd, "*to = 0;\n");
 				fprintf(fd, "\n");
-				fprintf(fd, "/* Put source *from just after the C sequence */\n");
 				print_tabs(1, fd);
-				fprintf(fd, "*from = obj+1;\n");
+				fprintf(fd, "/* Put source *from just after the C string */\n");
+				print_tabs(1, fd);
+				fprintf(fd, "*from += size;\n");
 				break;
 			case STRUCT:
 				for(unsigned int i=0;i<td->fields.position;i++){
