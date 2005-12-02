@@ -1005,7 +1005,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	
 	print_tabs(1, fd);
 	fprintf(fd, "align = ");
-	if(print_type_alignment(td, fd, 0, basename, "", "obj->")) return 1;
+	if(print_type_alignment(td, fd, 0, basename, "", "obj")) return 1;
 	fprintf(fd, ";\n");
 	fprintf(fd, "\n");
 	print_tabs(1, fd);
