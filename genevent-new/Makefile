@@ -2,7 +2,8 @@ SHELL = /bin/sh
 
 CC = gcc
 
-CFLAGS = -std=c99 -Wall -g -DDEBUG
+#CFLAGS = -std=c99 -Wall -g -DDEBUG
+CFLAGS = -std=c99 -Wall -g
 
 all: genevent
 

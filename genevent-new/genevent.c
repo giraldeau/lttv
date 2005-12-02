@@ -826,7 +826,7 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 			fprintf(fd, ";\n");
 			break;
 		default:
-			printf("print_type_alignment_fct : type has no alignment function.\n");
+			dprintf("print_type_alignment_fct : type has no alignment function.\n");
 			return 0;
 			break;
 	}
@@ -878,7 +878,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		case ARRAY:
 			break;
 		default:
-			printf("print_type_write_fct : type has no write function.\n");
+			dprintf("print_type_write_fct : type has no write function.\n");
 			return 0;
 			break;
 	}
@@ -1152,7 +1152,9 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		fprintf(fd, "void");
 	}
 	fprintf(fd,")\n");
-	fprintf(fd, "#ifndef CONFIG_LTT\n");
+	fprintf(fd, 
+			"#if (!defined(CONFIG_LTT) || !defined(CONFIG_LTT_FACILITY_%s))\n",
+			fac->capname);
 	fprintf(fd, "{\n");
 	fprintf(fd, "}\n");
 	fprintf(fd,"#else\n");
@@ -1332,7 +1334,8 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "preempt_enable_no_resched();\n");
 
 	fprintf(fd, "}\n");
-	fprintf(fd, "#endif //CONFIG_LTT\n\n");
+	fprintf(fd, "#endif //(!defined(CONFIG_LTT) || !defined(CONFIG_LTT_FACILITY_%s))\n\n",
+			fac->capname);
 	return 0;
 }
 
@@ -1345,8 +1348,6 @@ void print_log_header_head(facility_t *fac, FILE *fd)
 	fprintf(fd, "#ifndef _LTT_FACILITY_%s_H_\n", fac->capname);
 	fprintf(fd, "#define _LTT_FACILITY_%s_H_\n\n", fac->capname);
 	fprintf(fd, "\n");
-	fprintf(fd, "/* Facility activation at compile time. */\n");
-	fprintf(fd, "#ifdef CONFIG_LTT_FACILITY_%s\n\n", fac->capname);
 }
 
 
@@ -1418,7 +1419,6 @@ int print_log_header_events(facility_t *fac, FILE *fd)
 
 void print_log_header_tail(facility_t *fac, FILE *fd)
 {
-	fprintf(fd, "#endif //CONFIG_LTT_FACILITY_%s\n\n", fac->capname);
 	fprintf(fd, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
 }
 	
@@ -1472,6 +1472,9 @@ int print_id_header(facility_t *fac)
 	char filename[PATH_MAX];
 	unsigned int filename_size = 0;
 	FILE *fd;
+	char basename[PATH_MAX];
+	char basename_len = 0;
+
 	dprintf("%s\n", fac->name);
 
 	strcpy(filename, "ltt-facility-id-");
@@ -1490,6 +1493,41 @@ int print_id_header(facility_t *fac)
 				filename, strerror(errno));
 		return errno;
 	}
+
+  fprintf(fd, "#ifndef _LTT_FACILITY_ID_%s_H_\n",fac->capname);
+  fprintf(fd, "#define _LTT_FACILITY_ID_%s_H_\n\n",fac->capname);
+  fprintf(fd, "#ifdef CONFIG_LTT\n");
+
+  fprintf(fd,"#include <linux/ltt-facilities.h>\n\n");
+
+  fprintf(fd,"/****  facility handle  ****/\n\n");
+  fprintf(fd,"extern ltt_facility_t ltt_facility_%s_%X;\n",
+			fac->name, fac->checksum);
+  fprintf(fd,"extern ltt_facility_t ltt_facility_%s;\n\n\n",fac->name);
+
+	strncpy(basename, fac->name, PATH_MAX);
+	basename_len = strlen(basename);
+	strncat(basename, "_", PATH_MAX - basename_len);
+	basename_len++;
+	
+	fprintf(fd,"/****  event index  ****/\n\n");
+	fprintf(fd,"enum %s_event {\n",fac->name);
+	
+	for(unsigned int i = 0; i < fac->events.position; i++) {
+		event_t *event = (event_t*)fac->events.array[i];
+		strncpy(basename+basename_len, event->name, PATH_MAX-basename_len);
+		print_tabs(1, fd);
+		fprintf(fd, "event_%s,\n", basename);
+	}
+	print_tabs(1, fd);
+	fprintf(fd, "facility_%s_num_events\n", fac->name);
+	fprintf(fd, "};\n");
+	fprintf(fd, "\n");
+
+
+  fprintf(fd, "#endif //CONFIG_LTT\n");
+  fprintf(fd, "#endif //_LTT_FACILITY_ID_%s_H_\n",fac->capname);
+
 
 	fclose(fd);
 
@@ -1523,6 +1561,27 @@ int print_loader_header(facility_t *fac)
 		return errno;
 	}
 
+  fprintf(fd, "#ifndef _LTT_FACILITY_LOADER_%s_H_\n", fac->capname);
+  fprintf(fd, "#define _LTT_FACILITY_LOADER_%s_H_\n\n", fac->capname);
+  fprintf(fd, "#ifdef CONFIG_LTT\n\n");
+  fprintf(fd,"#include <linux/ltt-facilities.h>\n");
+  fprintf(fd,"#include <linux/ltt/ltt-facility-id-%s.h>\n\n",
+			fac->name);
+  fprintf(fd,"ltt_facility_t\tltt_facility_%s;\n", fac->name);
+  fprintf(fd,"ltt_facility_t\tltt_facility_%s_%X;\n\n",
+			fac->name, fac->checksum);
+
+  fprintf(fd,"#define LTT_FACILITY_SYMBOL\t\t\t\t\t\t\tltt_facility_%s\n",
+      fac->name);
+  fprintf(fd,"#define LTT_FACILITY_CHECKSUM_SYMBOL\t\tltt_facility_%s_%X\n",
+      fac->name, fac->checksum);
+  fprintf(fd,"#define LTT_FACILITY_CHECKSUM\t\t\t\t\t\t0x%X\n", fac->checksum);
+  fprintf(fd,"#define LTT_FACILITY_NAME\t\t\t\t\t\t\t\t\"%s\"\n", fac->name);
+  fprintf(fd,"#define LTT_FACILITY_NUM_EVENTS\t\t\t\t\tfacility_%s_num_events\n\n",
+			fac->name);
+  fprintf(fd, "#endif //CONFIG_LTT\n\n");
+  fprintf(fd, "#endif //_LTT_FACILITY_LOADER_%s_H_\n", fac->capname);
+
 	fclose(fd);
 
 	return 0;
@@ -1554,6 +1613,92 @@ int print_loader_c(facility_t *fac)
 		return errno;
 	}
 
+  fprintf(fd, "/*\n");
+  fprintf(fd, " * ltt-facility-loader-%s.c\n", fac->name);
+  fprintf(fd, " *\n");
+  fprintf(fd, " * (C) Copyright  2005 - \n");
+  fprintf(fd, " *          Mathieu Desnoyers (mathieu.desnoyers@polymtl.ca)\n");
+  fprintf(fd, " *\n");
+  fprintf(fd, " * Contains the LTT facility loader.\n");
+  fprintf(fd, " *\n");
+  fprintf(fd, " */\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "#include <linux/ltt-facilities.h>\n");
+  fprintf(fd, "#include <linux/module.h>\n");
+  fprintf(fd, "#include <linux/init.h>\n");
+  fprintf(fd, "#include <linux/config.h>\n");
+  fprintf(fd, "#include \"ltt-facility-loader-%s.h\"\n", fac->name);
+  fprintf(fd, "\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "#ifdef CONFIG_LTT\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "EXPORT_SYMBOL(LTT_FACILITY_SYMBOL);\n");
+  fprintf(fd, "EXPORT_SYMBOL(LTT_FACILITY_CHECKSUM_SYMBOL);\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "static const char ltt_facility_name[] = LTT_FACILITY_NAME;\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "#define SYMBOL_STRING(sym) #sym\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "static struct ltt_facility facility = {\n");
+  fprintf(fd, "\t.name = ltt_facility_name,\n");
+  fprintf(fd, "\t.num_events = LTT_FACILITY_NUM_EVENTS,\n");
+  fprintf(fd, "\t.checksum = LTT_FACILITY_CHECKSUM,\n");
+  fprintf(fd, "\t.symbol = SYMBOL_STRING(LTT_FACILITY_SYMBOL),\n");
+  fprintf(fd, "};\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "#ifndef MODULE\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "/* Built-in facility. */\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "static int __init facility_init(void)\n");
+  fprintf(fd, "{\n");
+  fprintf(fd, "\tprintk(KERN_INFO \"LTT : ltt-facility-%s init in kernel\\n\");\n", fac->name);
+  fprintf(fd, "\n");
+  fprintf(fd, "\tLTT_FACILITY_SYMBOL = ltt_facility_builtin_register(&facility);\n");
+  fprintf(fd, "\tLTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;\n");
+  fprintf(fd, "\t\n");
+  fprintf(fd, "\treturn LTT_FACILITY_SYMBOL;\n");
+  fprintf(fd, "}\n");
+  fprintf(fd, "__initcall(facility_init);\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "#else \n");
+  fprintf(fd, "\n");
+  fprintf(fd, "/* Dynamic facility. */\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "static int __init facility_init(void)\n");
+  fprintf(fd, "{\n");
+  fprintf(fd, "\tprintk(KERN_INFO \"LTT : ltt-facility-%s init dynamic\\n\");\n", fac->name);
+  fprintf(fd, "\n");
+  fprintf(fd, "\tLTT_FACILITY_SYMBOL = ltt_facility_dynamic_register(&facility);\n");
+  fprintf(fd, "\tLTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "\treturn LTT_FACILITY_SYMBOL;\n");
+  fprintf(fd, "}\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "static void __exit facility_exit(void)\n");
+  fprintf(fd, "{\n");
+  fprintf(fd, "\tint err;\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "\terr = ltt_facility_dynamic_unregister(LTT_FACILITY_SYMBOL);\n");
+  fprintf(fd, "\tif(err != 0)\n");
+  fprintf(fd, "\t\tprintk(KERN_ERR \"LTT : Error in unregistering facility.\\n\");\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "}\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "module_init(facility_init)\n");
+  fprintf(fd, "module_exit(facility_exit)\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "MODULE_LICENSE(\"GPL\");\n");
+  fprintf(fd, "MODULE_AUTHOR(\"Mathieu Desnoyers\");\n");
+  fprintf(fd, "MODULE_DESCRIPTION(\"Linux Trace Toolkit Facility\");\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "#endif //MODULE\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "#endif //CONFIG_LTT\n");
 
 	fclose(fd);
 
