@@ -1,6 +1,20 @@
 <facility name=timer>
   <description>The timer facility has events related to timer events in the kernel.</description>
 
+  <type name=itimer_kind>
+    <enum>
+      <label name=ITIMER_REAL value=0/> <description>decrements in real time,
+      and delivers SIGALRM upon expiration.</description>
+      <label name=ITIMER_VIRTUAL value=1/> <description>decrements only when the
+      process is executing, and delivers SIGVTALRM upon expiration.</description>
+      <label name=ITIMER_PROF value=2/> <description>decrements both when the
+      process executes and when the system is executing on behalf of the
+      process. Coupled with ITIMER_VIRTUAL, this timer is usually used to
+      profile the time spent by the application in user and kernel space.
+      SIGPROF is delivered upon expiration.</description>
+    </enum>
+  </type>
+
   <event name=expired>
     <description>A timer or itimer has expired.</description>
     <field name="pid"> <description>PID of the process to wake up.</description> <uint size=4/> </field>
@@ -19,19 +33,5 @@
     <field name="value_seconds"><uint size=4/></field>
     <field name="value_microseconds"><uint size=4/></field>
   </event>
-
-  <type name=itimer_kind>
-    <enum>
-      <label name=ITIMER_REAL value=0/> <description>decrements in real time,
-      and delivers SIGALRM upon expiration.</description>
-      <label name=ITIMER_VIRTUAL value=1/> <description>decrements only when the
-      process is executing, and delivers SIGVTALRM upon expiration.</description>
-      <label name=ITIMER_PROF value=2/> <description>decrements both when the
-      process executes and when the system is executing on behalf of the
-      process. Coupled with ITIMER_VIRTUAL, this timer is usually used to
-      profile the time spent by the application in user and kernel space.
-      SIGPROF is delivered upon expiration.</description>
-    </enum>
-  </type>
 
 </facility>

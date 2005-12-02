@@ -1,5 +1,13 @@
 <facility name=core>
   <description>The core facility contains the basic tracing related events</description>
+	
+  <type name=timestamp>
+		<struct>
+			<field name="seconds"><uint size=4/></field>
+			<field name="nanoseconds"><uint size=4/></field>
+			<field name="cycle_count"><uint size=8/></field>
+		</struct>
+  </type>
 
   <event name=facility_load>
     <description>Facility is loaded</description>
@@ -35,13 +43,5 @@
 		<field name="size_t_size"><uint size=4/></field>
 		<field name="alignment"><uint size=4/></field>
   </event>
-
-  <type name=timestamp>
-		<struct>
-			<field name="seconds"><uint size=4/></field>
-			<field name="nanoseconds"><uint size=4/></field>
-			<field name="cycle_count"><uint size=8/></field>
-		</struct>
-  </type>
 
 </facility>
