@@ -13,12 +13,22 @@
 
   <event name=exec>
     <description>Executing a file</description>
-    <field name="filename"> <description>File name</description> <string/> </field>
+    <field name="filename"> <description>File name</description>
+			<sequence>
+				<uint>
+				<uchar>
+			</sequence>
+		</field>
   </event>
 
   <event name=open>
     <description>Opening a file</description>
-    <field name="filename"> <description>File name</description> <string/> </field>
+    <field name="filename"> <description>File name</description>
+			<sequence>
+				<uint>
+				<uchar>
+			</sequence>
+		</field>
     <field name="fd"> <description>File descriptor</description> <uint size=4/> </field>
   </event>
 
