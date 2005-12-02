@@ -151,7 +151,7 @@ int print_type(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, "%s", floatOutputTypes[getSizeindex(td->size)]);
 			break;
 		case POINTER:
-			fprintf(fd, "const void *");
+			fprintf(fd, "void *");
 			break;
 		case LONG:
 			fprintf(fd, "long");
@@ -259,7 +259,7 @@ int print_arg(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, " %s", field_name);
 			break;
 		case POINTER:
-			fprintf(fd, "const void *");
+			fprintf(fd, "void *");
 			fprintf(fd, " %s", field_name);
 			break;
 		case LONG:
