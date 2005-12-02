@@ -1,0 +1,40 @@
+<facility name=statedump>
+  <description>The statedump facility contains the events generated at trace startup</description>
+
+  <event name=enumerate_file_descriptors>
+    <description>List of open file descriptors</description>
+      <field name="name"><description>File name</description><string/></field>
+      <field name="PID"><description>Process identifier</description><uint size=4/></field>
+      <field name="fd"><description>File descriptor index in this process's task_struct</description><uint size=4/></field>
+  </event>
+
+  <event name=enumerate_vm_maps>
+    <description>List of active vm maps</description>
+      <field name="start"> <description>VM's start address</description> <pointer/> </field>
+      <field name="end"> <description>VM's end address</description> <pointer/> </field>
+      <field name="flags"> <description>VM area flags</description> <uint size=1/> </field>
+      <field name="pgoff"> <description>VM's page offset</description> <long/> </field>
+      <field name="inode"> <description>Inode associated with this VM</description> <long/> </field>
+  </event>
+
+  <event name=enumerate_modules>
+    <description>List of loaded kernel modules</description>
+      <field name="name"><description>Module name</description><string/></field>
+      <field name="state"><description>Module's state</description><uint size=4/></field>
+      <field name="ref"><description>Number of references to this module</description><uint size=4/></field>
+  </event>
+
+  <event name=enumerate_interrupts>
+    <description>List of registered interrupts</description>
+      <field name="name"> <description>Interrupt name</description> <string/> </field>
+      <field name="action"> <description>action triggered by interrupt</description> <string/> </field>
+      <field name="num"> <description>Interrupt number</description> <uint size=4/> </field>
+  </event>
+
+  <event name=statedump_end>
+    <description>Kernel state dump complete</description>
+  </event>
+
+</facility>
+
+
