@@ -1089,7 +1089,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				fprintf(fd, "*from = obj+1;\n");
 				break;
 			case STRING:
-				fprintf(fd, "size = strlen(obj) + 1; /* Include '\0' */\n");
+				fprintf(fd, "size = strlen(obj) + 1; /* Include final NULL char. */\n");
 				print_tabs(1, fd);
 				fprintf(fd, "if(buffer != NULL)\n");
 				print_tabs(2, fd);
