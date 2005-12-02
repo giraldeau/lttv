@@ -151,7 +151,7 @@ int print_type(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, "%s", floatOutputTypes[getSizeindex(td->size)]);
 			break;
 		case POINTER:
-			fprintf(fd, "void *");
+			fprintf(fd, "const void *");
 			break;
 		case LONG:
 			fprintf(fd, "long");
@@ -259,7 +259,7 @@ int print_arg(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, " %s", field_name);
 			break;
 		case POINTER:
-			fprintf(fd, "void *");
+			fprintf(fd, "const void *");
 			fprintf(fd, " %s", field_name);
 			break;
 		case LONG:
@@ -696,7 +696,7 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		case SEQUENCE:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_%s(buffer, to_base, to, from, len, &%s%s)",
+					"lttng_write_sequence%s(buffer, to_base, to, from, len, &%s%s)",
 					basename, obj_prefix, field_name);
 			break;
 		case STRUCT:
