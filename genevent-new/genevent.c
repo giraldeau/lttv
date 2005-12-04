@@ -151,7 +151,7 @@ int print_type(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, "%s", floatOutputTypes[getSizeindex(td->size)]);
 			break;
 		case POINTER:
-			fprintf(fd, "void *");
+			fprintf(fd, "const void *");
 			break;
 		case LONG:
 			fprintf(fd, "long");
@@ -259,7 +259,7 @@ int print_arg(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, " %s", field_name);
 			break;
 		case POINTER:
-			fprintf(fd, "void *");
+			fprintf(fd, "const void *");
 			fprintf(fd, " %s", field_name);
 			break;
 		case LONG:
@@ -639,10 +639,11 @@ int print_type_alignment(type_descriptor_t * td, FILE *fd, unsigned int tabs,
  * (possibly)). */
 
 int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
-		char *nest_name, char *field_name, char *obj_prefix)
+		char *nest_name, char *field_name, char *obj_prefix, int get_ptr)
 {
 	char basename[PATH_MAX];
 	unsigned int basename_len = 0;
+	char get_ptr_char[2] = "";
 	
 	strncpy(basename, nest_name, PATH_MAX);
 	basename_len = strlen(basename);
@@ -663,6 +664,10 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		strncat(basename, field_name, PATH_MAX - basename_len);
 	}
 	
+	if(get_ptr) {
+		strcpy(get_ptr_char, "&");
+	}
+
 	switch(td->type) {
 		case INT_FIXED:
 		case UINT_FIXED:
@@ -699,20 +704,20 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		case SEQUENCE:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_sequence_%s(buffer, to_base, to, from, len, &%s%s);",
-					basename, obj_prefix, field_name);
+					"lttng_write_sequence_%s(buffer, to_base, to, from, len, %s%s%s);",
+					basename, get_ptr_char, obj_prefix, field_name);
 			break;
 		case STRUCT:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_struct_%s(buffer, to_base, to, from, len, &%s%s);",
-					basename, obj_prefix, field_name);
+					"lttng_write_struct_%s(buffer, to_base, to, from, len, %s%s%s);",
+					basename, get_ptr_char, obj_prefix, field_name);
 			break;
 		case UNION:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_union_%s(buffer, to_base, to, from, len, &%s%s);",
-					basename, obj_prefix, field_name);
+					"lttng_write_union_%s(buffer, to_base, to, from, len, %s%s%s);",
+					basename, get_ptr_char, obj_prefix, field_name);
 			break;
 		case ARRAY:
 			print_tabs(tabs, fd);
@@ -953,7 +958,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	print_tabs(2, fd);
 	fprintf(fd, "size_t *to,\n");
 	print_tabs(2, fd);
-	fprintf(fd, "void **from,\n");
+	fprintf(fd, "const void **from,\n");
 	print_tabs(2, fd);
 	fprintf(fd, "size_t *len,\n");
 	print_tabs(2, fd);
@@ -1056,7 +1061,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 //				print_tabs(1, fd);
 //				fprintf(fd, "size = sizeof(\n");
 				if(print_type_write(((field_t*)td->fields.array[0])->type,
-						fd, 1, basename, "len", "obj->")) return 1;
+						fd, 1, basename, "len", "obj->", 1)) return 1;
 				fprintf(fd, "\n");
 //				fprintf(fd, ");\n");
 //				print_tabs(1, fd);
@@ -1075,7 +1080,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 //					print_tabs(1, fd);
 //					fprintf(fd, "size = sizeof(\n");
 					if(print_type_write(((field_t*)td->fields.array[1])->type,
-							fd, 1, basename, "array[0]", "obj->")) return 1;
+							fd, 1, basename, "array[0]", "obj->", 1)) return 1;
 //					fprintf(fd, ");\n");
 //					print_tabs(1, fd);
 					fprintf(fd, "*to += ltt_align(*to, size);\n");
@@ -1094,7 +1099,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					print_tabs(1, fd);
 					fprintf(fd, "for(unsigned int i=0; i<obj->len; i++) {\n");
 					if(print_type_write(((field_t*)td->fields.array[1])->type,
-							fd, 2, basename, "array[i]", "obj->")) return 1;
+							fd, 2, basename, "array[i]", "obj->", 1)) return 1;
 					print_tabs(1, fd);
 					fprintf(fd, "}\n");
 				}
@@ -1142,7 +1147,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					field_t *field = (field_t*)(td->fields.array[i]);
 					type_descriptor_t *type = field->type;
 					if(print_type_write(type,
-							fd, 1, basename, field->name, "obj->")) return 1;
+							fd, 1, basename, field->name, "obj->", 1)) return 1;
 					fprintf(fd, "\n");
 				}
 				break;
@@ -1162,7 +1167,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					print_tabs(1, fd);
 					fprintf(fd, "for(unsigned int i=0; i<LTTNG_ARRAY_SIZE_%s; i++) {\n", basename);
 					if(print_type_write(((field_t*)td->fields.array[0])->type,
-							fd, 2, basename, "", "obj->array[i]")) return 1;
+							fd, 2, basename, "", "obj->array[i]", 1)) return 1;
 					print_tabs(1, fd);
 					fprintf(fd, "}\n");
 				}
@@ -1243,21 +1248,31 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "void *buffer = NULL;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "size_t to_base = 0; /* The buffer is allocated on arch_size alignment */\n");
+	fprintf(fd, "size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */\n");
 	print_tabs(1, fd);
-	fprintf(fd, "size_t to = 0;\n");
+	fprintf(fd, "size_t *to_base = &real_to_base;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "void *from;");
+	fprintf(fd, "size_t real_to = 0;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "size_t len = 0;\n");
+	fprintf(fd, "size_t *to = &real_to;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "const void *real_from;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "const void **from = &real_from;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t real_len = 0;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t *len = &real_len;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t reserve_size;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t slot_size;\n");
 	print_tabs(1, fd);
+	fprintf(fd, "size_t size;\n");
+	print_tabs(1, fd);
 	fprintf(fd, "cycles_t tsc;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "size_t before_hdr_pad, size_t after_hdr_pad;\n");
+	fprintf(fd, "size_t before_hdr_pad, after_hdr_pad, header_size;\n");
 	fprintf(fd, "\n");
 	
 	print_tabs(1, fd);
@@ -1272,7 +1287,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "/* For each field, calculate the field size. */\n");
 	print_tabs(1, fd);
-	fprintf(fd, "/* size = to_base + to + len */\n");
+	fprintf(fd, "/* size = *to_base + *to + *len */\n");
 	print_tabs(1, fd);
 	fprintf(fd, "/* Assume that the padding for alignment starts at a\n");
 	print_tabs(1, fd);
@@ -1282,14 +1297,29 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	for(unsigned int i=0;i<event->fields.position;i++){
 		field_t *field = (field_t*)(event->fields.array[i]);
 		type_descriptor_t *type = field->type;
+		/* Set from */
+		print_tabs(1, fd);
+		switch(type->type) {
+			case SEQUENCE:
+			case UNION:
+			case ARRAY:
+			case STRUCT:
+			case STRING:
+				fprintf(fd, "*from = %s;\n", field->name);
+				break;
+			default:
+				fprintf(fd, "*from = &%s;\n", field->name);
+				break;
+		}
+
 		if(print_type_write(type,
-				fd, 1, basename, field->name, "")) return 1;
+				fd, 1, basename, field->name, "", 0)) return 1;
 		fprintf(fd, "\n");
 	}
 	print_tabs(1, fd);
-	fprintf(fd, "reserve_size = to_base + to + len;\n");
+	fprintf(fd, "reserve_size = *to_base + *to + *len;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "to_base = to = len = 0;\n");
+	fprintf(fd, "*to_base = *to = *len = 0;\n");
 	fprintf(fd, "\n");
 
 	/* Take locks : make sure the trace does not vanish while we write on
@@ -1308,8 +1338,8 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		print_tabs(1, fd);
 		fprintf(fd, 
 			"index = ltt_get_index_from_facility(ltt_facility_%s_%X,\n"\
-					"\t\t\t\t\t\tevent_%s);\n",
-				fac->name, fac->checksum, event->name);
+					"\t\t\t\t\t\tevent_%s_%s);\n",
+				fac->name, fac->checksum, fac->name, event->name);
 	}
 	fprintf(fd,"\n");
 
@@ -1328,7 +1358,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(2, fd);
 	fprintf(fd, "channel = ltt_get_channel_from_index(trace, index);\n");
 	print_tabs(2, fd);
-	fprintf(fd, "relayfs_buf = channel->rchan->buf[channel->rchan->buf->cpu];\n");
+	fprintf(fd, "relayfs_buf = channel->rchan->buf[smp_processor_id()];\n");
 	fprintf(fd, "\n");
 
 	
@@ -1342,10 +1372,20 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(3, fd);
 	fprintf(fd, "reserve_size, &slot_size, &tsc,\n");
 	print_tabs(3, fd);
-	fprintf(fd, "&before_hdr_pad, &after_hdr_pad);\n");
+	fprintf(fd, "&before_hdr_pad, &after_hdr_pad, &header_size);\n");
 	/* If error, return */
 	print_tabs(2, fd);
 	fprintf(fd, "if(!buffer) return;\n\n");
+	/* Write event header */
+	print_tabs(2, fd);
+	fprintf(fd, "ltt_write_event_header(trace, channel, buffer,\n");
+	print_tabs(3, fd);
+	fprintf(fd, "ltt_facility_%s_%X, event_%s_%s,\n", fac->name, fac->checksum,
+									fac->name, event->name);
+	print_tabs(3, fd);
+	fprintf(fd, "reserve_size, before_hdr_pad, tsc);\n");
+	print_tabs(2, fd);
+	fprintf(fd, "*to_base += before_hdr_pad + after_hdr_pad + header_size;\n");
 	
 	/* write data : assume stack alignment is the same as struct alignment. */
 
@@ -1361,16 +1401,16 @@ int print_event_logging_function(char *basename, facility_t *fac,
 			case ARRAY:
 			case STRUCT:
 			case STRING:
-				fprintf(fd, "from = %s;\n", field->name);
+				fprintf(fd, "*from = %s;\n", field->name);
 				break;
 			default:
-				fprintf(fd, "from = &%s;\n", field->name);
+				fprintf(fd, "*from = &%s;\n", field->name);
 				break;
 		}
 
 
 		if(print_type_write(type,
-				fd, 2, basename, field->name, "")) return 1;
+				fd, 2, basename, field->name, "", 0)) return 1;
 		fprintf(fd, "\n");
 		
 		/* Don't forget to flush pending memcpy */
@@ -1379,13 +1419,13 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		print_tabs(2, fd);
 		fprintf(fd, "if(len != 0) {\n");
 		print_tabs(3, fd);
-		fprintf(fd, "memcpy(buffer+to_base+to, from, len);\n");
+		fprintf(fd, "memcpy(buffer+*to_base+*to, *from, *len);\n");
 		print_tabs(3, fd);
-		fprintf(fd, "to += len;\n");
+		fprintf(fd, "*to += *len;\n");
 		//print_tabs(3, fd);
 		//fprintf(fd, "from += len;\n");
 		print_tabs(3, fd);
-		fprintf(fd, "len = 0;\n");
+		fprintf(fd, "*len = 0;\n");
 		print_tabs(2, fd);
 		fprintf(fd, "}\n");
 		fprintf(fd, "\n");
@@ -1435,14 +1475,14 @@ int print_log_header_types(facility_t *fac, FILE *fd)
 	
 	for(unsigned int i = 0; i < types->position; i++) {
 		/* For each named type, print the definition */
-		if((print_type_declaration(types->array[i], fd,
-						0, "", ""))) return 1;
+		if(print_type_declaration(types->array[i], fd,
+						0, "", "")) return 1;
 		/* Print also the align function */
-		if((print_type_alignment_fct(types->array[i], fd,
-						0, "", ""))) return 1;
+		if(print_type_alignment_fct(types->array[i], fd,
+						0, "", "")) return 1;
 		/* Print also the write function */
-		if((print_type_write_fct(types->array[i], fd,
-						0, "", ""))) return 1;
+		if(print_type_write_fct(types->array[i], fd,
+						0, "", "")) return 1;
 	}
 	return 0;
 }
