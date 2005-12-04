@@ -224,87 +224,87 @@ int print_arg(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	switch(td->type) {
 		case INT_FIXED:
 			fprintf(fd, "%s", intOutputTypes[getSizeindex(td->size)]);
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, "lttng_param_%s", field_name);
 			break;
 		case UINT_FIXED:
 			fprintf(fd, "%s", uintOutputTypes[getSizeindex(td->size)]);
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, "lttng_param_%s", field_name);
 			break;
 		case CHAR:
 			fprintf(fd, "signed char");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case UCHAR:
 			fprintf(fd, "unsigned char");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case SHORT:
 			fprintf(fd, "short");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case USHORT:
 			fprintf(fd, "unsigned short");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case INT:
 			fprintf(fd, "int");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case UINT:
 			fprintf(fd, "unsigned int");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case FLOAT:
 			fprintf(fd, "%s", floatOutputTypes[getSizeindex(td->size)]);
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case POINTER:
 			fprintf(fd, "const void *");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case LONG:
 			fprintf(fd, "long");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case ULONG:
 			fprintf(fd, "unsigned long");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case SIZE_T:
 			fprintf(fd, "size_t");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case SSIZE_T:
 			fprintf(fd, "ssize_t");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case OFF_T:
 			fprintf(fd, "off_t");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case STRING:
 			fprintf(fd, "const char *");
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case ENUM:
 			fprintf(fd, "enum lttng_%s", basename);
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case ARRAY:
 			fprintf(fd, "lttng_array_%s", basename);
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case SEQUENCE:
 			fprintf(fd, "lttng_sequence_%s *", basename);
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 	case STRUCT:
 			fprintf(fd, "struct lttng_%s *", basename);
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 	case UNION:
 			fprintf(fd, "union lttng_%s *", basename);
-			fprintf(fd, " %s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 	default:
 	 	 	printf("print_type : unknown type\n");
@@ -1031,8 +1031,27 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	}
 
 	fprintf(fd, "{\n");
+
+
+	if(td->fields.position > 0) {
+		int has_type_fixed = 0;
+		for(unsigned int i=0;i<td->fields.position;i++){
+			/* Search for at least one child with fixed size. It means
+			 * we need local variables.*/
+			field_t *field = (field_t*)(td->fields.array[i]);
+			type_descriptor_t *type = field->type;
+			has_type_fixed = has_type_local(type);
+			if(has_type_fixed) break;
+		}
+		
+		if(has_type_fixed) {
+			print_tabs(1, fd);
+			fprintf(fd, "size_t size;\n");
+		}
+	}
+
 	print_tabs(1, fd);
-	fprintf(fd, "size_t align, size;\n");
+	fprintf(fd, "size_t align;\n");
 	fprintf(fd, "\n");
 
 	switch(td->type) {
@@ -1366,15 +1385,15 @@ int print_event_logging_function(char *basename, facility_t *fac,
 			case ARRAY:
 			case STRUCT:
 			case STRING:
-				fprintf(fd, "*from = %s;\n", field->name);
+				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
 				break;
 			default:
-				fprintf(fd, "*from = &%s;\n", field->name);
+				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
 				break;
 		}
 
 		if(print_type_write(type,
-				fd, 1, basename, field->name, "", 0)) return 1;
+				fd, 1, basename, field->name, "lttng_param_", 0)) return 1;
 		fprintf(fd, "\n");
 	}
 	print_tabs(1, fd);
@@ -1462,16 +1481,16 @@ int print_event_logging_function(char *basename, facility_t *fac,
 			case ARRAY:
 			case STRUCT:
 			case STRING:
-				fprintf(fd, "*from = %s;\n", field->name);
+				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
 				break;
 			default:
-				fprintf(fd, "*from = &%s;\n", field->name);
+				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
 				break;
 		}
 
 
 		if(print_type_write(type,
-				fd, 2, basename, field->name, "", 0)) return 1;
+				fd, 2, basename, field->name, "lttng_param_", 0)) return 1;
 		fprintf(fd, "\n");
 		
 		/* Don't forget to flush pending memcpy */
