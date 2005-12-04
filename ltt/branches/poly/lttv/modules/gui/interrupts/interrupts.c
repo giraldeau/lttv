@@ -68,43 +68,37 @@ static GSList *interrupt_data_list = NULL ;
 
 typedef struct _InterruptEventData {
 
-  Tab 	     * tab;
+  /*Graphical Widgets */ 
+  GtkWidget * ScrollWindow;
+  GtkListStore *ListStore;
+  GtkWidget *Hbox;
+  GtkWidget *TreeView;
+  GtkTreeSelection *SelectionTree;
+  
+  Tab 	     * tab; /* tab that contains this plug-in*/ 
   LttvHooks  * event_hooks;
   LttvHooks  * hooks_trace_after;
   LttvHooks  * hooks_trace_before;
-  TimeWindow   time_window; 		// time window
-  GtkWidget * scroll_win;
-  /* Model containing list data */
-  GtkListStore *store_m;
-  GtkWidget *hbox_v;
-  /* Widget to display the data in a columned list */
-  GtkWidget *tree_v;
-  /* Selection handler */
-  GtkTreeSelection *select_c;
-  GtkWidget *container;
+  TimeWindow   time_window;
+  
   GArray *interrupt_counters;
   GArray *active_irq_entry ;
 } InterruptEventData ;
 
-
+/* Function prototypes */
  
 static gboolean interrupt_update_time_window(void * hook_data, void * call_data);
-// Event Viewer's constructor hook
 GtkWidget *interrupts(Tab *tab);
-// Event Viewer's constructor
+// Plug-in's constructor
 InterruptEventData *system_info(Tab *tab);
-// Event Viewer's destructor
+// Plug-in's destructor
 void interrupt_destructor(InterruptEventData *event_viewer_data);
-void gui_events_free(InterruptEventData *event_viewer_data);
-static void request_event(  InterruptEventData *event_data);  
-  /* Prototype for selection handler callback */
- 
-static void v_scroll_cb (GtkAdjustment *adjustment, gpointer data);
 
+static void request_event(  InterruptEventData *event_data);  
+static guint64 get_event_detail(LttEvent *e, LttField *f);
 static gboolean trace_header(void *hook_data, void *call_data);
 static gboolean parse_event(void *hook_data, void *call_data);
 static gboolean interrupt_show(void *hook_data, void *call_data);
- 
 static void calcul_duration(LttTime time_exit,  guint cpu_id,  InterruptEventData *event_data);
 static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrupt_counters);
 /* Enumeration of the columns */
@@ -116,9 +110,8 @@ enum{
   N_COLUMNS
 };
 
-
 /**
- * Event Viewer's constructor hook
+ *  constructor hook
  *
  * This constructor is given as a parameter to the menuitem and toolbar button
  * registration. It creates the list.
@@ -126,19 +119,14 @@ enum{
  * @return The widget created.
  */
 GtkWidget *interrupts(Tab * tab){
+
   InterruptEventData* event_data = system_info(tab) ;
   if(event_data)
-    return event_data->hbox_v;
+    return event_data->Hbox;
   else 
     return NULL; 
 }
 
-/**
- * Event Viewer's constructor
- *
- * This constructor is used to create InterruptEventData data structure.
- * @return The Event viewer data created.
- */
 InterruptEventData *system_info(Tab *tab)
 {
   LttTime end;
@@ -146,24 +134,20 @@ InterruptEventData *system_info(Tab *tab)
   GtkCellRenderer *renderer;
   InterruptEventData* event_viewer_data = g_new(InterruptEventData,1) ;
   g_info("system_info \n");
-  
+   
   event_viewer_data->tab = tab;
   event_viewer_data->time_window  =  lttvwindow_get_time_window(tab);
   event_viewer_data->interrupt_counters = g_array_new(FALSE, FALSE, sizeof(Irq));
   event_viewer_data->active_irq_entry   =  g_array_new(FALSE, FALSE, sizeof(irq_entry));
-  
-  lttvwindow_register_time_window_notify(tab,
-                                         interrupt_update_time_window,
-                                         event_viewer_data);	
-					 	
-  event_viewer_data->scroll_win = gtk_scrolled_window_new (NULL, NULL);
-  gtk_widget_show (event_viewer_data->scroll_win);
+  					 	
+  event_viewer_data->ScrollWindow = gtk_scrolled_window_new (NULL, NULL);
+  gtk_widget_show (event_viewer_data->ScrollWindow);
   gtk_scrolled_window_set_policy(
-      GTK_SCROLLED_WINDOW(event_viewer_data->scroll_win), 
+      GTK_SCROLLED_WINDOW(event_viewer_data->ScrollWindow), 
       GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC/*GTK_POLICY_NEVER*/);
  
   /* Create a model for storing the data list */
-  event_viewer_data->store_m = gtk_list_store_new (
+  event_viewer_data->ListStore = gtk_list_store_new (
     N_COLUMNS,      /* Total number of columns     */
     G_TYPE_INT,     /* CPUID                       */
     G_TYPE_INT,     /* IRQ_ID                      */
@@ -171,9 +155,9 @@ InterruptEventData *system_info(Tab *tab)
     G_TYPE_UINT64   /* Duration                    */
     );  
  
-  event_viewer_data->tree_v = gtk_tree_view_new_with_model (GTK_TREE_MODEL (event_viewer_data->store_m)); 
+  event_viewer_data->TreeView = gtk_tree_view_new_with_model (GTK_TREE_MODEL (event_viewer_data->ListStore)); 
    
-  g_object_unref (G_OBJECT (event_viewer_data->store_m));
+  g_object_unref (G_OBJECT (event_viewer_data->ListStore));
     
   renderer = gtk_cell_renderer_text_new ();
   column = gtk_tree_view_column_new_with_attributes ("CPUID",
@@ -182,7 +166,7 @@ InterruptEventData *system_info(Tab *tab)
                  NULL);
   gtk_tree_view_column_set_alignment (column, 0.0);
   gtk_tree_view_column_set_fixed_width (column, 45);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->tree_v), column);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
 
    
   renderer = gtk_cell_renderer_text_new ();
@@ -192,7 +176,7 @@ InterruptEventData *system_info(Tab *tab)
                  NULL);
   gtk_tree_view_column_set_alignment (column, 0.0);
   gtk_tree_view_column_set_fixed_width (column,  220);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->tree_v), column);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
 
   renderer = gtk_cell_renderer_text_new ();
   column = gtk_tree_view_column_new_with_attributes ("Frequency",
@@ -201,7 +185,7 @@ InterruptEventData *system_info(Tab *tab)
                  NULL);
   gtk_tree_view_column_set_alignment (column, 1.0);
   gtk_tree_view_column_set_fixed_width (column, 220);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->tree_v), column);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
 
   renderer = gtk_cell_renderer_text_new ();
   column = gtk_tree_view_column_new_with_attributes ("Duration (nsec)",
@@ -210,50 +194,114 @@ InterruptEventData *system_info(Tab *tab)
                  NULL);
   gtk_tree_view_column_set_alignment (column, 0.0);
   gtk_tree_view_column_set_fixed_width (column, 145);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->tree_v), column);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
 
-  event_viewer_data->select_c = gtk_tree_view_get_selection (GTK_TREE_VIEW (event_viewer_data->tree_v));
-  gtk_tree_selection_set_mode (event_viewer_data->select_c, GTK_SELECTION_SINGLE);
+  event_viewer_data->SelectionTree = gtk_tree_view_get_selection (GTK_TREE_VIEW (event_viewer_data->TreeView));
+  gtk_tree_selection_set_mode (event_viewer_data->SelectionTree, GTK_SELECTION_SINGLE);
    
-  gtk_container_add (GTK_CONTAINER (event_viewer_data->scroll_win), event_viewer_data->tree_v);
+  gtk_container_add (GTK_CONTAINER (event_viewer_data->ScrollWindow), event_viewer_data->TreeView);
    
-  event_viewer_data->hbox_v = gtk_hbox_new(0, 0);
-  gtk_box_pack_start(GTK_BOX(event_viewer_data->hbox_v), event_viewer_data->scroll_win, TRUE, TRUE, 0);
+  event_viewer_data->Hbox = gtk_hbox_new(0, 0);
+  gtk_box_pack_start(GTK_BOX(event_viewer_data->Hbox), event_viewer_data->ScrollWindow, TRUE, TRUE, 0);
  
-  gtk_widget_show(event_viewer_data->hbox_v);
-  gtk_widget_show(event_viewer_data->tree_v);
+  gtk_widget_show(event_viewer_data->Hbox);
+  gtk_widget_show(event_viewer_data->TreeView);
 
-   interrupt_data_list = g_slist_append(interrupt_data_list, event_viewer_data);
+  interrupt_data_list = g_slist_append(interrupt_data_list, event_viewer_data);
   
+  lttvwindow_register_time_window_notify(tab,
+                                         interrupt_update_time_window,
+                                         event_viewer_data);	
   request_event(event_viewer_data);
   return event_viewer_data;
 }
+
+
+static void request_event(  InterruptEventData *event_data){
+
+  event_data->hooks_trace_before = lttv_hooks_new();
+  lttv_hooks_add(event_data->hooks_trace_before, trace_header, event_data, LTTV_PRIO_DEFAULT);
   
-void v_scroll_cb(GtkAdjustment *adjustment, gpointer data){
-  InterruptEventData *event_data = (InterruptEventData*)data;
-  GtkTreePath *tree_path;
-  g_info("enter v_scroll_cb\n");
-}
+  event_data->event_hooks = lttv_hooks_new();
+  lttv_hooks_add(event_data->event_hooks, parse_event, event_data, LTTV_PRIO_DEFAULT);
  
-void gui_events_free(InterruptEventData *event_viewer_data)
-{
-  Tab *tab = event_viewer_data->tab;
-
-  if(event_viewer_data){
-    lttv_hooks_remove(event_viewer_data->event_hooks,parse_event);
-    lttv_hooks_destroy(event_viewer_data->event_hooks);
-   
-    interrupt_data_list = g_slist_remove(interrupt_data_list, event_viewer_data);
-    g_free(event_viewer_data);
-  }
+  event_data->hooks_trace_after = lttv_hooks_new();
+  lttv_hooks_add(event_data->hooks_trace_after, interrupt_show, event_data, LTTV_PRIO_DEFAULT);
+    
+  EventsRequest *events_request = g_new(EventsRequest, 1); 
+  events_request->owner       = event_data; 
+  events_request->viewer_data = event_data; 
+  events_request->servicing   = FALSE;     
+  events_request->start_time  = event_data->time_window.start_time; 
+  events_request->start_position  = NULL;
+  events_request->stop_flag	   = FALSE;
+  events_request->end_time 	   = event_data->time_window.end_time;
+  events_request->num_events  	   = G_MAXUINT;      
+  events_request->end_position     = NULL; 
+  events_request->trace 	   = 0;    
+  events_request->hooks 	   = NULL; 
+  events_request->before_chunk_traceset = NULL; 
+  events_request->before_chunk_trace    = event_data->hooks_trace_before; 
+  events_request->before_chunk_tracefile= NULL; 
+  events_request->event		        = event_data->event_hooks; 
+  events_request->event_by_id		= NULL; 
+  events_request->after_chunk_tracefile = NULL; 
+  events_request->after_chunk_trace     = NULL;   
+  events_request->after_chunk_traceset	= NULL; 
+  events_request->before_request	= NULL; 
+  events_request->after_request		= event_data->hooks_trace_after; 
+  
+  lttvwindow_events_request(event_data->tab, events_request);   
 }
 
+gboolean parse_event(void *hook_data, void *call_data){
+
+  LttTime  event_time; 
+  LttEvent *e;
+  LttField *field;
+  LttEventType *event_type;
+  unsigned cpu_id;
+  irq_entry entry;
+  irq_entry *element; 
+  guint i;
+ // g_info("interrupts: parse_event() \n");
+  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  GArray* active_irq_entry  = event_data->active_irq_entry; 
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  //e = tfc->e; 
+  e = ltt_tracefile_get_event(tfc->tf);
+  
+  field = ltt_event_field(e);
+  event_time = ltt_event_time(e);
+  event_type = ltt_event_eventtype(e);
+  cpu_id = ltt_event_cpu_id(e);
+  GString * detail_event = g_string_new("");
+  if ((ltt_time_compare(event_time,event_data->time_window.start_time) == TRUE) &&    
+     (ltt_time_compare(event_data->time_window.end_time,event_time) == TRUE)){
+	if (strcmp( g_quark_to_string(ltt_eventtype_name(event_type)),"irq_entry") == 0) {  
+	    entry.id = get_event_detail(e, field);
+	    entry.cpu_id = cpu_id;
+	    entry.event_time =  event_time;
+	    g_array_append_val (active_irq_entry, entry);
+	    
+	}
+	if(strcmp( g_quark_to_string(ltt_eventtype_name(event_type)),"irq_exit") == 0) {
+	  //printf("event_time: %ld.%ld\n",event_time.tv_sec,event_time.tv_nsec);	
+	  calcul_duration( event_time,  cpu_id, event_data);
+        }
+   } 
+   g_string_free(detail_event, TRUE);
+   return FALSE;
+}
+
+ 
 void interrupt_destructor(InterruptEventData *event_viewer_data)
 {
   /* May already been done by GTK window closing */
   g_info("enter interrupt_destructor \n");
-  if(GTK_IS_WIDGET(event_viewer_data->hbox_v)){
-    gtk_widget_destroy(event_viewer_data->hbox_v);
+  if(GTK_IS_WIDGET(event_viewer_data->Hbox)){
+    gtk_widget_destroy(event_viewer_data->Hbox);
   }
 }
    
@@ -296,15 +344,15 @@ static gboolean interrupt_show(void *hook_data, void *call_data){
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
   GArray *interrupt_counters = event_data->interrupt_counters;  
   g_info("interrupts: interrupt_show() \n");
-  gtk_list_store_clear(event_data->store_m);
+  gtk_list_store_clear(event_data->ListStore);
   for(i = 0; i < interrupt_counters->len; i++){  
     element = g_array_index(interrupt_counters,Irq,i);  
     real_data = element.total_duration.tv_sec;
     real_data *= NANOSECONDS_PER_SECOND;
     real_data += element.total_duration.tv_nsec;
     //printf("total_duration:%ld\n",  element.total_duration.tv_nsec);
-    gtk_list_store_append (event_data->store_m, &iter);
-    gtk_list_store_set (event_data->store_m, &iter,
+    gtk_list_store_append (event_data->ListStore, &iter);
+    gtk_list_store_set (event_data->ListStore, &iter,
       CPUID_COLUMN, element.cpu_id,
       IRQ_ID_COLUMN,  element.id,
       FREQUENCY_COLUMN, element.frequency,
@@ -374,83 +422,6 @@ static void calcul_duration(LttTime time_exit,  guint cpu_id,InterruptEventData 
   }
 }
 
-gboolean parse_event(void *hook_data, void *call_data){
-
-  LttTime  event_time; 
-  LttEvent *e;
-  LttField *field;
-  LttEventType *event_type;
-  unsigned cpu_id;
-  irq_entry entry;
-  irq_entry *element; 
-  guint i;
- // g_info("interrupts: parse_event() \n");
-  InterruptEventData *event_data = (InterruptEventData *)hook_data;
-  GArray* active_irq_entry  = event_data->active_irq_entry; 
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  //e = tfc->e; 
-  e = ltt_tracefile_get_event(tfc->tf);
-  
-  field = ltt_event_field(e);
-  event_time = ltt_event_time(e);
-  event_type = ltt_event_eventtype(e);
-  cpu_id = ltt_event_cpu_id(e);
-  GString * detail_event = g_string_new("");
-  if ((ltt_time_compare(event_time,event_data->time_window.start_time) == TRUE) &&    
-     (ltt_time_compare(event_data->time_window.end_time,event_time) == TRUE)){
-	if (strcmp( g_quark_to_string(ltt_eventtype_name(event_type)),"irq_entry") == 0) {  
-	    entry.id = get_event_detail(e, field);
-	    entry.cpu_id = cpu_id;
-	    entry.event_time =  event_time;
-	    g_array_append_val (active_irq_entry, entry);
-	    
-	}
-	if(strcmp( g_quark_to_string(ltt_eventtype_name(event_type)),"irq_exit") == 0) {
-	  //printf("event_time: %ld.%ld\n",event_time.tv_sec,event_time.tv_nsec);	
-	  calcul_duration( event_time,  cpu_id, event_data);
-        }
-   } 
-   g_string_free(detail_event, TRUE);
-   return FALSE;
-}
-
-static void request_event(  InterruptEventData *event_data){
-
-  event_data->event_hooks = lttv_hooks_new();
-  lttv_hooks_add(event_data->event_hooks, parse_event, event_data, LTTV_PRIO_DEFAULT);
- 
-  event_data->hooks_trace_after = lttv_hooks_new();
-  lttv_hooks_add(event_data->hooks_trace_after, interrupt_show, event_data, LTTV_PRIO_DEFAULT);
-    
-  event_data->hooks_trace_before = lttv_hooks_new();
-  lttv_hooks_add(event_data->hooks_trace_before, trace_header, event_data, LTTV_PRIO_DEFAULT);
-
-  EventsRequest *events_request = g_new(EventsRequest, 1); 
-  events_request->owner       = event_data; 
-  events_request->viewer_data = event_data; 
-  events_request->servicing   = FALSE;     
-  events_request->start_time  = event_data->time_window.start_time; 
-  events_request->start_position  = NULL;
-  events_request->stop_flag	   = FALSE;
-  events_request->end_time 	   = event_data->time_window.end_time;
-  events_request->num_events  	   = G_MAXUINT;      
-  events_request->end_position     = NULL; 
-  events_request->trace 	   = 0;    
-  events_request->hooks 	   = NULL; 
-  events_request->before_chunk_traceset = NULL; 
-  events_request->before_chunk_trace    = event_data->hooks_trace_before; 
-  events_request->before_chunk_tracefile= NULL; 
-  events_request->event		        = event_data->event_hooks; 
-  events_request->event_by_id		= NULL; 
-  events_request->after_chunk_tracefile = NULL; 
-  events_request->after_chunk_trace     = NULL;   
-  events_request->after_chunk_traceset	= NULL; 
-  events_request->before_request	= NULL; 
-  events_request->after_request		= event_data->hooks_trace_after; 
-  
-  lttvwindow_events_request(event_data->tab, events_request);   
-}
 
 gboolean interrupt_update_time_window(void * hook_data, void * call_data){
  
@@ -474,7 +445,6 @@ gboolean interrupt_update_time_window(void * hook_data, void * call_data){
  */
 static void init() {
   g_info("interrupts: init()");
-  
   lttvwindow_register_constructor("interrupts",
                                   "/",
                                   "Insert  Interrupts View",
