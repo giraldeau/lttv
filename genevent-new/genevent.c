@@ -1032,24 +1032,8 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 
 	fprintf(fd, "{\n");
 
-
-	if(td->fields.position > 0) {
-		int has_type_fixed = 0;
-		for(unsigned int i=0;i<td->fields.position;i++){
-			/* Search for at least one child with fixed size. It means
-			 * we need local variables.*/
-			field_t *field = (field_t*)(td->fields.array[i]);
-			type_descriptor_t *type = field->type;
-			has_type_fixed = has_type_local(type);
-			if(has_type_fixed) break;
-		}
-		
-		if(has_type_fixed) {
-			print_tabs(1, fd);
-			fprintf(fd, "size_t size;\n");
-		}
-	}
-
+	print_tabs(1, fd);
+	fprintf(fd, "size_t size;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t align;\n");
 	fprintf(fd, "\n");
