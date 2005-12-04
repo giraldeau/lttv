@@ -27,7 +27,7 @@
 	
   <event name=trap_entry>
     <description>Entry in a trap</description>
-    <field name="trap_id"> <description>Trap number</description> <uint size=2/> </field>
+    <field name="trap_id"> <description>Trap number</description> <long/> </field>
     <field name="address"> <description>Address where trap occured</description> <pointer/> </field>
   </event>
 
