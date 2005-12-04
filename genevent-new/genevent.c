@@ -1256,10 +1256,6 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "size_t *to = &real_to;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "const void *real_from;\n");
-	print_tabs(1, fd);
-	fprintf(fd, "const void **from = &real_from;\n");
-	print_tabs(1, fd);
 	fprintf(fd, "size_t real_len = 0;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t *len = &real_len;\n");
@@ -1268,8 +1264,14 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "size_t slot_size;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "size_t size;\n");
-	print_tabs(1, fd);
+	if(event->fields.position > 0) {
+		fprintf(fd, "size_t size;\n");
+		print_tabs(1, fd);
+		fprintf(fd, "const void *real_from;\n");
+		print_tabs(1, fd);
+		fprintf(fd, "const void **from = &real_from;\n");
+		print_tabs(1, fd);
+	}
 	fprintf(fd, "cycles_t tsc;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t before_hdr_pad, after_hdr_pad, header_size;\n");
