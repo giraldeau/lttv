@@ -734,6 +734,51 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	return 0;
 }
 
+/* print need local vars ?.
+ *
+ * Copied from print_type_write
+ *
+ * Does the type_write call needs local size and from variables ?
+ * return value : 1 yes, 0 no.
+ */
+
+int has_type_local(type_descriptor_t * td)
+{
+	switch(td->type) {
+		case INT_FIXED:
+		case UINT_FIXED:
+		case CHAR:
+		case UCHAR:
+		case SHORT:
+		case USHORT:
+		case INT:
+		case UINT:
+		case FLOAT:
+		case POINTER:
+		case LONG:
+		case ULONG:
+		case SIZE_T:
+		case SSIZE_T:
+		case OFF_T:
+		case ENUM:
+			return 1;
+			break;
+		case STRING:
+		case SEQUENCE:
+		case STRUCT:
+		case UNION:
+		case ARRAY:
+			return 0;
+			break;
+		case NONE:
+			printf("Error : type NONE unexpected\n");
+			return 1;
+			break;
+	}
+
+	return 0;
+}
+
 
 
 /* print type alignment function.
@@ -1195,6 +1240,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 {
 	fprintf(fd, "static inline void trace_%s(\n", basename);
 	int	has_argument = 0;
+	int has_type_fixed = 0;
 
   /* Does it support per trace tracing ? */
   if(event->per_trace) {
@@ -1264,9 +1310,22 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "size_t slot_size;\n");
 	print_tabs(1, fd);
+
 	if(event->fields.position > 0) {
-		fprintf(fd, "size_t size;\n");
-		print_tabs(1, fd);
+		for(unsigned int i=0;i<event->fields.position;i++){
+			/* Search for at least one child with fixed size. It means
+			 * we need local variables.*/
+			field_t *field = (field_t*)(event->fields.array[i]);
+			type_descriptor_t *type = field->type;
+			has_type_fixed = has_type_local(type);
+			if(has_type_fixed) break;
+		}
+		
+		if(has_type_fixed) {
+			fprintf(fd, "size_t size;\n");
+			print_tabs(1, fd);
+		}
+
 		fprintf(fd, "const void *real_from;\n");
 		print_tabs(1, fd);
 		fprintf(fd, "const void **from = &real_from;\n");
