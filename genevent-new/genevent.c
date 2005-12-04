@@ -1439,7 +1439,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "&before_hdr_pad, &after_hdr_pad, &header_size);\n");
 	/* If error, return */
 	print_tabs(2, fd);
-	fprintf(fd, "if(!buffer) return;\n\n");
+	fprintf(fd, "if(!buffer) continue; /* buffer full */\n\n");
 	/* Write event header */
 	print_tabs(2, fd);
 	fprintf(fd, "ltt_write_event_header(trace, channel, buffer,\n");
