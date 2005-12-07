@@ -574,6 +574,27 @@ int print_type_alignment(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			case STRING:
 				fprintf(fd, "sizeof(char)");
 				break;
+			case INT_FIXED:
+			case UINT_FIXED:
+			case CHAR:
+			case UCHAR:
+			case SHORT:
+			case USHORT:
+			case INT:
+			case UINT:
+			case FLOAT:
+			case POINTER:
+			case LONG:
+			case ULONG:
+			case SIZE_T:
+			case SSIZE_T:
+			case OFF_T:
+			case ENUM:
+				fprintf(fd, "sizeof(");
+				if(print_type(td, fd, 0, basename, "")) return 1;
+				fprintf(fd, ")");
+				break;
+
 			default:
 				printf("error : type unexpected\n");
 				return 1;
@@ -686,14 +707,28 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		case OFF_T:
 		case ENUM:
 			print_tabs(tabs, fd);
-			fprintf(fd, "size = ");
+			fprintf(fd, "align = ");
+			if(print_type_alignment(td, fd, 0, basename, "", "obj")) return 1;
+			fprintf(fd, ";\n");
+			fprintf(fd, "\n");
+			print_tabs(tabs, fd);
+			fprintf(fd, "if(*len == 0) {\n");
+			print_tabs(tabs+1, fd);
+			fprintf(fd, "*to += ltt_align(*to, align); /* align output */\n");
+			print_tabs(tabs, fd);
+			fprintf(fd, "} else {\n");
+			print_tabs(tabs+1, fd);
+			fprintf(fd, "*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */\n");
+			print_tabs(tabs, fd);
+			fprintf(fd, "}\n");
+			fprintf(fd, "\n");
+
+			print_tabs(tabs, fd);
+			fprintf(fd, "*len += ");
 			fprintf(fd, "sizeof(");
 			if(print_type(td, fd, 0, basename, "")) return 1;
 			fprintf(fd, ");\n");
-			print_tabs(tabs, fd);
-			fprintf(fd, "size += ltt_align(*to+*len, size) + size;\n");
-			print_tabs(tabs, fd);
-			fprintf(fd, "*len += size;");
+
 			break;
 		case STRING:
 			print_tabs(tabs, fd);
@@ -1117,29 +1152,37 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				print_tabs(1, fd);
 				fprintf(fd, "if(buffer != NULL)\n");
 				print_tabs(2, fd);
-				fprintf(fd, "memcpy(buffer+*to_base+*to, &obj->len, size);\n");
+				fprintf(fd, "memcpy(buffer+*to_base+*to, &obj->len, *len);\n");
 				print_tabs(1, fd);
-				fprintf(fd, "*to += size;\n");
+				fprintf(fd, "*to += *len;\n");
+				print_tabs(1, fd);
+				fprintf(fd, "*len = 0;\n");
 				fprintf(fd, "\n");
-				
+
 				/* Write the child : varlen child or not ? */
 				if(has_type_fixed_size(((field_t*)td->fields.array[1])->type)) {
 					/* Fixed size len child : use a multiplication of its size */
 //					print_tabs(1, fd);
 //					fprintf(fd, "size = sizeof(\n");
+
+					//print_tabs(1, fd);
+					/* We know that *len does not contain alignment because of the
+					 * previous align output. len is always 0 here. */
 					if(print_type_write(((field_t*)td->fields.array[1])->type,
-							fd, 1, basename, "array[0]", "obj->", 1)) return 1;
+							fd, 1, basename, "array[0]", "obj->", 1))
+						return 1;
 //					fprintf(fd, ");\n");
-//					print_tabs(1, fd);
-					fprintf(fd, "*to += ltt_align(*to, size);\n");
+					fprintf(fd, "\n");
 					print_tabs(1, fd);
-					fprintf(fd, "size = obj->len * size;\n");
+					fprintf(fd, "*len = obj->len * (*len);\n");
 					print_tabs(1, fd);
 					fprintf(fd, "if(buffer != NULL)\n");
 					print_tabs(2, fd);
-					fprintf(fd, "memcpy(buffer+*to_base+*to, obj->array, size);\n");
+					fprintf(fd, "memcpy(buffer+*to_base+*to, obj->array, *len);\n");
 					print_tabs(1, fd);
-					fprintf(fd, "*to += size;\n");
+					fprintf(fd, "*to += *len;\n");
+					print_tabs(1, fd);
+					fprintf(fd, "*len = 0;\n");
 					fprintf(fd, "\n");
 				} else {
 					print_tabs(1, fd);
@@ -1325,7 +1368,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		}
 		
 		if(has_type_fixed) {
-			fprintf(fd, "size_t size;\n");
+			fprintf(fd, "size_t align;\n");
 			print_tabs(1, fd);
 		}
 
@@ -1382,9 +1425,6 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	}
 	print_tabs(1, fd);
 	fprintf(fd, "reserve_size = *to_base + *to + *len;\n");
-	print_tabs(1, fd);
-	fprintf(fd, "*to_base = *to = *len = 0;\n");
-	fprintf(fd, "\n");
 
 	/* Take locks : make sure the trace does not vanish while we write on
 	 * it. A simple preemption disabling is enough (using rcu traces). */
@@ -1440,6 +1480,13 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	/* If error, return */
 	print_tabs(2, fd);
 	fprintf(fd, "if(!buffer) continue; /* buffer full */\n\n");
+	//print_tabs(2, fd);
+	// for DEBUG only 
+	// fprintf(fd, "goto commit; /* DEBUG : never actually write. */\n\n");
+	print_tabs(2, fd);
+	fprintf(fd, "*to_base = *to = *len = 0;\n");
+	fprintf(fd, "\n");
+
 	/* Write event header */
 	print_tabs(2, fd);
 	fprintf(fd, "ltt_write_event_header(trace, channel, buffer,\n");
@@ -1451,12 +1498,12 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(2, fd);
 	fprintf(fd, "*to_base += before_hdr_pad + after_hdr_pad + header_size;\n");
 	
-	/* write data : assume stack alignment is the same as struct alignment. */
+	/* write data. */
 
 	for(unsigned int i=0;i<event->fields.position;i++){
 		field_t *field = (field_t*)(event->fields.array[i]);
 		type_descriptor_t *type = field->type;
-
+	
 		/* Set from */
 		print_tabs(2, fd);
 		switch(type->type) {
@@ -1481,7 +1528,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		print_tabs(2, fd);
 		fprintf(fd, "/* Flush pending memcpy */\n");
 		print_tabs(2, fd);
-		fprintf(fd, "if(len != 0) {\n");
+		fprintf(fd, "if(*len != 0) {\n");
 		print_tabs(3, fd);
 		fprintf(fd, "memcpy(buffer+*to_base+*to, *from, *len);\n");
 		print_tabs(3, fd);
@@ -1497,6 +1544,8 @@ int print_event_logging_function(char *basename, facility_t *fac,
 
 	
 	/* commit */
+	// for DEBUG only.
+	//fprintf(fd, "commit:\n"); /* DEBUG! */
 	print_tabs(2, fd);
 	fprintf(fd, "ltt_commit_slot(relayfs_buf, buffer, slot_size);\n\n");
 	
