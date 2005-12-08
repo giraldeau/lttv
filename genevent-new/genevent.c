@@ -1198,7 +1198,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				print_tabs(1, fd);
 				fprintf(fd, "/* Realign the *to_base on arch size, set *to to 0 */\n");
 				print_tabs(1, fd);
-				fprintf(fd, "*to = ltt_align(*to, sizeof(void *));\n");
+				fprintf(fd, "*to += ltt_align(*to, sizeof(void *));\n");
 				print_tabs(1, fd);
 				fprintf(fd, "*to_base = *to_base+*to;\n");
 				print_tabs(1, fd);
@@ -1222,7 +1222,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				print_tabs(1, fd);
 				fprintf(fd, "/* Realign the *to_base on arch size, set *to to 0 */\n");
 				print_tabs(1, fd);
-				fprintf(fd, "*to = ltt_align(*to, sizeof(void *));\n");
+				fprintf(fd, "*to += ltt_align(*to, sizeof(void *));\n");
 				print_tabs(1, fd);
 				fprintf(fd, "*to_base = *to_base+*to;\n");
 				print_tabs(1, fd);
@@ -1497,6 +1497,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "reserve_size, before_hdr_pad, tsc);\n");
 	print_tabs(2, fd);
 	fprintf(fd, "*to_base += before_hdr_pad + after_hdr_pad + header_size;\n");
+	fprintf(fd, "\n");
 	
 	/* write data. */
 
