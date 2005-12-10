@@ -17,6 +17,7 @@ The % symbol marks who is interested in the realisation of the item.<br>
 <br>
 * TODO<br>
 (1) Port LTTV to genevent-new parser.<br>
+	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>>">Mathieu Desnoyers</A><br>
 (2) Fix bug with enums in lttv : make them use the value associated.<br>
 (4) create a event rate graphical view : Will be useful in conjonction with the
   filter.<br>
@@ -30,9 +31,6 @@ The % symbol marks who is interested in the realisation of the item.<br>
 <big>LTT Next Generation Roadmap<small><br>
 <br>
 * TODO<br>
-(1) add genevent full functionnality : alignment, array, sequences, nested
-structures.<br>
-	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>>">Mathieu Desnoyers</A><br>
 (1) Use 2.6.14 RelayFS control files.<br>
 (1) port LTTng to 2.6.14 kernel. (depends on genevent rewrite)<br>
 (2) add efficient and secure user space tracing. (1 month)<br>
@@ -44,7 +42,8 @@ structures.<br>
 (3) port LTTng to : (depends on 2.6.14 port)<br>
 x86_64<BR>
 #Autodesk <A HREF="mailto:Francois L'Archeveque <fla@discreet.com>">Francois
-L'Archeveque</A> for 2.6.9 RedHat Enterprise<BR>
+L'Archeveque</A> for 2.6.9 RedHat Enterprise (patch available in contrib, still
+has to be ported to 2.6.14, thanks!)<BR>
 %Wind River for 2.6.10<BR>
 PPC<BR>
 PPC64<BR>
@@ -65,7 +64,11 @@ enhance RPM packages for lttng kernel<br>
 Integrate header generation (genevent) in kernel build system.<br>
 Multithreaded lttd.<br>
 Find a different way to printk from instrumentation : forbidden from schedule
-and wakeup (causes a deadlock).<br>
+and wakeup (causes a deadlock). -> Modify printk so it uses LTTng tracer!<br>
+Export channels via network sockets instead of writing them to disk.<br>
+Export buffers with time constraint for "live" visualisation. Use
+ltt_force_switch periodically from a timer to insure slow channels does not
+interfere with viewing.<br>
 <br>
 * Need to be discussed<br>
 Drop ltt-module-register and ltt-module-unregister, use exported variables.<br>
