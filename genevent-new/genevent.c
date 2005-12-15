@@ -411,7 +411,8 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, " {\n");
 			for(unsigned int i=0;i<td->labels.position;i++){
 				print_tabs(1, fd);
-				fprintf(fd, "LTTNG_%s", ((char*)(td->labels.array[i])));
+				fprintf(fd, "LTTNG_%s = %d", ((char*)td->labels.array[i]),
+            (*(int*)td->labels_values.array[i]));
 				fprintf(fd, ",\n");
 			}
 			fprintf(fd, "};\n");

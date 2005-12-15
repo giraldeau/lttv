@@ -107,6 +107,7 @@ typedef struct _type_descriptor {
   char *fmt;
   size_t size;
   sequence_t labels; // for enumeration
+  sequence_t labels_values; // for enumeration
 	sequence_t labels_description;
 	int	already_printed;
   sequence_t fields; // for structure, array and sequence
@@ -139,7 +140,7 @@ typedef struct _facility {
 	char * capname;
   char * description;
   sequence_t events;
-  sequence_t unnamed_types;
+  sequence_t unnamed_types; //FIXME : remove
   table_t named_types;
 	unsigned int checksum;
 } facility_t;

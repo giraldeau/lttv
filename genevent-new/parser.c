@@ -723,9 +723,12 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     getRAnglebracket(in); //</sequence>
   }
   else if(strcmp(token,"enum") == 0) {
-    char * str, *str1;
+    char * str;
+    int value = -1;
+
     t->type = ENUM;
     sequence_init(&(t->labels));
+    sequence_init(&(t->labels_values));
     sequence_init(&(t->labels_description));
 		t->already_printed = 0;
     getTypeAttributes(in, t, unnamed_types, named_types);
@@ -740,17 +743,18 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     getLAnglebracket(in);
     token = getToken(in); //"label" or "/"
     while(strcmp("label",token) == 0){
+      int *label_value = malloc(sizeof(int));
+      
       str   = allocAndCopy(getNameAttribute(in));      
       token = getValueStrAttribute(in);
-      if(token){
-      	str1 = appendString(str,"=");
-      	free(str);
-      	str = appendString(str1,token);
-      	free(str1);
-      	sequence_push(&(t->labels),str);
-      }
-      else
-      	sequence_push(&(t->labels),str);
+      
+     	sequence_push(&(t->labels),str);
+
+      if(token) value = strtol(token, NULL, 0);
+      else value++;
+
+      *label_value = value;
+      sequence_push(&(t->labels_values), label_value);
 
       getForwardslash(in);
       getRAnglebracket(in);
@@ -1397,6 +1401,10 @@ void freeType(type_descriptor_t * tp)
       free(tp->labels.array[pos2]);
     }
     sequence_dispose(&(tp->labels));
+    for(pos2 = 0; pos2 < tp->labels_values.position; pos2++) {
+      free(tp->labels_values.array[pos2]);
+    }
+    sequence_dispose(&(tp->labels_values));
   }
   if(tp->type == STRUCT) {
     for(pos2 = 0; pos2 < tp->fields.position; pos2++) {
