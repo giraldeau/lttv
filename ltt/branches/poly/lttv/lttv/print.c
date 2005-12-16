@@ -185,10 +185,11 @@ void lttv_event_to_string(LttEvent *e, GString *s,
 		    process->ppid,
 		    g_quark_to_string(process->state->t));
   }
+  event_type = ltt_event_eventtype(e);
   
-  num_fields = ltt_event_num_fields(e);
+  num_fields = ltt_eventtype_num_fields(event_type);
   for(i=0; i<num_fields; i++) {
-    field = ltt_event_field(e, i);
+    field = ltt_event_field(event_type, i);
     lttv_print_field(e, field, s, field_names);
   }
 } 
