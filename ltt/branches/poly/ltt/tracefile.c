@@ -273,6 +273,31 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
         }
       }
       break;
+    case 5:
+      {
+        struct ltt_trace_header_0_5 *vheader =
+          (struct ltt_trace_header_0_5 *)header;
+        tf->buffer_header_size =
+         sizeof(struct ltt_block_start_header) 
+            + sizeof(struct ltt_trace_header_0_5);
+        if(t) {
+          t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
+                                         &vheader->start_freq);
+          t->start_tsc = ltt_get_uint64(LTT_GET_BO(tf),
+                                        &vheader->start_tsc);
+          t->start_monotonic = ltt_get_uint64(LTT_GET_BO(tf),
+                                              &vheader->start_monotonic);
+          t->start_time.tv_sec = ltt_get_uint64(LTT_GET_BO(tf),
+                                       &vheader->start_time_sec);
+          t->start_time.tv_nsec = ltt_get_uint64(LTT_GET_BO(tf),
+                                       &vheader->start_time_usec);
+          t->start_time.tv_nsec *= 1000; /* microsec to nanosec */
+
+          t->start_time_from_tsc = ltt_time_from_uint64(
+              (double)t->start_tsc * 1000000.0 / (double)t->start_freq);
+        }
+      }
+      break;
     default:
       g_warning("Unsupported trace version : %hhu.%hhu",
             any->major_version, any->minor_version);

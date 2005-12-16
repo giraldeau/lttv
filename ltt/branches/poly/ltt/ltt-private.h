@@ -200,14 +200,41 @@ struct ltt_trace_header_0_4 {
 } LTT_PACKED_STRUCT;
 
 
+/* For version 0.5 */
+
+struct ltt_trace_header_0_5 {
+  uint32_t        magic_number;
+  uint32_t        arch_type;
+  uint32_t        arch_variant;
+  uint32_t        float_word_order;
+  uint8_t         arch_size;
+  uint8_t         major_version;
+  uint8_t         minor_version;
+  uint8_t         flight_recorder;
+  uint8_t         has_heartbeat;
+  uint8_t         has_alignment;  /* Event header alignment */
+  uint8_t         has_tsc;
+  uint64_t        start_freq;
+  uint64_t        start_tsc;
+  uint64_t        start_monotonic;
+  //struct timespec start_time; // not portable
+  uint64_t        start_time_sec;
+  uint64_t        start_time_usec;
+} LTT_PACKED_STRUCT;
+
+
 struct ltt_block_start_header {
   struct { 
-    struct timeval          timestamp;
+    //struct timeval          timestamp;
+    uint64_t                timestamp_sec;
+    uint64_t                timestamp_usec;
     uint64_t                cycle_count;
     uint64_t                freq;
   } begin;
   struct {
-    struct timeval          timestamp;
+    //struct timeval          timestamp;
+    uint64_t                timestamp_sec;
+    uint64_t                timestamp_usec;
     uint64_t                cycle_count;
     uint64_t                freq;
   } end;
