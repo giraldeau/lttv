@@ -165,11 +165,12 @@ void lttv_event_to_string(LttEvent *e, GString *s,
   LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
 
+  guint i, num_fields;
+
   g_string_set_size(s,0);
 
   facility = ltt_event_facility(e);
   event_type = ltt_event_eventtype(e);
-  field = ltt_event_field(e);
 
   if(mandatory_fields) {
     time = ltt_event_time(e);
@@ -184,9 +185,12 @@ void lttv_event_to_string(LttEvent *e, GString *s,
 		    process->ppid,
 		    g_quark_to_string(process->state->t));
   }
-
-  if(field)
+  
+  num_fields = ltt_event_num_fields(e);
+  for(i=0; i<num_fields; i++) {
+    field = ltt_event_field(e, i);
     lttv_print_field(e, field, s, field_names);
+  }
 } 
 
 static void init()
