@@ -1395,8 +1395,7 @@ int event_hook(void *hook_data, void *call_data)
 
   lttv_traceset_context_position_save(tfc->t_context->ts_context, pos);
 
-  if(field)
-    lttv_print_field(e, field, desc, TRUE);
+  lttv_event_to_string(e, desc, TRUE, TRUE, (LttvTracefileState*)tfc);
 
   g_info("field : %s", desc->str);
   
