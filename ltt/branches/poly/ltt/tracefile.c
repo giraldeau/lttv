@@ -250,30 +250,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
         return 1;
       }
       break;
-    case 4:
-      {
-        struct ltt_trace_header_0_4 *vheader =
-          (struct ltt_trace_header_0_4 *)header;
-        tf->buffer_header_size =
-         sizeof(struct ltt_block_start_header) 
-            + sizeof(struct ltt_trace_header_0_4);
-        if(t) {
-          t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
-                                         &vheader->start_freq);
-          t->start_tsc = ltt_get_uint64(LTT_GET_BO(tf),
-                                        &vheader->start_tsc);
-          t->start_monotonic = ltt_get_uint64(LTT_GET_BO(tf),
-                                              &vheader->start_monotonic);
-          t->start_time = ltt_get_time(LTT_GET_BO(tf),
-                                       &vheader->start_time);
-          t->start_time.tv_nsec *= 1000; /* microsec to nanosec */
-
-          t->start_time_from_tsc = ltt_time_from_uint64(
-              (double)t->start_tsc * 1000000.0 / (double)t->start_freq);
-        }
-      }
-      break;
-    case 5:
+    case 6:
       {
         struct ltt_trace_header_0_5 *vheader =
           (struct ltt_trace_header_0_5 *)header;
