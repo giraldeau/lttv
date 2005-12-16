@@ -252,11 +252,11 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
       break;
     case 6:
       {
-        struct ltt_trace_header_0_5 *vheader =
-          (struct ltt_trace_header_0_5 *)header;
+        struct ltt_trace_header_0_6 *vheader =
+          (struct ltt_trace_header_0_6 *)header;
         tf->buffer_header_size =
          sizeof(struct ltt_block_start_header) 
-            + sizeof(struct ltt_trace_header_0_5);
+            + sizeof(struct ltt_trace_header_0_6);
         if(t) {
           t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &vheader->start_freq);

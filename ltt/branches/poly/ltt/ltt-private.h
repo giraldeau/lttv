@@ -179,30 +179,9 @@ struct ltt_trace_header_0_3 {
 	uint8_t				 has_tsc;
 } LTT_PACKED_STRUCT;
 
-/* For version 0.4 */
+/* For version 0.6 */
 
-struct ltt_trace_header_0_4 {
-  uint32_t        magic_number;
-  uint32_t        arch_type;
-  uint32_t        arch_variant;
-  uint32_t        float_word_order;
-  uint8_t         arch_size;
-  uint8_t         major_version;
-  uint8_t         minor_version;
-  uint8_t         flight_recorder;
-  uint8_t         has_heartbeat;
-  uint8_t         has_alignment;  /* Event header alignment */
-	uint8_t         has_tsc;
-  uint64_t        start_freq;
-  uint64_t        start_tsc;
-  uint64_t        start_monotonic;
-  struct timeval	start_time;
-} LTT_PACKED_STRUCT;
-
-
-/* For version 0.5 */
-
-struct ltt_trace_header_0_5 {
+struct ltt_trace_header_0_6 {
   uint32_t        magic_number;
   uint32_t        arch_type;
   uint32_t        arch_variant;
