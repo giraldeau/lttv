@@ -311,7 +311,8 @@ int read_subbuffer(struct fd_pair *pair)
 	}
 	
 	err = TEMP_FAILURE_RETRY(write(pair->trace,
-				pair->mmap + (consumed_old & (~(pair->subbuf_size-1))),
+				pair->mmap 
+					+ (consumed_old & ((pair->n_subbufs * pair->subbuf_size)-1)),
 				pair->subbuf_size));
 
 	if(err < 0) {

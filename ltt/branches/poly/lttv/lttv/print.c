@@ -49,8 +49,6 @@ void lttv_print_field(LttEvent *e, LttField *f, GString *s,
 
   LttType *type;
 
-  LttField *element;
-
   GQuark name;
 
   int nb, i;
@@ -107,10 +105,9 @@ void lttv_print_field(LttEvent *e, LttField *f, GString *s,
     case LTT_SEQUENCE:
       g_string_append_printf(s, "{ ");
       nb = ltt_event_field_element_number(e,f);
-      element = ltt_field_element(f);
       for(i = 0 ; i < nb ; i++) {
-        ltt_event_field_element_select(e,f,i);
-        lttv_print_field(e, element, s, field_names);
+        LttField *child = ltt_event_field_element_select(e,f,i);
+        lttv_print_field(e, child, s, field_names);
         if(i != nb-1) g_string_append_printf(s, ", ");
       }
       g_string_append_printf(s, " }");
@@ -120,9 +117,10 @@ void lttv_print_field(LttEvent *e, LttField *f, GString *s,
       g_string_append_printf(s, "{ ");
       nb = ltt_type_member_number(type);
       for(i = 0 ; i < nb ; i++) {
+        LttField *element;
         element = ltt_field_member(f,i);
         if(field_names) {
-          ltt_type_member_type(type, i, &name);
+          name = ltt_field_name(element);
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
         }
         lttv_print_field(e, element, s, field_names);
@@ -135,9 +133,10 @@ void lttv_print_field(LttEvent *e, LttField *f, GString *s,
       g_string_append_printf(s, "{ ");
       nb = ltt_type_member_number(type);
       for(i = 0 ; i < nb ; i++) {
+        LttField *element;
         element = ltt_field_member(f,i);
         if(field_names) {
-          ltt_type_member_type(type, i, &name);
+          name = ltt_field_name(element);
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
         }
         lttv_print_field(e, element, s, field_names);
@@ -145,7 +144,8 @@ void lttv_print_field(LttEvent *e, LttField *f, GString *s,
       }
       g_string_append_printf(s, " }");
       break;
-
+    case LTT_NONE:
+      break;
   }
 }
 
@@ -164,6 +164,8 @@ void lttv_event_to_string(LttEvent *e, GString *s,
   guint cpu = ltt_tracefile_num(tfs->parent.tf);
   LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
+
+  GQuark name;
 
   guint i, num_fields;
 
@@ -189,7 +191,12 @@ void lttv_event_to_string(LttEvent *e, GString *s,
   
   num_fields = ltt_eventtype_num_fields(event_type);
   for(i=0; i<num_fields; i++) {
-    field = ltt_event_field(event_type, i);
+    field = ltt_eventtype_field(event_type, i);
+    if(field_names) {
+      name = ltt_field_name(field);
+      if(name)
+        g_string_append_printf(s, "%s = ", g_quark_to_string(name));
+    }
     lttv_print_field(e, field, s, field_names);
   }
 } 

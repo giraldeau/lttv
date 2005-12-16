@@ -7,7 +7,6 @@ kernel.xml \
 memory.xml \
 network.xml \
 process.xml \
-s390_kernel.xml \
 socket.xml \
 timer.xml
 
@@ -19,7 +18,6 @@ kernel.xml \
 memory.xml \
 network.xml \
 process.xml \
-s390_kernel.xml \
 socket.xml \
 timer.xml
 

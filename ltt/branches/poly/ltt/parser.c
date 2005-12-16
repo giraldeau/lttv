@@ -1239,12 +1239,13 @@ void generateChecksum(char* facName,
   unsigned long crc ;
   int pos;
   event_t * ev;
+  unsigned int i;
 
   crc = crc32(facName);
   for(pos = 0; pos < events->position; pos++){
     ev = (event_t *)(events->array[pos]);
     crc = partial_crc32(ev->name, crc);
-		for(unsigned int i = 0; i < ev->fields.position; i++) {
+		for(i = 0; i < ev->fields.position; i++) {
 			field_t *f = (field_t*)ev->fields.array[i];
       crc = partial_crc32(f->name, crc);
       crc = getTypeChecksum(crc, f->type);

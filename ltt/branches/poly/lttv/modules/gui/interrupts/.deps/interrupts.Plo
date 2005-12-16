@@ -2,18 +2,17 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
   /usr/include/features.h /usr/include/sys/cdefs.h \
   /usr/include/gnu/stubs.h /usr/include/bits/huge_val.h \
   /usr/include/bits/mathdef.h /usr/include/bits/mathcalls.h \
-  /usr/include/bits/mathinline.h /usr/include/glib-2.0/glib.h \
-  /usr/include/glib-2.0/glib/galloca.h \
+  /usr/include/glib-2.0/glib.h /usr/include/glib-2.0/glib/galloca.h \
   /usr/include/glib-2.0/glib/gtypes.h \
   /usr/lib/glib-2.0/include/glibconfig.h \
   /usr/include/glib-2.0/glib/gmacros.h \
-  /usr/lib/gcc-lib/i486-linux/3.3.5/include/stddef.h \
-  /usr/lib/gcc-lib/i486-linux/3.3.5/include/limits.h \
-  /usr/lib/gcc-lib/i486-linux/3.3.5/include/syslimits.h \
+  /usr/lib/gcc/i486-linux-gnu/4.0.2/include/stddef.h \
+  /usr/lib/gcc/i486-linux-gnu/4.0.2/include/limits.h \
+  /usr/lib/gcc/i486-linux-gnu/4.0.2/include/syslimits.h \
   /usr/include/limits.h /usr/include/bits/posix1_lim.h \
   /usr/include/bits/local_lim.h /usr/include/linux/limits.h \
   /usr/include/bits/posix2_lim.h \
-  /usr/lib/gcc-lib/i486-linux/3.3.5/include/float.h \
+  /usr/lib/gcc/i486-linux-gnu/4.0.2/include/float.h \
   /usr/include/glib-2.0/glib/garray.h \
   /usr/include/glib-2.0/glib/gasyncqueue.h \
   /usr/include/glib-2.0/glib/gthread.h \
@@ -33,8 +32,9 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
   /usr/include/glib-2.0/glib/gstring.h \
   /usr/include/glib-2.0/glib/gunicode.h \
   /usr/include/glib-2.0/glib/gutils.h \
-  /usr/lib/gcc-lib/i486-linux/3.3.5/include/stdarg.h \
+  /usr/lib/gcc/i486-linux-gnu/4.0.2/include/stdarg.h \
   /usr/include/glib-2.0/glib/gkeyfile.h \
+  /usr/include/glib-2.0/glib/gmappedfile.h \
   /usr/include/glib-2.0/glib/gmarkup.h \
   /usr/include/glib-2.0/glib/gmessages.h \
   /usr/include/glib-2.0/glib/gnode.h /usr/include/glib-2.0/glib/goption.h \
@@ -95,8 +95,7 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
   /usr/include/bits/typesizes.h /usr/include/libio.h \
   /usr/include/_G_config.h /usr/include/wchar.h /usr/include/bits/wchar.h \
   /usr/include/gconv.h /usr/include/bits/stdio_lim.h \
-  /usr/include/bits/sys_errlist.h /usr/include/bits/stdio.h \
-  /usr/include/glib-2.0/gmodule.h \
+  /usr/include/bits/sys_errlist.h /usr/include/glib-2.0/gmodule.h \
   /usr/include/gtk-2.0/gdk-pixbuf/gdk-pixbuf-loader.h \
   /usr/include/gtk-2.0/gdk-pixbuf/gdk-pixbuf-enum-types.h \
   /usr/include/gtk-2.0/gdk/gdkdisplay.h \
@@ -155,6 +154,7 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
   /usr/include/atk-1.0/atk/atknoopobjectfactory.h \
   /usr/include/atk-1.0/atk/atkobjectfactory.h \
   /usr/include/atk-1.0/atk/atkregistry.h \
+  /usr/include/atk-1.0/atk/atkobjectfactory.h \
   /usr/include/atk-1.0/atk/atkrelation.h \
   /usr/include/atk-1.0/atk/atkrelationset.h \
   /usr/include/atk-1.0/atk/atkselection.h \
@@ -224,6 +224,7 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
   /usr/include/gtk-2.0/gtk/gtkfilechooser.h \
   /usr/include/gtk-2.0/gtk/gtkfilefilter.h \
   /usr/include/gtk-2.0/gtk/gtkfilechooserdialog.h \
+  /usr/include/gtk-2.0/gtk/gtkfilechooser.h \
   /usr/include/gtk-2.0/gtk/gtkfilechooserwidget.h \
   /usr/include/gtk-2.0/gtk/gtkfontbutton.h \
   /usr/include/gtk-2.0/gtk/gtkfontsel.h \
@@ -251,6 +252,7 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
   /usr/include/gtk-2.0/gtk/gtkmain.h \
   /usr/include/gtk-2.0/gtk/gtkmenubar.h \
   /usr/include/gtk-2.0/gtk/gtkmenutoolbutton.h \
+  /usr/include/gtk-2.0/gtk/gtkmenu.h \
   /usr/include/gtk-2.0/gtk/gtktoolbutton.h \
   /usr/include/gtk-2.0/gtk/gtktoolitem.h \
   /usr/include/gtk-2.0/gtk/gtktooltips.h \
@@ -270,6 +272,7 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
   /usr/include/gtk-2.0/gtk/gtkradiomenuitem.h \
   /usr/include/gtk-2.0/gtk/gtkradiotoolbutton.h \
   /usr/include/gtk-2.0/gtk/gtktoggletoolbutton.h \
+  /usr/include/gtk-2.0/gtk/gtktoolbutton.h \
   /usr/include/gtk-2.0/gtk/gtkscrolledwindow.h \
   /usr/include/gtk-2.0/gtk/gtkviewport.h \
   /usr/include/gtk-2.0/gtk/gtkseparatormenuitem.h \
@@ -288,7 +291,10 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
   /usr/include/gtk-2.0/gtk/gtktextmark.h \
   /usr/include/gtk-2.0/gtk/gtktextview.h \
   /usr/include/gtk-2.0/gtk/gtktipsquery.h \
+  /usr/include/gtk-2.0/gtk/gtktoggletoolbutton.h \
   /usr/include/gtk-2.0/gtk/gtktoolbar.h \
+  /usr/include/gtk-2.0/gtk/gtktoolbutton.h \
+  /usr/include/gtk-2.0/gtk/gtktoolitem.h \
   /usr/include/gtk-2.0/gtk/gtktree.h \
   /usr/include/gtk-2.0/gtk/gtktreednd.h \
   /usr/include/gtk-2.0/gtk/gtktreeitem.h \
@@ -307,8 +313,7 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
   /usr/include/bits/select.h /usr/include/bits/sigset.h \
   /usr/include/bits/time.h /usr/include/sys/sysmacros.h \
   /usr/include/bits/pthreadtypes.h /usr/include/bits/sched.h \
-  /usr/include/alloca.h /usr/include/string.h /usr/include/bits/string.h \
-  /usr/include/bits/string2.h ../../../../ltt/ltt.h \
+  /usr/include/alloca.h /usr/include/string.h ../../../../ltt/ltt.h \
   ../../../../ltt/time.h ../../../../ltt/compiler.h \
   ../../../../ltt/event.h ../../../../ltt/type.h ../../../../ltt/trace.h \
   ../../../../ltt/facility.h ../../../../lttv/lttv/module.h \
@@ -335,8 +340,6 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 
 /usr/include/bits/mathcalls.h:
 
-/usr/include/bits/mathinline.h:
-
 /usr/include/glib-2.0/glib.h:
 
 /usr/include/glib-2.0/glib/galloca.h:
@@ -347,11 +350,11 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 
 /usr/include/glib-2.0/glib/gmacros.h:
 
-/usr/lib/gcc-lib/i486-linux/3.3.5/include/stddef.h:
+/usr/lib/gcc/i486-linux-gnu/4.0.2/include/stddef.h:
 
-/usr/lib/gcc-lib/i486-linux/3.3.5/include/limits.h:
+/usr/lib/gcc/i486-linux-gnu/4.0.2/include/limits.h:
 
-/usr/lib/gcc-lib/i486-linux/3.3.5/include/syslimits.h:
+/usr/lib/gcc/i486-linux-gnu/4.0.2/include/syslimits.h:
 
 /usr/include/limits.h:
 
@@ -363,7 +366,7 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 
 /usr/include/bits/posix2_lim.h:
 
-/usr/lib/gcc-lib/i486-linux/3.3.5/include/float.h:
+/usr/lib/gcc/i486-linux-gnu/4.0.2/include/float.h:
 
 /usr/include/glib-2.0/glib/garray.h:
 
@@ -413,9 +416,11 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 
 /usr/include/glib-2.0/glib/gutils.h:
 
-/usr/lib/gcc-lib/i486-linux/3.3.5/include/stdarg.h:
+/usr/lib/gcc/i486-linux-gnu/4.0.2/include/stdarg.h:
 
 /usr/include/glib-2.0/glib/gkeyfile.h:
+
+/usr/include/glib-2.0/glib/gmappedfile.h:
 
 /usr/include/glib-2.0/glib/gmarkup.h:
 
@@ -565,8 +570,6 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 
 /usr/include/bits/sys_errlist.h:
 
-/usr/include/bits/stdio.h:
-
 /usr/include/glib-2.0/gmodule.h:
 
 /usr/include/gtk-2.0/gdk-pixbuf/gdk-pixbuf-loader.h:
@@ -698,6 +701,8 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 /usr/include/atk-1.0/atk/atkobjectfactory.h:
 
 /usr/include/atk-1.0/atk/atkregistry.h:
+
+/usr/include/atk-1.0/atk/atkobjectfactory.h:
 
 /usr/include/atk-1.0/atk/atkrelation.h:
 
@@ -845,6 +850,8 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 
 /usr/include/gtk-2.0/gtk/gtkfilechooserdialog.h:
 
+/usr/include/gtk-2.0/gtk/gtkfilechooser.h:
+
 /usr/include/gtk-2.0/gtk/gtkfilechooserwidget.h:
 
 /usr/include/gtk-2.0/gtk/gtkfontbutton.h:
@@ -903,6 +910,8 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 
 /usr/include/gtk-2.0/gtk/gtkmenutoolbutton.h:
 
+/usr/include/gtk-2.0/gtk/gtkmenu.h:
+
 /usr/include/gtk-2.0/gtk/gtktoolbutton.h:
 
 /usr/include/gtk-2.0/gtk/gtktoolitem.h:
@@ -943,6 +952,8 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 
 /usr/include/gtk-2.0/gtk/gtktoggletoolbutton.h:
 
+/usr/include/gtk-2.0/gtk/gtktoolbutton.h:
+
 /usr/include/gtk-2.0/gtk/gtkscrolledwindow.h:
 
 /usr/include/gtk-2.0/gtk/gtkviewport.h:
@@ -981,7 +992,13 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 
 /usr/include/gtk-2.0/gtk/gtktipsquery.h:
 
+/usr/include/gtk-2.0/gtk/gtktoggletoolbutton.h:
+
 /usr/include/gtk-2.0/gtk/gtktoolbar.h:
+
+/usr/include/gtk-2.0/gtk/gtktoolbutton.h:
+
+/usr/include/gtk-2.0/gtk/gtktoolitem.h:
 
 /usr/include/gtk-2.0/gtk/gtktree.h:
 
@@ -1036,10 +1053,6 @@ interrupts.lo interrupts.o: interrupts.c /usr/include/math.h \
 /usr/include/alloca.h:
 
 /usr/include/string.h:
-
-/usr/include/bits/string.h:
-
-/usr/include/bits/string2.h:
 
 ../../../../ltt/ltt.h:
 

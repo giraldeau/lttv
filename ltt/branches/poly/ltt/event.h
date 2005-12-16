@@ -46,10 +46,6 @@ LttFacility *ltt_event_facility(const LttEvent *e);
 LttEventType *ltt_event_eventtype(const LttEvent *e);
 
 
-/* Root field for the event */
-
-LttField *ltt_event_field(LttEvent *e);
-
 
 /* Time and cycle count for the event */
 
@@ -100,7 +96,7 @@ guint64 ltt_event_field_element_number(LttEvent *e, LttField *f);
 
 /* Set the currently selected element for a sequence or array field. */
 
-void ltt_event_field_element_select(LttEvent *e, LttField *f, unsigned i);
+LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i);
 
 
 /* A union is like a structure except that only a single member at a time
@@ -131,11 +127,7 @@ double ltt_event_get_double(LttEvent *e, LttField *f);
 
 gchar *ltt_event_get_string(LttEvent *e, LttField *f);
 
-size_t get_field_type_size(LttTracefile *tf,
-    LttEventType *event_type,
-    off_t offset_root, off_t offset_parent,
-    LttField *field, void *data);
-
-
+void compute_offsets(LttTracefile *tf, LttEventType *event, off_t *offset,
+      void *root);
 
 #endif // EVENT_H

@@ -776,7 +776,7 @@ create_name_tables(LttvTraceState *tcs)
   thf = lttv_trace_hook_get_first(&h);
   
   t = ltt_field_type(thf->f1);
-  nb = ltt_type_element_number(t);
+  //nb = ltt_type_element_number(t);
   
   lttv_trace_hook_destroy(&h);
 
@@ -804,7 +804,7 @@ create_name_tables(LttvTraceState *tcs)
   thf = lttv_trace_hook_get_first(&h);
 
   t = ltt_field_type(thf->f1);
-  nb = ltt_type_element_number(t);
+  //nb = ltt_type_element_number(t);
 
   lttv_trace_hook_destroy(&h);
 
@@ -831,7 +831,7 @@ create_name_tables(LttvTraceState *tcs)
   thf = lttv_trace_hook_get_first(&h);
   
   t = ltt_field_type(thf->f1);
-  nb = ltt_type_element_number(t);
+  //nb = ltt_type_element_number(t);
 
   lttv_trace_hook_destroy(&h);
 

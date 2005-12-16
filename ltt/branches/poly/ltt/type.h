@@ -41,16 +41,13 @@ unsigned ltt_eventtype_relative_id(LttEventType *et);
 
 guint8 ltt_eventtype_id(LttEventType *et);
 
-LttType *ltt_eventtype_type(LttEventType *et);
-
-LttField *ltt_eventtype_field(LttEventType *et);
-
-
 /* obtain the type name and size. The size is the number of bytes for
    primitive types (INT, UINT, FLOAT, ENUM), or the size for the unsigned
    integer length count for sequences. */
  
 GQuark ltt_type_name(LttType *t);
+
+GQuark ltt_field_name(LttField *f);
 
 LttTypeEnum ltt_type_class(LttType *t);
 
@@ -64,23 +61,18 @@ LttType *ltt_type_element_type(LttType *t);
 
 /* The number of elements for arrays. */
 
-unsigned ltt_type_element_number(LttType *t);
+//unsigned ltt_type_element_number(LttType *t);
 
 
 /* The number of data members for structures and unions. */
 
-unsigned ltt_type_member_number(LttType *t);
-
-
-/* The type of a data member in a structure. */
-
-LttType *ltt_type_member_type(LttType *t, unsigned i, GQuark *name);
+guint ltt_type_member_number(LttType *t);
 
 
 /* For enumerations, obtain the symbolic string associated with a value
    (0 to n - 1 for an enumeration of n elements). */
 
-GQuark ltt_enum_string_get(LttType *t, unsigned i);
+GQuark ltt_enum_string_get(LttType *t, gulong i);
 
 
 /* The fields form a tree representing a depth first search of the 
@@ -91,12 +83,20 @@ GQuark ltt_enum_string_get(LttType *t, unsigned i);
    platform/trace specific offset values (for efficient access) and
    points back to the corresponding LttType for the rest. */
 
-LttField *ltt_field_element(LttField *f);
+//LttField *ltt_field_element(LttField *f);
 
-LttField *ltt_field_member(LttField *f, unsigned i);
+LttField *ltt_field_member_by_name(LttField *f, GQuark name);
+
+LttField *ltt_field_member(LttField *f, guint i);
 
 LttType *ltt_field_type(LttField *f);
 
 int ltt_field_size(LttField * f);
+
+guint ltt_eventtype_num_fields(LttEventType *event_type);
+
+LttField *ltt_eventtype_field(LttEventType *event_type, guint i);
+
+LttField *ltt_eventtype_field_by_name(LttEventType *event_type, GQuark name);
 
 #endif // TYPE_H

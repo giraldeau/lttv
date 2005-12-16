@@ -25,7 +25,7 @@
 #include <sys/stat.h>
 
 /* Buffer for file copy : 4k seems optimal. */
-#define BUF_SIZE 4194304
+#define BUF_SIZE 4096
 
 enum trace_ctl_op {
   CTL_OP_CREATE_START,

@@ -29,6 +29,11 @@
 #define max(a,b) ((a)>(b)?(a):(b))
 #endif
 
+#ifndef min
+#define min(a,b) ((a)<(b)?(a):(b))
+#endif
+
+
 
 #define LTT_MAGIC_NUMBER 0x00D6B7ED
 #define LTT_REV_MAGIC_NUMBER 0xEDB7D600
@@ -218,7 +223,7 @@ struct _LttType{
   gchar * fmt;
   guint size;
   LttTypeEnum type_class;          //which type
-  GData *enum_map;                 //maps enum labels to numbers.
+  GHashTable *enum_map;                 //maps enum labels to numbers.
   GArray *fields;     // Array of LttFields, for array, sequence, union, struct.
   GData *fields_by_name;
 };

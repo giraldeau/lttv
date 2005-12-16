@@ -105,6 +105,9 @@ static int ltt_seek_next_event(LttTracefile *tf);
 
 void ltt_update_event_size(LttTracefile *tf);
 
+
+void precompute_offsets(LttTracefile *tf, LttEventType *event);
+
 #if 0
 /* Functions to parse system.xml file (using glib xml parser) */
 static void parser_start_element (GMarkupParseContext  __UNUSED__ *context,
@@ -973,7 +976,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->size_t_size);
           fac->alignment = ltt_get_uint32(LTT_GET_BO(tf),
-                          &fac_load_data->alignment);
+                          &fac_load_data->has_alignment);
 
           if(ltt_get_facility_description(fac, tf->trace, tf))
             continue; /* error opening description */
@@ -1029,7 +1032,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->size_t_size);
           fac->alignment = ltt_get_uint32(LTT_GET_BO(tf),
-                          &fac_state_dump_load_data->alignment);
+                          &fac_state_dump_load_data->has_alignment);
           if(ltt_get_facility_description(fac, tf->trace, tf))
             continue; /* error opening description */
           
@@ -1662,7 +1665,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   /* Read event header */
   
 	/* Align the head */
-	pos += ltt_align(pos, tf->trace->arch_size, tf->has_alignment);
+	pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
   
   if(tf->trace->has_tsc) {
     if(tf->trace->has_heartbeat) {
@@ -1711,7 +1714,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   pos += sizeof(guint16);
   
 	/* Align the head */
-	pos += ltt_align(pos, tf->trace->arch_size, tf->has_alignment);
+	pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
 
   event->data = pos;
 
@@ -1846,7 +1849,7 @@ map_error:
 /* It will update the fields offsets too */
 void ltt_update_event_size(LttTracefile *tf)
 {
-  size_t size = 0;
+  off_t size = 0;
 
   /* Specific handling of core events : necessary to read the facility control
    * tracefile. */
@@ -2047,7 +2050,7 @@ void set_fields_offsets(LttTracefile *tf, LttEventType *event_type)
  ****************************************************************************/
 off_t get_alignment(LttTracefile *tf, LttField *field)
 {
-  type = &field->field_type;
+  LttType *type = &field->field_type;
 
   switch(type->type_class) {
     case LTT_INT_FIXED:
@@ -2126,7 +2129,7 @@ off_t get_alignment(LttTracefile *tf, LttField *field)
 
 void field_compute_static_size(LttTracefile *tf, LttField *field)
 {
-  type = &field->field_type;
+  LttType *type = &field->field_type;
 
   switch(type->type_class) {
     case LTT_INT_FIXED:
@@ -2168,7 +2171,7 @@ void field_compute_static_size(LttTracefile *tf, LttField *field)
     case LTT_SEQUENCE:
       g_assert(type->fields->len == 2);
       {
-        local_offset = 0;
+        off_t local_offset = 0;
         LttField *child = &g_array_index(type->fields, LttField, 1);
         field_compute_static_size(tf, child);
         field->field_size = 0;
@@ -2202,6 +2205,7 @@ void field_compute_static_size(LttTracefile *tf, LttField *field)
       break;
     default:
       g_error("field_static_size : unknown type");
+  }
       
 }
 
@@ -2222,7 +2226,7 @@ void field_compute_static_size(LttTracefile *tf, LttField *field)
 
 gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
 {
-  type = &field->field_type;
+  LttType *type = &field->field_type;
 
   switch(type->type_class) {
     case LTT_INT_FIXED:
@@ -2587,6 +2591,8 @@ gint check_fields_compatibility(LttEventType *event_type1,
     LttField *field1, LttField *field2)
 {
   guint different = 0;
+  LttType *type1;
+  LttType *type2;
 
   if(field1 == NULL) {
     if(field2 == NULL) goto end;
@@ -2599,14 +2605,10 @@ gint check_fields_compatibility(LttEventType *event_type1,
     goto end;
   }
 
-  type1 = field1->field_type;
-  type2 = field2->field_type;
+  type1 = &field1->field_type;
+  type2 = &field2->field_type;
 
   if(type1->type_class != type2->type_class) {
-    different = 1;
-    goto end;
-  }
-  if(type1->element_name != type2->element_name) {
     different = 1;
     goto end;
   }
@@ -2665,6 +2667,8 @@ gint check_fields_compatibility(LttEventType *event_type1,
         }
         
         for(i=0; i< type1->fields->len; i++) {
+          LttField *child1;
+          LttField *child2;
           child1 = &g_array_index(type1->fields, LttField, i);
           child2 = &g_array_index(type2->fields, LttField, i);
           different = check_fields_compatibility(event_type1,

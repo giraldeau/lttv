@@ -14,11 +14,11 @@
 		<field name="name"><string/></field>
 		<field name="checksum"><uint size=4/></field>
 		<field name="id"><uint size=4/></field>
-		<field name="int_size"><size_t/></field>
-		<field name="long_size"><size_t/></field>
-		<field name="pointer_size"><size_t/></field>
-		<field name="size_t_size"><size_t/></field>
-		<field name="alignment"><size_t/></field>
+		<field name="int_size"><uint size=4/></field>
+		<field name="long_size"><uint size=4/></field>
+		<field name="pointer_size"><uint size=4/></field>
+		<field name="size_t_size"><uint size=4/></field>
+		<field name="has_alignment"><uint size=4/></field>
   </event>
 
   <event name=facility_unload>
@@ -42,7 +42,7 @@
 		<field name="long_size"><uint size=4/></field>
 		<field name="pointer_size"><uint size=4/></field>
 		<field name="size_t_size"><uint size=4/></field>
-		<field name="alignment"><uint size=4/></field>
+		<field name="has_alignment"><uint size=4/></field>
   </event>
 
 </facility>

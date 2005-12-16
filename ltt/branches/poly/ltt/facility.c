@@ -47,8 +47,9 @@
 LttType * lookup_named_type(LttFacility *fac, type_descriptor_t * td);
 
 /* construct directed acyclic graph for types, and tree for fields */
-void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td, 
-                            LttField * fld);
+void construct_fields(LttFacility *fac,
+											LttField *field,
+                      field_t *fld);
 
 /* generate the facility according to the events belongin to it */
 void generateFacility(LttFacility * f, facility_t  * fac, 
@@ -57,7 +58,7 @@ void generateFacility(LttFacility * f, facility_t  * fac,
 /* functions to release the memory occupied by a facility */
 void freeFacility(LttFacility * facility);
 void freeEventtype(LttEventType * evType);
-void freeLttType(LttType ** type);
+void freeLttType(LttType * type);
 void freeLttField(LttField * fld);
 void freeLttNamedType(LttType * type);
 
@@ -80,7 +81,7 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   gchar *token;
   parse_file_t in;
   facility_t * fac;
-  unsigned long checksum;
+  unsigned int checksum;
   gchar buffer[BUFFER_SIZE];
   gboolean generated = FALSE;
 
@@ -187,7 +188,7 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
   f->events = g_array_set_size(f->events, events->position);
 
   g_datalist_init(&f->events_by_name);
-  g_datalist_init(&f->named_types);
+ // g_datalist_init(&f->named_types);
 #if 0
   /* The first day, he created the named types */
 
@@ -216,7 +217,7 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
   /* The second day, he created the event fields and types */
   //for each event, construct field and type acyclic graph
   for(i=0;i<events->position;i++){
-		event_t parser_event = (event_t*)events->array[i];
+		event_t *parser_event = (event_t*)events->array[i];
     LttEventType *event_type = &g_array_index(f->events, LttEventType, i);
 
     event_type->name = 
@@ -241,7 +242,7 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
       LttField *field = &g_array_index(event_type->fields, LttField, j);
       field_t *parser_field = (field_t*)parser_event->fields.array[j];
 
-      construct_types_and_fields(NULL, NULL, field, parser_field, ...);
+      construct_fields(f, field, parser_field);
       g_datalist_id_set_data(&event_type->fields_by_name, 
          field->name, 
          field);
@@ -278,6 +279,7 @@ void construct_fields(LttFacility *fac,
 {
   guint len;
   type_descriptor_t *td;
+  LttType *type;
 
   field->name = g_quark_from_string(fld->name);
   if(fld->description) {
@@ -363,12 +365,11 @@ void construct_fields(LttFacility *fac,
       type->size = fac->int_size;
       {
         guint i;
-        g_datalist_init(&type->enum_map);
+        type->enum_map = g_hash_table_new(g_int_hash, g_int_equal);
         for(i=0; i<td->labels.position; i++) {
-          GQuark key = g_quark_from_string((char*)td->labels.array[i]);
-          int *src = (int*)td->labels_values.array[i];
-          /* it's always ok to cast a int to a pointer type */
-          g_datalist_id_set_data(&type->enum_map, key, (gpointer)*src);
+          GQuark value = g_quark_from_string((char*)td->labels.array[i]);
+          gint key = *(int*)td->labels_values.array[i];
+          g_hash_table_insert(type->enum_map, (gpointer)key, (gpointer)value);
         }
       }
       break;
@@ -734,7 +735,8 @@ void freeEventtype(LttEventType * evType)
     g_free(evType->description);
   
   for(i=0; i<evType->fields->len;i++) {
-    freeLttType(&g_array_index(evType->fields, LttType, i));
+    LttField *field = &g_array_index(evType->fields, LttField, i);
+    freeLttField(field);
   }
   g_array_free(evType->fields, TRUE);
   g_datalist_clear(&evType->fields_by_name);
@@ -748,7 +750,7 @@ void freeLttType(LttType * type)
     g_free(type->fmt);
 
   if(type->enum_map)
-    g_datalist_clear(&type->enum_map);
+    g_hash_table_destroy(type->enum_map);
 
   if(type->fields) {
     for(i=0; i<type->fields->len; i++) {
@@ -765,19 +767,13 @@ void freeLttNamedType(LttType * type)
   freeLttType(type);
 }
 
-void copy_enum_element(GQuark keyid, gpointer data, gpointer user_data)
-{
-  int *value = gpointer data;
-
-}
-
 void freeLttField(LttField * field)
 { 
   if(field->description)
     g_free(field->description);
   if(field->dynamic_offsets)
     g_array_free(field->dynamic_offsets, TRUE);
-  freeLttType(field->type);
+  freeLttType(&field->field_type);
 }
 
 /*****************************************************************************

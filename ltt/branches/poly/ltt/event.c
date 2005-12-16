@@ -35,6 +35,14 @@
 #include <ltt/trace.h>
 #include <ltt/ltt-types.h>
 
+
+
+void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
+    void *root);
+
+
+
+
 LttEvent *ltt_event_new()
 {
   return g_new(LttEvent, 1);
@@ -242,25 +250,6 @@ LttEventType *ltt_event_eventtype(const LttEvent *e)
   return &g_array_index(facility->events, LttEventType, e->event_id);
 }
 
-/*****************************************************************************
- *Function name
- *    ltt_event_field : get the root field of the event
- *Input params
- *    e               : an instance of an event type
- *    name            : field name
- *Return value
- *    LttField *      : The requested field, or NULL
- ****************************************************************************/
-
-LttField *ltt_event_field(LttEvent *e, GQuark name)
-{
-  LttField * field;
-  LttEventType * event_type = ltt_event_eventtype(e);
-  if(unlikely(!event_type)) return NULL;
-
-  return (LttField*)g_datalist_id_get_data(&event_type->fields_by_name, name);
-  
-}
 
 /*****************************************************************************
  *Function name
@@ -440,13 +429,14 @@ void *ltt_event_data(LttEvent *e)
  ****************************************************************************/
 guint64 ltt_event_field_element_number(LttEvent *e, LttField *f)
 {
-  if(f->field_type->type_class != LTT_ARRAY &&
-     f->field_type->type_class != LTT_SEQUENCE)
+  if(f->field_type.type_class != LTT_ARRAY &&
+     f->field_type.type_class != LTT_SEQUENCE)
     return 0;
   
-  if(f->field_type->type_class == LTT_ARRAY)
-    return f->field_type->size;
-  return ltt_get_long_unsigned(e, &g_array_index(f->fields, LttField, 0));
+  if(f->field_type.type_class == LTT_ARRAY)
+    return f->field_type.size;
+  return ltt_event_get_long_unsigned(e, &g_array_index(f->field_type.fields,
+                                                 LttField, 0));
 }
 
 /*****************************************************************************
@@ -470,8 +460,8 @@ LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i)
   LttEventType *event_type;
   off_t new_offset;
  
-  if(f->field_type->type_class != LTT_ARRAY &&
-     f->field_type->type_class != LTT_SEQUENCE)
+  if(f->field_type.type_class != LTT_ARRAY &&
+     f->field_type.type_class != LTT_SEQUENCE)
     return ;
 
   element_number  = ltt_event_field_element_number(e,f);
@@ -480,10 +470,10 @@ LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i)
    */
   if(i >= element_number) return;
  
-  if(f->field_type->type_class == LTT_ARRAY) {
-   field = &g_array_index(f->fields, LttField, 0);
+  if(f->field_type.type_class == LTT_ARRAY) {
+   field = &g_array_index(f->field_type.fields, LttField, 0);
   } else {
-   field = &g_array_index(f->fields, LttField, 1);
+   field = &g_array_index(f->field_type.fields, LttField, 1);
   }
 
   if(field->field_size != 0) {
@@ -495,7 +485,7 @@ LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i)
     /* Var. len. child */
     new_offset = g_array_index(f->dynamic_offsets, off_t, i);
   }
-  compute_fields_offsets(e->tracefile, field, new_offset);
+  compute_fields_offsets(e->tracefile, field, &new_offset, e->data);
 
   return field;
 }
@@ -508,9 +498,7 @@ guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f)
 {
   gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
-  LttTypeEnum t = f->field_type->type_class;
-
-  g_assert(t == LTT_UINT || t == LTT_ENUM);
+  LttTypeEnum t = f->field_type.type_class;
 
   if(f->field_size == 1){
     guint8 x = *(guint8 *)(e->data + f->offset_root);
@@ -537,8 +525,6 @@ gint32 ltt_event_get_int(LttEvent *e, LttField *f)
 {
   gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
-  g_assert(f->field_type->type_class == LTT_INT);
-
   if(f->field_size == 1){
     gint8 x = *(gint8 *)(e->data + f->offset_root);
     return (gint32) x;    
@@ -564,10 +550,7 @@ guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
 {
   gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
-  LttTypeEnum t = f->field_type->type_class;
-
-  g_assert(t == LTT_UINT || t == LTT_ENUM 
-      || t == LTT_ULONG || LTT_SIZE_T || LTT_OFF_T || LTT_POINTER);
+  LttTypeEnum t = f->field_type.type_class;
 
   if(f->field_size == 1){
     guint8 x = *(guint8 *)(e->data + f->offset_root);
@@ -589,10 +572,6 @@ gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
   //              e->tracefile->trace->system_description->endian ? 0:1;
   gboolean reverse_byte_order = LTT_GET_BO(e->tracefile);
 
-  g_assert( f->field_type->type_class == LTT_INT
-      || f->field_type->type_class == LTT_LONG
-      || f->field_type->type_class == LTT_SSIZE_T);
-
   if(f->field_size == 1){
     gint8 x = *(gint8 *)(e->data + f->offset_root);
     return (gint64) x;    
@@ -612,7 +591,7 @@ float ltt_event_get_float(LttEvent *e, LttField *f)
   g_assert(LTT_HAS_FLOAT(e->tracefile));
   gboolean reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
 
-  g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 4);
+  g_assert(f->field_type.type_class == LTT_FLOAT && f->field_size == 4);
 
   if(reverse_byte_order == 0) return *(float *)(e->data + f->offset_root);
   else{
@@ -627,7 +606,10 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
   g_assert(LTT_HAS_FLOAT(e->tracefile));
   gboolean reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
 
-  g_assert(f->field_type->type_class == LTT_FLOAT && f->field_size == 8);
+  if(f->field_size == 4)
+    return ltt_event_get_float(e, f);
+    
+  g_assert(f->field_type.type_class == LTT_FLOAT && f->field_size == 8);
 
   if(reverse_byte_order == 0) return *(double *)(e->data + f->offset_root);
   else {
@@ -643,7 +625,7 @@ double ltt_event_get_double(LttEvent *e, LttField *f)
  ****************************************************************************/
 char *ltt_event_get_string(LttEvent *e, LttField *f)
 {
-  g_assert(f->field_type->type_class == LTT_STRING);
+  g_assert(f->field_type.type_class == LTT_STRING);
 
   return (gchar*)g_strdup((gchar*)(e->data + f->offset_root));
 }
@@ -818,7 +800,7 @@ size_t get_field_type_size(LttTracefile *tf, LttEventType *event_type,
 void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
     void *root)
 {
-  type = &field->field_type;
+  LttType *type = &field->field_type;
 
   switch(type->type_class) {
     case LTT_INT_FIXED:
@@ -881,13 +863,14 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
                                                     0);
           for(i=0; i<type->size; i++) {
             g_array_append_val(field->dynamic_offsets, *offset);
-            compute_fields_offsets(tf, child, offset);
+            compute_fields_offsets(tf, child, offset, root);
           }
         }
   //      local_offset = field->array_offset;
   //      /* Set the offset at position 0 */
-  //      compute_fields_offsets(tf, child, &local_offset);
-        break;
+  //      compute_fields_offsets(tf, child, &local_offset, root);
+      }
+      break;
     case LTT_SEQUENCE:
       g_assert(type->fields->len == 2);
       {
@@ -901,7 +884,7 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
           field->offset_root = *offset;
 
           child = &g_array_index(type->fields, LttField, 0);
-          compute_fields_offsets(tf, child, offset);
+          compute_fields_offsets(tf, child, offset, root);
           child = &g_array_index(type->fields, LttField, 1);
           *offset += ltt_align(*offset, get_alignment(tf, child),
                                tf->has_alignment);
@@ -915,11 +898,11 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
                                                   0);
         for(i=0; i<ltt_event_field_element_number(&tf->event, field); i++) {
           g_array_append_val(field->dynamic_offsets, *offset);
-          compute_fields_offsets(tf, child, offset);
+          compute_fields_offsets(tf, child, offset, root);
         }
  //       local_offset = field->array_offset;
  //       /* Set the offset at position 0 */
- //       compute_fields_offsets(tf, child, &local_offset);
+ //       compute_fields_offsets(tf, child, &local_offset, root);
       }
       break;
     case LTT_STRUCT:
@@ -937,7 +920,7 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
         }
         for(i=0; i<type->fields->len; i++) {
           child = &g_array_index(type->fields, LttField, i);
-          compute_fields_offsets(tf, child, offset);
+          compute_fields_offsets(tf, child, offset, root);
         }
       }
       break;
@@ -955,7 +938,7 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
         for(i=0; i<type->fields->len; i++) {
           *offset = field->offset_root;
           child = &g_array_index(type->fields, LttField, i);
-          compute_fields_offsets(tf, child, offset);
+          compute_fields_offsets(tf, child, offset, root);
         }
         *offset = field->offset_root + field->field_size;
       }
@@ -976,7 +959,7 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
  *    event : event type
  *
  ****************************************************************************/
-void compute_offsets(LttTracefile *tf, LttEventType *event, size_t *offset,
+void compute_offsets(LttTracefile *tf, LttEventType *event, off_t *offset,
       void *root)
 {
   guint i;
@@ -985,7 +968,7 @@ void compute_offsets(LttTracefile *tf, LttEventType *event, size_t *offset,
   /* compute all variable offsets */
   for(i=0; i<event->fields->len; i++) {
     LttField *field = &g_array_index(event->fields, LttField, i);
-    ret = compute_fields_offsets(tf, field, offset, root);
+    compute_fields_offsets(tf, field, offset, root);
     if(ret) break;
   }
 

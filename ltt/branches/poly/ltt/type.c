@@ -101,47 +101,17 @@ guint8 ltt_eventtype_id(LttEventType *et)
 
 /*****************************************************************************
  *Function name
- *    ltt_eventtype_type : get the type of the event type
+ *    ltt_field_name  : get the name of the field
  *Input params
- *    et                 : an  event type   
- *Return value
- *    LttType *         : the type of the event type
- ****************************************************************************/
-
-LttType *ltt_eventtype_type(LttEventType *et)
-{
-  if(unlikely(!et->root_field)) return NULL;
-  else return et->root_field->field_type;
-}
-
-/*****************************************************************************
- *Function name
- *    ltt_eventtype_field : get the root filed of the event type
- *Input params
- *    et                  : an  event type   
- *Return value
- *    LttField *          : the root filed of the event type
- ****************************************************************************/
-
-LttField *ltt_eventtype_field(LttEventType *et)
-{
-  return et->root_field;
-}
-
-/*****************************************************************************
- *Function name
- *    ltt_type_name  : get the name of the type
- *Input params
- *    t              : a type   
+ *    f              : a field
  *Return value
  *    char *         : the name of the type
  ****************************************************************************/
 
-GQuark ltt_type_name(LttType *t)
+GQuark ltt_field_name(LttField *f)
 {
-  return t->element_name;
+  return f->name;
 }
-
 /*****************************************************************************
  *Function name
  *    ltt_type_class : get the type class of the type
@@ -226,11 +196,17 @@ error:
 LttType *ltt_type_element_type(LttType *t)
 {
   LttType *element_type;
+  LttField *field;
 
   if(unlikely(t->type_class != LTT_ARRAY && t->type_class != LTT_SEQUENCE))
     element_type = NULL;
-  else
-    element_type = t->element_type[0];
+  else {
+    if(t->type_class == LTT_ARRAY)
+      field = &g_array_index(t->fields, LttField, 0);
+    else
+      field = &g_array_index(t->fields, LttField, 1);
+    element_type = ltt_field_type(field);
+  }
 
   return element_type;
 }
@@ -243,7 +219,7 @@ LttType *ltt_type_element_type(LttType *t)
  *Return value
  *    unsigned                : the number of elements for arrays
  ****************************************************************************/
-
+#if 0
 unsigned ltt_type_element_number(LttType *t)
 {
   unsigned ret = 0;
@@ -253,7 +229,7 @@ unsigned ltt_type_element_number(LttType *t)
 
   return ret;
 }
-
+#endif //0
 /*****************************************************************************
  *Function name
  *    ltt_type_member_number : obtain the number of data members for structure 
@@ -268,39 +244,11 @@ unsigned ltt_type_member_number(LttType *t)
   unsigned ret = 0;
   
   if(likely(t->type_class == LTT_STRUCT || t->type_class == LTT_UNION))
-    ret =t->element_number;
+    ret = t->fields->len;
 
   return ret;
 }
 
-/*****************************************************************************
- *Function name
- *    ltt_type_member_type : obtain the type of a data member in a structure 
- *                           or union.
- *Input params
- *    t                    : a type   
- *    i                    : index of the member
- *Return value
- *    LttType *           : the type of structure member
- ****************************************************************************/
-
-LttType *ltt_type_member_type(LttType *t, unsigned i, GQuark *name)
-{
-  LttType *member_type = NULL;
-
-  if(unlikely(  (t->type_class != LTT_STRUCT
-                 && t->type_class != LTT_UNION)
-              ||
-                (i >= t->element_number)
-             )) {
-      *name = 0;
-  } else {
-    *name = t->element_type[i]->element_name;
-    member_type = t->element_type[i];
-  }
-
-  return member_type;
-}
 
 /*****************************************************************************
  *Function name
@@ -314,14 +262,14 @@ LttType *ltt_type_member_type(LttType *t, unsigned i, GQuark *name)
  *    char *              : symbolic string associated with a value
  ****************************************************************************/
 
-GQuark ltt_enum_string_get(LttType *t, unsigned i)
+GQuark ltt_enum_string_get(LttType *t, gulong i)
 { 
-  if(likely(t->type_class == LTT_ENUM && i < t->element_number))
-    return t->enum_strings[i];
+  if(likely(t->type_class == LTT_ENUM))
+    return (GQuark)g_hash_table_lookup(t->enum_map, (gpointer)i);
   else
     return 0;
 }
-
+#if 0
 /*****************************************************************************
  *Function name
  *    ltt_field_element : obtain the field of nested elements for arrays and
@@ -342,6 +290,30 @@ LttField *ltt_field_element(LttField *f)
 
   return nest;
 }
+#endif//0
+
+/*****************************************************************************
+ *Function name
+ *    ltt_field_member_by_name  : obtain the field of data members for structure
+ *Input params
+ *    f                 : a field   
+ *    name              : name of the field
+ *Return value
+ *    LttField *       : the field of the nested element
+ ****************************************************************************/
+
+LttField *ltt_field_member_by_name(LttField *f, GQuark name)
+{
+  LttField *field_member;
+
+  g_assert(f->field_type.type_class == LTT_STRUCT ||
+              f->field_type.type_class == LTT_UNION);
+
+  field_member = g_datalist_id_get_data(&f->field_type.fields_by_name, name);
+
+  return field_member;
+}
+
 
 /*****************************************************************************
  *Function name
@@ -353,21 +325,15 @@ LttField *ltt_field_element(LttField *f)
  *    LttField *       : the field of the nested element
  ****************************************************************************/
 
-LttField *ltt_field_member(LttField *f, unsigned i)
+LttField *ltt_field_member(LttField *f, guint i)
 {
   LttField *field_member;
 
-  g_assert(f->field_type->type_class == LTT_STRUCT ||
-              f->field_type->type_class == LTT_UNION);
-  g_assert(i < f->field_type->element_number);
-#if 0
-  if(unlikely(   f->field_type->type_class != LTT_STRUCT
-                 && f->field_type->type_class != LTT_UNION)
-              || i >= f->field_type->element_number )
-    field_member = NULL;
-  else
-#endif //0
-  field_member = f->child[i];
+  g_assert(f->field_type.type_class == LTT_STRUCT ||
+              f->field_type.type_class == LTT_UNION);
+  g_assert(i < f->field_type.fields->len);
+
+  field_member = &g_array_index(f->field_type.fields, LttField, i);
 
   return field_member;
 }
@@ -384,7 +350,7 @@ LttField *ltt_field_member(LttField *f, unsigned i)
 LttType *ltt_field_type(LttField *f)
 {
   if(unlikely(!f))return NULL;
-  return f->field_type;
+  return &f->field_type;
 }
 
 int ltt_field_size(LttField * f)
@@ -392,3 +358,60 @@ int ltt_field_size(LttField * f)
   if(unlikely(!f))return 0;
   return f->field_size;
 }
+
+
+/*****************************************************************************
+ *Function name
+ *    ltt_eventtype_num_fields : get the number of fields of the event
+ *Input params
+ *    e               : an instance of an event type
+ *Return value
+ *    guint           : number of fields
+ ****************************************************************************/
+
+guint ltt_eventtype_num_fields(LttEventType *event_type)
+{
+  if(unlikely(!event_type)) return NULL;
+
+  return event_type->fields->len;
+  
+}
+/*****************************************************************************
+ *Function name
+ *    ltt_eventtype_field : get the i th field of the event
+ *Input params
+ *    e               : an instance of an event type
+ *    i               : field index
+ *Return value
+ *    LttField *      : The requested field, or NULL
+ ****************************************************************************/
+
+LttField *ltt_eventtype_field(LttEventType *event_type, guint i)
+{
+  if(unlikely(!event_type)) return NULL;
+
+  if(i >= event_type->fields->len) return NULL;
+  
+  return &g_array_index(event_type->fields, LttField, i);
+  
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_eventtype_field_by_name : get a field of the event
+ *Input params
+ *    e               : an instance of an event type
+ *    name            : field name
+ *Return value
+ *    LttField *      : The requested field, or NULL
+ ****************************************************************************/
+
+LttField *ltt_eventtype_field_by_name(LttEventType *event_type, GQuark name)
+{
+  if(unlikely(!event_type)) return NULL;
+
+  return (LttField*)g_datalist_id_get_data(&event_type->fields_by_name, name);
+  
+}
+
+
