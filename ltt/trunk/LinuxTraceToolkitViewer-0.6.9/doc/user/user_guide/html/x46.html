@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Installing LTT kernel tracer</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer User Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Getting started"
+HREF="c25.html"><LINK
+REL="PREVIOUS"
+TITLE="Getting started"
+HREF="c25.html"><LINK
+REL="NEXT"
+TITLE="Installing LTT trace recording daemon"
+HREF="x54.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer User Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c25.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. Getting started</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x54.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="install-tracer"
+>2.2. Installing LTT kernel tracer</A
+></H1
+><P
+>&#13;The goal of this guide is not to describe the Linux Trace Toolkit project in
+details, as it is a
+seperate project for now. It just gives pointers to the basic steps you must
+take in order to generate a trace suitable for conversion.
+</P
+><P
+>&#13;First, go to the <A
+HREF="http://ltt.polymtl.ca"
+TARGET="_top"
+>ltt.polymtl.ca</A
+>
+website, in the "Patches for the Official LTT" section. Use the latest version
+of patches available. The file name convention used goes like this : 
+aaaaaa-x.x--bbbbb-y.y.patch. That means a patch made for aaaaa, release x.x,
+that adds bbbbb, release y.y to it. Notice the presence of the -- sign that
+separates the "from" field from the name of the patch applied. This way, it's
+impossible to be mixed up on the specific sequence of patch application. I
+suggest that you use the "relayfs", "ltt" and then "md" patches. The "md" patch
+adds events useful to LTTV that are not in the official LTT.
+</P
+><P
+>&#13;Once you have the patches you need, get the matching Linux kernel version, apply
+the patches on it, configure it, install it, reboot with the new kernel. You then
+have an instrumented kernel ready for tracing. If you have problems during this phase,
+please refer to <A
+HREF="http://www.opersys.com/ltt"
+TARGET="_top"
+>www.opersys.com/ltt</A
+>. If you need
+instructions about how to recompile a kernel, see
+<A
+HREF="http://www.tldp.org/HOWTO/Kernel-HOWTO/"
+TARGET="_top"
+>Kernel-HOWTO</A
+>.
+</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c25.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x54.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Getting started</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c25.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Installing LTT trace recording daemon</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

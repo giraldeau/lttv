@@ -1,0 +1,24 @@
+Linux Trace Toolkit
+
+Mathieu Desnoyers 18-05-2004
+
+
+Seeing that a very precise hook call ordering is needed when processing events
+(especially the order for calling state update hooks and event delivery hooks),
+this document defines a new type and interface that permits to merge all kind of
+hooks, eventually sorted by the priority associated to them.
+
+- Type LttvHooks with priorities
+
+This is a modification to the actual LttvHooks that associates a priority with
+each hook. The container for this type would be a garray, just like hook.c, but
+hooks would be added at the right position in the list, by priority. Hooks in a
+hook list are ordered by priority : from highest priority (0) to
+lowest (99). The default priority is 50 (defined as LTTV_PRIO_DEFAULT).
+
+A new lttv_hooks_call_merge that will get the hooks from two hook lists in the
+right order will deal with the multiple lists priority problem.
+
+
+
+

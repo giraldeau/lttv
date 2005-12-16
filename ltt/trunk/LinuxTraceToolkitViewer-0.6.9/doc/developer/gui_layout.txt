@@ -1,0 +1,142 @@
+GUI Layout
+
+
+
+
+In order to implement the GUI, choices has to be made based on habitual interfaces that we know users are familiar with. The inspiration for these choices came mainly from the Mozilla browser project and also from Openoffice, which are currently used as two userfriendly applications in various Linux distribution at the time of this writing.
+
+This document describes the layout of the GUI in three sections : containers, menus and toolbars.
+
+A status bar is also placed at the bottom of the window.
+
+- Containers
+
+elements hierarchy
+
+Window Mainwindow
+|->vbox
+   |->menus
+   |->toolbar of the main window
+   |->toolbar of the currently selected viewer
+   |->notebook
+   |  |->vpaned
+   |  |->viewer's widget
+   |  |->vpaned
+   |  |->viewer's widget
+   |  |->vpaned
+   |  |->...
+   |->Status bar
+
+- Menus
+
+Here is a short description of each menu entry
+*   by itself means a separator
+
+
+- File
+*New -> *Empty trace set : open a new window with an empty trace set.
+        *Clone trace set : copy the content of the current window in a new
+			   window.
+	*
+	*Tab : Opens a new tab.
+*Open : open a trace set. Calls a file selection dialog.
+*Close : close the current window.
+*Close Tab : close the current tab.
+*
+*Add trace : Add a trace to the window's traceset. Calls file selection dialog.
+*Remove trace : Removes a trace from the traceset.
+*Save : save the trace set. Calls a file save dialog of no current filename.
+*Save as : save a trace set. Calls a file save dialog.
+*
+*Quit : quit the program.
+
+- Edit ? (not needed for now)
+
+- View
+*Zoom In : Multiply the zoom factor by a certain quantity.
+*Zoom Out : Divide the zoom factor by a certain quantity.
+*Zoom Extended : Show the entire traceset's largest time interval.
+*Go to time : Keep same zoom, ask user for time to center view on and make
+              it the current time.
+*Show time frame : ask user for time interval to show.
+              (modify zoom and current event in consequence)
+
+- Tools (this is an example of how viewer's menu entries should look like)
+*Move viewer up -> Moves the current viewer up one position.
+*Move viewer down -> Moves the current viewer down one position.
+*Remove : remove the current viewer
+*
+*DumpToFile -> *Dump Text (This is a text module which adds graphical menu
+                           entries)
+               *Dump binary
+* (separator between text tools and graphical tools implies different function
+   to register each type of menu entries)
+*Insert Events View : insert this type of viewer
+*Insert ControlFlow View
+- Plugins
+*Load module : ask the user a module to load (list modules in search path).
+*Unload module : list all modules, click to choose, then unload button.
+*Add module search path : ask user for a new path (file selection dialog).
+
+- Options
+//FIXME *Color : change the color of the currently selected element ?
+*Filter : Show traceset's filter option window.
+*Save configuration : Save the currently loaded modules/traceset/filters
+                      to gconf.
+
+
+(aligned to the right)
+- Help
+*Content
+*About
+
+
+- Toolbar
+
+The toolbar is separated in two parts : like the two lines used in Openoffice. The first one is applying to the top level window (or current tab) while the one below contains the current viewer's toolbar.
+
+So we have something like this :
+
+--------------------------------------------------------------------------------
+| Menus                                                                        |
+--------------------------------------------------------------------------------
+| Toolbar of the top level window                                              |
+--------------------------------------------------------------------------------
+| Toolbar of the current viewer                                                |
+--------------------------------------------------------------------------------
+||Current Tab|                                                                 |
+|-----------------------------------------------------------------------------||
+||viewers in vpaned                                                           ||
+||                                                                            ||
+||----------------------------------------------------------------------------||
+--------------------------------------------------------------------------------
+| Status bar                                                                   |
+--------------------------------------------------------------------------------
+
+
+The toolbar of the top level window is the only one described in this document, as the second one is defined by the viewers and specific to each of them.
+
+This toolbar is mainly a selection of the menu entries.
+
+New : New window with empty trace set.
+Open : open a trace set.
+Add Trace
+Remove Trace
+Save : save the current trace set.
+Save as
+*
+Zoom in
+(Show the current zoom factor, modifiable)
+Zoom out
+Zoom Extended
+Go to time (shows time directly)
+Show time frame (Could be a special field showing the time frame)
+*
+Move up current viewer
+Move down current viewer
+Delete current viewer
+*
+Add viewer's specific insertion buttons are added here.
+
+
+Mathieu Desnoyers, June 2003

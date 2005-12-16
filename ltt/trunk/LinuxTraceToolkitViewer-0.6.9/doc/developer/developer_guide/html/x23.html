@@ -1,0 +1,200 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>A typical module</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer Developer Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Linux Trace Toolkit Viewer Text Module Tutorial"
+HREF="c18.html"><LINK
+REL="PREVIOUS"
+TITLE="Linux Trace Toolkit Viewer Text Module Tutorial"
+HREF="c18.html"><LINK
+REL="NEXT"
+TITLE="The hooks"
+HREF="x33.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer Developer Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c18.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 1. Linux Trace Toolkit Viewer Text Module Tutorial</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x33.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="AEN23"
+>1.2. A typical module</A
+></H1
+><P
+>&#13;A typical module must have a init() and destroy() function. Please refer to
+lttv/modules/text/textDump.c for the detail of these functions.
+</P
+><P
+>&#13;The init() function is called when the library is loaded and destroy()
+inversely. It adds options to the command line by calling "lttv_option_add" from
+option.h
+</P
+><P
+>&#13;The module communicates with the main lttv program through the use of global
+attributes. Use lttv/attribute.h, lttv/iattribute.h and lttv/lttv.h, and then
+LTTV_IATTRIBUTE(lttv_global_attributes()) to get the pointer to these
+global attributes.
+</P
+><P
+>&#13;You can then add your hooks (functions that follows the prototype of a hook, as
+defined in lttv/hook.h) in the different hook lists defined in lttv/lttv.h. Note
+that hooks have an assigned priority. This is necessary to inform the trace
+reader that a specific hook needs to be called, for example, before or after the
+state update done for an event by the state module. For that specific example, a
+hook could use the LTTV_PRIO_STATE-5 to get called before the state update and a
+second hook could use the LTTV_PRIO_STATE+5 to get called after the state
+update. This is especially important for graphical module, which is the subject
+of a the chapter named "Linux Trace Toolkit Viewer Graphical Module Tutorial".
+</P
+><P
+>&#13;You should also take a look at lttv/state.c, where by_id hooks are used. When
+you only need some specific events, you should use this interface. It makes the
+event filtering sooner in the dispatch chain : you hook doesn't have to be
+called for each event, only the ones selected. That improves the performances a
+lot!
+</P
+><P
+>&#13;Note that you should use the lttv_trace_find_hook method from
+lttv/tracecontext.h to connect the hook to the right facility/event type. See
+state.c for an example. A problem that may arise is that the LttvTraceHook
+structure must be passed as hook_data when registering the hook. In fact, it is
+not necessary for it to be directly passed as the hook_data parameter. As long
+as the hook function can access the LttvTraceHook fields necessary to parse the
+LttEvent, there is no problem. In a complex viewer where you need a pointer to
+your own data structure, just keep a pointer to the LttvTraceHook structure
+inside your own data structure, and give to pointer to your data structure in
+parameter as the hook_data.
+</P
+><P
+>&#13;Then, you should use the macro LTTV_MODULE, defined in lttv/module.h. It allows
+you to specify the module name, a short and a long description, the init and
+destroy functions and the module dependencies. That permits to the module
+backend to load the right dependencies when needed.
+</P
+><P
+>&#13;A typical text module will depend on batchAnalysis for the batch computation of a
+trace, and simply register before and after trace hooks, as weel as the most
+important one : a event hook.
+</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c18.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x33.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Linux Trace Toolkit Viewer Text Module Tutorial</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c18.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>The hooks</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

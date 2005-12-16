@@ -1,0 +1,12 @@
+<facility name=s390_kernel>
+  <description>The kernel facility has events related to kernel execution status.</description>
+
+  <event name=trap_entry>
+    <description>Entry in a trap</description>
+    <struct>
+      <field name="trap_id"> <description>Trap number</description> <uint size=8/> </field>
+      <field name="address"> <description>Address where trap occured</description> <pointer/> </field>
+     </struct>
+  </event>
+
+</facility>

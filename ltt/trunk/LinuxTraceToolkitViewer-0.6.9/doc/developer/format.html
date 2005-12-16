@@ -1,0 +1,379 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>The new LTT trace format</title>
+</head>
+  <body>
+
+<h1>The new LTT trace format</h1>
+
+<P>
+A trace is contained in a directory tree. To send a trace remotely,
+the directory tree may be tar-gzipped. Trace foo, placed in the home
+directory of user john, /home/john, would have the following content:
+
+<PRE><TT>
+$ cd /home/john
+$ tree foo
+foo/
+|-- eventdefs
+|   |-- core.xml
+|   |-- net.xml
+|   |-- ipv4.xml
+|   `-- ide.xml
+|-- info
+|   |-- bookmarks.xml
+|   `-- system.xml
+|-- control
+|   |-- facilities
+|   |-- interrupts
+|   `-- processes
+`-- cpu
+    |-- 0
+    |-- 1
+    |-- 2
+    `-- 3
+</TT></PRE>
+
+<P>
+The eventdefs directory contains the events descriptions for all the
+facilities used. The syntax is a simple subset of XML; XML is widely
+known and easily parsed or hand edited. Each file contains one or more
+<FACILITY NAME=name>...</FACILITY> elements. Indeed, several
+facilities may have the same name but different content (and thus will
+generate a different checksum). It typically happens when, while tracing
+is enabled, a module using the named facility is unloaded, modified
+(along with the description of some events), recompiled and reloaded.
+Then, the trace will contain events from two different, similarly named,
+facility versions.
+
+<P>
+A small number of events are predefined, part of the "builtin" facility, 
+and are not present there. These "builtin" events include "facility_load", 
+"block_start", "block_end" and "time_heartbeat".
+
+<P>
+The cpu directory contains a tracefile for each cpu, numbered from 0, 
+in .trace format. A uniprocessor thus only contains the file cpu/0. 
+A multi-processor with some unused (possibly hotplug) CPU slots may have some
+unused CPU numbers. For instance a 8 way SMP board with 6 CPUs randomly 
+installed may produce tracefiles named 0, 1, 2, 4, 6, 7.
+
+<P>
+The files in the control directory also follow the .trace format. 
+The "facilities" file only contains "builtin" facility_load events
+and is used to determine the facilities used and the code range assigned 
+to each facility. The other control files contain the initial system
+state and various subsequent important events, for example process 
+creations and exit. The interest of placing such subsequent events 
+in control trace files instead of (or in addition to) in the per cpu 
+trace files is that they may be accessed more quickly/conveniently 
+and that they may be kept even when the per cpu files are overwritten 
+in "flight recorder mode".
+
+<P>
+The info directory contains in system.xml a description of the system on which
+the trace was created as well as different user annotations in bookmark.xml.
+This directory may also contain various information about the trace, generated 
+during trace analysis (statistics, index...).
+
+
+<H2>Trace format</H2>
+
+<P>
+Each tracefile is divided into equal size blocks with an uint32 at the block 
+end giving the offset to the last event in the block. Events are packed
+sequentially in the block starting at offset 0 with a "block_start" event
+and ending, at the offset stored in the last 4 bytes of the block, with a
+block_end event. Both the block_start and block_end events
+contain the kernel timestamp (timespec binary structure, 
+uint32 seconds, uint32 nanoseconds), the cycle counter (uint64 cycles), 
+and the buffer id (uint64).
+
+<P>
+Each event consists in an event type id (uint16 which is the event type id 
+within the facility + the facility base id), a time delta (uint32 in cycles
+or nanoseconds, depending on configuration, since the last time value, in the 
+block header or in a "time_heartbeat" event) and the event type specific data.
+All values are packed in native byte order binary format.
+
+
+<H2>System description</H2>
+
+<P>
+The system type description, in system.xml, looks like:
+
+<PRE><TT>
+&lt;system 
+ node_name="vaucluse"
+ domainname="polymtl.ca" 
+ cpu=4
+ arch_size="ILP32" 
+ endian="little" 
+ kernel_name="Linux" 
+ kernel_release="2.4.18-686-smp" 
+ kernel_version="#1 SMP Sun Apr 14 12:07:19 EST 2002"
+ machine="i686" 
+ processor="unknown" 
+ hardware_platform="unknown"
+ operating_system="Linux" 
+ ltt_major_version="2"
+ ltt_minor_version="0"
+ ltt_block_size="100000"
+&gt;
+Some comments about the system
+&lt;/system&gt;
+</TT></PRE>
+
+<P>
+The system attributes kernel_name, node_name, kernel_release,
+ kernel_version, machine, processor, hardware_platform and operating_system
+come from the uname(1) program. The domainname attribute is obtained from
+the "hostname --domain" command. The arch_size attribute is one of
+LP32, ILP32, LP64 or ILP64 and specifies the length in bits of integers (I),
+long (L) and pointers (P). The endian attribute is "little" or "big".
+While the arch_size and endian attributes could be deduced from the platform
+type, having these explicit allows analysing traces from yet unknown
+platforms. The cpu attribute specifies the maximum number of processors in
+the system; only tracefiles 0 to this maximum - 1 may exist in the cpu
+directory.
+
+<P>
+Within the system element, the text enclosed may describe further the
+system traced.
+
+
+<H2>Event type descriptions</H2>
+
+<P>
+A facility contains the descriptions of several event types. When a structure
+is reused in several event types, a named type is defined and may be referenced
+by several other event types or named types.
+
+<PRE><TT>
+&lt;facility name=facility_name&gt;
+  &lt;description&gt;Some text&lt;/description&gt;
+  &lt;event name=eventtype_name&gt;
+    &lt;description&gt;Some text&lt;/description&gt;
+    --type structure--
+  &lt;/event&gt;
+  ...
+  &lt;type name=type_name&gt;
+    --type structure--
+  &lt;/type&gt;
+&lt;/facility&gt;
+</TT></PRE>
+
+<P>
+The type structure may be one of the following primitive type elements.
+Whenever the keyword isize is used, the allowed values are 
+short, medium, long, 1, 2, 4, 8, indicating the size in bytes.
+The fsize keyword represents one of medium, long, 4 and 8 bytes.
+
+<PRE><TT>
+&lt;int size=isize format="printf format"/&gt;
+
+&lt;uint size=isize format="printf format"/&gt;
+
+&lt;float size=fsize format="printf format"/&gt;
+
+&lt;string format="printf format"/&gt;
+
+&lt;enum size=isize format="printf format"&gt;label1 label2 ...&lt;/enum&gt;
+</TT></PRE>
+
+<P>
+The string is null terminated. For the enumeration, the size of the integer
+used for its representation is specified.
+
+<P>
+The type structure may also be a compound type.
+
+<PRE><TT>
+&lt;array size=n&gt; --type structure-- &lt;/array&gt;
+
+&lt;sequence lengthsize=isize&gt; --type structure-- &lt;/sequence&gt;
+
+&lt;struct&gt;
+  &lt;field name=field_name&gt;
+    &lt;description&gt;Some text&lt;/description&gt;
+    --type structure--
+  &lt;/field&gt;
+  ...
+&lt;/struct&gt;
+
+&lt;union typecodesize=isize&gt;
+  &lt;field name=field_name&gt;
+    &lt;description&gt;Some text&lt;/description&gt;
+    --type structure--
+  &lt;/field&gt;
+  ...
+&lt;/union&gt;
+</TT></PRE>
+
+<P>
+Array is a fixed size array of length size. Sequence is a variable size
+array with its length stored as a prepended uint of length lengthsize. 
+A structure is simply an aggregation of fields. An union is one of its n 
+fields (variant record), as indicated by a preceeding code (0 to n - 1)
+of the specified size typecodesize.
+
+<P>
+Finally the type structure may be defined by referencing a named type.
+
+<PRE><TT>
+&lt;typeref name=type_name/&gt;
+</PRE></TT>
+
+<H2>Builtin events</H2>
+
+<P>
+The facility named "builtin" is always present and contains at least the
+following event types.
+
+<PRE><TT>
+&lt;event name=facility_load&gt;
+  &lt;description&gt;Facility used in the trace&lt;/description&gt;
+  &lt;struct&gt;
+    &lt;field name="name"&gt;&lt;string/&gt;&lt;/field&gt;
+    &lt;field name="checksum"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="base_code"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+  &lt;/struct&gt;
+&lt;/event&gt;
+
+&lt;event name=block_start&gt;
+  &lt;description&gt;Block start timestamp&lt;/description&gt;
+  &lt;typeref name=block_timestamp/&gt;
+&lt;/event&gt;
+
+&lt;event name=block_end&gt;
+  &lt;description&gt;Block end timestamp&lt;/description&gt;
+  &lt;typeref name=block_timestamp/&gt;
+&lt;/event&gt;
+
+&lt;event name=time_heartbeat&gt;
+  &lt;description&gt;System time values sent periodically to minimize cycle counter 
+    drift with respect to real time clock and to detect cycle counter
+    rollovers
+  &lt;/description&gt;
+  &lt;typeref name=timestamp/&gt;
+&lt;/event&gt;
+
+&lt;type name=block_timestamp&gt;
+  &lt;struct&gt;
+    &lt;field name=timestamp&gt;&lt;typeref name=timestamp&gt;&lt;/field&gt;
+    &lt;field name=block_id&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+  &lt;/struct&gt;
+&lt;/type&gt;
+
+&lt;type name=timestamp&gt;
+  &lt;struct&gt;
+    &lt;field name=time&gt;&lt;typeref name=timespec/&gt;&lt;/event&gt;
+    &lt;field name="cycle_count"&gt;&lt;uint size=8/&gt;&lt;/field&gt;
+  &lt;/struct&gt;
+&lt;/event&gt;
+
+&lt;type name=timespec&gt;
+  &lt;struct&gt;
+    &lt;field name="seconds"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="nanoseconds"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+  &lt;/struct&gt;
+&lt;/type&gt;
+</TT></PRE>
+
+<H2>Control files</H2>
+
+<P>
+The interrupts file reflects the content of the /proc/interrupts system file.
+It contains one event describing each interrupt. At trace start, events are
+generated describing all the current interrupts. If the assignment of
+interrupts changes later, due to devices or device drivers being activated or
+deactivated, additional events may be added to the file. Each interrupt
+event has the following structure.
+
+<PRE><TT>
+&lt;event name=interrupt&gt;
+  &lt;description&gt;Interrupt request number assignment&lt;description&gt;
+  &lt;struct&gt;
+    &lt;field name="number"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="count"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="controller"&gt;&lt;string/&gt;&lt;/field&gt;
+    &lt;field name="name"&gt;&lt;string/&gt;&lt;/field&gt;
+  &lt;/struct&gt;
+&lt;/event&gt;
+</TT></PRE>
+
+<P>
+The processes file contains the list of processes already created when the
+trace starts. Each process describing event is modeled after the 
+/proc/self/status system file. The number of fields in this event is
+expected to be expanded in the future to include groups, signal masks,
+opened file descriptors and address maps.
+
+<PRE><TT>
+&lt;event name=process&gt;
+  &lt;description&gt;Existing process&lt;description&gt;
+  &lt;struct&gt;
+    &lt;field name="name"&gt;&lt;string/&gt;&lt;/field&gt;
+    &lt;field name="pid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="ppid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="tracer_pid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="uid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="euid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="suid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="fsuid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="gid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="egid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="sgid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="fsgid"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="state"&gt;&lt;enum size=4&gt;
+        Running WaitInterruptible WaitUninterruptible Zombie Traced Paging
+    &lt;/enum&gt;&lt;/field&gt;
+  &lt;/struct&gt;
+&lt;/event&gt;
+</TT></PRE>
+
+<H2>Facilities</H2>
+
+<P>
+Facilities define a granularity of events grouping for filtering, activation
+and compilation. Each facility does cost a table entry in the kernel (name,
+checksum, event type code range), or somewhere between 20 and 30 bytes. Having
+one facility per tracing statement in the kernel would be too much (assuming
+that they eventually are routinely inserted in the kernel code and replace 
+the 80000+ printk statements in some proportion). However, having a few 
+facilities, up to a few tens, would make sense.
+
+<P>
+The "builtin" facility contains a small number of predefined events which must
+always exist. The "core" facility contains a small subset of OS events which
+are almost always of interest (scheduling, interrupts, faults, system calls).
+Then, specialized facilities may exist for each subsystem (network, disks,
+USB, SCSI...).
+ 
+
+<H2>Bookmarks</H2>
+
+<P>
+Bookmarks are user supplied information added to a trace. They contain user
+annotations attached to a time interval.
+
+<PRE><TT>
+&lt;bookmarks&gt;
+  &lt;location name=name cpu=n start_time=t end_time=t&gt;Some text&lt;/location&gt;
+  ...
+&lt;/bookmarks&gt;
+</TT></PRE>
+
+<P>
+The interval is defined using either "time=" or "start_time=" and 
+"end_time=", or "cycle=" or "start_cycle=" and "end_cycle=". 
+The time is in seconds with decimals up to nanoseconds and cycle counts 
+are unsigned integers with a 64 bits range. The cpu attribute is optional.
+
+</BODY>
+</HTML>
+
+
+
+
