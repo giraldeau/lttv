@@ -1,0 +1,21 @@
+
+|-----------------|
+|Graphical Plugins|
+|-----------------|
+gui/
+
+detailedevents : Display events for time interval into a list.
+controlflow : Display the control flow of the trace for time interval
+                 using gdk and a GtkDrawingArea. Pixmaps for icons are
+		             defined with each event inside the event related
+		             information.
+statistics :  Display statistics computed from the trace.
+
+|---------------------|
+|Text Oriented Plugins|
+|---------------------|
+text/
+
+batchAnalysis : Call processing hooks for every events of the trace.
+textDump : Dump in clear text all data related to events on standard output.
+           It depends on batchAnalysis.

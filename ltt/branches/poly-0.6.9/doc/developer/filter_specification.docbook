@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+                      "/usr/share/sgml/docbook/dtd/4.3/xdocbook.dtd">
+<!--<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" >-->
+
+<book>
+
+<bookinfo>
+<title>Spécifications du filtre de Linux Trace Toolkit Viewer</title>
+<authorgroup>
+<author>
+<firstname>Mathieu</firstname>
+<surname>Desnoyers</surname>
+</author>
+</authorgroup>
+
+<date>26/01/2005</date>
+<releaseinfo>1.00.00</releaseinfo>
+
+<abstract>
+<para>
+Ce document décrit les spécifications requises pour la fonctionnalité de
+filtrage pour l'application 
+<application>Linux Trace Toolkit Viewer</application>.
+
+</para>
+</abstract>
+
+<keywordset>
+<keyword>Linux Trace Toolkit Viewer</keyword>
+<keyword>spécification</keyword>
+<keyword>filtre</keyword>
+<keyword>specification</keyword>
+<keyword>filter</keyword>
+</keywordset>
+
+</bookinfo>
+<chapter>
+<title>Introduction</title>
+
+<para>
+Le filtre de Linux Trace Toolkit Viewer est une fonctionnalité nécessaire pour
+rendre l'outil pleinement utilisable. Des cas typiques de filtrage ont déjà été
+identifiés : filtrer par CPU ou par ID d'événement.
+</para>
+<para>
+Cependant, un utilisateur plus avancé peut vouloir filtrer selon n'importe quel
+champs d'information disponible lors de la lecture d'un événement. L'approche
+qui sera suivie, afin d'assurer l'applicabilité du filtrage aux différents types
+de traces, sera de ne pas limiter les champs selon lesquels le filtrage pourra
+être fait.
+</para>
+<para>
+Comme le filtrage se fait à la lecture de chaque événement, il peut rapidement
+devenir un goulot d'étranglement important. Les performances doivent donc être
+un souci de taille lors de la réalisation de cette fonctionnalité. C'est
+pourquoi l'architecture proposée se base sur une compilation des règles de
+filtrage lors de leur définition afin de générer une structure de données
+optimale pour le parcours de la trace.
+</para>
+<para>
+Ce document explique les différents défis à surmonter dans les différents
+sous-modules du filtre, soit : la partie "core" du filtre, qui sera intégrée,
+comme son nom l'indique, au coeur de l'application ainsi que les parties
+modulaires textes et graphiques. À la fin du document, des optimisations
+éventuelles sont énoncées, sans plus. Elles pourront être utiles dans le cas où
+les performances s'avéreraient problématiques.
+</para>
+<para>
+Ce document est le fruit d'un échange entre Michel Dagenais et moi-même, Mathieu
+Desnoyers. Certains passages sont laissés sous leur forme originale.
+</para>
+
+</chapter>
+
+
+<chapter>
+<title>Design</title>
+
+<sect1>
+<title>Core</title>
+
+<para>
+     Application des règles de filtrage aux événements. Les règles de
+     filtrage pourraient être représentées par un arbre. Cette section du
+     filtrage est assez intégrée au reste de l'application pour mériter d'être
+     au coeur même de lttv (pas dans un module séparé). Les feuilles de l'arbre
+     sont des 3-tuples (champs, relation, valeur), alors que les noeuds
+     intermédiaires sont des relations logiques (and, or, xor, not). Le and, le
+     or et le xor sont limités à deux enfants, alors que le not est limité à un
+     seul enfant.
+</para>
+<para>
+     Les champs du 3-tuple devraient respecter une arborescence qui représente
+     l'organisation des données dans les événements. Celles-ci sont, lors de la
+     lecture de la trace, accessibles via les structures :
+</para>
+<itemizedlist>
+<listitem><para>LttEvent (plus les champs spécifiques à l'événement)</para></listitem>
+<listitem><para>LttvTracefile</para></listitem>
+<listitem><para>LttvTrace</para></listitem>
+<listitem><para>LttvTraceset</para></listitem>
+<listitem><para>LttvState</para></listitem>
+</itemizedlist>
+<para>
+     On pourrait donc, au niveau de la description du champs, représenter
+     celui-ci par une chaîne de caractères imbriquable dont les niveaux sont
+     séparés par le ".". Voici la représentation des niveaux d'imbrication :
+</para>
+<para>
+<literallayout class="monospaced">
+     *
+     |->event (pour accéder aux champs sous LttEvent)
+     |  |->name (string)
+     |  |->category (string)
+     |  |->time (LttTime)
+     |  |->tsc (LttCycleCount)
+     |  |->fields
+     |     |->"event name"
+     |        |->"field name"
+     |           |->"sub-field name"
+     |              |->...
+     |                 |->"leaf-field name" (field type)
+     |
+     |->tracefile
+     |  |->name (string)
+     |->trace
+     |  |->name (string)
+     |->state
+        |->pid (guint)
+        |->ppid (guint)
+        |->creation_time (LttTime)
+        |->insertion_time (LttTime)
+        |->process_name (string)
+        |->execution_mode (user_mode, syscall, trap, irq, unknown)
+        |->execution_submode (none, unknown)
+        |->process_status (wait_fork,wait_cpu,exit,zombie,wait,run,unnamed)
+        |->cpu (guint)
+</literallayout>
+</para>
+
+<para>
+L'objet contenant l'arbre des règles de filtrage ainsi que la cache du filtre,
+  qu'on pourrait appeler "LttvFilter", serait associé à une trace, non pas à un
+  trace set, pour des raisons de performance. En effet, le même nom d'événement
+  peut très bien être associé à un ID différent d'une trace à l'autre. Comme on
+  ne souhaite pas faire la translation nom->id (qui est coûteuse) à chaque
+  utilisation du filtre, on le ferait lors de sa construction. Ceci implique de
+  garder un objet LttvFilter par trace. Rien n'empêche cependant d'avoir une
+  façon de créer, au niveau usager, des filtres pour toutes les traces d'un
+  traceset, mais ceux-ci seront associés à chaque trace du trace set.
+</para>
+
+<para>
+Michel Dagenais :
+</para>
+<para>
+Je m`inquiète beaucoup pour la performance. Il faut pouvoir précompiler
+ces expressions en offset (ltt_field) et avoir un espèce d`index pour ne
+pas passer séquentiellement à travers toutes les règles et pour chaque
+règle interpréter les noms de champs à chaque événement traité!!
+</para>
+
+<para>
+Mathieu Desnoyers :
+</para>
+<para>
+C'est ce que j'avais en tête : fixer les positions des champs au moment de la
+création de la règle de filtrage, quitte à la recalculer si jamais la trace
+change en cours de route (mais ça ne devrait pas arriver, puisque les paires
+(facility, event id) sont uniques au cours d'une trace).
+</para>
+
+<para>
+Cependant, de la manière dont je vois ça, on aura pas le choix de se garder un
+arbre représentant l'expression logique et de le parcourir séquentiellement pour
+chaque événement. On peut évidemment éviter de balayer certaines branches en se
+basant sur les relations and, or, xor lors du parcours.
+</para>
+
+<para>
+Donc, je vois ça, dans le pire cas, comme un parcours infixe de l'arbre
+représentant les règles. Chaque feuille serait une règle représentée par un
+3-tuple (position, (type, relation), valeur), où chaque paire de (type,relation)
+devrait être défini pour chaque type (possiblement incorrect, comme la relation
+< sur un type string). Lors de la compilation, on passerait du 3-tuple (champs,
+relation, valeur) à un 3-tuple (position, (type, relation), valeur).
+</para>
+
+<para>
+À noter : un simple offset n'est en réalité pas assez pour représenter la
+position, puisque toutes les données ne résident pas dans une seule structure.
+Certaines sont dans le contexte (TracesetContext), d'autres dans la structure de
+l'événement. Il faut donc décrire la position, en réalité, comme une paire
+(structure, offset), où nous limitons structure aux noms de structure connus
+(qui peuvent être encodés sur la forme de GQuarks) : {LTTV_TRACE,
+LTTV_TRACEFILE, LTTV_TRACE_STATE, LTT_EVENT}.
+</para>
+
+<para>
+Lors de la compilation, on a, en entrée, le tuple :
+</para>
+
+<para>
+(champs, relation, valeur)
+</para>
+
+<para>
+où champs est un tuple : (structure, offset, type)
+</para>
+
+<para>
+On produit, en sortie, (toujours dans la même structure en arbre pour les
+expressions logiques), les 3-tuples suivants (aux feuilles) :
+</para>
+
+<para>
+(position, fonction, valeur)
+</para>
+
+<para>
+où :
+<simplelist type="inline">
+<member>position = (structure, offset)</member>
+<member>fonction = (type, relation)</member>
+</simplelist>
+</para>
+
+<para>
+Il me reste une question : que fait-on lors qu'un facility est rechargé en cours
+de traçage ? Les événements vont-ils changer d'id ?
+</para>
+
+<para>
+Michel Dagenais :
+</para>
+<para>
+Non, c`est un nouveau facility avec le même nom mais un fingerprint
+différent qui s`ajoute puisqu`il est possible que des modules utilisent
+l`ancienne version alors que d`autres utilisent la nouvelle
+simultanément. Il est possible que les règles ne spécifient que le nom
+de la facilité auquel cas elles pourraient s`appliquer à toutes les
+facilités du même nom et demanderaient d`avoir une précompilation
+différente pour chaque facilité.
+</para>
+
+<para>
+Mathieu Desnoyers :
+</para>
+<para>
+J'en conclue que le 2-tuple (facility, event id) est unique pour la trace, c'est
+ça ?
+</para>
+<para>
+Michel Dagenais :
+</para>
+<para>
+> Oui.
+</para>
+
+</sect1>
+
+<sect1>
+<title>Module texte</title>
+
+<para>
+Lecture d'une chaîne de caractères formée d'expressions
+booléennes qui décrivent le filtre à partir des opérations de base :
+and, or, xor, not
+et de parenthèses : ( et ).
+Les entrées logiques de ce filtre sont composées 3-tuples
+(champs, relation, valeur),
+où le champs est le type d'information (i.e. pid)
+la relation est la limite sur la valeur (i.e. <)
+la valeur est la valeur qui doit être respectée par le champs selon la
+relation. Doit être du type associé au champs. À priori, on utilise
+le type de champs pour savoir sous quel type encoder l'information
+lue, tout en vérifiant le contenu de la chaîne lue pour des
+débordements (overflow) avant encodage vers le type associé.
+La lecture de cette expression booléenne formerait un arbre de règles de
+filtrage, qui serait ensuite utilisé par la partie "core" de filtrage de
+lttv pour être appliqué aux événements lors de la lecture de trace.
+</para>
+
+</sect1>
+
+<sect1>
+<title>Module graphique</title>
+
+<para>
+Une classe filtre graphique serait associée à un arbre
+de règles de filtrage. On pourrait le modifier les objets de la classe
+filtre graphique en invoquant une fenêtre de modification de filtre qui
+permettrait d'entrer les spécifications du filtre à l'aide de champs
+graphiques de sélection (drop down list) pour les types d'éléments selon
+lesquels filtrer, et d'un champs d'entrée de texte libre pour spécifier la
+valeur que ce champs doit prendre. La relation qui doit être appliquée
+(<, >, <=, >=, =) doit être sélectionnée dans un autre drop-down list.
+En plus de la sélection graphique, l'entrée d'une chaîne de caractère serait
+possible pour spécifier le filtre selon l'entrée décrite ci-haut pour le
+module texte.
+</para>
+
+<para>
+Michel Dagenais :
+</para>
+<para>
+Oui, à la rigueur la partie graphique n`est probablement pas tellement
+plus difficile que celle textuelle. On pourrait commencer avec seulement
+la partie graphique qui produit directement la représentation en arbre.
+</para>
+
+<para>
+Mathieu Desnoyers :
+</para>
+<para>
+Comme je prévois réutiliser l'entrée texte à l'intérieur de la fenêtre
+graphique, je crois qu'il est préférable de commencer par l'entrée texte.
+D'ailleurs, l'avantage pour quelqu'un qui commence à contribuer au projet est de
+ne pas avoir à apprendre l'API de GTK en même temps qu'il fait le développement
+de son module. Il est un peu trop facile de ne pas assez découpler la logique
+interne de la présentation.
+</para>
+
+<para>
+Michel Dagenais :
+</para>
+<para>
+Le cas classique est de choisir un CPU ou un type d`événement, auquel
+cas un menu simple de CPU et type serait beaucoup plus pratique que
+d`avoir à taper une expression.
+</para>
+<para>
+Mathieu Desnoyers :
+</para>
+<para>
+On pourrait penser à faire un module graphique de création de filtre de base,
+pour les fonctionnalités les plus utilisées. Celui-ci pourra être étendu par
+la suite, si besoin est. L'intérêt est d'avoir quand-même la possibilité, pour
+un utilisateur plus avancé, de spécifier toutes les caractéristiques via
+l'interface. Dans ce cas, quelqu'un serait tout-à-fait prêt à faire une
+expression pour décrire en détail son filtre. C'est quand-même quelque chose de
+plus en plus commun avec la venue des moteurs de recherche.
+</para>
+
+</sect1>
+
+<sect1>
+<title>Choix de syntaxe, documentation et messages d'erreur</title>
+<para>
+Michel Dagenais :
+</para>
+<para>
+Oui, une partie non négligeable est un choix de syntaxe convivial, la
+documentation et les messages d`erreur...
+</para>
+<para>
+Mathieu Desnoyers :
+</para>
+<para>
+C'est bel et bien ce qui sera perçu par l'utilisateur, de là l'importance..
+</para>
+<para>
+Je me demande s'il est mieux d'adopter une syntaxe un peu à la Google ou bien à
+la C :
+</para>
+
+<para>
+(, ), and, or, xor, not, field op value
+où op peut prendre : <, >, <=, >=, =
+</para>
+
+<para>
+ou bien à la C
+(, ), &, |, ^, !, field op value
+</para>
+
+
+<para>
+Ou bien on peut faire un alphabet mixte entre les deux, où les mots and et &
+seraient équivalents. Ce serait probablement plus facile de reconnaître les
+symboles comme & par contre, et moins limitant sur le traitement du mot
+identifiant le field.
+</para>
+
+<para>
+Mais cette question est de moindre importance : tant qu'on se fixe un standard
+et qu'on le documente, je crois qu'il n'y a pas vraiment de mauvais choix.
+</para>
+
+<para>
+Pour la documentation, l'ajout d'une section au guide de l'utilisateur (déjà en
+docbook) me semble très adéquat.
+</para>
+
+<para>
+Pour les messages d'erreur, il faudra entres autres penser à valider les
+opération par rapport à celles permises pour chaque type. Par exemple, un > n'a
+pas vraiment de sens pour un string.
+</para>
+
+
+<para>
+Michel Dagenais :
+</para>
+<para>
+Je tendrais à prendre la syntaxe C.
+</para>
+
+<para>
+Mathieu Desnoyers :
+</para>
+<para>
+Si on utilise de manière stricte la syntaxe C, il faudrait utiliser ceci :
+</para>
+
+<para>
+&&, ||, ==, (rien pour le xor logique ?)
+</para>
+
+<para>
+Je me dis que, puisque nous n'avons pas besoin des opérations "bitwise", nous
+pourrions utiliser celles-ci.
+</para>
+
+<para>
+Donc, ce que je propose, est d'utiliser l'alphabet utilisé pour les opérateurs
+bitwise du C en tant qu'opérateurs logiques pour notre parser d'expressions de
+filtre :
+</para>
+
+<para>
+&, |, =, ^
+</para>
+
+<para>
+Ceci est un détail sémantique, mais je veux juste m'assurer qu'on est d'accord.
+</para>
+
+
+</sect1>
+
+<sect1>
+<title>Optimisation éventuelles</title>
+
+
+<para>
+ "Cache" de filtre, afin d'optimiser le cas courant.
+  Au niveau de la partie "core" du filtrage, on pourrait faire une hash
+  table indexée par une clé formée d'un xor des champs à filtrer. Alors, si un
+  événement possède les même caractéristiques de filtrage, on pourrait accéder à
+  la solution (V/F) en O(1). Le coût est de calculer la clé de hashage pour
+  chaque événement. L'avantage apparaît lorsqu'il y a plusieurs critères de
+  filtrage à comparer. La remise à zéro de cette cache devrait être faite
+  lorsqu'il y a des modifications au filtre.
+</para>
+
+<para>
+Michel Dagenais :
+</para>
+<para>
+Les travaux sur l`optimisation de requêtes dans les bases de données est
+probablement pertinent pour ce genre de choses.
+</para>
+
+<para>
+Mathieu Desnoyers :
+</para>
+<para>
+Il faudra que je m'y arrête. Cependant, ceci constitue une optimisation et n'est
+donc pas crucial pour le fonctionnement.
+</para>
+
+
+<para>
+Michel Dagenais :
+</para>
+<para>
+Sauf si c`est inutilisable sans une telle optimisation :-).
+</para>
+
+<para>
+Mathieu Desnoyers :
+</para>
+<para>
+N'est-ce pas toi qui m'a déjà dit, citant Donald Knuth  : "Premature
+optimisation is the root of all evil" ? :)
+</para>
+
+<para>
+Effectivement, si on s'aperçoit que c'est trop lent, il faudra passer à cette
+étape.
+</para>
+
+
+</sect1>
+
+</chapter>
+
+
+
+</book>

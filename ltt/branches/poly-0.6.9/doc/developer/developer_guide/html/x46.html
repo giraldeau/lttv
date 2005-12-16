@@ -1,0 +1,162 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Why an event driven trace reader ?</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer Developer Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="How to use the Linux Trace Toolkit Viewer's Reading Context"
+HREF="c40.html"><LINK
+REL="PREVIOUS"
+TITLE="How to use the Linux Trace Toolkit Viewer's Reading Context"
+HREF="c40.html"><LINK
+REL="NEXT"
+TITLE="Using the reading context"
+HREF="x50.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer Developer Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c40.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. How to use the Linux Trace Toolkit Viewer's Reading Context</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x50.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="AEN46"
+>2.2. Why an event driven trace reader ?</A
+></H1
+><P
+>&#13;The complexity of synchronizing the tracesets is then hidden to the viewer. Some
+future plans involve to be able to put many traces together in a trace set.
+Before this becomes possible, the time of each trace must be synchronized in
+some way. Some work is actually done to create a module that uses the network
+traffic shared by different computers to synchronize the time of different
+traces.
+</P
+><P
+>&#13;In order to make each module integrate well with each other, we made the trace
+reader a simple hook caller. For each event it reads, it just calls the hook
+lists for this event. For each event, it calls the by_id specific hooks
+registered for this event and also the "main" hooks, registered for all events.
+Note that the two hook lists are merged when called so the priority of the
+hooks of each list is respected. For example, a hook of higher priority (20) in
+the main list will be called before a hook of lower priority (40) from the
+by_id specific list.
+</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c40.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x50.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>How to use the Linux Trace Toolkit Viewer's Reading Context</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c40.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Using the reading context</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,668 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+                      "/usr/share/sgml/docbook/dtd/4.3/xdocbook.dtd">
+<!--<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" >-->
+
+<book>
+
+<bookinfo>
+<title>Linux Trace Toolkit Viewer Developer Guide</title>
+<authorgroup>
+<author>
+<firstname>Mathieu</firstname>
+<surname>Desnoyers</surname>
+</author>
+</authorgroup>
+
+<date>01/12/2004</date>
+<releaseinfo>1.00.00</releaseinfo>
+
+<abstract>
+<para>
+This document describes the basic steps necessary to develop within the 
+<application>Linux Trace Toolkit Viewer</application> project.
+
+</para>
+</abstract>
+
+<keywordset>
+<keyword>Linux Trace Toolkit Viewer</keyword>
+<keyword>text</keyword>
+<keyword>module</keyword>
+<keyword>context</keyword>
+</keywordset>
+
+</bookinfo>
+<chapter>
+<title>Linux Trace Toolkit Viewer Text Module Tutorial</title>
+
+<sect1>
+<title>Introduction</title>
+<para>
+This chapter explains all the steps that are necessary to create a text module
+in LTTV.
+</para>
+</sect1>
+
+<sect1>
+<title>A typical module</title>
+<para>
+A typical module must have a init() and destroy() function. Please refer to
+lttv/modules/text/textDump.c for the detail of these functions.
+</para>
+<para>
+The init() function is called when the library is loaded and destroy()
+inversely. It adds options to the command line by calling "lttv_option_add" from
+option.h
+</para>
+<para>
+The module communicates with the main lttv program through the use of global
+attributes. Use lttv/attribute.h, lttv/iattribute.h and lttv/lttv.h, and then
+LTTV_IATTRIBUTE(lttv_global_attributes()) to get the pointer to these
+global attributes.
+</para>
+<para>
+You can then add your hooks (functions that follows the prototype of a hook, as
+defined in lttv/hook.h) in the different hook lists defined in lttv/lttv.h. Note
+that hooks have an assigned priority. This is necessary to inform the trace
+reader that a specific hook needs to be called, for example, before or after the
+state update done for an event by the state module. For that specific example, a
+hook could use the LTTV_PRIO_STATE-5 to get called before the state update and a
+second hook could use the LTTV_PRIO_STATE+5 to get called after the state
+update. This is especially important for graphical module, which is the subject
+of a the chapter named "Linux Trace Toolkit Viewer Graphical Module Tutorial".
+</para>
+<para>
+You should also take a look at lttv/state.c, where by_id hooks are used. When
+you only need some specific events, you should use this interface. It makes the
+event filtering sooner in the dispatch chain : you hook doesn't have to be
+called for each event, only the ones selected. That improves the performances a
+lot!
+</para>
+<para>
+Note that you should use the lttv_trace_find_hook method from
+lttv/tracecontext.h to connect the hook to the right facility/event type. See
+state.c for an example. A problem that may arise is that the LttvTraceHook
+structure must be passed as hook_data when registering the hook. In fact, it is
+not necessary for it to be directly passed as the hook_data parameter. As long
+as the hook function can access the LttvTraceHook fields necessary to parse the
+LttEvent, there is no problem. In a complex viewer where you need a pointer to
+your own data structure, just keep a pointer to the LttvTraceHook structure
+inside your own data structure, and give to pointer to your data structure in
+parameter as the hook_data.
+</para>
+<para>
+Then, you should use the macro LTTV_MODULE, defined in lttv/module.h. It allows
+you to specify the module name, a short and a long description, the init and
+destroy functions and the module dependencies. That permits to the module
+backend to load the right dependencies when needed.
+</para>
+<para>
+A typical text module will depend on batchAnalysis for the batch computation of a
+trace, and simply register before and after trace hooks, as weel as the most
+important one : a event hook.
+</para>
+</sect1>
+
+<sect1>
+<title>The hooks</title>
+<para>
+The before and after trace hooks only exists to be able to generate a report at
+the end of a trace computation. The effective computation is done by the event
+hooks.
+</para>
+<para>
+These hooks does particular computation on data arriving as argument, a
+call_data. The type of the call_data, when a hook is called during the trace
+read, is a traceset context. It contains all the necessary information about the
+read in progress. This is the base class from which inherits trace set
+state, and trace set/trace/tracefile state is the base classe of trace
+set/trace/tracefile statistics. All these types can be casted to another without
+problem (a TracesetState, for example, can be casted to a TracesetContext, but
+it's not true for the casting between a TraceContext and a TracesetContext, see
+the chapter "How to use the trace reading context" for details). They offer the
+input data and they give a container (the attributes of the trace set/trace/tracefile
+statistics) to write the output of this hook.
+</para>
+<para>
+The idea behind writing in the attributes container is to provide an extensible
+way of storing any type of information. For example, a specific module that adds
+statistics to a trace can store them there, and the statistic printout will
+automatically include the results produced by the specific module.
+</para>
+<para>
+Output data does not necessarily need to be stored in such a global container
+though. If we think of data of which we need to keed track during the execution,
+an event counter for example, we should create our own data structure that
+contains this counter, and pass the address of the allocated structure as the
+hook_data parameter of the hook list creation function. That way, the hook will
+be called with its hook_data as first parameter, which it can read and write. We
+can think of this structure as the data related to the function that persists
+between each call to the hook. You must make sure that you cast the hook_data to
+the type of the structure before you use it in the hook function.
+</para>
+<para>
+The detail about how to access the different fields of the reading context (the
+hook's call_data) will be discussed in the chapter  "How to use the trace
+reading context".
+</para>
+</sect1>
+
+
+</chapter>
+
+
+<chapter>
+<title>How to use the Linux Trace Toolkit Viewer's Reading Context</title>
+
+<sect1>
+<title>Introduction</title>
+<para>
+This chapter describes how to use the Linux Trace Toolkit reading context, a
+data structure that is given as call data parameter of the modules'callbacks.
+</para>
+<para>
+Linux Trace Toolkit Viewer provides a backend that reads the traces. In combines
+them in tracesets. A trace is an abstaction over many tracefiles, one per CPU.
+LTTV reads the whole trace together, providing the events to modules by calling
+their pre-registered hook lists in a chronological order.
+</para>
+</sect1>
+
+<sect1>
+<title>Why an event driven trace reader ?</title>
+<para>
+The complexity of synchronizing the tracesets is then hidden to the viewer. Some
+future plans involve to be able to put many traces together in a trace set.
+Before this becomes possible, the time of each trace must be synchronized in
+some way. Some work is actually done to create a module that uses the network
+traffic shared by different computers to synchronize the time of different
+traces.
+</para>
+<para>
+In order to make each module integrate well with each other, we made the trace
+reader a simple hook caller. For each event it reads, it just calls the hook
+lists for this event. For each event, it calls the by_id specific hooks
+registered for this event and also the "main" hooks, registered for all events.
+Note that the two hook lists are merged when called so the priority of the
+hooks of each list is respected. For example, a hook of higher priority (20) in
+the main list will be called before a hook of lower priority (40) from the
+by_id specific list.
+</para>
+</sect1>
+
+<sect1>
+<title>Using the reading context</title>
+<para>
+If you have read the tutorials about writing a text and a graphic module, you
+should be fairly ready to use the information provided to your hook by the
+reading API.
+</para>
+<para>
+The data structures of the reading context are based on the gobject, a
+object-oriented library from the glib. Some evolved types that are found in the
+context also comes from the "glib" (GArray, GHashTable and so on). For detailed
+information about "gobjects" and the "glib", see the <ulink
+url="http://www.gtk.org">www.gtk.org</ulink> website. They provide a complete
+API reference about the data types they provide.
+</para>
+<para>
+The reading context is object oriented. It is described by the lttv/tracecontext.h
+header. Is can be illustrated with this UML class diagram :
+</para>
+<para>
+<screenshot>
+<mediaobject>
+<imageobject>
+<imagedata srccredit="Mathieu Desnoyers, 2004" fileref="lttv-context.png"
+format="PNG" align="center"/>
+</imageobject>
+<imageobject>
+<imagedata srccredit="Mathieu Desnoyers, 2004"
+fileref="lttv-context.eps"
+format="EPS" align="center"/>
+</imageobject>
+<!--<imagedata srccredit="Mathieu Desnoyers, 2004" fileref="lttv-numbered-6.svg"
+format="SVG" align="center" scalefit="1"/>
+</imageobject>-->
+<caption><para>Linux Trace Toolkit Viewer Reading Context Class Diagram</para></caption>
+</mediaobject>
+</screenshot>
+</para>
+<para>
+Though, for performance's sake, navigating through it is not as encapsulated as
+it could. Consider the class attributes to be all public (no get/set functions).
+Sometimes, iteration upon a specific element can be uneasy. For example, you may
+have to get the number of tracefiles in a trace from the "vt" field of the trace
+context to be able to iterate over all the tracefiles contained by the trace.
+</para>
+<para>
+To facilitate the common operations on the reading context, LTTV now provides a
+header that consists of simple macros : lttv/contextmacros.h. It gives an object
+look-and-feel to the context classes. Simple "GET" macros can be used to easily
+access the different fields are iterate over the elements (and get the total
+number of elements too).
+</para>
+</sect1>
+</chapter>
+
+<chapter>
+<title>Linux Trace Toolkit Viewer Graphical Module Tutorial</title>
+<sect1>
+<title>Introduction</title>
+<para>
+As a matter of fact, most of the things said for the text modules still hold for
+the graphical modules. However, the fact that every module must instanciate
+objects (called viewers) more than once changes a little bit the scenario. It is
+then impossible to use static structures : everything must be instanciated at
+run-time, except the structures related to the module itself.
+</para>
+</sect1>
+<sect1>
+<title>The static part of a module</title>
+<para>
+A module must have a static part to be able to get loaded just like a text
+module. Now, let's see the differences. The graphical module depends on the
+"lttvwindow" module. See module.c from the control flow viewer for an example.
+</para>
+<para>
+The init() and destroy() functions must register functions that can be called by
+user interaction to instanciate the viewers. That's the goal of
+lttvwindow_register_constructor() and lttvwindow_unregister_constructor() :
+they register a function with a menu entry and an icon. The main window will
+shown them in its interface and call the function when the button or menu item
+is selected. This hook function must receive a pointer to a "Tab" object in
+parameter.
+</para>
+<para>
+Also note the presence of the destroy_walk() method. It is called when the
+module is unloaded : it must destroy all the instances of the viewers from the
+module.
+</para>
+</sect1>
+<sect1>
+<title>The dynamic part of a module : the viewer</title>
+<para>
+The dynamic part starts with the constructor of the viewer. It is called by the
+main window when the corresponding button or menu item is selected. See
+h_guicontrolflow() from control flow viewer eventhooks.c for an example. It does
+basic connexion to the tab's events available : time window change notification,
+current time notification, redraw notification, continue notification. All these
+function should be implemented in your viewer if you want the data you shown to
+be synchronised with the main window and the other viewers. It also calls the
+background computation, which will be discussed in the next section.
+</para>
+<para>
+This is also at this point that the viewer does create it's own memory footprint
+: its inner structure. This structure will have to be passed as hook_data to
+each function registered by the viewer : this is what makes the functions
+"belong" to this instance of the viewer.
+</para>
+</sect1>
+<sect1>
+<title>How to request background computation</title>
+<para>
+You will also notice the presence of a request_background_data() called in the
+constructor. This function, in eventhooks.c, does verify for the presence of the
+state information that could be precomputed by the main window background
+computation. If it has not been precomputed, we ask for a computation and show
+partial data. We also register a hook that will be called (notified) by the main
+window when the requested data will become ready, so the viewer can update
+itself with the new data. If no partial information would have made sense in a
+particular viewer, one could choose to shown a "waiting for computation" message
+while waiting for the notification. See lttvwindow/lttvwindowtraces.h for the API
+of the background requests.
+</para>
+</sect1>
+
+<sect1>
+<title>How to handle events and use the graphical trace reading service</title>
+<para>
+The events that are delivered by the main window are defined in
+lttvwindow/lttvwindow.h. Let's describe them and their use in details. Remember
+that you can refer to the control flow viewer module as an example.
+</para>
+
+<sect2>
+<title>Module Related API</title>
+<para>
+A viewer plugin is, before anything, a plugin. As a dynamically loadable
+module, it thus has an init and a destroy function called whenever it is
+loaded/initialized and unloaded/destroyed. A graphical module depends on
+lttvwindow for construction of its viewer instances. In order to achieve
+this, it must register its constructor function to the main window along
+with button description or text menu entry description. A module keeps
+a list of every viewer that currently sits in memory so it can destroy
+them before the module gets unloaded/destroyed.
+</para>
+<para>
+The contructor registration to the main windows adds button and menu
+entry to each main window, thus allowing instanciation of viewers.
+</para>
+</sect2>
+<sect2>
+<title>Main Window</title>
+<para>
+The main window is a container that offers menus, buttons and a
+notebook. Some of those menus and buttons are part of the core of the
+main window, others are dynamically added and removed when modules are
+loaded/unloaded.
+</para>
+<para>
+The notebook contains as much tabs as wanted. Each tab is linked with
+a set of traces (traceset). Each trace contains many tracefiles (one
+per cpu).  A trace corresponds to a kernel being traced. A traceset
+corresponds to many traces read together. The time span of a traceset
+goes from the earliest start of all the traces to the latest end of all
+the traces.
+</para>
+<para>
+Inside each tab are added the viewers. When they interact with the main
+window through the lttvwindow API, they affect the other viewers located
+in the same tab as they are.
+</para>
+<para>
+The insertion of many viewers in a tab permits a quick look at all the
+information wanted in a glance. The main window does merge the read
+requests from all the viewers in the same tab in a way that every viewer
+will get exactly the events it asked for, while the event reading loop
+and state update are shared. It improves performance of events delivery
+to the viewers.
+</para>
+</sect2>
+
+<sect2>
+<title>Viewer Instance Related API</title>
+<para>
+The lifetime of a viewer is as follows. The viewer constructor function
+is called each time an instance view is created (one subwindow of this
+viewer type is created by the user either by clicking on the menu item
+or the button corresponding to the viewer). Thereafter, the viewer gets
+hooks called for different purposes by the window containing it. These
+hooks are detailed below. It also has to deal with GTK Events. Finally,
+it can be destructed by having its top level widget unreferenced by the
+main window or by any GTK Event causing a "destroy-event" signal on the
+its top widget. Another possible way for it do be destroyed is if the
+module gets unloaded. The module unload function will have to emit a
+"destroy" signal on each top level widget of all instances of its viewers.
+</para>
+</sect2>
+<sect2>
+<title>Notices from Main Window</title>
+<variablelist>
+<varlistentry>
+<term>time_window</term>
+<listitem>
+<simpara>This is the time interval visible on the viewer's tab. Every
+              viewer that cares about being synchronised by respect to the
+              time with other viewers should register to this notification.
+              They should redraw all or part of their display when this
+              occurs.</simpara>
+</listitem>
+</varlistentry>
+<varlistentry>
+<term>traceset</term>
+<listitem>
+<simpara>This notification is called whenever a trace is added/removed
+              from the traceset. As it affects all the data displayed by the
+              viewer, it sould redraw itself totally.</simpara>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>filter</term>
+<listitem>
+<simpara>This feature has not been implemented yet.</simpara>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>current_time</term>
+<listitem>
+<simpara>Being able to zoom nearer a specific time or highlight a specific
+              time on every viewer in synchronicity implies that the viewer
+              has to shown a visual sign over the drawing or select an event
+              when it receives this notice. It should also inform the main
+              window with the appropriate report API function when a user
+              selects a specific time as being the current time.</simpara>
+</listitem>
+</varlistentry>
+
+<varlistentry>
+<term>dividor</term>
+<listitem>
+<simpara>This notice links the positions of the horizontal dividors
+              between the graphic display zone of every viewer and their Y axis,
+              typically showing processes, cpus, ...</simpara>
+</listitem>
+</varlistentry>
+</variablelist>
+</sect2>
+<sect2>
+<title>Reporting Changes to the Main Window</title>
+<para>
+In most cases, the enclosing window knows about updates such as described
+in the Notification section higher. There are a few cases, however, where
+updates are caused by actions known by a view instance. For example,
+clicking in a view may update the current time; all viewers within
+the same window must be told about the new current time to change the
+currently highlighted time point. A viewer reports such events by calling
+lttvwindow_report_current_time on its lttvwindow.  The lttvwindow will
+consequently call current_time_notify for each of its contained viewers.
+</para>
+<para>
+Available report methods are :
+<itemizedlist>
+<listitem>
+<simpara>
+lttvwindow_report_time_window : reports the new time window.
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+lttvwindow_report_current_time : reports the new current time.
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+lttvwindow_report_dividor : reports the new horizontal dividor's position.
+</simpara>
+</listitem>
+</itemizedlist>
+</para>
+</sect2>
+
+<sect2>
+<title>Requesting Events to Main Window</title>
+<para>
+Events can be requested by passing a EventsRequest structure to the main
+window.  They will be delivered later when the next g_idle functions
+will be called.  Event delivery is done by calling the event hook for
+this event ID, or the main event hooks. A pointer to the EventsRequest
+structure is passed as hook_data to the event hooks of the viewers.
+</para>
+<para>
+EventsRequest consists in 
+<itemizedlist>
+<listitem>
+<simpara>
+a pointer to the viewer specific data structure
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+a start timestamp or position
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+a stop_flag, ending the read process when set to TRUE
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+a end timestamp and/or position and/or number of events to read
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+hook lists to call for traceset/trace/tracefile begin and end, and for each
+  event (event hooks and event_by_id hooks).
+</simpara>
+</listitem>
+</itemizedlist>
+</para>
+<para>
+The main window will deliver events for every EventRequests it has
+pending through an algorithm that guarantee that all events requested,
+and only them, will be delivered to the viewer between the call of the
+tracefile_begin hooks and the call of the tracefile_end hooks.
+</para>
+<para>
+If a viewer wants to stop the event request at a certain point inside the
+event hooks, it has to set the stop_flag to TRUE and return TRUE from the
+hook function. Then return value will stop the process traceset. Then,
+the main window will look for the stop_flag and remove the EventRequests
+from its lists, calling the process_traceset_end for this request (it
+removes hooks from the context and calls the after hooks).
+</para>
+<para>
+It no stop_flag is risen, the end timestamp, end position or number
+of events to read has to be reached to determine the end of the
+request. Otherwise, the end of traceset does determine it.
+</para>
+</sect2>
+<sect2>
+<title>GTK Events</title>
+<sect3>
+<title>Events and Signals</title>
+<para>
+GTK is quite different from the other graphical toolkits around
+there. The main difference resides in that there are many X Windows
+inside one GtkWindow, instead of just one. That means that X events are
+delivered by the glib main loop directly to the widget corresponding to
+the GdkWindow affected by the X event.
+</para>
+<para>
+Event delivery to a widget emits a signal on that widget. Then, if a
+handler is connected to this widget's signal, it will be executed. There
+are default handlers for signals, connected at class instantiation
+time. There is also the possibility to connect other handlers to these
+signals, which is what should be done in most cases when a viewer needs
+to interact with X in any way.
+</para>
+
+<para>
+Signal emission and propagation is described there : 
+
+<itemizedlist>
+<listitem>
+<simpara>
+http://www.gtk.org/tutorial/sec-signalemissionandpropagation.html
+</simpara>
+</listitem>
+</itemizedlist>
+</para>
+
+<para>
+For further information on the GTK main loop (now a wrapper over glib main loop)
+see :
+
+<itemizedlist>
+<listitem>
+<simpara>
+http://developer.gnome.org/doc/API/2.0/gtk/gtk-General.html
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+http://developer.gnome.org/doc/API/2.0/glib/glib-The-Main-Event-Loop.html
+</simpara>
+</listitem>
+</itemizedlist>
+</para>
+
+
+<para>
+For documentation on event handling in GTK/GDK, see :
+
+<itemizedlist>
+<listitem>
+<simpara>
+http://developer.gnome.org/doc/API/2.0/gdk/gdk-Events.html
+</simpara>
+</listitem>
+<listitem>
+<simpara>
+http://developer.gnome.org/doc/API/2.0/gdk/gdk-Event-Structures.html
+</simpara>
+</listitem>
+</itemizedlist>
+</para>
+
+
+<para>
+Signals can be connected to handlers, emitted, propagated, blocked, 
+stopped. See :
+
+<itemizedlist>
+<listitem>
+<simpara>
+http://developer.gnome.org/doc/API/2.0/gobject/gobject-Signals.html
+</simpara>
+</listitem>
+</itemizedlist>
+</para>
+
+</sect3>
+
+
+<sect3>
+<title>The "expose_event"</title>
+<para>
+Provides the exposed region in the GdkEventExpose structure. 
+</para>
+<para>
+There are two ways of dealing with exposures. The first one is to directly
+draw on the screen and the second one is to draw in a pixmap buffer,
+and then to update the screen when necessary.
+</para>
+<para>
+In the first case, the expose event will be responsible for registering
+hooks to process_traceset and require time intervals to the main
+window. So, in this scenario, if a part of the screen is damaged, the
+trace has to be read to redraw the screen.
+</para>
+<para>
+In the second case, with a pixmap buffer, the expose handler is only
+responsible of showing the pixmap buffer on the screen. If the pixmap
+buffer has never been filled with a drawing, the expose handler may ask
+for it to be filled.
+</para>
+<para>
+The interest of using events request to the main window instead of reading
+the events directly from the trace comes from the fact that the main
+window does merge requests from the different viewers in the same tab so
+that the read loop and the state update is shared. As viewers will, in
+the common scenario, request the same events, only one pass through the
+trace that will call the right hooks for the right intervals will be done.
+</para>
+<para>
+When the traceset read is over for a events request, the traceset_end
+hook is called. It has the responsibility of finishing the drawing if
+some parts still need to be drawn and to show it on the screen (if the
+viewer uses a pixmap buffer).
+</para>
+<para>
+It can add dotted lines and such visual effects to enhance the user's
+experience.
+</para>
+</sect3>
+</sect2>
+</sect1>
+
+</chapter>
+
+
+
+</book>

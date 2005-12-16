@@ -1,0 +1,537 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>How to handle events and use the graphical trace reading service</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer Developer Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Linux Trace Toolkit Viewer Graphical Module Tutorial"
+HREF="c67.html"><LINK
+REL="PREVIOUS"
+TITLE="How to request background computation"
+HREF="x81.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer Developer Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x81.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 3. Linux Trace Toolkit Viewer Graphical Module Tutorial</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+>&nbsp;</TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="AEN84"
+>3.5. How to handle events and use the graphical trace reading service</A
+></H1
+><P
+>&#13;The events that are delivered by the main window are defined in
+lttvwindow/lttvwindow.h. Let's describe them and their use in details. Remember
+that you can refer to the control flow viewer module as an example.
+</P
+><DIV
+CLASS="sect2"
+><H2
+CLASS="sect2"
+><A
+NAME="AEN87"
+>3.5.1. Module Related API</A
+></H2
+><P
+>&#13;A viewer plugin is, before anything, a plugin. As a dynamically loadable
+module, it thus has an init and a destroy function called whenever it is
+loaded/initialized and unloaded/destroyed. A graphical module depends on
+lttvwindow for construction of its viewer instances. In order to achieve
+this, it must register its constructor function to the main window along
+with button description or text menu entry description. A module keeps
+a list of every viewer that currently sits in memory so it can destroy
+them before the module gets unloaded/destroyed.
+</P
+><P
+>&#13;The contructor registration to the main windows adds button and menu
+entry to each main window, thus allowing instanciation of viewers.
+</P
+></DIV
+><DIV
+CLASS="sect2"
+><H2
+CLASS="sect2"
+><A
+NAME="AEN91"
+>3.5.2. Main Window</A
+></H2
+><P
+>&#13;The main window is a container that offers menus, buttons and a
+notebook. Some of those menus and buttons are part of the core of the
+main window, others are dynamically added and removed when modules are
+loaded/unloaded.
+</P
+><P
+>&#13;The notebook contains as much tabs as wanted. Each tab is linked with
+a set of traces (traceset). Each trace contains many tracefiles (one
+per cpu).  A trace corresponds to a kernel being traced. A traceset
+corresponds to many traces read together. The time span of a traceset
+goes from the earliest start of all the traces to the latest end of all
+the traces.
+</P
+><P
+>&#13;Inside each tab are added the viewers. When they interact with the main
+window through the lttvwindow API, they affect the other viewers located
+in the same tab as they are.
+</P
+><P
+>&#13;The insertion of many viewers in a tab permits a quick look at all the
+information wanted in a glance. The main window does merge the read
+requests from all the viewers in the same tab in a way that every viewer
+will get exactly the events it asked for, while the event reading loop
+and state update are shared. It improves performance of events delivery
+to the viewers.
+</P
+></DIV
+><DIV
+CLASS="sect2"
+><H2
+CLASS="sect2"
+><A
+NAME="AEN97"
+>3.5.3. Viewer Instance Related API</A
+></H2
+><P
+>&#13;The lifetime of a viewer is as follows. The viewer constructor function
+is called each time an instance view is created (one subwindow of this
+viewer type is created by the user either by clicking on the menu item
+or the button corresponding to the viewer). Thereafter, the viewer gets
+hooks called for different purposes by the window containing it. These
+hooks are detailed below. It also has to deal with GTK Events. Finally,
+it can be destructed by having its top level widget unreferenced by the
+main window or by any GTK Event causing a "destroy-event" signal on the
+its top widget. Another possible way for it do be destroyed is if the
+module gets unloaded. The module unload function will have to emit a
+"destroy" signal on each top level widget of all instances of its viewers.
+</P
+></DIV
+><DIV
+CLASS="sect2"
+><H2
+CLASS="sect2"
+><A
+NAME="AEN100"
+>3.5.4. Notices from Main Window</A
+></H2
+><P
+></P
+><DIV
+CLASS="variablelist"
+><DL
+><DT
+>time_window</DT
+><DD
+><P
+>This is the time interval visible on the viewer's tab. Every
+              viewer that cares about being synchronised by respect to the
+              time with other viewers should register to this notification.
+              They should redraw all or part of their display when this
+              occurs.</P
+></DD
+><DT
+>traceset</DT
+><DD
+><P
+>This notification is called whenever a trace is added/removed
+              from the traceset. As it affects all the data displayed by the
+              viewer, it sould redraw itself totally.</P
+></DD
+><DT
+>filter</DT
+><DD
+><P
+>This feature has not been implemented yet.</P
+></DD
+><DT
+>current_time</DT
+><DD
+><P
+>Being able to zoom nearer a specific time or highlight a specific
+              time on every viewer in synchronicity implies that the viewer
+              has to shown a visual sign over the drawing or select an event
+              when it receives this notice. It should also inform the main
+              window with the appropriate report API function when a user
+              selects a specific time as being the current time.</P
+></DD
+><DT
+>dividor</DT
+><DD
+><P
+>This notice links the positions of the horizontal dividors
+              between the graphic display zone of every viewer and their Y axis,
+              typically showing processes, cpus, ...</P
+></DD
+></DL
+></DIV
+></DIV
+><DIV
+CLASS="sect2"
+><H2
+CLASS="sect2"
+><A
+NAME="AEN123"
+>3.5.5. Reporting Changes to the Main Window</A
+></H2
+><P
+>&#13;In most cases, the enclosing window knows about updates such as described
+in the Notification section higher. There are a few cases, however, where
+updates are caused by actions known by a view instance. For example,
+clicking in a view may update the current time; all viewers within
+the same window must be told about the new current time to change the
+currently highlighted time point. A viewer reports such events by calling
+lttvwindow_report_current_time on its lttvwindow.  The lttvwindow will
+consequently call current_time_notify for each of its contained viewers.
+</P
+><P
+>&#13;Available report methods are :
+<P
+></P
+><UL
+><LI
+><P
+>&#13;lttvwindow_report_time_window : reports the new time window.
+</P
+></LI
+><LI
+><P
+>&#13;lttvwindow_report_current_time : reports the new current time.
+</P
+></LI
+><LI
+><P
+>&#13;lttvwindow_report_dividor : reports the new horizontal dividor's position.
+</P
+></LI
+></UL
+>
+</P
+></DIV
+><DIV
+CLASS="sect2"
+><H2
+CLASS="sect2"
+><A
+NAME="AEN134"
+>3.5.6. Requesting Events to Main Window</A
+></H2
+><P
+>&#13;Events can be requested by passing a EventsRequest structure to the main
+window.  They will be delivered later when the next g_idle functions
+will be called.  Event delivery is done by calling the event hook for
+this event ID, or the main event hooks. A pointer to the EventsRequest
+structure is passed as hook_data to the event hooks of the viewers.
+</P
+><P
+>&#13;EventsRequest consists in 
+<P
+></P
+><UL
+><LI
+><P
+>&#13;a pointer to the viewer specific data structure
+</P
+></LI
+><LI
+><P
+>&#13;a start timestamp or position
+</P
+></LI
+><LI
+><P
+>&#13;a stop_flag, ending the read process when set to TRUE
+</P
+></LI
+><LI
+><P
+>&#13;a end timestamp and/or position and/or number of events to read
+</P
+></LI
+><LI
+><P
+>&#13;hook lists to call for traceset/trace/tracefile begin and end, and for each
+  event (event hooks and event_by_id hooks).
+</P
+></LI
+></UL
+>
+</P
+><P
+>&#13;The main window will deliver events for every EventRequests it has
+pending through an algorithm that guarantee that all events requested,
+and only them, will be delivered to the viewer between the call of the
+tracefile_begin hooks and the call of the tracefile_end hooks.
+</P
+><P
+>&#13;If a viewer wants to stop the event request at a certain point inside the
+event hooks, it has to set the stop_flag to TRUE and return TRUE from the
+hook function. Then return value will stop the process traceset. Then,
+the main window will look for the stop_flag and remove the EventRequests
+from its lists, calling the process_traceset_end for this request (it
+removes hooks from the context and calls the after hooks).
+</P
+><P
+>&#13;It no stop_flag is risen, the end timestamp, end position or number
+of events to read has to be reached to determine the end of the
+request. Otherwise, the end of traceset does determine it.
+</P
+></DIV
+><DIV
+CLASS="sect2"
+><H2
+CLASS="sect2"
+><A
+NAME="AEN152"
+>3.5.7. GTK Events</A
+></H2
+><DIV
+CLASS="sect3"
+><H3
+CLASS="sect3"
+><A
+NAME="AEN154"
+>3.5.7.1. Events and Signals</A
+></H3
+><P
+>&#13;GTK is quite different from the other graphical toolkits around
+there. The main difference resides in that there are many X Windows
+inside one GtkWindow, instead of just one. That means that X events are
+delivered by the glib main loop directly to the widget corresponding to
+the GdkWindow affected by the X event.
+</P
+><P
+>&#13;Event delivery to a widget emits a signal on that widget. Then, if a
+handler is connected to this widget's signal, it will be executed. There
+are default handlers for signals, connected at class instantiation
+time. There is also the possibility to connect other handlers to these
+signals, which is what should be done in most cases when a viewer needs
+to interact with X in any way.
+</P
+><P
+>&#13;Signal emission and propagation is described there : 
+
+<P
+></P
+><UL
+><LI
+><P
+>&#13;http://www.gtk.org/tutorial/sec-signalemissionandpropagation.html
+</P
+></LI
+></UL
+>
+</P
+><P
+>&#13;For further information on the GTK main loop (now a wrapper over glib main loop)
+see :
+
+<P
+></P
+><UL
+><LI
+><P
+>&#13;http://developer.gnome.org/doc/API/2.0/gtk/gtk-General.html
+</P
+></LI
+><LI
+><P
+>&#13;http://developer.gnome.org/doc/API/2.0/glib/glib-The-Main-Event-Loop.html
+</P
+></LI
+></UL
+>
+</P
+><P
+>&#13;For documentation on event handling in GTK/GDK, see :
+
+<P
+></P
+><UL
+><LI
+><P
+>&#13;http://developer.gnome.org/doc/API/2.0/gdk/gdk-Events.html
+</P
+></LI
+><LI
+><P
+>&#13;http://developer.gnome.org/doc/API/2.0/gdk/gdk-Event-Structures.html
+</P
+></LI
+></UL
+>
+</P
+><P
+>&#13;Signals can be connected to handlers, emitted, propagated, blocked, 
+stopped. See :
+
+<P
+></P
+><UL
+><LI
+><P
+>&#13;http://developer.gnome.org/doc/API/2.0/gobject/gobject-Signals.html
+</P
+></LI
+></UL
+>
+</P
+></DIV
+><DIV
+CLASS="sect3"
+><H3
+CLASS="sect3"
+><A
+NAME="AEN178"
+>3.5.7.2. The "expose_event"</A
+></H3
+><P
+>&#13;Provides the exposed region in the GdkEventExpose structure. 
+</P
+><P
+>&#13;There are two ways of dealing with exposures. The first one is to directly
+draw on the screen and the second one is to draw in a pixmap buffer,
+and then to update the screen when necessary.
+</P
+><P
+>&#13;In the first case, the expose event will be responsible for registering
+hooks to process_traceset and require time intervals to the main
+window. So, in this scenario, if a part of the screen is damaged, the
+trace has to be read to redraw the screen.
+</P
+><P
+>&#13;In the second case, with a pixmap buffer, the expose handler is only
+responsible of showing the pixmap buffer on the screen. If the pixmap
+buffer has never been filled with a drawing, the expose handler may ask
+for it to be filled.
+</P
+><P
+>&#13;The interest of using events request to the main window instead of reading
+the events directly from the trace comes from the fact that the main
+window does merge requests from the different viewers in the same tab so
+that the read loop and the state update is shared. As viewers will, in
+the common scenario, request the same events, only one pass through the
+trace that will call the right hooks for the right intervals will be done.
+</P
+><P
+>&#13;When the traceset read is over for a events request, the traceset_end
+hook is called. It has the responsibility of finishing the drawing if
+some parts still need to be drawn and to show it on the screen (if the
+viewer uses a pixmap buffer).
+</P
+><P
+>&#13;It can add dotted lines and such visual effects to enhance the user's
+experience.
+</P
+></DIV
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x81.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>How to request background computation</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c67.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>&nbsp;</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
