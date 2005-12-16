@@ -57,73 +57,91 @@ void lttv_print_field(LttEvent *e, LttField *f, GString *s,
 
   type = ltt_field_type(f);
   switch(ltt_type_class(type)) {
+    case LTT_SHORT:
     case LTT_INT:
     case LTT_LONG:
     case LTT_SSIZE_T:
-      g_string_append_printf(s, " %lld", ltt_event_get_long_int(e,f));
+    case LTT_INT_FIXED:
+      g_string_append_printf(s, "%lld", ltt_event_get_long_int(e,f));
       break;
 
+    case LTT_USHORT:
     case LTT_UINT:
     case LTT_ULONG:
     case LTT_SIZE_T:
     case LTT_OFF_T:
-      g_string_append_printf(s, " %llu", ltt_event_get_long_unsigned(e,f));
+    case LTT_UINT_FIXED:
+      g_string_append_printf(s, "%llu", ltt_event_get_long_unsigned(e,f));
       break;
-
+    
+    case LTT_CHAR:
+      g_string_append_printf(s, "%c", ltt_event_get_int(e,f));
+      break;
+    case LTT_UCHAR:
+      g_string_append_printf(s, "%c", ltt_event_get_unsigned(e,f));
+      break;
     case LTT_FLOAT:
-      g_string_append_printf(s, " %g", ltt_event_get_double(e,f));
+      g_string_append_printf(s, "%g", ltt_event_get_double(e,f));
       break;
 
     case LTT_POINTER:
-      g_string_append_printf(s, " 0x%llx", ltt_event_get_long_unsigned(e,f));
+      g_string_append_printf(s, "0x%llx", ltt_event_get_long_unsigned(e,f));
       break;
 
     case LTT_STRING:
-      g_string_append_printf(s, " \"%s\"", ltt_event_get_string(e,f));
+      g_string_append_printf(s, "\"%s\"", ltt_event_get_string(e,f));
       break;
 
     case LTT_ENUM:
-      g_string_append_printf(s, " %s", 
-          g_quark_to_string(ltt_enum_string_get(type,
-          ltt_event_get_unsigned(e,f)-1)));
+      {
+        GQuark value = ltt_enum_string_get(type, ltt_event_get_unsigned(e,f));
+        
+        if(value)
+          g_string_append_printf(s, "%s", g_quark_to_string(value));
+        else
+          g_string_append_printf(s, "%lld", ltt_event_get_long_int(e,f));
+      }
       break;
 
     case LTT_ARRAY:
     case LTT_SEQUENCE:
-      g_string_append_printf(s, " {");
+      g_string_append_printf(s, "{ ");
       nb = ltt_event_field_element_number(e,f);
       element = ltt_field_element(f);
       for(i = 0 ; i < nb ; i++) {
         ltt_event_field_element_select(e,f,i);
         lttv_print_field(e, element, s, field_names);
+        if(i != nb-1) g_string_append_printf(s, ", ");
       }
       g_string_append_printf(s, " }");
       break;
 
     case LTT_STRUCT:
-      g_string_append_printf(s, " {");
+      g_string_append_printf(s, "{ ");
       nb = ltt_type_member_number(type);
       for(i = 0 ; i < nb ; i++) {
         element = ltt_field_member(f,i);
         if(field_names) {
           ltt_type_member_type(type, i, &name);
-          g_string_append_printf(s, " %s = ", g_quark_to_string(name));
+          g_string_append_printf(s, "%s = ", g_quark_to_string(name));
         }
         lttv_print_field(e, element, s, field_names);
+        if(i != nb-1) g_string_append_printf(s, ", ");
       }
       g_string_append_printf(s, " }");
       break;
 
     case LTT_UNION:
-      g_string_append_printf(s, " {");
+      g_string_append_printf(s, "{ ");
       nb = ltt_type_member_number(type);
       for(i = 0 ; i < nb ; i++) {
         element = ltt_field_member(f,i);
         if(field_names) {
           ltt_type_member_type(type, i, &name);
-          g_string_append_printf(s, " %s = ", g_quark_to_string(name));
+          g_string_append_printf(s, "%s = ", g_quark_to_string(name));
         }
         lttv_print_field(e, element, s, field_names);
+        if(i != nb-1) g_string_append_printf(s, ", ");
       }
       g_string_append_printf(s, " }");
       break;
