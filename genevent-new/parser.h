@@ -110,8 +110,7 @@ typedef struct _type_descriptor {
   sequence_t labels_values; // for enumeration
 	sequence_t labels_description;
 	int	already_printed;
-  sequence_t fields; // for structure, array and sequence
-  int alignment;
+  sequence_t fields; // for structure, array and sequence (field_t type)
 } type_descriptor_t;
 
 

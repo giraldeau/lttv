@@ -182,7 +182,6 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
 
   t->fmt = NULL;
   t->size = 0;
-  t->alignment = 0;
   
   while(1) {
     token = getToken(in); 
@@ -203,9 +202,6 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
     } else if(!strcmp("size",token)) {
       getEqual(in);
       t->size = getSize(in);
-    } else if(!strcmp("align",token)) {
-      getEqual(in);
-      t->alignment = getNumber(in);
     }
   }
 }
@@ -733,10 +729,10 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
 		t->already_printed = 0;
     getTypeAttributes(in, t, unnamed_types, named_types);
     //if(t->size == 0) in->error(in, "Sequence has empty size");
-		//Mathieu : we fix enum size to 4 bytes. GCC is always like this.
+		//Mathieu : we fix enum size to target int size. GCC is always like this.
 		//fox copy optimisation.
-    if(t->size != 0) in->error(in, "Enum has fixed size of 4.");
-		t->size = 4;
+    if(t->size != 0) in->error(in, "Enum has fixed size of target int.");
+		t->size = 0;
     getRAnglebracket(in);
 
     //<label name=label1 value=n/>
@@ -1243,12 +1239,13 @@ void generateChecksum(char* facName,
   unsigned long crc ;
   int pos;
   event_t * ev;
+  unsigned int i;
 
   crc = crc32(facName);
   for(pos = 0; pos < events->position; pos++){
     ev = (event_t *)(events->array[pos]);
     crc = partial_crc32(ev->name, crc);
-		for(unsigned int i = 0; i < ev->fields.position; i++) {
+		for(i = 0; i < ev->fields.position; i++) {
 			field_t *f = (field_t*)ev->fields.array[i];
       crc = partial_crc32(f->name, crc);
       crc = getTypeChecksum(crc, f->type);
