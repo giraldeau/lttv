@@ -47,6 +47,8 @@
 #define LTT_GET_FLOAT_BO(t) \
   (((t)->float_word_order==__BYTE_ORDER)?0:1)
 
+#define SEQUENCE_AVG_ELEMENTS 1000
+                               
 /* Hardcoded core events */
 enum ltt_core_events {
     LTT_EVENT_FACILITY_LOAD,
@@ -98,10 +100,11 @@ typedef guint64 uint64_t;
 struct LttFacilityLoad {
   guint32 checksum;
   guint32 id;
+	guint32 int_size;
   guint32 long_size;
   guint32 pointer_size;
   guint32 size_t_size;
-  guint32 alignment;
+	guint32 has_alignment;
 } LTT_PACKED_STRUCT;
 
 struct LttFacilityUnload {
@@ -111,10 +114,11 @@ struct LttFacilityUnload {
 struct LttStateDumpFacilityLoad {
   guint32 checksum;
   guint32 id;
+	guint32 int_size;
   guint32 long_size;
   guint32 pointer_size;
   guint32 size_t_size;
-  guint32 alignment;
+	guint32	has_alignment;
 } LTT_PACKED_STRUCT;
 
 typedef struct _TimeHeartbeat {
@@ -187,7 +191,7 @@ struct ltt_trace_header_0_4 {
   uint64_t        start_freq;
   uint64_t        start_tsc;
   uint64_t        start_monotonic;
-  struct timespec start_time;
+  struct timeval	start_time;
 } LTT_PACKED_STRUCT;
 
 
@@ -209,23 +213,23 @@ struct ltt_block_start_header {
 
 
 struct _LttType{
-  GQuark type_name;                //type name if it is a named type
-  GQuark element_name;             //elements name of the struct
+// LTTV does not care about type names. Everything is a field.
+// GQuark type_name;                //type name if it is a named type
   gchar * fmt;
-  unsigned int size;
+  guint size;
   LttTypeEnum type_class;          //which type
-  GQuark * enum_strings;            //for enum labels
-  struct _LttType ** element_type; //for array, sequence and struct
-  unsigned element_number;         //the number of elements 
-                                   //for enum, array, sequence and structure
+  GData *enum_map;                 //maps enum labels to numbers.
+  GArray *fields;     // Array of LttFields, for array, sequence, union, struct.
+  GData *fields_by_name;
 };
 
 struct _LttEventType{
   GQuark name;
   gchar * description;
-  guint index;              //id of the event type within the facility
+  guint index;            //id of the event type within the facility
   LttFacility * facility; //the facility that contains the event type
-  LttField * root_field;  //root field
+  GArray * fields;        //event's fields (LttField)
+  GData *fields_by_name;
 };
 
 /* Structure LttEvent and LttEventPosition must begin with the _exact_ same
@@ -274,65 +278,41 @@ struct _LttEventPosition{
 enum field_status { FIELD_UNKNOWN, FIELD_VARIABLE, FIELD_FIXED };
 
 struct _LttField{
-  //guint field_pos;           //field position within its parent
-  LttType * field_type;      //field type, if it is root field
-                             //then it must be struct type
+  GQuark name;
+  gchar *description;
+  LttType field_type;      //field type
 
-  off_t offset_root;         //offset from the root, -1:uninitialized 
-  enum field_status fixed_root;          //offset fixed according to the root
-                             //-1:uninitialized, 0:unfixed, 1:fixed
-  off_t offset_parent;       //offset from the parent,-1:uninitialized
-  enum field_status fixed_parent;        //offset fixed according to its parent
-                             //-1:uninitialized, 0:unfixed, 1:fixed
-  //  void * base_address;       //base address of the field  ????
-  
-  guint field_size;     //      //>0: size of the field, 
-                          //   //0 : uncertain
-                           //  //-1: uninitialize
-  enum field_status fixed_size;
+  off_t offset_root;            //offset from the root
+  enum field_status fixed_root; //offset fixed according to the root
 
-  /* for sequence */
-  gint sequ_number_size;      //the size of unsigned used to save the
-                             //number of elements in the sequence
-
-  gint element_size;          //the element size of the sequence
-  //int field_fixed;           //0: field has string or sequence
-                             //1: field has no string or sequenc
-                             //-1: uninitialize
-
-  struct _LttField * parent;
-  struct _LttField ** child; //for array, sequence, struct and union: 
-                             //list of fields, it may have only one
-                             //field if the element is not a struct or
-                             //union
-  unsigned current_element;  //which element is currently processed
-                             // Used for sequences and arrays.
+  guint field_size;       // size of the field
+                          // Only if field type size is set to 0
+                          // (it's variable), then the field_size should be
+                          // dynamically calculated while reading the trace
+                          // and put here. Otherwise, the field_size always
+                          // equels the type size.
+  off_t array_offset;     // offset of the beginning of the array (for array
+                          // and sequences)
+  GArray * dynamic_offsets; // array of offsets calculated dynamically at
+                            // each event for sequences and arrays that
+                            // contain variable length fields.
 };
-
 
 struct _LttFacility{
   LttTrace  *trace;
-  //gchar * name;               //facility name 
   GQuark name;
   guint32 checksum;      //checksum of the facility 
   guint32  id;          //id of the facility
  
-  guint32 pointer_size;
+  guint32 int_size;
   guint32 long_size;
+  guint32 pointer_size;
   guint32 size_t_size;
   guint32 alignment;
 
-
-  //LttEventType ** events;    //array of event types 
-  //unsigned int event_number;          //number of events in the facility 
-  //LttType ** named_types;
-  //unsigned int named_types_number;
-
   GArray *events;
   GData *events_by_name;
- // GArray *named_types;
-  //GData *named_types_by_name;
-  GData *named_types;
+ // not necessary in LTTV GData *named_types;
   
   unsigned char exists; /* 0 does not exist, 1 exists */
 };
@@ -369,9 +349,11 @@ struct _LttTracefile{
   int fd;                            //file descriptor 
   off_t file_size;                   //file size
   //unsigned block_size;               //block_size
-  unsigned int num_blocks;           //number of blocks in the file
+  guint num_blocks;           //number of blocks in the file
   gboolean  reverse_bo;              //must we reverse byte order ?
   gboolean  float_word_order;        //what is the byte order of floats ?
+	size_t		has_alignment;					 //alignment of events in the tracefile.
+																		 // 0 or the architecture size in bytes.
 
   size_t    buffer_header_size;
 
@@ -412,7 +394,6 @@ struct _LttTrace{
   guint8    ltt_minor_version;
   guint8    flight_recorder;
   guint8    has_heartbeat;
-  guint8    has_alignment;
 	guint8		has_tsc;
   uint64_t  start_freq;
   uint64_t  start_tsc;
@@ -452,6 +433,23 @@ struct _LttSystemDescription {
 //#define TIMESTAMP_SIZE    sizeof(guint32)
 //#define EVENT_ID_SIZE     sizeof(guint16)
 //#define EVENT_HEADER_SIZE (TIMESTAMP_SIZE + EVENT_ID_SIZE)
+
+
+/* Calculate the offset needed to align the type.
+ * If has_alignment is 0, alignment is disactivated.
+ * else, the function returns the offset needed to
+ * align align_drift on the has_alignment value (should be
+ * the size of the architecture). */
+static inline unsigned int ltt_align(size_t align_drift,
+																		 size_t size_of_type,
+																		 size_t has_alignment)
+{
+	size_t alignment = min(has_alignment, size_of_type);
+
+	return ((alignment - align_drift) & (alignment-1));
+}
+
+off_t field_align(LttTracefile *tf, LttField *field, off_t offset);
 
 
 #endif /* LTT_PRIVATE_H */

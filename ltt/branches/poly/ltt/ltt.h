@@ -1,5 +1,6 @@
 /* This file is part of the Linux Trace Toolkit trace reading library
  * Copyright (C) 2003-2004 Michel Dagenais
+ *               2005 Mathieu Desnoyers
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -131,10 +132,28 @@ typedef enum _LttArchEndian
 } LttArchEndian;
 
 typedef enum _LttTypeEnum 
-{ LTT_INT, LTT_UINT, LTT_POINTER, LTT_LONG, LTT_ULONG, LTT_SIZE_T, 
-  LTT_SSIZE_T, LTT_OFF_T, LTT_FLOAT, LTT_STRING, LTT_ENUM, LTT_ARRAY, 
-  LTT_SEQUENCE, LTT_STRUCT, LTT_UNION
+{ LTT_INT_FIXED,
+  LTT_UINT_FIXED,
+  LTT_POINTER,
+  LTT_CHAR,
+  LTT_UCHAR,
+  LTT_SHORT,
+  LTT_USHORT,
+  LTT_INT,
+  LTT_UINT,
+  LTT_LONG,
+  LTT_ULONG,
+  LTT_SIZE_T,
+  LTT_SSIZE_T,
+  LTT_OFF_T,
+  LTT_FLOAT,
+  LTT_STRING,
+  LTT_ENUM,
+  LTT_ARRAY,
+  LTT_SEQUENCE,
+  LTT_STRUCT,
+  LTT_UNION,
+  LTT_NONE
 } LttTypeEnum;
-
-
+  
 #endif // LTT_H

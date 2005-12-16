@@ -78,16 +78,18 @@ GQuark LTT_TRACEFILE_NAME_FACILITIES;
 
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
-void set_fields_offsets(LttTracefile *tf, LttEventType *event_type);
+//void set_fields_offsets(LttTracefile *tf, LttEventType *event_type);
 //size_t get_fields_offsets(LttTracefile *tf, LttEventType *event_type, void *data);
 
 /* get the size of the field type according to 
  * The facility size information. */
+#if 0
 static inline void preset_field_type_size(LttTracefile *tf,
     LttEventType *event_type,
     off_t offset_root, off_t offset_parent,
     enum field_status *fixed_root, enum field_status *fixed_parent,
     LttField *field);
+#endif //0
 
 /* map a fixed size or a block information from the file (fd) */
 static gint map_block(LttTracefile * tf, guint block_num);
@@ -179,6 +181,8 @@ static void  parser_characters   (GMarkupParseContext __UNUSED__ *context,
   des->description = g_strdup(text);
 }
 #endif //0
+
+
 LttFacility *ltt_trace_get_facility_by_num(LttTrace *t,
     guint num)
 {
@@ -213,6 +217,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
   /* Get float byte order : might be different from int byte order
    * (or is set to 0 if the trace has no float (kernel trace)) */
   tf->float_word_order = any->float_word_order;
+	tf->has_alignment = any->has_alignment;
 
   if(t) {
     t->arch_type = ltt_get_uint32(LTT_GET_BO(tf),
@@ -224,7 +229,6 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
     t->ltt_minor_version = any->minor_version;
     t->flight_recorder = any->flight_recorder;
     t->has_heartbeat = any->has_heartbeat;
-    t->has_alignment = any->has_alignment;
     t->has_tsc = any->has_tsc;
   }
  
@@ -962,6 +966,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->id = ltt_get_uint32(LTT_GET_BO(tf), &fac_load_data->id);
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->pointer_size);
+					fac->int_size = ltt_get_uint32(LTT_GET_BO(tf),
+													&fac_load_data->int_size);
           fac->long_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->long_size);
           fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
@@ -977,7 +983,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           /* Preset the field offsets */
           for(i=0; i<fac->events->len; i++){
             et = &g_array_index(fac->events, LttEventType, i);
-            set_fields_offsets(tf, et);
+            precompute_offsets(tf, et);
           }
 
           fac->exists = 1;
@@ -1016,6 +1022,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
                           &fac_state_dump_load_data->id);
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->pointer_size);
+					fac->int_size = ltt_get_uint32(LTT_GET_BO(tf),
+													&fac_state_dump_load_data->int_size);
           fac->long_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->long_size);
           fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
@@ -1030,7 +1038,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           /* Preset the field offsets */
           for(i=0; i<fac->events->len; i++){
             et = &g_array_index(fac->events, LttEventType, i);
-            set_fields_offsets(tf, et);
+            precompute_offsets(tf, et);
           }
 
           fac->exists = 1;
@@ -1653,7 +1661,8 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 
   /* Read event header */
   
-  //TODO align
+	/* Align the head */
+	pos += ltt_align(pos, tf->trace->arch_size, tf->has_alignment);
   
   if(tf->trace->has_tsc) {
     if(tf->trace->has_heartbeat) {
@@ -1701,6 +1710,9 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   event->event_size = ltt_get_uint16(LTT_GET_BO(tf), pos);
   pos += sizeof(guint16);
   
+	/* Align the head */
+	pos += ltt_align(pos, tf->trace->arch_size, tf->has_alignment);
+
   event->data = pos;
 
   /* get the data size and update the event fields with the current
@@ -1834,7 +1846,7 @@ map_error:
 /* It will update the fields offsets too */
 void ltt_update_event_size(LttTracefile *tf)
 {
-  ssize_t size = 0;
+  size_t size = 0;
 
   /* Specific handling of core events : necessary to read the facility control
    * tracefile. */
@@ -1889,12 +1901,9 @@ void ltt_update_event_size(LttTracefile *tf)
           g_quark_to_string(tf->name));
       goto event_type_error;
     }
- 
-    if(event_type->root_field)
-      size = get_field_type_size(tf, event_type,
-          0, 0, event_type->root_field, tf->event.data);
-    else
-      size = 0;
+    
+    /* Compute the dynamic offsets */
+    compute_offsets(tf, event_type, &size, tf->event.data);
 
     //g_debug("Event root field : f.e %hhu.%hhu size %zd",
     //    tf->event.facility_id,
@@ -2003,7 +2012,7 @@ void setFieldsOffset(LttTracefile *tf, LttEventType *evT,void *evD)
         evT, 0,0,rootFld, evD);  
 }
 #endif //0
-
+#if 0
 /*****************************************************************************
  *Function name
  *    set_fields_offsets : set the precomputable offset of the fields
@@ -2023,6 +2032,369 @@ void set_fields_offsets(LttTracefile *tf, LttEventType *event_type)
         field);
 
 }
+#endif //0
+
+
+/*****************************************************************************
+ *Function name
+ *    get_alignment : Get the alignment needed for a field.
+ *Input params 
+ *    tf : tracefile
+ *    field : field
+ *
+ *    returns : The size on which it must be aligned.
+ *
+ ****************************************************************************/
+off_t get_alignment(LttTracefile *tf, LttField *field)
+{
+  type = &field->field_type;
+
+  switch(type->type_class) {
+    case LTT_INT_FIXED:
+    case LTT_UINT_FIXED:
+    case LTT_POINTER:
+    case LTT_CHAR:
+    case LTT_UCHAR:
+    case LTT_SHORT:
+    case LTT_USHORT:
+    case LTT_INT:
+    case LTT_UINT:
+    case LTT_LONG:
+    case LTT_ULONG:
+    case LTT_SIZE_T:
+    case LTT_SSIZE_T:
+    case LTT_OFF_T:
+    case LTT_FLOAT:
+    case LTT_ENUM:
+      /* Align offset on type size */
+      return field->field_size;
+      break;
+    case LTT_STRING:
+      return 0;
+      break;
+    case LTT_ARRAY:
+      g_assert(type->fields->len == 1);
+      {
+        LttField *child = &g_array_index(type->fields, LttField, 0);
+        return get_alignment(tf, child);
+      }
+      break;
+    case LTT_SEQUENCE:
+      g_assert(type->fields->len == 2);
+      {
+        off_t localign = 0;
+        LttField *child = &g_array_index(type->fields, LttField, 0);
+
+        localign = max(localign, get_alignment(tf, child));
+
+        child = &g_array_index(type->fields, LttField, 1);
+        localign = max(localign, get_alignment(tf, child));
+        
+        return localign;
+      }
+      break;
+    case LTT_STRUCT:
+    case LTT_UNION:
+      {
+        guint i;
+        off_t localign = 0;
+        
+        for(i=0; i<type->fields->len; i++) {
+          LttField *child = &g_array_index(type->fields, LttField, i);
+          localign = max(localign, get_alignment(tf, child));
+        }
+        return localign;
+      }
+      break;
+    case LTT_NONE:
+    default:
+      g_error("get_alignment : unknown type");
+  }
+
+}
+
+/*****************************************************************************
+ *Function name
+ *    field_compute_static_size : Determine the size of fields known by their
+ *    sole definition. Unions, arrays and struct sizes might be known, but
+ *    the parser does not give that information.
+ *Input params 
+ *    tf : tracefile
+ *    field : field
+ *
+ ****************************************************************************/
+
+void field_compute_static_size(LttTracefile *tf, LttField *field)
+{
+  type = &field->field_type;
+
+  switch(type->type_class) {
+    case LTT_INT_FIXED:
+    case LTT_UINT_FIXED:
+    case LTT_POINTER:
+    case LTT_CHAR:
+    case LTT_UCHAR:
+    case LTT_SHORT:
+    case LTT_USHORT:
+    case LTT_INT:
+    case LTT_UINT:
+    case LTT_LONG:
+    case LTT_ULONG:
+    case LTT_SIZE_T:
+    case LTT_SSIZE_T:
+    case LTT_OFF_T:
+    case LTT_FLOAT:
+    case LTT_ENUM:
+    case LTT_STRING:
+      /* nothing to do */
+      break;
+    case LTT_ARRAY:
+      /* note this : array type size is the number of elements in the array,
+       * while array field size of the length of the array in bytes */
+      g_assert(type->fields->len == 1);
+      {
+        LttField *child = &g_array_index(type->fields, LttField, 0);
+        field_compute_static_size(tf, child);
+        
+        if(child->field_size != 0) {
+          field->field_size = type->size * child->field_size;
+          field->dynamic_offsets = g_array_sized_new(FALSE, TRUE, 
+              sizeof(off_t), type->size);
+        } else {
+          field->field_size = 0;
+        }
+      }
+      break;
+    case LTT_SEQUENCE:
+      g_assert(type->fields->len == 2);
+      {
+        local_offset = 0;
+        LttField *child = &g_array_index(type->fields, LttField, 1);
+        field_compute_static_size(tf, child);
+        field->field_size = 0;
+        type->size = 0;
+        if(child->field_size != 0) {
+          field->dynamic_offsets = g_array_sized_new(FALSE, TRUE, 
+              sizeof(off_t), SEQUENCE_AVG_ELEMENTS);
+        }
+      }
+      break;
+    case LTT_STRUCT:
+    case LTT_UNION:
+      {
+        guint i;
+        for(i=0;i<type->fields->len;i++) {
+          LttField *child = &g_array_index(type->fields, LttField, i);
+          field_compute_static_size(tf, child);
+          if(child->field_size != 0) {
+            type->size += ltt_align(type->size, get_alignment(tf, child),
+                                    tf->has_alignment);
+            type->size += child->field_size;
+          } else {
+            /* As soon as we find a child with variable size, we have
+             * a variable size */
+            type->size = 0;
+            break;
+          }
+        }
+        field->field_size = type->size;
+      }
+      break;
+    default:
+      g_error("field_static_size : unknown type");
+      
+}
+
+
+
+/*****************************************************************************
+ *Function name
+ *    precompute_fields_offsets : set the precomputable offset of the fields
+ *Input params 
+ *    tf : tracefile
+ *    field : the field
+ *    offset : pointer to the current offset, must be incremented
+ *
+ *    return : 1 : found a variable length field, stop the processing.
+ *             0 otherwise.
+ ****************************************************************************/
+
+
+gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
+{
+  type = &field->field_type;
+
+  switch(type->type_class) {
+    case LTT_INT_FIXED:
+    case LTT_UINT_FIXED:
+    case LTT_POINTER:
+    case LTT_CHAR:
+    case LTT_UCHAR:
+    case LTT_SHORT:
+    case LTT_USHORT:
+    case LTT_INT:
+    case LTT_UINT:
+    case LTT_LONG:
+    case LTT_ULONG:
+    case LTT_SIZE_T:
+    case LTT_SSIZE_T:
+    case LTT_OFF_T:
+    case LTT_FLOAT:
+    case LTT_ENUM:
+      /* Align offset on type size */
+      *offset += ltt_align(*offset, get_alignment(tf, field),
+                           tf->has_alignment);
+      /* remember offset */
+      field->offset_root = *offset;
+      field->fixed_root = FIELD_FIXED;
+      /* Increment offset */
+      *offset += field->field_size;
+      return 0;
+      break;
+    case LTT_STRING:
+      field->offset_root = *offset;
+      field->fixed_root = FIELD_FIXED;
+      return 1;
+      break;
+    case LTT_ARRAY:
+      g_assert(type->fields->len == 1);
+      {
+        LttField *child = &g_array_index(type->fields, LttField, 0);
+
+        *offset += ltt_align(*offset, get_alignment(tf, field),
+                            tf->has_alignment);
+        
+        /* remember offset */
+        field->offset_root = *offset;
+        field->array_offset = *offset;
+        field->fixed_root = FIELD_FIXED;
+
+        /* Let the child be variable */
+        //precompute_fields_offsets(tf, child, offset);
+      
+        if(field->field_size != 0) {
+          /* Increment offset */
+          /* field_size is the array size in bytes */
+          *offset += field->field_size;
+          return 0;
+        } else {
+          return 1;
+        }
+      }
+      break;
+    case LTT_SEQUENCE:
+      g_assert(type->fields->len == 2);
+      {
+        LttField *child;
+        guint ret;
+
+        *offset += ltt_align(*offset, get_alignment(tf, field),
+                             tf->has_alignment);
+
+        /* remember offset */
+        field->offset_root = *offset;
+        field->fixed_root = FIELD_FIXED;
+ 
+        child = &g_array_index(type->fields, LttField, 0);
+        ret = precompute_fields_offsets(tf, child, offset);
+        g_assert(ret == 0); /* Seq len cannot have variable len */
+
+        child = &g_array_index(type->fields, LttField, 1);
+        *offset += ltt_align(*offset, get_alignment(tf, child),
+                             tf->has_alignment);
+        field->array_offset = *offset;
+        /* Set the offset position at position 0 */
+        ret = precompute_fields_offsets(tf, child, offset);
+
+        /* Cannot precompute fields offsets of sequence members, and has
+         * variable length. */
+        return 1;
+      }
+      break;
+    case LTT_STRUCT:
+      { 
+        LttField *child;
+        guint i;
+        gint ret=0;
+
+        *offset += ltt_align(*offset, get_alignment(tf, field),
+                             tf->has_alignment);
+        /* remember offset */
+        field->offset_root = *offset;
+        field->fixed_root = FIELD_FIXED;
+
+        for(i=0; i< type->fields->len; i++) {
+          child = &g_array_index(type->fields, LttField, i);
+          ret = precompute_fields_offsets(tf, child, offset);
+
+          if(ret) break;
+        }
+        return ret;
+      }
+      break;
+    case LTT_UNION:
+      { 
+        LttField *child;
+        guint i;
+        gint ret=0;
+
+        *offset += ltt_align(*offset, get_alignment(tf, field),
+                             tf->has_alignment);
+        /* remember offset */
+        field->offset_root = *offset;
+        field->fixed_root = FIELD_FIXED;
+
+        for(i=0; i< type->fields->len; i++) {
+          *offset = field->offset_root;
+          child = &g_array_index(type->fields, LttField, i);
+          ret = precompute_fields_offsets(tf, child, offset);
+
+          if(ret) break;
+        }
+        *offset = field->offset_root + field->field_size;
+        return ret;
+      }
+
+      break;
+    case LTT_NONE:
+    default:
+      g_error("precompute_fields_offsets : unknown type");
+      return 1;
+  }
+
+}
+
+
+/*****************************************************************************
+ *Function name
+ *    precompute_offsets : set the precomputable offset of an event type
+ *Input params 
+ *    tf : tracefile
+ *    event : event type
+ *
+ ****************************************************************************/
+void precompute_offsets(LttTracefile *tf, LttEventType *event)
+{
+  guint i;
+  off_t offset = 0;
+  gint ret;
+
+  /* First, compute the size of fixed size fields. Will determine size for
+   * arrays, struct and unions, which is not done by the parser */
+  for(i=0; i<event->fields->len; i++) {
+    LttField *field = &g_array_index(event->fields, LttField, i);
+    field_compute_static_size(tf, field);
+  }
+  
+  /* Precompute all known offsets */
+  for(i=0; i<event->fields->len; i++) {
+    LttField *field = &g_array_index(event->fields, LttField, i);
+    ret = precompute_fields_offsets(tf, field, &offset);
+    if(ret) break;
+  }
+}
+
+
 
 
 /*****************************************************************************
@@ -2037,6 +2409,15 @@ void set_fields_offsets(LttTracefile *tf, LttEventType *event_type)
  *    fixed_parent    : Do we know a fixed offset to the parent ?
  *    field           : field
  ****************************************************************************/
+
+
+
+// preset the fixed size offsets. Calculate them just like genevent-new : an
+// increment of a *to value that represents the offset from the start of the
+// event data.
+// The preset information is : offsets up to (and including) the first element
+// of variable size. All subsequent fields must be flagged "VARIABLE OFFSET".
+#if 0
 void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
     off_t offset_root, off_t offset_parent,
     enum field_status *fixed_root, enum field_status *fixed_parent,
@@ -2184,7 +2565,7 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
   }
 
 }
-
+#endif //0
 
 /*****************************************************************************
  *Function name
@@ -2198,6 +2579,112 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
  *Returns : 0 if identical
  *          1 if not.
  ****************************************************************************/
+// this function checks for equality of field types. Therefore, it does not use
+// per se offsets. For instance, an aligned version of a structure is
+// compatible with an unaligned version of the same structure.
+gint check_fields_compatibility(LttEventType *event_type1,
+    LttEventType *event_type2,
+    LttField *field1, LttField *field2)
+{
+  guint different = 0;
+
+  if(field1 == NULL) {
+    if(field2 == NULL) goto end;
+    else {
+      different = 1;
+      goto end;
+    }
+  } else if(field2 == NULL) {
+    different = 1;
+    goto end;
+  }
+
+  type1 = field1->field_type;
+  type2 = field2->field_type;
+
+  if(type1->type_class != type2->type_class) {
+    different = 1;
+    goto end;
+  }
+  if(type1->element_name != type2->element_name) {
+    different = 1;
+    goto end;
+  }
+ 
+  switch(type1->type_class) {
+    case LTT_INT_FIXED:
+    case LTT_UINT_FIXED:
+    case LTT_POINTER:
+    case LTT_CHAR:
+    case LTT_UCHAR:
+    case LTT_SHORT:
+    case LTT_USHORT:
+    case LTT_INT:
+    case LTT_UINT:
+    case LTT_LONG:
+    case LTT_ULONG:
+    case LTT_SIZE_T:
+    case LTT_SSIZE_T:
+    case LTT_OFF_T:
+    case LTT_FLOAT:
+    case LTT_ENUM:
+      if(field1->field_size != field2->field_size)
+        different = 1;
+      break;
+    case LTT_STRING:
+      break;
+    case LTT_ARRAY:
+      {
+        LttField *child1 = &g_array_index(type1->fields, LttField, 0);
+        LttField *child2 = &g_array_index(type2->fields, LttField, 0);
+
+        if(type1->size != type2->size)
+          different = 1;
+        if(check_fields_compatibility(event_type1, event_type2, child1, child2))
+          different = 1;
+      }
+      break;
+    case LTT_SEQUENCE:
+      {
+        LttField *child1 = &g_array_index(type1->fields, LttField, 1);
+        LttField *child2 = &g_array_index(type2->fields, LttField, 1);
+
+        if(check_fields_compatibility(event_type1, event_type2, child1, child2))
+          different = 1;
+      }
+      break;
+    case LTT_STRUCT:
+    case LTT_UNION:
+      { 
+        LttField *child;
+        guint i;
+        
+        if(type1->fields->len != type2->fields->len) {
+          different = 1;
+          goto end;
+        }
+        
+        for(i=0; i< type1->fields->len; i++) {
+          child1 = &g_array_index(type1->fields, LttField, i);
+          child2 = &g_array_index(type2->fields, LttField, i);
+          different = check_fields_compatibility(event_type1,
+                        event_type2, child1, child2);
+
+          if(different) break;
+        }
+      }
+      break;
+    case LTT_NONE:
+    default:
+      g_error("precompute_fields_offsets : unknown type");
+  }
+
+end:
+  return different;
+}
+
+
+#if 0
 gint check_fields_compatibility(LttEventType *event_type1,
     LttEventType *event_type2,
     LttField *field1, LttField *field2)
@@ -2310,175 +2797,8 @@ gint check_fields_compatibility(LttEventType *event_type1,
 end:
   return different;
 }
-
-
-
-
-#if 0
-/*****************************************************************************
- *Function name
- *    getFieldtypeSize: get the size of the field type (primitive type)
- *Input params 
- *    evT             : event type
- *    offsetRoot      : offset from the root
- *    offsetParent    : offset from the parrent
- *    fld             : field
- *    evD             : event data, it may be NULL
- *Return value
- *    int             : size of the field
- ****************************************************************************/
-
-static inline gint getFieldtypeSize(LttTracefile *tf,
-       LttEventType * evT, gint offsetRoot,
-	     gint offsetParent, LttField * fld, void *evD)
-{
-  gint size, size1, element_number, i, offset1, offset2;
-  LttType * type = fld->field_type;
-
-  /* This likely has been tested with gcov : half of them.. */
-  if(unlikely(fld->field_fixed == 1)){
-    /* tested : none */
-    if(unlikely(fld == evT->root_field)) {
-      size = fld->field_size;
-      goto end_getFieldtypeSize;
-    }
-  }
-
-  /* From gcov profiling : half string, half struct, can we gain something
-   * from that ? (Mathieu) */
-  switch(type->type_class) {
-    case LTT_ARRAY:
-      element_number = (int) type->element_number;
-      if(fld->field_fixed == -1){
-        size = getFieldtypeSize(tf, evT, offsetRoot,
-                                0,fld->child[0], NULL);
-        if(size == 0){ //has string or sequence
-          fld->field_fixed = 0;
-        }else{
-          fld->field_fixed = 1;
-          size *= element_number; 
-        }
-      }else if(fld->field_fixed == 0){// has string or sequence
-        size = 0;
-        for(i=0;i<element_number;i++){
-          size += getFieldtypeSize(tf, evT, offsetRoot+size,size, 
-          fld->child[0], evD+size);
-        }
-      }else size = fld->field_size;
-      if(unlikely(!evD)){
-        fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
-        fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
-      }
-
-      break;
-
-    case LTT_SEQUENCE:
-      size1 = (int) ltt_type_size(fac, type);
-      if(fld->field_fixed == -1){
-        fld->sequ_number_size = size1;
-        fld->field_fixed = 0;
-        size = getFieldtypeSize(evT, offsetRoot,
-                                0,fld->child[0], NULL);      
-        fld->element_size = size;
-      }else{//0: sequence
-        element_number = getIntNumber(tf,size1,evD);
-        type->element_number = element_number;
-        if(fld->element_size > 0){
-          size = element_number * fld->element_size;
-        }else{//sequence has string or sequence
-          size = 0;
-          for(i=0;i<element_number;i++){
-            size += getFieldtypeSize(tf, evT,
-                                     offsetRoot+size+size1,size+size1, 
-                                     fld->child[0], evD+size+size1);
-          }
-        }
-        size += size1;
-      }
-      if(unlikely(!evD)){
-        fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
-        fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
-      }
-
-      break;
-      
-    case LTT_STRING:
-      size = 0;
-      if(fld->field_fixed == -1){
-        fld->field_fixed = 0;
-      }else{//0: string
-        /* Hope my implementation is faster than strlen (Mathieu) */
-        char *ptr=(char*)evD;
-        size = 1;
-        /* from gcov : many many strings are empty, make it the common case.*/
-        while(unlikely(*ptr != '\0')) { size++; ptr++; }
-        //size = ptr - (char*)evD + 1; //include end : '\0'
-      }
-      fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
-      fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
-
-      break;
-      
-    case LTT_STRUCT:
-      element_number = (int) type->element_number;
-      size = 0;
-      /* tested with gcov */
-      if(unlikely(fld->field_fixed == -1)){
-        offset1 = offsetRoot;
-        offset2 = 0;
-        for(i=0;i<element_number;i++){
-          size1=getFieldtypeSize(tf, evT,offset1,offset2,
-                                 fld->child[i], NULL);
-          if(likely(size1 > 0 && size >= 0)){
-            size += size1;
-            if(likely(offset1 >= 0)) offset1 += size1;
-              offset2 += size1;
-          }else{
-            size = -1;
-            offset1 = -1;
-            offset2 = -1;
-          }
-        }
-        if(unlikely(size == -1)){
-           fld->field_fixed = 0;
-           size = 0;
-        }else fld->field_fixed = 1;
-      }else if(likely(fld->field_fixed == 0)){
-        offset1 = offsetRoot;
-        offset2 = 0;
-        for(i=0;unlikely(i<element_number);i++){
-          size=getFieldtypeSize(tf, evT, offset1, offset2,
-                                fld->child[i], evD+offset2);
-          offset1 += size;
-          offset2 += size;
-        }      
-        size = offset2;
-      }else size = fld->field_size;
-      fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
-      fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
-      break;
-
-    default:
-      if(unlikely(fld->field_fixed == -1)){
-        size = (int) ltt_type_size(LTT_GET_BO(tf), type);
-        fld->field_fixed = 1;
-      }else size = fld->field_size;
-      if(unlikely(!evD)){
-        fld->fixed_root    = (offsetRoot==-1)   ? 0 : 1;
-        fld->fixed_parent  = (offsetParent==-1) ? 0 : 1;
-      }
-      break;
-  }
-
-  fld->offset_root     = offsetRoot;
-  fld->offset_parent   = offsetParent;
-  fld->field_size      = size;
-
-end_getFieldtypeSize:
-
-  return size;
-}
 #endif //0
+
 
 /*****************************************************************************
  *Function name

@@ -77,9 +77,15 @@ static const int BUFFER_SIZE = 1024;
 /* Events data types */
 
 typedef enum _data_type {
+  INT_FIXED,
+  UINT_FIXED,
+	POINTER,
+	CHAR,
+	UCHAR,
+	SHORT,
+	USHORT,
   INT,
   UINT,
-	POINTER,
 	LONG,
 	ULONG,
 	SIZE_T,
@@ -95,24 +101,21 @@ typedef enum _data_type {
   NONE
 } data_type_t;
 
-/* Event type descriptors */
-
 typedef struct _type_descriptor {
   char * type_name; //used for named type
   data_type_t type;
   char *fmt;
-  int size;
+  size_t size;
   sequence_t labels; // for enumeration
+  sequence_t labels_values; // for enumeration
 	sequence_t labels_description;
 	int	already_printed;
-  sequence_t fields; // for structure
-  struct _type_descriptor *nested_type; // for array and sequence 
-  int alignment;
+  sequence_t fields; // for structure, array and sequence (field_t type)
 } type_descriptor_t;
 
 
-/* Fields within types */
 
+/* Fields within types or events */
 typedef struct _field{
   char *name;
   char *description;
@@ -125,7 +128,8 @@ typedef struct _field{
 typedef struct _event {  
   char *name;
   char *description;
-  type_descriptor_t *type; 
+  //type_descriptor_t *type; 
+	sequence_t fields;	/* event fields */
   int  per_trace;   /* Is the event able to be logged to a specific trace ? */
   int  per_tracefile;  /* Must we log this event in a specific tracefile ? */
 } event_t;
@@ -135,11 +139,13 @@ typedef struct _facility {
 	char * capname;
   char * description;
   sequence_t events;
-  sequence_t unnamed_types;
+  sequence_t unnamed_types; //FIXME : remove
   table_t named_types;
+	unsigned int checksum;
 } facility_t;
 
-int getSize(parse_file_t *in);
+int getSizeindex(unsigned int value);
+unsigned long long int getSize(parse_file_t *in);
 unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type);
 
 void parseFacility(parse_file_t *in, facility_t * fac);
@@ -149,12 +155,14 @@ void parseTypeDefinition(parse_file_t *in,
     sequence_t * unnamed_types, table_t * named_types);
 type_descriptor_t *parseType(parse_file_t *in,
     type_descriptor_t *t, sequence_t * unnamed_types, table_t * named_types);
-void parseFields(parse_file_t *in, type_descriptor_t *t,
-    sequence_t * unnamed_types, table_t * named_types);
+void parseFields(parse_file_t *in, field_t *f,
+    sequence_t * unnamed_types,
+		table_t * named_types,
+		int tag);
 void checkNamedTypesImplemented(table_t * namedTypes);
 type_descriptor_t * find_named_type(char *name, table_t * named_types);
 void generateChecksum(char * facName,
-    unsigned long * checksum, sequence_t * events);
+    unsigned int * checksum, sequence_t * events);
 
 
 /* get attributes */
@@ -204,6 +212,15 @@ crc32(const char *s)
 {
   return partial_crc32(s, 0xffffffff) ^ 0xffffffff;
 }
+
+
+extern char *intOutputTypes[];
+
+extern char *uintOutputTypes[];
+
+extern char *floatOutputTypes[];
+
+
 
 
 #endif // PARSER_H

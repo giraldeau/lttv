@@ -171,11 +171,9 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
 {
   char * facilityName = fac->name;
   sequence_t * events = &fac->events;
-  int i;
-  //LttEventType * evType;
-  LttEventType * event_type;
-  LttField * field;
+  unsigned int i, j;
   LttType * type;
+  table_t *named_types = &fac->named_types;
   
   g_assert(f->name == g_quark_from_string(facilityName));
   g_assert(f->checksum == checksum);
@@ -190,56 +188,67 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
 
   g_datalist_init(&f->events_by_name);
   g_datalist_init(&f->named_types);
-  
-  //f->named_types_number = fac->named_types.keys.position;
-  //f->named_types = g_array_sized_new (FALSE, TRUE, sizeof(LttType),
-  //    fac->named_types.keys.position);
-  //f->named_types = g_new(LttType*, fac->named_types.keys.position);
-  //f->named_types = g_array_set_size(f->named_types, 
-  //    fac->named_types.keys.position);
+#if 0
+  /* The first day, he created the named types */
 
-  //for each event, construct field tree and type graph
+  for(i=0; i<named_types->keys.position; i++) {
+    GQuark name = g_quark_from_string((char*)named_types->keys.array[i]);
+    type_descriptor_t *td = (type_descriptor_t*)named_types->values.array[i];
+
+    /* Create the type */
+    type = g_new(LttType,1);
+    type->type_name = name;
+    type->type_class = td->type;
+    if(td->fmt) type->fmt = g_strdup(td->fmt);
+    else type->fmt = NULL;
+    type->size = td->size;
+    type->enum_strings = NULL;
+    type->element_type = NULL;
+    type->element_number = 0;
+
+    construct_types_and_fields(type, td, NULL, NULL, ...);
+    
+    g_datalist_id_set_data_full(&fac->named_types, name,
+                type, (GDestroyNotify)freeLttNamedType);
+
+  }
+#endif //0
+  /* The second day, he created the event fields and types */
+  //for each event, construct field and type acyclic graph
   for(i=0;i<events->position;i++){
-    event_type = &g_array_index(f->events, LttEventType, i);
-    //evType = g_new(LttEventType,1);
-    //f->events[i] = evType;
+		event_t parser_event = (event_t*)events->array[i];
+    LttEventType *event_type = &g_array_index(f->events, LttEventType, i);
 
     event_type->name = 
-      g_quark_from_string(((event_t*)(events->array[i]))->name);
+      g_quark_from_string(parser_event->name);
     
     g_datalist_id_set_data(&f->events_by_name, event_type->name,
         event_type);
     
     event_type->description =
-      g_strdup(((event_t*)(events->array[i]))->description);
+      g_strdup(parser_event->description);
     
-    field = g_new(LttField, 1);
-    event_type->root_field = field;
-    event_type->facility = f;
     event_type->index = i;
+    event_type->facility = f;
 
-    if(((event_t*)(events->array[i]))->type != NULL){
- //     field->field_pos = 0;
-      type = lookup_named_type(f,((event_t*)(events->array[i]))->type);
-      field->field_type = type;
-      field->offset_root = 0;
-      field->fixed_root = FIELD_UNKNOWN;
-      field->offset_parent = 0;
-      field->fixed_parent = FIELD_UNKNOWN;
-      //    field->base_address = NULL;
-      field->field_size  = 0;
-      field->fixed_size = FIELD_UNKNOWN;
-      field->parent = NULL;
-      field->child = NULL;
-      field->current_element = 0;
+    event_type->fields = g_array_sized_new(FALSE, TRUE,
+        sizeof(LttField), parser_event->fields.position);
+    event_type->fields = 
+      g_array_set_size(event_type->fields, parser_event->fields.position);
+    g_datalist_init(&event_type->fields_by_name);
+  
+    for(j=0; j<parser_event->fields.position; j++) {
+      LttField *field = &g_array_index(event_type->fields, LttField, j);
+      field_t *parser_field = (field_t*)parser_event->fields.array[j];
 
-      //construct field tree and type graph
-      construct_types_and_fields(f,((event_t*)(events->array[i]))->type,field);
-    }else{
-      event_type->root_field = NULL;
-      g_free(field);
+      construct_types_and_fields(NULL, NULL, field, parser_field, ...);
+      g_datalist_id_set_data(&event_type->fields_by_name, 
+         field->name, 
+         field);
     }
-  }  
+  }
+
+  /* What about 2 days weeks ? */
 }
 
 
@@ -249,11 +258,219 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
  *                             internal recursion function
  *Input params 
  *    fac                    : facility struct
- *    td                     : type descriptor
- *    root_field             : root field of the event
+ *    field                  : destination lttv field
+ *    fld                    : source parser field
  ****************************************************************************/
 
+//DONE
+//make the change for arrays and sequences
+//no more root field. -> change this for an array of fields.
+// Compute the field size here.
+// Flag fields as "VARIABLE OFFSET" or "FIXED OFFSET" : as soon as
+// a field with a variable size is found, all the following fields must
+// be flagged with "VARIABLE OFFSET", this will be done by the offset
+// precomputation.
 
+
+void construct_fields(LttFacility *fac,
+											LttField *field,
+                      field_t *fld)
+{
+  guint len;
+  type_descriptor_t *td;
+
+  field->name = g_quark_from_string(fld->name);
+  if(fld->description) {
+    len = strlen(fld->description);
+    field->description = g_new(gchar, len+1);
+    strcpy(field->description, fld->description);
+  }
+  field->dynamic_offsets = NULL;
+  type = &field->field_type;
+  td = fld->type;
+
+  type->enum_map = NULL;
+  type->fields = NULL;
+  type->fields_by_name = NULL;
+ 
+  switch(td->type) {
+    case INT_FIXED:
+      type->type_class = LTT_INT_FIXED;
+      type->size = td->size;
+      break;
+    case UINT_FIXED:
+      type->type_class = LTT_UINT_FIXED;
+      type->size = td->size;
+      break;
+    case POINTER:
+      type->type_class = LTT_POINTER;
+      type->size = fac->pointer_size;
+      break;
+    case CHAR:
+      type->type_class = LTT_CHAR;
+      type->size = td->size;
+      break;
+    case UCHAR:
+      type->type_class = LTT_UCHAR;
+      type->size = td->size;
+      break;
+    case SHORT:
+      type->type_class = LTT_SHORT;
+      type->size = td->size;
+      break;
+    case USHORT:
+      type->type_class = LTT_USHORT;
+      type->size = td->size;
+      break;
+    case INT:
+      type->type_class = LTT_INT;
+      type->size = fac->int_size;
+      break;
+    case UINT:
+      type->type_class = LTT_UINT;
+      type->size = fac->int_size;
+      break;
+    case LONG:
+      type->type_class = LTT_LONG;
+      type->size = fac->long_size;
+      break;
+    case ULONG:
+      type->type_class = LTT_ULONG;
+      type->size = fac->long_size;
+      break;
+    case SIZE_T:
+      type->type_class = LTT_SIZE_T;
+      type->size = fac->size_t_size;
+      break;
+    case SSIZE_T:
+      type->type_class = LTT_SSIZE_T;
+      type->size = fac->size_t_size;
+      break;
+    case OFF_T:
+      type->type_class = LTT_OFF_T;
+      type->size = fac->size_t_size;
+      break;
+    case FLOAT:
+      type->type_class = LTT_FLOAT;
+      type->size = td->size;
+      break;
+    case STRING:
+      type->type_class = LTT_STRING;
+      type->size = 0;
+      break;
+    case ENUM:
+      type->type_class = LTT_ENUM;
+      type->size = fac->int_size;
+      {
+        guint i;
+        g_datalist_init(&type->enum_map);
+        for(i=0; i<td->labels.position; i++) {
+          GQuark key = g_quark_from_string((char*)td->labels.array[i]);
+          int *src = (int*)td->labels_values.array[i];
+          /* it's always ok to cast a int to a pointer type */
+          g_datalist_id_set_data(&type->enum_map, key, (gpointer)*src);
+        }
+      }
+      break;
+    case ARRAY:
+      type->type_class = LTT_ARRAY;
+      type->size = td->size;
+      type->fields = g_array_sized_new(FALSE, TRUE, sizeof(LttField),
+          td->fields.position);
+      type->fields = g_array_set_size(type->fields, td->fields.position);
+      {
+        guint i;
+
+        for(i=0; i<td->fields.position; i++) {
+          field_t *schild = (field_t*)td->fields.array[i];
+          LttField *dchild = &g_array_index(type->fields, LttField, i);
+          
+          construct_fields(fac, dchild, schild);
+        }
+      }
+      break;
+    case SEQUENCE:
+      type->type_class = LTT_SEQUENCE;
+      type->size = 0;
+      type->fields = g_array_sized_new(FALSE, TRUE, sizeof(LttField),
+          td->fields.position);
+      type->fields = g_array_set_size(type->fields, td->fields.position);
+      {
+        guint i;
+
+        for(i=0; i<td->fields.position; i++) {
+          field_t *schild = (field_t*)td->fields.array[i];
+          LttField *dchild = &g_array_index(type->fields, LttField, i);
+          
+          construct_fields(fac, dchild, schild);
+        }
+      }
+      break;
+    case STRUCT:
+      type->type_class = LTT_STRUCT;
+      type->size = 0; // Size not calculated by the parser.
+      type->fields = g_array_sized_new(FALSE, TRUE, sizeof(LttField),
+          td->fields.position);
+      type->fields = g_array_set_size(type->fields, td->fields.position);
+      g_datalist_init(&type->fields_by_name);
+      {
+        guint i;
+
+        for(i=0; i<td->fields.position; i++) {
+          field_t *schild = (field_t*)td->fields.array[i];
+          LttField *dchild = &g_array_index(type->fields, LttField, i);
+          
+          construct_fields(fac, dchild, schild);
+          g_datalist_id_set_data(&type->fields_by_name, 
+             dchild->name, 
+             dchild);
+        }
+      }
+      break;
+    case UNION:
+      type->type_class = LTT_UNION;
+      type->size = 0; // Size not calculated by the parser.
+      type->fields = g_array_sized_new(FALSE, TRUE, sizeof(LttField),
+          td->fields.position);
+      type->fields = g_array_set_size(type->fields, td->fields.position);
+      g_datalist_init(&type->fields_by_name);
+      {
+        guint i;
+
+        for(i=0; i<td->fields.position; i++) {
+          field_t *schild = (field_t*)td->fields.array[i];
+          LttField *dchild = &g_array_index(type->fields, LttField, i);
+          
+          construct_fields(fac, dchild, schild);
+          g_datalist_id_set_data(&type->fields_by_name, 
+             dchild->name, 
+             dchild);
+        }
+      }
+      break;
+    case NONE:
+    default:
+      g_error("construct_fields : unknown type");
+  }
+
+  field->field_size = type->size;
+
+  /* Put the fields as "variable" offset to root first. Then,
+   * the offset precomputation will only have to set the FIELD_FIXED until
+   * it reaches the first variable length field, then stop.
+   */
+  field->fixed_root = FIELD_VARIABLE;
+
+  if(td->fmt) {
+    len = strlen(td->fmt);
+    type->fmt = g_new(gchar, len+1);
+    strcpy(type->fmt, td->fmt);
+  }
+}
+
+
+
+#if 0
 void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td, 
                             LttField * fld)
 {
@@ -349,7 +566,7 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td,
 
 }
 
-
+#endif //0
 
 #if 0
 void construct_types_and_fields(LttFacility * fac, type_descriptor * td, 
@@ -433,29 +650,27 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor * td,
 }
 #endif //0
 
+#if 0
 /*****************************************************************************
  *Function name
  *    lookup_named_type: search named type in the table
  *                       internal function
  *Input params 
  *    fac              : facility struct
- *    td               : type descriptor
+ *    name             : type name
  *Return value    
  *                     : either find the named type, or create a new LttType
  ****************************************************************************/
 
-LttType * lookup_named_type(LttFacility *fac, type_descriptor_t * td)
+LttType * lookup_named_type(LttFacility *fac, GQuark type_name)
 {
   LttType *type = NULL;
-  GQuark name = 0;
   
-  if(td->type_name != NULL) {
-    /* Named type */
-    name = g_quark_from_string(td->type_name);
-  
-    type = g_datalist_id_get_data(&fac->named_types, name);
-  }
-  
+  /* Named type */
+  type = g_datalist_id_get_data(&fac->named_types, name);
+
+  g_assert(type != NULL);
+#if 0
   if(type == NULL){
     /* Create the type */
     type = g_new(LttType,1);
@@ -472,9 +687,10 @@ LttType * lookup_named_type(LttFacility *fac, type_descriptor_t * td)
       g_datalist_id_set_data_full(&fac->named_types, name,
                   type, (GDestroyNotify)freeLttNamedType);
   }
+#endif //0
   return type;
 }
-
+#endif //0
 
 /*****************************************************************************
  *Function name
@@ -505,71 +721,63 @@ void freeFacility(LttFacility * fac)
   }
   g_array_free(fac->events, TRUE);
 
-  g_datalist_clear(&fac->named_types);
+  g_datalist_clear(&fac->events_by_name);
 
+ // g_datalist_clear(&fac->named_types);
 }
 
 void freeEventtype(LttEventType * evType)
 {
+  unsigned int i;
   LttType * root_type;
   if(evType->description)
-    g_free(evType->description); 
-  if(evType->root_field){    
-    root_type = evType->root_field->field_type;
-    freeLttField(evType->root_field);
-    freeLttType(&root_type);
+    g_free(evType->description);
+  
+  for(i=0; i<evType->fields->len;i++) {
+    freeLttType(&g_array_index(evType->fields, LttType, i));
   }
+  g_array_free(evType->fields, TRUE);
+  g_datalist_clear(&evType->fields_by_name);
+}
+
+void freeLttType(LttType * type)
+{
+  unsigned int i;
+
+  if(type->fmt)
+    g_free(type->fmt);
+
+  if(type->enum_map)
+    g_datalist_clear(&type->enum_map);
+
+  if(type->fields) {
+    for(i=0; i<type->fields->len; i++) {
+      freeLttField(&g_array_index(type->fields, LttField, i));
+    }
+    g_array_free(type->fields, TRUE);
+  }
+  if(type->fields_by_name)
+    g_datalist_clear(&type->fields_by_name);
 }
 
 void freeLttNamedType(LttType * type)
 {
-  freeLttType(&type);
+  freeLttType(type);
 }
 
-void freeLttType(LttType ** type)
+void copy_enum_element(GQuark keyid, gpointer data, gpointer user_data)
 {
-  unsigned int i;
-  if(*type == NULL) return;
-  if((*type)->type_name != 0) return; //this is a named type.
-  //if((*type)->type_name){
-  //  return; //this is a named type
-  //}
-  if((*type)->fmt)
-    g_free((*type)->fmt);
-  if((*type)->enum_strings){
-    g_free((*type)->enum_strings);
-  }
+  int *value = gpointer data;
 
-  if((*type)->element_type){
-    for(i=0;i<(*type)->element_number;i++)
-      freeLttType(&((*type)->element_type[i]));   
-    g_free((*type)->element_type);
-  }
-  g_free(*type);
-  *type = NULL;
 }
 
-void freeLttField(LttField * fld)
+void freeLttField(LttField * field)
 { 
-  int i;
-  int size = 0;
-  
-  if(fld->field_type){
-    if(fld->field_type->type_class == LTT_ARRAY ||
-       fld->field_type->type_class == LTT_SEQUENCE){
-      size = 1;
-    }else if(fld->field_type->type_class == LTT_STRUCT){
-      size = fld->field_type->element_number;
-    }
-  }
-
-  if(fld->child){
-    for(i=0; i<size; i++){
-      if(fld->child[i])freeLttField(fld->child[i]);
-    }
-    g_free(fld->child);
-  }
-  g_free(fld);
+  if(field->description)
+    g_free(field->description);
+  if(field->dynamic_offsets)
+    g_array_free(field->dynamic_offsets, TRUE);
+  freeLttType(field->type);
 }
 
 /*****************************************************************************
