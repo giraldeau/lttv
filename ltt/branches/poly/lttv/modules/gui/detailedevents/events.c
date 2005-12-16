@@ -1379,7 +1379,6 @@ int event_hook(void *hook_data, void *call_data)
 
   LttFacility *facility = ltt_event_facility(e);
   LttEventType *event_type = ltt_event_eventtype(e);
-  LttField *field = ltt_event_field(e);
   LttTime time = ltt_event_time(e);
 
   guint cpu = ltt_tracefile_num(tfc->tf);
@@ -1397,7 +1396,7 @@ int event_hook(void *hook_data, void *call_data)
 
   lttv_event_to_string(e, desc, TRUE, TRUE, (LttvTracefileState*)tfc);
 
-  g_info("field : %s", desc->str);
+  g_info("detail : %s", desc->str);
   
   gtk_list_store_append (event_viewer_data->store_m, &iter);
   gtk_list_store_set (event_viewer_data->store_m, &iter,
