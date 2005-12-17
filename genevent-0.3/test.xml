@@ -1,0 +1,125 @@
+<facility name=test>
+  <description>The kernel facility has events related to kernel execution status.</description>
+
+
+  <type name=tasklet_priority>
+    <enum>
+      <label name=LOW value=0/> <description>Low priority tasklet</description>
+      <label name=HIGH value=1/> <description>High priority tasklet</description>
+    </enum>
+  </type>
+
+  <type name=irq_mode>
+    <enum>
+      <label name=user value=0/> <description>User context</description>
+      <label name=kernel value=1/> <description>Kernel context</description>
+    </enum>
+  </type>
+	
+	<type name=mystruct2>
+		<struct>
+      <field name="irq_id"> <description>IRQ number</description> <uint size=4/> </field>
+      <field name="mode"> <description>Are we executing kernel code</description> <typeref name=irq_mode/> </field>
+		</struct>
+	</type>
+
+	<type name=mystruct>
+		<struct>
+      <field name="irq_id"> <description>IRQ number</description> <uint size=4/> </field>
+      <field name="mode"> <description>Are we executing kernel code</description> <typeref name=irq_mode/> </field>
+			
+			<field name="teststr"><typeref name=mystruct2/></field>
+			<field name="myarray">
+				<array size=10/>
+					<uint_fixed size=8/>
+				</array>
+			</field>
+			<field name="mysequence">
+				<sequence>
+					<uint>
+					<float size=8/>
+				</sequence>
+			</field>
+			<field name="myunion">
+				<union>
+					<field name="myfloat"><float size=8/></field>
+					<field name="myulong"><ulong></field>
+				</union>
+			</field>
+		</struct>
+	</type>
+
+
+
+
+  <event name=syscall_entry>
+    <description>System call entry</description>
+    <field name="syscall_id"> <description>Syscall entry number in entry.S</description> <uint size=1/> </field>
+    <field name="address"> <description>Address from which call was made</description> <pointer/> </field>
+  </event>
+	
+	<event name=syscall_exit>
+    <description>System call exit</description>
+  </event>
+	
+  <event name=trap_entry>
+    <description>Entry in a trap</description>
+    <field name="trap_id"> <description>Trap number</description> <uint size=2/> </field>
+    <field name="address"> <description>Address where trap occured</description> <pointer/> </field>
+  </event>
+
+  <event name=trap_exit>
+  <description>Exit from a trap</description>
+  </event>
+
+  <event name=soft_irq_entry>
+  <description>Soft IRQ entry</description>
+  <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
+  </event>
+
+  <event name=soft_irq_exit>
+  <description>Soft IRQ exit</description>
+   <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
+  </event>
+
+  <event name=tasklet_entry>
+  <description>Tasklet entry</description>
+  <field name="priority"> <description>Tasklet priority</description> <typeref name=tasklet_priority/> </field>
+  <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+  <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  </event>
+
+  <event name=tasklet_exit>
+  <description>Tasklet exit</description>
+  <field name="priority"> <description>Tasklet priority</description> <typeref name=tasklet_priority/> </field>
+  <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+  <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  </event>
+
+  <event name=irq_entry>
+  <description>Entry in an irq</description>
+  <field name="irq_id"> <description>IRQ number</description> <uint size=4/> </field>
+  <field name="mode"> <description>Are we executing kernel code</description> <typeref name=irq_mode/> </field>
+  </event>
+
+  <event name=irq_exit>
+  <description>Exit from an IRQ</description>
+  </event>
+
+	<event name=big_array>
+	<field name="myarray">
+		<array size=10000>
+			<array size=2>
+				<struct>
+					<field name=a><pointer></field>
+					<field name=b><union>
+													<field name=c><pointer></field>
+												</union>
+					</field>
+				</struct>
+			</array>
+		</array>
+	</field>
+	</event>
+
+</facility>

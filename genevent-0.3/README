@@ -1,0 +1,95 @@
+
+Mathieu Desnoyers -- November 2005
+
+This is a complete rework of genevent.
+
+The 'genevent' program parses event descriptions and generates 
+the inline functions to record events in the kernel.
+
+There are several files in the directory:
+ genevent.c, genevent.h, crc32.tab, parser.c and parser.h
+
+In fact, crc32.tab, parser.c and parser.h are the same files as  
+those in LTT library.
+
+Note about strings :
+There are three methods to write strings in genevent, each suitable and
+efficient for a particular case. They are explained here from the fastest
+to the slowest.
+1 - The C code presents a fixed size string.
+	For example, you find :
+		char mystring[10];
+	as string definition.
+
+	you must then define it as an array of char :
+	<array size=10/><char></array>
+
+	Note, however, that you might not want to declare a fixed size for trace size
+	and unnecessary copy matters.
+	
+	For instance, on a 32 bits architecture, copying a n bytes array takes
+	approximately* n/4 memory read and write, for n/2 memory operations.
+	
+	Using the	slower method described in (3), with a strlen and memcpy, where
+	"u" is the number of used caracters, takes u+1 reads for the strlen, and
+	approximately* (u+1)/4 read and write for the memcpy, for a total of :
+	(3/2)*(u+1) memory access.
+
+	So, if (n/2) > (3/2)*(u+1), or : n > 3*u+3
+		where n is the size of the array
+					u is the average number of used caracters (excluding the \0)
+				it becomes faster to use the method number 3 with strlen.
+
+2 - The C code presents a variable size string together with its
+		size.
+
+	A typical use for this case is filenames in the Linux kernel. The
+	dentry strucure has a d_name member, which is a struct qstr containing
+	a unsigned int len and const unsigned char *name.
+
+	you must use a sequence to declare this efficiently :
+	<sequence><uint><char></sequence>
+		
+3 - The C code presents a \0 terminated string.
+	
+	This is the slowest, but most convenient way to declare a string. You are
+	discouraged to use it when options 1 or 2 are available. It will dynamically
+	calculate the string length (byte by byte read) and only afterward do a
+	memcpy.
+
+	Note that, as explained in 1, if n > 3*u+3, it becomes faster to use this
+	method instead of copying the whole fixed size array.
+
+	Declare like this :
+	<string>
+
+Here is a brief description of how to use genevent.
+
+make
+make install
+
+
+* Add new events to the kernel with genevent
+
+su -
+cd /usr/local/share/LinuxTraceToolkitViewer/facilities
+cp process.xml yourfacility.xml
+  * edit yourfacility.xml to fit your needs.
+cd /tmp
+/usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/yourfacility.xml
+cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
+         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt
+cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
+         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/ltt
+  * edit the kernel file you want to instrument
+    - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
+      of the file.
+    - Add a call to the tracing functions. See their names and parameters in
+      /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt/ltt-facility-yourfacility.h
+
+
+
+* The approximation comes from the fact that copies of number of caracters non
+  multiple of the architecture size takes more operations (maximum of :
+	(architecture size (in bytes) - 1) operations).
+
