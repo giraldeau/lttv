@@ -3,6 +3,7 @@ EXTRA_DIST =  \
 core.xml \
 fs.xml \
 ipc.xml \
+asm_i386_kernel.xml \
 kernel.xml \
 memory.xml \
 network.xml \
@@ -15,6 +16,7 @@ facilities_DATA = \
 core.xml \
 fs.xml \
 ipc.xml \
+asm_i386_kernel.xml \
 kernel.xml \
 memory.xml \
 network.xml \

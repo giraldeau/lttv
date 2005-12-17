@@ -808,14 +808,14 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     g_array_set_size(hooks, 7);
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
+        LTT_FACILITY_ASM_I386_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
         LTT_FIELD_SYSCALL_ID, 0, 0,
         before_syscall_entry, NULL, 
         &g_array_index(hooks, LttvTraceHook, 0));
     g_assert(!ret);
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_EXIT,
+        LTT_FACILITY_ASM_I386_KERNEL, LTT_EVENT_SYSCALL_EXIT,
         0, 0, 0,
         before_syscall_exit, NULL, 
         &g_array_index(hooks, LttvTraceHook, 1));
@@ -862,14 +862,14 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     g_array_set_size(hooks, 9);
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
+        LTT_FACILITY_ASM_I386_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
         LTT_FIELD_SYSCALL_ID, 0, 0,
         after_syscall_entry, NULL, 
         &g_array_index(hooks, LttvTraceHook, 0));
     g_assert(!ret);
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_EXIT,
+        LTT_FACILITY_ASM_I386_KERNEL, LTT_EVENT_SYSCALL_EXIT,
         0, 0, 0,
         after_syscall_exit, NULL, 
         &g_array_index(hooks, LttvTraceHook, 1));

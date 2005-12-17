@@ -35,6 +35,7 @@
 
 GQuark
     LTT_FACILITY_KERNEL,
+    LTT_FACILITY_ASM_I386_KERNEL,
     LTT_FACILITY_PROCESS,
     LTT_FACILITY_FS;
 
@@ -768,7 +769,7 @@ create_name_tables(LttvTraceState *tcs)
   }
 #endif //0
   if(lttv_trace_find_hook(tcs->parent.t,
-      LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
+      LTT_FACILITY_ASM_I386_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
       LTT_FIELD_SYSCALL_ID, 0, 0,
       NULL, NULL, &h))
     return;
@@ -1437,13 +1438,13 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     hooks = g_array_set_size(hooks, 11);
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
+        LTT_FACILITY_ASM_I386_KERNEL, LTT_EVENT_SYSCALL_ENTRY,
         LTT_FIELD_SYSCALL_ID, 0, 0,
         syscall_entry, NULL, &g_array_index(hooks, LttvTraceHook, 0));
     g_assert(!ret);
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_SYSCALL_EXIT,
+        LTT_FACILITY_ASM_I386_KERNEL, LTT_EVENT_SYSCALL_EXIT,
         0, 0, 0,
         syscall_exit, NULL, &g_array_index(hooks, LttvTraceHook, 1));
     g_assert(!ret);
@@ -2155,6 +2156,7 @@ static void module_init()
 
   
   LTT_FACILITY_KERNEL     = g_quark_from_string("kernel");
+  LTT_FACILITY_ASM_I386_KERNEL     = g_quark_from_string("asm_i386_kernel");
   LTT_FACILITY_PROCESS    = g_quark_from_string("process");
   LTT_FACILITY_FS    = g_quark_from_string("fs");
 
