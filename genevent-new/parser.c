@@ -741,7 +741,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     while(strcmp("label",token) == 0){
       int *label_value = malloc(sizeof(int));
       
-      str   = allocAndCopy(getNameAttribute(in));      
+      str   = allocAndCopy(getNameAttribute(in));
       token = getValueStrAttribute(in);
       
      	sequence_push(&(t->labels),str);
@@ -972,7 +972,8 @@ char *getName(parse_file_t * in)
   char *token;
 
   token = getToken(in);
-  if(in->type != NAME) in->error(in,"Name token was expected");
+  // Optional descriptions
+	// if(in->type != NAME) in->error(in,"Name token was expected");
   return token;
 }
 
@@ -1154,11 +1155,11 @@ char *getToken(parse_file_t * in)
         if(pos == BUFFER_SIZE) in->error(in, "number token too large");
         in->type = NUMBER;
       }    
-      else if(isalpha(car)) {
+      else if(isalnum(car) || car == '_' || car == '-') {
         in->buffer[0] = car;
         pos = 1;
         while((car = getc(fp)) != EOF && pos < BUFFER_SIZE) {
-          if(!(isalnum(car) || car == '_')) {
+          if(!(isalnum(car) || car == '_' || car == '-')) {
             ungetc(car,fp);
             break;
           }
