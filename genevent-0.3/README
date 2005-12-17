@@ -78,14 +78,14 @@ cp process.xml yourfacility.xml
 cd /tmp
 /usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/yourfacility.xml
 cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
-         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt
+         /usr/src/linux-2.6.12-rc4-lttng-0.5.0/include/linux/ltt
 cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
-         /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/ltt
+         /usr/src/linux-2.6.12-rc4-lttng-0.5.0/ltt
   * edit the kernel file you want to instrument
     - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
       of the file.
     - Add a call to the tracing functions. See their names and parameters in
-      /usr/src/linux-2.6.12-rc4-mm2-lttng-0.2/include/linux/ltt/ltt-facility-yourfacility.h
+      /usr/src/linux-2.6.12-rc4-lttng-0.5.0/include/linux/ltt/ltt-facility-yourfacility.h
 
 
 
