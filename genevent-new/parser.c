@@ -784,29 +784,29 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"char") == 0) {
     t->type = CHAR;
-		t->size = 1;
     getTypeAttributes(in, t, unnamed_types, named_types);
+		t->size = 1;
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"uchar") == 0) {
     t->type = UCHAR;
-		t->size = 1;
     getTypeAttributes(in, t, unnamed_types, named_types);
+		t->size = 1;
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"short") == 0) {
     t->type = SHORT;
-		t->size = 2;
     getTypeAttributes(in, t, unnamed_types, named_types);
+		t->size = 2;
     getForwardslash(in);
     getRAnglebracket(in); 
   }
   else if(strcmp(token,"ushort") == 0) {
     t->type = USHORT;
-		t->size = 2;
     getTypeAttributes(in, t, unnamed_types, named_types);
+		t->size = 2;
     getForwardslash(in);
     getRAnglebracket(in); 
   }
@@ -1344,8 +1344,7 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type)
       flag = 1;
       break;
     case SEQUENCE:
-      sprintf(buf,"%zu", type->size);
-      str = appendString("sequence ",buf);
+      str = allocAndCopy("sequence ");
       flag = 1;
       break;
     case STRUCT:
