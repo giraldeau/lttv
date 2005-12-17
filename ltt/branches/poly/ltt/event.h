@@ -127,7 +127,7 @@ double ltt_event_get_double(LttEvent *e, LttField *f);
 
 gchar *ltt_event_get_string(LttEvent *e, LttField *f);
 
-void compute_offsets(LttTracefile *tf, LttEventType *event, off_t *offset,
-      void *root);
+void compute_offsets(LttTracefile *tf, LttFacility *fac,
+    LttEventType *event, off_t *offset, void *root);
 
 #endif // EVENT_H

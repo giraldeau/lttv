@@ -294,7 +294,7 @@ void construct_fields(LttFacility *fac,
   type->enum_map = NULL;
   type->fields = NULL;
   type->fields_by_name = NULL;
- 
+
   switch(td->type) {
     case INT_FIXED:
       type->type_class = LTT_INT_FIXED;
@@ -315,6 +315,7 @@ void construct_fields(LttFacility *fac,
     case UCHAR:
       type->type_class = LTT_UCHAR;
       type->size = td->size;
+      g_assert(type->size != 0);
       break;
     case SHORT:
       type->type_class = LTT_SHORT;
@@ -331,6 +332,7 @@ void construct_fields(LttFacility *fac,
     case UINT:
       type->type_class = LTT_UINT;
       type->size = fac->int_size;
+      g_assert(type->size != 0);
       break;
     case LONG:
       type->type_class = LTT_LONG;
@@ -365,13 +367,14 @@ void construct_fields(LttFacility *fac,
       type->size = fac->int_size;
       {
         guint i;
-        type->enum_map = g_hash_table_new(g_int_hash, g_int_equal);
+        type->enum_map = g_hash_table_new(g_direct_hash, g_direct_equal);
         for(i=0; i<td->labels.position; i++) {
           GQuark value = g_quark_from_string((char*)td->labels.array[i]);
           gint key = *(int*)td->labels_values.array[i];
           g_hash_table_insert(type->enum_map, (gpointer)key, (gpointer)value);
         }
       }
+      g_assert(type->size != 0);
       break;
     case ARRAY:
       type->type_class = LTT_ARRAY;

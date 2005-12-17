@@ -460,7 +460,5 @@ static inline unsigned int ltt_align(size_t align_drift,
 	return ((alignment - align_drift) & (alignment-1));
 }
 
-off_t field_align(LttTracefile *tf, LttField *field, off_t offset);
-
 
 #endif /* LTT_PRIVATE_H */

@@ -8,6 +8,7 @@ memory.xml \
 network.xml \
 process.xml \
 socket.xml \
+statedump.xml \
 timer.xml
 
 facilities_DATA = \
@@ -19,6 +20,7 @@ memory.xml \
 network.xml \
 process.xml \
 socket.xml \
+statedump.xml \
 timer.xml
 
 

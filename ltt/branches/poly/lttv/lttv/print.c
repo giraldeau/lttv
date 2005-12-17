@@ -190,6 +190,9 @@ void lttv_event_to_string(LttEvent *e, GString *s,
   event_type = ltt_event_eventtype(e);
   
   num_fields = ltt_eventtype_num_fields(event_type);
+  if(num_fields == 0) return;
+  g_string_append_printf(s, " ");
+  g_string_append_printf(s, "{ ");
   for(i=0; i<num_fields; i++) {
     field = ltt_eventtype_field(event_type, i);
     if(field_names) {
@@ -198,7 +201,9 @@ void lttv_event_to_string(LttEvent *e, GString *s,
         g_string_append_printf(s, "%s = ", g_quark_to_string(name));
     }
     lttv_print_field(e, field, s, field_names);
+    if(i != num_fields-1) g_string_append_printf(s, ", ");
   }
+  g_string_append_printf(s, " }");
 } 
 
 static void init()

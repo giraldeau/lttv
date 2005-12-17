@@ -37,10 +37,8 @@
 
 
 
-void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
-    void *root);
-
-
+void compute_fields_offsets(LttTracefile *tf,
+    LttFacility *fac, LttField *field, off_t *offset, void *root);
 
 
 LttEvent *ltt_event_new()
@@ -462,13 +460,13 @@ LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i)
  
   if(f->field_type.type_class != LTT_ARRAY &&
      f->field_type.type_class != LTT_SEQUENCE)
-    return ;
+    return NULL;
 
   element_number  = ltt_event_field_element_number(e,f);
   event_type = ltt_event_eventtype(e);
   /* Sanity check for i : 0..n-1 only, and must be lower or equal element_number
    */
-  if(i >= element_number) return;
+  if(i >= element_number) return NULL;
  
   if(f->field_type.type_class == LTT_ARRAY) {
    field = &g_array_index(f->field_type.fields, LttField, 0);
@@ -478,14 +476,15 @@ LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i)
 
   if(field->field_size != 0) {
     if(f->array_offset + (i * field->field_size) == field->offset_root)
-      return; /* fixed length child, already at the right offset */
+      return field; /* fixed length child, already at the right offset */
     else
       new_offset = f->array_offset + (i * field->field_size);
   } else {
     /* Var. len. child */
     new_offset = g_array_index(f->dynamic_offsets, off_t, i);
   }
-  compute_fields_offsets(e->tracefile, field, &new_offset, e->data);
+  compute_fields_offsets(e->tracefile, 
+      ltt_event_facility(e), field, &new_offset, e->data);
 
   return field;
 }
@@ -691,7 +690,7 @@ size_t get_field_type_size(LttTracefile *tf, LttEventType *event_type,
       g_assert(field->fixed_size == FIELD_FIXED);
 			size = field->field_size;
       align = ltt_align(field->offset_root,
-																size, event_type->facility->has_alignment);
+																size, event_type->facility->alignment);
 			field->offset_root += align;
 			field->offset_parent += align;
 			size += align;
@@ -791,14 +790,14 @@ size_t get_field_type_size(LttTracefile *tf, LttEventType *event_type,
  *Function name
  *    compute_fields_offsets : set the precomputable offset of the fields
  *Input params 
- *    tf : tracefile
+ *    fac : facility
  *    field : the field
  *    offset : pointer to the current offset, must be incremented
  ****************************************************************************/
 
 
-void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
-    void *root)
+void compute_fields_offsets(LttTracefile *tf, 
+    LttFacility *fac, LttField *field, off_t *offset, void *root)
 {
   LttType *type = &field->field_type;
 
@@ -821,23 +820,29 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
     case LTT_ENUM:
       if(field->fixed_root == FIELD_VARIABLE) {
         /* Align offset on type size */
-        *offset += ltt_align(*offset, get_alignment(tf, field),
-                             tf->has_alignment);
+        *offset += ltt_align(*offset, get_alignment(field),
+                             fac->alignment);
         /* remember offset */
         field->offset_root = *offset;
         /* Increment offset */
         *offset += field->field_size;
+      } else {
+        //g_debug("type before offset : %llu %llu %u\n", *offset,
+        //    field->offset_root,
+        //    field->field_size);
+        *offset = field->offset_root;
+        *offset += field->field_size;
+        //g_debug("type after offset : %llu\n", *offset);
       }
-      /* None of these types has variable size, so we are sure that if
-       * this element has a fixed_root, then the following one will have
-       * a fixed root too, so it does not need the *offset at all.
-       */
       break;
     case LTT_STRING:
       if(field->fixed_root == FIELD_VARIABLE) {
         field->offset_root = *offset;
       }
       *offset += strlen((gchar*)(root+*offset)) + 1;
+      /* Realign the data */
+      *offset += ltt_align(*offset, fac->pointer_size,
+                           fac->alignment);
       break;
     case LTT_ARRAY:
       g_assert(type->fields->len == 1);
@@ -845,8 +850,8 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
         off_t local_offset;
         LttField *child = &g_array_index(type->fields, LttField, 0);
         if(field->fixed_root == FIELD_VARIABLE) {
-          *offset += ltt_align(*offset, get_alignment(tf, field),
-                              tf->has_alignment);
+          *offset += ltt_align(*offset, get_alignment(field),
+                              fac->alignment);
           /* remember offset */
           field->offset_root = *offset;
           field->array_offset = *offset;
@@ -863,12 +868,12 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
                                                     0);
           for(i=0; i<type->size; i++) {
             g_array_append_val(field->dynamic_offsets, *offset);
-            compute_fields_offsets(tf, child, offset, root);
+            compute_fields_offsets(tf, fac, child, offset, root);
           }
         }
   //      local_offset = field->array_offset;
   //      /* Set the offset at position 0 */
-  //      compute_fields_offsets(tf, child, &local_offset, root);
+  //      compute_fields_offsets(tf, fac, child, &local_offset, root);
       }
       break;
     case LTT_SEQUENCE:
@@ -877,17 +882,18 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
         off_t local_offset;
         LttField *child;
         guint i;
+        guint num_elem;
         if(field->fixed_root == FIELD_VARIABLE) {
-          *offset += ltt_align(*offset, get_alignment(tf, field),
-                              tf->has_alignment);
+          *offset += ltt_align(*offset, get_alignment(field),
+                              fac->alignment);
           /* remember offset */
           field->offset_root = *offset;
 
           child = &g_array_index(type->fields, LttField, 0);
-          compute_fields_offsets(tf, child, offset, root);
+          compute_fields_offsets(tf, fac, child, offset, root);
           child = &g_array_index(type->fields, LttField, 1);
-          *offset += ltt_align(*offset, get_alignment(tf, child),
-                               tf->has_alignment);
+          *offset += ltt_align(*offset, get_alignment(child),
+                               fac->alignment);
           field->array_offset = *offset;
 
         } else {
@@ -896,13 +902,20 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
         *offset = field->array_offset;
         field->dynamic_offsets = g_array_set_size(field->dynamic_offsets,
                                                   0);
-        for(i=0; i<ltt_event_field_element_number(&tf->event, field); i++) {
+        num_elem = ltt_event_field_element_number(&tf->event, field);
+        for(i=0; i<num_elem; i++) {
           g_array_append_val(field->dynamic_offsets, *offset);
-          compute_fields_offsets(tf, child, offset, root);
+          compute_fields_offsets(tf, fac, child, offset, root);
         }
+        g_assert(num_elem == field->dynamic_offsets->len);
+
+        /* Realign the data */
+        *offset += ltt_align(*offset, fac->pointer_size,
+                             fac->alignment);
+        
  //       local_offset = field->array_offset;
  //       /* Set the offset at position 0 */
- //       compute_fields_offsets(tf, child, &local_offset, root);
+ //       compute_fields_offsets(tf, fac, child, &local_offset, root);
       }
       break;
     case LTT_STRUCT:
@@ -911,8 +924,8 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
         guint i;
         gint ret=0;
         if(field->fixed_root == FIELD_VARIABLE) {
-          *offset += ltt_align(*offset, get_alignment(tf, field),
-                               tf->has_alignment);
+          *offset += ltt_align(*offset, get_alignment(fac, field),
+                               fac->alignment);
           /* remember offset */
           field->offset_root = *offset;
         } else {
@@ -920,7 +933,7 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
         }
         for(i=0; i<type->fields->len; i++) {
           child = &g_array_index(type->fields, LttField, i);
-          compute_fields_offsets(tf, child, offset, root);
+          compute_fields_offsets(tf, fac, child, offset, root);
         }
       }
       break;
@@ -930,15 +943,15 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
         guint i;
         gint ret=0;
         if(field->fixed_root == FIELD_VARIABLE) {
-          *offset += ltt_align(*offset, get_alignment(tf, field),
-                               tf->has_alignment);
+          *offset += ltt_align(*offset, get_alignment(field),
+                               fac->alignment);
           /* remember offset */
           field->offset_root = *offset;
         }
         for(i=0; i<type->fields->len; i++) {
           *offset = field->offset_root;
           child = &g_array_index(type->fields, LttField, i);
-          compute_fields_offsets(tf, child, offset, root);
+          compute_fields_offsets(tf, fac, child, offset, root);
         }
         *offset = field->offset_root + field->field_size;
       }
@@ -959,17 +972,16 @@ void compute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset,
  *    event : event type
  *
  ****************************************************************************/
-void compute_offsets(LttTracefile *tf, LttEventType *event, off_t *offset,
-      void *root)
+void compute_offsets(LttTracefile *tf, LttFacility *fac,
+    LttEventType *event, off_t *offset, void *root)
 {
   guint i;
-  gint ret;
 
   /* compute all variable offsets */
   for(i=0; i<event->fields->len; i++) {
+    //g_debug("computing offset %u of %u\n", i, event->fields->len-1);
     LttField *field = &g_array_index(event->fields, LttField, i);
-    compute_fields_offsets(tf, field, offset, root);
-    if(ret) break;
+    compute_fields_offsets(tf, fac, field, offset, root);
   }
 
 }

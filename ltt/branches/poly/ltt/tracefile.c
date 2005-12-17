@@ -106,7 +106,7 @@ static int ltt_seek_next_event(LttTracefile *tf);
 void ltt_update_event_size(LttTracefile *tf);
 
 
-void precompute_offsets(LttTracefile *tf, LttEventType *event);
+void precompute_offsets(LttFacility *fac, LttEventType *event);
 
 #if 0
 /* Functions to parse system.xml file (using glib xml parser) */
@@ -951,6 +951,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
       struct LttFacilityLoad *fac_load_data;
       struct LttStateDumpFacilityLoad *fac_state_dump_load_data;
       char *fac_name;
+      void *pos;
 
       // FIXME align
       switch((enum ltt_core_events)tf->event.event_id) {
@@ -958,9 +959,10 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac_name = (char*)(tf->event.data);
           g_debug("Doing LTT_EVENT_FACILITY_LOAD of facility %s",
               fac_name);
-          fac_load_data =
-            (struct LttFacilityLoad *)
-                (tf->event.data + strlen(fac_name) + 1);
+          pos = (tf->event.data + strlen(fac_name) + 1);
+          pos += ltt_align((size_t)pos, sizeof(guint32), tf->has_alignment);
+          fac_load_data = (struct LttFacilityLoad *)pos;
+
           fac = &g_array_index (tf->trace->facilities_by_num, LttFacility,
               ltt_get_uint32(LTT_GET_BO(tf), &fac_load_data->id));
           /* facility may already exist if trace is paused/unpaused */
@@ -988,7 +990,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           /* Preset the field offsets */
           for(i=0; i<fac->events->len; i++){
             et = &g_array_index(fac->events, LttEventType, i);
-            precompute_offsets(tf, et);
+            precompute_offsets(fac, et);
           }
 
           fac->exists = 1;
@@ -1013,9 +1015,10 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac_name = (char*)(tf->event.data);
           g_debug("Doing LTT_EVENT_STATE_DUMP_FACILITY_LOAD of facility %s",
               fac_name);
-          fac_state_dump_load_data =
-            (struct LttStateDumpFacilityLoad *)
-                (tf->event.data + strlen(fac_name) + 1);
+          pos = (tf->event.data + strlen(fac_name) + 1);
+          pos += ltt_align((size_t)pos, sizeof(guint32), tf->has_alignment);
+          fac_state_dump_load_data = (struct LttStateDumpFacilityLoad *)pos;
+
           fac = &g_array_index (tf->trace->facilities_by_num, LttFacility,
               ltt_get_uint32(LTT_GET_BO(tf), &fac_state_dump_load_data->id));
           /* facility may already exist if trace is paused/unpaused */
@@ -1043,7 +1046,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           /* Preset the field offsets */
           for(i=0; i<fac->events->len; i++){
             et = &g_array_index(fac->events, LttEventType, i);
-            precompute_offsets(tf, et);
+            precompute_offsets(fac, et);
           }
 
           fac->exists = 1;
@@ -1863,6 +1866,7 @@ void ltt_update_event_size(LttTracefile *tf)
   case LTT_EVENT_FACILITY_LOAD:
     size = strlen((char*)tf->event.data) + 1;
     //g_debug("Update Event facility load of facility %s", (char*)tf->event.data);
+    size += ltt_align(size, sizeof(guint32), tf->has_alignment);
     size += sizeof(struct LttFacilityLoad);
     break;
   case LTT_EVENT_FACILITY_UNLOAD:
@@ -1871,6 +1875,7 @@ void ltt_update_event_size(LttTracefile *tf)
     break;
   case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
     size = strlen((char*)tf->event.data) + 1;
+    size += ltt_align(size, sizeof(guint32), tf->has_alignment);
     //g_debug("Update Event facility load state dump of facility %s",
     //    (char*)tf->event.data);
     size += sizeof(struct LttStateDumpFacilityLoad);
@@ -1908,7 +1913,7 @@ void ltt_update_event_size(LttTracefile *tf)
     }
     
     /* Compute the dynamic offsets */
-    compute_offsets(tf, event_type, &size, tf->event.data);
+    compute_offsets(tf, f, event_type, &size, tf->event.data);
 
     //g_debug("Event root field : f.e %hhu.%hhu size %zd",
     //    tf->event.facility_id,
@@ -2044,13 +2049,12 @@ void set_fields_offsets(LttTracefile *tf, LttEventType *event_type)
  *Function name
  *    get_alignment : Get the alignment needed for a field.
  *Input params 
- *    tf : tracefile
  *    field : field
  *
  *    returns : The size on which it must be aligned.
  *
  ****************************************************************************/
-off_t get_alignment(LttTracefile *tf, LttField *field)
+off_t get_alignment(LttField *field)
 {
   LttType *type = &field->field_type;
 
@@ -2081,7 +2085,7 @@ off_t get_alignment(LttTracefile *tf, LttField *field)
       g_assert(type->fields->len == 1);
       {
         LttField *child = &g_array_index(type->fields, LttField, 0);
-        return get_alignment(tf, child);
+        return get_alignment(child);
       }
       break;
     case LTT_SEQUENCE:
@@ -2090,10 +2094,10 @@ off_t get_alignment(LttTracefile *tf, LttField *field)
         off_t localign = 0;
         LttField *child = &g_array_index(type->fields, LttField, 0);
 
-        localign = max(localign, get_alignment(tf, child));
+        localign = max(localign, get_alignment(child));
 
         child = &g_array_index(type->fields, LttField, 1);
-        localign = max(localign, get_alignment(tf, child));
+        localign = max(localign, get_alignment(child));
         
         return localign;
       }
@@ -2106,7 +2110,7 @@ off_t get_alignment(LttTracefile *tf, LttField *field)
         
         for(i=0; i<type->fields->len; i++) {
           LttField *child = &g_array_index(type->fields, LttField, i);
-          localign = max(localign, get_alignment(tf, child));
+          localign = max(localign, get_alignment(child));
         }
         return localign;
       }
@@ -2129,7 +2133,7 @@ off_t get_alignment(LttTracefile *tf, LttField *field)
  *
  ****************************************************************************/
 
-void field_compute_static_size(LttTracefile *tf, LttField *field)
+void field_compute_static_size(LttFacility *fac, LttField *field)
 {
   LttType *type = &field->field_type;
 
@@ -2159,7 +2163,7 @@ void field_compute_static_size(LttTracefile *tf, LttField *field)
       g_assert(type->fields->len == 1);
       {
         LttField *child = &g_array_index(type->fields, LttField, 0);
-        field_compute_static_size(tf, child);
+        field_compute_static_size(fac, child);
         
         if(child->field_size != 0) {
           field->field_size = type->size * child->field_size;
@@ -2175,7 +2179,7 @@ void field_compute_static_size(LttTracefile *tf, LttField *field)
       {
         off_t local_offset = 0;
         LttField *child = &g_array_index(type->fields, LttField, 1);
-        field_compute_static_size(tf, child);
+        field_compute_static_size(fac, child);
         field->field_size = 0;
         type->size = 0;
         if(child->field_size != 0) {
@@ -2190,10 +2194,10 @@ void field_compute_static_size(LttTracefile *tf, LttField *field)
         guint i;
         for(i=0;i<type->fields->len;i++) {
           LttField *child = &g_array_index(type->fields, LttField, i);
-          field_compute_static_size(tf, child);
+          field_compute_static_size(fac, child);
           if(child->field_size != 0) {
-            type->size += ltt_align(type->size, get_alignment(tf, child),
-                                    tf->has_alignment);
+            type->size += ltt_align(type->size, get_alignment(child),
+                                    fac->alignment);
             type->size += child->field_size;
           } else {
             /* As soon as we find a child with variable size, we have
@@ -2217,7 +2221,7 @@ void field_compute_static_size(LttTracefile *tf, LttField *field)
  *Function name
  *    precompute_fields_offsets : set the precomputable offset of the fields
  *Input params 
- *    tf : tracefile
+ *    fac : facility
  *    field : the field
  *    offset : pointer to the current offset, must be incremented
  *
@@ -2226,7 +2230,7 @@ void field_compute_static_size(LttTracefile *tf, LttField *field)
  ****************************************************************************/
 
 
-gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
+gint precompute_fields_offsets(LttFacility *fac, LttField *field, off_t *offset)
 {
   LttType *type = &field->field_type;
 
@@ -2247,9 +2251,10 @@ gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
     case LTT_OFF_T:
     case LTT_FLOAT:
     case LTT_ENUM:
+      g_assert(field->field_size != 0);
       /* Align offset on type size */
-      *offset += ltt_align(*offset, get_alignment(tf, field),
-                           tf->has_alignment);
+      *offset += ltt_align(*offset, get_alignment(field),
+                           fac->alignment);
       /* remember offset */
       field->offset_root = *offset;
       field->fixed_root = FIELD_FIXED;
@@ -2267,8 +2272,8 @@ gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
       {
         LttField *child = &g_array_index(type->fields, LttField, 0);
 
-        *offset += ltt_align(*offset, get_alignment(tf, field),
-                            tf->has_alignment);
+        *offset += ltt_align(*offset, get_alignment(field),
+                             fac->alignment);
         
         /* remember offset */
         field->offset_root = *offset;
@@ -2294,23 +2299,23 @@ gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
         LttField *child;
         guint ret;
 
-        *offset += ltt_align(*offset, get_alignment(tf, field),
-                             tf->has_alignment);
+        *offset += ltt_align(*offset, get_alignment(field),
+                             fac->alignment);
 
         /* remember offset */
         field->offset_root = *offset;
         field->fixed_root = FIELD_FIXED;
  
         child = &g_array_index(type->fields, LttField, 0);
-        ret = precompute_fields_offsets(tf, child, offset);
+        ret = precompute_fields_offsets(fac, child, offset);
         g_assert(ret == 0); /* Seq len cannot have variable len */
 
         child = &g_array_index(type->fields, LttField, 1);
-        *offset += ltt_align(*offset, get_alignment(tf, child),
-                             tf->has_alignment);
+        *offset += ltt_align(*offset, get_alignment(child),
+                             fac->alignment);
         field->array_offset = *offset;
-        /* Set the offset position at position 0 */
-        ret = precompute_fields_offsets(tf, child, offset);
+        /* Let the child be variable. */
+        //ret = precompute_fields_offsets(fac, child, offset);
 
         /* Cannot precompute fields offsets of sequence members, and has
          * variable length. */
@@ -2323,15 +2328,15 @@ gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
         guint i;
         gint ret=0;
 
-        *offset += ltt_align(*offset, get_alignment(tf, field),
-                             tf->has_alignment);
+        *offset += ltt_align(*offset, get_alignment(field),
+                             fac->alignment);
         /* remember offset */
         field->offset_root = *offset;
         field->fixed_root = FIELD_FIXED;
 
         for(i=0; i< type->fields->len; i++) {
           child = &g_array_index(type->fields, LttField, i);
-          ret = precompute_fields_offsets(tf, child, offset);
+          ret = precompute_fields_offsets(fac, child, offset);
 
           if(ret) break;
         }
@@ -2344,8 +2349,8 @@ gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
         guint i;
         gint ret=0;
 
-        *offset += ltt_align(*offset, get_alignment(tf, field),
-                             tf->has_alignment);
+        *offset += ltt_align(*offset, get_alignment(field),
+                             fac->alignment);
         /* remember offset */
         field->offset_root = *offset;
         field->fixed_root = FIELD_FIXED;
@@ -2353,7 +2358,7 @@ gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
         for(i=0; i< type->fields->len; i++) {
           *offset = field->offset_root;
           child = &g_array_index(type->fields, LttField, i);
-          ret = precompute_fields_offsets(tf, child, offset);
+          ret = precompute_fields_offsets(fac, child, offset);
 
           if(ret) break;
         }
@@ -2379,7 +2384,7 @@ gint precompute_fields_offsets(LttTracefile *tf, LttField *field, off_t *offset)
  *    event : event type
  *
  ****************************************************************************/
-void precompute_offsets(LttTracefile *tf, LttEventType *event)
+void precompute_offsets(LttFacility *fac, LttEventType *event)
 {
   guint i;
   off_t offset = 0;
@@ -2389,13 +2394,13 @@ void precompute_offsets(LttTracefile *tf, LttEventType *event)
    * arrays, struct and unions, which is not done by the parser */
   for(i=0; i<event->fields->len; i++) {
     LttField *field = &g_array_index(event->fields, LttField, i);
-    field_compute_static_size(tf, field);
+    field_compute_static_size(fac, field);
   }
   
   /* Precompute all known offsets */
   for(i=0; i<event->fields->len; i++) {
     LttField *field = &g_array_index(event->fields, LttField, i);
-    ret = precompute_fields_offsets(tf, field, &offset);
+    ret = precompute_fields_offsets(fac, field, &offset);
     if(ret) break;
   }
 }

@@ -1375,14 +1375,19 @@ static gboolean process_exec(void *hook_data, void *call_data)
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
-  gchar *name;
+  //gchar *name;
   guint cpu = ltt_tracefile_num(s->parent.tf);
   LttvProcessState *process = ts->running_process[cpu];
 
   /* PID of the process to release */
-  name = ltt_event_get_string(e, thf->f1);
+  guint64 name_len = ltt_event_field_element_number(e, thf->f1);
+  //name = ltt_event_get_string(e, thf->f1);
+  gchar *name_begin = ltt_event_field_element_select(e, thf->f1, 0);
+  gchar *null_term_name = g_new(gchar, name_len+1);
+  memcpy(null_term_name, name_begin, name_len);
+  null_term_name[name_len] = '\0';
 
-  process->name = g_quark_from_string(name);
+  process->name = g_quark_from_string(null_term_name);
 
   return FALSE;
 }

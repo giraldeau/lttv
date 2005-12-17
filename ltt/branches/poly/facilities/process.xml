@@ -41,57 +41,57 @@
 
   <event name=fork>
     <description>Process fork</description>
-    <field name="parent_pid"> <description>PID of the parent process</description> <uint size=4/> </field>
-    <field name="child_pid"> <description>PID of the child process</description> <uint size=4/> </field>
+    <field name="parent_pid"> <description>PID of the parent process</description> <uint/> </field>
+    <field name="child_pid"> <description>PID of the child process</description> <uint/> </field>
   </event>
 	
   <event name=kernel_thread>
     <description>Just created a new kernel thread</description>
-    <field name="pid"> <description>PID of the kernel thread</description> <uint size=4/> </field>
+    <field name="pid"> <description>PID of the kernel thread</description> <uint/> </field>
     <field name="function"> <description>Function called</description> <pointer/> </field>
   </event>
 
 
   <event name=exit>
     <description>Process exit</description>
-    <field name="pid"> <description>PID of the process</description> <uint size=4/> </field>
+    <field name="pid"> <description>PID of the process</description> <uint/> </field>
   </event>
 
   <event name=wait>
     <description>Process wait</description>
-    <field name="parent_pid"> <description>PID of the waiting process</description> <uint size=4/> </field>
-    <field name="child_pid"> <description>PID of the process waited for</description> <uint size=4/> </field>
+    <field name="parent_pid"> <description>PID of the waiting process</description> <uint/> </field>
+    <field name="child_pid"> <description>PID of the process waited for</description> <uint/> </field>
   </event>
 
   <event name=free>
     <description>Process kernel data structure free (end of life of a zombie)</description>
-    <field name="pid"> <description>PID of the freed process</description> <uint size=4/> </field>
+    <field name="pid"> <description>PID of the freed process</description> <uint/> </field>
   </event>
 
   <event name=kill>
     <description>Process kill system call</description>
-    <field name="pid"> <description>PID of the process</description> <uint size=4/> </field>
-    <field name="target_pid"> <description>PID of the process to kill</description> <uint size=4/> </field>
+    <field name="pid"> <description>PID of the process</description> <uint/> </field>
+    <field name="target_pid"> <description>PID of the process to kill</description> <uint/> </field>
     <field name="signal"> <description>Signal number</description> <typeref name=signal_name/> </field>
   </event>
 
   <event name=signal>
     <description>Process signal reception</description>
-    <field name="pid"> <description>PID of the receiving process</description> <uint size=4/> </field>
+    <field name="pid"> <description>PID of the receiving process</description> <uint/> </field>
     <field name="signal"> <description>Signal number</description> <typeref name=signal_name/> </field>
   </event>
 
   <event name=wakeup>
     <description>Process wakeup</description>
-    <field name="pid"> <description>PID of the receiving process</description> <uint size=4/> </field>
-    <field name="state"> <description>State of the awakened process. -1 unrunnable, 0 runnable, >0 stopped.</description> <int size=4/> </field>
+    <field name="pid"> <description>PID of the receiving process</description> <uint/> </field>
+    <field name="state"> <description>State of the awakened process. -1 unrunnable, 0 runnable, >0 stopped.</description> <int/> </field>
   </event>
 
   <event name=schedchange>
     <description>Scheduling change</description>
-    <field name="out"> <description>Outgoing process</description> <uint size=4/> </field>
-    <field name="in"> <description>Incoming process</description> <uint size=4/> </field>
-    <field name="out_state"> <description>Outgoing process' state. -1 unrunnable, 0 runnable, >0 stopped.</description> <int size=4/> </field>
+    <field name="out"> <description>Outgoing process</description> <uint/> </field>
+    <field name="in"> <description>Incoming process</description> <uint/> </field>
+    <field name="out_state"> <description>Outgoing process' state. -1 unrunnable, 0 runnable, >0 stopped.</description> <int/> </field>
   </event>
 
 </facility>
