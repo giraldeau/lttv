@@ -98,6 +98,7 @@ guint64 ltt_event_field_element_number(LttEvent *e, LttField *f);
 
 LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i);
 
+off_t ltt_event_field_offset(LttEvent *e, LttField *f);
 
 /* A union is like a structure except that only a single member at a time
    is present depending on the specific event instance. This function tells

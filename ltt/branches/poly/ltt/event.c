@@ -489,6 +489,14 @@ LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i)
   return field;
 }
 
+
+off_t ltt_event_field_offset(LttEvent *e, LttField *f)
+{
+  return f->offset_root;
+}
+
+
+
 /*****************************************************************************
  * These functions extract data from an event after architecture specific
  * conversions
