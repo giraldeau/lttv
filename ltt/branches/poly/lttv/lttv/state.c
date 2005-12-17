@@ -777,24 +777,21 @@ create_name_tables(LttvTraceState *tcs)
   thf = lttv_trace_hook_get_first(&h);
   
   t = ltt_field_type(thf->f1);
-  //nb = ltt_type_element_number(t);
+  nb = ltt_type_element_number(t);
   
   lttv_trace_hook_destroy(&h);
 
-  /* CHECK syscalls should be an enum but currently are not!  
   name_tables->syscall_names = g_new(GQuark, nb);
 
   for(i = 0 ; i < nb ; i++) {
-    name_tables->syscall_names[i] = g_quark_from_string(
-        ltt_enum_string_get(t, i));
+    name_tables->syscall_names[i] = ltt_enum_string_get(t, i);
   }
-  */
 
-  name_tables->syscall_names = g_new(GQuark, 256);
-  for(i = 0 ; i < 256 ; i++) {
-    g_string_printf(fe_name, "syscall %d", i);
-    name_tables->syscall_names[i] = g_quark_from_string(fe_name->str);
-  }
+  //name_tables->syscall_names = g_new(GQuark, 256);
+  //for(i = 0 ; i < 256 ; i++) {
+  //  g_string_printf(fe_name, "syscall %d", i);
+  //  name_tables->syscall_names[i] = g_quark_from_string(fe_name->str);
+  //}
 
   if(lttv_trace_find_hook(tcs->parent.t, LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_ENTRY,

@@ -213,23 +213,22 @@ LttType *ltt_type_element_type(LttType *t)
 
 /*****************************************************************************
  *Function name
- *    ltt_type_element_number : obtain the number of elements for arrays 
+ *    ltt_type_element_number : obtain the number of elements for enums
  *Input params
- *    t                       : a type   
+ *    t                       : a type
  *Return value
  *    unsigned                : the number of elements for arrays
  ****************************************************************************/
-#if 0
 unsigned ltt_type_element_number(LttType *t)
 {
   unsigned ret = 0;
 
-  if(likely(t->type_class == LTT_ARRAY))
-    ret = t->element_number;
+  if(likely(t->type_class == LTT_ENUM))
+    ret = g_hash_table_size(t->enum_map);
 
   return ret;
 }
-#endif //0
+
 /*****************************************************************************
  *Function name
  *    ltt_type_member_number : obtain the number of data members for structure 
