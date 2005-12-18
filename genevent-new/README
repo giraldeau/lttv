@@ -12,6 +12,10 @@ There are several files in the directory:
 In fact, crc32.tab, parser.c and parser.h are the same files as  
 those in LTT library.
 
+Important notes : 
+	* Do not put "-" symbols in facilities name.
+	* Use the exact same name for facility xml file and for facility name.
+
 Note about strings :
 There are three methods to write strings in genevent, each suitable and
 efficient for a particular case. They are explained here from the fastest
