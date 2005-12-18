@@ -1575,7 +1575,12 @@ void print_log_header_head(facility_t *fac, FILE *fd)
 	fprintf(fd, "#ifndef _LTT_FACILITY_%s_H_\n", fac->capname);
 	fprintf(fd, "#define _LTT_FACILITY_%s_H_\n\n", fac->capname);
   fprintf(fd, "#include <linux/types.h>\n");
-  fprintf(fd, "#include <linux/ltt/ltt-facility-id-%s.h>\n", fac->name);
+	if(!fac->arch)
+	  fprintf(fd, "#include <linux/ltt/ltt-facility-id-%s.h>\n", fac->name);
+	else
+	  fprintf(fd, "#include <asm/ltt/ltt-facility-id-%s_%s.h>\n",
+				fac->name,
+				fac->arch);
   fprintf(fd, "#include <linux/ltt-core.h>\n");
 	fprintf(fd, "\n");
 }
@@ -1665,6 +1670,14 @@ int print_log_header(facility_t *fac)
 	strncat(filename, fac->name, PATH_MAX - filename_size);
 	filename_size = strlen(filename);
 
+	if(fac->arch) {
+		strncat(filename, "_", PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+
+		strncat(filename, fac->arch, PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+	}
+
 	strncat(filename, ".h", PATH_MAX - filename_size);
 	filename_size = strlen(filename);
 	
@@ -1712,6 +1725,14 @@ int print_id_header(facility_t *fac)
 	
 	strncat(filename, fac->name, PATH_MAX - filename_size);
 	filename_size = strlen(filename);
+
+	if(fac->arch) {
+		strncat(filename, "_", PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+
+		strncat(filename, fac->arch, PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+	}
 
 	strncat(filename, ".h", PATH_MAX - filename_size);
 	filename_size = strlen(filename);
@@ -1780,6 +1801,14 @@ int print_loader_header(facility_t *fac)
 	strncat(filename, fac->name, PATH_MAX - filename_size);
 	filename_size = strlen(filename);
 
+	if(fac->arch) {
+		strncat(filename, "_", PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+
+		strncat(filename, fac->arch, PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+	}
+
 	strncat(filename, ".h", PATH_MAX - filename_size);
 	filename_size = strlen(filename);
 	
@@ -1795,8 +1824,13 @@ int print_loader_header(facility_t *fac)
   fprintf(fd, "#define _LTT_FACILITY_LOADER_%s_H_\n\n", fac->capname);
   fprintf(fd, "#ifdef CONFIG_LTT\n\n");
   fprintf(fd,"#include <linux/ltt-facilities.h>\n");
-  fprintf(fd,"#include <linux/ltt/ltt-facility-id-%s.h>\n\n",
-			fac->name);
+	if(!fac->arch)
+	  fprintf(fd,"#include <linux/ltt/ltt-facility-id-%s.h>\n\n",
+				fac->name);
+	else
+	  fprintf(fd,"#include <asm/ltt/ltt-facility-id-%s_%s.h>\n\n",
+				fac->name,
+				fac->arch);
   fprintf(fd,"ltt_facility_t\tltt_facility_%s;\n", fac->name);
   fprintf(fd,"ltt_facility_t\tltt_facility_%s_%X;\n\n",
 			fac->name, fac->checksum);
@@ -1832,6 +1866,14 @@ int print_loader_c(facility_t *fac)
 	strncat(filename, fac->name, PATH_MAX - filename_size);
 	filename_size = strlen(filename);
 
+	if(fac->arch) {
+		strncat(filename, "_", PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+
+		strncat(filename, fac->arch, PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+	}
+
 	strncat(filename, ".c", PATH_MAX - filename_size);
 	filename_size = strlen(filename);
 	
@@ -1844,7 +1886,10 @@ int print_loader_c(facility_t *fac)
 	}
 
   fprintf(fd, "/*\n");
-  fprintf(fd, " * ltt-facility-loader-%s.c\n", fac->name);
+	if(!fac->arch)
+	  fprintf(fd, " * ltt-facility-loader-%s.c\n", fac->name);
+	else
+	  fprintf(fd, " * ltt-facility-loader-%s_%s.c\n", fac->name, fac->arch);
   fprintf(fd, " *\n");
   fprintf(fd, " * (C) Copyright  2005 - \n");
   fprintf(fd, " *          Mathieu Desnoyers (mathieu.desnoyers@polymtl.ca)\n");
@@ -1858,7 +1903,11 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "#include <linux/module.h>\n");
   fprintf(fd, "#include <linux/init.h>\n");
   fprintf(fd, "#include <linux/config.h>\n");
-  fprintf(fd, "#include \"ltt-facility-loader-%s.h\"\n", fac->name);
+	if(!fac->arch)
+  	fprintf(fd, "#include \"ltt-facility-loader-%s.h\"\n", fac->name);
+	else
+	  fprintf(fd, "#include \"ltt-facility-loader-%s_%s.h\"\n",
+				fac->name, fac->arch);
   fprintf(fd, "\n");
   fprintf(fd, "\n");
   fprintf(fd, "#ifdef CONFIG_LTT\n");
