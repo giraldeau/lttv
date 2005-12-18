@@ -267,6 +267,7 @@ void getFacilityAttributes(parse_file_t *in, facility_t *fac)
   char car;
   
   fac->name = NULL;
+  fac->arch = NULL;
 
   while(1) {
     token = getToken(in); 
@@ -281,7 +282,12 @@ void getFacilityAttributes(parse_file_t *in, facility_t *fac)
       if(car == EOF) in->error(in,"name was expected");
       else if(car == '\"') fac->name = allocAndCopy(getQuotedString(in));
       else fac->name = allocAndCopy(getName(in));
-    }
+    } else if(!strcmp("arch", token)) {
+      getEqual(in);
+      car = seekNextChar(in);
+      if(car == '\"') fac->name = allocAndCopy(getQuotedString(in));
+			else fac->arch = allocAndCopy(getName(in));
+		}
   }
 }
 
@@ -420,7 +426,7 @@ void parseFacility(parse_file_t *in, facility_t * fac)
   
   getFacilityAttributes(in, fac);
   if(fac->name == NULL) in->error(in, "Attribute not named");
-
+	
   fac->capname = allocAndCopy(fac->name);
 	strupper(fac->capname);
   getRAnglebracket(in);    
@@ -1551,5 +1557,3 @@ char *appendString(char *s, char *suffix)
   strcat(tmp,suffix);  
   return tmp;
 }
-
-

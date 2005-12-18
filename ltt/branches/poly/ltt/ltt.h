@@ -155,5 +155,21 @@ typedef enum _LttTypeEnum
   LTT_UNION,
   LTT_NONE
 } LttTypeEnum;
-  
+ 
+
+/* Architecture types */
+#define LTT_ARCH_TYPE_I386          1
+#define LTT_ARCH_TYPE_PPC           2
+#define LTT_ARCH_TYPE_SH            3
+#define LTT_ARCH_TYPE_S390          4
+#define LTT_ARCH_TYPE_MIPS          5
+#define LTT_ARCH_TYPE_ARM           6
+#define LTT_ARCH_TYPE_PPC64         7
+#define LTT_ARCH_TYPE_X86_64        8
+
+/* Standard definitions for variants */
+#define LTT_ARCH_VARIANT_NONE       0  /* Main architecture implementation */
+
+
+
 #endif // LTT_H

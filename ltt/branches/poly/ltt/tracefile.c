@@ -858,6 +858,8 @@ static int ltt_get_facility_description(LttFacility *f,
   const gchar *text;
   guint textlen;
   gint err;
+	gint arch_spec;
+	gint fac_name_len;
 
   text = g_quark_to_string(t->pathname);
   textlen = strlen(text);
@@ -871,9 +873,21 @@ static int ltt_get_facility_description(LttFacility *f,
   strcat(desc_file_name, text);
   
   text = g_quark_to_string(f->name);
-  textlen+=strlen(text);
+	fac_name_len = strlen(text);
+  textlen+=fac_name_len;
   if(textlen >= PATH_MAX) goto name_error;
   strcat(desc_file_name, text);
+
+	/* arch specific facilities are named like this : name_arch */
+	if(fac_name_len+1 < sizeof("_arch"))
+		arch_spec = 0;
+	else {
+		if(!strcmp(&text[fac_name_len+1-sizeof("_arch")], "_arch"))
+			arch_spec = 1;
+		else
+			arch_spec = 0;
+	}
+
 #if 0
   text = "_";
   textlen+=strlen(text);
@@ -887,6 +901,39 @@ static int ltt_get_facility_description(LttFacility *f,
   textlen=strlen(desc_file_name);
   
 #endif //0
+	
+	if(arch_spec) {
+		switch(t->arch_type) {
+			case LTT_ARCH_TYPE_I386:
+				text = "_i386";
+				break;
+			case LTT_ARCH_TYPE_PPC:
+				text = "_ppc";
+				break;
+			case LTT_ARCH_TYPE_SH:
+				text = "_sh";
+				break;
+			case LTT_ARCH_TYPE_S390:
+				text = "_s390";
+				break;
+			case LTT_ARCH_TYPE_MIPS:
+				text = "_mips";
+				break;
+			case LTT_ARCH_TYPE_ARM:
+				text = "_arm";
+			case LTT_ARCH_TYPE_PPC64:
+				text = "_ppc64";
+			case LTT_ARCH_TYPE_X86_64:
+				text = "_x86_64";
+				break;
+			default:
+				g_error("Trace from unsupported architecture.");
+		}
+		textlen+=strlen(text);
+		if(textlen >= PATH_MAX) goto name_error;
+		strcat(desc_file_name, text);
+	}
+	
   text = ".xml";
   textlen+=strlen(text);
   if(textlen >= PATH_MAX) goto name_error;

@@ -137,6 +137,7 @@ typedef struct _event {
 typedef struct _facility {
   char * name;
 	char * capname;
+	char * arch;
   char * description;
   sequence_t events;
   sequence_t unnamed_types; //FIXME : remove
