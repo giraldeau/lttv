@@ -9,7 +9,7 @@ for the TODO items :<br>
 (10): lowest priority<br>
 <br>
 <br>
-Dependencies are written between parenthesis ( ).<br>
+Dependencies are written between brackets [ ].<br>
 The # symbol marks who is currently working on the item.<br>
 The % symbol marks who is interested in the realisation of the item.<br>
 <br>
@@ -21,7 +21,7 @@ The % symbol marks who is interested in the realisation of the item.<br>
 	# <A HREF="mailto:Parisa Heidari <parisa.heidari@polymtl.ca>">Parisa Heidari</A><br>
 (7) create an analysis of function time (like a precise gprof)<br>
   -> with gcc -f inline-functions<br>
-(7) Create a hardware counter viewer (rates : L1 cache miss, page faults, interrupts...).<br>
+(7) Create a hardware counter viewer (low cost rate counters : L1 cache miss, page faults, interrupts...).<br>
 (10) Add cancel button to LTTV filter GUI window.
 <br>
 <br>
@@ -37,7 +37,7 @@ The % symbol marks who is interested in the realisation of the item.<br>
 (5) Integrate LTTng and lttd with LKCD.<br>
 (7) add gcc -finstrument-functions instrumentation<br>
 (7) Integrate periodical dump of perfctr hardware counters.<br>
-(3) port LTTng to : (depends on 2.6.14 port)<br>
+(3) port LTTng to :<br>
 x86_64<BR>
 #Autodesk <A HREF="mailto:Francois L'Archeveque <fla@discreet.com>">Francois
 L'Archeveque</A> for 2.6.9 RedHat Enterprise (patch available in contrib, still
@@ -65,7 +65,7 @@ Find a different way to printk from instrumentation : forbidden from schedule
 and wakeup (causes a deadlock). -> Modify printk so it uses LTTng tracer!<br>
 Export channels via network sockets instead of writing them to disk.<br>
 Export buffers with time constraint for "live" visualisation. Use
-ltt_force_switch periodically from a timer to insure slow channels does not
+ltt_force_switch periodically from a timer to insure slow channels do not
 interfere with viewing.<br>
 <br>
 * Need to be discussed<br>
