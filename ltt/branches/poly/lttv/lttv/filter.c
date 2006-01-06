@@ -1255,6 +1255,7 @@ lttv_filter_update(LttvFilter* filter) {
   
   /* temporary values */
   GString *a_field_component = g_string_new(""); 
+  GString *a_string_spaces = g_string_new(""); 
   GPtrArray *a_field_path = g_ptr_array_new(); 
   
   /* simple expression buffer */
@@ -1334,6 +1335,8 @@ lttv_filter_update(LttvFilter* filter) {
         } else {  /* append a simple expression */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
+					g_string_free(a_string_spaces, TRUE);
+					a_string_spaces = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
@@ -1366,6 +1369,8 @@ lttv_filter_update(LttvFilter* filter) {
        } else {    /* append a simple expression */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
+					g_string_free(a_string_spaces, TRUE);
+					a_string_spaces = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new();
@@ -1398,6 +1403,8 @@ lttv_filter_update(LttvFilter* filter) {
         } else {    /* append a simple expression */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
+					g_string_free(a_string_spaces, TRUE);
+					a_string_spaces = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
@@ -1410,6 +1417,8 @@ lttv_filter_update(LttvFilter* filter) {
           g_ptr_array_add( a_field_path,(gpointer) a_field_component );
           lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
           a_field_component = g_string_new("");         
+					g_string_free(a_string_spaces, TRUE);
+					a_string_spaces = g_string_new("");
           lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_NE);
           i++;
         } else {  /* ! */
@@ -1468,6 +1477,8 @@ lttv_filter_update(LttvFilter* filter) {
         } else {    /* assign subtree as current tree */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
+					g_string_free(a_string_spaces, TRUE);
+					a_string_spaces = g_string_new("");
           t1->right = LTTV_TREE_LEAF;
           t1->r_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
@@ -1483,6 +1494,8 @@ lttv_filter_update(LttvFilter* filter) {
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );
         lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
+				g_string_free(a_string_spaces, TRUE);
+				a_string_spaces = g_string_new("");
         if(filter->expression[i+1] == '=') { /* <= */
           i++;
           lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_LE);
@@ -1494,6 +1507,8 @@ lttv_filter_update(LttvFilter* filter) {
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );   
         lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
+				g_string_free(a_string_spaces, TRUE);
+				a_string_spaces = g_string_new("");
         if(filter->expression[i+1] == '=') {  /* >= */
           i++;
           lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_GE);
@@ -1505,6 +1520,8 @@ lttv_filter_update(LttvFilter* filter) {
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );
         lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
+				g_string_free(a_string_spaces, TRUE);
+				a_string_spaces = g_string_new("");
         lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_EQ);
         break;
         
@@ -1522,13 +1539,25 @@ lttv_filter_update(LttvFilter* filter) {
         if(a_simple_expression->field == LTTV_FILTER_UNDEFINED) {
           g_ptr_array_add( a_field_path,(gpointer) a_field_component );
           a_field_component = g_string_new("");
+					g_string_free(a_string_spaces, TRUE);
+					a_string_spaces = g_string_new("");
         }
         break;
-      case ' ':   /* ignore */
+      case ' ':   /* keep spaces that are within a field component */
+				if(a_field_component->len == 0) break; /* ignore */
+				else 
+        	a_string_spaces = g_string_append_c(a_string_spaces,
+																							filter->expression[i]);
+
       case '\n':  /* ignore */
         break;
       default:    /* concatening current string */
-        g_string_append_c(a_field_component,filter->expression[i]);
+				if(a_string_spaces->len != 0) {
+        	g_string_append(a_field_component, a_string_spaces->str);
+					a_string_spaces = g_string_set_size(a_string_spaces, 0);
+				}
+        a_field_component = g_string_append_c(a_field_component,
+																							filter->expression[i]);
     }
   }
 
@@ -1568,6 +1597,8 @@ lttv_filter_update(LttvFilter* filter) {
   } else {  /* add a leaf */
     lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
     a_field_component = NULL;
+		g_string_free(a_string_spaces, TRUE);
+		a_string_spaces = NULL;
     t1->right = LTTV_TREE_LEAF;
     t1->r_child.leaf = a_simple_expression;
     a_simple_expression = NULL;
@@ -1584,7 +1615,8 @@ lttv_filter_update(LttvFilter* filter) {
   
   /* free the field buffer if allocated */
   if(a_field_component != NULL) g_string_free(a_field_component,TRUE); 
- 
+ 	if(a_string_spaces != NULL) g_string_free(a_string_spaces, TRUE);
+
   /* free the simple expression buffer if allocated */
   if(a_simple_expression != NULL) lttv_simple_expression_destroy(a_simple_expression);
   
