@@ -457,7 +457,7 @@ static inline unsigned int ltt_align(size_t align_drift,
 {
 	size_t alignment = min(has_alignment, size_of_type);
 	
-	if(!has_alignement) return 0;
+	if(!has_alignment) return 0;
 	
 	return ((alignment - align_drift) & (alignment-1));
 }
