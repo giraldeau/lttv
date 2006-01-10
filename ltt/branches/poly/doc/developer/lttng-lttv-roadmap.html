@@ -25,6 +25,7 @@ The % symbol marks who is interested in the realisation of the item.<br>
 	# <A HREF="mailto:Parisa Heidari <parisa.heidari@polymtl.ca>">Parisa Heidari</A><br>
 (4) create a graphical per cpu activity view.<br>
 (5) Flight recorder : start lttd automatically upon GUI trace control stop.<br>
+(5) Automatically detect traces with too much processes and disable faulty operations.<br>
 (5) Event sequence detector (inspired from regular expressions).<br>
 (7) create an analysis of function time (like a precise gprof).<br>
   -> with gcc -f inline-functions<br>
@@ -45,6 +46,7 @@ never hit the facility channel. Use the complete 64 bits TSC for the facility
 channel in every case. That's because this channel must never be overwritten
 even in "flight recorder" mode.<br>
 (5) Integrate LTTng and lttd with LKCD.<br>
+(6) Add Xen support.<br>
 (7) add gcc -finstrument-functions instrumentation<br>
 (7) Integrate periodical dump of perfctr hardware counters.<br>
 (8) Integrate periodical dump of SystemTAP computed information.<br>
