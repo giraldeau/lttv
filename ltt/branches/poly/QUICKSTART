@@ -277,9 +277,9 @@ echo ltt-control >> /etc/modules
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.8.3-06012006.tar.gz
-gzip -cd LinuxTraceToolkitViewer-0.8.3-06012006.tar.gz | tar xvof -
-cd LinuxTraceToolkitViewer-0.8.3-06012006
+wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.8.4-10012006.tar.gz
+gzip -cd LinuxTraceToolkitViewer-0.8.4-10012006.tar.gz | tar xvof -
+cd LinuxTraceToolkitViewer-0.8.4-10012006
 (refer to README to see the development libraries that must be installed on you
 system)
 ./configure
