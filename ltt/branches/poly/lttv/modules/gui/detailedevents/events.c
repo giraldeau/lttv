@@ -1613,6 +1613,8 @@ gboolean traceset_changed(void * hook_data, void * call_data)
   get_events(event_viewer_data->vadjust_c->value, event_viewer_data);
   //  event_viewer_data->vadjust_c->value = 0;
 
+	request_background_data(event_viewer_data);
+	
   return FALSE;
 }
 
