@@ -1,4 +1,8 @@
 LinuxTraceToolkit ChangeLog
 
+10/01/1006	LTTV 0.8.4
+						Add SoftIRQ mode.
+						Fix state request from GUI detailed event list.
+
 29/05/2003	Subversion repository preliminary files addition
 
