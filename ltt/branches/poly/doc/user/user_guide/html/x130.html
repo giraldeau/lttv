@@ -17,7 +17,7 @@ TITLE="Using LTTV graphical interface"
 HREF="c91.html"><LINK
 REL="NEXT"
 TITLE="Using LTTV text modules"
-HREF="c162.html"></HEAD
+HREF="c164.html"></HEAD
 ><BODY
 CLASS="sect1"
 BGCOLOR="#FFFFFF"
@@ -59,7 +59,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="c162.html"
+HREF="c164.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -136,6 +136,17 @@ interrupt a lower priority interrupt.
 ></LI
 ><LI
 ><P
+>&#13;Pink : SoftIRQ handler is running. A SoftIRQ is normally triggered by an
+interrupt that whishes to have some work done very soon, but not "now". This is
+especially useful, for example, to have the longest part of the network stack
+traversal done : a too long computation in the interrupt handler would increase
+the latency of the system. Therefore, doing the long part of the computation in
+a softirq that will be run just after the IRQ handler exits will permits to do
+this work while interrupts are enabled, without increasing the system latency.
+</P
+></LI
+><LI
+><P
 >&#13;Dark red : A process in that state is waiting for an input/output operation to
 complete before it can continue its execution.
 </P
@@ -200,7 +211,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="c162.html"
+HREF="c164.html"
 ACCESSKEY="N"
 >Next</A
 ></TD

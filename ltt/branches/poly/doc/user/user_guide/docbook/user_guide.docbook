@@ -448,6 +448,17 @@ interrupt a lower priority interrupt.
 </listitem>
 <listitem>
 <para>
+Pink : SoftIRQ handler is running. A SoftIRQ is normally triggered by an
+interrupt that whishes to have some work done very soon, but not "now". This is
+especially useful, for example, to have the longest part of the network stack
+traversal done : a too long computation in the interrupt handler would increase
+the latency of the system. Therefore, doing the long part of the computation in
+a softirq that will be run just after the IRQ handler exits will permits to do
+this work while interrupts are enabled, without increasing the system latency.
+</para>
+</listitem>
+<listitem>
+<para>
 Dark red : A process in that state is waiting for an input/output operation to
 complete before it can continue its execution.
 </para>
