@@ -39,7 +39,8 @@ typedef enum _draw_color {
                 COL_RUN_USER_MODE,/* green */
                 COL_RUN_SYSCALL,  /* pale blue */
                 COL_RUN_TRAP,     /* yellow */
-                COL_RUN_IRQ,      /* red */
+                COL_RUN_IRQ,      /* orange */
+                COL_RUN_SOFT_IRQ, /* red */
                 COL_WAIT,         /* dark red */
                 COL_WAIT_CPU,     /* dark yellow */
                 COL_ZOMBIE,       /* dark purple */

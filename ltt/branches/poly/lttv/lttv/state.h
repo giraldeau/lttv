@@ -70,6 +70,8 @@ extern GQuark
     LTT_EVENT_TRAP_EXIT,
     LTT_EVENT_IRQ_ENTRY,
     LTT_EVENT_IRQ_EXIT,
+    LTT_EVENT_SOFT_IRQ_ENTRY,
+    LTT_EVENT_SOFT_IRQ_EXIT,
     LTT_EVENT_SCHEDCHANGE,
     LTT_EVENT_FORK,
     LTT_EVENT_EXIT,
@@ -82,6 +84,7 @@ extern GQuark
     LTT_FIELD_SYSCALL_ID,
     LTT_FIELD_TRAP_ID,
     LTT_FIELD_IRQ_ID,
+    LTT_FIELD_SOFT_IRQ_ID,
     LTT_FIELD_OUT,
     LTT_FIELD_IN,
     LTT_FIELD_OUT_STATE,
@@ -89,8 +92,6 @@ extern GQuark
     LTT_FIELD_CHILD_PID,
     LTT_FIELD_PID,
     LTT_FIELD_NAME;
-
-extern GQuark LTT_EVENT_SYSCALL_ENTRY;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
@@ -141,6 +142,7 @@ extern LttvExecutionMode
   LTTV_STATE_SYSCALL,
   LTTV_STATE_TRAP,
   LTTV_STATE_IRQ,
+  LTTV_STATE_SOFT_IRQ,
   LTTV_STATE_MODE_UNKNOWN;
 
 
@@ -255,6 +257,7 @@ struct _LttvTraceState {
   GQuark *syscall_names;
   GQuark *trap_names;
   GQuark *irq_names;
+  GQuark *soft_irq_names;
   LttTime *max_time_state_recomputed_in_seek;
 
   /* Array of per cpu running process */

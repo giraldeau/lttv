@@ -72,7 +72,8 @@ GdkColor drawing_colors[NUM_COLORS] =
   { 0, 0x0000, 0xFF00, 0x0000 }, /* COL_RUN_USER_MODE : green */
   { 0, 0x0100, 0x9E00, 0xFFFF }, /* COL_RUN_SYSCALL : pale blue */
   { 0, 0xFF00, 0xFF00, 0x0100 }, /* COL_RUN_TRAP : yellow */
-  { 0, 0xFFFF, 0x5E00, 0x0000 }, /* COL_RUN_IRQ : red */
+  { 0, 0xFFFF, 0x5E00, 0x0000 }, /* COL_RUN_IRQ : orange */
+  { 0, 0xFFFF, 0x9400, 0x9600 }, /* COL_RUN_SOFT_IRQ : pink */
   { 0, 0x6600, 0x0000, 0x0000 }, /* COL_WAIT : dark red */
   { 0, 0x7700, 0x7700, 0x0000 }, /* COL_WAIT_CPU : dark yellow */
   { 0, 0x6400, 0x0000, 0x5D00 }, /* COL_ZOMBIE : dark purple */
@@ -219,7 +220,7 @@ void drawing_data_request(Drawing_t *drawing,
          associated by id hooks. */
 
       hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
-      hooks = g_array_set_size(hooks, 13);
+      hooks = g_array_set_size(hooks, 15);
 
       /* before hooks */
       
@@ -272,11 +273,28 @@ void drawing_data_request(Drawing_t *drawing,
       g_assert(!ret);
 
       ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY,
+          LTT_FIELD_SOFT_IRQ_ID, 0, 0,
+          before_execmode_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, 6));
+      g_assert(!ret);
+
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_EXIT,
+          0, 0, 0, 
+          before_execmode_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, 7));
+      g_assert(!ret);
+
+
+      ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
           LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
           before_schedchange_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 6));
+          &g_array_index(hooks, LttvTraceHook, 8));
       g_assert(!ret);
 
       ret = lttv_trace_find_hook(ts->parent.t,
@@ -284,7 +302,7 @@ void drawing_data_request(Drawing_t *drawing,
           LTT_FIELD_PID, 0, 0,
           before_process_exit_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 7));
+          &g_array_index(hooks, LttvTraceHook, 9));
       g_assert(!ret);
       
       ret = lttv_trace_find_hook(ts->parent.t,
@@ -292,7 +310,7 @@ void drawing_data_request(Drawing_t *drawing,
           LTT_FIELD_PID, 0, 0,
           before_process_release_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 8));
+          &g_array_index(hooks, LttvTraceHook, 10));
       g_assert(!ret);
 
 
@@ -350,7 +368,7 @@ void drawing_data_request(Drawing_t *drawing,
           LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
           after_schedchange_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 9));
+          &g_array_index(hooks, LttvTraceHook, 11));
       g_assert(!ret);
 
       ret = lttv_trace_find_hook(ts->parent.t,
@@ -358,7 +376,7 @@ void drawing_data_request(Drawing_t *drawing,
           LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, 0,
           after_process_fork_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 10));
+          &g_array_index(hooks, LttvTraceHook, 12));
       g_assert(!ret);
 
       ret = lttv_trace_find_hook(ts->parent.t,
@@ -366,7 +384,7 @@ void drawing_data_request(Drawing_t *drawing,
           LTT_FIELD_PID, 0, 0,
           after_process_exit_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 11));
+          &g_array_index(hooks, LttvTraceHook, 13));
       g_assert(!ret);
 
       ret = lttv_trace_find_hook(ts->parent.t,
@@ -374,7 +392,7 @@ void drawing_data_request(Drawing_t *drawing,
           0, 0, 0,
           after_fs_exec_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 12));
+          &g_array_index(hooks, LttvTraceHook, 14));
       g_assert(!ret);
 
 
@@ -391,7 +409,7 @@ void drawing_data_request(Drawing_t *drawing,
       
       /* Add these hooks to each event_by_id hooks list */
       /* add before */
-      for(k = 0 ; k < 9 ; k++) {
+      for(k = 0 ; k < 11 ; k++) {
         hook = &g_array_index(hooks, LttvTraceHook, k);
         for(l=0;l<hook->fac_list->len;l++) {
           thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);
@@ -403,7 +421,7 @@ void drawing_data_request(Drawing_t *drawing,
       }
 
       /* add after */
-      for(k = 9 ; k < 13 ; k++) {
+      for(k = 11 ; k < 15 ; k++) {
         hook = &g_array_index(hooks, LttvTraceHook, k);
         for(l=0;l<hook->fac_list->len;l++) {
           thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);

@@ -48,6 +48,8 @@ GQuark
     LTT_EVENT_TRAP_EXIT,
     LTT_EVENT_IRQ_ENTRY,
     LTT_EVENT_IRQ_EXIT,
+    LTT_EVENT_SOFT_IRQ_ENTRY,
+    LTT_EVENT_SOFT_IRQ_EXIT,
     LTT_EVENT_SCHEDCHANGE,
     LTT_EVENT_FORK,
     LTT_EVENT_EXIT,
@@ -60,6 +62,7 @@ GQuark
     LTT_FIELD_SYSCALL_ID,
     LTT_FIELD_TRAP_ID,
     LTT_FIELD_IRQ_ID,
+    LTT_FIELD_SOFT_IRQ_ID,
     LTT_FIELD_OUT,
     LTT_FIELD_IN,
     LTT_FIELD_OUT_STATE,
@@ -73,7 +76,8 @@ LttvExecutionMode
   LTTV_STATE_USER_MODE,
   LTTV_STATE_SYSCALL,
   LTTV_STATE_TRAP,
-  LTTV_STATE_IRQ;
+  LTTV_STATE_IRQ,
+  LTTV_STATE_SOFT_IRQ;
 
 LttvExecutionSubmode
   LTTV_STATE_SUBMODE_UNKNOWN,
@@ -728,6 +732,7 @@ typedef struct _LttvNameTables {
   GQuark *syscall_names;
   GQuark *trap_names;
   GQuark *irq_names;
+  GQuark *soft_irq_names;
 } LttvNameTables;
 
 
@@ -846,6 +851,20 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->irq_names[i] = g_quark_from_string(fe_name->str);
   }
 
+  /*
+  name_tables->soft_irq_names = g_new(GQuark, nb);
+  for(i = 0 ; i < nb ; i++) {
+    name_tables->soft_irq_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
+  }
+  */
+
+  name_tables->soft_irq_names = g_new(GQuark, 256);
+  for(i = 0 ; i < 256 ; i++) {
+    g_string_printf(fe_name, "softirq %d", i);
+    name_tables->soft_irq_names[i] = g_quark_from_string(fe_name->str);
+  }
+
+
   g_string_free(fe_name, TRUE);
 }
 
@@ -865,6 +884,7 @@ get_name_tables(LttvTraceState *tcs)
   tcs->syscall_names = name_tables->syscall_names;
   tcs->trap_names = name_tables->trap_names;
   tcs->irq_names = name_tables->irq_names;
+  tcs->soft_irq_names = name_tables->soft_irq_names;
 }
 
 
@@ -884,6 +904,7 @@ free_name_tables(LttvTraceState *tcs)
   g_free(name_tables->syscall_names);
   g_free(name_tables->trap_names);
   g_free(name_tables->irq_names);
+  g_free(name_tables->soft_irq_names);
   g_free(name_tables);
 } 
 
@@ -1177,6 +1198,37 @@ static gboolean irq_exit(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean soft_irq_entry(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  guint8 fac_id = ltt_event_facility_id(e);
+  guint8 ev_id = ltt_event_eventtype_id(e);
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+ // g_assert(lttv_trace_hook_get_first((LttvTraceHook *)hook_data)->f1 != NULL);
+  g_assert(thf->f1 != NULL);
+ // g_assert(thf == lttv_trace_hook_get_first((LttvTraceHook *)hook_data));
+  LttField *f = thf->f1;
+
+  LttvExecutionSubmode submode;
+
+  submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[
+      ltt_event_get_unsigned(e, f)];
+
+  /* Do something with the info about being in user or system mode when int? */
+  push_state(s, LTTV_STATE_SOFT_IRQ, submode);
+  return FALSE;
+}
+
+
+static gboolean soft_irq_exit(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+
+  pop_state(s, LTTV_STATE_SOFT_IRQ);
+  return FALSE;
+}
+
 
 static gboolean schedchange(void *hook_data, void *call_data)
 {
@@ -1431,8 +1483,8 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 11);
-    hooks = g_array_set_size(hooks, 11);
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 13);
+    hooks = g_array_set_size(hooks, 13);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
@@ -1471,33 +1523,45 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     g_assert(!ret);
 
     ret = lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY,
+        LTT_FIELD_SOFT_IRQ_ID, 0, 0,
+        soft_irq_entry, NULL, &g_array_index(hooks, LttvTraceHook, 6));
+    g_assert(!ret);
+
+    ret = lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_EXIT,
+        0, 0, 0, 
+        soft_irq_exit, NULL, &g_array_index(hooks, LttvTraceHook, 7));
+    g_assert(!ret);
+
+    ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
         LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
-        schedchange, NULL, &g_array_index(hooks, LttvTraceHook, 6));
+        schedchange, NULL, &g_array_index(hooks, LttvTraceHook, 8));
     g_assert(!ret);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_FORK,
         LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, 0,
-        process_fork, NULL, &g_array_index(hooks, LttvTraceHook, 7));
+        process_fork, NULL, &g_array_index(hooks, LttvTraceHook, 9));
     g_assert(!ret);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
         LTT_FIELD_PID, 0, 0,
-        process_exit, NULL, &g_array_index(hooks, LttvTraceHook, 8));
+        process_exit, NULL, &g_array_index(hooks, LttvTraceHook, 10));
     g_assert(!ret);
     
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_FREE,
         LTT_FIELD_PID, 0, 0,
-        process_free, NULL, &g_array_index(hooks, LttvTraceHook, 9));
+        process_free, NULL, &g_array_index(hooks, LttvTraceHook, 11));
     g_assert(!ret);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_FS, LTT_EVENT_EXEC,
         LTT_FIELD_FILENAME, 0, 0,
-        process_exec, NULL, &g_array_index(hooks, LttvTraceHook, 10));
+        process_exec, NULL, &g_array_index(hooks, LttvTraceHook, 12));
     g_assert(!ret);
 
 
@@ -2130,6 +2194,7 @@ static void module_init()
   LTTV_STATE_SYSCALL = g_quark_from_string("system call");
   LTTV_STATE_TRAP = g_quark_from_string("trap");
   LTTV_STATE_IRQ = g_quark_from_string("irq");
+  LTTV_STATE_SOFT_IRQ = g_quark_from_string("softirq");
   LTTV_STATE_SUBMODE_UNKNOWN = g_quark_from_string("unknown submode");
   LTTV_STATE_SUBMODE_NONE = g_quark_from_string("(no submode)");
   LTTV_STATE_WAIT_CPU = g_quark_from_string("wait for cpu");
@@ -2164,6 +2229,8 @@ static void module_init()
   LTT_EVENT_TRAP_EXIT     = g_quark_from_string("trap_exit");
   LTT_EVENT_IRQ_ENTRY     = g_quark_from_string("irq_entry");
   LTT_EVENT_IRQ_EXIT      = g_quark_from_string("irq_exit");
+  LTT_EVENT_SOFT_IRQ_ENTRY     = g_quark_from_string("soft_irq_entry");
+  LTT_EVENT_SOFT_IRQ_EXIT      = g_quark_from_string("soft_irq_exit");
   LTT_EVENT_SCHEDCHANGE   = g_quark_from_string("schedchange");
   LTT_EVENT_FORK          = g_quark_from_string("fork");
   LTT_EVENT_EXIT          = g_quark_from_string("exit");
@@ -2174,6 +2241,7 @@ static void module_init()
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");
   LTT_FIELD_TRAP_ID       = g_quark_from_string("trap_id");
   LTT_FIELD_IRQ_ID        = g_quark_from_string("irq_id");
+  LTT_FIELD_SOFT_IRQ_ID        = g_quark_from_string("softirq_id");
   LTT_FIELD_OUT           = g_quark_from_string("out");
   LTT_FIELD_IN            = g_quark_from_string("in");
   LTT_FIELD_OUT_STATE     = g_quark_from_string("out_state");
