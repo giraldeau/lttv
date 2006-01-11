@@ -14,8 +14,8 @@
 </author>
 </authorgroup>
 
-<date>29/11/2004</date>
-<releaseinfo>1.00.01</releaseinfo>
+<date>11/01/2006</date>
+<releaseinfo>1.00.02</releaseinfo>
 
 <abstract>
 <para>
@@ -47,11 +47,8 @@ the kernel space to the user space.
 
 <para>
 Linux Trace Toolkit Viewer (LTTV) is the second generation of visualization
-tool. It is 
-based on a trace format (the files where the data is recorded on disk) slightly
-different from LTT. As for now, November 29, 2004, the implementation of the new
-trace format in LTT is still not done, we must use a conversion tool to
-transform the original LTT traces to the new format.
+tool. It is based on a trace format (the files where the data is recorded on
+disk) written by the LTTng tracer.
 </para>
 
 <para>
@@ -64,6 +61,13 @@ trace with LTT and view it with LTTV.
 <title>Getting started</title>
 
 <sect1 id="install">
+<title>Installing LTTng and LTTV</title>
+<para>
+Follow the QUICKSTART guide found at
+<ulink url="http://ltt.polymtl.ca">ltt.polymtl.ca</ulink>.
+</para>
+
+<!--
 <title>Installing LTTV</title>
 <para>
 First, you must download the latests version of LTTV. You should get it from
@@ -100,7 +104,7 @@ Then, go to the directory newly created, and type :
 <prompt>$</prompt> <userinput>make</userinput>
 <prompt>#</prompt> <userinput>make install</userinput> (as root)
 </screen>
-
+-->
 <para>
 At this point, LTTV is installed in the default directory. You may find the
 lttv executable in /usr/local/bin and the librairies in /usr/local/lib. You will
@@ -108,7 +112,7 @@ also notice the presence of the convert executable in /usr/local/bin. This tool
 will be used later to convert from the Linux Trace Toolkit trace format to the
 LTTV format.
 </para>
-
+<!--
 <para>
 You are now ready to go to the next step : installing the LTT kernel tracer.
 </para>
@@ -131,8 +135,8 @@ take in order to generate a trace suitable for conversion.
 First, go to the <ulink url="http://ltt.polymtl.ca">ltt.polymtl.ca</ulink>
 website, in the "Patches for the Official LTT" section. Use the latest version
 of patches available. The file name convention used goes like this : 
-aaaaaa-x.x--bbbbb-y.y.patch. That means a patch made for aaaaa, release x.x,
-that adds bbbbb, release y.y to it. Notice the presence of the -- sign that
+aaaaaa-x.x\-\-bbbbb-y.y.patch. That means a patch made for aaaaa, release x.x,
+that adds bbbbb, release y.y to it. Notice the presence of the \-\- sign that
 separates the "from" field from the name of the patch applied. This way, it's
 impossible to be mixed up on the specific sequence of patch application. I
 suggest that you use the "relayfs", "ltt" and then "md" patches. The "md" patch
@@ -222,7 +226,7 @@ You must then copy the core event definition file to the converted trace directo
 <para>
 You now have a converted trace ready for visualization in LTTV. Congratulations!
 </para>
-
+-->
 </sect1>
 
 <sect1 id="running">
@@ -231,8 +235,7 @@ You now have a converted trace ready for visualization in LTTV. Congratulations!
 Starting the graphical mode with the basic viewer activated is as simple as :
 </para>
 <screen>
-<prompt>$</prompt> <userinput>lttv -L /usr/local/lib/lttv/plugins -m lttvwindow\
--m guievents -m guicontrolflow -m guistatistics -t sample.converted/</userinput>
+<prompt>$</prompt> <userinput>lttv-gui</userinput>
 </screen>
 <para>
 Using the text mode is very simple too. Look in /usr/local/lib/lttv/plugins for

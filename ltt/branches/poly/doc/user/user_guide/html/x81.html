@@ -2,7 +2,7 @@
 <HTML
 ><HEAD
 ><TITLE
->Running the executable with basic libraries</TITLE
+>Control Flow View Colors</TITLE
 ><META
 NAME="GENERATOR"
 CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
@@ -10,14 +10,14 @@ REL="HOME"
 TITLE="Linux Trace Toolkit Viewer User Guide"
 HREF="index.html"><LINK
 REL="UP"
-TITLE="Getting started"
-HREF="c25.html"><LINK
-REL="PREVIOUS"
-TITLE="Conversion from LTT to LTTV trace format"
-HREF="x64.html"><LINK
-REL="NEXT"
 TITLE="Using LTTV graphical interface"
-HREF="c91.html"></HEAD
+HREF="c42.html"><LINK
+REL="PREVIOUS"
+TITLE="Using LTTV graphical interface"
+HREF="c42.html"><LINK
+REL="NEXT"
+TITLE="Using LTTV text modules"
+HREF="c115.html"></HEAD
 ><BODY
 CLASS="sect1"
 BGCOLOR="#FFFFFF"
@@ -45,7 +45,7 @@ WIDTH="10%"
 ALIGN="left"
 VALIGN="bottom"
 ><A
-HREF="x64.html"
+HREF="c42.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -53,13 +53,13 @@ ACCESSKEY="P"
 WIDTH="80%"
 ALIGN="center"
 VALIGN="bottom"
->Chapter 2. Getting started</TD
+>Chapter 3. Using LTTV graphical interface</TD
 ><TD
 WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="c91.html"
+HREF="c115.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -73,41 +73,109 @@ CLASS="sect1"
 ><H1
 CLASS="sect1"
 ><A
-NAME="running"
->2.5. Running the executable with basic libraries</A
+NAME="ControlFlowColors"
+>3.2. Control Flow View Colors</A
 ></H1
+><DIV
+CLASS="mediaobject"
 ><P
->&#13;Starting the graphical mode with the basic viewer activated is as simple as :
-</P
-><PRE
-CLASS="screen"
->&#13;<SAMP
-CLASS="prompt"
->$</SAMP
-> <KBD
-CLASS="userinput"
->lttv -L /usr/local/lib/lttv/plugins -m lttvwindow\
--m guievents -m guicontrolflow -m guistatistics -t sample.converted/</KBD
->
-</PRE
+><IMG
+SRC="lttv-color-list.png"
+ALIGN="center"><DIV
+CLASS="caption"
 ><P
->&#13;Using the text mode is very simple too. Look in /usr/local/lib/lttv/plugins for
-the list of modules. You may use the --help switch to get basic help on the
-command line parameters of every loaded modules. To simply output the events of
-a trace in a text file, try the textDump module. The batchAnalysis module
-permits to do batch mode analysis (state and statistics calculation ) on a
-trace.
+>Control Flow View Color Legend</P
+></DIV
+></P
+></DIV
+><P
+>&#13;Here is a description of the colors used in the control flow view. Each color
+represents a state of the process at a given time.
 </P
-><PRE
-CLASS="screen"
->&#13;<SAMP
-CLASS="prompt"
->$</SAMP
-> <KBD
-CLASS="userinput"
->lttv -L /usr/local/lib/lttv/plugins -m textDump --help</KBD
->
-</PRE
+><P
+></P
+><UL
+><LI
+><P
+>&#13;White : this color is used for process from which state is not known. It may
+happen when you seek quickly at a far time in the trace just after it has been
+launched. At that moment, the precomputed state information is incomplete. The
+"unknown" state is used to identify this. Note that the viewer gets refreshed
+once the precomputation ends.
+</P
+></LI
+><LI
+><P
+>&#13;Green : This color is only used for process when they are running in user mode.
+That includes execution of all the source code of an executable as well as the
+libraries it uses.
+</P
+></LI
+><LI
+><P
+>&#13;Pale blue : A process is doing a system call to the kernel, and the mode is
+switched from process limited rights to super user mode. Only code from the
+kernel (including modules) should be run in that state.
+</P
+></LI
+><LI
+><P
+>&#13;Yellow : The kernel is running a trap that services a fault. The most frequent
+trap is the memory page fault trap : it is called every time a page is missing
+from physical memory.
+</P
+></LI
+><LI
+><P
+>&#13;Orange : IRQ servicing routine is running. It interrupts the currently running
+process. As the IRQ does not change the currently running process (on some
+architectures it uses the same stack as the process), the IRQ state is shown in
+the state of the process. IRQ can be nested : a higher priority interrupt can
+interrupt a lower priority interrupt.
+</P
+></LI
+><LI
+><P
+>&#13;Pink : SoftIRQ handler is running. A SoftIRQ is normally triggered by an
+interrupt that whishes to have some work done very soon, but not "now". This is
+especially useful, for example, to have the longest part of the network stack
+traversal done : a too long computation in the interrupt handler would increase
+the latency of the system. Therefore, doing the long part of the computation in
+a softirq that will be run just after the IRQ handler exits will permits to do
+this work while interrupts are enabled, without increasing the system latency.
+</P
+></LI
+><LI
+><P
+>&#13;Dark red : A process in that state is waiting for an input/output operation to
+complete before it can continue its execution.
+</P
+></LI
+><LI
+><P
+>&#13;Dark yellow : A process is ready to run, but waiting to get the CPU (a schedule
+in event).
+</P
+></LI
+><LI
+><P
+>&#13;Dark purple : A process in zombie state. This state happens when a process
+exits and then waits for the parent to wait for it (wait() or waitpid()).
+</P
+></LI
+><LI
+><P
+>&#13;Dark green : A process has just been created by its parent and is waiting for
+first scheduling.
+</P
+></LI
+><LI
+><P
+>&#13;Magenta : The process has exited, but still has the control of the CPU. It may
+happend if it has some tasks to do in the exit system call.
+</P
+></LI
+></UL
 ></DIV
 ><DIV
 CLASS="NAVFOOTER"
@@ -125,7 +193,7 @@ WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
 ><A
-HREF="x64.html"
+HREF="c42.html"
 ACCESSKEY="P"
 >Prev</A
 ></TD
@@ -143,7 +211,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="c91.html"
+HREF="c115.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -153,13 +221,13 @@ ACCESSKEY="N"
 WIDTH="33%"
 ALIGN="left"
 VALIGN="top"
->Conversion from LTT to LTTV trace format</TD
+>Using LTTV graphical interface</TD
 ><TD
 WIDTH="34%"
 ALIGN="center"
 VALIGN="top"
 ><A
-HREF="c25.html"
+HREF="c42.html"
 ACCESSKEY="U"
 >Up</A
 ></TD
@@ -167,7 +235,7 @@ ACCESSKEY="U"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->Using LTTV graphical interface</TD
+>Using LTTV text modules</TD
 ></TR
 ></TABLE
 ></DIV

@@ -13,8 +13,8 @@ REL="PREVIOUS"
 TITLE="Introduction"
 HREF="c20.html"><LINK
 REL="NEXT"
-TITLE="Installing LTT kernel tracer"
-HREF="x46.html"></HEAD
+TITLE="Running the executable with basic libraries"
+HREF="x32.html"></HEAD
 ><BODY
 CLASS="chapter"
 BGCOLOR="#FFFFFF"
@@ -56,7 +56,7 @@ WIDTH="10%"
 ALIGN="right"
 VALIGN="bottom"
 ><A
-HREF="x46.html"
+HREF="x32.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -78,76 +78,22 @@ CLASS="sect1"
 CLASS="sect1"
 ><A
 NAME="install"
->2.1. Installing LTTV</A
+>2.1. Installing LTTng and LTTV</A
 ></H1
 ><P
->&#13;First, you must download the latests version of LTTV. You should get it from
-this site : <A
+>&#13;Follow the QUICKSTART guide found at
+<A
 HREF="http://ltt.polymtl.ca"
 TARGET="_top"
 >ltt.polymtl.ca</A
 >.
-I suggest that you get it from the "Packages" section.
 </P
-><P
->&#13;You need a recent gcc compiler to compile the project. You might want to use gcc
-3.2 or newer.
-You will also need some libraries in order to compile it. They are described in
-the README of the LTTV package. These are GTK 2.0, GLIB 2.0, "popt" and Pango 1.0.
-Install them if they are not on your system. Remember that if you use a package
-manager from you favourite Linux distribution, you will need to specifically
-install the librairies'development packages.
-</P
-><P
->&#13;Then, you are ready to compile LTTV. Extract and untar the file you previously
-downloaded : 
-</P
-><PRE
-CLASS="screen"
->&#13;<SAMP
-CLASS="prompt"
->$</SAMP
-> <KBD
-CLASS="userinput"
->tar -xvzof LinuxTraceToolkitViewer-x.x-dddddddd.tar.bz2</KBD
->
-</PRE
-><P
->&#13;Then, go to the directory newly created, and type :
-</P
-><PRE
-CLASS="screen"
->&#13;<SAMP
-CLASS="prompt"
->$</SAMP
-> <KBD
-CLASS="userinput"
->./configure</KBD
->
-<SAMP
-CLASS="prompt"
->$</SAMP
-> <KBD
-CLASS="userinput"
->make</KBD
->
-<SAMP
-CLASS="prompt"
->#</SAMP
-> <KBD
-CLASS="userinput"
->make install</KBD
-> (as root)
-</PRE
 ><P
 >&#13;At this point, LTTV is installed in the default directory. You may find the
 lttv executable in /usr/local/bin and the librairies in /usr/local/lib. You will
 also notice the presence of the convert executable in /usr/local/bin. This tool
 will be used later to convert from the Linux Trace Toolkit trace format to the
 LTTV format.
-</P
-><P
->&#13;You are now ready to go to the next step : installing the LTT kernel tracer.
 </P
 ></DIV
 ></DIV
@@ -185,7 +131,7 @@ WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
 ><A
-HREF="x46.html"
+HREF="x32.html"
 ACCESSKEY="N"
 >Next</A
 ></TD
@@ -205,7 +151,7 @@ VALIGN="top"
 WIDTH="33%"
 ALIGN="right"
 VALIGN="top"
->Installing LTT kernel tracer</TD
+>Running the executable with basic libraries</TD
 ></TR
 ></TABLE
 ></DIV
