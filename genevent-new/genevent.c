@@ -1068,8 +1068,15 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 
 	fprintf(fd, "{\n");
 
-	print_tabs(1, fd);
-	fprintf(fd, "size_t size;\n");
+	switch(td->type) {
+		case STRING:
+			print_tabs(1, fd);
+			fprintf(fd, "size_t size;\n");
+			break;
+		default:
+			break;
+	}
+
 	print_tabs(1, fd);
 	fprintf(fd, "size_t align;\n");
 	fprintf(fd, "\n");
@@ -1126,11 +1133,9 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		fprintf(fd, "/* Contains only fixed size fields : use compiler sizeof() */\n");
 		fprintf(fd, "\n");
 		print_tabs(1, fd);
-		fprintf(fd, "size = sizeof(");
+		fprintf(fd, "*len += sizeof(");
 		if(print_type(td, fd, 0, basename, field_name)) return 1;
 		fprintf(fd, ");\n");
-		print_tabs(1, fd);
-		fprintf(fd, "*len += size;\n");
 	} else {
 		/* The type contains nested variable size subtypes :
 		 * we must write field by field. */
