@@ -13,7 +13,7 @@ What you will typically want is to read sections 1 and 3 : install LTTng from
 binary packages and use it. If there are no packages ready for your system, you
 will have to install from sources (section 2) instead.
 
-These operations are made for installing the LTTng 0.5.5 tracer on a
+These operations are made for installing the LTTng 0.5.6 tracer on a
 linux 2.6.15 kernel. You will also find instructions for installation of
 LTTV 0.8.x : the Linux Trace Toolkit Viewer.
 
@@ -186,9 +186,9 @@ mkdir /usr/src/lttng
 cd /usr/src/lttng
 (see http://ltt.polymtl.ca/lttng for package listing)
 wget http://ltt.polymtl.ca/lttng/lttng-modules-0.4.tar.bz2
-wget http://ltt.polymtl.ca/lttng/patch-2.6.15-lttng-0.5.5.tar.bz2
+wget http://ltt.polymtl.ca/lttng/patch-2.6.15-lttng-0.5.6.tar.bz2
 bzip2 -cd lttng-modules-0.4.tar.bz2 | tar xvof -
-bzip2 -cd patch-2.6.15-lttng-0.5.5.tar.bz2 | tar xvof -
+bzip2 -cd patch-2.6.15-lttng-0.5.6.tar.bz2 | tar xvof -
 
 
 * Getting LTTng kernel sources
@@ -198,15 +198,15 @@ cd /usr/src
 wget http://kernel.org/pub/linux/kernel/v2.6/testing/linux-2.6.15.tar.bz2
 bzip2 -cd linux-2.6.15.tar.bz2 | tar xvof -
 cd linux-2.6.15
-cat /usr/src/lttng/patch-2.6.15-lttng-0.5.5* | patch -p1
+cat /usr/src/lttng/patch-2.6.15-lttng-0.5.6* | patch -p1
 cd ..
-mv linux-2.6.15 linux-2.6.15-lttng-0.5.5
+mv linux-2.6.15 linux-2.6.15-lttng-0.5.6
 
 
 * Installing a LTTng kernel
 
 su -
-cd /usr/src/linux-2.6.15-lttng-0.5.5
+cd /usr/src/linux-2.6.15-lttng-0.5.6
 make menuconfig (or make xconfig or make config)
     Select the < Help > button if you are not familiar with kernel
     configuration.
@@ -237,15 +237,15 @@ make install
 
 reboot
 
-  Select the Linux 2.6.15-lttng-0.5.5 kernel in your boot loader.
+  Select the Linux 2.6.15-lttng-0.5.6 kernel in your boot loader.
 
 
 * Install the ltt-modules
 
 su -
 cd /usr/src/lttng/lttng-modules-0.4
-KERNELDIR=/usr/src/linux-2.6.15-lttng-0.5.5 make
-KERNELDIR=/usr/src/linux-2.6.15-lttng-0.5.5 make modules_install
+KERNELDIR=/usr/src/linux-2.6.15-lttng-0.5.6 make
+KERNELDIR=/usr/src/linux-2.6.15-lttng-0.5.6 make modules_install
 
 
 * Editing the system wide configuration
@@ -277,9 +277,9 @@ echo ltt-control >> /etc/modules
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.8.4-10012006.tar.gz
-gzip -cd LinuxTraceToolkitViewer-0.8.4-10012006.tar.gz | tar xvof -
-cd LinuxTraceToolkitViewer-0.8.4-10012006
+wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.8.5-17012006.tar.gz
+gzip -cd LinuxTraceToolkitViewer-0.8.5-17012006.tar.gz | tar xvof -
+cd LinuxTraceToolkitViewer-0.8.5-17012006
 (refer to README to see the development libraries that must be installed on you
 system)
 ./configure
@@ -342,9 +342,9 @@ see lttv -m textDump --help for detailed command line options of textDump.
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/genevent-0.4.tar.gz
-gzip -cd genevent-0.4.tar.gz | tar xvof -
-cd genevent-0.4
+wget http://ltt.polymtl.ca/packages/genevent-0.6.tar.gz
+gzip -cd genevent-0.6.tar.gz | tar xvof -
+cd genevent-0.6
 make
 make install
 
@@ -358,14 +358,14 @@ cp process.xml yourfacility.xml
 cd /tmp
 /usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/facilities/yourfacility.xml
 cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
-         /usr/src/linux-2.6.15-lttng-0.5.5/include/linux/ltt
+         /usr/src/linux-2.6.15-lttng-0.5.6/include/linux/ltt
 cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
-         /usr/src/linux-2.6.15-lttng-0.5.5/ltt
+         /usr/src/linux-2.6.15-lttng-0.5.6/ltt
   * edit the kernel file you want to instrument
     - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
       of the file.
     - Add a call to the tracing functions. See their names and parameters in
-      /usr/src/linux-2.6.15-lttng-0.5.5/include/linux/ltt/ltt-facility-yourfacility.h
+      /usr/src/linux-2.6.15-lttng-0.5.6/include/linux/ltt/ltt-facility-yourfacility.h
     
 
 
