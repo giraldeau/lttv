@@ -5,6 +5,7 @@ fs.xml \
 ipc.xml \
 kernel.xml \
 kernel_arch_i386.xml \
+stack_arch_i386.xml \
 memory.xml \
 network.xml \
 process.xml \
@@ -18,6 +19,7 @@ fs.xml \
 ipc.xml \
 kernel.xml \
 kernel_arch_i386.xml \
+stack_arch_i386.xml \
 memory.xml \
 network.xml \
 process.xml \
