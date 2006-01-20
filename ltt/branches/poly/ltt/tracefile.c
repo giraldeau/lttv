@@ -232,7 +232,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
     t->ltt_minor_version = any->minor_version;
     t->flight_recorder = any->flight_recorder;
     t->has_heartbeat = any->has_heartbeat;
-    t->has_tsc = any->has_tsc;
+    t->freq_scale = any->freq_scale;
   }
  
 
@@ -250,13 +250,13 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
         return 1;
       }
       break;
-    case 6:
+    case 7:
       {
-        struct ltt_trace_header_0_6 *vheader =
-          (struct ltt_trace_header_0_6 *)header;
+        struct ltt_trace_header_0_7 *vheader =
+          (struct ltt_trace_header_0_7 *)header;
         tf->buffer_header_size =
          sizeof(struct ltt_block_start_header) 
-            + sizeof(struct ltt_trace_header_0_6);
+            + sizeof(struct ltt_trace_header_0_7);
         if(t) {
           t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &vheader->start_freq);
@@ -1598,12 +1598,11 @@ LttTime ltt_interpolate_time(LttTracefile *tf, LttEvent *event)
 {
   LttTime time;
 
-  g_assert(tf->trace->has_tsc);
-
 //  time = ltt_time_from_uint64(
 //      cycles_2_ns(tf, (guint64)(tf->buffer.tsc - tf->buffer.begin.cycle_count)));
   time = ltt_time_from_uint64(
-      (double)(tf->buffer.tsc - tf->trace->start_tsc) * 1000000.0
+      (double)(tf->buffer.tsc - tf->trace->start_tsc) 
+																	* (1000000000.0 / tf->trace->freq_scale)
                                   / (double)tf->trace->start_freq);
   //time = ltt_time_add(tf->buffer.begin.timestamp, time);
   time = ltt_time_add(tf->trace->start_time_from_tsc, time);
@@ -1719,43 +1718,30 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 	/* Align the head */
 	pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
   
-  if(tf->trace->has_tsc) {
-    if(tf->trace->has_heartbeat) {
-      event->time.timestamp = ltt_get_uint32(LTT_GET_BO(tf),
-                                            pos);
-      /* 32 bits -> 64 bits tsc */
-      /* note : still works for seek and non seek cases. */
-      if(event->time.timestamp < (0xFFFFFFFFULL&tf->buffer.tsc)) {
-        tf->buffer.tsc = ((tf->buffer.tsc&0xFFFFFFFF00000000ULL)
-                            + 0x100000000ULL)
-                                | (guint64)event->time.timestamp;
-        event->tsc = tf->buffer.tsc;
-      } else {
-        /* no overflow */
-        tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
-                                | (guint64)event->time.timestamp;
-        event->tsc = tf->buffer.tsc;
-      }
-      pos += sizeof(guint32);
-    } else {
-      event->tsc = ltt_get_uint64(LTT_GET_BO(tf), pos);
-      tf->buffer.tsc = event->tsc;
-      pos += sizeof(guint64);
-    }
-    
-    event->event_time = ltt_interpolate_time(tf, event);
-  } else {
-    event->time.delta.tv_sec = 0;
-    event->time.delta.tv_nsec = ltt_get_uint32(LTT_GET_BO(tf),
-                                          pos) * NSEC_PER_USEC;
-    tf->buffer.tsc = 0;
-    event->tsc = tf->buffer.tsc;
-
-    event->event_time = ltt_time_add(tf->buffer.begin.timestamp,
-                                     event->time.delta);
-    pos += sizeof(guint32);
-  }
-
+	if(tf->trace->has_heartbeat) {
+		event->timestamp = ltt_get_uint32(LTT_GET_BO(tf),
+																					pos);
+		/* 32 bits -> 64 bits tsc */
+		/* note : still works for seek and non seek cases. */
+		if(event->timestamp < (0xFFFFFFFFULL&tf->buffer.tsc)) {
+			tf->buffer.tsc = ((tf->buffer.tsc&0xFFFFFFFF00000000ULL)
+													+ 0x100000000ULL)
+															| (guint64)event->timestamp;
+			event->tsc = tf->buffer.tsc;
+		} else {
+			/* no overflow */
+			tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
+															| (guint64)event->timestamp;
+			event->tsc = tf->buffer.tsc;
+		}
+		pos += sizeof(guint32);
+	} else {
+		event->tsc = ltt_get_uint64(LTT_GET_BO(tf), pos);
+		tf->buffer.tsc = event->tsc;
+		pos += sizeof(guint64);
+	}
+	
+	event->event_time = ltt_interpolate_time(tf, event);
   event->facility_id = *(guint8*)pos;
   pos += sizeof(guint8);
 

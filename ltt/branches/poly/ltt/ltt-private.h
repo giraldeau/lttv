@@ -160,7 +160,7 @@ struct ltt_trace_header_any {
   uint8_t         flight_recorder;
   uint8_t         has_heartbeat;
   uint8_t         has_alignment;  /* Event header alignment */
-	uint8_t			    has_tsc;
+	uint32_t			  freq_scale;
 } LTT_PACKED_STRUCT;
 
 
@@ -177,12 +177,12 @@ struct ltt_trace_header_0_3 {
   uint8_t         flight_recorder;
   uint8_t         has_heartbeat;
   uint8_t         has_alignment;  /* Event header alignment */
-	uint8_t				 has_tsc;
+	uint32_t				freq_scale;
 } LTT_PACKED_STRUCT;
 
-/* For version 0.6 */
+/* For version 0.7 */
 
-struct ltt_trace_header_0_6 {
+struct ltt_trace_header_0_7 {
   uint32_t        magic_number;
   uint32_t        arch_type;
   uint32_t        arch_variant;
@@ -193,11 +193,10 @@ struct ltt_trace_header_0_6 {
   uint8_t         flight_recorder;
   uint8_t         has_heartbeat;
   uint8_t         has_alignment;  /* Event header alignment */
-  uint8_t         has_tsc;
+  uint32_t        freq_scale;
   uint64_t        start_freq;
   uint64_t        start_tsc;
   uint64_t        start_monotonic;
-  //struct timespec start_time; // not portable
   uint64_t        start_time_sec;
   uint64_t        start_time_usec;
 } LTT_PACKED_STRUCT;
@@ -205,16 +204,10 @@ struct ltt_trace_header_0_6 {
 
 struct ltt_block_start_header {
   struct { 
-    //struct timeval          timestamp;
-    uint64_t                timestamp_sec;
-    uint64_t                timestamp_usec;
     uint64_t                cycle_count;
     uint64_t                freq;
   } begin;
   struct {
-    //struct timeval          timestamp;
-    uint64_t                timestamp_sec;
-    uint64_t                timestamp_usec;
     uint64_t                cycle_count;
     uint64_t                freq;
   } end;
@@ -258,10 +251,7 @@ struct _LttEvent{
   
   /* End of LttEventPosition fields */
 
-	union {											/* choice by trace has_tsc */
-	  guint32  timestamp;				/* truncated timestamp */
-  	LttTime  delta;
-	} time;
+  guint32  timestamp;				/* truncated timestamp */
 
   unsigned char facility_id;	/* facility ID are never reused. */
   unsigned char event_id;
@@ -406,7 +396,7 @@ struct _LttTrace{
   guint8    ltt_minor_version;
   guint8    flight_recorder;
   guint8    has_heartbeat;
-	guint8		has_tsc;
+	guint32		freq_scale;
   uint64_t  start_freq;
   uint64_t  start_tsc;
   uint64_t  start_monotonic;
