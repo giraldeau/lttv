@@ -49,7 +49,7 @@ status.
 My suggestion is to go for a system call, but only call it :
 
 - when the thread starts
-- when receiving a SIG_UPDTRACING (multithread ?)
+- when receiving a SIGRTMIN+3 (multithread ?)
 
 Note : save the thread ID (process ID) in the logging function and the update
 handler. Use it as a comparison to check if we are a forked child thread.
@@ -192,18 +192,30 @@ API :
 
 syscall 1 :
 
-int update_tracing_info(void *buffer, int *active, int *filter);
+in :
+buffer : NULL means get new traces
+				 non NULL means to get the information for the specified buffer
+out :
+buffer : returns the address of the trace buffer
+active : is the trace active ?
+filter : 32 bits filter mask
 
+return : 0 on success, 1 on error.
+
+int ltt_update(void **buffer, int *active, int *filter);
 
 syscall 2 :
 
-int tracing_buffer_switch(void *buffer);
+in :
+buffer : Switch the specified buffer.
+return : 0 on success, 1 on error.
+
+int ltt_switch(void *buffer);
 
 
 Signal :
 
-UPD_TRACING
-Default : SIG IGNORE
+SIGRTMIN+3
 (like hardware fault and expiring timer : to the thread, see p. 413 of Advances
 prog. in the UNIX env.)
 
