@@ -26,6 +26,9 @@
 
 void __lttng_sig_trace_handler(int signo);
 
+/* Call this at the beginning of a new thread, except for the main() */
+void lttng_thread_init(void);
+
 static inline _syscall1(int, ltt_switch, unsigned long, addr)
 static inline _syscall3(int, ltt_update, unsigned long, addr, int *, active, int *, filter)
 

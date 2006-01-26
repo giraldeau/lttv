@@ -71,8 +71,8 @@ void __lttng_sig_trace_handler(int signo)
 	int ret;
 	sigset_t set, oldset;
 	
-  printf("LTTng Sig handler : pid : %lu\n", getpid());
-
+  printf("LTTng signal handler : thread id : %lu, pid %lu\n", pthread_self(), getpid());
+#if 0
 	/* Disable signals */
 	ret = sigfillset(&set);
 	if(ret) {
@@ -85,7 +85,7 @@ void __lttng_sig_trace_handler(int signo)
 		printf("Error in sigprocmask\n");
 		exit(1);
 	}
-	
+#endif //0
 	/* Get all the new traces */
 #if 0
 	do {
@@ -99,39 +99,21 @@ void __lttng_sig_trace_handler(int signo)
 	} while(addr);
 		
 #endif //0
+
+#if 0
 	/* Enable signals */
 	ret = sigprocmask(SIG_SETMASK, &oldset, NULL);
 	if(ret) {
 		printf("Error in sigprocmask\n");
 		exit(1);
 	}
-	
+#endif //0
 }
 
 
-void __lttng_init_trace_info(void)
+static void thread_init(void)
 {
-	memset(&lttng_trace_info, 0, MAX_TRACES*sizeof(struct lttng_trace_info));
-}
-
-void __attribute__((constructor)) __lttng_user_init(void)
-{
-	static struct sigaction act;
 	int err;
-
-  printf("LTTng user init\n");
-
-	/* Init trace info */
-	__lttng_init_trace_info();
-	
-	/* Activate the signal */
-	act.sa_handler = __lttng_sig_trace_handler;
-	err = sigemptyset(&(act.sa_mask));
-	if(err) perror("Error with sigemptyset");
-	err = sigaddset(&(act.sa_mask), SIGRTMIN+3);
-	if(err) perror("Error with sigaddset");
-	err = sigaction(SIGRTMIN+3, &act, NULL);
-	if(err) perror("Error with sigaction");
 
 	/* TEST */
 	err = ltt_switch((unsigned long)NULL);
@@ -153,7 +135,34 @@ void __attribute__((constructor)) __lttng_user_init(void)
 		printf("Error in ltt_switch system call\n");
 		exit(1);
 	}
-
-
-
 }
+
+void __attribute__((constructor)) __lttng_user_init(void)
+{
+	static struct sigaction act;
+	int err;
+
+  printf("LTTng user init\n");
+
+	/* Activate the signal */
+	act.sa_handler = __lttng_sig_trace_handler;
+	err = sigemptyset(&(act.sa_mask));
+	if(err) perror("Error with sigemptyset");
+	err = sigaddset(&(act.sa_mask), SIGRTMIN+3);
+	if(err) perror("Error with sigaddset");
+	err = sigaction(SIGRTMIN+3, &act, NULL);
+	if(err) perror("Error with sigaction");
+
+	thread_init();
+}
+
+
+void lttng_thread_init(void)
+{
+	thread_init();
+}
+
+
+
+
+
