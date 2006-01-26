@@ -6,6 +6,7 @@ ipc.xml \
 kernel.xml \
 kernel_arch_i386.xml \
 stack_arch_i386.xml \
+locking.xml \
 memory.xml \
 network.xml \
 process.xml \
@@ -20,6 +21,7 @@ ipc.xml \
 kernel.xml \
 kernel_arch_i386.xml \
 stack_arch_i386.xml \
+locking.xml \
 memory.xml \
 network.xml \
 process.xml \

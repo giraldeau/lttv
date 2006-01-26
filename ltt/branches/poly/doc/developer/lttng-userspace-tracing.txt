@@ -219,10 +219,17 @@ SIGRTMIN+3
 (like hardware fault and expiring timer : to the thread, see p. 413 of Advances
 prog. in the UNIX env.)
 
+Signal is sent on tracing create/destroy, start/stop and filter change.
+
 Will update for itself only : it will remove unnecessary concurrency.
 
 
 
+Notes :
+
+It doesn't matter "when" the process receives the update signal after a trace
+start : it will receive it in priority, before executing anything else when it
+will be scheduled in.
 
 
 
