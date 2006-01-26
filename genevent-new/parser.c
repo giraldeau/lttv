@@ -182,6 +182,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
 
   t->fmt = NULL;
   t->size = 0;
+  t->custom_write = 0;
   
   while(1) {
     token = getToken(in); 
@@ -202,6 +203,8 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
     } else if(!strcmp("size",token)) {
       getEqual(in);
       t->size = getSize(in);
+    } else if(!strcmp("custom_write", token)) {
+      t->custom_write = 1;
     }
   }
 }
@@ -335,22 +338,20 @@ char *getNameAttribute(parse_file_t *in)
   
   while(1) {
     token = getToken(in); 
-    if(strcmp("/",token) == 0 || strcmp(">",token) == 0){
-      ungetToken(in);
-      break;
-    }
-
     if(!strcmp("name",token)) {
       getEqual(in);
       car = seekNextChar(in);
       if(car == EOF) in->error(in,"name was expected");
       else if(car == '\"') name = allocAndCopy(getQuotedString(in));
       else name = allocAndCopy(getName(in));
+    } else {
+      ungetToken(in);
+      break;
     }
+
   }
   if(name == NULL) in->error(in, "Name was expected");
   return name;
-  
 }
 
 
@@ -680,8 +681,8 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   else if(strcmp(token,"sequence") == 0) {
     t->type = SEQUENCE;
     sequence_init(&(t->fields));
-    //getTypeAttributes(in, t, unnamed_types, named_types);
-    //getForwardslash(in);
+    getTypeAttributes(in, t, unnamed_types, named_types);
+    getForwardslash(in);
     getRAnglebracket(in); //<sequence>
 
     //getLAnglebracket(in); //<sequence size type> 

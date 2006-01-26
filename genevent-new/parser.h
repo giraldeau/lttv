@@ -111,6 +111,7 @@ typedef struct _type_descriptor {
 	sequence_t labels_description;
 	int	already_printed;
   sequence_t fields; // for structure, array and sequence (field_t type)
+  int  custom_write;  /* Should we use a custom write function ? */
 } type_descriptor_t;
 
 

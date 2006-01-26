@@ -386,6 +386,8 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	char basename[PATH_MAX];
 	unsigned int basename_len = 0;
 	
+	if(td->custom_write) return 0;	/* Does print custom type */
+	
 	strncpy(basename, nest_name, PATH_MAX);
 	basename_len = strlen(basename);
 	
@@ -666,6 +668,7 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	char basename[PATH_MAX];
 	unsigned int basename_len = 0;
 	char get_ptr_char[2] = "";
+	char custom[PATH_MAX] = "";
 	
 	strncpy(basename, nest_name, PATH_MAX);
 	basename_len = strlen(basename);
@@ -688,6 +691,10 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	
 	if(get_ptr) {
 		strcpy(get_ptr_char, "&");
+	}
+
+	if(td->custom_write) {
+		strcpy(custom, "_custom");
 	}
 
 	switch(td->type) {
@@ -734,32 +741,32 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		case STRING:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_string_%s(buffer, to_base, to, from, len, %s%s);\n",
-					basename, obj_prefix, field_name);
+					"lttng_write%s_string_%s(buffer, to_base, to, from, len, %s%s);\n",
+					custom, basename, obj_prefix, field_name);
 			break;
 		case SEQUENCE:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_sequence_%s(buffer, to_base, to, from, len, %s%s%s);",
-					basename, get_ptr_char, obj_prefix, field_name);
+					"lttng_write%s_sequence_%s(buffer, to_base, to, from, len, %s%s%s);",
+					custom, basename, get_ptr_char, obj_prefix, field_name);
 			break;
 		case STRUCT:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_struct_%s(buffer, to_base, to, from, len, %s%s%s);",
-					basename, get_ptr_char, obj_prefix, field_name);
+					"lttng_write%s_struct_%s(buffer, to_base, to, from, len, %s%s%s);",
+					custom, basename, get_ptr_char, obj_prefix, field_name);
 			break;
 		case UNION:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_union_%s(buffer, to_base, to, from, len, %s%s%s);",
-					basename, get_ptr_char, obj_prefix, field_name);
+					"lttng_write%s_union_%s(buffer, to_base, to, from, len, %s%s%s);",
+					custom, basename, get_ptr_char, obj_prefix, field_name);
 			break;
 		case ARRAY:
 			print_tabs(tabs, fd);
 			fprintf(fd,
-					"lttng_write_array_%s(buffer, to_base, to, from, len, %s%s);",
-					basename, obj_prefix, field_name);
+					"lttng_write%s_array_%s(buffer, to_base, to, from, len, %s%s);",
+					custom, basename, obj_prefix, field_name);
 			break;
 		case NONE:
 			printf("Error : type NONE unexpected\n");
@@ -831,6 +838,8 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 	char basename[PATH_MAX];
 	unsigned int basename_len = 0;
 	
+	if(td->custom_write) return 0;	/* Does print custom type */
+
 	strncpy(basename, nest_name, PATH_MAX);
 	basename_len = strlen(basename);
 	
@@ -977,6 +986,8 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	char basename[PATH_MAX];
 	unsigned int basename_len = 0;
 	
+	if(td->custom_write) return 0;	/* Does print custom type */
+
 	strncpy(basename, nest_name, PATH_MAX);
 	basename_len = strlen(basename);
 	
