@@ -1,6 +1,9 @@
 
+
+CC=gcc
+
 test: test.c lttng_usertrace.c
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -lpthread -o $@ $^
 
 .PHONY : clean
 
