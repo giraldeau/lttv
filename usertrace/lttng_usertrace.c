@@ -33,7 +33,6 @@ struct ltt_buf {
 };
 
 struct lttng_trace_info {
-	struct lttng_trace_info *next;
 	int	active:1;
 	struct {
 		struct ltt_buf facilities;
@@ -43,9 +42,28 @@ struct lttng_trace_info {
 
 
 /* TLS for the trace info */
-static __thread struct lttng_trace_info *test;
-static __thread struct lttng_trace_info lttng_trace_info[MAX_TRACES];
+/* http://www.dis.com/gnu/gcc/C--98-Thread-Local-Edits.html
+ *
+ * Add after paragraph 4
+ *
+ *     The storage for an object of thread storage duration shall be statically
+ *     initialized before the first statement of the thread startup function. An
+ *     object of thread storage duration shall not require dynamic
+ *     initialization.
+ * GCC extention permits init of a range.
+ */
 
+static __thread struct lttng_trace_info lttng_trace_info[MAX_TRACES] =
+{	[ 0 ... MAX_TRACES-1 ].active = 0,
+	[ 0 ... MAX_TRACES-1 ].channel = 
+		{ NULL,
+			ATOMIC_INIT(0),
+			ATOMIC_INIT(0),
+			ATOMIC_INIT(0),
+			ATOMIC_INIT(0),
+			ATOMIC_INIT(0)
+		}
+};
 
 /* signal handler */
 void __lttng_sig_trace_handler(int signo)
