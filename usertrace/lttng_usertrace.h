@@ -30,6 +30,6 @@ void __lttng_sig_trace_handler(int signo);
 void lttng_thread_init(void);
 
 static inline _syscall1(int, ltt_switch, unsigned long, addr)
-static inline _syscall3(int, ltt_update, unsigned long, addr, int *, active, int *, filter)
+static inline _syscall4(int, ltt_update, unsigned long *, cpu_addr, unsigned long *, fac_addr, int *, active, int *, filter)
 
 #endif //_LTTNG_USERTRACE_H

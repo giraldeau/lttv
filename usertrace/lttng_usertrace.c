@@ -34,6 +34,7 @@ struct ltt_buf {
 
 struct lttng_trace_info {
 	int	active:1;
+	int filter;
 	struct {
 		struct ltt_buf facilities;
 		struct ltt_buf cpu;
@@ -41,8 +42,8 @@ struct lttng_trace_info {
 };
 
 
-/* TLS for the trace info */
-/* http://www.dis.com/gnu/gcc/C--98-Thread-Local-Edits.html
+/* TLS for the trace info
+ * http://www.dis.com/gnu/gcc/C--98-Thread-Local-Edits.html
  *
  * Add after paragraph 4
  *
@@ -55,6 +56,7 @@ struct lttng_trace_info {
 
 static __thread struct lttng_trace_info lttng_trace_info[MAX_TRACES] =
 {	[ 0 ... MAX_TRACES-1 ].active = 0,
+	[ 0 ... MAX_TRACES-1 ].filter = 0,
 	[ 0 ... MAX_TRACES-1 ].channel = 
 		{ NULL,
 			ATOMIC_INIT(0),
@@ -64,6 +66,61 @@ static __thread struct lttng_trace_info lttng_trace_info[MAX_TRACES] =
 			ATOMIC_INIT(0)
 		}
 };
+
+
+static void lttng_get_new_info(void)
+{
+	unsigned long cpu_addr, fac_addr;
+	unsigned int i, first_empty;
+	int active, filter;
+	int ret;
+
+	/* Get all the new traces */
+	while(1) {
+		cpu_addr = fac_addr = 0;
+		active = filter = 0;
+		ret = ltt_update(&cpu_addr, &fac_addr, &active, &filter);
+		if(ret) {
+			printf("LTTng : error in ltt_update\n");
+			exit(1);
+		}
+		
+		if(!cpu_addr || !fac_addr) break;
+		
+		first_empty = MAX_TRACES;
+		/* Try to find the trace */
+		for(i=0;i<MAX_TRACES;i++) {
+			if(i<first_empty && !lttng_trace_info[i].channel.cpu.start)
+				first_empty = i;
+			if(cpu_addr == 
+					(unsigned long)lttng_trace_info[i].channel.cpu.start &&
+				 fac_addr == 
+				 	(unsigned long)lttng_trace_info[i].channel.facilities.start) {
+
+				lttng_trace_info[i].filter = filter;
+				lttng_trace_info[i].active = active;
+			}
+
+		}
+		if(i == MAX_TRACES) {
+			/* Not found. Must take an empty slot */
+			if(first_empty == MAX_TRACES) {
+				printf(
+				"LTTng WARNING : too many traces requested for pid %d by the kernel.\n"
+				"                Compilation defined maximum is %u\n",
+					getpid(), MAX_TRACES);
+
+			} else {
+				lttng_trace_info[first_empty].channel.cpu.start = (void*)cpu_addr;
+				lttng_trace_info[first_empty].channel.facilities.start =
+																													(void*)fac_addr;
+				lttng_trace_info[first_empty].filter = filter;
+				lttng_trace_info[first_empty].active = active;
+			}
+		}
+	}
+}
+
 
 /* signal handler */
 void __lttng_sig_trace_handler(int signo)
@@ -86,20 +143,6 @@ void __lttng_sig_trace_handler(int signo)
 		exit(1);
 	}
 #endif //0
-	/* Get all the new traces */
-#if 0
-	do {
-		/* FIXME : allocate the trace structure somewhere : thread private */
-		ret = ltt_update(addr, &active, &filter);
-		
-		if(ret) {
-			printf("Error in ltt_update system call\n");
-			exit(1);
-		}
-	} while(addr);
-		
-#endif //0
-
 #if 0
 	/* Enable signals */
 	ret = sigprocmask(SIG_SETMASK, &oldset, NULL);
@@ -113,21 +156,8 @@ void __lttng_sig_trace_handler(int signo)
 
 static void thread_init(void)
 {
+	lttng_get_new_info();
 	int err;
-
-	/* TEST */
-	err = ltt_switch((unsigned long)NULL);
-	if(err) {
-		printf("Error in ltt_switch system call\n");
-		exit(1);
-	}
-
-	/* Make the first ltt_update system call */
-	err = ltt_update(1, NULL, NULL);
-	if(err) {
-		printf("Error in ltt_update system call\n");
-		exit(1);
-	}
 
 	/* Make some ltt_switch syscalls */
 	err = ltt_switch((unsigned long)NULL);
