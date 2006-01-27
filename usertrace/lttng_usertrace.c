@@ -49,6 +49,7 @@
 static __thread struct lttng_trace_info lttng_trace_info[MAX_TRACES] =
 {	[ 0 ... MAX_TRACES-1 ].active = 0,
 	[ 0 ... MAX_TRACES-1 ].filter = 0,
+	[ 0 ... MAX_TRACES-1 ].destroy = 0,
 	[ 0 ... MAX_TRACES-1 ].nesting = ATOMIC_INIT(0),
 	[ 0 ... MAX_TRACES-1 ].channel = 
 		{ NULL,
