@@ -18,28 +18,9 @@
 #include <malloc.h>
 #include <string.h>
 
-#include <asm/atomic.h>
 #include "lttng_usertrace.h"
 
 #define MAX_TRACES 16
-
-struct ltt_buf {
-	void *start;
-	atomic_t	offset;
-	atomic_t	reserve_count;
-	atomic_t	commit_count;
-
-	atomic_t	events_lost;
-};
-
-struct lttng_trace_info {
-	int	active:1;
-	int filter;
-	struct {
-		struct ltt_buf facilities;
-		struct ltt_buf cpu;
-	} channel;
-};
 
 
 /* TLS for the trace info
@@ -57,8 +38,10 @@ struct lttng_trace_info {
 static __thread struct lttng_trace_info lttng_trace_info[MAX_TRACES] =
 {	[ 0 ... MAX_TRACES-1 ].active = 0,
 	[ 0 ... MAX_TRACES-1 ].filter = 0,
+	[ 0 ... MAX_TRACES-1 ].nesting = ATOMIC_INIT(0),
 	[ 0 ... MAX_TRACES-1 ].channel = 
 		{ NULL,
+			0,
 			ATOMIC_INIT(0),
 			ATOMIC_INIT(0),
 			ATOMIC_INIT(0),
@@ -68,18 +51,60 @@ static __thread struct lttng_trace_info lttng_trace_info[MAX_TRACES] =
 };
 
 
+/* Must be called we sure nobody else is using the info.
+ * It implies that the trace should have been previously stopped
+ * and that every writer has finished.
+ *
+ * Writers should always check if the trace must be destroyed when they
+ * finish writing and the nesting level is 0.
+ */
+void lttng_free_trace_info(struct lttng_trace_info *info)
+{
+	int ret;
+	
+	if(info->active) {
+		printf(
+		"LTTng ERROR : lttng_free_trace_info should be called on inactive trace\n");
+		exit(1);
+	}
+	if(!info->destroy) {
+		printf(
+		"LTTng ERROR : lttng_free_trace_info should be called on destroyed trace\n");
+		exit(1);
+	}
+	if(atomic_read(&info->nesting) > 0) {
+		printf(
+		"LTTng ERROR : lttng_free_trace_info should not be nested on tracing\n");
+		exit(1);
+	}
+	
+	/* Remove the maps */
+	ret = munmap(info->channel.cpu.start, info->channel.cpu.length);
+	if(ret) {
+		perror("LTTNG : error in munmap");
+	}
+	ret = munmap(info->channel.facilities.start, info->channel.facilities.length);
+	if(ret) {
+		perror("LTTNG : error in munmap");
+	}
+	
+	/* Zero the structure */
+	memset(info, 0, sizeof(struct lttng_trace_info));
+}
+
+
 static void lttng_get_new_info(void)
 {
 	unsigned long cpu_addr, fac_addr;
 	unsigned int i, first_empty;
-	int active, filter;
+	int active, filter, destroy;
 	int ret;
 
 	/* Get all the new traces */
 	while(1) {
 		cpu_addr = fac_addr = 0;
-		active = filter = 0;
-		ret = ltt_update(&cpu_addr, &fac_addr, &active, &filter);
+		active = filter = destroy = 0;
+		ret = ltt_update(&cpu_addr, &fac_addr, &active, &filter, &destroy);
 		if(ret) {
 			printf("LTTng : error in ltt_update\n");
 			exit(1);
@@ -96,9 +121,14 @@ static void lttng_get_new_info(void)
 					(unsigned long)lttng_trace_info[i].channel.cpu.start &&
 				 fac_addr == 
 				 	(unsigned long)lttng_trace_info[i].channel.facilities.start) {
-
+				/* Found */
 				lttng_trace_info[i].filter = filter;
 				lttng_trace_info[i].active = active;
+				lttng_trace_info[i].destroy = destroy;
+				if(destroy && !atomic_read(&lttng_trace_info[i].nesting)) {
+					lttng_free_trace_info(&lttng_trace_info[i]);
+				}
+				break;
 			}
 
 		}
@@ -112,8 +142,10 @@ static void lttng_get_new_info(void)
 
 			} else {
 				lttng_trace_info[first_empty].channel.cpu.start = (void*)cpu_addr;
+				lttng_trace_info[first_empty].channel.cpu.length = PAGE_SIZE;
 				lttng_trace_info[first_empty].channel.facilities.start =
 																													(void*)fac_addr;
+				lttng_trace_info[first_empty].channel.facilities.length = PAGE_SIZE;
 				lttng_trace_info[first_empty].filter = filter;
 				lttng_trace_info[first_empty].active = active;
 			}
