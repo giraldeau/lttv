@@ -23,6 +23,17 @@
 #define MAX_TRACES 16
 
 
+/*
+ * Notes :
+ *
+ * ltt_update :
+ *
+ * it should send the information on the traces that has their status MODIFIED.
+ * It's a necessary assumption to have a correct lttng_free_trace_info, which
+ * would not be reentrant otherwise.
+ */
+
+
 /* TLS for the trace info
  * http://www.dis.com/gnu/gcc/C--98-Thread-Local-Edits.html
  *
@@ -93,12 +104,52 @@ void lttng_free_trace_info(struct lttng_trace_info *info)
 }
 
 
+static struct lttng_trace_info* find_info(unsigned long cpu_addr,
+		unsigned long fac_addr, unsigned int *first_empty)
+{
+	struct lttng_trace_info *found = NULL;
+	unsigned int i;
+
+	*first_empty = MAX_TRACES;
+
+	/* Try to find the trace */
+	for(i=0;i<MAX_TRACES;i++) {
+		if(i<*first_empty && !lttng_trace_info[i].channel.cpu.start)
+			*first_empty = i;
+		if(cpu_addr == 
+				(unsigned long)lttng_trace_info[i].channel.cpu.start &&
+			 fac_addr == 
+				(unsigned long)lttng_trace_info[i].channel.facilities.start) {
+			/* Found */
+			found = &lttng_trace_info[i];
+			break;
+		}
+	}
+	return found;
+}
+
+
 static void lttng_get_new_info(void)
 {
 	unsigned long cpu_addr, fac_addr;
 	unsigned int i, first_empty;
 	int active, filter, destroy;
 	int ret;
+	struct lttng_trace_info *info;
+	sigset_t set, oldset;
+
+	/* Disable signals */
+	ret = sigfillset(&set);
+	if(ret) {
+		printf("Error in sigfillset\n");
+		exit(1);
+	}
+	
+	ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
+	if(ret) {
+		printf("Error in sigprocmask\n");
+		exit(1);
+	}
 
 	/* Get all the new traces */
 	while(1) {
@@ -112,27 +163,14 @@ static void lttng_get_new_info(void)
 		
 		if(!cpu_addr || !fac_addr) break;
 		
-		first_empty = MAX_TRACES;
-		/* Try to find the trace */
-		for(i=0;i<MAX_TRACES;i++) {
-			if(i<first_empty && !lttng_trace_info[i].channel.cpu.start)
-				first_empty = i;
-			if(cpu_addr == 
-					(unsigned long)lttng_trace_info[i].channel.cpu.start &&
-				 fac_addr == 
-				 	(unsigned long)lttng_trace_info[i].channel.facilities.start) {
-				/* Found */
-				lttng_trace_info[i].filter = filter;
-				lttng_trace_info[i].active = active;
-				lttng_trace_info[i].destroy = destroy;
-				if(destroy && !atomic_read(&lttng_trace_info[i].nesting)) {
-					lttng_free_trace_info(&lttng_trace_info[i]);
-				}
-				break;
-			}
-
-		}
-		if(i == MAX_TRACES) {
+		info = find_info(cpu_addr, fac_addr, &first_empty);
+		if(info) {
+			info->filter = filter;
+			info->active = active;
+			info->destroy = destroy;
+			if(destroy && !atomic_read(&info->nesting))
+				lttng_free_trace_info(info);
+		} else {
 			/* Not found. Must take an empty slot */
 			if(first_empty == MAX_TRACES) {
 				printf(
@@ -141,15 +179,25 @@ static void lttng_get_new_info(void)
 					getpid(), MAX_TRACES);
 
 			} else {
-				lttng_trace_info[first_empty].channel.cpu.start = (void*)cpu_addr;
-				lttng_trace_info[first_empty].channel.cpu.length = PAGE_SIZE;
-				lttng_trace_info[first_empty].channel.facilities.start =
-																													(void*)fac_addr;
-				lttng_trace_info[first_empty].channel.facilities.length = PAGE_SIZE;
-				lttng_trace_info[first_empty].filter = filter;
-				lttng_trace_info[first_empty].active = active;
+				info = &lttng_trace_info[first_empty];
+				info->channel.cpu.start = (void*)cpu_addr;
+				info->channel.cpu.length = PAGE_SIZE;
+				info->channel.facilities.start = (void*)fac_addr;
+				info->channel.facilities.length = PAGE_SIZE;
+				info->filter = filter;
+				info->active = active;
+				info->destroy = destroy;
+				if(destroy && !atomic_read(&info->nesting))
+					lttng_free_trace_info(info);
 			}
 		}
+	}
+
+	/* Enable signals */
+	ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+	if(ret) {
+		printf("Error in sigprocmask\n");
+		exit(1);
 	}
 }
 
@@ -157,39 +205,15 @@ static void lttng_get_new_info(void)
 /* signal handler */
 void __lttng_sig_trace_handler(int signo)
 {
-	int ret;
-	sigset_t set, oldset;
-	
   printf("LTTng signal handler : thread id : %lu, pid %lu\n", pthread_self(), getpid());
-#if 0
-	/* Disable signals */
-	ret = sigfillset(&set);
-	if(ret) {
-		printf("Error in sigfillset\n");
-		exit(1);
-	}
-	
-	ret = sigprocmask(SIG_BLOCK, &set, &oldset);
-	if(ret) {
-		printf("Error in sigprocmask\n");
-		exit(1);
-	}
-#endif //0
-#if 0
-	/* Enable signals */
-	ret = sigprocmask(SIG_SETMASK, &oldset, NULL);
-	if(ret) {
-		printf("Error in sigprocmask\n");
-		exit(1);
-	}
-#endif //0
+	lttng_get_new_info();
 }
 
 
 static void thread_init(void)
 {
-	lttng_get_new_info();
 	int err;
+	lttng_get_new_info();
 
 	/* Make some ltt_switch syscalls */
 	err = ltt_switch((unsigned long)NULL);
@@ -223,8 +247,5 @@ void lttng_thread_init(void)
 {
 	thread_init();
 }
-
-
-
 
 
