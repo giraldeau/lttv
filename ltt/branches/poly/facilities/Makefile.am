@@ -4,6 +4,7 @@ core.xml \
 fs.xml \
 ipc.xml \
 kernel.xml \
+kernel_arch_arm.xml \
 kernel_arch_i386.xml \
 stack_arch_i386.xml \
 locking.xml \
@@ -19,6 +20,7 @@ core.xml \
 fs.xml \
 ipc.xml \
 kernel.xml \
+kernel_arch_arm.xml \
 kernel_arch_i386.xml \
 stack_arch_i386.xml \
 locking.xml \

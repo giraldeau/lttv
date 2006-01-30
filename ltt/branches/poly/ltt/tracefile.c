@@ -921,8 +921,10 @@ static int ltt_get_facility_description(LttFacility *f,
 				break;
 			case LTT_ARCH_TYPE_ARM:
 				text = "_arm";
+				break;
 			case LTT_ARCH_TYPE_PPC64:
 				text = "_ppc64";
+				break;
 			case LTT_ARCH_TYPE_X86_64:
 				text = "_x86_64";
 				break;
