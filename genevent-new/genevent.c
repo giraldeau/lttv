@@ -1394,7 +1394,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		fprintf(fd, "const void **from = &real_from;\n");
 		print_tabs(1, fd);
 	}
-	fprintf(fd, "cycles_t tsc;\n");
+	fprintf(fd, "u64 tsc;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t before_hdr_pad, after_hdr_pad, header_size;\n");
 	fprintf(fd, "\n");
