@@ -14,7 +14,9 @@
 #include <config.h>
 #endif
 
+#define _REENTRANT
 #define _GNU_SOURCE
+#include <features.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -27,6 +29,7 @@
 #include <sys/poll.h>
 #include <sys/mman.h>
 #include <signal.h>
+#include <pthread.h>
 
 /* Relayfs IOCTL */
 #include <asm/ioctl.h>
@@ -67,6 +70,7 @@ static char *trace_name = NULL;
 static char *channel_name = NULL;
 static int	daemon_mode = 0;
 static int	append_mode = 0;
+static unsigned long num_threads = 1;
 volatile static int	quit_program = 0;	/* For signal handler */
 
 /* Args :
@@ -86,6 +90,7 @@ void show_arguments(void)
 	printf("-c directory  Root directory of the relayfs trace channels.\n");
 	printf("-d            Run in background (daemon).\n");
 	printf("-a            Append to an possibly existing trace.\n");
+	printf("-n            Number of threads to start.\n");
 	printf("\n");
 }
 
@@ -130,6 +135,12 @@ int parse_arguments(int argc, char **argv)
 						break;
 					case 'a':
 						append_mode = 1;
+						break;
+					case 'n':
+						if(argn+1 < argc) {
+							num_threads = strtoul(argv[argn+1], NULL, 0);
+							argn++;
+						}
 						break;
 					default:
 						printf("Invalid argument '%s'.\n", argv[argn]);
@@ -341,29 +352,11 @@ get_error:
 }
 
 
-/* read_channels
- *
- * Read the realyfs channels and write them in the paired tracefiles.
- *
- * @fd_pairs : paired channels and trace files.
- *
- * returns 0 on success, -1 on error.
- *
- * Note that the high priority polled channels are consumed first. We then poll
- * again to see if these channels are still in priority. Only when no
- * high priority channel is left, we start reading low priority channels.
- *
- * Note that a channel is considered high priority when the buffer is almost
- * full.
- */
 
-int read_channels(struct channel_trace_fd *fd_pairs)
+int map_channels(struct channel_trace_fd *fd_pairs)
 {
-	struct pollfd *pollfd;
 	int i,j;
-	int num_rdy, num_hup;
-	int high_prio;
-	int ret;
+	int ret=0;
 
 	if(fd_pairs->num_pairs <= 0) {
 		printf("No channel to read\n");
@@ -401,6 +394,73 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 		}
 	}
 
+
+	/* Error handling */
+	/* munmap only the successfully mmapped indexes */
+munmap:
+		/* Munmap each FD */
+	for(j=0;j<i;j++) {
+		struct fd_pair *pair = &fd_pairs->pair[j];
+		int err_ret;
+
+		err_ret = munmap(pair->mmap, pair->subbuf_size * pair->n_subbufs);
+		if(err_ret != 0) {
+			perror("Error in munmap");
+		}
+		ret |= err_ret;
+	}
+
+end:
+	return ret;
+
+
+}
+
+
+int unmap_channels(struct channel_trace_fd *fd_pairs)
+{
+	int j;
+	int ret=0;
+
+	/* Munmap each FD */
+	for(j=0;j<fd_pairs->num_pairs;j++) {
+		struct fd_pair *pair = &fd_pairs->pair[j];
+		int err_ret;
+
+		err_ret = munmap(pair->mmap, pair->subbuf_size * pair->n_subbufs);
+		if(err_ret != 0) {
+			perror("Error in munmap");
+		}
+		ret |= err_ret;
+	}
+
+	return ret;
+}
+
+
+/* read_channels
+ *
+ * Read the relayfs channels and write them in the paired tracefiles.
+ *
+ * @fd_pairs : paired channels and trace files.
+ *
+ * returns 0 on success, -1 on error.
+ *
+ * Note that the high priority polled channels are consumed first. We then poll
+ * again to see if these channels are still in priority. Only when no
+ * high priority channel is left, we start reading low priority channels.
+ *
+ * Note that a channel is considered high priority when the buffer is almost
+ * full.
+ */
+
+int read_channels(struct channel_trace_fd *fd_pairs)
+{
+	struct pollfd *pollfd;
+	int i,j;
+	int num_rdy, num_hup;
+	int high_prio;
+	int ret;
 
 	/* Start polling the FD */
 	
@@ -475,21 +535,6 @@ int read_channels(struct channel_trace_fd *fd_pairs)
 free_fd:
 	free(pollfd);
 
-	/* munmap only the successfully mmapped indexes */
-	i = fd_pairs->num_pairs;
-munmap:
-		/* Munmap each FD */
-	for(j=0;j<i;j++) {
-		struct fd_pair *pair = &fd_pairs->pair[j];
-		int err_ret;
-
-		err_ret = munmap(pair->mmap, pair->subbuf_size * pair->n_subbufs);
-		if(err_ret != 0) {
-			perror("Error in munmap");
-		}
-		ret |= err_ret;
-	}
-
 end:
 	return ret;
 }
@@ -511,7 +556,7 @@ void close_channel_trace_pairs(struct channel_trace_fd *fd_pairs)
 
 int main(int argc, char ** argv)
 {
-	int ret;
+	int ret = 0;
 	struct channel_trace_fd fd_pairs = { NULL, 0 };
 	struct sigaction act;
 	
@@ -543,11 +588,16 @@ int main(int argc, char ** argv)
 	sigaction(SIGQUIT, &act, NULL);
 	sigaction(SIGINT, &act, NULL);
 
-	//return 0;
+
 	if(ret = open_channel_trace_pairs(channel_name, trace_name, &fd_pairs))
 		goto close_channel;
 
+	if(ret = map_channels(&fd_pairs))
+		goto close_channel;
+	
 	ret = read_channels(&fd_pairs);
+
+	ret |= unmap_channels(&fd_pairs);
 
 close_channel:
 	close_channel_trace_pairs(&fd_pairs);
