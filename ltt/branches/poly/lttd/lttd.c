@@ -318,7 +318,7 @@ int read_subbuffer(struct fd_pair *pair)
 	printf("cookie : %u\n", consumed_old);
 	if(err != 0) {
 		ret = errno;
-		perror("Error in reserving sub buffer");
+		perror("Reserving sub buffer failed (everything is normal)");
 		goto get_error;
 	}
 	
@@ -529,8 +529,7 @@ void * read_channels(void *arg)
 						/* it's ok to have an unavailable subbuffer */
 						ret = read_subbuffer(&fd_pairs->pair[i]);
 						if(ret == -EAGAIN) ret = 0;
-						else if(ret)
-							printf("Error in read_subbuffer : %s\n", strerror(ret));
+
 						ret = pthread_mutex_unlock(&fd_pairs->pair[i].mutex);
 						if(ret)
 							printf("Error in mutex unlock : %s\n", strerror(ret));
@@ -551,8 +550,7 @@ void * read_channels(void *arg)
 							/* it's ok to have an unavailable subbuffer */
 							ret = read_subbuffer(&fd_pairs->pair[i]);
 							if(ret == -EAGAIN) ret = 0;
-							else if(ret)
-								printf("Error in read_subbuffer : %s\n", strerror(ret));
+
 							ret = pthread_mutex_unlock(&fd_pairs->pair[i].mutex);
 							if(ret)
 								printf("Error in mutex unlock : %s\n", strerror(ret));

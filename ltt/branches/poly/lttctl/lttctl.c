@@ -86,7 +86,7 @@ void show_arguments(void)
 	printf("-x            Number of subbuffers\n");
 	printf("-e            Get XML facilities description\n");
 	printf("-a            Append to trace\n");
-	printf("-N            Number of ltt threads\n");
+	printf("-N            Number of lttd threads\n");
 	printf("\n");
 }
 
