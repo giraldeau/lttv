@@ -332,8 +332,14 @@ int read_subbuffer(struct fd_pair *pair)
 		perror("Error in writing to file");
 		goto write_error;
 	}
-
-
+#if 0
+	err = fsync(pair->trace);
+	if(err < 0) {
+		ret = errno;
+		perror("Error in writing to file");
+		goto write_error;
+	}
+#endif //0
 write_error:
 	err = ioctl(pair->channel, RELAYFS_PUT_SUBBUF, &consumed_old);
 	if(err != 0) {
@@ -644,7 +650,7 @@ int main(int argc, char ** argv)
 			break;
 		}
 		if((int)tret != 0) {
-			printf("Error %s occured in thread %u\n", strerror(-(int)tret), i);
+			printf("Error %s occured in thread %u\n", strerror((int)tret), i);
 		}
 	}
 
