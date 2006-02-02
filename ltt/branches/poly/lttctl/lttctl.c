@@ -48,6 +48,7 @@ static enum trace_mode mode = LTT_TRACE_NORMAL;
 static enum trace_ctl_op op = CTL_OP_NONE;
 static char *channel_root = NULL;
 static char *trace_root = NULL;
+static char *num_threads = "1";
 
 static int sigchld_received = 0;
 
@@ -85,6 +86,7 @@ void show_arguments(void)
 	printf("-x            Number of subbuffers\n");
 	printf("-e            Get XML facilities description\n");
 	printf("-a            Append to trace\n");
+	printf("-N            Number of ltt threads\n");
 	printf("\n");
 }
 
@@ -208,6 +210,12 @@ int parse_arguments(int argc, char **argv)
           case 'a':
             append_trace = 1;
             break;
+          case 'N':
+						if(argn+1 < argc) {
+							num_threads = argv[argn+1];
+							argn++;
+						}
+						break;
 					default:
 						printf("Invalid argument '%s'.\n", argv[argn]);
 						printf("\n");
@@ -411,10 +419,10 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
     int ret;
     if(append_trace) 
   		ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
-                       channel_path, "-d", "-a", NULL);
+                       channel_path, "-d", "-a", "-N", num_threads, NULL);
     else
   		ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
-                       channel_path, "-d", NULL);
+                       channel_path, "-d", "-N", num_threads, NULL);
 		if(ret) {
       ret = errno;
 			perror("Error in executing the lttd daemon");
