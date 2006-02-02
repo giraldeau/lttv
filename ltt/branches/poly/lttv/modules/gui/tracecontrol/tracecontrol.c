@@ -116,6 +116,8 @@ struct _ControlData {
   GtkWidget *subbuf_size_entry;
   GtkWidget *subbuf_num_label;
   GtkWidget *subbuf_num_entry;
+  GtkWidget *lttd_threads_label;
+  GtkWidget *lttd_threads_entry;
   GtkWidget *lttctl_path_label;
   GtkWidget *lttctl_path_entry;
   GtkWidget *lttd_path_label;
@@ -309,13 +311,21 @@ gui_control(Tab *tab)
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->subbuf_num_label,0,2,10,11,GTK_FILL,GTK_FILL,2,2);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->subbuf_num_entry,2,6,10,11,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
 
+  tcd->lttd_threads_label = gtk_label_new("Number of lttd threads:");
+  gtk_widget_show (tcd->lttd_threads_label);
+  tcd->lttd_threads_entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(tcd->lttd_threads_entry), "1");
+  gtk_widget_show (tcd->lttd_threads_entry);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_threads_label,0,2,11,12,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_threads_entry,2,6,11,12,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
   tcd->lttctl_path_label = gtk_label_new("path to lttctl:");
   gtk_widget_show (tcd->lttctl_path_label);
   tcd->lttctl_path_entry = gtk_entry_new();
   gtk_entry_set_text(GTK_ENTRY(tcd->lttctl_path_entry),PACKAGE_BIN_DIR "/lttctl");
   gtk_widget_show (tcd->lttctl_path_entry);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttctl_path_label,0,2,11,12,GTK_FILL,GTK_FILL,2,2);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttctl_path_entry,2,6,11,12,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttctl_path_label,0,2,12,13,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttctl_path_entry,2,6,12,13,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
 
 
   tcd->lttd_path_label = gtk_label_new("path to lttd:");
@@ -323,8 +333,8 @@ gui_control(Tab *tab)
   tcd->lttd_path_entry = gtk_entry_new();
   gtk_entry_set_text(GTK_ENTRY(tcd->lttd_path_entry),PACKAGE_BIN_DIR "/lttd");
   gtk_widget_show (tcd->lttd_path_entry);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_path_label,0,2,12,13,GTK_FILL,GTK_FILL,2,2);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_path_entry,2,6,12,13,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_path_label,0,2,13,14,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_path_entry,2,6,13,14,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
 
   
   tcd->fac_path_label = gtk_label_new("path to facilities:");
@@ -333,8 +343,8 @@ gui_control(Tab *tab)
   gtk_entry_set_text(GTK_ENTRY(tcd->fac_path_entry),PACKAGE_DATA_DIR "/" PACKAGE "/facilities");
   gtk_widget_set_size_request(tcd->fac_path_entry, 250, -1);
   gtk_widget_show (tcd->fac_path_entry);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_label,0,2,13,14,GTK_FILL,GTK_FILL,2,2);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_entry,2,6,13,14,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_label,0,2,14,15,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_entry,2,6,14,15,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
 
   focus_chain = g_list_append (focus_chain, tcd->username_entry);
   focus_chain = g_list_append (focus_chain, tcd->password_entry);
@@ -350,6 +360,7 @@ gui_control(Tab *tab)
   focus_chain = g_list_append (focus_chain, tcd->append_check);
   focus_chain = g_list_append (focus_chain, tcd->subbuf_size_entry);
   focus_chain = g_list_append (focus_chain, tcd->subbuf_num_entry);
+  focus_chain = g_list_append (focus_chain, tcd->lttd_threads_entry);
   focus_chain = g_list_append (focus_chain, tcd->lttctl_path_entry);
   focus_chain = g_list_append (focus_chain, tcd->lttd_path_entry);
   focus_chain = g_list_append (focus_chain, tcd->fac_path_entry);
@@ -621,6 +632,8 @@ void start_clicked (GtkButton *button, gpointer user_data)
     gtk_entry_get_text(GTK_ENTRY(tcd->subbuf_size_entry));
   const gchar *subbuf_num =
     gtk_entry_get_text(GTK_ENTRY(tcd->subbuf_num_entry));
+	const gchar *threads_num =
+    gtk_entry_get_text(GTK_ENTRY(tcd->lttd_threads_entry));
   const gchar *lttctl_path =
     gtk_entry_get_text(GTK_ENTRY(tcd->lttctl_path_entry));
   const gchar *lttd_path = gtk_entry_get_text(GTK_ENTRY(tcd->lttd_path_entry));
@@ -734,6 +747,18 @@ void start_clicked (GtkButton *button, gpointer user_data)
     strncat(args, "-x ", args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
     strncat(args, subbuf_num, args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+  }
+
+  /* number of lttd threads */
+  if(strcmp(threads_num, "") != 0) {
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    strncat(args, "-N ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    strncat(args, threads_num, args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
   }
 

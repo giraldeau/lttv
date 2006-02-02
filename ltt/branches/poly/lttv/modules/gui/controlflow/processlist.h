@@ -22,6 +22,7 @@
 #define _PROCESS_LIST_H
 
 #include <gtk/gtk.h>
+#include <gdk/gdk.h>
 #include <lttv/state.h>
 #include <ltt/ltt.h>
 
@@ -170,7 +171,16 @@ void copy_pixmap_to_screen(ProcessList *process_list,
     gint width, gint height);
 
 
-
+static inline gint get_cell_height(ProcessList *process_list, 
+		GtkTreeView *TreeView)
+{
+  gint height;
+  GtkTreeViewColumn *column = gtk_tree_view_get_column(TreeView, 0);
+  
+  gtk_tree_view_column_cell_get_size(column, NULL, NULL, NULL, NULL, &height);
+  
+  return height;
+}
 
 static inline guint processlist_get_height(ProcessList *process_list)
 {
