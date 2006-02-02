@@ -127,6 +127,7 @@ int parse_arguments(int argc, char **argv)
 						break;
           case 'b':
             op = CTL_OP_CREATE_START;
+						break;
 					case 'c':
 						op = CTL_OP_CREATE;
             break;
