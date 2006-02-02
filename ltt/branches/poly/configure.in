@@ -45,9 +45,13 @@ AC_CHECK_LIB([popt], [poptGetNextOpt], POPT_LIBS="-lpopt",AC_MSG_ERROR([libpopt 
 AC_CHECK_LIB([util], [forkpty], UTIL_LIBS="-lutil", AC_MSG_ERROR([libutil is
 required in order to compile LinuxTraceToolkit]))
 
+
+# pthread for lttd
+AC_CHECK_LIB(pthread, pthread_join,[THREAD_LIBS="-lpthread"], AC_MSG_ERROR([LinuxThreads is required in order to compile lttd]))
+
 # Checks for header files.
 AC_HEADER_STDC
-AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/time.h unistd.h])
+AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/time.h unistd.h pthread.h])
 
 AC_ISC_POSIX
 AC_PROG_CC
@@ -95,6 +99,7 @@ lttctlincludedir="${includedir}/liblttctl"
 
 AC_SUBST(POPT_LIBS)
 AC_SUBST(UTIL_LIBS)
+AC_SUBST(THREAD_LIBS)
 AC_SUBST(lttvlibdir)
 AC_SUBST(lttvplugindir)
 #AC_SUBST(lttlibdir)
