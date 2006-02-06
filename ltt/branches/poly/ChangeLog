@@ -1,6 +1,9 @@
 LinuxTraceToolkit ChangeLog
 
-10/01/1006	LTTV 0.8.4
+06/02/2006	LTTV 0.8.10
+						Now handle correctly events with a 0xFFFF size (dynamically).
+						Make lttd multithreaded.
+10/01/2006	LTTV 0.8.4
 						Add SoftIRQ mode.
 						Fix state request from GUI detailed event list.
 

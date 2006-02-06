@@ -1958,6 +1958,10 @@ void ltt_update_event_size(LttTracefile *tf)
   tf->event.data_size = size;
   
   /* Check consistency between kernel and LTTV structure sizes */
+	if(tf->event.event_size == 0xFFFF) {
+		/* Event size too big to fit in the event size field */
+		tf->event.event_size = tf->event.data_size;
+	}
   g_assert(tf->event.data_size == tf->event.event_size);
 
   return;
