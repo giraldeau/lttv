@@ -1,5 +1,7 @@
 LinuxTraceToolkit ChangeLog
 
+06/02/2006	LTTV 0.8.11
+						Fix GtkTreeView using "vertical-separator" style property.
 06/02/2006	LTTV 0.8.10
 						Now handle correctly events with a 0xFFFF size (dynamically).
 						Make lttd multithreaded.

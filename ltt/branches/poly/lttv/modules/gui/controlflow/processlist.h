@@ -171,14 +171,20 @@ void copy_pixmap_to_screen(ProcessList *process_list,
     gint width, gint height);
 
 
-static inline gint get_cell_height(ProcessList *process_list, 
-		GtkTreeView *TreeView)
+static inline gint get_cell_height(GtkTreeView *TreeView)
 {
   gint height;
   GtkTreeViewColumn *column = gtk_tree_view_get_column(TreeView, 0);
   
   gtk_tree_view_column_cell_get_size(column, NULL, NULL, NULL, NULL, &height);
-  
+
+  gint vertical_separator;
+  gtk_widget_style_get (GTK_WIDGET (TreeView),
+      "vertical-separator", &vertical_separator,
+      NULL);
+
+  height += vertical_separator;
+
   return height;
 }
 
@@ -220,8 +226,7 @@ static inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
                     &hashed_process_data->y_iter);
   path_indices =  gtk_tree_path_get_indices (tree_path);
 
-  *height = get_cell_height(process_list,
-      (GtkTreeView*)process_list->process_list_widget);
+  *height = get_cell_height((GtkTreeView*)process_list->process_list_widget);
   *y = *height * path_indices[0];
   gtk_tree_path_free(tree_path);
 

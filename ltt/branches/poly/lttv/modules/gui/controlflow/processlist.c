@@ -21,6 +21,7 @@
 #endif
 
 #include <gtk/gtk.h>
+#include <gdk/gdk.h>
 #include <glib.h>
 #include <string.h>
 #include <stdlib.h>
@@ -366,6 +367,10 @@ ProcessList *processlist_construct(void)
   renderer = gtk_cell_renderer_text_new ();
   process_list->renderer = renderer;
 
+	gint vertical_separator;
+	gtk_widget_style_get (GTK_WIDGET (process_list->process_list_widget),
+			"vertical-separator", &vertical_separator,
+			NULL);
   gtk_cell_renderer_get_size(renderer,
       GTK_WIDGET(process_list->process_list_widget),
       NULL,
@@ -373,12 +378,14 @@ ProcessList *processlist_construct(void)
       NULL,
       NULL,
       &process_list->cell_height);
-  
+	
   guint ypad;
   g_object_get(G_OBJECT(renderer), "ypad", &ypad, NULL);
 
   process_list->cell_height += ypad;
-  
+  process_list->cell_height += vertical_separator;
+	
+
   column = gtk_tree_view_column_new_with_attributes ( "Process",
                 renderer,
                 "text",
