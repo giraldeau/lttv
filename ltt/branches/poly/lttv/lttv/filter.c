@@ -229,6 +229,9 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
       se->field = LTTV_FILTER_EVENT_FIELD;
     }
   } else {
+    g_string_free(f,TRUE);
+    f=g_ptr_array_remove_index(fp,0);
+
     g_warning("Unrecognized field in filter string");
   }
 
