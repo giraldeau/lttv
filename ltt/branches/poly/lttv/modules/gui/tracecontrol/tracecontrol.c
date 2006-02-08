@@ -46,6 +46,8 @@
 #include <sys/wait.h>
 #include <sys/poll.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sched.h>
 
 #define MAX_ARGS_LEN PATH_MAX * 10
 
@@ -447,26 +449,29 @@ static int execute_command(const gchar *command, const gchar *username,
     struct pollfd pollfd;
     int num_rdy;
     int num_hup = 0;
+		enum read_state { GET_LINE, GET_SEMI, GET_SPACE } read_state = GET_LINE;
 
+		retval = fcntl(fdpty, F_SETFL, O_WRONLY);
+		if(retval == -1) {
+			perror("Error in fcntl");
+			goto wait_child;
+		}
 
     /* Read the output from the child terminal before the prompt. If no data in
      * 200 ms, we stop reading to give the password */
     g_info("Reading from child console...");
-    sleep(1); /* make sure the child is ready */
     while(1) {
       pollfd.fd = fdpty;
       pollfd.events = POLLIN|POLLPRI|POLLERR|POLLHUP|POLLNVAL;
 
-      num_rdy = poll(&pollfd, 1, 200);
-#if 0
+      num_rdy = poll(&pollfd, 1, -1);
       if(num_rdy == -1) {
         perror("Poll error");
         goto wait_child;
       }
-#endif //0
       
-      /* Timeout : stop waiting for chars */
-      if(num_rdy == 0) break;
+      /* Timeout : Stop waiting for chars */
+      if(num_rdy == 0) goto wait_child;
 
       switch(pollfd.revents) {
         case POLLERR:
@@ -485,8 +490,31 @@ static int execute_command(const gchar *command, const gchar *username,
         case POLLIN:
           count = read (fdpty, buf, 256);
           if(count > 0) {
+						unsigned int i;
             buf[count] = '\0';
-            printf("%s", buf);
+            g_printf("%s", buf);
+						for(i=0; i<count; i++) {
+							switch(read_state) {
+								case GET_LINE:
+									if(buf[i] == '\n') {
+										read_state = GET_SEMI;
+										g_debug("Tracecontrol input line skip\n");
+									}
+									break;
+								case GET_SEMI:
+									if(buf[i] == ':') {
+										g_debug("Tracecontrol input  : marker found\n");
+										read_state = GET_SPACE;
+									}
+									break;
+								case GET_SPACE:
+									if(buf[i] == ' ') {
+										g_debug("Tracecontrol input space marker found\n");
+										goto write_password;
+									}
+									break;
+							}
+						}
           } else if(count == -1) {
             perror("Error in read");
             goto wait_child;
@@ -498,16 +526,26 @@ static int execute_command(const gchar *command, const gchar *username,
         goto wait_child;
       }
     }
-    
+write_password:
+		fsync(fdpty);
+		pollfd.fd = fdpty;
+		pollfd.events = POLLOUT|POLLERR|POLLHUP|POLLNVAL;
+
+		num_rdy = poll(&pollfd, 1, -1);
+		if(num_rdy == -1) {
+			perror("Poll error");
+			goto wait_child;
+		}
+
     /* Write the password */
     g_info("Got su prompt, now writing password...");
     int ret;
+		sleep(1);
     ret = write(fdpty, password, strlen(password));
     if(ret < 0) perror("Error in write");
     ret = write(fdpty, "\n", 1);
     if(ret < 0) perror("Error in write");
     fsync(fdpty);
-
     /* Take the output from the terminal and show it on the real console */
     g_info("Getting data from child terminal...");
     while(1) {
@@ -516,39 +554,33 @@ static int execute_command(const gchar *command, const gchar *username,
       pollfd.events = POLLIN|POLLPRI|POLLERR|POLLHUP|POLLNVAL;
 
       num_rdy = poll(&pollfd, 1, -1);
-#if 0
       if(num_rdy == -1) {
         perror("Poll error");
         goto wait_child;
       }
-#endif //0
       if(num_rdy == 0) break;
+	
+			if(pollfd.revents & (POLLERR|POLLNVAL)) {
+				g_warning("Error returned in polling fd\n");
+				num_hup++;
+			}
 
-      switch(pollfd.revents) {
-        case POLLERR:
-          g_warning("Error returned in polling fd\n");
-          num_hup++;
-          break;
-        case POLLHUP:
-          g_info("Polling FD : hung up.");
-          num_hup++;
-          break;
-        case POLLNVAL:
-          g_warning("Polling fd tells it is not open");
-          num_hup++;
-          break;
-        case POLLPRI:
-        case POLLIN:
-          count = read (fdpty, buf, 256);
-          if(count > 0) {
-            buf[count] = '\0';
-            printf("%s", buf);
-          } else if(count == -1) {
-            perror("Error in read");
-            goto wait_child;
-          }
-          break;
-      }
+			if(pollfd.revents & (POLLIN|POLLPRI) ) {
+				count = read (fdpty, buf, 256);
+				if(count > 0) {
+					buf[count] = '\0';
+					printf("%s", buf);
+				} else if(count == -1) {
+					perror("Error in read");
+					goto wait_child;
+				}
+			}
+
+			if(pollfd.revents & POLLHUP) {
+        g_info("Polling FD : hung up.");
+        num_hup++;
+			}
+
       if(num_hup > 0) goto wait_child;
     }
 wait_child:
@@ -577,7 +609,8 @@ wait_child:
     if(strcmp(fac_path, "") != 0)
       setenv("LTT_FACILITIES", fac_path, 1);
    
-    g_message("Executing (as %s) : %s\n", username, command);
+		/* One comment line (must be only one) */
+    g_printf("Executing (as %s) : %s\n", username, command);
     
     execlp("su", "su", "-p", "-c", command, username, NULL);
     exit(-1); /* not supposed to happen! */
