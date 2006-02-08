@@ -1706,7 +1706,6 @@ int after_fs_exec_hook(void *hook_data, void *call_data)
 
 /* after_event_enum_process_hook
  * 
- * DOES EXACTLY THE SAME AS after_schedchange_hook, for the "in" process.
  * Create the processlist entry for the child process. Put the last
  * position in x at the current time value.
  *
@@ -1786,38 +1785,12 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
                                     -1,
                                     pl_height);
         gtk_widget_queue_draw(drawing->drawing_area);
-  }
-  /* Set the current process */
-  process_list->current_hash_data[process_in->cpu] =
-                                             hashed_process_data_in;
-
-  if(ltt_time_compare(hashed_process_data_in->next_good_time,
-                          evtime) <= 0)
-  {
-    TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-    if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
-#endif //EXTRA_CHECK
-    Drawing_t *drawing = control_flow_data->drawing;
-    guint width = drawing->width;
-    guint new_x;
-    
-    convert_time_to_pixels(
-        time_window,
-        evtime,
-        width,
-        &new_x);
-
-    if(hashed_process_data_in->x.middle != new_x) {
-      hashed_process_data_in->x.middle = new_x;
-      hashed_process_data_in->x.middle_used = FALSE;
-      hashed_process_data_in->x.middle_marked = FALSE;
-    }
-  }
+  } else {
+	  processlist_set_name(process_list, process_in->name,
+												 hashed_process_data_in);
+  	processlist_set_ppid(process_list, process_in->ppid,
+												 hashed_process_data_in);
+	}
   return 0;
 }
 

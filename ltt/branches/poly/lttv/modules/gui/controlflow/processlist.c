@@ -530,6 +530,16 @@ void processlist_set_name(ProcessList *process_list,
         -1);
 }
 
+void processlist_set_ppid(ProcessList *process_list,
+    guint ppid,
+    HashedProcessData *hashed_process_data)
+{
+  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
+        PPID_COLUMN, ppid,
+        -1);
+}
+
+
 int processlist_add(  ProcessList *process_list,
       Drawing_t *drawing,
       guint pid,

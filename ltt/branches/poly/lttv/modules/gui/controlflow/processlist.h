@@ -145,6 +145,11 @@ void processlist_set_name(ProcessList *process_list,
     GQuark name,
     HashedProcessData *hashed_process_data);
 
+/* Set the ppid of a process */
+void processlist_set_ppid(ProcessList *process_list,
+    guint ppid,
+    HashedProcessData *hashed_process_data);
+
 
 /* Synchronize the list at the left and the drawing */
 void update_index_to_pixmap(ProcessList *process_list);
