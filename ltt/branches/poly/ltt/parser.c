@@ -1495,7 +1495,8 @@ void sequence_push(sequence_t *t, void *elem)
 
 void *sequence_pop(sequence_t *t) 
 {
-  return t->array[t->position--];
+	if(t->position == 0) printf("Error : trying to pop an empty sequence");
+  return t->array[--t->position];
 }
 
 
