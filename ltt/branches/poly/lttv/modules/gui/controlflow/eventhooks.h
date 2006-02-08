@@ -94,7 +94,7 @@ int before_process_release_hook(void *hook_data, void *call_data);
 int after_process_exit_hook(void *hook_data, void *call_data);
 int after_process_fork_hook(void *hook_data, void *call_data);
 int after_fs_exec_hook(void *hook_data, void *call_data);
-
+int after_event_enum_process_hook(void *hook_data, void *call_data);
 
 #if 0
 int before_process_hook(void *hook_data, void *call_data);

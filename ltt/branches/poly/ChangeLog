@@ -1,5 +1,7 @@
 LinuxTraceToolkit ChangeLog
 
+07/02/2006	LTTV 0.8.13
+						Add state dump.
 07/02/2006	LTTV 0.8.12
 						Fix tracontrol timing problem with su.
 06/02/2006	LTTV 0.8.11

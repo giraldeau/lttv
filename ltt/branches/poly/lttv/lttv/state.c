@@ -28,6 +28,7 @@
 #include <ltt/event.h>
 #include <ltt/type.h>
 #include <stdio.h>
+#include <string.h>
 
 #define PREALLOCATED_EXECUTION_STACK 10
 
@@ -37,7 +38,8 @@ GQuark
     LTT_FACILITY_KERNEL,
     LTT_FACILITY_KERNEL_ARCH,
     LTT_FACILITY_PROCESS,
-    LTT_FACILITY_FS;
+    LTT_FACILITY_FS,
+    LTT_FACILITY_STATEDUMP;
 
 /* Events Quarks */
 
@@ -54,7 +56,8 @@ GQuark
     LTT_EVENT_FORK,
     LTT_EVENT_EXIT,
     LTT_EVENT_FREE,
-    LTT_EVENT_EXEC;
+    LTT_EVENT_EXEC,
+    LTT_EVENT_ENUM_PROCESS_STATE;
 
 /* Fields Quarks */
 
@@ -69,7 +72,11 @@ GQuark
     LTT_FIELD_PARENT_PID,
     LTT_FIELD_CHILD_PID,
     LTT_FIELD_PID,
-    LTT_FIELD_FILENAME;
+    LTT_FIELD_FILENAME,
+    LTT_FIELD_NAME,
+    LTT_FIELD_MODE,
+    LTT_FIELD_SUBMODE,
+    LTT_FIELD_STATUS;
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -194,7 +201,7 @@ restore_init_state(LttvTraceState *self)
   /* Put the per cpu running_process to beginning state : process 0. */
   for(i=0; i< nb_cpus; i++) {
     self->running_process[i] = lttv_state_create_process(self, NULL, i, 0,
-        &ltt_time_zero);
+        LTTV_STATE_UNNAMED, &ltt_time_zero);
     self->running_process[i]->state->s = LTTV_STATE_RUN;
     self->running_process[i]->cpu = i;
   }
@@ -995,7 +1002,7 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
 
 LttvProcessState *
 lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent, 
-    guint cpu, guint pid, const LttTime *timestamp)
+    guint cpu, guint pid, GQuark name, const LttTime *timestamp)
 {
   LttvProcessState *process = g_new(LttvProcessState, 1);
 
@@ -1007,6 +1014,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
 
   process->pid = pid;
   process->cpu = cpu;
+  process->name = name;
   //process->last_cpu = tfs->cpu_name;
   //process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)tfs)->tf);
   g_info("Process %u, core %p", process->pid, process);
@@ -1014,7 +1022,6 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
 
   if(parent) {
     process->ppid = parent->pid;
-    process->name = parent->name;
     process->creation_time = *timestamp;
   }
 
@@ -1024,7 +1031,6 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
 
   else {
     process->ppid = 0;
-    process->name = LTTV_STATE_UNNAMED;
     process->creation_time = ltt_time_zero;
   }
 
@@ -1079,7 +1085,7 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
   
   /* Put ltt_time_zero creation time for unexisting processes */
   if(unlikely(process == NULL)) process = lttv_state_create_process(ts,
-                NULL, cpu, pid, timestamp);
+                NULL, cpu, pid, LTTV_STATE_UNNAMED, timestamp);
   return process;
 }
 
@@ -1290,7 +1296,6 @@ static gboolean process_fork(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
-  LttField *f;
   guint parent_pid;
   guint child_pid;
   LttvProcessState *zombie_process;
@@ -1300,12 +1305,10 @@ static gboolean process_fork(void *hook_data, void *call_data)
   LttvProcessState *child_process;
 
   /* Parent PID */
-  f = thf->f1;
-  parent_pid = ltt_event_get_unsigned(e, f);
+  parent_pid = ltt_event_get_unsigned(e, thf->f1);
 
   /* Child PID */
-  f = thf->f2;
-  child_pid = ltt_event_get_unsigned(e, f);
+  child_pid = ltt_event_get_unsigned(e, thf->f2);
 
   /* Mathieu : it seems like the process might have been scheduled in before the
    * fork, and, in a rare case, might be the current process. This might happen
@@ -1334,7 +1337,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
   child_process = lttv_state_find_process(ts, ANY_CPU, child_pid);
   if(child_process == NULL) {
     lttv_state_create_process(ts, process, cpu,
-                              child_pid, &s->parent.timestamp);
+                              child_pid, LTTV_STATE_UNNAMED, &s->parent.timestamp);
   } else {
     /* The process has already been created :  due to time imprecision between
      * multiple CPUs : it has been scheduled in before creation. Note that we
@@ -1444,8 +1447,84 @@ static gboolean process_exec(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean enum_process_state(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+	//It's slow : optimise later by doing this before reading trace.
+	LttEventType *et = ltt_event_eventtype(e);
+	//
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  guint parent_pid;
+  guint pid;
+  gchar * command;
+  guint cpu = ltt_tracefile_num(s->parent.tf);
+  LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttvProcessState *process = ts->running_process[cpu];
+  LttvProcessState *parent_process;
+	LttField *f4, *f5, *f6;
+	GQuark mode, submode, status;
 
+  /* PID */
+  pid = ltt_event_get_unsigned(e, thf->f1);
 
+  /* Parent PID */
+  parent_pid = ltt_event_get_unsigned(e, thf->f2);
+
+  /* Command name */
+  command = ltt_event_get_string(e, thf->f3);
+
+	/* mode */
+	f4 = ltt_eventtype_field_by_name(et, LTT_FIELD_MODE);
+	mode = ltt_enum_string_get(ltt_field_type(f4), 
+			ltt_event_get_unsigned(e, f4));
+
+	/* submode */
+	f5 = ltt_eventtype_field_by_name(et, LTT_FIELD_SUBMODE);
+	submode = ltt_enum_string_get(ltt_field_type(f5), 
+			ltt_event_get_unsigned(e, f5));
+
+	/* status */
+	f6 = ltt_eventtype_field_by_name(et, LTT_FIELD_STATUS);
+	status = ltt_enum_string_get(ltt_field_type(f6), 
+			ltt_event_get_unsigned(e, f6));
+
+  /* The process might exist if a process was forked while performing the sate dump. */
+  process = lttv_state_find_process(ts, ANY_CPU, pid);
+  if(process == NULL) {
+    parent_process = lttv_state_find_process(ts, ANY_CPU, parent_pid);
+    process = lttv_state_create_process(ts, parent_process, cpu,
+                              pid, g_quark_from_string(command),
+															&s->parent.timestamp);
+	
+		/* Keep the stack bottom : a running user mode */
+
+		if(mode == LTTV_STATE_USER_MODE) {
+			/* Only keep the bottom */
+			process->execution_stack = g_array_set_size(process->execution_stack, 1);
+		} else {
+			/* On top of it : */
+			LttvExecutionState *es;
+			es = process->state = &g_array_index(process->execution_stack, 
+					LttvExecutionState, 1);
+			es->t = mode;
+			es->s = status;
+			es->n = submode;
+		}
+
+  } else {
+    /* The process has already been created :
+		 * Probably was forked while dumping the process state or
+		 * was simply scheduled in prior to get the state dump event.
+     */
+    process->ppid = parent_pid;
+		process->name = g_quark_from_string(command);
+		/* Don't mess around with the stack, it will eventually become
+		 * ok after the end of state dump. */
+  }
+  
+  return FALSE;
+}
 
 gint lttv_state_hook_add_event_hooks(void *hook_data, void *call_data)
 {
@@ -1483,8 +1562,8 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 13);
-    hooks = g_array_set_size(hooks, 13);
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 14);
+    hooks = g_array_set_size(hooks, 14);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
@@ -1564,8 +1643,14 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         process_exec, NULL, &g_array_index(hooks, LttvTraceHook, 12));
     g_assert(!ret);
 
+     /* statedump-related hooks */
+    ret = lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
+        LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
+        enum_process_state, NULL, &g_array_index(hooks, LttvTraceHook, 13));
+    g_assert(!ret);
 
-
+    
     /* Add these hooks to each event_by_id hooks list */
 
     nb_tracefile = ts->parent.tracefiles->len;
@@ -2188,21 +2273,21 @@ lttv_tracefile_state_get_type(void)
 static void module_init()
 {
   LTTV_STATE_UNNAMED = g_quark_from_string("unnamed");
-  LTTV_STATE_MODE_UNKNOWN = g_quark_from_string("unknown execution mode");
-  LTTV_STATE_USER_MODE = g_quark_from_string("user mode");
-  LTTV_STATE_WAIT_FORK = g_quark_from_string("wait fork");
-  LTTV_STATE_SYSCALL = g_quark_from_string("system call");
-  LTTV_STATE_TRAP = g_quark_from_string("trap");
-  LTTV_STATE_IRQ = g_quark_from_string("irq");
-  LTTV_STATE_SOFT_IRQ = g_quark_from_string("softirq");
-  LTTV_STATE_SUBMODE_UNKNOWN = g_quark_from_string("unknown submode");
-  LTTV_STATE_SUBMODE_NONE = g_quark_from_string("(no submode)");
-  LTTV_STATE_WAIT_CPU = g_quark_from_string("wait for cpu");
-  LTTV_STATE_EXIT = g_quark_from_string("exiting");
-  LTTV_STATE_ZOMBIE = g_quark_from_string("zombie");
-  LTTV_STATE_WAIT = g_quark_from_string("wait for I/O");
-  LTTV_STATE_RUN = g_quark_from_string("running");
-  LTTV_STATE_DEAD = g_quark_from_string("dead");
+  LTTV_STATE_MODE_UNKNOWN = g_quark_from_string("MODE_UNKNOWN");
+  LTTV_STATE_USER_MODE = g_quark_from_string("USER_MODE");
+  LTTV_STATE_SYSCALL = g_quark_from_string("SYSCALL");
+  LTTV_STATE_TRAP = g_quark_from_string("TRAP");
+  LTTV_STATE_IRQ = g_quark_from_string("IRQ");
+  LTTV_STATE_SOFT_IRQ = g_quark_from_string("SOFTIRQ");
+  LTTV_STATE_SUBMODE_UNKNOWN = g_quark_from_string("UNKNOWN");
+  LTTV_STATE_SUBMODE_NONE = g_quark_from_string("NONE");
+  LTTV_STATE_WAIT_FORK = g_quark_from_string("WAIT_FORK");
+  LTTV_STATE_WAIT_CPU = g_quark_from_string("WAIT_CPU");
+  LTTV_STATE_EXIT = g_quark_from_string("EXIT");
+  LTTV_STATE_ZOMBIE = g_quark_from_string("ZOMBIE");
+  LTTV_STATE_WAIT = g_quark_from_string("WAIT");
+  LTTV_STATE_RUN = g_quark_from_string("RUN");
+  LTTV_STATE_DEAD = g_quark_from_string("DEAD");
   LTTV_STATE_TRACEFILES = g_quark_from_string("tracefiles");
   LTTV_STATE_PROCESSES = g_quark_from_string("processes");
   LTTV_STATE_PROCESS = g_quark_from_string("process");
@@ -2221,6 +2306,7 @@ static void module_init()
   LTT_FACILITY_KERNEL_ARCH = g_quark_from_string("kernel_arch");
   LTT_FACILITY_PROCESS    = g_quark_from_string("process");
   LTT_FACILITY_FS    = g_quark_from_string("fs");
+  LTT_FACILITY_STATEDUMP    = g_quark_from_string("statedump");
 
   
   LTT_EVENT_SYSCALL_ENTRY = g_quark_from_string("syscall_entry");
@@ -2236,6 +2322,7 @@ static void module_init()
   LTT_EVENT_EXIT          = g_quark_from_string("exit");
   LTT_EVENT_FREE          = g_quark_from_string("free");
   LTT_EVENT_EXEC          = g_quark_from_string("exec");
+  LTT_EVENT_ENUM_PROCESS_STATE  = g_quark_from_string("enumerate_process_state");
 
 
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");
@@ -2249,6 +2336,10 @@ static void module_init()
   LTT_FIELD_CHILD_PID     = g_quark_from_string("child_pid");
   LTT_FIELD_PID           = g_quark_from_string("pid");
   LTT_FIELD_FILENAME      = g_quark_from_string("filename");
+  LTT_FIELD_NAME          = g_quark_from_string("name");
+  LTT_FIELD_MODE          = g_quark_from_string("mode");
+  LTT_FIELD_SUBMODE       = g_quark_from_string("submode");
+  LTT_FIELD_STATUS        = g_quark_from_string("status");
   
 }
 

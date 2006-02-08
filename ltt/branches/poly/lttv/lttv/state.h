@@ -59,7 +59,8 @@ extern GQuark
     LTT_FACILITY_KERNEL,
     LTT_FACILITY_KERNEL_ARCH,
     LTT_FACILITY_PROCESS,
-    LTT_FACILITY_FS;
+    LTT_FACILITY_FS,
+		LTT_FACILITY_STATEDUMP;
 
 /* Events Quarks */
 
@@ -76,7 +77,8 @@ extern GQuark
     LTT_EVENT_FORK,
     LTT_EVENT_EXIT,
     LTT_EVENT_FREE,
-    LTT_EVENT_EXEC;
+    LTT_EVENT_EXEC,
+		LTT_EVENT_ENUM_PROCESS_STATE;
 
 /* Fields Quarks */
 
@@ -91,7 +93,11 @@ extern GQuark
     LTT_FIELD_PARENT_PID,
     LTT_FIELD_CHILD_PID,
     LTT_FIELD_PID,
-    LTT_FIELD_NAME;
+    LTT_FIELD_FILENAME,
+    LTT_FIELD_NAME,
+    LTT_FIELD_MODE,
+    LTT_FIELD_SUBMODE,
+    LTT_FIELD_STATUS;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
@@ -213,8 +219,8 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
     LttTime *timestamp);
 
 LttvProcessState *
-lttv_state_create_process(LttvTraceState *ts, LttvProcessState *parent, 
-    guint cpu, guint pid, const LttTime *timestamp);
+lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent, 
+    guint cpu, guint pid, GQuark name, const LttTime *timestamp);
 
 void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp);
 

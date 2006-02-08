@@ -1,6 +1,37 @@
 <facility name=statedump>
   <description>The statedump facility contains the events generated at trace startup</description>
 
+  <type name=execution_mode>
+    <enum>
+      <label name=USER_MODE value=0/> <description>Task is executing user code</description>
+      <label name=SYSCALL value=1/> <description>Task is in a system call</description>
+      <label name=TRAP value=2/> <description>Task is in a trap</description>
+      <label name=IRQ value=3/> <description></description>
+      <label name=SOFTIRQ value=4/> <description></description>
+      <label name=MODE_UNKNOWN value=5/> <description>Execution mode cannot be determined for this task</description>
+    </enum>
+  </type>
+
+  <type name=execution_submode>
+    <enum>
+      <label name=NONE value=0/> <description>No execution submode to report</description>
+      <label name=UNKNOWN value=1/> <description>Task execution submode cannot be determined</description>
+    </enum>
+  </type>
+
+  <type name=process_status>
+    <enum>
+      <label name=UNNAMED value=0/> <description></description>
+      <label name=WAIT_FORK value=1/> <description></description>
+      <label name=WAIT_CPU value=2/> <description></description>
+      <label name=EXIT value=3/> <description></description>
+      <label name=ZOMBIE value=4/> <description></description>
+      <label name=WAIT value=5/> <description></description>
+      <label name=RUN value=6/> <description></description>
+      <label name=DEAD value=7/> <description></description>
+    </enum>
+  </type>
+
   <event name=enumerate_file_descriptors>
     <description>List of open file descriptors</description>
       <field name="name"><description>File name</description><string/></field>
@@ -10,6 +41,7 @@
 
   <event name=enumerate_vm_maps>
     <description>List of active vm maps</description>
+      <field name="PID"><description>Process identifier</description><uint size=4/></field>
       <field name="start"> <description>VM's start address</description> <pointer/> </field>
       <field name="end"> <description>VM's end address</description> <pointer/> </field>
       <field name="flags"> <description>VM area flags</description> <uint size=1/> </field>
@@ -29,6 +61,16 @@
       <field name="name"> <description>Interrupt name</description> <string/> </field>
       <field name="action"> <description>action triggered by interrupt</description> <string/> </field>
       <field name="num"> <description>Interrupt number</description> <uint size=4/> </field>
+  </event>
+
+  <event name=enumerate_process_state>
+    <description>State of each process when statedump is performed</description>
+      <field name="pid"><description>Process identifier</description><uint size=4/></field>
+      <field name="parent_pid"><description>Parent process identifier</description><uint size=4/></field>
+      <field name="name"> <description>Process name</description><string/></field>
+      <field name="mode"> <description>Execution mode</description> <typeref name=execution_mode/> </field>
+      <field name="submode"> <description>Execution submode</description> <typeref name=execution_submode/> </field>
+      <field name="status"> <description>Process status</description> <typeref name=process_status/> </field>
   </event>
 
   <event name=statedump_end>

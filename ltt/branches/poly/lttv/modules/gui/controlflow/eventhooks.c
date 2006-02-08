@@ -300,8 +300,10 @@ static inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
     prop_line.color = drawing_colors[COL_EXIT];
   } else if(process->state->s == LTTV_STATE_UNNAMED) {
     prop_line.color = drawing_colors[COL_UNNAMED];
-  } else
+  } else {
+		g_critical("unknown state : %s", g_quark_to_string(process->state->s));
     g_assert(FALSE);   /* UNKNOWN STATE */
+	}
   
   return prop_line;
 
@@ -1702,7 +1704,122 @@ int after_fs_exec_hook(void *hook_data, void *call_data)
 
 }
 
+/* after_event_enum_process_hook
+ * 
+ * DOES EXACTLY THE SAME AS after_schedchange_hook, for the "in" process.
+ * Create the processlist entry for the child process. Put the last
+ * position in x at the current time value.
+ *
+ * @param hook_data ControlFlowData structure of the viewer. 
+ * @param call_data Event context.
+ *
+ * This function adds items to be drawn in a queue for each process.
+ * 
+ */
+int after_event_enum_process_hook(void *hook_data, void *call_data)
+{
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
 
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+
+  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+
+  LttEvent *e;
+  e = ltt_tracefile_get_event(tfc->tf);
+
+  LttTime evtime = ltt_event_time(e);
+
+  /* Add process to process list (if not present) */
+  LttvProcessState *process_in;
+  LttTime birth;
+  guint pl_height = 0;
+  HashedProcessData *hashed_process_data_in = NULL;
+
+  ProcessList *process_list = control_flow_data->process_list;
+  
+  guint pid_in;
+  {
+    pid_in = ltt_event_get_long_unsigned(e, thf->f1);
+  }
+
+
+  /* Find process pid_in in the list... */
+  process_in = lttv_state_find_process(ts, ANY_CPU, pid_in);
+  //process_in = tfs->process;
+  //guint cpu = ltt_tracefile_num(tfc->tf);
+  //process_in = ts->running_process[cpu];
+  /* It should exist, because we are after the state update. */
+#ifdef EXTRA_CHECK
+  //g_assert(process_in != NULL);
+#endif //EXTRA_CHECK
+  birth = process_in->creation_time;
+
+  hashed_process_data_in = processlist_get_process_data(process_list,
+          pid_in,
+          process_in->cpu,
+          &birth,
+          tfc->t_context->index);
+  if(hashed_process_data_in == NULL)
+  {
+		if(pid_in != 0 && pid_in == process_in->ppid)
+			g_critical("TEST %u , %u", pid_in, process_in->ppid);
+    g_assert(pid_in == 0 || pid_in != process_in->ppid);
+    ProcessInfo *process_info;
+    Drawing_t *drawing = control_flow_data->drawing;
+    /* Process not present */
+    processlist_add(process_list,
+        drawing,
+        pid_in,
+        process_in->cpu,
+        process_in->ppid,
+        &birth,
+        tfc->t_context->index,
+        process_in->name,
+        &pl_height,
+        &process_info,
+        &hashed_process_data_in);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
+  }
+  /* Set the current process */
+  process_list->current_hash_data[process_in->cpu] =
+                                             hashed_process_data_in;
+
+  if(ltt_time_compare(hashed_process_data_in->next_good_time,
+                          evtime) <= 0)
+  {
+    TimeWindow time_window = 
+    lttvwindow_get_time_window(control_flow_data->tab);
+
+#ifdef EXTRA_CHECK
+    if(ltt_time_compare(evtime, time_window.start_time) == -1
+        || ltt_time_compare(evtime, time_window.end_time) == 1)
+            return;
+#endif //EXTRA_CHECK
+    Drawing_t *drawing = control_flow_data->drawing;
+    guint width = drawing->width;
+    guint new_x;
+    
+    convert_time_to_pixels(
+        time_window,
+        evtime,
+        width,
+        &new_x);
+
+    if(hashed_process_data_in->x.middle != new_x) {
+      hashed_process_data_in->x.middle = new_x;
+      hashed_process_data_in->x.middle_used = FALSE;
+      hashed_process_data_in->x.middle_marked = FALSE;
+    }
+  }
+  return 0;
+}
 
 
 gint update_time_window_hook(void *hook_data, void *call_data)
