@@ -1,5 +1,9 @@
 LinuxTraceToolkit ChangeLog
 
+09/02/2006	LTTV 0.8.15
+						Fix error handling of filter.c.
+08/02/2006	LTTV 0.8.14
+						Fix sequence pop in parser.c.
 07/02/2006	LTTV 0.8.13
 						Add state dump.
 07/02/2006	LTTV 0.8.12
