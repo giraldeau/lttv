@@ -555,6 +555,8 @@ void parseFields(parse_file_t *in, field_t *f,
 		getRAnglebracket(in);
 
 		f->description = getDescription(in);
+	} else {
+		f->description = NULL;
 	}
 
   //<int size=...>
