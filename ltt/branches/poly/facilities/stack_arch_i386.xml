@@ -1,0 +1,25 @@
+<facility name=stack_arch arch=i386>
+  <description>The stack facility has events related to getting process stack.</description>
+
+  <event name=process_dump>
+    <description>Process EIP on the user stack</description>
+    <field name="eip"> <description>Sequence of EIP</description>
+			<sequence custom_write/>
+				<uint>
+				<ulong>
+			</sequence>
+		</field>
+  </event>
+
+  <event name=kernel_dump>
+    <description>EIP on the kernel stack</description>
+    <field name="eip"> <description>Sequence of EIP</description>
+			<sequence custom_write/>
+				<uint>
+				<ulong>
+			</sequence>
+		</field>
+  </event>
+
+
+</facility>

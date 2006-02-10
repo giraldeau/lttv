@@ -1,0 +1,24 @@
+<facility name=locking>
+  <description>The locking facility instruments the kernel locking.</description>
+  <event name=spin_lock_wait>
+    <description>Takes a spinlock</description>
+    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
+  </event>
+
+  <event name=spin_lock_try>
+    <description>Tries a spinlock</description>
+    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
+  </event>
+
+  <event name=spin_lock_entry>
+    <description>Get a spinlock</description>
+    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
+  </event>
+
+  <event name=spin_lock_exit>
+    <description>Releases a spinlock</description>
+    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
+  </event>
+
+
+</facility>
