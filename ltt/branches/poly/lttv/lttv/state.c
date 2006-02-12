@@ -1336,7 +1336,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
   // g_assert(process->pid == parent_pid);
   child_process = lttv_state_find_process(ts, ANY_CPU, child_pid);
   if(child_process == NULL) {
-    lttv_state_create_process(ts, process, cpu,
+    child_process = lttv_state_create_process(ts, process, cpu,
                               child_pid, LTTV_STATE_UNNAMED, &s->parent.timestamp);
   } else {
     /* The process has already been created :  due to time imprecision between
@@ -1349,6 +1349,8 @@ static gboolean process_fork(void *hook_data, void *call_data)
                     before the fork event */
     child_process->ppid = process->pid;
   }
+	g_assert(child_process->name == LTTV_STATE_UNNAMED);
+	child_process->name = process->name;
 
   return FALSE;
 }
@@ -1498,7 +1500,8 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
 															&s->parent.timestamp);
 	
 		/* Keep the stack bottom : a running user mode */
-
+#if 0
+		/* Disabled because of inconsistencies in the current statedump states. */
 		if(mode == LTTV_STATE_USER_MODE) {
 			/* Only keep the bottom */
 			process->execution_stack = g_array_set_size(process->execution_stack, 1);
@@ -1511,7 +1514,17 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
 			es->s = status;
 			es->n = submode;
 		}
+#endif //0
 
+		/* UNKNOWN STATE */
+		{
+			LttvExecutionState *es;
+			es = process->state = &g_array_index(process->execution_stack, 
+					LttvExecutionState, 1);
+			es->t = LTTV_STATE_MODE_UNKNOWN;
+			es->s = LTTV_STATE_UNNAMED;
+			es->n = LTTV_STATE_SUBMODE_UNKNOWN;
+		}
   } else {
     /* The process has already been created :
 		 * Probably was forked while dumping the process state or

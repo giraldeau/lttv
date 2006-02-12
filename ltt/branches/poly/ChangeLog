@@ -1,5 +1,8 @@
 LinuxTraceToolkit ChangeLog
 
+11/02/2006	LTTV 0.8.19
+						Copy process names upon fork.
+						Put statedump to "unknown" mode until ltt-statedump is fixed.
 09/02/2006	LTTV 0.8.15
 						Fix error handling of filter.c.
 08/02/2006	LTTV 0.8.14
