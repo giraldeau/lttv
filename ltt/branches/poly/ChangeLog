@@ -1,5 +1,8 @@
 LinuxTraceToolkit ChangeLog
 
+15/02/2006	LTTV 0.8.20
+						Fix end of trace NULL pointer problem in debug output of
+						lttvwindow.
 11/02/2006	LTTV 0.8.19
 						Copy process names upon fork.
 						Put statedump to "unknown" mode until ltt-statedump is fixed.

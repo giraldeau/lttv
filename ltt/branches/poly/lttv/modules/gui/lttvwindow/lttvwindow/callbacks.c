@@ -1090,6 +1090,8 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
 
         } else {
           LttTime pos_time;
+					LttvTracefileContext *tfc =
+						lttv_traceset_context_get_current_tfc(tsc);
           /* Else, the first request in list_in is a position request */
           /* If first req in list_in pos != current pos */
           g_assert(events_request->start_position != NULL);
@@ -1098,10 +1100,16 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                       events_request->start_position).tv_sec,
                  lttv_traceset_context_position_get_time(
                       events_request->start_position).tv_nsec);
-
-          g_debug("SEEK POS context time : %lu, %lu", 
-               lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_sec,
-               lttv_traceset_context_get_current_tfc(tsc)->timestamp.tv_nsec);
+					
+					if(tfc) {
+						g_debug("SEEK POS context time : %lu, %lu", 
+							 tfc->timestamp.tv_sec,
+							 tfc->timestamp.tv_nsec);
+					} else {
+						g_debug("SEEK POS context time : %lu, %lu", 
+							 ltt_time_infinite.tv_sec,
+							 ltt_time_infinite.tv_nsec);
+					}
           g_assert(events_request->start_position != NULL);
           if(lttv_traceset_context_ctx_pos_compare(tsc,
                      events_request->start_position) != 0) {
