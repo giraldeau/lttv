@@ -233,6 +233,80 @@ will be scheduled in.
 
 
 
+Major enhancement :
+
+* Buffer pool *
+
+The problem with the design, up to now, is if an heavily threaded application
+launches many threads that has a short lifetime : it will allocate memory for
+each traced thread, consuming time and it will create an incredibly high
+number of files in the trace (or per thread).
+
+(thanks to Matthew Khouzam)
+The solution to this sits in the use of a buffer poll : We typically create a
+buffer pool of a specified size (say, 10 buffers by default, alterable by the
+user), each 8k in size (4k for normal trace, 4k for facility channel), for a
+total of 80kB of memory. It has to be tweaked to the maximum number of
+expected threads running at once, or it will have to grow dynamically (thus
+impacting on the trace).
+
+A typical approach to dynamic growth is to double the number of allocated
+buffers each time a threashold near the limit is reached.
+
+Each channel would be found as :
+
+trace_name/user/facilities_0
+trace_name/user/cpu_0
+trace_name/user/facilities_1
+trace_name/user/cpu_1
+...
+
+When a thread asks for being traced, it gets a buffer from free buffers pool. If
+the number of available buffers falls under a threshold, the pool is marked for
+expansion and the thread gets its buffer quickly. The expansion will be executed
+a little bit later by a worker thread. If however, the number of available
+buffer is 0, then an "emergency" reservation will be done, allocating only one
+buffer. The goal of this is to modify the thread fork time as less as possible.
+
+When a thread releases a buffer (the thread terminates), a buffer switch is
+performed, so the data can be flushed to disk and no other thread will mess
+with it or render the buffer unreadable.
+
+Upon trace creation, the pre-allocated pool is allocated. Upon trace
+destruction, the threads are first informed of the trace destruction, any
+pending worker thread (for pool allocation) is cancelled and then the pool is
+released. Buffers used by threads at this moment but not mapped for reading
+will be simply destroyed (as their refcount will fall to 0). It means that
+between the "trace stop" and "trace destroy", there should be enough time to let
+the lttd daemon open the newly created channels or they will be lost.
+
+Upon buffer switch, the reader can read directly from the buffer. Note that when
+the reader finish reading a buffer, if the associated thread writer has
+exited, it must fill the buffer with zeroes and put it back into the free pool.
+In the case where the trace is destroyed, it must just derement its refcount (as
+it would do otherwise) and the buffer will be destroyed.
+
+This pool will reduce the number of trace files created to the order of the
+number of threads present in the system at a given time.
+
+A worse cast scenario is 32768 processes traced at the same time, for a total
+amount of 256MB of buffers. If a machine has so many threads, it probably have
+enough memory to handle this.
+
+In flight recorder mode, it would be interesting to use a LRU algorithm to
+choose which buffer from the pool we must take for a newly forked thread. A
+simple queue would do it.
+
+SMP : per cpu pools ? -> no, L1 and L2 caches are typically too small to be
+impacted by the fact that a reused buffer is on a different or the same CPU.
+
+
+
+
+
+
+
+
 
 
 
