@@ -2658,6 +2658,10 @@ gint check_fields_compatibility(LttEventType *event_type1,
     different = 1;
     goto end;
   }
+	if(type1->network != type2->network) {
+		different = 1;
+		goto end;
+	}
  
   switch(type1->type_class) {
     case LTT_INT_FIXED:

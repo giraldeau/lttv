@@ -226,6 +226,7 @@ struct _LttType{
   GHashTable *enum_map;                 //maps enum labels to numbers.
   GArray *fields;     // Array of LttFields, for array, sequence, union, struct.
   GData *fields_by_name;
+	guint	network;	// Is the type in network byte order ?
 };
 
 struct _LttEventType{

@@ -1685,7 +1685,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         }
       }
     }
-    lttv_attribute_find(self->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
+    lttv_attribute_find(ts->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
     *(val.v_pointer) = hooks;
   }
 }
@@ -1720,7 +1720,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = LTTV_TRACE_STATE(self->parent.traces[i]);
-    lttv_attribute_find(self->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
+    lttv_attribute_find(ts->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
     hooks = *(val.v_pointer);
 
     /* Remove these hooks from each event_by_id hooks list */

@@ -183,6 +183,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
   t->fmt = NULL;
   t->size = 0;
   t->custom_write = 0;
+	t->network = 0;
   
   while(1) {
     token = getToken(in); 
@@ -205,7 +206,9 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
       t->size = getSize(in);
     } else if(!strcmp("custom_write", token)) {
       t->custom_write = 1;
-    }
+    } else if(!strcmp("network", token)) {
+			t->network = 1;
+		}
   }
 }
 
@@ -327,7 +330,7 @@ void getFieldAttributes(parse_file_t *in, field_t *f)
       else if(car == '\"') f->name = allocAndCopy(getQuotedString(in));
       else f->name = allocAndCopy(getName(in));
     }
-  }
+	}
 }
 
 char *getNameAttribute(parse_file_t *in)

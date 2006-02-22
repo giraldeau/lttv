@@ -294,6 +294,7 @@ void construct_fields(LttFacility *fac,
   type->enum_map = NULL;
   type->fields = NULL;
   type->fields_by_name = NULL;
+	type->network = td->network;
 
   switch(td->type) {
     case INT_FIXED:
