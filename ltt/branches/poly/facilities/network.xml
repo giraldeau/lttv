@@ -3,8 +3,7 @@
 
   <event name=packet_in>
     <description>A packet is arriving</description>
-    <field name="skbuff"> <description>Socket buffer pointer : identify the
-		socket buffer</description> <pointer/> </field>
+    <field name="skbuff"> <description>Socket buffer pointer : identify the socket buffer</description> <pointer/> </field>
     <field name="protocol"> <description>Protocol of the packet</description> <uint size=2/> </field>
   </event>
 
