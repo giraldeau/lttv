@@ -97,11 +97,26 @@ int getSizeindex(unsigned int value)
 unsigned long long int getSize(parse_file_t *in)
 {
   char *token;
+	int has_quotes = 0;
+	unsigned long long int ret;
 
   token = getToken(in);
+	if(token[0] == '"') {
+		has_quotes = 1;
+		token = getToken(in);
+	}
   if(in->type == NUMBER) {
-		return strtoull(token, NULL, 0);
-  }
+		ret = strtoull(token, NULL, 0);
+  } else {
+		goto error;
+	}
+	if(has_quotes) {
+		token = getToken(in);
+		if(token[0] != '"') goto error;
+	}
+		
+	return ret;
+error:
   in->error(in,"incorrect size specification");
   return -1;
 }
@@ -360,21 +375,40 @@ char *getNameAttribute(parse_file_t *in)
 
 
 //for <label name=label_name value=n format="..."/>, value is an option
-char * getValueStrAttribute(parse_file_t *in)
+//Return value : 0 : no value,   1 : has a value
+int getValueAttribute(parse_file_t *in, long long *value)
 {
   char * token;
+	int has_quotes = 0;
 
   token = getToken(in); 
   if(strcmp("/",token) == 0){
     ungetToken(in);
-    return NULL;
+    return 0;
   }
   
   if(strcmp("value",token))in->error(in,"value was expected");
   getEqual(in);
   token = getToken(in);
-  if(in->type != NUMBER) in->error(in,"number was expected");
-  return token;  
+
+	if(token[0] == '"') {
+		has_quotes = 1;
+		token = getToken(in);
+	}
+  if(in->type == NUMBER) {
+		*value = strtoll(token, NULL, 0);
+  } else {
+		goto error;
+	}
+	if(has_quotes) {
+		token = getToken(in);
+		if(token[0] != '"') goto error;
+	}
+  return 1;
+
+error:
+  in->error(in,"incorrect size specification");
+  return 0;
 }
 
 char * getDescription(parse_file_t *in)
@@ -732,7 +766,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
   }
   else if(strcmp(token,"enum") == 0) {
     char * str;
-    int value = -1;
+    long long value = -1;
 
     t->type = ENUM;
     sequence_init(&(t->labels));
@@ -752,13 +786,15 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     token = getToken(in); //"label" or "/"
     while(strcmp("label",token) == 0){
       int *label_value = malloc(sizeof(int));
+			int has_value = 0;
+			long long loc_value;
       
       str   = allocAndCopy(getNameAttribute(in));
-      token = getValueStrAttribute(in);
+      has_value = getValueAttribute(in, &loc_value);
       
      	sequence_push(&(t->labels),str);
 
-      if(token) value = strtol(token, NULL, 0);
+      if(has_value) value = loc_value;
       else value++;
 
       *label_value = value;

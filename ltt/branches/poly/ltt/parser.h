@@ -172,8 +172,7 @@ void generateChecksum(char * facName,
 char * getNameAttribute(parse_file_t *in);
 char * getFormatAttribute(parse_file_t *in);
 int    getSizeAttribute(parse_file_t *in);
-int    getValueAttribute(parse_file_t *in);
-char * getValueStrAttribute(parse_file_t *in);
+int	getValueAttribute(parse_file_t *in, long long *value);
 
 char * getDescription(parse_file_t *in);
 
