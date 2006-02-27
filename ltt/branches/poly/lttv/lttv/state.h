@@ -75,6 +75,7 @@ extern GQuark
     LTT_EVENT_SOFT_IRQ_EXIT,
     LTT_EVENT_SCHEDCHANGE,
     LTT_EVENT_FORK,
+    LTT_EVENT_KERNEL_THREAD,
     LTT_EVENT_EXIT,
     LTT_EVENT_FREE,
     LTT_EVENT_EXEC,
@@ -204,6 +205,7 @@ typedef struct _LttvProcessState {
        * (Mathieu) */
   guint cpu;                /* CPU where process is scheduled (being either in
                                the active or inactive runqueue)*/
+	gboolean kernel_thread;		/* Is this thread a kernel_thread ? */
 //  guint  last_tracefile_index;    /* index in the trace for cpu tracefile */
   /* opened file descriptors, address map?... */
 } LttvProcessState;

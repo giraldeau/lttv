@@ -54,6 +54,7 @@ GQuark
     LTT_EVENT_SOFT_IRQ_EXIT,
     LTT_EVENT_SCHEDCHANGE,
     LTT_EVENT_FORK,
+    LTT_EVENT_KERNEL_THREAD,
     LTT_EVENT_EXIT,
     LTT_EVENT_FREE,
     LTT_EVENT_EXEC,
@@ -1017,6 +1018,8 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   process->name = name;
   //process->last_cpu = tfs->cpu_name;
   //process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)tfs)->tf);
+	process->kernel_thread = 0;
+
   g_info("Process %u, core %p", process->pid, process);
   g_hash_table_insert(tcs->processes, process, process);
 
@@ -1082,10 +1085,17 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
     LttTime *timestamp)
 {
   LttvProcessState *process = lttv_state_find_process(ts, cpu, pid);
+  LttvExecutionState *es;
   
   /* Put ltt_time_zero creation time for unexisting processes */
-  if(unlikely(process == NULL)) process = lttv_state_create_process(ts,
+  if(unlikely(process == NULL)) {
+		process = lttv_state_create_process(ts,
                 NULL, cpu, pid, LTTV_STATE_UNNAMED, timestamp);
+		/* We are not sure is it's a kernel thread or normal thread, put the
+	 	 * bottom stack state to unknown */
+		es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
+		es->t = LTTV_STATE_MODE_UNKNOWN;
+	}
   return process;
 }
 
@@ -1355,6 +1365,28 @@ static gboolean process_fork(void *hook_data, void *call_data)
   return FALSE;
 }
 
+/* We stamp a newly created process as kernel_thread */
+static gboolean process_kernel_thread(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  guint pid;
+  guint cpu = ltt_tracefile_num(s->parent.tf);
+  LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttvProcessState *process;
+  LttvExecutionState *es;
+
+  /* PID */
+  pid = ltt_event_get_unsigned(e, thf->f1);
+
+  process = lttv_state_find_process(ts, ANY_CPU, pid);
+	es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
+	es->t = LTTV_STATE_SYSCALL;
+	process->kernel_thread = 1;
+
+	return FALSE;
+}
 
 static gboolean process_exit(void *hook_data, void *call_data)
 {
@@ -1575,8 +1607,8 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 14);
-    hooks = g_array_set_size(hooks, 14);
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 15);
+    hooks = g_array_set_size(hooks, 15);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
@@ -1639,28 +1671,34 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     g_assert(!ret);
 
     ret = lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_PROCESS, LTT_EVENT_KERNEL_THREAD,
+        LTT_FIELD_PID, 0, 0,
+        process_kernel_thread, NULL, &g_array_index(hooks, LttvTraceHook, 10));
+    g_assert(!ret);
+
+    ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
         LTT_FIELD_PID, 0, 0,
-        process_exit, NULL, &g_array_index(hooks, LttvTraceHook, 10));
+        process_exit, NULL, &g_array_index(hooks, LttvTraceHook, 11));
     g_assert(!ret);
     
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_FREE,
         LTT_FIELD_PID, 0, 0,
-        process_free, NULL, &g_array_index(hooks, LttvTraceHook, 11));
+        process_free, NULL, &g_array_index(hooks, LttvTraceHook, 12));
     g_assert(!ret);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_FS, LTT_EVENT_EXEC,
         LTT_FIELD_FILENAME, 0, 0,
-        process_exec, NULL, &g_array_index(hooks, LttvTraceHook, 12));
+        process_exec, NULL, &g_array_index(hooks, LttvTraceHook, 13));
     g_assert(!ret);
 
      /* statedump-related hooks */
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
         LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
-        enum_process_state, NULL, &g_array_index(hooks, LttvTraceHook, 13));
+        enum_process_state, NULL, &g_array_index(hooks, LttvTraceHook, 14));
     g_assert(!ret);
 
     
@@ -2332,6 +2370,7 @@ static void module_init()
   LTT_EVENT_SOFT_IRQ_EXIT      = g_quark_from_string("soft_irq_exit");
   LTT_EVENT_SCHEDCHANGE   = g_quark_from_string("schedchange");
   LTT_EVENT_FORK          = g_quark_from_string("fork");
+  LTT_EVENT_KERNEL_THREAD = g_quark_from_string("kernel_thread");
   LTT_EVENT_EXIT          = g_quark_from_string("exit");
   LTT_EVENT_FREE          = g_quark_from_string("free");
   LTT_EVENT_EXEC          = g_quark_from_string("exec");

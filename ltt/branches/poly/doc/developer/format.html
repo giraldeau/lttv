@@ -377,6 +377,20 @@ following event types.
   &lt;/struct&gt;
 &lt;/event&gt;
 
+&lt;event name=state_dump_facility_load&gt;
+  &lt;description&gt;Facility used in the trace&lt;/description&gt;
+  &lt;struct&gt;
+    &lt;field name="name"&gt;&lt;string/&gt;&lt;/field&gt;
+    &lt;field name="checksum"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="id"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="int_size"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="long_size"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="pointer_size"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="size_t_size"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="has_alignment"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+  &lt;/struct&gt;
+&lt;/event&gt;
+
 &lt;event name=time_heartbeat&gt;
   &lt;description&gt;System time values sent periodically to minimize cycle counter 
     drift with respect to real time clock and to detect cycle counter

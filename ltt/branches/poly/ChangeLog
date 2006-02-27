@@ -1,5 +1,7 @@
 LinuxTraceToolkit ChangeLog
 
+27/02/2006	LTTV 0.8.23
+						Add kernel_thread information in state.
 15/02/2006	LTTV 0.8.21
 						Add support for data with network byte order.
 15/02/2006	LTTV 0.8.20
