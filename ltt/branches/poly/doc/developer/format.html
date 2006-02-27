@@ -134,7 +134,7 @@ end
 	uint64 cycle_count
 		* TSC at the beginning of the buffer
 	uint64 freq
-		* frequency of the CPUs at the beginning of the buffer.
+		* frequency of the CPUs at the end of the buffer.
 uint32 lost_size
 	* number of bytes of padding at the end of the buffer.
 uint32 buf_size
@@ -356,10 +356,10 @@ Finally the type structure may be defined by referencing a named type.
 &lt;typeref name=type_name/&gt;
 </PRE></TT>
 
-<H2>Builtin events</H2>
+<H2>Core events</H2>
 
 <P>
-The facility named "builtin" is always present and contains at least the
+The facility named "core" is always present and contains at least the
 following event types.
 
 <PRE><TT>
@@ -368,18 +368,13 @@ following event types.
   &lt;struct&gt;
     &lt;field name="name"&gt;&lt;string/&gt;&lt;/field&gt;
     &lt;field name="checksum"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
-    &lt;field name="base_code"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="id"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="int_size"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="long_size"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="pointer_size"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="size_t_size"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="has_alignment"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
   &lt;/struct&gt;
-&lt;/event&gt;
-
-&lt;event name=block_start&gt;
-  &lt;description&gt;Block start timestamp&lt;/description&gt;
-  &lt;typeref name=block_timestamp/&gt;
-&lt;/event&gt;
-
-&lt;event name=block_end&gt;
-  &lt;description&gt;Block end timestamp&lt;/description&gt;
-  &lt;typeref name=block_timestamp/&gt;
 &lt;/event&gt;
 
 &lt;event name=time_heartbeat&gt;
@@ -390,26 +385,14 @@ following event types.
   &lt;typeref name=timestamp/&gt;
 &lt;/event&gt;
 
-&lt;type name=block_timestamp&gt;
-  &lt;struct&gt;
-    &lt;field name=timestamp&gt;&lt;typeref name=timestamp&gt;&lt;/field&gt;
-    &lt;field name=block_id&gt;&lt;uint size=4/&gt;&lt;/field&gt;
-  &lt;/struct&gt;
-&lt;/type&gt;
-
 &lt;type name=timestamp&gt;
   &lt;struct&gt;
-    &lt;field name=time&gt;&lt;typeref name=timespec/&gt;&lt;/event&gt;
+    &lt;field name="seconds"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
+    &lt;field name="nanoseconds"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
     &lt;field name="cycle_count"&gt;&lt;uint size=8/&gt;&lt;/field&gt;
   &lt;/struct&gt;
 &lt;/event&gt;
 
-&lt;type name=timespec&gt;
-  &lt;struct&gt;
-    &lt;field name="seconds"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
-    &lt;field name="nanoseconds"&gt;&lt;uint size=4/&gt;&lt;/field&gt;
-  &lt;/struct&gt;
-&lt;/type&gt;
 </TT></PRE>
 
 <H2>Control files</H2>
