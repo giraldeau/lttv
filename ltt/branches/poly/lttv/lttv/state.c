@@ -1252,6 +1252,7 @@ static gboolean schedchange(void *hook_data, void *call_data)
   guint cpu = ltt_tracefile_num(s->parent.tf);
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
+  LttvProcessState *old_process = ts->running_process[cpu];
   
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
@@ -1271,7 +1272,8 @@ static gboolean schedchange(void *hook_data, void *call_data)
        the wrongly attributed statistics. */
 
     //This test only makes sense once the state is known and if there is no
-    //missing events.
+    //missing events. We need to silently ignore schedchange coming after a
+		//process_free, or it causes glitches. (FIXME)
     //if(unlikely(process->pid != pid_out)) {
     //  g_assert(process->pid == 0);
     //}
@@ -1284,8 +1286,8 @@ static gboolean schedchange(void *hook_data, void *call_data)
       else process->state->s = LTTV_STATE_WAIT;
       process->state->change = s->parent.timestamp;
     }
-
-    if(state_out == 32)
+		
+		if(state_out == 32)
        exit_process(s, process); /* EXIT_DEAD */
           /* see sched.h for states */
   }
@@ -1448,8 +1450,9 @@ static gboolean process_free(void *hook_data, void *call_data)
         break;
       }
     }
-    if(i == num_cpus) /* process is not scheduled */
-      exit_process(s, process);
+    //if(i == num_cpus) /* process is not scheduled */
+      //exit_process(s, process);	// do nothing : wait for the schedchange to
+			//delete the process.
   }
 
   return FALSE;
