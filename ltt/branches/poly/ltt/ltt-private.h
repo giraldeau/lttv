@@ -127,9 +127,8 @@ struct LttStateDumpFacilityLoad {
 	guint32	has_alignment;
 } LTT_PACKED_STRUCT;
 
+/* Empty event */
 typedef struct _TimeHeartbeat {
-  LttTime       time;       //Time stamp of this block
-  uint64_t cycle_count; //cycle count of the event
 } LTT_PACKED_STRUCT TimeHeartbeat;
 
 struct ltt_event_header_hb {

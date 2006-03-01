@@ -1,14 +1,6 @@
 <facility name=core>
   <description>The core facility contains the basic tracing related events</description>
 	
-  <type name=timestamp>
-		<struct>
-			<field name="seconds"><uint size=4/></field>
-			<field name="nanoseconds"><uint size=4/></field>
-			<field name="cycle_count"><uint size=8/></field>
-		</struct>
-  </type>
-
   <event name=facility_load>
     <description>Facility is loaded</description>
 		<field name="name"><string/></field>
@@ -31,7 +23,6 @@
      rollovers. Useful when only the 32 LSB of the TSC are saved in events
      header : we save the full 64 bits in this event.
     </description>
-		<field name="timestamp"><typeref name=timestamp/></field>
   </event>
   
   <event name=state_dump_facility_load per_trace>

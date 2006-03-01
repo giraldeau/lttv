@@ -1,5 +1,7 @@
 LinuxTraceToolkit ChangeLog
 
+28/02/2006	LTTV 0.8.24
+						Fix heartbeat support
 27/02/2006	LTTV 0.8.23
 						Add kernel_thread information in state.
 15/02/2006	LTTV 0.8.21

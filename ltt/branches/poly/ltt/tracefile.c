@@ -1582,6 +1582,10 @@ int ltt_tracefile_seek_position(LttTracefile *tf, const LttEventPosition *ep) {
 
   tf->event.offset = ep->offset;
 
+	/* Put back the event real tsc */
+	tf->event.tsc = ep->tsc;
+	tf->buffer.tsc = ep->tsc;
+
   err = ltt_tracefile_read_update_event(tf);
   if(err) goto fail;
   err = ltt_tracefile_read_op(tf);
@@ -1742,7 +1746,6 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 		tf->buffer.tsc = event->tsc;
 		pos += sizeof(guint64);
 	}
-	
 	event->event_time = ltt_interpolate_time(tf, event);
   event->facility_id = *(guint8*)pos;
   pos += sizeof(guint8);
