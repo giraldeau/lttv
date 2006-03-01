@@ -48,4 +48,5 @@ An array of two 64 bits elements. Elements are updated in two memory writes, but
 the element switch (current element) is made atomically. As there is only one
 writer, this has no locking problem.
 
-
+We make sure the synthetic tcs reader does not sleep by disabling preemption. We
+do the same for the writer.
