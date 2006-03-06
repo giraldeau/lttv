@@ -33,13 +33,17 @@ static struct user_facility_info facility = {
 static void __attribute__((constructor)) __ltt_user_init(void)
 {
 	int err;
+#ifdef LTT_SHOW_DEBUG
 	printf("LTT : ltt-facility-user_generic init in userspace\n");
+#endif //LTT_SHOW_DEBUG
 
 	err = ltt_register_generic(&LTT_FACILITY_SYMBOL, &facility);
 	LTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;
 	
 	if(err) {
+#ifdef LTT_SHOW_DEBUG
 		perror("Error in ltt_register_generic");
+#endif //LTT_SHOW_DEBUG
 	}
 }
 

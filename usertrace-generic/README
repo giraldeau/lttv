@@ -1,0 +1,164 @@
+
+LTTng usertrace generic package
+
+Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+March 2006
+
+This package contains all the user space headers and c files necessary to make
+your application and library trace through an active LTTng tracer. Here is a
+short quickstart guide of it.
+
+Here are the currently supported architectures :
+x86
+(please add the ltt_* system calls to other architectures as you need them : it
+will work magically)
+
+* Compile your kernel with the latest LTTng patch. Make sure the option 
+	"Allow tracing from userspace" is _active_!
+	See the QUICKSTART guide at http://ltt.polymtl.ca/ for details about how to
+	setup a working tracer and viewer. See the genevent installation step : it is
+	required for method #2 below.
+	
+* Extract the latest usertrace-generic archive :
+su
+cd /usr/src
+wget http://ltt.polymtl.ca/packages/usertrace-generic-x.x.tar.gz
+gzip -cd usertrace-generic-x.x.tar.gz | tar xvof -
+
+* Build the sample programs and install the headers into your system :
+su
+cd /usr/src/usertrace-generic
+make
+make install
+
+* There are two ways to trace information from your application :
+
+1) Easy way, but slow (printf style)
+	See sample-printf.c for code example.
+
+- Add the following statements to your program source (the define must come
+	_before_ the includes!) :
+
+#define LTT_TRACE
+#define LTT_BLOCKING 1
+#include <ltt/ltt-facility-user_generic.h>
+#include <ltt/ltt-facility-custom-user_generic.h>
+
+Note the define of LTT_BLOCKING to 1 : if a trace buffer is full, your
+application will block. The default of this parameter is 0 (non blocking) :
+events are lost when trace buffer is full. The choice is up to you.
+
+- Add something like the following sample line in your code. Note that this is a
+	very standard format string, this is only a suggested presentation.
+	
+trace_user_generic_slow_printf("in: %s at: %s:%d: Counter value is: %u.",
+                               __FILE__, __func__, __LINE__, count);
+
+- Compile your application with at least these parameters to gcc (it is splitted
+	on two lines, joined by a "\") :
+gcc -D LTT_SHOW_DEBUG -I /usr/src/usertrace-generic -o myapp myapp.c \
+  /usr/src/usertrace-generic/ltt-facility-loader-user_generic.c
+
+To see what the final result looks like :
+- Start tracing
+- Start your application
+	** You should see the following message when your program starts and the
+	LTT_SHOW_DEBUG is defined : 
+		"LTT : ltt-facility-user_generic init in userspace"
+		If you don't then you forgot to compile the facility loader in your
+		application. If you find this output annoying, you can remove the
+		"-D LTT_SHOW_DEBUG" gcc parameter, which will make the facility loader
+		silent.
+- Stop tracing
+Then, to see only the user_generic events :
+lttv -m textDump -t /tmp/trace1 -e "event.facility=user_generic"
+
+It will show :
+user_generic.slow_printf: 35885.922829472 (/cpu_0), 15521, 7453,  SYSCALL { "in: sample-printf.c at: main:18: Counter value is: 0." }
+user_generic.slow_printf: 35886.925685289 (/cpu_0), 15521, 7453,  SYSCALL { "in: sample-printf.c at: main:18: Counter value is: 1." }
+...
+
+
+
+2) The second way to log events is still easy, yet faster. It requires creating
+   your own XML description of your data structures. It will make it easier to
+   identify your data in the trace. Please read the comments in method 1)
+	 explained previously, as they are not repeated here.
+   See sample.c for code example.
+
+- Go to the usertrace-generic directory
+su
+cd /usr/src/usertrace-generic
+
+- Create your own facility (i.e. user_myfacility.xml).
+  See the ones available in /usr/share/LinuxTraceToolkitViewer/facilities for
+	examples.
+	You facility _must_ be named following this standard : "user_*", where * is
+	whatever you like. If it is not, it will be rejected by the kernel with a
+	Operation not permitted (can be seen with the -D LTT_SHOW_DEBUG compilation
+	parameter).
+
+user_myfacility.xml:
+
+<facility name="user_myfacility">
+	<description>Sample facility</description>
+	<event name="myevent">
+		<description>Sample event</description>
+		<field name="file"><string></field>
+		<field name="function"><string></field>
+		<field name="line"><int></field>
+		<field name="firstval"><long></field>
+		<field name="secondval"><pointer></field>
+	</event>
+</facility>
+
+- AN IMPORTANT STEP FOLLOWS :
+	*copy* the user_myfacility.xml file in your system :
+su
+cp user_myfacility.xml /usr/share/LinuxTraceToolkitViewer/facilities
+
+- Use genevent to create the c code and headers :
+su
+cd /tmp
+mkdir genevent
+cd genevent
+for a in /usr/share/LinuxTraceToolkitViewer/facilities/user_*.xml;
+	do /usr/local/bin/genevent $a;
+done
+cd /usr/src/usertrace-generic
+cp /tmp/genevent/*load* .
+cd ltt
+cp /tmp/genevent/ltt-facility-id-user_myfacility.h .
+cp /tmp/genevent/ltt-facility-user_myfacility.h .
+cd ..
+make install
+
+- Add the following statements to your program source (the define must come
+	_before_ the includes!) :
+
+#define LTT_TRACE
+#define LTT_BLOCKING 1
+#include <ltt/ltt-facility-user_myfacility.h>
+
+- Add a call following the trace_user_myfacility_myevent function found in 
+	/usr/include/ltt/ltt-facility-user_myfacility.h in your program.
+For instance :
+trace_user_myfacility_myevent(__FILE__, __func__, __LINE__, 1234, (void*)0xF0F0F0F0);
+
+- Compile your application with at least these parameters to gcc (it is splitted
+	on two lines, joined by a "\") :
+gcc -I /usr/src/usertrace-generic -o myapp myapp.c \
+  /usr/src/usertrace-generic/ltt-facility-loader-user_myfacility.c
+
+To see what the final result looks like :
+- Start tracing
+- Start your application
+- Stop tracing
+Then, to see only the user_myfacility events :
+lttv -m textDump -t /tmp/trace1 -e "event.facility=user_myfacility"
+
+It will show, for example :
+user_myfacility.myevent: 39507.805584526 (/cpu_1), 15829, 15736,  SYSCALL { "myapp.c", "main", 8, 1234, 0xf0f0f0f0 }
+
+
+

@@ -14,7 +14,8 @@ int main(int argc, char **argv)
 	unsigned int count = 0;
 
 	while(1) {
-		trace_user_generic_slow_printf("Counter value is : %u.", count);
+		trace_user_generic_slow_printf("in: %s at: %s:%d: Counter value is: %u.",
+																	__FILE__, __func__, __LINE__, count);
 		count++;
 		sleep(1);
 	}
