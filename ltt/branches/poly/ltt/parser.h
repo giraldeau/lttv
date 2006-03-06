@@ -145,6 +145,7 @@ typedef struct _facility {
   sequence_t unnamed_types; //FIXME : remove
   table_t named_types;
 	unsigned int checksum;
+	int	user;		/* Is this a userspace facility ? */
 } facility_t;
 
 int getSizeindex(unsigned int value);
