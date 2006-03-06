@@ -1030,6 +1030,7 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
         G_CALLBACK (button_press_event),
         (gpointer)drawing);
   
+
   gtk_widget_show(drawing->ruler);
   gtk_widget_show(drawing->padding);
   gtk_widget_show(drawing->ruler_hbox);

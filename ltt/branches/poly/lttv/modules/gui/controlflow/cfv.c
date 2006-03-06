@@ -47,6 +47,38 @@ header_size_allocate(GtkWidget *widget,
   return 0;
 }
 
+gboolean cfv_scroll_event(GtkWidget *widget, GdkEventScroll *event,
+		gpointer data)
+{
+  ControlFlowData *control_flow_data = (ControlFlowData*)data;
+	unsigned int cell_height =
+		get_cell_height(
+				GTK_TREE_VIEW(control_flow_data->process_list->process_list_widget));
+	gdouble new;
+
+  switch(event->direction) {
+    case GDK_SCROLL_UP:
+			{
+				new = gtk_adjustment_get_value(control_flow_data->v_adjust) 
+																	- cell_height;
+			}
+      break;
+    case GDK_SCROLL_DOWN:
+			{
+				new = gtk_adjustment_get_value(control_flow_data->v_adjust) 
+																	+ cell_height;
+			}
+      break;
+		default:
+			return FALSE;
+  }
+	if(new >= control_flow_data->v_adjust->lower &&
+			new <= control_flow_data->v_adjust->upper 
+					- control_flow_data->v_adjust->page_size)
+		gtk_adjustment_set_value(control_flow_data->v_adjust, new);
+	return TRUE;
+}
+
 
 /*****************************************************************************
  *                     Control Flow Viewer class implementation              *
@@ -98,6 +130,15 @@ guicontrolflow(Tab *tab)
                                 GTK_ADJUSTMENT(
                                    control_flow_data->v_adjust));
 
+  g_signal_connect (G_OBJECT(process_list_widget),
+        "scroll-event",
+        G_CALLBACK (cfv_scroll_event),
+        (gpointer)control_flow_data);
+	 g_signal_connect (G_OBJECT(drawing_area),
+        "scroll-event",
+        G_CALLBACK (cfv_scroll_event),
+        (gpointer)control_flow_data);
+	
   g_signal_connect (G_OBJECT(control_flow_data->process_list->button),
         "size-allocate",
         G_CALLBACK(header_size_allocate),

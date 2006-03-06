@@ -1,5 +1,8 @@
 LinuxTraceToolkit ChangeLog
 
+05/03/2006	LTTV 0.8.26
+						Add mouse scroll support.
+						Add user_generic.xml facility.
 01/03/2006	LTTV 0.8.25
 						Fix process end of life in state.c
 28/02/2006	LTTV 0.8.24

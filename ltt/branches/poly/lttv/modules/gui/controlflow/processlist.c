@@ -141,6 +141,30 @@ void destroy_hash_key(gpointer key);
 void destroy_hash_data(gpointer data);
 
 
+gboolean scroll_event(GtkWidget *widget, GdkEventScroll *event, gpointer data)
+{
+  ControlFlowData *control_flow_data = 
+      (ControlFlowData*)g_object_get_data(
+                G_OBJECT(widget),
+                "control_flow_data");
+  Drawing_t *drawing = control_flow_data->drawing;
+	unsigned int cell_height =
+		get_cell_height(GTK_TREE_VIEW(control_flow_data->process_list->process_list_widget));
+
+  switch(event->direction) {
+    case GDK_SCROLL_UP:
+      gtk_adjustment_set_value(control_flow_data->v_adjust,
+        gtk_adjustment_get_value(control_flow_data->v_adjust) - cell_height);
+      break;
+    case GDK_SCROLL_DOWN:
+      gtk_adjustment_set_value(control_flow_data->v_adjust,
+        gtk_adjustment_get_value(control_flow_data->v_adjust) + cell_height);
+      break;
+  }
+	return TRUE;
+}
+
+
 static void update_index_to_pixmap_each(ProcessInfo *key,
                                         HashedProcessData *value,
                                         ProcessList *process_list)

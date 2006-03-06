@@ -1932,7 +1932,7 @@ void ltt_update_event_size(LttTracefile *tf)
     }
   } else {
     if(!f->exists) {
-      g_error("Unknown facility %hhu (0x%hhx) in tracefile %s",
+      g_warning("Unknown facility %hhu (0x%hhx) in tracefile %s",
           tf->event.facility_id,
           tf->event.facility_id,
           g_quark_to_string(tf->name));
@@ -1943,7 +1943,7 @@ void ltt_update_event_size(LttTracefile *tf)
       ltt_facility_eventtype_get(f, tf->event.event_id);
 
     if(!event_type) {
-      g_error("Unknown event id %hhu in facility %s in tracefile %s",
+      g_warning("Unknown event id %hhu in facility %s in tracefile %s",
           tf->event.event_id,
           g_quark_to_string(f->name),
           g_quark_to_string(tf->name));
@@ -1972,7 +1972,12 @@ void ltt_update_event_size(LttTracefile *tf)
 facility_error:
 event_type_error:
 event_id_error:
-  tf->event.data_size = 0;
+	if(tf->event.event_size == 0xFFFF) {
+		g_error("Cannot jump over an unknown event bigger than 0xFFFE bytes");
+	}
+	/* The facility is unknown : use the kernel information about this event
+	 * to jump over it. */
+  tf->event.data_size = tf->event.event_size;
 }
 
 
