@@ -1582,6 +1582,198 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	return 0;
 }
 
+/* print_event_logging_function_user
+ * Print the logging function of an event for userspace tracing. This is the
+ * core of genevent */
+int print_event_logging_function_user(char *basename, facility_t *fac,
+		event_t *event, FILE *fd)
+{
+	fprintf(fd, "static inline int trace_%s(\n", basename);
+	int	has_argument = 0;
+	int has_type_fixed = 0;
+
+	for(unsigned int j = 0; j < event->fields.position; j++) {
+		/* For each field, print the function argument */
+		field_t *f = (field_t*)event->fields.array[j];
+		type_descriptor_t *t = f->type;
+		if(has_argument) {
+			fprintf(fd, ",");
+			fprintf(fd, "\n");
+		}
+		if(print_arg(t, fd, 2, basename, f->name)) return 1;
+		has_argument = 1;
+	}
+	if(!has_argument) {
+		print_tabs(2, fd);
+		fprintf(fd, "void");
+	}
+	fprintf(fd,")\n");
+	fprintf(fd, 
+			"#ifndef LTT_TRACE\n");
+	fprintf(fd, "{\n");
+	fprintf(fd, "}\n");
+	fprintf(fd,"#else\n");
+	fprintf(fd, "{\n");
+	/* Print the function variables */
+	print_tabs(1, fd);
+	fprintf(fd, "void *buffer = NULL;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t *to_base = &real_to_base;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t real_to = 0;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t *to = &real_to;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t real_len = 0;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t *len = &real_len;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t reserve_size;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t slot_size;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "int ret = 0;\n");
+	print_tabs(1, fd);
+
+	if(event->fields.position > 0) {
+		for(unsigned int i=0;i<event->fields.position;i++){
+			/* Search for at least one child with fixed size. It means
+			 * we need local variables.*/
+			field_t *field = (field_t*)(event->fields.array[i]);
+			type_descriptor_t *type = field->type;
+			has_type_fixed = has_type_local(type);
+			if(has_type_fixed) break;
+		}
+		
+		if(has_type_fixed) {
+			fprintf(fd, "size_t align;\n");
+			print_tabs(1, fd);
+		}
+
+		fprintf(fd, "const void *real_from;\n");
+		print_tabs(1, fd);
+		fprintf(fd, "const void **from = &real_from;\n");
+		print_tabs(1, fd);
+	}
+
+	/* Calculate event variable len + event data alignment offset.
+	 * Assume that the padding for alignment starts at a void*
+	 * address.
+	 * This excludes the header size and alignment. */
+
+	print_tabs(1, fd);
+	fprintf(fd, "/* For each field, calculate the field size. */\n");
+	print_tabs(1, fd);
+	fprintf(fd, "/* size = *to_base + *to + *len */\n");
+	print_tabs(1, fd);
+	fprintf(fd, "/* Assume that the padding for alignment starts at a\n");
+	print_tabs(1, fd);
+	fprintf(fd, " * sizeof(void *) address. */\n");
+	fprintf(fd, "\n");
+
+	for(unsigned int i=0;i<event->fields.position;i++){
+		field_t *field = (field_t*)(event->fields.array[i]);
+		type_descriptor_t *type = field->type;
+		/* Set from */
+		print_tabs(1, fd);
+		switch(type->type) {
+			case SEQUENCE:
+			case UNION:
+			case ARRAY:
+			case STRUCT:
+			case STRING:
+				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				break;
+			default:
+				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				break;
+		}
+
+		if(print_type_write(type,
+				fd, 1, basename, field->name, "lttng_param_", 0)) return 1;
+		fprintf(fd, "\n");
+	}
+	print_tabs(1, fd);
+	fprintf(fd, "reserve_size = *to_base + *to + *len;\n");
+
+	print_tabs(1, fd);
+	fprintf(fd, "{\n");
+	print_tabs(2, fd);
+	fprintf(fd, "char stack_buffer[reserve_size];\n");
+	print_tabs(2, fd);
+	fprintf(fd, "buffer = stack_buffer;\n");
+	fprintf(fd, "\n");
+
+	
+	//print_tabs(2, fd);
+	// for DEBUG only 
+	// fprintf(fd, "goto commit; /* DEBUG : never actually write. */\n\n");
+	print_tabs(2, fd);
+	fprintf(fd, "*to_base = *to = *len = 0;\n");
+	fprintf(fd, "\n");
+
+	/* write data. */
+
+	for(unsigned int i=0;i<event->fields.position;i++){
+		field_t *field = (field_t*)(event->fields.array[i]);
+		type_descriptor_t *type = field->type;
+	
+		/* Set from */
+		print_tabs(2, fd);
+		switch(type->type) {
+			case SEQUENCE:
+			case UNION:
+			case ARRAY:
+			case STRUCT:
+			case STRING:
+				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				break;
+			default:
+				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				break;
+		}
+
+
+		if(print_type_write(type,
+				fd, 2, basename, field->name, "lttng_param_", 0)) return 1;
+		fprintf(fd, "\n");
+		
+		/* Don't forget to flush pending memcpy */
+		print_tabs(2, fd);
+		fprintf(fd, "/* Flush pending memcpy */\n");
+		print_tabs(2, fd);
+		fprintf(fd, "if(*len != 0) {\n");
+		print_tabs(3, fd);
+		fprintf(fd, "memcpy(buffer+*to_base+*to, *from, *len);\n");
+		print_tabs(3, fd);
+		fprintf(fd, "*to += *len;\n");
+		//print_tabs(3, fd);
+		//fprintf(fd, "from += len;\n");
+		print_tabs(3, fd);
+		fprintf(fd, "*len = 0;\n");
+		print_tabs(2, fd);
+		fprintf(fd, "}\n");
+		fprintf(fd, "\n");
+	}
+
+	
+	print_tabs(2, fd);
+	fprintf(fd, "ret = ltt_trace_generic(ltt_facility_%s_%X, event_%s_%s, stack_buffer, sizeof(stack_buffer));\n", fac->name, fac->checksum, fac->name, event->name);
+
+	print_tabs(1, fd);
+	fprintf(fd, "}\n\n");
+	
+	print_tabs(1, fd);
+	fprintf(fd, "return ret;\n\n");
+
+	fprintf(fd, "}\n");
+	fprintf(fd, 
+			"#endif //LTT_TRACE\n");
+
+	return 0;
+}
 
 /* ltt-facility-name.h : main logging header.
  * log_header */
@@ -1601,6 +1793,23 @@ void print_log_header_head(facility_t *fac, FILE *fd)
 	fprintf(fd, "\n");
 }
 
+/* ltt-facility-name.h : main logging header.
+ * log_header */
+
+void print_log_header_head_user(facility_t *fac, FILE *fd)
+{
+	fprintf(fd, "#ifndef _LTT_FACILITY_%s_H_\n", fac->capname);
+	fprintf(fd, "#define _LTT_FACILITY_%s_H_\n\n", fac->capname);
+  fprintf(fd, "#include <sys/types.h>\n");
+	if(!fac->arch)
+	  fprintf(fd, "#include <ltt/ltt-facility-id-%s.h>\n", fac->name);
+	else
+	  fprintf(fd, "#include <asm/ltt/ltt-facility-id-%s_%s.h>\n",
+				fac->name,
+				fac->arch);
+  fprintf(fd, "#include <ltt/ltt-generic.h>\n");
+	fprintf(fd, "\n");
+}
 
 
 int print_log_header_types(facility_t *fac, FILE *fd)
@@ -1658,8 +1867,12 @@ int print_log_header_events(facility_t *fac, FILE *fd)
 
 		fprintf(fd, "/* Event %s logging function */\n",
 				event->name);
-
-		if(print_event_logging_function(basename, fac, event, fd)) return 1;
+		
+		if(!fac->user) {
+			if(print_event_logging_function(basename, fac, event, fd)) return 1;
+		} else {
+			if(print_event_logging_function_user(basename, fac, event, fd)) return 1;
+		}
 
 		fprintf(fd, "\n");
 	}
@@ -1669,6 +1882,11 @@ int print_log_header_events(facility_t *fac, FILE *fd)
 
 
 void print_log_header_tail(facility_t *fac, FILE *fd)
+{
+	fprintf(fd, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
+}
+
+void print_log_header_tail_user(facility_t *fac, FILE *fd)
 {
 	fprintf(fd, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
 }
@@ -1706,7 +1924,10 @@ int print_log_header(facility_t *fac)
 	}
 
 	/* Print file head */
-	print_log_header_head(fac, fd);
+	if(!fac->user)
+		print_log_header_head(fac, fd);
+	else
+		print_log_header_head_user(fac, fd);
 
 	/* print named types in declaration order */
 	if(print_log_header_types(fac, fd)) return 1;
@@ -1715,7 +1936,11 @@ int print_log_header(facility_t *fac)
 	if(print_log_header_events(fac, fd)) return 1;
 	
 	/* Print file tail */
-	print_log_header_tail(fac, fd);
+	if(!fac->user)
+		print_log_header_tail(fac, fd);
+	else
+		print_log_header_tail_user(fac, fd);
+
 
 	
 	fclose(fd);
@@ -1761,39 +1986,75 @@ int print_id_header(facility_t *fac)
 		return errno;
 	}
 
-  fprintf(fd, "#ifndef _LTT_FACILITY_ID_%s_H_\n",fac->capname);
-  fprintf(fd, "#define _LTT_FACILITY_ID_%s_H_\n\n",fac->capname);
-  fprintf(fd, "#ifdef CONFIG_LTT\n");
+	if(!fac->user) {
+		fprintf(fd, "#ifndef _LTT_FACILITY_ID_%s_H_\n",fac->capname);
+		fprintf(fd, "#define _LTT_FACILITY_ID_%s_H_\n\n",fac->capname);
+		fprintf(fd, "#ifdef CONFIG_LTT\n");
 
-  fprintf(fd,"#include <linux/ltt-facilities.h>\n\n");
+		fprintf(fd,"#include <linux/ltt-facilities.h>\n\n");
 
-  fprintf(fd,"/****  facility handle  ****/\n\n");
-  fprintf(fd,"extern ltt_facility_t ltt_facility_%s_%X;\n",
-			fac->name, fac->checksum);
-  fprintf(fd,"extern ltt_facility_t ltt_facility_%s;\n\n\n",fac->name);
+		fprintf(fd,"/****  facility handle  ****/\n\n");
+		fprintf(fd,"extern ltt_facility_t ltt_facility_%s_%X;\n",
+				fac->name, fac->checksum);
+		fprintf(fd,"extern ltt_facility_t ltt_facility_%s;\n\n\n",fac->name);
 
-	strncpy(basename, fac->name, PATH_MAX);
-	basename_len = strlen(basename);
-	strncat(basename, "_", PATH_MAX - basename_len);
-	basename_len++;
-	
-	fprintf(fd,"/****  event index  ****/\n\n");
-	fprintf(fd,"enum %s_event {\n",fac->name);
-	
-	for(unsigned int i = 0; i < fac->events.position; i++) {
-		event_t *event = (event_t*)fac->events.array[i];
-		strncpy(basename+basename_len, event->name, PATH_MAX-basename_len);
+		strncpy(basename, fac->name, PATH_MAX);
+		basename_len = strlen(basename);
+		strncat(basename, "_", PATH_MAX - basename_len);
+		basename_len++;
+		
+		fprintf(fd,"/****  event index  ****/\n\n");
+		fprintf(fd,"enum %s_event {\n",fac->name);
+		
+		for(unsigned int i = 0; i < fac->events.position; i++) {
+			event_t *event = (event_t*)fac->events.array[i];
+			strncpy(basename+basename_len, event->name, PATH_MAX-basename_len);
+			print_tabs(1, fd);
+			fprintf(fd, "event_%s,\n", basename);
+		}
 		print_tabs(1, fd);
-		fprintf(fd, "event_%s,\n", basename);
+		fprintf(fd, "facility_%s_num_events\n", fac->name);
+		fprintf(fd, "};\n");
+		fprintf(fd, "\n");
+
+
+		fprintf(fd, "#endif //CONFIG_LTT\n");
+		fprintf(fd, "#endif //_LTT_FACILITY_ID_%s_H_\n",fac->capname);
+	} else {
+		fprintf(fd, "#ifndef _LTT_FACILITY_ID_%s_H_\n",fac->capname);
+		fprintf(fd, "#define _LTT_FACILITY_ID_%s_H_\n\n",fac->capname);
+		fprintf(fd, "#ifdef LTT_TRACE\n");
+
+		fprintf(fd,"#include <ltt/ltt-generic.h>\n\n");
+
+		fprintf(fd,"/****  facility handle  ****/\n\n");
+		fprintf(fd,"extern ltt_facility_t ltt_facility_%s_%X;\n",
+				fac->name, fac->checksum);
+		fprintf(fd,"extern ltt_facility_t ltt_facility_%s;\n\n\n",fac->name);
+
+		strncpy(basename, fac->name, PATH_MAX);
+		basename_len = strlen(basename);
+		strncat(basename, "_", PATH_MAX - basename_len);
+		basename_len++;
+		
+		fprintf(fd,"/****  event index  ****/\n\n");
+		fprintf(fd,"enum %s_event {\n",fac->name);
+		
+		for(unsigned int i = 0; i < fac->events.position; i++) {
+			event_t *event = (event_t*)fac->events.array[i];
+			strncpy(basename+basename_len, event->name, PATH_MAX-basename_len);
+			print_tabs(1, fd);
+			fprintf(fd, "event_%s,\n", basename);
+		}
+		print_tabs(1, fd);
+		fprintf(fd, "facility_%s_num_events\n", fac->name);
+		fprintf(fd, "};\n");
+		fprintf(fd, "\n");
+
+
+		fprintf(fd, "#endif //LTT_TRACE\n");
+		fprintf(fd, "#endif //_LTT_FACILITY_ID_%s_H_\n",fac->capname);
 	}
-	print_tabs(1, fd);
-	fprintf(fd, "facility_%s_num_events\n", fac->name);
-	fprintf(fd, "};\n");
-	fprintf(fd, "\n");
-
-
-  fprintf(fd, "#endif //CONFIG_LTT\n");
-  fprintf(fd, "#endif //_LTT_FACILITY_ID_%s_H_\n",fac->capname);
 
 
 	fclose(fd);
@@ -1867,7 +2128,70 @@ int print_loader_header(facility_t *fac)
 	return 0;
 }
 
-/* ltt-facility-loader-name.c : generic faciilty loader
+int print_loader_header_user(facility_t *fac)
+{
+	char filename[PATH_MAX];
+	unsigned int filename_size = 0;
+	FILE *fd;
+	dprintf("%s\n", fac->name);
+
+	strcpy(filename, "ltt-facility-loader-");
+	filename_size = strlen(filename);
+	
+	strncat(filename, fac->name, PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+
+	if(fac->arch) {
+		strncat(filename, "_", PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+
+		strncat(filename, fac->arch, PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+	}
+
+	strncat(filename, ".h", PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+	
+
+	fd = fopen(filename, "w");
+	if(fd == NULL) {
+		printf("Error opening file %s for writing : %s\n",
+				filename, strerror(errno));
+		return errno;
+	}
+
+  fprintf(fd, "#ifndef _LTT_FACILITY_LOADER_%s_H_\n", fac->capname);
+  fprintf(fd, "#define _LTT_FACILITY_LOADER_%s_H_\n\n", fac->capname);
+  fprintf(fd,"#include <ltt/ltt-generic.h>\n");
+	if(!fac->arch)
+	  fprintf(fd,"#include <ltt/ltt-facility-id-%s.h>\n\n",
+				fac->name);
+	else
+	  fprintf(fd,"#include <asm/ltt/ltt-facility-id-%s_%s.h>\n\n",
+				fac->name,
+				fac->arch);
+  fprintf(fd,"ltt_facility_t\tltt_facility_%s;\n", fac->name);
+  fprintf(fd,"ltt_facility_t\tltt_facility_%s_%X;\n\n",
+			fac->name, fac->checksum);
+
+  fprintf(fd,"#define LTT_FACILITY_SYMBOL\t\t\t\t\t\t\tltt_facility_%s\n",
+      fac->name);
+  fprintf(fd,"#define LTT_FACILITY_CHECKSUM_SYMBOL\t\tltt_facility_%s_%X\n",
+      fac->name, fac->checksum);
+  fprintf(fd,"#define LTT_FACILITY_CHECKSUM\t\t\t\t\t\t0x%X\n", fac->checksum);
+  fprintf(fd,"#define LTT_FACILITY_NAME\t\t\t\t\t\t\t\t\"%s\"\n", fac->name);
+  fprintf(fd,"#define LTT_FACILITY_NUM_EVENTS\t\t\t\t\tfacility_%s_num_events\n\n",
+			fac->name);
+  fprintf(fd, "#endif //_LTT_FACILITY_LOADER_%s_H_\n", fac->capname);
+
+	fclose(fd);
+
+	return 0;
+}
+
+
+
+/* ltt-facility-loader-name.c : generic facility loader
  * loader_c */
 int print_loader_c(facility_t *fac)
 {
@@ -1942,15 +2266,11 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "\t.symbol = SYMBOL_STRING(LTT_FACILITY_SYMBOL),\n");
   fprintf(fd, "};\n");
   fprintf(fd, "\n");
-  fprintf(fd, "#ifndef MODULE\n");
-  fprintf(fd, "\n");
-  fprintf(fd, "/* Built-in facility. */\n");
-  fprintf(fd, "\n");
   fprintf(fd, "static int __init facility_init(void)\n");
   fprintf(fd, "{\n");
   fprintf(fd, "\tprintk(KERN_INFO \"LTT : ltt-facility-%s init in kernel\\n\");\n", fac->name);
   fprintf(fd, "\n");
-  fprintf(fd, "\tLTT_FACILITY_SYMBOL = ltt_facility_builtin_register(&facility);\n");
+  fprintf(fd, "\tLTT_FACILITY_SYMBOL = ltt_facility_kernel_register(&facility);\n");
   fprintf(fd, "\tLTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;\n");
   fprintf(fd, "\t\n");
   fprintf(fd, "\treturn LTT_FACILITY_SYMBOL;\n");
@@ -1958,32 +2278,18 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "__initcall(facility_init);\n");
   fprintf(fd, "\n");
   fprintf(fd, "\n");
-  fprintf(fd, "\n");
-  fprintf(fd, "#else \n");
-  fprintf(fd, "\n");
-  fprintf(fd, "/* Dynamic facility. */\n");
-  fprintf(fd, "\n");
-  fprintf(fd, "static int __init facility_init(void)\n");
-  fprintf(fd, "{\n");
-  fprintf(fd, "\tprintk(KERN_INFO \"LTT : ltt-facility-%s init dynamic\\n\");\n", fac->name);
-  fprintf(fd, "\n");
-  fprintf(fd, "\tLTT_FACILITY_SYMBOL = ltt_facility_dynamic_register(&facility);\n");
-  fprintf(fd, "\tLTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;\n");
-  fprintf(fd, "\n");
-  fprintf(fd, "\treturn LTT_FACILITY_SYMBOL;\n");
-  fprintf(fd, "}\n");
+  fprintf(fd, "#ifndef MODULE\n");
   fprintf(fd, "\n");
   fprintf(fd, "static void __exit facility_exit(void)\n");
   fprintf(fd, "{\n");
   fprintf(fd, "\tint err;\n");
   fprintf(fd, "\n");
-  fprintf(fd, "\terr = ltt_facility_dynamic_unregister(LTT_FACILITY_SYMBOL);\n");
+  fprintf(fd, "\terr = ltt_facility_unregister(LTT_FACILITY_SYMBOL);\n");
   fprintf(fd, "\tif(err != 0)\n");
   fprintf(fd, "\t\tprintk(KERN_ERR \"LTT : Error in unregistering facility.\\n\");\n");
   fprintf(fd, "\n");
   fprintf(fd, "}\n");
   fprintf(fd, "\n");
-  fprintf(fd, "module_init(facility_init)\n");
   fprintf(fd, "module_exit(facility_exit)\n");
   fprintf(fd, "\n");
   fprintf(fd, "\n");
@@ -1994,6 +2300,96 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "#endif //MODULE\n");
   fprintf(fd, "\n");
   fprintf(fd, "#endif //CONFIG_LTT\n");
+
+	fclose(fd);
+
+	return 0;
+}
+
+int print_loader_c_user(facility_t *fac)
+{
+	char filename[PATH_MAX];
+	unsigned int filename_size = 0;
+	FILE *fd;
+	dprintf("%s\n", fac->name);
+
+	strcpy(filename, "ltt-facility-loader-");
+	filename_size = strlen(filename);
+	
+	strncat(filename, fac->name, PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+
+	if(fac->arch) {
+		strncat(filename, "_", PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+
+		strncat(filename, fac->arch, PATH_MAX - filename_size);
+		filename_size = strlen(filename);
+	}
+
+	strncat(filename, ".c", PATH_MAX - filename_size);
+	filename_size = strlen(filename);
+	
+
+	fd = fopen(filename, "w");
+	if(fd == NULL) {
+		printf("Error opening file %s for writing : %s\n",
+				filename, strerror(errno));
+		return errno;
+	}
+
+  fprintf(fd, "/*\n");
+	if(!fac->arch)
+	  fprintf(fd, " * ltt-facility-loader-%s.c\n", fac->name);
+	else
+	  fprintf(fd, " * ltt-facility-loader-%s_%s.c\n", fac->name, fac->arch);
+  fprintf(fd, " *\n");
+  fprintf(fd, " * (C) Copyright  2005 - \n");
+  fprintf(fd, " *          Mathieu Desnoyers (mathieu.desnoyers@polymtl.ca)\n");
+  fprintf(fd, " *\n");
+  fprintf(fd, " * Contains the LTT user space facility loader.\n");
+  fprintf(fd, " *\n");
+  fprintf(fd, " */\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "#define LTT_TRACE\n");
+  fprintf(fd, "#include <error.h>\n");
+  fprintf(fd, "#include <stdio.h>\n");
+  fprintf(fd, "#include <ltt/ltt-generic.h>\n");
+	if(!fac->arch)
+  	fprintf(fd, "#include \"ltt-facility-loader-%s.h\"\n", fac->name);
+	else
+	  fprintf(fd, "#include \"ltt-facility-loader-%s_%s.h\"\n",
+				fac->name, fac->arch);
+  fprintf(fd, "\n");
+  fprintf(fd, "static struct user_facility_info facility = {\n");
+  fprintf(fd, "\t.name = LTT_FACILITY_NAME,\n");
+  fprintf(fd, "\t.num_events = LTT_FACILITY_NUM_EVENTS,\n");
+  fprintf(fd, "#ifndef LTT_PACK\n");
+  fprintf(fd, "\t.alignment = sizeof(void*),\n");
+  fprintf(fd, "#else\n");
+  fprintf(fd, "\t.alignment = 0,\n");
+  fprintf(fd, "#endif //LTT_PACK\n");
+  fprintf(fd, "\t.checksum = LTT_FACILITY_CHECKSUM,\n");
+  fprintf(fd, "\t.int_size = sizeof(int),\n");
+  fprintf(fd, "\t.long_size = sizeof(long),\n");
+  fprintf(fd, "\t.pointer_size = sizeof(void*),\n");
+  fprintf(fd, "\t.size_t_size = sizeof(size_t)\n");
+  fprintf(fd, "};\n");
+  fprintf(fd, "\n");
+  fprintf(fd, "static void __attribute__((constructor)) __ltt_user_init(void)\n");
+  fprintf(fd, "{\n");
+  fprintf(fd, "\tint err;\n");
+  fprintf(fd, "\tprintf(\"LTT : ltt-facility-%s init in userspace\\n\");\n", fac->name);
+  fprintf(fd, "\n");
+  fprintf(fd, "\terr = ltt_register_generic(&LTT_FACILITY_SYMBOL, &facility);\n");
+  fprintf(fd, "\tLTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;\n");
+  fprintf(fd, "\t\n");
+  fprintf(fd, "\tif(err) {\n");
+  fprintf(fd, "\t\tperror(\"Error in ltt_register_generic\");\n");
+  fprintf(fd, "\t}\n");
+  fprintf(fd, "}\n");
+  fprintf(fd, "\n");
 
 	fclose(fd);
 
@@ -2169,12 +2565,18 @@ int main(int argc, char **argv)
 	
 	/* ltt-facility-loader-name.h : facility specific loader info.
 	 * loader_header */
-	err = print_loader_header(fac);
+	if(!fac->user)
+		err = print_loader_header(fac);
+	else
+		err = print_loader_header_user(fac);
 	if(err)	return err;
 
 	/* ltt-facility-loader-name.c : generic faciilty loader
 	 * loader_c */
-	err = print_loader_c(fac);
+	if(!fac->user)
+		err = print_loader_c(fac);
+	else
+		err = print_loader_c_user(fac);
 	if(err)	return err;
 
 	/* close the facility */
