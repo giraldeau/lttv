@@ -1588,10 +1588,16 @@ int print_event_logging_function(char *basename, facility_t *fac,
 int print_event_logging_function_user(char *basename, facility_t *fac,
 		event_t *event, FILE *fd)
 {
-	if(event->param_buffer) {
-		fprintf(fd, "static inline int trace_%s_param_buffer(\n", basename);
+	char *attrib;
+	if(event->no_instrument_function) {
+		attrib = "__attribute__((no_instrument_function)) ";
 	} else {
-		fprintf(fd, "static inline int trace_%s(\n", basename);
+		attrib = "";
+	}
+	if(event->param_buffer) {
+		fprintf(fd, "static inline %sint trace_%s_param_buffer(\n", attrib, basename);
+	} else {
+		fprintf(fd, "static inline %sint trace_%s(\n",attrib, basename);
 	}
 	int	has_argument = 0;
 	int has_type_fixed = 0;
