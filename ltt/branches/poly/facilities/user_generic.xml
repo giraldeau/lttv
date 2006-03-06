@@ -12,4 +12,9 @@
 		<field name="pointer"><pointer/></field>
   </event>
 	
+	<event name=slow_printf param_buffer>
+  	<description>Takes a buffer of variable size (written by printf) and log it.</description>
+		<field name="string"><string/></field>
+  </event>
+	
 </facility>
