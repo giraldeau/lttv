@@ -9,11 +9,10 @@
 
 int main(int argc, char **argv)
 {
-	printf("Will trace the following string : Hello world! Have a nice day.\n");
+	printf("Will trace the following string : Running fast! in a infinite loop.\n");
 
 	while(1) {
-		trace_user_generic_string("Hello world! Have a nice day.");
-		sleep(1);
+		trace_user_generic_string("Running fast!");
 	}
 	
 	return 0;

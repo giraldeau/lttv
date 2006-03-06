@@ -39,6 +39,11 @@
 
 #define FACNAME_LEN 32
 
+/* LTT userspace tracing is non blocking by default when buffers are full */
+#ifndef LTT_BLOCKING
+#define LTT_BLOCKING 0
+#endif //LTT_BLOCKING
+															 
 typedef unsigned int ltt_facility_t;
 
 struct user_facility_info {
@@ -52,8 +57,8 @@ struct user_facility_info {
   size_t size_t_size;
 };
 
-static inline _syscall4(int, ltt_trace_generic, unsigned int, facility_id,
-		unsigned int, event_id, void *, data, size_t, data_size)
+static inline _syscall5(int, ltt_trace_generic, unsigned int, facility_id,
+		unsigned int, event_id, void *, data, size_t, data_size, int, blocking)
 static inline _syscall2(int, ltt_register_generic, unsigned int *, facility_id, const struct user_facility_info *, info)
 
 #ifndef LTT_PACK

@@ -97,7 +97,7 @@ static inline int trace_user_generic_string(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_411B0F83, event_user_generic_string, stack_buffer, sizeof(stack_buffer));
+		ret = ltt_trace_generic(ltt_facility_user_generic_411B0F83, event_user_generic_string, stack_buffer, sizeof(stack_buffer), LTT_BLOCKING);
 	}
 
 	return ret;
@@ -226,7 +226,7 @@ static inline int trace_user_generic_string_pointer(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_411B0F83, event_user_generic_string_pointer, stack_buffer, sizeof(stack_buffer));
+		ret = ltt_trace_generic(ltt_facility_user_generic_411B0F83, event_user_generic_string_pointer, stack_buffer, sizeof(stack_buffer), LTT_BLOCKING);
 	}
 
 	return ret;
