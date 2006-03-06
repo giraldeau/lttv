@@ -60,6 +60,7 @@ static inline int trace_user_generic_string(
 }
 #else
 {
+	int ret = 0;
 	void *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
@@ -69,7 +70,6 @@ static inline int trace_user_generic_string(
 	size_t *len = &real_len;
 	size_t reserve_size;
 	size_t slot_size;
-	int ret = 0;
 	const void *real_from;
 	const void **from = &real_from;
 		/* For each field, calculate the field size. */
@@ -97,7 +97,7 @@ static inline int trace_user_generic_string(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_411B0F83, event_user_generic_string, stack_buffer, sizeof(stack_buffer), LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_FB850A80, event_user_generic_string, buffer, reserve_size, LTT_BLOCKING);
 	}
 
 	return ret;
@@ -159,6 +159,7 @@ static inline int trace_user_generic_string_pointer(
 }
 #else
 {
+	int ret = 0;
 	void *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
@@ -168,7 +169,6 @@ static inline int trace_user_generic_string_pointer(
 	size_t *len = &real_len;
 	size_t reserve_size;
 	size_t slot_size;
-	int ret = 0;
 	size_t align;
 	const void *real_from;
 	const void **from = &real_from;
@@ -226,7 +226,72 @@ static inline int trace_user_generic_string_pointer(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_411B0F83, event_user_generic_string_pointer, stack_buffer, sizeof(stack_buffer), LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_FB850A80, event_user_generic_string_pointer, buffer, reserve_size, LTT_BLOCKING);
+	}
+
+	return ret;
+
+}
+#endif //LTT_TRACE
+
+/* Event slow_printf structures */
+static inline void lttng_write_string_user_generic_slow_printf_string(
+		void *buffer,
+		size_t *to_base,
+		size_t *to,
+		const void **from,
+		size_t *len,
+		const char * obj)
+{
+	size_t size;
+	size_t align;
+
+	/* Flush pending memcpy */
+	if(*len != 0) {
+		if(buffer != NULL)
+			memcpy(buffer+*to_base+*to, *from, *len);
+	}
+	*to += *len;
+	*len = 0;
+
+	align = sizeof(char);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	/* Contains variable sized fields : must explode the structure */
+
+	size = strlen(obj) + 1; /* Include final NULL char. */
+	if(buffer != NULL)
+		memcpy(buffer+*to_base+*to, obj, size);
+	*to += size;
+
+	/* Realign the *to_base on arch size, set *to to 0 */
+	*to += ltt_align(*to, sizeof(void *));
+	*to_base = *to_base+*to;
+	*to = 0;
+
+	/* Put source *from just after the C string */
+	*from += size;
+}
+
+
+/* Event slow_printf logging function */
+static inline int trace_user_generic_slow_printf_param_buffer(
+		void *buffer,
+		size_t reserve_size)
+#ifndef LTT_TRACE
+{
+}
+#else
+{
+	int ret = 0;
+	reserve_size += ltt_align(reserve_size, sizeof(void *));
+	{
+		ret = ltt_trace_generic(ltt_facility_user_generic_FB850A80, event_user_generic_slow_printf, buffer, reserve_size, LTT_BLOCKING);
 	}
 
 	return ret;

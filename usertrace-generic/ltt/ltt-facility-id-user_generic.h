@@ -6,7 +6,7 @@
 
 /****  facility handle  ****/
 
-extern ltt_facility_t ltt_facility_user_generic_411B0F83;
+extern ltt_facility_t ltt_facility_user_generic_FB850A80;
 extern ltt_facility_t ltt_facility_user_generic;
 
 
@@ -15,6 +15,7 @@ extern ltt_facility_t ltt_facility_user_generic;
 enum user_generic_event {
 	event_user_generic_string,
 	event_user_generic_string_pointer,
+	event_user_generic_slow_printf,
 	facility_user_generic_num_events
 };
 
