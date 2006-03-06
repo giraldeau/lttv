@@ -135,6 +135,7 @@ typedef struct _event {
   int  per_trace;   /* Is the event able to be logged to a specific trace ? */
   int  per_tracefile;  /* Must we log this event in a specific tracefile ? */
 	int param_buffer; /* For userspace tracing : takes a buffer as parameter? */
+	int no_instrument_function;
 } event_t;
 
 typedef struct _facility {

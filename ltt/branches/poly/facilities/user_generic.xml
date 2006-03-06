@@ -17,4 +17,16 @@
 		<field name="string"><string/></field>
   </event>
 	
+	<event name=function_entry no_instrument_function>
+		<description>Entry in a function</description>
+		<field name="this_fn"><pointer/></field>
+		<field name="call_site"><pointer/></field>
+	</event>
+
+	<event name=function_exit no_instrument_function>
+		<description>Exit from a function</description>
+		<field name="this_fn"><pointer/></field>
+		<field name="call_site"><pointer/></field>
+	</event>
+
 </facility>
