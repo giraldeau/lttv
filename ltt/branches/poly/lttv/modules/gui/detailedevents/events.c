@@ -179,7 +179,7 @@ static void tree_v_size_request_cb (GtkWidget *widget,
 static void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data);
 static void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1,
     gint arg2, gpointer data);
-static void tree_v_scroll_handler (GtkWidget *widget, GdkEventScroll *event, gpointer data);
+static gboolean tree_v_scroll_handler (GtkWidget *widget, GdkEventScroll *event, gpointer data);
 static gboolean key_handler(GtkWidget *widget, GdkEventKey *event,
     gpointer user_data);
 
@@ -791,26 +791,19 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
 				}
 			} else {
 				/* Must get up one event and select the first one */
-				g_printf("a\n");
 				gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(
 							GTK_TREE_VIEW(event_viewer_data->tree_v)));
-				g_printf("b\n");
 				event_viewer_data->update_cursor = FALSE;
-				g_printf("c\n");
 				gtk_adjustment_set_value(event_viewer_data->vadjust_c,
 						gtk_adjustment_get_value(event_viewer_data->vadjust_c) - 1);
-				g_printf("d\n");
 				event_viewer_data->update_cursor = TRUE;
 				if(event_viewer_data->pos->len > 0) {
 					path = gtk_tree_path_new_from_indices(
 							0, -1);
-				g_printf("e\n");
 					if(path) {
 						gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
 																		 path, NULL, FALSE);
-				g_printf("f\n");
 						gtk_tree_path_free(path);
-				g_printf("g\n");
 					}
 				}
 			}
@@ -889,25 +882,19 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
 				}
 			}	else {
 				/* Must get up one page and select the first one */
-				printf("A\n");
 				gtk_tree_selection_unselect_all(gtk_tree_view_get_selection(
 							GTK_TREE_VIEW(event_viewer_data->tree_v)));
-				printf("B\n");
 				event_viewer_data->update_cursor = FALSE;
 				gtk_adjustment_set_value(event_viewer_data->vadjust_c,
 						gtk_adjustment_get_value(event_viewer_data->vadjust_c) - 2);
-				printf("C\n");
 				event_viewer_data->update_cursor = TRUE;
 				if(event_viewer_data->pos->len > 0) {
 					path = gtk_tree_path_new_from_indices(
 							0, -1);
-				printf("D\n");
 					if(path) {
 						gtk_tree_view_set_cursor(GTK_TREE_VIEW(event_viewer_data->tree_v),
 																		 path, NULL, FALSE);
-				printf("E\n");
 						gtk_tree_path_free(path);
-				printf("F\n");
 					}
 				}
 			}
