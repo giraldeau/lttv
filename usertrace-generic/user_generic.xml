@@ -1,0 +1,15 @@
+<facility name=user_generic>
+  <description>Generic user space facility</description>
+	
+  <event name=string>
+  	<description>Takes a string from user space</description>
+		<field name="data"><string/></field>
+  </event>
+
+  <event name=string_pointer>
+  	<description>Takes a string and pointer from user space</description>
+		<field name="string"><string/></field>
+		<field name="pointer"><pointer/></field>
+  </event>
+	
+</facility>
