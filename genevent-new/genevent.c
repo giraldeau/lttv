@@ -1588,20 +1588,38 @@ int print_event_logging_function(char *basename, facility_t *fac,
 int print_event_logging_function_user(char *basename, facility_t *fac,
 		event_t *event, FILE *fd)
 {
-	fprintf(fd, "static inline int trace_%s(\n", basename);
+	if(event->param_buffer) {
+		fprintf(fd, "static inline int trace_%s_param_buffer(\n", basename);
+	} else {
+		fprintf(fd, "static inline int trace_%s(\n", basename);
+	}
 	int	has_argument = 0;
 	int has_type_fixed = 0;
 
-	for(unsigned int j = 0; j < event->fields.position; j++) {
-		/* For each field, print the function argument */
-		field_t *f = (field_t*)event->fields.array[j];
-		type_descriptor_t *t = f->type;
+	if(event->param_buffer) {
 		if(has_argument) {
-			fprintf(fd, ",");
-			fprintf(fd, "\n");
+				fprintf(fd, ",");
+				fprintf(fd, "\n");
 		}
-		if(print_arg(t, fd, 2, basename, f->name)) return 1;
+		print_tabs(2, fd);
+		fprintf(fd, "void *buffer");
 		has_argument = 1;
+		fprintf(fd, ",");
+		fprintf(fd, "\n");
+		print_tabs(2, fd);
+		fprintf(fd, "size_t reserve_size");
+	} else {
+		for(unsigned int j = 0; j < event->fields.position; j++) {
+			/* For each field, print the function argument */
+			field_t *f = (field_t*)event->fields.array[j];
+			type_descriptor_t *t = f->type;
+			if(has_argument) {
+				fprintf(fd, ",");
+				fprintf(fd, "\n");
+			}
+			if(print_arg(t, fd, 2, basename, f->name)) return 1;
+			has_argument = 1;
+		}
 	}
 	if(!has_argument) {
 		print_tabs(2, fd);
@@ -1615,6 +1633,15 @@ int print_event_logging_function_user(char *basename, facility_t *fac,
 	fprintf(fd,"#else\n");
 	fprintf(fd, "{\n");
 	/* Print the function variables */
+	print_tabs(1, fd);
+	fprintf(fd, "int ret = 0;\n");
+	if(event->param_buffer) {
+		print_tabs(1, fd);
+		fprintf(fd, "reserve_size = ltt_align(reserve_size, sizeof(void *));\n");
+		print_tabs(1, fd);
+		fprintf(fd, "{\n");
+		goto do_syscall;
+	}
 	print_tabs(1, fd);
 	fprintf(fd, "void *buffer = NULL;\n");
 	print_tabs(1, fd);
@@ -1633,8 +1660,6 @@ int print_event_logging_function_user(char *basename, facility_t *fac,
 	fprintf(fd, "size_t reserve_size;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t slot_size;\n");
-	print_tabs(1, fd);
-	fprintf(fd, "int ret = 0;\n");
 	print_tabs(1, fd);
 
 	if(event->fields.position > 0) {
@@ -1758,9 +1783,9 @@ int print_event_logging_function_user(char *basename, facility_t *fac,
 		fprintf(fd, "\n");
 	}
 
-	
+do_syscall:
 	print_tabs(2, fd);
-	fprintf(fd, "ret = ltt_trace_generic(ltt_facility_%s_%X, event_%s_%s, stack_buffer, sizeof(stack_buffer));\n", fac->name, fac->checksum, fac->name, event->name);
+	fprintf(fd, "ret = ltt_trace_generic(ltt_facility_%s_%X, event_%s_%s, buffer, reserve_size, LTT_BLOCKING);\n", fac->name, fac->checksum, fac->name, event->name);
 
 	print_tabs(1, fd);
 	fprintf(fd, "}\n\n");
