@@ -247,6 +247,7 @@ void getEventAttributes(parse_file_t *in, event_t *ev)
   ev->name = NULL;
   ev->per_trace = 0;
   ev->per_tracefile = 0;
+  ev->param_buffer = 0;
 
   while(1) {
     token = getToken(in); 
@@ -265,7 +266,9 @@ void getEventAttributes(parse_file_t *in, event_t *ev)
       ev->per_trace = 1;
     } else if(!strcmp("per_tracefile", token)) {
       ev->per_tracefile = 1;
-    }
+    } else if(!strcmp("param_buffer", token)) {
+			ev->param_buffer = 1;
+		}
 
   }
 }
