@@ -57,22 +57,27 @@ struct user_facility_info {
   size_t size_t_size;
 };
 
-static inline _syscall5(int, ltt_trace_generic, unsigned int, facility_id,
-		unsigned int, event_id, void *, data, size_t, data_size, int, blocking)
-static inline _syscall2(int, ltt_register_generic, unsigned int *, facility_id, const struct user_facility_info *, info)
+static inline __attribute__((no_instrument_function)) 
+_syscall5(int, ltt_trace_generic, unsigned int, facility_id,
+	unsigned int, event_id, void *, data, size_t, data_size, int, blocking)
+static inline __attribute__((no_instrument_function))
+_syscall2(int, ltt_register_generic, unsigned int *, facility_id,
+	const struct user_facility_info *, info)
 
 #ifndef LTT_PACK
 /* Calculate the offset needed to align the type */
-static inline unsigned int ltt_align(size_t align_drift,
-                                     size_t size_of_type)
+static inline unsigned int __attribute__((no_instrument_function))
+														ltt_align(size_t align_drift,
+                                      size_t size_of_type)
 {
   size_t alignment = min(sizeof(void*), size_of_type);
 
   return ((alignment - align_drift) & (alignment-1));
 }
 #else
-static inline unsigned int ltt_align(size_t align_drift,
-                                     size_t size_of_type)
+static inline unsigned int __attribute__((no_instrument_function))
+														ltt_align(size_t align_drift,
+                                      size_t size_of_type)
 {
   return 0;
 }

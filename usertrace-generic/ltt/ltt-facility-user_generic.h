@@ -97,7 +97,7 @@ static inline int trace_user_generic_string(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_FB850A80, event_user_generic_string, buffer, reserve_size, LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_F583779E, event_user_generic_string, buffer, reserve_size, LTT_BLOCKING);
 	}
 
 	return ret;
@@ -226,7 +226,7 @@ static inline int trace_user_generic_string_pointer(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_FB850A80, event_user_generic_string_pointer, buffer, reserve_size, LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_F583779E, event_user_generic_string_pointer, buffer, reserve_size, LTT_BLOCKING);
 	}
 
 	return ret;
@@ -289,9 +289,213 @@ static inline int trace_user_generic_slow_printf_param_buffer(
 #else
 {
 	int ret = 0;
-	reserve_size += ltt_align(reserve_size, sizeof(void *));
+	reserve_size = ltt_align(reserve_size, sizeof(void *));
 	{
-		ret = ltt_trace_generic(ltt_facility_user_generic_FB850A80, event_user_generic_slow_printf, buffer, reserve_size, LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_F583779E, event_user_generic_slow_printf, buffer, reserve_size, LTT_BLOCKING);
+	}
+
+	return ret;
+
+}
+#endif //LTT_TRACE
+
+/* Event function_entry structures */
+
+/* Event function_entry logging function */
+static inline __attribute__((no_instrument_function)) int trace_user_generic_function_entry(
+		const void * lttng_param_this_fn,
+		const void * lttng_param_call_site)
+#ifndef LTT_TRACE
+{
+}
+#else
+{
+	int ret = 0;
+	void *buffer = NULL;
+	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
+	size_t *to_base = &real_to_base;
+	size_t real_to = 0;
+	size_t *to = &real_to;
+	size_t real_len = 0;
+	size_t *len = &real_len;
+	size_t reserve_size;
+	size_t slot_size;
+	size_t align;
+	const void *real_from;
+	const void **from = &real_from;
+		/* For each field, calculate the field size. */
+	/* size = *to_base + *to + *len */
+	/* Assume that the padding for alignment starts at a
+	 * sizeof(void *) address. */
+
+	*from = &lttng_param_this_fn;
+	align = sizeof(const void *);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	*len += sizeof(const void *);
+
+	*from = &lttng_param_call_site;
+	align = sizeof(const void *);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	*len += sizeof(const void *);
+
+	reserve_size = *to_base + *to + *len;
+	{
+		char stack_buffer[reserve_size];
+		buffer = stack_buffer;
+
+		*to_base = *to = *len = 0;
+
+		*from = &lttng_param_this_fn;
+		align = sizeof(const void *);
+
+		if(*len == 0) {
+			*to += ltt_align(*to, align); /* align output */
+		} else {
+			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+		}
+
+		*len += sizeof(const void *);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		*from = &lttng_param_call_site;
+		align = sizeof(const void *);
+
+		if(*len == 0) {
+			*to += ltt_align(*to, align); /* align output */
+		} else {
+			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+		}
+
+		*len += sizeof(const void *);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		ret = ltt_trace_generic(ltt_facility_user_generic_F583779E, event_user_generic_function_entry, buffer, reserve_size, LTT_BLOCKING);
+	}
+
+	return ret;
+
+}
+#endif //LTT_TRACE
+
+/* Event function_exit structures */
+
+/* Event function_exit logging function */
+static inline __attribute__((no_instrument_function)) int trace_user_generic_function_exit(
+		const void * lttng_param_this_fn,
+		const void * lttng_param_call_site)
+#ifndef LTT_TRACE
+{
+}
+#else
+{
+	int ret = 0;
+	void *buffer = NULL;
+	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
+	size_t *to_base = &real_to_base;
+	size_t real_to = 0;
+	size_t *to = &real_to;
+	size_t real_len = 0;
+	size_t *len = &real_len;
+	size_t reserve_size;
+	size_t slot_size;
+	size_t align;
+	const void *real_from;
+	const void **from = &real_from;
+		/* For each field, calculate the field size. */
+	/* size = *to_base + *to + *len */
+	/* Assume that the padding for alignment starts at a
+	 * sizeof(void *) address. */
+
+	*from = &lttng_param_this_fn;
+	align = sizeof(const void *);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	*len += sizeof(const void *);
+
+	*from = &lttng_param_call_site;
+	align = sizeof(const void *);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	*len += sizeof(const void *);
+
+	reserve_size = *to_base + *to + *len;
+	{
+		char stack_buffer[reserve_size];
+		buffer = stack_buffer;
+
+		*to_base = *to = *len = 0;
+
+		*from = &lttng_param_this_fn;
+		align = sizeof(const void *);
+
+		if(*len == 0) {
+			*to += ltt_align(*to, align); /* align output */
+		} else {
+			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+		}
+
+		*len += sizeof(const void *);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		*from = &lttng_param_call_site;
+		align = sizeof(const void *);
+
+		if(*len == 0) {
+			*to += ltt_align(*to, align); /* align output */
+		} else {
+			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+		}
+
+		*len += sizeof(const void *);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		ret = ltt_trace_generic(ltt_facility_user_generic_F583779E, event_user_generic_function_exit, buffer, reserve_size, LTT_BLOCKING);
 	}
 
 	return ret;
