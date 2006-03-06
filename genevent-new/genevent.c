@@ -2405,13 +2405,17 @@ int print_loader_c_user(facility_t *fac)
   fprintf(fd, "static void __attribute__((constructor)) __ltt_user_init(void)\n");
   fprintf(fd, "{\n");
   fprintf(fd, "\tint err;\n");
+	fprintf(fd, "#ifdef LTT_SHOW_DEBUG\n");
   fprintf(fd, "\tprintf(\"LTT : ltt-facility-%s init in userspace\\n\");\n", fac->name);
+	fprintf(fd, "#endif //LTT_SHOW_DEBUG\n");
   fprintf(fd, "\n");
   fprintf(fd, "\terr = ltt_register_generic(&LTT_FACILITY_SYMBOL, &facility);\n");
   fprintf(fd, "\tLTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;\n");
   fprintf(fd, "\t\n");
   fprintf(fd, "\tif(err) {\n");
+	fprintf(fd, "#ifdef LTT_SHOW_DEBUG\n");
   fprintf(fd, "\t\tperror(\"Error in ltt_register_generic\");\n");
+	fprintf(fd, "#endif //LTT_SHOW_DEBUG\n");
   fprintf(fd, "\t}\n");
   fprintf(fd, "}\n");
   fprintf(fd, "\n");
