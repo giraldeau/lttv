@@ -2,8 +2,9 @@
 CC=gcc
 INCLUDE_DIR=/usr/include
 LIB_DIR=/usr/lib
+RANLIB=ranlib
 
-all: sample-thread sample sample-highspeed sample-printf sample-instrument-fct ltt-instrument-functions.so.0
+all: libltt-instrument-functions.a libltt-instrument-functions.so.0 sample-thread sample sample-highspeed sample-printf sample-instrument-fct
 
 sample-thread: sample-thread.c ltt-facility-loader-user_generic.c
 	$(CC) $(CFLAGS) -lpthread -o $@ $^
@@ -17,20 +18,26 @@ sample-highspeed: sample-highspeed.c ltt-facility-loader-user_generic.c
 sample-printf: sample-printf.c ltt-facility-loader-user_generic.c
 	$(CC) $(CFLAGS) -o $@ $^
 
-sample-instrument-fct: sample-instrument-fct.c ltt-facility-loader-user_generic.c ltt-instrument-functions.c
-	$(CC) $(CFLAGS) -g -finstrument-functions -o $@ $^
+sample-instrument-fct: sample-instrument-fct.c
+	$(CC) $(CFLAGS) -L. -g -finstrument-functions -lltt-instrument-functions -o $@ $^
 
-ltt-instrument-functions.so.0: ltt-facility-loader-user_generic.c ltt-instrument-functions.c
-	$(CC) $(CFLAGS) -shared -Wl,-soname,ltt-instrument-functions.so -o $@ $^
-	ln -s ltt-instrument-functions.so.0 ltt-instrument-functions.so
+libltt-instrument-functions.a: ltt-instrument-functions.o ltt-facility-loader-user_generic.o
+	@rm -f libltt-instrument-functions.a
+	$(AR) rc $@ $^
+	$(RANLIB) $@
+
+libltt-instrument-functions.so.0: ltt-instrument-functions.o ltt-facility-loader-user_generic.o
+	@rm -f libltt-instrument-functions.so libltt-instrument-functions.so.0
+	$(CC) $(CFLAGS) -shared -Wl,-soname,libltt-instrument-functions.so -o $@ $^
+	ln -s libltt-instrument-functions.so.0 libltt-instrument-functions.so
 
 .PHONY : clean install
 
 install:
 	if [ ! -e "$(INCLUDE_DIR)/ltt" ] ; then mkdir $(INCLUDE_DIR)/ltt ; fi
 	cp -f ltt/*.h $(INCLUDE_DIR)/ltt
-	cp -f ltt-instrument-functions.so* $(LIB_DIR)
+	cp -f libltt-instrument-functions.so* libltt-instrument-functions.a $(LIB_DIR)
 
 clean:
-	rm -fr *.o *~ sample-thread sample sample-highspeed sample-printf sample-instrument-fct ltt-instrument-functions.so.0 ltt-instrument-functions.so
+	rm -fr *.o *~ sample-thread sample sample-highspeed sample-printf sample-instrument-fct libltt-instrument-functions.so* libltt-instrument-functions.a
 
