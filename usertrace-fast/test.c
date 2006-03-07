@@ -21,7 +21,7 @@ void *thr1(void *arg)
 	}
 
   //return ((void*)1);
-	//pthread_exit((void*)1);
+	pthread_exit((void*)1);
 }
 
 void *thr2(void *arg)
@@ -32,14 +32,14 @@ void *thr2(void *arg)
     printf("thread 2, thread id : %lu, pid %lu\n", pthread_self(), getpid());
     sleep(2);
   //}
-  //return ((void*)2);
-	//pthread_exit((void*)2);
 	for(i=0; i<2; i++) {
 		ltt_usertrace_fast_buffer_switch();
 		sleep(3);
 	}
 
 
+  return ((void*)2);	/* testing "die" */
+	//pthread_exit((void*)2);
 }
 
 

@@ -50,82 +50,115 @@
 
 #include "ltt-usertrace-fast.h"
 
-/* TLS for the trace buffer
- * http://www.dis.com/gnu/gcc/C--98-Thread-Local-Edits.html
- *
- * Add after paragraph 4
- *
- *     The storage for an object of thread storage duration shall be statically
- *     initialized before the first statement of the thread startup function. An
- *     object of thread storage duration shall not require dynamic
- *     initialization.
- */
-#if 0
-__thread struct ltt_trace_info ltt_trace_info =
-{
-	.init = 0,
-	.filter = 0,
-	.nesting = ATOMIC_INIT(0),
-	.channel.facilities = 
-		{	ATOMIC_INIT(0),
-			ATOMIC_INIT(0),
-			ATOMIC_INIT(0),
-			ATOMIC_INIT(0)
-		},
-	.channel.cpu = 
-		{ ATOMIC_INIT(0),
-			ATOMIC_INIT(0),
-			ATOMIC_INIT(0),
-			ATOMIC_INIT(0)
-		},
-};
-#endif //0
+
+/* Writer (the traced application) */
 
 __thread struct ltt_trace_info *thread_trace_info = NULL;
-
-
-/* signal handling */
-
-static void handler(int signo)
-{
-	printf("Signal %d received\n", signo);
-}
-
-
 
 void ltt_usertrace_fast_buffer_switch(void)
 {
 	kill(thread_trace_info->daemon_id, SIGUSR1);
 }
 
+static void ltt_usertrace_fast_cleanup(void *arg)
+{
+	kill(thread_trace_info->daemon_id, SIGUSR2);
+}
+
+/* Reader (the disk dumper daemon) */
+
+static pid_t ppid = 0;
+static int parent_exited = 0;
+
+/* signal handling */
+static void handler_sigusr1(int signo)
+{
+	printf("Signal %d received : parent buffer switch.\n", signo);
+}
+
+static void handler_sigusr2(int signo)
+{
+	printf("Signal %d received : parent exited.\n", signo);
+	parent_exited = 1;
+}
+
+static void handler_sigalarm(int signo)
+{
+	printf("Signal %d received\n", signo);
+
+	if(getppid() != ppid) {
+		/* Parent died */
+		printf("Parent %lu died, cleaning up\n", ppid);
+		ppid = 0;
+	}
+	alarm(3);
+}
+
+
+/* This function is called by ltt_thread_init which has signals blocked */
 static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		sigset_t oldset)
 {
 	struct sigaction act;
 	int ret;
 
+	ppid = getppid();
+
 	printf("ltt_usertrace_fast_daemon : init is %d, pid is %lu\n",
 			shared_trace_info->init, getpid());
 
-	act.sa_handler = handler;
+	act.sa_handler = handler_sigusr1;
 	act.sa_flags = 0;
 	sigemptyset(&(act.sa_mask));
 	sigaddset(&(act.sa_mask), SIGUSR1);
 	sigaction(SIGUSR1, &act, NULL);
+
+	act.sa_handler = handler_sigusr2;
+	act.sa_flags = 0;
+	sigemptyset(&(act.sa_mask));
+	sigaddset(&(act.sa_mask), SIGUSR2);
+	sigaction(SIGUSR2, &act, NULL);
+
+	act.sa_handler = handler_sigalarm;
+	act.sa_flags = 0;
+	sigemptyset(&(act.sa_mask));
+	sigaddset(&(act.sa_mask), SIGALRM);
+	sigaction(SIGALRM, &act, NULL);
+
 	/* Enable signals */
 	ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 	if(ret) {
 		printf("Error in pthread_sigmask\n");
 	}
 
+	alarm(3);
+
 	while(1) {
+		sleep(1);
 		pause();
+		if(ppid == 0) break; /* parent died */
+		if(parent_exited) break;
 		printf("Doing a buffer switch read. pid is : %lu\n", getpid());
+		//printf("Test parent. pid is : %lu, ppid is %lu\n", getpid(), getppid());
 	}
 
+	/* Buffer force switch (flush) */
+	//TODO
+	
+	/* The parent thread is dead and we have finished with the buffer */
+	munmap(shared_trace_info, sizeof(*shared_trace_info));
+	
+	exit(0);
 }
 
-void ltt_thread_init(void)
+
+/* Reader-writer initialization */
+
+static enum ltt_process_role { LTT_ROLE_WRITER, LTT_ROLE_READER }
+	role = LTT_ROLE_WRITER;
+
+
+void ltt_rw_init(void)
 {
 	pid_t pid;
 	struct ltt_trace_info *shared_trace_info;
@@ -162,6 +195,7 @@ void ltt_thread_init(void)
 		}
 	} else if(pid == 0) {
 		/* Child */
+		role = LTT_ROLE_READER;
 		ltt_usertrace_fast_daemon(shared_trace_info, oldset);
 		/* Should never return */
 		exit(-1);
@@ -171,16 +205,26 @@ void ltt_thread_init(void)
 	}
 }
 
+static __thread struct _pthread_cleanup_buffer cleanup_buffer;
+
+void ltt_thread_init(void)
+{
+	_pthread_cleanup_push(&cleanup_buffer, ltt_usertrace_fast_cleanup, NULL);
+	ltt_rw_init();
+}
+	
 void __attribute__((constructor)) __ltt_usertrace_fast_init(void)
 {
   printf("LTT usertrace-fast init\n");
 
-	ltt_thread_init();
+	ltt_rw_init();
 }
 
 void __attribute__((destructor)) __ltt_usertrace_fast_fini(void)
 {
-  printf("LTT usertrace-fast fini\n");
-
+	if(role == LTT_ROLE_WRITER) {
+	  printf("LTT usertrace-fast fini\n");
+		ltt_usertrace_fast_cleanup(NULL);
+	}
 }
 
