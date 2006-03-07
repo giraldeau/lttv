@@ -2,7 +2,7 @@
 
 CC=gcc
 
-test: test.c lttng_usertrace.c
+test: test.c ltt-usertrace-fast.c
 	$(CC) $(CFLAGS) -lpthread -o $@ $^
 
 .PHONY : clean

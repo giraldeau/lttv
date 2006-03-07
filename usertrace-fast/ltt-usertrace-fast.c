@@ -18,7 +18,7 @@
 #include <malloc.h>
 #include <string.h>
 
-#include "ltt_usertrace.h"
+#include "ltt-usertrace-fast.h"
 
 /* TLS for the trace buffer
  * http://www.dis.com/gnu/gcc/C--98-Thread-Local-Edits.html
@@ -71,7 +71,7 @@ void __attribute__((constructor)) __ltt_usertrace_fast_init(void)
 
   printf("LTTng usertrace-fast init\n");
 
-
+	ltt_thread_init();
 
 }
 

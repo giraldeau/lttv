@@ -4,12 +4,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "lttng_usertrace.h"
+#include "ltt-usertrace-fast.h"
 
 
 
 void *thr1(void *arg)
 {
+	ltt_thread_init();
   printf("thread 1, thread id : %lu, pid %lu\n", pthread_self(), getpid());
 
   while(1) {}
@@ -20,6 +21,7 @@ void *thr1(void *arg)
 
 void *thr2(void *arg)
 {
+	ltt_thread_init();
   while(1) {
     printf("thread 2, thread id : %lu, pid %lu\n", pthread_self(), getpid());
     sleep(2);

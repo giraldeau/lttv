@@ -29,6 +29,7 @@ struct ltt_buf {
 
 struct lttng_trace_info {
 	struct _pthread_cleanup_buffer cleanup;
+	int init;
 	int filter;
 	atomic_t nesting;
 	struct {
