@@ -180,10 +180,8 @@ Then, to see only the function_entry and function_exit events :
 lttv -m textDump -t /tmp/trace1 -e "event.facility=user_generic & (event.name=function_entry & event.name=function_exit)"
 
 It will show, for example :
-user_generic.function_entry: 59329.709939111 (/cpu_0), 19250, 18581,  SYSCALL { 
-0x8048454, 0x80484c2 }
-user_generic.function_exit: 59329.709944613 (/cpu_0), 19250, 18581,  SYSCALL { 0
-x8048454, 0x80484c2 }
+user_generic.function_entry: 59329.709939111 (/cpu_0), 19250, 18581,  SYSCALL { 0x8048454, 0x80484c2 }
+user_generic.function_exit: 59329.709944613 (/cpu_0), 19250, 18581,  SYSCALL { 0x8048454, 0x80484c2 }
 
 you can then use (from the binutils package)
 addr2line -e sample-instrument-fct -i -f 0x8048454
