@@ -9,26 +9,17 @@
 #define _LTTNG_USERTRACE_H
 
 #include <errno.h>
-#include <syscall.h>
-
 #include <asm/atomic.h>
 
-//Put in asm-i486/unistd.h
-#define __NR_ltt_update	294
-#define __NR_ltt_switch	295
+#ifndef	LTT_BUF_SIZE_CPU
+#define LTT_BUF_SIZE_CPU 1048576
+#endif //LTT_BUF_SIZE_CPU
 
-#undef NR_syscalls
-#define NR_syscalls 296
-
-#ifndef _LIBC
-// Put in bits/syscall.h
-#define SYS_ltt_update	__NR_ltt_update
-#define SYS_ltt_switch	__NR_ltt_switch
-#endif
+#ifndef	LTT_BUF_SIZE_FACILITIES
+#define LTT_BUF_SIZE_FACILITIES 4096
+#endif //LTT_BUF_SIZE_FACILITIES
 
 struct ltt_buf {
-	void *start;
-	size_t length;
 	atomic_t	offset;
 	atomic_t	reserve_count;
 	atomic_t	commit_count;
@@ -37,25 +28,19 @@ struct ltt_buf {
 };
 
 struct lttng_trace_info {
-	int	active:1;
-	int destroy:1;
+	struct _pthread_cleanup_buffer cleanup;
 	int filter;
 	atomic_t nesting;
 	struct {
 		struct ltt_buf facilities;
+		char facilities_buf[LTT_BUF_SIZE_FACILITIES] __attribute__ ((aligned (8)));
 		struct ltt_buf cpu;
+		char cpu_buf[LTT_BUF_SIZE_CPU] __attribute__ ((aligned (8)));
 	} channel;
 };
 
+extern __thread struct lttng_trace_info lttng_trace_info;
 
-void __lttng_sig_trace_handler(int signo);
-
-/* Call this at the beginning of a new thread, except for the main() */
-void lttng_thread_init(void);
-
-void lttng_free_trace_info(struct lttng_trace_info *info);
-
-static inline _syscall1(int, ltt_switch, unsigned long, addr)
-static inline _syscall5(int, ltt_update, unsigned long *, cpu_addr, unsigned long *, fac_addr, int *, active, int *, filter, int *, destroy)
+void ltt_thread_init(void);
 
 #endif //_LTTNG_USERTRACE_H
