@@ -73,22 +73,22 @@ static int parent_exited = 0;
 /* signal handling */
 static void handler_sigusr1(int signo)
 {
-	printf("Signal %d received : parent buffer switch.\n", signo);
+	printf("LTT Signal %d received : parent buffer switch.\n", signo);
 }
 
 static void handler_sigusr2(int signo)
 {
-	printf("Signal %d received : parent exited.\n", signo);
+	printf("LTT Signal %d received : parent exited.\n", signo);
 	parent_exited = 1;
 }
 
 static void handler_sigalarm(int signo)
 {
-	printf("Signal %d received\n", signo);
+	printf("LTT Signal %d received\n", signo);
 
 	if(getppid() != ppid) {
 		/* Parent died */
-		printf("Parent %lu died, cleaning up\n", ppid);
+		printf("LTT Parent %lu died, cleaning up\n", ppid);
 		ppid = 0;
 	}
 	alarm(3);
@@ -104,7 +104,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 
 	ppid = getppid();
 
-	printf("ltt_usertrace_fast_daemon : init is %d, pid is %lu\n",
+	printf("LTT ltt_usertrace_fast_daemon : init is %d, pid is %lu\n",
 			shared_trace_info->init, getpid());
 
 	act.sa_handler = handler_sigusr1;
@@ -128,17 +128,16 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	/* Enable signals */
 	ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 	if(ret) {
-		printf("Error in pthread_sigmask\n");
+		printf("LTT Error in pthread_sigmask\n");
 	}
 
 	alarm(3);
 
 	while(1) {
-		sleep(1);
 		pause();
 		if(ppid == 0) break; /* parent died */
 		if(parent_exited) break;
-		printf("Doing a buffer switch read. pid is : %lu\n", getpid());
+		printf("LTT Doing a buffer switch read. pid is : %lu\n", getpid());
 		//printf("Test parent. pid is : %lu, ppid is %lu\n", getpid(), getppid());
 	}
 
@@ -174,13 +173,13 @@ void ltt_rw_init(void)
 	/* Disable signals */
   ret = sigfillset(&set);
   if(ret) {
-    printf("Error in sigfillset\n");
+    printf("LTT Error in sigfillset\n");
   } 
 	
 	
   ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
   if(ret) {
-    printf("Error in pthread_sigmask\n");
+    printf("LTT Error in pthread_sigmask\n");
   }
 	
 	pid = fork();
@@ -191,7 +190,7 @@ void ltt_rw_init(void)
 		/* Enable signals */
 		ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 		if(ret) {
-			printf("Error in pthread_sigmask\n");
+			printf("LTT Error in pthread_sigmask\n");
 		}
 	} else if(pid == 0) {
 		/* Child */
@@ -201,7 +200,7 @@ void ltt_rw_init(void)
 		exit(-1);
 	} else if(pid < 0) {
 		/* fork error */
-		perror("Error in forking ltt-usertrace-fast");
+		perror("LTT Error in forking ltt-usertrace-fast");
 	}
 }
 
