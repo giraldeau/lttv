@@ -30,6 +30,13 @@
  *   dies, the data is not lost.
  * * Fast thread spawn : a pthread_create() is done by the application for each
  *   new thread.
+ *
+ * We use a timer to check periodically if the parent died. I think it is less
+ * intrusive than a ptrace() on the parent, which would get every signal. The
+ * side effect of this is that we won't be notified if the parent does an
+ * exec(). In this case, we will just sit there until the parent exits.
+ * 
+ *   
  * Copyright 2006 Mathieu Desnoyers
  *
  */
@@ -57,17 +64,24 @@ __thread struct ltt_trace_info *thread_trace_info = NULL;
 
 void ltt_usertrace_fast_buffer_switch(void)
 {
-	kill(thread_trace_info->daemon_id, SIGUSR1);
+	struct ltt_trace_info *tmp = thread_trace_info;
+	if(tmp)
+		kill(tmp->daemon_id, SIGUSR1);
 }
 
 static void ltt_usertrace_fast_cleanup(void *arg)
 {
-	kill(thread_trace_info->daemon_id, SIGUSR2);
+	struct ltt_trace_info *tmp = thread_trace_info;
+	if(tmp) {
+		thread_trace_info = NULL;
+		kill(tmp->daemon_id, SIGUSR2);
+		munmap(tmp, sizeof(*tmp));
+	}
 }
 
 /* Reader (the disk dumper daemon) */
 
-static pid_t ppid = 0;
+static pid_t traced_pid = 0;
 static int parent_exited = 0;
 
 /* signal handling */
@@ -86,26 +100,26 @@ static void handler_sigalarm(int signo)
 {
 	printf("LTT Signal %d received\n", signo);
 
-	if(getppid() != ppid) {
+	if(getppid() != traced_pid) {
 		/* Parent died */
-		printf("LTT Parent %lu died, cleaning up\n", ppid);
-		ppid = 0;
+		printf("LTT Parent %lu died, cleaning up\n", traced_pid);
+		traced_pid = 0;
 	}
 	alarm(3);
 }
 
 
-/* This function is called by ltt_thread_init which has signals blocked */
+/* This function is called by ltt_rw_init which has signals blocked */
 static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
-		sigset_t oldset)
+		sigset_t oldset, pid_t l_traced_pid)
 {
 	struct sigaction act;
 	int ret;
 
-	ppid = getppid();
+	traced_pid = l_traced_pid;
 
-	printf("LTT ltt_usertrace_fast_daemon : init is %d, pid is %lu\n",
-			shared_trace_info->init, getpid());
+	printf("LTT ltt_usertrace_fast_daemon : init is %d, pid is %lu, traced_pid is %lu\n",
+			shared_trace_info->init, getpid(), traced_pid);
 
 	act.sa_handler = handler_sigusr1;
 	act.sa_flags = 0;
@@ -135,7 +149,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 
 	while(1) {
 		pause();
-		if(ppid == 0) break; /* parent died */
+		if(traced_pid == 0) break; /* parent died */
 		if(parent_exited) break;
 		printf("LTT Doing a buffer switch read. pid is : %lu\n", getpid());
 		//printf("Test parent. pid is : %lu, ppid is %lu\n", getpid(), getppid());
@@ -163,12 +177,13 @@ void ltt_rw_init(void)
 	struct ltt_trace_info *shared_trace_info;
 	int ret;
 	sigset_t set, oldset;
+	pid_t l_traced_pid = getpid();
 
 	/* parent : create the shared memory map */
-	shared_trace_info = thread_trace_info = mmap(0, sizeof(*thread_trace_info),
+	shared_trace_info = mmap(0, sizeof(*thread_trace_info),
 			PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, 0, 0);
-	memset(shared_trace_info, 0, sizeof(*thread_trace_info));
-	thread_trace_info->init = 1;
+	memset(shared_trace_info, 0, sizeof(*shared_trace_info));
+	shared_trace_info->init = 1;
 
 	/* Disable signals */
   ret = sigfillset(&set);
@@ -181,11 +196,12 @@ void ltt_rw_init(void)
   if(ret) {
     printf("LTT Error in pthread_sigmask\n");
   }
-	
+
 	pid = fork();
 	if(pid > 0) {
 		/* Parent */
-		thread_trace_info->daemon_id = pid;
+		shared_trace_info->daemon_id = pid;
+		thread_trace_info = shared_trace_info;
 
 		/* Enable signals */
 		ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
@@ -195,7 +211,7 @@ void ltt_rw_init(void)
 	} else if(pid == 0) {
 		/* Child */
 		role = LTT_ROLE_READER;
-		ltt_usertrace_fast_daemon(shared_trace_info, oldset);
+		ltt_usertrace_fast_daemon(shared_trace_info, oldset, l_traced_pid);
 		/* Should never return */
 		exit(-1);
 	} else if(pid < 0) {
