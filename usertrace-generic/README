@@ -169,7 +169,7 @@ See the sample-instrument-fct.c example program.
 - Compile your application with at least these parameters to gcc (it is splitted
   on two lines, joined by a "\") :
 gcc -g -finstrument-functions -I /usr/src/usertrace-generic -o myapp myapp.c \
-  /usr/src/usertrace-generic/ltt-facility-loader-user_myfacility.c \
+  /usr/src/usertrace-generic/ltt-facility-loader-user_generic.c \
 	/usr/src/usertrace-generic/ltt-instrument-functions.c
 
 To see what the final result looks like :
