@@ -176,10 +176,10 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	snprintf(identifier_name, PATH_MAX-1,	"%lu.%lu.%llu",
 			traced_pid, traced_thread, get_cycles());
 	snprintf(outfile_name, PATH_MAX-1,	"facilities-%s", identifier_name);
-	fd_fac = creat(outfile_name, 0666);
+	fd_fac = creat(outfile_name, 0644);
 
 	snprintf(outfile_name, PATH_MAX-1,	"cpu-%s", identifier_name);
-	fd_cpu = creat(outfile_name, 0666);
+	fd_cpu = creat(outfile_name, 0644);
 	
 	
 	while(1) {
