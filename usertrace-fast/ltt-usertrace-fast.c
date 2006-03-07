@@ -1,5 +1,5 @@
 
-/* LTTng user-space tracing code
+/* LTTng user-space "fast" tracing code
  *
  * Copyright 2006 Mathieu Desnoyers
  *
@@ -18,7 +18,7 @@
 #include <malloc.h>
 #include <string.h>
 
-#include "lttng_usertrace.h"
+#include "ltt_usertrace.h"
 
 /* TLS for the trace buffer
  * http://www.dis.com/gnu/gcc/C--98-Thread-Local-Edits.html
@@ -65,7 +65,7 @@ void ltt_thread_init(void)
 }
 
 
-void __attribute__((constructor)) __lttng_user_init(void)
+void __attribute__((constructor)) __ltt_usertrace_fast_init(void)
 {
 	int err;
 

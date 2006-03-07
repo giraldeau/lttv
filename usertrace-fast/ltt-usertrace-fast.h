@@ -1,12 +1,12 @@
 
-/* LTTng user-space tracing header
+/* LTTng user-space "fast" tracing header
  *
  * Copyright 2006 Mathieu Desnoyers
  *
  */
 
-#ifndef _LTTNG_USERTRACE_H
-#define _LTTNG_USERTRACE_H
+#ifndef _LTT_USERTRACE_FAST_H
+#define _LTT_USERTRACE_FAST_H
 
 #include <errno.h>
 #include <asm/atomic.h>
@@ -43,4 +43,4 @@ extern __thread struct lttng_trace_info lttng_trace_info;
 
 void ltt_thread_init(void);
 
-#endif //_LTTNG_USERTRACE_H
+#endif //_LTT_USERTRACE_FAST_H
