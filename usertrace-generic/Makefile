@@ -36,7 +36,7 @@ libltt-instrument-functions.so.0: ltt-instrument-functions.o ltt-facility-loader
 install:
 	if [ ! -e "$(INCLUDE_DIR)/ltt" ] ; then mkdir $(INCLUDE_DIR)/ltt ; fi
 	cp -f ltt/*.h $(INCLUDE_DIR)/ltt
-	cp -f libltt-instrument-functions.so* libltt-instrument-functions.a $(LIB_DIR)
+	cp -df libltt-instrument-functions.so* libltt-instrument-functions.a $(LIB_DIR)
 
 clean:
 	rm -fr *.o *~ sample-thread sample sample-highspeed sample-printf sample-instrument-fct libltt-instrument-functions.so* libltt-instrument-functions.a
