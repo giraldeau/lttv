@@ -168,8 +168,8 @@ See the sample-instrument-fct.c example program.
 
 - Compile your application with at least these parameters to gcc (it is splitted
   on two lines, joined by a "\") :
-gcc -g -finstrument-functions -I /usr/src/usertrace-generic \
-  -llibltt-instrument-functions -o myapp myapp.c
+gcc -g -finstrument-functions \
+  -lltt-instrument-functions -o myapp myapp.c
 
 To see what the final result looks like :
 - Start tracing
