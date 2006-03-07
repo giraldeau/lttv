@@ -54,6 +54,12 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <signal.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <sys/param.h>
+
+#include <asm/timex.h>	//for get_cycles()
 
 #include "ltt-usertrace-fast.h"
 
@@ -69,6 +75,7 @@ void ltt_usertrace_fast_buffer_switch(void)
 		kill(tmp->daemon_id, SIGUSR1);
 }
 
+/* The cleanup should never be called from a signal handler */
 static void ltt_usertrace_fast_cleanup(void *arg)
 {
 	struct ltt_trace_info *tmp = thread_trace_info;
@@ -82,6 +89,7 @@ static void ltt_usertrace_fast_cleanup(void *arg)
 /* Reader (the disk dumper daemon) */
 
 static pid_t traced_pid = 0;
+static pthread_t traced_thread = 0;
 static int parent_exited = 0;
 
 /* signal handling */
@@ -111,12 +119,18 @@ static void handler_sigalarm(int signo)
 
 /* This function is called by ltt_rw_init which has signals blocked */
 static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
-		sigset_t oldset, pid_t l_traced_pid)
+		sigset_t oldset, pid_t l_traced_pid, pthread_t l_traced_thread)
 {
 	struct sigaction act;
 	int ret;
+	int fd_fac;
+	int fd_cpu;
+	char outfile_name[PATH_MAX];
+	char identifier_name[PATH_MAX];
+
 
 	traced_pid = l_traced_pid;
+	traced_thread = l_traced_thread;
 
 	printf("LTT ltt_usertrace_fast_daemon : init is %d, pid is %lu, traced_pid is %lu\n",
 			shared_trace_info->init, getpid(), traced_pid);
@@ -147,6 +161,27 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 
 	alarm(3);
 
+	/* Open output files */
+	umask(00000);
+	ret = mkdir(LTT_USERTRACE_ROOT, 0777);
+	if(ret < 0 && errno != EEXIST) {
+		perror("LTT Error in creating output (mkdir)");
+		exit(-1);
+	}
+	ret = chdir(LTT_USERTRACE_ROOT);
+	if(ret < 0) {
+		perror("LTT Error in creating output (chdir)");
+		exit(-1);
+	}
+	snprintf(identifier_name, PATH_MAX-1,	"%lu.%lu.%llu",
+			traced_pid, traced_thread, get_cycles());
+	snprintf(outfile_name, PATH_MAX-1,	"facilities-%s", identifier_name);
+	fd_fac = creat(outfile_name, 0666);
+
+	snprintf(outfile_name, PATH_MAX-1,	"cpu-%s", identifier_name);
+	fd_cpu = creat(outfile_name, 0666);
+	
+	
 	while(1) {
 		pause();
 		if(traced_pid == 0) break; /* parent died */
@@ -157,6 +192,9 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 
 	/* Buffer force switch (flush) */
 	//TODO
+	
+	close(fd_fac);
+	close(fd_cpu);
 	
 	/* The parent thread is dead and we have finished with the buffer */
 	munmap(shared_trace_info, sizeof(*shared_trace_info));
@@ -178,6 +216,7 @@ void ltt_rw_init(void)
 	int ret;
 	sigset_t set, oldset;
 	pid_t l_traced_pid = getpid();
+	pthread_t l_traced_thread = pthread_self();
 
 	/* parent : create the shared memory map */
 	shared_trace_info = mmap(0, sizeof(*thread_trace_info),
@@ -211,7 +250,8 @@ void ltt_rw_init(void)
 	} else if(pid == 0) {
 		/* Child */
 		role = LTT_ROLE_READER;
-		ltt_usertrace_fast_daemon(shared_trace_info, oldset, l_traced_pid);
+		ltt_usertrace_fast_daemon(shared_trace_info, oldset, l_traced_pid,
+					l_traced_thread);
 		/* Should never return */
 		exit(-1);
 	} else if(pid < 0) {

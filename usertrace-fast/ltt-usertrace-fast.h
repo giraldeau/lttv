@@ -20,6 +20,10 @@
 #define LTT_BUF_SIZE_FACILITIES 4096
 #endif //LTT_BUF_SIZE_FACILITIES
 
+#ifndef LTT_USERTRACE_ROOT
+#define LTT_USERTRACE_ROOT "/tmp/ltt-usertrace"
+#endif //LTT_USERTRACE_ROOT
+
 struct ltt_buf {
 	atomic_t	offset;
 	atomic_t	reserve_count;
