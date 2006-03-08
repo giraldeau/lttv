@@ -42,6 +42,7 @@
  */
 
 #define _GNU_SOURCE
+#define LTT_TRACE
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -60,9 +61,12 @@
 #include <stdlib.h>
 #include <sys/param.h>
 #include <sys/time.h>
+#include <errno.h>
 
 #include <asm/atomic.h>
 #include <asm/timex.h>	//for get_cycles()
+
+_syscall0(pid_t,gettid)
 
 #include "ltt-usertrace-fast.h"
 

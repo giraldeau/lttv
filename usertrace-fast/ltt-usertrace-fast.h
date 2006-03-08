@@ -8,12 +8,17 @@
 #ifndef _LTT_USERTRACE_FAST_H
 #define _LTT_USERTRACE_FAST_H
 
+#ifdef LTT_TRACE
+
 #include <errno.h>
 #include <asm/atomic.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <syscall.h>
 #include <linux/futex.h>
+
+#include <ltt/ltt-facility-id-user_generic.h>
+#include <ltt/ltt-generic.h>
 
 #ifndef futex
 static inline __attribute__((no_instrument_function))
@@ -121,7 +126,7 @@ struct ltt_trace_info {
 	int init;
 	int filter;
 	pid_t daemon_id;
-	atomic_t nesting;
+	int nesting;
 	struct {
 		struct ltt_buf facilities;
 		struct ltt_buf cpu;
@@ -145,27 +150,6 @@ void ltt_thread_init(void);
 void __attribute__((no_instrument_function))
 	ltt_usertrace_fast_buffer_switch(void);
 
-#ifndef LTT_PACK
-/* Calculate the offset needed to align the type */
-static inline unsigned int __attribute__((no_instrument_function))
-                            ltt_align(size_t align_drift,
-                                      size_t size_of_type)
-{
-  size_t alignment = min(sizeof(void*), size_of_type);
-
-  return ((alignment - align_drift) & (alignment-1));
-}
-#define LTT_ALIGN
-#else
-static inline unsigned int __attribute__((no_instrument_function))
-                            ltt_align(size_t align_drift,
-                                      size_t size_of_type)
-{
-  return 0;
-}
-#define LTT_ALIGN __attribute__((packed))
-#endif //LTT_PACK
-
 /* Get the offset of the channel in the ltt_trace_struct */
 #define GET_CHANNEL_INDEX(chan) \
   (unsigned int)&((struct ltt_trace_info*)NULL)->channel.chan
@@ -186,17 +170,6 @@ static inline unsigned int __attribute__((no_instrument_function))
 		ltt_get_index_from_facility(ltt_facility_t fID,
 																uint8_t eID)
 {
-
-	if(fID == ltt_facility_core) {
-		switch(eID) {
-			case event_core_facility_load:
-			case event_core_facility_unload:
-			case event_core_state_dump_facility_load:
-				return GET_CHANNEL_INDEX(facilities);
-			default:
-				return GET_CHANNEL_INDEX(cpu);
-		}
-	}
 	return GET_CHANNEL_INDEX(cpu);
 }
 
@@ -658,7 +631,7 @@ static inline void __attribute__((no_instrument_function)) ltt_commit_slot(
 }
 	
 
-
+#endif //LTT_TRACE
 
 
 #endif //_LTT_USERTRACE_FAST_H
