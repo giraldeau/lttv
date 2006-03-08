@@ -53,6 +53,7 @@ static inline void lttng_write_string_user_generic_string_data(
 
 
 /* Event string logging function */
+#ifndef LTT_TRACE_FAST
 static inline int trace_user_generic_string(
 		const char * lttng_param_data)
 #ifndef LTT_TRACE
@@ -104,6 +105,82 @@ static inline int trace_user_generic_string(
 
 }
 #endif //LTT_TRACE
+#endif //!LTT_TRACE_FAST
+
+#ifdef LTT_TRACE_FAST
+static inline int trace_user_generic_string(
+		const char * lttng_param_data)
+#ifndef LTT_TRACE
+{
+}
+#else
+{
+	unsigned int index;
+	struct ltt_trace_info *trace = thread_trace_info;
+	struct ltt_buf *ltt_buf;
+	void *buffer = NULL;
+	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
+	size_t *to_base = &real_to_base;
+	size_t real_to = 0;
+	size_t *to = &real_to;
+	size_t real_len = 0;
+	size_t *len = &real_len;
+	size_t reserve_size;
+	size_t slot_size;
+	const void *real_from;
+	const void **from = &real_from;
+	uint64_t tsc;
+	size_t before_hdr_pad, after_hdr_pad, header_size;
+
+	if(!trace) ltt_thread_init();
+
+	/* For each field, calculate the field size. */
+	/* size = *to_base + *to + *len */
+	/* Assume that the padding for alignment starts at a
+	 * sizeof(void *) address. */
+
+	*from = lttng_param_data;
+	lttng_write_string_user_generic_string_data(buffer, to_base, to, from, len, lttng_param_data);
+
+	reserve_size = *to_base + *to + *len;
+	trace->nesting++;
+	index = ltt_get_index_from_facility(ltt_facility_user_generic_F583779E,
+						event_user_generic_string);
+
+	{
+		ltt_buf = ltt_get_channel_from_index(trace, index);
+				slot_size = 0;
+		buffer = ltt_reserve_slot(trace, ltt_buf,
+			reserve_size, &slot_size, &tsc,
+			&before_hdr_pad, &after_hdr_pad, &header_size);
+		if(!buffer) goto end; /* buffer full */
+
+		*to_base = *to = *len = 0;
+
+		ltt_write_event_header(trace, ltt_buf, buffer,
+			ltt_facility_user_generic_F583779E, event_user_generic_string,
+			reserve_size, before_hdr_pad, tsc);
+		*to_base += before_hdr_pad + after_hdr_pad + header_size;
+
+		*from = lttng_param_data;
+		lttng_write_string_user_generic_string_data(buffer, to_base, to, from, len, lttng_param_data);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		ltt_commit_slot(ltt_buf, buffer, slot_size);
+
+}
+
+end:
+	trace->nesting--;
+}
+#endif //LTT_TRACE
+#endif //LTT_TRACE_FAST
 
 /* Event string_pointer structures */
 static inline void lttng_write_string_user_generic_string_pointer_string(
@@ -151,6 +228,7 @@ static inline void lttng_write_string_user_generic_string_pointer_string(
 
 
 /* Event string_pointer logging function */
+#ifndef LTT_TRACE_FAST
 static inline int trace_user_generic_string_pointer(
 		const char * lttng_param_string,
 		const void * lttng_param_pointer)
@@ -233,6 +311,113 @@ static inline int trace_user_generic_string_pointer(
 
 }
 #endif //LTT_TRACE
+#endif //!LTT_TRACE_FAST
+
+#ifdef LTT_TRACE_FAST
+static inline int trace_user_generic_string_pointer(
+		const char * lttng_param_string,
+		const void * lttng_param_pointer)
+#ifndef LTT_TRACE
+{
+}
+#else
+{
+	unsigned int index;
+	struct ltt_trace_info *trace = thread_trace_info;
+	struct ltt_buf *ltt_buf;
+	void *buffer = NULL;
+	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
+	size_t *to_base = &real_to_base;
+	size_t real_to = 0;
+	size_t *to = &real_to;
+	size_t real_len = 0;
+	size_t *len = &real_len;
+	size_t reserve_size;
+	size_t slot_size;
+	size_t align;
+	const void *real_from;
+	const void **from = &real_from;
+	uint64_t tsc;
+	size_t before_hdr_pad, after_hdr_pad, header_size;
+
+	if(!trace) ltt_thread_init();
+
+	/* For each field, calculate the field size. */
+	/* size = *to_base + *to + *len */
+	/* Assume that the padding for alignment starts at a
+	 * sizeof(void *) address. */
+
+	*from = lttng_param_string;
+	lttng_write_string_user_generic_string_pointer_string(buffer, to_base, to, from, len, lttng_param_string);
+
+	*from = &lttng_param_pointer;
+	align = sizeof(const void *);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	*len += sizeof(const void *);
+
+	reserve_size = *to_base + *to + *len;
+	trace->nesting++;
+	index = ltt_get_index_from_facility(ltt_facility_user_generic_F583779E,
+						event_user_generic_string_pointer);
+
+	{
+		ltt_buf = ltt_get_channel_from_index(trace, index);
+				slot_size = 0;
+		buffer = ltt_reserve_slot(trace, ltt_buf,
+			reserve_size, &slot_size, &tsc,
+			&before_hdr_pad, &after_hdr_pad, &header_size);
+		if(!buffer) goto end; /* buffer full */
+
+		*to_base = *to = *len = 0;
+
+		ltt_write_event_header(trace, ltt_buf, buffer,
+			ltt_facility_user_generic_F583779E, event_user_generic_string_pointer,
+			reserve_size, before_hdr_pad, tsc);
+		*to_base += before_hdr_pad + after_hdr_pad + header_size;
+
+		*from = lttng_param_string;
+		lttng_write_string_user_generic_string_pointer_string(buffer, to_base, to, from, len, lttng_param_string);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		*from = &lttng_param_pointer;
+		align = sizeof(const void *);
+
+		if(*len == 0) {
+			*to += ltt_align(*to, align); /* align output */
+		} else {
+			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+		}
+
+		*len += sizeof(const void *);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		ltt_commit_slot(ltt_buf, buffer, slot_size);
+
+}
+
+end:
+	trace->nesting--;
+}
+#endif //LTT_TRACE
+#endif //LTT_TRACE_FAST
 
 /* Event slow_printf structures */
 static inline void lttng_write_string_user_generic_slow_printf_string(
@@ -280,6 +465,7 @@ static inline void lttng_write_string_user_generic_slow_printf_string(
 
 
 /* Event slow_printf logging function */
+#ifndef LTT_TRACE_FAST
 static inline int trace_user_generic_slow_printf_param_buffer(
 		void *buffer,
 		size_t reserve_size)
@@ -298,10 +484,87 @@ static inline int trace_user_generic_slow_printf_param_buffer(
 
 }
 #endif //LTT_TRACE
+#endif //!LTT_TRACE_FAST
+
+#ifdef LTT_TRACE_FAST
+static inline int trace_user_generic_slow_printf(
+		const char * lttng_param_string)
+#ifndef LTT_TRACE
+{
+}
+#else
+{
+	unsigned int index;
+	struct ltt_trace_info *trace = thread_trace_info;
+	struct ltt_buf *ltt_buf;
+	void *buffer = NULL;
+	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
+	size_t *to_base = &real_to_base;
+	size_t real_to = 0;
+	size_t *to = &real_to;
+	size_t real_len = 0;
+	size_t *len = &real_len;
+	size_t reserve_size;
+	size_t slot_size;
+	const void *real_from;
+	const void **from = &real_from;
+	uint64_t tsc;
+	size_t before_hdr_pad, after_hdr_pad, header_size;
+
+	if(!trace) ltt_thread_init();
+
+	/* For each field, calculate the field size. */
+	/* size = *to_base + *to + *len */
+	/* Assume that the padding for alignment starts at a
+	 * sizeof(void *) address. */
+
+	*from = lttng_param_string;
+	lttng_write_string_user_generic_slow_printf_string(buffer, to_base, to, from, len, lttng_param_string);
+
+	reserve_size = *to_base + *to + *len;
+	trace->nesting++;
+	index = ltt_get_index_from_facility(ltt_facility_user_generic_F583779E,
+						event_user_generic_slow_printf);
+
+	{
+		ltt_buf = ltt_get_channel_from_index(trace, index);
+				slot_size = 0;
+		buffer = ltt_reserve_slot(trace, ltt_buf,
+			reserve_size, &slot_size, &tsc,
+			&before_hdr_pad, &after_hdr_pad, &header_size);
+		if(!buffer) goto end; /* buffer full */
+
+		*to_base = *to = *len = 0;
+
+		ltt_write_event_header(trace, ltt_buf, buffer,
+			ltt_facility_user_generic_F583779E, event_user_generic_slow_printf,
+			reserve_size, before_hdr_pad, tsc);
+		*to_base += before_hdr_pad + after_hdr_pad + header_size;
+
+		*from = lttng_param_string;
+		lttng_write_string_user_generic_slow_printf_string(buffer, to_base, to, from, len, lttng_param_string);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		ltt_commit_slot(ltt_buf, buffer, slot_size);
+
+}
+
+end:
+	trace->nesting--;
+}
+#endif //LTT_TRACE
+#endif //LTT_TRACE_FAST
 
 /* Event function_entry structures */
 
 /* Event function_entry logging function */
+#ifndef LTT_TRACE_FAST
 static inline __attribute__((no_instrument_function)) int trace_user_generic_function_entry(
 		const void * lttng_param_this_fn,
 		const void * lttng_param_call_site)
@@ -400,10 +663,134 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 
 }
 #endif //LTT_TRACE
+#endif //!LTT_TRACE_FAST
+
+#ifdef LTT_TRACE_FAST
+static inline __attribute__((no_instrument_function)) int trace_user_generic_function_entry(
+		const void * lttng_param_this_fn,
+		const void * lttng_param_call_site)
+#ifndef LTT_TRACE
+{
+}
+#else
+{
+	unsigned int index;
+	struct ltt_trace_info *trace = thread_trace_info;
+	struct ltt_buf *ltt_buf;
+	void *buffer = NULL;
+	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
+	size_t *to_base = &real_to_base;
+	size_t real_to = 0;
+	size_t *to = &real_to;
+	size_t real_len = 0;
+	size_t *len = &real_len;
+	size_t reserve_size;
+	size_t slot_size;
+	size_t align;
+	const void *real_from;
+	const void **from = &real_from;
+	uint64_t tsc;
+	size_t before_hdr_pad, after_hdr_pad, header_size;
+
+	if(!trace) ltt_thread_init();
+
+	/* For each field, calculate the field size. */
+	/* size = *to_base + *to + *len */
+	/* Assume that the padding for alignment starts at a
+	 * sizeof(void *) address. */
+
+	*from = &lttng_param_this_fn;
+	align = sizeof(const void *);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	*len += sizeof(const void *);
+
+	*from = &lttng_param_call_site;
+	align = sizeof(const void *);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	*len += sizeof(const void *);
+
+	reserve_size = *to_base + *to + *len;
+	trace->nesting++;
+	index = ltt_get_index_from_facility(ltt_facility_user_generic_F583779E,
+						event_user_generic_function_entry);
+
+	{
+		ltt_buf = ltt_get_channel_from_index(trace, index);
+				slot_size = 0;
+		buffer = ltt_reserve_slot(trace, ltt_buf,
+			reserve_size, &slot_size, &tsc,
+			&before_hdr_pad, &after_hdr_pad, &header_size);
+		if(!buffer) goto end; /* buffer full */
+
+		*to_base = *to = *len = 0;
+
+		ltt_write_event_header(trace, ltt_buf, buffer,
+			ltt_facility_user_generic_F583779E, event_user_generic_function_entry,
+			reserve_size, before_hdr_pad, tsc);
+		*to_base += before_hdr_pad + after_hdr_pad + header_size;
+
+		*from = &lttng_param_this_fn;
+		align = sizeof(const void *);
+
+		if(*len == 0) {
+			*to += ltt_align(*to, align); /* align output */
+		} else {
+			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+		}
+
+		*len += sizeof(const void *);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		*from = &lttng_param_call_site;
+		align = sizeof(const void *);
+
+		if(*len == 0) {
+			*to += ltt_align(*to, align); /* align output */
+		} else {
+			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+		}
+
+		*len += sizeof(const void *);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		ltt_commit_slot(ltt_buf, buffer, slot_size);
+
+}
+
+end:
+	trace->nesting--;
+}
+#endif //LTT_TRACE
+#endif //LTT_TRACE_FAST
 
 /* Event function_exit structures */
 
 /* Event function_exit logging function */
+#ifndef LTT_TRACE_FAST
 static inline __attribute__((no_instrument_function)) int trace_user_generic_function_exit(
 		const void * lttng_param_this_fn,
 		const void * lttng_param_call_site)
@@ -502,5 +889,128 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 
 }
 #endif //LTT_TRACE
+#endif //!LTT_TRACE_FAST
+
+#ifdef LTT_TRACE_FAST
+static inline __attribute__((no_instrument_function)) int trace_user_generic_function_exit(
+		const void * lttng_param_this_fn,
+		const void * lttng_param_call_site)
+#ifndef LTT_TRACE
+{
+}
+#else
+{
+	unsigned int index;
+	struct ltt_trace_info *trace = thread_trace_info;
+	struct ltt_buf *ltt_buf;
+	void *buffer = NULL;
+	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
+	size_t *to_base = &real_to_base;
+	size_t real_to = 0;
+	size_t *to = &real_to;
+	size_t real_len = 0;
+	size_t *len = &real_len;
+	size_t reserve_size;
+	size_t slot_size;
+	size_t align;
+	const void *real_from;
+	const void **from = &real_from;
+	uint64_t tsc;
+	size_t before_hdr_pad, after_hdr_pad, header_size;
+
+	if(!trace) ltt_thread_init();
+
+	/* For each field, calculate the field size. */
+	/* size = *to_base + *to + *len */
+	/* Assume that the padding for alignment starts at a
+	 * sizeof(void *) address. */
+
+	*from = &lttng_param_this_fn;
+	align = sizeof(const void *);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	*len += sizeof(const void *);
+
+	*from = &lttng_param_call_site;
+	align = sizeof(const void *);
+
+	if(*len == 0) {
+		*to += ltt_align(*to, align); /* align output */
+	} else {
+		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+	}
+
+	*len += sizeof(const void *);
+
+	reserve_size = *to_base + *to + *len;
+	trace->nesting++;
+	index = ltt_get_index_from_facility(ltt_facility_user_generic_F583779E,
+						event_user_generic_function_exit);
+
+	{
+		ltt_buf = ltt_get_channel_from_index(trace, index);
+				slot_size = 0;
+		buffer = ltt_reserve_slot(trace, ltt_buf,
+			reserve_size, &slot_size, &tsc,
+			&before_hdr_pad, &after_hdr_pad, &header_size);
+		if(!buffer) goto end; /* buffer full */
+
+		*to_base = *to = *len = 0;
+
+		ltt_write_event_header(trace, ltt_buf, buffer,
+			ltt_facility_user_generic_F583779E, event_user_generic_function_exit,
+			reserve_size, before_hdr_pad, tsc);
+		*to_base += before_hdr_pad + after_hdr_pad + header_size;
+
+		*from = &lttng_param_this_fn;
+		align = sizeof(const void *);
+
+		if(*len == 0) {
+			*to += ltt_align(*to, align); /* align output */
+		} else {
+			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+		}
+
+		*len += sizeof(const void *);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		*from = &lttng_param_call_site;
+		align = sizeof(const void *);
+
+		if(*len == 0) {
+			*to += ltt_align(*to, align); /* align output */
+		} else {
+			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
+		}
+
+		*len += sizeof(const void *);
+
+		/* Flush pending memcpy */
+		if(*len != 0) {
+			memcpy(buffer+*to_base+*to, *from, *len);
+			*to += *len;
+			*len = 0;
+		}
+
+		ltt_commit_slot(ltt_buf, buffer, slot_size);
+
+}
+
+end:
+	trace->nesting--;
+}
+#endif //LTT_TRACE
+#endif //LTT_TRACE_FAST
 
 #endif //_LTT_FACILITY_USER_GENERIC_H_

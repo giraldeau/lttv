@@ -1582,13 +1582,16 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	return 0;
 }
 
-/* print_event_logging_function_user
+/* print_event_logging_function_user_generic
  * Print the logging function of an event for userspace tracing. This is the
  * core of genevent */
-int print_event_logging_function_user(char *basename, facility_t *fac,
+int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 		event_t *event, FILE *fd)
 {
 	char *attrib;
+
+	fprintf(fd, "#ifndef LTT_TRACE_FAST\n");
+	
 	if(event->no_instrument_function) {
 		attrib = "__attribute__((no_instrument_function)) ";
 	} else {
@@ -1802,9 +1805,279 @@ do_syscall:
 	fprintf(fd, "}\n");
 	fprintf(fd, 
 			"#endif //LTT_TRACE\n");
+	fprintf(fd, "#endif //!LTT_TRACE_FAST\n\n");
 
 	return 0;
 }
+
+/* print_event_logging_function_user_fast
+ * Print the logging function of an event for userspace tracing. This is the
+ * core of genevent */
+int print_event_logging_function_user_fast(char *basename, facility_t *fac,
+		event_t *event, FILE *fd)
+{
+	char *attrib;
+
+	fprintf(fd, "#ifdef LTT_TRACE_FAST\n");
+	
+	if(event->no_instrument_function) {
+		attrib = "__attribute__((no_instrument_function)) ";
+	} else {
+		attrib = "";
+	}
+	fprintf(fd, "static inline %sint trace_%s(\n",attrib, basename);
+
+	int	has_argument = 0;
+	int has_type_fixed = 0;
+
+	for(unsigned int j = 0; j < event->fields.position; j++) {
+		/* For each field, print the function argument */
+		field_t *f = (field_t*)event->fields.array[j];
+		type_descriptor_t *t = f->type;
+		if(has_argument) {
+			fprintf(fd, ",");
+			fprintf(fd, "\n");
+		}
+		if(print_arg(t, fd, 2, basename, f->name)) return 1;
+		has_argument = 1;
+	}
+	if(!has_argument) {
+		print_tabs(2, fd);
+		fprintf(fd, "void");
+	}
+	fprintf(fd,")\n");
+	fprintf(fd, 
+			"#ifndef LTT_TRACE\n");
+	fprintf(fd, "{\n");
+	fprintf(fd, "}\n");
+	fprintf(fd,"#else\n");
+	fprintf(fd, "{\n");
+	/* Print the function variables */
+	print_tabs(1, fd);
+	fprintf(fd, "unsigned int index;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "struct ltt_trace_info *trace = thread_trace_info;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "struct ltt_buf *ltt_buf;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "void *buffer = NULL;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t *to_base = &real_to_base;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t real_to = 0;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t *to = &real_to;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t real_len = 0;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t *len = &real_len;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t reserve_size;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t slot_size;\n");
+	print_tabs(1, fd);
+
+	if(event->fields.position > 0) {
+		for(unsigned int i=0;i<event->fields.position;i++){
+			/* Search for at least one child with fixed size. It means
+			 * we need local variables.*/
+			field_t *field = (field_t*)(event->fields.array[i]);
+			type_descriptor_t *type = field->type;
+			has_type_fixed = has_type_local(type);
+			if(has_type_fixed) break;
+		}
+		
+		if(has_type_fixed) {
+			fprintf(fd, "size_t align;\n");
+			print_tabs(1, fd);
+		}
+
+		fprintf(fd, "const void *real_from;\n");
+		print_tabs(1, fd);
+		fprintf(fd, "const void **from = &real_from;\n");
+		print_tabs(1, fd);
+	}
+	fprintf(fd, "uint64_t tsc;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "size_t before_hdr_pad, after_hdr_pad, header_size;\n");
+	fprintf(fd, "\n");
+	
+	print_tabs(1, fd);
+	fprintf(fd, "if(!trace) ltt_thread_init();\n");
+	fprintf(fd, "\n");
+
+	/* Calculate event variable len + event data alignment offset.
+	 * Assume that the padding for alignment starts at a void*
+	 * address.
+	 * This excludes the header size and alignment. */
+
+	print_tabs(1, fd);
+	fprintf(fd, "/* For each field, calculate the field size. */\n");
+	print_tabs(1, fd);
+	fprintf(fd, "/* size = *to_base + *to + *len */\n");
+	print_tabs(1, fd);
+	fprintf(fd, "/* Assume that the padding for alignment starts at a\n");
+	print_tabs(1, fd);
+	fprintf(fd, " * sizeof(void *) address. */\n");
+	fprintf(fd, "\n");
+
+	for(unsigned int i=0;i<event->fields.position;i++){
+		field_t *field = (field_t*)(event->fields.array[i]);
+		type_descriptor_t *type = field->type;
+		/* Set from */
+		print_tabs(1, fd);
+		switch(type->type) {
+			case SEQUENCE:
+			case UNION:
+			case ARRAY:
+			case STRUCT:
+			case STRING:
+				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				break;
+			default:
+				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				break;
+		}
+
+		if(print_type_write(type,
+				fd, 1, basename, field->name, "lttng_param_", 0)) return 1;
+		fprintf(fd, "\n");
+	}
+	print_tabs(1, fd);
+	fprintf(fd, "reserve_size = *to_base + *to + *len;\n");
+
+	print_tabs(1, fd);
+	fprintf(fd, "trace->nesting++;\n");
+
+	/* Get facility index */
+
+	print_tabs(1, fd);
+	fprintf(fd, 
+		"index = ltt_get_index_from_facility(ltt_facility_%s_%X,\n"\
+				"\t\t\t\t\t\tevent_%s_%s);\n",
+			fac->name, fac->checksum, fac->name, event->name);
+	fprintf(fd,"\n");
+
+	
+	print_tabs(1, fd);
+	fprintf(fd, "{\n");
+
+	if(event->per_trace) {
+		print_tabs(2, fd);
+		fprintf(fd, "if(dest_trace != trace) continue;\n\n");
+	}
+ 
+	print_tabs(2, fd);
+	fprintf(fd, "ltt_buf = ltt_get_channel_from_index(trace, index);\n");
+	print_tabs(2, fd);
+
+	
+	/* Relay reserve */
+	/* If error, increment event lost counter (done by ltt_reserve_slot) and 
+	 * return */
+	print_tabs(2, fd);
+	fprintf(fd, "slot_size = 0;\n");
+	print_tabs(2, fd);
+	fprintf(fd, "buffer = ltt_reserve_slot(trace, ltt_buf,\n");
+	print_tabs(3, fd);
+	fprintf(fd, "reserve_size, &slot_size, &tsc,\n");
+	print_tabs(3, fd);
+	fprintf(fd, "&before_hdr_pad, &after_hdr_pad, &header_size);\n");
+	/* If error, return */
+	print_tabs(2, fd);
+	fprintf(fd, "if(!buffer) goto end; /* buffer full */\n\n");
+	//print_tabs(2, fd);
+	// for DEBUG only 
+	// fprintf(fd, "goto commit; /* DEBUG : never actually write. */\n\n");
+	print_tabs(2, fd);
+	fprintf(fd, "*to_base = *to = *len = 0;\n");
+	fprintf(fd, "\n");
+
+	/* Write event header */
+	print_tabs(2, fd);
+	fprintf(fd, "ltt_write_event_header(trace, ltt_buf, buffer,\n");
+	print_tabs(3, fd);
+	fprintf(fd, "ltt_facility_%s_%X, event_%s_%s,\n", fac->name, fac->checksum,
+									fac->name, event->name);
+	print_tabs(3, fd);
+	fprintf(fd, "reserve_size, before_hdr_pad, tsc);\n");
+	print_tabs(2, fd);
+	fprintf(fd, "*to_base += before_hdr_pad + after_hdr_pad + header_size;\n");
+	fprintf(fd, "\n");
+	
+	/* write data. */
+
+	for(unsigned int i=0;i<event->fields.position;i++){
+		field_t *field = (field_t*)(event->fields.array[i]);
+		type_descriptor_t *type = field->type;
+	
+		/* Set from */
+		print_tabs(2, fd);
+		switch(type->type) {
+			case SEQUENCE:
+			case UNION:
+			case ARRAY:
+			case STRUCT:
+			case STRING:
+				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				break;
+			default:
+				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				break;
+		}
+
+
+		if(print_type_write(type,
+				fd, 2, basename, field->name, "lttng_param_", 0)) return 1;
+		fprintf(fd, "\n");
+		
+		/* Don't forget to flush pending memcpy */
+		print_tabs(2, fd);
+		fprintf(fd, "/* Flush pending memcpy */\n");
+		print_tabs(2, fd);
+		fprintf(fd, "if(*len != 0) {\n");
+		print_tabs(3, fd);
+		fprintf(fd, "memcpy(buffer+*to_base+*to, *from, *len);\n");
+		print_tabs(3, fd);
+		fprintf(fd, "*to += *len;\n");
+		//print_tabs(3, fd);
+		//fprintf(fd, "from += len;\n");
+		print_tabs(3, fd);
+		fprintf(fd, "*len = 0;\n");
+		print_tabs(2, fd);
+		fprintf(fd, "}\n");
+		fprintf(fd, "\n");
+	}
+
+	
+	/* commit */
+	// for DEBUG only.
+	//fprintf(fd, "commit:\n"); /* DEBUG! */
+	print_tabs(2, fd);
+	fprintf(fd, "ltt_commit_slot(ltt_buf, buffer, slot_size);\n\n");
+	
+	fprintf(fd, "}\n\n");
+
+	fprintf(fd, "end:\n");
+	/* Release locks */
+	print_tabs(1, fd);
+	fprintf(fd, "trace->nesting--;\n");
+
+
+	fprintf(fd, "}\n");
+	fprintf(fd, 
+			"#endif //LTT_TRACE\n");
+	fprintf(fd, "#endif //LTT_TRACE_FAST\n");
+
+	return 0;
+}
+
+
+
+
+
 
 /* ltt-facility-name.h : main logging header.
  * log_header */
@@ -1902,7 +2175,10 @@ int print_log_header_events(facility_t *fac, FILE *fd)
 		if(!fac->user) {
 			if(print_event_logging_function(basename, fac, event, fd)) return 1;
 		} else {
-			if(print_event_logging_function_user(basename, fac, event, fd)) return 1;
+			if(print_event_logging_function_user_generic(basename, fac, event, fd))
+				return 1;
+			if(print_event_logging_function_user_fast(basename, fac, event, fd))
+				return 1;
 		}
 
 		fprintf(fd, "\n");

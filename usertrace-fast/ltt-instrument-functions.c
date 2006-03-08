@@ -5,6 +5,8 @@
  * March 2006
  */
 
+#define inline inline __attribute__((always_inline))
+
 #define LTT_TRACE
 #define LTT_TRACE_FAST
 #include <ltt/ltt-usertrace-fast.h>

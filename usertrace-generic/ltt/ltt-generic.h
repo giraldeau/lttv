@@ -74,6 +74,7 @@ static inline unsigned int __attribute__((no_instrument_function))
 
   return ((alignment - align_drift) & (alignment-1));
 }
+#define LTT_ALIGN
 #else
 static inline unsigned int __attribute__((no_instrument_function))
 														ltt_align(size_t align_drift,
@@ -81,6 +82,7 @@ static inline unsigned int __attribute__((no_instrument_function))
 {
   return 0;
 }
+#define LTT_ALIGN __attribute__((packed))
 #endif //LTT_PACK
 
 #endif //_LTT_GENERIC_H

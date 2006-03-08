@@ -41,6 +41,8 @@
  *
  */
 
+#define inline inline __attribute__((always_inline))
+
 #define _GNU_SOURCE
 #define LTT_TRACE
 #include <sys/types.h>
@@ -70,6 +72,13 @@ _syscall0(pid_t,gettid)
 
 #include <ltt/ltt-usertrace-fast.h>
 
+#ifdef LTT_SHOW_DEBUG
+#define dbg_printf(...) dbg_printf(__VA_ARGS__)
+#else
+#define dbg_printf(...)
+#endif //LTT_SHOW_DEBUG
+
+	
 enum force_switch_mode { FORCE_ACTIVE, FORCE_FLUSH };
 
 /* Writer (the traced application) */
@@ -103,22 +112,22 @@ static int parent_exited = 0;
 /* signal handling */
 static void handler_sigusr1(int signo)
 {
-	printf("LTT Signal %d received : parent buffer switch.\n", signo);
+	dbg_printf("LTT Signal %d received : parent buffer switch.\n", signo);
 }
 
 static void handler_sigusr2(int signo)
 {
-	printf("LTT Signal %d received : parent exited.\n", signo);
+	dbg_printf("LTT Signal %d received : parent exited.\n", signo);
 	parent_exited = 1;
 }
 
 static void handler_sigalarm(int signo)
 {
-	printf("LTT Signal %d received\n", signo);
+	dbg_printf("LTT Signal %d received\n", signo);
 
 	if(getppid() != traced_pid) {
 		/* Parent died */
-		printf("LTT Parent %lu died, cleaning up\n", traced_pid);
+		dbg_printf("LTT Parent %lu died, cleaning up\n", traced_pid);
 		traced_pid = 0;
 	}
 	alarm(3);
@@ -315,7 +324,7 @@ static inline int ltt_buffer_put(struct ltt_buf *ltt_buf,
 			ret = futex((unsigned long)&ltt_buf->full,
 					FUTEX_WAKE, 1, 0, 0, 0);
 			if(ret != 1) {
-				printf("LTT warning : race condition : writer not waiting or too many writers\n");
+				dbg_printf("LTT warning : race condition : writer not waiting or too many writers\n");
 			}
 			atomic_set(&ltt_buf->full, 0);
 		}
@@ -326,12 +335,12 @@ static int read_subbuffer(struct ltt_buf *ltt_buf, int fd)
 {
 	unsigned int consumed_old;
 	int err;
-	printf("LTT read buffer\n");
+	dbg_printf("LTT read buffer\n");
 
 
 	err = ltt_buffer_get(ltt_buf, &consumed_old);
 	if(err != 0) {
-		if(err != -EAGAIN) printf("LTT Reserving sub buffer failed\n");
+		if(err != -EAGAIN) dbg_printf("LTT Reserving sub buffer failed\n");
 		goto get_error;
 	}
 
@@ -357,7 +366,7 @@ write_error:
 
 	if(err != 0) {
 		if(err == -EIO) {
-			printf("Reader has been pushed by the writer, last subbuffer corrupted.\n");
+			dbg_printf("Reader has been pushed by the writer, last subbuffer corrupted.\n");
 			/* FIXME : we may delete the last written buffer if we wish. */
 		}
 		goto get_error;
@@ -382,7 +391,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	traced_pid = l_traced_pid;
 	traced_tid = l_traced_tid;
 
-	printf("LTT ltt_usertrace_fast_daemon : init is %d, pid is %lu, traced_pid is %lu, traced_tid is %lu\n",
+	dbg_printf("LTT ltt_usertrace_fast_daemon : init is %d, pid is %lu, traced_pid is %lu, traced_tid is %lu\n",
 			shared_trace_info->init, getpid(), traced_pid, traced_tid);
 
 	act.sa_handler = handler_sigusr1;
@@ -406,7 +415,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	/* Enable signals */
 	ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 	if(ret) {
-		printf("LTT Error in pthread_sigmask\n");
+		dbg_printf("LTT Error in pthread_sigmask\n");
 	}
 
 	alarm(3);
@@ -436,7 +445,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		pause();
 		if(traced_pid == 0) break; /* parent died */
 		if(parent_exited) break;
-		printf("LTT Doing a buffer switch read. pid is : %lu\n", getpid());
+		dbg_printf("LTT Doing a buffer switch read. pid is : %lu\n", getpid());
 	
 		do {
 			ret = read_subbuffer(&shared_trace_info->channel.cpu, fd_cpu);
@@ -489,7 +498,14 @@ void ltt_rw_init(void)
 	/* parent : create the shared memory map */
 	shared_trace_info = mmap(0, sizeof(*thread_trace_info),
 			PROT_READ|PROT_WRITE, MAP_SHARED|MAP_ANONYMOUS, 0, 0);
-	memset(shared_trace_info, 0, sizeof(*shared_trace_info));
+	shared_trace_info->init=0;
+	shared_trace_info->filter=0;
+	shared_trace_info->daemon_id=0;
+	shared_trace_info->nesting=0;
+	memset(&shared_trace_info->channel.facilities, 0,
+			sizeof(shared_trace_info->channel.facilities));
+	memset(&shared_trace_info->channel.cpu, 0,
+			sizeof(shared_trace_info->channel.cpu));
 	/* Tricky semaphore : is in a shared memory space, so it's ok for a fast
 	 * mutex (futex). */
 	atomic_set(&shared_trace_info->channel.facilities.full, 0);
@@ -512,13 +528,13 @@ void ltt_rw_init(void)
 	/* Disable signals */
   ret = sigfillset(&set);
   if(ret) {
-    printf("LTT Error in sigfillset\n");
+    dbg_printf("LTT Error in sigfillset\n");
   } 
 	
 	
   ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
   if(ret) {
-    printf("LTT Error in pthread_sigmask\n");
+    dbg_printf("LTT Error in pthread_sigmask\n");
   }
 
 	pid = fork();
@@ -530,13 +546,17 @@ void ltt_rw_init(void)
 		/* Enable signals */
 		ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 		if(ret) {
-			printf("LTT Error in pthread_sigmask\n");
+			dbg_printf("LTT Error in pthread_sigmask\n");
 		}
 	} else if(pid == 0) {
 		pid_t sid;
 		/* Child */
 		role = LTT_ROLE_READER;
 		sid = setsid();
+		ret = nice(1);
+		if(ret < 0) {
+			perror("Error in nice");
+		}
 		if(sid < 0) {
 			perror("Error setting sid");
 		}
@@ -560,7 +580,7 @@ void ltt_thread_init(void)
 	
 void __attribute__((constructor)) __ltt_usertrace_fast_init(void)
 {
-  printf("LTT usertrace-fast init\n");
+  dbg_printf("LTT usertrace-fast init\n");
 
 	ltt_rw_init();
 }
@@ -568,7 +588,7 @@ void __attribute__((constructor)) __ltt_usertrace_fast_init(void)
 void __attribute__((destructor)) __ltt_usertrace_fast_fini(void)
 {
 	if(role == LTT_ROLE_WRITER) {
-	  printf("LTT usertrace-fast fini\n");
+	  dbg_printf("LTT usertrace-fast fini\n");
 		ltt_usertrace_fast_cleanup(NULL);
 	}
 }

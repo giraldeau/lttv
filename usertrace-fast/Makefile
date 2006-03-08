@@ -5,7 +5,8 @@ INCLUDE_DIR=/usr/include
 RANLIB=ranlib
 
 CC=gcc
-CFLAGS=-I. -g
+CFLAGS=-I. -O3
+CFLAGS+=-DLTT_SUBBUF_SIZE_CPU=134217728
 
 all: test sample-instrument-fct libltt-instrument-functions.a libltt-instrument-functions.so.0
 
