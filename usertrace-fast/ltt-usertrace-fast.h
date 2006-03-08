@@ -12,34 +12,56 @@
 #include <asm/atomic.h>
 #include <pthread.h>
 
-#ifndef	LTT_BUF_SIZE_CPU
-#define LTT_BUF_SIZE_CPU 1048576
+
+#ifndef	LTT_N_SUBBUFS
+#define LTT_N_SUBBUFS 2
+#endif //LTT_N_SUBBUFS
+
+#ifndef	LTT_SUBBUF_SIZE_CPU
+#define LTT_SUBBUF_SIZE_CPU 1048576
 #endif //LTT_BUF_SIZE_CPU
 
-#ifndef	LTT_BUF_SIZE_FACILITIES
-#define LTT_BUF_SIZE_FACILITIES 4096
+#define LTT_BUF_SIZE_CPU (LTT_SUBBUF_SIZE_CPU * LTT_N_SUBBUFS)
+
+#ifndef	LTT_SUBBUF_SIZE_FACILITIES
+#define LTT_SUBBUF_SIZE_FACILITIES 4096
 #endif //LTT_BUF_SIZE_FACILITIES
+
+#define LTT_BUF_SIZE_FACILITIES  (LTT_SUBBUF_SIZE_FACILITIES * LTT_N_SUBBUFS)
 
 #ifndef LTT_USERTRACE_ROOT
 #define LTT_USERTRACE_ROOT "/tmp/ltt-usertrace"
 #endif //LTT_USERTRACE_ROOT
 
+
+/* Buffer offset macros */
+
+#define BUFFER_OFFSET(offset, buf) (offset & (buf->alloc_size-1))
+#define SUBBUF_OFFSET(offset, buf) (offset & (buf->subbuf_size-1))
+#define SUBBUF_ALIGN(offset, buf) \
+  (((offset) + buf->subbuf_size) & (~(buf->subbuf_size-1)))
+#define SUBBUF_TRUNC(offset, buf) \
+  ((offset) & (~(buf->subbuf_size-1)))
+#define SUBBUF_INDEX(offset, buf) \
+  (BUFFER_OFFSET(offset,buf)/buf->subbuf_size)
+
+
 struct ltt_buf {
 	atomic_t	offset;
-	atomic_t	reserve_count;
-	atomic_t	commit_count;
+	atomic_t	consumed;
+	atomic_t	reserve_count[LTT_N_SUBBUFS];
+	atomic_t	commit_count[LTT_N_SUBBUFS];
 
 	atomic_t	events_lost;
+	atomic_t	full;	/* futex on which the writer waits : 1 : full */
+	unsigned int	alloc_size;
+	unsigned int	subbuf_size;
 };
 
 struct ltt_trace_info {
 	int init;
 	int filter;
-#ifndef LTT_USE_THREADS
 	pid_t daemon_id;
-#else
-	pthread_t daemon_id;
-#endif //LTT_USE_THREADS
 	atomic_t nesting;
 	struct {
 		struct ltt_buf facilities;
