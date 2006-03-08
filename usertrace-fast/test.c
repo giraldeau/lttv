@@ -16,7 +16,7 @@ void *thr1(void *arg)
 
   //while(1) {}
 	for(i=0; i<5; i++) {
-		ltt_usertrace_fast_buffer_switch();
+	//	ltt_usertrace_fast_buffer_switch();
 		sleep(1);
 	}
 
@@ -33,7 +33,7 @@ void *thr2(void *arg)
     sleep(2);
   //}
 	for(i=0; i<2; i++) {
-		ltt_usertrace_fast_buffer_switch();
+	//	ltt_usertrace_fast_buffer_switch();
 		sleep(3);
 	}
 
@@ -58,7 +58,7 @@ int main()
   if(err!=0) exit(1);
 
 	for(i=0; i<2; i++) {
-		ltt_usertrace_fast_buffer_switch();
+	//	ltt_usertrace_fast_buffer_switch();
 		sleep(3);
 	}
 

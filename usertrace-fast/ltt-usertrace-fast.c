@@ -318,22 +318,6 @@ static inline int ltt_buffer_put(struct ltt_buf *ltt_buf,
 	}
 }
 
-/* In the writer :
- *
- * if(buffer full condition) {
- *   put myself in the wait queue
- *   ltt_buf->full = 1;
- *   schedule
- * }
- *{
-	if(buffer_is_full) {
-		atomic_set(&ltt_buf->full, 1);
-		ret = do_futex((unsigned long)&ltt_buf->full, 1, 0, 0, 0);
-	}
-}
-
- */
-
 static int read_subbuffer(struct ltt_buf *ltt_buf, int fd)
 {
 	unsigned int consumed_old;
@@ -342,8 +326,8 @@ static int read_subbuffer(struct ltt_buf *ltt_buf, int fd)
 
 
 	err = ltt_buffer_get(ltt_buf, &consumed_old);
-	if(err != -EAGAIN && err != 0) {
-		printf("LTT Reserving sub buffer failed\n");
+	if(err != 0) {
+		if(err != -EAGAIN) printf("LTT Reserving sub buffer failed\n");
 		goto get_error;
 	}
 
@@ -509,11 +493,16 @@ void ltt_rw_init(void)
 	shared_trace_info->channel.facilities.subbuf_size = LTT_SUBBUF_SIZE_FACILITIES;
 	shared_trace_info->channel.facilities.start =
 		shared_trace_info->channel.facilities_buf;
+	ltt_buffer_begin_callback(&shared_trace_info->channel.facilities,
+			ltt_get_timestamp(), 0);
 
 	atomic_set(&shared_trace_info->channel.cpu.full, 0);
 	shared_trace_info->channel.cpu.alloc_size = LTT_BUF_SIZE_CPU;
 	shared_trace_info->channel.cpu.subbuf_size = LTT_SUBBUF_SIZE_CPU;
 	shared_trace_info->channel.cpu.start = shared_trace_info->channel.cpu_buf;
+	ltt_buffer_begin_callback(&shared_trace_info->channel.cpu,
+			ltt_get_timestamp(), 0);
+	
 	shared_trace_info->init = 1;
 
 	/* Disable signals */
