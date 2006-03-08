@@ -93,7 +93,7 @@ static void ltt_usertrace_fast_cleanup(void *arg)
 /* Reader (the disk dumper daemon) */
 
 static pid_t traced_pid = 0;
-static pthread_t traced_thread = 0;
+static pid_t traced_tid = 0;
 static int parent_exited = 0;
 
 /* signal handling */
@@ -365,7 +365,7 @@ get_error:
 
 /* This function is called by ltt_rw_init which has signals blocked */
 static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
-		sigset_t oldset, pid_t l_traced_pid, pthread_t l_traced_thread)
+		sigset_t oldset, pid_t l_traced_pid, pthread_t l_traced_tid)
 {
 	struct sigaction act;
 	int ret;
@@ -376,10 +376,10 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 
 
 	traced_pid = l_traced_pid;
-	traced_thread = l_traced_thread;
+	traced_tid = l_traced_tid;
 
-	printf("LTT ltt_usertrace_fast_daemon : init is %d, pid is %lu, traced_pid is %lu\n",
-			shared_trace_info->init, getpid(), traced_pid);
+	printf("LTT ltt_usertrace_fast_daemon : init is %d, pid is %lu, traced_pid is %lu, traced_tid is %lu\n",
+			shared_trace_info->init, getpid(), traced_pid, traced_tid);
 
 	act.sa_handler = handler_sigusr1;
 	act.sa_flags = 0;
@@ -420,7 +420,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		exit(-1);
 	}
 	snprintf(identifier_name, PATH_MAX-1,	"%lu.%lu.%llu",
-			traced_pid, traced_thread, get_cycles());
+			traced_pid, traced_tid, get_cycles());
 	snprintf(outfile_name, PATH_MAX-1,	"facilities-%s", identifier_name);
 	fd_fac = creat(outfile_name, 0644);
 
@@ -480,7 +480,7 @@ void ltt_rw_init(void)
 	int ret;
 	sigset_t set, oldset;
 	pid_t l_traced_pid = getpid();
-	pthread_t l_traced_thread = pthread_self();
+	pid_t l_traced_tid = gettid();
 
 	/* parent : create the shared memory map */
 	shared_trace_info = mmap(0, sizeof(*thread_trace_info),
@@ -532,7 +532,7 @@ void ltt_rw_init(void)
 		/* Child */
 		role = LTT_ROLE_READER;
 		ltt_usertrace_fast_daemon(shared_trace_info, oldset, l_traced_pid,
-					l_traced_thread);
+					l_traced_tid);
 		/* Should never return */
 		exit(-1);
 	} else if(pid < 0) {
