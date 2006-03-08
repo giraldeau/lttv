@@ -1905,7 +1905,13 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	fprintf(fd, "\n");
 	
 	print_tabs(1, fd);
-	fprintf(fd, "if(!trace) ltt_thread_init();\n");
+	fprintf(fd, "if(!trace) {\n");
+	print_tabs(2, fd);
+	fprintf(fd, "ltt_thread_init();\n");
+	print_tabs(2, fd);
+	fprintf(fd, "trace = thread_trace_info;\n");
+	print_tabs(1, fd);
+	fprintf(fd, "}\n\n");
 	fprintf(fd, "\n");
 
 	/* Calculate event variable len + event data alignment offset.

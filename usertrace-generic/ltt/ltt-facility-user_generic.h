@@ -132,7 +132,11 @@ static inline int trace_user_generic_string(
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
-	if(!trace) ltt_thread_init();
+	if(!trace) {
+		ltt_thread_init();
+		trace = thread_trace_info;
+	}
+
 
 	/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
@@ -340,7 +344,11 @@ static inline int trace_user_generic_string_pointer(
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
-	if(!trace) ltt_thread_init();
+	if(!trace) {
+		ltt_thread_init();
+		trace = thread_trace_info;
+	}
+
 
 	/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
@@ -511,7 +519,11 @@ static inline int trace_user_generic_slow_printf(
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
-	if(!trace) ltt_thread_init();
+	if(!trace) {
+		ltt_thread_init();
+		trace = thread_trace_info;
+	}
+
 
 	/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
@@ -692,7 +704,11 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
-	if(!trace) ltt_thread_init();
+	if(!trace) {
+		ltt_thread_init();
+		trace = thread_trace_info;
+	}
+
 
 	/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
@@ -918,7 +934,11 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
-	if(!trace) ltt_thread_init();
+	if(!trace) {
+		ltt_thread_init();
+		trace = thread_trace_info;
+	}
+
 
 	/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
