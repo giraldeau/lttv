@@ -68,7 +68,7 @@
 
 _syscall0(pid_t,gettid)
 
-#include "ltt-usertrace-fast.h"
+#include <ltt/ltt-usertrace-fast.h>
 
 enum force_switch_mode { FORCE_ACTIVE, FORCE_FLUSH };
 
@@ -533,8 +533,13 @@ void ltt_rw_init(void)
 			printf("LTT Error in pthread_sigmask\n");
 		}
 	} else if(pid == 0) {
+		pid_t sid;
 		/* Child */
 		role = LTT_ROLE_READER;
+		sid = setsid();
+		if(sid < 0) {
+			perror("Error setting sid");
+		}
 		ltt_usertrace_fast_daemon(shared_trace_info, oldset, l_traced_pid,
 					l_traced_tid);
 		/* Should never return */

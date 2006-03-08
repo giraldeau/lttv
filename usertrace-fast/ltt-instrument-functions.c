@@ -7,7 +7,7 @@
 
 #define LTT_TRACE
 #define LTT_TRACE_FAST
-#include "ltt-usertrace-fast.h"
+#include <ltt/ltt-usertrace-fast.h>
 #include <ltt/ltt-facility-user_generic.h>
 
 void __attribute__((no_instrument_function)) __cyg_profile_func_enter (

@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <syscall.h>
 #include <linux/futex.h>
+#include <asm/timex.h>
 
 #include <ltt/ltt-facility-id-user_generic.h>
 #include <ltt/ltt-generic.h>
@@ -178,7 +179,7 @@ static inline struct ltt_buf * __attribute__((no_instrument_function))
 	ltt_get_channel_from_index(
 		struct ltt_trace_info *trace, unsigned int index)
 {
-	return *(struct ltt_buf **)((void*)trace+index);
+	return (struct ltt_buf *)((void*)trace+index);
 }
 
 

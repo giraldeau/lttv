@@ -1,25 +1,29 @@
 
+LIB_DIR=/usr/lib
+INCLUDE_DIR=/usr/include
+
 RANLIB=ranlib
 
 CC=gcc
+CFLAGS=-I. -g
 
 all: test sample-instrument-fct libltt-instrument-functions.a libltt-instrument-functions.so.0
 
 test: test.c ltt-usertrace-fast.c
-	$(CC) $(CFLAGS) -lpthread -o $@ $^
+	$(CC) $(CFLAGS) -I. -lpthread -o $@ $^
 
 
 sample-instrument-fct: sample-instrument-fct.c
 	$(CC) $(CFLAGS) -L. -g -finstrument-functions -lltt-instrument-functions -o $@ $^
 
-libltt-instrument-functions.a: ltt-instrument-functions.o ltt-facility-loader-user_generic.o
+libltt-instrument-functions.a: ltt-instrument-functions.o ltt-facility-loader-user_generic.o ltt-usertrace-fast.o
 	@rm -f libltt-instrument-functions.a
 	$(AR) rc $@ $^
 	$(RANLIB) $@
 
-libltt-instrument-functions.so.0: ltt-instrument-functions.o ltt-facility-loader-user_generic.o
+libltt-instrument-functions.so.0: ltt-instrument-functions.o ltt-facility-loader-user_generic.o ltt-usertrace-fast.o
 	@rm -f libltt-instrument-functions.so libltt-instrument-functions.so.0
-	$(CC) $(CFLAGS) -shared -Wl,-soname,libltt-instrument-functions.so -o $@ $^
+	$(CC) $(CFLAGS) -lpthread -shared -Wl,-soname,libltt-instrument-functions.so -o $@ $^
 	ln -s libltt-instrument-functions.so.0 libltt-instrument-functions.so
 
 install:

@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 
-#include "ltt-usertrace-fast.h"
+#include <ltt/ltt-usertrace-fast.h>
 
 
 
