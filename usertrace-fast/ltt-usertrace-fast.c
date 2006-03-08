@@ -420,7 +420,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		exit(-1);
 	}
 	snprintf(identifier_name, PATH_MAX-1,	"%lu.%lu.%llu",
-			traced_pid, traced_tid, get_cycles());
+			traced_tid, traced_pid, get_cycles());
 	snprintf(outfile_name, PATH_MAX-1,	"facilities-%s", identifier_name);
 	fd_fac = creat(outfile_name, 0644);
 
