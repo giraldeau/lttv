@@ -320,6 +320,8 @@ static inline int ltt_buffer_put(struct ltt_buf *ltt_buf,
 		 * It can also happen if this is a buffer we never got. */
 		return -EIO;
 	} else {
+		if(traced_pid == 0 || parent_exited) return 0;
+
 		ret = sem_post(&ltt_buf->writer_sem);
 		if(ret < 0) {
 			printf("error in sem_post");
@@ -378,7 +380,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 {
 	struct sigaction act;
 	int ret;
-	int fd_process;
+	int fd_process = -1;
 	char outfile_name[PATH_MAX];
 	char identifier_name[PATH_MAX];
 
@@ -429,7 +431,6 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	if(ret != -1) {
 		perror("LTT Error in sigsuspend\n");
 	}
-	if((traced_pid == 0) || parent_exited) goto dead_parent;
 
 #ifndef LTT_NULL_OUTPUT_TEST
 	fd_process = creat(outfile_name, 0644);
@@ -459,7 +460,6 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 			perror("LTT Error in sigsuspend\n");
 		}
 	}
-dead_parent:
 	/* The parent thread is dead and we have finished with the buffer */
 
 	/* Buffer force switch (flush). Using FLUSH instead of ACTIVE because we know
@@ -469,8 +469,8 @@ dead_parent:
 		ret = read_subbuffer(&shared_trace_info->channel.process, fd_process);
 	} while(ret == 0);
 
-
-	close(fd_process);
+	if(fd_process != -1)
+		close(fd_process);
 	
 	ret = sem_destroy(&shared_trace_info->channel.process.writer_sem);
 	if(ret < 0) {

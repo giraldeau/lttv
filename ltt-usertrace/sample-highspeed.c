@@ -13,7 +13,9 @@ int main(int argc, char **argv)
 	printf("Abort with CTRL-C or it will quickly fill up your disk.\n");
 	printf("See the result file in /tmp/ltt-usertrace.\n");
 
-	while(1) {
+	int i;
+	//while(1) {
+	for(i=0; i<100000; i++) {
 		trace_user_generic_string("Running fast!");
 	}
 	
