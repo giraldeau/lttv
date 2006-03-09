@@ -33,17 +33,11 @@ static inline __attribute__((no_instrument_function))
 #define LTT_N_SUBBUFS 2
 #endif //LTT_N_SUBBUFS
 
-#ifndef	LTT_SUBBUF_SIZE_CPU
-#define LTT_SUBBUF_SIZE_CPU 1048576
+#ifndef	LTT_SUBBUF_SIZE_PROCESS
+#define LTT_SUBBUF_SIZE_PROCESS 1048576
 #endif //LTT_BUF_SIZE_CPU
 
-#define LTT_BUF_SIZE_CPU (LTT_SUBBUF_SIZE_CPU * LTT_N_SUBBUFS)
-
-#ifndef	LTT_SUBBUF_SIZE_FACILITIES
-#define LTT_SUBBUF_SIZE_FACILITIES 4096
-#endif //LTT_BUF_SIZE_FACILITIES
-
-#define LTT_BUF_SIZE_FACILITIES  (LTT_SUBBUF_SIZE_FACILITIES * LTT_N_SUBBUFS)
+#define LTT_BUF_SIZE_PROCESS (LTT_SUBBUF_SIZE_PROCESS * LTT_N_SUBBUFS)
 
 #ifndef LTT_USERTRACE_ROOT
 #define LTT_USERTRACE_ROOT "/tmp/ltt-usertrace"
@@ -118,7 +112,7 @@ struct ltt_buf {
 
 	atomic_t	events_lost;
 	atomic_t	corrupted_subbuffers;
-	atomic_t	full;	/* futex on which the writer waits : 1 : full */
+	atomic_t	writer_futex;	/* futex on which the writer waits */
 	unsigned int	alloc_size;
 	unsigned int	subbuf_size;
 };
@@ -129,10 +123,8 @@ struct ltt_trace_info {
 	pid_t daemon_id;
 	int nesting;
 	struct {
-		struct ltt_buf facilities;
-		struct ltt_buf cpu;
-		char facilities_buf[LTT_BUF_SIZE_FACILITIES] __attribute__ ((aligned (8)));
-		char cpu_buf[LTT_BUF_SIZE_CPU] __attribute__ ((aligned (8)));
+		struct ltt_buf process;
+		char process_buf[LTT_BUF_SIZE_PROCESS] __attribute__ ((aligned (8)));
 	} channel;
 };
 
@@ -171,7 +163,7 @@ static inline unsigned int __attribute__((no_instrument_function))
 		ltt_get_index_from_facility(ltt_facility_t fID,
 																uint8_t eID)
 {
-	return GET_CHANNEL_INDEX(cpu);
+	return GET_CHANNEL_INDEX(process);
 }
 
 
@@ -423,23 +415,28 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 																						 ltt_buf)]);
 			if(reserve_commit_diff == 0) {
 				/* Next buffer not corrupted. */
-				if((SUBBUF_TRUNC(offset_begin, ltt_buf) 
-								- SUBBUF_TRUNC(atomic_read(&ltt_buf->consumed), ltt_buf))
-									>= ltt_buf->alloc_size) {
-					/* We block until the reader unblocks us */
-					atomic_set(&ltt_buf->full, 1);
-					/* We block until the reader tells us to wake up.
-						 Signals will simply cause this loop to restart.
-						 */
-					do {
-						ret = futex((unsigned long)&ltt_buf->full, FUTEX_WAIT, 1, 0, 0, 0);
-					} while(ret != 0 && ret != EWOULDBLOCK);
+				//if((SUBBUF_TRUNC(offset_begin, ltt_buf) 
+				//				- SUBBUF_TRUNC(atomic_read(&ltt_buf->consumed), ltt_buf))
+				//					>= ltt_buf->alloc_size) {
+					if(atomic_dec_return(&ltt_buf->writer_futex) >= 0) {
+						/* non contended */
+					} else {
+						/* We block until the reader unblocks us */
+						atomic_set(&ltt_buf->writer_futex, -1);
+						/* We block until the reader tells us to wake up.
+							 Signals will simply cause this loop to restart.
+							 */
+						do {
+							ret = futex((unsigned long)&ltt_buf->writer_futex,
+									FUTEX_WAIT, -1, 0, 0, 0);
+						} while(ret != 0 && ret != EWOULDBLOCK);
+					}
 					/* go on with the write */
 
-				} else {
-					/* next buffer not corrupted, we are either in overwrite mode or
-					 * the buffer is not full. It's safe to write in this new subbuffer.*/
-				}
+				//} else {
+				//	/* next buffer not corrupted, we are either in overwrite mode or
+				//	 * the buffer is not full. It's safe to write in this new subbuffer.*/
+				//}
 			} else {
 				/* Next subbuffer corrupted. Force pushing reader even in normal
 				 * mode. It's safe to write in this new subbuffer. */

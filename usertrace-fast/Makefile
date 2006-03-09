@@ -6,9 +6,10 @@ RANLIB=ranlib
 
 CC=gcc
 CFLAGS=-I. -O3
-CFLAGS+=-DLTT_SUBBUF_SIZE_CPU=134217728
+#CFLAGS+=-DLTT_SUBBUF_SIZE_CPU=134217728
+CFLAGS+=-DLTT_NULL_OUTPUT_TEST
 
-all: test sample-instrument-fct libltt-instrument-functions.a libltt-instrument-functions.so.0
+all: test sample-instrument-fct libltt-instrument-functions.a libltt-instrument-functions.so.0 sample-loop
 
 test: test.c ltt-usertrace-fast.c
 	$(CC) $(CFLAGS) -I. -lpthread -o $@ $^
@@ -16,6 +17,9 @@ test: test.c ltt-usertrace-fast.c
 
 sample-instrument-fct: sample-instrument-fct.c
 	$(CC) $(CFLAGS) -L. -g -finstrument-functions -lltt-instrument-functions -o $@ $^
+
+sample-loop: sample-loop.c ltt-usertrace-fast.o ltt-facility-loader-user_generic.o
+	$(CC) $(CFLAGS) -L. -lpthread -g -o $@ $^
 
 libltt-instrument-functions.a: ltt-instrument-functions.o ltt-facility-loader-user_generic.o ltt-usertrace-fast.o
 	@rm -f libltt-instrument-functions.a

@@ -319,14 +319,14 @@ static inline int ltt_buffer_put(struct ltt_buf *ltt_buf,
 		 * It can also happen if this is a buffer we never got. */
 		return -EIO;
 	} else {
-		if(atomic_read(&ltt_buf->full) == 1) {
+		if(atomic_inc_return(&ltt_buf->writer_futex) <= 0) {
+			atomic_set(&ltt_buf->writer_futex, 1);
 			/* tell the client that buffer is now unfull */
-			ret = futex((unsigned long)&ltt_buf->full,
+			ret = futex((unsigned long)&ltt_buf->writer_futex,
 					FUTEX_WAKE, 1, 0, 0, 0);
 			if(ret != 1) {
 				dbg_printf("LTT warning : race condition : writer not waiting or too many writers\n");
 			}
-			atomic_set(&ltt_buf->full, 0);
 		}
 	}
 }
@@ -382,8 +382,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 {
 	struct sigaction act;
 	int ret;
-	int fd_fac;
-	int fd_cpu;
+	int fd_process;
 	char outfile_name[PATH_MAX];
 	char identifier_name[PATH_MAX];
 
@@ -434,12 +433,20 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	}
 	snprintf(identifier_name, PATH_MAX-1,	"%lu.%lu.%llu",
 			traced_tid, traced_pid, get_cycles());
-	snprintf(outfile_name, PATH_MAX-1,	"facilities-%s", identifier_name);
-	fd_fac = creat(outfile_name, 0644);
-
-	snprintf(outfile_name, PATH_MAX-1,	"cpu-%s", identifier_name);
-	fd_cpu = creat(outfile_name, 0644);
-	
+	snprintf(outfile_name, PATH_MAX-1,	"process-%s", identifier_name);
+#ifndef LTT_NULL_OUTPUT_TEST
+	fd_process = creat(outfile_name, 0644);
+#else
+	/* NULL test */
+	ret = symlink("/dev/null", outfile_name);
+	if(ret < 0) {
+		perror("error in symlink");
+	}
+	fd_process = open(outfile_name, O_WRONLY);
+	if(fd_process < 0) {
+		perror("Error in open");
+	}
+#endif //LTT_NULL_OUTPUT_TEST
 	
 	while(1) {
 		pause();
@@ -448,11 +455,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		dbg_printf("LTT Doing a buffer switch read. pid is : %lu\n", getpid());
 	
 		do {
-			ret = read_subbuffer(&shared_trace_info->channel.cpu, fd_cpu);
-		} while(ret == 0);
-
-		do {
-			ret = read_subbuffer(&shared_trace_info->channel.facilities, fd_fac);
+			ret = read_subbuffer(&shared_trace_info->channel.process, fd_process);
 		} while(ret == 0);
 	}
 
@@ -460,19 +463,13 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 
 	/* Buffer force switch (flush). Using FLUSH instead of ACTIVE because we know
 	 * there is no writer. */
-	flush_buffer(&shared_trace_info->channel.cpu, FORCE_FLUSH);
+	flush_buffer(&shared_trace_info->channel.process, FORCE_FLUSH);
 	do {
-		ret = read_subbuffer(&shared_trace_info->channel.cpu, fd_cpu);
+		ret = read_subbuffer(&shared_trace_info->channel.process, fd_process);
 	} while(ret == 0);
 
 
-	flush_buffer(&shared_trace_info->channel.facilities, FORCE_FLUSH);
-	do {
-		ret = read_subbuffer(&shared_trace_info->channel.facilities, fd_fac);
-	} while(ret == 0);
-
-	close(fd_fac);
-	close(fd_cpu);
+	close(fd_process);
 	
 	munmap(shared_trace_info, sizeof(*shared_trace_info));
 	
@@ -502,25 +499,16 @@ void ltt_rw_init(void)
 	shared_trace_info->filter=0;
 	shared_trace_info->daemon_id=0;
 	shared_trace_info->nesting=0;
-	memset(&shared_trace_info->channel.facilities, 0,
-			sizeof(shared_trace_info->channel.facilities));
-	memset(&shared_trace_info->channel.cpu, 0,
-			sizeof(shared_trace_info->channel.cpu));
+	memset(&shared_trace_info->channel.process, 0,
+			sizeof(shared_trace_info->channel.process));
 	/* Tricky semaphore : is in a shared memory space, so it's ok for a fast
 	 * mutex (futex). */
-	atomic_set(&shared_trace_info->channel.facilities.full, 0);
-	shared_trace_info->channel.facilities.alloc_size = LTT_BUF_SIZE_FACILITIES;
-	shared_trace_info->channel.facilities.subbuf_size = LTT_SUBBUF_SIZE_FACILITIES;
-	shared_trace_info->channel.facilities.start =
-		shared_trace_info->channel.facilities_buf;
-	ltt_buffer_begin_callback(&shared_trace_info->channel.facilities,
-			ltt_get_timestamp(), 0);
-
-	atomic_set(&shared_trace_info->channel.cpu.full, 0);
-	shared_trace_info->channel.cpu.alloc_size = LTT_BUF_SIZE_CPU;
-	shared_trace_info->channel.cpu.subbuf_size = LTT_SUBBUF_SIZE_CPU;
-	shared_trace_info->channel.cpu.start = shared_trace_info->channel.cpu_buf;
-	ltt_buffer_begin_callback(&shared_trace_info->channel.cpu,
+	atomic_set(&shared_trace_info->channel.process.writer_futex, LTT_N_SUBBUFS);
+	shared_trace_info->channel.process.alloc_size = LTT_BUF_SIZE_PROCESS;
+	shared_trace_info->channel.process.subbuf_size = LTT_SUBBUF_SIZE_PROCESS;
+	shared_trace_info->channel.process.start =
+						shared_trace_info->channel.process_buf;
+	ltt_buffer_begin_callback(&shared_trace_info->channel.process,
 			ltt_get_timestamp(), 0);
 	
 	shared_trace_info->init = 1;
@@ -553,10 +541,12 @@ void ltt_rw_init(void)
 		/* Child */
 		role = LTT_ROLE_READER;
 		sid = setsid();
-		ret = nice(1);
-		if(ret < 0) {
-			perror("Error in nice");
-		}
+		//Not a good idea to renice, unless futex wait eventually implement
+		//priority inheritence.
+		//ret = nice(1);
+		//if(ret < 0) {
+		//	perror("Error in nice");
+		//}
 		if(sid < 0) {
 			perror("Error setting sid");
 		}
