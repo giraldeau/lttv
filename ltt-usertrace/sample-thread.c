@@ -42,6 +42,9 @@ int main()
 
 	printf("Will trace the following string : Hello world! Have a nice day.\n");
 	printf("Press CTRL-C to stop.\n");
+  printf("No file is created with this example : it logs through a kernel\n");
+  printf("system call. See the LTTng lttctl command to start tracing.\n\n");
+
   printf("thread main, thread id : %lu, pid %lu\n", pthread_self(), getpid());
   err = pthread_create(&tid1, NULL, thr1, NULL);
   if(err!=0) exit(1);
