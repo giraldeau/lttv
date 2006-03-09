@@ -15,19 +15,11 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <syscall.h>
-#include <linux/futex.h>
 #include <asm/timex.h>
+#include <semaphore.h>
 
 #include <ltt/ltt-facility-id-user_generic.h>
 #include <ltt/ltt-generic.h>
-
-#ifndef futex
-static inline __attribute__((no_instrument_function))
-	_syscall6(long, futex, unsigned long, uaddr, int, op, int, val,
-		unsigned long, timeout, unsigned long, uaddr2, int, val2)
-#endif //futex
-
-
 
 #ifndef	LTT_N_SUBBUFS
 #define LTT_N_SUBBUFS 2
@@ -112,7 +104,7 @@ struct ltt_buf {
 
 	atomic_t	events_lost;
 	atomic_t	corrupted_subbuffers;
-	atomic_t	writer_futex;	/* futex on which the writer waits */
+	sem_t	writer_sem;	/* semaphore on which the writer waits */
 	unsigned int	alloc_size;
 	unsigned int	subbuf_size;
 };
@@ -418,19 +410,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 				//if((SUBBUF_TRUNC(offset_begin, ltt_buf) 
 				//				- SUBBUF_TRUNC(atomic_read(&ltt_buf->consumed), ltt_buf))
 				//					>= ltt_buf->alloc_size) {
-					if(atomic_dec_return(&ltt_buf->writer_futex) >= 0) {
-						/* non contended */
-					} else {
-						/* We block until the reader unblocks us */
-						atomic_set(&ltt_buf->writer_futex, -1);
-						/* We block until the reader tells us to wake up.
-							 Signals will simply cause this loop to restart.
-							 */
-						do {
-							ret = futex((unsigned long)&ltt_buf->writer_futex,
-									FUTEX_WAIT, -1, 0, 0, 0);
-						} while(ret != 0 && ret != EWOULDBLOCK);
-					}
+				sem_wait(&ltt_buf->writer_sem);
 					/* go on with the write */
 
 				//} else {
@@ -440,6 +420,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 			} else {
 				/* Next subbuffer corrupted. Force pushing reader even in normal
 				 * mode. It's safe to write in this new subbuffer. */
+				sem_post(&ltt_buf->writer_sem);
 			}
 			size = ltt_get_header_size(trace, ltt_buf->start + offset_begin,
 					before_hdr_pad, after_hdr_pad, header_size) + data_size;

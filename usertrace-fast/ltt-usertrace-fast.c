@@ -319,14 +319,9 @@ static inline int ltt_buffer_put(struct ltt_buf *ltt_buf,
 		 * It can also happen if this is a buffer we never got. */
 		return -EIO;
 	} else {
-		if(atomic_inc_return(&ltt_buf->writer_futex) <= 0) {
-			atomic_set(&ltt_buf->writer_futex, 1);
-			/* tell the client that buffer is now unfull */
-			ret = futex((unsigned long)&ltt_buf->writer_futex,
-					FUTEX_WAKE, 1, 0, 0, 0);
-			if(ret != 1) {
-				dbg_printf("LTT warning : race condition : writer not waiting or too many writers\n");
-			}
+		ret = sem_post(&ltt_buf->writer_sem);
+		if(ret < 0) {
+			printf("error in sem_post");
 		}
 	}
 }
@@ -471,6 +466,10 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 
 	close(fd_process);
 	
+	ret = sem_destroy(&shared_trace_info->channel.process.writer_sem);
+	if(ret < 0) {
+		perror("error in sem_destroy");
+	}
 	munmap(shared_trace_info, sizeof(*shared_trace_info));
 	
 	exit(0);
@@ -501,9 +500,12 @@ void ltt_rw_init(void)
 	shared_trace_info->nesting=0;
 	memset(&shared_trace_info->channel.process, 0,
 			sizeof(shared_trace_info->channel.process));
-	/* Tricky semaphore : is in a shared memory space, so it's ok for a fast
-	 * mutex (futex). */
-	atomic_set(&shared_trace_info->channel.process.writer_futex, LTT_N_SUBBUFS);
+	//Need NPTL!
+	ret = sem_init(&shared_trace_info->channel.process.writer_sem, 1,
+									LTT_N_SUBBUFS);
+	if(ret < 0) {
+		perror("error in sem_init");
+	}
 	shared_trace_info->channel.process.alloc_size = LTT_BUF_SIZE_PROCESS;
 	shared_trace_info->channel.process.subbuf_size = LTT_SUBBUF_SIZE_PROCESS;
 	shared_trace_info->channel.process.start =
