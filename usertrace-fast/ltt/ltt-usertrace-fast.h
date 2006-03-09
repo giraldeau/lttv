@@ -17,6 +17,7 @@
 #include <syscall.h>
 #include <asm/timex.h>
 #include <semaphore.h>
+#include <signal.h>
 
 #include <ltt/ltt-facility-id-user_generic.h>
 #include <ltt/ltt-generic.h>
@@ -410,7 +411,24 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 				//if((SUBBUF_TRUNC(offset_begin, ltt_buf) 
 				//				- SUBBUF_TRUNC(atomic_read(&ltt_buf->consumed), ltt_buf))
 				//					>= ltt_buf->alloc_size) {
-				sem_wait(&ltt_buf->writer_sem);
+				/* sem_wait is not signal safe. Disable signals around it. */
+				{
+					sigset_t oldset, set;
+
+					/* Disable signals */
+					ret = sigfillset(&set);
+					if(ret) perror("LTT Error in sigfillset\n"); 
+					
+					ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
+					if(ret) perror("LTT Error in pthread_sigmask\n");
+
+					sem_wait(&ltt_buf->writer_sem);
+
+					/* Enable signals */
+					ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+					if(ret) perror("LTT Error in pthread_sigmask\n");
+				}
+
 					/* go on with the write */
 
 				//} else {
