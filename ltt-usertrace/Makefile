@@ -13,15 +13,10 @@ LDFLAGS=-L.
 
 all: libs samples
 
+#SAMPLE PROGRAMS
 
-libs: libltt-instrument-functions.a libltt-instrument-functions.so.0 \
-				libltt-usertrace-fast.a libltt-usertrace-fast.so.0
-
-samples: sample-thread sample sample-highspeed sample-printf \
-				sample-instrument-fct
-
-sample-thread: sample-thread.c ltt-facility-loader-user_generic.c
-	$(CC) $(CFLAGS) -lpthread -o $@ $^
+samples: sample sample-highspeed sample-printf \
+				sample-instrument-fct sample-thread-slow sample-thread-fast
 
 sample: sample.c ltt-facility-loader-user_generic.c
 	$(CC) $(CFLAGS) -o $@ $^
@@ -35,12 +30,24 @@ sample-printf: sample-printf.c ltt-facility-loader-user_generic.c
 sample-instrument-fct: sample-instrument-fct.c
 	$(CC) $(CFLAGS) -L. -g -finstrument-functions -lltt-instrument-functions -o $@ $^
 
-libltt-usertrace-fast.a: ltt-usertrace-fast.o ltt-facility-loader-user_generic.o
+sample-thread-slow: sample-thread-slow.c ltt-facility-loader-user_generic.c
+	$(CC) $(CFLAGS) -lpthread -o $@ $^
+
+sample-thread-fast: sample-thread-fast.c ltt-facility-loader-user_generic.c
+	$(CC) $(CFLAGS) -lpthread -o $@ $^
+
+
+#LIBRAIRIES
+
+libs: libltt-instrument-functions.a libltt-instrument-functions.so.0 \
+				libltt-usertrace-fast.a libltt-usertrace-fast.so.0
+
+libltt-usertrace-fast.a: ltt-usertrace-fast.o
 	@rm -f libltt-usertrace-fast.a
 	$(AR) rc $@ $^
 	$(RANLIB) $@
 
-libltt-usertrace-fast.so.0: ltt-usertrace-fast.o ltt-facility-loader-user_generic.o
+libltt-usertrace-fast.so.0: ltt-usertrace-fast.o
 	@rm -f libltt-usertrace-fast.so libltt-usertrace-fast.so.0
 	$(CC) $(CFLAGS) -lpthread -shared -Wl,-soname,libltt-usertrace-fast.so -o $@ $^
 	ln -s libltt-usertrace-fast.so.0 libltt-usertrace-fast.so
