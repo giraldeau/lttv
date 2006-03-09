@@ -425,6 +425,14 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	snprintf(identifier_name, PATH_MAX-1,	"%lu.%lu.%llu",
 			traced_tid, traced_pid, get_cycles());
 	snprintf(outfile_name, PATH_MAX-1,	"process-%s", identifier_name);
+
+	/* Wait for the first signal before creating files */
+	ret = sigsuspend(&oldset);
+	if(ret != -1) {
+		perror("LTT Error in sigsuspend\n");
+	}
+	if(traced_pid == 0 || parent_exited) goto dead_parent;
+
 #ifndef LTT_NULL_OUTPUT_TEST
 	fd_process = creat(outfile_name, 0644);
 #else
@@ -440,11 +448,6 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 #endif //LTT_NULL_OUTPUT_TEST
 	
 	while(1) {
-		ret = sigsuspend(&oldset);
-		if(ret != -1) {
-			perror("LTT Error in sigsuspend\n");
-		}
-		
 		if(traced_pid == 0) break; /* parent died */
 		if(parent_exited) break;
 		dbg_printf("LTT Doing a buffer switch read. pid is : %lu\n", getpid());
@@ -452,8 +455,12 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		do {
 			ret = read_subbuffer(&shared_trace_info->channel.process, fd_process);
 		} while(ret == 0);
+		ret = sigsuspend(&oldset);
+		if(ret != -1) {
+			perror("LTT Error in sigsuspend\n");
+		}
 	}
-
+dead_parent:
 	/* The parent thread is dead and we have finished with the buffer */
 
 	/* Buffer force switch (flush). Using FLUSH instead of ACTIVE because we know
