@@ -70,5 +70,5 @@ install:
 	cp -df libltt-usertrace-fast.so* libltt-usertrace-fast.a $(LIB_DIR)
 
 clean:
-	rm -fr *.o *~ sample-thread sample sample-highspeed sample-printf sample-instrument-fct libltt-instrument-functions.so* libltt-instrument-functions.a libltt-usertrace-fast.a libltt-usertrace-fast.so.0
+	rm -fr *.o *~ sample-thread sample sample-highspeed sample-printf sample-instrument-fct libltt-instrument-functions.so* libltt-instrument-functions.a libltt-usertrace-fast.a libltt-usertrace-fast.so* sample-thread-slow sample-thread-fast
 
