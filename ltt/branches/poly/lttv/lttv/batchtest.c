@@ -202,7 +202,7 @@ gboolean count_event(void *hook_data, void __UNUSED__ *call_data)
     g_warning("Time decreasing trace %s tracefile %s cpu %u position %u/0x%x",
   g_quark_to_string(ltt_trace_name(ltt_tracefile_get_trace(tracefile))),
   g_quark_to_string(ltt_tracefile_name(tracefile)), 
-  ltt_tracefile_num(tracefile), nb_block, offset);
+  tfs->cpu, nb_block, offset);
     g_warning("last time %lu.%lu vs current %lu.%lu",
   count_previous_time.tv_sec, count_previous_time.tv_nsec,
   time.tv_sec, time.tv_nsec);
@@ -316,7 +316,7 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
   
   g_warning("test %s test", g_quark_to_string(ltt_tracefile_name(tracefile)));
   g_string_printf(filename, "%s.%s.%u.trace", a_dump_tracefiles,
-      mod_name, ltt_tracefile_num(tracefile));
+      mod_name, ltt_tracefile_cpu(tracefile));
   fp = fopen(filename->str, "w");
   if(fp == NULL) g_error("Cannot open %s", filename->str);
   g_string_free(filename, TRUE);
@@ -346,7 +346,7 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
       g_warning("Time decreasing trace %s tracefile %s cpu %u position %u/0x%x",
     g_quark_to_string(ltt_trace_name(ltt_tracefile_get_trace(tracefile))),
     g_quark_to_string(ltt_tracefile_name(tracefile)), 
-    ltt_tracefile_num(tracefile), nb_block, offset);
+    ltt_tracefile_cpu(tracefile), nb_block, offset);
       g_warning("last time %lu.%lu vs current %lu.%lu",
     previous_time.tv_sec, previous_time.tv_nsec,
     time.tv_sec, time.tv_nsec);

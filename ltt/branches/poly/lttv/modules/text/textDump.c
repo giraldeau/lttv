@@ -236,7 +236,7 @@ static int write_event_content(void *hook_data, void *call_data)
 
   LttvFilter *filter;
 
-  guint cpu = ltt_tracefile_num(tfs->parent.tf);
+  guint cpu = tfs->cpu;
   LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
   LttvProcessState *process = ts->running_process[cpu];
 

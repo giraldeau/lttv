@@ -161,7 +161,7 @@ void lttv_event_to_string(LttEvent *e, GString *s,
 
   LttTime time;
 
-  guint cpu = ltt_tracefile_num(tfs->parent.tf);
+  guint cpu = tfs->cpu;
   LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
 

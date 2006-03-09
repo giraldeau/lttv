@@ -363,12 +363,12 @@ int before_schedchange_hook(void *hook_data, void *call_data)
      * draw items from the beginning of the read for it. If it is not
      * present, it's a new process and it was not present : it will
      * be added after the state update.  */
-    guint cpu = ltt_tracefile_num(tfc->tf);
+    guint cpu = tfs->cpu;
     LttvProcessState *process = ts->running_process[cpu];
     /* unknown state, bad current pid */
     if(process->pid != pid_out)
       process = lttv_state_find_process(ts,
-          ltt_tracefile_num(tfc->tf), pid_out);
+          tfs->cpu, pid_out);
     
     if(process != NULL) {
       /* Well, the process_out existed : we must get it in the process hash
@@ -524,7 +524,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
      * be added after the state update.  */
     LttvProcessState *process;
     process = lttv_state_find_process(ts,
-        ltt_tracefile_num(tfc->tf), pid_in);
+        tfs->cpu, pid_in);
     
     if(process != NULL) {
       /* Well, the process existed : we must get it in the process hash
@@ -538,7 +538,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
       
       hashed_process_data = processlist_get_process_data(process_list,
               pid_in,
-              ltt_tracefile_num(tfc->tf),
+              tfs->cpu,
               &birth,
               tfc->t_context->index);
       if(hashed_process_data == NULL)
@@ -550,7 +550,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         processlist_add(process_list,
             drawing,
             pid_in,
-            ltt_tracefile_num(tfc->tf),
+            tfs->cpu,
             process->ppid,
             &birth,
             tfc->t_context->index,
@@ -748,7 +748,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   /* Find process pid_in in the list... */
   //process_in = lttv_state_find_process(ts, ANY_CPU, pid_in);
   //process_in = tfs->process;
-  guint cpu = ltt_tracefile_num(tfc->tf);
+  guint cpu = tfs->cpu;
   process_in = ts->running_process[cpu];
   /* It should exist, because we are after the state update. */
 #ifdef EXTRA_CHECK
@@ -861,7 +861,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
    */
   /* For the pid */
   //LttvProcessState *process = tfs->process;
-  guint cpu = ltt_tracefile_num(tfc->tf);
+  guint cpu = tfs->cpu;
   LttvProcessState *process = ts->running_process[cpu];
   g_assert(process != NULL);
 
@@ -1052,7 +1052,7 @@ int before_process_exit_hook(void *hook_data, void *call_data)
 
   /* Add process to process list (if not present) */
   //LttvProcessState *process = tfs->process;
-  guint cpu = ltt_tracefile_num(tfc->tf);
+  guint cpu = tfs->cpu;
   LttvProcessState *process = ts->running_process[cpu];
   guint pid = process->pid;
   LttTime birth;
@@ -1554,7 +1554,7 @@ int after_process_exit_hook(void *hook_data, void *call_data)
 
   /* Add process to process list (if not present) */
   //LttvProcessState *process = tfs->process;
-  guint cpu = ltt_tracefile_num(tfc->tf);
+  guint cpu = tfs->cpu;
   LttvProcessState *process = ts->running_process[cpu];
 
   /* It should exist, because we are after the state update. */
@@ -1648,7 +1648,7 @@ int after_fs_exec_hook(void *hook_data, void *call_data)
 
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
 
-  guint cpu = ltt_tracefile_num(tfc->tf);
+  guint cpu = tfs->cpu;
   LttvProcessState *process = ts->running_process[cpu];
   g_assert(process != NULL);
 
@@ -1749,7 +1749,7 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
   /* Find process pid_in in the list... */
   process_in = lttv_state_find_process(ts, ANY_CPU, pid_in);
   //process_in = tfs->process;
-  //guint cpu = ltt_tracefile_num(tfc->tf);
+  //guint cpu = tfs->cpu;
   //process_in = ts->running_process[cpu];
   /* It should exist, because we are after the state update. */
 #ifdef EXTRA_CHECK
@@ -2228,7 +2228,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
     for(i=0;i<tc->tracefiles->len;i++) {
       tfc = g_array_index(tc->tracefiles, LttvTracefileContext*, i);
       if(ltt_tracefile_name(tfc->tf) == LTT_NAME_CPU
-          && ltt_tracefile_num(tfc->tf) == process_info->cpu)
+          && tfs->cpu == process_info->cpu)
         break;
 
     }

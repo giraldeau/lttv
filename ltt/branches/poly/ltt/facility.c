@@ -281,7 +281,11 @@ void construct_fields(LttFacility *fac,
   type_descriptor_t *td;
   LttType *type;
 
-  field->name = g_quark_from_string(fld->name);
+	if(fld->name)
+	  field->name = g_quark_from_string(fld->name);
+	else
+		fld->name = 0;
+
   if(fld->description) {
     len = strlen(fld->description);
     field->description = g_new(gchar, len+1);

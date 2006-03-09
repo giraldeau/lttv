@@ -1815,8 +1815,9 @@ lttv_filter_tree_parse(
 
   LttvProcessState* state;
   
-  guint cpu = ltt_tracefile_num(context->tf);
   LttvTraceState *ts = (LttvTraceState*)context->t_context;
+  LttvTracefileState *tfs = (LttvTracefileState*)context;
+  guint cpu = tfs->cpu;
   state = ts->running_process[cpu];
   
   /*

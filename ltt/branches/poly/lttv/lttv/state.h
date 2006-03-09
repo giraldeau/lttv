@@ -190,7 +190,6 @@ typedef struct _LttvExecutionState {
   LttvProcessStatus s;
 } LttvExecutionState;
 
-
 typedef struct _LttvProcessState {
   guint pid;
   guint ppid;
@@ -207,6 +206,7 @@ typedef struct _LttvProcessState {
                                the active or inactive runqueue)*/
 	gboolean kernel_thread;		/* Is this thread a kernel_thread ? */
 //  guint  last_tracefile_index;    /* index in the trace for cpu tracefile */
+	LttvTracefileState	*usertrace;		/* Associated usertrace */
   /* opened file descriptors, address map?... */
 } LttvProcessState;
 
@@ -303,6 +303,7 @@ struct _LttvTracefileState {
 
   //LttvProcessState *process;
   GQuark tracefile_name;
+	guint cpu;	/* Current cpu of the tracefile */
 //  guint saved_position;
 };
 

@@ -642,9 +642,12 @@ void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname)
  * The left side is the name, the right side is the number.
  */
 
-int get_tracefile_name_number(const gchar *raw_name,
+int get_tracefile_name_number(gchar *raw_name,
                               GQuark *name,
-                              guint *num)
+                              guint *num,
+															guint *tid,
+															guint *pgid,
+															guint64 *creation)
 {
   guint raw_name_len = strlen(raw_name);
   gchar char_name[PATH_MAX];
@@ -652,27 +655,84 @@ int get_tracefile_name_number(const gchar *raw_name,
   int underscore_pos;
   long int cpu_num;
   gchar *endptr;
+	gchar *tmpptr;
 
   for(i=raw_name_len-1;i>=0;i--) {
     if(raw_name[i] == '_') break;
   }
-  if(i==0)  /* Either not found or name length is 0 */
-    return -1;
-  underscore_pos = i;
+  if(i==-1) { /* Either not found or name length is 0 */
+		/* This is a userspace tracefile */
+		strncpy(char_name, raw_name, raw_name_len);
+		*name = g_quark_from_string(char_name);
+		*num = 0;	/* unknown cpu */
+		for(i=0;i<raw_name_len;i++) {
+			if(raw_name[i] == '/') {
+				break;
+			}
+		}
+		i++;
+		for(;i<raw_name_len;i++) {
+			if(raw_name[i] == '/') {
+				break;
+			}
+		}
+		i++;
+		for(;i<raw_name_len;i++) {
+			if(raw_name[i] == '-') {
+				break;
+			}
+		}
+		if(i == raw_name_len) return -1;
+		i++;
+		tmpptr = &raw_name[i];
+		for(;i<raw_name_len;i++) {
+			if(raw_name[i] == '.') {
+				raw_name[i] = ' ';
+				break;
+			}
+		}
+		*tid = strtoul(tmpptr, &endptr, 10);
+		if(endptr == tmpptr)
+			return -1; /* No digit */
+		if(*tid == ULONG_MAX)
+			return -1; /* underflow / overflow */
+		i++;
+		tmpptr = &raw_name[i];
+		for(;i<raw_name_len;i++) {
+			if(raw_name[i] == '.') {
+				raw_name[i] = ' ';
+				break;
+			}
+		}
+		*pgid = strtoul(tmpptr, &endptr, 10);
+		if(endptr == tmpptr)
+			return -1; /* No digit */
+		if(*pgid == ULONG_MAX)
+			return -1; /* underflow / overflow */
+		i++;
+		tmpptr = &raw_name[i];
+		*creation = strtoull(tmpptr, &endptr, 10);
+		if(endptr == tmpptr)
+			return -1; /* No digit */
+		if(*creation == G_MAXUINT64)
+			return -1; /* underflow / overflow */
+	} else {
+		underscore_pos = i;
 
-  cpu_num = strtol(raw_name+underscore_pos+1, &endptr, 10);
+		cpu_num = strtol(raw_name+underscore_pos+1, &endptr, 10);
 
-  if(endptr == raw_name+underscore_pos+1)
-    return -1; /* No digit */
-  if(cpu_num == LONG_MIN || cpu_num == LONG_MAX)
-    return -1; /* underflow / overflow */
+		if(endptr == raw_name+underscore_pos+1)
+			return -1; /* No digit */
+		if(cpu_num == LONG_MIN || cpu_num == LONG_MAX)
+			return -1; /* underflow / overflow */
+		
+		strncpy(char_name, raw_name, underscore_pos);
+		char_name[underscore_pos] = '\0';
+
+		*name = g_quark_from_string(char_name);
+		*num = cpu_num;
+	}
   
-  strncpy(char_name, raw_name, underscore_pos);
-  
-  char_name[underscore_pos] = '\0';
-  
-  *name = g_quark_from_string(char_name);
-  *num = cpu_num;
   
   return 0;
 }
@@ -796,10 +856,12 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path,
 			if(ret < 0) continue;
 		} else if(S_ISREG(stat_buf.st_mode)) {
 			GQuark name;
-      guint num;
+      guint num, tid, pgid;
+			guint64 creation;
       GArray *group;
-      
-      if(get_tracefile_name_number(rel_path, &name, &num))
+      num = tid = pgid = 0;
+			creation = 0;
+      if(get_tracefile_name_number(rel_path, &name, &num, &tid, &pgid, &creation))
         continue; /* invalid name */
       
 			g_debug("Opening file.\n");
@@ -815,6 +877,9 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path,
       tmp_tf.cpu_online = 1;
       tmp_tf.cpu_num = num;
       tmp_tf.name = name;
+			tmp_tf.tid = tid;
+			tmp_tf.pgid = pgid;
+			tmp_tf.creation = creation;
 
       group = g_datalist_id_get_data(&trace->tracefiles, name);
       if(group == NULL) {
@@ -1427,11 +1492,25 @@ GQuark ltt_tracefile_long_name(const LttTracefile *tf)
 
 
 
-guint ltt_tracefile_num(LttTracefile *tf)
+guint ltt_tracefile_cpu(LttTracefile *tf)
 {
   return tf->cpu_num;
 }
 
+guint ltt_tracefile_tid(LttTracefile *tf)
+{
+  return tf->tid;
+}
+
+guint ltt_tracefile_pgid(LttTracefile *tf)
+{
+  return tf->pgid;
+}
+
+guint64 ltt_tracefile_creation(LttTracefile *tf)
+{
+  return tf->creation;
+}
 /*****************************************************************************
  * Get the number of blocks in the tracefile 
  ****************************************************************************/
@@ -1599,21 +1678,30 @@ fail:
   return 1;
 }
 
+LttTime ltt_interpolate_time_from_tsc(LttTracefile *tf, guint64 tsc)
+{
+  LttTime time;
+	
+	if(tsc > tf->trace->start_tsc) {
+		time = ltt_time_from_uint64(
+				(double)(tsc - tf->trace->start_tsc) 
+																		* (1000000000.0 / tf->trace->freq_scale)
+																		/ (double)tf->trace->start_freq);
+		time = ltt_time_add(tf->trace->start_time_from_tsc, time);
+	} else {
+		time = ltt_time_from_uint64(
+				(double)(tf->trace->start_tsc - tsc)
+																		* (1000000000.0 / tf->trace->freq_scale)
+																		/ (double)tf->trace->start_freq);
+		time = ltt_time_sub(tf->trace->start_time_from_tsc, time);
+	}
+  return time;
+}
+
 /* Calculate the real event time based on the buffer boundaries */
 LttTime ltt_interpolate_time(LttTracefile *tf, LttEvent *event)
 {
-  LttTime time;
-
-//  time = ltt_time_from_uint64(
-//      cycles_2_ns(tf, (guint64)(tf->buffer.tsc - tf->buffer.begin.cycle_count)));
-  time = ltt_time_from_uint64(
-      (double)(tf->buffer.tsc - tf->trace->start_tsc) 
-																	* (1000000000.0 / tf->trace->freq_scale)
-                                  / (double)tf->trace->start_freq);
-  //time = ltt_time_add(tf->buffer.begin.timestamp, time);
-  time = ltt_time_add(tf->trace->start_time_from_tsc, time);
-
-  return time;
+	return ltt_interpolate_time_from_tsc(tf, tf->buffer.tsc);
 }
 
 
@@ -1830,12 +1918,19 @@ static gint map_block(LttTracefile * tf, guint block_num)
                                               &header->begin.cycle_count);
   tf->buffer.begin.freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &header->begin.freq);
-  tf->buffer.begin.timestamp = ltt_time_add(
+	if(tf->buffer.begin.freq == 0)
+		tf->buffer.begin.freq = tf->trace->start_freq;
+
+  tf->buffer.begin.timestamp = ltt_interpolate_time_from_tsc(tf, 
+																					tf->buffer.begin.cycle_count);
+#if 0
+		ltt_time_add(
                                 ltt_time_from_uint64(
                                   (double)(tf->buffer.begin.cycle_count
                                   - tf->trace->start_tsc) * 1000000.0
                                     / (double)tf->trace->start_freq),
-                                tf->trace->start_time_from_tsc);
+     															tf->trace->start_time_from_tsc);
+#endif //0
 #if 0
 
   tf->buffer.end.timestamp = ltt_time_add(
@@ -1851,15 +1946,21 @@ static gint map_block(LttTracefile * tf, guint block_num)
                                               &header->end.cycle_count);
   tf->buffer.end.freq = ltt_get_uint64(LTT_GET_BO(tf),
                                        &header->end.freq);
+	if(tf->buffer.end.freq == 0)
+		tf->buffer.end.freq = tf->trace->start_freq;
+	
   tf->buffer.lost_size = ltt_get_uint32(LTT_GET_BO(tf),
                                         &header->lost_size);
-  tf->buffer.end.timestamp = ltt_time_add(
+  tf->buffer.end.timestamp = ltt_interpolate_time_from_tsc(tf,
+																				tf->buffer.end.cycle_count);
+#if 0
+		ltt_time_add(
                                 ltt_time_from_uint64(
                                   (double)(tf->buffer.end.cycle_count
                                   - tf->trace->start_tsc) * 1000000.0
                                     / (double)tf->trace->start_freq),
                                 tf->trace->start_time_from_tsc);
- 
+#endif //0
   tf->buffer.tsc =  tf->buffer.begin.cycle_count;
   tf->event.tsc = tf->buffer.tsc;
   tf->buffer.freq = tf->buffer.begin.freq;

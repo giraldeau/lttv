@@ -417,7 +417,7 @@ find_event_tree(LttvTracefileStats *tfcs,
 static void update_event_tree(LttvTracefileStats *tfcs) 
 {
   LttvTraceState *ts = (LttvTraceState *)tfcs->parent.parent.t_context;
-  guint cpu = ltt_tracefile_num(tfcs->parent.parent.tf);
+  guint cpu = tfcs->parent.cpu;
   LttvProcessState *process = ts->running_process[cpu];
   LttvExecutionState *es = process->state;
 
@@ -431,7 +431,7 @@ static void update_event_tree(LttvTracefileStats *tfcs)
 static void mode_change(LttvTracefileStats *tfcs)
 {
   LttvTraceState *ts = (LttvTraceState *)tfcs->parent.parent.t_context;
-  guint cpu = ltt_tracefile_num(tfcs->parent.parent.tf);
+  guint cpu = tfcs->parent.cpu;
   LttvProcessState *process = ts->running_process[cpu];
   LttvAttributeValue cpu_time; 
 
@@ -448,7 +448,7 @@ static void mode_change(LttvTracefileStats *tfcs)
 static void mode_end(LttvTracefileStats *tfcs)
 {
   LttvTraceState *ts = (LttvTraceState *)tfcs->parent.parent.t_context;
-  guint cpu = ltt_tracefile_num(tfcs->parent.parent.tf);
+  guint cpu = tfcs->parent.cpu;
   LttvProcessState *process = ts->running_process[cpu];
   LttvAttributeValue elapsed_time, cpu_time; 
 

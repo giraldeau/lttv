@@ -86,7 +86,13 @@ GQuark ltt_tracefile_long_name(const LttTracefile *tf);
 
 /* get the cpu number of the tracefile */
 
-guint ltt_tracefile_num(LttTracefile *tf);
+guint ltt_tracefile_cpu(LttTracefile *tf);
+
+/* For usertrace */
+guint ltt_tracefile_tid(LttTracefile *tf);
+guint ltt_tracefile_pgid(LttTracefile *tf);
+guint64 ltt_tracefile_creation(LttTracefile *tf);
+
 
 LttTrace *ltt_tracefile_get_trace(LttTracefile *tf);
 
@@ -182,5 +188,7 @@ gint check_fields_compatibility(LttEventType *event_type1,
 gint64 ltt_get_int(gboolean reverse_byte_order, gint size, void *data);
 
 guint64 ltt_get_uint(gboolean reverse_byte_order, gint size, void *data);
+
+LttTime ltt_interpolate_time_from_tsc(LttTracefile *tf, guint64 tsc);
 
 #endif // TRACE_H

@@ -1481,6 +1481,7 @@ int event_hook(void *hook_data, void *call_data)
 {
   EventViewerData *event_viewer_data = (EventViewerData*)hook_data;
   LttvTracefileContext *tfc = (LttvTracefileContext*)call_data;
+  LttvTracefileState *tfs = (LttvTracefileState*)call_data;
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
 
   LttvFilter *filter = event_viewer_data->main_win_filter;
@@ -1493,7 +1494,7 @@ int event_hook(void *hook_data, void *call_data)
   LttEventType *event_type = ltt_event_eventtype(e);
   LttTime time = ltt_event_time(e);
 
-  guint cpu = ltt_tracefile_num(tfc->tf);
+  guint cpu = tfs->cpu;
   LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
   LttvProcessState *process = ts->running_process[cpu];
   

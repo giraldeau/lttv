@@ -347,6 +347,9 @@ struct _LttTracefile{
   GQuark long_name;                  //tracefile complete filename
   GQuark name;                       //tracefile name
   guint cpu_num;                     //cpu number of the tracefile
+	guint	tid;												 //Usertrace tid, else 0
+	guint pgid;												 //Usertrace pgid, else 0
+	guint64 creation;									 //Usertrace creation, else 0
   LttTrace * trace;                  //trace containing the tracefile
   int fd;                            //file descriptor 
   off_t file_size;                   //file size
