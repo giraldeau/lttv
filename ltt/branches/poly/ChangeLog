@@ -1,5 +1,9 @@
 LinuxTraceToolkit ChangeLog
 
+09/03/2006	LTTV 0.8.28
+						Add usertrace support.
+						Bugfix : handle badly number syscall xml correctly.
+						Add network_ip_interface XML.
 05/03/2006	LTTV 0.8.26
 						Add mouse scroll support.
 						Add user_generic.xml facility.

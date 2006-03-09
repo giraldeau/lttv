@@ -799,6 +799,7 @@ free_max_time(LttvTraceState *tcs)
 typedef struct _LttvNameTables {
  // FIXME  GQuark *eventtype_names;
   GQuark *syscall_names;
+	guint nb_syscalls;
   GQuark *trap_names;
   GQuark *irq_names;
   GQuark *soft_irq_names;
@@ -856,6 +857,7 @@ create_name_tables(LttvTraceState *tcs)
   lttv_trace_hook_destroy(&h);
 
   name_tables->syscall_names = g_new(GQuark, nb);
+  name_tables->nb_syscalls = nb;
 
   for(i = 0 ; i < nb ; i++) {
     name_tables->syscall_names[i] = ltt_enum_string_get(t, i);
@@ -951,6 +953,7 @@ get_name_tables(LttvTraceState *tcs)
   name_tables = (LttvNameTables *)*(v.v_pointer);
   //tcs->eventtype_names = name_tables->eventtype_names;
   tcs->syscall_names = name_tables->syscall_names;
+  tcs->nb_syscalls = name_tables->nb_syscalls;
   tcs->trap_names = name_tables->trap_names;
   tcs->irq_names = name_tables->irq_names;
   tcs->soft_irq_names = name_tables->soft_irq_names;
@@ -1254,8 +1257,19 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
 
   LttvExecutionSubmode submode;
 
-  submode = ((LttvTraceState *)(s->parent.t_context))->syscall_names[
-      ltt_event_get_unsigned(e, f)];
+	guint nb_syscalls = ((LttvTraceState *)(s->parent.t_context))->nb_syscalls;
+	guint syscall = ltt_event_get_unsigned(e, f);
+	
+	if(syscall < nb_syscalls) {
+	  submode = ((LttvTraceState *)(s->parent.t_context))->syscall_names[
+  	    syscall];
+	} else {
+		/* Fixup an incomplete syscall table */
+		GString *string = g_string_new("");
+    g_string_printf(string, "syscall %u", syscall);
+		submode = g_quark_from_string(string->str);
+		g_string_free(string, TRUE);
+	}
   push_state(s, LTTV_STATE_SYSCALL, submode);
   return FALSE;
 }

@@ -15,7 +15,8 @@ process.xml \
 socket.xml \
 statedump.xml \
 timer.xml \
-user_generic.xml
+user_generic.xml \
+network_ip_interface.xml
 
 facilities_DATA = \
 core.xml \
@@ -33,7 +34,8 @@ process.xml \
 socket.xml \
 statedump.xml \
 timer.xml \
-user_generic.xml
+user_generic.xml \
+network_ip_interface.xml
 
 
 facilitiesdir = $(pkgdatadir)/facilities

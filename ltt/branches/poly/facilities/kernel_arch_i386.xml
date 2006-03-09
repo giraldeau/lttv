@@ -294,6 +294,8 @@
 			<label name=inotify_init value=291/>
 			<label name=inotify_add_watch value=292/>
 			<label name=inotify_rm_watch value=293/>
+			<label name=ltt_trace_generic value=294/>
+			<label name=ltt_register_generic value=295/>
     </enum>
   </type>
 

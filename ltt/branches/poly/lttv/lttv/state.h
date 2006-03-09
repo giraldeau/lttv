@@ -265,6 +265,7 @@ struct _LttvTraceState {
   /* Block/char devices, locks, memory pages... */
   GQuark *eventtype_names;
   GQuark *syscall_names;
+	guint  nb_syscalls;
   GQuark *trap_names;
   GQuark *irq_names;
   GQuark *soft_irq_names;
