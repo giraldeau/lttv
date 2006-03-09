@@ -17,7 +17,7 @@ void *thr1(void *arg)
 	printf("thread 1, thread id : %lu, pid %lu\n", pthread_self(), getpid());
 
 	for(i=0; i<100000; i++) {
-//		trace_user_generic_string("Hello world! Have a nice day.");
+		trace_user_generic_string("Hello world! Have a nice day.");
 	}
 	pthread_exit((void*)1);
 }
