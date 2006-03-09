@@ -375,6 +375,7 @@ get_error:
 static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		sigset_t oldset, pid_t l_traced_pid, pthread_t l_traced_tid)
 {
+	sigset_t set;
 	struct sigaction act;
 	int ret;
 	int fd_process;
@@ -405,12 +406,6 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	sigemptyset(&(act.sa_mask));
 	sigaddset(&(act.sa_mask), SIGALRM);
 	sigaction(SIGALRM, &act, NULL);
-
-	/* Enable signals */
-	ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
-	if(ret) {
-		dbg_printf("LTT Error in pthread_sigmask\n");
-	}
 
 	alarm(3);
 
@@ -444,11 +439,15 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 #endif //LTT_NULL_OUTPUT_TEST
 	
 	while(1) {
-		pause();
+		ret = sigsuspend(&oldset);
+		if(ret) {
+			perror("LTT Error in sigsuspend\n");
+		}
+		
 		if(traced_pid == 0) break; /* parent died */
 		if(parent_exited) break;
 		dbg_printf("LTT Doing a buffer switch read. pid is : %lu\n", getpid());
-	
+
 		do {
 			ret = read_subbuffer(&shared_trace_info->channel.process, fd_process);
 		} while(ret == 0);
