@@ -3,7 +3,7 @@
 
 #include <sys/types.h>
 #include <ltt/ltt-facility-id-user_generic.h>
-#include <ltt/ltt-generic.h>
+#include <ltt/ltt-usertrace.h>
 
 /* Named types */
 

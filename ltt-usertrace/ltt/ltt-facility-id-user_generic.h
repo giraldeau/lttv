@@ -2,7 +2,7 @@
 #define _LTT_FACILITY_ID_USER_GENERIC_H_
 
 #ifdef LTT_TRACE
-#include <ltt/ltt-generic.h>
+#include <ltt/ltt-usertrace.h>
 
 /****  facility handle  ****/
 

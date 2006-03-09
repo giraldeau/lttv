@@ -1,7 +1,7 @@
 #ifndef _LTT_FACILITY_LOADER_USER_GENERIC_H_
 #define _LTT_FACILITY_LOADER_USER_GENERIC_H_
 
-#include <ltt/ltt-generic.h>
+#include <ltt/ltt-usertrace.h>
 #include <ltt/ltt-facility-id-user_generic.h>
 
 ltt_facility_t	ltt_facility_user_generic;

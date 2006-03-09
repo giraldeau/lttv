@@ -9,6 +9,7 @@
 #define _LTT_USERTRACE_FAST_H
 
 #ifdef LTT_TRACE
+#ifdef LTT_TRACE_FAST
 
 #include <errno.h>
 #include <asm/atomic.h>
@@ -628,7 +629,6 @@ static inline void __attribute__((no_instrument_function)) ltt_commit_slot(
 }
 	
 
+#endif //LTT_TRACE_FAST
 #endif //LTT_TRACE
-
-
 #endif //_LTT_USERTRACE_FAST_H

@@ -12,7 +12,7 @@
 #define LTT_TRACE
 #include <error.h>
 #include <stdio.h>
-#include <ltt/ltt-generic.h>
+#include <ltt/ltt-usertrace.h>
 #include "ltt-facility-loader-user_generic.h"
 
 static struct user_facility_info facility = {
