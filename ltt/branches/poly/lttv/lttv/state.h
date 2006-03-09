@@ -259,6 +259,8 @@ struct _LttvTraceState {
 
   GHashTable *processes;  /* LttvProcessState objects indexed by pid and
                              last_cpu */
+	GHashTable *usertraces;	/* GPtrArray objects indexed by pid, containing
+														 pointers to LttvTracefileState objects. */
   guint nb_event, save_interval;
   /* Block/char devices, locks, memory pages... */
   GQuark *eventtype_names;

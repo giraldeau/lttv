@@ -174,6 +174,18 @@ gboolean process_equal(gconstpointer a, gconstpointer b)
   return ret;
 }
 
+static void delete_usertrace(gpointer key, gpointer value, gpointer user_data)
+{
+	g_tree_destroy((GTree*)value);
+}
+
+static void lttv_state_free_usertraces(GHashTable *usertraces)
+{
+	g_hash_table_foreach(usertraces, delete_usertrace, NULL);
+	g_hash_table_destroy(usertraces);
+}
+
+
 
 static void
 restore_init_state(LttvTraceState *self)
@@ -184,7 +196,9 @@ restore_init_state(LttvTraceState *self)
   
   /* Free the process tables */
   if(self->processes != NULL) lttv_state_free_process_table(self->processes);
+	if(self->usertraces != NULL) lttv_state_free_usertraces(self->usertraces);
   self->processes = g_hash_table_new(process_hash, process_equal);
+	self->usertraces = g_hash_table_new(g_direct_hash, g_direct_equal);
   self->nb_event = 0;
 
   /* Seek time to beginning */
@@ -226,6 +240,20 @@ restore_init_state(LttvTraceState *self)
 
 //static LttTime time_zero = {0,0};
 
+static gint compare_usertraces(gconstpointer a, gconstpointer b, 
+		gpointer user_data)
+{
+	const LttTime *t1 = (const LttTime *)a;
+	const LttTime *t2 = (const LttTime *)b;
+
+	return ltt_time_compare(*t1, *t2);
+}
+
+static void free_usertrace_key(gpointer data)
+{
+	g_free(data);
+}
+
 static void
 init(LttvTracesetState *self, LttvTraceset *ts)
 {
@@ -260,6 +288,7 @@ init(LttvTracesetState *self, LttvTraceset *ts)
 
     nb_tracefile = tc->tracefiles->len;
     tcs->processes = NULL;
+    tcs->usertraces = NULL;
     tcs->running_process = g_new(LttvProcessState*, 
                                  ltt_trace_get_num_cpu(tc->t));
     restore_init_state(tcs);
@@ -269,7 +298,7 @@ init(LttvTracesetState *self, LttvTraceset *ts)
                                           LttvTracefileContext*, j));
       tfcs->tracefile_name = ltt_tracefile_name(tfcs->parent.tf);
 			tfcs->cpu = ltt_tracefile_cpu(tfcs->parent.tf);
-			
+#if 0		
 			if(ltt_tracefile_tid(tfcs->parent.tf) != 0) {
 				/* It's a Usertrace */
 				LttvProcessState *process;
@@ -283,9 +312,27 @@ init(LttvTracesetState *self, LttvTraceset *ts)
 				process->usertrace = tfcs;
 			}
     }
+#endif //0
+			if(ltt_tracefile_tid(tfcs->parent.tf) != 0) {
+				/* It's a Usertrace */
+				guint tid = ltt_tracefile_tid(tfcs->parent.tf);
+				GTree *usertrace_tree = (GTree*)g_hash_table_lookup(tcs->usertraces,
+						(gconstpointer)tid);
+				if(!usertrace_tree) {
+					usertrace_tree = g_tree_new_full(compare_usertraces,
+							NULL, free_usertrace_key, NULL);
+					g_hash_table_insert(tcs->usertraces,
+							(gpointer)tid, usertrace_tree);
+				}
+				LttTime *timestamp = g_new(LttTime, 1);
+				*timestamp = ltt_interpolate_time_from_tsc(tfcs->parent.tf,
+							ltt_tracefile_creation(tfcs->parent.tf));
+				g_tree_insert(usertrace_tree, timestamp, tfcs);
+			}
+    }
+
   }
 }
-
 
 static void
 fini(LttvTracesetState *self)
@@ -315,7 +362,9 @@ fini(LttvTracesetState *self)
     g_free(tcs->running_process);
     tcs->running_process = NULL;
     lttv_state_free_process_table(tcs->processes);
+		lttv_state_free_usertraces(tcs->usertraces);
     tcs->processes = NULL;
+    tcs->usertraces = NULL;
   }
   LTTV_TRACESET_CONTEXT_CLASS(g_type_class_peek(LTTV_TRACESET_CONTEXT_TYPE))->
       fini((LttvTracesetContext *)self);
@@ -1012,6 +1061,56 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
   process->state->change = tfs->parent.timestamp;
 }
 
+struct search_result {
+	const LttTime *time;	/* Requested time */
+	LttTime *best;	/* Best result */
+};
+
+static gint search_usertrace(gconstpointer a, gconstpointer b)
+{
+	const LttTime *elem_time = (const LttTime*)a;
+	/* Explicit non const cast */
+	struct search_result *res = (struct search_result *)b;
+
+	if(ltt_time_compare(*elem_time, *(res->time)) < 0) {
+		/* The usertrace was created before the schedchange */
+		/* Get larger keys */
+		return 1;
+	} else if(ltt_time_compare(*elem_time, *(res->time)) >= 0) {
+		/* The usertrace was created after the schedchange time */
+		/* Get smaller keys */
+		if(res->best) {
+			if(ltt_time_compare(*elem_time, *res->best) < 0) {
+				res->best = elem_time;
+			}
+		} else {
+			res->best = elem_time;
+		}
+		return -1;
+	}
+}
+
+static LttvTracefileState *ltt_state_usertrace_find(LttvTraceState *tcs,
+		guint pid, const LttTime *timestamp)
+{
+	LttvTracefileState *tfs = NULL;
+	struct search_result res;
+	/* Find the usertrace associated with a pid and time interval.
+	 * Search in the usertraces by PID (within a hash) and then, for each
+	 * corresponding element of the array, find the first one with creation
+	 * timestamp the lowest, but higher or equal to "timestamp". */
+	res.time = timestamp;
+	res.best = NULL;
+	GTree *usertrace_tree = g_hash_table_lookup(tcs->usertraces, (gpointer)pid);
+	if(usertrace_tree) {
+		g_tree_search(usertrace_tree, search_usertrace, &res);
+		if(res.best)
+			tfs = g_tree_lookup(usertrace_tree, res.best);
+	}
+
+	return tfs;
+}
+
 
 LttvProcessState *
 lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent, 
@@ -1031,7 +1130,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   //process->last_cpu = tfs->cpu_name;
   //process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)tfs)->tf);
 	process->kernel_thread = 0;
-	process->usertrace = NULL;
+	process->usertrace = ltt_state_usertrace_find(tcs, pid, timestamp);
 
   g_info("Process %u, core %p", process->pid, process);
   g_hash_table_insert(tcs->processes, process, process);
@@ -1372,10 +1471,8 @@ static gboolean process_fork(void *hook_data, void *call_data)
      *
      * Simply put a correct parent.
      */
-		//It can also happen when created by a usertrace. In that case, it's
-		//correct.
-    //g_assert(0); /* This is a problematic case : the process has been created
-    //                before the fork event */
+    g_assert(0); /* This is a problematic case : the process has been created
+                    before the fork event */
     child_process->ppid = process->pid;
   }
 	g_assert(child_process->name == LTTV_STATE_UNNAMED);
