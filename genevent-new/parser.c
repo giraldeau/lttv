@@ -310,7 +310,7 @@ void getFacilityAttributes(parse_file_t *in, facility_t *fac)
       if(car == EOF) in->error(in,"name was expected");
       else if(car == '\"') fac->name = allocAndCopy(getQuotedString(in));
       else fac->name = allocAndCopy(getName(in));
-			if(!strncmp(fac->name, "user_", sizeof("user_")) == 0)
+			if(!strncmp(fac->name, "user_", sizeof("user_")-1))
 				fac->user = 1;
     } else if(!strcmp("arch", token)) {
       getEqual(in);
