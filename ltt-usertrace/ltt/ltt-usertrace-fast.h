@@ -21,7 +21,6 @@
 #include <signal.h>
 
 #include <ltt/ltt-facility-id-user_generic.h>
-#include <ltt/ltt-generic.h>
 
 #ifndef	LTT_N_SUBBUFS
 #define LTT_N_SUBBUFS 2
@@ -58,8 +57,6 @@
 #define atomic_cmpxchg(v, old, new) ((int)cmpxchg(&((v)->counter), old, new))
 #endif //atomic_cmpxchg
 
-typedef unsigned int ltt_facility_t;
-	
 struct ltt_trace_header {
 	uint32_t				magic_number;
 	uint32_t				arch_type;

@@ -17,10 +17,6 @@
 #include <sys/types.h>
 #include <stdint.h>
 
-#ifdef LTT_TRACE_FAST
-#include <ltt/ltt-usertrace-fast.h>
-#endif //LTT_TRACE_FAST
-
 #ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
 #endif
@@ -88,6 +84,10 @@ static inline unsigned int __attribute__((no_instrument_function))
 }
 #define LTT_ALIGN __attribute__((packed))
 #endif //LTT_PACK
+
+#ifdef LTT_TRACE_FAST
+#include <ltt/ltt-usertrace-fast.h>
+#endif //LTT_TRACE_FAST
 
 #endif //_LTT_USERTRACE_H
 

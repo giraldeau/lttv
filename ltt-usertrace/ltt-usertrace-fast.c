@@ -45,6 +45,7 @@
 
 #define _GNU_SOURCE
 #define LTT_TRACE
+#define LTT_TRACE_FAST
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -70,7 +71,7 @@
 
 _syscall0(pid_t,gettid)
 
-#include <ltt/ltt-usertrace-fast.h>
+#include <ltt/ltt-usertrace.h>
 
 #ifdef LTT_SHOW_DEBUG
 #define dbg_printf(...) dbg_printf(__VA_ARGS__)
