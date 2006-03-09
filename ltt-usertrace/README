@@ -1,5 +1,5 @@
 
-LTTng usertrace generic package
+LTTng usertrace package
 
 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
 March 2006
@@ -10,8 +10,8 @@ short quickstart guide of it.
 
 Here are the currently supported architectures :
 x86
-(please add the ltt_* system calls to other architectures as you need them : it
-will work magically)
+(please add the ltt_trace_generic and ltt_register_generic system calls to
+other architectures as you need them : it will work magically)
 
 * Compile your kernel with the latest LTTng patch. Make sure the option 
   "Allow tracing from userspace" is _active_!
@@ -19,19 +19,23 @@ will work magically)
   setup a working tracer and viewer. See the genevent installation step : it is
   required for method #2 below.
   
-* Extract the latest usertrace-generic archive :
+* Extract the latest ltt-usertrace archive :
 su
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/usertrace-generic-x.x.tar.gz
-gzip -cd usertrace-generic-x.x.tar.gz | tar xvof -
+wget http://ltt.polymtl.ca/packages/ltt-usertrace-x.x.tar.gz
+gzip -cd ltt-usertrace-x.x.tar.gz | tar xvof -
 
-* Build the sample programs and install the headers into your system :
+* Build the sample programs and install the headers and librairies into your
+system :
 su
 cd /usr/src/usertrace-generic
 make
 make install
 
-* There are two ways to trace information from your application :
+Feel free to look at the sample programs and the Makefile : they demonstrate
+very well the features of the usertrace package and how to use them.
+
+* There are three ways to trace information from your application :
 
 1) Easy way, but slow (printf style)
   See sample-printf.c for code example.

@@ -13,9 +13,9 @@
 int main(int argc, char **argv)
 {
 	printf("Will trace a printf of an incrementing counter.\n");
-  printf("Abort with CTRL-C.\n");
-  printf("No file is created with this example : it logs through a kernel\n");
-  printf("system call. See the LTTng lttctl command to start tracing.\n");
+	printf("Abort with CTRL-C.\n");
+	printf("No file is created with this example : it logs through a kernel\n");
+	printf("system call. See the LTTng lttctl command to start tracing.\n");
 
 	unsigned int count = 0;
 

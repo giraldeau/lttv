@@ -4,8 +4,7 @@ INCLUDE_DIR=/usr/include
 LIB_DIR=/usr/lib
 RANLIB=ranlib
 
-CFLAGS=-I. -O3
-LDFLAGS=-L.
+CFLAGS=-I. -O3 -L.
 
 #For testing lib ltt-usertrace-fast
 #CFLAGS+=-DLTT_SUBBUF_SIZE_CPU=134217728
@@ -22,19 +21,19 @@ sample: sample.c ltt-facility-loader-user_generic.c
 	$(CC) $(CFLAGS) -o $@ $^
 	
 sample-highspeed: sample-highspeed.c ltt-facility-loader-user_generic.c
-	$(CC) $(CFLAGS) -L. -lltt-usertrace-fast -o $@ $^
+	$(CC) $(CFLAGS) -lltt-usertrace-fast -o $@ $^
 
 sample-printf: sample-printf.c ltt-facility-loader-user_generic.c
 	$(CC) $(CFLAGS) -o $@ $^
 
 sample-instrument-fct: sample-instrument-fct.c
-	$(CC) $(CFLAGS) -L. -g -finstrument-functions -lltt-instrument-functions -o $@ $^
+	$(CC) $(CFLAGS) -g -finstrument-functions -lltt-instrument-functions -o $@ $^
 
 sample-thread-slow: sample-thread-slow.c ltt-facility-loader-user_generic.c
 	$(CC) $(CFLAGS) -lpthread -o $@ $^
 
 sample-thread-fast: sample-thread-fast.c ltt-facility-loader-user_generic.c
-	$(CC) $(CFLAGS) -lpthread -o $@ $^
+	$(CC) $(CFLAGS) -lpthread -lltt-usertrace-fast -o $@ $^
 
 
 #LIBRAIRIES
