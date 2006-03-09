@@ -4,7 +4,7 @@ INCLUDE_DIR=/usr/include
 LIB_DIR=/usr/lib
 RANLIB=ranlib
 
-CFLAGS=-I. -O3 -L.
+CFLAGS=-I. -O2 -L.
 
 #For testing lib ltt-usertrace-fast
 #CFLAGS+=-DLTT_SUBBUF_SIZE_CPU=134217728

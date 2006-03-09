@@ -74,7 +74,7 @@ _syscall0(pid_t,gettid)
 #include <ltt/ltt-usertrace.h>
 
 #ifdef LTT_SHOW_DEBUG
-#define dbg_printf(...) dbg_printf(__VA_ARGS__)
+#define dbg_printf(...) printf(__VA_ARGS__)
 #else
 #define dbg_printf(...)
 #endif //LTT_SHOW_DEBUG
@@ -376,13 +376,11 @@ get_error:
 static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		sigset_t oldset, pid_t l_traced_pid, pthread_t l_traced_tid)
 {
-	sigset_t set;
 	struct sigaction act;
 	int ret;
 	int fd_process;
 	char outfile_name[PATH_MAX];
 	char identifier_name[PATH_MAX];
-
 
 	traced_pid = l_traced_pid;
 	traced_tid = l_traced_tid;
@@ -431,7 +429,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	if(ret != -1) {
 		perror("LTT Error in sigsuspend\n");
 	}
-	if(traced_pid == 0 || parent_exited) goto dead_parent;
+	if((traced_pid == 0) || parent_exited) goto dead_parent;
 
 #ifndef LTT_NULL_OUTPUT_TEST
 	fd_process = creat(outfile_name, 0644);
@@ -455,6 +453,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		do {
 			ret = read_subbuffer(&shared_trace_info->channel.process, fd_process);
 		} while(ret == 0);
+
 		ret = sigsuspend(&oldset);
 		if(ret != -1) {
 			perror("LTT Error in sigsuspend\n");
@@ -527,7 +526,6 @@ void ltt_rw_init(void)
   if(ret) {
     dbg_printf("LTT Error in sigfillset\n");
   } 
-	
 	
   ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
   if(ret) {
