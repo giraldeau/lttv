@@ -109,6 +109,9 @@ static void ltt_usertrace_fast_cleanup(void *arg)
 static pid_t traced_pid = 0;
 static pid_t traced_tid = 0;
 static int parent_exited = 0;
+static int fd_process = -1;
+static char outfile_name[PATH_MAX];
+static char identifier_name[PATH_MAX];
 
 /* signal handling */
 static void handler_sigusr1(int signo)
@@ -284,6 +287,45 @@ static void flush_buffer(struct ltt_buf *ltt_buf, enum force_switch_mode mode)
 
 }
 
+
+static int open_output_files(void)
+{
+	int ret;
+	int fd;
+	/* Open output files */
+	umask(00000);
+	ret = mkdir(LTT_USERTRACE_ROOT, 0777);
+	if(ret < 0 && errno != EEXIST) {
+		perror("LTT Error in creating output (mkdir)");
+		exit(-1);
+	}
+	ret = chdir(LTT_USERTRACE_ROOT);
+	if(ret < 0) {
+		perror("LTT Error in creating output (chdir)");
+		exit(-1);
+	}
+	snprintf(identifier_name, PATH_MAX-1,	"%lu.%lu.%llu",
+			traced_tid, traced_pid, get_cycles());
+	snprintf(outfile_name, PATH_MAX-1,	"process-%s", identifier_name);
+
+#ifndef LTT_NULL_OUTPUT_TEST
+	fd = creat(outfile_name, 0644);
+#else
+	/* NULL test */
+	ret = symlink("/dev/null", outfile_name);
+	if(ret < 0) {
+		perror("error in symlink");
+		exit(-1);
+	}
+	fd = open(outfile_name, O_WRONLY);
+	if(fd_process < 0) {
+		perror("Error in open");
+		exit(-1);
+	}
+#endif //LTT_NULL_OUTPUT_TEST
+	return fd;
+}
+
 static inline int ltt_buffer_get(struct ltt_buf *ltt_buf,
 		unsigned int *offset)
 {
@@ -341,6 +383,9 @@ static int read_subbuffer(struct ltt_buf *ltt_buf, int fd)
 		if(err != -EAGAIN) dbg_printf("LTT Reserving sub buffer failed\n");
 		goto get_error;
 	}
+	if(fd_process == -1) {
+		fd_process = fd = open_output_files();
+	}
 
 	err = TEMP_FAILURE_RETRY(write(fd,
 				ltt_buf->start 
@@ -380,9 +425,6 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 {
 	struct sigaction act;
 	int ret;
-	int fd_process = -1;
-	char outfile_name[PATH_MAX];
-	char identifier_name[PATH_MAX];
 
 	traced_pid = l_traced_pid;
 	traced_tid = l_traced_tid;
@@ -410,43 +452,11 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 
 	alarm(3);
 
-	/* Open output files */
-	umask(00000);
-	ret = mkdir(LTT_USERTRACE_ROOT, 0777);
-	if(ret < 0 && errno != EEXIST) {
-		perror("LTT Error in creating output (mkdir)");
-		exit(-1);
-	}
-	ret = chdir(LTT_USERTRACE_ROOT);
-	if(ret < 0) {
-		perror("LTT Error in creating output (chdir)");
-		exit(-1);
-	}
-	snprintf(identifier_name, PATH_MAX-1,	"%lu.%lu.%llu",
-			traced_tid, traced_pid, get_cycles());
-	snprintf(outfile_name, PATH_MAX-1,	"process-%s", identifier_name);
-
-	/* Wait for the first signal before creating files */
-	ret = sigsuspend(&oldset);
-	if(ret != -1) {
-		perror("LTT Error in sigsuspend\n");
-	}
-
-#ifndef LTT_NULL_OUTPUT_TEST
-	fd_process = creat(outfile_name, 0644);
-#else
-	/* NULL test */
-	ret = symlink("/dev/null", outfile_name);
-	if(ret < 0) {
-		perror("error in symlink");
-	}
-	fd_process = open(outfile_name, O_WRONLY);
-	if(fd_process < 0) {
-		perror("Error in open");
-	}
-#endif //LTT_NULL_OUTPUT_TEST
-	
 	while(1) {
+		ret = sigsuspend(&oldset);
+		if(ret != -1) {
+			perror("LTT Error in sigsuspend\n");
+		}
 		if(traced_pid == 0) break; /* parent died */
 		if(parent_exited) break;
 		dbg_printf("LTT Doing a buffer switch read. pid is : %lu\n", getpid());
@@ -454,11 +464,6 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 		do {
 			ret = read_subbuffer(&shared_trace_info->channel.process, fd_process);
 		} while(ret == 0);
-
-		ret = sigsuspend(&oldset);
-		if(ret != -1) {
-			perror("LTT Error in sigsuspend\n");
-		}
 	}
 	/* The parent thread is dead and we have finished with the buffer */
 
