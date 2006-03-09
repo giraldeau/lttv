@@ -7,7 +7,7 @@ RANLIB=ranlib
 CC=gcc
 CFLAGS=-I. -O3
 #CFLAGS+=-DLTT_SUBBUF_SIZE_CPU=134217728
-CFLAGS+=-DLTT_NULL_OUTPUT_TEST
+#CFLAGS+=-DLTT_NULL_OUTPUT_TEST
 
 all: test sample-instrument-fct libltt-instrument-functions.a libltt-instrument-functions.so.0 sample-loop
 
