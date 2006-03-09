@@ -14,8 +14,7 @@ int main(int argc, char **argv)
 	printf("See the result file in /tmp/ltt-usertrace.\n");
 
 	int i;
-	//while(1) {
-	for(i=0; i<100000; i++) {
+	while(1) {
 		trace_user_generic_string("Running fast!");
 	}
 	
