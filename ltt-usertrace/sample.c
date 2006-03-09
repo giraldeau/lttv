@@ -10,6 +10,9 @@
 int main(int argc, char **argv)
 {
 	printf("Will trace the following string : Hello world! Have a nice day.\n");
+  printf("Abort with CTRL-C.\n");
+  printf("No file is created with this example : it logs through a kernel\n");
+  printf("system call. See the LTTng lttctl command to start tracing.\n");
 
 	while(1) {
 		trace_user_generic_string("Hello world! Have a nice day.");

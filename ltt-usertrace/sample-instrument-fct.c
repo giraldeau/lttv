@@ -14,6 +14,10 @@ void test_function(void)
 
 int main(int argc, char **argv)
 {
+  printf("Abort with CTRL-C.\n");
+  printf("See the result file in /tmp/ltt-usertraces.\n");
+
+
 	while(1) {
 		test_function();
 		sleep(1);
