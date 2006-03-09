@@ -440,7 +440,7 @@ static void ltt_usertrace_fast_daemon(struct ltt_trace_info *shared_trace_info,
 	
 	while(1) {
 		ret = sigsuspend(&oldset);
-		if(ret) {
+		if(ret != -1) {
 			perror("LTT Error in sigsuspend\n");
 		}
 		
