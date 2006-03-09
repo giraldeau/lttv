@@ -28,14 +28,15 @@ gzip -cd ltt-usertrace-x.x.tar.gz | tar xvof -
 * Build the sample programs and install the headers and librairies into your
 system :
 su
-cd /usr/src/usertrace-generic
+cd /usr/src/ltt-usertrace
 make
 make install
 
 Feel free to look at the sample programs and the Makefile : they demonstrate
 very well the features of the usertrace package and how to use them.
 
-* There are three ways to trace information from your application :
+* There are three ways to trace information from your application. The choice
+  will principally depend on the trace data rate.
 
 1) Easy way, but slow (printf style)
   See sample-printf.c for code example.
@@ -84,15 +85,15 @@ user_generic.slow_printf: 35886.925685289 (/cpu_0), 15521, 7453,  SYSCALL { "in:
 
 
 
-2) The second way to log events is still easy, yet faster. It requires creating
-   your own XML description of your data structures. It will make it easier to
-   identify your data in the trace. Please read the comments in method 1)
-   explained previously, as they are not repeated here.
-   See sample.c for code example.
+2) The second way to log events is still easy. The advantage is that it
+   will make it easier to identify your data in the trace viewer afterward.
+   Please read the comments in method 1) explained previously, as they
+   are not repeated here.
+   See sample.c and sample-thread-slow.c for code example.
 
-- Go to the usertrace-generic directory
+- Go to the ltt-usertrace directory
 su
-cd /usr/src/usertrace-generic
+cd /usr/src/ltt-usertrace
 
 - Create your own facility (i.e. user_myfacility.xml).
   See the ones available in /usr/share/LinuxTraceToolkitViewer/facilities for
@@ -165,6 +166,50 @@ It will show, for example :
 user_myfacility.myevent: 39507.805584526 (/cpu_1), 15829, 15736,  SYSCALL { "myapp.c", "main", 8, 1234, 0xf0f0f0f0 }
 
 
+3) The third way to trace information from your application
+
+This method is cleary the _FASTEST_. It is principally I/O (disk and memory)
+bound. It will create a companion process for each of you program's thread which
+will dump the tracing information into /tmp/ltt-usertrace.
+
+See sample-highspeed.c and sample-thread-fast.c for code example.
+
+- Add the following statements to your program source (the define must come
+  _before_ the includes!) :
+
+#define LTT_TRACE
+#define LTT_TRACE_FAST
+#include <ltt/ltt-facility-user_myfacility.h>
+
+- Add a call following the trace_user_myfacility_myevent function found in 
+  /usr/include/ltt/ltt-facility-user_myfacility.h in your program.
+For instance :
+trace_user_myfacility_myevent(__FILE__, __func__, __LINE__, 1234, (void*)0xF0F0F0F0);
+
+- Compile your application with at least these parameters to gcc (it is splitted
+  on two lines, joined by a "\") :
+gcc -lltt-usertrace-fast -I /usr/src/usertrace-generic -o myapp myapp.c \
+  /usr/src/usertrace-generic/ltt-facility-loader-user_myfacility.c
+
+It requires a supplementary operation when you take the trace :
+- Start tracing (with lttctl)
+- Start your application
+- Let your application run...
+- Stop tracing
+- Move or copy /tmp/ltt-usertrace info your trace.
+i.e., if your trace is in /tmp/trace1 :
+su
+mv /tmp/ltt-usertrace /tmp/trace1
+
+
+Then, to see only the user_myfacility events :
+lttv -m textDump -t /tmp/trace1 -e "event.facility=user_myfacility"
+
+It will show, for example :
+user_myfacility.myevent: 39507.805584526 (/ltt-usertrace/process-26174.26174.39236180500380_0), 15829, 15736,  USER_MODE { "myapp.c", "main", 8, 1234, 0xf0f0f0f0 }
+
+
+
 * Fun feature : function instrumentation
 
 Here is how to generate a full trace of you program function calls.
@@ -183,8 +228,8 @@ Then, to see only the function_entry and function_exit events :
 lttv -m textDump -t /tmp/trace1 -e "event.facility=user_generic & (event.name=function_entry & event.name=function_exit)"
 
 It will show, for example :
-user_generic.function_entry: 59329.709939111 (/cpu_0), 19250, 18581,  SYSCALL { 0x8048454, 0x80484c2 }
-user_generic.function_exit: 59329.709944613 (/cpu_0), 19250, 18581,  SYSCALL { 0x8048454, 0x80484c2 }
+user_generic.function_entry: 59329.709939111 (/ltt-usertrace/process-26202.0.39949996866578_0), 19250, 18581,  USER_MODE { 0x8048454, 0x80484c2 }
+user_generic.function_exit: 59329.709944613 (/ltt-usertrace/process-26202.0.39949996866578_0), 19250, 18581,  USER_MODE { 0x8048454, 0x80484c2 }
 
 you can then use (from the binutils package)
 addr2line -e sample-instrument-fct -i -f 0x8048454
