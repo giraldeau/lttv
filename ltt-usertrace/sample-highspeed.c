@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 #define LTT_TRACE
-#define LTT_BLOCKING 1
+#define LTT_TRACE_FAST
 #include <ltt/ltt-facility-user_generic.h>
 
 

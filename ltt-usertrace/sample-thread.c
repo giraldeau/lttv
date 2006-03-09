@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 #define LTT_TRACE
+//this one is a non blocking sample (not #define LTT_BLOCKING 1)
 #include <ltt/ltt-facility-user_generic.h>
 
 
