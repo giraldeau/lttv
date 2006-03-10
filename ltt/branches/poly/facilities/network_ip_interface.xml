@@ -1,15 +1,16 @@
-<facility name=network_ip_interface>
+<?xml version="1.0"?>
+<facility name="network_ip_interface">
     <description>Network IP interface status</description>
     
-  <event name=dev_up>
+  <event name="dev_up">
     <description>IP interface up</description>
-      <field name="name"> <description>Interface name</description><string/></field>
-      <field name="addr"> <description>IP address</description> <uint size=4 network/> </field>
+      <field name="name"> <description>Interface name</description><string></field>
+      <field name="addr"> <description>IP address</description> <uint size="4" byte_order="network"> </field>
   </event>  
   
-  <event name=dev_down>
+  <event name="dev_down">
     <description>IP interface down</description>
-      <field name="name"> <description>Interface name</description><string/></field>
+      <field name="name"> <description>Interface name</description><string></field>
   </event> 
   
 </facility>

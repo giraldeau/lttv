@@ -1,97 +1,97 @@
-<facility name=process>
-  <description>The process facility has events related to process handling in
-	the kernel.</description>
+<?xml version="1.0"?>
+<facility name="process">
+  <description>The process facility has events related to process handling in the kernel.</description>
 
-  <type name=signal_name>
+  <type name="signal_name">
     <enum>
-      <label name=SIGHUP value=1/> <description>Hangup (POSIX).</description>
-      <label name=SIGINT value=2/> <description>Interrupt (ANSI).</description>
-      <label name=SIGQUIT value=3/> <description>Quit (POSIX).</description>
-      <label name=SIGILL value=4/> <description>Illegal instruction (ANSI).</description>
-      <label name=SIGTRAP value=5/> <description>Trace trap (POSIX).</description>
-      <label name=SIGABRT value=6/> <description>Abort (ANSI).</description>
-      <label name=SIGBUS value=7/> <description>BUS error (4.2 BSD).</description>
-      <label name=SIGFPE value=8/> <description>Floating-point exception (ANSI).</description>
-      <label name=SIGKILL value=9/> <description>Kill, unblockable (POSIX).</description>
-      <label name=SIGUSR1 value=10/> <description>User-defined signal 1 (POSIX).</description>
-      <label name=SIGSEGV value=11/> <description>Segmentation violation (ANSI).</description>
-      <label name=SIGUSR2 value=12/> <description>User-defined signal 2 (POSIX).</description>
-      <label name=SIGPIPE value=13/> <description>Broken pipe (POSIX).</description>
-      <label name=SIGALRM value=14/> <description>Alarm clock (POSIX).</description>
-      <label name=SIGTERM value=15/> <description>Termination (ANSI).</description>
-      <label name=SIGSTKFLT value=16/> <description>Stack fault.</description>
+      <label name="SIGHUP" value="1"> <description>Hangup (POSIX).</description>
+      <label name="SIGINT" value="2"> <description>Interrupt (ANSI).</description>
+      <label name="SIGQUIT" value="3"> <description>Quit (POSIX).</description>
+      <label name="SIGILL" value="4"> <description>Illegal instruction (ANSI).</description>
+      <label name="SIGTRAP" value="5"> <description>Trace trap (POSIX).</description>
+      <label name="SIGABRT" value="6"> <description>Abort (ANSI).</description>
+      <label name="SIGBUS" value="7"> <description>BUS error (4.2 BSD).</description>
+      <label name="SIGFPE" value="8"> <description>Floating-point exception (ANSI).</description>
+      <label name="SIGKILL" value="9"> <description>Kill, unblockable (POSIX).</description>
+      <label name="SIGUSR1" value="10"> <description>User-defined signal 1 (POSIX).</description>
+      <label name="SIGSEGV" value="11"> <description>Segmentation violation (ANSI).</description>
+      <label name="SIGUSR2" value="12"> <description>User-defined signal 2 (POSIX).</description>
+      <label name="SIGPIPE" value="13"> <description>Broken pipe (POSIX).</description>
+      <label name="SIGALRM" value="14"> <description>Alarm clock (POSIX).</description>
+      <label name="SIGTERM" value="15"> <description>Termination (ANSI).</description>
+      <label name="SIGSTKFLT" value="16"> <description>Stack fault.</description>
   
-      <label name=SIGCHLD value=17/> <description>Child status has changed (POSIX).</description>
-      <label name=SIGCONT value=18/> <description>Continue (POSIX).</description>
-      <label name=SIGSTOP value=19/> <description>Stop, unblockable (POSIX).</description>
-      <label name=SIGTSTP value=20/> <description>Keyboard stop (POSIX).</description>
-      <label name=SIGTTIN value=21/> <description>Background read from tty (POSIX).</description>
-      <label name=SIGTTOU value=22/> <description>Background write to tty (POSIX).</description>
-      <label name=SIGURG value=23/> <description>Urgent condition on socket (4.2 BSD).</description>
-      <label name=SIGXCPU value=24/> <description>CPU limit exceeded (4.2 BSD).</description>
-      <label name=SIGXFSZ value=25/> <description>File size limit exceeded (4.2 BSD).</description>
-      <label name=SIGVTALRM value=26/> <description>Virtual alarm clock (4.2 BSD).</description>
-      <label name=SIGPROF value=27/> <description>Profiling alarm clock (4.2 BSD).</description>
-      <label name=SIGWINCH value=28/> <description>Window size change (4.3 BSD, Sun).</description>
-      <label name=SIGIO value=29/> <description>I/O now possible (4.2 BSD). (aka SIGPOLL)</description>
-      <label name=SIGPWR value=30/> <description>Power failure restart (System V).</description>
-      <label name=SIGSYS value=31/> <description>Bad system call.</description>
+      <label name="SIGCHLD" value="17"> <description>Child status has changed (POSIX).</description>
+      <label name="SIGCONT" value="18"> <description>Continue (POSIX).</description>
+      <label name="SIGSTOP" value="19"> <description>Stop, unblockable (POSIX).</description>
+      <label name="SIGTSTP" value="20"> <description>Keyboard stop (POSIX).</description>
+      <label name="SIGTTIN" value="21"> <description>Background read from tty (POSIX).</description>
+      <label name="SIGTTOU" value="22"> <description>Background write to tty (POSIX).</description>
+      <label name="SIGURG" value="23"> <description>Urgent condition on socket (4.2 BSD).</description>
+      <label name="SIGXCPU" value="24"> <description>CPU limit exceeded (4.2 BSD).</description>
+      <label name="SIGXFSZ" value="25"> <description>File size limit exceeded (4.2 BSD).</description>
+      <label name="SIGVTALRM" value="26"> <description>Virtual alarm clock (4.2 BSD).</description>
+      <label name="SIGPROF" value="27"> <description>Profiling alarm clock (4.2 BSD).</description>
+      <label name="SIGWINCH" value="28"> <description>Window size change (4.3 BSD, Sun).</description>
+      <label name="SIGIO" value="29"> <description>I/O now possible (4.2 BSD). (aka SIGPOLL)</description>
+      <label name="SIGPWR" value="30"> <description>Power failure restart (System V).</description>
+      <label name="SIGSYS" value="31"> <description>Bad system call.</description>
     </enum>
   </type>
 
-  <event name=fork>
+  <event name="fork">
     <description>Process fork</description>
-    <field name="parent_pid"> <description>PID of the parent process</description> <uint/> </field>
-    <field name="child_pid"> <description>PID of the child process</description> <uint/> </field>
+    <field name="parent_pid"> <description>PID of the parent process</description> <uint> </field>
+    <field name="child_pid"> <description>PID of the child process</description> <uint> </field>
   </event>
 	
-  <event name=kernel_thread>
+  <event name="kernel_thread">
     <description>Just created a new kernel thread</description>
-    <field name="pid"> <description>PID of the kernel thread</description> <uint/> </field>
-    <field name="function"> <description>Function called</description> <pointer/> </field>
+    <field name="pid"> <description>PID of the kernel thread</description> <uint> </field>
+    <field name="function"> <description>Function called</description> <pointer> </field>
   </event>
 
 
-  <event name=exit>
+  <event name="exit">
     <description>Process exit</description>
-    <field name="pid"> <description>PID of the process</description> <uint/> </field>
+    <field name="pid"> <description>PID of the process</description> <uint> </field>
   </event>
 
-  <event name=wait>
+  <event name="wait">
     <description>Process wait</description>
-    <field name="parent_pid"> <description>PID of the waiting process</description> <uint/> </field>
-    <field name="child_pid"> <description>PID of the process waited for</description> <uint/> </field>
+    <field name="parent_pid"> <description>PID of the waiting process</description> <uint> </field>
+    <field name="child_pid"> <description>PID of the process waited for</description> <uint> </field>
   </event>
 
-  <event name=free>
+  <event name="free">
     <description>Process kernel data structure free (end of life of a zombie)</description>
-    <field name="pid"> <description>PID of the freed process</description> <uint/> </field>
+    <field name="pid"> <description>PID of the freed process</description> <uint> </field>
   </event>
 
-  <event name=kill>
+  <event name="kill">
     <description>Process kill system call</description>
-    <field name="pid"> <description>PID of the process</description> <uint/> </field>
-    <field name="target_pid"> <description>PID of the process to kill</description> <uint/> </field>
-    <field name="signal"> <description>Signal number</description> <typeref name=signal_name/> </field>
+    <field name="pid"> <description>PID of the process</description> <uint> </field>
+    <field name="target_pid"> <description>PID of the process to kill</description> <uint> </field>
+    <field name="signal"> <description>Signal number</description> <typeref name="signal_name"> </field>
   </event>
 
-  <event name=signal>
+  <event name="signal">
     <description>Process signal reception</description>
-    <field name="pid"> <description>PID of the receiving process</description> <uint/> </field>
-    <field name="signal"> <description>Signal number</description> <typeref name=signal_name/> </field>
+    <field name="pid"> <description>PID of the receiving process</description> <uint> </field>
+    <field name="signal"> <description>Signal number</description> <typeref name="signal_name"> </field>
   </event>
 
-  <event name=wakeup>
+  <event name="wakeup">
     <description>Process wakeup</description>
-    <field name="pid"> <description>PID of the receiving process</description> <uint/> </field>
-    <field name="state"> <description>State of the awakened process. -1 unrunnable, 0 runnable, >0 stopped.</description> <int/> </field>
+    <field name="pid"> <description>PID of the receiving process</description> <uint> </field>
+    <field name="state"> <description>State of the awakened process. -1 unrunnable, 0 runnable, >0 stopped.</description> <int> </field>
   </event>
 
-  <event name=schedchange>
+  <event name="schedchange">
     <description>Scheduling change</description>
-    <field name="out"> <description>Outgoing process</description> <uint/> </field>
-    <field name="in"> <description>Incoming process</description> <uint/> </field>
-    <field name="out_state"> <description>Outgoing process' state. -1 unrunnable, 0 runnable, >0 stopped.</description> <int/> </field>
+    <field name="out"> <description>Outgoing process</description> <uint> </field>
+    <field name="in"> <description>Incoming process</description> <uint> </field>
+    <field name="out_state"> <description>Outgoing process' state. -1 unrunnable, 0 runnable, >0 stopped.</description> <int> </field>
   </event>
 
 </facility>
