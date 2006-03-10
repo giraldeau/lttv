@@ -102,7 +102,25 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   while(1){
     token = getToken(&in);
     if(in.type == ENDFILE) break;
-    
+   
+		if(g_ascii_strcasecmp(token, "<")) in.error(&in,"not a facility file");
+		token = getName(&in);
+		if(g_ascii_strcasecmp(token, "?")) in.error(&in,"not a facility file");
+		token = getName(&in);
+		if(g_ascii_strcasecmp(token, "xml")) in.error(&in,"not a facility file");
+		token = getName(&in);
+		if(g_ascii_strcasecmp(token, "version")) in.error(&in,"not a facility file");
+		token = getName(&in);
+		if(g_ascii_strcasecmp(token, "=")) in.error(&in,"not a facility file");
+		token = getQuotedString(&in);
+		if(g_ascii_strcasecmp(token, "1.0")) in.error(&in,"not a facility file");
+		token = getName(&in);
+		if(g_ascii_strcasecmp(token, "?")) in.error(&in,"not a facility file");
+		token = getToken(&in);
+		if(g_ascii_strcasecmp(token, ">")) in.error(&in,"not a facility file");
+
+		token = getToken(&in);
+		
     if(g_ascii_strcasecmp(token, "<")) in.error(&in,"not a facility file");
     token = getName(&in);
 
