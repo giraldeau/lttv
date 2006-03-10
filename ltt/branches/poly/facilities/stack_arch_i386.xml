@@ -1,3 +1,4 @@
+<?xml version="1.0"?>
 <facility name="stack_arch arch=i386">
   <description>The stack facility has events related to getting process stack.</description>
 
