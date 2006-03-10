@@ -1107,6 +1107,7 @@ static gint search_usertrace(gconstpointer a, gconstpointer b)
 		}
 		return -1;
 	}
+	return 0;
 }
 
 static LttvTracefileState *ltt_state_usertrace_find(LttvTraceState *tcs,

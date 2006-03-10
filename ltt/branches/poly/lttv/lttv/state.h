@@ -60,7 +60,8 @@ extern GQuark
     LTT_FACILITY_KERNEL_ARCH,
     LTT_FACILITY_PROCESS,
     LTT_FACILITY_FS,
-		LTT_FACILITY_STATEDUMP;
+		LTT_FACILITY_STATEDUMP,
+		LTT_FACILITY_USER_GENERIC;
 
 /* Events Quarks */
 
@@ -79,7 +80,9 @@ extern GQuark
     LTT_EVENT_EXIT,
     LTT_EVENT_FREE,
     LTT_EVENT_EXEC,
-		LTT_EVENT_ENUM_PROCESS_STATE;
+		LTT_EVENT_ENUM_PROCESS_STATE,
+		LTT_EVENT_FUNCTION_ENTRY,
+		LTT_EVENT_FUNCTION_EXIT;
 
 /* Fields Quarks */
 
@@ -98,7 +101,9 @@ extern GQuark
     LTT_FIELD_NAME,
     LTT_FIELD_MODE,
     LTT_FIELD_SUBMODE,
-    LTT_FIELD_STATUS;
+    LTT_FIELD_STATUS,
+		LTT_FIELD_THIS_FN,
+		LTT_FIELD_CALL_SITE;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;

@@ -31,6 +31,7 @@
 #include <ltt/type.h>
 
 #define BUF_SIZE 256
+#define MAX_64_HEX_STRING_LEN 19
 
 GQuark
   LTTV_STATS_PROCESS_UNKNOWN,
@@ -54,6 +55,7 @@ GQuark
 
 static void
 find_event_tree(LttvTracefileStats *tfcs, GQuark pid_time, GQuark cpu,
+		guint64 function,
     GQuark mode, GQuark sub_mode, LttvAttribute **events_tree, 
     LttvAttribute **event_types_tree);
 
@@ -120,6 +122,7 @@ static void lttv_stats_init(LttvTracesetStats *self)
           ltt_tracefile_long_name(tfcs->parent.parent.tf));
       find_event_tree(tfcs, LTTV_STATS_PROCESS_UNKNOWN,
           ltt_tracefile_long_name(tfcs->parent.parent.tf),
+					0x0ULL,
           LTTV_STATE_MODE_UNKNOWN, 
           LTTV_STATE_SUBMODE_UNKNOWN, &tfcs->current_events_tree,
           &tfcs->current_event_types_tree);
@@ -393,18 +396,26 @@ static void
 find_event_tree(LttvTracefileStats *tfcs,
                 GQuark pid_time,
                 GQuark cpu,
+								guint64 function,
                 GQuark mode,
                 GQuark sub_mode,
                 LttvAttribute **events_tree, 
                 LttvAttribute **event_types_tree)
 {
   LttvAttribute *a;
+	gchar fstring[MAX_64_HEX_STRING_LEN];
+
+	g_assert(snprintf(fstring, MAX_64_HEX_STRING_LEN-1,
+				"0x%llX", function) > 0);
+	fstring[MAX_64_HEX_STRING_LEN-1] = '\0';
 
   LttvTraceStats *tcs = (LttvTraceStats*)tfcs->parent.parent.t_context;
   a = lttv_attribute_find_subdir(tcs->stats, LTTV_STATS_PROCESSES);
   a = lttv_attribute_find_subdir(a, pid_time);
   a = lttv_attribute_find_subdir(a, LTTV_STATS_CPU);
   a = lttv_attribute_find_subdir(a, cpu);
+  a = lttv_attribute_find_subdir(a, LTTV_STATS_FUNCTIONS);
+  a = lttv_attribute_find_subdir(a, g_quark_from_string(fstring));
   a = lttv_attribute_find_subdir(a, LTTV_STATS_MODE_TYPES);
   a = lttv_attribute_find_subdir(a, mode);
   a = lttv_attribute_find_subdir(a, LTTV_STATS_SUBMODES);
@@ -423,7 +434,8 @@ static void update_event_tree(LttvTracefileStats *tfcs)
   LttvExecutionState *es = process->state;
 
   find_event_tree(tfcs, process->pid_time,
-      ltt_tracefile_long_name(tfcs->parent.parent.tf), 
+      ltt_tracefile_long_name(tfcs->parent.parent.tf),
+			process->current_function,
       es->t, es->n, &(tfcs->current_events_tree), 
       &(tfcs->current_event_types_tree));
 }
@@ -578,6 +590,30 @@ gboolean after_soft_irq_exit(void *hook_data, void *call_data)
   return FALSE;
 }
 
+gboolean before_function_entry(void *hook_data, void *call_data)
+{
+  mode_end((LttvTracefileStats *)call_data);
+  return FALSE;
+}
+
+gboolean after_function_entry(void *hook_data, void *call_data)
+{
+  update_event_tree((LttvTracefileStats *)call_data);
+  return FALSE;
+}
+
+gboolean before_function_exit(void *hook_data, void *call_data)
+{
+  mode_end((LttvTracefileStats *)call_data);
+  return FALSE;
+}
+
+gboolean after_function_exit(void *hook_data, void *call_data)
+{
+  update_event_tree((LttvTracefileStats *)call_data);
+  return FALSE;
+}
+
 
 gboolean before_schedchange(void *hook_data, void *call_data)
 {
@@ -610,6 +646,7 @@ gboolean before_schedchange(void *hook_data, void *call_data)
 
   find_event_tree(tfcs, process->pid_time,
       ltt_tracefile_long_name(tfcs->parent.parent.tf), 
+			process->current_function,
       process->state->t, process->state->n, &(tfcs->current_events_tree), 
       &(tfcs->current_event_types_tree));
 
@@ -832,8 +869,8 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 9);
-    g_array_set_size(hooks, 9);
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 11);
+    g_array_set_size(hooks, 11);
 		hn=0;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
@@ -898,12 +935,27 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
         before_schedchange, NULL, 
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
+
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
+        LTT_FACILITY_USER_GENERIC, LTT_EVENT_FUNCTION_ENTRY,
+        LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
+        before_function_entry, NULL,
+        &g_array_index(hooks, LttvTraceHook, hn++));
+    if(ret) hn--;
+
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
+        LTT_FACILITY_USER_GENERIC, LTT_EVENT_FUNCTION_EXIT,
+        LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
+        before_function_exit, NULL,
+        &g_array_index(hooks, LttvTraceHook, hn++));
+    if(ret) hn--;
+		
     g_array_set_size(hooks, hn);
 
     before_hooks = hooks;
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 11);
-    g_array_set_size(hooks, 11);
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 13);
+    g_array_set_size(hooks, 13);
 		hn=0;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
@@ -983,6 +1035,20 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
+        LTT_FACILITY_USER_GENERIC, LTT_EVENT_FUNCTION_ENTRY,
+        LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
+        after_function_entry, NULL,
+        &g_array_index(hooks, LttvTraceHook, hn++));
+    if(ret) hn--;
+
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
+        LTT_FACILITY_USER_GENERIC, LTT_EVENT_FUNCTION_EXIT,
+        LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
+        after_function_exit, NULL,
+        &g_array_index(hooks, LttvTraceHook, hn++));
+    if(ret) hn--;
+	
     g_array_set_size(hooks, hn);
 
     after_hooks = hooks;
@@ -1115,7 +1181,7 @@ static void module_init()
   LTTV_STATS_MODE_TYPES = g_quark_from_string("mode_types");
   LTTV_STATS_MODES = g_quark_from_string("modes");
   LTTV_STATS_SUBMODES = g_quark_from_string("submodes");
-  LTTV_STATS_SUBMODES = g_quark_from_string("functions");
+  LTTV_STATS_FUNCTIONS = g_quark_from_string("functions");
   LTTV_STATS_EVENT_TYPES = g_quark_from_string("event_types");
   LTTV_STATS_CPU_TIME = g_quark_from_string("cpu time");
   LTTV_STATS_ELAPSED_TIME = g_quark_from_string("elapsed time");
