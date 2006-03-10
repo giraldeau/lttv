@@ -70,10 +70,15 @@ print_tree(FILE *fp, GString *indent, LttvAttribute *tree)
 
   LttvAttributeType type;
 
+	gboolean is_named;
+
   nb = lttv_attribute_get_number(tree);
   for(i = 0 ; i < nb ; i++) {
-    type = lttv_attribute_get(tree, i, &name, &value);
-    fprintf(fp, "%s%s: ", indent->str, g_quark_to_string(name));
+    type = lttv_attribute_get(tree, i, &name, &value, &is_named);
+		if(is_named)
+	    fprintf(fp, "%s%s: ", indent->str, g_quark_to_string(name));
+		else
+	    fprintf(fp, "%s%lu: ", indent->str, name);
 
     switch(type) {
       case LTTV_INT:

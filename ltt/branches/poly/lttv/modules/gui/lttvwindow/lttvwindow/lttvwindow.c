@@ -344,6 +344,7 @@ void lttvwindow_unregister_constructor
   LttvToolbars * toolbar;
   LttvMenus * menu;
   LttvAttributeValue value;
+	gboolean is_named;
 
   g_assert(lttv_iattribute_find_by_path(attributes_global,
      "viewers/toolbar", LTTV_POINTER, &value));
@@ -381,7 +382,8 @@ void lttvwindow_unregister_constructor
     LttvAttributeType type;
     
     for(i=0;i<num;i++) {
-      type = lttv_iattribute_get(LTTV_IATTRIBUTE(attribute), i, &name, &value);
+      type = lttv_iattribute_get(LTTV_IATTRIBUTE(attribute), i, &name, &value,
+					&is_named);
       g_assert(type == LTTV_POINTER);
       if(*(value.v_pointer) == view_constructor) {
         lttv_iattribute_remove(LTTV_IATTRIBUTE(attribute), i);

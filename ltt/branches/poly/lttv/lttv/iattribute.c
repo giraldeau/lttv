@@ -69,9 +69,9 @@ gboolean lttv_iattribute_named(LttvIAttribute *self, gboolean *homogeneous)
 
 
 LttvAttributeType lttv_iattribute_get(LttvIAttribute *self, unsigned i, 
-    LttvAttributeName *name, LttvAttributeValue *v)
+    LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named)
 {
-  return LTTV_IATTRIBUTE_GET_CLASS (self)->get (self, i, name, v);
+  return LTTV_IATTRIBUTE_GET_CLASS (self)->get (self, i, name, v, is_named);
 }
  
 
@@ -88,6 +88,11 @@ LttvAttributeValue lttv_iattribute_add(LttvIAttribute *self,
   return LTTV_IATTRIBUTE_GET_CLASS (self)->add (self, name, t);
 }
 
+LttvAttributeValue lttv_iattribute_add_unnamed(LttvIAttribute *self, 
+    LttvAttributeName name, LttvAttributeType t)
+{
+  return LTTV_IATTRIBUTE_GET_CLASS (self)->add_unnamed (self, name, t);
+}
 
 void lttv_iattribute_remove(LttvIAttribute *self, unsigned i)
 {
@@ -106,6 +111,13 @@ LttvIAttribute* lttv_iattribute_find_subdir(LttvIAttribute *self,
 {
   return LTTV_IATTRIBUTE_GET_CLASS (self)->find_subdir (self, name);
 }
+
+LttvIAttribute* lttv_iattribute_find_subdir_unnamed(LttvIAttribute *self, 
+      LttvAttributeName name)
+{
+  return LTTV_IATTRIBUTE_GET_CLASS (self)->find_subdir_unnamed (self, name);
+}
+
 
 
 /* Find the named attribute in the table, which must be of the specified type.
@@ -190,6 +202,8 @@ LttvIAttribute *lttv_iattribute_shallow_copy(LttvIAttribute *self)
 
   LttvAttributeName name;
 
+	gboolean is_named;
+
   int i;
 
   int nb_attributes = lttv_iattribute_get_number(self);
@@ -197,8 +211,11 @@ LttvIAttribute *lttv_iattribute_shallow_copy(LttvIAttribute *self)
   copy = LTTV_IATTRIBUTE_GET_CLASS(self)->new_attribute(NULL);
 
   for(i = 0 ; i < nb_attributes ; i++) {
-    t = lttv_iattribute_get(self, i, &name, &v);
-    v_copy = lttv_iattribute_add(copy, name, t);
+    t = lttv_iattribute_get(self, i, &name, &v, &is_named);
+		if(is_named)
+	    v_copy = lttv_iattribute_add(copy, name, t);
+		else
+	    v_copy = lttv_iattribute_add_unnamed(copy, name, t);
     lttv_iattribute_copy_value(t, v_copy, v);
   }
   return copy;
@@ -214,6 +231,8 @@ LttvIAttribute *lttv_iattribute_deep_copy(LttvIAttribute *self)
 
   LttvAttributeName name;
 
+	gboolean is_named;
+
   int i;
 
   int nb_attributes = lttv_iattribute_get_number(self);
@@ -221,8 +240,11 @@ LttvIAttribute *lttv_iattribute_deep_copy(LttvIAttribute *self)
   copy = LTTV_IATTRIBUTE_GET_CLASS(self)->new_attribute(NULL);
 
   for(i = 0 ; i < nb_attributes ; i++) {
-    t = lttv_iattribute_get(self, i, &name, &v);
-    v_copy = lttv_iattribute_add(copy, name, t);
+    t = lttv_iattribute_get(self, i, &name, &v, &is_named);
+		if(is_named)
+    	v_copy = lttv_iattribute_add(copy, name, t);
+		else
+    	v_copy = lttv_iattribute_add_unnamed(copy, name, t);
     if(t == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(*(v.v_gobject))) {
       child = LTTV_IATTRIBUTE(*(v.v_gobject));
       *(v_copy.v_gobject) = G_OBJECT(lttv_iattribute_deep_copy(child));

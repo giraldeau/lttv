@@ -472,6 +472,7 @@ void show_tree(StatisticViewerData * statistic_viewer_data,
   LttvAttributeName name;
   LttvAttributeValue value;
   LttvAttributeType type;
+	gboolean is_named;
   gchar * str, dir_str[PATH_LENGTH];
   GtkTreePath * path;
   GtkTreeIter   iter;
@@ -479,12 +480,15 @@ void show_tree(StatisticViewerData * statistic_viewer_data,
 
   nb = lttv_attribute_get_number(stats);
   for(i = 0 ; i < nb ; i++) {
-    type = lttv_attribute_get(stats, i, &name, &value);
+    type = lttv_attribute_get(stats, i, &name, &value, &is_named);
     switch(type) {
      case LTTV_GOBJECT:
         if(LTTV_IS_ATTRIBUTE(*(value.v_gobject))) {
-    sprintf(dir_str, "%s", g_quark_to_string(name));
           subtree = (LttvAttribute *)*(value.v_gobject);
+		if(is_named)
+	    sprintf(dir_str, "%s", g_quark_to_string(name));
+		else
+			sprintf(dir_str, "%lu", name);
     gtk_tree_store_append (store, &iter, parent);  
     gtk_tree_store_set (store, &iter,NAME_COLUMN,dir_str,-1);  
     path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
@@ -507,14 +511,18 @@ void show_statistic(StatisticViewerData * statistic_viewer_data,
   LttvAttributeName name;
   LttvAttributeValue value;
   LttvAttributeType type;
+	gboolean is_named;
   gchar type_name[PATH_LENGTH], type_value[PATH_LENGTH];
   GtkTextIter   text_iter;
   
   flag = 0;
   nb = lttv_attribute_get_number(stats);
   for(i = 0 ; i < nb ; i++) {
-    type = lttv_attribute_get(stats, i, &name, &value);
-    sprintf(type_name,"%s", g_quark_to_string(name));
+    type = lttv_attribute_get(stats, i, &name, &value, &is_named);
+		if(is_named)
+	    sprintf(type_name,"%s", g_quark_to_string(name));
+		else
+	    sprintf(type_name,"%lu", name);
     type_value[0] = '\0';
     switch(type) {
       case LTTV_INT:

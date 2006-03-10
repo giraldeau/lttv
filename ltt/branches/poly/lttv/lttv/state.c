@@ -624,6 +624,8 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
 
   LttvAttributeName name;
 
+	gboolean is_named;
+
   LttEventPosition *ep;
 
   LttvTracesetContext *tsc = self->parent.ts_context;
@@ -659,7 +661,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     tfcs = 
           LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
                                           LttvTracefileContext*, i));
-    type = lttv_attribute_get(tracefiles_tree, i, &name, &value);
+    type = lttv_attribute_get(tracefiles_tree, i, &name, &value, &is_named);
     g_assert(type == LTTV_GOBJECT);
     tracefile_tree = *((LttvAttribute **)(value.v_gobject));
 #if 0
@@ -708,6 +710,8 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
 
   LttvAttributeName name;
 
+	gboolean is_named;
+
   LttEventPosition *ep;
 
   tracefiles_tree = lttv_attribute_find_subdir(container, 
@@ -736,7 +740,7 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
     tfcs = 
           LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
                                           LttvTracefileContext*, i));
-    type = lttv_attribute_get(tracefiles_tree, i, &name, &value);
+    type = lttv_attribute_get(tracefiles_tree, i, &name, &value, &is_named);
     g_assert(type == LTTV_GOBJECT);
     tracefile_tree = *((LttvAttribute **)(value.v_gobject));
 
@@ -759,6 +763,8 @@ static void free_saved_state(LttvTraceState *self)
 
   LttvAttributeName name;
 
+	gboolean is_named;
+
   LttvAttribute *saved_states;
 
   saved_states = lttv_attribute_find_subdir(self->parent.t_a,
@@ -766,7 +772,7 @@ static void free_saved_state(LttvTraceState *self)
 
   nb = lttv_attribute_get_number(saved_states);
   for(i = 0 ; i < nb ; i++) {
-    type = lttv_attribute_get(saved_states, i, &name, &value);
+    type = lttv_attribute_get(saved_states, i, &name, &value, &is_named);
     g_assert(type == LTTV_GOBJECT);
     state_saved_free(self, *((LttvAttribute **)value.v_gobject));
   }
@@ -2372,6 +2378,8 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 
   LttvAttributeName name;
 
+	gboolean is_named;
+
   LttvAttribute *saved_states_tree, *saved_state_tree, *closest_tree;
 
   //g_tree_destroy(self->parent.pqueue);
@@ -2392,7 +2400,8 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
         max_pos = lttv_attribute_get_number(saved_states_tree) - 1;
         mid_pos = max_pos / 2;
         while(min_pos < max_pos) {
-          type = lttv_attribute_get(saved_states_tree, mid_pos, &name, &value);
+          type = lttv_attribute_get(saved_states_tree, mid_pos, &name, &value,
+							&is_named);
           g_assert(type == LTTV_GOBJECT);
           saved_state_tree = *((LttvAttribute **)(value.v_gobject));
           type = lttv_attribute_get_by_name(saved_state_tree, LTTV_STATE_TIME, 

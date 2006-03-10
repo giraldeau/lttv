@@ -54,7 +54,7 @@ GQuark
   LTTV_STATS_AFTER_HOOKS;
 
 static void
-find_event_tree(LttvTracefileStats *tfcs, GQuark pid_time, GQuark cpu,
+find_event_tree(LttvTracefileStats *tfcs, GQuark pid_time, guint cpu,
 		guint64 function,
     GQuark mode, GQuark sub_mode, LttvAttribute **events_tree, 
     LttvAttribute **event_types_tree);
@@ -120,8 +120,9 @@ static void lttv_stats_init(LttvTracesetStats *self)
       tfcs = LTTV_TRACEFILE_STATS(*tfs);
       tfcs->stats = lttv_attribute_find_subdir(tracefiles_stats, 
           ltt_tracefile_long_name(tfcs->parent.parent.tf));
+  		guint cpu = tfcs->parent.cpu;
       find_event_tree(tfcs, LTTV_STATS_PROCESS_UNKNOWN,
-          ltt_tracefile_long_name(tfcs->parent.parent.tf),
+					cpu,
 					0x0ULL,
           LTTV_STATE_MODE_UNKNOWN, 
           LTTV_STATE_SUBMODE_UNKNOWN, &tfcs->current_events_tree,
@@ -395,14 +396,14 @@ lttv_tracefile_stats_get_type(void)
 static void
 find_event_tree(LttvTracefileStats *tfcs,
                 GQuark pid_time,
-                GQuark cpu,
+                guint cpu,
 								guint64 function,
                 GQuark mode,
                 GQuark sub_mode,
                 LttvAttribute **events_tree, 
                 LttvAttribute **event_types_tree)
 {
-  LttvAttribute *a;
+  LttvAttribute *a, *prev_a;
 	gchar fstring[MAX_64_HEX_STRING_LEN];
 
 	g_assert(snprintf(fstring, MAX_64_HEX_STRING_LEN-1,
@@ -413,7 +414,7 @@ find_event_tree(LttvTracefileStats *tfcs,
   a = lttv_attribute_find_subdir(tcs->stats, LTTV_STATS_PROCESSES);
   a = lttv_attribute_find_subdir(a, pid_time);
   a = lttv_attribute_find_subdir(a, LTTV_STATS_CPU);
-  a = lttv_attribute_find_subdir(a, cpu);
+  a = lttv_attribute_find_subdir_unnamed(a, cpu);
   a = lttv_attribute_find_subdir(a, LTTV_STATS_FUNCTIONS);
   a = lttv_attribute_find_subdir(a, g_quark_from_string(fstring));
   a = lttv_attribute_find_subdir(a, LTTV_STATS_MODE_TYPES);
@@ -434,7 +435,7 @@ static void update_event_tree(LttvTracefileStats *tfcs)
   LttvExecutionState *es = process->state;
 
   find_event_tree(tfcs, process->pid_time,
-      ltt_tracefile_long_name(tfcs->parent.parent.tf),
+      cpu,
 			process->current_function,
       es->t, es->n, &(tfcs->current_events_tree), 
       &(tfcs->current_event_types_tree));
@@ -644,8 +645,10 @@ gboolean before_schedchange(void *hook_data, void *call_data)
   process = lttv_state_find_process_or_create(ts, 
       ANY_CPU, pid_in, &tfcs->parent.parent.timestamp);
 
+  guint cpu = tfcs->parent.cpu;
+
   find_event_tree(tfcs, process->pid_time,
-      ltt_tracefile_long_name(tfcs->parent.parent.tf), 
+      cpu,
 			process->current_function,
       process->state->t, process->state->n, &(tfcs->current_events_tree), 
       &(tfcs->current_event_types_tree));
@@ -708,6 +711,8 @@ lttv_stats_sum_trace(LttvTraceStats *self)
 
   LttvAttributeName name;
 
+	gboolean is_named;
+
   unsigned sum;
 
   int i, j, k, l, m, nb_process, nb_cpu, nb_mode_type, nb_submode,
@@ -734,30 +739,32 @@ lttv_stats_sum_trace(LttvTraceStats *self)
   nb_process = lttv_attribute_get_number(processes_tree);
 
   for(i = 0 ; i < nb_process ; i++) {
-    type = lttv_attribute_get(processes_tree, i, &name, &value);
+    type = lttv_attribute_get(processes_tree, i, &name, &value, &is_named);
     process_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
     cpus_tree = lttv_attribute_find_subdir(process_tree, LTTV_STATS_CPU);
     nb_cpu = lttv_attribute_get_number(cpus_tree);
 
     for(j = 0 ; j < nb_cpu ; j++) {
-      type = lttv_attribute_get(cpus_tree, j, &name, &value);
+      type = lttv_attribute_get(cpus_tree, j, &name, &value, &is_named);
       cpu_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
       trace_cpu_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_CPU);
-      trace_cpu_tree = lttv_attribute_find_subdir(trace_cpu_tree, name);
+      trace_cpu_tree = lttv_attribute_find_subdir_unnamed(trace_cpu_tree, name);
 			cpu_functions_tree = lttv_attribute_find_subdir(cpu_tree,
 																											LTTV_STATS_FUNCTIONS);
     	nb_functions = lttv_attribute_get_number(cpu_functions_tree);
 			
 			for(nf=0; nf < nb_functions; nf++) {
-				type = lttv_attribute_get(cpu_functions_tree, nf, &name, &value);
+				type = lttv_attribute_get(cpu_functions_tree, nf, &name, &value,
+						&is_named);
 				function_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 				function_mode_types_tree = lttv_attribute_find_subdir(function_tree,
 						LTTV_STATS_MODE_TYPES);
       	nb_mode_type = lttv_attribute_get_number(function_mode_types_tree);
 				for(k = 0 ; k < nb_mode_type ; k++) {
-					type = lttv_attribute_get(function_mode_types_tree, k, &name, &value);
+					type = lttv_attribute_get(function_mode_types_tree, k, &name, &value,
+							&is_named);
 					mode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
 					submodes_tree = lttv_attribute_find_subdir(mode_tree, 
@@ -770,7 +777,8 @@ lttv_stats_sum_trace(LttvTraceStats *self)
 					nb_submode = lttv_attribute_get_number(submodes_tree);
 
 					for(l = 0 ; l < nb_submode ; l++) {
-						type = lttv_attribute_get(submodes_tree, l, &name, &value);
+						type = lttv_attribute_get(submodes_tree, l, &name, &value,
+								&is_named);
 						submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
 						event_types_tree = lttv_attribute_find_subdir(submode_tree, 
@@ -779,14 +787,16 @@ lttv_stats_sum_trace(LttvTraceStats *self)
 
 						sum = 0;
 						for(m = 0 ; m < nb_event_type ; m++) {
-							type = lttv_attribute_get(event_types_tree, m, &name, &value);
+							type = lttv_attribute_get(event_types_tree, m, &name, &value,
+									&is_named);
 							sum += *(value.v_uint);
 						}
 						lttv_attribute_find(submode_tree, LTTV_STATS_EVENTS_COUNT, 
 								LTTV_UINT, &value);
 						*(value.v_uint) = sum;
 
-						type = lttv_attribute_get(submodes_tree, l, &name, &value);
+						type = lttv_attribute_get(submodes_tree, l, &name, &value,
+								&is_named);
 						submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 						lttv_attribute_recursive_add(mode_events_tree, event_types_tree);
 						lttv_attribute_recursive_add(mode_types_tree, submode_tree);

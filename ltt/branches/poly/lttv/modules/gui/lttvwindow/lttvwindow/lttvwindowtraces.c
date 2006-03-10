@@ -104,12 +104,14 @@ LttvTrace *lttvwindowtraces_get_trace(guint num)
   LttvAttributeType type;
   LttvAttributeName name;
   LttvAttributeValue value;
+	gboolean is_named;
 
   g_assert(attribute = 
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
                                 LTTV_TRACES)));
   
-  type = lttv_iattribute_get(LTTV_IATTRIBUTE(attribute), num, &name, &value);
+  type = lttv_iattribute_get(LTTV_IATTRIBUTE(attribute), num, &name, &value,
+			&is_named);
 
   if(type == LTTV_POINTER) {
     return (LttvTrace *)*(value.v_pointer);

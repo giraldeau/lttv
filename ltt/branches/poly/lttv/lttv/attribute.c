@@ -43,6 +43,7 @@ typedef struct _Attribute {
   LttvAttributeName name;
   LttvAttributeType type;
   AttributeValue value;
+	gboolean is_named;
 } Attribute;
 
 
@@ -95,7 +96,6 @@ lttv_attribute_get_number(LttvAttribute *self)
   return self->attributes->len;
 }
 
-
 gboolean 
 lttv_attribute_named(LttvAttribute *self, gboolean *homogeneous)
 {
@@ -103,16 +103,16 @@ lttv_attribute_named(LttvAttribute *self, gboolean *homogeneous)
   return TRUE;
 }
 
-
 LttvAttributeType 
 lttv_attribute_get(LttvAttribute *self, unsigned i, LttvAttributeName *name, 
-    LttvAttributeValue *v)
+    LttvAttributeValue *v, gboolean *is_named)
 {
   Attribute *a;
 
   a = &g_array_index(self->attributes, Attribute, i);
   *name = a->name;
   *v = address_of_value(a->type, &(a->value));
+	*is_named = a->is_named;
   return a->type;
 }
 
@@ -150,6 +150,30 @@ lttv_attribute_add(LttvAttribute *self, LttvAttributeName name,
   if(i != 0) g_error("duplicate entry in attribute table");
 
   a.name = name;
+	a.is_named = 1;
+  a.type = t;
+  a.value = init_value(t);
+  g_array_append_val(self->attributes, a);
+  i = self->attributes->len - 1;
+  pa = &g_array_index(self->attributes, Attribute, i);
+  g_hash_table_insert(self->names, GUINT_TO_POINTER(name), 
+      GUINT_TO_POINTER(i + 1));
+  return address_of_value(t, &(pa->value));
+}
+
+LttvAttributeValue 
+lttv_attribute_add_unnamed(LttvAttribute *self, LttvAttributeName name, 
+    LttvAttributeType t)
+{
+  unsigned i;
+
+  Attribute a, *pa;
+
+  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  if(i != 0) g_error("duplicate entry in attribute table");
+
+  a.name = name;
+	a.is_named = 0;
   a.type = t;
   a.value = init_value(t);
   g_array_append_val(self->attributes, a);
@@ -226,6 +250,29 @@ lttv_attribute_find_subdir(LttvAttribute *self, LttvAttributeName name)
   return (LttvAttribute *)new;
 }
 
+/*CHECK*/LttvAttribute* 
+lttv_attribute_find_subdir_unnamed(LttvAttribute *self, LttvAttributeName name)
+{
+  unsigned i;
+
+  Attribute a;
+
+  LttvAttribute *new;
+  
+  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  if(likely(i != 0)) {
+    a = g_array_index(self->attributes, Attribute, i - 1);
+    if(likely(a.type == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(a.value.dv_gobject))) {
+      return LTTV_ATTRIBUTE(a.value.dv_gobject);
+    }
+    else return NULL;    
+  }
+  new = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+  *(lttv_attribute_add_unnamed(self, name, LTTV_GOBJECT).v_gobject)
+		= G_OBJECT(new);
+  return (LttvAttribute *)new;
+}
+
 gboolean 
 lttv_attribute_find(LttvAttribute *self, LttvAttributeName name, 
     LttvAttributeType t, LttvAttributeValue *v)
@@ -243,6 +290,26 @@ lttv_attribute_find(LttvAttribute *self, LttvAttributeName name,
   }
 
   *v = lttv_attribute_add(self, name, t);
+  return TRUE;
+}
+
+gboolean 
+lttv_attribute_find_unnamed(LttvAttribute *self, LttvAttributeName name, 
+    LttvAttributeType t, LttvAttributeValue *v)
+{
+  unsigned i;
+
+  Attribute *a;
+
+  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  if(likely(i != 0)) {
+    a = &g_array_index(self->attributes, Attribute, i - 1);
+    if(unlikely(a->type != t)) return FALSE;
+    *v = address_of_value(t, &(a->value));
+    return TRUE;
+  }
+
+  *v = lttv_attribute_add_unnamed(self, name, t);
   return TRUE;
 }
 
@@ -278,12 +345,20 @@ void lttv_attribute_recursive_add(LttvAttribute *dest, LttvAttribute *src)
   for(i = 0 ; i < nb ; i++) {
     a = &g_array_index(src->attributes, Attribute, i);
     if(a->type == LTTV_GOBJECT && LTTV_IS_ATTRIBUTE(a->value.dv_gobject)) {
-      lttv_attribute_recursive_add(
-      /*CHECK*/(LttvAttribute *)lttv_attribute_find_subdir(dest, a->name),
-          (LttvAttribute *)(a->value.dv_gobject));
+			if(a->is_named)
+	      lttv_attribute_recursive_add(
+  	    /*CHECK*/(LttvAttribute *)lttv_attribute_find_subdir(dest, a->name),
+    	      (LttvAttribute *)(a->value.dv_gobject));
+			else
+	      lttv_attribute_recursive_add(
+  	    /*CHECK*/(LttvAttribute *)lttv_attribute_find_subdir_unnamed(
+						dest, a->name), (LttvAttribute *)(a->value.dv_gobject));
     }
     else {
-      g_assert(lttv_attribute_find(dest, a->name, a->type, &value));
+			if(a->is_named)
+	      g_assert(lttv_attribute_find(dest, a->name, a->type, &value));
+			else
+	      g_assert(lttv_attribute_find_unnamed(dest, a->name, a->type, &value));
       switch(a->type) {
 	      case LTTV_INT:
           *value.v_int += a->value.dv_int;
@@ -500,7 +575,8 @@ attribute_interface_init (gpointer g_iface, gpointer iface_data)
       lttv_attribute_named;
 
   klass->get = (LttvAttributeType (*) (LttvIAttribute *self, unsigned i, 
-      LttvAttributeName *name, LttvAttributeValue *v)) lttv_attribute_get;
+      LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named)) 
+			lttv_attribute_get;
 
   klass->get_by_name = (LttvAttributeType (*) (LttvIAttribute *self,
       LttvAttributeName name, LttvAttributeValue *v)) 
@@ -508,6 +584,9 @@ attribute_interface_init (gpointer g_iface, gpointer iface_data)
 
   klass->add = (LttvAttributeValue (*) (LttvIAttribute *self, 
       LttvAttributeName name, LttvAttributeType t)) lttv_attribute_add;
+
+  klass->add_unnamed = (LttvAttributeValue (*) (LttvIAttribute *self, 
+      LttvAttributeName name, LttvAttributeType t)) lttv_attribute_add_unnamed;
 
   klass->remove = (void (*) (LttvIAttribute *self, unsigned i)) 
       lttv_attribute_remove;
@@ -518,6 +597,8 @@ attribute_interface_init (gpointer g_iface, gpointer iface_data)
   klass->find_subdir = (LttvIAttribute* (*) (LttvIAttribute *self, 
       LttvAttributeName name)) lttv_attribute_find_subdir;
 
+  klass->find_subdir = (LttvIAttribute* (*) (LttvIAttribute *self, 
+      LttvAttributeName name)) lttv_attribute_find_subdir_unnamed;
 }
 
 static void

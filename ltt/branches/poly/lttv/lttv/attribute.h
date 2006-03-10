@@ -70,7 +70,7 @@ gboolean lttv_attribute_named(LttvAttribute *self, gboolean *homogeneous);
 /* Get the i th attribute along with its type and a pointer to its value. */
 
 LttvAttributeType lttv_attribute_get(LttvAttribute *self, unsigned i, 
-    LttvAttributeName *name, LttvAttributeValue *v);
+    LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named);
  
 
 /* Get the named attribute in the table along with its type and a pointer to
@@ -86,6 +86,8 @@ LttvAttributeType lttv_attribute_get_by_name(LttvAttribute *self,
 LttvAttributeValue lttv_attribute_add(LttvAttribute *self, 
     LttvAttributeName name, LttvAttributeType t);
 
+LttvAttributeValue lttv_attribute_add_unnamed(LttvAttribute *self, 
+    LttvAttributeName name, LttvAttributeType t);
 
 /* Remove an attribute */
 
@@ -102,6 +104,10 @@ void lttv_attribute_remove_by_name(LttvAttribute *self,
 
 LttvAttribute* lttv_attribute_find_subdir(LttvAttribute *self, 
       LttvAttributeName name);
+
+LttvAttribute* lttv_attribute_find_subdir_unnamed(LttvAttribute *self, 
+      LttvAttributeName name);
+
 
 gboolean lttv_attribute_find(LttvAttribute *self, LttvAttributeName name, 
     LttvAttributeType t, LttvAttributeValue *v);

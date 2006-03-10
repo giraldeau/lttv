@@ -82,12 +82,16 @@ struct _LttvIAttributeClass {
   gboolean (*named) (LttvIAttribute *self, gboolean *homogeneous);
 
   LttvAttributeType (*get) (LttvIAttribute *self, unsigned i, 
-      LttvAttributeName *name, LttvAttributeValue *v);
+      LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named);
 
   LttvAttributeType (*get_by_name) (LttvIAttribute *self,
       LttvAttributeName name, LttvAttributeValue *v);
 
   LttvAttributeValue (*add) (LttvIAttribute *self, LttvAttributeName name, 
+      LttvAttributeType t);
+
+  LttvAttributeValue (*add_unnamed) (LttvIAttribute *self,
+			LttvAttributeName name,
       LttvAttributeType t);
 
   void (*remove) (LttvIAttribute *self, unsigned i);
@@ -97,6 +101,10 @@ struct _LttvIAttributeClass {
 
   LttvIAttribute* (*find_subdir) (LttvIAttribute *self, 
       LttvAttributeName name);
+
+  LttvIAttribute* (*find_subdir_unnamed) (LttvIAttribute *self, 
+      LttvAttributeName name);
+
 };
 
 
@@ -117,7 +125,7 @@ gboolean lttv_iattribute_named(LttvIAttribute *self, gboolean *homogeneous);
 /* Get the i th attribute along with its type and a pointer to its value. */
 
 LttvAttributeType lttv_iattribute_get(LttvIAttribute *self, unsigned i, 
-    LttvAttributeName *name, LttvAttributeValue *v);
+    LttvAttributeName *name, LttvAttributeValue *v, gboolean *is_named);
  
 
 /* Get the named attribute in the table along with its type and a pointer to
@@ -134,6 +142,8 @@ LttvAttributeType lttv_iattribute_get_by_name(LttvIAttribute *self,
 LttvAttributeValue lttv_iattribute_add(LttvIAttribute *self, 
     LttvAttributeName name, LttvAttributeType t);
 
+LttvAttributeValue lttv_iattribute_add_unnamed(LttvIAttribute *self, 
+    LttvAttributeName name, LttvAttributeType t);
 /* Remove an attribute */
 
 void lttv_iattribute_remove(LttvIAttribute *self, unsigned i);
@@ -150,6 +160,8 @@ void lttv_iattribute_remove_by_name(LttvIAttribute *self,
 LttvIAttribute* lttv_iattribute_find_subdir(LttvIAttribute *self, 
       LttvAttributeName name);
 
+LttvIAttribute* lttv_iattribute_find_subdir_unnamed(LttvIAttribute *self, 
+      LttvAttributeName name);
 
 /* The remaining utility functions are not part of the LttvIAttribute
    interface but operate on objects implementing it. */
