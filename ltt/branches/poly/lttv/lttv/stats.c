@@ -711,13 +711,15 @@ lttv_stats_sum_trace(LttvTraceStats *self)
   unsigned sum;
 
   int i, j, k, l, m, nb_process, nb_cpu, nb_mode_type, nb_submode,
-      nb_event_type;
+      nb_event_type, nf, nb_functions;
 
   LttvAttribute *main_tree, *processes_tree, *process_tree, *cpus_tree,
       *cpu_tree, *mode_tree, *mode_types_tree, *submodes_tree,
       *submode_tree, *event_types_tree, *mode_events_tree,
-      *cpu_events_tree, *process_modes_tree, *trace_cpu_tree, 
-      *trace_modes_tree;
+      *cpu_functions_tree,
+			*function_tree,
+			*function_mode_types_tree,
+			*trace_cpu_tree;
 
   main_tree = sum_container;
 
@@ -729,8 +731,6 @@ lttv_stats_sum_trace(LttvTraceStats *self)
 
   processes_tree = lttv_attribute_find_subdir(main_tree, 
                                               LTTV_STATS_PROCESSES);
-  trace_modes_tree = lttv_attribute_find_subdir(main_tree,
-                                                LTTV_STATS_MODES);
   nb_process = lttv_attribute_get_number(processes_tree);
 
   for(i = 0 ; i < nb_process ; i++) {
@@ -738,56 +738,67 @@ lttv_stats_sum_trace(LttvTraceStats *self)
     process_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
     cpus_tree = lttv_attribute_find_subdir(process_tree, LTTV_STATS_CPU);
-    process_modes_tree = lttv_attribute_find_subdir(process_tree,
-        LTTV_STATS_MODES);
     nb_cpu = lttv_attribute_get_number(cpus_tree);
 
     for(j = 0 ; j < nb_cpu ; j++) {
       type = lttv_attribute_get(cpus_tree, j, &name, &value);
       cpu_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
-      mode_types_tree = lttv_attribute_find_subdir(cpu_tree, 
-          LTTV_STATS_MODE_TYPES);
-      cpu_events_tree = lttv_attribute_find_subdir(cpu_tree,
-          LTTV_STATS_EVENTS);
       trace_cpu_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_CPU);
       trace_cpu_tree = lttv_attribute_find_subdir(trace_cpu_tree, name);
-      nb_mode_type = lttv_attribute_get_number(mode_types_tree);
+			cpu_functions_tree = lttv_attribute_find_subdir(cpu_tree,
+																											LTTV_STATS_FUNCTIONS);
+    	nb_functions = lttv_attribute_get_number(cpu_functions_tree);
+			
+			for(nf=0; nf < nb_functions; nf++) {
+				type = lttv_attribute_get(cpu_functions_tree, nf, &name, &value);
+				function_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+				function_mode_types_tree = lttv_attribute_find_subdir(function_tree,
+						LTTV_STATS_MODE_TYPES);
+      	nb_mode_type = lttv_attribute_get_number(function_mode_types_tree);
+				for(k = 0 ; k < nb_mode_type ; k++) {
+					type = lttv_attribute_get(function_mode_types_tree, k, &name, &value);
+					mode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
-      for(k = 0 ; k < nb_mode_type ; k++) {
-        type = lttv_attribute_get(mode_types_tree, k, &name, &value);
-        mode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+					submodes_tree = lttv_attribute_find_subdir(mode_tree, 
+							LTTV_STATS_SUBMODES);
+					mode_events_tree = lttv_attribute_find_subdir(mode_tree,
+							LTTV_STATS_EVENTS);
+					mode_types_tree = lttv_attribute_find_subdir(mode_tree, 
+							LTTV_STATS_MODE_TYPES);
 
-        submodes_tree = lttv_attribute_find_subdir(mode_tree, 
-            LTTV_STATS_SUBMODES);
-        mode_events_tree = lttv_attribute_find_subdir(mode_tree,
-            LTTV_STATS_EVENTS);
-        nb_submode = lttv_attribute_get_number(submodes_tree);
+					nb_submode = lttv_attribute_get_number(submodes_tree);
 
-        for(l = 0 ; l < nb_submode ; l++) {
-          type = lttv_attribute_get(submodes_tree, l, &name, &value);
-          submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+					for(l = 0 ; l < nb_submode ; l++) {
+						type = lttv_attribute_get(submodes_tree, l, &name, &value);
+						submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
-          event_types_tree = lttv_attribute_find_subdir(submode_tree, 
-            LTTV_STATS_EVENT_TYPES);
-          nb_event_type = lttv_attribute_get_number(event_types_tree);
+						event_types_tree = lttv_attribute_find_subdir(submode_tree, 
+							LTTV_STATS_EVENT_TYPES);
+						nb_event_type = lttv_attribute_get_number(event_types_tree);
 
-          sum = 0;
-          for(m = 0 ; m < nb_event_type ; m++) {
-            type = lttv_attribute_get(event_types_tree, m, &name, &value);
-            sum += *(value.v_uint);
-          }
-          lttv_attribute_find(submode_tree, LTTV_STATS_EVENTS_COUNT, 
-              LTTV_UINT, &value);
-          *(value.v_uint) = sum;
-          lttv_attribute_recursive_add(mode_events_tree, submode_tree);
-        }
-        lttv_attribute_recursive_add(cpu_events_tree, mode_events_tree);
-      }
-      lttv_attribute_recursive_add(process_modes_tree, cpu_tree);
-      lttv_attribute_recursive_add(trace_cpu_tree, cpu_tree);
+						sum = 0;
+						for(m = 0 ; m < nb_event_type ; m++) {
+							type = lttv_attribute_get(event_types_tree, m, &name, &value);
+							sum += *(value.v_uint);
+						}
+						lttv_attribute_find(submode_tree, LTTV_STATS_EVENTS_COUNT, 
+								LTTV_UINT, &value);
+						*(value.v_uint) = sum;
+
+						type = lttv_attribute_get(submodes_tree, l, &name, &value);
+						submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+						lttv_attribute_recursive_add(mode_events_tree, event_types_tree);
+						lttv_attribute_recursive_add(mode_types_tree, submode_tree);
+					}
+				}
+    		lttv_attribute_recursive_add(main_tree, mode_types_tree);
+      	lttv_attribute_recursive_add(trace_cpu_tree, mode_types_tree);
+      	lttv_attribute_recursive_add(process_tree, mode_types_tree);
+      	lttv_attribute_recursive_add(function_tree, mode_types_tree);
+			}
+      lttv_attribute_recursive_add(process_tree, cpu_tree);
     }
-    lttv_attribute_recursive_add(trace_modes_tree, process_modes_tree);
   }
 }
 
@@ -808,7 +819,7 @@ lttv_stats_sum_traceset(LttvTracesetStats *self)
 
   int i, nb_trace;
 
-  LttvAttribute *main_tree, *trace_modes_tree, *traceset_modes_tree;
+  LttvAttribute *main_tree;
 
   LttvAttributeValue value;
 
@@ -817,16 +828,13 @@ lttv_stats_sum_traceset(LttvTracesetStats *self)
   if(*(value.v_uint) != 0) return;
   *(value.v_uint) = 1;
 
-  traceset_modes_tree = lttv_attribute_find_subdir(sum_container, 
-      LTTV_STATS_MODES);
   nb_trace = lttv_traceset_number(traceset);
 
   for(i = 0 ; i < nb_trace ; i++) {
     tcs = (LttvTraceStats *)(self->parent.parent.traces[i]);
     lttv_stats_sum_trace(tcs);
     main_tree = tcs->stats;
-    trace_modes_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_MODES);
-    lttv_attribute_recursive_add(traceset_modes_tree, trace_modes_tree);
+    lttv_attribute_recursive_add(sum_container, main_tree);
   }
 }
 
