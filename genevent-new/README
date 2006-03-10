@@ -15,6 +15,8 @@ those in LTT library.
 Important notes : 
 	* Do not put "-" symbols in facilities name.
 	* Use the exact same name for facility xml file and for facility name.
+	* As from genevent 0.17, a standard XML 1.0 description is "required". It must
+		begin with the <?xml version="1.0"?> header.
 
 Note about strings :
 There are three methods to write strings in genevent, each suitable and
@@ -26,7 +28,7 @@ to the slowest.
 	as string definition.
 
 	you must then define it as an array of char :
-	<array size=10/><char></array>
+	<array size="10"><char></array>
 
 	Note, however, that you might not want to declare a fixed size for trace size
 	and unnecessary copy matters.
