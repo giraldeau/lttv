@@ -105,6 +105,7 @@ cd /usr/src/ltt-usertrace
 
 user_myfacility.xml:
 
+<?xml version="1.0"?>
 <facility name="user_myfacility">
   <description>Sample facility</description>
   <event name="myevent">
