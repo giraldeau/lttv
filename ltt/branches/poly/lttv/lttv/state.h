@@ -208,6 +208,8 @@ typedef struct _LttvProcessState {
 //  guint  last_tracefile_index;    /* index in the trace for cpu tracefile */
 	LttvTracefileState	*usertrace;		/* Associated usertrace */
   /* opened file descriptors, address map?... */
+  GArray *user_stack;					/* User space function call stack */
+	guint64	current_function;
 } LttvProcessState;
 
 #define ANY_CPU 0 /* For clarity sake : a call to lttv_state_find_process for
@@ -273,7 +275,6 @@ struct _LttvTraceState {
 
   /* Array of per cpu running process */
   LttvProcessState **running_process;
-  
 };
 
 struct _LttvTraceStateClass {

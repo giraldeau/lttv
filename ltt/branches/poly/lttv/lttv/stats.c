@@ -39,6 +39,7 @@ GQuark
   LTTV_STATS_MODE_TYPES,
   LTTV_STATS_MODES,
   LTTV_STATS_SUBMODES,
+	LTTV_STATS_FUNCTIONS,
   LTTV_STATS_EVENT_TYPES,
   LTTV_STATS_CPU_TIME,
   LTTV_STATS_ELAPSED_TIME,
@@ -1109,6 +1110,7 @@ static void module_init()
   LTTV_STATS_MODE_TYPES = g_quark_from_string("mode_types");
   LTTV_STATS_MODES = g_quark_from_string("modes");
   LTTV_STATS_SUBMODES = g_quark_from_string("submodes");
+  LTTV_STATS_SUBMODES = g_quark_from_string("functions");
   LTTV_STATS_EVENT_TYPES = g_quark_from_string("event_types");
   LTTV_STATS_CPU_TIME = g_quark_from_string("cpu time");
   LTTV_STATS_ELAPSED_TIME = g_quark_from_string("elapsed time");

@@ -79,7 +79,9 @@
    "cpu number" stands for the cpu identifier, and "process_id-start_time"
    is a unique process identifier composed of the process id
    (unique at any given time but which may be reused over time) concatenated
-   with the process start time.
+   with the process start time. Each process has a "functions" tree which
+	 contains each process'function address (when the information is available).
+	 If not, only the 0x0 function will appear.
 
    modes/
      Execution Modes Tree
@@ -97,20 +99,33 @@
        cpu/
          "cpu number"/
            Execution Modes Tree
+	       functions/
+			     "function address"/
+					    Execution Modes Tree
+	     functions/
+			   "function address"/
+					  Execution Modes Tree
 
    All the events and derived values (cpu, elapsed and wait time) are
    added during the trace analysis in the relevant 
-   trace / processes / * / cpu / * / mode_types / * /submodes / * 
+   trace/processes/ * /cpu/ * /functions/ * /mode_types/ * /submodes/ * 
    "events tree". To achieve this efficiently, each tracefile context 
    contains a pointer to the current relevant "events tree" and "event_types" 
    tree within it.
 
    Once all the events are processed, the total number of events is computed
-   within each trace / processes / * / cpu / * / mode_types / * / submodes / *.
+   within each
+   trace/processes/ * /cpu/ * /functions/ * /mode_types/ * /submodes/ *.
    Then, the "events tree" are summed for all submodes within each mode type 
-   and for all mode types within a processes / * / cpu / * 
+   and for all mode types within a processes/ * /cpu/ * /functions/ *
    "execution modes tree".
-
+   
+	 Then, the "execution modes trees" for all functions within a
+	 trace/processes/ * /cpu for all cpu within a process, for all processes,
+	 and for all traces are computed. Separately, the "execution modes tree" for
+	 each function (over all cpus) for all processes, and for all traces are
+	 summed in the trace/processes/ * /functions/ * subtree.
+	 
    Finally, the "execution modes trees" for all cpu within a process,
    for all processes, and for all traces are computed. Separately,
    the "execution modes tree" for each cpu but for all processes within a
@@ -132,6 +147,7 @@ extern GQuark
   LTTV_STATS_CPU,
   LTTV_STATS_MODE_TYPES,
   LTTV_STATS_SUBMODES,
+  LTTV_STATS_FUNCTIONS,
   LTTV_STATS_EVENT_TYPES,
   LTTV_STATS_CPU_TIME,
   LTTV_STATS_ELAPSED_TIME,
