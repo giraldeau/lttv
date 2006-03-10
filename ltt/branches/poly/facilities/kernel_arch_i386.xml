@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<facility name="kernel_arch arch=i386">
+<facility name="kernel_arch" arch="i386">
   <description>The kernel facility has events related to kernel execution status for the i386 architecture.</description>
   <type name="syscall_name">
     <enum>
