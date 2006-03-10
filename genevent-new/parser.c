@@ -234,18 +234,18 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
      	else token = getName(in);
 		 	if(!strcmp("network", token)) {
 		   	t->network = 1;
+			}
 		} else if(!strcmp("write",token)) {
      	getEqual(in);
      	car = seekNextChar(in);
      	if(car == EOF) in->error(in,"write type was expected (custom?)");
      	else if(car == '\"') token = getQuotedString(in);
      	else token = getName(in);
-		 	if(!strcmp("custom", token))
-		   	t->network = 1;
+		 	if(!strcmp("custom", token)) {
+		   	t->custom_write = 1;
+			}
 	  }
 	}
-		
-  }
 }
 
 /**************************************************************************
@@ -350,7 +350,7 @@ void getFacilityAttributes(parse_file_t *in, facility_t *fac)
     } else if(!strcmp("arch", token)) {
       getEqual(in);
       car = seekNextChar(in);
-      if(car == '\"') fac->name = allocAndCopy(getQuotedString(in));
+      if(car == '\"') fac->arch = allocAndCopy(getQuotedString(in));
 			else fac->arch = allocAndCopy(getName(in));
 		}
   }
