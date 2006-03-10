@@ -2117,7 +2117,7 @@ void print_log_header_head_user(facility_t *fac, FILE *fd)
 	  fprintf(fd, "#include <asm/ltt/ltt-facility-id-%s_%s.h>\n",
 				fac->name,
 				fac->arch);
-  fprintf(fd, "#include <ltt/ltt-generic.h>\n");
+  fprintf(fd, "#include <ltt/ltt-usertrace.h>\n");
 	fprintf(fd, "\n");
 }
 
@@ -2338,7 +2338,7 @@ int print_id_header(facility_t *fac)
 		fprintf(fd, "#define _LTT_FACILITY_ID_%s_H_\n\n",fac->capname);
 		fprintf(fd, "#ifdef LTT_TRACE\n");
 
-		fprintf(fd,"#include <ltt/ltt-generic.h>\n\n");
+		fprintf(fd,"#include <ltt/ltt-usertrace.h>\n\n");
 
 		fprintf(fd,"/****  facility handle  ****/\n\n");
 		fprintf(fd,"extern ltt_facility_t ltt_facility_%s_%X;\n",
@@ -2475,7 +2475,7 @@ int print_loader_header_user(facility_t *fac)
 
   fprintf(fd, "#ifndef _LTT_FACILITY_LOADER_%s_H_\n", fac->capname);
   fprintf(fd, "#define _LTT_FACILITY_LOADER_%s_H_\n\n", fac->capname);
-  fprintf(fd,"#include <ltt/ltt-generic.h>\n");
+  fprintf(fd,"#include <ltt/ltt-usertrace.h>\n");
 	if(!fac->arch)
 	  fprintf(fd,"#include <ltt/ltt-facility-id-%s.h>\n\n",
 				fac->name);
@@ -2668,7 +2668,7 @@ int print_loader_c_user(facility_t *fac)
   fprintf(fd, "#define LTT_TRACE\n");
   fprintf(fd, "#include <error.h>\n");
   fprintf(fd, "#include <stdio.h>\n");
-  fprintf(fd, "#include <ltt/ltt-generic.h>\n");
+  fprintf(fd, "#include <ltt/ltt-usertrace.h>\n");
 	if(!fac->arch)
   	fprintf(fd, "#include \"ltt-facility-loader-%s.h\"\n", fac->name);
 	else
@@ -2760,7 +2760,23 @@ facility_t *ltt_facility_open(char * pathname)
 		
 		if(strcmp(token, "<")) in.error(&in,"not a facility file");
 		token = getName(&in);
+		if(strcmp(token, "?")) in.error(&in,"not a facility file");
+		token = getName(&in);
+		if(strcmp(token, "xml")) in.error(&in,"not a facility file");
+		token = getName(&in);
+		if(strcmp(token, "version")) in.error(&in,"not a facility file");
+		token = getName(&in);
+		if(strcmp(token, "=")) in.error(&in,"not a facility file");
+		token = getQuotedString(&in);
+		if(strcmp(token, "1.0")) in.error(&in,"not a facility file");
+		token = getName(&in);
+		if(strcmp(token, "?")) in.error(&in,"not a facility file");
+		token = getToken(&in);
+		if(strcmp(token, ">")) in.error(&in,"not a facility file");
 
+		token = getName(&in);
+		if(strcmp(token, "<")) in.error(&in,"not a facility file");
+		token = getName(&in);
 		if(strcmp("facility",token) == 0) {
 			fac = malloc(sizeof(facility_t));
 			fac->name = NULL;

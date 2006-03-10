@@ -96,23 +96,27 @@ int getSizeindex(unsigned int value)
 
 unsigned long long int getSize(parse_file_t *in)
 {
-  char *token;
-	int has_quotes = 0;
+  char *token, *token2;
 	unsigned long long int ret;
 
   token = getToken(in);
-	if(token[0] == '"') {
-		has_quotes = 1;
-		token = getToken(in);
-	}
+
+
+  if(in->type == QUOTEDSTRING) {
+    in->type = NUMBER;
+    token2 = token;
+    do {
+       if (!isdigit(*token2)) {
+          in->type = QUOTEDSTRING;
+          break;
+				}
+    } while (*(++token2) != '\0');
+  }
+
   if(in->type == NUMBER) {
 		ret = strtoull(token, NULL, 0);
   } else {
 		goto error;
-	}
-	if(has_quotes) {
-		token = getToken(in);
-		if(token[0] != '"') goto error;
 	}
 		
 	return ret;
@@ -194,6 +198,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
 			   sequence_t * unnamed_types, table_t * named_types) 
 {
   char * token;
+	char car;
 
   t->fmt = NULL;
   t->size = 0;
@@ -221,9 +226,25 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
       t->size = getSize(in);
     } else if(!strcmp("custom_write", token)) {
       t->custom_write = 1;
-    } else if(!strcmp("network", token)) {
-			t->network = 1;
-		}
+		} else if(!strcmp("byte_order",token)) {
+     	getEqual(in);
+     	car = seekNextChar(in);
+     	if(car == EOF) in->error(in,"byte order was expected (network?)");
+     	else if(car == '\"') token = getQuotedString(in);
+     	else token = getName(in);
+		 	if(!strcmp("network", token)) {
+		   	t->network = 1;
+		} else if(!strcmp("write",token)) {
+     	getEqual(in);
+     	car = seekNextChar(in);
+     	if(car == EOF) in->error(in,"write type was expected (custom?)");
+     	else if(car == '\"') token = getQuotedString(in);
+     	else token = getName(in);
+		 	if(!strcmp("custom", token))
+		   	t->network = 1;
+	  }
+	}
+		
   }
 }
 
@@ -263,16 +284,30 @@ void getEventAttributes(parse_file_t *in, event_t *ev)
       if(car == EOF) in->error(in,"name was expected");
       else if(car == '\"') ev->name = allocAndCopy(getQuotedString(in));
       else ev->name = allocAndCopy(getName(in));
-    } else if(!strcmp("per_trace", token)) {
-      ev->per_trace = 1;
-    } else if(!strcmp("per_tracefile", token)) {
-      ev->per_tracefile = 1;
-    } else if(!strcmp("param_buffer", token)) {
-			ev->param_buffer = 1;
-		} else if(!strcmp("no_instrument_function", token)) {
-			ev->no_instrument_function = 1;
-		}
-
+    } else if(!strcmp("scope", token)) {
+			getEqual(in);
+			car = seekNextChar(in);
+			if(car == EOF) in->error(in,"scope was expected");
+      else if(car == '\"') token = getQuotedString(in);
+      else token = getName(in);
+			if(!strcmp(token, "trace")) ev->per_trace = 1;
+			else if(!strcmp(token, "tracefile")) ev->per_tracefile = 1;
+	  } else if(!strcmp("param", token)) {
+			getEqual(in);
+			car = seekNextChar(in);
+			if(car == EOF) in->error(in,"parameter type was expected");
+      else if(car == '\"') token = getQuotedString(in);
+      else token = getName(in);
+			if(!strcmp(token, "buffer")) ev->param_buffer = 1;
+		} else if(!strcmp("attribute", token)) {
+			getEqual(in);
+			car = seekNextChar(in);
+			if(car == EOF) in->error(in,"attribute was expected");
+      else if(car == '\"') token = getQuotedString(in);
+      else token = getName(in);
+			if(!strcmp(token, "no_instrument_function"))
+				ev->no_instrument_function = 1;
+    }
   }
 }
 
@@ -383,38 +418,39 @@ char *getNameAttribute(parse_file_t *in)
 
 
 
-//for <label name=label_name value=n format="..."/>, value is an option
+//for <label name=label_name value=n format="...">, value is an option
 //Return value : 0 : no value,   1 : has a value
 int getValueAttribute(parse_file_t *in, long long *value)
 {
-  char * token;
-	int has_quotes = 0;
+  char * token, *token2;
 
-  token = getToken(in); 
-  if(strcmp("/",token) == 0){
+  token = getToken(in);
+	
+  if(strcmp("/",token) == 0 || strcmp(">", token) == 0){
     ungetToken(in);
     return 0;
   }
-  
   if(strcmp("value",token))in->error(in,"value was expected");
+	
   getEqual(in);
   token = getToken(in);
 
-	if(token[0] == '"') {
-		has_quotes = 1;
-		token = getToken(in);
-	}
-  if(in->type == NUMBER) {
-		*value = strtoll(token, NULL, 0);
-  } else {
-		goto error;
-	}
-	if(has_quotes) {
-		token = getToken(in);
-		if(token[0] != '"') goto error;
-	}
-  return 1;
+  if(in->type == QUOTEDSTRING) {
+    in->type = NUMBER;
+    token2 = token;
+    do {
+       if (!isdigit(*token2)) {
+          in->type = QUOTEDSTRING;
+          break;
+			 }
+    } while (*(++token2) != '\0');
+  }
 
+  if(in->type == NUMBER)
+		*value = strtoll(token, NULL, 0);
+	else
+		goto error;
+  return 1;
 error:
   in->error(in,"incorrect size specification");
   return 0;
@@ -1178,8 +1214,8 @@ char *getToken(parse_file_t * in)
       escaped = 0;
       while((car = getc(fp)) != EOF && pos < BUFFER_SIZE) {
         if(car == '\\' && escaped == 0) {
-	  in->buffer[pos] = car;
-	  pos++;
+	  			in->buffer[pos] = car;
+				  pos++;
           escaped = 1;
           continue;
         }
@@ -1208,10 +1244,10 @@ char *getToken(parse_file_t * in)
           in->buffer[pos] = car;
           pos++;
         }
-	if(car == EOF) ungetc(car,fp);
+				if(car == EOF) ungetc(car,fp);
         if(pos == BUFFER_SIZE) in->error(in, "number token too large");
         in->type = NUMBER;
-      }    
+      }
       else if(isalnum(car) || car == '_' || car == '-') {
         in->buffer[0] = car;
         pos = 1;
@@ -1223,10 +1259,13 @@ char *getToken(parse_file_t * in)
           in->buffer[pos] = car;
           pos++;
         }
-	if(car == EOF) ungetc(car,fp);
+			if(car == EOF) ungetc(car,fp);
         if(pos == BUFFER_SIZE) in->error(in, "name token too large");
         in->type = NAME;
-      }
+      } else if(car == '?') {
+				in->buffer[0] = car;
+				pos++;
+			}
       else in->error(in, "invalid character, unrecognized token");
   }
   in->buffer[pos] = 0;
