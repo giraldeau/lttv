@@ -801,11 +801,11 @@ lttv_stats_sum_trace(LttvTraceStats *self)
 						lttv_attribute_recursive_add(mode_events_tree, event_types_tree);
 						lttv_attribute_recursive_add(mode_types_tree, submode_tree);
 					}
+					lttv_attribute_recursive_add(main_tree, mode_types_tree);
+					lttv_attribute_recursive_add(trace_cpu_tree, mode_types_tree);
+					lttv_attribute_recursive_add(process_tree, mode_types_tree);
+					lttv_attribute_recursive_add(function_tree, mode_types_tree);
 				}
-    		lttv_attribute_recursive_add(main_tree, mode_types_tree);
-      	lttv_attribute_recursive_add(trace_cpu_tree, mode_types_tree);
-      	lttv_attribute_recursive_add(process_tree, mode_types_tree);
-      	lttv_attribute_recursive_add(function_tree, mode_types_tree);
 			}
       lttv_attribute_recursive_add(process_tree, cpu_tree);
     }
