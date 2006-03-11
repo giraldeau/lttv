@@ -1,5 +1,8 @@
 LinuxTraceToolkit ChangeLog
 
+11/03/2006	LTTV 0.8.30
+						Change statistics tree structure.
+						Add user space functions support to statistics.
 09/03/2006	LTTV 0.8.28
 						Add usertrace support.
 						Bugfix : handle badly number syscall xml correctly.
