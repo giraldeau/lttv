@@ -1067,8 +1067,9 @@ event_error:
       g_quark_to_string(event));
   goto free;
 facility_error:
-  g_error("No %s facility", g_quark_to_string(facility));
-  goto free;
+  //Ignore this type of error : some facilities are not required.
+	//g_error("No %s facility", g_quark_to_string(facility));
+  return -1;
 free:
   g_array_free(th->fac_index, TRUE);
   g_array_free(th->fac_list, TRUE);
