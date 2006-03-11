@@ -47,7 +47,7 @@ required in order to compile LinuxTraceToolkit]))
 
 
 # pthread for lttd
-AC_CHECK_LIB(pthread, pthread_join,[THREAD_LIBS="-lpthread"], AC_MSG_ERROR([LinuxThreads is required in order to compile lttd]))
+#AC_CHECK_LIB(pthread, pthread_join,[THREAD_LIBS="-lpthread"], AC_MSG_ERROR([LinuxThreads is required in order to compile lttd]))
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -112,8 +112,6 @@ AC_SUBST(lttvwindowincludedir)
 AC_SUBST(lttctlincludedir)
 
 AC_CONFIG_FILES([Makefile
-     liblttctl/Makefile
-     lttctl/Makefile
 		 lttv/Makefile
 		 lttv/lttv/Makefile
 		 lttv/modules/Makefile
@@ -129,7 +127,6 @@ AC_CONFIG_FILES([Makefile
 		 lttv/modules/gui/statistics/Makefile
      lttv/modules/gui/filter/Makefile
      lttv/modules/gui/tracecontrol/Makefile
-		 lttd/Makefile
 		 ltt/Makefile
      doc/Makefile
      doc/developer/Makefile
@@ -139,6 +136,5 @@ AC_CONFIG_FILES([Makefile
      doc/user/Makefile
      doc/user/user_guide/Makefile
      doc/user/user_guide/docbook/Makefile
-     doc/user/user_guide/html/Makefile
-     facilities/Makefile])
+     doc/user/user_guide/html/Makefile])
 AC_OUTPUT

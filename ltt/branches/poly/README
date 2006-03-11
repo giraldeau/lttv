@@ -1,7 +1,6 @@
 
 This package contains the trace reading library and trace viewing tools for
-the new Linux Trace Toolkit trace format. It also contains the lttd, lttctl and
-liblttctl programs which are necessary to obtain a trace.
+the new Linux Trace Toolkit trace format.
 
 * Compiling
 
@@ -49,9 +48,6 @@ debian: debian config files (currently empty).
 doc:    Documentation.
 doc/user:      User related documentation.
 doc/developer: Developer related documentation.
-liblttctl:    Library to communicate with the kernel tracer control module.
-lttctl:       Command line program to use the liblttctl library.
-lttd:   Linux Trace Toolkit daemon.
 lttv:   Linux Trace Toolkit trace analysis tool and viewer.
 lttv/modules:  Linux Trace Toolkit analysis tool and viewer plugin modules.
 specs:  RPM config files (currently empty).
