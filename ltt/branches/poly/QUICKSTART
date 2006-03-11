@@ -282,13 +282,28 @@ echo ltt-control >> /etc/modules
 echo ltt-statedump >> /etc/modules
 
 
-* Getting and installing the LTTV package
+* Getting and installing the ltt-control package (on the traced machine)
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.8.13-07022006.tar.gz
-gzip -cd LinuxTraceToolkitViewer-0.8.13-07022006.tar.gz | tar xvof -
-cd LinuxTraceToolkitViewer-0.8.13-07022006
+wget http://ltt.polymtl.ca/lttng/ltt-control-0.1-11032006.tar.gz
+gzip -cd ltt-control-0.1-11032006.tar.gz | tar xvof -
+cd ltt-control-0.1-11032006
+(refer to README to see the development libraries that must be installed on you
+system)
+./configure
+make
+make install
+
+
+* Getting and installing the LTTV package (on the visualisation machine, same or
+  different from the visualisation machine)
+
+su -
+cd /usr/src
+wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.8.31-11032006.tar.gz
+gzip -cd LinuxTraceToolkitViewer-0.8.31-11032006.tar.gz | tar xvof -
+cd LinuxTraceToolkitViewer-0.8.31-11032006
 (refer to README to see the development libraries that must be installed on you
 system)
 ./configure
