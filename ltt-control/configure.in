@@ -75,6 +75,9 @@ DEFAULT_INCLUDES="-I\$(top_srcdir)"
 #CPPFLAGS="${GLIB_CFLAGS}"
 #AC_SUBST(CPPFLAGS)
 
+lttctlincludedir="${includedir}/liblttctl"
+
+AC_SUBST(lttctlincludedir)
 AC_SUBST(UTIL_LIBS)
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(DEFAULT_INCLUDES)
