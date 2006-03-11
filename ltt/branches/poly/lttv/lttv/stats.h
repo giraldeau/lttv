@@ -179,7 +179,7 @@ void lttv_stats_remove_event_hooks(LttvTracesetStats *self);
 gboolean lttv_stats_sum_traceset_hook(void *hook_data, void *call_data);
 void lttv_stats_sum_traceset(LttvTracesetStats *self);
 
-void lttv_stats_sum_trace(LttvTraceStats *self);
+void lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats);
 
 /* Reset all statistics containers */
 void lttv_stats_reset(LttvTracesetStats *self);

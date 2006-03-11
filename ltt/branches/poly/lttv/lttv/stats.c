@@ -701,7 +701,7 @@ gboolean every_event(void *hook_data, void *call_data)
 
 
 void
-lttv_stats_sum_trace(LttvTraceStats *self)
+lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
 {
   LttvAttribute *sum_container = self->stats;
 
@@ -714,6 +714,8 @@ lttv_stats_sum_trace(LttvTraceStats *self)
 	gboolean is_named;
 
   unsigned sum;
+
+	int trace_is_summed;
 
   int i, j, k, l, m, nb_process, nb_cpu, nb_mode_type, nb_submode,
       nb_event_type, nf, nb_functions;
@@ -731,7 +733,7 @@ lttv_stats_sum_trace(LttvTraceStats *self)
   lttv_attribute_find(sum_container,
                       LTTV_STATS_SUMMED, 
                       LTTV_UINT, &value);
-  if(*(value.v_uint) != 0) return;
+	trace_is_summed = *(value.v_uint);
   *(value.v_uint) = 1;
 
   processes_tree = lttv_attribute_find_subdir(main_tree, 
@@ -798,16 +800,23 @@ lttv_stats_sum_trace(LttvTraceStats *self)
 						type = lttv_attribute_get(submodes_tree, l, &name, &value,
 								&is_named);
 						submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-						lttv_attribute_recursive_add(mode_events_tree, event_types_tree);
-						lttv_attribute_recursive_add(mode_types_tree, submode_tree);
+						if(!trace_is_summed) {
+							lttv_attribute_recursive_add(mode_events_tree, event_types_tree);
+							lttv_attribute_recursive_add(mode_types_tree, submode_tree);
+						}
 					}
-					lttv_attribute_recursive_add(main_tree, mode_types_tree);
-					lttv_attribute_recursive_add(trace_cpu_tree, mode_types_tree);
-					lttv_attribute_recursive_add(process_tree, mode_types_tree);
-					lttv_attribute_recursive_add(function_tree, mode_types_tree);
+					if(!trace_is_summed) {
+						lttv_attribute_recursive_add(main_tree, mode_types_tree);
+						lttv_attribute_recursive_add(trace_cpu_tree, mode_types_tree);
+						lttv_attribute_recursive_add(process_tree, mode_types_tree);
+						lttv_attribute_recursive_add(function_tree, mode_types_tree);
+					}
+					lttv_attribute_recursive_add(ts_stats, mode_types_tree);
 				}
 			}
-      lttv_attribute_recursive_add(process_tree, cpu_tree);
+			if(!trace_is_summed) {
+      	lttv_attribute_recursive_add(process_tree, cpu_tree);
+			}
     }
   }
 }
@@ -842,9 +851,8 @@ lttv_stats_sum_traceset(LttvTracesetStats *self)
 
   for(i = 0 ; i < nb_trace ; i++) {
     tcs = (LttvTraceStats *)(self->parent.parent.traces[i]);
-    lttv_stats_sum_trace(tcs);
-    main_tree = tcs->stats;
-    lttv_attribute_recursive_add(sum_container, main_tree);
+    lttv_stats_sum_trace(tcs, self->stats);
+	//				lttv_attribute_recursive_add(sum_container, tcs->stats);
   }
 }
 
