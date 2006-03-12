@@ -1416,8 +1416,7 @@ static void push_function(LttvTracefileState *tfs, guint64 funcptr)
     
   new_func = &g_array_index(process->user_stack, guint64, depth);
 	*new_func = funcptr;
-  process->current_function = 
-		g_array_index(process->user_stack, guint64, depth - 1);
+  process->current_function = funcptr;
 }
 
 static void pop_function(LttvTracefileState *tfs, guint64 funcptr)
@@ -1426,7 +1425,6 @@ static void pop_function(LttvTracefileState *tfs, guint64 funcptr)
   LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
 
-  guint depth = process->user_stack->len;
   if(process->current_function != funcptr){
     g_info("Different functions (%lu.%09lu): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
@@ -1439,6 +1437,7 @@ static void pop_function(LttvTracefileState *tfs, guint64 funcptr)
 		    g_quark_to_string(process->state->s));
     return;
   }
+  guint depth = process->user_stack->len;
 
   if(depth == 0){
     g_info("Trying to pop last function on stack (%lu.%09lu): ignore it\n",
