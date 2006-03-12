@@ -13,9 +13,15 @@ What you will typically want is to read sections 1 and 3 : install LTTng from
 binary packages and use it. If there are no packages ready for your system, you
 will have to install from sources (section 2) instead.
 
-These operations are made for installing the LTTng 0.5.18 tracer on a
-linux 2.6.15 kernel. You will also find instructions for installation of
-LTTV 0.8.x : the Linux Trace Toolkit Viewer.
+These operations are made for installing the LTTng 0.5.X tracer on a
+linux 2.6.X kernel. You will also find instructions for installation of
+LTTV 0.8.x : the Linux Trace Toolkit Viewer. 
+
+To see the list of compatibilities between LTTng, ltt-control, LTTV, genevent
+and lttng-modules, please refer to :
+http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
+
+
 
 The following lttng patch is necessary to have the tracing hooks in the kernel.
 The following ltt-control module controls the tracing.
@@ -50,7 +56,7 @@ Last update : February 10, 2006
 ** NOTE : RPM and debian packages are only made once a version has been
    thoroughly tested. If they do not exist at the moment, please install from
 	 sources (see section 2 below). To see the list of compatibilities between
-	 LTTng, LTTv, genevent and lttng-modules, please refer to
+	 LTTng, ltt-control, LTTV, genevent and lttng-modules, please refer to
 	 http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
 
 
@@ -159,7 +165,7 @@ o  module-init-tools      0.9.10                  # depmod -V
 You might also want to have libncurses5 to have the text mode kernel
 configuration menu, but there are alternatives.
 
-Prerequisites for LTTV 0.6.x installation are :
+Prerequisites for LTTV 0.x.x installation are :
 
 gcc 3.2 or better
 gtk 2.4 or better development libraries
@@ -188,9 +194,9 @@ mkdir /usr/src/lttng
 cd /usr/src/lttng
 (see http://ltt.polymtl.ca/lttng for package listing)
 wget http://ltt.polymtl.ca/lttng/lttng-modules-0.5.tar.bz2
-wget http://ltt.polymtl.ca/lttng/patch-2.6.15-lttng-0.5.18.tar.bz2
-bzip2 -cd lttng-modules-0.5.tar.bz2 | tar xvof -
-bzip2 -cd patch-2.6.15-lttng-0.5.18.tar.bz2 | tar xvof -
+wget http://ltt.polymtl.ca/lttng/patch-2.6.15-lttng-0.x.xx.tar.bz2
+bzip2 -cd lttng-modules-0.x.tar.bz2 | tar xvof -
+bzip2 -cd patch-2.6.15-lttng-0.x.xx.tar.bz2 | tar xvof -
 
 
 * Getting LTTng kernel sources
@@ -200,15 +206,15 @@ cd /usr/src
 wget http://kernel.org/pub/linux/kernel/v2.6/testing/linux-2.6.15.tar.bz2
 bzip2 -cd linux-2.6.15.tar.bz2 | tar xvof -
 cd linux-2.6.15
-cat /usr/src/lttng/patch-2.6.15-lttng-0.5.18* | patch -p1
+cat /usr/src/lttng/patch-2.6.15-lttng-0.x.xx* | patch -p1
 cd ..
-mv linux-2.6.15 linux-2.6.15-lttng-0.5.18
+mv linux-2.6.15 linux-2.6.15-lttng-0.x.xx
 
 
 * Installing a LTTng kernel
 
 su -
-cd /usr/src/linux-2.6.15-lttng-0.5.18
+cd /usr/src/linux-2.6.15-lttng-0.x.xx
 make menuconfig (or make xconfig or make config)
     Select the < Help > button if you are not familiar with kernel
     configuration.
@@ -223,7 +229,8 @@ make menuconfig (or make xconfig or make config)
         is compiled built-in or as a module.
     activate :
        [*] Align Linux Trace Toolkit Traces
-    do NOT activate (not ready yet) :
+       [*] Allow tracing from userspace
+    your choice (see < Help >) :
        [ ] Activate Linux Trace Toolkit Heartbeat Timer
 		You may or may not activate instrumentation per facility. They are all
 		selected for logging by default. It can be used as a compile time filter to
@@ -239,15 +246,15 @@ make install
 
 reboot
 
-  Select the Linux 2.6.15-lttng-0.5.18 kernel in your boot loader.
+  Select the Linux 2.6.15-lttng-0.x.xx kernel in your boot loader.
 
 
 * Install the ltt-modules
 
 su -
-cd /usr/src/lttng/lttng-modules-0.5
-KERNELDIR=/usr/src/linux-2.6.15-lttng-0.5.18 make
-KERNELDIR=/usr/src/linux-2.6.15-lttng-0.5.18 make modules_install
+cd /usr/src/lttng/lttng-modules-0.xx
+KERNELDIR=/usr/src/linux-2.6.15-lttng-0.x.xx make
+KERNELDIR=/usr/src/linux-2.6.15-lttng-0.x.xx make modules_install
 
 
 * Editing the system wide configuration
@@ -286,9 +293,9 @@ echo ltt-statedump >> /etc/modules
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/lttng/ltt-control-0.1-11032006.tar.gz
-gzip -cd ltt-control-0.1-11032006.tar.gz | tar xvof -
-cd ltt-control-0.1-11032006
+wget http://ltt.polymtl.ca/lttng/ltt-control-0.x-xxxx2006.tar.gz
+gzip -cd ltt-control-0.x-xxxx2006.tar.gz | tar xvof -
+cd ltt-control-0.x-xxxx2006
 (refer to README to see the development libraries that must be installed on you
 system)
 ./configure
@@ -301,9 +308,9 @@ make install
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.8.31-11032006.tar.gz
-gzip -cd LinuxTraceToolkitViewer-0.8.31-11032006.tar.gz | tar xvof -
-cd LinuxTraceToolkitViewer-0.8.31-11032006
+wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.x.xx-xxxx2006.tar.gz
+gzip -cd LinuxTraceToolkitViewer-0.x.xx-xxxx2006.tar.gz | tar xvof -
+cd LinuxTraceToolkitViewer-0.x.xx-xxxx2006
 (refer to README to see the development libraries that must be installed on you
 system)
 ./configure
@@ -366,9 +373,9 @@ see lttv -m textDump --help for detailed command line options of textDump.
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/genevent-0.6.tar.gz
-gzip -cd genevent-0.8.tar.gz | tar xvof -
-cd genevent-0.8
+wget http://ltt.polymtl.ca/packages/genevent-0.xx.tar.gz
+gzip -cd genevent-0.xx.tar.gz | tar xvof -
+cd genevent-0.xx
 make
 make install
 
@@ -382,14 +389,14 @@ cp process.xml yourfacility.xml
 cd /tmp
 /usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/facilities/yourfacility.xml
 cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
-         /usr/src/linux-2.6.15-lttng-0.5.18/include/linux/ltt
+         /usr/src/linux-2.6.15-lttng-0.x.xx8/include/linux/ltt
 cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
-         /usr/src/linux-2.6.15-lttng-0.5.18/ltt
+         /usr/src/linux-2.6.15-lttng-0.x.xx/ltt
   * edit the kernel file you want to instrument
     - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
       of the file.
     - Add a call to the tracing functions. See their names and parameters in
-      /usr/src/linux-2.6.15-lttng-0.5.18/include/linux/ltt/ltt-facility-yourfacility.h
+      /usr/src/linux-2.6.15-lttng-0.x.xx/include/linux/ltt/ltt-facility-yourfacility.h
     
 
 
