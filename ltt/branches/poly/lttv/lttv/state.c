@@ -510,8 +510,7 @@ static void copy_process_state(gpointer key, gpointer value,gpointer user_data)
     g_array_index(new_process->user_stack, guint64, i) =
         g_array_index(process->user_stack, guint64, i);
   }
-  new_process->current_function = &g_array_index(new_process->user_stack, 
-      guint64, new_process->user_stack->len - 1);
+  new_process->current_function = process->current_function;
   g_hash_table_insert(new_processes, new_process, new_process);
 }
 
