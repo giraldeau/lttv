@@ -36,6 +36,7 @@ sources, the dependencies are listed.
 LTTng : 
 supported architectures : 
 Intel Pentium (UP/SMP) with TSC
+ARM
 
 LTTV :
 supported architectures :
@@ -46,7 +47,7 @@ PowerPC
 
 
 Author : Mathieu Desnoyers, September 2005
-Last update : February 10, 2006
+Last update : March 13, 2006
 
 
 ***********************************************************
