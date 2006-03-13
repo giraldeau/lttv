@@ -73,13 +73,14 @@ S/390<BR>
 * TODO (low priority)<br>
 enhance RPM packages for lttng kernel<br>
 Integrate header generation (genevent) in kernel build system.<br>
-Multithreaded lttd.<br>
 Find a different way to printk from instrumentation : forbidden from schedule
 and wakeup (causes a deadlock). -> Modify printk so it uses LTTng tracer!<br>
 Export channels via network sockets instead of writing them to disk.<br>
 Export buffers with time constraint for "live" visualisation. Use
 ltt_force_switch periodically from a timer to insure slow channels do not
 interfere with viewing.<br>
+Have an optional round-robin mode to write information into multiple channels
+from the same source.<br>
 <br>
 * Need to be discussed<br>
 Use 2.6.14 RelayFS control files.<br>
