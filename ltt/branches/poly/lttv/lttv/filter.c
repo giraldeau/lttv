@@ -36,11 +36,12 @@
  *  | |->time (LttTime)
  *  | |->tsc (LttCycleCount --> uint64)
  *  | |->fields
- *  |   |->"event name"
- *  |     |->"field name"
- *  |       |->"sub-field name"
- *  |         |->...
- *  |           |->"leaf-field name" (field type)
+ *  |   |->"facility_name
+ *  |     |->"event name"
+ *  |       |->"field name"
+ *  |         |->"sub-field name"
+ *  |           |->...
+ *  |             |->"leaf-field name" (field type)
  *  |->tracefile
  *  | |->name (String, converted to GQuark)
  *  |->trace
@@ -204,6 +205,7 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
      *  event.category
      *  event.time
      *  event.tsc
+     *  event.field
      */
     g_string_free(f,TRUE);
     f=g_ptr_array_remove_index(fp,0);
@@ -225,8 +227,11 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
     else if(!g_strcasecmp(f->str,"tsc") ) {
       se->field = LTTV_FILTER_EVENT_TSC;
     }
-    else {  /* core.xml specified options */
+    else if(!g_strcasecmp(f->str,"field") ) {
       se->field = LTTV_FILTER_EVENT_FIELD;
+
+    } else {
+      g_warning("Unknown event filter subtype %s", f->str);
     }
   } else {
     g_string_free(f,TRUE);
@@ -433,7 +438,7 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
      case LTTV_FILTER_STATE_EX_SUBMODE:
      case LTTV_FILTER_STATE_P_STATUS:
       // se->value.v_string = value;
-       se->value.v_uint32 = g_quark_from_string(value);
+       se->value.v_quark = g_quark_from_string(value);
        g_free(value);
        break;
      /* 
@@ -657,8 +662,7 @@ gboolean lttv_apply_op_eq_string(const gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_eq_quark(const gpointer v1, LttvFieldValue v2) {
   GQuark* r = (GQuark*) v1;
-//  g_print("v1:%i v2:%i\n",*r,v2.v_uint32);
-  return (*r == v2.v_uint32);
+  return (*r == v2.v_quark);
 }
 
 /**
@@ -770,7 +774,7 @@ gboolean lttv_apply_op_ne_string(const gpointer v1, LttvFieldValue v2) {
  */
 gboolean lttv_apply_op_ne_quark(const gpointer v1, LttvFieldValue v2) {
   GQuark* r = (GQuark*) v1;
-  return (*r != v2.v_uint32);
+  return (*r != v2.v_quark);
 }
 
 
@@ -1952,9 +1956,6 @@ lttv_filter_tree_parse_branch(
         case LTTV_FILTER_STATE_CPU:
             if(context == NULL) return TRUE;
             else {
-              /* FIXME: not sure of that one  Mathieu : fixed.*/
- //             GQuark quark = ((LttvTracefileState*)context)->cpu_name;
- //                return se->op((gpointer)&quark,v);
               if(state == NULL) return TRUE;
               else return se->op((gpointer)&state->cpu,v);
             }

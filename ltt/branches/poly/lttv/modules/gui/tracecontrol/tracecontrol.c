@@ -342,7 +342,7 @@ gui_control(Tab *tab)
   tcd->fac_path_label = gtk_label_new("path to facilities:");
   gtk_widget_show (tcd->fac_path_label);
   tcd->fac_path_entry = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(tcd->fac_path_entry),PACKAGE_DATA_DIR "/" PACKAGE "/facilities");
+  gtk_entry_set_text(GTK_ENTRY(tcd->fac_path_entry),PACKAGE_DATA_DIR "/" "ltt-control" "/facilities");
   gtk_widget_set_size_request(tcd->fac_path_entry, 250, -1);
   gtk_widget_show (tcd->fac_path_entry);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_label,0,2,14,15,GTK_FILL,GTK_FILL,2,2);

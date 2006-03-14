@@ -48,11 +48,6 @@
    event. Print a global header. */
 
 /*
- *  YET TO BE ANSWERED !
- *  - why does this module need dependency with batchAnalysis ?
- */
-
-/*
  *  TODO
  *  - specify wich hook function will be used to call the core filter
  */
@@ -138,6 +133,7 @@ void filter_list_commands(void *hook_data) {
   g_print("event.category (string)\n");
   g_print("event.time (double)\n");
   g_print("event.tsc (integer)\n");
+  g_print("event.field.facility_name.event_name.field_name.subfield_name (field_type)\n");
   g_print("tracefile.name (string)\n");
   g_print("trace.name (string)\n");
   g_print("state.pid (integer)\n");
