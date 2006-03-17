@@ -33,10 +33,11 @@ libdir = ${lttvplugindir}
 lib_LTLIBRARIES = libguihistogram.la
 libguihistogram_la_LDFLAGS = -module
 libguihistogram_la_SOURCES = histomodule.c histoeventhooks.c histocfv.c \
-			histobuttonwidget.c histodrawing.c histodrawitem.c 
+			histobuttonwidget.c histodrawing.c histodrawitem.c
 
 noinst_HEADERS = histoeventhooks.h histocfv.h \
-		histobuttonwidget.h histodrawing.h histodrawitem.h   
+		histobuttonwidget.h histodrawing.h histodrawitem.h
 
 EXTRA_DIST = \
-		hHistogramInsert.xpm stock_zoom_in_24.xpm stock_zoom_out_24.xpm \ 			stock_zoom_fit_24.xpm
+		hHistogramInsert.xpm stock_zoom_in_24.xpm stock_zoom_out_24.xpm \
+		stock_zoom_fit_24.xpm
