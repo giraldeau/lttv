@@ -229,8 +229,12 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
     }
     else if(!g_strcasecmp(f->str,"field") ) {
       se->field = LTTV_FILTER_EVENT_FIELD;
+      g_string_free(f,TRUE);
+      f=g_ptr_array_remove_index(fp,0);
 
     } else {
+      g_string_free(f,TRUE);
+      f=g_ptr_array_remove_index(fp,0);
       g_warning("Unknown event filter subtype %s", f->str);
     }
   } else {
