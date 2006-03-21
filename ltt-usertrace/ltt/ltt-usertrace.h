@@ -22,11 +22,11 @@
 #endif
 
 //Put in asm-i486/unistd.h
-#define __NR_ltt_trace_generic	294
-#define __NR_ltt_register_generic	295
+#define __NR_ltt_trace_generic	311
+#define __NR_ltt_register_generic	312
 
 #undef NR_syscalls
-#define NR_syscalls 296
+#define NR_syscalls 313
 
 //FIXME : setup for ARM
 //FIXME : setup for MIPS
