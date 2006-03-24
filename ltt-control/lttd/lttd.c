@@ -318,7 +318,7 @@ int read_subbuffer(struct fd_pair *pair)
 	printf("cookie : %u\n", consumed_old);
 	if(err != 0) {
 		ret = errno;
-		perror("Reserving sub buffer failed (everything is normal)");
+		perror("Reserving sub buffer failed (everything is normal, it is due to concurrency)");
 		goto get_error;
 	}
 	
@@ -344,9 +344,9 @@ write_error:
 	err = ioctl(pair->channel, RELAYFS_PUT_SUBBUF, &consumed_old);
 	if(err != 0) {
 		ret = errno;
-		if(errno == -EFAULT) {
+		if(errno == EFAULT) {
 			perror("Error in unreserving sub buffer\n");
-		} else if(errno == -EIO) {
+		} else if(errno == EIO) {
 			perror("Reader has been pushed by the writer, last subbuffer corrupted.");
 			/* FIXME : we may delete the last written buffer if we wish. */
 		}
@@ -534,7 +534,7 @@ void * read_channels(void *arg)
 						high_prio = 1;
 						/* it's ok to have an unavailable subbuffer */
 						ret = read_subbuffer(&fd_pairs->pair[i]);
-						if(ret == -EAGAIN) ret = 0;
+						if(ret == EAGAIN) ret = 0;
 
 						ret = pthread_mutex_unlock(&fd_pairs->pair[i].mutex);
 						if(ret)
@@ -555,7 +555,7 @@ void * read_channels(void *arg)
 							printf("Normal read on fd %d\n", pollfd[i].fd);
 							/* it's ok to have an unavailable subbuffer */
 							ret = read_subbuffer(&fd_pairs->pair[i]);
-							if(ret == -EAGAIN) ret = 0;
+							if(ret == EAGAIN) ret = 0;
 
 							ret = pthread_mutex_unlock(&fd_pairs->pair[i].mutex);
 							if(ret)
