@@ -579,6 +579,7 @@ Separate the viewer from the tracing controller (userful for embedded tracing).<
 0.5.37<br>
 0.5.38<br>
 0.5.39<br>
+0.5.40<br>
 </td>
 <td style="vertical-align: top;">
 0.1<br>
@@ -601,7 +602,9 @@ Separate the viewer from the tracing controller (userful for embedded tracing).<
 </td>
 <td style="vertical-align: top;">
 Kernel 2.6.16 support.<br>
-0.5.38 : Fix deadlock scenario involving deliver from an NMI handler.
+0.5.38 : Fix deadlock scenario involving deliver from an NMI handler.<br>
+0.5.40 : Fix off-by-one which pushes the reader with small subbuffers (only
+in buffer full condition)<br>
 <br>
 </td>
 </tr>
