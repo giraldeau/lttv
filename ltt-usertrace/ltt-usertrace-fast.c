@@ -205,7 +205,7 @@ static void flush_buffer(struct ltt_buf *ltt_buf, enum force_switch_mode mode)
 				 index in the buffer being the one which will win this loop. */
 			/* If the buffer is not in overwrite mode, pushing the reader only
 				 happen if a sub-buffer is corrupted */
-			if((SUBBUF_TRUNC(offset_end, ltt_buf) 
+			if((SUBBUF_TRUNC(offset_end-1, ltt_buf) 
 					- SUBBUF_TRUNC(consumed_old, ltt_buf)) 
 							>= ltt_buf->alloc_size)
 				consumed_new = SUBBUF_ALIGN(consumed_old, ltt_buf);
