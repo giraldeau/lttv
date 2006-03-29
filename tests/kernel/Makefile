@@ -2,7 +2,10 @@ ifneq ($(KERNELRELEASE),)
 ifneq ($(CONFIG_LTT),)
 	obj-m += ltt-facility-loader-tests.o
 	obj-m += test-time-probe.o 
-	#test-l1-hit-probe.o test-instrument-size-small.o test-instrument-size-med.o test-instrument-size-big.o
+	obj-m += test-instrument-size-small.o
+	obj-m += test-instrument-size-med.o
+	obj-m += test-instrument-size-big.o
+	#test-l1-hit-probe.o
 endif
 
 else
