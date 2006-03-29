@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<facility name="tests">
+  <description>The core facility contains test events</description>
+	
+  <event name="write_4bytes">
+    <description>Write a 4 bytes int</description>
+		<field name="data"><int size="4"></field>
+  </event>
+
+</facility>
