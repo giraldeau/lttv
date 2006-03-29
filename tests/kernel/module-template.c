@@ -12,7 +12,11 @@ static int ltt_test_init(void)
 {
 	printk(KERN_ALERT "test init\n");
 
-	return 0;
+	
+
+	printf(KERN_ALERT "test end\n");
+	
+	return -EAGAIN; /* Fail will directly unload the module */
 }
 
 static void ltt_test_exit(void)
