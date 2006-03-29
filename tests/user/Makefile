@@ -14,10 +14,13 @@ all: tests
 
 #TEST PROGRAMS
 
-tests: test-usertrace-time
+tests: test-usertrace-time test-usertrace-time-slow
 
 test-usertrace-time: test-usertrace-time.c ltt-facility-loader-user_tests.c
 	$(CC) $(CFLAGS) -lltt-usertrace-fast -o $@ $^
+
+test-usertrace-time-slow: test-usertrace-time-slow.c ltt-facility-loader-user_tests.c
+	$(CC) $(CFLAGS) -o $@ $^
 
 #LIBRAIRIES
 

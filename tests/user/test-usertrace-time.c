@@ -1,7 +1,7 @@
 
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/timex.h>
+#include <asm/timex.h>
 
 #define LTT_TRACE
 #define LTT_TRACE_FAST

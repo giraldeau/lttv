@@ -6,5 +6,28 @@
     <description>Write a 4 bytes int</description>
 		<field name="data"><int size="4"></field>
   </event>
+	
+  <event name="write_string">
+    <description>Write a string</description>
+		<field name="data"><string></field>
+  </event>
+
+  <event name="write_struct">
+    <description>Write a structure (big)</description>
+		<field name="data1"><int size="4"></field>
+		<field name="data2">
+			<struct>
+				<field name="data3"><string></field>
+				<field name="data4"><int size="4"></field>
+				<field name="data5">
+					<sequence>
+					<uint>
+					<int_fixed size="8">
+					</sequence>
+				</field>
+				<field name="data6"><int size="8"></field>
+			</struct>
+		</field>
+  </event>
 
 </facility>
