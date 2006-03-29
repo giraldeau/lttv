@@ -4,11 +4,13 @@
  */
 
 
+#define CONFIG_LTT_FACILITY_TESTS
 #include "ltt-facility-tests.h"
 
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/ltt-core.h>
+
 
 /* Event logged : 4 bytes + 20 bytes header = 24 bytes. Let's use 1MB of
  * buffers. 1MB / 24bytes = 43690. So, if we write 20000 event, we should not
