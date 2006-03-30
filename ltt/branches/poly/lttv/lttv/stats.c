@@ -911,16 +911,16 @@ lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
 						}
 					}
 					if(!trace_is_summed) {
-						//lttv_attribute_recursive_add(function_tree, mode_types_tree);
+						lttv_attribute_recursive_add(function_tree, mode_types_tree);
 					}
 				}
 				if(!trace_is_summed) {
-					//lttv_attribute_recursive_add(cpu_tree, function_tree);
-					//lttv_attribute_recursive_add(process_tree, function_tree);
-					//lttv_attribute_recursive_add(trace_cpu_tree, function_tree);
-					//lttv_attribute_recursive_add(main_tree, function_tree);
+					lttv_attribute_recursive_add(cpu_tree, function_tree);
+					lttv_attribute_recursive_add(process_tree, function_tree);
+					lttv_attribute_recursive_add(trace_cpu_tree, function_tree);
+					lttv_attribute_recursive_add(main_tree, function_tree);
 				}
-				//lttv_attribute_recursive_add(ts_stats, function_tree);
+				lttv_attribute_recursive_add(ts_stats, function_tree);
 			}
     }
   }
