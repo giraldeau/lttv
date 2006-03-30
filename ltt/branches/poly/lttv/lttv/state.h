@@ -192,6 +192,7 @@ typedef struct _LttvExecutionState {
   LttvExecutionSubmode n;
   LttTime entry;
   LttTime change;
+	LttTime cum_cpu_time;
   LttvProcessStatus s;
 } LttvExecutionState;
 
@@ -299,6 +300,8 @@ void lttv_state_restore(LttvTraceState *self, LttvAttribute *container);
 void lttv_state_state_saved_free(LttvTraceState *self, 
     LttvAttribute *container);
 
+int lttv_state_pop_state_cleanup(LttvProcessState *process,
+		LttvTracefileState *tfs);
 
 #define LTTV_TRACEFILE_STATE_TYPE  (lttv_tracefile_state_get_type ())
 #define LTTV_TRACEFILE_STATE(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACEFILE_STATE_TYPE, LttvTracefileState))

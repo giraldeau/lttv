@@ -1045,10 +1045,33 @@ static void push_state(LttvTracefileState *tfs, LttvExecutionMode t,
   es->t = t;
   es->n = state_id;
   es->entry = es->change = tfs->parent.timestamp;
+	es->cum_cpu_time = ltt_time_zero;
   es->s = process->state->s;
   process->state = es;
 }
 
+/* pop state
+ * return 1 when empty, else 0 */
+int lttv_state_pop_state_cleanup(LttvProcessState *process, 
+		LttvTracefileState *tfs)
+{ 
+	guint cpu = tfs->cpu;
+  LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
+
+  guint depth = process->execution_stack->len;
+
+  if(depth == 1){
+    return 1;
+  }
+
+  process->execution_stack = 
+    g_array_set_size(process->execution_stack, depth - 1);
+  process->state = &g_array_index(process->execution_stack, LttvExecutionState,
+      depth - 2);
+  process->state->change = tfs->parent.timestamp;
+	
+	return 0;
+}
 
 static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
 {
@@ -1192,6 +1215,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   es->entry = *timestamp;
   //g_assert(timestamp->tv_sec != 0);
   es->change = *timestamp;
+	es->cum_cpu_time = ltt_time_zero;
   es->s = LTTV_STATE_RUN;
 
   es = process->state = &g_array_index(process->execution_stack, 
@@ -1201,6 +1225,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   es->entry = *timestamp;
   //g_assert(timestamp->tv_sec != 0);
   es->change = *timestamp;
+	es->cum_cpu_time = ltt_time_zero;
   es->s = LTTV_STATE_WAIT_FORK;
 	
 	/* Allocate an empty function call stack. If it's empty, use 0x0. */

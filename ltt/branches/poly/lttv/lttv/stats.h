@@ -39,6 +39,7 @@
      "facility-event_type"
    events_count
    cpu_time
+	 cumulative_cpu_time
    elapsed_time
    wait_time
    bytes_written
@@ -150,6 +151,7 @@ extern GQuark
   LTTV_STATS_FUNCTIONS,
   LTTV_STATS_EVENT_TYPES,
   LTTV_STATS_CPU_TIME,
+  LTTV_STATS_CUMULATIVE_CPU_TIME,
   LTTV_STATS_ELAPSED_TIME,
   LTTV_STATS_EVENTS,
   LTTV_STATS_EVENTS_COUNT,
