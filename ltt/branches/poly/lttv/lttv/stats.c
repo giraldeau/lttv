@@ -761,6 +761,12 @@ static void lttv_stats_cleanup_process_state(gpointer key, gpointer value,
 			&g_array_index(ts->parent.tracefiles, LttvTracefileContext*,
 					process->cpu);
 	int cleanup_empty = 0;
+	LttTime nested_delta = ltt_time_zero;
+	/* FIXME : ok, this is a hack. The time is infinite here :( */
+	LttTime save_time = (*tfs)->parent.parent.timestamp;
+	LttTime start, end;
+	ltt_trace_time_span_get(ts->parent.t, &start, &end);
+	(*tfs)->parent.parent.timestamp = end;
 
 	do {
 		if(ltt_time_compare(process->state->cum_cpu_time, ltt_time_zero) != 0) {
@@ -769,17 +775,17 @@ static void lttv_stats_cleanup_process_state(gpointer key, gpointer value,
 					process->current_function,
 					process->state->t, process->state->n, &((*tfs)->current_events_tree), 
 					&((*tfs)->current_event_types_tree));
-			/* FIXME : ok, this is a hack. The time is infinite here :( */
-			LttTime save_time = (*tfs)->parent.parent.timestamp;
-			LttTime start, end;
-			ltt_trace_time_span_get(ts->parent.t, &start, &end);
-			(*tfs)->parent.parent.timestamp = end;
 			mode_end(*tfs);
-			(*tfs)->parent.parent.timestamp = save_time;
+			nested_delta = process->state->cum_cpu_time;
 		}
 		cleanup_empty = lttv_state_pop_state_cleanup(process,
 				(LttvTracefileState *)*tfs);
+		process->state->cum_cpu_time = ltt_time_add(process->state->cum_cpu_time,
+				nested_delta);
+
 	} while(cleanup_empty != 1);
+
+	(*tfs)->parent.parent.timestamp = save_time;
 }
 
 /* For each process in the state, for each of their stacked states,
@@ -788,11 +794,9 @@ static void lttv_stats_cleanup_state(LttvTraceStats *tcs)
 {
   LttvTraceState *ts = (LttvTraceState *)tcs;
 	
-#if 0
 	/* Does not work correctly FIXME. */
 	g_hash_table_foreach(ts->processes, lttv_stats_cleanup_process_state,
 			tcs);
-#endif //0
 }
 
 void
@@ -907,16 +911,16 @@ lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
 						}
 					}
 					if(!trace_is_summed) {
-						lttv_attribute_recursive_add(function_tree, mode_types_tree);
+						//lttv_attribute_recursive_add(function_tree, mode_types_tree);
 					}
 				}
 				if(!trace_is_summed) {
-					lttv_attribute_recursive_add(cpu_tree, function_tree);
-					lttv_attribute_recursive_add(process_tree, function_tree);
-					lttv_attribute_recursive_add(trace_cpu_tree, function_tree);
-					lttv_attribute_recursive_add(main_tree, function_tree);
+					//lttv_attribute_recursive_add(cpu_tree, function_tree);
+					//lttv_attribute_recursive_add(process_tree, function_tree);
+					//lttv_attribute_recursive_add(trace_cpu_tree, function_tree);
+					//lttv_attribute_recursive_add(main_tree, function_tree);
 				}
-				lttv_attribute_recursive_add(ts_stats, function_tree);
+				//lttv_attribute_recursive_add(ts_stats, function_tree);
 			}
     }
   }
