@@ -9,6 +9,17 @@
     </enum>
   </type>
 
+  <type name=execution_mode>
+     <enum>
+      <label name="USER_MODE" value="0"> <description>Task is executing user code</description>
+      <label name="SYSCALL" value="1"> <description>Task is in a system call</description>
+      <label name="TRAP" value="2"> <description>Task is in a trap</description>
+      <label name="IRQ" value="3"> <description></description>
+      <label name="SOFTIRQ" value="4"> <description></description>
+      <label name="MODE_UNKNOWN" value="5"> <description>Execution mode cannot be determined for this task</description>
+     </enum>
+   </type>
+
   <type name=execution_submode>
     <enum>
       <label name="NONE" value="0"> <description>No execution submode to report</description>
@@ -72,7 +83,8 @@
       <field name="pid"><description>Process identifier</description><uint size="4"></field>
       <field name="parent_pid"><description>Parent process identifier</description><uint size="4"></field>
       <field name="name"> <description>Process name</description><string></field>
-      <field name="mode"> <description>Execution mode</description> <typeref name="execution_mode"> </field>
+      <field name="type"> <description>Thread type</description> <typeref name="thread_type"> </field>
+      <field name="mode"> <description>Execution submode</description> <typeref name="execution_mode"> </field>
       <field name="submode"> <description>Execution submode</description> <typeref name="execution_submode"> </field>
       <field name="status"> <description>Process status</description> <typeref name="process_status"> </field>
   </event>
