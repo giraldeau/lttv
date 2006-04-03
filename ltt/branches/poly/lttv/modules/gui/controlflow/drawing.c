@@ -1110,7 +1110,7 @@ void drawing_destroy(Drawing_t *drawing)
   if(drawing->gc != NULL)
     gdk_gc_unref(drawing->gc);
   
-  g_free(drawing->pango_layout);
+  g_object_unref(drawing->pango_layout);
   if(drawing->dotted_gc != NULL) gdk_gc_unref(drawing->dotted_gc);
   if(drawing->ruler_gc_butt != NULL) gdk_gc_unref(drawing->ruler_gc_butt);
   if(drawing->ruler_gc_round != NULL) gdk_gc_unref(drawing->ruler_gc_round);
