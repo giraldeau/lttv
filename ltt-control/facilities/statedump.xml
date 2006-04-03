@@ -2,14 +2,10 @@
 <facility name="statedump">
   <description>The statedump facility contains the events generated at trace startup</description>
 
-  <type name=execution_mode>
+  <type name=thread_type>
     <enum>
-      <label name="USER_MODE" value="0"> <description>Task is executing user code</description>
-      <label name="SYSCALL" value="1"> <description>Task is in a system call</description>
-      <label name="TRAP" value="2"> <description>Task is in a trap</description>
-      <label name="IRQ" value="3"> <description></description>
-      <label name="SOFTIRQ" value="4"> <description></description>
-      <label name="MODE_UNKNOWN" value="5"> <description>Execution mode cannot be determined for this task</description>
+      <label name="USER_THREAD" value="0"> <description>User thread</description>
+      <label name="KERNEL_THREAD" value="1"> <description>Kernel Thread</description>
     </enum>
   </type>
 
