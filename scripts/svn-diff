@@ -1,0 +1,20 @@
+#! /bin/sh
+
+# wrapper for svn diff command
+#
+# svn always call this with: 
+#	$1	= -u
+#	$2	= -L
+#	$3	= left file label
+#	$4	= -L
+#	$5	= right file label
+#	$6	= left file name
+#	$7	= right file name
+
+OLDDIR=a
+NEWDIR=b
+
+exec /usr/bin/diff -up "$1" "$2" "$3" "$4" "$5" "$6" "$7" | \
+	sed -e "s/^--- \([^\/].*\)/--- $OLDDIR\/\1/" | \
+	sed -e "s/^+++ \([^\/].*\)/+++ $NEWDIR\/\1/"
+

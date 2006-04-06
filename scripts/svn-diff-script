@@ -1,0 +1,10 @@
+#!/bin/sh
+
+TRUNKDIR=file:///compudj_dir/kernelrep/trunk/kernel/linux-2.6.12-rc4-mm2
+LTTNGDIR=file:///compudj_dir/kernelrep/branches/mathieu/linux-2.6.12-rc4-mm2
+PATCHDIR=/compudj_dir/work/kernelrep/branches/mathieu
+
+
+svn diff --diff-cmd /home/compudj/bin/svn-diff -x -urpN \
+$TRUNKDIR $LTTNGDIR > \
+$PATCHDIR/$1
