@@ -21,5 +21,44 @@
     <field name="spinlock"> <description>Spinlock address</description> <pointer> </field>
   </event>
 
+  <event name="irq_save">
+    <description>Disable IRQ, saving state</description>
+    <field name="EIP">
+			<description>Instruction pointer where the irq_save is located.</description>
+			<pointer>
+		</field>
+    <field name="flags">
+			<description>Saved IRQ state.</description>
+			<ulong>
+		</field>
+  </event>
+
+  <event name="irq_restore">
+    <description>Disable IRQ, saving state</description>
+    <field name="EIP">
+			<description>Instruction pointer where the irq_restore is located.</description>
+			<pointer> 
+		</field>
+    <field name="flags">
+			<description>Restored IRQ state.</description>
+			<ulong>
+		</field>
+  </event>
+
+  <event name="irq_disable">
+    <description>Disable IRQ</description>
+    <field name="EIP">
+			<description>Instruction pointer where the irq_disable is located.</description>
+			<pointer>
+		</field>
+  </event>
+
+  <event name="irq_enable">
+    <description>Disable IRQ</description>
+    <field name="EIP">
+			<description>Instruction pointer where the irq_enable is located.</description>
+			<pointer>
+		</field>
+  </event>
 
 </facility>
