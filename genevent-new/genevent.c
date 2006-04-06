@@ -861,6 +861,11 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 	
 	switch(td->type) {
 		case SEQUENCE:
+			if(((field_t*)td->fields.array[1])->type->type_name == NULL) {
+				/* Not a named nested type : we must print its align fct */
+				if(print_type_alignment_fct(((field_t*)td->fields.array[1])->type, fd,
+								0, basename, "")) return 1;
+			}
 			/* Function header */
 			fprintf(fd, "static inline size_t lttng_get_alignment_sequence_%s(\n",
 					basename);
@@ -891,6 +896,15 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 			fprintf(fd, "return align;\n");
 			break;
 		case STRUCT:
+			for(unsigned int i=0;i<td->fields.position;i++){
+				field_t *field = (field_t*)(td->fields.array[i]);
+				type_descriptor_t *type = field->type;
+				if(type->type_name == NULL) {
+					/* Not a named nested type : we must print its align fct */
+					if(print_type_alignment_fct(type, fd,
+								0, basename, field->name)) return 1;
+				}
+			}
 			/* Function header */
 			fprintf(fd, "static inline size_t lttng_get_alignment_struct_%s(\n",
 					basename);
@@ -918,6 +932,15 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 
 			break;
 		case UNION:
+			for(unsigned int i=0;i<td->fields.position;i++){
+				field_t *field = (field_t*)(td->fields.array[i]);
+				type_descriptor_t *type = field->type;
+				if(type->type_name == NULL) {
+					/* Not a named nested type : we must print its align fct */
+					if(print_type_alignment_fct(type, fd,
+								0, basename, field->name)) return 1;
+				}
+			}
 			/* Function header */
 			fprintf(fd, "static inline size_t lttng_get_alignment_union_%s(\n",
 					basename);
@@ -945,6 +968,11 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 
 			break;
 		case ARRAY:
+			if(((field_t*)td->fields.array[0])->type->type_name == NULL) {
+				/* Not a named nested type : we must print its align fct */
+				if(print_type_alignment_fct(((field_t*)td->fields.array[0])->type, fd,
+								0, basename, "")) return 1;
+			}
 			/* Function header */
 			fprintf(fd, "static inline size_t lttng_get_alignment_array_%s(\n",
 					basename);
@@ -1009,9 +1037,41 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	
 	switch(td->type) {
 		case SEQUENCE:
+			if(((field_t*)td->fields.array[1])->type->type_name == NULL) {
+				/* Not a named nested type : we must print its write fct */
+				if(print_type_write_fct(((field_t*)td->fields.array[1])->type, fd,
+								0, basename, "")) return 1;
+			}
+			break;
 		case STRUCT:
+			for(unsigned int i=0;i<td->fields.position;i++){
+				field_t *field = (field_t*)(td->fields.array[i]);
+				type_descriptor_t *type = field->type;
+				if(type->type_name == NULL) {
+					/* Not a named nested type : we must print its write fct */
+					if(print_type_write_fct(type, fd,
+								0, basename, field->name)) return 1;
+				}
+			}
+			break;
 		case UNION:
+			for(unsigned int i=0;i<td->fields.position;i++){
+				field_t *field = (field_t*)(td->fields.array[i]);
+				type_descriptor_t *type = field->type;
+				if(type->type_name == NULL) {
+					/* Not a named nested type : we must print its write fct */
+					if(print_type_write_fct(type, fd,
+								0, basename, field->name)) return 1;
+				}
+			}
+			break;
 		case ARRAY:
+			if(((field_t*)td->fields.array[0])->type->type_name == NULL) {
+				/* Not a named nested type : we must print its write fct */
+				if(print_type_write_fct(((field_t*)td->fields.array[0])->type, fd,
+								0, basename, "")) return 1;
+			}
+			break;
 		case STRING:
 			break;
 		default:
@@ -2588,11 +2648,11 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "\t\n");
   fprintf(fd, "\treturn LTT_FACILITY_SYMBOL;\n");
   fprintf(fd, "}\n");
-  fprintf(fd, "__initcall(facility_init);\n");
-  fprintf(fd, "\n");
   fprintf(fd, "\n");
   fprintf(fd, "#ifndef MODULE\n");
-  fprintf(fd, "\n");
+  fprintf(fd, "__initcall(facility_init);\n");
+  fprintf(fd, "#else\n");
+  fprintf(fd, "module_init(facility_init);\n");
   fprintf(fd, "static void __exit facility_exit(void)\n");
   fprintf(fd, "{\n");
   fprintf(fd, "\tint err;\n");
@@ -2602,9 +2662,7 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "\t\tprintk(KERN_ERR \"LTT : Error in unregistering facility.\\n\");\n");
   fprintf(fd, "\n");
   fprintf(fd, "}\n");
-  fprintf(fd, "\n");
   fprintf(fd, "module_exit(facility_exit)\n");
-  fprintf(fd, "\n");
   fprintf(fd, "\n");
   fprintf(fd, "MODULE_LICENSE(\"GPL\");\n");
   fprintf(fd, "MODULE_AUTHOR(\"Mathieu Desnoyers\");\n");

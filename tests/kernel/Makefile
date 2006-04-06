@@ -5,7 +5,7 @@ ifneq ($(CONFIG_LTT),)
 	obj-m += test-instrument-size-small.o
 	obj-m += test-instrument-size-med.o
 	obj-m += test-instrument-size-big.o
-	#test-l1-hit-probe.o
+	obj-m += test-printk-effect.o
 endif
 
 else
