@@ -9,6 +9,7 @@
  *     Eric Clement:            add listing of network IP interface
  */
 
+#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/ltt-core.h>
@@ -20,6 +21,7 @@
 #include <linux/file.h>
 #include <linux/interrupt.h>
 #include <linux/irq.h>
+#include <linux/cpu.h>
 #include <linux/ltt/ltt-facility-statedump.h>
 
 #define NB_PROC_CHUNK 20
@@ -263,30 +265,16 @@ void ltt_statedump_work_func(void *sem)
   up((struct semaphore *)sem);
 }
 
+static struct work_struct cpu_work[NR_CPUS];
+
 int ltt_statedump_thread(void *data)
 {
-  struct work_struct *cpu_work;
   struct semaphore work_sema4;
-  int cpu, cpu_index=0;
+  int cpu;
 
   printk("ltt_statedump_thread\n");
 
-  /* Start by firing off a work queue on each CPU. Their sole purpose in life
-   * is to guarantee that each CPU has been in a state where is was in syscall
-   * mode (i.e. not in a trap, an IRQ or a soft IRQ) */
-  sema_init(&work_sema4, 1 - num_online_cpus());
-  cpu_work = (struct work_struct *)kmalloc(sizeof(struct work_struct) *
-																					 num_online_cpus(), GFP_KERNEL);
-  for_each_online_cpu(cpu)
-  {
-    INIT_WORK(&cpu_work[cpu_index], ltt_statedump_work_func, &work_sema4);
-
-    /* TODO: verify RC */
-    schedule_delayed_work_on(cpu,&cpu_work[cpu_index],0);
-    cpu_index++;
-  }
-  
-	ltt_enumerate_process_states();
+ 	ltt_enumerate_process_states();
   
   ltt_enumerate_file_descriptors();
 
@@ -298,9 +286,22 @@ int ltt_statedump_thread(void *data)
 	
 	ltt_enumerate_network_ip_interface();
   
+  /* Fire off a work queue on each CPU. Their sole purpose in life
+   * is to guarantee that each CPU has been in a state where is was in syscall
+   * mode (i.e. not in a trap, an IRQ or a soft IRQ) */
+  sema_init(&work_sema4, 1 - num_online_cpus());
+  
+  lock_cpu_hotplug();
+  for_each_online_cpu(cpu)
+  {
+    INIT_WORK(&cpu_work[cpu], ltt_statedump_work_func, &work_sema4);
+
+    schedule_delayed_work_on(cpu,&cpu_work[cpu],0);
+  }
+  unlock_cpu_hotplug();
+  
   /* Wait for all work queues to have completed */
   down(&work_sema4);
-  kfree(cpu_work);
   
   /* Our work is done */
   printk("trace_statedump_statedump_end\n");
