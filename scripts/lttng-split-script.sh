@@ -253,7 +253,7 @@ IN="?_MAINTAINERS
 ?_include_asm-mips_timex.h
 ?_arch_mips_kernel_time.c
 ?_include_asm-parisc_ltt.h
-?_include_asm-ppc64_ltt.h
+?_include_asm-powerpc_ltt.h
 ?_include_asm-ppc_ltt.h
 ?_include_asm-s390_ltt.h
 ?_include_asm-sh64_ltt.h
