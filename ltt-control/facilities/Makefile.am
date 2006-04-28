@@ -5,6 +5,7 @@ fs.xml \
 ipc.xml \
 kernel.xml \
 kernel_arch_arm.xml \
+kernel_arch_c2.xml \
 kernel_arch_i386.xml \
 kernel_arch_mips.xml \
 stack_arch_i386.xml \
@@ -24,6 +25,7 @@ fs.xml \
 ipc.xml \
 kernel.xml \
 kernel_arch_arm.xml \
+kernel_arch_c2.xml \
 kernel_arch_i386.xml \
 kernel_arch_mips.xml \
 stack_arch_i386.xml \
