@@ -403,10 +403,10 @@ ProcessList *processlist_construct(void)
       NULL,
       &process_list->cell_height);
 	
-  guint ypad;
-  g_object_get(G_OBJECT(renderer), "ypad", &ypad, NULL);
+  //guint ypad;
+  //g_object_get(G_OBJECT(renderer), "ypad", &ypad, NULL);
 
-  process_list->cell_height += ypad;
+  //process_list->cell_height += ypad;
   process_list->cell_height += vertical_separator;
 	
 
