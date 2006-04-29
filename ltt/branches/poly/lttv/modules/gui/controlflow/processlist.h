@@ -183,7 +183,7 @@ static inline gint get_cell_height(GtkTreeView *TreeView)
   
   gtk_tree_view_column_cell_get_size(column, NULL, NULL, NULL, NULL, &height);
 
-#if GTK_CHECK_VERSION(2.4.15)
+#if GTK_CHECK_VERSION(2,4,15)
   gint vertical_separator;
   gtk_widget_style_get (GTK_WIDGET (TreeView),
       "vertical-separator", &vertical_separator,
