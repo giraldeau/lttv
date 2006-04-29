@@ -864,85 +864,91 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->eventtype_names[i] = g_quark_from_string(fe_name->str);    
   }
 #endif //0
-  if(lttv_trace_find_hook(tcs->parent.t,
+  if(!lttv_trace_find_hook(tcs->parent.t,
       LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
       LTT_FIELD_SYSCALL_ID, 0, 0,
-      NULL, NULL, &h))
-    return;
-  
-  thf = lttv_trace_hook_get_first(&h);
-  
-  t = ltt_field_type(thf->f1);
-  nb = ltt_type_element_number(t);
-  
-  lttv_trace_hook_destroy(&h);
+      NULL, NULL, &h)) {
+		
+		thf = lttv_trace_hook_get_first(&h);
+		
+		t = ltt_field_type(thf->f1);
+		nb = ltt_type_element_number(t);
+		
+		lttv_trace_hook_destroy(&h);
 
-  name_tables->syscall_names = g_new(GQuark, nb);
-  name_tables->nb_syscalls = nb;
+		name_tables->syscall_names = g_new(GQuark, nb);
+		name_tables->nb_syscalls = nb;
 
-  for(i = 0 ; i < nb ; i++) {
-    name_tables->syscall_names[i] = ltt_enum_string_get(t, i);
-  }
+		for(i = 0 ; i < nb ; i++) {
+			name_tables->syscall_names[i] = ltt_enum_string_get(t, i);
+		}
 
-  //name_tables->syscall_names = g_new(GQuark, 256);
-  //for(i = 0 ; i < 256 ; i++) {
-  //  g_string_printf(fe_name, "syscall %d", i);
-  //  name_tables->syscall_names[i] = g_quark_from_string(fe_name->str);
-  //}
+		//name_tables->syscall_names = g_new(GQuark, 256);
+		//for(i = 0 ; i < 256 ; i++) {
+		//  g_string_printf(fe_name, "syscall %d", i);
+		//  name_tables->syscall_names[i] = g_quark_from_string(fe_name->str);
+		//}
+	} else {
+		name_tables->syscall_names = NULL;
+		name_tables->nb_syscalls = 0;
+	}
 
-  if(lttv_trace_find_hook(tcs->parent.t, LTT_FACILITY_KERNEL,
+  if(!lttv_trace_find_hook(tcs->parent.t, LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
-        NULL, NULL, &h))
-    return;
+        NULL, NULL, &h)) {
 
-  thf = lttv_trace_hook_get_first(&h);
+		thf = lttv_trace_hook_get_first(&h);
 
-  t = ltt_field_type(thf->f1);
-  //nb = ltt_type_element_number(t);
+		t = ltt_field_type(thf->f1);
+		//nb = ltt_type_element_number(t);
 
-  lttv_trace_hook_destroy(&h);
+		lttv_trace_hook_destroy(&h);
 
-  /*
-  name_tables->trap_names = g_new(GQuark, nb);
-  for(i = 0 ; i < nb ; i++) {
-    name_tables->trap_names[i] = g_quark_from_string(
-        ltt_enum_string_get(t, i));
-  }
-  */
+		/*
+		name_tables->trap_names = g_new(GQuark, nb);
+		for(i = 0 ; i < nb ; i++) {
+			name_tables->trap_names[i] = g_quark_from_string(
+					ltt_enum_string_get(t, i));
+		}
+		*/
 
-  name_tables->trap_names = g_new(GQuark, 256);
-  for(i = 0 ; i < 256 ; i++) {
-    g_string_printf(fe_name, "trap %d", i);
-    name_tables->trap_names[i] = g_quark_from_string(fe_name->str);
-  }
+		name_tables->trap_names = g_new(GQuark, 256);
+		for(i = 0 ; i < 256 ; i++) {
+			g_string_printf(fe_name, "trap %d", i);
+			name_tables->trap_names[i] = g_quark_from_string(fe_name->str);
+		}
+	} else {
+		name_tables->trap_names = NULL;
+	}
 
-  if(lttv_trace_find_hook(tcs->parent.t,
+  if(!lttv_trace_find_hook(tcs->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
         LTT_FIELD_IRQ_ID, 0, 0,
-        NULL, NULL, &h))
-    return;
-  
-  thf = lttv_trace_hook_get_first(&h);
-  
-  t = ltt_field_type(thf->f1);
-  //nb = ltt_type_element_number(t);
+        NULL, NULL, &h)) {
+		
+		thf = lttv_trace_hook_get_first(&h);
+		
+		t = ltt_field_type(thf->f1);
+		//nb = ltt_type_element_number(t);
 
-  lttv_trace_hook_destroy(&h);
+		lttv_trace_hook_destroy(&h);
 
-  /*
-  name_tables->irq_names = g_new(GQuark, nb);
-  for(i = 0 ; i < nb ; i++) {
-    name_tables->irq_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
-  }
-  */
+		/*
+		name_tables->irq_names = g_new(GQuark, nb);
+		for(i = 0 ; i < nb ; i++) {
+			name_tables->irq_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
+		}
+		*/
 
-  name_tables->irq_names = g_new(GQuark, 256);
-  for(i = 0 ; i < 256 ; i++) {
-    g_string_printf(fe_name, "irq %d", i);
-    name_tables->irq_names[i] = g_quark_from_string(fe_name->str);
-  }
-
+		name_tables->irq_names = g_new(GQuark, 256);
+		for(i = 0 ; i < 256 ; i++) {
+			g_string_printf(fe_name, "irq %d", i);
+			name_tables->irq_names[i] = g_quark_from_string(fe_name->str);
+		}
+	} else {
+		name_tables->irq_names = NULL;
+	}
   /*
   name_tables->soft_irq_names = g_new(GQuark, nb);
   for(i = 0 ; i < nb ; i++) {
@@ -994,11 +1000,11 @@ free_name_tables(LttvTraceState *tcs)
   *(v.v_pointer) = NULL;
 
  // g_free(name_tables->eventtype_names);
-  g_free(name_tables->syscall_names);
-  g_free(name_tables->trap_names);
-  g_free(name_tables->irq_names);
-  g_free(name_tables->soft_irq_names);
-  g_free(name_tables);
+  if(name_tables->syscall_names) g_free(name_tables->syscall_names);
+  if(name_tables->trap_names) g_free(name_tables->trap_names);
+  if(name_tables->irq_names) g_free(name_tables->irq_names);
+  if(name_tables->soft_irq_names) g_free(name_tables->soft_irq_names);
+  if(name_tables) g_free(name_tables);
 } 
 
 #ifdef HASH_TABLE_DEBUG

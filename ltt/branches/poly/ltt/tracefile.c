@@ -993,6 +993,9 @@ static int ltt_get_facility_description(LttFacility *f,
 			case LTT_ARCH_TYPE_X86_64:
 				text = "_x86_64";
 				break;
+			case LTT_ARCH_TYPE_C2:
+				text = "_c2";
+				break;
 			default:
 				g_error("Trace from unsupported architecture.");
 		}
