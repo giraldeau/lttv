@@ -66,6 +66,8 @@ enum type_t {
 static GSList *interrupt_data_list = NULL ;
  
 
+#define TRACE_NUMBER 0
+
 typedef struct _InterruptEventData {
 
   /*Graphical Widgets */ 
@@ -80,27 +82,27 @@ typedef struct _InterruptEventData {
   LttvHooks  * hooks_trace_after;
   LttvHooks  * hooks_trace_before;
   TimeWindow   time_window;
-  
+  LttvHooksById * event_by_id_hooks;
   GArray *interrupt_counters;
   GArray *active_irq_entry ;
 } InterruptEventData ;
 
+
 /* Function prototypes */
  
 static gboolean interrupt_update_time_window(void * hook_data, void * call_data);
-GtkWidget *interrupts(Tab *tab);
-// Plug-in's constructor
-InterruptEventData *system_info(Tab *tab);
-// Plug-in's destructor
+static GtkWidget *interrupts(Tab *tab);
+static InterruptEventData *system_info(Tab *tab);
 void interrupt_destructor(InterruptEventData *event_viewer_data);
-
-static void request_event(  InterruptEventData *event_data);  
-static guint64 get_event_detail(LttEvent *e, LttField *f);
+static void request_event(InterruptEventData *event_data );  
+static guint64 get_interrupt_id(LttEvent *e);
 static gboolean trace_header(void *hook_data, void *call_data);
-static gboolean parse_event(void *hook_data, void *call_data);
-static gboolean interrupt_show(void *hook_data, void *call_data);
+static gboolean interrupt_display (void *hook_data, void *call_data);
 static void calcul_duration(LttTime time_exit,  guint cpu_id,  InterruptEventData *event_data);
 static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrupt_counters);
+static gboolean irq_entry_callback(void *hook_data, void *call_data);
+static gboolean irq_exit_callback(void *hook_data, void *call_data);
+ 
 /* Enumeration of the columns */
 enum{
   CPUID_COLUMN,
@@ -109,16 +111,34 @@ enum{
   DURATION_COLUMN,
   N_COLUMNS
 };
+ 
+ 
+ 
+/**
+ *  init function
+ *
+ * 
+ * This is the entry point of the viewer.
+ *
+ */
+static void init() {
+  g_info("interrupts: init()");
+  lttvwindow_register_constructor("interrupts",
+                                  "/",
+                                  "Insert  Interrupts View",
+                                  hInterruptsInsert_xpm,
+                                  "Insert Interrupts View",
+                                  interrupts);
+   
+}
+
 
 /**
- *  constructor hook
+ *  Constructor hook
  *
- * This constructor is given as a parameter to the menuitem and toolbar button
- * registration. It creates the list.
- * @param parent_window A pointer to the parent window.
- * @return The widget created.
  */
-GtkWidget *interrupts(Tab * tab){
+static GtkWidget *interrupts(Tab * tab)
+{
 
   InterruptEventData* event_data = system_info(tab) ;
   if(event_data)
@@ -127,19 +147,25 @@ GtkWidget *interrupts(Tab * tab){
     return NULL; 
 }
 
+/**
+ * This function initializes the Event Viewer functionnality through the
+ * GTK  API. 
+ */
 InterruptEventData *system_info(Tab *tab)
 {
   LttTime end;
   GtkTreeViewColumn *column;
   GtkCellRenderer *renderer;
   InterruptEventData* event_viewer_data = g_new(InterruptEventData,1) ;
-  g_info("system_info \n");
+   
    
   event_viewer_data->tab = tab;
+  
+  /*Get the current time frame from the main window */
   event_viewer_data->time_window  =  lttvwindow_get_time_window(tab);
   event_viewer_data->interrupt_counters = g_array_new(FALSE, FALSE, sizeof(Irq));
   event_viewer_data->active_irq_entry   =  g_array_new(FALSE, FALSE, sizeof(irq_entry));
-  					 	
+  /*Create tha main window for the viewer */					 	
   event_viewer_data->ScrollWindow = gtk_scrolled_window_new (NULL, NULL);
   gtk_widget_show (event_viewer_data->ScrollWindow);
   gtk_scrolled_window_set_policy(
@@ -208,166 +234,229 @@ InterruptEventData *system_info(Tab *tab)
   gtk_widget_show(event_viewer_data->TreeView);
 
   interrupt_data_list = g_slist_append(interrupt_data_list, event_viewer_data);
-  
+  /* Registration for time notification */
   lttvwindow_register_time_window_notify(tab,
                                          interrupt_update_time_window,
                                          event_viewer_data);	
-  request_event(event_viewer_data);
+					 
+  
+  request_event(event_viewer_data );
   return event_viewer_data;
 }
 
-
-static void request_event(  InterruptEventData *event_data){
-
-  event_data->hooks_trace_before = lttv_hooks_new();
-  lttv_hooks_add(event_data->hooks_trace_before, trace_header, event_data, LTTV_PRIO_DEFAULT);
-  
-  event_data->event_hooks = lttv_hooks_new();
-  lttv_hooks_add(event_data->event_hooks, parse_event, event_data, LTTV_PRIO_DEFAULT);
+/**
+ * 
+ * For each trace in the traceset, this function:
+ *  - registers a callback function to each hook
+ *  - calls lttv_trace_find_hook() registers a hook function to event_by_id_hooks
+ *  - calls lttvwindow_events_request() to request data in a specific 
+ *    time interval to the main window
+ * 
+ */
+static void request_event(InterruptEventData *event_data )
+{
+  guint i, k, l, nb_trace;
  
-  event_data->hooks_trace_after = lttv_hooks_new();
-  lttv_hooks_add(event_data->hooks_trace_after, interrupt_show, event_data, LTTV_PRIO_DEFAULT);
-    
-  EventsRequest *events_request = g_new(EventsRequest, 1); 
-  events_request->owner       = event_data; 
-  events_request->viewer_data = event_data; 
-  events_request->servicing   = FALSE;     
-  events_request->start_time  = event_data->time_window.start_time; 
-  events_request->start_position  = NULL;
-  events_request->stop_flag	   = FALSE;
-  events_request->end_time 	   = event_data->time_window.end_time;
-  events_request->num_events  	   = G_MAXUINT;      
-  events_request->end_position     = NULL; 
-  events_request->trace 	   = 0;    
-  events_request->hooks 	   = NULL; 
-  events_request->before_chunk_traceset = NULL; 
-  events_request->before_chunk_trace    = event_data->hooks_trace_before; 
-  events_request->before_chunk_tracefile= NULL; 
-  events_request->event		        = event_data->event_hooks; 
-  events_request->event_by_id		= NULL; 
-  events_request->after_chunk_tracefile = NULL; 
-  events_request->after_chunk_trace     = NULL;   
-  events_request->after_chunk_traceset	= NULL; 
-  events_request->before_request	= NULL; 
-  events_request->after_request		= event_data->hooks_trace_after; 
+  LttvTraceHook *hook;
+   
+  guint ret; 
   
-  lttvwindow_events_request(event_data->tab, events_request);   
+  LttvTraceState *ts;
+    
+  GArray *hooks;
+   
+  EventsRequest *events_request;
+  
+  LttvTraceHookByFacility *thf;
+  
+  LttvTracesetContext *tsc = lttvwindow_get_traceset_context(event_data->tab);
+  
+  
+  /* Get the traceset */
+  LttvTraceset *traceset = tsc->ts;
+ 
+  nb_trace = lttv_traceset_number(traceset);
+  
+  /* There are many traces in a traceset. Iteration for each trace. */  
+  for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++)
+  {
+        events_request = g_new(EventsRequest, 1); 
+	
+      	hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
+      	
+	hooks = g_array_set_size(hooks, 2);
+    
+	event_data->hooks_trace_before = lttv_hooks_new();
+	
+  	/* Registers a hook function */
+	lttv_hooks_add(event_data->hooks_trace_before, trace_header, event_data, LTTV_PRIO_DEFAULT);	
+
+  	event_data->hooks_trace_after = lttv_hooks_new();
+  	/* Registers a hook function */
+	lttv_hooks_add(event_data->hooks_trace_after, interrupt_display, event_data, LTTV_PRIO_DEFAULT);
+ 	/* Get a trace state */
+	ts = (LttvTraceState *)tsc->traces[i];
+	/* Create event_by_Id hooks */
+  	event_data->event_by_id_hooks = lttv_hooks_by_id_new();
+  
+ 	/*Register event_by_id_hooks with a callback function*/ 
+          ret = lttv_trace_find_hook(ts->parent.t,
+		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
+		LTT_FIELD_IRQ_ID, 0, 0,
+		irq_entry_callback,
+		events_request,
+		&g_array_index(hooks, LttvTraceHook, 0));
+	 
+	 ret = lttv_trace_find_hook(ts->parent.t,
+		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
+		LTT_FIELD_IRQ_ID, 0, 0,
+		irq_exit_callback,
+		events_request,
+		&g_array_index(hooks, LttvTraceHook, 1));
+		
+	  g_assert(!ret);
+ 	 /*iterate through the facility list*/
+	for(k = 0 ; k < hooks->len; k++) 
+	{ 
+	        hook = &g_array_index(hooks, LttvTraceHook, k);
+		for(l=0; l<hook->fac_list->len; l++) 
+		{
+			thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l); 
+			lttv_hooks_add(lttv_hooks_by_id_find(event_data->event_by_id_hooks, thf->id),
+				thf->h,
+				event_data,
+				LTTV_PRIO_DEFAULT);
+			 
+		}
+	}
+	/* Initalize the EventsRequest structure */
+	events_request->owner       = event_data; 
+	events_request->viewer_data = event_data; 
+	events_request->servicing   = FALSE;     
+	events_request->start_time  = event_data->time_window.start_time; 
+	events_request->start_position  = NULL;
+	events_request->stop_flag	   = FALSE;
+	events_request->end_time 	   = event_data->time_window.end_time;
+	events_request->num_events  	   = G_MAXUINT;      
+	events_request->end_position       = NULL; 
+	events_request->trace 	   = i;    
+	
+	events_request->hooks = hooks;
+	
+	events_request->before_chunk_traceset = NULL; 
+	events_request->before_chunk_trace    = event_data->hooks_trace_before; 
+	events_request->before_chunk_tracefile= NULL; 
+	events_request->event		        = NULL;  
+	events_request->event_by_id		= event_data->event_by_id_hooks; 
+	events_request->after_chunk_tracefile = NULL; 
+	events_request->after_chunk_trace     = NULL;   
+	events_request->after_chunk_traceset	= NULL; 
+	events_request->before_request	= NULL; 
+	events_request->after_request		= event_data->hooks_trace_after; 
+	
+	lttvwindow_events_request(event_data->tab, events_request);   
+   }
+   
 }
 
-gboolean parse_event(void *hook_data, void *call_data){
-
+/**
+ *  This function is called whenever an irq_entry event occurs.  
+ *  
+ */ 
+static gboolean irq_entry_callback(void *hook_data, void *call_data)
+{
+  
   LttTime  event_time; 
-  LttEvent *e;
-  LttField *field;
-  LttEventType *event_type;
   unsigned cpu_id;
   irq_entry entry;
-  irq_entry *element; 
-  guint i;
- // g_info("interrupts: parse_event() \n");
-  InterruptEventData *event_data = (InterruptEventData *)hook_data;
-  GArray* active_irq_entry  = event_data->active_irq_entry; 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  //e = tfc->e; 
-  e = ltt_tracefile_get_event(tfc->tf);
-  
-  field = ltt_event_field(e);
+  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  GArray* active_irq_entry  = event_data->active_irq_entry; 
+  LttEvent *e = ltt_tracefile_get_event(tfc->tf); 
   event_time = ltt_event_time(e);
-  event_type = ltt_event_eventtype(e);
   cpu_id = ltt_event_cpu_id(e);
-  GString * detail_event = g_string_new("");
+   
   if ((ltt_time_compare(event_time,event_data->time_window.start_time) == TRUE) &&    
-     (ltt_time_compare(event_data->time_window.end_time,event_time) == TRUE)){
-	if (strcmp( g_quark_to_string(ltt_eventtype_name(event_type)),"irq_entry") == 0) {  
-	    entry.id = get_event_detail(e, field);
-	    entry.cpu_id = cpu_id;
-	    entry.event_time =  event_time;
-	    g_array_append_val (active_irq_entry, entry);
-	    
-	}
-	if(strcmp( g_quark_to_string(ltt_eventtype_name(event_type)),"irq_exit") == 0) {
-	  //printf("event_time: %ld.%ld\n",event_time.tv_sec,event_time.tv_nsec);	
-	  calcul_duration( event_time,  cpu_id, event_data);
-        }
-   } 
-   g_string_free(detail_event, TRUE);
+     (ltt_time_compare(event_data->time_window.end_time,event_time) == TRUE))
+  { 	 
+	entry.id =get_interrupt_id(e);	  
+	entry.cpu_id = cpu_id;
+	entry.event_time =  event_time;		
+	g_array_append_val (active_irq_entry, entry);
+  } 
+  return FALSE;
+}
+
+/**
+ *  This function gets the id of the interrupt. The id is stored in a dynamic structure. 
+ *  Refer to the print.c file for howto extract data from a dynamic structure.
+ */ 
+static guint64 get_interrupt_id(LttEvent *e)
+{
+  guint i, num_fields;
+  LttEventType *event_type;
+  LttField *element;  
+  LttField *field;
+   guint64  irq_id;
+  event_type = ltt_event_eventtype(e);
+  num_fields = ltt_eventtype_num_fields(event_type);
+  for(i = 0 ; i < num_fields-1 ; i++) 
+  {   
+        field = ltt_eventtype_field(event_type, i);
+  	irq_id = ltt_event_get_long_unsigned(e,field);
+  }
+  return  irq_id;
+
+} 
+/**
+ *  This function is called whenever an irq_exit event occurs.  
+ *  
+ */ 
+gboolean irq_exit_callback(void *hook_data, void *call_data)
+{
+  LttTime  event_time; 
+  unsigned cpu_id;
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  LttEvent *e = ltt_tracefile_get_event(tfc->tf);
+  LttEventType *type = ltt_event_eventtype(e);
+  event_time = ltt_event_time(e);
+  cpu_id = ltt_event_cpu_id(e);
+  if ((ltt_time_compare(event_time,event_data->time_window.start_time) == TRUE) &&    
+     (ltt_time_compare(event_data->time_window.end_time,event_time) == TRUE))
+     {
+     	 calcul_duration( event_time,  cpu_id, event_data);
+	 
+     }
    return FALSE;
 }
 
- 
-void interrupt_destructor(InterruptEventData *event_viewer_data)
-{
-  /* May already been done by GTK window closing */
-  g_info("enter interrupt_destructor \n");
-  if(GTK_IS_WIDGET(event_viewer_data->Hbox)){
-    gtk_widget_destroy(event_viewer_data->Hbox);
+/**
+ *  This function calculates the duration of an interrupt.  
+ *  
+ */ 
+static void calcul_duration(LttTime time_exit,  guint cpu_id,InterruptEventData *event_data){
+  
+  gint i, irq_id;
+  irq_entry *element; 
+  LttTime duration;
+  GArray *interrupt_counters = event_data->interrupt_counters;
+  GArray *active_irq_entry = event_data->active_irq_entry;
+  for(i = 0; i < active_irq_entry->len; i++){
+    element = &g_array_index(active_irq_entry,irq_entry,i);
+    if(element->cpu_id == cpu_id){
+      sum_interrupt_data(element,time_exit,  interrupt_counters);    
+      g_array_remove_index(active_irq_entry, i);
+      break;
+    }
   }
 }
-   
-static guint64 get_event_detail(LttEvent *e, LttField *f){
-
-  LttType *type;
-  LttField *element;
-  GQuark name;
-  int nb, i;
-  guint64  irq_id;
-  type = ltt_field_type(f);
-  nb = ltt_type_member_number(type);
-  for(i = 0 ; i < nb-1 ; i++) {
-  	element = ltt_field_member(f,i);
-  	ltt_type_member_type(type, i, &name);
-  	irq_id = ltt_event_get_long_unsigned(e,element);
-  }
-  return  irq_id;
-} 
-
-
-
-
-gboolean trace_header(void *hook_data, void *call_data){
-
-  InterruptEventData *event_data = (InterruptEventData *)hook_data;
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-  LttEvent *e;
-  LttTime event_time;
-  return FALSE;
-}
-
-static gboolean interrupt_show(void *hook_data, void *call_data){
-  
-  gint i;	
-  Irq element; 
-  LttTime average_duration;
-  GtkTreeIter    iter;
-  guint64 real_data;
-  InterruptEventData *event_data = (InterruptEventData *)hook_data;
-  GArray *interrupt_counters = event_data->interrupt_counters;  
-  g_info("interrupts: interrupt_show() \n");
-  gtk_list_store_clear(event_data->ListStore);
-  for(i = 0; i < interrupt_counters->len; i++){  
-    element = g_array_index(interrupt_counters,Irq,i);  
-    real_data = element.total_duration.tv_sec;
-    real_data *= NANOSECONDS_PER_SECOND;
-    real_data += element.total_duration.tv_nsec;
-    //printf("total_duration:%ld\n",  element.total_duration.tv_nsec);
-    gtk_list_store_append (event_data->ListStore, &iter);
-    gtk_list_store_set (event_data->ListStore, &iter,
-      CPUID_COLUMN, element.cpu_id,
-      IRQ_ID_COLUMN,  element.id,
-      FREQUENCY_COLUMN, element.frequency,
-      DURATION_COLUMN, real_data,
-      -1);
-  } 
-  
-  if(event_data->interrupt_counters->len)
-     g_array_remove_range (event_data->interrupt_counters,0,event_data->interrupt_counters->len);
-   
-  if(event_data->active_irq_entry->len)
-    g_array_remove_range (event_data->active_irq_entry,0,event_data->active_irq_entry->len);
-  return FALSE;
-}
-
+/**
+ *  This function calculates the total duration of an interrupt.  
+ *  
+ */ 
 static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrupt_counters){
   Irq irq;
   Irq *element; 
@@ -376,7 +465,7 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrup
   gboolean  notFound = FALSE;
   memset ((void*)&irq, 0,sizeof(Irq));
   
-  //printf("time_exit: %ld.%ld\n",time_exit.tv_sec,time_exit.tv_nsec);	
+  
   if(interrupt_counters->len == NO_ITEMS){
     irq.cpu_id = e->cpu_id;
     irq.id    =  e->id;
@@ -403,61 +492,83 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrup
     }
   } 
 }
- 
-static void calcul_duration(LttTime time_exit,  guint cpu_id,InterruptEventData *event_data){
+/**
+ *  This function displays the result on the viewer 
+ *  
+ */ 
+static gboolean interrupt_display(void *hook_data, void *call_data){
   
-  gint i, irq_id;
-  irq_entry *element; 
-  LttTime duration;
-  GArray *interrupt_counters = event_data->interrupt_counters;
-  GArray *active_irq_entry = event_data->active_irq_entry;
-  for(i = 0; i < active_irq_entry->len; i++){
-    element = &g_array_index(active_irq_entry,irq_entry,i);
-    if(element->cpu_id == cpu_id){
-      sum_interrupt_data(element,time_exit,  interrupt_counters);    
-      g_array_remove_index(active_irq_entry, i);
-     // printf("array length:%d\n",active_irq_entry->len);
-      break;
-    }
-  }
+  gint i;	
+  Irq element; 
+  LttTime average_duration;
+  GtkTreeIter    iter;
+  guint64 real_data;
+  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  GArray *interrupt_counters = event_data->interrupt_counters;  
+  gtk_list_store_clear(event_data->ListStore);
+  for(i = 0; i < interrupt_counters->len; i++){  
+    element = g_array_index(interrupt_counters,Irq,i);  
+    real_data = element.total_duration.tv_sec;
+    real_data *= NANOSECONDS_PER_SECOND;
+    real_data += element.total_duration.tv_nsec;
+    gtk_list_store_append (event_data->ListStore, &iter);
+    gtk_list_store_set (event_data->ListStore, &iter,
+      CPUID_COLUMN, element.cpu_id,
+      IRQ_ID_COLUMN,  element.id,
+      FREQUENCY_COLUMN, element.frequency,
+      DURATION_COLUMN, real_data,
+      -1);
+  } 
+  if(event_data->interrupt_counters->len)
+     g_array_remove_range (event_data->interrupt_counters,0,event_data->interrupt_counters->len);
+   
+  if(event_data->active_irq_entry->len)
+    g_array_remove_range (event_data->active_irq_entry,0,event_data->active_irq_entry->len);
+  return FALSE;
 }
-
-
-gboolean interrupt_update_time_window(void * hook_data, void * call_data){
- 
+/*
+ * This function is called by the main window
+ * when the time interval needs to be updated.
+ **/ 
+gboolean interrupt_update_time_window(void * hook_data, void * call_data)
+{
   InterruptEventData *event_data = (InterruptEventData *) hook_data;
   const TimeWindowNotifyData *time_window_nofify_data =  ((const TimeWindowNotifyData *)call_data);
   event_data->time_window = *time_window_nofify_data->new_time_window;
   g_info("interrupts: interrupt_update_time_window()\n");
   Tab *tab = event_data->tab;
   lttvwindow_events_request_remove_all(tab, event_data);
-  request_event(event_data);
-   
-  
-    return FALSE;
+  request_event(event_data );
+  return FALSE;
 }
 
-/**
- * plugin's init function
- *
- * This function initializes the Event Viewer functionnality through the
- * gtkTraceSet API.
- */
-static void init() {
-  g_info("interrupts: init()");
-  lttvwindow_register_constructor("interrupts",
-                                  "/",
-                                  "Insert  Interrupts View",
-                                  hInterruptsInsert_xpm,
-                                  "Insert Interrupts View",
-                                  interrupts);
-   
+
+gboolean trace_header(void *hook_data, void *call_data)
+{
+
+  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+  printf("trace_header\n" );
+  LttEvent *e;
+  LttTime event_time;
+  return FALSE;
 }
 
-void interrupt_destroy_walk(gpointer data, gpointer user_data){
+void interrupt_destroy_walk(gpointer data, gpointer user_data)
+{
   g_info("interrupt_destroy_walk");
   interrupt_destructor((InterruptEventData*)data);
 
+}
+
+void interrupt_destructor(InterruptEventData *event_viewer_data)
+{
+  /* May already been done by GTK window closing */
+  g_info("enter interrupt_destructor \n");
+  if(GTK_IS_WIDGET(event_viewer_data->Hbox))
+  {
+    gtk_widget_destroy(event_viewer_data->Hbox);
+  }
 }
 
 /**
