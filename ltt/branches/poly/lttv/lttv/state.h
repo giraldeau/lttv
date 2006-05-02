@@ -99,6 +99,7 @@ extern GQuark
     LTT_FIELD_PID,
     LTT_FIELD_FILENAME,
     LTT_FIELD_NAME,
+    LTT_FIELD_TYPE,
     LTT_FIELD_MODE,
     LTT_FIELD_SUBMODE,
     LTT_FIELD_STATUS,
@@ -186,6 +187,11 @@ extern LttvProcessStatus
   LTTV_STATE_RUN,
   LTTV_STATE_DEAD;
 
+typedef GQuark LttvProcessType;
+
+extern LttvProcessType
+  LTTV_STATE_USER_THREAD,
+	LTTV_STATE_KERNEL_THREAD;
 
 typedef struct _LttvExecutionState {
   LttvExecutionMode t;
@@ -210,12 +216,12 @@ typedef struct _LttvProcessState {
        * (Mathieu) */
   guint cpu;                /* CPU where process is scheduled (being either in
                                the active or inactive runqueue)*/
-	gboolean kernel_thread;		/* Is this thread a kernel_thread ? */
 //  guint  last_tracefile_index;    /* index in the trace for cpu tracefile */
 	LttvTracefileState	*usertrace;		/* Associated usertrace */
   /* opened file descriptors, address map?... */
   GArray *user_stack;					/* User space function call stack */
 	guint64	current_function;
+	LttvProcessType type;				/* kernel thread or user space ? */
 } LttvProcessState;
 
 #define ANY_CPU 0 /* For clarity sake : a call to lttv_state_find_process for

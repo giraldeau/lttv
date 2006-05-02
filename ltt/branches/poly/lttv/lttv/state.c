@@ -78,6 +78,7 @@ GQuark
     LTT_FIELD_PID,
     LTT_FIELD_FILENAME,
     LTT_FIELD_NAME,
+    LTT_FIELD_TYPE,
     LTT_FIELD_MODE,
     LTT_FIELD_SUBMODE,
     LTT_FIELD_STATUS,
@@ -105,6 +106,10 @@ LttvProcessStatus
   LTTV_STATE_WAIT,
   LTTV_STATE_RUN,
   LTTV_STATE_DEAD;
+
+LttvProcessType
+  LTTV_STATE_USER_THREAD,
+	LTTV_STATE_KERNEL_THREAD;
 
 static GQuark
   LTTV_STATE_TRACEFILES,
@@ -412,8 +417,9 @@ static void write_process_state(gpointer key, gpointer value,
 
   process = (LttvProcessState *)value;
   fprintf(fp,
-"  <PROCESS CORE=%p PID=%u PPID=%u CTIME_S=%lu CTIME_NS=%lu NAME=\"%s\" CPU=\"%u\">\n",
-      process, process->pid, process->ppid, process->creation_time.tv_sec,
+"  <PROCESS CORE=%p PID=%u PPID=%u TYPE=\"%s\"CTIME_S=%lu CTIME_NS=%lu NAME=\"%s\" CPU=\"%u\">\n",
+      process, process->pid, process->ppid, g_quark_to_string(process->type),
+			process->creation_time.tv_sec,
       process->creation_time.tv_nsec, g_quark_to_string(process->name),
       process->cpu);
 
@@ -1183,7 +1189,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   process->name = name;
   //process->last_cpu = tfs->cpu_name;
   //process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)tfs)->tf);
-	process->kernel_thread = 0;
+	process->type = LTTV_STATE_USER_THREAD;
 	process->usertrace = ltt_state_usertrace_find(tcs, pid, timestamp);
 	process->current_function = 0; //function 0x0 by default.
 
@@ -1655,7 +1661,7 @@ static gboolean process_kernel_thread(void *hook_data, void *call_data)
   process = lttv_state_find_process(ts, ANY_CPU, pid);
 	es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
 	es->t = LTTV_STATE_SYSCALL;
-	process->kernel_thread = 1;
+	process->type = LTTV_STATE_KERNEL_THREAD;
 
 	return FALSE;
 }
@@ -1769,8 +1775,9 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
   LttvProcessState *parent_process;
-	LttField *f4, *f5, *f6;
-	GQuark mode, submode, status;
+	LttField *f4, *f5, *f6, *f7;
+	GQuark type, mode, submode, status;
+	LttvExecutionState *es;
 
   /* PID */
   pid = ltt_event_get_unsigned(e, thf->f1);
@@ -1781,20 +1788,25 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   /* Command name */
   command = ltt_event_get_string(e, thf->f3);
 
-	/* mode */
-	f4 = ltt_eventtype_field_by_name(et, LTT_FIELD_MODE);
-	mode = ltt_enum_string_get(ltt_field_type(f4), 
+	/* type */
+	f4 = ltt_eventtype_field_by_name(et, LTT_FIELD_TYPE);
+	type = ltt_enum_string_get(ltt_field_type(f4),
 			ltt_event_get_unsigned(e, f4));
 
-	/* submode */
-	f5 = ltt_eventtype_field_by_name(et, LTT_FIELD_SUBMODE);
-	submode = ltt_enum_string_get(ltt_field_type(f5), 
+	/* mode */
+	f5 = ltt_eventtype_field_by_name(et, LTT_FIELD_MODE);
+	mode = ltt_enum_string_get(ltt_field_type(f5), 
 			ltt_event_get_unsigned(e, f5));
 
-	/* status */
-	f6 = ltt_eventtype_field_by_name(et, LTT_FIELD_STATUS);
-	status = ltt_enum_string_get(ltt_field_type(f6), 
+	/* submode */
+	f6 = ltt_eventtype_field_by_name(et, LTT_FIELD_SUBMODE);
+	submode = ltt_enum_string_get(ltt_field_type(f6), 
 			ltt_event_get_unsigned(e, f6));
+
+	/* status */
+	f7 = ltt_eventtype_field_by_name(et, LTT_FIELD_STATUS);
+	status = ltt_enum_string_get(ltt_field_type(f7), 
+			ltt_event_get_unsigned(e, f7));
 
   /* The process might exist if a process was forked while performing the sate dump. */
   process = lttv_state_find_process(ts, ANY_CPU, pid);
@@ -1805,38 +1817,44 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
 															&s->parent.timestamp);
 	
 		/* Keep the stack bottom : a running user mode */
-#if 0
 		/* Disabled because of inconsistencies in the current statedump states. */
-		if(mode == LTTV_STATE_USER_MODE) {
+		if(type == LTTV_STATE_KERNEL_THREAD) {
 			/* Only keep the bottom */
 			process->execution_stack = g_array_set_size(process->execution_stack, 1);
+			es = process->state = &g_array_index(process->execution_stack, 
+					LttvExecutionState, 0);
+			es->t = LTTV_STATE_SYSCALL;
+			es->s = status;
+			es->n = submode;
 		} else {
 			/* On top of it : */
-			LttvExecutionState *es;
 			es = process->state = &g_array_index(process->execution_stack, 
 					LttvExecutionState, 1);
-			es->t = mode;
+			es->t = LTTV_STATE_USER_MODE;
 			es->s = status;
 			es->n = submode;
 		}
-#endif //0
-
+#if 0
 		/* UNKNOWN STATE */
 		{
-			LttvExecutionState *es;
 			es = process->state = &g_array_index(process->execution_stack, 
 					LttvExecutionState, 1);
 			es->t = LTTV_STATE_MODE_UNKNOWN;
 			es->s = LTTV_STATE_UNNAMED;
 			es->n = LTTV_STATE_SUBMODE_UNKNOWN;
 		}
+#endif //0
   } else {
     /* The process has already been created :
 		 * Probably was forked while dumping the process state or
 		 * was simply scheduled in prior to get the state dump event.
+		 * We know for sure if it is a user space thread.
      */
     process->ppid = parent_pid;
 		process->name = g_quark_from_string(command);
+		es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
+		if(type != LTTV_STATE_KERNEL_THREAD)
+			es->t = LTTV_STATE_USER_MODE;
 		/* Don't mess around with the stack, it will eventually become
 		 * ok after the end of state dump. */
   }
@@ -2638,6 +2656,8 @@ static void module_init()
   LTTV_STATE_WAIT = g_quark_from_string("WAIT");
   LTTV_STATE_RUN = g_quark_from_string("RUN");
   LTTV_STATE_DEAD = g_quark_from_string("DEAD");
+	LTTV_STATE_USER_THREAD = g_quark_from_string("USER_THREAD");
+	LTTV_STATE_KERNEL_THREAD = g_quark_from_string("KERNEL_THREAD");
   LTTV_STATE_TRACEFILES = g_quark_from_string("tracefiles");
   LTTV_STATE_PROCESSES = g_quark_from_string("processes");
   LTTV_STATE_PROCESS = g_quark_from_string("process");
@@ -2691,6 +2711,7 @@ static void module_init()
   LTT_FIELD_PID           = g_quark_from_string("pid");
   LTT_FIELD_FILENAME      = g_quark_from_string("filename");
   LTT_FIELD_NAME          = g_quark_from_string("name");
+  LTT_FIELD_TYPE          = g_quark_from_string("type");
   LTT_FIELD_MODE          = g_quark_from_string("mode");
   LTT_FIELD_SUBMODE       = g_quark_from_string("submode");
   LTT_FIELD_STATUS        = g_quark_from_string("status");
