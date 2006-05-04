@@ -531,16 +531,12 @@ static gboolean block_read_callback(void *hook_data, void *call_data)
   e = ltt_tracefile_get_event(tfc->tf); 
   event_time = ltt_event_time(e);
   cpu_id = ltt_event_cpu_id(e);
-  if ((ltt_time_compare(event_time,disk_performance->time_window.start_time) == TRUE) &&    
-     (ltt_time_compare(disk_performance->time_window.end_time,event_time) == TRUE))
-  {
-    	get_event_detail(e, &block_read);
-  	diskname = major_minor_to_diskname(&block_read);
-	sum_data(diskname, block_read.size,LTTV_READ_OPERATION, disk_array);
   
-  
-  }
- return FALSE;
+  get_event_detail(e, &block_read);
+  diskname = major_minor_to_diskname(&block_read);
+  sum_data(diskname, block_read.size,LTTV_READ_OPERATION, disk_array);
+ 
+  return FALSE;
 }
 
 /**
@@ -561,13 +557,11 @@ static gboolean block_write_callback(void *hook_data, void *call_data)
   e = ltt_tracefile_get_event(tfc->tf); 
   event_time = ltt_event_time(e);
   cpu_id = ltt_event_cpu_id(e);
-  if ((ltt_time_compare(event_time,disk_performance->time_window.start_time) == TRUE) &&    
-     (ltt_time_compare(disk_performance->time_window.end_time,event_time) == TRUE))
-  { 
-	get_event_detail(e, &block_write);
-	diskname = major_minor_to_diskname(&block_write);
-	sum_data(diskname, block_write.size,LTTV_WRITE_OPERATION, disk_array);
-  }
+  
+  get_event_detail(e, &block_write);
+  diskname = major_minor_to_diskname(&block_write);
+  sum_data(diskname, block_write.size,LTTV_WRITE_OPERATION, disk_array);
+  
  return FALSE;
 }
 
@@ -587,27 +581,25 @@ static void  get_event_detail(LttEvent *e, lttv_block* disk_data)
   for(i = 0 ; i < num_fields ; i++) 
   {
   	element = ltt_eventtype_field(event_type,i);
-	if(i== 0)
-	  disk_data->major_number = ltt_event_get_long_unsigned(e, element); 
-        if(i== 1)
-	  disk_data->minor_number = ltt_event_get_long_unsigned(e, element); 
- 	if(i==2)
-	  disk_data->size = ltt_event_get_long_unsigned(e, element); 
+	switch(i)
+	{
+	  case 0:
+	  	disk_data->major_number = ltt_event_get_long_unsigned(e, element); 
+	  break;
+	  	
+	  case 1:
+	  	disk_data->minor_number = ltt_event_get_long_unsigned(e, element); 
+	  break;
+	  case 2:
+	  	disk_data->size = ltt_event_get_long_unsigned(e, element); 
+	  break;
+	}
+	 
   }
    
 }
 
-/**
- *  This function convert  the major and minor  number to the corresponding disk 
- *  
- */ 
-static char * major_minor_to_diskname( lttv_block* disk_data)
-{
-  if (disk_data->major_number == 3 && disk_data->minor_number == 0)
- 	return "hda";
-  if (disk_data->major_number == 4 && disk_data->minor_number == 0)	
-	return "hdb";
-}
+
  
 /**
  *  This function calculates: the number of operations, the total bytes read or written,  
@@ -676,7 +668,600 @@ static void destroy()
   
 }
 
+/**
+ *  This function convert  the major and minor  number to the corresponding disk. 
+ *  Data taken from Documentation/devices.txt of the kernel tree.
+ */ 
+static char * major_minor_to_diskname( lttv_block* disk_data)
+{
+  switch(disk_data->major_number)
+  {
+     /* IDE Disks */
+     case 3: /* First MFM, RLL and IDE hard disk/CD-ROM interface */
+     	if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hda";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdb";
+     break;
+     
+     case 22: /*Second IDE hard disk/CD-ROM interface */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hdc";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdd";
+     break;
+       
+     case 33: /* Third IDE hard disk/CD-ROM interface */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hde";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdf";
+     break;
+       
+     case 34: /* Fourth IDE hard disk/CD-ROM interface */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hdg";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdh";
+     break;
+     
+     case 56: /* Fifth IDE hard disk/CD-ROM interface */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hdi";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdj";
+     break;
+     
+     case 57: /* Sixth IDE hard disk/CD-ROM interface */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hdk";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdl";
+     break;
 
+     case 88: /* Seventh IDE hard disk/CD-ROM interface */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hdm";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdn";
+     break;          
+     
+     case  89: /* Eighth IDE hard disk/CD-ROM interface */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hdo";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdp";
+     break;          
+       
+     case  90: /* Ninth IDE hard disk/CD-ROM interface */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hdq";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdr";
+     break;          
+     
+     case  91: /* Tenth IDE hard disk/CD-ROM interface */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 64))
+	  return "/dev/hds";
+        if((disk_data->minor_number >= 64) && (disk_data->minor_number < 128))		
+	  return  "/dev/hdt";
+     break;          
+     
+     /* SCSI Disks */
+      case  8: /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sda"; //	First SCSI disk whole disk
+        
+	if((disk_data->minor_number >= 16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sdb";// Second SCSI disk whole disk
+	
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sdc";// Third SCSI disk whole disk
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sdd";// Fourth SCSI disk whole disk	    
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sde";// Fifth SCSI disk whole disk	    
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sdf";// Sixth SCSI disk whole disk	    	  
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sdg";// seventh SCSI disk whole disk	    	  
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sdh";// eighth SCSI disk whole disk	    	  	  
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sdi";// 9th SCSI disk whole disk	    	  	    
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sdj";// 10th SCSI disk whole disk	    	  	      
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sdk";// 11th SCSI disk whole disk	    	  	      
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sdl";// 12th SCSI disk whole disk	    	  	      
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sdm";// 13th SCSI disk whole disk	    	  	      
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sdn";// 14th SCSI disk whole disk	    	  	      	
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sdo";// 15th SCSI disk whole disk	    	  	      		    
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sdp";// 16th SCSI disk whole disk	    	  	      	
+      break;          
+     
+      case  65: /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sdq"; 
+        
+	if((disk_data->minor_number >= 16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sdr"; 
+	
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sds"; 
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sdt";  
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sdu"; 
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sdv"; 
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sdw"; 
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sdy"; 
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sdx"; 
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sdz"; 
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sdaa"; 
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sdab"; 
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sdac"; 
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sdad"; 
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sdae"; 
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sdaf"; 
+      break;     
+
+      case  66: /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sdag"; 
+        
+	if((disk_data->minor_number >= 16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sdah"; 
+	
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sdai"; 
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sdaj";  
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sdak"; 
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sdal"; 
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sdam"; 
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sdan"; 
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sdao"; 
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sdap"; 
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sdaq"; 
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sdar"; 
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sdas"; 
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sdat"; 
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sdau"; 
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sdav"; 
+      break;     
+
+      
+      case  67: /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sdaw"; 
+        
+	if((disk_data->minor_number >= 16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sdax"; 
+	
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sday"; 
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sdaz";  
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sdba"; 
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sdbb"; 
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sdbc"; 
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sdbd"; 
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sdbe"; 
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sdbf"; 
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sdbg"; 
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sdbh"; 
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sdbi"; 
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sdbj"; 
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sdbk"; 
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sdbl"; 
+      break;     
+      
+      case  68 : /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sdbm"; 
+        
+	if((disk_data->minor_number >= 16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sdbm"; 
+	
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sdbo"; 
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sdbp";  
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sdbq"; 
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sdbr"; 
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sdbs"; 
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sdbt"; 
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sdbu"; 
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sdbv"; 
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sdbw"; 
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sdbx"; 
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sdby"; 
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sdbz"; 
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sdca"; 
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sdcb"; 
+      break;     
+      case  69 : /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sdcc"; 
+        
+	if((disk_data->minor_number >= 16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sdcd"; 
+	
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sdce"; 
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sdcf";  
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sdcg"; 
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sdch"; 
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sdci"; 
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sdcj"; 
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sdck"; 
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sdcl"; 
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sdcm"; 
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sdcn"; 
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sdco"; 
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sdcp"; 
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sdcq"; 
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sdcr"; 
+      break;     
+
+      
+      case  70 : /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sdcs"; 
+        
+	if((disk_data->minor_number >= 16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sdct"; 
+	
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sdcu"; 
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sdcv";  
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sdcw"; 
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sdcx"; 
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sdcy"; 
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sdcz"; 
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sdda"; 
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sddb"; 
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sddc"; 
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sddd"; 
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sdde"; 
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sddf"; 
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sddg"; 
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sddh"; 
+      break;      
+ 
+      case  71: /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sddi"; 
+        
+	if((disk_data->minor_number >=  16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sddj"; 
+	
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sddk"; 
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sddl";  
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sddm"; 
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sddn"; 
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sddo"; 
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sddp"; 
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sddq"; 
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sddr"; 
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sdds"; 
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sddt"; 
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sddu"; 
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sddv"; 
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sddw"; 
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sddx"; 
+      break;      
+       
+      case  128: /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sddy"; 
+        
+	if((disk_data->minor_number >= 16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sddz"; 
+	 
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sdea"; 
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sdeb";  
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sdec"; 
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sded"; 
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sdee"; 
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sdef"; 
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sdeg"; 
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sdeh"; 
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sdei"; 
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sdej"; 
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sdek"; 
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sdel"; 
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sdem"; 
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sden"; 
+      break;      
+
+      case  129: /* SCSI disk devices */
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 16))
+	  return "/dev/sdeo"; 
+        
+	if((disk_data->minor_number >= 16) && (disk_data->minor_number < 32))		
+	  return  "/dev/sdep"; 
+	
+	if((disk_data->minor_number >= 32) && (disk_data->minor_number < 48))		
+	  return  "/dev/sdeq"; 
+	
+	if((disk_data->minor_number >= 48) && (disk_data->minor_number < 64))		
+	  return  "/dev/sder";  
+	
+	if((disk_data->minor_number >= 64) && (disk_data->minor_number < 80))		
+	  return  "/dev/sdes"; 
+	
+	if((disk_data->minor_number >= 80) && (disk_data->minor_number < 96))		
+	  return  "/dev/sdet"; 
+      
+        if((disk_data->minor_number >= 96) && (disk_data->minor_number < 112))		
+	  return  "/dev/sdeu"; 
+	
+	if((disk_data->minor_number >= 112) && (disk_data->minor_number < 128))		
+	  return  "/dev/sdev"; 
+	
+	if((disk_data->minor_number >= 128) && (disk_data->minor_number < 144))		
+	  return  "/dev/sdew"; 
+	  
+	if((disk_data->minor_number >= 144) && (disk_data->minor_number < 160))		
+	  return  "/dev/sdez"; 
+	  
+        if((disk_data->minor_number >= 160) && (disk_data->minor_number < 176))		
+	  return  "/dev/sdey"; 
+      
+        if((disk_data->minor_number >= 176) && (disk_data->minor_number < 192))		
+	  return  "/dev/sdez"; 
+      
+        if((disk_data->minor_number >= 192) && (disk_data->minor_number < 208))		
+	  return  "/dev/sdfa"; 
+
+	if((disk_data->minor_number >= 208) && (disk_data->minor_number < 224))		
+	  return  "/dev/sdfb"; 
+	
+	if((disk_data->minor_number >= 224) && (disk_data->minor_number < 240))		
+	  return  "/dev/sdfc"; 
+	
+	if((disk_data->minor_number >= 240) && (disk_data->minor_number < 256))		
+	  return  "/dev/sdfd"; 
+      break;      
+      /*USB block devices*/
+      case  180: 
+        if( (disk_data->minor_number >= 0) && (disk_data->minor_number < 8))
+	  return "/dev/uba"; 
+	if( (disk_data->minor_number >= 8) && (disk_data->minor_number < 16))
+	  return "/dev/ubb"; 
+	if( (disk_data->minor_number >= 16) && (disk_data->minor_number < 24))
+	  return "/dev/ubc"; 
+      break;      
+   
+  }
+
+
+}
 LTTV_MODULE("diskperformance", "disk info view", \
 	    "Produce disk I/O performance", \
 	    init, destroy, "lttvwindow") 
