@@ -90,8 +90,14 @@ for a in $IN; do wr $a $FILE; done
 FILE=../$NAME-instrumentation-mips.diff
 
 IN="?_arch_mips_kernel_irq.c
+?_arch_mips_kernel_process.c
 ?_arch_mips_kernel_traps.c
 ?_arch_mips_kernel_unaligned.c
+?_arch_mips_kernel_syscall.c
+?_arch_mips_kernel_scall32-o32.S
+?_arch_mips_kernel_scall64-64.S
+?_arch_mips_kernel_scall64-n32.S
+?_arch_mips_kernel_scall64-o32.S
 ?_arch_mips_mm_fault.c"
 for a in $IN; do wr $a $FILE; done
 
@@ -267,6 +273,9 @@ IN="?_MAINTAINERS
 ?_include_linux_netlink.h
 ?_include_linux_sched.h
 ?_ltt_Kconfig
+?_ltt_ltt-core.c
+?_ltt_ltt-control.c
+?_ltt_ltt-statedump.c
 ?_arch_i386_Kconfig
 ?_arch_ppc_Kconfig
 ?_arch_arm_Kconfig
@@ -274,7 +283,6 @@ IN="?_MAINTAINERS
 ?_init_main.c
 ?_kernel_Makefile
 ?_kernel_ltt-base.c
-?_kernel_ltt-core.c
 ?_kernel_ltt-heartbeat.c
 ?_kernel_ltt-syscall.c
 ?_kernel_sys_ni.c
