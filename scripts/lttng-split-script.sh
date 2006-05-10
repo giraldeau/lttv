@@ -275,6 +275,7 @@ IN="?_MAINTAINERS
 ?_ltt_Kconfig
 ?_ltt_ltt-core.c
 ?_ltt_ltt-control.c
+?_ltt_ltt-control.h
 ?_ltt_ltt-statedump.c
 ?_arch_i386_Kconfig
 ?_arch_ppc_Kconfig
@@ -288,6 +289,12 @@ IN="?_MAINTAINERS
 ?_kernel_sys_ni.c
 ?_kernel_exit.c
 ?_kernel_fork.c"
+
+FILE=../$NAME-modules.diff
+
+IN="?_ltt_ltt-control.c
+?_ltt_ltt-control.h
+?_ltt_ltt-statedump.c"
 
 for a in $IN; do wr $a $FILE; done
 
