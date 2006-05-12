@@ -440,19 +440,22 @@ struct _LttSystemDescription {
 //#define EVENT_HEADER_SIZE (TIMESTAMP_SIZE + EVENT_ID_SIZE)
 
 
+off_t get_alignment(LttField *field);
+
 /* Calculate the offset needed to align the type.
  * If has_alignment is 0, alignment is disactivated.
  * else, the function returns the offset needed to
  * align align_drift on the has_alignment value (should be
  * the size of the architecture). */
 static inline unsigned int ltt_align(size_t align_drift,
-																		 size_t size_of_type,
-																		 size_t has_alignment)
+          size_t size_of_type,
+          size_t has_alignment)
 {
 	size_t alignment = min(has_alignment, size_of_type);
 	
 	if(!has_alignment) return 0;
 	
+	g_assert(size_of_type != 0);
 	return ((alignment - align_drift) & (alignment-1));
 }
 

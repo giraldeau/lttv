@@ -997,6 +997,9 @@ static int ltt_get_facility_description(LttFacility *f,
 			case LTT_ARCH_TYPE_C2:
 				text = "_c2";
 				break;
+			case LTT_ARCH_TYPE_POWERPC:
+				text = "_powerpc";
+				break;
 			default:
 				g_error("Trace from unsupported architecture.");
 		}
@@ -1091,8 +1094,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           fac->id = ltt_get_uint32(LTT_GET_BO(tf), &fac_load_data->id);
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->pointer_size);
-					fac->int_size = ltt_get_uint32(LTT_GET_BO(tf),
-													&fac_load_data->int_size);
+          fac->int_size = ltt_get_uint32(LTT_GET_BO(tf),
+                          &fac_load_data->int_size);
           fac->long_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_load_data->long_size);
           fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
@@ -1148,8 +1151,8 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
                           &fac_state_dump_load_data->id);
           fac->pointer_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->pointer_size);
-					fac->int_size = ltt_get_uint32(LTT_GET_BO(tf),
-													&fac_state_dump_load_data->int_size);
+          fac->int_size = ltt_get_uint32(LTT_GET_BO(tf),
+                          &fac_state_dump_load_data->int_size);
           fac->long_size = ltt_get_uint32(LTT_GET_BO(tf),
                           &fac_state_dump_load_data->long_size);
           fac->size_t_size = ltt_get_uint32(LTT_GET_BO(tf),
@@ -2228,10 +2231,11 @@ off_t get_alignment(LttField *field)
     case LTT_FLOAT:
     case LTT_ENUM:
       /* Align offset on type size */
+      g_assert(field->field_size != 0);
       return field->field_size;
       break;
     case LTT_STRING:
-      return 0;
+      return 1;
       break;
     case LTT_ARRAY:
       g_assert(type->fields->len == 1);
@@ -2243,7 +2247,7 @@ off_t get_alignment(LttField *field)
     case LTT_SEQUENCE:
       g_assert(type->fields->len == 2);
       {
-        off_t localign = 0;
+        off_t localign = 1;
         LttField *child = &g_array_index(type->fields, LttField, 0);
 
         localign = max(localign, get_alignment(child));
@@ -2258,7 +2262,7 @@ off_t get_alignment(LttField *field)
     case LTT_UNION:
       {
         guint i;
-        off_t localign = 0;
+        off_t localign = 1;
         
         for(i=0; i<type->fields->len; i++) {
           LttField *child = &g_array_index(type->fields, LttField, i);
@@ -2270,8 +2274,8 @@ off_t get_alignment(LttField *field)
     case LTT_NONE:
     default:
       g_error("get_alignment : unknown type");
+      return -1;
   }
-
 }
 
 /*****************************************************************************
@@ -2614,6 +2618,12 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
   size_t max_size;
 
   switch(type->type_class) {
+    case LTT_INT_FIXED:
+    case LTT_UINT_FIXED:
+    case LTT_CHAR:
+    case LTT_UCHAR:
+    case LTT_SHORT:
+    case LTT_USHORT:
     case LTT_INT:
     case LTT_UINT:
     case LTT_FLOAT:
@@ -2724,6 +2734,9 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
         field->field_size = max_size;
         field->fixed_size = FIELD_FIXED;
       }
+      break;
+    case LTT_NONE:
+      g_error("unexpected type NONE");
       break;
   }
 
@@ -2892,6 +2905,13 @@ gint check_fields_compatibility(LttEventType *event_type1,
   }
     
   switch(type1->type_class) {
+    case LTT_INT_FIXED:
+    case LTT_UINT_FIXED:
+    case LTT_POINTER:
+    case LTT_CHAR:
+    case LTT_UCHAR:
+    case LTT_SHORT:
+    case LTT_USHORT:
     case LTT_INT:
     case LTT_UINT:
     case LTT_FLOAT:

@@ -97,7 +97,7 @@ int getSizeindex(unsigned int value)
 unsigned long long int getSize(parse_file_t *in)
 {
   char *token, *token2;
-	unsigned long long int ret;
+  unsigned long long int ret;
 
   token = getToken(in);
 
@@ -198,7 +198,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
 			   sequence_t * unnamed_types, table_t * named_types) 
 {
   char * token;
-	char car;
+  int car;
 
   t->fmt = NULL;
   t->size = 0;
@@ -263,7 +263,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
 void getEventAttributes(parse_file_t *in, event_t *ev)
 {
   char * token;
-  char car;
+  int car;
   
   ev->name = NULL;
   ev->per_trace = 0;
@@ -326,7 +326,7 @@ void getEventAttributes(parse_file_t *in, event_t *ev)
 void getFacilityAttributes(parse_file_t *in, facility_t *fac)
 {
   char * token;
-  char car;
+  int car;
   
   fac->name = NULL;
   fac->arch = NULL;
@@ -371,7 +371,7 @@ void getFacilityAttributes(parse_file_t *in, facility_t *fac)
 void getFieldAttributes(parse_file_t *in, field_t *f)
 {
   char * token;
-  char car;
+  int car;
 
   f->name = NULL;
 
@@ -396,7 +396,7 @@ char *getNameAttribute(parse_file_t *in)
 {
   char * token;
   char *name = NULL;
-  char car;
+  int car;
   
   while(1) {
     token = getToken(in); 
@@ -459,7 +459,8 @@ error:
 char * getDescription(parse_file_t *in)
 {
   long int pos;
-  char * token, car, *str;
+  char * token, *str;
+  int car;
 
   pos = ftell(in->fp);
 
@@ -1127,9 +1128,9 @@ char * getEqual(parse_file_t *in)
   return token;
 }
 
-char seekNextChar(parse_file_t *in)
+int seekNextChar(parse_file_t *in)
 {
-  char car;
+  int car;
   while((car = getc(in->fp)) != EOF) {
     if(!isspace(car)){
       ungetc(car,in->fp);
@@ -1162,7 +1163,7 @@ void ungetToken(parse_file_t * in)
 char *getToken(parse_file_t * in)
 {
   FILE *fp = in->fp;
-  char car, car1;
+  int car, car1;
   int pos = 0, escaped;
 
   if(in->unget == 1) {
@@ -1274,7 +1275,7 @@ char *getToken(parse_file_t * in)
 
 void skipComment(parse_file_t * in)
 {
-  char car;
+  int car;
   while((car = getc(in->fp)) != EOF) {
     if(car == '\n') in->lineno++;
     else if(car == '*') {
@@ -1289,7 +1290,7 @@ void skipComment(parse_file_t * in)
 
 void skipEOL(parse_file_t * in)
 {
-  char car;
+  int car;
   while((car = getc(in->fp)) != EOF) {
     if(car == '\n') {
       ungetc(car,in->fp);

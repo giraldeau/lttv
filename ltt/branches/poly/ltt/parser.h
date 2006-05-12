@@ -64,7 +64,7 @@ char *getQuotedString(parse_file_t *in);
 char *getName(parse_file_t *in);
 int   getNumber(parse_file_t *in);
 char *getEqual(parse_file_t *in);
-char  seekNextChar(parse_file_t *in);
+int   seekNextChar(parse_file_t *in);
 
 void skipComment(parse_file_t * in);
 void skipEOL(parse_file_t * in);

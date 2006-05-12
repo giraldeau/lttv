@@ -146,10 +146,14 @@ size_t ltt_type_size(LttTrace * trace, LttType *t)
   size_t size;
 
   switch(t->type_class) {
-
+    case LTT_INT_FIXED:
+    case LTT_UINT_FIXED:
+    case LTT_CHAR:
+    case LTT_UCHAR:
+    case LTT_SHORT:
+    case LTT_USHORT:
     case LTT_INT:
     case LTT_UINT:
-    case LTT_SEQUENCE:
     case LTT_ENUM:
       if(likely(t->size < INT_SIZES_NUMBER))
         size = intSizes[t->size];
@@ -167,11 +171,13 @@ size_t ltt_type_size(LttTrace * trace, LttType *t)
     case LTT_ULONG:
     case LTT_SIZE_T:
     case LTT_SSIZE_T:
+    case LTT_SEQUENCE:
     case LTT_OFF_T:
     case LTT_STRING:
     case LTT_ARRAY:
     case LTT_STRUCT:
     case LTT_UNION:
+    case LTT_NONE:
       goto error;
       break;
   }
@@ -371,7 +377,7 @@ int ltt_field_size(LttField * f)
 
 guint ltt_eventtype_num_fields(LttEventType *event_type)
 {
-  if(unlikely(!event_type)) return NULL;
+  if(unlikely(!event_type)) return 0;
 
   return event_type->fields->len;
   

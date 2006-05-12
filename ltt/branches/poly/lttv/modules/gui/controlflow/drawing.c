@@ -178,6 +178,7 @@ void drawing_data_request(Drawing_t *drawing,
     LttvTraceHookByFacility *thf;
 
     guint ret;
+    gint before_hn, after_hn;
 
     nb_trace = lttv_traceset_number(traceset);
     // FIXME : eventually request for more traces
@@ -221,6 +222,7 @@ void drawing_data_request(Drawing_t *drawing,
 
       hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
       hooks = g_array_set_size(hooks, 16);
+      before_hn = after_hn = 0;
 
       /* before hooks */
       
@@ -229,64 +231,64 @@ void drawing_data_request(Drawing_t *drawing,
           LTT_FIELD_SYSCALL_ID, 0, 0,
           before_execmode_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 0));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_EXIT,
           0, 0, 0,
           before_execmode_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 1));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_ENTRY,
           LTT_FIELD_TRAP_ID, 0, 0,
           before_execmode_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 2));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_EXIT,
           0, 0, 0, 
           before_execmode_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 3));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
           LTT_FIELD_IRQ_ID, 0, 0,
           before_execmode_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 4));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
           0, 0, 0, 
           before_execmode_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 5));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY,
           LTT_FIELD_SOFT_IRQ_ID, 0, 0,
           before_execmode_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 6));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_EXIT,
           0, 0, 0, 
           before_execmode_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 7));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
 
       ret = lttv_trace_find_hook(ts->parent.t,
@@ -294,38 +296,38 @@ void drawing_data_request(Drawing_t *drawing,
           LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
           before_schedchange_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 8));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
           LTT_FIELD_PID, 0, 0,
           before_process_exit_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 9));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
       
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_PROCESS, LTT_EVENT_FREE,
           LTT_FIELD_PID, 0, 0,
           before_process_release_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 10));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
 
 #if 0
       lttv_trace_find_hook(ts->parent.t,
           "core", "process", "event_sub_id", 
           "event_data1", "event_data2", before_process_hook,
-          &g_array_index(hooks, LttvTraceHook, 7));
+          &g_array_index(hooks, LttvTraceHook, hn++));
 #endif //0
 #if 0
       lttv_trace_find_hook(ts->parent.t, "core", "process_fork", "child_pid", 
-          NULL, NULL, process_fork, &g_array_index(hooks, LttvTraceHook, 7));
+          NULL, NULL, process_fork, &g_array_index(hooks, LttvTraceHook, hn++));
 
       lttv_trace_find_hook(ts->parent.t, "core", "process_exit", NULL, NULL, 
-          NULL, process_exit, &g_array_index(hooks, LttvTraceHook, 8));
+          NULL, process_exit, &g_array_index(hooks, LttvTraceHook, hn++));
 #endif //0
 
       /* after hooks */
@@ -333,91 +335,93 @@ void drawing_data_request(Drawing_t *drawing,
 #if 0
       /**** DESACTIVATED ****/
       lttv_trace_find_hook(ts->parent.t, "core","syscall_entry","syscall_id", 
-    NULL, NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 8));
+    NULL, NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, hn++));
       /**** DESACTIVATED ****/
       lttv_trace_find_hook(ts->parent.t, "core", "syscall_exit", NULL, NULL, 
-          NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 9));
+          NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, hn++));
 
       /**** DESACTIVATED ****/
       lttv_trace_find_hook(ts->parent.t, "core", "trap_entry", "trap_id",
-    NULL, NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 10));
+    NULL, NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, hn++));
 
       /**** DESACTIVATED ****/
       lttv_trace_find_hook(ts->parent.t, "core", "trap_exit", NULL, NULL, NULL, 
-          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 11));
+          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, hn++));
 
       /**** DESACTIVATED ****/
       lttv_trace_find_hook(ts->parent.t, "core", "irq_entry", "irq_id", NULL, 
-          NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 12));
+          NULL, after_execmode_hook, &g_array_index(hooks, LttvTraceHook, hn++));
 
       /**** DESACTIVATED ****/
       lttv_trace_find_hook(ts->parent.t, "core", "irq_exit", NULL, NULL, NULL, 
-          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, 13));
+          after_execmode_hook, &g_array_index(hooks, LttvTraceHook, hn++));
 #endif //0
 #if 0
       lttv_trace_find_hook(ts->parent.t, "core", "schedchange", "in", "out", 
         "out_state", after_schedchange_hook, 
-        &g_array_index(hooks, LttvTraceHook, 8));
+        &g_array_index(hooks, LttvTraceHook, hn++));
 
       lttv_trace_find_hook(ts->parent.t, "core", "process", "event_sub_id", 
           "event_data1", "event_data2", after_process_hook,
-          &g_array_index(hooks, LttvTraceHook, 9));
+          &g_array_index(hooks, LttvTraceHook, hn++));
 #endif //0
+      after_hn = before_hn;
+      
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
           LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
           after_schedchange_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 11));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, after_hn++));
+      if(ret) after_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_PROCESS, LTT_EVENT_FORK,
           LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, 0,
           after_process_fork_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 12));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, after_hn++));
+      if(ret) after_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
           LTT_FIELD_PID, 0, 0,
           after_process_exit_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 13));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, after_hn++));
+      if(ret) after_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_FS, LTT_EVENT_EXEC,
           0, 0, 0,
           after_fs_exec_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 14));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, after_hn++));
+      if(ret) after_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
           LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
           after_event_enum_process_hook,
           events_request,
-          &g_array_index(hooks, LttvTraceHook, 15));
-      g_assert(!ret);
+          &g_array_index(hooks, LttvTraceHook, after_hn++));
+      if(ret) after_hn--;
 
-
+      hooks = g_array_set_size(hooks, after_hn);
 
 #if 0
       lttv_trace_find_hook(ts->parent.t, "core", "process_fork", "child_pid", 
-          NULL, NULL, process_fork, &g_array_index(hooks, LttvTraceHook, 7));
+          NULL, NULL, process_fork, &g_array_index(hooks, LttvTraceHook, hn++));
 
       lttv_trace_find_hook(ts->parent.t, "core", "process_exit", NULL, NULL, 
-          NULL, process_exit, &g_array_index(hooks, LttvTraceHook, 8));
+          NULL, process_exit, &g_array_index(hooks, LttvTraceHook, hn++));
 #endif //0
 
 
       
       /* Add these hooks to each event_by_id hooks list */
       /* add before */
-      for(k = 0 ; k < 11 ; k++) {
+      for(k = 0 ; k < before_hn ; k++) {
         hook = &g_array_index(hooks, LttvTraceHook, k);
         for(l=0;l<hook->fac_list->len;l++) {
           thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);
@@ -429,7 +433,7 @@ void drawing_data_request(Drawing_t *drawing,
       }
 
       /* add after */
-      for(k = 11 ; k < 16 ; k++) {
+      for(k = before_hn ; k < after_hn ; k++) {
         hook = &g_array_index(hooks, LttvTraceHook, k);
         for(l=0;l<hook->fac_list->len;l++) {
           thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);

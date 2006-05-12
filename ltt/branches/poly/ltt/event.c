@@ -687,7 +687,7 @@ void compute_fields_offsets(LttTracefile *tf,
         guint i;
         gint ret=0;
         if(field->fixed_root == FIELD_VARIABLE) {
-          *offset += ltt_align(*offset, get_alignment(fac, field),
+          *offset += ltt_align(*offset, get_alignment(field),
                                fac->alignment);
           /* remember offset */
           field->offset_root = *offset;
