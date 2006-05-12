@@ -232,7 +232,6 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
     t->ltt_minor_version = any->minor_version;
     t->flight_recorder = any->flight_recorder;
     t->has_heartbeat = any->has_heartbeat;
-    t->freq_scale = any->freq_scale;
   }
  
 
@@ -260,6 +259,8 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
         if(t) {
           t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &vheader->start_freq);
+          t->freq_scale = ltt_get_uint32(LTT_GET_BO(tf),
+                                         &vheader->freq_scale);
           t->start_tsc = ltt_get_uint64(LTT_GET_BO(tf),
                                         &vheader->start_tsc);
           t->start_monotonic = ltt_get_uint64(LTT_GET_BO(tf),
