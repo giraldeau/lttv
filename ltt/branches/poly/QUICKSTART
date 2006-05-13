@@ -48,7 +48,7 @@ PowerPC
 
 
 Author : Mathieu Desnoyers, September 2005
-Last update : April 29, 2006
+Last update : May 13, 2006
 
 
 ***********************************************************
@@ -195,28 +195,26 @@ su -
 mkdir /usr/src/lttng
 cd /usr/src/lttng
 (see http://ltt.polymtl.ca/lttng for package listing)
-wget http://ltt.polymtl.ca/lttng/lttng-modules-0.5.tar.bz2
-wget http://ltt.polymtl.ca/lttng/patch-2.6.15-lttng-0.x.xx.tar.bz2
-bzip2 -cd lttng-modules-0.x.tar.bz2 | tar xvof -
-bzip2 -cd patch-2.6.15-lttng-0.x.xx.tar.bz2 | tar xvof -
+wget http://ltt.polymtl.ca/lttng/patch-2.6.16-lttng-0.x.xx.tar.bz2
+bzip2 -cd patch-2.6.16-lttng-0.x.xx.tar.bz2 | tar xvof -
 
 
 * Getting LTTng kernel sources
 
 su -
 cd /usr/src
-wget http://kernel.org/pub/linux/kernel/v2.6/testing/linux-2.6.15.tar.bz2
-bzip2 -cd linux-2.6.15.tar.bz2 | tar xvof -
-cd linux-2.6.15
-cat /usr/src/lttng/patch-2.6.15-lttng-0.x.xx* | patch -p1
+wget http://kernel.org/pub/linux/kernel/v2.6/testing/linux-2.6.16.tar.bz2
+bzip2 -cd linux-2.6.16.tar.bz2 | tar xvof -
+cd linux-2.6.16
+cat /usr/src/lttng/patch-2.6.16-lttng-0.x.xx* | patch -p1
 cd ..
-mv linux-2.6.15 linux-2.6.15-lttng-0.x.xx
+mv linux-2.6.16 linux-2.6.16-lttng-0.x.xx
 
 
 * Installing a LTTng kernel
 
 su -
-cd /usr/src/linux-2.6.15-lttng-0.x.xx
+cd /usr/src/linux-2.6.16-lttng-0.x.xx
 make menuconfig (or make xconfig or make config)
     Select the < Help > button if you are not familiar with kernel
     configuration.
@@ -248,15 +246,7 @@ make install
 
 reboot
 
-  Select the Linux 2.6.15-lttng-0.x.xx kernel in your boot loader.
-
-
-* Install the ltt-modules
-
-su -
-cd /usr/src/lttng/lttng-modules-0.xx
-KERNELDIR=/usr/src/linux-2.6.15-lttng-0.x.xx make
-KERNELDIR=/usr/src/linux-2.6.15-lttng-0.x.xx make modules_install
+  Select the Linux 2.6.16-lttng-0.x.xx kernel in your boot loader.
 
 
 * Editing the system wide configuration
@@ -292,7 +282,8 @@ echo ltt-statedump >> /etc/modules
 
 
 * Getting and installing the ltt-control package (on the traced machine)
-
+(note : the ltt-control package contains lttd and lttctl. Although it has the
+same name as the ltt-control kernel module, they are *not* the same thing.)
 su -
 cd /usr/src
 wget http://ltt.polymtl.ca/lttng/ltt-control-0.x-xxxx2006.tar.gz
@@ -391,14 +382,14 @@ cp process.xml yourfacility.xml
 cd /tmp
 /usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/facilities/yourfacility.xml
 cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
-         /usr/src/linux-2.6.15-lttng-0.x.xx8/include/linux/ltt
+         /usr/src/linux-2.6.16-lttng-0.x.xx8/include/linux/ltt
 cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
-         /usr/src/linux-2.6.15-lttng-0.x.xx/ltt
+         /usr/src/linux-2.6.16-lttng-0.x.xx/ltt
   * edit the kernel file you want to instrument
     - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
       of the file.
     - Add a call to the tracing functions. See their names and parameters in
-      /usr/src/linux-2.6.15-lttng-0.x.xx/include/linux/ltt/ltt-facility-yourfacility.h
+      /usr/src/linux-2.6.16-lttng-0.x.xx/include/linux/ltt/ltt-facility-yourfacility.h
     
 
 
