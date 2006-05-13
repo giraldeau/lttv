@@ -2485,13 +2485,13 @@ int print_loader_header(facility_t *fac)
   fprintf(fd,"ltt_facility_t\tltt_facility_%s_%X;\n\n",
 			fac->name, fac->checksum);
 
-  fprintf(fd,"#define LTT_FACILITY_SYMBOL\t\t\t\t\t\t\tltt_facility_%s\n",
+  fprintf(fd,"#define LTT_FACILITY_SYMBOL\t\tltt_facility_%s\n",
       fac->name);
-  fprintf(fd,"#define LTT_FACILITY_CHECKSUM_SYMBOL\t\tltt_facility_%s_%X\n",
+  fprintf(fd,"#define LTT_FACILITY_CHECKSUM_SYMBOL\tltt_facility_%s_%X\n",
       fac->name, fac->checksum);
-  fprintf(fd,"#define LTT_FACILITY_CHECKSUM\t\t\t\t\t\t0x%X\n", fac->checksum);
-  fprintf(fd,"#define LTT_FACILITY_NAME\t\t\t\t\t\t\t\t\"%s\"\n", fac->name);
-  fprintf(fd,"#define LTT_FACILITY_NUM_EVENTS\t\t\t\t\tfacility_%s_num_events\n\n",
+  fprintf(fd,"#define LTT_FACILITY_CHECKSUM\t\t0x%X\n", fac->checksum);
+  fprintf(fd,"#define LTT_FACILITY_NAME\t\t\"%s\"\n", fac->name);
+  fprintf(fd,"#define LTT_FACILITY_NUM_EVENTS\tfacility_%s_num_events\n\n",
 			fac->name);
   fprintf(fd, "#endif //CONFIG_LTT\n\n");
   fprintf(fd, "#endif //_LTT_FACILITY_LOADER_%s_H_\n", fac->capname);
