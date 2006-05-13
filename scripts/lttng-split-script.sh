@@ -229,7 +229,6 @@ FILE=../$NAME-relayfs.diff
 
 IN="?_Documentation_ioctl-number.txt
 ?_include_linux_relayfs_fs.h
-
 ?_fs_relayfs_inode.c
 ?_fs_relayfs_relay.c"
 
@@ -244,7 +243,6 @@ for a in $IN; do wr $a $FILE; done
 FILE=../$NAME-core.diff
 
 IN="?_MAINTAINERS
-
 ?_include_asm-alpha_ltt.h
 ?_include_asm-arm26_ltt.h
 ?_include_asm-arm_ltt.h
@@ -292,6 +290,8 @@ IN="?_MAINTAINERS
 ?_kernel_sys_ni.c
 ?_kernel_exit.c
 ?_kernel_fork.c"
+
+for a in $IN; do wr $a $FILE; done
 
 FILE=../$NAME-modules.diff
 
