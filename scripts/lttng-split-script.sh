@@ -113,8 +113,7 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../$NAME-instrumentation-powerpc.diff
-IN="?_arch_powerpc_kernel_syscalls.c
-?_arch_powerpc_Kconfig
+IN="?_arch_powerpc_Kconfig
 ?_arch_powerpc_kernel_irq.c
 ?_arch_powerpc_kernel_ppc_ksyms.c
 ?_arch_powerpc_kernel_syscalls.c"
