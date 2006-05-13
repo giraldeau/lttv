@@ -349,9 +349,9 @@ static void request_event(InterruptEventData *event_data )
 	events_request->event		        = NULL;  
 	events_request->event_by_id		= event_data->event_by_id_hooks; 
 	events_request->after_chunk_tracefile = NULL; 
-	events_request->after_chunk_trace     = NULL;   
+	events_request->after_chunk_trace     = NULL;    
 	events_request->after_chunk_traceset	= NULL; 
-	events_request->before_request	= NULL; 
+	events_request->before_request		= NULL; 
 	events_request->after_request		= event_data->hooks_trace_after; 
 	
 	lttvwindow_events_request(event_data->tab, events_request);   
@@ -377,14 +377,12 @@ static gboolean irq_entry_callback(void *hook_data, void *call_data)
   event_time = ltt_event_time(e);
   cpu_id = ltt_event_cpu_id(e);
    
-  if ((ltt_time_compare(event_time,event_data->time_window.start_time) == TRUE) &&    
-     (ltt_time_compare(event_data->time_window.end_time,event_time) == TRUE))
-  { 	 
-	entry.id =get_interrupt_id(e);	  
-	entry.cpu_id = cpu_id;
-	entry.event_time =  event_time;		
-	g_array_append_val (active_irq_entry, entry);
-  } 
+  
+  entry.id =get_interrupt_id(e);	  
+  entry.cpu_id = cpu_id;
+  entry.event_time =  event_time;		
+  g_array_append_val (active_irq_entry, entry);
+
   return FALSE;
 }
 
@@ -424,13 +422,9 @@ gboolean irq_exit_callback(void *hook_data, void *call_data)
   LttEventType *type = ltt_event_eventtype(e);
   event_time = ltt_event_time(e);
   cpu_id = ltt_event_cpu_id(e);
-  if ((ltt_time_compare(event_time,event_data->time_window.start_time) == TRUE) &&    
-     (ltt_time_compare(event_data->time_window.end_time,event_time) == TRUE))
-     {
-     	 calcul_duration( event_time,  cpu_id, event_data);
-	 
-     }
-   return FALSE;
+  
+  calcul_duration( event_time,  cpu_id, event_data);
+  return FALSE;
 }
 
 /**
@@ -444,9 +438,11 @@ static void calcul_duration(LttTime time_exit,  guint cpu_id,InterruptEventData 
   LttTime duration;
   GArray *interrupt_counters = event_data->interrupt_counters;
   GArray *active_irq_entry = event_data->active_irq_entry;
-  for(i = 0; i < active_irq_entry->len; i++){
+  for(i = 0; i < active_irq_entry->len; i++)
+  {
     element = &g_array_index(active_irq_entry,irq_entry,i);
-    if(element->cpu_id == cpu_id){
+    if(element->cpu_id == cpu_id)
+    {
       sum_interrupt_data(element,time_exit,  interrupt_counters);    
       g_array_remove_index(active_irq_entry, i);
       break;
@@ -465,16 +461,19 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrup
   gboolean  notFound = FALSE;
   memset ((void*)&irq, 0,sizeof(Irq));
   
-  
-  if(interrupt_counters->len == NO_ITEMS){
+  /*first time*/
+  if(interrupt_counters->len == NO_ITEMS)
+  {
     irq.cpu_id = e->cpu_id;
     irq.id    =  e->id;
     irq.frequency++;
     irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
     g_array_append_val (interrupt_counters, irq);
   }
-  else{
-    for(i = 0; i < interrupt_counters->len; i++){
+  else
+  {
+    for(i = 0; i < interrupt_counters->len; i++)
+    {
       element = &g_array_index(interrupt_counters,Irq,i);
       if(element->id == e->id){
 	notFound = TRUE;
@@ -483,7 +482,8 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrup
 	element->frequency++;
       }
     }
-    if(!notFound){
+    if(!notFound)
+    {
       irq.cpu_id = e->cpu_id;
       irq.id    =  e->id;
       irq.frequency++;
@@ -492,6 +492,7 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrup
     }
   } 
 }
+
 /**
  *  This function displays the result on the viewer 
  *  
@@ -506,7 +507,8 @@ static gboolean interrupt_display(void *hook_data, void *call_data){
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
   GArray *interrupt_counters = event_data->interrupt_counters;  
   gtk_list_store_clear(event_data->ListStore);
-  for(i = 0; i < interrupt_counters->len; i++){  
+  for(i = 0; i < interrupt_counters->len; i++)
+  {  
     element = g_array_index(interrupt_counters,Irq,i);  
     real_data = element.total_duration.tv_sec;
     real_data *= NANOSECONDS_PER_SECOND;
@@ -518,12 +520,19 @@ static gboolean interrupt_display(void *hook_data, void *call_data){
       FREQUENCY_COLUMN, element.frequency,
       DURATION_COLUMN, real_data,
       -1);
+  
   } 
+  
   if(event_data->interrupt_counters->len)
+  {
      g_array_remove_range (event_data->interrupt_counters,0,event_data->interrupt_counters->len);
-   
+  }
+  
   if(event_data->active_irq_entry->len)
+  {
+  
     g_array_remove_range (event_data->active_irq_entry,0,event_data->active_irq_entry->len);
+  }
   return FALSE;
 }
 /*
@@ -548,7 +557,6 @@ gboolean trace_header(void *hook_data, void *call_data)
 
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-  printf("trace_header\n" );
   LttEvent *e;
   LttTime event_time;
   return FALSE;
