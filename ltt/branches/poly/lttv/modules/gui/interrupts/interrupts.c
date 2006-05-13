@@ -66,12 +66,20 @@
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 #define NO_ITEMS 0
   
+typedef struct 
+{
+  LttTime duration;
+  LttTime start_time;	
+  LttTime end_time;	
+}MaxDuration;
+
 typedef struct {
 	guint cpu_id;
 	guint id;
 	guint frequency;
 	LttTime total_duration;	
 	guint average_duration;
+	MaxDuration max_irq_handler;
 	
 }Irq;
 
@@ -146,7 +154,7 @@ static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data);
 static void CalculateXi(LttEvent *event, InterruptEventData *event_data);
 static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data);
 static int CalculateStandardDeviation(gint id, InterruptEventData *event_data);
-static void CalculateMaxIRQHandler();
+static void CalculateMaxIRQHandler(LttEvent *event);
 /* Enumeration of the columns */
 enum{
   CPUID_COLUMN,
@@ -154,6 +162,7 @@ enum{
   FREQUENCY_COLUMN,
   DURATION_COLUMN,
   DURATION_STANDARD_DEV_COLUMN,
+  MAX_IRQ_HANDLER_COLUMN,
   N_COLUMNS
 };
  
@@ -232,7 +241,8 @@ InterruptEventData *system_info(Tab *tab)
     G_TYPE_INT,     /* IRQ_ID                      */
     G_TYPE_INT,     /* Frequency 		   */
     G_TYPE_UINT64,   /* Duration                   */
-    G_TYPE_INT	    /* standard deviation 	   */
+    G_TYPE_INT,	    /* standard deviation 	   */
+    G_TYPE_INT	    /* Max IRQ handler  	   */
     );  
  
   event_viewer_data->TreeView = gtk_tree_view_new_with_model (GTK_TREE_MODEL (event_viewer_data->ListStore)); 
@@ -283,9 +293,17 @@ InterruptEventData *system_info(Tab *tab)
                  "text", DURATION_STANDARD_DEV_COLUMN,
                  NULL);
   gtk_tree_view_column_set_alignment (column, 0.0);
-  gtk_tree_view_column_set_fixed_width (column, 250);
+  gtk_tree_view_column_set_fixed_width (column, 200);
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
   
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("Max IRQ handler duration (nsec)",
+                 renderer,
+                 "text", MAX_IRQ_HANDLER_COLUMN,
+                 NULL);
+  gtk_tree_view_column_set_alignment (column, 0.0);
+  gtk_tree_view_column_set_fixed_width (column, 250);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
   
   
   event_viewer_data->SelectionTree = gtk_tree_view_get_selection (GTK_TREE_VIEW (event_viewer_data->TreeView));
@@ -491,7 +509,7 @@ gboolean FirstRequestIrqExitCallback(void *hook_data, void *call_data)
   cpu_id = ltt_event_cpu_id(e);
   
   calcul_duration( event_time,  cpu_id, event_data);
-  CalculateMaxIRQHandler();
+  CalculateMaxIRQHandler(e);
   return FALSE;
 }
 
@@ -519,7 +537,7 @@ static void calcul_duration(LttTime time_exit,  guint cpu_id,InterruptEventData 
   }
 }
 
-static void CalculateMaxIRQHandler()
+static void CalculateMaxIRQHandler(LttEvent *event)
 {
 
 }
@@ -543,6 +561,18 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *FirstReq
     irq.id    =  e->id;
     irq.frequency++;
     irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
+    
+    /* test code */
+    irq.max_irq_handler.start_time = e->event_time;
+    irq.max_irq_handler.end_time = time_exit;
+    irq.max_irq_handler.duration = ltt_time_sub(time_exit, e->event_time);
+    /*
+    irq.max_irq_handler.duration = duration.tv_sec;
+    irq.max_irq_handler.duration *= NANOSECONDS_PER_SECOND;
+    irq.max_irq_handler.duration += element.total_duration.tv_nsec;
+    */
+    /* test code */
+    
     g_array_append_val (FirstRequestIrqExit, irq);
   }
   else
@@ -556,6 +586,12 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *FirstReq
 	duration =  ltt_time_sub(time_exit, e->event_time);
 	element->total_duration = ltt_time_add(element->total_duration, duration);
 	element->frequency++;
+	if(ltt_time_compare(duration,element->max_irq_handler.duration) > 0)
+	{
+	    element->max_irq_handler.duration = duration;
+	    element->max_irq_handler.start_time = e->event_time;
+	    element->max_irq_handler.end_time  = time_exit;
+	}
       }
     }
     if(!notFound)
@@ -564,6 +600,11 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *FirstReq
       irq.id    =  e->id;
       irq.frequency++;
       irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
+      
+      irq.max_irq_handler.start_time = e->event_time;
+      irq.max_irq_handler.end_time = time_exit;
+      irq.max_irq_handler.duration = ltt_time_sub(time_exit, e->event_time);
+      
       g_array_append_val (FirstRequestIrqExit, irq);
     }
   } 
@@ -828,6 +869,7 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
   LttTime average_duration;
   GtkTreeIter    iter;
   guint64 real_data;
+  guint maxIRQduration;
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
   GArray *FirstRequestIrqExit = event_data->FirstRequestIrqExit;  
   gtk_list_store_clear(event_data->ListStore);
@@ -837,6 +879,12 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     real_data = element.total_duration.tv_sec;
     real_data *= NANOSECONDS_PER_SECOND;
     real_data += element.total_duration.tv_nsec;
+    
+    
+    maxIRQduration  = element.max_irq_handler.duration.tv_sec;
+    maxIRQduration *= NANOSECONDS_PER_SECOND;
+    maxIRQduration += element.max_irq_handler.duration.tv_nsec;
+      
     gtk_list_store_append (event_data->ListStore, &iter);
     gtk_list_store_set (event_data->ListStore, &iter,
       CPUID_COLUMN, element.cpu_id,
@@ -844,7 +892,9 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
       FREQUENCY_COLUMN, element.frequency,
       DURATION_COLUMN, real_data,
       DURATION_STANDARD_DEV_COLUMN, CalculateStandardDeviation(element.id, event_data),
+      MAX_IRQ_HANDLER_COLUMN, maxIRQduration,
       -1);
+     
      
   } 
    
