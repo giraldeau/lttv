@@ -15,6 +15,27 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, 
  * MA 02111-1307, USA.
  */
+ 
+ /******************************************************************
+ CPUID  | IRQID | Frequency | 
+ 
+ The standard deviation (sigma) is based on: 
+ http://en.wikipedia.org/wiki/Standard_deviation
+ 
+ sigma = sqrt(1/N Sum ((xi -Xa)^2))
+ 
+ To compute the standard deviation, we pass  two EventRequests to LTTV. In 
+ the first EventRequest, we  compute the average duration (Xa) of and the 
+ frequency (N) each IrqID.  We store the information in an array  called 
+ FirstRequestIrqExit.
+ 
+ In the second  EventRequest, we compute the Sum ((xi -Xa)^2) 
+  
+    
+ 
+ 
+ 
+ *******************************************************************/
 
  
 
@@ -24,6 +45,7 @@
 #include <gdk/gdk.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <string.h>
 #include <ltt/ltt.h>
 #include <ltt/event.h>
@@ -49,6 +71,8 @@ typedef struct {
 	guint id;
 	guint frequency;
 	LttTime total_duration;	
+	guint average_duration;
+	
 }Irq;
 
 typedef struct {
@@ -56,6 +80,15 @@ typedef struct {
 	guint cpu_id;
 	LttTime event_time;
 }irq_entry;
+
+
+typedef struct 
+{
+	guint irqId;
+	guint frequency;
+	guint64 sumOfDurations;
+	
+}SumId;
 
 enum type_t {
    IRQ_ENTRY,
@@ -83,8 +116,12 @@ typedef struct _InterruptEventData {
   LttvHooks  * hooks_trace_before;
   TimeWindow   time_window;
   LttvHooksById * event_by_id_hooks;
-  GArray *interrupt_counters;
-  GArray *active_irq_entry ;
+  GArray *FirstRequestIrqExit;
+  GArray *FirstRequestIrqEntry;
+  GArray *SecondRequestIrqEntry;
+  GArray *SecondRequestIrqExit;
+  GArray *SumArray;
+  
 } InterruptEventData ;
 
 
@@ -94,21 +131,29 @@ static gboolean interrupt_update_time_window(void * hook_data, void * call_data)
 static GtkWidget *interrupts(Tab *tab);
 static InterruptEventData *system_info(Tab *tab);
 void interrupt_destructor(InterruptEventData *event_viewer_data);
-static void request_event(InterruptEventData *event_data );  
+static void FirstRequest(InterruptEventData *event_data );  
 static guint64 get_interrupt_id(LttEvent *e);
 static gboolean trace_header(void *hook_data, void *call_data);
-static gboolean interrupt_display (void *hook_data, void *call_data);
+static gboolean DisplayViewer (void *hook_data, void *call_data);
 static void calcul_duration(LttTime time_exit,  guint cpu_id,  InterruptEventData *event_data);
-static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrupt_counters);
-static gboolean irq_entry_callback(void *hook_data, void *call_data);
-static gboolean irq_exit_callback(void *hook_data, void *call_data);
- 
+static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit);
+static gboolean FirstRequestIrqEntryCallback(void *hook_data, void *call_data);
+static gboolean FirstRequestIrqExitCallback(void *hook_data, void *call_data);
+static gboolean SecondRequest(void *hook_data, void *call_data);
+static void CalculateAverageDurationForEachIrqId(InterruptEventData *event_data);
+static gboolean SecondRequestIrqEntryCallback(void *hook_data, void *call_data);
+static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data);
+static void CalculateXi(LttEvent *event, InterruptEventData *event_data);
+static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data);
+static int CalculateStandardDeviation(gint id, InterruptEventData *event_data);
+static void CalculateMaxIRQHandler();
 /* Enumeration of the columns */
 enum{
   CPUID_COLUMN,
   IRQ_ID_COLUMN,
   FREQUENCY_COLUMN,
   DURATION_COLUMN,
+  DURATION_STANDARD_DEV_COLUMN,
   N_COLUMNS
 };
  
@@ -153,18 +198,26 @@ static GtkWidget *interrupts(Tab * tab)
  */
 InterruptEventData *system_info(Tab *tab)
 {
+  
   LttTime end;
   GtkTreeViewColumn *column;
   GtkCellRenderer *renderer;
   InterruptEventData* event_viewer_data = g_new(InterruptEventData,1) ;
-   
-   
+      
   event_viewer_data->tab = tab;
   
   /*Get the current time frame from the main window */
   event_viewer_data->time_window  =  lttvwindow_get_time_window(tab);
-  event_viewer_data->interrupt_counters = g_array_new(FALSE, FALSE, sizeof(Irq));
-  event_viewer_data->active_irq_entry   =  g_array_new(FALSE, FALSE, sizeof(irq_entry));
+  
+  event_viewer_data->FirstRequestIrqExit = g_array_new(FALSE, FALSE, sizeof(Irq));
+  event_viewer_data->FirstRequestIrqEntry   =  g_array_new(FALSE, FALSE, sizeof(irq_entry));
+  
+  event_viewer_data->SecondRequestIrqEntry   =  g_array_new(FALSE, FALSE, sizeof(irq_entry));
+  event_viewer_data->SecondRequestIrqExit = g_array_new(FALSE, FALSE, sizeof(Irq));
+   
+  event_viewer_data->SumArray = g_array_new(FALSE, FALSE, sizeof(SumId));
+  
+  
   /*Create tha main window for the viewer */					 	
   event_viewer_data->ScrollWindow = gtk_scrolled_window_new (NULL, NULL);
   gtk_widget_show (event_viewer_data->ScrollWindow);
@@ -178,7 +231,8 @@ InterruptEventData *system_info(Tab *tab)
     G_TYPE_INT,     /* CPUID                       */
     G_TYPE_INT,     /* IRQ_ID                      */
     G_TYPE_INT,     /* Frequency 		   */
-    G_TYPE_UINT64   /* Duration                    */
+    G_TYPE_UINT64,   /* Duration                   */
+    G_TYPE_INT	    /* standard deviation 	   */
     );  
  
   event_viewer_data->TreeView = gtk_tree_view_new_with_model (GTK_TREE_MODEL (event_viewer_data->ListStore)); 
@@ -222,6 +276,18 @@ InterruptEventData *system_info(Tab *tab)
   gtk_tree_view_column_set_fixed_width (column, 145);
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
 
+  
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("Duration standard deviation  (nsec)",
+                 renderer,
+                 "text", DURATION_STANDARD_DEV_COLUMN,
+                 NULL);
+  gtk_tree_view_column_set_alignment (column, 0.0);
+  gtk_tree_view_column_set_fixed_width (column, 250);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
+  
+  
+  
   event_viewer_data->SelectionTree = gtk_tree_view_get_selection (GTK_TREE_VIEW (event_viewer_data->TreeView));
   gtk_tree_selection_set_mode (event_viewer_data->SelectionTree, GTK_SELECTION_SINGLE);
    
@@ -240,7 +306,7 @@ InterruptEventData *system_info(Tab *tab)
                                          event_viewer_data);	
 					 
   
-  request_event(event_viewer_data );
+  FirstRequest(event_viewer_data );
   return event_viewer_data;
 }
 
@@ -253,7 +319,7 @@ InterruptEventData *system_info(Tab *tab)
  *    time interval to the main window
  * 
  */
-static void request_event(InterruptEventData *event_data )
+static void FirstRequest(InterruptEventData *event_data )
 {
   guint i, k, l, nb_trace;
  
@@ -292,8 +358,9 @@ static void request_event(InterruptEventData *event_data )
 	lttv_hooks_add(event_data->hooks_trace_before, trace_header, event_data, LTTV_PRIO_DEFAULT);	
 
   	event_data->hooks_trace_after = lttv_hooks_new();
-  	/* Registers a hook function */
-	lttv_hooks_add(event_data->hooks_trace_after, interrupt_display, event_data, LTTV_PRIO_DEFAULT);
+  	
+	/* Registers a hook function */
+	lttv_hooks_add(event_data->hooks_trace_after,  SecondRequest, event_data, LTTV_PRIO_DEFAULT);
  	/* Get a trace state */
 	ts = (LttvTraceState *)tsc->traces[i];
 	/* Create event_by_Id hooks */
@@ -303,14 +370,14 @@ static void request_event(InterruptEventData *event_data )
           ret = lttv_trace_find_hook(ts->parent.t,
 		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
 		LTT_FIELD_IRQ_ID, 0, 0,
-		irq_entry_callback,
+		FirstRequestIrqEntryCallback,
 		events_request,
 		&g_array_index(hooks, LttvTraceHook, 0));
 	 
 	 ret = lttv_trace_find_hook(ts->parent.t,
 		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
 		LTT_FIELD_IRQ_ID, 0, 0,
-		irq_exit_callback,
+		FirstRequestIrqExitCallback,
 		events_request,
 		&g_array_index(hooks, LttvTraceHook, 1));
 		
@@ -363,7 +430,7 @@ static void request_event(InterruptEventData *event_data )
  *  This function is called whenever an irq_entry event occurs.  
  *  
  */ 
-static gboolean irq_entry_callback(void *hook_data, void *call_data)
+static gboolean FirstRequestIrqEntryCallback(void *hook_data, void *call_data)
 {
   
   LttTime  event_time; 
@@ -372,7 +439,7 @@ static gboolean irq_entry_callback(void *hook_data, void *call_data)
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
-  GArray* active_irq_entry  = event_data->active_irq_entry; 
+  GArray* FirstRequestIrqEntry  = event_data->FirstRequestIrqEntry; 
   LttEvent *e = ltt_tracefile_get_event(tfc->tf); 
   event_time = ltt_event_time(e);
   cpu_id = ltt_event_cpu_id(e);
@@ -381,7 +448,7 @@ static gboolean irq_entry_callback(void *hook_data, void *call_data)
   entry.id =get_interrupt_id(e);	  
   entry.cpu_id = cpu_id;
   entry.event_time =  event_time;		
-  g_array_append_val (active_irq_entry, entry);
+  g_array_append_val (FirstRequestIrqEntry, entry);
 
   return FALSE;
 }
@@ -411,7 +478,7 @@ static guint64 get_interrupt_id(LttEvent *e)
  *  This function is called whenever an irq_exit event occurs.  
  *  
  */ 
-gboolean irq_exit_callback(void *hook_data, void *call_data)
+gboolean FirstRequestIrqExitCallback(void *hook_data, void *call_data)
 {
   LttTime  event_time; 
   unsigned cpu_id;
@@ -424,6 +491,7 @@ gboolean irq_exit_callback(void *hook_data, void *call_data)
   cpu_id = ltt_event_cpu_id(e);
   
   calcul_duration( event_time,  cpu_id, event_data);
+  CalculateMaxIRQHandler();
   return FALSE;
 }
 
@@ -431,29 +499,36 @@ gboolean irq_exit_callback(void *hook_data, void *call_data)
  *  This function calculates the duration of an interrupt.  
  *  
  */ 
-static void calcul_duration(LttTime time_exit,  guint cpu_id,InterruptEventData *event_data){
+static void calcul_duration(LttTime time_exit,  guint cpu_id,InterruptEventData *event_data)
+{
   
   gint i, irq_id;
   irq_entry *element; 
   LttTime duration;
-  GArray *interrupt_counters = event_data->interrupt_counters;
-  GArray *active_irq_entry = event_data->active_irq_entry;
-  for(i = 0; i < active_irq_entry->len; i++)
+  GArray *FirstRequestIrqExit = event_data->FirstRequestIrqExit;
+  GArray *FirstRequestIrqEntry = event_data->FirstRequestIrqEntry;
+  for(i = 0; i < FirstRequestIrqEntry->len; i++)
   {
-    element = &g_array_index(active_irq_entry,irq_entry,i);
+    element = &g_array_index(FirstRequestIrqEntry,irq_entry,i);
     if(element->cpu_id == cpu_id)
     {
-      sum_interrupt_data(element,time_exit,  interrupt_counters);    
-      g_array_remove_index(active_irq_entry, i);
+      sum_interrupt_data(element,time_exit,  FirstRequestIrqExit);    
+      g_array_remove_index(FirstRequestIrqEntry, i);
       break;
     }
   }
 }
+
+static void CalculateMaxIRQHandler()
+{
+
+}
+
 /**
  *  This function calculates the total duration of an interrupt.  
  *  
  */ 
-static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrupt_counters){
+static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit){
   Irq irq;
   Irq *element; 
   guint i;
@@ -462,20 +537,21 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrup
   memset ((void*)&irq, 0,sizeof(Irq));
   
   /*first time*/
-  if(interrupt_counters->len == NO_ITEMS)
+  if(FirstRequestIrqExit->len == NO_ITEMS)
   {
     irq.cpu_id = e->cpu_id;
     irq.id    =  e->id;
     irq.frequency++;
     irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
-    g_array_append_val (interrupt_counters, irq);
+    g_array_append_val (FirstRequestIrqExit, irq);
   }
   else
   {
-    for(i = 0; i < interrupt_counters->len; i++)
+    for(i = 0; i < FirstRequestIrqExit->len; i++)
     {
-      element = &g_array_index(interrupt_counters,Irq,i);
-      if(element->id == e->id){
+      element = &g_array_index(FirstRequestIrqExit,Irq,i);
+      if(element->id == e->id)
+      {
 	notFound = TRUE;
 	duration =  ltt_time_sub(time_exit, e->event_time);
 	element->total_duration = ltt_time_add(element->total_duration, duration);
@@ -488,28 +564,276 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *interrup
       irq.id    =  e->id;
       irq.frequency++;
       irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
-      g_array_append_val (interrupt_counters, irq);
+      g_array_append_val (FirstRequestIrqExit, irq);
     }
   } 
+}
+
+static gboolean SecondRequest(void *hook_data, void *call_data)
+{
+ 
+  guint i, k, l, nb_trace;
+ 
+  LttvTraceHook *hook;
+   
+  guint ret; 
+  
+  LttvTraceState *ts;
+    
+  GArray *hooks;
+   
+  EventsRequest *events_request;
+  
+  LttvTraceHookByFacility *thf;
+  
+  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  
+  LttvTracesetContext *tsc = lttvwindow_get_traceset_context(event_data->tab);
+  
+  CalculateAverageDurationForEachIrqId(event_data);
+   
+  /* Get the traceset */
+  LttvTraceset *traceset = tsc->ts;
+ 
+  nb_trace = lttv_traceset_number(traceset);
+  
+  /* There are many traces in a traceset. Iteration for each trace. */  
+  for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++)
+  {
+        events_request = g_new(EventsRequest, 1); 
+	
+      	hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
+      	
+	hooks = g_array_set_size(hooks, 2);
+    
+	event_data->hooks_trace_after = lttv_hooks_new();
+  	
+	/* Registers a hook function */
+	lttv_hooks_add(event_data->hooks_trace_after, DisplayViewer, event_data, LTTV_PRIO_DEFAULT);
+	
+  	/* Get a trace state */
+	ts = (LttvTraceState *)tsc->traces[i];
+	/* Create event_by_Id hooks */
+  	event_data->event_by_id_hooks = lttv_hooks_by_id_new();
+  
+ 	/*Register event_by_id_hooks with a callback function*/ 
+          ret = lttv_trace_find_hook(ts->parent.t,
+		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
+		LTT_FIELD_IRQ_ID, 0, 0,
+		SecondRequestIrqEntryCallback,
+		events_request,
+		&g_array_index(hooks, LttvTraceHook, 0));
+	 
+	 ret = lttv_trace_find_hook(ts->parent.t,
+		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
+		LTT_FIELD_IRQ_ID, 0, 0,
+		SecondRequestIrqExitCallback,
+		events_request,
+		&g_array_index(hooks, LttvTraceHook, 1));
+		
+	  g_assert(!ret);
+ 	 /*iterate through the facility list*/
+	for(k = 0 ; k < hooks->len; k++) 
+	{ 
+	        hook = &g_array_index(hooks, LttvTraceHook, k);
+		for(l=0; l<hook->fac_list->len; l++) 
+		{
+			thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l); 
+			lttv_hooks_add(lttv_hooks_by_id_find(event_data->event_by_id_hooks, thf->id),
+				thf->h,
+				event_data,
+				LTTV_PRIO_DEFAULT);
+			 
+		}
+	}
+	/* Initalize the EventsRequest structure */
+	events_request->owner       = event_data; 
+	events_request->viewer_data = event_data; 
+	events_request->servicing   = FALSE;     
+	events_request->start_time  = event_data->time_window.start_time; 
+	events_request->start_position  = NULL;
+	events_request->stop_flag	   = FALSE;
+	events_request->end_time 	   = event_data->time_window.end_time;
+	events_request->num_events  	   = G_MAXUINT;      
+	events_request->end_position       = NULL; 
+	events_request->trace 	   = i;    
+	
+	events_request->hooks = hooks;
+	
+	events_request->before_chunk_traceset = NULL; 
+	events_request->before_chunk_trace    = NULL; 
+	events_request->before_chunk_tracefile= NULL; 
+	events_request->event		        = NULL;  
+	events_request->event_by_id		= event_data->event_by_id_hooks; 
+	events_request->after_chunk_tracefile = NULL; 
+	events_request->after_chunk_trace     = NULL;    
+	events_request->after_chunk_traceset	= NULL; 
+	events_request->before_request		= NULL; 
+	events_request->after_request		= event_data->hooks_trace_after; 
+	
+	lttvwindow_events_request(event_data->tab, events_request);   
+   }
+    
+
+  return FALSE;
+}
+
+static void CalculateAverageDurationForEachIrqId(InterruptEventData *event_data)
+{
+  guint64 real_data;
+  Irq *element; 
+  gint i;
+  GArray* FirstRequestIrqExit  = event_data->FirstRequestIrqExit; 
+  for(i = 0; i < FirstRequestIrqExit->len; i++)
+  {  
+    element = &g_array_index(FirstRequestIrqExit,Irq,i);  
+    real_data = element->total_duration.tv_sec;
+    real_data *= NANOSECONDS_PER_SECOND;
+    real_data += element->total_duration.tv_nsec;
+    element->average_duration = real_data / element->frequency;
+    printf("average duration: %d\n",  element->average_duration);
+  }
+
+}
+
+static gboolean SecondRequestIrqEntryCallback(void *hook_data, void *call_data)
+{
+
+  LttTime  event_time; 
+  unsigned cpu_id;
+  irq_entry entry;
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  GArray* SecondRequestIrqEntry  = event_data->SecondRequestIrqEntry; 
+  LttEvent *e = ltt_tracefile_get_event(tfc->tf); 
+  event_time = ltt_event_time(e);
+  cpu_id = ltt_event_cpu_id(e);
+   
+  
+  entry.id =get_interrupt_id(e);	  
+  entry.cpu_id = cpu_id;
+  entry.event_time =  event_time;		
+  g_array_append_val (SecondRequestIrqEntry, entry);
+ 
+  return FALSE;
+}
+
+static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data)
+{
+   
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  LttEvent *event = ltt_tracefile_get_event(tfc->tf);
+  
+  CalculateXi(event, event_data);
+  return FALSE;
+} 
+
+static void CalculateXi(LttEvent *event_irq_exit, InterruptEventData *event_data)
+{
+  gint i, irq_id;
+  irq_entry *element; 
+  LttTime Xi;
+  LttTime  exit_time; 
+  unsigned cpu_id;
+  
+  GArray *SecondRequestIrqExit = event_data->SecondRequestIrqExit;
+  GArray *SecondRequestIrqEntry = event_data->SecondRequestIrqEntry;
+  cpu_id = ltt_event_cpu_id(event_irq_exit);
+  for(i = 0; i < SecondRequestIrqEntry->len; i++)
+  {
+    element = &g_array_index(SecondRequestIrqEntry,irq_entry,i);
+    if(element->cpu_id == cpu_id)
+    {
+     
+      /* time calculation */	
+      exit_time = ltt_event_time(event_irq_exit);
+      Xi   =  ltt_time_sub(exit_time, element->event_time);
+      irq_id    =  element->id;
+         
+      SumItems(irq_id, Xi,event_data);
+      g_array_remove_index(SecondRequestIrqEntry, i);
+      break;
+    }
+  }
+}
+
+static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data)
+{
+  gint i;
+  guint time_in_ns;
+   
+  gint temp;
+  Irq *average; 
+  SumId *sumItem; 
+  SumId sum;
+  gboolean  notFound = FALSE;
+  GArray *FirstRequestIrqExit = event_data->FirstRequestIrqExit;
+  GArray *SumArray = event_data->SumArray;
+  time_in_ns  = Xi.tv_sec;
+  time_in_ns *= NANOSECONDS_PER_SECOND;
+  time_in_ns += Xi.tv_nsec;
+    
+  for(i = 0; i < FirstRequestIrqExit->len; i++)
+  {
+  	average = &g_array_index(FirstRequestIrqExit,Irq,i);
+	if(irq_id == average->id)
+	{
+	    temp = time_in_ns - average->average_duration;
+	    sum.sumOfDurations =  pow (temp , 2);
+	    //printf("one : %d\n", sum.sumOfDurations);	    
+	    sum.irqId = irq_id;
+	    sum.frequency = average->frequency;
+	    if(event_data->SumArray->len == NO_ITEMS)		 
+	    {   
+	     	g_array_append_val (SumArray, sum);
+	    }
+	    else
+ 	    {
+	        
+	        for(i = 0; i < SumArray->len; i++)
+    		{
+      		  sumItem = &g_array_index(SumArray, SumId, i);
+      		  if(sumItem->irqId == irq_id)
+      		  { 
+		     notFound = TRUE;
+		     sumItem->sumOfDurations  += sum.sumOfDurations;
+ 		     
+      		  }
+    		}
+		if(!notFound)
+    		{
+   		   g_array_append_val (SumArray, sum);
+		}
+    
+	   
+	    }
+         
+	}
+  } 	
 }
 
 /**
  *  This function displays the result on the viewer 
  *  
  */ 
-static gboolean interrupt_display(void *hook_data, void *call_data){
+static gboolean DisplayViewer(void *hook_data, void *call_data)
+{
   
+  guint average;
   gint i;	
   Irq element; 
   LttTime average_duration;
   GtkTreeIter    iter;
   guint64 real_data;
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
-  GArray *interrupt_counters = event_data->interrupt_counters;  
+  GArray *FirstRequestIrqExit = event_data->FirstRequestIrqExit;  
   gtk_list_store_clear(event_data->ListStore);
-  for(i = 0; i < interrupt_counters->len; i++)
+  for(i = 0; i < FirstRequestIrqExit->len; i++)
   {  
-    element = g_array_index(interrupt_counters,Irq,i);  
+    element = g_array_index(FirstRequestIrqExit,Irq,i);  
     real_data = element.total_duration.tv_sec;
     real_data *= NANOSECONDS_PER_SECOND;
     real_data += element.total_duration.tv_nsec;
@@ -519,21 +843,61 @@ static gboolean interrupt_display(void *hook_data, void *call_data){
       IRQ_ID_COLUMN,  element.id,
       FREQUENCY_COLUMN, element.frequency,
       DURATION_COLUMN, real_data,
+      DURATION_STANDARD_DEV_COLUMN, CalculateStandardDeviation(element.id, event_data),
       -1);
-  
+     
   } 
+   
   
-  if(event_data->interrupt_counters->len)
+   
+  if(event_data->FirstRequestIrqExit->len)
   {
-     g_array_remove_range (event_data->interrupt_counters,0,event_data->interrupt_counters->len);
+     g_array_remove_range (event_data->FirstRequestIrqExit,0,event_data->FirstRequestIrqExit->len);
   }
   
-  if(event_data->active_irq_entry->len)
+  if(event_data->FirstRequestIrqEntry->len)
   {
-  
-    g_array_remove_range (event_data->active_irq_entry,0,event_data->active_irq_entry->len);
+    g_array_remove_range (event_data->FirstRequestIrqEntry,0,event_data->FirstRequestIrqEntry->len);
   }
+   
+  if(event_data->SecondRequestIrqEntry->len)
+  {
+    g_array_remove_range (event_data->SecondRequestIrqEntry,0,event_data->SecondRequestIrqEntry->len);
+  }
+  
+  if(event_data->SecondRequestIrqExit->len)
+  {
+    g_array_remove_range (event_data->SecondRequestIrqExit,0, event_data->SecondRequestIrqExit->len);
+  } 
+    
+  if(event_data->SumArray->len)
+  {
+    g_array_remove_range (event_data->SumArray,0, event_data->SumArray->len);
+  }
+    
   return FALSE;
+}
+
+static int CalculateStandardDeviation(gint id, InterruptEventData *event_data)
+{
+  int i;
+  SumId sumId;
+  double inner_component;
+  int deviation = 0;
+  for(i = 0; i < event_data->SumArray->len; i++)
+  {  
+    sumId  = g_array_index(event_data->SumArray, SumId, i);  
+    if(id == sumId.irqId)
+    {
+	printf("id: %d\n", sumId.irqId);	     
+	inner_component = sumId.sumOfDurations/ sumId.frequency;
+	deviation =  sqrt(inner_component);
+	printf("deviation: %d\n", deviation);	    
+	return deviation;
+	
+    }    
+  }
+  return deviation; 
 }
 /*
  * This function is called by the main window
@@ -547,7 +911,7 @@ gboolean interrupt_update_time_window(void * hook_data, void * call_data)
   g_info("interrupts: interrupt_update_time_window()\n");
   Tab *tab = event_data->tab;
   lttvwindow_events_request_remove_all(tab, event_data);
-  request_event(event_data );
+  FirstRequest(event_data );
   return FALSE;
 }
 
@@ -585,7 +949,9 @@ void interrupt_destructor(InterruptEventData *event_viewer_data)
  * This function releases the memory reserved by the module and unregisters
  * everything that has been registered in the gtkTraceSet API.
  */
-static void destroy() {
+static void destroy() 
+{
+    
   g_info("Destroy  interrupts");
   g_slist_foreach(interrupt_data_list, interrupt_destroy_walk, NULL );
   g_slist_free(interrupt_data_list); 
