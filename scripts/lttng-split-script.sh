@@ -275,9 +275,6 @@ IN="?_MAINTAINERS
 ?_include_linux_sched.h
 ?_ltt_Kconfig
 ?_ltt_ltt-core.c
-?_ltt_ltt-control.c
-?_ltt_ltt-control.h
-?_ltt_ltt-statedump.c
 ?_arch_i386_Kconfig
 ?_arch_ppc_Kconfig
 ?_arch_arm_Kconfig
