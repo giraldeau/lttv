@@ -266,7 +266,7 @@ InterruptEventData *system_info(Tab *tab)
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
 
   renderer = gtk_cell_renderer_text_new ();
-  column = gtk_tree_view_column_new_with_attributes ("Frequency (Hz)",
+  column = gtk_tree_view_column_new_with_attributes ("Frequency ",
                  renderer,
                  "text", FREQUENCY_COLUMN,
                  NULL);
@@ -902,7 +902,7 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     gtk_list_store_set (event_data->ListStore, &iter,
       CPUID_COLUMN, element.cpu_id,
       IRQ_ID_COLUMN,  element.id,
-      FREQUENCY_COLUMN, FrequencyInHZ(element.frequency,event_data->time_window),
+      FREQUENCY_COLUMN, element.frequency,
       DURATION_COLUMN, real_data,
       DURATION_STANDARD_DEV_COLUMN, CalculateStandardDeviation(element.id, event_data),
       MAX_IRQ_HANDLER_COLUMN, maxIrqHandler,
