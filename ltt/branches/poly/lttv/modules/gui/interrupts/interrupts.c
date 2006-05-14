@@ -17,24 +17,20 @@
  */
  
  /******************************************************************
- CPUID  | IRQID | Frequency | 
- 
- The standard deviation (sigma) is based on: 
+   
+ The standard deviation  calculation is based on: 
  http://en.wikipedia.org/wiki/Standard_deviation
  
- sigma = sqrt(1/N Sum ((xi -Xa)^2))
+ Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2))
  
- To compute the standard deviation, we pass  two EventRequests to LTTV. In 
- the first EventRequest, we  compute the average duration (Xa) of and the 
- frequency (N) each IrqID.  We store the information in an array  called 
- FirstRequestIrqExit.
- 
- In the second  EventRequest, we compute the Sum ((xi -Xa)^2) 
-  
-    
- 
- 
- 
+ To compute the standard deviation, we need to make  EventRequests to LTTV. In 
+ the first EventRequest, we  compute the average duration (Xa)  and the 
+ frequency (N) of each IrqID.  We store the information calculated in the first 
+ EventRequest in an array  called  FirstRequestIrqExit.
+ In the second  EventRequest, we compute the Sum ((xi -Xa)^2) and store this information 
+ in a array called SumArray. The function CalculateStandardDeviation() uses FirstRequestIrqExit 
+ and SumArray arrays to calculate the standard deviation.
+   
  *******************************************************************/
 
  
@@ -143,8 +139,8 @@ static void FirstRequest(InterruptEventData *event_data );
 static guint64 get_interrupt_id(LttEvent *e);
 static gboolean trace_header(void *hook_data, void *call_data);
 static gboolean DisplayViewer (void *hook_data, void *call_data);
-static void calcul_duration(LttTime time_exit,  guint cpu_id,  InterruptEventData *event_data);
-static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit);
+static void CalculateData(LttTime time_exit,  guint cpu_id,  InterruptEventData *event_data);
+static void TotalDurationMaxIrqDuration(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit);
 static gboolean FirstRequestIrqEntryCallback(void *hook_data, void *call_data);
 static gboolean FirstRequestIrqExitCallback(void *hook_data, void *call_data);
 static gboolean SecondRequest(void *hook_data, void *call_data);
@@ -154,7 +150,7 @@ static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data);
 static void CalculateXi(LttEvent *event, InterruptEventData *event_data);
 static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data);
 static int CalculateStandardDeviation(gint id, InterruptEventData *event_data);
-static void CalculateMaxIRQHandler(LttEvent *event);
+ 
 /* Enumeration of the columns */
 enum{
   CPUID_COLUMN,
@@ -242,7 +238,7 @@ InterruptEventData *system_info(Tab *tab)
     G_TYPE_INT,     /* Frequency 		   */
     G_TYPE_UINT64,   /* Duration                   */
     G_TYPE_INT,	    /* standard deviation 	   */
-    G_TYPE_INT	    /* Max IRQ handler  	   */
+    G_TYPE_STRING	    /* Max IRQ handler  	   */
     );  
  
   event_viewer_data->TreeView = gtk_tree_view_new_with_model (GTK_TREE_MODEL (event_viewer_data->ListStore)); 
@@ -508,8 +504,8 @@ gboolean FirstRequestIrqExitCallback(void *hook_data, void *call_data)
   event_time = ltt_event_time(e);
   cpu_id = ltt_event_cpu_id(e);
   
-  calcul_duration( event_time,  cpu_id, event_data);
-  CalculateMaxIRQHandler(e);
+  CalculateData( event_time,  cpu_id, event_data);
+   
   return FALSE;
 }
 
@@ -517,7 +513,7 @@ gboolean FirstRequestIrqExitCallback(void *hook_data, void *call_data)
  *  This function calculates the duration of an interrupt.  
  *  
  */ 
-static void calcul_duration(LttTime time_exit,  guint cpu_id,InterruptEventData *event_data)
+static void CalculateData(LttTime time_exit,  guint cpu_id,InterruptEventData *event_data)
 {
   
   gint i, irq_id;
@@ -530,23 +526,18 @@ static void calcul_duration(LttTime time_exit,  guint cpu_id,InterruptEventData 
     element = &g_array_index(FirstRequestIrqEntry,irq_entry,i);
     if(element->cpu_id == cpu_id)
     {
-      sum_interrupt_data(element,time_exit,  FirstRequestIrqExit);    
+      TotalDurationMaxIrqDuration(element,time_exit,  FirstRequestIrqExit);    
       g_array_remove_index(FirstRequestIrqEntry, i);
       break;
     }
   }
-}
-
-static void CalculateMaxIRQHandler(LttEvent *event)
-{
-
-}
+} 
 
 /**
- *  This function calculates the total duration of an interrupt.  
+ *  This function calculates the total duration  of an interrupt and the longest Irq handler.  
  *  
  */ 
-static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit){
+static void TotalDurationMaxIrqDuration(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit){
   Irq irq;
   Irq *element; 
   guint i;
@@ -561,17 +552,11 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *FirstReq
     irq.id    =  e->id;
     irq.frequency++;
     irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
-    
-    /* test code */
+     
     irq.max_irq_handler.start_time = e->event_time;
     irq.max_irq_handler.end_time = time_exit;
     irq.max_irq_handler.duration = ltt_time_sub(time_exit, e->event_time);
-    /*
-    irq.max_irq_handler.duration = duration.tv_sec;
-    irq.max_irq_handler.duration *= NANOSECONDS_PER_SECOND;
-    irq.max_irq_handler.duration += element.total_duration.tv_nsec;
-    */
-    /* test code */
+     
     
     g_array_append_val (FirstRequestIrqExit, irq);
   }
@@ -610,6 +595,10 @@ static void sum_interrupt_data(irq_entry *e, LttTime time_exit, GArray *FirstReq
   } 
 }
 
+/**
+ *  This function  passes the second EventsRequest to LTTV
+ *  
+ */ 
 static gboolean SecondRequest(void *hook_data, void *call_data)
 {
  
@@ -673,7 +662,8 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
 		&g_array_index(hooks, LttvTraceHook, 1));
 		
 	  g_assert(!ret);
- 	 /*iterate through the facility list*/
+	  
+ 	/* iterate through the facility list */
 	for(k = 0 ; k < hooks->len; k++) 
 	{ 
 	        hook = &g_array_index(hooks, LttvTraceHook, k);
@@ -714,9 +704,7 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
 	
 	lttvwindow_events_request(event_data->tab, events_request);   
    }
-    
-
-  return FALSE;
+   return FALSE;
 }
 
 static void CalculateAverageDurationForEachIrqId(InterruptEventData *event_data)
@@ -732,11 +720,14 @@ static void CalculateAverageDurationForEachIrqId(InterruptEventData *event_data)
     real_data *= NANOSECONDS_PER_SECOND;
     real_data += element->total_duration.tv_nsec;
     element->average_duration = real_data / element->frequency;
-    printf("average duration: %d\n",  element->average_duration);
   }
 
 }
 
+/**
+ *  This function is called whenever an irq_entry event occurs.  Use in the second request
+ *  
+ */ 
 static gboolean SecondRequestIrqEntryCallback(void *hook_data, void *call_data)
 {
 
@@ -760,6 +751,10 @@ static gboolean SecondRequestIrqEntryCallback(void *hook_data, void *call_data)
   return FALSE;
 }
 
+/**
+ *  This function is called whenever an irq_exit event occurs in the second request. 
+ *  
+ */ 
 static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data)
 {
    
@@ -772,6 +767,11 @@ static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data)
   return FALSE;
 } 
 
+
+/**
+ *  This function is called whenever an irq_exit event occurs in the second request.  
+ *  
+ */ 
 static void CalculateXi(LttEvent *event_irq_exit, InterruptEventData *event_data)
 {
   gint i, irq_id;
@@ -801,6 +801,11 @@ static void CalculateXi(LttEvent *event_irq_exit, InterruptEventData *event_data
   }
 }
 
+
+/**
+ *  This function computes the Sum ((xi -Xa)^2) and store the result in SumArray
+ *  
+ */ 
 static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data)
 {
   gint i;
@@ -870,6 +875,7 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
   GtkTreeIter    iter;
   guint64 real_data;
   guint maxIRQduration;
+  char maxIrqHandler[80];
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
   GArray *FirstRequestIrqExit = event_data->FirstRequestIrqExit;  
   gtk_list_store_clear(event_data->ListStore);
@@ -884,7 +890,11 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     maxIRQduration  = element.max_irq_handler.duration.tv_sec;
     maxIRQduration *= NANOSECONDS_PER_SECOND;
     maxIRQduration += element.max_irq_handler.duration.tv_nsec;
-      
+    
+    sprintf(maxIrqHandler, "%d [%d.%d - %d.%d]",maxIRQduration, element.max_irq_handler.start_time.tv_sec, \ 			 
+   			    element.max_irq_handler.start_time.tv_nsec, element.max_irq_handler.end_time.tv_sec, \ 
+    			    element.max_irq_handler.end_time.tv_nsec) ;
+     
     gtk_list_store_append (event_data->ListStore, &iter);
     gtk_list_store_set (event_data->ListStore, &iter,
       CPUID_COLUMN, element.cpu_id,
@@ -892,13 +902,12 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
       FREQUENCY_COLUMN, element.frequency,
       DURATION_COLUMN, real_data,
       DURATION_STANDARD_DEV_COLUMN, CalculateStandardDeviation(element.id, event_data),
-      MAX_IRQ_HANDLER_COLUMN, maxIRQduration,
+      MAX_IRQ_HANDLER_COLUMN, maxIrqHandler,
       -1);
      
      
   } 
    
-  
    
   if(event_data->FirstRequestIrqExit->len)
   {
@@ -928,6 +937,10 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
   return FALSE;
 }
 
+/**
+ *  This function calculatees the standard deviation
+ *  
+ */ 
 static int CalculateStandardDeviation(gint id, InterruptEventData *event_data)
 {
   int i;
@@ -939,10 +952,10 @@ static int CalculateStandardDeviation(gint id, InterruptEventData *event_data)
     sumId  = g_array_index(event_data->SumArray, SumId, i);  
     if(id == sumId.irqId)
     {
-	printf("id: %d\n", sumId.irqId);	     
+//	printf("id: %d\n", sumId.irqId);	     
 	inner_component = sumId.sumOfDurations/ sumId.frequency;
 	deviation =  sqrt(inner_component);
-	printf("deviation: %d\n", deviation);	    
+//	printf("deviation: %d\n", deviation);	    
 	return deviation;
 	
     }    
