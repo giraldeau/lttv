@@ -150,7 +150,8 @@ static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data);
 static void CalculateXi(LttEvent *event, InterruptEventData *event_data);
 static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data);
 static int CalculateStandardDeviation(gint id, InterruptEventData *event_data);
- 
+static int FrequencyInHZ(gint frequency, TimeWindow time_window);
+
 /* Enumeration of the columns */
 enum{
   CPUID_COLUMN,
@@ -265,7 +266,7 @@ InterruptEventData *system_info(Tab *tab)
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
 
   renderer = gtk_cell_renderer_text_new ();
-  column = gtk_tree_view_column_new_with_attributes ("Frequency",
+  column = gtk_tree_view_column_new_with_attributes ("Frequency (Hz)",
                  renderer,
                  "text", FREQUENCY_COLUMN,
                  NULL);
@@ -274,7 +275,7 @@ InterruptEventData *system_info(Tab *tab)
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
 
   renderer = gtk_cell_renderer_text_new ();
-  column = gtk_tree_view_column_new_with_attributes ("Duration (nsec)",
+  column = gtk_tree_view_column_new_with_attributes ("Total Duration (nsec)",
                  renderer,
                  "text", DURATION_COLUMN,
                  NULL);
@@ -293,7 +294,7 @@ InterruptEventData *system_info(Tab *tab)
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
   
   renderer = gtk_cell_renderer_text_new ();
-  column = gtk_tree_view_column_new_with_attributes ("Max IRQ handler duration (nsec)",
+  column = gtk_tree_view_column_new_with_attributes ("Max IRQ handler duration (nsec) [time interval]",
                  renderer,
                  "text", MAX_IRQ_HANDLER_COLUMN,
                  NULL);
@@ -894,12 +895,14 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     sprintf(maxIrqHandler, "%d [%d.%d - %d.%d]",maxIRQduration, element.max_irq_handler.start_time.tv_sec, \ 			 
    			    element.max_irq_handler.start_time.tv_nsec, element.max_irq_handler.end_time.tv_sec, \ 
     			    element.max_irq_handler.end_time.tv_nsec) ;
+    
      
+    
     gtk_list_store_append (event_data->ListStore, &iter);
     gtk_list_store_set (event_data->ListStore, &iter,
       CPUID_COLUMN, element.cpu_id,
       IRQ_ID_COLUMN,  element.id,
-      FREQUENCY_COLUMN, element.frequency,
+      FREQUENCY_COLUMN, FrequencyInHZ(element.frequency,event_data->time_window),
       DURATION_COLUMN, real_data,
       DURATION_STANDARD_DEV_COLUMN, CalculateStandardDeviation(element.id, event_data),
       MAX_IRQ_HANDLER_COLUMN, maxIrqHandler,
@@ -937,6 +940,19 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
   return FALSE;
 }
 
+
+static int FrequencyInHZ(gint frequency, TimeWindow time_window)
+{
+  guint64 frequencyHz = 0;
+  double timeSec; 
+  guint64 time = time_window.time_width.tv_sec;
+  time      *= NANOSECONDS_PER_SECOND;
+  time      += time_window.time_width.tv_nsec; 
+  timeSec = time/NANOSECONDS_PER_SECOND;
+  frequencyHz = frequency/timeSec;
+  return  frequencyHz;
+}
+
 /**
  *  This function calculatees the standard deviation
  *  
@@ -952,12 +968,9 @@ static int CalculateStandardDeviation(gint id, InterruptEventData *event_data)
     sumId  = g_array_index(event_data->SumArray, SumId, i);  
     if(id == sumId.irqId)
     {
-//	printf("id: %d\n", sumId.irqId);	     
-	inner_component = sumId.sumOfDurations/ sumId.frequency;
+  	inner_component = sumId.sumOfDurations/ sumId.frequency;
 	deviation =  sqrt(inner_component);
-//	printf("deviation: %d\n", deviation);	    
-	return deviation;
-	
+  	return deviation;
     }    
   }
   return deviation; 
