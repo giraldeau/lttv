@@ -160,6 +160,8 @@ enum{
   DURATION_COLUMN,
   DURATION_STANDARD_DEV_COLUMN,
   MAX_IRQ_HANDLER_COLUMN,
+  AVERAGE_PERIOD,
+  PERIOD_STANDARD_DEV_COLUMN, 
   N_COLUMNS
 };
  
@@ -239,7 +241,9 @@ InterruptEventData *system_info(Tab *tab)
     G_TYPE_INT,     /* Frequency 		   */
     G_TYPE_UINT64,   /* Duration                   */
     G_TYPE_INT,	    /* standard deviation 	   */
-    G_TYPE_STRING	    /* Max IRQ handler  	   */
+    G_TYPE_STRING,	    /* Max IRQ handler  	   */
+    G_TYPE_DOUBLE,	    /* Average period 		   */
+    G_TYPE_DOUBLE 	    /* period standard deviation   */
     );  
  
   event_viewer_data->TreeView = gtk_tree_view_new_with_model (GTK_TREE_MODEL (event_viewer_data->ListStore)); 
@@ -266,7 +270,7 @@ InterruptEventData *system_info(Tab *tab)
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
 
   renderer = gtk_cell_renderer_text_new ();
-  column = gtk_tree_view_column_new_with_attributes ("Frequency ",
+  column = gtk_tree_view_column_new_with_attributes ("Frequency (Hz)",
                  renderer,
                  "text", FREQUENCY_COLUMN,
                  NULL);
@@ -301,6 +305,25 @@ InterruptEventData *system_info(Tab *tab)
   gtk_tree_view_column_set_alignment (column, 0.0);
   gtk_tree_view_column_set_fixed_width (column, 250);
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
+  
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes (" Average period (nsec)",
+                 renderer,
+                 "text", AVERAGE_PERIOD,
+                 NULL);
+  gtk_tree_view_column_set_alignment (column, 0.0);
+  gtk_tree_view_column_set_fixed_width (column, 200);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
+  
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("Period standard deviation (nsec)",
+                 renderer,
+                 "text", PERIOD_STANDARD_DEV_COLUMN,
+                 NULL);
+  gtk_tree_view_column_set_alignment (column, 0.0);
+  gtk_tree_view_column_set_fixed_width (column, 200);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
+  
   
   
   event_viewer_data->SelectionTree = gtk_tree_view_get_selection (GTK_TREE_VIEW (event_viewer_data->TreeView));
@@ -876,9 +899,12 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
   GtkTreeIter    iter;
   guint64 real_data;
   guint maxIRQduration;
+  double period;
   char maxIrqHandler[80];
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
   GArray *FirstRequestIrqExit = event_data->FirstRequestIrqExit;  
+  int FrequencyHZ =  0; 
+  period = 0.0;
   gtk_list_store_clear(event_data->ListStore);
   for(i = 0; i < FirstRequestIrqExit->len; i++)
   {  
@@ -895,17 +921,21 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     sprintf(maxIrqHandler, "%d [%d.%d - %d.%d]",maxIRQduration, element.max_irq_handler.start_time.tv_sec, \ 			 
    			    element.max_irq_handler.start_time.tv_nsec, element.max_irq_handler.end_time.tv_sec, \ 
     			    element.max_irq_handler.end_time.tv_nsec) ;
-    
-     
+   FrequencyHZ = FrequencyInHZ(element.frequency,event_data->time_window);
+   if(FrequencyHZ != 0)
+   {
+   	period =(double)1/FrequencyHZ;
+   }
     
     gtk_list_store_append (event_data->ListStore, &iter);
     gtk_list_store_set (event_data->ListStore, &iter,
       CPUID_COLUMN, element.cpu_id,
       IRQ_ID_COLUMN,  element.id,
-      FREQUENCY_COLUMN, element.frequency,
+      FREQUENCY_COLUMN, FrequencyHZ,
       DURATION_COLUMN, real_data,
       DURATION_STANDARD_DEV_COLUMN, CalculateStandardDeviation(element.id, event_data),
       MAX_IRQ_HANDLER_COLUMN, maxIrqHandler,
+      AVERAGE_PERIOD , period,
       -1);
      
      
@@ -945,11 +975,10 @@ static int FrequencyInHZ(gint frequency, TimeWindow time_window)
 {
   guint64 frequencyHz = 0;
   double timeSec; 
-  guint64 time = time_window.time_width.tv_sec;
-  time      *= NANOSECONDS_PER_SECOND;
-  time      += time_window.time_width.tv_nsec; 
-  timeSec = time/NANOSECONDS_PER_SECOND;
-  frequencyHz = frequency/timeSec;
+   
+  timeSec = ltt_time_to_double(time_window.time_width);
+  double result = (timeSec/NANOSECONDS_PER_SECOND);
+  frequencyHz = frequency / result; 
   return  frequencyHz;
 }
 
