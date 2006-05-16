@@ -173,7 +173,7 @@ uint8 has_alignment
 	* Is the information in this trace aligned ?
 		Yes (1) -> aligned on min(arch size, atomic data size).
 		No (0) -> data is packed.
-uint328 freq_scale
+uint32 freq_scale
 		event time is always calculated from :
 			trace_start_time + ((event_tsc - trace_start_tsc) * (freq / freq_scale))
 uint64 start_freq
