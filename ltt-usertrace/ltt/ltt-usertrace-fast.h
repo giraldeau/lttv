@@ -12,7 +12,6 @@
 #ifdef LTT_TRACE_FAST
 
 #include <errno.h>
-#include <asm/atomic.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <syscall.h>

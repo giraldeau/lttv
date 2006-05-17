@@ -12,21 +12,35 @@
 #include <errno.h>
 #include <syscall.h>
 #include <linux/unistd.h>
-#include <asm/atomic.h>
 #include <string.h>
 #include <sys/types.h>
 #include <stdint.h>
+#ifdef powerpc
+#define __KERNEL__	/* Ugly hack : atomic.h is broken */
+#endif
+#include <asm/atomic.h>
+#include "ltt/ltt-usertrace-ppc.h"
+#ifdef powerpc
+#undef __KERNEL__	/* Ugly hack : atomic.h is broken */
+#endif
 
 #ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
 #endif
 
-//Put in asm-i486/unistd.h
+#ifdef i386
 #define __NR_ltt_trace_generic	311
 #define __NR_ltt_register_generic	312
-
 #undef NR_syscalls
 #define NR_syscalls 313
+#endif
+
+#ifdef powerpc
+#define __NR_ltt_trace_generic	283
+#define __NR_ltt_register_generic	284
+#undef NR_syscalls
+#define NR_syscalls 285
+#endif
 
 //FIXME : setup for ARM
 //FIXME : setup for MIPS

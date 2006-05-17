@@ -66,7 +66,7 @@
 #include <sys/time.h>
 #include <errno.h>
 
-#include <asm/atomic.h>
+// included with hack for powerpc in ltt-usertrace.h #include <asm/atomic.h>
 #include <asm/timex.h>	//for get_cycles()
 
 _syscall0(pid_t,gettid)
