@@ -114,9 +114,19 @@ for a in $IN; do wr $a $FILE; done
 
 FILE=../$NAME-instrumentation-powerpc.diff
 IN="?_arch_powerpc_Kconfig
+?_arch_powerpc_kernel_entry_32.S
+?_arch_powerpc_kernel_entry_64.S
+?_arch_powerpc_kernel_misc_32.S
+?_arch_powerpc_kernel_misc_64.S
+?_arch_powerpc_kernel_process.c
+?_arch_powerpc_kernel_systbl.S
+?_arch_powerpc_kernel_time.c
+?_arch_powerpc_kernel_traps.c
+?_arch_powerpc_mm_fault.c
 ?_arch_powerpc_kernel_irq.c
 ?_arch_powerpc_kernel_ppc_ksyms.c
-?_arch_powerpc_kernel_syscalls.c"
+?_arch_powerpc_kernel_syscalls.c
+?_include_asm-powerpc_unistd.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -174,7 +184,9 @@ IN="?_include_linux_ltt_ltt-facility-core.h
 ?_include_asm-arm_ltt_ltt-facility-id-kernel_arch_arm.h
 ?_include_asm-arm_ltt_ltt-facility-kernel_arch_arm.h
 ?_include_asm-mips_ltt_ltt-facility-id-kernel_arch_mips.h
-?_include_asm-mips_ltt_ltt-facility-kernel_arch_mips.h"
+?_include_asm-mips_ltt_ltt-facility-kernel_arch_mips.h
+?_include_asm-powerpc_ltt_ltt-facility-id-kernel_arch_powerpc.h
+?_include_asm-powerpc_ltt_ltt-facility-kernel_arch_powerpc.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -213,7 +225,9 @@ IN="?_ltt_Makefile
 ?_ltt_ltt-facility-loader-kernel_arch_arm.c
 ?_ltt_ltt-facility-loader-kernel_arch_arm.h
 ?_ltt_ltt-facility-loader-kernel_arch_mips.c
-?_ltt_ltt-facility-loader-kernel_arch_mips.h"
+?_ltt_ltt-facility-loader-kernel_arch_mips.h
+?_ltt_ltt-facility-loader-kernel_arch_powerpc.c
+?_ltt_ltt-facility-loader-kernel_arch_powerpc.h"
 
 
 for a in $IN; do wr $a $FILE; done
