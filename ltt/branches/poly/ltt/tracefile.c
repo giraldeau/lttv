@@ -664,6 +664,7 @@ int get_tracefile_name_number(gchar *raw_name,
   if(i==-1) { /* Either not found or name length is 0 */
 		/* This is a userspace tracefile */
 		strncpy(char_name, raw_name, raw_name_len);
+		char_name[raw_name_len] = '\0';
 		*name = g_quark_from_string(char_name);
 		*num = 0;	/* unknown cpu */
 		for(i=0;i<raw_name_len;i++) {
