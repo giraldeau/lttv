@@ -25,6 +25,7 @@
 #include <gdk/gdk.h>
 #include <lttv/lttv.h>
 #include <lttvwindow/lttvwindow.h>
+#include <lttvwindow/lttvwindowtraces.h>
 
 #include "cfv.h"
 #include "drawing.h"

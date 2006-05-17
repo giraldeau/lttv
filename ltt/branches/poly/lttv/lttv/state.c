@@ -826,8 +826,9 @@ free_max_time(LttvTraceState *tcs)
 typedef struct _LttvNameTables {
  // FIXME  GQuark *eventtype_names;
   GQuark *syscall_names;
-	guint nb_syscalls;
+  guint nb_syscalls;
   GQuark *trap_names;
+  guint nb_traps;
   GQuark *irq_names;
   GQuark *soft_irq_names;
 } LttvNameTables;
@@ -918,7 +919,7 @@ create_name_tables(LttvTraceState *tcs)
 					ltt_enum_string_get(t, i));
 		}
 		*/
-
+		name_tables->nb_traps = 256;
 		name_tables->trap_names = g_new(GQuark, 256);
 		for(i = 0 ; i < 256 ; i++) {
 			g_string_printf(fe_name, "trap %d", i);
@@ -926,6 +927,7 @@ create_name_tables(LttvTraceState *tcs)
 		}
 	} else {
 		name_tables->trap_names = NULL;
+		name_tables->nb_traps = 0;
 	}
 
   if(!lttv_trace_find_hook(tcs->parent.t,
@@ -988,6 +990,7 @@ get_name_tables(LttvTraceState *tcs)
   tcs->syscall_names = name_tables->syscall_names;
   tcs->nb_syscalls = name_tables->nb_syscalls;
   tcs->trap_names = name_tables->trap_names;
+  tcs->nb_traps = name_tables->nb_traps;
   tcs->irq_names = name_tables->irq_names;
   tcs->soft_irq_names = name_tables->soft_irq_names;
 }
@@ -1359,8 +1362,19 @@ static gboolean trap_entry(void *hook_data, void *call_data)
 
   LttvExecutionSubmode submode;
 
-  submode = ((LttvTraceState *)(s->parent.t_context))->trap_names[
-      ltt_event_get_unsigned(e, f)];
+  guint nb_traps = ((LttvTraceState *)(s->parent.t_context))->nb_traps;
+  guint trap = ltt_event_get_unsigned(e, f);
+
+  if(trap < nb_traps) {
+    submode = ((LttvTraceState *)(s->parent.t_context))->trap_names[trap];
+  } else {
+    /* Fixup an incomplete trap table */
+    GString *string = g_string_new("");
+    g_string_printf(string, "trap %u", trap);
+    submode = g_quark_from_string(string->str);
+    g_string_free(string, TRUE);
+  }
+
   push_state(s, LTTV_STATE_TRAP, submode);
   return FALSE;
 }

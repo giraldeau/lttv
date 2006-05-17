@@ -485,15 +485,15 @@ void show_tree(StatisticViewerData * statistic_viewer_data,
      case LTTV_GOBJECT:
         if(LTTV_IS_ATTRIBUTE(*(value.v_gobject))) {
           subtree = (LttvAttribute *)*(value.v_gobject);
-		if(is_named)
-	    sprintf(dir_str, "%s", g_quark_to_string(name));
-		else
-			sprintf(dir_str, "%lu", name);
-    gtk_tree_store_append (store, &iter, parent);  
-    gtk_tree_store_set (store, &iter,NAME_COLUMN,dir_str,-1);  
-    path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
-    str = gtk_tree_path_to_string (path);
-    g_hash_table_insert(statistic_viewer_data->statistic_hash,
+          if(is_named)
+            sprintf(dir_str, "%s", g_quark_to_string(name));
+          else
+            sprintf(dir_str, "%u", name);
+          gtk_tree_store_append (store, &iter, parent);  
+          gtk_tree_store_set (store, &iter,NAME_COLUMN,dir_str,-1);  
+          path = gtk_tree_model_get_path(GTK_TREE_MODEL(store), &iter);
+          str = gtk_tree_path_to_string (path);
+          g_hash_table_insert(statistic_viewer_data->statistic_hash,
             (gpointer)str, subtree);
           show_tree(statistic_viewer_data, subtree, &iter);
         }
@@ -522,7 +522,7 @@ void show_statistic(StatisticViewerData * statistic_viewer_data,
 		if(is_named)
 	    sprintf(type_name,"%s", g_quark_to_string(name));
 		else
-	    sprintf(type_name,"%lu", name);
+	    sprintf(type_name,"%u", name);
     type_value[0] = '\0';
     switch(type) {
       case LTTV_INT:

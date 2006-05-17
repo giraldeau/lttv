@@ -160,6 +160,8 @@ gboolean scroll_event(GtkWidget *widget, GdkEventScroll *event, gpointer data)
       gtk_adjustment_set_value(control_flow_data->v_adjust,
         gtk_adjustment_get_value(control_flow_data->v_adjust) + cell_height);
       break;
+    default:
+      g_error("should only scroll up and down.");
   }
 	return TRUE;
 }

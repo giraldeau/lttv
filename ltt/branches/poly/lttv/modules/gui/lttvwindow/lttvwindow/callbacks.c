@@ -4516,7 +4516,7 @@ gboolean execute_events_requests(Tab *tab)
 }
 
 
-void create_main_window_with_trace(gchar *path)
+void create_main_window_with_trace(const gchar *path)
 {
   if(path == NULL) return;
 

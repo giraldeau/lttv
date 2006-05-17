@@ -110,6 +110,7 @@
 #include <lttv/state.h>
 #include <lttv/lttv.h>
 
+#include "drawing.h"
 #include "drawitem.h"
 
 

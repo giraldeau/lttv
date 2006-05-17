@@ -575,7 +575,8 @@ void drawing_request_expose(EventsRequest *events_request,
                             LttvTracesetState *tss,
                             LttTime end_time)
 {
-  gint x, x_end, width;
+  gint x, width;
+  guint x_end;
 
   ControlFlowData *cfd = events_request->viewer_data;
   LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
@@ -1454,4 +1455,5 @@ motion_notify_ruler(GtkWidget *widget, GdkEventMotion *event, gpointer user_data
 {
   //g_debug("motion");
   //eventually follow mouse and show time here
+  return 0;
 }

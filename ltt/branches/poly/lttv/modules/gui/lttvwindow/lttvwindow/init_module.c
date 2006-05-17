@@ -27,6 +27,7 @@
 
 #include <gtk/gtk.h>
 #include <glib.h>
+#include <string.h>
 
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>

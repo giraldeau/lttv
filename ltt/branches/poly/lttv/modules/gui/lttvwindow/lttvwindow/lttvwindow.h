@@ -824,4 +824,6 @@ void events_request_free(EventsRequest *events_request);
 
 GtkWidget *main_window_get_widget(Tab *tab);
 
+void set_current_position(Tab *tab, const LttvTracesetContextPosition *pos);
+
 #endif //LTTVWINDOW_H

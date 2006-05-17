@@ -21,6 +21,7 @@
 #endif
 
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <string.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
@@ -32,6 +33,7 @@
 
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
+#include <lttvwindow/callbacks.h>
 
 #include "hTraceControlInsert.xpm"
 #include "TraceControlStart.xpm"

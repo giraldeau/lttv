@@ -49,6 +49,7 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdk.h>
+#include <gdk/gdkx.h>
 #include <string.h>
 
 #include <ltt/ltt.h>
@@ -1040,6 +1041,8 @@ gboolean tree_v_scroll_handler (GtkWidget *widget, GdkEventScroll *event, gpoint
 			gtk_adjustment_set_value(event_viewer_data->vadjust_c,
 				gtk_adjustment_get_value(event_viewer_data->vadjust_c) + 1);
 			break;
+		default:
+			g_error("Only scroll up and down expected");
 	}
 	return TRUE;
 }
@@ -1753,6 +1756,7 @@ gint redraw_notify(void *hook_data, void *call_data)
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
 
   get_events(event_viewer_data->vadjust_c->value, event_viewer_data);
+  return 0;
 }
 
 void gui_events_free(EventViewerData *event_viewer_data)

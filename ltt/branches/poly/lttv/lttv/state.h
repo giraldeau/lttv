@@ -279,8 +279,9 @@ struct _LttvTraceState {
   /* Block/char devices, locks, memory pages... */
   GQuark *eventtype_names;
   GQuark *syscall_names;
-	guint  nb_syscalls;
+  guint  nb_syscalls;
   GQuark *trap_names;
+  guint  nb_traps;
   GQuark *irq_names;
   GQuark *soft_irq_names;
   LttTime *max_time_state_recomputed_in_seek;
