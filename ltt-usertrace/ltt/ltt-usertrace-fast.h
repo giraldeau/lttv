@@ -349,7 +349,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 															struct ltt_trace_info *trace,
 															struct ltt_buf *ltt_buf,
 															unsigned int data_size,
-															unsigned int *slot_size,
+															size_t *slot_size,
 															uint64_t *tsc,
 															size_t *before_hdr_pad,
 															size_t *after_hdr_pad,
