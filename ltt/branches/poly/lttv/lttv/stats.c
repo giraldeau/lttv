@@ -724,6 +724,20 @@ gboolean process_exit(void *hook_data, void *call_data)
   return FALSE;
 }
 
+gboolean before_enum_process_state(void *hook_data, void *call_data)
+{
+  mode_end((LttvTracefileStats *)call_data);
+  after_mode_end((LttvTracefileStats *)call_data);
+  mode_change((LttvTracefileStats *)call_data);
+  return FALSE;
+}
+
+gboolean after_enum_process_state(void *hook_data, void *call_data)
+{
+  update_event_tree((LttvTracefileStats *)call_data);
+  return FALSE;
+}
+
 gboolean process_free(void *hook_data, void *call_data)
 {
   return FALSE;
@@ -1000,9 +1014,9 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 11);
-    g_array_set_size(hooks, 11);
-		hn=0;
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 12);
+    g_array_set_size(hooks, 12);
+    hn=0;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
@@ -1080,14 +1094,22 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
         before_function_exit, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
-		
+
+    /* statedump-related hooks */
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
+        LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
+        LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
+        before_enum_process_state, NULL,
+        &g_array_index(hooks, LttvTraceHook, hn++));
+    if(ret) hn--;
+
     g_array_set_size(hooks, hn);
 
     before_hooks = hooks;
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 14);
-    g_array_set_size(hooks, 14);
-		hn=0;
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 15);
+    g_array_set_size(hooks, 15);
+    hn=0;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
@@ -1186,7 +1208,15 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
         after_function_exit, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
-	
+
+    /* statedump-related hooks */
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
+        LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
+        LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
+        after_enum_process_state, NULL,
+        &g_array_index(hooks, LttvTraceHook, hn++));
+    if(ret) hn--;
+
     g_array_set_size(hooks, hn);
 
     after_hooks = hooks;

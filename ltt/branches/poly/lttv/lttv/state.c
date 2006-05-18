@@ -203,6 +203,8 @@ restore_init_state(LttvTraceState *self)
   guint i, nb_cpus;
 
   LttvTracefileState *tfcs;
+
+  LttTime start_time, end_time;
   
   /* Free the process tables */
   if(self->processes != NULL) lttv_state_free_process_table(self->processes);
@@ -218,6 +220,7 @@ restore_init_state(LttvTraceState *self)
   //g_tree_destroy(self->parent.ts_context->pqueue);
   //self->parent.ts_context->pqueue = g_tree_new(compare_tracefile);
   
+  ltt_trace_time_span_get(self->parent.t, &start_time, &end_time);
   
   //lttv_process_trace_seek_time(&self->parent, ltt_time_zero);
 
@@ -226,7 +229,7 @@ restore_init_state(LttvTraceState *self)
   /* Put the per cpu running_process to beginning state : process 0. */
   for(i=0; i< nb_cpus; i++) {
     self->running_process[i] = lttv_state_create_process(self, NULL, i, 0,
-        LTTV_STATE_UNNAMED, &ltt_time_zero);
+        LTTV_STATE_UNNAMED, &start_time);
     self->running_process[i]->state->s = LTTV_STATE_RUN;
     self->running_process[i]->cpu = i;
   }
