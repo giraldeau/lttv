@@ -2002,70 +2002,70 @@ map_error:
 void ltt_update_event_size(LttTracefile *tf)
 {
   off_t size = 0;
-
-  /* Specific handling of core events : necessary to read the facility control
-   * tracefile. */
   LttFacility *f = ltt_trace_get_facility_by_num(tf->trace, 
                                           tf->event.facility_id);
-
-  if(likely(tf->event.facility_id == LTT_FACILITY_CORE)) {
-    switch((enum ltt_core_events)tf->event.event_id) {
-  case LTT_EVENT_FACILITY_LOAD:
-    size = strlen((char*)tf->event.data) + 1;
-    //g_debug("Update Event facility load of facility %s", (char*)tf->event.data);
-    size += ltt_align(size, sizeof(guint32), tf->has_alignment);
-    size += sizeof(struct LttFacilityLoad);
-    break;
-  case LTT_EVENT_FACILITY_UNLOAD:
-    //g_debug("Update Event facility unload");
-    size = sizeof(struct LttFacilityUnload);
-    break;
-  case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
-    size = strlen((char*)tf->event.data) + 1;
-    size += ltt_align(size, sizeof(guint32), tf->has_alignment);
-    //g_debug("Update Event facility load state dump of facility %s",
-    //    (char*)tf->event.data);
-    size += sizeof(struct LttStateDumpFacilityLoad);
-    break;
-  case LTT_EVENT_HEARTBEAT:
-    //g_debug("Update Event heartbeat");
-    size = sizeof(TimeHeartbeat);
-    break;
-  default:
-    g_warning("Error in getting event size : tracefile %s, "
-        "unknown event id %hhu in core facility.",
-        g_quark_to_string(tf->name),
-        tf->event.event_id);
-    goto event_id_error;
-
-    }
-  } else {
-    if(!f->exists) {
+ 
+  if(!f->exists) {
+    /* Specific handling of core events : necessary to read the facility control
+     * tracefile. */
+ 
+    if(likely(tf->event.facility_id == LTT_FACILITY_CORE)) {
+      switch((enum ltt_core_events)tf->event.event_id) {
+    case LTT_EVENT_FACILITY_LOAD:
+      size = strlen((char*)tf->event.data) + 1;
+      //g_debug("Update Event facility load of facility %s", (char*)tf->event.data);
+      size += ltt_align(size, sizeof(guint32), tf->has_alignment);
+      size += sizeof(struct LttFacilityLoad);
+      break;
+    case LTT_EVENT_FACILITY_UNLOAD:
+      //g_debug("Update Event facility unload");
+      size = sizeof(struct LttFacilityUnload);
+      break;
+    case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
+      size = strlen((char*)tf->event.data) + 1;
+      size += ltt_align(size, sizeof(guint32), tf->has_alignment);
+      //g_debug("Update Event facility load state dump of facility %s",
+      //    (char*)tf->event.data);
+      size += sizeof(struct LttStateDumpFacilityLoad);
+      break;
+    case LTT_EVENT_HEARTBEAT:
+      //g_debug("Update Event heartbeat");
+      size = sizeof(TimeHeartbeat);
+      break;
+    default:
+      g_warning("Error in getting event size : tracefile %s, "
+          "unknown event id %hhu in core facility.",
+          g_quark_to_string(tf->name),
+          tf->event.event_id);
+      goto event_id_error;
+  
+      }
+    } else {
       g_warning("Unknown facility %hhu (0x%hhx) in tracefile %s",
           tf->event.facility_id,
           tf->event.facility_id,
           g_quark_to_string(tf->name));
       goto facility_error;
     }
-
-    LttEventType *event_type = 
-      ltt_facility_eventtype_get(f, tf->event.event_id);
-
-    if(!event_type) {
-      g_warning("Unknown event id %hhu in facility %s in tracefile %s",
-          tf->event.event_id,
-          g_quark_to_string(f->name),
-          g_quark_to_string(tf->name));
-      goto event_type_error;
-    }
-    
-    /* Compute the dynamic offsets */
-    compute_offsets(tf, f, event_type, &size, tf->event.data);
-
-    //g_debug("Event root field : f.e %hhu.%hhu size %zd",
-    //    tf->event.facility_id,
-    //    tf->event.event_id, size);
   }
+
+  LttEventType *event_type = 
+    ltt_facility_eventtype_get(f, tf->event.event_id);
+
+  if(!event_type) {
+    g_warning("Unknown event id %hhu in facility %s in tracefile %s",
+        tf->event.event_id,
+        g_quark_to_string(f->name),
+        g_quark_to_string(tf->name));
+    goto event_type_error;
+  }
+  
+  /* Compute the dynamic offsets */
+  compute_offsets(tf, f, event_type, &size, tf->event.data);
+
+  //g_debug("Event root field : f.e %hhu.%hhu size %zd",
+  //    tf->event.facility_id,
+  //    tf->event.event_id, size);
   
   tf->event.data_size = size;
   
