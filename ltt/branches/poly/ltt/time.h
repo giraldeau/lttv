@@ -86,10 +86,6 @@ static inline LttTime ltt_time_add(LttTime t1, LttTime t2)
   return res;
 }
 
-if t1>t2 return 1
-
-if t1-t1 > 0 return 1
-
 /* Fastest comparison : t1 > t2 */
 static inline int ltt_time_compare(LttTime t1, LttTime t2)
 {
