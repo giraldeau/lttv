@@ -2171,7 +2171,8 @@ void zoom(GtkWidget * widget, double size)
       new_time_window.end_time = ltt_time_add(new_time_window.start_time,
                                             new_time_window.time_width) ;
       /* If on borders, don't fall off */
-      if(ltt_time_compare(new_time_window.start_time, time_span.start_time) <0)
+      if(ltt_time_compare(new_time_window.start_time, time_span.start_time) <0
+       || ltt_time_compare(new_time_window.start_time, time_span.end_time) >0)
       {
         new_time_window.start_time = time_span.start_time;
         new_time_window.end_time = ltt_time_add(new_time_window.start_time,
@@ -2180,7 +2181,9 @@ void zoom(GtkWidget * widget, double size)
       else 
       {
         if(ltt_time_compare(new_time_window.end_time,
-                            time_span.end_time) > 0)
+                            time_span.end_time) > 0
+         || ltt_time_compare(new_time_window.end_time,
+                            time_span.start_time) < 0)
         {
           new_time_window.start_time = 
                   ltt_time_sub(time_span.end_time, new_time_window.time_width);
