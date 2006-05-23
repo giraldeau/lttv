@@ -90,14 +90,10 @@ static inline LttTime ltt_time_add(LttTime t1, LttTime t2)
 static inline int ltt_time_compare(LttTime t1, LttTime t2)
 {
   int ret=0;
-  //if(likely(t1.tv_sec > t2.tv_sec)) ret = 1;
-  //else if(unlikely(t1.tv_sec < t2.tv_sec)) ret = -1;
-  //else if(likely(t1.tv_nsec > t2.tv_nsec)) ret = 1;
-  //else if(unlikely(t1.tv_nsec < t2.tv_nsec)) ret = -1;
-  if(likely((long)t1.tv_sec - (long)t2.tv_sec > 0)) ret = 1;
-  else if(unlikely((long)t1.tv_sec - (long)t2.tv_sec < 0)) ret = -1;
-  else if(likely((long)t1.tv_nsec - (long)t2.tv_nsec > 0)) ret = 1;
-  else if(unlikely((long)t1.tv_nsec - (long)t2.tv_nsec < 0)) ret = -1;
+  if(likely(t1.tv_sec > t2.tv_sec)) ret = 1;
+  else if(unlikely(t1.tv_sec < t2.tv_sec)) ret = -1;
+  else if(likely(t1.tv_nsec > t2.tv_nsec)) ret = 1;
+  else if(unlikely(t1.tv_nsec < t2.tv_nsec)) ret = -1;
   
   return ret;
 }
