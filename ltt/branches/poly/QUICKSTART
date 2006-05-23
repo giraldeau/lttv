@@ -36,6 +36,7 @@ sources, the dependencies are listed.
 LTTng : 
 supported architectures : 
 Intel Pentium (UP/SMP) with TSC
+PowerPC 32 and 64 bits
 ARM
 C2 Microsystems (variant of MIPS)
 
@@ -43,12 +44,12 @@ LTTV :
 supported architectures :
 Intel i386 and better
 Intel 64 bits
-PowerPC
+PowerPC 32 and 64 bits
 
 
 
 Author : Mathieu Desnoyers, September 2005
-Last update : May 13, 2006
+Last update : May 23, 2006
 
 
 ***********************************************************
