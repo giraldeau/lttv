@@ -1082,7 +1082,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           g_debug("Doing LTT_EVENT_FACILITY_LOAD of facility %s",
               fac_name);
           pos = (tf->event.data + strlen(fac_name) + 1);
-          pos += ltt_align((size_t)pos, sizeof(guint32), tf->has_alignment);
+          pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
           fac_load_data = (struct LttFacilityLoad *)pos;
 
           fac = &g_array_index (tf->trace->facilities_by_num, LttFacility,
@@ -1138,7 +1138,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           g_debug("Doing LTT_EVENT_STATE_DUMP_FACILITY_LOAD of facility %s",
               fac_name);
           pos = (tf->event.data + strlen(fac_name) + 1);
-          pos += ltt_align((size_t)pos, sizeof(guint32), tf->has_alignment);
+          pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
           fac_state_dump_load_data = (struct LttStateDumpFacilityLoad *)pos;
 
           fac = &g_array_index (tf->trace->facilities_by_num, LttFacility,
@@ -2040,6 +2040,7 @@ void ltt_update_event_size(LttTracefile *tf)
       goto event_id_error;
   
       }
+      goto no_offset;	/* Skip the field computation */
     } else {
       g_warning("Unknown facility %hhu (0x%hhx) in tracefile %s",
           tf->event.facility_id,
@@ -2066,7 +2067,8 @@ void ltt_update_event_size(LttTracefile *tf)
   //g_debug("Event root field : f.e %hhu.%hhu size %zd",
   //    tf->event.facility_id,
   //    tf->event.event_id, size);
-  
+
+no_offset: 
   tf->event.data_size = size;
   
   /* Check consistency between kernel and LTTV structure sizes */
