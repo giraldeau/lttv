@@ -1365,8 +1365,8 @@ static gboolean trap_entry(void *hook_data, void *call_data)
 
   LttvExecutionSubmode submode;
 
-  guint nb_traps = ((LttvTraceState *)(s->parent.t_context))->nb_traps;
-  guint trap = ltt_event_get_unsigned(e, f);
+  guint64 nb_traps = ((LttvTraceState *)(s->parent.t_context))->nb_traps;
+  guint64 trap = ltt_event_get_long_unsigned(e, f);
 
   if(trap < nb_traps) {
     submode = ((LttvTraceState *)(s->parent.t_context))->trap_names[trap];
@@ -1447,7 +1447,7 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
   LttvExecutionSubmode submode;
 
   submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[
-      ltt_event_get_unsigned(e, f)];
+      ltt_event_get_long_unsigned(e, f)];
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_SOFT_IRQ, submode);
