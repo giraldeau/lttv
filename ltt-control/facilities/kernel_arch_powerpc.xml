@@ -286,6 +286,8 @@
 			<label name="pselect6" value="280">
 			<label name="ppoll" value="281">
 			<label name="unshare" value="282">
+			<label name="ltt_trace_generic" value="283">
+			<label name="ltt_register_generic" value="284">
     </enum>
   </type>
 
