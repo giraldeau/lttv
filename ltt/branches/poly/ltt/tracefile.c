@@ -272,7 +272,9 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
           t->start_time.tv_nsec *= 1000; /* microsec to nanosec */
 
           t->start_time_from_tsc = ltt_time_from_uint64(
-              (double)t->start_tsc * 1000000.0 / (double)t->start_freq);
+              (double)t->start_tsc
+              * (1000000000.0 / tf->trace->freq_scale)
+	      / (double)t->start_freq);
         }
       }
       break;
