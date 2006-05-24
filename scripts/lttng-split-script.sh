@@ -28,6 +28,7 @@ splitdiff -a -d $ALL_NAME
 FILE=../$NAME-instrumentation.diff
 
 IN="?_fs_buffer.c
+?_fs_compat.c
 ?_fs_exec.c
 ?_fs_ioctl.c
 ?_fs_open.c
