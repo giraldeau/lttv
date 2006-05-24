@@ -54,7 +54,7 @@ Average period (nsec): 1/frequency
  
 Period Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) where
 N: number of interrupts 
-xi: 1/duration of an interrupt
+xi: duration of an interrupt
 Xa: 1/frequency  
  
  *******************************************************************/
@@ -180,6 +180,7 @@ static int CalculateDurationStandardDeviation(gint id, InterruptEventData *event
 static int CalculatePeriodStandardDeviation(gint id, InterruptEventData *event_data);
 static int FrequencyInHZ(gint frequency, TimeWindow time_window);
 static  guint64 CalculatePeriodInnerPart(guint Xi, guint FrequencyHZ);
+static void InterruptFree(InterruptEventData *event_viewer_data);
 /* Enumeration of the columns */
 enum{
   CPUID_COLUMN,
@@ -371,10 +372,15 @@ InterruptEventData *system_info(Tab *tab)
                                          interrupt_update_time_window,
                                          event_viewer_data);	
 					 
+  g_object_set_data_full(G_OBJECT(event_viewer_data->Hbox),
+      "event_data",
+       event_viewer_data,
+      (GDestroyNotify) InterruptFree);  
   
   FirstRequest(event_viewer_data );
   return event_viewer_data;
 }
+
 
 /**
  * 
@@ -969,9 +975,9 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     maxIRQduration *= NANOSECONDS_PER_SECOND;
     maxIRQduration += element.max_irq_handler.duration.tv_nsec;
     
-    sprintf(maxIrqHandler, "%d [%d.%d - %d.%d]",maxIRQduration, element.max_irq_handler.start_time.tv_sec, \ 			 
-   			    element.max_irq_handler.start_time.tv_nsec, element.max_irq_handler.end_time.tv_sec, \ 
-    			    element.max_irq_handler.end_time.tv_nsec) ;
+    sprintf(maxIrqHandler, "%d [%d.%d - %d.%d]",maxIRQduration, element.max_irq_handler.start_time.tv_sec, \
+    element.max_irq_handler.start_time.tv_nsec, element.max_irq_handler.end_time.tv_sec, \
+    element.max_irq_handler.end_time.tv_nsec) ;
    FrequencyHZ = FrequencyInHZ(element.frequency,event_data->time_window);
    
    if(FrequencyHZ != 0)
@@ -1118,9 +1124,13 @@ gboolean trace_header(void *hook_data, void *call_data)
 void interrupt_destroy_walk(gpointer data, gpointer user_data)
 {
   g_info("interrupt_destroy_walk");
+  InterruptEventData *event_data = (InterruptEventData*) data;
+
+    
   interrupt_destructor((InterruptEventData*)data);
 
 }
+
 
 void interrupt_destructor(InterruptEventData *event_viewer_data)
 {
@@ -1130,6 +1140,32 @@ void interrupt_destructor(InterruptEventData *event_viewer_data)
   {
     gtk_widget_destroy(event_viewer_data->Hbox);
   }
+}
+
+/**
+    This function is called when the viewer is destroyed to free hooks and memory
+*/
+static void InterruptFree(InterruptEventData *event_viewer_data)
+{
+  Tab *tab = event_viewer_data->tab;
+  if(tab != NULL)
+  {
+  
+     g_array_free(event_viewer_data->FirstRequestIrqExit, TRUE);
+     g_array_free(event_viewer_data->FirstRequestIrqEntry, TRUE);
+     g_array_free(event_viewer_data->SecondRequestIrqEntry, TRUE);
+     g_array_free(event_viewer_data->SecondRequestIrqExit, TRUE);
+     g_array_free(event_viewer_data->SumArray, TRUE);
+     
+     lttvwindow_unregister_time_window_notify(tab, interrupt_update_time_window, event_viewer_data);
+     	
+     lttvwindow_events_request_remove_all(event_viewer_data->tab,
+                                          event_viewer_data);	
+					  
+     interrupt_data_list = g_slist_remove(interrupt_data_list, event_viewer_data);					  
+      
+  }
+ 	
 }
 
 /**
