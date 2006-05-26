@@ -19,8 +19,8 @@
 #define __KERNEL__	/* Ugly hack : atomic.h is broken */
 #endif
 #include <asm/atomic.h>
-#include "ltt/ltt-usertrace-ppc.h"
 #ifdef powerpc
+#include "ltt/ltt-usertrace-ppc.h"
 #undef __KERNEL__	/* Ugly hack : atomic.h is broken */
 #endif
 
