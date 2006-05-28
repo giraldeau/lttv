@@ -9,7 +9,6 @@ public class Sample
 
   public static void main(String[] args)
   {
-    System.out.println("Hello world");
     Sample.trace_java_generic_string("Tracing from java");
   }
 }
