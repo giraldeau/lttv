@@ -241,3 +241,12 @@ test_function
 The lookup in LTTV through libbfd has not been implemented yet.
 
 
+* Instrumentation of a java program
+
+See the java/ directory of this package. You will have to create a C library
+that holds the tracing functions, following the java-instrument-string.c. It has
+to be called from the Java code as shown in Sample.java.
+
+The generate.sh scripts compiles and executes the Java program with the JNI
+tracing library.
+

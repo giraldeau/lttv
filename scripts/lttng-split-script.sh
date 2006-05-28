@@ -34,11 +34,9 @@ IN="?_fs_buffer.c
 ?_fs_open.c
 ?_fs_read_write.c
 ?_fs_select.c
-
 ?_ipc_msg.c
 ?_ipc_sem.c
 ?_ipc_shm.c
-
 ?_kernel_irq_handle.c
 ?_kernel_itimer.c
 ?_kernel_sched.c
@@ -46,7 +44,6 @@ IN="?_fs_buffer.c
 ?_kernel_softirq.c
 ?_kernel_timer.c
 ?_kernel_module.c
-
 ?_mm_filemap.c
 ?_mm_memory.c
 ?_mm_page_alloc.c
