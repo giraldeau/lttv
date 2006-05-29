@@ -4,23 +4,27 @@
  */
 
 
+#include <linux/config.h>
+#include <linux/jiffies.h>
+#include <linux/compiler.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/ltt-core.h>
-#include <asm/system.h>
 
 #define NR_LOOPS 2000
 
-static volatile int test_val = 100;
+volatile int test_val = 100;
+
 
 static void do_test(void)
 {
-	int val;
+	int val, ret;
 
 	val = test_val;
 	
-	ret = cmpxchg(&test_val, val, 101);
+	ret = cmpxchg(&test_val, val, val+1);
 }
+
+void (*fct)(void) = do_test;
 
 static int ltt_test_init(void)
 {
@@ -32,22 +36,25 @@ static int ltt_test_init(void)
 	printk(KERN_ALERT "test init\n");
 	
 	local_irq_save(flags);
+	time1 = get_cycles();
 	for(i=0; i<NR_LOOPS; i++) {
-		time1 = get_cycles();
+		//for(int j=0; j<10; j++) {
 		do_test();
-		time2 = get_cycles();
-		time = time2 - time1;
-		max_time = max(max_time, time);
-		min_time = min(min_time, time);
-		tot_time += time;
+		//}
+		//max_time = max(max_time, time);
+		//min_time = min(min_time, time);
+		//printk("val : %d\n", test_val);
 	}
+	time2 = get_cycles();
 	local_irq_restore(flags);
+	time = time2 - time1;
+	tot_time += time;
 
 	printk(KERN_ALERT "test results : time per probe\n");
 	printk(KERN_ALERT "number of loops : %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time : %llu\n", tot_time);
-	printk(KERN_ALERT "min : %llu\n", min_time);
-	printk(KERN_ALERT "max : %llu\n", max_time);
+	//printk(KERN_ALERT "min : %llu\n", min_time);
+	//printk(KERN_ALERT "max : %llu\n", max_time);
 
 	printk(KERN_ALERT "test end\n");
 	
