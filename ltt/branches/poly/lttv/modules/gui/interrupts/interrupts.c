@@ -18,44 +18,51 @@
  
  /******************************************************************
    
- The standard deviation  calculation is based on: 
+- CPUID: processor ID
+
+- IrqId: IRQ ID
+
+- Frequency (Hz): the number of interruptions per second (Hz)
+
+- Total Duration (nsec): the sum of each interrupt duration in nsec
+
+- Duration Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) where
+	N: number of interrupts 
+	xi: duration of an interrupt (nsec)
+	Xa: average duration (nsec)
+
+- Max IRQ handler duration (nsec) [time interval]:   the longest IRQ handler duration in nsec.  
+
+-Average period (nsec): 1/Frequency(in HZ)
+
+-Period Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) where
+N: number of interruptions 
+xi: duration of an interrupt
+Xa: 1/Frequency  (in Hz)
+ 
+-Frequency Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) 
+N:  number of interruptions 
+xi: duration of an interrupt
+Xa: Frequency  (Hz)
+
+
+
+The standard deviation  calculation is based on: 
  http://en.wikipedia.org/wiki/Standard_deviation
  
  Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2))
  
+
+ 
  To compute the standard deviation, we need to make  EventRequests to LTTV. In 
  the first EventRequest, we  compute the average duration (Xa)  and the 
- frequency (N) of each IrqID.  We store the information calculated in the first 
+ Number of interruptions (N) of each IrqID.  We store the information calculated in the first 
  EventRequest in an array  called  FirstRequestIrqExit.
  In the second  EventRequest, we compute the Sum ((xi -Xa)^2) and store this information 
  in a array called SumArray. The function CalculateDurationStandardDeviation() uses FirstRequestIrqExit 
  and SumArray arrays to calculate the standard deviation.
    
 
-
-CPUID: processor ID
-
-IrqId: IRQ ID
-
-Frequency (Hz): the number of interruptions per second (Hz)
-
-Total Duration (nsec): the sum of each interrupt duration in nsec
-
-Duration standard deviation (nsec):   taken from http://en.wikipedia.org/wiki/Standard_deviation
-Duration Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) where
-N: number of interrupts 
-xi: duration of an interrupt (nsec)
-Xa: average duration (nsec)
-
-Max IRQ handler duration (nsec) [time interval]:   the longest IRQ handler duration in nsec.  
-
-Average period (nsec): 1/frequency
-
- 
-Period Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) where
-N: number of interrupts 
-xi: duration of an interrupt
-Xa: 1/frequency  
  
  *******************************************************************/
 
@@ -93,16 +100,16 @@ typedef struct
   LttTime duration;
   LttTime start_time;	
   LttTime end_time;	
-}MaxDuration;
+}IrqDuration;
 
 typedef struct {
 	guint cpu_id;
 	guint id;
-	guint frequency;
+	guint NumerofInterruptions;
 	LttTime total_duration;	
 	guint average_duration;
-	MaxDuration max_irq_handler;
-	
+	IrqDuration max_irq_handler;
+	IrqDuration min_irq_handler;
 }Irq;
 
 typedef struct {
@@ -115,9 +122,10 @@ typedef struct {
 typedef struct 
 {
 	guint irqId;
-	guint frequency;
-	guint64 sumOfDurations;
-	guint64 sumOfPeriods;
+	guint NumerofInterruptions;//frequency;// 
+	guint64 sumOfDurations; // to store the Sum ((xi -Xa)^2) of the duration Standard deviation
+	guint64 sumOfPeriods;   // to store  the Sum ((xi -Xa)^2) of the period Standard deviation
+	guint64 sumOfFrequencies;// to store the Sum ((xi -Xa)^2) of the frequency Standard deviation
 	
 }SumId;
 
@@ -167,7 +175,7 @@ static guint64 get_interrupt_id(LttEvent *e);
 static gboolean trace_header(void *hook_data, void *call_data);
 static gboolean DisplayViewer (void *hook_data, void *call_data);
 static void CalculateData(LttTime time_exit,  guint cpu_id,  InterruptEventData *event_data);
-static void TotalDurationMaxIrqDuration(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit);
+static void CalculateTotalDurationAndMaxIrqDurationAndMinIrqDuration(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit);
 static gboolean FirstRequestIrqEntryCallback(void *hook_data, void *call_data);
 static gboolean FirstRequestIrqExitCallback(void *hook_data, void *call_data);
 static gboolean SecondRequest(void *hook_data, void *call_data);
@@ -178,9 +186,12 @@ static void CalculateXi(LttEvent *event, InterruptEventData *event_data);
 static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data);
 static int CalculateDurationStandardDeviation(gint id, InterruptEventData *event_data);
 static int CalculatePeriodStandardDeviation(gint id, InterruptEventData *event_data);
-static int FrequencyInHZ(gint frequency, TimeWindow time_window);
+static int FrequencyInHZ(gint NumerofInterruptions, TimeWindow time_window);
 static  guint64 CalculatePeriodInnerPart(guint Xi, guint FrequencyHZ);
+static  guint64 CalculateFrequencyInnerPart(guint Xi_in_ns,  guint FrequencyHZ); 
 static void InterruptFree(InterruptEventData *event_viewer_data);
+static int CalculateFrequencyStandardDeviation(gint id, InterruptEventData *event_data);
+
 /* Enumeration of the columns */
 enum{
   CPUID_COLUMN,
@@ -190,7 +201,8 @@ enum{
   DURATION_STANDARD_DEV_COLUMN,
   MAX_IRQ_HANDLER_COLUMN,
   AVERAGE_PERIOD,
-  PERIOD_STANDARD_DEV_COLUMN, 
+  PERIOD_STANDARD_DEV_COLUMN,
+  FREQUENCY_STANDARD_DEV_COLUMN, 
   N_COLUMNS
 };
  
@@ -272,7 +284,9 @@ InterruptEventData *system_info(Tab *tab)
     G_TYPE_INT,	    /* standard deviation 	   */
     G_TYPE_STRING,	    /* Max IRQ handler  	   */
     G_TYPE_INT,		    /* Average period 		   */
-    G_TYPE_INT 	    /* period standard deviation   */
+    G_TYPE_INT, 	    /* period standard deviation   */
+    G_TYPE_INT 	    	    /* frequency standard deviation   */
+    
     );  
  
   event_viewer_data->TreeView = gtk_tree_view_new_with_model (GTK_TREE_MODEL (event_viewer_data->ListStore)); 
@@ -280,7 +294,7 @@ InterruptEventData *system_info(Tab *tab)
   g_object_unref (G_OBJECT (event_viewer_data->ListStore));
     
   renderer = gtk_cell_renderer_text_new ();
-  column = gtk_tree_view_column_new_with_attributes ("CPUID",
+  column = gtk_tree_view_column_new_with_attributes ("CPU ID",
                  renderer,
                  "text", CPUID_COLUMN,
                  NULL);
@@ -290,7 +304,7 @@ InterruptEventData *system_info(Tab *tab)
 
    
   renderer = gtk_cell_renderer_text_new ();
-  column = gtk_tree_view_column_new_with_attributes ("IrqId",
+  column = gtk_tree_view_column_new_with_attributes ("IRQ ID",
                  renderer,
                  "text", IRQ_ID_COLUMN,
                  NULL);
@@ -353,6 +367,14 @@ InterruptEventData *system_info(Tab *tab)
   gtk_tree_view_column_set_fixed_width (column, 200);
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
   
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("Frequency standard deviation (Hz)",
+                 renderer,
+                 "text", FREQUENCY_STANDARD_DEV_COLUMN,
+                 NULL);
+  gtk_tree_view_column_set_alignment (column, 0.0);
+  gtk_tree_view_column_set_fixed_width (column, 200);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
   
   
   event_viewer_data->SelectionTree = gtk_tree_view_get_selection (GTK_TREE_VIEW (event_viewer_data->TreeView));
@@ -527,7 +549,7 @@ static gboolean FirstRequestIrqEntryCallback(void *hook_data, void *call_data)
 
 /**
  *  This function gets the id of the interrupt. The id is stored in a dynamic structure. 
- *  Refer to the print.c file for howto extract data from a dynamic structure.
+ *  Refer to the print.c file for how to extract data from a dynamic structure.
  */ 
 static guint64 get_interrupt_id(LttEvent *e)
 {
@@ -584,18 +606,20 @@ static void CalculateData(LttTime time_exit,  guint cpu_id,InterruptEventData *e
     element = &g_array_index(FirstRequestIrqEntry,irq_entry,i);
     if(element->cpu_id == cpu_id)
     {
-      TotalDurationMaxIrqDuration(element,time_exit,  FirstRequestIrqExit);    
+      CalculateTotalDurationAndMaxIrqDurationAndMinIrqDuration(element,time_exit,  FirstRequestIrqExit);    
       g_array_remove_index(FirstRequestIrqEntry, i);
       break;
     }
   }
 } 
+ 
 
 /**
- *  This function calculates the total duration  of an interrupt and the longest Irq handler.  
+ *  This function calculates the total duration  of an interrupt and the longest & shortest Irq handlers.  
  *  
  */ 
-static void TotalDurationMaxIrqDuration(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit){
+static void CalculateTotalDurationAndMaxIrqDurationAndMinIrqDuration(irq_entry *e, LttTime time_exit, GArray *FirstRequestIrqExit)
+{
   Irq irq;
   Irq *element; 
   guint i;
@@ -608,12 +632,16 @@ static void TotalDurationMaxIrqDuration(irq_entry *e, LttTime time_exit, GArray 
   {
     irq.cpu_id = e->cpu_id;
     irq.id    =  e->id;
-    irq.frequency++;
+    irq.NumerofInterruptions++;
     irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
      
     irq.max_irq_handler.start_time = e->event_time;
     irq.max_irq_handler.end_time = time_exit;
     irq.max_irq_handler.duration = ltt_time_sub(time_exit, e->event_time);
+    
+    irq.min_irq_handler.start_time = e->event_time;
+    irq.min_irq_handler.end_time = time_exit;
+    irq.min_irq_handler.duration = ltt_time_sub(time_exit, e->event_time);
      
     g_array_append_val (FirstRequestIrqExit, irq);
   }
@@ -627,12 +655,20 @@ static void TotalDurationMaxIrqDuration(irq_entry *e, LttTime time_exit, GArray 
 	notFound = TRUE;
 	duration =  ltt_time_sub(time_exit, e->event_time);
 	element->total_duration = ltt_time_add(element->total_duration, duration);
-	element->frequency++;
+	element->NumerofInterruptions++;
+	// Max irq handler
 	if(ltt_time_compare(duration,element->max_irq_handler.duration) > 0)
 	{
 	    element->max_irq_handler.duration = duration;
 	    element->max_irq_handler.start_time = e->event_time;
 	    element->max_irq_handler.end_time  = time_exit;
+	}
+	// Min irq handler
+	if(ltt_time_compare(duration,element->min_irq_handler.duration) < 0)
+	{
+	    element->min_irq_handler.duration = duration;
+	    element->min_irq_handler.start_time = e->event_time;
+	    element->min_irq_handler.end_time  = time_exit;
 	}
       }
     }
@@ -640,12 +676,16 @@ static void TotalDurationMaxIrqDuration(irq_entry *e, LttTime time_exit, GArray 
     {
       irq.cpu_id = e->cpu_id;
       irq.id    =  e->id;
-      irq.frequency++;
+      irq.NumerofInterruptions++;
       irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
-      
+      // Max irq handler
       irq.max_irq_handler.start_time = e->event_time;
       irq.max_irq_handler.end_time = time_exit;
       irq.max_irq_handler.duration = ltt_time_sub(time_exit, e->event_time);
+      // Min irq handler
+      irq.min_irq_handler.start_time = e->event_time;
+      irq.min_irq_handler.end_time = time_exit;
+      irq.min_irq_handler.duration = ltt_time_sub(time_exit, e->event_time);
       
       g_array_append_val (FirstRequestIrqExit, irq);
     }
@@ -764,6 +804,10 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
    return FALSE;
 }
 
+/**
+ *  This function calculates the average  duration for each Irq Id
+ *  
+ */ 
 static void CalculateAverageDurationForEachIrqId(InterruptEventData *event_data)
 {
   guint64 real_data;
@@ -776,7 +820,10 @@ static void CalculateAverageDurationForEachIrqId(InterruptEventData *event_data)
     real_data = element->total_duration.tv_sec;
     real_data *= NANOSECONDS_PER_SECOND;
     real_data += element->total_duration.tv_nsec;
-    element->average_duration = real_data / element->frequency;
+    if(element->NumerofInterruptions != 0)
+       element->average_duration = real_data / element->NumerofInterruptions;
+    else
+       element->average_duration = 0;
   }
 
 }
@@ -870,6 +917,8 @@ static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data)
    
   gint duration_inner_part;
   guint64 period_inner_part;
+  guint64 frequency_inner_part;
+  
   Irq *average; 
   SumId *sumItem; 
   SumId sum;
@@ -887,13 +936,22 @@ static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data)
 	if(irq_id == average->id)
 	{
 	    duration_inner_part = Xi_in_ns - average->average_duration;
-	    FrequencyHZ = FrequencyInHZ(average->frequency, event_data->time_window);
-	     
+	    FrequencyHZ = FrequencyInHZ(average->NumerofInterruptions, event_data->time_window);
 	    sum.irqId = irq_id;
-	    sum.frequency = average->frequency;
+	    // compute  (xi -Xa)^2 of the duration Standard deviation
+	    sum.NumerofInterruptions = average->NumerofInterruptions;
 	    sum.sumOfDurations =  pow (duration_inner_part , 2);
+	     
+	    // compute  (xi -Xa)^2 of the period Standard deviation
 	    period_inner_part = CalculatePeriodInnerPart(Xi_in_ns, FrequencyHZ); 
+	    
+	    // compute (xi -Xa)^2 of the frequency Standard deviation
+	    frequency_inner_part =  CalculateFrequencyInnerPart(Xi_in_ns, FrequencyHZ); 
+	    
 	    sum.sumOfPeriods = period_inner_part;
+	    
+	    sum.sumOfFrequencies = frequency_inner_part;
+	    
 	    if(event_data->SumArray->len == NO_ITEMS)		 
 	    {   
 	     	g_array_append_val (SumArray, sum);
@@ -908,7 +966,8 @@ static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data)
 		     notFound = TRUE;
 		     sumItem->sumOfDurations  += sum.sumOfDurations;
 		     sumItem->sumOfPeriods += sum.sumOfPeriods;
- 		  }
+ 		     sumItem->sumOfFrequencies += sum.sumOfFrequencies;
+		  }
     		}
 		if(!notFound)
     		{
@@ -921,6 +980,10 @@ static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data)
   } 	
 }
 
+/**
+ *  This function computes the inner part of the period standard deviation  = sqrt(1/N Sum ((xi -Xa)^2))  
+ *  The inner part is: (xi -Xa)^2
+ */  
 static  guint64 CalculatePeriodInnerPart(guint Xi, guint FrequencyHZ)
 {
 
@@ -934,12 +997,21 @@ static  guint64 CalculatePeriodInnerPart(guint Xi, guint FrequencyHZ)
   
   difference = Xi - periodInNSec;
   result = pow (difference , 2);
-  
-  
   return result; 
-  
-   
+}
 
+/**
+ *  This function computes the inner part of the frequency standard deviation  = sqrt(1/N Sum ((xi -Xa)^2))  
+ *  The inner part is: (xi -Xa)^2
+ */  
+static  guint64 CalculateFrequencyInnerPart(guint Xi_in_ns,  guint FrequencyHZ)
+{
+  guint64 result;
+  gint difference;
+  
+  difference = Xi_in_ns - FrequencyHZ;
+  result = pow (difference , 2);
+  return result;
 }
 /**
  *  This function displays the result on the viewer 
@@ -978,14 +1050,14 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     sprintf(maxIrqHandler, "%d [%d.%d - %d.%d]",maxIRQduration, element.max_irq_handler.start_time.tv_sec, \
     element.max_irq_handler.start_time.tv_nsec, element.max_irq_handler.end_time.tv_sec, \
     element.max_irq_handler.end_time.tv_nsec) ;
-   FrequencyHZ = FrequencyInHZ(element.frequency,event_data->time_window);
+    FrequencyHZ = FrequencyInHZ(element.NumerofInterruptions,event_data->time_window);
    
    if(FrequencyHZ != 0)
    {
       periodInSec = (double)1/FrequencyHZ;
       periodInSec *= NANOSECONDS_PER_SECOND;
       periodInNsec = (int)periodInSec;
-      //printf("period1:%d\n", periodInNsec);
+     
    }
      
     gtk_list_store_append (event_data->ListStore, &iter);
@@ -998,9 +1070,12 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
       MAX_IRQ_HANDLER_COLUMN, maxIrqHandler,
       AVERAGE_PERIOD , periodInNsec,
       PERIOD_STANDARD_DEV_COLUMN,  CalculatePeriodStandardDeviation(element.id, event_data),
+      FREQUENCY_STANDARD_DEV_COLUMN, CalculateFrequencyStandardDeviation(element.id, event_data),
       -1);
      
      
+   
+    printf("%d	%d	%lld	%d	%s	%d	%d	%d\n\n",element.id, FrequencyHZ,real_data,CalculateDurationStandardDeviation(element.id, event_data), maxIrqHandler, periodInNsec, CalculatePeriodStandardDeviation(element.id, event_data), CalculateFrequencyStandardDeviation(element.id, event_data));
   } 
    
    
@@ -1037,20 +1112,24 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
  *  This function converts the number of interrupts over a time window to
  *  frequency in HZ
  */ 
-static int FrequencyInHZ(gint frequency, TimeWindow time_window)
+static int FrequencyInHZ(gint NumerofInterruptions, TimeWindow time_window)
 {
   guint64 frequencyHz = 0;
   double timeSec;  // time in second
   double result; 
   result  = ltt_time_to_double(time_window.time_width);
   timeSec = (result/NANOSECONDS_PER_SECOND);  //time in second
-  frequencyHz = frequency / timeSec;  
+  frequencyHz = NumerofInterruptions / timeSec;  
   return  frequencyHz;
 }
 
 /**
  *  This function calculates the duration standard deviation
- *  
+ *  Duration standard deviation = sqrt(1/N Sum ((xi -Xa)^2)) 
+ *  Where: 
+ *   sumId.sumOfDurations -> Sum ((xi -Xa)^2)
+ *   inner_component -> 1/N Sum ((xi -Xa)^2)
+ *   deviation-> sqrt(1/N Sum ((xi -Xa)^2)) 
  */ 
 static int CalculateDurationStandardDeviation(gint id, InterruptEventData *event_data)
 {
@@ -1063,7 +1142,10 @@ static int CalculateDurationStandardDeviation(gint id, InterruptEventData *event
     sumId  = g_array_index(event_data->SumArray, SumId, i);  
     if(id == sumId.irqId)
     {
-  	inner_component = sumId.sumOfDurations/ sumId.frequency;
+        if(sumId.NumerofInterruptions != 0)
+  	  inner_component = sumId.sumOfDurations/ sumId.NumerofInterruptions;
+	 else  
+	  inner_component = 0.0;
 	deviation =  sqrt(inner_component);
   	return deviation;
     }    
@@ -1074,6 +1156,12 @@ static int CalculateDurationStandardDeviation(gint id, InterruptEventData *event
 
 /**
  *  This function calculates the period standard deviation
+ *  Period standard deviation = sqrt(1/N Sum ((xi -Xa)^2)) 
+ *  Where: 
+ *   sumId.sumOfPeriods -> Sum ((xi -Xa)^2)
+ *   inner_component -> 1/N Sum ((xi -Xa)^2)
+ *   period_standard_deviation-> sqrt(1/N Sum ((xi -Xa)^2)) 
+ 
  *  
  */ 
 static int CalculatePeriodStandardDeviation(gint id, InterruptEventData *event_data)
@@ -1082,18 +1170,55 @@ static int CalculatePeriodStandardDeviation(gint id, InterruptEventData *event_d
    SumId sumId;
    guint64 inner_component;
    guint64 period_standard_deviation = 0;
+   
    for(i = 0; i < event_data->SumArray->len; i++)
    {  
       sumId  = g_array_index(event_data->SumArray, SumId, i);  
       if(id == sumId.irqId)
       {
-        inner_component = sumId.sumOfPeriods / sumId.frequency;
+        if(sumId.NumerofInterruptions != 0)
+           inner_component = sumId.sumOfPeriods / sumId.NumerofInterruptions;
+	else
+	   inner_component = 0;
+	   
 	period_standard_deviation =  sqrt(inner_component);
       }
    }
    
    return period_standard_deviation;
 }
+
+/**
+ *  This function calculates the frequency standard deviation
+ *  Frequency standard deviation = sqrt(1/N Sum ((xi -Xa)^2)) 
+ *  Where: 
+ *   sumId.sumOfFrequencies -> Sum ((xi -Xa)^2)
+ *   inner_component -> 1/N Sum ((xi -Xa)^2)
+ *   frequency_standard_deviation-> sqrt(1/N Sum ((xi -Xa)^2)) 
+ *  
+ */ 
+static int CalculateFrequencyStandardDeviation(gint id, InterruptEventData *event_data)
+{
+   int i;
+   SumId sumId;
+   guint64 inner_component;
+   guint64 frequency_standard_deviation = 0;
+   for(i = 0; i < event_data->SumArray->len; i++)
+   {  
+     sumId  = g_array_index(event_data->SumArray, SumId, i); 	
+     if(id == sumId.irqId)
+     {
+        if(sumId.NumerofInterruptions != 0)
+           inner_component = sumId.sumOfFrequencies / sumId.NumerofInterruptions;
+	else
+	   inner_component = 0;
+       
+        frequency_standard_deviation =  sqrt(inner_component);	   
+     }
+   }
+   return frequency_standard_deviation;
+}
+ 
 /*
  * This function is called by the main window
  * when the time interval needs to be updated.
@@ -1125,10 +1250,7 @@ void interrupt_destroy_walk(gpointer data, gpointer user_data)
 {
   g_info("interrupt_destroy_walk");
   InterruptEventData *event_data = (InterruptEventData*) data;
-
-    
   interrupt_destructor((InterruptEventData*)data);
-
 }
 
 
