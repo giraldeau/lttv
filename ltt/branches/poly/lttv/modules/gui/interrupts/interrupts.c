@@ -54,16 +54,13 @@ The standard deviation  calculation is based on:
  
 
  
- To compute the standard deviation, we need to make  EventRequests to LTTV. In 
- the first EventRequest, we  compute the average duration (Xa)  and the 
- Number of interruptions (N) of each IrqID.  We store the information calculated in the first 
- EventRequest in an array  called  FirstRequestIrqExit.
- In the second  EventRequest, we compute the Sum ((xi -Xa)^2) and store this information 
- in a array called SumArray. The function CalculateDurationStandardDeviation() uses FirstRequestIrqExit 
- and SumArray arrays to calculate the standard deviation.
-   
-
- 
+ To compute the standard deviation, we need to make two EventRequests to LTTV. In 
+ the first EventRequest, we  compute the average duration (Xa)  and the Number of interruptions (N) of 
+ each IrqID.  We store the information calculated in the first EventRequest in an array  
+ called  FirstRequestIrqExit. In the second  EventRequest, we compute the Sum ((xi -Xa)^2) 
+ and store this information in a array called SumArray. The function CalculateDurationStandardDeviation() uses
+ FirstRequestIrqExit and SumArray arrays to calculate the duration standard deviation.
+  
  *******************************************************************/
 
  
@@ -200,6 +197,7 @@ enum{
   DURATION_COLUMN,
   DURATION_STANDARD_DEV_COLUMN,
   MAX_IRQ_HANDLER_COLUMN,
+  MIN_IRQ_HANDLER_COLUMN,
   AVERAGE_PERIOD,
   PERIOD_STANDARD_DEV_COLUMN,
   FREQUENCY_STANDARD_DEV_COLUMN, 
@@ -283,6 +281,7 @@ InterruptEventData *system_info(Tab *tab)
     G_TYPE_UINT64,   /* Duration                   */
     G_TYPE_INT,	    /* standard deviation 	   */
     G_TYPE_STRING,	    /* Max IRQ handler  	   */
+    G_TYPE_STRING,	    /* Min IRQ handler  	   */
     G_TYPE_INT,		    /* Average period 		   */
     G_TYPE_INT, 	    /* period standard deviation   */
     G_TYPE_INT 	    	    /* frequency standard deviation   */
@@ -348,7 +347,16 @@ InterruptEventData *system_info(Tab *tab)
   gtk_tree_view_column_set_alignment (column, 0.0);
   gtk_tree_view_column_set_fixed_width (column, 250);
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
-  
+
+  renderer = gtk_cell_renderer_text_new ();
+  column = gtk_tree_view_column_new_with_attributes ("Min IRQ handler duration (nsec) [time interval]",
+                 renderer,
+                 "text", MIN_IRQ_HANDLER_COLUMN,
+                 NULL);
+  gtk_tree_view_column_set_alignment (column, 0.0);
+  gtk_tree_view_column_set_fixed_width (column, 250);
+  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->TreeView), column);
+    
   renderer = gtk_cell_renderer_text_new ();
   column = gtk_tree_view_column_new_with_attributes (" Average period (nsec)",
                  renderer,
@@ -1027,9 +1035,11 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
   GtkTreeIter    iter;
   guint64 real_data;
   guint maxIRQduration;
+  guint minIRQduration;
   double periodInSec;
   int periodInNsec;
   char maxIrqHandler[80];
+  char minIrqHandler[80];
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
   GArray *FirstRequestIrqExit = event_data->FirstRequestIrqExit;  
   int FrequencyHZ =  0; 
@@ -1050,6 +1060,15 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     sprintf(maxIrqHandler, "%d [%d.%d - %d.%d]",maxIRQduration, element.max_irq_handler.start_time.tv_sec, \
     element.max_irq_handler.start_time.tv_nsec, element.max_irq_handler.end_time.tv_sec, \
     element.max_irq_handler.end_time.tv_nsec) ;
+    
+    minIRQduration  =  element.min_irq_handler.duration.tv_sec;
+    minIRQduration *= NANOSECONDS_PER_SECOND;
+    minIRQduration += element.min_irq_handler.duration.tv_nsec;
+    sprintf(minIrqHandler, "%d [%d.%d - %d.%d]",minIRQduration, element.min_irq_handler.start_time.tv_sec, \
+    element.min_irq_handler.start_time.tv_nsec, element.min_irq_handler.end_time.tv_sec, \
+    element.min_irq_handler.end_time.tv_nsec) ;
+ 
+    
     FrequencyHZ = FrequencyInHZ(element.NumerofInterruptions,event_data->time_window);
    
    if(FrequencyHZ != 0)
@@ -1068,14 +1087,13 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
       DURATION_COLUMN, real_data,
       DURATION_STANDARD_DEV_COLUMN, CalculateDurationStandardDeviation(element.id, event_data),
       MAX_IRQ_HANDLER_COLUMN, maxIrqHandler,
+      MIN_IRQ_HANDLER_COLUMN, minIrqHandler,
       AVERAGE_PERIOD , periodInNsec,
       PERIOD_STANDARD_DEV_COLUMN,  CalculatePeriodStandardDeviation(element.id, event_data),
       FREQUENCY_STANDARD_DEV_COLUMN, CalculateFrequencyStandardDeviation(element.id, event_data),
       -1);
      
-     
-   
-    printf("%d	%d	%lld	%d	%s	%d	%d	%d\n\n",element.id, FrequencyHZ,real_data,CalculateDurationStandardDeviation(element.id, event_data), maxIrqHandler, periodInNsec, CalculatePeriodStandardDeviation(element.id, event_data), CalculateFrequencyStandardDeviation(element.id, event_data));
+  
   } 
    
    
