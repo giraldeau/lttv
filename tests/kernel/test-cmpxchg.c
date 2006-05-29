@@ -12,7 +12,6 @@
 
 #define NR_LOOPS 20000
 
-
 volatile int test_val = 100;
 
 
