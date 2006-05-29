@@ -16,7 +16,7 @@
 volatile int test_val = 100;
 
 
-static void do_test(void)
+static inline void do_test(void)
 {
 	int val, ret;
 
@@ -25,7 +25,7 @@ static void do_test(void)
 	ret = cmpxchg(&test_val, val, val+1);
 }
 
-void (*fct)(void) = do_test;
+//void (*fct)(void) = do_test;
 
 static int ltt_test_init(void)
 {
