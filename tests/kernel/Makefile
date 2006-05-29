@@ -6,8 +6,8 @@ ifneq ($(CONFIG_LTT),)
 	#obj-m += test-instrument-size-med.o
 	#obj-m += test-instrument-size-big.o
 	#obj-m += test-printk-effect.o
-	obj-m += test-cmpxchg.o
 endif
+	obj-m += test-cmpxchg.o
 
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
