@@ -10,7 +10,8 @@
 #include <linux/init.h>
 #include <linux/module.h>
 
-#define NR_LOOPS 2000
+#define NR_LOOPS 20000
+
 
 volatile int test_val = 100;
 
