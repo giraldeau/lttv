@@ -7,18 +7,18 @@ This document is made of four parts : The first one explains how to install
 LTTng and LTTV from Debian and RPM binary packages, the second one explains how
 to install LTTng and LTTV from sources and the third one describes the steps
 to follow to trace a system and view it. The fourth and last part explains
-briefly how to add a new trace point to the kernel.
+briefly how to add a new trace point to the kernel and to user space
+applications.
 
-What you will typically want is to read sections 1 and 3 : install LTTng from
-binary packages and use it. If there are no packages ready for your system, you
-will have to install from sources (section 2) instead.
+What you will typically want is to read sections 2 and 3 : install LTTng from
+sources and use it.
 
 These operations are made for installing the LTTng 0.5.X tracer on a
 linux 2.6.X kernel. You will also find instructions for installation of
 LTTV 0.8.x : the Linux Trace Toolkit Viewer. 
 
 To see the list of compatibilities between LTTng, ltt-control, LTTV, genevent
-and lttng-modules, please refer to :
+and ltt-usertrace, please refer to :
 http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
 
 
@@ -49,7 +49,7 @@ PowerPC 32 and 64 bits
 
 
 Author : Mathieu Desnoyers, September 2005
-Last update : May 23, 2006
+Last update : May 30, 2006
 
 
 ***********************************************************
@@ -58,9 +58,9 @@ Last update : May 23, 2006
 
 ** NOTE : RPM and debian packages are only made once a version has been
    thoroughly tested. If they do not exist at the moment, please install from
-	 sources (see section 2 below). To see the list of compatibilities between
-	 LTTng, ltt-control, LTTV, genevent and lttng-modules, please refer to
-	 http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
+   sources (see section 2 below). To see the list of compatibilities between
+   LTTng, ltt-control, LTTV, genevent and lttng-modules, please refer to
+   http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
 
 
 * Install from RPM packages on Fedora Core 4 :
@@ -196,26 +196,26 @@ su -
 mkdir /usr/src/lttng
 cd /usr/src/lttng
 (see http://ltt.polymtl.ca/lttng for package listing)
-wget http://ltt.polymtl.ca/lttng/patch-2.6.16-lttng-0.x.xx.tar.bz2
-bzip2 -cd patch-2.6.16-lttng-0.x.xx.tar.bz2 | tar xvof -
+wget http://ltt.polymtl.ca/lttng/patch-2.6.X-lttng-0.x.xx.tar.bz2
+bzip2 -cd patch-2.6.X-lttng-0.x.xx.tar.bz2 | tar xvof -
 
 
 * Getting LTTng kernel sources
 
 su -
 cd /usr/src
-wget http://kernel.org/pub/linux/kernel/v2.6/testing/linux-2.6.16.tar.bz2
-bzip2 -cd linux-2.6.16.tar.bz2 | tar xvof -
-cd linux-2.6.16
-cat /usr/src/lttng/patch-2.6.16-lttng-0.x.xx* | patch -p1
+wget http://kernel.org/pub/linux/kernel/v2.6/testing/linux-2.6.X.tar.bz2
+bzip2 -cd linux-2.6.X.tar.bz2 | tar xvof -
+cd linux-2.6.X
+cat /usr/src/lttng/patch-2.6.X-lttng-0.x.xx* | patch -p1
 cd ..
-mv linux-2.6.16 linux-2.6.16-lttng-0.x.xx
+mv linux-2.6.X linux-2.6.X-lttng-0.x.xx
 
 
 * Installing a LTTng kernel
 
 su -
-cd /usr/src/linux-2.6.16-lttng-0.x.xx
+cd /usr/src/linux-2.6.X-lttng-0.x.xx
 make menuconfig (or make xconfig or make config)
     Select the < Help > button if you are not familiar with kernel
     configuration.
@@ -233,21 +233,36 @@ make menuconfig (or make xconfig or make config)
        [*] Allow tracing from userspace
     your choice (see < Help >) :
        [ ] Activate Linux Trace Toolkit Heartbeat Timer
-		You may or may not activate instrumentation per facility. They are all
-		selected for logging by default. It can be used as a compile time filter to
-		enable/disable logging of events. It is useful to discard events with a
-		minimal impact on the system and especially useful for now, as the dynamic
-		filter has not been implemented yet.
+    You may or may not activate instrumentation per facility. They are all
+    selected for logging by default. It can be used as a compile time filter to
+    enable/disable logging of events. It is useful to discard events with a
+    minimal impact on the system and especially useful for now, as the dynamic
+    filter has not been implemented yet.
     Select <Exit>
   Select <Exit>
   Select <Yes>
 make
 make modules_install
+
+-- on X86, X86_64
 make install
-
 reboot
+Select the Linux 2.6.16-lttng-0.x.xx kernel in your boot loader.
 
-  Select the Linux 2.6.16-lttng-0.x.xx kernel in your boot loader.
+-- on PowerPC
+cp vmlinux /boot/vmlinux-2.6.X-lttng-0.x.xx
+cp System.map /boot/System.map-2.6.X-lttng-0.x.xx
+cp .config /boot/config-2.6.X-lttng-0.x.xx
+depmod -ae -F /boot/System.map-2.6.X-lttng-0.x.xx 2.6.X-lttng-0.x.xx
+mkinitrd /boot/initrd.img-2.6.X-lttng-0.x.xx 2.6.X-lttng-0.x.xx
+(edit /etc/yaboot.conf to add a new entry pointing to your kernel : the entry
+that comes first is the default kernel)
+ybin
+select the right entry at the yaboot prompt (see choices : tab, select : type
+the kernel name followed by enter)
+Select the Linux 2.6.16-lttng-0.x.xx kernel in your boot loader.
+--
+
 
 
 * Editing the system wide configuration
@@ -295,6 +310,9 @@ system)
 ./configure
 make
 make install
+
+* Getting and installing the ltt-usertrace package for user space tracing
+See http://ltt.polymtl.ca/ > USERSPACE TRACING QUICKSTART
 
 
 * Getting and installing the LTTV package (on the visualisation machine, same or
@@ -392,5 +410,9 @@ cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
     - Add a call to the tracing functions. See their names and parameters in
       /usr/src/linux-2.6.16-lttng-0.x.xx/include/linux/ltt/ltt-facility-yourfacility.h
     
+* Add new events to userspace programs with genevent
+See http://ltt.polymtl.ca/ > USERSPACE TRACING QUICKSTART
+
+
 
 
