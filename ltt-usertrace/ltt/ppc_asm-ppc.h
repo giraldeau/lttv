@@ -11,8 +11,6 @@
  *  2 of the License, or (at your option) any later version.
  */
 
-#include <linux/config.h>
-
 /*
  * Macros for storing registers into and loading registers from
  * exception frames.

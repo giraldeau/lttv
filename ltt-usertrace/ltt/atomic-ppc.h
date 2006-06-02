@@ -7,8 +7,6 @@
 
 typedef struct { volatile int counter; } atomic_t;
 
-#ifdef __KERNEL__
-
 #define ATOMIC_INIT(i)	{ (i) }
 
 #define atomic_read(v)		((v)->counter)
@@ -16,7 +14,7 @@ typedef struct { volatile int counter; } atomic_t;
 
 extern void atomic_clear_mask(unsigned long mask, unsigned long *addr);
 
-#ifdef CONFIG_SMP
+#if 0 // We only do operation on one CPU at a time (LTT)
 #define SMP_SYNC	"sync"
 #define SMP_ISYNC	"\n\tisync"
 #else
@@ -210,5 +208,4 @@ static __inline__ int atomic_dec_if_positive(atomic_t *v)
 #define smp_mb__before_atomic_inc()	__MB
 #define smp_mb__after_atomic_inc()	__MB
 
-#endif /* __KERNEL__ */
 #endif /* _ASM_PPC_ATOMIC_H_ */

@@ -8,8 +8,8 @@
  * 2 of the License, or (at your option) any later version.
  */
 
-#include <linux/config.h>
-#include <linux/compiler.h>
+//#include <linux/config.h>
+//#include <linux/compiler.h>
 #include <asm/page.h>
 #include <asm/processor.h>
 #include <asm/hw_irq.h>
@@ -56,97 +56,6 @@
 #define smp_wmb()	__asm__ __volatile__("": : :"memory")
 #define smp_read_barrier_depends()  do { } while(0)
 #endif /* CONFIG_SMP */
-
-#ifdef __KERNEL__
-struct task_struct;
-struct pt_regs;
-
-#ifdef CONFIG_DEBUGGER
-
-extern int (*__debugger)(struct pt_regs *regs);
-extern int (*__debugger_ipi)(struct pt_regs *regs);
-extern int (*__debugger_bpt)(struct pt_regs *regs);
-extern int (*__debugger_sstep)(struct pt_regs *regs);
-extern int (*__debugger_iabr_match)(struct pt_regs *regs);
-extern int (*__debugger_dabr_match)(struct pt_regs *regs);
-extern int (*__debugger_fault_handler)(struct pt_regs *regs);
-
-#define DEBUGGER_BOILERPLATE(__NAME) \
-static inline int __NAME(struct pt_regs *regs) \
-{ \
-	if (unlikely(__ ## __NAME)) \
-		return __ ## __NAME(regs); \
-	return 0; \
-}
-
-DEBUGGER_BOILERPLATE(debugger)
-DEBUGGER_BOILERPLATE(debugger_ipi)
-DEBUGGER_BOILERPLATE(debugger_bpt)
-DEBUGGER_BOILERPLATE(debugger_sstep)
-DEBUGGER_BOILERPLATE(debugger_iabr_match)
-DEBUGGER_BOILERPLATE(debugger_dabr_match)
-DEBUGGER_BOILERPLATE(debugger_fault_handler)
-
-#ifdef CONFIG_XMON
-extern void xmon_init(void);
-#endif
-
-#else
-static inline int debugger(struct pt_regs *regs) { return 0; }
-static inline int debugger_ipi(struct pt_regs *regs) { return 0; }
-static inline int debugger_bpt(struct pt_regs *regs) { return 0; }
-static inline int debugger_sstep(struct pt_regs *regs) { return 0; }
-static inline int debugger_iabr_match(struct pt_regs *regs) { return 0; }
-static inline int debugger_dabr_match(struct pt_regs *regs) { return 0; }
-static inline int debugger_fault_handler(struct pt_regs *regs) { return 0; }
-#endif
-
-extern int fix_alignment(struct pt_regs *regs);
-extern void bad_page_fault(struct pt_regs *regs, unsigned long address,
-			   int sig);
-extern void show_regs(struct pt_regs * regs);
-extern void low_hash_fault(struct pt_regs *regs, unsigned long address);
-extern int die(const char *str, struct pt_regs *regs, long err);
-
-extern int _get_PVR(void);
-extern void giveup_fpu(struct task_struct *);
-extern void disable_kernel_fp(void);
-extern void flush_fp_to_thread(struct task_struct *);
-extern void enable_kernel_fp(void);
-extern void giveup_altivec(struct task_struct *);
-extern void disable_kernel_altivec(void);
-extern void enable_kernel_altivec(void);
-extern int emulate_altivec(struct pt_regs *);
-extern void cvt_fd(float *from, double *to, unsigned long *fpscr);
-extern void cvt_df(double *from, float *to, unsigned long *fpscr);
-
-#ifdef CONFIG_ALTIVEC
-extern void flush_altivec_to_thread(struct task_struct *);
-#else
-static inline void flush_altivec_to_thread(struct task_struct *t)
-{
-}
-#endif
-
-extern int mem_init_done;	/* set on boot once kmalloc can be called */
-
-/* EBCDIC -> ASCII conversion for [0-9A-Z] on iSeries */
-extern unsigned char e2a(unsigned char);
-
-extern struct task_struct *__switch_to(struct task_struct *,
-				       struct task_struct *);
-#define switch_to(prev, next, last)	((last) = __switch_to((prev), (next)))
-
-struct thread_struct;
-extern struct task_struct * _switch(struct thread_struct *prev,
-				    struct thread_struct *next);
-
-static inline int __is_processor(unsigned long pv)
-{
-	unsigned long pvr;
-	asm("mfspr %0, 0x11F" : "=r" (pvr)); 
-	return(PVR_VER(pvr) == pv);
-}
 
 /*
  * Atomic exchange
@@ -302,5 +211,4 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
 
 #define arch_align_stack(x) (x)
 
-#endif /* __KERNEL__ */
 #endif

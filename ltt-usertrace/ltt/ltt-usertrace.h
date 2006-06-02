@@ -15,6 +15,11 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <linux/unistd.h>
+#if defined(__powerpc__) || defined(__powerpc64__)
+#include "ltt/ltt-usertrace-ppc.h"
+#else
+#include <asm/atomic.h>
+#endif
 
 #ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))
