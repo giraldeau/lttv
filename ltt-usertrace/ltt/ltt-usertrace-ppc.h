@@ -11,7 +11,6 @@ xchg_u32(volatile void *p, unsigned long val)
 
 	__asm__ __volatile__ ("\n\
 1:	lwarx	%0,0,%2 \n"
-	PPC405_ERR77(0,%2)
 "	stwcx.	%3,0,%2 \n\
 	bne-	1b"
 	: "=&r" (prev), "=m" (*(volatile unsigned long *)p)
@@ -63,7 +62,6 @@ __cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int new)
 1:	lwarx	%0,0,%2 \n\
 	cmpw	0,%0,%3 \n\
 	bne	2f \n"
-	PPC405_ERR77(0,%2)
 "	stwcx.	%4,0,%2 \n\
 	bne-	1b\n"
 #ifdef CONFIG_SMP
