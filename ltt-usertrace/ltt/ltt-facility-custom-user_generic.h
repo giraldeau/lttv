@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-static inline int trace_user_generic_slow_printf(
+static int trace_user_generic_slow_printf(
 		const char *fmt, ...)
 #ifndef LTT_TRACE
 {

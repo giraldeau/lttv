@@ -66,7 +66,7 @@
  * Inline asm pulled from arch/ppc/kernel/misc.S so ppc64
  * is more like most of the other architectures.
  */
-static __inline__ unsigned long
+static inline unsigned long
 __xchg_u32(volatile int *m, unsigned long val)
 {
 	unsigned long dummy;
@@ -84,7 +84,7 @@ __xchg_u32(volatile int *m, unsigned long val)
 	return (dummy);
 }
 
-static __inline__ unsigned long
+static inline unsigned long
 __xchg_u64(volatile long *m, unsigned long val)
 {
 	unsigned long dummy;
@@ -108,7 +108,7 @@ __xchg_u64(volatile long *m, unsigned long val)
  */
 extern void __xchg_called_with_bad_pointer(void);
 
-static __inline__ unsigned long
+static inline unsigned long
 __xchg(volatile void *ptr, unsigned long x, int size)
 {
 	switch (size) {
@@ -131,7 +131,7 @@ __xchg(volatile void *ptr, unsigned long x, int size)
 
 #define __HAVE_ARCH_CMPXCHG	1
 
-static __inline__ unsigned long
+static inline unsigned long
 __cmpxchg_u32(volatile int *p, int old, int new)
 {
 	unsigned int prev;
@@ -153,7 +153,7 @@ __cmpxchg_u32(volatile int *p, int old, int new)
 	return prev;
 }
 
-static __inline__ unsigned long
+static inline unsigned long
 __cmpxchg_u64(volatile long *p, unsigned long old, unsigned long new)
 {
 	unsigned long prev;
@@ -179,7 +179,7 @@ __cmpxchg_u64(volatile long *p, unsigned long old, unsigned long new)
    if something tries to do an invalid cmpxchg().  */
 extern void __cmpxchg_called_with_bad_pointer(void);
 
-static __inline__ unsigned long
+static inline unsigned long
 __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
 {
 	switch (size) {

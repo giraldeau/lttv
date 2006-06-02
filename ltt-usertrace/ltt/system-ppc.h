@@ -45,7 +45,7 @@
 #define smp_read_barrier_depends()	do { } while(0)
 #endif /* CONFIG_SMP */
 
-static __inline__ unsigned long
+static inline unsigned long
 xchg_u32(volatile void *p, unsigned long val)
 {
 	unsigned long prev;
@@ -95,7 +95,7 @@ extern inline void * xchg_ptr(void * m, void * val)
 
 #define __HAVE_ARCH_CMPXCHG	1
 
-static __inline__ unsigned long
+static inline unsigned long
 __cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int new)
 {
 	unsigned int prev;
@@ -122,7 +122,7 @@ __cmpxchg_u32(volatile unsigned int *p, unsigned int old, unsigned int new)
    if something tries to do an invalid cmpxchg().  */
 extern void __cmpxchg_called_with_bad_pointer(void);
 
-static __inline__ unsigned long
+static inline unsigned long
 __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
 {
 	switch (size) {

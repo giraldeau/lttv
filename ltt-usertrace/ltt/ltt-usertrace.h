@@ -15,9 +15,22 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <linux/unistd.h>
+
+#define inline inline __attribute__((always_inline))
+
 #if defined(__powerpc__) || defined(__powerpc64__)
-#include "ltt/ltt-usertrace-ppc.h"
+#ifdef __powerpc64__
+#include <ltt/atomic-ppc64.h>
+#include <ltt/system-ppc64.h>
+#include <asm/timex.h>
 #else
+#include <ltt/ppc_asm-ppc.h>
+#include <ltt/atomic-ppc.h>
+#include <ltt/system-ppc.h>
+#include <ltt/timex-ppc.h>
+#endif
+#else
+#include <asm/timex.h>
 #include <asm/atomic.h>
 #endif
 
@@ -32,12 +45,21 @@
 #define NR_syscalls 313
 #endif
 
-#ifdef powerpc
+#ifdef __powerpc__
 #define __NR_ltt_trace_generic	283
 #define __NR_ltt_register_generic	284
 #undef NR_syscalls
 #define NR_syscalls 285
 #endif
+
+#ifdef __powerpc64__
+#define __NR_ltt_trace_generic	283
+#define __NR_ltt_register_generic	284
+#undef NR_syscalls
+#define NR_syscalls 285
+#endif
+
+
 
 //FIXME : setup for ARM
 //FIXME : setup for MIPS

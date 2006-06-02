@@ -27,10 +27,18 @@ gzip -cd ltt-usertrace-x.x.tar.gz | tar xvof -
 
 * Build the sample programs and install the headers and librairies into your
 system :
+(32 bits)
 su
 cd /usr/src/ltt-usertrace
+make clean
+make install (will build and install headers and libraries)
 make
-make install
+(64 bits)
+su
+cd /usr/src/ltt-usertrace
+make clean
+LIB_DIR=/usr/lib64 make install CFLAGS=-m64
+make CFLAGS=-m64
 
 Feel free to look at the sample programs and the Makefile : they demonstrate
 very well the features of the usertrace package and how to use them.

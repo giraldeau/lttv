@@ -15,7 +15,6 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <syscall.h>
-#include <asm/timex.h>
 #include <semaphore.h>
 #include <signal.h>
 
