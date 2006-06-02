@@ -4,6 +4,12 @@
 #ifndef __LTT_USERTRACE_PPC_H
 #define __LTT_USERTRACE_PPC_H
 
+#ifdef __powerpc64__
+#include "ltt/atomic-ppc64.h"
+#else
+#include "ltt/atomic-ppc.h"
+#endif
+
 static __inline__ unsigned long
 xchg_u32(volatile void *p, unsigned long val)
 {

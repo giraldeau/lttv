@@ -18,6 +18,14 @@
 #include <asm/timex.h>
 #include <semaphore.h>
 #include <signal.h>
+#ifdef powerpc
+#define __KERNEL__	/* Ugly hack : atomic.h is broken */
+#endif
+#include <asm/atomic.h>
+#ifdef powerpc
+#include "ltt/ltt-usertrace-ppc.h"
+#undef __KERNEL__	/* Ugly hack : atomic.h is broken */
+#endif
 
 #include <ltt/ltt-facility-id-user_generic.h>
 

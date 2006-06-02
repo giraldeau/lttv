@@ -11,18 +11,10 @@
 
 #include <errno.h>
 #include <syscall.h>
-#include <linux/unistd.h>
 #include <string.h>
-#include <sys/types.h>
 #include <stdint.h>
-#ifdef powerpc
-#define __KERNEL__	/* Ugly hack : atomic.h is broken */
-#endif
-#include <asm/atomic.h>
-#ifdef powerpc
-#include "ltt/ltt-usertrace-ppc.h"
-#undef __KERNEL__	/* Ugly hack : atomic.h is broken */
-#endif
+#include <sys/types.h>
+#include <linux/unistd.h>
 
 #ifndef min
 #define min(a,b) ((a)<(b)?(a):(b))

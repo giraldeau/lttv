@@ -46,8 +46,6 @@
 #define _GNU_SOURCE
 #define LTT_TRACE
 #define LTT_TRACE_FAST
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -57,21 +55,24 @@
 #include <pthread.h>
 #include <malloc.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <signal.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <sys/param.h>
 #include <sys/time.h>
-#include <errno.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <linux/unistd.h>
 
 // included with hack for powerpc in ltt-usertrace.h #include <asm/atomic.h>
 #include <asm/timex.h>	//for get_cycles()
 
-_syscall0(pid_t,gettid)
-
 #include <ltt/ltt-usertrace.h>
+
+_syscall0(pid_t,gettid);
 
 #ifdef LTT_SHOW_DEBUG
 #define dbg_printf(...) printf(__VA_ARGS__)
