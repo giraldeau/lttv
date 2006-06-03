@@ -3329,6 +3329,7 @@ void time_change_manager               (Tab *tab,
   TimeInterval time_span = tsc->time_span;
   LttTime start_time = new_time_window.start_time;
   LttTime end_time = new_time_window.end_time;
+  LttTime time_width = new_time_window.time_width;
 
   g_assert(ltt_time_compare(start_time, end_time) < 0);
   
@@ -3440,6 +3441,37 @@ void time_change_manager               (Tab *tab,
                               (double)NANOSECONDS_PER_SECOND-1);
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry4),
                             (double)end_time.tv_nsec);
+
+  /* width seconds */
+  gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry7),
+                            (double)0,
+                            (double)time_span.time_width.tv_sec);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry7),
+                            (double)time_width.tv_sec);
+
+  /* width nanoseconds */
+  if(time_width.tv_sec == time_span.time_width.tv_sec) {
+    if(time_width.tv_sec == 0) {
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry8),
+                                (double)1,
+                                (double)time_span.time_width.tv_nsec);
+    } else {
+      gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry8),
+                                (double)0,
+                                (double)time_span.time_width.tv_nsec);
+    }
+  }
+  else if(time_width.tv_sec == 0) {
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry8),
+                              1.0,
+                              (double)time_span.time_width.tv_nsec);
+  }
+  else /* anywhere else */
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry8),
+                              0.0,
+                              (double)NANOSECONDS_PER_SECOND-1);
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry8),
+                            (double)time_width.tv_nsec);
 
   /* call viewer hooks for new time window */
   set_time_window(tab, &new_time_window);
