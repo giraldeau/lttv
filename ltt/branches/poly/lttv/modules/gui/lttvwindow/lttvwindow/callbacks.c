@@ -4569,6 +4569,8 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText4, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEntry4, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText5a, FALSE, FALSE, 0);
+    temp_widget = gtk_vseparator_new();
+    gtk_widget_show(temp_widget);
     gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEventBox8, FALSE,
                          FALSE, 0);
     gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEntry7, FALSE, FALSE, 0);
