@@ -3443,9 +3443,15 @@ void time_change_manager               (Tab *tab,
                             (double)end_time.tv_nsec);
 
   /* width seconds */
-  gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry7),
-                            (double)0,
-                            (double)upper.tv_sec);
+  if(time_width.tv_nsec == 0) {
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry7),
+                              (double)1,
+                              (double)upper.tv_sec);
+  } else {
+    gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry7),
+                              (double)0,
+                              (double)upper.tv_sec);
+  }
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry7),
                             (double)time_width.tv_sec);
 
