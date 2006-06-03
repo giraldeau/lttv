@@ -9,6 +9,7 @@ ifneq ($(CONFIG_LTT),)
 	obj-m += test-printk-effect.o
 endif
 	obj-m += test-cmpxchg.o
+	obj-m += test-cmpxchg-nolock.o
 
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
