@@ -100,6 +100,12 @@ struct _Tab{
   GtkWidget *MText6;
   GtkWidget *MEntry6;
   GtkWidget *MText7;
+  GtkWidget *MEventBox8;
+  GtkWidget *MText8;
+  GtkWidget *MEntry7;
+  GtkWidget *MText9;
+  GtkWidget *MEntry8;
+  GtkWidget *MText10;
    
   // startTime is the left of the visible area. Corresponds to the scrollbar
   // value.

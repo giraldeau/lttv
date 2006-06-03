@@ -301,6 +301,53 @@ static gboolean on_MEventBox5b_paste(GtkWidget *widget, GdkEventButton *event,
   return 0;
 }
 
+/* Interval */
+static void MEventBox8_receive(GtkClipboard *clipboard,
+                          const gchar *text,
+                          gpointer data)
+{
+  if(text == NULL) return;
+  Tab *tab = (Tab *)data;
+  gchar buffer[CLIP_BUF];
+  gchar *ptr = buffer, *ptr_sec, *ptr_nsec;
+
+  strncpy(buffer, text, CLIP_BUF);
+  
+  while(!isdigit(*ptr) && ptr < buffer+CLIP_BUF-1) ptr++;
+                                                       /* remove leading junk */
+  ptr_sec = ptr;
+  while(isdigit(*ptr) && ptr < buffer+CLIP_BUF-1) ptr++;
+                                                 /* read all the first number */
+  *ptr = '\0';
+  ptr++;
+
+  while(!isdigit(*ptr) && ptr < buffer+CLIP_BUF-1) ptr++;
+                                                       /* remove leading junk */
+  ptr_nsec = ptr;
+  while(isdigit(*ptr) && ptr < buffer+CLIP_BUF-1) ptr++;
+                                                 /* read all the first number */
+  *ptr = '\0';
+
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry7),
+                            (double)strtoul(ptr_sec, NULL, 10));
+  gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry8),
+                            (double)strtoul(ptr_nsec, NULL, 10));
+}
+
+/* Interval */
+static gboolean on_MEventBox8_paste(GtkWidget *widget, GdkEventButton *event,
+                                gpointer data)
+{
+  Tab *tab = (Tab*)data;
+
+  GtkClipboard *clip = gtk_clipboard_get_for_display(gdk_display_get_default(),
+                                                     GDK_SELECTION_PRIMARY);
+  gtk_clipboard_request_text(clip,
+                             (GtkClipboardTextReceivedFunc)MEventBox8_receive,
+                             (gpointer)tab);
+  return 0;
+}
+
 
 static gboolean viewer_grab_focus(GtkWidget *widget, GdkEventButton *event,
                                   gpointer data)
@@ -3584,6 +3631,141 @@ on_MEntry4_value_changed               (GtkSpinButton *spinbutton,
 
 }
 
+/* value changed for time frame interval s
+ *
+ * Check time span : if ns is out of range, clip it the nearest good value.
+ */
+void
+on_MEntry7_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data)
+{
+  Tab *tab =(Tab *)user_data;
+  LttvTracesetContext * tsc = 
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  gint value = gtk_spin_button_get_value_as_int(spinbutton);
+  LttTime    current_time, time_delta;
+  TimeWindow new_time_window =  tab->time_window;
+  current_time = tab->current_time;
+  
+  time_delta = ltt_time_sub(time_span.end_time,time_span.start_time);
+  new_time_window.time_width.tv_sec = value;
+  new_time_window.time_width_double = 
+                 ltt_time_to_double(new_time_window.time_width);
+  if(ltt_time_compare(new_time_window.time_width,time_delta) > 0)
+  { /* Case where zoom out is bigger than trace length */
+    new_time_window.start_time = time_span.start_time;
+    new_time_window.time_width = time_delta;
+    new_time_window.time_width_double = ltt_time_to_double(time_delta);
+    new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                          new_time_window.time_width) ;
+  }
+  else
+  {
+    /* Center the image on the current time */
+    new_time_window.start_time = 
+      ltt_time_sub(current_time,
+          ltt_time_from_double(new_time_window.time_width_double/2.0));
+    new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                          new_time_window.time_width) ;
+    /* If on borders, don't fall off */
+    if(ltt_time_compare(new_time_window.start_time, time_span.start_time) <0
+     || ltt_time_compare(new_time_window.start_time, time_span.end_time) >0)
+    {
+      new_time_window.start_time = time_span.start_time;
+      new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                          new_time_window.time_width) ;
+    }
+    else 
+    {
+      if(ltt_time_compare(new_time_window.end_time,
+                          time_span.end_time) > 0
+       || ltt_time_compare(new_time_window.end_time,
+                          time_span.start_time) < 0)
+      {
+        new_time_window.start_time = 
+                ltt_time_sub(time_span.end_time, new_time_window.time_width);
+
+        new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                                new_time_window.time_width) ;
+      }
+    }
+    
+  }
+
+  if(ltt_time_compare(new_time_window.time_width, ltt_time_zero) == 0) {
+    g_warning("Zoom more than 1 ns impossible");
+  } else {
+   time_change_manager(tab, new_time_window);
+  }
+}
+
+void
+on_MEntry8_value_changed               (GtkSpinButton *spinbutton,
+                                        gpointer user_data)
+{
+  Tab *tab =(Tab *)user_data;
+  LttvTracesetContext * tsc = 
+    LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+  TimeInterval time_span = tsc->time_span;
+  gint value = gtk_spin_button_get_value_as_int(spinbutton);
+  LttTime    current_time, time_delta;
+  TimeWindow new_time_window =  tab->time_window;
+  current_time = tab->current_time;
+  
+  time_delta = ltt_time_sub(time_span.end_time,time_span.start_time);
+  new_time_window.time_width.tv_nsec = value;
+  new_time_window.time_width_double = 
+                 ltt_time_to_double(new_time_window.time_width);
+  if(ltt_time_compare(new_time_window.time_width,time_delta) > 0)
+  { /* Case where zoom out is bigger than trace length */
+    new_time_window.start_time = time_span.start_time;
+    new_time_window.time_width = time_delta;
+    new_time_window.time_width_double = ltt_time_to_double(time_delta);
+    new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                          new_time_window.time_width) ;
+  }
+  else
+  {
+    /* Center the image on the current time */
+    new_time_window.start_time = 
+      ltt_time_sub(current_time,
+          ltt_time_from_double(new_time_window.time_width_double/2.0));
+    new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                          new_time_window.time_width) ;
+    /* If on borders, don't fall off */
+    if(ltt_time_compare(new_time_window.start_time, time_span.start_time) <0
+     || ltt_time_compare(new_time_window.start_time, time_span.end_time) >0)
+    {
+      new_time_window.start_time = time_span.start_time;
+      new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                          new_time_window.time_width) ;
+    }
+    else 
+    {
+      if(ltt_time_compare(new_time_window.end_time,
+                          time_span.end_time) > 0
+       || ltt_time_compare(new_time_window.end_time,
+                          time_span.start_time) < 0)
+      {
+        new_time_window.start_time = 
+                ltt_time_sub(time_span.end_time, new_time_window.time_width);
+
+        new_time_window.end_time = ltt_time_add(new_time_window.start_time,
+                                                new_time_window.time_width) ;
+      }
+    }
+    
+  }
+
+  if(ltt_time_compare(new_time_window.time_width, ltt_time_zero) == 0) {
+    g_warning("Zoom more than 1 ns impossible");
+  } else {
+   time_change_manager(tab, new_time_window);
+  }
+}
+
+
 
 void current_time_change_manager       (Tab *tab,
                                         LttTime new_current_time)
@@ -4266,6 +4448,7 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     gtk_widget_show(tab->MText2);
     tab->MText3a = gtk_label_new("ns");
     gtk_widget_show(tab->MText3a);
+
     tab->MEventBox3b = gtk_event_box_new();
     gtk_widget_show(tab->MEventBox3b);
     gtk_tooltips_set_tip(tab->tooltips, tab->MEventBox3b, 
@@ -4277,6 +4460,19 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     gtk_widget_show(tab->MText4);
     tab->MText5a = gtk_label_new("ns");
     gtk_widget_show(tab->MText5a);
+
+    tab->MEventBox8 = gtk_event_box_new();
+    gtk_widget_show(tab->MEventBox8);
+    gtk_tooltips_set_tip(tab->tooltips, tab->MEventBox8, 
+        "Paste Time Interval here", "");
+    tab->MText8 = gtk_label_new("Time Interval:");
+    gtk_widget_show(tab->MText8);
+    gtk_container_add(GTK_CONTAINER(tab->MEventBox8), tab->MText8);
+    tab->MText9 = gtk_label_new("s");
+    gtk_widget_show(tab->MText9);
+    tab->MText10 = gtk_label_new("ns");
+    gtk_widget_show(tab->MText10);
+
     tab->MEventBox5b = gtk_event_box_new();
     gtk_widget_show(tab->MEventBox5b);
     gtk_tooltips_set_tip(tab->tooltips, tab->MEventBox5b, 
@@ -4313,7 +4509,14 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     gtk_spin_button_set_digits(GTK_SPIN_BUTTON(tab->MEntry6),0);
     gtk_spin_button_set_snap_to_ticks(GTK_SPIN_BUTTON(tab->MEntry6),TRUE);
     gtk_widget_show(tab->MEntry6);
-
+    tab->MEntry7 = gtk_spin_button_new_with_range(0.0, 1.0, 1.0);
+    gtk_spin_button_set_digits(GTK_SPIN_BUTTON(tab->MEntry7),0);
+    gtk_spin_button_set_snap_to_ticks(GTK_SPIN_BUTTON(tab->MEntry7),TRUE);
+    gtk_widget_show(tab->MEntry7);
+    tab->MEntry8 = gtk_spin_button_new_with_range(0.0, 1.0, 1.0);
+    gtk_spin_button_set_digits(GTK_SPIN_BUTTON(tab->MEntry8),0);
+    gtk_spin_button_set_snap_to_ticks(GTK_SPIN_BUTTON(tab->MEntry8),TRUE);
+    gtk_widget_show(tab->MEntry8);
     
     GtkWidget *temp_widget;
     
@@ -4334,6 +4537,13 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText4, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEntry4, FALSE, FALSE, 0);
     gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText5a, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEventBox8, FALSE,
+                         FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEntry7, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText9, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MEntry8, FALSE, FALSE, 0);
+    gtk_box_pack_start (GTK_BOX (tab->MTimebar), tab->MText10, FALSE, FALSE, 0);
+
     temp_widget = gtk_vseparator_new();
     gtk_widget_show(temp_widget);
     gtk_box_pack_end (GTK_BOX (tab->MTimebar), tab->MText7, FALSE, FALSE, 0);
@@ -4380,6 +4590,10 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
     g_signal_connect (G_OBJECT(tab->MEventBox5b),
                       "button-press-event",
                       G_CALLBACK (on_MEventBox5b_paste),
+                      (gpointer)tab);
+    g_signal_connect (G_OBJECT(tab->MEventBox8),
+                      "button-press-event",
+                      G_CALLBACK (on_MEventBox8_paste),
                       (gpointer)tab);
   }
 
@@ -4469,6 +4683,12 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
                     tab);
   g_signal_connect ((gpointer) tab->MEntry6, "value-changed",
                     G_CALLBACK (on_MEntry6_value_changed),
+                    tab);
+  g_signal_connect ((gpointer) tab->MEntry7, "value-changed",
+                    G_CALLBACK (on_MEntry7_value_changed),
+                    tab);
+  g_signal_connect ((gpointer) tab->MEntry8, "value-changed",
+                    G_CALLBACK (on_MEntry8_value_changed),
                     tab);
 
   //g_signal_connect(G_OBJECT(tab->scrollbar), "changed",
