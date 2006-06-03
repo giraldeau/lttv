@@ -3445,26 +3445,26 @@ void time_change_manager               (Tab *tab,
   /* width seconds */
   gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry7),
                             (double)0,
-                            (double)time_span.time_width.tv_sec);
+                            (double)upper.tv_sec);
   gtk_spin_button_set_value(GTK_SPIN_BUTTON(tab->MEntry7),
                             (double)time_width.tv_sec);
 
   /* width nanoseconds */
-  if(time_width.tv_sec == time_span.time_width.tv_sec) {
+  if(time_width.tv_sec == upper.tv_sec) {
     if(time_width.tv_sec == 0) {
       gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry8),
                                 (double)1,
-                                (double)time_span.time_width.tv_nsec);
+                                (double)upper.tv_nsec);
     } else {
       gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry8),
                                 (double)0,
-                                (double)time_span.time_width.tv_nsec);
+                                (double)upper.tv_nsec);
     }
   }
   else if(time_width.tv_sec == 0) {
     gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry8),
                               1.0,
-                              (double)time_span.time_width.tv_nsec);
+                              (double)upper.tv_nsec);
   }
   else /* anywhere else */
     gtk_spin_button_set_range(GTK_SPIN_BUTTON(tab->MEntry8),
