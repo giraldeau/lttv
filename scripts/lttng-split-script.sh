@@ -151,8 +151,11 @@ FILE=../$NAME-facilities-headers.diff
 
 IN="?_include_linux_ltt_ltt-facility-core.h
 ?_include_linux_ltt_ltt-facility-fs.h
+?_include_linux_ltt_ltt-facility-fs_data.h
+?_include_linux_ltt_ltt-facility-custom-fs_data.h
 ?_include_linux_ltt_ltt-facility-id-core.h
 ?_include_linux_ltt_ltt-facility-id-fs.h
+?_include_linux_ltt_ltt-facility-id-fs_data.h
 ?_include_linux_ltt_ltt-facility-id-ipc.h
 ?_include_linux_ltt_ltt-facility-id-kernel.h
 ?_include_linux_ltt_ltt-facility-id-locking.h
@@ -196,6 +199,8 @@ IN="?_ltt_Makefile
 ?_ltt_ltt-facility-loader-core.h
 ?_ltt_ltt-facility-loader-fs.c
 ?_ltt_ltt-facility-loader-fs.h
+?_ltt_ltt-facility-loader-fs_data.c
+?_ltt_ltt-facility-loader-fs_data.h
 ?_ltt_ltt-facility-loader-ipc.c
 ?_ltt_ltt-facility-loader-ipc.h
 ?_ltt_ltt-facility-loader-kernel.c

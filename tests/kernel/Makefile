@@ -10,6 +10,9 @@ ifneq ($(CONFIG_LTT),)
 endif
 	obj-m += test-cmpxchg.o
 	obj-m += test-cmpxchg-nolock.o
+	obj-m += test-spinlock.o
+	obj-m += test-inc.o
+	obj-m += test-inc-nolock.o
 
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
