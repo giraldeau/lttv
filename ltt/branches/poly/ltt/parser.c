@@ -750,8 +750,10 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
 
     //getLAnglebracket(in); //<subtype> 
 		/* subfield */
-		f = (field_t *)memAlloc(sizeof(field_t));
-		sequence_push(&(t->fields),f);
+    f = (field_t *)memAlloc(sizeof(field_t));
+    
+    f->name = NULL;
+    sequence_push(&(t->fields),f);
     parseFields(in, f, unnamed_types, named_types, 0);
 
     //getLAnglebracket(in); //<type struct> 
@@ -772,14 +774,16 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
 
     //getLAnglebracket(in); //<sequence size type> 
 		/* subfield */
-		f = (field_t *)memAlloc(sizeof(field_t));
-		sequence_push(&(t->fields),f);
+    f = (field_t *)memAlloc(sizeof(field_t));
+    f->name = NULL;
+    sequence_push(&(t->fields),f);
     parseFields(in, f, unnamed_types, named_types, 0);
 
     //getLAnglebracket(in); //<subtype> 
 		/* subfield */
-		f = (field_t *)memAlloc(sizeof(field_t));
-		sequence_push(&(t->fields),f);
+    f = (field_t *)memAlloc(sizeof(field_t));
+    f->name = NULL;
+    sequence_push(&(t->fields),f);
     parseFields(in, f, unnamed_types, named_types, 0);
 
     //getLAnglebracket(in); //<type sequence> 
@@ -838,7 +842,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
       str   = allocAndCopy(getNameAttribute(in));
       has_value = getValueAttribute(in, &loc_value);
       
-     	sequence_push(&(t->labels),str);
+      sequence_push(&(t->labels),str);
 
       if(has_value) value = loc_value;
       else value++;
