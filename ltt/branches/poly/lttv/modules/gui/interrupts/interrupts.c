@@ -17,51 +17,49 @@
  */
  
  /******************************************************************
+
+Each field of the interrupt viewer is summarized as follows:
    
 - CPUID: processor ID
 
 - IrqId: IRQ ID
 
-- Frequency (Hz): the number of interruptions per second (Hz)
+- Frequency (Hz): the number of interrupts per second (Hz). 
+                  We compute the total number of interrupts. Then 
+		  we divide it by the time interval.
 
-- Total Duration (nsec): the sum of each interrupt duration in nsec
+- Total Duration (nsec): the sum of each interrupt duration in nsec. 
+	         For a given Irq ID, we sum the duration of each interrupt
+		 to give us the total duration 
 
 - Duration Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) where
 	N: number of interrupts 
 	xi: duration of an interrupt (nsec)
 	Xa: average duration (nsec)
+  The formula is taken from wikipedia: http://en.wikipedia.org/wiki/Standard_deviation.	
+  To calculate the duration standard deviation, we make two EventsRequest passes to the main window.
+  In the first EventsRequest pass, we calculate the total number of interrupts to compute for 
+  the average Xa. In the second  EventsRequest pass, calculate the standard deviation.
+  
 
 - Max IRQ handler duration (nsec) [time interval]:   the longest IRQ handler duration in nsec.  
 
--Average period (nsec): 1/Frequency(in HZ)
+- Min IRQ handler duration (nsec) [time interval]:   the shortest IRQ handler duration in nsec.  
+
+- Average period (nsec): 1/Frequency(in HZ). The frequency is computed above.
 
 -Period Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) where
-N: number of interruptions 
+N: number of interrupts 
 xi: duration of an interrupt
-Xa: 1/Frequency  (in Hz)
+Xa: Period = 1/Frequency  (in Hz)
  
 -Frequency Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) 
-N:  number of interruptions 
+N:  number of interrupts 
 xi: duration of an interrupt
 Xa: Frequency  (Hz)
 
-
-
-The standard deviation  calculation is based on: 
- http://en.wikipedia.org/wiki/Standard_deviation
- 
- Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2))
- 
-
- 
- To compute the standard deviation, we need to make two EventRequests to LTTV. In 
- the first EventRequest, we  compute the average duration (Xa)  and the Number of interruptions (N) of 
- each IrqID.  We store the information calculated in the first EventRequest in an array  
- called  FirstRequestIrqExit. In the second  EventRequest, we compute the Sum ((xi -Xa)^2) 
- and store this information in a array called SumArray. The function CalculateDurationStandardDeviation() uses
- FirstRequestIrqExit and SumArray arrays to calculate the duration standard deviation.
   
- *******************************************************************/
+*******************************************************************/
 
  
 
@@ -102,7 +100,7 @@ typedef struct
 typedef struct {
 	guint cpu_id;
 	guint id;
-	guint NumerofInterruptions;
+	guint TotalNumberOfInterrupts;
 	LttTime total_duration;	
 	guint average_duration;
 	IrqDuration max_irq_handler;
@@ -119,7 +117,7 @@ typedef struct {
 typedef struct 
 {
 	guint irqId;
-	guint NumerofInterruptions;//frequency;// 
+	guint TotalNumberOfInterrupts;//frequency;// 
 	guint64 sumOfDurations; // to store the Sum ((xi -Xa)^2) of the duration Standard deviation
 	guint64 sumOfPeriods;   // to store  the Sum ((xi -Xa)^2) of the period Standard deviation
 	guint64 sumOfFrequencies;// to store the Sum ((xi -Xa)^2) of the frequency Standard deviation
@@ -183,7 +181,7 @@ static void CalculateXi(LttEvent *event, InterruptEventData *event_data);
 static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data);
 static int CalculateDurationStandardDeviation(gint id, InterruptEventData *event_data);
 static int CalculatePeriodStandardDeviation(gint id, InterruptEventData *event_data);
-static int FrequencyInHZ(gint NumerofInterruptions, TimeWindow time_window);
+static int FrequencyInHZ(gint NumberOfInterruptions, TimeWindow time_window);
 static  guint64 CalculatePeriodInnerPart(guint Xi, guint FrequencyHZ);
 static  guint64 CalculateFrequencyInnerPart(guint Xi_in_ns,  guint FrequencyHZ); 
 static void InterruptFree(InterruptEventData *event_viewer_data);
@@ -640,7 +638,7 @@ static void CalculateTotalDurationAndMaxIrqDurationAndMinIrqDuration(irq_entry *
   {
     irq.cpu_id = e->cpu_id;
     irq.id    =  e->id;
-    irq.NumerofInterruptions++;
+    irq.TotalNumberOfInterrupts++;
     irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
      
     irq.max_irq_handler.start_time = e->event_time;
@@ -663,7 +661,7 @@ static void CalculateTotalDurationAndMaxIrqDurationAndMinIrqDuration(irq_entry *
 	notFound = TRUE;
 	duration =  ltt_time_sub(time_exit, e->event_time);
 	element->total_duration = ltt_time_add(element->total_duration, duration);
-	element->NumerofInterruptions++;
+	element->TotalNumberOfInterrupts++;
 	// Max irq handler
 	if(ltt_time_compare(duration,element->max_irq_handler.duration) > 0)
 	{
@@ -684,7 +682,7 @@ static void CalculateTotalDurationAndMaxIrqDurationAndMinIrqDuration(irq_entry *
     {
       irq.cpu_id = e->cpu_id;
       irq.id    =  e->id;
-      irq.NumerofInterruptions++;
+      irq.TotalNumberOfInterrupts++;
       irq.total_duration =  ltt_time_sub(time_exit, e->event_time);
       // Max irq handler
       irq.max_irq_handler.start_time = e->event_time;
@@ -828,8 +826,8 @@ static void CalculateAverageDurationForEachIrqId(InterruptEventData *event_data)
     real_data = element->total_duration.tv_sec;
     real_data *= NANOSECONDS_PER_SECOND;
     real_data += element->total_duration.tv_nsec;
-    if(element->NumerofInterruptions != 0)
-       element->average_duration = real_data / element->NumerofInterruptions;
+    if(element->TotalNumberOfInterrupts != 0)
+       element->average_duration = real_data / element->TotalNumberOfInterrupts;
     else
        element->average_duration = 0;
   }
@@ -944,10 +942,10 @@ static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data)
 	if(irq_id == average->id)
 	{
 	    duration_inner_part = Xi_in_ns - average->average_duration;
-	    FrequencyHZ = FrequencyInHZ(average->NumerofInterruptions, event_data->time_window);
+	    FrequencyHZ = FrequencyInHZ(average->TotalNumberOfInterrupts, event_data->time_window);
 	    sum.irqId = irq_id;
 	    // compute  (xi -Xa)^2 of the duration Standard deviation
-	    sum.NumerofInterruptions = average->NumerofInterruptions;
+	    sum.TotalNumberOfInterrupts = average->TotalNumberOfInterrupts;
 	    sum.sumOfDurations =  pow (duration_inner_part , 2);
 	     
 	    // compute  (xi -Xa)^2 of the period Standard deviation
@@ -1069,7 +1067,7 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     element.min_irq_handler.end_time.tv_nsec) ;
  
     
-    FrequencyHZ = FrequencyInHZ(element.NumerofInterruptions,event_data->time_window);
+    FrequencyHZ = FrequencyInHZ(element.TotalNumberOfInterrupts,event_data->time_window);
    
    if(FrequencyHZ != 0)
    {
@@ -1092,7 +1090,8 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
       PERIOD_STANDARD_DEV_COLUMN,  CalculatePeriodStandardDeviation(element.id, event_data),
       FREQUENCY_STANDARD_DEV_COLUMN, CalculateFrequencyStandardDeviation(element.id, event_data),
       -1);
-     
+         printf("%d  %d      %lld    %d      %s      %d      %d      %d\n\n",element.id, FrequencyHZ,real_data,CalculateDurationStandardDeviation(element.id, event_data), maxIrqHandler, periodInNsec, CalculatePeriodStandardDeviation(element.id, event_data), CalculateFrequencyStandardDeviation(element.id, event_data));
+
   
   } 
    
@@ -1160,8 +1159,8 @@ static int CalculateDurationStandardDeviation(gint id, InterruptEventData *event
     sumId  = g_array_index(event_data->SumArray, SumId, i);  
     if(id == sumId.irqId)
     {
-        if(sumId.NumerofInterruptions != 0)
-  	  inner_component = sumId.sumOfDurations/ sumId.NumerofInterruptions;
+        if(sumId.TotalNumberOfInterrupts != 0)
+  	  inner_component = sumId.sumOfDurations/ sumId.TotalNumberOfInterrupts;
 	 else  
 	  inner_component = 0.0;
 	deviation =  sqrt(inner_component);
@@ -1194,8 +1193,8 @@ static int CalculatePeriodStandardDeviation(gint id, InterruptEventData *event_d
       sumId  = g_array_index(event_data->SumArray, SumId, i);  
       if(id == sumId.irqId)
       {
-        if(sumId.NumerofInterruptions != 0)
-           inner_component = sumId.sumOfPeriods / sumId.NumerofInterruptions;
+        if(sumId.TotalNumberOfInterrupts != 0)
+           inner_component = sumId.sumOfPeriods / sumId.TotalNumberOfInterrupts;
 	else
 	   inner_component = 0;
 	   
@@ -1226,8 +1225,8 @@ static int CalculateFrequencyStandardDeviation(gint id, InterruptEventData *even
      sumId  = g_array_index(event_data->SumArray, SumId, i); 	
      if(id == sumId.irqId)
      {
-        if(sumId.NumerofInterruptions != 0)
-           inner_component = sumId.sumOfFrequencies / sumId.NumerofInterruptions;
+        if(sumId.TotalNumberOfInterrupts != 0)
+           inner_component = sumId.sumOfFrequencies / sumId.TotalNumberOfInterrupts;
 	else
 	   inner_component = 0;
        
