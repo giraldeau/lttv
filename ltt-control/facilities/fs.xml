@@ -15,21 +15,21 @@
   <event name="exec">
     <description>Executing a file</description>
     <field name="filename"> <description>File name</description>
-			<sequence>
-				<uint>
-				<uchar>
-			</sequence>
-		</field>
+      <sequence>
+        <uint>
+        <uchar>
+      </sequence>
+    </field>
   </event>
 
   <event name="open">
     <description>Opening a file</description>
     <field name="filename"> <description>File name</description>
-			<sequence>
-				<uint>
-				<uchar>
-			</sequence>
-		</field>
+      <sequence>
+        <uint>
+        <uchar>
+      </sequence>
+    </field>
     <field name="fd"> <description>File descriptor</description> <uint size="4"> </field>
   </event>
 
@@ -43,7 +43,7 @@
     <field name="fd"> <description>File descriptor</description> <uint size="4"> </field>
     <field name="count"> <description>Number of bytes to read</description> <size_t> </field>
   </event>
-	
+  
   <event name="write">
     <description>Write to a file descriptor</description>
     <field name="fd"> <description>File descriptor</description> <uint size="4"> </field>
