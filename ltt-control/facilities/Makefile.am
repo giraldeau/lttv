@@ -2,6 +2,7 @@
 EXTRA_DIST =  \
 core.xml \
 fs.xml \
+fs_data.xml \
 ipc.xml \
 kernel.xml \
 kernel_arch_arm.xml \
@@ -23,6 +24,7 @@ network_ip_interface.xml
 facilities_DATA = \
 core.xml \
 fs.xml \
+fs_data.xml \
 ipc.xml \
 kernel.xml \
 kernel_arch_arm.xml \
