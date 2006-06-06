@@ -204,7 +204,7 @@ bzip2 -cd patch-2.6.X-lttng-0.x.xx.tar.bz2 | tar xvof -
 
 su -
 cd /usr/src
-wget http://kernel.org/pub/linux/kernel/v2.6/testing/linux-2.6.X.tar.bz2
+wget http://kernel.org/pub/linux/kernel/v2.6/linux-2.6.X.tar.bz2
 bzip2 -cd linux-2.6.X.tar.bz2 | tar xvof -
 cd linux-2.6.X
 cat /usr/src/lttng/patch-2.6.X-lttng-0.x.xx* | patch -p1
