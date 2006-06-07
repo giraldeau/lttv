@@ -1692,13 +1692,14 @@ static gboolean process_exit(void *hook_data, void *call_data)
   guint pid;
   guint cpu = s->cpu;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
-  LttvProcessState *process = ts->running_process[cpu];
+  LttvProcessState *process; // = ts->running_process[cpu];
 
   pid = ltt_event_get_unsigned(e, thf->f1);
 
   // FIXME : Add this test in the "known state" section
   // g_assert(process->pid == pid);
 
+  process = lttv_state_find_process(ts, ANY_CPU, pid);
   if(likely(process != NULL)) {
     process->state->s = LTTV_STATE_EXIT;
   }
@@ -1743,9 +1744,8 @@ static gboolean process_free(void *hook_data, void *call_data)
         break;
       }
     }
-    //if(i == num_cpus) /* process is not scheduled */
-      //exit_process(s, process);	// do nothing : wait for the schedchange to
-			//delete the process.
+    if(i == num_cpus) /* process is not scheduled */
+      exit_process(s, process);
   }
 
   return FALSE;
