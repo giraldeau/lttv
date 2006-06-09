@@ -10,6 +10,7 @@ kernel_arch_c2.xml \
 kernel_arch_i386.xml \
 kernel_arch_mips.xml \
 kernel_arch_powerpc.xml \
+kernel_arch_ppc.xml \
 stack_arch_i386.xml \
 locking.xml \
 memory.xml \
@@ -32,6 +33,7 @@ kernel_arch_c2.xml \
 kernel_arch_i386.xml \
 kernel_arch_mips.xml \
 kernel_arch_powerpc.xml \
+kernel_arch_ppc.xml \
 stack_arch_i386.xml \
 locking.xml \
 memory.xml \
