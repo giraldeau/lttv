@@ -187,7 +187,9 @@ IN="?_include_linux_ltt_ltt-facility-core.h
 ?_include_asm-mips_ltt_ltt-facility-id-kernel_arch_mips.h
 ?_include_asm-mips_ltt_ltt-facility-kernel_arch_mips.h
 ?_include_asm-powerpc_ltt_ltt-facility-id-kernel_arch_powerpc.h
-?_include_asm-powerpc_ltt_ltt-facility-kernel_arch_powerpc.h"
+?_include_asm-powerpc_ltt_ltt-facility-kernel_arch_powerpc.h
+?_include_asm-ppc_ltt_ltt-facility-id-kernel_arch_ppc.h
+?_include_asm-ppc_ltt_ltt-facility-kernel_arch_ppc.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -230,7 +232,9 @@ IN="?_ltt_Makefile
 ?_ltt_ltt-facility-loader-kernel_arch_mips.c
 ?_ltt_ltt-facility-loader-kernel_arch_mips.h
 ?_ltt_ltt-facility-loader-kernel_arch_powerpc.c
-?_ltt_ltt-facility-loader-kernel_arch_powerpc.h"
+?_ltt_ltt-facility-loader-kernel_arch_powerpc.h
+?_ltt_ltt-facility-loader-kernel_arch_ppc.c
+?_ltt_ltt-facility-loader-kernel_arch_ppc.h"
 
 
 for a in $IN; do wr $a $FILE; done
