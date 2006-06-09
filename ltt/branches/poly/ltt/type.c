@@ -141,9 +141,9 @@ LttTypeEnum ltt_type_class(LttType *t)
  *    returns 0 if erroneous, and show a critical warning message.
  ****************************************************************************/
 
-size_t ltt_type_size(LttTrace * trace, LttType *t)
+guint ltt_type_size(LttTrace * trace, LttType *t)
 {
-  size_t size;
+  guint size;
 
   switch(t->type_class) {
     case LTT_INT_FIXED:
