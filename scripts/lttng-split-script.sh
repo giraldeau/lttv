@@ -103,7 +103,6 @@ for a in $IN; do wr $a $FILE; done
 FILE=../$NAME-instrumentation-ppc.diff
 IN="?_arch_ppc_kernel_entry.S
 ?_arch_ppc_kernel_misc.S
-?_arch_ppc_kernel_process.c
 ?_arch_ppc_kernel_time.c
 ?_arch_ppc_kernel_traps.c
 ?_arch_ppc_mm_fault.c"
