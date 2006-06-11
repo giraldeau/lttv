@@ -1089,10 +1089,7 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
       AVERAGE_PERIOD , periodInNsec,
       PERIOD_STANDARD_DEV_COLUMN,  CalculatePeriodStandardDeviation(element.id, event_data),
       FREQUENCY_STANDARD_DEV_COLUMN, CalculateFrequencyStandardDeviation(element.id, event_data),
-      -1);
-         printf("%d  %d      %lld    %d      %s      %d      %d      %d\n\n",element.id, FrequencyHZ,real_data,CalculateDurationStandardDeviation(element.id, event_data), maxIrqHandler, periodInNsec, CalculatePeriodStandardDeviation(element.id, event_data), CalculateFrequencyStandardDeviation(element.id, event_data));
-
-  
+      -1); 
   } 
    
    
