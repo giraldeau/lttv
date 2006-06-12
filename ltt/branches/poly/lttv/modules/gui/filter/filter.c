@@ -598,11 +598,11 @@ callback_add_button(GtkWidget *widget, gpointer data) {
    */
   GString* s;
   s = g_ptr_array_index(fvd->f_logical_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvd->f_logical_op_junction_box)));
-  g_string_append(a_filter_string,s->str);
+  a_filter_string = g_string_append(a_filter_string,s->str);
   gtk_combo_box_set_active(GTK_COMBO_BOX(fvd->f_logical_op_junction_box),0);
 
   /* begin expression */
-  g_string_append_c(a_filter_string,'(');
+  a_filter_string = g_string_append_c(a_filter_string,'(');
 
   /*
    * For each simple expression, add the resulting string 
@@ -615,18 +615,18 @@ callback_add_button(GtkWidget *widget, gpointer data) {
     fvdl = (FilterViewerDataLine*)g_ptr_array_index(fvd->f_lines,i);
  
     s = g_ptr_array_index(fvd->f_not_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_not_op_box)));
-    g_string_append(a_filter_string,s->str);
+    a_filter_string = g_string_append(a_filter_string,s->str);
     
     s = g_ptr_array_index(fvd->f_field_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_field_box)));
-    g_string_append(a_filter_string,s->str);
+    a_filter_string = g_string_append(a_filter_string,s->str);
     
     s = g_ptr_array_index(fvd->f_math_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_math_op_box)));
-    g_string_append(a_filter_string,s->str);
+    a_filter_string = g_string_append(a_filter_string,s->str);
     
-    g_string_append(a_filter_string,gtk_entry_get_text(GTK_ENTRY(fvdl->f_value_field)));
+    a_filter_string = g_string_append(a_filter_string,gtk_entry_get_text(GTK_ENTRY(fvdl->f_value_field)));
     
     s = g_ptr_array_index(fvd->f_logical_op_options,gtk_combo_box_get_active(GTK_COMBO_BOX(fvdl->f_logical_op_box)));
-    g_string_append(a_filter_string,s->str);
+    a_filter_string = g_string_append(a_filter_string,s->str);
     
     /*
      * resetting simple expression lines
@@ -636,7 +636,7 @@ callback_add_button(GtkWidget *widget, gpointer data) {
   }
 
   /* end expression */
-  g_string_append_c(a_filter_string,')');
+  a_filter_string = g_string_append_c(a_filter_string,')');
 
   g_string_prepend(a_filter_string,gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
   gtk_entry_set_text(GTK_ENTRY(fvd->f_expression_field),a_filter_string->str);

@@ -114,7 +114,7 @@ print_tree(FILE *fp, GString *indent, LttvAttribute *tree)
           fprintf(fp, "\n");
           subtree = (LttvAttribute *)*(value.v_gobject);
           saved_length = indent->len; 
-          g_string_append(indent, "  ");
+          indent = g_string_append(indent, "  ");
           print_tree(fp, indent, subtree);
           g_string_truncate(indent, saved_length);
         }
@@ -159,7 +159,7 @@ print_stats(FILE *fp, LttvTracesetStats *tscs)
       start_time.tv_nsec);
 #endif //FIXME
     saved_length = indent->len;
-    g_string_append(indent, "  ");
+    indent = g_string_append(indent, "  ");
     print_tree(fp, indent, tcs->stats);
     g_string_truncate(indent, saved_length);
   }

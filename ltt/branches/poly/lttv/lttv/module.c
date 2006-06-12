@@ -199,8 +199,8 @@ static LttvLibrary *library_load(char *name, GError **error)
     
     if(gm != NULL) break;
 
-    g_string_append(messages, g_module_error());
-    g_string_append(messages, "\n");
+    messages = g_string_append(messages, g_module_error());
+    messages = g_string_append(messages, "\n");
     g_log(G_LOG_DOMAIN,G_LOG_LEVEL_INFO,"Trial failed, %s", g_module_error());
   }
 

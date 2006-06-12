@@ -488,7 +488,7 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
               t.tv_sec = atoi(v->str);
               g_string_free(v,TRUE);
               v = g_string_new("");
-          } else g_string_append_c(v,value[i]);
+          } else v = g_string_append_c(v,value[i]);
        }
        /* number can be integer or double */
        if(is_double) t.tv_nsec = atoi(v->str);
@@ -1572,9 +1572,10 @@ lttv_filter_update(LttvFilter* filter) {
         break;
       default:    /* concatening current string */
 				if(a_string_spaces->len != 0) {
-        	g_string_append(a_field_component, a_string_spaces->str);
-					a_string_spaces = g_string_set_size(a_string_spaces, 0);
-				}
+        	a_field_component = g_string_append(
+                    a_field_component, a_string_spaces->str);
+                    a_string_spaces = g_string_set_size(a_string_spaces, 0);
+        }
         a_field_component = g_string_append_c(a_field_component,
 																							filter->expression[i]);
     }
@@ -1720,10 +1721,10 @@ lttv_filter_append_expression(LttvFilter* filter, const char *expression) {
 
   GString* s = g_string_new("");
   if(filter->expression != NULL) {
-    g_string_append(s,filter->expression);
-    g_string_append_c(s,'&');
+    s = g_string_append(s,filter->expression);
+    s = g_string_append_c(s,'&');
   }
-  g_string_append(s,expression);
+  s = g_string_append(s,expression);
  
   g_free(filter->expression);
   filter->expression = g_string_free(s,FALSE);

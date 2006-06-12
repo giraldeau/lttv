@@ -29,6 +29,7 @@
 #include <config.h>
 #endif
 
+#include <glib.h>
 #include <lttv/lttv.h>
 #include <lttv/option.h>
 #include <lttv/module.h>
@@ -42,7 +43,6 @@
 #include <ltt/type.h>
 #include <ltt/trace.h>
 #include <ltt/facility.h>
-#include <stdio.h>
 
 /* Insert the hooks before and after each trace and tracefile, and for each
    event. Print a global header. */
@@ -87,10 +87,15 @@ void filter_analyze_file(void *hook_data) {
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
       LTTV_POINTER, &value));
 
-  if(((GString*)*(value.v_pointer))->len != 0) g_string_append_c((GString*)*(value.v_pointer),'&');
-  g_string_append_c((GString*)*(value.v_pointer),'(');
-  g_string_append((GString*)*(value.v_pointer),a_file_content);
-  g_string_append_c((GString*)*(value.v_pointer),')');
+  if(((GString*)*(value.v_pointer))->len != 0)
+    (GString*)*(value.v_pointer) =
+      g_string_append_c((GString*)*(value.v_pointer),'&');
+  (GString*)*(value.v_pointer) = 
+     g_string_append_c((GString*)*(value.v_pointer),'(');
+  (GString*)*(value.v_pointer) = 
+    g_string_append((GString*)*(value.v_pointer),a_file_content);
+  (GString*)*(value.v_pointer) = 
+    g_string_append_c((GString*)*(value.v_pointer),')');
   
 }
 
@@ -112,10 +117,15 @@ void filter_analyze_string(void *hook_data) {
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
       LTTV_POINTER, &value));
 
-  if(((GString*)*(value.v_pointer))->len != 0) g_string_append_c((GString*)*(value.v_pointer),'&');
-  g_string_append_c((GString*)*(value.v_pointer),'(');
-  g_string_append((GString*)*(value.v_pointer),a_string);
-  g_string_append_c((GString*)*(value.v_pointer),')');
+  if(((GString*)*(value.v_pointer))->len != 0)
+    (GString*)*(value.v_pointer) =
+      g_string_append_c((GString*)*(value.v_pointer),'&');
+  (GString*)*(value.v_pointer) = 
+    g_string_append_c((GString*)*(value.v_pointer),'(');
+  (GString*)*(value.v_pointer) = 
+    g_string_append((GString*)*(value.v_pointer),a_string);
+  (GString*)*(value.v_pointer) = 
+    g_string_append_c((GString*)*(value.v_pointer),')');
 
 }
 
