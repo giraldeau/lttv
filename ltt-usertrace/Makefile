@@ -15,11 +15,14 @@ all: libs samples
 #SAMPLE PROGRAMS
 
 samples: sample sample-highspeed sample-printf \
-				sample-instrument-fct sample-thread-slow sample-thread-fast
+	sample-instrument-fct sample-thread-slow sample-thread-fast sample-thread-brand
 
 sample: sample.c ltt-facility-loader-user_generic.c
 	$(CC) $(LTT_CFLAGS) $(CFLAGS) -o $@ $^
 	
+sample-thread-brand: sample-thread-brand.c ltt-facility-loader-user_generic.c
+	$(CC) $(LTT_CFLAGS) $(CFLAGS) -o $@ $^
+
 sample-highspeed: sample-highspeed.c ltt-facility-loader-user_generic.c
 	$(CC) $(LTT_CFLAGS) $(CFLAGS) -lltt-usertrace-fast -o $@ $^
 
