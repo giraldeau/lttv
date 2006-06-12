@@ -1,4 +1,4 @@
-// The Sample-java.java file
+// The Sample.java file
 public class Sample
 {
   // Declaration of the Native (C) function
