@@ -61,7 +61,8 @@ GQuark
     LTT_EVENT_EXEC,
     LTT_EVENT_ENUM_PROCESS_STATE,
 		LTT_EVENT_FUNCTION_ENTRY,
-		LTT_EVENT_FUNCTION_EXIT;
+		LTT_EVENT_FUNCTION_EXIT,
+		LTT_EVENT_THREAD_BRAND;
 
 /* Fields Quarks */
 
@@ -99,6 +100,7 @@ LttvExecutionSubmode
 
 LttvProcessStatus
   LTTV_STATE_UNNAMED,
+  LTTV_STATE_UNBRANDED,
   LTTV_STATE_WAIT_FORK,
   LTTV_STATE_WAIT_CPU,
   LTTV_STATE_EXIT,
@@ -420,10 +422,11 @@ static void write_process_state(gpointer key, gpointer value,
 
   process = (LttvProcessState *)value;
   fprintf(fp,
-"  <PROCESS CORE=%p PID=%u PPID=%u TYPE=\"%s\"CTIME_S=%lu CTIME_NS=%lu NAME=\"%s\" CPU=\"%u\">\n",
+"  <PROCESS CORE=%p PID=%u PPID=%u TYPE=\"%s\"CTIME_S=%lu CTIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\">\n",
       process, process->pid, process->ppid, g_quark_to_string(process->type),
 			process->creation_time.tv_sec,
       process->creation_time.tv_nsec, g_quark_to_string(process->name),
+      g_quark_to_string(process->brand),
       process->cpu);
 
   for(i = 0 ; i < process->execution_stack->len; i++) {
@@ -1105,10 +1108,11 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
     g_info("process state has %s when pop_int is %s\n",
 		    g_quark_to_string(process->state->t),
 		    g_quark_to_string(t));
-    g_info("{ %u, %u, %s, %s }\n",
+    g_info("{ %u, %u, %s, %s, %s }\n",
 		    process->pid,
 		    process->ppid,
 		    g_quark_to_string(process->name),
+		    g_quark_to_string(process->brand),
 		    g_quark_to_string(process->state->s));
     return;
   }
@@ -1193,6 +1197,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   process->pid = pid;
   process->cpu = cpu;
   process->name = name;
+  process->brand = LTTV_STATE_UNBRANDED;
   //process->last_cpu = tfs->cpu_name;
   //process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)tfs)->tf);
 	process->type = LTTV_STATE_USER_THREAD;
@@ -1483,10 +1488,11 @@ static void pop_function(LttvTracefileState *tfs, guint64 funcptr)
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
     g_info("process state has %llu when pop_function is %llu\n",
 		    process->current_function, funcptr);
-    g_info("{ %u, %u, %s, %s }\n",
+    g_info("{ %u, %u, %s, %s, %s }\n",
 		    process->pid,
 		    process->ppid,
 		    g_quark_to_string(process->name),
+		    g_quark_to_string(process->brand),
 		    g_quark_to_string(process->state->s));
     return;
   }
@@ -1777,6 +1783,22 @@ static gboolean process_exec(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean thread_brand(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  gchar *name;
+  guint cpu = s->cpu;
+  LttvProcessState *process = ts->running_process[cpu];
+
+  name = ltt_event_get_string(e, thf->f1);
+  process->brand = g_quark_from_string(name);
+
+  return FALSE;
+}
+
 static gboolean enum_process_state(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
@@ -1916,8 +1938,8 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 17);
-    hooks = g_array_set_size(hooks, 17); // Max possible number of hooks.
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 18);
+    hooks = g_array_set_size(hooks, 18); // Max possible number of hooks.
 		hn = 0;
 
     ret = lttv_trace_find_hook(ts->parent.t,
@@ -2003,6 +2025,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         LTT_FACILITY_FS, LTT_EVENT_EXEC,
         LTT_FIELD_FILENAME, 0, 0,
         process_exec, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
+		if(ret) hn--;
+
+    ret = lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_USER_GENERIC, LTT_EVENT_THREAD_BRAND,
+        LTT_FIELD_NAME, 0, 0,
+        thread_brand, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
 		if(ret) hn--;
 
      /* statedump-related hooks */
@@ -2658,6 +2686,7 @@ lttv_tracefile_state_get_type(void)
 static void module_init()
 {
   LTTV_STATE_UNNAMED = g_quark_from_string("UNNAMED");
+  LTTV_STATE_UNBRANDED = g_quark_from_string("UNBRANDED");
   LTTV_STATE_MODE_UNKNOWN = g_quark_from_string("MODE_UNKNOWN");
   LTTV_STATE_USER_MODE = g_quark_from_string("USER_MODE");
   LTTV_STATE_SYSCALL = g_quark_from_string("SYSCALL");
@@ -2714,6 +2743,7 @@ static void module_init()
   LTT_EVENT_ENUM_PROCESS_STATE  = g_quark_from_string("enumerate_process_state");
   LTT_EVENT_FUNCTION_ENTRY  = g_quark_from_string("function_entry");
   LTT_EVENT_FUNCTION_EXIT  = g_quark_from_string("function_exit");
+  LTT_EVENT_THREAD_BRAND  = g_quark_from_string("thread_brand");
 
 
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");

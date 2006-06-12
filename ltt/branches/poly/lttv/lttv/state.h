@@ -82,7 +82,8 @@ extern GQuark
     LTT_EVENT_EXEC,
 		LTT_EVENT_ENUM_PROCESS_STATE,
 		LTT_EVENT_FUNCTION_ENTRY,
-		LTT_EVENT_FUNCTION_EXIT;
+		LTT_EVENT_FUNCTION_EXIT,
+		LTT_EVENT_THREAD_BRAND;
 
 /* Fields Quarks */
 
@@ -179,6 +180,7 @@ typedef GQuark LttvProcessStatus;
 
 extern LttvProcessStatus
   LTTV_STATE_UNNAMED,
+  LTTV_STATE_UNBRANDED,
   LTTV_STATE_WAIT_FORK,
   LTTV_STATE_WAIT_CPU,
   LTTV_STATE_EXIT,
@@ -208,6 +210,7 @@ typedef struct _LttvProcessState {
   LttTime creation_time;
   LttTime insertion_time;
   GQuark name;
+  GQuark brand;
   GQuark pid_time;
   GArray *execution_stack;         /* Array of LttvExecutionState */
   LttvExecutionState *state;       /* Top of interrupt stack */

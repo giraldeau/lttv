@@ -351,6 +351,7 @@ ProcessList *processlist_construct(void)
   /* Create the Process list */
   process_list->list_store = gtk_list_store_new (  N_COLUMNS,
               G_TYPE_STRING,
+              G_TYPE_STRING,
               G_TYPE_UINT,
               G_TYPE_UINT,
               G_TYPE_UINT,
@@ -425,7 +426,17 @@ ProcessList *processlist_construct(void)
     GTK_TREE_VIEW (process_list->process_list_widget), column);
   
   process_list->button = column->button;
-  
+ 
+  column = gtk_tree_view_column_new_with_attributes ( "Brand",
+                renderer,
+                "text",
+                BRAND_COLUMN,
+                NULL);
+  gtk_tree_view_column_set_alignment (column, 0.0);
+  gtk_tree_view_column_set_fixed_width (column, 45);
+  gtk_tree_view_append_column (
+    GTK_TREE_VIEW (process_list->process_list_widget), column);
+
   column = gtk_tree_view_column_new_with_attributes ( "PID",
                 renderer,
                 "text",
@@ -558,6 +569,14 @@ void processlist_set_name(ProcessList *process_list,
         -1);
 }
 
+void processlist_set_brand(ProcessList *process_list,
+    GQuark brand,
+    HashedProcessData *hashed_process_data)
+{
+  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
+        BRAND_COLUMN, g_quark_to_string(brand),
+        -1);
+}
 void processlist_set_ppid(ProcessList *process_list,
     guint ppid,
     HashedProcessData *hashed_process_data)
@@ -576,6 +595,7 @@ int processlist_add(  ProcessList *process_list,
       LttTime *birth,
       guint trace_num,
       GQuark name,
+      GQuark brand,
       guint *height,
       ProcessInfo **pm_process_info,
       HashedProcessData **pm_hashed_process_data)
@@ -617,6 +637,7 @@ int processlist_add(  ProcessList *process_list,
 
   gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
         PROCESS_COLUMN, g_quark_to_string(name),
+        BRAND_COLUMN, g_quark_to_string(brand),
         PID_COLUMN, pid,
         PPID_COLUMN, ppid,
         CPU_COLUMN, cpu,

@@ -104,6 +104,7 @@ enum _LttvFieldType {
   LTTV_FILTER_STATE_CT,               /**< state.creation_time (double) */
   LTTV_FILTER_STATE_IT,               /**< state.insertion_time (double) */
   LTTV_FILTER_STATE_P_NAME,           /**< state.process_name (char*) */
+  LTTV_FILTER_STATE_T_BRAND,          /**< state.thread_brand (char*) */
   LTTV_FILTER_STATE_EX_MODE,          /**< state.execution_mode (LttvExecutionMode) */
   LTTV_FILTER_STATE_EX_SUBMODE,       /**< state.execution_submode (LttvExecutionSubmode) */
   LTTV_FILTER_STATE_P_STATUS,         /**< state.process_status (LttvProcessStatus) */

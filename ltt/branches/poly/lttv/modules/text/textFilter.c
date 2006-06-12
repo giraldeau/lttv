@@ -139,12 +139,13 @@ void filter_list_commands(void *hook_data) {
   g_print("state.pid (integer)\n");
   g_print("state.ppid (integer)\n");
   g_print("state.creation_time (double)\n");
-  g_print("trace.insertion_time (double)\n");
-  g_print("trace.process_name (string)\n");
-  g_print("trace.execution_mode (string)\n");
-  g_print("trace.execution_submode (string)\n");
-  g_print("trace.process_status (string)\n");
-  g_print("trace.cpu (string)\n\n");
+  g_print("state.insertion_time (double)\n");
+  g_print("state.process_name (string)\n");
+  g_print("state.thread_brand (string)\n");
+  g_print("state.execution_mode (string)\n");
+  g_print("state.execution_submode (string)\n");
+  g_print("state.process_status (string)\n");
+  g_print("state.cpu (string)\n\n");
   
   g_print("*** Possible operators ***\n");
   g_print("equal '='\n");

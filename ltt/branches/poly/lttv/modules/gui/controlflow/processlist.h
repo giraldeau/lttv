@@ -46,6 +46,7 @@
 enum
 {
   PROCESS_COLUMN,
+  BRAND_COLUMN,
   PID_COLUMN,
   PPID_COLUMN,
   CPU_COLUMN,
@@ -133,7 +134,7 @@ void processlist_clear(ProcessList *process_list);
 /* CPU num is only used for PID 0 */
 int processlist_add(ProcessList *process_list, Drawing_t * drawing, 
     guint pid, guint cpu, guint ppid,
-    LttTime *birth, guint trace_num, GQuark name, guint *height,
+    LttTime *birth, guint trace_num, GQuark name, GQuark brand, guint *height,
     ProcessInfo **process_info,
     HashedProcessData **hashed_process_data);
 // out : success (0) and height
@@ -143,6 +144,10 @@ int processlist_remove(ProcessList *process_list, guint pid, guint cpu,
 /* Set the name of a process */
 void processlist_set_name(ProcessList *process_list,
     GQuark name,
+    HashedProcessData *hashed_process_data);
+
+void processlist_set_brand(ProcessList *process_list,
+    GQuark brand,
     HashedProcessData *hashed_process_data);
 
 /* Set the ppid of a process */

@@ -399,6 +399,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             &birth,
             tfc->t_context->index,
             process->name,
+            process->brand,
             &pl_height,
             &process_info,
             &hashed_process_data);
@@ -555,6 +556,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             &birth,
             tfc->t_context->index,
             process->name,
+            process->brand,
             &pl_height,
             &process_info,
             &hashed_process_data);
@@ -775,6 +777,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
         &birth,
         tfc->t_context->index,
         process_in->name,
+        process_in->brand,
         &pl_height,
         &process_info,
         &hashed_process_data_in);
@@ -898,6 +901,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
           &birth,
           tfc->t_context->index,
           process->name,
+          process->brand,
           &pl_height,
           &process_info,
           &hashed_process_data);
@@ -1087,6 +1091,7 @@ int before_process_exit_hook(void *hook_data, void *call_data)
           &birth,
           tfc->t_context->index,
           process->name,
+          process->brand,
           &pl_height,
           &process_info,
           &hashed_process_data);
@@ -1281,6 +1286,7 @@ int before_process_release_hook(void *hook_data, void *call_data)
           &birth,
           tfc->t_context->index,
           process->name,
+          process->brand,
           &pl_height,
           &process_info,
           &hashed_process_data);
@@ -1473,6 +1479,7 @@ int after_process_fork_hook(void *hook_data, void *call_data)
         &birth,
         tfc->t_context->index,
         process_child->name,
+        process_child->brand,
         &pl_height,
         &process_info,
         &hashed_process_data_child);
@@ -1591,6 +1598,7 @@ int after_process_exit_hook(void *hook_data, void *call_data)
           &birth,
           tfc->t_context->index,
           process->name,
+          process->brand,
           &pl_height,
           &process_info,
           &hashed_process_data);
@@ -1685,6 +1693,7 @@ int after_fs_exec_hook(void *hook_data, void *call_data)
           &birth,
           tfc->t_context->index,
           process->name,
+          process->brand,
           &pl_height,
           &process_info,
           &hashed_process_data);
@@ -1703,6 +1712,77 @@ int after_fs_exec_hook(void *hook_data, void *call_data)
   return 0;
 
 }
+
+/* Get the filename of the process to print */
+int after_user_generic_thread_brand_hook(void *hook_data, void *call_data)
+{
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
+
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+
+  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+
+  guint cpu = tfs->cpu;
+  LttvProcessState *process = ts->running_process[cpu];
+  g_assert(process != NULL);
+
+  guint pid = process->pid;
+
+  /* Well, the process_out existed : we must get it in the process hash
+   * or add it, and draw its items.
+   */
+   /* Add process to process list (if not present) */
+  guint pl_height = 0;
+  HashedProcessData *hashed_process_data = NULL;
+  ProcessList *process_list = control_flow_data->process_list;
+  LttTime birth = process->creation_time;
+ 
+  if(likely(process_list->current_hash_data[cpu] != NULL)) {
+    hashed_process_data = process_list->current_hash_data[cpu];
+  } else {
+    hashed_process_data = processlist_get_process_data(process_list,
+            pid,
+            process->cpu,
+            &birth,
+            tfc->t_context->index);
+    if(unlikely(hashed_process_data == NULL))
+    {
+      g_assert(pid == 0 || pid != process->ppid);
+      ProcessInfo *process_info;
+      /* Process not present */
+      Drawing_t *drawing = control_flow_data->drawing;
+      processlist_add(process_list,
+          drawing,
+          pid,
+          process->cpu,
+          process->ppid,
+          &birth,
+          tfc->t_context->index,
+          process->name,
+	  process->brand,
+          &pl_height,
+          &process_info,
+          &hashed_process_data);
+        gtk_widget_set_size_request(drawing->drawing_area,
+                                    -1,
+                                    pl_height);
+        gtk_widget_queue_draw(drawing->drawing_area);
+    }
+    /* Set the current process */
+    process_list->current_hash_data[process->cpu] =
+                                               hashed_process_data;
+  }
+
+  processlist_set_brand(process_list, process->brand, hashed_process_data);
+
+  return 0;
+
+}
+
 
 /* after_event_enum_process_hook
  * 
@@ -1778,6 +1858,7 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
         &birth,
         tfc->t_context->index,
         process_in->name,
+        process_in->brand,
         &pl_height,
         &process_info,
         &hashed_process_data_in);
