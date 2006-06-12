@@ -30,4 +30,8 @@
 		<field name="call_site"><pointer></field>
 	</event>
 
+	<event name="thread_brand">
+		<description>Name a thread</description>
+		<field name="name"><string></field>
+	</event>
 </facility>
