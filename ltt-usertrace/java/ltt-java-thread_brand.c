@@ -8,8 +8,8 @@
 #define LTT_BLOCKING 1
 #include <ltt/ltt-facility-user_generic.h>
 
-JNIEXPORT void JNICALL Java_ThreadBrand_trace_1java_1generic_1thread_brand
-  (JNIEnv *env, jobject obj, jstring jstr)
+JNIEXPORT void JNICALL Java_ltt_ThreadBrand_trace_1java_1generic_1thread_1brand
+  (JNIEnv *env, jclass jc, jstring jstr)
 {
   const char *str;
   str = (*env)->GetStringUTFChars(env, jstr, NULL);
