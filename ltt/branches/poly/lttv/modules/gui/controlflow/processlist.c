@@ -48,11 +48,13 @@ gint process_sort_func  ( GtkTreeModel *model,
         gpointer user_data)
 {
   gchar *a_name;
+  gchar *a_brand;
   guint a_pid, a_ppid, a_cpu;
   gulong a_birth_s, a_birth_ns;
   gulong a_trace;
 
   gchar *b_name;
+  gchar *b_brand;
   guint b_pid, b_ppid, b_cpu;
   gulong b_birth_s, b_birth_ns;
   gulong b_trace;
@@ -60,23 +62,25 @@ gint process_sort_func  ( GtkTreeModel *model,
   gtk_tree_model_get(model,
            it_a,
            0, &a_name,
-           1, &a_pid,
-           2, &a_ppid,
-           3, &a_cpu,
-           4, &a_birth_s,
-           5, &a_birth_ns,
-           6, &a_trace,
+           1, &a_brand,
+           2, &a_pid,
+           3, &a_ppid,
+           4, &a_cpu,
+           5, &a_birth_s,
+           6, &a_birth_ns,
+           7, &a_trace,
            -1);
 
   gtk_tree_model_get(model,
            it_b,
            0, &b_name,
-           1, &b_pid,
-           2, &b_ppid,
-           3, &b_cpu,
-           4, &b_birth_s,
-           5, &b_birth_ns,
-           6, &b_trace,
+           1, &b_brand,
+           2, &b_pid,
+           3, &b_ppid,
+           4, &b_cpu,
+           5, &b_birth_s,
+           6, &b_birth_ns,
+           7, &b_trace,
            -1);
 
   
