@@ -250,7 +250,7 @@ reboot
 Select the Linux 2.6.16-lttng-0.x.xx kernel in your boot loader.
 
 -- on PowerPC
-cp vmlinux /boot/vmlinux-2.6.X-lttng-0.x.xx
+cp vmlinux.strip /boot/vmlinux-2.6.X-lttng-0.x.xx
 cp System.map /boot/System.map-2.6.X-lttng-0.x.xx
 cp .config /boot/config-2.6.X-lttng-0.x.xx
 depmod -ae -F /boot/System.map-2.6.X-lttng-0.x.xx 2.6.X-lttng-0.x.xx
