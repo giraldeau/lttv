@@ -1660,8 +1660,9 @@ static gboolean process_fork(void *hook_data, void *call_data)
                     before the fork event */
     child_process->ppid = process->pid;
   }
-	g_assert(child_process->name == LTTV_STATE_UNNAMED);
-	child_process->name = process->name;
+  g_assert(child_process->name == LTTV_STATE_UNNAMED);
+  child_process->name = process->name;
+  child_process->brand = process->brand;
 
   return FALSE;
 }
@@ -1779,6 +1780,7 @@ static gboolean process_exec(void *hook_data, void *call_data)
   null_term_name[name_len] = '\0';
 
   process->name = g_quark_from_string(null_term_name);
+  process->brand = LTTV_STATE_UNBRANDED;
   g_free(null_term_name);
   return FALSE;
 }

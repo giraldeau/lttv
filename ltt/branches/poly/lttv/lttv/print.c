@@ -236,7 +236,7 @@ void lttv_event_to_string(LttEvent *e, GString *s,
 
   guint i, num_fields;
 
-  g_string_set_size(s,0);
+  s = g_string_set_size(s,0);
 
   facility = ltt_event_facility(e);
   event_type = ltt_event_eventtype(e);
