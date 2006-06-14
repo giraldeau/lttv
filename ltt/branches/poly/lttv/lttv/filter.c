@@ -1279,6 +1279,8 @@ lttv_filter_update(LttvFilter* filter) {
   
   /* simple expression buffer */
   LttvSimpleExpression* a_simple_expression = lttv_simple_expression_new(); 
+
+  gint nest_quotes = 0;
   
   /*
    *	Parse entire expression and construct
@@ -1320,7 +1322,28 @@ lttv_filter_update(LttvFilter* filter) {
   for(i=0;i<strlen(filter->expression);i++) {
     // debug
 //    g_print("%c\n ",filter->expression[i]);
-    
+    if(nest_quotes) {
+      switch(filter->expression[i]) {
+	      case '\\' :
+		      if(filter->expression[i+1] == '\"') {
+			      i++;
+		      }
+		      break;
+              case '\"':
+		      nest_quotes = 0;
+	              i++;
+		      break;
+      }
+      if(a_string_spaces->len != 0) {
+        a_field_component = g_string_append(
+          a_field_component, a_string_spaces->str);
+          a_string_spaces = g_string_set_size(a_string_spaces, 0);
+      }
+      a_field_component = g_string_append_c(a_field_component,
+        filter->expression[i]);
+      continue;
+    }
+
     switch(filter->expression[i]) {
       /*
        *   logical operators
@@ -1563,21 +1586,24 @@ lttv_filter_update(LttvFilter* filter) {
         }
         break;
       case ' ':   /* keep spaces that are within a field component */
-				if(a_field_component->len == 0) break; /* ignore */
+                if(a_field_component->len == 0) break; /* ignore */
 				else 
         	a_string_spaces = g_string_append_c(a_string_spaces,
 																							filter->expression[i]);
 
       case '\n':  /* ignore */
         break;
+      case '\"':
+               nest_quotes?(nest_quotes=0):(nest_quotes=1);
+               break;
       default:    /* concatening current string */
-				if(a_string_spaces->len != 0) {
+              if(a_string_spaces->len != 0) {
         	a_field_component = g_string_append(
                     a_field_component, a_string_spaces->str);
                     a_string_spaces = g_string_set_size(a_string_spaces, 0);
-        }
-        a_field_component = g_string_append_c(a_field_component,
-																							filter->expression[i]);
+              }
+              a_field_component = g_string_append_c(a_field_component,
+                    filter->expression[i]);
     }
   }
 
