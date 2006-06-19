@@ -247,7 +247,7 @@ make modules_install
 -- on X86, X86_64
 make install
 reboot
-Select the Linux 2.6.16-lttng-0.x.xx kernel in your boot loader.
+Select the Linux 2.6.17-lttng-0.x.xx kernel in your boot loader.
 
 -- on PowerPC
 cp vmlinux.strip /boot/vmlinux-2.6.X-lttng-0.x.xx
@@ -260,7 +260,7 @@ that comes first is the default kernel)
 ybin
 select the right entry at the yaboot prompt (see choices : tab, select : type
 the kernel name followed by enter)
-Select the Linux 2.6.16-lttng-0.x.xx kernel in your boot loader.
+Select the Linux 2.6.17-lttng-0.x.xx kernel in your boot loader.
 --
 
 
@@ -401,14 +401,14 @@ cp process.xml yourfacility.xml
 cd /tmp
 /usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/facilities/yourfacility.xml
 cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
-         /usr/src/linux-2.6.16-lttng-0.x.xx8/include/linux/ltt
+         /usr/src/linux-2.6.17-lttng-0.x.xx8/include/linux/ltt
 cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
-         /usr/src/linux-2.6.16-lttng-0.x.xx/ltt
+         /usr/src/linux-2.6.17-lttng-0.x.xx/ltt
   * edit the kernel file you want to instrument
     - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
       of the file.
     - Add a call to the tracing functions. See their names and parameters in
-      /usr/src/linux-2.6.16-lttng-0.x.xx/include/linux/ltt/ltt-facility-yourfacility.h
+      /usr/src/linux-2.6.17-lttng-0.x.xx/include/linux/ltt/ltt-facility-yourfacility.h
     
 * Add new events to userspace programs with genevent
 See http://ltt.polymtl.ca/ > USERSPACE TRACING QUICKSTART
