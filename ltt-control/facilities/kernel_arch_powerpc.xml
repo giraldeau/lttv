@@ -286,8 +286,26 @@
 			<label name="pselect6" value="280">
 			<label name="ppoll" value="281">
 			<label name="unshare" value="282">
-			<label name="ltt_trace_generic" value="283">
-			<label name="ltt_register_generic" value="284">
+			<label name="splice" value="283">
+			<label name="tee" value="284">
+			<label name="vmsplice" value="285">
+			<label name="openat" value="286">
+			<label name="mkdirat" value="287">
+			<label name="mknodat" value="288">
+			<label name="fchownat" value="289">
+			<label name="futimesat" value="290">
+			<label name="fstatat64" value="291">
+			<label name="unlinkat" value="292">
+			<label name="renameat" value="293">
+			<label name="linkat" value="294">
+			<label name="symlinkat" value="295">
+			<label name="readlinkat" value="296">
+			<label name="fchmodat" value="297">
+			<label name="faccessat" value="298">
+			<label name="get_robust_list" value="299">
+			<label name="set_robust_list" value="300">
+			<label name="ltt_trace_generic" value="301">
+			<label name="ltt_register_generic" value="302">
     </enum>
   </type>
 

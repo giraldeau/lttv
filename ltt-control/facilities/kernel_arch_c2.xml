@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <facility name="kernel_arch" arch="c2">
   <description>The kernel facility has events related to kernel execution status
-	for the C2 architecture.</description>
+	for the MIPS architecture.</description>
   <type name=syscall_name>
     <enum>
 			<label name="o32_base" value="3999"><description>Linux o32 style syscalls</description>
@@ -292,7 +292,29 @@
 			<label name="o32_inotify_init" value="4284">
 			<label name="o32_inotify_add_watch" value="4285">
 			<label name="o32_inotify_rm_watch" value="4286">
-	
+			<label name="o32_migrate_pages" value="4287">
+			<label name="o32_openat" value="4288">
+			<label name="o32_mkdirat" value="4289">
+			<label name="o32_mknodat" value="4290">
+			<label name="o32_fchownat" value="4291">
+			<label name="o32_futimesat" value="4292">
+			<label name="o32_fstatat64" value="4293">
+			<label name="o32_unlinkat" value="4294">
+			<label name="o32_renameat" value="4295">
+			<label name="o32_linkat" value="4296">
+			<label name="o32_symlinkat" value="4297">
+			<label name="o32_readlinkat" value="4298">
+			<label name="o32_fchmodat" value="4299">
+			<label name="o32_faccessat" value="4300">
+			<label name="o32_pselect6" value="4301">
+			<label name="o32_ppoll" value="4302">
+			<label name="o32_unshare" value="4303">
+			<label name="o32_set_robust_list" value="4304">
+			<label name="o32_get_robust_list" value="4305">
+			<label name="o32_splice" value="4306">
+			<label name="o32_sync_file_range" value="4307">
+			<label name="o32_tee" value="4308">
+			<label name="o32_vmsplice" value="4309">
 
 			<label name="N32_base" value="5999">
 			<label name="N32_read" value="6000">
@@ -545,12 +567,36 @@
 			<label name="N32_inotify_init" value="6247">
 			<label name="N32_inotify_add_watch" value="6248">
 			<label name="N32_inotify_rm_watch" value="6249">
+			<label name="N32_migrate_pages" value="6250">
+			<label name="N32_openat" value="6251">
+			<label name="N32_mkdirat" value="6252">
+			<label name="N32_mknodat" value="6253">
+			<label name="N32_fchownat" value="6254">
+			<label name="N32_futimesat" value="6255">
+			<label name="N32_fstatat64" value="6256">
+			<label name="N32_unlinkat" value="6257">
+			<label name="N32_renameat" value="6258">
+			<label name="N32_linkat" value="6259">
+			<label name="N32_symlinkat" value="6260">
+			<label name="N32_readlinkat" value="6261">
+			<label name="N32_fchmodat" value="6262">
+			<label name="N32_faccessat" value="6263">
+			<label name="N32_pselect6" value="6264">
+			<label name="N32_ppoll" value="6265">
+			<label name="N32_unshare" value="6266">
+			<label name="N32_set_robust_list" value="6267">
+			<label name="N32_get_robust_list" value="6268">
+			<label name="N32_splice" value="6269">
+			<label name="N32_sync_file_range" value="6270">
+			<label name="N32_tee" value="6271">
+			<label name="N32_vmsplice" value="6272">
     </enum>
   </type>
 
   <event name="syscall_entry">
     <description>System call entry</description>
-    <field name="syscall_id"> <description>Syscall entry number in entry.S</description> <typeref name="syscall_name"> </field>
+    <field name="syscall_id"> <description>Syscall entry number in
+		entry.S</description> <typeref name="syscall_name"> </field>
     <field name="address"> <description>Address from which call was made</description> <pointer> </field>
   </event>
 	

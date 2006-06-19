@@ -295,8 +295,31 @@
 			<label name="inotify_init" value="291">
 			<label name="inotify_add_watch" value="292">
 			<label name="inotify_rm_watch" value="293">
-			<label name="ltt_trace_generic" value="294">
-			<label name="ltt_register_generic" value="295">
+			<label name="migrate_pages" value="294">
+			<label name="openat" value="295">
+			<label name="mkdirat" value="296">
+			<label name="mknodat" value="297">
+			<label name="fchownat" value="298">
+			<label name="futimesat" value="299">
+			<label name="fstatat64" value="300">
+			<label name="unlinkat" value="301">
+			<label name="renameat" value="302">
+			<label name="linkat" value="303">
+			<label name="symlinkat" value="304">
+			<label name="readlinkat" value="305">
+			<label name="fchmodat" value="306">
+			<label name="faccessat" value="307">
+			<label name="pselect6" value="308">
+			<label name="ppoll" value="309">
+			<label name="unshare" value="310">
+			<label name="set_robust_list" value="311">
+			<label name="get_robust_list" value="312">
+			<label name="splice" value="313">
+			<label name="sync_file_range" value="314">
+			<label name="tee" value="315">
+			<label name="vmsplice" value="316">
+			<label name="ltt_trace_generic" value="317">
+			<label name="ltt_register_generic" value="318">
     </enum>
   </type>
 

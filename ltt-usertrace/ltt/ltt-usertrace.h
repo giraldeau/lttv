@@ -39,24 +39,24 @@
 #endif
 
 #ifdef i386
-#define __NR_ltt_trace_generic	311
-#define __NR_ltt_register_generic	312
+#define __NR_ltt_trace_generic	317
+#define __NR_ltt_register_generic	318
 #undef NR_syscalls
-#define NR_syscalls 313
+#define NR_syscalls 319
 #endif
 
 #ifdef __powerpc__
-#define __NR_ltt_trace_generic	283
-#define __NR_ltt_register_generic	284
+#define __NR_ltt_trace_generic	301
+#define __NR_ltt_register_generic	302
 #undef NR_syscalls
-#define NR_syscalls 285
+#define NR_syscalls 303
 #endif
 
 #ifdef __powerpc64__
-#define __NR_ltt_trace_generic	283
-#define __NR_ltt_register_generic	284
+#define __NR_ltt_trace_generic	301
+#define __NR_ltt_register_generic	302
 #undef NR_syscalls
-#define NR_syscalls 285
+#define NR_syscalls 303
 #endif
 
 
