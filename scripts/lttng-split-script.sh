@@ -11,7 +11,7 @@ function wr () {
 }
 
 
-NAME=patch-2.6.16-lttng-$1
+NAME=patch-2.6.17-lttng-$1
 ALL_NAME=$NAME-all.diff
 
 rm -fr tmppatch
@@ -248,9 +248,12 @@ for a in $IN; do wr $a $FILE; done
 FILE=../$NAME-relayfs.diff
 
 IN="?_Documentation_ioctl-number.txt
-?_include_linux_relayfs_fs.h
+?_include_linux_relay.h
 ?_fs_relayfs_inode.c
-?_fs_relayfs_relay.c"
+?_fs_relayfs_relay.c
+?_fs_relayfs_buffers.c
+?_fs_relayfs_buffers.h
+?_fs_relayfs_relay.h"
 
 for a in $IN; do wr $a $FILE; done
 
