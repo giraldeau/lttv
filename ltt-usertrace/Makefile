@@ -80,5 +80,5 @@ install_libs:
 install: install_headers libs install_libs
 
 clean:
-	rm -fr *.o *~ sample-thread sample sample-highspeed sample-printf sample-instrument-fct libltt-instrument-functions.so* libltt-instrument-functions.a libltt-usertrace-fast.a libltt-usertrace-fast.so* sample-thread-slow sample-thread-fast
+	rm -fr *.o *~ sample-thread sample sample-highspeed sample-printf sample-instrument-fct libltt-instrument-functions.so* libltt-instrument-functions.a libltt-usertrace-fast.a libltt-usertrace-fast.so* sample-thread-slow sample-thread-fast sample-thread-brand
 
