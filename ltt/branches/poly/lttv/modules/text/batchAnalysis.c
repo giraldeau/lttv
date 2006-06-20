@@ -65,6 +65,8 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 {
   LttvAttributeValue value_expression, value_filter;
 
+  char * testval = 0x88888;
+
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
   LttvTracesetStats *tscs;
@@ -91,7 +93,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
       LTTV_POINTER, &value_filter));
 
   *(value_filter.v_pointer) = lttv_filter_new();
-  g_debug("Filter string: %s",((GString*)*(value_expression.v_pointer))->str);
+  //g_debug("Filter string: %s",((GString*)*(value_expression.v_pointer))->str);
 
   lttv_filter_append_expression(*(value_filter.v_pointer),((GString*)*(value_expression.v_pointer))->str);
   
