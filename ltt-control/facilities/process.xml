@@ -43,6 +43,7 @@
     <description>Process fork</description>
     <field name="parent_pid"> <description>PID of the parent process</description> <uint> </field>
     <field name="child_pid"> <description>PID of the child process</description> <uint> </field>
+    <field name="child_tgid"> <description>Thread group ID of the child process (POSIX PID)</description> <uint> </field>
   </event>
 	
   <event name="kernel_thread">

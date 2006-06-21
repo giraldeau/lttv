@@ -40,12 +40,12 @@
     </enum>
   </type>
 
-	<type name=interface_state>
-		<enum>
+  <type name=interface_state>
+    <enum>
       <label name="UP" value="0"> <description></description>
       <label name="DOWN" value="1"> <description></description>
-		</enum>
-	</type>
+    </enum>
+  </type>
 
   <event name="enumerate_file_descriptors">
     <description>List of open file descriptors</description>
@@ -93,7 +93,7 @@
     <description>List of each IP interface up</description>
       <field name="name"> <description>Interface name</description><string></field>
       <field name="addr"> <description>IP address</description> <uint size="4" byte_order="network"> </field>
-			<field name="status"> <description>Status of the interface</description> <typeref name="interface_state"> </field>
+      <field name="status"> <description>Status of the interface</description> <typeref name="interface_state"> </field>
   </event>  
   
   <event name="statedump_end">
