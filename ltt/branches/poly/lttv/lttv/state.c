@@ -40,7 +40,7 @@ GQuark
     LTT_FACILITY_PROCESS,
     LTT_FACILITY_FS,
     LTT_FACILITY_STATEDUMP,
-		LTT_FACILITY_USER_GENERIC;
+    LTT_FACILITY_USER_GENERIC;
 
 /* Events Quarks */
 
@@ -60,9 +60,9 @@ GQuark
     LTT_EVENT_FREE,
     LTT_EVENT_EXEC,
     LTT_EVENT_ENUM_PROCESS_STATE,
-		LTT_EVENT_FUNCTION_ENTRY,
-		LTT_EVENT_FUNCTION_EXIT,
-		LTT_EVENT_THREAD_BRAND;
+    LTT_EVENT_FUNCTION_ENTRY,
+    LTT_EVENT_FUNCTION_EXIT,
+    LTT_EVENT_THREAD_BRAND;
 
 /* Fields Quarks */
 
@@ -83,8 +83,8 @@ GQuark
     LTT_FIELD_MODE,
     LTT_FIELD_SUBMODE,
     LTT_FIELD_STATUS,
-		LTT_FIELD_THIS_FN,
-		LTT_FIELD_CALL_SITE;
+    LTT_FIELD_THIS_FN,
+    LTT_FIELD_CALL_SITE;
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -111,7 +111,7 @@ LttvProcessStatus
 
 LttvProcessType
   LTTV_STATE_USER_THREAD,
-	LTTV_STATE_KERNEL_THREAD;
+  LTTV_STATE_KERNEL_THREAD;
 
 static GQuark
   LTTV_STATE_TRACEFILES,
@@ -188,13 +188,13 @@ gboolean process_equal(gconstpointer a, gconstpointer b)
 
 static void delete_usertrace(gpointer key, gpointer value, gpointer user_data)
 {
-	g_tree_destroy((GTree*)value);
+  g_tree_destroy((GTree*)value);
 }
 
 static void lttv_state_free_usertraces(GHashTable *usertraces)
 {
-	g_hash_table_foreach(usertraces, delete_usertrace, NULL);
-	g_hash_table_destroy(usertraces);
+  g_hash_table_foreach(usertraces, delete_usertrace, NULL);
+  g_hash_table_destroy(usertraces);
 }
 
 
@@ -210,9 +210,9 @@ restore_init_state(LttvTraceState *self)
   
   /* Free the process tables */
   if(self->processes != NULL) lttv_state_free_process_table(self->processes);
-	if(self->usertraces != NULL) lttv_state_free_usertraces(self->usertraces);
+  if(self->usertraces != NULL) lttv_state_free_usertraces(self->usertraces);
   self->processes = g_hash_table_new(process_hash, process_equal);
-	self->usertraces = g_hash_table_new(g_direct_hash, g_direct_equal);
+  self->usertraces = g_hash_table_new(g_direct_hash, g_direct_equal);
   self->nb_event = 0;
 
   /* Seek time to beginning */
@@ -256,17 +256,17 @@ restore_init_state(LttvTraceState *self)
 //static LttTime time_zero = {0,0};
 
 static gint compare_usertraces(gconstpointer a, gconstpointer b, 
-		gpointer user_data)
+    gpointer user_data)
 {
-	const LttTime *t1 = (const LttTime *)a;
-	const LttTime *t2 = (const LttTime *)b;
+  const LttTime *t1 = (const LttTime *)a;
+  const LttTime *t2 = (const LttTime *)b;
 
-	return ltt_time_compare(*t1, *t2);
+  return ltt_time_compare(*t1, *t2);
 }
 
 static void free_usertrace_key(gpointer data)
 {
-	g_free(data);
+  g_free(data);
 }
 
 static void
@@ -312,38 +312,38 @@ init(LttvTracesetState *self, LttvTraceset *ts)
           LTTV_TRACEFILE_STATE(g_array_index(tc->tracefiles,
                                           LttvTracefileContext*, j));
       tfcs->tracefile_name = ltt_tracefile_name(tfcs->parent.tf);
-			tfcs->cpu = ltt_tracefile_cpu(tfcs->parent.tf);
-#if 0		
-			if(ltt_tracefile_tid(tfcs->parent.tf) != 0) {
-				/* It's a Usertrace */
-				LttvProcessState *process;
-				LttTime timestamp = 
-					ltt_interpolate_time_from_tsc(tfcs->parent.tf,
-							ltt_tracefile_creation(tfcs->parent.tf));
-				process = lttv_state_find_process_or_create(
-												tcs,
-												0, ltt_tracefile_tid(tfcs->parent.tf),
-												&timestamp);
-				process->usertrace = tfcs;
-			}
+      tfcs->cpu = ltt_tracefile_cpu(tfcs->parent.tf);
+#if 0    
+      if(ltt_tracefile_tid(tfcs->parent.tf) != 0) {
+        /* It's a Usertrace */
+        LttvProcessState *process;
+        LttTime timestamp = 
+          ltt_interpolate_time_from_tsc(tfcs->parent.tf,
+              ltt_tracefile_creation(tfcs->parent.tf));
+        process = lttv_state_find_process_or_create(
+                        tcs,
+                        0, ltt_tracefile_tid(tfcs->parent.tf),
+                        &timestamp);
+        process->usertrace = tfcs;
+      }
     }
 #endif //0
-			if(ltt_tracefile_tid(tfcs->parent.tf) != 0) {
-				/* It's a Usertrace */
-				guint tid = ltt_tracefile_tid(tfcs->parent.tf);
-				GTree *usertrace_tree = (GTree*)g_hash_table_lookup(tcs->usertraces,
-						(gconstpointer)tid);
-				if(!usertrace_tree) {
-					usertrace_tree = g_tree_new_full(compare_usertraces,
-							NULL, free_usertrace_key, NULL);
-					g_hash_table_insert(tcs->usertraces,
-							(gpointer)tid, usertrace_tree);
-				}
-				LttTime *timestamp = g_new(LttTime, 1);
-				*timestamp = ltt_interpolate_time_from_tsc(tfcs->parent.tf,
-							ltt_tracefile_creation(tfcs->parent.tf));
-				g_tree_insert(usertrace_tree, timestamp, tfcs);
-			}
+      if(ltt_tracefile_tid(tfcs->parent.tf) != 0) {
+        /* It's a Usertrace */
+        guint tid = ltt_tracefile_tid(tfcs->parent.tf);
+        GTree *usertrace_tree = (GTree*)g_hash_table_lookup(tcs->usertraces,
+            (gconstpointer)tid);
+        if(!usertrace_tree) {
+          usertrace_tree = g_tree_new_full(compare_usertraces,
+              NULL, free_usertrace_key, NULL);
+          g_hash_table_insert(tcs->usertraces,
+              (gpointer)tid, usertrace_tree);
+        }
+        LttTime *timestamp = g_new(LttTime, 1);
+        *timestamp = ltt_interpolate_time_from_tsc(tfcs->parent.tf,
+              ltt_tracefile_creation(tfcs->parent.tf));
+        g_tree_insert(usertrace_tree, timestamp, tfcs);
+      }
     }
 
   }
@@ -377,7 +377,7 @@ fini(LttvTracesetState *self)
     g_free(tcs->running_process);
     tcs->running_process = NULL;
     lttv_state_free_process_table(tcs->processes);
-		lttv_state_free_usertraces(tcs->usertraces);
+    lttv_state_free_usertraces(tcs->usertraces);
     tcs->processes = NULL;
     tcs->usertraces = NULL;
   }
@@ -424,7 +424,7 @@ static void write_process_state(gpointer key, gpointer value,
   fprintf(fp,
 "  <PROCESS CORE=%p PID=%u PPID=%u TYPE=\"%s\"CTIME_S=%lu CTIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\">\n",
       process, process->pid, process->ppid, g_quark_to_string(process->type),
-			process->creation_time.tv_sec,
+      process->creation_time.tv_sec,
       process->creation_time.tv_nsec, g_quark_to_string(process->name),
       g_quark_to_string(process->brand),
       process->cpu);
@@ -432,7 +432,7 @@ static void write_process_state(gpointer key, gpointer value,
   for(i = 0 ; i < process->execution_stack->len; i++) {
     es = &g_array_index(process->execution_stack, LttvExecutionState, i);
     fprintf(fp, "    <ES MODE=\"%s\" SUBMODE=\"%s\" ENTRY_S=%lu ENTRY_NS=%lu",
-	    g_quark_to_string(es->t), g_quark_to_string(es->n),
+      g_quark_to_string(es->t), g_quark_to_string(es->n),
             es->entry.tv_sec, es->entry.tv_nsec);
     fprintf(fp, " CHANGE_S=%lu CHANGE_NS=%lu STATUS=\"%s\"/>\n",
             es->change.tv_sec, es->change.tv_nsec, g_quark_to_string(es->s)); 
@@ -635,7 +635,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
 
   LttvAttributeName name;
 
-	gboolean is_named;
+  gboolean is_named;
 
   LttEventPosition *ep;
 
@@ -721,7 +721,7 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
 
   LttvAttributeName name;
 
-	gboolean is_named;
+  gboolean is_named;
 
   LttEventPosition *ep;
 
@@ -774,7 +774,7 @@ static void free_saved_state(LttvTraceState *self)
 
   LttvAttributeName name;
 
-	gboolean is_named;
+  gboolean is_named;
 
   LttvAttribute *saved_states;
 
@@ -881,88 +881,88 @@ create_name_tables(LttvTraceState *tcs)
       LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
       LTT_FIELD_SYSCALL_ID, 0, 0,
       NULL, NULL, &h)) {
-		
-		thf = lttv_trace_hook_get_first(&h);
-		
-		t = ltt_field_type(thf->f1);
-		nb = ltt_type_element_number(t);
-		
-		lttv_trace_hook_destroy(&h);
+    
+    thf = lttv_trace_hook_get_first(&h);
+    
+    t = ltt_field_type(thf->f1);
+    nb = ltt_type_element_number(t);
+    
+    lttv_trace_hook_destroy(&h);
 
-		name_tables->syscall_names = g_new(GQuark, nb);
-		name_tables->nb_syscalls = nb;
+    name_tables->syscall_names = g_new(GQuark, nb);
+    name_tables->nb_syscalls = nb;
 
-		for(i = 0 ; i < nb ; i++) {
-			name_tables->syscall_names[i] = ltt_enum_string_get(t, i);
-		}
+    for(i = 0 ; i < nb ; i++) {
+      name_tables->syscall_names[i] = ltt_enum_string_get(t, i);
+    }
 
-		//name_tables->syscall_names = g_new(GQuark, 256);
-		//for(i = 0 ; i < 256 ; i++) {
-		//  g_string_printf(fe_name, "syscall %d", i);
-		//  name_tables->syscall_names[i] = g_quark_from_string(fe_name->str);
-		//}
-	} else {
-		name_tables->syscall_names = NULL;
-		name_tables->nb_syscalls = 0;
-	}
+    //name_tables->syscall_names = g_new(GQuark, 256);
+    //for(i = 0 ; i < 256 ; i++) {
+    //  g_string_printf(fe_name, "syscall %d", i);
+    //  name_tables->syscall_names[i] = g_quark_from_string(fe_name->str);
+    //}
+  } else {
+    name_tables->syscall_names = NULL;
+    name_tables->nb_syscalls = 0;
+  }
 
   if(!lttv_trace_find_hook(tcs->parent.t, LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
         NULL, NULL, &h)) {
 
-		thf = lttv_trace_hook_get_first(&h);
+    thf = lttv_trace_hook_get_first(&h);
 
-		t = ltt_field_type(thf->f1);
-		//nb = ltt_type_element_number(t);
+    t = ltt_field_type(thf->f1);
+    //nb = ltt_type_element_number(t);
 
-		lttv_trace_hook_destroy(&h);
+    lttv_trace_hook_destroy(&h);
 
-		/*
-		name_tables->trap_names = g_new(GQuark, nb);
-		for(i = 0 ; i < nb ; i++) {
-			name_tables->trap_names[i] = g_quark_from_string(
-					ltt_enum_string_get(t, i));
-		}
-		*/
-		name_tables->nb_traps = 256;
-		name_tables->trap_names = g_new(GQuark, 256);
-		for(i = 0 ; i < 256 ; i++) {
-			g_string_printf(fe_name, "trap %d", i);
-			name_tables->trap_names[i] = g_quark_from_string(fe_name->str);
-		}
-	} else {
-		name_tables->trap_names = NULL;
-		name_tables->nb_traps = 0;
-	}
+    /*
+    name_tables->trap_names = g_new(GQuark, nb);
+    for(i = 0 ; i < nb ; i++) {
+      name_tables->trap_names[i] = g_quark_from_string(
+          ltt_enum_string_get(t, i));
+    }
+    */
+    name_tables->nb_traps = 256;
+    name_tables->trap_names = g_new(GQuark, 256);
+    for(i = 0 ; i < 256 ; i++) {
+      g_string_printf(fe_name, "trap %d", i);
+      name_tables->trap_names[i] = g_quark_from_string(fe_name->str);
+    }
+  } else {
+    name_tables->trap_names = NULL;
+    name_tables->nb_traps = 0;
+  }
 
   if(!lttv_trace_find_hook(tcs->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
         LTT_FIELD_IRQ_ID, 0, 0,
         NULL, NULL, &h)) {
-		
-		thf = lttv_trace_hook_get_first(&h);
-		
-		t = ltt_field_type(thf->f1);
-		//nb = ltt_type_element_number(t);
+    
+    thf = lttv_trace_hook_get_first(&h);
+    
+    t = ltt_field_type(thf->f1);
+    //nb = ltt_type_element_number(t);
 
-		lttv_trace_hook_destroy(&h);
+    lttv_trace_hook_destroy(&h);
 
-		/*
-		name_tables->irq_names = g_new(GQuark, nb);
-		for(i = 0 ; i < nb ; i++) {
-			name_tables->irq_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
-		}
-		*/
+    /*
+    name_tables->irq_names = g_new(GQuark, nb);
+    for(i = 0 ; i < nb ; i++) {
+      name_tables->irq_names[i] = g_quark_from_string(ltt_enum_string_get(t, i));
+    }
+    */
 
-		name_tables->irq_names = g_new(GQuark, 256);
-		for(i = 0 ; i < 256 ; i++) {
-			g_string_printf(fe_name, "irq %d", i);
-			name_tables->irq_names[i] = g_quark_from_string(fe_name->str);
-		}
-	} else {
-		name_tables->irq_names = NULL;
-	}
+    name_tables->irq_names = g_new(GQuark, 256);
+    for(i = 0 ; i < 256 ; i++) {
+      g_string_printf(fe_name, "irq %d", i);
+      name_tables->irq_names[i] = g_quark_from_string(fe_name->str);
+    }
+  } else {
+    name_tables->irq_names = NULL;
+  }
   /*
   name_tables->soft_irq_names = g_new(GQuark, nb);
   for(i = 0 ; i < nb ; i++) {
@@ -1066,7 +1066,7 @@ static void push_state(LttvTracefileState *tfs, LttvExecutionMode t,
   es->t = t;
   es->n = state_id;
   es->entry = es->change = tfs->parent.timestamp;
-	es->cum_cpu_time = ltt_time_zero;
+  es->cum_cpu_time = ltt_time_zero;
   es->s = process->state->s;
   process->state = es;
 }
@@ -1074,9 +1074,9 @@ static void push_state(LttvTracefileState *tfs, LttvExecutionMode t,
 /* pop state
  * return 1 when empty, else 0 */
 int lttv_state_pop_state_cleanup(LttvProcessState *process, 
-		LttvTracefileState *tfs)
+    LttvTracefileState *tfs)
 { 
-	guint cpu = tfs->cpu;
+  guint cpu = tfs->cpu;
   LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
 
   guint depth = process->execution_stack->len;
@@ -1090,8 +1090,8 @@ int lttv_state_pop_state_cleanup(LttvProcessState *process,
   process->state = &g_array_index(process->execution_stack, LttvExecutionState,
       depth - 2);
   process->state->change = tfs->parent.timestamp;
-	
-	return 0;
+  
+  return 0;
 }
 
 static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
@@ -1106,14 +1106,14 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
     g_info("Different execution mode type (%lu.%09lu): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
     g_info("process state has %s when pop_int is %s\n",
-		    g_quark_to_string(process->state->t),
-		    g_quark_to_string(t));
+        g_quark_to_string(process->state->t),
+        g_quark_to_string(t));
     g_info("{ %u, %u, %s, %s, %s }\n",
-		    process->pid,
-		    process->ppid,
-		    g_quark_to_string(process->name),
-		    g_quark_to_string(process->brand),
-		    g_quark_to_string(process->state->s));
+        process->pid,
+        process->ppid,
+        g_quark_to_string(process->name),
+        g_quark_to_string(process->brand),
+        g_quark_to_string(process->state->s));
     return;
   }
 
@@ -1131,54 +1131,54 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
 }
 
 struct search_result {
-	const LttTime *time;	/* Requested time */
-	LttTime *best;	/* Best result */
+  const LttTime *time;  /* Requested time */
+  LttTime *best;  /* Best result */
 };
 
 static gint search_usertrace(gconstpointer a, gconstpointer b)
 {
-	const LttTime *elem_time = (const LttTime*)a;
-	/* Explicit non const cast */
-	struct search_result *res = (struct search_result *)b;
+  const LttTime *elem_time = (const LttTime*)a;
+  /* Explicit non const cast */
+  struct search_result *res = (struct search_result *)b;
 
-	if(ltt_time_compare(*elem_time, *(res->time)) < 0) {
-		/* The usertrace was created before the schedchange */
-		/* Get larger keys */
-		return 1;
-	} else if(ltt_time_compare(*elem_time, *(res->time)) >= 0) {
-		/* The usertrace was created after the schedchange time */
-		/* Get smaller keys */
-		if(res->best) {
-			if(ltt_time_compare(*elem_time, *res->best) < 0) {
-				res->best = elem_time;
-			}
-		} else {
-			res->best = elem_time;
-		}
-		return -1;
-	}
-	return 0;
+  if(ltt_time_compare(*elem_time, *(res->time)) < 0) {
+    /* The usertrace was created before the schedchange */
+    /* Get larger keys */
+    return 1;
+  } else if(ltt_time_compare(*elem_time, *(res->time)) >= 0) {
+    /* The usertrace was created after the schedchange time */
+    /* Get smaller keys */
+    if(res->best) {
+      if(ltt_time_compare(*elem_time, *res->best) < 0) {
+        res->best = elem_time;
+      }
+    } else {
+      res->best = elem_time;
+    }
+    return -1;
+  }
+  return 0;
 }
 
 static LttvTracefileState *ltt_state_usertrace_find(LttvTraceState *tcs,
-		guint pid, const LttTime *timestamp)
+    guint pid, const LttTime *timestamp)
 {
-	LttvTracefileState *tfs = NULL;
-	struct search_result res;
-	/* Find the usertrace associated with a pid and time interval.
-	 * Search in the usertraces by PID (within a hash) and then, for each
-	 * corresponding element of the array, find the first one with creation
-	 * timestamp the lowest, but higher or equal to "timestamp". */
-	res.time = timestamp;
-	res.best = NULL;
-	GTree *usertrace_tree = g_hash_table_lookup(tcs->usertraces, (gpointer)pid);
-	if(usertrace_tree) {
-		g_tree_search(usertrace_tree, search_usertrace, &res);
-		if(res.best)
-			tfs = g_tree_lookup(usertrace_tree, res.best);
-	}
+  LttvTracefileState *tfs = NULL;
+  struct search_result res;
+  /* Find the usertrace associated with a pid and time interval.
+   * Search in the usertraces by PID (within a hash) and then, for each
+   * corresponding element of the array, find the first one with creation
+   * timestamp the lowest, but higher or equal to "timestamp". */
+  res.time = timestamp;
+  res.best = NULL;
+  GTree *usertrace_tree = g_hash_table_lookup(tcs->usertraces, (gpointer)pid);
+  if(usertrace_tree) {
+    g_tree_search(usertrace_tree, search_usertrace, &res);
+    if(res.best)
+      tfs = g_tree_lookup(usertrace_tree, res.best);
+  }
 
-	return tfs;
+  return tfs;
 }
 
 
@@ -1200,9 +1200,9 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   process->brand = LTTV_STATE_UNBRANDED;
   //process->last_cpu = tfs->cpu_name;
   //process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)tfs)->tf);
-	process->type = LTTV_STATE_USER_THREAD;
-	process->usertrace = ltt_state_usertrace_find(tcs, pid, timestamp);
-	process->current_function = 0; //function 0x0 by default.
+  process->type = LTTV_STATE_USER_THREAD;
+  process->usertrace = ltt_state_usertrace_find(tcs, pid, timestamp);
+  process->current_function = 0; //function 0x0 by default.
 
   g_info("Process %u, core %p", process->pid, process);
   g_hash_table_insert(tcs->processes, process, process);
@@ -1223,7 +1223,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
 
   process->insertion_time = *timestamp;
   sprintf(buffer,"%d-%lu.%lu",pid, process->creation_time.tv_sec, 
-	  process->creation_time.tv_nsec);
+    process->creation_time.tv_nsec);
   process->pid_time = g_quark_from_string(buffer);
   process->cpu = cpu;
   //process->last_cpu = tfs->cpu_name;
@@ -1238,7 +1238,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   es->entry = *timestamp;
   //g_assert(timestamp->tv_sec != 0);
   es->change = *timestamp;
-	es->cum_cpu_time = ltt_time_zero;
+  es->cum_cpu_time = ltt_time_zero;
   es->s = LTTV_STATE_RUN;
 
   es = process->state = &g_array_index(process->execution_stack, 
@@ -1248,13 +1248,13 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   es->entry = *timestamp;
   //g_assert(timestamp->tv_sec != 0);
   es->change = *timestamp;
-	es->cum_cpu_time = ltt_time_zero;
+  es->cum_cpu_time = ltt_time_zero;
   es->s = LTTV_STATE_WAIT_FORK;
-	
-	/* Allocate an empty function call stack. If it's empty, use 0x0. */
-	process->user_stack = g_array_sized_new(FALSE, FALSE,
-			sizeof(guint64), 0);
-	
+  
+  /* Allocate an empty function call stack. If it's empty, use 0x0. */
+  process->user_stack = g_array_sized_new(FALSE, FALSE,
+      sizeof(guint64), 0);
+  
   return process;
 }
 
@@ -1279,13 +1279,13 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
   
   /* Put ltt_time_zero creation time for unexisting processes */
   if(unlikely(process == NULL)) {
-		process = lttv_state_create_process(ts,
+    process = lttv_state_create_process(ts,
                 NULL, cpu, pid, LTTV_STATE_UNNAMED, timestamp);
-		/* We are not sure is it's a kernel thread or normal thread, put the
-	 	 * bottom stack state to unknown */
-		es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
-		es->t = LTTV_STATE_MODE_UNKNOWN;
-	}
+    /* We are not sure is it's a kernel thread or normal thread, put the
+      * bottom stack state to unknown */
+    es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
+    es->t = LTTV_STATE_MODE_UNKNOWN;
+  }
   return process;
 }
 
@@ -1334,19 +1334,19 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
 
   LttvExecutionSubmode submode;
 
-	guint nb_syscalls = ((LttvTraceState *)(s->parent.t_context))->nb_syscalls;
-	guint syscall = ltt_event_get_unsigned(e, f);
-	
-	if(syscall < nb_syscalls) {
-	  submode = ((LttvTraceState *)(s->parent.t_context))->syscall_names[
-  	    syscall];
-	} else {
-		/* Fixup an incomplete syscall table */
-		GString *string = g_string_new("");
+  guint nb_syscalls = ((LttvTraceState *)(s->parent.t_context))->nb_syscalls;
+  guint syscall = ltt_event_get_unsigned(e, f);
+  
+  if(syscall < nb_syscalls) {
+    submode = ((LttvTraceState *)(s->parent.t_context))->syscall_names[
+        syscall];
+  } else {
+    /* Fixup an incomplete syscall table */
+    GString *string = g_string_new("");
     g_string_printf(string, "syscall %u", syscall);
-		submode = g_quark_from_string(string->str);
-		g_string_free(string, TRUE);
-	}
+    submode = g_quark_from_string(string->str);
+    g_string_free(string, TRUE);
+  }
   push_state(s, LTTV_STATE_SYSCALL, submode);
   return FALSE;
 }
@@ -1473,7 +1473,7 @@ static void push_function(LttvTracefileState *tfs, guint64 funcptr)
     g_array_set_size(process->user_stack, depth + 1);
     
   new_func = &g_array_index(process->user_stack, guint64, depth);
-	*new_func = funcptr;
+  *new_func = funcptr;
   process->current_function = funcptr;
 }
 
@@ -1487,13 +1487,13 @@ static void pop_function(LttvTracefileState *tfs, guint64 funcptr)
     g_info("Different functions (%lu.%09lu): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
     g_info("process state has %llu when pop_function is %llu\n",
-		    process->current_function, funcptr);
+        process->current_function, funcptr);
     g_info("{ %u, %u, %s, %s, %s }\n",
-		    process->pid,
-		    process->ppid,
-		    g_quark_to_string(process->name),
-		    g_quark_to_string(process->brand),
-		    g_quark_to_string(process->state->s));
+        process->pid,
+        process->ppid,
+        g_quark_to_string(process->name),
+        g_quark_to_string(process->brand),
+        g_quark_to_string(process->state->s));
     return;
   }
   guint depth = process->user_stack->len;
@@ -1507,7 +1507,7 @@ static void pop_function(LttvTracefileState *tfs, guint64 funcptr)
   process->user_stack = 
     g_array_set_size(process->user_stack, depth - 1);
   process->current_function =
-		g_array_index(process->user_stack, guint64, depth - 2);
+    g_array_index(process->user_stack, guint64, depth - 2);
 }
 
 
@@ -1520,7 +1520,7 @@ static gboolean function_entry(void *hook_data, void *call_data)
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   g_assert(thf->f1 != NULL);
   LttField *f = thf->f1;
-	guint64 funcptr = ltt_event_get_long_unsigned(e, f);
+  guint64 funcptr = ltt_event_get_long_unsigned(e, f);
 
   push_function(s, funcptr);
   return FALSE;
@@ -1535,7 +1535,7 @@ static gboolean function_exit(void *hook_data, void *call_data)
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   g_assert(thf->f1 != NULL);
   LttField *f = thf->f1;
-	guint64 funcptr = ltt_event_get_long_unsigned(e, f);
+  guint64 funcptr = ltt_event_get_long_unsigned(e, f);
 
   LttvExecutionSubmode submode;
 
@@ -1570,7 +1570,7 @@ static gboolean schedchange(void *hook_data, void *call_data)
 
     //This test only makes sense once the state is known and if there is no
     //missing events. We need to silently ignore schedchange coming after a
-		//process_free, or it causes glitches. (FIXME)
+    //process_free, or it causes glitches. (FIXME)
     //if(unlikely(process->pid != pid_out)) {
     //  g_assert(process->pid == 0);
     //}
@@ -1583,8 +1583,8 @@ static gboolean schedchange(void *hook_data, void *call_data)
       else process->state->s = LTTV_STATE_WAIT;
       process->state->change = s->parent.timestamp;
     }
-		
-		if(state_out == 32)
+    
+    if(state_out == 32)
        exit_process(s, process); /* EXIT_DEAD */
           /* see sched.h for states */
   }
@@ -1595,8 +1595,8 @@ static gboolean schedchange(void *hook_data, void *call_data)
                   &s->parent.timestamp);
   process->state->s = LTTV_STATE_RUN;
   process->cpu = cpu;
-	if(process->usertrace)
-		process->usertrace->cpu = cpu;
+  if(process->usertrace)
+    process->usertrace->cpu = cpu;
  // process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)s)->tf);
   process->state->change = s->parent.timestamp;
   return FALSE;
@@ -1683,11 +1683,11 @@ static gboolean process_kernel_thread(void *hook_data, void *call_data)
   pid = ltt_event_get_unsigned(e, thf->f1);
 
   process = lttv_state_find_process(ts, ANY_CPU, pid);
-	es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
-	es->t = LTTV_STATE_SYSCALL;
-	process->type = LTTV_STATE_KERNEL_THREAD;
+  es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
+  es->t = LTTV_STATE_SYSCALL;
+  process->type = LTTV_STATE_KERNEL_THREAD;
 
-	return FALSE;
+  return FALSE;
 }
 
 static gboolean process_exit(void *hook_data, void *call_data)
@@ -1805,9 +1805,9 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-	//It's slow : optimise later by doing this before reading trace.
-	LttEventType *et = ltt_event_eventtype(e);
-	//
+  //It's slow : optimise later by doing this before reading trace.
+  LttEventType *et = ltt_event_eventtype(e);
+  //
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   guint parent_pid;
   guint pid;
@@ -1816,9 +1816,9 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
   LttvProcessState *parent_process;
-	LttField *f4, *f5, *f6, *f7;
-	GQuark type, mode, submode, status;
-	LttvExecutionState *es;
+  LttField *f4, *f5, *f6, *f7;
+  GQuark type, mode, submode, status;
+  LttvExecutionState *es;
 
   /* PID */
   pid = ltt_event_get_unsigned(e, thf->f1);
@@ -1829,25 +1829,25 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   /* Command name */
   command = ltt_event_get_string(e, thf->f3);
 
-	/* type */
-	f4 = ltt_eventtype_field_by_name(et, LTT_FIELD_TYPE);
-	type = ltt_enum_string_get(ltt_field_type(f4),
-			ltt_event_get_unsigned(e, f4));
+  /* type */
+  f4 = ltt_eventtype_field_by_name(et, LTT_FIELD_TYPE);
+  type = ltt_enum_string_get(ltt_field_type(f4),
+      ltt_event_get_unsigned(e, f4));
 
-	/* mode */
-	f5 = ltt_eventtype_field_by_name(et, LTT_FIELD_MODE);
-	mode = ltt_enum_string_get(ltt_field_type(f5), 
-			ltt_event_get_unsigned(e, f5));
+  /* mode */
+  f5 = ltt_eventtype_field_by_name(et, LTT_FIELD_MODE);
+  mode = ltt_enum_string_get(ltt_field_type(f5), 
+      ltt_event_get_unsigned(e, f5));
 
-	/* submode */
-	f6 = ltt_eventtype_field_by_name(et, LTT_FIELD_SUBMODE);
-	submode = ltt_enum_string_get(ltt_field_type(f6), 
-			ltt_event_get_unsigned(e, f6));
+  /* submode */
+  f6 = ltt_eventtype_field_by_name(et, LTT_FIELD_SUBMODE);
+  submode = ltt_enum_string_get(ltt_field_type(f6), 
+      ltt_event_get_unsigned(e, f6));
 
-	/* status */
-	f7 = ltt_eventtype_field_by_name(et, LTT_FIELD_STATUS);
-	status = ltt_enum_string_get(ltt_field_type(f7), 
-			ltt_event_get_unsigned(e, f7));
+  /* status */
+  f7 = ltt_eventtype_field_by_name(et, LTT_FIELD_STATUS);
+  status = ltt_enum_string_get(ltt_field_type(f7), 
+      ltt_event_get_unsigned(e, f7));
 
   /* The process might exist if a process was forked while performing the sate dump. */
   process = lttv_state_find_process(ts, ANY_CPU, pid);
@@ -1855,49 +1855,49 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
     parent_process = lttv_state_find_process(ts, ANY_CPU, parent_pid);
     process = lttv_state_create_process(ts, parent_process, cpu,
                               pid, g_quark_from_string(command),
-															&s->parent.timestamp);
-	
-		/* Keep the stack bottom : a running user mode */
-		/* Disabled because of inconsistencies in the current statedump states. */
-		if(type == LTTV_STATE_KERNEL_THREAD) {
-			/* Only keep the bottom */
-			process->execution_stack = g_array_set_size(process->execution_stack, 1);
-			es = process->state = &g_array_index(process->execution_stack, 
-					LttvExecutionState, 0);
-			es->t = LTTV_STATE_SYSCALL;
-			es->s = status;
-			es->n = submode;
-		} else {
-			/* On top of it : */
-			es = process->state = &g_array_index(process->execution_stack, 
-					LttvExecutionState, 1);
-			es->t = LTTV_STATE_USER_MODE;
-			es->s = status;
-			es->n = submode;
-		}
+                              &s->parent.timestamp);
+  
+    /* Keep the stack bottom : a running user mode */
+    /* Disabled because of inconsistencies in the current statedump states. */
+    if(type == LTTV_STATE_KERNEL_THREAD) {
+      /* Only keep the bottom */
+      process->execution_stack = g_array_set_size(process->execution_stack, 1);
+      es = process->state = &g_array_index(process->execution_stack, 
+          LttvExecutionState, 0);
+      es->t = LTTV_STATE_SYSCALL;
+      es->s = status;
+      es->n = submode;
+    } else {
+      /* On top of it : */
+      es = process->state = &g_array_index(process->execution_stack, 
+          LttvExecutionState, 1);
+      es->t = LTTV_STATE_USER_MODE;
+      es->s = status;
+      es->n = submode;
+    }
 #if 0
-		/* UNKNOWN STATE */
-		{
-			es = process->state = &g_array_index(process->execution_stack, 
-					LttvExecutionState, 1);
-			es->t = LTTV_STATE_MODE_UNKNOWN;
-			es->s = LTTV_STATE_UNNAMED;
-			es->n = LTTV_STATE_SUBMODE_UNKNOWN;
-		}
+    /* UNKNOWN STATE */
+    {
+      es = process->state = &g_array_index(process->execution_stack, 
+          LttvExecutionState, 1);
+      es->t = LTTV_STATE_MODE_UNKNOWN;
+      es->s = LTTV_STATE_UNNAMED;
+      es->n = LTTV_STATE_SUBMODE_UNKNOWN;
+    }
 #endif //0
   } else {
     /* The process has already been created :
-		 * Probably was forked while dumping the process state or
-		 * was simply scheduled in prior to get the state dump event.
-		 * We know for sure if it is a user space thread.
+     * Probably was forked while dumping the process state or
+     * was simply scheduled in prior to get the state dump event.
+     * We know for sure if it is a user space thread.
      */
     process->ppid = parent_pid;
-		process->name = g_quark_from_string(command);
-		es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
-		if(type != LTTV_STATE_KERNEL_THREAD)
-			es->t = LTTV_STATE_USER_MODE;
-		/* Don't mess around with the stack, it will eventually become
-		 * ok after the end of state dump. */
+    process->name = g_quark_from_string(command);
+    es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
+    if(type != LTTV_STATE_KERNEL_THREAD)
+      es->t = LTTV_STATE_USER_MODE;
+    /* Don't mess around with the stack, it will eventually become
+     * ok after the end of state dump. */
   }
   
   return FALSE;
@@ -1931,7 +1931,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
   LttvAttributeValue val;
 
   gint ret;
-	gint hn;
+  gint hn;
 
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
@@ -1942,117 +1942,117 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
     hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 18);
     hooks = g_array_set_size(hooks, 18); // Max possible number of hooks.
-		hn = 0;
+    hn = 0;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
         LTT_FIELD_SYSCALL_ID, 0, 0,
         syscall_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_EXIT,
         0, 0, 0,
         syscall_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
         trap_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_EXIT,
         0, 0, 0, 
         trap_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
         LTT_FIELD_IRQ_ID, 0, 0,
         irq_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
         0, 0, 0, 
         irq_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY,
         LTT_FIELD_SOFT_IRQ_ID, 0, 0,
         soft_irq_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_EXIT,
         0, 0, 0, 
         soft_irq_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
         LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
         schedchange, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_FORK,
         LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, 0,
         process_fork, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_KERNEL_THREAD,
         LTT_FIELD_PID, 0, 0,
         process_kernel_thread, NULL, &g_array_index(hooks, LttvTraceHook,
-					hn++));
-		if(ret) hn--;
+          hn++));
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
         LTT_FIELD_PID, 0, 0,
         process_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
     
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_PROCESS, LTT_EVENT_FREE,
         LTT_FIELD_PID, 0, 0,
         process_free, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_FS, LTT_EVENT_EXEC,
         LTT_FIELD_FILENAME, 0, 0,
         process_exec, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_USER_GENERIC, LTT_EVENT_THREAD_BRAND,
         LTT_FIELD_NAME, 0, 0,
         thread_brand, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
      /* statedump-related hooks */
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
         LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
         enum_process_state, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_USER_GENERIC, LTT_EVENT_FUNCTION_ENTRY,
         LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
         function_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_USER_GENERIC, LTT_EVENT_FUNCTION_EXIT,
         LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
         function_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-		if(ret) hn--;
+    if(ret) hn--;
 
     hooks = g_array_set_size(hooks, hn);
   
@@ -2196,7 +2196,7 @@ static gboolean state_save_after_trace_hook(void *hook_data, void *call_data)
 
 guint lttv_state_current_cpu(LttvTracefileState *tfs)
 {
-	return tfs->cpu;
+  return tfs->cpu;
 }
 
 
@@ -2250,7 +2250,7 @@ static gboolean block_start(void *hook_data, void *call_data)
     lttv_state_save(tcs, saved_state_tree);
     tcs->nb_event = 0;
     g_debug("Saving state at time %lu.%lu", self->parent.timestamp.tv_sec,
-	    self->parent.timestamp.tv_nsec);
+      self->parent.timestamp.tv_nsec);
   }
   *(tcs->max_time_state_recomputed_in_seek) = self->parent.timestamp;
   return FALSE;
@@ -2299,9 +2299,9 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
     ts = (LttvTraceState *)self->parent.traces[i];
 
     lttv_trace_find_hook(ts->parent.t, "core","block_start",NULL, 
-	NULL, NULL, block_start, &hook_start);
+  NULL, NULL, block_start, &hook_start);
     lttv_trace_find_hook(ts->parent.t, "core","block_end",NULL, 
-	NULL, NULL, block_end, &hook_end);
+  NULL, NULL, block_end, &hook_end);
 
     nb_tracefile = ts->parent.tracefiles->len;
 
@@ -2310,9 +2310,9 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
           LTTV_TRACEFILE_STATE(&g_array_index(ts->parent.tracefiles,
                                           LttvTracefileContext, j));
       lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.event_by_id, 
-      	        hook_start.id), hook_start.h, NULL, LTTV_PRIO_STATE);
+                hook_start.id), hook_start.h, NULL, LTTV_PRIO_STATE);
       lttv_hooks_add(lttv_hooks_by_id_find(tfs->parent.event_by_id, 
-	              hook_end.id), hook_end.h, NULL, LTTV_PRIO_STATE);
+                hook_end.id), hook_end.h, NULL, LTTV_PRIO_STATE);
     }
   }
 }
@@ -2383,10 +2383,10 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
     ts = LTTV_TRACE_STATE(self->parent.traces[i]);
 
     lttv_trace_find_hook(ts->parent.t, "core","block_start",NULL, 
-	NULL, NULL, block_start, &hook_start);
+  NULL, NULL, block_start, &hook_start);
 
     lttv_trace_find_hook(ts->parent.t, "core","block_end",NULL, 
-	NULL, NULL, block_end, &hook_end);
+  NULL, NULL, block_end, &hook_end);
 
     nb_tracefile = ts->parent.tracefiles->len;
 
@@ -2472,7 +2472,7 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 
   LttvAttributeName name;
 
-	gboolean is_named;
+  gboolean is_named;
 
   LttvAttribute *saved_states_tree, *saved_state_tree, *closest_tree;
 
@@ -2495,7 +2495,7 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
         mid_pos = max_pos / 2;
         while(min_pos < max_pos) {
           type = lttv_attribute_get(saved_states_tree, mid_pos, &name, &value,
-							&is_named);
+              &is_named);
           g_assert(type == LTTV_GOBJECT);
           saved_state_tree = *((LttvAttribute **)(value.v_gobject));
           type = lttv_attribute_get_by_name(saved_state_tree, LTTV_STATE_TIME, 
@@ -2704,8 +2704,8 @@ static void module_init()
   LTTV_STATE_WAIT = g_quark_from_string("WAIT");
   LTTV_STATE_RUN = g_quark_from_string("RUN");
   LTTV_STATE_DEAD = g_quark_from_string("DEAD");
-	LTTV_STATE_USER_THREAD = g_quark_from_string("USER_THREAD");
-	LTTV_STATE_KERNEL_THREAD = g_quark_from_string("KERNEL_THREAD");
+  LTTV_STATE_USER_THREAD = g_quark_from_string("USER_THREAD");
+  LTTV_STATE_KERNEL_THREAD = g_quark_from_string("KERNEL_THREAD");
   LTTV_STATE_TRACEFILES = g_quark_from_string("tracefiles");
   LTTV_STATE_PROCESSES = g_quark_from_string("processes");
   LTTV_STATE_PROCESS = g_quark_from_string("process");

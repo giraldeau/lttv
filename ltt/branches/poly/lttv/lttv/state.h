@@ -60,8 +60,8 @@ extern GQuark
     LTT_FACILITY_KERNEL_ARCH,
     LTT_FACILITY_PROCESS,
     LTT_FACILITY_FS,
-		LTT_FACILITY_STATEDUMP,
-		LTT_FACILITY_USER_GENERIC;
+    LTT_FACILITY_STATEDUMP,
+    LTT_FACILITY_USER_GENERIC;
 
 /* Events Quarks */
 
@@ -80,10 +80,10 @@ extern GQuark
     LTT_EVENT_EXIT,
     LTT_EVENT_FREE,
     LTT_EVENT_EXEC,
-		LTT_EVENT_ENUM_PROCESS_STATE,
-		LTT_EVENT_FUNCTION_ENTRY,
-		LTT_EVENT_FUNCTION_EXIT,
-		LTT_EVENT_THREAD_BRAND;
+    LTT_EVENT_ENUM_PROCESS_STATE,
+    LTT_EVENT_FUNCTION_ENTRY,
+    LTT_EVENT_FUNCTION_EXIT,
+    LTT_EVENT_THREAD_BRAND;
 
 /* Fields Quarks */
 
@@ -104,8 +104,8 @@ extern GQuark
     LTT_FIELD_MODE,
     LTT_FIELD_SUBMODE,
     LTT_FIELD_STATUS,
-		LTT_FIELD_THIS_FN,
-		LTT_FIELD_CALL_SITE;
+    LTT_FIELD_THIS_FN,
+    LTT_FIELD_CALL_SITE;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
@@ -193,14 +193,14 @@ typedef GQuark LttvProcessType;
 
 extern LttvProcessType
   LTTV_STATE_USER_THREAD,
-	LTTV_STATE_KERNEL_THREAD;
+  LTTV_STATE_KERNEL_THREAD;
 
 typedef struct _LttvExecutionState {
   LttvExecutionMode t;
   LttvExecutionSubmode n;
   LttTime entry;
   LttTime change;
-	LttTime cum_cpu_time;
+  LttTime cum_cpu_time;
   LttvProcessStatus s;
 } LttvExecutionState;
 
@@ -220,11 +220,11 @@ typedef struct _LttvProcessState {
   guint cpu;                /* CPU where process is scheduled (being either in
                                the active or inactive runqueue)*/
 //  guint  last_tracefile_index;    /* index in the trace for cpu tracefile */
-	LttvTracefileState	*usertrace;		/* Associated usertrace */
+  LttvTracefileState  *usertrace;    /* Associated usertrace */
   /* opened file descriptors, address map?... */
-  GArray *user_stack;					/* User space function call stack */
-	guint64	current_function;
-	LttvProcessType type;				/* kernel thread or user space ? */
+  GArray *user_stack;          /* User space function call stack */
+  guint64  current_function;
+  LttvProcessType type;        /* kernel thread or user space ? */
 } LttvProcessState;
 
 #define ANY_CPU 0 /* For clarity sake : a call to lttv_state_find_process for
@@ -276,8 +276,8 @@ struct _LttvTraceState {
 
   GHashTable *processes;  /* LttvProcessState objects indexed by pid and
                              last_cpu */
-	GHashTable *usertraces;	/* GPtrArray objects indexed by pid, containing
-														 pointers to LttvTracefileState objects. */
+  GHashTable *usertraces;  /* GPtrArray objects indexed by pid, containing
+                             pointers to LttvTracefileState objects. */
   guint nb_event, save_interval;
   /* Block/char devices, locks, memory pages... */
   GQuark *eventtype_names;
@@ -311,7 +311,7 @@ void lttv_state_state_saved_free(LttvTraceState *self,
     LttvAttribute *container);
 
 int lttv_state_pop_state_cleanup(LttvProcessState *process,
-		LttvTracefileState *tfs);
+    LttvTracefileState *tfs);
 
 #define LTTV_TRACEFILE_STATE_TYPE  (lttv_tracefile_state_get_type ())
 #define LTTV_TRACEFILE_STATE(obj)  (G_TYPE_CHECK_INSTANCE_CAST ((obj), LTTV_TRACEFILE_STATE_TYPE, LttvTracefileState))
@@ -325,7 +325,7 @@ struct _LttvTracefileState {
 
   //LttvProcessState *process;
   GQuark tracefile_name;
-	guint cpu;	/* Current cpu of the tracefile */
+  guint cpu;  /* Current cpu of the tracefile */
 //  guint saved_position;
 };
 
