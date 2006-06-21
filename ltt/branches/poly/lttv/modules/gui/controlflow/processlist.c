@@ -49,38 +49,40 @@ gint process_sort_func  ( GtkTreeModel *model,
 {
   gchar *a_name;
   gchar *a_brand;
-  guint a_pid, a_ppid, a_cpu;
+  guint a_pid, a_tgid, a_ppid, a_cpu;
   gulong a_birth_s, a_birth_ns;
   gulong a_trace;
 
   gchar *b_name;
   gchar *b_brand;
-  guint b_pid, b_ppid, b_cpu;
+  guint b_pid, b_tgid, b_ppid, b_cpu;
   gulong b_birth_s, b_birth_ns;
   gulong b_trace;
 
   gtk_tree_model_get(model,
            it_a,
-           0, &a_name,
-           1, &a_brand,
-           2, &a_pid,
-           3, &a_ppid,
-           4, &a_cpu,
-           5, &a_birth_s,
-           6, &a_birth_ns,
-           7, &a_trace,
+           PROCESS_COLUMN, &a_name,
+           BRAND_COLUMN, &a_brand,
+           PID_COLUMN, &a_pid,
+           TGID_COLUMN, &a_tgid,
+           PPID_COLUMN, &a_ppid,
+           CPU_COLUMN, &a_cpu,
+           BIRTH_S_COLUMN, &a_birth_s,
+           BIRTH_NS_COLUMN, &a_birth_ns,
+           TRACE_COLUMN, &a_trace,
            -1);
 
   gtk_tree_model_get(model,
            it_b,
-           0, &b_name,
-           1, &b_brand,
-           2, &b_pid,
-           3, &b_ppid,
-           4, &b_cpu,
-           5, &b_birth_s,
-           6, &b_birth_ns,
-           7, &b_trace,
+           PROCESS_COLUMN, &b_name,
+           BRAND_COLUMN, &b_brand,
+           PID_COLUMN, &b_pid,
+           TGID_COLUMN, &b_tgid,
+           PPID_COLUMN, &b_ppid,
+           CPU_COLUMN, &b_cpu,
+           BIRTH_S_COLUMN, &b_birth_s,
+           BIRTH_NS_COLUMN, &b_birth_ns,
+           TRACE_COLUMN, &b_trace,
            -1);
 
   
@@ -359,6 +361,7 @@ ProcessList *processlist_construct(void)
               G_TYPE_UINT,
               G_TYPE_UINT,
               G_TYPE_UINT,
+              G_TYPE_UINT,
               G_TYPE_ULONG,
               G_TYPE_ULONG,
               G_TYPE_ULONG);
@@ -445,6 +448,14 @@ ProcessList *processlist_construct(void)
                 renderer,
                 "text",
                 PID_COLUMN,
+                NULL);
+  gtk_tree_view_append_column (
+    GTK_TREE_VIEW (process_list->process_list_widget), column);
+
+  column = gtk_tree_view_column_new_with_attributes ( "TGID",
+                renderer,
+                "text",
+                TGID_COLUMN,
                 NULL);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
@@ -581,6 +592,16 @@ void processlist_set_brand(ProcessList *process_list,
         BRAND_COLUMN, g_quark_to_string(brand),
         -1);
 }
+
+void processlist_set_tgid(ProcessList *process_list,
+    guint tgid,
+    HashedProcessData *hashed_process_data)
+{
+  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
+        TGID_COLUMN, tgid,
+        -1);
+}
+
 void processlist_set_ppid(ProcessList *process_list,
     guint ppid,
     HashedProcessData *hashed_process_data)
@@ -594,6 +615,7 @@ void processlist_set_ppid(ProcessList *process_list,
 int processlist_add(  ProcessList *process_list,
       Drawing_t *drawing,
       guint pid,
+      guint tgid,
       guint cpu,
       guint ppid,
       LttTime *birth,
@@ -610,6 +632,7 @@ int processlist_add(  ProcessList *process_list,
   *pm_process_info = Process_Info;
   
   Process_Info->pid = pid;
+  Process_Info->tgid = tgid;
   if(pid == 0)
     Process_Info->cpu = cpu;
   else
@@ -643,6 +666,7 @@ int processlist_add(  ProcessList *process_list,
         PROCESS_COLUMN, g_quark_to_string(name),
         BRAND_COLUMN, g_quark_to_string(brand),
         PID_COLUMN, pid,
+        TGID_COLUMN, tgid,
         PPID_COLUMN, ppid,
         CPU_COLUMN, cpu,
         BIRTH_S_COLUMN, birth->tv_sec,

@@ -61,7 +61,7 @@ LttType *ltt_type_element_type(LttType *t);
 
 /* The number of elements for arrays. */
 
-//unsigned ltt_type_element_number(LttType *t);
+unsigned ltt_type_element_number(LttType *t);
 
 
 /* The number of data members for structures and unions. */

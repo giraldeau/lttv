@@ -98,6 +98,7 @@ extern GQuark
     LTT_FIELD_PARENT_PID,
     LTT_FIELD_CHILD_PID,
     LTT_FIELD_PID,
+    LTT_FIELD_TGID,
     LTT_FIELD_FILENAME,
     LTT_FIELD_NAME,
     LTT_FIELD_TYPE,
@@ -206,6 +207,7 @@ typedef struct _LttvExecutionState {
 
 typedef struct _LttvProcessState {
   guint pid;
+  guint tgid;
   guint ppid;
   LttTime creation_time;
   LttTime insertion_time;
@@ -239,7 +241,7 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
 
 LttvProcessState *
 lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent, 
-    guint cpu, guint pid, GQuark name, const LttTime *timestamp);
+    guint cpu, guint pid, guint tgid, GQuark name, const LttTime *timestamp);
 
 void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp);
 

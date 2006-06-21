@@ -48,6 +48,7 @@ enum
   PROCESS_COLUMN,
   BRAND_COLUMN,
   PID_COLUMN,
+  TGID_COLUMN,
   PPID_COLUMN,
   CPU_COLUMN,
   BIRTH_S_COLUMN,
@@ -60,6 +61,7 @@ enum
 typedef struct _ProcessInfo {
   
   guint pid;
+  guint tgid;
   guint cpu;
   guint ppid;
   LttTime birth;
@@ -133,7 +135,7 @@ void processlist_clear(ProcessList *process_list);
 // out : success (0) and height
 /* CPU num is only used for PID 0 */
 int processlist_add(ProcessList *process_list, Drawing_t * drawing, 
-    guint pid, guint cpu, guint ppid,
+    guint pid, guint tgid, guint cpu, guint ppid,
     LttTime *birth, guint trace_num, GQuark name, GQuark brand, guint *height,
     ProcessInfo **process_info,
     HashedProcessData **hashed_process_data);
@@ -151,6 +153,9 @@ void processlist_set_brand(ProcessList *process_list,
     HashedProcessData *hashed_process_data);
 
 /* Set the ppid of a process */
+void processlist_set_tgid(ProcessList *process_list,
+    guint tgid,
+    HashedProcessData *hashed_process_data);
 void processlist_set_ppid(ProcessList *process_list,
     guint ppid,
     HashedProcessData *hashed_process_data);

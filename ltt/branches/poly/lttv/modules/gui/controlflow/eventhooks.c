@@ -394,6 +394,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         processlist_add(process_list,
             drawing,
             pid_out,
+            process->tgid,
             process->cpu,
             process->ppid,
             &birth,
@@ -551,6 +552,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         processlist_add(process_list,
             drawing,
             pid_in,
+            process->tgid,
             tfs->cpu,
             process->ppid,
             &birth,
@@ -772,6 +774,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
     processlist_add(process_list,
         drawing,
         pid_in,
+        process_in->tgid,
         process_in->cpu,
         process_in->ppid,
         &birth,
@@ -896,6 +899,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
       processlist_add(process_list,
           drawing,
           pid,
+          process->tgid,
           process->cpu,
           process->ppid,
           &birth,
@@ -1086,6 +1090,7 @@ int before_process_exit_hook(void *hook_data, void *call_data)
       processlist_add(process_list,
           drawing,
           pid,
+          process->tgid,
           process->cpu,
           process->ppid,
           &birth,
@@ -1281,6 +1286,7 @@ int before_process_release_hook(void *hook_data, void *call_data)
       processlist_add(process_list,
           drawing,
           pid,
+          process->tgid,
           process->cpu,
           process->ppid,
           &birth,
@@ -1474,6 +1480,7 @@ int after_process_fork_hook(void *hook_data, void *call_data)
     processlist_add(process_list,
         drawing,
         child_pid,
+        process_child->tgid,
         process_child->cpu,
         process_child->ppid,
         &birth,
@@ -1487,6 +1494,11 @@ int after_process_fork_hook(void *hook_data, void *call_data)
                                   -1,
                                   pl_height);
       gtk_widget_queue_draw(drawing->drawing_area);
+  } else {
+          processlist_set_ppid(process_list, process_child->ppid,
+                               hashed_process_data_child);
+          processlist_set_tgid(process_list, process_child->tgid,
+                               hashed_process_data_child);
   }
 
 
@@ -1593,6 +1605,7 @@ int after_process_exit_hook(void *hook_data, void *call_data)
       processlist_add(process_list,
           drawing,
           pid,
+          process->tgid,
           process->cpu,
           process->ppid,
           &birth,
@@ -1688,6 +1701,7 @@ int after_fs_exec_hook(void *hook_data, void *call_data)
       processlist_add(process_list,
           drawing,
           pid,
+          process->tgid,
           process->cpu,
           process->ppid,
           &birth,
@@ -1758,6 +1772,7 @@ int after_user_generic_thread_brand_hook(void *hook_data, void *call_data)
       processlist_add(process_list,
           drawing,
           pid,
+          process->tgid,
           process->cpu,
           process->ppid,
           &birth,
@@ -1853,6 +1868,7 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
     processlist_add(process_list,
         drawing,
         pid_in,
+        process_in->tgid,
         process_in->cpu,
         process_in->ppid,
         &birth,
@@ -1867,10 +1883,12 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
                                     pl_height);
         gtk_widget_queue_draw(drawing->drawing_area);
   } else {
-	  processlist_set_name(process_list, process_in->name,
-												 hashed_process_data_in);
-  	processlist_set_ppid(process_list, process_in->ppid,
-												 hashed_process_data_in);
+          processlist_set_name(process_list, process_in->name,
+                               hashed_process_data_in);
+          processlist_set_ppid(process_list, process_in->ppid,
+                               hashed_process_data_in);
+          processlist_set_tgid(process_list, process_in->tgid,
+                               hashed_process_data_in);
 	}
   return 0;
 }

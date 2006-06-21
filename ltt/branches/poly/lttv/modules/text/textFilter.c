@@ -88,13 +88,9 @@ void filter_analyze_file(void *hook_data) {
       LTTV_POINTER, &value));
 
   if(((GString*)*(value.v_pointer))->len != 0)
-    (GString*)*(value.v_pointer) =
       g_string_append_c((GString*)*(value.v_pointer),'&');
-  (GString*)*(value.v_pointer) = 
      g_string_append_c((GString*)*(value.v_pointer),'(');
-  (GString*)*(value.v_pointer) = 
     g_string_append((GString*)*(value.v_pointer),a_file_content);
-  (GString*)*(value.v_pointer) = 
     g_string_append_c((GString*)*(value.v_pointer),')');
   
 }
@@ -118,13 +114,9 @@ void filter_analyze_string(void *hook_data) {
       LTTV_POINTER, &value));
 
   if(((GString*)*(value.v_pointer))->len != 0)
-    (GString*)*(value.v_pointer) =
       g_string_append_c((GString*)*(value.v_pointer),'&');
-  (GString*)*(value.v_pointer) = 
     g_string_append_c((GString*)*(value.v_pointer),'(');
-  (GString*)*(value.v_pointer) = 
     g_string_append((GString*)*(value.v_pointer),a_string);
-  (GString*)*(value.v_pointer) = 
     g_string_append_c((GString*)*(value.v_pointer),')');
 
 }
