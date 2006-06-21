@@ -16,7 +16,7 @@ install-data-local:
 dist-hook:
 	if test -d pixmaps; then \
 	  mkdir $(distdir)/pixmaps; \
-	  for pixmap in pixmaps/*; do \
+	  for pixmap in pixmaps/*.xpm pixmaps/*.png; do \
 	    if test -f $$pixmap; then \
 	      cp -p $$pixmap $(distdir)/pixmaps; \
 	    fi \

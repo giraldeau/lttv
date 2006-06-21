@@ -87,7 +87,7 @@ lttvplugindir="${lttvlibdir}/plugins"
 top_lttvdir="\$(top_srcdir)/lttv"
 top_lttvwindowdir="\$(top_srcdir)/lttv/modules/gui/lttvwindow"
 
-DEFAULT_INCLUDES="-I\$(top_srcdir) -I\$(top_lttvdir) -I\$(top_lttvwindowdir)"
+DEFAULT_INCLUDES="-I\$(top_srcdir) -I\$(top_builddir) -I\$(top_lttvdir) -I\$(top_lttvwindowdir)"
 
 #CPPFLAGS="${GLIB_CFLAGS}"
 #AC_SUBST(CPPFLAGS)

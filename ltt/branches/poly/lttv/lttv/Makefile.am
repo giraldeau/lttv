@@ -1,5 +1,5 @@
 AM_CFLAGS = $(GLIB_CFLAGS) 
-LIBS += $(POPT_LIBS) $(GLIB_LIBS) -lgobject-2.0 -L${top_srcdir}/ltt\
+LIBS += $(POPT_LIBS) $(GLIB_LIBS) -lgobject-2.0 -L${top_builddir}/ltt\
           -llttvtraceread
 
 bin_PROGRAMS = lttv.real
@@ -11,13 +11,13 @@ EXTRA_DIST = lttv.sh lttv-gui.sh
 lttv: lttv.sh
 	rm -f lttv
 	echo "#!"$(BASH) > lttv
-	cat lttv.sh >> lttv
+	cat $(srcdir)/lttv.sh >> lttv
 	chmod ugo+x lttv
 
 lttv-gui: lttv-gui.sh
 	rm -f lttv-gui
 	echo "#!"$(BASH) > lttv-gui
-	cat lttv-gui.sh >> lttv-gui
+	cat $(srcdir)/lttv-gui.sh >> lttv-gui
 	chmod ugo+x lttv-gui
 
 
