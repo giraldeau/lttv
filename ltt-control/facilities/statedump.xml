@@ -87,6 +87,7 @@
       <field name="mode"> <description>Execution submode</description> <typeref name="execution_mode"> </field>
       <field name="submode"> <description>Execution submode</description> <typeref name="execution_submode"> </field>
       <field name="status"> <description>Process status</description> <typeref name="process_status"> </field>
+      <field name="tgid"><description>Thread group ID (POSIX PID)</description><uint size="4"></field>
   </event>
 
   <event name="enumerate_network_ip_interface">
