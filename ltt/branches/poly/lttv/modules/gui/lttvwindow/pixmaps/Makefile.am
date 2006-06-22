@@ -28,5 +28,5 @@ EXTRA_DIST =  \
 	close.png\
 	stock_jump_to_24.png\
 	lttv-color-list.png\
-	guifilter22x22.xpm\
-	guifilter16x16.xpm
+	guifilter22x22.png\
+	guifilter16x16.png
