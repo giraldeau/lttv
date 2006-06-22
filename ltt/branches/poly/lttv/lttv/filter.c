@@ -502,7 +502,6 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
        g_string_free(v,TRUE);
        
        se->value.v_ltttime = t;
-       //g_error("Filter TEST ltttime : %u, %u.", t.tv_sec, t.tv_nsec);
        g_free(value);
        break;
      default:
@@ -1337,15 +1336,15 @@ lttv_filter_update(LttvFilter* filter) {
             i++;
           }
           break;
-              case '\"':
+        case '\"':
           nest_quotes = 0;
-                i++;
+          i++;
           break;
       }
       if(a_string_spaces->len != 0) {
         a_field_component = g_string_append(
           a_field_component, a_string_spaces->str);
-          a_string_spaces = g_string_set_size(a_string_spaces, 0);
+        a_string_spaces = g_string_set_size(a_string_spaces, 0);
       }
       a_field_component = g_string_append_c(a_field_component,
         filter->expression[i]);
@@ -1591,10 +1590,13 @@ lttv_filter_update(LttvFilter* filter) {
           a_field_component = g_string_new("");
           g_string_free(a_string_spaces, TRUE);
           a_string_spaces = g_string_new("");
+        } else {
+          /* Operator found, we are in the value field */
+          g_string_append_c(a_field_component, filter->expression[i]);
         }
         break;
       case ' ':   /* keep spaces that are within a field component */
-                if(a_field_component->len == 0) break; /* ignore */
+        if(a_field_component->len == 0) break; /* ignore */
         else 
           a_string_spaces = g_string_append_c(a_string_spaces,
                                               filter->expression[i]);
@@ -1606,9 +1608,9 @@ lttv_filter_update(LttvFilter* filter) {
                break;
       default:    /* concatening current string */
               if(a_string_spaces->len != 0) {
-          a_field_component = g_string_append(
+                a_field_component = g_string_append(
                     a_field_component, a_string_spaces->str);
-                    a_string_spaces = g_string_set_size(a_string_spaces, 0);
+                a_string_spaces = g_string_set_size(a_string_spaces, 0);
               }
               a_field_component = g_string_append_c(a_field_component,
                     filter->expression[i]);
