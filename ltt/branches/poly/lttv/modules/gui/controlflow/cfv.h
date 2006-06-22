@@ -23,6 +23,7 @@
 
 #include <gtk/gtk.h>
 #include <lttvwindow/mainwindow.h>
+#include <lttv/filter.h>
 #include "processlist.h"
 
 extern GQuark LTT_NAME_CPU;
@@ -44,6 +45,8 @@ struct _ControlFlowData {
   Tab *tab;
 
   GtkWidget *box; /* box that contains the hpaned. necessary for it to work */
+  GtkWidget *toolbar; /* Vbox that contains the viewer's toolbar */
+  GtkWidget *button_prop; /* Properties button. */
   GtkWidget *h_paned;
 
   ProcessList *process_list;
@@ -59,6 +62,8 @@ struct _ControlFlowData {
   guint number_of_process;
   guint background_info_waiting; /* Number of background requests waited for
                                     in order to have all the info ready. */
+
+  LttvFilter *filter;
 
 } ;
 

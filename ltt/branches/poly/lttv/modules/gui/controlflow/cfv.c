@@ -49,35 +49,35 @@ header_size_allocate(GtkWidget *widget,
 }
 
 gboolean cfv_scroll_event(GtkWidget *widget, GdkEventScroll *event,
-		gpointer data)
+    gpointer data)
 {
   ControlFlowData *control_flow_data = (ControlFlowData*)data;
-	unsigned int cell_height =
-		get_cell_height(
-				GTK_TREE_VIEW(control_flow_data->process_list->process_list_widget));
-	gdouble new;
+  unsigned int cell_height =
+    get_cell_height(
+        GTK_TREE_VIEW(control_flow_data->process_list->process_list_widget));
+  gdouble new;
 
   switch(event->direction) {
     case GDK_SCROLL_UP:
-			{
-				new = gtk_adjustment_get_value(control_flow_data->v_adjust) 
-																	- cell_height;
-			}
+      {
+        new = gtk_adjustment_get_value(control_flow_data->v_adjust) 
+                                  - cell_height;
+      }
       break;
     case GDK_SCROLL_DOWN:
-			{
-				new = gtk_adjustment_get_value(control_flow_data->v_adjust) 
-																	+ cell_height;
-			}
+      {
+        new = gtk_adjustment_get_value(control_flow_data->v_adjust) 
+                                  + cell_height;
+      }
       break;
-		default:
-			return FALSE;
+    default:
+      return FALSE;
   }
-	if(new >= control_flow_data->v_adjust->lower &&
-			new <= control_flow_data->v_adjust->upper 
-					- control_flow_data->v_adjust->page_size)
-		gtk_adjustment_set_value(control_flow_data->v_adjust, new);
-	return TRUE;
+  if(new >= control_flow_data->v_adjust->lower &&
+      new <= control_flow_data->v_adjust->upper 
+          - control_flow_data->v_adjust->page_size)
+    gtk_adjustment_set_value(control_flow_data->v_adjust, new);
+  return TRUE;
 }
 
 
@@ -135,11 +135,11 @@ guicontrolflow(Tab *tab)
         "scroll-event",
         G_CALLBACK (cfv_scroll_event),
         (gpointer)control_flow_data);
-	 g_signal_connect (G_OBJECT(drawing_area),
+   g_signal_connect (G_OBJECT(drawing_area),
         "scroll-event",
         G_CALLBACK (cfv_scroll_event),
         (gpointer)control_flow_data);
-	
+  
   g_signal_connect (G_OBJECT(control_flow_data->process_list->button),
         "size-allocate",
         G_CALLBACK(header_size_allocate),
@@ -191,6 +191,8 @@ guicontrolflow(Tab *tab)
   g_control_flow_data_list = g_slist_append(
       g_control_flow_data_list,
       control_flow_data);
+  
+  control_flow_data->filter = NULL;
 
   //WARNING : The widget must be 
   //inserted in the main window before the drawing area
@@ -224,6 +226,7 @@ guicontrolflow_destructor(ControlFlowData *control_flow_data)
   if(GTK_IS_WIDGET(guicontrolflow_get_widget(control_flow_data)))
     g_info("widget still exists");
   
+  lttv_filter_destroy(control_flow_data->filter);
   /* Process List is removed with it's widget */
   //ProcessList_destroy(control_flow_data->process_list);
   if(tab != NULL)
