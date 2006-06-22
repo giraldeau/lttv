@@ -433,6 +433,7 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
   gboolean is_double = FALSE;
   LttTime t = ltt_time_zero;
   GString* v;
+  guint string_len;
   
   switch(se->field) {
      /* 
@@ -480,7 +481,8 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
         * but as for now, simpler this way
         */
        v = g_string_new("");
-       for(i=0;i<strlen(value);i++) {
+       string_len = strlen(value);
+       for(i=0;i<string_len;i++) {
           if(value[i] == '.') { 
               /* cannot specify number with more than one '.' */
               if(is_double) return FALSE; 
@@ -492,11 +494,15 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
        }
        /* number can be integer or double */
        if(is_double) t.tv_nsec = atoi(v->str);
-       else t.tv_sec = atoi(v->str);
+       else {
+         t.tv_sec = atoi(v->str);
+         t.tv_nsec = 0;
+       }
        
        g_string_free(v,TRUE);
        
        se->value.v_ltttime = t;
+       //g_error("Filter TEST ltttime : %u, %u.", t.tv_sec, t.tv_nsec);
        g_free(value);
        break;
      default:
@@ -555,7 +561,7 @@ lttv_struct_type(gint ft) {
         case LTTV_FILTER_STATE_CT:
         case LTTV_FILTER_STATE_IT:
         case LTTV_FILTER_STATE_P_NAME:
-	case LTTV_FILTER_STATE_T_BRAND:
+  case LTTV_FILTER_STATE_T_BRAND:
         case LTTV_FILTER_STATE_EX_MODE:
         case LTTV_FILTER_STATE_EX_SUBMODE:
         case LTTV_FILTER_STATE_P_STATUS:
@@ -1194,7 +1200,7 @@ lttv_filter_tree_clone(const LttvFilterTree* tree) {
 LttvFilter*
 lttv_filter_clone(const LttvFilter* filter) {
  
-	if(!filter) return NULL;
+  if(!filter) return NULL;
 
   LttvFilter* newfilter = g_new(LttvFilter,1); 
 
@@ -1210,8 +1216,8 @@ lttv_filter_clone(const LttvFilter* filter) {
 /**
  *  @fn LttvFilter* lttv_filter_new()
  * 
- * 	Creates a new LttvFilter
- * 	@return the current LttvFilter or NULL if error
+ *   Creates a new LttvFilter
+ *   @return the current LttvFilter or NULL if error
  */
 LttvFilter*
 lttv_filter_new() {
@@ -1235,14 +1241,15 @@ lttv_filter_new() {
 gboolean
 lttv_filter_update(LttvFilter* filter) {
     
-//  g_print("filter::lttv_filter_new()\n");		/* debug */
+//  g_print("filter::lttv_filter_new()\n");    /* debug */
   
   if(filter->expression == NULL) return FALSE;
   
-  int	
+  int  
     i, 
-    p_nesting=0,	/* parenthesis nesting value */
+    p_nesting=0,  /* parenthesis nesting value */
     not=0;
+  guint expression_len;
     
   /* trees */
   LttvFilterTree
@@ -1283,17 +1290,17 @@ lttv_filter_update(LttvFilter* filter) {
   gint nest_quotes = 0;
   
   /*
-   *	Parse entire expression and construct
-   *	the binary tree.  There are two steps 
-   *	in browsing that string
-   *	  1. finding boolean ops " &,|,^,! " and parenthesis " {,(,[,],),} "
-   *	  2. finding simple expressions
-   *	    - field path ( separated by dots )
-   *	    - op ( >, <, =, >=, <=, !=)
-   *	    - value ( integer, string ... )
-   *	To spare computing time, the whole 
-   *	string is parsed in this loop for a 
-   *	O(n) complexity order.
+   *  Parse entire expression and construct
+   *  the binary tree.  There are two steps 
+   *  in browsing that string
+   *    1. finding boolean ops " &,|,^,! " and parenthesis " {,(,[,],),} "
+   *    2. finding simple expressions
+   *      - field path ( separated by dots )
+   *      - op ( >, <, =, >=, <=, !=)
+   *      - value ( integer, string ... )
+   *  To spare computing time, the whole 
+   *  string is parsed in this loop for a 
+   *  O(n) complexity order.
    *
    *  When encountering logical op &,|,^
    *    1. parse the last value if any
@@ -1319,20 +1326,21 @@ lttv_filter_update(LttvFilter* filter) {
   gettimeofday(&starttime, NULL);
 #endif
   
-  for(i=0;i<strlen(filter->expression);i++) {
+  expression_len = strlen(filter->expression);
+  for(i=0;i<expression_len;i++) {
     // debug
 //    g_print("%c\n ",filter->expression[i]);
     if(nest_quotes) {
       switch(filter->expression[i]) {
-	      case '\\' :
-		      if(filter->expression[i+1] == '\"') {
-			      i++;
-		      }
-		      break;
+        case '\\' :
+          if(filter->expression[i+1] == '\"') {
+            i++;
+          }
+          break;
               case '\"':
-		      nest_quotes = 0;
-	              i++;
-		      break;
+          nest_quotes = 0;
+                i++;
+          break;
       }
       if(a_string_spaces->len != 0) {
         a_field_component = g_string_append(
@@ -1377,8 +1385,8 @@ lttv_filter_update(LttvFilter* filter) {
         } else {  /* append a simple expression */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
-					g_string_free(a_string_spaces, TRUE);
-					a_string_spaces = g_string_new("");
+          g_string_free(a_string_spaces, TRUE);
+          a_string_spaces = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
@@ -1411,8 +1419,8 @@ lttv_filter_update(LttvFilter* filter) {
        } else {    /* append a simple expression */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
-					g_string_free(a_string_spaces, TRUE);
-					a_string_spaces = g_string_new("");
+          g_string_free(a_string_spaces, TRUE);
+          a_string_spaces = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new();
@@ -1445,8 +1453,8 @@ lttv_filter_update(LttvFilter* filter) {
         } else {    /* append a simple expression */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
-					g_string_free(a_string_spaces, TRUE);
-					a_string_spaces = g_string_new("");
+          g_string_free(a_string_spaces, TRUE);
+          a_string_spaces = g_string_new("");
           t2->left = LTTV_TREE_LEAF;
           t2->l_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
@@ -1459,8 +1467,8 @@ lttv_filter_update(LttvFilter* filter) {
           g_ptr_array_add( a_field_path,(gpointer) a_field_component );
           lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
           a_field_component = g_string_new("");         
-					g_string_free(a_string_spaces, TRUE);
-					a_string_spaces = g_string_new("");
+          g_string_free(a_string_spaces, TRUE);
+          a_string_spaces = g_string_new("");
           lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_NE);
           i++;
         } else {  /* ! */
@@ -1491,7 +1499,7 @@ lttv_filter_update(LttvFilter* filter) {
         p_nesting--;      /* decrementing parenthesis nesting value */
         if(p_nesting<0 || tree_stack->len<2) {
           g_warning("Wrong filtering options, the string\n\"%s\"\n\
-                     is not valid due to parenthesis incorrect use",filter->expression);	
+                     is not valid due to parenthesis incorrect use",filter->expression);  
           return FALSE;
         }
   
@@ -1519,8 +1527,8 @@ lttv_filter_update(LttvFilter* filter) {
         } else {    /* assign subtree as current tree */
           lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
           a_field_component = g_string_new("");
-					g_string_free(a_string_spaces, TRUE);
-					a_string_spaces = g_string_new("");
+          g_string_free(a_string_spaces, TRUE);
+          a_string_spaces = g_string_new("");
           t1->right = LTTV_TREE_LEAF;
           t1->r_child.leaf = a_simple_expression;
           a_simple_expression = lttv_simple_expression_new(); 
@@ -1528,16 +1536,16 @@ lttv_filter_update(LttvFilter* filter) {
         }
         break;
 
-      /*	
-       *	mathematic operators
+      /*  
+       *  mathematic operators
        */
       case '<':   /* lower, lower or equal */
         
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );
         lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
-				g_string_free(a_string_spaces, TRUE);
-				a_string_spaces = g_string_new("");
+        g_string_free(a_string_spaces, TRUE);
+        a_string_spaces = g_string_new("");
         if(filter->expression[i+1] == '=') { /* <= */
           i++;
           lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_LE);
@@ -1549,8 +1557,8 @@ lttv_filter_update(LttvFilter* filter) {
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );   
         lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
-				g_string_free(a_string_spaces, TRUE);
-				a_string_spaces = g_string_new("");
+        g_string_free(a_string_spaces, TRUE);
+        a_string_spaces = g_string_new("");
         if(filter->expression[i+1] == '=') {  /* >= */
           i++;
           lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_GE);
@@ -1562,8 +1570,8 @@ lttv_filter_update(LttvFilter* filter) {
         g_ptr_array_add( a_field_path,(gpointer) a_field_component );
         lttv_simple_expression_assign_field(a_field_path,a_simple_expression);
         a_field_component = g_string_new("");         
-				g_string_free(a_string_spaces, TRUE);
-				a_string_spaces = g_string_new("");
+        g_string_free(a_string_spaces, TRUE);
+        a_string_spaces = g_string_new("");
         lttv_simple_expression_assign_operator(a_simple_expression,LTTV_FIELD_EQ);
         break;
         
@@ -1581,15 +1589,15 @@ lttv_filter_update(LttvFilter* filter) {
         if(a_simple_expression->field == LTTV_FILTER_UNDEFINED) {
           g_ptr_array_add( a_field_path,(gpointer) a_field_component );
           a_field_component = g_string_new("");
-					g_string_free(a_string_spaces, TRUE);
-					a_string_spaces = g_string_new("");
+          g_string_free(a_string_spaces, TRUE);
+          a_string_spaces = g_string_new("");
         }
         break;
       case ' ':   /* keep spaces that are within a field component */
                 if(a_field_component->len == 0) break; /* ignore */
-				else 
-        	a_string_spaces = g_string_append_c(a_string_spaces,
-																							filter->expression[i]);
+        else 
+          a_string_spaces = g_string_append_c(a_string_spaces,
+                                              filter->expression[i]);
 
       case '\n':  /* ignore */
         break;
@@ -1598,7 +1606,7 @@ lttv_filter_update(LttvFilter* filter) {
                break;
       default:    /* concatening current string */
               if(a_string_spaces->len != 0) {
-        	a_field_component = g_string_append(
+          a_field_component = g_string_append(
                     a_field_component, a_string_spaces->str);
                     a_string_spaces = g_string_set_size(a_string_spaces, 0);
               }
@@ -1613,7 +1621,7 @@ lttv_filter_update(LttvFilter* filter) {
    */
   if( p_nesting>0 ) { 
     g_warning("Wrong filtering options, the string\n\"%s\"\n\
-        is not valid due to parenthesis incorrect use",filter->expression);	
+        is not valid due to parenthesis incorrect use",filter->expression);  
     return FALSE;
   }
  
@@ -1643,8 +1651,8 @@ lttv_filter_update(LttvFilter* filter) {
   } else {  /* add a leaf */
     lttv_simple_expression_assign_value(a_simple_expression,g_string_free(a_field_component,FALSE)); 
     a_field_component = NULL;
-		g_string_free(a_string_spaces, TRUE);
-		a_string_spaces = NULL;
+    g_string_free(a_string_spaces, TRUE);
+    a_string_spaces = NULL;
     t1->right = LTTV_TREE_LEAF;
     t1->r_child.leaf = a_simple_expression;
     a_simple_expression = NULL;
@@ -1661,7 +1669,7 @@ lttv_filter_update(LttvFilter* filter) {
   
   /* free the field buffer if allocated */
   if(a_field_component != NULL) g_string_free(a_field_component,TRUE); 
- 	if(a_string_spaces != NULL) g_string_free(a_string_spaces, TRUE);
+   if(a_string_spaces != NULL) g_string_free(a_string_spaces, TRUE);
 
   /* free the simple expression buffer if allocated */
   if(a_simple_expression != NULL) lttv_simple_expression_destroy(a_simple_expression);
@@ -1698,12 +1706,12 @@ lttv_filter_update(LttvFilter* filter) {
 void
 lttv_filter_destroy(LttvFilter* filter) {
   
-	if(!filter) return;
+  if(!filter) return;
 
-	if(filter->expression)
-	  g_free(filter->expression);
-	if(filter->head)
-	  lttv_filter_tree_destroy(filter->head);
+  if(filter->expression)
+    g_free(filter->expression);
+  if(filter->head)
+    lttv_filter_tree_destroy(filter->head);
   g_free(filter);
   
 }
@@ -1977,7 +1985,7 @@ lttv_filter_tree_parse_branch(
               return se->op((gpointer)&quark,v);
             }
             break;
-	case LTTV_FILTER_STATE_T_BRAND:
+  case LTTV_FILTER_STATE_T_BRAND:
             if(state == NULL) return TRUE;
             else {
               GQuark quark = state->brand;

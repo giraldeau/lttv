@@ -119,7 +119,7 @@ enum _LttvFieldType {
 };
   
 /**
- * 	@enum _LttvExpressionOp
+ *   @enum _LttvExpressionOp
  *  @brief Contains possible operators
  *
  *  This enumeration defines the 
@@ -129,12 +129,12 @@ enum _LttvFieldType {
  */
 enum _LttvExpressionOp
 { 
-  LTTV_FIELD_EQ,	                    /**< equal */
-  LTTV_FIELD_NE,	                    /**< not equal */
-  LTTV_FIELD_LT,	                    /**< lower than */
-  LTTV_FIELD_LE,	                    /**< lower or equal */
-  LTTV_FIELD_GT,	                    /**< greater than */
-  LTTV_FIELD_GE		                    /**< greater or equal */
+  LTTV_FIELD_EQ,                      /**< equal */
+  LTTV_FIELD_NE,                      /**< not equal */
+  LTTV_FIELD_LT,                      /**< lower than */
+  LTTV_FIELD_LE,                      /**< lower or equal */
+  LTTV_FIELD_GT,                      /**< greater than */
+  LTTV_FIELD_GE                        /**< greater or equal */
 };
 
 /**
