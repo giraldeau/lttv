@@ -253,7 +253,9 @@ IN="?_Documentation_ioctl-number.txt
 ?_fs_relayfs_relay.c
 ?_fs_relayfs_buffers.c
 ?_fs_relayfs_buffers.h
-?_fs_relayfs_relay.h"
+?_fs_relayfs_relay.h
+?_fs_Makefile
+?_block_blktrace.c"
 
 for a in $IN; do wr $a $FILE; done
 
