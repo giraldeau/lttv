@@ -129,7 +129,6 @@ AC_CONFIG_FILES([Makefile
      		 lttv/modules/gui/histogram/Makefile
                  lttv/modules/gui/filter/Makefile
                  lttv/modules/gui/tracecontrol/Makefile
-                 lttv/modules/gui/tutorial/Makefile
 		 ltt/Makefile
      doc/Makefile
      doc/developer/Makefile
