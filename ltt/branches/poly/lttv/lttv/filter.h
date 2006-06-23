@@ -114,6 +114,7 @@ enum _LttvFieldType {
   LTTV_FILTER_EVENT_CATEGORY,         /**< FIXME: not implemented */
   LTTV_FILTER_EVENT_TIME,             /**< event.time (double) */
   LTTV_FILTER_EVENT_TSC,              /**< event.tsc (double) */
+  LTTV_FILTER_EVENT_TARGET_PID,       /**< event.target_pid (guint) */
   LTTV_FILTER_EVENT_FIELD,            /**< dynamic field, specified in facility */
   LTTV_FILTER_UNDEFINED               /**< undefined field */
 };

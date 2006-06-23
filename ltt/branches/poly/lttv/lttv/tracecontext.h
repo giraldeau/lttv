@@ -175,6 +175,8 @@ struct _LttvTracefileContext {
   LttvHooksById *event_by_id;
   LttTime timestamp;
   LttvAttribute *a;
+  guint target_pid;          /* Target PID of the event.
+				Updated by state.c. 0 means unset. */
 };
 
 struct _LttvTracefileContextClass {

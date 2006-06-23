@@ -35,6 +35,7 @@
  *  | |->category (String, not yet implemented)
  *  | |->time (LttTime)
  *  | |->tsc (LttCycleCount --> uint64)
+ *  | |->target_pid (target PID of the event)
  *  | |->fields
  *  |   |->"facility_name
  *  |     |->"event name"
@@ -210,6 +211,7 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
      *  event.category
      *  event.time
      *  event.tsc
+     *  event.target_pid
      *  event.field
      */
     g_string_free(f,TRUE);
@@ -231,6 +233,9 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
     }
     else if(!g_strcasecmp(f->str,"tsc") ) {
       se->field = LTTV_FILTER_EVENT_TSC;
+    }
+    else if(!g_strcasecmp(f->str,"target_pid") ) {
+      se->field = LTTV_FILTER_EVENT_TARGET_PID;
     }
     else if(!g_strcasecmp(f->str,"field") ) {
       se->field = LTTV_FILTER_EVENT_FIELD;
@@ -333,6 +338,7 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
      case LTTV_FILTER_STATE_CPU:
      case LTTV_FILTER_STATE_PID:
      case LTTV_FILTER_STATE_PPID:
+     case LTTV_FILTER_EVENT_TARGET_PID:
        switch(op) {
          case LTTV_FIELD_EQ:
            se->op = lttv_apply_op_eq_uint;
@@ -466,6 +472,7 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
      case LTTV_FILTER_STATE_PID:
      case LTTV_FILTER_STATE_PPID:
      case LTTV_FILTER_STATE_CPU:
+     case LTTV_FILTER_EVENT_TARGET_PID:
        se->value.v_uint = atoi(value);
        g_free(value);
        break;
@@ -572,6 +579,7 @@ lttv_struct_type(gint ft) {
         case LTTV_FILTER_EVENT_CATEGORY:
         case LTTV_FILTER_EVENT_TIME:
         case LTTV_FILTER_EVENT_TSC:
+        case LTTV_FILTER_EVENT_TARGET_PID:
         case LTTV_FILTER_EVENT_FIELD:
             return LTTV_FILTER_EVENT;
             break;
@@ -2049,6 +2057,14 @@ lttv_filter_tree_parse_branch(
             else {
               LttCycleCount count = ltt_event_cycle_count(event);
               return se->op((gpointer)&count,v);
+            }
+            break;
+        case LTTV_FILTER_EVENT_TARGET_PID:
+            if(context == NULL) return TRUE;
+            else {
+              guint target_pid =
+		      lttv_state_get_target_pid((LttvTracefileState*)context);
+              return se->op((gpointer)&target_pid,v);
             }
             break;
         case LTTV_FILTER_EVENT_FIELD:

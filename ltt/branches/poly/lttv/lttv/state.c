@@ -1623,6 +1623,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
 
   /* Child PID */
   child_pid = ltt_event_get_unsigned(e, thf->f2);
+  s->parent.target_pid = child_pid;
 
   /* Child TGID */
   if(thf->f3) child_tgid = ltt_event_get_unsigned(e, thf->f3);
@@ -1690,6 +1691,7 @@ static gboolean process_kernel_thread(void *hook_data, void *call_data)
 
   /* PID */
   pid = ltt_event_get_unsigned(e, thf->f1);
+  s->parent.target_pid = pid;
 
   process = lttv_state_find_process(ts, ANY_CPU, pid);
   es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
@@ -1711,6 +1713,7 @@ static gboolean process_exit(void *hook_data, void *call_data)
   LttvProcessState *process; // = ts->running_process[cpu];
 
   pid = ltt_event_get_unsigned(e, thf->f1);
+  s->parent.target_pid = pid;
 
   // FIXME : Add this test in the "known state" section
   // g_assert(process->pid == pid);
@@ -1733,6 +1736,7 @@ static gboolean process_free(void *hook_data, void *call_data)
 
   /* PID of the process to release */
   release_pid = ltt_event_get_unsigned(e, thf->f1);
+  s->parent.target_pid = release_pid;
   
   g_assert(release_pid != 0);
 

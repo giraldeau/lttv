@@ -171,6 +171,7 @@ static void init_tracefile_context(LttTracefile *tracefile,
   tfc->event = lttv_hooks_new();
   tfc->event_by_id = lttv_hooks_by_id_new();
   tfc->a = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+  tfc->target_pid = 0;
 }
 
 
@@ -767,6 +768,7 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
     fac_id = ltt_event_facility_id(e);
     ev_id = ltt_event_eventtype_id(e);
     id = GET_HOOK_ID(fac_id, ev_id);
+    tfc->target_pid = 0; /* unset target PID */
     /* Hooks : 
      * return values : 0 : continue read, 1 : go to next position and stop read,
      * 2 : stay at the current position and stop read */

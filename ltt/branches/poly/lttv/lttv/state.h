@@ -227,6 +227,7 @@ typedef struct _LttvProcessState {
   GArray *user_stack;          /* User space function call stack */
   guint64  current_function;
   LttvProcessType type;        /* kernel thread or user space ? */
+  guint target_pid; /* target PID of the current event. */
 } LttvProcessState;
 
 #define ANY_CPU 0 /* For clarity sake : a call to lttv_state_find_process for
@@ -336,6 +337,16 @@ struct _LttvTracefileStateClass {
 };
 
 GType lttv_tracefile_state_get_type (void);
+
+static inline guint lttv_state_get_target_pid(LttvTracefileState *tfs)
+{
+  LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
+  guint cpu = tfs->cpu;
+  LttvProcessState *process = ts->running_process[cpu];
+
+  if(tfs->parent.target_pid) return tfs->parent.target_pid;
+  else return process->pid;
+}
 
 
 #endif // STATE_H

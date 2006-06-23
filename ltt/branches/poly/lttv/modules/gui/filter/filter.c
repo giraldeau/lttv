@@ -189,6 +189,7 @@ gui_filter(LttvPlugin *plugin)
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.category"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.time"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.tsc"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.target_pid"));
   /*
    * TODO: Add core.xml fields here !
    */
