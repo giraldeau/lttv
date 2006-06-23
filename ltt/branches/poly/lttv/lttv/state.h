@@ -344,7 +344,7 @@ static inline guint lttv_state_get_target_pid(LttvTracefileState *tfs)
   guint cpu = tfs->cpu;
   LttvProcessState *process = ts->running_process[cpu];
 
-  if(tfs->parent.target_pid) return tfs->parent.target_pid;
+  if(tfs->parent.target_pid >= 0) return tfs->parent.target_pid;
   else return process->pid;
 }
 

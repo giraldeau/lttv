@@ -1836,7 +1836,8 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
 
   /* PID */
   pid = ltt_event_get_unsigned(e, thf->f1);
-
+  s->parent.target_pid = pid;
+  
   /* Parent PID */
   parent_pid = ltt_event_get_unsigned(e, thf->f2);
 

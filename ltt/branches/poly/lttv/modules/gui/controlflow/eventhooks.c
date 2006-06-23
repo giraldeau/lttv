@@ -345,8 +345,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
+  gint target_pid_saved = tfc->target_pid;
 
   LttTime evtime = ltt_event_time(e);
+  LttvFilter *filter = control_flow_data->filter;
 
   /* we are in a schedchange, before the state update. We must draw the
    * items corresponding to the state before it changes : now is the right
@@ -360,7 +362,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
     pid_in = ltt_event_get_long_unsigned(e, thf->f2);
   }
   
-  { 
+  tfc->target_pid = pid_out;
+  if(!filter || !filter->head ||
+    lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc)) { 
     /* For the pid_out */
     /* First, check if the current process is in the state computation
      * process list. If it is there, that means we must add it right now and
@@ -521,7 +526,10 @@ int before_schedchange_hook(void *hook_data, void *call_data)
     }
   }
 
-  {
+  tfc->target_pid = pid_in;
+  if(!filter || !filter->head ||
+    lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc)) { 
     /* For the pid_in */
     /* First, check if the current process is in the state computation
      * process list. If it is there, that means we must add it right now and
@@ -683,6 +691,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
     } else
       g_warning("Cannot find pin_in in schedchange %u", pid_in);
   }
+  tfc->target_pid = target_pid_saved;
   return 0;
 
 
@@ -734,6 +743,12 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
+
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
 
   LttTime evtime = ltt_event_time(e);
 
@@ -862,6 +877,12 @@ int before_execmode_hook(void *hook_data, void *call_data)
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
+
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
 
   LttTime evtime = ltt_event_time(e);
 
@@ -1060,6 +1081,12 @@ int before_process_exit_hook(void *hook_data, void *call_data)
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
 
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
+
   LttTime evtime = ltt_event_time(e);
 
   /* Add process to process list (if not present) */
@@ -1250,6 +1277,12 @@ int before_process_release_hook(void *hook_data, void *call_data)
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
+
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
 
   LttTime evtime = ltt_event_time(e);
 
@@ -1446,6 +1479,12 @@ int after_process_fork_hook(void *hook_data, void *call_data)
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
 
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
+
   LttTime evtime = ltt_event_time(e);
 
   guint child_pid;
@@ -1573,6 +1612,12 @@ int after_process_exit_hook(void *hook_data, void *call_data)
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
 
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
+
   LttTime evtime = ltt_event_time(e);
 
   /* Add process to process list (if not present) */
@@ -1673,6 +1718,15 @@ int after_fs_exec_hook(void *hook_data, void *call_data)
 
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
 
+  LttEvent *e;
+  e = ltt_tracefile_get_event(tfc->tf);
+
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
+
   guint cpu = tfs->cpu;
   LttvProcessState *process = ts->running_process[cpu];
   g_assert(process != NULL);
@@ -1743,6 +1797,15 @@ int after_user_generic_thread_brand_hook(void *hook_data, void *call_data)
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
 
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+
+  LttEvent *e;
+  e = ltt_tracefile_get_event(tfc->tf);
+
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
 
   guint cpu = tfs->cpu;
   LttvProcessState *process = ts->running_process[cpu];
@@ -1828,6 +1891,12 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
+
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
 
   LttTime evtime = ltt_event_time(e);
 
