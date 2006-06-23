@@ -36,6 +36,7 @@
 #include <lttv/state.h>
 #include <lttv/filter.h>
 #include <lttvwindow/lttvwindow.h>
+#include <lttvwindow/lttv_plugin_tab.h>
 #include <ltt/time.h>
 
 #include "hDiskPerformanceInsert.xpm" 
@@ -65,6 +66,8 @@ enum operation_t {
 typedef struct _DiskPerformanceData {
 
   Tab 	     * tab;
+
+  LttvPluginTab *ptab;
    
   LttvHooks  * hooks_trace_after;
   
@@ -118,7 +121,7 @@ GQuark LTT_FACILITY_BLOCK;
 GQuark LTT_EVENT_BLOCK_READ;  
 GQuark LTT_EVENT_BLOCK_WRITE;   
 
-static DiskPerformanceData *disk_performance_data(Tab *tab);
+static DiskPerformanceData *disk_performance_data(LttvPluginTab *ptab);
 static void disk_destroy_walk(gpointer data, gpointer user_data);
 static gboolean disk_show(void *hook_data, void *call_data);
 static gboolean trace_header(void *hook_data, void *call_data);
@@ -128,7 +131,7 @@ void gui_disperformance_free(DiskPerformanceData *event_viewer_data);
 static void get_event_detail(LttEvent *e, lttv_block* disk_data);
 static char * major_minor_to_diskname( lttv_block* disk_data); 
 static void sum_data(char* diskname, guint size, enum operation_t opt, GArray *disk_array);
-static GtkWidget *disk_performance(Tab * tab);
+static GtkWidget *disk_performance(LttvPlugin *plugin);
 
 static gboolean block_read_callback(void *hook_data, void *call_data);
 
@@ -263,13 +266,13 @@ static void init()
  *  Constructor hook
  *
  */
-GtkWidget *disk_performance(Tab * tab)
+GtkWidget *disk_performance(LttvPlugin *plugin)
 {
- 
- DiskPerformanceData* disk_data = disk_performance_data(tab);
- if(disk_data)
+  LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
+  DiskPerformanceData* disk_data = disk_performance_data(ptab);
+  if(disk_data)
     return disk_data->hbox_v;
- else 
+  else 
     return NULL; 
 }
 
@@ -277,7 +280,7 @@ GtkWidget *disk_performance(Tab * tab)
  * This function initializes the Event Viewer functionnality through the
  * GTK  API. 
  */
-DiskPerformanceData *disk_performance_data(Tab *tab)
+DiskPerformanceData *disk_performance_data(LttvPluginTab *ptab)
 { 
   LttTime end;
   GtkTreeViewColumn *column;
@@ -285,8 +288,9 @@ DiskPerformanceData *disk_performance_data(Tab *tab)
   DiskPerformanceData* disk_data = g_new(DiskPerformanceData,1) ;
   
   g_info("enter disk_performance_data \n");
-  
+  Tab *tab = ptab->tab;
   disk_data->tab = tab;
+  disk_data->ptab = ptab;
   disk_data->time_window  =  lttvwindow_get_time_window(tab);
   
   disk_data->disk_array = g_array_new(FALSE, FALSE, sizeof(lttv_total_block ));

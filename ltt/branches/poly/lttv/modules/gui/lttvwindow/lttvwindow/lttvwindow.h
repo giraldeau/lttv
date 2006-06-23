@@ -259,6 +259,7 @@ FIXME : explain other important events
 #include <lttv/stats.h>
 #include <lttv/filter.h>
 #include <lttvwindow/mainwindow.h>
+#include <lttvwindow/lttv_plugin.h>
 
 /* Module Related API */
 
@@ -266,7 +267,7 @@ FIXME : explain other important events
 extern GQuark LTTV_VIEWER_CONSTRUCTORS;
 
 /* constructor a the viewer */
-typedef GtkWidget* (*lttvwindow_viewer_constructor)(Tab *tab);
+typedef GtkWidget* (*lttvwindow_viewer_constructor)(LttvPlugin *plugin);
 
 
 /**

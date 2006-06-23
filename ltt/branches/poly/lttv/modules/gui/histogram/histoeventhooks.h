@@ -57,7 +57,7 @@
 
 void send_test_data(ButtonWidget *buttonwidget, histoDrawing_t *drawing);//??
 
-GtkWidget *h_guihistocontrolflow(Tab *tab);
+GtkWidget *h_guihistocontrolflow(LttvPlugin *plugin);
 
 //GtkWidget *h_legend(Tab *tab);
 

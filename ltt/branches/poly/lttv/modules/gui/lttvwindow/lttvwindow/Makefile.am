@@ -24,7 +24,9 @@ liblttvwindow_la_SOURCES = \
 	init_module.c \
 	support.c \
 	interface.c \
-	callbacks.c
+	callbacks.c \
+	lttv_plugin_tab.c \
+	lttv_plugin.c
 
 noinst_HEADERS = \
 	support.h \
@@ -37,7 +39,9 @@ lttvwindowinclude_HEADERS = \
 	lttvwindowtraces.h\
 	mainwindow.h\
 	menu.h\
-	toolbar.h
+	toolbar.h\
+	lttv_plugin_tab.h \
+	lttv_plugin.h
 
 liblttvwindow_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
 

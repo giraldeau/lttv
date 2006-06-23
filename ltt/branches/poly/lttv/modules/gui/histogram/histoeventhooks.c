@@ -178,11 +178,13 @@ static void histo_request_background_data(HistoControlFlowData *histocontrol_flo
  * @return The widget created.
  */
 GtkWidget *
-h_guihistocontrolflow(Tab *tab)
+h_guihistocontrolflow(LttvPlugin *plugin)
 {
-  g_info("h_guihistocontrolflow, %p", tab);
-  HistoControlFlowData *histocontrol_flow_data = guihistocontrolflow(tab) ;
+  LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
+  g_info("h_guihistocontrolflow, %p", ptab);
+  HistoControlFlowData *histocontrol_flow_data = guihistocontrolflow(ptab) ;
   
+  Tab *tab = ptab->tab;
   histocontrol_flow_data->tab = tab;
   
   // Unreg done in the GuiHistoControlFlow_Destructor

@@ -39,6 +39,7 @@
 
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
+#include <lttvwindow/lttv_plugin_tab.h>
 
 #include "hGuiStatisticInsert.xpm"
 
@@ -57,9 +58,9 @@ static void request_background_data(StatisticViewerData *svd);
 GtkWidget *guistatistic_get_widget(StatisticViewerData *svd);
 
 //! Statistic Viewer's constructor hook
-GtkWidget *h_gui_statistic(Tab *tab);
+GtkWidget *h_gui_statistic(LttvPlugin *plugin);
 //! Statistic Viewer's constructor
-StatisticViewerData *gui_statistic(Tab *tab);
+StatisticViewerData *gui_statistic(LttvPluginTab *ptab);
 //! Statistic Viewer's destructor
 void gui_statistic_destructor(StatisticViewerData *statistic_viewer_data);
 
@@ -91,6 +92,7 @@ enum
 
 struct _StatisticViewerData{
   Tab *tab;
+  LttvPluginTab *ptab;
   //LttvTracesetStats * stats;
   int                 size;
 
@@ -232,9 +234,10 @@ gui_statistic_destructor(StatisticViewerData *statistic_viewer_data)
  * @return The widget created.
  */
 GtkWidget *
-h_gui_statistic(Tab *tab)
+h_gui_statistic(LttvPlugin *plugin)
 {
-  StatisticViewerData* statistic_viewer_data = gui_statistic(tab) ;
+  LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
+  StatisticViewerData* statistic_viewer_data = gui_statistic(ptab) ;
 
   if(statistic_viewer_data)
     return guistatistic_get_widget(statistic_viewer_data);
@@ -268,14 +271,15 @@ gboolean statistic_insert_traceset_stats(void * stats)
  * @return The Statistic viewer data created.
  */
 StatisticViewerData *
-gui_statistic(Tab *tab)
+gui_statistic(LttvPluginTab *ptab)
 {
   GtkCellRenderer *renderer;
   GtkTreeViewColumn *column;
 
   StatisticViewerData* statistic_viewer_data = g_new(StatisticViewerData,1);
-
+  Tab *tab = ptab->tab;
   statistic_viewer_data->tab  = tab;
+  statistic_viewer_data->ptab  = ptab;
  // statistic_viewer_data->stats  =
  //         lttvwindow_get_traceset_stats(statistic_viewer_data->tab);
  // statistic_viewer_data->calculate_stats = 

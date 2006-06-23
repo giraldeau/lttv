@@ -23,6 +23,8 @@
 
 #include <gtk/gtk.h>
 #include <lttvwindow/mainwindow.h>
+#include <lttvwindow/lttv_plugin_tab.h>
+
 //#include "histobuttonwidget.h"
 
 extern GQuark LTT_NAME_CPU;
@@ -48,6 +50,7 @@ typedef struct _HistoControlFlowData HistoControlFlowData;
 struct _HistoControlFlowData {
 
   GtkWidget *top_widget;//The hbox containing buttons and drawing area.
+  LttvPluginTab *ptab;
   Tab *tab; 
   GtkWidget *box;
   GtkWidget *ev_box;//for histogram
@@ -71,7 +74,7 @@ struct _HistoControlFlowData {
 } ;
 
 /* Control Flow Data constructor */
-HistoControlFlowData *guihistocontrolflow(Tab *tab);
+HistoControlFlowData *guihistocontrolflow(LttvPluginTab *ptab);
 void
 guihistocontrolflow_destructor_full(HistoControlFlowData *histo_control_flow_data);
 void

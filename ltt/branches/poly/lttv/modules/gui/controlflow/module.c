@@ -47,6 +47,7 @@
 #include <lttvwindow/lttvwindow.h>
 
 #include "cfv.h"
+#include "lttv_plugin_cfv.h"
 #include "eventhooks.h"
 
 #include "hGuiControlFlowInsert.xpm"
@@ -94,7 +95,7 @@ static void init() {
 void destroy_walk(gpointer data, gpointer user_data)
 {
   g_info("Walk destroy GUI Control Flow Viewer");
-  guicontrolflow_destructor_full((ControlFlowData*)data);
+  guicontrolflow_destructor_full((LttvPluginCFV*)data);
 }
 
 void destroy_legend_walk(gpointer data, gpointer user_data)

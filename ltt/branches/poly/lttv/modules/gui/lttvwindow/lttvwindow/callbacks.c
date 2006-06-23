@@ -46,7 +46,7 @@
 #include <lttvwindow/toolbar.h>
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
-
+#include <lttvwindow/lttv_plugin_tab.h>
 
 static LttTime lttvwindow_default_time_width = { 1, 0 };
 #define CLIP_BUF 256 // size of clipboard buffer
@@ -61,6 +61,7 @@ extern GSList * g_main_window_list;
 static char remember_plugins_dir[PATH_MAX] = "";
 static char remember_trace_dir[PATH_MAX] = "";
 
+void tab_destructor(LttvPluginTab * ptab);
 
 MainWindow * get_window_data_struct(GtkWidget * widget);
 char * get_load_module(MainWindow *mw,
@@ -70,12 +71,12 @@ char * get_unload_module(MainWindow *mw,
 char * get_remove_trace(MainWindow *mw, char ** all_trace_name, int nb_trace);
 char * get_selection(MainWindow *mw,
     char ** all_name, int nb, char *title, char * column_title);
-Tab* create_tab(MainWindow * mw, Tab *copy_tab,
+void init_tab(Tab *tab, MainWindow * mw, Tab *copy_tab,
 		  GtkNotebook * notebook, char * label);
 
 static void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor);
 
-Tab *create_new_tab(GtkWidget* widget, gpointer user_data);
+LttvPluginTab *create_new_tab(GtkWidget* widget, gpointer user_data);
 
 static gboolean lttvwindow_process_pending_requests(Tab *tab);
 
@@ -348,7 +349,16 @@ static gboolean on_MEventBox8_paste(GtkWidget *widget, GdkEventButton *event,
   return 0;
 }
 
+#if 0
+static void on_top_notify(GObject    *gobject,
+		GParamSpec *arg1,
+		gpointer    user_data)
+{
+	Tab *tab = (Tab*)user_data;
+	g_message("in on_top_notify.\n");
 
+}
+#endif //0
 static gboolean viewer_grab_focus(GtkWidget *widget, GdkEventButton *event,
                                   gpointer data)
 {
@@ -414,17 +424,19 @@ void insert_viewer(GtkWidget* widget, lttvwindow_viewer_constructor constructor)
   TimeInterval * time_interval;
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
                       gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  LttvPluginTab *ptab;
   Tab *tab;
   
   if(!page) {
-    tab = create_new_tab(widget, NULL);
+    ptab = create_new_tab(widget, NULL);
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
   }
+  tab = ptab->tab;
 
   viewer_container = tab->viewer_container;
 
-  viewer = (GtkWidget*)constructor(tab);
+  viewer = (GtkWidget*)constructor(ptab);
   if(viewer)
   {
     //gtk_multivpaned_widget_add(GTK_MULTIVPANED(multivpaned), viewer); 
@@ -752,7 +764,9 @@ void move_down_viewer(GtkWidget * widget, gpointer user_data)
   if(!page) {
     return;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    LttvPluginTab *ptab;
+    ptab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
 
   //gtk_multivpaned_widget_move_up(GTK_MULTIVPANED(tab->multivpaned));
@@ -784,7 +798,9 @@ void move_up_viewer(GtkWidget * widget, gpointer user_data)
   if(!page) {
     return;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    LttvPluginTab *ptab;
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
 
   //gtk_multivpaned_widget_move_down(GTK_MULTIVPANED(tab->multivpaned));
@@ -823,7 +839,9 @@ void delete_viewer(GtkWidget * widget, gpointer user_data)
   if(!page) {
     return;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    LttvPluginTab *ptab;
+    ptab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
 
   //gtk_multivpaned_widget_delete(GTK_MULTIVPANED(tab->multivpaned));
@@ -1750,12 +1768,15 @@ void add_trace(GtkWidget * widget, gpointer user_data)
 
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
                       gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  LttvPluginTab *ptab;
   Tab *tab;
 
   if(!page) {
-    tab = create_new_tab(widget, NULL);
+    ptab = create_new_tab(widget, NULL);
+    tab = ptab->tab;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
 
   //GtkDirSelection * file_selector = (GtkDirSelection *)gtk_dir_selection_new("Select a trace");
@@ -1856,7 +1877,9 @@ void remove_trace(GtkWidget *widget, gpointer user_data)
   if(!page) {
     return;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    LttvPluginTab *ptab;
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
 
   nb_trace =lttv_traceset_number(tab->traceset_info->traceset); 
@@ -2075,7 +2098,9 @@ void redraw(GtkWidget *widget, gpointer user_data)
   if(!page) {
     return;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    LttvPluginTab *ptab;
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
 
   LttvHooks * tmp;
@@ -2098,7 +2123,9 @@ void continue_processing(GtkWidget *widget, gpointer user_data)
   if(!page) {
     return;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    LttvPluginTab *ptab;
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
 
   LttvHooks * tmp;
@@ -2126,7 +2153,9 @@ void stop_processing(GtkWidget *widget, gpointer user_data)
   if(!page) {
     return;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    LttvPluginTab *ptab;
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
   GSList *iter = tab->events_requests;
   
@@ -2180,7 +2209,9 @@ void zoom(GtkWidget * widget, double size)
   if(!page) {
     return;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    LttvPluginTab *ptab;
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
 
   if(size == 1) return;
@@ -2297,7 +2328,8 @@ on_clone_traceset_activate             (GtkMenuItem     *menuitem,
 /* create_new_tab calls create_tab to construct a new tab in the main window
  */
 
-Tab *create_new_tab(GtkWidget* widget, gpointer user_data){
+LttvPluginTab *create_new_tab(GtkWidget* widget, gpointer user_data)
+{
   gchar label[PATH_MAX];
   MainWindow * mw_data = get_window_data_struct(widget);
 
@@ -2313,14 +2345,26 @@ Tab *create_new_tab(GtkWidget* widget, gpointer user_data){
   if(!page) {
     copy_tab = NULL;
   } else {
-    copy_tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    LttvPluginTab *ptab;
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    copy_tab = ptab->tab;
   }
   
   strcpy(label,"Page");
-  if(get_label(mw_data, label,"Get the name of the tab","Please input tab's name"))    
-    return (create_tab (mw_data, copy_tab, notebook, label));
-  else
-    return NULL;
+  if(get_label(mw_data, label,"Get the name of the tab","Please input tab's name")) {
+    LttvPluginTab *ptab;
+    
+    ptab = g_object_new(LTTV_TYPE_PLUGIN_TAB, NULL);
+    init_tab (ptab->tab, mw_data, copy_tab, notebook, label);
+    ptab->parent.top_widget = ptab->tab->top_widget;
+    g_object_set_data_full(
+           G_OBJECT(ptab->tab->vbox),
+           "Tab_Plugin",
+           ptab,
+	   (GDestroyNotify)tab_destructor);
+    return ptab;
+  }
+  else return NULL;
 }
 
 void
@@ -4263,11 +4307,30 @@ MainWindow *construct_main_window(MainWindow * parent)
     if(!page) {
       parent_tab = NULL;
     } else {
-      parent_tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+      LttvPluginTab *ptab;
+      ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+      parent_tab = ptab->tab;
     }
-    new_tab = create_tab(new_m_window, parent_tab, notebook, "Traceset");
+    LttvPluginTab *ptab = g_object_new(LTTV_TYPE_PLUGIN_TAB, NULL);
+    init_tab(ptab->tab,
+		    new_m_window, parent_tab, notebook, "Traceset");
+    ptab->parent.top_widget = ptab->tab->top_widget;
+    g_object_set_data_full(
+           G_OBJECT(ptab->tab->vbox),
+           "Tab_Plugin",
+           ptab,
+	   (GDestroyNotify)tab_destructor);
+    new_tab = ptab->tab;
   } else {
-    new_tab = create_tab(new_m_window, NULL, notebook, "Traceset");
+    LttvPluginTab *ptab = g_object_new(LTTV_TYPE_PLUGIN_TAB, NULL);
+    init_tab(ptab->tab, new_m_window, NULL, notebook, "Traceset");
+    ptab->parent.top_widget = ptab->tab->top_widget;
+    g_object_set_data_full(
+           G_OBJECT(ptab->tab->vbox),
+           "Tab_Plugin",
+           ptab,
+	   (GDestroyNotify)tab_destructor);
+    new_tab = ptab->tab;
   }
 
   /* Insert default viewers */
@@ -4323,10 +4386,11 @@ MainWindow *construct_main_window(MainWindow * parent)
  * destroy the tab
  */
 
-void tab_destructor(Tab * tab)
+void tab_destructor(LttvPluginTab * ptab)
 {
   int i, nb, ref_count;
   LttvTrace * trace;
+  Tab *tab = ptab->tab;
 
   gtk_object_destroy(GTK_OBJECT(tab->tooltips));
   
@@ -4356,28 +4420,29 @@ void tab_destructor(Tab * tab)
       }
     }
   }
-  lttv_filter_destroy(tab->filter);
   lttv_traceset_destroy(tab->traceset_info->traceset);
   /* Remove the idle events requests processing function of the tab */
   g_idle_remove_by_data(tab);
 
   g_slist_free(tab->events_requests);
   g_free(tab->traceset_info);
-  g_free(tab);
+  //g_free(tab);
+  g_object_unref(ptab);
 }
 
 
 /* Create a tab and insert it into the current main window
  */
 
-Tab* create_tab(MainWindow * mw, Tab *copy_tab, 
+void init_tab(Tab *tab, MainWindow * mw, Tab *copy_tab, 
 		  GtkNotebook * notebook, char * label)
 {
   GList * list;
-  Tab * tab;
+  //Tab * tab;
+  //LttvFilter *filter = NULL;
   
   //create a new tab data structure
-  tab = g_new(Tab,1);
+  //tab = g_new(Tab,1);
 
   //construct and initialize the traceset_info
   tab->traceset_info = g_new(TracesetInfo,1);
@@ -4447,6 +4512,15 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   tab->interrupted_state = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
  
   tab->vbox = gtk_vbox_new(FALSE, 2);
+  tab->top_widget = tab->vbox;
+  //g_object_set_data_full(G_OBJECT(tab->top_widget), "filter",
+//		  filter, (GDestroyNotify)lttv_filter_destroy);
+
+//  g_signal_connect (G_OBJECT(tab->top_widget),
+//                      "notify",
+//                      G_CALLBACK (on_top_notify),
+//                      (gpointer)tab);
+
   tab->viewer_container = gtk_vbox_new(TRUE, 2);
   tab->scrollbar = gtk_hscrollbar_new(NULL);
   //tab->multivpaned = gtk_multi_vpaned_new();
@@ -4698,11 +4772,6 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
   tab->events_requests = NULL;
   tab->events_request_pending = FALSE;
 
-  g_object_set_data_full(
-           G_OBJECT(tab->vbox),
-           "Tab_Info",
-	         tab,
-	         (GDestroyNotify)tab_destructor);
 
   g_signal_connect(G_OBJECT(tab->scrollbar), "value-changed",
       G_CALLBACK(scroll_value_changed_cb), tab);
@@ -4763,8 +4832,6 @@ Tab* create_tab(MainWindow * mw, Tab *copy_tab,
  
   LttvTraceset *traceset = tab->traceset_info->traceset;
   SetTraceset(tab, traceset);
-
-  return tab;
 }
 
 /*
@@ -4791,12 +4858,15 @@ void create_main_window_with_trace(const gchar *path)
   GtkWidget * notebook = lookup_widget(widget, "MNotebook");
   GtkWidget *page = gtk_notebook_get_nth_page(GTK_NOTEBOOK(notebook),
                       gtk_notebook_get_current_page(GTK_NOTEBOOK(notebook)));
+  LttvPluginTab *ptab;
   Tab *tab;
   
   if(!page) {
-    tab = create_new_tab(widget, NULL);
+    ptab = create_new_tab(widget, NULL);
+    tab = ptab->tab;
   } else {
-    tab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Info");
+    ptab = (LttvPluginTab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    tab = ptab->tab;
   }
 
   /* Add trace */

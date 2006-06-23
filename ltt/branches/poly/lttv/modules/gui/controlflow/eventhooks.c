@@ -180,10 +180,12 @@ static void request_background_data(ControlFlowData *control_flow_data)
  * @return The widget created.
  */
 GtkWidget *
-h_guicontrolflow(Tab *tab)
+h_guicontrolflow(LttvPlugin *plugin)
 {
+  LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
+  Tab *tab = ptab->tab;
   g_info("h_guicontrolflow, %p", tab);
-  ControlFlowData *control_flow_data = guicontrolflow(tab) ;
+  ControlFlowData *control_flow_data = guicontrolflow(ptab);
   
   control_flow_data->tab = tab;
   
@@ -218,8 +220,10 @@ void legend_destructor(GtkWindow *legend)
 
 /* Create a popup legend */
 GtkWidget *
-h_legend(Tab *tab)
+h_legend(LttvPlugin *plugin)
 {
+  LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
+  Tab *tab = ptab->tab;
   g_info("h_legend, %p", tab);
 
   GtkWindow *legend = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));

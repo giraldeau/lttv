@@ -65,6 +65,7 @@
 #include <lttv/print.h>
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
+#include <lttvwindow/lttv_plugin_tab.h>
 
 #include "hGuiEventsInsert.xpm"
 
@@ -92,6 +93,7 @@ typedef enum _ScrollDirection{
 typedef struct _EventViewerData {
 
   Tab * tab;
+  LttvPluginTab *ptab;
   LttvHooks  * event_hooks;
 
   /* previous value is used to determine if it is a page up/down or
@@ -154,9 +156,9 @@ gboolean filter_changed(void * hook_data, void * call_data);
 static void request_background_data(EventViewerData *event_viewer_data);
 
 //! Event Viewer's constructor hook
-GtkWidget *h_gui_events(Tab *tab);
+GtkWidget *h_gui_events(LttvPlugin *plugin);
 //! Event Viewer's constructor
-EventViewerData *gui_events(Tab *tab);
+EventViewerData *gui_events(LttvPluginTab *ptab);
 //! Event Viewer's destructor
 void gui_events_destructor(EventViewerData *event_viewer_data);
 void gui_events_free(EventViewerData *event_viewer_data);
@@ -215,9 +217,10 @@ enum
  * @return The widget created.
  */
 GtkWidget *
-h_gui_events(Tab * tab)
+h_gui_events(LttvPlugin *plugin)
 {
-  EventViewerData* event_viewer_data = gui_events(tab) ;
+  LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
+  EventViewerData* event_viewer_data = gui_events(ptab) ;
   if(event_viewer_data)
     return event_viewer_data->top_widget;
   else return NULL;
@@ -231,14 +234,15 @@ h_gui_events(Tab * tab)
  * @return The Event viewer data created.
  */
 EventViewerData *
-gui_events(Tab *tab)
+gui_events(LttvPluginTab *ptab)
 {
   LttTime end;
   GtkTreeViewColumn *column;
   GtkCellRenderer *renderer;
   EventViewerData* event_viewer_data = g_new(EventViewerData,1) ;
-
+  Tab *tab = ptab->tab;
   event_viewer_data->tab = tab;
+  event_viewer_data->ptab = ptab;
 
   LttvTracesetContext * tsc =
         lttvwindow_get_traceset_context(event_viewer_data->tab);

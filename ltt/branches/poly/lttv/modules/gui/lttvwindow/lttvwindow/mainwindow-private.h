@@ -69,7 +69,7 @@ struct _MainWindow{
 
 struct _Tab{
   GtkWidget *label;
-  
+  GtkWidget *top_widget;
   GtkWidget *vbox; /* contains viewer_container and scrollbar */
   //GtkWidget *multivpaned;
   GtkWidget *viewer_container;

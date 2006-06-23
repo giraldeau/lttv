@@ -62,15 +62,15 @@ header_size_allocate(GtkWidget *widget,
  * @return The widget created.
  */
 HistoControlFlowData *
-guihistocontrolflow(Tab *tab)
+guihistocontrolflow(LttvPluginTab *ptab)
 {
   GtkWidget *button_widget, *drawing_widget, *drawing_area;
   GtkWidget *buttonP,*buttonM;
   histoDrawing_t *drawing;
   HistoControlFlowData* histo_control_flow_data = g_new(HistoControlFlowData,1) ;
   
-  
-  histo_control_flow_data->tab = tab;
+  histo_control_flow_data->ptab = ptab;
+  histo_control_flow_data->tab = ptab->tab;
   histo_control_flow_data->max_height = PREDEFINED_HEIGHT;
  
   /*histo_control_flow_data->v_adjust = 

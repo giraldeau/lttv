@@ -69,9 +69,9 @@ typedef struct _ControlData ControlData;
  * Prototypes
  */
 GtkWidget *guicontrol_get_widget(ControlData *tcd);
-ControlData *gui_control(Tab *tab);
+ControlData *gui_control(GObject *obj);
 void gui_control_destructor(ControlData *tcd);
-GtkWidget* h_guicontrol(Tab *tab);
+GtkWidget* h_guicontrol(GObject *obj);
 void control_destroy_walk(gpointer data, gpointer user_data);
   
 /*
@@ -152,8 +152,9 @@ guicontrol_get_widget(ControlData *tcd)
  *  @return The Filter viewer data created.
  */
 ControlData*
-gui_control(Tab *tab)
+gui_control(GObject *obj)
 {
+  Tab *tab = g_object_get_data(obj, "Tab");
   g_debug("filter::gui_control()");
 
   unsigned i;
@@ -1089,9 +1090,9 @@ void stop_clicked (GtkButton *button, gpointer user_data)
  *  @return The widget created.
  */
 GtkWidget *
-h_guicontrol(Tab *tab)
+h_guicontrol(GObject *obj)
 {
-  ControlData* f = gui_control(tab) ;
+  ControlData* f = gui_control(obj);
 
   return NULL;
 }

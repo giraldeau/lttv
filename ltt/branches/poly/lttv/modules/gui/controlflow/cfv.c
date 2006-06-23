@@ -26,11 +26,13 @@
 #include <lttv/lttv.h>
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
+#include <lttvwindow/support.h>
 
 #include "cfv.h"
 #include "drawing.h"
 #include "processlist.h"
 #include "eventhooks.h"
+#include "lttv_plugin_cfv.h"
 
 extern GSList *g_control_flow_data_list;
 
@@ -81,6 +83,44 @@ gboolean cfv_scroll_event(GtkWidget *widget, GdkEventScroll *event,
 }
 
 
+/* Toolbar callbacks */
+static void        property_button      (GtkToolButton *toolbutton,
+                                          gpointer       user_data)
+{
+  ControlFlowData *control_flow_data = (ControlFlowData*)user_data;
+
+  g_printf("CFV Property button clicked\n");
+
+}
+
+/* Toolbar callbacks */
+static void        filter_button      (GtkToolButton *toolbutton,
+                                          gpointer       user_data)
+{
+  LttvPluginCFV *plugin_cfv = (LttvPluginCFV*)user_data;
+  LttvAttribute *attribute;
+  LttvAttributeValue value;
+  gboolean ret;
+  g_printf("Filter button clicked\n");
+
+  attribute = LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+        LTTV_IATTRIBUTE(lttv_global_attributes()),
+        LTTV_VIEWER_CONSTRUCTORS));
+  g_assert(attribute);
+
+  ret = lttv_iattribute_find_by_path(LTTV_IATTRIBUTE(attribute),
+      "guifilter", LTTV_POINTER, &value);
+  g_assert(ret);
+  lttvwindow_viewer_constructor constructor =
+    (lttvwindow_viewer_constructor)*(value.v_pointer);
+  if(constructor) constructor(&plugin_cfv->parent);
+  else g_warning("Filter module not loaded.");
+
+  //FIXME : viewer returned.
+}
+
+
+
 /*****************************************************************************
  *                     Control Flow Viewer class implementation              *
  *****************************************************************************/
@@ -93,13 +133,16 @@ gboolean cfv_scroll_event(GtkWidget *widget, GdkEventScroll *event,
  * @return The widget created.
  */
 ControlFlowData *
-guicontrolflow(Tab *tab)
+guicontrolflow(LttvPluginTab *ptab)
 {
+  Tab *tab = ptab->tab;
+  GtkWidget *tmp_toolbar_icon;
   GtkWidget *process_list_widget, *drawing_widget, *drawing_area;
-
-  ControlFlowData* control_flow_data = g_new(ControlFlowData,1) ;
-
-  control_flow_data->tab = tab;
+  //ControlFlowData* control_flow_data = g_new(ControlFlowData,1) ;
+  LttvPluginCFV *plugin_cfv = g_object_new(LTTV_TYPE_PLUGIN_CFV, NULL);
+  ControlFlowData* control_flow_data = plugin_cfv->cfd;
+  control_flow_data->ptab = ptab;
+  control_flow_data->tab = ptab->tab;
 
   control_flow_data->v_adjust = 
     GTK_ADJUSTMENT(gtk_adjustment_new(  0.0,  /* Value */
@@ -153,9 +196,50 @@ guicontrolflow(Tab *tab)
         (gpointer)control_flow_data);
 #endif //0
   
+  control_flow_data->hbox = gtk_hbox_new(FALSE, 1);
+  control_flow_data->toolbar = gtk_toolbar_new();
+  gtk_toolbar_set_orientation(GTK_TOOLBAR(control_flow_data->toolbar),
+                              GTK_ORIENTATION_VERTICAL);
+
+  tmp_toolbar_icon = create_pixmap (main_window_get_widget(tab),
+      "guifilter16x16.png");
+  gtk_widget_show(tmp_toolbar_icon);
+  control_flow_data->button_filter = gtk_tool_button_new(tmp_toolbar_icon,
+      "Filter");
+  g_signal_connect (G_OBJECT(control_flow_data->button_filter),
+        "clicked",
+        G_CALLBACK (filter_button),
+        (gpointer)plugin_cfv);
+  gtk_toolbar_insert(GTK_TOOLBAR(control_flow_data->toolbar),
+      control_flow_data->button_filter,
+      0);
+
+  tmp_toolbar_icon = create_pixmap (main_window_get_widget(tab),
+      "stock_file-properties.png");
+  gtk_widget_show(tmp_toolbar_icon);
+  control_flow_data->button_prop = gtk_tool_button_new(tmp_toolbar_icon,
+      "Properties");
+  g_signal_connect (G_OBJECT(control_flow_data->button_prop),
+        "clicked",
+        G_CALLBACK (property_button),
+        (gpointer)control_flow_data);
+  gtk_toolbar_insert(GTK_TOOLBAR(control_flow_data->toolbar),
+      control_flow_data->button_prop,
+      1);
+
+  gtk_toolbar_set_style(GTK_TOOLBAR(control_flow_data->toolbar),
+      GTK_TOOLBAR_ICONS);
+
+  gtk_box_pack_start(GTK_BOX(control_flow_data->hbox), 
+      control_flow_data->toolbar,
+      FALSE, FALSE, 0);
   control_flow_data->h_paned = gtk_hpaned_new();
   control_flow_data->box = gtk_event_box_new();
-  control_flow_data->top_widget = control_flow_data->box;
+  gtk_box_pack_end(GTK_BOX(control_flow_data->hbox), 
+      control_flow_data->box,
+      TRUE, TRUE, 0);
+  control_flow_data->top_widget = control_flow_data->hbox;
+  plugin_cfv->parent.top_widget = control_flow_data->top_widget;
   gtk_container_add(GTK_CONTAINER(control_flow_data->box),
                     control_flow_data->h_paned);
       
@@ -176,11 +260,15 @@ guicontrolflow(Tab *tab)
   gtk_widget_show(process_list_widget);
   gtk_widget_show(control_flow_data->h_paned);
   gtk_widget_show(control_flow_data->box);
+  gtk_widget_show(control_flow_data->toolbar);
+  gtk_widget_show(GTK_WIDGET(control_flow_data->button_prop));
+  gtk_widget_show(GTK_WIDGET(control_flow_data->button_filter));
+  gtk_widget_show(control_flow_data->hbox);
   
   g_object_set_data_full(
       G_OBJECT(control_flow_data->top_widget),
-      "control_flow_data",
-      control_flow_data,
+      "plugin_data",
+      plugin_cfv,
       (GDestroyNotify)guicontrolflow_destructor);
     
   g_object_set_data(
@@ -190,7 +278,7 @@ guicontrolflow(Tab *tab)
         
   g_control_flow_data_list = g_slist_append(
       g_control_flow_data_list,
-      control_flow_data);
+      plugin_cfv);
   
   control_flow_data->filter = NULL;
 
@@ -205,28 +293,31 @@ guicontrolflow(Tab *tab)
 
 /* Destroys widget also */
 void
-guicontrolflow_destructor_full(ControlFlowData *control_flow_data)
+guicontrolflow_destructor_full(gpointer data)
 {
-  g_info("CFV.c : guicontrolflow_destructor_full, %p", control_flow_data);
+  LttvPluginCFV *plugin_cfv = (LttvPluginCFV*)data;
+  g_info("CFV.c : guicontrolflow_destructor_full, %p", plugin_cfv);
   /* May already have been done by GTK window closing */
-  if(GTK_IS_WIDGET(guicontrolflow_get_widget(control_flow_data)))
-    gtk_widget_destroy(guicontrolflow_get_widget(control_flow_data));
+  if(GTK_IS_WIDGET(guicontrolflow_get_widget(plugin_cfv->cfd)))
+    gtk_widget_destroy(guicontrolflow_get_widget(plugin_cfv->cfd));
   //control_flow_data->mw = NULL;
   //FIXME guicontrolflow_destructor(control_flow_data);
 }
 
 /* When this destructor is called, the widgets are already disconnected */
 void
-guicontrolflow_destructor(ControlFlowData *control_flow_data)
+guicontrolflow_destructor(gpointer data)
 {
-  Tab *tab = control_flow_data->tab;
+  LttvPluginCFV *plugin_cfv = (LttvPluginCFV*)data;
+  Tab *tab = plugin_cfv->cfd->tab;
+  ControlFlowData *control_flow_data = plugin_cfv->cfd;
   
-  g_info("CFV.c : guicontrolflow_destructor, %p", control_flow_data);
-  g_info("%p, %p, %p", update_time_window_hook, control_flow_data, tab);
-  if(GTK_IS_WIDGET(guicontrolflow_get_widget(control_flow_data)))
+  g_info("CFV.c : guicontrolflow_destructor, %p", plugin_cfv);
+  g_info("%p, %p, %p", update_time_window_hook, plugin_cfv, tab);
+  if(GTK_IS_WIDGET(guicontrolflow_get_widget(plugin_cfv->cfd)))
     g_info("widget still exists");
   
-  lttv_filter_destroy(control_flow_data->filter);
+  lttv_filter_destroy(plugin_cfv->cfd->filter);
   /* Process List is removed with it's widget */
   //ProcessList_destroy(control_flow_data->process_list);
   if(tab != NULL)
@@ -255,11 +346,11 @@ guicontrolflow_destructor(ControlFlowData *control_flow_data)
   }
   lttvwindowtraces_background_notify_remove(control_flow_data);
   g_control_flow_data_list = 
-         g_slist_remove(g_control_flow_data_list,control_flow_data);
+         g_slist_remove(g_control_flow_data_list, control_flow_data);
 
   g_info("CFV.c : guicontrolflow_destructor end, %p", control_flow_data);
-  g_free(control_flow_data);
- 
+  //g_free(control_flow_data);
+  g_object_unref(plugin_cfv);
 }
 
 

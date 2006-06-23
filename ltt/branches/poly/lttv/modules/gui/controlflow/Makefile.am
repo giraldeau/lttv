@@ -32,10 +32,10 @@ libdir = ${lttvplugindir}
 lib_LTLIBRARIES = libguicontrolflow.la
 libguicontrolflow_la_LDFLAGS = -module
 libguicontrolflow_la_SOURCES = 	module.c eventhooks.c cfv.c processlist.c\
-				drawing.c drawitem.c
+				drawing.c drawitem.c lttv_plugin_cfv.c
 
 noinst_HEADERS = 	eventhooks.h cfv.h processlist.h\
-				drawing.h drawitem.h
+				drawing.h drawitem.h lttv_plugin_cfv.h
 
 EXTRA_DIST = \
 		hGuiControlFlowInsert.xpm hLegendInsert.xpm

@@ -1057,7 +1057,7 @@ LttTime lttvwindow_get_current_time(Tab *tab)
  */
 LttvFilter *lttvwindow_get_filter(Tab *tab)
 {
-  return tab->filter;
+  return g_object_get_data(G_OBJECT(tab->vbox), "filter");
 }
 
 /**
@@ -1072,14 +1072,13 @@ LttvFilter *lttvwindow_get_filter(Tab *tab)
  * @param main_win, the main window the viewer belongs to.
  * @param filter, a pointer to a filter.
  */
-
 void lttvwindow_report_filter(Tab *tab, LttvFilter *filter)
 {
   LttvAttributeValue value;
   LttvHooks * tmp;
 
-  lttv_filter_destroy(tab->filter);
-  tab->filter = filter;
+  //lttv_filter_destroy(tab->filter);
+  //tab->filter = filter;
   
   g_assert(lttv_iattribute_find_by_path(tab->attributes,
            "hooks/updatefilter", LTTV_POINTER, &value));

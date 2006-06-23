@@ -57,9 +57,9 @@
 
 void send_test_data(ProcessList *process_list, Drawing_t *drawing);
 
-GtkWidget *h_guicontrolflow(Tab *tab);
+GtkWidget *h_guicontrolflow(LttvPlugin *plugin);
 
-GtkWidget *h_legend(Tab *tab);
+GtkWidget *h_legend(LttvPlugin *plugin);
 
 int event_selected_hook(void *hook_data, void *call_data);
 

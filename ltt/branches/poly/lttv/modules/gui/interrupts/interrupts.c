@@ -82,6 +82,7 @@ Xa: Frequency  (Hz)
 #include <lttv/state.h>
 #include <lttv/filter.h>
 #include <lttvwindow/lttvwindow.h>
+#include <lttvwindow/lttv_plugin_tab.h>
 #include <ltt/time.h>
 
 #include "hInterruptsInsert.xpm" 
@@ -145,6 +146,7 @@ typedef struct _InterruptEventData {
   GtkTreeSelection *SelectionTree;
   
   Tab 	     * tab; /* tab that contains this plug-in*/ 
+  LttvPluginTab *ptab;
   LttvHooks  * event_hooks;
   LttvHooks  * hooks_trace_after;
   LttvHooks  * hooks_trace_before;
@@ -162,8 +164,8 @@ typedef struct _InterruptEventData {
 /* Function prototypes */
  
 static gboolean interrupt_update_time_window(void * hook_data, void * call_data);
-static GtkWidget *interrupts(Tab *tab);
-static InterruptEventData *system_info(Tab *tab);
+static GtkWidget *interrupts(LttvPlugin *plugin);
+static InterruptEventData *system_info(LttvPluginTab *ptab);
 void interrupt_destructor(InterruptEventData *event_viewer_data);
 static void FirstRequest(InterruptEventData *event_data );  
 static guint64 get_interrupt_id(LttEvent *e);
@@ -227,10 +229,10 @@ static void init() {
  *  Constructor hook
  *
  */
-static GtkWidget *interrupts(Tab * tab)
+static GtkWidget *interrupts(LttvPlugin *plugin)
 {
-
-  InterruptEventData* event_data = system_info(tab) ;
+  LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
+  InterruptEventData* event_data = system_info(ptab) ;
   if(event_data)
     return event_data->Hbox;
   else 
@@ -241,14 +243,15 @@ static GtkWidget *interrupts(Tab * tab)
  * This function initializes the Event Viewer functionnality through the
  * GTK  API. 
  */
-InterruptEventData *system_info(Tab *tab)
+InterruptEventData *system_info(LttvPluginTab *ptab)
 {
   
   LttTime end;
   GtkTreeViewColumn *column;
   GtkCellRenderer *renderer;
   InterruptEventData* event_viewer_data = g_new(InterruptEventData,1) ;
-      
+  Tab *tab = ptab->tab;   
+  event_viewer_data->ptab = ptab;
   event_viewer_data->tab = tab;
   
   /*Get the current time frame from the main window */

@@ -25,9 +25,9 @@
 #include <lttvwindow/mainwindow.h>
 #include <lttv/filter.h>
 #include "processlist.h"
+#include <lttvwindow/lttv_plugin_tab.h>
 
 extern GQuark LTT_NAME_CPU;
-
 
 #ifndef TYPE_DRAWING_T_DEFINED
 #define TYPE_DRAWING_T_DEFINED
@@ -43,10 +43,13 @@ struct _ControlFlowData {
 
   GtkWidget *top_widget;
   Tab *tab;
-
-  GtkWidget *box; /* box that contains the hpaned. necessary for it to work */
+  LttvPluginTab *ptab;
+  
+  GtkWidget *hbox;
   GtkWidget *toolbar; /* Vbox that contains the viewer's toolbar */
-  GtkWidget *button_prop; /* Properties button. */
+  GtkToolItem *button_prop; /* Properties button. */
+  GtkToolItem *button_filter; /* Properties button. */
+  GtkWidget *box; /* box that contains the hpaned. necessary for it to work */
   GtkWidget *h_paned;
 
   ProcessList *process_list;
@@ -68,11 +71,11 @@ struct _ControlFlowData {
 } ;
 
 /* Control Flow Data constructor */
-ControlFlowData *guicontrolflow(Tab *tab);
+ControlFlowData *guicontrolflow(LttvPluginTab *ptab);
 void
-guicontrolflow_destructor_full(ControlFlowData *control_flow_data);
+guicontrolflow_destructor_full(gpointer data);
 void
-guicontrolflow_destructor(ControlFlowData *control_flow_data);
+guicontrolflow_destructor(gpointer data);
 
 static inline GtkWidget *guicontrolflow_get_widget(
                                      ControlFlowData *control_flow_data)

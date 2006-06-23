@@ -61,12 +61,12 @@ typedef struct _FilterViewerDataLine FilterViewerDataLine;
  * Prototypes
  */
 GtkWidget *guifilter_get_widget(FilterViewerData *fvd);
-FilterViewerData *gui_filter(Tab *tab);
+FilterViewerData *gui_filter(LttvPlugin *plugin);
 void gui_filter_destructor(FilterViewerData *fvd);
 FilterViewerDataLine* gui_filter_add_line(FilterViewerData *fvd);
 void gui_filter_line_set_visible(FilterViewerDataLine *fvdl, gboolean v);
 void gui_filter_line_reset(FilterViewerDataLine *fvdl);
-GtkWidget* h_guifilter(Tab *tab);
+GtkWidget* h_guifilter(LttvPlugin *plugin);
 void filter_destroy_walk(gpointer data, gpointer user_data);
   
 /*
@@ -105,7 +105,7 @@ struct _FilterViewerDataLine {
  *  Main struct for the filter gui module
  */
 struct _FilterViewerData {
-  Tab *tab;                             /**< current tab of module */
+  LttvPlugin *plugin;                   /**< Plugin on which we interact. */
 
   GtkWidget *f_window;                  /**< filter window */
   
@@ -150,7 +150,7 @@ guifilter_get_widget(FilterViewerData *fvd)
  *  @return The Filter viewer data created.
  */
 FilterViewerData*
-gui_filter(Tab *tab)
+gui_filter(LttvPlugin *plugin)
 {
   g_debug("filter::gui_filter()");
 
@@ -160,7 +160,7 @@ gui_filter(Tab *tab)
 
   FilterViewerData* fvd = g_new(FilterViewerData,1);
 
-  fvd->tab  = tab;
+  fvd->plugin = plugin;
 
 //  lttvwindow_register_traceset_notify(fvd->tab,
 //                                      filter_traceset_changed,
@@ -218,7 +218,7 @@ gui_filter(Tab *tab)
   fvd->f_window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title(GTK_WINDOW(fvd->f_window), "LTTV Filter");
   gtk_window_set_transient_for(GTK_WINDOW(fvd->f_window),
-      GTK_WINDOW(main_window_get_widget(tab)));
+      GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(fvd->plugin->top_widget))));
   gtk_window_set_destroy_with_parent(GTK_WINDOW(fvd->f_window), TRUE);
 
   /* 
@@ -423,8 +423,6 @@ gui_filter_line_reset(FilterViewerDataLine *fvdl) {
 void
 gui_filter_destructor(FilterViewerData *fvd)
 {
-  Tab *tab = fvd->tab;
-
   /* May already been done by GTK window closing */
   if(GTK_IS_WIDGET(guifilter_get_widget(fvd))){
     g_info("widget still exists");
@@ -449,13 +447,13 @@ gui_filter_destructor(FilterViewerData *fvd)
  *
  *  This constructor is given as a parameter to the menuitem and toolbar button
  *  registration. It creates the list.
- *  @param tab A pointer to the parent window.
+ *  @param obj Object to interact with.
  *  @return The widget created.
  */
 GtkWidget *
-h_guifilter(Tab *tab)
+h_guifilter(LttvPlugin *plugin)
 {
-  FilterViewerData* f = gui_filter(tab) ;
+  FilterViewerData* f = gui_filter(plugin) ;
 
   return NULL;
 }
@@ -529,11 +527,14 @@ callback_process_button(GtkWidget *widget, gpointer data) {
     GString* s = g_string_new(gtk_entry_get_text(GTK_ENTRY(fvd->f_expression_field)));
     lttv_filter_append_expression(filter,s->str);
     g_string_free(s,TRUE);
-    //SetFilter(fvd->tab,filter);
   } else {
     filter = NULL;
   }
-  lttvwindow_report_filter(fvd->tab, filter);
+  /* Remove the old filter if present */
+  //g_object_set_data_full(fvd->obj, "filter", filter,
+  //                      (GDestroyNotify)lttv_filter_destroy);
+  //g_object_notify(fvd->obj, "filter");
+  lttv_plugin_update_filter(fvd->plugin, filter);
 }
 
 gboolean callback_enter_check(GtkWidget *widget,
