@@ -5,7 +5,7 @@ LIBS += $(GLIB_LIBS) -lgobject-2.0 -L${top_srcdir}/ltt -llttvtraceread
 
 libdir = ${lttvplugindir}
 
-lib_LTLIBRARIES = libtextDump.la libbatchAnalysis.la libtextFilter.la
+lib_LTLIBRARIES = libtextDump.la libbatchAnalysis.la libtextFilter.la libprecomputeState.la
 libtextDump_la_LDFLAGS = -module
 libtextDump_la_SOURCES = textDump.c
 libbatchAnalysis_la_LDFLAGS = -module
