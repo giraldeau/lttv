@@ -12,6 +12,8 @@ libbatchAnalysis_la_LDFLAGS = -module
 libbatchAnalysis_la_SOURCES = batchAnalysis.c
 libtextFilter_la_LDFLAGS = -module
 libtextFilter_la_SOURCES = textFilter.c
+libprecomputeState_la_LDFLAGS = -module
+libprecomputeState_la_SOURCES = precomputeState.c
 
 noinst_HEADERS = \
 	batchanalysis.h
