@@ -420,15 +420,21 @@ static void write_process_state(gpointer key, gpointer value,
   FILE *fp = (FILE *)user_data;
 
   guint i;
+  guint64 address;
 
   process = (LttvProcessState *)value;
   fprintf(fp,
-"  <PROCESS CORE=%p PID=%u PPID=%u TYPE=\"%s\"CTIME_S=%lu CTIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\">\n",
-      process, process->pid, process->ppid, g_quark_to_string(process->type),
+"  <PROCESS CORE=%p PID=%u TGID=%u PPID=%u TYPE=\"%s\"CTIME_S=%lu CTIME_NS=%lu ITIME_S=%lu ITIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\" PROCESS_TYPE=%u>\n",
+      process, process->pid, process->tgid, process->ppid,
+      g_quark_to_string(process->type),
       process->creation_time.tv_sec,
-      process->creation_time.tv_nsec, g_quark_to_string(process->name),
+      process->creation_time.tv_nsec,
+      process->insertion_time.tv_sec,
+      process->insertion_time.tv_nsec,
+      g_quark_to_string(process->name),
       g_quark_to_string(process->brand),
-      process->cpu);
+      process->cpu,
+      process->type);
 
   for(i = 0 ; i < process->execution_stack->len; i++) {
     es = &g_array_index(process->execution_stack, LttvExecutionState, i);
@@ -438,6 +444,20 @@ static void write_process_state(gpointer key, gpointer value,
     fprintf(fp, " CHANGE_S=%lu CHANGE_NS=%lu STATUS=\"%s\"/>\n",
             es->change.tv_sec, es->change.tv_nsec, g_quark_to_string(es->s)); 
   }
+
+  for(i = 0 ; i < process->execution_stack->len; i++) {
+    address = &g_array_index(process->user_stack, guint64, i);
+    fprintf(fp, "    <USER_STACK ADDRESS=\"%llu\"/>\n",
+            address);
+  }
+
+  if(process->usertrace) {
+    fprintf(fp, "    <USERTRACE NAME=\"%s\" CPU=%u\n/>",
+            process->usertrace->tracefile_name,
+	    process->usertrace->cpu);
+  }
+
+
   fprintf(fp, "  </PROCESS>\n");
 }
 

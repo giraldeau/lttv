@@ -1995,7 +1995,7 @@ lttv_filter_tree_parse_branch(
               return se->op((gpointer)&quark,v);
             }
             break;
-  case LTTV_FILTER_STATE_T_BRAND:
+        case LTTV_FILTER_STATE_T_BRAND:
             if(state == NULL) return TRUE;
             else {
               GQuark quark = state->brand;
