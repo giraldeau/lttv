@@ -245,6 +245,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
     guint cpu, guint pid, guint tgid, GQuark name, const LttTime *timestamp);
 
 void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp);
+void lttv_state_write_raw(LttvTraceState *self, LttTime t, FILE *fp);
 
 /* The LttvTracesetState, LttvTraceState and LttvTracefileState types
    inherit from the corresponding Context objects defined in processTrace. */
@@ -347,6 +348,20 @@ static inline guint lttv_state_get_target_pid(LttvTracefileState *tfs)
   if(tfs->parent.target_pid >= 0) return tfs->parent.target_pid;
   else return process->pid;
 }
+
+
+#define HDR_PROCESS 0
+#define HDR_ES 1
+#define HDR_USER_STACK 2
+#define HDR_USERTRACE 3
+#define HDR_PROCESS_STATE 4
+#define HDR_CPU 5
+#define HDR_TRACEFILE 6
+#define HDR_TRACESET 7
+#define HDR_TRACE 8
+#define HDR_QUARKS 9
+#define HDR_QUARK 10
+
 
 
 #endif // STATE_H

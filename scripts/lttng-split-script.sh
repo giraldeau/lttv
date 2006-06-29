@@ -249,6 +249,7 @@ FILE=../$NAME-relayfs.diff
 
 IN="?_Documentation_ioctl-number.txt
 ?_include_linux_relay.h
+?_fs_relayfs_Makefile
 ?_fs_relayfs_inode.c
 ?_fs_relayfs_relay.c
 ?_fs_relayfs_buffers.c

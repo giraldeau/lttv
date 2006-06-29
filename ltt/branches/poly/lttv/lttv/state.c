@@ -424,7 +424,7 @@ static void write_process_state(gpointer key, gpointer value,
 
   process = (LttvProcessState *)value;
   fprintf(fp,
-"  <PROCESS CORE=%p PID=%u TGID=%u PPID=%u TYPE=\"%s\"CTIME_S=%lu CTIME_NS=%lu ITIME_S=%lu ITIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\" PROCESS_TYPE=%u>\n",
+"  <PROCESS CORE=%p PID=%u TGID=%u PPID=%u TYPE=\"%s\" CTIME_S=%lu CTIME_NS=%lu ITIME_S=%lu ITIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\" PROCESS_TYPE=%u>\n",
       process, process->pid, process->tgid, process->ppid,
       g_quark_to_string(process->type),
       process->creation_time.tv_sec,
@@ -433,8 +433,7 @@ static void write_process_state(gpointer key, gpointer value,
       process->insertion_time.tv_nsec,
       g_quark_to_string(process->name),
       g_quark_to_string(process->brand),
-      process->cpu,
-      process->type);
+      process->cpu);
 
   for(i = 0 ; i < process->execution_stack->len; i++) {
     es = &g_array_index(process->execution_stack, LttvExecutionState, i);
@@ -445,7 +444,7 @@ static void write_process_state(gpointer key, gpointer value,
             es->change.tv_sec, es->change.tv_nsec, g_quark_to_string(es->s)); 
   }
 
-  for(i = 0 ; i < process->execution_stack->len; i++) {
+  for(i = 0 ; i < process->user_stack->len; i++) {
     address = &g_array_index(process->user_stack, guint64, i);
     fprintf(fp, "    <USER_STACK ADDRESS=\"%llu\"/>\n",
             address);
@@ -453,7 +452,7 @@ static void write_process_state(gpointer key, gpointer value,
 
   if(process->usertrace) {
     fprintf(fp, "    <USERTRACE NAME=\"%s\" CPU=%u\n/>",
-            process->usertrace->tracefile_name,
+            g_quark_to_string(process->usertrace->tracefile_name),
 	    process->usertrace->cpu);
   }
 
@@ -483,7 +482,7 @@ void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp)
   
   nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
   for(i=0;i<nb_cpus;i++) {
-    fprintf(fp,"<CPU NUM=%u RUNNING_PROCESS=%u>\n",
+    fprintf(fp,"  <CPU NUM=%u RUNNING_PROCESS=%u>\n",
         i, self->running_process[i]->pid);
   }
 
@@ -506,8 +505,374 @@ void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp)
     }
   }
   g_free(ep);
-  fprintf(fp,"</PROCESS_STATE>");
+  fprintf(fp,"</PROCESS_STATE>\n");
 }
+
+
+static void write_process_state_raw(gpointer key, gpointer value,
+    gpointer user_data)
+{
+  LttvProcessState *process;
+
+  LttvExecutionState *es;
+
+  FILE *fp = (FILE *)user_data;
+
+  guint i;
+  guint64 address;
+
+  process = (LttvProcessState *)value;
+  fputc(HDR_PROCESS, fp);
+  //fwrite(&header, sizeof(header), 1, fp);
+  //fprintf(fp, "%s", g_quark_to_string(process->type));
+  //fputc('\0', fp);
+  fwrite(&process->type, sizeof(process->type), 1, fp);
+  //fprintf(fp, "%s", g_quark_to_string(process->name));
+  //fputc('\0', fp);
+  fwrite(&process->name, sizeof(process->name), 1, fp);
+  //fprintf(fp, "%s", g_quark_to_string(process->brand));
+  //fputc('\0', fp);
+  fwrite(&process->brand, sizeof(process->brand), 1, fp);
+  fwrite(&process->pid, sizeof(process->pid), 1, fp);
+  fwrite(&process->tgid, sizeof(process->tgid), 1, fp);
+  fwrite(&process->ppid, sizeof(process->ppid), 1, fp);
+  fwrite(&process->cpu, sizeof(process->cpu), 1, fp);
+  fwrite(&process->creation_time, sizeof(process->creation_time), 1, fp);
+  fwrite(&process->insertion_time, sizeof(process->insertion_time), 1, fp);
+
+#if 0
+  fprintf(fp,
+"  <PROCESS CORE=%p PID=%u TGID=%u PPID=%u TYPE=\"%s\" CTIME_S=%lu CTIME_NS=%lu ITIME_S=%lu ITIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\" PROCESS_TYPE=%u>\n",
+      process, process->pid, process->tgid, process->ppid,
+      g_quark_to_string(process->type),
+      process->creation_time.tv_sec,
+      process->creation_time.tv_nsec,
+      process->insertion_time.tv_sec,
+      process->insertion_time.tv_nsec,
+      g_quark_to_string(process->name),
+      g_quark_to_string(process->brand),
+      process->cpu);
+#endif //0
+
+  for(i = 0 ; i < process->execution_stack->len; i++) {
+    es = &g_array_index(process->execution_stack, LttvExecutionState, i);
+
+    fputc(HDR_ES, fp);
+    //fprintf(fp, "%s", g_quark_to_string(es->t));
+    //fputc('\0', fp);
+    fwrite(&es->t, sizeof(es->t), 1, fp);
+    //fprintf(fp, "%s", g_quark_to_string(es->n));
+    //fputc('\0', fp);
+    fwrite(&es->n, sizeof(es->n), 1, fp);
+    //fprintf(fp, "%s", g_quark_to_string(es->s));
+    //fputc('\0', fp);
+    fwrite(&es->s, sizeof(es->s), 1, fp);
+    fwrite(&es->entry, sizeof(es->entry), 1, fp);
+    fwrite(&es->change, sizeof(es->change), 1, fp);
+#if 0
+    fprintf(fp, "    <ES MODE=\"%s\" SUBMODE=\"%s\" ENTRY_S=%lu ENTRY_NS=%lu",
+      g_quark_to_string(es->t), g_quark_to_string(es->n),
+            es->entry.tv_sec, es->entry.tv_nsec);
+    fprintf(fp, " CHANGE_S=%lu CHANGE_NS=%lu STATUS=\"%s\"/>\n",
+            es->change.tv_sec, es->change.tv_nsec, g_quark_to_string(es->s)); 
+#endif //0
+  }
+
+  for(i = 0 ; i < process->user_stack->len; i++) {
+    address = &g_array_index(process->user_stack, guint64, i);
+    fputc(HDR_USER_STACK, fp);
+    fwrite(&address, sizeof(address), 1, fp);
+#if 0
+    fprintf(fp, "    <USER_STACK ADDRESS=\"%llu\"/>\n",
+            address);
+#endif //0
+  }
+
+  if(process->usertrace) {
+    fputc(HDR_USERTRACE, fp);
+    //fprintf(fp, "%s", g_quark_to_string(process->usertrace->tracefile_name));
+    //fputc('\0', fp);
+    fwrite(&process->usertrace->tracefile_name,
+		    sizeof(process->usertrace->tracefile_name), 1, fp);
+    fwrite(&process->usertrace->cpu, sizeof(process->usertrace->cpu), 1, fp);
+#if 0
+    fprintf(fp, "    <USERTRACE NAME=\"%s\" CPU=%u\n/>",
+            g_quark_to_string(process->usertrace->tracefile_name),
+	    process->usertrace->cpu);
+#endif //0
+  }
+
+}
+
+
+void lttv_state_write_raw(LttvTraceState *self, LttTime t, FILE *fp)
+{
+  guint i, nb_tracefile, nb_block, offset;
+  guint64 tsc;
+
+  LttvTracefileState *tfcs;
+
+  LttTracefile *tf;
+
+  LttEventPosition *ep;
+
+  guint nb_cpus;
+
+  ep = ltt_event_position_new();
+
+  //fprintf(fp,"<PROCESS_STATE TIME_S=%lu TIME_NS=%lu>\n", t.tv_sec, t.tv_nsec);
+  fputc(HDR_PROCESS_STATE, fp);
+  fwrite(&t, sizeof(t), 1, fp);
+
+  g_hash_table_foreach(self->processes, write_process_state_raw, fp);
+  
+  nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
+  for(i=0;i<nb_cpus;i++) {
+    fputc(HDR_CPU, fp);
+    fwrite(&i, sizeof(i), 1, fp); /* cpu number */
+    fwrite(&self->running_process[i]->pid,
+        sizeof(self->running_process[i]->pid), 1, fp);
+    //fprintf(fp,"  <CPU NUM=%u RUNNING_PROCESS=%u>\n",
+    //    i, self->running_process[i]->pid);
+  }
+
+  nb_tracefile = self->parent.tracefiles->len;
+
+  for(i = 0 ; i < nb_tracefile ; i++) {
+    tfcs = 
+          LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
+                                          LttvTracefileContext*, i));
+  //  fprintf(fp, "  <TRACEFILE TIMESTAMP_S=%lu TIMESTAMP_NS=%lu", 
+  //      tfcs->parent.timestamp.tv_sec, 
+  //      tfcs->parent.timestamp.tv_nsec);
+    fputc(HDR_TRACEFILE, fp);
+    fwrite(&tfcs->parent.timestamp, sizeof(tfcs->parent.timestamp), 1, fp);
+    /* Note : if timestamp if LTT_TIME_INFINITE, there will be no
+     * position following : end of trace */
+    LttEvent *e = ltt_tracefile_get_event(tfcs->parent.tf);
+    if(e != NULL) {
+      ltt_event_position(e, ep);
+      ltt_event_position_get(ep, &tf, &nb_block, &offset, &tsc);
+      //fprintf(fp, " BLOCK=%u OFFSET=%u TSC=%llu/>\n", nb_block, offset,
+      //    tsc);
+      fwrite(&nb_block, sizeof(nb_block), 1, fp);
+      fwrite(&offset, sizeof(offset), 1, fp);
+      fwrite(&tsc, sizeof(tsc), 1, fp);
+    }
+  }
+  g_free(ep);
+}
+
+
+/* Read process state from a file */
+
+/* Called because a HDR_PROCESS was found */
+static void read_process_state_raw(LttvTraceState *self, FILE *fp)
+{
+  LttvExecutionState *es;
+  LttvProcessState *process, *parent_process;
+  LttvProcessState tmp;
+
+  FILE *fp = (FILE *)user_data;
+
+  guint i;
+  guint64 address;
+  guint cpu;
+
+  /* TOOD : check return value */
+  fread(&tmp.type, sizeof(tmp.type), 1, fp);
+  fread(&tmp.name, sizeof(tmp.name), 1, fp);
+  fread(&tmp.brand, sizeof(tmp.brand), 1, fp);
+  fread(&tmp.pid, sizeof(tmp.pid), 1, fp);
+  fread(&tmp.tgid, sizeof(tmp.tgid), 1, fp);
+  fread(&tmp.ppid, sizeof(tmp.ppid), 1, fp);
+  fread(&tmp.cpu, sizeof(tmp.cpu), 1, fp);
+  fread(&tmp.creation_time, sizeof(tmp.creation_time), 1, fp);
+  fread(&tmp.insertion_time, sizeof(tmp.insertion_time), 1, fp);
+
+  if(tmp.pid == 0) {
+    process = lttv_state_find_process(self, tmp.cpu, tmp.pid,
+        tmp.insertion_time);
+  } else {
+    /* We must link to the parent */
+    parent_process = lttv_state_find_process_or_create(self, ANY_CPU, tmp.ppid,
+        LTT_TIME_ZERO);
+    process = lttv_state_find_process_or_create(self, ANY_CPU, tmp.pid,
+        tmp.insertion_time);
+  }
+  process->creation_time = tmp.creation_time;
+  process->type = tmp.type;
+  process->brand = tmp.brand;
+  process->tgid = tmp.tgid;
+  process->cpu = tmp.cpu;
+
+  do {
+    if(feof(fp) || ferror(fp)) goto end_loop;
+
+    hdr = fgetc(fp);
+
+    switch(hdr) {
+      case HDR_ES:
+        break;
+      case HDR_USER_STACK:
+        break;
+      case HDR_USERTRACE:
+        break;
+      case HDR_PROCESS_STATE:
+        break;
+      default:
+        ungetc(hdr, fp);
+        goto end_loop;
+    };
+  } while(1);
+end_loop:
+
+}
+
+
+/* Called because a HDR_PROCESS_STATE was found */
+/* Append a saved state to the trace states */
+void lttv_state_read_raw(LttvTraceState *self, FILE *fp)
+{
+  guint i, nb_tracefile, nb_block, offset;
+  guint64 tsc;
+  LttTracefile *tf;
+
+  LttEventPosition *ep;
+
+  guint nb_cpus;
+
+  int hdr;
+
+  LttTime t;
+
+  LttvAttribute *saved_states_tree, *saved_state_tree;
+
+  LttvAttributeValue value;
+  ep = ltt_event_position_new();
+  
+  restore_init_state(self);
+
+  fread(&t, sizeof(t), 1, fp);
+
+  do {
+    if(feof(fp) || ferror(fp)) goto end_loop;
+    hdr = fgetc(fp);
+
+    switch(hdr) {
+      case HDR_PROCESS:
+        /* Call read_process_state_raw */
+        read_process_state_raw(self, fp);
+        break;
+      case HDR_TRACEFILE:
+      case HDR_TRACESET:
+      case HDR_TRACE:
+      case HDR_QUARKS:
+      case HDR_QUARK:
+      case HDR_ES:
+      case HDR_USER_STACK:
+      case HDR_USERTRACE:
+      case HDR_PROCESS_STATE:
+      case HDR_CPU:
+        g_error("Error while parsing saved state file :"
+            " unexpected data header %d",
+            hdr);
+        break;
+      default:
+        g_error("Error while parsing saved state file : unknown data header %d",
+            hdr);
+    };
+  } while(1);
+end_loop:
+
+  nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
+  for(i=0;i<nb_cpus;i++) {
+    int cpu_num;
+    hdr = fgetc(fp);
+    g_assert(hdr == HDR_CPU);
+    fread(&cpu_num, sizeof(cpu_num), 1, fp); /* cpu number */
+    g_assert(i == cpu_num);
+    fread(&self->running_process[i]->pid,
+        sizeof(self->running_process[i]->pid), 1, fp);
+  }
+
+  nb_tracefile = self->parent.tracefiles->len;
+
+  for(i = 0 ; i < nb_tracefile ; i++) {
+    tfcs = 
+          LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
+                                          LttvTracefileContext*, i));
+  //  fprintf(fp, "  <TRACEFILE TIMESTAMP_S=%lu TIMESTAMP_NS=%lu", 
+  //      tfcs->parent.timestamp.tv_sec, 
+  //      tfcs->parent.timestamp.tv_nsec);
+    hdr = fgetc(fp);
+    g_assert(hdr == HDR_TRACEFILE);
+    fread(&tfcs->parent.timestamp, sizeof(tfcs->parent.timestamp), 1, fp);
+    /* Note : if timestamp if LTT_TIME_INFINITE, there will be no
+     * position following : end of trace */
+    if(ltt_time_compare(tfcs->parent.timestamp, LTT_TIME_INFINITE) != 0) {
+      fread(&nb_block, sizeof(nb_block), 1, fp);
+      fread(&offset, sizeof(offset), 1, fp);
+      fread(&tsc, sizeof(tsc), 1, fp);
+      ltt_event_position_set(ep, tf, nb_block, offset, tsc);
+      g_assert(ltt_tracefile_seek_position(tfc->tf, ep) == 0);
+    }
+  }
+  g_free(ep);
+
+  saved_states_tree = lttv_attribute_find_subdir(tcs->parent.t_a, 
+      LTTV_STATE_SAVED_STATES);
+  saved_state_tree = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
+  value = lttv_attribute_add(saved_states_tree, 
+      lttv_attribute_get_number(saved_states_tree), LTTV_GOBJECT);
+  *(value.v_gobject) = (GObject *)saved_state_tree;
+  value = lttv_attribute_add(saved_state_tree, LTTV_STATE_TIME, LTTV_TIME);
+  *(value.v_time) = t;
+  lttv_state_save(tcs, saved_state_tree);
+  g_debug("Saving state at time %lu.%lu", t.tv_sec,
+    self->parent.timestamp.tv_nsec);
+
+  *(self->max_time_state_recomputed_in_seek) = t;
+}
+
+/* Called when a HDR_TRACE is found */
+void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp)
+{
+  int hdr;
+
+  do {
+    if(feof(fp) || ferror(fp)) goto end_loop;
+    hdr = fgetc(fp);
+
+    switch(hdr) {
+      case HDR_PROCESS_STATE:
+        /* Call read_process_state_raw */
+        lttv_state_read_raw(tcs, fp);
+        break;
+      case HDR_TRACEFILE:
+      case HDR_TRACESET:
+      case HDR_TRACE:
+      case HDR_QUARKS:
+      case HDR_QUARK:
+      case HDR_ES:
+      case HDR_USER_STACK:
+      case HDR_USERTRACE:
+      case HDR_PROCESS:
+      case HDR_CPU:
+        g_error("Error while parsing saved state file :"
+            " unexpected data header %d",
+            hdr);
+        break;
+      default:
+        g_error("Error while parsing saved state file : unknown data header %d",
+            hdr);
+    };
+  } while(1);
+end_loop:
+
+  *(tcs->max_time_state_recomputed_in_seek) = tcs->parent.time_span.end_time;
+}
+
 
 
 /* Copy each process from an existing hash table to a new one */

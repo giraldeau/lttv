@@ -170,6 +170,16 @@ void ltt_event_position_get(LttEventPosition *ep, LttTracefile **tf,
 }
 
 
+void ltt_event_position_set(LttEventPosition *ep, LttTracefile *tf,
+        guint block, guint offset, guint64 tsc)
+{
+  ep->tracefile = tf;
+  ep->block = block;
+  ep->offset = offset;
+  ep->tsc = tsc;
+}
+
+
 /*****************************************************************************
  *Function name
  *    ltt_event_position : get the event's position

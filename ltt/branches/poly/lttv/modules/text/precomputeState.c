@@ -45,17 +45,21 @@ static gboolean
   a_field_names,
   a_state,
   a_cpu_stats,
-  a_process_stats;
+  a_process_stats,
+  a_raw;
 
 static char
-  *a_file_name = NULL;
+  *a_file_name = NULL,
+  *a_quark_file_name = NULL;
 
 static LttvHooks
   *before_traceset,
   *after_traceset,
   *before_trace,
+  *after_trace,
   *event_hook;
 
+static guint a_event_count = 0;
 
 /* Insert the hooks before and after each trace and tracefile, and for each
    event. Print a global header. */
@@ -68,16 +72,19 @@ static gboolean write_traceset_header(void *hook_data, void *call_data)
 {
   LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
 
-  g_info("TextDump traceset header");
-
   if(a_file_name == NULL) a_file = stdout;
   else a_file = fopen(a_file_name, "w");
 
   if(a_file == NULL) g_error("cannot open file %s", a_file_name);
 
   /* Print the trace set header */
-  fprintf(a_file,"Trace set contains %d traces\n\n", 
-      lttv_traceset_number(tc->ts));
+  if(a_raw) {
+  /* TODO : Write a header that will check for ILP size and endianness */
+    fputc(HDR_TRACESET, a_file);
+  } else  {
+    fprintf(a_file,"<TRACESET NUM_TRACES=%d/>\n", 
+        lttv_traceset_number(tc->ts));
+  }
 
   return FALSE;
 }
@@ -86,17 +93,42 @@ static gboolean write_traceset_header(void *hook_data, void *call_data)
 static gboolean write_traceset_footer(void *hook_data, void *call_data)
 {
   LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
+  GQuark q;
+  gchar *string;
 
-  g_info("TextDump traceset footer");
+  if(a_raw) {
 
-  fprintf(a_file,"End trace set\n\n");
-
-  if(LTTV_IS_TRACESET_STATS(tc)) {
-    lttv_stats_sum_traceset((LttvTracesetStats *)tc);
-    print_stats(a_file, (LttvTracesetStats *)tc);
+  } else {
+    fprintf(a_file,"</TRACESET>\n");
   }
 
   if(a_file_name != NULL) fclose(a_file);
+
+  if(a_raw) {
+    if(a_quark_file_name == NULL) {
+      if(a_file_name == NULL) a_file = stdout;
+      else a_file = fopen(a_file_name, "a");
+    } else {
+      if(a_quark_file_name == NULL) a_file = stdout;
+      else a_file = fopen(a_quark_file_name, "w");
+    }
+
+    if(a_file == NULL) g_error("cannot open file %s", a_quark_file_name);
+
+    fputc(HDR_QUARKS, a_file);
+    q = 1;
+    do {
+      string = g_quark_to_string(q);
+      if(string == NULL) break;
+      fputc(HDR_QUARK, a_file);
+      // increment. fwrite(&q, sizeof(GQuark), 1, a_file);
+      fwrite(string, sizeof(char), strlen(string)+1, a_file);
+      q++;
+    } while(1);
+   
+    if(a_quark_file_name != NULL || a_file_name != NULL) fclose(a_file);
+
+  }
 
   return FALSE;
 }
@@ -105,14 +137,27 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
 static gboolean write_trace_header(void *hook_data, void *call_data)
 {
   LttvTraceContext *tc = (LttvTraceContext *)call_data;
-#if 0 //FIXME
-  LttSystemDescription *system = ltt_trace_system_description(tc->t);
 
-  fprintf(a_file,"  Trace from %s in %s\n%s\n\n", 
-	  ltt_trace_system_description_node_name(system), 
-	  ltt_trace_system_description_domain_name(system), 
-	  ltt_trace_system_description_description(system));
-#endif //0
+  if(a_raw) {
+    fputc(HDR_TRACE, a_file);
+  } else {
+    fprintf(a_file,"<TRACE TRACE_NUMBER=%d/>\n", 
+        tc->index);
+  }
+  
+  return FALSE;
+}
+
+static gboolean write_trace_footer(void *hook_data, void *call_data)
+{
+  LttvTraceContext *tc = (LttvTraceContext *)call_data;
+
+  if(a_raw) {
+
+  } else {
+    fprintf(a_file,"</TRACE>\n");
+  }
+
   return FALSE;
 }
 
@@ -143,7 +188,11 @@ static int for_each_event(void *hook_data, void *call_data)
 
   e = ltt_tracefile_get_event(tfc->tf);
 
-  lttv_state_write(ts, tfs->parent.timestamp, a_file);
+  if(a_raw) {
+    lttv_state_write_raw(ts, tfs->parent.timestamp, a_file);
+  } else {
+    lttv_state_write(ts, tfs->parent.timestamp, a_file);
+  }
   
   return FALSE;
 }
@@ -155,7 +204,7 @@ static void init()
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
-  g_info("Init textDump.c");
+  g_info("Init precomputeState.c");
 
   a_string = g_string_new("");
 
@@ -165,15 +214,31 @@ static void init()
       "file name", 
       LTTV_OPT_STRING, &a_file_name, NULL, NULL);
 
+  a_quark_file_name = NULL;
+  lttv_option_add("qoutput", 'q', 
+      "output file where the quarks (tuples integer, string) are to be written", 
+      "file name", 
+      LTTV_OPT_STRING, &a_quark_file_name, NULL, NULL);
+
+  lttv_option_add("raw", 'r', 
+      "Output in raw binary",
+      "Raw binary", 
+      LTTV_OPT_NONE, &a_raw, NULL, NULL);
+
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event",
       LTTV_POINTER, &value));
   g_assert((event_hook = *(value.v_pointer)) != NULL);
-  lttv_hooks_add(event_hook, write_event_content, NULL, LTTV_PRIO_DEFAULT);
+  lttv_hooks_add(event_hook, for_each_event, &a_event_count, LTTV_PRIO_DEFAULT);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
       LTTV_POINTER, &value));
   g_assert((before_trace = *(value.v_pointer)) != NULL);
   lttv_hooks_add(before_trace, write_trace_header, NULL, LTTV_PRIO_DEFAULT);
+
+  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/after",
+      LTTV_POINTER, &value));
+  g_assert((after_trace = *(value.v_pointer)) != NULL);
+  lttv_hooks_add(after_trace, write_trace_footer, NULL, LTTV_PRIO_DEFAULT);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
       LTTV_POINTER, &value));
@@ -190,9 +255,13 @@ static void init()
 
 static void destroy()
 {
-  g_info("Destroy textDump");
+  g_info("Destroy precomputeState");
 
   lttv_option_remove("output");
+
+  lttv_option_remove("qoutput");
+
+  lttv_option_remove("raw");
 
   g_string_free(a_string, TRUE);
 
@@ -206,7 +275,7 @@ static void destroy()
 }
 
 
-LTTV_MODULE("textDump", "Print events in a file", \
-	    "Produce a detailed text printout of a trace", \
+LTTV_MODULE("precomputeState", "Precompute states", \
+	    "Precompute states in a trace, XML output.", \
 	    init, destroy, "stats", "batchAnalysis", "option", "print")
 

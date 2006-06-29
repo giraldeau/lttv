@@ -69,6 +69,9 @@ LttEventPosition * ltt_event_position_new();
 void ltt_event_position_get(LttEventPosition *ep, LttTracefile **tf,
         guint *block, guint *offset, guint64 *tsc);
 
+void ltt_event_position_set(LttEventPosition *ep, LttTracefile *tf,
+        guint block, guint offset, guint64 tsc);
+
 gint ltt_event_position_compare(const LttEventPosition *ep1,
                                 const LttEventPosition *ep2);
 
