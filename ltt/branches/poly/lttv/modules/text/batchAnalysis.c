@@ -65,8 +65,6 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 {
   LttvAttributeValue value_expression, value_filter;
 
-  char * testval = 0x88888;
-
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
 
   LttvTracesetStats *tscs;
