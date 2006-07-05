@@ -27,7 +27,7 @@ MainWindow *construct_main_window(MainWindow * parent);
 void main_window_free(MainWindow * mw);
 void main_window_destructor(MainWindow * mw);
 
-void create_main_window_with_trace(const gchar *path);
+void create_main_window_with_trace_list(GSList *traces);
 
 void insert_viewer_wrap(GtkWidget *menuitem, gpointer user_data);
 gboolean execute_events_requests(Tab *tab);

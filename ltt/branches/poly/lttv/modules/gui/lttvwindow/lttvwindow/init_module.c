@@ -83,17 +83,18 @@ LttvHooks
   *main_hooks;
 
 /* Initial trace from command line */
-//LttvTrace *g_init_trace = NULL;
+static GSList *g_init_trace = NULL;
 
 static char *a_trace;
-static char g_init_trace[PATH_MAX] = "";
+//static char g_init_trace[PATH_MAX] = "";
 
 
 void lttv_trace_option(void *hook_data)
 { 
-  LttTrace *trace;
+  //LttTrace *trace;
 
-  get_absolute_pathname(a_trace, g_init_trace);
+  //get_absolute_pathname(a_trace, g_init_trace);
+  g_init_trace = g_slist_append(g_init_trace, a_trace);
 }
 
 /*****************************************************************************
@@ -122,11 +123,7 @@ static gboolean window_creation_hook(void *hook_data, void *call_data)
   add_pixmap_directory ("../modules/gui/main/pixmaps");
 
   /* First window, use command line trace */
-  if(strcmp(g_init_trace, "") != 0){
-    create_main_window_with_trace(g_init_trace);
-  } else {
-    construct_main_window(NULL);
-  }
+  create_main_window_with_trace_list(g_init_trace);
 
   gtk_main ();
 
@@ -255,6 +252,8 @@ static void destroy() {
   g_slist_foreach(g_main_window_list, destroy_walk, NULL);
   
   g_slist_free(g_main_window_list);
+
+  g_slist_free(g_init_trace);
   
 }
 

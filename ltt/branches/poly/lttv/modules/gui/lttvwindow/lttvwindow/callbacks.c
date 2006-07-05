@@ -4847,9 +4847,9 @@ gboolean execute_events_requests(Tab *tab)
 }
 
 
-void create_main_window_with_trace(const gchar *path)
+void create_main_window_with_trace_list(GSList *traces)
 {
-  if(path == NULL) return;
+  GSList *iter = NULL;
 
   /* Create window */
   MainWindow *mw = construct_main_window(NULL);
@@ -4869,37 +4869,40 @@ void create_main_window_with_trace(const gchar *path)
     tab = ptab->tab;
   }
 
-  /* Add trace */
-  gchar abs_path[PATH_MAX];
-  LttvTrace *trace_v;
-  LttTrace *trace;
+  for(iter=traces; iter!=NULL; iter=g_slist_next(iter)) {
+    gchar *path = (gchar*)iter->data;
+    /* Add trace */
+    gchar abs_path[PATH_MAX];
+    LttvTrace *trace_v;
+    LttTrace *trace;
 
-  get_absolute_pathname(path, abs_path);
-  trace_v = lttvwindowtraces_get_trace_by_name(abs_path);
-  if(trace_v == NULL) {
-    trace = ltt_trace_open(abs_path);
-    if(trace == NULL) {
-      g_warning("cannot open trace %s", abs_path);
+    get_absolute_pathname(path, abs_path);
+    trace_v = lttvwindowtraces_get_trace_by_name(abs_path);
+    if(trace_v == NULL) {
+      trace = ltt_trace_open(abs_path);
+      if(trace == NULL) {
+        g_warning("cannot open trace %s", abs_path);
 
-      GtkWidget *dialogue = 
-        gtk_message_dialog_new(
-          GTK_WINDOW(gtk_widget_get_toplevel(widget)),
-          GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
-          GTK_MESSAGE_ERROR,
-          GTK_BUTTONS_OK,
-          "Cannot open trace : maybe you should enter in the directory"
-          "to select it ?");
-      gtk_dialog_run(GTK_DIALOG(dialogue));
-      gtk_widget_destroy(dialogue);
+        GtkWidget *dialogue = 
+          gtk_message_dialog_new(
+            GTK_WINDOW(gtk_widget_get_toplevel(widget)),
+            GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
+            GTK_MESSAGE_ERROR,
+            GTK_BUTTONS_OK,
+            "Cannot open trace : maybe you should enter in the directory"
+            "to select it ?");
+        gtk_dialog_run(GTK_DIALOG(dialogue));
+        gtk_widget_destroy(dialogue);
+      } else {
+        trace_v = lttv_trace_new(trace);
+        lttvwindowtraces_add_trace(trace_v);
+        lttvwindow_add_trace(tab, trace_v);
+      }
     } else {
-      trace_v = lttv_trace_new(trace);
-      lttvwindowtraces_add_trace(trace_v);
       lttvwindow_add_trace(tab, trace_v);
     }
-  } else {
-    lttvwindow_add_trace(tab, trace_v);
   }
-
+  
   LttvTraceset *traceset;
 
   traceset = tab->traceset_info->traceset;
