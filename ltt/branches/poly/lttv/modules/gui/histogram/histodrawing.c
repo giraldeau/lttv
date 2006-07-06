@@ -40,7 +40,7 @@
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
 //FIXME
-#define TRACE_NUMBER 0
+// fixed #define TRACE_NUMBER 0
 #define EXTRA_ALLOC 1024 // pixels
 #define padding_width 50
 
@@ -149,21 +149,15 @@ void histo_drawing_data_request_begin(EventsRequest *events_request, LttvTracese
 
  }
 
- void histo_drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
+void histo_drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
 {
   g_debug("Begin of chunk");
   HistoControlFlowData *cfd = events_request->viewer_data;
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
-  //LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
-  guint num_cpu = 
-    ltt_trace_get_num_cpu(tss->parent.traces[TRACE_NUMBER]->t);
 
-  /* //disabled for histogram
-   cfd->process_list->current_hash_data = g_new(HashedProcessData*,num_cpu);
-  memset(cfd->process_list->current_hash_data, 0,
-         sizeof(HashedProcessData*)*num_cpu);*/
-  //cfd->drawing->last_start = LTT_TIME_MIN(current_time,
-  //                                        events_request->end_time);
+  if(cfd->chunk_has_begun) return;
+
+  cfd->chunk_has_begun = TRUE;
 }
 
 

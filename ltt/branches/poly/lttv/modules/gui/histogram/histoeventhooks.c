@@ -81,7 +81,7 @@
 #define MAX_PATH_LEN 256
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 //FIXME
-#define TRACE_NUMBER 0
+// fixed #define TRACE_NUMBER 0
 #define EXTRA_ALLOC 1024 // pixels
 
 /* Action to do when background computation completed.
@@ -251,8 +251,8 @@ void histo_request_event( HistoControlFlowData *histocontrol_flow_data, guint x,
  
   // LttvHooksById *histo_event_by_id = lttv_hooks_by_id_new();//if necessary for filter!
   // FIXME : eventually request for more traces 
-  for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++)
-  {   
+  // fixed for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++) {
+  for(i=0;i<nb_trace;i++) {
 	//should be in the loop or before? 
 	EventsRequest *histo_events_request = g_new(EventsRequest, 1);
   	
@@ -1108,6 +1108,9 @@ int histo_after_chunk(void *hook_data, void *call_data)
   LttTime end_time;
 
   histoDrawing_t *drawing = histocontrol_flow_data->drawing;
+
+  if(!histocontrol_flow_data->chunk_has_begun) return;
+  histocontrol_flow_data->chunk_has_begun = TRUE;
 
   if(tfc != NULL)
     end_time = LTT_TIME_MIN(tfc->timestamp, events_request->end_time);

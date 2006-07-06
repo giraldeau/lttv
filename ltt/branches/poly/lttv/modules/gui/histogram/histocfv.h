@@ -70,7 +70,8 @@ struct _HistoControlFlowData {
 // For histogram  
   guint max_height;
 
- LttvFilter *histo_main_win_filter;
+  LttvFilter *histo_main_win_filter;
+  gboolean chunk_has_begun;
 } ;
 
 /* Control Flow Data constructor */
