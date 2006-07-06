@@ -540,8 +540,8 @@ static gboolean remove_hash_item(ProcessInfo *process_info,
 
   if(likely(process_list->current_hash_data != NULL)) {
     if(likely(hashed_process_data ==
-                process_list->current_hash_data[process_info->cpu]))
-      process_list->current_hash_data[process_info->cpu] = NULL;
+                process_list->current_hash_data[process_info->trace_num][process_info->cpu]))
+      process_list->current_hash_data[process_info->trace_num][process_info->cpu] = NULL;
   }
   return TRUE; /* remove the element from the hash table */
 }
@@ -742,8 +742,8 @@ int processlist_remove( ProcessList *process_list,
         &process_info);
 
     if(likely(process_list->current_hash_data != NULL)) {
-      if(likely(hashed_process_data == process_list->current_hash_data[cpu])) {
-        process_list->current_hash_data[cpu] = NULL;
+      if(likely(hashed_process_data == process_list->current_hash_data[trace_num][cpu])) {
+        process_list->current_hash_data[trace_num][cpu] = NULL;
       }
     }
     

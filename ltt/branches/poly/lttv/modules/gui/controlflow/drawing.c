@@ -40,7 +40,7 @@
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
 //FIXME
-#define TRACE_NUMBER 0
+// fixed #define TRACE_NUMBER 0
 #define EXTRA_ALLOC 1024 // pixels
 
 
@@ -181,10 +181,9 @@ void drawing_data_request(Drawing_t *drawing,
     gint before_hn, after_hn;
 
     nb_trace = lttv_traceset_number(traceset);
-    // FIXME : eventually request for more traces
-    // for(i = 0 ; i < nb_trace ; i++) {
-    for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++)
-    {
+    // FIXME  (fixed) : eventually request for more traces
+    for(i = 0 ; i < nb_trace ; i++) {
+    //for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++) {
       EventsRequest *events_request = g_new(EventsRequest, 1);
       // Create the hooks
       //LttvHooks *event = lttv_hooks_new();
@@ -464,7 +463,7 @@ void drawing_data_request(Drawing_t *drawing,
       events_request->end_time = time_end;
       events_request->num_events = G_MAXUINT;
       events_request->end_position = NULL;
-      events_request->trace = i;    /* FIXME */
+      events_request->trace = i; //fixed    /* FIXME */
       events_request->before_chunk_traceset = before_chunk_traceset;
       events_request->before_chunk_trace = NULL;
       events_request->before_chunk_tracefile = NULL;
@@ -566,14 +565,21 @@ void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
 {
   g_debug("Begin of chunk");
   ControlFlowData *cfd = events_request->viewer_data;
-  LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
+  LttvTracesetContext *tsc = &tss->parent.parent;
   //LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
-  guint num_cpu = 
-    ltt_trace_get_num_cpu(tss->parent.traces[TRACE_NUMBER]->t);
-
-  cfd->process_list->current_hash_data = g_new(HashedProcessData*,num_cpu);
-  memset(cfd->process_list->current_hash_data, 0,
-         sizeof(HashedProcessData*)*num_cpu);
+  guint i;
+  LttvTraceset *traceset = tsc->ts;
+  guint nb_trace = lttv_traceset_number(traceset);
+  
+  if(!cfd->process_list->current_hash_data) {
+    cfd->process_list->current_hash_data = g_new(HashedProcessData**,nb_trace);
+    for(i = 0 ; i < nb_trace ; i++) {
+      guint num_cpu = ltt_trace_get_num_cpu(tss->parent.traces[i]->t);
+      cfd->process_list->current_hash_data[i] = g_new(HashedProcessData*,num_cpu);
+      memset(cfd->process_list->current_hash_data[i], 0,
+             sizeof(HashedProcessData*)*num_cpu);
+    }
+  }
   //cfd->drawing->last_start = LTT_TIME_MIN(current_time,
   //                                        events_request->end_time);
 }

@@ -108,8 +108,8 @@ struct _ProcessList {
   guint number_of_process;
   gint cell_height;
 
-  /* Current process, one per cpu */
-  HashedProcessData **current_hash_data;
+  /* Current process pointer, one per cpu, one per trace */
+  HashedProcessData ***current_hash_data;
 
   /* Array containing index -> pixmap correspondance. Must be updated
    * every time the process list is reordered, process added or removed */
