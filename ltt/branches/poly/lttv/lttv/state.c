@@ -424,7 +424,7 @@ static void write_process_state(gpointer key, gpointer value,
 
   process = (LttvProcessState *)value;
   fprintf(fp,
-"  <PROCESS CORE=%p PID=%u TGID=%u PPID=%u TYPE=\"%s\" CTIME_S=%lu CTIME_NS=%lu ITIME_S=%lu ITIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\" PROCESS_TYPE=%u>\n",
+"  <PROCESS CORE=%p PID=%u TGID=%u PPID=%u TYPE=\"%s\" CTIME_S=%lu CTIME_NS=%lu ITIME_S=%lu ITIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\">\n",
       process, process->pid, process->tgid, process->ppid,
       g_quark_to_string(process->type),
       process->creation_time.tv_sec,
@@ -673,8 +673,6 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp)
   LttvProcessState *process, *parent_process;
   LttvProcessState tmp;
 
-  FILE *fp = (FILE *)user_data;
-
   guint i;
   guint64 address;
   guint cpu;
@@ -691,14 +689,13 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp)
   fread(&tmp.insertion_time, sizeof(tmp.insertion_time), 1, fp);
 
   if(tmp.pid == 0) {
-    process = lttv_state_find_process(self, tmp.cpu, tmp.pid,
-        tmp.insertion_time);
+    process = lttv_state_find_process(self, tmp.cpu, tmp.pid);
   } else {
     /* We must link to the parent */
     parent_process = lttv_state_find_process_or_create(self, ANY_CPU, tmp.ppid,
-        LTT_TIME_ZERO);
+        &ltt_time_zero);
     process = lttv_state_find_process_or_create(self, ANY_CPU, tmp.pid,
-        tmp.insertion_time);
+        &tmp.insertion_time);
   }
   process->creation_time = tmp.creation_time;
   process->type = tmp.type;
@@ -709,7 +706,7 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp)
   do {
     if(feof(fp) || ferror(fp)) goto end_loop;
 
-    hdr = fgetc(fp);
+    gint hdr = fgetc(fp);
 
     switch(hdr) {
       case HDR_ES:
@@ -726,7 +723,7 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp)
     };
   } while(1);
 end_loop:
-
+  return;
 }
 
 
@@ -737,6 +734,7 @@ void lttv_state_read_raw(LttvTraceState *self, FILE *fp)
   guint i, nb_tracefile, nb_block, offset;
   guint64 tsc;
   LttTracefile *tf;
+  LttvTracefileState *tfcs;
 
   LttEventPosition *ep;
 
@@ -810,17 +808,18 @@ end_loop:
     fread(&tfcs->parent.timestamp, sizeof(tfcs->parent.timestamp), 1, fp);
     /* Note : if timestamp if LTT_TIME_INFINITE, there will be no
      * position following : end of trace */
-    if(ltt_time_compare(tfcs->parent.timestamp, LTT_TIME_INFINITE) != 0) {
+    if(ltt_time_compare(tfcs->parent.timestamp, ltt_time_infinite) != 0) {
       fread(&nb_block, sizeof(nb_block), 1, fp);
       fread(&offset, sizeof(offset), 1, fp);
       fread(&tsc, sizeof(tsc), 1, fp);
       ltt_event_position_set(ep, tf, nb_block, offset, tsc);
-      g_assert(ltt_tracefile_seek_position(tfc->tf, ep) == 0);
+      gint ret = ltt_tracefile_seek_position(tfcs->parent.tf, ep);
+      g_assert(ret == 0);
     }
   }
   g_free(ep);
 
-  saved_states_tree = lttv_attribute_find_subdir(tcs->parent.t_a, 
+  saved_states_tree = lttv_attribute_find_subdir(self->parent.t_a, 
       LTTV_STATE_SAVED_STATES);
   saved_state_tree = g_object_new(LTTV_ATTRIBUTE_TYPE, NULL);
   value = lttv_attribute_add(saved_states_tree, 
@@ -828,9 +827,9 @@ end_loop:
   *(value.v_gobject) = (GObject *)saved_state_tree;
   value = lttv_attribute_add(saved_state_tree, LTTV_STATE_TIME, LTTV_TIME);
   *(value.v_time) = t;
-  lttv_state_save(tcs, saved_state_tree);
+  lttv_state_save(self, saved_state_tree);
   g_debug("Saving state at time %lu.%lu", t.tv_sec,
-    self->parent.timestamp.tv_nsec);
+    t.tv_nsec);
 
   *(self->max_time_state_recomputed_in_seek) = t;
 }
@@ -1659,7 +1658,7 @@ LttvProcessState *lttv_state_find_process(LttvTraceState *ts, guint cpu,
 
 LttvProcessState *
 lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
-    LttTime *timestamp)
+    const LttTime *timestamp)
 {
   LttvProcessState *process = lttv_state_find_process(ts, cpu, pid);
   LttvExecutionState *es;

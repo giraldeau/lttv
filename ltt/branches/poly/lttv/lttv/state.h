@@ -238,7 +238,7 @@ lttv_state_find_process(LttvTraceState *ts, guint cpu, guint pid);
 
 LttvProcessState *
 lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
-    LttTime *timestamp);
+    const LttTime *timestamp);
 
 LttvProcessState *
 lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent, 

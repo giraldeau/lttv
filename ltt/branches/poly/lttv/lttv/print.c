@@ -243,10 +243,12 @@ void lttv_event_to_string(LttEvent *e, GString *s,
 
   if(mandatory_fields) {
     time = ltt_event_time(e);
-    g_string_append_printf(s,"%s.%s: %ld.%09ld (%s_%u)",
+    g_string_append_printf(s,"%s.%s: %ld.%09ld (%s%s_%u)",
         g_quark_to_string(ltt_facility_name(facility)),
         g_quark_to_string(ltt_eventtype_name(event_type)),
         (long)time.tv_sec, time.tv_nsec,
+	g_quark_to_string(
+		ltt_trace_name(ltt_tracefile_get_trace(tfs->parent.tf))),
         g_quark_to_string(ltt_tracefile_name(tfs->parent.tf)),
         cpu);
     /* Print the process id and the state/interrupt type of the process */
