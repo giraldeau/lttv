@@ -44,7 +44,7 @@
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
-#define TRACE_NUMBER 0
+// fixed #define TRACE_NUMBER 0
 #define NO_ITEMS 0
 
 enum{
@@ -436,8 +436,8 @@ static void request_event(DiskPerformanceData *disk_performance)
  
   nb_trace = lttv_traceset_number(traceset);
     
-  for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++)
-  { 
+  //for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++) {
+  for(i = 0 ; i < nb_trace ; i++) {
   	EventsRequest *events_request = g_new(EventsRequest, 1);
 	
 	hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));

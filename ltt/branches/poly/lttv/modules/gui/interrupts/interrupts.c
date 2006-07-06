@@ -134,7 +134,7 @@ enum type_t {
 static GSList *interrupt_data_list = NULL ;
  
 
-#define TRACE_NUMBER 0
+//fixed #define TRACE_NUMBER 0
 
 typedef struct _InterruptEventData {
 
@@ -447,8 +447,8 @@ static void FirstRequest(InterruptEventData *event_data )
   nb_trace = lttv_traceset_number(traceset);
   
   /* There are many traces in a traceset. Iteration for each trace. */  
-  for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++)
-  {
+  //for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++) {
+  for(i = 0 ; i < nb_trace ; i++) {
         events_request = g_new(EventsRequest, 1); 
 	
       	hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
@@ -734,8 +734,8 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
   nb_trace = lttv_traceset_number(traceset);
   
   /* There are many traces in a traceset. Iteration for each trace. */  
-  for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++)
-  {
+  for(i = 0 ; i < nb_trace ; i++) {
+  // fixed for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++) {
         events_request = g_new(EventsRequest, 1); 
 	
       	hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
