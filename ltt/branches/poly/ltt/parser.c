@@ -998,7 +998,7 @@ type_descriptor_t * find_named_type(char *name, table_t * named_types)
 { 
   type_descriptor_t *t;
 
-  t = table_find(named_types,name);
+  t = (type_descriptor_t*)table_find(named_types,name);
 
   return t;
 }
