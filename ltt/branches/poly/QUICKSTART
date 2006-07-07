@@ -38,6 +38,7 @@ supported architectures :
 Intel Pentium (UP/SMP) with TSC
 PowerPC 32 and 64 bits
 ARM
+x86_64
 C2 Microsystems (variant of MIPS)
 
 LTTV :
