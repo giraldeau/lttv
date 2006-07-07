@@ -6,8 +6,8 @@
     <description>Process EIP on the user stack</description>
     <field name="eip"> <description>Sequence of EIP</description>
 			<sequence write="custom">
-				<uint>
-				<ulong>
+				<uint/>
+				<ulong/>
 			</sequence>
 		</field>
   </event>
@@ -16,8 +16,8 @@
     <description>EIP on the kernel stack</description>
     <field name="eip"> <description>Sequence of EIP</description>
 			<sequence write="custom">
-				<uint>
-				<ulong>
+				<uint/>
+				<ulong/>
 			</sequence>
 		</field>
   </event>

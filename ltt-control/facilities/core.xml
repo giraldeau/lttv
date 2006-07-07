@@ -4,19 +4,19 @@
 	
   <event name="facility_load">
     <description>Facility is loaded</description>
-		<field name="name"><string></field>
-		<field name="checksum"><uint size="4"></field>
-		<field name="id"><uint size="4"></field>
-		<field name="int_size"><uint size="4"></field>
-		<field name="long_size"><uint size="4"></field>
-		<field name="pointer_size"><uint size="4"></field>
-		<field name="size_t_size"><uint size="4"></field>
-		<field name="has_alignment"><uint size="4"></field>
+		<field name="name"><string/></field>
+		<field name="checksum"><uint size="4"/></field>
+		<field name="id"><uint size="4"/></field>
+		<field name="int_size"><uint size="4"/></field>
+		<field name="long_size"><uint size="4"/></field>
+		<field name="pointer_size"><uint size="4"/></field>
+		<field name="size_t_size"><uint size="4"/></field>
+		<field name="has_alignment"><uint size="4"/></field>
   </event>
 
   <event name="facility_unload">
     <description>Facility is unloaded</description>
-    <field name="id"><uint size="4"></field>
+    <field name="id"><uint size="4"/></field>
   </event>
 
   <event name="time_heartbeat" scope="tracefile">
@@ -28,14 +28,14 @@
   
   <event name="state_dump_facility_load" scope="trace">
     <description>Facility is loaded while in state dump</description>
-		<field name="name"><string></field>
-		<field name="checksum"><uint size="4"></field>
-		<field name="id"><uint size="4"></field>
-		<field name="int_size"><uint size="4"></field>
-		<field name="long_size"><uint size="4"></field>
-		<field name="pointer_size"><uint size="4"></field>
-		<field name="size_t_size"><uint size="4"></field>
-		<field name="has_alignment"><uint size="4"></field>
+		<field name="name"><string/></field>
+		<field name="checksum"><uint size="4"/></field>
+		<field name="id"><uint size="4"/></field>
+		<field name="int_size"><uint size="4"/></field>
+		<field name="long_size"><uint size="4"/></field>
+		<field name="pointer_size"><uint size="4"/></field>
+		<field name="size_t_size"><uint size="4"/></field>
+		<field name="has_alignment"><uint size="4"/></field>
   </event>
 
 </facility>

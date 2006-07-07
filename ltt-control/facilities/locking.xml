@@ -3,33 +3,33 @@
   <description>The locking facility instruments the kernel locking.</description>
   <event name="spin_lock_wait">
     <description>Takes a spinlock</description>
-    <field name="spinlock"> <description>Spinlock address</description> <pointer> </field>
+    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
   </event>
 
   <event name="spin_lock_try">
     <description>Tries a spinlock</description>
-    <field name="spinlock"> <description>Spinlock address</description> <pointer> </field>
+    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
   </event>
 
   <event name="spin_lock_entry">
     <description>Get a spinlock</description>
-    <field name="spinlock"> <description>Spinlock address</description> <pointer> </field>
+    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
   </event>
 
   <event name="spin_lock_exit">
     <description>Releases a spinlock</description>
-    <field name="spinlock"> <description>Spinlock address</description> <pointer> </field>
+    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
   </event>
 
   <event name="irq_save">
     <description>Disable IRQ, saving state</description>
     <field name="EIP">
 			<description>Instruction pointer where the irq_save is located.</description>
-			<pointer>
+			<pointer/>
 		</field>
     <field name="flags">
 			<description>Saved IRQ state.</description>
-			<ulong>
+			<ulong/>
 		</field>
   </event>
 
@@ -37,11 +37,11 @@
     <description>Disable IRQ, saving state</description>
     <field name="EIP">
 			<description>Instruction pointer where the irq_restore is located.</description>
-			<pointer> 
+			<pointer/> 
 		</field>
     <field name="flags">
 			<description>Restored IRQ state.</description>
-			<ulong>
+			<ulong/>
 		</field>
   </event>
 
@@ -49,7 +49,7 @@
     <description>Disable IRQ</description>
     <field name="EIP">
 			<description>Instruction pointer where the irq_disable is located.</description>
-			<pointer>
+			<pointer/>
 		</field>
   </event>
 
@@ -57,7 +57,7 @@
     <description>Disable IRQ</description>
     <field name="EIP">
 			<description>Instruction pointer where the irq_enable is located.</description>
-			<pointer>
+			<pointer/>
 		</field>
   </event>
 
