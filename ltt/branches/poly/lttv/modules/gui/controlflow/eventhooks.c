@@ -269,7 +269,7 @@ int event_selected_hook(void *hook_data, void *call_data)
 static inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
 {
   PropertiesLine prop_line;
-  prop_line.line_width = 2;
+  prop_line.line_width = 5;
   prop_line.style = GDK_LINE_SOLID;
   prop_line.y = MIDDLE;
   //GdkColormap *colormap = gdk_colormap_get_system();

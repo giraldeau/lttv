@@ -34,6 +34,7 @@
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
 #include <lttvwindow/callbacks.h>
+#include <lttvwindow/lttv_plugin_tab.h>
 
 #include "hTraceControlInsert.xpm"
 #include "TraceControlStart.xpm"
@@ -69,9 +70,9 @@ typedef struct _ControlData ControlData;
  * Prototypes
  */
 GtkWidget *guicontrol_get_widget(ControlData *tcd);
-ControlData *gui_control(GObject *obj);
+ControlData *gui_control(LttvPluginTab *ptab);
 void gui_control_destructor(ControlData *tcd);
-GtkWidget* h_guicontrol(GObject *obj);
+GtkWidget* h_guicontrol(LttvPlugin *plugin);
 void control_destroy_walk(gpointer data, gpointer user_data);
   
 /*
@@ -152,9 +153,9 @@ guicontrol_get_widget(ControlData *tcd)
  *  @return The Filter viewer data created.
  */
 ControlData*
-gui_control(GObject *obj)
+gui_control(LttvPluginTab *ptab)
 {
-  Tab *tab = g_object_get_data(obj, "Tab");
+  Tab *tab = ptab->tab;
   g_debug("filter::gui_control()");
 
   unsigned i;
@@ -983,7 +984,10 @@ void stop_clicked (GtkButton *button, gpointer user_data)
   
   const gchar *lttctl_path =
     gtk_entry_get_text(GTK_ENTRY(tcd->lttctl_path_entry));
-  const gchar *trace_dir = gtk_entry_get_text(GTK_ENTRY(tcd->trace_dir_entry));
+  gchar *trace_dir = gtk_entry_get_text(GTK_ENTRY(tcd->trace_dir_entry));
+  GSList * trace_list = NULL;
+
+  trace_list = g_slist_append(trace_list, trace_dir);
 
   /* Setup arguments to su */
   /* child */
@@ -1067,7 +1071,7 @@ void stop_clicked (GtkButton *button, gpointer user_data)
   switch(id){
     case GTK_RESPONSE_ACCEPT:
       {
-        create_main_window_with_trace(trace_dir);
+        create_main_window_with_trace_list(trace_list);
       }
       break;
     case GTK_RESPONSE_REJECT:
@@ -1075,7 +1079,7 @@ void stop_clicked (GtkButton *button, gpointer user_data)
       break;
   }
   gtk_widget_destroy(dialogue);
-
+  g_slist_free(trace_list);
 }
 
 
@@ -1090,9 +1094,10 @@ void stop_clicked (GtkButton *button, gpointer user_data)
  *  @return The widget created.
  */
 GtkWidget *
-h_guicontrol(GObject *obj)
+h_guicontrol(LttvPlugin *plugin)
 {
-  ControlData* f = gui_control(obj);
+  LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
+  ControlData* f = gui_control(ptab);
 
   return NULL;
 }
