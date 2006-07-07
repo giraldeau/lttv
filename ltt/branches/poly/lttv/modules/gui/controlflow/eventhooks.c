@@ -79,6 +79,8 @@
 
 
 #define MAX_PATH_LEN 256
+#define STATE_LINE_WIDTH 4
+#define COLLISION_POSITION(height) (((height - STATE_LINE_WIDTH)/2) -3)
 
 extern GSList *g_legend_list;
 
@@ -269,7 +271,7 @@ int event_selected_hook(void *hook_data, void *call_data)
 static inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
 {
   PropertiesLine prop_line;
-  prop_line.line_width = 5;
+  prop_line.line_width = STATE_LINE_WIDTH;
   prop_line.style = GDK_LINE_SOLID;
   prop_line.y = MIDDLE;
   //GdkColormap *colormap = gdk_colormap_get_system();
@@ -451,7 +453,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           gdk_draw_point(hashed_process_data->pixmap,
                          drawing->gc,
                          x,
-                         (hashed_process_data->height/2)-3);
+                         COLLISION_POSITION(hashed_process_data->height));
           hashed_process_data->x.middle_marked = TRUE;
         }
       } else {
@@ -482,7 +484,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             gdk_draw_point(hashed_process_data->pixmap,
                            drawing->gc,
                            x,
-                           (hashed_process_data->height/2)-3);
+                           COLLISION_POSITION(hashed_process_data->height));
             hashed_process_data->x.middle_marked = TRUE;
           }
           /* jump */
@@ -615,7 +617,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
           gdk_draw_point(hashed_process_data->pixmap,
                          drawing->gc,
                          x,
-                         (hashed_process_data->height/2)-3);
+                         COLLISION_POSITION(hashed_process_data->height));
           hashed_process_data->x.middle_marked = TRUE;
         }
       } else {
@@ -647,7 +649,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             gdk_draw_point(hashed_process_data->pixmap,
                            drawing->gc,
                            x,
-                           (hashed_process_data->height/2)-3);
+                           COLLISION_POSITION(hashed_process_data->height));
             hashed_process_data->x.middle_marked = TRUE;
           }
           /* jump */
@@ -978,7 +980,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
       gdk_draw_point(hashed_process_data->pixmap,
                      drawing->gc,
                      x,
-                     (hashed_process_data->height/2)-3);
+                     COLLISION_POSITION(hashed_process_data->height));
       hashed_process_data->x.middle_marked = TRUE;
     }
   } else {
@@ -1011,7 +1013,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
         gdk_draw_point(hashed_process_data->pixmap,
                        drawing->gc,
                        x,
-                       (hashed_process_data->height/2)-3);
+                       COLLISION_POSITION(hashed_process_data->height));
         hashed_process_data->x.middle_marked = TRUE;
       }
       /* jump */
@@ -1173,7 +1175,7 @@ int before_process_exit_hook(void *hook_data, void *call_data)
       gdk_draw_point(hashed_process_data->pixmap,
                      drawing->gc,
                      x,
-                     (hashed_process_data->height/2)-3);
+                     COLLISION_POSITION(hashed_process_data->height));
       hashed_process_data->x.middle_marked = TRUE;
     }
   } else {
@@ -1206,7 +1208,7 @@ int before_process_exit_hook(void *hook_data, void *call_data)
         gdk_draw_point(hashed_process_data->pixmap,
                        drawing->gc,
                        x,
-                       (hashed_process_data->height/2)-3);
+                       COLLISION_POSITION(hashed_process_data->height));
         hashed_process_data->x.middle_marked = TRUE;
       }
       /* jump */
@@ -1375,7 +1377,7 @@ int before_process_release_hook(void *hook_data, void *call_data)
         gdk_draw_point(hashed_process_data->pixmap,
                        drawing->gc,
                        x,
-                       (hashed_process_data->height/2)-3);
+                       COLLISION_POSITION(hashed_process_data->height));
         hashed_process_data->x.middle_marked = TRUE;
       }
     } else {
@@ -1408,7 +1410,7 @@ int before_process_release_hook(void *hook_data, void *call_data)
           gdk_draw_point(hashed_process_data->pixmap,
                          drawing->gc,
                          x,
-                         (hashed_process_data->height/2)-3);
+                         COLLISION_POSITION(hashed_process_data->height));
           hashed_process_data->x.middle_marked = TRUE;
         }
         /* jump */
