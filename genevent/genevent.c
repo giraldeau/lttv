@@ -224,11 +224,11 @@ int print_arg(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	switch(td->type) {
 		case INT_FIXED:
 			fprintf(fd, "%s", intOutputTypes[getSizeindex(td->size)]);
-			fprintf(fd, "lttng_param_%s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case UINT_FIXED:
 			fprintf(fd, "%s", uintOutputTypes[getSizeindex(td->size)]);
-			fprintf(fd, "lttng_param_%s", field_name);
+			fprintf(fd, " lttng_param_%s", field_name);
 			break;
 		case CHAR:
 			fprintf(fd, "signed char");
