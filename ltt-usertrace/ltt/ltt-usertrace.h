@@ -29,6 +29,11 @@
 #include <ltt/system-ppc.h>
 #include <ltt/timex-ppc.h>
 #endif
+#elif defined(__x86_64__)
+#include <asm/timex.h>
+#include <asm/bitops.h>
+#include <asm/atomic.h>
+#include <asm/system.h>
 #else
 #include <asm/timex.h>
 #include <asm/atomic.h>
@@ -43,6 +48,13 @@
 #define __NR_ltt_register_generic	318
 #undef NR_syscalls
 #define NR_syscalls 319
+#endif
+
+#ifdef __x86_64__
+#define __NR_ltt_trace_generic	279
+#define __NR_ltt_register_generic	280
+#undef NR_syscalls
+#define NR_syscalls 281
 #endif
 
 #ifdef __powerpc__
