@@ -112,8 +112,7 @@ _syscall2(int, ltt_register_generic, unsigned int *, facility_id,
 #ifndef LTT_PACK
 /* Calculate the offset needed to align the type */
 static inline unsigned int __attribute__((no_instrument_function))
-														ltt_align(size_t align_drift,
-                                      size_t size_of_type)
+	ltt_align(size_t align_drift, size_t size_of_type)
 {
   size_t alignment = min(sizeof(void*), size_of_type);
 
