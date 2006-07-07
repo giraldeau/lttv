@@ -127,6 +127,24 @@ IN="?_arch_powerpc_Kconfig
 
 for a in $IN; do wr $a $FILE; done
 
+FILE=../$NAME-instrumentation-x86_64.diff
+
+IN="?_arch_x86_64_ia32_ia32entry.S
+?_arch_x86_64_ia32_ipc32.c
+?_arch_x86_64_Kconfig
+?_arch_x86_64_kernel_entry.S
+?_arch_x86_64_kernel_ltt.c
+?_arch_x86_64_kernel_Makefile
+?_arch_x86_64_kernel_time.c
+?_arch_x86_64_kernel_traps.c
+?_arch_x86_64_mm_fault.c
+?_include_asm-x86_64_ia32_unistd.h
+?_include_asm-x86_64_unistd.h
+?_include_asm-x86_64_system.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
 
 FILE=../$NAME-instrumentation-s390.diff
 IN="?_arch_s390_kernel_entry.S
@@ -188,7 +206,10 @@ IN="?_include_linux_ltt_ltt-facility-core.h
 ?_include_asm-powerpc_ltt_ltt-facility-id-kernel_arch_powerpc.h
 ?_include_asm-powerpc_ltt_ltt-facility-kernel_arch_powerpc.h
 ?_include_asm-ppc_ltt_ltt-facility-id-kernel_arch_ppc.h
-?_include_asm-ppc_ltt_ltt-facility-kernel_arch_ppc.h"
+?_include_asm-ppc_ltt_ltt-facility-kernel_arch_ppc.h
+?_include_asm-x86_64_ltt_ltt-facility-id-kernel_arch_x86_64.h
+?_include_asm-x86_64_ltt_ltt-facility-kernel_arch_x86_64.h
+?_include_asm-x86_64_ltt_ltt-facility-custom-locking.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -233,7 +254,9 @@ IN="?_ltt_Makefile
 ?_ltt_ltt-facility-loader-kernel_arch_powerpc.c
 ?_ltt_ltt-facility-loader-kernel_arch_powerpc.h
 ?_ltt_ltt-facility-loader-kernel_arch_ppc.c
-?_ltt_ltt-facility-loader-kernel_arch_ppc.h"
+?_ltt_ltt-facility-loader-kernel_arch_ppc.h
+?_ltt_ltt-facility-loader-kernel_arch_x86_64.c
+?_ltt_ltt-facility-loader-kernel_arch_x86_64.h"
 
 
 for a in $IN; do wr $a $FILE; done
@@ -288,6 +311,7 @@ IN="?_MAINTAINERS
 ?_include_asm-parisc_ltt.h
 ?_include_asm-powerpc_ltt.h
 ?_include_asm-ppc_ltt.h
+?_include_asm-x86_64_ltt.h
 ?_include_asm-s390_ltt.h
 ?_include_asm-sh64_ltt.h
 ?_include_asm-sh_ltt.h
@@ -305,6 +329,7 @@ IN="?_MAINTAINERS
 ?_arch_ppc_Kconfig
 ?_arch_arm_Kconfig
 ?_arch_mips_Kconfig
+?_arch_x86_64_Kconfig
 ?_init_main.c
 ?_kernel_Makefile
 ?_kernel_ltt-base.c
