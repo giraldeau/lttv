@@ -4,7 +4,7 @@ INCLUDE_DIR=/usr/include
 LIB_DIR?=/usr/lib
 RANLIB=ranlib
 
-LTT_CFLAGS=-I. -O2 -L.
+LTT_CFLAGS=-I. -O2 -L. -fPIC
 # note : x86_64 needs -fPIC ? FIXME
 
 #For testing lib ltt-usertrace-fast

@@ -65,14 +65,15 @@
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
-#include <linux/unistd.h>
+#include <unistd.h>
+#include <sys/syscall.h>
 
 // included with hack for powerpc in ltt-usertrace.h #include <asm/atomic.h>
 #include <asm/timex.h>	//for get_cycles()
 
 #include <ltt/ltt-usertrace.h>
 
-_syscall0(pid_t,gettid);
+#define gettid() syscall(__NR_gettid)
 
 #ifdef LTT_SHOW_DEBUG
 #define dbg_printf(...) printf(__VA_ARGS__)

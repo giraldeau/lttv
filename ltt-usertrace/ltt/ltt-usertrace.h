@@ -101,13 +101,17 @@ struct user_facility_info {
   size_t pointer_size;
   size_t size_t_size;
 };
-
+#if 0
 static inline __attribute__((no_instrument_function)) 
 _syscall5(int, ltt_trace_generic, unsigned int, facility_id,
 	unsigned int, event_id, void *, data, size_t, data_size, int, blocking)
 static inline __attribute__((no_instrument_function))
 _syscall2(int, ltt_register_generic, unsigned int *, facility_id,
 	const struct user_facility_info *, info)
+#endif //0
+
+#define ltt_register_generic(...)  syscall(__NR_ltt_register_generic, __VA_ARGS__)
+#define ltt_trace_generic(...)  syscall(__NR_ltt_trace_generic, __VA_ARGS__)
 
 #ifndef LTT_PACK
 /* Calculate the offset needed to align the type */
