@@ -1413,7 +1413,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "struct ltt_trace_struct *trace;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "struct rchan_buf *relayfs_buf;\n");
+	fprintf(fd, "void *transport_data;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "void *buffer = NULL;\n");
 	print_tabs(1, fd);
@@ -1538,8 +1538,6 @@ int print_event_logging_function(char *basename, facility_t *fac,
  
 	print_tabs(2, fd);
 	fprintf(fd, "channel = ltt_get_channel_from_index(trace, index);\n");
-	print_tabs(2, fd);
-	fprintf(fd, "relayfs_buf = channel->rchan->buf[smp_processor_id()];\n");
 	fprintf(fd, "\n");
 
 	
@@ -1549,7 +1547,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(2, fd);
 	fprintf(fd, "slot_size = 0;\n");
 	print_tabs(2, fd);
-	fprintf(fd, "buffer = ltt_reserve_slot(trace, relayfs_buf,\n");
+	fprintf(fd, "buffer = ltt_reserve_slot(trace, channel, &transport_data,\n");
 	print_tabs(3, fd);
 	fprintf(fd, "reserve_size, &slot_size, &tsc,\n");
 	print_tabs(3, fd);
@@ -1625,7 +1623,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	// for DEBUG only.
 	//fprintf(fd, "commit:\n"); /* DEBUG! */
 	print_tabs(2, fd);
-	fprintf(fd, "ltt_commit_slot(relayfs_buf, buffer, slot_size);\n\n");
+	fprintf(fd, "ltt_commit_slot(channel, &transport_data, buffer, slot_size);\n\n");
 	
 	print_tabs(1, fd);
 	fprintf(fd, "}\n\n");
@@ -2046,7 +2044,7 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	print_tabs(2, fd);
 	fprintf(fd, "slot_size = 0;\n");
 	print_tabs(2, fd);
-	fprintf(fd, "buffer = ltt_reserve_slot(trace, ltt_buf,\n");
+	fprintf(fd, "buffer = ltt_reserve_slot(trace, ltt_buf, &transport_data,\n");
 	print_tabs(3, fd);
 	fprintf(fd, "reserve_size, &slot_size, &tsc,\n");
 	print_tabs(3, fd);
@@ -2122,7 +2120,7 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	// for DEBUG only.
 	//fprintf(fd, "commit:\n"); /* DEBUG! */
 	print_tabs(2, fd);
-	fprintf(fd, "ltt_commit_slot(ltt_buf, buffer, slot_size);\n\n");
+	fprintf(fd, "ltt_commit_slot(ltt_buf, &transport_data, buffer, slot_size);\n\n");
 	
 	fprintf(fd, "}\n\n");
 
