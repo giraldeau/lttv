@@ -110,8 +110,7 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../$NAME-instrumentation-powerpc.diff
-IN="?_arch_powerpc_Kconfig
-?_arch_powerpc_kernel_entry_32.S
+IN="?_arch_powerpc_kernel_entry_32.S
 ?_arch_powerpc_kernel_entry_64.S
 ?_arch_powerpc_kernel_misc_32.S
 ?_arch_powerpc_kernel_misc_64.S
@@ -131,7 +130,6 @@ FILE=../$NAME-instrumentation-x86_64.diff
 
 IN="?_arch_x86_64_ia32_ia32entry.S
 ?_arch_x86_64_ia32_ipc32.c
-?_arch_x86_64_Kconfig
 ?_arch_x86_64_kernel_entry.S
 ?_arch_x86_64_kernel_ltt.c
 ?_arch_x86_64_kernel_Makefile
@@ -311,7 +309,6 @@ IN="?_MAINTAINERS
 ?_include_asm-parisc_ltt.h
 ?_include_asm-powerpc_ltt.h
 ?_include_asm-ppc_ltt.h
-?_include_asm-x86_64_ltt.h
 ?_include_asm-s390_ltt.h
 ?_include_asm-sh64_ltt.h
 ?_include_asm-sh_ltt.h
@@ -325,8 +322,10 @@ IN="?_MAINTAINERS
 ?_include_linux_sched.h
 ?_ltt_Kconfig
 ?_ltt_ltt-core.c
+?_ltt_ltt-relay.c
 ?_arch_i386_Kconfig
 ?_arch_ppc_Kconfig
+?_arch_powerpc_Kconfig
 ?_arch_arm_Kconfig
 ?_arch_mips_Kconfig
 ?_arch_x86_64_Kconfig
