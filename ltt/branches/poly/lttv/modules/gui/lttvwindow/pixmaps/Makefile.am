@@ -27,7 +27,7 @@ EXTRA_DIST =  \
 	stock_refresh_24.png\
 	close.png\
 	stock_jump_to_24.png\
-	stock_file-properties.png
+	stock_file-properties.png\
 	lttv-color-list.png\
 	guifilter22x22.png\
 	guifilter16x16.png
