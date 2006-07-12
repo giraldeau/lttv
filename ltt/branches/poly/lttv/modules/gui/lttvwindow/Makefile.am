@@ -6,7 +6,7 @@ install-data-local:
 	@$(NORMAL_INSTALL)
 	if test -d $(srcdir)/pixmaps; then \
 	  $(mkinstalldirs) $(DESTDIR)$(pkgdatadir)/pixmaps; \
-	  for pixmap in $(srcdir)/pixmaps/*; do \
+	  for pixmap in $(srcdir)/pixmaps/*.xpm $(srcdir)/pixmaps/*.png; do \
 	    if test -f $$pixmap; then \
 	      $(INSTALL_DATA) $$pixmap $(DESTDIR)$(pkgdatadir)/pixmaps; \
 	    fi \
