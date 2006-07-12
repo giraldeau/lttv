@@ -215,7 +215,7 @@ guicontrolflow(LttvPluginTab *ptab)
       0);
 
   tmp_toolbar_icon = create_pixmap (main_window_get_widget(tab),
-      "stock_file-properties.png");
+      "properties.png");
   gtk_widget_show(tmp_toolbar_icon);
   control_flow_data->button_prop = gtk_tool_button_new(tmp_toolbar_icon,
       "Properties");
