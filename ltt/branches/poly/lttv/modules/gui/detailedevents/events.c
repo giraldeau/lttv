@@ -78,6 +78,9 @@
 #define abs(a) (((a)<0)?(-a):(a))
 #define max(a,b) ((a)>(b)?(a):(b))
 
+/* Number of events between checks for GDK events (stop button) */
+#define CHECK_GDK_INTERVAL 50000
+                               
 /** Array containing instanced objects. Used when module is unloaded */
 static GSList *g_event_viewer_data_list = NULL ;
 
@@ -143,6 +146,8 @@ typedef struct _EventViewerData {
   gint background_info_waiting;
 
   guint32 last_tree_update_time; /* To filter out repeat keys */
+
+  guint num_events;  /* Number of events processed */
 
 } EventViewerData ;
 
@@ -1286,6 +1291,9 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   
   double value = new_value - event_viewer_data->previous_value;
 
+  /* Set stop button status for foreground processing */
+  event_viewer_data->tab->stop_foreground = FALSE;
+  
   /* See where we have to scroll... */
   ScrollDirection direction;
   gint relative_position;
@@ -1447,11 +1455,14 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   /* Mathieu :
    * I make the choice not to use the mainwindow lttvwindow API here : the idle
    * loop might have a too low priority, and we want good update while
-   * scrolling.
+   * scrolling. However, we call the gdk loop to get events periodically so the
+   * processing can be stopped.
    */
   
   lttv_process_traceset_begin(tsc,
       NULL, NULL, NULL, event_viewer_data->event_hooks, NULL);
+
+  event_viewer_data->num_events = 0;
   
   lttv_process_traceset_middle(tsc, ltt_time_infinite, G_MAXUINT, NULL);
   
@@ -1490,6 +1501,14 @@ int event_hook(void *hook_data, void *call_data)
   LttvTracefileState *tfs = (LttvTracefileState*)call_data;
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
 
+  event_viewer_data->num_events++;
+  if(event_viewer_data->num_events % CHECK_GDK_INTERVAL == 0) {
+    while(gtk_events_pending ())
+      gtk_main_iteration();
+    if(event_viewer_data->tab->stop_foreground)
+      return TRUE;
+  }
+  
   LttvFilter *filter = event_viewer_data->main_win_filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,

@@ -2168,6 +2168,7 @@ void stop_processing(GtkWidget *widget, gpointer user_data)
                        g_slist_remove_link(tab->events_requests, remove_iter);
   }
   tab->events_request_pending = FALSE;
+  tab->stop_foreground = TRUE;
   g_idle_remove_by_data(tab);
   g_assert(g_slist_length(tab->events_requests) == 0);
 }
@@ -4771,6 +4772,8 @@ void init_tab(Tab *tab, MainWindow * mw, Tab *copy_tab,
   /* Start with empty events requests list */
   tab->events_requests = NULL;
   tab->events_request_pending = FALSE;
+  tab->stop_foreground = FALSE;
+  
 
 
   g_signal_connect(G_OBJECT(tab->scrollbar), "value-changed",

@@ -133,6 +133,7 @@ struct _Tab{
   GSList *events_requests;
   gboolean events_request_pending;
   LttvAttribute *interrupted_state;
+  gboolean stop_foreground;
 };
 
 #endif /* _MAIN_WINDOW_PRIVATE_ */
