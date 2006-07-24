@@ -147,8 +147,6 @@ typedef struct _EventViewerData {
 
   guint num_events;  /* Number of events processed */
 
-  gboolean in_get_events;
-
 } EventViewerData ;
 
 /** hook functions for update time interval, current time ... */
@@ -524,8 +522,6 @@ gui_events(LttvPluginTab *ptab)
       event_viewer_data,
       (GDestroyNotify)gui_events_free);
   
-  event_viewer_data->in_get_events = FALSE;
-
   event_viewer_data->background_info_waiting = 0;
 
   request_background_data(event_viewer_data);
@@ -1296,12 +1292,11 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   guint i;
   gboolean seek_by_time;
   
-  if(event_viewer_data->in_get_events) return;
+  if(lttvwindow_preempt_count > 0) return;
 
   double value = new_value - event_viewer_data->previous_value;
 
   /* Set stop button status for foreground processing */
-  event_viewer_data->in_get_events = TRUE;
   event_viewer_data->tab->stop_foreground = FALSE;
   lttvwindow_events_request_disable();
   
@@ -1506,7 +1501,6 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
         gtk_widget_get_parent_window(event_viewer_data->tree_v));
 
   lttvwindow_events_request_enable();
-  event_viewer_data->in_get_events = FALSE;
 
   return;
 }
