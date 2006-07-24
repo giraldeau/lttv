@@ -77,6 +77,7 @@
 
 #define abs(a) (((a)<0)?(-a):(a))
 #define max(a,b) ((a)>(b)?(a):(b))
+#define min(a,b) ((a)<(b)?(a):(b))
 
 /** Array containing instanced objects. Used when module is unloaded */
 static GSList *g_event_viewer_data_list = NULL ;
@@ -145,6 +146,8 @@ typedef struct _EventViewerData {
   guint32 last_tree_update_time; /* To filter out repeat keys */
 
   guint num_events;  /* Number of events processed */
+
+  gboolean in_get_events;
 
 } EventViewerData ;
 
@@ -521,6 +524,8 @@ gui_events(LttvPluginTab *ptab)
       event_viewer_data,
       (GDestroyNotify)gui_events_free);
   
+  event_viewer_data->in_get_events = FALSE;
+
   event_viewer_data->background_info_waiting = 0;
 
   request_background_data(event_viewer_data);
@@ -1271,11 +1276,16 @@ gboolean show_event_detail(void * hook_data, void * call_data)
 }
 #endif //0
 
-
-
-
-
-
+static gboolean events_check_handler(guint count, gboolean *stop_flag)
+{
+  if(count % CHECK_GDK_INTERVAL == 0) {
+    gtk_main_iteration_do(FALSE);
+    if(*stop_flag)
+      return TRUE;
+    else
+      return FALSE;
+  }
+}
 
 static void get_events(double new_value, EventViewerData *event_viewer_data)
 {
@@ -1286,9 +1296,12 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
   guint i;
   gboolean seek_by_time;
   
+  if(event_viewer_data->in_get_events) return;
+
   double value = new_value - event_viewer_data->previous_value;
 
   /* Set stop button status for foreground processing */
+  event_viewer_data->in_get_events = TRUE;
   event_viewer_data->tab->stop_foreground = FALSE;
   lttvwindow_events_request_disable();
   
@@ -1390,8 +1403,9 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
    */
     if(relative_position > 0) {
       guint count;
-      count = lttv_process_traceset_seek_n_forward(tsc, relative_position,
-          event_viewer_data->main_win_filter);
+      count += lttv_process_traceset_seek_n_forward(tsc, relative_position,
+          event_viewer_data->main_win_filter, events_check_handler,
+          &event_viewer_data->tab->stop_foreground);
     } else if(relative_position < 0) {
       guint count;
       
@@ -1403,10 +1417,14 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
       LttTime time_diff = ltt_time_sub(last_event_time, first_event_time);
       if(ltt_time_compare(time_diff, ltt_time_zero) == 0)
         time_diff = seek_back_default_offset;
-      count = lttv_process_traceset_seek_n_backward(tsc, abs(relative_position),
+
+      count = lttv_process_traceset_seek_n_backward(tsc,
+          abs(relative_position),
           time_diff,
           (seek_time_fct)lttv_state_traceset_seek_time_closest,
-          event_viewer_data->main_win_filter);
+          event_viewer_data->main_win_filter,
+	  events_check_handler,
+	  &event_viewer_data->tab->stop_foreground);
     } /* else 0 : do nothing : we are already at the beginning position */
 
     lttv_traceset_context_position_destroy(pos);
@@ -1488,6 +1506,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
         gtk_widget_get_parent_window(event_viewer_data->tree_v));
 
   lttvwindow_events_request_enable();
+  event_viewer_data->in_get_events = FALSE;
 
   return;
 }
@@ -1502,7 +1521,7 @@ int event_hook(void *hook_data, void *call_data)
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
 
   if(event_viewer_data->num_events % CHECK_GDK_INTERVAL == 0) {
-    gtk_main_iteration();
+    gtk_main_iteration_do(FALSE);
     if(event_viewer_data->tab->stop_foreground)
       return TRUE;
   }

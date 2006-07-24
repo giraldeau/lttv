@@ -352,9 +352,13 @@ void lttv_process_traceset_get_sync_data(LttvTracesetContext *tsc);
 
 static const LttTime seek_back_default_offset = { 1, 0 };
 
+typedef gboolean check_handler(guint count, gboolean *stop_flag);
+
 guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
                                            guint n,
-                                           LttvFilter *filter);
+                                           LttvFilter *filter,
+					   check_handler *check,
+					   gboolean *stop_flag);
 typedef void (*seek_time_fct)(LttvTracesetContext *self, LttTime start);
 
 /* If first_offset is ltt_time_zero, it will choose a default value */
@@ -362,7 +366,9 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
                                             guint n,
                                             LttTime first_offset,
                                             seek_time_fct,
-                                            LttvFilter *filter);
+                                            LttvFilter *filter,
+	 				    check_handler *check,
+					    gboolean *stop_flag);
 
 
 #endif // PROCESSTRACE_H
