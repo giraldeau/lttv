@@ -51,6 +51,8 @@
 
 extern GSList * g_main_window_list;
 
+gint lttvwindow_preempt_count = 0;
+
 /* set_time_window 
  *
  * It updates the time window of the tab, then calls the updatetimewindow
@@ -1016,8 +1018,6 @@ gboolean lttvwindow_events_request_pending(Tab            *tab)
   if(element == NULL) return FALSE;
   else return TRUE;
 }
-
-
 
 
 /**

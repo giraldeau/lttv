@@ -928,6 +928,8 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
   guint count;
   LttvTracesetContextPosition *end_position;
   
+  if(lttvwindow_preempt_count > 0) return TRUE;
+  
   if(tab == NULL) {
     g_critical("Foreground processing : tab does not exist. Processing removed.");
     return FALSE;

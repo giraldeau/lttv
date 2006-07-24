@@ -269,6 +269,9 @@ extern GQuark LTTV_VIEWER_CONSTRUCTORS;
 /* constructor a the viewer */
 typedef GtkWidget* (*lttvwindow_viewer_constructor)(LttvPlugin *plugin);
 
+extern gint lttvwindow_preempt_count;
+
+#define CHECK_GDK_INTERVAL 50000
 
 /**
  * Function to register a view constructor so that main window can generate
@@ -826,5 +829,31 @@ void events_request_free(EventsRequest *events_request);
 GtkWidget *main_window_get_widget(Tab *tab);
 
 void set_current_position(Tab *tab, const LttvTracesetContextPosition *pos);
+
+
+/**
+ * Function to disable the EventsRequests scheduler, nestable.
+ *
+ */
+static inline void lttvwindow_events_request_disable(void)
+{
+  lttvwindow_preempt_count++;
+}
+
+/**
+ * Function to restore the EventsRequests scheduler, nestable.
+ *
+ */
+static inline void lttvwindow_events_request_enable(void)
+{
+  lttvwindow_preempt_count--;
+}
+
+
+
+
+
+
+
 
 #endif //LTTVWINDOW_H

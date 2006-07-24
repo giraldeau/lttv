@@ -975,6 +975,8 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
 
   if(trace == NULL)
     return FALSE;
+
+  if(lttvwindow_preempt_count > 0) return TRUE;
    
   attribute = lttv_trace_attribute(trace);
   

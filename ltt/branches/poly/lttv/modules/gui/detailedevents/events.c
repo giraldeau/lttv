@@ -78,9 +78,6 @@
 #define abs(a) (((a)<0)?(-a):(a))
 #define max(a,b) ((a)>(b)?(a):(b))
 
-/* Number of events between checks for GDK events (stop button) */
-#define CHECK_GDK_INTERVAL 50000
-                               
 /** Array containing instanced objects. Used when module is unloaded */
 static GSList *g_event_viewer_data_list = NULL ;
 
@@ -1293,6 +1290,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
 
   /* Set stop button status for foreground processing */
   event_viewer_data->tab->stop_foreground = FALSE;
+  lttvwindow_events_request_disable();
   
   /* See where we have to scroll... */
   ScrollDirection direction;
@@ -1489,6 +1487,8 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
     gdk_x11_get_server_time(
         gtk_widget_get_parent_window(event_viewer_data->tree_v));
 
+  lttvwindow_events_request_enable();
+
   return;
 }
 
@@ -1501,13 +1501,12 @@ int event_hook(void *hook_data, void *call_data)
   LttvTracefileState *tfs = (LttvTracefileState*)call_data;
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
 
-  event_viewer_data->num_events++;
   if(event_viewer_data->num_events % CHECK_GDK_INTERVAL == 0) {
-    while(gtk_events_pending ())
-      gtk_main_iteration();
+    gtk_main_iteration();
     if(event_viewer_data->tab->stop_foreground)
       return TRUE;
   }
+  event_viewer_data->num_events++;
   
   LttvFilter *filter = event_viewer_data->main_win_filter;
   if(filter != NULL && filter->head != NULL)
