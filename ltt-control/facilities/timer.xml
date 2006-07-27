@@ -39,4 +39,11 @@
     <field name="value_microseconds"><uint size="4"/></field>
   </event>
 
+  <event name="set_timer">
+    <description>A timer is added/modified/migrated.</description>
+    <field name="expires"><ulong/></field>
+    <field name="function"><pointer/></field>
+    <field name="data"><pointer/></field>
+  </event>
+
 </facility>
