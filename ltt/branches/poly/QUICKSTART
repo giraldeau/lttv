@@ -285,6 +285,8 @@ You need to load the ltt-control module to be able to control tracing from user
 space. This is done by issuing the command :
 
 modprobe ltt-control
+modprobe ltt-core
+modprobe ltt-relay
 
 If you want to have complete information about the kernel state (including all
 the process names), you need to load the ltt-statedump module. This is done by
@@ -295,6 +297,8 @@ modprobe ltt-statedump
 You can automate at boot time loading the ltt-control module by :
 
 echo ltt-control >> /etc/modules
+echo ltt-core >> /etc/modules
+echo ltt-relay >> /etc/modules
 echo ltt-statedump >> /etc/modules
 
 
