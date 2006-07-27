@@ -40,6 +40,7 @@ enum trace_ctl_op {
 };
 
 static char *trace_name = NULL;
+static char *trace_type = "relay";
 static char *mode_name = NULL;
 static unsigned subbuf_size = 0;
 static unsigned n_subbufs = 0;
@@ -81,6 +82,7 @@ void show_arguments(void)
 	printf("              (optionnaly, you can set LTT_DAEMON\n");
 	printf("              and the LTT_FACILITIES env. vars.)\n");
 	printf("-t            Trace root path. (ex. /root/traces/example_trace)\n");
+	printf("-T            Type of trace (ex. relay)\n");
 	printf("-l            LTT channels root path. (ex. /mnt/relayfs/ltt)\n");
 	printf("-z            Size of the subbuffers (will be rounded to next page size)\n");
 	printf("-x            Number of subbuffers\n");
@@ -215,6 +217,16 @@ int parse_arguments(int argc, char **argv)
 						if(argn+1 < argc) {
 							num_threads = argv[argn+1];
 							argn++;
+						}
+						break;
+					case 'T':
+						if(argn+1 < argc) {
+							trace_type = argv[argn+1];
+							argn++;
+						} else {
+							printf("Specify a trace type after -T.\n");
+							printf("\n");
+							ret = EINVAL;
 						}
 						break;
 					default:
@@ -390,7 +402,7 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	strcat(channel_path, trace_name);
 
 	
-	ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size, n_subbufs);
+	ret = lttctl_create_trace(handle, trace_name, mode, trace_type, subbuf_size, n_subbufs);
 	if(ret != 0) goto create_error;
 
 	act.sa_handler = sigchld_handler;
@@ -466,13 +478,13 @@ int main(int argc, char ** argv)
 	
 	switch(op) {
     case CTL_OP_CREATE_START:
-			ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size,
+			ret = lttctl_create_trace(handle, trace_name, mode, trace_type, subbuf_size,
 																n_subbufs);
       if(!ret)
         ret = lttctl_start(handle, trace_name);
       break;
   	case CTL_OP_CREATE:
-			ret = lttctl_create_trace(handle, trace_name, mode, subbuf_size,
+			ret = lttctl_create_trace(handle, trace_name, mode, trace_type, subbuf_size,
 																n_subbufs);
       break;
 		case CTL_OP_DESTROY:

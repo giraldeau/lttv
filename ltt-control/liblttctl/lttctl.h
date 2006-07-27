@@ -47,6 +47,7 @@ enum trace_mode {
 
 typedef struct lttctl_peer_msg {
 	char trace_name[NAME_MAX];
+	char trace_type[NAME_MAX];
 	enum trace_op op;
 	union {
     struct {
@@ -76,7 +77,7 @@ int lttctl_destroy_handle(struct lttctl_handle *h);
 
 
 int lttctl_create_trace(const struct lttctl_handle *h,
-		char *name, enum trace_mode mode, unsigned subbuf_size, unsigned n_subbufs);
+		char *name, enum trace_mode mode, char *trace_type, unsigned subbuf_size, unsigned n_subbufs);
 
 int lttctl_destroy_trace(const struct lttctl_handle *handle, char *name);
 

@@ -298,7 +298,7 @@ int lttctl_destroy_handle(struct lttctl_handle *h)
 
 
 int lttctl_create_trace(const struct lttctl_handle *h,
-		char *name, enum trace_mode mode, unsigned subbuf_size, unsigned n_subbufs)
+		char *name, enum trace_mode mode, char *trace_type, unsigned subbuf_size, unsigned n_subbufs)
 {
 	int err;
 	
@@ -320,6 +320,7 @@ int lttctl_create_trace(const struct lttctl_handle *h,
 	req.nlh.nlmsg_seq = 0;
 
 	strncpy(req.msg.trace_name, name, NAME_MAX);
+	strncpy(req.msg.trace_type, trace_type, NAME_MAX);
 	req.msg.op = OP_CREATE;
 	req.msg.args.new_trace.mode = mode;
 	req.msg.args.new_trace.subbuf_size = subbuf_size;
