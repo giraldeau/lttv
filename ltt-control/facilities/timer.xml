@@ -43,7 +43,7 @@
     <description>A timer is added/modified/migrated.</description>
     <field name="expires"><ulong/></field>
     <field name="function"><pointer/></field>
-    <field name="data"><pointer/></field>
+    <field name="data"><ulong/></field>
   </event>
 
 </facility>
