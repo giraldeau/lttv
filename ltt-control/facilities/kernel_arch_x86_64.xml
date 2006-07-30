@@ -137,7 +137,6 @@
       <label name="stub_sigaltstack" value="131"/>
       <label name="sys_utime" value="132"/>
       <label name="sys_mknod" value="133"/>
-      <label name="sys_ni_syscall" value="134"/>
       <label name="sys_personality" value="135"/>
       <label name="sys_ustat" value="136"/>
       <label name="sys_statfs" value="137"/>
@@ -177,18 +176,10 @@
       <label name="sys_setdomainname" value="171"/>
       <label name="stub_iopl" value="172"/>
       <label name="sys_ioperm" value="173"/>
-      <label name="sys_ni_syscall" value="174"/>
       <label name="sys_init_module" value="175"/>
       <label name="sys_delete_module" value="176"/>
-      <label name="sys_ni_syscall" value="177"/>
-      <label name="sys_ni_syscall" value="178"/>
       <label name="sys_quotactl" value="179"/>
       <label name="sys_nfsservctl" value="180"/>
-      <label name="sys_ni_syscall" value="181"/>
-      <label name="sys_ni_syscall" value="182"/>
-      <label name="sys_ni_syscall" value="183"/>
-      <label name="sys_ni_syscall" value="184"/>
-      <label name="sys_ni_syscall" value="185"/>
       <label name="sys_gettid" value="186"/>
       <label name="sys_readahead" value="187"/>
       <label name="sys_setxattr" value="188"/>
@@ -208,17 +199,13 @@
       <label name="sys_futex" value="202"/>
       <label name="sys_sched_setaffinity" value="203"/>
       <label name="sys_sched_getaffinity" value="204"/>
-      <label name="sys_ni_syscall" value="205"/>
       <label name="sys_io_setup" value="206"/>
       <label name="sys_io_destroy" value="207"/>
       <label name="sys_io_getevents" value="208"/>
       <label name="sys_io_submit" value="209"/>
       <label name="sys_io_cancel" value="210"/>
-      <label name="sys_ni_syscall" value="211"/>
       <label name="sys_lookup_dcookie" value="212"/>
       <label name="sys_epoll_create" value="213"/>
-      <label name="sys_ni_syscall" value="214"/>
-      <label name="sys_ni_syscall" value="215"/>
       <label name="sys_remap_file_pages" value="216"/>
       <label name="sys_getdents64" value="217"/>
       <label name="sys_set_tid_address" value="218"/>
@@ -239,7 +226,6 @@
       <label name="sys_epoll_ctl" value="233"/>
       <label name="sys_tgkill" value="234"/>
       <label name="sys_utimes" value="235"/>
-      <label name="sys_ni_syscall" value="236"/>
       <label name="sys_mbind" value="237"/>
       <label name="sys_set_mempolicy" value="238"/>
       <label name="sys_get_mempolicy" value="239"/>
@@ -273,8 +259,6 @@
       <label name="sys_readlinkat" value="267"/>
       <label name="sys_fchmodat" value="268"/>
       <label name="sys_faccessat" value="269"/>
-      <label name="sys_ni_syscall" value="270"/>
-      <label name="sys_ni_syscall" value="271"/>
       <label name="sys_unshare" value="272"/>
       <label name="sys_set_robust_list" value="273"/>
       <label name="sys_get_robust_list" value="274"/>
