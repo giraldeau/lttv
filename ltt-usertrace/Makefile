@@ -22,7 +22,7 @@ sample: sample.c
 	$(CC) $(LTT_CFLAGS) $(CFLAGS) -lltt-loader-user_generic -o $@ $^
 sample-block: sample-block.c
 	$(CC) $(LTT_CFLAGS) $(CFLAGS) -lltt-loader-user_generic -o $@ $^
-	
+
 sample-thread-brand: sample-thread-brand.c
 	$(CC) $(LTT_CFLAGS) $(CFLAGS) -lltt-loader-user_generic -o $@ $^
 
@@ -95,4 +95,4 @@ install_libs:
 install: install_headers libs install_libs
 
 clean:
-	rm -fr *.o *~ sample-thread sample sample-highspeed sample-printf sample-instrument-fct libltt-instrument-functions.so* libltt-instrument-functions.a libltt-usertrace-fast.a libltt-usertrace-fast.so* libltt-loader-user_generic.so* libltt-loader-user_generic.a sample-thread-slow sample-thread-fast sample-thread-brand sample-block java/*.class java/Sample.h java/TestBrand.h
+	find . -name \*~ | xargs rm -fr *.o sample-thread sample sample-highspeed sample-printf sample-instrument-fct libltt-instrument-functions.so* libltt-instrument-functions.a libltt-usertrace-fast.a libltt-usertrace-fast.so* libltt-loader-user_generic.so* libltt-loader-user_generic.a sample-thread-slow sample-thread-fast sample-thread-brand sample-block java/*.class java/Sample.h java/TestBrand.h

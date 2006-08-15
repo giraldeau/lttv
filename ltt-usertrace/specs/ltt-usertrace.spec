@@ -47,6 +47,7 @@ ldconfig
 /usr/include/ltt
 /usr/include/ltt/atomic-ppc.h
 /usr/include/ltt/atomic-ppc64.h
+/usr/include/ltt/kernelutils-x86_64.h
 /usr/include/ltt/ltt-facility-custom-user_generic.h
 /usr/include/ltt/ltt-facility-id-user_generic.h
 /usr/include/ltt/ltt-facility-user_generic.h

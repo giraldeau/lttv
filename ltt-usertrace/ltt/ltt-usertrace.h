@@ -14,7 +14,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <linux/unistd.h>
 
 #define inline inline __attribute__((always_inline))
 
@@ -30,13 +29,11 @@
 #include <ltt/timex-ppc.h>
 #endif
 #elif defined(__x86_64__)
-#include <asm/timex.h>
-#include <asm/bitops.h>
-#include <asm/atomic.h>
-#include <asm/system.h>
+#include <ltt/kernelutils-x86_64.h>
+#elif defined(__i386__)
+#include <ltt/kernelutils-i386.h>
 #else
-#include <asm/timex.h>
-#include <asm/atomic.h>
+#error "Unsupported architecture"
 #endif
 
 #ifndef min

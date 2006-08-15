@@ -68,9 +68,6 @@
 #include <unistd.h>
 #include <sys/syscall.h>
 
-// included with hack for powerpc in ltt-usertrace.h #include <asm/atomic.h>
-#include <asm/timex.h>	//for get_cycles()
-
 #include <ltt/ltt-usertrace.h>
 
 #define gettid() syscall(__NR_gettid)
