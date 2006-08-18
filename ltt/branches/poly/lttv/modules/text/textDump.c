@@ -45,7 +45,8 @@ static gboolean
   a_field_names,
   a_state,
   a_cpu_stats,
-  a_process_stats;
+  a_process_stats,
+  a_path_output;
 
 static char
   *a_file_name = NULL;
@@ -58,6 +59,74 @@ static LttvHooks
 
 
 static void 
+print_path_tree(FILE *fp, GString *indent, LttvAttribute *tree)
+{
+  int i, nb, saved_length;
+
+  LttvAttribute *subtree;
+
+  LttvAttributeName name;
+
+  LttvAttributeValue value;
+
+  LttvAttributeType type;
+
+  gboolean is_named;
+
+  saved_length = indent->len;
+  nb = lttv_attribute_get_number(tree);
+  for(i = 0 ; i < nb ; i++) {
+    type = lttv_attribute_get(tree, i, &name, &value, &is_named);
+    if(is_named) {
+      g_string_sprintfa(indent, "/%s", g_quark_to_string(name));
+    } else {
+      g_string_sprintfa(indent, "/%s", name);
+    }
+
+    switch(type) {
+      case LTTV_INT:
+       fprintf(fp, "%s: %d\n", indent->str, *value.v_int);
+        break;
+      case LTTV_UINT:
+       fprintf(fp, "%s: %d\n", indent->str, *value.v_int);
+        break;
+      case LTTV_LONG:
+       fprintf(fp, "%s: %ld\n", indent->str, *value.v_ulong);
+        break;
+      case LTTV_ULONG:
+       fprintf(fp, "%s: %lu\n", indent->str, *value.v_ulong);
+        break;
+      case LTTV_FLOAT:
+       fprintf(fp, "%s: %f\n", indent->str, (double) *value.v_float);
+        break;
+      case LTTV_DOUBLE:
+        fprintf(fp, "%s: %f\n", indent->str, *value.v_double);
+        break;
+      case LTTV_TIME:
+       fprintf(fp, "%s: %lu.%09lu\n", indent->str, value.v_time->tv_sec, value.v_time->tv_nsec);
+        break;
+      case LTTV_POINTER:
+       fprintf(fp, "%s: POINTER\n", indent->str);
+        break;
+      case LTTV_STRING:
+       fprintf(fp, "%s: %s\n", indent->str, *value.v_string);
+        break;
+      case LTTV_GOBJECT:
+        if(LTTV_IS_ATTRIBUTE(*(value.v_gobject))) {
+          subtree = (LttvAttribute*) *(value.v_gobject);
+          print_path_tree(fp, indent, subtree);
+        } else {
+         fprintf(fp, "%s: GOBJECT\n", indent->str);
+       }
+        break;
+      case LTTV_NONE:
+        break;
+    }
+    g_string_truncate(indent, saved_length);
+  }
+}
+
+static void
 print_tree(FILE *fp, GString *indent, LttvAttribute *tree)
 {
   int i, nb, saved_length;
@@ -126,7 +195,6 @@ print_tree(FILE *fp, GString *indent, LttvAttribute *tree)
   }
 }
 
-
 static void
 print_stats(FILE *fp, LttvTracesetStats *tscs)
 {
@@ -143,7 +211,11 @@ print_stats(FILE *fp, LttvTracesetStats *tscs)
   if(tscs->stats == NULL) return;
   indent = g_string_new("");
   fprintf(fp, "Traceset statistics:\n\n");
-  print_tree(fp, indent, tscs->stats);
+  if(a_path_output) {
+    print_path_tree(fp, indent, tscs->stats);
+  } else {
+    print_tree(fp, indent, tscs->stats);
+  }
 
   ts = tscs->parent.parent.ts;
   nb = lttv_traceset_number(ts);
@@ -159,13 +231,17 @@ print_stats(FILE *fp, LttvTracesetStats *tscs)
       start_time.tv_nsec);
 #endif //FIXME
     saved_length = indent->len;
-    indent = g_string_append(indent, "  ");
-    print_tree(fp, indent, tcs->stats);
+    if(a_path_output) {
+      g_string_sprintfa(indent, "/trace%i", i);
+      print_path_tree(fp, indent, tcs->stats);
+    } else {
+      g_string_append(indent, "  ");
+      print_tree(fp, indent, tcs->stats);
+    }
     g_string_truncate(indent, saved_length);
   }
   g_string_free(indent, TRUE);
 }
-
 
 /* Insert the hooks before and after each trace and tracefile, and for each
    event. Print a global header. */
@@ -311,6 +387,12 @@ static void init()
       "write the per process statistics", 
       "", 
       LTTV_OPT_NONE, &a_process_stats, NULL, NULL);
+
+  a_path_output = FALSE;
+  lttv_option_add("path_output", 'a',
+      "print the process stats in path format, for easy grepping",
+      "",
+      LTTV_OPT_NONE, &a_path_output, NULL, NULL);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event",
       LTTV_POINTER, &value));
