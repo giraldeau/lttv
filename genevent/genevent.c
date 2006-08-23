@@ -1104,13 +1104,13 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	}
 
 	print_tabs(2, fd);
-	fprintf(fd, "void *buffer,\n");
+	fprintf(fd, "char *buffer,\n");
 	print_tabs(2, fd);
 	fprintf(fd, "size_t *to_base,\n");
 	print_tabs(2, fd);
 	fprintf(fd, "size_t *to,\n");
 	print_tabs(2, fd);
-	fprintf(fd, "const void **from,\n");
+	fprintf(fd, "const char **from,\n");
 	print_tabs(2, fd);
 	fprintf(fd, "size_t *len,\n");
 	print_tabs(2, fd);
@@ -1415,7 +1415,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "void *transport_data;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "void *buffer = NULL;\n");
+	fprintf(fd, "char *buffer = NULL;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */\n");
 	print_tabs(1, fd);
@@ -1449,9 +1449,9 @@ int print_event_logging_function(char *basename, facility_t *fac,
 			print_tabs(1, fd);
 		}
 
-		fprintf(fd, "const void *real_from;\n");
+		fprintf(fd, "const char *real_from;\n");
 		print_tabs(1, fd);
-		fprintf(fd, "const void **from = &real_from;\n");
+		fprintf(fd, "const char **from = &real_from;\n");
 		print_tabs(1, fd);
 	}
 	fprintf(fd, "u64 tsc;\n");
@@ -1669,7 +1669,7 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 				fprintf(fd, "\n");
 		}
 		print_tabs(2, fd);
-		fprintf(fd, "void *buffer");
+		fprintf(fd, "char *buffer");
 		has_argument = 1;
 		fprintf(fd, ",");
 		fprintf(fd, "\n");
@@ -1710,7 +1710,7 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 		goto do_syscall;
 	}
 	print_tabs(1, fd);
-	fprintf(fd, "void *buffer = NULL;\n");
+	fprintf(fd, "char *buffer = NULL;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */\n");
 	print_tabs(1, fd);
@@ -1744,9 +1744,9 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 			print_tabs(1, fd);
 		}
 
-		fprintf(fd, "const void *real_from;\n");
+		fprintf(fd, "const char *real_from;\n");
 		print_tabs(1, fd);
-		fprintf(fd, "const void **from = &real_from;\n");
+		fprintf(fd, "const char **from = &real_from;\n");
 		print_tabs(1, fd);
 	}
 
@@ -1918,7 +1918,7 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "struct ltt_buf *ltt_buf;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "void *buffer = NULL;\n");
+	fprintf(fd, "char *buffer = NULL;\n");
 	print_tabs(1, fd);
 	fprintf(fd, "size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */\n");
 	print_tabs(1, fd);
@@ -1952,9 +1952,9 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 			print_tabs(1, fd);
 		}
 
-		fprintf(fd, "const void *real_from;\n");
+		fprintf(fd, "const char *real_from;\n");
 		print_tabs(1, fd);
-		fprintf(fd, "const void **from = &real_from;\n");
+		fprintf(fd, "const char **from = &real_from;\n");
 		print_tabs(1, fd);
 	}
 	fprintf(fd, "uint64_t tsc;\n");
