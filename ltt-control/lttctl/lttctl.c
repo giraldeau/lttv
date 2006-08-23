@@ -51,15 +51,6 @@ static char *channel_root = NULL;
 static char *trace_root = NULL;
 static char *num_threads = "1";
 
-static int sigchld_received = 0;
-
-void sigchld_handler(int signo)
-{
-	printf("signal %d received\n", signo);
-	sigchld_received = 1;
-}
-
-
 /* Args :
  *
  */
@@ -67,28 +58,28 @@ void show_arguments(void)
 {
 	printf("Please use the following arguments :\n");
 	printf("\n");
-	printf("-n name			 Name of the trace.\n");
-	printf("-b						Create trace channels and start tracing (no daemon).\n");
-	printf("-c						Create trace channels.\n");
-	printf("-m mode			 Normal or flight recorder mode.\n");
-	printf("							Mode values : normal (default) or flight.\n");
-	printf("-r						Destroy trace channels.\n");
-	printf("-R						Stop tracing and destroy trace channels.\n");
-	printf("-s						Start tracing.\n");
-	//printf("							Note : will automatically create a normal trace if "
-	//											"none exists.\n");
-	printf("-q						Stop tracing.\n");
-	printf("-d						Create trace, spawn a lttd daemon, start tracing.\n");
-	printf("							(optionnaly, you can set LTT_DAEMON\n");
-	printf("							and the LTT_FACILITIES env. vars.)\n");
-	printf("-t						Trace root path. (ex. /root/traces/example_trace)\n");
-	printf("-T						Type of trace (ex. relay)\n");
-	printf("-l						LTT channels root path. (ex. /mnt/relayfs/ltt)\n");
-	printf("-z						Size of the subbuffers (will be rounded to next page size)\n");
-	printf("-x						Number of subbuffers\n");
-	printf("-e						Get XML facilities description\n");
-	printf("-a						Append to trace\n");
-	printf("-N						Number of lttd threads\n");
+	printf("-n name       Name of the trace.\n");
+	printf("-b            Create trace channels and start tracing (no daemon).\n");
+	printf("-c            Create trace channels.\n");
+	printf("-m mode       Normal or flight recorder mode.\n");
+	printf("              Mode values : normal (default) or flight.\n");
+	printf("-r            Destroy trace channels.\n");
+	printf("-R            Stop tracing and destroy trace channels.\n");
+	printf("-s            Start tracing.\n");
+	//printf("              Note : will automatically create a normal trace if "
+	//                      "none exists.\n");
+	printf("-q            Stop tracing.\n");
+	printf("-d            Create trace, spawn a lttd daemon, start tracing.\n");
+	printf("              (optionnaly, you can set LTT_DAEMON\n");
+	printf("              and the LTT_FACILITIES env. vars.)\n");
+	printf("-t            Trace root path. (ex. /root/traces/example_trace)\n");
+	printf("-T            Type of trace (ex. relay)\n");
+	printf("-l            LTT channels root path. (ex. /mnt/relayfs/ltt)\n");
+	printf("-z            Size of the subbuffers (will be rounded to next page size)\n");
+	printf("-x            Number of subbuffers\n");
+	printf("-e            Get XML facilities description\n");
+	printf("-a            Append to trace\n");
+	printf("-N            Number of lttd threads\n");
 	printf("\n");
 }
 
@@ -392,7 +383,6 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	pid_t pid;
 	int ret;
 	char *lttd_path = getenv("LTT_DAEMON");
-	struct sigaction act;
 
 	if(lttd_path == NULL) lttd_path = 
 		PACKAGE_BIN_DIR "/lttd";
@@ -405,18 +395,12 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	ret = lttctl_create_trace(handle, trace_name, mode, trace_type, subbuf_size, n_subbufs);
 	if(ret != 0) goto create_error;
 
-	act.sa_handler = sigchld_handler;
-	sigemptyset(&(act.sa_mask));
-	sigaddset(&(act.sa_mask), SIGCHLD);
-	sigaction(SIGCHLD, &act, NULL);
-	
 	pid = fork();
 
 	if(pid > 0) {
-		int status;
+		int status = 0;
 		/* parent */
-		while(!(sigchld_received)) pause();
-
+		
 		ret = waitpid(pid, &status, 0);
 		if(ret == -1) {
 			ret = errno;
