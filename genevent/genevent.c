@@ -86,6 +86,9 @@
 #define dprintf(...)
 #endif
 
+
+enum user_fct_types { USER_FCT_PROTO, USER_FCT_DECLARATION } ;
+
 /* Code printing */
 
 void print_tabs(unsigned int tabs, FILE *fd)
@@ -1489,10 +1492,10 @@ int print_event_logging_function(char *basename, facility_t *fac,
 			case ARRAY:
 			case STRUCT:
 			case STRING:
-				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)lttng_param_%s;\n", field->name);
 				break;
 			default:
-				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)&lttng_param_%s;\n", field->name);
 				break;
 		}
 
@@ -1588,10 +1591,10 @@ int print_event_logging_function(char *basename, facility_t *fac,
 			case ARRAY:
 			case STRUCT:
 			case STRING:
-				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)lttng_param_%s;\n", field->name);
 				break;
 			default:
-				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)&lttng_param_%s;\n", field->name);
 				break;
 		}
 
@@ -1640,17 +1643,12 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	return 0;
 }
 
-/* print_event_logging_function_user_generic
- * Print the logging function of an event for userspace tracing. This is the
- * core of genevent */
-int print_event_logging_function_user_generic(char *basename, facility_t *fac,
-		event_t *event, FILE *fd)
+int print_event_logging_function_header_user_generic(char *basename, facility_t *fac,
+		event_t *event, FILE *fd, enum user_fct_types fct_type)
 {
 	char *attrib;
 
-	fprintf(fd, "#ifndef LTT_TRACE_FAST\n");
-	
-	if(event->no_instrument_function) {
+	if(event->no_instrument_function && fct_type == USER_FCT_PROTO) {
 		attrib = "__attribute__((no_instrument_function)) ";
 	} else {
 		attrib = "";
@@ -1661,7 +1659,6 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 		fprintf(fd, "static inline %sint trace_%s(\n",attrib, basename);
 	}
 	int	has_argument = 0;
-	int has_type_fixed = 0;
 
 	if(event->param_buffer) {
 		if(has_argument) {
@@ -1692,7 +1689,25 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 		print_tabs(2, fd);
 		fprintf(fd, "void");
 	}
-	fprintf(fd,")\n");
+	fprintf(fd,")");
+	return 0;
+}
+
+
+/* print_event_logging_function_user_generic
+ * Print the logging function of an event for userspace tracing. This is the
+ * core of genevent */
+int print_event_logging_function_user_generic(char *basename, facility_t *fac,
+		event_t *event, FILE *fd)
+{
+	int has_type_fixed = 0;
+
+	if(print_event_logging_function_header_user_generic(basename, fac, event, fd, USER_FCT_PROTO)) return 1;
+	fprintf(fd,";\n");
+	fprintf(fd,"\n");
+	fprintf(fd, "#ifndef LTT_TRACE_FAST\n");
+	if(print_event_logging_function_header_user_generic(basename, fac, event, fd, USER_FCT_DECLARATION)) return 1;
+	fprintf(fd,"\n");
 	fprintf(fd, 
 			"#ifndef LTT_TRACE\n");
 	fprintf(fd, "{\n");
@@ -1776,10 +1791,10 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 			case ARRAY:
 			case STRUCT:
 			case STRING:
-				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)lttng_param_%s;\n", field->name);
 				break;
 			default:
-				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)&lttng_param_%s;\n", field->name);
 				break;
 		}
 
@@ -1820,10 +1835,10 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 			case ARRAY:
 			case STRUCT:
 			case STRING:
-				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)lttng_param_%s;\n", field->name);
 				break;
 			default:
-				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)&lttng_param_%s;\n", field->name);
 				break;
 		}
 
@@ -1998,10 +2013,10 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 			case ARRAY:
 			case STRUCT:
 			case STRING:
-				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)lttng_param_%s;\n", field->name);
 				break;
 			default:
-				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)&lttng_param_%s;\n", field->name);
 				break;
 		}
 
@@ -2044,7 +2059,7 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	print_tabs(2, fd);
 	fprintf(fd, "slot_size = 0;\n");
 	print_tabs(2, fd);
-	fprintf(fd, "buffer = ltt_reserve_slot(trace, ltt_buf, &transport_data,\n");
+	fprintf(fd, "buffer = ltt_reserve_slot(trace, ltt_buf,\n");
 	print_tabs(3, fd);
 	fprintf(fd, "reserve_size, &slot_size, &tsc,\n");
 	print_tabs(3, fd);
@@ -2085,10 +2100,10 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 			case ARRAY:
 			case STRUCT:
 			case STRING:
-				fprintf(fd, "*from = lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)lttng_param_%s;\n", field->name);
 				break;
 			default:
-				fprintf(fd, "*from = &lttng_param_%s;\n", field->name);
+				fprintf(fd, "*from = (const char*)&lttng_param_%s;\n", field->name);
 				break;
 		}
 
@@ -2120,7 +2135,7 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	// for DEBUG only.
 	//fprintf(fd, "commit:\n"); /* DEBUG! */
 	print_tabs(2, fd);
-	fprintf(fd, "ltt_commit_slot(ltt_buf, &transport_data, buffer, slot_size);\n\n");
+	fprintf(fd, "ltt_commit_slot(ltt_buf, buffer, slot_size);\n\n");
 	
 	fprintf(fd, "}\n\n");
 
@@ -2150,14 +2165,14 @@ void print_log_header_head(facility_t *fac, FILE *fd)
 {
 	fprintf(fd, "#ifndef _LTT_FACILITY_%s_H_\n", fac->capname);
 	fprintf(fd, "#define _LTT_FACILITY_%s_H_\n\n", fac->capname);
-  fprintf(fd, "#include <linux/types.h>\n");
+	fprintf(fd, "#include <linux/types.h>\n");
 	if(!fac->arch)
-	  fprintf(fd, "#include <linux/ltt/ltt-facility-id-%s.h>\n", fac->name);
+		fprintf(fd, "#include <linux/ltt/ltt-facility-id-%s.h>\n", fac->name);
 	else
-	  fprintf(fd, "#include <asm/ltt/ltt-facility-id-%s_%s.h>\n",
+		fprintf(fd, "#include <asm/ltt/ltt-facility-id-%s_%s.h>\n",
 				fac->name,
 				fac->arch);
-  fprintf(fd, "#include <linux/ltt-core.h>\n");
+	fprintf(fd, "#include <linux/ltt-core.h>\n");
 	fprintf(fd, "\n");
 }
 
@@ -2168,14 +2183,18 @@ void print_log_header_head_user(facility_t *fac, FILE *fd)
 {
 	fprintf(fd, "#ifndef _LTT_FACILITY_%s_H_\n", fac->capname);
 	fprintf(fd, "#define _LTT_FACILITY_%s_H_\n\n", fac->capname);
-  fprintf(fd, "#include <sys/types.h>\n");
+	fprintf(fd, "#include <sys/types.h>\n");
 	if(!fac->arch)
-	  fprintf(fd, "#include <ltt/ltt-facility-id-%s.h>\n", fac->name);
+		fprintf(fd, "#include <ltt/ltt-facility-id-%s.h>\n", fac->name);
 	else
-	  fprintf(fd, "#include <asm/ltt/ltt-facility-id-%s_%s.h>\n",
+		fprintf(fd, "#include <asm/ltt/ltt-facility-id-%s_%s.h>\n",
 				fac->name,
 				fac->arch);
-  fprintf(fd, "#include <ltt/ltt-usertrace.h>\n");
+	fprintf(fd, "#include <ltt/ltt-usertrace.h>\n");
+	fprintf(fd, "\n");
+	fprintf(fd, "#ifdef __cplusplus\n");
+	fprintf(fd, "extern \"C\" {\n");
+	fprintf(fd, "#endif\n");
 	fprintf(fd, "\n");
 }
 
@@ -2259,6 +2278,10 @@ void print_log_header_tail(facility_t *fac, FILE *fd)
 
 void print_log_header_tail_user(facility_t *fac, FILE *fd)
 {
+	fprintf(fd, "#ifdef __cplusplus\n");
+	fprintf(fd, "} /* end of extern \"C\" */\n");
+	fprintf(fd, "#endif\n");
+	fprintf(fd, "\n");
 	fprintf(fd, "#endif //_LTT_FACILITY_%s_H_\n",fac->capname);
 }
 	
