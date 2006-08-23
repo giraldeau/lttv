@@ -205,12 +205,12 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 	char path_trace[PATH_MAX];
 	int path_trace_len;
 	char *path_trace_ptr;
-  int open_ret = 0;
+	int open_ret = 0;
 
 	if(channel_dir == NULL) {
 		perror(subchannel_name);
 		open_ret = ENOENT;
-    goto end;
+		goto end;
 	}
 
 	printf("Creating trace subdirectory %s\n", subtrace_name);
@@ -218,7 +218,7 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 	if(ret == -1) {
 		if(errno != EEXIST) {
 			perror(subtrace_name);
-      open_ret = -1;
+			open_ret = -1;
 			goto end;
 		}
 	}
@@ -285,7 +285,7 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 				} else {
 					printf("File %s exists, cannot open. Try append mode.\n", path_trace);
 					open_ret = -1;
-          goto end;
+					goto end;
 				}
 			} else {
 				if(errno == ENOENT) {
@@ -609,12 +609,12 @@ int main(int argc, char ** argv)
 
 	if(daemon_mode) {
 		ret = daemon(0, 0);
-    
-    if(ret == -1) {
-      perror("An error occured while daemonizing.");
-      exit(-1);
-    }
-  }
+		
+		if(ret == -1) {
+			perror("An error occured while daemonizing.");
+			exit(-1);
+		}
+	}
 
 	/* Connect the signal handlers */
 	act.sa_handler = handler;
