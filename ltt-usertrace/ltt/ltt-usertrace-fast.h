@@ -20,6 +20,10 @@
 
 #include <ltt/ltt-facility-id-user_generic.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef	LTT_N_SUBBUFS
 #define LTT_N_SUBBUFS 2
 #endif //LTT_N_SUBBUFS
@@ -622,7 +626,10 @@ static inline void __attribute__((no_instrument_function)) ltt_commit_slot(
 		ltt_deliver_callback(ltt_buf, SUBBUF_INDEX(offset_begin, ltt_buf), NULL);
 	}
 }
-	
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif //LTT_TRACE_FAST
 #endif //LTT_TRACE

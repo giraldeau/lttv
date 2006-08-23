@@ -1,6 +1,10 @@
 #ifndef __TIMEX_PPC_H
 #define __TIMEX_PPC_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define CPU_FTR_601			0x00000100
 
 #define CLOCK_TICK_RATE	1193180 /* Underlying HZ */
@@ -49,5 +53,9 @@ static inline cycles_t get_cycles(void)
 {
 	return get_tb();
 }
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif //__TIMEX_PPC_H

@@ -5,6 +5,10 @@
 #ifndef _ASM_PPC_ATOMIC_H_
 #define _ASM_PPC_ATOMIC_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct { volatile int counter; } atomic_t;
 
 #define ATOMIC_INIT(i)	{ (i) }
@@ -207,5 +211,9 @@ static __inline__ int atomic_dec_if_positive(atomic_t *v)
 #define smp_mb__after_atomic_dec()	__MB
 #define smp_mb__before_atomic_inc()	__MB
 #define smp_mb__after_atomic_inc()	__MB
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif /* _ASM_PPC_ATOMIC_H_ */

@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static int trace_user_generic_slow_printf(
 		const char *fmt, ...)
 #ifndef LTT_TRACE
@@ -49,5 +53,9 @@ static int trace_user_generic_slow_printf(
  	}
 }
 #endif //LTT_TRACE
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif //_LTT_FACILITY_CUSTOM_USER_GENERIC_H_

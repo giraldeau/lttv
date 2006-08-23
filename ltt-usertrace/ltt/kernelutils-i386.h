@@ -13,11 +13,13 @@
 #ifndef _KERNELUTILS_I386_H
 #define _KERNELUTILS_I386_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // We are careful, so we assume a possibly SMP machine
 #define LOCK "lock ; "
 #define LOCK_PREFIX "lock ; "
-
-
 
 
 // From atomic.h
@@ -106,26 +108,26 @@ struct __xchg_dummy { unsigned long a[100]; };
 					(unsigned long)(n),sizeof(*(ptr))))
 
 static inline unsigned long __cmpxchg(volatile void *ptr, unsigned long old,
-				      unsigned long new, int size)
+				      unsigned long newval, int size)
 {
 	unsigned long prev;
 	switch (size) {
 	case 1:
 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgb %b1,%2"
 				     : "=a"(prev)
-				     : "q"(new), "m"(*__xg(ptr)), "0"(old)
+				     : "q"(newval), "m"(*__xg(ptr)), "0"(old)
 				     : "memory");
 		return prev;
 	case 2:
 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgw %w1,%2"
 				     : "=a"(prev)
-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
+				     : "r"(newval), "m"(*__xg(ptr)), "0"(old)
 				     : "memory");
 		return prev;
 	case 4:
 		__asm__ __volatile__(LOCK_PREFIX "cmpxchgl %1,%2"
 				     : "=a"(prev)
-				     : "r"(new), "m"(*__xg(ptr)), "0"(old)
+				     : "r"(newval), "m"(*__xg(ptr)), "0"(old)
 				     : "memory");
 		return prev;
 	}
@@ -150,5 +152,8 @@ static inline cycles_t get_cycles (void)
 	return ret;
 }
 
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif // _KERNELUTILS_I386_H

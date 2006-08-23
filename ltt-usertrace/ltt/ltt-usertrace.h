@@ -15,6 +15,11 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 #define inline inline __attribute__((always_inline))
 
 #if defined(__powerpc__) || defined(__powerpc64__)
@@ -110,9 +115,12 @@ _syscall2(int, ltt_register_generic, unsigned int *, facility_id,
 #define ltt_register_generic(...)  syscall(__NR_ltt_register_generic, __VA_ARGS__)
 #define ltt_trace_generic(...)  syscall(__NR_ltt_trace_generic, __VA_ARGS__)
 
+static inline unsigned int __attribute__((no_instrument_function)) 
+	ltt_align(size_t align_drift, size_t size_of_type);
+
 #ifndef LTT_PACK
 /* Calculate the offset needed to align the type */
-static inline unsigned int __attribute__((no_instrument_function))
+static inline unsigned int
 	ltt_align(size_t align_drift, size_t size_of_type)
 {
   size_t alignment = min(sizeof(void*), size_of_type);
@@ -121,19 +129,19 @@ static inline unsigned int __attribute__((no_instrument_function))
 }
 #define LTT_ALIGN
 #else
-static inline unsigned int __attribute__((no_instrument_function))
-														ltt_align(size_t align_drift,
-                                      size_t size_of_type)
+static inline unsigned int ltt_align(size_t align_drift, size_t size_of_type)
 {
   return 0;
 }
 #define LTT_ALIGN __attribute__((packed))
 #endif //LTT_PACK
 
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
+
 #ifdef LTT_TRACE_FAST
 #include <ltt/ltt-usertrace-fast.h>
 #endif //LTT_TRACE_FAST
 
 #endif //_LTT_USERTRACE_H
-
-

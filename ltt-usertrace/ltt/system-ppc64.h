@@ -1,6 +1,10 @@
 #ifndef __PPC64_SYSTEM_H
 #define __PPC64_SYSTEM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -210,5 +214,9 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
 #define NET_IP_ALIGN   0
 
 #define arch_align_stack(x) (x)
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif

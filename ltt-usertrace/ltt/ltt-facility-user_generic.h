@@ -5,14 +5,18 @@
 #include <ltt/ltt-facility-id-user_generic.h>
 #include <ltt/ltt-usertrace.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Named types */
 
 /* Event string structures */
 static inline void lttng_write_string_user_generic_string_data(
-		void *buffer,
+		char *buffer,
 		size_t *to_base,
 		size_t *to,
-		const void **from,
+		const char **from,
 		size_t *len,
 		const char * obj)
 {
@@ -53,6 +57,9 @@ static inline void lttng_write_string_user_generic_string_data(
 
 
 /* Event string logging function */
+static inline int trace_user_generic_string(
+		const char * lttng_param_data);
+
 #ifndef LTT_TRACE_FAST
 static inline int trace_user_generic_string(
 		const char * lttng_param_data)
@@ -62,7 +69,7 @@ static inline int trace_user_generic_string(
 #else
 {
 	int ret = 0;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -71,14 +78,14 @@ static inline int trace_user_generic_string(
 	size_t *len = &real_len;
 	size_t reserve_size;
 	size_t slot_size;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 		/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = lttng_param_data;
+	*from = (const char*)lttng_param_data;
 	lttng_write_string_user_generic_string_data(buffer, to_base, to, from, len, lttng_param_data);
 
 	reserve_size = *to_base + *to + *len;
@@ -88,7 +95,7 @@ static inline int trace_user_generic_string(
 
 		*to_base = *to = *len = 0;
 
-		*from = lttng_param_data;
+		*from = (const char*)lttng_param_data;
 		lttng_write_string_user_generic_string_data(buffer, to_base, to, from, len, lttng_param_data);
 
 		/* Flush pending memcpy */
@@ -118,7 +125,7 @@ static inline int trace_user_generic_string(
 	unsigned int index;
 	struct ltt_trace_info *trace = thread_trace_info;
 	struct ltt_buf *ltt_buf;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -127,8 +134,8 @@ static inline int trace_user_generic_string(
 	size_t *len = &real_len;
 	size_t reserve_size;
 	size_t slot_size;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
@@ -143,7 +150,7 @@ static inline int trace_user_generic_string(
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = lttng_param_data;
+	*from = (const char*)lttng_param_data;
 	lttng_write_string_user_generic_string_data(buffer, to_base, to, from, len, lttng_param_data);
 
 	reserve_size = *to_base + *to + *len;
@@ -166,7 +173,7 @@ static inline int trace_user_generic_string(
 			reserve_size, before_hdr_pad, tsc);
 		*to_base += before_hdr_pad + after_hdr_pad + header_size;
 
-		*from = lttng_param_data;
+		*from = (const char*)lttng_param_data;
 		lttng_write_string_user_generic_string_data(buffer, to_base, to, from, len, lttng_param_data);
 
 		/* Flush pending memcpy */
@@ -188,10 +195,10 @@ end:
 
 /* Event string_pointer structures */
 static inline void lttng_write_string_user_generic_string_pointer_string(
-		void *buffer,
+		char *buffer,
 		size_t *to_base,
 		size_t *to,
-		const void **from,
+		const char **from,
 		size_t *len,
 		const char * obj)
 {
@@ -232,6 +239,10 @@ static inline void lttng_write_string_user_generic_string_pointer_string(
 
 
 /* Event string_pointer logging function */
+static inline int trace_user_generic_string_pointer(
+		const char * lttng_param_string,
+		const void * lttng_param_pointer);
+
 #ifndef LTT_TRACE_FAST
 static inline int trace_user_generic_string_pointer(
 		const char * lttng_param_string,
@@ -242,7 +253,7 @@ static inline int trace_user_generic_string_pointer(
 #else
 {
 	int ret = 0;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -252,17 +263,17 @@ static inline int trace_user_generic_string_pointer(
 	size_t reserve_size;
 	size_t slot_size;
 	size_t align;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 		/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = lttng_param_string;
+	*from = (const char*)lttng_param_string;
 	lttng_write_string_user_generic_string_pointer_string(buffer, to_base, to, from, len, lttng_param_string);
 
-	*from = &lttng_param_pointer;
+	*from = (const char*)&lttng_param_pointer;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -280,7 +291,7 @@ static inline int trace_user_generic_string_pointer(
 
 		*to_base = *to = *len = 0;
 
-		*from = lttng_param_string;
+		*from = (const char*)lttng_param_string;
 		lttng_write_string_user_generic_string_pointer_string(buffer, to_base, to, from, len, lttng_param_string);
 
 		/* Flush pending memcpy */
@@ -290,7 +301,7 @@ static inline int trace_user_generic_string_pointer(
 			*len = 0;
 		}
 
-		*from = &lttng_param_pointer;
+		*from = (const char*)&lttng_param_pointer;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -329,7 +340,7 @@ static inline int trace_user_generic_string_pointer(
 	unsigned int index;
 	struct ltt_trace_info *trace = thread_trace_info;
 	struct ltt_buf *ltt_buf;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -339,8 +350,8 @@ static inline int trace_user_generic_string_pointer(
 	size_t reserve_size;
 	size_t slot_size;
 	size_t align;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
@@ -355,10 +366,10 @@ static inline int trace_user_generic_string_pointer(
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = lttng_param_string;
+	*from = (const char*)lttng_param_string;
 	lttng_write_string_user_generic_string_pointer_string(buffer, to_base, to, from, len, lttng_param_string);
 
-	*from = &lttng_param_pointer;
+	*from = (const char*)&lttng_param_pointer;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -389,7 +400,7 @@ static inline int trace_user_generic_string_pointer(
 			reserve_size, before_hdr_pad, tsc);
 		*to_base += before_hdr_pad + after_hdr_pad + header_size;
 
-		*from = lttng_param_string;
+		*from = (const char*)lttng_param_string;
 		lttng_write_string_user_generic_string_pointer_string(buffer, to_base, to, from, len, lttng_param_string);
 
 		/* Flush pending memcpy */
@@ -399,7 +410,7 @@ static inline int trace_user_generic_string_pointer(
 			*len = 0;
 		}
 
-		*from = &lttng_param_pointer;
+		*from = (const char*)&lttng_param_pointer;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -429,10 +440,10 @@ end:
 
 /* Event slow_printf structures */
 static inline void lttng_write_string_user_generic_slow_printf_string(
-		void *buffer,
+		char *buffer,
 		size_t *to_base,
 		size_t *to,
-		const void **from,
+		const char **from,
 		size_t *len,
 		const char * obj)
 {
@@ -473,9 +484,13 @@ static inline void lttng_write_string_user_generic_slow_printf_string(
 
 
 /* Event slow_printf logging function */
+static inline int trace_user_generic_slow_printf_param_buffer(
+		char *buffer,
+		size_t reserve_size);
+
 #ifndef LTT_TRACE_FAST
 static inline int trace_user_generic_slow_printf_param_buffer(
-		void *buffer,
+		char *buffer,
 		size_t reserve_size)
 #ifndef LTT_TRACE
 {
@@ -505,7 +520,7 @@ static inline int trace_user_generic_slow_printf(
 	unsigned int index;
 	struct ltt_trace_info *trace = thread_trace_info;
 	struct ltt_buf *ltt_buf;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -514,8 +529,8 @@ static inline int trace_user_generic_slow_printf(
 	size_t *len = &real_len;
 	size_t reserve_size;
 	size_t slot_size;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
@@ -530,7 +545,7 @@ static inline int trace_user_generic_slow_printf(
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = lttng_param_string;
+	*from = (const char*)lttng_param_string;
 	lttng_write_string_user_generic_slow_printf_string(buffer, to_base, to, from, len, lttng_param_string);
 
 	reserve_size = *to_base + *to + *len;
@@ -553,7 +568,7 @@ static inline int trace_user_generic_slow_printf(
 			reserve_size, before_hdr_pad, tsc);
 		*to_base += before_hdr_pad + after_hdr_pad + header_size;
 
-		*from = lttng_param_string;
+		*from = (const char*)lttng_param_string;
 		lttng_write_string_user_generic_slow_printf_string(buffer, to_base, to, from, len, lttng_param_string);
 
 		/* Flush pending memcpy */
@@ -576,8 +591,12 @@ end:
 /* Event function_entry structures */
 
 /* Event function_entry logging function */
-#ifndef LTT_TRACE_FAST
 static inline __attribute__((no_instrument_function)) int trace_user_generic_function_entry(
+		const void * lttng_param_this_fn,
+		const void * lttng_param_call_site);
+
+#ifndef LTT_TRACE_FAST
+static inline int trace_user_generic_function_entry(
 		const void * lttng_param_this_fn,
 		const void * lttng_param_call_site)
 #ifndef LTT_TRACE
@@ -586,7 +605,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 #else
 {
 	int ret = 0;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -596,14 +615,14 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	size_t reserve_size;
 	size_t slot_size;
 	size_t align;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 		/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = &lttng_param_this_fn;
+	*from = (const char*)&lttng_param_this_fn;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -614,7 +633,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 
 	*len += sizeof(const void *);
 
-	*from = &lttng_param_call_site;
+	*from = (const char*)&lttng_param_call_site;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -632,7 +651,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 
 		*to_base = *to = *len = 0;
 
-		*from = &lttng_param_this_fn;
+		*from = (const char*)&lttng_param_this_fn;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -650,7 +669,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 			*len = 0;
 		}
 
-		*from = &lttng_param_call_site;
+		*from = (const char*)&lttng_param_call_site;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -689,7 +708,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	unsigned int index;
 	struct ltt_trace_info *trace = thread_trace_info;
 	struct ltt_buf *ltt_buf;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -699,8 +718,8 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	size_t reserve_size;
 	size_t slot_size;
 	size_t align;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
@@ -715,7 +734,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = &lttng_param_this_fn;
+	*from = (const char*)&lttng_param_this_fn;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -726,7 +745,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 
 	*len += sizeof(const void *);
 
-	*from = &lttng_param_call_site;
+	*from = (const char*)&lttng_param_call_site;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -757,7 +776,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 			reserve_size, before_hdr_pad, tsc);
 		*to_base += before_hdr_pad + after_hdr_pad + header_size;
 
-		*from = &lttng_param_this_fn;
+		*from = (const char*)&lttng_param_this_fn;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -775,7 +794,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 			*len = 0;
 		}
 
-		*from = &lttng_param_call_site;
+		*from = (const char*)&lttng_param_call_site;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -806,8 +825,12 @@ end:
 /* Event function_exit structures */
 
 /* Event function_exit logging function */
-#ifndef LTT_TRACE_FAST
 static inline __attribute__((no_instrument_function)) int trace_user_generic_function_exit(
+		const void * lttng_param_this_fn,
+		const void * lttng_param_call_site);
+
+#ifndef LTT_TRACE_FAST
+static inline int trace_user_generic_function_exit(
 		const void * lttng_param_this_fn,
 		const void * lttng_param_call_site)
 #ifndef LTT_TRACE
@@ -816,7 +839,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 #else
 {
 	int ret = 0;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -826,14 +849,14 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	size_t reserve_size;
 	size_t slot_size;
 	size_t align;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 		/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = &lttng_param_this_fn;
+	*from = (const char*)&lttng_param_this_fn;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -844,7 +867,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 
 	*len += sizeof(const void *);
 
-	*from = &lttng_param_call_site;
+	*from = (const char*)&lttng_param_call_site;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -862,7 +885,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 
 		*to_base = *to = *len = 0;
 
-		*from = &lttng_param_this_fn;
+		*from = (const char*)&lttng_param_this_fn;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -880,7 +903,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 			*len = 0;
 		}
 
-		*from = &lttng_param_call_site;
+		*from = (const char*)&lttng_param_call_site;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -919,7 +942,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	unsigned int index;
 	struct ltt_trace_info *trace = thread_trace_info;
 	struct ltt_buf *ltt_buf;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -929,8 +952,8 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	size_t reserve_size;
 	size_t slot_size;
 	size_t align;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
@@ -945,7 +968,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = &lttng_param_this_fn;
+	*from = (const char*)&lttng_param_this_fn;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -956,7 +979,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 
 	*len += sizeof(const void *);
 
-	*from = &lttng_param_call_site;
+	*from = (const char*)&lttng_param_call_site;
 	align = sizeof(const void *);
 
 	if(*len == 0) {
@@ -987,7 +1010,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 			reserve_size, before_hdr_pad, tsc);
 		*to_base += before_hdr_pad + after_hdr_pad + header_size;
 
-		*from = &lttng_param_this_fn;
+		*from = (const char*)&lttng_param_this_fn;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -1005,7 +1028,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 			*len = 0;
 		}
 
-		*from = &lttng_param_call_site;
+		*from = (const char*)&lttng_param_call_site;
 		align = sizeof(const void *);
 
 		if(*len == 0) {
@@ -1035,10 +1058,10 @@ end:
 
 /* Event thread_brand structures */
 static inline void lttng_write_string_user_generic_thread_brand_name(
-		void *buffer,
+		char *buffer,
 		size_t *to_base,
 		size_t *to,
-		const void **from,
+		const char **from,
 		size_t *len,
 		const char * obj)
 {
@@ -1079,6 +1102,9 @@ static inline void lttng_write_string_user_generic_thread_brand_name(
 
 
 /* Event thread_brand logging function */
+static inline int trace_user_generic_thread_brand(
+		const char * lttng_param_name);
+
 #ifndef LTT_TRACE_FAST
 static inline int trace_user_generic_thread_brand(
 		const char * lttng_param_name)
@@ -1088,7 +1114,7 @@ static inline int trace_user_generic_thread_brand(
 #else
 {
 	int ret = 0;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -1097,14 +1123,14 @@ static inline int trace_user_generic_thread_brand(
 	size_t *len = &real_len;
 	size_t reserve_size;
 	size_t slot_size;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 		/* For each field, calculate the field size. */
 	/* size = *to_base + *to + *len */
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = lttng_param_name;
+	*from = (const char*)lttng_param_name;
 	lttng_write_string_user_generic_thread_brand_name(buffer, to_base, to, from, len, lttng_param_name);
 
 	reserve_size = *to_base + *to + *len;
@@ -1114,7 +1140,7 @@ static inline int trace_user_generic_thread_brand(
 
 		*to_base = *to = *len = 0;
 
-		*from = lttng_param_name;
+		*from = (const char*)lttng_param_name;
 		lttng_write_string_user_generic_thread_brand_name(buffer, to_base, to, from, len, lttng_param_name);
 
 		/* Flush pending memcpy */
@@ -1144,7 +1170,7 @@ static inline int trace_user_generic_thread_brand(
 	unsigned int index;
 	struct ltt_trace_info *trace = thread_trace_info;
 	struct ltt_buf *ltt_buf;
-	void *buffer = NULL;
+	char *buffer = NULL;
 	size_t real_to_base = 0; /* The buffer is allocated on arch_size alignment */
 	size_t *to_base = &real_to_base;
 	size_t real_to = 0;
@@ -1153,8 +1179,8 @@ static inline int trace_user_generic_thread_brand(
 	size_t *len = &real_len;
 	size_t reserve_size;
 	size_t slot_size;
-	const void *real_from;
-	const void **from = &real_from;
+	const char *real_from;
+	const char **from = &real_from;
 	uint64_t tsc;
 	size_t before_hdr_pad, after_hdr_pad, header_size;
 
@@ -1169,7 +1195,7 @@ static inline int trace_user_generic_thread_brand(
 	/* Assume that the padding for alignment starts at a
 	 * sizeof(void *) address. */
 
-	*from = lttng_param_name;
+	*from = (const char*)lttng_param_name;
 	lttng_write_string_user_generic_thread_brand_name(buffer, to_base, to, from, len, lttng_param_name);
 
 	reserve_size = *to_base + *to + *len;
@@ -1192,7 +1218,7 @@ static inline int trace_user_generic_thread_brand(
 			reserve_size, before_hdr_pad, tsc);
 		*to_base += before_hdr_pad + after_hdr_pad + header_size;
 
-		*from = lttng_param_name;
+		*from = (const char*)lttng_param_name;
 		lttng_write_string_user_generic_thread_brand_name(buffer, to_base, to, from, len, lttng_param_name);
 
 		/* Flush pending memcpy */
@@ -1211,5 +1237,9 @@ end:
 }
 #endif //LTT_TRACE
 #endif //LTT_TRACE_FAST
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif //_LTT_FACILITY_USER_GENERIC_H_

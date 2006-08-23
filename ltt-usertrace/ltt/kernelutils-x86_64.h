@@ -12,6 +12,10 @@
 #ifndef _KERNELUTILS_X86_64_H
 #define _KERNELUTILS_X86_64_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // We are careful, so we assume a possibly SMP machine
 #define LOCK "lock ; "
 #define LOCK_PREFIX "lock ; "
@@ -164,5 +168,8 @@ static inline cycles_t get_cycles (void)
 	return ret;
 }
 
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif // _KERNELUTILS_X86_64_H

@@ -7,6 +7,10 @@
 #include <asm/atomic.h>
 #include <asm/hw_irq.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Memory barrier.
  * The sync instruction guarantees that all memory accesses initiated
@@ -146,5 +150,9 @@ __cmpxchg(volatile void *ptr, unsigned long old, unsigned long new, int size)
   })
 
 #define arch_align_stack(x) (x)
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif /* __PPC_SYSTEM_H */

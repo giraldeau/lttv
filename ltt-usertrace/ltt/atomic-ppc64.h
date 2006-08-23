@@ -15,6 +15,10 @@
 
 #include <asm/memory.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct { volatile int counter; } atomic_t;
 
 #define ATOMIC_INIT(i)	{ (i) }
@@ -193,5 +197,9 @@ static __inline__ int atomic_dec_if_positive(atomic_t *v)
 #define smp_mb__after_atomic_dec()      smp_mb()
 #define smp_mb__before_atomic_inc()     smp_mb()
 #define smp_mb__after_atomic_inc()      smp_mb()
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif /* _ASM_PPC64_ATOMIC_H_ */

@@ -11,6 +11,13 @@
  *  2 of the License, or (at your option) any later version.
  */
 
+#ifndef _PPC_ASM_PPC_H
+#define _PPC_ASM_PPC_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Macros for storing registers into and loading registers from
  * exception frames.
@@ -340,3 +347,9 @@ END_FTR_SECTION_IFCLR(CPU_FTR_601)
 #define N_RSYM	64
 #define N_SLINE	68
 #define N_SO	100
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
+
+#endif //_PPC_ASM_PPC_H
