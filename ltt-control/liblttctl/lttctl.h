@@ -1,7 +1,7 @@
 /* libltt header file
  *
  * Copyright 2005-
- *     Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+ *		 Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -11,7 +11,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
  * GNU General Public License for more details.
  *
  *
@@ -50,21 +50,21 @@ typedef struct lttctl_peer_msg {
 	char trace_type[NAME_MAX];
 	enum trace_op op;
 	union {
-    struct {
-      enum trace_mode mode;
-      unsigned subbuf_size;
-      unsigned n_subbufs;
-    } new_trace;
+		struct {
+			enum trace_mode mode;
+			unsigned subbuf_size;
+			unsigned n_subbufs;
+		} new_trace;
 	} args;
 } lttctl_peer_msg_t;
 
 
 struct lttctl_handle
 {
-  int fd;
-  //u_int8_t blocking;
-  struct sockaddr_nl local;
-  struct sockaddr_nl peer;
+	int fd;
+	//u_int8_t blocking;
+	struct sockaddr_nl local;
+	struct sockaddr_nl peer;
 };
 
 typedef struct lttctl_resp_msg {

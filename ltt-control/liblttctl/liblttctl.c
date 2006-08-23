@@ -18,7 +18,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
  * GNU General Public License for more details.
  * 	
  */
@@ -57,7 +57,7 @@ enum {
 	LTTCTL_ERR_SUPP,
 	LTTCTL_ERR_RECVBUF,
 	LTTCTL_ERR_TIMEOUT,
-        LTTCTL_ERR_PROTOCOL
+				LTTCTL_ERR_PROTOCOL
 };
 #define LTTCTL_MAXERR LTTCTL_ERR_PROTOCOL
 
@@ -89,25 +89,25 @@ static int lttctl_errno = LTTCTL_ERR_NONE;
 
 
 static ssize_t lttctl_netlink_sendto(const struct lttctl_handle *h,
-                                  const void *msg, size_t len);
+																	const void *msg, size_t len);
 
 static ssize_t lttctl_netlink_recvfrom(const struct lttctl_handle *h,
-                                    unsigned char *buf, size_t len,
-                                    int timeout);
+																		unsigned char *buf, size_t len,
+																		int timeout);
 
 static ssize_t lttctl_netlink_sendmsg(const struct lttctl_handle *h,
-                                   const struct msghdr *msg,
-                                   unsigned int flags);
+																	 const struct msghdr *msg,
+																	 unsigned int flags);
 
 static char *lttctl_strerror(int errcode);
 
 void lttctl_perror(const char *s);
 
 static ssize_t lttctl_netlink_sendto(const struct lttctl_handle *h,
-                                  const void *msg, size_t len)
+																	const void *msg, size_t len)
 {
 	int status = sendto(h->fd, msg, len, 0,
-	                    (struct sockaddr *)&h->peer, sizeof(h->peer));
+											(struct sockaddr *)&h->peer, sizeof(h->peer));
 	if (status < 0)
 		lttctl_errno = LTTCTL_ERR_SEND;
 	
@@ -115,8 +115,8 @@ static ssize_t lttctl_netlink_sendto(const struct lttctl_handle *h,
 }
 
 static ssize_t lttctl_netlink_sendmsg(const struct lttctl_handle *h,
-                                   const struct msghdr *msg,
-                                   unsigned int flags)
+																	 const struct msghdr *msg,
+																	 unsigned int flags)
 {
 	int status = sendmsg(h->fd, msg, flags);
 	if (status < 0)
@@ -125,8 +125,8 @@ static ssize_t lttctl_netlink_sendmsg(const struct lttctl_handle *h,
 }
 
 static ssize_t lttctl_netlink_recvfrom(const struct lttctl_handle *h,
-                                    unsigned char *buf, size_t len,
-                                    int timeout)
+																		unsigned char *buf, size_t len,
+																		int timeout)
 {
 	int addrlen, status;
 	struct nlmsghdr *nlh;
@@ -172,7 +172,7 @@ static ssize_t lttctl_netlink_recvfrom(const struct lttctl_handle *h,
 		}
 	}
 	status = recvfrom(h->fd, buf, len, 0,
-	                      (struct sockaddr *)&h->peer, &addrlen);
+												(struct sockaddr *)&h->peer, &addrlen);
 	
 	if (status < 0) {
 		lttctl_errno = LTTCTL_ERR_RECV;
@@ -251,8 +251,8 @@ struct lttctl_handle *lttctl_create_handle(void)
 	
 	memset(h, 0, sizeof(struct lttctl_handle));
 	
-  h->fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_LTT);
-        
+	h->fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_LTT);
+				
 	if (h->fd == -1) {
 		lttctl_errno = LTTCTL_ERR_SOCKET;
 		lttctl_perror("Create handle");
@@ -343,7 +343,7 @@ int lttctl_create_trace(const struct lttctl_handle *h,
 
 senderr:
 	lttctl_perror("Create Trace Error");
-  err = EPERM;
+	err = EPERM;
 	return err;
 }
 
@@ -387,7 +387,7 @@ int lttctl_destroy_trace(const struct lttctl_handle *h,
 
 senderr:
 	lttctl_perror("Destroy Trace Channels Error");
-  err = EPERM;
+	err = EPERM;
 	return err;
 
 }
@@ -432,7 +432,7 @@ int lttctl_start(const struct lttctl_handle *h,
 	return 0;
 
 senderr:
-  err = EPERM;
+	err = EPERM;
 	lttctl_perror("Start Trace Error");
 	return err;
 
@@ -477,7 +477,7 @@ int lttctl_stop(const struct lttctl_handle *h,
 	return 0;
 
 senderr:
-  err = EPERM;
+	err = EPERM;
 	lttctl_perror("Stop Trace Error");
 	return err;
 }
