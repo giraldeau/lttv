@@ -16,8 +16,6 @@ The % symbol marks who is interested in the realisation of the item.<br>
 <big>LTTV Roadmap<small><br>
 <br>
 * TODO<br>
-(2) Add support for "stop" button in event list. (disabling event request
-scheduler)<br>
 (2) Finish pre-computing of states to a file.<br>
 (3) Add cluster support.<br>
 	# <A HREF="mailto:Eric Clement <eric.clement@polymtl.ca>">Eric Clement</A><br>
@@ -45,7 +43,6 @@ page faults, interrupts...). This will be a generalisation of the event rate
 view into a view of the evolution of a user definable event field.<br>
 <br>
 * TO FIX<br>
-(10) Event filter : event.time does not work.<br>
 (10) Add cancel button to LTTV filter GUI window.<br>
 (10) Sometimes, in the control flow view, a process with 0 creation time is
 created in addition to the real process itself. Seems to be caused by end of
@@ -106,8 +103,6 @@ RTLinux<BR>
 * TODO (low priority)<br>
 enhance RPM packages for lttng kernel<br>
 Integrate header generation (genevent) in kernel build system.<br>
-Find a different way to printk from instrumentation : forbidden from schedule
-and wakeup (causes a deadlock). -> Modify printk so it uses LTTng tracer!<br>
 Export channels via network sockets instead of writing them to disk.<br>
 Export buffers with time constraint for "live" visualisation. Use
 ltt_force_switch periodically from a timer to insure slow channels do not
