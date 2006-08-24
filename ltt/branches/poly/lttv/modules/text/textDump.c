@@ -431,6 +431,8 @@ static void destroy()
 
   lttv_option_remove("process_stats");
 
+  lttv_option_remove("path_output");
+
   g_string_free(a_string, TRUE);
 
   lttv_hooks_remove_data(event_hook, write_event_content, NULL);
