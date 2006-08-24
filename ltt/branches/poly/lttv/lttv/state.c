@@ -231,8 +231,18 @@ restore_init_state(LttvTraceState *self)
   
   /* Put the per cpu running_process to beginning state : process 0. */
   for(i=0; i< nb_cpus; i++) {
+    LttvExecutionState *es;
     self->running_process[i] = lttv_state_create_process(self, NULL, i, 0, 0,
         LTTV_STATE_UNNAMED, &start_time);
+    /* We are not sure is it's a kernel thread or normal thread, put the
+      * bottom stack state to unknown */
+    self->running_process[i]->execution_stack = 
+      g_array_set_size(self->running_process[i]->execution_stack, 1);
+    es = self->running_process[i]->state =
+      &g_array_index(self->running_process[i]->execution_stack,
+        LttvExecutionState, 0);
+    es->t = LTTV_STATE_MODE_UNKNOWN;
+
     self->running_process[i]->state->s = LTTV_STATE_RUN;
     self->running_process[i]->cpu = i;
   }
@@ -1714,6 +1724,9 @@ static void lttv_state_free_process_table(GHashTable *processes)
 static gboolean syscall_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
+  guint cpu = s->cpu;
+  LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttvProcessState *process = ts->running_process[cpu];
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   LttField *f = thf->f1;
@@ -1733,7 +1746,9 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
     submode = g_quark_from_string(string->str);
     g_string_free(string, TRUE);
   }
-  push_state(s, LTTV_STATE_SYSCALL, submode);
+  /* There can be no system call from PID 0 : unknown state */
+  if(process->pid != 0)
+    push_state(s, LTTV_STATE_SYSCALL, submode);
   return FALSE;
 }
 
@@ -1741,8 +1756,13 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
 static gboolean syscall_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
+  guint cpu = s->cpu;
+  LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttvProcessState *process = ts->running_process[cpu];
 
-  pop_state(s, LTTV_STATE_SYSCALL);
+  /* There can be no system call from PID 0 : unknown state */
+  if(process->pid != 0)
+    pop_state(s, LTTV_STATE_SYSCALL);
   return FALSE;
 }
 
@@ -1960,7 +1980,12 @@ static gboolean schedchange(void *hook_data, void *call_data)
     //if(unlikely(process->pid != pid_out)) {
     //  g_assert(process->pid == 0);
     //}
-
+    if(process->pid == 0 && process->state->t == LTTV_STATE_MODE_UNKNOWN) {
+      /* Scheduling out of pid 0 at beginning of the trace :
+       * we know for sure it is in syscall mode at this point. */
+      g_assert(process->execution_stack->len == 1);
+      process->state->t = LTTV_STATE_SYSCALL;
+    }
     if(unlikely(process->state->s == LTTV_STATE_EXIT)) {
       process->state->s = LTTV_STATE_ZOMBIE;
       process->state->change = s->parent.timestamp;
