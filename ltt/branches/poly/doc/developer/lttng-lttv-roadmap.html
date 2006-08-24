@@ -65,6 +65,8 @@ informatinon.<br>
 (4) efficient dynamic event filtering while recording trace.<br>
 	% Sensis Corp. <A HREF="mailto:Bish, Tim <Tim.Bish@Sensis.com>">Tim Bish</A><br>
 (4) instrument kernel bottom half irqsave, spinlocks, rwlocks, seqlocks, semaphores, mutexes, brlock.<br>
+(4) In flight recorder mode, have the low traffic channels saved as normal
+tracefiles and high traffic channels being flight recorder.<br>
 (4) Try to use my own non LOCK prefixed version of atomic operations : we are
 using per-CPU variables, so it should make it possible.<br>
 (4) integrate NPTL instrumentation (see
