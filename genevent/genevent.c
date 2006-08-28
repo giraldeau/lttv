@@ -1287,7 +1287,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				print_tabs(1, fd);
 				fprintf(fd, "/* Put source *from just after the C sequence */\n");
 				print_tabs(1, fd);
-				fprintf(fd, "*from = obj+1;\n");
+				fprintf(fd, "*from = (const char*)(obj+1);\n");
 				break;
 			case STRING:
 				print_tabs(1, fd);
