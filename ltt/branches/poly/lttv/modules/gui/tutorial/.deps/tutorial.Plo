@@ -153,6 +153,7 @@ tutorial.lo tutorial.o: tutorial.c /usr/include/math.h \
   /usr/include/atk-1.0/atk/atktext.h \
   /usr/include/atk-1.0/atk/atkgobjectaccessible.h \
   /usr/include/atk-1.0/atk/atkhyperlink.h \
+  /usr/include/atk-1.0/atk/atkhyperlinkimpl.h \
   /usr/include/atk-1.0/atk/atkhypertext.h \
   /usr/include/atk-1.0/atk/atkimage.h \
   /usr/include/atk-1.0/atk/atknoopobject.h \
@@ -712,6 +713,8 @@ tutorial.lo tutorial.o: tutorial.c /usr/include/math.h \
 /usr/include/atk-1.0/atk/atkgobjectaccessible.h:
 
 /usr/include/atk-1.0/atk/atkhyperlink.h:
+
+/usr/include/atk-1.0/atk/atkhyperlinkimpl.h:
 
 /usr/include/atk-1.0/atk/atkhypertext.h:
 

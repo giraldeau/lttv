@@ -1280,7 +1280,7 @@ static gboolean events_check_handler(guint count, gboolean *stop_flag)
       return TRUE;
     else
       return FALSE;
-  }
+  } else return FALSE;
 }
 
 static void get_events(double new_value, EventViewerData *event_viewer_data)
