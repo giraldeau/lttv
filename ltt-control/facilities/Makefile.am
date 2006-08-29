@@ -12,12 +12,12 @@ kernel_arch_mips.xml \
 kernel_arch_powerpc.xml \
 kernel_arch_ppc.xml \
 kernel_arch_x86_64.xml \
-stack_arch_i386.xml \
 locking.xml \
 memory.xml \
 network.xml \
 process.xml \
 socket.xml \
+stack.xml \
 statedump.xml \
 timer.xml \
 user_generic.xml \
@@ -36,12 +36,12 @@ kernel_arch_mips.xml \
 kernel_arch_powerpc.xml \
 kernel_arch_ppc.xml \
 kernel_arch_x86_64.xml \
-stack_arch_i386.xml \
 locking.xml \
 memory.xml \
 network.xml \
 process.xml \
 socket.xml \
+stack.xml \
 statedump.xml \
 timer.xml \
 user_generic.xml \
