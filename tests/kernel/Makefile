@@ -1,19 +1,20 @@
 ifneq ($(KERNELRELEASE),)
 ifneq ($(CONFIG_LTT),)
-	obj-m += ltt-facility-loader-tests.o
-	obj-m += test-time-probe.o 
-	obj-m += test-time-probe2.o 
-	obj-m += test-instrument-size-small.o
-	obj-m += test-instrument-size-med.o
-	obj-m += test-instrument-size-big.o
-	obj-m += test-printk-effect.o
+#	obj-m += ltt-facility-loader-tests.o
+#	obj-m += test-time-probe.o 
+#	obj-m += test-time-probe2.o 
+#	obj-m += test-instrument-size-small.o
+#	obj-m += test-instrument-size-med.o
+#	obj-m += test-instrument-size-big.o
+#	obj-m += test-printk-effect.o
 endif
 	obj-m += test-cmpxchg.o
 	obj-m += test-cmpxchg-nolock.o
 	obj-m += test-spinlock.o
 	obj-m += test-inc.o
 	obj-m += test-inc-nolock.o
-
+	obj-m += test-kmalloc.o
+	obj-m += test-irqdis.o
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 	PWD := $(shell pwd)

@@ -20,11 +20,12 @@ static int trace_user_generic_slow_printf(
 #else
 {
 	/* Guess we need no more than 100 bytes. */
-	int n, size = 100;
+	int n, size = 104;
 	char *p, *np;
 	va_list ap;
 	int ret;
 
+	size += ltt_align(size, sizeof(void*));
 	if ((p = malloc (size)) == NULL)
 		return -1;
 
@@ -35,7 +36,7 @@ static int trace_user_generic_slow_printf(
 		va_end(ap);
 		/* If that worked, trace the string. */
 		if (n > -1 && n < size) {
-			ret = trace_user_generic_slow_printf_param_buffer(p, n+1);
+			ret = trace_user_generic_slow_printf_param_buffer(p, n+1+ltt_align(n+1, sizeof(void*)));
 			free(p);
 			return ret;
 		}
@@ -44,6 +45,7 @@ static int trace_user_generic_slow_printf(
 			 size = n+1; /* precisely what is needed */
 		else           /* glibc 2.0 */
 			 size *= 2;  /* twice the old size */
+		size += ltt_align(size, sizeof(void*));
 		if ((np = realloc (p, size)) == NULL) {
 			 free(p);
 			 return -1;

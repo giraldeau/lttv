@@ -498,7 +498,6 @@ static inline int trace_user_generic_slow_printf_param_buffer(
 #else
 {
 	int ret = 0;
-	reserve_size = ltt_align(reserve_size, sizeof(void *));
 	{
 		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_slow_printf, buffer, reserve_size, LTT_BLOCKING);
 	}

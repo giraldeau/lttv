@@ -1718,8 +1718,8 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "int ret = 0;\n");
 	if(event->param_buffer) {
-		print_tabs(1, fd);
-		fprintf(fd, "reserve_size = ltt_align(reserve_size, sizeof(void *));\n");
+		//FIX print_tabs(1, fd);
+		//fprintf(fd, "reserve_size = ltt_align(reserve_size, sizeof(void *));\n");
 		print_tabs(1, fd);
 		fprintf(fd, "{\n");
 		goto do_syscall;

@@ -168,6 +168,7 @@ IN="?_include_linux_ltt_ltt-facility-core.h
 ?_include_linux_ltt_ltt-facility-fs.h
 ?_include_linux_ltt_ltt-facility-fs_data.h
 ?_include_linux_ltt_ltt-facility-custom-fs_data.h
+?_include_linux_ltt_ltt-facility-custom-stack.h
 ?_include_linux_ltt_ltt-facility-id-core.h
 ?_include_linux_ltt_ltt-facility-id-fs.h
 ?_include_linux_ltt_ltt-facility-id-fs_data.h
@@ -179,6 +180,7 @@ IN="?_include_linux_ltt_ltt-facility-core.h
 ?_include_linux_ltt_ltt-facility-id-network_ip_interface.h
 ?_include_linux_ltt_ltt-facility-id-process.h
 ?_include_linux_ltt_ltt-facility-id-socket.h
+?_include_linux_ltt_ltt-facility-id-stack.h
 ?_include_linux_ltt_ltt-facility-id-statedump.h
 ?_include_linux_ltt_ltt-facility-id-timer.h
 ?_include_linux_ltt_ltt-facility-ipc.h
@@ -189,13 +191,12 @@ IN="?_include_linux_ltt_ltt-facility-core.h
 ?_include_linux_ltt_ltt-facility-network_ip_interface.h
 ?_include_linux_ltt_ltt-facility-process.h
 ?_include_linux_ltt_ltt-facility-socket.h
+?_include_linux_ltt_ltt-facility-stack.h
 ?_include_linux_ltt_ltt-facility-statedump.h
 ?_include_linux_ltt_ltt-facility-timer.h
 ?_include_asm-i386_ltt_ltt-facility-id-kernel_arch_i386.h
 ?_include_asm-i386_ltt_ltt-facility-kernel_arch_i386.h
-?_include_asm-i386_ltt_ltt-facility-custom-stack_arch_i386.h
-?_include_asm-i386_ltt_ltt-facility-id-stack_arch_i386.h
-?_include_asm-i386_ltt_ltt-facility-stack_arch_i386.h
+?_include_asm-i386_ltt_ltt-facility-custom-stack.h
 ?_include_asm-i386_ltt_ltt-facility-custom-locking.h
 ?_include_asm-arm_ltt_ltt-facility-id-kernel_arch_arm.h
 ?_include_asm-arm_ltt_ltt-facility-kernel_arch_arm.h
@@ -207,6 +208,7 @@ IN="?_include_linux_ltt_ltt-facility-core.h
 ?_include_asm-ppc_ltt_ltt-facility-kernel_arch_ppc.h
 ?_include_asm-x86_64_ltt_ltt-facility-id-kernel_arch_x86_64.h
 ?_include_asm-x86_64_ltt_ltt-facility-kernel_arch_x86_64.h
+?_include_asm-x86_64_ltt_ltt-facility-custom-stack.h
 ?_include_asm-x86_64_ltt_ltt-facility-custom-locking.h"
 
 for a in $IN; do wr $a $FILE; done
@@ -237,14 +239,14 @@ IN="?_ltt_Makefile
 ?_ltt_ltt-facility-loader-process.h
 ?_ltt_ltt-facility-loader-socket.c
 ?_ltt_ltt-facility-loader-socket.h
+?_ltt_ltt-facility-loader-stack.c
+?_ltt_ltt-facility-loader-stack.h
 ?_ltt_ltt-facility-loader-statedump.c
 ?_ltt_ltt-facility-loader-statedump.h
 ?_ltt_ltt-facility-loader-timer.c
 ?_ltt_ltt-facility-loader-timer.h
 ?_ltt_ltt-facility-loader-kernel_arch_i386.c
 ?_ltt_ltt-facility-loader-kernel_arch_i386.h
-?_ltt_ltt-facility-loader-stack_arch_i386.c
-?_ltt_ltt-facility-loader-stack_arch_i386.h
 ?_ltt_ltt-facility-loader-kernel_arch_arm.c
 ?_ltt_ltt-facility-loader-kernel_arch_arm.h
 ?_ltt_ltt-facility-loader-kernel_arch_mips.c
