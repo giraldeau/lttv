@@ -57,15 +57,10 @@ of process 0.<br>
 <big>LTT Next Generation Roadmap<small><br>
 <br>
 * TODO<br>
-(3) Find a way to make logging know when it causes a minor page fault
-recursively (without ignoring silently all nested events).<br>
+(3) Add sysenter instrumentation on x86. Verify x86_64.<br>
 (3) Have various subbuffer sizes for high and low rate channels.<br>
 (3) Change the byte pair "facility, event" id for a short combining the
 informatinon.<br>
-(3) Add sysenter instrumentation on x86. Verify x86_64.<br>
-(3) #IBM Fix ppc64 syscall time accounting. Maybe caused by a missing syscall
-return instrumentation ?<br>
-(3) Process and kernel stack dump for x86_64, for native and compat.<br>
 (4) Add Xen support.<br>
 	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
 	# <A HREF="mailto:Parisa Heidari <parisa.heidari@polymtl.ca>">Parisa Heidari</A><br>
@@ -79,6 +74,9 @@ using per-CPU variables, so it should make it possible.<br>
 (4) integrate NPTL instrumentation (see
 <A HREF="http://nptltracetool.sourceforge.net/">PTT</A>).<br>
 (4) Probe calibration kernel module.<br>
+(4) Make page faults detect nested fault without nesting 4 times in the page
+fault handler.<br>
+(4) #IBM Test fix for ppc64 kernel 2.6.9 missing syscall return instrumentation.<br>
 (5) Discuss with RelayFS upstream to integrate LTTng modifications.<br>
 (5) Move to DebugFS for channel files.<br>
 (5) Support CPUs with scalable frequency.<br>
