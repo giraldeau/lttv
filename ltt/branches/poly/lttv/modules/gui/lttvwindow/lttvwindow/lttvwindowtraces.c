@@ -211,7 +211,6 @@ void lttvwindowtraces_add_trace(LttvTrace *trace)
   value = lttv_attribute_add(attribute,
                      LTTV_NOTIFY_CURRENT,
                      LTTV_POINTER);
- 
 }
 
 /* Remove a trace from the global attributes */

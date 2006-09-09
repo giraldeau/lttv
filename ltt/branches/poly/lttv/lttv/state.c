@@ -30,6 +30,16 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Comment :
+ * Mathieu Desnoyers
+ * usertrace is there only to be able to update the current CPU of the
+ * usertraces when there is a schedchange. it is a way to link the ProcessState
+ * to the associated usertrace. Link only created upon thread creation.
+ *
+ * The cpu id is necessary : it gives us back the current ProcessState when we
+ * are considering data from the usertrace.
+ */
+
 #define PREALLOCATED_EXECUTION_STACK 10
 
 /* Facilities Quarks */
@@ -143,6 +153,8 @@ static void free_saved_state(LttvTraceState *tcs);
 
 static void lttv_state_free_process_table(GHashTable *processes);
 
+static void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp,
+                       GPtrArray *quarktable);
 
 void lttv_state_save(LttvTraceState *self, LttvAttribute *container)
 {
@@ -280,6 +292,82 @@ static void free_usertrace_key(gpointer data)
   g_free(data);
 }
 
+#define MAX_STRING_LEN 4096
+
+static void
+state_load_saved_states(LttvTraceState *tcs)
+{
+  FILE *fp;
+  GPtrArray *quarktable;
+  char *trace_path;
+  char path[PATH_MAX];
+  guint count;
+  guint i;
+  tcs->has_precomputed_states = FALSE;
+  GQuark q;
+  gchar *string;
+  gint hdr;
+  gchar buf[MAX_STRING_LEN];
+  guint len;
+
+  trace_path = g_quark_to_string(ltt_trace_name(tcs->parent.t));
+  strncpy(path, trace_path, PATH_MAX-1);
+  count = strnlen(trace_path, PATH_MAX-1);
+  // quarktable : open, test
+  strncat(path, "/precomputed/quarktable", PATH_MAX-count-1);
+  fp = fopen(path, "r");
+  if(!fp) return;
+  quarktable = g_ptr_array_sized_new(4096);
+  
+  /* Index 0 is null */
+  hdr = fgetc(fp);
+  if(hdr == EOF) return;
+  g_assert(hdr == HDR_QUARKS);
+  q = 1;
+  do {
+    hdr = fgetc(fp);
+    if(hdr == EOF) break;
+    g_assert(hdr == HDR_QUARK);
+    g_ptr_array_set_size(quarktable, q+1);
+    i=0;
+    while(1) {
+      fread(&buf[i], sizeof(gchar), 1, fp);
+      if(buf[i] == '\0' || feof(fp)) break;
+      i++;
+    }
+    len = strnlen(buf, MAX_STRING_LEN-1);
+    g_ptr_array_index (quarktable, q) = g_new(gchar, len+1);
+    strncpy(g_ptr_array_index (quarktable, q), buf, len+1);
+    q++;
+  } while(1);
+
+  fclose(fp);
+  // saved_states : open, test
+  strncpy(path, trace_path, PATH_MAX-1);
+  count = strnlen(trace_path, PATH_MAX-1);
+  strncat(path, "/precomputed/states", PATH_MAX-count-1);
+  fp = fopen(path, "r");
+  if(!fp) return;
+
+  hdr = fgetc(fp);
+  if(hdr != HDR_TRACE) goto end;
+
+  lttv_trace_states_read_raw(tcs, fp, quarktable);
+
+  tcs->has_precomputed_states = TRUE;
+
+end:
+  fclose(fp);
+
+  /* Free the quarktable */
+  for(i=0; i<quarktable->len; i++) {
+    string = g_ptr_array_index (quarktable, i);
+    g_free(string);
+  }
+  g_ptr_array_free(quarktable, TRUE);
+  return;
+}
+
 static void
 init(LttvTracesetState *self, LttvTraceset *ts)
 {
@@ -324,21 +412,6 @@ init(LttvTracesetState *self, LttvTraceset *ts)
                                           LttvTracefileContext*, j));
       tfcs->tracefile_name = ltt_tracefile_name(tfcs->parent.tf);
       tfcs->cpu = ltt_tracefile_cpu(tfcs->parent.tf);
-#if 0    
-      if(ltt_tracefile_tid(tfcs->parent.tf) != 0) {
-        /* It's a Usertrace */
-        LttvProcessState *process;
-        LttTime timestamp = 
-          ltt_interpolate_time_from_tsc(tfcs->parent.tf,
-              ltt_tracefile_creation(tfcs->parent.tf));
-        process = lttv_state_find_process_or_create(
-                        tcs,
-                        0, ltt_tracefile_tid(tfcs->parent.tf),
-                        &timestamp);
-        process->usertrace = tfcs;
-      }
-    }
-#endif //0
       if(ltt_tracefile_tid(tfcs->parent.tf) != 0) {
         /* It's a Usertrace */
         guint tid = ltt_tracefile_tid(tfcs->parent.tf);
@@ -357,6 +430,8 @@ init(LttvTracesetState *self, LttvTraceset *ts)
       }
     }
 
+    /* See if the trace has saved states */
+    state_load_saved_states(tcs);
   }
 }
 
@@ -579,6 +654,7 @@ static void write_process_state_raw(gpointer key, gpointer value,
     fwrite(&es->s, sizeof(es->s), 1, fp);
     fwrite(&es->entry, sizeof(es->entry), 1, fp);
     fwrite(&es->change, sizeof(es->change), 1, fp);
+    fwrite(&es->cum_cpu_time, sizeof(es->cum_cpu_time), 1, fp);
 #if 0
     fprintf(fp, "    <ES MODE=\"%s\" SUBMODE=\"%s\" ENTRY_S=%lu ENTRY_NS=%lu",
       g_quark_to_string(es->t), g_quark_to_string(es->n),
@@ -677,17 +753,19 @@ void lttv_state_write_raw(LttvTraceState *self, LttTime t, FILE *fp)
 /* Read process state from a file */
 
 /* Called because a HDR_PROCESS was found */
-static void read_process_state_raw(LttvTraceState *self, FILE *fp)
+static void read_process_state_raw(LttvTraceState *self, FILE *fp,
+                       GPtrArray *quarktable)
 {
   LttvExecutionState *es;
   LttvProcessState *process, *parent_process;
   LttvProcessState tmp;
+  GQuark tmpq;
 
   guint i;
-  guint64 address;
+  guint64 *address;
   guint cpu;
 
-  /* TOOD : check return value */
+  /* TODO : check return value */
   fread(&tmp.type, sizeof(tmp.type), 1, fp);
   fread(&tmp.name, sizeof(tmp.name), 1, fp);
   fread(&tmp.brand, sizeof(tmp.brand), 1, fp);
@@ -704,28 +782,58 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp)
     /* We must link to the parent */
     parent_process = lttv_state_find_process_or_create(self, ANY_CPU, tmp.ppid,
         &ltt_time_zero);
-    process = lttv_state_find_process_or_create(self, ANY_CPU, tmp.pid,
-        &tmp.insertion_time);
+    process = lttv_state_find_process_or_create(self, tmp.cpu, tmp.pid,
+        &tmp.creation_time);
   }
+  process->insertion_time = tmp.insertion_time;
   process->creation_time = tmp.creation_time;
-  process->type = tmp.type;
-  process->brand = tmp.brand;
+  process->type = g_quark_from_string(
+    (gchar*)g_ptr_array_index(quarktable, tmp.type));
   process->tgid = tmp.tgid;
-  process->cpu = tmp.cpu;
+  process->ppid = tmp.ppid;
+  process->brand = g_quark_from_string(
+    (gchar*)g_ptr_array_index(quarktable, tmp.brand));
+  process->name = 
+    g_quark_from_string((gchar*)g_ptr_array_index(quarktable, tmp.name));
 
   do {
     if(feof(fp) || ferror(fp)) goto end_loop;
 
     gint hdr = fgetc(fp);
+    if(hdr == EOF) goto end_loop;
 
     switch(hdr) {
       case HDR_ES:
+        process->execution_stack =
+          g_array_set_size(process->execution_stack,
+                           process->execution_stack->len + 1);
+        es = &g_array_index(process->execution_stack, LttvExecutionState,
+                process->execution_stack->len-1);
+
+        fread(&es->t, sizeof(es->t), 1, fp);
+        es->t = g_quark_from_string(
+           (gchar*)g_ptr_array_index(quarktable, es->t));
+        fread(&es->n, sizeof(es->n), 1, fp);
+        es->n = g_quark_from_string(
+           (gchar*)g_ptr_array_index(quarktable, es->n));
+        fread(&es->s, sizeof(es->s), 1, fp);
+        es->s = g_quark_from_string(
+           (gchar*)g_ptr_array_index(quarktable, es->s));
+        fread(&es->entry, sizeof(es->entry), 1, fp);
+        fread(&es->change, sizeof(es->change), 1, fp);
+        fread(&es->cum_cpu_time, sizeof(es->cum_cpu_time), 1, fp);
         break;
       case HDR_USER_STACK:
+        process->user_stack = g_array_set_size(process->user_stack,
+                              process->user_stack->len + 1);
+        address = &g_array_index(process->user_stack, guint64,
+                                 process->user_stack->len-1);
+        fread(address, sizeof(address), 1, fp);
+	process->current_function = *address;
         break;
       case HDR_USERTRACE:
-        break;
-      case HDR_PROCESS_STATE:
+        fread(&tmpq, sizeof(tmpq), 1, fp);
+        fread(&process->usertrace->cpu, sizeof(process->usertrace->cpu), 1, fp);
         break;
       default:
         ungetc(hdr, fp);
@@ -739,11 +847,10 @@ end_loop:
 
 /* Called because a HDR_PROCESS_STATE was found */
 /* Append a saved state to the trace states */
-void lttv_state_read_raw(LttvTraceState *self, FILE *fp)
+void lttv_state_read_raw(LttvTraceState *self, FILE *fp, GPtrArray *quarktable)
 {
   guint i, nb_tracefile, nb_block, offset;
   guint64 tsc;
-  LttTracefile *tf;
   LttvTracefileState *tfcs;
 
   LttEventPosition *ep;
@@ -766,11 +873,12 @@ void lttv_state_read_raw(LttvTraceState *self, FILE *fp)
   do {
     if(feof(fp) || ferror(fp)) goto end_loop;
     hdr = fgetc(fp);
+    if(hdr == EOF) goto end_loop;
 
     switch(hdr) {
       case HDR_PROCESS:
         /* Call read_process_state_raw */
-        read_process_state_raw(self, fp);
+        read_process_state_raw(self, fp, quarktable);
         break;
       case HDR_TRACEFILE:
       case HDR_TRACESET:
@@ -782,9 +890,8 @@ void lttv_state_read_raw(LttvTraceState *self, FILE *fp)
       case HDR_USERTRACE:
       case HDR_PROCESS_STATE:
       case HDR_CPU:
-        g_error("Error while parsing saved state file :"
-            " unexpected data header %d",
-            hdr);
+        ungetc(hdr, fp);
+      	goto end_loop;
         break;
       default:
         g_error("Error while parsing saved state file : unknown data header %d",
@@ -822,7 +929,7 @@ end_loop:
       fread(&nb_block, sizeof(nb_block), 1, fp);
       fread(&offset, sizeof(offset), 1, fp);
       fread(&tsc, sizeof(tsc), 1, fp);
-      ltt_event_position_set(ep, tf, nb_block, offset, tsc);
+      ltt_event_position_set(ep, tfcs->parent.tf, nb_block, offset, tsc);
       gint ret = ltt_tracefile_seek_position(tfcs->parent.tf, ep);
       g_assert(ret == 0);
     }
@@ -845,18 +952,20 @@ end_loop:
 }
 
 /* Called when a HDR_TRACE is found */
-void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp)
+void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp,
+                       GPtrArray *quarktable)
 {
   int hdr;
 
   do {
     if(feof(fp) || ferror(fp)) goto end_loop;
     hdr = fgetc(fp);
+    if(hdr == EOF) goto end_loop;
 
     switch(hdr) {
       case HDR_PROCESS_STATE:
         /* Call read_process_state_raw */
-        lttv_state_read_raw(tcs, fp);
+        lttv_state_read_raw(tcs, fp, quarktable);
         break;
       case HDR_TRACEFILE:
       case HDR_TRACESET:
@@ -2368,6 +2477,8 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceState *)self->parent.traces[i];
 
+    if(ts->has_precomputed_states) continue;
+
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
@@ -2543,6 +2654,9 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = LTTV_TRACE_STATE(self->parent.traces[i]);
+
+    if(ts->has_precomputed_states) continue;
+
     lttv_attribute_find(ts->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
     hooks = *(val.v_pointer);
 

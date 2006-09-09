@@ -80,7 +80,8 @@ static gboolean write_traceset_header(void *hook_data, void *call_data)
   /* Print the trace set header */
   if(a_raw) {
   /* TODO : Write a header that will check for ILP size and endianness */
-    fputc(HDR_TRACESET, a_file);
+    //fputc(HDR_TRACESET, a_file);
+    g_assert(lttv_traceset_number(tc->ts) == 1); /* Only one trace in traceset */
   } else  {
     fprintf(a_file,"<TRACESET NUM_TRACES=%d/>\n", 
         lttv_traceset_number(tc->ts));
@@ -276,6 +277,6 @@ static void destroy()
 
 
 LTTV_MODULE("precomputeState", "Precompute states", \
-	    "Precompute states in a trace, XML output.", \
+	    "Precompute states in a trace, XML or binary output.", \
 	    init, destroy, "stats", "batchAnalysis", "option", "print")
 

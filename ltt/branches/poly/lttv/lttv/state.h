@@ -295,6 +295,7 @@ struct _LttvTraceState {
 
   /* Array of per cpu running process */
   LttvProcessState **running_process;
+  gboolean has_precomputed_states;
 };
 
 struct _LttvTraceStateClass {

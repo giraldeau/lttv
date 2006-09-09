@@ -556,6 +556,7 @@ static void request_background_data(EventViewerData *event_viewer_data)
   gint num_traces = lttv_traceset_number(tsc->ts);
   gint i;
   LttvTrace *trace;
+  LttvTraceState *tstate;
 
   LttvHooks *background_ready_hook = 
     lttv_hooks_new();
@@ -565,8 +566,10 @@ static void request_background_data(EventViewerData *event_viewer_data)
   
   for(i=0;i<num_traces;i++) {
     trace = lttv_traceset_get(tsc->ts, i);
+    tstate = LTTV_TRACE_STATE(tsc->traces[i]);
 
-    if(lttvwindowtraces_get_ready(g_quark_from_string("state"),trace)==FALSE) {
+    if(lttvwindowtraces_get_ready(g_quark_from_string("state"),trace)==FALSE
+        && !tstate->has_precomputed_states) {
 
       if(lttvwindowtraces_get_in_progress(g_quark_from_string("state"),
                                           trace) == FALSE) {
@@ -593,7 +596,7 @@ static void request_background_data(EventViewerData *event_viewer_data)
         event_viewer_data->background_info_waiting++;
       }
     } else {
-      /* Data ready. Be its nature, this viewer doesn't need to have
+      /* Data ready. By its nature, this viewer doesn't need to have
        * its data ready hook called htere, because a background
        * request is always linked with a redraw.
        */
