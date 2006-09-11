@@ -342,6 +342,7 @@ state_load_saved_states(LttvTraceState *tcs)
   } while(1);
 
   fclose(fp);
+
   // saved_states : open, test
   strncpy(path, trace_path, PATH_MAX-1);
   count = strnlen(trace_path, PATH_MAX-1);
@@ -782,8 +783,13 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp,
     /* We must link to the parent */
     parent_process = lttv_state_find_process_or_create(self, ANY_CPU, tmp.ppid,
         &ltt_time_zero);
-    process = lttv_state_find_process_or_create(self, tmp.cpu, tmp.pid,
-        &tmp.creation_time);
+    process = lttv_state_find_process(self, ANY_CPU, tmp.pid);
+    if(process == NULL) {
+      process = lttv_state_create_process(self, parent_process, tmp.cpu,
+      tmp.pid, tmp.tgid,
+      g_quark_from_string((gchar*)g_ptr_array_index(quarktable, tmp.name)),
+          &tmp.creation_time);
+    }
   }
   process->insertion_time = tmp.insertion_time;
   process->creation_time = tmp.creation_time;
@@ -795,6 +801,7 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp,
     (gchar*)g_ptr_array_index(quarktable, tmp.brand));
   process->name = 
     g_quark_from_string((gchar*)g_ptr_array_index(quarktable, tmp.name));
+
 
   do {
     if(feof(fp) || ferror(fp)) goto end_loop;
@@ -809,6 +816,7 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp,
                            process->execution_stack->len + 1);
         es = &g_array_index(process->execution_stack, LttvExecutionState,
                 process->execution_stack->len-1);
+        process->state = es;
 
         fread(&es->t, sizeof(es->t), 1, fp);
         es->t = g_quark_from_string(
@@ -864,6 +872,7 @@ void lttv_state_read_raw(LttvTraceState *self, FILE *fp, GPtrArray *quarktable)
   LttvAttribute *saved_states_tree, *saved_state_tree;
 
   LttvAttributeValue value;
+  GTree *pqueue = self->parent.ts_context->pqueue;
   ep = ltt_event_position_new();
   
   restore_init_state(self);
@@ -920,6 +929,7 @@ end_loop:
   //  fprintf(fp, "  <TRACEFILE TIMESTAMP_S=%lu TIMESTAMP_NS=%lu", 
   //      tfcs->parent.timestamp.tv_sec, 
   //      tfcs->parent.timestamp.tv_nsec);
+    g_tree_remove(pqueue, &tfcs->parent);
     hdr = fgetc(fp);
     g_assert(hdr == HDR_TRACEFILE);
     fread(&tfcs->parent.timestamp, sizeof(tfcs->parent.timestamp), 1, fp);
@@ -932,6 +942,7 @@ end_loop:
       ltt_event_position_set(ep, tfcs->parent.tf, nb_block, offset, tsc);
       gint ret = ltt_tracefile_seek_position(tfcs->parent.tf, ep);
       g_assert(ret == 0);
+      g_tree_insert(pqueue, &tfcs->parent, &tfcs->parent);
     }
   }
   g_free(ep);
@@ -949,6 +960,7 @@ end_loop:
     t.tv_nsec);
 
   *(self->max_time_state_recomputed_in_seek) = t;
+
 }
 
 /* Called when a HDR_TRACE is found */
@@ -987,8 +999,10 @@ void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp,
     };
   } while(1);
 end_loop:
-
   *(tcs->max_time_state_recomputed_in_seek) = tcs->parent.time_span.end_time;
+  restore_init_state(tcs);
+  lttv_process_trace_seek_time(tcs, ltt_time_zero);
+  return;
 }
 
 
@@ -2477,8 +2491,6 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceState *)self->parent.traces[i];
 
-    if(ts->has_precomputed_states) continue;
-
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
@@ -2654,8 +2666,6 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = LTTV_TRACE_STATE(self->parent.traces[i]);
-
-    if(ts->has_precomputed_states) continue;
 
     lttv_attribute_find(ts->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
     hooks = *(val.v_pointer);
@@ -2880,6 +2890,8 @@ void lttv_state_save_add_event_hooks(LttvTracesetState *self)
     ts = (LttvTraceState *)self->parent.traces[i];
     nb_tracefile = ts->parent.tracefiles->len;
 
+    if(ts->has_precomputed_states) continue;
+
     guint *event_count = g_new(guint, 1);
     *event_count = 0;
 
@@ -2976,6 +2988,8 @@ void lttv_state_save_remove_event_hooks(LttvTracesetState *self)
 
     ts = (LttvTraceState *)self->parent.traces[i];
     nb_tracefile = ts->parent.tracefiles->len;
+
+    if(ts->has_precomputed_states) continue;
 
     guint *event_count = NULL;
 
