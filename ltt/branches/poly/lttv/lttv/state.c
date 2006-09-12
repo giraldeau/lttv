@@ -1632,11 +1632,25 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
         g_quark_to_string(process->name),
         g_quark_to_string(process->brand),
         g_quark_to_string(process->state->s));
+    g_printf("MATD1 Different execution mode type (%lu.%09lu): ignore it\n",
+        tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
+    g_printf("MATD1 process state has %s when pop_int is %s\n",
+        g_quark_to_string(process->state->t),
+        g_quark_to_string(t));
+    g_printf("MATD1 { %u, %u, %s, %s, %s }\n",
+        process->pid,
+        process->ppid,
+        g_quark_to_string(process->name),
+        g_quark_to_string(process->brand),
+        g_quark_to_string(process->state->s));
+
     return;
   }
 
   if(depth == 1){
     g_info("Trying to pop last state on stack (%lu.%09lu): ignore it\n",
+        tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
+    g_printf("MATD1 Trying to pop last state on stack (%lu.%09lu): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
     return;
   }
@@ -2413,7 +2427,13 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
     /* Keep the stack bottom : a running user mode */
     /* Disabled because of inconsistencies in the current statedump states. */
     if(type == LTTV_STATE_KERNEL_THREAD) {
-      /* Only keep the bottom */
+      /* Only keep the bottom 
+       * FIXME Kernel thread : can be in syscall or interrupt or trap. */
+      /* Will cause expected trap when in fact being syscall (even after end of
+       * statedump event)
+       * Will cause expected interrupt when being syscall. (only before end of
+       * statedump event) */
+      // This will cause a "popping last state on stack, ignoring it."
       process->execution_stack = g_array_set_size(process->execution_stack, 1);
       es = process->state = &g_array_index(process->execution_stack, 
           LttvExecutionState, 0);
@@ -2421,12 +2441,27 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
       es->s = status;
       es->n = submode;
     } else {
-      /* On top of it : */
+      /* User space process :
+       * bottom : user mode
+       * either currently running or scheduled out.
+       * can be scheduled out because interrupted in (user mode or in syscall)
+       * or because of an explicit call to the scheduler in syscall. Note that
+       * the scheduler call comes after the irq_exit, so never in interrupt
+       * context. */
+      // temp workaround : set size to 1 : only have user mode bottom of stack.
+      // will cause g_info message of expected syscall mode when in fact being
+      // in user mode. Can also cause expected trap when in fact being user
+      // mode in the event of a page fault reenabling interrupts in the handler.
+      // Expected syscall and trap can also happen after the end of statedump
+      // This will cause a "popping last state on stack, ignoring it."
+      process->execution_stack = g_array_set_size(process->execution_stack, 1);
+#if 0
       es = process->state = &g_array_index(process->execution_stack, 
           LttvExecutionState, 1);
       es->t = LTTV_STATE_USER_MODE;
       es->s = status;
       es->n = submode;
+#endif //0
     }
 #if 0
     /* UNKNOWN STATE */
