@@ -1632,25 +1632,11 @@ static void pop_state(LttvTracefileState *tfs, LttvExecutionMode t)
         g_quark_to_string(process->name),
         g_quark_to_string(process->brand),
         g_quark_to_string(process->state->s));
-    g_printf("MATD1 Different execution mode type (%lu.%09lu): ignore it\n",
-        tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
-    g_printf("MATD1 process state has %s when pop_int is %s\n",
-        g_quark_to_string(process->state->t),
-        g_quark_to_string(t));
-    g_printf("MATD1 { %u, %u, %s, %s, %s }\n",
-        process->pid,
-        process->ppid,
-        g_quark_to_string(process->name),
-        g_quark_to_string(process->brand),
-        g_quark_to_string(process->state->s));
-
     return;
   }
 
   if(depth == 1){
     g_info("Trying to pop last state on stack (%lu.%09lu): ignore it\n",
-        tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
-    g_printf("MATD1 Trying to pop last state on stack (%lu.%09lu): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
     return;
   }
