@@ -35,6 +35,7 @@ enum trace_ctl_op {
 	CTL_OP_START,
 	CTL_OP_STOP,
 	CTL_OP_DAEMON,
+	CTL_OP_DAEMON_HYBRID_FINISH,
 	CTL_OP_DESCRIPTION,
 	CTL_OP_NONE
 };
@@ -42,8 +43,12 @@ enum trace_ctl_op {
 static char *trace_name = NULL;
 static char *trace_type = "relay";
 static char *mode_name = NULL;
-static unsigned subbuf_size = 0;
-static unsigned n_subbufs = 0;
+static unsigned subbuf_size_low = 0;
+static unsigned n_subbufs_low = 0;
+static unsigned subbuf_size_med = 0;
+static unsigned n_subbufs_med = 0;
+static unsigned subbuf_size_high = 0;
+static unsigned n_subbufs_high = 0;
 static unsigned append_trace = 0;
 static enum trace_mode mode = LTT_TRACE_NORMAL;
 static enum trace_ctl_op op = CTL_OP_NONE;
@@ -61,8 +66,8 @@ void show_arguments(void)
 	printf("-n name       Name of the trace.\n");
 	printf("-b            Create trace channels and start tracing (no daemon).\n");
 	printf("-c            Create trace channels.\n");
-	printf("-m mode       Normal or flight recorder mode.\n");
-	printf("              Mode values : normal (default) or flight.\n");
+	printf("-m mode       Normal, flight recorder or hybrid mode.\n");
+	printf("              Mode values : normal (default), flight or hybrid.\n");
 	printf("-r            Destroy trace channels.\n");
 	printf("-R            Stop tracing and destroy trace channels.\n");
 	printf("-s            Start tracing.\n");
@@ -70,13 +75,19 @@ void show_arguments(void)
 	//                      "none exists.\n");
 	printf("-q            Stop tracing.\n");
 	printf("-d            Create trace, spawn a lttd daemon, start tracing.\n");
-	printf("              (optionnaly, you can set LTT_DAEMON\n");
+	printf("              (optionally, you can set LTT_DAEMON\n");
 	printf("              and the LTT_FACILITIES env. vars.)\n");
+	printf("-f            Stop tracing, dump flight recorder trace, destroy channels\n");
+	printf("              (for hybrid traces)\n");
 	printf("-t            Trace root path. (ex. /root/traces/example_trace)\n");
 	printf("-T            Type of trace (ex. relay)\n");
 	printf("-l            LTT channels root path. (ex. /mnt/relayfs/ltt)\n");
-	printf("-z            Size of the subbuffers (will be rounded to next page size)\n");
-	printf("-x            Number of subbuffers\n");
+	printf("-Z            Size of the low data rate subbuffers (will be rounded to next page size)\n");
+	printf("-X            Number of low data rate subbuffers\n");
+	printf("-V            Size of the medium data rate subbuffers (will be rounded to next page size)\n");
+	printf("-B            Number of medium data rate subbuffers\n");
+	printf("-z            Size of the high data rate subbuffers (will be rounded to next page size)\n");
+	printf("-x            Number of high data rate subbuffers\n");
 	printf("-e            Get XML facilities description\n");
 	printf("-a            Append to trace\n");
 	printf("-N            Number of lttd threads\n");
@@ -132,6 +143,8 @@ int parse_arguments(int argc, char **argv)
 								mode = LTT_TRACE_NORMAL;
 							else if(strcmp(mode_name, "flight") == 0)
 								mode = LTT_TRACE_FLIGHT;
+							else if(strcmp(mode_name, "hybrid") == 0)
+								mode = LTT_TRACE_HYBRID;
 							else {
 								printf("Invalid mode '%s'.\n", argv[argn]);
 								printf("\n");
@@ -155,28 +168,71 @@ int parse_arguments(int argc, char **argv)
 					case 'q':
 						op = CTL_OP_STOP;
 						break;
-					case 'z':
+					case 'Z':
 						if(argn+1 < argc) {
-							subbuf_size = (unsigned)atoi(argv[argn+1]);
+							subbuf_size_low = (unsigned)atoi(argv[argn+1]);
 							argn++;
 						} else {
-							printf("Specify a number of subbuffers after -z.\n");
+							printf("Specify a number of low traffic subbuffers after -Z.\n");
+							printf("\n");
+							ret = EINVAL;
+						}
+						break;
+					case 'X':
+						if(argn+1 < argc) {
+							n_subbufs_low = (unsigned)atoi(argv[argn+1]);
+							argn++;
+						} else {
+							printf("Specify a low traffic subbuffer size after -X.\n");
+							printf("\n");
+							ret = EINVAL;
+						}
+						break;
+					case 'V':
+						if(argn+1 < argc) {
+							subbuf_size_med = (unsigned)atoi(argv[argn+1]);
+							argn++;
+						} else {
+							printf("Specify a number of medium traffic subbuffers after -V.\n");
+							printf("\n");
+							ret = EINVAL;
+						}
+						break;
+					case 'B':
+						if(argn+1 < argc) {
+							n_subbufs_med = (unsigned)atoi(argv[argn+1]);
+							argn++;
+						} else {
+							printf("Specify a medium traffic subbuffer size after -B.\n");
+							printf("\n");
+							ret = EINVAL;
+						}
+						break;
+					case 'z':
+						if(argn+1 < argc) {
+							subbuf_size_high = (unsigned)atoi(argv[argn+1]);
+							argn++;
+						} else {
+							printf("Specify a number of high traffic subbuffers after -z.\n");
 							printf("\n");
 							ret = EINVAL;
 						}
 						break;
 					case 'x':
 						if(argn+1 < argc) {
-							n_subbufs = (unsigned)atoi(argv[argn+1]);
+							n_subbufs_high = (unsigned)atoi(argv[argn+1]);
 							argn++;
 						} else {
-							printf("Specify a subbuffer size after -x.\n");
+							printf("Specify a high traffic subbuffer size after -x.\n");
 							printf("\n");
 							ret = EINVAL;
 						}
 						break;
 					case 'd':
 						op = CTL_OP_DAEMON;
+						break;
+					case 'f':
+						op = CTL_OP_DAEMON_HYBRID_FINISH;
 						break;
 					case 'e':
 						op = CTL_OP_DESCRIPTION;
@@ -246,7 +302,7 @@ int parse_arguments(int argc, char **argv)
 		ret = EINVAL;
 	}
 
-	if(op == CTL_OP_DAEMON) {
+	if(op == CTL_OP_DAEMON || op == CTL_OP_DAEMON_HYBRID_FINISH) {
 		if(trace_root == NULL) {
 			printf("Please specify -t trace_root_path with the -d option.\n");
 			printf("\n");
@@ -392,7 +448,10 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	strcat(channel_path, trace_name);
 
 	
-	ret = lttctl_create_trace(handle, trace_name, mode, trace_type, subbuf_size, n_subbufs);
+	ret = lttctl_create_trace(handle, trace_name, mode, trace_type,
+		subbuf_size_low, n_subbufs_low,
+		subbuf_size_med, n_subbufs_med,
+		subbuf_size_high, n_subbufs_high);
 	if(ret != 0) goto create_error;
 
 	pid = fork();
@@ -420,12 +479,21 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 	} else if(pid == 0) {
 		/* child */
 		int ret;
-		if(append_trace) 
-			ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
-											 channel_path, "-d", "-a", "-N", num_threads, NULL);
-		else
-			ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
-											 channel_path, "-d", "-N", num_threads, NULL);
+		if(mode != LTT_TRACE_HYBRID) {
+			if(append_trace) 
+				ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
+					 channel_path, "-d", "-a", "-N", num_threads, NULL);
+			else
+				ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
+					 channel_path, "-d", "-N", num_threads, NULL);
+		} else {
+			if(append_trace) 
+				ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
+					 channel_path, "-d", "-a", "-N", num_threads, "-n", NULL);
+			else
+				ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
+					 channel_path, "-d", "-N", num_threads, "-n", NULL);
+		}
 		if(ret) {
 			ret = errno;
 			perror("Error in executing the lttd daemon");
@@ -449,6 +517,78 @@ create_error:
 	return ret;
 }
 
+
+
+
+int lttctl_daemon_hybrid_finish(struct lttctl_handle *handle, char *trace_name)
+{
+	char channel_path[PATH_MAX] = "";
+	pid_t pid;
+	int ret;
+	char *lttd_path = getenv("LTT_DAEMON");
+
+	if(lttd_path == NULL) lttd_path = 
+		PACKAGE_BIN_DIR "/lttd";
+	
+	strcat(channel_path, channel_root);
+	strcat(channel_path, "/");
+	strcat(channel_path, trace_name);
+
+	
+	ret = lttctl_stop(handle, trace_name);
+	if(ret != 0) goto stop_error;
+
+	pid = fork();
+
+	if(pid > 0) {
+		int status = 0;
+		/* parent */
+		
+		ret = waitpid(pid, &status, 0);
+		if(ret == -1) {
+			ret = errno;
+			perror("Error in waitpid");
+			goto destroy_error;
+		}
+
+		ret = 0;
+		if(WIFEXITED(status))
+			ret = WEXITSTATUS(status);
+		if(ret) goto destroy_error;
+
+	} else if(pid == 0) {
+		/* child */
+		int ret;
+		if(append_trace) 
+			ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
+					 channel_path, "-d", "-a", "-N", num_threads, "-f", NULL);
+		else
+			ret =	execlp(lttd_path, lttd_path, "-t", trace_root, "-c",
+					 channel_path, "-d", "-N", num_threads, "-f", NULL);
+		if(ret) {
+			ret = errno;
+			perror("Error in executing the lttd daemon");
+			exit(ret);
+		}
+	} else {
+		/* error */
+		perror("Error in forking for lttd daemon");
+	}
+
+	ret = lttctl_destroy_trace(handle, trace_name);
+	if(ret != 0) goto destroy_error;
+
+	return 0;
+
+	/* error handling */
+destroy_error:
+	printf("Hybrid trace destroy error\n");
+stop_error:
+	return ret;
+}
+
+
+
 int main(int argc, char ** argv)
 {
 	int ret;
@@ -468,14 +608,18 @@ int main(int argc, char ** argv)
 	
 	switch(op) {
 		case CTL_OP_CREATE_START:
-			ret = lttctl_create_trace(handle, trace_name, mode, trace_type, subbuf_size,
-																n_subbufs);
+			ret = lttctl_create_trace(handle, trace_name, mode, trace_type,
+			subbuf_size_low, n_subbufs_low,
+			subbuf_size_med, n_subbufs_med,
+			subbuf_size_high, n_subbufs_high);
 			if(!ret)
 				ret = lttctl_start(handle, trace_name);
 			break;
 		case CTL_OP_CREATE:
-			ret = lttctl_create_trace(handle, trace_name, mode, trace_type, subbuf_size,
-																n_subbufs);
+			ret = lttctl_create_trace(handle, trace_name, mode, trace_type,
+			subbuf_size_low, n_subbufs_low,
+			subbuf_size_med, n_subbufs_med,
+			subbuf_size_high, n_subbufs_high);
 			break;
 		case CTL_OP_DESTROY:
 			ret = lttctl_destroy_trace(handle, trace_name);
@@ -493,6 +637,9 @@ int main(int argc, char ** argv)
 			break;
 		case CTL_OP_DAEMON:
 			ret = lttctl_daemon(handle, trace_name);
+			break;
+		case CTL_OP_DAEMON_HYBRID_FINISH:
+			ret = lttctl_daemon_hybrid_finish(handle, trace_name);
 			break;
 		case CTL_OP_DESCRIPTION:
 			ret = create_eventdefs();

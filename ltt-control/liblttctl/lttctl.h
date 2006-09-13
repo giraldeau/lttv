@@ -42,7 +42,8 @@ enum trace_op {
 
 enum trace_mode {
 	LTT_TRACE_NORMAL,
-	LTT_TRACE_FLIGHT
+	LTT_TRACE_FLIGHT,
+	LTT_TRACE_HYBRID
 };
 
 typedef struct lttctl_peer_msg {
@@ -52,8 +53,12 @@ typedef struct lttctl_peer_msg {
 	union {
 		struct {
 			enum trace_mode mode;
-			unsigned subbuf_size;
-			unsigned n_subbufs;
+			unsigned subbuf_size_low;
+			unsigned n_subbufs_low;
+			unsigned subbuf_size_med;
+			unsigned n_subbufs_med;
+			unsigned subbuf_size_high;
+			unsigned n_subbufs_high;
 		} new_trace;
 	} args;
 } lttctl_peer_msg_t;
@@ -77,7 +82,10 @@ int lttctl_destroy_handle(struct lttctl_handle *h);
 
 
 int lttctl_create_trace(const struct lttctl_handle *h,
-		char *name, enum trace_mode mode, char *trace_type, unsigned subbuf_size, unsigned n_subbufs);
+		char *name, enum trace_mode mode, char *trace_type,
+		unsigned subbuf_size_low, unsigned n_subbufs_low,
+		unsigned subbuf_size_med, unsigned n_subbufs_med,
+		unsigned subbuf_size_high, unsigned n_subbufs_high);
 
 int lttctl_destroy_trace(const struct lttctl_handle *handle, char *name);
 

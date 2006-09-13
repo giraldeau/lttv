@@ -298,7 +298,10 @@ int lttctl_destroy_handle(struct lttctl_handle *h)
 
 
 int lttctl_create_trace(const struct lttctl_handle *h,
-		char *name, enum trace_mode mode, char *trace_type, unsigned subbuf_size, unsigned n_subbufs)
+		char *name, enum trace_mode mode, char *trace_type,
+		unsigned subbuf_size_low, unsigned n_subbufs_low,
+		unsigned subbuf_size_med, unsigned n_subbufs_med,
+		unsigned subbuf_size_high, unsigned n_subbufs_high)
 {
 	int err;
 	
@@ -323,8 +326,12 @@ int lttctl_create_trace(const struct lttctl_handle *h,
 	strncpy(req.msg.trace_type, trace_type, NAME_MAX);
 	req.msg.op = OP_CREATE;
 	req.msg.args.new_trace.mode = mode;
-	req.msg.args.new_trace.subbuf_size = subbuf_size;
-	req.msg.args.new_trace.n_subbufs = n_subbufs;
+	req.msg.args.new_trace.subbuf_size_low = subbuf_size_low;
+	req.msg.args.new_trace.n_subbufs_low = n_subbufs_low;
+	req.msg.args.new_trace.subbuf_size_med = subbuf_size_med;
+	req.msg.args.new_trace.n_subbufs_med = n_subbufs_med;
+	req.msg.args.new_trace.subbuf_size_high = subbuf_size_high;
+	req.msg.args.new_trace.n_subbufs_high = n_subbufs_high;
 
 	err = lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
 	if(err < 0) goto senderr;

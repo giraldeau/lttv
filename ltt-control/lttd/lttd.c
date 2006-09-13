@@ -67,12 +67,14 @@ struct channel_trace_fd {
 	int num_pairs;
 };
 
-static char *trace_name = NULL;
-static char *channel_name = NULL;
-static int	daemon_mode = 0;
-static int	append_mode = 0;
-static unsigned long num_threads = 1;
+static char		*trace_name = NULL;
+static char		*channel_name = NULL;
+static int		daemon_mode = 0;
+static int		append_mode = 0;
+static unsigned long	num_threads = 1;
 volatile static int	quit_program = 0;	/* For signal handler */
+static int		dump_flight_only = 0;
+static int		dump_normal_only = 0;
 
 /* Args :
  *
@@ -92,6 +94,8 @@ void show_arguments(void)
 	printf("-d            Run in background (daemon).\n");
 	printf("-a            Append to an possibly existing trace.\n");
 	printf("-N            Number of threads to start.\n");
+	printf("-f            Dump only flight recorder channels.\n");
+	printf("-n            Dump only normal channels.\n");
 	printf("\n");
 }
 
@@ -142,6 +146,12 @@ int parse_arguments(int argc, char **argv)
 							num_threads = strtoul(argv[argn+1], NULL, 0);
 							argn++;
 						}
+						break;
+					case 'f':
+						dump_flight_only = 1;
+						break;
+					case 'n':
+						dump_normal_only = 1;
 						break;
 					default:
 						printf("Invalid argument '%s'.\n", argv[argn]);
@@ -256,6 +266,17 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 			ret = open_channel_trace_pairs(path_channel, path_trace, fd_pairs);
 			if(ret < 0) continue;
 		} else if(S_ISREG(stat_buf.st_mode)) {
+			if(strncmp(entry->d_name, "flight-", sizeof("flight-")-1) != 0) {
+				if(dump_flight_only) {
+					printf("Skipping normal channel %s\n", path_channel);
+					continue;
+				}
+			} else {
+				if(dump_normal_only) {
+					printf("Skipping flight channel %s\n", path_channel);
+					continue;
+				}
+			}
 			printf("Opening file.\n");
 			
 			fd_pairs->pair = realloc(fd_pairs->pair,
