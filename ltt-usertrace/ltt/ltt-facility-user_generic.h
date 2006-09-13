@@ -105,7 +105,7 @@ static inline int trace_user_generic_string(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_string, buffer, reserve_size, LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_string, buffer, reserve_size, LTT_BLOCKING, 0);
 	}
 
 	return ret;
@@ -319,7 +319,7 @@ static inline int trace_user_generic_string_pointer(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_string_pointer, buffer, reserve_size, LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_string_pointer, buffer, reserve_size, LTT_BLOCKING, 0);
 	}
 
 	return ret;
@@ -499,7 +499,7 @@ static inline int trace_user_generic_slow_printf_param_buffer(
 {
 	int ret = 0;
 	{
-		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_slow_printf, buffer, reserve_size, LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_slow_printf, buffer, reserve_size, LTT_BLOCKING, 0);
 	}
 
 	return ret;
@@ -686,7 +686,7 @@ static inline int trace_user_generic_function_entry(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_function_entry, buffer, reserve_size, LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_function_entry, buffer, reserve_size, LTT_BLOCKING, 0);
 	}
 
 	return ret;
@@ -920,7 +920,7 @@ static inline int trace_user_generic_function_exit(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_function_exit, buffer, reserve_size, LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_function_exit, buffer, reserve_size, LTT_BLOCKING, 0);
 	}
 
 	return ret;
@@ -1149,7 +1149,7 @@ static inline int trace_user_generic_thread_brand(
 			*len = 0;
 		}
 
-		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_thread_brand, buffer, reserve_size, LTT_BLOCKING);
+		ret = ltt_trace_generic(ltt_facility_user_generic_B1865E44, event_user_generic_thread_brand, buffer, reserve_size, LTT_BLOCKING, 1);
 	}
 
 	return ret;
