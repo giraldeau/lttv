@@ -16,13 +16,20 @@ ALL_NAME=$NAME-all.diff
 
 rm -fr tmppatch
 mkdir tmppatch
-./lttng-core-release-script.sh $ALL_NAME
 
 cd tmppatch
 
 cp ../$ALL_NAME .
 
 splitdiff -a -d $ALL_NAME
+
+rm $ALL_NAME
+
+for a in *; do
+	cp $a $a.tmp;
+	grep -v -e "^diff --git " -e "^new file mode " -e "^index " $a.tmp > $a
+	rm $a.tmp;
+done
 
 FILE=../$NAME-facilities-headers.diff
 
@@ -34,10 +41,8 @@ for a in $IN; do wr $a $FILE; done
 
 FILE=../$NAME-facilities-loader.diff
 
-IN="?_ltt_Makefile
-?_ltt_ltt-facility-loader-core.c
+IN="?_ltt_ltt-facility-loader-core.c
 ?_ltt_ltt-facility-loader-core.h"
-
 
 for a in $IN; do wr $a $FILE; done
 
@@ -47,6 +52,8 @@ IN="?_include_linux_ltt-facilities.h
 ?_kernel_ltt-facilities.c"
 
 for a in $IN; do wr $a $FILE; done
+
+
 
 FILE=../$NAME-relayfs.diff
 
@@ -63,16 +70,11 @@ IN="?_Documentation_ioctl-number.txt
 
 for a in $IN; do wr $a $FILE; done
 
-FILE=../$NAME-build.diff
 
-IN="?_Makefile"
 
-for a in $IN; do wr $a $FILE; done
+FILE=../$NAME-core-timestamp.diff
 
-FILE=../$NAME-core.diff
-
-IN="?_MAINTAINERS
-?_include_asm-alpha_ltt.h
+IN="?_include_asm-alpha_ltt.h
 ?_include_asm-arm26_ltt.h
 ?_include_asm-arm_ltt.h
 ?_include_asm-cris_ltt.h
@@ -98,34 +100,75 @@ IN="?_MAINTAINERS
 ?_include_asm-sparc_ltt.h
 ?_include_asm-um_ltt.h
 ?_include_asm-v850_ltt.h
-?_include_asm-x86_64_ltt.h
-?_include_linux_ltt-core.h
-?_include_linux_netlink.h
-?_include_linux_sched.h
-?_ltt_Kconfig
+?_include_asm-x86_64_ltt.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../$NAME-core-header.diff
+
+IN="?_include_linux_ltt-core.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../$NAME-userspace-tracing.diff
+
+IN="?_include_linux_sched.h
+?_kernel_sys_ni.c
+?_kernel_ltt-syscall.c
+?_kernel_exit.c
+?_kernel_fork.c
+?_include_asm-i386_unistd.h
+?_include_asm-powerpc_unistd.h
+?_include_asm-x86_64_ia32_unistd.h
+?_include_asm-x86_64_unistd.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../$NAME-core.diff
+
+IN="?_MAINTAINERS
 ?_ltt_ltt-core.c
-?_ltt_ltt-relay.c
+?_init_main.c
+?_kernel_ltt-base.c
+?_kernel_ltt-heartbeat.c"
+
+for a in $IN; do wr $a $FILE; done
+
+
+
+FILE=../$NAME-transport.diff
+
+IN="?_ltt_ltt-relay.c"
+
+for a in $IN; do wr $a $FILE; done
+
+
+
+FILE=../$NAME-build.diff
+
+IN="?_Makefile
+?_kernel_Makefile
+?_ltt_Kconfig
+?_ltt_Makefile
 ?_arch_i386_Kconfig
 ?_arch_ppc_Kconfig
 ?_arch_powerpc_Kconfig
 ?_arch_arm_Kconfig
 ?_arch_mips_Kconfig
-?_arch_x86_64_Kconfig
-?_init_main.c
-?_kernel_Makefile
-?_kernel_ltt-base.c
-?_kernel_ltt-heartbeat.c
-?_kernel_ltt-syscall.c
-?_kernel_sys_ni.c
-?_kernel_exit.c
-?_kernel_fork.c"
+?_arch_x86_64_Kconfig"
 
 for a in $IN; do wr $a $FILE; done
 
-FILE=../$NAME-modules.diff
+
+
+FILE=../$NAME-netlink-control.diff
 
 IN="?_ltt_ltt-control.c
-?_ltt_ltt-control.h"
+?_ltt_ltt-control.h
+?_include_linux_netlink.h"
 
 for a in $IN; do wr $a $FILE; done
 

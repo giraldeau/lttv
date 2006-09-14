@@ -16,13 +16,21 @@ ALL_NAME=$NAME-all.diff
 
 rm -fr tmppatch
 mkdir tmppatch
-./lttng-release-script.sh $ALL_NAME
 
 cd tmppatch
 
 cp ../$ALL_NAME .
 
 splitdiff -a -d $ALL_NAME
+
+
+rm $ALL_NAME
+
+for a in *; do
+	cp $a $a.tmp;
+	grep -v -e "^diff --git " -e "^new file mode " -e "^index " $a.tmp > $a
+	rm $a.tmp;
+done
 
 
 FILE=../$NAME-instrumentation.diff
