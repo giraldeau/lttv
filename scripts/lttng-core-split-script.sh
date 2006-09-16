@@ -31,6 +31,16 @@ for a in *; do
 	rm $a.tmp;
 done
 
+
+
+FILE=../$NAME-debugfs.diff
+
+IN="?_fs_debugfs_inode.c"
+
+for a in $IN; do wr $a $FILE; done
+
+
+
 FILE=../$NAME-facilities-headers.diff
 
 IN="?_include_linux_ltt_ltt-facility-core.h
@@ -53,22 +63,6 @@ IN="?_include_linux_ltt-facilities.h
 
 for a in $IN; do wr $a $FILE; done
 
-
-
-FILE=../$NAME-relayfs.diff
-
-IN="?_Documentation_ioctl-number.txt
-?_include_linux_relay.h
-?_fs_relayfs_Makefile
-?_fs_relayfs_inode.c
-?_fs_relayfs_relay.c
-?_fs_relayfs_buffers.c
-?_fs_relayfs_buffers.h
-?_fs_relayfs_relay.h
-?_fs_Makefile
-?_block_blktrace.c"
-
-for a in $IN; do wr $a $FILE; done
 
 
 
@@ -112,21 +106,6 @@ IN="?_include_linux_ltt-core.h"
 for a in $IN; do wr $a $FILE; done
 
 
-FILE=../$NAME-userspace-tracing.diff
-
-IN="?_include_linux_sched.h
-?_kernel_sys_ni.c
-?_kernel_ltt-syscall.c
-?_kernel_exit.c
-?_kernel_fork.c
-?_include_asm-i386_unistd.h
-?_include_asm-powerpc_unistd.h
-?_include_asm-x86_64_ia32_unistd.h
-?_include_asm-x86_64_unistd.h"
-
-for a in $IN; do wr $a $FILE; done
-
-
 FILE=../$NAME-core.diff
 
 IN="?_MAINTAINERS
@@ -141,9 +120,36 @@ for a in $IN; do wr $a $FILE; done
 
 FILE=../$NAME-transport.diff
 
-IN="?_ltt_ltt-relay.c"
+IN="?_ltt_ltt-relay.c
+?_Documentation_ioctl-number.txt"
 
 for a in $IN; do wr $a $FILE; done
+
+
+
+FILE=../$NAME-netlink-control.diff
+
+IN="?_ltt_ltt-control.c
+?_ltt_ltt-control.h
+?_include_linux_netlink.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../$NAME-userspace-tracing.diff
+
+IN="?_include_linux_sched.h
+?_kernel_sys_ni.c
+?_kernel_ltt-syscall.c
+?_kernel_exit.c
+?_kernel_fork.c
+?_include_asm-i386_unistd.h
+?_include_asm-powerpc_unistd.h
+?_include_asm-x86_64_ia32_unistd.h
+?_include_asm-x86_64_unistd.h"
+
+for a in $IN; do wr $a $FILE; done
+
 
 
 
@@ -164,13 +170,7 @@ for a in $IN; do wr $a $FILE; done
 
 
 
-FILE=../$NAME-netlink-control.diff
 
-IN="?_ltt_ltt-control.c
-?_ltt_ltt-control.h
-?_include_linux_netlink.h"
-
-for a in $IN; do wr $a $FILE; done
 
 cd ..
 

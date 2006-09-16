@@ -33,6 +33,15 @@ for a in *; do
 done
 
 
+
+FILE=../$NAME-debugfs.diff
+
+IN="?_fs_debugfs_inode.c"
+
+for a in $IN; do wr $a $FILE; done
+
+
+
 FILE=../$NAME-instrumentation.diff
 
 IN="?_fs_buffer.c
@@ -276,20 +285,6 @@ IN="?_include_linux_ltt-facilities.h
 
 for a in $IN; do wr $a $FILE; done
 
-FILE=../$NAME-relayfs.diff
-
-IN="?_Documentation_ioctl-number.txt
-?_include_linux_relay.h
-?_fs_relayfs_Makefile
-?_fs_relayfs_inode.c
-?_fs_relayfs_relay.c
-?_fs_relayfs_buffers.c
-?_fs_relayfs_buffers.h
-?_fs_relayfs_relay.h
-?_fs_Makefile
-?_block_blktrace.c"
-
-for a in $IN; do wr $a $FILE; done
 
 FILE=../$NAME-build.diff
 
@@ -332,6 +327,7 @@ IN="?_MAINTAINERS
 ?_include_linux_sched.h
 ?_ltt_Kconfig
 ?_ltt_ltt-core.c
+?_Documentation_ioctl-number.txt
 ?_ltt_ltt-relay.c
 ?_arch_i386_Kconfig
 ?_arch_ppc_Kconfig
