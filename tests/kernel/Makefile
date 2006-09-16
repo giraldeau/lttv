@@ -8,13 +8,15 @@ ifneq ($(CONFIG_LTT),)
 #	obj-m += test-instrument-size-big.o
 #	obj-m += test-printk-effect.o
 endif
-	obj-m += test-cmpxchg.o
-	obj-m += test-cmpxchg-nolock.o
-	obj-m += test-spinlock.o
-	obj-m += test-inc.o
-	obj-m += test-inc-nolock.o
-	obj-m += test-kmalloc.o
-	obj-m += test-irqdis.o
+#	obj-m += test-cmpxchg.o
+#	obj-m += test-cmpxchg-nolock.o
+#	obj-m += test-spinlock.o
+#	obj-m += test-inc.o
+#	obj-m += test-inc-nolock.o
+#	obj-m += test-kmalloc.o
+#	obj-m += test-irqdis.o
+#	obj-m += test-int3.o
+	obj-m += test-kprobes.o
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 	PWD := $(shell pwd)
