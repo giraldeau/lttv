@@ -81,7 +81,7 @@ void show_arguments(void)
 	printf("              (for hybrid traces)\n");
 	printf("-t            Trace root path. (ex. /root/traces/example_trace)\n");
 	printf("-T            Type of trace (ex. relay)\n");
-	printf("-l            LTT channels root path. (ex. /mnt/relayfs/ltt)\n");
+	printf("-l            LTT channels root path. (ex. /mnt/debugfs/ltt)\n");
 	printf("-Z            Size of the low data rate subbuffers (will be rounded to next page size)\n");
 	printf("-X            Number of low data rate subbuffers\n");
 	printf("-V            Size of the medium data rate subbuffers (will be rounded to next page size)\n");

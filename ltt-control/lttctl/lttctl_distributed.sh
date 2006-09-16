@@ -42,12 +42,12 @@ UDP_SERVER=udpserver
 UDP_CLIENT=udpclient  
 
 PATH_TRACE=/root/trace-ltt/
-PATH_RELAYFS=/relayfs/ltt/
+PATH_DEBUGFS=/debugfs/ltt/
 SET_LTT_FACILITIES="export LTT_FACILITIES=/home/ercle/NEW_GENERATION_LTTV/share/LinuxTraceToolkitViewer/facilities/"
 SET_LTT_DAEMON="export LTT_DAEMON=/home/ercle/NEW_GENERATION_LTTV/bin/lttd"
 
 START_DAEMON="/home/ercle/NEW_GENERATION_LTTV/bin/lttctl -d -n \
-trace1 -t $PATH_TRACE  -l $PATH_RELAYFS >/dev/null"
+trace1 -t $PATH_TRACE  -l $PATH_DEBUGFS >/dev/null"
 
 STOP_DAEMON="/home/ercle/NEW_GENERATION_LTTV/bin/lttctl  -n trace1 -q >/dev/null"
 REMOVE_DAEMON="/home/ercle/NEW_GENERATION_LTTV/bin/lttctl  -n trace1 -r >/dev/null"

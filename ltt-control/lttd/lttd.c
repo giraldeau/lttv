@@ -2,8 +2,8 @@
  *
  * Linux Trace Toolkit Daemon
  *
- * This is a simple daemon that reads a few relayfs channels and save them in a
- * trace.
+ * This is a simple daemon that reads a few relay+debugfs channels and save
+ * them in a trace.
  *
  *
  * Copyright 2005 -
@@ -36,13 +36,13 @@
 #include <asm/types.h>
 
 /* Get the next sub buffer that can be read. */
-#define RELAYFS_GET_SUBBUF        _IOR(0xF4, 0x00,__u32)
+#define RELAY_GET_SUBBUF        _IOR(0xF4, 0x00,__u32)
 /* Release the oldest reserved (by "get") sub buffer. */
-#define RELAYFS_PUT_SUBBUF        _IOW(0xF4, 0x01,__u32)
+#define RELAY_PUT_SUBBUF        _IOW(0xF4, 0x01,__u32)
 /* returns the number of sub buffers in the per cpu channel. */
-#define RELAYFS_GET_N_SUBBUFS     _IOR(0xF4, 0x02,__u32)
+#define RELAY_GET_N_SUBBUFS     _IOR(0xF4, 0x02,__u32)
 /* returns the size of the sub buffers. */
-#define RELAYFS_GET_SUBBUF_SIZE   _IOR(0xF4, 0x03,__u32)
+#define RELAY_GET_SUBBUF_SIZE   _IOR(0xF4, 0x03,__u32)
 
 
 
@@ -79,7 +79,7 @@ static int		dump_normal_only = 0;
 /* Args :
  *
  * -t directory		Directory name of the trace to write to. Will be created.
- * -c directory		Root directory of the relayfs trace channels.
+ * -c directory		Root directory of the debugfs trace channels.
  * -d          		Run in background (daemon).
  * -a							Trace append mode.
  * -s							Send SIGUSR1 to parent when ready for IO.
@@ -90,7 +90,7 @@ void show_arguments(void)
 	printf("\n");
 	printf("-t directory  Directory name of the trace to write to.\n"
 				 "              It will be created.\n");
-	printf("-c directory  Root directory of the relayfs trace channels.\n");
+	printf("-c directory  Root directory of the debugfs trace channels.\n");
 	printf("-d            Run in background (daemon).\n");
 	printf("-a            Append to an possibly existing trace.\n");
 	printf("-N            Number of threads to start.\n");
@@ -186,7 +186,7 @@ void show_info(void)
 {
 	printf("Linux Trace Toolkit Trace Daemon\n");
 	printf("\n");
-	printf("Reading from relayfs directory : %s\n", channel_name);
+	printf("Reading from debugfs directory : %s\n", channel_name);
 	printf("Writing to trace directory : %s\n", trace_name);
 	printf("\n");
 }
@@ -334,7 +334,7 @@ int read_subbuffer(struct fd_pair *pair)
 	int err, ret=0;
 
 
-	err = ioctl(pair->channel, RELAYFS_GET_SUBBUF, 
+	err = ioctl(pair->channel, RELAY_GET_SUBBUF, 
 								&consumed_old);
 	printf("cookie : %u\n", consumed_old);
 	if(err != 0) {
@@ -362,7 +362,7 @@ int read_subbuffer(struct fd_pair *pair)
 	}
 #endif //0
 write_error:
-	err = ioctl(pair->channel, RELAYFS_PUT_SUBBUF, &consumed_old);
+	err = ioctl(pair->channel, RELAY_PUT_SUBBUF, &consumed_old);
 	if(err != 0) {
 		ret = errno;
 		if(errno == EFAULT) {
@@ -395,13 +395,13 @@ int map_channels(struct channel_trace_fd *fd_pairs)
 	for(i=0;i<fd_pairs->num_pairs;i++) {
 		struct fd_pair *pair = &fd_pairs->pair[i];
 
-		ret = ioctl(pair->channel, RELAYFS_GET_N_SUBBUFS, 
+		ret = ioctl(pair->channel, RELAY_GET_N_SUBBUFS, 
 							&pair->n_subbufs);
 		if(ret != 0) {
 			perror("Error in getting the number of subbuffers");
 			goto end;
 		}
-		ret = ioctl(pair->channel, RELAYFS_GET_SUBBUF_SIZE, 
+		ret = ioctl(pair->channel, RELAY_GET_SUBBUF_SIZE, 
 							&pair->subbuf_size);
 		if(ret != 0) {
 			perror("Error in getting the size of the subbuffers");
@@ -480,7 +480,7 @@ int unmap_channels(struct channel_trace_fd *fd_pairs)
  *
  * Thread worker.
  *
- * Read the relayfs channels and write them in the paired tracefiles.
+ * Read the debugfs channels and write them in the paired tracefiles.
  *
  * @fd_pairs : paired channels and trace files.
  *
