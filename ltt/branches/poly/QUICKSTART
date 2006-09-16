@@ -268,18 +268,18 @@ Select the Linux 2.6.17-lttng-0.x.xx kernel in your boot loader.
 
 * Editing the system wide configuration
 
-You must activate relayfs and specify a mount point. This is typically done in
+You must activate debugfs and specify a mount point. This is typically done in
 fstab such that it happens at boot time.
 
-If you have never used RelayFS before, these operation would do this for you :
+If you have never used DebugFS before, these operation would do this for you :
 
-mkdir /mnt/relayfs
+mkdir /mnt/debugfs
 cp /etc/fstab /etc/fstab.lttng.bkp
-echo "relayfs         /mnt/relayfs    relayfs rw              0       0"  >> /etc/fstab
+echo "debugfs         /mnt/debugfs    debugfs rw              0       0"  >> /etc/fstab
 
-then, rebooting or issuing the following command will activate relayfs :
+then, rebooting or issuing the following command will activate debugfs :
 
-mount /mnt/relayfs
+mount /mnt/debugfs
 
 You need to load the ltt-control module to be able to control tracing from user
 space. This is done by issuing the command :
@@ -359,7 +359,7 @@ root).
 
 Start tracing :
 
-lttctl -n trace -d -l /mnt/relayfs/ltt -t /tmp/trace
+lttctl -n trace -d -l /mnt/debugfs/ltt -t /tmp/trace
 
 Stop tracing and destroy trace channels :
 

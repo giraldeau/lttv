@@ -249,7 +249,7 @@ gui_control(LttvPluginTab *ptab)
   tcd->channel_dir_label = gtk_label_new("Channel directory:");
   gtk_widget_show (tcd->channel_dir_label);
   tcd->channel_dir_entry = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(tcd->channel_dir_entry),"/mnt/relayfs/ltt");
+  gtk_entry_set_text(GTK_ENTRY(tcd->channel_dir_entry),"/mnt/debugfs/ltt");
   gtk_widget_show (tcd->channel_dir_entry);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->channel_dir_label,0,2,2,3,GTK_FILL,GTK_FILL,2,2);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->channel_dir_entry,2,6,2,3,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
