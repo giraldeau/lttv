@@ -72,4 +72,21 @@
       </sequence>
     </field>
   </event>
+
+  <event name="printk_locate">
+    <description>Kernel printk location</description>
+    <field name="file"> <description>Source file</description>
+      <string/>
+    </field>
+    <field name="function"> <description>Function</description>
+      <string/>
+    </field>
+    <field name="line"> <description>Line in source file</description>
+      <uint/>
+    </field>
+    <field name="address"> <description>Caller address</description>
+      <pointer/>
+    </field>
+  </event>
+
 </facility>
