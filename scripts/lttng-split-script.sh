@@ -61,6 +61,7 @@ IN="?_fs_buffer.c
 ?_kernel_softirq.c
 ?_kernel_timer.c
 ?_kernel_module.c
+?_kernel_printk.c
 ?_mm_filemap.c
 ?_mm_memory.c
 ?_mm_page_alloc.c
