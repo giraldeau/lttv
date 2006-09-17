@@ -44,7 +44,8 @@ for a in $IN; do wr $a $FILE; done
 
 FILE=../$NAME-instrumentation.diff
 
-IN="?_fs_buffer.c
+IN="?_include_linux_kernel.h
+?_fs_buffer.c
 ?_fs_compat.c
 ?_fs_exec.c
 ?_fs_ioctl.c
