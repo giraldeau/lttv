@@ -60,4 +60,16 @@
     <description>Exit from an IRQ</description>
   </event>
 
+  <event name="printk">
+    <description>Kernel printk</description>
+    <field name="loglevel"> <description>loglevel</description>
+      <uint size="1"/>
+    </field>
+    <field name="text"> <description>printk string</description>
+      <sequence>
+        <uint/>
+        <uchar/>
+      </sequence>
+    </field>
+  </event>
 </facility>
