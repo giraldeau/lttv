@@ -21,12 +21,10 @@ void do_mark1(const char *format, int value)
 }
 
 
-#define PROBE_NAME subsys_mark1
-
-#define CALL __mark_subsys_mark1_call
-#define JUMP_OVER __mark_subsys_mark1_jump_over
-#define JUMP_CALL __mark_subsys_mark1_jump_call
-#define JUMP_INLINE __mark_subsys_mark1_jump_inline
+//#define CALL __mark_subsys_mark1_call
+//#define JUMP_OVER __mark_subsys_mark1_jump_over
+//#define JUMP_CALL __mark_subsys_mark1_jump_call
+//#define JUMP_INLINE __mark_subsys_mark1_jump_inline
 
 static void *saved_over;
 
