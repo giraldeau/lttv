@@ -16,7 +16,12 @@ endif
 #	obj-m += test-kmalloc.o
 #	obj-m += test-irqdis.o
 #	obj-m += test-int3.o
-	obj-m += test-kprobes.o
+	#obj-m += test-kprobes.o
+	#obj-m += test-printk.o
+	#obj-m += test-debugfs.o
+	obj-m += test-mark.o
+	#obj-m += marker-loader.o
+	#obj-m += test-linuxtrace.o
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 	PWD := $(shell pwd)
