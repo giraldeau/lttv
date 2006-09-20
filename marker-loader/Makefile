@@ -1,4 +1,3 @@
-ifneq ($(KERNELRELEASE),)
 
 export MARKER_CFLAGS
 
@@ -6,6 +5,8 @@ MARKER_CFLAGS	:= -DCALL="__mark_$(TARGET)_call" -DJUMP_OVER="__mark_$(TARGET)_ju
 MARKER_CFLAGS	+= -DJUMP_CALL="__mark_$(TARGET)_jump_call" -DJUMP_INLINE="__mark_$(TARGET)_jump_inline"
 
 EXTRA_CFLAGS	+= $(MARKER_CFLAGS)
+
+ifneq ($(KERNELRELEASE),)
 
 obj-m += marker-loader.o
 
