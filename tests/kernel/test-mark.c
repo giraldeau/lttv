@@ -22,14 +22,14 @@ static int my_open(struct inode *inode, struct file *file)
 
 
 static struct file_operations my_operations = {
-        .open = my_open,
+	.open = my_open,
 };
 
 int init_module(void)
 {
-       pentry = create_proc_entry("testmark", 0444, NULL);
-        if(pentry)
-                pentry->proc_fops = &my_operations;
+	pentry = create_proc_entry("testmark", 0444, NULL);
+	if (pentry)
+		pentry->proc_fops = &my_operations;
 	return 0;
 }
 
