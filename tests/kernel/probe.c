@@ -13,20 +13,20 @@
 #include <linux/kallsyms.h>
 
 /* function to install */
-void do_mark1(const char *format, int value)
+asmlinkage void do_mark1(const char *format, int value)
 {
 	printk("value is %d\n", value);
 }
 
 int init_module(void)
 {
-	return marker_set_probe("subsys_mark1", (marker_probe)do_mark1,
+	return marker_set_probe("subsys_mark1", (marker_probe_func*)do_mark1,
 			MARKER_CALL);
 }
 
 void cleanup_module(void)
 {
-	marker_disable_probe("subsys_mark1", (marker_probe)do_mark1,
+	marker_disable_probe("subsys_mark1", (marker_probe_func*)do_mark1,
 		MARKER_CALL);
 }
 
