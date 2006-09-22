@@ -20,9 +20,13 @@ endif
 	#obj-m += test-printk.o
 	#obj-m += test-debugfs.o
 	obj-m += test-mark.o
+	obj-m += test-mark-instrumented.o
 	obj-m += probe.o
 	#obj-m += marker-loader.o
 	#obj-m += test-linuxtrace.o
+
+	CFLAGS_test-mark-instrumented.o += -DFORCE_MARK_JUMP_INLINE
+	CFLAGS_test-mark.o += -funroll-all-loops
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 	PWD := $(shell pwd)

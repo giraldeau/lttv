@@ -20,17 +20,49 @@ asmlinkage void do_mark1(const char *format, int value)
 	printk("value is %d\n", value);
 }
 
+#define DO_MARK2_FORMAT "%d %s"
+asmlinkage void do_mark2(const char *format, int value, const char *string)
+{
+	__mark_check_format(DO_MARK2_FORMAT, value, string);
+	printk("value is %d %s\n", value, string);
+}
+
+#define DO_MARK3_FORMAT "%d %s %s"
+asmlinkage void do_mark3(const char *format, int value, const char *s1,
+				const char *s2)
+{
+	__mark_check_format(DO_MARK3_FORMAT, value, s1, s2);
+	printk("value is %d %s %s\n", value, s1, s2);
+}
+
 int init_module(void)
 {
-	return marker_set_probe("subsys_mark1", DO_MARK1_FORMAT,
-			(marker_probe_func*)do_mark1,
-			MARKER_CALL);
+	int result;
+	result = marker_set_probe("subsys_mark1", DO_MARK1_FORMAT,
+			(marker_probe_func*)do_mark1);
+	if(result) goto end;
+	result = marker_set_probe("subsys_mark2", DO_MARK2_FORMAT,
+			(marker_probe_func*)do_mark2);
+	if(result) goto cleanup1;
+	result = marker_set_probe("subsys_mark3", DO_MARK3_FORMAT,
+			(marker_probe_func*)do_mark3);
+	if(result) goto cleanup2;
+
+	return -result;
+
+cleanup2:
+	marker_disable_probe("subsys_mark2", (marker_probe_func*)do_mark2);
+cleanup1:
+	marker_disable_probe("subsys_mark1", (marker_probe_func*)do_mark1);
+end:
+	return -result;
 }
 
 void cleanup_module(void)
 {
-	marker_disable_probe("subsys_mark1", (marker_probe_func*)do_mark1,
-		MARKER_CALL);
+	marker_disable_probe("subsys_mark1", (marker_probe_func*)do_mark1);
+	marker_disable_probe("subsys_mark2", (marker_probe_func*)do_mark2);
+	marker_disable_probe("subsys_mark3", (marker_probe_func*)do_mark3);
 }
 
 MODULE_LICENSE("GPL");

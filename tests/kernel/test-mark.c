@@ -7,15 +7,21 @@
 #include <linux/proc_fs.h>
 #include <linux/sched.h>
 
-int x=7;
+volatile int x=7;
 
 struct proc_dir_entry *pentry = NULL;
 
 static int my_open(struct inode *inode, struct file *file)
 {
-	MARK(subsys_mark1, "%d", 1);
+	unsigned int i;
+
+	for(i=0; i<2; i++) {
+		MARK(subsys_mark1, "%d", 1);
+		x=i;
+		barrier();
+	}
 	MARK(subsys_mark2, "%d %s", 2, "blah2");
-	MARK(subsys_mark3, "%d %s", x, "blah3");
+	MARK(subsys_mark3, "%d %s %s", x, "blah3", "blah5");
 
 	return -EPERM;
 }
