@@ -14,25 +14,43 @@
 
 /* function to install */
 #define DO_MARK1_FORMAT "%d"
-asmlinkage void do_mark1(const char *format, int value)
+void do_mark1(const char *format, ...)
 {
-	__mark_check_format(DO_MARK1_FORMAT, value);
+	va_list ap;
+	int value;
+
+	va_start(ap, format);
+	value = va_arg(ap, int);
 	printk("value is %d\n", value);
+	
+	va_end(ap);
 }
 
-#define DO_MARK2_FORMAT "%d %s"
-asmlinkage void do_mark2(const char *format, int value, const char *string)
+void do_mark2(const char *format, ...)
 {
-	__mark_check_format(DO_MARK2_FORMAT, value, string);
-	printk("value is %d %s\n", value, string);
+	va_list ap;
+
+	va_start(ap, format);
+	vprintk(format, ap);
+	va_end(ap);
+	printk("\n");
 }
 
 #define DO_MARK3_FORMAT "%d %s %s"
-asmlinkage void do_mark3(const char *format, int value, const char *s1,
-				const char *s2)
+void do_mark3(const char *format, ...)
 {
-	__mark_check_format(DO_MARK3_FORMAT, value, s1, s2);
-	printk("value is %d %s %s\n", value, s1, s2);
+	va_list ap;
+	int value;
+	const char *s1, *s2;
+	
+	va_start(ap, format);
+	value = va_arg(ap, int);
+	s1 = va_arg(ap, const char*);
+	s2 = va_arg(ap, const char *);
+
+	printk("value is %d %s %s\n",
+		value, s1, s2);
+	va_end(ap);
 }
 
 int init_module(void)
@@ -41,7 +59,7 @@ int init_module(void)
 	result = marker_set_probe("subsys_mark1", DO_MARK1_FORMAT,
 			(marker_probe_func*)do_mark1);
 	if(!result) goto end;
-	result = marker_set_probe("subsys_mark2", DO_MARK2_FORMAT,
+	result = marker_set_probe("subsys_mark2", NULL,
 			(marker_probe_func*)do_mark2);
 	if(!result) goto cleanup1;
 	result = marker_set_probe("subsys_mark3", DO_MARK3_FORMAT,
@@ -68,4 +86,3 @@ void cleanup_module(void)
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mathieu Desnoyers");
 MODULE_DESCRIPTION("Probe");
-
