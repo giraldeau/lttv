@@ -40,29 +40,29 @@ int init_module(void)
 	int result;
 	result = marker_set_probe("subsys_mark1", DO_MARK1_FORMAT,
 			(marker_probe_func*)do_mark1);
-	if(result) goto end;
+	if(!result) goto end;
 	result = marker_set_probe("subsys_mark2", DO_MARK2_FORMAT,
 			(marker_probe_func*)do_mark2);
-	if(result) goto cleanup1;
+	if(!result) goto cleanup1;
 	result = marker_set_probe("subsys_mark3", DO_MARK3_FORMAT,
 			(marker_probe_func*)do_mark3);
-	if(result) goto cleanup2;
+	if(!result) goto cleanup2;
 
-	return -result;
+	return 0;
 
 cleanup2:
-	marker_disable_probe("subsys_mark2", (marker_probe_func*)do_mark2);
+	marker_remove_probe((marker_probe_func*)do_mark2);
 cleanup1:
-	marker_disable_probe("subsys_mark1", (marker_probe_func*)do_mark1);
+	marker_remove_probe((marker_probe_func*)do_mark1);
 end:
-	return -result;
+	return -EPERM;
 }
 
 void cleanup_module(void)
 {
-	marker_disable_probe("subsys_mark1", (marker_probe_func*)do_mark1);
-	marker_disable_probe("subsys_mark2", (marker_probe_func*)do_mark2);
-	marker_disable_probe("subsys_mark3", (marker_probe_func*)do_mark3);
+	marker_remove_probe((marker_probe_func*)do_mark1);
+	marker_remove_probe((marker_probe_func*)do_mark2);
+	marker_remove_probe((marker_probe_func*)do_mark3);
 }
 
 MODULE_LICENSE("GPL");

@@ -20,7 +20,6 @@ endif
 	#obj-m += test-printk.o
 	#obj-m += test-debugfs.o
 	obj-m += test-mark.o
-	obj-m += test-mark-instrumented.o
 	obj-m += probe.o
 	#obj-m += marker-loader.o
 	#obj-m += test-linuxtrace.o
