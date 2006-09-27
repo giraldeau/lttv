@@ -269,7 +269,8 @@ void getEventAttributes(parse_file_t *in, event_t *ev)
   ev->per_trace = 0;
   ev->per_tracefile = 0;
   ev->param_buffer = 0;
-	ev->no_instrument_function = 0;
+  ev->no_instrument_function = 0;
+  ev->high_priority = 0;
 
   while(1) {
     token = getToken(in); 
@@ -285,28 +286,30 @@ void getEventAttributes(parse_file_t *in, event_t *ev)
       else if(car == '\"') ev->name = allocAndCopy(getQuotedString(in));
       else ev->name = allocAndCopy(getName(in));
     } else if(!strcmp("scope", token)) {
-			getEqual(in);
-			car = seekNextChar(in);
-			if(car == EOF) in->error(in,"scope was expected");
+      getEqual(in);
+      car = seekNextChar(in);
+      if(car == EOF) in->error(in,"scope was expected");
       else if(car == '\"') token = getQuotedString(in);
       else token = getName(in);
-			if(!strcmp(token, "trace")) ev->per_trace = 1;
-			else if(!strcmp(token, "tracefile")) ev->per_tracefile = 1;
-	  } else if(!strcmp("param", token)) {
-			getEqual(in);
-			car = seekNextChar(in);
-			if(car == EOF) in->error(in,"parameter type was expected");
+      if(!strcmp(token, "trace")) ev->per_trace = 1;
+      else if(!strcmp(token, "tracefile")) ev->per_tracefile = 1;
+    } else if(!strcmp("param", token)) {
+      getEqual(in);
+      car = seekNextChar(in);
+      if(car == EOF) in->error(in,"parameter type was expected");
       else if(car == '\"') token = getQuotedString(in);
       else token = getName(in);
-			if(!strcmp(token, "buffer")) ev->param_buffer = 1;
-		} else if(!strcmp("attribute", token)) {
-			getEqual(in);
-			car = seekNextChar(in);
-			if(car == EOF) in->error(in,"attribute was expected");
+      if(!strcmp(token, "buffer")) ev->param_buffer = 1;
+    } else if(!strcmp("attribute", token)) {
+      getEqual(in);
+      car = seekNextChar(in);
+      if(car == EOF) in->error(in,"attribute was expected");
       else if(car == '\"') token = getQuotedString(in);
       else token = getName(in);
-			if(!strcmp(token, "no_instrument_function"))
-				ev->no_instrument_function = 1;
+      if(!strcmp(token, "no_instrument_function"))
+        ev->no_instrument_function = 1;
+      else if(!strcmp(token, "high_priority"))
+        ev->high_priority = 1;
     }
   }
 }

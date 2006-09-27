@@ -1401,12 +1401,14 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		fprintf(fd, "void");
 	}
 	fprintf(fd,")\n");
+#if 0
 	fprintf(fd, 
-			"#if (!defined(CONFIG_LTT) || !defined(CONFIG_LTT_FACILITY_%s))\n",
-			fac->capname);
+			"#if (!defined(CONFIG_LTT) || (!defined(CONFIG_LTT_FACILITY_%s) && !defined(CONFIG_LTT_FACILITY_%s_MODULE)))\n",
+			fac->capname, fac->capname);
 	fprintf(fd, "{\n");
 	fprintf(fd, "}\n");
 	fprintf(fd,"#else\n");
+#endif //0
 	fprintf(fd, "{\n");
 	/* Print the function variables */
 	print_tabs(1, fd);
@@ -1638,8 +1640,10 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "preempt_enable_no_resched();\n");
 
 	fprintf(fd, "}\n");
-	fprintf(fd, "#endif //(!defined(CONFIG_LTT) || !defined(CONFIG_LTT_FACILITY_%s))\n\n",
-			fac->capname);
+#if 0
+	fprintf(fd, "#endif //(!defined(CONFIG_LTT) || (!defined(CONFIG_LTT_FACILITY_%s) && !defined(CONFIG_LTT_FACILITY_%s_MODULE)))\n\n",
+			fac->capname, fac->capname);
+#endif //0
 	return 0;
 }
 
@@ -1867,7 +1871,7 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 
 do_syscall:
 	print_tabs(2, fd);
-	fprintf(fd, "ret = ltt_trace_generic(ltt_facility_%s_%X, event_%s_%s, buffer, reserve_size, LTT_BLOCKING);\n", fac->name, fac->checksum, fac->name, event->name);
+	fprintf(fd, "ret = ltt_trace_generic(ltt_facility_%s_%X, event_%s_%s, buffer, reserve_size, LTT_BLOCKING, %u);\n", fac->name, fac->checksum, fac->name, event->name, event->high_priority);
 
 	print_tabs(1, fd);
 	fprintf(fd, "}\n\n");
@@ -2167,12 +2171,12 @@ void print_log_header_head(facility_t *fac, FILE *fd)
 	fprintf(fd, "#define _LTT_FACILITY_%s_H_\n\n", fac->capname);
 	fprintf(fd, "#include <linux/types.h>\n");
 	if(!fac->arch)
-		fprintf(fd, "#include <linux/ltt/ltt-facility-id-%s.h>\n", fac->name);
+		fprintf(fd, "#include <ltt/ltt-facility-id-%s.h>\n", fac->name);
 	else
-		fprintf(fd, "#include <asm/ltt/ltt-facility-id-%s_%s.h>\n",
+		fprintf(fd, "#include <ltt/ltt-facility-id-%s_%s.h>\n",
 				fac->name,
 				fac->arch);
-	fprintf(fd, "#include <linux/ltt-core.h>\n");
+	fprintf(fd, "#include <ltt/ltt-tracer.h>\n");
 	fprintf(fd, "\n");
 }
 
@@ -2496,10 +2500,10 @@ int print_loader_header(facility_t *fac)
   fprintf(fd, "#ifdef CONFIG_LTT\n\n");
   fprintf(fd,"#include <linux/ltt-facilities.h>\n");
 	if(!fac->arch)
-	  fprintf(fd,"#include <linux/ltt/ltt-facility-id-%s.h>\n\n",
+	  fprintf(fd,"#include <ltt/ltt-facility-id-%s.h>\n\n",
 				fac->name);
 	else
-	  fprintf(fd,"#include <asm/ltt/ltt-facility-id-%s_%s.h>\n\n",
+	  fprintf(fd,"#include <ltt/ltt-facility-id-%s_%s.h>\n\n",
 				fac->name,
 				fac->arch);
   fprintf(fd,"ltt_facility_t\tltt_facility_%s;\n", fac->name);
@@ -2561,7 +2565,7 @@ int print_loader_header_user(facility_t *fac)
 	  fprintf(fd,"#include <ltt/ltt-facility-id-%s.h>\n\n",
 				fac->name);
 	else
-	  fprintf(fd,"#include <asm/ltt/ltt-facility-id-%s_%s.h>\n\n",
+	  fprintf(fd,"#include <ltt/ltt-facility-id-%s_%s.h>\n\n",
 				fac->name,
 				fac->arch);
   fprintf(fd,"ltt_facility_t\tltt_facility_%s;\n", fac->name);
