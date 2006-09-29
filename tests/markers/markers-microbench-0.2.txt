@@ -1,0 +1,216 @@
+
+
+* Microbenchmarks
+
+Use timestamp counter to calculate the time spent, with interrupts disabled.
+Machine : Pentium 4 3GHz
+Fully preemptible kernel
+marker : MARK(subsys_mark1, "%d %p", 1, NULL);
+Linux Kernel Markers 0.19
+
+* Execute an empty loop
+NR_LOOPS : 10000000
+time delta (cycles): 15026497
+cycles per loop : 1.50
+- i386 "optimized" : immediate value, test and predicted branch
+  (non connected marker)
+NR_LOOPS : 10000000
+time delta (cycles): 40031640
+cycles per loop : 4.00
+cycles per loop for marker : 2.50
+- i386 "generic" : load, test and predicted branch
+  (non connected marker)
+NR_LOOPS : 10000000
+time delta (cycles): 26697878
+cycles per loop : 2.67
+cycles per loop for marker : 1.17
+
+* Execute a loop of memcpy 4096 bytes
+- Without marker
+NR_LOOPS : 10000
+time delta (cycles): 12981555
+cycles per loop : 1298.16
+- i386 "optimized" : immediate value, test and predicted branch
+  (non connected marker)
+NR_LOOPS : 10000
+time delta (cycles): 12982290
+cycles per loop : 1298.23
+cycles per loop for marker : 0.074
+- i386 "generic" : load, test and predicted branch
+  (non connected marker)
+NR_LOOPS : 10000
+time delta (cycles): 13002788
+cycles per loop : 1300.28
+cycles per loop for marker : 2.123
+
+
+The following tests are done with the "optimized" markers only
+
+Execute a loop with marker enabled, with i386 "fastcall" register argument
+	setup, probe empty.
+NR_LOOPS : 100000
+time delta (cycles): 4407608
+cycles per loop : 44.08
+cycles per loop to setup arguments in registers : 44.08-4.00=40.08
+
+Execute a loop with a marker enabled, with an empty probe. Var args argument
+	setup, probe empty.
+NR_LOOPS : 100000
+time delta (cycles): 5210587
+cycles per loop : 52.11
+additional cycles per loop to setup var args : 52.11-44.08=8.03
+
+Execute a loop with marker enabled, with i386 "asmlinkage" arguments expected.
+	Data is copied by the probe.
+NR_LOOPS : 100000
+time delta (cycles): 5299837
+cycles per loop : 53.00
+additional cycles per loop to get arguments in probe (from stack) on x86 :
+  53.00-52.11=0.89
+
+Execute a loop with marker enabled, with var args probe expecting arguments.
+	Data is copied by the probe.
+NR_LOOPS : 100000
+time delta (cycles): 5574300
+cycles per loop : 55.74
+additional cycles per loop to get expected variable arguments on x86 : 
+  55.74-53.00=2.74
+
+Execute a loop with marker enabled, with var args probe, format string
+	Data is copied by the probe.
+processing.
+NR_LOOPS : 100000
+time delta (cycles): 9622117
+cycles per loop : 96.22
+additional cycles per loop to dynamically parse arguments with format string :
+  96.22-55.74=40.48
+
+
+* Assembly code
+
+
+- Optimized
+
+static int my_open(struct inode *inode, struct file *file)
+{
+   0:   55                      push   %ebp
+   1:   89 e5                   mov    %esp,%ebp
+   3:   83 ec 0c                sub    $0xc,%esp
+        MARK(subsys_mark1, "%d %p", 1, NULL);
+   6:   b0 00                   mov    $0x0,%al
+   8:   84 c0                   test   %al,%al
+   a:   75 07                   jne    13 <my_open+0x13>
+
+        return -EPERM;
+}
+   c:   b8 ff ff ff ff          mov    $0xffffffff,%eax
+  11:   c9                      leave  
+  12:   c3                      ret    
+  13:   b8 01 00 00 00          mov    $0x1,%eax
+  18:   e8 fc ff ff ff          call   19 <my_open+0x19>
+  1d:   c7 44 24 08 00 00 00    movl   $0x0,0x8(%esp)
+  24:   00 
+  25:   c7 44 24 04 01 00 00    movl   $0x1,0x4(%esp)
+  2c:   00 
+  2d:   c7 04 24 0d 00 00 00    movl   $0xd,(%esp)
+  34:   ff 15 74 10 00 00       call   *0x1074
+  3a:   b8 01 00 00 00          mov    $0x1,%eax
+  3f:   e8 fc ff ff ff          call   40 <my_open+0x40>
+  44:   eb c6                   jmp    c <my_open+0xc>
+
+
+- Generic 
+
+static int my_open(struct inode *inode, struct file *file)
+{
+   0:   55                      push   %ebp
+   1:   89 e5                   mov    %esp,%ebp
+   3:   83 ec 0c                sub    $0xc,%esp
+        MARK(subsys_mark1, "%d %p", 1, NULL);
+   6:   0f b6 05 20 10 00 00    movzbl 0x1020,%eax
+   d:   84 c0                   test   %al,%al
+   f:   75 07                   jne    18 <my_open+0x18>
+
+        return -EPERM;
+}
+  11:   b8 ff ff ff ff          mov    $0xffffffff,%eax
+  16:   c9                      leave  
+  17:   c3                      ret    
+  18:   b8 01 00 00 00          mov    $0x1,%eax
+  1d:   e8 fc ff ff ff          call   1e <my_open+0x1e>
+  22:   c7 44 24 08 00 00 00    movl   $0x0,0x8(%esp)
+  29:   00 
+  2a:   c7 44 24 04 01 00 00    movl   $0x1,0x4(%esp)
+  31:   00 
+  32:   c7 04 24 0d 00 00 00    movl   $0xd,(%esp)
+  39:   ff 15 74 10 00 00       call   *0x1074
+  3f:   b8 01 00 00 00          mov    $0x1,%eax
+  44:   e8 fc ff ff ff          call   45 <my_open+0x45>
+  49:   eb c6                   jmp    11 <my_open+0x11>
+
+* Size (x86)
+
+- Optimized
+
+Adds 6 bytes in the "likely" path.
+Adds 32 bytes in the "unlikely" path.
+
+- Generic 
+
+Adds 11 bytes in the "likely" path.
+Adds 32 bytes in the "unlikely" path.
+
+
+* Macrobenchmarks
+
+Compiling a 2.6.17 kernel on a Pentium 4 3GHz, 1GB ram, cold cache.
+Running a 2.6.17 vanilla kernel :
+real    8m2.443s
+user    7m35.124s
+sys     0m34.950s
+
+Running a 2.6.17 kernel with lttng-0.6.0pre11 markers (no probe connected) :
+real    8m1.635s
+user    7m34.552s
+sys     0m36.298s
+
+Ping flood on loopback interface :
+Running a 2.6.17 vanilla kernel :
+136596 packets transmitted, 136596 packets received, 0% packet loss
+round-trip min/avg/max = 0.0/0.0/0.1 ms
+
+real    0m10.840s
+user    0m0.360s
+sys     0m10.485s
+
+12601 packets transmitted/s
+
+Running a 2.6.17 kernel with lttng-0.6.0pre11 markers (no probe connected) :
+108504 packets transmitted, 108504 packets received, 0% packet loss
+round-trip min/avg/max = 0.0/0.0/0.1 ms
+
+real    0m8.614s
+user    0m0.264s
+sys     0m8.353s
+
+12596 packets transmitted/s
+
+
+
+Conclusion
+
+In an empty loop, the generic marker is faster than the optimized marker. This
+may be due to better performances of the movzbl instruction over the movb on the
+Pentium 4 architecture. However, when we execute a loop of 4kB copy, the impact
+of the movzbl becomes greater because it uses the memory bandwidth.
+
+The preemption disabling and call to a probe itself costs 48.11 cycles, almost
+as much as dynamically parsing the format string to get the variable arguments
+(40.48 cycles).
+
+There is almost no difference, on x86, between passing the arguments directly on
+the stack and using a variable argument list when its layout is known
+statically (0.89 cycles vs 2.74 cycles).
+
+
+
