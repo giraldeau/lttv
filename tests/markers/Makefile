@@ -9,6 +9,7 @@ endif
 	obj-m += probe-string.o
 	obj-m += test-micro-loop-probe.o
 	obj-m += test-asm.o
+	obj-m += test-kprobes.o
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 	PWD := $(shell pwd)

@@ -1,6 +1,22 @@
 
 
-* Microbenchmarks
+Hi,
+
+Following the huge discussion thread about tracing/static vs dynamic
+instrumentation/markers, a consensus seems to emerge about the need for a
+marker system in the Linux kernel. The main issues this mechanism addresses are:
+
+- Identify code important to runtime data collection/analysis tools in tree so
+  that it follows the code changes naturally.
+- Be visually appealing to kernel developers.
+- Have a very low impact on the system performance.
+- Integrate in the standard kernel infrastructure : use C and loadable modules.
+
+The time has come for some performance measurements of the Linux Kernel Markers,
+which follows.
+
+
+* Micro-benchmarks
 
 Use timestamp counter to calculate the time spent, with interrupts disabled.
 Machine : Pentium 4 3GHz, 1GB ram
@@ -106,13 +122,19 @@ additional cycles per loop to get expected variable arguments on x86 :
 
 - Execute a loop with marker enabled, with var args probe, format string
   Data is copied by the probe. This is a 6 bytes string to decode.
-processing.
 NR_LOOPS : 100000
 time delta (cycles): 9622117
 cycles per loop : 96.22
 additional cycles per loop to dynamically parse arguments with a 6 bytes format
-string :
-96.22-55.74=40.48
+string : 96.22-55.74=40.48
+
+- Execute a loop with marker enabled, with var args probe expecting arguments.
+  Data is copied by the probe. With preemption disabling. An empty "kprobe" is
+  connected to the probe.
+NR_LOOPS : 100000
+time delta (cycles): 423397455
+cycles per loop : 4233.97
+additional cycles per loop to execute the kprobe : 4233.97-55.74=4178.23
 
 
 * Assembly code
@@ -272,7 +294,7 @@ Length of the marker name + 7 bytes (__mark_)
 12 bytes (3 pointers)
 
 
-* Macrobenchmarks
+* Macro-benchmarks
 
 Compiling a 2.6.17 kernel on a Pentium 4 3GHz, 1GB ram, cold cache.
 Running a 2.6.17 vanilla kernel :
@@ -284,6 +306,8 @@ Running a 2.6.17 kernel with lttng-0.6.0pre11 markers (no probe connected) :
 real    8m1.635s
 user    7m34.552s
 sys     0m36.298s
+
+--> 0.98 % speedup with markers
 
 Ping flood on loopback interface :
 Running a 2.6.17 vanilla kernel :
@@ -306,6 +330,7 @@ sys     0m8.353s
 
 12596 packets transmitted/s
 
+--> 0.03 % slowdown with markers
 
 
 Conclusion
@@ -329,15 +354,22 @@ ability to insert a breakpoint at any location without any impact on the code
 when inactive. This breakpoint based approach is very useful to instrument core
 kernel code that has not been previously marked without need to recompile and
 reboot. We can therefore compare the case "without markers" to the null impact
-of the int3 breakpoint based approach when inactive.
+of an inactive int3 breakpoint.
 
+However, the performance impact for using a kprobe is non negligible when
+activated. Assuming that kprobes would have a mechanism to get the variables
+from the caller's stack, it would perform the same task in at least 4178.23
+cycles vs 55.74 for a marker and a probe (ratio : 75). While kprobes are very
+useful for the reason explained earlier, the high event rate paths in the kernel
+would clearly benefit from a marker mechanism when the are probed.
 
+Code size and memory footprints are smaller with the optimized version : 6
+bytes of code in the likely path compared to 11 bytes. The memory footprint of
+the optimized approach saves 4 bytes of data memory that would otherwise have to
+stay in cache.
 
-
-
-
-
-
-
+On the macro-benchmark side, no significant difference in performance has been
+found between the vanilla kernel and a kernel "marked" with the standard LTTng
+instrumentation.
 
 
