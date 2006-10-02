@@ -1768,7 +1768,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   //g_assert(timestamp->tv_sec != 0);
   es->change = *timestamp;
   es->cum_cpu_time = ltt_time_zero;
-  es->s = LTTV_STATE_WAIT_FORK;
+  es->s = LTTV_STATE_MODE_UNKNOWN;
   
   /* Allocate an empty function call stack. If it's empty, use 0x0. */
   process->user_stack = g_array_sized_new(FALSE, FALSE,
@@ -2190,6 +2190,7 @@ static gboolean process_fork(void *hook_data, void *call_data)
     child_process = lttv_state_create_process(ts, process, cpu,
                               child_pid, child_tgid, 
                               LTTV_STATE_UNNAMED, &s->parent.timestamp);
+    child_process->state->s = LTTV_STATE_WAIT_FORK;
   } else {
     /* The process has already been created :  due to time imprecision between
      * multiple CPUs : it has been scheduled in before creation. Note that we
