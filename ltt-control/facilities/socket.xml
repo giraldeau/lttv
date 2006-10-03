@@ -4,7 +4,7 @@
 
   <event name="call">
     <description>Generic socket call : FIXME : should be more detailed.</description>
-    <field name="call_number"> <description>Number of socket call</description> <int size="4"/> </field>
+    <field name="call_number"> <description>Number of socket call</description> <int/> </field>
     <field name="first_argument"> <description>First argument of socket call</description> <ulong/> </field>
   </event>
 

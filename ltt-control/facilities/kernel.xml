@@ -28,12 +28,12 @@
 
   <event name="soft_irq_entry">
     <description>Soft IRQ entry</description>
-    <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
+    <field name="softirq_id"> <description>Soft IRQ number</description> <ulong/> </field>
   </event>
 
   <event name="soft_irq_exit">
     <description>Soft IRQ exit</description>
-    <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
+    <field name="softirq_id"> <description>Soft IRQ number</description> <ulong/> </field>
   </event>
 
   <event name="tasklet_entry">
@@ -86,6 +86,20 @@
     </field>
     <field name="address"> <description>Caller address</description>
       <pointer/>
+    </field>
+  </event>
+
+  <event name="module_free">
+    <description>Unload module</description>
+    <field name="name"> <description>Module name</description>
+      <string/>
+    </field>
+  </event>
+
+  <event name="module_load">
+    <description>Load module</description>
+    <field name="name"> <description>Module name</description>
+      <string/>
     </field>
   </event>
 

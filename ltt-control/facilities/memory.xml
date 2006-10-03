@@ -34,4 +34,10 @@
     <field name="address"> <description>Address of the page we wait for.</description> <pointer/> </field>
   </event>
 
+  <event name="page_fault">
+    <description>Ending wait for a page</description>
+    <field name="address"> <description>Address of the page faulted.</description> <ulong/> </field>
+    <field name="eip"> <description>Instruction causing the fault.</description> <long/> </field>
+  </event>
+
 </facility>

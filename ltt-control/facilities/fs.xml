@@ -30,49 +30,84 @@
         <uchar/>
       </sequence>
     </field>
-    <field name="fd"> <description>File descriptor</description> <uint size="4"/> </field>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
   </event>
 
   <event name="close">
     <description>Closing a file descriptor</description>
-    <field name="fd"> <description>File descriptor</description> <uint size="4"/> </field>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
   </event>
 
   <event name="read">
     <description>Reading from a file descriptor</description>
-    <field name="fd"> <description>File descriptor</description> <uint size="4"/> </field>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
     <field name="count"> <description>Number of bytes to read</description> <size_t/> </field>
   </event>
-  
+
+   <event name="pread64">
+    <description>Reading from a file descriptor</description>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
+    <field name="count"> <description>Number of bytes to read</description> <size_t/> </field>
+    <field name="pos"> <description>Position</description> <int_fixed size="8"/> </field>
+  </event>
+
+   <event name="readv">
+    <description>Read vector from a file descriptor</description>
+    <field name="fd"> <description>File descriptor</description> <ulong/> </field>
+    <field name="vlen"> <description>Vector length</description> <ulong/> </field>
+  </event>
+
+ 
   <event name="write">
     <description>Write to a file descriptor</description>
-    <field name="fd"> <description>File descriptor</description> <uint size="4"/> </field>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
     <field name="count"> <description>Number of bytes to write</description> <size_t/> </field>
   </event>
 
-  <event name="seek">
-    <description>Seek a file descriptor</description>
-    <field name="fd"> <description>File descriptor</description> <uint size="4"/> </field>
-    <field name="offset"> <description>Number of bytes to write</description> <off_t/> </field>
-    <field name="origin"> <description>Number of bytes to write</description> <uint size="4"/> </field>
+   <event name="pwrite64">
+    <description>Reading from a file descriptor</description>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
+    <field name="count"> <description>Number of bytes to read</description> <size_t/> </field>
+    <field name="pos"> <description>Position</description> <int_fixed size="8"/> </field>
   </event>
+ 
+  <event name="writev">
+    <description>Write vector to a file descriptor</description>
+    <field name="fd"> <description>File descriptor</description> <ulong/> </field>
+    <field name="vlen"> <description>Vector length</description> <ulong/> </field>
+  </event>
+
+  <event name="lseek">
+    <description>Seek a file descriptor</description>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
+    <field name="offset"> <description>Number of bytes to write</description> <off_t/> </field>
+    <field name="origin"> <description>Number of bytes to write</description> <uint/> </field>
+  </event>
+
+  <event name="llseek">
+    <description>Seek a file descriptor</description>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
+    <field name="offset"> <description>Number of bytes to write</description> <int_fixed size="8"/> </field>
+    <field name="origin"> <description>Number of bytes to write</description> <uint/> </field>
+  </event>
+
 
   <event name="ioctl">
     <description>Do a IOCTL on a file descriptor</description>
-    <field name="fd"> <description>File descriptor</description> <uint size="4"/> </field>
-    <field name="cmd"> <description>Command</description> <uint size="4"/> </field>
-    <field name="arg"> <description>Argument</description> <uint size="4"/> </field>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
+    <field name="cmd"> <description>Command</description> <uint/> </field>
+    <field name="arg"> <description>Argument</description> <uint/> </field>
   </event>
 
   <event name="select">
     <description>Do a select on a file descriptor</description>
-    <field name="fd"> <description>File descriptor</description> <uint size="4"/> </field>
-    <field name="timeout"> <description>Time out</description> <ulong/> </field>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
+    <field name="timeout"> <description>Timeout</description> <int_fixed size="8"/> </field>
   </event>
 
   <event name="poll">
     <description>Do a poll on a file descriptor</description>
-    <field name="fd"> <description>File descriptor</description> <uint size="4"/> </field>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
   </event>
 
 </facility>
