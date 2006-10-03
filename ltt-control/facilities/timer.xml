@@ -49,8 +49,10 @@
   <event name="update_time">
     <description>The time is updated (timer interrupt).</description>
     <field name="jiffies"><uint_fixed size="8"/></field>
-    <field name="tv_sec"><long/></field>
-    <field name="tv_nsec"><long/></field>
+    <field name="wall_tv_sec"><long/></field>
+    <field name="wall_tv_nsec"><long/></field>
+    <field name="wall_to_monotonic_tv_sec"><long/></field>
+    <field name="wall_to_monotonic_tv_nsec"><long/></field>
   </event>
 
 </facility>
