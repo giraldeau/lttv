@@ -2359,19 +2359,19 @@ static void fix_process(gpointer key, gpointer value,
   LttvTracefileContext *tfc = (LttvTracefileContext *)user_data;
   LttTime *timestamp = (LttTime*)user_data;
 
-printf("%s %s\n", g_quark_to_string(process->type), g_quark_to_string(process->state->t));
-
   if(process->type == LTTV_STATE_KERNEL_THREAD) {
-    if(process->state->t == LTTV_STATE_MODE_UNKNOWN) {
-      process->state->t = LTTV_STATE_SYSCALL;
-      process->state->s = LTTV_STATE_WAIT;
-      process->state->n = LTTV_STATE_SUBMODE_NONE;
+    es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
+    if(es->t == LTTV_STATE_MODE_UNKNOWN) {
+      es->t = LTTV_STATE_SYSCALL;
+      es->s = LTTV_STATE_WAIT;
+      es->n = LTTV_STATE_SUBMODE_NONE;
+      es->entry = *timestamp;
+      es->change = *timestamp;
+      es->cum_cpu_time = ltt_time_zero;
     }
   } else {
-    if(process->state->t == LTTV_STATE_MODE_UNKNOWN) {
-      process->execution_stack = g_array_set_size(process->execution_stack, 2);
-      es = process->state = &g_array_index(process->execution_stack, 
-          LttvExecutionState, 0);
+    es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
+    if(es->t == LTTV_STATE_MODE_UNKNOWN) {
       es->t = LTTV_STATE_USER_MODE;
       es->n = LTTV_STATE_SUBMODE_NONE;
       es->entry = *timestamp;
@@ -2380,15 +2380,20 @@ printf("%s %s\n", g_quark_to_string(process->type), g_quark_to_string(process->s
       es->cum_cpu_time = ltt_time_zero;
       es->s = LTTV_STATE_RUN;
 
-      es = process->state = &g_array_index(process->execution_stack, 
+      if(process->execution_stack->len == 1) {
+        /* Still in user mode, means never scheduled */
+        process->execution_stack =
+          g_array_set_size(process->execution_stack, 2);
+        es = process->state = &g_array_index(process->execution_stack, 
           LttvExecutionState, 1);
-      es->t = LTTV_STATE_SYSCALL;
-      es->n = LTTV_STATE_SUBMODE_NONE;
-      es->entry = *timestamp;
-      //g_assert(timestamp->tv_sec != 0);
-      es->change = *timestamp;
-      es->cum_cpu_time = ltt_time_zero;
-      es->s = LTTV_STATE_WAIT;
+        es->t = LTTV_STATE_SYSCALL;
+        es->n = LTTV_STATE_SUBMODE_NONE;
+        es->entry = *timestamp;
+        //g_assert(timestamp->tv_sec != 0);
+        es->change = *timestamp;
+        es->cum_cpu_time = ltt_time_zero;
+        es->s = LTTV_STATE_WAIT;
+      }
     }
   }
 }
