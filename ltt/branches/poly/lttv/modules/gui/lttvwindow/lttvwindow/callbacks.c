@@ -4894,7 +4894,7 @@ void create_main_window_with_trace_list(GSList *traces)
             GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
             GTK_MESSAGE_ERROR,
             GTK_BUTTONS_OK,
-            "Cannot open trace : maybe you should enter in the directory"
+            "Cannot open trace : maybe you should enter in the directory "
             "to select it ?");
         gtk_dialog_run(GTK_DIALOG(dialogue));
         gtk_widget_destroy(dialogue);
