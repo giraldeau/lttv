@@ -62,6 +62,13 @@
 
   <event name="printk">
     <description>Kernel printk</description>
+    <field name="ip"> <description>Instruction</description>
+      <pointer/>
+    </field>
+  </event>
+
+  <event name="vprintk">
+    <description>Kernel vprintk</description>
     <field name="loglevel"> <description>loglevel</description>
       <uint size="1"/>
     </field>
@@ -71,20 +78,7 @@
         <uchar/>
       </sequence>
     </field>
-  </event>
-
-  <event name="printk_locate">
-    <description>Kernel printk location</description>
-    <field name="file"> <description>Source file</description>
-      <string/>
-    </field>
-    <field name="function"> <description>Function</description>
-      <string/>
-    </field>
-    <field name="line"> <description>Line in source file</description>
-      <uint/>
-    </field>
-    <field name="address"> <description>Caller address</description>
+    <field name="ip"> <description>Instruction</description>
       <pointer/>
     </field>
   </event>
