@@ -339,6 +339,7 @@ IN="?_fs_buffer.c
 ?_kernel_itimer.c
 ?_kernel_kthread.c
 ?_kernel_Makefile
+?_kernel_lockdep.c
 ?_kernel_module.c
 ?_kernel_printk.c
 ?_kernel_sched.c
@@ -471,6 +472,7 @@ IN="?_ltt_probes_ltt-probe-arm.c
 ?_ltt_probes_ltt-probe-ipc.c
 ?_ltt_probes_ltt-probe-kernel.c
 ?_ltt_probes_ltt-probe-list.c
+?_ltt_probes_ltt-probe-locking.c
 ?_ltt_probes_ltt-probe-mips.c
 ?_ltt_probes_ltt-probe-mm.c
 ?_ltt_probes_ltt-probe-net.c
