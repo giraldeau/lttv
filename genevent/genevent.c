@@ -1523,9 +1523,9 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	} else {
 		print_tabs(1, fd);
 		fprintf(fd, 
-			"index = ltt_get_index_from_facility(ltt_facility_%s_%X,\n"\
+			"index = ltt_get_index_from_facility_%s(" \
 					"\t\t\t\t\t\tevent_%s_%s);\n",
-				fac->name, fac->checksum, fac->name, event->name);
+				fac->name, fac->name, event->name);
 	}
 	fprintf(fd,"\n");
 
