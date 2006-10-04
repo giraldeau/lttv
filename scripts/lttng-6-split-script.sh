@@ -14,7 +14,8 @@ function wr () {
 PRENAME=patch
 NAME=-2.6.18-lttng-$1
 ALL_NAME=${PRENAME}${NAME}-all.diff
-COUNT=1
+VALUE=1
+printf -v COUNT "%02d" ${VALUE}
 
 rm -fr tmppatch
 mkdir tmppatch
@@ -34,14 +35,16 @@ for a in *; do
 done
 
 FILE=../${PRENAME}${COUNT}${NAME}-debugfs.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_fs_debugfs_inode.c"
 
 for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-markers.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_asm-generic_vmlinux.lds.h
 ?_kernel_Kconfig.marker
@@ -76,7 +79,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-facility-core-headers.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_ltt_ltt-facility-core.h
 ?_include_ltt_ltt-facility-id-core.h"
@@ -85,7 +89,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-facility-loader-core.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_ltt_facilities_ltt-facility-loader-core.c
 ?_ltt_facilities_ltt-facility-loader-core.h
@@ -94,7 +99,8 @@ IN="?_ltt_facilities_ltt-facility-loader-core.c
 for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-facilities.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_linux_ltt-facilities.h
 ?_ltt_ltt-facilities.c"
@@ -103,7 +109,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-timestamp.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_asm-alpha_ltt.h
 ?_include_asm-arm26_ltt.h
@@ -138,7 +145,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-core-header.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_linux_ltt-core.h"
 
@@ -146,7 +154,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-core.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_MAINTAINERS
 ?_ltt_ltt-core.c
@@ -155,7 +164,8 @@ IN="?_MAINTAINERS
 for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-tracer-header.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_ltt_ltt-tracer.h"
 
@@ -163,7 +173,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-tracer.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_ltt_ltt-tracer.c"
 
@@ -172,7 +183,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-transport.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_ltt_ltt-relay.c
 ?_Documentation_ioctl-number.txt"
@@ -182,7 +194,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-netlink-control.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_ltt_ltt-control.c
 ?_ltt_ltt-control.h
@@ -192,7 +205,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-userspace-tracing.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_linux_sched.h
 ?_kernel_sys_ni.c
@@ -207,7 +221,8 @@ IN="?_include_linux_sched.h
 for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-arm.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_arch_arm_kernel_calls.S
 ?_arch_arm_kernel_entry-common.S
@@ -222,7 +237,8 @@ IN="?_arch_arm_kernel_calls.S
 for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-i386.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_arch_i386_kernel_process.c
 ?_arch_i386_kernel_ptrace.c
@@ -234,7 +250,8 @@ IN="?_arch_i386_kernel_process.c
 for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-mips.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_arch_mips_kernel_irq.c
 ?_arch_mips_kernel_process.c
@@ -255,7 +272,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-powerpc.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_arch_powerpc_kernel_entry_32.S
 ?_arch_powerpc_kernel_irq.c
@@ -275,7 +293,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-ppc.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_arch_ppc_Kconfig
 ?_arch_ppc_kernel_misc.S
@@ -288,7 +307,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-x86_64.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_arch_x86_64_ia32_ia32entry.S
 ?_arch_x86_64_ia32_ipc32.c
@@ -301,7 +321,8 @@ IN="?_arch_x86_64_ia32_ia32entry.S
 for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_fs_buffer.c
 ?_fs_compat.c
@@ -335,7 +356,8 @@ IN="?_fs_buffer.c
 for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-facilities-probes-headers.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_ltt_ltt-facility-custom-fs_data.h
 ?_include_ltt_ltt-facility-custom-stack_arch_i386.h
@@ -391,7 +413,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-facilities-probes.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_ltt_facilities_ltt-facility-loader-fs.c
 ?_ltt_facilities_ltt-facility-loader-fs_data.c
@@ -439,7 +462,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-probes.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_ltt_probes_ltt-probe-arm.c
 ?_ltt_probes_ltt-probe-fs.c
@@ -458,7 +482,8 @@ IN="?_ltt_probes_ltt-probe-arm.c
 for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-statedump.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_ltt_ltt-statedump.c"
 
@@ -466,7 +491,8 @@ for a in $IN; do wr $a $FILE; done
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-build.diff
-COUNT=$(( ${COUNT} + 1 ))
+VALUE=$(( ${COUNT} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
 
 IN="?_Makefile
 ?_kernel_Makefile
