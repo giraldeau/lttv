@@ -32,7 +32,7 @@ for a in *; do
 	grep -v -e "^diff --git " -e "^new file mode " -e "^index " $a.tmp > $a
 	rm $a.tmp;
 done
-exit
+
 FILE=../${PRENAME}${COUNT}${NAME}-debugfs.diff
 COUNT=$(( ${COUNT} + 1 ))
 
