@@ -13,7 +13,7 @@ applications.
 What you will typically want is to read sections 2 and 3 : install LTTng from
 sources and use it.
 
-These operations are made for installing the LTTng 0.5.X tracer on a
+These operations are made for installing the LTTng 0.6.X tracer on a
 linux 2.6.X kernel. You will also find instructions for installation of
 LTTV 0.8.x : the Linux Trace Toolkit Viewer. 
 
@@ -227,19 +227,22 @@ make menuconfig (or make xconfig or make config)
     Select the following options :
     [*] Linux Trace Toolkit Instrumentation Support
     <M> or <*> Linux Trace Toolkit Tracer
+      <M> or <*> Linux Trace Toolkit Relay+DebugFS Support
         It makes no difference for the rest of the procedure whether the Tracer
         is compiled built-in or as a module.
     activate :
        [*] Align Linux Trace Toolkit Traces
        [*] Allow tracing from userspace
+       <M> Linux Trace Toolkit Netlink Controller
+       <M> Linux Trace Toolkit State Dump
     your choice (see < Help >) :
        [ ] Activate Linux Trace Toolkit Heartbeat Timer
-    You may or may not activate instrumentation per facility. They are all
-    selected for logging by default. It can be used as a compile time filter to
-    enable/disable logging of events. It is useful to discard events with a
-    minimal impact on the system and especially useful for now, as the dynamic
-    filter has not been implemented yet.
-    Select <Exit>
+    You may or may not decide to compile probes. Afterward, you will have to
+    load the probe modules to enable tracing of their events. The probes
+    automatically select the appropriate facilities.
+    Static instrumentation is a more invasive type of instrumentation that gives
+    the address taking a lock or doing a printk.
+  Select <Exit>
   Select <Exit>
   Select <Yes>
 make
@@ -281,12 +284,20 @@ then, rebooting or issuing the following command will activate debugfs :
 
 mount /mnt/debugfs
 
-You need to load the ltt-control module to be able to control tracing from user
+You need to load the LTT modules to be able to control tracing from user
 space. This is done by issuing the command :
 
 modprobe ltt-control
 modprobe ltt-core
 modprobe ltt-relay
+modprobe ltt-tracer
+modprobe ltt-probe-mm
+modprobe ltt-probe-kernel
+modprobe ltt-probe-i386 (or x86_64, powerpc, ppc, arm, mips)
+modprobe ltt-probe-net
+modprobe ltt-probe-list
+modprobe ltt-probe-ipc
+modprobe ltt-probe-fs
 
 If you want to have complete information about the kernel state (including all
 the process names), you need to load the ltt-statedump module. This is done by
@@ -296,10 +307,23 @@ modprobe ltt-statedump
 
 You can automate at boot time loading the ltt-control module by :
 
+cp /etc/modules /etc/modules.bkp
 echo ltt-control >> /etc/modules
 echo ltt-core >> /etc/modules
 echo ltt-relay >> /etc/modules
+echo ltt-tracer >> /etc/modules
+echo ltt-probe-mm >> /etc/modules
+echo ltt-probe-kernel >> /etc/modules
+echo ltt-probe-i386 >> /etc/modules (or x86_64, powerpc, ppc, arm, mips)
+echo ltt-probe-net >> /etc/modules
+echo ltt-probe-list >> /etc/modules
+echo ltt-probe-ipc >> /etc/modules
+echo ltt-probe-fs >> /etc/modules
 echo ltt-statedump >> /etc/modules
+
+(note : if you want to probe a marker which is within a module, make sure you
+load the probe _after_ the module, otherwise the probe will not be able to
+connect itself to the marker.)
 
 
 * Getting and installing the ltt-control package (on the traced machine)
@@ -367,6 +391,10 @@ lttctl -n trace -R
 
 see lttctl --help for details.
 
+(note : to see if the buffers has been filled, look at the dmesg output after
+lttctl -R or after stopping tracing from the GUI, it will show an event lost
+count. If it is the case, try using larger buffers. See lttctl --help to learn 
+how.)
 
 * Use text mode LTTV
 
@@ -379,7 +407,11 @@ lttv -m textDump -t /tmp/trace
 
 see lttv -m textDump --help for detailed command line options of textDump.
 
-
+It is, in the current state of the project, very useful to use "grep" on the
+text output to filter by specific event fields. You can later copy the timestamp
+of the events to the clipboard and paste them in the GUI by clicking on the
+bottom right label "Current time". Support for this type of filtering should
+be added to the filter module soon.
 
 
 ***********************************************************
@@ -400,21 +432,21 @@ make install
 * Add new events to the kernel with genevent
 
 su -
-cd /usr/local/share/LinuxTraceToolkitViewer/facilities
+cd /usr/local/share/ltt-control/facilities
 cp process.xml yourfacility.xml
   * edit yourfacility.xml to fit your needs.
 cd /tmp
-/usr/local/bin/genevent /usr/local/share/LinuxTraceToolkitViewer/facilities/yourfacility.xml
+/usr/local/bin/genevent /usr/local/share/ltt-control/facilities/yourfacility.xml
 cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
-         /usr/src/linux-2.6.17-lttng-0.x.xx8/include/linux/ltt
+         /usr/src/linux-2.6.17-lttng-0.x.xx8/include/ltt
 cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
-         /usr/src/linux-2.6.17-lttng-0.x.xx/ltt
-  * edit the kernel file you want to instrument
-    - Add #include <linux/ltt/ltt-facility-yourfacility.h> at the beginning
-      of the file.
-    - Add a call to the tracing functions. See their names and parameters in
-      /usr/src/linux-2.6.17-lttng-0.x.xx/include/linux/ltt/ltt-facility-yourfacility.h
-    
+         /usr/src/linux-2.6.17-lttng-0.x.xx/ltt/facilities
+  * edit the kernel file you want to instrument to add a marker to it. See
+    include/linux/marker.h.
+  * create a dynamically loadable probe. See ltt/probes for examples. The probe
+    will be connected to your marker and will typically call the logging
+    functions found in the header file you created with genevent.
+
 * Add new events to userspace programs with genevent
 See http://ltt.polymtl.ca/ > USERSPACE TRACING QUICKSTART
 

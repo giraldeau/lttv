@@ -220,7 +220,7 @@ void drawing_data_request(Drawing_t *drawing,
          associated by id hooks. */
 
       hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
-      hooks = g_array_set_size(hooks, 17);
+      hooks = g_array_set_size(hooks, 18);
       before_hn = after_hn = 0;
 
       /* before hooks */
@@ -314,6 +314,13 @@ void drawing_data_request(Drawing_t *drawing,
           &g_array_index(hooks, LttvTraceHook, before_hn++));
       if(ret) before_hn--;
 
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_STATEDUMP, LTT_EVENT_STATEDUMP_END,
+          0, 0, 0,
+          before_statedump_end,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 
 #if 0
       lttv_trace_find_hook(ts->parent.t,

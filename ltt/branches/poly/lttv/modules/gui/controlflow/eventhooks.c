@@ -2673,3 +2673,72 @@ int after_chunk(void *hook_data, void *call_data)
   return 0;
 }
 
+/* after_statedump_end
+ * 
+ * @param hook_data ControlFlowData structure of the viewer. 
+ * @param call_data Event context.
+ *
+ * This function adds items to be drawn in a queue for each process.
+ * 
+ */
+int before_statedump_end(void *hook_data, void *call_data)
+{
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+  ControlFlowData *control_flow_data = events_request->viewer_data;
+
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+
+  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+
+  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+
+  LttvTracesetState *tss = (LttvTracesetState*)tfc->t_context->ts_context;
+  ProcessList *process_list = control_flow_data->process_list;
+
+  LttEvent *e;
+  e = ltt_tracefile_get_event(tfc->tf);
+
+  LttvFilter *filter = control_flow_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
+
+  LttTime evtime = ltt_event_time(e);
+
+  ClosureData closure_data;
+  closure_data.events_request = events_request;
+  closure_data.tss = tss;
+  closure_data.end_time = evtime;
+
+  TimeWindow time_window = 
+          lttvwindow_get_time_window(control_flow_data->tab);
+  guint width = control_flow_data->drawing->width;
+  convert_time_to_pixels(
+            time_window,
+            evtime,
+            width,
+            &closure_data.x_end);
+
+  /* Draw last items */
+  g_hash_table_foreach(process_list->process_hash, draw_closure,
+                        (void*)&closure_data);
+#if 0
+  /* Reactivate sort */
+  gtk_tree_sortable_set_sort_column_id(
+      GTK_TREE_SORTABLE(control_flow_data->process_list->list_store),
+      GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
+      GTK_SORT_ASCENDING);
+
+  update_index_to_pixmap(control_flow_data->process_list);
+  /* Request a full expose : drawing scrambled */
+  gtk_widget_queue_draw(control_flow_data->drawing->drawing_area);
+#endif //0
+  /* Request expose (updates damages zone also) */
+  drawing_request_expose(events_request, tss, evtime);
+
+  return 0;
+}
+
+
