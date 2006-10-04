@@ -519,5 +519,5 @@ for a in $IN; do wr $a $FILE; done
 cd ..
 
 rm $ALL_NAME
-tar cvfj $NAME.tar.bz2 ${PRENAME}*$NAME-*
+tar cvfj ${PRENAME}${NAME}.tar.bz2 ${PRENAME}*${NAME}-*
 
