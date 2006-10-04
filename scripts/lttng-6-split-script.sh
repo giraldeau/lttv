@@ -12,7 +12,7 @@ function wr () {
 
 
 PRENAME=patch
-NAME=-2.6.17-lttng-$1
+NAME=-2.6.18-lttng-$1
 ALL_NAME=${PRENAME}${NAME}-all.diff
 COUNT=1
 
@@ -32,7 +32,7 @@ for a in *; do
 	grep -v -e "^diff --git " -e "^new file mode " -e "^index " $a.tmp > $a
 	rm $a.tmp;
 done
-
+exit
 FILE=../${PRENAME}${COUNT}${NAME}-debugfs.diff
 COUNT=$(( ${COUNT} + 1 ))
 
@@ -229,8 +229,7 @@ IN="?_arch_i386_kernel_process.c
 ?_arch_i386_kernel_syscall_table.S
 ?_arch_i386_kernel_sys_i386.c
 ?_arch_i386_kernel_time.c
-?_arch_i386_kernel_traps.c
-?_include_asm-i386_system.h"
+?_arch_i386_kernel_traps.c"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -297,8 +296,7 @@ IN="?_arch_x86_64_ia32_ia32entry.S
 ?_arch_x86_64_kernel_ptrace.c
 ?_arch_x86_64_kernel_time.c
 ?_arch_x86_64_kernel_traps.c
-?_arch_x86_64_mm_fault.c
-?_include_asm-x86_64_system.h"
+?_arch_x86_64_mm_fault.c"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -465,19 +463,6 @@ COUNT=$(( ${COUNT} + 1 ))
 IN="?_ltt_ltt-statedump.c"
 
 for a in $IN; do wr $a $FILE; done
-
-
-
-FILE=../${PRENAME}${COUNT}${NAME}-static-instrumentation.diff
-COUNT=$(( ${COUNT} + 1 ))
-
-IN="?_include_linux_kernel.h
-?_include_linux_ltt-static.h
-?_ltt_static_locking.c
-?_ltt_static_Makefile"
-
-for a in $IN; do wr $a $FILE; done
-
 
 
 FILE=../${PRENAME}${COUNT}${NAME}-build.diff
