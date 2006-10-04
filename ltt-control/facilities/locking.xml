@@ -1,64 +1,40 @@
 <?xml version="1.0"?>
 <facility name="locking">
   <description>The locking facility instruments the kernel locking.</description>
-  <event name="spin_lock_wait">
-    <description>Takes a spinlock</description>
-    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
+
+  <event name="hardirqs_on">
+    <description>Enable IRQs</description>
+    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
   </event>
 
-  <event name="spin_lock_try">
-    <description>Tries a spinlock</description>
-    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
+  <event name="hardirqs_off">
+    <description>Disable IRQs</description>
+    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
   </event>
 
-  <event name="spin_lock_entry">
-    <description>Get a spinlock</description>
-    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
+  <event name="softirqs_on">
+    <description>Enable SoftIRQs</description>
+    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
   </event>
 
-  <event name="spin_lock_exit">
-    <description>Releases a spinlock</description>
-    <field name="spinlock"> <description>Spinlock address</description> <pointer/> </field>
+  <event name="softirqs_off">
+    <description>Disable SoftIRQs</description>
+    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
   </event>
 
-  <event name="irq_save">
-    <description>Disable IRQ, saving state</description>
-    <field name="EIP">
-			<description>Instruction pointer where the irq_save is located.</description>
-			<pointer/>
-		</field>
-    <field name="flags">
-			<description>Saved IRQ state.</description>
-			<ulong/>
-		</field>
+  <event name="lock_acquire">
+    <description>Acquire lock</description>
+    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
+    <field name="subclass"> <description>Lock subclass</description> <uint/> </field>
+    <field name="lock"> <description>Lock address</description> <pointer/> </field>
+    <field name="trylock"> <description>Trylock ?</description> <int/> </field>
   </event>
 
-  <event name="irq_restore">
-    <description>Disable IRQ, saving state</description>
-    <field name="EIP">
-			<description>Instruction pointer where the irq_restore is located.</description>
-			<pointer/> 
-		</field>
-    <field name="flags">
-			<description>Restored IRQ state.</description>
-			<ulong/>
-		</field>
-  </event>
-
-  <event name="irq_disable">
-    <description>Disable IRQ</description>
-    <field name="EIP">
-			<description>Instruction pointer where the irq_disable is located.</description>
-			<pointer/>
-		</field>
-  </event>
-
-  <event name="irq_enable">
-    <description>Disable IRQ</description>
-    <field name="EIP">
-			<description>Instruction pointer where the irq_enable is located.</description>
-			<pointer/>
-		</field>
+  <event name="lock_release">
+    <description>Release lock</description>
+    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
+    <field name="lock"> <description>Lock address</description> <pointer/> </field>
+    <field name="nested"> <description>Nested release ?</description> <int/> </field>
   </event>
 
 </facility>
