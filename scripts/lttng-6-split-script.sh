@@ -326,7 +326,6 @@ printf -v COUNT "%02d" ${VALUE}
 
 IN="?_fs_buffer.c
 ?_fs_compat.c
-?_fs_debugfs_inode.c
 ?_fs_exec.c
 ?_fs_ioctl.c
 ?_fs_open.c
