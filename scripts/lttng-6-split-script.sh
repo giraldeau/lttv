@@ -232,7 +232,8 @@ IN="?_arch_arm_kernel_calls.S
 ?_arch_arm_kernel_sys_arm.c
 ?_arch_arm_kernel_time.c
 ?_arch_arm_kernel_traps.c
-?_include_asm-arm_irq.h"
+?_include_asm-arm_irq.h
+?_include_asm-arm_thread_info.h"
 
 for a in $IN; do wr $a $FILE; done
 
