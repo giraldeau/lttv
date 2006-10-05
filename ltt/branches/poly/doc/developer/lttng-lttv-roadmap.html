@@ -58,8 +58,7 @@ of process 0.<br>
 <br>
 * TODO<br>
 (1) Integrate SystemTAP logging with LTTng.<br>
-(2) Rethink facility logging code (genevent output).<br>
-(2) Post an updated LTTng version to LKML (2.6.18-rcX).<br>
+(2) Post LTTng 0.6.x to LKML.<br>
 (3) Change the byte pair "facility, event" id for a short combining the
 informatinon.<br>
 (4) Add Xen support.<br>
@@ -79,6 +78,8 @@ fault handler.<br>
 (5) Integrate LTTng and lttd with LKCD.<br>
 (7) Integrate periodical dump of perfctr hardware counters.<br>
 (8) Integrate periodical dump of SystemTAP computed information.<br>
+(9) Rethink facility logging code (genevent output). Maybe unneeded because of
+markers/probes mechanism.<br>
 (9) Add support for setjmp/longjmp and jump tables instrumentation to
 ltt-instrument-functions.<br>
 (9) Make ltt-usertrace-fast support internal heartbeat timer.<br>
@@ -110,25 +111,6 @@ drop ltt_filter_control, use functions pointers instead.<br>
 Merge facilities headers into one big header.<br>
 Change the name of XML files from XML to something else.<br>
 Remove ltt-base.c.<br>
-<br>
-<br>
-* lttng patch division (0.5.10+) :<br>
-<br>
-instrumentation.diff<br>
-instrumentation-arm.diff<br>
-instrumentation-i386.diff<br>
-instrumentation-mips.diff<br>
-instrumentation-powerpc.diff<br>
-instrumentation-ppc.diff<br>
-instrumentation-s390.diff<br>
-instrumentation-sh.diff<br>
-ltt-facilities-headers.diff<br>
-ltt-facilities-loader.diff<br>
-ltt-facilities.diff<br>
-ltt-relayfs.diff<br>
-ltt-core.diff<br>
-ltt-build.diff<br>
-<br>
 <br>
 Mathieu Desnoyers<br>
 
