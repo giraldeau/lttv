@@ -66,7 +66,10 @@
 #include <lttvwindow/lttvwindow.h>
 #include <lttvwindow/lttvwindowtraces.h>
 #include <lttvwindow/lttv_plugin_tab.h>
+#include <lttvwindow/support.h>
+#include "lttv_plugin_evd.h"
 
+#include "events.h"
 #include "hGuiEventsInsert.xpm"
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
@@ -91,64 +94,6 @@ typedef enum _ScrollDirection{
   SCROLL_NONE
 } ScrollDirection;
 
-typedef struct _EventViewerData {
-
-  Tab * tab;
-  LttvPluginTab *ptab;
-  LttvHooks  * event_hooks;
-
-  /* previous value is used to determine if it is a page up/down or
-   * step up/down, in which case we move of a certain amount of events (one or
-   * the number of events shown on the screen) instead of changing begin time.
-   */
-  double       previous_value;
-
-  //scroll window containing Tree View
-  GtkWidget * scroll_win;
-
-  /* Model containing list data */
-  GtkListStore *store_m;
-
-  GPtrArray *pos; /* Array of LttvTracesetContextPosition * */
- 
-  GtkWidget *top_widget;
-  GtkWidget *hbox_v;
-  /* Widget to display the data in a columned list */
-  GtkWidget *tree_v;
-  GtkAdjustment *vtree_adjust_c ;
-  GtkWidget *button; /* a button of the header, used to get the header_height */
-  gint header_height;
-  
-  /* Vertical scrollbar and its adjustment */
-  GtkWidget *vscroll_vc;
-  GtkAdjustment *vadjust_c;
-  
-  /* Selection handler */
-  GtkTreeSelection *select_c;
-  
-  gint num_visible_events;
-  
-  LttvTracesetContextPosition *currently_selected_position;
-  gboolean update_cursor; /* Speed optimisation : do not update cursor when 
-                             unnecessary */
-  gboolean report_position; /* do not report position when in current_time
-                               update */
-
-  LttvTracesetContextPosition *first_event;  /* Time of the first event shown */
-  LttvTracesetContextPosition *last_event;  /* Time of the first event shown */
-
-  LttvTracesetContextPosition *current_time_get_first; 
-
-  LttvFilter *main_win_filter;
-
-  gint background_info_waiting;
-
-  guint32 last_tree_update_time; /* To filter out repeat keys */
-
-  guint num_events;  /* Number of events processed */
-
-} EventViewerData ;
-
 /** hook functions for update time interval, current time ... */
 gboolean update_current_time(void * hook_data, void * call_data);
 gboolean update_current_position(void * hook_data, void * call_data);
@@ -163,8 +108,8 @@ GtkWidget *h_gui_events(LttvPlugin *plugin);
 //! Event Viewer's constructor
 EventViewerData *gui_events(LttvPluginTab *ptab);
 //! Event Viewer's destructor
-void gui_events_destructor(EventViewerData *event_viewer_data);
-void gui_events_free(EventViewerData *event_viewer_data);
+void gui_events_destructor(gpointer data);
+void gui_events_free(gpointer data);
 
 static gboolean
 header_size_allocate(GtkWidget *widget,
@@ -185,11 +130,11 @@ static void tree_v_size_request_cb (GtkWidget *widget,
 static void tree_v_cursor_changed_cb (GtkWidget *widget, gpointer data);
 static void tree_v_move_cursor_cb (GtkWidget *widget, GtkMovementStep arg1,
     gint arg2, gpointer data);
+static void        filter_button      (GtkToolButton *toolbutton,
+                                          gpointer       user_data);
 static gboolean tree_v_scroll_handler (GtkWidget *widget, GdkEventScroll *event, gpointer data);
 static gboolean key_handler(GtkWidget *widget, GdkEventKey *event,
     gpointer user_data);
-
-static gint redraw_notify(void *hook_data, void *call_data);
 
 static void get_events(double time, EventViewerData *event_viewer_data);
 
@@ -242,10 +187,13 @@ gui_events(LttvPluginTab *ptab)
   LttTime end;
   GtkTreeViewColumn *column;
   GtkCellRenderer *renderer;
-  EventViewerData* event_viewer_data = g_new(EventViewerData,1) ;
+  EventViewerData* event_viewer_data = g_new(EventViewerData,1);
+  LttvPluginEVD *plugin_evd = g_object_new(LTTV_TYPE_PLUGIN_EVD, NULL);
+  plugin_evd->evd = event_viewer_data;
   Tab *tab = ptab->tab;
   event_viewer_data->tab = tab;
   event_viewer_data->ptab = ptab;
+  GtkWidget *tmp_toolbar_icon;
 
   LttvTracesetContext * tsc =
         lttvwindow_get_traceset_context(event_viewer_data->tab);
@@ -266,7 +214,7 @@ gui_events(LttvPluginTab *ptab)
   lttvwindow_register_filter_notify(tab,
                 filter_changed, event_viewer_data);
   lttvwindow_register_redraw_notify(tab,
-                redraw_notify, event_viewer_data);
+                evd_redraw_notify, event_viewer_data);
   
 
   event_viewer_data->scroll_win = gtk_scrolled_window_new (NULL, NULL);
@@ -331,6 +279,8 @@ gui_events(LttvPluginTab *ptab)
   g_signal_connect (G_OBJECT(event_viewer_data->tree_v), "scroll-event",
       G_CALLBACK(tree_v_scroll_handler),
       event_viewer_data);
+
+
 
   // Use on each column!
   //gtk_tree_view_column_set_sizing(event_viewer_data->tree_v,
@@ -459,6 +409,30 @@ gui_events(LttvPluginTab *ptab)
 
   event_viewer_data->hbox_v = gtk_hbox_new(0, 0);
   event_viewer_data->top_widget = event_viewer_data->hbox_v;
+  plugin_evd->parent.top_widget = event_viewer_data->hbox_v;
+
+  event_viewer_data->toolbar = gtk_toolbar_new();
+  gtk_toolbar_set_orientation(GTK_TOOLBAR(event_viewer_data->toolbar),
+                              GTK_ORIENTATION_VERTICAL);
+
+  tmp_toolbar_icon = create_pixmap (main_window_get_widget(tab),
+      "guifilter16x16.png");
+  gtk_widget_show(tmp_toolbar_icon);
+  event_viewer_data->button_filter = gtk_tool_button_new(tmp_toolbar_icon,
+      "Filter");
+  g_signal_connect (G_OBJECT(event_viewer_data->button_filter),
+        "clicked",
+        G_CALLBACK (filter_button),
+        (gpointer)plugin_evd);
+  gtk_toolbar_insert(GTK_TOOLBAR(event_viewer_data->toolbar),
+      event_viewer_data->button_filter,
+      0);
+  gtk_toolbar_set_style(GTK_TOOLBAR(event_viewer_data->toolbar),
+      GTK_TOOLBAR_ICONS);
+  gtk_box_pack_start(GTK_BOX(event_viewer_data->hbox_v),
+      event_viewer_data->toolbar, FALSE, FALSE, 0);
+  event_viewer_data->filter = NULL;
+
   gtk_box_pack_start(GTK_BOX(event_viewer_data->hbox_v),
       event_viewer_data->scroll_win, TRUE, TRUE, 0);
 
@@ -493,13 +467,15 @@ gui_events(LttvPluginTab *ptab)
   event_viewer_data->vadjust_c->page_size = 2.0;
   //    event_viewer_data->vtree_adjust_c->upper;
   /*  Raw event trace */
+  gtk_widget_show(GTK_WIDGET(event_viewer_data->button_filter));
+  gtk_widget_show(event_viewer_data->toolbar);
   gtk_widget_show(event_viewer_data->hbox_v);
   gtk_widget_show(event_viewer_data->tree_v);
   gtk_widget_show(event_viewer_data->vscroll_vc);
 
   /* Add the object's information to the module's array */
   g_event_viewer_data_list = g_slist_append(g_event_viewer_data_list,
-      event_viewer_data);
+      plugin_evd);
 
   event_viewer_data->num_visible_events = 1;
 
@@ -518,9 +494,14 @@ gui_events(LttvPluginTab *ptab)
  //
   g_object_set_data_full(
       G_OBJECT(event_viewer_data->hbox_v),
-      "event_viewer_data",
-      event_viewer_data,
+      "plugin_data",
+      plugin_evd,
       (GDestroyNotify)gui_events_free);
+
+  g_object_set_data(
+      G_OBJECT(event_viewer_data->hbox_v),
+      "event_viewer_data",
+      event_viewer_data);
   
   event_viewer_data->background_info_waiting = 0;
 
@@ -542,7 +523,7 @@ static gint background_ready(void *hook_data, void *call_data)
   if(event_viewer_data->background_info_waiting == 0) {
     g_message("event viewer : background computation data ready.");
 
-    redraw_notify(event_viewer_data, NULL);
+    evd_redraw_notify(event_viewer_data, NULL);
   }
 
   return 0;
@@ -1036,6 +1017,30 @@ void tree_v_move_cursor_cb (GtkWidget *widget,
 #endif //0
 }
 
+static void        filter_button      (GtkToolButton *toolbutton,
+                                          gpointer       user_data)
+{
+  LttvPluginEVD *plugin_evd = (LttvPluginEVD*)user_data;
+  LttvAttribute *attribute;
+  LttvAttributeValue value;
+  gboolean ret;
+  g_printf("Filter button clicked\n");
+
+  attribute = LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+        LTTV_IATTRIBUTE(lttv_global_attributes()),
+        LTTV_VIEWER_CONSTRUCTORS));
+  g_assert(attribute);
+
+  ret = lttv_iattribute_find_by_path(LTTV_IATTRIBUTE(attribute),
+      "guifilter", LTTV_POINTER, &value);
+  g_assert(ret);
+  lttvwindow_viewer_constructor constructor =
+    (lttvwindow_viewer_constructor)*(value.v_pointer);
+  if(constructor) constructor(&plugin_evd->parent);
+  else g_warning("Filter module not loaded.");
+
+  //FIXME : viewer returned.
+}
 
 gboolean tree_v_scroll_handler (GtkWidget *widget, GdkEventScroll *event, gpointer data)
 {
@@ -1402,8 +1407,10 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
     if(relative_position > 0) {
       guint count;
       count += lttv_process_traceset_seek_n_forward(tsc, relative_position,
-          event_viewer_data->main_win_filter, events_check_handler,
-          &event_viewer_data->tab->stop_foreground);
+          events_check_handler,
+          &event_viewer_data->tab->stop_foreground,
+          event_viewer_data->main_win_filter,
+          event_viewer_data->filter, NULL);
     } else if(relative_position < 0) {
       guint count;
       
@@ -1420,9 +1427,10 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
           abs(relative_position),
           time_diff,
           (seek_time_fct)lttv_state_traceset_seek_time_closest,
-          event_viewer_data->main_win_filter,
 	  events_check_handler,
-	  &event_viewer_data->tab->stop_foreground);
+	  &event_viewer_data->tab->stop_foreground,
+          event_viewer_data->main_win_filter,
+          event_viewer_data->filter, NULL);
     } /* else 0 : do nothing : we are already at the beginning position */
 
     lttv_traceset_context_position_destroy(pos);
@@ -1509,7 +1517,6 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
 }
 
 
-
 int event_hook(void *hook_data, void *call_data)
 {
   EventViewerData *event_viewer_data = (EventViewerData*)hook_data;
@@ -1529,6 +1536,13 @@ int event_hook(void *hook_data, void *call_data)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
           tfc->t_context->t,tfc))
       return FALSE;
+
+  filter = event_viewer_data->filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
+
 
   LttFacility *facility = ltt_event_facility(e);
   LttEventType *event_type = ltt_event_eventtype(e);
@@ -1618,6 +1632,12 @@ static int current_time_get_first_event_hook(void *hook_data, void *call_data)
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
 
   LttvFilter *filter = event_viewer_data->main_win_filter;
+  if(filter != NULL && filter->head != NULL)
+    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc))
+      return FALSE;
+
+  filter = event_viewer_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
           tfc->t_context->t,tfc))
@@ -1789,7 +1809,7 @@ gboolean filter_changed(void * hook_data, void * call_data)
 }
 
 
-gint redraw_notify(void *hook_data, void *call_data)
+gint evd_redraw_notify(void *hook_data, void *call_data)
 {
   EventViewerData *event_viewer_data = (EventViewerData*) hook_data;
 
@@ -1797,12 +1817,16 @@ gint redraw_notify(void *hook_data, void *call_data)
   return 0;
 }
 
-void gui_events_free(EventViewerData *event_viewer_data)
+void gui_events_free(gpointer data)
 {
-  Tab *tab = event_viewer_data->tab;
+  LttvPluginEVD *plugin_evd = (LttvPluginEVD*)data;
+  Tab *tab = plugin_evd->evd->tab;
+  EventViewerData *event_viewer_data = plugin_evd->evd;
   guint i;
  
-  if(event_viewer_data){
+  lttv_filter_destroy(plugin_evd->evd->filter);
+
+  if(tab != NULL){
     lttv_hooks_remove(event_viewer_data->event_hooks,event_hook);
     lttv_hooks_destroy(event_viewer_data->event_hooks);
     
@@ -1831,23 +1855,25 @@ void gui_events_free(EventViewerData *event_viewer_data)
     lttvwindow_unregister_filter_notify(tab,
                         filter_changed, event_viewer_data);
     lttvwindow_unregister_redraw_notify(tab,
-                redraw_notify, event_viewer_data);
+                evd_redraw_notify, event_viewer_data);
 
-    lttvwindowtraces_background_notify_remove(event_viewer_data);
-
-    g_event_viewer_data_list = g_slist_remove(g_event_viewer_data_list,
-        event_viewer_data);
-    g_free(event_viewer_data);
   }
+  lttvwindowtraces_background_notify_remove(event_viewer_data);
+
+  g_event_viewer_data_list = g_slist_remove(g_event_viewer_data_list,
+      event_viewer_data);
+  //g_free(event_viewer_data);
+  g_object_unref(plugin_evd);
 }
 
 
 
-void gui_events_destructor(EventViewerData *event_viewer_data)
+void gui_events_destructor(gpointer data)
 {
+  LttvPluginEVD *plugin_evd = (LttvPluginEVD*)data;
   /* May already been done by GTK window closing */
-  if(GTK_IS_WIDGET(event_viewer_data->hbox_v)){
-    gtk_widget_destroy(event_viewer_data->hbox_v);
+  if(GTK_IS_WIDGET(plugin_evd->parent.top_widget)){
+    gtk_widget_destroy(plugin_evd->parent.top_widget);
   }
 }
 
@@ -1871,7 +1897,7 @@ static void init() {
 
 void event_destroy_walk(gpointer data, gpointer user_data)
 {
-  gui_events_destructor((EventViewerData*)data);
+  gui_events_destructor((LttvPluginEVD*)data);
 }
 
 /**

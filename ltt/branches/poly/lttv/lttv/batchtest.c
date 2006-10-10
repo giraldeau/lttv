@@ -661,18 +661,18 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     g_message("Running test 9 : seek_forward and seek_backward");
     lttv_process_traceset_seek_time(tsc, ltt_time_zero);
 
-    count = lttv_process_traceset_seek_n_forward(tsc, 500, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 500, NULL, NULL, NULL, NULL, NULL);
     g_assert(count == 500);
     lttv_traceset_context_position_save(tsc, saved_pos);
     t0 = get_time();
-    count = lttv_process_traceset_seek_n_forward(tsc, 150000, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 150000, NULL, NULL, NULL, NULL, NULL);
     t1 = get_time();
     g_message("Seek forward 150000 events in %g seconds", t1 - t0);
     g_assert(count == 150000);
     t0 = get_time();
     count = lttv_process_traceset_seek_n_backward(tsc, 150000,
         seek_back_default_offset, lttv_process_traceset_seek_time, NULL,
-        NULL, NULL);
+        NULL, NULL, NULL, NULL);
     t1 = get_time();
     g_message("Seek backward 150000 events in %g seconds", t1 - t0);
     g_assert(count == 150000);
@@ -680,20 +680,20 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
       g_warning("Problem with seek_n ! Positions differ. (1)");
     }
     
-    lttv_process_traceset_seek_n_forward(tsc, 500, NULL, NULL, NULL);
+    lttv_process_traceset_seek_n_forward(tsc, 500, NULL, NULL, NULL, NULL, NULL);
     lttv_traceset_context_position_save(tsc, saved_pos);
-    lttv_process_traceset_seek_n_forward(tsc, 15000, NULL, NULL, NULL);
+    lttv_process_traceset_seek_n_forward(tsc, 15000, NULL, NULL, NULL, NULL, NULL);
     lttv_process_traceset_seek_n_backward(tsc, 15005,
         seek_back_default_offset, lttv_process_traceset_seek_time, NULL,
-        NULL, NULL);
-    lttv_process_traceset_seek_n_forward(tsc, 5, NULL, NULL, NULL);
+        NULL, NULL, NULL, NULL);
+    lttv_process_traceset_seek_n_forward(tsc, 5, NULL, NULL, NULL, NULL, NULL);
     if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos)) {
       g_warning("Problem with seek_n ! Positions differ. (2)");
     }
     
     lttv_process_traceset_seek_time(tsc, ltt_time_infinite);
     
-    count = lttv_process_traceset_seek_n_forward(tsc, 15000, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 15000, NULL, NULL, NULL, NULL, NULL);
     if(count > 0)
       g_warning("Problem with seek_n ! Forward at end of traceset.");
     
@@ -703,11 +703,11 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     t0 = get_time();
     lttv_process_traceset_seek_n_backward(tsc, 300,
         seek_back_default_offset, lttv_process_traceset_seek_time, NULL,
-        NULL, NULL);
+        NULL, NULL, NULL, NULL);
     t1 = get_time();
     g_message("Seek backward 300 events in %g seconds", t1 - t0);
-    count = lttv_process_traceset_seek_n_forward(tsc, 299, NULL, NULL, NULL);
-    count = lttv_process_traceset_seek_n_forward(tsc, 1, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 299, NULL, NULL, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 1, NULL, NULL, NULL, NULL, NULL);
 
     if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos)) {
       g_warning("Problem with seek_n ! Positions differ. (4)");
@@ -717,11 +717,11 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     t0 = get_time();
     lttv_process_traceset_seek_n_backward(tsc, 10,
         seek_back_default_offset, lttv_process_traceset_seek_time, NULL,
-        NULL, NULL);
+        NULL, NULL, NULL, NULL);
     t1 = get_time();
     g_message("Seek backward 10 events in %g seconds", t1 - t0);
     t0 = get_time();
-    count = lttv_process_traceset_seek_n_forward(tsc, 10, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 10, NULL, NULL, NULL, NULL, NULL);
     t1 = get_time();
     g_message("Seek forward 10 events in %g seconds", t1 - t0);
 
@@ -732,9 +732,9 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     lttv_traceset_context_position_save(tsc, saved_pos);
     lttv_process_traceset_seek_n_backward(tsc, 301,
         seek_back_default_offset, lttv_process_traceset_seek_time, NULL,
-        NULL, NULL);
-    count = lttv_process_traceset_seek_n_forward(tsc, 299, NULL, NULL, NULL);
-    count = lttv_process_traceset_seek_n_forward(tsc, 1, NULL, NULL, NULL);
+        NULL, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 299, NULL, NULL, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 1, NULL, NULL, NULL, NULL, NULL);
 
     if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos) == 0) {
       g_warning("Problem with seek_n ! Positions _should_ differ. (5)");
@@ -743,17 +743,17 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     /* Try a seek by closest time : Hint : try this one with and without states
      * computed. */
     lttv_process_traceset_seek_time(tsc, ltt_time_zero);
-    count = lttv_process_traceset_seek_n_forward(tsc, 200000, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 200000, NULL, NULL, NULL, NULL, NULL);
     lttv_traceset_context_position_save(tsc, saved_pos);
     t0 = get_time();
     lttv_process_traceset_seek_n_backward(tsc, 100301,
         seek_back_default_offset,
         (seek_time_fct)lttv_state_traceset_seek_time_closest, NULL,
-        NULL, NULL);
+        NULL, NULL, NULL, NULL);
     t1 = get_time();
     g_message("Seek backward 100301 events (with seek closest) in %g seconds",
                 t1 - t0);
-    count = lttv_process_traceset_seek_n_forward(tsc, 100301, NULL, NULL, NULL);
+    count = lttv_process_traceset_seek_n_forward(tsc, 100301, NULL, NULL, NULL, NULL, NULL);
     
     if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos)) {
       g_warning("Problem with seek_n with state seek time! Positions differ. (6)");
@@ -769,7 +769,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
       lttv_traceset_context_position_new(tsc);
 
     lttv_process_traceset_seek_time(tsc, ltt_time_zero);
-    lttv_process_traceset_seek_n_forward(tsc, 200000, NULL, NULL, NULL);
+    lttv_process_traceset_seek_n_forward(tsc, 200000, NULL, NULL, NULL, NULL, NULL);
     lttv_traceset_context_position_save(tsc, saved_pos);
     if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos) != 0)
       g_critical("Error in seek position. (1)");
@@ -777,7 +777,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
     lttv_process_traceset_seek_time(tsc, ltt_time_infinite);
     lttv_process_traceset_seek_n_backward(tsc, 500,
         seek_back_default_offset, lttv_process_traceset_seek_time, NULL,
-        NULL, NULL);
+        NULL, NULL, NULL, NULL);
     lttv_traceset_context_position_save(tsc, saved_pos);
 
     if(lttv_traceset_context_ctx_pos_compare(tsc, saved_pos) != 0)

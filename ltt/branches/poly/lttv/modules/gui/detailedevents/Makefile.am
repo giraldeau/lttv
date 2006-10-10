@@ -32,7 +32,9 @@ libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libguievents.la
 libguievents_la_LDFLAGS = -module
-libguievents_la_SOURCES = events.c
+libguievents_la_SOURCES = events.c lttv_plugin_evd.c
+
+noinst_HEADERS =	lttv_plugin_evd.h events.h
 
 EXTRA_DIST = \
 		hGuiEventsInsert.xpm

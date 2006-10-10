@@ -1337,7 +1337,9 @@ struct seek_back_data {
   guint events_found;
   guint n;             /* number of events requested */
   GPtrArray *array; /* array of LttvTracesetContextPositions pointers */
-  LttvFilter *filter;
+  LttvFilter *filter1;
+  LttvFilter *filter2;
+  LttvFilter *filter3;
   check_handler *check;
   gboolean *stop_flag;
   guint raw_event_count;
@@ -1353,15 +1355,31 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
   if(sd->check && sd->check(sd->raw_event_count, sd->stop_flag)) return TRUE;
   sd->raw_event_count++;
 
-  if(sd->filter != NULL && sd->filter->head != NULL) {
-    if(!lttv_filter_tree_parse(sd->filter->head,
+  if(sd->filter1 != NULL && sd->filter1->head != NULL && 
+    !lttv_filter_tree_parse(sd->filter1->head,
           ltt_tracefile_get_event(tfc->tf),
           tfc->tf,
           tfc->t_context->t,
-          tfc))
-      return FALSE;
+          tfc)) {
+	  return FALSE;
   }
-  
+  if(sd->filter2 != NULL && sd->filter2->head != NULL && 
+    !lttv_filter_tree_parse(sd->filter2->head,
+          ltt_tracefile_get_event(tfc->tf),
+          tfc->tf,
+          tfc->t_context->t,
+          tfc)) {
+	  return FALSE;
+  }
+  if(sd->filter3 != NULL && sd->filter3->head != NULL && 
+    !lttv_filter_tree_parse(sd->filter3->head,
+          ltt_tracefile_get_event(tfc->tf),
+          tfc->tf,
+          tfc->t_context->t,
+          tfc)) {
+	  return FALSE;
+  }
+
   pos = (LttvTracesetContextPosition*)g_ptr_array_index (sd->array,
                                                          sd->first_event);
 
@@ -1404,9 +1422,11 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
 guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
                                             guint n, LttTime first_offset,
                                             seek_time_fct time_seeker,
-                                            LttvFilter *filter,
                                             check_handler *check,
-                                            gboolean *stop_flag)
+                                            gboolean *stop_flag,
+					    LttvFilter *filter1,
+					    LttvFilter *filter2,
+					    LttvFilter *filter3)
 {
   if(lttv_traceset_number(self->ts) == 0) return 0;
   g_assert(ltt_time_compare(first_offset, ltt_time_zero) != 0);
@@ -1427,7 +1447,9 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   sd.first_event = 0;
   sd.events_found = 0;
   sd.array = g_ptr_array_sized_new(n);
-  sd.filter = filter;
+  sd.filter1 = filter1;
+  sd.filter2 = filter2;
+  sd.filter3 = filter3;
   sd.n = n;
   sd.check = check;
   sd.stop_flag = stop_flag;
@@ -1537,7 +1559,9 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
 struct seek_forward_data {
   guint event_count;  /* event counter */
   guint n;            /* requested number of events to jump over */
-  LttvFilter *filter;
+  LttvFilter *filter1;
+  LttvFilter *filter2;
+  LttvFilter *filter3;
   check_handler *check;
   gboolean *stop_flag;
   guint raw_event_count;  /* event counter */
@@ -1551,16 +1575,34 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
   if(sd->check && sd->check(sd->raw_event_count, sd->stop_flag)) return TRUE;
   sd->raw_event_count++;
 
-  if(sd->filter == NULL || lttv_filter_tree_parse(sd->filter->head,
+  if(sd->filter1 != NULL && sd->filter1->head != NULL && 
+    !lttv_filter_tree_parse(sd->filter1->head,
           ltt_tracefile_get_event(tfc->tf),
           tfc->tf,
           tfc->t_context->t,
           tfc)) {
-    sd->event_count++;
-    if(sd->event_count >= sd->n)
-      return TRUE;
+	  return FALSE;
   }
-  return FALSE;
+  if(sd->filter2 != NULL && sd->filter2->head != NULL && 
+    !lttv_filter_tree_parse(sd->filter2->head,
+          ltt_tracefile_get_event(tfc->tf),
+          tfc->tf,
+          tfc->t_context->t,
+          tfc)) {
+	  return FALSE;
+  }
+  if(sd->filter3 != NULL && sd->filter3->head != NULL && 
+    !lttv_filter_tree_parse(sd->filter3->head,
+          ltt_tracefile_get_event(tfc->tf),
+          tfc->tf,
+          tfc->t_context->t,
+          tfc)) {
+	  return FALSE;
+  }
+
+  sd->event_count++;
+  if(sd->event_count >= sd->n)
+      return TRUE;
 }
 
 /* Seek back n events forward from the current position (1 to n)
@@ -1574,14 +1616,19 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
  * returns : the number of events jumped over (may be less than requested if end
  * of traceset reached) */
 guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
-                                          guint n, LttvFilter *filter,
+                                          guint n,
                                           check_handler *check,
-                                          gboolean *stop_flag)
+                                          gboolean *stop_flag,
+					  LttvFilter *filter1,
+					  LttvFilter *filter2,
+					  LttvFilter *filter3)
 {
   struct seek_forward_data sd;
   sd.event_count = 0;
   sd.n = n;
-  sd.filter = filter;
+  sd.filter1 = filter1;
+  sd.filter2 = filter2;
+  sd.filter3 = filter3;
   sd.check = check;
   sd.stop_flag = stop_flag;
   sd.raw_event_count = 0;
