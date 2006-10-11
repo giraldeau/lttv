@@ -3085,7 +3085,7 @@ on_about_activate                      (GtkMenuItem     *menuitem,
   gtk_window_set_title(about_window, "About Linux Trace Toolkit");
 
   gtk_window_set_resizable(about_window, FALSE);
-  gtk_window_set_transient_for(GTK_WINDOW(window_widget), about_window);
+  gtk_window_set_transient_for(about_window, GTK_WINDOW(window_widget));
   gtk_window_set_destroy_with_parent(about_window, TRUE);
   gtk_window_set_modal(about_window, FALSE);
 
@@ -3104,7 +3104,7 @@ on_about_activate                      (GtkMenuItem     *menuitem,
   GtkWidget *label1 = gtk_label_new("");
   gtk_misc_set_padding(GTK_MISC(label1), 10, 20);
   gtk_label_set_markup(GTK_LABEL(label1), "\
-<big>Linux Trace Toolkit</big>");
+<big>Linux Trace Toolkit " VERSION "</big>");
   gtk_label_set_justify(GTK_LABEL(label1), GTK_JUSTIFY_CENTER);
   
   GtkWidget *label2 = gtk_label_new("");
@@ -3123,12 +3123,12 @@ Xang-Xiu Yang (new trace reading library and converter, lttv gui, \n\
                detailed event list and statistics view)\n\
 Tom Zanussi (RelayFS)\n\
 \n\
-Strongly inspired from the original Linux Trace Toolkit Visualizer made by\n\
+Inspired from the original Linux Trace Toolkit Visualizer made by\n\
 Karim Yaghmour");
 
   GtkWidget *label3 = gtk_label_new("");
   gtk_label_set_markup(GTK_LABEL(label3), "\
-Linux Trace Toolkit Viewer, Copyright (C) 2004\n\
+Linux Trace Toolkit Viewer, Copyright (C) 2004, 2005, 2006\n\
                                                 Michel Dagenais\n\
                                                 Mathieu Desnoyers\n\
                                                 Xang-Xiu Yang\n\

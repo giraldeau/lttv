@@ -272,7 +272,7 @@ void lttv_fatal(void *hook_data)
 
 void lttv_help(void *hook_data)
 {
-	printf("Linux Trace Toolkit Visualizer\n");
+	printf("Linux Trace Toolkit Visualizer " VERSION "\n");
 	printf("\n");
 	lttv_option_show_help();
 	printf("\n");
