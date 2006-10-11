@@ -1340,6 +1340,7 @@ struct seek_back_data {
   LttvFilter *filter1;
   LttvFilter *filter2;
   LttvFilter *filter3;
+  gpointer data;
   check_handler *check;
   gboolean *stop_flag;
   guint raw_event_count;
@@ -1352,7 +1353,8 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
   LttvTracesetContext *tsc = tfc->t_context->ts_context;
   LttvTracesetContextPosition *pos;
 
-  if(sd->check && sd->check(sd->raw_event_count, sd->stop_flag)) return TRUE;
+  if(sd->check && sd->check(sd->raw_event_count, sd->stop_flag, sd->data))
+    return TRUE;
   sd->raw_event_count++;
 
   if(sd->filter1 != NULL && sd->filter1->head != NULL && 
@@ -1426,7 +1428,8 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
                                             gboolean *stop_flag,
 					    LttvFilter *filter1,
 					    LttvFilter *filter2,
-					    LttvFilter *filter3)
+					    LttvFilter *filter3,
+					    gpointer data)
 {
   if(lttv_traceset_number(self->ts) == 0) return 0;
   g_assert(ltt_time_compare(first_offset, ltt_time_zero) != 0);
@@ -1450,6 +1453,7 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
   sd.filter1 = filter1;
   sd.filter2 = filter2;
   sd.filter3 = filter3;
+  sd.data = data;
   sd.n = n;
   sd.check = check;
   sd.stop_flag = stop_flag;
@@ -1562,6 +1566,7 @@ struct seek_forward_data {
   LttvFilter *filter1;
   LttvFilter *filter2;
   LttvFilter *filter3;
+  gpointer data;
   check_handler *check;
   gboolean *stop_flag;
   guint raw_event_count;  /* event counter */
@@ -1572,7 +1577,8 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
   struct seek_forward_data *sd = (struct seek_forward_data*)hook_data;
   LttvTracefileContext *tfc = (LttvTracefileContext*)call_data;
 
-  if(sd->check && sd->check(sd->raw_event_count, sd->stop_flag)) return TRUE;
+  if(sd->check && sd->check(sd->raw_event_count, sd->stop_flag, sd->data))
+    return TRUE;
   sd->raw_event_count++;
 
   if(sd->filter1 != NULL && sd->filter1->head != NULL && 
@@ -1621,7 +1627,8 @@ guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
                                           gboolean *stop_flag,
 					  LttvFilter *filter1,
 					  LttvFilter *filter2,
-					  LttvFilter *filter3)
+					  LttvFilter *filter3,
+					  gpointer data)
 {
   struct seek_forward_data sd;
   sd.event_count = 0;
@@ -1629,6 +1636,7 @@ guint lttv_process_traceset_seek_n_forward(LttvTracesetContext *self,
   sd.filter1 = filter1;
   sd.filter2 = filter2;
   sd.filter3 = filter3;
+  sd.data = data;
   sd.check = check;
   sd.stop_flag = stop_flag;
   sd.raw_event_count = 0;

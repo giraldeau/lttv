@@ -66,6 +66,7 @@ struct _EventViewerData {
   GtkWidget *toolbar;
   GtkToolItem *button_filter;
 
+  guint init_done;
 };
 
 extern gint evd_redraw_notify(void *hook_data, void *call_data);

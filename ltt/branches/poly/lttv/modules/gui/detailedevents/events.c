@@ -237,6 +237,8 @@ gui_events(LttvPluginTab *ptab)
 
   event_viewer_data->last_tree_update_time = 0;
 
+  event_viewer_data->init_done = 0;
+
   /* Create a model for storing the data list */
   event_viewer_data->store_m = gtk_list_store_new (
     N_COLUMNS,      /* Total number of columns     */
@@ -460,6 +462,9 @@ gui_events(LttvPluginTab *ptab)
   event_viewer_data->previous_value = 0;
   event_viewer_data->vadjust_c->lower = 0.0;
     //event_viewer_data->vadjust_c->upper = event_viewer_data->number_of_events;
+  LttTime time = lttvwindow_get_current_time(tab);
+  time = ltt_time_sub(time, tsc->time_span.start_time);
+  event_viewer_data->vadjust_c->value = ltt_time_to_double(time);
   event_viewer_data->vadjust_c->value = 0.0;
   event_viewer_data->vadjust_c->step_increment = 1.0;
   event_viewer_data->vadjust_c->page_increment = 2.0;
@@ -505,9 +510,9 @@ gui_events(LttvPluginTab *ptab)
   
   event_viewer_data->background_info_waiting = 0;
 
+
   request_background_data(event_viewer_data);
   
-
   return event_viewer_data;
 }
 
@@ -1101,6 +1106,7 @@ static void tree_selection_changed_cb (GtkTreeSelection *selection,
 {
   g_debug("tree sel changed cb");
   EventViewerData *event_viewer_data = (EventViewerData*) data;
+
 #if 0
     /* Set the cursor to currently selected event */
   GtkTreeModel* model = GTK_TREE_MODEL(event_viewer_data->store_m);
@@ -1229,14 +1235,15 @@ void tree_v_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer 
     floor(exact_num_visible);
 */
  
-  g_debug("size allocate : last_num_visible_events : %d,\
-           num_visible_events : %d",
-           last_num_visible_events,
-           event_viewer_data->num_visible_events);
-  if(event_viewer_data->num_visible_events != last_num_visible_events)
-    {
+  g_debug("size allocate %p : last_num_visible_events : %d",
+           event_viewer_data, last_num_visible_events);
+  g_debug("num_visible_events : %d, value %lu",
+           event_viewer_data->num_visible_events,
+	   event_viewer_data->vadjust_c->value);
+
+  if(event_viewer_data->num_visible_events != last_num_visible_events) {
       get_events(event_viewer_data->vadjust_c->value, event_viewer_data);
-    }
+  }
   
 
 }
@@ -1280,10 +1287,23 @@ gboolean show_event_detail(void * hook_data, void * call_data)
 }
 #endif //0
 
-static gboolean events_check_handler(guint count, gboolean *stop_flag)
+static gboolean events_check_handler(guint count, gboolean *stop_flag,
+  gpointer data)
 {
+  EventViewerData *evd = (EventViewerData*)data;
   if(count % CHECK_GDK_INTERVAL == 0) {
-    gtk_main_iteration_do(FALSE);
+    GdkEvent *event;
+    GtkWidget *widget;
+    while((event = gdk_event_get()) != NULL) {
+        widget = gtk_get_event_widget(event);
+        if(widget == 
+	  lookup_widget(main_window_get_widget(evd->tab),
+	      "StopProcessingButton")) {
+          gtk_main_do_event(event);
+	  gdk_window_process_all_updates();
+	}
+        gdk_event_free(event);
+    }
     if(*stop_flag)
       return TRUE;
     else
@@ -1410,7 +1430,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
           events_check_handler,
           &event_viewer_data->tab->stop_foreground,
           event_viewer_data->main_win_filter,
-          event_viewer_data->filter, NULL);
+          event_viewer_data->filter, NULL, event_viewer_data);
     } else if(relative_position < 0) {
       guint count;
       
@@ -1430,7 +1450,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
 	  events_check_handler,
 	  &event_viewer_data->tab->stop_foreground,
           event_viewer_data->main_win_filter,
-          event_viewer_data->filter, NULL);
+          event_viewer_data->filter, NULL, event_viewer_data);
     } /* else 0 : do nothing : we are already at the beginning position */
 
     lttv_traceset_context_position_destroy(pos);
@@ -1525,7 +1545,19 @@ int event_hook(void *hook_data, void *call_data)
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
 
   if(event_viewer_data->num_events % CHECK_GDK_INTERVAL == 0) {
-    gtk_main_iteration_do(FALSE);
+    GdkEvent *event;
+    GtkWidget *widget;
+    while((event = gdk_event_get()) != NULL) {
+        widget = gtk_get_event_widget(event);
+        if(widget == 
+	  lookup_widget(main_window_get_widget(event_viewer_data->tab),
+	      "StopProcessingButton")) {
+          gtk_main_do_event(event);
+	  gdk_window_process_all_updates();
+	}
+        gdk_event_free(event);
+    }
+    //gtk_main_iteration_do(FALSE);
     if(event_viewer_data->tab->stop_foreground)
       return TRUE;
   }

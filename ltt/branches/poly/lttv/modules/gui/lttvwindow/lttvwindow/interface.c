@@ -529,6 +529,7 @@ create_MWindow (void)
   gtk_label_set_use_underline (GTK_LABEL (((GtkToolbarChild*) (g_list_last (GTK_TOOLBAR (MToolbar1)->children)->data))->label), TRUE);
   gtk_widget_show (tlbStopProcessing);
   gtk_container_set_border_width (GTK_CONTAINER (tlbStopProcessing), 1);
+  GLADE_HOOKUP_OBJECT (MWindow, tlbStopProcessing, "StopProcessingButton");
 
 
   gtk_toolbar_append_space (GTK_TOOLBAR (MToolbar1));
