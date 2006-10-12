@@ -290,6 +290,8 @@ struct _LttvTraceState {
   guint  nb_syscalls;
   GQuark *trap_names;
   guint  nb_traps;
+  guint  nb_irqs;
+  guint  nb_softirqs;
   GQuark *irq_names;
   GQuark *soft_irq_names;
   LttTime *max_time_state_recomputed_in_seek;

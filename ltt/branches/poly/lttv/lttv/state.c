@@ -1355,7 +1355,9 @@ typedef struct _LttvNameTables {
   GQuark *trap_names;
   guint nb_traps;
   GQuark *irq_names;
+  guint nb_irqs;
   GQuark *soft_irq_names;
+  guint nb_softirqs;
 } LttvNameTables;
 
 
@@ -1474,12 +1476,14 @@ create_name_tables(LttvTraceState *tcs)
     }
     */
 
+    name_tables->nb_irqs = 256;
     name_tables->irq_names = g_new(GQuark, 256);
     for(i = 0 ; i < 256 ; i++) {
       g_string_printf(fe_name, "irq %d", i);
       name_tables->irq_names[i] = g_quark_from_string(fe_name->str);
     }
   } else {
+    name_tables->nb_irqs = 0;
     name_tables->irq_names = NULL;
   }
   /*
@@ -1489,6 +1493,7 @@ create_name_tables(LttvTraceState *tcs)
   }
   */
 
+  name_tables->nb_softirqs = 256;
   name_tables->soft_irq_names = g_new(GQuark, 256);
   for(i = 0 ; i < 256 ; i++) {
     g_string_printf(fe_name, "softirq %d", i);
@@ -1518,6 +1523,8 @@ get_name_tables(LttvTraceState *tcs)
   tcs->nb_traps = name_tables->nb_traps;
   tcs->irq_names = name_tables->irq_names;
   tcs->soft_irq_names = name_tables->soft_irq_names;
+  tcs->nb_irqs = name_tables->nb_irqs;
+  tcs->nb_softirqs = name_tables->nb_softirqs;
 }
 
 
@@ -1943,9 +1950,19 @@ static gboolean irq_entry(void *hook_data, void *call_data)
   LttField *f = thf->f1;
 
   LttvExecutionSubmode submode;
+  guint64 irq = ltt_event_get_unsigned(e, f);
+  guint64 nb_irqs = ((LttvTraceState *)(s->parent.t_context))->nb_irqs;
+  GString *string;
 
-  submode = ((LttvTraceState *)(s->parent.t_context))->irq_names[
-      ltt_event_get_unsigned(e, f)];
+  if(irq < nb_irqs) {
+    submode = ((LttvTraceState *)(s->parent.t_context))->irq_names[irq];
+  } else {
+    /* Fixup an incomplete irq table */
+    GString *string = g_string_new("");
+    g_string_printf(string, "irq %llu", irq);
+    submode = g_quark_from_string(string->str);
+    g_string_free(string, TRUE);
+  }
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_IRQ, submode);
@@ -1983,9 +2000,19 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
   LttField *f = thf->f1;
 
   LttvExecutionSubmode submode;
+  guint64 softirq = ltt_event_get_unsigned(e, f);
+  guint64 nb_softirqs = ((LttvTraceState *)(s->parent.t_context))->nb_softirqs;
+  GString *string;
 
-  submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[
-      ltt_event_get_long_unsigned(e, f)];
+  if(softirq < nb_softirqs) {
+    submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[softirq];
+  } else {
+    /* Fixup an incomplete irq table */
+    GString *string = g_string_new("");
+    g_string_printf(string, "softirq %llu", softirq);
+    submode = g_quark_from_string(string->str);
+    g_string_free(string, TRUE);
+  }
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_SOFT_IRQ, submode);
