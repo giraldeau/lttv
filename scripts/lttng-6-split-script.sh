@@ -259,7 +259,6 @@ IN="?_arch_mips_kernel_irq.c
 ?_arch_mips_kernel_time.c
 ?_arch_mips_kernel_traps.c
 ?_arch_mips_kernel_unaligned.c
-?_arch_mips_mm_fault.c
 ?_include_asm-mips_mipsregs.h"
 
 for a in $IN; do wr $a $FILE; done
