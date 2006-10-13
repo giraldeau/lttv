@@ -255,10 +255,6 @@ printf -v COUNT "%02d" ${VALUE}
 IN="?_arch_mips_kernel_irq.c
 ?_arch_mips_kernel_process.c
 ?_arch_mips_kernel_ptrace.c
-?_arch_mips_kernel_scall32-o32.S
-?_arch_mips_kernel_scall64-64.S
-?_arch_mips_kernel_scall64-n32.S
-?_arch_mips_kernel_scall64-o32.S
 ?_arch_mips_kernel_syscall.c
 ?_arch_mips_kernel_time.c
 ?_arch_mips_kernel_traps.c
