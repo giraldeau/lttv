@@ -307,6 +307,7 @@ printf -v COUNT "%02d" ${VALUE}
 IN="?_arch_x86_64_ia32_ia32entry.S
 ?_arch_x86_64_ia32_ipc32.c
 ?_arch_x86_64_kernel_entry.S
+?_arch_x86_64_kernel_process.c
 ?_arch_x86_64_kernel_ptrace.c
 ?_arch_x86_64_kernel_time.c
 ?_arch_x86_64_kernel_traps.c
