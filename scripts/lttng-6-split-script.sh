@@ -394,7 +394,8 @@ IN="?_include_ltt_ltt-facility-custom-fs_data.h
 ?_include_ltt_ltt-facility-socket.h
 ?_include_ltt_ltt-facility-stack.h
 ?_include_ltt_ltt-facility-statedump.h
-?_include_ltt_ltt-facility-timer.h"
+?_include_ltt_ltt-facility-timer.h
+?_include_ltt_ltt-stack.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -442,7 +443,8 @@ IN="?_ltt_facilities_ltt-facility-loader-fs.c
 ?_ltt_facilities_ltt-facility-loader-statedump.c
 ?_ltt_facilities_ltt-facility-loader-statedump.h
 ?_ltt_facilities_ltt-facility-loader-timer.c
-?_ltt_facilities_ltt-facility-loader-timer.h"
+?_ltt_facilities_ltt-facility-loader-timer.h
+?_ltt_ltt-stack.c"
 
 
 for a in $IN; do wr $a $FILE; done
