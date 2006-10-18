@@ -1161,9 +1161,9 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			print_tabs(1, fd);
 			fprintf(fd, "/* Flush pending memcpy */\n");
 			print_tabs(1, fd);
-			fprintf(fd, "if(*len != 0) {\n");
+			fprintf(fd, "if (*len != 0) {\n");
 			print_tabs(2, fd);
-			fprintf(fd, "if(buffer != NULL)\n");
+			fprintf(fd, "if (buffer != NULL)\n");
 			print_tabs(3, fd);
 			fprintf(fd, "memcpy(buffer+*to_base+*to, *from, *len);\n");
 			print_tabs(1, fd);
@@ -1189,7 +1189,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	fprintf(fd, ";\n");
 	fprintf(fd, "\n");
 	print_tabs(1, fd);
-	fprintf(fd, "if(*len == 0) {\n");
+	fprintf(fd, "if (*len == 0) {\n");
 	print_tabs(2, fd);
 	fprintf(fd, "*to += ltt_align(*to, align); /* align output */\n");
 	print_tabs(1, fd);
@@ -1256,7 +1256,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					print_tabs(1, fd);
 					fprintf(fd, "*len = obj->len * (*len);\n");
 					print_tabs(1, fd);
-					fprintf(fd, "if(buffer != NULL)\n");
+					fprintf(fd, "if (buffer != NULL)\n");
 					print_tabs(2, fd);
 					fprintf(fd, "memcpy(buffer+*to_base+*to, obj->array, *len);\n");
 					print_tabs(1, fd);
@@ -1268,7 +1268,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					print_tabs(1, fd);
 					fprintf(fd, "/* Variable length child : iter. */\n");
 					print_tabs(1, fd);
-					fprintf(fd, "for(unsigned int i=0; i<obj->len; i++) {\n");
+					fprintf(fd, "for (unsigned int i = 0; i < obj->len; i++) {\n");
 					if(print_type_write(((field_t*)td->fields.array[1])->type,
 							fd, 2, basename, "array[i]", "obj->", 1)) return 1;
 					print_tabs(1, fd);
@@ -1293,7 +1293,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				print_tabs(1, fd);
 				fprintf(fd, "size = strlen(obj) + 1; /* Include final NULL char. */\n");
 				print_tabs(1, fd);
-				fprintf(fd, "if(buffer != NULL)\n");
+				fprintf(fd, "if (buffer != NULL)\n");
 				print_tabs(2, fd);
 				fprintf(fd, "memcpy(buffer+*to_base+*to, obj, size);\n");
 				print_tabs(1, fd);
@@ -1336,7 +1336,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 					print_tabs(1, fd);
 					fprintf(fd, "/* Variable length child : iter. */\n");
 					print_tabs(1, fd);
-					fprintf(fd, "for(unsigned int i=0; i<LTTNG_ARRAY_SIZE_%s; i++) {\n", basename);
+					fprintf(fd, "for (unsigned int i = 0; i < LTTNG_ARRAY_SIZE_%s; i++) {\n", basename);
 					if(print_type_write(((field_t*)td->fields.array[0])->type,
 							fd, 2, basename, "", "obj->array[i]", 1)) return 1;
 					print_tabs(1, fd);
@@ -1465,7 +1465,9 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "\n");
 	
 	print_tabs(1, fd);
-	fprintf(fd, "if(ltt_traces.num_active_traces == 0) return;\n");
+	fprintf(fd, "if (ltt_traces.num_active_traces == 0)\n");
+	print_tabs(2, fd);
+	fprintf(fd, "return;\n");
 	fprintf(fd, "\n");
 
 	/* Calculate event variable len + event data alignment offset.
@@ -1534,11 +1536,15 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "list_for_each_entry_rcu(trace, &ltt_traces.head, list) {\n");
 	print_tabs(2, fd);
-	fprintf(fd, "if(!trace->active) continue;\n\n");
+	fprintf(fd, "if (!trace->active)\n");
+	print_tabs(3, fd);
+	fprintf(fd, "continue;\n\n");
 
 	if(event->per_trace) {
 		print_tabs(2, fd);
-		fprintf(fd, "if(dest_trace != trace) continue;\n\n");
+		fprintf(fd, "if (dest_trace != trace)\n");
+		print_tabs(3, fd);
+		fprintf(fd, "continue;\n\n");
 	}
  
 	print_tabs(2, fd);
@@ -1559,7 +1565,9 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "&before_hdr_pad, &after_hdr_pad, &header_size);\n");
 	/* If error, return */
 	print_tabs(2, fd);
-	fprintf(fd, "if(!buffer) continue; /* buffer full */\n\n");
+	fprintf(fd, "if(!buffer)\n");
+	print_tabs(3, fd);
+	fprintf(fd, "continue; /* buffer full */\n\n");
 	//print_tabs(2, fd);
 	// for DEBUG only 
 	// fprintf(fd, "goto commit; /* DEBUG : never actually write. */\n\n");
@@ -1609,7 +1617,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		print_tabs(2, fd);
 		fprintf(fd, "/* Flush pending memcpy */\n");
 		print_tabs(2, fd);
-		fprintf(fd, "if(*len != 0) {\n");
+		fprintf(fd, "if (*len != 0) {\n");
 		print_tabs(3, fd);
 		fprintf(fd, "memcpy(buffer+*to_base+*to, *from, *len);\n");
 		print_tabs(3, fd);
@@ -1855,7 +1863,7 @@ int print_event_logging_function_user_generic(char *basename, facility_t *fac,
 		print_tabs(2, fd);
 		fprintf(fd, "/* Flush pending memcpy */\n");
 		print_tabs(2, fd);
-		fprintf(fd, "if(*len != 0) {\n");
+		fprintf(fd, "if (*len != 0) {\n");
 		print_tabs(3, fd);
 		fprintf(fd, "memcpy(buffer+*to_base+*to, *from, *len);\n");
 		print_tabs(3, fd);
@@ -1982,7 +1990,7 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	fprintf(fd, "\n");
 	
 	print_tabs(1, fd);
-	fprintf(fd, "if(!trace) {\n");
+	fprintf(fd, "if (!trace) {\n");
 	print_tabs(2, fd);
 	fprintf(fd, "ltt_thread_init();\n");
 	print_tabs(2, fd);
@@ -2049,7 +2057,7 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 
 	if(event->per_trace) {
 		print_tabs(2, fd);
-		fprintf(fd, "if(dest_trace != trace) continue;\n\n");
+		fprintf(fd, "if (dest_trace != trace) continue;\n\n");
 	}
  
 	print_tabs(2, fd);
@@ -2070,7 +2078,9 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	fprintf(fd, "&before_hdr_pad, &after_hdr_pad, &header_size);\n");
 	/* If error, return */
 	print_tabs(2, fd);
-	fprintf(fd, "if(!buffer) goto end; /* buffer full */\n\n");
+	fprintf(fd, "if (!buffer)\n");
+	print_tabs(3, fd);
+	fprintf(fd, "goto end; /* buffer full */\n\n");
 	//print_tabs(2, fd);
 	// for DEBUG only 
 	// fprintf(fd, "goto commit; /* DEBUG : never actually write. */\n\n");
@@ -2120,7 +2130,7 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 		print_tabs(2, fd);
 		fprintf(fd, "/* Flush pending memcpy */\n");
 		print_tabs(2, fd);
-		fprintf(fd, "if(*len != 0) {\n");
+		fprintf(fd, "if (*len != 0) {\n");
 		print_tabs(3, fd);
 		fprintf(fd, "memcpy(buffer+*to_base+*to, *from, *len);\n");
 		print_tabs(3, fd);
@@ -2683,7 +2693,7 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "\tint err;\n");
   fprintf(fd, "\n");
   fprintf(fd, "\terr = ltt_facility_unregister(LTT_FACILITY_SYMBOL);\n");
-  fprintf(fd, "\tif(err != 0)\n");
+  fprintf(fd, "\tif (err != 0)\n");
   fprintf(fd, "\t\tprintk(KERN_ERR \"LTT : Error in unregistering facility.\\n\");\n");
   fprintf(fd, "\n");
   fprintf(fd, "}\n");
@@ -2783,7 +2793,7 @@ int print_loader_c_user(facility_t *fac)
   fprintf(fd, "\terr = ltt_register_generic(&LTT_FACILITY_SYMBOL, &facility);\n");
   fprintf(fd, "\tLTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;\n");
   fprintf(fd, "\t\n");
-  fprintf(fd, "\tif(err) {\n");
+  fprintf(fd, "\tif (err) {\n");
 	fprintf(fd, "#ifdef LTT_SHOW_DEBUG\n");
   fprintf(fd, "\t\tperror(\"Error in ltt_register_generic\");\n");
 	fprintf(fd, "#endif //LTT_SHOW_DEBUG\n");
