@@ -215,7 +215,6 @@ IN="?_include_linux_sched.h
 ?_kernel_fork.c
 ?_include_asm-i386_unistd.h
 ?_include_asm-powerpc_unistd.h
-?_include_asm-x86_64_ia32_unistd.h
 ?_include_asm-x86_64_unistd.h"
 
 for a in $IN; do wr $a $FILE; done
@@ -252,8 +251,7 @@ FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-mips.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_arch_mips_kernel_irq.c
-?_arch_mips_kernel_process.c
+IN="?_arch_mips_kernel_process.c
 ?_arch_mips_kernel_ptrace.c
 ?_arch_mips_kernel_syscall.c
 ?_arch_mips_kernel_time.c
@@ -269,8 +267,7 @@ FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-powerpc.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_arch_powerpc_kernel_entry_32.S
-?_arch_powerpc_kernel_irq.c
+IN="?_arch_powerpc_kernel_irq.c
 ?_arch_powerpc_kernel_misc_32.S
 ?_arch_powerpc_kernel_misc_64.S
 ?_arch_powerpc_kernel_ppc_ksyms.c
@@ -278,10 +275,8 @@ IN="?_arch_powerpc_kernel_entry_32.S
 ?_arch_powerpc_kernel_prom.c
 ?_arch_powerpc_kernel_ptrace.c
 ?_arch_powerpc_kernel_syscalls.c
-?_arch_powerpc_kernel_systbl.S
 ?_arch_powerpc_kernel_time.c
-?_arch_powerpc_kernel_traps.c
-?_arch_powerpc_mm_fault.c"
+?_arch_powerpc_kernel_traps.c"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -293,8 +288,7 @@ printf -v COUNT "%02d" ${VALUE}
 IN="?_arch_ppc_Kconfig
 ?_arch_ppc_kernel_misc.S
 ?_arch_ppc_kernel_time.c
-?_arch_ppc_kernel_traps.c
-?_arch_ppc_mm_fault.c"
+?_arch_ppc_kernel_traps.c"
 
 
 for a in $IN; do wr $a $FILE; done
@@ -310,8 +304,7 @@ IN="?_arch_x86_64_ia32_ia32entry.S
 ?_arch_x86_64_kernel_process.c
 ?_arch_x86_64_kernel_ptrace.c
 ?_arch_x86_64_kernel_time.c
-?_arch_x86_64_kernel_traps.c
-?_arch_x86_64_mm_fault.c"
+?_arch_x86_64_kernel_traps.c"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -332,7 +325,6 @@ IN="?_fs_buffer.c
 ?_kernel_irq_handle.c
 ?_kernel_itimer.c
 ?_kernel_kthread.c
-?_kernel_Makefile
 ?_kernel_lockdep.c
 ?_kernel_module.c
 ?_kernel_printk.c
@@ -491,7 +483,6 @@ VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
 IN="?_Makefile
-?_kernel_Makefile
 ?_ltt_Kconfig
 ?_ltt_Makefile
 ?_arch_alpha_Kconfig
