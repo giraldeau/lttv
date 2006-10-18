@@ -723,7 +723,7 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 			fprintf(fd, ";\n");
 			fprintf(fd, "\n");
 			print_tabs(tabs, fd);
-			fprintf(fd, "if(*len == 0) {\n");
+			fprintf(fd, "if (*len == 0) {\n");
 			print_tabs(tabs+1, fd);
 			fprintf(fd, "*to += ltt_align(*to, align); /* align output */\n");
 			print_tabs(tabs, fd);
@@ -1230,7 +1230,7 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 //				print_tabs(1, fd);
 //				fprintf(fd, "*to += ltt_align(*to, size);\n");
 				print_tabs(1, fd);
-				fprintf(fd, "if(buffer != NULL)\n");
+				fprintf(fd, "if (buffer != NULL)\n");
 				print_tabs(2, fd);
 				fprintf(fd, "memcpy(buffer+*to_base+*to, &obj->len, *len);\n");
 				print_tabs(1, fd);
@@ -1565,7 +1565,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "&before_hdr_pad, &after_hdr_pad, &header_size);\n");
 	/* If error, return */
 	print_tabs(2, fd);
-	fprintf(fd, "if(!buffer)\n");
+	fprintf(fd, "if (!buffer)\n");
 	print_tabs(3, fd);
 	fprintf(fd, "continue; /* buffer full */\n\n");
 	//print_tabs(2, fd);
