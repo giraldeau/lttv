@@ -1566,13 +1566,13 @@ int event_hook(void *hook_data, void *call_data)
   LttvFilter *filter = event_viewer_data->main_win_filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   filter = event_viewer_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
 
@@ -1666,13 +1666,13 @@ static int current_time_get_first_event_hook(void *hook_data, void *call_data)
   LttvFilter *filter = event_viewer_data->main_win_filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   filter = event_viewer_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   lttv_traceset_context_position_save(tfc->t_context->ts_context, 

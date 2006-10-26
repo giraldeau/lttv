@@ -341,7 +341,9 @@ gboolean lttv_filter_tree_parse(
         const LttEvent* event,
         const LttTracefile* tracefile,
         const LttTrace* trace,
-        const LttvTracefileContext* context);
+        const LttvTracefileContext* context,
+	const LttvProcessState* pstate,
+	const LttvTraceContext* tc);
 
 gboolean lttv_filter_tree_parse_branch(
         const LttvSimpleExpression* se,

@@ -370,7 +370,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   tfc->target_pid = pid_out;
   if(!filter || !filter->head ||
     lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc)) { 
+          tfc->t_context->t,tfc,NULL,NULL)) { 
     /* For the pid_out */
     /* First, check if the current process is in the state computation
      * process list. If it is there, that means we must add it right now and
@@ -535,7 +535,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   tfc->target_pid = pid_in;
   if(!filter || !filter->head ||
     lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc)) { 
+          tfc->t_context->t,tfc,NULL,NULL)) { 
     /* For the pid_in */
     /* First, check if the current process is in the state computation
      * process list. If it is there, that means we must add it right now and
@@ -754,7 +754,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   LttTime evtime = ltt_event_time(e);
@@ -889,7 +889,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   LttTime evtime = ltt_event_time(e);
@@ -1093,7 +1093,7 @@ int before_process_exit_hook(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   LttTime evtime = ltt_event_time(e);
@@ -1291,7 +1291,7 @@ int before_process_release_hook(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   LttTime evtime = ltt_event_time(e);
@@ -1493,7 +1493,7 @@ int after_process_fork_hook(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   LttTime evtime = ltt_event_time(e);
@@ -1627,7 +1627,7 @@ int after_process_exit_hook(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   LttTime evtime = ltt_event_time(e);
@@ -1737,7 +1737,7 @@ int after_fs_exec_hook(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   guint cpu = tfs->cpu;
@@ -1818,7 +1818,7 @@ int after_user_generic_thread_brand_hook(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   guint cpu = tfs->cpu;
@@ -1910,7 +1910,7 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   LttTime evtime = ltt_event_time(e);
@@ -2434,6 +2434,12 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
     if(unlikely(process != NULL)) {
       
+       LttvFilter *filter = control_flow_data->filter;
+       if(filter != NULL && filter->head != NULL)
+         if(!lttv_filter_tree_parse(filter->head,NULL,NULL,
+             tc->t,NULL,process,tc))
+           return FALSE;
+
       /* Only draw for processes that are currently in the trace states */
 
       ProcessList *process_list = control_flow_data->process_list;
@@ -2702,7 +2708,7 @@ int before_statedump_end(void *hook_data, void *call_data)
   LttvFilter *filter = control_flow_data->filter;
   if(filter != NULL && filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   LttTime evtime = ltt_event_time(e);
@@ -2740,5 +2746,3 @@ int before_statedump_end(void *hook_data, void *call_data)
 
   return 0;
 }
-
-

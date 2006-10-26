@@ -341,7 +341,7 @@ int histo_count_event(void *hook_data, void *call_data){
   LttvFilter *histo_filter = histocontrol_flow_data->histo_main_win_filter;
   if(histo_filter != NULL && histo_filter->head != NULL)
     if(!lttv_filter_tree_parse(histo_filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc))
+          tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
 
   TimeWindow time_window  =  lttvwindow_get_time_window(histocontrol_flow_data->tab);

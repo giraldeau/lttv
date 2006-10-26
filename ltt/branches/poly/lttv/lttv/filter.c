@@ -1833,7 +1833,9 @@ lttv_filter_tree_parse(
         const LttEvent* event,
         const LttTracefile* tracefile,
         const LttTrace* trace,
-        const LttvTracefileContext* context
+        const LttvTracefileContext* context,
+	const LttvProcessState* state,
+	const LttvTraceContext* tc
         /*,...*/) 
 {
 
@@ -1874,18 +1876,24 @@ lttv_filter_tree_parse(
     
   gboolean lresult = FALSE, rresult = FALSE;
 
-  LttvProcessState* state;
-  
-  LttvTraceState *ts = (LttvTraceState*)context->t_context;
+  LttvTraceState *ts;
   LttvTracefileState *tfs = (LttvTracefileState*)context;
-  guint cpu = tfs->cpu;
-  state = ts->running_process[cpu];
+  if(tc)
+    ts = (LttvTraceState*)tc;
+  else if(context)
+    ts = (LttvTraceState*)context->t_context;
+
+  if(tfs) {
+    guint cpu = tfs->cpu;
+    if(ts)
+      state = ts->running_process[cpu];
+  }
   
   /*
    * Parse left branch
    */
   if(t->left == LTTV_TREE_NODE) {
-      lresult = lttv_filter_tree_parse(t->l_child.t,event,tracefile,trace,context);
+      lresult = lttv_filter_tree_parse(t->l_child.t,event,tracefile,trace,context,NULL,NULL);
   }
   else if(t->left == LTTV_TREE_LEAF) {
       lresult = lttv_filter_tree_parse_branch(t->l_child.leaf,event,tracefile,trace,state,context);
@@ -1902,7 +1910,7 @@ lttv_filter_tree_parse(
    * Parse right branch
    */
   if(t->right == LTTV_TREE_NODE) {
-      rresult = lttv_filter_tree_parse(t->r_child.t,event,tracefile,trace,context);
+      rresult = lttv_filter_tree_parse(t->r_child.t,event,tracefile,trace,context,NULL,NULL);
   }
   else if(t->right == LTTV_TREE_LEAF) {
       rresult = lttv_filter_tree_parse_branch(t->r_child.leaf,event,tracefile,trace,state,context);

@@ -332,7 +332,7 @@ static int write_event_content(void *hook_data, void *call_data)
    */
   if(filter->head != NULL)
     if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-                               tfc->t_context->t,tfc))
+                               tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
   
   lttv_event_to_string(e, a_string, TRUE, a_field_names, tfs);

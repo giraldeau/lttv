@@ -1362,7 +1362,7 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
           ltt_tracefile_get_event(tfc->tf),
           tfc->tf,
           tfc->t_context->t,
-          tfc)) {
+          tfc,NULL,NULL)) {
 	  return FALSE;
   }
   if(sd->filter2 != NULL && sd->filter2->head != NULL && 
@@ -1370,7 +1370,7 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
           ltt_tracefile_get_event(tfc->tf),
           tfc->tf,
           tfc->t_context->t,
-          tfc)) {
+          tfc,NULL,NULL)) {
 	  return FALSE;
   }
   if(sd->filter3 != NULL && sd->filter3->head != NULL && 
@@ -1378,7 +1378,7 @@ static gint seek_back_event_hook(void *hook_data, void* call_data)
           ltt_tracefile_get_event(tfc->tf),
           tfc->tf,
           tfc->t_context->t,
-          tfc)) {
+          tfc,NULL,NULL)) {
 	  return FALSE;
   }
 
@@ -1586,7 +1586,7 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
           ltt_tracefile_get_event(tfc->tf),
           tfc->tf,
           tfc->t_context->t,
-          tfc)) {
+          tfc,NULL,NULL)) {
 	  return FALSE;
   }
   if(sd->filter2 != NULL && sd->filter2->head != NULL && 
@@ -1594,7 +1594,7 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
           ltt_tracefile_get_event(tfc->tf),
           tfc->tf,
           tfc->t_context->t,
-          tfc)) {
+          tfc,NULL,NULL)) {
 	  return FALSE;
   }
   if(sd->filter3 != NULL && sd->filter3->head != NULL && 
@@ -1602,7 +1602,7 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
           ltt_tracefile_get_event(tfc->tf),
           tfc->tf,
           tfc->t_context->t,
-          tfc)) {
+          tfc,NULL,NULL)) {
 	  return FALSE;
   }
 
