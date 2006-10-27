@@ -1298,7 +1298,8 @@ static gboolean events_check_handler(guint count, gboolean *stop_flag,
         widget = gtk_get_event_widget(event);
         if(widget == 
 	  lookup_widget(main_window_get_widget(evd->tab),
-	      "StopProcessingButton")) {
+	      "StopProcessingButton")
+	  || widget == evd->vscroll_vc) {
           gtk_main_do_event(event);
 	  gdk_window_process_all_updates();
 	}
@@ -1551,7 +1552,8 @@ int event_hook(void *hook_data, void *call_data)
         widget = gtk_get_event_widget(event);
         if(widget == 
 	  lookup_widget(main_window_get_widget(event_viewer_data->tab),
-	      "StopProcessingButton")) {
+	      "StopProcessingButton")
+	  || widget == event_viewer_data->vscroll_vc) {
           gtk_main_do_event(event);
 	  gdk_window_process_all_updates();
 	}
