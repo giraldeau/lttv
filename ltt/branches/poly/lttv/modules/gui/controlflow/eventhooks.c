@@ -2396,6 +2396,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
 
   LttTime evtime = closure_data->end_time;
 
+  gboolean dodraw = TRUE;
+
   { 
     /* For the process */
     /* First, check if the current process is in the state computation
@@ -2438,7 +2440,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
        if(filter != NULL && filter->head != NULL)
          if(!lttv_filter_tree_parse(filter->head,NULL,NULL,
              tc->t,NULL,process,tc))
-           return FALSE;
+           dodraw = FALSE;
 
       /* Only draw for processes that are currently in the trace states */
 
@@ -2521,8 +2523,10 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         } else {
           draw_context.drawinfo.start.x = hashed_process_data->x.middle;
           /* Draw the line */
-          PropertiesLine prop_line = prepare_s_e_line(process);
-          draw_line((void*)&prop_line, (void*)&draw_context);
+	  if(dodraw) {
+            PropertiesLine prop_line = prepare_s_e_line(process);
+            draw_line((void*)&prop_line, (void*)&draw_context);
+	  }
 
            /* become the last x position */
           if(likely(x != hashed_process_data->x.middle)) {

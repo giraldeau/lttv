@@ -2023,10 +2023,9 @@ lttv_filter_tree_parse_branch(
             else return se->op((gpointer)&state->state->s,v);
             break;
         case LTTV_FILTER_STATE_CPU:
-            if(context == NULL) return TRUE;
+            if(state == NULL) return TRUE;
             else {
-              if(state == NULL) return TRUE;
-              else return se->op((gpointer)&state->cpu,v);
+              return se->op((gpointer)&state->cpu,v);
             }
             break;
         case LTTV_FILTER_EVENT_NAME:
