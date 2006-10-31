@@ -213,7 +213,9 @@ IN="?_include_linux_sched.h
 ?_ltt_ltt-syscall.c
 ?_kernel_exit.c
 ?_kernel_fork.c
+?_include_asm-arm_unistd.h
 ?_include_asm-i386_unistd.h
+?_include_asm-mips_unistd.h
 ?_include_asm-powerpc_unistd.h
 ?_include_asm-powerpc_systbl.h
 ?_include_asm-x86_64_unistd.h
@@ -259,7 +261,11 @@ IN="?_arch_mips_kernel_process.c
 ?_arch_mips_kernel_time.c
 ?_arch_mips_kernel_traps.c
 ?_arch_mips_kernel_unaligned.c
-?_include_asm-mips_mipsregs.h"
+?_include_asm-mips_mipsregs.h
+?_arch_mips_kernel_scall32-o32.S
+?_arch_mips_kernel_scall64-64.S
+?_arch_mips_kernel_scall64-n32.S
+?_arch_mips_kernel_scall64-o32.S"
 
 for a in $IN; do wr $a $FILE; done
 
