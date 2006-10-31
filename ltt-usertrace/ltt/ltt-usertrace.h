@@ -37,6 +37,8 @@ extern "C" {
 #include <ltt/kernelutils-x86_64.h>
 #elif defined(__i386__)
 #include <ltt/kernelutils-i386.h>
+#elif defined(__arm__)
+#include <ltt/kernelutils-arm.h>
 #else
 #error "Unsupported architecture"
 #endif
@@ -73,9 +75,13 @@ extern "C" {
 #define NR_syscalls 303
 #endif
 
+#ifdef __arm__
+#define __NR_ltt_trace_generic	322
+#define __NR_ltt_register_generic	323
+#undef NR_syscalls
+#define NR_syscalls 324
+#endif
 
-
-//FIXME : setup for ARM
 //FIXME : setup for MIPS
 
 #ifndef _LIBC
