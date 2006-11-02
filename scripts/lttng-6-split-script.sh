@@ -77,6 +77,20 @@ IN="?_include_asm-generic_vmlinux.lds.h
 
 for a in $IN; do wr $a $FILE; done
 
+FILE=../${PRENAME}${COUNT}${NAME}-atomic_up.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm_i386/atomic.h
+?_include_asm_i386/system.h
+?_include_asm_x86_64/atomic.h
+?_include_asm_x86_64/system.h
+?_include_asm_powerpc/atomic.h
+?_include_asm_powerpc/system.h
+?_include_asm_arm/atomic.h
+?_include_asm_mips/atomic.h"
+
+for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-facility-core-headers.diff
 VALUE=$(( ${VALUE} + 1 ))
