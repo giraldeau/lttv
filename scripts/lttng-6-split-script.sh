@@ -444,8 +444,6 @@ IN="?_ltt_facilities_ltt-facility-loader-fs.c
 ?_ltt_facilities_ltt-facility-loader-process.h
 ?_ltt_facilities_ltt-facility-loader-socket.c
 ?_ltt_facilities_ltt-facility-loader-socket.h
-?_ltt_facilities_ltt-facility-loader-stack_arch_i386.c
-?_ltt_facilities_ltt-facility-loader-stack_arch_i386.h
 ?_ltt_facilities_ltt-facility-loader-stack.c
 ?_ltt_facilities_ltt-facility-loader-stack.h
 ?_ltt_facilities_ltt-facility-loader-statedump.c
