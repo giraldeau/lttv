@@ -284,11 +284,38 @@
 			<label name="mq_notify" value="278"/>
 			<label name="mq_getsetattr" value="279"/>
 			<label name="waitid" value="280"/>
-
+			<label name="socket" value="281"/>
+			<label name="bind" value="282"/>
+			<label name="connect" value="283"/>
+			<label name="listen" value="284"/>
+			<label name="accept" value="285"/>
+			<label name="getsockname" value="286"/>
+			<label name="getpeername" value="287"/>
+			<label name="socketpair" value="288"/>
+			<label name="send" value="289"/>
+			<label name="sendto" value="290"/>
+			<label name="recv" value="291"/>
+			<label name="recvfrom" value="292"/>
+			<label name="shutdown" value="293"/>
+			<label name="setsockopt" value="294"/>
+			<label name="getsockopt" value="295"/>
+			<label name="sendmsg" value="296"/>
+			<label name="recvmsg" value="297"/>
+			<label name="semop" value="298"/>
+			<label name="semget" value="299"/>
+			<label name="semctl" value="300"/>
+			<label name="msgsnd" value="301"/>
+			<label name="msgrcv" value="302"/>
+			<label name="msgget" value="303"/>
+			<label name="msgctl" value="304"/>
+			<label name="shmat" value="305"/>
+			<label name="shmdt" value="306"/>
+			<label name="shmget" value="307"/>
+			<label name="shmctl" value="308"/>
 			<label name="add_key" value="309"/>
 			<label name="request_key" value="310"/>
 			<label name="keyctl" value="311"/>
-
+			<label name="semtimedop" value="312"/>
 			<label name="vserver" value="313"/>
 			<label name="ioprio_set" value="314"/>
 			<label name="ioprio_get" value="315"/>

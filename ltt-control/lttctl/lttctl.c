@@ -328,7 +328,7 @@ int parse_arguments(int argc, char **argv)
 
 void show_info(void)
 {
-	printf("Linux Trace Toolkit Trace Control\n");
+	printf("Linux Trace Toolkit Trace Control " VERSION"\n");
 	printf("\n");
 	if(trace_name != NULL) {
 		printf("Controlling trace : %s\n", trace_name);

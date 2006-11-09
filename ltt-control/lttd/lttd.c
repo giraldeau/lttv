@@ -184,7 +184,7 @@ int parse_arguments(int argc, char **argv)
 
 void show_info(void)
 {
-	printf("Linux Trace Toolkit Trace Daemon\n");
+	printf("Linux Trace Toolkit Trace Daemon " VERSION "\n");
 	printf("\n");
 	printf("Reading from debugfs directory : %s\n", channel_name);
 	printf("Writing to trace directory : %s\n", trace_name);
