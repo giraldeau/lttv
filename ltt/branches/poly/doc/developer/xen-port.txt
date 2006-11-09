@@ -106,3 +106,41 @@ get_info :
 tb_control that returns a fresh copy of trace control info.
 
 
+
+NOTE 8-11-2006
+
+Xen 3.0.3
+Only one init of buffers (cannot change buffer size)
+tbc->buffer_mfn = opt_tbuf_size ? virt_to_mfn(per_cpu(t_bufs, 0)) : 0;
+/* Convert between Xen-heap virtual addresses and machine frame numbers. */
+#define virt_to_mfn(va)     (virt_to_maddr(va) >> PAGE_SHIFT)
+
+struct t_buf *tbufs_mapped;
+
+    tbufs_mapped = xc_map_foreign_range(xc_handle, DOMID_XEN,
+                                        size * num, PROT_READ | PROT_WRITE,
+                                        tbufs_mfn);
+
+int fd = open("/proc/xen/privcmd", O_RDWR);
+
+/* sleep for this long (milliseconds) between checking the trace buffers */
+#define POLL_SLEEP_MILLIS 100
+
+
+netfront.c
+xenbus_alloc_evtchn
+bind_evtchn_to_irqhandler
+
+
+virq :
+
+include/public/xen.h VIRQ_TBUF
+			/* G. (DOM0) Trace buffer has records available. */
+
+trace_notify_guest : send_guest_global_virq(dom0, VIRQ_TBUF);
+
+see arch/i386/oprofile/xenoprof.c
+bind_virq
+
+
+

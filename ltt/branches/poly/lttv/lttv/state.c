@@ -1415,6 +1415,12 @@ create_name_tables(LttvTraceState *tcs)
 
     for(i = 0 ; i < nb ; i++) {
       name_tables->syscall_names[i] = ltt_enum_string_get(t, i);
+      if(!name_tables->syscall_names[i]) {
+        GString *string = g_string_new("");
+        g_string_printf(string, "syscall %u", i);
+        name_tables->syscall_names[i] = g_quark_from_string(string->str);
+        g_string_free(string, TRUE);
+      }
     }
 
     //name_tables->syscall_names = g_new(GQuark, 256);
