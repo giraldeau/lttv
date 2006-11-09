@@ -81,14 +81,15 @@ FILE=../${PRENAME}${COUNT}${NAME}-atomic_up.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-i386_atomic.h
+IN="?_include_asm-i386_atomic-up.h
 ?_include_asm-i386_system.h
-?_include_asm-x86_64_atomic.h
+?_include_asm-x86_64_atomic-up.h
 ?_include_asm-x86_64_system.h
-?_include_asm-powerpc_atomic.h
+?_include_asm-powerpc_atomic-up.h
 ?_include_asm-powerpc_system.h
-?_include_asm-arm_atomic.h
-?_include_asm-mips_atomic.h"
+?_include_asm-arm_atomic-up.h
+?_include_asm-mips_atomic-up.h
+?_include_asm-generic_atomic-up.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -261,7 +262,8 @@ IN="?_arch_i386_kernel_process.c
 ?_arch_i386_kernel_syscall_table.S
 ?_arch_i386_kernel_sys_i386.c
 ?_arch_i386_kernel_time.c
-?_arch_i386_kernel_traps.c"
+?_arch_i386_kernel_traps.c
+?_arch_i386_mm_fault.c"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -279,7 +281,8 @@ IN="?_arch_mips_kernel_process.c
 ?_arch_mips_kernel_scall32-o32.S
 ?_arch_mips_kernel_scall64-64.S
 ?_arch_mips_kernel_scall64-n32.S
-?_arch_mips_kernel_scall64-o32.S"
+?_arch_mips_kernel_scall64-o32.S
+?_arch_mips_mm_fault.c"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -298,7 +301,8 @@ IN="?_arch_powerpc_kernel_irq.c
 ?_arch_powerpc_kernel_ptrace.c
 ?_arch_powerpc_kernel_syscalls.c
 ?_arch_powerpc_kernel_time.c
-?_arch_powerpc_kernel_traps.c"
+?_arch_powerpc_kernel_traps.c
+?_arch_powerpc_mm_fault.c"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -310,7 +314,8 @@ printf -v COUNT "%02d" ${VALUE}
 IN="?_arch_ppc_Kconfig
 ?_arch_ppc_kernel_misc.S
 ?_arch_ppc_kernel_time.c
-?_arch_ppc_kernel_traps.c"
+?_arch_ppc_kernel_traps.c
+?_arch_ppc_mm_fault.c"
 
 
 for a in $IN; do wr $a $FILE; done
@@ -326,7 +331,8 @@ IN="?_arch_x86_64_ia32_ia32entry.S
 ?_arch_x86_64_kernel_process.c
 ?_arch_x86_64_kernel_ptrace.c
 ?_arch_x86_64_kernel_time.c
-?_arch_x86_64_kernel_traps.c"
+?_arch_x86_64_kernel_traps.c
+?_arch_x86_64_mm_fault.c"
 
 for a in $IN; do wr $a $FILE; done
 
