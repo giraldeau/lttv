@@ -73,4 +73,15 @@ Res : 767.51 cycles per loop
 
 (205.63-255.83)/255.83 * 100% = 19.62 %
 
+
+Difference between
+cmpxchg 2967855/20000 = 148.39 cycles or 49.46 ns
+cmpxchg-up 540577/20000 = 27.02 cycles or 9.00 ns
+irq save/restore 12636562/20000 = 631.82 cycles 210.60 ns
+
+
+
+
+
+
 Mathieu Desnoyers, November 2006
