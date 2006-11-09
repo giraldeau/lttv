@@ -1,15 +1,15 @@
 ifneq ($(KERNELRELEASE),)
 ifneq ($(CONFIG_LTT),)
-#	obj-m += ltt-facility-loader-tests.o
+	obj-m += ltt-facility-loader-tests.o
 #	obj-m += test-time-probe.o 
-#	obj-m += test-time-probe2.o 
+	obj-m += test-time-probe2.o 
 #	obj-m += test-instrument-size-small.o
 #	obj-m += test-instrument-size-med.o
 #	obj-m += test-instrument-size-big.o
 #	obj-m += test-printk-effect.o
 endif
-#	obj-m += test-cmpxchg.o
-#	obj-m += test-cmpxchg-nolock.o
+	obj-m += test-cmpxchg.o
+	obj-m += test-cmpxchg-nolock.o
 #	obj-m += test-spinlock.o
 #	obj-m += test-inc.o
 #	obj-m += test-inc-nolock.o
@@ -21,6 +21,7 @@ endif
 	#obj-m += test-debugfs.o
 	obj-m += test-mark.o
 	obj-m += probe.o
+	obj-m += test-irqloop.o
 	#obj-m += marker-loader.o
 	#obj-m += test-linuxtrace.o
 

@@ -10,7 +10,7 @@
 #include <linux/init.h>
 #include <linux/module.h>
 
-
+#if 0
 #define cmpxchg_up(ptr,o,n)\
 	((__typeof__(*(ptr)))__cmpxchg_up((ptr),(unsigned long)(o),\
 					(unsigned long)(n),sizeof(*(ptr))))
@@ -40,7 +40,7 @@ static inline unsigned long __cmpxchg_up(volatile void *ptr, unsigned long old,
 	}
 	return old;
 }
-
+#endif //0
 
 #define NR_LOOPS 20000
 

@@ -6,7 +6,7 @@
 
 /****  facility handle  ****/
 
-extern ltt_facility_t ltt_facility_tests_2F06D8DB;
+extern ltt_facility_t ltt_facility_tests_CA7F1536;
 extern ltt_facility_t ltt_facility_tests;
 
 
@@ -14,8 +14,6 @@ extern ltt_facility_t ltt_facility_tests;
 
 enum tests_event {
 	event_tests_write_4bytes,
-	event_tests_write_string,
-	event_tests_write_struct,
 	facility_tests_num_events
 };
 

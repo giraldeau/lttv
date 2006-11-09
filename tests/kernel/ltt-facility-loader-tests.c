@@ -51,7 +51,7 @@ static void __exit facility_exit(void)
 	int err;
 
 	err = ltt_facility_unregister(LTT_FACILITY_SYMBOL);
-	if(err != 0)
+	if (err != 0)
 		printk(KERN_ERR "LTT : Error in unregistering facility.\n");
 
 }
