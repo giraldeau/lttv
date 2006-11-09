@@ -318,8 +318,9 @@
 			<label name="sync_file_range" value="314"/>
 			<label name="tee" value="315"/>
 			<label name="vmsplice" value="316"/>
-			<label name="ltt_trace_generic" value="317"/>
-			<label name="ltt_register_generic" value="318"/>
+			<label name="move_pages" value="317"/>
+			<label name="ltt_trace_generic" value="318"/>
+			<label name="ltt_register_generic" value="319"/>
     </enum>
   </type>
 

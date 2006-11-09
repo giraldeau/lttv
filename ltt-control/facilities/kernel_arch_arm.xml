@@ -325,6 +325,8 @@
 			<label name="mbind" value="319"/>
 			<label name="get_mempolicy" value="320"/>
 			<label name="set_mempolicy" value="321"/>
+			<label name="ltt_trace_generic" value="322"/>
+			<label name="ltt_register_generic" value="323"/>
 			<label name="arm_syscall_offset" value="1024"/>
 			<label name="breakpoint" value="1025"/>
 			<label name="cacheflush" value="1026"/>

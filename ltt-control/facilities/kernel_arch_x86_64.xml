@@ -282,8 +282,9 @@
       <label name="tee" value="276"/>
       <label name="sync_file_range" value="277"/>
       <label name="vmsplice" value="278"/>
-      <label name="ltt_trace_generic" value="279"/>
-      <label name="ltt_register_generic" value="280"/>
+      <label name="move_pages" value="279"/>
+      <label name="ltt_trace_generic" value="280"/>
+      <label name="ltt_register_generic" value="281"/>
 
 
       <label name="ia32_restart_syscall" value="5000"/>
