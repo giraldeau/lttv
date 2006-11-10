@@ -24,6 +24,8 @@ file.<br>
 (3) Change the byte pair "facility, event" id for a short combining the
 informatinon.<br>
 (4) Statistics per time window.<br>
+(4) Add Xen per physical CPU view.<br>
+(4) Add Xen per vcpu view.<br>
 (4) Disable plugins when threshold reached (i.e. too much process in control
 flow view). Draw, and, when the threshold is reached, stop drawing. The global
 statistics view can inhibit showing the per process stats.<br>
@@ -57,13 +59,14 @@ of process 0.<br>
 <big>LTT Next Generation Roadmap<small><br>
 <br>
 * TODO<br>
+(1) Add inotify support to debugfs dir + lttd (needed for hotplug).<br>
+(1) CPU Hotplug support.<br>
+(1) Add Xen support.<br>
+	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
 (1) Integrate SystemTAP logging with LTTng.<br>
 (2) Post LTTng 0.6.x to LKML.<br>
 (3) Change the byte pair "facility, event" id for a short combining the
 informatinon.<br>
-(4) Add Xen support.<br>
-	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
-	# <A HREF="mailto:Parisa Heidari <parisa.heidari@polymtl.ca>">Parisa Heidari</A><br>
 (4) efficient dynamic event filtering while recording trace.<br>
 	% Sensis Corp. <A HREF="mailto:Bish, Tim <Tim.Bish@Sensis.com>">Tim Bish</A><br>
 (4) instrument kernel bottom half irqsave, spinlocks, rwlocks, seqlocks, semaphores, mutexes, brlock.<br>
@@ -72,7 +75,6 @@ informatinon.<br>
 (4) Probe calibration kernel module.<br>
 (4) Make page faults detect nested fault without nesting 4 times in the page
 fault handler.<br>
-(5) CPU Hotplug support.<br>
 (5) Support CPUs with scalable frequency.<br>
 (5) Add boot time tracing support.<br>
 (5) Integrate LTTng and lttd with LKCD.<br>
