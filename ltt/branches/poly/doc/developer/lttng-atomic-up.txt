@@ -81,6 +81,50 @@ irq save/restore 12636562/20000 = 631.82 cycles 210.60 ns
 
 
 
+* Memory ordering
+
+offset
+written by local CPU
+read by local CPU and other CPUs (reader)
+
+commit count
+written by local CPU
+read by local CPU and other CPUs (reader)
+
+consumed
+written by any CPU
+read by any CPU
+
+data
+written by local CPU
+read by any CPU
+
+
+test done in the reader :
+if ( consumed < offset )
+  if ( subbuf.commit_count == multiple of SUBBUFSIZE)
+    read data
+    inc consumed
+
+
+We must guarantee the following ordering :
+* offset
+Seen from the local CPU :
+offset must always be incremented before the data is written (already
+consistent)
+
+Seen from other cpus :
+offset and data can be written out of order
+(because offset is always incremented : in an out of order case, offset is lower
+than the actual data ready, but the commit_count _has_ to be incremented to read
+the data (and is preceded by a store fence)
+
+* commit_count
+commit_count must always be seen by other CPUs after the data has been written.
+Therefore, we must put a store fence before the commit_count write. (smp_wmb)
+
+* consumed
+Rarely updated, use LOCK prefix. Acts as a full memory barrier.
 
 
 
