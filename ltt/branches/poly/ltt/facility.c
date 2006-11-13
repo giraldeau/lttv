@@ -48,7 +48,7 @@ LttType * lookup_named_type(LttFacility *fac, type_descriptor_t * td);
 
 /* construct directed acyclic graph for types, and tree for fields */
 void construct_fields(LttFacility *fac,
-											LttField *field,
+                      LttField *field,
                       field_t *fld);
 
 /* generate the facility according to the events belongin to it */
@@ -103,24 +103,24 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
     token = getToken(&in);
     if(in.type == ENDFILE) break;
    
-		if(g_ascii_strcasecmp(token, "<")) in.error(&in,"not a facility file");
-		token = getName(&in);
-		if(g_ascii_strcasecmp(token, "?")) in.error(&in,"not a facility file");
-		token = getName(&in);
-		if(g_ascii_strcasecmp(token, "xml")) in.error(&in,"not a facility file");
-		token = getName(&in);
-		if(g_ascii_strcasecmp(token, "version")) in.error(&in,"not a facility file");
-		token = getName(&in);
-		if(g_ascii_strcasecmp(token, "=")) in.error(&in,"not a facility file");
-		token = getQuotedString(&in);
-		if(g_ascii_strcasecmp(token, "1.0")) in.error(&in,"not a facility file");
-		token = getName(&in);
-		if(g_ascii_strcasecmp(token, "?")) in.error(&in,"not a facility file");
-		token = getToken(&in);
-		if(g_ascii_strcasecmp(token, ">")) in.error(&in,"not a facility file");
+    if(g_ascii_strcasecmp(token, "<")) in.error(&in,"not a facility file");
+    token = getName(&in);
+    if(g_ascii_strcasecmp(token, "?")) in.error(&in,"not a facility file");
+    token = getName(&in);
+    if(g_ascii_strcasecmp(token, "xml")) in.error(&in,"not a facility file");
+    token = getName(&in);
+    if(g_ascii_strcasecmp(token, "version")) in.error(&in,"not a facility file");
+    token = getName(&in);
+    if(g_ascii_strcasecmp(token, "=")) in.error(&in,"not a facility file");
+    token = getQuotedString(&in);
+    if(g_ascii_strcasecmp(token, "1.0")) in.error(&in,"not a facility file");
+    token = getName(&in);
+    if(g_ascii_strcasecmp(token, "?")) in.error(&in,"not a facility file");
+    token = getToken(&in);
+    if(g_ascii_strcasecmp(token, ">")) in.error(&in,"not a facility file");
 
-		token = getToken(&in);
-		
+    token = getToken(&in);
+    
     if(g_ascii_strcasecmp(token, "<")) in.error(&in,"not a facility file");
     token = getName(&in);
 
@@ -235,7 +235,7 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
   /* The second day, he created the event fields and types */
   //for each event, construct field and type acyclic graph
   for(i=0;i<events->position;i++){
-		event_t *parser_event = (event_t*)events->array[i];
+    event_t *parser_event = (event_t*)events->array[i];
     LttEventType *event_type = &g_array_index(f->events, LttEventType, i);
 
     event_type->name = 
@@ -292,17 +292,17 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
 
 
 void construct_fields(LttFacility *fac,
-											LttField *field,
+                      LttField *field,
                       field_t *fld)
 {
   guint len;
   type_descriptor_t *td;
   LttType *type;
 
-	if(fld->name)
-	  field->name = g_quark_from_string(fld->name);
-	else
-		fld->name = 0;
+  if(fld->name)
+    field->name = g_quark_from_string(fld->name);
+  else
+    fld->name = 0;
 
   if(fld->description) {
     len = strlen(fld->description);
@@ -316,7 +316,7 @@ void construct_fields(LttFacility *fac,
   type->enum_map = NULL;
   type->fields = NULL;
   type->fields_by_name = NULL;
-	type->network = td->network;
+  type->network = td->network;
 
   switch(td->type) {
     case INT_FIXED:
@@ -564,14 +564,14 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td,
     for(i=0;i<td->fields.position;i++){
       tmpTd = ((field_t*)(td->fields.array[i]))->type;
 
-    	fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
+      fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
       fld->child[i] = g_new(LttField,1); 
 
  //     fld->child[i]->field_pos = i;
       fld->child[i]->field_type = fld->field_type->element_type[i]; 
 
       fld->child[i]->field_type->element_name 
-	          = g_quark_from_string(((field_t*)(td->fields.array[i]))->name);
+            = g_quark_from_string(((field_t*)(td->fields.array[i]))->name);
 
       fld->child[i]->offset_root = 0;
       fld->child[i]->fixed_root = FIELD_UNKNOWN;
@@ -650,15 +650,15 @@ void construct_types_and_fields(LttFacility * fac, type_descriptor * td,
       tmpTd = ((type_fields*)(td->fields.array[i]))->type;
 
       if(flag)
-	fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
+  fld->field_type->element_type[i] = lookup_named_type(fac, tmpTd);
       fld->child[i] = g_new(LttField,1); 
 
       fld->child[i]->field_pos = i;
       fld->child[i]->field_type = fld->field_type->element_type[i]; 
 
       if(flag){
-      	fld->child[i]->field_type->element_name 
-	          = g_quark_from_string(((type_fields*)(td->fields.array[i]))->name);
+        fld->child[i]->field_type->element_name 
+            = g_quark_from_string(((type_fields*)(td->fields.array[i]))->name);
       }
 
       fld->child[i]->offset_root = -1;

@@ -33,13 +33,19 @@ static unsigned intSizes[] = {
   sizeof(int8_t), sizeof(int16_t), sizeof(int32_t), sizeof(int64_t), 
   sizeof(short) };
 
+static unsigned floatSizes[] = {
+  0, 0, sizeof(float), sizeof(double), 0, sizeof(float), sizeof(double) };
+
+
 typedef enum _intSizesNames { SIZE_INT8, SIZE_INT16, SIZE_INT32,
                               SIZE_INT64, SIZE_SHORT, INT_SIZES_NUMBER }
                    intSizesNames;
 
+static char * typeNames[] = {
+  "int_fixed", "uint_fixed", "pointer", "char", "uchar", "short", "ushort",
+  "int", "uint", "long", "ulong", "size_t", "ssize_t", "off_t", "float",
+  "string", "enum", "array", "sequence", "struct", "union", "none" };
 
-static unsigned floatSizes[] = {
-  0, 0, sizeof(float), sizeof(double), 0, sizeof(float), sizeof(double) };
 
 #define FLOAT_SIZES_NUMBER 7
 
@@ -98,6 +104,20 @@ LttFacility *ltt_eventtype_facility(LttEventType *et)
 guint8 ltt_eventtype_id(LttEventType *et)
 {
   return et->index;
+}
+
+/*****************************************************************************
+ *Function name
+ *    ltt_type_name  : get the name of the type
+ *Input params
+ *    t              : a type
+ *Return value
+ *    GQuark         : the name of the type
+ ****************************************************************************/
+
+GQuark ltt_type_name(LttType *t)
+{
+  return g_quark_from_static_string(typeNames[t->type_class]);
 }
 
 /*****************************************************************************

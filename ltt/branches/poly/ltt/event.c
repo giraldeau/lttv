@@ -384,11 +384,11 @@ off_t ltt_event_field_offset(LttEvent *e, LttField *f)
 guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f)
 {
   gboolean reverse_byte_order;
-	if(unlikely(f->field_type.network)) {
-		reverse_byte_order = (g_ntohs(0x1) != 0x1);
-	} else {
-  	reverse_byte_order = LTT_GET_BO(e->tracefile);
-	}
+  if(unlikely(f->field_type.network)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    reverse_byte_order = LTT_GET_BO(e->tracefile);
+  }
 
   switch(f->field_size) {
   case 1:
@@ -414,11 +414,11 @@ guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f)
 gint32 ltt_event_get_int(LttEvent *e, LttField *f)
 {
   gboolean reverse_byte_order;
-	if(unlikely(f->field_type.network)) {
-		reverse_byte_order = (g_ntohs(0x1) != 0x1);
-	} else {
-  	reverse_byte_order = LTT_GET_BO(e->tracefile);
-	}
+  if(unlikely(f->field_type.network)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    reverse_byte_order = LTT_GET_BO(e->tracefile);
+  }
 
   switch(f->field_size) {
   case 1:
@@ -443,12 +443,12 @@ gint32 ltt_event_get_int(LttEvent *e, LttField *f)
 
 guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
 {
-	gboolean reverse_byte_order;
-	if(unlikely(f->field_type.network)) {
-		reverse_byte_order = (g_ntohs(0x1) != 0x1);
-	} else {
-  	reverse_byte_order = LTT_GET_BO(e->tracefile);
-	}
+  gboolean reverse_byte_order;
+  if(unlikely(f->field_type.network)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    reverse_byte_order = LTT_GET_BO(e->tracefile);
+  }
   
   switch(f->field_size) {
   case 1:
@@ -475,12 +475,12 @@ guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f)
 
 gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
 {
-	gboolean reverse_byte_order;
-	if(unlikely(f->field_type.network)) {
-		reverse_byte_order = (g_ntohs(0x1) != 0x1);
-	} else {
-  	reverse_byte_order = LTT_GET_BO(e->tracefile);
-	}
+  gboolean reverse_byte_order;
+  if(unlikely(f->field_type.network)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    reverse_byte_order = LTT_GET_BO(e->tracefile);
+  }
   
   switch(f->field_size) {
   case 1:
@@ -507,13 +507,13 @@ gint64 ltt_event_get_long_int(LttEvent *e, LttField *f)
 
 float ltt_event_get_float(LttEvent *e, LttField *f)
 {
-	gboolean reverse_byte_order;
-	if(unlikely(f->field_type.network)) {
-		reverse_byte_order = (g_ntohs(0x1) != 0x1);
-	} else {
-	  g_assert(LTT_HAS_FLOAT(e->tracefile));
-  	reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
-	}
+  gboolean reverse_byte_order;
+  if(unlikely(f->field_type.network)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    g_assert(LTT_HAS_FLOAT(e->tracefile));
+    reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
+  }
 
   g_assert(f->field_type.type_class == LTT_FLOAT && f->field_size == 4);
 
@@ -527,13 +527,13 @@ float ltt_event_get_float(LttEvent *e, LttField *f)
 
 double ltt_event_get_double(LttEvent *e, LttField *f)
 {
-	gboolean reverse_byte_order;
-	if(unlikely(f->field_type.network)) {
-		reverse_byte_order = (g_ntohs(0x1) != 0x1);
-	} else {
-	  g_assert(LTT_HAS_FLOAT(e->tracefile));
-  	reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
-	}
+  gboolean reverse_byte_order;
+  if(unlikely(f->field_type.network)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    g_assert(LTT_HAS_FLOAT(e->tracefile));
+    reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
+  }
 
   if(f->field_size == 4)
     return ltt_event_get_float(e, f);
