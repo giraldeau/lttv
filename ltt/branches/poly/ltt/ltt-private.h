@@ -106,11 +106,11 @@ typedef guint64 uint64_t;
 struct LttFacilityLoad {
   guint32 checksum;
   guint32 id;
-	guint32 int_size;
+  guint32 int_size;
   guint32 long_size;
   guint32 pointer_size;
   guint32 size_t_size;
-	guint32 has_alignment;
+  guint32 has_alignment;
 } LTT_PACKED_STRUCT;
 
 struct LttFacilityUnload {
@@ -120,11 +120,11 @@ struct LttFacilityUnload {
 struct LttStateDumpFacilityLoad {
   guint32 checksum;
   guint32 id;
-	guint32 int_size;
+  guint32 int_size;
   guint32 long_size;
   guint32 pointer_size;
   guint32 size_t_size;
-	guint32	has_alignment;
+  guint32  has_alignment;
 } LTT_PACKED_STRUCT;
 
 /* Empty event */
@@ -159,7 +159,7 @@ struct ltt_trace_header_any {
   uint8_t         flight_recorder;
   uint8_t         has_heartbeat;
   uint8_t         has_alignment;  /* Event header alignment */
-	uint32_t			  freq_scale;
+  uint32_t        freq_scale;
 } LTT_PACKED_STRUCT;
 
 
@@ -176,7 +176,7 @@ struct ltt_trace_header_0_3 {
   uint8_t         flight_recorder;
   uint8_t         has_heartbeat;
   uint8_t         has_alignment;  /* Event header alignment */
-	uint32_t				freq_scale;
+  uint32_t        freq_scale;
 } LTT_PACKED_STRUCT;
 
 /* For version 0.7 */
@@ -225,7 +225,7 @@ struct _LttType{
   GHashTable *enum_map;                 //maps enum labels to numbers.
   GArray *fields;     // Array of LttFields, for array, sequence, union, struct.
   GData *fields_by_name;
-	guint	network;	// Is the type in network byte order ?
+  guint network;  // Is the type in network byte order ?
 };
 
 struct _LttEventType{
@@ -251,9 +251,9 @@ struct _LttEvent{
   
   /* End of LttEventPosition fields */
 
-  guint32  timestamp;				/* truncated timestamp */
+  guint32  timestamp;        /* truncated timestamp */
 
-  unsigned char facility_id;	/* facility ID are never reused. */
+  unsigned char facility_id;  /* facility ID are never reused. */
   unsigned char event_id;
 
   LttTime event_time;
@@ -347,9 +347,9 @@ struct _LttTracefile{
   GQuark long_name;                  //tracefile complete filename
   GQuark name;                       //tracefile name
   guint cpu_num;                     //cpu number of the tracefile
-	guint	tid;												 //Usertrace tid, else 0
-	guint pgid;												 //Usertrace pgid, else 0
-	guint64 creation;									 //Usertrace creation, else 0
+  guint  tid;                         //Usertrace tid, else 0
+  guint pgid;                         //Usertrace pgid, else 0
+  guint64 creation;                   //Usertrace creation, else 0
   LttTrace * trace;                  //trace containing the tracefile
   int fd;                            //file descriptor 
   off_t file_size;                   //file size
@@ -357,19 +357,19 @@ struct _LttTracefile{
   guint num_blocks;           //number of blocks in the file
   gboolean  reverse_bo;              //must we reverse byte order ?
   gboolean  float_word_order;        //what is the byte order of floats ?
-	size_t		has_alignment;					 //alignment of events in the tracefile.
-																		 // 0 or the architecture size in bytes.
+  size_t    has_alignment;           //alignment of events in the tracefile.
+                                     // 0 or the architecture size in bytes.
 
   size_t    buffer_header_size;
 
-	/* Current event */
+  /* Current event */
   LttEvent event;                    //Event currently accessible in the trace
 
-	/* Current block */
+  /* Current block */
   LttBuffer buffer;                  //current buffer
   guint32 buf_size;                  /* The size of blocks */
 
-	/* Time flow */
+  /* Time flow */
   //unsigned int      count;           //the number of overflow of cycle count
   //double nsec_per_cycle;             //Nsec per cycle
   //TimeHeartbeat * last_heartbeat;    //last heartbeat
@@ -399,7 +399,7 @@ struct _LttTrace{
   guint8    ltt_minor_version;
   guint8    flight_recorder;
   guint8    has_heartbeat;
-	guint32		freq_scale;
+  guint32    freq_scale;
   uint64_t  start_freq;
   uint64_t  start_tsc;
   uint64_t  start_monotonic;
@@ -451,12 +451,12 @@ static inline unsigned int ltt_align(size_t align_drift,
           size_t size_of_type,
           size_t has_alignment)
 {
-	size_t alignment = min(has_alignment, size_of_type);
-	
-	if(!has_alignment) return 0;
-	
-	g_assert(size_of_type != 0);
-	return ((alignment - align_drift) & (alignment-1));
+  size_t alignment = min(has_alignment, size_of_type);
+  
+  if(!has_alignment) return 0;
+  
+  g_assert(size_of_type != 0);
+  return ((alignment - align_drift) & (alignment-1));
 }
 
 
