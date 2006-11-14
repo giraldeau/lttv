@@ -42,6 +42,16 @@ IN="?_fs_debugfs_inode.c"
 
 for a in $IN; do wr $a $FILE; done
 
+#for hotplug
+FILE=../${PRENAME}${COUNT}${NAME}-relay.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_linux_relay.h
+?_kernel_relay.c"
+
+for a in $IN; do wr $a $FILE; done
+
 FILE=../${PRENAME}${COUNT}${NAME}-markers.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
