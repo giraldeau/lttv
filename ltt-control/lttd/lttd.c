@@ -30,6 +30,11 @@
 #include <sys/mman.h>
 #include <signal.h>
 #include <pthread.h>
+#include <sys/syscall.h>
+#include <unistd.h>
+#include <asm/ioctls.h>
+
+#include <linux/version.h>
 
 /* Relayfs IOCTL */
 #include <asm/ioctl.h>
@@ -44,7 +49,41 @@
 /* returns the size of the sub buffers. */
 #define RELAY_GET_SUBBUF_SIZE   _IOR(0xF4, 0x03,__u32)
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,14)
+#include <linux/inotify.h>
+/* From the inotify-tools 2.6 package */
+static inline int inotify_init (void)
+{
+	return syscall (__NR_inotify_init);
+}
 
+static inline int inotify_add_watch (int fd, const char *name, __u32 mask)
+{
+	return syscall (__NR_inotify_add_watch, fd, name, mask);
+}
+
+static inline int inotify_rm_watch (int fd, __u32 wd)
+{
+	return syscall (__NR_inotify_rm_watch, fd, wd);
+}
+#define HAS_INOTIFY
+#else
+static inline int inotify_init (void)
+{
+	return -1;
+}
+
+static inline int inotify_add_watch (int fd, const char *name, __u32 mask)
+{
+	return 0;
+}
+
+static inline int inotify_rm_watch (int fd, __u32 wd)
+{
+	return 0;
+}
+#undef HAS_INOTIFY
+#endif
 
 enum {
 	GET_SUBBUF,
@@ -65,6 +104,17 @@ struct fd_pair {
 struct channel_trace_fd {
 	struct fd_pair *pair;
 	int num_pairs;
+};
+
+struct inotify_watch {
+	int wd;
+	char path_channel[PATH_MAX];
+	char path_trace[PATH_MAX];
+};
+
+struct inotify_watch_array {
+	struct inotify_watch *elem;
+	int num;
 };
 
 static char		*trace_name = NULL;
@@ -201,9 +251,72 @@ static void handler(int signo)
 }
 
 
+int open_buffer_file(char *filename, char *path_channel, char *path_trace,
+	struct channel_trace_fd *fd_pairs)
+{
+	int open_ret = 0;
+	int ret = 0;
+	struct stat stat_buf;
+
+	if(strncmp(filename, "flight-", sizeof("flight-")-1) != 0) {
+		if(dump_flight_only) {
+			printf("Skipping normal channel %s\n", path_channel);
+			return 0;
+		}
+	} else {
+		if(dump_normal_only) {
+			printf("Skipping flight channel %s\n", path_channel);
+			return 0;
+		}
+	}
+	printf("Opening file.\n");
+	
+	fd_pairs->pair = realloc(fd_pairs->pair,
+			++fd_pairs->num_pairs * sizeof(struct fd_pair));
+
+	/* Open the channel in read mode */
+	fd_pairs->pair[fd_pairs->num_pairs-1].channel = 
+		open(path_channel, O_RDONLY | O_NONBLOCK);
+	if(fd_pairs->pair[fd_pairs->num_pairs-1].channel == -1) {
+		perror(path_channel);
+		fd_pairs->num_pairs--;
+		return 0;	/* continue */
+	}
+	/* Open the trace in write mode, only append if append_mode */
+	ret = stat(path_trace, &stat_buf);
+	if(ret == 0) {
+		if(append_mode) {
+			printf("Appending to file %s as requested\n", path_trace);
+
+			fd_pairs->pair[fd_pairs->num_pairs-1].trace = 
+				open(path_trace, O_WRONLY|O_APPEND,
+						S_IRWXU|S_IRWXG|S_IRWXO);
+
+			if(fd_pairs->pair[fd_pairs->num_pairs-1].trace == -1) {
+				perror(path_trace);
+			}
+		} else {
+			printf("File %s exists, cannot open. Try append mode.\n", path_trace);
+			open_ret = -1;
+			goto end;
+		}
+	} else {
+		if(errno == ENOENT) {
+			fd_pairs->pair[fd_pairs->num_pairs-1].trace = 
+				open(path_trace, O_WRONLY|O_CREAT|O_EXCL,
+						S_IRWXU|S_IRWXG|S_IRWXO);
+			if(fd_pairs->pair[fd_pairs->num_pairs-1].trace == -1) {
+				perror(path_trace);
+			}
+		}
+	}
+end:
+	return open_ret;
+}
 
 int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
-		struct channel_trace_fd *fd_pairs)
+		struct channel_trace_fd *fd_pairs, int *inotify_fd,
+		struct inotify_watch_array *iwatch_array)
 {
 	DIR *channel_dir = opendir(subchannel_name);
 	struct dirent *entry;
@@ -245,6 +358,18 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 	path_trace_len++;
 	path_trace_ptr = path_trace + path_trace_len;
 	
+#ifdef HAS_INOTIFY
+	iwatch_array->elem = realloc(iwatch_array->elem,
+		++iwatch_array->num * sizeof(struct inotify_watch));
+	
+	printf("Adding inotify for channel %s\n", path_channel);
+	iwatch_array->elem[iwatch_array->num-1].wd = inotify_add_watch(*inotify_fd, path_channel, IN_CREATE);
+	strcpy(iwatch_array->elem[iwatch_array->num-1].path_channel, path_channel);
+	strcpy(iwatch_array->elem[iwatch_array->num-1].path_trace, path_trace);
+	printf("Added inotify for channel %s, wd %u\n", iwatch_array->elem[iwatch_array->num-1].path_channel,
+		iwatch_array->elem[iwatch_array->num-1].wd);
+#endif
+
 	while((entry = readdir(channel_dir)) != NULL) {
 
 		if(entry->d_name[0] == '.') continue;
@@ -263,61 +388,14 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 		if(S_ISDIR(stat_buf.st_mode)) {
 
 			printf("Entering channel subdirectory...\n");
-			ret = open_channel_trace_pairs(path_channel, path_trace, fd_pairs);
+			ret = open_channel_trace_pairs(path_channel, path_trace, fd_pairs,
+				inotify_fd, iwatch_array);
 			if(ret < 0) continue;
 		} else if(S_ISREG(stat_buf.st_mode)) {
-			if(strncmp(entry->d_name, "flight-", sizeof("flight-")-1) != 0) {
-				if(dump_flight_only) {
-					printf("Skipping normal channel %s\n", path_channel);
-					continue;
-				}
-			} else {
-				if(dump_normal_only) {
-					printf("Skipping flight channel %s\n", path_channel);
-					continue;
-				}
-			}
-			printf("Opening file.\n");
-			
-			fd_pairs->pair = realloc(fd_pairs->pair,
-					++fd_pairs->num_pairs * sizeof(struct fd_pair));
-
-			/* Open the channel in read mode */
-			fd_pairs->pair[fd_pairs->num_pairs-1].channel = 
-				open(path_channel, O_RDONLY | O_NONBLOCK);
-			if(fd_pairs->pair[fd_pairs->num_pairs-1].channel == -1) {
-				perror(path_channel);
-				fd_pairs->num_pairs--;
-				continue;
-			}
-			/* Open the trace in write mode, only append if append_mode */
-			ret = stat(path_trace, &stat_buf);
-			if(ret == 0) {
-				if(append_mode) {
-					printf("Appending to file %s as requested\n", path_trace);
-
-					fd_pairs->pair[fd_pairs->num_pairs-1].trace = 
-						open(path_trace, O_WRONLY|O_APPEND,
-								S_IRWXU|S_IRWXG|S_IRWXO);
-
-					if(fd_pairs->pair[fd_pairs->num_pairs-1].trace == -1) {
-						perror(path_trace);
-					}
-				} else {
-					printf("File %s exists, cannot open. Try append mode.\n", path_trace);
-					open_ret = -1;
-					goto end;
-				}
-			} else {
-				if(errno == ENOENT) {
-					fd_pairs->pair[fd_pairs->num_pairs-1].trace = 
-						open(path_trace, O_WRONLY|O_CREAT|O_EXCL,
-								S_IRWXU|S_IRWXG|S_IRWXO);
-					if(fd_pairs->pair[fd_pairs->num_pairs-1].trace == -1) {
-						perror(path_trace);
-					}
-				}
-			}
+			open_ret = open_buffer_file(entry->d_name, path_channel, path_trace,
+				fd_pairs);
+			if(open_ret)
+				goto end;
 		}
 	}
 	
@@ -380,7 +458,8 @@ get_error:
 
 
 
-int map_channels(struct channel_trace_fd *fd_pairs)
+int map_channels(struct channel_trace_fd *fd_pairs,
+	int idx_begin, int idx_end)
 {
 	int i,j;
 	int ret=0;
@@ -392,7 +471,7 @@ int map_channels(struct channel_trace_fd *fd_pairs)
 	
 	/* Get the subbuf sizes and number */
 
-	for(i=0;i<fd_pairs->num_pairs;i++) {
+	for(i=idx_begin;i<idx_end;i++) {
 		struct fd_pair *pair = &fd_pairs->pair[i];
 
 		ret = ioctl(pair->channel, RELAY_GET_N_SUBBUFS, 
@@ -415,7 +494,7 @@ int map_channels(struct channel_trace_fd *fd_pairs)
 	}
 
 	/* Mmap each FD */
-	for(i=0;i<fd_pairs->num_pairs;i++) {
+	for(i=idx_begin;i<idx_end;i++) {
 		struct fd_pair *pair = &fd_pairs->pair[i];
 
 		pair->mmap = mmap(0, pair->subbuf_size * pair->n_subbufs, PROT_READ,
@@ -432,7 +511,7 @@ int map_channels(struct channel_trace_fd *fd_pairs)
 	/* munmap only the successfully mmapped indexes */
 munmap:
 		/* Munmap each FD */
-	for(j=0;j<i;j++) {
+	for(j=idx_begin;j<i;j++) {
 		struct fd_pair *pair = &fd_pairs->pair[j];
 		int err_ret;
 
@@ -475,6 +554,61 @@ int unmap_channels(struct channel_trace_fd *fd_pairs)
 	return ret;
 }
 
+#ifdef HAS_INOTIFY
+/* Inotify event arrived.
+ *
+ * Only support add file for now.
+ */
+
+int read_inotify(int inotify_fd,
+	struct channel_trace_fd *fd_pairs,
+	struct inotify_watch_array *iwatch_array)
+{
+	char buf[sizeof(struct inotify_event) + PATH_MAX];
+	char path_channel[PATH_MAX];
+	char path_trace[PATH_MAX];
+	ssize_t len;
+	struct inotify_event *ievent;
+	size_t offset;
+	unsigned int i;
+	int ret;
+	int old_num;
+	
+	offset = 0;
+	len = read(inotify_fd, buf, sizeof(struct inotify_event) + PATH_MAX);
+	if(len < 0) {
+		printf("Error in read from inotify FD %s.\n", strerror(len));
+		return -1;
+	}
+	while(offset < len) {
+		ievent = (struct inotify_event *)&(buf[offset]);
+		for(i=0; i<iwatch_array->num; i++) {
+			if(iwatch_array->elem[i].wd == ievent->wd &&
+				ievent->mask == IN_CREATE) {
+				printf("inotify wd %u event mask : %u for %s%s\n",
+					ievent->wd, ievent->mask,
+					iwatch_array->elem[i].path_channel, ievent->name);
+				old_num = fd_pairs->num_pairs;
+				strcpy(path_channel, iwatch_array->elem[i].path_channel);
+				strcat(path_channel, ievent->name);
+				strcpy(path_trace, iwatch_array->elem[i].path_trace);
+				strcat(path_trace, ievent->name);
+				if(ret = open_buffer_file(ievent->name, path_channel,
+					path_trace, fd_pairs)) {
+					printf("Error opening buffer file\n");
+					return -1;
+				}
+				if(ret = map_channels(fd_pairs, old_num, fd_pairs->num_pairs)) {
+					printf("Error mapping channel\n");
+					return -1;
+				}
+
+			}
+		}
+		offset += sizeof(*ievent) + ievent->len;
+	}
+}
+#endif //HAS_INOTIFY
 
 /* read_channels
  *
@@ -484,7 +618,7 @@ int unmap_channels(struct channel_trace_fd *fd_pairs)
  *
  * @fd_pairs : paired channels and trace files.
  *
- * returns (void*)0 on success, (void*)-1 on error.
+ * returns 0 on success, -1 on error.
  *
  * Note that the high priority polled channels are consumed first. We then poll
  * again to see if these channels are still in priority. Only when no
@@ -494,25 +628,36 @@ int unmap_channels(struct channel_trace_fd *fd_pairs)
  * full.
  */
 
-void * read_channels(void *arg)
+int read_channels(unsigned int thread_num, struct channel_trace_fd *fd_pairs,
+	int inotify_fd, struct inotify_watch_array *iwatch_array)
 {
-	struct pollfd *pollfd;
+	struct pollfd *pollfd = NULL;
 	int i,j;
 	int num_rdy, num_hup;
 	int high_prio;
 	int ret = 0;
-	struct channel_trace_fd *fd_pairs = (struct channel_trace_fd *)arg;
+	int inotify_fds;
+	unsigned int old_num;
 
-	/* Start polling the FD */
-	
-	pollfd = malloc(fd_pairs->num_pairs * sizeof(struct pollfd));
+#ifdef HAS_INOTIFY
+	inotify_fds = 1;
+#else
+	inotify_fds = 0;
+#endif
 
-	/* Note : index in pollfd is the same index as fd_pair->pair */
+	/* Start polling the FD. Keep one fd for inotify */
+	pollfd = malloc((inotify_fds + fd_pairs->num_pairs) * sizeof(struct pollfd));
+
+#ifdef HAS_INOTIFY
+	pollfd[0].fd = inotify_fd;
+	pollfd[0].events = POLLIN|POLLPRI;
+#endif
+
 	for(i=0;i<fd_pairs->num_pairs;i++) {
-		pollfd[i].fd = fd_pairs->pair[i].channel;
-		pollfd[i].events = POLLIN|POLLPRI;
+		pollfd[inotify_fds+i].fd = fd_pairs->pair[i].channel;
+		pollfd[inotify_fds+i].events = POLLIN|POLLPRI;
 	}
-
+	
 	while(1) {
 		high_prio = 0;
 		num_hup = 0; 
@@ -520,21 +665,46 @@ void * read_channels(void *arg)
 		printf("Press a key for next poll...\n");
 		char buf[1];
 		read(STDIN_FILENO, &buf, 1);
-		printf("Next poll (polling %d fd) :\n", fd_pairs->num_pairs);
+		printf("Next poll (polling %d fd) :\n", 1+fd_pairs->num_pairs);
 #endif //DEBUG
-		
+
 		/* Have we received a signal ? */
 		if(quit_program) break;
 		
-		num_rdy = poll(pollfd, fd_pairs->num_pairs, -1);
+		num_rdy = poll(pollfd, inotify_fds+fd_pairs->num_pairs, -1);
 		if(num_rdy == -1) {
 			perror("Poll error");
 			goto free_fd;
 		}
 
 		printf("Data received\n");
+#ifdef HAS_INOTIFY
+		switch(pollfd[0].revents) {
+			case POLLERR:
+				printf("Error returned in polling inotify fd %d.\n", pollfd[0].fd);
+				break;
+			case POLLHUP:
+				printf("Polling inotify fd %d tells it has hung up.\n", pollfd[0].fd);
+				break;
+			case POLLNVAL:
+				printf("Polling inotify fd %d tells fd is not open.\n", pollfd[0].fd);
+				break;
+			case POLLPRI:
+			case POLLIN:
+				printf("Polling inotify fd %d : data ready.\n", pollfd[0].fd);
+				old_num = fd_pairs->num_pairs;
+				read_inotify(inotify_fd, fd_pairs, iwatch_array);
+				pollfd = realloc(pollfd,
+						(inotify_fds + fd_pairs->num_pairs) * sizeof(struct pollfd));
+				for(i=old_num;i<fd_pairs->num_pairs;i++) {
+					pollfd[inotify_fds+i].fd = fd_pairs->pair[i].channel;
+					pollfd[inotify_fds+i].events = POLLIN|POLLPRI;
+				}
+			break;
+		}
+#endif
 
-		for(i=0;i<fd_pairs->num_pairs;i++) {
+		for(i=inotify_fds;i<inotify_fds+fd_pairs->num_pairs;i++) {
 			switch(pollfd[i].revents) {
 				case POLLERR:
 					printf("Error returned in polling fd %d.\n", pollfd[i].fd);
@@ -549,36 +719,36 @@ void * read_channels(void *arg)
 					num_hup++;
 					break;
 				case POLLPRI:
-					if(pthread_mutex_trylock(&fd_pairs->pair[i].mutex) == 0) {
+					if(pthread_mutex_trylock(&fd_pairs->pair[i-inotify_fds].mutex) == 0) {
 						printf("Urgent read on fd %d\n", pollfd[i].fd);
 						/* Take care of high priority channels first. */
 						high_prio = 1;
 						/* it's ok to have an unavailable subbuffer */
-						ret = read_subbuffer(&fd_pairs->pair[i]);
+						ret = read_subbuffer(&fd_pairs->pair[i-inotify_fds]);
 						if(ret == EAGAIN) ret = 0;
 
-						ret = pthread_mutex_unlock(&fd_pairs->pair[i].mutex);
+						ret = pthread_mutex_unlock(&fd_pairs->pair[i-inotify_fds].mutex);
 						if(ret)
 							printf("Error in mutex unlock : %s\n", strerror(ret));
 					}
 					break;
 			}
 		}
-		/* If every FD has hung up, we end the read loop here */
+		/* If every buffer FD has hung up, we end the read loop here */
 		if(num_hup == fd_pairs->num_pairs) break;
 
 		if(!high_prio) {
-			for(i=0;i<fd_pairs->num_pairs;i++) {
+			for(i=inotify_fds;i<inotify_fds+fd_pairs->num_pairs;i++) {
 				switch(pollfd[i].revents) {
 					case POLLIN:
-						if(pthread_mutex_trylock(&fd_pairs->pair[i].mutex) == 0) {
+						if(pthread_mutex_trylock(&fd_pairs->pair[i-inotify_fds].mutex) == 0) {
 							/* Take care of low priority channels. */
 							printf("Normal read on fd %d\n", pollfd[i].fd);
 							/* it's ok to have an unavailable subbuffer */
-							ret = read_subbuffer(&fd_pairs->pair[i]);
+							ret = read_subbuffer(&fd_pairs->pair[i-inotify_fds]);
 							if(ret == EAGAIN) ret = 0;
 
-							ret = pthread_mutex_unlock(&fd_pairs->pair[i].mutex);
+							ret = pthread_mutex_unlock(&fd_pairs->pair[i-inotify_fds].mutex);
 							if(ret)
 								printf("Error in mutex unlock : %s\n", strerror(ret));
 						}
@@ -593,11 +763,12 @@ free_fd:
 	free(pollfd);
 
 end:
-	return (void*)ret;
+	return ret;
 }
 
 
-void close_channel_trace_pairs(struct channel_trace_fd *fd_pairs)
+void close_channel_trace_pairs(struct channel_trace_fd *fd_pairs, int inotify_fd,
+	struct inotify_watch_array *iwatch_array)
 {
 	int i;
 	int ret;
@@ -609,12 +780,43 @@ void close_channel_trace_pairs(struct channel_trace_fd *fd_pairs)
 		if(ret == -1) perror("Close error on trace");
 	}
 	free(fd_pairs->pair);
+	free(iwatch_array->elem);
 }
+
+/* Thread worker */
+void * thread_main(void *arg)
+{
+	struct channel_trace_fd fd_pairs = { NULL, 0 };
+	int inotify_fd = -1;
+	struct inotify_watch_array inotify_watch_array = { NULL, 0 };
+	int ret = 0;
+	unsigned int thread_num = (unsigned int)arg;
+
+	inotify_fd = inotify_init();
+
+	if(ret = open_channel_trace_pairs(channel_name, trace_name, &fd_pairs,
+			&inotify_fd, &inotify_watch_array))
+		goto close_channel;
+
+	if(ret = map_channels(&fd_pairs, 0, fd_pairs.num_pairs))
+		goto close_channel;
+
+	ret = read_channels(thread_num, &fd_pairs, inotify_fd, &inotify_watch_array);
+
+	ret |= unmap_channels(&fd_pairs);
+
+close_channel:
+	close_channel_trace_pairs(&fd_pairs, inotify_fd, &inotify_watch_array);
+	if(inotify_fd >= 0)
+		close(inotify_fd);
+
+	return (void*)ret;
+}
+
 
 int main(int argc, char ** argv)
 {
 	int ret = 0;
-	struct channel_trace_fd fd_pairs = { NULL, 0 };
 	struct sigaction act;
 	pthread_t *tids;
 	unsigned int i;
@@ -649,15 +851,9 @@ int main(int argc, char ** argv)
 	sigaction(SIGINT, &act, NULL);
 
 
-	if(ret = open_channel_trace_pairs(channel_name, trace_name, &fd_pairs))
-		goto close_channel;
-
-	if(ret = map_channels(&fd_pairs))
-		goto close_channel;
-	
 	tids = malloc(sizeof(pthread_t) * num_threads);
 	for(i=0; i<num_threads; i++) {
-		ret = pthread_create(&tids[i], NULL, read_channels, &fd_pairs);
+		ret = pthread_create(&tids[i], NULL, thread_main, (void*)i);
 		if(ret) {
 			perror("Error creating thread");
 			break;
@@ -677,10 +873,5 @@ int main(int argc, char ** argv)
 
 	free(tids);
 			
-	ret |= unmap_channels(&fd_pairs);
-
-close_channel:
-	close_channel_trace_pairs(&fd_pairs);
-
 	return ret;
 }
