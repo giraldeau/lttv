@@ -48,7 +48,8 @@ VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_linux_relay.h
-?_kernel_relay.c"
+?_kernel_relay.c
+?_block_blktrace.c"
 
 for a in $IN; do wr $a $FILE; done
 
