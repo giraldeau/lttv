@@ -84,7 +84,8 @@ IN="?_include_asm-generic_vmlinux.lds.h
 ?_include_asm-um_marker.h
 ?_include_asm-v850_marker.h
 ?_include_asm-x86_64_marker.h
-?_include_asm-xtensa_marker.h"
+?_include_asm-xtensa_marker.h
+?_kernel_module.c"
 
 for a in $IN; do wr $a $FILE; done
 
