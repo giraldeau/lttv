@@ -1,5 +1,5 @@
 #!/bin/sh
-# LTTng patch creation 
+# LTTng patch creation core
 # Creates a -all patch, and split it.
 # Mathieu Desnoyers, october 2005
 #$1 is the version
@@ -12,7 +12,7 @@ function wr () {
 
 
 PRENAME=patch
-NAME=-2.6.18-lttng-$1
+NAME=-2.6.18-lttng-core-$1
 ALL_NAME=${PRENAME}${NAME}-all.diff
 VALUE=1
 printf -v COUNT "%02d" ${VALUE}
