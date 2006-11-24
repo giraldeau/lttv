@@ -109,7 +109,8 @@ VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_ltt_ltt-facility-core.h
-?_include_ltt_ltt-facility-id-core.h"
+?_include_ltt_ltt-facility-id-core.h
+?_include_ltt_ltt-facility-select-core.h"
 
 for a in $IN; do wr $a $FILE; done
 
