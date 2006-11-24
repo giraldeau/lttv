@@ -104,6 +104,15 @@ IN="?_include_asm-i386_atomic-up.h
 
 for a in $IN; do wr $a $FILE; done
 
+FILE=../${PRENAME}${COUNT}${NAME}-facilities.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_linux_ltt-facilities.h
+?_ltt_ltt-facilities.c"
+
+for a in $IN; do wr $a $FILE; done
+
 FILE=../${PRENAME}${COUNT}${NAME}-facility-core-headers.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
@@ -122,15 +131,6 @@ printf -v COUNT "%02d" ${VALUE}
 IN="?_ltt_facilities_ltt-facility-loader-core.c
 ?_ltt_facilities_ltt-facility-loader-core.h
 ?_ltt_facilities_Makefile"
-
-for a in $IN; do wr $a $FILE; done
-
-FILE=../${PRENAME}${COUNT}${NAME}-facilities.diff
-VALUE=$(( ${VALUE} + 1 ))
-printf -v COUNT "%02d" ${VALUE}
-
-IN="?_include_linux_ltt-facilities.h
-?_ltt_ltt-facilities.c"
 
 for a in $IN; do wr $a $FILE; done
 
