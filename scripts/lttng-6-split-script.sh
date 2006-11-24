@@ -244,8 +244,7 @@ IN="?_include_linux_sched.h
 ?_include_asm-mips_unistd.h
 ?_include_asm-powerpc_unistd.h
 ?_include_asm-powerpc_systbl.h
-?_include_asm-x86_64_unistd.h
-?_include_asm-arm_unistd.h"
+?_include_asm-x86_64_unistd.h"
 
 for a in $IN; do wr $a $FILE; done
 
