@@ -111,7 +111,6 @@ printf -v COUNT "%02d" ${VALUE}
 IN="?_include_asm-i386_atomic.h
 ?_include_asm-x86_64_local.h
 ?_include_asm-powerpc_local.h
-?_include_asm-arm_local.h
 ?_include_asm-mips_local.h
 ?_include_asm-generic_local.h"
 
