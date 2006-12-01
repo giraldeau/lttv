@@ -88,19 +88,32 @@ IN="?_include_asm-generic_vmlinux.lds.h
 
 for a in $IN; do wr $a $FILE; done
 
-FILE=../${PRENAME}${COUNT}${NAME}-atomic_up.diff
+FILE=../${PRENAME}${COUNT}${NAME}-atomic.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-i386_atomic-up.h
+IN="?_include_asm-i386_atomic.h
 ?_include_asm-i386_system.h
-?_include_asm-x86_64_atomic-up.h
+?_include_asm-x86_64_atomic.h
 ?_include_asm-x86_64_system.h
-?_include_asm-powerpc_atomic-up.h
+?_include_asm-powerpc_atomic.h
 ?_include_asm-powerpc_system.h
-?_include_asm-arm_atomic-up.h
-?_include_asm-mips_atomic-up.h
-?_include_asm-generic_atomic-up.h"
+?_include_asm-arm_atomic.h
+?_include_asm-mips_atomic.h
+?_include_asm-generic_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-local.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-i386_atomic.h
+?_include_asm-x86_64_local.h
+?_include_asm-powerpc_local.h
+?_include_asm-arm_local.h
+?_include_asm-mips_local.h
+?_include_asm-generic_local.h"
 
 for a in $IN; do wr $a $FILE; done
 
