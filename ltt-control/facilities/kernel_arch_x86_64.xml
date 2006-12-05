@@ -605,8 +605,11 @@
       <label name="ia32_sync_file_range" value="5314"/>
       <label name="ia32_tee" value="5315"/>
       <label name="ia32_vmsplice" value="5316"/>
-      <label name="ia32_ltt_trace_generic" value="5317"/>
-      <label name="ia32_ltt_register_generic" value="5318"/>
+      <label name="ia32_move_pages" value="5317"/>
+      <label name="ia32_getcpu" value="5318"/>
+      <label name="ia32_epoll_pwait" value="5319"/>
+      <label name="ia32_ltt_trace_generic" value="5320"/>
+      <label name="ia32_ltt_register_generic" value="5321"/>
     </enum>
   </type>
 

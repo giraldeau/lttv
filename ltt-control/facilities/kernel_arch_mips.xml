@@ -314,8 +314,13 @@
 			<label name="o32_tee" value="4306"/>
 			<label name="o32_vmsplice" value="4307"/>
 			<label name="o32_move_pages" value="4308"/>
-			<label name="o32_ltt_trace_generic" value="4309"/>
-			<label name="o32_ltt_register_generic" value="4310"/>
+			<label name="o32_set_robust_list" value="4309"/>
+			<label name="o32_get_robust_list" value="4310"/>
+			<label name="o32_kexec_load" value="4311"/>
+			<label name="o32_getcpu" value="4312"/>
+			<label name="o32_epoll_pwait" value="4313"/>
+			<label name="o32_ltt_trace_generic" value="4314"/>
+			<label name="o32_ltt_register_generic" value="4315"/>
 
 			<label name="l64_base" value="4999"/>
 			<label name="l64_read" value="5000"/>
@@ -586,8 +591,13 @@
 			<label name="l64_tee" value="5265"/>
 			<label name="l64_vmsplice" value="5266"/>
 			<label name="l64_move_pages" value="5267"/>
-			<label name="l64_ltt_trace_generic" value="5268"/>
-			<label name="l64_ltt_register_generic" value="5269"/>
+			<label name="l64_set_robust_list" value="5268"/>
+			<label name="l64_get_robust_list" value="5269"/>
+			<label name="l64_kexec_load" value="5270"/>
+			<label name="l64_getcpu" value="5271"/>
+			<label name="l64_epoll_pwait" value="5272"/>
+			<label name="l64_ltt_trace_generic" value="5273"/>
+			<label name="l64_ltt_register_generic" value="5274"/>
 
 			<label name="N32_base" value="5999"/>
 			<label name="N32_read" value="6000"/>
@@ -862,8 +872,13 @@
 			<label name="N32_tee" value="6269"/>
 			<label name="N32_vmsplice" value="6270"/>
 			<label name="N32_move_pages" value="6271"/>
-			<label name="N32_ltt_trace_generic" value="6272"/>
-			<label name="N32_ltt_register_generic" value="6273"/>
+			<label name="N32_set_robust_list" value="6272"/>
+			<label name="N32_get_robust_list" value="6273"/>
+			<label name="N32_kexec_load" value="6274"/>
+			<label name="N32_getcpu" value="6275"/>
+			<label name="N32_epoll_pwait" value="6276"/>
+			<label name="N32_ltt_trace_generic" value="6277"/>
+			<label name="N32_ltt_register_generic" value="6278"/>
     </enum>
   </type>
 

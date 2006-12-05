@@ -319,8 +319,10 @@
 			<label name="tee" value="315"/>
 			<label name="vmsplice" value="316"/>
 			<label name="move_pages" value="317"/>
-			<label name="ltt_trace_generic" value="318"/>
-			<label name="ltt_register_generic" value="319"/>
+			<label name="getcpu" value="318"/>
+			<label name="epoll_pwait" value="319"/>
+			<label name="ltt_trace_generic" value="320"/>
+			<label name="ltt_register_generic" value="321"/>
     </enum>
   </type>
 

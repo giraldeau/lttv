@@ -304,8 +304,9 @@
 			<label name="faccessat" value="298"/>
 			<label name="get_robust_list" value="299"/>
 			<label name="set_robust_list" value="300"/>
-			<label name="ltt_trace_generic" value="301"/>
-			<label name="ltt_register_generic" value="302"/>
+			<label name="move_pages" value="301"/>
+			<label name="ltt_trace_generic" value="302"/>
+			<label name="ltt_register_generic" value="303"/>
     </enum>
   </type>
 
