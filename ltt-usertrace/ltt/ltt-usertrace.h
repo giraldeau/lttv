@@ -48,10 +48,10 @@ extern "C" {
 #endif
 
 #ifdef i386
-#define __NR_ltt_trace_generic	318
-#define __NR_ltt_register_generic	319
+#define __NR_ltt_trace_generic	320
+#define __NR_ltt_register_generic	321
 #undef NR_syscalls
-#define NR_syscalls 320
+#define NR_syscalls 322
 #endif
 
 #ifdef __x86_64__
@@ -62,17 +62,17 @@ extern "C" {
 #endif
 
 #ifdef __powerpc__
-#define __NR_ltt_trace_generic	301
-#define __NR_ltt_register_generic	302
+#define __NR_ltt_trace_generic	302
+#define __NR_ltt_register_generic	303
 #undef NR_syscalls
-#define NR_syscalls 303
+#define NR_syscalls 304
 #endif
 
 #ifdef __powerpc64__
-#define __NR_ltt_trace_generic	301
-#define __NR_ltt_register_generic	302
+#define __NR_ltt_trace_generic	302
+#define __NR_ltt_register_generic	303
 #undef NR_syscalls
-#define NR_syscalls 303
+#define NR_syscalls 304
 #endif
 
 #ifdef __arm__
