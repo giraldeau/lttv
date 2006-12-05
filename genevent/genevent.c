@@ -2650,7 +2650,6 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "#include <linux/ltt-facilities.h>\n");
   fprintf(fd, "#include <linux/module.h>\n");
   fprintf(fd, "#include <linux/init.h>\n");
-  fprintf(fd, "#include <linux/config.h>\n");
 	if(!fac->arch)
   	fprintf(fd, "#include \"ltt-facility-loader-%s.h\"\n", fac->name);
 	else
