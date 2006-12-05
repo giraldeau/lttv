@@ -12,7 +12,7 @@ function wr () {
 
 
 PRENAME=patch
-NAME=-2.6.18-lttng-core-$1
+NAME=-2.6.19-lttng-core-$1
 ALL_NAME=${PRENAME}${NAME}-all.diff
 VALUE=1
 printf -v COUNT "%02d" ${VALUE}
