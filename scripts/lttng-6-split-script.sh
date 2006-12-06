@@ -176,7 +176,6 @@ IN="?_include_asm-alpha_ltt.h
 ?_include_asm-m68k_ltt.h
 ?_include_asm-m68knommu_ltt.h
 ?_include_asm-mips_ltt.h
-?_include_asm-mips_mipsregs.h
 ?_include_asm-mips_timex.h
 ?_arch_mips_kernel_time.c
 ?_include_asm-parisc_ltt.h
@@ -309,7 +308,6 @@ printf -v COUNT "%02d" ${VALUE}
 IN="?_arch_mips_kernel_process.c
 ?_arch_mips_kernel_ptrace.c
 ?_arch_mips_kernel_syscall.c
-?_arch_mips_kernel_time.c
 ?_arch_mips_kernel_traps.c
 ?_arch_mips_kernel_unaligned.c
 ?_include_asm-mips_mipsregs.h
@@ -346,8 +344,7 @@ FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-ppc.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_arch_ppc_Kconfig
-?_arch_ppc_kernel_misc.S
+IN="?_arch_ppc_kernel_misc.S
 ?_arch_ppc_kernel_time.c
 ?_arch_ppc_kernel_traps.c
 ?_arch_ppc_mm_fault.c"
