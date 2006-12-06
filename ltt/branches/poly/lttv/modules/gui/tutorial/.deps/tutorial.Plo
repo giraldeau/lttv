@@ -19,15 +19,16 @@ tutorial.lo tutorial.o: tutorial.c /usr/include/math.h \
   /usr/include/glib-2.0/glib/gerror.h /usr/include/glib-2.0/glib/gquark.h \
   /usr/include/glib-2.0/glib/gatomic.h \
   /usr/include/glib-2.0/glib/gbacktrace.h \
+  /usr/include/glib-2.0/glib/gbase64.h \
+  /usr/include/glib-2.0/glib/gbookmarkfile.h /usr/include/time.h \
+  /usr/include/bits/time.h /usr/include/bits/types.h \
+  /usr/include/bits/wordsize.h /usr/include/bits/typesizes.h \
   /usr/include/glib-2.0/glib/gcache.h /usr/include/glib-2.0/glib/glist.h \
   /usr/include/glib-2.0/glib/gmem.h /usr/include/glib-2.0/glib/gslice.h \
   /usr/include/glib-2.0/glib/gcompletion.h \
   /usr/include/glib-2.0/glib/gconvert.h \
   /usr/include/glib-2.0/glib/gdataset.h \
-  /usr/include/glib-2.0/glib/gdate.h /usr/include/time.h \
-  /usr/include/bits/time.h /usr/include/bits/types.h \
-  /usr/include/bits/wordsize.h /usr/include/bits/typesizes.h \
-  /usr/include/glib-2.0/glib/gdir.h \
+  /usr/include/glib-2.0/glib/gdate.h /usr/include/glib-2.0/glib/gdir.h \
   /usr/include/glib-2.0/glib/gfileutils.h \
   /usr/include/glib-2.0/glib/ghash.h /usr/include/glib-2.0/glib/ghook.h \
   /usr/include/glib-2.0/glib/giochannel.h \
@@ -390,6 +391,20 @@ tutorial.lo tutorial.o: tutorial.c /usr/include/math.h \
 
 /usr/include/glib-2.0/glib/gbacktrace.h:
 
+/usr/include/glib-2.0/glib/gbase64.h:
+
+/usr/include/glib-2.0/glib/gbookmarkfile.h:
+
+/usr/include/time.h:
+
+/usr/include/bits/time.h:
+
+/usr/include/bits/types.h:
+
+/usr/include/bits/wordsize.h:
+
+/usr/include/bits/typesizes.h:
+
 /usr/include/glib-2.0/glib/gcache.h:
 
 /usr/include/glib-2.0/glib/glist.h:
@@ -405,16 +420,6 @@ tutorial.lo tutorial.o: tutorial.c /usr/include/math.h \
 /usr/include/glib-2.0/glib/gdataset.h:
 
 /usr/include/glib-2.0/glib/gdate.h:
-
-/usr/include/time.h:
-
-/usr/include/bits/time.h:
-
-/usr/include/bits/types.h:
-
-/usr/include/bits/wordsize.h:
-
-/usr/include/bits/typesizes.h:
 
 /usr/include/glib-2.0/glib/gdir.h:
 

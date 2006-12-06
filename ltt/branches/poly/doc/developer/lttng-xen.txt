@@ -22,18 +22,21 @@ Reader uses poll()-like mechanism instead of polling the buffers each 100ms.
 
 * Dom0 lttd-xen process
 
-Does an hypercall to map the buffers.
+Does an hypercall to map the buffers (increment refcount)
 Does an hypercall to poll for data, put to sleep by the OS.
 Uses write from the mapped buffers to a file.
+unmap buffer, decrement refcount.
 
 
 * Xen
 
 tb_control (hypercalls seen from dom0 OS)
+(hypercalls done by lttctl-xen)
 - trace_create
 Map a page for control information, return it for mapping by user space. (rw)
 Map multiple pages for buffers. return them for mapping by user space.
 (shared, read-only for consumer)
+increment refcount
 - trace_start
 Activate tracing in control information.
 - trace_stop
@@ -47,7 +50,7 @@ Quiescent state detection.
   for_each_domain( d )
     for_each_vcpu( d, v )
       vcpu_sleep_sync(v);
-destroy the channels
+decrement refcount : destroy the channels
 
 Events coming from xen :
 - Buffer switch

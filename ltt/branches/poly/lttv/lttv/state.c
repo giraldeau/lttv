@@ -1956,7 +1956,7 @@ static gboolean irq_entry(void *hook_data, void *call_data)
   LttField *f = thf->f1;
 
   LttvExecutionSubmode submode;
-  guint64 irq = ltt_event_get_unsigned(e, f);
+  guint64 irq = ltt_event_get_long_unsigned(e, f);
   guint64 nb_irqs = ((LttvTraceState *)(s->parent.t_context))->nb_irqs;
   GString *string;
 
@@ -2006,7 +2006,7 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
   LttField *f = thf->f1;
 
   LttvExecutionSubmode submode;
-  guint64 softirq = ltt_event_get_unsigned(e, f);
+  guint64 softirq = ltt_event_get_long_unsigned(e, f);
   guint64 nb_softirqs = ((LttvTraceState *)(s->parent.t_context))->nb_softirqs;
   GString *string;
 
