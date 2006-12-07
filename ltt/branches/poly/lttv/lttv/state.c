@@ -2274,7 +2274,10 @@ static gboolean process_kernel_thread(void *hook_data, void *call_data)
   s->parent.target_pid = pid;
 
   process = lttv_state_find_process(ts, ANY_CPU, pid);
-  es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
+  process->execution_stack = 
+    g_array_set_size(process->execution_stack, 1);
+  es = process->state =
+    &g_array_index(process->execution_stack, LttvExecutionState, 0);
   es->t = LTTV_STATE_SYSCALL;
   process->type = LTTV_STATE_KERNEL_THREAD;
 

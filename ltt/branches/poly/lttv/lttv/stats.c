@@ -484,6 +484,9 @@ static void mode_end(LttvTracefileStats *tfcs)
 
   LttTime delta;
 
+  /* FIXME put there in case of a missing update after a state modification */
+  //update_event_tree(tfcs);
+
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_ELAPSED_TIME, 
       LTTV_TIME, &elapsed_time);
 
@@ -494,6 +497,8 @@ static void mode_end(LttvTracefileStats *tfcs)
     delta = ltt_time_zero;
 
   *(elapsed_time.v_time) = ltt_time_add(*(elapsed_time.v_time), delta);
+
+  //g_assert(delta.tv_nsec != 14736);
 
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_CPU_TIME, 
       LTTV_TIME, &cpu_time);
@@ -688,7 +693,6 @@ gboolean before_schedchange(void *hook_data, void *call_data)
   state_out = ltt_event_get_int(e, thf->f3);
 
   /* compute the time for the process to schedule out */
-
   mode_change(tfcs);
 
   return FALSE;
@@ -858,9 +862,6 @@ static void lttv_stats_cleanup_state(LttvTraceStats *tcs)
   for(i=0; i<nb_cpus; i++) {
     lttv_stats_cleanup_process_state(ts, ts->running_process[i]);
   }
-  /* Does not work correctly FIXME. */
-  //g_hash_table_foreach(ts->processes, lttv_stats_cleanup_process_state,
-  //    tcs);
 }
 
 void
