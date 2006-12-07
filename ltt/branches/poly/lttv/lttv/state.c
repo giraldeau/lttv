@@ -2257,7 +2257,8 @@ static gboolean process_fork(void *hook_data, void *call_data)
   return FALSE;
 }
 
-/* We stamp a newly created process as kernel_thread */
+/* We stamp a newly created process as kernel_thread.
+ * The thread should not be running yet. */
 static gboolean process_kernel_thread(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
@@ -2430,7 +2431,9 @@ static void fix_process(gpointer key, gpointer value,
         es->s = LTTV_STATE_RUN;
 
       if(process->execution_stack->len == 1) {
-        /* Still in user mode, means never scheduled */
+        /* Still in bottom unknown mode, means never did a system call
+	 * May be either in user mode, syscall mode, running or waiting.*/
+	/* FIXME : we may be tagging syscall mode when being user mode */
         process->execution_stack =
           g_array_set_size(process->execution_stack, 2);
         es = process->state = &g_array_index(process->execution_stack, 
@@ -2441,7 +2444,7 @@ static void fix_process(gpointer key, gpointer value,
         //g_assert(timestamp->tv_sec != 0);
         es->change = *timestamp;
         es->cum_cpu_time = ltt_time_zero;
-        es->s = LTTV_STATE_WAIT;
+        //es->s = LTTV_STATE_WAIT;
       }
     }
   }

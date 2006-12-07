@@ -393,7 +393,6 @@ lttv_tracefile_stats_get_type(void)
   return type;
 }
 
-
 static void
 find_event_tree(LttvTracefileStats *tfcs,
                 GQuark pid_time,
@@ -429,10 +428,9 @@ find_event_tree(LttvTracefileStats *tfcs,
   *event_types_tree = a;
 }
 
-
-/* Update the trace event tree for the specified cpu */
-static void update_trace_event_tree(LttvTracefileStats *tfcs, guint cpu)
+static void update_event_tree(LttvTracefileStats *tfcs)
 {
+  guint cpu = tfcs->parent.cpu;
   LttvTraceState *ts = (LttvTraceState *)tfcs->parent.parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
   LttvExecutionState *es = process->state;
@@ -444,9 +442,21 @@ static void update_trace_event_tree(LttvTracefileStats *tfcs, guint cpu)
       &(tfcs->current_event_types_tree));
 }
 
-static void update_event_tree(LttvTracefileStats *tfcs)
+
+/* Update the trace event tree for the specified cpu */
+static void update_trace_event_tree(LttvTraceStats *tcs)
 {
-  update_trace_event_tree(tfcs, tfcs->parent.cpu);
+  LttvTracefileStats *tfcs;
+  LttvTraceContext *tc = (LttvTraceContext*)tcs;
+  guint j, nb_tracefile;
+
+  /* For each tracefile, update the event tree */
+  nb_tracefile = tc->tracefiles->len;
+  for(j = 0; j < nb_tracefile; j++) {
+    tfcs = LTTV_TRACEFILE_STATS(g_array_index(tc->tracefiles,
+       LttvTracefileContext*, j));
+    update_event_tree(tfcs);
+  }
 }
 
 static void mode_change(LttvTracefileStats *tfcs)
@@ -485,15 +495,16 @@ static void mode_end(LttvTracefileStats *tfcs)
   LttTime delta;
 
   /* FIXME put there in case of a missing update after a state modification */
+  //void *lasttree = tfcs->current_events_tree;
   //update_event_tree(tfcs);
-
+  //g_assert (lasttree == tfcs->current_events_tree);
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_ELAPSED_TIME, 
       LTTV_TIME, &elapsed_time);
 
-  if(process->state->t != LTTV_STATE_MODE_UNKNOWN)
+  if(process->state->t != LTTV_STATE_MODE_UNKNOWN) {
     delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
         process->state->entry);
-  else
+  } else
     delta = ltt_time_zero;
 
   *(elapsed_time.v_time) = ltt_time_add(*(elapsed_time.v_time), delta);
@@ -552,7 +563,7 @@ static gboolean after_syscall_entry(void *hook_data, void *call_data)
 }
 
 
-gboolean before_syscall_exit(void *hook_data, void *call_data)
+static gboolean before_syscall_exit(void *hook_data, void *call_data)
 {
   mode_end((LttvTracefileStats *)call_data);
   return FALSE;
@@ -566,7 +577,7 @@ static gboolean after_syscall_exit(void *hook_data, void *call_data)
 }
 
 
-gboolean before_trap_entry(void *hook_data, void *call_data)
+static gboolean before_trap_entry(void *hook_data, void *call_data)
 {
   mode_change((LttvTracefileStats *)call_data);
   return FALSE;
@@ -580,99 +591,98 @@ static gboolean after_trap_entry(void *hook_data, void *call_data)
 }
 
 
-gboolean before_trap_exit(void *hook_data, void *call_data)
+static gboolean before_trap_exit(void *hook_data, void *call_data)
 {
   mode_end((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
 
-gboolean after_trap_exit(void *hook_data, void *call_data)
+static gboolean after_trap_exit(void *hook_data, void *call_data)
 {
   after_mode_end((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
 
-gboolean before_irq_entry(void *hook_data, void *call_data)
+static gboolean before_irq_entry(void *hook_data, void *call_data)
 {
   mode_change((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
-gboolean after_irq_entry(void *hook_data, void *call_data)
+static gboolean after_irq_entry(void *hook_data, void *call_data)
 {
   update_event_tree((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
 
-gboolean before_irq_exit(void *hook_data, void *call_data)
+static gboolean before_irq_exit(void *hook_data, void *call_data)
 {
   mode_end((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
 
-gboolean after_irq_exit(void *hook_data, void *call_data)
+static gboolean after_irq_exit(void *hook_data, void *call_data)
 {
   after_mode_end((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
 
-gboolean before_soft_irq_entry(void *hook_data, void *call_data)
+static gboolean before_soft_irq_entry(void *hook_data, void *call_data)
 {
   mode_change((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
-gboolean after_soft_irq_entry(void *hook_data, void *call_data)
+static gboolean after_soft_irq_entry(void *hook_data, void *call_data)
 {
   update_event_tree((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
-
-gboolean before_soft_irq_exit(void *hook_data, void *call_data)
+static gboolean before_soft_irq_exit(void *hook_data, void *call_data)
 {
   mode_end((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
 
-gboolean after_soft_irq_exit(void *hook_data, void *call_data)
+static gboolean after_soft_irq_exit(void *hook_data, void *call_data)
 {
   after_mode_end((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
-gboolean before_function_entry(void *hook_data, void *call_data)
+static gboolean before_function_entry(void *hook_data, void *call_data)
 {
   mode_change((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
-gboolean after_function_entry(void *hook_data, void *call_data)
+static gboolean after_function_entry(void *hook_data, void *call_data)
 {
   update_event_tree((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
-gboolean before_function_exit(void *hook_data, void *call_data)
+static gboolean before_function_exit(void *hook_data, void *call_data)
 {
   mode_end((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
-gboolean after_function_exit(void *hook_data, void *call_data)
+static gboolean after_function_exit(void *hook_data, void *call_data)
 {
   after_mode_end((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
 
-gboolean before_schedchange(void *hook_data, void *call_data)
+static gboolean before_schedchange(void *hook_data, void *call_data)
 {
   LttvTracefileStats *tfcs = (LttvTracefileStats *)call_data;
 
@@ -696,7 +706,7 @@ gboolean before_schedchange(void *hook_data, void *call_data)
   return FALSE;
 }
 
-gboolean after_schedchange(void *hook_data, void *call_data)
+static gboolean after_schedchange(void *hook_data, void *call_data)
 {
   LttvTracefileStats *tfcs = (LttvTracefileStats *)call_data;
 
@@ -732,21 +742,18 @@ gboolean after_schedchange(void *hook_data, void *call_data)
   return FALSE;
 }
 
-gboolean process_fork(void *hook_data, void *call_data)
+static gboolean process_fork(void *hook_data, void *call_data)
 {
-  /* nothing to do for now */
   return FALSE;
 }
 
-
-gboolean process_exit(void *hook_data, void *call_data)
+static gboolean process_exit(void *hook_data, void *call_data)
 {
-  /* We should probably exit all modes here or we could do that at 
-     schedule out. */
+  update_event_tree((LttvTracefileStats *)call_data);
   return FALSE;
 }
 
-gboolean before_enum_process_state(void *hook_data, void *call_data)
+static gboolean before_enum_process_state(void *hook_data, void *call_data)
 {
 #if 0
   /* Broken : adds up time in the current process doing the dump */
@@ -758,40 +765,28 @@ gboolean before_enum_process_state(void *hook_data, void *call_data)
   return FALSE;
 }
 
-gboolean after_enum_process_state(void *hook_data, void *call_data)
+static gboolean after_enum_process_state(void *hook_data, void *call_data)
 {
-  LttvTracefileStats *tfcs = (LttvTracefileStats *)call_data;
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-  LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
-  guint nb_cpus, i;
-
-  nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
-  for(i=0; i<nb_cpus; i++) {
-    update_trace_event_tree(tfcs, i);
-  }
+  LttvTraceStats *tcs = (LttvTraceStats*)tfc->t_context;
+  update_trace_event_tree(tcs);
   return FALSE;
 }
 
 static gboolean after_statedump_end(void *hook_data, void *call_data)
 {
-  LttvTracefileStats *tfcs = (LttvTracefileStats *)call_data;
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-  LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
-  guint nb_cpus, i;
-
-  nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
-  for(i=0; i<nb_cpus; i++) {
-    update_trace_event_tree(tfcs, i);
-  }
+  LttvTraceStats *tcs = (LttvTraceStats*)tfc->t_context;
+  update_trace_event_tree(tcs);
   return FALSE;
 }
 
-gboolean process_free(void *hook_data, void *call_data)
+static gboolean process_free(void *hook_data, void *call_data)
 {
   return FALSE;
 }
 
-gboolean every_event(void *hook_data, void *call_data)
+static gboolean every_event(void *hook_data, void *call_data)
 {
   LttvTracefileStats *tfcs = (LttvTracefileStats *)call_data;
 
