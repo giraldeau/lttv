@@ -498,8 +498,6 @@ static void mode_end(LttvTracefileStats *tfcs)
 
   *(elapsed_time.v_time) = ltt_time_add(*(elapsed_time.v_time), delta);
 
-  //g_assert(delta.tv_nsec != 14736);
-
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_CPU_TIME, 
       LTTV_TIME, &cpu_time);
 
