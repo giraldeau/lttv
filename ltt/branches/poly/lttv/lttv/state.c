@@ -2153,6 +2153,7 @@ static gboolean schedchange(void *hook_data, void *call_data)
         process->state->t = LTTV_STATE_SYSCALL;
         process->state->s = LTTV_STATE_WAIT;
         process->state->change = s->parent.timestamp;
+        process->state->entry = s->parent.timestamp;
       }
     } else {
       if(unlikely(process->state->s == LTTV_STATE_EXIT)) {

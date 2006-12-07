@@ -40,7 +40,7 @@ GQuark
   LTTV_STATS_MODE_TYPES,
   LTTV_STATS_MODES,
   LTTV_STATS_SUBMODES,
-	LTTV_STATS_FUNCTIONS,
+  LTTV_STATS_FUNCTIONS,
   LTTV_STATS_EVENT_TYPES,
   LTTV_STATS_CPU_TIME,
   LTTV_STATS_CUMULATIVE_CPU_TIME,
@@ -56,7 +56,7 @@ GQuark
 
 static void
 find_event_tree(LttvTracefileStats *tfcs, GQuark pid_time, guint cpu,
-		guint64 function,
+    guint64 function,
     GQuark mode, GQuark sub_mode, LttvAttribute **events_tree, 
     LttvAttribute **event_types_tree);
 
@@ -121,10 +121,10 @@ static void lttv_stats_init(LttvTracesetStats *self)
       tfcs = LTTV_TRACEFILE_STATS(*tfs);
       tfcs->stats = lttv_attribute_find_subdir(tracefiles_stats, 
           ltt_tracefile_long_name(tfcs->parent.parent.tf));
-  		guint cpu = tfcs->parent.cpu;
+      guint cpu = tfcs->parent.cpu;
       find_event_tree(tfcs, LTTV_STATS_PROCESS_UNKNOWN,
-					cpu,
-					0x0ULL,
+          cpu,
+          0x0ULL,
           LTTV_STATE_MODE_UNKNOWN, 
           LTTV_STATE_SUBMODE_UNKNOWN, &tfcs->current_events_tree,
           &tfcs->current_event_types_tree);
@@ -398,20 +398,20 @@ static void
 find_event_tree(LttvTracefileStats *tfcs,
                 GQuark pid_time,
                 guint cpu,
-								guint64 function,
+                guint64 function,
                 GQuark mode,
                 GQuark sub_mode,
                 LttvAttribute **events_tree, 
                 LttvAttribute **event_types_tree)
 {
   LttvAttribute *a, *prev_a;
-	gchar fstring[MAX_64_HEX_STRING_LEN];
-	gint ret;
+  gchar fstring[MAX_64_HEX_STRING_LEN];
+  gint ret;
 
-	ret = snprintf(fstring, MAX_64_HEX_STRING_LEN-1,
-				"0x%llX", function) > 0;
-	g_assert(ret > 0);
-	fstring[MAX_64_HEX_STRING_LEN-1] = '\0';
+  ret = snprintf(fstring, MAX_64_HEX_STRING_LEN-1,
+        "0x%llX", function) > 0;
+  g_assert(ret > 0);
+  fstring[MAX_64_HEX_STRING_LEN-1] = '\0';
 
   LttvTraceStats *tcs = (LttvTraceStats*)tfcs->parent.parent.t_context;
   a = lttv_attribute_find_subdir(tcs->stats, LTTV_STATS_PROCESSES);
@@ -430,20 +430,24 @@ find_event_tree(LttvTracefileStats *tfcs,
 }
 
 
-static void update_event_tree(LttvTracefileStats *tfcs) 
+/* Update the trace event tree for the specified cpu */
+static void update_trace_event_tree(LttvTracefileStats *tfcs, guint cpu)
 {
   LttvTraceState *ts = (LttvTraceState *)tfcs->parent.parent.t_context;
-  guint cpu = tfcs->parent.cpu;
   LttvProcessState *process = ts->running_process[cpu];
   LttvExecutionState *es = process->state;
 
   find_event_tree(tfcs, process->pid_time,
       cpu,
-			process->current_function,
+      process->current_function,
       es->t, es->n, &(tfcs->current_events_tree), 
       &(tfcs->current_event_types_tree));
 }
 
+static void update_event_tree(LttvTracefileStats *tfcs)
+{
+  update_trace_event_tree(tfcs, tfcs->parent.cpu);
+}
 
 static void mode_change(LttvTracefileStats *tfcs)
 {
@@ -454,19 +458,23 @@ static void mode_change(LttvTracefileStats *tfcs)
 
   LttTime delta;
 
-  delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
-      process->state->change);
+  if(process->state->s == LTTV_STATE_RUN &&
+      process->state->t != LTTV_STATE_MODE_UNKNOWN)
+    delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
+        process->state->change);
+  else
+    delta = ltt_time_zero;
 
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_CPU_TIME, 
       LTTV_TIME, &cpu_time);
   *(cpu_time.v_time) = ltt_time_add(*(cpu_time.v_time), delta);
 
   process->state->cum_cpu_time = ltt_time_add(process->state->cum_cpu_time,
-			delta);
+      delta);
 }
 
 /* Note : every mode_end must come with a cumulative cpu time update in the
- * after hook */
+ * after hook. */
 static void mode_end(LttvTracefileStats *tfcs)
 {
   LttvTraceState *ts = (LttvTraceState *)tfcs->parent.parent.t_context;
@@ -478,22 +486,34 @@ static void mode_end(LttvTracefileStats *tfcs)
 
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_ELAPSED_TIME, 
       LTTV_TIME, &elapsed_time);
-  delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
-      process->state->entry);
+
+  if(process->state->t != LTTV_STATE_MODE_UNKNOWN)
+    delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
+        process->state->entry);
+  else
+    delta = ltt_time_zero;
+
   *(elapsed_time.v_time) = ltt_time_add(*(elapsed_time.v_time), delta);
 
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_CPU_TIME, 
       LTTV_TIME, &cpu_time);
-  delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
-      process->state->change);
+
+  /* if it is a running mode, we must count its cpu time */
+  if(process->state->s == LTTV_STATE_RUN &&
+      process->state->t != LTTV_STATE_MODE_UNKNOWN)
+    delta = ltt_time_sub(tfcs->parent.parent.timestamp, 
+        process->state->change);
+  else
+    delta = ltt_time_zero;
+
   *(cpu_time.v_time) = ltt_time_add(*(cpu_time.v_time), delta);
   process->state->cum_cpu_time = ltt_time_add(process->state->cum_cpu_time,
-			delta);
+      delta);
 
   lttv_attribute_find(tfcs->current_events_tree, LTTV_STATS_CUMULATIVE_CPU_TIME,
       LTTV_TIME, &cum_cpu_time);
   *(cum_cpu_time.v_time) = ltt_time_add(*(cum_cpu_time.v_time), 
-			process->state->cum_cpu_time);
+      process->state->cum_cpu_time);
 }
 
 
@@ -507,12 +527,12 @@ static void after_mode_end(LttvTracefileStats *tfcs)
   LttTime nested_delta;
 
   nested_delta = process->state->cum_cpu_time;
-  process->state->cum_cpu_time = ltt_time_zero;	/* For after traceset hook */
+  process->state->cum_cpu_time = ltt_time_zero;  /* For after traceset hook */
 
   update_event_tree(tfcs);
 
   process->state->cum_cpu_time = ltt_time_add(process->state->cum_cpu_time,
-			nested_delta);
+      nested_delta);
 }
 
 static gboolean before_syscall_entry(void *hook_data, void *call_data)
@@ -700,14 +720,14 @@ gboolean after_schedchange(void *hook_data, void *call_data)
 
   find_event_tree(tfcs, process->pid_time,
       cpu,
-			process->current_function,
+      process->current_function,
       process->state->t, process->state->n, &(tfcs->current_events_tree), 
       &(tfcs->current_event_types_tree));
 
   /* compute the time waiting for the process to schedule in */
   mode_change(tfcs);
 
-	return FALSE;
+  return FALSE;
 }
 
 gboolean process_fork(void *hook_data, void *call_data)
@@ -726,15 +746,41 @@ gboolean process_exit(void *hook_data, void *call_data)
 
 gboolean before_enum_process_state(void *hook_data, void *call_data)
 {
-  mode_end((LttvTracefileStats *)call_data);
-  after_mode_end((LttvTracefileStats *)call_data);
-  mode_change((LttvTracefileStats *)call_data);
+#if 0
+  /* Broken : adds up time in the current process doing the dump */
+  LttvTracefileStats *tfcs = (LttvTracefileStats *)call_data;
+  mode_end(tfcs);
+  after_mode_end(tfcs);
+  mode_change(tfcs);
+#endif //0
   return FALSE;
 }
 
 gboolean after_enum_process_state(void *hook_data, void *call_data)
 {
-  update_event_tree((LttvTracefileStats *)call_data);
+  LttvTracefileStats *tfcs = (LttvTracefileStats *)call_data;
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+  LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
+  guint nb_cpus, i;
+
+  nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
+  for(i=0; i<nb_cpus; i++) {
+    update_trace_event_tree(tfcs, i);
+  }
+  return FALSE;
+}
+
+static gboolean after_statedump_end(void *hook_data, void *call_data)
+{
+  LttvTracefileStats *tfcs = (LttvTracefileStats *)call_data;
+  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+  LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
+  guint nb_cpus, i;
+
+  nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
+  for(i=0; i<nb_cpus; i++) {
+    update_trace_event_tree(tfcs, i);
+  }
   return FALSE;
 }
 
@@ -763,13 +809,11 @@ gboolean every_event(void *hook_data, void *call_data)
   return FALSE;
 }
 
-static void lttv_stats_cleanup_process_state(gpointer key, gpointer value,
-    gpointer user_data)
+static void lttv_stats_cleanup_process_state(LttvTraceState *ts,
+  LttvProcessState *process)
 {
-  LttvTraceStats *tcs = (LttvTraceStats *)user_data;
-  LttvTraceState *ts = (LttvTraceState *)user_data;
+  LttvTraceStats *tcs = (LttvTraceStats *)ts;
   LttvTracesetContext *tsc = ts->parent.ts_context;
-  LttvProcessState *process = (LttvProcessState *)value;
   int i;
   LttvTracefileStats **tfs = (LttvTracefileStats **)
       &g_array_index(ts->parent.tracefiles, LttvTracefileContext*,
@@ -789,9 +833,7 @@ static void lttv_stats_cleanup_process_state(gpointer key, gpointer value,
           process->current_function,
           process->state->t, process->state->n, &((*tfs)->current_events_tree), 
           &((*tfs)->current_event_types_tree));
-      /* if it is a running mode, we must count its cpu time */
-      if(process->state->s == LTTV_STATE_RUN)
-        mode_end(*tfs);
+      mode_end(*tfs);
       nested_delta = process->state->cum_cpu_time;
     }
     cleanup_empty = lttv_state_pop_state_cleanup(process,
@@ -804,15 +846,21 @@ static void lttv_stats_cleanup_process_state(gpointer key, gpointer value,
   (*tfs)->parent.parent.timestamp = save_time;
 }
 
-/* For each process in the state, for each of their stacked states,
+/* For each cpu, for each of their stacked states,
  * perform sum of needed values. */
 static void lttv_stats_cleanup_state(LttvTraceStats *tcs)
 {
   LttvTraceState *ts = (LttvTraceState *)tcs;
+  guint nb_cpus, i;
+
+  nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
   
+  for(i=0; i<nb_cpus; i++) {
+    lttv_stats_cleanup_process_state(ts, ts->running_process[i]);
+  }
   /* Does not work correctly FIXME. */
-  g_hash_table_foreach(ts->processes, lttv_stats_cleanup_process_state,
-      tcs);
+  //g_hash_table_foreach(ts->processes, lttv_stats_cleanup_process_state,
+  //    tcs);
 }
 
 void
@@ -826,11 +874,11 @@ lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
 
   LttvAttributeName name;
 
-	gboolean is_named;
+  gboolean is_named;
 
   unsigned sum;
 
-	int trace_is_summed;
+  int trace_is_summed;
 
   int i, j, k, l, m, nb_process, nb_cpu, nb_mode_type, nb_submode,
       nb_event_type, nf, nb_functions;
@@ -839,9 +887,9 @@ lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
       *cpu_tree, *mode_tree, *mode_types_tree, *submodes_tree,
       *submode_tree, *event_types_tree, *mode_events_tree,
       *cpu_functions_tree,
-			*function_tree,
-			*function_mode_types_tree,
-			*trace_cpu_tree;
+      *function_tree,
+      *function_mode_types_tree,
+      *trace_cpu_tree;
 
 
   main_tree = sum_container;
@@ -849,14 +897,14 @@ lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
   lttv_attribute_find(sum_container,
                       LTTV_STATS_SUMMED, 
                       LTTV_UINT, &value);
-	trace_is_summed = *(value.v_uint);
+  trace_is_summed = *(value.v_uint);
   *(value.v_uint) = 1;
 
-	/* First cleanup the state : sum all stalled information (never ending
-	 * states). */
-	if(!trace_is_summed)
-		lttv_stats_cleanup_state(self);
-	
+  /* First cleanup the state : sum all stalled information (never ending
+   * states). */
+  if(!trace_is_summed)
+    lttv_stats_cleanup_state(self);
+  
   processes_tree = lttv_attribute_find_subdir(main_tree, 
                                               LTTV_STATS_PROCESSES);
   nb_process = lttv_attribute_get_number(processes_tree);
@@ -874,70 +922,70 @@ lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
 
       trace_cpu_tree = lttv_attribute_find_subdir(main_tree, LTTV_STATS_CPU);
       trace_cpu_tree = lttv_attribute_find_subdir_unnamed(trace_cpu_tree, name);
-			cpu_functions_tree = lttv_attribute_find_subdir(cpu_tree,
-																											LTTV_STATS_FUNCTIONS);
-    	nb_functions = lttv_attribute_get_number(cpu_functions_tree);
-			
-			for(nf=0; nf < nb_functions; nf++) {
-				type = lttv_attribute_get(cpu_functions_tree, nf, &name, &value,
-						&is_named);
-				function_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-				function_mode_types_tree = lttv_attribute_find_subdir(function_tree,
-						LTTV_STATS_MODE_TYPES);
-      	nb_mode_type = lttv_attribute_get_number(function_mode_types_tree);
-				for(k = 0 ; k < nb_mode_type ; k++) {
-					type = lttv_attribute_get(function_mode_types_tree, k, &name, &value,
-							&is_named);
-					mode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+      cpu_functions_tree = lttv_attribute_find_subdir(cpu_tree,
+                                                      LTTV_STATS_FUNCTIONS);
+      nb_functions = lttv_attribute_get_number(cpu_functions_tree);
+      
+      for(nf=0; nf < nb_functions; nf++) {
+        type = lttv_attribute_get(cpu_functions_tree, nf, &name, &value,
+            &is_named);
+        function_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+        function_mode_types_tree = lttv_attribute_find_subdir(function_tree,
+            LTTV_STATS_MODE_TYPES);
+        nb_mode_type = lttv_attribute_get_number(function_mode_types_tree);
+        for(k = 0 ; k < nb_mode_type ; k++) {
+          type = lttv_attribute_get(function_mode_types_tree, k, &name, &value,
+              &is_named);
+          mode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
-					submodes_tree = lttv_attribute_find_subdir(mode_tree, 
-							LTTV_STATS_SUBMODES);
-					mode_events_tree = lttv_attribute_find_subdir(mode_tree,
-							LTTV_STATS_EVENTS);
-					mode_types_tree = lttv_attribute_find_subdir(mode_tree, 
-							LTTV_STATS_MODE_TYPES);
+          submodes_tree = lttv_attribute_find_subdir(mode_tree, 
+              LTTV_STATS_SUBMODES);
+          mode_events_tree = lttv_attribute_find_subdir(mode_tree,
+              LTTV_STATS_EVENTS);
+          mode_types_tree = lttv_attribute_find_subdir(mode_tree, 
+              LTTV_STATS_MODE_TYPES);
 
-					nb_submode = lttv_attribute_get_number(submodes_tree);
+          nb_submode = lttv_attribute_get_number(submodes_tree);
 
-					for(l = 0 ; l < nb_submode ; l++) {
-						type = lttv_attribute_get(submodes_tree, l, &name, &value,
-								&is_named);
-						submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+          for(l = 0 ; l < nb_submode ; l++) {
+            type = lttv_attribute_get(submodes_tree, l, &name, &value,
+                &is_named);
+            submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
 
-						event_types_tree = lttv_attribute_find_subdir(submode_tree, 
-							LTTV_STATS_EVENT_TYPES);
-						nb_event_type = lttv_attribute_get_number(event_types_tree);
+            event_types_tree = lttv_attribute_find_subdir(submode_tree, 
+              LTTV_STATS_EVENT_TYPES);
+            nb_event_type = lttv_attribute_get_number(event_types_tree);
 
-						sum = 0;
-						for(m = 0 ; m < nb_event_type ; m++) {
-							type = lttv_attribute_get(event_types_tree, m, &name, &value,
-									&is_named);
-							sum += *(value.v_uint);
-						}
-						lttv_attribute_find(submode_tree, LTTV_STATS_EVENTS_COUNT, 
-								LTTV_UINT, &value);
-						*(value.v_uint) = sum;
+            sum = 0;
+            for(m = 0 ; m < nb_event_type ; m++) {
+              type = lttv_attribute_get(event_types_tree, m, &name, &value,
+                  &is_named);
+              sum += *(value.v_uint);
+            }
+            lttv_attribute_find(submode_tree, LTTV_STATS_EVENTS_COUNT, 
+                LTTV_UINT, &value);
+            *(value.v_uint) = sum;
 
-						type = lttv_attribute_get(submodes_tree, l, &name, &value,
-								&is_named);
-						submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
-						if(!trace_is_summed) {
-							lttv_attribute_recursive_add(mode_events_tree, event_types_tree);
-							lttv_attribute_recursive_add(mode_types_tree, submode_tree);
-						}
-					}
-					if(!trace_is_summed) {
-						lttv_attribute_recursive_add(function_tree, mode_types_tree);
-					}
-				}
-				if(!trace_is_summed) {
-					lttv_attribute_recursive_add(cpu_tree, function_tree);
-					lttv_attribute_recursive_add(process_tree, function_tree);
-					lttv_attribute_recursive_add(trace_cpu_tree, function_tree);
-					lttv_attribute_recursive_add(main_tree, function_tree);
-				}
-				lttv_attribute_recursive_add(ts_stats, function_tree);
-			}
+            type = lttv_attribute_get(submodes_tree, l, &name, &value,
+                &is_named);
+            submode_tree = LTTV_ATTRIBUTE(*(value.v_gobject));
+            if(!trace_is_summed) {
+              lttv_attribute_recursive_add(mode_events_tree, event_types_tree);
+              lttv_attribute_recursive_add(mode_types_tree, submode_tree);
+            }
+          }
+          if(!trace_is_summed) {
+            lttv_attribute_recursive_add(function_tree, mode_types_tree);
+          }
+        }
+        if(!trace_is_summed) {
+          lttv_attribute_recursive_add(cpu_tree, function_tree);
+          lttv_attribute_recursive_add(process_tree, function_tree);
+          lttv_attribute_recursive_add(trace_cpu_tree, function_tree);
+          lttv_attribute_recursive_add(main_tree, function_tree);
+        }
+        lttv_attribute_recursive_add(ts_stats, function_tree);
+      }
     }
   }
 }
@@ -973,7 +1021,7 @@ lttv_stats_sum_traceset(LttvTracesetStats *self)
   for(i = 0 ; i < nb_trace ; i++) {
     tcs = (LttvTraceStats *)(self->parent.parent.traces[i]);
     lttv_stats_sum_trace(tcs, self->stats);
-	//				lttv_attribute_recursive_add(sum_container, tcs->stats);
+  //        lttv_attribute_recursive_add(sum_container, tcs->stats);
   }
 }
 
@@ -1007,7 +1055,7 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
   LttvAttributeValue val;
 
   gint ret;
-	gint hn;
+  gint hn;
 
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
@@ -1109,8 +1157,8 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
     before_hooks = hooks;
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 15);
-    g_array_set_size(hooks, 15);
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 16);
+    g_array_set_size(hooks, 16);
     hn=0;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
@@ -1216,6 +1264,13 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
         LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
         LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
         after_enum_process_state, NULL,
+        &g_array_index(hooks, LttvTraceHook, hn++));
+    if(ret) hn--;
+
+    ret = lttv_trace_find_hook(ts->parent.parent.t,
+        LTT_FACILITY_STATEDUMP, LTT_EVENT_STATEDUMP_END,
+        0, 0, 0,
+        after_statedump_end, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
