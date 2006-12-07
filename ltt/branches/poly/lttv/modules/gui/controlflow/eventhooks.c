@@ -1904,6 +1904,8 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
 
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
 
+  guint first_cpu, nb_cpus, cpu;
+
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
 
@@ -1928,58 +1930,67 @@ int after_event_enum_process_hook(void *hook_data, void *call_data)
   {
     pid_in = ltt_event_get_long_unsigned(e, thf->f1);
   }
-
-
-  /* Find process pid_in in the list... */
-  process_in = lttv_state_find_process(ts, ANY_CPU, pid_in);
-  //process_in = tfs->process;
-  //guint cpu = tfs->cpu;
-  //guint trace_num = ts->parent.index;
-  //process_in = ts->running_process[cpu];
-  /* It should exist, because we are after the state update. */
-#ifdef EXTRA_CHECK
-  //g_assert(process_in != NULL);
-#endif //EXTRA_CHECK
-  birth = process_in->creation_time;
-
-  hashed_process_data_in = processlist_get_process_data(process_list,
-          pid_in,
-          process_in->cpu,
-          &birth,
-          trace_num);
-  if(hashed_process_data_in == NULL)
-  {
-		if(pid_in != 0 && pid_in == process_in->ppid)
-			g_critical("TEST %u , %u", pid_in, process_in->ppid);
-    g_assert(pid_in == 0 || pid_in != process_in->ppid);
-    ProcessInfo *process_info;
-    Drawing_t *drawing = control_flow_data->drawing;
-    /* Process not present */
-    processlist_add(process_list,
-        drawing,
-        pid_in,
-        process_in->tgid,
-        process_in->cpu,
-        process_in->ppid,
-        &birth,
-        trace_num,
-        process_in->name,
-        process_in->brand,
-        &pl_height,
-        &process_info,
-        &hashed_process_data_in);
-        gtk_widget_set_size_request(drawing->drawing_area,
-                                    -1,
-                                    pl_height);
-        gtk_widget_queue_draw(drawing->drawing_area);
+  
+  if(pid_in == 0) {
+    first_cpu = 0;
+    nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
   } else {
-          processlist_set_name(process_list, process_in->name,
-                               hashed_process_data_in);
-          processlist_set_ppid(process_list, process_in->ppid,
-                               hashed_process_data_in);
-          processlist_set_tgid(process_list, process_in->tgid,
-                               hashed_process_data_in);
-	}
+    first_cpu = ANY_CPU;
+    nb_cpus = ANY_CPU+1;
+  }
+
+  for(cpu = first_cpu; cpu < nb_cpus; cpu++) {
+    /* Find process pid_in in the list... */
+    process_in = lttv_state_find_process(ts, cpu, pid_in);
+    //process_in = tfs->process;
+    //guint cpu = tfs->cpu;
+    //guint trace_num = ts->parent.index;
+    //process_in = ts->running_process[cpu];
+    /* It should exist, because we are after the state update. */
+  #ifdef EXTRA_CHECK
+    //g_assert(process_in != NULL);
+  #endif //EXTRA_CHECK
+    birth = process_in->creation_time;
+
+    hashed_process_data_in = processlist_get_process_data(process_list,
+            pid_in,
+            process_in->cpu,
+            &birth,
+            trace_num);
+    if(hashed_process_data_in == NULL)
+    {
+      if(pid_in != 0 && pid_in == process_in->ppid)
+        g_critical("TEST %u , %u", pid_in, process_in->ppid);
+      g_assert(pid_in == 0 || pid_in != process_in->ppid);
+      ProcessInfo *process_info;
+      Drawing_t *drawing = control_flow_data->drawing;
+      /* Process not present */
+      processlist_add(process_list,
+          drawing,
+          pid_in,
+          process_in->tgid,
+          process_in->cpu,
+          process_in->ppid,
+          &birth,
+          trace_num,
+          process_in->name,
+          process_in->brand,
+          &pl_height,
+          &process_info,
+          &hashed_process_data_in);
+          gtk_widget_set_size_request(drawing->drawing_area,
+                                      -1,
+                                      pl_height);
+          gtk_widget_queue_draw(drawing->drawing_area);
+    } else {
+      processlist_set_name(process_list, process_in->name,
+                           hashed_process_data_in);
+      processlist_set_ppid(process_list, process_in->ppid,
+                           hashed_process_data_in);
+      processlist_set_tgid(process_list, process_in->tgid,
+                           hashed_process_data_in);
+    }
+  }
   return 0;
 }
 
@@ -2523,10 +2534,10 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
         } else {
           draw_context.drawinfo.start.x = hashed_process_data->x.middle;
           /* Draw the line */
-	  if(dodraw) {
-            PropertiesLine prop_line = prepare_s_e_line(process);
-            draw_line((void*)&prop_line, (void*)&draw_context);
-	  }
+          if(dodraw) {
+                  PropertiesLine prop_line = prepare_s_e_line(process);
+                  draw_line((void*)&prop_line, (void*)&draw_context);
+          }
 
            /* become the last x position */
           if(likely(x != hashed_process_data->x.middle)) {

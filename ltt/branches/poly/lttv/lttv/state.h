@@ -182,7 +182,6 @@ typedef GQuark LttvProcessStatus;
 
 extern LttvProcessStatus
   LTTV_STATE_UNNAMED,
-  LTTV_STATE_UNBRANDED,
   LTTV_STATE_WAIT_FORK,
   LTTV_STATE_WAIT_CPU,
   LTTV_STATE_EXIT,
@@ -190,6 +189,9 @@ extern LttvProcessStatus
   LTTV_STATE_WAIT,
   LTTV_STATE_RUN,
   LTTV_STATE_DEAD;
+
+extern GQuark
+  LTTV_STATE_UNBRANDED;
 
 typedef GQuark LttvProcessType;
 

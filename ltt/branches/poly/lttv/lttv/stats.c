@@ -764,42 +764,44 @@ gboolean every_event(void *hook_data, void *call_data)
 }
 
 static void lttv_stats_cleanup_process_state(gpointer key, gpointer value,
-		gpointer user_data)
+    gpointer user_data)
 {
-	LttvTraceStats *tcs = (LttvTraceStats *)user_data;
-	LttvTraceState *ts = (LttvTraceState *)user_data;
-	LttvTracesetContext *tsc = ts->parent.ts_context;
-	LttvProcessState *process = (LttvProcessState *)value;
-	int i;
-	LttvTracefileStats **tfs = (LttvTracefileStats **)
-			&g_array_index(ts->parent.tracefiles, LttvTracefileContext*,
-					process->cpu);
-	int cleanup_empty = 0;
-	LttTime nested_delta = ltt_time_zero;
-	/* FIXME : ok, this is a hack. The time is infinite here :( */
-	LttTime save_time = (*tfs)->parent.parent.timestamp;
-	LttTime start, end;
-	ltt_trace_time_span_get(ts->parent.t, &start, &end);
-	(*tfs)->parent.parent.timestamp = end;
+  LttvTraceStats *tcs = (LttvTraceStats *)user_data;
+  LttvTraceState *ts = (LttvTraceState *)user_data;
+  LttvTracesetContext *tsc = ts->parent.ts_context;
+  LttvProcessState *process = (LttvProcessState *)value;
+  int i;
+  LttvTracefileStats **tfs = (LttvTracefileStats **)
+      &g_array_index(ts->parent.tracefiles, LttvTracefileContext*,
+          process->cpu);
+  int cleanup_empty = 0;
+  LttTime nested_delta = ltt_time_zero;
+  /* FIXME : ok, this is a hack. The time is infinite here :( */
+  LttTime save_time = (*tfs)->parent.parent.timestamp;
+  LttTime start, end;
+  ltt_trace_time_span_get(ts->parent.t, &start, &end);
+  (*tfs)->parent.parent.timestamp = end;
 
-	do {
-		if(ltt_time_compare(process->state->cum_cpu_time, ltt_time_zero) != 0) {
-			find_event_tree(*tfs, process->pid_time,
-					process->cpu,
-					process->current_function,
-					process->state->t, process->state->n, &((*tfs)->current_events_tree), 
-					&((*tfs)->current_event_types_tree));
-			mode_end(*tfs);
-			nested_delta = process->state->cum_cpu_time;
-		}
-		cleanup_empty = lttv_state_pop_state_cleanup(process,
-				(LttvTracefileState *)*tfs);
-		process->state->cum_cpu_time = ltt_time_add(process->state->cum_cpu_time,
-				nested_delta);
+  do {
+    if(ltt_time_compare(process->state->cum_cpu_time, ltt_time_zero) != 0) {
+      find_event_tree(*tfs, process->pid_time,
+          process->cpu,
+          process->current_function,
+          process->state->t, process->state->n, &((*tfs)->current_events_tree), 
+          &((*tfs)->current_event_types_tree));
+      /* if it is a running mode, we must count its cpu time */
+      if(process->state->s == LTTV_STATE_RUN)
+        mode_end(*tfs);
+      nested_delta = process->state->cum_cpu_time;
+    }
+    cleanup_empty = lttv_state_pop_state_cleanup(process,
+        (LttvTracefileState *)*tfs);
+    process->state->cum_cpu_time = ltt_time_add(process->state->cum_cpu_time,
+        nested_delta);
 
-	} while(cleanup_empty != 1);
+  } while(cleanup_empty != 1);
 
-	(*tfs)->parent.parent.timestamp = save_time;
+  (*tfs)->parent.parent.timestamp = save_time;
 }
 
 /* For each process in the state, for each of their stacked states,
@@ -807,10 +809,10 @@ static void lttv_stats_cleanup_process_state(gpointer key, gpointer value,
 static void lttv_stats_cleanup_state(LttvTraceStats *tcs)
 {
   LttvTraceState *ts = (LttvTraceState *)tcs;
-	
-	/* Does not work correctly FIXME. */
-	g_hash_table_foreach(ts->processes, lttv_stats_cleanup_process_state,
-			tcs);
+  
+  /* Does not work correctly FIXME. */
+  g_hash_table_foreach(ts->processes, lttv_stats_cleanup_process_state,
+      tcs);
 }
 
 void

@@ -112,7 +112,6 @@ LttvExecutionSubmode
 
 LttvProcessStatus
   LTTV_STATE_UNNAMED,
-  LTTV_STATE_UNBRANDED,
   LTTV_STATE_WAIT_FORK,
   LTTV_STATE_WAIT_CPU,
   LTTV_STATE_EXIT,
@@ -120,6 +119,9 @@ LttvProcessStatus
   LTTV_STATE_WAIT,
   LTTV_STATE_RUN,
   LTTV_STATE_DEAD;
+
+GQuark
+  LTTV_STATE_UNBRANDED;
 
 LttvProcessType
   LTTV_STATE_USER_THREAD,
@@ -255,8 +257,9 @@ restore_init_state(LttvTraceState *self)
       &g_array_index(self->running_process[i]->execution_stack,
         LttvExecutionState, 0);
     es->t = LTTV_STATE_MODE_UNKNOWN;
+    es->s = LTTV_STATE_UNNAMED;
 
-    self->running_process[i]->state->s = LTTV_STATE_RUN;
+    //self->running_process[i]->state->s = LTTV_STATE_RUN;
     self->running_process[i]->cpu = i;
   }
   
@@ -1821,6 +1824,7 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
     process->state = es =
       &g_array_index(process->execution_stack, LttvExecutionState, 0);
     es->t = LTTV_STATE_MODE_UNKNOWN;
+    es->s = LTTV_STATE_UNNAMED;
   }
   return process;
 }
@@ -2140,24 +2144,30 @@ static gboolean schedchange(void *hook_data, void *call_data)
     //if(unlikely(process->pid != pid_out)) {
     //  g_assert(process->pid == 0);
     //}
-    if(process->pid == 0 && process->state->t == LTTV_STATE_MODE_UNKNOWN) {
-      /* Scheduling out of pid 0 at beginning of the trace :
-       * we know for sure it is in syscall mode at this point. */
-      g_assert(process->execution_stack->len == 1);
-      process->state->t = LTTV_STATE_SYSCALL;
-    }
-    if(unlikely(process->state->s == LTTV_STATE_EXIT)) {
-      process->state->s = LTTV_STATE_ZOMBIE;
-      process->state->change = s->parent.timestamp;
+    if(process->pid == 0
+      && process->state->t == LTTV_STATE_MODE_UNKNOWN) {
+      if(pid_out == 0) {
+        /* Scheduling out of pid 0 at beginning of the trace :
+         * we know for sure it is in syscall mode at this point. */
+        g_assert(process->execution_stack->len == 1);
+        process->state->t = LTTV_STATE_SYSCALL;
+        process->state->s = LTTV_STATE_WAIT;
+        process->state->change = s->parent.timestamp;
+      }
     } else {
-      if(unlikely(state_out == 0)) process->state->s = LTTV_STATE_WAIT_CPU;
-      else process->state->s = LTTV_STATE_WAIT;
-      process->state->change = s->parent.timestamp;
+      if(unlikely(process->state->s == LTTV_STATE_EXIT)) {
+        process->state->s = LTTV_STATE_ZOMBIE;
+        process->state->change = s->parent.timestamp;
+      } else {
+        if(unlikely(state_out == 0)) process->state->s = LTTV_STATE_WAIT_CPU;
+        else process->state->s = LTTV_STATE_WAIT;
+        process->state->change = s->parent.timestamp;
+      }
+      
+      if(state_out == 32)
+         exit_process(s, process); /* EXIT_DEAD */
+            /* see sched.h for states */
     }
-    
-    if(state_out == 32)
-       exit_process(s, process); /* EXIT_DEAD */
-          /* see sched.h for states */
   }
   process = ts->running_process[cpu] =
               lttv_state_find_process_or_create(
@@ -2396,11 +2406,12 @@ static void fix_process(gpointer key, gpointer value,
     es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
     if(es->t == LTTV_STATE_MODE_UNKNOWN) {
       es->t = LTTV_STATE_SYSCALL;
-      es->s = LTTV_STATE_WAIT;
       es->n = LTTV_STATE_SUBMODE_NONE;
       es->entry = *timestamp;
       es->change = *timestamp;
       es->cum_cpu_time = ltt_time_zero;
+      if(es->s == LTTV_STATE_UNNAMED)
+        es->s = LTTV_STATE_WAIT;
     }
   } else {
     es = &g_array_index(process->execution_stack, LttvExecutionState, 0);
@@ -2411,7 +2422,8 @@ static void fix_process(gpointer key, gpointer value,
       //g_assert(timestamp->tv_sec != 0);
       es->change = *timestamp;
       es->cum_cpu_time = ltt_time_zero;
-      es->s = LTTV_STATE_RUN;
+      if(es->s == LTTV_STATE_UNNAMED)
+        es->s = LTTV_STATE_RUN;
 
       if(process->execution_stack->len == 1) {
         /* Still in user mode, means never scheduled */
@@ -2465,6 +2477,7 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   LttField *f4, *f5, *f6, *f7, *f8;
   GQuark type, mode, submode, status;
   LttvExecutionState *es;
+  guint i, nb_cpus;
 
   /* PID */
   pid = ltt_event_get_unsigned(e, thf->f1);
@@ -2501,88 +2514,111 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   if(f8) tgid = ltt_event_get_unsigned(e, f8);
   else tgid = 0;
 
-  /* The process might exist if a process was forked while performing the state 
-   * dump. */
-  process = lttv_state_find_process(ts, ANY_CPU, pid);
-  if(process == NULL) {
-    parent_process = lttv_state_find_process(ts, ANY_CPU, parent_pid);
-    process = lttv_state_create_process(ts, parent_process, cpu,
-                              pid, tgid, g_quark_from_string(command),
-                              &s->parent.timestamp);
-  
-    /* Keep the stack bottom : a running user mode */
-    /* Disabled because of inconsistencies in the current statedump states. */
-    if(type == LTTV_STATE_KERNEL_THREAD) {
-      /* Only keep the bottom 
-       * FIXME Kernel thread : can be in syscall or interrupt or trap. */
-      /* Will cause expected trap when in fact being syscall (even after end of
-       * statedump event)
-       * Will cause expected interrupt when being syscall. (only before end of
-       * statedump event) */
-      // This will cause a "popping last state on stack, ignoring it."
-      process->execution_stack = g_array_set_size(process->execution_stack, 1);
-      es = process->state = &g_array_index(process->execution_stack, 
-          LttvExecutionState, 0);
+
+  if(pid == 0) {
+    nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
+    for(i=0; i<nb_cpus; i++) {
+      process = lttv_state_find_process(ts, i, pid);
+      g_assert(process != NULL);
+
+      process->ppid = parent_pid;
+      process->tgid = tgid;
+      process->name = g_quark_from_string(command);
+      es =
+        &g_array_index(process->execution_stack, LttvExecutionState, 0);
       process->type = LTTV_STATE_KERNEL_THREAD;
-      es->t = LTTV_STATE_MODE_UNKNOWN;
-      es->s = LTTV_STATE_UNNAMED;
-      es->n = LTTV_STATE_SUBMODE_UNKNOWN;
-#if 0
-      es->t = LTTV_STATE_SYSCALL;
-      es->s = status;
-      es->n = submode;
-#endif //0
-    } else {
-      /* User space process :
-       * bottom : user mode
-       * either currently running or scheduled out.
-       * can be scheduled out because interrupted in (user mode or in syscall)
-       * or because of an explicit call to the scheduler in syscall. Note that
-       * the scheduler call comes after the irq_exit, so never in interrupt
-       * context. */
-      // temp workaround : set size to 1 : only have user mode bottom of stack.
-      // will cause g_info message of expected syscall mode when in fact being
-      // in user mode. Can also cause expected trap when in fact being user
-      // mode in the event of a page fault reenabling interrupts in the handler.
-      // Expected syscall and trap can also happen after the end of statedump
-      // This will cause a "popping last state on stack, ignoring it."
-      process->execution_stack = g_array_set_size(process->execution_stack, 1);
-      es = process->state = &g_array_index(process->execution_stack, 
-          LttvExecutionState, 0);
-      es->t = LTTV_STATE_MODE_UNKNOWN;
-      es->s = LTTV_STATE_UNNAMED;
-      es->n = LTTV_STATE_SUBMODE_UNKNOWN;
-#if 0
-      es->t = LTTV_STATE_USER_MODE;
-      es->s = status;
-      es->n = submode;
-#endif //0
     }
-#if 0
-    /* UNKNOWN STATE */
-    {
-      es = process->state = &g_array_index(process->execution_stack, 
-          LttvExecutionState, 1);
-      es->t = LTTV_STATE_MODE_UNKNOWN;
-      es->s = LTTV_STATE_UNNAMED;
-      es->n = LTTV_STATE_SUBMODE_UNKNOWN;
-    }
-#endif //0
+
   } else {
-    /* The process has already been created :
-     * Probably was forked while dumping the process state or
-     * was simply scheduled in prior to get the state dump event.
-     * We know for sure if it is a user space thread.
-     */
-    process->ppid = parent_pid;
-    process->tgid = tgid;
-    process->name = g_quark_from_string(command);
-    es =
-      &g_array_index(process->execution_stack, LttvExecutionState, 0);
-    if(type != LTTV_STATE_KERNEL_THREAD)
-      es->t = LTTV_STATE_USER_MODE;
-    /* Don't mess around with the stack, it will eventually become
-     * ok after the end of state dump. */
+    /* The process might exist if a process was forked while performing the
+     * state dump. */
+    process = lttv_state_find_process(ts, ANY_CPU, pid);
+    if(process == NULL) {
+      parent_process = lttv_state_find_process(ts, ANY_CPU, parent_pid);
+      process = lttv_state_create_process(ts, parent_process, cpu,
+                                pid, tgid, g_quark_from_string(command),
+                                &s->parent.timestamp);
+    
+      /* Keep the stack bottom : a running user mode */
+      /* Disabled because of inconsistencies in the current statedump states. */
+      if(type == LTTV_STATE_KERNEL_THREAD) {
+        /* Only keep the bottom 
+         * FIXME Kernel thread : can be in syscall or interrupt or trap. */
+        /* Will cause expected trap when in fact being syscall (even after end of
+         * statedump event)
+         * Will cause expected interrupt when being syscall. (only before end of
+         * statedump event) */
+        // This will cause a "popping last state on stack, ignoring it."
+        process->execution_stack = g_array_set_size(process->execution_stack, 1);
+        es = process->state = &g_array_index(process->execution_stack, 
+            LttvExecutionState, 0);
+        process->type = LTTV_STATE_KERNEL_THREAD;
+        es->t = LTTV_STATE_MODE_UNKNOWN;
+        es->s = LTTV_STATE_UNNAMED;
+        es->n = LTTV_STATE_SUBMODE_UNKNOWN;
+  #if 0
+        es->t = LTTV_STATE_SYSCALL;
+        es->s = status;
+        es->n = submode;
+  #endif //0
+      } else {
+        /* User space process :
+         * bottom : user mode
+         * either currently running or scheduled out.
+         * can be scheduled out because interrupted in (user mode or in syscall)
+         * or because of an explicit call to the scheduler in syscall. Note that
+         * the scheduler call comes after the irq_exit, so never in interrupt
+         * context. */
+        // temp workaround : set size to 1 : only have user mode bottom of stack.
+        // will cause g_info message of expected syscall mode when in fact being
+        // in user mode. Can also cause expected trap when in fact being user
+        // mode in the event of a page fault reenabling interrupts in the handler.
+        // Expected syscall and trap can also happen after the end of statedump
+        // This will cause a "popping last state on stack, ignoring it."
+        process->execution_stack = g_array_set_size(process->execution_stack, 1);
+        es = process->state = &g_array_index(process->execution_stack, 
+            LttvExecutionState, 0);
+        es->t = LTTV_STATE_MODE_UNKNOWN;
+        es->s = LTTV_STATE_UNNAMED;
+        es->n = LTTV_STATE_SUBMODE_UNKNOWN;
+  #if 0
+        es->t = LTTV_STATE_USER_MODE;
+        es->s = status;
+        es->n = submode;
+  #endif //0
+      }
+  #if 0
+      /* UNKNOWN STATE */
+      {
+        es = process->state = &g_array_index(process->execution_stack, 
+            LttvExecutionState, 1);
+        es->t = LTTV_STATE_MODE_UNKNOWN;
+        es->s = LTTV_STATE_UNNAMED;
+        es->n = LTTV_STATE_SUBMODE_UNKNOWN;
+      }
+  #endif //0
+    } else {
+      /* The process has already been created :
+       * Probably was forked while dumping the process state or
+       * was simply scheduled in prior to get the state dump event.
+       */
+      process->ppid = parent_pid;
+      process->tgid = tgid;
+      process->name = g_quark_from_string(command);
+      process->type = type;
+      es =
+        &g_array_index(process->execution_stack, LttvExecutionState, 0);
+#if 0
+      if(es->t == LTTV_STATE_MODE_UNKNOWN) {
+        if(type == LTTV_STATE_KERNEL_THREAD)
+          es->t = LTTV_STATE_SYSCALL;
+        else
+          es->t = LTTV_STATE_USER_MODE;
+      }
+#endif //0
+      /* Don't mess around with the stack, it will eventually become
+       * ok after the end of state dump. */
+    }
   }
   
   return FALSE;
