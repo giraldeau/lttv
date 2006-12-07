@@ -2444,7 +2444,8 @@ static void fix_process(gpointer key, gpointer value,
         //g_assert(timestamp->tv_sec != 0);
         es->change = *timestamp;
         es->cum_cpu_time = ltt_time_zero;
-        //es->s = LTTV_STATE_WAIT;
+	if(es->s == LTTV_STATE_WAIT_FORK)
+          es->s = LTTV_STATE_WAIT;
       }
     }
   }
