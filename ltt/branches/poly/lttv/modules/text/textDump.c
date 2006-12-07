@@ -278,7 +278,7 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
   fprintf(a_file,"End trace set\n\n");
 
   if(LTTV_IS_TRACESET_STATS(tc)) {
-    lttv_stats_sum_traceset((LttvTracesetStats *)tc);
+    lttv_stats_sum_traceset((LttvTracesetStats *)tc, ltt_time_infinite);
     print_stats(a_file, (LttvTracesetStats *)tc);
   }
 

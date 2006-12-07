@@ -179,9 +179,10 @@ gboolean lttv_stats_hook_remove_event_hooks(void *hook_data, void *call_data);
 void lttv_stats_remove_event_hooks(LttvTracesetStats *self);
 
 gboolean lttv_stats_sum_traceset_hook(void *hook_data, void *call_data);
-void lttv_stats_sum_traceset(LttvTracesetStats *self);
+void lttv_stats_sum_traceset(LttvTracesetStats *self, LttTime current_time);
 
-void lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats);
+void lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats,
+  LttTime current_time);
 
 /* Reset all statistics containers */
 void lttv_stats_reset(LttvTracesetStats *self);
@@ -250,6 +251,11 @@ struct _LttvTracefileStatsClass {
 };
 
 GType lttv_tracefile_stats_get_type (void);
+
+struct sum_traceset_closure {
+  LttvTracesetStats *tss;
+  LttTime current_time;
+};
 
 
 #endif // STATS_H

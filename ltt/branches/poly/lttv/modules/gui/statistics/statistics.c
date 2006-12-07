@@ -141,7 +141,8 @@ static gint background_ready(void *hook_data, void *call_data)
 
     gtk_tree_store_clear (svd->store_m);
 
-    lttv_stats_sum_traceset(lttvwindow_get_traceset_stats(tab));
+    lttv_stats_sum_traceset(lttvwindow_get_traceset_stats(tab),
+      ltt_time_infinite);
     show_traceset_stats(svd);
   }
 

@@ -806,22 +806,35 @@ static gboolean every_event(void *hook_data, void *call_data)
   return FALSE;
 }
 
-static void lttv_stats_cleanup_process_state(LttvTraceState *ts,
-  LttvProcessState *process)
+struct cleanup_state_struct {
+  LttvTraceState *ts;
+  LttTime current_time;
+};
+
+//static void lttv_stats_cleanup_process_state(LttvTraceState *ts,
+//  LttvProcessState *process, LttTime current_time)
+static void lttv_stats_cleanup_process_state(gpointer key, gpointer value,
+  gpointer user_data)
 {
+  struct cleanup_state_struct *cleanup_closure =
+    (struct cleanup_state_struct *)user_data;
+  LttvTraceState *ts = cleanup_closure->ts;
   LttvTraceStats *tcs = (LttvTraceStats *)ts;
+  LttvProcessState *process = (LttvProcessState *)value;
   LttvTracesetContext *tsc = ts->parent.ts_context;
+  LttTime current_time = cleanup_closure->current_time;
   int i;
   LttvTracefileStats **tfs = (LttvTracefileStats **)
       &g_array_index(ts->parent.tracefiles, LttvTracefileContext*,
           process->cpu);
   int cleanup_empty = 0;
   LttTime nested_delta = ltt_time_zero;
+
   /* FIXME : ok, this is a hack. The time is infinite here :( */
-  LttTime save_time = (*tfs)->parent.parent.timestamp;
-  LttTime start, end;
-  ltt_trace_time_span_get(ts->parent.t, &start, &end);
-  (*tfs)->parent.parent.timestamp = end;
+  //LttTime save_time = (*tfs)->parent.parent.timestamp;
+  //LttTime start, end;
+  //ltt_trace_time_span_get(ts->parent.t, &start, &end);
+  //(*tfs)->parent.parent.timestamp = end;
 
   do {
     if(ltt_time_compare(process->state->cum_cpu_time, ltt_time_zero) != 0) {
@@ -830,7 +843,9 @@ static void lttv_stats_cleanup_process_state(LttvTraceState *ts,
           process->current_function,
           process->state->t, process->state->n, &((*tfs)->current_events_tree), 
           &((*tfs)->current_event_types_tree));
-      mode_end(*tfs);
+      /* Call mode_end only if not at end of trace */
+      if(ltt_time_compare(current_time, ltt_time_infinite) != 0)
+        mode_end(*tfs);
       nested_delta = process->state->cum_cpu_time;
     }
     cleanup_empty = lttv_state_pop_state_cleanup(process,
@@ -840,25 +855,33 @@ static void lttv_stats_cleanup_process_state(LttvTraceState *ts,
 
   } while(cleanup_empty != 1);
 
-  (*tfs)->parent.parent.timestamp = save_time;
+  //(*tfs)->parent.parent.timestamp = save_time;
 }
 
 /* For each cpu, for each of their stacked states,
  * perform sum of needed values. */
-static void lttv_stats_cleanup_state(LttvTraceStats *tcs)
+static void lttv_stats_cleanup_state(LttvTraceStats *tcs, LttTime current_time)
 {
   LttvTraceState *ts = (LttvTraceState *)tcs;
+  struct cleanup_state_struct cleanup_closure;
+#if 0
   guint nb_cpus, i;
 
   nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
   
   for(i=0; i<nb_cpus; i++) {
-    lttv_stats_cleanup_process_state(ts, ts->running_process[i]);
+    lttv_stats_cleanup_process_state(ts, ts->running_process[i], current_time);
   }
+#endif //0
+  cleanup_closure.ts = tcs;
+  cleanup_closure.current_time = current_time;
+  g_hash_table_foreach(ts->processes, lttv_stats_cleanup_process_state,
+    &cleanup_closure);
 }
 
 void
-lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
+lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats,
+  LttTime current_time)
 {
   LttvAttribute *sum_container = self->stats;
 
@@ -897,7 +920,7 @@ lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
   /* First cleanup the state : sum all stalled information (never ending
    * states). */
   if(!trace_is_summed)
-    lttv_stats_cleanup_state(self);
+    lttv_stats_cleanup_state(self, current_time);
   
   processes_tree = lttv_attribute_find_subdir(main_tree, 
                                               LTTV_STATS_PROCESSES);
@@ -987,12 +1010,14 @@ lttv_stats_sum_trace(LttvTraceStats *self, LttvAttribute *ts_stats)
 
 gboolean lttv_stats_sum_traceset_hook(void *hook_data, void *call_data)
 {
-  lttv_stats_sum_traceset((LttvTracesetStats *)call_data);
+  struct sum_traceset_closure *closure =
+    (struct sum_traceset_closure *)call_data;
+  lttv_stats_sum_traceset(closure->tss, closure->current_time);
   return 0;
 }
 
 void
-lttv_stats_sum_traceset(LttvTracesetStats *self)
+lttv_stats_sum_traceset(LttvTracesetStats *self, LttTime current_time)
 {
   LttvTraceset *traceset = self->parent.parent.ts;
   LttvAttribute *sum_container = self->stats;
@@ -1014,7 +1039,7 @@ lttv_stats_sum_traceset(LttvTracesetStats *self)
 
   for(i = 0 ; i < nb_trace ; i++) {
     tcs = (LttvTraceStats *)(self->parent.parent.traces[i]);
-    lttv_stats_sum_trace(tcs, self->stats);
+    lttv_stats_sum_trace(tcs, self->stats, current_time);
   //        lttv_attribute_recursive_add(sum_container, tcs->stats);
   }
 }

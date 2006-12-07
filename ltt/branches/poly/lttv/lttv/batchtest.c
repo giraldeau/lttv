@@ -513,7 +513,7 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
       g_mem_profile();
     }
 
-    lttv_stats_sum_traceset(tscs);
+    lttv_stats_sum_traceset(tscs, ltt_time_infinite);
 
     if(lttv_profile_memory) {
       g_message("Memory summary after summing stats");

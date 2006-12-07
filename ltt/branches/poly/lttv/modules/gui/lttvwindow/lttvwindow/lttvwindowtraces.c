@@ -1312,8 +1312,13 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
                                                &value);
             g_assert(type == LTTV_POINTER);
             LttvHooks *after_request = (LttvHooks*)*(value.v_pointer);
-
-            if(after_request != NULL) lttv_hooks_call(after_request, tsc);
+            {
+              struct sum_traceset_closure t_closure;
+	      t_closure.tss = (LttvTracesetStats*)tsc;
+	      t_closure.current_time = ltt_time_infinite;
+              if(after_request != NULL) lttv_hooks_call(after_request,
+	        &t_closure);
+            }
             
             if(bg_req->dialog != NULL)
               gtk_widget_destroy(bg_req->dialog);
