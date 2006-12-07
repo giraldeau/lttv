@@ -583,7 +583,7 @@ static void request_background_data(EventViewerData *event_viewer_data)
       }
     } else {
       /* Data ready. By its nature, this viewer doesn't need to have
-       * its data ready hook called htere, because a background
+       * its data ready hook called there, because a background
        * request is always linked with a redraw.
        */
     }

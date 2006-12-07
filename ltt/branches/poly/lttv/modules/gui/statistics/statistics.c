@@ -115,6 +115,8 @@ struct _StatisticViewerData{
   
   //hash 
   GHashTable *statistic_hash;
+
+  guint background_info_waiting;
 };
 
 
@@ -132,12 +134,16 @@ static gint background_ready(void *hook_data, void *call_data)
   Tab *tab = svd->tab;
   LttvTrace *trace = (LttvTrace*)call_data;
 
-  g_debug("statistics viewer : background computation data ready.");
+  svd->background_info_waiting--;
 
-  gtk_tree_store_clear (svd->store_m);
+  if(svd->background_info_waiting == 0) {
+    g_message("statistics viewer : background computation data ready.");
 
-  lttv_stats_sum_traceset(lttvwindow_get_traceset_stats(tab));
-  show_traceset_stats(svd);
+    gtk_tree_store_clear (svd->store_m);
+
+    lttv_stats_sum_traceset(lttvwindow_get_traceset_stats(tab));
+    show_traceset_stats(svd);
+  }
 
   return 0;
 }
@@ -153,11 +159,15 @@ static void request_background_data(StatisticViewerData *svd)
   gint num_traces = lttvwindowtraces_get_number();
   gint i;
   LttvTrace *trace;
+  GtkTextBuffer* buf;
 
   LttvHooks *background_ready_hook = 
     lttv_hooks_new();
   lttv_hooks_add(background_ready_hook, background_ready, svd,
       LTTV_PRIO_DEFAULT);
+  svd->background_info_waiting = num_traces;
+  buf = gtk_text_view_get_buffer((GtkTextView*)svd->text_v);
+  gtk_text_buffer_set_text(buf,"", -1);
   
   for(i=0;i<num_traces;i++) {
     trace = lttvwindowtraces_get_trace(i);
@@ -179,7 +189,6 @@ static void request_background_data(StatisticViewerData *svd)
                                                  NULL,
                                                  background_ready_hook);
       } else { /* in progress */
-      
         lttvwindowtraces_background_notify_current(svd,
                                                    trace,
                                                    ltt_time_infinite,
@@ -191,6 +200,11 @@ static void request_background_data(StatisticViewerData *svd)
       /* ready */
       lttv_hooks_call(background_ready_hook, NULL);
     }
+  }
+
+  if(num_traces == 0) {
+    svd->background_info_waiting = 1;
+    lttv_hooks_call(background_ready_hook, NULL);
   }
   lttv_hooks_destroy(background_ready_hook);
 }
@@ -431,7 +445,7 @@ void show_traceset_stats(StatisticViewerData * statistic_viewer_data)
   
   ts = tscs->parent.parent.ts;
   nb = lttv_traceset_number(ts);
-  if(nb == 0)return;
+  if(nb == 0) return;
 
   gtk_tree_store_append (store, &iter, NULL);  
   gtk_tree_store_set (store, &iter,
