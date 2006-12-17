@@ -371,7 +371,7 @@ static void init()
       LTTV_OPT_NONE, &a_field_names, NULL, NULL);
 
   a_state = FALSE;
-  lttv_option_add("process_state", 's', 
+  lttv_option_add("process_state", 'r', 
       "write the pid and state for each event", 
       "", 
       LTTV_OPT_NONE, &a_state, NULL, NULL);
