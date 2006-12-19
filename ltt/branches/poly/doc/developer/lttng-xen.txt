@@ -55,7 +55,7 @@ decrement refcount : destroy the channels
 Events coming from xen :
 - Buffer switch
   through virq sent to dom0
-
+- wakes up poll on the buffers FD.
 
 
 * Dom0 Linux OS
