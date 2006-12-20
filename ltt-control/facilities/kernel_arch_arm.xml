@@ -325,8 +325,21 @@
 			<label name="mbind" value="319"/>
 			<label name="get_mempolicy" value="320"/>
 			<label name="set_mempolicy" value="321"/>
-			<label name="ltt_trace_generic" value="322"/>
-			<label name="ltt_register_generic" value="323"/>
+			<label name="openat" value="322"/>
+			<label name="mkdirat" value="323"/>
+			<label name="mknodat" value="324"/>
+			<label name="fchownat" value="325"/>
+			<label name="futimesat" value="326"/>
+			<label name="fstatat64" value="327"/>
+			<label name="unlinkat" value="328"/>
+			<label name="renameat" value="329"/>
+			<label name="linkat" value="330"/>
+			<label name="symlinkat" value="331"/>
+			<label name="readlinkat" value="332"/>
+			<label name="fchmodat" value="333"/>
+			<label name="faccessat" value="334"/>
+			<label name="ltt_trace_generic" value="335"/>
+			<label name="ltt_register_generic" value="336"/>
 			<label name="arm_syscall_offset" value="1024"/>
 			<label name="breakpoint" value="1025"/>
 			<label name="cacheflush" value="1026"/>
