@@ -96,5 +96,4 @@ int lttctl_stop(const struct lttctl_handle *handle, char *name);
 #define LTTCTLM_BASE	0x10
 #define LTTCTLM_CONTROL	(LTTCTLM_BASE + 1)	/* LTT control message */
 
-
 #endif //_LIBLTT_H

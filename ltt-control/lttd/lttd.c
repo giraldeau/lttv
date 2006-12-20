@@ -41,13 +41,13 @@
 #include <asm/types.h>
 
 /* Get the next sub buffer that can be read. */
-#define RELAY_GET_SUBBUF        _IOR(0xF4, 0x00,__u32)
+#define RELAY_GET_SUBBUF        _IOR(0xF5, 0x00,__u32)
 /* Release the oldest reserved (by "get") sub buffer. */
-#define RELAY_PUT_SUBBUF        _IOW(0xF4, 0x01,__u32)
+#define RELAY_PUT_SUBBUF        _IOW(0xF5, 0x01,__u32)
 /* returns the number of sub buffers in the per cpu channel. */
-#define RELAY_GET_N_SUBBUFS     _IOR(0xF4, 0x02,__u32)
+#define RELAY_GET_N_SUBBUFS     _IOR(0xF5, 0x02,__u32)
 /* returns the size of the sub buffers. */
-#define RELAY_GET_SUBBUF_SIZE   _IOR(0xF4, 0x03,__u32)
+#define RELAY_GET_SUBBUF_SIZE   _IOR(0xF5, 0x03,__u32)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,14)
 #include <linux/inotify.h>

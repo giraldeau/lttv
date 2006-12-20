@@ -107,7 +107,7 @@ static ssize_t lttctl_netlink_sendto(const struct lttctl_handle *h,
 																	const void *msg, size_t len)
 {
 	int status = sendto(h->fd, msg, len, 0,
-											(struct sockaddr *)&h->peer, sizeof(h->peer));
+			(struct sockaddr *)&h->peer, sizeof(h->peer));
 	if (status < 0)
 		lttctl_errno = LTTCTL_ERR_SEND;
 	
@@ -172,7 +172,7 @@ static ssize_t lttctl_netlink_recvfrom(const struct lttctl_handle *h,
 		}
 	}
 	status = recvfrom(h->fd, buf, len, 0,
-												(struct sockaddr *)&h->peer, &addrlen);
+			(struct sockaddr *)&h->peer, &addrlen);
 	
 	if (status < 0) {
 		lttctl_errno = LTTCTL_ERR_RECV;
@@ -450,12 +450,12 @@ int lttctl_stop(const struct lttctl_handle *h,
 {
 	struct {
 		struct nlmsghdr	nlh;
-		lttctl_peer_msg_t	msg;
+		lttctl_peer_msg_t msg;
 	} req;
 	struct {
 		struct nlmsghdr	nlh;
 		struct nlmsgerr	nlerr;
-		lttctl_peer_msg_t	msg;
+		lttctl_peer_msg_t msg;
 	} ack;
 	int err;
 
