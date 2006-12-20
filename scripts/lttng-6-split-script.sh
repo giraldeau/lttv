@@ -34,11 +34,11 @@ for a in *; do
 	rm $a.tmp;
 done
 
-FILE=../${PRENAME}${COUNT}${NAME}-debugfs.diff
+FILE=../${PRENAME}${COUNT}${NAME}-workqueue.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_fs_debugfs_inode.c"
+IN="?_include_linux_workqueue.h"
 
 for a in $IN; do wr $a $FILE; done
 
