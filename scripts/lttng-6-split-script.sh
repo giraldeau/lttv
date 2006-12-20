@@ -34,14 +34,6 @@ for a in *; do
 	rm $a.tmp;
 done
 
-FILE=../${PRENAME}${COUNT}${NAME}-workqueue.diff
-VALUE=$(( ${VALUE} + 1 ))
-printf -v COUNT "%02d" ${VALUE}
-
-IN="?_include_linux_workqueue.h"
-
-for a in $IN; do wr $a $FILE; done
-
 #for hotplug
 FILE=../${PRENAME}${COUNT}${NAME}-relay.diff
 VALUE=$(( ${VALUE} + 1 ))
@@ -101,6 +93,7 @@ IN="
 ?_include_asm-i386_system.h
 ?_include_asm-ia64_atomic.h
 ?_include_asm-mips_atomic.h
+?_include_asm-mips_system.h
 ?_include_asm-parisc_atomic.h
 ?_include_asm-powerpc_atomic.h
 ?_include_asm-powerpc_system.h
