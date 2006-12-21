@@ -12,7 +12,6 @@
 #include <linux/ltt-facilities.h>
 #include <linux/module.h>
 #include <linux/init.h>
-#include <linux/config.h>
 #include "ltt-facility-loader-tests.h"
 
 

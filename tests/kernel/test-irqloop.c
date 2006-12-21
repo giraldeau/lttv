@@ -4,7 +4,6 @@
  */
 
 
-#include <linux/config.h>
 #include <linux/jiffies.h>
 #include <linux/compiler.h>
 #include <linux/init.h>
