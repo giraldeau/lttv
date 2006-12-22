@@ -67,7 +67,6 @@ IN="?_include_asm-generic_vmlinux.lds.h
 ?_include_asm-mips_marker.h
 ?_include_asm-parisc_marker.h
 ?_include_asm-powerpc_marker.h
-?_include_asm-ppc64_marker.h
 ?_include_asm-ppc_marker.h
 ?_include_asm-s390_marker.h
 ?_include_asm-sh64_marker.h
@@ -88,7 +87,6 @@ printf -v COUNT "%02d" ${VALUE}
 IN="
 ?_include_asm-alpha_atomic.h
 ?_include_asm-alpha_system.h
-?_include_asm-arm_atomic.h
 ?_include_asm-generic_atomic.h
 ?_include_asm-i386_atomic.h
 ?_include_asm-i386_system.h
