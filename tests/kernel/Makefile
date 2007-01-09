@@ -11,6 +11,7 @@ endif
 	obj-m += test-debugfs.o
 	obj-m += test-hotplug.o
 	obj-m += rdtsc-smp.o
+	obj-m += test-local.o
 #	obj-m += test-cmpxchg.o
 #	obj-m += test-cmpxchg-nolock.o
 #	obj-m += test-spinlock.o
