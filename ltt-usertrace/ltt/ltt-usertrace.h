@@ -76,10 +76,10 @@ extern "C" {
 #endif
 
 #ifdef __arm__
-#define __NR_ltt_trace_generic	322
-#define __NR_ltt_register_generic	323
+#define __NR_ltt_trace_generic	347
+#define __NR_ltt_register_generic	348
 #undef NR_syscalls
-#define NR_syscalls 324
+#define NR_syscalls 349
 #endif
 
 //FIXME : setup for MIPS
