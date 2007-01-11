@@ -1,3 +1,3 @@
 #!/bin/sh
 
-git-diff-tree -p -r v2.6.20-rc1-git7 lttng-$1-for-2.6.20-rc1-git7 > ../patch-2.6.20-rc1-git7-lttng-$1-all.diff
+git-diff-tree -p -r v2.6.20-rc4-git3 lttng-$1-for-2.6.20-rc4-git3 > ../patch-2.6.20-rc4-git3-lttng-$1-all.diff
