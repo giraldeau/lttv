@@ -338,8 +338,20 @@
 			<label name="readlinkat" value="332"/>
 			<label name="fchmodat" value="333"/>
 			<label name="faccessat" value="334"/>
-			<label name="ltt_trace_generic" value="335"/>
-			<label name="ltt_register_generic" value="336"/>
+			<label name="pselect6" value="335"/>
+			<label name="ppoll" value="336"/>
+			<label name="unshare" value="337"/>
+			<label name="set_robust_list" value="338"/>
+			<label name="get_robust_list" value="339"/>
+			<label name="splice" value="340"/>
+			<label name="arm_sync_file_range" value="341"/>
+			<label name="tee" value="342"/>
+			<label name="vmsplice" value="343"/>
+			<label name="move_pages" value="344"/>
+			<label name="getcpu" value="345"/>
+			<label name="epoll_pwait" value="346"/>
+			<label name="ltt_trace_generic" value="347"/>
+			<label name="ltt_register_generic" value="348"/>
 			<label name="arm_syscall_offset" value="1024"/>
 			<label name="breakpoint" value="1025"/>
 			<label name="cacheflush" value="1026"/>
