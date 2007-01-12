@@ -1645,7 +1645,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(1, fd);
 	fprintf(fd, "ltt_nesting[smp_processor_id()]--;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "preempt_enable_no_resched();\n");
+	fprintf(fd, "preempt_enable();\n");
 
 	fprintf(fd, "}\n");
 #if 0
