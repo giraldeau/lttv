@@ -46,27 +46,62 @@ IN="?_include_linux_relay.h
 
 for a in $IN; do wr $a $FILE; done
 
-FILE=../${PRENAME}${COUNT}${NAME}-markers.diff
+#Markers
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-kconfig.part1.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_kernel_Kconfig.marker"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-generic.part1.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_asm-generic_vmlinux.lds.h
-?_kernel_Kconfig.marker
 ?_include_linux_module.h
-?_include_linux_marker.h
-?_include_asm-arm_marker.h
+?_include_linux_marker.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-i386.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-i386_marker.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-powerpc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-powerpc_marker.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-non-opt-arch.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-arm_marker.h
 ?_include_asm-cris_marker.h
 ?_include_asm-frv_marker.h
 ?_include_asm-generic_marker.h
 ?_include_asm-h8300_marker.h
-?_include_asm-i386_marker.h
 ?_include_asm-ia64_marker.h
 ?_include_asm-m32r_marker.h
 ?_include_asm-m68k_marker.h
 ?_include_asm-m68knommu_marker.h
 ?_include_asm-mips_marker.h
 ?_include_asm-parisc_marker.h
-?_include_asm-powerpc_marker.h
 ?_include_asm-ppc_marker.h
 ?_include_asm-s390_marker.h
 ?_include_asm-sh64_marker.h
@@ -80,43 +115,186 @@ IN="?_include_asm-generic_vmlinux.lds.h
 
 for a in $IN; do wr $a $FILE; done
 
-FILE=../${PRENAME}${COUNT}${NAME}-atomic.diff
+
+
+#atomic
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-alpha.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="
-?_include_asm-alpha_atomic.h
-?_include_asm-alpha_system.h
-?_include_asm-generic_atomic.h
-?_include_asm-i386_atomic.h
-?_include_asm-i386_system.h
-?_include_asm-ia64_atomic.h
-?_include_asm-mips_atomic.h
-?_include_asm-mips_system.h
-?_include_asm-parisc_atomic.h
-?_include_asm-powerpc_atomic.h
-?_include_asm-powerpc_system.h
-?_include_asm-sparc64_atomic.h
-?_include_asm-x86_64_atomic.h
-?_include_asm-x86_64_system.h"
+IN="?_include_asm-alpha_atomic.h"
 
 for a in $IN; do wr $a $FILE; done
 
-FILE=../${PRENAME}${COUNT}${NAME}-local.diff
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-generic-atomic_long.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="
-?_include_asm-alpha_local.h
-?_include_asm-generic_local.h
-?_include_asm-i386_local.h
-?_include_asm-ia64_local.h
-?_include_asm-mips_local.h
-?_include_asm-parisc_local.h
-?_include_asm-powerpc_local.h
-?_include_asm-s390_local.h
-?_include_asm-sparc64_local.h
-?_include_asm-x86_64_local.h"
+IN="?_include_asm-generic_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-i386.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-i386_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-ia64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-ia64_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-mips.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-mips_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-parisc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-parisc_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-powerpc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-powerpc_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-sparc64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-sparc64_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-x86_64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-x86_64_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+
+#local
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-generic.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-generic_local.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-alpha.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-alpha_local.h
+?_include_asm-alpha_system.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-i386.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-i386_local.h
+?_include_asm-i386_system.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-ia64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-ia64_local.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-mips.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-mips_local.h
+?_include_asm-mips_system.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-parisc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-parisc_local.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-powerpc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-powerpc_local.h
+?_include_asm-powerpc_system.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-s390.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-s390_local.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-sparc64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-sparc64_local.h"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-local-x86_64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-x86_64_local.h
+?_include_asm-x86_64_system.h"
+
+
+#facilities
 
 for a in $IN; do wr $a $FILE; done
 
@@ -360,6 +538,7 @@ IN="?_arch_x86_64_ia32_ia32entry.S
 
 for a in $IN; do wr $a $FILE; done
 
+
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
@@ -378,7 +557,6 @@ IN="?_fs_buffer.c
 ?_kernel_itimer.c
 ?_kernel_kthread.c
 ?_kernel_lockdep.c
-?_kernel_module.c
 ?_kernel_printk.c
 ?_kernel_sched.c
 ?_kernel_signal.c
@@ -393,6 +571,17 @@ IN="?_fs_buffer.c
 ?_net_socket.c"
 
 for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-markers.tosplit.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_kernel_module.c"
+
+for a in $IN; do wr $a $FILE; done
+
+
 
 FILE=../${PRENAME}${COUNT}${NAME}-facilities-probes-headers.diff
 VALUE=$(( ${VALUE} + 1 ))
@@ -529,7 +718,7 @@ IN="?_ltt_ltt-statedump.c"
 for a in $IN; do wr $a $FILE; done
 
 
-FILE=../${PRENAME}${COUNT}${NAME}-build.diff
+FILE=../${PRENAME}${COUNT}${NAME}-build.tosplit.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
