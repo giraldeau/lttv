@@ -1805,6 +1805,7 @@ problematic with cpu hotplug and trace stop/restart sequence.<br>
 0.6.55<br>
 0.6.55a<br>
 0.6.56<br>
+0.6.58<br>
 </td>
 <td style="vertical-align: top;">
 0.34<br>
@@ -1829,8 +1830,10 @@ obsolete<br>
 2.6.20-rc4-git3 support.<br>
 Change marker format to %p[type], %u[extended type], i.e. : %p[struct
 task_struct], %u[__be].<br>
-LTTng 0.6.56 ans genevent 0.32 changes the preempt_enable_no_resched() calls for
+LTTng 0.6.56 and genevent 0.32 changes the preempt_enable_no_resched() calls for
 a preempt_enable() call.<br>
+LTTng 0.6.58 fixes markers for i386 : optimized version correctly does XMC
+following Pentium III erratum 49.<br>
 <br>
 </td>
 </tr>
