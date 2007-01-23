@@ -31,7 +31,7 @@ LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -ll
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libdiskperformance.la
-libdiskperformance_la_LDFLAGS = -module
+libdiskperformance_la_LDFLAGS = -module -avoid-version
 libdiskperformance_la_SOURCES = diskperformance.c
 
 EXTRA_DIST = \

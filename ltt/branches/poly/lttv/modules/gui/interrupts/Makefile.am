@@ -31,7 +31,7 @@ LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -ll
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libinterrupts.la
-libinterrupts_la_LDFLAGS = -module
+libinterrupts_la_LDFLAGS = -module -avoid-version
 libinterrupts_la_SOURCES = interrupts.c
 
 EXTRA_DIST = \

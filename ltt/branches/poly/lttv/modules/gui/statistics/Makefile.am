@@ -12,7 +12,7 @@ LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -ll
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libguistatistics.la
-libguistatistics_la_LDFLAGS = -module
+libguistatistics_la_LDFLAGS = -module -avoid-version
 libguistatistics_la_SOURCES = statistics.c
 
 EXTRA_DIST = \

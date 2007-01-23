@@ -14,11 +14,9 @@ LIBS += $(UTIL_LIBS)
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libguitracecontrol.la
-libguitracecontrol_la_LDFLAGS = -module
+libguitracecontrol_la_LDFLAGS = -module -avoid-version
 libguitracecontrol_la_SOURCES = tracecontrol.c
 
 EXTRA_DIST = \
     hTraceControlInsert.xpm TraceControlStart.xpm TraceControlPause.xpm \
 		TraceControlStop.xpm
-    
-

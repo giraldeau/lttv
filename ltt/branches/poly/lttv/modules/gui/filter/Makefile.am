@@ -12,10 +12,8 @@ LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -ll
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libguifilter.la
-libguifilter_la_LDFLAGS = -module
+libguifilter_la_LDFLAGS = -module -avoid-version
 libguifilter_la_SOURCES = filter.c
 
 EXTRA_DIST = \
     hGuiFilterInsert.xpm
-    
-

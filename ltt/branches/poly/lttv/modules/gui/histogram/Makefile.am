@@ -31,7 +31,7 @@ LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -ll
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libguihistogram.la
-libguihistogram_la_LDFLAGS = -module
+libguihistogram_la_LDFLAGS = -module -avoid-version
 libguihistogram_la_SOURCES = histomodule.c histoeventhooks.c histocfv.c \
 			histobuttonwidget.c histodrawing.c histodrawitem.c
 

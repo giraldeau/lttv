@@ -31,7 +31,7 @@ LIBS += $(GTK_LIBS) -L${top_srcdir}/lttv/modules/gui/lttvwindow/lttvwindow -lltt
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libtutorial.la
-libtutorial_la_LDFLAGS = -module
+libtutorial_la_LDFLAGS = -module -avoid-version
 libtutorial_la_SOURCES = tutorial.c
 
 EXTRA_DIST = \

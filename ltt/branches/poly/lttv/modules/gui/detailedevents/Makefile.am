@@ -31,7 +31,7 @@ LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -ll
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libguievents.la
-libguievents_la_LDFLAGS = -module
+libguievents_la_LDFLAGS = -module -avoid-version
 libguievents_la_SOURCES = events.c lttv_plugin_evd.c
 
 noinst_HEADERS =	lttv_plugin_evd.h events.h
