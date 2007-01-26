@@ -12,7 +12,7 @@ function wr () {
 
 
 PRENAME=patch
-NAME=-2.6.20-rc4-git3-lttng-$1
+NAME=-2.6.20-rc6-lttng-$1
 ALL_NAME=${PRENAME}${NAME}-all.diff
 VALUE=1
 printf -v COUNT "%02d" ${VALUE}
@@ -84,7 +84,8 @@ FILE=../${PRENAME}${COUNT}${NAME}-markers-i386.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-i386_marker.h"
+IN="?_include_asm-i386_marker.h
+?_arch_i386_kernel_marker.c"
 
 for a in $IN; do wr $a $FILE; done
 
