@@ -85,7 +85,8 @@ VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_asm-i386_marker.h
-?_arch_i386_kernel_marker.c"
+?_arch_i386_kernel_marker.c
+?_arch_i386_kernel_Makefile"
 
 for a in $IN; do wr $a $FILE; done
 
