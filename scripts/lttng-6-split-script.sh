@@ -202,6 +202,13 @@ IN="?_include_asm-sparc64_atomic.h"
 
 for a in $IN; do wr $a $FILE; done
 
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-s390.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-s390_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-atomic-x86_64.diff
 VALUE=$(( ${VALUE} + 1 ))
