@@ -247,6 +247,8 @@ make menuconfig (or make xconfig or make config)
   Select <Yes>
 make
 make modules_install
+(if necessary, create a initrd with mkinitrd or your preferate alternative)
+(mkinitrd -o /boot/initrd.img-2.6.X-lttng-0.x.xx 2.6.X-lttng-0.x.xx)
 
 -- on X86, X86_64
 make install
@@ -398,7 +400,7 @@ how.)
 
 * Use text mode LTTV
 
-Fell free to look in /usr/local/lib/lttv/plugins to see all the text and
+Feel free to look in /usr/local/lib/lttv/plugins to see all the text and
 graphical plugins available.
 
 For example, a simple trace dump in text format is available with :
