@@ -368,6 +368,7 @@ static inline int ltt_buffer_put(struct ltt_buf *ltt_buf,
 			printf("error in sem_post");
 		}
 	}
+	return ret;
 }
 
 static int read_subbuffer(struct ltt_buf *ltt_buf, int fd)
