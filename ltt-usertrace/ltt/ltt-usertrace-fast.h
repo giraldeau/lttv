@@ -368,15 +368,6 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 	int ret;
 	sigset_t oldset, set;
 
-	/* sem_wait is not signal safe. Disable signals around it. */
-
-	/* Disable signals */
-	ret = sigfillset(&set);
-	if(ret) perror("LTT Error in sigfillset\n"); 
-	
-	ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
-	if(ret) perror("LTT Error in pthread_sigmask\n");
-
 	do {
 		offset_old = atomic_read(&ltt_buf->offset);
 		offset_begin = offset_old;
@@ -416,16 +407,26 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 																												 ltt_buf)])
 				- atomic_read(&ltt_buf->commit_count[SUBBUF_INDEX(offset_begin,
 																						 ltt_buf)]);
+
 			if(reserve_commit_diff == 0) {
 				/* Next buffer not corrupted. */
 				//if((SUBBUF_TRUNC(offset_begin, ltt_buf) 
 				//				- SUBBUF_TRUNC(atomic_read(&ltt_buf->consumed), ltt_buf))
 				//					>= ltt_buf->alloc_size) {
 				{
+					/* sem_wait is not signal safe. Disable signals around it.
+					 * Signals are kept disabled to make sure we win the cmpxchg. */
+
+					/* Disable signals */
+					ret = sigfillset(&set);
+					if(ret) perror("LTT Error in sigfillset\n"); 
+	
+					ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
+					if(ret) perror("LTT Error in pthread_sigmask\n");
+
 					sem_wait(&ltt_buf->writer_sem);
 
 				}
-
 					/* go on with the write */
 
 				//} else {
@@ -435,7 +436,8 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 			} else {
 				/* Next subbuffer corrupted. Force pushing reader even in normal
 				 * mode. It's safe to write in this new subbuffer. */
-				sem_post(&ltt_buf->writer_sem);
+				/* No sem_post is required because we fall through without doing a
+				 * sem_wait. */
 			}
 			size = ltt_get_header_size(trace, ltt_buf->start + offset_begin,
 					before_hdr_pad, after_hdr_pad, header_size) + data_size;
@@ -443,6 +445,10 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 				/* Event too big for subbuffers, report error, don't complete 
 				 * the sub-buffer switch. */
 				atomic_inc(&ltt_buf->events_lost);
+				if(reserve_commit_diff == 0) {
+					ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+					if(ret) perror("LTT Error in pthread_sigmask\n");
+				}
 				return NULL;
 			} else {
 				/* We just made a successful buffer switch and the event fits in the
@@ -462,10 +468,6 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 
 	} while(atomic_cmpxchg(&ltt_buf->offset, offset_old, offset_end)
 							!= offset_old);
-
-	/* Enable signals */
-	ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
-	if(ret) perror("LTT Error in pthread_sigmask\n");
 
 	/* Push the reader if necessary */
 	do {
@@ -541,6 +543,14 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 	}
 
 	if(begin_switch) {
+		/* Enable signals : this is what guaranteed that same reserve which did the
+		 * sem_wait does in fact win the cmpxchg for the offset. We only call
+		 * these system calls on buffer boundaries because of their performance
+		 * cost. */
+		if(reserve_commit_diff == 0) {
+			ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+			if(ret) perror("LTT Error in pthread_sigmask\n");
+		}
 		/* New sub-buffer */
 		/* This code can be executed unordered : writers may already have written
 			 to the sub-buffer before this code gets executed, caution. */
