@@ -366,6 +366,16 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 	int consumed_old, consumed_new;
 	int commit_count, reserve_count;
 	int ret;
+	sigset_t oldset, set;
+
+	/* sem_wait is not signal safe. Disable signals around it. */
+
+	/* Disable signals */
+	ret = sigfillset(&set);
+	if(ret) perror("LTT Error in sigfillset\n"); 
+	
+	ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
+	if(ret) perror("LTT Error in pthread_sigmask\n");
 
 	do {
 		offset_old = atomic_read(&ltt_buf->offset);
@@ -411,22 +421,9 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 				//if((SUBBUF_TRUNC(offset_begin, ltt_buf) 
 				//				- SUBBUF_TRUNC(atomic_read(&ltt_buf->consumed), ltt_buf))
 				//					>= ltt_buf->alloc_size) {
-				/* sem_wait is not signal safe. Disable signals around it. */
 				{
-					sigset_t oldset, set;
-
-					/* Disable signals */
-					ret = sigfillset(&set);
-					if(ret) perror("LTT Error in sigfillset\n"); 
-					
-					ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
-					if(ret) perror("LTT Error in pthread_sigmask\n");
-
 					sem_wait(&ltt_buf->writer_sem);
 
-					/* Enable signals */
-					ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
-					if(ret) perror("LTT Error in pthread_sigmask\n");
 				}
 
 					/* go on with the write */
@@ -466,6 +463,9 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 	} while(atomic_cmpxchg(&ltt_buf->offset, offset_old, offset_end)
 							!= offset_old);
 
+	/* Enable signals */
+	ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
+	if(ret) perror("LTT Error in pthread_sigmask\n");
 
 	/* Push the reader if necessary */
 	do {
