@@ -12,7 +12,7 @@ function wr () {
 
 
 PRENAME=patch
-NAME=-2.6.20-rc6-lttng-$1
+NAME=-2.6.20-lttng-$1
 ALL_NAME=${PRENAME}${NAME}-all.diff
 VALUE=1
 printf -v COUNT "%02d" ${VALUE}
@@ -33,6 +33,16 @@ for a in *; do
 	grep -v -e "^diff --git " -e "^new file mode " -e "^index " $a.tmp > $a
 	rm $a.tmp;
 done
+
+#hotfix 2.6.20
+FILE=../${PRENAME}${COUNT}${NAME}-hotfix.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-powerpc_prom.h"
+
+for a in $IN; do wr $a $FILE; done
+
 
 #for hotplug
 FILE=../${PRENAME}${COUNT}${NAME}-relay.diff
@@ -189,7 +199,9 @@ FILE=../${PRENAME}${COUNT}${NAME}-atomic-powerpc.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-powerpc_atomic.h"
+IN="?_include_asm-powerpc_atomic.h
+?_include_asm-powerpc_bitops.h
+?_include_asm-powerpc_system.h"
 
 for a in $IN; do wr $a $FILE; done
 
