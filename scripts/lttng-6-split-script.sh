@@ -39,7 +39,9 @@ FILE=../${PRENAME}${COUNT}${NAME}-hotfix.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-powerpc_prom.h"
+IN="?_include_asm-powerpc_prom.h
+?_include_asm-sparc64_tlb.h
+?_kernel_time_clocksource.c" # sched.h for m68k
 
 for a in $IN; do wr $a $FILE; done
 
@@ -116,6 +118,7 @@ VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_asm-arm_marker.h
+?_include_asm-arm_thread_info.h
 ?_include_asm-cris_marker.h
 ?_include_asm-frv_marker.h
 ?_include_asm-generic_marker.h
@@ -123,7 +126,9 @@ IN="?_include_asm-arm_marker.h
 ?_include_asm-ia64_marker.h
 ?_include_asm-m32r_marker.h
 ?_include_asm-m68k_marker.h
+?_include_asm-m68k_thread_info.h
 ?_include_asm-m68knommu_marker.h
+?_include_asm-m68knommu_thread_info.h
 ?_include_asm-mips_marker.h
 ?_include_asm-parisc_marker.h
 ?_include_asm-ppc_marker.h
@@ -485,8 +490,7 @@ IN="?_arch_arm_kernel_calls.S
 ?_arch_arm_kernel_ptrace.c
 ?_arch_arm_kernel_sys_arm.c
 ?_arch_arm_kernel_time.c
-?_arch_arm_kernel_traps.c
-?_include_asm-arm_thread_info.h"
+?_arch_arm_kernel_traps.c"
 
 for a in $IN; do wr $a $FILE; done
 
