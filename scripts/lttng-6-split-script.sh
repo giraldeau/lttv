@@ -41,7 +41,8 @@ printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_asm-powerpc_prom.h
 ?_include_asm-sparc64_tlb.h
-?_kernel_time_clocksource.c" # sched.h for m68k
+?_kernel_time_clocksource.c
+?_include_asm-powerpc_dcr.h"
 
 for a in $IN; do wr $a $FILE; done
 
