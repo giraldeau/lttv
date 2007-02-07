@@ -42,7 +42,8 @@ printf -v COUNT "%02d" ${VALUE}
 IN="?_arch_powerpc_kernel_prom_parse.c
 ?_include_powerpc_prom.h
 ?_include_asm-sparc64_tlb.h
-?_kernel_time_clocksource.c"
+?_kernel_time_clocksource.c
+?_include_asm-ppc_ocp.h"
 
 for a in $IN; do wr $a $FILE; done
 
