@@ -39,10 +39,9 @@ FILE=../${PRENAME}${COUNT}${NAME}-hotfix.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-powerpc_prom.h
+IN="?_arch_powerpc_kernel_prom_parse.c
 ?_include_asm-sparc64_tlb.h
-?_kernel_time_clocksource.c
-?_include_asm-powerpc_dcr.h"
+?_kernel_time_clocksource.c"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -119,7 +118,6 @@ VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_asm-arm_marker.h
-?_include_asm-arm_thread_info.h
 ?_include_asm-cris_marker.h
 ?_include_asm-frv_marker.h
 ?_include_asm-generic_marker.h
@@ -127,9 +125,7 @@ IN="?_include_asm-arm_marker.h
 ?_include_asm-ia64_marker.h
 ?_include_asm-m32r_marker.h
 ?_include_asm-m68k_marker.h
-?_include_asm-m68k_thread_info.h
 ?_include_asm-m68knommu_marker.h
-?_include_asm-m68knommu_thread_info.h
 ?_include_asm-mips_marker.h
 ?_include_asm-parisc_marker.h
 ?_include_asm-ppc_marker.h
@@ -144,7 +140,6 @@ IN="?_include_asm-arm_marker.h
 ?_include_asm-xtensa_marker.h"
 
 for a in $IN; do wr $a $FILE; done
-
 
 
 #atomic
@@ -491,7 +486,8 @@ IN="?_arch_arm_kernel_calls.S
 ?_arch_arm_kernel_ptrace.c
 ?_arch_arm_kernel_sys_arm.c
 ?_arch_arm_kernel_time.c
-?_arch_arm_kernel_traps.c"
+?_arch_arm_kernel_traps.c
+?_include_asm-arm_thread_info.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -573,6 +569,71 @@ IN="?_arch_x86_64_ia32_ia32entry.S
 ?_arch_x86_64_kernel_time.c
 ?_arch_x86_64_kernel_traps.c
 ?_arch_x86_64_mm_fault.c"
+
+for a in $IN; do wr $a $FILE; done
+
+#limited
+FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-m68k.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-m68k_thread_info.h"
+
+for a in $IN; do wr $a $FILE; done
+
+#limited
+FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-m68knommu.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-m68knommu_thread_info.h
+?_arch_m68knommu_platform_68328_entry.S"
+
+for a in $IN; do wr $a $FILE; done
+
+
+#limited
+FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-sparc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-sparc_thread_info.h
+?_arch_sparc_kernel_entry.S"
+
+for a in $IN; do wr $a $FILE; done
+
+#limited
+FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-s390.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_s390_kernel_traps.c
+?_arch_s390_mm_fault.c"
+
+for a in $IN; do wr $a $FILE; done
+
+#limited
+FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-sh.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_sh_kernel_entry-common.S
+?_arch_sh_kernel_irq.c
+?_arch_sh_kernel_process.c
+?_arch_sh_kernel_sys_sh.c
+?_arch_sh_kernel_traps.c
+?_arch_sh_mm_fault.c
+?_include_asm-sh_thread_info.h"
+
+for a in $IN; do wr $a $FILE; done
+
+#limited
+FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-sh64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_sh64_kernel_entry.S
+?_include_asm-sh64_thread_info.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -764,6 +825,8 @@ IN="?_Makefile
 ?_ltt_Kconfig
 ?_ltt_Makefile
 ?_arch_alpha_Kconfig
+?_arch_arm26_Kconfig
+?_arch_arm_Kconfig
 ?_arch_cris_Kconfig
 ?_arch_frv_Kconfig
 ?_arch_h8300_Kconfig
@@ -775,8 +838,6 @@ IN="?_Makefile
 ?_arch_ppc_Kconfig
 ?_arch_powerpc_Kconfig
 ?_arch_parisc_Kconfig
-?_arch_arm_Kconfig
-?_arch_arm26_Kconfig
 ?_arch_mips_Kconfig
 ?_arch_s390_Kconfig
 ?_arch_sh64_Kconfig
