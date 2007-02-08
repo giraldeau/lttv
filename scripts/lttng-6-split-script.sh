@@ -641,6 +641,14 @@ IN="?_arch_sh64_kernel_entry.S
 
 for a in $IN; do wr $a $FILE; done
 
+#limited
+FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-alpha.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-alpha_thread_info.h"
+
+for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation.diff
 VALUE=$(( ${VALUE} + 1 ))
