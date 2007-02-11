@@ -367,6 +367,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 	int commit_count, reserve_count;
 	int ret;
 	sigset_t oldset, set;
+	int signals_disabled = 0;
 
 	do {
 		offset_old = atomic_read(&ltt_buf->offset);
@@ -418,12 +419,14 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 					 * Signals are kept disabled to make sure we win the cmpxchg. */
 
 					/* Disable signals */
-					ret = sigfillset(&set);
-					if(ret) perror("LTT Error in sigfillset\n"); 
-	
-					ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
-					if(ret) perror("LTT Error in pthread_sigmask\n");
-
+					if(!signals_disabled) {
+						ret = sigfillset(&set);
+						if(ret) perror("LTT Error in sigfillset\n"); 
+		
+						ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
+						if(ret) perror("LTT Error in pthread_sigmask\n");
+						signals_disabled = 1;
+					}
 					sem_wait(&ltt_buf->writer_sem);
 
 				}
@@ -547,7 +550,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 		 * sem_wait does in fact win the cmpxchg for the offset. We only call
 		 * these system calls on buffer boundaries because of their performance
 		 * cost. */
-		if(reserve_commit_diff == 0) {
+		if(signals_disabled) {
 			ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 			if(ret) perror("LTT Error in pthread_sigmask\n");
 		}
