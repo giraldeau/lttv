@@ -367,7 +367,6 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 	int commit_count, reserve_count;
 	int ret;
 	sigset_t oldset, set;
-	int signals_disabled = 0;
 
 	do {
 		offset_old = atomic_read(&ltt_buf->offset);
@@ -417,16 +416,28 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 				{
 					/* sem_wait is not signal safe. Disable signals around it.
 					 * Signals are kept disabled to make sure we win the cmpxchg. */
-
 					/* Disable signals */
-					if(!signals_disabled) {
-						ret = sigfillset(&set);
-						if(ret) perror("LTT Error in sigfillset\n"); 
-		
-						ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
+					ret = sigfillset(&set);
+					if(ret) perror("LTT Error in sigfillset\n"); 
+	
+					ret = pthread_sigmask(SIG_BLOCK, &set, &oldset);
+					if(ret) perror("LTT Error in pthread_sigmask\n");
+
+					/* We detect if a signal came between
+					 * the offset read and signal disabling:
+					 * if it is the case, then we restart
+					 * the loop after reenabling signals. It
+					 * means that it's a signal that has
+					 * won the buffer switch.*/
+					if(offset_old != atomic_read(&ltt_buf->offset)) {
+						ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 						if(ret) perror("LTT Error in pthread_sigmask\n");
-						signals_disabled = 1;
+						continue;
 					}
+					/* If the offset is still the same, then
+					 * we can safely proceed to do the
+					 * buffer switch without being
+					 * interrupted by a signal. */
 					sem_wait(&ltt_buf->writer_sem);
 
 				}
@@ -550,7 +561,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 		 * sem_wait does in fact win the cmpxchg for the offset. We only call
 		 * these system calls on buffer boundaries because of their performance
 		 * cost. */
-		if(signals_disabled) {
+		if(reserve_commit_diff == 0) {
 			ret = pthread_sigmask(SIG_SETMASK, &oldset, NULL);
 			if(ret) perror("LTT Error in pthread_sigmask\n");
 		}
