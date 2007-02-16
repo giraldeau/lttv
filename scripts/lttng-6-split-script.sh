@@ -145,6 +145,14 @@ IN="?_include_asm-arm_marker.h
 
 for a in $IN; do wr $a $FILE; done
 
+FILE=../${PRENAME}${COUNT}${NAME}-markers-doc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_Documentation_marker.txt"
+
+for a in $IN; do wr $a $FILE; done
+
 
 #atomic
 
@@ -300,8 +308,7 @@ FILE=../${PRENAME}${COUNT}${NAME}-local-powerpc.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-powerpc_local.h
-?_include_asm-powerpc_system.h"
+IN="?_include_asm-powerpc_local.h"
 
 for a in $IN; do wr $a $FILE; done
 
