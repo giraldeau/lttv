@@ -91,7 +91,8 @@ printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_asm-generic_vmlinux.lds.h
 ?_include_linux_module.h
-?_include_linux_marker.h"
+?_include_linux_marker.h
+?_include_linux_kernel.h"
 
 for a in $IN; do wr $a $FILE; done
 
