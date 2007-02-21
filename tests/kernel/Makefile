@@ -9,9 +9,12 @@ ifneq ($(CONFIG_LTT),)
 #	obj-m += test-printk-effect.o
 endif
 	obj-m += test-debugfs.o
+#	obj-m += test-mod.o
+#	obj-m += atomic-pIII-cmx.o
 	obj-m += test-hotplug.o
 	obj-m += rdtsc-smp.o
 	obj-m += test-local.o
+	obj-m += test-ser.o
 #	obj-m += test-cmpxchg.o
 #	obj-m += test-cmpxchg-nolock.o
 #	obj-m += test-spinlock.o
@@ -23,7 +26,8 @@ endif
 	#obj-m += test-kprobes.o
 	#obj-m += test-printk.o
 	#obj-m += test-debugfs.o
-#	obj-m += test-mark.o
+	obj-m += test-mark.o
+	obj-m += test-markxmc.o
 #	obj-m += probe.o
 #	obj-m += test-irqloop.o
 	#obj-m += marker-loader.o

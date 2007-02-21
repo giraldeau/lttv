@@ -113,7 +113,9 @@ FILE=../${PRENAME}${COUNT}${NAME}-markers-powerpc.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-powerpc_marker.h"
+IN="?_include_asm-powerpc_marker.h
+?_arch_powerpc_kernel_marker.c
+?_arch_powerpc_kernel_Makefile"
 
 for a in $IN; do wr $a $FILE; done
 

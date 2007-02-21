@@ -5,7 +5,6 @@
 
 
 #include <asm/local.h>
-#include <linux/init.h>
 #include <linux/module.h>
 #include <linux/timer.h>
 
@@ -27,6 +26,7 @@ static void test_each(void *info)
 	 * put_cpu_var(counters);
 	 */
 }
+
 static void do_test_timer(unsigned long data)
 {
 	int cpu;
