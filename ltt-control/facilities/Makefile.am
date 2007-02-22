@@ -21,7 +21,8 @@ stack.xml \
 statedump.xml \
 timer.xml \
 user_generic.xml \
-network_ip_interface.xml
+network_ip_interface.xml \
+xen.xml
 
 facilities_DATA = \
 core.xml \
@@ -45,7 +46,8 @@ stack.xml \
 statedump.xml \
 timer.xml \
 user_generic.xml \
-network_ip_interface.xml
+network_ip_interface.xml \
+xen.xml
 
 
 facilitiesdir = $(pkgdatadir)/facilities
