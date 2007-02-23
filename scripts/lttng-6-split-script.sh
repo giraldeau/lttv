@@ -748,6 +748,7 @@ IN="?_include_ltt_ltt-facility-custom-fs_data.h
 ?_include_ltt_ltt-facility-network_ip_interface.h
 ?_include_ltt_ltt-facility-process.h
 ?_include_ltt_ltt-facility-select-default.h
+?_include_ltt_ltt-facility-select-fs.h
 ?_include_ltt_ltt-facility-select-kernel.h
 ?_include_ltt_ltt-facility-select-network_ip_interface.h
 ?_include_ltt_ltt-facility-select-process.h
