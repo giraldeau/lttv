@@ -27,6 +27,9 @@ static struct time_struct {
 
 DECLARE_PERCPU(struct time_struct, cpu_time);
 
+/* Number of times the scheduler is called on each CPU */
+DECLARE_PERCPU(unsigned long, sched_nr);
+
 /* On frequency change event */
 /* In irq context */
 void freq_change_cb(unsigned int new_freq)
@@ -83,9 +86,9 @@ wake_from_hlt()
 /* If the update_count changes while we read the context, it may be invalid.
  * This would happen if we are scheduled out for a period of time long enough to
  * permit 2 frequency changes. We simply start the loop again if it happens.
- * We detect it by comparing the update_count running counter. */
-/* FIXME : if thread is migrated to another CPU, get_cycles() is bad */
-/* Pb with get cpu id / migrate / get_cycles() / migrate / get cpu id and check
+ * We detect it by comparing the update_count running counter.
+ * We detect preemption by incrementing a counter sched_nr within schedule(). 
+ * This counter is readable by user space through the vsyscall page. */
  */
 u64 read_time(void)
 {
@@ -94,16 +97,22 @@ u64 read_time(void)
 	struct time_struct this_cpu_time;
 	struct time_info *current_time;
 	unsigned int cpu;
+	long prev_sched_nr;
 	do {
 		cpu = _smp_processor_id();
+		prev_sched_nr = per_cpu(sched_nr, cpu);
+		if(cpu != _smp_processor_id())
+			continue;	/* changed CPU between CPUID and getting
+					   sched_nr */
 		this_cpu_time = per_cpu(cpu_time, cpu);
 		update_count = this_cpu_time->update_count;
 		current_time = this_cpu_time->time_sel[update_count&1];
 		walltime = current_time->walltime + 
 				(get_cycles() - current_time->tsc) /
 				current_time->freq;
-	} while(this_cpu_time->update_count != update_count
-		|| cpu != _smp_processor_id());
+		if(per_cpu(sched_nr, cpu) != prev_sched_nr)
+			continue;	/* been preempted */
+	} while(this_cpu_time->update_count != update_count);
 	return walltime;
 }
 
