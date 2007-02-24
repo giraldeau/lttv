@@ -33,7 +33,17 @@ if (enable) {
 #define _MARK_RESCHED (1 << MARK_RESCHED)
   preempt_schedule() will be called by the marker.
 
-#define _MARK_DEFAULT (~_MARK_PREEMPT | _MARK_TRAP | _MARK_RESCHED)
+#define MARK_PRINTK 4
+#define _MARK_PRINTK (1 << MARK_PRINTK)
+  vprintk can be called in the probe/printk can be called as probe.
+
+#define MARK_LOCK_SAFE
+#define _MARK_LOCK_SAFE (1 << MARK_LOCK_SAFE)
+  It is completely safe to take a lock, disable irqs, softirqs, ... from this marker.
+  If unset, checking the context must be done to insure no deadlock or recursive
+  call will occur.
+
+#define _MARK_DEFAULT (_MARK_TRAP | _MARK_RESCHED | _MARK_PRINTK)
 
 #define MARK (format, ...) MARK_OPTIONS(MARK_DEFAULT, format, __VA_ARGS__)
 
