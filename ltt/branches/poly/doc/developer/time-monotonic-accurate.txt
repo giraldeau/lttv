@@ -84,20 +84,26 @@ wake_from_hlt()
  * This would happen if we are scheduled out for a period of time long enough to
  * permit 2 frequency changes. We simply start the loop again if it happens.
  * We detect it by comparing the update_count running counter. */
+/* FIXME : if thread is migrated to another CPU, get_cycles() is bad */
+/* Pb with get cpu id / migrate / get_cycles() / migrate / get cpu id and check
+ */
 u64 read_time(void)
 {
 	u64 walltime;
 	long update_count;
-	struct time_struct this_cpu_time = 
-		per_cpu(cpu_time, smp_processor_id());
+	struct time_struct this_cpu_time;
 	struct time_info *current_time;
+	unsigned int cpu;
 	do {
+		cpu = _smp_processor_id();
+		this_cpu_time = per_cpu(cpu_time, cpu);
 		update_count = this_cpu_time->update_count;
 		current_time = this_cpu_time->time_sel[update_count&1];
 		walltime = current_time->walltime + 
 				(get_cycles() - current_time->tsc) /
 				current_time->freq;
-	} while(this_cpu_time->update_count != update_count);
+	} while(this_cpu_time->update_count != update_count
+		|| cpu != _smp_processor_id());
 	return walltime;
 }
 
