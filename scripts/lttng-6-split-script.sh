@@ -63,15 +63,15 @@ for a in $IN; do wr $a $FILE; done
 
 #kprobes
 
-for a in $IN; do wr $a $FILE; done
-
-FILE=../${PRENAME}${COUNT}${NAME}-kprobes.diff
-VALUE=$(( ${VALUE} + 1 ))
-printf -v COUNT "%02d" ${VALUE}
-
-IN="?_include_linux_kprobes.h
-?_arch_i386_kernel_kprobes.c
-?_kernel_kprobes.c"
+#FILE=../${PRENAME}${COUNT}${NAME}-kprobes.diff
+#VALUE=$(( ${VALUE} + 1 ))
+#printf -v COUNT "%02d" ${VALUE}
+#
+#IN="?_include_linux_kprobes.h
+#?_arch_i386_kernel_kprobes.c
+#?_kernel_kprobes.c"
+#
+#for a in $IN; do wr $a $FILE; done
 
 #Markers
 
