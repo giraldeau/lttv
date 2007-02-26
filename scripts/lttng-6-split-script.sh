@@ -39,8 +39,7 @@ FILE=../${PRENAME}${COUNT}${NAME}-hotfix.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_arch_powerpc_kernel_prom_parse.c
-?_include_asm-powerpc_prom.h
+IN="?_include_asm-powerpc_prom.h
 ?_include_asm-sparc64_tlb.h
 ?_kernel_time_clocksource.c
 ?_include_asm-ppc_ocp.h
