@@ -336,12 +336,13 @@ static int write_event_content(void *hook_data, void *call_data)
       return FALSE;
   
   lttv_event_to_string(e, a_string, TRUE, a_field_names, tfs);
-  g_string_append_printf(a_string,"\n");  
 
   if(a_state) {
     g_string_append_printf(a_string, " %s ",
         g_quark_to_string(process->state->s));
   }
+
+  g_string_append_printf(a_string,"\n");  
 
   fputs(a_string->str, a_file);
   return FALSE;
