@@ -3,29 +3,29 @@
   <description>The Xen facility containts hypervisor events.</description>
 	
   <event name="wtrace0">
-		<field name="event"><uint size="4"/></field>
+		<field name="event"><uint_fixed size="4"/></field>
   </event>
 
   <event name="wtrace1">
-		<field name="event"><uint size="4"/></field>
+		<field name="event"><uint_fixed size="4"/></field>
 		<field name="data1"><ulong/></field>
   </event>
 
   <event name="wtrace2">
-		<field name="event"><uint size="4"/></field>
+		<field name="event"><uint_fixed size="4"/></field>
 		<field name="data1"><ulong/></field>
 		<field name="data2"><ulong/></field>
   </event>
 
   <event name="wtrace3">
-		<field name="event"><uint size="4"/></field>
+		<field name="event"><uint_fixed size="4"/></field>
 		<field name="data1"><ulong/></field>
 		<field name="data2"><ulong/></field>
 		<field name="data3"><ulong/></field>
   </event>
 
   <event name="wtrace4">
-		<field name="event"><uint size="4"/></field>
+		<field name="event"><uint_fixed size="4"/></field>
 		<field name="data1"><ulong/></field>
 		<field name="data2"><ulong/></field>
 		<field name="data3"><ulong/></field>
@@ -33,7 +33,7 @@
   </event>
 
   <event name="wtrace5">
-		<field name="event"><uint size="4"/></field>
+		<field name="event"><uint_fixed size="4"/></field>
 		<field name="data1"><ulong/></field>
 		<field name="data2"><ulong/></field>
 		<field name="data3"><ulong/></field>
