@@ -45,19 +45,19 @@ if (enable) {
 
 #define _MARK_DEFAULT (_MARK_TRAP | _MARK_RESCHED | _MARK_PRINTK)
 
-#define MARK (format, ...) MARK_OPTIONS(MARK_DEFAULT, format, __VA_ARGS__)
+#define MARK (format, args...) _MARK(MARK_DEFAULT, format, ## args)
 
 ex. i386
-#define MARK_OPTIONS(opt, format, ...) \
-{ \
-	if (opt & _MARK_NO_TRAP) \
-		GEN_MARK(opt, format, __VA_ARGS__); \
+#define _MARK(opt, format, args...) \
+do { \
+	if (opt & _MARK_TRAP) \
+		MARK(opt, format, ## args); \
 	else \
-		MARK(opt, format, __VA_ARGS__); \
-}
+		GEN_MARK(opt, format, ## args); \
+} while (0)
 
 ex. powerpc
-#define MARK_OPTIONS(opt, format, ...) MARK(opt, format, __VA_ARGS__);
+#define _MARK(opt, format, args...) MARK(opt, format, ## args);
 
 
 MARK(opt, format, ...) \
