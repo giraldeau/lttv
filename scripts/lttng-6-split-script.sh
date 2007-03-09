@@ -44,7 +44,14 @@ IN="?_include_asm-powerpc_prom.h
 ?_kernel_time_clocksource.c
 ?_include_asm-ppc_ocp.h
 ?_arch_powerpc_kernel_setup_32.c
-?_arch_ppc_kernel_setup.c"
+?_arch_ppc_kernel_setup.c
+?_arch_sparc64_kernel_process.c
+?_arch_sparc_kernel_process.c
+?_arch_sparc_kernel_traps.c
+?_arch_avr32_kernel_ptrace.c"
+#also in instrumentation
+#?_arch_x86_64_kernel_process.c
+#?_arch_powerpc_kernel_process.c
 
 for a in $IN; do wr $a $FILE; done
 
