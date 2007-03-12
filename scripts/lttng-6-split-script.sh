@@ -759,6 +759,7 @@ IN="?_include_ltt_ltt-facility-custom-fs_data.h
 ?_include_ltt_ltt-facility-select-network_ip_interface.h
 ?_include_ltt_ltt-facility-select-process.h
 ?_include_ltt_ltt-facility-select-statedump.h
+?_include_ltt_ltt-facility-select-compact.h
 ?_include_ltt_ltt-facility-socket.h
 ?_include_ltt_ltt-facility-stack.h
 ?_include_ltt_ltt-facility-statedump.h
