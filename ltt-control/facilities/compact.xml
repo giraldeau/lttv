@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<facility name="compact">
+  <description>The compact facility contains high rate compact events.</description>
+
+  <event name="event_a">
+    <description>Compact event with no data</description>
+  </event>
+
+  <event name="event_b">
+    <description>Compact event with 4 bytes of data</description>
+    <field name="data1"> <uint_fixed size="4"/> </field>
+  </event>
+
+  <event name="event_c">
+    <description>Compact event with 8 bytes of data</description>
+    <field name="data1"> <uint_fixed size="8"/> </field>
+  </event>
+
+</facility>
