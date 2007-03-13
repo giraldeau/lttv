@@ -122,7 +122,8 @@ Granularity : 800ns (200 cycles@4GHz) : 2^9 = 512 (remove 9 LSB)
 Min wrap : 100HZ system, each 3 timer ticks : 0.03s (32-4 MSB for 4 GHZ : 0.26s)
   (heartbeat each 100HZ, to be safe)
   Number of MSB to skip :
-    32 - find_first_bit(( (expected_longest_interrupt_latency()[ms] + max_timer_interval[ms]) / cpu_khz )) - 1
+    32 - find_first_bit(( (expected_longest_interrupt_latency()[ms] +
+       max_timer_interval[ms]) * cpu_khz[kcycles/s] )) - 1
     (the last -1 is to make sure we remove less or exact amount of bits, round
     near to 0, not round up).
 
