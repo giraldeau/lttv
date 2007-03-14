@@ -53,7 +53,8 @@
 /* Facility names used in this file */
 
 GQuark LTT_FACILITY_NAME_HEARTBEAT,
-       LTT_EVENT_NAME_HEARTBEAT;
+       LTT_EVENT_NAME_HEARTBEAT,
+       LTT_EVENT_NAME_HEARTBEAT_FULL;
 GQuark LTT_TRACEFILE_NAME_FACILITIES;
 
 #ifndef g_open
@@ -232,6 +233,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
     t->ltt_minor_version = any->minor_version;
     t->flight_recorder = any->flight_recorder;
     t->has_heartbeat = any->has_heartbeat;
+    t->compact_facilities = NULL;
   }
  
 
@@ -256,6 +258,47 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
         tf->buffer_header_size =
          sizeof(struct ltt_block_start_header) 
             + sizeof(struct ltt_trace_header_0_7);
+	tf->tsc_lsb_truncate = 0;
+	tf->tscbits = 32;
+	tf->tsc_msb_cutoff = 32 - tf->tsc_lsb_truncate - tf->tscbits;
+	tf->tsc_mask = (1ULL<<32)-1;
+	tf->tsc_mask_next_bit = (1ULL<<32);
+        if(t) {
+          t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
+                                         &vheader->start_freq);
+          t->freq_scale = ltt_get_uint32(LTT_GET_BO(tf),
+                                         &vheader->freq_scale);
+          t->start_tsc = ltt_get_uint64(LTT_GET_BO(tf),
+                                        &vheader->start_tsc);
+          t->start_monotonic = ltt_get_uint64(LTT_GET_BO(tf),
+                                              &vheader->start_monotonic);
+          t->start_time.tv_sec = ltt_get_uint64(LTT_GET_BO(tf),
+                                       &vheader->start_time_sec);
+          t->start_time.tv_nsec = ltt_get_uint64(LTT_GET_BO(tf),
+                                       &vheader->start_time_usec);
+          t->start_time.tv_nsec *= 1000; /* microsec to nanosec */
+
+          t->start_time_from_tsc = ltt_time_from_uint64(
+              (double)t->start_tsc
+              * (1000000000.0 / tf->trace->freq_scale)
+	      / (double)t->start_freq);
+        }
+      }
+      break;
+    case 8:
+      {
+        struct ltt_trace_header_0_8 *vheader =
+          (struct ltt_trace_header_0_8 *)header;
+        tf->buffer_header_size =
+         sizeof(struct ltt_block_start_header) 
+            + sizeof(struct ltt_trace_header_0_8);
+	tf->tsc_lsb_truncate = vheader->tsc_lsb_truncate;
+	tf->tscbits = vheader->tscbits;
+	tf->tsc_msb_cutoff = 32 - tf->tsc_lsb_truncate - tf->tscbits;
+  tf->tsc_mask = ((1ULL << (tf->tscbits))-1);
+  tf->tsc_mask = tf->tsc_mask << tf->tsc_lsb_truncate;
+	tf->tsc_mask_next_bit = (1ULL<<(tf->tscbits));
+	tf->tsc_mask_next_bit = tf->tsc_mask_next_bit << tf->tsc_lsb_truncate;
         if(t) {
           t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &vheader->start_freq);
@@ -884,7 +927,11 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path,
 			tmp_tf.tid = tid;
 			tmp_tf.pgid = pgid;
 			tmp_tf.creation = creation;
-
+      if(tmp_tf.name == g_quark_from_string("/compact")
+      	|| tmp_tf.name == g_quark_from_string("/flight-compact"))
+	      tmp_tf.compact = 1;
+      else
+	      tmp_tf.compact = 0;
       group = g_datalist_id_get_data(&trace->tracefiles, name);
       if(group == NULL) {
         /* Elements are automatically cleared when the array is allocated.
@@ -1184,9 +1231,12 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
                                      fac_ids, ltt_fac_ids_destroy);
           }
           g_array_append_val(fac_ids, fac->id);
+	  g_debug("fac id : %u", fac->id);
 
           break;
         case LTT_EVENT_HEARTBEAT:
+          break;
+        case LTT_EVENT_HEARTBEAT_FULL:
           break;
         default:
           g_warning("Error in processing facility file %s, "
@@ -1298,6 +1348,11 @@ LttTrace *ltt_trace_open(const gchar *pathname)
     if(ltt_process_facility_tracefile(tf))
       goto facilities_error;
   }
+  t->compact_facilities = ltt_trace_facility_get_by_name(t,
+    g_quark_from_string("compact"));
+  if(!t->compact_facilities)
+    t->compact_facilities = ltt_trace_facility_get_by_name(t,
+      g_quark_from_string("flight-compact"));
   
   return t;
 
@@ -1820,24 +1875,66 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   /* Read event header */
   
 	/* Align the head */
-	pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+	if(!tf->compact)
+		pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+	else {
+		g_assert(tf->trace->has_heartbeat);
+		pos += ltt_align((size_t)pos, sizeof(uint32_t), tf->has_alignment);
+	}
   
 	if(tf->trace->has_heartbeat) {
 		event->timestamp = ltt_get_uint32(LTT_GET_BO(tf),
 																					pos);
-		/* 32 bits -> 64 bits tsc */
-		/* note : still works for seek and non seek cases. */
-		if(event->timestamp < (0xFFFFFFFFULL&tf->buffer.tsc)) {
-			tf->buffer.tsc = ((tf->buffer.tsc&0xFFFFFFFF00000000ULL)
-													+ 0x100000000ULL)
-															| (guint64)event->timestamp;
-			event->tsc = tf->buffer.tsc;
-		} else {
-			/* no overflow */
-			tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
-															| (guint64)event->timestamp;
-			event->tsc = tf->buffer.tsc;
-		}
+    if(!tf->compact) {
+      /* 32 bits -> 64 bits tsc */
+      /* note : still works for seek and non seek cases. */
+      if(event->timestamp < (0xFFFFFFFFULL&tf->buffer.tsc)) {
+        tf->buffer.tsc = ((tf->buffer.tsc&0xFFFFFFFF00000000ULL)
+                            + 0x100000000ULL)
+                                | (guint64)event->timestamp;
+        event->tsc = tf->buffer.tsc;
+      } else {
+        /* no overflow */
+        tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
+                                | (guint64)event->timestamp;
+        event->tsc = tf->buffer.tsc;
+      }
+    } else {
+      /* Compact header */
+      /* We keep the LSB of the previous timestamp, to make sure
+       * we never go back */
+      event->event_id = event->timestamp >> tf->tscbits;
+      event->event_size = 0xFFFF;
+      printf("Found compact event %d\n", event->event_id);
+      event->timestamp = event->timestamp << tf->tsc_lsb_truncate;
+      event->timestamp = event->timestamp & tf->tsc_mask;
+      printf("timestamp 0x%lX\n", event->timestamp);
+      printf("mask 0x%llX\n", tf->tsc_mask);
+      printf("mask_next 0x%llX\n", tf->tsc_mask_next_bit);
+      printf("previous tsc 0x%llX\n", tf->buffer.tsc);
+      printf("previous tsc&mask 0x%llX\n", tf->tsc_mask&tf->buffer.tsc);
+      printf("previous tsc&(~mask) 0x%llX\n", tf->buffer.tsc&(~tf->tsc_mask));
+      if(event->timestamp < (tf->tsc_mask&tf->buffer.tsc)) {
+        printf("wrap\n");
+        tf->buffer.tsc = ((tf->buffer.tsc&(~tf->tsc_mask))
+                            + tf->tsc_mask_next_bit)
+                                | (guint64)event->timestamp;
+        event->tsc = tf->buffer.tsc;
+      } else {
+        printf("no wrap\n");
+        /* no overflow */
+        tf->buffer.tsc = (tf->buffer.tsc&(~tf->tsc_mask)) 
+                                | (guint64)event->timestamp;
+        event->tsc = tf->buffer.tsc;
+      }
+      printf("current tsc 0x%llX\n", tf->buffer.tsc);
+      g_assert(tf->trace->compact_facilities);
+      /* FIXME : currently does not support unload/load of compact
+       * facility during tracing. Should check for the currently loaded
+       * version of the facility. */
+      g_assert(tf->trace->compact_facilities->len == 1);
+      event->facility_id = g_array_index(tf->trace->compact_facilities, guint, 0);
+    }
 		pos += sizeof(guint32);
 	} else {
 		event->tsc = ltt_get_uint64(LTT_GET_BO(tf), pos);
@@ -1845,22 +1942,27 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 		pos += sizeof(guint64);
 	}
 	event->event_time = ltt_interpolate_time(tf, event);
-  event->facility_id = *(guint8*)pos;
-  pos += sizeof(guint8);
 
-  event->event_id = *(guint8*)pos;
-  pos += sizeof(guint8);
+  if(!tf->compact) {
+    event->facility_id = *(guint8*)pos;
+    pos += sizeof(guint8);
 
-  event->event_size = ltt_get_uint16(LTT_GET_BO(tf), pos);
-  pos += sizeof(guint16);
-  
+    event->event_id = *(guint8*)pos;
+    pos += sizeof(guint8);
+
+    event->event_size = ltt_get_uint16(LTT_GET_BO(tf), pos);
+    pos += sizeof(guint16);
+  } else {
+    /* Compact event */
+  }
 	/* Align the head */
-	pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+	if(!tf->compact)
+		pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
 
   event->data = pos;
 
   /* get the data size and update the event fields with the current
-   * information */
+   * information. Also update the time if a heartbeat_full event is found. */
   ltt_update_event_size(tf);
 
   return 0;
@@ -2006,6 +2108,7 @@ void ltt_update_event_size(LttTracefile *tf)
   off_t size = 0;
   LttFacility *f = ltt_trace_get_facility_by_num(tf->trace, 
                                           tf->event.facility_id);
+  char *tscdata;
  
   if(!f->exists) {
     /* Specific handling of core events : necessary to read the facility control
@@ -2033,6 +2136,15 @@ void ltt_update_event_size(LttTracefile *tf)
     case LTT_EVENT_HEARTBEAT:
       //g_debug("Update Event heartbeat");
       size = sizeof(TimeHeartbeat);
+      break;
+    case LTT_EVENT_HEARTBEAT_FULL:
+      //g_debug("Update Event heartbeat full");
+      tscdata = (char*)(tf->event.data);
+      tf->event.tsc = ltt_get_uint64(LTT_GET_BO(tf), tscdata);
+      tf->buffer.tsc = tf->event.tsc;
+      tf->event.event_time = ltt_interpolate_time(tf, &tf->event);
+      size = sizeof(TimeHeartbeatFull);
+      size += ltt_align(size, sizeof(guint64), tf->has_alignment);
       break;
     default:
       g_warning("Error in getting event size : tracefile %s, "
@@ -3107,6 +3219,7 @@ static void __attribute__((constructor)) init(void)
 {
   LTT_FACILITY_NAME_HEARTBEAT = g_quark_from_string("heartbeat");
   LTT_EVENT_NAME_HEARTBEAT = g_quark_from_string("heartbeat");
+  LTT_EVENT_NAME_HEARTBEAT_FULL = g_quark_from_string("heartbeat_full");
   
   LTT_TRACEFILE_NAME_FACILITIES = g_quark_from_string("/control/facilities");
 }

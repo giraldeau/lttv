@@ -60,6 +60,7 @@ enum ltt_core_events {
     LTT_EVENT_FACILITY_LOAD,
     LTT_EVENT_FACILITY_UNLOAD,
     LTT_EVENT_HEARTBEAT,
+    LTT_EVENT_HEARTBEAT_FULL,
     LTT_EVENT_STATE_DUMP_FACILITY_LOAD
 };
 
@@ -131,6 +132,10 @@ struct LttStateDumpFacilityLoad {
 typedef struct _TimeHeartbeat {
 } LTT_PACKED_STRUCT TimeHeartbeat;
 
+typedef struct _TimeHeartbeatFull {
+  guint64 tsc;
+} LTT_PACKED_STRUCT TimeHeartbeatFull;
+
 struct ltt_event_header_hb {
   uint32_t      timestamp;
   unsigned char  facility_id;
@@ -192,6 +197,29 @@ struct ltt_trace_header_0_7 {
   uint8_t         flight_recorder;
   uint8_t         has_heartbeat;
   uint8_t         has_alignment;  /* Event header alignment */
+  uint32_t        freq_scale;
+  uint64_t        start_freq;
+  uint64_t        start_tsc;
+  uint64_t        start_monotonic;
+  uint64_t        start_time_sec;
+  uint64_t        start_time_usec;
+} LTT_PACKED_STRUCT;
+
+/* For version 0.8 */
+
+struct ltt_trace_header_0_8 {
+  uint32_t        magic_number;
+  uint32_t        arch_type;
+  uint32_t        arch_variant;
+  uint32_t        float_word_order;
+  uint8_t         arch_size;
+  uint8_t         major_version;
+  uint8_t         minor_version;
+  uint8_t         flight_recorder;
+  uint8_t         has_heartbeat;
+  uint8_t         has_alignment;  /* Event header alignment */
+  uint8_t         tsc_lsb_truncate;
+  uint8_t         tscbits;
   uint32_t        freq_scale;
   uint64_t        start_freq;
   uint64_t        start_tsc;
@@ -292,7 +320,7 @@ struct _LttField{
                           // (it's variable), then the field_size should be
                           // dynamically calculated while reading the trace
                           // and put here. Otherwise, the field_size always
-                          // equels the type size.
+                          // equals the type size.
   off_t array_offset;     // offset of the beginning of the array (for array
                           // and sequences)
   GArray * dynamic_offsets; // array of offsets calculated dynamically at
@@ -361,6 +389,12 @@ struct _LttTracefile{
                                      // 0 or the architecture size in bytes.
 
   size_t    buffer_header_size;
+  int       compact;                 //compact tracefile ?
+  uint8_t   tsc_lsb_truncate;
+  uint8_t   tscbits;
+  uint8_t   tsc_msb_cutoff;
+  uint64_t  tsc_mask;
+  uint64_t  tsc_mask_next_bit;       //next MSB after the mask
 
   /* Current event */
   LttEvent event;                    //Event currently accessible in the trace
@@ -405,6 +439,7 @@ struct _LttTrace{
   uint64_t  start_monotonic;
   LttTime   start_time;
   LttTime   start_time_from_tsc;
+  GArray    *compact_facilities;
 
   GData     *tracefiles;                    //tracefiles groups
 };

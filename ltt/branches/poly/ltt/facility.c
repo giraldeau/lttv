@@ -138,7 +138,6 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
       checkNamedTypesImplemented(&fac->named_types);
     
       generateChecksum(fac->name, &checksum, &fac->events);
-  
       if(checksum == f->checksum) {
         generateFacility(f, fac, checksum);
         generated = TRUE;

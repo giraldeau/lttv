@@ -23,7 +23,8 @@
 #include <ltt/ltt.h>
 
 extern GQuark LTT_FACILITY_NAME_HEARTBEAT,
-              LTT_EVENT_NAME_HEARTBEAT;
+              LTT_EVENT_NAME_HEARTBEAT,
+              LTT_EVENT_NAME_HEARTBEAT_FULL;
 
 /* A trace is specified as a pathname to the directory containing all the
    associated data (control tracefiles, per cpu tracefiles, event 
