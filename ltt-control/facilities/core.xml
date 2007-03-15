@@ -5,18 +5,18 @@
   <event name="facility_load">
     <description>Facility is loaded</description>
 		<field name="name"><string/></field>
-		<field name="checksum"><uint size="4"/></field>
-		<field name="id"><uint size="4"/></field>
-		<field name="int_size"><uint size="4"/></field>
-		<field name="long_size"><uint size="4"/></field>
-		<field name="pointer_size"><uint size="4"/></field>
-		<field name="size_t_size"><uint size="4"/></field>
-		<field name="has_alignment"><uint size="4"/></field>
+		<field name="checksum"><uint_fixed size="4"/></field>
+		<field name="id"><uint_fixed size="4"/></field>
+		<field name="int_size"><uint_fixed size="4"/></field>
+		<field name="long_size"><uint_fixed size="4"/></field>
+		<field name="pointer_size"><uint_fixed size="4"/></field>
+		<field name="size_t_size"><uint_fixed size="4"/></field>
+		<field name="has_alignment"><uint_fixed size="4"/></field>
   </event>
 
   <event name="facility_unload">
     <description>Facility is unloaded</description>
-    <field name="id"><uint size="4"/></field>
+    <field name="id"><uint_fixed size="4"/></field>
   </event>
 
   <event name="time_heartbeat" scope="tracefile">
@@ -25,17 +25,24 @@
      header : we save the full 64 bits in this event.
     </description>
   </event>
-  
+
+   <event name="time_heartbeat_full" scope="tracefile" scope="trace" attribute="force">
+    <description>System time, full 64 bits TSC. Saved before trace restart.
+    Forced write, even if trace is stopped.
+    </description>
+		<field name="tsc"><uint_fixed size="8"/></field>
+  </event>
+ 
   <event name="state_dump_facility_load" scope="trace">
     <description>Facility is loaded while in state dump</description>
 		<field name="name"><string/></field>
-		<field name="checksum"><uint size="4"/></field>
-		<field name="id"><uint size="4"/></field>
-		<field name="int_size"><uint size="4"/></field>
-		<field name="long_size"><uint size="4"/></field>
-		<field name="pointer_size"><uint size="4"/></field>
-		<field name="size_t_size"><uint size="4"/></field>
-		<field name="has_alignment"><uint size="4"/></field>
+		<field name="checksum"><uint_fixed size="4"/></field>
+		<field name="id"><uint_fixed size="4"/></field>
+		<field name="int_size"><uint_fixed size="4"/></field>
+		<field name="long_size"><uint_fixed size="4"/></field>
+		<field name="pointer_size"><uint_fixed size="4"/></field>
+		<field name="size_t_size"><uint_fixed size="4"/></field>
+		<field name="has_alignment"><uint_fixed size="4"/></field>
   </event>
 
 </facility>
