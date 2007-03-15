@@ -2027,6 +2027,8 @@ ARM, MIPS32/64, powerpc32, powerpc64, ppc, i386, x86_64<br>
 </td>
 <td style="vertical-align: top;">
 Add compact channel.<br>
+Fix start of trace get full timestamp. Caused problems with time gap between
+trace create/start and 32 bits (or less) TSC in events.<br>
 Ok for xen-unstable changeset starting at 14391.<br>
 </td>
 <td style="vertical-align: top;">
