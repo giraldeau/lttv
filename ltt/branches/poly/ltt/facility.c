@@ -249,6 +249,8 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
     event_type->index = i;
     event_type->facility = f;
 
+    event_type->has_compact_data = parser_event->compact_data;
+
     event_type->fields = g_array_sized_new(FALSE, TRUE,
         sizeof(LttField), parser_event->fields.position);
     event_type->fields = 

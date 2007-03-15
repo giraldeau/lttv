@@ -195,7 +195,7 @@ char *allocAndCopy(char *str)
  **************************************************************************/
 
 void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
-			   sequence_t * unnamed_types, table_t * named_types) 
+         sequence_t * unnamed_types, table_t * named_types) 
 {
   char * token;
   int car;
@@ -203,7 +203,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
   t->fmt = NULL;
   t->size = 0;
   t->custom_write = 0;
-	t->network = 0;
+  t->network = 0;
   
   while(1) {
     token = getToken(in); 
@@ -226,26 +226,26 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
       t->size = getSize(in);
     } else if(!strcmp("custom_write", token)) {
       t->custom_write = 1;
-		} else if(!strcmp("byte_order",token)) {
-     	getEqual(in);
-     	car = seekNextChar(in);
-     	if(car == EOF) in->error(in,"byte order was expected (network?)");
-     	else if(car == '\"') token = getQuotedString(in);
-     	else token = getName(in);
-		 	if(!strcmp("network", token)) {
-		   	t->network = 1;
-			}
-		} else if(!strcmp("write",token)) {
-     	getEqual(in);
-     	car = seekNextChar(in);
-     	if(car == EOF) in->error(in,"write type was expected (custom?)");
-     	else if(car == '\"') token = getQuotedString(in);
-     	else token = getName(in);
-		 	if(!strcmp("custom", token)) {
-		   	t->custom_write = 1;
-			}
-	  }
-	}
+    } else if(!strcmp("byte_order",token)) {
+       getEqual(in);
+       car = seekNextChar(in);
+       if(car == EOF) in->error(in,"byte order was expected (network?)");
+       else if(car == '\"') token = getQuotedString(in);
+       else token = getName(in);
+       if(!strcmp("network", token)) {
+         t->network = 1;
+       }
+    } else if(!strcmp("write",token)) {
+       getEqual(in);
+       car = seekNextChar(in);
+       if(car == EOF) in->error(in,"write type was expected (custom?)");
+       else if(car == '\"') token = getQuotedString(in);
+       else token = getName(in);
+       if(!strcmp("custom", token)) {
+         t->custom_write = 1;
+       }
+    }
+  }
 }
 
 /**************************************************************************
@@ -271,6 +271,8 @@ void getEventAttributes(parse_file_t *in, event_t *ev)
   ev->param_buffer = 0;
   ev->no_instrument_function = 0;
   ev->high_priority = 0;
+  ev->force = 0;
+  ev->compact_data = 0;
 
   while(1) {
     token = getToken(in); 
@@ -310,6 +312,10 @@ void getEventAttributes(parse_file_t *in, event_t *ev)
         ev->no_instrument_function = 1;
       else if(!strcmp(token, "high_priority"))
         ev->high_priority = 1;
+      else if(!strcmp(token, "force"))
+        ev->force = 1;
+      else if(!strcmp(token, "compact_data"))
+        ev->compact_data = 1;
     }
   }
 }
@@ -333,7 +339,8 @@ void getFacilityAttributes(parse_file_t *in, facility_t *fac)
   
   fac->name = NULL;
   fac->arch = NULL;
-	fac->user = 0;
+  fac->align = 1;
+  fac->user = 0;
 
   while(1) {
     token = getToken(in); 
@@ -354,8 +361,12 @@ void getFacilityAttributes(parse_file_t *in, facility_t *fac)
       getEqual(in);
       car = seekNextChar(in);
       if(car == '\"') fac->arch = allocAndCopy(getQuotedString(in));
-			else fac->arch = allocAndCopy(getName(in));
-		}
+      else fac->arch = allocAndCopy(getName(in));
+    } else if(!strcmp("align", token)) {
+      getEqual(in);
+      fac->align = getSize(in);
+    }
+
   }
 }
 
@@ -530,9 +541,9 @@ void parseFacility(parse_file_t *in, facility_t * fac)
     if(strcmp("event",token) == 0){
       ev = (event_t*) memAlloc(sizeof(event_t));
       sequence_push(&(fac->events),ev);
-      parseEvent(in,ev, &(fac->unnamed_types), &(fac->named_types));    
+      parseEvent(fac, in, ev, &(fac->unnamed_types), &(fac->named_types));    
     }else if(strcmp("type",token) == 0){
-      parseTypeDefinition(in, &(fac->unnamed_types), &(fac->named_types));
+      parseTypeDefinition(fac, in, &(fac->unnamed_types), &(fac->named_types));
     }else if(in->type == FORWARDSLASH){
       break;
     }else in->error(in,"event or type token expected\n");
@@ -546,7 +557,8 @@ void parseFacility(parse_file_t *in, facility_t * fac)
 /*****************************************************************************
  *Function name
  *    parseEvent    : generate event from event definition 
- *Input params 
+ *Input params
+ *    fac           : facility holding the event
  *    in            : input file handle          
  *    ev            : new event                              
  *    unnamed_types : array of unamed types
@@ -555,12 +567,13 @@ void parseFacility(parse_file_t *in, facility_t * fac)
  *    ev            : new event (parameters are passed to it)   
  ****************************************************************************/
 
-void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types, 
+void parseEvent(facility_t *fac, parse_file_t *in, event_t * ev, sequence_t * unnamed_types, 
 		table_t * named_types) 
 {
   char *token;
 	field_t *f;
 
+  ev->fac = fac;
 	sequence_init(&(ev->fields));
   //<event name=eventtype_name>
   getEventAttributes(in, ev);
@@ -588,7 +601,7 @@ void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types,
 			if(strcmp("field",token))in->error(in,"expecting a field");
 			f = (field_t *)memAlloc(sizeof(field_t));
 			sequence_push(&(ev->fields),f);
-			parseFields(in, f, unnamed_types, named_types, 1);
+			parseFields(fac, in, f, unnamed_types, named_types, 1);
 			break;
 		default:
 			in->error(in, "expecting </event> or <field >");
@@ -621,6 +634,7 @@ void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types,
  *Function name
  *    parseField    : get field infomation from buffer 
  *Input params 
+ *    fac           : facility holding the field
  *    in            : input file handle
  *    f             : field
  *    unnamed_types : array of unamed types
@@ -628,12 +642,13 @@ void parseEvent(parse_file_t *in, event_t * ev, sequence_t * unnamed_types,
  *    tag						: is field surrounded by a <field> </field> tag ?
  ****************************************************************************/
 
-void parseFields(parse_file_t *in, field_t *f,
+void parseFields(facility_t *fac, parse_file_t *in, field_t *f,
     sequence_t * unnamed_types,
 		table_t * named_types,
 		int tag) 
 {
   char * token;
+  f->fac = fac;
 	if(tag) {
 		//<field name=field_name> <description> <type> </field>
 		getFieldAttributes(in, f);
@@ -647,7 +662,7 @@ void parseFields(parse_file_t *in, field_t *f,
 
   //<int size=...>
   getLAnglebracket(in);
-  f->type = parseType(in,NULL, unnamed_types, named_types);
+  f->type = parseType(fac, in,NULL, unnamed_types, named_types);
 
 	if(tag) {
 		getLAnglebracket(in);
@@ -671,6 +686,7 @@ void parseFields(parse_file_t *in, field_t *f,
  *                     type name:
  *                        type(name,type)
  *Input params 
+ *    fac              : facility
  *    in               : input file handle
  *    inType           : a type descriptor          
  *    unnamed_types    : array of unamed types
@@ -679,7 +695,7 @@ void parseFields(parse_file_t *in, field_t *f,
  *    type_descriptor* : a type descriptor             
  ****************************************************************************/
 
-type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType, 
+type_descriptor_t *parseType(facility_t *fac, parse_file_t *in, type_descriptor_t *inType, 
 			   sequence_t * unnamed_types, table_t * named_types) 
 {
   char *token;
@@ -694,6 +710,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     sequence_push(unnamed_types,t);
   }
   else t = inType;
+  t->fac = fac;
 
   token = getName(in);
 
@@ -708,7 +725,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
 			f = (field_t *)memAlloc(sizeof(field_t));
 			sequence_push(&(t->fields),f);
 
-      parseFields(in, f, unnamed_types, named_types, 1);
+      parseFields(fac, in, f, unnamed_types, named_types, 1);
       
       //next field
       getLAnglebracket(in);
@@ -731,7 +748,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     while(strcmp("field",token) == 0){
 			f = (field_t *)memAlloc(sizeof(field_t));
 			sequence_push(&(t->fields),f);
-      parseFields(in, f, unnamed_types, named_types, 1);
+      parseFields(fac, in, f, unnamed_types, named_types, 1);
       
       //next field
       getLAnglebracket(in);
@@ -757,7 +774,7 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     
     f->name = NULL;
     sequence_push(&(t->fields),f);
-    parseFields(in, f, unnamed_types, named_types, 0);
+    parseFields(fac, in, f, unnamed_types, named_types, 0);
 
     //getLAnglebracket(in); //<type struct> 
     //t->nested_type = parseType(in, NULL, unnamed_types, named_types);
@@ -780,14 +797,14 @@ type_descriptor_t *parseType(parse_file_t *in, type_descriptor_t *inType,
     f = (field_t *)memAlloc(sizeof(field_t));
     f->name = NULL;
     sequence_push(&(t->fields),f);
-    parseFields(in, f, unnamed_types, named_types, 0);
+    parseFields(fac, in, f, unnamed_types, named_types, 0);
 
     //getLAnglebracket(in); //<subtype> 
 		/* subfield */
     f = (field_t *)memAlloc(sizeof(field_t));
     f->name = NULL;
     sequence_push(&(t->fields),f);
-    parseFields(in, f, unnamed_types, named_types, 0);
+    parseFields(fac, in, f, unnamed_types, named_types, 0);
 
     //getLAnglebracket(in); //<type sequence> 
     //t->length_type = parseType(in, NULL, unnamed_types, named_types);
@@ -1023,12 +1040,13 @@ type_descriptor_t * create_named_type(char *name, table_t * named_types)
  *Function name
  *    parseTypeDefinition : get type information from type definition 
  *Input params 
+ *    fac                 : facility
  *    in                  : input file handle          
  *    unnamed_types       : array of unamed types
  *    named_types         : array of named types
  *****************************************************************************/
 
-void parseTypeDefinition(parse_file_t * in, sequence_t * unnamed_types,
+void parseTypeDefinition(facility_t *fac, parse_file_t * in, sequence_t * unnamed_types,
 			 table_t * named_types)
 {
   char *token;
@@ -1044,7 +1062,7 @@ void parseTypeDefinition(parse_file_t * in, sequence_t * unnamed_types,
   token = getName(in);
   //MD ??if(strcmp("struct",token))in->error(in,"not a valid type definition");
   ungetToken(in);
-  parseType(in,t, unnamed_types, named_types);
+  parseType(fac, in,t, unnamed_types, named_types);
   
   //</type>
   getLAnglebracket(in);

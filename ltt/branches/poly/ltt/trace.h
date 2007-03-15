@@ -61,8 +61,6 @@ LttSystemDescription *ltt_trace_system_description(LttTrace *t);
 
 unsigned ltt_trace_facility_number(LttTrace *t);
 
-LttFacility *ltt_trace_facility_get(LttTrace *t, unsigned i);
-
 LttFacility * ltt_trace_facility_by_id(LttTrace * trace, guint8 id);
 
 /* Returns an array of indexes (guint) that matches the facility name */

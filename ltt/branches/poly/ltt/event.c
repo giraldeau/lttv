@@ -39,7 +39,7 @@
 
 
 void compute_fields_offsets(LttTracefile *tf,
-    LttFacility *fac, LttField *field, off_t *offset, void *root);
+    LttFacility *fac, LttField *field, off_t *offset, void *root, guint is_compact);
 
 
 LttEvent *ltt_event_new()
@@ -364,7 +364,7 @@ LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i)
     new_offset = g_array_index(f->dynamic_offsets, off_t, i);
   }
   compute_fields_offsets(e->tracefile, 
-      ltt_event_facility(e), field, &new_offset, e->data);
+      ltt_event_facility(e), field, &new_offset, e->data, 0);
 
   return field;
 }
@@ -570,9 +570,23 @@ char *ltt_event_get_string(LttEvent *e, LttField *f)
 
 
 void compute_fields_offsets(LttTracefile *tf, 
-    LttFacility *fac, LttField *field, off_t *offset, void *root)
+    LttFacility *fac, LttField *field, off_t *offset, void *root, guint is_compact)
 {
   LttType *type = &field->field_type;
+
+  if(unlikely(is_compact)) {
+    g_assert(field->field_size != 0);
+    /* FIXME THIS IS A HUUUUUGE hack :
+     * offset is between the compact_data field in struct LttEvent
+     * and the address of the field root in the memory map.
+     * ark. Both will stay at the same addresses while the event
+     * is readable, so it's ok.
+     */
+    field->offset_root = (unsigned long)(&tf->event.compact_data)
+    				- (unsigned long)root;
+    field->fixed_root = FIELD_FIXED;
+    return;
+  }
 
   switch(type->type_class) {
     case LTT_INT_FIXED:
@@ -641,7 +655,7 @@ void compute_fields_offsets(LttTracefile *tf,
                                                     0);
           for(i=0; i<type->size; i++) {
             g_array_append_val(field->dynamic_offsets, *offset);
-            compute_fields_offsets(tf, fac, child, offset, root);
+            compute_fields_offsets(tf, fac, child, offset, root, is_compact);
           }
         }
   //      local_offset = field->array_offset;
@@ -663,7 +677,7 @@ void compute_fields_offsets(LttTracefile *tf,
           field->offset_root = *offset;
 
           child = &g_array_index(type->fields, LttField, 0);
-          compute_fields_offsets(tf, fac, child, offset, root);
+          compute_fields_offsets(tf, fac, child, offset, root, is_compact);
           child = &g_array_index(type->fields, LttField, 1);
           *offset += ltt_align(*offset, get_alignment(child),
                                fac->alignment);
@@ -678,7 +692,7 @@ void compute_fields_offsets(LttTracefile *tf,
         num_elem = ltt_event_field_element_number(&tf->event, field);
         for(i=0; i<num_elem; i++) {
           g_array_append_val(field->dynamic_offsets, *offset);
-          compute_fields_offsets(tf, fac, child, offset, root);
+          compute_fields_offsets(tf, fac, child, offset, root, is_compact);
         }
         g_assert(num_elem == field->dynamic_offsets->len);
 
@@ -706,7 +720,7 @@ void compute_fields_offsets(LttTracefile *tf,
         }
         for(i=0; i<type->fields->len; i++) {
           child = &g_array_index(type->fields, LttField, i);
-          compute_fields_offsets(tf, fac, child, offset, root);
+          compute_fields_offsets(tf, fac, child, offset, root, is_compact);
         }
       }
       break;
@@ -724,7 +738,7 @@ void compute_fields_offsets(LttTracefile *tf,
         for(i=0; i<type->fields->len; i++) {
           *offset = field->offset_root;
           child = &g_array_index(type->fields, LttField, i);
-          compute_fields_offsets(tf, fac, child, offset, root);
+          compute_fields_offsets(tf, fac, child, offset, root, is_compact);
         }
         *offset = field->offset_root + field->field_size;
       }
@@ -754,7 +768,10 @@ void compute_offsets(LttTracefile *tf, LttFacility *fac,
   for(i=0; i<event->fields->len; i++) {
     //g_debug("computing offset %u of %u\n", i, event->fields->len-1);
     LttField *field = &g_array_index(event->fields, LttField, i);
-    compute_fields_offsets(tf, fac, field, offset, root);
+    if(event->has_compact_data && i == 0)
+	    compute_fields_offsets(tf, fac, field, offset, root, 1);
+    else
+	    compute_fields_offsets(tf, fac, field, offset, root, 0);
   }
 
 }

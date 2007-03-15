@@ -263,6 +263,7 @@ struct _LttEventType{
   LttFacility * facility; //the facility that contains the event type
   GArray * fields;        //event's fields (LttField)
   GData *fields_by_name;
+  int has_compact_data;       //event header contains compact data (first field)
 };
 
 /* Structure LttEvent and LttEventPosition must begin with the _exact_ same
@@ -290,6 +291,7 @@ struct _LttEvent{
   guint  data_size;
   guint  event_size;         //event_size field of the header : 
                              //used to verify data_size from facility.
+  uint32_t compact_data;
 
   int      count;                    //the number of overflow of cycle count
   gint64 overflow_nsec;              //precalculated nsec for overflows
@@ -440,6 +442,7 @@ struct _LttTrace{
   LttTime   start_time;
   LttTime   start_time_from_tsc;
   GArray    *compact_facilities;
+  uint8_t   compact_event_bits;
 
   GData     *tracefiles;                    //tracefiles groups
 };

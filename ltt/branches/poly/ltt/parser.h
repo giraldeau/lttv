@@ -101,7 +101,11 @@ typedef enum _data_type {
   NONE
 } data_type_t;
 
+typedef struct _facility facility_t;
+typedef struct _event event_t;
+
 typedef struct _type_descriptor {
+  facility_t *fac;
   char * type_name; //used for named type
   data_type_t type;
   char *fmt;
@@ -116,9 +120,9 @@ typedef struct _type_descriptor {
 } type_descriptor_t;
 
 
-
 /* Fields within types or events */
 typedef struct _field{
+  facility_t *fac;
   char *name;
   char *description;
   type_descriptor_t *type;
@@ -127,42 +131,46 @@ typedef struct _field{
 
 /* Events definitions */
 
-typedef struct _event {  
+struct _event {  
+  facility_t *fac;
   char *name;
   char *description;
   //type_descriptor_t *type; 
-	sequence_t fields;	/* event fields */
+  sequence_t fields;  /* event fields */
   int  per_trace;   /* Is the event able to be logged to a specific trace ? */
   int  per_tracefile;  /* Must we log this event in a specific tracefile ? */
-	int param_buffer; /* For userspace tracing : takes a buffer as parameter? */
-	int no_instrument_function;
-	int high_priority;
-} event_t;
+  int param_buffer; /* For userspace tracing : takes a buffer as parameter? */
+  int no_instrument_function;
+  int high_priority;
+  int force;
+  int compact_data;
+};
 
-typedef struct _facility {
+struct _facility {
   char * name;
-	char * capname;
-	char * arch;
+  char * capname;
+  char * arch;
+  int align;  /* Alignment : default 1, 0 no alignment. */
   char * description;
   sequence_t events;
   sequence_t unnamed_types; //FIXME : remove
   table_t named_types;
-	unsigned int checksum;
-	int	user;		/* Is this a userspace facility ? */
-} facility_t;
+  unsigned int checksum;
+  int  user;    /* Is this a userspace facility ? */
+};
 
 int getSizeindex(unsigned int value);
 unsigned long long int getSize(parse_file_t *in);
 unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type);
 
 void parseFacility(parse_file_t *in, facility_t * fac);
-void parseEvent(parse_file_t *in, event_t *ev, sequence_t * unnamed_types,
+void parseEvent(facility_t *fac, parse_file_t *in, event_t *ev, sequence_t * unnamed_types,
     table_t * named_types);
-void parseTypeDefinition(parse_file_t *in,
+void parseTypeDefinition(facility_t *fac, parse_file_t *in,
     sequence_t * unnamed_types, table_t * named_types);
-type_descriptor_t *parseType(parse_file_t *in,
+type_descriptor_t *parseType(facility_t *fac, parse_file_t *in,
     type_descriptor_t *t, sequence_t * unnamed_types, table_t * named_types);
-void parseFields(parse_file_t *in, field_t *f,
+void parseFields(facility_t *fac, parse_file_t *in, field_t *f,
     sequence_t * unnamed_types,
 		table_t * named_types,
 		int tag);

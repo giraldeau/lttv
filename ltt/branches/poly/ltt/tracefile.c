@@ -34,6 +34,7 @@
 #include <glib.h>
 #include <malloc.h>
 #include <sys/mman.h>
+#include <string.h>
 
 // For realpath
 #include <limits.h>
@@ -282,6 +283,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
               (double)t->start_tsc
               * (1000000000.0 / tf->trace->freq_scale)
 	      / (double)t->start_freq);
+	  t->compact_event_bits = 0;
         }
       }
       break;
@@ -295,8 +297,8 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
 	tf->tsc_lsb_truncate = vheader->tsc_lsb_truncate;
 	tf->tscbits = vheader->tscbits;
 	tf->tsc_msb_cutoff = 32 - tf->tsc_lsb_truncate - tf->tscbits;
-  tf->tsc_mask = ((1ULL << (tf->tscbits))-1);
-  tf->tsc_mask = tf->tsc_mask << tf->tsc_lsb_truncate;
+        tf->tsc_mask = ((1ULL << (tf->tscbits))-1);
+        tf->tsc_mask = tf->tsc_mask << tf->tsc_lsb_truncate;
 	tf->tsc_mask_next_bit = (1ULL<<(tf->tscbits));
 	tf->tsc_mask_next_bit = tf->tsc_mask_next_bit << tf->tsc_lsb_truncate;
         if(t) {
@@ -318,6 +320,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
               (double)t->start_tsc
               * (1000000000.0 / tf->trace->freq_scale)
 	      / (double)t->start_freq);
+	  t->compact_event_bits = 0;
         }
       }
       break;
@@ -1353,7 +1356,24 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   if(!t->compact_facilities)
     t->compact_facilities = ltt_trace_facility_get_by_name(t,
       g_quark_from_string("flight-compact"));
-  
+  /* FIXME : currently does not support unload/load of compact
+   * facility during tracing. Should check for the currently loaded
+   * version of the facility. */
+  g_assert(t->compact_facilities);
+  g_assert(t->compact_facilities->len == 1);
+  {
+    guint facility_id = g_array_index(t->compact_facilities, guint, 0);
+    LttFacility *fac = ltt_trace_facility_by_id(t, facility_id);
+    unsigned int num = ltt_facility_eventtype_number(fac);
+    /* Could be done much quicker, but not on much used code path */
+    if(num) {
+      t->compact_event_bits = 1;
+      while(num >>= 1)
+        t->compact_event_bits++;
+    } else
+      t->compact_event_bits = 0;
+  }
+
   return t;
 
   /* Error handling */
@@ -1898,47 +1918,52 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
         tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
                                 | (guint64)event->timestamp;
         event->tsc = tf->buffer.tsc;
+	event->compact_data = 0;
       }
     } else {
       /* Compact header */
       /* We keep the LSB of the previous timestamp, to make sure
        * we never go back */
       event->event_id = event->timestamp >> tf->tscbits;
+      event->event_id = event->event_id & ((1 << tf->trace->compact_event_bits) - 1);
+      event->compact_data = event->timestamp >> 
+      	(tf->trace->compact_event_bits + tf->tscbits);
+      //printf("tsc bits %u, ev bits %u init data %u\n",
+      //	tf->tscbits, tf->trace->compact_event_bits, event->compact_data);
+      /* Put the compact data back in original endianness */
+      event->compact_data = ltt_get_uint32(LTT_GET_BO(tf), &event->compact_data);
       event->event_size = 0xFFFF;
-      printf("Found compact event %d\n", event->event_id);
+      //printf("Found compact event %d\n", event->event_id);
+      //printf("Compact data %d\n", event->compact_data);
       event->timestamp = event->timestamp << tf->tsc_lsb_truncate;
       event->timestamp = event->timestamp & tf->tsc_mask;
-      printf("timestamp 0x%lX\n", event->timestamp);
-      printf("mask 0x%llX\n", tf->tsc_mask);
-      printf("mask_next 0x%llX\n", tf->tsc_mask_next_bit);
-      printf("previous tsc 0x%llX\n", tf->buffer.tsc);
-      printf("previous tsc&mask 0x%llX\n", tf->tsc_mask&tf->buffer.tsc);
-      printf("previous tsc&(~mask) 0x%llX\n", tf->buffer.tsc&(~tf->tsc_mask));
+      //printf("timestamp 0x%lX\n", event->timestamp);
+      //printf("mask 0x%llX\n", tf->tsc_mask);
+      //printf("mask_next 0x%llX\n", tf->tsc_mask_next_bit);
+      //printf("previous tsc 0x%llX\n", tf->buffer.tsc);
+      //printf("previous tsc&mask 0x%llX\n", tf->tsc_mask&tf->buffer.tsc);
+      //printf("previous tsc&(~mask) 0x%llX\n", tf->buffer.tsc&(~tf->tsc_mask));
       if(event->timestamp < (tf->tsc_mask&tf->buffer.tsc)) {
-        printf("wrap\n");
+        //printf("wrap\n");
         tf->buffer.tsc = ((tf->buffer.tsc&(~tf->tsc_mask))
                             + tf->tsc_mask_next_bit)
                                 | (guint64)event->timestamp;
         event->tsc = tf->buffer.tsc;
       } else {
-        printf("no wrap\n");
+        //printf("no wrap\n");
         /* no overflow */
         tf->buffer.tsc = (tf->buffer.tsc&(~tf->tsc_mask)) 
                                 | (guint64)event->timestamp;
         event->tsc = tf->buffer.tsc;
       }
-      printf("current tsc 0x%llX\n", tf->buffer.tsc);
-      g_assert(tf->trace->compact_facilities);
-      /* FIXME : currently does not support unload/load of compact
-       * facility during tracing. Should check for the currently loaded
-       * version of the facility. */
-      g_assert(tf->trace->compact_facilities->len == 1);
+      //printf("current tsc 0x%llX\n", tf->buffer.tsc);
       event->facility_id = g_array_index(tf->trace->compact_facilities, guint, 0);
     }
 		pos += sizeof(guint32);
 	} else {
 		event->tsc = ltt_get_uint64(LTT_GET_BO(tf), pos);
 		tf->buffer.tsc = event->tsc;
+		event->compact_data = 0;
 		pos += sizeof(guint64);
 	}
 	event->event_time = ltt_interpolate_time(tf, event);
@@ -2503,9 +2528,22 @@ void field_compute_static_size(LttFacility *fac, LttField *field)
  ****************************************************************************/
 
 
-gint precompute_fields_offsets(LttFacility *fac, LttField *field, off_t *offset)
+gint precompute_fields_offsets(LttFacility *fac, LttField *field, off_t *offset, gint is_compact)
 {
   LttType *type = &field->field_type;
+  
+  if(unlikely(is_compact)) {
+    g_assert(field->field_size != 0);
+    /* FIXME THIS IS A HUUUUUGE hack :
+     * offset is between the compact_data field in struct LttEvent
+     * and the address of the field root in the memory map.
+     * ark. Both will stay at the same addresses while the event
+     * is readable, so it's ok.
+     */
+    field->offset_root = 0;
+    field->fixed_root = FIELD_FIXED;
+    return 0;
+  }
 
   switch(type->type_class) {
     case LTT_INT_FIXED:
@@ -2580,7 +2618,7 @@ gint precompute_fields_offsets(LttFacility *fac, LttField *field, off_t *offset)
         field->fixed_root = FIELD_FIXED;
  
         child = &g_array_index(type->fields, LttField, 0);
-        ret = precompute_fields_offsets(fac, child, offset);
+        ret = precompute_fields_offsets(fac, child, offset, is_compact);
         g_assert(ret == 0); /* Seq len cannot have variable len */
 
         child = &g_array_index(type->fields, LttField, 1);
@@ -2609,7 +2647,7 @@ gint precompute_fields_offsets(LttFacility *fac, LttField *field, off_t *offset)
 
         for(i=0; i< type->fields->len; i++) {
           child = &g_array_index(type->fields, LttField, i);
-          ret = precompute_fields_offsets(fac, child, offset);
+          ret = precompute_fields_offsets(fac, child, offset, is_compact);
 
           if(ret) break;
         }
@@ -2631,7 +2669,7 @@ gint precompute_fields_offsets(LttFacility *fac, LttField *field, off_t *offset)
         for(i=0; i< type->fields->len; i++) {
           *offset = field->offset_root;
           child = &g_array_index(type->fields, LttField, i);
-          ret = precompute_fields_offsets(fac, child, offset);
+          ret = precompute_fields_offsets(fac, child, offset, is_compact);
 
           if(ret) break;
         }
@@ -2673,7 +2711,10 @@ void precompute_offsets(LttFacility *fac, LttEventType *event)
   /* Precompute all known offsets */
   for(i=0; i<event->fields->len; i++) {
     LttField *field = &g_array_index(event->fields, LttField, i);
-    ret = precompute_fields_offsets(fac, field, &offset);
+    if(event->has_compact_data && i == 0)
+      ret = precompute_fields_offsets(fac, field, &offset, 1);
+    else
+      ret = precompute_fields_offsets(fac, field, &offset, 0);
     if(ret) break;
   }
 }
@@ -2973,7 +3014,7 @@ gint check_fields_compatibility(LttEventType *event_type1,
       break;
     case LTT_NONE:
     default:
-      g_error("precompute_fields_offsets : unknown type");
+      g_error("check_fields_compatibility : unknown type");
   }
 
 end:
