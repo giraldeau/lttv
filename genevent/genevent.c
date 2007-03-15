@@ -1610,7 +1610,13 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		fprintf(fd, "ltt_facility_%s_%X, event_%s_%s,\n", fac->name, fac->checksum,
 										fac->name, event->name);
 		print_tabs(3, fd);
-		fprintf(fd, "reserve_size, before_hdr_pad, tsc, compact_data);\n");
+		if(event->compact_data) {
+			assert(event->fields.position > 0);
+			field_t *field = (field_t*)(event->fields.array[0]);
+			fprintf(fd, "reserve_size, before_hdr_pad, tsc, lttng_param_%s);\n",
+				field->name);
+		} else
+			fprintf(fd, "reserve_size, before_hdr_pad, tsc, 0);\n");
 	}
 	print_tabs(2, fd);
 	fprintf(fd, "*to_base += before_hdr_pad + after_hdr_pad + header_size;\n");
@@ -1621,7 +1627,10 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	for(unsigned int i=0;i<event->fields.position;i++){
 		field_t *field = (field_t*)(event->fields.array[i]);
 		type_descriptor_t *type = field->type;
-	
+
+		/* First param is compacted in the header */
+		if(event->compact_data && i == 0)
+			continue;
 		/* Set from */
 		print_tabs(2, fd);
 		switch(type->type) {
