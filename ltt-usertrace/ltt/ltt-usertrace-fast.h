@@ -53,7 +53,7 @@ extern "C" {
 
 #define LTT_TRACER_MAGIC_NUMBER		 0x00D6B7ED
 #define LTT_TRACER_VERSION_MAJOR		0
-#define LTT_TRACER_VERSION_MINOR		7
+#define LTT_TRACER_VERSION_MINOR		8
 
 #ifndef atomic_cmpxchg
 #define atomic_cmpxchg(v, old, new) ((int)cmpxchg(&((v)->counter), old, new))
@@ -71,12 +71,14 @@ struct ltt_trace_header {
 	uint8_t					flight_recorder;
 	uint8_t					has_heartbeat;
 	uint8_t					has_alignment;	/* Event header alignment */
+	uint8_t					tsc_lsb_truncate;
+	uint8_t					tscbits;
 	uint32_t				freq_scale;
 	uint64_t				start_freq;
 	uint64_t				start_tsc;
 	uint64_t				start_monotonic;
-  uint64_t        start_time_sec;
-  uint64_t        start_time_usec;
+	uint64_t				start_time_sec;
+	uint64_t				start_time_usec;
 } __attribute((packed));
 
 
