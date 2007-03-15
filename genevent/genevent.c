@@ -489,7 +489,10 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				fprintf(fd, "%s", field->name);
 				fprintf(fd, ";\n");
 			}
-			fprintf(fd, "} LTT_ALIGN;\n");
+      if(td->fac->align)
+			  fprintf(fd, "} LTT_ALIGN;\n");
+      else
+			  fprintf(fd, "};\n");
 			fprintf(fd, "\n");
 			break;
 	case UNION:
@@ -513,7 +516,10 @@ int print_type_declaration(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				fprintf(fd, "%s", field->name);
 				fprintf(fd, ";\n");
 			}
-			fprintf(fd, "} LTT_ALIGN;\n");
+      if(td->fac->align)
+			  fprintf(fd, "} LTT_ALIGN;\n");
+      else
+			  fprintf(fd, "};\n");
 			fprintf(fd, "\n");
 			break;
 	default:
@@ -719,7 +725,10 @@ int print_type_write(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 		case ENUM:
 			print_tabs(tabs, fd);
 			fprintf(fd, "align = ");
-			if(print_type_alignment(td, fd, 0, basename, "", "obj")) return 1;
+      if(td->fac->align) {
+			  if(print_type_alignment(td, fd, 0, basename, "", "obj")) return 1;
+      } else
+			  fprintf(fd, "0");
 			fprintf(fd, ";\n");
 			fprintf(fd, "\n");
 			print_tabs(tabs, fd);
@@ -842,6 +851,7 @@ int print_type_alignment_fct(type_descriptor_t * td, FILE *fd,
 	unsigned int basename_len = 0;
 	
 	if(td->custom_write) return 0;	/* Does print custom type */
+  if(td->fac->align == 0) return 0;
 
 	strncpy(basename, nest_name, PATH_MAX);
 	basename_len = strlen(basename);
@@ -1185,7 +1195,10 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 	
 	print_tabs(1, fd);
 	fprintf(fd, "align = ");
-	if(print_type_alignment(td, fd, 0, basename, "", "obj")) return 1;
+  if(td->fac->align) {
+	  if(print_type_alignment(td, fd, 0, basename, "", "obj")) return 1;
+  } else
+	  fprintf(fd, "0");
 	fprintf(fd, ";\n");
 	fprintf(fd, "\n");
 	print_tabs(1, fd);
@@ -1278,7 +1291,8 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				print_tabs(1, fd);
 				fprintf(fd, "/* Realign the *to_base on arch size, set *to to 0 */\n");
 				print_tabs(1, fd);
-				fprintf(fd, "*to += ltt_align(*to, sizeof(void *));\n");
+        if(td->fac->align)
+				  fprintf(fd, "*to += ltt_align(*to, sizeof(void *));\n");
 				print_tabs(1, fd);
 				fprintf(fd, "*to_base = *to_base+*to;\n");
 				print_tabs(1, fd);
@@ -1302,7 +1316,8 @@ int print_type_write_fct(type_descriptor_t * td, FILE *fd, unsigned int tabs,
 				print_tabs(1, fd);
 				fprintf(fd, "/* Realign the *to_base on arch size, set *to to 0 */\n");
 				print_tabs(1, fd);
-				fprintf(fd, "*to += ltt_align(*to, sizeof(void *));\n");
+        if(td->fac->align)
+				  fprintf(fd, "*to += ltt_align(*to, sizeof(void *));\n");
 				print_tabs(1, fd);
 				fprintf(fd, "*to_base = *to_base+*to;\n");
 				print_tabs(1, fd);
@@ -1464,11 +1479,13 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "size_t before_hdr_pad, after_hdr_pad, header_size;\n");
 	fprintf(fd, "\n");
 	
-	print_tabs(1, fd);
-	fprintf(fd, "if (ltt_traces.num_active_traces == 0)\n");
-	print_tabs(2, fd);
-	fprintf(fd, "return;\n");
-	fprintf(fd, "\n");
+	if(!event->force) {
+		print_tabs(1, fd);
+		fprintf(fd, "if (ltt_traces.num_active_traces == 0)\n");
+		print_tabs(2, fd);
+		fprintf(fd, "return;\n");
+		fprintf(fd, "\n");
+	}
 
 	/* Calculate event variable len + event data alignment offset.
 	 * Assume that the padding for alignment starts at a void*
@@ -1535,10 +1552,12 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	/* For each trace */
 	print_tabs(1, fd);
 	fprintf(fd, "list_for_each_entry_rcu(trace, &ltt_traces.head, list) {\n");
-	print_tabs(2, fd);
-	fprintf(fd, "if (!trace->active)\n");
-	print_tabs(3, fd);
-	fprintf(fd, "continue;\n\n");
+	if(!event->force) {
+		print_tabs(2, fd);
+		fprintf(fd, "if (!trace->active)\n");
+		print_tabs(3, fd);
+		fprintf(fd, "continue;\n\n");
+	}
 
 	if(event->per_trace) {
 		print_tabs(2, fd);
@@ -1576,13 +1595,23 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	fprintf(fd, "\n");
 
 	/* Write event header */
-	print_tabs(2, fd);
-	fprintf(fd, "ltt_write_event_header(trace, channel, buffer,\n");
-	print_tabs(3, fd);
-	fprintf(fd, "ltt_facility_%s_%X, event_%s_%s,\n", fac->name, fac->checksum,
-									fac->name, event->name);
-	print_tabs(3, fd);
-	fprintf(fd, "reserve_size, before_hdr_pad, tsc);\n");
+	if(strcmp("compact", fac->name) != 0) {
+		print_tabs(2, fd);
+		fprintf(fd, "ltt_write_event_header(trace, channel, buffer,\n");
+		print_tabs(3, fd);
+		fprintf(fd, "ltt_facility_%s_%X, event_%s_%s,\n", fac->name, fac->checksum,
+										fac->name, event->name);
+		print_tabs(3, fd);
+		fprintf(fd, "reserve_size, before_hdr_pad, tsc);\n");
+	} else {
+		print_tabs(2, fd);
+		fprintf(fd, "ltt_write_compact_header(trace, channel, buffer,\n");
+		print_tabs(3, fd);
+		fprintf(fd, "ltt_facility_%s_%X, event_%s_%s,\n", fac->name, fac->checksum,
+										fac->name, event->name);
+		print_tabs(3, fd);
+		fprintf(fd, "reserve_size, before_hdr_pad, tsc, compact_data);\n");
+	}
 	print_tabs(2, fd);
 	fprintf(fd, "*to_base += before_hdr_pad + after_hdr_pad + header_size;\n");
 	fprintf(fd, "\n");
@@ -2224,7 +2253,8 @@ int print_log_header_types(facility_t *fac, FILE *fd)
 		if(print_type_declaration(types->array[i], fd,
 						0, "", "")) return 1;
 		/* Print also the align function */
-		if(print_type_alignment_fct(types->array[i], fd,
+    if(((type_descriptor_t*)types->array[i])->fac->align)
+		  if(print_type_alignment_fct(types->array[i], fd,
 						0, "", "")) return 1;
 		/* Print also the write function */
 		if(print_type_write_fct(types->array[i], fd,
@@ -2258,7 +2288,9 @@ int print_log_header_events(facility_t *fac, FILE *fd)
 			if(t->type_name == NULL) {
 				if((print_type_declaration(t, fd, 0, basename, f->name))) return 1;
 				/* Print also the align function */
-				if((print_type_alignment_fct(t, fd, 0, basename, f->name))) return 1;
+        if(fac->align) {
+				  if((print_type_alignment_fct(t, fd, 0, basename, f->name))) return 1;
+        }
 				/* Print also the write function */
 				if((print_type_write_fct(t, fd, 0, basename, f->name))) return 1;
 			}
@@ -2528,6 +2560,8 @@ int print_loader_header(facility_t *fac)
   fprintf(fd,"#define LTT_FACILITY_NAME\t\t\"%s\"\n", fac->name);
   fprintf(fd,"#define LTT_FACILITY_NUM_EVENTS\tfacility_%s_num_events\n\n",
 			fac->name);
+  fprintf(fd,"#define LTT_FACILITY_ALIGNMENT\t\t%u\n\n",
+  			fac->align);
   fprintf(fd, "#endif //CONFIG_LTT\n\n");
   fprintf(fd, "#endif //_LTT_FACILITY_LOADER_%s_H_\n", fac->capname);
 
@@ -2590,6 +2624,8 @@ int print_loader_header_user(facility_t *fac)
   fprintf(fd,"#define LTT_FACILITY_NAME\t\t\t\t\t\t\t\t\"%s\"\n", fac->name);
   fprintf(fd,"#define LTT_FACILITY_NUM_EVENTS\t\t\t\t\tfacility_%s_num_events\n\n",
 			fac->name);
+  fprintf(fd,"#define LTT_FACILITY_ALIGNMENT\t\t\t\t\t%u\n\n",
+  			fac->align);
   fprintf(fd, "#endif //_LTT_FACILITY_LOADER_%s_H_\n", fac->capname);
 
 	fclose(fd);
@@ -2671,6 +2707,7 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "\t.num_events = LTT_FACILITY_NUM_EVENTS,\n");
   fprintf(fd, "\t.checksum = LTT_FACILITY_CHECKSUM,\n");
   fprintf(fd, "\t.symbol = SYMBOL_STRING(LTT_FACILITY_SYMBOL),\n");
+  fprintf(fd, "\t.alignment = LTT_FACILITY_ALIGNMENT,\n");
   fprintf(fd, "};\n");
   fprintf(fd, "\n");
   fprintf(fd, "static int __init facility_init(void)\n");
@@ -2771,7 +2808,7 @@ int print_loader_c_user(facility_t *fac)
   fprintf(fd, "\t.name = LTT_FACILITY_NAME,\n");
   fprintf(fd, "\t.num_events = LTT_FACILITY_NUM_EVENTS,\n");
   fprintf(fd, "#ifndef LTT_PACK\n");
-  fprintf(fd, "\t.alignment = sizeof(void*),\n");
+  fprintf(fd, "\t.alignment = LTT_FACILITY_ALIGNMENT?sizeof(void*):0,\n");
   fprintf(fd, "#else\n");
   fprintf(fd, "\t.alignment = 0,\n");
   fprintf(fd, "#endif //LTT_PACK\n");
