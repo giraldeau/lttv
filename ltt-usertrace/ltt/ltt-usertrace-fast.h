@@ -269,6 +269,8 @@ ltt_write_trace_header(struct ltt_trace_header *header)
 	header->arch_variant = 0; //FIXME LTT_ARCH_VARIANT;
 	header->flight_recorder = 0;
 	header->has_heartbeat = 0;
+	header->tsc_lsb_truncate = 0;
+	header->tscbits = 0;
 
 #ifndef LTT_PACK
 	header->has_alignment = sizeof(void*);
