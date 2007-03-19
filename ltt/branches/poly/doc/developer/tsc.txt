@@ -17,18 +17,26 @@ http://developer.amd.com/article_print.jsp?id=92 (RH)
 before 7th gen : ok
 7th gen:
   P-state (performance state) change
-    sol : disable powernow
+    UP : warn about time inaccuracy
+    SMP
+      sol : disable powernow
+      Use monotonic pseudo-TSC
   STPCLK-Throttling (temperature) : only done on UP, ok
+    UP : warn about time inaccuracy
 8th gen :
   P-state change
-    dual-core : locked-step
+    UP : inaccuracy
+    dual-core : locked-step ; inaccuracy
     SMP : may drift
-    sol : disable powernow
+      sol : disable powernow
+    Use monotonic pseudo-TSC
   SMP, dual core : C1-clock ramping (halt) (power state : C-state)
     sol : idle=poll or disable C1-ramping
+    Use monotonic pseudo-TSC
   STPCLK-Throttling (temperature) :
-    single processor dual-core ok
+    single processor dual-core ok ; inaccuracy
     SMP : NOT ok (rare)
+      Use monotonic pseudo-TSC
 
 
 Until TSC  becomes invariant, AMD  recommends that operating
@@ -122,10 +130,16 @@ Intel
 
 Pentium M
   family [06H], models [09H, 0DH]
-  SOL : disable speedstep
+  UP
+    warn about time inaccuracy
+  SMP
+    SOL : disable speedstep
 Pentium 4 processors, Intel Xeon
   family [0FH], models [00H, 01H, or 02H]
-  SOL : disable speedstep
+  UP
+    warn about time inaccuracy
+  SMP
+    SOL : disable speedstep
 
 Other : ok
 
