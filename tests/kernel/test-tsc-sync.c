@@ -13,18 +13,29 @@ static DEFINE_PER_CPU(cycles_t, count) = 0;
 
 static struct timer_list test_timer;
 
+static atomic_t kernel_threads_to_run;
+
+
 /* IPI called on each CPU. */
 static void test_each(void *info)
 {
+	unsigned long flags;
+	local_irq_save(flags);
+	atomic_dec(&kernel_threads_to_run);
+	while(atomic_read(&kernel_threads_to_run))
+		cpu_relax();
 	__get_cpu_var(count) = get_cycles();
+	local_irq_restore(flags);
 }
 
 static void do_test_timer(unsigned long data)
 {
 	int cpu;
 
-	/* Increment the counters */
-	on_each_cpu(test_each, NULL, 0, 1);
+	atomic_set(&kernel_threads_to_run, num_online_cpus());
+
+	smp_call_function(test_each, NULL, 0, 0);
+	test_each(NULL);
 	/* Read all the counters */
 	printk("Counters read from CPU %d\n", smp_processor_id());
 	for_each_online_cpu(cpu) {
