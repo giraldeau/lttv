@@ -12,6 +12,7 @@ ifneq ($(CONFIG_LTT),)
 endif
 #	obj-m += test-async-tsc.o
 	obj-m += test-tsc-sync.o
+	obj-m += test-tsc.o
 #	obj-m += test-hpet.o
 	#obj-m += test-debugfs.o
 #	obj-m += test-mod.o

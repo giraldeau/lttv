@@ -24,7 +24,7 @@ static void test_each(void *info)
 	atomic_dec(&kernel_threads_to_run);
 	while(atomic_read(&kernel_threads_to_run))
 		cpu_relax();
-	__get_cpu_var(count) = get_cycles();
+	__get_cpu_var(count) = get_cycles_sync();
 	local_irq_restore(flags);
 }
 
