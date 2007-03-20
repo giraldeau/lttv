@@ -387,7 +387,8 @@ FILE=../${PRENAME}${COUNT}${NAME}-timestamp.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-alpha_ltt.h
+IN="?_ltt_ltt-test-tsc.c
+?_include_asm-alpha_ltt.h
 ?_include_asm-arm26_ltt.h
 ?_include_asm-arm_ltt.h
 ?_include_asm-cris_ltt.h
