@@ -4,13 +4,13 @@
  */
 
 
-#define CONFIG_LTT_FACILITY_COMPACT
 #include <ltt/ltt-facility-select-compact.h>
-#include "ltt-facility-compact.h"
+#include <ltt/ltt-facility-compact.h>
 
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/ltt-core.h>
+#include <linux/timex.h>
 
 
 /* Event logged : 4 bytes. Let's use 1MB of
@@ -31,6 +31,9 @@ static int ltt_test_init(void)
 	time1 = get_cycles();
 	for(i=0; i<NR_LOOPS; i++) {
 		trace_compact_event_a();
+		trace_compact_event_c(get_cycles());
+		trace_compact_event_d(0xFF);
+		trace_compact_event_e(0xFF, 0xFAFAFA);
 	}
 	time2 = get_cycles();
 	time = time2 - time1;

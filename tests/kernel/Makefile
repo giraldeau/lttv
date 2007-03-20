@@ -10,9 +10,9 @@ ifneq ($(CONFIG_LTT),)
 #	obj-m += test-instrument-size-big.o
 #	obj-m += test-printk-effect.o
 endif
-	obj-m += test-async-tsc.o
+#	obj-m += test-async-tsc.o
 	obj-m += test-tsc-sync.o
-	obj-m += test-hpet.o
+#	obj-m += test-hpet.o
 	#obj-m += test-debugfs.o
 #	obj-m += test-mod.o
 #	obj-m += atomic-pIII-cmx.o
