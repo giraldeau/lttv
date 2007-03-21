@@ -1356,22 +1356,24 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   if(!t->compact_facilities)
     t->compact_facilities = ltt_trace_facility_get_by_name(t,
       g_quark_from_string("flight-compact"));
-  /* FIXME : currently does not support unload/load of compact
-   * facility during tracing. Should check for the currently loaded
-   * version of the facility. */
-  g_assert(t->compact_facilities);
-  g_assert(t->compact_facilities->len == 1);
-  {
-    guint facility_id = g_array_index(t->compact_facilities, guint, 0);
-    LttFacility *fac = ltt_trace_facility_by_id(t, facility_id);
-    unsigned int num = ltt_facility_eventtype_number(fac);
-    /* Could be done much quicker, but not on much used code path */
-    if(num) {
-      t->compact_event_bits = 1;
-      while(num >>= 1)
-        t->compact_event_bits++;
-    } else
-      t->compact_event_bits = 0;
+  if (t->compact_facilities) {
+    /* FIXME : currently does not support unload/load of compact
+     * facility during tracing. Should check for the currently loaded
+     * version of the facility. */
+    g_assert(t->compact_facilities->len == 1);
+    g_assert(t->compact_facilities);
+    {
+      guint facility_id = g_array_index(t->compact_facilities, guint, 0);
+      LttFacility *fac = ltt_trace_facility_by_id(t, facility_id);
+      unsigned int num = ltt_facility_eventtype_number(fac);
+      /* Could be done much quicker, but not on much used code path */
+      if(num) {
+        t->compact_event_bits = 1;
+        while(num >>= 1)
+          t->compact_event_bits++;
+      } else
+        t->compact_event_bits = 0;
+    }
   }
 
   return t;
