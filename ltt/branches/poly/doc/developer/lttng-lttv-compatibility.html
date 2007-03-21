@@ -2110,7 +2110,6 @@ Use cpuid instruction in pIII XMC.<br>
 0.8.77<br>
 0.8.78<br>
 0.8.79<br>
-0.8.81<br>
 </td>
 <td style="vertical-align: top;">
 0.6.62<br>
@@ -2187,9 +2186,11 @@ xtensa.<br>
 <tr>
 <td style="vertical-align: top;">
 0.8.80<br>
+0.8.81<br>
 </td>
 <td style="vertical-align: top;">
 0.6.78<br>
+0.6.80<br>
 </td>
 <td style="vertical-align: top;">
 0.36<br>
@@ -2215,6 +2216,10 @@ Add compact channel.<br>
 Fix start of trace get full timestamp. Caused problems with time gap between
 trace create/start and 32 bits (or less) TSC in events.<br>
 Ok for xen-unstable changeset starting at 14391.<br>
+Adds TSC testing in kernel.<br>
+Adds monotonic logical clock based on highest TSC count for x86 and x86_64 with
+async TSCs.<br>
+Fix missing compat_fs_exec event : rename to fs_exec.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
