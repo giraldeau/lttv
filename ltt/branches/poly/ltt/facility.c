@@ -138,10 +138,13 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
       checkNamedTypesImplemented(&fac->named_types);
     
       generateChecksum(fac->name, &checksum, &fac->events);
-      if(checksum == f->checksum) {
+      // FIXME if(checksum == f->checksum) {
         generateFacility(f, fac, checksum);
         generated = TRUE;
-      }
+      //}
+      if (checksum != f->checksum)
+      	g_warning("Facility checksum mismatch for facility %s : kernel 0x%X vs "
+		"XML 0x%X\n", fac->name, f->checksum, checksum);
 
       g_free(fac->name);
       free(fac->capname);
@@ -194,7 +197,7 @@ void generateFacility(LttFacility *f, facility_t *fac, guint32 checksum)
   table_t *named_types = &fac->named_types;
   
   g_assert(f->name == g_quark_from_string(facilityName));
-  g_assert(f->checksum == checksum);
+  //g_assert(f->checksum == checksum);
 
   //f->event_number = events->position;
   
