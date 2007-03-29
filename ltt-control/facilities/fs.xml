@@ -104,4 +104,28 @@
     <field name="fd"> <description>File descriptor</description> <int/> </field>
   </event>
 
+  <event name="read_data">
+    <description>Reading from a file descriptor</description>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
+    <field name="count"> <description>Number of bytes to read</description> <size_t/> </field>
+    <field name="data"> <description>data read</description>
+      <sequence write="custom">
+        <uint/>
+        <uchar/>
+      </sequence>
+    </field>
+  </event>
+  
+  <event name="write_data">
+    <description>Write to a file descriptor</description>
+    <field name="fd"> <description>File descriptor</description> <uint/> </field>
+    <field name="count"> <description>Number of bytes to write</description> <size_t/> </field>
+    <field name="data"> <description>data written</description>
+      <sequence write="custom">
+        <uint/>
+        <uchar/>
+      </sequence>
+    </field>
+  </event>
+
 </facility>
