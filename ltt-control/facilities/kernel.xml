@@ -16,38 +16,115 @@
     </enum>
   </type>
 
-  <event name="soft_irq_entry">
-    <description>Soft IRQ entry</description>
-    <field name="softirq_id"> <description>Soft IRQ number</description> <ulong/> </field>
+  <type name="signal_name">
+    <enum>
+      <label name="SIGHUP" value="1"/> <description>Hangup (POSIX).</description>
+      <label name="SIGINT" value="2"/> <description>Interrupt (ANSI).</description>
+      <label name="SIGQUIT" value="3"/> <description>Quit (POSIX).</description>
+      <label name="SIGILL" value="4"/> <description>Illegal instruction (ANSI).</description>
+      <label name="SIGTRAP" value="5"/> <description>Trace trap (POSIX).</description>
+      <label name="SIGABRT" value="6"/> <description>Abort (ANSI).</description>
+      <label name="SIGBUS" value="7"/> <description>BUS error (4.2 BSD).</description>
+      <label name="SIGFPE" value="8"/> <description>Floating-point exception (ANSI).</description>
+      <label name="SIGKILL" value="9"/> <description>Kill, unblockable (POSIX).</description>
+      <label name="SIGUSR1" value="10"/> <description>User-defined signal 1 (POSIX).</description>
+      <label name="SIGSEGV" value="11"/> <description>Segmentation violation (ANSI).</description>
+      <label name="SIGUSR2" value="12"/> <description>User-defined signal 2 (POSIX).</description>
+      <label name="SIGPIPE" value="13"/> <description>Broken pipe (POSIX).</description>
+      <label name="SIGALRM" value="14"/> <description>Alarm clock (POSIX).</description>
+      <label name="SIGTERM" value="15"/> <description>Termination (ANSI).</description>
+      <label name="SIGSTKFLT" value="16"/> <description>Stack fault.</description>
+  
+      <label name="SIGCHLD" value="17"/> <description>Child status has changed (POSIX).</description>
+      <label name="SIGCONT" value="18"/> <description>Continue (POSIX).</description>
+      <label name="SIGSTOP" value="19"/> <description>Stop, unblockable (POSIX).</description>
+      <label name="SIGTSTP" value="20"/> <description>Keyboard stop (POSIX).</description>
+      <label name="SIGTTIN" value="21"/> <description>Background read from tty (POSIX).</description>
+      <label name="SIGTTOU" value="22"/> <description>Background write to tty (POSIX).</description>
+      <label name="SIGURG" value="23"/> <description>Urgent condition on socket (4.2 BSD).</description>
+      <label name="SIGXCPU" value="24"/> <description>CPU limit exceeded (4.2 BSD).</description>
+      <label name="SIGXFSZ" value="25"/> <description>File size limit exceeded (4.2 BSD).</description>
+      <label name="SIGVTALRM" value="26"/> <description>Virtual alarm clock (4.2 BSD).</description>
+      <label name="SIGPROF" value="27"/> <description>Profiling alarm clock (4.2 BSD).</description>
+      <label name="SIGWINCH" value="28"/> <description>Window size change (4.3 BSD, Sun).</description>
+      <label name="SIGIO" value="29"/> <description>I/O now possible (4.2 BSD). (aka SIGPOLL)</description>
+      <label name="SIGPWR" value="30"/> <description>Power failure restart (System V).</description>
+      <label name="SIGSYS" value="31"/> <description>Bad system call.</description>
+    </enum>
+  </type>
+
+  <type name="itimer_kind">
+    <enum>
+      <label name="ITIMER_REAL" value="0"/> <description>decrements in real time,
+      and delivers SIGALRM upon expiration.</description>
+      <label name="ITIMER_VIRTUAL" value="1"/> <description>decrements only when the
+      process is executing, and delivers SIGVTALRM upon expiration.</description>
+      <label name="ITIMER_PROF" value="2"/> <description>decrements both when the
+      process executes and when the system is executing on behalf of the
+      process. Coupled with ITIMER_VIRTUAL, this timer is usually used to
+      profile the time spent by the application in user and kernel space.
+      SIGPROF is delivered upon expiration.</description>
+    </enum>
+  </type>
+
+  <event name="process_fork">
+    <description>Process fork</description>
+    <field name="parent_pid"> <description>PID of the parent process</description> <int/> </field>
+    <field name="child_pid"> <description>PID of the child process</description> <int/> </field>
+    <field name="child_tgid"> <description>Thread group ID of the child process (POSIX PID)</description> <int/> </field>
   </event>
 
-  <event name="soft_irq_exit">
-    <description>Soft IRQ exit</description>
-    <field name="softirq_id"> <description>Soft IRQ number</description> <ulong/> </field>
+  <event name="process_exit">
+    <description>Process exit</description>
+    <field name="pid"> <description>PID of the process</description> <int/> </field>
   </event>
 
-  <event name="tasklet_entry">
-    <description>Tasklet entry</description>
-    <field name="priority"> <description>Tasklet priority</description> <typeref name="tasklet_priority"/> </field>
-    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
-    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  <event name="process_free">
+    <description>Process exit</description>
+    <field name="pid"> <description>PID of the process</description> <int/> </field>
   </event>
 
-  <event name="tasklet_exit">
-    <description>Tasklet exit</description>
-    <field name="priority"> <description>Tasklet priority</description> <typeref name="tasklet_priority"/> </field>
-    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
-    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  <event name="process_wait">
+    <description>Process exit</description>
+    <field name="pid"> <description>PID of the process we are waiting for</description> <int/> </field>
   </event>
 
-  <event name="irq_entry">
-    <description>Entry in an irq</description>
-    <field name="irq_id"> <description>IRQ number</description> <uint size="4"/> </field>
-    <field name="mode"> <description>Are we executing kernel code</description><typeref name="irq_mode"/> </field>
+  <event name="process_signal">
+    <description>Process exit</description>
+    <field name="pid"> <description>PID of the process we are signaling</description> <int/> </field>
+    <field name="signal"> <description></description> <typeref name="signal_name"/> </field>
   </event>
 
-  <event name="irq_exit">
-    <description>Exit from an IRQ</description>
+  <event name="kernel_sched_wait_task">
+    <description>Process exit</description>
+    <field name="pid"> <description>PID of the process we are waiting for</description> <int/> </field>
+    <field name="state"> <description>State of the process we are waiting for : -1 unrunnable, 0 runnable, >0 stopped</description> <long/> </field>
+  </event>
+
+  <event name="kernel_sched_try_wakeup">
+    <description>Process exit</description>
+    <field name="pid"> <description>PID of the process we are waiting for</description> <int/> </field>
+    <field name="state"> <description>State of the process we are waiting for : -1 unrunnable, 0 runnable, >0 stopped</description> <long/> </field>
+  </event>
+
+  <event name="kernel_sched_wakeup_new_task">
+    <description>Process exit</description>
+    <field name="pid"> <description>PID of the process we are waiting for</description> <int/> </field>
+    <field name="state"> <description>State of the process we are waiting for : -1 unrunnable, 0 runnable, >0 stopped</description> <long/> </field>
+  </event>
+
+  <event name="kernel_sched_migrate_task">
+    <description>Process exit</description>
+    <field name="pid"> <description>PID of the process we are waiting for</description> <int/> </field>
+    <field name="state"> <description>State of the process we are waiting for : -1 unrunnable, 0 runnable, >0 stopped</description> <long/> </field>
+    <field name="dest_cpu"> <description>Destination CPU</description> <int/> </field>
+  </event>
+
+  <event name="kernel_sched_schedule">
+    <description>Process exit</description>
+    <field name="prev_pid"> <description>Previously scheduled PID</description> <int/> </field>
+    <field name="next_pid"> <description>Next PID to be scheduled</description> <int/> </field>
+    <field name="state"> <description>State of the process we are waiting for : -1 unrunnable, 0 runnable, >0 stopped</description> <long/> </field>
   </event>
 
   <event name="printk">
@@ -73,11 +150,95 @@
     </field>
   </event>
 
-  <event name="module_free">
-    <description>Unload module</description>
-    <field name="name"> <description>Module name</description>
-      <string/>
+  <event name="timer_itimer_expired">
+    <description>An itimer has expired.</description>
+    <field name="pid">
+      <description>PID of the process to wake up.</description>
+      <int/>
     </field>
+  </event>
+
+  <event name="timer_itimer_set">
+    <description>An interval timer is set.</description>
+    <field name="which"> <description>kind of interval timer.</description>
+	    <typeref name="itimer_kind"/>
+    </field>
+    <field name="interval_seconds"><long/></field>
+    <field name="interval_microseconds"><long/></field>
+    <field name="value_seconds"><long/></field>
+    <field name="value_microseconds"><long/></field>
+  </event>
+
+  <event name="timer_set">
+    <description>A timer is added/modified/migrated.</description>
+    <field name="expires"><ulong/></field>
+    <field name="function"><pointer/></field>
+    <field name="data"><ulong/></field>
+  </event>
+
+  <event name="update_time">
+    <description>The time is updated (timer interrupt).</description>
+    <field name="jiffies"><uint_fixed size="8"/></field>
+    <field name="wall_tv_sec"><long/></field>
+    <field name="wall_tv_nsec"><long/></field>
+    <field name="wall_to_monotonic_tv_sec"><long/></field>
+    <field name="wall_to_monotonic_tv_nsec"><long/></field>
+  </event>
+
+  <event name="softirq">
+    <description>The timer softirq is currently runned.</description>
+  </event>
+
+  <event name="timer_timeout">
+    <description>A timer has expired.</description>
+    <field name="pid">
+      <description>PID of the process to wake up.</description>
+      <int/>
+    </field>
+  </event>
+
+  <event name="soft_irq_entry">
+    <description>Soft IRQ entry</description>
+    <field name="softirq_id"> <description>Soft IRQ number</description> <ulong/> </field>
+  </event>
+
+  <event name="soft_irq_exit">
+    <description>Soft IRQ exit</description>
+    <field name="softirq_id"> <description>Soft IRQ number</description> <ulong/> </field>
+  </event>
+
+  <event name="tasklet_low_entry">
+    <description>Low priority tasklet entry</description>
+    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  </event>
+
+  <event name="tasklet_low_exit">
+    <description>Low priority tasklet exit</description>
+    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  </event>
+
+  <event name="tasklet_high_entry">
+    <description>High priority tasklet entry</description>
+    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  </event>
+
+  <event name="tasklet_high_exit">
+    <description>High priority tasklet exit</description>
+    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  </event>
+
+  <event name="kernel_kthread_stop">
+    <description>Process exit</description>
+    <field name="pid"> <description>PID of the kthread we stop</description> <int/> </field>
+  </event>
+
+  <event name="kernel_kthread_stop_ret">
+    <description>Process exit</description>
+    <field name="retval"> <description>Return value of the kthread_stop call</description> <int/> </field>
   </event>
 
   <event name="module_load">
@@ -85,6 +246,24 @@
     <field name="name"> <description>Module name</description>
       <string/>
     </field>
+  </event>
+
+  <event name="module_free">
+    <description>Unload module</description>
+    <field name="name"> <description>Module name</description>
+      <string/>
+    </field>
+  </event>
+
+
+  <event name="irq_entry">
+    <description>Entry in an irq</description>
+    <field name="irq_id"> <description>IRQ number</description> <uint size="4"/> </field>
+    <field name="mode"> <description>Are we executing kernel code</description><typeref name="irq_mode"/> </field>
+  </event>
+
+  <event name="irq_exit">
+    <description>Exit from an IRQ</description>
   </event>
 
 </facility>
