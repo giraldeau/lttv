@@ -17,7 +17,7 @@ mm.xml \
 net.xml \
 process.xml \
 stack.xml \
-statedump.xml \
+list.xml \
 timer.xml \
 user_generic.xml \
 xen.xml \
@@ -41,7 +41,7 @@ mm.xml \
 net.xml \
 process.xml \
 stack.xml \
-statedump.xml \
+list.xml \
 timer.xml \
 user_generic.xml \
 xen.xml \
