@@ -4,20 +4,20 @@
 	
   <event name="msg_create">
     <description>Get an IPC message queue identifier</description>
-    <field name="id"> <description>Message queue identifier</description><long/> </field>
-    <field name="flags"> <description>Message flags</description> <int size="4"/> </field>
+    <field name="id"> <description>Message queue identifier</description><int/> </field>
+    <field name="flags"> <description>Message flags</description> <int/> </field>
   </event>
 
   <event name="sem_create">
     <description>Get an IPC semaphore identifier</description>
-    <field name="id"> <description>Semaphore identifier</description> <long/> </field>
-    <field name="flags"> <description>Semaphore flags</description> <int size="4"/> </field>
+    <field name="id"> <description>Semaphore identifier</description> <int/> </field>
+    <field name="flags"> <description>Semaphore flags</description> <int/> </field>
   </event>
 
   <event name="shm_create">
     <description>Get an IPC shared memory identifier</description>
-    <field name="id"> <description>Shared memory identifier</description> <long/> </field>
-    <field name="flags"> <description>Shared memory flags</description> <int size="4"/> </field>
+    <field name="id"> <description>Shared memory identifier</description> <int/> </field>
+    <field name="flags"> <description>Shared memory flags</description> <int/> </field>
   </event>
 
 </facility>

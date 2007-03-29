@@ -47,50 +47,50 @@
     </enum>
   </type>
 
-  <event name="enumerate_file_descriptors">
-    <description>List of open file descriptors</description>
-      <field name="name"><description>File name</description><string/></field>
-      <field name="PID"><description>Process identifier</description><uint size="4"/></field>
-      <field name="fd"><description>File descriptor index in this process's task_struct</description><uint size="4"/></field>
-  </event>
-
-  <event name="enumerate_vm_maps">
-    <description>List of active vm maps</description>
-      <field name="PID"><description>Process identifier</description><uint size="4"/></field>
-      <field name="start"> <description>VM's start address</description> <pointer/> </field>
-      <field name="end"> <description>VM's end address</description> <pointer/> </field>
-      <field name="flags"> <description>VM area flags</description> <uint size="1"/> </field>
-      <field name="pgoff"> <description>VM's page offset</description> <long/> </field>
-      <field name="inode"> <description>Inode associated with this VM</description> <long/> </field>
-  </event>
-
-  <event name="enumerate_modules">
+  <event name="module">
     <description>List of loaded kernel modules</description>
       <field name="name"><description>Module name</description><string/></field>
-      <field name="state"><description>Module's state</description><uint size="4"/></field>
-      <field name="ref"><description>Number of references to this module</description><uint size="4"/></field>
+      <field name="state"><description>Module's state</description><int/></field>
+      <field name="ref"><description>Number of references to this module</description><ulong/></field>
   </event>
 
-  <event name="enumerate_interrupts">
+  <event name="file_descriptor">
+    <description>List of open file descriptors</description>
+      <field name="name"><description>File name</description><string/></field>
+      <field name="PID"><description>Process identifier</description><int/></field>
+      <field name="fd"><description>File descriptor index in this process's task_struct</description><uint/></field>
+  </event>
+
+  <event name="vm_map">
+    <description>List of active vm maps</description>
+      <field name="PID"><description>Process identifier</description><int/></field>
+      <field name="start"> <description>VM's start address</description> <ulong/> </field>
+      <field name="end"> <description>VM's end address</description> <ulong/> </field>
+      <field name="flags"> <description>VM area flags</description> <ulong/> </field>
+      <field name="pgoff"> <description>VM's page offset</description> <long/> </field>
+      <field name="inode"> <description>Inode associated with this VM map</description> <ulong/> </field>
+  </event>
+
+  <event name="interrupt">
     <description>List of registered interrupts</description>
       <field name="name"> <description>Interrupt name</description> <string/> </field>
       <field name="action"> <description>action triggered by interrupt</description> <string/> </field>
-      <field name="num"> <description>Interrupt number</description> <uint size="4"/> </field>
+      <field name="num"> <description>Interrupt number</description> <uint/> </field>
   </event>
 
-  <event name="enumerate_process_state">
+  <event name="process_state">
     <description>State of each process when statedump is performed</description>
-      <field name="pid"><description>Process identifier</description><uint size="4"/></field>
-      <field name="parent_pid"><description>Parent process identifier</description><uint size="4"/></field>
+      <field name="pid"><description>Process identifier</description><int/></field>
+      <field name="parent_pid"><description>Parent process identifier</description><int/></field>
       <field name="name"> <description>Process name</description><string/></field>
       <field name="type"> <description>Thread type</description> <typeref name="thread_type"/> </field>
       <field name="mode"> <description>Execution submode</description> <typeref name="execution_mode"/> </field>
       <field name="submode"> <description>Execution submode</description> <typeref name="execution_submode"/> </field>
       <field name="status"> <description>Process status</description> <typeref name="process_status"/> </field>
-      <field name="tgid"><description>Thread group ID (POSIX PID)</description><uint size="4"/></field>
+      <field name="tgid"><description>Thread group ID (POSIX PID)</description><int/></field>
   </event>
 
-  <event name="enumerate_network_ip_interface">
+  <event name="network_ip_interface">
     <description>List of each IP interface up</description>
       <field name="name"> <description>Interface name</description><string/></field>
       <field name="addr"> <description>IP address</description> <uint size="4" byte_order="network"/> </field>
@@ -102,5 +102,3 @@
   </event>
 
 </facility>
-
-
