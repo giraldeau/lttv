@@ -1,0 +1,151 @@
+<?xml version="1.0"?>
+<facility name="xenoltt">
+  <description>XenoLTT facility Version 9 - JOV - 09-11-2006</description>
+	
+  <event name="xeno_thread_init">
+    <description>Xenomai Thread Init</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="flags"><description>Flags</description><uint size=4/></field>
+    <field name="prio"><description>Priority</description><uint size=4/></field>
+  </event>
+
+  <event name="xeno_thread_start">
+    <description>Xenomai Thread Start</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+  </event>
+    
+  <event name="xeno_thread_delete">
+    <description>Xenomai Thread Delete</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+  </event>
+
+  <event name="xeno_thread_set_period">
+    <description>Xenomai Thread Set Periodic</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="idate"><description>Start time</description><uint size=8/></field>
+    <field name="period"><description>Period</description><uint size=8/></field>
+    <field name="timer_address"><description>Timer Address</description><pointer></field>
+  </event>
+    
+  <event name="xeno_thread_wait_period">
+    <description>Xenomai Thread Wait Period</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+  </event>
+  
+  <event name="xeno_thread_missed_period">
+    <description>Xenomai thread next period time</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="overruns"><description>Number of misses</description><uint size=8/></field>
+  </event>    
+  
+  <event name="xeno_thread_suspend">
+    <description>Xenomai Thread Suspend</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="mask"><uint size=4/></field>
+    <field name="timeout"><uint size=4/></field>
+    <field name="wchan"><pointer/></field>
+  </event>
+  
+  <event name="xeno_thread_resume">
+    <description>Xenomai thread resume</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="mask"><uint size=4/></field>
+  </event>    
+  
+  <event name="xeno_thread_unblock">
+    <description>Xenomai thread unblock</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="status"><uint size=4/></field>
+  </event>    
+  
+  <event name="xeno_thread_renice">
+    <description>Xenomai thread priority change</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="prio"><description>Priority</description><uint size=4/></field>
+  </event>    
+
+  <event name="xeno_thread_restart">
+    <description>Xenomai thread restart</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+  </event>
+  
+  <event name="xeno_thread_switch">
+    <description>Xenomai thread restart</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="thread_out"><description>Name</description><string/></field>
+    <field name="address_out"><description>Address</description><pointer></field>
+  </event>
+  
+  <event name="xeno_timer_tick">
+    <description>Xenomai timer tick</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+  </event>
+ 
+  <event name="xeno_synch_sleepon">
+    <description>Xenomai sleepon</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="sync"><pointer/></field>
+  </event>
+  
+    <event name="xeno_synch_wakeup1">
+    <description>Xenomai wakeup1</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="sync"><pointer/></field>
+  </event>
+
+  <event name="xeno_synch_wakeupx">
+    <description>Xenomai wakeupx</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="sync"><pointer/></field>
+  </event>
+
+  <event name="xeno_synch_syncflush">
+    <description>Xenomai syncflush</description>
+    <field name="sync"><pointer/></field>
+    <field name="reason"><uint size=4/></field>
+  </event>
+
+  <event name="xeno_synch_syncforget">
+    <description>Xenomai syncforget</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="sync"><pointer/></field>
+  </event>
+
+  <event name="xeno_synch_set_owner">
+    <description>Xenomai sleepon</description>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="sync"><description>Synch</description><pointer></field>
+  </event>
+  
+  <event name="xeno_synch_unlock">
+    <description>Xenomai unlock synch</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Owner</description><pointer></field>
+    <field name="sync"><description>Synch</description><pointer></field>
+  </event>
+    
+  <event name="xeno_synch_renice_thread">
+    <description>Xenomai sleepon</description>
+    <field name="thread"><description>Name</description><string/></field>
+    <field name="address"><description>Address</description><pointer></field>
+    <field name="prio"><description>Priority</description><uint size=4/></field>
+  </event>
+
+</facility>

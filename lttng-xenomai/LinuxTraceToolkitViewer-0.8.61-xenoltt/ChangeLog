@@ -1,0 +1,45 @@
+LinuxTraceToolkit ChangeLog
+
+11/03/2006	LTTV 0.8.30
+						Change statistics tree structure.
+						Add user space functions support to statistics.
+09/03/2006	LTTV 0.8.28
+						Add usertrace support.
+						Bugfix : handle badly number syscall xml correctly.
+						Add network_ip_interface XML.
+05/03/2006	LTTV 0.8.26
+						Add mouse scroll support.
+						Add user_generic.xml facility.
+01/03/2006	LTTV 0.8.25
+						Fix process end of life in state.c
+28/02/2006	LTTV 0.8.24
+						Fix heartbeat support
+27/02/2006	LTTV 0.8.23
+						Add kernel_thread information in state.
+15/02/2006	LTTV 0.8.21
+						Add support for data with network byte order.
+15/02/2006	LTTV 0.8.20
+						Fix end of trace NULL pointer problem in debug output of
+						lttvwindow.
+11/02/2006	LTTV 0.8.19
+						Copy process names upon fork.
+						Put statedump to "unknown" mode until ltt-statedump is fixed.
+09/02/2006	LTTV 0.8.15
+						Fix error handling of filter.c.
+08/02/2006	LTTV 0.8.14
+						Fix sequence pop in parser.c.
+07/02/2006	LTTV 0.8.13
+						Add state dump.
+07/02/2006	LTTV 0.8.12
+						Fix tracontrol timing problem with su.
+06/02/2006	LTTV 0.8.11
+						Fix GtkTreeView using "vertical-separator" style property.
+06/02/2006	LTTV 0.8.10
+						Now handle correctly events with a 0xFFFF size (dynamically).
+						Make lttd multithreaded.
+10/01/2006	LTTV 0.8.4
+						Add SoftIRQ mode.
+						Fix state request from GUI detailed event list.
+
+29/05/2003	Subversion repository preliminary files addition
+

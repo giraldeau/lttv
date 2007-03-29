@@ -1,0 +1,577 @@
+#
+# An unexpected error has been detected by HotSpot Virtual Machine:
+#
+#  SIGSEGV (0xb) at pc=0xb799e01a, pid=20778, tid=2991672240
+#
+# Java VM: Java HotSpot(TM) Client VM (1.5.0_09-b03 mixed mode, sharing)
+# Problematic frame:
+# V  [libjvm.so+0x2b101a]
+#
+
+---------------  T H R E A D  ---------------
+
+Current thread (0x08099e28):  VMThread [id=20779]
+
+siginfo:si_signo=11, si_errno=0, si_code=1, si_addr=0x00000024
+
+Registers:
+EAX=0x00000000, EBX=0xb7a74aec, ECX=0x8700dd00, EDX=0x00000001
+ESP=0xb2514184, EBP=0xb2514188, ESI=0x00000024, EDI=0x0000d828
+EIP=0xb799e01a, CR2=0x00000024, EFLAGS=0x00210206
+
+Top of Stack: (sp=0xb2514184)
+0xb2514184:   00000009 b25141a8 b7845820 00000000
+0xb2514194:   873c81f8 b25141b8 b79c75b1 0000005c
+0xb25141a4:   8700dd00 b25141d8 b799dff2 8700dd00
+0xb25141b4:   b799e010 08454f44 08454f44 88888888
+0xb25141c4:   40667088 00000000 b7a74aec b7a6ae60
+0xb25141d4:   00000000 b2514218 b79aabf2 b7a74aec
+0xb25141e4:   b7fc82df 00000000 00000000 0805c8e8
+0xb25141f4:   00000000 00000001 00000001 b7a1c599 
+
+Instructions: (pc=0xb799e01a)
+0xb799e00a:   58 ff ff ff 89 f6 55 89 e5 56 8b 45 08 8d 70 24
+0xb799e01a:   8b 40 24 c1 e8 03 89 c2 d1 fa 85 c0 7e 09 85 d2 
+
+Stack: [0xb2494000,0xb2515000),  sp=0xb2514184,  free space=512k
+Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)
+V  [libjvm.so+0x2b101a]
+V  [libjvm.so+0x158820]
+V  [libjvm.so+0x2b0ff2]
+V  [libjvm.so+0x2bdbf2]
+V  [libjvm.so+0x32d341]
+V  [libjvm.so+0x32cec0]
+V  [libjvm.so+0x28bbe8]
+C  [libpthread.so.0+0x5341]
+
+VM_Operation (0xaa386204): generation collection for allocation, mode: safepoint, requested by thread 0x08518ae0
+
+
+---------------  P R O C E S S  ---------------
+
+Java Threads: ( => current thread )
+  0x084b6328 JavaThread "Inactive RequestProcessor thread [Was:Hints RP/org.netbeans.modules.editor.hints.HintsOperator$HintPopupTaskImpl]" daemon [_thread_blocked, id=24528]
+  0x08222a48 JavaThread "Inactive RequestProcessor thread [Was:Default RequestProcessor/org.netbeans.modules.editor.errorstripe.AnnotationView$RepaintTask]" daemon [_thread_blocked, id=24527]
+  0x086c1bd8 JavaThread "Inactive RequestProcessor thread [Was:Hints RP/org.netbeans.modules.editor.hints.HintsOperator$HintPopupTaskImpl]" daemon [_thread_blocked, id=24512]
+  0x086c1860 JavaThread "Inactive RequestProcessor thread [Was:LineStruct Processor/org.openide.text.LineStruct$1]" daemon [_thread_blocked, id=24511]
+  0x085c5c68 JavaThread "MDR event dispatcher" daemon [_thread_blocked, id=20847]
+  0x0805d518 JavaThread "DestroyJavaVM" [_thread_blocked, id=20778]
+  0x08518ae0 JavaThread "AWT-EventQueue-1" [_thread_blocked, id=20835]
+  0x0840f510 JavaThread "TimerQueue" daemon [_thread_blocked, id=20834]
+  0x0859aab8 JavaThread "Code Model Parser 0" daemon [_thread_blocked, id=20822]
+  0x0840eeb0 JavaThread "AWT-Shutdown" [_thread_blocked, id=20805]
+  0x083c3ba0 JavaThread "AWT-XAWT" daemon [_thread_blocked, id=20803]
+  0x083b4470 JavaThread "Java2D Disposer" daemon [_thread_blocked, id=20800]
+  0x08318120 JavaThread "Timer-0" daemon [_thread_blocked, id=20791]
+  0x083139a0 JavaThread "CLI Requests Server" daemon [_thread_in_native, id=20789]
+  0x082cffd8 JavaThread "Active Reference Queue Daemon" daemon [_thread_blocked, id=20786]
+  0x080bb978 JavaThread "Low Memory Detector" daemon [_thread_blocked, id=20784]
+  0x080ba418 JavaThread "CompilerThread0" daemon [_thread_blocked, id=20783]
+  0x080b9558 JavaThread "Signal Dispatcher" daemon [_thread_blocked, id=20782]
+  0x0809d680 JavaThread "Finalizer" daemon [_thread_blocked, id=20781]
+  0x0809c9c0 JavaThread "Reference Handler" daemon [_thread_blocked, id=20780]
+
+Other Threads:
+=>0x08099e28 VMThread [id=20779]
+  0x080bce18 WatcherThread [id=20785]
+
+VM state:at safepoint (normal execution)
+
+VM Mutex/Monitor currently owned by a thread:  ([mutex/lock_event])
+[0x0805c8e8/0x0805c910] Safepoint_lock - owner thread: 0x08099e28
+[0x0805c968/0x0805c990] Threads_lock - owner thread: 0x08099e28
+[0x0805cdb8/0x0805cdd0] Heap_lock - owner thread: 0x08518ae0
+
+Heap
+ def new generation   total 2304K, used 2204K [0x7e9c0000, 0x7ec30000, 0x7f390000)
+  eden space 2112K, 100% used [0x7e9c0000, 0x7ebd0000, 0x7ebd0000)
+  from space 192K,  48% used [0x7ebd0000, 0x7ebe7170, 0x7ec00000)
+  to   space 192K,   0% used [0x7ec00000, 0x7ec00000, 0x7ec30000)
+ tenured generation   total 30272K, used 29266K [0x7f390000, 0x81120000, 0x869c0000)
+   the space 30272K,  96% used [0x7f390000, 0x810249d0, 0x81024a00, 0x81120000)
+ compacting perm gen  total 32768K, used 16886K [0x869c0000, 0x889c0000, 0x909c0000)
+   the space 32768K,  51% used [0x869c0000, 0x87a3d9e8, 0x87a3da00, 0x889c0000)
+    ro space 8192K,  68% used [0x909c0000, 0x90f3ed48, 0x90f3ee00, 0x911c0000)
+    rw space 12288K,  48% used [0x911c0000, 0x91789e68, 0x9178a000, 0x91dc0000)
+
+Dynamic libraries:
+08048000-08057000 r-xp 00000000 03:08 963641     /root/jdk1.5.0_09/bin/java
+08057000-08059000 rwxp 0000e000 03:08 963641     /root/jdk1.5.0_09/bin/java
+08059000-087e3000 rwxp 08059000 00:00 0          [heap]
+7e9c0000-7ec30000 rwxp 7e9c0000 00:00 0 
+7ec30000-7f390000 rwxp 7ec30000 00:00 0 
+7f390000-81120000 rwxp 7f390000 00:00 0 
+81120000-869c0000 rwxp 81120000 00:00 0 
+869c0000-889c0000 rwxp 869c0000 00:00 0 
+889c0000-909c0000 rwxp 889c0000 00:00 0 
+909c0000-90f3f000 r-xs 00001000 03:08 963598     /root/jdk1.5.0_09/jre/lib/i386/client/classes.jsa
+90f3f000-911c0000 rwxp 90f3f000 00:00 0 
+911c0000-9178a000 rwxp 00580000 03:08 963598     /root/jdk1.5.0_09/jre/lib/i386/client/classes.jsa
+9178a000-91dc0000 rwxp 9178a000 00:00 0 
+91dc0000-91e90000 rwxp 00b4a000 03:08 963598     /root/jdk1.5.0_09/jre/lib/i386/client/classes.jsa
+91e90000-921c0000 rwxp 91e90000 00:00 0 
+921c0000-921c4000 r-xs 00c1a000 03:08 963598     /root/jdk1.5.0_09/jre/lib/i386/client/classes.jsa
+921c4000-925c0000 rwxp 921c4000 00:00 0 
+a9900000-a9921000 rwxp a9900000 00:00 0 
+a9921000-a9a00000 ---p a9921000 00:00 0 
+a9aa6000-a9ab6000 r-xp 00000000 03:08 98160      /lib/tls/i686/cmov/libresolv-2.3.6.so
+a9ab6000-a9ab7000 rwxp 00010000 03:08 98160      /lib/tls/i686/cmov/libresolv-2.3.6.so
+a9ab7000-a9ab9000 rwxp a9ab7000 00:00 0 
+a9ab9000-a9abd000 r-xp 00000000 03:08 98125      /lib/tls/i686/cmov/libnss_dns-2.3.6.so
+a9abd000-a9abe000 rwxp 00003000 03:08 98125      /lib/tls/i686/cmov/libnss_dns-2.3.6.so
+a9acb000-a9ace000 ---p a9acb000 00:00 0 
+a9ace000-a9b4c000 rwxp a9ace000 00:00 0 
+a9b4c000-a9b4f000 ---p a9b4c000 00:00 0 
+a9b4f000-a9bcd000 rwxp a9b4f000 00:00 0 
+a9bcd000-a9bd0000 ---p a9bcd000 00:00 0 
+a9bd0000-a9c4e000 rwxp a9bd0000 00:00 0 
+a9c4e000-aa286000 rwxs 00000000 00:07 16580620   /SYSV00000000 (deleted)
+aa286000-aa289000 rwxp aa286000 00:00 0 
+aa289000-aa307000 rwxp aa289000 00:00 0 
+aa307000-aa30a000 ---p aa307000 00:00 0 
+aa30a000-aa388000 rwxp aa30a000 00:00 0 
+aa388000-aa38b000 ---p aa388000 00:00 0 
+aa38b000-aa409000 rwxp aa38b000 00:00 0 
+aa409000-aa40c000 ---p aa409000 00:00 0 
+aa40c000-aa48a000 rwxp aa40c000 00:00 0 
+aa48a000-aa499000 r-xs 00000000 03:08 198718     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-qnavigator.jar
+aa499000-aa4a2000 r-xs 00000000 03:08 214603     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-genericserver.jar
+aa4a2000-aa4c0000 r-xs 00000000 03:08 411122     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-apisupport-refactoring.jar
+aa4c0000-aa4c2000 r-xs 00000000 03:08 410688     /opt/netbeans-5.5/enterprise3/modules/eager/tomcat5-bundled.jar
+aa4c2000-aa581000 r-xs 00000000 03:08 214607     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-refactoring.jar
+aa581000-aa68d000 r-xs 00000000 03:08 214621     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-core.jar
+aa68d000-aa6b2000 r-xs 00000000 03:08 214622     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-debug.jar
+aa6b2000-aa6b5000 r-xs 00000000 03:08 411195     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-utilities-project.jar
+aa6b5000-aa70a000 r-xs 00000000 03:08 411196     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-utilities.jar
+aa70a000-aa765000 r-xs 00000000 03:08 411170     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-navigation.jar
+aa765000-aa855000 r-xs 00000000 03:08 214581     /opt/netbeans-5.5/enterprise3/modules/docs/org-netbeans-modules-j2ee-platform.jar
+aa855000-aa857000 r-xs 00000000 03:08 214606     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-platform.jar
+aa857000-aa889000 r-xs 00000000 03:08 411216     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xsl.jar
+aa889000-aa89f000 r-xs 00000000 03:08 411160     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-image.jar
+aa89f000-aa913000 r-xs 00000000 03:08 411175     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-javadoc.jar
+aa913000-aa915000 r-xs 00000000 03:08 214613     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-toplinklib.jar
+aa915000-aa944000 r-xs 00000000 03:08 411125     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-clazz.jar
+aa944000-aa957000 r-xs 00000000 03:08 411077     /opt/netbeans-5.5/ide7/modules/ext/flute.jar
+aa957000-aa95b000 r-xs 00000000 03:08 411090     /opt/netbeans-5.5/ide7/modules/ext/sac.jar
+aa95b000-aa987000 r-xs 00000000 03:08 411126     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-css.jar
+aa987000-aa988000 r-xs 00000000 03:08 411384     /opt/netbeans-5.5/nb5.5/modules/locale/org-netbeans-core-windows_nb.jar
+aa988000-aaabf000 r-xs 00000000 03:08 411458     /opt/netbeans-5.5/platform6/modules/org-netbeans-core-windows.jar
+aaabf000-aab68000 r-xs 00000000 03:08 411467     /opt/netbeans-5.5/platform6/modules/org-netbeans-swing-tabcontrol.jar
+aab68000-aab6a000 r-xs 00000000 03:08 214627     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-jstl11.jar
+aab6a000-aab78000 r-xs 00000000 03:08 198716     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-gotodeclaration.jar
+aab78000-aabdf000 r-xs 00000000 03:08 198712     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-completion.jar
+aabdf000-aac5d000 r-xs 00000000 03:08 411123     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-beans.jar
+aac5d000-aacec000 r-xs 00000000 03:08 214614     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-verification.jar
+aacec000-aad31000 r-xs 00000000 03:08 214582     /opt/netbeans-5.5/enterprise3/modules/docs/org-netbeans-modules-j2ee-sun-appsrv81.jar
+aad31000-aade8000 r-xs 00000000 03:08 214610     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-sun-appsrv81.jar
+aade8000-aaf63000 r-xs 00000000 03:08 410804     /opt/netbeans-5.5/enterprise3/modules/ext/persistence-tool-support.jar
+aaf63000-ab1c0000 r-xs 00000000 03:08 214612     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-sun-ddui.jar
+ab1c0000-ab6b1000 r-xs 00000000 03:08 214592     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-blueprints.jar
+ab6b1000-ab6b3000 r-xs 00000000 03:08 411200     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-websvc-jaxrpc16.jar
+ab6b3000-ab6b9000 r-xs 00000000 03:08 411146     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-plain.jar
+ab6b9000-ab6d0000 r-xs 00000000 03:08 411128     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-db-sql-editor.jar
+ab6d0000-ab6f0000 r-xs 00000000 03:08 411209     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-schema.jar
+ab6f0000-ab703000 r-xs 00000000 03:08 411165     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-examples.jar
+ab703000-ab829000 r-xs 00000000 03:08 214615     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-weblogic9.jar
+ab829000-ab906000 r-xs 00000000 03:08 214630     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-struts.jar
+ab906000-ab929000 r-xs 00000000 03:08 214601     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-ejbfreeform.jar
+ab929000-ab998000 r-xs 00000000 03:08 411119     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-apisupport-feedreader.jar
+ab998000-ab9b6000 r-xs 00000000 03:08 411041     /opt/netbeans-5.5/ide7/modules/docs/org-netbeans-modules-versioning-system-cvss.jar
+ab9b6000-abb06000 r-xs 00000000 03:08 411197     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-versioning-system-cvss.jar
+abb06000-abb9f000 r-xs 00000000 03:08 411109     /opt/netbeans-5.5/ide7/modules/org-netbeans-lib-cvsclient.jar
+abb9f000-abbaf000 r-xs 00000000 03:08 411198     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-versioning.jar
+abbaf000-abbbd000 r-xs 00000000 03:08 411140     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-errorstripe.jar
+abbbd000-abc22000 r-xs 00000000 03:08 411135     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-diff.jar
+abc22000-abce7000 r-xs 00000000 03:08 214633     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-websvc-dev.jar
+abce7000-abdc9000 r-xs 00000000 03:08 411169     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-j2seproject.jar
+abdc9000-abe19000 r-xs 00000000 03:08 214591     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-archive.jar
+abe19000-abe1f000 r-xs 00000000 03:08 198706     /opt/netbeans-5.5/cnd1/modules/org-netbeans-configuration-api.jar
+abe1f000-abed4000 r-xs 00000000 03:08 214609     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-sun-appsrv.jar
+abed4000-ac13c000 r-xs 00000000 03:08 214611     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-sun-dd.jar
+ac13c000-ac199000 r-xs 00000000 03:08 411180     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-options-editor.jar
+ac199000-ac1b2000 r-xs 00000000 03:08 411147     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-settings-storage.jar
+ac1b2000-ac1f0000 r-xs 00000000 03:08 411168     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-j2seplatform.jar
+ac1f0000-ac3bc000 r-xs 00000000 03:08 214597     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-ddloaders.jar
+ac3bc000-ac3d1000 r-xs 00000000 03:08 411134     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-defaults.jar
+ac3d1000-ac3f1000 r-xs 00000000 03:08 411167     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-hints.jar
+ac3f1000-ac40d000 r-xs 00000000 03:08 411083     /opt/netbeans-5.5/ide7/modules/ext/jsch-0.1.24.jar
+ac40d000-ac40e000 r-xs 00000000 03:08 411112     /opt/netbeans-5.5/ide7/modules/org-netbeans-libs-jsch.jar
+ac40e000-ac648000 r-xs 00000000 03:08 198717     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-modelimpl.jar
+ac648000-ac68b000 r-xs 00000000 03:08 411212     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-tools.jar
+ac68b000-ac6d8000 r-xs 00000000 03:08 214632     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-websvc-customization.jar
+ac6d8000-ac6df000 r-xs 00000000 03:08 411117     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-ant-grammar.jar
+ac6df000-ac702000 r-xs 00000000 03:08 411115     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-ant-debugger.jar
+ac702000-ac737000 r-xs 00000000 03:08 411028     /opt/netbeans-5.5/ide7/modules/docs/org-netbeans-modules-apisupport-project.jar
+ac737000-ac940000 r-xs 00000000 03:08 411121     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-apisupport-project.jar
+ac940000-ac9af000 r-xs 00000000 03:08 411088     /opt/netbeans-5.5/ide7/modules/ext/org-netbeans-tax.jar
+ac9af000-aca27000 r-xs 00000000 03:08 411210     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-tax.jar
+aca27000-aca3c000 r-xs 00000000 03:08 411131     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-debugger-jpda-ant.jar
+aca3c000-acac8000 r-xs 00000000 03:08 411132     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-debugger-jpda-ui.jar
+acac8000-acb45000 r-xs 00000000 03:08 411133     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-debugger-jpda.jar
+acb45000-acb46000 r-xs 00000000 03:08 411118     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-apisupport-ant.jar
+acb46000-acb50000 r-xs 00000000 03:08 411186     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-properties-syntax.jar
+acb50000-acb53000 r-xs 00000000 03:08 411107     /opt/netbeans-5.5/ide7/modules/org-netbeans-core-ide.jar
+acb53000-acb69000 r-xs 00000000 03:08 411136     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-bookmarks.jar
+acb69000-acb99000 r-xs 00000000 03:08 411390     /opt/netbeans-5.5/nb5.5/modules/org-netbeans-modules-welcome.jar
+acb99000-acc61000 r-xs 00000000 03:08 198708     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-antlr.jar
+acc61000-acc98000 r-xs 00000000 03:08 214608     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-samples.jar
+acc98000-accaf000 r-xs 00000000 03:08 214588     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-derby.jar
+accaf000-accc4000 r-xs 00000000 03:08 411120     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-apisupport-paintapp.jar
+accc4000-accc5000 r-xs 00000000 03:08 214589     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-ant.jar
+accc5000-acd15000 r-xs 00000000 03:08 411156     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-html.jar
+acd15000-acda4000 r-xs 00000000 03:08 198714     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-debugger-gdb.jar
+acda4000-acded000 r-xs 00000000 03:08 411217     /opt/netbeans-5.5/ide7/modules/org-netbeans-spi-debugger-ui.jar
+acded000-acf65000 r-xs 00000000 03:08 198713     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-makeproject.jar
+acf65000-acf71000 r-xs 00000000 03:08 214584     /opt/netbeans-5.5/enterprise3/modules/docs/org-netbeans-modules-web-monitor.jar
+acf71000-acfdd000 r-xs 00000000 03:08 214628     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-monitor.jar
+acfdd000-ad040000 r-xs 00000000 03:08 411092     /opt/netbeans-5.5/ide7/modules/ext/webserver.jar
+ad040000-ad054000 r-xs 00000000 03:08 411157     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-httpserver.jar
+ad054000-ad082000 r-xs 00000000 03:08 411193     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-tasklist-docscan.jar
+ad082000-ad189000 r-xs 00000000 03:08 411040     /opt/netbeans-5.5/ide7/modules/docs/org-netbeans-modules-usersguide.jar
+ad189000-ad18b000 r-xs 00000000 03:08 411194     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-usersguide.jar
+ad18b000-ad19f000 r-xs 00000000 03:08 411158     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-i18n-form.jar
+ad19f000-ad1a0000 r-xs 00000000 03:08 411074     /opt/netbeans-5.5/ide7/modules/ext/AbsoluteLayout.jar
+ad1a0000-ad464000 r-xs 00000000 03:08 411153     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-form.jar
+ad464000-ad4aa000 r-xs 00000000 03:08 411219     /opt/netbeans-5.5/ide7/modules/org-netbeans-spi-palette.jar
+ad4aa000-ad557000 r-xs 00000000 03:08 214599     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-earproject.jar
+ad557000-ad69f000 r-xs 00000000 03:08 214629     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-project.jar
+ad69f000-ad7ad000 r-xs 00000000 03:08 214602     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-ejbjarproject.jar
+ad7ad000-ad8c1000 r-xs 00000000 03:08 214593     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-clientproject.jar
+ad8c1000-ad8c2000 r-xs 00000000 03:08 411114     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-ant-browsetask.jar
+ad8c2000-ad98e000 r-xs 00000000 03:08 214600     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-ejbcore.jar
+ad98e000-ad9fb000 r-xs 00000000 03:08 411159     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-i18n.jar
+ad9fb000-ada6b000 r-xs 00000000 03:08 411187     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-properties.jar
+ada6b000-ada6e000 r-xs 00000000 03:08 411389     /opt/netbeans-5.5/nb5.5/modules/org-netbeans-modules-updatecenters.jar
+ada6e000-ada8a000 r-xs 00000000 03:08 411451     /opt/netbeans-5.5/platform6/modules/ext/updater.jar
+ada8a000-ada96000 r-xs 00000000 03:08 411361     /opt/netbeans-5.5/nb5.5/modules/ext/locale/updater_nb.jar
+ada96000-adb50000 r-xs 00000000 03:08 411460     /opt/netbeans-5.5/platform6/modules/org-netbeans-modules-autoupdate.jar
+adb50000-adb5a000 r-xs 00000000 03:08 411091     /opt/netbeans-5.5/ide7/modules/ext/servlet-2.2.jar
+adb5a000-adb5b000 r-xs 00000000 03:08 411190     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-servletapi.jar
+adb5b000-adb7c000 r-xs 00000000 03:08 214624     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-freeform.jar
+adb7c000-adbc2000 r-xs 00000000 03:08 411166     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-freeform.jar
+adbc2000-adc06000 r-xs 00000000 03:08 411116     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-ant-freeform.jar
+adc06000-add24000 r-xs 00000000 03:08 214631     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-websvc-core.jar
+add24000-add34000 r-xs 00000000 03:08 411202     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-websvc-jaxwsapi.jar
+add34000-add9b000 r-xs 00000000 03:08 411213     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-wsdl-model.jar
+add9b000-ade11000 r-xs 00000000 03:08 411208     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-schema-model.jar
+ade11000-ade1a000 r-xs 00000000 03:08 214635     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-websvc-websvcapi.jar
+ade1a000-ae058000 r-xs 00000000 03:08 214595     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-dd-webservice.jar
+ae058000-ae069000 r-xs 00000000 03:08 411199     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-websvc-clientapi.jar
+ae069000-ae09b000 r-xs 00000000 03:08 411203     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-websvc-jaxwsmodel.jar
+ae09b000-ae0c8000 r-xs 00000000 03:08 411207     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-retriever.jar
+ae0c8000-ae3a2000 r-xs 00000000 03:08 411063     /opt/netbeans-5.5/ide7/modules/ext/jaxws20/jaxb-xjc.jar
+ae3a2000-ae3a8000 r-xs 00000000 03:08 411067     /opt/netbeans-5.5/ide7/modules/ext/jaxws20/jsr173_api.jar
+ae3a8000-ae467000 r-xs 00000000 03:08 411062     /opt/netbeans-5.5/ide7/modules/ext/jaxws20/jaxb-impl.jar
+ae467000-ae4df000 r-xs 00000000 03:08 411066     /opt/netbeans-5.5/ide7/modules/ext/jaxws20/jaxws-tools.jar
+ae4df000-ae4e5000 r-xs 00000000 03:08 411064     /opt/netbeans-5.5/ide7/modules/ext/jaxws20/jaxws-api.jar
+ae4e5000-ae536000 r-xs 00000000 03:08 411073     /opt/netbeans-5.5/ide7/modules/ext/jaxws20/sjsxp.jar
+ae536000-ae5cd000 r-xs 00000000 03:08 411065     /opt/netbeans-5.5/ide7/modules/ext/jaxws20/jaxws-rt.jar
+ae5cd000-ae5e0000 r-xs 00000000 03:08 411061     /opt/netbeans-5.5/ide7/modules/ext/jaxws20/jaxb-api.jar
+ae5e0000-ae5ee000 r-xs 00000000 03:08 411059     /opt/netbeans-5.5/ide7/modules/ext/jaxws20/activation.jar
+ae5ee000-ae5f1000 r-xs 00000000 03:08 411201     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-websvc-jaxws20.jar
+ae5f1000-ae6ed000 r-xs 00000000 03:08 214604     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-jboss4.jar
+ae6ed000-ae726000 r-xs 00000000 03:08 411191     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-suggestions_framework.jar
+ae726000-ae787000 r-xs 00000000 03:08 411192     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-tasklist-core.jar
+ae787000-ae790000 r-xs 00000000 03:08 411221     /opt/netbeans-5.5/ide7/modules/org-netbeans-tasklistapi.jar
+ae790000-ae8d7000 r-xs 00000000 03:08 214625     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-jsf.jar
+ae8d7000-ae958000 r-xs 00000000 03:08 214620     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-core-syntax.jar
+ae958000-ae9b5000 r-xs 00000000 03:08 411155     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-html-editor.jar
+ae9b5000-aea0e000 r-xs 00000000 03:08 411154     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-html-editor-lib.jar
+aea0e000-aea38000 r-xs 00000000 03:08 214626     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-jspparser.jar
+aea38000-aea75000 r-xs 00000000 03:08 410805     /opt/netbeans-5.5/enterprise3/modules/ext/servlet2.5-jsp2.1-api.jar
+aea75000-aea76000 r-xs 00000000 03:08 214618     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-servletjspapi.jar
+aea76000-aea7c000 r-xs 00000000 03:08 410799     /opt/netbeans-5.5/enterprise3/modules/ext/glassfish-logging.jar
+aea7c000-aea7d000 r-xs 00000000 03:08 214586     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-libs-glassfish_logging.jar
+aea7d000-aebb3000 r-xs 00000000 03:08 411188     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-refactoring.jar
+aebb3000-aecea000 r-xs 00000000 03:08 214605     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-persistence.jar
+aecea000-aecff000 r-xs 00000000 03:08 214590     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-api-ejbmodule.jar
+aecff000-aed03000 r-xs 00000000 03:08 214567     /opt/netbeans-5.5/enterprise3/modules/docs/org-netbeans-modules-dbschema.jar
+aed03000-aed7f000 r-xs 00000000 03:08 214587     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-dbschema.jar
+aed7f000-aed86000 r-xs 00000000 03:08 411130     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-dbapi.jar
+aed86000-aedf8000 r-xs 00000000 03:08 411177     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-junit.jar
+aedf8000-aee07000 r-xs 00000000 03:08 411142     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-hints.jar
+aee07000-aee54000 r-xs 00000000 03:08 411206     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-multiview.jar
+aee54000-aee75000 r-xs 00000000 03:08 411455     /opt/netbeans-5.5/platform6/modules/org-netbeans-core-multiview.jar
+aee75000-aeec8000 r-xs 00000000 03:08 214594     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-common.jar
+aeec8000-aef93000 r-xs 00000000 03:08 411164     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-editor.jar
+aef93000-aefaf000 r-xs 00000000 03:08 411137     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-codetemplates.jar
+aefaf000-aefba000 r-xs 00000000 03:08 411162     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-j2ee-persistenceapi.jar
+aefba000-af01e000 r-xs 00000000 03:08 411163     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-editor-lib.jar
+af01e000-af032000 r-xs 00000000 03:08 214583     /opt/netbeans-5.5/enterprise3/modules/docs/org-netbeans-modules-tomcat5.jar
+af032000-af0e1000 r-xs 00000000 03:08 214619     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-tomcat5.jar
+af0e1000-af4cc000 r-xs 00000000 03:08 214596     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-dd.jar
+af4cc000-af4cd000 r-xs 00000000 03:08 411094     /opt/netbeans-5.5/ide7/modules/ext/xml-commons-dom-ranges-1.0.b2.jar
+af4cd000-af5f3000 r-xs 00000000 03:08 411093     /opt/netbeans-5.5/ide7/modules/ext/xerces-2.8.0.jar
+af5f3000-af5f4000 r-xs 00000000 03:08 411113     /opt/netbeans-5.5/ide7/modules/org-netbeans-libs-xerces.jar
+af5f4000-af630000 r-xs 00000000 03:08 411172     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-project.jar
+af630000-af789000 r-xs 00000000 03:08 411173     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java.jar
+af789000-af78b000 r-xs 00000000 03:08 411139     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-errorstripe-api.jar
+af78b000-af80f000 r-xs 00000000 03:08 411184     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-projectui.jar
+af80f000-af85c000 r-xs 00000000 03:08 411463     /opt/netbeans-5.5/platform6/modules/org-netbeans-modules-masterfs.jar
+af85c000-af894000 r-xs 00000000 03:08 411204     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-catalog.jar
+af894000-af8a8000 r-xs 00000000 03:08 411089     /opt/netbeans-5.5/ide7/modules/ext/resolver-1_1_nb.jar
+af8a8000-af8a9000 r-xs 00000000 03:08 411101     /opt/netbeans-5.5/ide7/modules/org-apache-xml-resolver.jar
+af8a9000-af8b9000 r-xs 00000000 03:08 411457     /opt/netbeans-5.5/platform6/modules/org-netbeans-core-ui.jar
+af8b9000-af8d6000 r-xs 00000000 03:08 411461     /opt/netbeans-5.5/platform6/modules/org-netbeans-modules-favorites.jar
+af8d6000-af935000 r-xs 00000000 03:08 411100     /opt/netbeans-5.5/ide7/modules/org-apache-tools-ant-module.jar
+af935000-af956000 r-xs 00000000 03:08 411454     /opt/netbeans-5.5/platform6/modules/org-netbeans-core-execution.jar
+af956000-af976000 r-xs 00000000 03:08 411179     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-options-api.jar
+af976000-af999000 r-xs 00000000 03:08 411127     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-db-core.jar
+af999000-af9e5000 r-xs 00000000 03:08 411076     /opt/netbeans-5.5/ide7/modules/ext/ddl.jar
+af9e5000-af9f2000 r-xs 00000000 03:08 411039     /opt/netbeans-5.5/ide7/modules/docs/org-netbeans-modules-db.jar
+af9f2000-afad1000 r-xs 00000000 03:08 411129     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-db.jar
+afad1000-afb53000 r-xs 00000000 03:08 411450     /opt/netbeans-5.5/platform6/modules/ext/jh-2.0_03.jar
+afb53000-afb72000 r-xs 00000000 03:08 411462     /opt/netbeans-5.5/platform6/modules/org-netbeans-modules-javahelp.jar
+afb72000-afb95000 r-xs 00000000 03:08 411445     /opt/netbeans-5.5/platform6/modules/ext/swing-layout-1.0.jar
+afb95000-afb97000 r-xs 00000000 03:08 411452     /opt/netbeans-5.5/platform6/modules/org-jdesktop-layout.jar
+afb97000-afb9c000 r-xs 00000000 03:08 214598     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2ee-debug.jar
+afb9c000-afba4000 r-xs 00000000 03:08 214634     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-websvc-registry.jar
+afba4000-afc55000 r-xs 00000000 03:08 214617     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2eeserver.jar
+afc55000-afc74000 r-xs 00000000 03:08 411171     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-java-platform.jar
+afc74000-afc84000 r-xs 00000000 03:08 411102     /opt/netbeans-5.5/ide7/modules/org-netbeans-api-debugger-jpda.jar
+afc84000-afc9c000 r-xs 00000000 03:08 411103     /opt/netbeans-5.5/ide7/modules/org-netbeans-api-debugger.jar
+afc9c000-afcbc000 r-xs 00000000 03:08 411220     /opt/netbeans-5.5/ide7/modules/org-netbeans-spi-viewmodel.jar
+afcbc000-afcea000 r-xs 00000000 03:08 411465     /opt/netbeans-5.5/platform6/modules/org-netbeans-modules-settings.jar
+afcea000-afceb000 r-xs 00000000 03:08 411386     /opt/netbeans-5.5/nb5.5/modules/locale/org-netbeans-core_nb.jar
+afceb000-afdeb000 r-xs 00000000 03:08 411459     /opt/netbeans-5.5/platform6/modules/org-netbeans-core.jar
+afdeb000-afe19000 r-xs 00000000 03:08 411466     /opt/netbeans-5.5/platform6/modules/org-netbeans-swing-plaf.jar
+afe19000-afe1f000 r-xs 00000000 03:08 410801     /opt/netbeans-5.5/enterprise3/modules/ext/jsr88javax.jar
+afe1f000-afe20000 r-xs 00000000 03:08 214616     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-j2eeapis.jar
+afe20000-afe35000 r-xs 00000000 03:08 411078     /opt/netbeans-5.5/ide7/modules/ext/forms-1.0.5.jar
+afe35000-afe36000 r-xs 00000000 03:08 411111     /opt/netbeans-5.5/ide7/modules/org-netbeans-libs-formlayout.jar
+afe36000-afe7d000 r-xs 00000000 03:08 411215     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-xdm.jar
+afe7d000-aff0d000 r-xs 00000000 03:08 411211     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-text.jar
+aff0d000-aff7b000 r-xs 00000000 03:08 411205     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-core.jar
+aff7b000-affd3000 r-xs 00000000 03:08 411456     /opt/netbeans-5.5/platform6/modules/org-netbeans-core-output2.jar
+affd3000-affdd000 r-xs 00000000 03:08 411218     /opt/netbeans-5.5/ide7/modules/org-netbeans-spi-navigator.jar
+affdd000-afff0000 r-xs 00000000 03:08 411106     /opt/netbeans-5.5/ide7/modules/org-netbeans-api-xml.jar
+afff0000-b001b000 r-xs 00000000 03:08 411138     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-completion.jar
+b001b000-b0044000 r-xs 00000000 03:08 411214     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-xml-xam.jar
+b0044000-b00a8000 r-xs 00000000 03:08 214623     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-modules-web-examples.jar
+b00a8000-b00fe000 r-xs 00000000 03:08 411181     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-project-ant.jar
+b00fe000-b0118000 r-xs 00000000 03:08 411161     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-j2ee-metadata.jar
+b0118000-b0139000 r-xs 00000000 03:08 411182     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-project-libraries.jar
+b0139000-b017d000 r-xs 00000000 03:08 411189     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-schema2beans.jar
+b017d000-b01ad000 r-xs 00000000 03:08 411080     /opt/netbeans-5.5/ide7/modules/ext/java-parser.jar
+b01ad000-b0346000 r-xs 00000000 03:08 411174     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-javacore.jar
+b0346000-b0491000 r-xs 00000000 03:08 411085     /opt/netbeans-5.5/ide7/modules/ext/mdr.jar
+b0491000-b0507000 r-xs 00000000 03:08 411082     /opt/netbeans-5.5/ide7/modules/ext/jmiutils.jar
+b0507000-b050a000 r-xs 00000000 03:08 411176     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-jmiutils.jar
+b050a000-b0535000 r-xs 00000000 03:08 411086     /opt/netbeans-5.5/ide7/modules/ext/mof.jar
+b0535000-b0536000 r-xs 00000000 03:08 411095     /opt/netbeans-5.5/ide7/modules/javax-jmi-model.jar
+b0536000-b0555000 r-xs 00000000 03:08 411124     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-classfile.jar
+b0555000-b055d000 r-xs 00000000 03:08 411105     /opt/netbeans-5.5/ide7/modules/org-netbeans-api-mdr.jar
+b055d000-b05b9000 r-xs 00000000 03:08 411108     /opt/netbeans-5.5/ide7/modules/org-netbeans-jmi-javamodel.jar
+b05b9000-b05be000 r-xs 00000000 03:08 411081     /opt/netbeans-5.5/ide7/modules/ext/jmi.jar
+b05be000-b05bf000 r-xs 00000000 03:08 411099     /opt/netbeans-5.5/ide7/modules/javax-jmi-reflect.jar
+b05bf000-b05dc000 r-xs 00000000 03:08 411152     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-extbrowser.jar
+b05dc000-b0603000 r-xs 00000000 03:08 198711     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-classview.jar
+b0603000-b0627000 r-xs 00000000 03:08 411185     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-projectuiapi.jar
+b0627000-b0640000 r-xs 00000000 03:08 411453     /opt/netbeans-5.5/platform6/modules/org-netbeans-api-progress.jar
+b0640000-b066c000 r-xs 00000000 03:08 198710     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-modelutil.jar
+b066c000-b069b000 r-xs 00000000 03:08 214817     /opt/netbeans-5.5/cnd1/modules/docs/org-netbeans-modules-cnd.jar
+b069b000-b0814000 r-xs 00000000 03:08 198707     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd.jar
+b0814000-b08d2000 r-xs 00000000 03:08 411151     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor.jar
+b08d2000-b08d6000 r-xs 00000000 03:08 411148     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-settings.jar
+b08d6000-b08e3000 r-xs 00000000 03:08 411223     /opt/netbeans-5.5/ide7/modules/org-openidex-util.jar
+b08e3000-b0961000 r-xs 00000000 03:08 411222     /opt/netbeans-5.5/ide7/modules/org-openide-src.jar
+b0961000-b0978000 r-xs 00000000 03:08 411104     /opt/netbeans-5.5/ide7/modules/org-netbeans-api-java.jar
+b0978000-b097f000 r-xs 00000000 03:08 411472     /opt/netbeans-5.5/platform6/modules/org-openide-execution.jar
+b097f000-b0983000 r-xs 00000000 03:08 411474     /opt/netbeans-5.5/platform6/modules/org-openide-io.jar
+b0983000-b0aff000 r-xs 00000000 03:08 411143     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-lib.jar
+b0aff000-b0b18000 r-xs 00000000 03:08 411141     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-fold.jar
+b0b18000-b0b2c000 r-xs 00000000 03:08 411144     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-mimelookup.jar
+b0b2c000-b0b37000 r-xs 00000000 03:08 411150     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-util.jar
+b0b37000-b0b55000 r-xs 00000000 03:08 198709     /opt/netbeans-5.5/cnd1/modules/org-netbeans-modules-cnd-api-model.jar
+b0b55000-b0b69000 r-xs 00000000 03:08 411183     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-projectapi.jar
+b0b69000-b0b6f000 r-xs 00000000 03:08 411464     /opt/netbeans-5.5/platform6/modules/org-netbeans-modules-queries.jar
+b0b6f000-b0c59000 r-xs 00000000 03:08 411475     /opt/netbeans-5.5/platform6/modules/org-openide-loaders.jar
+b0c59000-b0c83000 r-xs 00000000 03:08 411468     /opt/netbeans-5.5/platform6/modules/org-openide-actions.jar
+b0c83000-b0da5000 r-xs 00000000 03:08 411473     /opt/netbeans-5.5/platform6/modules/org-openide-explorer.jar
+b0da5000-b0de8000 r-xs 00000000 03:08 411478     /opt/netbeans-5.5/platform6/modules/org-openide-text.jar
+b0de8000-b0ded000 r-xs 00000000 03:08 411477     /opt/netbeans-5.5/platform6/modules/org-openide-options.jar
+b0ded000-b0e06000 r-xs 00000000 03:08 411480     /opt/netbeans-5.5/platform6/modules/org-openide-windows.jar
+b0e06000-b0e51000 r-xs 00000000 03:08 411476     /opt/netbeans-5.5/platform6/modules/org-openide-nodes.jar
+b0e51000-b0edc000 rwxs 00000000 00:07 16547868   /SYSV00000000 (deleted)
+b0edf000-b0ee2000 rwxs 00000000 00:07 16613405   /SYSV00000000 (deleted)
+b0ee2000-b0ef5000 r-xs 00000000 03:08 411149     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-structure.jar
+b0ef5000-b0efb000 r-xs 00000000 03:08 214585     /opt/netbeans-5.5/enterprise3/modules/org-netbeans-api-web-webmodule.jar
+b0efb000-b0f1c000 r-xs 00000000 03:08 411471     /opt/netbeans-5.5/platform6/modules/org-openide-dialogs.jar
+b0f1c000-b0f52000 r-xs 00000000 03:08 411469     /opt/netbeans-5.5/platform6/modules/org-openide-awt.jar
+b0f52000-b0feb000 r-xs 00000000 03:07 231046     /home/jov/.netbeans/5.5/var/cache/all-layers.dat
+b0feb000-b0fee000 ---p b0feb000 00:00 0 
+b0fee000-b106c000 rwxp b0fee000 00:00 0 
+b106c000-b106f000 ---p b106c000 00:00 0 
+b106f000-b10ed000 rwxp b106f000 00:00 0 
+b10ed000-b10f0000 ---p b10ed000 00:00 0 
+b10f0000-b116e000 rwxp b10f0000 00:00 0 
+b116e000-b1171000 ---p b116e000 00:00 0 
+b1171000-b11ef000 rwxp b1171000 00:00 0 
+b11ef000-b11f2000 r-xp 00000000 03:08 1116032    /usr/lib/libXfixes.so.3.0.0
+b11f2000-b11f3000 rwxp 00003000 03:08 1116032    /usr/lib/libXfixes.so.3.0.0
+b11f3000-b11fa000 r-xp 00000000 03:08 1116005    /usr/lib/libXrender.so.1.3.0
+b11fa000-b11fb000 rwxp 00006000 03:08 1116005    /usr/lib/libXrender.so.1.3.0
+b11fb000-b1203000 r-xp 00000000 03:08 1116034    /usr/lib/libXcursor.so.1.0.2
+b1203000-b1204000 rwxp 00007000 03:08 1116034    /usr/lib/libXcursor.so.1.0.2
+b1204000-b1207000 ---p b1204000 00:00 0 
+b1207000-b1285000 rwxp b1207000 00:00 0 
+b1285000-b12ec000 r-xp 00000000 03:08 962999     /root/jdk1.5.0_09/jre/lib/i386/libfontmanager.so
+b12ec000-b12f6000 rwxp 00067000 03:08 962999     /root/jdk1.5.0_09/jre/lib/i386/libfontmanager.so
+b12f6000-b12fa000 rwxp b12f6000 00:00 0 
+b12fa000-b12fc000 r-xp 00000000 03:08 1113498    /usr/lib/libXau.so.6.0.0
+b12fc000-b12fd000 rwxp 00001000 03:08 1113498    /usr/lib/libXau.so.6.0.0
+b12fd000-b13de000 r-xp 00000000 03:08 1113500    /usr/lib/libX11.so.6.2.0
+b13de000-b13e2000 rwxp 000e1000 03:08 1113500    /usr/lib/libX11.so.6.2.0
+b13e2000-b13e3000 rwxp b13e2000 00:00 0 
+b13e3000-b13ef000 r-xp 00000000 03:08 1113563    /usr/lib/libXext.so.6.4.0
+b13ef000-b13f0000 rwxp 0000c000 03:08 1113563    /usr/lib/libXext.so.6.4.0
+b13f0000-b13f6000 r-xs 00000000 03:08 411178     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-mdr.jar
+b13f6000-b13fc000 r-xp 00000000 03:08 962983     /root/jdk1.5.0_09/jre/lib/i386/libnio.so
+b13fc000-b13fd000 rwxp 00005000 03:08 962983     /root/jdk1.5.0_09/jre/lib/i386/libnio.so
+b13fd000-b142b000 r-xp 00000000 03:08 962994     /root/jdk1.5.0_09/jre/lib/i386/xawt/libmawt.so
+b142b000-b142e000 rwxp 0002e000 03:08 962994     /root/jdk1.5.0_09/jre/lib/i386/xawt/libmawt.so
+b142e000-b142f000 rwxp b142e000 00:00 0 
+b142f000-b14f5000 r-xp 00000000 03:08 962989     /root/jdk1.5.0_09/jre/lib/i386/libmlib_image.so
+b14f5000-b14f6000 rwxp 000c5000 03:08 962989     /root/jdk1.5.0_09/jre/lib/i386/libmlib_image.so
+b14f6000-b1556000 r-xp 00000000 03:08 962990     /root/jdk1.5.0_09/jre/lib/i386/libawt.so
+b1556000-b155c000 rwxp 0005f000 03:08 962990     /root/jdk1.5.0_09/jre/lib/i386/libawt.so
+b155c000-b1580000 rwxp b155c000 00:00 0 
+b1580000-b1583000 ---p b1580000 00:00 0 
+b1583000-b1601000 rwxp b1583000 00:00 0 
+b1601000-b1604000 rwxp b1601000 00:00 0 
+b1604000-b1682000 rwxp b1604000 00:00 0 
+b1682000-b1693000 r-xp 00000000 03:08 962982     /root/jdk1.5.0_09/jre/lib/i386/libnet.so
+b1693000-b1694000 rwxp 00011000 03:08 962982     /root/jdk1.5.0_09/jre/lib/i386/libnet.so
+b1694000-b1697000 ---p b1694000 00:00 0 
+b1697000-b1715000 rwxp b1697000 00:00 0 
+b1715000-b1dcb000 r-xs 00000000 03:08 962940     /root/jdk1.5.0_09/lib/tools.jar
+b1dcb000-b1dee000 r-xs 00000000 03:08 963638     /root/jdk1.5.0_09/lib/dt.jar
+b1dee000-b1df1000 ---p b1dee000 00:00 0 
+b1df1000-b1e6f000 rwxp b1df1000 00:00 0 
+b1e6f000-b1ee7000 r-xs 00000000 03:08 411404     /opt/netbeans-5.5/platform6/lib/org-openide-util.jar
+b1ee7000-b1eed000 r-xs 00000000 03:08 411403     /opt/netbeans-5.5/platform6/lib/org-openide-modules.jar
+b1eed000-b1eef000 r-xs 00000000 03:08 410889     /opt/netbeans-5.5/ide7/core/org-netbeans-modules-utilities-cli.jar
+b1eef000-b1f07000 r-xs 00000000 03:08 411224     /opt/netbeans-5.5/nb5.5/core/locale/core_nb.jar
+b1f07000-b1f28000 r-xs 00000000 03:08 382002     /opt/netbeans-5.5/nb5.5/core/org-netbeans-upgrader.jar
+b1f28000-b1f90000 r-xs 00000000 03:08 411444     /opt/netbeans-5.5/platform6/core/org-openide-filesystems.jar
+b1f90000-b200d000 r-xs 00000000 03:08 411405     /opt/netbeans-5.5/platform6/core/core.jar
+b200d000-b203d000 r-xs 00000000 03:08 411391     /opt/netbeans-5.5/platform6/lib/boot.jar
+b203d000-b2101000 r-xs 00000000 03:08 963613     /root/jdk1.5.0_09/jre/lib/ext/localedata.jar
+b2101000-b212c000 r-xs 00000000 03:08 963017     /root/jdk1.5.0_09/jre/lib/ext/sunpkcs11.jar
+b212c000-b2153000 r-xs 00000000 03:08 963016     /root/jdk1.5.0_09/jre/lib/ext/sunjce_provider.jar
+b2153000-b2154000 ---p b2153000 00:00 0 
+b2154000-b21d4000 rwxp b2154000 00:00 0 
+b21d4000-b21d7000 ---p b21d4000 00:00 0 
+b21d7000-b2255000 rwxp b21d7000 00:00 0 
+b2255000-b2258000 ---p b2255000 00:00 0 
+b2258000-b22d6000 rwxp b2258000 00:00 0 
+b22d6000-b22d9000 ---p b22d6000 00:00 0 
+b22d9000-b2357000 rwxp b22d9000 00:00 0 
+b2357000-b2392000 r-xp 00000000 03:08 1142515    /usr/lib/locale/fr_CA.utf8/LC_CTYPE
+b2392000-b2395000 ---p b2392000 00:00 0 
+b2395000-b2413000 rwxp b2395000 00:00 0 
+b2413000-b2416000 ---p b2413000 00:00 0 
+b2416000-b2494000 rwxp b2416000 00:00 0 
+b2494000-b2495000 ---p b2494000 00:00 0 
+b2495000-b252d000 rwxp b2495000 00:00 0 
+b252d000-b256d000 rwxp b252d000 00:00 0 
+b256d000-b257c000 rwxp b256d000 00:00 0 
+b257c000-b25a9000 rwxp b257c000 00:00 0 
+b25a9000-b25ab000 rwxp b25a9000 00:00 0 
+b25ab000-b25ad000 rwxp b25ab000 00:00 0 
+b25ad000-b25bd000 rwxp b25ad000 00:00 0 
+b25bd000-b25e9000 rwxp b25bd000 00:00 0 
+b25e9000-b25f9000 rwxp b25e9000 00:00 0 
+b25f9000-b2639000 rwxp b25f9000 00:00 0 
+b2639000-b2658000 rwxp b2639000 00:00 0 
+b2658000-b26c4000 rwxp b2658000 00:00 0 
+b26c4000-b2bac000 rwxp b26c4000 00:00 0 
+b2bac000-b46c4000 rwxp b2bac000 00:00 0 
+b46c4000-b4f34000 r-xs 00000000 03:08 963556     /root/jdk1.5.0_09/jre/lib/charsets.jar
+b4f34000-b4f49000 r-xs 00000000 03:08 963020     /root/jdk1.5.0_09/jre/lib/jce.jar
+b4f49000-b4fce000 r-xs 00000000 03:08 962938     /root/jdk1.5.0_09/jre/lib/jsse.jar
+b4fce000-b5037000 rwxp b4fce000 00:00 0 
+b5037000-b764d000 r-xs 00000000 03:08 963635     /root/jdk1.5.0_09/jre/lib/rt.jar
+b764d000-b765c000 r-xp 00000000 03:08 962979     /root/jdk1.5.0_09/jre/lib/i386/libzip.so
+b765c000-b765e000 rwxp 0000e000 03:08 962979     /root/jdk1.5.0_09/jre/lib/i386/libzip.so
+b765e000-b767f000 r-xp 00000000 03:08 962977     /root/jdk1.5.0_09/jre/lib/i386/libjava.so
+b767f000-b7681000 rwxp 00020000 03:08 962977     /root/jdk1.5.0_09/jre/lib/i386/libjava.so
+b7681000-b768c000 r-xp 00000000 03:08 962976     /root/jdk1.5.0_09/jre/lib/i386/libverify.so
+b768c000-b768d000 rwxp 0000b000 03:08 962976     /root/jdk1.5.0_09/jre/lib/i386/libverify.so
+b768d000-b7696000 r-xp 00000000 03:08 98126      /lib/tls/i686/cmov/libnss_files-2.3.6.so
+b7696000-b7697000 rwxp 00008000 03:08 98126      /lib/tls/i686/cmov/libnss_files-2.3.6.so
+b7697000-b769f000 r-xp 00000000 03:08 98130      /lib/tls/i686/cmov/libnss_nis-2.3.6.so
+b769f000-b76a0000 rwxp 00007000 03:08 98130      /lib/tls/i686/cmov/libnss_nis-2.3.6.so
+b76a0000-b76a8000 r-xp 00000000 03:08 98123      /lib/tls/i686/cmov/libnss_compat-2.3.6.so
+b76a8000-b76a9000 rwxp 00007000 03:08 98123      /lib/tls/i686/cmov/libnss_compat-2.3.6.so
+b76a9000-b76bb000 r-xp 00000000 03:08 98122      /lib/tls/i686/cmov/libnsl-2.3.6.so
+b76bb000-b76bc000 rwxp 00012000 03:08 98122      /lib/tls/i686/cmov/libnsl-2.3.6.so
+b76bc000-b76c3000 rwxp b76bc000 00:00 0 
+b76c3000-b76cb000 rwxs 00000000 03:08 669263     /tmp/hsperfdata_root/20778
+b76cb000-b76ec000 r-xp 00000000 03:08 98120      /lib/tls/i686/cmov/libm-2.3.6.so
+b76ec000-b76ed000 rwxp 00020000 03:08 98120      /lib/tls/i686/cmov/libm-2.3.6.so
+b76ed000-b7a59000 r-xp 00000000 03:08 962970     /root/jdk1.5.0_09/jre/lib/i386/client/libjvm.so
+b7a59000-b7a78000 rwxp 0036b000 03:08 962970     /root/jdk1.5.0_09/jre/lib/i386/client/libjvm.so
+b7a78000-b7e8f000 rwxp b7a78000 00:00 0 
+b7e8f000-b7fb4000 r-xp 00000000 03:08 98116      /lib/tls/i686/cmov/libc-2.3.6.so
+b7fb4000-b7fbb000 rwxp 00125000 03:08 98116      /lib/tls/i686/cmov/libc-2.3.6.so
+b7fbb000-b7fbe000 rwxp b7fbb000 00:00 0 
+b7fbe000-b7fc0000 r-xp 00000000 03:08 98119      /lib/tls/i686/cmov/libdl-2.3.6.so
+b7fc0000-b7fc1000 rwxp 00001000 03:08 98119      /lib/tls/i686/cmov/libdl-2.3.6.so
+b7fc1000-b7fd0000 r-xp 00000000 03:08 98134      /lib/tls/i686/cmov/libpthread-2.3.6.so
+b7fd0000-b7fd1000 rwxp 0000e000 03:08 98134      /lib/tls/i686/cmov/libpthread-2.3.6.so
+b7fd1000-b7fd3000 rwxp b7fd1000 00:00 0 
+b7fd3000-b7fd5000 r-xs 00000000 03:08 411145     /opt/netbeans-5.5/ide7/modules/org-netbeans-modules-editor-plain-lib.jar
+b7fd5000-b7fd7000 r-xs 00000000 03:08 963018     /root/jdk1.5.0_09/jre/lib/ext/dnsns.jar
+b7fd7000-b7fdd000 r-xp 00000000 03:08 962964     /root/jdk1.5.0_09/jre/lib/i386/native_threads/libhpi.so
+b7fdd000-b7fde000 rwxp 00006000 03:08 962964     /root/jdk1.5.0_09/jre/lib/i386/native_threads/libhpi.so
+b7fde000-b7fdf000 rwxp b7fde000 00:00 0 
+b7fdf000-b7fe0000 ---p b7fdf000 00:00 0 
+b7fe0000-b7fe3000 rwxp b7fe0000 00:00 0 
+b7fe3000-b7ff8000 r-xp 00000000 03:08 97936      /lib/ld-2.3.6.so
+b7ff8000-b7ff9000 rwxp 00014000 03:08 97936      /lib/ld-2.3.6.so
+bfa25000-bfa28000 ---p bfa25000 00:00 0 
+bfa28000-bfc25000 rwxp bfa28000 00:00 0          [stack]
+ffffe000-fffff000 ---p 00000000 00:00 0          [vdso]
+
+VM Arguments:
+jvm_args: -Djdk.home=/root/jdk1.5.0_09 -Dnetbeans.osenv=/tmp/nbenv.20741 -Dnetbeans.osenv.nullsep=true -Dnetbeans.system_http_proxy=DIRECT -Dnetbeans.system_http_non_proxy_hosts= -Dnetbeans.dirs=/opt/netbeans-5.5/bin/../nb5.5:/opt/netbeans-5.5/bin/../ide7:/opt/netbeans-5.5/bin/../enterprise3:/opt/netbeans-5.5/bin/../harness:/opt/netbeans-5.5/bin/../cnd1: -Dnetbeans.home=/opt/netbeans-5.5/platform6 -Dnetbeans.importclass=org.netbeans.upgrade.AutoUpgrade -Dnetbeans.accept_license_class=org.netbeans.license.AcceptLicense -Xms32m -Xmx128m -XX:PermSize=32m -XX:MaxPermSize=160m -Xverify:none -Dapple.laf.useScreenMenuBar=true
+java_command: org.netbeans.Main --userdir /home/jov/.netbeans/5.5 --branding nb
+Launcher Type: SUN_STANDARD
+
+Environment Variables:
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/X11R6/bin
+USERNAME=jov
+LD_LIBRARY_PATH=/root/jdk1.5.0_09/jre/lib/i386/client:/root/jdk1.5.0_09/jre/lib/i386:/root/jdk1.5.0_09/jre/../lib/i386
+SHELL=/bin/bash
+DISPLAY=:0.0
+
+Signal Handlers:
+SIGSEGV: [libjvm.so+0x325bd0], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGBUS: [libjvm.so+0x325bd0], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGFPE: [libjvm.so+0x28a010], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGPIPE: [libjvm.so+0x28a010], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGILL: [libjvm.so+0x28a010], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGUSR1: SIG_DFL, sa_mask[0]=0x00000000, sa_flags=0x00000000
+SIGUSR2: [libjvm.so+0x28c460], sa_mask[0]=0x00000000, sa_flags=0x10000004
+SIGHUP: [libjvm.so+0x28be90], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGINT: [libjvm.so+0x28be90], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGQUIT: [libjvm.so+0x28be90], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+SIGTERM: [libjvm.so+0x28be90], sa_mask[0]=0x7ffbfeff, sa_flags=0x10000004
+
+
+---------------  S Y S T E M  ---------------
+
+OS:testing/unstable
+
+uname:Linux 2.6.17-lttng-0.6.0 #3 PREEMPT Tue Nov 14 19:33:01 EST 2006 i686
+libc:glibc 2.3.6 NPTL 2.3.6 
+rlimit: STACK 8192k, CORE 0k, NPROC infinity, NOFILE 1024, AS infinity
+load average:1.08 1.04 0.90
+
+CPU:total 1 (cores per cpu 1, threads per core 1) family 6 model 8 stepping 6, cmov, cx8, fxsr, mmx, sse
+
+Memory: 4k page, physical 255820k(4344k free), swap 265032k(8k free)
+
+vm_info: Java HotSpot(TM) Client VM (1.5.0_09-b03) for linux-x86, built on Oct 12 2006 10:54:08 by java_re with gcc 3.2.1-7a (J2SE release)
+

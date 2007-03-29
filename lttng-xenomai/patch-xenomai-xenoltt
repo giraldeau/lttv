@@ -1,0 +1,615 @@
+diff -Naur xenomai-2.2.3/config.log xenomai-2.2.3-good/config.log
+--- xenomai-2.2.3/config.log	2006-12-07 17:17:36.000000000 -0500
++++ xenomai-2.2.3-good/config.log	2006-12-07 11:09:13.000000000 -0500
+@@ -954,6 +954,7 @@
+ config.status:894: creating doc/docbook/custom-stylesheets/xsl/html/onechunk.xsl
+ config.status:894: creating doc/docbook/xenomai/Makefile
+ config.status:960: creating src/include/xeno_config.h
++config.status:1092: src/include/xeno_config.h is unchanged
+ config.status:1171: linking ./include/asm-i386 to src/include/asm/xenomai
+ config.status:1171: linking ./include/asm-generic to src/include/asm-generic/xenomai
+ config.status:1408: executing depfiles commands
+diff -Naur xenomai-2.2.3/include/nucleus/ltt.h xenomai-2.2.3-good/include/nucleus/ltt.h
+--- xenomai-2.2.3/include/nucleus/ltt.h	2006-07-18 09:18:51.000000000 -0400
++++ xenomai-2.2.3-good/include/nucleus/ltt.h	2006-11-14 10:01:40.000000000 -0500
+@@ -96,11 +96,13 @@
+ 
+ extern int xnltt_filter;
+ 
+-#define xnltt_log_event(ev, args...) \
++#define xnltt_log_event(ev, args...) ;
++/*
+ do { \
+   if (xnltt_evtable[ev].ltt_filter & xnltt_filter) \
+     ltt_log_std_formatted_event(xnltt_evtable[ev].ltt_evid, ##args); \
+ } while(0)
++*/
+ 
+ static inline void xnltt_set_filter (int mask)
+ {
+diff -Naur xenomai-2.2.3/include/nucleus/synch.h xenomai-2.2.3-good/include/nucleus/synch.h
+--- xenomai-2.2.3/include/nucleus/synch.h	2006-08-13 15:42:27.000000000 -0400
++++ xenomai-2.2.3-good/include/nucleus/synch.h	2006-11-14 10:01:40.000000000 -0500
+@@ -17,6 +17,12 @@
+  * 02111-1307, USA.
+  */
+ 
++/****************************************************
++ * JOV - XenoLTT - 2006-10-24
++ * To enable LTTng tracing functions on Xenomai synch
++ ****************************************************/
++#include <linux/ltt/ltt-facility-xenoltt.h>
++
+ #ifndef _XENO_NUCLEUS_SYNCH_H
+ #define _XENO_NUCLEUS_SYNCH_H
+ 
+@@ -89,6 +95,12 @@
+ 
+ static inline void xnsynch_set_owner (xnsynch_t *synch, struct xnthread *thread)
+ {
++/**************************************************************
++ * JOV - XenoLTT - 2006-10-24
++ * Here we place the tracing call for the set owner function
++ * Args: synch object, thread
++ **************************************************************/
++    trace_xenoltt_xeno_synch_set_owner(thread,synch);
+     synch->owner = thread;
+ }
+ 
+diff -Naur xenomai-2.2.3/ksrc/nucleus/intr.c xenomai-2.2.3-good/ksrc/nucleus/intr.c
+--- xenomai-2.2.3/ksrc/nucleus/intr.c	2006-07-18 09:19:03.000000000 -0400
++++ xenomai-2.2.3-good/ksrc/nucleus/intr.c	2006-11-14 10:01:18.000000000 -0500
+@@ -389,7 +389,7 @@
+ 	xnarch_memory_barrier();
+ 
+ 	xnltt_log_event(xeno_ev_ienter, irq);
+-
++        
+ 	++sched->inesting;
+ 	s = intr->isr(intr);
+ 	++intr->hits;
+@@ -476,7 +476,7 @@
+ 	xnarch_memory_barrier();
+ 
+ 	xnltt_log_event(xeno_ev_ienter, irq);
+-
++        
+ 	++sched->inesting;
+ 
+ 	xnintr_shirq_lock(shirq);
+@@ -521,7 +521,7 @@
+ 	xnarch_memory_barrier();
+ 
+ 	xnltt_log_event(xeno_ev_ienter, irq);
+-
++        
+ 	++sched->inesting;
+ 
+ 	xnintr_shirq_lock(shirq);
+diff -Naur xenomai-2.2.3/ksrc/nucleus/ltt.c xenomai-2.2.3-good/ksrc/nucleus/ltt.c
+--- xenomai-2.2.3/ksrc/nucleus/ltt.c	2006-07-18 09:19:03.000000000 -0400
++++ xenomai-2.2.3-good/ksrc/nucleus/ltt.c	2006-11-14 10:01:18.000000000 -0500
+@@ -34,8 +34,7 @@
+ 		va_start(ap, fmt);
+ 		vsnprintf(markbuf, sizeof(markbuf), fmt, ap);
+ 		va_end(ap);
+-		ltt_log_std_formatted_event(xnltt_evtable[xeno_ev_mark].
+-					    ltt_evid, markbuf);
++//		ltt_log_std_formatted_event(xnltt_evtable[xeno_ev_mark]. ltt_evid, markbuf);
+ 	}
+ }
+ 
+@@ -46,13 +45,15 @@
+ 	/* Create all custom LTT events we need. */
+ 
+ 	for (ev = 0; xnltt_evtable[ev].ltt_label != NULL; ev++) {
++/*
+ 		evid = ltt_create_event(xnltt_evtable[ev].ltt_label,
+ 					xnltt_evtable[ev].ltt_format,
+ 					LTT_CUSTOM_EV_FORMAT_TYPE_STR, NULL);
++*/
+ 		if (evid < 0) {
+ 			while (--ev >= 0) {
+ 				xnltt_evtable[ev].ltt_evid = -1;
+-				ltt_destroy_event(xnltt_evtable[ev].ltt_evid);
++//				ltt_destroy_event(xnltt_evtable[ev].ltt_evid);
+ 			}
+ 
+ 			return evid;
+@@ -81,9 +82,10 @@
+ void __exit xnltt_umount(void)
+ {
+ 	int ev;
+-
++/*
+ 	for (ev = 0; xnltt_evtable[ev].ltt_evid != -1; ev++)
+ 		ltt_destroy_event(xnltt_evtable[ev].ltt_evid);
++*/
+ }
+ 
+ struct xnltt_evmap xnltt_evtable[] = {
+diff -Naur xenomai-2.2.3/ksrc/nucleus/pod.c xenomai-2.2.3-good/ksrc/nucleus/pod.c
+--- xenomai-2.2.3/ksrc/nucleus/pod.c	2006-09-03 09:45:41.000000000 -0400
++++ xenomai-2.2.3-good/ksrc/nucleus/pod.c	2006-12-08 09:03:25.000000000 -0500
+@@ -44,6 +44,12 @@
+ #include <nucleus/module.h>
+ #include <nucleus/ltt.h>
+ 
++/****************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * To enable LTTng tracing functions on Xenomai task
++ ****************************************************/
++#include <linux/ltt/ltt-facility-xenoltt.h>
++
+ /* NOTE: We need to initialize the globals: remember that this code
+    also runs over user-space VMs... */
+ 
+@@ -227,6 +233,7 @@
+ void xnpod_schedule_handler(void)
+ {
+ 	xnltt_log_event(xeno_ev_smpsched);
++        
+ 	xnsched_set_resched(xnpod_current_sched());
+ 	xnpod_schedule();
+ }
+@@ -814,6 +821,13 @@
+ 		return err;
+ 
+ 	xnltt_log_event(xeno_ev_thrinit, thread->name, flags);
++  
++/*************************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * Here we place the tracing call for the thread init function
++ * Args: Name, address, flags, priority
++ *************************************************************/
++        trace_xenoltt_xeno_thread_init(thread->name,thread,flags,prio);
+ 
+ 	xnlock_get_irqsave(&nklock, s);
+ 	thread->sched = xnpod_current_sched();
+@@ -947,6 +961,13 @@
+ 
+ 	xnltt_log_event(xeno_ev_thrstart, thread->name);
+ 
++/**************************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * Here we place the tracing call for the thread start function
++ * Args: Name, address
++ **************************************************************/
++	trace_xenoltt_xeno_thread_start(thread->name,thread);
++
+ #if defined(__KERNEL__) && defined(CONFIG_XENO_OPT_PERVASIVE)
+ 	if (testbits(thread->status, XNSHADOW)) {
+ 		xnlock_put_irqrestore(&nklock, s);
+@@ -1027,7 +1048,14 @@
+ 	xnlock_get_irqsave(&nklock, s);
+ 
+ 	xnltt_log_event(xeno_ev_threstart, thread->name);
++/***************************************************************
++ * JOV - XenoLTT - 2006-10-05
++ * Here we place the tracing call for the thread restart function
++ * Args: Name, address
++ ***************************************************************/
++	trace_xenoltt_xeno_thread_restart(thread->name,thread);
+ 
++        
+ 	/* Break the thread out of any wait it is currently in. */
+ 	xnpod_unblock_thread(thread);
+ 
+@@ -1226,6 +1254,14 @@
+ 
+ 	xnltt_log_event(xeno_ev_thrdelete, thread->name);
+ 
++/***************************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * Here we place the tracing call for the thread delete function
++ * Args: Name, address
++ ***************************************************************/
++	trace_xenoltt_xeno_thread_delete(thread->name,thread);
++
++
+ 	sched = thread->sched;
+ 
+ 	removeq(&nkpod->threadq, &thread->glink);
+@@ -1375,6 +1411,14 @@
+ 
+ 	xnltt_log_event(xeno_ev_thrsuspend, thread->name, mask, timeout, wchan);
+ 
++/****************************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * Here we place the tracing call for the thread suspend function
++ * Args: Name, address, address of a pended resource
++ ****************************************************************/
++	trace_xenoltt_xeno_thread_suspend(thread->name,thread,mask,timeout,wchan);
++
++
+ 	sched = thread->sched;
+ 
+ 	if (thread == sched->runthread) {
+@@ -1552,6 +1596,14 @@
+ 	xnlock_get_irqsave(&nklock, s);
+ 
+ 	xnltt_log_event(xeno_ev_thresume, thread->name, mask);
++	
++/***************************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * Here we place the tracing call for the thread resume function
++ * Args: Name, address, start time, period
++ ***************************************************************/
++	trace_xenoltt_xeno_thread_resume(thread->name,thread,mask);
++
+ 	xnarch_trace_pid(xnthread_user_task(thread) ?
+ 			 xnarch_user_pid(xnthread_archtcb(thread)) : -1,
+ 			 xnthread_current_priority(thread));
+@@ -1701,6 +1753,12 @@
+ 	xnlock_get_irqsave(&nklock, s);
+ 
+ 	xnltt_log_event(xeno_ev_thrunblock, thread->name, thread->status);
++/***************************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * Here we place the tracing call for the thread unblock function
++ * Args: Name, address, start time, period
++ ***************************************************************/
++	trace_xenoltt_xeno_thread_unblock(thread->name,thread,thread->status);
+ 
+ 	if (testbits(thread->status, XNDELAY))
+ 		xnpod_resume_thread(thread, XNDELAY);
+@@ -1785,6 +1843,13 @@
+ 
+ 	xnltt_log_event(xeno_ev_threnice, thread->name, prio);
+ 
++/***************************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * Here we place the tracing call for the thread renice function
++ * Args: Name, address, priority
++ ***************************************************************/
++	trace_xenoltt_xeno_thread_renice(thread->name,thread,prio);
++		
+ 	oldprio = thread->cprio;
+ 
+ 	/* Change the thread priority, taking in account an undergoing PIP
+@@ -2316,11 +2381,11 @@
+ #ifdef CONFIG_XENO_OPT_PERVASIVE
+ 	int shadow;
+ #endif /* CONFIG_XENO_OPT_PERVASIVE */
+-
+ 	if (xnarch_escalate())
+ 		return;
+ 
+ 	xnltt_log_event(xeno_ev_resched);
++        
+ #endif /* __KERNEL__ */
+ 
+ 	/* No immediate rescheduling is possible if an ISR or callout
+@@ -2419,6 +2484,13 @@
+ 
+ 	xnltt_log_event(xeno_ev_switch, threadout->name, threadin->name);
+ 
++/**************************************************************
++ * JOV - XenoLTT - 2006-11-09
++ * Here we place the tracing call for the thread switch fonction
++ * Args: Name, address, thread out name, address
++ **************************************************************/
++        trace_xenoltt_xeno_thread_switch(threadin->name,threadin,threadout->name,threadout);        
++        
+ #if defined(__KERNEL__) && defined(CONFIG_XENO_OPT_PERVASIVE)
+ 	shadow = testbits(threadout->status, XNSHADOW);
+ #endif /* __KERNEL__ && CONFIG_XENO_OPT_PERVASIVE */
+@@ -2526,6 +2598,7 @@
+ 	xnthread_t *runthread = sched->runthread, *threadin;
+ 
+ 	xnltt_log_event(xeno_ev_fastsched);
++        
+ 	xnarch_trace_pid(xnthread_user_task(runthread) ?
+ 			 xnarch_user_pid(xnthread_archtcb(runthread)) : -1,
+ 			 xnthread_current_priority(runthread));
+@@ -3245,7 +3318,7 @@
+ 	xnlock_get(&nklock);
+ 
+ 	xnltt_log_event(xeno_ev_tmtick, xnpod_current_thread()->name);
+-
++        
+ #ifdef CONFIG_XENO_OPT_WATCHDOG
+ 	if (xnarch_get_cpu_tsc() >= sched->watchdog_trigger) {
+ 		if (!xnpod_root_p() && sched->watchdog_armed) {
+@@ -3371,6 +3444,13 @@
+ 
+ 	xnltt_log_event(xeno_ev_thrperiodic, thread->name, idate, period);
+ 
++/**************************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * Here we place the tracing call for the set periodic function
++ * Args: Name, address, start time, period
++ **************************************************************/
++	trace_xenoltt_xeno_thread_set_period(thread->name,thread,idate,period,&thread->ptimer);
++
+ 	if (period == XN_INFINITE) {
+ 		if (xntimer_running_p(&thread->ptimer))
+ 			xntimer_stop(&thread->ptimer);
+@@ -3392,6 +3472,7 @@
+ 			thread->pexpect =
+ 			    xntimer_get_raw_expiry(&thread->ptimer)
+ 			    + xntimer_interval(&thread->ptimer);
++                        
+ 			xnpod_suspend_thread(thread, XNDELAY, XN_INFINITE,
+ 					     NULL);
+ 		} else
+@@ -3466,6 +3547,13 @@
+ 
+ 	xnltt_log_event(xeno_ev_thrwait, thread->name);
+ 
++/**************************************************************
++ * JOV - XenoLTT - 2006-09-25
++ * Here we place the tracing call for the wait perdiod function
++ * Args: Name, address
++ **************************************************************/
++	trace_xenoltt_xeno_thread_wait_period(thread->name,thread);
++
+ 	now = xntimer_get_rawclock();	/* Work with either TSC or periodic ticks. */
+ 
+ 	if (likely(now < thread->pexpect)) {
+@@ -3500,7 +3588,13 @@
+ #endif /* BITS_PER_LONG < 64 */
+ 		thread->pexpect += period * overruns;
+ 		err = -ETIMEDOUT;
+-	}
++/**************************************************************
++ * JOV - XenoLTT - 2006-10-16
++ * Here we place the tracing call for the event of period exceed
++ * Args: Name, address, number of periods exceeded
++ **************************************************************/
++                trace_xenoltt_xeno_thread_missed_period(thread->name,thread,overruns);
++        }
+ 
+ 	thread->pexpect += period;
+ 
+diff -Naur xenomai-2.2.3/ksrc/nucleus/synch.c xenomai-2.2.3-good/ksrc/nucleus/synch.c
+--- xenomai-2.2.3/ksrc/nucleus/synch.c	2006-09-03 12:44:10.000000000 -0400
++++ xenomai-2.2.3-good/ksrc/nucleus/synch.c	2006-11-14 10:01:18.000000000 -0500
+@@ -37,6 +37,11 @@
+ #include <nucleus/module.h>
+ #include <nucleus/ltt.h>
+ 
++/****************************************************
++ * JOV - XenoLTT - 2006-10-17
++ * To enable LTTng tracing functions on Xenomai synch
++ ****************************************************/
++#include <linux/ltt/ltt-facility-xenoltt.h>
+ /*! 
+  * \fn void xnsynch_init(xnsynch_t *synch, xnflags_t flags);
+  * \brief Initialize a synchronization object.
+@@ -89,6 +94,7 @@
+ {
+ 	initph(&synch->link);
+ 
++               
+ 	if (flags & XNSYNCH_PIP)
+ 		flags |= XNSYNCH_PRIO;	/* Obviously... */
+ 
+@@ -109,7 +115,13 @@
+ 
+ static inline void xnsynch_renice_thread(xnthread_t *thread, int prio)
+ {
+-	thread->cprio = prio;
++/**************************************************************
++ * JOV - XenoLTT - 2006-10-24
++ * Here we place the tracing call for the set renice function
++ * Args: thread, priority
++ **************************************************************/
++        trace_xenoltt_xeno_synch_renice_thread(thread->name,thread,prio);
++        thread->cprio = prio;
+ 
+ 	if (thread->wchan)
+ 		/* Ignoring the XNSYNCH_DREORD flag on purpose here. */
+@@ -168,6 +180,12 @@
+ 	xnlock_get_irqsave(&nklock, s);
+ 
+ 	xnltt_log_event(xeno_ev_sleepon, thread->name, synch);
++/**************************************************************
++ * JOV - XenoLTT - 2006-10-17
++ * Here we place the tracing call for the sleepon synch function
++ * Args: Name, address, synch
++ **************************************************************/
++        trace_xenoltt_xeno_synch_sleepon(thread->name,thread,synch);
+ 
+ 	if (!testbits(synch->status, XNSYNCH_PRIO)) { /* i.e. FIFO */
+ 		appendpq(&synch->pendq, &thread->plink);
+@@ -373,7 +391,14 @@
+ 
+ 	xnlock_get_irqsave(&nklock, s);
+ 
+-	holder = getpq(&synch->pendq);
++/**************************************************************
++ * JOV - XenoLTT - 2006-10-30
++ * Here we place the tracing call for the unblock function
++ * Args: Last Owner Name, address, synch
++ **************************************************************/
++        trace_xenoltt_xeno_synch_unlock(lastowner->name,lastowner,synch);
++
++        holder = getpq(&synch->pendq);
+ 
+ 	if (holder) {
+ 		thread = link2thread(holder, plink);
+@@ -381,7 +406,14 @@
+ 		synch->owner = thread;
+ 		__setbits(thread->status, XNWAKEN);
+ 		xnltt_log_event(xeno_ev_wakeup1, thread->name, synch);
+-		xnpod_resume_thread(thread, XNPEND);
++/**************************************************************
++ * JOV - XenoLTT - 2006-10-17
++ * Here we place the tracing call for the wakeup synch function
++ * Args: Name, address, synch
++ **************************************************************/
++                trace_xenoltt_xeno_synch_wakeup1(thread->name,thread,synch);
++
++                xnpod_resume_thread(thread, XNPEND);
+ 	} else
+ 		synch->owner = NULL;
+ 
+@@ -452,7 +484,14 @@
+ 	synch->owner = thread;
+ 	__setbits(thread->status, XNWAKEN);
+ 	xnltt_log_event(xeno_ev_wakeupx, thread->name, synch);
+-	xnpod_resume_thread(thread, XNPEND);
++/**************************************************************
++ * JOV - XenoLTT - 2006-10-17
++ * Here we place the tracing call for the wakeup synch function
++ * Args: Name, address, synch
++ **************************************************************/
++        trace_xenoltt_xeno_synch_wakeupx(thread->name,thread,synch);
++
++        xnpod_resume_thread(thread, XNPEND);
+ 
+ 	if (testbits(synch->status, XNSYNCH_CLAIMED))
+ 		xnsynch_clear_boost(synch, lastowner);
+@@ -522,6 +561,12 @@
+ 	xnlock_get_irqsave(&nklock, s);
+ 
+ 	xnltt_log_event(xeno_ev_syncflush, synch, reason);
++/**************************************************************
++ * JOV - XenoLTT - 2006-10-17
++ * Here we place the tracing call for the wakeup synch function
++ * Args: Name, address, synch
++ **************************************************************/
++        trace_xenoltt_xeno_synch_syncflush(synch,reason);
+ 
+ 	status = emptypq_p(&synch->pendq) ? XNSYNCH_DONE : XNSYNCH_RESCHED;
+ 
+@@ -568,7 +613,13 @@
+ 	xnsynch_t *synch = thread->wchan;
+ 
+ 	xnltt_log_event(xeno_ev_syncforget, thread->name, synch);
+-
++/**************************************************************
++ * JOV - XenoLTT - 2006-10-17
++ * Here we place the tracing call for the forget synch call
++ * Args: Name, address, synch
++ **************************************************************/
++        trace_xenoltt_xeno_synch_syncforget(thread->name, thread, synch);
++        
+ 	__clrbits(thread->status, XNPEND);
+ 	thread->wchan = NULL;
+ 	removepq(&synch->pendq, &thread->plink);
+diff -Naur xenomai-2.2.3/ksrc/nucleus/timer.c xenomai-2.2.3-good/ksrc/nucleus/timer.c
+--- xenomai-2.2.3/ksrc/nucleus/timer.c	2006-08-27 06:45:08.000000000 -0400
++++ xenomai-2.2.3-good/ksrc/nucleus/timer.c	2006-11-14 10:01:18.000000000 -0500
+@@ -48,6 +48,12 @@
+ #include <nucleus/thread.h>
+ #include <nucleus/timer.h>
+ 
++/****************************************************
++ * JOV - XenoLTT - 2006-10-18
++ * To enable LTTng tracing functions on Xenomai task
++ ****************************************************/
++#include <linux/ltt/ltt-facility-xenoltt.h>
++
+ static inline void xntimer_enqueue_aperiodic(xntimer_t *timer)
+ {
+ 	xntimerq_t *q = &timer->sched->timerqueue;
+@@ -202,22 +208,30 @@
+ 	xnsched_t *sched = xnpod_current_sched();
+ 	xntimerq_t *timerq = &sched->timerqueue;
+ 	xntimerh_t *holder;
+-	xntimer_t *timer;
+-
++	xntimer_t *timer;         
++        
+ 	while ((holder = xntimerq_head(timerq)) != NULL) {
+ 		timer = aplink2timer(holder);
+ 
+ 		if (xntimerh_date(&timer->aplink) - nkschedlat >
+-		    xnarch_get_cpu_tsc())
++		    xnarch_get_cpu_tsc()) 
+ 			/* No need to continue in aperiodic mode since timeout
+ 			   dates are ordered by increasing values. */
+ 			break;
++                
+ 
+ 		xntimer_dequeue_aperiodic(timer);
+ 
+ 		if (timer != &nkpod->htimer) {
+ 			if (!testbits(nkpod->status, XNTLOCK)) {
+-				timer->handler(timer->cookie);
++                     /**************************************************************
++                      * JOV - XenoLTT - 2006-10-18
++                      * Here we place the tracing call for the current thread timer tick
++                      * Args: Name, Address
++                      **************************************************************/
++                      trace_xenoltt_xeno_timer_tick("1",holder);
++
++                                timer->handler(timer->cookie);
+ 
+ 				if (timer->interval == XN_INFINITE ||
+ 				    !testbits(timer->status, XNTIMER_DEQUEUED)
+@@ -234,12 +248,13 @@
+ 				    nkpod->htimer.interval;
+ 				continue;
+ 			}
++                                              
+ 		} else
+-			/* By postponing the propagation of the low-priority host
++                        /* By postponing the propagation of the low-priority host
+ 			   tick to the interrupt epilogue (see
+ 			   xnintr_irq_handler()), we save some I-cache, which
+ 			   translates into precious microsecs on low-end hw. */
+-			__setbits(sched->status, XNHTICK);
++                        __setbits(sched->status, XNHTICK);
+ 
+ 		xntimerh_date(&timer->aplink) += timer->interval;
+ 		xntimer_enqueue_aperiodic(timer);
+@@ -379,7 +394,8 @@
+ 	xntlholder_t *holder;
+ 	xnqueue_t *timerq;
+ 	xntimer_t *timer;
+-
++       
++        
+ 	/* Update the periodic clocks keeping the things strictly
+ 	   monotonous (this routine is run on every cpu, but only CPU
+ 	   XNTIMER_KEEPER_ID should do this). */
+@@ -389,7 +405,7 @@
+ 	timerq = &sched->timerwheel[nkpod->jiffies & XNTIMER_WHEELMASK];
+ 
+ 	while ((holder = xntlist_head(timerq)) != NULL) {
+-		timer = plink2timer(holder);
++		timer = plink2timer(holder);        
+ 
+ 		if (xntlholder_date(&timer->plink) > nkpod->jiffies)
+ 			break;
+@@ -398,7 +414,14 @@
+ 
+ 		if (timer != &nkpod->htimer) {
+ 			if (!testbits(nkpod->status, XNTLOCK)) {
+-				timer->handler(timer->cookie);
++                     /**************************************************************
++                      * JOV - XenoLTT - 2006-10-18
++                      * Here we place the tracing call for the current thread timer tick
++                      * Args: Name, Address
++                      **************************************************************/
++                      trace_xenoltt_xeno_timer_tick("2",holder);
++
++                                timer->handler(timer->cookie);
+ 
+ 				if (timer->interval == XN_INFINITE ||
+ 				    !testbits(timer->status, XNTIMER_DEQUEUED)
+@@ -409,8 +432,8 @@
+ 				    nkpod->jiffies + nkpod->htimer.interval;
+ 				continue;
+ 			}
+-		} else
+-			__setbits(sched->status, XNHTICK);
++		} else       
++                        __setbits(sched->status, XNHTICK);
+ 
+ 		xntlholder_date(&timer->plink) =
+ 		    nkpod->jiffies + timer->interval;
+diff -Naur xenomai-2.2.3/src/skins/native/libnative_la-alarm.loT xenomai-2.2.3-good/src/skins/native/libnative_la-alarm.loT
+--- xenomai-2.2.3/src/skins/native/libnative_la-alarm.loT	1969-12-31 19:00:00.000000000 -0500
++++ xenomai-2.2.3-good/src/skins/native/libnative_la-alarm.loT	2006-12-07 11:09:26.000000000 -0500
+@@ -0,0 +1,7 @@
++# libnative_la-alarm.lo - a libtool object file
++# Generated by ltmain.sh - GNU libtool 1.5.6 (1.1220.2.95 2004/04/11 05:50:42) Debian: 224 $
++#
++# Please DO NOT delete this file!
++# It is necessary for linking the library.
++
++# Name of the PIC object.

@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<facility name="core">
+  <description>The core facility contains the basic tracing related events</description>
+	
+  <event name="facility_load">
+    <description>Facility is loaded</description>
+		<field name="name"><string/></field>
+		<field name="checksum"><uint size="4"/></field>
+		<field name="id"><uint size="4"/></field>
+		<field name="int_size"><uint size="4"/></field>
+		<field name="long_size"><uint size="4"/></field>
+		<field name="pointer_size"><uint size="4"/></field>
+		<field name="size_t_size"><uint size="4"/></field>
+		<field name="has_alignment"><uint size="4"/></field>
+  </event>
+
+  <event name="facility_unload">
+    <description>Facility is unloaded</description>
+    <field name="id"><uint size="4"/></field>
+  </event>
+
+  <event name="time_heartbeat" scope="tracefile">
+    <description>System time values sent periodically to detect cycle counter
+     rollovers. Useful when only the 32 LSB of the TSC are saved in events
+     header : we save the full 64 bits in this event.
+    </description>
+  </event>
+  
+  <event name="state_dump_facility_load" scope="trace">
+    <description>Facility is loaded while in state dump</description>
+		<field name="name"><string/></field>
+		<field name="checksum"><uint size="4"/></field>
+		<field name="id"><uint size="4"/></field>
+		<field name="int_size"><uint size="4"/></field>
+		<field name="long_size"><uint size="4"/></field>
+		<field name="pointer_size"><uint size="4"/></field>
+		<field name="size_t_size"><uint size="4"/></field>
+		<field name="has_alignment"><uint size="4"/></field>
+  </event>
+
+</facility>

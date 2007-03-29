@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<facility name="kernel">
+  <description>The kernel facility has events related to kernel execution status.</description>
+
+  <type name="tasklet_priority">
+    <enum>
+      <label name="LOW" value="0"/> <description>Low priority tasklet</description>
+      <label name="HIGH" value="1"/> <description>High priority tasklet</description>
+    </enum>
+  </type>
+
+  <type name="irq_mode">
+    <enum>
+      <label name="user" value="0"/> <description>User context</description>
+      <label name="kernel" value="1"/> <description>Kernel context</description>
+    </enum>
+  </type>
+
+  <event name="trap_entry">
+    <description>Entry in a trap</description>
+    <field name="trap_id"> <description>Trap number</description> <long/> </field>
+    <field name="address"> <description>Address where trap occured</description> <pointer/> </field>
+  </event>
+
+  <event name="trap_exit">
+    <description>Exit from a trap</description>
+  </event>
+
+  <event name="soft_irq_entry">
+    <description>Soft IRQ entry</description>
+    <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
+  </event>
+
+  <event name="soft_irq_exit">
+    <description>Soft IRQ exit</description>
+    <field name="softirq_id"> <description>Soft IRQ number</description> <pointer/> </field>
+  </event>
+
+  <event name="tasklet_entry">
+    <description>Tasklet entry</description>
+    <field name="priority"> <description>Tasklet priority</description> <typeref name="tasklet_priority"/> </field>
+    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  </event>
+
+  <event name="tasklet_exit">
+    <description>Tasklet exit</description>
+    <field name="priority"> <description>Tasklet priority</description> <typeref name="tasklet_priority"/> </field>
+    <field name="address"> <description>Tasklet function address</description> <pointer/> </field>
+    <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
+  </event>
+
+  <event name="irq_entry">
+    <description>Entry in an irq</description>
+    <field name="irq_id"> <description>IRQ number</description> <uint size="4"/> </field>
+    <field name="mode"> <description>Are we executing kernel code</description><typeref name="irq_mode"/> </field>
+  </event>
+
+  <event name="irq_exit">
+    <description>Exit from an IRQ</description>
+  </event>
+
+  <event name="printk">
+    <description>Kernel printk</description>
+    <field name="loglevel"> <description>loglevel</description>
+      <uint size="1"/>
+    </field>
+    <field name="text"> <description>printk string</description>
+      <sequence>
+        <uint/>
+        <uchar/>
+      </sequence>
+    </field>
+  </event>
+
+  <event name="printk_locate">
+    <description>Kernel printk location</description>
+    <field name="file"> <description>Source file</description>
+      <string/>
+    </field>
+    <field name="function"> <description>Function</description>
+      <string/>
+    </field>
+    <field name="line"> <description>Line in source file</description>
+      <uint/>
+    </field>
+    <field name="address"> <description>Caller address</description>
+      <pointer/>
+    </field>
+  </event>
+
+</facility>

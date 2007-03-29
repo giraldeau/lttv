@@ -1,0 +1,156 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>How to request background computation</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer Developer Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Linux Trace Toolkit Viewer Graphical Module Tutorial"
+HREF="c67.html"><LINK
+REL="PREVIOUS"
+TITLE="The dynamic part of a module : the viewer"
+HREF="x77.html"><LINK
+REL="NEXT"
+TITLE="How to handle events and use the graphical trace reading service"
+HREF="x84.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer Developer Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x77.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 3. Linux Trace Toolkit Viewer Graphical Module Tutorial</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x84.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="AEN81"
+>3.4. How to request background computation</A
+></H1
+><P
+>&#13;You will also notice the presence of a request_background_data() called in the
+constructor. This function, in eventhooks.c, does verify for the presence of the
+state information that could be precomputed by the main window background
+computation. If it has not been precomputed, we ask for a computation and show
+partial data. We also register a hook that will be called (notified) by the main
+window when the requested data will become ready, so the viewer can update
+itself with the new data. If no partial information would have made sense in a
+particular viewer, one could choose to shown a "waiting for computation" message
+while waiting for the notification. See lttvwindow/lttvwindowtraces.h for the API
+of the background requests.
+</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x77.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x84.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>The dynamic part of a module : the viewer</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c67.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>How to handle events and use the graphical trace reading service</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
