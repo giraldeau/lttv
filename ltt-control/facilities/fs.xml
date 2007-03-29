@@ -2,12 +2,12 @@
 <facility name="fs">
   <description>The fs facility contains events related to file system operation</description>
 
-  <event name="buf_wait_start">
+  <event name="buffer_wait_start">
     <description>Staring to wait for a buffer</description>
     <field name="address"> <description>Address of the buffer head.</description> <pointer/> </field>
   </event>
 
-  <event name="buf_wait_end">
+  <event name="buffer_wait_end">
     <description>Ending to wait for a buffer</description>
     <field name="address"> <description>Address of the buffer head.</description> <pointer/> </field>
   </event>
@@ -15,22 +15,16 @@
   <event name="exec">
     <description>Executing a file</description>
     <field name="filename"> <description>File name</description>
-      <sequence>
-        <uint/>
-        <uchar/>
-      </sequence>
+      <string/>
     </field>
   </event>
 
   <event name="open">
     <description>Opening a file</description>
+    <field name="fd"> <description>File descriptor</description> <int/> </field>
     <field name="filename"> <description>File name</description>
-      <sequence>
-        <uint/>
-        <uchar/>
-      </sequence>
+      <string/>
     </field>
-    <field name="fd"> <description>File descriptor</description> <uint/> </field>
   </event>
 
   <event name="close">
@@ -96,7 +90,7 @@
     <description>Do a IOCTL on a file descriptor</description>
     <field name="fd"> <description>File descriptor</description> <uint/> </field>
     <field name="cmd"> <description>Command</description> <uint/> </field>
-    <field name="arg"> <description>Argument</description> <uint/> </field>
+    <field name="arg"> <description>Argument</description> <ulong/> </field>
   </event>
 
   <event name="select">
@@ -105,9 +99,9 @@
     <field name="timeout"> <description>Timeout</description> <int_fixed size="8"/> </field>
   </event>
 
-  <event name="poll">
+  <event name="pollfd">
     <description>Do a poll on a file descriptor</description>
-    <field name="fd"> <description>File descriptor</description> <uint/> </field>
+    <field name="fd"> <description>File descriptor</description> <int/> </field>
   </event>
 
 </facility>

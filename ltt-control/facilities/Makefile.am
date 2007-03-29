@@ -13,15 +13,13 @@ kernel_arch_powerpc.xml \
 kernel_arch_ppc.xml \
 kernel_arch_x86_64.xml \
 locking.xml \
-memory.xml \
-network.xml \
+mm.xml \
+net.xml \
 process.xml \
-socket.xml \
 stack.xml \
 statedump.xml \
 timer.xml \
 user_generic.xml \
-network_ip_interface.xml \
 xen.xml \
 compact.xml
 
@@ -39,15 +37,13 @@ kernel_arch_powerpc.xml \
 kernel_arch_ppc.xml \
 kernel_arch_x86_64.xml \
 locking.xml \
-memory.xml \
-network.xml \
+mm.xml \
+net.xml \
 process.xml \
-socket.xml \
 stack.xml \
 statedump.xml \
 timer.xml \
 user_generic.xml \
-network_ip_interface.xml \
 xen.xml \
 compact.xml
 

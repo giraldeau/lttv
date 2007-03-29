@@ -326,6 +326,16 @@
     </enum>
   </type>
 
+  <event name="trap_entry">
+    <description>Entry in a trap</description>
+    <field name="trap_id"> <description>Trap number</description> <long/> </field>
+    <field name="address"> <description>Address where trap occured</description> <long/> </field>
+  </event>
+
+  <event name="trap_exit">
+    <description>Exit from a trap</description>
+  </event>
+
   <event name="syscall_entry">
     <description>System call entry</description>
     <field name="syscall_id"> <description>Syscall entry number in entry.S</description> <typeref name="syscall_name"/> </field>
@@ -335,4 +345,17 @@
   <event name="syscall_exit">
     <description>System call exit</description>
   </event>
+
+  <event name="ipc_call">
+    <description>IPC call</description>
+    <field name="call_number"> <description>Number of IPC call</description> <uint size="4"/> </field>
+    <field name="first"> <description>First argument</description> <int size="4"/> </field>
+  </event>
+
+  <event name="thread_create">
+    <description>Just created a new kernel thread</description>
+    <field name="pid"> <description>PID of the kernel thread</description> <uint/> </field>
+    <field name="function"> <description>Function called</description> <pointer/> </field>
+  </event>
+
 </facility>

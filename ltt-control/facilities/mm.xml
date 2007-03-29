@@ -2,6 +2,26 @@
 <facility name="memory">
   <description>The memory facility has memory management events.</description>
 
+  <event name="handle_fault_entry">
+    <description>Entry in a trap</description>
+    <field name="trap_id"> <description>Trap number</description> <long/> </field>
+    <field name="address"> <description>Address where trap occured</description> <long/> </field>
+  </event>
+
+  <event name="handle_fault_exit">
+    <description>Exit from the fault handler</description>
+  </event>
+
+  <event name="filemap_wait_start">
+    <description>Staring to wait for a page</description>
+    <field name="address"> <description>Address of the page we wait for.</description> <pointer/> </field>
+  </event>
+
+  <event name="filemap_wait_end">
+    <description>Ending wait for a page</description>
+    <field name="address"> <description>Address of the page we wait for.</description> <pointer/> </field>
+  </event>
+
   <event name="page_alloc">
     <description>Page allocation</description>
     <field name="order"> <description>Order of the page to allocate</description> <uint size="4"/> </field>
@@ -16,28 +36,12 @@
 
   <event name="swap_in">
     <description>Page swapped into memory</description>
-    <field name="address"> <description>Address of the page to swap in.</description> <pointer/> </field>
+    <field name="address"> <description>Address of the page to swap in.</description> <ulong/> </field>
   </event>
 
   <event name="swap_out">
     <description>Page swapped to disk</description>
     <field name="address"> <description>Address of the page to swap out.</description> <pointer/> </field>
-  </event>
-
-  <event name="page_wait_start">
-    <description>Staring to wait for a page</description>
-    <field name="address"> <description>Address of the page we wait for.</description> <pointer/> </field>
-  </event>
-
-  <event name="page_wait_end">
-    <description>Ending wait for a page</description>
-    <field name="address"> <description>Address of the page we wait for.</description> <pointer/> </field>
-  </event>
-
-  <event name="page_fault">
-    <description>Ending wait for a page</description>
-    <field name="address"> <description>Address of the page faulted.</description> <ulong/> </field>
-    <field name="eip"> <description>Instruction causing the fault.</description> <long/> </field>
   </event>
 
 </facility>

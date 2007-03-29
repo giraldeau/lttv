@@ -16,16 +16,6 @@
     </enum>
   </type>
 
-  <event name="trap_entry">
-    <description>Entry in a trap</description>
-    <field name="trap_id"> <description>Trap number</description> <long/> </field>
-    <field name="address"> <description>Address where trap occured</description> <pointer/> </field>
-  </event>
-
-  <event name="trap_exit">
-    <description>Exit from a trap</description>
-  </event>
-
   <event name="soft_irq_entry">
     <description>Soft IRQ entry</description>
     <field name="softirq_id"> <description>Soft IRQ number</description> <ulong/> </field>

@@ -45,13 +45,6 @@
     <field name="child_pid"> <description>PID of the child process</description> <uint/> </field>
     <field name="child_tgid"> <description>Thread group ID of the child process (POSIX PID)</description> <uint/> </field>
   </event>
-	
-  <event name="kernel_thread">
-    <description>Just created a new kernel thread</description>
-    <field name="pid"> <description>PID of the kernel thread</description> <uint/> </field>
-    <field name="function"> <description>Function called</description> <pointer/> </field>
-  </event>
-
 
   <event name="exit">
     <description>Process exit</description>
