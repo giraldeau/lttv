@@ -2,7 +2,6 @@
 EXTRA_DIST =  \
 core.xml \
 fs.xml \
-fs_data.xml \
 ipc.xml \
 kernel.xml \
 kernel_arch_arm.xml \
@@ -26,7 +25,6 @@ compact.xml
 facilities_DATA = \
 core.xml \
 fs.xml \
-fs_data.xml \
 ipc.xml \
 kernel.xml \
 kernel_arch_arm.xml \

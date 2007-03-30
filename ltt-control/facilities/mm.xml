@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<facility name="memory">
+<facility name="mm">
   <description>The memory facility has memory management events.</description>
 
   <event name="handle_fault_entry">

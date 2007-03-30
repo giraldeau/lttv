@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<facility name="timer">
-  <description>The timer facility has events related to timer events in the kernel.</description>
-
-</facility>
