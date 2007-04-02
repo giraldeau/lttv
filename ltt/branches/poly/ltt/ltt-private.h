@@ -251,6 +251,8 @@ struct _LttType{
   guint size;
   LttTypeEnum type_class;          //which type
   GHashTable *enum_map;                 //maps enum labels to numbers.
+  gint32 highest_value;			//For enum
+  gint32 lowest_value;			//For enum
   GArray *fields;     // Array of LttFields, for array, sequence, union, struct.
   GData *fields_by_name;
   guint network;  // Is the type in network byte order ?

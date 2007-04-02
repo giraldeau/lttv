@@ -395,10 +395,14 @@ void construct_fields(LttFacility *fac,
       {
         guint i;
         type->enum_map = g_hash_table_new(g_direct_hash, g_direct_equal);
+	type->lowest_value = G_MAXINT32;
+	type->highest_value = G_MININT32;
         for(i=0; i<td->labels.position; i++) {
           GQuark value = g_quark_from_string((char*)td->labels.array[i]);
           gint key = *(int*)td->labels_values.array[i];
           g_hash_table_insert(type->enum_map, (gpointer)key, (gpointer)value);
+	  type->highest_value = max(key, type->highest_value);
+	  type->lowest_value = min(key, type->lowest_value);
         }
       }
       g_assert(type->size != 0);

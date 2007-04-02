@@ -251,7 +251,8 @@ unsigned ltt_type_element_number(LttType *t)
   unsigned ret = 0;
 
   if(likely(t->type_class == LTT_ENUM))
-    ret = g_hash_table_size(t->enum_map);
+    // Permits non full enums ret = g_hash_table_size(t->enum_map);
+    ret = (unsigned)(t->highest_value - t->lowest_value);
 
   return ret;
 }
