@@ -1102,14 +1102,14 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_ENTRY,
+        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
         before_trap_entry, NULL, 
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_EXIT,
+        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_EXIT,
         0, 0, 0,
         before_trap_exit, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
@@ -1144,7 +1144,7 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
+        LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
         LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
         before_schedchange, NULL, 
         &g_array_index(hooks, LttvTraceHook, hn++));
@@ -1166,7 +1166,7 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
     /* statedump-related hooks */
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
+        LTT_FACILITY_LIST, LTT_EVENT_PROCESS_STATE,
         LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
         before_enum_process_state, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
@@ -1195,14 +1195,14 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_ENTRY, 
+        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_ENTRY, 
         LTT_FIELD_TRAP_ID, 0, 0,
         after_trap_entry, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_EXIT,
+        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_EXIT,
         0, 0, 0,
         after_trap_exit, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
@@ -1237,28 +1237,28 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
+        LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
         LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
         after_schedchange, NULL, 
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_FORK, 
+        LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FORK, 
         LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, 0,
         process_fork, NULL, 
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
+        LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_EXIT,
         LTT_FIELD_PID, 0, 0,
         process_exit, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
     
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_FREE,
+        LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FREE,
         LTT_FIELD_PID, 0, 0,
         process_free, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
@@ -1280,14 +1280,14 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
     /* statedump-related hooks */
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
+        LTT_FACILITY_LIST, LTT_EVENT_PROCESS_STATE,
         LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
         after_enum_process_state, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_STATEDUMP, LTT_EVENT_STATEDUMP_END,
+        LTT_FACILITY_LIST, LTT_EVENT_STATEDUMP_END,
         0, 0, 0,
         after_statedump_end, NULL,
         &g_array_index(hooks, LttvTraceHook, hn++));

@@ -291,7 +291,7 @@ void drawing_data_request(Drawing_t *drawing,
 
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
+          LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
           LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
           before_schedchange_hook,
           events_request,
@@ -299,7 +299,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
+          LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_EXIT,
           LTT_FIELD_PID, 0, 0,
           before_process_exit_hook,
           events_request,
@@ -307,7 +307,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) before_hn--;
       
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_PROCESS, LTT_EVENT_FREE,
+          LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FREE,
           LTT_FIELD_PID, 0, 0,
           before_process_release_hook,
           events_request,
@@ -315,7 +315,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_STATEDUMP, LTT_EVENT_STATEDUMP_END,
+          LTT_FACILITY_LIST, LTT_EVENT_STATEDUMP_END,
           0, 0, 0,
           before_statedump_end,
           events_request,
@@ -374,7 +374,7 @@ void drawing_data_request(Drawing_t *drawing,
       after_hn = before_hn;
       
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
+          LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
           LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
           after_schedchange_hook,
           events_request,
@@ -382,7 +382,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) after_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_PROCESS, LTT_EVENT_FORK,
+          LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FORK,
           LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, 0,
           after_process_fork_hook,
           events_request,
@@ -390,7 +390,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) after_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
+          LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_EXIT,
           LTT_FIELD_PID, 0, 0,
           after_process_exit_hook,
           events_request,
@@ -414,7 +414,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) after_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
+          LTT_FACILITY_LIST, LTT_EVENT_PROCESS_STATE,
           LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
           after_event_enum_process_hook,
           events_request,

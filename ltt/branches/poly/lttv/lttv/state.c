@@ -47,9 +47,8 @@
 GQuark
     LTT_FACILITY_KERNEL,
     LTT_FACILITY_KERNEL_ARCH,
-    LTT_FACILITY_PROCESS,
+    LTT_FACILITY_LIST,
     LTT_FACILITY_FS,
-    LTT_FACILITY_STATEDUMP,
     LTT_FACILITY_USER_GENERIC;
 
 /* Events Quarks */
@@ -63,13 +62,13 @@ GQuark
     LTT_EVENT_IRQ_EXIT,
     LTT_EVENT_SOFT_IRQ_ENTRY,
     LTT_EVENT_SOFT_IRQ_EXIT,
-    LTT_EVENT_SCHEDCHANGE,
-    LTT_EVENT_FORK,
-    LTT_EVENT_KERNEL_THREAD,
-    LTT_EVENT_EXIT,
-    LTT_EVENT_FREE,
+    LTT_EVENT_SCHED_SCHEDULE,
+    LTT_EVENT_PROCESS_FORK,
+    LTT_EVENT_KTHREAD_CREATE,
+    LTT_EVENT_PROCESS_EXIT,
+    LTT_EVENT_PROCESS_FREE,
     LTT_EVENT_EXEC,
-    LTT_EVENT_ENUM_PROCESS_STATE,
+    LTT_EVENT_PROCESS_STATE,
     LTT_EVENT_STATEDUMP_END,
     LTT_EVENT_FUNCTION_ENTRY,
     LTT_EVENT_FUNCTION_EXIT,
@@ -1436,7 +1435,7 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->nb_syscalls = 0;
   }
 
-  if(!lttv_trace_find_hook(tcs->parent.t, LTT_FACILITY_KERNEL,
+  if(!lttv_trace_find_hook(tcs->parent.t, LTT_FACILITY_KERNEL_ARCH,
         LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
         NULL, NULL, &h)) {
@@ -2686,13 +2685,13 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_ENTRY,
+        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
         trap_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_EXIT,
+        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_EXIT,
         0, 0, 0, 
         trap_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
@@ -2722,32 +2721,32 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_SCHEDCHANGE,
+        LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
         LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
         schedchange, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_FORK,
+        LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FORK,
         LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, LTT_FIELD_TGID,
         process_fork, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_KERNEL_THREAD,
+        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_KTHREAD_CREATE,
         LTT_FIELD_PID, 0, 0,
         process_kernel_thread, NULL, &g_array_index(hooks, LttvTraceHook,
           hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_EXIT,
+        LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_EXIT,
         LTT_FIELD_PID, 0, 0,
         process_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
     
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_PROCESS, LTT_EVENT_FREE,
+        LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FREE,
         LTT_FIELD_PID, 0, 0,
         process_free, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
@@ -2766,13 +2765,13 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
      /* statedump-related hooks */
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_STATEDUMP, LTT_EVENT_ENUM_PROCESS_STATE,
+        LTT_FACILITY_LIST, LTT_EVENT_PROCESS_STATE,
         LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
         enum_process_state, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_STATEDUMP, LTT_EVENT_STATEDUMP_END,
+        LTT_FACILITY_LIST, LTT_EVENT_STATEDUMP_END,
         0, 0, 0,
         statedump_end, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
@@ -3462,9 +3461,8 @@ static void module_init()
   
   LTT_FACILITY_KERNEL     = g_quark_from_string("kernel");
   LTT_FACILITY_KERNEL_ARCH = g_quark_from_string("kernel_arch");
-  LTT_FACILITY_PROCESS    = g_quark_from_string("process");
   LTT_FACILITY_FS    = g_quark_from_string("fs");
-  LTT_FACILITY_STATEDUMP    = g_quark_from_string("statedump");
+  LTT_FACILITY_LIST = g_quark_from_string("list");
   LTT_FACILITY_USER_GENERIC    = g_quark_from_string("user_generic");
 
   
@@ -3476,13 +3474,13 @@ static void module_init()
   LTT_EVENT_IRQ_EXIT      = g_quark_from_string("irq_exit");
   LTT_EVENT_SOFT_IRQ_ENTRY     = g_quark_from_string("soft_irq_entry");
   LTT_EVENT_SOFT_IRQ_EXIT      = g_quark_from_string("soft_irq_exit");
-  LTT_EVENT_SCHEDCHANGE   = g_quark_from_string("schedchange");
-  LTT_EVENT_FORK          = g_quark_from_string("fork");
-  LTT_EVENT_KERNEL_THREAD = g_quark_from_string("kernel_thread");
-  LTT_EVENT_EXIT          = g_quark_from_string("exit");
-  LTT_EVENT_FREE          = g_quark_from_string("free");
+  LTT_EVENT_SCHED_SCHEDULE   = g_quark_from_string("sched_schedule");
+  LTT_EVENT_PROCESS_FORK          = g_quark_from_string("process_fork");
+  LTT_EVENT_KTHREAD_CREATE = g_quark_from_string("kthread_create");
+  LTT_EVENT_PROCESS_EXIT          = g_quark_from_string("process_exit");
+  LTT_EVENT_PROCESS_FREE          = g_quark_from_string("procesS_free");
   LTT_EVENT_EXEC          = g_quark_from_string("exec");
-  LTT_EVENT_ENUM_PROCESS_STATE  = g_quark_from_string("enumerate_process_state");
+  LTT_EVENT_PROCESS_STATE  = g_quark_from_string("process_state");
   LTT_EVENT_STATEDUMP_END  = g_quark_from_string("statedump_end");
   LTT_EVENT_FUNCTION_ENTRY  = g_quark_from_string("function_entry");
   LTT_EVENT_FUNCTION_EXIT  = g_quark_from_string("function_exit");
