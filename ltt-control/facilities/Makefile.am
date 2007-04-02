@@ -14,10 +14,8 @@ kernel_arch_x86_64.xml \
 locking.xml \
 mm.xml \
 net.xml \
-process.xml \
-stack.xml \
+stack_arch_i386.xml \
 list.xml \
-timer.xml \
 user_generic.xml \
 xen.xml \
 compact.xml
@@ -37,10 +35,8 @@ kernel_arch_x86_64.xml \
 locking.xml \
 mm.xml \
 net.xml \
-process.xml \
-stack.xml \
+stack_arch_i386.xml \
 list.xml \
-timer.xml \
 user_generic.xml \
 xen.xml \
 compact.xml

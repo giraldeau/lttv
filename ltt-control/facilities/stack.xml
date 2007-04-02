@@ -3,7 +3,7 @@
   <description>The stack facility has events related to getting process stack.</description>
 
   <event name="process_dump_32">
-    <description>Dump process EIPs on the user stackfor a 32 bits process</description>
+    <description>Dump process EIPs on the user stack for a 32 bits process</description>
     <field name="eip"> <description>Sequence of EIP</description>
       <sequence write="custom">
         <uint/>

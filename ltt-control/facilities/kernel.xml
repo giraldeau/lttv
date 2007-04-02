@@ -95,32 +95,32 @@
     <field name="signal"> <description></description> <typeref name="signal_name"/> </field>
   </event>
 
-  <event name="kernel_sched_wait_task">
+  <event name="sched_wait_task">
     <description>Process exit</description>
     <field name="pid"> <description>PID of the process we are waiting for</description> <int/> </field>
     <field name="state"> <description>State of the process we are waiting for : -1 unrunnable, 0 runnable, >0 stopped</description> <long/> </field>
   </event>
 
-  <event name="kernel_sched_try_wakeup">
+  <event name="sched_try_wakeup">
     <description>Process exit</description>
     <field name="pid"> <description>PID of the process we are waiting for</description> <int/> </field>
     <field name="state"> <description>State of the process we are waiting for : -1 unrunnable, 0 runnable, >0 stopped</description> <long/> </field>
   </event>
 
-  <event name="kernel_sched_wakeup_new_task">
+  <event name="sched_wakeup_new_task">
     <description>Process exit</description>
     <field name="pid"> <description>PID of the process we are waiting for</description> <int/> </field>
     <field name="state"> <description>State of the process we are waiting for : -1 unrunnable, 0 runnable, >0 stopped</description> <long/> </field>
   </event>
 
-  <event name="kernel_sched_migrate_task">
+  <event name="sched_migrate_task">
     <description>Process exit</description>
     <field name="pid"> <description>PID of the process we are waiting for</description> <int/> </field>
     <field name="state"> <description>State of the process we are waiting for : -1 unrunnable, 0 runnable, >0 stopped</description> <long/> </field>
     <field name="dest_cpu"> <description>Destination CPU</description> <int/> </field>
   </event>
 
-  <event name="kernel_sched_schedule">
+  <event name="sched_schedule">
     <description>Process exit</description>
     <field name="prev_pid"> <description>Previously scheduled PID</description> <int/> </field>
     <field name="next_pid"> <description>Next PID to be scheduled</description> <int/> </field>
@@ -231,12 +231,12 @@
     <field name="data"> <description>Tasklet data address</description> <ulong/> </field>
   </event>
 
-  <event name="kernel_kthread_stop">
+  <event name="kthread_stop">
     <description>Process exit</description>
     <field name="pid"> <description>PID of the kthread we stop</description> <int/> </field>
   </event>
 
-  <event name="kernel_kthread_stop_ret">
+  <event name="kthread_stop_ret">
     <description>Process exit</description>
     <field name="retval"> <description>Return value of the kthread_stop call</description> <int/> </field>
   </event>
@@ -254,7 +254,6 @@
       <string/>
     </field>
   </event>
-
 
   <event name="irq_entry">
     <description>Entry in an irq</description>

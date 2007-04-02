@@ -109,7 +109,7 @@
     <field name="fd"> <description>File descriptor</description> <uint/> </field>
     <field name="count"> <description>Number of bytes to read</description> <size_t/> </field>
     <field name="data"> <description>data read</description>
-      <sequence write="custom">
+      <sequence>
         <uint/>
         <uchar/>
       </sequence>
@@ -121,7 +121,7 @@
     <field name="fd"> <description>File descriptor</description> <uint/> </field>
     <field name="count"> <description>Number of bytes to write</description> <size_t/> </field>
     <field name="data"> <description>data written</description>
-      <sequence write="custom">
+      <sequence>
         <uint/>
         <uchar/>
       </sequence>

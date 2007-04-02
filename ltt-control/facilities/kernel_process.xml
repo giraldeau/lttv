@@ -1,4 +1,0 @@
-<?xml version="1.0"?>
-<facility name="process">
-  <description>The process facility has events related to process handling in the kernel.</description>
-</facility>

@@ -352,7 +352,7 @@
     <field name="first"> <description>First argument</description> <int size="4"/> </field>
   </event>
 
-  <event name="thread_create">
+  <event name="kthread_create">
     <description>Just created a new kernel thread</description>
     <field name="pid"> <description>PID of the kernel thread</description> <uint/> </field>
     <field name="function"> <description>Function called</description> <pointer/> </field>

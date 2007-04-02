@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<facility name="statedump">
+<facility name="list">
   <description>The statedump facility contains the events generated at trace startup</description>
 
   <type name="thread_type">
