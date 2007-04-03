@@ -81,13 +81,14 @@ GQuark
     LTT_FIELD_TRAP_ID,
     LTT_FIELD_IRQ_ID,
     LTT_FIELD_SOFT_IRQ_ID,
-    LTT_FIELD_OUT,
-    LTT_FIELD_IN,
-    LTT_FIELD_OUT_STATE,
+    LTT_FIELD_PREV_PID,
+    LTT_FIELD_NEXT_PID,
+    LTT_FIELD_PREV_STATE,
     LTT_FIELD_PARENT_PID,
     LTT_FIELD_CHILD_PID,
     LTT_FIELD_PID,
     LTT_FIELD_TGID,
+    LTT_FIELD_CHILD_TGID,
     LTT_FIELD_FILENAME,
     LTT_FIELD_NAME,
     LTT_FIELD_TYPE,
@@ -2365,6 +2366,7 @@ static gboolean process_exec(void *hook_data, void *call_data)
   guint cpu = s->cpu;
   LttvProcessState *process = ts->running_process[cpu];
 
+#if 0//how to use a sequence that must be transformed in a string
   /* PID of the process to release */
   guint64 name_len = ltt_event_field_element_number(e, thf->f1);
   //name = ltt_event_get_string(e, thf->f1);
@@ -2374,10 +2376,12 @@ static gboolean process_exec(void *hook_data, void *call_data)
   gchar *null_term_name = g_new(gchar, name_len+1);
   memcpy(null_term_name, name_begin, name_len);
   null_term_name[name_len] = '\0';
-
   process->name = g_quark_from_string(null_term_name);
+#endif //0
+
+  process->name = ltt_event_get_string(e, thf->f1);
   process->brand = LTTV_STATE_UNBRANDED;
-  g_free(null_term_name);
+  //g_free(null_term_name);
   return FALSE;
 }
 
@@ -2722,13 +2726,13 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
-        LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
+        LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE,
         schedchange, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FORK,
-        LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, LTT_FIELD_TGID,
+        LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, LTT_FIELD_CHILD_TGID,
         process_fork, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
@@ -3478,7 +3482,7 @@ static void module_init()
   LTT_EVENT_PROCESS_FORK          = g_quark_from_string("process_fork");
   LTT_EVENT_KTHREAD_CREATE = g_quark_from_string("kthread_create");
   LTT_EVENT_PROCESS_EXIT          = g_quark_from_string("process_exit");
-  LTT_EVENT_PROCESS_FREE          = g_quark_from_string("procesS_free");
+  LTT_EVENT_PROCESS_FREE          = g_quark_from_string("process_free");
   LTT_EVENT_EXEC          = g_quark_from_string("exec");
   LTT_EVENT_PROCESS_STATE  = g_quark_from_string("process_state");
   LTT_EVENT_STATEDUMP_END  = g_quark_from_string("statedump_end");
@@ -3491,13 +3495,14 @@ static void module_init()
   LTT_FIELD_TRAP_ID       = g_quark_from_string("trap_id");
   LTT_FIELD_IRQ_ID        = g_quark_from_string("irq_id");
   LTT_FIELD_SOFT_IRQ_ID        = g_quark_from_string("softirq_id");
-  LTT_FIELD_OUT           = g_quark_from_string("out");
-  LTT_FIELD_IN            = g_quark_from_string("in");
-  LTT_FIELD_OUT_STATE     = g_quark_from_string("out_state");
+  LTT_FIELD_PREV_PID            = g_quark_from_string("prev_pid");
+  LTT_FIELD_NEXT_PID           = g_quark_from_string("next_pid");
+  LTT_FIELD_PREV_STATE     = g_quark_from_string("prev_state");
   LTT_FIELD_PARENT_PID    = g_quark_from_string("parent_pid");
   LTT_FIELD_CHILD_PID     = g_quark_from_string("child_pid");
   LTT_FIELD_PID           = g_quark_from_string("pid");
   LTT_FIELD_TGID          = g_quark_from_string("tgid");
+  LTT_FIELD_CHILD_TGID    = g_quark_from_string("child_tgid");
   LTT_FIELD_FILENAME      = g_quark_from_string("filename");
   LTT_FIELD_NAME          = g_quark_from_string("name");
   LTT_FIELD_TYPE          = g_quark_from_string("type");

@@ -2217,7 +2217,13 @@ no_offset:
 		/* Event size too big to fit in the event size field */
 		tf->event.event_size = tf->event.data_size;
 	}
-  g_assert(tf->event.data_size == tf->event.event_size);
+  if (tf->event.data_size != tf->event.event_size) {
+    g_error("Kernel/LTTV event size differs for event %s.%s: kernel %u, LTTV %u",
+    		g_quark_to_string(f->name), g_quark_to_string(event_type->name),
+		tf->event.event_size, tf->event.data_size);
+    exit(-1);
+  }
+  //g_assert(tf->event.data_size == tf->event.event_size);
 
   return;
 

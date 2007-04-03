@@ -1145,7 +1145,7 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
-        LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
+        LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE,
         before_schedchange, NULL, 
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
@@ -1238,7 +1238,7 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
     ret = lttv_trace_find_hook(ts->parent.parent.t,
         LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
-        LTT_FIELD_OUT, LTT_FIELD_IN, LTT_FIELD_OUT_STATE,
+        LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE,
         after_schedchange, NULL, 
         &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;

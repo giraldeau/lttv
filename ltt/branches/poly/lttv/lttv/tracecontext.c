@@ -955,11 +955,18 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
 static LttField *
 find_field(LttEventType *et, const GQuark field)
 {
-  GQuark name;
+  LttField *f;
 
   if(field == 0) return NULL;
   
-  return ltt_eventtype_field_by_name(et, field);
+  f = ltt_eventtype_field_by_name(et, field);
+  if (!f) {
+    g_warning("Cannot find field %s in event %s.%s", g_quark_to_string(field),
+    	g_quark_to_string(ltt_facility_name(ltt_eventtype_facility(et))),
+    	g_quark_to_string(ltt_eventtype_name(et)));
+  }
+
+  return f;
 }
 
 LttvTraceHookByFacility *lttv_trace_hook_get_fac(LttvTraceHook *th, 
