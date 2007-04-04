@@ -14,6 +14,7 @@ locking.xml \
 mm.xml \
 net.xml \
 stack_arch_i386.xml \
+stack_arch_x86_64.xml \
 list.xml \
 user_generic.xml \
 xen.xml \
@@ -34,6 +35,7 @@ locking.xml \
 mm.xml \
 net.xml \
 stack_arch_i386.xml \
+stack_arch_x86_64.xml \
 list.xml \
 user_generic.xml \
 xen.xml \
