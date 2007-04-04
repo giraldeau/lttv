@@ -137,7 +137,7 @@
   <event name="vprintk">
     <description>Kernel vprintk</description>
     <field name="loglevel"> <description>loglevel</description>
-      <uint size="1"/>
+      <uint_fixed size="1"/>
     </field>
     <field name="text"> <description>printk string</description>
       <sequence>
@@ -253,7 +253,7 @@
 
   <event name="irq_entry">
     <description>Entry in an irq</description>
-    <field name="irq_id"> <description>IRQ number</description> <uint size="4"/> </field>
+    <field name="irq_id"> <description>IRQ number</description> <uint/> </field>
     <field name="mode"> <description>Are we executing kernel code</description><typeref name="irq_mode"/> </field>
   </event>
 

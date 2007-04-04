@@ -118,7 +118,7 @@
 			</field>
 			<field name="addr">
 				<description>IP address</description>
-				<uint size="4" byte_order="network"/>
+				<uint_fixed size="4" byte_order="network"/>
 			</field>
 	</event>
 

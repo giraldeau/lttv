@@ -24,13 +24,13 @@
 
   <event name="page_alloc">
     <description>Page allocation</description>
-    <field name="order"> <description>Order of the page to allocate</description> <uint size="4"/> </field>
+    <field name="order"> <description>Order of the page to allocate</description> <uint/> </field>
     <field name="address"> <description>Assigned page address, or 0 if failed.</description> <pointer/> </field>
   </event>
 
   <event name="page_free">
     <description>Page free</description>
-    <field name="order"> <description>Order of the page to free</description> <uint size="4"/> </field>
+    <field name="order"> <description>Order of the page to free</description> <uint/> </field>
     <field name="address"> <description>Address of the page to free.</description> <pointer/> </field>
   </event>
 
