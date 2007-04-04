@@ -1,5 +1,5 @@
 AM_CFLAGS = $(GLIB_CFLAGS) 
-LIBS += $(GLIB_LIBS) -lgobject-2.0 -L${top_srcdir}/ltt -llttvtraceread
+LIBS += $(GLIB_LIBS) -lgobject-2.0 -L${top_builddir}/ltt -llttvtraceread
 
 libdir = ${lttvplugindir}
 
