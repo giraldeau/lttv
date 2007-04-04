@@ -694,11 +694,11 @@ static gboolean before_schedchange(void *hook_data, void *call_data)
 
   guint pid_in, pid_out;
     
-  gint state_out;
+  gint64 state_out;
 
   pid_out = ltt_event_get_unsigned(e, thf->f1);
   pid_in = ltt_event_get_unsigned(e, thf->f2);
-  state_out = ltt_event_get_int(e, thf->f3);
+  state_out = ltt_event_get_long_int(e, thf->f3);
 
   /* compute the time for the process to schedule out */
   mode_change(tfcs);
@@ -718,13 +718,13 @@ static gboolean after_schedchange(void *hook_data, void *call_data)
 
   guint pid_in, pid_out;
     
-  gint state_out;
+  gint64 state_out;
 
   LttvProcessState *process;
 
   pid_out = ltt_event_get_unsigned(e, thf->f1);
   pid_in = ltt_event_get_unsigned(e, thf->f2);
-  state_out = ltt_event_get_int(e, thf->f3);
+  state_out = ltt_event_get_long_int(e, thf->f3);
 
   /* get the information for the process scheduled in */
   guint cpu = tfcs->parent.cpu;

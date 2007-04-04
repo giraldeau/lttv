@@ -2124,11 +2124,11 @@ static gboolean schedchange(void *hook_data, void *call_data)
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
   guint pid_in, pid_out;
-  gint state_out;
+  gint64 state_out;
 
   pid_out = ltt_event_get_unsigned(e, thf->f1);
   pid_in = ltt_event_get_unsigned(e, thf->f2);
-  state_out = ltt_event_get_int(e, thf->f3);
+  state_out = ltt_event_get_long_int(e, thf->f3);
   
   if(likely(process != NULL)) {
 
@@ -2379,7 +2379,7 @@ static gboolean process_exec(void *hook_data, void *call_data)
   process->name = g_quark_from_string(null_term_name);
 #endif //0
 
-  process->name = ltt_event_get_string(e, thf->f1);
+  process->name = g_quark_from_string(ltt_event_get_string(e, thf->f1));
   process->brand = LTTV_STATE_UNBRANDED;
   //g_free(null_term_name);
   return FALSE;
