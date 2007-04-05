@@ -223,6 +223,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
    * (or is set to 0 if the trace has no float (kernel trace)) */
   tf->float_word_order = any->float_word_order;
 	tf->has_alignment = any->has_alignment;
+  tf->has_heartbeat = any->has_heartbeat;
 
   if(t) {
     t->arch_type = ltt_get_uint32(LTT_GET_BO(tf),
@@ -233,7 +234,6 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
     t->ltt_major_version = any->major_version;
     t->ltt_minor_version = any->minor_version;
     t->flight_recorder = any->flight_recorder;
-    t->has_heartbeat = any->has_heartbeat;
     t->compact_facilities = NULL;
   }
  
@@ -1900,11 +1900,11 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 	if(!tf->compact)
 		pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
 	else {
-		g_assert(tf->trace->has_heartbeat);
+		g_assert(tf->has_heartbeat);
 		pos += ltt_align((size_t)pos, sizeof(uint32_t), tf->has_alignment);
 	}
   
-	if(tf->trace->has_heartbeat) {
+	if(tf->has_heartbeat) {
 		event->timestamp = ltt_get_uint32(LTT_GET_BO(tf),
 																					pos);
     if(!tf->compact) {

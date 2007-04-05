@@ -392,6 +392,7 @@ struct _LttTracefile{
   size_t    has_alignment;           //alignment of events in the tracefile.
                                      // 0 or the architecture size in bytes.
 
+  guint8    has_heartbeat;
   size_t    buffer_header_size;
   int       compact;                 //compact tracefile ?
   uint8_t   tsc_lsb_truncate;
@@ -436,7 +437,6 @@ struct _LttTrace{
   guint8    ltt_major_version;
   guint8    ltt_minor_version;
   guint8    flight_recorder;
-  guint8    has_heartbeat;
   guint32    freq_scale;
   uint64_t  start_freq;
   uint64_t  start_tsc;
