@@ -629,7 +629,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
  * Parameters:
  *
  * @buf : the buffer to commit to.
- * @reserved : address of the beginnig of the reserved slot.
+ * @reserved : address of the end of the event header.
  * @slot_size : size of the reserved slot.
  *
  */
@@ -638,17 +638,17 @@ static inline void __attribute__((no_instrument_function)) ltt_commit_slot(
 															void *reserved,
 															unsigned int slot_size)
 {
-	unsigned int offset_begin = reserved - ltt_buf->start;
+	unsigned int offset_end = reserved - ltt_buf->start;
 	int commit_count;
 
 	commit_count = atomic_add_return(slot_size,
-													&ltt_buf->commit_count[SUBBUF_INDEX(offset_begin,
+													&ltt_buf->commit_count[SUBBUF_INDEX(offset_end-1,
 																															ltt_buf)]);
 	
 	/* Check if all commits have been done */
 	if(commit_count	==
-	atomic_read(&ltt_buf->reserve_count[SUBBUF_INDEX(offset_begin, ltt_buf)])) {
-		ltt_deliver_callback(ltt_buf, SUBBUF_INDEX(offset_begin, ltt_buf), NULL);
+	atomic_read(&ltt_buf->reserve_count[SUBBUF_INDEX(offset_end-1, ltt_buf)])) {
+		ltt_deliver_callback(ltt_buf, SUBBUF_INDEX(offset_end-1, ltt_buf), NULL);
 	}
 }
 
