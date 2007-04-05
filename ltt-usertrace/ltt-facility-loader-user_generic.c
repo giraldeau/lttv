@@ -19,7 +19,7 @@ static struct user_facility_info facility = {
 	.name = LTT_FACILITY_NAME,
 	.num_events = LTT_FACILITY_NUM_EVENTS,
 #ifndef LTT_PACK
-	.alignment = sizeof(void*),
+	.alignment = LTT_FACILITY_ALIGNMENT?sizeof(void*):0,
 #else
 	.alignment = 0,
 #endif //LTT_PACK
@@ -40,7 +40,7 @@ static void __attribute__((constructor)) __ltt_user_init(void)
 	err = ltt_register_generic(&LTT_FACILITY_SYMBOL, &facility);
 	LTT_FACILITY_CHECKSUM_SYMBOL = LTT_FACILITY_SYMBOL;
 	
-	if(err) {
+	if (err) {
 #ifdef LTT_SHOW_DEBUG
 		perror("Error in ltt_register_generic");
 #endif //LTT_SHOW_DEBUG

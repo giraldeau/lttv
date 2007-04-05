@@ -24,8 +24,8 @@ static inline void lttng_write_string_user_generic_string_data(
 	size_t align;
 
 	/* Flush pending memcpy */
-	if(*len != 0) {
-		if(buffer != NULL)
+	if (*len != 0) {
+		if (buffer != NULL)
 			memcpy(buffer+*to_base+*to, *from, *len);
 	}
 	*to += *len;
@@ -33,7 +33,7 @@ static inline void lttng_write_string_user_generic_string_data(
 
 	align = sizeof(char);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -42,7 +42,7 @@ static inline void lttng_write_string_user_generic_string_data(
 	/* Contains variable sized fields : must explode the structure */
 
 	size = strlen(obj) + 1; /* Include final NULL char. */
-	if(buffer != NULL)
+	if (buffer != NULL)
 		memcpy(buffer+*to_base+*to, obj, size);
 	*to += size;
 
@@ -99,7 +99,7 @@ static inline int trace_user_generic_string(
 		lttng_write_string_user_generic_string_data(buffer, to_base, to, from, len, lttng_param_data);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -137,9 +137,7 @@ static inline int trace_user_generic_string(
 	const char *real_from;
 	const char **from = &real_from;
 	uint64_t tsc;
-	size_t before_hdr_pad, after_hdr_pad, header_size;
-
-	if(!trace) {
+		if (!trace) {
 		ltt_thread_init();
 		trace = thread_trace_info;
 	}
@@ -162,22 +160,20 @@ static inline int trace_user_generic_string(
 		ltt_buf = ltt_get_channel_from_index(trace, index);
 				slot_size = 0;
 		buffer = ltt_reserve_slot(trace, ltt_buf,
-			reserve_size, &slot_size, &tsc,
-			&before_hdr_pad, &after_hdr_pad, &header_size);
-		if(!buffer) goto end; /* buffer full */
+			reserve_size, &slot_size, &tsc);
+		if (!buffer)
+			goto end; /* buffer full */
 
 		*to_base = *to = *len = 0;
 
-		ltt_write_event_header(trace, ltt_buf, buffer,
+		buffer = ltt_write_event_header(trace, ltt_buf, buffer,
 			ltt_facility_user_generic_B1865E44, event_user_generic_string,
-			reserve_size, before_hdr_pad, tsc);
-		*to_base += before_hdr_pad + after_hdr_pad + header_size;
-
+			reserve_size, tsc);
 		*from = (const char*)lttng_param_data;
 		lttng_write_string_user_generic_string_data(buffer, to_base, to, from, len, lttng_param_data);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -206,8 +202,8 @@ static inline void lttng_write_string_user_generic_string_pointer_string(
 	size_t align;
 
 	/* Flush pending memcpy */
-	if(*len != 0) {
-		if(buffer != NULL)
+	if (*len != 0) {
+		if (buffer != NULL)
 			memcpy(buffer+*to_base+*to, *from, *len);
 	}
 	*to += *len;
@@ -215,7 +211,7 @@ static inline void lttng_write_string_user_generic_string_pointer_string(
 
 	align = sizeof(char);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -224,7 +220,7 @@ static inline void lttng_write_string_user_generic_string_pointer_string(
 	/* Contains variable sized fields : must explode the structure */
 
 	size = strlen(obj) + 1; /* Include final NULL char. */
-	if(buffer != NULL)
+	if (buffer != NULL)
 		memcpy(buffer+*to_base+*to, obj, size);
 	*to += size;
 
@@ -276,7 +272,7 @@ static inline int trace_user_generic_string_pointer(
 	*from = (const char*)&lttng_param_pointer;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -295,7 +291,7 @@ static inline int trace_user_generic_string_pointer(
 		lttng_write_string_user_generic_string_pointer_string(buffer, to_base, to, from, len, lttng_param_string);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -304,7 +300,7 @@ static inline int trace_user_generic_string_pointer(
 		*from = (const char*)&lttng_param_pointer;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -313,7 +309,7 @@ static inline int trace_user_generic_string_pointer(
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -353,9 +349,7 @@ static inline int trace_user_generic_string_pointer(
 	const char *real_from;
 	const char **from = &real_from;
 	uint64_t tsc;
-	size_t before_hdr_pad, after_hdr_pad, header_size;
-
-	if(!trace) {
+		if (!trace) {
 		ltt_thread_init();
 		trace = thread_trace_info;
 	}
@@ -372,7 +366,7 @@ static inline int trace_user_generic_string_pointer(
 	*from = (const char*)&lttng_param_pointer;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -389,22 +383,20 @@ static inline int trace_user_generic_string_pointer(
 		ltt_buf = ltt_get_channel_from_index(trace, index);
 				slot_size = 0;
 		buffer = ltt_reserve_slot(trace, ltt_buf,
-			reserve_size, &slot_size, &tsc,
-			&before_hdr_pad, &after_hdr_pad, &header_size);
-		if(!buffer) goto end; /* buffer full */
+			reserve_size, &slot_size, &tsc);
+		if (!buffer)
+			goto end; /* buffer full */
 
 		*to_base = *to = *len = 0;
 
-		ltt_write_event_header(trace, ltt_buf, buffer,
+		buffer = ltt_write_event_header(trace, ltt_buf, buffer,
 			ltt_facility_user_generic_B1865E44, event_user_generic_string_pointer,
-			reserve_size, before_hdr_pad, tsc);
-		*to_base += before_hdr_pad + after_hdr_pad + header_size;
-
+			reserve_size, tsc);
 		*from = (const char*)lttng_param_string;
 		lttng_write_string_user_generic_string_pointer_string(buffer, to_base, to, from, len, lttng_param_string);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -413,7 +405,7 @@ static inline int trace_user_generic_string_pointer(
 		*from = (const char*)&lttng_param_pointer;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -422,7 +414,7 @@ static inline int trace_user_generic_string_pointer(
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -451,8 +443,8 @@ static inline void lttng_write_string_user_generic_slow_printf_string(
 	size_t align;
 
 	/* Flush pending memcpy */
-	if(*len != 0) {
-		if(buffer != NULL)
+	if (*len != 0) {
+		if (buffer != NULL)
 			memcpy(buffer+*to_base+*to, *from, *len);
 	}
 	*to += *len;
@@ -460,7 +452,7 @@ static inline void lttng_write_string_user_generic_slow_printf_string(
 
 	align = sizeof(char);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -469,7 +461,7 @@ static inline void lttng_write_string_user_generic_slow_printf_string(
 	/* Contains variable sized fields : must explode the structure */
 
 	size = strlen(obj) + 1; /* Include final NULL char. */
-	if(buffer != NULL)
+	if (buffer != NULL)
 		memcpy(buffer+*to_base+*to, obj, size);
 	*to += size;
 
@@ -531,9 +523,7 @@ static inline int trace_user_generic_slow_printf(
 	const char *real_from;
 	const char **from = &real_from;
 	uint64_t tsc;
-	size_t before_hdr_pad, after_hdr_pad, header_size;
-
-	if(!trace) {
+		if (!trace) {
 		ltt_thread_init();
 		trace = thread_trace_info;
 	}
@@ -556,22 +546,20 @@ static inline int trace_user_generic_slow_printf(
 		ltt_buf = ltt_get_channel_from_index(trace, index);
 				slot_size = 0;
 		buffer = ltt_reserve_slot(trace, ltt_buf,
-			reserve_size, &slot_size, &tsc,
-			&before_hdr_pad, &after_hdr_pad, &header_size);
-		if(!buffer) goto end; /* buffer full */
+			reserve_size, &slot_size, &tsc);
+		if (!buffer)
+			goto end; /* buffer full */
 
 		*to_base = *to = *len = 0;
 
-		ltt_write_event_header(trace, ltt_buf, buffer,
+		buffer = ltt_write_event_header(trace, ltt_buf, buffer,
 			ltt_facility_user_generic_B1865E44, event_user_generic_slow_printf,
-			reserve_size, before_hdr_pad, tsc);
-		*to_base += before_hdr_pad + after_hdr_pad + header_size;
-
+			reserve_size, tsc);
 		*from = (const char*)lttng_param_string;
 		lttng_write_string_user_generic_slow_printf_string(buffer, to_base, to, from, len, lttng_param_string);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -624,7 +612,7 @@ static inline int trace_user_generic_function_entry(
 	*from = (const char*)&lttng_param_this_fn;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -635,7 +623,7 @@ static inline int trace_user_generic_function_entry(
 	*from = (const char*)&lttng_param_call_site;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -653,7 +641,7 @@ static inline int trace_user_generic_function_entry(
 		*from = (const char*)&lttng_param_this_fn;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -662,7 +650,7 @@ static inline int trace_user_generic_function_entry(
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -671,7 +659,7 @@ static inline int trace_user_generic_function_entry(
 		*from = (const char*)&lttng_param_call_site;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -680,7 +668,7 @@ static inline int trace_user_generic_function_entry(
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -720,9 +708,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	const char *real_from;
 	const char **from = &real_from;
 	uint64_t tsc;
-	size_t before_hdr_pad, after_hdr_pad, header_size;
-
-	if(!trace) {
+		if (!trace) {
 		ltt_thread_init();
 		trace = thread_trace_info;
 	}
@@ -736,7 +722,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	*from = (const char*)&lttng_param_this_fn;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -747,7 +733,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	*from = (const char*)&lttng_param_call_site;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -764,21 +750,19 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 		ltt_buf = ltt_get_channel_from_index(trace, index);
 				slot_size = 0;
 		buffer = ltt_reserve_slot(trace, ltt_buf,
-			reserve_size, &slot_size, &tsc,
-			&before_hdr_pad, &after_hdr_pad, &header_size);
-		if(!buffer) goto end; /* buffer full */
+			reserve_size, &slot_size, &tsc);
+		if (!buffer)
+			goto end; /* buffer full */
 
 		*to_base = *to = *len = 0;
 
-		ltt_write_event_header(trace, ltt_buf, buffer,
+		buffer = ltt_write_event_header(trace, ltt_buf, buffer,
 			ltt_facility_user_generic_B1865E44, event_user_generic_function_entry,
-			reserve_size, before_hdr_pad, tsc);
-		*to_base += before_hdr_pad + after_hdr_pad + header_size;
-
+			reserve_size, tsc);
 		*from = (const char*)&lttng_param_this_fn;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -787,7 +771,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -796,7 +780,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 		*from = (const char*)&lttng_param_call_site;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -805,7 +789,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -858,7 +842,7 @@ static inline int trace_user_generic_function_exit(
 	*from = (const char*)&lttng_param_this_fn;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -869,7 +853,7 @@ static inline int trace_user_generic_function_exit(
 	*from = (const char*)&lttng_param_call_site;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -887,7 +871,7 @@ static inline int trace_user_generic_function_exit(
 		*from = (const char*)&lttng_param_this_fn;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -896,7 +880,7 @@ static inline int trace_user_generic_function_exit(
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -905,7 +889,7 @@ static inline int trace_user_generic_function_exit(
 		*from = (const char*)&lttng_param_call_site;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -914,7 +898,7 @@ static inline int trace_user_generic_function_exit(
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -954,9 +938,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	const char *real_from;
 	const char **from = &real_from;
 	uint64_t tsc;
-	size_t before_hdr_pad, after_hdr_pad, header_size;
-
-	if(!trace) {
+		if (!trace) {
 		ltt_thread_init();
 		trace = thread_trace_info;
 	}
@@ -970,7 +952,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	*from = (const char*)&lttng_param_this_fn;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -981,7 +963,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 	*from = (const char*)&lttng_param_call_site;
 	align = sizeof(const void *);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -998,21 +980,19 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 		ltt_buf = ltt_get_channel_from_index(trace, index);
 				slot_size = 0;
 		buffer = ltt_reserve_slot(trace, ltt_buf,
-			reserve_size, &slot_size, &tsc,
-			&before_hdr_pad, &after_hdr_pad, &header_size);
-		if(!buffer) goto end; /* buffer full */
+			reserve_size, &slot_size, &tsc);
+		if (!buffer)
+			goto end; /* buffer full */
 
 		*to_base = *to = *len = 0;
 
-		ltt_write_event_header(trace, ltt_buf, buffer,
+		buffer = ltt_write_event_header(trace, ltt_buf, buffer,
 			ltt_facility_user_generic_B1865E44, event_user_generic_function_exit,
-			reserve_size, before_hdr_pad, tsc);
-		*to_base += before_hdr_pad + after_hdr_pad + header_size;
-
+			reserve_size, tsc);
 		*from = (const char*)&lttng_param_this_fn;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -1021,7 +1001,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -1030,7 +1010,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 		*from = (const char*)&lttng_param_call_site;
 		align = sizeof(const void *);
 
-		if(*len == 0) {
+		if (*len == 0) {
 			*to += ltt_align(*to, align); /* align output */
 		} else {
 			*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -1039,7 +1019,7 @@ static inline __attribute__((no_instrument_function)) int trace_user_generic_fun
 		*len += sizeof(const void *);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -1068,8 +1048,8 @@ static inline void lttng_write_string_user_generic_thread_brand_name(
 	size_t align;
 
 	/* Flush pending memcpy */
-	if(*len != 0) {
-		if(buffer != NULL)
+	if (*len != 0) {
+		if (buffer != NULL)
 			memcpy(buffer+*to_base+*to, *from, *len);
 	}
 	*to += *len;
@@ -1077,7 +1057,7 @@ static inline void lttng_write_string_user_generic_thread_brand_name(
 
 	align = sizeof(char);
 
-	if(*len == 0) {
+	if (*len == 0) {
 		*to += ltt_align(*to, align); /* align output */
 	} else {
 		*len += ltt_align(*to+*len, align); /* alignment, ok to do a memcpy of it */
@@ -1086,7 +1066,7 @@ static inline void lttng_write_string_user_generic_thread_brand_name(
 	/* Contains variable sized fields : must explode the structure */
 
 	size = strlen(obj) + 1; /* Include final NULL char. */
-	if(buffer != NULL)
+	if (buffer != NULL)
 		memcpy(buffer+*to_base+*to, obj, size);
 	*to += size;
 
@@ -1143,7 +1123,7 @@ static inline int trace_user_generic_thread_brand(
 		lttng_write_string_user_generic_thread_brand_name(buffer, to_base, to, from, len, lttng_param_name);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;
@@ -1181,9 +1161,7 @@ static inline int trace_user_generic_thread_brand(
 	const char *real_from;
 	const char **from = &real_from;
 	uint64_t tsc;
-	size_t before_hdr_pad, after_hdr_pad, header_size;
-
-	if(!trace) {
+		if (!trace) {
 		ltt_thread_init();
 		trace = thread_trace_info;
 	}
@@ -1206,22 +1184,20 @@ static inline int trace_user_generic_thread_brand(
 		ltt_buf = ltt_get_channel_from_index(trace, index);
 				slot_size = 0;
 		buffer = ltt_reserve_slot(trace, ltt_buf,
-			reserve_size, &slot_size, &tsc,
-			&before_hdr_pad, &after_hdr_pad, &header_size);
-		if(!buffer) goto end; /* buffer full */
+			reserve_size, &slot_size, &tsc);
+		if (!buffer)
+			goto end; /* buffer full */
 
 		*to_base = *to = *len = 0;
 
-		ltt_write_event_header(trace, ltt_buf, buffer,
+		buffer = ltt_write_event_header(trace, ltt_buf, buffer,
 			ltt_facility_user_generic_B1865E44, event_user_generic_thread_brand,
-			reserve_size, before_hdr_pad, tsc);
-		*to_base += before_hdr_pad + after_hdr_pad + header_size;
-
+			reserve_size, tsc);
 		*from = (const char*)lttng_param_name;
 		lttng_write_string_user_generic_thread_brand_name(buffer, to_base, to, from, len, lttng_param_name);
 
 		/* Flush pending memcpy */
-		if(*len != 0) {
+		if (*len != 0) {
 			memcpy(buffer+*to_base+*to, *from, *len);
 			*to += *len;
 			*len = 0;

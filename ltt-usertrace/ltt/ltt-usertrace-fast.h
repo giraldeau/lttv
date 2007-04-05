@@ -56,7 +56,7 @@ extern "C" {
 #define LTT_TRACER_VERSION_MINOR		8
 
 #ifndef atomic_cmpxchg
-#define atomic_cmpxchg(v, old, new) ((int)cmpxchg(&((v)->counter), old, new))
+#define atomic_cmpxchg(v, old, new) (cmpxchg(&((v)->counter), old, new))
 #endif //atomic_cmpxchg
 
 struct ltt_trace_header {
@@ -155,7 +155,7 @@ void __attribute__((no_instrument_function))
  * for every trace).
  */
 static inline unsigned int __attribute__((no_instrument_function))
-		ltt_get_index_from_facility(ltt_facility_t fID,
+		ltt_get_index_from_facility(uint8_t fID,
 																uint8_t eID)
 {
 	return GET_CHANNEL_INDEX(process);
@@ -188,12 +188,12 @@ static inline struct ltt_buf * __attribute__((no_instrument_function))
 static inline unsigned char __attribute__((no_instrument_function))
 														ltt_get_header_size(struct ltt_trace_info *trace,
                                                 void *address,
-                                                size_t *before_hdr_pad,
-                                                size_t *after_hdr_pad,
-                                                size_t *header_size)
+                                                size_t data_size,
+                                                size_t *before_hdr_pad)
 {
   unsigned int padding;
   unsigned int header;
+  size_t after_hdr_pad;
 
   header = sizeof(struct ltt_event_header_nohb);
 
@@ -203,10 +203,8 @@ static inline unsigned char __attribute__((no_instrument_function))
 
   /* Padding after header, considering header aligned on ltt_align.
    * Calculated statically if header size if known. */
-  *after_hdr_pad = ltt_align(header, sizeof(void*));
-  padding += *after_hdr_pad;
-
-  *header_size = header;
+  after_hdr_pad = ltt_align(header, sizeof(void*));
+  padding += after_hdr_pad;
 
   return header+padding;
 }
@@ -221,24 +219,25 @@ static inline unsigned char __attribute__((no_instrument_function))
  * @fID : facility ID
  * @eID : event ID
  * @event_size : size of the event, excluding the event header.
- * @offset : offset of the beginning of the header, for alignment.
- * 					 Calculated by ltt_get_event_header_size.
  * @tsc : time stamp counter.
  */
-static inline void __attribute__((no_instrument_function))
+static inline char *__attribute__((no_instrument_function))
 	ltt_write_event_header(
 		struct ltt_trace_info *trace, struct ltt_buf *buf,
-		void *ptr, ltt_facility_t fID, uint32_t eID, size_t event_size,
-		size_t offset, uint64_t tsc)
+		void *ptr, uint8_t fID, uint32_t eID, size_t event_size,
+		uint64_t tsc)
 {
+  size_t after_hdr_pad;
 	struct ltt_event_header_nohb *nohb;
 	
 	event_size = min(event_size, 0xFFFFU);
-	nohb = (struct ltt_event_header_nohb *)(ptr+offset);
+	nohb = (struct ltt_event_header_nohb *)(ptr);
 	nohb->timestamp = (uint64_t)tsc;
 	nohb->facility_id = fID;
 	nohb->event_id = eID;
 	nohb->event_size = (uint16_t)event_size;
+  after_hdr_pad = ltt_align(sizeof(*nohb), sizeof(void*));
+  return ptr + sizeof(*nohb) + after_hdr_pad;
 }
 
 
@@ -357,16 +356,14 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 															struct ltt_buf *ltt_buf,
 															unsigned int data_size,
 															size_t *slot_size,
-															uint64_t *tsc,
-															size_t *before_hdr_pad,
-															size_t *after_hdr_pad,
-															size_t *header_size)
+															uint64_t *tsc)
 {
 	int offset_begin, offset_end, offset_old;
 	//int has_switch;
 	int begin_switch, end_switch_current, end_switch_old;
 	int reserve_commit_diff = 0;
 	unsigned int size;
+  size_t before_hdr_pad;
 	int consumed_old, consumed_new;
 	int commit_count, reserve_count;
 	int ret;
@@ -390,7 +387,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 			begin_switch = 1; /* For offset_begin */
 		} else {
 			size = ltt_get_header_size(trace, ltt_buf->start + offset_begin,
-																 before_hdr_pad, after_hdr_pad, header_size)
+																 data_size, &before_hdr_pad)
 						 + data_size;
 
 			if((SUBBUF_OFFSET(offset_begin, ltt_buf)+size)>ltt_buf->subbuf_size) {
@@ -458,7 +455,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 				 * sem_wait. */
 			}
 			size = ltt_get_header_size(trace, ltt_buf->start + offset_begin,
-					before_hdr_pad, after_hdr_pad, header_size) + data_size;
+					data_size, &before_hdr_pad) + data_size;
 			if((SUBBUF_OFFSET(offset_begin,ltt_buf)+size)>ltt_buf->subbuf_size) {
 				/* Event too big for subbuffers, report error, don't complete 
 				 * the sub-buffer switch. */
@@ -620,7 +617,7 @@ static inline void * __attribute__((no_instrument_function)) ltt_reserve_slot(
 	//BUG_ON(*slot_size != (data_size + *before_hdr_pad + *after_hdr_pad + *header_size));
 	//BUG_ON(*slot_size != (offset_end - offset_begin));
 	
-	return ltt_buf->start + BUFFER_OFFSET(offset_begin, ltt_buf);
+	return ltt_buf->start + BUFFER_OFFSET(offset_begin, ltt_buf) + before_hdr_pad;
 }
 	
 	

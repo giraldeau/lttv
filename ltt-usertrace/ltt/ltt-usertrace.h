@@ -96,7 +96,7 @@ extern "C" {
 #ifndef LTT_BLOCKING
 #define LTT_BLOCKING 0
 #endif //LTT_BLOCKING
-															 
+
 typedef unsigned int ltt_facility_t;
 
 struct user_facility_info {

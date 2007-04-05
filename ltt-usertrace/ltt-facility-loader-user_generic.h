@@ -13,4 +13,6 @@ ltt_facility_t	ltt_facility_user_generic_B1865E44;
 #define LTT_FACILITY_NAME								"user_generic"
 #define LTT_FACILITY_NUM_EVENTS					facility_user_generic_num_events
 
+#define LTT_FACILITY_ALIGNMENT					1
+
 #endif //_LTT_FACILITY_LOADER_USER_GENERIC_H_
