@@ -1,5 +1,8 @@
 #include <stdarg.h>
 
+/* Maximum number of callbacks per marker */
+#define LTT_NR_CALLBACKS	10
+
 /* LTT flags
  *
  * LTT_FLAG_TRACE : first arg contains trace to write into.
@@ -18,7 +21,8 @@
 #define LTT_FLAG_FORCE		(1 << _LTT_FLAG_FORCE)
 
 
-char *(*ltt_serialize_cb)(char *buffer, const char *fmt, va_list args);
+char *(*ltt_serialize_cb)(char *buffer, int *cb_args,
+			const char *fmt, va_list args);
 
 
 static int skip_atoi(const char **s)
@@ -32,10 +36,13 @@ static int skip_atoi(const char **s)
 
 /* Inspired from vsnprintf */
 /* New types :
- * %r : serialized pointer.
+ * %r : serialized fixed length struct, union, array.
+ * %v : serialized sequence
+ * %k : callback
  */
 static inline __attribute__((no_instrument_function))
-char *ltt_serialize_data(char *buffer, const char *fmt, va_list args)
+char *ltt_serialize_data(char *buffer, int *cb_args,
+			const char *fmt, va_list args)
 {
 	int len;
 	const char *s;
@@ -48,6 +55,7 @@ char *ltt_serialize_data(char *buffer, const char *fmt, va_list args)
 				/* 't' added for ptrdiff_t */
 	char *str;		/* Pointer to write to */
 	ltt_serialize_cb cb;
+	int cb_arg_nr = 0;
 
 	str = buf;
 
@@ -117,6 +125,9 @@ char *ltt_serialize_data(char *buffer, const char *fmt, va_list args)
 				if (buffer)
 					strcpy(str, s);
 				str += strlen(s);
+				/* Following alignment for genevent
+				 * compatibility */
+				str += ltt_align(str, sizeof(void*));
 				continue;
 
 			case 'p':
@@ -154,6 +165,9 @@ char *ltt_serialize_data(char *buffer, const char *fmt, va_list args)
 						memcpy(str, src, elem_size);
 					str += elem_size;
 				}
+				/* Following alignment for genevent
+				 * compatibility */
+				str += ltt_align(str, sizeof(void*));
 				continue;
 
 			case 'k':
@@ -162,16 +176,20 @@ char *ltt_serialize_data(char *buffer, const char *fmt, va_list args)
 				 /* The callback will take as many arguments
 				  * as it needs from args. They won't be
 				  * type verified. */
-				str = cb(str, fmt, args);
+				if (cb_arg_nr < LTT_NR_CALLBACKS)
+					str = cb(str, &cb_args[cb_arg_nr++],
+						fmt, args);
 				continue;
 
 			case 'n':
 				/* FIXME:
-				* What does C99 say about the overflow case here? */
+				* What does C99 say about the overflow case
+				* here? */
 				if (qualifier == 'l') {
 					long * ip = va_arg(args, long *);
 					*ip = (str - buf);
-				} else if (qualifier == 'Z' || qualifier == 'z') {
+				} else if (qualifier == 'Z'
+					|| qualifier == 'z') {
 					size_t * ip = va_arg(args, size_t *);
 					*ip = (str - buf);
 				} else {
@@ -234,10 +252,12 @@ char *ltt_serialize_data(char *buffer, const char *fmt, va_list args)
 			if (buffer)
 				switch (elem_size) {
 				case 1:
-					*(int8_t*)str = (int8_t)va_arg(args, int);
+					*(int8_t*)str =
+						(int8_t)va_arg(args, int);
 					break;
 				case 2:
-					*(int16_t*)str = (int16_t)va_arg(args, int);
+					*(int16_t*)str =
+						(int16_t)va_arg(args, int);
 					break;
 				case 4:
 					*(int32_t*)str = va_arg(args, int32_t);
@@ -262,6 +282,7 @@ char *ltt_serialize_data(char *buffer, const char *fmt, va_list args)
  * sizeof(void *) address. */
 static inline __attribute__((no_instrument_function))
 size_t ltt_get_data_size(ltt_facility_t fID, uint8_t eID,
+				int *cb_args,
 				const char *fmt, va_list args)
 {
 	return (size_t)ltt_serialize_data(NULL, fmt, args);
@@ -270,6 +291,7 @@ size_t ltt_get_data_size(ltt_facility_t fID, uint8_t eID,
 static inline __attribute__((no_instrument_function))
 void ltt_write_event_data(char *buffer,
 				ltt_facility_t fID, uint8_t eID,
+				int *cb_args,
 				const char *fmt, va_list args)
 {
 	ltt_serialize_data(buffer, fmt, args);
@@ -288,10 +310,12 @@ void _vtrace(ltt_facility_t fID, uint8_t eID, long flags,
 	uint64_t tsc;
 	char *buffer;
 	va_list args_copy;
+	int cb_args[LTT_NR_CALLBACKS];
 
 	/* This test is useful for quickly exiting static tracing when no
 	 * trace is active. */
-	if (likely(ltt_traces.num_active_traces == 0 && !(flags & LTT_FLAG_FORCE)))
+	if (likely(ltt_traces.num_active_traces == 0
+		&& !(flags & LTT_FLAG_FORCE)))
 		return;
 
 	preempt_disable();
@@ -305,7 +329,7 @@ void _vtrace(ltt_facility_t fID, uint8_t eID, long flags,
 		channel_index = ltt_get_channel_index(fID, eID);
 
 	va_copy(args_copy, args);	/* Check : skip 2 st args if trace/ch */
-	data_size = ltt_get_data_size(fID, eID, fmt, args_copy);
+	data_size = ltt_get_data_size(fID, eID, cb_args, fmt, args_copy);
 	va_end(args_copy);
 
 	/* Iterate on each traces */
@@ -324,7 +348,7 @@ void _vtrace(ltt_facility_t fID, uint8_t eID, long flags,
 		buffer = ltt_write_event_header(trace, channel, buffer,
 						fID, eID, data_size, tsc);
 		va_copy(args_copy, args);
-		ltt_write_event_data(buffer, fID, eID, fmt, args_copy);
+		ltt_write_event_data(buffer, fID, eID, cb_args, fmt, args_copy);
 		va_end(args_copy);
 		/* Out-of-order commit */
 		ltt_commit_slot(channel, &transport_data, buffer, slot_size);

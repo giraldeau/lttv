@@ -3,13 +3,17 @@ ifneq ($(CONFIG_LTT),)
 	#obj-m += ltt-facility-loader-tests.o
 #	#obj-m += test-time-probe.o 
 	#obj-m += test-time-probe2.o 
-	#obj-m += test-compact.o 
+	obj-m += test-compact.o 
 #	obj-m += ltt-facility-loader-compact.o
 #	obj-m += test-instrument-size-small.o
 #	obj-m += test-instrument-size-med.o
 #	obj-m += test-instrument-size-big.o
 #	obj-m += test-printk-effect.o
+	obj-m += ltt-probe-tests.o
+	obj-m += test-time-probe3.o
 endif
+	obj-m += probe-example.o
+	obj-m += marker-example.o
 #	obj-m += test-async-tsc.o
 	obj-m += test-tsc-sync.o
 	obj-m += test-tsc.o
