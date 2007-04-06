@@ -2271,7 +2271,7 @@ static gboolean process_kernel_thread(void *hook_data, void *call_data)
   LttvExecutionState *es;
 
   /* PID */
-  pid = ltt_event_get_unsigned(e, thf->f1);
+  pid = ltt_event_get_long_unsigned(e, thf->f1);
   s->parent.target_pid = pid;
 
   process = lttv_state_find_process(ts, ANY_CPU, pid);
