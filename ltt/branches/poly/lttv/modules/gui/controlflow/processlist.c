@@ -51,13 +51,13 @@ gint process_sort_func  ( GtkTreeModel *model,
   gchar *a_brand;
   guint a_pid, a_tgid, a_ppid, a_cpu;
   gulong a_birth_s, a_birth_ns;
-  gulong a_trace;
+  guint a_trace;
 
   gchar *b_name;
   gchar *b_brand;
   guint b_pid, b_tgid, b_ppid, b_cpu;
   gulong b_birth_s, b_birth_ns;
-  gulong b_trace;
+  guint b_trace;
 
   gtk_tree_model_get(model,
            it_a,
@@ -364,7 +364,7 @@ ProcessList *processlist_construct(void)
               G_TYPE_UINT,
               G_TYPE_ULONG,
               G_TYPE_ULONG,
-              G_TYPE_ULONG);
+              G_TYPE_UINT);
 
 
   process_list->process_list_widget = 
@@ -630,7 +630,7 @@ int processlist_add(  ProcessList *process_list,
   HashedProcessData *hashed_process_data = g_new(HashedProcessData, 1);
   *pm_hashed_process_data = hashed_process_data;
   *pm_process_info = Process_Info;
-  
+ 
   Process_Info->pid = pid;
   Process_Info->tgid = tgid;
   if(pid == 0)
