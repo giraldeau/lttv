@@ -2231,6 +2231,55 @@ xtensa.<br>
 
 </tr>
 
+<tr>
+<td style="vertical-align: top;">
+0.8.82<br>
+</td>
+<td style="vertical-align: top;">
+0.9.0<br>
+</td>
+<td style="vertical-align: top;">
+0.37<br>
+</td>
+<td style="vertical-align: top;">
+obsolete<br>
+</td>
+<td style="vertical-align: top;">
+0.29<br>
+</td>
+<td style="vertical-align: top;">
+0.34<br>
+</td>
+<td style="vertical-align: top;">
+0.8<br>
+</td>
+<td style="vertical-align: top;">
+2.6.20<br>
+ARM, MIPS32/64, powerpc32, powerpc64, ppc, i386, x86_64<br>
+</td>
+<td style="vertical-align: top;">
+Introduces the LTT serialization library. Cuts the kernel patch size from
+2M to 500k. Deprecates genevent for kernel instrumentation, but keeps backward
+compatibility with genevent generated code (still used for user space tracing).
+Slightly longer execution time at instrumentation site (270ns vs 200ns for 4
+bytes write on P4 3GHz), but the global advantage of using less memory, and
+therefore less cache, should overweight this cost in cycles. Note : In this
+version, the ltt-probe-* kernel modules and the XML definitions must be kept in
+sync by hand, otherwise, LTTV will detect a size mismatch between the kernel
+trace and the expected event size..<br>
+</td>
+<td style="vertical-align: top;">
+</td>
+<td style="vertical-align: top;">
+ARM, mips, mipsel, powerpc64, i386, sparc64, m68k, ia64, s390, sparc, alpha.<br>
+arm26, avr32, cris, frv, h8300, m32r, m68knommu, parisc, sh, sh64, um, v850,
+xtensa.<br>
+</td>
+
+</tr>
+
+
+
 </tbody>
 </table>
 
