@@ -45,6 +45,7 @@ IN="?_include_asm-powerpc_prom.h
 ?_include_asm-ppc_ocp.h
 ?_arch_powerpc_kernel_setup_32.c
 ?_arch_ppc_kernel_setup.c
+?_arch_ppc_kernel_ppc_ksyms.c
 ?_arch_sparc64_kernel_process.c
 ?_arch_sparc_kernel_process.c
 ?_arch_sparc_kernel_traps.c
@@ -68,17 +69,6 @@ IN="?_include_linux_relay.h
 
 for a in $IN; do wr $a $FILE; done
 
-#kprobes
-
-#FILE=../${PRENAME}${COUNT}${NAME}-kprobes.diff
-#VALUE=$(( ${VALUE} + 1 ))
-#printf -v COUNT "%02d" ${VALUE}
-#
-#IN="?_include_linux_kprobes.h
-#?_arch_i386_kernel_kprobes.c
-#?_kernel_kprobes.c"
-#
-#for a in $IN; do wr $a $FILE; done
 
 #Markers
 
@@ -91,12 +81,231 @@ IN="?_kernel_Kconfig.marker"
 for a in $IN; do wr $a $FILE; done
 
 
+#marker linker scripts
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-generic.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-generic_vmlinux.lds.h"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-alpha.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_alpha_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-arm.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_arm_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-arm26.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_arm26_kernel_vmlinux-arm26-xip.lds.in
+?_arch_arm26_kernel_vmlinux-arm26.lds.in"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-avr32.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_avr32_kernel_vmlinux.lds.c"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-cris.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_cris_arch-v10_vmlinux.lds.S
+?_arch_cris_arch-v32_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-frv.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_frv_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-h8300.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_h8300_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-i386.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_i386_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-ia64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_ia64_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-m32r.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_m32r_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-m68k.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_m68k_kernel_vmlinux-std.lds
+?_arch_m68k_kernel_vmlinux-sun3.lds"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-m68knommu.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_m68knommu_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-mips.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_mips_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-parisc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_parisc_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-powerpc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_powerpc_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-ppc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_ppc_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-s390.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_s390_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-sh.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_sh_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-sh64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_sh64_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-sparc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_sparc_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-sparc64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_sparc64_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-um.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_um_kernel_dyn.lds.S
+?_arch_um_kernel_uml.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-v850.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_v850_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-x86_64.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_x86_64_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-markers-linker-scripts-xtensa.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_arch_xtensa_kernel_vmlinux.lds.S"
+
+for a in $IN; do wr $a $FILE; done
+
+
+
+
+
+
+#markers implementation
 FILE=../${PRENAME}${COUNT}${NAME}-markers-generic.part1.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-generic_vmlinux.lds.h
-?_include_linux_module.h
+IN="?_include_linux_module.h
 ?_include_linux_marker.h
 ?_include_linux_kernel.h"
 
@@ -130,7 +339,9 @@ FILE=../${PRENAME}${COUNT}${NAME}-markers-non-opt-arch.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_asm-arm_marker.h
+IN="?_include_asm-alpha_marker.h
+?_include_asm-arm_marker.h
+?_include_asm-arm26_marker.h
 ?_include_asm-cris_marker.h
 ?_include_asm-frv_marker.h
 ?_include_asm-generic_marker.h
@@ -143,10 +354,10 @@ IN="?_include_asm-arm_marker.h
 ?_include_asm-parisc_marker.h
 ?_include_asm-ppc_marker.h
 ?_include_asm-s390_marker.h
-?_include_asm-sh64_marker.h
 ?_include_asm-sh_marker.h
-?_include_asm-sparc64_marker.h
+?_include_asm-sh64_marker.h
 ?_include_asm-sparc_marker.h
+?_include_asm-sparc64_marker.h
 ?_include_asm-um_marker.h
 ?_include_asm-v850_marker.h
 ?_include_asm-x86_64_marker.h
@@ -170,6 +381,22 @@ VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
 IN="?_include_asm-alpha_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-avr32.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-avr32_atomic.h"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-frv.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-frv_system.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -227,6 +454,14 @@ IN="?_include_asm-powerpc_atomic.h
 
 for a in $IN; do wr $a $FILE; done
 
+FILE=../${PRENAME}${COUNT}${NAME}-atomic-ppc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_include_asm-ppc_system.h"
+
+for a in $IN; do wr $a $FILE; done
+
 
 FILE=../${PRENAME}${COUNT}${NAME}-atomic-sparc64.diff
 VALUE=$(( ${VALUE} + 1 ))
@@ -264,6 +499,13 @@ IN="?_include_asm-generic_local.h"
 
 for a in $IN; do wr $a $FILE; done
 
+FILE=../${PRENAME}${COUNT}${NAME}-local-documentation.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_Documentation_local_ops.txt"
+
+for a in $IN; do wr $a $FILE; done
 
 FILE=../${PRENAME}${COUNT}${NAME}-local-alpha.diff
 VALUE=$(( ${VALUE} + 1 ))
@@ -389,8 +631,8 @@ printf -v COUNT "%02d" ${VALUE}
 
 IN="?_ltt_ltt-test-tsc.c
 ?_include_asm-alpha_ltt.h
-?_include_asm-arm26_ltt.h
 ?_include_asm-arm_ltt.h
+?_include_asm-arm26_ltt.h
 ?_include_asm-cris_ltt.h
 ?_include_asm-frv_ltt.h
 ?_include_asm-generic_ltt.h
@@ -407,10 +649,10 @@ IN="?_ltt_ltt-test-tsc.c
 ?_include_asm-powerpc_ltt.h
 ?_include_asm-ppc_ltt.h
 ?_include_asm-s390_ltt.h
-?_include_asm-sh64_ltt.h
 ?_include_asm-sh_ltt.h
-?_include_asm-sparc64_ltt.h
+?_include_asm-sh64_ltt.h
 ?_include_asm-sparc_ltt.h
+?_include_asm-sparc64_ltt.h
 ?_include_asm-um_ltt.h
 ?_include_asm-v850_ltt.h
 ?_include_asm-x86_64_ltt.h
@@ -442,7 +684,7 @@ FILE=../${PRENAME}${COUNT}${NAME}-tracer-header.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_include_ltt_ltt-tracer.h"
+IN="?_include_linux_ltt-tracer.h"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -491,11 +733,29 @@ IN="?_include_linux_sched.h
 ?_include_asm-arm_unistd.h
 ?_include_asm-i386_unistd.h
 ?_include_asm-mips_unistd.h
-?_include_asm-powerpc_unistd.h
 ?_include_asm-powerpc_systbl.h
+?_include_asm-powerpc_unistd.h
 ?_include_asm-x86_64_unistd.h"
 
 for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-serialize.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_ltt_ltt-serialize.c"
+
+for a in $IN; do wr $a $FILE; done
+
+FILE=../${PRENAME}${COUNT}${NAME}-test-tsc.diff
+VALUE=$(( ${VALUE} + 1 ))
+printf -v COUNT "%02d" ${VALUE}
+
+IN="?_ltt_ltt-test-tsc.c"
+
+for a in $IN; do wr $a $FILE; done
+
+
 
 FILE=../${PRENAME}${COUNT}${NAME}-instrumentation-arm.diff
 VALUE=$(( ${VALUE} + 1 ))
@@ -518,8 +778,8 @@ printf -v COUNT "%02d" ${VALUE}
 
 IN="?_arch_i386_kernel_process.c
 ?_arch_i386_kernel_ptrace.c
-?_arch_i386_kernel_syscall_table.S
 ?_arch_i386_kernel_sys_i386.c
+?_arch_i386_kernel_syscall_table.S
 ?_arch_i386_kernel_time.c
 ?_arch_i386_kernel_traps.c
 ?_arch_i386_mm_fault.c"
@@ -532,14 +792,14 @@ printf -v COUNT "%02d" ${VALUE}
 
 IN="?_arch_mips_kernel_process.c
 ?_arch_mips_kernel_ptrace.c
-?_arch_mips_kernel_syscall.c
-?_arch_mips_kernel_traps.c
-?_arch_mips_kernel_unaligned.c
-?_include_asm-mips_mipsregs.h
 ?_arch_mips_kernel_scall32-o32.S
 ?_arch_mips_kernel_scall64-64.S
 ?_arch_mips_kernel_scall64-n32.S
 ?_arch_mips_kernel_scall64-o32.S
+?_arch_mips_kernel_syscall.c
+?_arch_mips_kernel_traps.c
+?_arch_mips_kernel_unaligned.c
+?_include_asm-mips_mipsregs.h
 ?_arch_mips_mm_fault.c"
 
 for a in $IN; do wr $a $FILE; done
@@ -585,11 +845,13 @@ printf -v COUNT "%02d" ${VALUE}
 IN="?_arch_x86_64_ia32_ia32entry.S
 ?_arch_x86_64_ia32_ipc32.c
 ?_arch_x86_64_kernel_entry.S
+?_arch_x86_64_kernel_init_task.c
 ?_arch_x86_64_kernel_process.c
 ?_arch_x86_64_kernel_ptrace.c
 ?_arch_x86_64_kernel_time.c
 ?_arch_x86_64_kernel_traps.c
 ?_arch_x86_64_mm_fault.c"
+#?_arch_x86_64_kernel_init_task.c is for stack dump as module
 
 for a in $IN; do wr $a $FILE; done
 
@@ -629,6 +891,7 @@ VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
 IN="?_arch_s390_kernel_traps.c
+?_arch_s390_kernel_sys_s390.c
 ?_arch_s390_mm_fault.c"
 
 for a in $IN; do wr $a $FILE; done
@@ -696,7 +959,9 @@ IN="?_fs_buffer.c
 ?_mm_page_io.c
 ?_net_core_dev.c
 ?_net_ipv4_devinet.c
-?_net_socket.c"
+?_net_socket.c
+?_kernel_extable.c"
+#extable is for stack dump as module : __kernel_text_address must be exported
 
 for a in $IN; do wr $a $FILE; done
 
@@ -710,132 +975,27 @@ IN="?_kernel_module.c"
 for a in $IN; do wr $a $FILE; done
 
 
-
-FILE=../${PRENAME}${COUNT}${NAME}-facilities-probes-headers.diff
-VALUE=$(( ${VALUE} + 1 ))
-printf -v COUNT "%02d" ${VALUE}
-
-IN="?_include_ltt_ltt-facility-custom-fs_data.h
-?_include_ltt_ltt-facility-custom-stack_arch_i386.h
-?_include_ltt_ltt-facility-custom-stack_arch_x86_64.h
-?_include_ltt_ltt-facility-custom-stack.h
-?_include_ltt_ltt-facility-fs_data.h
-?_include_ltt_ltt-facility-fs.h
-?_include_ltt_ltt-facility-id-fs_data.h
-?_include_ltt_ltt-facility-id-fs.h
-?_include_ltt_ltt-facility-id-ipc.h
-?_include_ltt_ltt-facility-id-kernel_arch_arm.h
-?_include_ltt_ltt-facility-id-kernel_arch_i386.h
-?_include_ltt_ltt-facility-id-kernel_arch_mips.h
-?_include_ltt_ltt-facility-id-kernel_arch_powerpc.h
-?_include_ltt_ltt-facility-id-kernel_arch_ppc.h
-?_include_ltt_ltt-facility-id-kernel_arch_x86_64.h
-?_include_ltt_ltt-facility-id-kernel.h
-?_include_ltt_ltt-facility-id-locking.h
-?_include_ltt_ltt-facility-id-memory.h
-?_include_ltt_ltt-facility-id-network.h
-?_include_ltt_ltt-facility-id-network_ip_interface.h
-?_include_ltt_ltt-facility-id-process.h
-?_include_ltt_ltt-facility-id-socket.h
-?_include_ltt_ltt-facility-id-stack_arch_i386.h
-?_include_ltt_ltt-facility-id-stack.h
-?_include_ltt_ltt-facility-id-statedump.h
-?_include_ltt_ltt-facility-id-timer.h
-?_include_ltt_ltt-facility-ipc.h
-?_include_ltt_ltt-facility-kernel_arch_arm.h
-?_include_ltt_ltt-facility-kernel_arch_i386.h
-?_include_ltt_ltt-facility-kernel_arch_mips.h
-?_include_ltt_ltt-facility-kernel_arch_powerpc.h
-?_include_ltt_ltt-facility-kernel_arch_ppc.h
-?_include_ltt_ltt-facility-kernel_arch_x86_64.h
-?_include_ltt_ltt-facility-kernel.h
-?_include_ltt_ltt-facility-locking.h
-?_include_ltt_ltt-facility-memory.h
-?_include_ltt_ltt-facility-network.h
-?_include_ltt_ltt-facility-network_ip_interface.h
-?_include_ltt_ltt-facility-process.h
-?_include_ltt_ltt-facility-select-default.h
-?_include_ltt_ltt-facility-select-fs.h
-?_include_ltt_ltt-facility-select-kernel.h
-?_include_ltt_ltt-facility-select-network_ip_interface.h
-?_include_ltt_ltt-facility-select-process.h
-?_include_ltt_ltt-facility-select-statedump.h
-?_include_ltt_ltt-facility-select-compact.h
-?_include_ltt_ltt-facility-socket.h
-?_include_ltt_ltt-facility-stack.h
-?_include_ltt_ltt-facility-statedump.h
-?_include_ltt_ltt-facility-timer.h
-?_include_ltt_ltt-stack.h"
-
-for a in $IN; do wr $a $FILE; done
-
-
-FILE=../${PRENAME}${COUNT}${NAME}-facilities-probes.diff
-VALUE=$(( ${VALUE} + 1 ))
-printf -v COUNT "%02d" ${VALUE}
-
-IN="?_ltt_facilities_ltt-facility-loader-fs.c
-?_ltt_facilities_ltt-facility-loader-fs_data.c
-?_ltt_facilities_ltt-facility-loader-fs_data.h
-?_ltt_facilities_ltt-facility-loader-fs.h
-?_ltt_facilities_ltt-facility-loader-ipc.c
-?_ltt_facilities_ltt-facility-loader-ipc.h
-?_ltt_facilities_ltt-facility-loader-kernel_arch_arm.c
-?_ltt_facilities_ltt-facility-loader-kernel_arch_arm.h
-?_ltt_facilities_ltt-facility-loader-kernel_arch_i386.c
-?_ltt_facilities_ltt-facility-loader-kernel_arch_i386.h
-?_ltt_facilities_ltt-facility-loader-kernel_arch_mips.c
-?_ltt_facilities_ltt-facility-loader-kernel_arch_mips.h
-?_ltt_facilities_ltt-facility-loader-kernel_arch_powerpc.c
-?_ltt_facilities_ltt-facility-loader-kernel_arch_powerpc.h
-?_ltt_facilities_ltt-facility-loader-kernel_arch_ppc.c
-?_ltt_facilities_ltt-facility-loader-kernel_arch_ppc.h
-?_ltt_facilities_ltt-facility-loader-kernel_arch_x86_64.c
-?_ltt_facilities_ltt-facility-loader-kernel_arch_x86_64.h
-?_ltt_facilities_ltt-facility-loader-kernel.c
-?_ltt_facilities_ltt-facility-loader-kernel.h
-?_ltt_facilities_ltt-facility-loader-locking.c
-?_ltt_facilities_ltt-facility-loader-locking.h
-?_ltt_facilities_ltt-facility-loader-memory.c
-?_ltt_facilities_ltt-facility-loader-memory.h
-?_ltt_facilities_ltt-facility-loader-network.c
-?_ltt_facilities_ltt-facility-loader-network.h
-?_ltt_facilities_ltt-facility-loader-network_ip_interface.c
-?_ltt_facilities_ltt-facility-loader-network_ip_interface.h
-?_ltt_facilities_ltt-facility-loader-process.c
-?_ltt_facilities_ltt-facility-loader-process.h
-?_ltt_facilities_ltt-facility-loader-socket.c
-?_ltt_facilities_ltt-facility-loader-socket.h
-?_ltt_facilities_ltt-facility-loader-stack.c
-?_ltt_facilities_ltt-facility-loader-stack.h
-?_ltt_facilities_ltt-facility-loader-statedump.c
-?_ltt_facilities_ltt-facility-loader-statedump.h
-?_ltt_facilities_ltt-facility-loader-timer.c
-?_ltt_facilities_ltt-facility-loader-timer.h
-?_ltt_ltt-stack.c"
-
-
-for a in $IN; do wr $a $FILE; done
-
-
 FILE=../${PRENAME}${COUNT}${NAME}-probes.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_ltt_probes_ltt-probe-arm.c
+IN="?_ltt_probes_Makefile
+?_ltt_probes_ltt-probe-compact.c
+?_ltt_probes_ltt-probe-core.c
 ?_ltt_probes_ltt-probe-fs.c
-?_ltt_probes_ltt-probe-i386.c
-?_ltt_probes_ltt-probe-ipc.c
 ?_ltt_probes_ltt-probe-kernel.c
+?_ltt_probes_ltt-probe-kernel_arch_arm.c
+?_ltt_probes_ltt-probe-kernel_arch_i386.c
+?_ltt_probes_ltt-probe-kernel_arch_mips.c
+?_ltt_probes_ltt-probe-kernel_arch_powerpc.c
+?_ltt_probes_ltt-probe-kernel_arch_ppc.c
+?_ltt_probes_ltt-probe-kernel_arch_x86_64.c
 ?_ltt_probes_ltt-probe-list.c
 ?_ltt_probes_ltt-probe-locking.c
-?_ltt_probes_ltt-probe-mips.c
 ?_ltt_probes_ltt-probe-mm.c
 ?_ltt_probes_ltt-probe-net.c
-?_ltt_probes_ltt-probe-powerpc.c
-?_ltt_probes_ltt-probe-ppc.c
-?_ltt_probes_ltt-probe-x86_64.c
-?_ltt_probes_Makefile"
+?_ltt_probes_ltt-probe-stack_arch_i386.c
+?_ltt_probes_ltt-probe-stack_arch_x86_64.c"
 
 for a in $IN; do wr $a $FILE; done
 
@@ -858,6 +1018,7 @@ IN="?_Makefile
 ?_arch_alpha_Kconfig
 ?_arch_arm26_Kconfig
 ?_arch_arm_Kconfig
+?_arch_avr32_Kconfig.debug
 ?_arch_cris_Kconfig
 ?_arch_frv_Kconfig
 ?_arch_h8300_Kconfig
@@ -866,19 +1027,19 @@ IN="?_Makefile
 ?_arch_m32r_Kconfig
 ?_arch_m68k_Kconfig
 ?_arch_m68knommu_Kconfig
-?_arch_ppc_Kconfig
-?_arch_powerpc_Kconfig
-?_arch_parisc_Kconfig
 ?_arch_mips_Kconfig
+?_arch_parisc_Kconfig
+?_arch_powerpc_Kconfig
+?_arch_ppc_Kconfig
 ?_arch_s390_Kconfig
-?_arch_sh64_Kconfig
 ?_arch_sh_Kconfig
-?_arch_sparc64_Kconfig
+?_arch_sh64_Kconfig
 ?_arch_sparc_Kconfig
+?_arch_sparc64_Kconfig
 ?_arch_um_Kconfig
 ?_arch_v850_Kconfig
-?_arch_xtensa_Kconfig
-?_arch_x86_64_Kconfig"
+?_arch_x86_64_Kconfig
+?_arch_xtensa_Kconfig"
 
 for a in $IN; do wr $a $FILE; done
 
