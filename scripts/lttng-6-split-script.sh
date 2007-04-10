@@ -603,28 +603,6 @@ IN="?_include_linux_ltt-facilities.h
 
 for a in $IN; do wr $a $FILE; done
 
-FILE=../${PRENAME}${COUNT}${NAME}-facility-core-headers.diff
-VALUE=$(( ${VALUE} + 1 ))
-printf -v COUNT "%02d" ${VALUE}
-
-IN="?_include_ltt_ltt-facility-core.h
-?_include_ltt_ltt-facility-id-core.h
-?_include_ltt_ltt-facility-select-core.h"
-
-for a in $IN; do wr $a $FILE; done
-
-
-FILE=../${PRENAME}${COUNT}${NAME}-facility-loader-core.diff
-VALUE=$(( ${VALUE} + 1 ))
-printf -v COUNT "%02d" ${VALUE}
-
-IN="?_ltt_facilities_ltt-facility-loader-core.c
-?_ltt_facilities_ltt-facility-loader-core.h
-?_ltt_facilities_Makefile"
-
-for a in $IN; do wr $a $FILE; done
-
-
 FILE=../${PRENAME}${COUNT}${NAME}-timestamp.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
