@@ -319,8 +319,10 @@
 			<label name="o32_kexec_load" value="4311"/>
 			<label name="o32_getcpu" value="4312"/>
 			<label name="o32_epoll_pwait" value="4313"/>
-			<label name="o32_ltt_trace_generic" value="4314"/>
-			<label name="o32_ltt_register_generic" value="4315"/>
+			<label name="o32_ioprio_set" value="4314"/>
+			<label name="o32_ioprio_get" value="4315"/>
+			<label name="o32_ltt_trace_generic" value="4316"/>
+			<label name="o32_ltt_register_generic" value="4317"/>
 
 			<label name="l64_base" value="4999"/>
 			<label name="l64_read" value="5000"/>
@@ -596,8 +598,10 @@
 			<label name="l64_kexec_load" value="5270"/>
 			<label name="l64_getcpu" value="5271"/>
 			<label name="l64_epoll_pwait" value="5272"/>
-			<label name="l64_ltt_trace_generic" value="5273"/>
-			<label name="l64_ltt_register_generic" value="5274"/>
+			<label name="l64_ioprio_set" value="5273"/>
+			<label name="l64_ioprio_get" value="5274"/>
+			<label name="l64_ltt_trace_generic" value="5275"/>
+			<label name="l64_ltt_register_generic" value="5276"/>
 
 			<label name="N32_base" value="5999"/>
 			<label name="N32_read" value="6000"/>
@@ -877,8 +881,10 @@
 			<label name="N32_kexec_load" value="6274"/>
 			<label name="N32_getcpu" value="6275"/>
 			<label name="N32_epoll_pwait" value="6276"/>
-			<label name="N32_ltt_trace_generic" value="6277"/>
-			<label name="N32_ltt_register_generic" value="6278"/>
+			<label name="N32_ioprio_set" value="6277"/>
+			<label name="N32_ioprio_get" value="6278"/>
+			<label name="N32_ltt_trace_generic" value="6279"/>
+			<label name="N32_ltt_register_generic" value="6280"/>
     </enum>
   </type>
 

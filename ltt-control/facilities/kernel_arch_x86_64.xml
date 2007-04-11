@@ -283,8 +283,12 @@
       <label name="sync_file_range" value="277"/>
       <label name="vmsplice" value="278"/>
       <label name="move_pages" value="279"/>
-      <label name="ltt_trace_generic" value="280"/>
-      <label name="ltt_register_generic" value="281"/>
+      <label name="futex64" value="280"/>
+      <label name="signalfd" value="281"/>
+      <label name="timerfd" value="282"/>
+      <label name="eventfd" value="283"/>
+      <label name="ltt_trace_generic" value="284"/>
+      <label name="ltt_register_generic" value="285"/>
 
 
       <label name="ia32_restart_syscall" value="5000"/>
@@ -608,8 +612,14 @@
       <label name="ia32_move_pages" value="5317"/>
       <label name="ia32_getcpu" value="5318"/>
       <label name="ia32_epoll_pwait" value="5319"/>
-      <label name="ia32_ltt_trace_generic" value="5320"/>
-      <label name="ia32_ltt_register_generic" value="5321"/>
+      <label name="ia32_lutimesat" value="5320"/>
+      <label name="ia32_signalfd" value="5321"/>
+      <label name="ia32_timerfd" value="5322"/>
+      <label name="ia32_eventfd" value="5323"/>
+      <label name="ia32_revokeat" value="5324"/>
+      <label name="ia32_frevoke" value="5325"/>
+      <label name="ia32_ltt_trace_generic" value="5326"/>
+      <label name="ia32_ltt_register_generic" value="5327"/>
     </enum>
   </type>
 

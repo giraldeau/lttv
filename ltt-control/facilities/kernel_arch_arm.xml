@@ -350,8 +350,9 @@
 			<label name="move_pages" value="344"/>
 			<label name="getcpu" value="345"/>
 			<label name="epoll_pwait" value="346"/>
-			<label name="ltt_trace_generic" value="347"/>
-			<label name="ltt_register_generic" value="348"/>
+			<label name="kexec_load" value="347"/>
+			<label name="ltt_trace_generic" value="348"/>
+			<label name="ltt_register_generic" value="349"/>
 			<label name="arm_syscall_offset" value="1024"/>
 			<label name="breakpoint" value="1025"/>
 			<label name="cacheflush" value="1026"/>

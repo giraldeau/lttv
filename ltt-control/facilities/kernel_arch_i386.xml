@@ -321,8 +321,14 @@
 			<label name="move_pages" value="317"/>
 			<label name="getcpu" value="318"/>
 			<label name="epoll_pwait" value="319"/>
-			<label name="ltt_trace_generic" value="320"/>
-			<label name="ltt_register_generic" value="321"/>
+			<label name="lutimesat" value="320"/>
+			<label name="signalfd" value="321"/>
+			<label name="timerfd" value="322"/>
+			<label name="eventfd" value="323"/>
+			<label name="revokeat" value="324"/>
+			<label name="frevoke" value="325"/>
+			<label name="ltt_trace_generic" value="326"/>
+			<label name="ltt_register_generic" value="327"/>
     </enum>
   </type>
 
