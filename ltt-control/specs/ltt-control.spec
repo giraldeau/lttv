@@ -3,8 +3,8 @@
 #
 Summary: LTT Control
 Name: ltt-control
-Version: 0.12
-Release: 21062006
+Version: 0.39
+Release: 25042007
 License: GPL
 Group: Applications/Development
 Source: http://ltt.polymtl.ca/lttng/ltt-control-%{version}-%{release}.tar.gz
@@ -58,10 +58,9 @@ ldconfig
 /usr/include/liblttctl/lttctl.h
 /usr/share/ltt-control
 /usr/share/ltt-control/facilities
+/usr/share/ltt-control/facilities/compact.xml
 /usr/share/ltt-control/facilities/core.xml
 /usr/share/ltt-control/facilities/fs.xml
-/usr/share/ltt-control/facilities/fs_data.xml
-/usr/share/ltt-control/facilities/ipc.xml
 /usr/share/ltt-control/facilities/kernel.xml
 /usr/share/ltt-control/facilities/kernel_arch_arm.xml
 /usr/share/ltt-control/facilities/kernel_arch_c2.xml
@@ -70,13 +69,14 @@ ldconfig
 /usr/share/ltt-control/facilities/kernel_arch_powerpc.xml
 /usr/share/ltt-control/facilities/kernel_arch_ppc.xml
 /usr/share/ltt-control/facilities/kernel_arch_x86_64.xml
-/usr/share/ltt-control/facilities/stack_arch_i386.xml
+/usr/share/ltt-control/facilities/list.xml
 /usr/share/ltt-control/facilities/locking.xml
-/usr/share/ltt-control/facilities/memory.xml
+/usr/share/ltt-control/facilities/mm.xml
+/usr/share/ltt-control/facilities/net.xml
 /usr/share/ltt-control/facilities/network.xml
-/usr/share/ltt-control/facilities/process.xml
-/usr/share/ltt-control/facilities/socket.xml
-/usr/share/ltt-control/facilities/statedump.xml
-/usr/share/ltt-control/facilities/timer.xml
+/usr/share/ltt-control/facilities/stack.xml
+/usr/share/ltt-control/facilities/stack_arch_i386.xml
+/usr/share/ltt-control/facilities/stack_arch_x86_64.xml
 /usr/share/ltt-control/facilities/user_generic.xml
-/usr/share/ltt-control/facilities/network_ip_interface.xml
+/usr/share/ltt-control/facilities/xen.xml
+/usr/share/ltt-control/facilities/
