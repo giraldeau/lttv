@@ -57,4 +57,3 @@ ldconfig
 /usr/include/liblttctl
 /usr/include/liblttctl/lttctl.h
 /usr/share/ltt-control
-/usr/share/ltt-control/facilities
