@@ -73,8 +73,6 @@ ldconfig
 /usr/share/ltt-control/facilities/locking.xml
 /usr/share/ltt-control/facilities/mm.xml
 /usr/share/ltt-control/facilities/net.xml
-/usr/share/ltt-control/facilities/network.xml
-/usr/share/ltt-control/facilities/stack.xml
 /usr/share/ltt-control/facilities/stack_arch_i386.xml
 /usr/share/ltt-control/facilities/stack_arch_x86_64.xml
 /usr/share/ltt-control/facilities/user_generic.xml
