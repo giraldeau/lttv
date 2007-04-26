@@ -101,13 +101,13 @@ typedef unsigned int ltt_facility_t;
 
 struct user_facility_info {
   char name[FACNAME_LEN];
-  unsigned int num_events;
-  size_t alignment;
+  uint32_t num_events;
+  uint32_t alignment;
   uint32_t checksum;
-  size_t int_size;
-  size_t long_size;
-  size_t pointer_size;
-  size_t size_t_size;
+  uint32_t int_size;
+  uint32_t long_size;
+  uint32_t pointer_size;
+  uint32_t uint32_t_size;
 };
 #if 0
 static inline __attribute__((no_instrument_function)) 
