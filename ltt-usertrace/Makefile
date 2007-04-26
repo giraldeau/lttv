@@ -1,6 +1,6 @@
 
 CC=gcc
-INCLUDE_DIR=/usr/include
+INCLUDE_DIR?=/usr/include
 LIB_DIR?=/usr/lib
 RANLIB=ranlib
 
