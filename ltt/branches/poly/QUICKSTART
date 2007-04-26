@@ -431,7 +431,7 @@ make
 make install
 
 
-* Add new events to the kernel with genevent
+* Add new events to the kernel with genevent (deprecated in LTTng 0.9.x)
 
 su -
 cd /usr/local/share/ltt-control/facilities
@@ -449,9 +449,22 @@ cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
     will be connected to your marker and will typically call the logging
     functions found in the header file you created with genevent.
 
+* Add new kernel events
+
+*Important* note : in its current state, LTTng and LTTV needs the programmer
+to keep the marker/probe format string and the XML description of the
+event data types in sync by hand. Failure to do so will result in errors in
+LTTV.
+
+See the markers documentation to see how to describe the marker. You will need
+to clone probe modules found in ltt/probes to connect them to the markers so
+that the information can be recorded in the trace.
+
 * Add new events to userspace programs with genevent
 See http://ltt.polymtl.ca/ > USERSPACE TRACING QUICKSTART
 
+User-space tracing still uses genevent, which is subject to change in a near
+future.
 
 
 
