@@ -59,7 +59,7 @@ DIE=0
   }
 }
 
-(automake-1.7 --version) < /dev/null > /dev/null 2>&1 || {
+(automake --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: You must have \`automake' installed."
   echo "You can get it from: ftp://ftp.gnu.org/pub/gnu/"
@@ -69,7 +69,7 @@ DIE=0
 
 
 # if no automake, don't bother testing for aclocal
-test -n "$NO_AUTOMAKE" || (aclocal-1.7 --version) < /dev/null > /dev/null 2>&1 || {
+test -n "$NO_AUTOMAKE" || (aclocal --version) < /dev/null > /dev/null 2>&1 || {
   echo
   echo "**Error**: Missing \`aclocal'.  The version of \`automake'"
   echo "installed doesn't appear recent enough."
@@ -126,14 +126,14 @@ do
 	  libtoolize --force --copy
 	fi
       fi
-      echo "Running aclocal-1.7 $aclocalinclude ..."
-      aclocal-1.7 $aclocalinclude
+      echo "Running aclocal $aclocalinclude ..."
+      aclocal $aclocalinclude
       if grep "^AM_CONFIG_HEADER" configure.in >/dev/null; then
 	echo "Running autoheader..."
 	autoheader
       fi
-      echo "Running automake-1.7 --gnu $am_opt ..."
-      automake-1.7 --add-missing --gnu $am_opt
+      echo "Running automake --gnu $am_opt ..."
+      automake --add-missing --gnu $am_opt
       echo "Running autoconf ..."
       autoconf
     )
