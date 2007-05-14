@@ -1,9 +1,10 @@
+Linux Trace Toolkit Quickstart
+------------------------------
+Author : Mathieu Desnoyers, September 2005
+Last update : May 14, 2007
 
-QUICKSTART
 
-How to use LTTng and LTTV in a few lines :
-
-This document is made of four parts : The first one explains how to install
+This document is made of four parts : the first one explains how to install
 LTTng and LTTV from Debian and RPM binary packages, the second one explains how
 to install LTTng and LTTV from sources and the third one describes the steps
 to follow to trace a system and view it. The fourth and last part explains
@@ -26,7 +27,7 @@ http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
 The following lttng patch is necessary to have the tracing hooks in the kernel.
 The following ltt-control module controls the tracing.
 
-Required programs and librairies are assumed to be automatically installed in an
+Required programs and libraries are assumed to be automatically installed in an
 installation with Debian or RPM packages. In the case of an installation from
 sources, the dependencies are listed.
 
@@ -48,16 +49,11 @@ Intel 64 bits
 PowerPC 32 and 64 bits
 
 
-
-Author : Mathieu Desnoyers, September 2005
-Last update : May 30, 2006
-
-
 ***********************************************************
 ** Section 1 * Installation from Debian or RPM packages  **
 ***********************************************************
 
-** NOTE : RPM and debian packages are only made once a version has been
+** NOTE : RPM and Debian packages are only made once a version has been
    thoroughly tested. If they do not exist at the moment, please install from
    sources (see section 2 below). To see the list of compatibilities between
    LTTng, ltt-control, LTTV, genevent and lttng-modules, please refer to
@@ -77,7 +73,7 @@ i686). Feel free to help fix the spec files to have correct lttng-modules RPM
 package.
 
 
-* Install from Deb packages on Debian :
+* Install from .deb packages on Debian :
 
 You can use the ltt.polymtl.ca apt source to get LTTV for Debian :
 
@@ -156,7 +152,7 @@ o bzip2
 o gzip
 o tar
 
-You have to install the standard development librairies and programs necessary
+You have to install the standard development libraries and programs necessary
 to compile a kernel :
 
 (from Documentation/Changes in the Linux kernel tree)
@@ -289,7 +285,9 @@ then, rebooting or issuing the following command will activate debugfs :
 mount /mnt/debugfs
 
 You need to load the LTT modules to be able to control tracing from user
-space. This is done by issuing the command :
+space. This is done by issuing the following commands. Note however
+these commands load all LTT modules. Depending on what options you chose to
+compile statically, you may not need to issue all these commands. 
 
 modprobe ltt-control
 modprobe ltt-core
@@ -356,7 +354,7 @@ cd /usr/src
 wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.x.xx-xxxx2006.tar.gz
 gzip -cd LinuxTraceToolkitViewer-0.x.xx-xxxx2006.tar.gz | tar xvof -
 cd LinuxTraceToolkitViewer-0.x.xx-xxxx2006
-(refer to README to see the development libraries that must be installed on you
+(refer to README to see the development libraries that must be installed on your
 system)
 ./configure
 make
@@ -467,6 +465,3 @@ See http://ltt.polymtl.ca/ > USERSPACE TRACING QUICKSTART
 
 User-space tracing still uses genevent, which is subject to change in a near
 future.
-
-
-
