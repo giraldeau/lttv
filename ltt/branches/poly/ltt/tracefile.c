@@ -845,7 +845,7 @@ gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
  * relative path is the path relative to the trace root
  * root path is the full path
  *
- * A tracefile group is simply an array where all the per cpu tracefiles sits.
+ * A tracefile group is simply an array where all the per cpu tracefiles sit.
  */
 
 static int open_tracefiles(LttTrace *trace, gchar *root_path,
