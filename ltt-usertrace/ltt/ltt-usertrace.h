@@ -48,38 +48,38 @@ extern "C" {
 #endif
 
 #ifdef i386
-#define __NR_ltt_trace_generic	340
-#define __NR_ltt_register_generic	341
+#define __NR_ltt_trace_generic	328
+#define __NR_ltt_register_generic	329
 #undef NR_syscalls
-#define NR_syscalls 342
+#define NR_syscalls 330
 #endif
 
 #ifdef __x86_64__
-#define __NR_ltt_trace_generic	295
-#define __NR_ltt_register_generic	296
+#define __NR_ltt_trace_generic	286
+#define __NR_ltt_register_generic	287
 #undef NR_syscalls
-#define NR_syscalls 286
+#define NR_syscalls 288
 #endif
 
 #ifdef __powerpc__
-#define __NR_ltt_trace_generic	330
-#define __NR_ltt_register_generic	331
+#define __NR_ltt_trace_generic	309
+#define __NR_ltt_register_generic	310
 #undef NR_syscalls
-#define NR_syscalls 332
+#define NR_syscalls 311
 #endif
 
 #ifdef __powerpc64__
-#define __NR_ltt_trace_generic	331
-#define __NR_ltt_register_generic	332
+#define __NR_ltt_trace_generic	309
+#define __NR_ltt_register_generic	310
 #undef NR_syscalls
-#define NR_syscalls 332
+#define NR_syscalls 311
 #endif
 
 #ifdef __arm__
-#define __NR_ltt_trace_generic	370
-#define __NR_ltt_register_generic	371
+#define __NR_ltt_trace_generic	352
+#define __NR_ltt_register_generic	353
 #undef NR_syscalls
-#define NR_syscalls 372
+#define NR_syscalls 354
 #endif
 
 //FIXME : setup for MIPS
