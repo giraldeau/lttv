@@ -48,38 +48,38 @@ extern "C" {
 #endif
 
 #ifdef i386
-#define __NR_ltt_trace_generic	326
-#define __NR_ltt_register_generic	327
+#define __NR_ltt_trace_generic	340
+#define __NR_ltt_register_generic	341
 #undef NR_syscalls
-#define NR_syscalls 328
+#define NR_syscalls 342
 #endif
 
 #ifdef __x86_64__
-#define __NR_ltt_trace_generic	284
-#define __NR_ltt_register_generic	285
+#define __NR_ltt_trace_generic	295
+#define __NR_ltt_register_generic	296
 #undef NR_syscalls
 #define NR_syscalls 286
 #endif
 
 #ifdef __powerpc__
-#define __NR_ltt_trace_generic	304
-#define __NR_ltt_register_generic	305
+#define __NR_ltt_trace_generic	330
+#define __NR_ltt_register_generic	331
 #undef NR_syscalls
-#define NR_syscalls 306
+#define NR_syscalls 332
 #endif
 
 #ifdef __powerpc64__
-#define __NR_ltt_trace_generic	304
-#define __NR_ltt_register_generic	305
+#define __NR_ltt_trace_generic	331
+#define __NR_ltt_register_generic	332
 #undef NR_syscalls
-#define NR_syscalls 306
+#define NR_syscalls 332
 #endif
 
 #ifdef __arm__
-#define __NR_ltt_trace_generic	348
-#define __NR_ltt_register_generic	349
+#define __NR_ltt_trace_generic	370
+#define __NR_ltt_register_generic	371
 #undef NR_syscalls
-#define NR_syscalls 350
+#define NR_syscalls 372
 #endif
 
 //FIXME : setup for MIPS
@@ -107,7 +107,7 @@ struct user_facility_info {
   uint32_t int_size;
   uint32_t long_size;
   uint32_t pointer_size;
-  uint32_t uint32_t_size;
+  uint32_t size_t_size;
 };
 #if 0
 static inline __attribute__((no_instrument_function)) 
