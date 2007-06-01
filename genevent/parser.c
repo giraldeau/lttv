@@ -436,7 +436,7 @@ char *getNameAttribute(parse_file_t *in)
 //Return value : 0 : no value,   1 : has a value
 int getValueAttribute(parse_file_t *in, long long *value)
 {
-  char * token, *token2;
+  char * token, * endptr;
 
   token = getToken(in);
 
@@ -449,24 +449,12 @@ int getValueAttribute(parse_file_t *in, long long *value)
   getEqual(in);
   token = getToken(in);
 
-  if(in->type == QUOTEDSTRING) {
-    in->type = NUMBER;
-    token2 = token;
-    do {
-      if (!isdigit(*token2)) {
-          in->type = QUOTEDSTRING;
-          break;
-      }
-    } while (*(++token2) != '\0');
-  }
-
-  if(in->type == NUMBER)
-    *value = strtoll(token, NULL, 0);
-  else
+  *value = strtoll(token, &endptr, 0);
+  if(*endptr != '\0')
     goto error;
   return 1;
 error:
-  in->error(in,"incorrect size specification");
+  in->error(in,"invalid number specified");
   return 0;
 }
 
