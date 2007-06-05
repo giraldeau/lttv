@@ -3,9 +3,9 @@
   <description>The memory facility has memory management events.</description>
 
   <event name="handle_fault_entry">
-    <description>Entry in a trap</description>
-    <field name="trap_id"> <description>Trap number</description> <long/> </field>
-    <field name="address"> <description>Address where trap occured</description> <long/> </field>
+    <description>Entry in the page fault handler</description>
+    <field name="address"> <description>Pointer that caused the page fault</description> <ulong/> </field>
+    <field name="ip"> <description>Instruction at which the page fault occured</description> <long/> </field>
   </event>
 
   <event name="handle_fault_exit">
