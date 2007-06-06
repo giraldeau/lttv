@@ -1,3 +1,6 @@
+
+
+
 /*
 
 parser.c: Generate helper declarations and functions to trace events
@@ -215,6 +218,7 @@ void getTypeAttributes(parse_file_t *in, type_descriptor_t *t,
     if(!strcmp("format",token)) {
       getEqual(in);
       t->fmt = allocAndCopy(getQuotedString(in));
+      // printf("%s - ",t->fmt);
     //} else if(!strcmp("name",token)) {
      // getEqual(in);
      // car = seekNextChar(in);
@@ -1474,7 +1478,9 @@ unsigned long getTypeChecksum(unsigned long aCrc, type_descriptor_t * type)
   crc = partial_crc32(str,crc);
   if(flag) free(str);
 
-  if(type->fmt) crc = partial_crc32(type->fmt,crc);
+  //the format string is not included in the crc calculation
+
+  //if(type->fmt) crc = partial_crc32(type->fmt,crc);
 
   if(type->type == ARRAY){
     crc = getTypeChecksum(crc,((field_t*)type->fields.array[0])->type);

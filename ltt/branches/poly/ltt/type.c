@@ -133,6 +133,9 @@ GQuark ltt_field_name(LttField *f)
 {
   return f->name;
 }
+
+
+
 /*****************************************************************************
  *Function name
  *    ltt_type_class : get the type class of the type

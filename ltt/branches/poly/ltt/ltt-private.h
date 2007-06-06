@@ -256,6 +256,10 @@ struct _LttType{
   GArray *fields;     // Array of LttFields, for array, sequence, union, struct.
   GData *fields_by_name;
   guint network;  // Is the type in network byte order ?
+  //part added by gaby for fmt:
+  char *header;
+  char *separator;
+  char *footer;
 };
 
 struct _LttEventType{

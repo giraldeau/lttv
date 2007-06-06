@@ -1,3 +1,4 @@
+
 /* This file is part of the Linux Trace Toolkit viewer
  * Copyright (C) 2003-2004 Xiangxiu Yang
  *               2005 Mathieu Desnoyers
@@ -61,6 +62,200 @@ void freeEventtype(LttEventType * evType);
 void freeLttType(LttType * type);
 void freeLttField(LttField * fld);
 void freeLttNamedType(LttType * type);
+
+
+/*****************************************************************************
+ *Function name
+ *    parse_fmt               : parses the format string
+ *Input params
+ *    fmt                     : format string specified in the xml file
+ *    header                  : points to the extracted header string
+ *    separator               : points to the extracted separator string
+ *    footer                  : points to the extracted footer string
+ *
+ *    Parses the format string in order to extract the header,
+ *    the separator and the footer.
+ *    The default fmt string is: { %S, %S }
+ *    In this case:
+ *    The header is: {
+ *    The separator is: ,
+ *    The footer
+ *
+ ****************************************************************************/
+
+parse_fmt(char *fmt, char **header, char **separator, char **footer){
+  int i;
+  unsigned int num = 0;
+
+  int header_index = 0;//header index
+  int separator_index = 0;//separator index
+  int footer_index = 0;//footer index
+  int fmt_length = strlen(fmt);
+
+  for(i=0; i<fmt_length; i++)
+    {
+      if(fmt[i]=='%')
+	{
+	  num++;
+	  if(num>=3)
+	    g_error("More than 2 '%%' chars were encountered: %s\n",fmt);
+
+	  //Detecting identifier
+	  if(fmt[++i]!='S')
+	    g_error("Unexpected format: %s\n",fmt);
+
+	  if(i+1<strlen(fmt))
+	    i = i+1;
+	  else
+	    g_error("Unexpected format: %s\n",fmt);
+
+	  //Need to have at least on char after the %S
+	  if(fmt[i]=='%')
+	    g_error("Missing separator: %s\n",fmt);
+
+	  if(separator_index==0)
+	    separator_index = i;//index of separator inside the original string.
+	  else if(footer_index==0)//the 'else' gives the priority to set the separator index first.
+	    footer_index = i;//no break since an error should be generated if more than 2 '%' were encountered
+	}
+    }
+
+
+  //Create header String
+  num =  separator_index-header_index-2;//(-2 due to '%S')
+  if(num<0)
+    g_error("Unexpected format");
+  //*header = malloc(num+1);//(+1 for EOS).
+  *header = g_new(gchar,num+1);//(+1 for EOS).
+  strncpy(*header,fmt,num);
+  (*header)[num] = '\0';//need EOS, not handled by strncopy
+
+  //Create seperator String
+  num =footer_index - separator_index - 2;
+  if(num<0)
+    g_error("Unexpected format");
+  //*separator = malloc(num+1);//+1 for EOS
+  *separator = g_new(gchar, num+1);//+1 for EOS
+  strncpy(*separator,fmt+separator_index*sizeof(char),num);
+  (*separator)[num] = '\0';//need EOS, not handled by strncopy
+
+  //Create footer String
+  num = strlen(fmt)-footer_index;
+  //*footer = malloc(num+1);
+  *footer = g_new(gchar, num+1);
+  strncpy(*footer,fmt+footer_index*sizeof(char),num);
+  (*footer)[num] = '\0';
+}
+
+/*****************************************************************************
+ *Function name
+ *    verify_fmt_syntax       : verifies the syntax of the format string
+ *Input params
+ *    fmt                     : format string specified in the xml file
+ *    fmt_type                : points to the detected type in the fmt string
+ *
+ *    Verifies the syntax of the format string sepcified in the xml file
+ *    It allows fmt strings having the following syntax:
+ *    "..header text... %12.20d ...footer text..."
+ *    It sets the fmt_type accordingly. In the previous example
+ *    fmt_type would point to the character 'd' inside fmt.
+ *
+ *returns 1 on success, and -1 or -2 on error.
+ *
+ ****************************************************************************/
+
+int verify_fmt_syntax(char *fmt, char **fmt_type){
+  int i;
+  int dot = 0;//number of dots encountered.
+  unsigned short counter = 0;
+  *fmt_type=NULL;
+
+
+  for(i=0; i<strlen(fmt); i++)
+    {
+      if(fmt[i]=='%')
+	{
+	  if(++counter==2)
+	    return -1;//should generate an error.
+
+	  i = i+1;//go to next character
+
+	  if(fmt[i]=='-' && i<(strlen(fmt)-1))
+	    i++;//allow this character after the '%'
+
+	  if(fmt[i]=='#' && i<(strlen(fmt)-1))
+	    i++;//allow this character
+	}
+
+      if(counter ==1 && !isdigit(fmt[i]) && *fmt_type==NULL)
+	     switch (fmt[i]){
+	     case 'd':
+	     case 'i':
+	     case 'u':
+	     case 'o':
+	     case 'x':
+	     case 'X':
+	     case 'f':
+	     case 'e':
+	     case 'E':
+	     case 's':
+	     case 'p':
+	       *fmt_type=&fmt[i];
+	       break;
+	       //do not return yet. may encounter another '%'
+	     case '.':
+	       if(++dot==2)
+		 return -2;//generate error
+	       break;
+	     default:
+	       return -1;
+	     }
+
+    }
+
+  return 1;
+
+}
+
+/*****************************************************************************
+ *Function name
+ *    append_ll               : appends "ll" to the format string
+ *Input params
+ *    fmt                     : format string specified in the xml file
+ *    fmt_type                : address of the format char inside fmt
+ *
+ *  inserts "ll" just before the fmt_type
+ *
+ ****************************************************************************/
+
+void append_ll (char **fmt, char **fmt_type){
+  char *new_fmt;
+  int i;
+  int num;
+
+
+  //new_fmt = malloc(strlen(*fmt)*sizeof(char)+2);//the +2 corresponds the the "ll";
+  new_fmt = g_new(gchar, strlen(*fmt)+2);
+
+ num = *fmt_type - *fmt;
+
+ for(i=0; i<num;i++)
+   new_fmt[i] =(*fmt)[i];
+
+  new_fmt[i++] = 'l';
+  new_fmt[i++] = 'l';
+
+
+  while(i-2<strlen(*fmt))
+    {
+      new_fmt[i]=(*fmt)[i-2];
+      i++;
+    }
+
+  *fmt = new_fmt;
+  (*fmt)[i] = '\0';
+
+}
 
 
 /*****************************************************************************
@@ -299,6 +494,7 @@ void construct_fields(LttFacility *fac,
                       LttField *field,
                       field_t *fld)
 {
+  char *fmt_type;//gaby
   guint len;
   type_descriptor_t *td;
   LttType *type;
@@ -501,9 +697,187 @@ void construct_fields(LttFacility *fac,
     type->fmt = g_new(gchar, len+1);
     strcpy(type->fmt, td->fmt);
   }
+    //here I should verify syntax based on type.
+    //if type is array or sequence or enum, parse_fmt.
+    //if type is basic, verify syntax, and allow or not the type format.
+    //the code can be integrated in the above code (after testing)
+
+
+
+   switch (type->type_class){
+    case LTT_ARRAY:
+    case LTT_UNION:
+    case LTT_STRUCT:
+    case LTT_SEQUENCE:
+      if(type->fmt==NULL)
+	{
+	  //Assign a default format for these complex types
+	  //type->fmt = malloc(11*sizeof(char));
+	  type->fmt = g_new(gchar, 11);
+	  type->fmt = g_strdup("{ %S, %S }");//set a default value for fmt. can directly set header and footer, but kept this way on purpose.
+	}
+      //Parse the fmt string in order to extract header, separator and footer
+      parse_fmt(type->fmt,&(type->header),&(type->separator),&(type->footer));
+
+      break;
+    case LTT_SHORT:
+    case LTT_INT:
+    case LTT_LONG:
+    case LTT_SSIZE_T:
+    case LTT_INT_FIXED:
+
+     if(type->fmt == NULL)
+	{
+	  //Assign a default format string
+	  //type->fmt = malloc(5*sizeof(char));
+	  type->fmt = g_new(gchar, 5);
+	  type->fmt=g_strdup("%lld");
+	  break;
+	}
+      else
+	if(verify_fmt_syntax((type->fmt),&fmt_type)>0)
+	  switch(fmt_type[0]){
+	  case 'd':
+	  case 'i':
+	  case 'x':
+	  case 'X':
+	    append_ll(&(type->fmt),&fmt_type);//append 'll' to fmt
+	    break;
+	  default:
+	    g_error("Format type '%c' not supported\n",fmt_type[0]);
+	    break;
+	  }
+     break;
+
+    case LTT_USHORT:
+    case LTT_UINT:
+    case LTT_ULONG:
+    case LTT_SIZE_T:
+    case LTT_OFF_T:
+    case LTT_UINT_FIXED:
+      if(type->fmt == NULL)
+	{
+	  //Assign a default format string
+	  //type->fmt= malloc(5*sizeof(char));
+	  type->fmt = g_new(gchar, 5);
+	  type->fmt=g_strdup("%lld");
+	  break;
+	}
+      else
+	if(verify_fmt_syntax((type->fmt),&fmt_type)>0)
+	  switch(fmt_type[0]){
+	  case 'd':
+	  case 'u':
+	  case 'o':
+	  case 'x':
+	  case 'X':
+	    append_ll(&(type->fmt),&fmt_type);
+	    break;
+	  default:
+	    g_error("Format type '%c' not supported\n",fmt_type[0]);
+	  }
+      break;
+
+    case LTT_CHAR:
+    case LTT_UCHAR:
+      if(type->fmt == NULL)
+	{
+	  //Assign a default format string
+	  //type->fmt = malloc(3*sizeof(char));
+	  type->fmt = g_new(gchar, 3);
+	  type->fmt = g_strdup("%c");
+	  break;
+	}
+      else
+	if(verify_fmt_syntax((type->fmt),&fmt_type)>1)
+	  switch(fmt_type[0]){
+	  case 'c':
+	  case 'd':
+	  case 'u':
+	  case 'x':
+	  case 'X':
+	  case 'o':
+	    break;
+	  default:
+	    g_error("Format type '%c' not supported\n",fmt_type[0]);
+	  }
+      break;
+
+    case LTT_FLOAT:
+      if(type->fmt == NULL)
+	{
+	  //Assign a default format string
+	  //type->fmt = malloc(3*sizeof(char));
+	  type->fmt = g_new(gchar, 3);
+	  type->fmt = g_strdup("%g");
+	  break;
+	}
+      else
+	if(verify_fmt_syntax((type->fmt),&fmt_type)>0)
+	  switch(fmt_type[0]){
+	  case 'f':
+	  case 'g':
+	  case 'G':
+	  case 'e':
+	  case 'E':
+	    break;
+	  default:
+	    g_error("Format type '%c' not supported\n",fmt_type[0]);
+	  }
+      break;
+
+    case LTT_POINTER:
+      if(type->fmt == NULL)
+	{
+	  //Assign a default format string
+	  //type->fmt = malloc(7*sizeof(char));
+	  type->fmt = g_new(gchar, 7);
+	  type->fmt = g_strdup("0x%llx");
+	  break;
+	}
+      else
+	if(verify_fmt_syntax((type->fmt),&fmt_type)>0)
+	  switch(fmt_type[0]){
+	  case 'p':
+	    //type->fmt = malloc(7*sizeof(char));
+	    type->fmt = g_new(gchar, 7);
+	    type->fmt = g_strdup("0x%llx");
+	    break;
+	  case 'x':
+	  case 'X':
+	  case 'd':
+	    append_ll(&(type->fmt),&fmt_type);
+	    break;
+	  default:
+	    g_error("Format type '%c' not supported\n",fmt_type[0]);
+	  }
+      break;
+
+    case LTT_STRING:
+      if(type->fmt == NULL)
+	{
+	  //type->fmt = malloc(7*sizeof(char));
+	  type->fmt = g_new(gchar, 5);
+	  type->fmt = g_strdup("\"%s\"");//default value for fmt.
+	  break;
+	}
+      else
+	if(verify_fmt_syntax((type->fmt),&fmt_type)>0)
+	  switch(fmt_type[0]){
+	  case 's':
+	    break;
+	  default:
+	    g_error("Format type '%c' not supported\n", fmt_type[0]);
+	  }
+      break;
+
+   default:
+     //missing enum
+     break;
+   }
+
+
 }
-
-
 
 #if 0
 void construct_types_and_fields(LttFacility * fac, type_descriptor_t * td, 
@@ -794,6 +1168,13 @@ void freeLttType(LttType * type)
   }
   if(type->fields_by_name)
     g_datalist_clear(&type->fields_by_name);
+
+  if(type->header)
+    g_free(type->header);//no need for condition? if(type->header)
+  if(type->separator)
+    g_free(type->separator);
+  if(type->footer)
+    g_free(type->footer);
 }
 
 void freeLttNamedType(LttType * type)
