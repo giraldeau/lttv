@@ -335,7 +335,7 @@
   <event name="trap_entry">
     <description>Entry in a trap</description>
     <field name="trap_id"> <description>Trap number</description> <int/> </field>
-    <field name="address"> <description>Address where trap occured</description> <long/> </field>
+    <field name="address"> <description>Address where trap occured</description> <ulong format="%#x"/> </field>
   </event>
 
   <event name="trap_exit">
@@ -345,7 +345,7 @@
   <event name="syscall_entry">
     <description>System call entry</description>
     <field name="syscall_id"> <description>Syscall entry number in entry.S</description> <typeref name="syscall_name"/> </field>
-    <field name="address"> <description>Address from which call was made</description> <long/> </field>
+    <field name="address"> <description>Address from which call was made</description> <ulong format="%#x"/> </field>
   </event>
 
   <event name="syscall_exit">

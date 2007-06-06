@@ -4,8 +4,8 @@
 
   <event name="handle_fault_entry">
     <description>Entry in the page fault handler</description>
-    <field name="address"> <description>Pointer that caused the page fault</description> <ulong/> </field>
-    <field name="ip"> <description>Instruction at which the page fault occured</description> <long/> </field>
+    <field name="address"> <description>Pointer that caused the page fault</description> <ulong format="%#x"/> </field>
+    <field name="ip"> <description>Instruction at which the page fault occured</description> <ulong format="%#x"/> </field>
   </event>
 
   <event name="handle_fault_exit">
@@ -36,7 +36,7 @@
 
   <event name="swap_in">
     <description>Page swapped into memory</description>
-    <field name="address"> <description>Address of the page to swap in.</description> <ulong/> </field>
+    <field name="address"> <description>Address of the page to swap in.</description> <ulong format="%#x"/> </field>
   </event>
 
   <event name="swap_out">

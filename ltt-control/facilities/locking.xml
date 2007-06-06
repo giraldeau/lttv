@@ -4,27 +4,27 @@
 
   <event name="hardirqs_on">
     <description>Enable IRQs</description>
-    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
+    <field name="ip"> <description>Instruction address</description> <ulong format="%#x"/> </field>
   </event>
 
   <event name="hardirqs_off">
     <description>Disable IRQs</description>
-    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
+    <field name="ip"> <description>Instruction address</description> <ulong format="%#x"/> </field>
   </event>
 
   <event name="softirqs_on">
     <description>Enable SoftIRQs</description>
-    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
+    <field name="ip"> <description>Instruction address</description> <ulong format="%#x"/> </field>
   </event>
 
   <event name="softirqs_off">
     <description>Disable SoftIRQs</description>
-    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
+    <field name="ip"> <description>Instruction address</description> <ulong format="%#x"/> </field>
   </event>
 
   <event name="lock_acquire">
     <description>Acquire lock</description>
-    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
+    <field name="ip"> <description>Instruction address</description> <ulong format="%#x"/> </field>
     <field name="subclass"> <description>Lock subclass</description> <uint/> </field>
     <field name="lock"> <description>Lock address</description> <pointer/> </field>
     <field name="trylock"> <description>Trylock ?</description> <int/> </field>
@@ -32,7 +32,7 @@
 
   <event name="lock_release">
     <description>Release lock</description>
-    <field name="ip"> <description>Instruction address</description> <ulong/> </field>
+    <field name="ip"> <description>Instruction address</description> <ulong format="%#x"/> </field>
     <field name="lock"> <description>Lock address</description> <pointer/> </field>
     <field name="nested"> <description>Nested release ?</description> <int/> </field>
   </event>
