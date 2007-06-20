@@ -223,6 +223,7 @@ gui_filter(LttvPlugin *plugin)
   gtk_window_set_transient_for(GTK_WINDOW(fvd->f_window),
       GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(fvd->plugin->top_widget))));
   gtk_window_set_destroy_with_parent(GTK_WINDOW(fvd->f_window), TRUE);
+  gtk_window_set_resizable(GTK_WINDOW(fvd->f_window), FALSE);
 
   /* 
    * Initiating GtkTable layout 
