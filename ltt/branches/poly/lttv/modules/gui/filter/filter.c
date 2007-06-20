@@ -79,6 +79,7 @@ gboolean callback_enter_check(GtkWidget *widget,
 void callback_add_button(GtkWidget *widget, gpointer data);
 void callback_logical_op_box(GtkWidget *widget, gpointer data);
 void callback_expression_field(GtkWidget *widget, gpointer data);
+void callback_cancel_button(GtkWidget *widget, gpointer data);
 
 /**
  *  @struct _FilterViewerDataLine
@@ -125,6 +126,7 @@ struct _FilterViewerData {
   GPtrArray *f_math_op_options;         /**< array of operators types for math_op box */
   
   GtkWidget *f_add_button;              /**< add expression to current expression (GtkButton) */
+  GtkWidget *f_cancel_button;           /**< cancel and close dialog (GtkButton) */
  
 };
 
@@ -268,7 +270,14 @@ gui_filter(LttvPlugin *plugin)
   g_signal_connect (G_OBJECT (fvd->f_add_button), "clicked",
       G_CALLBACK (callback_add_button), (gpointer) fvd);
   
-  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_add_button,6,7,1,2,GTK_FILL,GTK_FILL,0,0);
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_add_button,6,7,2,3,GTK_FILL,GTK_FILL,0,0);
+
+  fvd->f_cancel_button = gtk_button_new_with_label("Cancel");
+  gtk_widget_show (fvd->f_cancel_button);
+  g_signal_connect (G_OBJECT (fvd->f_cancel_button), "clicked",
+      G_CALLBACK (callback_cancel_button), (gpointer) fvd);
+
+  gtk_table_attach( GTK_TABLE(fvd->f_main_box),fvd->f_cancel_button,6,7,1,2,GTK_FILL,GTK_FILL,0,0);
   
   fvd->f_logical_op_junction_box = gtk_combo_box_new_text();
   for(i=0;i<fvd->f_logical_op_options->len;i++) {
@@ -536,6 +545,20 @@ callback_process_button(GtkWidget *widget, gpointer data) {
   //                      (GDestroyNotify)lttv_filter_destroy);
   //g_object_notify(fvd->obj, "filter");
   lttv_plugin_update_filter(fvd->plugin, filter);
+}
+
+/**
+ *  @fn void callback_cancel_button(GtkWidget*,gpointer)
+ * 
+ *  The Cancel Button callback function
+ *  @param widget The Button widget passed to the callback function
+ *  @param data Data sent along with the callback function
+ */
+void 
+callback_cancel_button(GtkWidget *widget, gpointer data) {
+
+  FilterViewerData *fvd = (FilterViewerData*)data;
+  gtk_widget_destroy(fvd->f_window);
 }
 
 gboolean callback_enter_check(GtkWidget *widget,
