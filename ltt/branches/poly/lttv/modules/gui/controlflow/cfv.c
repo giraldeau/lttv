@@ -140,6 +140,7 @@ guicontrolflow(LttvPluginTab *ptab)
   GtkWidget *process_list_widget, *drawing_widget, *drawing_area;
   //ControlFlowData* control_flow_data = g_new(ControlFlowData,1) ;
   LttvPluginCFV *plugin_cfv = g_object_new(LTTV_TYPE_PLUGIN_CFV, NULL);
+  GtkTooltips *tooltips = gtk_tooltips_new();
   ControlFlowData* control_flow_data = plugin_cfv->cfd;
   control_flow_data->ptab = ptab;
   control_flow_data->tab = ptab->tab;
@@ -213,6 +214,8 @@ guicontrolflow(LttvPluginTab *ptab)
   gtk_toolbar_insert(GTK_TOOLBAR(control_flow_data->toolbar),
       control_flow_data->button_filter,
       0);
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(control_flow_data->button_filter),
+      tooltips, "Open the filter window", NULL);
 
   tmp_toolbar_icon = create_pixmap (main_window_get_widget(tab),
       "properties.png");

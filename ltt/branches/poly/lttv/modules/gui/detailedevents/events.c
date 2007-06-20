@@ -189,6 +189,7 @@ gui_events(LttvPluginTab *ptab)
   GtkCellRenderer *renderer;
   EventViewerData* event_viewer_data = g_new(EventViewerData,1);
   LttvPluginEVD *plugin_evd = g_object_new(LTTV_TYPE_PLUGIN_EVD, NULL);
+  GtkTooltips *tooltips = gtk_tooltips_new();
   plugin_evd->evd = event_viewer_data;
   Tab *tab = ptab->tab;
   event_viewer_data->tab = tab;
@@ -426,6 +427,8 @@ gui_events(LttvPluginTab *ptab)
         "clicked",
         G_CALLBACK (filter_button),
         (gpointer)plugin_evd);
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(event_viewer_data->button_filter), 
+      tooltips, "Open the filter window", NULL);
   gtk_toolbar_insert(GTK_TOOLBAR(event_viewer_data->toolbar),
       event_viewer_data->button_filter,
       0);
