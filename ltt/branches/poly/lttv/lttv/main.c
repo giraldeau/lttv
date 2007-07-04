@@ -75,14 +75,16 @@ static void lttv_help(void *hook_data);
    messages. It receives the message and does nothing. */
 
 void ignore_and_drop_message(const gchar *log_domain, GLogLevelFlags log_level,
-    const gchar *message, gpointer user_data) {
+    const gchar *message, gpointer user_data)
+{
 }
 
 
 /* Since everything is done in modules, the main program only takes care
    of the infrastructure. */
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
 
   int i;
 
@@ -237,7 +239,7 @@ LttvAttribute *lttv_global_attributes()
 
 
 void lttv_module_option(void *hook_data)
-{ 
+{
   GError *error = NULL;
 
   lttv_module_require(a_module, &error);
@@ -272,10 +274,10 @@ void lttv_fatal(void *hook_data)
 
 void lttv_help(void *hook_data)
 {
-	printf("Linux Trace Toolkit Visualizer " VERSION "\n");
-	printf("\n");
-	lttv_option_show_help();
-	printf("\n");
+  printf("Linux Trace Toolkit Visualizer " VERSION "\n");
+  printf("\n");
+  lttv_option_show_help();
+  printf("\n");
 }
 
 /* 
