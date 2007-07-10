@@ -6,7 +6,7 @@
 
 #include <linux/init.h>
 #include <linux/module.h>
-#include <ltt/ltt-tracer.h>
+#include <linux/ltt-tracer.h>
 #include <linux/timex.h>
 #include <linux/marker.h>
 #include <linux/proc_fs.h>

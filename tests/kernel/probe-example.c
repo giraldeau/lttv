@@ -29,19 +29,14 @@ void probe_subsystem_event(const struct __mark_marker_c *mdata,
 	/* Declare args */
 	unsigned int value;
 	const char *mystr;
-	int task_size, task_alignment;
-	struct task_struct *task;
 
 	/* Assign args */
 	va_start(ap, format);
 	value = va_arg(ap, typeof(value));
 	mystr = va_arg(ap, typeof(mystr));
-	task_size = va_arg(ap, typeof(task_size));
-	task_alignment = va_arg(ap, typeof(task_alignment));
-	task = va_arg(ap, typeof(task));
 
 	/* Call printk */
-	printk("Value %u, string %s, current ptr %p\n", value, mystr, current);
+	printk("Value %u, string %s\n", value, mystr);
 
 	/* or count, check rights, serialize data in a buffer */
 
@@ -60,7 +55,7 @@ void probe_subsystem_eventb(const struct __mark_marker_c *mdata,
 static struct probe_data probe_array[] =
 {
 	{	.name = "subsystem_event",
-		.format = "%d %s %*.*r",
+		.format = "%d %s",
 		.probe_func = probe_subsystem_event },
 	{	.name = "subsystem_eventb",
 		.format = MARK_NOARGS,
