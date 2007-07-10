@@ -95,7 +95,7 @@ static void do_test_disable_int(void)
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
 	time = div_long_long_rem(time, NR_LOOPS, &rem);
-	printk(KERN_ALERT "-> disabling interrupts (CTI) takes %llu cycles\n",
+	printk(KERN_ALERT "-> disabling interrupts (CLI) takes %llu cycles\n",
 				time);
 	printk(KERN_ALERT "test end\n");
 }
