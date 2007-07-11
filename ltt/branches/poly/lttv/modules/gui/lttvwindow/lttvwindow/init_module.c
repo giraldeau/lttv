@@ -49,7 +49,8 @@
 #include <ltt/trace.h>
 
 
-LttvTraceInfo LTTV_TRACES,
+__EXPORT LttvTraceInfo
+       LTTV_TRACES,
        LTTV_COMPUTATION,
        LTTV_VIEWER_CONSTRUCTORS,
        LTTV_REQUESTS_QUEUE,

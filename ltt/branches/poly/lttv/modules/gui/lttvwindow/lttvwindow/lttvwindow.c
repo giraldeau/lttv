@@ -51,7 +51,7 @@
 
 extern GSList * g_main_window_list;
 
-gint lttvwindow_preempt_count = 0;
+__EXPORT gint lttvwindow_preempt_count = 0;
 
 /* set_time_window 
  *
@@ -263,7 +263,7 @@ void remove_menu_constructor(MainWindow *mw, lttvwindow_viewer_constructor viewe
  * @param view_constructor constructor of the viewer. 
  */
 
-void lttvwindow_register_constructor
+__EXPORT void lttvwindow_register_constructor
                             (char *  name,
                              char *  menu_path, 
                              char *  menu_text,
@@ -339,7 +339,7 @@ void lttvwindow_register_constructor
  */
 
 
-void lttvwindow_unregister_constructor
+__EXPORT void lttvwindow_unregister_constructor
                   (lttvwindow_viewer_constructor view_constructor)
 {
   LttvIAttribute *attributes_global = LTTV_IATTRIBUTE(lttv_global_attributes());
@@ -403,7 +403,7 @@ void lttvwindow_unregister_constructor
  * @param hook hook function of the viewer.
  * @param hook_data hook data associated with the hook function.
  */
-void lttvwindow_register_time_window_notify(Tab *tab,
+__EXPORT void lttvwindow_register_time_window_notify(Tab *tab,
     LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -427,7 +427,7 @@ void lttvwindow_register_time_window_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_unregister_time_window_notify(Tab *tab,
+__EXPORT void lttvwindow_unregister_time_window_notify(Tab *tab,
     LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -447,7 +447,7 @@ void lttvwindow_unregister_time_window_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_register_traceset_notify(Tab *tab,
+__EXPORT void lttvwindow_register_traceset_notify(Tab *tab,
     LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -471,7 +471,7 @@ void lttvwindow_register_traceset_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_unregister_traceset_notify(Tab *tab,
+__EXPORT void lttvwindow_unregister_traceset_notify(Tab *tab,
               LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -491,7 +491,7 @@ void lttvwindow_unregister_traceset_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_register_redraw_notify(Tab *tab,
+__EXPORT void lttvwindow_register_redraw_notify(Tab *tab,
     LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -515,7 +515,7 @@ void lttvwindow_register_redraw_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_unregister_redraw_notify(Tab *tab,
+__EXPORT void lttvwindow_unregister_redraw_notify(Tab *tab,
               LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -541,7 +541,7 @@ void lttvwindow_unregister_redraw_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_register_continue_notify(Tab *tab,
+__EXPORT void lttvwindow_register_continue_notify(Tab *tab,
     LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -566,7 +566,7 @@ void lttvwindow_register_continue_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_unregister_continue_notify(Tab *tab,
+__EXPORT void lttvwindow_unregister_continue_notify(Tab *tab,
               LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -587,7 +587,7 @@ void lttvwindow_unregister_continue_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_register_filter_notify(Tab *tab,
+__EXPORT void lttvwindow_register_filter_notify(Tab *tab,
       LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -611,7 +611,7 @@ void lttvwindow_register_filter_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_unregister_filter_notify(Tab *tab,
+__EXPORT void lttvwindow_unregister_filter_notify(Tab *tab,
                                          LttvHook hook,
                                          gpointer hook_data)
 {
@@ -632,7 +632,7 @@ void lttvwindow_unregister_filter_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_register_current_time_notify(Tab *tab,
+__EXPORT void lttvwindow_register_current_time_notify(Tab *tab,
             LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -656,7 +656,7 @@ void lttvwindow_register_current_time_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_unregister_current_time_notify(Tab *tab,
+__EXPORT void lttvwindow_unregister_current_time_notify(Tab *tab,
             LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -676,7 +676,7 @@ void lttvwindow_unregister_current_time_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_register_current_position_notify(Tab *tab,
+__EXPORT void lttvwindow_register_current_position_notify(Tab *tab,
             LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -700,7 +700,7 @@ void lttvwindow_register_current_position_notify(Tab *tab,
  * @param hook_data hook data associated with the hook function.
  */
 
-void lttvwindow_unregister_current_position_notify(Tab *tab,
+__EXPORT void lttvwindow_unregister_current_position_notify(Tab *tab,
             LttvHook hook, gpointer hook_data)
 {
   LttvAttributeValue value;
@@ -811,8 +811,8 @@ void lttvwindow_unregister_dividor(Tab *tab,
  * @param time_interval a pointer where time interval is stored.
  */
 
-void lttvwindow_report_time_window(Tab *tab,
-                                   TimeWindow time_window)
+__EXPORT void lttvwindow_report_time_window(Tab *tab,
+                                            TimeWindow time_window)
 {
   //set_time_window(tab, time_window);
   //set_time_window_adjustment(tab, time_window);
@@ -870,7 +870,7 @@ void lttvwindow_report_time_window(Tab *tab,
  * @param time a pointer where time is stored.
  */
 
-void lttvwindow_report_current_time(Tab *tab,
+__EXPORT void lttvwindow_report_current_time(Tab *tab,
                                     LttTime time)
 {
   LttvAttributeValue value;
@@ -887,7 +887,7 @@ void lttvwindow_report_current_time(Tab *tab,
  * @param time a pointer where time is stored.
  */
 
-void lttvwindow_report_current_position(Tab *tab,
+__EXPORT void lttvwindow_report_current_position(Tab *tab,
                                         LttvTracesetContextPosition *pos)
 {
   LttvAttributeValue value;
@@ -934,8 +934,8 @@ void lttvwindow_report_dividor(Tab *tab, gint position)
  * @param events_requested the structure of request from.
  */
 
-void lttvwindow_events_request(Tab *tab,
-                               EventsRequest  *events_request)
+__EXPORT void lttvwindow_events_request(Tab *tab,
+                                        EventsRequest  *events_request)
 {
   tab->events_requests = g_slist_append(tab->events_requests, events_request);
   
@@ -970,7 +970,7 @@ gint find_viewer (const EventsRequest *a, gconstpointer b)
 }
 
 
-void lttvwindow_events_request_remove_all(Tab       *tab,
+__EXPORT void lttvwindow_events_request_remove_all(Tab       *tab,
                                           gconstpointer   viewer)
 {
   GSList *element = tab->events_requests;
@@ -1011,7 +1011,7 @@ void lttvwindow_events_request_remove_all(Tab       *tab,
  * @return : TRUE is events requests are pending, else FALSE.
  */
 
-gboolean lttvwindow_events_request_pending(Tab            *tab)
+__EXPORT gboolean lttvwindow_events_request_pending(Tab            *tab)
 {
   GSList *element = tab->events_requests;
 
@@ -1029,7 +1029,7 @@ gboolean lttvwindow_events_request_pending(Tab            *tab)
  * @return time window.
  */
 
-TimeWindow lttvwindow_get_time_window(Tab *tab)
+__EXPORT TimeWindow lttvwindow_get_time_window(Tab *tab)
 {
   return tab->time_window;
 }
@@ -1043,7 +1043,7 @@ TimeWindow lttvwindow_get_time_window(Tab *tab)
  * @return time
  */
 
-LttTime lttvwindow_get_current_time(Tab *tab)
+__EXPORT LttTime lttvwindow_get_current_time(Tab *tab)
 {
   return tab->current_time;
 }
@@ -1055,7 +1055,7 @@ LttTime lttvwindow_get_current_time(Tab *tab)
  *
  * returns the current filter
  */
-LttvFilter *lttvwindow_get_filter(Tab *tab)
+__EXPORT LttvFilter *lttvwindow_get_filter(Tab *tab)
 {
   return g_object_get_data(G_OBJECT(tab->vbox), "filter");
 }
@@ -1094,13 +1094,12 @@ void lttvwindow_report_filter(Tab *tab, LttvFilter *filter)
  * @param tab viewer's tab 
  */
 
-LttvTracesetStats* lttvwindow_get_traceset_stats(Tab *tab)
+__EXPORT LttvTracesetStats* lttvwindow_get_traceset_stats(Tab *tab)
 {
   return tab->traceset_info->traceset_context;
 }
 
-
-LttvTracesetContext* lttvwindow_get_traceset_context(Tab *tab)
+__EXPORT LttvTracesetContext* lttvwindow_get_traceset_context(Tab *tab)
 {
   return (LttvTracesetContext*)tab->traceset_info->traceset_context;
 }
@@ -1148,7 +1147,7 @@ void events_request_free(EventsRequest *events_request)
 
 
 
-GtkWidget *main_window_get_widget(Tab *tab)
+__EXPORT GtkWidget *main_window_get_widget(Tab *tab)
 {
   return tab->mw->mwindow;
 }

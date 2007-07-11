@@ -24,6 +24,7 @@
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 AM_CFLAGS += $(GTK_CFLAGS)
+AM_CFLAGS += -fvisibility=hidden
 LIBS += $(GLIB_LIBS)
 LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -llttvwindow
 

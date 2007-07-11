@@ -4852,7 +4852,7 @@ gboolean execute_events_requests(Tab *tab)
 }
 
 
-void create_main_window_with_trace_list(GSList *traces)
+__EXPORT void create_main_window_with_trace_list(GSList *traces)
 {
   GSList *iter = NULL;
 

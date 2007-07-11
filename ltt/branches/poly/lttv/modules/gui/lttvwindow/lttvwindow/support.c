@@ -32,9 +32,11 @@
 
 #include <gtk/gtk.h>
 
+#include <ltt/compiler.h>
+
 #include "support.h"
 
-GtkWidget*
+__EXPORT GtkWidget*
 lookup_widget                          (GtkWidget       *widget,
                                         const gchar     *widget_name)
 {
@@ -91,7 +93,7 @@ find_pixmap_file                       (const gchar     *filename)
 }
 
 /* This is an internally used function to create pixmaps. */
-GtkWidget*
+__EXPORT GtkWidget*
 create_pixmap                          (GtkWidget       *widget,
                                         const gchar     *filename)
 {

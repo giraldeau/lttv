@@ -48,5 +48,6 @@
    ((gint32)(b) - (gint32)(a) <= 0))
 #define guint32_before_eq(a,b)  guint32_after_eq(b,a)
 
+#define __EXPORT __attribute__ ((visibility ("default")))
 
 #endif //COMPILER_H

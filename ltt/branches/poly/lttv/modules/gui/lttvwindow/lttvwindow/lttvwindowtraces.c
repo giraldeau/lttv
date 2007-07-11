@@ -72,7 +72,7 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace);
  *         NULL is returned if the trace is not present
  */
 
-LttvTrace *lttvwindowtraces_get_trace_by_name(gchar *path)
+__EXPORT LttvTrace *lttvwindowtraces_get_trace_by_name(gchar *path)
 {
   guint i;
 
@@ -97,7 +97,7 @@ LttvTrace *lttvwindowtraces_get_trace_by_name(gchar *path)
 
 /* Get a trace by its number identifier */
 
-LttvTrace *lttvwindowtraces_get_trace(guint num)
+__EXPORT LttvTrace *lttvwindowtraces_get_trace(guint num)
 {
   LttvAttribute *g_attribute = lttv_global_attributes();
   LttvAttribute *attribute;
@@ -122,7 +122,7 @@ LttvTrace *lttvwindowtraces_get_trace(guint num)
 
 /* Total number of traces */
 
-guint lttvwindowtraces_get_number()
+__EXPORT guint lttvwindowtraces_get_number()
 {
   LttvAttribute *g_attribute = lttv_global_attributes();
   LttvAttribute *attribute;
@@ -316,7 +316,7 @@ static void destroy_dialog(BackgroundRequest *bg_req)
  *                    hooks.
  */
 
-void lttvwindowtraces_background_request_queue
+__EXPORT void lttvwindowtraces_background_request_queue
                      (GtkWidget *widget, LttvTrace *trace, gchar *module_name)
 {
   BackgroundRequest *bg_req;
@@ -433,7 +433,7 @@ void lttvwindowtraces_background_request_remove
  *
  */
 
-gboolean lttvwindowtraces_background_request_find
+__EXPORT gboolean lttvwindowtraces_background_request_find
                      (LttvTrace *trace, gchar *module_name)
 {
   LttvAttribute *attribute = lttv_trace_attribute(trace);
@@ -471,7 +471,7 @@ gboolean lttvwindowtraces_background_request_find
  * @param notify  Hook to call when the notify position is passed
  */
 
-void lttvwindowtraces_background_notify_queue
+__EXPORT void lttvwindowtraces_background_notify_queue
  (gpointer                     owner,
   LttvTrace                   *trace,
   LttTime                      notify_time,
@@ -525,7 +525,7 @@ void lttvwindowtraces_background_notify_queue
  * @param notify  Hook to call when the notify position is passed
  */
 
-void lttvwindowtraces_background_notify_current
+__EXPORT void lttvwindowtraces_background_notify_current
  (gpointer                     owner,
   LttvTrace                   *trace,
   LttTime                      notify_time,
@@ -586,7 +586,7 @@ static void notify_request_free(BackgroundNotify *notify_req)
  * @param owner owner of the background notification
  */
 
-void lttvwindowtraces_background_notify_remove(gpointer owner)
+__EXPORT void lttvwindowtraces_background_notify_remove(gpointer owner)
 {
   guint i;
 
@@ -872,7 +872,7 @@ void lttvwindowtraces_unset_in_progress(LttvAttributeName module_name,
                          LTTV_IN_PROGRESS);
 }
 
-gboolean lttvwindowtraces_get_in_progress(LttvAttributeName module_name,
+__EXPORT gboolean lttvwindowtraces_get_in_progress(LttvAttributeName module_name,
                                           LttvTrace *trace)
 {
   LttvAttribute *attribute = lttv_trace_attribute(trace);
@@ -923,7 +923,7 @@ void lttvwindowtraces_unset_ready(LttvAttributeName module_name,
                          LTTV_READY);
 }
 
-gboolean lttvwindowtraces_get_ready(LttvAttributeName module_name,
+__EXPORT gboolean lttvwindowtraces_get_ready(LttvAttributeName module_name,
                                     LttvTrace *trace)
 {
   LttvAttribute *attribute = lttv_trace_attribute(trace);

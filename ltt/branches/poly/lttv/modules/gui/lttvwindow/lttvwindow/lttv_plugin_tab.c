@@ -57,7 +57,7 @@ lttv_plugin_tab_init (GTypeInstance *instance, gpointer g_class)
 }
 
 
-GType
+__EXPORT GType
 lttv_plugin_tab_get_type (void)
 {
   static GType type = 0;

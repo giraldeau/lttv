@@ -63,7 +63,7 @@ lttv_plugin_get_type (void)
 
 
 /* implementation in the source file */
-void lttv_plugin_update_filter (LttvPlugin *self, LttvFilter *filter)
+__EXPORT void lttv_plugin_update_filter (LttvPlugin *self, LttvFilter *filter)
 {
   LTTV_PLUGIN_GET_CLASS (self)->update_filter (self, filter);
 }
