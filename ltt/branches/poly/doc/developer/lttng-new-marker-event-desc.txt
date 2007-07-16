@@ -91,12 +91,29 @@ update probes (temp)
 /proc/markers: enable/disable name [channel]
 
 probe_data should provide, for ltt:
-channel_index
 callbacks
 id <-- will stay in marker because otherwise we would need another hash table.
-
+channel index : put inside the marker structure (parameter to register).
+A marker control module
 
 Q: field names in dictionnary or in marker ?
+
+
+What users will do with marker interface:
+
+from userspace:
+enable/disable marker_name (act on any marker, reg by module or other)
+channel marker_name channel_name (act on any marker)
+
+Default: use serializer
+But.. module can override _default_ probe with a "register" operation.
+
+Use case
+Set channel
+Register by specific module (unregister default, register specific)
+activate.
+
+Serve as a proxy for probe registration.
 
 
 
