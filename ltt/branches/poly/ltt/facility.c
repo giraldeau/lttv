@@ -234,8 +234,8 @@ void append_ll (char **fmt, char **fmt_type){
   int num;
 
 
-  //new_fmt = malloc(strlen(*fmt)*sizeof(char)+2);//the +2 corresponds the the "ll";
-  new_fmt = g_new(gchar, strlen(*fmt)+2);
+  //the +2 corresponds the the "ll"; the +1 is the \0
+  new_fmt = g_new(gchar, strlen(*fmt)+2+1);
 
  num = *fmt_type - *fmt;
 
