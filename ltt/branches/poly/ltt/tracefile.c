@@ -259,11 +259,11 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
         tf->buffer_header_size =
          sizeof(struct ltt_block_start_header) 
             + sizeof(struct ltt_trace_header_0_7);
-	tf->tsc_lsb_truncate = 0;
-	tf->tscbits = 32;
-	tf->tsc_msb_cutoff = 32 - tf->tsc_lsb_truncate - tf->tscbits;
-	tf->tsc_mask = (1ULL<<32)-1;
-	tf->tsc_mask_next_bit = (1ULL<<32);
+        tf->tsc_lsb_truncate = 0;
+        tf->tscbits = 32;
+        tf->tsc_msb_cutoff = 32 - tf->tsc_lsb_truncate - tf->tscbits;
+        tf->tsc_mask = (1ULL<<32)-1;
+        tf->tsc_mask_next_bit = (1ULL<<32);
         if(t) {
           t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &vheader->start_freq);
@@ -282,8 +282,8 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
           t->start_time_from_tsc = ltt_time_from_uint64(
               (double)t->start_tsc
               * (1000000000.0 / tf->trace->freq_scale)
-	      / (double)t->start_freq);
-	  t->compact_event_bits = 0;
+              / (double)t->start_freq);
+          t->compact_event_bits = 0;
         }
       }
       break;
@@ -294,13 +294,13 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
         tf->buffer_header_size =
          sizeof(struct ltt_block_start_header) 
             + sizeof(struct ltt_trace_header_0_8);
-	tf->tsc_lsb_truncate = vheader->tsc_lsb_truncate;
-	tf->tscbits = vheader->tscbits;
-	tf->tsc_msb_cutoff = 32 - tf->tsc_lsb_truncate - tf->tscbits;
+        tf->tsc_lsb_truncate = vheader->tsc_lsb_truncate;
+        tf->tscbits = vheader->tscbits;
+        tf->tsc_msb_cutoff = 32 - tf->tsc_lsb_truncate - tf->tscbits;
         tf->tsc_mask = ((1ULL << (tf->tscbits))-1);
         tf->tsc_mask = tf->tsc_mask << tf->tsc_lsb_truncate;
-	tf->tsc_mask_next_bit = (1ULL<<(tf->tscbits));
-	tf->tsc_mask_next_bit = tf->tsc_mask_next_bit << tf->tsc_lsb_truncate;
+        tf->tsc_mask_next_bit = (1ULL<<(tf->tscbits));
+        tf->tsc_mask_next_bit = tf->tsc_mask_next_bit << tf->tsc_lsb_truncate;
         if(t) {
           t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &vheader->start_freq);
@@ -319,8 +319,8 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
           t->start_time_from_tsc = ltt_time_from_uint64(
               (double)t->start_tsc
               * (1000000000.0 / tf->trace->freq_scale)
-	      / (double)t->start_freq);
-	  t->compact_event_bits = 0;
+              / (double)t->start_freq);
+          t->compact_event_bits = 0;
         }
       }
       break;
@@ -694,9 +694,9 @@ void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname)
 int get_tracefile_name_number(gchar *raw_name,
                               GQuark *name,
                               guint *num,
-															guint *tid,
-															guint *pgid,
-															guint64 *creation)
+                              guint *tid,
+                              guint *pgid,
+                              guint64 *creation)
 {
   guint raw_name_len = strlen(raw_name);
   gchar char_name[PATH_MAX];
@@ -704,84 +704,84 @@ int get_tracefile_name_number(gchar *raw_name,
   int underscore_pos;
   long int cpu_num;
   gchar *endptr;
-	gchar *tmpptr;
+  gchar *tmpptr;
 
   for(i=raw_name_len-1;i>=0;i--) {
     if(raw_name[i] == '_') break;
   }
   if(i==-1) { /* Either not found or name length is 0 */
-		/* This is a userspace tracefile */
-		strncpy(char_name, raw_name, raw_name_len);
-		char_name[raw_name_len] = '\0';
-		*name = g_quark_from_string(char_name);
-		*num = 0;	/* unknown cpu */
-		for(i=0;i<raw_name_len;i++) {
-			if(raw_name[i] == '/') {
-				break;
-			}
-		}
-		i++;
-		for(;i<raw_name_len;i++) {
-			if(raw_name[i] == '/') {
-				break;
-			}
-		}
-		i++;
-		for(;i<raw_name_len;i++) {
-			if(raw_name[i] == '-') {
-				break;
-			}
-		}
-		if(i == raw_name_len) return -1;
-		i++;
-		tmpptr = &raw_name[i];
-		for(;i<raw_name_len;i++) {
-			if(raw_name[i] == '.') {
-				raw_name[i] = ' ';
-				break;
-			}
-		}
-		*tid = strtoul(tmpptr, &endptr, 10);
-		if(endptr == tmpptr)
-			return -1; /* No digit */
-		if(*tid == ULONG_MAX)
-			return -1; /* underflow / overflow */
-		i++;
-		tmpptr = &raw_name[i];
-		for(;i<raw_name_len;i++) {
-			if(raw_name[i] == '.') {
-				raw_name[i] = ' ';
-				break;
-			}
-		}
-		*pgid = strtoul(tmpptr, &endptr, 10);
-		if(endptr == tmpptr)
-			return -1; /* No digit */
-		if(*pgid == ULONG_MAX)
-			return -1; /* underflow / overflow */
-		i++;
-		tmpptr = &raw_name[i];
-		*creation = strtoull(tmpptr, &endptr, 10);
-		if(endptr == tmpptr)
-			return -1; /* No digit */
-		if(*creation == G_MAXUINT64)
-			return -1; /* underflow / overflow */
-	} else {
-		underscore_pos = i;
+    /* This is a userspace tracefile */
+    strncpy(char_name, raw_name, raw_name_len);
+    char_name[raw_name_len] = '\0';
+    *name = g_quark_from_string(char_name);
+    *num = 0;  /* unknown cpu */
+    for(i=0;i<raw_name_len;i++) {
+      if(raw_name[i] == '/') {
+        break;
+      }
+    }
+    i++;
+    for(;i<raw_name_len;i++) {
+      if(raw_name[i] == '/') {
+        break;
+      }
+    }
+    i++;
+    for(;i<raw_name_len;i++) {
+      if(raw_name[i] == '-') {
+        break;
+      }
+    }
+    if(i == raw_name_len) return -1;
+    i++;
+    tmpptr = &raw_name[i];
+    for(;i<raw_name_len;i++) {
+      if(raw_name[i] == '.') {
+        raw_name[i] = ' ';
+        break;
+      }
+    }
+    *tid = strtoul(tmpptr, &endptr, 10);
+    if(endptr == tmpptr)
+      return -1; /* No digit */
+    if(*tid == ULONG_MAX)
+      return -1; /* underflow / overflow */
+    i++;
+    tmpptr = &raw_name[i];
+    for(;i<raw_name_len;i++) {
+      if(raw_name[i] == '.') {
+        raw_name[i] = ' ';
+        break;
+      }
+    }
+    *pgid = strtoul(tmpptr, &endptr, 10);
+    if(endptr == tmpptr)
+      return -1; /* No digit */
+    if(*pgid == ULONG_MAX)
+      return -1; /* underflow / overflow */
+    i++;
+    tmpptr = &raw_name[i];
+    *creation = strtoull(tmpptr, &endptr, 10);
+    if(endptr == tmpptr)
+      return -1; /* No digit */
+    if(*creation == G_MAXUINT64)
+      return -1; /* underflow / overflow */
+  } else {
+    underscore_pos = i;
 
-		cpu_num = strtol(raw_name+underscore_pos+1, &endptr, 10);
+    cpu_num = strtol(raw_name+underscore_pos+1, &endptr, 10);
 
-		if(endptr == raw_name+underscore_pos+1)
-			return -1; /* No digit */
-		if(cpu_num == LONG_MIN || cpu_num == LONG_MAX)
-			return -1; /* underflow / overflow */
-		
-		strncpy(char_name, raw_name, underscore_pos);
-		char_name[underscore_pos] = '\0';
+    if(endptr == raw_name+underscore_pos+1)
+      return -1; /* No digit */
+    if(cpu_num == LONG_MIN || cpu_num == LONG_MAX)
+      return -1; /* underflow / overflow */
+    
+    strncpy(char_name, raw_name, underscore_pos);
+    char_name[underscore_pos] = '\0';
 
-		*name = g_quark_from_string(char_name);
-		*num = cpu_num;
-	}
+    *name = g_quark_from_string(char_name);
+    *num = cpu_num;
+  }
   
   
   return 0;
@@ -851,30 +851,30 @@ gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
 static int open_tracefiles(LttTrace *trace, gchar *root_path,
     gchar *relative_path)
 {
-	DIR *dir = opendir(root_path);
-	struct dirent *entry;
-	struct stat stat_buf;
-	int ret;
+  DIR *dir = opendir(root_path);
+  struct dirent *entry;
+  struct stat stat_buf;
+  int ret;
   
-	gchar path[PATH_MAX];
-	int path_len;
-	gchar *path_ptr;
+  gchar path[PATH_MAX];
+  int path_len;
+  gchar *path_ptr;
 
   int rel_path_len;
   gchar rel_path[PATH_MAX];
   gchar *rel_path_ptr;
   LttTracefile tmp_tf;
 
-	if(dir == NULL) {
-		perror(root_path);
-		return ENOENT;
-	}
+  if(dir == NULL) {
+    perror(root_path);
+    return ENOENT;
+  }
 
-	strncpy(path, root_path, PATH_MAX-1);
-	path_len = strlen(path);
-	path[path_len] = '/';
-	path_len++;
-	path_ptr = path + path_len;
+  strncpy(path, root_path, PATH_MAX-1);
+  path_len = strlen(path);
+  path[path_len] = '/';
+  path_len++;
+  path_ptr = path + path_len;
 
   strncpy(rel_path, relative_path, PATH_MAX-1);
   rel_path_len = strlen(rel_path);
@@ -882,39 +882,39 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path,
   rel_path_len++;
   rel_path_ptr = rel_path + rel_path_len;
   
-	while((entry = readdir(dir)) != NULL) {
+  while((entry = readdir(dir)) != NULL) {
 
-		if(entry->d_name[0] == '.') continue;
-		
-		strncpy(path_ptr, entry->d_name, PATH_MAX - path_len);
-		strncpy(rel_path_ptr, entry->d_name, PATH_MAX - rel_path_len);
-		
-		ret = stat(path, &stat_buf);
-		if(ret == -1) {
-			perror(path);
-			continue;
-		}
-		
-		g_debug("Tracefile file or directory : %s\n", path);
-		
+    if(entry->d_name[0] == '.') continue;
+    
+    strncpy(path_ptr, entry->d_name, PATH_MAX - path_len);
+    strncpy(rel_path_ptr, entry->d_name, PATH_MAX - rel_path_len);
+    
+    ret = stat(path, &stat_buf);
+    if(ret == -1) {
+      perror(path);
+      continue;
+    }
+    
+    g_debug("Tracefile file or directory : %s\n", path);
+    
     if(strcmp(rel_path, "/eventdefs") == 0) continue;
     
-		if(S_ISDIR(stat_buf.st_mode)) {
+    if(S_ISDIR(stat_buf.st_mode)) {
 
-			g_debug("Entering subdirectory...\n");
-			ret = open_tracefiles(trace, path, rel_path);
-			if(ret < 0) continue;
-		} else if(S_ISREG(stat_buf.st_mode)) {
-			GQuark name;
+      g_debug("Entering subdirectory...\n");
+      ret = open_tracefiles(trace, path, rel_path);
+      if(ret < 0) continue;
+    } else if(S_ISREG(stat_buf.st_mode)) {
+      GQuark name;
       guint num, tid, pgid;
-			guint64 creation;
+      guint64 creation;
       GArray *group;
       num = tid = pgid = 0;
-			creation = 0;
+      creation = 0;
       if(get_tracefile_name_number(rel_path, &name, &num, &tid, &pgid, &creation))
         continue; /* invalid name */
       
-			g_debug("Opening file.\n");
+      g_debug("Opening file.\n");
       if(ltt_tracefile_open(trace, path, &tmp_tf)) {
         g_info("Error opening tracefile %s", path);
 
@@ -927,14 +927,14 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path,
       tmp_tf.cpu_online = 1;
       tmp_tf.cpu_num = num;
       tmp_tf.name = name;
-			tmp_tf.tid = tid;
-			tmp_tf.pgid = pgid;
-			tmp_tf.creation = creation;
+      tmp_tf.tid = tid;
+      tmp_tf.pgid = pgid;
+      tmp_tf.creation = creation;
       if(tmp_tf.name == g_quark_from_string("/compact")
-      	|| tmp_tf.name == g_quark_from_string("/flight-compact"))
-	      tmp_tf.compact = 1;
+        || tmp_tf.name == g_quark_from_string("/flight-compact"))
+        tmp_tf.compact = 1;
       else
-	      tmp_tf.compact = 0;
+        tmp_tf.compact = 0;
       group = g_datalist_id_get_data(&trace->tracefiles, name);
       if(group == NULL) {
         /* Elements are automatically cleared when the array is allocated.
@@ -951,12 +951,12 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path,
         group = g_array_set_size(group, num+1);
       g_array_index (group, LttTracefile, num) = tmp_tf;
 
-		}
-	}
-	
-	closedir(dir);
+    }
+  }
+  
+  closedir(dir);
 
-	return 0;
+  return 0;
 }
 
 /* ltt_get_facility_description
@@ -977,8 +977,8 @@ static int ltt_get_facility_description(LttFacility *f,
   const gchar *text;
   guint textlen;
   gint err;
-	gint arch_spec;
-	gint fac_name_len;
+  gint arch_spec;
+  gint fac_name_len;
 
   text = g_quark_to_string(t->pathname);
   textlen = strlen(text);
@@ -992,20 +992,20 @@ static int ltt_get_facility_description(LttFacility *f,
   strcat(desc_file_name, text);
   
   text = g_quark_to_string(f->name);
-	fac_name_len = strlen(text);
+  fac_name_len = strlen(text);
   textlen+=fac_name_len;
   if(textlen >= PATH_MAX) goto name_error;
   strcat(desc_file_name, text);
 
-	/* arch specific facilities are named like this : name_arch */
-	if(fac_name_len+1 < sizeof("_arch"))
-		arch_spec = 0;
-	else {
-		if(!strcmp(&text[fac_name_len+1-sizeof("_arch")], "_arch"))
-			arch_spec = 1;
-		else
-			arch_spec = 0;
-	}
+  /* arch specific facilities are named like this : name_arch */
+  if(fac_name_len+1 < sizeof("_arch"))
+    arch_spec = 0;
+  else {
+    if(!strcmp(&text[fac_name_len+1-sizeof("_arch")], "_arch"))
+      arch_spec = 1;
+    else
+      arch_spec = 0;
+  }
 
 #if 0
   text = "_";
@@ -1020,47 +1020,47 @@ static int ltt_get_facility_description(LttFacility *f,
   textlen=strlen(desc_file_name);
   
 #endif //0
-	
-	if(arch_spec) {
-		switch(t->arch_type) {
-			case LTT_ARCH_TYPE_I386:
-				text = "_i386";
-				break;
-			case LTT_ARCH_TYPE_PPC:
-				text = "_ppc";
-				break;
-			case LTT_ARCH_TYPE_SH:
-				text = "_sh";
-				break;
-			case LTT_ARCH_TYPE_S390:
-				text = "_s390";
-				break;
-			case LTT_ARCH_TYPE_MIPS:
-				text = "_mips";
-				break;
-			case LTT_ARCH_TYPE_ARM:
-				text = "_arm";
-				break;
-			case LTT_ARCH_TYPE_PPC64:
-				text = "_ppc64";
-				break;
-			case LTT_ARCH_TYPE_X86_64:
-				text = "_x86_64";
-				break;
-			case LTT_ARCH_TYPE_C2:
-				text = "_c2";
-				break;
-			case LTT_ARCH_TYPE_POWERPC:
-				text = "_powerpc";
-				break;
-			default:
-				g_error("Trace from unsupported architecture.");
-		}
-		textlen+=strlen(text);
-		if(textlen >= PATH_MAX) goto name_error;
-		strcat(desc_file_name, text);
-	}
-	
+  
+  if(arch_spec) {
+    switch(t->arch_type) {
+      case LTT_ARCH_TYPE_I386:
+        text = "_i386";
+        break;
+      case LTT_ARCH_TYPE_PPC:
+        text = "_ppc";
+        break;
+      case LTT_ARCH_TYPE_SH:
+        text = "_sh";
+        break;
+      case LTT_ARCH_TYPE_S390:
+        text = "_s390";
+        break;
+      case LTT_ARCH_TYPE_MIPS:
+        text = "_mips";
+        break;
+      case LTT_ARCH_TYPE_ARM:
+        text = "_arm";
+        break;
+      case LTT_ARCH_TYPE_PPC64:
+        text = "_ppc64";
+        break;
+      case LTT_ARCH_TYPE_X86_64:
+        text = "_x86_64";
+        break;
+      case LTT_ARCH_TYPE_C2:
+        text = "_c2";
+        break;
+      case LTT_ARCH_TYPE_POWERPC:
+        text = "_powerpc";
+        break;
+      default:
+        g_error("Trace from unsupported architecture.");
+    }
+    textlen+=strlen(text);
+    if(textlen >= PATH_MAX) goto name_error;
+    strcat(desc_file_name, text);
+  }
+  
   text = ".xml";
   textlen+=strlen(text);
   if(textlen >= PATH_MAX) goto name_error;
@@ -1234,7 +1234,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
                                      fac_ids, ltt_fac_ids_destroy);
           }
           g_array_append_val(fac_ids, fac->id);
-	  g_debug("fac id : %u", fac->id);
+          g_debug("fac id : %u", fac->id);
 
           break;
         case LTT_EVENT_HEARTBEAT:
@@ -1271,11 +1271,11 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   GArray *group;
   int i, ret;
   struct ltt_block_start_header *header;
-	DIR *dir;
-	struct dirent *entry;
+  DIR *dir;
+  struct dirent *entry;
   guint control_found = 0;
   guint eventdefs_found = 0;
-	struct stat stat_buf;
+  struct stat stat_buf;
   gchar path[PATH_MAX];
   
   t = g_new(LttTrace, 1);
@@ -1287,21 +1287,21 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   g_datalist_init(&t->tracefiles);
 
   /* Test to see if it looks like a trace */
-	dir = opendir(abs_path);
-	if(dir == NULL) {
-		perror(abs_path);
-		goto open_error;
-	}
-	while((entry = readdir(dir)) != NULL) {
+  dir = opendir(abs_path);
+  if(dir == NULL) {
+    perror(abs_path);
+    goto open_error;
+  }
+  while((entry = readdir(dir)) != NULL) {
     strcpy(path, abs_path);
     strcat(path, "/");
     strcat(path, entry->d_name);
-		ret = stat(path, &stat_buf);
-		if(ret == -1) {
-			perror(path);
-			continue;
-		}
-		if(S_ISDIR(stat_buf.st_mode)) {
+    ret = stat(path, &stat_buf);
+    if(ret == -1) {
+      perror(path);
+      continue;
+    }
+    if(S_ISDIR(stat_buf.st_mode)) {
       if(strcmp(entry->d_name, "control") == 0) {
         control_found = 1;
       }
@@ -1748,9 +1748,9 @@ int ltt_tracefile_seek_position(LttTracefile *tf, const LttEventPosition *ep) {
 
   tf->event.offset = ep->offset;
 
-	/* Put back the event real tsc */
-	tf->event.tsc = ep->tsc;
-	tf->buffer.tsc = ep->tsc;
+  /* Put back the event real tsc */
+  tf->event.tsc = ep->tsc;
+  tf->buffer.tsc = ep->tsc;
 
   err = ltt_tracefile_read_update_event(tf);
   if(err) goto fail;
@@ -1768,27 +1768,27 @@ fail:
 LttTime ltt_interpolate_time_from_tsc(LttTracefile *tf, guint64 tsc)
 {
   LttTime time;
-	
-	if(tsc > tf->trace->start_tsc) {
-		time = ltt_time_from_uint64(
-				(double)(tsc - tf->trace->start_tsc) 
-																		* (1000000000.0 / tf->trace->freq_scale)
-																		/ (double)tf->trace->start_freq);
-		time = ltt_time_add(tf->trace->start_time_from_tsc, time);
-	} else {
-		time = ltt_time_from_uint64(
-				(double)(tf->trace->start_tsc - tsc)
-																		* (1000000000.0 / tf->trace->freq_scale)
-																		/ (double)tf->trace->start_freq);
-		time = ltt_time_sub(tf->trace->start_time_from_tsc, time);
-	}
+  
+  if(tsc > tf->trace->start_tsc) {
+    time = ltt_time_from_uint64(
+        (double)(tsc - tf->trace->start_tsc) 
+                                    * (1000000000.0 / tf->trace->freq_scale)
+                                    / (double)tf->trace->start_freq);
+    time = ltt_time_add(tf->trace->start_time_from_tsc, time);
+  } else {
+    time = ltt_time_from_uint64(
+        (double)(tf->trace->start_tsc - tsc)
+                                    * (1000000000.0 / tf->trace->freq_scale)
+                                    / (double)tf->trace->start_freq);
+    time = ltt_time_sub(tf->trace->start_time_from_tsc, time);
+  }
   return time;
 }
 
 /* Calculate the real event time based on the buffer boundaries */
 LttTime ltt_interpolate_time(LttTracefile *tf, LttEvent *event)
 {
-	return ltt_interpolate_time_from_tsc(tf, tf->buffer.tsc);
+  return ltt_interpolate_time_from_tsc(tf, tf->buffer.tsc);
 }
 
 
@@ -1896,17 +1896,17 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 
   /* Read event header */
   
-	/* Align the head */
-	if(!tf->compact)
-		pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
-	else {
-		g_assert(tf->has_heartbeat);
-		pos += ltt_align((size_t)pos, sizeof(uint32_t), tf->has_alignment);
-	}
+  /* Align the head */
+  if(!tf->compact)
+    pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+  else {
+    g_assert(tf->has_heartbeat);
+    pos += ltt_align((size_t)pos, sizeof(uint32_t), tf->has_alignment);
+  }
   
-	if(tf->has_heartbeat) {
-		event->timestamp = ltt_get_uint32(LTT_GET_BO(tf),
-																					pos);
+  if(tf->has_heartbeat) {
+    event->timestamp = ltt_get_uint32(LTT_GET_BO(tf),
+                                          pos);
     if(!tf->compact) {
       /* 32 bits -> 64 bits tsc */
       /* note : still works for seek and non seek cases. */
@@ -1920,7 +1920,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
         tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
                                 | (guint64)event->timestamp;
         event->tsc = tf->buffer.tsc;
-	event->compact_data = 0;
+        event->compact_data = 0;
       }
     } else {
       /* Compact header */
@@ -1929,9 +1929,9 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
       event->event_id = event->timestamp >> tf->tscbits;
       event->event_id = event->event_id & ((1 << tf->trace->compact_event_bits) - 1);
       event->compact_data = event->timestamp >> 
-      	(tf->trace->compact_event_bits + tf->tscbits);
+        (tf->trace->compact_event_bits + tf->tscbits);
       //printf("tsc bits %u, ev bits %u init data %u\n",
-      //	tf->tscbits, tf->trace->compact_event_bits, event->compact_data);
+      //  tf->tscbits, tf->trace->compact_event_bits, event->compact_data);
       /* Put the compact data back in original endianness */
       event->compact_data = ltt_get_uint32(LTT_GET_BO(tf), &event->compact_data);
       event->event_size = 0xFFFF;
@@ -1961,14 +1961,14 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
       //printf("current tsc 0x%llX\n", tf->buffer.tsc);
       event->facility_id = g_array_index(tf->trace->compact_facilities, guint, 0);
     }
-		pos += sizeof(guint32);
-	} else {
-		event->tsc = ltt_get_uint64(LTT_GET_BO(tf), pos);
-		tf->buffer.tsc = event->tsc;
-		event->compact_data = 0;
-		pos += sizeof(guint64);
-	}
-	event->event_time = ltt_interpolate_time(tf, event);
+    pos += sizeof(guint32);
+  } else {
+    event->tsc = ltt_get_uint64(LTT_GET_BO(tf), pos);
+    tf->buffer.tsc = event->tsc;
+    event->compact_data = 0;
+    pos += sizeof(guint64);
+  }
+  event->event_time = ltt_interpolate_time(tf, event);
 
   if(!tf->compact) {
     event->facility_id = *(guint8*)pos;
@@ -1982,9 +1982,9 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   } else {
     /* Compact event */
   }
-	/* Align the head */
-	if(!tf->compact)
-		pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+  /* Align the head */
+  if(!tf->compact)
+    pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
 
   event->data = pos;
 
@@ -2057,18 +2057,18 @@ static gint map_block(LttTracefile * tf, guint block_num)
                                               &header->begin.cycle_count);
   tf->buffer.begin.freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &header->begin.freq);
-	if(tf->buffer.begin.freq == 0)
-		tf->buffer.begin.freq = tf->trace->start_freq;
+  if(tf->buffer.begin.freq == 0)
+    tf->buffer.begin.freq = tf->trace->start_freq;
 
   tf->buffer.begin.timestamp = ltt_interpolate_time_from_tsc(tf, 
-																					tf->buffer.begin.cycle_count);
+                                          tf->buffer.begin.cycle_count);
 #if 0
-		ltt_time_add(
+    ltt_time_add(
                                 ltt_time_from_uint64(
                                   (double)(tf->buffer.begin.cycle_count
                                   - tf->trace->start_tsc) * 1000000.0
                                     / (double)tf->trace->start_freq),
-     															tf->trace->start_time_from_tsc);
+                                   tf->trace->start_time_from_tsc);
 #endif //0
 #if 0
 
@@ -2085,15 +2085,15 @@ static gint map_block(LttTracefile * tf, guint block_num)
                                               &header->end.cycle_count);
   tf->buffer.end.freq = ltt_get_uint64(LTT_GET_BO(tf),
                                        &header->end.freq);
-	if(tf->buffer.end.freq == 0)
-		tf->buffer.end.freq = tf->trace->start_freq;
-	
+  if(tf->buffer.end.freq == 0)
+    tf->buffer.end.freq = tf->trace->start_freq;
+  
   tf->buffer.lost_size = ltt_get_uint32(LTT_GET_BO(tf),
                                         &header->lost_size);
   tf->buffer.end.timestamp = ltt_interpolate_time_from_tsc(tf,
-																				tf->buffer.end.cycle_count);
+                                        tf->buffer.end.cycle_count);
 #if 0
-		ltt_time_add(
+    ltt_time_add(
                                 ltt_time_from_uint64(
                                   (double)(tf->buffer.end.cycle_count
                                   - tf->trace->start_tsc) * 1000000.0
@@ -2181,7 +2181,7 @@ void ltt_update_event_size(LttTracefile *tf)
       goto event_id_error;
   
       }
-      goto no_offset;	/* Skip the field computation */
+      goto no_offset;  /* Skip the field computation */
     } else {
       g_warning("Unknown facility %hhu (0x%hhx) in tracefile %s",
           tf->event.facility_id,
@@ -2213,14 +2213,14 @@ no_offset:
   tf->event.data_size = size;
   
   /* Check consistency between kernel and LTTV structure sizes */
-	if(tf->event.event_size == 0xFFFF) {
-		/* Event size too big to fit in the event size field */
-		tf->event.event_size = tf->event.data_size;
-	}
+  if(tf->event.event_size == 0xFFFF) {
+    /* Event size too big to fit in the event size field */
+    tf->event.event_size = tf->event.data_size;
+  }
   if (tf->event.data_size != tf->event.event_size) {
     g_error("Kernel/LTTV event size differs for event %s.%s: kernel %u, LTTV %u",
-    		g_quark_to_string(f->name), g_quark_to_string(event_type->name),
-		tf->event.event_size, tf->event.data_size);
+        g_quark_to_string(f->name), g_quark_to_string(event_type->name),
+    tf->event.event_size, tf->event.data_size);
     exit(-1);
   }
   //g_assert(tf->event.data_size == tf->event.event_size);
@@ -2230,11 +2230,11 @@ no_offset:
 facility_error:
 event_type_error:
 event_id_error:
-	if(tf->event.event_size == 0xFFFF) {
-		g_error("Cannot jump over an unknown event bigger than 0xFFFE bytes");
-	}
-	/* The facility is unknown : use the kernel information about this event
-	 * to jump over it. */
+  if(tf->event.event_size == 0xFFFF) {
+    g_error("Cannot jump over an unknown event bigger than 0xFFFE bytes");
+  }
+  /* The facility is unknown : use the kernel information about this event
+   * to jump over it. */
   tf->event.data_size = tf->event.event_size;
 }
 
@@ -2890,8 +2890,8 @@ void preset_field_type_size(LttTracefile *tf, LttEventType *event_type,
           max_size = max(max_size, field->child[i]->field_size);
       }
       if(final_child_status != FIELD_FIXED) {
-				g_error("LTTV does not support variable size fields in unions.");
-				/* This will stop the application. */
+        g_error("LTTV does not support variable size fields in unions.");
+        /* This will stop the application. */
         *fixed_root = final_child_status;
         *fixed_parent = final_child_status;
         field->field_size = 0;
@@ -2950,10 +2950,10 @@ gint check_fields_compatibility(LttEventType *event_type1,
     different = 1;
     goto end;
   }
-	if(type1->network != type2->network) {
-		different = 1;
-		goto end;
-	}
+  if(type1->network != type2->network) {
+    different = 1;
+    goto end;
+  }
  
   switch(type1->type_class) {
     case LTT_INT_FIXED:
