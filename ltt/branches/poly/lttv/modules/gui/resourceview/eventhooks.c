@@ -319,7 +319,12 @@ static inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
 
 static void cpu_set_line_color(PropertiesLine *prop_line, LttvCPUState *s)
 {
-  GQuark present_state = ((GQuark*)s->mode_stack->data)[s->mode_stack->len-1];
+  GQuark present_state;
+
+  if(s->mode_stack->len == 0)
+    present_state = LTTV_CPU_UNKNOWN;
+  else
+    present_state = ((GQuark*)s->mode_stack->data)[s->mode_stack->len-1];
 
   if(present_state == LTTV_CPU_IDLE) {
     prop_line->color = drawing_colors_cpu[COL_CPU_IDLE];
@@ -339,27 +344,32 @@ static void cpu_set_line_color(PropertiesLine *prop_line, LttvCPUState *s)
 
 static void irq_set_line_color(PropertiesLine *prop_line, LttvIRQState *s)
 {
-  GQuark present_state = ((GQuark*)s->mode_stack->data)[s->mode_stack->len-1];
+  GQuark present_state;
+  if(s->mode_stack->len == 0)
+    present_state = LTTV_IRQ_UNKNOWN;
+  else
+    present_state = ((GQuark*)s->mode_stack->data)[s->mode_stack->len-1];
 
-  if(present_state == LTTV_IRQ_UNKNOWN) {
-    prop_line->color = drawing_colors_irq[COL_IRQ_UNKNOWN];
-  }
-  else if(present_state == LTTV_IRQ_IDLE) {
+  if(present_state == LTTV_IRQ_IDLE) {
     prop_line->color = drawing_colors_irq[COL_IRQ_IDLE];
   }
   else if(present_state == LTTV_IRQ_BUSY) {
     prop_line->color = drawing_colors_irq[COL_IRQ_BUSY];
   }
+  else {
+    prop_line->color = drawing_colors_irq[COL_IRQ_UNKNOWN];
+  }
 }
 
 static void bdev_set_line_color(PropertiesLine *prop_line, LttvBdevState *s)
 {
-  GQuark present_state = ((GQuark*)s->mode_stack->data)[s->mode_stack->len-1];
+  GQuark present_state;
+  if(s->mode_stack->len == 0)
+    present_state = LTTV_BDEV_UNKNOWN;
+  else
+    present_state = ((GQuark*)s->mode_stack->data)[s->mode_stack->len-1];
 
-  if(present_state == LTTV_BDEV_UNKNOWN) {
-    prop_line->color = drawing_colors_bdev[COL_BDEV_UNKNOWN];
-  }
-  else if(present_state == LTTV_BDEV_IDLE) {
+  if(present_state == LTTV_BDEV_IDLE) {
     prop_line->color = drawing_colors_bdev[COL_BDEV_IDLE];
   }
   else if(present_state == LTTV_BDEV_BUSY_READING) {
@@ -367,6 +377,9 @@ static void bdev_set_line_color(PropertiesLine *prop_line, LttvBdevState *s)
   }
   else if(present_state == LTTV_BDEV_BUSY_WRITING) {
     prop_line->color = drawing_colors_bdev[COL_BDEV_BUSY_WRITING];
+  }
+  else {
+    prop_line->color = drawing_colors_bdev[COL_BDEV_UNKNOWN];
   }
 }
 
