@@ -321,10 +321,7 @@ static void cpu_set_line_color(PropertiesLine *prop_line, LttvCPUState *s)
 {
   GQuark present_state = ((GQuark*)s->mode_stack->data)[s->mode_stack->len-1];
 
-  if(present_state == LTTV_CPU_UNKNOWN) {
-    prop_line->color = drawing_colors_cpu[COL_CPU_UNKNOWN];
-  }
-  else if(present_state == LTTV_CPU_IDLE) {
+  if(present_state == LTTV_CPU_IDLE) {
     prop_line->color = drawing_colors_cpu[COL_CPU_IDLE];
   }
   else if(present_state == LTTV_CPU_BUSY) {
@@ -335,6 +332,8 @@ static void cpu_set_line_color(PropertiesLine *prop_line, LttvCPUState *s)
   }
   else if(present_state == LTTV_CPU_TRAP) {
     prop_line->color = drawing_colors_cpu[COL_CPU_TRAP];
+  } else {
+    prop_line->color = drawing_colors_cpu[COL_CPU_UNKNOWN];
   }
 }
 
@@ -372,14 +371,6 @@ static void irq_set_line_color(PropertiesLine *prop_line, LttvIRQState *s)
 
 
 int before_schedchange_hook(void *hook_data, void *call_data)
-{
-	before_schedchange_hook_cpu(hook_data, call_data);
-//	before_schedchange_hook_irq(hook_data, call_data);
-
-	return 0;
-}
-
-int before_schedchange_hook_cpu(void *hook_data, void *call_data)
 {
   LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
   EventsRequest *events_request = (EventsRequest*)thf->hook_data;
