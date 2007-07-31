@@ -198,6 +198,12 @@ extern LttvProcessType
   LTTV_STATE_USER_THREAD,
   LTTV_STATE_KERNEL_THREAD;
 
+typedef GQuark LttvCPUMode;
+extern LttvCPUMode
+  LTTV_CPU_UNKNOWN,
+  LTTV_CPU_IDLE,
+  LTTV_CPU_BUSY;
+
 typedef struct _LttvExecutionState {
   LttvExecutionMode t;
   LttvExecutionSubmode n;
@@ -277,6 +283,11 @@ GType lttv_traceset_state_get_type (void);
 #define LTTV_IS_TRACE_STATE_CLASS(vtable) (G_TYPE_CHECK_CLASS_TYPE ((vtable), LTTV_TRACE_STATE_TYPE))
 #define LTTV_TRACE_STATE_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACE_STATE_TYPE, LttvTraceStateClass))
 
+typedef struct _LttvCPUState {
+  LttvCPUMode previous_state;
+  LttvCPUMode present_state;
+} LttvCPUState;
+
 struct _LttvTraceState {
   LttvTraceContext parent;
 
@@ -300,6 +311,7 @@ struct _LttvTraceState {
   /* Array of per cpu running process */
   LttvProcessState **running_process;
   gboolean has_precomputed_states;
+  LttvCPUState *cpu_states; /* state of each cpu */
 };
 
 struct _LttvTraceStateClass {
@@ -332,10 +344,9 @@ int lttv_state_pop_state_cleanup(LttvProcessState *process,
 struct _LttvTracefileState {
   LttvTracefileContext parent;
 
-  //LttvProcessState *process;
   GQuark tracefile_name;
-  guint cpu;  /* Current cpu of the tracefile */
-//  guint saved_position;
+  guint cpu;  /* Current cpu of the tracefile */ /* perhaps merge in cpu_state */
+  LttvCPUState *cpu_state; /* cpu resource state */
 };
 
 struct _LttvTracefileStateClass {

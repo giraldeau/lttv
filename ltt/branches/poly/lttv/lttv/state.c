@@ -127,6 +127,11 @@ LttvProcessType
   LTTV_STATE_USER_THREAD,
   LTTV_STATE_KERNEL_THREAD;
 
+LttvCPUMode
+  LTTV_CPU_UNKNOWN,
+  LTTV_CPU_IDLE,
+  LTTV_CPU_BUSY;
+
 static GQuark
   LTTV_STATE_TRACEFILES,
   LTTV_STATE_PROCESSES,
@@ -410,6 +415,8 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     tcs->usertraces = NULL;
     tcs->running_process = g_new(LttvProcessState*, 
                                  ltt_trace_get_num_cpu(tc->t));
+    tcs->cpu_states = g_new(LttvCPUState, 
+                                 ltt_trace_get_num_cpu(tc->t));
     restore_init_state(tcs);
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfcs = 
@@ -417,6 +424,7 @@ init(LttvTracesetState *self, LttvTraceset *ts)
                                           LttvTracefileContext*, j));
       tfcs->tracefile_name = ltt_tracefile_name(tfcs->parent.tf);
       tfcs->cpu = ltt_tracefile_cpu(tfcs->parent.tf);
+      tfcs->cpu_state = &(tcs->cpu_states[tfcs->cpu]);
       if(ltt_tracefile_tid(tfcs->parent.tf) != 0) {
         /* It's a Usertrace */
         guint tid = ltt_tracefile_tid(tfcs->parent.tf);
@@ -2181,6 +2189,13 @@ static gboolean schedchange(void *hook_data, void *call_data)
     process->usertrace->cpu = cpu;
  // process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)s)->tf);
   process->state->change = s->parent.timestamp;
+
+  /* update cpu status */
+  if(pid_in == 0)
+    s->cpu_state->present_state = LTTV_CPU_IDLE;
+  else
+    s->cpu_state->present_state = LTTV_CPU_BUSY;
+
   return FALSE;
 }
 
@@ -3513,6 +3528,9 @@ static void module_init()
   LTT_FIELD_THIS_FN       = g_quark_from_string("this_fn");
   LTT_FIELD_CALL_SITE     = g_quark_from_string("call_site");
   
+  LTTV_CPU_UNKNOWN = g_quark_from_string("unknown");
+  LTTV_CPU_IDLE = g_quark_from_string("idle");
+  LTTV_CPU_BUSY = g_quark_from_string("busy");
 }
 
 static void module_destroy() 

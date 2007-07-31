@@ -626,14 +626,10 @@ void destroy_hash_data(gpointer data)
 
 int resourcelist_add(  ProcessList *process_list,
       Drawing_t *drawing,
-//      guint pid,
-//      guint tgid,
-//      guint cpu,
-//      guint ppid,
-//      LttTime *birth,
       guint trace_num,
       GQuark name,
-//      GQuark brand,
+      guint type,
+      guint id,
       guint *height,
       ResourceInfo **pm_resource_info,
       HashedResourceData **pm_hashed_resource_data)
@@ -654,6 +650,8 @@ int resourcelist_add(  ProcessList *process_list,
 //  Process_Info->ppid = ppid;
 //  Process_Info->birth = *birth;
   Resource_Info->trace_num = trace_num;
+  Resource_Info->type = type;
+  Resource_Info->id = id;
 
   /* When we create it from before state update, we are sure that the
    * last event occured before the beginning of the global area.

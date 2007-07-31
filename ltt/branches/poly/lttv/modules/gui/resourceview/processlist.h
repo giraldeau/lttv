@@ -51,6 +51,8 @@ enum
 typedef struct _ResourceInfo {
   GQuark name;
   guint trace_num;
+  guint type;
+  guint id;
 } ResourceInfo;
 
 typedef struct _HashedResourceData {

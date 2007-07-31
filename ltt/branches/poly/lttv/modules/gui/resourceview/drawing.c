@@ -84,19 +84,12 @@ GdkColor drawing_colors[NUM_COLORS] =
 
 };
 
-/*
-RUN+USER MODE green
-RUN+SYSCALL
-RUN+TRAP
-RUN+IRQ
-WAIT+foncé
-WAIT CPU + WAIT FORK vert foncé ou jaune
-IRQ rouge
-TRAP: orange
-SYSCALL: bleu pâle
-
-ZOMBIE + WAIT EXIT
-*/
+GdkColor drawing_colors_cpu[NUM_COLORS_CPU] =
+{ /* Pixel, R, G, B */
+  { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_IDLE */
+  { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_BUSY */
+  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_UNKNOWN */
+};
 
 
 /*****************************************************************************
@@ -1070,7 +1063,9 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   /* Allocate the colors */
   GdkColormap* colormap = gdk_colormap_get_system();
   gboolean success[NUM_COLORS];
-  gdk_colormap_alloc_colors(colormap, drawing_colors, NUM_COLORS, FALSE,
+  //gdk_colormap_alloc_colors(colormap, drawing_colors, NUM_COLORS, FALSE,
+  //                          TRUE, success);
+  gdk_colormap_alloc_colors(colormap, drawing_colors_cpu, NUM_COLORS_CPU, FALSE,
                             TRUE, success);
   
   drawing->gc =
@@ -1127,7 +1122,8 @@ void drawing_destroy(Drawing_t *drawing)
   /* Free the colors */
   GdkColormap* colormap = gdk_colormap_get_system();
 
-  gdk_colormap_free_colors(colormap, drawing_colors, NUM_COLORS);
+  //gdk_colormap_free_colors(colormap, drawing_colors, NUM_COLORS);
+  gdk_colormap_free_colors(colormap, drawing_colors_cpu, NUM_COLORS_CPU);
   
 
 

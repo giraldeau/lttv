@@ -75,7 +75,7 @@ lttv_plugin_cfv_get_type (void)
       lttv_plugin_cfv_init    /* instance_init */
       };
       type = g_type_register_static (G_TYPE_OBJECT,
-                                     "LttvPluginCFVType",
+                                     "LttvPluginRVType",
                                      &info, 0);
     }
     return type;
