@@ -163,7 +163,8 @@ static GQuark
   LTTV_STATE_HOOKS,
   LTTV_STATE_NAME_TABLES,
   LTTV_STATE_TRACE_STATE_USE_COUNT,
-  LTTV_STATE_RESOURCE_CPUS;
+  LTTV_STATE_RESOURCE_CPUS,
+  LTTV_STATE_RESOURCE_IRQS;
 
 static void create_max_time(LttvTraceState *tcs);
 
@@ -1143,6 +1144,35 @@ static void lttv_state_free_cpu_states(LttvCPUState *states, guint n)
   g_free(states);
 }
 
+static LttvIRQState *lttv_state_copy_irq_states(LttvIRQState *states, guint n)
+{
+  guint i,j;
+  LttvIRQState *retval;
+
+  retval = g_malloc(n*sizeof(LttvIRQState));
+
+  for(i=0; i<n; i++) {
+    retval[i].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvIRQMode));
+    g_array_set_size(retval[i].mode_stack, states[i].mode_stack->len);
+    for(j=0; j<states[i].mode_stack->len; j++) {
+      g_array_index(retval[i].mode_stack, GQuark, j) = g_array_index(states[i].mode_stack, GQuark, j);
+    }
+  }
+
+  return retval;
+}
+
+static void lttv_state_free_irq_states(LttvIRQState *states, guint n)
+{
+  guint i;
+
+  for(i=0; i<n; i++) {
+    g_array_free(states[i].mode_stack, FALSE);
+  }
+
+  g_free(states);
+}
+
 /* The saved state for each trace contains a member "processes", which
    stores a copy of the process table, and a member "tracefiles" with
    one entry per tracefile. Each tracefile has a "process" member pointing
@@ -1151,7 +1181,7 @@ static void lttv_state_free_cpu_states(LttvCPUState *states, guint n)
 
 static void state_save(LttvTraceState *self, LttvAttribute *container)
 {
-  guint i, nb_tracefile, nb_cpus;
+  guint i, nb_tracefile, nb_cpus, nb_irqs;
 
   LttvTracefileState *tfcs;
 
@@ -1224,16 +1254,28 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
     }
   }
 
-  value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_CPUS,
-      LTTV_POINTER);
-  guint size = sizeof(LttvCPUState)*nb_cpus;
-  *(value.v_pointer) = lttv_state_copy_cpu_states(self->cpu_states, nb_cpus);
+  /* save the cpu state */
+  {
+    guint size = sizeof(LttvCPUState)*nb_cpus;
+    value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_CPUS,
+        LTTV_POINTER);
+    *(value.v_pointer) = lttv_state_copy_cpu_states(self->cpu_states, nb_cpus);
+  }
+
+  /* save the irq state */
+  nb_irqs = self->nb_irqs;
+  {
+    guint size = sizeof(LttvCPUState)*nb_irqs;
+    value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_IRQS,
+        LTTV_POINTER);
+    *(value.v_pointer) = lttv_state_copy_irq_states(self->irq_states, nb_irqs);
+  }
 }
 
 
 static void state_restore(LttvTraceState *self, LttvAttribute *container)
 {
-  guint i, nb_tracefile, pid, nb_cpus;
+  guint i, nb_tracefile, pid, nb_cpus, nb_irqs;
 
   LttvTracefileState *tfcs;
 
@@ -1274,8 +1316,6 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     g_assert(self->running_process[i] != NULL);
   }
 
-  printf("state restore\n"); 
-
   nb_tracefile = self->parent.tracefiles->len;
 
   //g_tree_destroy(tsc->pqueue);
@@ -1286,6 +1326,13 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
   g_assert(type == LTTV_POINTER);
   lttv_state_free_cpu_states(self->cpu_states, nb_cpus);
   self->cpu_states = lttv_state_copy_cpu_states(*(value.v_pointer), nb_cpus);
+ 
+  /* restore irq resource states */
+  nb_irqs = self->nb_irqs;
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_IRQS, &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_irq_states(self->irq_states, nb_irqs);
+  self->irq_states = lttv_state_copy_irq_states(*(value.v_pointer), nb_irqs);
  
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
