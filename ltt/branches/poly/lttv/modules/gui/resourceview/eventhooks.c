@@ -366,6 +366,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
     pid_out = ltt_event_get_long_unsigned(e, thf->f1);
     pid_in = ltt_event_get_long_unsigned(e, thf->f2);
   }
+
+  g_debug("a");
   
   tfc->target_pid = pid_out;
   if(!filter || !filter->head ||
@@ -406,16 +408,16 @@ int before_schedchange_hook(void *hook_data, void *call_data)
         /* Process not present */
         ProcessInfo *process_info;
         Drawing_t *drawing = control_flow_data->drawing;
-        processlist_add(process_list,
+        resourcelist_add(process_list,
             drawing,
-            pid_out,
-            process->tgid,
-            process->cpu,
-            process->ppid,
-            &birth,
-            trace_num,
+//            pid_out,
+//            process->tgid,
+//            process->cpu,
+//            process->ppid,
+//            &birth,
+//            trace_num,
             process->name,
-            process->brand,
+//            process->brand,
             &pl_height,
             &process_info,
             &hashed_process_data);

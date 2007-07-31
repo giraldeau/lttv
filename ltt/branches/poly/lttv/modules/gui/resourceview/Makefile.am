@@ -30,8 +30,8 @@ LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -ll
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libresourceview.la
-libguicontrolflow_la_LDFLAGS = -module -avoid-version
-libguicontrolflow_la_SOURCES = 	module.c eventhooks.c cfv.c processlist.c drawing.c drawitem.c lttv_plugin_cfv.c
+libresourceview_la_LDFLAGS = -module -avoid-version
+libresourceview_la_SOURCES = 	module.c eventhooks.c cfv.c processlist.c drawing.c drawitem.c lttv_plugin_cfv.c
 
 noinst_HEADERS = eventhooks.h cfv.h processlist.h drawing.h drawitem.h lttv_plugin_cfv.h
 

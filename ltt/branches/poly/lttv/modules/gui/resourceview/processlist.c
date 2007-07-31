@@ -249,9 +249,6 @@ static void copy_pixmap_region_each(ProcessInfo *key,
       cp->width, cp->height);
 }
 
-
-
-
 void copy_pixmap_region(ProcessList *process_list, GdkDrawable *dest,
     GdkGC *gc, GdkDrawable *src,
     gint xsrc, gint ysrc,
@@ -331,17 +328,7 @@ void copy_pixmap_to_screen(ProcessList *process_list,
         width, cell_height);
 
   }
-  
-  
 }
-
-
-
-
-
-
-
-
 
 ProcessList *processlist_construct(void)
 {
@@ -422,7 +409,7 @@ ProcessList *processlist_construct(void)
   process_list->cell_height += vertical_separator;
 	
 
-  column = gtk_tree_view_column_new_with_attributes ( "Process",
+  column = gtk_tree_view_column_new_with_attributes ( "Resource",
                 renderer,
                 "text",
                 PROCESS_COLUMN,
@@ -434,73 +421,73 @@ ProcessList *processlist_construct(void)
   
   process_list->button = column->button;
  
-  column = gtk_tree_view_column_new_with_attributes ( "Brand",
-                renderer,
-                "text",
-                BRAND_COLUMN,
-                NULL);
-  gtk_tree_view_column_set_alignment (column, 0.0);
-  gtk_tree_view_column_set_fixed_width (column, 45);
-  gtk_tree_view_append_column (
-    GTK_TREE_VIEW (process_list->process_list_widget), column);
-
-  column = gtk_tree_view_column_new_with_attributes ( "PID",
-                renderer,
-                "text",
-                PID_COLUMN,
-                NULL);
-  gtk_tree_view_append_column (
-    GTK_TREE_VIEW (process_list->process_list_widget), column);
-
-  column = gtk_tree_view_column_new_with_attributes ( "TGID",
-                renderer,
-                "text",
-                TGID_COLUMN,
-                NULL);
-  gtk_tree_view_append_column (
-    GTK_TREE_VIEW (process_list->process_list_widget), column);
-
-  column = gtk_tree_view_column_new_with_attributes ( "PPID",
-                renderer,
-                "text",
-                PPID_COLUMN,
-                NULL);
-  gtk_tree_view_append_column (
-    GTK_TREE_VIEW (process_list->process_list_widget), column);
-  
-  column = gtk_tree_view_column_new_with_attributes ( "CPU",
-                renderer,
-                "text",
-                CPU_COLUMN,
-                NULL);
-  gtk_tree_view_append_column (
-    GTK_TREE_VIEW (process_list->process_list_widget), column);
-
-  column = gtk_tree_view_column_new_with_attributes ( "Birth sec",
-                renderer,
-                "text",
-                BIRTH_S_COLUMN,
-                NULL);
-  gtk_tree_view_append_column (
-    GTK_TREE_VIEW (process_list->process_list_widget), column);
-
-  //gtk_tree_view_column_set_visible(column, 0);
-  //
-  column = gtk_tree_view_column_new_with_attributes ( "Birth nsec",
-                renderer,
-                "text",
-                BIRTH_NS_COLUMN,
-                NULL);
-  gtk_tree_view_append_column (
-    GTK_TREE_VIEW (process_list->process_list_widget), column);
-
-  column = gtk_tree_view_column_new_with_attributes ( "TRACE",
-                renderer,
-                "text",
-                TRACE_COLUMN,
-                NULL);
-  gtk_tree_view_append_column (
-    GTK_TREE_VIEW (process_list->process_list_widget), column);
+//  column = gtk_tree_view_column_new_with_attributes ( "Brand",
+//                renderer,
+//                "text",
+//                BRAND_COLUMN,
+//                NULL);
+//  gtk_tree_view_column_set_alignment (column, 0.0);
+//  gtk_tree_view_column_set_fixed_width (column, 45);
+//  gtk_tree_view_append_column (
+//    GTK_TREE_VIEW (process_list->process_list_widget), column);
+//
+//  column = gtk_tree_view_column_new_with_attributes ( "PID",
+//                renderer,
+//                "text",
+//                PID_COLUMN,
+//                NULL);
+//  gtk_tree_view_append_column (
+//    GTK_TREE_VIEW (process_list->process_list_widget), column);
+//
+//  column = gtk_tree_view_column_new_with_attributes ( "TGID",
+//                renderer,
+//                "text",
+//                TGID_COLUMN,
+//                NULL);
+//  gtk_tree_view_append_column (
+//    GTK_TREE_VIEW (process_list->process_list_widget), column);
+//
+//  column = gtk_tree_view_column_new_with_attributes ( "PPID",
+//                renderer,
+//                "text",
+//                PPID_COLUMN,
+//                NULL);
+//  gtk_tree_view_append_column (
+//    GTK_TREE_VIEW (process_list->process_list_widget), column);
+//  
+//  column = gtk_tree_view_column_new_with_attributes ( "CPU",
+//                renderer,
+//                "text",
+//                CPU_COLUMN,
+//                NULL);
+//  gtk_tree_view_append_column (
+//    GTK_TREE_VIEW (process_list->process_list_widget), column);
+//
+//  column = gtk_tree_view_column_new_with_attributes ( "Birth sec",
+//                renderer,
+//                "text",
+//                BIRTH_S_COLUMN,
+//                NULL);
+//  gtk_tree_view_append_column (
+//    GTK_TREE_VIEW (process_list->process_list_widget), column);
+//
+//  //gtk_tree_view_column_set_visible(column, 0);
+//  //
+//  column = gtk_tree_view_column_new_with_attributes ( "Birth nsec",
+//                renderer,
+//                "text",
+//                BIRTH_NS_COLUMN,
+//                NULL);
+//  gtk_tree_view_append_column (
+//    GTK_TREE_VIEW (process_list->process_list_widget), column);
+//
+//  column = gtk_tree_view_column_new_with_attributes ( "TRACE",
+//                renderer,
+//                "text",
+//                TRACE_COLUMN,
+//                NULL);
+//  gtk_tree_view_append_column (
+//    GTK_TREE_VIEW (process_list->process_list_widget), column);
 
 
   //gtk_tree_view_column_set_visible(column, 0);
@@ -611,52 +598,58 @@ void processlist_set_ppid(ProcessList *process_list,
         -1);
 }
 
-
-int processlist_add(  ProcessList *process_list,
+int resourcelist_add(  ProcessList *process_list,
       Drawing_t *drawing,
-      guint pid,
-      guint tgid,
-      guint cpu,
-      guint ppid,
-      LttTime *birth,
-      guint trace_num,
+//      guint pid,
+//      guint tgid,
+//      guint cpu,
+//      guint ppid,
+//      LttTime *birth,
+//      guint trace_num,
       GQuark name,
-      GQuark brand,
+//      GQuark brand,
       guint *height,
-      ProcessInfo **pm_process_info,
-      HashedProcessData **pm_hashed_process_data)
+      ResourceInfo **pm_process_info,
+      ProcessInfo
+      ResourceProcessData **pm_hashed_process_data)
 {
-  ProcessInfo *Process_Info = g_new(ProcessInfo, 1);
-  HashedProcessData *hashed_process_data = g_new(HashedProcessData, 1);
-  *pm_hashed_process_data = hashed_process_data;
-  *pm_process_info = Process_Info;
+  ResourceInfo *Process_Info = g_new(ProcessInfo, 1);
+  HashedResourceData *hashed_resource_data = g_new(HashedProcessData, 1);
+  *pm_hashed_resource_data = hashed_resource_data;
+  *pm_resource_info = Resource_Info;
  
-  Process_Info->pid = pid;
-  Process_Info->tgid = tgid;
-  if(pid == 0)
-    Process_Info->cpu = cpu;
-  else
-    Process_Info->cpu = 0;
-  Process_Info->ppid = ppid;
-  Process_Info->birth = *birth;
-  Process_Info->trace_num = trace_num;
+//  Process_Info->pid = pid;
+//  Process_Info->tgid = tgid;
+//  if(pid == 0)
+//    Process_Info->cpu = cpu;
+//  else
+//    Process_Info->cpu = 0;
+//  Process_Info->ppid = ppid;
+//  Process_Info->birth = *birth;
+//  Process_Info->trace_num = trace_num;
 
   /* When we create it from before state update, we are sure that the
    * last event occured before the beginning of the global area.
    *
    * If it is created after state update, this value (0) will be
    * overriden by the new state before anything is drawn.
+   *
+   * There are 3 potential lines for the each process: one in the middle,
+   * one under it and one over it. The {over,middle,under} fields tell us
+   * the x pixel on the pixmap where we are. The _used fields tell us
+   * whether that pixel was used. The _marked field tells us if we marked a
+   * conflict point.
    */
-  hashed_process_data->x.over = 0;
-  hashed_process_data->x.over_used = FALSE;
-  hashed_process_data->x.over_marked = FALSE;
-  hashed_process_data->x.middle = 0;
-  hashed_process_data->x.middle_used = FALSE;
-  hashed_process_data->x.middle_marked = FALSE;
-  hashed_process_data->x.under = 0;
-  hashed_process_data->x.under_used = FALSE;
-  hashed_process_data->x.under_marked = FALSE;
-  hashed_process_data->next_good_time = ltt_time_zero;
+  hashed_resource_data->x.over = 0;
+  hashed_resource_data->x.over_used = FALSE;
+  hashed_resource_data->x.over_marked = FALSE;
+  hashed_resource_data->x.middle = 0; // last 
+  hashed_resource_data->x.middle_used = FALSE;
+  hashed_resource_data->x.middle_marked = FALSE;
+  hashed_resource_data->x.under = 0;
+  hashed_resource_data->x.under_used = FALSE;
+  hashed_resource_data->x.under_marked = FALSE;
+  hashed_resource_data->next_good_time = ltt_time_zero;
  
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->list_store,
@@ -664,24 +657,13 @@ int processlist_add(  ProcessList *process_list,
 
   gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
         PROCESS_COLUMN, g_quark_to_string(name),
-        BRAND_COLUMN, g_quark_to_string(brand),
-        PID_COLUMN, pid,
-        TGID_COLUMN, tgid,
-        PPID_COLUMN, ppid,
-        CPU_COLUMN, cpu,
-        BIRTH_S_COLUMN, birth->tv_sec,
-        BIRTH_NS_COLUMN, birth->tv_nsec,
-        TRACE_COLUMN, trace_num,
         -1);
-  //gtk_tree_view_set_model(GTK_TREE_VIEW(process_list->process_list_widget),
-  //                        GTK_TREE_MODEL(process_list->list_store));
-  //gtk_container_resize_children(GTK_CONTAINER(process_list->process_list_widget));
   
   g_hash_table_insert(process_list->process_hash,
         (gpointer)Process_Info,
         (gpointer)hashed_process_data);
   
-  process_list->number_of_process++;
+  process_list->number_of_process++; // of resources
 
   hashed_process_data->height = process_list->cell_height;
 
@@ -695,7 +677,7 @@ int processlist_add(  ProcessList *process_list,
                        hashed_process_data->height,
                        -1);
   
-  // Clear the image
+  // Clear the image with black background
   gdk_draw_rectangle (hashed_process_data->pixmap,
         drawing->drawing_area->style->black_gc,
         TRUE,
@@ -705,9 +687,104 @@ int processlist_add(  ProcessList *process_list,
 
   update_index_to_pixmap(process_list);
 
-
   return 0;
 }
+//int processlist_add(  ProcessList *process_list,
+//      Drawing_t *drawing,
+//      guint pid,
+//      guint tgid,
+//      guint cpu,
+//      guint ppid,
+//      LttTime *birth,
+//      guint trace_num,
+//      GQuark name,
+//      GQuark brand,
+//      guint *height,
+//      ProcessInfo **pm_process_info,
+//      HashedProcessData **pm_hashed_process_data)
+//{
+//  ProcessInfo *Process_Info = g_new(ProcessInfo, 1);
+//  HashedProcessData *hashed_process_data = g_new(HashedProcessData, 1);
+//  *pm_hashed_process_data = hashed_process_data;
+//  *pm_process_info = Process_Info;
+// 
+//  Process_Info->pid = pid;
+//  Process_Info->tgid = tgid;
+//  if(pid == 0)
+//    Process_Info->cpu = cpu;
+//  else
+//    Process_Info->cpu = 0;
+//  Process_Info->ppid = ppid;
+//  Process_Info->birth = *birth;
+//  Process_Info->trace_num = trace_num;
+//
+//  /* When we create it from before state update, we are sure that the
+//   * last event occured before the beginning of the global area.
+//   *
+//   * If it is created after state update, this value (0) will be
+//   * overriden by the new state before anything is drawn.
+//   */
+//  hashed_process_data->x.over = 0;
+//  hashed_process_data->x.over_used = FALSE;
+//  hashed_process_data->x.over_marked = FALSE;
+//  hashed_process_data->x.middle = 0;
+//  hashed_process_data->x.middle_used = FALSE;
+//  hashed_process_data->x.middle_marked = FALSE;
+//  hashed_process_data->x.under = 0;
+//  hashed_process_data->x.under_used = FALSE;
+//  hashed_process_data->x.under_marked = FALSE;
+//  hashed_process_data->next_good_time = ltt_time_zero;
+// 
+//  /* Add a new row to the model */
+//  gtk_list_store_append ( process_list->list_store,
+//                          &hashed_process_data->y_iter);
+//
+//  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
+//        PROCESS_COLUMN, g_quark_to_string(name),
+//        BRAND_COLUMN, g_quark_to_string(brand),
+//        PID_COLUMN, pid,
+//        TGID_COLUMN, tgid,
+//        PPID_COLUMN, ppid,
+//        CPU_COLUMN, cpu,
+//        BIRTH_S_COLUMN, birth->tv_sec,
+//        BIRTH_NS_COLUMN, birth->tv_nsec,
+//        TRACE_COLUMN, trace_num,
+//        -1);
+//  //gtk_tree_view_set_model(GTK_TREE_VIEW(process_list->process_list_widget),
+//  //                        GTK_TREE_MODEL(process_list->list_store));
+//  //gtk_container_resize_children(GTK_CONTAINER(process_list->process_list_widget));
+//  
+//  g_hash_table_insert(process_list->process_hash,
+//        (gpointer)Process_Info,
+//        (gpointer)hashed_process_data);
+//  
+//  process_list->number_of_process++;
+//
+//  hashed_process_data->height = process_list->cell_height;
+//
+//  g_assert(hashed_process_data->height != 0);
+//
+//  *height = hashed_process_data->height * process_list->number_of_process;
+//
+//  hashed_process_data->pixmap = 
+//        gdk_pixmap_new(drawing->drawing_area->window,
+//                       drawing->alloc_width,
+//                       hashed_process_data->height,
+//                       -1);
+//  
+//  // Clear the image
+//  gdk_draw_rectangle (hashed_process_data->pixmap,
+//        drawing->drawing_area->style->black_gc,
+//        TRUE,
+//        0, 0,
+//        drawing->alloc_width,
+//        hashed_process_data->height);
+//
+//  update_index_to_pixmap(process_list);
+//
+//
+//  return 0;
+//}
 
 int processlist_remove( ProcessList *process_list,
       guint pid,

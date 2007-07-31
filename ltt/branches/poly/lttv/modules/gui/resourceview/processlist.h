@@ -16,8 +16,6 @@
  * MA 02111-1307, USA.
  */
 
-
-
 #ifndef _PROCESS_LIST_H
 #define _PROCESS_LIST_H
 
@@ -45,33 +43,16 @@
 /* Enumeration of the columns */
 enum
 {
-  PROCESS_COLUMN,
-  BRAND_COLUMN,
-  PID_COLUMN,
-  TGID_COLUMN,
-  PPID_COLUMN,
-  CPU_COLUMN,
-  BIRTH_S_COLUMN,
-  BIRTH_NS_COLUMN,
-  TRACE_COLUMN,
+  NAME_COLUMN,
   N_COLUMNS
 };
 
 
-typedef struct _ProcessInfo {
-  
-  guint pid;
-  guint tgid;
-  guint cpu;
-  guint ppid;
-  LttTime birth;
-  guint trace_num;
+typedef struct _ResourceInfo {
+  guint name;
+} ResourceInfo;
 
- // gint height_cache;
-
-} ProcessInfo;
-
-typedef struct _HashedProcessData {
+typedef struct _HashedResourceData {
  
   GdkPixmap *pixmap;  // Pixmap slice containing drawing buffer for the PID
   gint height; // height of the pixmap
@@ -93,7 +74,7 @@ typedef struct _HashedProcessData {
   LttTime next_good_time; /* precalculate the next time where the next
                              pixel is.*/
 
-} HashedProcessData;
+} HashedResourceData;
   
 struct _ProcessList {
   
