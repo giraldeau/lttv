@@ -100,6 +100,14 @@ GdkColor drawing_colors_irq[NUM_COLORS_IRQ] =
   { 0, 0xFFFF, 0x5E00, 0x0000 }, /* COL_IRQ_BUSY */
 };
 
+GdkColor drawing_colors_bdev[NUM_COLORS_BDEV] =
+{ /* Pixel, R, G, B */
+  { 0, 0x0000, 0x0000, 0x0000 }, /* COL_BDEV_UNKNOWN */
+  { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_BDEV_IDLE */
+  { 0, 0x0000, 0x0000, 0xFFFF }, /* COL_BDEV_BUSY_READING */
+  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_BDEV_BUSY_WRITING */
+};
+
 /*****************************************************************************
  *                              drawing functions                            *
  *****************************************************************************/
@@ -421,6 +429,22 @@ void drawing_data_request(Drawing_t *drawing,
 //          events_request,
 //          &g_array_index(hooks, LttvTraceHook, after_hn++));
 //      if(ret) after_hn--;
+
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_ISSUE,
+          LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
+          before_bdev_event_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, after_hn++));
+      if(ret) after_hn--;
+
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_COMPLETE,
+          LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
+          before_bdev_event_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, after_hn++));
+      if(ret) after_hn--;
 
       hooks = g_array_set_size(hooks, after_hn);
 
@@ -1077,6 +1101,8 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
                             TRUE, success);
   gdk_colormap_alloc_colors(colormap, drawing_colors_irq, NUM_COLORS_IRQ, FALSE,
                             TRUE, success);
+  gdk_colormap_alloc_colors(colormap, drawing_colors_bdev, NUM_COLORS_BDEV, FALSE,
+                            TRUE, success);
   
   drawing->gc =
     gdk_gc_new(GDK_DRAWABLE(main_window_get_widget(control_flow_data->tab)->window));
@@ -1135,6 +1161,7 @@ void drawing_destroy(Drawing_t *drawing)
   gdk_colormap_free_colors(colormap, drawing_colors, NUM_COLORS);
   gdk_colormap_free_colors(colormap, drawing_colors_cpu, NUM_COLORS_CPU);
   gdk_colormap_free_colors(colormap, drawing_colors_irq, NUM_COLORS_IRQ);
+  gdk_colormap_free_colors(colormap, drawing_colors_bdev, NUM_COLORS_BDEV);
 
   // Do not unref here, Drawing_t destroyed by it's widget.
   //g_object_unref( G_OBJECT(drawing->drawing_area));

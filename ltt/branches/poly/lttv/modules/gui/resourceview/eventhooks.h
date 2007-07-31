@@ -109,7 +109,7 @@ int  after_chunk(void *hook_data, void *call_data);
 int  before_request(void *hook_data, void *call_data);
 int  after_request(void *hook_data, void *call_data);
 int  before_statedump_end(void *hook_data, void *call_data);
-
+int before_bdev_event_hook(void *hook_data, void *call_data);
 
 
 gint update_time_window_hook(void *hook_data, void *call_data);
