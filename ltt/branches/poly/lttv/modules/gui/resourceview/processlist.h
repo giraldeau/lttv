@@ -49,7 +49,8 @@ enum
 
 
 typedef struct _ResourceInfo {
-  guint name;
+  GQuark name;
+  guint trace_num;
 } ResourceInfo;
 
 typedef struct _HashedResourceData {
@@ -90,7 +91,7 @@ struct _ProcessList {
   gint cell_height;
 
   /* Current process pointer, one per cpu, one per trace */
-  HashedProcessData ***current_hash_data;
+  HashedResourceData ***current_hash_data;
 
   /* Array containing index -> pixmap correspondance. Must be updated
    * every time the process list is reordered, process added or removed */
@@ -118,8 +119,8 @@ void processlist_clear(ProcessList *process_list);
 int processlist_add(ProcessList *process_list, Drawing_t * drawing, 
     guint pid, guint tgid, guint cpu, guint ppid,
     LttTime *birth, guint trace_num, GQuark name, GQuark brand, guint *height,
-    ProcessInfo **process_info,
-    HashedProcessData **hashed_process_data);
+    ResourceInfo **process_info,
+    HashedResourceData **hashed_process_data);
 // out : success (0) and height
 int processlist_remove(ProcessList *process_list, guint pid, guint cpu, 
     LttTime *birth, guint trace_num);
@@ -127,19 +128,19 @@ int processlist_remove(ProcessList *process_list, guint pid, guint cpu,
 /* Set the name of a process */
 void processlist_set_name(ProcessList *process_list,
     GQuark name,
-    HashedProcessData *hashed_process_data);
+    HashedResourceData *hashed_process_data);
 
 void processlist_set_brand(ProcessList *process_list,
     GQuark brand,
-    HashedProcessData *hashed_process_data);
+    HashedResourceData *hashed_process_data);
 
 /* Set the ppid of a process */
 void processlist_set_tgid(ProcessList *process_list,
     guint tgid,
-    HashedProcessData *hashed_process_data);
+    HashedResourceData *hashed_process_data);
 void processlist_set_ppid(ProcessList *process_list,
     guint ppid,
-    HashedProcessData *hashed_process_data);
+    HashedResourceData *hashed_process_data);
 
 
 /* Synchronize the list at the left and the drawing */
@@ -189,28 +190,29 @@ static inline guint processlist_get_height(ProcessList *process_list)
 }
 
 
-static inline HashedProcessData *processlist_get_process_data( 
-          ProcessList *process_list,
-          guint pid, guint cpu, LttTime *birth, guint trace_num)
+static inline HashedResourceData *processlist_get_process_data( 
+          ProcessList *process_list, GQuark resource_name, guint trace_num)
 {
-  ProcessInfo process_info;
+  ResourceInfo resource_info;
 
-  process_info.pid = pid;
-  if(pid == 0)
-    process_info.cpu = cpu;
-  else
-    process_info.cpu = ANY_CPU;
-  process_info.birth = *birth;
-  process_info.trace_num = trace_num;
+//  process_info.pid = pid;
+//  if(pid == 0)
+//    process_info.cpu = cpu;
+//  else
+//    process_info.cpu = ANY_CPU;
+//  process_info.birth = *birth;
+//  process_info.trace_num = trace_num;
+  resource_info.name = resource_name;
+  resource_info.trace_num = trace_num;
 
-  return  (HashedProcessData*)g_hash_table_lookup(
+  return  (HashedResourceData*)g_hash_table_lookup(
                 process_list->process_hash,
-                &process_info);
+                &resource_info);
 }
 
 
 static inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
-          HashedProcessData *hashed_process_data,
+          HashedResourceData *hashed_process_data,
           guint *y,
           guint *height)
 {
@@ -230,7 +232,7 @@ static inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
 }
 
 static inline guint processlist_get_index_from_data(ProcessList *process_list,
-          HashedProcessData *hashed_process_data)
+          HashedResourceData *hashed_process_data)
 {
   gint *path_indices;
   GtkTreePath *tree_path;

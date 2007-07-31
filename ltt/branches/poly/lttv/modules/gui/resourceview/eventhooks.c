@@ -185,12 +185,12 @@ static void request_background_data(ControlFlowData *control_flow_data)
  * @return The widget created.
  */
 GtkWidget *
-h_guicontrolflow(LttvPlugin *plugin)
+h_resourceview(LttvPlugin *plugin)
 {
   LttvPluginTab *ptab = LTTV_PLUGIN_TAB(plugin);
   Tab *tab = ptab->tab;
   g_info("h_guicontrolflow, %p", tab);
-  ControlFlowData *control_flow_data = guicontrolflow(ptab);
+  ControlFlowData *control_flow_data = resourceview(ptab);
   
   control_flow_data->tab = tab;
   
@@ -277,7 +277,6 @@ static inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
   prop_line.line_width = STATE_LINE_WIDTH;
   prop_line.style = GDK_LINE_SOLID;
   prop_line.y = MIDDLE;
-  //GdkColormap *colormap = gdk_colormap_get_system();
   
   if(process->state->s == LTTV_STATE_RUN) {
     if(process->state->t == LTTV_STATE_USER_MODE)
@@ -355,6 +354,9 @@ int before_schedchange_hook(void *hook_data, void *call_data)
   LttTime evtime = ltt_event_time(e);
   LttvFilter *filter = control_flow_data->filter;
 
+  gchar *cpustr;
+  GQuark cpuq;
+
   /* we are in a schedchange, before the state update. We must draw the
    * items corresponding to the state before it changes : now is the right
    * time to do it.
@@ -362,17 +364,19 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
   guint pid_out;
   guint pid_in;
-  {
-    pid_out = ltt_event_get_long_unsigned(e, thf->f1);
-    pid_in = ltt_event_get_long_unsigned(e, thf->f2);
+  pid_out = ltt_event_get_long_unsigned(e, thf->f1);
+  pid_in = ltt_event_get_long_unsigned(e, thf->f2);
+  if(pid_in != 0 && pid_out != 0) {
+    /* not a transition to/from idle */
+    return 0;
   }
 
   g_debug("a");
   
   tfc->target_pid = pid_out;
-  if(!filter || !filter->head ||
-    lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL)) { 
+//  if(!filter || !filter->head ||
+//    lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL)) { 
     /* For the pid_out */
     /* First, check if the current process is in the state computation
      * process list. If it is there, that means we must add it right now and
@@ -380,33 +384,38 @@ int before_schedchange_hook(void *hook_data, void *call_data)
      * present, it's a new process and it was not present : it will
      * be added after the state update.  */
     guint cpu = tfs->cpu;
+    cpustr = g_strdup_printf("CPU%u", cpu);
+    cpuq = g_quark_from_string(cpustr);
+    g_free(cpustr);
+
     guint trace_num = ts->parent.index;
-    LttvProcessState *process = ts->running_process[cpu];
+//    LttvProcessState *process = ts->running_process[cpu];
     /* unknown state, bad current pid */
-    if(process->pid != pid_out)
-      process = lttv_state_find_process(ts,
-          tfs->cpu, pid_out);
+//    if(process->pid != pid_out)
+//      process = lttv_state_find_process(ts,
+//          tfs->cpu, pid_out);
     
-    if(process != NULL) {
+//    if(process != NULL) {
       /* Well, the process_out existed : we must get it in the process hash
        * or add it, and draw its items.
        */
        /* Add process to process list (if not present) */
       guint pl_height = 0;
-      HashedProcessData *hashed_process_data = NULL;
+      HashedResourceData *hashed_process_data = NULL;
       ProcessList *process_list = control_flow_data->process_list;
-      LttTime birth = process->creation_time;
+//      LttTime birth = process->creation_time;
       
-      hashed_process_data = processlist_get_process_data(process_list,
-              pid_out,
-              process->cpu,
-              &birth,
-              trace_num);
+      hashed_process_data = processlist_get_process_data(process_list, cpuq, trace_num);
+//      hashed_process_data = processlist_get_process_data(process_list,
+//              pid_out,
+//              process->cpu,
+//              &birth,
+//              trace_num);
       if(hashed_process_data == NULL)
       {
-        g_assert(pid_out == 0 || pid_out != process->ppid);
+//        g_assert(pid_out == 0 || pid_out != process->ppid);
         /* Process not present */
-        ProcessInfo *process_info;
+        ResourceInfo *process_info;
         Drawing_t *drawing = control_flow_data->drawing;
         resourcelist_add(process_list,
             drawing,
@@ -415,8 +424,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 //            process->cpu,
 //            process->ppid,
 //            &birth,
-//            trace_num,
-            process->name,
+            trace_num,
+            cpuq, //process->name,
 //            process->brand,
             &pl_height,
             &process_info,
@@ -517,7 +526,18 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
           {
             /* Draw the line */
-            PropertiesLine prop_line = prepare_s_e_line(process);
+            //PropertiesLine prop_line = prepare_s_e_line(process);
+            PropertiesLine prop_line;
+            prop_line.line_width = STATE_LINE_WIDTH;
+            prop_line.style = GDK_LINE_SOLID;
+            prop_line.y = MIDDLE;
+            if(pid_out == 0)
+              //prop_line.color = { 0, 0xCCCC, 0xCCCC, 0xCCCC }; /* gray */
+              prop_line.color = drawing_colors[COL_WHITE];
+            else
+              //prop_line.color = { 0, 0x0000, 0x0000, 0xFFFF }; /* blue */
+              prop_line.color = drawing_colors[COL_EXIT];
+
             draw_line((void*)&prop_line, (void*)&draw_context);
 
           }
@@ -531,176 +551,177 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                                  &hashed_process_data->next_good_time);
         }
       }
-    }
-  }
+//    }
+//  }
 
-  tfc->target_pid = pid_in;
-  if(!filter || !filter->head ||
-    lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL)) { 
-    /* For the pid_in */
-    /* First, check if the current process is in the state computation
-     * process list. If it is there, that means we must add it right now and
-     * draw items from the beginning of the read for it. If it is not
-     * present, it's a new process and it was not present : it will
-     * be added after the state update.  */
-    LttvProcessState *process;
-    process = lttv_state_find_process(ts,
-        tfs->cpu, pid_in);
-    guint trace_num = ts->parent.index;
-    
-    if(process != NULL) {
-      /* Well, the process existed : we must get it in the process hash
-       * or add it, and draw its items.
-       */
-       /* Add process to process list (if not present) */
-      guint pl_height = 0;
-      HashedProcessData *hashed_process_data = NULL;
-      ProcessList *process_list = control_flow_data->process_list;
-      LttTime birth = process->creation_time;
-      
-      hashed_process_data = processlist_get_process_data(process_list,
-              pid_in,
-              tfs->cpu,
-              &birth,
-              trace_num);
-      if(hashed_process_data == NULL)
-      {
-        g_assert(pid_in == 0 || pid_in != process->ppid);
-        /* Process not present */
-        ProcessInfo *process_info;
-        Drawing_t *drawing = control_flow_data->drawing;
-        processlist_add(process_list,
-            drawing,
-            pid_in,
-            process->tgid,
-            tfs->cpu,
-            process->ppid,
-            &birth,
-            trace_num,
-            process->name,
-            process->brand,
-            &pl_height,
-            &process_info,
-            &hashed_process_data);
-        gtk_widget_set_size_request(drawing->drawing_area,
-                                    -1,
-                                    pl_height);
-        gtk_widget_queue_draw(drawing->drawing_area);
-
-      }
-      //We could set the current process and hash here, but will be done
-      //by after schedchange hook
-    
-      /* Now, the process is in the state hash and our own process hash.
-       * We definitely can draw the items related to the ending state.
-       */
-      
-      if(ltt_time_compare(hashed_process_data->next_good_time,
-                          evtime) > 0)
-      {
-        if(hashed_process_data->x.middle_marked == FALSE) {
-
-          TimeWindow time_window = 
-            lttvwindow_get_time_window(control_flow_data->tab);
-#ifdef EXTRA_CHECK
-          if(ltt_time_compare(evtime, time_window.start_time) == -1
-                || ltt_time_compare(evtime, time_window.end_time) == 1)
-                    return;
-#endif //EXTRA_CHECK
-          Drawing_t *drawing = control_flow_data->drawing;
-          guint width = drawing->width;
-          guint x;
-          convert_time_to_pixels(
-                    time_window,
-                    evtime,
-                    width,
-                    &x);
-
-          /* Draw collision indicator */
-          gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-          gdk_draw_point(hashed_process_data->pixmap,
-                         drawing->gc,
-                         x,
-                         COLLISION_POSITION(hashed_process_data->height));
-          hashed_process_data->x.middle_marked = TRUE;
-        }
-      } else {
-        TimeWindow time_window = 
-          lttvwindow_get_time_window(control_flow_data->tab);
-#ifdef EXTRA_CHECK
-        if(ltt_time_compare(evtime, time_window.start_time) == -1
-              || ltt_time_compare(evtime, time_window.end_time) == 1)
-                  return;
-#endif //EXTRA_CHECK
-        Drawing_t *drawing = control_flow_data->drawing;
-        guint width = drawing->width;
-        guint x;
-
-        convert_time_to_pixels(
-                  time_window,
-                  evtime,
-                  width,
-                  &x);
-
-
-        /* Jump over draw if we are at the same x position */
-        if(x == hashed_process_data->x.middle &&
-            hashed_process_data->x.middle_used)
-        {
-          if(hashed_process_data->x.middle_marked == FALSE) {
-            /* Draw collision indicator */
-            gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-            gdk_draw_point(hashed_process_data->pixmap,
-                           drawing->gc,
-                           x,
-                           COLLISION_POSITION(hashed_process_data->height));
-            hashed_process_data->x.middle_marked = TRUE;
-          }
-          /* jump */
-        } else {
-          DrawContext draw_context;
-
-          /* Now create the drawing context that will be used to draw
-           * items related to the last state. */
-          draw_context.drawable = hashed_process_data->pixmap;
-          draw_context.gc = drawing->gc;
-          draw_context.pango_layout = drawing->pango_layout;
-          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
-          draw_context.drawinfo.end.x = x;
-
-          draw_context.drawinfo.y.over = 1;
-          draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
-          draw_context.drawinfo.y.under = hashed_process_data->height;
-
-          draw_context.drawinfo.start.offset.over = 0;
-          draw_context.drawinfo.start.offset.middle = 0;
-          draw_context.drawinfo.start.offset.under = 0;
-          draw_context.drawinfo.end.offset.over = 0;
-          draw_context.drawinfo.end.offset.middle = 0;
-          draw_context.drawinfo.end.offset.under = 0;
-
-          {
-            /* Draw the line */
-            PropertiesLine prop_line = prepare_s_e_line(process);
-            draw_line((void*)&prop_line, (void*)&draw_context);
-          }
-
-          
-          /* become the last x position */
-          hashed_process_data->x.middle = x;
-          hashed_process_data->x.middle_used = TRUE;
-          hashed_process_data->x.middle_marked = FALSE;
-
-          /* Calculate the next good time */
-          convert_pixels_to_time(width, x+1, time_window,
-                                 &hashed_process_data->next_good_time);
-        }
-      }
-    } else
-      g_warning("Cannot find pin_in in schedchange %u", pid_in);
-  }
-  tfc->target_pid = target_pid_saved;
+//  tfc->target_pid = pid_in;
+//  if(!filter || !filter->head ||
+//    lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL)) { 
+//    /* For the pid_in */
+//    /* First, check if the current process is in the state computation
+//     * process list. If it is there, that means we must add it right now and
+//     * draw items from the beginning of the read for it. If it is not
+//     * present, it's a new process and it was not present : it will
+//     * be added after the state update.  */
+//    LttvProcessState *process;
+//    process = lttv_state_find_process(ts,
+//        tfs->cpu, pid_in);
+//    guint trace_num = ts->parent.index;
+//    
+//    if(process != NULL) {
+//      /* Well, the process existed : we must get it in the process hash
+//       * or add it, and draw its items.
+//       */
+//       /* Add process to process list (if not present) */
+//      guint pl_height = 0;
+//      HashedResourceData *hashed_process_data = NULL;
+//      ProcessList *process_list = control_flow_data->process_list;
+//      LttTime birth = process->creation_time;
+//      
+//      hashed_process_data = processlist_get_process_data(process_list, cpuq);
+////      hashed_process_data = processlist_get_process_data(process_list,
+////              pid_in,
+////              tfs->cpu,
+////              &birth,
+////              trace_num);
+//      if(hashed_process_data == NULL)
+//      {
+//        g_assert(pid_in == 0 || pid_in != process->ppid);
+//        /* Process not present */
+//        ResourceInfo *process_info;
+//        Drawing_t *drawing = control_flow_data->drawing;
+//        resourcelist_add(process_list,
+//            drawing,
+////            pid_in,
+////            process->tgid,
+////            tfs->cpu,
+////            process->ppid,
+////            &birth,
+////            trace_num,
+//            process->name,
+////            process->brand,
+//            &pl_height,
+//            &process_info,
+//            &hashed_process_data);
+//        gtk_widget_set_size_request(drawing->drawing_area,
+//                                    -1,
+//                                    pl_height);
+//        gtk_widget_queue_draw(drawing->drawing_area);
+//
+//      }
+//      //We could set the current process and hash here, but will be done
+//      //by after schedchange hook
+//    
+//      /* Now, the process is in the state hash and our own process hash.
+//       * We definitely can draw the items related to the ending state.
+//       */
+//      
+//      if(ltt_time_compare(hashed_process_data->next_good_time,
+//                          evtime) > 0)
+//      {
+//        if(hashed_process_data->x.middle_marked == FALSE) {
+//
+//          TimeWindow time_window = 
+//            lttvwindow_get_time_window(control_flow_data->tab);
+//#ifdef EXTRA_CHECK
+//          if(ltt_time_compare(evtime, time_window.start_time) == -1
+//                || ltt_time_compare(evtime, time_window.end_time) == 1)
+//                    return;
+//#endif //EXTRA_CHECK
+//          Drawing_t *drawing = control_flow_data->drawing;
+//          guint width = drawing->width;
+//          guint x;
+//          convert_time_to_pixels(
+//                    time_window,
+//                    evtime,
+//                    width,
+//                    &x);
+//
+//          /* Draw collision indicator */
+//          gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+//          gdk_draw_point(hashed_process_data->pixmap,
+//                         drawing->gc,
+//                         x,
+//                         COLLISION_POSITION(hashed_process_data->height));
+//          hashed_process_data->x.middle_marked = TRUE;
+//        }
+//      } else {
+//        TimeWindow time_window = 
+//          lttvwindow_get_time_window(control_flow_data->tab);
+//#ifdef EXTRA_CHECK
+//        if(ltt_time_compare(evtime, time_window.start_time) == -1
+//              || ltt_time_compare(evtime, time_window.end_time) == 1)
+//                  return;
+//#endif //EXTRA_CHECK
+//        Drawing_t *drawing = control_flow_data->drawing;
+//        guint width = drawing->width;
+//        guint x;
+//
+//        convert_time_to_pixels(
+//                  time_window,
+//                  evtime,
+//                  width,
+//                  &x);
+//
+//
+//        /* Jump over draw if we are at the same x position */
+//        if(x == hashed_process_data->x.middle &&
+//            hashed_process_data->x.middle_used)
+//        {
+//          if(hashed_process_data->x.middle_marked == FALSE) {
+//            /* Draw collision indicator */
+//            gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+//            gdk_draw_point(hashed_process_data->pixmap,
+//                           drawing->gc,
+//                           x,
+//                           COLLISION_POSITION(hashed_process_data->height));
+//            hashed_process_data->x.middle_marked = TRUE;
+//          }
+//          /* jump */
+//        } else {
+//          DrawContext draw_context;
+//
+//          /* Now create the drawing context that will be used to draw
+//           * items related to the last state. */
+//          draw_context.drawable = hashed_process_data->pixmap;
+//          draw_context.gc = drawing->gc;
+//          draw_context.pango_layout = drawing->pango_layout;
+//          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+//          draw_context.drawinfo.end.x = x;
+//
+//          draw_context.drawinfo.y.over = 1;
+//          draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+//          draw_context.drawinfo.y.under = hashed_process_data->height;
+//
+//          draw_context.drawinfo.start.offset.over = 0;
+//          draw_context.drawinfo.start.offset.middle = 0;
+//          draw_context.drawinfo.start.offset.under = 0;
+//          draw_context.drawinfo.end.offset.over = 0;
+//          draw_context.drawinfo.end.offset.middle = 0;
+//          draw_context.drawinfo.end.offset.under = 0;
+//
+//          {
+//            /* Draw the line */
+//            PropertiesLine prop_line = prepare_s_e_line(process);
+//            draw_line((void*)&prop_line, (void*)&draw_context);
+//          }
+//
+//          
+//          /* become the last x position */
+//          hashed_process_data->x.middle = x;
+//          hashed_process_data->x.middle_used = TRUE;
+//          hashed_process_data->x.middle_marked = FALSE;
+//
+//          /* Calculate the next good time */
+//          convert_pixels_to_time(width, x+1, time_window,
+//                                 &hashed_process_data->next_good_time);
+//        }
+//      }
+//    } else
+//      g_warning("Cannot find pin_in in schedchange %u", pid_in);
+//  }
+//  tfc->target_pid = target_pid_saved;
   return 0;
 
 
@@ -740,120 +761,119 @@ int before_schedchange_hook(void *hook_data, void *call_data)
  */
 int after_schedchange_hook(void *hook_data, void *call_data)
 {
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
-  ControlFlowData *control_flow_data = events_request->viewer_data;
-
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
-  LttEvent *e;
-  e = ltt_tracefile_get_event(tfc->tf);
-
-  LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
-  LttTime evtime = ltt_event_time(e);
-
-  /* Add process to process list (if not present) */
-  LttvProcessState *process_in;
-  LttTime birth;
-  guint pl_height = 0;
-  HashedProcessData *hashed_process_data_in = NULL;
-
-  ProcessList *process_list = control_flow_data->process_list;
-  
-  guint pid_in;
-  {
-    guint pid_out;
-    pid_out = ltt_event_get_long_unsigned(e, thf->f1);
-    pid_in = ltt_event_get_long_unsigned(e, thf->f2);
-  }
-
-
-  /* Find process pid_in in the list... */
-  //process_in = lttv_state_find_process(ts, ANY_CPU, pid_in);
-  //process_in = tfs->process;
-  guint cpu = tfs->cpu;
-  guint trace_num = ts->parent.index;
-  process_in = ts->running_process[cpu];
-  /* It should exist, because we are after the state update. */
-#ifdef EXTRA_CHECK
-  g_assert(process_in != NULL);
-#endif //EXTRA_CHECK
-  birth = process_in->creation_time;
-
-  hashed_process_data_in = processlist_get_process_data(process_list,
-          pid_in,
-          process_in->cpu,
-          &birth,
-          trace_num);
-  if(hashed_process_data_in == NULL)
-  {
-    g_assert(pid_in == 0 || pid_in != process_in->ppid);
-    ProcessInfo *process_info;
-    Drawing_t *drawing = control_flow_data->drawing;
-    /* Process not present */
-    processlist_add(process_list,
-        drawing,
-        pid_in,
-        process_in->tgid,
-        process_in->cpu,
-        process_in->ppid,
-        &birth,
-        trace_num,
-        process_in->name,
-        process_in->brand,
-        &pl_height,
-        &process_info,
-        &hashed_process_data_in);
-        gtk_widget_set_size_request(drawing->drawing_area,
-                                    -1,
-                                    pl_height);
-        gtk_widget_queue_draw(drawing->drawing_area);
-  }
-  /* Set the current process */
-  process_list->current_hash_data[trace_num][process_in->cpu] =
-                                             hashed_process_data_in;
-
-  if(ltt_time_compare(hashed_process_data_in->next_good_time,
-                          evtime) <= 0)
-  {
-    TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-    if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
-#endif //EXTRA_CHECK
-    Drawing_t *drawing = control_flow_data->drawing;
-    guint width = drawing->width;
-    guint new_x;
-    
-    convert_time_to_pixels(
-        time_window,
-        evtime,
-        width,
-        &new_x);
-
-    if(hashed_process_data_in->x.middle != new_x) {
-      hashed_process_data_in->x.middle = new_x;
-      hashed_process_data_in->x.middle_used = FALSE;
-      hashed_process_data_in->x.middle_marked = FALSE;
-    }
-  }
+//  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+//  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+//
+//  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+//
+//  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+//
+//  LttEvent *e;
+//  e = ltt_tracefile_get_event(tfc->tf);
+//
+//  LttvFilter *filter = control_flow_data->filter;
+//  if(filter != NULL && filter->head != NULL)
+//    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL))
+//      return FALSE;
+//
+//  LttTime evtime = ltt_event_time(e);
+//
+//  return 0;
+//  /* Add process to process list (if not present) */
+//  LttvProcessState *process_in;
+//  LttTime birth;
+//  guint pl_height = 0;
+//  HashedResourceData *hashed_process_data_in = NULL;
+//
+//  ProcessList *process_list = control_flow_data->process_list;
+//  
+//  guint pid_in;
+//  {
+//    guint pid_out;
+//    pid_out = ltt_event_get_long_unsigned(e, thf->f1);
+//    pid_in = ltt_event_get_long_unsigned(e, thf->f2);
+//  }
+//
+//
+//  /* Find process pid_in in the list... */
+//  //process_in = lttv_state_find_process(ts, ANY_CPU, pid_in);
+//  //process_in = tfs->process;
+//  guint cpu = tfs->cpu;
+//  guint trace_num = ts->parent.index;
+//  process_in = ts->running_process[cpu];
+//  /* It should exist, because we are after the state update. */
+//#ifdef EXTRA_CHECK
+//  g_assert(process_in != NULL);
+//#endif //EXTRA_CHECK
+//  birth = process_in->creation_time;
+//
+//  hashed_process_data_in = processlist_get_process_data(process_list, cpuq, trace_num);
+////  hashed_process_data_in = processlist_get_process_data(process_list,
+////          pid_in,
+////          process_in->cpu,
+////          &birth,
+////          trace_num);
+//  if(hashed_process_data_in == NULL)
+//  {
+//    g_assert(pid_in == 0 || pid_in != process_in->ppid);
+//    ResourceInfo *process_info;
+//    Drawing_t *drawing = control_flow_data->drawing;
+//    /* Process not present */
+//    resourcelist_add(process_list,
+//        drawing,
+//        pid_in,
+//        process_in->tgid,
+//        process_in->cpu,
+//        process_in->ppid,
+//        &birth,
+//        trace_num,
+//        process_in->name,
+//        process_in->brand,
+//        &pl_height,
+//        &process_info,
+//        &hashed_process_data_in);
+//        gtk_widget_set_size_request(drawing->drawing_area,
+//                                    -1,
+//                                    pl_height);
+//        gtk_widget_queue_draw(drawing->drawing_area);
+//  }
+//  /* Set the current process */
+//  process_list->current_hash_data[trace_num][process_in->cpu] =
+//                                             hashed_process_data_in;
+//
+//  if(ltt_time_compare(hashed_process_data_in->next_good_time,
+//                          evtime) <= 0)
+//  {
+//    TimeWindow time_window = 
+//    lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//    if(ltt_time_compare(evtime, time_window.start_time) == -1
+//        || ltt_time_compare(evtime, time_window.end_time) == 1)
+//            return;
+//#endif //EXTRA_CHECK
+//    Drawing_t *drawing = control_flow_data->drawing;
+//    guint width = drawing->width;
+//    guint new_x;
+//    
+//    convert_time_to_pixels(
+//        time_window,
+//        evtime,
+//        width,
+//        &new_x);
+//
+//    if(hashed_process_data_in->x.middle != new_x) {
+//      hashed_process_data_in->x.middle = new_x;
+//      hashed_process_data_in->x.middle_used = FALSE;
+//      hashed_process_data_in->x.middle_marked = FALSE;
+//    }
+//  }
   return 0;
 }
-
-
-
 
 /* before_execmode_hook
  * 
@@ -872,197 +892,197 @@ int after_schedchange_hook(void *hook_data, void *call_data)
  * process.
  */
 
-
-int before_execmode_hook(void *hook_data, void *call_data)
-{
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
-  ControlFlowData *control_flow_data = events_request->viewer_data;
-
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
-  LttEvent *e;
-  e = ltt_tracefile_get_event(tfc->tf);
-
-  LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
-  LttTime evtime = ltt_event_time(e);
-
-  /* we are in a execmode, before the state update. We must draw the
-   * items corresponding to the state before it changes : now is the right
-   * time to do it.
-   */
-  /* For the pid */
-  //LttvProcessState *process = tfs->process;
-  guint cpu = tfs->cpu;
-  guint trace_num = ts->parent.index;
-  LttvProcessState *process = ts->running_process[cpu];
-  g_assert(process != NULL);
-
-  guint pid = process->pid;
-
-  /* Well, the process_out existed : we must get it in the process hash
-   * or add it, and draw its items.
-   */
-   /* Add process to process list (if not present) */
-  guint pl_height = 0;
-  HashedProcessData *hashed_process_data = NULL;
-  ProcessList *process_list = control_flow_data->process_list;
-  LttTime birth = process->creation_time;
- 
-  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
-    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
-  } else {
-    hashed_process_data = processlist_get_process_data(process_list,
-            pid,
-            process->cpu,
-            &birth,
-            trace_num);
-    if(unlikely(hashed_process_data == NULL))
-    {
-      g_assert(pid == 0 || pid != process->ppid);
-      ProcessInfo *process_info;
-      /* Process not present */
-      Drawing_t *drawing = control_flow_data->drawing;
-      processlist_add(process_list,
-          drawing,
-          pid,
-          process->tgid,
-          process->cpu,
-          process->ppid,
-          &birth,
-          trace_num,
-          process->name,
-          process->brand,
-          &pl_height,
-          &process_info,
-          &hashed_process_data);
-        gtk_widget_set_size_request(drawing->drawing_area,
-                                    -1,
-                                    pl_height);
-        gtk_widget_queue_draw(drawing->drawing_area);
-    }
-    /* Set the current process */
-    process_list->current_hash_data[trace_num][process->cpu] =
-                                               hashed_process_data;
-  }
-
-  /* Now, the process is in the state hash and our own process hash.
-   * We definitely can draw the items related to the ending state.
-   */
-
-  if(likely(ltt_time_compare(hashed_process_data->next_good_time,
-                      evtime) > 0))
-  {
-    if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
-      TimeWindow time_window = 
-        lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-      if(ltt_time_compare(evtime, time_window.start_time) == -1
-            || ltt_time_compare(evtime, time_window.end_time) == 1)
-                return;
-#endif //EXTRA_CHECK
-      Drawing_t *drawing = control_flow_data->drawing;
-      guint width = drawing->width;
-      guint x;
-      convert_time_to_pixels(
-                time_window,
-                evtime,
-                width,
-                &x);
-
-      /* Draw collision indicator */
-      gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-      gdk_draw_point(hashed_process_data->pixmap,
-                     drawing->gc,
-                     x,
-                     COLLISION_POSITION(hashed_process_data->height));
-      hashed_process_data->x.middle_marked = TRUE;
-    }
-  } else {
-    TimeWindow time_window = 
-      lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-    if(ltt_time_compare(evtime, time_window.start_time) == -1
-          || ltt_time_compare(evtime, time_window.end_time) == 1)
-              return;
-#endif //EXTRA_CHECK
-    Drawing_t *drawing = control_flow_data->drawing;
-    guint width = drawing->width;
-    guint x;
-
-    convert_time_to_pixels(
-        time_window,
-        evtime,
-        width,
-        &x);
-
-
-    /* Jump over draw if we are at the same x position */
-    if(unlikely(x == hashed_process_data->x.middle &&
-             hashed_process_data->x.middle_used))
-    {
-      if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
-        /* Draw collision indicator */
-        gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-        gdk_draw_point(hashed_process_data->pixmap,
-                       drawing->gc,
-                       x,
-                       COLLISION_POSITION(hashed_process_data->height));
-        hashed_process_data->x.middle_marked = TRUE;
-      }
-      /* jump */
-    } else {
-
-      DrawContext draw_context;
-      /* Now create the drawing context that will be used to draw
-       * items related to the last state. */
-      draw_context.drawable = hashed_process_data->pixmap;
-      draw_context.gc = drawing->gc;
-      draw_context.pango_layout = drawing->pango_layout;
-      draw_context.drawinfo.start.x = hashed_process_data->x.middle;
-      draw_context.drawinfo.end.x = x;
-
-      draw_context.drawinfo.y.over = 1;
-      draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
-      draw_context.drawinfo.y.under = hashed_process_data->height;
-
-      draw_context.drawinfo.start.offset.over = 0;
-      draw_context.drawinfo.start.offset.middle = 0;
-      draw_context.drawinfo.start.offset.under = 0;
-      draw_context.drawinfo.end.offset.over = 0;
-      draw_context.drawinfo.end.offset.middle = 0;
-      draw_context.drawinfo.end.offset.under = 0;
-
-      {
-        /* Draw the line */
-        PropertiesLine prop_line = prepare_s_e_line(process);
-        draw_line((void*)&prop_line, (void*)&draw_context);
-
-      }
-      /* become the last x position */
-      hashed_process_data->x.middle = x;
-      hashed_process_data->x.middle_used = TRUE;
-      hashed_process_data->x.middle_marked = FALSE;
-
-      /* Calculate the next good time */
-      convert_pixels_to_time(width, x+1, time_window,
-                             &hashed_process_data->next_good_time);
-    }
-  }
-  
-  return 0;
-}
+//int before_execmode_hook(void *hook_data, void *call_data)
+//{
+//  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+//  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+//
+//  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+//
+//  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+//
+//  LttEvent *e;
+//  e = ltt_tracefile_get_event(tfc->tf);
+//
+//  LttvFilter *filter = control_flow_data->filter;
+//  if(filter != NULL && filter->head != NULL)
+//    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL))
+//      return FALSE;
+//
+//  LttTime evtime = ltt_event_time(e);
+//
+//  /* we are in a execmode, before the state update. We must draw the
+//   * items corresponding to the state before it changes : now is the right
+//   * time to do it.
+//   */
+//  /* For the pid */
+//  //LttvProcessState *process = tfs->process;
+//  guint cpu = tfs->cpu;
+//  guint trace_num = ts->parent.index;
+//  LttvProcessState *process = ts->running_process[cpu];
+//  g_assert(process != NULL);
+//
+//  guint pid = process->pid;
+//
+//  /* Well, the process_out existed : we must get it in the process hash
+//   * or add it, and draw its items.
+//   */
+//   /* Add process to process list (if not present) */
+//  guint pl_height = 0;
+//  HashedResourceData *hashed_process_data = NULL;
+//  ProcessList *process_list = control_flow_data->process_list;
+//  LttTime birth = process->creation_time;
+// 
+//  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
+//    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
+//  } else {
+//    hashed_process_data = processlist_get_process_data(process_list, "CPU0");
+////    hashed_process_data = processlist_get_process_data(process_list,
+////            pid,
+////            process->cpu,
+////            &birth,
+////            trace_num);
+//    if(unlikely(hashed_process_data == NULL))
+//    {
+//      g_assert(pid == 0 || pid != process->ppid);
+//      ResourceInfo *process_info;
+//      /* Process not present */
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      processlist_add(process_list,
+//          drawing,
+//          pid,
+//          process->tgid,
+//          process->cpu,
+//          process->ppid,
+//          &birth,
+//          trace_num,
+//          process->name,
+//          process->brand,
+//          &pl_height,
+//          &process_info,
+//          &hashed_process_data);
+//        gtk_widget_set_size_request(drawing->drawing_area,
+//                                    -1,
+//                                    pl_height);
+//        gtk_widget_queue_draw(drawing->drawing_area);
+//    }
+//    /* Set the current process */
+//    process_list->current_hash_data[trace_num][process->cpu] =
+//                                               hashed_process_data;
+//  }
+//
+//  /* Now, the process is in the state hash and our own process hash.
+//   * We definitely can draw the items related to the ending state.
+//   */
+//
+//  if(likely(ltt_time_compare(hashed_process_data->next_good_time,
+//                      evtime) > 0))
+//  {
+//    if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
+//      TimeWindow time_window = 
+//        lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//      if(ltt_time_compare(evtime, time_window.start_time) == -1
+//            || ltt_time_compare(evtime, time_window.end_time) == 1)
+//                return;
+//#endif //EXTRA_CHECK
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      guint width = drawing->width;
+//      guint x;
+//      convert_time_to_pixels(
+//                time_window,
+//                evtime,
+//                width,
+//                &x);
+//
+//      /* Draw collision indicator */
+//      gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+//      gdk_draw_point(hashed_process_data->pixmap,
+//                     drawing->gc,
+//                     x,
+//                     COLLISION_POSITION(hashed_process_data->height));
+//      hashed_process_data->x.middle_marked = TRUE;
+//    }
+//  } else {
+//    TimeWindow time_window = 
+//      lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//    if(ltt_time_compare(evtime, time_window.start_time) == -1
+//          || ltt_time_compare(evtime, time_window.end_time) == 1)
+//              return;
+//#endif //EXTRA_CHECK
+//    Drawing_t *drawing = control_flow_data->drawing;
+//    guint width = drawing->width;
+//    guint x;
+//
+//    convert_time_to_pixels(
+//        time_window,
+//        evtime,
+//        width,
+//        &x);
+//
+//
+//    /* Jump over draw if we are at the same x position */
+//    if(unlikely(x == hashed_process_data->x.middle &&
+//             hashed_process_data->x.middle_used))
+//    {
+//      if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
+//        /* Draw collision indicator */
+//        gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+//        gdk_draw_point(hashed_process_data->pixmap,
+//                       drawing->gc,
+//                       x,
+//                       COLLISION_POSITION(hashed_process_data->height));
+//        hashed_process_data->x.middle_marked = TRUE;
+//      }
+//      /* jump */
+//    } else {
+//
+//      DrawContext draw_context;
+//      /* Now create the drawing context that will be used to draw
+//       * items related to the last state. */
+//      draw_context.drawable = hashed_process_data->pixmap;
+//      draw_context.gc = drawing->gc;
+//      draw_context.pango_layout = drawing->pango_layout;
+//      draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+//      draw_context.drawinfo.end.x = x;
+//
+//      draw_context.drawinfo.y.over = 1;
+//      draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+//      draw_context.drawinfo.y.under = hashed_process_data->height;
+//
+//      draw_context.drawinfo.start.offset.over = 0;
+//      draw_context.drawinfo.start.offset.middle = 0;
+//      draw_context.drawinfo.start.offset.under = 0;
+//      draw_context.drawinfo.end.offset.over = 0;
+//      draw_context.drawinfo.end.offset.middle = 0;
+//      draw_context.drawinfo.end.offset.under = 0;
+//
+//      {
+//        /* Draw the line */
+//        PropertiesLine prop_line = prepare_s_e_line(process);
+//        draw_line((void*)&prop_line, (void*)&draw_context);
+//
+//      }
+//      /* become the last x position */
+//      hashed_process_data->x.middle = x;
+//      hashed_process_data->x.middle_used = TRUE;
+//      hashed_process_data->x.middle_marked = FALSE;
+//
+//      /* Calculate the next good time */
+//      convert_pixels_to_time(width, x+1, time_window,
+//                             &hashed_process_data->next_good_time);
+//    }
+//  }
+//  
+//  return 0;
+//}
 
 /* before_process_exit_hook
  * 
@@ -1075,191 +1095,190 @@ int before_execmode_hook(void *hook_data, void *call_data)
  * 
  */
 
-
-int before_process_exit_hook(void *hook_data, void *call_data)
-{
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
-
-  ControlFlowData *control_flow_data = events_request->viewer_data;
-
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
-  LttEvent *e;
-  e = ltt_tracefile_get_event(tfc->tf);
-
-  LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
-  LttTime evtime = ltt_event_time(e);
-
-  /* Add process to process list (if not present) */
-  //LttvProcessState *process = tfs->process;
-  guint cpu = tfs->cpu;
-  guint trace_num = ts->parent.index;
-  LttvProcessState *process = ts->running_process[cpu];
-  guint pid = process->pid;
-  LttTime birth;
-  guint pl_height = 0;
-  HashedProcessData *hashed_process_data = NULL;
-
-  ProcessList *process_list = control_flow_data->process_list;
-  
-  g_assert(process != NULL);
-
-  birth = process->creation_time;
-
-  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
-    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
-  } else {
-    hashed_process_data = processlist_get_process_data(process_list,
-          pid,
-          process->cpu,
-          &birth,
-          trace_num);
-    if(unlikely(hashed_process_data == NULL))
-    {
-      g_assert(pid == 0 || pid != process->ppid);
-      /* Process not present */
-      Drawing_t *drawing = control_flow_data->drawing;
-      ProcessInfo *process_info;
-      processlist_add(process_list,
-          drawing,
-          pid,
-          process->tgid,
-          process->cpu,
-          process->ppid,
-          &birth,
-          trace_num,
-          process->name,
-          process->brand,
-          &pl_height,
-          &process_info,
-          &hashed_process_data);
-      gtk_widget_set_size_request(drawing->drawing_area,
-                                  -1,
-                                  pl_height);
-      gtk_widget_queue_draw(drawing->drawing_area);
-    }
-  }
-
-  /* Now, the process is in the state hash and our own process hash.
-   * We definitely can draw the items related to the ending state.
-   */
-  
-  if(likely(ltt_time_compare(hashed_process_data->next_good_time,
-                      evtime) > 0))
-  {
-    if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
-      TimeWindow time_window = 
-        lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-      if(ltt_time_compare(evtime, time_window.start_time) == -1
-            || ltt_time_compare(evtime, time_window.end_time) == 1)
-                return;
-#endif //EXTRA_CHECK
-      Drawing_t *drawing = control_flow_data->drawing;
-      guint width = drawing->width;
-      guint x;
-      convert_time_to_pixels(
-                time_window,
-                evtime,
-                width,
-                &x);
-
-      /* Draw collision indicator */
-      gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-      gdk_draw_point(hashed_process_data->pixmap,
-                     drawing->gc,
-                     x,
-                     COLLISION_POSITION(hashed_process_data->height));
-      hashed_process_data->x.middle_marked = TRUE;
-    }
-  } else {
-    TimeWindow time_window = 
-      lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-    if(ltt_time_compare(evtime, time_window.start_time) == -1
-          || ltt_time_compare(evtime, time_window.end_time) == 1)
-              return;
-#endif //EXTRA_CHECK
-    Drawing_t *drawing = control_flow_data->drawing;
-    guint width = drawing->width;
-    guint x;
-
-    convert_time_to_pixels(
-        time_window,
-        evtime,
-        width,
-        &x);
-
-
-    /* Jump over draw if we are at the same x position */
-    if(unlikely(x == hashed_process_data->x.middle &&
-           hashed_process_data->x.middle_used))
-    { 
-      if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
-        /* Draw collision indicator */
-        gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-        gdk_draw_point(hashed_process_data->pixmap,
-                       drawing->gc,
-                       x,
-                       COLLISION_POSITION(hashed_process_data->height));
-        hashed_process_data->x.middle_marked = TRUE;
-      }
-      /* jump */
-    } else {
-      DrawContext draw_context;
-
-      /* Now create the drawing context that will be used to draw
-       * items related to the last state. */
-      draw_context.drawable = hashed_process_data->pixmap;
-      draw_context.gc = drawing->gc;
-      draw_context.pango_layout = drawing->pango_layout;
-      draw_context.drawinfo.start.x = hashed_process_data->x.middle;
-      draw_context.drawinfo.end.x = x;
-
-      draw_context.drawinfo.y.over = 1;
-      draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
-      draw_context.drawinfo.y.under = hashed_process_data->height;
-
-      draw_context.drawinfo.start.offset.over = 0;
-      draw_context.drawinfo.start.offset.middle = 0;
-      draw_context.drawinfo.start.offset.under = 0;
-      draw_context.drawinfo.end.offset.over = 0;
-      draw_context.drawinfo.end.offset.middle = 0;
-      draw_context.drawinfo.end.offset.under = 0;
-
-      {
-        /* Draw the line */
-        PropertiesLine prop_line = prepare_s_e_line(process);
-        draw_line((void*)&prop_line, (void*)&draw_context);
-
-      }
-      /* become the last x position */
-      hashed_process_data->x.middle = x;
-      hashed_process_data->x.middle_used = TRUE;
-      hashed_process_data->x.middle_marked = FALSE;
-
-      /* Calculate the next good time */
-      convert_pixels_to_time(width, x+1, time_window,
-                             &hashed_process_data->next_good_time);
-    }
-  }
-  
-  return 0;
-
-}
-
+//int before_process_exit_hook(void *hook_data, void *call_data)
+//{
+//  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+//  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+//
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+//
+//  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+//
+//  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+//
+//  LttEvent *e;
+//  e = ltt_tracefile_get_event(tfc->tf);
+//
+//  LttvFilter *filter = control_flow_data->filter;
+//  if(filter != NULL && filter->head != NULL)
+//    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL))
+//      return FALSE;
+//
+//  LttTime evtime = ltt_event_time(e);
+//
+//  /* Add process to process list (if not present) */
+//  //LttvProcessState *process = tfs->process;
+//  guint cpu = tfs->cpu;
+//  guint trace_num = ts->parent.index;
+//  LttvProcessState *process = ts->running_process[cpu];
+//  guint pid = process->pid;
+//  LttTime birth;
+//  guint pl_height = 0;
+//  HashedResourceData *hashed_process_data = NULL;
+//
+//  ProcessList *process_list = control_flow_data->process_list;
+//  
+//  g_assert(process != NULL);
+//
+//  birth = process->creation_time;
+//
+//  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
+//    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
+//  } else {
+//    hashed_process_data = processlist_get_process_data(process_list, "CPU0");
+////    hashed_process_data = processlist_get_process_data(process_list,
+////          pid,
+////          process->cpu,
+////          &birth,
+////          trace_num);
+//    if(unlikely(hashed_process_data == NULL))
+//    {
+//      g_assert(pid == 0 || pid != process->ppid);
+//      /* Process not present */
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      ResourceInfo *process_info;
+//      processlist_add(process_list,
+//          drawing,
+//          pid,
+//          process->tgid,
+//          process->cpu,
+//          process->ppid,
+//          &birth,
+//          trace_num,
+//          process->name,
+//          process->brand,
+//          &pl_height,
+//          &process_info,
+//          &hashed_process_data);
+//      gtk_widget_set_size_request(drawing->drawing_area,
+//                                  -1,
+//                                  pl_height);
+//      gtk_widget_queue_draw(drawing->drawing_area);
+//    }
+//  }
+//
+//  /* Now, the process is in the state hash and our own process hash.
+//   * We definitely can draw the items related to the ending state.
+//   */
+//  
+//  if(likely(ltt_time_compare(hashed_process_data->next_good_time,
+//                      evtime) > 0))
+//  {
+//    if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
+//      TimeWindow time_window = 
+//        lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//      if(ltt_time_compare(evtime, time_window.start_time) == -1
+//            || ltt_time_compare(evtime, time_window.end_time) == 1)
+//                return;
+//#endif //EXTRA_CHECK
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      guint width = drawing->width;
+//      guint x;
+//      convert_time_to_pixels(
+//                time_window,
+//                evtime,
+//                width,
+//                &x);
+//
+//      /* Draw collision indicator */
+//      gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+//      gdk_draw_point(hashed_process_data->pixmap,
+//                     drawing->gc,
+//                     x,
+//                     COLLISION_POSITION(hashed_process_data->height));
+//      hashed_process_data->x.middle_marked = TRUE;
+//    }
+//  } else {
+//    TimeWindow time_window = 
+//      lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//    if(ltt_time_compare(evtime, time_window.start_time) == -1
+//          || ltt_time_compare(evtime, time_window.end_time) == 1)
+//              return;
+//#endif //EXTRA_CHECK
+//    Drawing_t *drawing = control_flow_data->drawing;
+//    guint width = drawing->width;
+//    guint x;
+//
+//    convert_time_to_pixels(
+//        time_window,
+//        evtime,
+//        width,
+//        &x);
+//
+//
+//    /* Jump over draw if we are at the same x position */
+//    if(unlikely(x == hashed_process_data->x.middle &&
+//           hashed_process_data->x.middle_used))
+//    { 
+//      if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
+//        /* Draw collision indicator */
+//        gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+//        gdk_draw_point(hashed_process_data->pixmap,
+//                       drawing->gc,
+//                       x,
+//                       COLLISION_POSITION(hashed_process_data->height));
+//        hashed_process_data->x.middle_marked = TRUE;
+//      }
+//      /* jump */
+//    } else {
+//      DrawContext draw_context;
+//
+//      /* Now create the drawing context that will be used to draw
+//       * items related to the last state. */
+//      draw_context.drawable = hashed_process_data->pixmap;
+//      draw_context.gc = drawing->gc;
+//      draw_context.pango_layout = drawing->pango_layout;
+//      draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+//      draw_context.drawinfo.end.x = x;
+//
+//      draw_context.drawinfo.y.over = 1;
+//      draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+//      draw_context.drawinfo.y.under = hashed_process_data->height;
+//
+//      draw_context.drawinfo.start.offset.over = 0;
+//      draw_context.drawinfo.start.offset.middle = 0;
+//      draw_context.drawinfo.start.offset.under = 0;
+//      draw_context.drawinfo.end.offset.over = 0;
+//      draw_context.drawinfo.end.offset.middle = 0;
+//      draw_context.drawinfo.end.offset.under = 0;
+//
+//      {
+//        /* Draw the line */
+//        PropertiesLine prop_line = prepare_s_e_line(process);
+//        draw_line((void*)&prop_line, (void*)&draw_context);
+//
+//      }
+//      /* become the last x position */
+//      hashed_process_data->x.middle = x;
+//      hashed_process_data->x.middle_used = TRUE;
+//      hashed_process_data->x.middle_marked = FALSE;
+//
+//      /* Calculate the next good time */
+//      convert_pixels_to_time(width, x+1, time_window,
+//                             &hashed_process_data->next_good_time);
+//    }
+//  }
+//  
+//  return 0;
+//
+//}
 
 
 /* before_process_release_hook
@@ -1273,198 +1292,194 @@ int before_process_exit_hook(void *hook_data, void *call_data)
  * 
  */
 
-
-int before_process_release_hook(void *hook_data, void *call_data)
-{
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
-
-  ControlFlowData *control_flow_data = events_request->viewer_data;
-
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
-  LttEvent *e;
-  e = ltt_tracefile_get_event(tfc->tf);
-
-  LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
-  LttTime evtime = ltt_event_time(e);
-
-  guint trace_num = ts->parent.index;
-
-  guint pid;
-  {
-    pid = ltt_event_get_long_unsigned(e, thf->f1);
-  }
-
-  /* Add process to process list (if not present) */
-  /* Don't care about the process if it's not in the state hash already :
-   * that means a process that has never done anything in the trace and
-   * unknown suddently gets destroyed : no state meaningful to show. */
-  LttvProcessState *process = lttv_state_find_process(ts, ANY_CPU, pid);
-
-  if(process != NULL) {
-    LttTime birth;
-    guint pl_height = 0;
-    HashedProcessData *hashed_process_data = NULL;
-
-    ProcessList *process_list = control_flow_data->process_list;
-    
-    birth = process->creation_time;
-
-    /* Cannot use current process : this event happens on another process,
-     * action done by the parent. */
-    hashed_process_data = processlist_get_process_data(process_list,
-          pid,
-          process->cpu,
-          &birth,
-          trace_num);
-    if(unlikely(hashed_process_data == NULL))
-    {
-      g_assert(pid == 0 || pid != process->ppid);
-      /* Process not present */
-      Drawing_t *drawing = control_flow_data->drawing;
-      ProcessInfo *process_info;
-      processlist_add(process_list,
-          drawing,
-          pid,
-          process->tgid,
-          process->cpu,
-          process->ppid,
-          &birth,
-          trace_num,
-          process->name,
-          process->brand,
-          &pl_height,
-          &process_info,
-          &hashed_process_data);
-      gtk_widget_set_size_request(drawing->drawing_area,
-                                  -1,
-                                  pl_height);
-      gtk_widget_queue_draw(drawing->drawing_area);
-    }
-
-    /* Now, the process is in the state hash and our own process hash.
-     * We definitely can draw the items related to the ending state.
-     */
-    
-    if(likely(ltt_time_compare(hashed_process_data->next_good_time,
-                        evtime) > 0))
-    {
-      if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
-        TimeWindow time_window = 
-          lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-        if(ltt_time_compare(evtime, time_window.start_time) == -1
-              || ltt_time_compare(evtime, time_window.end_time) == 1)
-                  return;
-#endif //EXTRA_CHECK
-        Drawing_t *drawing = control_flow_data->drawing;
-        guint width = drawing->width;
-        guint x;
-        convert_time_to_pixels(
-                  time_window,
-                  evtime,
-                  width,
-                  &x);
-
-        /* Draw collision indicator */
-        gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-        gdk_draw_point(hashed_process_data->pixmap,
-                       drawing->gc,
-                       x,
-                       COLLISION_POSITION(hashed_process_data->height));
-        hashed_process_data->x.middle_marked = TRUE;
-      }
-    } else {
-      TimeWindow time_window = 
-        lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-      if(ltt_time_compare(evtime, time_window.start_time) == -1
-            || ltt_time_compare(evtime, time_window.end_time) == 1)
-                return;
-#endif //EXTRA_CHECK
-      Drawing_t *drawing = control_flow_data->drawing;
-      guint width = drawing->width;
-      guint x;
-
-      convert_time_to_pixels(
-          time_window,
-          evtime,
-          width,
-          &x);
-
-
-      /* Jump over draw if we are at the same x position */
-      if(unlikely(x == hashed_process_data->x.middle &&
-             hashed_process_data->x.middle_used))
-      { 
-        if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
-          /* Draw collision indicator */
-          gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-          gdk_draw_point(hashed_process_data->pixmap,
-                         drawing->gc,
-                         x,
-                         COLLISION_POSITION(hashed_process_data->height));
-          hashed_process_data->x.middle_marked = TRUE;
-        }
-        /* jump */
-      } else {
-        DrawContext draw_context;
-
-        /* Now create the drawing context that will be used to draw
-         * items related to the last state. */
-        draw_context.drawable = hashed_process_data->pixmap;
-        draw_context.gc = drawing->gc;
-        draw_context.pango_layout = drawing->pango_layout;
-        draw_context.drawinfo.start.x = hashed_process_data->x.middle;
-        draw_context.drawinfo.end.x = x;
-
-        draw_context.drawinfo.y.over = 1;
-        draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
-        draw_context.drawinfo.y.under = hashed_process_data->height;
-
-        draw_context.drawinfo.start.offset.over = 0;
-        draw_context.drawinfo.start.offset.middle = 0;
-        draw_context.drawinfo.start.offset.under = 0;
-        draw_context.drawinfo.end.offset.over = 0;
-        draw_context.drawinfo.end.offset.middle = 0;
-        draw_context.drawinfo.end.offset.under = 0;
-
-        {
-          /* Draw the line */
-          PropertiesLine prop_line = prepare_s_e_line(process);
-          draw_line((void*)&prop_line, (void*)&draw_context);
-
-        }
-        /* become the last x position */
-        hashed_process_data->x.middle = x;
-        hashed_process_data->x.middle_used = TRUE;
-        hashed_process_data->x.middle_marked = FALSE;
-
-        /* Calculate the next good time */
-        convert_pixels_to_time(width, x+1, time_window,
-                               &hashed_process_data->next_good_time);
-      }
-    }
-  }
-
-  return 0;
-}
-
-
-
-
+//int before_process_release_hook(void *hook_data, void *call_data)
+//{
+//  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+//  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+//
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+//
+//  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+//
+//  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+//
+//  LttEvent *e;
+//  e = ltt_tracefile_get_event(tfc->tf);
+//
+//  LttvFilter *filter = control_flow_data->filter;
+//  if(filter != NULL && filter->head != NULL)
+//    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL))
+//      return FALSE;
+//
+//  LttTime evtime = ltt_event_time(e);
+//
+//  guint trace_num = ts->parent.index;
+//
+//  guint pid;
+//  {
+//    pid = ltt_event_get_long_unsigned(e, thf->f1);
+//  }
+//
+//  /* Add process to process list (if not present) */
+//  /* Don't care about the process if it's not in the state hash already :
+//   * that means a process that has never done anything in the trace and
+//   * unknown suddently gets destroyed : no state meaningful to show. */
+//  LttvProcessState *process = lttv_state_find_process(ts, ANY_CPU, pid);
+//
+//  if(process != NULL) {
+//    LttTime birth;
+//    guint pl_height = 0;
+//    HashedResourceData *hashed_process_data = NULL;
+//
+//    ProcessList *process_list = control_flow_data->process_list;
+//    
+//    birth = process->creation_time;
+//
+//    /* Cannot use current process : this event happens on another process,
+//     * action done by the parent. */
+//    hashed_process_data = processlist_get_process_data(process_list, "CPU0");
+////    hashed_process_data = processlist_get_process_data(process_list,
+////          pid,
+////          process->cpu,
+////          &birth,
+////          trace_num);
+//    if(unlikely(hashed_process_data == NULL))
+//    {
+//      g_assert(pid == 0 || pid != process->ppid);
+//      /* Process not present */
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      ResourceInfo *process_info;
+//      processlist_add(process_list,
+//          drawing,
+//          pid,
+//          process->tgid,
+//          process->cpu,
+//          process->ppid,
+//          &birth,
+//          trace_num,
+//          process->name,
+//          process->brand,
+//          &pl_height,
+//          &process_info,
+//          &hashed_process_data);
+//      gtk_widget_set_size_request(drawing->drawing_area,
+//                                  -1,
+//                                  pl_height);
+//      gtk_widget_queue_draw(drawing->drawing_area);
+//    }
+//
+//    /* Now, the process is in the state hash and our own process hash.
+//     * We definitely can draw the items related to the ending state.
+//     */
+//    
+//    if(likely(ltt_time_compare(hashed_process_data->next_good_time,
+//                        evtime) > 0))
+//    {
+//      if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
+//        TimeWindow time_window = 
+//          lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//        if(ltt_time_compare(evtime, time_window.start_time) == -1
+//              || ltt_time_compare(evtime, time_window.end_time) == 1)
+//                  return;
+//#endif //EXTRA_CHECK
+//        Drawing_t *drawing = control_flow_data->drawing;
+//        guint width = drawing->width;
+//        guint x;
+//        convert_time_to_pixels(
+//                  time_window,
+//                  evtime,
+//                  width,
+//                  &x);
+//
+//        /* Draw collision indicator */
+//        gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+//        gdk_draw_point(hashed_process_data->pixmap,
+//                       drawing->gc,
+//                       x,
+//                       COLLISION_POSITION(hashed_process_data->height));
+//        hashed_process_data->x.middle_marked = TRUE;
+//      }
+//    } else {
+//      TimeWindow time_window = 
+//        lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//      if(ltt_time_compare(evtime, time_window.start_time) == -1
+//            || ltt_time_compare(evtime, time_window.end_time) == 1)
+//                return;
+//#endif //EXTRA_CHECK
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      guint width = drawing->width;
+//      guint x;
+//
+//      convert_time_to_pixels(
+//          time_window,
+//          evtime,
+//          width,
+//          &x);
+//
+//
+//      /* Jump over draw if we are at the same x position */
+//      if(unlikely(x == hashed_process_data->x.middle &&
+//             hashed_process_data->x.middle_used))
+//      { 
+//        if(unlikely(hashed_process_data->x.middle_marked == FALSE)) {
+//          /* Draw collision indicator */
+//          gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+//          gdk_draw_point(hashed_process_data->pixmap,
+//                         drawing->gc,
+//                         x,
+//                         COLLISION_POSITION(hashed_process_data->height));
+//          hashed_process_data->x.middle_marked = TRUE;
+//        }
+//        /* jump */
+//      } else {
+//        DrawContext draw_context;
+//
+//        /* Now create the drawing context that will be used to draw
+//         * items related to the last state. */
+//        draw_context.drawable = hashed_process_data->pixmap;
+//        draw_context.gc = drawing->gc;
+//        draw_context.pango_layout = drawing->pango_layout;
+//        draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+//        draw_context.drawinfo.end.x = x;
+//
+//        draw_context.drawinfo.y.over = 1;
+//        draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+//        draw_context.drawinfo.y.under = hashed_process_data->height;
+//
+//        draw_context.drawinfo.start.offset.over = 0;
+//        draw_context.drawinfo.start.offset.middle = 0;
+//        draw_context.drawinfo.start.offset.under = 0;
+//        draw_context.drawinfo.end.offset.over = 0;
+//        draw_context.drawinfo.end.offset.middle = 0;
+//        draw_context.drawinfo.end.offset.under = 0;
+//
+//        {
+//          /* Draw the line */
+//          PropertiesLine prop_line = prepare_s_e_line(process);
+//          draw_line((void*)&prop_line, (void*)&draw_context);
+//
+//        }
+//        /* become the last x position */
+//        hashed_process_data->x.middle = x;
+//        hashed_process_data->x.middle_used = TRUE;
+//        hashed_process_data->x.middle_marked = FALSE;
+//
+//        /* Calculate the next good time */
+//        convert_pixels_to_time(width, x+1, time_window,
+//                               &hashed_process_data->next_good_time);
+//      }
+//    }
+//  }
+//
+//  return 0;
+//}
 
 /* after_process_fork_hook
  * 
@@ -1477,126 +1492,127 @@ int before_process_release_hook(void *hook_data, void *call_data)
  * This function adds items to be drawn in a queue for each process.
  * 
  */
-int after_process_fork_hook(void *hook_data, void *call_data)
-{
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
-  ControlFlowData *control_flow_data = events_request->viewer_data;
-
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
-  LttEvent *e;
-  e = ltt_tracefile_get_event(tfc->tf);
-
-  LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
-  LttTime evtime = ltt_event_time(e);
-
-  guint child_pid;
-  {
-    child_pid = ltt_event_get_long_unsigned(e, thf->f2);
-  }
-
-  /* Add process to process list (if not present) */
-  LttvProcessState *process_child;
-  LttTime birth;
-  guint pl_height = 0;
-  HashedProcessData *hashed_process_data_child = NULL;
-
-  ProcessList *process_list = control_flow_data->process_list;
-
-  /* Find child in the list... */
-  process_child = lttv_state_find_process(ts, ANY_CPU, child_pid);
-  /* It should exist, because we are after the state update. */
-  g_assert(process_child != NULL);
-
-  birth = process_child->creation_time;
-  guint trace_num = ts->parent.index;
-
-  /* Cannot use current process, because this action is done by the parent
-   * on its child. */
-  hashed_process_data_child = processlist_get_process_data(process_list,
-          child_pid,
-          process_child->cpu,
-          &birth,
-          trace_num);
-  if(likely(hashed_process_data_child == NULL))
-  {
-    g_assert(child_pid == 0 || child_pid != process_child->ppid);
-    /* Process not present */
-    Drawing_t *drawing = control_flow_data->drawing;
-    ProcessInfo *process_info;
-    processlist_add(process_list,
-        drawing,
-        child_pid,
-        process_child->tgid,
-        process_child->cpu,
-        process_child->ppid,
-        &birth,
-        trace_num,
-        process_child->name,
-        process_child->brand,
-        &pl_height,
-        &process_info,
-        &hashed_process_data_child);
-      gtk_widget_set_size_request(drawing->drawing_area,
-                                  -1,
-                                  pl_height);
-      gtk_widget_queue_draw(drawing->drawing_area);
-  } else {
-          processlist_set_ppid(process_list, process_child->ppid,
-                               hashed_process_data_child);
-          processlist_set_tgid(process_list, process_child->tgid,
-                               hashed_process_data_child);
-  }
-
-
-  if(likely(ltt_time_compare(hashed_process_data_child->next_good_time,
-                        evtime) <= 0))
-  {
-    TimeWindow time_window = 
-      lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-    if(ltt_time_compare(evtime, time_window.start_time) == -1
-          || ltt_time_compare(evtime, time_window.end_time) == 1)
-              return;
-#endif //EXTRA_CHECK
-    Drawing_t *drawing = control_flow_data->drawing;
-    guint width = drawing->width;
-    guint new_x;
-    convert_time_to_pixels(
-        time_window,
-        evtime,
-        width,
-        &new_x);
-
-    if(likely(hashed_process_data_child->x.over != new_x)) {
-      hashed_process_data_child->x.over = new_x;
-      hashed_process_data_child->x.over_used = FALSE;
-      hashed_process_data_child->x.over_marked = FALSE;
-    }
-    if(likely(hashed_process_data_child->x.middle != new_x)) {
-      hashed_process_data_child->x.middle = new_x;
-      hashed_process_data_child->x.middle_used = FALSE;
-      hashed_process_data_child->x.middle_marked = FALSE;
-    }
-    if(likely(hashed_process_data_child->x.under != new_x)) {
-      hashed_process_data_child->x.under = new_x;
-      hashed_process_data_child->x.under_used = FALSE;
-      hashed_process_data_child->x.under_marked = FALSE;
-    }
-  }
-  return 0;
-}
+//int after_process_fork_hook(void *hook_data, void *call_data)
+//{
+//  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+//  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+//
+//  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+//
+//  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+//
+//  LttEvent *e;
+//  e = ltt_tracefile_get_event(tfc->tf);
+//
+//  LttvFilter *filter = control_flow_data->filter;
+//  if(filter != NULL && filter->head != NULL)
+//    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL))
+//      return FALSE;
+//
+//  LttTime evtime = ltt_event_time(e);
+//
+//  guint child_pid;
+//  {
+//    child_pid = ltt_event_get_long_unsigned(e, thf->f2);
+//  }
+//
+//  /* Add process to process list (if not present) */
+//  LttvProcessState *process_child;
+//  LttTime birth;
+//  guint pl_height = 0;
+//  HashedResourceData *hashed_process_data_child = NULL;
+//
+//  ProcessList *process_list = control_flow_data->process_list;
+//
+//  /* Find child in the list... */
+//  process_child = lttv_state_find_process(ts, ANY_CPU, child_pid);
+//  /* It should exist, because we are after the state update. */
+//  g_assert(process_child != NULL);
+//
+//  birth = process_child->creation_time;
+//  guint trace_num = ts->parent.index;
+//
+//  /* Cannot use current process, because this action is done by the parent
+//   * on its child. */
+//  hashed_process_data_child = processlist_get_process_data(process_list, "CPU0");
+////  hashed_process_data_child = processlist_get_process_data(process_list,
+////          child_pid,
+////          process_child->cpu,
+////          &birth,
+////          trace_num);
+//  if(likely(hashed_process_data_child == NULL))
+//  {
+//    g_assert(child_pid == 0 || child_pid != process_child->ppid);
+//    /* Process not present */
+//    Drawing_t *drawing = control_flow_data->drawing;
+//    ResourceInfo *process_info;
+//    processlist_add(process_list,
+//        drawing,
+//        child_pid,
+//        process_child->tgid,
+//        process_child->cpu,
+//        process_child->ppid,
+//        &birth,
+//        trace_num,
+//        process_child->name,
+//        process_child->brand,
+//        &pl_height,
+//        &process_info,
+//        &hashed_process_data_child);
+//      gtk_widget_set_size_request(drawing->drawing_area,
+//                                  -1,
+//                                  pl_height);
+//      gtk_widget_queue_draw(drawing->drawing_area);
+//  } else {
+//          processlist_set_ppid(process_list, process_child->ppid,
+//                               hashed_process_data_child);
+//          processlist_set_tgid(process_list, process_child->tgid,
+//                               hashed_process_data_child);
+//  }
+//
+//
+//  if(likely(ltt_time_compare(hashed_process_data_child->next_good_time,
+//                        evtime) <= 0))
+//  {
+//    TimeWindow time_window = 
+//      lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//    if(ltt_time_compare(evtime, time_window.start_time) == -1
+//          || ltt_time_compare(evtime, time_window.end_time) == 1)
+//              return;
+//#endif //EXTRA_CHECK
+//    Drawing_t *drawing = control_flow_data->drawing;
+//    guint width = drawing->width;
+//    guint new_x;
+//    convert_time_to_pixels(
+//        time_window,
+//        evtime,
+//        width,
+//        &new_x);
+//
+//    if(likely(hashed_process_data_child->x.over != new_x)) {
+//      hashed_process_data_child->x.over = new_x;
+//      hashed_process_data_child->x.over_used = FALSE;
+//      hashed_process_data_child->x.over_marked = FALSE;
+//    }
+//    if(likely(hashed_process_data_child->x.middle != new_x)) {
+//      hashed_process_data_child->x.middle = new_x;
+//      hashed_process_data_child->x.middle_used = FALSE;
+//      hashed_process_data_child->x.middle_marked = FALSE;
+//    }
+//    if(likely(hashed_process_data_child->x.under != new_x)) {
+//      hashed_process_data_child->x.under = new_x;
+//      hashed_process_data_child->x.under_used = FALSE;
+//      hashed_process_data_child->x.under_marked = FALSE;
+//    }
+//  }
+//  return 0;
+//}
 
 
 
@@ -1611,276 +1627,279 @@ int after_process_fork_hook(void *hook_data, void *call_data)
  * This function adds items to be drawn in a queue for each process.
  * 
  */
-int after_process_exit_hook(void *hook_data, void *call_data)
-{
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
-  ControlFlowData *control_flow_data = events_request->viewer_data;
+//int after_process_exit_hook(void *hook_data, void *call_data)
+//{
+//  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+//  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+//
+//  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+//
+//  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+//
+//  LttEvent *e;
+//  e = ltt_tracefile_get_event(tfc->tf);
+//
+//  LttvFilter *filter = control_flow_data->filter;
+//  if(filter != NULL && filter->head != NULL)
+//    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL))
+//      return FALSE;
+//
+//  LttTime evtime = ltt_event_time(e);
+//
+//  /* Add process to process list (if not present) */
+//  //LttvProcessState *process = tfs->process;
+//  guint cpu = tfs->cpu;
+//  guint trace_num = ts->parent.index;
+//  LttvProcessState *process = ts->running_process[cpu];
+//
+//  /* It should exist, because we are after the state update. */
+//  g_assert(process != NULL);
+//
+//  guint pid = process->pid;
+//  LttTime birth;
+//  guint pl_height = 0;
+//  HashedResourceData *hashed_process_data = NULL;
+//
+//  ProcessList *process_list = control_flow_data->process_list;
+//
+//  birth = process->creation_time;
+//
+//  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL) ){
+//    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
+//  } else {
+//    hashed_process_data = processlist_get_process_data(process_list, "CPU0");
+////    hashed_process_data = processlist_get_process_data(process_list,
+////            pid,
+////            process->cpu,
+////            &birth,
+////            trace_num);
+//    if(unlikely(hashed_process_data == NULL))
+//    {
+//      g_assert(pid == 0 || pid != process->ppid);
+//      /* Process not present */
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      ResourceInfo *process_info;
+//      processlist_add(process_list,
+//          drawing,
+//          pid,
+//          process->tgid,
+//          process->cpu,
+//          process->ppid,
+//          &birth,
+//          trace_num,
+//          process->name,
+//          process->brand,
+//          &pl_height,
+//          &process_info,
+//          &hashed_process_data);
+//      gtk_widget_set_size_request(drawing->drawing_area,
+//                                  -1,
+//                                  pl_height);
+//      gtk_widget_queue_draw(drawing->drawing_area);
+//    }
+//
+//    /* Set the current process */
+//    process_list->current_hash_data[trace_num][process->cpu] =
+//                                             hashed_process_data;
+//  }
+//
+//  if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
+//                        evtime) <= 0))
+//  {
+//    TimeWindow time_window = 
+//      lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//    if(ltt_time_compare(evtime, time_window.start_time) == -1
+//          || ltt_time_compare(evtime, time_window.end_time) == 1)
+//              return;
+//#endif //EXTRA_CHECK
+//    Drawing_t *drawing = control_flow_data->drawing;
+//    guint width = drawing->width;
+//    guint new_x;
+//    convert_time_to_pixels(
+//        time_window,
+//        evtime,
+//        width,
+//        &new_x);
+//    if(unlikely(hashed_process_data->x.middle != new_x)) {
+//      hashed_process_data->x.middle = new_x;
+//      hashed_process_data->x.middle_used = FALSE;
+//      hashed_process_data->x.middle_marked = FALSE;
+//    }
+//  }
+//
+//  return 0;
+//}
 
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
-  LttEvent *e;
-  e = ltt_tracefile_get_event(tfc->tf);
-
-  LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
-  LttTime evtime = ltt_event_time(e);
-
-  /* Add process to process list (if not present) */
-  //LttvProcessState *process = tfs->process;
-  guint cpu = tfs->cpu;
-  guint trace_num = ts->parent.index;
-  LttvProcessState *process = ts->running_process[cpu];
-
-  /* It should exist, because we are after the state update. */
-  g_assert(process != NULL);
-
-  guint pid = process->pid;
-  LttTime birth;
-  guint pl_height = 0;
-  HashedProcessData *hashed_process_data = NULL;
-
-  ProcessList *process_list = control_flow_data->process_list;
-
-  birth = process->creation_time;
-
-  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL) ){
-    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
-  } else {
-    hashed_process_data = processlist_get_process_data(process_list,
-            pid,
-            process->cpu,
-            &birth,
-            trace_num);
-    if(unlikely(hashed_process_data == NULL))
-    {
-      g_assert(pid == 0 || pid != process->ppid);
-      /* Process not present */
-      Drawing_t *drawing = control_flow_data->drawing;
-      ProcessInfo *process_info;
-      processlist_add(process_list,
-          drawing,
-          pid,
-          process->tgid,
-          process->cpu,
-          process->ppid,
-          &birth,
-          trace_num,
-          process->name,
-          process->brand,
-          &pl_height,
-          &process_info,
-          &hashed_process_data);
-      gtk_widget_set_size_request(drawing->drawing_area,
-                                  -1,
-                                  pl_height);
-      gtk_widget_queue_draw(drawing->drawing_area);
-    }
-
-    /* Set the current process */
-    process_list->current_hash_data[trace_num][process->cpu] =
-                                             hashed_process_data;
-  }
-
-  if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
-                        evtime) <= 0))
-  {
-    TimeWindow time_window = 
-      lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-    if(ltt_time_compare(evtime, time_window.start_time) == -1
-          || ltt_time_compare(evtime, time_window.end_time) == 1)
-              return;
-#endif //EXTRA_CHECK
-    Drawing_t *drawing = control_flow_data->drawing;
-    guint width = drawing->width;
-    guint new_x;
-    convert_time_to_pixels(
-        time_window,
-        evtime,
-        width,
-        &new_x);
-    if(unlikely(hashed_process_data->x.middle != new_x)) {
-      hashed_process_data->x.middle = new_x;
-      hashed_process_data->x.middle_used = FALSE;
-      hashed_process_data->x.middle_marked = FALSE;
-    }
-  }
-
-  return 0;
-}
-
-
-/* Get the filename of the process to print */
-int after_fs_exec_hook(void *hook_data, void *call_data)
-{
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
-  ControlFlowData *control_flow_data = events_request->viewer_data;
-
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
-  LttEvent *e;
-  e = ltt_tracefile_get_event(tfc->tf);
-
-  LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
-  guint cpu = tfs->cpu;
-  guint trace_num = ts->parent.index;
-  LttvProcessState *process = ts->running_process[cpu];
-  g_assert(process != NULL);
-
-  guint pid = process->pid;
-
-  /* Well, the process_out existed : we must get it in the process hash
-   * or add it, and draw its items.
-   */
-   /* Add process to process list (if not present) */
-  guint pl_height = 0;
-  HashedProcessData *hashed_process_data = NULL;
-  ProcessList *process_list = control_flow_data->process_list;
-  LttTime birth = process->creation_time;
- 
-  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
-    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
-  } else {
-    hashed_process_data = processlist_get_process_data(process_list,
-            pid,
-            process->cpu,
-            &birth,
-            trace_num);
-    if(unlikely(hashed_process_data == NULL))
-    {
-      g_assert(pid == 0 || pid != process->ppid);
-      ProcessInfo *process_info;
-      /* Process not present */
-      Drawing_t *drawing = control_flow_data->drawing;
-      processlist_add(process_list,
-          drawing,
-          pid,
-          process->tgid,
-          process->cpu,
-          process->ppid,
-          &birth,
-          trace_num,
-          process->name,
-          process->brand,
-          &pl_height,
-          &process_info,
-          &hashed_process_data);
-        gtk_widget_set_size_request(drawing->drawing_area,
-                                    -1,
-                                    pl_height);
-        gtk_widget_queue_draw(drawing->drawing_area);
-    }
-    /* Set the current process */
-    process_list->current_hash_data[trace_num][process->cpu] =
-                                               hashed_process_data;
-  }
-
-  processlist_set_name(process_list, process->name, hashed_process_data);
-
-  return 0;
-
-}
 
 /* Get the filename of the process to print */
-int after_user_generic_thread_brand_hook(void *hook_data, void *call_data)
-{
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
-  ControlFlowData *control_flow_data = events_request->viewer_data;
+//int after_fs_exec_hook(void *hook_data, void *call_data)
+//{
+//  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+//  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+//
+//  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+//
+//  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+//
+//  LttEvent *e;
+//  e = ltt_tracefile_get_event(tfc->tf);
+//
+//  LttvFilter *filter = control_flow_data->filter;
+//  if(filter != NULL && filter->head != NULL)
+//    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL))
+//      return FALSE;
+//
+//  guint cpu = tfs->cpu;
+//  guint trace_num = ts->parent.index;
+//  LttvProcessState *process = ts->running_process[cpu];
+//  g_assert(process != NULL);
+//
+//  guint pid = process->pid;
+//
+//  /* Well, the process_out existed : we must get it in the process hash
+//   * or add it, and draw its items.
+//   */
+//   /* Add process to process list (if not present) */
+//  guint pl_height = 0;
+//  HashedResourceData *hashed_process_data = NULL;
+//  ProcessList *process_list = control_flow_data->process_list;
+//  LttTime birth = process->creation_time;
+// 
+//  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
+//    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
+//  } else {
+//    hashed_process_data = processlist_get_process_data(process_list, "CPU0");
+////    hashed_process_data = processlist_get_process_data(process_list,
+////            pid,
+////            process->cpu,
+////            &birth,
+////            trace_num);
+//    if(unlikely(hashed_process_data == NULL))
+//    {
+//      g_assert(pid == 0 || pid != process->ppid);
+//      ResourceInfo *process_info;
+//      /* Process not present */
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      processlist_add(process_list,
+//          drawing,
+//          pid,
+//          process->tgid,
+//          process->cpu,
+//          process->ppid,
+//          &birth,
+//          trace_num,
+//          process->name,
+//          process->brand,
+//          &pl_height,
+//          &process_info,
+//          &hashed_process_data);
+//        gtk_widget_set_size_request(drawing->drawing_area,
+//                                    -1,
+//                                    pl_height);
+//        gtk_widget_queue_draw(drawing->drawing_area);
+//    }
+//    /* Set the current process */
+//    process_list->current_hash_data[trace_num][process->cpu] =
+//                                               hashed_process_data;
+//  }
+//
+//  processlist_set_name(process_list, process->name, hashed_process_data);
+//
+//  return 0;
+//
+//}
 
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
-  LttEvent *e;
-  e = ltt_tracefile_get_event(tfc->tf);
-
-  LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
-  guint cpu = tfs->cpu;
-  guint trace_num = ts->parent.index;
-  LttvProcessState *process = ts->running_process[cpu];
-  g_assert(process != NULL);
-
-  guint pid = process->pid;
-
-  /* Well, the process_out existed : we must get it in the process hash
-   * or add it, and draw its items.
-   */
-   /* Add process to process list (if not present) */
-  guint pl_height = 0;
-  HashedProcessData *hashed_process_data = NULL;
-  ProcessList *process_list = control_flow_data->process_list;
-  LttTime birth = process->creation_time;
- 
-  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
-    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
-  } else {
-    hashed_process_data = processlist_get_process_data(process_list,
-            pid,
-            process->cpu,
-            &birth,
-            trace_num);
-    if(unlikely(hashed_process_data == NULL))
-    {
-      g_assert(pid == 0 || pid != process->ppid);
-      ProcessInfo *process_info;
-      /* Process not present */
-      Drawing_t *drawing = control_flow_data->drawing;
-      processlist_add(process_list,
-          drawing,
-          pid,
-          process->tgid,
-          process->cpu,
-          process->ppid,
-          &birth,
-          trace_num,
-          process->name,
-	  process->brand,
-          &pl_height,
-          &process_info,
-          &hashed_process_data);
-        gtk_widget_set_size_request(drawing->drawing_area,
-                                    -1,
-                                    pl_height);
-        gtk_widget_queue_draw(drawing->drawing_area);
-    }
-    /* Set the current process */
-    process_list->current_hash_data[trace_num][process->cpu] =
-                                               hashed_process_data;
-  }
-
-  processlist_set_brand(process_list, process->brand, hashed_process_data);
-
-  return 0;
-
-}
+/* Get the filename of the process to print */
+//int after_user_generic_thread_brand_hook(void *hook_data, void *call_data)
+//{
+//  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+//  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+//
+//  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+//
+//  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+//
+//  LttEvent *e;
+//  e = ltt_tracefile_get_event(tfc->tf);
+//
+//  LttvFilter *filter = control_flow_data->filter;
+//  if(filter != NULL && filter->head != NULL)
+//    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL))
+//      return FALSE;
+//
+//  guint cpu = tfs->cpu;
+//  guint trace_num = ts->parent.index;
+//  LttvProcessState *process = ts->running_process[cpu];
+//  g_assert(process != NULL);
+//
+//  guint pid = process->pid;
+//
+//  /* Well, the process_out existed : we must get it in the process hash
+//   * or add it, and draw its items.
+//   */
+//   /* Add process to process list (if not present) */
+//  guint pl_height = 0;
+//  HashedResourceData *hashed_process_data = NULL;
+//  ProcessList *process_list = control_flow_data->process_list;
+//  LttTime birth = process->creation_time;
+// 
+//  if(likely(process_list->current_hash_data[trace_num][cpu] != NULL)) {
+//    hashed_process_data = process_list->current_hash_data[trace_num][cpu];
+//  } else {
+//    hashed_process_data = processlist_get_process_data(process_list, "CPU0");
+////    hashed_process_data = processlist_get_process_data(process_list,
+////            pid,
+////            process->cpu,
+////            &birth,
+////            trace_num);
+//    if(unlikely(hashed_process_data == NULL))
+//    {
+//      g_assert(pid == 0 || pid != process->ppid);
+//      ResourceInfo *process_info;
+//      /* Process not present */
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      processlist_add(process_list,
+//          drawing,
+//          pid,
+//          process->tgid,
+//          process->cpu,
+//          process->ppid,
+//          &birth,
+//          trace_num,
+//          process->name,
+//	  process->brand,
+//          &pl_height,
+//          &process_info,
+//          &hashed_process_data);
+//        gtk_widget_set_size_request(drawing->drawing_area,
+//                                    -1,
+//                                    pl_height);
+//        gtk_widget_queue_draw(drawing->drawing_area);
+//    }
+//    /* Set the current process */
+//    process_list->current_hash_data[trace_num][process->cpu] =
+//                                               hashed_process_data;
+//  }
+//
+//  processlist_set_brand(process_list, process->brand, hashed_process_data);
+//
+//  return 0;
+//
+//}
 
 
 /* after_event_enum_process_hook
@@ -1894,107 +1913,108 @@ int after_user_generic_thread_brand_hook(void *hook_data, void *call_data)
  * This function adds items to be drawn in a queue for each process.
  * 
  */
-int after_event_enum_process_hook(void *hook_data, void *call_data)
-{
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
-  ControlFlowData *control_flow_data = events_request->viewer_data;
-
-  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-
-  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-
-  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
-
-  guint first_cpu, nb_cpus, cpu;
-
-  LttEvent *e;
-  e = ltt_tracefile_get_event(tfc->tf);
-
-  LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
-  LttTime evtime = ltt_event_time(e);
-
-  /* Add process to process list (if not present) */
-  LttvProcessState *process_in;
-  LttTime birth;
-  guint pl_height = 0;
-  HashedProcessData *hashed_process_data_in = NULL;
-
-  ProcessList *process_list = control_flow_data->process_list;
-  guint trace_num = ts->parent.index;
-  
-  guint pid_in;
-  {
-    pid_in = ltt_event_get_long_unsigned(e, thf->f1);
-  }
-  
-  if(pid_in == 0) {
-    first_cpu = 0;
-    nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
-  } else {
-    first_cpu = ANY_CPU;
-    nb_cpus = ANY_CPU+1;
-  }
-
-  for(cpu = first_cpu; cpu < nb_cpus; cpu++) {
-    /* Find process pid_in in the list... */
-    process_in = lttv_state_find_process(ts, cpu, pid_in);
-    //process_in = tfs->process;
-    //guint cpu = tfs->cpu;
-    //guint trace_num = ts->parent.index;
-    //process_in = ts->running_process[cpu];
-    /* It should exist, because we are after the state update. */
-  #ifdef EXTRA_CHECK
-    //g_assert(process_in != NULL);
-  #endif //EXTRA_CHECK
-    birth = process_in->creation_time;
-
-    hashed_process_data_in = processlist_get_process_data(process_list,
-            pid_in,
-            process_in->cpu,
-            &birth,
-            trace_num);
-    if(hashed_process_data_in == NULL)
-    {
-      if(pid_in != 0 && pid_in == process_in->ppid)
-        g_critical("TEST %u , %u", pid_in, process_in->ppid);
-      g_assert(pid_in == 0 || pid_in != process_in->ppid);
-      ProcessInfo *process_info;
-      Drawing_t *drawing = control_flow_data->drawing;
-      /* Process not present */
-      processlist_add(process_list,
-          drawing,
-          pid_in,
-          process_in->tgid,
-          process_in->cpu,
-          process_in->ppid,
-          &birth,
-          trace_num,
-          process_in->name,
-          process_in->brand,
-          &pl_height,
-          &process_info,
-          &hashed_process_data_in);
-          gtk_widget_set_size_request(drawing->drawing_area,
-                                      -1,
-                                      pl_height);
-          gtk_widget_queue_draw(drawing->drawing_area);
-    } else {
-      processlist_set_name(process_list, process_in->name,
-                           hashed_process_data_in);
-      processlist_set_ppid(process_list, process_in->ppid,
-                           hashed_process_data_in);
-      processlist_set_tgid(process_list, process_in->tgid,
-                           hashed_process_data_in);
-    }
-  }
-  return 0;
-}
+//int after_event_enum_process_hook(void *hook_data, void *call_data)
+//{
+//  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
+//  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
+//
+//  LttvTracefileState *tfs = (LttvTracefileState *)call_data;
+//
+//  LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+//
+//  guint first_cpu, nb_cpus, cpu;
+//
+//  LttEvent *e;
+//  e = ltt_tracefile_get_event(tfc->tf);
+//
+//  LttvFilter *filter = control_flow_data->filter;
+//  if(filter != NULL && filter->head != NULL)
+//    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
+//          tfc->t_context->t,tfc,NULL,NULL))
+//      return FALSE;
+//
+//  LttTime evtime = ltt_event_time(e);
+//
+//  /* Add process to process list (if not present) */
+//  LttvProcessState *process_in;
+//  LttTime birth;
+//  guint pl_height = 0;
+//  HashedResourceData *hashed_process_data_in = NULL;
+//
+//  ProcessList *process_list = control_flow_data->process_list;
+//  guint trace_num = ts->parent.index;
+//  
+//  guint pid_in;
+//  {
+//    pid_in = ltt_event_get_long_unsigned(e, thf->f1);
+//  }
+//  
+//  if(pid_in == 0) {
+//    first_cpu = 0;
+//    nb_cpus = ltt_trace_get_num_cpu(ts->parent.t);
+//  } else {
+//    first_cpu = ANY_CPU;
+//    nb_cpus = ANY_CPU+1;
+//  }
+//
+//  for(cpu = first_cpu; cpu < nb_cpus; cpu++) {
+//    /* Find process pid_in in the list... */
+//    process_in = lttv_state_find_process(ts, cpu, pid_in);
+//    //process_in = tfs->process;
+//    //guint cpu = tfs->cpu;
+//    //guint trace_num = ts->parent.index;
+//    //process_in = ts->running_process[cpu];
+//    /* It should exist, because we are after the state update. */
+//  #ifdef EXTRA_CHECK
+//    //g_assert(process_in != NULL);
+//  #endif //EXTRA_CHECK
+//    birth = process_in->creation_time;
+//
+//    hashed_process_data_in = processlist_get_process_data(process_list, "CPU0");
+////    hashed_process_data_in = processlist_get_process_data(process_list,
+////            pid_in,
+////            process_in->cpu,
+////            &birth,
+////            trace_num);
+//    if(hashed_process_data_in == NULL)
+//    {
+//      if(pid_in != 0 && pid_in == process_in->ppid)
+//        g_critical("TEST %u , %u", pid_in, process_in->ppid);
+//      g_assert(pid_in == 0 || pid_in != process_in->ppid);
+//      ResourceInfo *process_info;
+//      Drawing_t *drawing = control_flow_data->drawing;
+//      /* Process not present */
+//      processlist_add(process_list,
+//          drawing,
+//          pid_in,
+//          process_in->tgid,
+//          process_in->cpu,
+//          process_in->ppid,
+//          &birth,
+//          trace_num,
+//          process_in->name,
+//          process_in->brand,
+//          &pl_height,
+//          &process_info,
+//          &hashed_process_data_in);
+//          gtk_widget_set_size_request(drawing->drawing_area,
+//                                      -1,
+//                                      pl_height);
+//          gtk_widget_queue_draw(drawing->drawing_area);
+//    } else {
+//      processlist_set_name(process_list, process_in->name,
+//                           hashed_process_data_in);
+//      processlist_set_ppid(process_list, process_in->ppid,
+//                           hashed_process_data_in);
+//      processlist_set_tgid(process_list, process_in->tgid,
+//                           hashed_process_data_in);
+//    }
+//  }
+//  return 0;
+//}
 
 
 gint update_time_window_hook(void *hook_data, void *call_data)
@@ -2394,167 +2414,168 @@ typedef struct _ClosureData {
   guint x_end;
 } ClosureData;
   
+/* Draw line until end of the screen */
 
 void draw_closure(gpointer key, gpointer value, gpointer user_data)
 {
-  ProcessInfo *process_info = (ProcessInfo*)key;
-  HashedProcessData *hashed_process_data = (HashedProcessData*)value;
-  ClosureData *closure_data = (ClosureData*)user_data;
-    
-  EventsRequest *events_request = closure_data->events_request;
-  ControlFlowData *control_flow_data = events_request->viewer_data;
-
-  LttvTracesetState *tss = closure_data->tss;
-  LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
-
-  LttTime evtime = closure_data->end_time;
-
-  gboolean dodraw = TRUE;
-
-  { 
-    /* For the process */
-    /* First, check if the current process is in the state computation
-     * process list. If it is there, that means we must add it right now and
-     * draw items from the beginning of the read for it. If it is not
-     * present, it's a new process and it was not present : it will
-     * be added after the state update.  */
-#ifdef EXTRA_CHECK
-    g_assert(lttv_traceset_number(tsc->ts) > 0);
-#endif //EXTRA_CHECK
-    LttvTraceContext *tc = tsc->traces[process_info->trace_num];
-    LttvTraceState *ts = (LttvTraceState*)tc;
-
-#if 0
-    //FIXME : optimize data structures.
-    LttvTracefileState *tfs;
-    LttvTracefileContext *tfc;
-    guint i;
-    for(i=0;i<tc->tracefiles->len;i++) {
-      tfc = g_array_index(tc->tracefiles, LttvTracefileContext*, i);
-      if(ltt_tracefile_name(tfc->tf) == LTT_NAME_CPU
-          && tfs->cpu == process_info->cpu)
-        break;
-
-    }
-    g_assert(i<tc->tracefiles->len);
-    tfs = LTTV_TRACEFILE_STATE(tfc);
-#endif //0
- //   LttvTracefileState *tfs =
- //    (LttvTracefileState*)tsc->traces[process_info->trace_num]->
- //                        tracefiles[process_info->cpu];
- 
-    LttvProcessState *process;
-    process = lttv_state_find_process(ts, process_info->cpu,
-                                      process_info->pid);
-
-    if(unlikely(process != NULL)) {
-      
-       LttvFilter *filter = control_flow_data->filter;
-       if(filter != NULL && filter->head != NULL)
-         if(!lttv_filter_tree_parse(filter->head,NULL,NULL,
-             tc->t,NULL,process,tc))
-           dodraw = FALSE;
-
-      /* Only draw for processes that are currently in the trace states */
-
-      ProcessList *process_list = control_flow_data->process_list;
-#ifdef EXTRA_CHECK
-      /* Should be alike when background info is ready */
-      if(control_flow_data->background_info_waiting==0)
-        g_assert(ltt_time_compare(process->creation_time,
-                                  process_info->birth) == 0);
-#endif //EXTRA_CHECK
-    
-      /* Now, the process is in the state hash and our own process hash.
-       * We definitely can draw the items related to the ending state.
-       */
-      
-      if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
-                            evtime) <= 0))
-      {
-        TimeWindow time_window = 
-          lttvwindow_get_time_window(control_flow_data->tab);
-
-#ifdef EXTRA_CHECK
-        if(ltt_time_compare(evtime, time_window.start_time) == -1
-              || ltt_time_compare(evtime, time_window.end_time) == 1)
-                  return;
-#endif //EXTRA_CHECK
-        Drawing_t *drawing = control_flow_data->drawing;
-        guint width = drawing->width;
-
-        guint x = closure_data->x_end;
-
-        DrawContext draw_context;
-
-        /* Now create the drawing context that will be used to draw
-         * items related to the last state. */
-        draw_context.drawable = hashed_process_data->pixmap;
-        draw_context.gc = drawing->gc;
-        draw_context.pango_layout = drawing->pango_layout;
-        draw_context.drawinfo.end.x = x;
-
-        draw_context.drawinfo.y.over = 1;
-        draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
-        draw_context.drawinfo.y.under = hashed_process_data->height;
-
-        draw_context.drawinfo.start.offset.over = 0;
-        draw_context.drawinfo.start.offset.middle = 0;
-        draw_context.drawinfo.start.offset.under = 0;
-        draw_context.drawinfo.end.offset.over = 0;
-        draw_context.drawinfo.end.offset.middle = 0;
-        draw_context.drawinfo.end.offset.under = 0;
-#if 0
-        /* Jump over draw if we are at the same x position */
-        if(x == hashed_process_data->x.over)
-        {
-          /* jump */
-        } else {
-          draw_context.drawinfo.start.x = hashed_process_data->x.over;
-          /* Draw the line */
-          PropertiesLine prop_line = prepare_execmode_line(process);
-          draw_line((void*)&prop_line, (void*)&draw_context);
-
-          hashed_process_data->x.over = x;
-        }
-#endif //0
-
-        if(unlikely(x == hashed_process_data->x.middle &&
-            hashed_process_data->x.middle_used)) {
-#if 0 /* do not mark closure : not missing information */
-          if(hashed_process_data->x.middle_marked == FALSE) {
-            /* Draw collision indicator */
-            gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
-            gdk_draw_point(drawing->pixmap,
-                           drawing->gc,
-                           x,
-                           y+(height/2)-3);
-            hashed_process_data->x.middle_marked = TRUE;
-          }
-#endif //0
-          /* Jump */
-        } else {
-          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
-          /* Draw the line */
-          if(dodraw) {
-                  PropertiesLine prop_line = prepare_s_e_line(process);
-                  draw_line((void*)&prop_line, (void*)&draw_context);
-          }
-
-           /* become the last x position */
-          if(likely(x != hashed_process_data->x.middle)) {
-            hashed_process_data->x.middle = x;
-            /* but don't use the pixel */
-            hashed_process_data->x.middle_used = FALSE;
-
-            /* Calculate the next good time */
-            convert_pixels_to_time(width, x+1, time_window,
-                                  &hashed_process_data->next_good_time);
-          }
-        }
-      }
-    }
-  }
+//  ResourceInfo *process_info = (ResourceInfo*)key;
+//  HashedResourceData *hashed_process_data = (HashedResourceData*)value;
+//  ClosureData *closure_data = (ClosureData*)user_data;
+//    
+//  EventsRequest *events_request = closure_data->events_request;
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//
+//  LttvTracesetState *tss = closure_data->tss;
+//  LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
+//
+//  LttTime evtime = closure_data->end_time;
+//
+//  gboolean dodraw = TRUE;
+//
+//  { 
+//    /* For the process */
+//    /* First, check if the current process is in the state computation
+//     * process list. If it is there, that means we must add it right now and
+//     * draw items from the beginning of the read for it. If it is not
+//     * present, it's a new process and it was not present : it will
+//     * be added after the state update.  */
+//#ifdef EXTRA_CHECK
+//    g_assert(lttv_traceset_number(tsc->ts) > 0);
+//#endif //EXTRA_CHECK
+//    LttvTraceContext *tc = tsc->traces[process_info->trace_num];
+//    LttvTraceState *ts = (LttvTraceState*)tc;
+//
+//#if 0
+//    //FIXME : optimize data structures.
+//    LttvTracefileState *tfs;
+//    LttvTracefileContext *tfc;
+//    guint i;
+//    for(i=0;i<tc->tracefiles->len;i++) {
+//      tfc = g_array_index(tc->tracefiles, LttvTracefileContext*, i);
+//      if(ltt_tracefile_name(tfc->tf) == LTT_NAME_CPU
+//          && tfs->cpu == process_info->cpu)
+//        break;
+//
+//    }
+//    g_assert(i<tc->tracefiles->len);
+//    tfs = LTTV_TRACEFILE_STATE(tfc);
+//#endif //0
+// //   LttvTracefileState *tfs =
+// //    (LttvTracefileState*)tsc->traces[process_info->trace_num]->
+// //                        tracefiles[process_info->cpu];
+// 
+//    LttvProcessState *process;
+//    process = lttv_state_find_process(ts, process_info->cpu,
+//                                      process_info->pid);
+//
+//    if(unlikely(process != NULL)) {
+//      
+//       LttvFilter *filter = control_flow_data->filter;
+//       if(filter != NULL && filter->head != NULL)
+//         if(!lttv_filter_tree_parse(filter->head,NULL,NULL,
+//             tc->t,NULL,process,tc))
+//           dodraw = FALSE;
+//
+//      /* Only draw for processes that are currently in the trace states */
+//
+//      ProcessList *process_list = control_flow_data->process_list;
+//#ifdef EXTRA_CHECK
+//      /* Should be alike when background info is ready */
+//      if(control_flow_data->background_info_waiting==0)
+//        g_assert(ltt_time_compare(process->creation_time,
+//                                  process_info->birth) == 0);
+//#endif //EXTRA_CHECK
+//    
+//      /* Now, the process is in the state hash and our own process hash.
+//       * We definitely can draw the items related to the ending state.
+//       */
+//      
+//      if(unlikely(ltt_time_compare(hashed_process_data->next_good_time,
+//                            evtime) <= 0))
+//      {
+//        TimeWindow time_window = 
+//          lttvwindow_get_time_window(control_flow_data->tab);
+//
+//#ifdef EXTRA_CHECK
+//        if(ltt_time_compare(evtime, time_window.start_time) == -1
+//              || ltt_time_compare(evtime, time_window.end_time) == 1)
+//                  return;
+//#endif //EXTRA_CHECK
+//        Drawing_t *drawing = control_flow_data->drawing;
+//        guint width = drawing->width;
+//
+//        guint x = closure_data->x_end;
+//
+//        DrawContext draw_context;
+//
+//        /* Now create the drawing context that will be used to draw
+//         * items related to the last state. */
+//        draw_context.drawable = hashed_process_data->pixmap;
+//        draw_context.gc = drawing->gc;
+//        draw_context.pango_layout = drawing->pango_layout;
+//        draw_context.drawinfo.end.x = x;
+//
+//        draw_context.drawinfo.y.over = 1;
+//        draw_context.drawinfo.y.middle = (hashed_process_data->height/2);
+//        draw_context.drawinfo.y.under = hashed_process_data->height;
+//
+//        draw_context.drawinfo.start.offset.over = 0;
+//        draw_context.drawinfo.start.offset.middle = 0;
+//        draw_context.drawinfo.start.offset.under = 0;
+//        draw_context.drawinfo.end.offset.over = 0;
+//        draw_context.drawinfo.end.offset.middle = 0;
+//        draw_context.drawinfo.end.offset.under = 0;
+//#if 0
+//        /* Jump over draw if we are at the same x position */
+//        if(x == hashed_process_data->x.over)
+//        {
+//          /* jump */
+//        } else {
+//          draw_context.drawinfo.start.x = hashed_process_data->x.over;
+//          /* Draw the line */
+//          PropertiesLine prop_line = prepare_execmode_line(process);
+//          draw_line((void*)&prop_line, (void*)&draw_context);
+//
+//          hashed_process_data->x.over = x;
+//        }
+//#endif //0
+//
+//        if(unlikely(x == hashed_process_data->x.middle &&
+//            hashed_process_data->x.middle_used)) {
+//#if 0 /* do not mark closure : not missing information */
+//          if(hashed_process_data->x.middle_marked == FALSE) {
+//            /* Draw collision indicator */
+//            gdk_gc_set_foreground(drawing->gc, &drawing_colors[COL_WHITE]);
+//            gdk_draw_point(drawing->pixmap,
+//                           drawing->gc,
+//                           x,
+//                           y+(height/2)-3);
+//            hashed_process_data->x.middle_marked = TRUE;
+//          }
+//#endif //0
+//          /* Jump */
+//        } else {
+//          draw_context.drawinfo.start.x = hashed_process_data->x.middle;
+//          /* Draw the line */
+//          if(dodraw) {
+//                  PropertiesLine prop_line = prepare_s_e_line(process);
+//                  draw_line((void*)&prop_line, (void*)&draw_context);
+//          }
+//
+//           /* become the last x position */
+//          if(likely(x != hashed_process_data->x.middle)) {
+//            hashed_process_data->x.middle = x;
+//            /* but don't use the pixel */
+//            hashed_process_data->x.middle_used = FALSE;
+//
+//            /* Calculate the next good time */
+//            convert_pixels_to_time(width, x+1, time_window,
+//                                  &hashed_process_data->next_good_time);
+//          }
+//        }
+//      }
+//    }
+//  }
   return;
 }
 
@@ -2595,37 +2616,38 @@ int before_request(void *hook_data, void *call_data)
  *    draw closing line
  *    expose
  */
+// TODO pmf: reenable this
 int after_request(void *hook_data, void *call_data)
 {
-  EventsRequest *events_request = (EventsRequest*)hook_data;
-  ControlFlowData *control_flow_data = events_request->viewer_data;
-  LttvTracesetState *tss = (LttvTracesetState*)call_data;
-  
-  ProcessList *process_list = control_flow_data->process_list;
-  LttTime end_time = events_request->end_time;
-
-  ClosureData closure_data;
-  closure_data.events_request = (EventsRequest*)hook_data;
-  closure_data.tss = tss;
-  closure_data.end_time = end_time;
-
-  TimeWindow time_window = 
-          lttvwindow_get_time_window(control_flow_data->tab);
-  guint width = control_flow_data->drawing->width;
-  convert_time_to_pixels(
-            time_window,
-            end_time,
-            width,
-            &closure_data.x_end);
-
-
-  /* Draw last items */
-  g_hash_table_foreach(process_list->process_hash, draw_closure,
-                        (void*)&closure_data);
-  
-
-  /* Request expose */
-  drawing_request_expose(events_request, tss, end_time);
+//  EventsRequest *events_request = (EventsRequest*)hook_data;
+//  ControlFlowData *control_flow_data = events_request->viewer_data;
+//  LttvTracesetState *tss = (LttvTracesetState*)call_data;
+//  
+//  ProcessList *process_list = control_flow_data->process_list;
+//  LttTime end_time = events_request->end_time;
+//
+//  ClosureData closure_data;
+//  closure_data.events_request = (EventsRequest*)hook_data;
+//  closure_data.tss = tss;
+//  closure_data.end_time = end_time;
+//
+//  TimeWindow time_window = 
+//          lttvwindow_get_time_window(control_flow_data->tab);
+//  guint width = control_flow_data->drawing->width;
+//  convert_time_to_pixels(
+//            time_window,
+//            end_time,
+//            width,
+//            &closure_data.x_end);
+//
+//
+//  /* Draw last items */
+//  g_hash_table_foreach(process_list->process_hash, draw_closure,
+//                        (void*)&closure_data);
+//  
+//
+//  /* Request expose */
+//  drawing_request_expose(events_request, tss, end_time);
   return 0;
 }
 

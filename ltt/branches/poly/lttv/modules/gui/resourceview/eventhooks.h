@@ -57,7 +57,7 @@
 
 void send_test_data(ProcessList *process_list, Drawing_t *drawing);
 
-GtkWidget *h_guicontrolflow(LttvPlugin *plugin);
+GtkWidget *h_resourceview(LttvPlugin *plugin);
 
 GtkWidget *h_legend(LttvPlugin *plugin);
 

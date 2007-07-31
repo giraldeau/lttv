@@ -59,7 +59,7 @@ static void init() {
                                   "Insert Resource Viewer",
                                   hGuiControlFlowInsert_xpm,
                                   "Insert Resource Viewer",
-                                  h_guicontrolflow);
+                                  h_resourceview);
   
 
   LTT_NAME_CPU = g_quark_from_string("/cpu");
@@ -86,7 +86,7 @@ static void destroy() {
   g_slist_free(g_control_flow_data_list);
 
   /* Unregister the toolbar insert button and menu entry */
-  lttvwindow_unregister_constructor(h_guicontrolflow);
+  lttvwindow_unregister_constructor(h_resourceview);
 }
 
 

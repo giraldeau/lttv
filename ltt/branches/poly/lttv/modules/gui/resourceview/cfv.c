@@ -133,7 +133,7 @@ static void        filter_button      (GtkToolButton *toolbutton,
  * @return The widget created.
  */
 ControlFlowData *
-guicontrolflow(LttvPluginTab *ptab)
+resourceview(LttvPluginTab *ptab)
 {
   Tab *tab = ptab->tab;
   GtkWidget *tmp_toolbar_icon;

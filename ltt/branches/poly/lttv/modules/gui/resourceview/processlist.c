@@ -26,13 +26,14 @@
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#
 
 #include "processlist.h"
 #include "drawing.h"
 #include "drawitem.h"
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+//#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
 /* Preallocated Size of the index_to_pixmap array */
 #define ALLOCATE_PROCESSES 1000
@@ -42,99 +43,123 @@
  *****************************************************************************/
 
 
-gint process_sort_func  ( GtkTreeModel *model,
-        GtkTreeIter *it_a,
-        GtkTreeIter *it_b,
-        gpointer user_data)
+//gint process_sort_func  ( GtkTreeModel *model,
+//        GtkTreeIter *it_a,
+//        GtkTreeIter *it_b,
+//        gpointer user_data)
+//{
+//  gchar *a_name;
+//  gchar *a_brand;
+//  guint a_pid, a_tgid, a_ppid, a_cpu;
+//  gulong a_birth_s, a_birth_ns;
+//  guint a_trace;
+//
+//  gchar *b_name;
+//  gchar *b_brand;
+//  guint b_pid, b_tgid, b_ppid, b_cpu;
+//  gulong b_birth_s, b_birth_ns;
+//  guint b_trace;
+//
+//  gtk_tree_model_get(model,
+//           it_a,
+//           PROCESS_COLUMN, &a_name,
+//           BRAND_COLUMN, &a_brand,
+//           PID_COLUMN, &a_pid,
+//           TGID_COLUMN, &a_tgid,
+//           PPID_COLUMN, &a_ppid,
+//           CPU_COLUMN, &a_cpu,
+//           BIRTH_S_COLUMN, &a_birth_s,
+//           BIRTH_NS_COLUMN, &a_birth_ns,
+//           TRACE_COLUMN, &a_trace,
+//           -1);
+//
+//  gtk_tree_model_get(model,
+//           it_b,
+//           PROCESS_COLUMN, &b_name,
+//           BRAND_COLUMN, &b_brand,
+//           PID_COLUMN, &b_pid,
+//           TGID_COLUMN, &b_tgid,
+//           PPID_COLUMN, &b_ppid,
+//           CPU_COLUMN, &b_cpu,
+//           BIRTH_S_COLUMN, &b_birth_s,
+//           BIRTH_NS_COLUMN, &b_birth_ns,
+//           TRACE_COLUMN, &b_trace,
+//           -1);
+//
+//  
+//  /* Order by PID */
+//  if(a_pid == 0 &&  b_pid == 0) {
+//    /* If 0, order by CPU */
+//    if(a_cpu > b_cpu) return 1;
+//    if(a_cpu < b_cpu) return -1;
+//
+//  } else { /* if not 0, order by pid */
+//
+//    if(a_pid > b_pid) return 1;
+//    if(a_pid < b_pid) return -1;
+//  }
+//
+//  /* Order by birth second */
+//
+//  if(a_birth_s > b_birth_s) return 1;
+//  if(a_birth_s < b_birth_s) return -1;
+//  
+//
+//  /* Order by birth nanosecond */
+//  if(a_birth_ns > b_birth_ns) return 1;
+//  if(a_birth_ns < b_birth_ns) return -1;
+//  
+//  /* Order by trace_num */
+//  if(a_trace > b_trace) return 1;
+//  if(a_trace < b_trace) return -1;
+//
+//  return 0;
+//
+//}
+
+//static guint process_list_hash_fct(gconstpointer key)
+//{
+//  guint pid = ((const ResourceInfo*)key)->pid;
+//  return ((pid>>8 ^ pid>>4 ^ pid>>2 ^ pid) ^ ((const ResourceInfo*)key)->cpu);
+//}
+//
+///* If hash is good, should be different */
+//static gboolean process_list_equ_fct(gconstpointer a, gconstpointer b)
+//{
+//  const ResourceInfo *pa = (const ResourceInfo*)a;
+//  const ResourceInfo *pb = (const ResourceInfo*)b;
+//  
+//  gboolean ret = TRUE;
+//
+//  if(likely(pa->pid != pb->pid))
+//    ret = FALSE;
+//  if(likely((pa->pid == 0 && (pa->cpu != pb->cpu))))
+//    ret = FALSE;
+//  if(unlikely(ltt_time_compare(pa->birth, pb->birth) != 0))
+//    ret = FALSE;
+//  if(unlikely(pa->trace_num != pb->trace_num))
+//    ret = FALSE;
+//
+//  return ret;
+//}
+
+static guint resource_list_hash_fct(gconstpointer key)
 {
-  gchar *a_name;
-  gchar *a_brand;
-  guint a_pid, a_tgid, a_ppid, a_cpu;
-  gulong a_birth_s, a_birth_ns;
-  guint a_trace;
-
-  gchar *b_name;
-  gchar *b_brand;
-  guint b_pid, b_tgid, b_ppid, b_cpu;
-  gulong b_birth_s, b_birth_ns;
-  guint b_trace;
-
-  gtk_tree_model_get(model,
-           it_a,
-           PROCESS_COLUMN, &a_name,
-           BRAND_COLUMN, &a_brand,
-           PID_COLUMN, &a_pid,
-           TGID_COLUMN, &a_tgid,
-           PPID_COLUMN, &a_ppid,
-           CPU_COLUMN, &a_cpu,
-           BIRTH_S_COLUMN, &a_birth_s,
-           BIRTH_NS_COLUMN, &a_birth_ns,
-           TRACE_COLUMN, &a_trace,
-           -1);
-
-  gtk_tree_model_get(model,
-           it_b,
-           PROCESS_COLUMN, &b_name,
-           BRAND_COLUMN, &b_brand,
-           PID_COLUMN, &b_pid,
-           TGID_COLUMN, &b_tgid,
-           PPID_COLUMN, &b_ppid,
-           CPU_COLUMN, &b_cpu,
-           BIRTH_S_COLUMN, &b_birth_s,
-           BIRTH_NS_COLUMN, &b_birth_ns,
-           TRACE_COLUMN, &b_trace,
-           -1);
-
-  
-  /* Order by PID */
-  if(a_pid == 0 &&  b_pid == 0) {
-    /* If 0, order by CPU */
-    if(a_cpu > b_cpu) return 1;
-    if(a_cpu < b_cpu) return -1;
-
-  } else { /* if not 0, order by pid */
-
-    if(a_pid > b_pid) return 1;
-    if(a_pid < b_pid) return -1;
-  }
-
-  /* Order by birth second */
-
-  if(a_birth_s > b_birth_s) return 1;
-  if(a_birth_s < b_birth_s) return -1;
-  
-
-  /* Order by birth nanosecond */
-  if(a_birth_ns > b_birth_ns) return 1;
-  if(a_birth_ns < b_birth_ns) return -1;
-  
-  /* Order by trace_num */
-  if(a_trace > b_trace) return 1;
-  if(a_trace < b_trace) return -1;
-
-  return 0;
-
+  gchar *name = g_quark_to_string(((const ResourceInfo*)key)->name);
+  return g_str_hash(name);
 }
 
-static guint process_list_hash_fct(gconstpointer key)
+static gboolean resource_list_equ_fct(gconstpointer a, gconstpointer b)
 {
-  guint pid = ((const ProcessInfo*)key)->pid;
-  return ((pid>>8 ^ pid>>4 ^ pid>>2 ^ pid) ^ ((const ProcessInfo*)key)->cpu);
-}
-
-/* If hash is good, should be different */
-static gboolean process_list_equ_fct(gconstpointer a, gconstpointer b)
-{
-  const ProcessInfo *pa = (const ProcessInfo*)a;
-  const ProcessInfo *pb = (const ProcessInfo*)b;
+  const ResourceInfo *pa = (const ResourceInfo*)a;
+  const ResourceInfo *pb = (const ResourceInfo*)b;
   
   gboolean ret = TRUE;
 
-  if(likely(pa->pid != pb->pid))
-    ret = FALSE;
-  if(likely((pa->pid == 0 && (pa->cpu != pb->cpu))))
-    ret = FALSE;
-  if(unlikely(ltt_time_compare(pa->birth, pb->birth) != 0))
+  /* TODO pmf: add some else's here to make it faster */
+  /* TODO pmf: this is highly inefficient */
+
+  if(likely(strcmp(g_quark_to_string(pa->name), g_quark_to_string(pb->name)) != 0))
     ret = FALSE;
   if(unlikely(pa->trace_num != pb->trace_num))
     ret = FALSE;
@@ -173,8 +198,8 @@ gboolean scroll_event(GtkWidget *widget, GdkEventScroll *event, gpointer data)
 }
 
 
-static void update_index_to_pixmap_each(ProcessInfo *key,
-                                        HashedProcessData *value,
+static void update_index_to_pixmap_each(ResourceInfo *key,
+                                        HashedResourceData *value,
                                         ProcessList *process_list)
 {
   guint array_index = processlist_get_index_from_data(process_list, value);
@@ -198,8 +223,8 @@ void update_index_to_pixmap(ProcessList *process_list)
 }
 
 
-static void update_pixmap_size_each(ProcessInfo *key,
-                                    HashedProcessData *value,
+static void update_pixmap_size_each(ResourceInfo *key,
+                                    HashedResourceData *value,
                                     guint width)
 {
   GdkPixmap *old_pixmap = value->pixmap;
@@ -229,8 +254,8 @@ typedef struct _CopyPixmap {
   gint xsrc, ysrc, xdest, ydest, width, height;
 } CopyPixmap;
 
-static void copy_pixmap_region_each(ProcessInfo *key,
-                                    HashedProcessData *value,
+static void copy_pixmap_region_each(ResourceInfo *key,
+                                    HashedResourceData *value,
                                     CopyPixmap *cp)
 {
   GdkPixmap *src = cp->src;
@@ -269,8 +294,8 @@ typedef struct _RectanglePixmap {
   GdkGC *gc;
 } RectanglePixmap;
 
-static void rectangle_pixmap_each(ProcessInfo *key,
-                                  HashedProcessData *value,
+static void rectangle_pixmap_each(ResourceInfo *key,
+                                  HashedResourceData *value,
                                   RectanglePixmap *rp)
 {
   if(rp->height == -1)
@@ -360,21 +385,21 @@ ProcessList *processlist_construct(void)
 
   g_object_unref (G_OBJECT (process_list->list_store));
 
-  gtk_tree_sortable_set_default_sort_func(
-      GTK_TREE_SORTABLE(process_list->list_store),
-      process_sort_func,
-      NULL,
-      NULL);
- 
-
-  gtk_tree_sortable_set_sort_column_id(
-      GTK_TREE_SORTABLE(process_list->list_store),
-      GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
-      GTK_SORT_ASCENDING);
+//  gtk_tree_sortable_set_default_sort_func(
+//      GTK_TREE_SORTABLE(process_list->list_store),
+//      process_sort_func,
+//      NULL,
+//      NULL);
+// 
+//
+//  gtk_tree_sortable_set_sort_column_id(
+//      GTK_TREE_SORTABLE(process_list->list_store),
+//      GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
+//      GTK_SORT_ASCENDING);
 
 
   process_list->process_hash = g_hash_table_new_full(
-      process_list_hash_fct, process_list_equ_fct,
+      resource_list_hash_fct, resource_list_equ_fct,
       destroy_hash_key, destroy_hash_data
       );
   
@@ -412,7 +437,7 @@ ProcessList *processlist_construct(void)
   column = gtk_tree_view_column_new_with_attributes ( "Resource",
                 renderer,
                 "text",
-                PROCESS_COLUMN,
+                NAME_COLUMN,
                 NULL);
   gtk_tree_view_column_set_alignment (column, 0.0);
   gtk_tree_view_column_set_fixed_width (column, 45);
@@ -514,8 +539,8 @@ void processlist_destroy(ProcessList *process_list)
   g_debug("processlist_destroy end");
 }
 
-static gboolean remove_hash_item(ProcessInfo *process_info,
-                                 HashedProcessData *hashed_process_data,
+static gboolean remove_hash_item(ResourceInfo *process_info,
+                                 HashedResourceData *hashed_process_data,
                                  ProcessList *process_list)
 {
   GtkTreeIter iter;
@@ -525,11 +550,12 @@ static gboolean remove_hash_item(ProcessInfo *process_info,
   gtk_list_store_remove (process_list->list_store, &iter);
   gdk_pixmap_unref(hashed_process_data->pixmap);
 
-  if(likely(process_list->current_hash_data != NULL)) {
-    if(likely(hashed_process_data ==
-                process_list->current_hash_data[process_info->trace_num][process_info->cpu]))
-      process_list->current_hash_data[process_info->trace_num][process_info->cpu] = NULL;
-  }
+// TODO pmf: check this; might be needed
+//  if(likely(process_list->current_hash_data != NULL)) {
+//    if(likely(hashed_process_data ==
+//                process_list->current_hash_data[process_info->trace_num][process_info->cpu]))
+//      process_list->current_hash_data[process_info->trace_num][process_info->cpu] = NULL;
+//  }
   return TRUE; /* remove the element from the hash table */
 }
 
@@ -562,41 +588,41 @@ void destroy_hash_data(gpointer data)
 }
 
 
-void processlist_set_name(ProcessList *process_list,
-    GQuark name,
-    HashedProcessData *hashed_process_data)
-{
-  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
-        PROCESS_COLUMN, g_quark_to_string(name),
-        -1);
-}
-
-void processlist_set_brand(ProcessList *process_list,
-    GQuark brand,
-    HashedProcessData *hashed_process_data)
-{
-  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
-        BRAND_COLUMN, g_quark_to_string(brand),
-        -1);
-}
-
-void processlist_set_tgid(ProcessList *process_list,
-    guint tgid,
-    HashedProcessData *hashed_process_data)
-{
-  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
-        TGID_COLUMN, tgid,
-        -1);
-}
-
-void processlist_set_ppid(ProcessList *process_list,
-    guint ppid,
-    HashedProcessData *hashed_process_data)
-{
-  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
-        PPID_COLUMN, ppid,
-        -1);
-}
+//void processlist_set_name(ProcessList *process_list,
+//    GQuark name,
+//    HashedResourceData *hashed_process_data)
+//{
+//  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
+//        PROCESS_COLUMN, g_quark_to_string(name),
+//        -1);
+//}
+//
+//void processlist_set_brand(ProcessList *process_list,
+//    GQuark brand,
+//    HashedResourceData *hashed_process_data)
+//{
+//  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
+//        BRAND_COLUMN, g_quark_to_string(brand),
+//        -1);
+//}
+//
+//void processlist_set_tgid(ProcessList *process_list,
+//    guint tgid,
+//    HashedResourceData *hashed_process_data)
+//{
+//  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
+//        TGID_COLUMN, tgid,
+//        -1);
+//}
+//
+//void processlist_set_ppid(ProcessList *process_list,
+//    guint ppid,
+//    HashedResourceData *hashed_process_data)
+//{
+//  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
+//        PPID_COLUMN, ppid,
+//        -1);
+//}
 
 int resourcelist_add(  ProcessList *process_list,
       Drawing_t *drawing,
@@ -605,18 +631,19 @@ int resourcelist_add(  ProcessList *process_list,
 //      guint cpu,
 //      guint ppid,
 //      LttTime *birth,
-//      guint trace_num,
+      guint trace_num,
       GQuark name,
 //      GQuark brand,
       guint *height,
-      ResourceInfo **pm_process_info,
-      ProcessInfo
-      ResourceProcessData **pm_hashed_process_data)
+      ResourceInfo **pm_resource_info,
+      HashedResourceData **pm_hashed_resource_data)
 {
-  ResourceInfo *Process_Info = g_new(ProcessInfo, 1);
-  HashedResourceData *hashed_resource_data = g_new(HashedProcessData, 1);
+  ResourceInfo *Resource_Info = g_new(ResourceInfo, 1);
+  HashedResourceData *hashed_resource_data = g_new(HashedResourceData, 1);
   *pm_hashed_resource_data = hashed_resource_data;
   *pm_resource_info = Resource_Info;
+
+  Resource_Info->name = name;
  
 //  Process_Info->pid = pid;
 //  Process_Info->tgid = tgid;
@@ -626,7 +653,7 @@ int resourcelist_add(  ProcessList *process_list,
 //    Process_Info->cpu = 0;
 //  Process_Info->ppid = ppid;
 //  Process_Info->birth = *birth;
-//  Process_Info->trace_num = trace_num;
+  Resource_Info->trace_num = trace_num;
 
   /* When we create it from before state update, we are sure that the
    * last event occured before the beginning of the global area.
@@ -653,37 +680,37 @@ int resourcelist_add(  ProcessList *process_list,
  
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->list_store,
-                          &hashed_process_data->y_iter);
+                          &hashed_resource_data->y_iter);
 
-  gtk_list_store_set (  process_list->list_store, &hashed_process_data->y_iter,
-        PROCESS_COLUMN, g_quark_to_string(name),
+  gtk_list_store_set (  process_list->list_store, &hashed_resource_data->y_iter,
+        NAME_COLUMN, g_quark_to_string(name),
         -1);
   
   g_hash_table_insert(process_list->process_hash,
-        (gpointer)Process_Info,
-        (gpointer)hashed_process_data);
+        (gpointer)Resource_Info,
+        (gpointer)hashed_resource_data);
   
   process_list->number_of_process++; // of resources
 
-  hashed_process_data->height = process_list->cell_height;
+  hashed_resource_data->height = process_list->cell_height;
 
-  g_assert(hashed_process_data->height != 0);
+  g_assert(hashed_resource_data->height != 0);
 
-  *height = hashed_process_data->height * process_list->number_of_process;
+  *height = hashed_resource_data->height * process_list->number_of_process;
 
-  hashed_process_data->pixmap = 
+  hashed_resource_data->pixmap = 
         gdk_pixmap_new(drawing->drawing_area->window,
                        drawing->alloc_width,
-                       hashed_process_data->height,
+                       hashed_resource_data->height,
                        -1);
   
   // Clear the image with black background
-  gdk_draw_rectangle (hashed_process_data->pixmap,
+  gdk_draw_rectangle (hashed_resource_data->pixmap,
         drawing->drawing_area->style->black_gc,
         TRUE,
         0, 0,
         drawing->alloc_width,
-        hashed_process_data->height);
+        hashed_resource_data->height);
 
   update_index_to_pixmap(process_list);
 
@@ -700,11 +727,11 @@ int resourcelist_add(  ProcessList *process_list,
 //      GQuark name,
 //      GQuark brand,
 //      guint *height,
-//      ProcessInfo **pm_process_info,
-//      HashedProcessData **pm_hashed_process_data)
+//      ResourceInfo **pm_process_info,
+//      HashedResourceData **pm_hashed_process_data)
 //{
-//  ProcessInfo *Process_Info = g_new(ProcessInfo, 1);
-//  HashedProcessData *hashed_process_data = g_new(HashedProcessData, 1);
+//  ResourceInfo *Process_Info = g_new(ResourceInfo, 1);
+//  HashedResourceData *hashed_process_data = g_new(HashedResourceData, 1);
 //  *pm_hashed_process_data = hashed_process_data;
 //  *pm_process_info = Process_Info;
 // 
@@ -786,55 +813,56 @@ int resourcelist_add(  ProcessList *process_list,
 //  return 0;
 //}
 
-int processlist_remove( ProcessList *process_list,
-      guint pid,
-      guint cpu,
-      LttTime *birth,
-      guint trace_num)
-{
-  ProcessInfo process_info;
-  HashedProcessData *hashed_process_data;
-  GtkTreeIter iter;
-  
-  process_info.pid = pid;
-  if(pid == 0)
-    process_info.cpu = cpu;
-  else
-    process_info.cpu = 0;
-  process_info.birth = *birth;
-  process_info.trace_num = trace_num;
-
-
-  hashed_process_data = 
-    (HashedProcessData*)g_hash_table_lookup(
-          process_list->process_hash,
-          &process_info);
-  if(likely(hashed_process_data != NULL))
-  {
-    iter = hashed_process_data->y_iter;
-
-    gtk_list_store_remove (process_list->list_store, &iter);
-    
-    g_hash_table_remove(process_list->process_hash,
-        &process_info);
-
-    if(likely(process_list->current_hash_data != NULL)) {
-      if(likely(hashed_process_data == process_list->current_hash_data[trace_num][cpu])) {
-        process_list->current_hash_data[trace_num][cpu] = NULL;
-      }
-    }
-    
-    gdk_pixmap_unref(hashed_process_data->pixmap);
-    
-    update_index_to_pixmap(process_list);
-
-    process_list->number_of_process--;
-
-    return 0; 
-  } else {
-    return 1;
-  }
-}
+// TODO pmf: make this work once again
+//int processlist_remove( ProcessList *process_list,
+//      guint pid,
+//      guint cpu,
+//      LttTime *birth,
+//      guint trace_num)
+//{
+//  ResourceInfo process_info;
+//  HashedResourceData *hashed_process_data;
+//  GtkTreeIter iter;
+//  
+//  process_info.pid = pid;
+//  if(pid == 0)
+//    process_info.cpu = cpu;
+//  else
+//    process_info.cpu = 0;
+//  process_info.birth = *birth;
+//  process_info.trace_num = trace_num;
+//
+//
+//  hashed_process_data = 
+//    (HashedResourceData*)g_hash_table_lookup(
+//          process_list->process_hash,
+//          &process_info);
+//  if(likely(hashed_process_data != NULL))
+//  {
+//    iter = hashed_process_data->y_iter;
+//
+//    gtk_list_store_remove (process_list->list_store, &iter);
+//    
+//    g_hash_table_remove(process_list->process_hash,
+//        &process_info);
+//
+//    if(likely(process_list->current_hash_data != NULL)) {
+//      if(likely(hashed_process_data == process_list->current_hash_data[trace_num][cpu])) {
+//        process_list->current_hash_data[trace_num][cpu] = NULL;
+//      }
+//    }
+//    
+//    gdk_pixmap_unref(hashed_process_data->pixmap);
+//    
+//    update_index_to_pixmap(process_list);
+//
+//    process_list->number_of_process--;
+//
+//    return 0; 
+//  } else {
+//    return 1;
+//  }
+//}
 
 
 #if 0
