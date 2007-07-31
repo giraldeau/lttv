@@ -331,6 +331,22 @@ void drawing_data_request(Drawing_t *drawing,
 //          &g_array_index(hooks, LttvTraceHook, before_hn++));
 //      if(ret) before_hn--;
 
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_ISSUE,
+          LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
+          before_bdev_event_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
+
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_COMPLETE,
+          LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
+          before_bdev_event_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
+
 #if 0
       lttv_trace_find_hook(ts->parent.t,
           "core", "process", "event_sub_id", 
@@ -429,22 +445,6 @@ void drawing_data_request(Drawing_t *drawing,
 //          events_request,
 //          &g_array_index(hooks, LttvTraceHook, after_hn++));
 //      if(ret) after_hn--;
-
-      ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_ISSUE,
-          LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
-          before_bdev_event_hook,
-          events_request,
-          &g_array_index(hooks, LttvTraceHook, after_hn++));
-      if(ret) after_hn--;
-
-      ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_COMPLETE,
-          LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
-          before_bdev_event_hook,
-          events_request,
-          &g_array_index(hooks, LttvTraceHook, after_hn++));
-      if(ret) after_hn--;
 
       hooks = g_array_set_size(hooks, after_hn);
 
