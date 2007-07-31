@@ -1736,7 +1736,7 @@ static void cpu_push_mode(LttvCPUState *cpust, LttvCPUMode state)
 
 static void cpu_pop_mode(LttvCPUState *cpust)
 {
-  if(cpust->mode_stack->len == 1)
+  if(cpust->mode_stack->len <= 1)
     cpu_set_base_mode(cpust, LTTV_CPU_UNKNOWN);
   else
     g_array_set_size(cpust->mode_stack, cpust->mode_stack->len - 1);
@@ -1757,7 +1757,7 @@ static void bdev_push_mode(LttvBdevState *bdevst, LttvBdevMode state)
 
 static void bdev_pop_mode(LttvBdevState *bdevst)
 {
-  if(bdevst->mode_stack->len == 1)
+  if(bdevst->mode_stack->len <= 1)
     bdev_set_base_mode(bdevst, LTTV_BDEV_UNKNOWN);
   else
     g_array_set_size(bdevst->mode_stack, bdevst->mode_stack->len - 1);
@@ -1777,7 +1777,7 @@ static void irq_push_mode(LttvIRQState *irqst, LttvIRQMode state)
 
 static void irq_pop_mode(LttvIRQState *irqst)
 {
-  if(irqst->mode_stack->len == 1)
+  if(irqst->mode_stack->len <= 1)
     irq_set_base_mode(irqst, LTTV_IRQ_UNKNOWN);
   else
     g_array_set_size(irqst->mode_stack, irqst->mode_stack->len - 1);
