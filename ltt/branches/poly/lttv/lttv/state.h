@@ -202,7 +202,8 @@ typedef GQuark LttvCPUMode;
 extern LttvCPUMode
   LTTV_CPU_UNKNOWN,
   LTTV_CPU_IDLE,
-  LTTV_CPU_BUSY;
+  LTTV_CPU_BUSY,
+  LTTV_CPU_IRQ;
 
 typedef struct _LttvExecutionState {
   LttvExecutionMode t;

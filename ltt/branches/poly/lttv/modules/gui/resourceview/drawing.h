@@ -51,10 +51,12 @@ typedef enum _draw_color {
                 NUM_COLORS } draw_color; 
 
 typedef enum _draw_color_cpu {
+                COL_CPU_UNKNOWN,
                 COL_CPU_IDLE,
                 COL_CPU_BUSY,
-                COL_CPU_UNKNOWN,
-                NUM_COLORS_CPU } draw_color_cpu; 
+                COL_CPU_IRQ,
+                NUM_COLORS_CPU
+} draw_color_cpu; 
 
 extern GdkColor drawing_colors[NUM_COLORS];
 extern GdkColor drawing_colors_cpu[NUM_COLORS_CPU];

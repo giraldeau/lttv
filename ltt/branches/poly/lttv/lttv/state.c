@@ -130,7 +130,8 @@ LttvProcessType
 LttvCPUMode
   LTTV_CPU_UNKNOWN,
   LTTV_CPU_IDLE,
-  LTTV_CPU_BUSY;
+  LTTV_CPU_BUSY,
+  LTTV_CPU_IRQ;
 
 static GQuark
   LTTV_STATE_TRACEFILES,
@@ -1984,6 +1985,11 @@ static gboolean irq_entry(void *hook_data, void *call_data)
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_IRQ, submode);
+
+  /* update cpu status */
+  s->cpu_state->previous_state = s->cpu_state->present_state;
+  s->cpu_state->present_state = LTTV_CPU_IRQ;
+
   return FALSE;
 }
 
@@ -2002,6 +2008,10 @@ static gboolean irq_exit(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   pop_state(s, LTTV_STATE_IRQ);
+
+  /* update cpu status */
+  s->cpu_state->present_state = s->cpu_state->previous_state;
+
   return FALSE;
 }
 
@@ -3531,6 +3541,7 @@ static void module_init()
   LTTV_CPU_UNKNOWN = g_quark_from_string("unknown");
   LTTV_CPU_IDLE = g_quark_from_string("idle");
   LTTV_CPU_BUSY = g_quark_from_string("busy");
+  LTTV_CPU_IRQ = g_quark_from_string("irq");
 }
 
 static void module_destroy() 

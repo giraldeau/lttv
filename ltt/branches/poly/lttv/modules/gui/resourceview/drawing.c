@@ -86,9 +86,10 @@ GdkColor drawing_colors[NUM_COLORS] =
 
 GdkColor drawing_colors_cpu[NUM_COLORS_CPU] =
 { /* Pixel, R, G, B */
-  { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_IDLE */
-  { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_BUSY */
-  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_UNKNOWN */
+  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_CPU_UNKNOWN */
+  { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_CPU_IDLE */
+  { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_CPU_BUSY */
+  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_CPU_IRQ */
 };
 
 
@@ -250,21 +251,21 @@ void drawing_data_request(Drawing_t *drawing,
 //          &g_array_index(hooks, LttvTraceHook, before_hn++));
 //      if(ret) before_hn--;
 //
-//      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
-//          LTT_FIELD_IRQ_ID, 0, 0,
-//          before_execmode_hook,
-//          events_request,
-//          &g_array_index(hooks, LttvTraceHook, before_hn++));
-//      if(ret) before_hn--;
-//
-//      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
-//          0, 0, 0, 
-//          before_execmode_hook,
-//          events_request,
-//          &g_array_index(hooks, LttvTraceHook, before_hn++));
-//      if(ret) before_hn--;
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
+          LTT_FIELD_IRQ_ID, 0, 0,
+          before_execmode_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
+
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
+          0, 0, 0, 
+          before_execmode_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
 //
 //      ret = lttv_trace_find_hook(ts->parent.t,
 //          LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY,
