@@ -43,79 +43,20 @@
  *****************************************************************************/
 
 
-//gint process_sort_func  ( GtkTreeModel *model,
-//        GtkTreeIter *it_a,
-//        GtkTreeIter *it_b,
-//        gpointer user_data)
-//{
-//  gchar *a_name;
-//  gchar *a_brand;
-//  guint a_pid, a_tgid, a_ppid, a_cpu;
-//  gulong a_birth_s, a_birth_ns;
-//  guint a_trace;
-//
-//  gchar *b_name;
-//  gchar *b_brand;
-//  guint b_pid, b_tgid, b_ppid, b_cpu;
-//  gulong b_birth_s, b_birth_ns;
-//  guint b_trace;
-//
-//  gtk_tree_model_get(model,
-//           it_a,
-//           PROCESS_COLUMN, &a_name,
-//           BRAND_COLUMN, &a_brand,
-//           PID_COLUMN, &a_pid,
-//           TGID_COLUMN, &a_tgid,
-//           PPID_COLUMN, &a_ppid,
-//           CPU_COLUMN, &a_cpu,
-//           BIRTH_S_COLUMN, &a_birth_s,
-//           BIRTH_NS_COLUMN, &a_birth_ns,
-//           TRACE_COLUMN, &a_trace,
-//           -1);
-//
-//  gtk_tree_model_get(model,
-//           it_b,
-//           PROCESS_COLUMN, &b_name,
-//           BRAND_COLUMN, &b_brand,
-//           PID_COLUMN, &b_pid,
-//           TGID_COLUMN, &b_tgid,
-//           PPID_COLUMN, &b_ppid,
-//           CPU_COLUMN, &b_cpu,
-//           BIRTH_S_COLUMN, &b_birth_s,
-//           BIRTH_NS_COLUMN, &b_birth_ns,
-//           TRACE_COLUMN, &b_trace,
-//           -1);
-//
-//  
-//  /* Order by PID */
-//  if(a_pid == 0 &&  b_pid == 0) {
-//    /* If 0, order by CPU */
-//    if(a_cpu > b_cpu) return 1;
-//    if(a_cpu < b_cpu) return -1;
-//
-//  } else { /* if not 0, order by pid */
-//
-//    if(a_pid > b_pid) return 1;
-//    if(a_pid < b_pid) return -1;
-//  }
-//
-//  /* Order by birth second */
-//
-//  if(a_birth_s > b_birth_s) return 1;
-//  if(a_birth_s < b_birth_s) return -1;
-//  
-//
-//  /* Order by birth nanosecond */
-//  if(a_birth_ns > b_birth_ns) return 1;
-//  if(a_birth_ns < b_birth_ns) return -1;
-//  
-//  /* Order by trace_num */
-//  if(a_trace > b_trace) return 1;
-//  if(a_trace < b_trace) return -1;
-//
-//  return 0;
-//
-//}
+gint resource_sort_func  ( GtkTreeModel *model,
+        GtkTreeIter *it_a,
+        GtkTreeIter *it_b,
+        gpointer user_data)
+{
+  gchar *a_name;
+  gchar *b_name;
+
+  gtk_tree_model_get(model, it_a, NAME_COLUMN, &a_name, -1);
+
+  gtk_tree_model_get(model, it_b, NAME_COLUMN, &b_name, -1);
+
+  return strcmp(a_name, b_name);
+}
 
 //static guint process_list_hash_fct(gconstpointer key)
 //{
@@ -385,17 +326,17 @@ ProcessList *processlist_construct(void)
 
   g_object_unref (G_OBJECT (process_list->list_store));
 
-//  gtk_tree_sortable_set_default_sort_func(
-//      GTK_TREE_SORTABLE(process_list->list_store),
-//      process_sort_func,
-//      NULL,
-//      NULL);
-// 
-//
-//  gtk_tree_sortable_set_sort_column_id(
-//      GTK_TREE_SORTABLE(process_list->list_store),
-//      GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
-//      GTK_SORT_ASCENDING);
+  gtk_tree_sortable_set_default_sort_func(
+      GTK_TREE_SORTABLE(process_list->list_store),
+      resource_sort_func,
+      NULL,
+      NULL);
+ 
+
+  gtk_tree_sortable_set_sort_column_id(
+      GTK_TREE_SORTABLE(process_list->list_store),
+      GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
+      GTK_SORT_ASCENDING);
 
 
   process_list->process_hash = g_hash_table_new_full(
