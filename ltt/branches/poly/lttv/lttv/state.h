@@ -293,6 +293,7 @@ GType lttv_traceset_state_get_type (void);
 
 typedef struct _LttvCPUState {
   GArray *mode_stack;
+  guint last_irq;
 } LttvCPUState;
 
 typedef struct _LttvIRQState {

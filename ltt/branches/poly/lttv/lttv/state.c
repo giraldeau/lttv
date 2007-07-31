@@ -2059,6 +2059,7 @@ static gboolean irq_entry(void *hook_data, void *call_data)
   cpu_push_mode(s->cpu_state, LTTV_CPU_IRQ);
 
   /* update irq status */
+  s->cpu_state->last_irq = irq;
   irq_push_mode(&ts->irq_states[irq], LTTV_IRQ_BUSY);
 
   return FALSE;
@@ -2077,11 +2078,15 @@ static gboolean soft_irq_exit(void *hook_data, void *call_data)
 static gboolean irq_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
 
   pop_state(s, LTTV_STATE_IRQ);
 
   /* update cpu status */
   cpu_pop_mode(s->cpu_state);
+
+  /* update irq status */
+  irq_pop_mode(&ts->irq_states[s->cpu_state->last_irq]);
 
   return FALSE;
 }

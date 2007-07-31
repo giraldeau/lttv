@@ -59,8 +59,16 @@ typedef enum _draw_color_cpu {
                 NUM_COLORS_CPU
 } draw_color_cpu; 
 
+typedef enum _draw_color_irq {
+                COL_IRQ_UNKNOWN,
+                COL_IRQ_IDLE,
+                COL_IRQ_BUSY,
+                NUM_COLORS_IRQ
+} draw_color_irq; 
+
 extern GdkColor drawing_colors[NUM_COLORS];
 extern GdkColor drawing_colors_cpu[NUM_COLORS_CPU];
+extern GdkColor drawing_colors_irq[NUM_COLORS_IRQ];
 
 /* This part of the viewer does :
  * Draw horizontal lines, getting graphic context as arg.

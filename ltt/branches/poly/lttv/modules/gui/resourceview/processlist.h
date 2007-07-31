@@ -52,7 +52,7 @@ typedef struct _ResourceInfo {
   GQuark name;
   guint trace_num;
   guint type;
-  guint id;
+  guint64 id;
 } ResourceInfo;
 
 typedef struct _HashedResourceData {
@@ -118,11 +118,10 @@ void processlist_clear(ProcessList *process_list);
 
 // out : success (0) and height
 /* CPU num is only used for PID 0 */
-int processlist_add(ProcessList *process_list, Drawing_t * drawing, 
-    guint pid, guint tgid, guint cpu, guint ppid,
-    LttTime *birth, guint trace_num, GQuark name, GQuark brand, guint *height,
-    ResourceInfo **process_info,
-    HashedResourceData **hashed_process_data);
+int resourcelist_add(  ProcessList *process_list, Drawing_t *drawing, guint trace_num,
+      GQuark name, guint type, guint id, guint *height, ResourceInfo **pm_resource_info,
+      HashedResourceData **pm_hashed_resource_data);
+
 // out : success (0) and height
 int processlist_remove(ProcessList *process_list, guint pid, guint cpu, 
     LttTime *birth, guint trace_num);

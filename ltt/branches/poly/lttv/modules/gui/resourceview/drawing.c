@@ -93,6 +93,12 @@ GdkColor drawing_colors_cpu[NUM_COLORS_CPU] =
   { 0, 0xFF00, 0xFF00, 0x0100 }, /* COL_CPU_TRAP */
 };
 
+GdkColor drawing_colors_irq[NUM_COLORS_IRQ] =
+{ /* Pixel, R, G, B */
+  { 0, 0x0000, 0x0000, 0x0000 }, /* COL_IRQ_UNKNOWN */
+  { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_IRQ_IDLE */
+  { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_IRQ_BUSY */
+};
 
 /*****************************************************************************
  *                              drawing functions                            *
@@ -1126,8 +1132,7 @@ void drawing_destroy(Drawing_t *drawing)
 
   gdk_colormap_free_colors(colormap, drawing_colors, NUM_COLORS);
   gdk_colormap_free_colors(colormap, drawing_colors_cpu, NUM_COLORS_CPU);
-  
-
+  gdk_colormap_free_colors(colormap, drawing_colors_irq, NUM_COLORS_IRQ);
 
   // Do not unref here, Drawing_t destroyed by it's widget.
   //g_object_unref( G_OBJECT(drawing->drawing_area));
