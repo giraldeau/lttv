@@ -97,7 +97,7 @@ GdkColor drawing_colors_irq[NUM_COLORS_IRQ] =
 { /* Pixel, R, G, B */
   { 0, 0x0000, 0x0000, 0x0000 }, /* COL_IRQ_UNKNOWN */
   { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_IRQ_IDLE */
-  { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_IRQ_BUSY */
+  { 0, 0xFFFF, 0x5E00, 0x0000 }, /* COL_IRQ_BUSY */
 };
 
 /*****************************************************************************
@@ -1074,6 +1074,8 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   gdk_colormap_alloc_colors(colormap, drawing_colors, NUM_COLORS, FALSE,
                             TRUE, success);
   gdk_colormap_alloc_colors(colormap, drawing_colors_cpu, NUM_COLORS_CPU, FALSE,
+                            TRUE, success);
+  gdk_colormap_alloc_colors(colormap, drawing_colors_irq, NUM_COLORS_IRQ, FALSE,
                             TRUE, success);
   
   drawing->gc =
