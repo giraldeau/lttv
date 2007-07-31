@@ -150,7 +150,8 @@ static GQuark
   LTTV_STATE_TIME,
   LTTV_STATE_HOOKS,
   LTTV_STATE_NAME_TABLES,
-  LTTV_STATE_TRACE_STATE_USE_COUNT;
+  LTTV_STATE_TRACE_STATE_USE_COUNT,
+  LTTV_STATE_RESOURCE_CPUS;
 
 static void create_max_time(LttvTraceState *tcs);
 
@@ -1087,6 +1088,35 @@ static GHashTable *lttv_state_copy_process_table(GHashTable *processes)
   return new_processes;
 }
 
+static LttvCPUState *lttv_state_copy_cpu_states(LttvCPUState *states, guint n)
+{
+  guint i,j;
+  LttvCPUState *retval;
+
+  retval = g_malloc(n*sizeof(LttvCPUState));
+
+  for(i=0; i<n; i++) {
+    retval[i].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvCPUMode));
+    retval[i].last_irq = states[i].last_irq;
+    g_array_set_size(retval[i].mode_stack, states[i].mode_stack->len);
+    for(j=0; j<states[i].mode_stack->len; j++) {
+      g_array_index(retval[i].mode_stack, GQuark, j) = g_array_index(states[i].mode_stack, GQuark, j);
+    }
+  }
+
+  return retval;
+}
+
+static void lttv_state_free_cpu_states(LttvCPUState *states, guint n)
+{
+  guint i;
+
+  for(i=0; i<n; i++) {
+    g_array_free(states[i].mode_stack, FALSE);
+  }
+
+  g_free(states);
+}
 
 /* The saved state for each trace contains a member "processes", which
    stores a copy of the process table, and a member "tracefiles" with
@@ -1168,6 +1198,11 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
           tfcs->parent.timestamp.tv_sec, tfcs->parent.timestamp.tv_nsec);
     }
   }
+
+  value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_CPUS,
+      LTTV_POINTER);
+  guint size = sizeof(LttvCPUState)*nb_cpus;
+  *(value.v_pointer) = lttv_state_copy_cpu_states(self->cpu_states, nb_cpus);
 }
 
 
@@ -1214,11 +1249,18 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     g_assert(self->running_process[i] != NULL);
   }
 
- 
+  printf("state restore\n"); 
+
   nb_tracefile = self->parent.tracefiles->len;
 
   //g_tree_destroy(tsc->pqueue);
   //tsc->pqueue = g_tree_new(compare_tracefile);
+
+  /* restore cpu resource states */
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_CPUS, &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_cpu_states(self->cpu_states, nb_cpus);
+  self->cpu_states = lttv_state_copy_cpu_states(*(value.v_pointer), nb_cpus);
  
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
@@ -1240,6 +1282,8 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
     //g_assert(*(value.v_pointer) != NULL);
     ep = *(value.v_pointer);
     g_assert(tfcs->parent.t_context != NULL);
+
+    tfcs->cpu_state = &self->cpu_states[tfcs->cpu];
     
     LttvTracefileContext *tfc = LTTV_TRACEFILE_CONTEXT(tfcs);
     g_tree_remove(tsc->pqueue, tfc);
@@ -3563,6 +3607,7 @@ static void module_init()
   LTTV_STATE_NAME_TABLES = g_quark_from_string("name tables");
   LTTV_STATE_TRACE_STATE_USE_COUNT = 
       g_quark_from_string("trace_state_use_count");
+  LTTV_STATE_RESOURCE_CPUS = g_quark_from_string("cpu resource states");
 
   
   LTT_FACILITY_KERNEL     = g_quark_from_string("kernel");
