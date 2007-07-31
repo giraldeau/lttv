@@ -364,7 +364,7 @@ static void irq_set_line_color(PropertiesLine *prop_line, LttvIRQState *s)
 static void bdev_set_line_color(PropertiesLine *prop_line, LttvBdevState *s)
 {
   GQuark present_state;
-  if(s->mode_stack->len == 0)
+  if(s == 0 || s->mode_stack->len == 0)
     present_state = LTTV_BDEV_UNKNOWN;
   else
     present_state = ((GQuark*)s->mode_stack->data)[s->mode_stack->len-1];
@@ -1395,9 +1395,8 @@ int before_bdev_event_hook(void *hook_data, void *call_data)
   guint trace_num = ts->parent.index;
 
   LttvBdevState *bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint); 
-  /* TODO: if bdev not found, draw right colour to indicate unknown state */
-  if(bdev == NULL)
-    return 0;
+  /* the result of the lookup might be NULL. that's ok, the rest of the function
+     should understand it was not found and that its state is unknown */
 
 //  guint pid = process->pid;
 
@@ -2109,7 +2108,8 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
               irq_set_line_color(&prop_line, &ts->irq_states[process_info->id]);
             else if(process_info->type == 2) {
               gint devcode_gint = process_info->id;
-              LttvBdevState *bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint); 
+              LttvBdevState *bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint);
+              // the lookup may return null; bdev_set_line_color must act appropriately
               bdev_set_line_color(&prop_line, bdev);
             }
             
