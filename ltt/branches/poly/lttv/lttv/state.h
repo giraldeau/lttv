@@ -206,6 +206,12 @@ extern LttvCPUMode
   LTTV_CPU_IRQ,
   LTTV_CPU_TRAP;
 
+typedef GQuark LttvIRQMode;
+extern LttvIRQMode
+  LTTV_IRQ_UNKNOWN,
+  LTTV_IRQ_IDLE,
+  LTTV_IRQ_BUSY;
+
 typedef struct _LttvExecutionState {
   LttvExecutionMode t;
   LttvExecutionSubmode n;
@@ -289,6 +295,10 @@ typedef struct _LttvCPUState {
   GArray *mode_stack;
 } LttvCPUState;
 
+typedef struct _LttvIRQState {
+  GArray *mode_stack;
+} LttvIRQState;
+
 struct _LttvTraceState {
   LttvTraceContext parent;
 
@@ -313,6 +323,7 @@ struct _LttvTraceState {
   LttvProcessState **running_process;
   gboolean has_precomputed_states;
   LttvCPUState *cpu_states; /* state of each cpu */
+  LttvIRQState *irq_states; /* state of each irq handler */
 };
 
 struct _LttvTraceStateClass {

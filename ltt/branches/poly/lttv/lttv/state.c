@@ -134,6 +134,11 @@ LttvCPUMode
   LTTV_CPU_IRQ,
   LTTV_CPU_TRAP;
 
+LttvIRQMode
+  LTTV_IRQ_UNKNOWN,
+  LTTV_IRQ_IDLE,
+  LTTV_IRQ_BUSY;
+
 static GQuark
   LTTV_STATE_TRACEFILES,
   LTTV_STATE_PROCESSES,
@@ -384,6 +389,7 @@ static void
 init(LttvTracesetState *self, LttvTraceset *ts)
 {
   guint i, j, nb_trace, nb_tracefile, nb_cpu;
+  guint64 nb_irq;
 
   LttvTraceContext *tc;
 
@@ -414,14 +420,23 @@ init(LttvTracesetState *self, LttvTraceset *ts)
 
     nb_tracefile = tc->tracefiles->len;
     nb_cpu = ltt_trace_get_num_cpu(tc->t);
+    nb_irq = tcs->nb_irqs;
     tcs->processes = NULL;
     tcs->usertraces = NULL;
     tcs->running_process = g_new(LttvProcessState*, nb_cpu);
+
     /* init cpu resource stuff */
     tcs->cpu_states = g_new(LttvCPUState, nb_cpu);
     for(j = 0; j<nb_cpu; j++) {
       tcs->cpu_states[j].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvCPUMode));
       g_assert(tcs->cpu_states[j].mode_stack != NULL);
+    } 
+
+    /* init irq resource stuff */
+    tcs->irq_states = g_new(LttvIRQState, nb_irq);
+    for(j = 0; j<nb_irq; j++) {
+      tcs->irq_states[j].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvIRQMode));
+      g_assert(tcs->irq_states[j].mode_stack != NULL);
     } 
 
     restore_init_state(tcs);
@@ -1611,6 +1626,27 @@ static void cpu_pop_mode(LttvCPUState *cpust)
     g_array_set_size(cpust->mode_stack, cpust->mode_stack->len - 1);
 }
 
+/* clears the stack and sets the state passed as argument */
+static void irq_set_base_mode(LttvIRQState *irqst, LttvIRQMode state)
+{
+  g_array_set_size(irqst->mode_stack, 1);
+  ((GQuark *)irqst->mode_stack->data)[0] = state;
+}
+
+static void irq_push_mode(LttvIRQState *irqst, LttvIRQMode state)
+{
+  g_array_set_size(irqst->mode_stack, irqst->mode_stack->len + 1);
+  ((GQuark *)irqst->mode_stack->data)[irqst->mode_stack->len - 1] = state;
+}
+
+static void irq_pop_mode(LttvIRQState *irqst)
+{
+  if(irqst->mode_stack->len == 1)
+    irq_set_base_mode(irqst, LTTV_IRQ_UNKNOWN);
+  else
+    g_array_set_size(irqst->mode_stack, irqst->mode_stack->len - 1);
+}
+
 static void push_state(LttvTracefileState *tfs, LttvExecutionMode t, 
     guint state_id)
 {
@@ -1991,6 +2027,7 @@ static gboolean trap_exit(void *hook_data, void *call_data)
 static gboolean irq_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   guint8 fac_id = ltt_event_facility_id(e);
   guint8 ev_id = ltt_event_eventtype_id(e);
@@ -2020,6 +2057,9 @@ static gboolean irq_entry(void *hook_data, void *call_data)
 
   /* update cpu status */
   cpu_push_mode(s->cpu_state, LTTV_CPU_IRQ);
+
+  /* update irq status */
+  irq_push_mode(&ts->irq_states[irq], LTTV_IRQ_BUSY);
 
   return FALSE;
 }
@@ -3574,6 +3614,10 @@ static void module_init()
   LTTV_CPU_BUSY = g_quark_from_string("busy");
   LTTV_CPU_IRQ = g_quark_from_string("irq");
   LTTV_CPU_TRAP = g_quark_from_string("trap");
+
+  LTTV_IRQ_UNKNOWN = g_quark_from_string("unknown");
+  LTTV_IRQ_IDLE = g_quark_from_string("idle");
+  LTTV_IRQ_BUSY = g_quark_from_string("busy");
 }
 
 static void module_destroy() 
