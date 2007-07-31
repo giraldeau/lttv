@@ -548,7 +548,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
                   width,
                   &x);
 
-
         /* Jump over draw if we are at the same x position */
         if(x == hashed_process_data->x.middle &&
              hashed_process_data->x.middle_used)
@@ -1396,7 +1395,9 @@ int before_bdev_event_hook(void *hook_data, void *call_data)
   guint trace_num = ts->parent.index;
 
   LttvBdevState *bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint); 
-  g_assert(bdev != NULL);
+  /* TODO: if bdev not found, draw right colour to indicate unknown state */
+  if(bdev == NULL)
+    return 0;
 
 //  guint pid = process->pid;
 
