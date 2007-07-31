@@ -185,6 +185,11 @@ static void lttv_state_free_process_table(GHashTable *processes);
 static void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp,
                        GPtrArray *quarktable);
 
+/* Resource function prototypes */
+static void bdev_state_free(gpointer key, gpointer value, gpointer user_data);
+static LttvBdevState *bdev_state_get(LttvTraceState *ts, guint16 devcode);
+
+
 void lttv_state_save(LttvTraceState *self, LttvAttribute *container)
 {
   LTTV_TRACE_STATE_GET_CLASS(self)->state_save(self, container);
@@ -298,6 +303,9 @@ restore_init_state(LttvTraceState *self)
     if(self->irq_states[i].mode_stack->len > 0)
       g_array_remove_range(self->irq_states[i].mode_stack, 0, self->irq_states[i].mode_stack->len);
   }
+
+  g_hash_table_foreach(self->bdev_states, bdev_state_free, NULL);
+  g_hash_table_steal_all(self->bdev_states);
   
 #if 0
   nb_tracefile = self->parent.tracefiles->len;
@@ -2259,7 +2267,7 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
   return FALSE;
 }
 
-LttvBdevState *bdev_state_get(LttvTraceState *ts, guint16 devcode)
+static LttvBdevState *bdev_state_get(LttvTraceState *ts, guint16 devcode)
 {
   gint devcode_gint = devcode;
   gpointer bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint);
@@ -2276,6 +2284,14 @@ LttvBdevState *bdev_state_get(LttvTraceState *ts, guint16 devcode)
   }
 
   return bdev;
+}
+
+static void bdev_state_free(gpointer key, gpointer value, gpointer user_data)
+{
+	LttvBdevState *bds = (LttvBdevState *) value;
+	
+	g_array_free(bds->mode_stack, FALSE);
+	g_free(bds);
 }
 
 static gboolean bdev_request_issue(void *hook_data, void *call_data)
