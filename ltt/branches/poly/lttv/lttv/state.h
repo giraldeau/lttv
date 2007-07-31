@@ -60,7 +60,8 @@ extern GQuark
     LTT_FACILITY_KERNEL_ARCH,
     LTT_FACILITY_FS,
     LTT_FACILITY_LIST,
-    LTT_FACILITY_USER_GENERIC;
+    LTT_FACILITY_USER_GENERIC,
+    LTT_FACILITY_BLOCK;
 
 /* Events Quarks */
 
@@ -83,7 +84,9 @@ extern GQuark
     LTT_EVENT_STATEDUMP_END,
     LTT_EVENT_FUNCTION_ENTRY,
     LTT_EVENT_FUNCTION_EXIT,
-    LTT_EVENT_THREAD_BRAND;
+    LTT_EVENT_THREAD_BRAND,
+    LTT_EVENT_REQUEST_ISSUE,
+    LTT_EVENT_REQUEST_COMPLETE;
 
 /* Fields Quarks */
 
@@ -106,7 +109,10 @@ extern GQuark
     LTT_FIELD_SUBMODE,
     LTT_FIELD_STATUS,
     LTT_FIELD_THIS_FN,
-    LTT_FIELD_CALL_SITE;
+    LTT_FIELD_CALL_SITE,
+    LTT_FIELD_MINOR,
+    LTT_FIELD_MAJOR,
+    LTT_FIELD_OPERATION;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
@@ -212,6 +218,13 @@ extern LttvIRQMode
   LTTV_IRQ_IDLE,
   LTTV_IRQ_BUSY;
 
+typedef GQuark LttvBdevMode;
+extern LttvBdevMode
+  LTTV_BDEV_UNKNOWN,
+  LTTV_BDEV_IDLE,
+  LTTV_BDEV_BUSY_READING,
+  LTTV_BDEV_BUSY_WRITING;
+
 typedef struct _LttvExecutionState {
   LttvExecutionMode t;
   LttvExecutionSubmode n;
@@ -300,6 +313,10 @@ typedef struct _LttvIRQState {
   GArray *mode_stack;
 } LttvIRQState;
 
+typedef struct _LttvBdevState {
+  GArray *mode_stack;
+} LttvBdevState;
+
 struct _LttvTraceState {
   LttvTraceContext parent;
 
@@ -325,6 +342,7 @@ struct _LttvTraceState {
   gboolean has_precomputed_states;
   LttvCPUState *cpu_states; /* state of each cpu */
   LttvIRQState *irq_states; /* state of each irq handler */
+  GHashTable *bdev_states; /* state of the block devices */
 };
 
 struct _LttvTraceStateClass {
@@ -391,6 +409,6 @@ static inline guint lttv_state_get_target_pid(LttvTracefileState *tfs)
 #define HDR_QUARKS 9
 #define HDR_QUARK 10
 
-
+#define MKDEV(ma,mi)    ((ma)<<8 | (mi))
 
 #endif // STATE_H

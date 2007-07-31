@@ -49,7 +49,8 @@ GQuark
     LTT_FACILITY_KERNEL_ARCH,
     LTT_FACILITY_LIST,
     LTT_FACILITY_FS,
-    LTT_FACILITY_USER_GENERIC;
+    LTT_FACILITY_USER_GENERIC,
+    LTT_FACILITY_BLOCK;
 
 /* Events Quarks */
 
@@ -72,7 +73,9 @@ GQuark
     LTT_EVENT_STATEDUMP_END,
     LTT_EVENT_FUNCTION_ENTRY,
     LTT_EVENT_FUNCTION_EXIT,
-    LTT_EVENT_THREAD_BRAND;
+    LTT_EVENT_THREAD_BRAND,
+    LTT_EVENT_REQUEST_ISSUE,
+    LTT_EVENT_REQUEST_COMPLETE;
 
 /* Fields Quarks */
 
@@ -96,7 +99,10 @@ GQuark
     LTT_FIELD_SUBMODE,
     LTT_FIELD_STATUS,
     LTT_FIELD_THIS_FN,
-    LTT_FIELD_CALL_SITE;
+    LTT_FIELD_CALL_SITE,
+    LTT_FIELD_MINOR,
+    LTT_FIELD_MAJOR,
+    LTT_FIELD_OPERATION;
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -138,6 +144,12 @@ LttvIRQMode
   LTTV_IRQ_UNKNOWN,
   LTTV_IRQ_IDLE,
   LTTV_IRQ_BUSY;
+
+LttvBdevMode
+  LTTV_BDEV_UNKNOWN,
+  LTTV_BDEV_IDLE,
+  LTTV_BDEV_BUSY_READING,
+  LTTV_BDEV_BUSY_WRITING;
 
 static GQuark
   LTTV_STATE_TRACEFILES,
@@ -439,6 +451,9 @@ init(LttvTracesetState *self, LttvTraceset *ts)
       tcs->irq_states[j].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvIRQMode));
       g_assert(tcs->irq_states[j].mode_stack != NULL);
     } 
+
+    /* init bdev resource stuff */
+    tcs->bdev_states = g_hash_table_new(g_int_hash, g_int_equal);
 
     restore_init_state(tcs);
     for(j = 0 ; j < nb_tracefile ; j++) {
@@ -1671,6 +1686,26 @@ static void cpu_pop_mode(LttvCPUState *cpust)
 }
 
 /* clears the stack and sets the state passed as argument */
+static void bdev_set_base_mode(LttvBdevState *bdevst, LttvBdevMode state)
+{
+  g_array_set_size(bdevst->mode_stack, 1);
+  ((GQuark *)bdevst->mode_stack->data)[0] = state;
+}
+
+static void bdev_push_mode(LttvBdevState *bdevst, LttvBdevMode state)
+{
+  g_array_set_size(bdevst->mode_stack, bdevst->mode_stack->len + 1);
+  ((GQuark *)bdevst->mode_stack->data)[bdevst->mode_stack->len - 1] = state;
+}
+
+static void bdev_pop_mode(LttvBdevState *bdevst)
+{
+  if(bdevst->mode_stack->len == 1)
+    bdev_set_base_mode(bdevst, LTTV_BDEV_UNKNOWN);
+  else
+    g_array_set_size(bdevst->mode_stack, bdevst->mode_stack->len - 1);
+}
+
 static void irq_set_base_mode(LttvIRQState *irqst, LttvIRQMode state)
 {
   g_array_set_size(irqst->mode_stack, 1);
@@ -2164,6 +2199,71 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_SOFT_IRQ, submode);
+  return FALSE;
+}
+
+LttvBdevState *bdev_state_get(LttvTraceState *ts, guint16 devcode)
+{
+  gint devcode_gint = devcode;
+  gpointer bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint);
+  if(bdev == NULL) {
+    LttvBdevState *bdevstate = g_malloc(sizeof(LttvBdevState));
+    bdevstate->mode_stack = g_array_new(FALSE, FALSE, sizeof(GQuark));
+
+    gint * key = g_malloc(sizeof(gint));
+    *key = devcode;
+    g_hash_table_insert(ts->bdev_states, key, bdevstate);
+    printf("adding key %u to hash table\n", *key);
+
+    bdev = bdevstate;
+  }
+
+  return bdev;
+}
+
+static gboolean bdev_request_issue(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  guint8 fac_id = ltt_event_facility_id(e);
+  guint8 ev_id = ltt_event_eventtype_id(e);
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+
+  guint major = ltt_event_get_long_unsigned(e, thf->f1);
+  guint minor = ltt_event_get_long_unsigned(e, thf->f2);
+  guint oper = ltt_event_get_long_unsigned(e, thf->f3);
+  guint16 devcode = MKDEV(major,minor);
+
+  /* have we seen this block device before? */
+  gpointer bdev = bdev_state_get(ts, devcode);
+
+  if(oper == 0)
+    bdev_push_mode(bdev, LTTV_BDEV_BUSY_READING);
+  else
+    bdev_push_mode(bdev, LTTV_BDEV_BUSY_WRITING);
+
+  return FALSE;
+}
+
+static gboolean bdev_request_complete(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+
+  guint major = ltt_event_get_long_unsigned(e, thf->f1);
+  guint minor = ltt_event_get_long_unsigned(e, thf->f2);
+  guint oper = ltt_event_get_long_unsigned(e, thf->f3);
+  guint16 devcode = MKDEV(major,minor);
+
+  /* have we seen this block device before? */
+  gpointer bdev = bdev_state_get(ts, devcode);
+
+  /* update block device */
+  bdev_pop_mode(bdev);
+
   return FALSE;
 }
 
@@ -2927,6 +3027,18 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_ISSUE,
+        LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
+        bdev_request_issue, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
+    if(ret) hn--;
+
+    ret = lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_COMPLETE,
+        LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
+        bdev_request_complete, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
+    if(ret) hn--;
+
+    ret = lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_USER_GENERIC, LTT_EVENT_FUNCTION_ENTRY,
         LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
         function_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
@@ -3615,6 +3727,7 @@ static void module_init()
   LTT_FACILITY_FS    = g_quark_from_string("fs");
   LTT_FACILITY_LIST = g_quark_from_string("list");
   LTT_FACILITY_USER_GENERIC    = g_quark_from_string("user_generic");
+  LTT_FACILITY_BLOCK = g_quark_from_string("block");
 
   
   LTT_EVENT_SYSCALL_ENTRY = g_quark_from_string("syscall_entry");
@@ -3636,6 +3749,8 @@ static void module_init()
   LTT_EVENT_FUNCTION_ENTRY  = g_quark_from_string("function_entry");
   LTT_EVENT_FUNCTION_EXIT  = g_quark_from_string("function_exit");
   LTT_EVENT_THREAD_BRAND  = g_quark_from_string("thread_brand");
+  LTT_EVENT_REQUEST_ISSUE = g_quark_from_string("_blk_request_issue");
+  LTT_EVENT_REQUEST_COMPLETE = g_quark_from_string("_blk_request_complete");
 
 
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");
@@ -3658,6 +3773,9 @@ static void module_init()
   LTT_FIELD_STATUS        = g_quark_from_string("status");
   LTT_FIELD_THIS_FN       = g_quark_from_string("this_fn");
   LTT_FIELD_CALL_SITE     = g_quark_from_string("call_site");
+  LTT_FIELD_MAJOR     = g_quark_from_string("major");
+  LTT_FIELD_MINOR     = g_quark_from_string("minor");
+  LTT_FIELD_OPERATION     = g_quark_from_string("direction");
   
   LTTV_CPU_UNKNOWN = g_quark_from_string("unknown");
   LTTV_CPU_IDLE = g_quark_from_string("idle");
@@ -3668,6 +3786,11 @@ static void module_init()
   LTTV_IRQ_UNKNOWN = g_quark_from_string("unknown");
   LTTV_IRQ_IDLE = g_quark_from_string("idle");
   LTTV_IRQ_BUSY = g_quark_from_string("busy");
+
+  LTTV_BDEV_UNKNOWN = g_quark_from_string("unknown");
+  LTTV_BDEV_IDLE = g_quark_from_string("idle");
+  LTTV_BDEV_BUSY_READING = g_quark_from_string("busy_reading");
+  LTTV_BDEV_BUSY_WRITING = g_quark_from_string("busy_writing");
 }
 
 static void module_destroy() 
