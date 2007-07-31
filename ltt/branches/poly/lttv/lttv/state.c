@@ -1213,6 +1213,8 @@ static LttvBdevState *bdevstate_new(void)
   LttvBdevState *retval;
   retval = g_malloc(sizeof(LttvBdevState));
   retval->mode_stack = g_array_new(FALSE, FALSE, sizeof(GQuark));
+
+  return retval;
 }
 
 static void bdevstate_free(LttvBdevState *bds)
@@ -1234,6 +1236,8 @@ static LttvBdevState *bdevstate_copy(LttvBdevState *bds)
 
   retval = bdevstate_new();
   g_array_insert_vals(retval->mode_stack, 0, bds->mode_stack->data, bds->mode_stack->len);
+
+  return retval;
 }
 
 static void insert_and_copy_bdev_state(gpointer k, gpointer v, gpointer u)
