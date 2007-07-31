@@ -1437,7 +1437,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_BLKDEVS, &value);
   g_assert(type == LTTV_POINTER);
   lttv_state_free_blkdev_hashtable(self->bdev_states);
-  self->bdev_states = lttv_state_copy_blkdev_hashtable(self->bdev_states);
+  self->bdev_states = lttv_state_copy_blkdev_hashtable(*(value.v_pointer));
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
