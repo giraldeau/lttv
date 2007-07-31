@@ -164,7 +164,8 @@ static GQuark
   LTTV_STATE_NAME_TABLES,
   LTTV_STATE_TRACE_STATE_USE_COUNT,
   LTTV_STATE_RESOURCE_CPUS,
-  LTTV_STATE_RESOURCE_IRQS;
+  LTTV_STATE_RESOURCE_IRQS,
+  LTTV_STATE_RESOURCE_BLKDEVS;
 
 static void create_max_time(LttvTraceState *tcs);
 
@@ -186,7 +187,11 @@ static void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp,
                        GPtrArray *quarktable);
 
 /* Resource function prototypes */
-static void bdev_state_free(gpointer key, gpointer value, gpointer user_data);
+static LttvBdevState *get_hashed_bdevstate(LttvTraceState *ts, guint16 devcode);
+static LttvBdevState *bdevstate_new(void);
+static void bdevstate_free(LttvBdevState *);
+static void bdevstate_free_cb(gpointer key, gpointer value, gpointer user_data);
+static LttvBdevState *bdevstate_copy(LttvBdevState *bds);
 static LttvBdevState *bdev_state_get(LttvTraceState *ts, guint16 devcode);
 
 
@@ -299,12 +304,14 @@ restore_init_state(LttvTraceState *self)
       g_array_remove_range(self->cpu_states[i].mode_stack, 0, self->cpu_states[i].mode_stack->len);
   }
 
+  /* reset irq states */
   for(i=0; i<nb_irqs; i++) {
     if(self->irq_states[i].mode_stack->len > 0)
       g_array_remove_range(self->irq_states[i].mode_stack, 0, self->irq_states[i].mode_stack->len);
   }
 
-  g_hash_table_foreach(self->bdev_states, bdev_state_free, NULL);
+  /* reset bdev states */
+  g_hash_table_foreach(self->bdev_states, bdevstate_free_cb, NULL);
   g_hash_table_steal_all(self->bdev_states);
   
 #if 0
@@ -1181,6 +1188,85 @@ static void lttv_state_free_irq_states(LttvIRQState *states, guint n)
   g_free(states);
 }
 
+/* bdevstate stuff */
+
+static LttvBdevState *get_hashed_bdevstate(LttvTraceState *ts, guint16 devcode)
+{
+  gint devcode_gint = devcode;
+  gpointer bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint);
+  if(bdev == NULL) {
+    LttvBdevState *bdevstate = g_malloc(sizeof(LttvBdevState));
+    bdevstate->mode_stack = g_array_new(FALSE, FALSE, sizeof(GQuark));
+
+    gint * key = g_malloc(sizeof(gint));
+    *key = devcode;
+    g_hash_table_insert(ts->bdev_states, key, bdevstate);
+
+    bdev = bdevstate;
+  }
+
+  return bdev;
+}
+
+static LttvBdevState *bdevstate_new(void)
+{
+  LttvBdevState *retval;
+  retval = g_malloc(sizeof(LttvBdevState));
+  retval->mode_stack = g_array_new(FALSE, FALSE, sizeof(GQuark));
+}
+
+static void bdevstate_free(LttvBdevState *bds)
+{
+  g_array_free(bds->mode_stack, FALSE);
+  g_free(bds);
+}
+
+static void bdevstate_free_cb(gpointer key, gpointer value, gpointer user_data)
+{
+  LttvBdevState *bds = (LttvBdevState *) value;
+
+  bdevstate_free(bds);
+}
+
+static LttvBdevState *bdevstate_copy(LttvBdevState *bds)
+{
+  LttvBdevState *retval;
+
+  retval = bdevstate_new();
+  g_array_insert_vals(retval->mode_stack, 0, bds->mode_stack->data, bds->mode_stack->len);
+}
+
+static void insert_and_copy_bdev_state(gpointer k, gpointer v, gpointer u)
+{
+  GHashTable *ht = (GHashTable *)u;
+  LttvBdevState *bds = (LttvBdevState *)v;
+  LttvBdevState *newbds;
+
+  newbds = bdevstate_copy(v);
+
+  g_hash_table_insert(u, k, newbds);
+}
+
+static GHashTable *lttv_state_copy_blkdev_hashtable(GHashTable *ht)
+{
+  GHashTable *retval;
+
+  retval = g_hash_table_new(g_int_hash, g_int_equal);
+
+  g_hash_table_foreach(ht, insert_and_copy_bdev_state, retval);
+
+  return retval;
+}
+
+/* Free a hashtable and the LttvBdevState structures its values
+ * point to. */
+
+static void lttv_state_free_blkdev_hashtable(GHashTable *ht)
+{
+  g_hash_table_foreach(ht, bdevstate_free_cb, NULL);
+  g_hash_table_destroy(ht);
+}
+
 /* The saved state for each trace contains a member "processes", which
    stores a copy of the process table, and a member "tracefiles" with
    one entry per tracefile. Each tracefile has a "process" member pointing
@@ -1278,6 +1364,11 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
         LTTV_POINTER);
     *(value.v_pointer) = lttv_state_copy_irq_states(self->irq_states, nb_irqs);
   }
+
+  /* save the blkdev states */
+  value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_BLKDEVS,
+        LTTV_POINTER);
+  *(value.v_pointer) = lttv_state_copy_blkdev_hashtable(self->bdev_states);
 }
 
 
@@ -1342,6 +1433,12 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
   lttv_state_free_irq_states(self->irq_states, nb_irqs);
   self->irq_states = lttv_state_copy_irq_states(*(value.v_pointer), nb_irqs);
  
+  /* restore the blkdev states */
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_BLKDEVS, &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_blkdev_hashtable(self->bdev_states);
+  self->bdev_states = lttv_state_copy_blkdev_hashtable(self->bdev_states);
+
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfcs = 
           LTTV_TRACEFILE_STATE(g_array_index(self->parent.tracefiles,
@@ -2267,33 +2364,6 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
   return FALSE;
 }
 
-static LttvBdevState *bdev_state_get(LttvTraceState *ts, guint16 devcode)
-{
-  gint devcode_gint = devcode;
-  gpointer bdev = g_hash_table_lookup(ts->bdev_states, &devcode_gint);
-  if(bdev == NULL) {
-    LttvBdevState *bdevstate = g_malloc(sizeof(LttvBdevState));
-    bdevstate->mode_stack = g_array_new(FALSE, FALSE, sizeof(GQuark));
-
-    gint * key = g_malloc(sizeof(gint));
-    *key = devcode;
-    g_hash_table_insert(ts->bdev_states, key, bdevstate);
-    printf("adding key %u to hash table\n", *key);
-
-    bdev = bdevstate;
-  }
-
-  return bdev;
-}
-
-static void bdev_state_free(gpointer key, gpointer value, gpointer user_data)
-{
-	LttvBdevState *bds = (LttvBdevState *) value;
-	
-	g_array_free(bds->mode_stack, FALSE);
-	g_free(bds);
-}
-
 static gboolean bdev_request_issue(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
@@ -2309,7 +2379,7 @@ static gboolean bdev_request_issue(void *hook_data, void *call_data)
   guint16 devcode = MKDEV(major,minor);
 
   /* have we seen this block device before? */
-  gpointer bdev = bdev_state_get(ts, devcode);
+  gpointer bdev = get_hashed_bdevstate(ts, devcode);
 
   if(oper == 0)
     bdev_push_mode(bdev, LTTV_BDEV_BUSY_READING);
@@ -2332,7 +2402,7 @@ static gboolean bdev_request_complete(void *hook_data, void *call_data)
   guint16 devcode = MKDEV(major,minor);
 
   /* have we seen this block device before? */
-  gpointer bdev = bdev_state_get(ts, devcode);
+  gpointer bdev = get_hashed_bdevstate(ts, devcode);
 
   /* update block device */
   bdev_pop_mode(bdev);
@@ -3793,6 +3863,8 @@ static void module_init()
   LTTV_STATE_TRACE_STATE_USE_COUNT = 
       g_quark_from_string("trace_state_use_count");
   LTTV_STATE_RESOURCE_CPUS = g_quark_from_string("cpu resource states");
+  LTTV_STATE_RESOURCE_IRQS = g_quark_from_string("irq resource states");
+  LTTV_STATE_RESOURCE_BLKDEVS = g_quark_from_string("blkdevs resource states");
 
   
   LTT_FACILITY_KERNEL     = g_quark_from_string("kernel");
