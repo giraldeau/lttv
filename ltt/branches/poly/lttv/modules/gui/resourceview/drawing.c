@@ -86,10 +86,11 @@ GdkColor drawing_colors[NUM_COLORS] =
 
 GdkColor drawing_colors_cpu[NUM_COLORS_CPU] =
 { /* Pixel, R, G, B */
-  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_CPU_UNKNOWN */
+  { 0, 0x0000, 0x0000, 0x0000 }, /* COL_CPU_UNKNOWN */
   { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_CPU_IDLE */
   { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_CPU_BUSY */
-  { 0, 0xFFFF, 0x0000, 0x0000 }, /* COL_CPU_IRQ */
+  { 0, 0xFFFF, 0x5E00, 0x0000 }, /* COL_CPU_IRQ */
+  { 0, 0xFF00, 0xFF00, 0x0100 }, /* COL_CPU_TRAP */
 };
 
 
@@ -235,22 +236,22 @@ void drawing_data_request(Drawing_t *drawing,
 //          &g_array_index(hooks, LttvTraceHook, before_hn++));
 //      if(ret) before_hn--;
 //
-//      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_ENTRY,
-//          LTT_FIELD_TRAP_ID, 0, 0,
-//          before_execmode_hook,
-//          events_request,
-//          &g_array_index(hooks, LttvTraceHook, before_hn++));
-//      if(ret) before_hn--;
-//
-//      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_EXIT,
-//          0, 0, 0, 
-//          before_execmode_hook,
-//          events_request,
-//          &g_array_index(hooks, LttvTraceHook, before_hn++));
-//      if(ret) before_hn--;
-//
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_ENTRY,
+          LTT_FIELD_TRAP_ID, 0, 0,
+          before_execmode_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
+
+      ret = lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_EXIT,
+          0, 0, 0, 
+          before_execmode_hook,
+          events_request,
+          &g_array_index(hooks, LttvTraceHook, before_hn++));
+      if(ret) before_hn--;
+
       ret = lttv_trace_find_hook(ts->parent.t,
           LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
           LTT_FIELD_IRQ_ID, 0, 0,
@@ -1064,8 +1065,8 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
   /* Allocate the colors */
   GdkColormap* colormap = gdk_colormap_get_system();
   gboolean success[NUM_COLORS];
-  //gdk_colormap_alloc_colors(colormap, drawing_colors, NUM_COLORS, FALSE,
-  //                          TRUE, success);
+  gdk_colormap_alloc_colors(colormap, drawing_colors, NUM_COLORS, FALSE,
+                            TRUE, success);
   gdk_colormap_alloc_colors(colormap, drawing_colors_cpu, NUM_COLORS_CPU, FALSE,
                             TRUE, success);
   
@@ -1123,7 +1124,7 @@ void drawing_destroy(Drawing_t *drawing)
   /* Free the colors */
   GdkColormap* colormap = gdk_colormap_get_system();
 
-  //gdk_colormap_free_colors(colormap, drawing_colors, NUM_COLORS);
+  gdk_colormap_free_colors(colormap, drawing_colors, NUM_COLORS);
   gdk_colormap_free_colors(colormap, drawing_colors_cpu, NUM_COLORS_CPU);
   
 

@@ -131,7 +131,8 @@ LttvCPUMode
   LTTV_CPU_UNKNOWN,
   LTTV_CPU_IDLE,
   LTTV_CPU_BUSY,
-  LTTV_CPU_IRQ;
+  LTTV_CPU_IRQ,
+  LTTV_CPU_TRAP;
 
 static GQuark
   LTTV_STATE_TRACEFILES,
@@ -382,7 +383,7 @@ end:
 static void
 init(LttvTracesetState *self, LttvTraceset *ts)
 {
-  guint i, j, nb_trace, nb_tracefile;
+  guint i, j, nb_trace, nb_tracefile, nb_cpu;
 
   LttvTraceContext *tc;
 
@@ -412,12 +413,17 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     get_max_time(tcs);
 
     nb_tracefile = tc->tracefiles->len;
+    nb_cpu = ltt_trace_get_num_cpu(tc->t);
     tcs->processes = NULL;
     tcs->usertraces = NULL;
-    tcs->running_process = g_new(LttvProcessState*, 
-                                 ltt_trace_get_num_cpu(tc->t));
-    tcs->cpu_states = g_new(LttvCPUState, 
-                                 ltt_trace_get_num_cpu(tc->t));
+    tcs->running_process = g_new(LttvProcessState*, nb_cpu);
+    /* init cpu resource stuff */
+    tcs->cpu_states = g_new(LttvCPUState, nb_cpu);
+    for(j = 0; j<nb_cpu; j++) {
+      tcs->cpu_states[j].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvCPUMode));
+      g_assert(tcs->cpu_states[j].mode_stack != NULL);
+    } 
+
     restore_init_state(tcs);
     for(j = 0 ; j < nb_tracefile ; j++) {
       tfcs = 
@@ -1584,6 +1590,26 @@ static void hash_table_check(GHashTable *table)
 
 #endif
 
+/* clears the stack and sets the state passed as argument */
+static void cpu_set_base_mode(LttvCPUState *cpust, LttvCPUMode state)
+{
+  g_array_set_size(cpust->mode_stack, 1);
+  ((GQuark *)cpust->mode_stack->data)[0] = state;
+}
+
+static void cpu_push_mode(LttvCPUState *cpust, LttvCPUMode state)
+{
+  g_array_set_size(cpust->mode_stack, cpust->mode_stack->len + 1);
+  ((GQuark *)cpust->mode_stack->data)[cpust->mode_stack->len - 1] = state;
+}
+
+static void cpu_pop_mode(LttvCPUState *cpust)
+{
+  if(cpust->mode_stack->len == 1)
+    cpu_set_base_mode(cpust, LTTV_CPU_UNKNOWN);
+  else
+    g_array_set_size(cpust->mode_stack, cpust->mode_stack->len - 1);
+}
 
 static void push_state(LttvTracefileState *tfs, LttvExecutionMode t, 
     guint state_id)
@@ -1943,18 +1969,24 @@ static gboolean trap_entry(void *hook_data, void *call_data)
   }
 
   push_state(s, LTTV_STATE_TRAP, submode);
+
+  /* update cpu status */
+  cpu_push_mode(s->cpu_state, LTTV_CPU_TRAP);
+
   return FALSE;
 }
-
 
 static gboolean trap_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
 
   pop_state(s, LTTV_STATE_TRAP);
+
+  /* update cpu status */
+  cpu_pop_mode(s->cpu_state);
+
   return FALSE;
 }
-
 
 static gboolean irq_entry(void *hook_data, void *call_data)
 {
@@ -1987,8 +2019,7 @@ static gboolean irq_entry(void *hook_data, void *call_data)
   push_state(s, LTTV_STATE_IRQ, submode);
 
   /* update cpu status */
-  s->cpu_state->previous_state = s->cpu_state->present_state;
-  s->cpu_state->present_state = LTTV_CPU_IRQ;
+  cpu_push_mode(s->cpu_state, LTTV_CPU_IRQ);
 
   return FALSE;
 }
@@ -2010,7 +2041,7 @@ static gboolean irq_exit(void *hook_data, void *call_data)
   pop_state(s, LTTV_STATE_IRQ);
 
   /* update cpu status */
-  s->cpu_state->present_state = s->cpu_state->previous_state;
+  cpu_pop_mode(s->cpu_state);
 
   return FALSE;
 }
@@ -2202,9 +2233,9 @@ static gboolean schedchange(void *hook_data, void *call_data)
 
   /* update cpu status */
   if(pid_in == 0)
-    s->cpu_state->present_state = LTTV_CPU_IDLE;
+    cpu_set_base_mode(s->cpu_state, LTTV_CPU_IDLE);
   else
-    s->cpu_state->present_state = LTTV_CPU_BUSY;
+    cpu_set_base_mode(s->cpu_state, LTTV_CPU_BUSY);
 
   return FALSE;
 }
@@ -3542,6 +3573,7 @@ static void module_init()
   LTTV_CPU_IDLE = g_quark_from_string("idle");
   LTTV_CPU_BUSY = g_quark_from_string("busy");
   LTTV_CPU_IRQ = g_quark_from_string("irq");
+  LTTV_CPU_TRAP = g_quark_from_string("trap");
 }
 
 static void module_destroy() 

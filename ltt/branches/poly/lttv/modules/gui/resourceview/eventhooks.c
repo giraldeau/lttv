@@ -317,9 +317,14 @@ static inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
 
 }
 
-static void set_line_color_cpu(PropertiesLine *prop_line, GQuark present_state)
+static void cpu_set_line_color(PropertiesLine *prop_line, LttvCPUState *s)
 {
-  if(present_state == LTTV_CPU_IDLE) {
+  GQuark present_state = ((GQuark*)s->mode_stack->data)[s->mode_stack->len-1];
+
+  if(present_state == LTTV_CPU_UNKNOWN) {
+    prop_line->color = drawing_colors_cpu[COL_CPU_UNKNOWN];
+  }
+  else if(present_state == LTTV_CPU_IDLE) {
     prop_line->color = drawing_colors_cpu[COL_CPU_IDLE];
   }
   else if(present_state == LTTV_CPU_BUSY) {
@@ -327,6 +332,9 @@ static void set_line_color_cpu(PropertiesLine *prop_line, GQuark present_state)
   }
   else if(present_state == LTTV_CPU_IRQ) {
     prop_line->color = drawing_colors_cpu[COL_CPU_IRQ];
+  }
+  else if(present_state == LTTV_CPU_TRAP) {
+    prop_line->color = drawing_colors_cpu[COL_CPU_TRAP];
   }
 }
 
@@ -381,8 +389,6 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 //    /* not a transition to/from idle */
 //    return 0;
 //  }
-
-  exit(0);
 
   tfc->target_pid = pid_out;
 //  if(!filter || !filter->head ||
@@ -541,7 +547,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
             prop_line.line_width = STATE_LINE_WIDTH;
             prop_line.style = GDK_LINE_SOLID;
             prop_line.y = MIDDLE;
-            cpu_set_line_color(&prop_line, tfs->cpu_state->present_state);
+            cpu_set_line_color(&prop_line, tfs->cpu_state);
             draw_line((void*)&prop_line, (void*)&draw_context);
 
           }
@@ -960,7 +966,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
       ResourceInfo *process_info;
       /* Process not present */
       Drawing_t *drawing = control_flow_data->drawing;
-      ressourcelist_add(process_list,
+      resourcelist_add(process_list,
             drawing,
             trace_num,
             cpuq, //process->name,
@@ -1012,7 +1018,8 @@ int before_execmode_hook(void *hook_data, void *call_data)
                      COLLISION_POSITION(hashed_process_data->height));
       hashed_process_data->x.middle_marked = TRUE;
     }
-  } else {
+  }
+  else {
     TimeWindow time_window = 
       lttvwindow_get_time_window(control_flow_data->tab);
 
@@ -1046,7 +1053,8 @@ int before_execmode_hook(void *hook_data, void *call_data)
         hashed_process_data->x.middle_marked = TRUE;
       }
       /* jump */
-    } else {
+    }
+    else {
 
       DrawContext draw_context;
       /* Now create the drawing context that will be used to draw
@@ -1071,8 +1079,10 @@ int before_execmode_hook(void *hook_data, void *call_data)
       {
         /* Draw the line */
         PropertiesLine prop_line;
-        cpu_set_line_color(&prop_line, tfs->cpu_state->present_state);
-	printf("current state: %s\n", g_quark_to_string(tfs->cpu_state->present_state));
+        prop_line.line_width = STATE_LINE_WIDTH;
+        prop_line.style = GDK_LINE_SOLID;
+        prop_line.y = MIDDLE;
+        cpu_set_line_color(&prop_line, tfs->cpu_state);
         draw_line((void*)&prop_line, (void*)&draw_context);
       }
       /* become the last x position */
@@ -2567,7 +2577,7 @@ void draw_closure(gpointer key, gpointer value, gpointer user_data)
             prop_line.line_width = STATE_LINE_WIDTH;
             prop_line.style = GDK_LINE_SOLID;
             prop_line.y = MIDDLE;
-            cpu_set_line_color(&prop_line, ts->cpu_states[process_info->id].present_state);
+            cpu_set_line_color(&prop_line, &ts->cpu_states[process_info->id]);
             
             draw_line((void*)&prop_line, (void*)&draw_context);
           }

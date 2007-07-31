@@ -203,7 +203,8 @@ extern LttvCPUMode
   LTTV_CPU_UNKNOWN,
   LTTV_CPU_IDLE,
   LTTV_CPU_BUSY,
-  LTTV_CPU_IRQ;
+  LTTV_CPU_IRQ,
+  LTTV_CPU_TRAP;
 
 typedef struct _LttvExecutionState {
   LttvExecutionMode t;
@@ -285,8 +286,7 @@ GType lttv_traceset_state_get_type (void);
 #define LTTV_TRACE_STATE_GET_CLASS(inst)  (G_TYPE_INSTANCE_GET_CLASS ((inst), LTTV_TRACE_STATE_TYPE, LttvTraceStateClass))
 
 typedef struct _LttvCPUState {
-  LttvCPUMode previous_state;
-  LttvCPUMode present_state;
+  GArray *mode_stack;
 } LttvCPUState;
 
 struct _LttvTraceState {
