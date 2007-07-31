@@ -243,7 +243,7 @@ static void lttv_state_free_usertraces(GHashTable *usertraces)
 static void
 restore_init_state(LttvTraceState *self)
 {
-  guint i, nb_cpus;
+  guint i, nb_cpus, nb_irqs;
 
   LttvTracefileState *tfcs;
 
@@ -268,6 +268,7 @@ restore_init_state(LttvTraceState *self)
   //lttv_process_trace_seek_time(&self->parent, ltt_time_zero);
 
   nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
+  nb_irqs = self->nb_irqs;
   
   /* Put the per cpu running_process to beginning state : process 0. */
   for(i=0; i< nb_cpus; i++) {
@@ -286,6 +287,15 @@ restore_init_state(LttvTraceState *self)
 
     //self->running_process[i]->state->s = LTTV_STATE_RUN;
     self->running_process[i]->cpu = i;
+
+    /* reset cpu states */
+    if(self->cpu_states[i].mode_stack->len > 0)
+      g_array_remove_range(self->cpu_states[i].mode_stack, 0, self->cpu_states[i].mode_stack->len);
+  }
+
+  for(i=0; i<nb_irqs; i++) {
+    if(self->irq_states[i].mode_stack->len > 0)
+      g_array_remove_range(self->irq_states[i].mode_stack, 0, self->irq_states[i].mode_stack->len);
   }
   
 #if 0
