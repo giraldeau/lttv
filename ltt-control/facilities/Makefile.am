@@ -9,6 +9,7 @@ kernel_arch_i386.xml \
 kernel_arch_mips.xml \
 kernel_arch_powerpc.xml \
 kernel_arch_ppc.xml \
+kernel_arch_sh.xml \
 kernel_arch_x86_64.xml \
 locking.xml \
 mm.xml \
@@ -30,6 +31,7 @@ kernel_arch_i386.xml \
 kernel_arch_mips.xml \
 kernel_arch_powerpc.xml \
 kernel_arch_ppc.xml \
+kernel_arch_sh.xml \
 kernel_arch_x86_64.xml \
 locking.xml \
 mm.xml \
