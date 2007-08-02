@@ -39,6 +39,8 @@ extern "C" {
 #include <ltt/kernelutils-i386.h>
 #elif defined(__arm__)
 #include <ltt/kernelutils-arm.h>
+#elif defined(__SH4__)
+#include <ltt/kernelutils-sh.h>
 #else
 #error "Unsupported architecture"
 #endif
