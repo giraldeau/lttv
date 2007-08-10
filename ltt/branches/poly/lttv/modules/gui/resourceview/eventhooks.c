@@ -1191,7 +1191,7 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
 
   {
     gchar *irqstr;
-    irqstr = g_strdup_printf("IRQ %u", irq);
+    irqstr = g_strdup_printf("IRQ %llu [%s]", irq, g_quark_to_string(ts->irq_names[irq]));
     resourceq = g_quark_from_string(irqstr);
     g_free(irqstr);
   }
