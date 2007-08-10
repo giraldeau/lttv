@@ -281,7 +281,7 @@ int ltt_facility_open(LttFacility *f, LttTrace * t, gchar * pathname)
   gboolean generated = FALSE;
 
   in.buffer = &(buffer[0]);
-  in.lineno = 0;
+  in.lineno = 1;
   in.error = error_callback;
   in.name = pathname;
   in.unget = 0;
