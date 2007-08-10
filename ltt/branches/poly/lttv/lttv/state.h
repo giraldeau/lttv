@@ -86,7 +86,8 @@ extern GQuark
     LTT_EVENT_FUNCTION_EXIT,
     LTT_EVENT_THREAD_BRAND,
     LTT_EVENT_REQUEST_ISSUE,
-    LTT_EVENT_REQUEST_COMPLETE;
+    LTT_EVENT_REQUEST_COMPLETE,
+    LTT_EVENT_LIST_INTERRUPT;
 
 /* Fields Quarks */
 
@@ -112,7 +113,9 @@ extern GQuark
     LTT_FIELD_CALL_SITE,
     LTT_FIELD_MINOR,
     LTT_FIELD_MAJOR,
-    LTT_FIELD_OPERATION;
+    LTT_FIELD_OPERATION,
+    LTT_FIELD_ACTION,
+    LTT_FIELD_NUM;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
