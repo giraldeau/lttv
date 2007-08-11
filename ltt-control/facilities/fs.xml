@@ -74,7 +74,7 @@
   <event name="lseek">
     <description>Seek a file descriptor</description>
     <field name="fd"> <description>File descriptor</description> <uint/> </field>
-    <field name="offset"> <description>Number of bytes to write</description> <long/> </field>
+    <field name="offset"> <description>Number of bytes to write</description> <uint_fixed size="8"/> </field>
     <field name="origin"> <description>Number of bytes to write</description> <uint/> </field>
   </event>
 
