@@ -49,7 +49,7 @@
 #include <ltt/event.h>
 #include <ltt/type.h>
 #include <ltt/ltt-types.h>
-
+#include <ltt/markers.h>
 
 /* Facility names used in this file */
 
@@ -2133,64 +2133,61 @@ map_error:
 void ltt_update_event_size(LttTracefile *tf)
 {
   off_t size = 0;
-  LttFacility *f = ltt_trace_get_facility_by_num(tf->trace, 
-                                          tf->event.facility_id);
   char *tscdata;
+  struct marker_info *info;
  
-  if(!f->exists) {
-    /* Specific handling of core events : necessary to read the facility control
-     * tracefile. */
- 
-    if(likely(tf->event.facility_id == LTT_FACILITY_CORE)) {
-      switch((enum ltt_core_events)tf->event.event_id) {
-    case LTT_EVENT_FACILITY_LOAD:
+  switch((enum marker_id)tf->event.event_id) {
+    case MARKER_ID_SET_MARKER_ID:
       size = strlen((char*)tf->event.data) + 1;
-      //g_debug("Update Event facility load of facility %s", (char*)tf->event.data);
-      size += ltt_align(size, sizeof(guint32), tf->has_alignment);
-      size += sizeof(struct LttFacilityLoad);
+      //g_debug("marker %s id set", (char*)tf->event.data);
+      size += ltt_align(size, sizeof(guint16), tf->has_alignment);
+      size += sizeof(guint16);
       break;
-    case LTT_EVENT_FACILITY_UNLOAD:
-      //g_debug("Update Event facility unload");
-      size = sizeof(struct LttFacilityUnload);
-      break;
-    case LTT_EVENT_STATE_DUMP_FACILITY_LOAD:
+    case MARKER_ID_SET_MARKER_FORMAT:
+      //g_debug("marker %s format set", (char*)tf->event.data);
       size = strlen((char*)tf->event.data) + 1;
-      size += ltt_align(size, sizeof(guint32), tf->has_alignment);
-      //g_debug("Update Event facility load state dump of facility %s",
-      //    (char*)tf->event.data);
-      size += sizeof(struct LttStateDumpFacilityLoad);
+      size += strlen((char*)tf->event.data) + 1;
       break;
-    case LTT_EVENT_HEARTBEAT:
-      //g_debug("Update Event heartbeat");
-      size = sizeof(TimeHeartbeat);
+    case MARKER_ID_HEARTBEAT_32:
+      //g_debug("Update Event heartbeat 32 bits");
+      size = ltt_align(size, sizeof(guint32), tf->has_alignment);
+      size += sizeof(guint32);
       break;
-    case LTT_EVENT_HEARTBEAT_FULL:
-      //g_debug("Update Event heartbeat full");
+    case MARKER_ID_HEARTBEAT_64:
+      //g_debug("Update Event heartbeat 64 bits");
       tscdata = (char*)(tf->event.data);
       tf->event.tsc = ltt_get_uint64(LTT_GET_BO(tf), tscdata);
       tf->buffer.tsc = tf->event.tsc;
       tf->event.event_time = ltt_interpolate_time(tf, &tf->event);
-      size = sizeof(TimeHeartbeatFull);
-      size += ltt_align(size, sizeof(guint64), tf->has_alignment);
+      size = ltt_align(size, sizeof(guint64), tf->has_alignment);
+      size += sizeof(guint64);
       break;
     default:
-      g_warning("Error in getting event size : tracefile %s, "
-          "unknown event id %hhu in core facility.",
-          g_quark_to_string(tf->name),
-          tf->event.event_id);
-      goto event_id_error;
-  
+      info = marker_get_info_from_id(tf->trace, tf->event.event_id);
+      g_assert(info != NULL);
+      if (info->size) {
+        size = info->size;
+      } else {
+        /* Must compute the event size dynamically TODO */
+
       }
-      goto no_offset;  /* Skip the field computation */
-    } else {
-      g_warning("Unknown facility %hhu (0x%hhx) in tracefile %s",
-          tf->event.facility_id,
-          tf->event.facility_id,
-          g_quark_to_string(tf->name));
-      goto facility_error;
-    }
   }
 
+  tf->event.data_size = size;
+  
+  /* Check consistency between kernel and LTTV structure sizes */
+  if(tf->event.event_size == 0xFFFF) {
+    /* Event size too big to fit in the event size field */
+    tf->event.event_size = tf->event.data_size;
+  }
+  if (tf->event.data_size != tf->event.event_size) {
+    g_error("Kernel/LTTV event size differs for event %s.%s: kernel %u, LTTV %u",
+        g_quark_to_string(f->name), g_quark_to_string(event_type->name),
+    tf->event.event_size, tf->event.data_size);
+    exit(-1);
+  }
+
+#if 0
   LttEventType *event_type = 
     ltt_facility_eventtype_get(f, tf->event.event_id);
 
@@ -2227,7 +2224,6 @@ no_offset:
 
   return;
 
-facility_error:
 event_type_error:
 event_id_error:
   if(tf->event.event_size == 0xFFFF) {
@@ -2236,6 +2232,7 @@ event_id_error:
   /* The facility is unknown : use the kernel information about this event
    * to jump over it. */
   tf->event.data_size = tf->event.event_size;
+#endif //0
 }
 
 

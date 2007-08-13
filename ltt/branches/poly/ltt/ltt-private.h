@@ -25,7 +25,6 @@
 #include <ltt/ltt.h>
 #include <endian.h>
 
-
 #ifndef max
 #define max(a,b) ((a)>(b)?(a):(b))
 #endif
@@ -451,6 +450,9 @@ struct _LttTrace{
   uint8_t   compact_event_bits;
 
   GData     *tracefiles;                    //tracefiles groups
+  /* Support for markers */
+  GArray    *markers;                       //indexed by marker ID
+  GHashTable *markers_hash;                 //indexed by name hash
 };
 
 /* The characteristics of the system on which the trace was obtained
