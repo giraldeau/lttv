@@ -16,15 +16,15 @@ The % symbol marks who is interested in the realisation of the item.<br>
 <big>LTTV Roadmap<small><br>
 <br>
 * TODO<br>
-(1) Put back coherent facility checksumming.<br>
+(1) Marker integration. Change the byte pair "facility, event" id for a short
+combining the informatinon.<br>
+	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
 (3) Add cluster support.<br>
 	# <A HREF="mailto:Eric Clement <eric.clement@polymtl.ca>">Eric Clement</A><br>
 (3) Make LTTV aware of type formats (visual separators) defined in the XML
 file.<br>
 	# <A HREF="mailto:Gabriel Matni <gabrien.matni@polymtl.ca>">Gabriel Matni</A><br>
 (3) Use a per architecture enumeration for traps.<br>
-(3) Change the byte pair "facility, event" id for a short combining the
-informatinon.<br>
 (4) Statistics per time window.<br>
 (4) Add Xen per physical CPU view.<br>
 (4) Add Xen per vcpu view.<br>
@@ -61,23 +61,16 @@ of process 0.<br>
 <big>LTT Next Generation Roadmap<small><br>
 <br>
 * TODO<br>
-(1) put probes in a hash table so we can connect the markers to them upon module
-load.<br>
 (1) efficient dynamic event filtering while recording trace.<br>
 	% Google<br>
 	% Sensis Corp. <A HREF="mailto:Bish, Tim <Tim.Bish@Sensis.com>">Tim Bish</A><br>
 	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
-(1) Support for compact event trace channel.<br>
-	% Google<br>
-	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
-(1) CPU Hotplug support. (Only ltt-heartbeat needs to be fixed).<br>
-	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
+	- Partly implemented: per marker selection through /proc interface.<br>
+	- Must still implement per active trace filtering.<br>
 (1) Add Xen support. (Trace buffer desallocation needs to be fixed)<br>
 	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
 (1) Integrate SystemTAP logging with LTTng.<br>
-(3) Change the byte pair "facility, event" id for a short combining the
-informatinon.<br>
-(4) instrument kernel bottom half irqsave, spinlocks, rwlocks, seqlocks, semaphores, mutexes, brlock.<br>
+(4) instrument kernel bottom half irqsave, seqlocks, semaphores, mutexes, brlock.<br>
 (4) integrate NPTL instrumentation (see
 <A HREF="http://nptltracetool.sourceforge.net/">PTT</A>).<br>
 (4) Probe calibration kernel module.<br>
@@ -88,8 +81,6 @@ fault handler.<br>
 (5) Integrate LTTng and lttd with LKCD.<br>
 (7) Integrate periodical dump of perfctr hardware counters.<br>
 (8) Integrate periodical dump of SystemTAP computed information.<br>
-(9) Rethink facility logging code (genevent output). Maybe unneeded because of
-markers/probes mechanism.<br>
 (9) Add support for setjmp/longjmp and jump tables instrumentation to
 ltt-instrument-functions.<br>
 (9) Make ltt-usertrace-fast support internal heartbeat timer.<br>
