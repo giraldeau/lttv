@@ -414,8 +414,10 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   head = g_hash_table_lookup(trace->markers_hash, (gconstpointer)name);
   if (!head)
     g_hash_table_insert(trace->markers_hash, (gpointer)name, info);
-  else
-    head->next = info;
+  else {
+    g_hash_table_replace(trace->markers_hash, (gpointer)name, info);
+    info->next = head;
+  }
 }
 
 int allocate_marker_data(LttTrace *trace)

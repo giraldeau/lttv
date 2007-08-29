@@ -219,6 +219,7 @@ struct _LttType{
   char *footer;
 };
 
+#if 0
 struct _LttEventType{
   GQuark name;
   gchar * description;
@@ -228,6 +229,7 @@ struct _LttEventType{
   GData *fields_by_name;
   int has_compact_data;       //event header contains compact data (first field)
 };
+#endif //0
 
 /* Structure LttEvent and LttEventPosition must begin with the _exact_ same
  * fields in the exact same order. LttEventPosition is a parent of LttEvent. */
