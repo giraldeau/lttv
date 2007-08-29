@@ -10,13 +10,13 @@ AM_CFLAGS = $(GLIB_CFLAGS)
 LIBS += $(GLIB_LIBS)
 
 lib_LTLIBRARIES = liblttvtraceread.la
-liblttvtraceread_la_SOURCES = event.c facility.c parser.c tracefile.c type.c
+liblttvtraceread_la_SOURCES = event.c parser.c tracefile.c type.c markers.c
 noinst_HEADERS = parser.h ltt-private.h
 
 lttinclude_HEADERS = \
   compiler.h\
 	event.h\
-	facility.h\
+	markers.h\
 	ltt.h\
 	time.h\
 	trace.h\

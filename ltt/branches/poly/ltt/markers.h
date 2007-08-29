@@ -1,17 +1,53 @@
+#ifndef _LTT_MARKERS_H
+#define _LTT_MARKERS_H
+
 /*
  * Marker support header.
  *
- * Mathieu Desnoyers, Auguest 2007
+ * Mathieu Desnoyers, August 2007
  * License: LGPL.
  */
 
+#include <glib.h>
 #include <ltt/trace.h>
 #include <ltt/compiler.h>
+#include <ltt/ltt-private.h>
+
+enum ltt_type {
+	LTT_TYPE_SIGNED_INT,
+	LTT_TYPE_UNSIGNED_INT,
+	LTT_TYPE_STRING,
+	LTT_TYPE_COMPACT,
+	LTT_TYPE_NONE,
+};
+
+#define LTT_ATTRIBUTE_COMPACT (1<<0)
+#define LTT_ATTRIBUTE_NETWORK_BYTE_ORDER (1<<1)
+
+/* static ids 0-7 reserved for internal use. */
+#define MARKER_CORE_IDS         8
+/* dynamic ids 8-127 reserved for compact events. */
+#define MARKER_COMPACT_IDS      128
+
+struct marker_info;
 
 struct marker_info {
-	char *name;
-	char *format;
-  unsigned long size;   /* size if known statically, else 0 */
+  GQuark name;
+  char *format;
+  long size;       /* size if known statically, else -1 */
+  GArray *fields;           /* Array of struct marker_field */
+  guint8 int_size, long_size, pointer_size, size_t_size, alignment;
+  struct marker_info *next; /* Linked list of markers with the same name */
+};
+
+struct marker_field {
+  GQuark name;
+  enum ltt_type type;
+  unsigned long offset; /* offset in the event data */
+  unsigned long size;
+  unsigned long alignment;
+  unsigned long attributes;
+  int static_offset;
 };
 
 enum marker_id {
@@ -23,7 +59,7 @@ enum marker_id {
   MARKER_ID_DYNAMIC,    /* Dynamic IDs (range: 128-65535)   */
 };
 
-static inline uint16_t marker_get_id_from_info(LttTrace *trace,
+static inline guint16 marker_get_id_from_info(LttTrace *trace,
     struct marker_info *info)
 {
   return ((unsigned long)info - (unsigned long)trace->markers->data)
@@ -31,14 +67,27 @@ static inline uint16_t marker_get_id_from_info(LttTrace *trace,
 }
 
 static inline struct marker_info *marker_get_info_from_id(LttTrace *trace,
-    uint16_t id)
+    guint16 id)
 {
   if (unlikely(trace->markers->len < id))
     return NULL;
   return &g_array_index(trace->markers, struct marker_info, id);
 }
 
-int marker_format_event(LttTrace *trace, const char *name, const char *format);
-int marker_id_event(LttTrace *trace, const char *name, uint16_t id);
+/*
+ * Returns the head of the marker info list for that name.
+ */
+static inline struct marker_info *marker_get_info_from_name(LttTrace *trace,
+    GQuark name)
+{
+  return g_hash_table_lookup(trace->markers_hash, (gconstpointer)name);
+}
+
+int marker_format_event(LttTrace *trace, GQuark name, const char *format);
+int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
+  uint8_t int_size, uint8_t long_size, uint8_t pointer_size,
+  uint8_t size_t_size, uint8_t alignment);
 int allocate_marker_data(LttTrace *trace);
-int destroy_marker_data(LttTrace *trace);
+void destroy_marker_data(LttTrace *trace);
+
+#endif //_LTT_MARKERS_H

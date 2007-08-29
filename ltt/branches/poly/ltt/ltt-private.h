@@ -137,15 +137,13 @@ typedef struct _TimeHeartbeatFull {
 
 struct ltt_event_header_hb {
   uint32_t      timestamp;
-  unsigned char  facility_id;
-  unsigned char event_id;
+  uint16_t      event_id;
   uint16_t      event_size;
 } LTT_PACKED_STRUCT;
 
 struct ltt_event_header_nohb {
   uint64_t      timestamp;
-  unsigned char  facility_id;
-  unsigned char event_id;
+  uint16_t      event_id;
   uint16_t      event_size;
 } LTT_PACKED_STRUCT;
 
@@ -166,47 +164,7 @@ struct ltt_trace_header_any {
   uint32_t        freq_scale;
 } LTT_PACKED_STRUCT;
 
-
-/* For version 0.3 */
-
-struct ltt_trace_header_0_3 {
-  uint32_t        magic_number;
-  uint32_t        arch_type;
-  uint32_t        arch_variant;
-  uint32_t        float_word_order;
-  uint8_t         arch_size;
-  uint8_t         major_version;
-  uint8_t         minor_version;
-  uint8_t         flight_recorder;
-  uint8_t         has_heartbeat;
-  uint8_t         has_alignment;  /* Event header alignment */
-  uint32_t        freq_scale;
-} LTT_PACKED_STRUCT;
-
-/* For version 0.7 */
-
-struct ltt_trace_header_0_7 {
-  uint32_t        magic_number;
-  uint32_t        arch_type;
-  uint32_t        arch_variant;
-  uint32_t        float_word_order;
-  uint8_t         arch_size;
-  uint8_t         major_version;
-  uint8_t         minor_version;
-  uint8_t         flight_recorder;
-  uint8_t         has_heartbeat;
-  uint8_t         has_alignment;  /* Event header alignment */
-  uint32_t        freq_scale;
-  uint64_t        start_freq;
-  uint64_t        start_tsc;
-  uint64_t        start_monotonic;
-  uint64_t        start_time_sec;
-  uint64_t        start_time_usec;
-} LTT_PACKED_STRUCT;
-
-/* For version 0.8 */
-
-struct ltt_trace_header_0_8 {
+struct ltt_trace_header_1_0 {
   uint32_t        magic_number;
   uint32_t        arch_type;
   uint32_t        arch_variant;
@@ -265,7 +223,7 @@ struct _LttEventType{
   GQuark name;
   gchar * description;
   guint index;            //id of the event type within the facility
-  LttFacility * facility; //the facility that contains the event type
+  struct marker_info *info;
   GArray * fields;        //event's fields (LttField)
   GData *fields_by_name;
   int has_compact_data;       //event header contains compact data (first field)
@@ -287,8 +245,7 @@ struct _LttEvent{
 
   guint32  timestamp;        /* truncated timestamp */
 
-  unsigned char facility_id;  /* facility ID are never reused. */
-  unsigned char event_id;
+  guint16 event_id;
 
   LttTime event_time;
 
@@ -335,6 +292,7 @@ struct _LttField{
                             // contain variable length fields.
 };
 
+#if 0
 struct _LttFacility{
   LttTrace  *trace;
   GQuark name;
@@ -353,6 +311,7 @@ struct _LttFacility{
   
   unsigned char exists; /* 0 does not exist, 1 exists */
 };
+#endif //0
 
 typedef struct _LttBuffer {
   void * head;
@@ -446,7 +405,6 @@ struct _LttTrace{
   uint64_t  start_monotonic;
   LttTime   start_time;
   LttTime   start_time_from_tsc;
-  GArray    *compact_facilities;
   uint8_t   compact_event_bits;
 
   GData     *tracefiles;                    //tracefiles groups

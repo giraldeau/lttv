@@ -80,20 +80,6 @@ gchar *ltt_eventtype_description(LttEventType *et)
 
 /*****************************************************************************
  *Function name
- *    ltt_eventtype_facility : get the facility which contains the event type
- *Input params
- *    et                     : an  event type   
- *Return value
- *    LttFacility *          : the facility
- ****************************************************************************/
-
-LttFacility *ltt_eventtype_facility(LttEventType *et)
-{
-  return et->facility;
-}
-
-/*****************************************************************************
- *Function name
  *    ltt_eventtype_id : get the id of the event type
  *Input params
  *    et               : an  event type   
@@ -133,8 +119,6 @@ GQuark ltt_field_name(LttField *f)
 {
   return f->name;
 }
-
-
 
 /*****************************************************************************
  *Function name

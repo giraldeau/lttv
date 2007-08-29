@@ -23,6 +23,7 @@
 #include <lttv/attribute.h>
 #include <lttv/hook.h>
 #include <ltt/ltt.h>
+#include <ltt/markers.h>
 
 /* This is the generic part of trace processing. All events within a
    certain time interval are accessed and processing hooks are called for
@@ -274,11 +275,6 @@ void lttv_tracefile_context_remove_hooks_by_id(LttvTracefileContext *self,
 /* A LttvTraceHook has two arrays of LttvTraceHookByFacility,
  * indexed by facility ID and a simple array used to walk all the hooks */
 typedef struct _LttvTraceHook {
-  GArray *fac_index;
-  GArray *fac_list;
-} LttvTraceHook;
-
-typedef struct _LttvTraceHookByFacility {
   LttvHook h;
   guint id;
   LttField *f1;
@@ -288,14 +284,9 @@ typedef struct _LttvTraceHookByFacility {
 } LttvTraceHookByFacility;
 
 
-/* Get the first facility corresponding to the name. As the types must be
- * compatible, it is relevant to use the field name and sizes of the first
- * facility to create data structures and assume the data will be compatible
- * thorough the trace */
-LttvTraceHookByFacility *lttv_trace_hook_get_first(LttvTraceHook *th);
-
-LttvTraceHookByFacility *lttv_trace_hook_get_fac(
-    LttvTraceHook *th, guint facility_id);
+/* Get the head of marker list correcponding to the given trace hook.
+ */
+struct marker_info *lttv_trace_hook_get_marker(LttvTraceHook *th);
 
 void lttv_trace_hook_destroy(LttvTraceHook *th);
 
@@ -306,7 +297,7 @@ void lttv_trace_hook_destroy(LttvTraceHook *th);
    registering a hook using this structure as event data;
    it already contains the (up to three) needed fields handles. */
  
-gint lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event_type,
+gint lttv_trace_find_hook(LttTrace *t, GQuark event_type,
     GQuark field1, GQuark field2, GQuark field3, LttvHook h,
     gpointer hook_data, LttvTraceHook *th);
 

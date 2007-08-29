@@ -975,11 +975,7 @@ LttvTraceHookByFacility *lttv_trace_hook_get_fac(LttvTraceHook *th,
   return &g_array_index(th->fac_index, LttvTraceHookByFacility, facility_id);
 }
 
-/* Get the first facility corresponding to the name. As the types must be
- * compatible, it is relevant to use the field name and sizes of the first
- * facility to create data structures and assume the data will be compatible
- * thorough the trace */
-LttvTraceHookByFacility *lttv_trace_hook_get_first(LttvTraceHook *th)
+struct marker_info *lttv_trace_hook_get_marker(LttvTraceHook *th)
 {
   g_assert(th->fac_list->len > 0);
   return g_array_index(th->fac_list, LttvTraceHookByFacility*, 0);
@@ -988,51 +984,29 @@ LttvTraceHookByFacility *lttv_trace_hook_get_first(LttvTraceHook *th)
 
 /* Returns 0 on success, -1 if fails. */
 gint
-lttv_trace_find_hook(LttTrace *t, GQuark facility, GQuark event, 
+lttv_trace_find_hook(LttTrace *t, GQuark event, 
     GQuark field1, GQuark field2, GQuark field3, LttvHook h, gpointer hook_data,
     LttvTraceHook *th)
 {
-  LttFacility *f;
-
   LttEventType *et, *first_et;
 
-  GArray *facilities;
+  struct marker_info *info;
 
-  guint i, fac_id, ev_id;
+  guint i, ev_id;
 
-  LttvTraceHookByFacility *thf, *first_thf;
+  head = marker_get_info_from_name(t, event);
 
-  facilities = ltt_trace_facility_get_by_name(t, facility);
+  if(unlikely(head == NULL))
+    goto facility_error;
 
-  if(unlikely(facilities == NULL)) goto facility_error;
-
-  th->fac_index = g_array_sized_new(FALSE, TRUE,
-             sizeof(LttvTraceHookByFacility),
-             NUM_FACILITIES);
-  th->fac_index = g_array_set_size(th->fac_index, NUM_FACILITIES);
-
-  th->fac_list = g_array_sized_new(FALSE, TRUE,
-             sizeof(LttvTraceHookByFacility*),
-             facilities->len);
-  th->fac_list = g_array_set_size(th->fac_list, facilities->len);
+  ev_id = marker_get_id_from_info(t, info);
   
-  fac_id = g_array_index(facilities, guint, 0);
-  f = ltt_trace_get_facility_by_num(t, fac_id);
-
-  et = ltt_facility_eventtype_get_by_name(f, event);
-  if(unlikely(et == NULL)) goto event_error;
-  
-  thf = &g_array_index(th->fac_index, LttvTraceHookByFacility, fac_id);
-  g_array_index(th->fac_list, LttvTraceHookByFacility*, 0) = thf;
-
-  ev_id = ltt_eventtype_id(et);
-  
-  thf->h = h;
-  thf->id = GET_HOOK_ID(fac_id, ev_id);
-  thf->f1 = find_field(et, field1);
-  thf->f2 = find_field(et, field2);
-  thf->f3 = find_field(et, field3);
-  thf->hook_data = hook_data;
+  th->h = h;
+  th->id = ev_id;
+  th->f1 = find_field(et, field1);
+  th->f2 = find_field(et, field2);
+  th->f3 = find_field(et, field3);
+  th->hook_data = hook_data;
   
   first_thf = thf;
   first_et = et;

@@ -23,6 +23,7 @@
 #include <glib.h>
 #include <ltt/ltt.h>
 #include <sys/types.h>
+#include <ltt/markers.h>
 
 LttEvent *ltt_event_new();
 
@@ -36,17 +37,11 @@ void ltt_event_destroy(LttEvent *event);
 /* Obtain the trace unique integer id associated with the type of 
    this event */
 
-unsigned ltt_event_eventtype_id(const LttEvent *e);
+uint16_t ltt_event_eventtype_id(const LttEvent *e);
 
-unsigned ltt_event_facility_id(const LttEvent *e);
-
-/* Facility and type for the event */
-
-LttFacility *ltt_event_facility(const LttEvent *e);
+struct marker_info *ltt_event_marker(const LttEvent *e);
 
 LttEventType *ltt_event_eventtype(const LttEvent *e);
-
-
 
 /* Time and cycle count for the event */
 

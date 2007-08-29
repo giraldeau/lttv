@@ -35,11 +35,12 @@
 #include <ltt/event.h>
 #include <ltt/trace.h>
 #include <ltt/ltt-types.h>
-
+#include <ltt/markers.h>
 
 
 void compute_fields_offsets(LttTracefile *tf,
-    LttFacility *fac, LttField *field, off_t *offset, void *root, guint is_compact);
+    LttFacility *fac, LttField *field, off_t *offset, void *root,
+    guint is_compact);
 
 
 LttEvent *ltt_event_new()
@@ -63,9 +64,9 @@ void ltt_event_destroy(LttEvent *event)
  *    unsigned              : event type id
  ****************************************************************************/
 
-unsigned ltt_event_eventtype_id(const LttEvent *e)
+uint16_t ltt_event_eventtype_id(const LttEvent *e)
 {
-  return (unsigned) e->event_id;
+  return e->event_id;
 }
 
 /*****************************************************************************
@@ -74,50 +75,13 @@ unsigned ltt_event_eventtype_id(const LttEvent *e)
  *Input params
  *    e                  : an instance of an event type   
  *Return value
- *    LttFacility *     : the facility of the event
+ *    struct marker_info *: the marker associated with the event
  ****************************************************************************/
 
-LttFacility *ltt_event_facility(const LttEvent *e)
+struct marker_info *ltt_event_marker(const LttEvent *e)
 {
-  LttTrace * trace = e->tracefile->trace;
-  unsigned id = e->facility_id;
-  LttFacility *facility = ltt_trace_facility_by_id(trace,id);
-  
-  g_assert(facility->exists);
-
-  return facility;
+  return marker_get_info_from_id(e->tracefile->trace, e->event_id);
 }
-
-/*****************************************************************************
- *Function name
- *    ltt_event_facility_id : get the facility id of the event
- *Input params
- *    e                  : an instance of an event type   
- *Return value
- *    unsigned          : the facility of the event
- ****************************************************************************/
-
-unsigned ltt_event_facility_id(const LttEvent *e)
-{
-  return e->facility_id;
-}
-
-/*****************************************************************************
- *Function name
- *    ltt_event_eventtype : get the event type of the event
- *Input params
- *    e                   : an instance of an event type   
- *Return value
- *    LttEventType *     : the event type of the event
- ****************************************************************************/
-
-LttEventType *ltt_event_eventtype(const LttEvent *e)
-{
-  LttFacility* facility = ltt_event_facility(e);
-  if(!facility) return NULL;
-  return &g_array_index(facility->events, LttEventType, e->event_id);
-}
-
 
 /*****************************************************************************
  *Function name
@@ -146,8 +110,6 @@ LttCycleCount ltt_event_cycle_count(const LttEvent *e)
 {
   return e->tsc;
 }
-
-
 
 /*****************************************************************************
  *Function name
@@ -568,7 +530,7 @@ char *ltt_event_get_string(LttEvent *e, LttField *f)
  *    offset : pointer to the current offset, must be incremented
  ****************************************************************************/
 
-
+#if 0
 void compute_fields_offsets(LttTracefile *tf, 
     LttFacility *fac, LttField *field, off_t *offset, void *root, guint is_compact)
 {
@@ -775,4 +737,4 @@ void compute_offsets(LttTracefile *tf, LttFacility *fac,
   }
 
 }
-
+#endif //0
