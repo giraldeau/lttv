@@ -19,6 +19,7 @@ stack_arch_x86_64.xml \
 list.xml \
 user_generic.xml \
 xen.xml \
+compact.xml \
 block.xml
 
 facilities_DATA = \
