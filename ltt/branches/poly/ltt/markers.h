@@ -12,14 +12,7 @@
 #include <ltt/trace.h>
 #include <ltt/compiler.h>
 #include <ltt/ltt-private.h>
-
-enum ltt_type {
-	LTT_TYPE_SIGNED_INT,
-	LTT_TYPE_UNSIGNED_INT,
-	LTT_TYPE_STRING,
-	LTT_TYPE_COMPACT,
-	LTT_TYPE_NONE,
-};
+#include <ltt/markers-field.h>
 
 #define LTT_ATTRIBUTE_COMPACT (1<<0)
 #define LTT_ATTRIBUTE_NETWORK_BYTE_ORDER (1<<1)
@@ -38,16 +31,6 @@ struct marker_info {
   GArray *fields;           /* Array of struct marker_field */
   guint8 int_size, long_size, pointer_size, size_t_size, alignment;
   struct marker_info *next; /* Linked list of markers with the same name */
-};
-
-struct marker_field {
-  GQuark name;
-  enum ltt_type type;
-  unsigned long offset; /* offset in the event data */
-  unsigned long size;
-  unsigned long alignment;
-  unsigned long attributes;
-  int static_offset;
 };
 
 enum marker_id {
@@ -82,6 +65,27 @@ static inline struct marker_info *marker_get_info_from_name(LttTrace *trace,
 {
   return g_hash_table_lookup(trace->markers_hash, (gconstpointer)name);
 }
+
+static inline struct marker_field *marker_get_field(struct marker_info *info,
+							guint i)
+{
+	return &g_array_index(info->fields, struct marker_field, i);
+}
+
+static inline unsigned int marker_get_num_fields(struct marker_info *info)
+{
+	return info->fields->len;
+}
+
+/*
+ * for_each_marker_field  -  iterate over fields of a marker
+ * @field:      struct marker_field * to use as iterator
+ * @info:       marker info pointer
+ */
+#define for_each_marker_field(field, info)				\
+	for (field = marker_get_field(info, 0);				\
+		field != marker_get_field(info, marker_get_num_fields(info)); \
+		field++)
 
 int marker_format_event(LttTrace *trace, GQuark name, const char *format);
 int marker_id_event(LttTrace *trace, GQuark name, guint16 id,

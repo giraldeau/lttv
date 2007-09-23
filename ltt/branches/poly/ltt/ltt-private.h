@@ -201,6 +201,7 @@ struct ltt_block_start_header {
 } LTT_PACKED_STRUCT;
 
 
+#if 0
 struct _LttType{
 // LTTV does not care about type names. Everything is a field.
 // GQuark type_name;                //type name if it is a named type
@@ -218,6 +219,7 @@ struct _LttType{
   char *separator;
   char *footer;
 };
+#endif //0
 
 #if 0
 struct _LttEventType{
@@ -273,6 +275,7 @@ struct _LttEventPosition{
 
 enum field_status { FIELD_UNKNOWN, FIELD_VARIABLE, FIELD_FIXED };
 
+#if 0
 struct _LttField{
   GQuark name;
   gchar *description;
@@ -293,7 +296,7 @@ struct _LttField{
                             // each event for sequences and arrays that
                             // contain variable length fields.
 };
-
+#endif //0
 #if 0
 struct _LttFacility{
   LttTrace  *trace;

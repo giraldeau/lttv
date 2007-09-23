@@ -272,8 +272,6 @@ void lttv_tracefile_context_add_hooks_by_id(LttvTracefileContext *self,
 void lttv_tracefile_context_remove_hooks_by_id(LttvTracefileContext *self,
 					       unsigned i);
 
-/* A LttvTraceHook has two arrays of LttvTraceHookByFacility,
- * indexed by facility ID and a simple array used to walk all the hooks */
 typedef struct _LttvTraceHook {
   LttvHook h;
   guint id;
@@ -281,7 +279,7 @@ typedef struct _LttvTraceHook {
   LttField *f2;
   LttField *f3;
   gpointer hook_data;
-} LttvTraceHookByFacility;
+} LttvTraceHook;
 
 
 /* Get the head of marker list correcponding to the given trace hook.

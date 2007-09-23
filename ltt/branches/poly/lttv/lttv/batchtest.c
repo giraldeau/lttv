@@ -298,7 +298,6 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
   FILE *fp;
   LttTime time, previous_time;
   LttEvent *event = ltt_tracefile_get_event(tracefile);
-  LttFacility *facility;
   LttEventType *event_type;
   int err;
   gchar mod_name[PATH_MAX];
@@ -328,7 +327,6 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
 
   do {
     LttTracefile *tf_pos;
-    facility = ltt_event_facility(event);
     event_type = ltt_event_eventtype(event);
     time = ltt_event_time(event);
     ltt_event_position(event, a_event_position);
