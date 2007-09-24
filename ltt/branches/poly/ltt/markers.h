@@ -11,8 +11,8 @@
 #include <glib.h>
 #include <ltt/trace.h>
 #include <ltt/compiler.h>
-#include <ltt/ltt-private.h>
 #include <ltt/markers-field.h>
+#include <ltt/trace.h>
 
 #define LTT_ATTRIBUTE_COMPACT (1<<0)
 #define LTT_ATTRIBUTE_NETWORK_BYTE_ORDER (1<<1)

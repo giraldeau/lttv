@@ -72,22 +72,13 @@
 #define FACILITIES_BITS 8
 #define AVG_EVENTS_PER_FACILITIES 10
 
-typedef struct _LttTrace LttTrace;
+typedef struct LttTrace LttTrace;
 
-typedef struct _LttTracefile LttTracefile;
+typedef struct LttTracefile LttTracefile;
 
-typedef struct _LttFacility LttFacility;
+typedef struct LttSystemDescription LttSystemDescription;
 
-typedef struct _LttEventType LttEventType;
-
-typedef struct _LttType LttType;
-
-typedef struct _LttField LttField;
-
-typedef struct _LttEvent LttEvent;
-
-typedef struct _LttSystemDescription LttSystemDescription;
-
+typedef struct LttEvent LttEvent;
 
 /* Checksums are used to differentiate facilities which have the same name
    but differ. */
@@ -110,11 +101,10 @@ typedef struct _TimeInterval{
 
 typedef guint64 LttCycleCount;
 
-
 /* Event positions are used to seek within a tracefile based on
    the block number and event position within the block. */
 
-typedef struct _LttEventPosition LttEventPosition;
+typedef struct LttEventPosition LttEventPosition;
 
 
 /* Differences between architectures include word sizes, endianess,

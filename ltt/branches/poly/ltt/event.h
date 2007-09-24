@@ -1,54 +1,61 @@
-/* This file is part of the Linux Trace Toolkit trace reading library
- * Copyright (C) 2003-2004 Michel Dagenais
- *               2006 Mathieu Desnoyers
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License Version 2.1 as published by the Free Software Foundation.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, write to the
- * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
- * Boston, MA 02111-1307, USA.
- */
+#ifndef _LTT_EVENT_H
+#define _LTT_EVENT_H
 
-#ifndef EVENT_H
-#define EVENT_H
-
+#include <ltt/time.h>
 #include <glib.h>
-#include <ltt/ltt.h>
+#include <stdint.h>
 #include <sys/types.h>
-#include <ltt/markers.h>
+#include <ltt/ltt.h>
+#include <endian.h>
 
-LttEvent *ltt_event_new();
+/*
+ * Structure LttEvent and LttEventPosition must begin with the _exact_ same
+ * fields in the exact same order. LttEventPosition is a parent of LttEvent.
+ */
+struct LttEvent {
+	/* Begin of LttEventPosition fields */
+	LttTracefile *tracefile;
+	unsigned int block;
+	unsigned int offset;
 
-void ltt_event_destroy(LttEvent *event);
+	/* Timekeeping */
+	uint64_t tsc;		/* Current timestamp counter */
+	
+	/* End of LttEventPosition fields */
+	guint32	timestamp;	/* truncated timestamp */
 
-/* Events and their content, including the raw data, are only valid 
-   until reading another event from the same tracefile. 
-   Indeed, since event reading is critical to the performance, 
-   the memory associated with an event may be reused at each read. */
+	guint16 event_id;
 
-/* Obtain the trace unique integer id associated with the type of 
-   this event */
+	LttTime event_time;
 
-uint16_t ltt_event_eventtype_id(const LttEvent *e);
+	void *data;		/* event data */
+	guint data_size;
+	guint event_size;	/* event_size field of the header :
+				   used to verify data_size from facility. */
+	uint32_t compact_data;
 
-struct marker_info *ltt_event_marker(const LttEvent *e);
+	int count;		/* the number of overflow of cycle count */
+	gint64 overflow_nsec;	/* precalculated nsec for overflows */
+};
 
-LttEventType *ltt_event_eventtype(const LttEvent *e);
+struct LttEventPosition {
+	LttTracefile *tracefile;
+	unsigned int block;
+	unsigned int offset;
+	
+	/* Timekeeping */
+	uint64_t tsc;		 /* Current timestamp counter */
+};
 
-/* Time and cycle count for the event */
+static inline guint16 ltt_event_id(struct LttEvent *event)
+{
+	return event->event_id;
+}
 
-LttTime ltt_event_time(const LttEvent *e);
-
-LttCycleCount ltt_event_cycle_count(const LttEvent *e);
-
+static inline LttTime ltt_event_time(struct LttEvent *event)
+{
+	return event->event_time;
+}
 
 /* Obtain the position of the event within the tracefile. This
    is used to seek back to this position later or to seek to another
@@ -75,59 +82,4 @@ void ltt_event_position_copy(LttEventPosition *dest,
 
 LttTracefile *ltt_event_position_tracefile(LttEventPosition *ep);
 
-/* CPU id of the event */
-
-unsigned ltt_event_cpu_id(LttEvent *e);
-
-
-/* Pointer to the raw data for the event. This should not be used directly
-   unless prepared to do all the architecture specific conversions. */
-
-void *ltt_event_data(LttEvent *e);
-
-
-/* The number of elements in a sequence field is specific to each event 
-   instance. This function returns the number of elements for an array or 
-   sequence field in an event. */
-
-guint64 ltt_event_field_element_number(LttEvent *e, LttField *f);
-
-
-/* Set the currently selected element for a sequence or array field. */
-
-LttField *ltt_event_field_element_select(LttEvent *e, LttField *f, gulong i);
-
-off_t ltt_event_field_offset(LttEvent *e, LttField *f);
-
-/* A union is like a structure except that only a single member at a time
-   is present depending on the specific event instance. This function tells
-   the active member for a union field in an event. */
-
-unsigned ltt_event_field_union_member(LttEvent *e, LttField *f);
-
-
-/* These functions extract data from an event after architecture specific
-   conversions. */
-
-guint32 ltt_event_get_unsigned(LttEvent *e, LttField *f);
-
-gint32 ltt_event_get_int(LttEvent *e, LttField *f);
-
-guint64 ltt_event_get_long_unsigned(LttEvent *e, LttField *f);
-
-gint64 ltt_event_get_long_int(LttEvent *e, LttField *f);
-
-float ltt_event_get_float(LttEvent *e, LttField *f);
-
-double ltt_event_get_double(LttEvent *e, LttField *f);
-
-
-/* The string obtained is only valid until the next read from
-   the same tracefile. */
-
-gchar *ltt_event_get_string(LttEvent *e, LttField *f);
-
-void compute_offsets(LttTracefile *tf, LttFacility *fac,
-    LttEventType *event, off_t *offset, void *root);
-
-#endif // EVENT_H
+#endif //_LTT_EVENT_H

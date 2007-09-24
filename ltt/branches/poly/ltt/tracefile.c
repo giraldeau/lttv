@@ -45,9 +45,8 @@
 #include <ltt/ltt.h>
 #include "ltt-private.h"
 #include <ltt/trace.h>
-#include <ltt/facility.h>
 #include <ltt/event.h>
-#include <ltt/type.h>
+//#include <ltt/type.h>
 #include <ltt/ltt-types.h>
 #include <ltt/markers.h>
 
@@ -1058,10 +1057,10 @@ static void ltt_fac_ids_destroy(gpointer data)
 int ltt_process_facility_tracefile(LttTracefile *tf)
 {
   int err;
-  LttFacility *fac;
-  GArray *fac_ids;
+  //LttFacility *fac;
+  //GArray *fac_ids;
   guint i;
-  LttEventType *et;
+  //LttEventType *et;
   
   while(1) {
     err = ltt_tracefile_read_seek(tf);

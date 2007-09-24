@@ -21,6 +21,40 @@
 #define TRACE_H
 
 #include <ltt/ltt.h>
+#include <stdint.h>
+#include <glib.h>
+
+struct LttTrace {
+  GQuark pathname;                          //the pathname of the trace
+  //LttSystemDescription * system_description;//system description 
+
+  GArray *facilities_by_num;            /* fac_id as index in array */
+  GData *facilities_by_name;            /* fac name (GQuark) as index */
+                                        /* Points to array of fac_id of all the
+                                        * facilities that has this name. */
+  guint     num_cpu;
+
+  guint32   arch_type;
+  guint32   arch_variant;
+  guint8    arch_size;
+  guint8    ltt_major_version;
+  guint8    ltt_minor_version;
+  guint8    flight_recorder;
+  guint32   freq_scale;
+  uint64_t  start_freq;
+  uint64_t  start_tsc;
+  uint64_t  start_monotonic;
+  LttTime   start_time;
+  LttTime   start_time_from_tsc;
+  uint8_t   compact_event_bits;
+
+  GData     *tracefiles;                    //tracefiles groups
+  /* Support for markers */
+  GArray    *markers;                       //indexed by marker ID
+  GHashTable *markers_hash;                 //indexed by name hash
+};
+
+
 
 extern GQuark LTT_FACILITY_NAME_HEARTBEAT,
               LTT_EVENT_NAME_HEARTBEAT,
@@ -59,18 +93,18 @@ LttSystemDescription *ltt_trace_system_description(LttTrace *t);
    versions of a facility (same name, different checksum) have consecutive
    positions. */
 
-unsigned ltt_trace_facility_number(LttTrace *t);
+//unsigned ltt_trace_facility_number(LttTrace *t);
 
-LttFacility * ltt_trace_facility_by_id(LttTrace * trace, guint8 id);
+//LttFacility * ltt_trace_facility_by_id(LttTrace * trace, guint8 id);
 
 /* Returns an array of indexes (guint) that matches the facility name */
-GArray *ltt_trace_facility_get_by_name(LttTrace *t, GQuark name);
+//GArray *ltt_trace_facility_get_by_name(LttTrace *t, GQuark name);
 
 /* Functions to discover all the event types in the trace */
 
-unsigned ltt_trace_eventtype_number(LttTrace *t);
+//unsigned ltt_trace_eventtype_number(LttTrace *t);
 
-LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned i);
+//LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned i);
 
 
 /* Get the start time and end time of the trace */
@@ -177,12 +211,12 @@ void compute_tracefile_group(GQuark key_id,
                              GArray *group,
                              struct compute_tracefile_group_args *args);
 
-LttFacility *ltt_trace_get_facility_by_num(LttTrace *t, guint num);
+//LttFacility *ltt_trace_get_facility_by_num(LttTrace *t, guint num);
 
 
-gint check_fields_compatibility(LttEventType *event_type1,
-    LttEventType *event_type2,
-    LttField *field1, LttField *field2);
+//gint check_fields_compatibility(LttEventType *event_type1,
+//    LttEventType *event_type2,
+//    LttField *field1, LttField *field2);
 
 gint64 ltt_get_int(gboolean reverse_byte_order, gint size, void *data);
 

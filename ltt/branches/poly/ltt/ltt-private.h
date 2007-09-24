@@ -24,6 +24,9 @@
 #include <sys/types.h>
 #include <ltt/ltt.h>
 #include <endian.h>
+#include <ltt/event.h>
+#include <ltt/markers.h>
+#include <ltt/trace.h>
 
 #ifndef max
 #define max(a,b) ((a)>(b)?(a):(b))
@@ -233,46 +236,6 @@ struct _LttEventType{
 };
 #endif //0
 
-/* Structure LttEvent and LttEventPosition must begin with the _exact_ same
- * fields in the exact same order. LttEventPosition is a parent of LttEvent. */
-struct _LttEvent{
-  
-  /* Begin of LttEventPosition fields */
-  LttTracefile  *tracefile;
-  unsigned int  block;
-  unsigned int  offset;
-
-  /* Timekeeping */
-  uint64_t                tsc;       /* Current timestamp counter */
-  
-  /* End of LttEventPosition fields */
-
-  guint32  timestamp;        /* truncated timestamp */
-
-  guint16 event_id;
-
-  LttTime event_time;
-
-  void * data;               //event data
-  guint  data_size;
-  guint  event_size;         //event_size field of the header : 
-                             //used to verify data_size from facility.
-  uint32_t compact_data;
-
-  int      count;                    //the number of overflow of cycle count
-  gint64 overflow_nsec;              //precalculated nsec for overflows
-};
-
-struct _LttEventPosition{
-  LttTracefile  *tracefile;
-  unsigned int  block;
-  unsigned int  offset;
-  
-  /* Timekeeping */
-  uint64_t                tsc;       /* Current timestamp counter */
-};
-
-
 enum field_status { FIELD_UNKNOWN, FIELD_VARIABLE, FIELD_FIXED };
 
 #if 0
@@ -341,7 +304,7 @@ typedef struct _LttBuffer {
   guint32                 cyc2ns_scale;
 } LttBuffer;
 
-struct _LttTracefile{
+struct LttTracefile {
   gboolean cpu_online;               //is the cpu online ?
   GQuark long_name;                  //tracefile complete filename
   GQuark name;                       //tracefile name
@@ -388,40 +351,10 @@ struct _LttTracefile{
   //LttCycleCount pre_cycle_count;     //previous cycle count of the event
 };
 
-struct _LttTrace{
-  GQuark pathname;                          //the pathname of the trace
-  //LttSystemDescription * system_description;//system description 
-
-  GArray *facilities_by_num;            /* fac_id as index in array */
-  GData *facilities_by_name;            /* fac name (GQuark) as index */
-                                        /* Points to array of fac_id of all the
-                                        * facilities that has this name. */
-  guint     num_cpu;
-
-  guint32   arch_type;
-  guint32   arch_variant;
-  guint8    arch_size;
-  guint8    ltt_major_version;
-  guint8    ltt_minor_version;
-  guint8    flight_recorder;
-  guint32    freq_scale;
-  uint64_t  start_freq;
-  uint64_t  start_tsc;
-  uint64_t  start_monotonic;
-  LttTime   start_time;
-  LttTime   start_time_from_tsc;
-  uint8_t   compact_event_bits;
-
-  GData     *tracefiles;                    //tracefiles groups
-  /* Support for markers */
-  GArray    *markers;                       //indexed by marker ID
-  GHashTable *markers_hash;                 //indexed by name hash
-};
-
 /* The characteristics of the system on which the trace was obtained
    is described in a LttSystemDescription structure. */
 
-struct _LttSystemDescription {
+struct LttSystemDescription {
   gchar *description;
   gchar *node_name;
   gchar *domain_name;
@@ -449,7 +382,7 @@ struct _LttSystemDescription {
 //#define EVENT_HEADER_SIZE (TIMESTAMP_SIZE + EVENT_ID_SIZE)
 
 
-off_t get_alignment(LttField *field);
+//off_t get_alignment(LttField *field);
 
 /* Calculate the offset needed to align the type.
  * If has_alignment is 0, alignment is disactivated.

@@ -35,8 +35,6 @@
 #include <lttv/stats.h>
 #include <ltt/trace.h>
 #include <ltt/event.h>
-#include <ltt/type.h>
-#include <ltt/facility.h>
 
 #define __UNUSED__ __attribute__((__unused__))
 
@@ -173,7 +171,8 @@ gboolean trace_event(void __UNUSED__ *hook_data, void *call_data)
   ltt_event_position(e, a_event_position);
   ltt_event_position_get(a_event_position, &tf, &nb_block, &offset, &tsc);
   fprintf(stderr,"Event %s %lu.%09lu [%u 0x%x tsc %llu]\n",
-      g_quark_to_string(ltt_eventtype_name(ltt_event_eventtype(e))),
+      g_quark_to_string(marker_get_info_from_id(ltt_tracefile_get_trace(tf),
+      			ltt_event_id(e))->name),
       tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec,
       nb_block, offset, tsc);
   return FALSE;
@@ -298,7 +297,8 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
   FILE *fp;
   LttTime time, previous_time;
   LttEvent *event = ltt_tracefile_get_event(tracefile);
-  LttEventType *event_type;
+  //LttEventType *event_type;
+  struct marker_info *minfo;
   int err;
   gchar mod_name[PATH_MAX];
 
@@ -327,14 +327,15 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
 
   do {
     LttTracefile *tf_pos;
-    event_type = ltt_event_eventtype(event);
+    //event_type = ltt_event_eventtype(event);
+    minfo = marker_get_info_from_id(ltt_tracefile_get_trace(tracefile),
+    					ltt_event_id(event));
     time = ltt_event_time(event);
     ltt_event_position(event, a_event_position);
     ltt_event_position_get(a_event_position, &tf_pos, &nb_block, &offset, &tsc);
     //fprintf(fp,"%s.%s: %llu %lu.%09lu position %u/%u\n", 
-    fprintf(fp, "%s.%s: %llu %lu.%09lu position %u/%u, tracefile %s\n", 
-        g_quark_to_string(ltt_facility_name(facility)),
-        g_quark_to_string(ltt_eventtype_name(event_type)),
+    fprintf(fp, "%s: %llu %lu.%09lu position %u/%u, tracefile %s\n", 
+    	g_quark_to_string(minfo->name),
         tsc, (unsigned long)time.tv_sec, 
         (unsigned long)time.tv_nsec, 
         nb_block, offset,
@@ -373,7 +374,8 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
     }
     else {
 #endif //0
-      if(ltt_time_compare(time, previous_time) == 0) nb_equal++;
+      if(ltt_time_compare(time, previous_time) == 0)
+      	nb_equal++;
       else if(nb_equal > 0) {
         g_warning("Consecutive %d events with time %lu.%09lu",
                    nb_equal + 1, previous_time.tv_sec, previous_time.tv_nsec);
