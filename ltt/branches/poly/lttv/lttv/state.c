@@ -16,6 +16,7 @@
  * MA 02111-1307, USA.
  */
 
+#define _GNU_SOURCE
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
@@ -23,10 +24,8 @@
 #include <lttv/lttv.h>
 #include <lttv/module.h>
 #include <lttv/state.h>
-#include <ltt/facility.h>
 #include <ltt/trace.h>
 #include <ltt/event.h>
-#include <ltt/type.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -357,7 +356,7 @@ state_load_saved_states(LttvTraceState *tcs)
 {
   FILE *fp;
   GPtrArray *quarktable;
-  char *trace_path;
+  const char *trace_path;
   char path[PATH_MAX];
   guint count;
   guint i;
@@ -610,7 +609,7 @@ static void write_process_state(gpointer key, gpointer value,
   }
 
   for(i = 0 ; i < process->user_stack->len; i++) {
-    address = &g_array_index(process->user_stack, guint64, i);
+    address = g_array_index(process->user_stack, guint64, i);
     fprintf(fp, "    <USER_STACK ADDRESS=\"%llu\"/>\n",
             address);
   }
@@ -745,7 +744,7 @@ static void write_process_state_raw(gpointer key, gpointer value,
   }
 
   for(i = 0 ; i < process->user_stack->len; i++) {
-    address = &g_array_index(process->user_stack, guint64, i);
+    address = g_array_index(process->user_stack, guint64, i);
     fputc(HDR_USER_STACK, fp);
     fwrite(&address, sizeof(address), 1, fp);
 #if 0
@@ -1079,7 +1078,7 @@ void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp,
   } while(1);
 end_loop:
   *(tcs->max_time_state_recomputed_in_seek) = tcs->parent.time_span.end_time;
-  restore_init_state(tcs);
+  restore_init_state(&tcs->parent);
   lttv_process_trace_seek_time(tcs, ltt_time_zero);
   return;
 }
