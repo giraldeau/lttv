@@ -117,3 +117,188 @@ LttTracefile *ltt_event_position_tracefile(LttEventPosition *ep)
   return ep->tracefile;
 }
 
+/*****************************************************************************
+ * These functions extract data from an event after architecture specific
+ * conversions
+ ****************************************************************************/
+guint32 ltt_event_get_unsigned(LttEvent *e, struct marker_field *f)
+{
+  gboolean reverse_byte_order;
+  if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    reverse_byte_order = LTT_GET_BO(e->tracefile);
+  }
+
+  switch(f->size) {
+  case 1:
+    {
+      guint8 x = *(guint8 *)(e->data + f->offset);
+      return (guint32) x;    
+    }
+    break;
+  case 2:
+    return (guint32)ltt_get_uint16(reverse_byte_order, e->data + f->offset);
+    break;
+  case 4:
+    return (guint32)ltt_get_uint32(reverse_byte_order, e->data + f->offset);
+    break;
+  case 8:
+  default:
+    g_critical("ltt_event_get_unsigned : field size %i unknown", f->size);
+    return 0;
+    break;
+  }
+}
+
+gint32 ltt_event_get_int(LttEvent *e, struct marker_field *f)
+{
+  gboolean reverse_byte_order;
+  if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    reverse_byte_order = LTT_GET_BO(e->tracefile);
+  }
+
+  switch(f->size) {
+  case 1:
+    {
+      gint8 x = *(gint8 *)(e->data + f->offset);
+      return (gint32) x;    
+    }
+    break;
+  case 2:
+    return (gint32)ltt_get_int16(reverse_byte_order, e->data + f->offset);
+    break;
+  case 4:
+    return (gint32)ltt_get_int32(reverse_byte_order, e->data + f->offset);
+    break;
+  case 8:
+  default:
+    g_critical("ltt_event_get_int : field size %i unknown", f->size);
+    return 0;
+    break;
+  }
+}
+
+guint64 ltt_event_get_long_unsigned(LttEvent *e, struct marker_field *f)
+{
+  gboolean reverse_byte_order;
+  if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    reverse_byte_order = LTT_GET_BO(e->tracefile);
+  }
+  
+  switch(f->size) {
+  case 1:
+    {
+      guint8 x = *(guint8 *)(e->data + f->offset);
+      return (guint64) x;    
+    }
+    break;
+  case 2:
+    return (guint64)ltt_get_uint16(reverse_byte_order, e->data + f->offset);
+    break;
+  case 4:
+    return (guint64)ltt_get_uint32(reverse_byte_order, e->data + f->offset);
+    break;
+  case 8:
+    return ltt_get_uint64(reverse_byte_order, e->data + f->offset);
+    break;
+  default:
+    g_critical("ltt_event_get_long_unsigned : field size %i unknown", f->size);
+    return 0;
+    break;
+  }
+}
+
+gint64 ltt_event_get_long_int(LttEvent *e, struct marker_field *f)
+{
+  gboolean reverse_byte_order;
+  if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    reverse_byte_order = LTT_GET_BO(e->tracefile);
+  }
+  
+  switch(f->size) {
+  case 1:
+    {
+      gint8 x = *(gint8 *)(e->data + f->offset);
+      return (gint64) x;    
+    }
+    break;
+  case 2:
+    return (gint64)ltt_get_int16(reverse_byte_order, e->data + f->offset);
+    break;
+  case 4:
+    return (gint64)ltt_get_int32(reverse_byte_order, e->data + f->offset);
+    break;
+  case 8:
+    return ltt_get_int64(reverse_byte_order, e->data + f->offset);
+    break;
+  default:
+    g_critical("ltt_event_get_long_int : field size %i unknown", f->size);
+    return 0;
+    break;
+  }
+}
+
+#if 0
+float ltt_event_get_float(LttEvent *e, struct marker_field *f)
+{
+  gboolean reverse_byte_order;
+  if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    g_assert(LTT_HAS_FLOAT(e->tracefile));
+    reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
+  }
+
+  g_assert(f->field_type.type_class == LTT_FLOAT && f->size == 4);
+
+  if(reverse_byte_order == 0) return *(float *)(e->data + f->offset);
+  else{
+    void *ptr = e->data + f->offset;
+    guint32 value = bswap_32(*(guint32*)ptr);
+    return *(float*)&value;
+  }
+}
+
+double ltt_event_get_double(LttEvent *e, struct marker_field *f)
+{
+  gboolean reverse_byte_order;
+  if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
+    reverse_byte_order = (g_ntohs(0x1) != 0x1);
+  } else {
+    g_assert(LTT_HAS_FLOAT(e->tracefile));
+    reverse_byte_order = LTT_GET_FLOAT_BO(e->tracefile);
+  }
+
+  if(f->size == 4)
+    return ltt_event_get_float(e, f);
+    
+  g_assert(f->field_type.type_class == LTT_FLOAT && f->size == 8);
+
+  if(reverse_byte_order == 0) return *(double *)(e->data + f->offset);
+  else {
+    void *ptr = e->data + f->offset;
+    guint64 value = bswap_64(*(guint64*)ptr);
+    return *(double*)&value;
+  }
+}
+#endif
+
+/*****************************************************************************
+ * The string obtained is only valid until the next read from
+ * the same tracefile.
+ ****************************************************************************/
+char *ltt_event_get_string(LttEvent *e, struct marker_field *f)
+{
+  g_assert(f->type == LTT_TYPE_STRING);
+
+  return (gchar*)g_strdup((gchar*)(e->data + f->offset));
+}
+
+

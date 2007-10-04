@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <ltt/ltt.h>
 #include <endian.h>
+#include <ltt/markers.h>
 
 /*
  * Structure LttEvent and LttEventPosition must begin with the _exact_ same
@@ -81,5 +82,26 @@ void ltt_event_position_copy(LttEventPosition *dest,
                              const LttEventPosition *src);
 
 LttTracefile *ltt_event_position_tracefile(LttEventPosition *ep);
+
+/* These functions extract data from an event after architecture specific
+ *    conversions. */
+
+guint32 ltt_event_get_unsigned(LttEvent *e, struct marker_field *f);
+
+gint32 ltt_event_get_int(LttEvent *e, struct marker_field *f);
+
+guint64 ltt_event_get_long_unsigned(LttEvent *e, struct marker_field *f);
+
+gint64 ltt_event_get_long_int(LttEvent *e, struct marker_field *f);
+
+float ltt_event_get_float(LttEvent *e, struct marker_field *f);
+
+double ltt_event_get_double(LttEvent *e, struct marker_field *f);
+
+
+/* The string obtained is only valid until the next read from
+ *    the same tracefile. */
+
+gchar *ltt_event_get_string(LttEvent *e, struct marker_field *f);
 
 #endif //_LTT_EVENT_H
