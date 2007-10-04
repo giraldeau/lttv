@@ -2159,8 +2159,8 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
-  LttField *f = thf->f1;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  struct marker_field *f = th->f1;
 
   LttvExecutionSubmode submode;
 
@@ -2202,8 +2202,8 @@ static gboolean trap_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
-  LttField *f = thf->f1;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  struct marker_field *f = th->f1;
 
   LttvExecutionSubmode submode;
 
@@ -2245,18 +2245,14 @@ static gboolean irq_entry(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  guint8 fac_id = ltt_event_facility_id(e);
-  guint8 ev_id = ltt_event_eventtype_id(e);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
- // g_assert(lttv_trace_hook_get_first((LttvTraceHook *)hook_data)->f1 != NULL);
-  g_assert(thf->f1 != NULL);
- // g_assert(thf == lttv_trace_hook_get_first((LttvTraceHook *)hook_data));
-  LttField *f = thf->f1;
+  //guint8 ev_id = ltt_event_eventtype_id(e);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  g_assert(th->f1 != NULL);
+  struct marker_field *f = th->f1;
 
   LttvExecutionSubmode submode;
   guint64 irq = ltt_event_get_long_unsigned(e, f);
   guint64 nb_irqs = ((LttvTraceState *)(s->parent.t_context))->nb_irqs;
-  GString *string;
 
   if(irq < nb_irqs) {
     submode = ((LttvTraceState *)(s->parent.t_context))->irq_names[irq];
@@ -2311,18 +2307,14 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  guint8 fac_id = ltt_event_facility_id(e);
-  guint8 ev_id = ltt_event_eventtype_id(e);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
- // g_assert(lttv_trace_hook_get_first((LttvTraceHook *)hook_data)->f1 != NULL);
-  g_assert(thf->f1 != NULL);
- // g_assert(thf == lttv_trace_hook_get_first((LttvTraceHook *)hook_data));
-  LttField *f = thf->f1;
+  //guint8 ev_id = ltt_event_eventtype_id(e);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  g_assert(th->f1 != NULL);
+  struct marker_field *f = th->f1;
 
   LttvExecutionSubmode submode;
   guint64 softirq = ltt_event_get_long_unsigned(e, f);
   guint64 nb_softirqs = ((LttvTraceState *)(s->parent.t_context))->nb_softirqs;
-  GString *string;
 
   if(softirq < nb_softirqs) {
     submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[softirq];
@@ -2344,12 +2336,11 @@ static gboolean enum_interrupt(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  guint8 fac_id = ltt_event_facility_id(e);
-  guint8 ev_id = ltt_event_eventtype_id(e);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  //guint8 ev_id = ltt_event_eventtype_id(e);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
 
-  GQuark action = g_quark_from_string(ltt_event_get_string(e, thf->f1));
-  guint irq = ltt_event_get_long_unsigned(e, thf->f2);
+  GQuark action = g_quark_from_string(ltt_event_get_string(e, th->f1));
+  guint irq = ltt_event_get_long_unsigned(e, th->f2);
 
   ts->irq_names[irq] = action;
 
@@ -2362,13 +2353,12 @@ static gboolean bdev_request_issue(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  guint8 fac_id = ltt_event_facility_id(e);
-  guint8 ev_id = ltt_event_eventtype_id(e);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  //guint8 ev_id = ltt_event_eventtype_id(e);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
 
-  guint major = ltt_event_get_long_unsigned(e, thf->f1);
-  guint minor = ltt_event_get_long_unsigned(e, thf->f2);
-  guint oper = ltt_event_get_long_unsigned(e, thf->f3);
+  guint major = ltt_event_get_long_unsigned(e, th->f1);
+  guint minor = ltt_event_get_long_unsigned(e, th->f2);
+  guint oper = ltt_event_get_long_unsigned(e, th->f3);
   guint16 devcode = MKDEV(major,minor);
 
   /* have we seen this block device before? */
@@ -2387,11 +2377,11 @@ static gboolean bdev_request_complete(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
 
-  guint major = ltt_event_get_long_unsigned(e, thf->f1);
-  guint minor = ltt_event_get_long_unsigned(e, thf->f2);
-  guint oper = ltt_event_get_long_unsigned(e, thf->f3);
+  guint major = ltt_event_get_long_unsigned(e, th->f1);
+  guint minor = ltt_event_get_long_unsigned(e, th->f2);
+  guint oper = ltt_event_get_long_unsigned(e, th->f3);
   guint16 devcode = MKDEV(major,minor);
 
   /* have we seen this block device before? */
@@ -2459,11 +2449,10 @@ static gboolean function_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  guint8 fac_id = ltt_event_facility_id(e);
-  guint8 ev_id = ltt_event_eventtype_id(e);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
-  g_assert(thf->f1 != NULL);
-  LttField *f = thf->f1;
+  //guint8 ev_id = ltt_event_eventtype_id(e);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  g_assert(th->f1 != NULL);
+  struct marker_field *f = th->f1;
   guint64 funcptr = ltt_event_get_long_unsigned(e, f);
 
   push_function(s, funcptr);
@@ -2474,14 +2463,11 @@ static gboolean function_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  guint8 fac_id = ltt_event_facility_id(e);
-  guint8 ev_id = ltt_event_eventtype_id(e);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
-  g_assert(thf->f1 != NULL);
-  LttField *f = thf->f1;
+  //guint8 ev_id = ltt_event_eventtype_id(e);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  g_assert(th->f1 != NULL);
+  struct marker_field *f = th->f1;
   guint64 funcptr = ltt_event_get_long_unsigned(e, f);
-
-  LttvExecutionSubmode submode;
 
   pop_function(s, funcptr);
   return FALSE;
@@ -2496,13 +2482,13 @@ static gboolean schedchange(void *hook_data, void *call_data)
   LttvProcessState *old_process = ts->running_process[cpu];
   
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
   guint pid_in, pid_out;
   gint64 state_out;
 
-  pid_out = ltt_event_get_unsigned(e, thf->f1);
-  pid_in = ltt_event_get_unsigned(e, thf->f2);
-  state_out = ltt_event_get_long_int(e, thf->f3);
+  pid_out = ltt_event_get_unsigned(e, th->f1);
+  pid_in = ltt_event_get_unsigned(e, th->f2);
+  state_out = ltt_event_get_long_int(e, th->f3);
   
   if(likely(process != NULL)) {
 
@@ -2569,25 +2555,25 @@ static gboolean process_fork(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
   guint parent_pid;
   guint child_pid;  /* In the Linux Kernel, there is one PID per thread. */
   guint child_tgid;  /* tgid in the Linux kernel is the "real" POSIX PID. */
-  LttvProcessState *zombie_process;
+  //LttvProcessState *zombie_process;
   guint cpu = s->cpu;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
   LttvProcessState *child_process;
 
   /* Parent PID */
-  parent_pid = ltt_event_get_unsigned(e, thf->f1);
+  parent_pid = ltt_event_get_unsigned(e, th->f1);
 
   /* Child PID */
-  child_pid = ltt_event_get_unsigned(e, thf->f2);
+  child_pid = ltt_event_get_unsigned(e, th->f2);
   s->parent.target_pid = child_pid;
 
   /* Child TGID */
-  if(thf->f3) child_tgid = ltt_event_get_unsigned(e, thf->f3);
+  if(th->f3) child_tgid = ltt_event_get_unsigned(e, th->f3);
   else child_tgid = 0;
 
   /* Mathieu : it seems like the process might have been scheduled in before the
@@ -2644,15 +2630,14 @@ static gboolean process_kernel_thread(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
   guint pid;
-  guint cpu = s->cpu;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process;
   LttvExecutionState *es;
 
   /* PID */
-  pid = (guint)ltt_event_get_long_unsigned(e, thf->f1);
+  pid = (guint)ltt_event_get_long_unsigned(e, th->f1);
   s->parent.target_pid = pid;
 
   process = lttv_state_find_process_or_create(ts, ANY_CPU, pid,
@@ -2671,14 +2656,12 @@ static gboolean process_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
-  LttField *f;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
   guint pid;
-  guint cpu = s->cpu;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process; // = ts->running_process[cpu];
 
-  pid = ltt_event_get_unsigned(e, thf->f1);
+  pid = ltt_event_get_unsigned(e, th->f1);
   s->parent.target_pid = pid;
 
   // FIXME : Add this test in the "known state" section
@@ -2696,12 +2679,12 @@ static gboolean process_free(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
   guint release_pid;
   LttvProcessState *process;
 
   /* PID of the process to release */
-  release_pid = ltt_event_get_unsigned(e, thf->f1);
+  release_pid = ltt_event_get_unsigned(e, th->f1);
   s->parent.target_pid = release_pid;
   
   g_assert(release_pid != 0);
@@ -2743,7 +2726,7 @@ static gboolean process_exec(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
   //gchar *name;
   guint cpu = s->cpu;
   LttvProcessState *process = ts->running_process[cpu];
@@ -2761,7 +2744,7 @@ static gboolean process_exec(void *hook_data, void *call_data)
   process->name = g_quark_from_string(null_term_name);
 #endif //0
 
-  process->name = g_quark_from_string(ltt_event_get_string(e, thf->f1));
+  process->name = g_quark_from_string(ltt_event_get_string(e, th->f1));
   process->brand = LTTV_STATE_UNBRANDED;
   //g_free(null_term_name);
   return FALSE;
@@ -2772,12 +2755,12 @@ static gboolean thread_brand(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
   gchar *name;
   guint cpu = s->cpu;
   LttvProcessState *process = ts->running_process[cpu];
 
-  name = ltt_event_get_string(e, thf->f1);
+  name = ltt_event_get_string(e, th->f1);
   process->brand = g_quark_from_string(name);
 
   return FALSE;
@@ -2789,7 +2772,6 @@ static void fix_process(gpointer key, gpointer value,
   LttvProcessState *process;
   LttvExecutionState *es;
   process = (LttvProcessState *)value;
-  LttvTracefileContext *tfc = (LttvTracefileContext *)user_data;
   LttTime *timestamp = (LttTime*)user_data;
 
   if(process->type == LTTV_STATE_KERNEL_THREAD) {
@@ -2841,14 +2823,16 @@ static gboolean statedump_end(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
-  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  //LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  //LttvTraceHook *th = (LttvTraceHook *)hook_data;
   
   /* For all processes */
     /* if kernel thread, if stack[0] is unknown, set to syscall mode, wait */
     /* else, if stack[0] is unknown, set to user mode, running */
 
   g_hash_table_foreach(ts->processes, fix_process, &tfc->timestamp);
+
+  return FALSE;
 }
 
 static gboolean enum_process_state(void *hook_data, void *call_data)
@@ -2857,8 +2841,7 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   //It's slow : optimise later by doing this before reading trace.
   LttEventType *et = ltt_event_eventtype(e);
-  //
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
   guint parent_pid;
   guint pid;
   guint tgid;
@@ -2867,20 +2850,20 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
   LttvProcessState *parent_process;
-  LttField *f4, *f5, *f6, *f7, *f8;
+  struct marker_field *f4, *f5, *f6, *f7, *f8;
   GQuark type, mode, submode, status;
   LttvExecutionState *es;
   guint i, nb_cpus;
 
   /* PID */
-  pid = ltt_event_get_unsigned(e, thf->f1);
+  pid = ltt_event_get_unsigned(e, th->f1);
   s->parent.target_pid = pid;
   
   /* Parent PID */
-  parent_pid = ltt_event_get_unsigned(e, thf->f2);
+  parent_pid = ltt_event_get_unsigned(e, th->f2);
 
   /* Command name */
-  command = ltt_event_get_string(e, thf->f3);
+  command = ltt_event_get_string(e, th->f3);
 
   /* type */
   f4 = ltt_eventtype_field_by_name(et, LTT_FIELD_TYPE);
@@ -3038,7 +3021,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
   GArray *hooks;
 
-  LttvTraceHookByFacility *thf;
+  LttvTraceHook *th;
   
   LttvTraceHook *hook;
 
@@ -3059,135 +3042,135 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     hn = 0;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
+        LTT_EVENT_SYSCALL_ENTRY,
         LTT_FIELD_SYSCALL_ID, 0, 0,
         syscall_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_EXIT,
+        LTT_EVENT_SYSCALL_EXIT,
         0, 0, 0,
         syscall_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_ENTRY,
+        LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
         trap_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_EXIT,
+        LTT_EVENT_TRAP_EXIT,
         0, 0, 0, 
         trap_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
+        LTT_EVENT_IRQ_ENTRY,
         LTT_FIELD_IRQ_ID, 0, 0,
         irq_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
+        LTT_EVENT_IRQ_EXIT,
         0, 0, 0, 
         irq_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY,
+        LTT_EVENT_SOFT_IRQ_ENTRY,
         LTT_FIELD_SOFT_IRQ_ID, 0, 0,
         soft_irq_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_EXIT,
+        LTT_EVENT_SOFT_IRQ_EXIT,
         0, 0, 0, 
         soft_irq_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
+        LTT_EVENT_SCHED_SCHEDULE,
         LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE,
         schedchange, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FORK,
+        LTT_EVENT_PROCESS_FORK,
         LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, LTT_FIELD_CHILD_TGID,
         process_fork, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_KTHREAD_CREATE,
+        LTT_EVENT_KTHREAD_CREATE,
         LTT_FIELD_PID, 0, 0,
         process_kernel_thread, NULL, &g_array_index(hooks, LttvTraceHook,
           hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_EXIT,
+        LTT_EVENT_PROCESS_EXIT,
         LTT_FIELD_PID, 0, 0,
         process_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
     
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FREE,
+        LTT_EVENT_PROCESS_FREE,
         LTT_FIELD_PID, 0, 0,
         process_free, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_FS, LTT_EVENT_EXEC,
+        LTT_EVENT_EXEC,
         LTT_FIELD_FILENAME, 0, 0,
         process_exec, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_USER_GENERIC, LTT_EVENT_THREAD_BRAND,
+        LTT_EVENT_THREAD_BRAND,
         LTT_FIELD_NAME, 0, 0,
         thread_brand, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
      /* statedump-related hooks */
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_LIST, LTT_EVENT_PROCESS_STATE,
+        LTT_EVENT_PROCESS_STATE,
         LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
         enum_process_state, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_LIST, LTT_EVENT_STATEDUMP_END,
+        LTT_EVENT_STATEDUMP_END,
         0, 0, 0,
         statedump_end, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_LIST, LTT_EVENT_LIST_INTERRUPT,
+        LTT_EVENT_LIST_INTERRUPT,
         LTT_FIELD_ACTION, LTT_FIELD_NUM, 0,
         enum_interrupt, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_ISSUE,
+        LTT_EVENT_REQUEST_ISSUE,
         LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
         bdev_request_issue, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_COMPLETE,
+        LTT_EVENT_REQUEST_COMPLETE,
         LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
         bdev_request_complete, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_USER_GENERIC, LTT_EVENT_FUNCTION_ENTRY,
+        LTT_EVENT_FUNCTION_ENTRY,
         LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
         function_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
 
     ret = lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_USER_GENERIC, LTT_EVENT_FUNCTION_EXIT,
+        LTT_EVENT_FUNCTION_EXIT,
         LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
         function_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
     if(ret) hn--;
