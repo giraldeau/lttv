@@ -26,6 +26,7 @@
 #include <lttv/state.h>
 #include <ltt/trace.h>
 #include <ltt/event.h>
+#include <ltt/ltt.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -1616,13 +1617,7 @@ create_name_tables(LttvTraceState *tcs)
 {
   int i, nb;
 
-  GQuark f_name, e_name;
-
   LttvTraceHook h;
-
-  LttvTraceHookByFacility *thf;
-
-  LttEventType *et;
 
   LttType *t;
 
@@ -1636,18 +1631,7 @@ create_name_tables(LttvTraceState *tcs)
       LTTV_POINTER, &v);
   g_assert(*(v.v_pointer) == NULL);
   *(v.v_pointer) = name_tables;
-#if 0 // Use iteration over the facilities_by_name and then list all event
-      // types of each facility
-  nb = ltt_trace_eventtype_number(tcs->parent.t);
-  name_tables->eventtype_names = g_new(GQuark, nb);
-  for(i = 0 ; i < nb ; i++) {
-    et = ltt_trace_eventtype_get(tcs->parent.t, i);
-    e_name = ltt_eventtype_name(et);
-    f_name = ltt_facility_name(ltt_eventtype_facility(et));
-    g_string_printf(fe_name, "%s.%s", f_name, e_name);
-    name_tables->eventtype_names[i] = g_quark_from_string(fe_name->str);    
-  }
-#endif //0
+
   if(!lttv_trace_find_hook(tcs->parent.t,
       LTT_EVENT_SYSCALL_ENTRY,
       LTT_FIELD_SYSCALL_ID, 0, 0,
@@ -1683,7 +1667,7 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->nb_syscalls = 0;
   }
 
-  if(!lttv_trace_find_hook(tcs->parent.t, LTT_FACILITY_KERNEL_ARCH,
+  if(!lttv_trace_find_hook(tcs->parent.t,
         LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
         NULL, NULL, &h)) {
@@ -1714,7 +1698,7 @@ create_name_tables(LttvTraceState *tcs)
   }
 
   if(!lttv_trace_find_hook(tcs->parent.t,
-        LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
+        LTT_EVENT_IRQ_ENTRY,
         LTT_FIELD_IRQ_ID, 0, 0,
         NULL, NULL, &h)) {
     
@@ -1919,9 +1903,6 @@ static void push_state(LttvTracefileState *tfs, LttvExecutionMode t,
 int lttv_state_pop_state_cleanup(LttvProcessState *process, 
     LttvTracefileState *tfs)
 { 
-  guint cpu = tfs->cpu;
-  LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
-
   guint depth = process->execution_stack->len;
 
   if(depth == 1){
@@ -1993,10 +1974,10 @@ static gint search_usertrace(gconstpointer a, gconstpointer b)
     /* Get smaller keys */
     if(res->best) {
       if(ltt_time_compare(*elem_time, *res->best) < 0) {
-        res->best = elem_time;
+        res->best = (LttTime *)elem_time;
       }
     } else {
-      res->best = elem_time;
+      res->best = (LttTime *)elem_time;
     }
     return -1;
   }
@@ -2032,8 +2013,6 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   LttvProcessState *process = g_new(LttvProcessState, 1);
 
   LttvExecutionState *es;
-
-  LttvTraceContext *tc = (LttvTraceContext*)tcs;
 
   char buffer[128];
 
