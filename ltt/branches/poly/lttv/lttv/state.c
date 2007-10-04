@@ -258,7 +258,7 @@ restore_init_state(LttvTraceState *self)
 {
   guint i, nb_cpus, nb_irqs;
 
-  LttvTracefileState *tfcs;
+  //LttvTracefileState *tfcs;
 
   LttTime start_time, end_time;
   
@@ -521,7 +521,7 @@ fini(LttvTracesetState *self)
 
   LttvTraceState *tcs;
 
-  LttvTracefileState *tfcs;
+  //LttvTracefileState *tfcs;
 
   LttvAttributeValue v;
 
@@ -840,9 +840,7 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp,
   LttvProcessState tmp;
   GQuark tmpq;
 
-  guint i;
   guint64 *address;
-  guint cpu;
 
   /* TODO : check return value */
   fread(&tmp.type, sizeof(tmp.type), 1, fp);
@@ -1078,8 +1076,8 @@ void lttv_trace_states_read_raw(LttvTraceState *tcs, FILE *fp,
   } while(1);
 end_loop:
   *(tcs->max_time_state_recomputed_in_seek) = tcs->parent.time_span.end_time;
-  restore_init_state(&tcs->parent);
-  lttv_process_trace_seek_time(tcs, ltt_time_zero);
+  restore_init_state(tcs);
+  lttv_process_trace_seek_time(&tcs->parent, ltt_time_zero);
   return;
 }
 
@@ -1244,11 +1242,11 @@ static LttvBdevState *bdevstate_copy(LttvBdevState *bds)
 
 static void insert_and_copy_bdev_state(gpointer k, gpointer v, gpointer u)
 {
-  GHashTable *ht = (GHashTable *)u;
+  //GHashTable *ht = (GHashTable *)u;
   LttvBdevState *bds = (LttvBdevState *)v;
   LttvBdevState *newbds;
 
-  newbds = bdevstate_copy(v);
+  newbds = bdevstate_copy(bds);
 
   g_hash_table_insert(u, k, newbds);
 }
@@ -1289,11 +1287,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
   
   guint *running_process;
 
-  LttvAttributeType type;
-
   LttvAttributeValue value;
-
-  LttvAttributeName name;
 
   LttEventPosition *ep;
 
@@ -1356,7 +1350,6 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
 
   /* save the cpu state */
   {
-    guint size = sizeof(LttvCPUState)*nb_cpus;
     value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_CPUS,
         LTTV_POINTER);
     *(value.v_pointer) = lttv_state_copy_cpu_states(self->cpu_states, nb_cpus);
@@ -1365,7 +1358,6 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
   /* save the irq state */
   nb_irqs = self->nb_irqs;
   {
-    guint size = sizeof(LttvCPUState)*nb_irqs;
     value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_IRQS,
         LTTV_POINTER);
     *(value.v_pointer) = lttv_state_copy_irq_states(self->irq_states, nb_irqs);
@@ -1501,8 +1493,6 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
   LttvAttributeName name;
 
   gboolean is_named;
-
-  LttEventPosition *ep;
 
   tracefiles_tree = lttv_attribute_find_subdir(container, 
       LTTV_STATE_TRACEFILES);
@@ -1659,7 +1649,7 @@ create_name_tables(LttvTraceState *tcs)
   }
 #endif //0
   if(!lttv_trace_find_hook(tcs->parent.t,
-      LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
+      LTT_EVENT_SYSCALL_ENTRY,
       LTT_FIELD_SYSCALL_ID, 0, 0,
       NULL, NULL, &h)) {
     
