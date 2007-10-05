@@ -1617,7 +1617,7 @@ create_name_tables(LttvTraceState *tcs)
 {
   int i, nb;
 
-  LttvTraceHook h;
+  LttvTraceHook th;
 
   LttType *t;
 
@@ -1635,14 +1635,14 @@ create_name_tables(LttvTraceState *tcs)
   if(!lttv_trace_find_hook(tcs->parent.t,
       LTT_EVENT_SYSCALL_ENTRY,
       LTT_FIELD_SYSCALL_ID, 0, 0,
-      NULL, NULL, &h)) {
+      NULL, NULL, &th)) {
     
-    thf = lttv_trace_hook_get_first(&h);
+    th = lttv_trace_hook_get_first(&th);
     
-    t = ltt_field_type(thf->f1);
+    t = ltt_field_type(th->f1);
     nb = ltt_type_element_number(t);
     
-    lttv_trace_hook_destroy(&h);
+    lttv_trace_hook_destroy(&th);
 
     name_tables->syscall_names = g_new(GQuark, nb);
     name_tables->nb_syscalls = nb;
@@ -1670,11 +1670,11 @@ create_name_tables(LttvTraceState *tcs)
   if(!lttv_trace_find_hook(tcs->parent.t,
         LTT_EVENT_TRAP_ENTRY,
         LTT_FIELD_TRAP_ID, 0, 0,
-        NULL, NULL, &h)) {
+        NULL, NULL, &th)) {
 
-    thf = lttv_trace_hook_get_first(&h);
+    th = lttv_trace_hook_get_first(&th);
 
-    t = ltt_field_type(thf->f1);
+    t = ltt_field_type(th->f1);
     //nb = ltt_type_element_number(t);
 
     lttv_trace_hook_destroy(&h);
@@ -1702,9 +1702,9 @@ create_name_tables(LttvTraceState *tcs)
         LTT_FIELD_IRQ_ID, 0, 0,
         NULL, NULL, &h)) {
     
-    thf = lttv_trace_hook_get_first(&h);
+    th = lttv_trace_hook_get_first(&h);
     
-    t = ltt_field_type(thf->f1);
+    t = ltt_field_type(th->f1);
     //nb = ltt_type_element_number(t);
 
     lttv_trace_hook_destroy(&h);
@@ -2381,7 +2381,7 @@ static gboolean bdev_request_complete(void *hook_data, void *call_data)
 
   guint major = ltt_event_get_long_unsigned(e, th->f1);
   guint minor = ltt_event_get_long_unsigned(e, th->f2);
-  guint oper = ltt_event_get_long_unsigned(e, th->f3);
+  //guint oper = ltt_event_get_long_unsigned(e, th->f3);
   guint16 devcode = MKDEV(major,minor);
 
   /* have we seen this block device before? */
@@ -2479,7 +2479,7 @@ static gboolean schedchange(void *hook_data, void *call_data)
   guint cpu = s->cpu;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
-  LttvProcessState *old_process = ts->running_process[cpu];
+  //LttvProcessState *old_process = ts->running_process[cpu];
   
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
@@ -2840,7 +2840,6 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   //It's slow : optimise later by doing this before reading trace.
-  LttEventType *et = ltt_event_eventtype(e);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
   guint parent_pid;
   guint pid;
@@ -2854,6 +2853,7 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   GQuark type, mode, submode, status;
   LttvExecutionState *es;
   guint i, nb_cpus;
+  struct marker_info *mi;
 
   /* PID */
   pid = ltt_event_get_unsigned(e, th->f1);
@@ -2866,27 +2866,33 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   command = ltt_event_get_string(e, th->f3);
 
   /* type */
-  f4 = ltt_eventtype_field_by_name(et, LTT_FIELD_TYPE);
+  mi = marker_get_info_from_id(ts->parent.t, e->event_id);
+  f4 = marker_get_field(mi, 3);
+  g_assert(f4->name == LTT_FIELD_TYPE);
   type = ltt_enum_string_get(ltt_field_type(f4),
       ltt_event_get_unsigned(e, f4));
 
   /* mode */
-  f5 = ltt_eventtype_field_by_name(et, LTT_FIELD_MODE);
+  f5 = marker_get_field(mi, 4);
+  g_assert(f5->name == LTT_FIELD_MODE);
   mode = ltt_enum_string_get(ltt_field_type(f5), 
       ltt_event_get_unsigned(e, f5));
 
   /* submode */
-  f6 = ltt_eventtype_field_by_name(et, LTT_FIELD_SUBMODE);
+  f6 = marker_get_field(mi, 5);
+  g_assert(f6->name == LTT_FIELD_SUBMODE);
   submode = ltt_enum_string_get(ltt_field_type(f6), 
       ltt_event_get_unsigned(e, f6));
 
   /* status */
-  f7 = ltt_eventtype_field_by_name(et, LTT_FIELD_STATUS);
+  f7 = marker_get_field(mi, 6);
+  g_assert(f7->name == LTT_FIELD_STATUS);
   status = ltt_enum_string_get(ltt_field_type(f7), 
       ltt_event_get_unsigned(e, f7));
 
   /* TGID */
-  f8 = ltt_eventtype_field_by_name(et, LTT_FIELD_TGID);
+  f8 = marker_get_field(mi, 7);
+  g_assert(f8->name == LTT_FIELD_TGID);
   if(f8) tgid = ltt_event_get_unsigned(e, f8);
   else tgid = 0;
 
@@ -3189,11 +3195,11 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
       for(k = 0 ; k < hooks->len ; k++) {
         hook = &g_array_index(hooks, LttvTraceHook, k);
         for(l=0;l<hook->fac_list->len;l++) {
-          thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);
+          th = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);
           lttv_hooks_add(
-            lttv_hooks_by_id_find(tfs->parent.event_by_id, thf->id),
-            thf->h,
-            thf,
+            lttv_hooks_by_id_find(tfs->parent.event_by_id, th->id),
+            th->h,
+            th,
             LTTV_PRIO_STATE);
         }
       }
@@ -3226,7 +3232,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
 
   LttvTraceHook *hook;
   
-  LttvTraceHookByFacility *thf;
+  LttvTraceHook *th;
 
   LttvAttributeValue val;
 
@@ -3249,12 +3255,12 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
       for(k = 0 ; k < hooks->len ; k++) {
         hook = &g_array_index(hooks, LttvTraceHook, k);
         for(l=0;l<hook->fac_list->len;l++) {
-          thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);
+          th = g_array_index(hook->fac_list, LttvTraceHook*, l);
           
           lttv_hooks_remove_data(
-            lttv_hooks_by_id_find(tfs->parent.event_by_id, thf->id),
-                    thf->h,
-                    thf);
+            lttv_hooks_by_id_find(tfs->parent.event_by_id, th->id),
+                    th->h,
+                    th);
         }
       }
     }
@@ -3276,15 +3282,7 @@ static gboolean state_save_event_hook(void *hook_data, void *call_data)
   
   LttvTracefileState *self = (LttvTracefileState *)call_data;
 
-  LttvTracefileState *tfcs;
-
   LttvTraceState *tcs = (LttvTraceState *)(self->parent.t_context);
-
-  LttEventPosition *ep;
-
-  guint i;
-
-  LttTracefile *tf;
 
   LttvAttribute *saved_states_tree, *saved_state_tree;
 
