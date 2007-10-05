@@ -195,7 +195,6 @@ static LttvBdevState *bdevstate_new(void);
 static void bdevstate_free(LttvBdevState *);
 static void bdevstate_free_cb(gpointer key, gpointer value, gpointer user_data);
 static LttvBdevState *bdevstate_copy(LttvBdevState *bds);
-static LttvBdevState *bdev_state_get(LttvTraceState *ts, guint16 devcode);
 
 
 void lttv_state_save(LttvTraceState *self, LttvAttribute *container)
@@ -1615,11 +1614,9 @@ typedef struct _LttvNameTables {
 static void 
 create_name_tables(LttvTraceState *tcs) 
 {
-  int i, nb;
+  int i;
 
   LttvTraceHook th;
-
-  LttType *t;
 
   GString *fe_name = g_string_new("");
 
@@ -1637,31 +1634,31 @@ create_name_tables(LttvTraceState *tcs)
       LTT_FIELD_SYSCALL_ID, 0, 0,
       NULL, NULL, &th)) {
     
-    th = lttv_trace_hook_get_first(&th);
-    
-    t = ltt_field_type(th->f1);
-    nb = ltt_type_element_number(t);
-    
+//    th = lttv_trace_hook_get_first(&th);
+//    
+//    t = ltt_field_type(th->f1);
+//    nb = ltt_type_element_number(t);
+//    
     lttv_trace_hook_destroy(&th);
+//
+//    name_tables->syscall_names = g_new(GQuark, nb);
+//    name_tables->nb_syscalls = nb;
+//
+//    for(i = 0 ; i < nb ; i++) {
+//      name_tables->syscall_names[i] = ltt_enum_string_get(t, i);
+//      if(!name_tables->syscall_names[i]) {
+//        GString *string = g_string_new("");
+//        g_string_printf(string, "syscall %u", i);
+//        name_tables->syscall_names[i] = g_quark_from_string(string->str);
+//        g_string_free(string, TRUE);
+//      }
+//    }
 
-    name_tables->syscall_names = g_new(GQuark, nb);
-    name_tables->nb_syscalls = nb;
-
-    for(i = 0 ; i < nb ; i++) {
-      name_tables->syscall_names[i] = ltt_enum_string_get(t, i);
-      if(!name_tables->syscall_names[i]) {
-        GString *string = g_string_new("");
-        g_string_printf(string, "syscall %u", i);
-        name_tables->syscall_names[i] = g_quark_from_string(string->str);
-        g_string_free(string, TRUE);
-      }
+    name_tables->syscall_names = g_new(GQuark, 256);
+    for(i = 0 ; i < 256 ; i++) {
+      g_string_printf(fe_name, "syscall %d", i);
+      name_tables->syscall_names[i] = g_quark_from_string(fe_name->str);
     }
-
-    //name_tables->syscall_names = g_new(GQuark, 256);
-    //for(i = 0 ; i < 256 ; i++) {
-    //  g_string_printf(fe_name, "syscall %d", i);
-    //  name_tables->syscall_names[i] = g_quark_from_string(fe_name->str);
-    //}
   } else {
     name_tables->syscall_names = NULL;
     name_tables->nb_syscalls = 0;
@@ -1672,20 +1669,19 @@ create_name_tables(LttvTraceState *tcs)
         LTT_FIELD_TRAP_ID, 0, 0,
         NULL, NULL, &th)) {
 
-    th = lttv_trace_hook_get_first(&th);
+//    th = lttv_trace_hook_get_first(&th);
+//
+//    t = ltt_field_type(th->f1);
+//    //nb = ltt_type_element_number(t);
+//
+    lttv_trace_hook_destroy(&th);
 
-    t = ltt_field_type(th->f1);
-    //nb = ltt_type_element_number(t);
+//    name_tables->trap_names = g_new(GQuark, nb);
+//    for(i = 0 ; i < nb ; i++) {
+//      name_tables->trap_names[i] = g_quark_from_string(
+//          ltt_enum_string_get(t, i));
+//    }
 
-    lttv_trace_hook_destroy(&h);
-
-    /*
-    name_tables->trap_names = g_new(GQuark, nb);
-    for(i = 0 ; i < nb ; i++) {
-      name_tables->trap_names[i] = g_quark_from_string(
-          ltt_enum_string_get(t, i));
-    }
-    */
     name_tables->nb_traps = 256;
     name_tables->trap_names = g_new(GQuark, 256);
     for(i = 0 ; i < 256 ; i++) {
@@ -1700,14 +1696,9 @@ create_name_tables(LttvTraceState *tcs)
   if(!lttv_trace_find_hook(tcs->parent.t,
         LTT_EVENT_IRQ_ENTRY,
         LTT_FIELD_IRQ_ID, 0, 0,
-        NULL, NULL, &h)) {
+        NULL, NULL, &th)) {
     
-    th = lttv_trace_hook_get_first(&h);
-    
-    t = ltt_field_type(th->f1);
-    //nb = ltt_type_element_number(t);
-
-    lttv_trace_hook_destroy(&h);
+    lttv_trace_hook_destroy(&th);
 
     /*
     name_tables->irq_names = g_new(GQuark, nb);
@@ -3019,7 +3010,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 {
   LttvTraceset *traceset = self->parent.ts;
 
-  guint i, j, k, l, nb_trace, nb_tracefile;
+  guint i, j, k, nb_trace, nb_tracefile;
 
   LttvTraceState *ts;
 
@@ -3029,8 +3020,6 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
   LttvTraceHook *th;
   
-  LttvTraceHook *hook;
-
   LttvAttributeValue val;
 
   gint ret;
@@ -3193,15 +3182,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
                                           LttvTracefileContext*, j));
 
       for(k = 0 ; k < hooks->len ; k++) {
-        hook = &g_array_index(hooks, LttvTraceHook, k);
-        for(l=0;l<hook->fac_list->len;l++) {
-          th = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);
+        th = &g_array_index(hooks, LttvTraceHook, k);
           lttv_hooks_add(
             lttv_hooks_by_id_find(tfs->parent.event_by_id, th->id),
             th->h,
             th,
             LTTV_PRIO_STATE);
-        }
       }
     }
     lttv_attribute_find(ts->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
@@ -3222,7 +3208,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
 {
   LttvTraceset *traceset = self->parent.ts;
 
-  guint i, j, k, l, nb_trace, nb_tracefile;
+  guint i, j, k, nb_trace, nb_tracefile;
 
   LttvTraceState *ts;
 
@@ -3230,8 +3216,6 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
 
   GArray *hooks;
 
-  LttvTraceHook *hook;
-  
   LttvTraceHook *th;
 
   LttvAttributeValue val;
@@ -3253,15 +3237,11 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
                                           LttvTracefileContext*, j));
 
       for(k = 0 ; k < hooks->len ; k++) {
-        hook = &g_array_index(hooks, LttvTraceHook, k);
-        for(l=0;l<hook->fac_list->len;l++) {
-          th = g_array_index(hook->fac_list, LttvTraceHook*, l);
-          
+        th = &g_array_index(hooks, LttvTraceHook, k);
           lttv_hooks_remove_data(
             lttv_hooks_by_id_find(tfs->parent.event_by_id, th->id),
                     th->h,
                     th);
-        }
       }
     }
     for(k = 0 ; k < hooks->len ; k++)
