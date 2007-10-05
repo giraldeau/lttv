@@ -25,7 +25,8 @@ struct marker_field {
   unsigned long size;
   unsigned long alignment;
   unsigned long attributes;
-  int static_offset;
+  int static_offset;	/* boolean - private - is the field offset statically
+  			 * known with the preceding types ? */
 };
 
 static inline GQuark marker_field_get_name(struct marker_field *field)
