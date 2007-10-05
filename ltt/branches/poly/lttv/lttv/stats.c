@@ -25,10 +25,8 @@
 #include <lttv/stats.h>
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>
-#include <ltt/facility.h>
 #include <ltt/trace.h>
 #include <ltt/event.h>
-#include <ltt/type.h>
 
 #define BUF_SIZE 256
 #define MAX_64_HEX_STRING_LEN 19

@@ -36,9 +36,7 @@
 #include <lttv/print.h>
 #include <ltt/ltt.h>
 #include <ltt/event.h>
-#include <ltt/type.h>
 #include <ltt/trace.h>
-#include <ltt/facility.h>
 #include <stdio.h>
 
 static gboolean

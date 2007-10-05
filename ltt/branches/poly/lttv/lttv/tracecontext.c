@@ -24,9 +24,7 @@
 #include <lttv/lttv.h>
 #include <lttv/tracecontext.h>
 #include <ltt/event.h>
-#include <ltt/facility.h>
 #include <ltt/trace.h>
-#include <ltt/type.h>
 #include <lttv/filter.h>
 #include <errno.h>
 

@@ -80,8 +80,6 @@
 #include <lttv/lttv.h>
 #include <lttv/filter.h>
 #include <ltt/trace.h>
-#include <ltt/type.h>
-#include <ltt/facility.h>
 #include <stdlib.h>
 #include <string.h>
 

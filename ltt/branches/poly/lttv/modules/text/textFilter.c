@@ -40,9 +40,7 @@
 #include <lttv/filter.h>
 #include <ltt/ltt.h>
 #include <ltt/event.h>
-#include <ltt/type.h>
 #include <ltt/trace.h>
-#include <ltt/facility.h>
 
 /* Insert the hooks before and after each trace and tracefile, and for each
    event. Print a global header. */
