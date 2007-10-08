@@ -274,7 +274,7 @@ void lttv_tracefile_context_remove_hooks_by_id(LttvTracefileContext *self,
 
 typedef struct _LttvTraceHook {
   LttvHook h;
-  guint id;
+  guint id;  /* id of the event associated with this hook */
   struct marker_field *f1;
   struct marker_field *f2;
   struct marker_field *f3;
