@@ -1,5 +1,3 @@
-
-
 /* This file is part of the Linux Trace Toolkit viewer
  * Copyright (C) 2003-2004 Michel Dagenais
  *               2005 Mathieu Desnoyers
@@ -42,52 +40,40 @@
 #include <ltt/trace.h>
 #include <stdio.h>
 #include <ctype.h>
-#include<ltt/ltt-private.h>
+#include <ltt/ltt-private.h>
 #include <string.h>
 
 
-void lttv_print_field(LttEvent *e, LttField *f, GString *s,
-                      gboolean field_names, guint element_index) {
-
-  LttType *type;
-
+void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
+                      gboolean field_names)
+{
   GQuark name;
 
-  int nb, i;
+  //int nb, i;
 
-  type = ltt_field_type(f);
-
-  switch(ltt_type_class(type)) {
-    case LTT_SHORT:
-    case LTT_INT:
-    case LTT_LONG:
-    case LTT_SSIZE_T:
-    case LTT_INT_FIXED:
+  switch(f->type) {
+    case LTT_TYPE_SIGNED_INT:
       if(field_names) {
-        name = ltt_field_name(f);
+        name = f->name;
         if(name)
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
       }
 
-      //g_string_append_printf(s, "%lld", ltt_event_get_long_int(e,f));
-       g_string_append_printf(s, type->fmt, ltt_event_get_long_int(e,f));
-       break;
+      g_string_append_printf(s, "%lld", ltt_event_get_long_int(e,f));
+      //g_string_append_printf(s, type->fmt, ltt_event_get_long_int(e,f));
+      break;
 
-    case LTT_USHORT:
-    case LTT_UINT:
-    case LTT_ULONG:
-    case LTT_SIZE_T:
-    case LTT_OFF_T:
-    case LTT_UINT_FIXED:
+    case LTT_TYPE_UNSIGNED_INT:
       if(field_names) {
-        name = ltt_field_name(f);
+        name = f->name;
         if(name)
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
       }
-      // g_string_append_printf(s, "%llu", ltt_event_get_long_unsigned(e,f));
-      g_string_append_printf(s, type->fmt, ltt_event_get_long_unsigned(e,f));
+      g_string_append_printf(s, "%llu", ltt_event_get_long_unsigned(e,f));
+      //g_string_append_printf(s, type->fmt, ltt_event_get_long_unsigned(e,f));
       break;
     
+#if 0
     case LTT_CHAR:
     case LTT_UCHAR:
       {
@@ -129,16 +115,18 @@ void lttv_print_field(LttEvent *e, LttField *f, GString *s,
       // g_string_append_printf(s, "0x%llx", ltt_event_get_long_unsigned(e,f));
       g_string_append_printf(s, type->fmt, ltt_event_get_long_unsigned(e,f));
       break;
+#endif
 
-    case LTT_STRING:
+    case LTT_TYPE_STRING:
       if(field_names) {
-        name = ltt_field_name(f);
+        name = f->name;
         if(name)
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
       }
       g_string_append_printf(s, "\"%s\"", ltt_event_get_string(e,f));
       break;
 
+#if 0
     case LTT_ENUM:
       {
         GQuark value = ltt_enum_string_get(type, ltt_event_get_unsigned(e,f));
@@ -221,7 +209,9 @@ void lttv_print_field(LttEvent *e, LttField *f, GString *s,
       //      g_string_append_printf(s, " }");
       g_string_append_printf(s, type->footer);
       break;
-    case LTT_NONE:
+#endif
+    case LTT_TYPE_COMPACT:
+    case LTT_TYPE_NONE:
       break;
   }
 }
@@ -229,32 +219,24 @@ void lttv_print_field(LttEvent *e, LttField *f, GString *s,
 void lttv_event_to_string(LttEvent *e, GString *s,
     gboolean mandatory_fields, gboolean field_names, LttvTracefileState *tfs)
 { 
-  LttFacility *facility;
-
-  LttEventType *event_type;
-
-  LttField *field;
+  struct marker_field *field;
+  struct marker_info *info;
 
   LttTime time;
 
   guint cpu = tfs->cpu;
   LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
-
-  GQuark name;
-
-  guint i, num_fields;
+  LttTrace *trace = ts->parent.t;
 
   s = g_string_set_size(s,0);
 
-  facility = ltt_event_facility(e);
-  event_type = ltt_event_eventtype(e);
+  info = marker_get_info_from_id(trace, e->event_id);
 
   if(mandatory_fields) {
     time = ltt_event_time(e);
-    g_string_append_printf(s,"%s.%s: %ld.%09ld (%s%s_%u)",
-        g_quark_to_string(ltt_facility_name(facility)),
-        g_quark_to_string(ltt_eventtype_name(event_type)),
+    g_string_append_printf(s,"%s: %ld.%09ld (%s%s_%u)",
+        g_quark_to_string(info->name),
         (long)time.tv_sec, time.tv_nsec,
 	g_quark_to_string(
 		ltt_trace_name(ltt_tracefile_get_trace(tfs->parent.tf))),
@@ -268,18 +250,16 @@ void lttv_event_to_string(LttEvent *e, GString *s,
         process->ppid, process->current_function,
         g_quark_to_string(process->state->t));
   }
-  event_type = ltt_event_eventtype(e);
   
-  num_fields = ltt_eventtype_num_fields(event_type);
-  if(num_fields == 0) return;
+  if(marker_get_num_fields(info) == 0) return;
   g_string_append_printf(s, " ");
   g_string_append_printf(s, "{ ");
-  for(i=0; i<num_fields; i++) {
-    field = ltt_eventtype_field(event_type, i);
-    lttv_print_field(e, field, s, field_names, i);
-    //should add ',' here
-    if(i<num_fields-1)
-      g_string_append_printf(s,", ");//tested: works fine
+  for (field = marker_get_field(info, 0); 
+                field != marker_get_field(info, marker_get_num_fields(info));
+                field++) {
+    if(field != marker_get_field(info, 0))
+      g_string_append_printf(s, ", ");
+    lttv_print_field(e, field, s, field_names);
   }
   g_string_append_printf(s, " }");
 } 

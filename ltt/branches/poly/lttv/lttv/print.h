@@ -26,8 +26,8 @@
 
 
 
-void lttv_print_field(LttEvent *e, LttField *f, GString *s,
-                      gboolean field_names, guint element_index);
+void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
+                      gboolean field_names);
 
 void lttv_event_to_string(LttEvent *e, GString *s,
     gboolean mandatory_fields, gboolean field_names, LttvTracefileState *tfs);
