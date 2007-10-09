@@ -691,8 +691,6 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
 {
   GTree *pqueue = self->pqueue;
 
-  guint fac_id, ev_id, id;
-
   LttvTracefileContext *tfc;
 
   LttEvent *e;
@@ -763,15 +761,12 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
      * first pass (not if last read returned end of tracefile) */
     count++;
     
-    fac_id = ltt_event_facility_id(e);
-    ev_id = ltt_event_eventtype_id(e);
-    id = GET_HOOK_ID(fac_id, ev_id);
     tfc->target_pid = -1; /* unset target PID */
     /* Hooks : 
      * return values : 0 : continue read, 1 : go to next position and stop read,
      * 2 : stay at the current position and stop read */
     last_ret = lttv_hooks_call_merge(tfc->event, tfc,
-                        lttv_hooks_by_id_get(tfc->event_by_id, id), tfc);
+                        lttv_hooks_by_id_get(tfc->event_by_id, e->event_id), tfc);
 
 #if 0
     /* This is buggy : it won't work well with state computation */
@@ -949,7 +944,7 @@ gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self,
 }
 
 
-
+#if 0 // pmf: temporary disable
 static LttField *
 find_field(LttEventType *et, const GQuark field)
 {
@@ -966,17 +961,11 @@ find_field(LttEventType *et, const GQuark field)
 
   return f;
 }
+#endif
 
-LttvTraceHookByFacility *lttv_trace_hook_get_fac(LttvTraceHook *th, 
-                                                 guint facility_id)
+struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th)
 {
-  return &g_array_index(th->fac_index, LttvTraceHookByFacility, facility_id);
-}
-
-struct marker_info *lttv_trace_hook_get_marker(LttvTraceHook *th)
-{
-  g_assert(th->fac_list->len > 0);
-  return g_array_index(th->fac_list, LttvTraceHookByFacility*, 0);
+  return marker_get_info_from_id(t, th->id);
 }
 
 
@@ -986,15 +975,15 @@ lttv_trace_find_hook(LttTrace *t, GQuark event,
     GQuark field1, GQuark field2, GQuark field3, LttvHook h, gpointer hook_data,
     LttvTraceHook *th)
 {
-  LttEventType *et, *first_et;
+//  LttEventType *et, *first_et;
 
   struct marker_info *info;
 
   guint i, ev_id;
 
-  head = marker_get_info_from_name(t, event);
+  info = marker_get_info_from_name(t, event);
 
-  if(unlikely(head == NULL))
+  if(unlikely(info == NULL))
     goto facility_error;
 
   ev_id = marker_get_id_from_info(t, info);
@@ -1006,20 +995,20 @@ lttv_trace_find_hook(LttTrace *t, GQuark event,
   th->f3 = find_field(et, field3);
   th->hook_data = hook_data;
   
-  first_thf = thf;
-  first_et = et;
+//  first_thf = thf;
+//  first_et = et;
 
   /* Check for type compatibility too */
-  for(i=1;i<facilities->len;i++) {
-    fac_id = g_array_index(facilities, guint, i);
-    f = ltt_trace_get_facility_by_num(t, fac_id);
+//  for(i=1;i<facilities->len;i++) {
+//    fac_id = g_array_index(facilities, guint, i);
+//    f = ltt_trace_get_facility_by_num(t, fac_id);
 
-    et = ltt_facility_eventtype_get_by_name(f, event);
-    if(unlikely(et == NULL)) goto event_error;
+//    et = ltt_facility_eventtype_get_by_name(f, event);
+//    if(unlikely(et == NULL)) goto event_error;
     
-    thf = &g_array_index(th->fac_index, LttvTraceHookByFacility, fac_id);
-    g_array_index(th->fac_list, LttvTraceHookByFacility*, i) = thf;
-    ev_id = ltt_eventtype_id(et);
+//    thf = &g_array_index(th->fac_index, LttvTraceHookByFacility, fac_id);
+//    g_array_index(th->fac_list, LttvTraceHookByFacility*, i) = thf;
+//    ev_id = ltt_eventtype_id(et);
     thf->h = h;
     thf->id = GET_HOOK_ID(fac_id, ev_id);
     thf->f1 = find_field(et, field1);
@@ -1037,7 +1026,7 @@ lttv_trace_find_hook(LttTrace *t, GQuark event,
         first_thf->f3, thf->f3))
       goto type_error;
     thf->hook_data = hook_data;
-  }
+//  }
 
   return 0;
 
@@ -1052,17 +1041,16 @@ facility_error:
 	//g_error("No %s facility", g_quark_to_string(facility));
   return -1;
 free:
-  g_array_free(th->fac_index, TRUE);
-  g_array_free(th->fac_list, TRUE);
-  th->fac_index = NULL;
-  th->fac_list = NULL;
+//  g_array_free(th->fac_index, TRUE);
+//  g_array_free(th->fac_list, TRUE);
+//  th->fac_index = NULL;
+//  th->fac_list = NULL;
   return -1;
 }
 
 void lttv_trace_hook_destroy(LttvTraceHook *th)
 {
-  g_array_free(th->fac_index, TRUE);
-  g_array_free(th->fac_list, TRUE);
+  // nothing to do
 }
 
 

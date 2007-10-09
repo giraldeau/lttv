@@ -284,7 +284,7 @@ typedef struct _LttvTraceHook {
 
 /* Get the head of marker list correcponding to the given trace hook.
  */
-struct marker_info *lttv_trace_hook_get_marker(LttvTraceHook *th);
+struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th);
 
 void lttv_trace_hook_destroy(LttvTraceHook *th);
 
