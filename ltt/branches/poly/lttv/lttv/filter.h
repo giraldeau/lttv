@@ -110,7 +110,6 @@ enum _LttvFieldType {
   LTTV_FILTER_STATE_P_STATUS,         /**< state.process_status (LttvProcessStatus) */
   LTTV_FILTER_STATE_CPU,              /**< state.cpu (?last_cpu?) */
   LTTV_FILTER_EVENT_NAME,             /**< event.name (char*) */
-  LTTV_FILTER_EVENT_FACILITY,         /**< event.facility (char*) */
   LTTV_FILTER_EVENT_CATEGORY,         /**< FIXME: not implemented */
   LTTV_FILTER_EVENT_TIME,             /**< event.time (double) */
   LTTV_FILTER_EVENT_TSC,              /**< event.tsc (double) */

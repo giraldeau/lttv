@@ -217,9 +217,6 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
     if(!g_strcasecmp(f->str,"name") ) {
       se->field = LTTV_FILTER_EVENT_NAME;
     }
-    else if(!g_strcasecmp(f->str,"facility") ) {
-      se->field = LTTV_FILTER_EVENT_FACILITY;
-    }
     else if(!g_strcasecmp(f->str,"category") ) {
       /*
        * FIXME: Category not yet functional in lttv
@@ -286,7 +283,6 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_STATE_T_BRAND:
      case LTTV_FILTER_EVENT_NAME:
-     case LTTV_FILTER_EVENT_FACILITY:
      case LTTV_FILTER_STATE_EX_MODE:
      case LTTV_FILTER_STATE_EX_SUBMODE:
      case LTTV_FILTER_STATE_P_STATUS:
@@ -449,7 +445,6 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_STATE_T_BRAND:
      case LTTV_FILTER_EVENT_NAME:
-     case LTTV_FILTER_EVENT_FACILITY:
      case LTTV_FILTER_STATE_EX_MODE:
      case LTTV_FILTER_STATE_EX_SUBMODE:
      case LTTV_FILTER_STATE_P_STATUS:
@@ -573,7 +568,6 @@ lttv_struct_type(gint ft) {
             return LTTV_FILTER_STATE;
             break;
         case LTTV_FILTER_EVENT_NAME:
-        case LTTV_FILTER_EVENT_FACILITY:
         case LTTV_FILTER_EVENT_CATEGORY:
         case LTTV_FILTER_EVENT_TIME:
         case LTTV_FILTER_EVENT_TSC:
@@ -2029,18 +2023,10 @@ lttv_filter_tree_parse_branch(
         case LTTV_FILTER_EVENT_NAME:
             if(event == NULL) return TRUE;
             else {
-              LttEventType* et;
-              et = ltt_event_eventtype(event);
-              GQuark quark = ltt_eventtype_name(et);
-              return se->op((gpointer)&quark,v);
-            }
-            break;
-         case LTTV_FILTER_EVENT_FACILITY:
-            if(event == NULL) return TRUE;
-            else {
-              LttFacility* fac;
-              fac = ltt_event_facility(event);
-              GQuark quark = ltt_facility_name(fac);
+              struct marker_info *info;
+              info = marker_get_info_from_id((LttTrace *)trace, event->event_id);
+              g_assert(info != NULL);
+              GQuark quark = info->name;
               return se->op((gpointer)&quark,v);
             }
             break;
