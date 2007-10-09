@@ -205,7 +205,6 @@ void remove_toolbar_constructor(MainWindow *mw, lttvwindow_viewer_constructor vi
   LttvIAttribute *attributes = mw->attributes;
   LttvAttributeValue value;
   LttvToolbars * instance_toolbar;
-  lttvwindow_viewer_constructor constructor;
   GtkWidget * tool_menu_title_menu, *widget;
 
   g_assert(lttv_iattribute_find_by_path(attributes,
@@ -226,9 +225,7 @@ void remove_menu_constructor(MainWindow *mw, lttvwindow_viewer_constructor viewe
   LttvIAttribute *attributes = mw->attributes;
   LttvAttributeValue value;
   LttvMenus * instance_menu;
-  lttvwindow_viewer_constructor constructor;
   GtkWidget * tool_menu_title_menu, *widget;
-  LttvMenuClosure *menu_item_i;
 
   g_assert(lttv_iattribute_find_by_path(attributes,
 	   "viewers/menu", LTTV_POINTER, &value));
@@ -314,13 +311,16 @@ __EXPORT void lttvwindow_register_constructor
   }
   {
     LttvAttribute *attribute;
-    g_assert(attribute = 
-      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
-                                LTTV_IATTRIBUTE(attributes_global),
-                                LTTV_VIEWER_CONSTRUCTORS)));
+    gboolean result;
+
+    attribute = LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+                  LTTV_IATTRIBUTE(attributes_global),
+                  LTTV_VIEWER_CONSTRUCTORS));
+    g_assert(attribute);
   
-    g_assert(lttv_iattribute_find_by_path(LTTV_IATTRIBUTE(attribute),
-                            name, LTTV_POINTER, &value));
+    result = lttv_iattribute_find_by_path(LTTV_IATTRIBUTE(attribute),
+                            name, LTTV_POINTER, &value);
+    g_assert(result);
 
     *(value.v_pointer) = view_constructor;
 
@@ -372,10 +372,10 @@ __EXPORT void lttvwindow_unregister_constructor
 
   {
     LttvAttribute *attribute;
-    g_assert(attribute = 
-      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
-                                LTTV_IATTRIBUTE(attributes_global),
-                                LTTV_VIEWER_CONSTRUCTORS)));
+    attribute = LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+         LTTV_IATTRIBUTE(attributes_global),
+         LTTV_VIEWER_CONSTRUCTORS));
+    g_assert(attribute);
   
     guint num = lttv_iattribute_get_number(LTTV_IATTRIBUTE(attribute));
     guint i;
@@ -873,9 +873,6 @@ __EXPORT void lttvwindow_report_time_window(Tab *tab,
 __EXPORT void lttvwindow_report_current_time(Tab *tab,
                                     LttTime time)
 {
-  LttvAttributeValue value;
-  LttvHooks * tmp;
-  
   current_time_change_manager(tab, time);
 }
 
@@ -890,9 +887,6 @@ __EXPORT void lttvwindow_report_current_time(Tab *tab,
 __EXPORT void lttvwindow_report_current_position(Tab *tab,
                                         LttvTracesetContextPosition *pos)
 {
-  LttvAttributeValue value;
-  LttvHooks * tmp;
-  
   current_position_change_manager(tab, pos);
 }
 
