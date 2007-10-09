@@ -32,7 +32,6 @@
 #include "interface.h"
 #include "support.h"
 #include <ltt/trace.h>
-#include <ltt/facility.h>
 #include <ltt/time.h>
 #include <ltt/event.h>
 #include <lttv/lttv.h>
