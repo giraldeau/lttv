@@ -27,6 +27,7 @@
 #include <ltt/trace.h>
 #include <ltt/event.h>
 #include <ltt/ltt.h>
+#include <ltt/marker-desc.h>
 #include <stdio.h>
 #include <string.h>
 
