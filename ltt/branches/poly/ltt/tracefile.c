@@ -1230,6 +1230,10 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 
   t->num_cpu = group->len;
   
+  ret = allocate_marker_data(t);
+  if (!ret)
+    g_error("Error in allocating marker data");
+
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
     if(ltt_process_facility_tracefile(tf))
@@ -1240,6 +1244,7 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 
   /* Error handling */
 facilities_error:
+  destroy_marker_data(t);
 find_error:
   g_datalist_clear(&t->tracefiles);
 open_error:
