@@ -1058,9 +1058,6 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
 
   LttvAttributeValue val;
 
-  gint ret;
-  gint hn;
-
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceStats *)self->parent.parent.traces[i];
@@ -1186,7 +1183,7 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     lttv_trace_find_hook(ts->parent.parent.t,
         LTT_EVENT_SOFT_IRQ_ENTRY, 
         FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
-        after_irq_entry, NULL,
+        after_soft_irq_entry, NULL,
         &hooks);
 
     lttv_trace_find_hook(ts->parent.parent.t,
