@@ -988,7 +988,7 @@ int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
   do {
     LttvTraceHook tmpth;
     int found;
-    GQuark f;
+    GQuark *f;
 
     marker_id = marker_get_id_from_info(t, info);
 
