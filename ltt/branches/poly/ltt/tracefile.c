@@ -1240,8 +1240,6 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 
   /* Error handling */
 facilities_error:
-  g_datalist_clear(&t->facilities_by_name);
-  g_array_free(t->facilities_by_num, TRUE);
 find_error:
   g_datalist_clear(&t->tracefiles);
 open_error:

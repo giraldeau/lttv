@@ -28,10 +28,6 @@ struct LttTrace {
   GQuark pathname;                          //the pathname of the trace
   //LttSystemDescription * system_description;//system description 
 
-  GArray *facilities_by_num;            /* fac_id as index in array */
-  GData *facilities_by_name;            /* fac name (GQuark) as index */
-                                        /* Points to array of fac_id of all the
-                                        * facilities that has this name. */
   guint     num_cpu;
 
   guint32   arch_type;
