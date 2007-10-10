@@ -973,13 +973,13 @@ int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
     GQuark fields[], LttvHook h, gpointer hook_data, GArray **trace_hooks)
 {
   struct marker_info *info;
-  struct marker_field *field;
   guint16 marker_id;
   int init_array_size;
 
   info = marker_get_info_from_name(t, marker_name);
   if(unlikely(info == NULL)) {
-    return NULL;
+    g_warning("No marker of name %s found", g_quark_to_string(marker_name));
+    return 1;
   }
 
   init_array_size = (*trace_hooks)->len;
@@ -989,6 +989,7 @@ int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
     LttvTraceHook tmpth;
     int found;
     GQuark *f;
+    struct marker_field *marker_field;
 
     marker_id = marker_get_id_from_info(t, info);
 
@@ -1001,7 +1002,7 @@ int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
     for(f = fields; f && *f != 0; f++) {
       found = 0;
       for_each_marker_field(marker_field, info) {
-        if(marker_fieldfield->name == *f) {
+        if(marker_field->name == *f) {
           found = 1;
           g_ptr_array_add(tmpth.fields, marker_field);
           break;
@@ -1035,10 +1036,10 @@ skip_marker:
 void lttv_trace_hook_remove_all(GArray **th)
 {
   int i;
-  for(i=0; i<th->len; i++) {
-    g_ptr_array_free(g_array_index(th, LttvTraceHook, i).fields, TRUE);
+  for(i=0; i<(*th)->len; i++) {
+    g_ptr_array_free(g_array_index(*th, LttvTraceHook, i).fields, TRUE);
   }
-  *th = g_array_remove_range(*th, 0, th->len);
+  *th = g_array_remove_range(*th, 0, (*th)->len);
 }
 
 LttvTracesetContextPosition *lttv_traceset_context_position_new(
@@ -1561,6 +1562,7 @@ static gint seek_forward_event_hook(void *hook_data, void* call_data)
   sd->event_count++;
   if(sd->event_count >= sd->n)
       return TRUE;
+  return FALSE;
 }
 
 /* Seek back n events forward from the current position (1 to n)
