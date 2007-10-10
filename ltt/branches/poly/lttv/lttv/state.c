@@ -3025,9 +3025,6 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
   
   LttvAttributeValue val;
 
-  gint ret;
-  gint hn;
-
   nb_trace = lttv_traceset_number(traceset);
   for(i = 0 ; i < nb_trace ; i++) {
     ts = (LttvTraceState *)self->parent.traces[i];
@@ -3093,7 +3090,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
     lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_KTHREAD_CREATE,
-        FIELD_ARRAY(LTT_FIELD_PID)
+        FIELD_ARRAY(LTT_FIELD_PID),
         process_kernel_thread, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
