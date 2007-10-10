@@ -228,8 +228,10 @@ gboolean save_state_copy_event(void *hook_data, void *call_data)
 
   FILE *fp;
 
+  LttTrace *trace = ((LttvTracefileContext *)tfs)->t_context->t;
+
   if(ts->nb_event == 0 && 
-      ltt_eventtype_name(ltt_event_eventtype(e)) 
+      marker_get_info_from_id(trace, e->event_id)->name
                             == QUARK_BLOCK_START) {
     if(a_save_sample != NULL) {
       filename = g_string_new("");
