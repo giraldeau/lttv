@@ -23,7 +23,7 @@
 #include <lttv/attribute.h>
 #include <lttv/hook.h>
 #include <ltt/ltt.h>
-#include <ltt/markers.h>
+#include <ltt/marker.h>
 
 /* This is the generic part of trace processing. All events within a
    certain time interval are accessed and processing hooks are called for

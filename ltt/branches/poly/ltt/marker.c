@@ -10,7 +10,7 @@
 #include <string.h>
 #include <errno.h>
 #include <ltt/compiler.h>
-#include <ltt/markers.h>
+#include <ltt/marker.h>
 #include <ltt/ltt-private.h>
 
 #define DEFAULT_MARKERS_NUM   100

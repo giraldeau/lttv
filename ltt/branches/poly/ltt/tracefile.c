@@ -48,7 +48,7 @@
 #include <ltt/event.h>
 //#include <ltt/type.h>
 #include <ltt/ltt-types.h>
-#include <ltt/markers.h>
+#include <ltt/marker.h>
 
 /* Facility names used in this file */
 

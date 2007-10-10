@@ -7,7 +7,7 @@
 #include <sys/types.h>
 #include <ltt/ltt.h>
 #include <endian.h>
-#include <ltt/markers.h>
+#include <ltt/marker.h>
 
 /*
  * Structure LttEvent and LttEventPosition must begin with the _exact_ same

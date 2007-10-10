@@ -25,7 +25,7 @@
 #include <ltt/ltt.h>
 #include <endian.h>
 #include <ltt/event.h>
-#include <ltt/markers.h>
+#include <ltt/marker.h>
 #include <ltt/trace.h>
 
 #ifndef max
