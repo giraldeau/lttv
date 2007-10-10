@@ -998,7 +998,7 @@ int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
     tmpth.fields = g_ptr_array_new();
 
     /* for each field requested */
-    for(f = fields; *f != 0; f++) {
+    for(f = fields; f && *f != 0; f++) {
       found = 0;
       for_each_marker_field(marker_field, info) {
         if(marker_fieldfield->name == *f) {
@@ -1027,7 +1027,7 @@ skip_marker:
   return (init_array_size == (*trace_hooks)->len);
 }
 
-void lttv_trace_hook_destroy(GArray **th)
+void lttv_trace_hook_remove_all(GArray **th)
 {
   int i;
   for(i=0; i<th->len; i++) {

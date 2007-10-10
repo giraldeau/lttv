@@ -1663,7 +1663,7 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->syscall_names = NULL;
     name_tables->nb_syscalls = 0;
   }
-  lttv_trace_hook_destroy(&hooks);
+  lttv_trace_hook_remove_all(&hooks);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
         LTT_EVENT_TRAP_ENTRY,
@@ -1691,7 +1691,7 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->trap_names = NULL;
     name_tables->nb_traps = 0;
   }
-  lttv_trace_hook_destroy(&hooks);
+  lttv_trace_hook_remove_all(&hooks);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
         LTT_EVENT_IRQ_ENTRY,
@@ -1715,7 +1715,7 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->nb_irqs = 0;
     name_tables->irq_names = NULL;
   }
-  lttv_trace_hook_destroy(&hooks);
+  lttv_trace_hook_remove_all(&hooks);
   /*
   name_tables->soft_irq_names = g_new(GQuark, nb);
   for(i = 0 ; i < nb ; i++) {
@@ -3042,7 +3042,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
     lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_SYSCALL_EXIT,
-        FIELD_ARRAY(0),
+        NULL,
         syscall_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
@@ -3050,124 +3050,104 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         trap_entry, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_TRAP_EXIT,
-        0, 0, 0, 
-        trap_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        NULL,
+        trap_exit, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_IRQ_ENTRY,
-        LTT_FIELD_IRQ_ID, 0, 0,
-        irq_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_IRQ_ID),
+        irq_entry, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_IRQ_EXIT,
-        0, 0, 0, 
-        irq_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        NULL,
+        irq_exit, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_SOFT_IRQ_ENTRY,
-        LTT_FIELD_SOFT_IRQ_ID, 0, 0,
-        soft_irq_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
+        soft_irq_entry, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_SOFT_IRQ_EXIT,
-        0, 0, 0, 
-        soft_irq_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        NULL,
+        soft_irq_exit, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_SCHED_SCHEDULE,
-        LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE,
-        schedchange, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID,
+	  LTT_FIELD_PREV_STATE),
+        schedchange, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_PROCESS_FORK,
-        LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, LTT_FIELD_CHILD_TGID,
-        process_fork, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID,
+	  LTT_FIELD_CHILD_TGID),
+        process_fork, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_KTHREAD_CREATE,
-        LTT_FIELD_PID, 0, 0,
-        process_kernel_thread, NULL, &g_array_index(hooks, LttvTraceHook,
-          hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_PID)
+        process_kernel_thread, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_PROCESS_EXIT,
-        LTT_FIELD_PID, 0, 0,
-        process_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_PID),
+        process_exit, NULL, &hooks);
     
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_PROCESS_FREE,
-        LTT_FIELD_PID, 0, 0,
-        process_free, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_PID),
+        process_free, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_EXEC,
-        LTT_FIELD_FILENAME, 0, 0,
-        process_exec, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_FILENAME),
+        process_exec, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_THREAD_BRAND,
-        LTT_FIELD_NAME, 0, 0,
-        thread_brand, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_NAME),
+        thread_brand, NULL, &hooks);
 
      /* statedump-related hooks */
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_PROCESS_STATE,
-        LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
-        enum_process_state, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME),
+        enum_process_state, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_STATEDUMP_END,
-        0, 0, 0,
-        statedump_end, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        NULL,
+        statedump_end, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_LIST_INTERRUPT,
-        LTT_FIELD_ACTION, LTT_FIELD_NUM, 0,
-        enum_interrupt, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_ACTION, LTT_FIELD_NUM),
+        enum_interrupt, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_REQUEST_ISSUE,
-        LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
-        bdev_request_issue, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION),
+        bdev_request_issue, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_REQUEST_COMPLETE,
-        LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
-        bdev_request_complete, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION),
+        bdev_request_complete, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_FUNCTION_ENTRY,
-        LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
-        function_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE),
+        function_entry, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_FUNCTION_EXIT,
-        LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE, 0,
-        function_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE),
+        function_exit, NULL, &hooks);
 
-    hooks = g_array_set_size(hooks, hn);
-  
     /* Add these hooks to each event_by_id hooks list */
 
     nb_tracefile = ts->parent.tracefiles->len;
@@ -3240,8 +3220,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
                     th);
       }
     }
-    for(k = 0 ; k < hooks->len ; k++)
-      lttv_trace_hook_destroy(&g_array_index(hooks, LttvTraceHook, k));
+    lttv_trace_hook_remove_all(&hooks);
     g_array_free(hooks, TRUE);
   }
 }

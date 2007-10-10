@@ -285,7 +285,8 @@ typedef struct _LttvTraceHook {
  */
 struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th);
 
-void lttv_trace_hook_destroy(GArray *th);
+/* Remove the hooks from the array. Does not free the array itself. */
+void lttv_trace_hook_remove_all(GArray **th);
 
 /* Search in the trace for the id of the named event type within the named
    facility. Then, find the three (if non null) named fields. All that
