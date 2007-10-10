@@ -279,7 +279,7 @@ typedef struct _LttvTraceHook {
   gpointer hook_data;
 } LttvTraceHook;
 
-#define FIELD_ARRAY(val) ((GQuark[]){ (val), 0 })
+#define FIELD_ARRAY(val...) ((GQuark[]){ val, 0 })
 
 /* Get the head of marker list correcponding to the given trace hook.
  */
