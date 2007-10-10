@@ -307,7 +307,7 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
   /* start_count is always initialized in this function _if_ there is always
    * a block_start before a block_end.
    */
-  long long unsigned cycle_count, start_count=0, delta_cycle;
+  //long long unsigned cycle_count, start_count=0, delta_cycle;
 
 
   filename = g_string_new("");
@@ -410,14 +410,6 @@ static gboolean process_traceset(void __UNUSED__ *hook_data,
   guint i, j, count;
 
   LttTrace *trace;
-
-  long long unsigned start_nsec, end_nsec, delta_nsec, added_nsec, added_nsec2;
-
-  double cycle_per_nsec, nsec_per_cycle;
-
-  long long interpolated_nsec, interpolated_nsec2, end_nsec_sec, end_nsec_nsec;
-
-  LttTime start_time;
 
   LttTime max_time = { G_MAXULONG, G_MAXULONG };
 
