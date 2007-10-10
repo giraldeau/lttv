@@ -104,4 +104,11 @@ double ltt_event_get_double(LttEvent *e, struct marker_field *f);
 
 gchar *ltt_event_get_string(LttEvent *e, struct marker_field *f);
 
+static inline LttCycleCount ltt_event_cycle_count(const LttEvent *e)
+{
+  return e->tsc;
+}
+
+
+
 #endif //_LTT_EVENT_H
