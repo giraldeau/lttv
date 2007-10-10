@@ -1231,7 +1231,7 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   t->num_cpu = group->len;
   
   ret = allocate_marker_data(t);
-  if (!ret)
+  if (ret)
     g_error("Error in allocating marker data");
 
   for(i=0; i<group->len; i++) {
