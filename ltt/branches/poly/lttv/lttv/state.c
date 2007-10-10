@@ -1631,8 +1631,8 @@ create_name_tables(LttvTraceState *tcs)
 
   if(!lttv_trace_find_hook(tcs->parent.t,
       LTT_EVENT_SYSCALL_ENTRY,
-      LTT_FIELD_SYSCALL_ID, 0, 0,
-      NULL, NULL, &th)) {
+      FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
+      NULL, NULL)) {
     
 //    th = lttv_trace_hook_get_first(&th);
 //    
