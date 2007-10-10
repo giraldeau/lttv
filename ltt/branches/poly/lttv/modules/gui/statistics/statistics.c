@@ -27,7 +27,6 @@
 
 #include <ltt/ltt.h>
 #include <ltt/event.h>
-#include <ltt/type.h>
 #include <ltt/trace.h>
 
 #include <lttv/lttv.h>

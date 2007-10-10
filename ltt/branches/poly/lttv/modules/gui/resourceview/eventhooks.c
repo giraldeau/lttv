@@ -61,7 +61,6 @@
 
 #include <ltt/event.h>
 #include <ltt/time.h>
-#include <ltt/type.h>
 #include <ltt/trace.h>
 
 #include <lttv/lttv.h>
@@ -403,8 +402,8 @@ static void bdev_set_line_color(PropertiesLine *prop_line, LttvBdevState *s)
 
 int before_schedchange_hook(void *hook_data, void *call_data)
 {
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+  LttvTraceHook *th = (LttvTraceHook*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
@@ -428,8 +427,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
   guint pid_out;
   guint pid_in;
-  pid_out = ltt_event_get_long_unsigned(e, thf->f1);
-  pid_in = ltt_event_get_long_unsigned(e, thf->f2);
+  pid_out = ltt_event_get_long_unsigned(e, th->f1);
+  pid_in = ltt_event_get_long_unsigned(e, th->f2);
 //  if(pid_in != 0 && pid_out != 0) {
 //    /* not a transition to/from idle */
 //    return 0;
@@ -815,8 +814,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
  */
 int after_schedchange_hook(void *hook_data, void *call_data)
 {
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+  LttvTraceHook *th = (LttvTraceHook*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
@@ -849,8 +848,8 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   guint pid_in;
   {
     guint pid_out;
-    pid_out = ltt_event_get_long_unsigned(e, thf->f1);
-    pid_in = ltt_event_get_long_unsigned(e, thf->f2);
+    pid_out = ltt_event_get_long_unsigned(e, th->f1);
+    pid_in = ltt_event_get_long_unsigned(e, th->f2);
   }
 
 
@@ -951,8 +950,8 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 
 int before_execmode_hook(void *hook_data, void *call_data)
 {
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+  LttvTraceHook *th = (LttvTraceHook*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
@@ -1147,8 +1146,8 @@ int before_execmode_hook(void *hook_data, void *call_data)
 
 int before_execmode_hook_irq(void *hook_data, void *call_data)
 {
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+  LttvTraceHook *th = (LttvTraceHook*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
@@ -1179,7 +1178,7 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
   guint8 ev_id_exit = ltt_eventtype_id(ltt_facility_eventtype_get_by_name(ev_facility, LTT_EVENT_IRQ_EXIT));
   if(ltt_facility_name(ev_facility) == LTT_FACILITY_KERNEL &&
       ev_id_entry == ltt_event_eventtype_id(e)) {
-    irq = ltt_event_get_long_unsigned(e, thf->f1);
+    irq = ltt_event_get_long_unsigned(e, th->f1);
   }
   else if(ltt_facility_name(ev_facility) == LTT_FACILITY_KERNEL &&
       ev_id_exit == ltt_event_eventtype_id(e)) {
@@ -1358,8 +1357,8 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
 
 int before_bdev_event_hook(void *hook_data, void *call_data)
 {
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+  LttvTraceHook *th = (LttvTraceHook*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
@@ -1381,9 +1380,9 @@ int before_bdev_event_hook(void *hook_data, void *call_data)
   /* For the pid */
 
   guint cpu = tfs->cpu;
-  guint8 major = ltt_event_get_long_unsigned(e, thf->f1);
-  guint8 minor = ltt_event_get_long_unsigned(e, thf->f2);
-  guint oper = ltt_event_get_long_unsigned(e, thf->f3);
+  guint8 major = ltt_event_get_long_unsigned(e, th->f1);
+  guint8 minor = ltt_event_get_long_unsigned(e, th->f2);
+  guint oper = ltt_event_get_long_unsigned(e, th->f3);
   gint devcode_gint = MKDEV(major,minor);
 
   {
@@ -2282,8 +2281,8 @@ int after_chunk(void *hook_data, void *call_data)
  */
 int before_statedump_end(void *hook_data, void *call_data)
 {
-  LttvTraceHookByFacility *thf = (LttvTraceHookByFacility*)hook_data;
-  EventsRequest *events_request = (EventsRequest*)thf->hook_data;
+  LttvTraceHook *th = (LttvTraceHook*)hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
   ControlFlowData *control_flow_data = events_request->viewer_data;
 
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;

@@ -184,7 +184,7 @@ void drawing_data_request(Drawing_t *drawing,
 
     LttvTraceHook *hook;
 
-    LttvTraceHookByFacility *thf;
+    LttvTraceHook *th;
 
     guint ret;
     gint before_hn, after_hn;
@@ -235,7 +235,7 @@ void drawing_data_request(Drawing_t *drawing,
       /* before hooks */
       
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_ENTRY,
+//          LTT_EVENT_SYSCALL_ENTRY,
 //          LTT_FIELD_SYSCALL_ID, 0, 0,
 //          before_execmode_hook,
 //          events_request,
@@ -243,7 +243,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) before_hn--;
 //
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_SYSCALL_EXIT,
+//          LTT_EVENT_SYSCALL_EXIT,
 //          0, 0, 0,
 //          before_execmode_hook,
 //          events_request,
@@ -251,7 +251,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) before_hn--;
 //
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_ENTRY,
+          LTT_EVENT_TRAP_ENTRY,
           LTT_FIELD_TRAP_ID, 0, 0,
           before_execmode_hook,
           events_request,
@@ -259,7 +259,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_EXIT,
+          LTT_EVENT_TRAP_EXIT,
           0, 0, 0, 
           before_execmode_hook,
           events_request,
@@ -267,7 +267,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
+          LTT_EVENT_IRQ_ENTRY,
           LTT_FIELD_IRQ_ID, 0, 0,
           before_execmode_hook,
           events_request,
@@ -275,7 +275,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
+          LTT_EVENT_IRQ_EXIT,
           0, 0, 0, 
           before_execmode_hook,
           events_request,
@@ -283,7 +283,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) before_hn--;
 //
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY,
+//          LTT_EVENT_SOFT_IRQ_ENTRY,
 //          LTT_FIELD_SOFT_IRQ_ID, 0, 0,
 //          before_execmode_hook,
 //          events_request,
@@ -291,7 +291,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) before_hn--;
 //
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_EXIT,
+//          LTT_EVENT_SOFT_IRQ_EXIT,
 //          0, 0, 0, 
 //          before_execmode_hook,
 //          events_request,
@@ -300,7 +300,7 @@ void drawing_data_request(Drawing_t *drawing,
 
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
+          LTT_EVENT_SCHED_SCHEDULE,
           LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE,
           before_schedchange_hook,
           events_request,
@@ -308,7 +308,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) before_hn--;
 
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_EXIT,
+//          LTT_EVENT_PROCESS_EXIT,
 //          LTT_FIELD_PID, 0, 0,
 //          before_process_exit_hook,
 //          events_request,
@@ -316,7 +316,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) before_hn--;
 //      
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FREE,
+//          LTT_EVENT_PROCESS_FREE,
 //          LTT_FIELD_PID, 0, 0,
 //          before_process_release_hook,
 //          events_request,
@@ -324,7 +324,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) before_hn--;
 //
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_LIST, LTT_EVENT_STATEDUMP_END,
+//          LTT_EVENT_STATEDUMP_END,
 //          0, 0, 0,
 //          before_statedump_end,
 //          events_request,
@@ -332,7 +332,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_ISSUE,
+          LTT_EVENT_REQUEST_ISSUE,
           LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
           before_bdev_event_hook,
           events_request,
@@ -340,7 +340,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) before_hn--;
 
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_BLOCK, LTT_EVENT_REQUEST_COMPLETE,
+          LTT_EVENT_REQUEST_COMPLETE,
           LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION,
           before_bdev_event_hook,
           events_request,
@@ -399,7 +399,7 @@ void drawing_data_request(Drawing_t *drawing,
       after_hn = before_hn;
       
       ret = lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL, LTT_EVENT_SCHED_SCHEDULE,
+          LTT_EVENT_SCHED_SCHEDULE,
           LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE,
           after_schedchange_hook,
           events_request,
@@ -407,7 +407,7 @@ void drawing_data_request(Drawing_t *drawing,
       if(ret) after_hn--;
 
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_FORK,
+//          LTT_EVENT_PROCESS_FORK,
 //          LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID, 0,
 //          after_process_fork_hook,
 //          events_request,
@@ -415,7 +415,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) after_hn--;
 //
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL, LTT_EVENT_PROCESS_EXIT,
+//          LTT_EVENT_PROCESS_EXIT,
 //          LTT_FIELD_PID, 0, 0,
 //          after_process_exit_hook,
 //          events_request,
@@ -423,7 +423,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) after_hn--;
 //
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_FS, LTT_EVENT_EXEC,
+//          LTT_EVENT_EXEC,
 //          0, 0, 0,
 //          after_fs_exec_hook,
 //          events_request,
@@ -431,7 +431,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) after_hn--;
 //
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_USER_GENERIC, LTT_EVENT_THREAD_BRAND,
+//          LTT_EVENT_THREAD_BRAND,
 //          LTT_FIELD_NAME, 0, 0,
 //          after_user_generic_thread_brand_hook,
 //          events_request,
@@ -439,7 +439,7 @@ void drawing_data_request(Drawing_t *drawing,
 //      if(ret) after_hn--;
 //
 //      ret = lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_LIST, LTT_EVENT_PROCESS_STATE,
+//          LTT_EVENT_PROCESS_STATE,
 //          LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
 //          after_event_enum_process_hook,
 //          events_request,
@@ -462,13 +462,10 @@ void drawing_data_request(Drawing_t *drawing,
       /* add before */
       for(k = 0 ; k < before_hn ; k++) {
         hook = &g_array_index(hooks, LttvTraceHook, k);
-        for(l=0;l<hook->fac_list->len;l++) {
-          thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l);
-          lttv_hooks_add(lttv_hooks_by_id_find(event_by_id, thf->id),
+        lttv_hooks_add(lttv_hooks_by_id_find(event_by_id, thf->id),
                           thf->h,
                           thf,
                           LTTV_PRIO_STATE-5);
-        }
       }
 
       /* add after */

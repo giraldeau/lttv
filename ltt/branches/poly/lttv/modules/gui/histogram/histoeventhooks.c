@@ -61,7 +61,6 @@
 
 #include <ltt/event.h>
 #include <ltt/time.h>
-#include <ltt/type.h>
 #include <ltt/trace.h>
 
 #include <lttv/lttv.h>

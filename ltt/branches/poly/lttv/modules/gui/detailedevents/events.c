@@ -54,9 +54,7 @@
 
 #include <ltt/ltt.h>
 #include <ltt/event.h>
-#include <ltt/type.h>
 #include <ltt/trace.h>
-#include <ltt/facility.h>
 #include <lttv/module.h>
 #include <lttv/hook.h>
 #include <lttv/tracecontext.h>
@@ -147,7 +145,6 @@ enum
   TRACEFILE_NAME_COLUMN,
   CPUID_COLUMN,
   EVENT_COLUMN,
-  FACILITY_COLUMN,
   TIME_S_COLUMN,
   TIME_NS_COLUMN,
   PID_COLUMN,
@@ -347,16 +344,6 @@ gui_events(LttvPluginTab *ptab)
   gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->tree_v),
       column);
   
-  renderer = gtk_cell_renderer_text_new ();
-  column = gtk_tree_view_column_new_with_attributes ("Facility",
-                 renderer,
-                 "text", FACILITY_COLUMN,
-                 NULL);
-  gtk_tree_view_column_set_alignment (column, 0.0);
-  gtk_tree_view_column_set_fixed_width (column, 120);
-  gtk_tree_view_append_column (GTK_TREE_VIEW (event_viewer_data->tree_v),
-      column);
-
   renderer = gtk_cell_renderer_text_new ();
   column = gtk_tree_view_column_new_with_attributes ("Time (s)",
                  renderer,
@@ -1581,8 +1568,8 @@ int event_hook(void *hook_data, void *call_data)
       return FALSE;
 
 
-  LttFacility *facility = ltt_event_facility(e);
-  LttEventType *event_type = ltt_event_eventtype(e);
+//  LttFacility *facility = ltt_event_facility(e);
+//  LttEventType *event_type = ltt_event_eventtype(e);
   LttTime time = ltt_event_time(e);
 
   guint cpu = tfs->cpu;
@@ -1607,8 +1594,7 @@ int event_hook(void *hook_data, void *call_data)
       TRACE_NAME_COLUMN, g_quark_to_string(ltt_trace_name(tfc->t_context->t)),
       TRACEFILE_NAME_COLUMN, g_quark_to_string(ltt_tracefile_name(tfc->tf)),
       CPUID_COLUMN, cpu,
-      FACILITY_COLUMN, g_quark_to_string(ltt_facility_name(facility)),
-      EVENT_COLUMN, g_quark_to_string(ltt_eventtype_name(event_type)),
+      EVENT_COLUMN, g_quark_to_string(marker_get_info_from_id(tfc->tf->trace, e->event_id)->name),
       TIME_S_COLUMN, time.tv_sec,
       TIME_NS_COLUMN, time.tv_nsec,
       PID_COLUMN, process->pid,
