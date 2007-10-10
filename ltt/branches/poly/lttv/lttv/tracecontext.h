@@ -279,8 +279,6 @@ typedef struct _LttvTraceHook {
   gpointer hook_data;
 } LttvTraceHook;
 
-#define FIELD_ARRAY(val...) ((GQuark[]){ val, 0 })
-
 /* Get the head of marker list correcponding to the given trace hook.
  */
 struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th);
@@ -302,6 +300,13 @@ void lttv_trace_hook_remove_all(GArray **th);
 
 int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
     GQuark fields[], LttvHook h, gpointer hook_data, GArray **trace_hooks);
+
+static inline struct marker_field *
+lttv_trace_get_hook_field(LttvTraceHook *hook, unsigned int index)
+{
+	return g_ptr_array_index(hook->fields, index);
+}
+
 
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);
@@ -369,5 +374,6 @@ guint lttv_process_traceset_seek_n_backward(LttvTracesetContext *self,
 					    LttvFilter *filter3,
 					    gpointer data);
 
+#define FIELD_ARRAY(val...) ((GQuark[]){ val, 0 })
 
 #endif // PROCESSTRACE_H

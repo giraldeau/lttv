@@ -2150,7 +2150,7 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
   LttvProcessState *process = ts->running_process[cpu];
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
-  struct marker_field *f = th->f1;
+  struct marker_field *f = lttv_trace_get_hook_field(th, 0);
 
   LttvExecutionSubmode submode;
 
