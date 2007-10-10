@@ -211,6 +211,8 @@ void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
       break;
 #endif
     case LTT_TYPE_COMPACT:
+      g_error("compact type printing not implemented");
+      break;
     case LTT_TYPE_NONE:
       break;
   }
