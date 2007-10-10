@@ -1,6 +1,7 @@
 
 #include <ltt/event.h>
 #include <ltt/ltt-types.h>
+#include <ltt/ltt-private.h>
 
 /*****************************************************************************
  *Function name
