@@ -969,29 +969,26 @@ struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th)
 }
 
 
-GArray *lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
-    GQuark fields[], LttvHook h, gpointer hook_data)
+int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
+    GQuark fields[], LttvHook h, gpointer hook_data, GArray **trace_hooks)
 {
   struct marker_info *info;
-  GQuark *pfieldname;
   struct marker_field *field;
   guint16 marker_id;
-
-  GArray * retval;
+  int init_array_size;
 
   info = marker_get_info_from_name(t, marker_name);
   if(unlikely(info == NULL)) {
     return NULL;
   }
 
-  retval = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
-
-  
+  init_array_size = (*trace_hooks)->len;
 
   /* for each marker with the requested name */
   do {
     LttvTraceHook tmpth;
     int found;
+    GQuark f;
 
     marker_id = marker_get_id_from_info(t, info);
 
@@ -1001,51 +998,43 @@ GArray *lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
     tmpth.fields = g_ptr_array_new();
 
     /* for each field requested */
-    found = 0;
-    for(pfieldname = fields; pfieldname != NULL; pfieldname++) {
-      for_each_marker_field(field, info) {
-        if(field->name == *pfieldname) {
-          
+    for(f = fields; *f != 0; f++) {
+      found = 0;
+      for_each_marker_field(marker_field, info) {
+        if(marker_fieldfield->name == *f) {
           found = 1;
-          g_ptr_array_add(tmpth.fields, field);
+          g_ptr_array_add(tmpth.fields, marker_field);
           break;
         }
       }
       if(!found) {
         /* Did not find the one of the fields in this instance of the
-           marker. Skip it. */
+           marker. Print a warning and skip this marker completely.
+	   Still iterate on other markers with same name. */
         g_ptr_array_free(tmpth.fields, TRUE);
-        goto free_retval;
+        g_warning("Field %s cannot be found in marker %s",
+                g_quark_to_string(*f), g_quark_to_string(marker_name));
+        goto skip_marker;
       }
     }
-
     /* all fields were found: add the tracehook to the array */
-    g_array_append_val(retval, tmpth);
-
+    *trace_hooks = g_array_append_val(*trace_hooks, tmpth);
+skip_marker:
     info = info->next;
   } while(info != NULL);
 
-
-  if(retval->len)
-    return retval;
-
-  free_retval:
-  g_array_free(retval, TRUE);
-  return NULL;
+  /* Error if no new trace hook has been added */
+  return (init_array_size == (*trace_hooks)->len);
 }
 
-void lttv_trace_hook_destroy(GArray *th)
+void lttv_trace_hook_destroy(GArray **th)
 {
   int i;
   for(i=0; i<th->len; i++) {
     g_ptr_array_free(g_array_index(th, LttvTraceHook, i).fields, TRUE);
   }
-
-  g_array_free(th, TRUE);
+  *th = g_array_remove_range(*th, 0, th->len);
 }
-
-
-
 
 LttvTracesetContextPosition *lttv_traceset_context_position_new(
                                         const LttvTracesetContext *self)

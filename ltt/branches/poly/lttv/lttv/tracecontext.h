@@ -293,11 +293,14 @@ void lttv_trace_hook_destroy(GArray *th);
    is useful to find the specific id for an event within a trace, for
    registering a hook using this structure as event data;
    it already contains the (up to three) needed fields handles.
-   Returns an array of LttvTraceHook, or NULL on error.
+   Returns the modified LttvTraceHook array.
+   Prints warnings if events or markers are not found. returns 1 on error,
+   0 on success.
+   Adds the hooks to the trace_hooks array.
  */
 
-GArray *lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
-    GQuark fields[], LttvHook h, gpointer hook_data);
+int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
+    GQuark fields[], LttvHook h, gpointer hook_data, GArray **trace_hooks);
 
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);

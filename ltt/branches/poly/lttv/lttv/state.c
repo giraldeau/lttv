@@ -1616,31 +1616,31 @@ create_name_tables(LttvTraceState *tcs)
 {
   int i;
 
-  LttvTraceHook th;
-
   GString *fe_name = g_string_new("");
 
   LttvNameTables *name_tables = g_new(LttvNameTables, 1);
 
   LttvAttributeValue v;
 
+  GArray *hooks;
+
   lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_NAME_TABLES, 
       LTTV_POINTER, &v);
   g_assert(*(v.v_pointer) == NULL);
   *(v.v_pointer) = name_tables;
 
+  hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 1);
+
   if(!lttv_trace_find_hook(tcs->parent.t,
       LTT_EVENT_SYSCALL_ENTRY,
       FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
-      NULL, NULL)) {
+      NULL, NULL, &hooks)) {
     
 //    th = lttv_trace_hook_get_first(&th);
 //    
 //    t = ltt_field_type(th->f1);
 //    nb = ltt_type_element_number(t);
 //    
-    lttv_trace_hook_destroy(&th);
-//
 //    name_tables->syscall_names = g_new(GQuark, nb);
 //    name_tables->nb_syscalls = nb;
 //
@@ -1663,19 +1663,18 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->syscall_names = NULL;
     name_tables->nb_syscalls = 0;
   }
+  lttv_trace_hook_destroy(&hooks);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
         LTT_EVENT_TRAP_ENTRY,
-        LTT_FIELD_TRAP_ID, 0, 0,
-        NULL, NULL, &th)) {
+        FIELD_ARRAY(LTT_FIELD_TRAP_ID),
+        NULL, NULL, &hooks)) {
 
 //    th = lttv_trace_hook_get_first(&th);
 //
 //    t = ltt_field_type(th->f1);
 //    //nb = ltt_type_element_number(t);
 //
-    lttv_trace_hook_destroy(&th);
-
 //    name_tables->trap_names = g_new(GQuark, nb);
 //    for(i = 0 ; i < nb ; i++) {
 //      name_tables->trap_names[i] = g_quark_from_string(
@@ -1692,14 +1691,13 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->trap_names = NULL;
     name_tables->nb_traps = 0;
   }
+  lttv_trace_hook_destroy(&hooks);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
         LTT_EVENT_IRQ_ENTRY,
-        LTT_FIELD_IRQ_ID, 0, 0,
-        NULL, NULL, &th)) {
+        FIELD_ARRAY(LTT_FIELD_IRQ_ID),
+        NULL, NULL, &hooks)) {
     
-    lttv_trace_hook_destroy(&th);
-
     /*
     name_tables->irq_names = g_new(GQuark, nb);
     for(i = 0 ; i < nb ; i++) {
@@ -1717,6 +1715,7 @@ create_name_tables(LttvTraceState *tcs)
     name_tables->nb_irqs = 0;
     name_tables->irq_names = NULL;
   }
+  lttv_trace_hook_destroy(&hooks);
   /*
   name_tables->soft_irq_names = g_new(GQuark, nb);
   for(i = 0 ; i < nb ; i++) {
@@ -1730,7 +1729,7 @@ create_name_tables(LttvTraceState *tcs)
     g_string_printf(fe_name, "softirq %d", i);
     name_tables->soft_irq_names[i] = g_quark_from_string(fe_name->str);
   }
-
+  g_array_free(hooks, TRUE);
 
   g_string_free(fe_name, TRUE);
 }
@@ -3033,26 +3032,23 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
        associated by id hooks. */
 
     hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 19);
-    hooks = g_array_set_size(hooks, 19); // Max possible number of hooks.
-    hn = 0;
+    //hooks = g_array_set_size(hooks, 19); // Max possible number of hooks.
+    //hn = 0;
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_SYSCALL_ENTRY,
-        LTT_FIELD_SYSCALL_ID, 0, 0,
-        syscall_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
+	syscall_entry, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_SYSCALL_EXIT,
-        0, 0, 0,
-        syscall_exit, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(0),
+        syscall_exit, NULL, &hooks);
 
-    ret = lttv_trace_find_hook(ts->parent.t,
+    lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_TRAP_ENTRY,
-        LTT_FIELD_TRAP_ID, 0, 0,
-        trap_entry, NULL, &g_array_index(hooks, LttvTraceHook, hn++));
-    if(ret) hn--;
+        FIELD_ARRAY(LTT_FIELD_TRAP_ID),
+        trap_entry, NULL, &hooks);
 
     ret = lttv_trace_find_hook(ts->parent.t,
         LTT_EVENT_TRAP_EXIT,
