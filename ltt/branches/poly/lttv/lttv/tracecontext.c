@@ -1024,7 +1024,12 @@ skip_marker:
   } while(info != NULL);
 
   /* Error if no new trace hook has been added */
-  return (init_array_size == (*trace_hooks)->len);
+  if (init_array_size == (*trace_hooks)->len) {
+        g_warning("No marker of name %s has all requested fields",
+                g_quark_to_string(marker_name));
+        return 1;
+  }
+  return 0;
 }
 
 void lttv_trace_hook_remove_all(GArray **th)
