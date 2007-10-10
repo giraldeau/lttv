@@ -2866,23 +2866,19 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
 
   /* type */
   f = lttv_trace_get_hook_field(th, 3);
-  type = ltt_enum_string_get(ltt_field_type(f),
-      ltt_event_get_unsigned(e, f));
+  type = ltt_enum_string_get(f, ltt_event_get_unsigned(e, f));
 
   /* mode */
   f = lttv_trace_get_hook_field(th, 4);
-  mode = ltt_enum_string_get(ltt_field_type(f), 
-      ltt_event_get_unsigned(e, f));
+  mode = ltt_enum_string_get(f,ltt_event_get_unsigned(e, f));
 
   /* submode */
   f = lttv_trace_get_hook_field(th, 5);
-  submode = ltt_enum_string_get(ltt_field_type(f), 
-      ltt_event_get_unsigned(e, f));
+  submode = ltt_enum_string_get(f, ltt_event_get_unsigned(e, f));
 
   /* status */
   f = lttv_trace_get_hook_field(th, 6);
-  status = ltt_enum_string_get(ltt_field_type(f), 
-      ltt_event_get_unsigned(e, f));
+  status = ltt_enum_string_get(f, ltt_event_get_unsigned(e, f));
 
   /* TGID */
   f = lttv_trace_get_hook_field(th, 7);
