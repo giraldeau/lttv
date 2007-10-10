@@ -969,88 +969,79 @@ struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th)
 }
 
 
-/* Returns 0 on success, -1 if fails. */
-gint
-lttv_trace_find_hook(LttTrace *t, GQuark event, 
-    GQuark field1, GQuark field2, GQuark field3, LttvHook h, gpointer hook_data,
-    LttvTraceHook *th)
+GArray *lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
+    GQuark fields[], LttvHook h, gpointer hook_data)
 {
-//  LttEventType *et, *first_et;
-
   struct marker_info *info;
+  GQuark *pfieldname;
+  struct marker_field *field;
+  guint16 marker_id;
 
-  guint i, ev_id;
+  GArray * retval;
 
-  info = marker_get_info_from_name(t, event);
+  info = marker_get_info_from_name(t, marker_name);
+  if(unlikely(info == NULL)) {
+    return NULL;
+  }
 
-  if(unlikely(info == NULL))
-    goto facility_error;
+  retval = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
 
-  ev_id = marker_get_id_from_info(t, info);
   
-  th->h = h;
-  th->id = ev_id;
-  th->f1 = find_field(et, field1);
-  th->f2 = find_field(et, field2);
-  th->f3 = find_field(et, field3);
-  th->hook_data = hook_data;
-  
-//  first_thf = thf;
-//  first_et = et;
 
-  /* Check for type compatibility too */
-//  for(i=1;i<facilities->len;i++) {
-//    fac_id = g_array_index(facilities, guint, i);
-//    f = ltt_trace_get_facility_by_num(t, fac_id);
+  /* for each marker with the requested name */
+  do {
+    LttvTraceHook tmpth;
+    int found;
 
-//    et = ltt_facility_eventtype_get_by_name(f, event);
-//    if(unlikely(et == NULL)) goto event_error;
-    
-//    thf = &g_array_index(th->fac_index, LttvTraceHookByFacility, fac_id);
-//    g_array_index(th->fac_list, LttvTraceHookByFacility*, i) = thf;
-//    ev_id = ltt_eventtype_id(et);
-    thf->h = h;
-    thf->id = GET_HOOK_ID(fac_id, ev_id);
-    thf->f1 = find_field(et, field1);
-    if(check_fields_compatibility(first_et, et,
-        first_thf->f1, thf->f1))
-      goto type_error;
-        
-    thf->f2 = find_field(et, field2);
-    if(check_fields_compatibility(first_et, et,
-        first_thf->f2, thf->f2))
-      goto type_error;
+    marker_id = marker_get_id_from_info(t, info);
 
-    thf->f3 = find_field(et, field3);
-    if(check_fields_compatibility(first_et, et,
-        first_thf->f3, thf->f3))
-      goto type_error;
-    thf->hook_data = hook_data;
-//  }
+    tmpth.h = h;
+    tmpth.id = marker_id;
+    tmpth.hook_data = hook_data;
+    tmpth.fields = g_ptr_array_new();
 
-  return 0;
+    /* for each field requested */
+    found = 0;
+    for(pfieldname = fields; pfieldname != NULL; pfieldname++) {
+      for_each_marker_field(field, info) {
+        if(field->name == *pfieldname) {
+          
+          found = 1;
+          g_ptr_array_add(tmpth.fields, field);
+          break;
+        }
+      }
+      if(!found) {
+        /* Did not find the one of the fields in this instance of the
+           marker. Skip it. */
+        g_ptr_array_free(tmpth.fields, TRUE);
+        goto free_retval;
+      }
+    }
 
-type_error:
-  goto free;
-event_error:
-  g_error("Event type does not exist for event %s", 
-      g_quark_to_string(event));
-  goto free;
-facility_error:
-  //Ignore this type of error : some facilities are not required.
-	//g_error("No %s facility", g_quark_to_string(facility));
-  return -1;
-free:
-//  g_array_free(th->fac_index, TRUE);
-//  g_array_free(th->fac_list, TRUE);
-//  th->fac_index = NULL;
-//  th->fac_list = NULL;
-  return -1;
+    /* all fields were found: add the tracehook to the array */
+    g_array_append_val(retval, tmpth);
+
+    info = info->next;
+  } while(info != NULL);
+
+
+  if(retval->len)
+    return retval;
+
+  free_retval:
+  g_array_free(retval, TRUE);
+  return NULL;
 }
 
-void lttv_trace_hook_destroy(LttvTraceHook *th)
+void lttv_trace_hook_destroy(GArray *th)
 {
-  // nothing to do
+  int i;
+  for(i=0; i<th->len; i++) {
+    g_ptr_array_free(g_array_index(th, LttvTraceHook, i).fields, TRUE);
+  }
+
+  g_array_free(th, TRUE);
 }
 
 

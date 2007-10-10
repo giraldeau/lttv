@@ -274,30 +274,30 @@ void lttv_tracefile_context_remove_hooks_by_id(LttvTracefileContext *self,
 
 typedef struct _LttvTraceHook {
   LttvHook h;
-  guint id;  /* id of the event associated with this hook */
-  struct marker_field *f1;
-  struct marker_field *f2;
-  struct marker_field *f3;
+  guint16 id;  /* id of the marker associated with this hook */
+  GPtrArray *fields;  /* struct marker_fields pointers */
   gpointer hook_data;
 } LttvTraceHook;
 
+#define FIELD_ARRAY(val) ({ (val), 0 })
 
 /* Get the head of marker list correcponding to the given trace hook.
  */
 struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th);
 
-void lttv_trace_hook_destroy(LttvTraceHook *th);
+void lttv_trace_hook_destroy(GArray *th);
 
 /* Search in the trace for the id of the named event type within the named
    facility. Then, find the three (if non null) named fields. All that
    information is then used to fill the LttvTraceHook structure. This
    is useful to find the specific id for an event within a trace, for
    registering a hook using this structure as event data;
-   it already contains the (up to three) needed fields handles. */
- 
-gint lttv_trace_find_hook(LttTrace *t, GQuark event_type,
-    GQuark field1, GQuark field2, GQuark field3, LttvHook h,
-    gpointer hook_data, LttvTraceHook *th);
+   it already contains the (up to three) needed fields handles.
+   Returns an array of LttvTraceHook, or NULL on error.
+ */
+
+GArray *lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
+    GQuark fields[], LttvHook h, gpointer hook_data);
 
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);
