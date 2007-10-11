@@ -152,8 +152,6 @@ guint32 ltt_event_get_unsigned(LttEvent *e, struct marker_field *f)
 {
   gboolean reverse_byte_order;
 
-  g_warning("ltt size: %d", sizeof(LttTracefile));
-
   if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
     reverse_byte_order = (g_ntohs(0x1) != 0x1);
   } else {
