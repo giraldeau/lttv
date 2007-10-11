@@ -267,11 +267,17 @@ long marker_update_fields_offsets(struct marker_info *info, const char *data)
   unsigned int i;
   long offset = 0;
 
-  for (i = 0; i < info->fields->len; i++) {
+  /* Find the last field with a static offset, then update from there. */
+  for (i = info->fields->len - 1; i >= 0; i--) {
     field = &g_array_index(info->fields, struct marker_field, i);
+    if (field->static_offset) {
+      offset = field->offset;
+      break;
+    }
+  }
 
-    if (field->static_offset)
-      continue;
+  for (; i < info->fields->len; i++) {
+    field = &g_array_index(info->fields, struct marker_field, i);
 
     switch (field->type) {
     case LTT_TYPE_SIGNED_INT:

@@ -231,7 +231,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
   /* Get float byte order : might be different from int byte order
    * (or is set to 0 if the trace has no float (kernel trace)) */
   tf->float_word_order = any->float_word_order;
-	tf->has_alignment = any->has_alignment;
+	tf->alignment = any->alignment;
   tf->has_heartbeat = any->has_heartbeat;
 
   if(t) {
@@ -1102,8 +1102,8 @@ int ltt_process_facility_tracefile(LttTracefile *tf)
           g_debug("Doing MARKER_ID_SET_MARKER_ID of marker %s", marker_name);
           pos += strlen(marker_name) + 1;
           //remove genevent compatibility
-	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
-          pos += ltt_align((size_t)pos, sizeof(uint16_t), tf->has_alignment);
+	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
+          pos += ltt_align((size_t)pos, sizeof(uint16_t), tf->alignment);
           id = ltt_get_uint16(LTT_GET_BO(tf), pos);
           pos += sizeof(guint16);
           int_size = *(guint8*)pos;
@@ -1126,11 +1126,11 @@ int ltt_process_facility_tracefile(LttTracefile *tf)
                   marker_name);
           pos += strlen(marker_name) + 1;
           //break genevent.
-	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
           format = pos;
           pos += strlen(format) + 1;
           //break genevent
-	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
           marker_format_event(tf->trace, g_quark_from_string(marker_name),
                               format);
           /* get information from dictionnary TODO */
@@ -1754,10 +1754,10 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   
   /* Align the head */
   if(!tf->compact)
-    pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+    pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
   else {
     g_assert(tf->has_heartbeat);
-    pos += ltt_align((size_t)pos, sizeof(uint32_t), tf->has_alignment);
+    pos += ltt_align((size_t)pos, sizeof(uint32_t), tf->alignment);
   }
   
   if(tf->has_heartbeat) {
@@ -1836,7 +1836,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   }
   /* Align the head */
   if(!tf->compact)
-    pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+    pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
 
   event->data = pos;
 
@@ -1992,7 +1992,7 @@ void ltt_update_event_size(LttTracefile *tf)
     case MARKER_ID_SET_MARKER_ID:
       size = strlen((char*)tf->event.data) + 1;
       //g_debug("marker %s id set", (char*)tf->event.data);
-      size += ltt_align(size, sizeof(guint16), tf->has_alignment);
+      size += ltt_align(size, sizeof(guint16), tf->alignment);
       size += sizeof(guint16);
       size += sizeof(guint8);
       size += sizeof(guint8);
@@ -2014,18 +2014,24 @@ void ltt_update_event_size(LttTracefile *tf)
       tf->event.tsc = ltt_get_uint64(LTT_GET_BO(tf), tscdata);
       tf->buffer.tsc = tf->event.tsc;
       tf->event.event_time = ltt_interpolate_time(tf, &tf->event);
-      size = ltt_align(size, sizeof(guint64), tf->has_alignment);
+      size = ltt_align(size, sizeof(guint64), tf->alignment);
       size += sizeof(guint64);
       break;
-    default:
-      info = marker_get_info_from_id(tf->trace, tf->event.event_id);
-      g_assert(info != NULL);
-      if (info->size != -1) {
-        size = info->size;
-      } else {
-        size = marker_update_fields_offsets(marker_get_info_from_id(tf->trace,
-                                     tf->event.event_id), tf->event.data);
-      }
+  }
+
+  info = marker_get_info_from_id(tf->trace, tf->event.event_id);
+  if (tf->event.event_id >= MARKER_CORE_IDS)
+    g_assert(info != NULL);
+
+  /* Do not update field offsets of core markers when initially reading the
+   * facility tracefile when the infos about these markers do not exist yet.
+   */
+  if (likely(info && info->fields)) {
+    if (info->size != -1)
+      size = info->size;
+    else
+      size = marker_update_fields_offsets(marker_get_info_from_id(tf->trace,
+                                   tf->event.event_id), tf->event.data);
   }
 
   tf->event.data_size = size;

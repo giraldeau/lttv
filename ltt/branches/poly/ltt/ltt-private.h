@@ -130,7 +130,7 @@ struct ltt_trace_header_any {
   uint8_t         minor_version;
   uint8_t         flight_recorder;
   uint8_t         has_heartbeat;
-  uint8_t         has_alignment;  /* Event header alignment */
+  uint8_t         alignment;  /* Event header alignment */
   uint32_t        freq_scale;
 } LTT_PACKED_STRUCT;
 
@@ -144,7 +144,7 @@ struct ltt_trace_header_1_0 {
   uint8_t         minor_version;
   uint8_t         flight_recorder;
   uint8_t         has_heartbeat;
-  uint8_t         has_alignment;  /* Event header alignment */
+  uint8_t         alignment;  /* Event header alignment */
   uint8_t         tsc_lsb_truncate;
   uint8_t         tscbits;
   uint32_t        freq_scale;
@@ -286,7 +286,7 @@ struct LttTracefile {
   guint num_blocks;           //number of blocks in the file
   gboolean  reverse_bo;              //must we reverse byte order ?
   gboolean  float_word_order;        //what is the byte order of floats ?
-  size_t    has_alignment;           //alignment of events in the tracefile.
+  size_t    alignment;               //alignment of events in the tracefile.
                                      // 0 or the architecture size in bytes.
 
   guint8    has_heartbeat;
@@ -352,20 +352,21 @@ struct LttSystemDescription {
 //off_t get_alignment(LttField *field);
 
 /* Calculate the offset needed to align the type.
- * If has_alignment is 0, alignment is disactivated.
+ * If alignment is 0, alignment is disactivated.
  * else, the function returns the offset needed to
- * align align_drift on the has_alignment value (should be
+ * align align_drift on the alignment value (should be
  * the size of the architecture). */
 static inline unsigned int ltt_align(size_t align_drift,
           size_t size_of_type,
-          size_t has_alignment)
+          size_t alignment)
 {
-  size_t alignment = min(has_alignment, size_of_type);
+  size_t align_offset = min(alignment, size_of_type);
   
-  if(!has_alignment) return 0;
+  if(!alignment)
+    return 0;
   
   g_assert(size_of_type != 0);
-  return ((alignment - align_drift) & (alignment-1));
+  return ((align_offset - align_drift) & (align_offset-1));
 }
 
 
