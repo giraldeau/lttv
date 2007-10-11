@@ -395,6 +395,7 @@ int marker_format_event(LttTrace *trace, GQuark name, const char *format)
       g_error("Error parsing marker format \"%s\" for marker \"%s\"", format,
         g_quark_to_string(name));
   }
+  return 0;
 }
 
 int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
@@ -402,6 +403,7 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   uint8_t size_t_size, uint8_t alignment)
 {
   struct marker_info *info, *head;
+  int found = 0;
 
   if (trace->markers->len < id)
     trace->markers = g_array_set_size(trace->markers, id+1);
@@ -417,9 +419,16 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   if (!head)
     g_hash_table_insert(trace->markers_hash, (gpointer)name, info);
   else {
-    g_hash_table_replace(trace->markers_hash, (gpointer)name, info);
-    info->next = head;
+    struct marker_info *iter;
+    for (iter = head; iter != NULL; iter = iter->next)
+      if (iter->name == name)
+        found = 1;
+    if (!found) {
+      g_hash_table_replace(trace->markers_hash, (gpointer)name, info);
+      info->next = head;
+    }
   }
+  return 0;
 }
 
 int allocate_marker_data(LttTrace *trace)
