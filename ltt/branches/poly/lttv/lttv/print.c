@@ -105,17 +105,17 @@ void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
      //g_string_append_printf(s, "%g", ltt_event_get_double(e,f));
       g_string_append_printf(s, type->fmt, ltt_event_get_double(e,f));
       break;
+#endif
 
-    case LTT_POINTER:
+    case LTT_TYPE_POINTER:
       if(field_names) {
-        name = ltt_field_name(f);
+        name = f->name;
         if(name)
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
       }
-      // g_string_append_printf(s, "0x%llx", ltt_event_get_long_unsigned(e,f));
-      g_string_append_printf(s, type->fmt, ltt_event_get_long_unsigned(e,f));
+      g_string_append_printf(s, "0x%llx", ltt_event_get_long_unsigned(e,f));
+      //g_string_append_printf(s, type->fmt, ltt_event_get_long_unsigned(e,f));
       break;
-#endif
 
     case LTT_TYPE_STRING:
       if(field_names) {

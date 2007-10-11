@@ -80,7 +80,7 @@ static inline const char *parse_trace_type(struct marker_info *info,
       *trace_type = LTT_TYPE_STRING;
       goto parse_end;
     case 'p':
-      *trace_type = LTT_TYPE_UNSIGNED_INT;
+      *trace_type = LTT_TYPE_POINTER;
       *trace_size = info->pointer_size;
       goto parse_end;
     case 'd':
@@ -184,7 +184,7 @@ static inline const char *parse_c_type(struct marker_info *info,
       *c_type = LTT_TYPE_STRING;
       goto parse_end;
     case 'p':
-      *c_type = LTT_TYPE_UNSIGNED_INT;
+      *c_type = LTT_TYPE_POINTER;
       *c_size = info->pointer_size;
       goto parse_end;
     case 'd':
