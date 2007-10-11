@@ -40,7 +40,7 @@
 #include <stdio.h>
 
 static gboolean
-  a_field_names,
+  a_no_field_names,
   a_state,
   a_cpu_stats,
   a_process_stats,
@@ -333,7 +333,7 @@ static int write_event_content(void *hook_data, void *call_data)
                                tfc->t_context->t,tfc,NULL,NULL))
       return FALSE;
   
-  lttv_event_to_string(e, a_string, TRUE, a_field_names, tfs);
+  lttv_event_to_string(e, a_string, TRUE, !a_no_field_names, tfs);
 
   if(a_state) {
     g_string_append_printf(a_string, " %s ",
@@ -363,11 +363,11 @@ static void init()
       "file name", 
       LTTV_OPT_STRING, &a_file_name, NULL, NULL);
 
-  a_field_names = FALSE;
-  lttv_option_add("field_names", 'l', 
-      "write the field names for each event", 
+  a_no_field_names = FALSE;
+  lttv_option_add("field_names", 's', 
+      "do not write the field names for each event", 
       "", 
-      LTTV_OPT_NONE, &a_field_names, NULL, NULL);
+      LTTV_OPT_NONE, &a_no_field_names, NULL, NULL);
 
   a_state = FALSE;
   lttv_option_add("process_state", 'r', 
