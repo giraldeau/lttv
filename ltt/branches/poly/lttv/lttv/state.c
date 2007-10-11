@@ -105,8 +105,7 @@ GQuark
     LTT_FIELD_MINOR,
     LTT_FIELD_MAJOR,
     LTT_FIELD_OPERATION,
-    LTT_FIELD_ACTION,
-    LTT_FIELD_NUM;
+    LTT_FIELD_ACTION;
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -3117,7 +3116,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         process_free, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_FACILITY_FS,
         LTT_EVENT_EXEC,
         FIELD_ARRAY(LTT_FIELD_FILENAME),
         process_exec, NULL, &hooks);
@@ -3146,7 +3145,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_LIST,
         LTT_EVENT_LIST_INTERRUPT,
-        FIELD_ARRAY(LTT_FIELD_ACTION, LTT_FIELD_NUM),
+        FIELD_ARRAY(LTT_FIELD_ACTION, LTT_FIELD_IRQ_ID),
         enum_interrupt, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
@@ -3841,8 +3840,8 @@ static void module_init()
   LTT_EVENT_TRAP_EXIT     = g_quark_from_string("trap_exit");
   LTT_EVENT_IRQ_ENTRY     = g_quark_from_string("irq_entry");
   LTT_EVENT_IRQ_EXIT      = g_quark_from_string("irq_exit");
-  LTT_EVENT_SOFT_IRQ_ENTRY     = g_quark_from_string("soft_irq_entry");
-  LTT_EVENT_SOFT_IRQ_EXIT      = g_quark_from_string("soft_irq_exit");
+  LTT_EVENT_SOFT_IRQ_ENTRY     = g_quark_from_string("softirq_entry");
+  LTT_EVENT_SOFT_IRQ_EXIT      = g_quark_from_string("softirq_exit");
   LTT_EVENT_SCHED_SCHEDULE   = g_quark_from_string("sched_schedule");
   LTT_EVENT_PROCESS_FORK          = g_quark_from_string("process_fork");
   LTT_EVENT_KTHREAD_CREATE = g_quark_from_string("kthread_create");
@@ -3883,7 +3882,6 @@ static void module_init()
   LTT_FIELD_MINOR     = g_quark_from_string("minor");
   LTT_FIELD_OPERATION     = g_quark_from_string("direction");
   LTT_FIELD_ACTION        = g_quark_from_string("action");
-  LTT_FIELD_NUM           = g_quark_from_string("num");
   
   LTTV_CPU_UNKNOWN = g_quark_from_string("unknown");
   LTTV_CPU_IDLE = g_quark_from_string("idle");

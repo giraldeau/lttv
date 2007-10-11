@@ -114,8 +114,7 @@ extern GQuark
     LTT_FIELD_MINOR,
     LTT_FIELD_MAJOR,
     LTT_FIELD_OPERATION,
-    LTT_FIELD_ACTION,
-    LTT_FIELD_NUM;
+    LTT_FIELD_ACTION;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
