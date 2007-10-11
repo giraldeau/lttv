@@ -346,7 +346,7 @@ static void format_parse(const char *fmt, struct marker_info *info)
       }
       break;
     case ' ':
-      if (name_end && name_begin) {
+      if (!name_end && name_begin) {
         name_end = fmt;
         if (name)
           g_free(name);
@@ -356,7 +356,7 @@ static void format_parse(const char *fmt, struct marker_info *info)
       }
       break;  /* Skip white spaces */
     default:
-      if (!name) {
+      if (!name_begin) {
         name_begin = fmt;
         name_end = NULL;
       }
