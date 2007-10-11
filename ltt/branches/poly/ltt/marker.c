@@ -250,6 +250,7 @@ static inline long add_type(struct marker_info *info,
   switch (trace_type) {
   case LTT_TYPE_SIGNED_INT:
   case LTT_TYPE_UNSIGNED_INT:
+  case LTT_TYPE_POINTER:
     field->size = trace_size;
     field->alignment = trace_size;
     field->attributes = attributes;
@@ -299,6 +300,7 @@ long marker_update_fields_offsets(struct marker_info *info, const char *data)
     switch (field->type) {
     case LTT_TYPE_SIGNED_INT:
     case LTT_TYPE_UNSIGNED_INT:
+    case LTT_TYPE_POINTER:
       field->offset = offset + ltt_align(offset, field->alignment,
                                           info->alignment);
       offset = field->offset + field->size;
