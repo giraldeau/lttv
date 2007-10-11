@@ -968,13 +968,32 @@ struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th)
   return marker_get_info_from_id(t, th->id);
 }
 
+static inline GQuark lttv_merge_facility_event_name(GQuark fac, GQuark ev)
+{
+  char *tmp;
+  const char *sfac, *sev;
+  GQuark ret;
 
-int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
+  sfac = g_quark_to_string(fac);
+  sev = g_quark_to_string(ev);
+  tmp = g_new(char, strlen(sfac) + strlen(sev) + 3); /* 3: _ \0 \0 */
+  strcpy(tmp, sfac);
+  strcat(tmp, "_");
+  strcat(tmp, sev);
+  ret = g_quark_from_string(tmp);
+  g_free(tmp);
+  return ret;
+}
+
+int lttv_trace_find_hook(LttTrace *t, GQuark facility_name, GQuark event_name,
     GQuark fields[], LttvHook h, gpointer hook_data, GArray **trace_hooks)
 {
   struct marker_info *info;
   guint16 marker_id;
   int init_array_size;
+  GQuark marker_name;
+
+  marker_name = lttv_merge_facility_event_name(facility_name, event_name);
 
   info = marker_get_info_from_name(t, marker_name);
   if(unlikely(info == NULL)) {

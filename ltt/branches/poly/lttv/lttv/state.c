@@ -1633,6 +1633,7 @@ create_name_tables(LttvTraceState *tcs)
   hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 1);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
+      LTT_FACILITY_KERNEL_ARCH,
       LTT_EVENT_SYSCALL_ENTRY,
       FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
       NULL, NULL, &hooks)) {
@@ -1667,6 +1668,7 @@ create_name_tables(LttvTraceState *tcs)
   lttv_trace_hook_remove_all(&hooks);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
+        LTT_FACILITY_KERNEL_ARCH,
         LTT_EVENT_TRAP_ENTRY,
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         NULL, NULL, &hooks)) {
@@ -1695,6 +1697,7 @@ create_name_tables(LttvTraceState *tcs)
   lttv_trace_hook_remove_all(&hooks);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_IRQ_ENTRY,
         FIELD_ARRAY(LTT_FIELD_IRQ_ID),
         NULL, NULL, &hooks)) {
@@ -3034,84 +3037,100 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     //hn = 0;
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL_ARCH,
         LTT_EVENT_SYSCALL_ENTRY,
         FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
 	syscall_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL_ARCH,
         LTT_EVENT_SYSCALL_EXIT,
         NULL,
         syscall_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL_ARCH,
         LTT_EVENT_TRAP_ENTRY,
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         trap_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL_ARCH,
         LTT_EVENT_TRAP_EXIT,
         NULL,
         trap_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_IRQ_ENTRY,
         FIELD_ARRAY(LTT_FIELD_IRQ_ID),
         irq_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_IRQ_EXIT,
         NULL,
         irq_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SOFT_IRQ_ENTRY,
         FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
         soft_irq_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SOFT_IRQ_EXIT,
         NULL,
         soft_irq_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SCHED_SCHEDULE,
         FIELD_ARRAY(LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID,
 	  LTT_FIELD_PREV_STATE),
         schedchange, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_PROCESS_FORK,
         FIELD_ARRAY(LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID,
 	  LTT_FIELD_CHILD_TGID),
         process_fork, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL_ARCH,
         LTT_EVENT_KTHREAD_CREATE,
         FIELD_ARRAY(LTT_FIELD_PID),
         process_kernel_thread, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_PROCESS_EXIT,
         FIELD_ARRAY(LTT_FIELD_PID),
         process_exit, NULL, &hooks);
     
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_PROCESS_FREE,
         FIELD_ARRAY(LTT_FIELD_PID),
         process_free, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_EXEC,
         FIELD_ARRAY(LTT_FIELD_FILENAME),
         process_exec, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_USER_GENERIC,
         LTT_EVENT_THREAD_BRAND,
         FIELD_ARRAY(LTT_FIELD_NAME),
         thread_brand, NULL, &hooks);
 
      /* statedump-related hooks */
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_LIST,
         LTT_EVENT_PROCESS_STATE,
         FIELD_ARRAY(LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
 	  LTT_FIELD_TYPE, LTT_FIELD_MODE, LTT_FIELD_SUBMODE,
@@ -3119,31 +3138,37 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         enum_process_state, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_LIST,
         LTT_EVENT_STATEDUMP_END,
         NULL,
         statedump_end, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_LIST,
         LTT_EVENT_LIST_INTERRUPT,
         FIELD_ARRAY(LTT_FIELD_ACTION, LTT_FIELD_NUM),
         enum_interrupt, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_BLOCK,
         LTT_EVENT_REQUEST_ISSUE,
         FIELD_ARRAY(LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION),
         bdev_request_issue, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_BLOCK,
         LTT_EVENT_REQUEST_COMPLETE,
         FIELD_ARRAY(LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION),
         bdev_request_complete, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_USER_GENERIC,
         LTT_EVENT_FUNCTION_ENTRY,
         FIELD_ARRAY(LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE),
         function_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_USER_GENERIC,
         LTT_EVENT_FUNCTION_EXIT,
         FIELD_ARRAY(LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE),
         function_exit, NULL, &hooks);

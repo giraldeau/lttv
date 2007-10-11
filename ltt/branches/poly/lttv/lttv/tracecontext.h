@@ -298,7 +298,7 @@ void lttv_trace_hook_remove_all(GArray **th);
    Adds the hooks to the trace_hooks array.
  */
 
-int lttv_trace_find_hook(LttTrace *t, GQuark marker_name,
+int lttv_trace_find_hook(LttTrace *t, GQuark facility_name, GQuark event_name,
     GQuark fields[], LttvHook h, gpointer hook_data, GArray **trace_hooks);
 
 static inline struct marker_field *
