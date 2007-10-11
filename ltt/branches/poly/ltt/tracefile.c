@@ -1090,7 +1090,7 @@ int ltt_process_facility_tracefile(LttTracefile *tf)
       goto event_id_error;
     } else {
     
-      void *pos;
+      char *pos;
       const char *marker_name, *format;
       uint16_t id;
       guint8 int_size, long_size, pointer_size, size_t_size, alignment;
@@ -1098,10 +1098,11 @@ int ltt_process_facility_tracefile(LttTracefile *tf)
       // FIXME align
       switch((enum marker_id)tf->event.event_id) {
         case MARKER_ID_SET_MARKER_ID:
-          marker_name = (char*)(tf->event.data);
+          marker_name = pos = tf->event.data;
           g_debug("Doing MARKER_ID_SET_MARKER_ID of marker %s", marker_name);
-          pos = (tf->event.data + strlen(marker_name) + 1);
-          pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+          pos += strlen(marker_name) + 1;
+          //remove genevent compatibility
+	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
           pos += ltt_align((size_t)pos, sizeof(uint16_t), tf->has_alignment);
           id = ltt_get_uint16(LTT_GET_BO(tf), pos);
           pos += sizeof(guint16);
@@ -1120,14 +1121,16 @@ int ltt_process_facility_tracefile(LttTracefile *tf)
                           pointer_size, size_t_size, alignment);
           break;
         case MARKER_ID_SET_MARKER_FORMAT:
-          marker_name = (char*)(tf->event.data);
+          marker_name = pos = tf->event.data;
           g_debug("Doing MARKER_ID_SET_MARKER_FORMAT of marker %s",
                   marker_name);
-          pos = (tf->event.data + strlen(marker_name) + 1);
-          pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
-          format = (const char*)pos;
+          pos += strlen(marker_name) + 1;
+          //break genevent.
+	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+          format = pos;
           pos += strlen(format) + 1;
-          pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
+          //break genevent
+	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->has_alignment);
           marker_format_event(tf->trace, g_quark_from_string(marker_name),
                               format);
           /* get information from dictionnary TODO */
@@ -2000,12 +2003,10 @@ void ltt_update_event_size(LttTracefile *tf)
     case MARKER_ID_SET_MARKER_FORMAT:
       //g_debug("marker %s format set", (char*)tf->event.data);
       size = strlen((char*)tf->event.data) + 1;
-      size += strlen((char*)tf->event.data) + 1;
+      size += strlen((char*)tf->event.data + size) + 1;
       break;
     case MARKER_ID_HEARTBEAT_32:
       //g_debug("Update Event heartbeat 32 bits");
-      size = ltt_align(size, sizeof(guint32), tf->has_alignment);
-      size += sizeof(guint32);
       break;
     case MARKER_ID_HEARTBEAT_64:
       //g_debug("Update Event heartbeat 64 bits");

@@ -305,6 +305,7 @@ static void format_parse(const char *fmt, struct marker_info *info)
   char *name = NULL;
   unsigned int field_count = 1;
 
+  name_begin = fmt;
   for (; *fmt ; ++fmt) {
     switch (*fmt) {
     case '#':
@@ -345,7 +346,7 @@ static void format_parse(const char *fmt, struct marker_info *info)
       }
       break;
     case ' ':
-      if (!name_end) {
+      if (name_end && name_begin) {
         name_end = fmt;
         if (name)
           g_free(name);
@@ -373,6 +374,7 @@ int marker_parse_format(const char *format, struct marker_info *info)
   info->fields = g_array_sized_new(FALSE, TRUE,
                     sizeof(struct marker_field), DEFAULT_FIELDS_NUM);
   format_parse(format, info);
+  return 0;
 }
 
 int marker_format_event(LttTrace *trace, GQuark name, const char *format)
@@ -381,7 +383,7 @@ int marker_format_event(LttTrace *trace, GQuark name, const char *format)
   
   info = g_hash_table_lookup(trace->markers_hash, (gconstpointer)name);
   if (!info)
-    g_error("Got marker format %s, but marker name %s has no ID yet. "
+    g_error("Got marker format \"%s\", but marker name \"%s\" has no ID yet. "
             "Kernel issue.",
             format, name);
   for (; info != NULL; info = info->next) {
@@ -390,7 +392,7 @@ int marker_format_event(LttTrace *trace, GQuark name, const char *format)
     info->format = g_new(char, strlen(format)+1);
     strcpy(info->format, format);
     if (marker_parse_format(format, info))
-      g_error("Error parsing marker format %s for marker %s", format,
+      g_error("Error parsing marker format \"%s\" for marker \"%s\"", format,
         g_quark_to_string(name));
   }
 }

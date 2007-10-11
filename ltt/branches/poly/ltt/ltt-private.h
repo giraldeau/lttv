@@ -105,39 +105,6 @@ typedef guint16 uint16_t;
 typedef guint32 uint32_t;
 typedef guint64 uint64_t;
 
-/* Hardcoded facility load event : this plus an preceding "name" string */
-struct LttFacilityLoad {
-  guint32 checksum;
-  guint32 id;
-  guint32 int_size;
-  guint32 long_size;
-  guint32 pointer_size;
-  guint32 size_t_size;
-  guint32 has_alignment;
-} LTT_PACKED_STRUCT;
-
-struct LttFacilityUnload {
-  guint32 id;
-} LTT_PACKED_STRUCT;
-
-struct LttStateDumpFacilityLoad {
-  guint32 checksum;
-  guint32 id;
-  guint32 int_size;
-  guint32 long_size;
-  guint32 pointer_size;
-  guint32 size_t_size;
-  guint32  has_alignment;
-} LTT_PACKED_STRUCT;
-
-/* Empty event */
-typedef struct _TimeHeartbeat {
-} LTT_PACKED_STRUCT TimeHeartbeat;
-
-typedef struct _TimeHeartbeatFull {
-  guint64 tsc;
-} LTT_PACKED_STRUCT TimeHeartbeatFull;
-
 struct ltt_event_header_hb {
   uint32_t      timestamp;
   uint16_t      event_id;
