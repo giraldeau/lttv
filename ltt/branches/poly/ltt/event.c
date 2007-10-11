@@ -1,3 +1,28 @@
+/* This file is part of the Linux Trace Toolkit viewer
+ * Copyright (C) 2007 Mathieu Desnoyers
+ *
+ * Complete rewrite from the original version made by XangXiu Yang.
+ * 
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License Version 2.1 as published by the Free Software Foundation.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ * Boston, MA 02111-1307, USA.
+ */
+
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
+#include <glib.h>
 
 #include <ltt/event.h>
 #include <ltt/ltt-types.h>
@@ -126,6 +151,9 @@ LttTracefile *ltt_event_position_tracefile(LttEventPosition *ep)
 guint32 ltt_event_get_unsigned(LttEvent *e, struct marker_field *f)
 {
   gboolean reverse_byte_order;
+
+  g_warning("ltt size: %d", sizeof(LttTracefile));
+
   if(unlikely(f->attributes & LTT_ATTRIBUTE_NETWORK_BYTE_ORDER)) {
     reverse_byte_order = (g_ntohs(0x1) != 0x1);
   } else {

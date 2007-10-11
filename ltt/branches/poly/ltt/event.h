@@ -1,12 +1,12 @@
 #ifndef _LTT_EVENT_H
 #define _LTT_EVENT_H
 
-#include <ltt/time.h>
 #include <glib.h>
 #include <stdint.h>
 #include <sys/types.h>
-#include <ltt/ltt.h>
 #include <endian.h>
+#include <ltt/ltt.h>
+#include <ltt/time.h>
 #include <ltt/marker.h>
 
 /*
@@ -108,7 +108,5 @@ static inline LttCycleCount ltt_event_cycle_count(const LttEvent *e)
 {
   return e->tsc;
 }
-
-
 
 #endif //_LTT_EVENT_H

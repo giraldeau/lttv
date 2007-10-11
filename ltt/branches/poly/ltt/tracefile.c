@@ -246,6 +246,8 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
    // t->compact_facilities = NULL;
   }
  
+  printf("init size : %d\n", sizeof(LttTracefile));
+
 
   switch(any->major_version) {
 
