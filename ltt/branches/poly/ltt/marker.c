@@ -428,7 +428,7 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   struct marker_info *info, *head;
   int found = 0;
 
-  if (trace->markers->len < id)
+  if (trace->markers->len <= id)
     trace->markers = g_array_set_size(trace->markers, id+1);
   info = &g_array_index(trace->markers, struct marker_info, id);
   info->name = name;

@@ -1104,6 +1104,8 @@ int ltt_process_facility_tracefile(LttTracefile *tf)
 	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
           pos += ltt_align((size_t)pos, sizeof(uint16_t), tf->alignment);
           id = ltt_get_uint16(LTT_GET_BO(tf), pos);
+          g_debug("In MARKER_ID_SET_MARKER_ID of marker %s id %hu",
+	  	marker_name, id);
           pos += sizeof(guint16);
           int_size = *(guint8*)pos;
           pos += sizeof(guint8);

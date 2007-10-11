@@ -21,6 +21,7 @@
 #include <config.h>
 #endif
 
+#include <glib.h>
 #include <lttv/lttv.h>
 #include <lttv/module.h>
 #include <lttv/state.h>
