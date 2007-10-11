@@ -1992,7 +1992,7 @@ void ltt_update_event_size(LttTracefile *tf)
   switch((enum marker_id)tf->event.event_id) {
     case MARKER_ID_SET_MARKER_ID:
       size = strlen((char*)tf->event.data) + 1;
-      //g_debug("marker %s id set", (char*)tf->event.data);
+      g_debug("marker %s id set", (char*)tf->event.data);
       size += ltt_align(size, sizeof(guint16), tf->alignment);
       size += sizeof(guint16);
       size += sizeof(guint8);
@@ -2002,15 +2002,15 @@ void ltt_update_event_size(LttTracefile *tf)
       size += sizeof(guint8);
       break;
     case MARKER_ID_SET_MARKER_FORMAT:
-      //g_debug("marker %s format set", (char*)tf->event.data);
+      g_debug("marker %s format set", (char*)tf->event.data);
       size = strlen((char*)tf->event.data) + 1;
       size += strlen((char*)tf->event.data + size) + 1;
       break;
     case MARKER_ID_HEARTBEAT_32:
-      //g_debug("Update Event heartbeat 32 bits");
+      g_debug("Update Event heartbeat 32 bits");
       break;
     case MARKER_ID_HEARTBEAT_64:
-      //g_debug("Update Event heartbeat 64 bits");
+      g_debug("Update Event heartbeat 64 bits");
       tscdata = (char*)(tf->event.data);
       tf->event.tsc = ltt_get_uint64(LTT_GET_BO(tf), tscdata);
       tf->buffer.tsc = tf->event.tsc;
