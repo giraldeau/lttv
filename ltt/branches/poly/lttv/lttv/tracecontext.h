@@ -279,7 +279,7 @@ typedef struct _LttvTraceHook {
   gpointer hook_data;
 } LttvTraceHook;
 
-/* Get the head of marker list correcponding to the given trace hook.
+/* Get the head of marker list corresponding to the given trace hook.
  */
 struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th);
 
