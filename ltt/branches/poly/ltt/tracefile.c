@@ -2142,6 +2142,16 @@ void ltt_update_event_size(LttTracefile *tf)
   if (a_event_debug)
     print_debug_event_data(&tf->event);
 
+  /* Having a marker load or marker format event out of the facilities
+   * tracefiles is a serious bug. */
+  switch((enum marker_id)tf->event.event_id) {
+    case MARKER_ID_SET_MARKER_ID:
+    case MARKER_ID_SET_MARKER_FORMAT:
+      if (tf->name != g_quark_from_string("/control/facilities"))
+        g_error("Trace inconsistency : metadata event found in data "
+                "tracefile %s", g_quark_to_string(tf->long_name));
+  }
+
   if (tf->event.data_size != tf->event.event_size) {
     struct marker_info *info = marker_get_info_from_id(tf->trace,
                                                        tf->event.event_id);
