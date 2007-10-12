@@ -220,4 +220,7 @@ guint64 ltt_get_uint(gboolean reverse_byte_order, gint size, void *data);
 
 LttTime ltt_interpolate_time_from_tsc(LttTracefile *tf, guint64 tsc);
 
+/* Set to enable event debugging output */
+void ltt_event_debug(int state);
+
 #endif // TRACE_H

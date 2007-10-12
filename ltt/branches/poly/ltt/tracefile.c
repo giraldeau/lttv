@@ -116,6 +116,15 @@ static gint map_block(LttTracefile * tf, guint block_num);
 static int ltt_seek_next_event(LttTracefile *tf);
 static void __attribute__((constructor)) init(void);
 static void ltt_update_event_size(LttTracefile *tf);
+
+/* Enable event debugging */
+static int a_event_debug = 0;
+
+void ltt_event_debug(int state)
+{
+  a_event_debug = state;
+}
+
 //void precompute_offsets(LttFacility *fac, LttEventType *event);
 
 #if 0
@@ -1740,6 +1749,38 @@ int ltt_tracefile_read_op(LttTracefile *tf)
   return 0;
 }
 
+static void print_debug_event_header(LttEvent *ev, void *start_pos, void *end_pos)
+{
+  unsigned int offset = 0;
+  int i, j;
+
+  g_printf("Event header (tracefile %s offset %llx):\n",
+    g_quark_to_string(ev->tracefile->name),
+    ((uint64_t)ev->tracefile->buffer.index * ev->tracefile->buf_size)
+      + (long)start_pos - (long)ev->tracefile->buffer.head);
+
+  while (offset < (long)end_pos - (long)start_pos) {
+    g_printf("%8lx", (long)start_pos - (long)ev->tracefile->buffer.head + offset);
+    g_printf("    ");
+    
+    for (i = 0; i < 4 ; i++) {
+      for (j = 0; j < 4; j++) {
+	if (offset + ((i * 4) + j) <
+		(long)end_pos - (long)start_pos)
+          g_printf("%02hhX",
+            ((char*)ev->tracefile->buffer.head)[ev->offset + offset + ((i * 4) + j)]);
+	else
+	  g_printf("  ");
+        g_printf(" ");
+      }
+      if (i < 4)
+      g_printf(" ");
+    }
+    offset+=16;
+    g_printf("\n");
+  }
+}
+
 
 /* same as ltt_tracefile_read, but does not seek to the next event nor call
  * event specific operation. */
@@ -1747,6 +1788,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 {
   void * pos;
   LttEvent *event;
+  void *pos_aligned;
  
   event = &tf->event;
   pos = tf->buffer.head + event->offset;
@@ -1760,6 +1802,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
     g_assert(tf->has_heartbeat);
     pos += ltt_align((size_t)pos, sizeof(uint32_t), tf->alignment);
   }
+  pos_aligned = pos;
   
   if(tf->has_heartbeat) {
     event->timestamp = ltt_get_uint32(LTT_GET_BO(tf),
@@ -1835,6 +1878,10 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   } else {
     /* Compact event */
   }
+
+  if (a_event_debug)
+    print_debug_event_header(event, pos_aligned, pos);
+
   /* Align the head */
   if(!tf->compact)
     pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
@@ -1982,6 +2029,54 @@ map_error:
 
 }
 
+static void print_debug_event_data(LttEvent *ev)
+{
+  unsigned int offset = 0;
+  int i, j;
+
+  if (!max(ev->event_size, ev->data_size))
+    return;
+
+  g_printf("Event data (tracefile %s offset %llx):\n",
+    g_quark_to_string(ev->tracefile->name),
+    ((uint64_t)ev->tracefile->buffer.index * ev->tracefile->buf_size)
+      + (long)ev->data - (long)ev->tracefile->buffer.head);
+
+  while (offset < max(ev->event_size, ev->data_size)) {
+    g_printf("%8lx", (long)ev->data + offset
+      - (long)ev->tracefile->buffer.head);
+    g_printf("    ");
+    
+    for (i = 0; i < 4 ; i++) {
+      for (j = 0; j < 4; j++) {
+	if (offset + ((i * 4) + j) < max(ev->event_size, ev->data_size))
+          g_printf("%02hhX", ((char*)ev->data)[offset + ((i * 4) + j)]);
+	else
+	  g_printf("  ");
+        g_printf(" ");
+      }
+      if (i < 4)
+      g_printf(" ");
+    }
+
+    g_printf("    ");
+
+    for (i = 0; i < 4; i++) {
+      for (j = 0; j < 4; j++) {
+	if (offset + ((i * 4) + j) < max(ev->event_size, ev->data_size)) {
+	  if (isprint(((char*)ev->data)[offset + ((i * 4) + j)]))
+            g_printf("%c", ((char*)ev->data)[offset + ((i * 4) + j)]);
+	  else
+            g_printf(".");
+	} else
+	  g_printf("  ");
+      }
+    }
+    offset+=16;
+    g_printf("\n");
+  }
+}
+
 /* It will update the fields offsets too */
 void ltt_update_event_size(LttTracefile *tf)
 {
@@ -2042,6 +2137,10 @@ void ltt_update_event_size(LttTracefile *tf)
     /* Event size too big to fit in the event size field */
     tf->event.event_size = tf->event.data_size;
   }
+
+  if (a_event_debug)
+    print_debug_event_data(&tf->event);
+
   if (tf->event.data_size != tf->event.event_size) {
     struct marker_info *info = marker_get_info_from_id(tf->trace,
                                                        tf->event.event_id);

@@ -67,6 +67,8 @@ static void lttv_verbose(void *hook_data);
 
 static void lttv_debug(void *hook_data);
 
+static void lttv_event_debug(void *hook_data);
+
 static void lttv_fatal(void *hook_data);
 
 static void lttv_help(void *hook_data);
@@ -183,6 +185,11 @@ int main(int argc, char **argv)
   lttv_option_add("debug",'d', "print debugging messages", "none", 
       LTTV_OPT_NONE, NULL, lttv_debug, NULL);
 
+  /* use -edebug, -e conflicts with filter. Problem with option parsing when we
+   * reparse the options with different number of arguments. */
+  lttv_option_add("edebug",'e', "print event debugging", "none", 
+      LTTV_OPT_NONE, NULL, lttv_event_debug, NULL);
+
   a_fatal = FALSE;
   lttv_option_add("fatal",'f', "make critical messages fatal",
                   "none", 
@@ -263,6 +270,12 @@ void lttv_debug(void *hook_data)
 {
   g_log_set_handler(NULL, G_LOG_LEVEL_DEBUG, g_log_default_handler, NULL);
   g_info("Logging set to include DEBUG level messages");
+}
+
+void lttv_event_debug(void *hook_data)
+{
+  ltt_event_debug(1);
+  g_info("Output event detailed debug");
 }
 
 void lttv_fatal(void *hook_data)
