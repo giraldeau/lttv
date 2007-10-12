@@ -340,7 +340,7 @@ static int write_event_content(void *hook_data, void *call_data)
         g_quark_to_string(process->state->s));
   }
 
-  g_string_append_printf(a_string,"\n");  
+  g_string_append_printf(a_string,"\n");
 
   fputs(a_string->str, a_file);
   return FALSE;
