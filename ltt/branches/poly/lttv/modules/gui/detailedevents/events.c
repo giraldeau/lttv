@@ -244,7 +244,6 @@ gui_events(LttvPluginTab *ptab)
     G_TYPE_STRING,  /* Tracefile name              */
     G_TYPE_UINT,    /* CPUID                       */
     G_TYPE_STRING,  /* Event                       */
-    G_TYPE_STRING,  /* Facility                    */
     G_TYPE_UINT,    /* Time s                      */
     G_TYPE_UINT,    /* Time ns                     */
     G_TYPE_INT,     /* PID                         */
@@ -1594,7 +1593,7 @@ int event_hook(void *hook_data, void *call_data)
       TRACE_NAME_COLUMN, g_quark_to_string(ltt_trace_name(tfc->t_context->t)),
       TRACEFILE_NAME_COLUMN, g_quark_to_string(ltt_tracefile_name(tfc->tf)),
       CPUID_COLUMN, cpu,
-      EVENT_COLUMN, g_quark_to_string(marker_get_info_from_id(tfc->tf->trace, e->event_id)->name),
+      EVENT_COLUMN, g_quark_to_string(marker_get_info_from_id(tfc->t_context->t, e->event_id)->name),
       TIME_S_COLUMN, time.tv_sec,
       TIME_NS_COLUMN, time.tv_nsec,
       PID_COLUMN, process->pid,
