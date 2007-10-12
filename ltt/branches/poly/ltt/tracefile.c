@@ -274,6 +274,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
         tf->tsc_lsb_truncate = vheader->tsc_lsb_truncate;
         tf->tscbits = vheader->tscbits;
         tf->tsc_msb_cutoff = 32 - tf->tsc_lsb_truncate - tf->tscbits;
+        tf->compact_event_bits = 32 - vheader->compact_data_shift;
         tf->tsc_mask = ((1ULL << (tf->tscbits))-1);
         tf->tsc_mask = tf->tsc_mask << tf->tsc_lsb_truncate;
         tf->tsc_mask_next_bit = (1ULL<<(tf->tscbits));
@@ -297,7 +298,6 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
               (double)t->start_tsc
               * (1000000000.0 / tf->trace->freq_scale)
               / (double)t->start_freq);
-          t->compact_event_bits = 0;
         }
       }
       break;

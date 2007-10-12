@@ -147,6 +147,7 @@ struct ltt_trace_header_1_0 {
   uint8_t         alignment;  /* Event header alignment */
   uint8_t         tsc_lsb_truncate;
   uint8_t         tscbits;
+  uint8_t         compact_data_shift;
   uint32_t        freq_scale;
   uint64_t        start_freq;
   uint64_t        start_tsc;
@@ -295,6 +296,7 @@ struct LttTracefile {
   uint8_t   tsc_lsb_truncate;
   uint8_t   tscbits;
   uint8_t   tsc_msb_cutoff;
+  uint8_t   compact_event_bits;
   uint64_t  tsc_mask;
   uint64_t  tsc_mask_next_bit;       //next MSB after the mask
 
