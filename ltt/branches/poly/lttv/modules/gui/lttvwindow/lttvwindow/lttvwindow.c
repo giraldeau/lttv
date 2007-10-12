@@ -1110,9 +1110,7 @@ void events_request_free(EventsRequest *events_request)
   if(events_request->hooks != NULL) {
     guint i;
     GArray *hooks = events_request->hooks;
-    for(i=0;i<hooks->len;i++) {
-      lttv_trace_hook_destroy(&g_array_index(hooks, LttvTraceHook, i));
-    }
+    lttv_trace_hook_remove_all(hooks);
     g_array_free(events_request->hooks, TRUE);
   }
   if(events_request->before_chunk_traceset != NULL)
