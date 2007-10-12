@@ -1769,7 +1769,7 @@ static void print_debug_event_header(LttEvent *ev, void *start_pos, void *end_po
 	if (offset + ((i * 4) + j) <
 		(long)end_pos - (long)start_pos)
           g_printf("%02hhX",
-            ((char*)ev->tracefile->buffer.head)[ev->offset + offset + ((i * 4) + j)]);
+            ((char*)start_pos)[offset + ((i * 4) + j)]);
 	else
 	  g_printf("  ");
         g_printf(" ");
@@ -1828,9 +1828,9 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
       /* We keep the LSB of the previous timestamp, to make sure
        * we never go back */
       event->event_id = event->timestamp >> tf->tscbits;
-      event->event_id = event->event_id & ((1 << tf->trace->compact_event_bits) - 1);
+      event->event_id = event->event_id & ((1 << tf->compact_event_bits) - 1);
       event->compact_data = event->timestamp >> 
-        (tf->trace->compact_event_bits + tf->tscbits);
+        (tf->compact_event_bits + tf->tscbits);
       //printf("tsc bits %u, ev bits %u init data %u\n",
       //  tf->tscbits, tf->trace->compact_event_bits, event->compact_data);
       /* Put the compact data back in original endianness */

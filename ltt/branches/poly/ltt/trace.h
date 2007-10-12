@@ -42,7 +42,6 @@ struct LttTrace {
   uint64_t  start_monotonic;
   LttTime   start_time;
   LttTime   start_time_from_tsc;
-  uint8_t   compact_event_bits;
 
   GData     *tracefiles;                    //tracefiles groups
   /* Support for markers */
