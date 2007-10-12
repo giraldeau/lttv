@@ -32,7 +32,6 @@
 #include "drawitem.h"
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 
 /* Preallocated Size of the index_to_pixmap array */
 #define ALLOCATE_PROCESSES 1000
