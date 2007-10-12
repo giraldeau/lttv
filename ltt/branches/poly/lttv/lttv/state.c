@@ -3791,7 +3791,7 @@ lttv_tracefile_state_get_type(void)
 
 static void module_init()
 {
-  LTTV_STATE_UNNAMED = g_quark_from_string("-unnamed-");
+  LTTV_STATE_UNNAMED = g_quark_from_string("");
   LTTV_STATE_UNBRANDED = g_quark_from_string("");
   LTTV_STATE_MODE_UNKNOWN = g_quark_from_string("MODE_UNKNOWN");
   LTTV_STATE_USER_MODE = g_quark_from_string("USER_MODE");
