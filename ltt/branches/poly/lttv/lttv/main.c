@@ -185,7 +185,7 @@ int main(int argc, char **argv)
   lttv_option_add("debug",'d', "print debugging messages", "none", 
       LTTV_OPT_NONE, NULL, lttv_debug, NULL);
 
-  /* use -edebug, -e conflicts with filter. Problem with option parsing when we
+  /* use --edebug, -e conflicts with filter. Problem with option parsing when we
    * reparse the options with different number of arguments. */
   lttv_option_add("edebug",'e', "print event debugging", "none", 
       LTTV_OPT_NONE, NULL, lttv_event_debug, NULL);
