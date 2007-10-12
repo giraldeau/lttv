@@ -926,7 +926,8 @@ int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_path)
       if(num+1 > old_len)
         group = g_array_set_size(group, num+1);
       g_array_index (group, LttTracefile, num) = tmp_tf;
-
+      g_array_index (group, LttTracefile, num).event.tracefile = 
+        &g_array_index (group, LttTracefile, num);
     }
   }
   
@@ -1755,7 +1756,7 @@ static void print_debug_event_header(LttEvent *ev, void *start_pos, void *end_po
   int i, j;
 
   g_printf("Event header (tracefile %s offset %llx):\n",
-    g_quark_to_string(ev->tracefile->name),
+    g_quark_to_string(ev->tracefile->long_name),
     ((uint64_t)ev->tracefile->buffer.index * ev->tracefile->buf_size)
       + (long)start_pos - (long)ev->tracefile->buffer.head);
 
@@ -2038,7 +2039,7 @@ static void print_debug_event_data(LttEvent *ev)
     return;
 
   g_printf("Event data (tracefile %s offset %llx):\n",
-    g_quark_to_string(ev->tracefile->name),
+    g_quark_to_string(ev->tracefile->long_name),
     ((uint64_t)ev->tracefile->buffer.index * ev->tracefile->buf_size)
       + (long)ev->data - (long)ev->tracefile->buffer.head);
 
@@ -3215,7 +3216,10 @@ LttTime ltt_trace_start_time_monotonic(LttTrace *t)
 
 LttTracefile *ltt_tracefile_new()
 {
-  return g_new(LttTracefile, 1);
+  LttTracefile *tf;
+  tf = g_new(LttTracefile, 1);
+  tf->event.tracefile = tf;
+  return tf;
 }
 
 void ltt_tracefile_destroy(LttTracefile *tf)
