@@ -19,6 +19,7 @@
 #ifndef PROCESSTRACE_H
 #define PROCESSTRACE_H
 
+#include <string.h>
 #include <lttv/traceset.h>
 #include <lttv/attribute.h>
 #include <lttv/hook.h>
@@ -307,6 +308,22 @@ lttv_trace_get_hook_field(LttvTraceHook *hook, unsigned int index)
 	return g_ptr_array_index(hook->fields, index);
 }
 
+static inline GQuark lttv_merge_facility_event_name(GQuark fac, GQuark ev)
+{
+  char *tmp;
+  const char *sfac, *sev;
+  GQuark ret;
+
+  sfac = g_quark_to_string(fac);
+  sev = g_quark_to_string(ev);
+  tmp = g_new(char, strlen(sfac) + strlen(sev) + 3); /* 3: _ \0 \0 */
+  strcpy(tmp, sfac);
+  strcat(tmp, "_");
+  strcat(tmp, sev);
+  ret = g_quark_from_string(tmp);
+  g_free(tmp);
+  return ret;
+}
 
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);
