@@ -346,7 +346,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_FACILITY_FS,
           LTT_EVENT_EXEC,
           NULL,
           after_fs_exec_hook,
