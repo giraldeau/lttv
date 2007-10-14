@@ -427,8 +427,8 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
   guint pid_out;
   guint pid_in;
-  pid_out = ltt_event_get_long_unsigned(e, th->f1);
-  pid_in = ltt_event_get_long_unsigned(e, th->f2);
+  pid_out = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
+  pid_in = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
 //  if(pid_in != 0 && pid_out != 0) {
 //    /* not a transition to/from idle */
 //    return 0;
@@ -848,8 +848,8 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   guint pid_in;
   {
     guint pid_out;
-    pid_out = ltt_event_get_long_unsigned(e, th->f1);
-    pid_in = ltt_event_get_long_unsigned(e, th->f2);
+    pid_out = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
+    pid_in = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
   }
 
 
@@ -1160,6 +1160,8 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
 
   LttTime evtime = ltt_event_time(e);
 
+  LttTrace *trace = tfc->t_context->t;
+
   GQuark resourceq;
 
   /* we are in a execmode, before the state update. We must draw the
@@ -1171,17 +1173,12 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
   guint64 irq;
   guint cpu = tfs->cpu;
 
-  LttFacility *ev_facility = ltt_event_facility(e);
-  if(ltt_facility_name(ev_facility) != LTT_FACILITY_KERNEL)
-    return 0;
-  guint8 ev_id_entry = ltt_eventtype_id(ltt_facility_eventtype_get_by_name(ev_facility, LTT_EVENT_IRQ_ENTRY));
-  guint8 ev_id_exit = ltt_eventtype_id(ltt_facility_eventtype_get_by_name(ev_facility, LTT_EVENT_IRQ_EXIT));
-  if(ltt_facility_name(ev_facility) == LTT_FACILITY_KERNEL &&
-      ev_id_entry == ltt_event_eventtype_id(e)) {
-    irq = ltt_event_get_long_unsigned(e, th->f1);
+  guint16 ev_id_entry = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY)));
+  guint16 ev_id_exit = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT)));
+  if(ev_id_entry == e->event_id) {
+    irq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   }
-  else if(ltt_facility_name(ev_facility) == LTT_FACILITY_KERNEL &&
-      ev_id_exit == ltt_event_eventtype_id(e)) {
+  else if(ev_id_exit == e->event_id) {
     irq = ts->cpu_states[cpu].last_irq;
   }
   else {
@@ -1380,9 +1377,9 @@ int before_bdev_event_hook(void *hook_data, void *call_data)
   /* For the pid */
 
   guint cpu = tfs->cpu;
-  guint8 major = ltt_event_get_long_unsigned(e, th->f1);
-  guint8 minor = ltt_event_get_long_unsigned(e, th->f2);
-  guint oper = ltt_event_get_long_unsigned(e, th->f3);
+  guint8 major = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
+  guint8 minor = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
+  guint oper = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 2));
   gint devcode_gint = MKDEV(major,minor);
 
   {
