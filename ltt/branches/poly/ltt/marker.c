@@ -406,7 +406,7 @@ int marker_format_event(LttTrace *trace, GQuark name, const char *format)
 {
   struct marker_info *info;
   
-  info = g_hash_table_lookup(trace->markers_hash, (gconstpointer)name);
+  info = marker_get_info_from_name(trace, name);
   if (!info)
     g_error("Got marker format \"%s\", but marker name \"%s\" has no ID yet. "
             "Kernel issue.",
@@ -431,7 +431,8 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   int found = 0;
 
   if (trace->markers->len <= id)
-    trace->markers = g_array_set_size(trace->markers, id+1);
+    trace->markers = g_array_set_size(trace->markers,
+      max(trace->markers->len * 2, id + 1));
   info = &g_array_index(trace->markers, struct marker_info, id);
   info->name = name;
   info->int_size = int_size;
@@ -440,16 +441,18 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   info->size_t_size = size_t_size;
   info->alignment = alignment;
   info->next = NULL;
-  head = g_hash_table_lookup(trace->markers_hash, (gconstpointer)name);
+  head = marker_get_info_from_name(trace, name);
   if (!head)
-    g_hash_table_insert(trace->markers_hash, (gpointer)name, info);
+    g_hash_table_insert(trace->markers_hash, (gpointer)name,
+      (gpointer)(gulong)id);
   else {
     struct marker_info *iter;
     for (iter = head; iter != NULL; iter = iter->next)
       if (iter->name == name)
         found = 1;
     if (!found) {
-      g_hash_table_replace(trace->markers_hash, (gpointer)name, info);
+      g_hash_table_replace(trace->markers_hash, (gpointer)name,
+        (gpointer)(gulong)id);
       info->next = head;
     }
   }
