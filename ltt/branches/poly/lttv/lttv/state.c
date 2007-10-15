@@ -2873,6 +2873,8 @@ static gboolean enum_process_state(void *hook_data, void *call_data)
   f = lttv_trace_get_hook_field(th, 3);
   type = ltt_enum_string_get(f, ltt_event_get_unsigned(e, f));
 
+  //FIXME: type is rarely used, enum must match possible types.
+
   /* mode */
   f = lttv_trace_get_hook_field(th, 4);
   mode = ltt_enum_string_get(f,ltt_event_get_unsigned(e, f));
