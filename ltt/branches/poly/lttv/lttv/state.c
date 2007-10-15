@@ -168,6 +168,7 @@ static GQuark
   LTTV_STATE_NAME_TABLES,
   LTTV_STATE_TRACE_STATE_USE_COUNT,
   LTTV_STATE_RESOURCE_CPUS,
+  LTTV_STATE_RESOURCE_CPUS_COUNT,
   LTTV_STATE_RESOURCE_IRQS,
   LTTV_STATE_RESOURCE_BLKDEVS;
 
@@ -1351,6 +1352,10 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
 
   /* save the cpu state */
   {
+    value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_CPUS_COUNT,
+        LTTV_UINT);
+    *(value.v_uint) = nb_cpus;
+
     value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_CPUS,
         LTTV_POINTER);
     *(value.v_pointer) = lttv_state_copy_cpu_states(self->cpu_states, nb_cpus);
@@ -1508,7 +1513,6 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
   lttv_attribute_remove_by_name(container, LTTV_STATE_PROCESSES);
 
   /* Free running processes array */
-  nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RUNNING_PROCESS, 
         &value);
   g_assert(type == LTTV_POINTER);
@@ -1516,20 +1520,23 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
   g_free(running_process);
 
   /* free cpu resource states */
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_CPUS_COUNT, &value);
+  g_assert(type == LTTV_UINT);
+  nb_cpus = *value.v_uint;
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_CPUS, &value);
   g_assert(type == LTTV_POINTER);
-  lttv_state_free_cpu_states(self->cpu_states, nb_cpus);
+  lttv_state_free_cpu_states(*(value.v_pointer), nb_cpus);
 
   /* free irq resource states */
   nb_irqs = self->nb_irqs;
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_IRQS, &value);
   g_assert(type == LTTV_POINTER);
-  lttv_state_free_irq_states(self->irq_states, nb_irqs);
+  lttv_state_free_irq_states(*(value.v_pointer), nb_irqs);
 
   /* free the blkdev states */
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_BLKDEVS, &value);
   g_assert(type == LTTV_POINTER);
-  lttv_state_free_blkdev_hashtable(self->bdev_states);
+  lttv_state_free_blkdev_hashtable(*(value.v_pointer));
 
   nb_tracefile = self->parent.tracefiles->len;
 
@@ -3842,6 +3849,7 @@ static void module_init()
   LTTV_STATE_TRACE_STATE_USE_COUNT = 
       g_quark_from_string("trace_state_use_count");
   LTTV_STATE_RESOURCE_CPUS = g_quark_from_string("cpu resource states");
+  LTTV_STATE_RESOURCE_CPUS = g_quark_from_string("cpu count");
   LTTV_STATE_RESOURCE_IRQS = g_quark_from_string("irq resource states");
   LTTV_STATE_RESOURCE_BLKDEVS = g_quark_from_string("blkdevs resource states");
 
