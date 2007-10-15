@@ -427,7 +427,8 @@ ProcessList *processlist_construct(void)
                 PROCESS_COLUMN,
                 NULL);
   gtk_tree_view_column_set_alignment (column, 0.0);
-  gtk_tree_view_column_set_fixed_width (column, 45);
+  gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+  gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
   
@@ -439,7 +440,8 @@ ProcessList *processlist_construct(void)
                 BRAND_COLUMN,
                 NULL);
   gtk_tree_view_column_set_alignment (column, 0.0);
-  gtk_tree_view_column_set_fixed_width (column, 45);
+  gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+  gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
 
@@ -448,6 +450,8 @@ ProcessList *processlist_construct(void)
                 "text",
                 PID_COLUMN,
                 NULL);
+  gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+  gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
 
@@ -456,6 +460,8 @@ ProcessList *processlist_construct(void)
                 "text",
                 TGID_COLUMN,
                 NULL);
+  gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+  gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
 
@@ -464,6 +470,8 @@ ProcessList *processlist_construct(void)
                 "text",
                 PPID_COLUMN,
                 NULL);
+  gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+  gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
   
@@ -472,6 +480,8 @@ ProcessList *processlist_construct(void)
                 "text",
                 CPU_COLUMN,
                 NULL);
+  gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+  gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
 
@@ -480,6 +490,8 @@ ProcessList *processlist_construct(void)
                 "text",
                 BIRTH_S_COLUMN,
                 NULL);
+  gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+  gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
 
@@ -490,6 +502,8 @@ ProcessList *processlist_construct(void)
                 "text",
                 BIRTH_NS_COLUMN,
                 NULL);
+  gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+  gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
 
@@ -498,6 +512,8 @@ ProcessList *processlist_construct(void)
                 "text",
                 TRACE_COLUMN,
                 NULL);
+  gtk_tree_view_column_set_sizing(column, GTK_TREE_VIEW_COLUMN_GROW_ONLY);
+  gtk_tree_view_column_set_resizable(column, TRUE);
   gtk_tree_view_append_column (
     GTK_TREE_VIEW (process_list->process_list_widget), column);
 
