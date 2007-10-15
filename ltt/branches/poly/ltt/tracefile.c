@@ -873,7 +873,7 @@ int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_path)
     
     g_debug("Tracefile file or directory : %s\n", path);
     
-    if(strcmp(rel_path, "/eventdefs") == 0) continue;
+  //  if(strcmp(rel_path, "/eventdefs") == 0) continue;
     
     if(S_ISDIR(stat_buf.st_mode)) {
 
@@ -1181,7 +1181,6 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   DIR *dir;
   struct dirent *entry;
   guint control_found = 0;
-  guint eventdefs_found = 0;
   struct stat stat_buf;
   gchar path[PATH_MAX];
   
@@ -1212,14 +1211,11 @@ LttTrace *ltt_trace_open(const gchar *pathname)
       if(strcmp(entry->d_name, "control") == 0) {
         control_found = 1;
       }
-      if(strcmp(entry->d_name, "eventdefs") == 0) {
-        eventdefs_found = 1;
-      }
     }
   }
   closedir(dir);
   
-  if(!control_found || !eventdefs_found) goto find_error;
+  if(!control_found) goto find_error;
   
   /* Open all the tracefiles */
   if(open_tracefiles(t, abs_path, "")) {
