@@ -308,16 +308,7 @@ ProcessList *processlist_construct(void)
   process_list->current_hash_data = NULL;
 
   /* Create the Process list */
-  process_list->list_store = gtk_list_store_new (  N_COLUMNS,
-              G_TYPE_STRING,
-              G_TYPE_STRING,
-              G_TYPE_UINT,
-              G_TYPE_UINT,
-              G_TYPE_UINT,
-              G_TYPE_UINT,
-              G_TYPE_ULONG,
-              G_TYPE_ULONG,
-              G_TYPE_UINT);
+  process_list->list_store = gtk_list_store_new (  N_COLUMNS, G_TYPE_STRING);
 
 
   process_list->process_list_widget = 
