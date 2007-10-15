@@ -3,8 +3,8 @@
 #
 Summary: LTT Control
 Name: ltt-control
-Version: 0.39
-Release: 25042007
+Version: 0.45
+Release: 11102007
 License: GPL
 Group: Applications/Development
 Source: http://ltt.polymtl.ca/lttng/ltt-control-%{version}-%{release}.tar.gz
@@ -56,4 +56,3 @@ ldconfig
 /usr/bin/lttd
 /usr/include/liblttctl
 /usr/include/liblttctl/lttctl.h
-/usr/share/ltt-control
