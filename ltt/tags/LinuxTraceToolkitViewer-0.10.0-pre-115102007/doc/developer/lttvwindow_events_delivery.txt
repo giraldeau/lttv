@@ -1,0 +1,427 @@
+Linux Trace Toolkit
+
+Mathieu Desnoyers 17-05-2004
+
+
+This document explains how the lttvwindow API could process the event requests
+of the viewers, merging event requests and hook lists to benefit from the fact
+that process_traceset can call multiple hooks for the same event.
+
+First, we will explain the detailed process of event delivery in the current
+framework. We will then study its strengths and weaknesses.
+
+In a second time, a framework where the events requests are dealt by the main
+window with fine granularity will be described. We will then discussed the
+advantages and inconvenients over the first framework.
+
+
+1. (Actual) Boundaryless event reading
+
+Actually, viewers request events in a time interval from the main window. They
+also specify a (not so) maximum number of events to be delivered. In fact, the
+number of events to read only gives a stop point, from where only events with
+the same timestamp will be delivered.
+
+Viewers register hooks themselves in the traceset context. When merging read
+requests in the main window, all hooks registered by viewers will be called for
+the union of all the read requests, because the main window has no control on
+hook registration.
+
+The main window calls process_traceset on its own for all the intervals
+requested by all the viewers. It must not duplicate a read of the same time
+interval : it could be very hard to filter by viewers. So, in order to achieve
+this, time requests are sorted by start time, and process_traceset is called for
+each time request. We keep the last event time between each read : if the start
+time of the next read is lower than the time reached, we continue the reading
+from the actual position.
+
+We deal with specific number of events requests (infinite end time) by
+garantying that, starting from the time start of the request, at least that
+number of events will be read. As we can't do it efficiently without interacting
+very closely with process_traceset, we always read the specified number of
+events requested starting from the current position when we answer to a request
+based on the number of events.
+
+The viewers have to filter events delivered by traceset reading, because they
+can be asked by another viewer for a totally (or partially) different time
+interval.
+
+
+Weaknesses
+
+- process_middle does not guarantee the number of events read
+
+First of all, a viewer that requests events to process_traceset has no garantee
+that it will get exactly what it asked for. For example, a direct call to
+traceset_middle for a specific number of events will delived _at least_ that
+quantity of events, plus the ones that have the same timestamp that the last one
+has.
+
+- Border effects
+
+Viewer's writers will have to deal with a lot of border effects caused by the
+particularities of the reading. They will be required to select the information
+they need from their input by filtering.
+
+- Lack of encapsulation and difficulty of testing
+
+The viewer's writer will have to take into account all the border effects caused
+by the interaction with other modules. This means that event if a viewer works
+well alone or with another viewer, it's possible that new bugs arises when a new
+viewer comes around. So, even if a perfect testbench works well for a viewer, it
+does not confirm that no new bug will arise when another viewer is loaded at the
+same moment asking for different time intervals.
+
+
+- Duplication of the work
+
+Time based filters and counters of events will have to be implemented at the
+viewer's side, which is a duplication of the functionnalities that would
+normally be expected from the tracecontext API.
+
+- Lack of control over the data input
+
+As we expect module's writers to prefer to be as close as possible from the raw
+datas, making them interact with a lower level library that gives them a data
+input that they only control by further filtering of the input is not
+appropriated. We should expect some reluctancy from them about using this API
+because of this lack of control on the input.
+
+- Speed cost
+
+All hooks of all viewers will be called for all the time intervals. So, if we
+have a detailed events list and a control flow view, asking both for different
+time intervals, the detailed events list will have to filter all the events
+delivered originally to the control flow view. This can be a case occuring quite
+often.
+
+
+
+Strengths
+
+- Simple concatenation of time intervals at the main window level.
+
+Having the opportunity of delivering more events than necessary to the viewers
+means that we can concatenate time intervals and number of events requested
+fairly easily, while being hard to determine if some specific cases will be
+wrong, in depth testing being impossible.
+
+- No duplication of the tracecontext API
+
+Viewers deal directly with the tracecontext API for registering hooks, removing
+a layer of encapsulation.
+
+
+
+
+
+2. (Proposed) Strict boundaries events reading
+
+The idea behind this method is to provide exactly the events requested by the
+viewers to them, no more, no less.
+
+It uses the new API for process traceset suggested in the document
+process_traceset_strict_boundaries.txt.
+
+It also means that the lttvwindow API will have to deal with viewer's hooks.
+Those will not be allowed to add them directly in the context. They will give
+them to the lttvwindow API, along with the time interval or the position and
+number of events. The lttvwindow API will have to take care of adding and
+removing hooks for the different time intervals requested. That means that hooks
+insertion and removal will be done between each traceset processing based on
+the time intervals and event positions related to each hook. We must therefore
+provide a simple interface for hooks passing between the viewers and the main
+window, making them easier to manage from the main window. A modification to the
+LttvHooks type solves this problem.
+
+
+Architecture
+
+Added to the lttvwindow API :
+
+
+void lttvwindow_events_request
+( Tab                  *tab,
+  const EventsRequest  *events_request);
+
+void lttvwindow_events_request_remove_all
+( Tab                *tab,
+  gconstpointer       viewer);
+
+
+Internal functions :
+
+- lttvwindow_process_pending_requests
+
+
+Events Requests Removal
+
+A new API function will be necessary to let viewers remove all event requests
+they have made previously. By allowing this, no more out of bound requests will
+be serviced : a viewer that sees its time interval changed before the first
+servicing is completed can clear its previous events requests and make a new
+one for the new interval needed, considering the finished chunks as completed
+area.
+
+It is also very useful for dealing with the viewer destruction case : the viewer
+just has to remove its events requests from the main window before it gets
+destroyed.
+
+
+Permitted GTK Events Between Chunks
+
+All GTK Events will be enabled between chunks. A viewer could ask for a
+long computation that has no impact on the display : in that case, it is
+necessary to keep the graphical interface active. While a processing is in
+progress, the whole graphical interface must be enabled.
+
+We needed to deal with the coherence of background processing and diverse GTK
+events anyway. This algorithm provides a generalized way to deal with any type
+of request and any GTK events.
+
+
+Background Computation Request
+
+A background computation has a trace scope, and is therefore not linked to a
+main window. It is not detailed in this document. 
+see requests_servicing_schedulers.txt
+
+A New "Redraw" Button
+
+It will be used to redraw the viewers entirely. It is useful to restart the
+servicing after a "stop" action.
+
+A New "Continue" Button
+
+It will tell the viewers to send requests for damaged areas. It is useful to
+complete the servicing after a "stop" action.
+
+
+
+Tab change
+
+If a tab change occurs, we still want to do background processing.
+Events requests must be stocked in a list located in the same scope than the
+traceset context. Right now, this is tab scope. All functions called from the
+request servicing function must _not_ use the current_tab concept, as it may
+change. The idle function must the take a tab, and not the main window, as
+parameter.
+
+If a tab is removed, its associated idle events requests servicing function must
+also be removed.
+
+It now looks a lot more useful to give a Tab* to the viewer instead of a
+MainWindow*, as all the information needed by the viewer is located at the tab
+level. It will diminish the dependance upon the current tab concept.
+
+
+
+Idle function (lttvwindow_process_pending_requests)
+
+The idle function must return FALSE to be removed from the idle functions when
+no more events requests are pending. Otherwise, it returns TRUE. It will service
+requests until there is no more request left.
+
+
+
+Implementation
+
+
+- Type LttvHooks
+
+see hook_prio.txt
+
+The viewers will just have to pass hooks to the main window through this type,
+using the hook.h interface to manipulate it. Then, the main window will add
+them and remove them from the context to deliver exactly the events requested by
+each viewer through process traceset.
+
+
+- lttvwindow_events_request
+
+It adds the an EventsRequest struct to the list of events requests
+pending and registers a pending request for the next g_idle if none is
+registered. The viewer can access this structure during the read as its
+hook_data. Only the stop_flag can be changed by the viewer through the
+event hooks.
+
+typedef struct _EventsRequest {
+  gpointer                     owner;           /* Owner of the request     */
+  gpointer                     viewer_data;     /* Unset : NULL             */
+  gboolean                     servicing;       /* service in progress: TRUE */ 
+  LttTime                      start_time;/* Unset : { G_MAXUINT, G_MAXUINT }*/
+  LttvTracesetContextPosition *start_position;  /* Unset : NULL             */
+  gboolean                     stop_flag;       /* Continue:TRUE Stop:FALSE */
+  LttTime                      end_time;/* Unset : { G_MAXUINT, G_MAXUINT } */
+  guint                        num_events;      /* Unset : G_MAXUINT        */
+  LttvTracesetContextPosition *end_position;    /* Unset : NULL             */
+  LttvHooks                   *before_chunk_traceset; /* Unset : NULL       */
+  LttvHooks                   *before_chunk_trace;    /* Unset : NULL       */
+  LttvHooks                   *before_chunk_tracefile;/* Unset : NULL       */
+  LttvHooks                   *event;           /* Unset : NULL             */
+  LttvHooksById               *event_by_id;     /* Unset : NULL             */
+  LttvHooks                   *after_chunk_tracefile; /* Unset : NULL       */
+  LttvHooks                   *after_chunk_trace;     /* Unset : NULL       */
+  LttvHooks                   *after_chunk_traceset;  /* Unset : NULL       */
+  LttvHooks                   *before_request;  /* Unset : NULL             */
+  LttvHooks                   *after_request;   /* Unset : NULL             */
+} EventsRequest;
+
+
+- lttvwindow_events_request_remove_all
+
+It removes all the events requests from the pool that has their "owner" field
+maching the owner pointer given as argument.
+
+It calls the traceset/trace/tracefile end hooks for each request removed if
+they are currently serviced.
+
+
+- lttvwindow_process_pending_requests
+
+This internal function gets called by g_idle, taking care of the pending
+requests. It is responsible for concatenation of time intervals and position
+requests. It does it with the following algorithm organizing process traceset
+calls. Here is the detailed description of the way it works :
+
+
+
+- Revised Events Requests Servicing Algorithm (v2)
+
+The reads are splitted in chunks. After a chunk is over, we want to check if
+there is a GTK Event pending and execute it. It can add or remove events 
+requests from the event requests list. If it happens, we want to start over
+the algorithm from the beginning. The after traceset/trace/tracefile hooks are
+called after each chunk, and before traceset/trace/tracefile are
+called when the request processing resumes. Before and after request hooks are
+called respectively before and after the request processing.
+
+
+Data structures necessary :
+
+List of requests added to context : list_in
+List of requests not added to context : list_out
+
+Initial state :
+
+list_in : empty
+list_out : many events requests
+
+
+0.1 Lock the traces
+0.2 Seek traces positions to current context position.
+
+A. While (list_in !empty or list_out !empty)
+  1. If list_in is empty (need a seek)
+    1.1 Add requests to list_in
+      1.1.1 Find all time requests with lowest start time in list_out (ltime)
+      1.1.2 Find all position requests with lowest position in list_out (lpos)
+      1.1.3 If lpos.start time < ltime
+        - Add lpos to list_in, remove them from list_out
+      1.1.4 Else, (lpos.start time >= ltime)
+        - Add ltime to list_in, remove them from list_out
+    1.2 Seek
+      1.2.1 If first request in list_in is a time request
+        - If first req in list_in start time != current time
+          - Seek to that time
+      1.2.2 Else, the first request in list_in is a position request
+        - If first req in list_in pos != current pos
+          - seek to that position
+    1.3 Add hooks and call before request for all list_in members
+      1.3.1 If !servicing
+          - begin request hooks called
+          - servicing = TRUE
+      1.3.2 call before chunk
+      1.3.3 events hooks added
+  2. Else, list_in is not empty, we continue a read
+    2.0 For each req of list_in
+      - Call before chunk
+      - events hooks added
+    2.1 For each req of list_out
+    - if req.start time == current context time
+              or req.start position == current position
+      - Add to list_in, remove from list_out
+      - If !servicing
+        - Call before request
+        - servicing = TRUE
+      - Call before chunk
+      - events hooks added
+
+  3. Find end criterions
+    3.1 End time
+      3.1.1 Find lowest end time in list_in
+      3.1.2 Find lowest start time in list_out (>= than current time*)
+                                * To eliminate lower prio requests (not used)
+      3.1.3 Use lowest of both as end time
+    3.2 Number of events
+      3.2.1 Find lowest number of events in list_in
+      3.2.2 Use min(CHUNK_NUM_EVENTS, min num events in list_in) as num_events
+    3.3 End position
+      3.3.1 Find lowest end position in list_in
+      3.3.2 Find lowest start position in list_out (>= than current
+                                                    position *not used)
+      3.3.3 Use lowest of both as end position
+
+  4. Call process traceset middle
+    4.1 Call process traceset middle (Use end criterion found in 3)
+      * note : end criterion can also be viewer's hook returning TRUE
+  5. After process traceset middle
+    - if current context time > traceset.end time
+      - For each req in list_in
+        - Remove events hooks for req
+        - Call end chunk for req
+        - Call end request for req
+        - remove req from list_in
+    5.1 For each req in list_in
+          - Call end chunk for req
+          - Remove events hooks for req
+          - req.num -= count
+          - if   req.num == 0
+               or
+                 current context time >= req.end time
+               or
+                 req.end pos == current pos
+               or
+                 req.stop_flag == TRUE
+            - Call end request for req
+            - remove req from list_in
+  If GTK Event pending : break A loop
+
+B. When interrupted between chunks
+  1. for each request in list_in
+    1.1. Use current postition as start position
+    1.2. Remove start time
+    1.3. Move from list_in to list_out
+
+C. Unlock the traces
+
+
+
+Notes :
+End criterions for process traceset middle :
+If the criterion is reached, event is out of boundaries and we return.
+Current time >= End time
+Event count > Number of events
+Current position >= End position
+Last hook list called returned TRUE
+
+The >= for position is necessary to make ensure consistency between start time
+requests and positions requests that happens to be at the exact same start time
+and position.
+
+
+
+
+Weaknesses
+
+- ?
+
+Strengths
+
+- Removes the need for filtering of information supplied to the viewers.
+
+- Viewers have a better control on their data input.
+
+- Solves all the weaknesses idenfied in the actual boundaryless traceset
+reading.
+

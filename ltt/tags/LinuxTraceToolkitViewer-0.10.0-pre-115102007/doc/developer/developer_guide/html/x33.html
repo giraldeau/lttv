@@ -1,0 +1,184 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>The hooks</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer Developer Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Linux Trace Toolkit Viewer Text Module Tutorial"
+HREF="c18.html"><LINK
+REL="PREVIOUS"
+TITLE="A typical module"
+HREF="x23.html"><LINK
+REL="NEXT"
+TITLE="How to use the Linux Trace Toolkit Viewer's Reading Context"
+HREF="c40.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer Developer Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x23.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 1. Linux Trace Toolkit Viewer Text Module Tutorial</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c40.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="AEN33"
+>1.3. The hooks</A
+></H1
+><P
+>&#13;The before and after trace hooks only exists to be able to generate a report at
+the end of a trace computation. The effective computation is done by the event
+hooks.
+</P
+><P
+>&#13;These hooks does particular computation on data arriving as argument, a
+call_data. The type of the call_data, when a hook is called during the trace
+read, is a traceset context. It contains all the necessary information about the
+read in progress. This is the base class from which inherits trace set
+state, and trace set/trace/tracefile state is the base classe of trace
+set/trace/tracefile statistics. All these types can be casted to another without
+problem (a TracesetState, for example, can be casted to a TracesetContext, but
+it's not true for the casting between a TraceContext and a TracesetContext, see
+the chapter "How to use the trace reading context" for details). They offer the
+input data and they give a container (the attributes of the trace set/trace/tracefile
+statistics) to write the output of this hook.
+</P
+><P
+>&#13;The idea behind writing in the attributes container is to provide an extensible
+way of storing any type of information. For example, a specific module that adds
+statistics to a trace can store them there, and the statistic printout will
+automatically include the results produced by the specific module.
+</P
+><P
+>&#13;Output data does not necessarily need to be stored in such a global container
+though. If we think of data of which we need to keed track during the execution,
+an event counter for example, we should create our own data structure that
+contains this counter, and pass the address of the allocated structure as the
+hook_data parameter of the hook list creation function. That way, the hook will
+be called with its hook_data as first parameter, which it can read and write. We
+can think of this structure as the data related to the function that persists
+between each call to the hook. You must make sure that you cast the hook_data to
+the type of the structure before you use it in the hook function.
+</P
+><P
+>&#13;The detail about how to access the different fields of the reading context (the
+hook's call_data) will be discussed in the chapter  "How to use the trace
+reading context".
+</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x23.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c40.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>A typical module</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c18.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>How to use the Linux Trace Toolkit Viewer's Reading Context</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,417 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Linux Trace Toolkit trace analysis tools</title>
+</head>
+  <body>
+
+<h1>Linux Trace Toolkit trace analysis tools</h1>
+
+<P>The Linux Trace Toolkit Visualizer, lttv, is a modular and extensible
+tool to read, analyze, annotate and display traces. It accesses traces through
+the libltt API and produces either textual output or graphical output using
+the GTK library. This document describes the architecture of lttv for
+developers.
+
+<P>Lttv is a small executable which links to the trace reading API, libltt,
+and to the glib and gobject base libraries. 
+By itself it contains just enough code to
+convert a trace to a textual format and to load modules. 
+The public
+functions defined in the main program are available to all modules.
+A number of
+<I>text</I> modules may be dynamically loaded to extend the capabilities of
+lttv, for instance to compute and print various statistics.
+
+<P>A more elaborate module, traceView, dynamically links to the GTK library
+and to a support library, libgtklttv. When loaded, it displays graphical
+windows in which one or more viewers in subwindows may be used to browse 
+details of events in traces. A number of other graphical modules may be 
+dynamically loaded to offer a choice of different viewers (e.g., process, 
+CPU or block devices state versus time).
+
+<H2>Main program: main.c</H2>
+
+<P>The main program parses the command line options, loads the requested 
+modules and executes the hooks registered in the global attributes
+(/hooks/main/before, /hooks/main/core, /hooks/main/after).
+
+<H3>Hooks for callbacks: hook.h (hook.c)</H3>
+
+<P>In a modular extensible application, each module registers callbacks to
+insure that it gets called at appropriate times (e.g., after command line
+options processing, at each event to compute statistics...). Hooks and lists
+of hooks are defined for this purpose and are normally stored in the global
+attributes under /hooks/*.
+
+<H3>Browsable data structures: iattribute.h (iattribute.c)</H3>
+
+<P>In several places, functions should operate on data structures for which the
+list of members is extensible. For example, the statistics printing 
+module should not be
+modified each time new statistics are added by other modules.
+For this purpose, a gobject interface is defined in iattribute.h to
+enumerate and access members in a data structure. Even if new modules
+define custom data structures for efficiently storing statistics while they
+are being computed, they will be generically accessible for the printing
+routine as long as they implement the iattribute interface.
+
+<H3>Extensible data structures: attribute.h (attribute.c)</H3>
+
+<P>To allow each module to add its needed members to important data structures,
+for instance new statistics for processes, the LttvAttributes type is
+a container for named typed values. Each attribute has a textual key (name) 
+and an associated typed value. 
+It is similar to a C data structure except that the
+number and type of the members can change dynamically. It may be accessed
+either directly or through the iattribute interface.
+
+<P>Some members may be LttvAttributes objects, thus forming a tree of
+attributes, not unlike hierarchical file systems or registries. This is used
+for the global attributes, used to exchange information between modules.
+Attributes are also attached to trace sets, traces and contexts to allow
+storing arbitrary attributes.
+
+<H3>Modules: module.h (module.c)</H3>
+
+<P>The benefit of modules is to avoid recompiling the whole application when
+adding new functionality. It also helps insuring that only the needed code 
+is loaded in memory.
+
+<P>Modules are loaded explicitly, being on the list of default modules or
+requested by a command line option, with g_module_open. The functions in
+the module are not directly accessible.
+Indeed, direct, compiled in, references to their functions would be dangerous
+since they would exist even before (if ever) the module is loaded.
+Each module contains a function named <i>init</i>. Its handle is obtained by
+the main program using g_module_symbol and is called.
+The <i>init</i> function of the module 
+then calls everything it needs from the main program or from libraries,
+typically registering callbacks in hooks lists stored in the global attributes.
+No module function other than <i>init</i> is 
+directly called. Modules cannot see the functions from other modules since
+they may or not be loaded at the same time.
+
+<P>The modules must see the declarations for the functions
+used, from the main program and from libraries, by including the associated 
+.h files. The list of libraries used must be provided as argument when
+a module is linked. This will insure that these libraries get loaded
+automatically when that module is loaded.
+
+<P>Libraries contain a number of functions available to modules and to the main
+program. They are loaded automatically at start time if linked by the main
+program or at module load time if linked by that module. Libraries are
+useful to contain functions needed by several modules. Indeed, functions
+used by a single module could be simply part of that module.
+
+<P>A list of loaded modules is maintained. When a module is requested, it
+is verified if the module is already loaded. A module may request other modules
+at the beginning of its init function. This will insure that these modules
+get loaded and initialized before the init function of the current module
+proceeds. Circular dependencies are obviously to be avoided as the 
+initialization order among mutually dependent modules will be arbitrary.
+
+<H3>Command line options: option.h (option.c)</H3>
+
+<P>Command line options are added as needed by the main program and by modules
+as they are loaded. Thus, while options are scanned and acted upon (i.e.,
+options to load modules), the
+list of options to recognize continues to grow. The options module registers
+to get called by /hooks/main/before. It offers hooks /hooks/option/before
+and /hooks/option/after which are called just before and just after
+processing the options. Many modules register in their init function to
+be called in /hooks/options/after to verify the options specified and
+register further hooks accordingly.
+
+<H2>Trace Analysis</H2>
+
+<P>The main purpose of the lttv application is to process trace sets,
+calling registered hooks for each event in the traces and maintaining
+a context (system state, accumulated statistics).
+
+<H3>Trace Sets: traceSet.h (traceSet.c)</H3>
+
+<P>Trace sets are defined such that several traces can be analyzed together.
+Traces may be added and removed as needed to a trace set.
+The main program stores a trace set in /trace_set/default.
+The content of the trace_set is defined by command line options and it is
+used by analysis modules (batch or interactive).
+
+<H3>Trace Set Analysis: processTrace.h (processTrace.c)</H3>
+
+<p>The function <i>lttv_process_trace_set</i> loops over all the events
+in the specified trace set for the specified time interval. <I>Before</I> 
+Hooks are first
+called for the trace set and for each trace and tracefile 
+(one per cpu plus control tracefiles) in the trace set.
+Then hooks are called for
+each event in sorted time order. Finally, <i>after</i> hooks are called
+for the trace set and for each trace and tracefile in it. 
+
+<P>To call all the event hooks in sorted time order, a priority queue
+(or sorted tree) is used. The first event from each tracefile is read and its
+time used as key in the sorted tree. The event with the lowest key is removed
+from the tree, the next event from that tracefile is read and reinserted in
+the tree. 
+
+<p>Each hook is called with a LttvContext gobject as call data. The LttvContext
+object for the trace set before/after hooks is provided in the call to
+lttv_process_trace_set. Shallow copies of this context are made for each
+trace in the trace set for the trace before/after hooks. Again, shallow
+copies of each trace context are made for each tracefile in a trace.
+The context for each tracefile is used both for the tracefile before/after
+hooks and when calling the hooks for the contained events.
+
+<p>The lttv_process_trace_set function sets appropriately the fields in the
+context before calling a hook. For example, when calling a hook event,
+the context contains:
+
+<DL>
+<DT>trace_set_context<DD> context for the trace set.
+<DT>trace_context<DD> context for the trace.
+<DT>ts<DD> trace set.
+<DT>t<DD> trace.
+<DT>tf<DD> tracefile.
+<DT>e<DD> event.
+</DL>
+
+<P>The cost of providing all this information in the context is relatively
+low. When calling a hook from one event to the next, in the same tracefile,
+only the event field needs to be changed.
+The contexts used when processing traces are key to extensibility and
+performance. New modules may need additional data members in the context to
+store intermediate results. For this purpose, it is possible to derive
+subtypes of LttvContext in order to add new data members.
+
+
+<H3>Reconstructing the system state from the trace: state.h (state.c)</H3>
+
+<P>The events in a trace often represent state transitions in the traced
+system. When the trace is processed, and events accessed in time sorted
+order, it is thus possible to reconstruct in part the state of the 
+traced system: state of each CPU, process, disk queue. The state of each
+process may contain detailed information such as opened file descriptors
+and memory map if needed by the analysis and if sufficient information is
+available in the trace. This incrementally updated state information may be
+used to display state graphs, or simply to compute state dependent
+statistics (time spent in user or system mode, waiting for a file...).
+
+<P>
+When tracing starts, at T0, no state is available. The OS state may be
+obtained through "initial state" events which enumerate the important OS data
+structures.  Unless the state is obtained atomically, other events
+describing state changes may be interleaved in the trace and must be
+processed in the correct order.  Once all the special initial state
+events are obtained, at Ts, the complete state is available. From there the
+system state can be deduced incrementally from the events in the trace.
+
+<P>
+Analysis tools must be prepared for missing state information. In some cases
+only a subset of events is traced, in others the trace may be truncated
+in <i>flight recorder</i> mode.
+
+<P>
+In interactive processing, the interval for which processing is required 
+varies. After scrolling a viewer, the events in the new interval to display
+need to be processed in order to redraw the view. To avoid restarting
+the processing at the trace start to reconstruct incrementally the system
+state, the computed state may be memorized at regular interval, for example at
+each 100 000 events, in a time indexed database associated with a trace.
+To conserve space, it may be possible in some cases to only store state 
+differences. 
+
+<p>To process a specific time interval, the state at the beginning of the
+interval would be obtained by copying the last preceeding saved state
+and processing the events since then to update the state.
+
+<p>A new subtype of LttvContext, LttvStateContext, is defined to add storage
+for the state information. It defines a trace set state as a set of trace
+state. The trace state is composed of processes, CPUs and block devices.
+Each CPU has a currently executing process and each process state keeps
+track the interrupt stack frames (faults, interrupts,
+system calls), executable file name and other information such as opened
+file descriptors. Each frame stores the process status, entry time
+and last status change time.
+
+<p>File state.c provides state updating hooks to be called when the trace is
+processed. When a scheduling change event is delivered to the hook, for
+instance, the current process for the CPU is changed and the state of the
+incoming and outgoing processes is changed.
+The state updating hooks are stored in the global attributes under 
+/hooks/state/core/trace_set/before, after, 
+/hooks/state/core/trace/before, after...
+to be used by processing functions requiring state updating (batch and 
+interactive alalysis, computing the state at time T by updating a preceeding
+saved state...).
+
+<H3>Computing Statistics: stats.h (stats.c)</H3>
+
+<p>This file defines a subtype of LttvStateContext, LttvStatsContext,
+to store statistics on various aspects of a trace set. The LttvTraceSetStats
+structure contains a set of LttvTraceStats structures. Each such structure
+contains structures for CPUs, processes, interrupt types (IRQ, system call,
+fault), subtypes (individual system calls, IRQs or faults) and
+block devices. The CPUs also contain structures for processes, interrupt types,
+subtypes and block devices. Process structures similarly contain
+structures for interrupt types, subtypes and block devices. At each level
+(trace set, trace, cpu, process, interrupt stack frames)
+attributes are used to store statistics. 
+
+<p>File stats.c provides statistics computing hooks to be called when the
+trace is processed. For example, when a <i>write</i> event is processed, 
+the attribute <i>BytesWritten</i> in the corresponding system, cpu, process,
+interrupt type (e.g. system call) and subtype (e.g. write) is incremented 
+by the number of bytes stored in the event. When the processing is finished, 
+perhaps in the after hooks, the number of bytes written and other statistics 
+may be summed over all CPUs for a given process, over all processes for a 
+given CPU or over all traces.
+
+<p>The basic set of statistics computed by stats.c include for the whole
+   trace set:
+
+<UL>
+<LI>Trace start time, end time and duration.
+<LI>Total number of events.
+<LI>Number of each event type (Interrupts, faults, system calls...)
+<LI>For each interrupt type and each subtype, the number of each event type.
+<LI>For each system:
+  <UL>
+  <LI>Total number of events.
+  <LI>Number of each event type (Interrupts, faults, system calls...)
+  <LI>For each interrupt type and each subtype, the number of each event type.
+  <LI>For each CPU:
+    <UL>
+    <LI> CPU id
+    <LI> User/System time
+    <LI> Number of each event type
+    <LI> For each interrupt type and each subtype, 
+         the number of each event type.
+    </UL>
+  <LI>For each block device:
+    <UL>
+    <LI> block device name
+    <LI> time busy/idle, average queue length
+    <LI> Number of each relevant event type (requests added, merged, served)
+    </UL>
+  <LI>For each process:
+    <UL>
+    <LI> Exec'ed file names.
+    <LI> Start and end time, User/System time
+    <LI> Number of each event type
+    <LI> For each interrupt type and each subtype, 
+         the number of each event type.
+    </UL>
+  </UL>
+</UL>
+
+<P>The structure to store statistics differs from the state storage structure
+in several ways. Statistics are maintained in different ways (per CPU all
+processes, per process all CPUs, per process on a given CPU...). Furthermore,
+statistics are maintained for all processes which existed during the trace
+while the state at time T only stores information about current processes.
+
+<P>The hooks defined by stats.c are stored in the global attributes under
+/hooks/stats/core/trace_set/before, after, 
+/hooks/stats/core/trace/before, after to be used by processing functions
+interested in statistics.
+
+<H3>Filtering events: filter.h (filter.c)</H3>
+
+<P>
+Filters are used to select which events in a trace are shown in a viewer or are
+used in a computation. The filtering rules are based on the values of 
+events fields. The filter module receives a filter expression and computes
+a compiled filter. The compiled filter then serves as hook data for 
+<i>check</i> event 
+filter hooks which, given a context containing an event, 
+return TRUE or FALSE to 
+indicate if the event satisfies the filter. Trace and tracefile <i>check</i>
+filter hooks
+may be used to determine if a system and CPU satisfy the filter. Finally,
+the filter module has a function to return the time bounds, if any, imposed
+by a filter.
+
+<P>For some applications, the hooks provided by the filter module may not 
+be sufficient, since they are based on simple boolean combinations
+of comparisons between fields and constants. In that case, custom code may be
+used for <i>check</i> hooks during the processing. An example of complex
+filtering could be to only show events belonging to processes which consumed
+more than 10% of the CPU in the last 10 seconds.
+
+<p>In module filter.c, filters are specified using textual expressions 
+with AND, OR, NOT operations on
+nested subexpressions. Primitive expressions compare an event field to
+a constant. In the graphical user interface, a filter editor is provided.
+
+<PRE><TT>
+tokens: ( ! && || == <= >= > < != name [ ] int float string )
+
+expression = ( expression ) OR ! expression OR
+     expression && expression OR expression || expression OR 
+     simple_expression
+
+simple_expression = field_selector OP value
+
+value = int OR float OR string OR enum
+
+field_selector = component OR component . field_selector
+
+component = name OR name [ int ]
+</TT></PRE>
+
+
+<H3>Batch Analysis: batchAnalysis.h (batchAnalysis.c)</H3>
+
+<p>This module registers to be called by the main program (/hooks/main/core). 
+When called, it gets the current trace set (/trace_set/default), 
+state updating hooks (/hooks/state/*) the statistics hooks 
+(/hooks/stats/*) and other analysis hooks (/hooks/batch/*)
+and runs lttv_process_trace_set for the entire
+trace set time interval. This simple processing of the complete trace set
+is normally sufficient for batch operations such as converting a trace to
+text and computing various statistics.
+
+
+<H3>Text output for events and statistics: textDump.h (textDump.c)</H3>
+
+<P>
+This module registers hooks (/hooks/batch)
+to print a textual representation of each event
+(event hooks) and to print the content of the statistics accumulated in the
+context (after trace set hook).
+
+<H2>Trace Set Viewers</H2>
+
+<p>
+A library, libgtklttv, is defined to provide utility functions for 
+the second set of modules, wich compose the interactive graphical user 
+interface. It offers functions to create and interact with top level trace 
+viewing windows, and to insert specialized embedded viewer modules. 
+The libgtklttv library requires the gtk library.
+The viewer modules include a detailed event list, eventsTableView,
+a process state graph, processStateView, and a CPU state graph, cpuStateView.
+
+<p>
+The top level gtkTraceSet, defined in libgtklttv, 
+window has the usual FILE EDIT... menu and a toolbar.
+It has an associated trace set (and filter) and contains several tabs, each
+containing several vertically stacked time synchronized trace set viewers.
+It manages the space allocated to each contained viewer, the menu items and
+tools registered by each contained viewer and the current time and current
+time interval.
+
+<P>
+When viewers change the current time or time interval, the gtkTraceSet
+window notifies all contained viewers. When one or more viewers need
+redrawing, the gtkTraceSet window calls the lttv_process_trace_set
+function for the needed time interval, after computing the system state
+for the interval start time. While events are processed, drawing hooks 
+from the viewers are called.
+
+<P>
+TO COMPLETE; description and motivation for the gtkTraceSet widget structure
+and interaction with viewers. Description and motivation for the detailed
+event view and process state view.
+
+</BODY>
+</HTML>

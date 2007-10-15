@@ -1,0 +1,24 @@
+
+CPUID: processor ID
+
+IrqId: IRQ ID
+
+Frequency (Hz): the number of interruptions per second (Hz)
+
+Total Duration (nsec): the sum of each interrupt duration in nsec
+
+Duration standard deviation (nsec):   taken from 
+http://en.wikipedia.org/wiki/Standard_deviation
+Duration Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) where
+N: the total number of interrupts 
+xi: the duration of an interrupt
+Xa: the average duration is the total duration divided by the total number of interrupts (N)
+
+Max IRQ handler duration (nsec) [time interval]:   the longest IRQ handler duration in nsec.  
+
+Average period (nsec): 1/Frequency
+ 
+Period Standard_deviation  = sqrt(1/N Sum ((xi -Xa)^2)) where
+N:  number of interrupts 
+xi: duration of an interrupt
+Xa: Average period in nsec

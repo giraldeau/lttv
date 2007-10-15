@@ -1,0 +1,571 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.3//EN"
+                      "/usr/share/sgml/docbook/dtd/4.3/xdocbook.dtd">
+<!--<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN" >-->
+
+<book>
+
+<bookinfo>
+<title>Linux Trace Toolkit Viewer User Guide</title>
+<authorgroup>
+<author>
+<firstname>Mathieu</firstname>
+<surname>Desnoyers</surname>
+</author>
+</authorgroup>
+
+<date>11/01/2006</date>
+<releaseinfo>1.00.02</releaseinfo>
+
+<abstract>
+<para>
+This document describes how to install <application>Linux Trace
+Toolkit Viewer</application> and how to use it.
+
+</para>
+</abstract>
+
+<keywordset>
+<keyword>Linux Trace Toolkit Viewer</keyword>
+<keyword>Linux Trace Toolkit</keyword>
+<keyword>tracing</keyword>
+<keyword>Linux</keyword>
+<keyword>visualization</keyword>
+<keyword>operating system</keyword>
+</keywordset>
+
+</bookinfo>
+
+<chapter>
+<title>Introduction</title>
+<para>
+Linux Trace Toolkit (LTT) is a tracing tool that permits to get all the possible
+execution information from the Linux Kernel. It is based on kernel
+instrumentation and a high-speed relay file system to copy the information from
+the kernel space to the user space.
+</para>
+
+<para>
+Linux Trace Toolkit Viewer (LTTV) is the second generation of visualization
+tool. It is based on a trace format (the files where the data is recorded on
+disk) written by the LTTng tracer.
+</para>
+
+<para>
+This document explains all the steps that are necessary in order to record a
+trace with LTT and view it with LTTV.
+</para>
+</chapter>
+
+<chapter>
+<title>Getting started</title>
+
+<sect1 id="install">
+<title>Installing LTTng and LTTV</title>
+<para>
+Follow the QUICKSTART guide found at
+<ulink url="http://ltt.polymtl.ca">ltt.polymtl.ca</ulink>.
+</para>
+
+<!--
+<title>Installing LTTV</title>
+<para>
+First, you must download the latests version of LTTV. You should get it from
+this site : <ulink url="http://ltt.polymtl.ca">ltt.polymtl.ca</ulink>.
+I suggest that you get it from the "Packages" section.
+</para>
+
+<para>
+You need a recent gcc compiler to compile the project. You might want to use gcc
+3.2 or newer.
+You will also need some libraries in order to compile it. They are described in
+the README of the LTTV package. These are GTK 2.0, GLIB 2.0, "popt" and Pango 1.0.
+Install them if they are not on your system. Remember that if you use a package
+manager from you favourite Linux distribution, you will need to specifically
+install the librairies'development packages.
+</para>
+
+
+<para>
+Then, you are ready to compile LTTV. Extract and untar the file you previously
+downloaded : 
+</para>
+
+<screen>
+<prompt>$</prompt> <userinput>tar -xvzof LinuxTraceToolkitViewer-x.x-dddddddd.tar.bz2</userinput>
+</screen>
+
+<para>
+Then, go to the directory newly created, and type :
+</para>
+
+<screen>
+<prompt>$</prompt> <userinput>./configure</userinput>
+<prompt>$</prompt> <userinput>make</userinput>
+<prompt>#</prompt> <userinput>make install</userinput> (as root)
+</screen>
+-->
+<para>
+At this point, LTTV is installed in the default directory. You may find the
+lttv executable in /usr/local/bin and the librairies in /usr/local/lib. You will
+also notice the presence of the convert executable in /usr/local/bin. This tool
+will be used later to convert from the Linux Trace Toolkit trace format to the
+LTTV format.
+</para>
+<!--
+<para>
+You are now ready to go to the next step : installing the LTT kernel tracer.
+</para>
+
+
+</sect1>
+
+
+
+<sect1 id="install-tracer">
+<title>Installing LTT kernel tracer</title>
+<para>
+The goal of this guide is not to describe the Linux Trace Toolkit project in
+details, as it is a
+seperate project for now. It just gives pointers to the basic steps you must
+take in order to generate a trace suitable for conversion.
+</para>
+
+<para>
+First, go to the <ulink url="http://ltt.polymtl.ca">ltt.polymtl.ca</ulink>
+website, in the "Patches for the Official LTT" section. Use the latest version
+of patches available. The file name convention used goes like this : 
+aaaaaa-x.x\-\-bbbbb-y.y.patch. That means a patch made for aaaaa, release x.x,
+that adds bbbbb, release y.y to it. Notice the presence of the \-\- sign that
+separates the "from" field from the name of the patch applied. This way, it's
+impossible to be mixed up on the specific sequence of patch application. I
+suggest that you use the "relayfs", "ltt" and then "md" patches. The "md" patch
+adds events useful to LTTV that are not in the official LTT.
+</para>
+
+<para>
+Once you have the patches you need, get the matching Linux kernel version, apply
+the patches on it, configure it, install it, reboot with the new kernel. You then
+have an instrumented kernel ready for tracing. If you have problems during this phase,
+please refer to <ulink
+url="http://www.opersys.com/ltt">www.opersys.com/ltt</ulink>. If you need
+instructions about how to recompile a kernel, see
+<ulink url="http://www.tldp.org/HOWTO/Kernel-HOWTO/">Kernel-HOWTO</ulink>.
+</para>
+
+</sect1>
+
+<sect1 id="install-daemon">
+<title>Installing LTT trace recording daemon</title>
+<para>
+In order to install the LTT trace recording daemon, you should get the latest
+TraceToolkit (or ltt) package from the LTT ftp site.
+Use the link "Official Linux Trace Toolkit Packages" on the
+<ulink url="http://ltt.polymtl.ca">ltt.polymtl.ca</ulink> webpage to access it.
+As of November 30, 2004, the most recent version is 0.9.6-pre3.
+</para>
+<para>
+Then, you should apply the TraceToolkit patches from the LTTV website related
+to the package version. Get them from the "Patches for the Official LTT"
+section.
+</para>
+<para>
+You are now ready to install the daemon in your system. Please refer to the
+documentation in the package for details.
+</para>
+<para>
+You may now use the following command to record a sample 30 seconds trace in
+your current directory. Command line switches are described on the official
+LTT website.
+</para>
+<screen>
+<prompt>#</prompt><userinput>tracedaemon -ts30 sample.out sample.proc (as root) userinput></userinput>
+</screen>
+</sect1>
+
+
+
+<sect1 id="convert">
+<title>Conversion from LTT to LTTV trace format</title>
+<para>
+If you used the default directory for installation, you should find the
+conversion tool in /usr/local/bin/convert. Before using it, some other files are
+necessary. You will find them in
+/usr/local/share/LinuxTraceToolkitViewer/convert/. Those are sysInfo and
+core.xml.
+</para>
+<para>
+sysInfo is a script that get informations about the traced computer. It should
+be invoked like this :
+</para>
+<screen>
+<prompt>$</prompt> <userinput>sh /usr/local/LinuxTraceToolkitViewer/convert/sysInfo</userinput>
+</screen>
+<para>
+It creates a file named sysInfo.out. This file has to be present in the current
+directory where the convert tool will be executed. I suggest that you choose a
+destination directory where will be written converted traces right now, put sysInfo.out in it, at
+use it as current directory for running the convert tool.
+</para>
+<para>
+Once the sysInfo.out file is ready and you have a trace ready for conversion,
+you should invoke convert like the following example. This is for a uniprocessor
+computer. If you whish to get detailed explanation on the parameters, simply
+execute the convert tool without any option. You may also wish to see the
+/usr/local/LinuxTraceToolkitViewer/convert/README file.
+</para>
+<screen>
+<prompt>$</prompt> <userinput>/usr/local/bin/convert sample.proc 1 sample.trace sample.converted</userinput>
+</screen>
+<para>
+You must then copy the core event definition file to the converted trace directory :
+</para>
+<screen>
+<prompt>$</prompt> <userinput>cp /usr/local/share/LinuxTraceToolkitViewer/convert/core.xml sample.converted/</userinput>
+</screen>
+<para>
+You now have a converted trace ready for visualization in LTTV. Congratulations!
+</para>
+-->
+</sect1>
+
+<sect1 id="running">
+<title>Running the executable with basic libraries</title>
+<para>
+Starting the graphical mode with the basic viewer activated is as simple as :
+</para>
+<screen>
+<prompt>$</prompt> <userinput>lttv-gui</userinput>
+</screen>
+<para>
+Using the text mode is very simple too. Look in /usr/local/lib/lttv/plugins for
+the list of modules. You may use the --help switch to get basic help on the
+command line parameters of every loaded modules. To simply output the events of
+a trace in a text file, try the textDump module. The batchAnalysis module
+permits to do batch mode analysis (state and statistics calculation ) on a
+trace.
+</para>
+<screen>
+<prompt>$</prompt> <userinput>lttv -L /usr/local/lib/lttv/plugins -m textDump --help</userinput>
+</screen>
+</sect1>
+</chapter>
+
+<chapter>
+<title>Using LTTV graphical interface</title>
+
+<sect1 id="mainwindow">
+<title>LTTV main window</title>
+<para>
+This section describes the main functionnalities that are provided by the LTTV
+GUI and how to use them.
+</para>
+<para>
+By default, when the lttv GUI starts with all the graphical modules loaded,
+it loads the statistics viewer, the control flow viewer, and the detailed event
+list inside a tab. Other viewers can be added later to this tab by interacting
+with the main window. Let's describe the operations available on the window :
+</para>
+<screenshot>
+<mediaobject>
+<imageobject>
+<imagedata srccredit="Mathieu Desnoyers, 2004" fileref="lttv-numbered-5.png"
+format="PNG" align="center"/>
+</imageobject>
+<imageobject>
+<imagedata srccredit="Mathieu Desnoyers, 2004"
+fileref="lttv-numbered-5.eps"
+format="EPS" align="center"/>
+</imageobject>
+<!--<imagedata srccredit="Mathieu Desnoyers, 2004" fileref="lttv-numbered-6.svg"
+format="SVG" align="center" scalefit="1"/>
+</imageobject>-->
+<caption><para>Linux Trace Toolkit Viewer GUI</para></caption>
+</mediaobject>
+</screenshot>
+<orderedlist>
+<listitem>
+<para>
+This toolbar allows you to navigate through the basic functionnalities of LTTV.
+The first button opens a new window and the second one, a new tab. You can leave
+your mouse over the buttons to read the information provided by the tooltips.
+</para>
+</listitem>
+<listitem>
+<para>
+This notebook, containing different tabs, lets you select the "Trace Set" you
+want to interact with. A trace set is an aggregation of traces, synchronised in
+time. You may also want to use one tab per viewer by simply cloning the traceset
+to a new tab. This way, you can have vertically stacked viewers in one tab, as
+well as different viewers, independant from the time interval. Note that once
+the Trace Set cloning is done, each trace set becomes completely independant.
+For Traceset cloning, see the File Menu.
+</para>
+</listitem>
+<listitem>
+<para>
+These buttons let you control the computation in progress on a trace. As
+sometimes the computation may last for a while, you may want to stop it, restart
+it from the beginning or simply to continue from where you stopped. This is
+exactly what those three buttons offer you.
+</para>
+</listitem>
+<listitem>
+<para>
+Buttons on the right side of the last spacer are semantically different from the
+others. While the other buttons at the left side of the bar are built in the
+lttv program and let you operate the basic functionnalities, the buttons at the
+right side let you add a viewer to the active Tab. They belong to the
+viewers themselves. The number of buttons that appears there should directly
+depend on the number of viewer's modules loaded.
+</para>
+</listitem>
+<listitem>
+<para>
+This is a tree representing the multiple statistics available for the current
+traceset. This is shown by the guistatistics viewer.
+</para>
+</listitem>
+<listitem>
+<para>
+This is the Y axis of the guicontrolflow viewer. It shows the process list of
+the traced system. You may notice that it grows : it dynamically adds
+process when they appear in the trace.
+</para>
+</listitem>
+<listitem>
+<para>
+This is a (missing) time bar for the X axis. Maybe will it be used for viewer
+specific buttons eventually. Work in progress.
+</para>
+</listitem>
+<listitem>
+<para>
+The is the current time selected. The concept of current event and current time
+selected is synchronised in a Tab for all the viewers. The control flow viewer
+shows it a vertical white dotted line. You move this marker by clicking on the
+background of the process state graph. This graph shows evolution of each
+process's state through time. The meaning of the colors will be explained later.
+</para>
+</listitem>
+<listitem>
+<para>
+This is the details event list. It shown the detailed information about each
+event of the trace. It is synchronised with the current time and current event,
+so selecting an event changes other viewer's current time and reciprocally.
+</para>
+</listitem>
+<listitem>
+<para>
+You can enter the values of start time and end time you wish to see on the
+screen here. It also supports pasting time as text input, simply by clicking of
+the "Time Frame", "start" or "end:" fields. A valid entry consists of any
+digital input separated by any quantity of non digital characters. For example :
+"I start at 356247.124626 and stop at 724524.453455" would be a valid input
+for the "Time Frame" field.
+</para>
+</listitem>
+<listitem>
+<para>
+This horizontal scrollbar modifies the window of time shown by all the viewers
+in the tab. It is linked with the fields below it (described at number 10 and
+12). Another way to modify the time shown is to use the zoom buttons of the
+toolbar (yes, the ones that looks like magnifying glasses).
+</para>
+</listitem>
+<listitem>
+<para>
+This field works just like the "Time Frame" field. It modifies the current time
+selected by the viewers. For example, changing its value will change the current
+event selected by the detailed events list and the current time selected by the
+control flow viewer.
+</para>
+</listitem>
+</orderedlist>
+</sect1>
+
+<sect1 id="ControlFlowColors">
+<title>Control Flow View Colors</title>
+<screenshot>
+<mediaobject>
+<imageobject>
+<imagedata srccredit="Mathieu Desnoyers, 2004" fileref="lttv-color-list.png"
+format="PNG" align="center"/>
+</imageobject>
+<imageobject>
+<imagedata srccredit="Mathieu Desnoyers, 2004"
+fileref="lttv-color-list.eps"
+format="EPS" align="center"/>
+</imageobject>
+<!--<imagedata srccredit="Mathieu Desnoyers, 2004" fileref="lttv-numbered-6.svg"
+format="SVG" align="center" scalefit="1"/>
+</imageobject>-->
+<caption><para>Control Flow View Color Legend</para></caption>
+</mediaobject>
+</screenshot>
+
+<para>
+Here is a description of the colors used in the control flow view. Each color
+represents a state of the process at a given time.
+</para>
+
+<itemizedlist>
+<listitem>
+<para>
+White : this color is used for process from which state is not known. It may
+happen when you seek quickly at a far time in the trace just after it has been
+launched. At that moment, the precomputed state information is incomplete. The
+"unknown" state is used to identify this. Note that the viewer gets refreshed
+once the precomputation ends.
+</para>
+</listitem>
+<listitem>
+<para>
+Green : This color is only used for process when they are running in user mode.
+That includes execution of all the source code of an executable as well as the
+libraries it uses.
+</para>
+</listitem>
+<listitem>
+<para>
+Pale blue : A process is doing a system call to the kernel, and the mode is
+switched from process limited rights to super user mode. Only code from the
+kernel (including modules) should be run in that state.
+</para>
+</listitem>
+<listitem>
+<para>
+Yellow : The kernel is running a trap that services a fault. The most frequent
+trap is the memory page fault trap : it is called every time a page is missing
+from physical memory.
+</para>
+</listitem>
+<listitem>
+<para>
+Orange : IRQ servicing routine is running. It interrupts the currently running
+process. As the IRQ does not change the currently running process (on some
+architectures it uses the same stack as the process), the IRQ state is shown in
+the state of the process. IRQ can be nested : a higher priority interrupt can
+interrupt a lower priority interrupt.
+</para>
+</listitem>
+<listitem>
+<para>
+Pink : SoftIRQ handler is running. A SoftIRQ is normally triggered by an
+interrupt that whishes to have some work done very soon, but not "now". This is
+especially useful, for example, to have the longest part of the network stack
+traversal done : a too long computation in the interrupt handler would increase
+the latency of the system. Therefore, doing the long part of the computation in
+a softirq that will be run just after the IRQ handler exits will permits to do
+this work while interrupts are enabled, without increasing the system latency.
+</para>
+</listitem>
+<listitem>
+<para>
+Dark red : A process in that state is waiting for an input/output operation to
+complete before it can continue its execution.
+</para>
+</listitem>
+<listitem>
+<para>
+Dark yellow : A process is ready to run, but waiting to get the CPU (a schedule
+in event).
+</para>
+</listitem>
+<listitem>
+<para>
+Dark purple : A process in zombie state. This state happens when a process
+exits and then waits for the parent to wait for it (wait() or waitpid()).
+</para>
+</listitem>
+<listitem>
+<para>
+Dark green : A process has just been created by its parent and is waiting for
+first scheduling.
+</para>
+</listitem>
+<listitem>
+<para>
+Magenta : The process has exited, but still has the control of the CPU. It may
+happend if it has some tasks to do in the exit system call.
+</para>
+</listitem>
+</itemizedlist>
+</sect1>
+</chapter>
+
+<chapter>
+<title>Using LTTV text modules</title>
+<sect1 id="batchAnalysis">
+<title>The batch analysis module</title>
+<para>
+This batch analysis module can be invoked like this :
+</para>
+<screen>
+<prompt>$</prompt> <userinput>lttv -L path/to/lib/plugins -m batchAnalysis\
+-t trace1 -t trace2 ...</userinput>
+</screen>
+<para>
+It permits to call any registered action to perform in batch mode on all the
+trace set, which consists of the traces loaded on the command line. Actions that
+are built in the batchAnalysis module are statistics computation. They can be
+triggered by using the -s (--stats) switch.
+</para>
+<para>
+However, the batchAnalysis module is mostly a backend for every other text
+module that does batch computation over a complete trace set.
+</para>
+</sect1>
+<sect1 id="textDump">
+<title>The text dump module</title>
+<para>
+ The goal of this module is to convert the binary data of the traces into
+a formatted text file.
+</para>
+<para>
+The text dump module is a good example of a usage of the batch analysis module
+backend. In fact, the text dump module depends on it. You don't need to
+explicitly load the batchAnalysis module though, as lttv offers a rich module
+backend that deals with the dependencies, loading the module automatically if
+needed.
+</para>
+<para>
+The text dump module is invoked just like the batchAnalysis module. It adds more
+options that can be specified in argument. You may specify the -o switch for the
+output file name of the text dump. You can enable the output of the field names
+(the identifier of the fields) with the -l switch. The -s switch, for process
+states, is very useful to indicate the state in which the process is when the
+event happens.
+</para>
+<para>
+If you use the --help option on the textDump module, you will see all the detail
+about the switches that can be used to show per cpu statistics and per process
+statistics. You will notice that you can use both the switches for the
+batchAnalysis module and those for textDump. You will also notice that the
+options --process_state (from textDump) and --stats (from batchAnalysis) has the
+same short name "-s". If you choose to invoke this option using the short name,
+it will use the option of the last module loaded just before the -s switch.
+</para>
+<para>
+For exemple, if you load the textDump module with -m textDump, it will first
+load the batchAnalysis module, and then load itself. As it is the last module
+loaded, the -s switch used after it will signify --process_stats. On the other
+hand, if you choose to specify explicitly the loading of both modules like this
+:
+</para>
+<screen>
+<prompt>$</prompt> <userinput>lttv -L path/to/lib/plugins -m batchAnalysis -s\
+-m textDump -s -t trace</userinput>
+</screen>
+<para>
+The first "-s" will invoke batchAnalysis --stats and the second "-s" will invoke
+textDump --process_state. The list of options generated by --help follows the
+order of registration of the options by the modules, therefore the invocation 
+order of the modules.
+</para>
+</sect1>
+
+</chapter>
+
+
+</book>

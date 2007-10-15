@@ -1,0 +1,244 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Control Flow View Colors</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer User Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Using LTTV graphical interface"
+HREF="c42.html"><LINK
+REL="PREVIOUS"
+TITLE="Using LTTV graphical interface"
+HREF="c42.html"><LINK
+REL="NEXT"
+TITLE="Using LTTV text modules"
+HREF="c115.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer User Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c42.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 3. Using LTTV graphical interface</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c115.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="ControlFlowColors"
+>3.2. Control Flow View Colors</A
+></H1
+><DIV
+CLASS="mediaobject"
+><P
+><IMG
+SRC="lttv-color-list.png"
+ALIGN="center"><DIV
+CLASS="caption"
+><P
+>Control Flow View Color Legend</P
+></DIV
+></P
+></DIV
+><P
+>&#13;Here is a description of the colors used in the control flow view. Each color
+represents a state of the process at a given time.
+</P
+><P
+></P
+><UL
+><LI
+><P
+>&#13;White : this color is used for process from which state is not known. It may
+happen when you seek quickly at a far time in the trace just after it has been
+launched. At that moment, the precomputed state information is incomplete. The
+"unknown" state is used to identify this. Note that the viewer gets refreshed
+once the precomputation ends.
+</P
+></LI
+><LI
+><P
+>&#13;Green : This color is only used for process when they are running in user mode.
+That includes execution of all the source code of an executable as well as the
+libraries it uses.
+</P
+></LI
+><LI
+><P
+>&#13;Pale blue : A process is doing a system call to the kernel, and the mode is
+switched from process limited rights to super user mode. Only code from the
+kernel (including modules) should be run in that state.
+</P
+></LI
+><LI
+><P
+>&#13;Yellow : The kernel is running a trap that services a fault. The most frequent
+trap is the memory page fault trap : it is called every time a page is missing
+from physical memory.
+</P
+></LI
+><LI
+><P
+>&#13;Orange : IRQ servicing routine is running. It interrupts the currently running
+process. As the IRQ does not change the currently running process (on some
+architectures it uses the same stack as the process), the IRQ state is shown in
+the state of the process. IRQ can be nested : a higher priority interrupt can
+interrupt a lower priority interrupt.
+</P
+></LI
+><LI
+><P
+>&#13;Pink : SoftIRQ handler is running. A SoftIRQ is normally triggered by an
+interrupt that whishes to have some work done very soon, but not "now". This is
+especially useful, for example, to have the longest part of the network stack
+traversal done : a too long computation in the interrupt handler would increase
+the latency of the system. Therefore, doing the long part of the computation in
+a softirq that will be run just after the IRQ handler exits will permits to do
+this work while interrupts are enabled, without increasing the system latency.
+</P
+></LI
+><LI
+><P
+>&#13;Dark red : A process in that state is waiting for an input/output operation to
+complete before it can continue its execution.
+</P
+></LI
+><LI
+><P
+>&#13;Dark yellow : A process is ready to run, but waiting to get the CPU (a schedule
+in event).
+</P
+></LI
+><LI
+><P
+>&#13;Dark purple : A process in zombie state. This state happens when a process
+exits and then waits for the parent to wait for it (wait() or waitpid()).
+</P
+></LI
+><LI
+><P
+>&#13;Dark green : A process has just been created by its parent and is waiting for
+first scheduling.
+</P
+></LI
+><LI
+><P
+>&#13;Magenta : The process has exited, but still has the control of the CPU. It may
+happend if it has some tasks to do in the exit system call.
+</P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c42.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c115.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Using LTTV graphical interface</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c42.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Using LTTV text modules</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

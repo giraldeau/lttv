@@ -1,0 +1,139 @@
+
+Redesign of the GUI detailed event list
+
+Mathieu Desnoyers 08/2005
+
+The basic problem about this list is that it uses the number of events, not the
+time, as a vertical axis (for the Y axis scrollbar).
+
+Seeking in the traces is done by time. We have no clue of the number of events
+between two times without doing preparsing.
+
+If we want to fully reuse textDump, it's bettwer if we depend upon state
+computation. It would be good to make the viewer work with this information
+missing though.
+
+textDump's print_field should be put in a lttv/lttv core file, so we can use it
+as is in the detailed event list module without depending upon batchAnalysis.
+
+
+* With preparsing only :
+
+The problem then becomes simpler :
+
+We can precompute the event number while doing state computation and save it
+periodically with saved states. We can then use the event number in the trace
+as scrollbar value, which, when scrolled, would result into a search in the
+saved states by event number.
+
+How much time would it take to seek back to the wanted position from the last
+saved state ?
+
+compudj@dijkstra:~/local/bin$ ./lttv -m batchtest -1 -2 -t
+/home/compudj/traces/200MB 
+** Message: Processing trace while counting events (12447572 events in 14.0173
+seconds)
+** Message: Processing trace while updating state (9.46535 seconds)
+
+9.46535 s / 12447572 events * 50000 events = 0.038 s
+
+38 ms latency shouldn't be too noticeable by a user when scrolling.
+
+(note : counting events batchtest does also verify time flow integrity and get
+the position for each event (not optimal), that's why it takes 14s)
+
+As an optimisation, we could use a backing text buffer (an array of strings),
+where we would save the 50000 computed events between two consecutive saved
+states.
+
+Memory required : 50000 * 20 bytes/event = 1MB
+
+Which seems ok, but costy. In would be better, in fact, not to depend on the
+saved states interval for such a value : we could keep a 1000 events array, for
+instance (for 20KB cost, which is really better).
+
+The backing text buffer would, by itself, make sure it has a sufficient
+number of events so a scroll up/down of one page would be responded directly.
+That imply that a scroll up/down would first update the shown fields, and only
+afterward make the backing buffer resync its events in the background. In the
+case where the events were not directly available, it would have to update the
+buffer in the foreground and only then show the requested events.
+
+
+Important note : this design doesn't support filtering of events, which is
+                 an important downside.
+
+
+
+* If we want the viewer to be able to show information without preparsing :
+
+This is the hardest the problem could get. We have to seek by time (even the
+scrollbar must seek by time), but increment/decrement event by event when using
+the scrollbar up/down, page up/page down. Let's call them "far scroll" and "near
+scroll", respectively.
+
+A far scroll must resync the trace to the time requested by the scrollbar value.
+
+A near scroll must sync the trace to a time that is prior to the requested
+event, show the events requested, and then sync the scrollbar value (without
+event updating) to the shown event time.
+
+* seek n events backward
+
+We have no information about how far back we must request events in the trace :
+
+The algorithm would look like :
+
+seek_n_events_backward(current time, current position, time_offset, filter)
+Returns : a TracesetPosition
+  - If the current time < beginning of trace, is means we cannot get any more
+    events, inform the requester that a list of less than n events is ready.
+  - Else, request a read to a the time_offset backward, calling the
+    per event hook, and calling the after_traceset hook when finished. The end
+    position would be the position of the current first event.
+  
+per_event_hook
+  - if filter returns true
+    - Append the traceset position to a list of maximum size n. Remove the first
+      entries.
+
+after_traceset_hook
+  - if the list has a size less than n, invoke a seek_n_events_backward
+    subsequent iteration, for completing the list. The new time_offset is the
+    last time_offset used multiplied by 2. (can be done by tail recursion (if we
+    want to split this operation in multiple segments) or by an iterative
+    algorithm (seek_n_events_backward would be a while() calling its own
+    process_traceset_middle()).
+  - if the list a a size of n, it's complete : call the viewer get_print_events
+    hook.
+
+
+* seek n events forward
+
+seek_n_events_forward(current position, filter)
+  - Simple : seek to the current position, request read of trace calling an
+    event counting hook (starts at 0).
+    
+event_counting_hook
+  - if filter returns true
+    - increment event count.
+    - if event count > requested count, inform that the current position if the
+      wanted position. Return TRUE, so the read will stop.
+
+
+* Printing events
+
+get_print_events
+  - seek to the position at the beginning of the list. End position is the
+    current one (not in the list! the one currently shown). Call a events
+    request between this positions, printing the fields to strings shown in the
+    viewer.
+
+
+
+seek_n_events backward and forward seems to be interesting algorithms that
+should be implemented in the tracecontext library. With those helpers, it would
+become simpler to implement a detailed event list not depending on state
+computation.
+
+

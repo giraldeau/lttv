@@ -1,0 +1,269 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Using LTTV graphical interface</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer User Guide"
+HREF="index.html"><LINK
+REL="PREVIOUS"
+TITLE="Running the executable with basic libraries"
+HREF="x32.html"><LINK
+REL="NEXT"
+TITLE="Control Flow View Colors"
+HREF="x81.html"></HEAD
+><BODY
+CLASS="chapter"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer User Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x32.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="x81.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="chapter"
+><H1
+><A
+NAME="AEN42"
+></A
+>Chapter 3. Using LTTV graphical interface</H1
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="mainwindow"
+>3.1. LTTV main window</A
+></H1
+><P
+>&#13;This section describes the main functionnalities that are provided by the LTTV
+GUI and how to use them.
+</P
+><P
+>&#13;By default, when the lttv GUI starts with all the graphical modules loaded,
+it loads the statistics viewer, the control flow viewer, and the detailed event
+list inside a tab. Other viewers can be added later to this tab by interacting
+with the main window. Let's describe the operations available on the window :
+</P
+><DIV
+CLASS="mediaobject"
+><P
+><IMG
+SRC="lttv-numbered-5.png"
+ALIGN="center"><DIV
+CLASS="caption"
+><P
+>Linux Trace Toolkit Viewer GUI</P
+></DIV
+></P
+></DIV
+><P
+></P
+><OL
+TYPE="1"
+><LI
+><P
+>&#13;This toolbar allows you to navigate through the basic functionnalities of LTTV.
+The first button opens a new window and the second one, a new tab. You can leave
+your mouse over the buttons to read the information provided by the tooltips.
+</P
+></LI
+><LI
+><P
+>&#13;This notebook, containing different tabs, lets you select the "Trace Set" you
+want to interact with. A trace set is an aggregation of traces, synchronised in
+time. You may also want to use one tab per viewer by simply cloning the traceset
+to a new tab. This way, you can have vertically stacked viewers in one tab, as
+well as different viewers, independant from the time interval. Note that once
+the Trace Set cloning is done, each trace set becomes completely independant.
+For Traceset cloning, see the File Menu.
+</P
+></LI
+><LI
+><P
+>&#13;These buttons let you control the computation in progress on a trace. As
+sometimes the computation may last for a while, you may want to stop it, restart
+it from the beginning or simply to continue from where you stopped. This is
+exactly what those three buttons offer you.
+</P
+></LI
+><LI
+><P
+>&#13;Buttons on the right side of the last spacer are semantically different from the
+others. While the other buttons at the left side of the bar are built in the
+lttv program and let you operate the basic functionnalities, the buttons at the
+right side let you add a viewer to the active Tab. They belong to the
+viewers themselves. The number of buttons that appears there should directly
+depend on the number of viewer's modules loaded.
+</P
+></LI
+><LI
+><P
+>&#13;This is a tree representing the multiple statistics available for the current
+traceset. This is shown by the guistatistics viewer.
+</P
+></LI
+><LI
+><P
+>&#13;This is the Y axis of the guicontrolflow viewer. It shows the process list of
+the traced system. You may notice that it grows : it dynamically adds
+process when they appear in the trace.
+</P
+></LI
+><LI
+><P
+>&#13;This is a (missing) time bar for the X axis. Maybe will it be used for viewer
+specific buttons eventually. Work in progress.
+</P
+></LI
+><LI
+><P
+>&#13;The is the current time selected. The concept of current event and current time
+selected is synchronised in a Tab for all the viewers. The control flow viewer
+shows it a vertical white dotted line. You move this marker by clicking on the
+background of the process state graph. This graph shows evolution of each
+process's state through time. The meaning of the colors will be explained later.
+</P
+></LI
+><LI
+><P
+>&#13;This is the details event list. It shown the detailed information about each
+event of the trace. It is synchronised with the current time and current event,
+so selecting an event changes other viewer's current time and reciprocally.
+</P
+></LI
+><LI
+><P
+>&#13;You can enter the values of start time and end time you wish to see on the
+screen here. It also supports pasting time as text input, simply by clicking of
+the "Time Frame", "start" or "end:" fields. A valid entry consists of any
+digital input separated by any quantity of non digital characters. For example :
+"I start at 356247.124626 and stop at 724524.453455" would be a valid input
+for the "Time Frame" field.
+</P
+></LI
+><LI
+><P
+>&#13;This horizontal scrollbar modifies the window of time shown by all the viewers
+in the tab. It is linked with the fields below it (described at number 10 and
+12). Another way to modify the time shown is to use the zoom buttons of the
+toolbar (yes, the ones that looks like magnifying glasses).
+</P
+></LI
+><LI
+><P
+>&#13;This field works just like the "Time Frame" field. It modifies the current time
+selected by the viewers. For example, changing its value will change the current
+event selected by the detailed events list and the current time selected by the
+control flow viewer.
+</P
+></LI
+></OL
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x32.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="x81.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Running the executable with basic libraries</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Control Flow View Colors</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

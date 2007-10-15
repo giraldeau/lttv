@@ -1,0 +1,37 @@
+
+LTTng format string parsing
+July 26, 2007
+
+"%lu"
+"#4b%u"
+"#lu%u" (no sign extension)
+"#ld%c" (sign extension)
+"#lld%p" (sign extension)
+
+Parsing:
+
+When # is encountered
+  Deal with ## case (escaped)
+  Read length modifier
+    gcc-like
+    trace specific : 1, 2, 4, 8, n, b
+      in both cases, save the output type size (1, 2, 4, 8).
+  Read conversion specifier
+      save the output type size if no length modifier is involved (1, 2, 4, 8).
+      save the signedness.
+
+(vsnprintf-like part)
+When % is encountered
+  Deal with %% case (escaped)
+  (deal with field width, precision. Skip them.)
+  Read length modifier
+    if output type size is 0, set it to the gcc type size.
+  Read conversion specifier
+    if output type size is 0, set it to the gcc type size if no length modifier
+        is involved.
+  Perform trace write with conversion.
+  Reset output type size to 0
+
+
+
+

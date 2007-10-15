@@ -1,0 +1,189 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>Tracing Tools</title>
+</head>
+  <body>
+
+<h1>Tracing Tools</h1>
+
+<p>Tracing is routinely used to help understanding the behavior and performance
+of various aspects of the Linux kernel and associated drivers. 
+Many of the 80K+ printk statements in the Linux kernel 
+serve this purpose, although printk is relatively low
+performance and unreliable. The small default printk buffer size coupled with
+the low performance brings lost messages as soon as the volume becomes
+significant.
+
+<p>For this reason, a number of drivers include their own tracing macros
+and infrastructure. A quick search looking for TRACE and related keywords
+in the Linux kernel source reveals some form of tracing in at least 
+the following files:
+
+<UL>
+<LI>./fs/hpfs/hpfs_fn.h
+<LI>./fs/smbfs/smb_debug.h
+<LI>./fs/autofs/autofs_i.h
+<LI>./fs/jffs2/nodelist.h
+<LI>./include/linux/wait.h
+<LI>./include/linux/parport_pc.h
+<LI>./include/linux/amigaffs.h
+<LI>./include/linux/parport_pc.h
+<LI>./include/linux/ncp_fs.h
+<LI>drivers/net/wireless airport and orinoco
+<LI>drivers/char/ftape
+<LI>drivers/char/dtlk.c
+<LI>drivers/char/mwave
+<LI>drivers/char/n_r3964.c
+<LI>drivers/scsi/qlogicfc.c
+<LI>drivers/usb/pwc-if.c
+<LI>drivers/usb/hpusbscsi.c
+<LI>drivers/acpi/include/acmacros.h
+<LI>arch/sparc/kernel/signal.c
+<LI>arch/mips/math-emu/cp1emu.c
+<LI>drivers/net/wavelan.c
+<LI>drivers/net/hp100.c
+<LI>drivers/net/wan/lmc/lmc_debug.c
+<LI>drivers/net/skfp/h/targetos.h
+<LI>drivers/char/ip2main.c
+<LI>drivers/scsi/gdth.c
+<LI>drivers/scsi/megaraid.c
+<LI>drivers/scsi/qlogicisp.c
+<LI>drivers/scsi/ips.c
+<LI>drivers/scsi/qla1280.c
+<LI>drivers/scsi/cpqfcTSstructs.h
+<LI>drivers/cdrom/sjcd.c
+<LI>drivers/isdn/eicon/sys.h
+<LI>drivers/sbus/char/bbc_envctrl.c
+<LI>drivers/ide/ide-tape.c
+<LI>drivers/video/radeonfb.c
+<LI>fs/intermezzo/sysctl.c
+<LI>fs/ext3/balloc.c
+<LI>net/ipv6/ip6_fib.c
+<LI>net/irda/irnet/irnet.h
+<UL>
+
+<p>A number of tracing tools have been developed for the Linux kernel.
+The best known, particularly in the embedded systems area, is the Linux Trace
+Toolkit, <A HREF="http://www.opersys.com/LTT">LTT at 
+http://www.opersys.com/LTT</A>. It
+comes with a nice graphical user interface and is currently under active
+development to add dynamically defined event types and graphical trace
+analysis modules.
+
+<P>
+The <A HREF="http://lkst.sf.net">Linux Kernel State Tracer at
+http://lkst.sf.net</A>was developed by Hitachi and offers basic,
+low overhead, tracing functionality. There is no grahical user interface
+available.
+
+<P>
+MAGNET was recently released. It was initially developed to trace the network
+stack and drivers. Its performance has not been optimized for SMP systems.
+It is available from 
+<A HREF="http://public.lanl.gov/radiant/software/magnet.html">
+http://public.lanl.gov/radiant/software/magnet.html
+</A>. 
+
+<P>
+The IKD patch from Andrea Arcangeli 
+<A HREF="ftp://ftp.kernel.org/pub/linux/kernel/people/andrea/ikd/">
+ftp://ftp.kernel.org/pub/linux/kernel/people/andrea/ikd/
+</A>
+includes ktrace which adds the -pg gcc compilation option 
+to specified source files. This adds a call to function <i>mcount</i> 
+upon entry in any function compiled with that option. A function <i>mcount</i>
+is provided which records in a trace the address of the function entered.
+Using the system map, this is later translated into a trace of names of
+functions entered.
+
+<H2>Reliability, Availability and Serviceability</H2>
+
+<P>
+Tracing may be placed in the larger context of Reliability, Availability and
+Serviceability (RAS). The Linux RAS project is probably the most active and
+well organized,
+<A HREF="http://systemras.sourceforge.net/">
+http://systemras.sourceforge.net/
+</A>
+<A HREF="http://www-124.ibm.com/linux/projects/linuxras/">
+http://www-124.ibm.com/linux/projects/linuxras/
+</A>.
+It links to several underlying projects, including the Linux Trace Toolkit
+<A HREF="http://www.opersys.com/LTT">LTT</A>.
+
+<P>
+Several other projects within Linux RAS directly relate to tracing.
+
+<H3>Enterprise Event Logging</H3>
+
+<p>The Enterprise Event Logging project,
+<A HREF="http://evlog.sourceforge.net/">EVLOG project
+at http://evlog.sourceforge.net/</A>, produces traces and thus shares a number
+of underlying implementation needs 
+(events recording, kernel to user mode transfer,
+trace analysis and viewing tools, event types format). The intended purpose
+and thus implementation constraints differ significantly, however. 
+EVLOG records important system events for two purposes,
+to trigger service and security alarms (e.g. weak signals in a magnetic disk,
+unauthorized access attempt) and to provide permament records. The volume
+is typically low and full context is required for each event. While logging
+(EVLOG) is therefore implemented separately from tracing (LTT), some
+underlying technology may be reused as appropriate (e.g. kernel hooks,
+kernel to user mode data relay...).
+
+<H3>Kernel Crash Dump</H3>
+
+<P>A common symptom of a serious kernel problem is a crash. Traces may
+be extremely useful to understand the problem except that, because of the
+crash, the important last events in the current trace buffer cannot be 
+stored on disk. The Linux Kernel Crash Dump facility (LKCD) at
+<A HREF="http://oss.software.ibm.com/developer/opensource/linux/projects/flexdump/">
+http://oss.software.ibm.com/developer/opensource/linux/projects/flexdump/
+</A> is used to recover such information, when <i>warm</i> rebooting from a
+crash while this information is still available in memory.
+
+<P>LKCD needs to be told how to find the tracing buffers in the memory
+(address in a map or signature to look for) and in which file to save
+their content.
+
+<H3>Kernel Hooks</H3>
+
+<p>
+Kernel hooks, at
+<A HREF="http://www-124.ibm.com/developerworks/oss/linux/projects/kernelhooks/">
+http://www-124.ibm.com/developerworks/oss/linux/projects/kernelhooks/
+</A> are a mechanism to insert hooks at desired locations in the kernel.
+Handlers may later be registered to be called at these hooks locations.
+When no handler is registered, the cost associated with a hook is almost
+negligeable, a few NOPs. Skipping NOPs is even faster than testing a 
+global boolean variable. Kernel hooks would be ideally suited for the
+dynamic activation of trace points. Furthermore, kernel hooks allow registering
+multiple handlers. A same location could have a tracing handler and a
+performance tool handler, reducing the number of points needed to be 
+inserted in the kernel source code.
+
+<p>Interactive tools may be used to rapidly select groups of hooks to be
+activated based on facilities (networking, block devices...), level
+of details (core events, detailed events) or severity level (warning, info,
+debug).
+
+<p>As part of Kernel Hooks and Dynamic Probes, were defined handlers
+which produce tracing information. The tracing data models for Dynamic Probes 
+and LTT are fairly similar and may eventually be consolidated.
+
+<H3>Dynamic Probes</H3>
+
+<p>The Dynamic Probes,
+<A HREF="http://www-124.ibm.com/linux/projects/kprobes/">
+http://www-124.ibm.com/linux/projects/kprobes/
+</A>,
+allow inserting kernel hooks dynamically in a running kernel, just like
+breakpoints in debuggers. The instruction
+at the desired location is saved and replaced by an interrupt instruction.
+When the interrupt instruction is executed, the handlers are called, the
+original instruction restored and executed in single step mode, and the
+interrupt instruction is reinserted.
+
+</body>
+</html>

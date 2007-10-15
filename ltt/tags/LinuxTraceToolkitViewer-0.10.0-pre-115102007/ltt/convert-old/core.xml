@@ -1,0 +1,263 @@
+<facility name=core>
+  <description>The core facility contains the basic events</description>
+
+  <event name=facility_load>
+    <description>Facility used in the trace</description>
+    <struct>
+      <field name="name"><string/></field>
+      <field name="checksum"><uint size=4/></field>
+      <field name="base_code"><uint size=4/></field>
+    </struct>
+  </event>
+
+  <event name=syscall_entry>
+    <description>Entry in a given system call</description>
+    <struct>
+      <field name="syscall_id"> <description>Syscall entry number in entry.S</description> <uint size=1/> </field>
+      <field name="address"> <description>Address from which call was made</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=syscall_exit>
+    <description>Exit from a given system call</description>
+  </event>
+
+  <event name=trap_entry>
+    <description>Entry in a trap</description>
+    <struct>
+      <field name="trap_id"> <description>Trap number</description> <uint size=2/> </field>
+      <field name="address"> <description>Address where trap occured</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=trap_exit>
+    <description>Exit from a trap</description>
+  </event>
+
+  <event name=irq_entry>
+    <description>Entry in an irq</description>
+    <struct>
+      <field name="irq_id"> <description>IRQ number</description> <uint size=1/> </field>
+      <field name="kernel"> <description>Are we executing kernel code</description> <uint size=1/> </field>
+     </struct>
+  </event>
+
+  <event name=irq_exit>
+    <description>Exit from an IRQ</description>
+  </event>
+
+  <event name=schedchange>
+    <description>Scheduling change</description>
+    <struct>
+      <field name="out"> <description>Outgoing process</description> <uint size=4/> </field>
+      <field name="in"> <description>Incoming process</description> <uint size=4/> </field>
+      <field name="out_state"> <description>Outgoing process' state</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=kernel_timer>
+    <description>The kernel timer routine has been called</description>
+  </event>
+
+  <event name=soft_irq>
+    <description>Hit key part of soft-irq management</description>
+    <struct>
+      <field name="event_sub_id"> <description>Soft-irq event Id</description> 
+        <enum size=1>
+          <label name=TRACE_EV_SOFT_IRQ_BOTTOM_HALF value=1/>
+          <label name=TRACE_EV_SOFT_IRQ_SOFT_IRQ/>
+          <label name=TRACE_EV_SOFT_IRQ_TASKLET_ACTION/>
+          <label name=TRACE_EV_SOFT_IRQ_TASKLET_HI_ACTION/>
+        </enum> 
+      </field>
+	
+      <field name="event_data"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=process>
+    <description>Hit key part of process management</description>
+    <struct>
+      <field name="event_sub_id"> <description>Process event ID</description> 
+        <enum size=1>
+          <label name=TRACE_EV_PROCESS_KTHREAD value=1/>
+          <label name=TRACE_EV_PROCESS_FORK/>
+          <label name=TRACE_EV_PROCESS_EXIT/>
+          <label name=TRACE_EV_PROCESS_WAIT/>
+          <label name=TRACE_EV_PROCESS_SIGNAL/>
+          <label name=TRACE_EV_PROCESS_WAKEUP/>
+          <label name=TRACE_EV_PROCESS_RELEASE/>
+        </enum> 
+      </field>
+	
+      <field name="event_data1"> <description>Data associated with event</description> <uint size=4/> </field>
+      <field name="event_data2"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=file_system>
+    <description>Hit key part of file system</description>
+    <struct>
+      <field name="event_sub_id"> <description>File system event ID</description> 
+        <enum size=1>
+          <label name=TRACE_EV_FILE_SYSTEM_BUF_WAIT_START value=1/>
+          <label name=TRACE_EV_FILE_SYSTEM_BUF_WAIT_END/>
+          <label name=TRACE_EV_FILE_SYSTEM_EXEC/>
+          <label name=TRACE_EV_FILE_SYSTEM_OPEN/>
+          <label name=TRACE_EV_FILE_SYSTEM_CLOSE/>
+          <label name=TRACE_EV_FILE_SYSTEM_READ/>
+          <label name=TRACE_EV_FILE_SYSTEM_WRITE/>
+          <label name=TRACE_EV_FILE_SYSTEM_SEEK/>
+          <label name=TRACE_EV_FILE_SYSTEM_IOCTL/>
+          <label name=TRACE_EV_FILE_SYSTEM_SELECT/>
+          <label name=TRACE_EV_FILE_SYSTEM_POLL/>
+        </enum> 
+      </field>
+	
+      <field name="event_data1"> <description>Event data </description> <uint size=4/> </field>
+      <field name="event_data2"> <description>Event data 2</description> <uint size=4/> </field>
+      <field name="file_name"> <description>Name of file operated on </description> <string/> </field>
+     </struct>
+  </event>
+
+  <event name=timer>
+    <description>Hit key part of timer management</description>
+    <struct>
+      <field name="event_sub_id"> <description>Timer event ID</description> 
+        <enum size=1>
+          <label name=TRACE_EV_TIMER_EXPIRED value=1/>
+          <label name=TRACE_EV_TIMER_SETITIMER/>
+          <label name=TRACE_EV_TIMER_SETTIMEOUT/>
+        </enum> 
+      </field>
+	
+      <field name="event_sdata"> <description>Short data</description> <uint size=1/> </field>
+      <field name="event_data1"> <description>Data associated with event</description> <uint size=4/> </field>
+      <field name="event_data2"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=memory>
+    <description>Hit key part of memory management</description>
+    <struct>
+      <field name="event_sub_id"> <description>Memory event ID</description> 
+        <enum size=1>
+          <label name=TRACE_EV_MEMORY_PAGE_ALLOC value=1/>
+          <label name=TRACE_EV_MEMORY_PAGE_FREE/>
+          <label name=TRACE_EV_MEMORY_SWAP_IN/>
+          <label name=TRACE_EV_MEMORY_SWAP_OUT/>
+          <label name=TRACE_EV_MEMORY_PAGE_WAIT_START/>
+          <label name=TRACE_EV_MEMORY_PAGE_WAIT_END/>
+        </enum> 
+      </field>
+	
+      <field name="event_data"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=socket>
+    <description>Hit key part of socket communication</description>
+    <struct>
+      <field name="event_sub_id"> <description>Memory event ID</description> 
+        <enum size=1>
+          <label name=TRACE_EV_SOCKET_CALL value=1/>
+          <label name=TRACE_EV_SOCKET_CREATE/>
+          <label name=TRACE_EV_SOCKET_SEND/>
+          <label name=TRACE_EV_SOCKET_RECEIVE/>
+        </enum> 
+      </field>
+	
+      <field name="event_data1"> <description>Data associated with event</description> <uint size=4/> </field>
+      <field name="event_data2"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=ipc>
+    <description>Hit key part of System V IPC</description>
+    <struct>
+      <field name="event_sub_id"> <description>Memory event ID</description> 
+        <enum size=1>
+          <label name=TRACE_EV_IPC_CALL value=1/>
+          <label name=TRACE_EV_IPC_MSG_CREATE/>
+          <label name=TRACE_EV_IPC_SEM_CREATE/>
+          <label name=TRACE_EV_IPC_SHM_CREATE/>
+        </enum> 
+      </field>
+	
+      <field name="event_data1"> <description>Data associated with event</description> <uint size=4/> </field>
+      <field name="event_data2"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=network>
+    <description>Hit key part of network communication</description>
+    <struct>
+      <field name="event_sub_id"> <description>Memory event ID</description> 
+        <enum size=1>
+          <label name=TRACE_EV_NETWORK_PACKET_IN value=1/>
+          <label name=TRACE_EV_NETWORK_PACKET_OUT/>
+        </enum> 
+      </field>
+	
+      <field name="event_data"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=block_start>
+    <description>Block start timestamp</description>
+    <typeref name=block_timestamp/>
+  </event>
+
+  <event name=block_end>
+    <description>Block end timestamp</description>
+    <typeref name=block_timestamp/>
+  </event>
+
+  <event name=time_heartbeat>
+    <description>System time values sent periodically to minimize cycle counter
+                 drift with respect to real time clock and to detect cycle counter roolovers
+    </description>
+    <typeref name=timestamp/>
+  </event>
+
+  <type name=block_timestamp>
+    <struct>
+      <field name=timestamp><typeref name=timestamp/></field>
+      <field name=block_id><uint size=4/></field>
+    </struct>
+  </type>
+
+  <type name=timestamp>
+    <struct>
+      <field name=time><typeref name=timespec/></field>
+      <field name="cycle_count"><uint size=8/></field>
+    </struct>
+  </type>
+
+  <type name=timespec>
+    <struct>
+      <field name="seconds"><uint size=4/></field>
+      <field name="nanoseconds"><uint size=4/></field>
+    </struct>
+  </type>
+
+
+  <event name=process_fork>
+    <description>Fork a new process</description>
+    <struct>
+      <field name="child_pid"> <description>Data associated with event</description> <uint size=4/> </field>
+      <field name="event_data2"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+  <event name=process_exit>
+    <description>Exit from a process</description>
+    <struct>
+      <field name="event_data1"> <description>Data associated with event</description> <uint size=4/> </field>
+      <field name="event_data2"> <description>Data associated with event</description> <uint size=4/> </field>
+     </struct>
+  </event>
+
+</facility>
+
+

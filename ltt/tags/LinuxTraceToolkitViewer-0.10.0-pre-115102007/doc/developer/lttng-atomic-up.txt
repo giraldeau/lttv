@@ -1,0 +1,131 @@
+
+Atomic UP test results.
+
+
+
+
+using test-time-probe2.ko
+
+Clock speed : cpu MHz         : 3000.077
+
+Tracing inactive
+
+[  125.787229] test init
+[  125.787303] test results : time per probe
+[  125.787306] number of loops : 20000
+[  125.787309] total time : 204413
+[  125.787312] test end
+[  175.660402] test init
+[  175.660475] test results : time per probe
+[  175.660479] number of loops : 20000
+[  175.660482] total time : 203468
+[  175.660484] test end
+[  179.337362] test init
+[  179.337436] test results : time per probe
+[  179.337440] number of loops : 20000
+[  179.337443] total time : 204757
+[  179.337446] test end
+
+Res : 10.21 cycles per loop
+
+Atomic UP, one trace, flight recorder.
+
+[  357.983971] test init
+[  357.988837] test results : time per probe
+[  357.988843] number of loops : 20000
+[  357.988846] total time : 12349013
+[  357.988849] test end
+[  358.718896] test init
+[  358.723049] test results : time per probe
+[  358.723053] number of loops : 20000
+[  358.723057] total time : 12332497
+[  358.723059] test end
+[  359.422038] test init
+[  359.426173] test results : time per probe
+[  359.426179] number of loops : 20000
+[  359.426182] total time : 12332535
+[  359.426185] test end
+
+Res : 616.90 cycles per loop.
+205.63 ns per loop
+
+Atomic SMP, one trace, flight.
+
+
+[  111.694180] test init
+[  111.700191] test results : time per probe
+[  111.700198] number of loops : 20000
+[  111.700201] total time : 16925670
+[  111.700204] test end
+[  112.285716] test init
+[  112.291321] test results : time per probe
+[  112.291326] number of loops : 20000
+[  112.291329] total time : 16766633
+[  112.291332] test end
+[  112.880602] test init
+[  112.884739] test results : time per probe
+[  112.884743] number of loops : 20000
+[  112.884746] total time : 12358237
+[  112.884748] test end
+
+Res : 767.51 cycles per loop
+255.83 ns per loop
+
+(205.63-255.83)/255.83 * 100% = 19.62 %
+
+
+Difference between
+cmpxchg 2967855/20000 = 148.39 cycles or 49.46 ns
+cmpxchg-up 540577/20000 = 27.02 cycles or 9.00 ns
+irq save/restore 12636562/20000 = 631.82 cycles 210.60 ns
+
+
+
+* Memory ordering
+
+offset
+written by local CPU
+read by local CPU and other CPUs (reader)
+
+commit count
+written by local CPU
+read by local CPU and other CPUs (reader)
+
+consumed
+written by any CPU
+read by any CPU
+
+data
+written by local CPU
+read by any CPU
+
+
+test done in the reader :
+if ( consumed < offset )
+  if ( subbuf.commit_count == multiple of SUBBUFSIZE)
+    read data
+    inc consumed
+
+
+We must guarantee the following ordering :
+* offset
+Seen from the local CPU :
+offset must always be incremented before the data is written (already
+consistent)
+
+Seen from other cpus :
+offset and data can be written out of order
+(because offset is always incremented : in an out of order case, offset is lower
+than the actual data ready, but the commit_count _has_ to be incremented to read
+the data (and is preceded by a store fence)
+
+* commit_count
+commit_count must always be seen by other CPUs after the data has been written.
+Therefore, we must put a store fence before the commit_count write. (smp_wmb)
+
+* consumed
+Rarely updated, use LOCK prefix. Acts as a full memory barrier.
+
+
+
+Mathieu Desnoyers, November 2006

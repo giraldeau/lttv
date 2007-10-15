@@ -1,0 +1,12 @@
+
+Random notes on Java instrumentation
+
+Mathieu Desnoyers, May 2006
+
+http://www.nag.com/IndustryArticles/CallingCLibraryRoutinesfromJava.pdf
+Use : Java Native Interface (JNI)
+
+String :
+http://java.sun.com/developer/onlineTraining/Programming/JDCBook/jnistring.html
+http://java.sun.com/docs/books/jni/html/objtypes.html
+
