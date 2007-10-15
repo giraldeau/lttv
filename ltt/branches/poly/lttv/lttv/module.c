@@ -600,6 +600,8 @@ static void destroy()
   g_assert(libraries->len <= 1); 
 
   initialized = FALSE;
+
+  exit(0);
 }
 
 LTTV_MODULE("module", "Modules in libraries",			      \
