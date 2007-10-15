@@ -30,7 +30,7 @@
 #include "lttv_plugin_cfv.h"
 #include "eventhooks.h"
 
-#include "hGuiControlFlowInsert.xpm"
+#include "resouceview_icon.xpm"
 #include "hLegendInsert.xpm"
 
 GQuark LTT_NAME_CPU;
