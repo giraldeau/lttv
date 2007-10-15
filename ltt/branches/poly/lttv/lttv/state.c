@@ -1656,6 +1656,7 @@ create_name_tables(LttvTraceState *tcs)
 //      }
 //    }
 
+    name_tables->nb_syscalls = 256;
     name_tables->syscall_names = g_new(GQuark, 256);
     for(i = 0 ; i < 256 ; i++) {
       g_string_printf(fe_name, "syscall %d", i);
