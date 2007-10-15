@@ -64,7 +64,6 @@ static inline struct marker_info *marker_get_info_from_name(LttTrace *trace,
     GQuark name)
 {
   gpointer orig_key, value;
-  guint16 id;
   int res;
 
   res = g_hash_table_lookup_extended(trace->markers_hash, (gconstpointer)name,
