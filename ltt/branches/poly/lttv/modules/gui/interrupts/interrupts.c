@@ -86,7 +86,6 @@ Xa: Frequency  (Hz)
 #include "hInterruptsInsert.xpm" 
 
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
-#define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
 #define NO_ITEMS 0
   
 typedef struct 
@@ -166,7 +165,6 @@ static GtkWidget *interrupts(LttvPlugin *plugin);
 static InterruptEventData *system_info(LttvPluginTab *ptab);
 void interrupt_destructor(InterruptEventData *event_viewer_data);
 static void FirstRequest(InterruptEventData *event_data );  
-static guint64 get_interrupt_id(LttEvent *e);
 static gboolean trace_header(void *hook_data, void *call_data);
 static gboolean DisplayViewer (void *hook_data, void *call_data);
 static void CalculateData(LttTime time_exit,  guint cpu_id,  InterruptEventData *event_data);
@@ -177,7 +175,7 @@ static gboolean SecondRequest(void *hook_data, void *call_data);
 static void CalculateAverageDurationForEachIrqId(InterruptEventData *event_data);
 static gboolean SecondRequestIrqEntryCallback(void *hook_data, void *call_data);
 static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data);
-static void CalculateXi(LttEvent *event, InterruptEventData *event_data);
+static void CalculateXi(LttEvent *event, InterruptEventData *event_data, guint cpu_id);
 static void  SumItems(gint irq_id, LttTime Xi, InterruptEventData *event_data);
 static int CalculateDurationStandardDeviation(gint id, InterruptEventData *event_data);
 static int CalculatePeriodStandardDeviation(gint id, InterruptEventData *event_data);
@@ -434,7 +432,7 @@ static void FirstRequest(InterruptEventData *event_data )
    
   EventsRequest *events_request;
   
-  LttvTraceHookByFacility *thf;
+  LttvTraceHook *th;
   
   LttvTracesetContext *tsc = lttvwindow_get_traceset_context(event_data->tab);
   
@@ -449,9 +447,7 @@ static void FirstRequest(InterruptEventData *event_data )
   for(i = 0 ; i < nb_trace ; i++) {
         events_request = g_new(EventsRequest, 1); 
 	
-      	hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
-      	
-	hooks = g_array_set_size(hooks, 2);
+      	hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 2);
     
 	event_data->hooks_trace_before = lttv_hooks_new();
 	
@@ -465,37 +461,34 @@ static void FirstRequest(InterruptEventData *event_data )
  	/* Get a trace state */
 	ts = (LttvTraceState *)tsc->traces[i];
 	/* Create event_by_Id hooks */
-  	event_data->event_by_id_hooks = lttv_hooks_by_id_new();
+ 	event_data->event_by_id_hooks = lttv_hooks_by_id_new();
   
  	/*Register event_by_id_hooks with a callback function*/ 
-          ret = lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
-		LTT_FIELD_IRQ_ID, 0, 0,
+        lttv_trace_find_hook(ts->parent.t,
+		LTT_FACILITY_KERNEL,
+                LTT_EVENT_IRQ_ENTRY,
+		FIELD_ARRAY(LTT_FIELD_IRQ_ID),
 		FirstRequestIrqEntryCallback,
 		events_request,
-		&g_array_index(hooks, LttvTraceHook, 0));
+		&hooks);
 	 
-	 ret = lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
-		LTT_FIELD_IRQ_ID, 0, 0,
+	lttv_trace_find_hook(ts->parent.t,
+		LTT_FACILITY_KERNEL,
+                LTT_EVENT_IRQ_EXIT,
+		NULL,
 		FirstRequestIrqExitCallback,
 		events_request,
-		&g_array_index(hooks, LttvTraceHook, 1));
+		&hooks);
 		
-	  g_assert(!ret);
  	 /*iterate through the facility list*/
 	for(k = 0 ; k < hooks->len; k++) 
 	{ 
-	        hook = &g_array_index(hooks, LttvTraceHook, k);
-		for(l=0; l<hook->fac_list->len; l++) 
-		{
-			thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l); 
-			lttv_hooks_add(lttv_hooks_by_id_find(event_data->event_by_id_hooks, thf->id),
-				thf->h,
-				event_data,
-				LTTV_PRIO_DEFAULT);
+		th = &g_array_index(hooks, LttvTraceHook, k); 
+		lttv_hooks_add(lttv_hooks_by_id_find(event_data->event_by_id_hooks, th->id),
+			th->h,
+			th,
+			LTTV_PRIO_DEFAULT);
 			 
-		}
 	}
 	/* Initalize the EventsRequest structure */
 	events_request->owner       = event_data; 
@@ -539,14 +532,16 @@ static gboolean FirstRequestIrqEntryCallback(void *hook_data, void *call_data)
   irq_entry entry;
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook*) hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
+  InterruptEventData *event_data = events_request->viewer_data;
   GArray* FirstRequestIrqEntry  = event_data->FirstRequestIrqEntry; 
   LttEvent *e = ltt_tracefile_get_event(tfc->tf); 
   event_time = ltt_event_time(e);
-  cpu_id = ltt_event_cpu_id(e);
+  cpu_id = tfs->cpu;
    
   
-  entry.id =get_interrupt_id(e);	  
+  entry.id = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));	  
   entry.cpu_id = cpu_id;
   entry.event_time =  event_time;		
   g_array_append_val (FirstRequestIrqEntry, entry);
@@ -554,27 +549,6 @@ static gboolean FirstRequestIrqEntryCallback(void *hook_data, void *call_data)
   return FALSE;
 }
 
-/**
- *  This function gets the id of the interrupt. The id is stored in a dynamic structure. 
- *  Refer to the print.c file for how to extract data from a dynamic structure.
- */ 
-static guint64 get_interrupt_id(LttEvent *e)
-{
-  guint i, num_fields;
-  LttEventType *event_type;
-  LttField *element;  
-  LttField *field;
-   guint64  irq_id;
-  event_type = ltt_event_eventtype(e);
-  num_fields = ltt_eventtype_num_fields(event_type);
-  for(i = 0 ; i < num_fields-1 ; i++) 
-  {   
-        field = ltt_eventtype_field(event_type, i);
-  	irq_id = ltt_event_get_long_unsigned(e,field);
-  }
-  return  irq_id;
-
-} 
 /**
  *  This function is called whenever an irq_exit event occurs.  
  *  
@@ -585,11 +559,12 @@ gboolean FirstRequestIrqExitCallback(void *hook_data, void *call_data)
   unsigned cpu_id;
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook*) hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
+  InterruptEventData *event_data = events_request->viewer_data;
   LttEvent *e = ltt_tracefile_get_event(tfc->tf);
-  LttEventType *type = ltt_event_eventtype(e);
   event_time = ltt_event_time(e);
-  cpu_id = ltt_event_cpu_id(e);
+  cpu_id = tfs->cpu;
   
   CalculateData( event_time,  cpu_id, event_data);
    
@@ -718,7 +693,7 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
    
   EventsRequest *events_request;
   
-  LttvTraceHookByFacility *thf;
+  LttvTraceHook *th;
   
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
   
@@ -736,10 +711,8 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
   // fixed for(i = 0; i<MIN(TRACE_NUMBER+1, nb_trace);i++) {
         events_request = g_new(EventsRequest, 1); 
 	
-      	hooks = g_array_new(FALSE, FALSE, sizeof(LttvTraceHook));
+      	hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 2);
       	
-	hooks = g_array_set_size(hooks, 2);
-    
 	event_data->hooks_trace_after = lttv_hooks_new();
   	
 	/* Registers a hook function */
@@ -752,34 +725,32 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
   
  	/*Register event_by_id_hooks with a callback function*/ 
           ret = lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY,
-		LTT_FIELD_IRQ_ID, 0, 0,
+		LTT_FACILITY_KERNEL,
+		LTT_EVENT_IRQ_ENTRY,
+		FIELD_ARRAY(LTT_FIELD_IRQ_ID),
 		SecondRequestIrqEntryCallback,
 		events_request,
-		&g_array_index(hooks, LttvTraceHook, 0));
+		&hooks);
 	 
 	 ret = lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT,
-		LTT_FIELD_IRQ_ID, 0, 0,
+		LTT_FACILITY_KERNEL,
+		LTT_EVENT_IRQ_EXIT,
+		NULL,
 		SecondRequestIrqExitCallback,
 		events_request,
-		&g_array_index(hooks, LttvTraceHook, 1));
+		&hooks);
 		
 	  g_assert(!ret);
 	  
  	/* iterate through the facility list */
 	for(k = 0 ; k < hooks->len; k++) 
 	{ 
-	        hook = &g_array_index(hooks, LttvTraceHook, k);
-		for(l=0; l<hook->fac_list->len; l++) 
-		{
-			thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l); 
-			lttv_hooks_add(lttv_hooks_by_id_find(event_data->event_by_id_hooks, thf->id),
-				thf->h,
-				event_data,
-				LTTV_PRIO_DEFAULT);
+		th = &g_array_index(hooks, LttvTraceHook, k); 
+		lttv_hooks_add(lttv_hooks_by_id_find(event_data->event_by_id_hooks, th->id),
+			th->h,
+			th,
+			LTTV_PRIO_DEFAULT);
 			 
-		}
 	}
 	/* Initalize the EventsRequest structure */
 	events_request->owner       = event_data; 
@@ -847,14 +818,16 @@ static gboolean SecondRequestIrqEntryCallback(void *hook_data, void *call_data)
   irq_entry entry;
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
+  InterruptEventData *event_data = events_request->viewer_data;
   GArray* SecondRequestIrqEntry  = event_data->SecondRequestIrqEntry; 
   LttEvent *e = ltt_tracefile_get_event(tfc->tf); 
   event_time = ltt_event_time(e);
-  cpu_id = ltt_event_cpu_id(e);
+  cpu_id = tfs->cpu;
    
   
-  entry.id =get_interrupt_id(e);	  
+  entry.id = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));	  
   entry.cpu_id = cpu_id;
   entry.event_time =  event_time;		
   g_array_append_val (SecondRequestIrqEntry, entry);
@@ -871,10 +844,13 @@ static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data)
    
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
-  InterruptEventData *event_data = (InterruptEventData *)hook_data;
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  EventsRequest *events_request = (EventsRequest*)th->hook_data;
+  InterruptEventData *event_data = events_request->viewer_data;
+  
   LttEvent *event = ltt_tracefile_get_event(tfc->tf);
   
-  CalculateXi(event, event_data);
+  CalculateXi(event, event_data, tfs->cpu);
   return FALSE;
 } 
 
@@ -883,17 +859,15 @@ static gboolean SecondRequestIrqExitCallback(void *hook_data, void *call_data)
  *  This function is called whenever an irq_exit event occurs in the second request.  
  *  
  */ 
-static void CalculateXi(LttEvent *event_irq_exit, InterruptEventData *event_data)
+static void CalculateXi(LttEvent *event_irq_exit, InterruptEventData *event_data, guint cpu_id)
 {
   gint i, irq_id;
   irq_entry *element; 
   LttTime Xi;
   LttTime  exit_time; 
-  unsigned cpu_id;
   
   GArray *SecondRequestIrqExit = event_data->SecondRequestIrqExit;
   GArray *SecondRequestIrqEntry = event_data->SecondRequestIrqEntry;
-  cpu_id = ltt_event_cpu_id(event_irq_exit);
   for(i = 0; i < SecondRequestIrqEntry->len; i++)
   {
     element = &g_array_index(SecondRequestIrqEntry,irq_entry,i);
