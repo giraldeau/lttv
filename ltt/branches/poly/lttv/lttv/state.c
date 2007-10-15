@@ -1479,7 +1479,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
 
 static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
 {
-  guint i, nb_tracefile, nb_cpus;
+  guint i, nb_tracefile, nb_cpus, nb_irqs;
 
   LttvTracefileState *tfcs;
 
@@ -1514,6 +1514,22 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
   g_assert(type == LTTV_POINTER);
   running_process = *(value.v_pointer);
   g_free(running_process);
+
+  /* free cpu resource states */
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_CPUS, &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_cpu_states(self->cpu_states, nb_cpus);
+
+  /* free irq resource states */
+  nb_irqs = self->nb_irqs;
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_IRQS, &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_irq_states(self->irq_states, nb_irqs);
+
+  /* free the blkdev states */
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_BLKDEVS, &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_blkdev_hashtable(self->bdev_states);
 
   nb_tracefile = self->parent.tracefiles->len;
 
