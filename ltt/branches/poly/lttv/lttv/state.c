@@ -1155,7 +1155,7 @@ static void lttv_state_free_cpu_states(LttvCPUState *states, guint n)
   guint i;
 
   for(i=0; i<n; i++) {
-    g_array_free(states[i].mode_stack, FALSE);
+    g_array_free(states[i].mode_stack, TRUE);
   }
 
   g_free(states);
@@ -1184,7 +1184,7 @@ static void lttv_state_free_irq_states(LttvIRQState *states, guint n)
   guint i;
 
   for(i=0; i<n; i++) {
-    g_array_free(states[i].mode_stack, FALSE);
+    g_array_free(states[i].mode_stack, TRUE);
   }
 
   g_free(states);
@@ -1221,7 +1221,7 @@ static LttvBdevState *bdevstate_new(void)
 
 static void bdevstate_free(LttvBdevState *bds)
 {
-  g_array_free(bds->mode_stack, FALSE);
+  g_array_free(bds->mode_stack, TRUE);
   g_free(bds);
 }
 
