@@ -362,10 +362,6 @@ int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 			ret = WEXITSTATUS(status);
 		if(ret) goto start_error;
 
-		printf("Creating supplementary trace files\n");
-		ret = create_eventdefs();
-		if(ret) goto start_error;
-
 	} else if(pid == 0) {
 		/* child */
 		int ret;
