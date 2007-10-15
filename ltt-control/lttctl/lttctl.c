@@ -36,7 +36,6 @@ enum trace_ctl_op {
 	CTL_OP_STOP,
 	CTL_OP_DAEMON,
 	CTL_OP_DAEMON_HYBRID_FINISH,
-	CTL_OP_DESCRIPTION,
 	CTL_OP_NONE
 };
 
@@ -76,7 +75,7 @@ void show_arguments(void)
 	printf("-q            Stop tracing.\n");
 	printf("-d            Create trace, spawn a lttd daemon, start tracing.\n");
 	printf("              (optionally, you can set LTT_DAEMON\n");
-	printf("              and the LTT_FACILITIES env. vars.)\n");
+	printf("              env. var.)\n");
 	printf("-f            Stop tracing, dump flight recorder trace, destroy channels\n");
 	printf("              (for hybrid traces)\n");
 	printf("-t            Trace root path. (ex. /root/traces/example_trace)\n");
@@ -88,7 +87,6 @@ void show_arguments(void)
 	printf("-B            Number of medium data rate subbuffers\n");
 	printf("-z            Size of the high data rate subbuffers (will be rounded to next page size)\n");
 	printf("-x            Number of high data rate subbuffers\n");
-	printf("-e            Get XML facilities description\n");
 	printf("-a            Append to trace\n");
 	printf("-N            Number of lttd threads\n");
 	printf("\n");
@@ -234,9 +232,6 @@ int parse_arguments(int argc, char **argv)
 					case 'f':
 						op = CTL_OP_DAEMON_HYBRID_FINISH;
 						break;
-					case 'e':
-						op = CTL_OP_DESCRIPTION;
-						break;
 					case 't':
 						if(argn+1 < argc) {
 							trace_root = argv[argn+1];
@@ -290,7 +285,7 @@ int parse_arguments(int argc, char **argv)
 		argn++;
 	}
 	
-	if(op != CTL_OP_DESCRIPTION && trace_name == NULL) {
+	if(trace_name == NULL) {
 		printf("Please specify a trace name.\n");
 		printf("\n");
 		ret = EINVAL;
@@ -315,14 +310,6 @@ int parse_arguments(int argc, char **argv)
 		}
 	}
 
-	if(op == CTL_OP_DESCRIPTION) {
-		if(trace_root == NULL) {
-			printf("Please specify -t trace_root_path with the -e option.\n");
-			printf("\n");
-			ret = EINVAL;
-		}
-	}
-
 	return ret;
 }
 
@@ -335,103 +322,6 @@ void show_info(void)
 		printf("\n");
 	}
 }
-
-int create_eventdefs(void)
-{
-	int ret = 0;
-	char eventdefs_path[PATH_MAX];
-	char eventdefs_file[PATH_MAX];
-	char facilities_file[PATH_MAX];
-	char read_buf[BUF_SIZE];
-	struct dirent *entry;
-	char *facilities_path = getenv("LTT_FACILITIES");
-	if(facilities_path == NULL) facilities_path =
-					PACKAGE_DATA_DIR "/" PACKAGE "/facilities";
-
-	ret = mkdir(trace_root, S_IRWXU|S_IRWXG|S_IRWXO);
-	if(ret == -1 && errno != EEXIST) {
-		ret = errno;
-		perror("Cannot create trace_root directory");
-		printf("trace_root is %s\n", trace_root);
-		goto error;
-	}
-	ret = 0;
-	
-	size_t trace_root_len = strlen(trace_root);
-	strncpy(eventdefs_path, trace_root, PATH_MAX);
-	strncat(eventdefs_path, "/eventdefs/", PATH_MAX - trace_root_len);
-	size_t eventdefs_path_len = strlen(eventdefs_path);
-	ret = mkdir(eventdefs_path, S_IRWXU|S_IRWXG|S_IRWXO);
-	if(ret == -1 && (!append_trace || errno != EEXIST)) {
-		ret = errno;
-		perror("Cannot create eventdefs directory");
-		goto error;
-	}
-	ret = 0;
-	
-	DIR *facilities_dir = opendir(facilities_path);
-	
-	if(facilities_dir == NULL) {
-		perror("Cannot open facilities directory");
-		ret = EEXIST;
-		goto error;
-	}
-
-	while((entry = readdir(facilities_dir)) != NULL) {
-		if(entry->d_name[0] == '.') continue;
-		
-		printf("Appending facility file %s\n", entry->d_name);
-		strncpy(eventdefs_file, eventdefs_path, PATH_MAX);
-		strncat(eventdefs_file, entry->d_name, PATH_MAX - eventdefs_path_len);
-		/* Append to the file */
-		FILE *dest = fopen(eventdefs_file, "a");
-		if(!dest) {
-			perror("Cannot create eventdefs file");
-			continue;
-		}
-		strncpy(facilities_file, facilities_path, PATH_MAX);
-		size_t facilities_dir_len = strlen(facilities_path);
-		strncat(facilities_file, "/", PATH_MAX - facilities_dir_len);
-		strncat(facilities_file, entry->d_name, PATH_MAX - facilities_dir_len-1);
-		FILE *src = fopen(facilities_file, "r");
-		if(!src) {
-			ret = errno;
-			perror("Cannot open eventdefs file for reading");
-			goto close_dest;
-		}
-
-		do {
-			size_t read_size, write_size;
-			read_size = fread(read_buf, sizeof(char), BUF_SIZE, src);
-			if(ferror(src)) {
-				ret = errno;
-				perror("Cannot read eventdefs file");
-				goto close_src;
-			}
-			write_size = fwrite(read_buf, sizeof(char), read_size, dest);
-			if(ferror(dest)) {
-				ret = errno;
-				perror("Cannot write eventdefs file");
-				goto close_src;
-			}
-		} while(!feof(src));
-
-		/* Add spacing between facilities */
-		fwrite("\n", 1, 1, dest);
-		
-close_src:
-		fclose(src);
-close_dest:
-		fclose(dest);
-	}
-
-	closedir(facilities_dir);
-
-error:
-	return ret;
-
-}
-
 
 int lttctl_daemon(struct lttctl_handle *handle, char *trace_name)
 {
@@ -640,9 +530,6 @@ int main(int argc, char ** argv)
 			break;
 		case CTL_OP_DAEMON_HYBRID_FINISH:
 			ret = lttctl_daemon_hybrid_finish(handle, trace_name);
-			break;
-		case CTL_OP_DESCRIPTION:
-			ret = create_eventdefs();
 			break;
 		case CTL_OP_NONE:
 			break;
