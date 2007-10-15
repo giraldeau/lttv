@@ -2565,9 +2565,18 @@ static gboolean schedchange(void *hook_data, void *call_data)
 
   /* update cpu status */
   if(pid_in == 0)
+    /* going to idle task */
     cpu_set_base_mode(s->cpu_state, LTTV_CPU_IDLE);
-  else
+  else {
+    /* scheduling a real task.
+     * we must be careful here:
+     * if we just schedule()'ed to a process that is
+     * in a trap, we must put the cpu in trap mode
+     */
     cpu_set_base_mode(s->cpu_state, LTTV_CPU_BUSY);
+    if(process->state->t == LTTV_STATE_TRAP)
+      cpu_push_mode(s->cpu_state, LTTV_CPU_TRAP);
+  }
 
   return FALSE;
 }
