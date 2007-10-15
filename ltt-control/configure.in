@@ -23,7 +23,7 @@
 AC_PREREQ(2.57)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 #AC_WITH_LTDL  # not needed ?
-AM_INIT_AUTOMAKE(ltt-control,0.44-21092007)
+AM_INIT_AUTOMAKE(ltt-control,0.45-11102007)
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
@@ -86,6 +86,5 @@ AC_CONFIG_FILES([Makefile
      liblttctl/Makefile
      lttctl/Makefile
      lttd/Makefile
-     facilities/Makefile
      specs/Makefile])
 AC_OUTPUT

@@ -813,7 +813,6 @@ close_channel:
 	return (void*)ret;
 }
 
-
 int main(int argc, char ** argv)
 {
 	int ret = 0;
@@ -850,9 +849,9 @@ int main(int argc, char ** argv)
 	sigaction(SIGQUIT, &act, NULL);
 	sigaction(SIGINT, &act, NULL);
 
-
 	tids = malloc(sizeof(pthread_t) * num_threads);
 	for(i=0; i<num_threads; i++) {
+
 		ret = pthread_create(&tids[i], NULL, thread_main, (void*)i);
 		if(ret) {
 			perror("Error creating thread");
