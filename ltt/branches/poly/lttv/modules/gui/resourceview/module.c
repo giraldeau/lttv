@@ -30,7 +30,7 @@
 #include "lttv_plugin_cfv.h"
 #include "eventhooks.h"
 
-#include "resouceview_icon.xpm"
+#include "resourceview_icon.xpm"
 #include "hLegendInsert.xpm"
 
 GQuark LTT_NAME_CPU;
@@ -57,7 +57,7 @@ static void init() {
   lttvwindow_register_constructor("resourceview",
                                   "/",
                                   "Insert Resource Viewer",
-                                  hGuiControlFlowInsert_xpm,
+                                  resourceview_icon_xpm,
                                   "Insert Resource Viewer",
                                   h_resourceview);
   
