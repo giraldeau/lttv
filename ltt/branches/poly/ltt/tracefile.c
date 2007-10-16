@@ -1874,6 +1874,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
     pos += sizeof(guint16);
   } else {
     /* Compact event */
+    event->event_size = 0xFFFF;
   }
 
   if (a_event_debug)
@@ -2113,6 +2114,7 @@ void ltt_update_event_size(LttTracefile *tf)
   }
 
   info = marker_get_info_from_id(tf->trace, tf->event.event_id);
+
   if (tf->event.event_id >= MARKER_CORE_IDS)
     g_assert(info != NULL);
 

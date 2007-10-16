@@ -52,7 +52,7 @@ static inline guint16 marker_get_id_from_info(LttTrace *trace,
 static inline struct marker_info *marker_get_info_from_id(LttTrace *trace,
     guint16 id)
 {
-  if (unlikely(trace->markers->len < id))
+  if (unlikely(trace->markers->len <= id))
     return NULL;
   return &g_array_index(trace->markers, struct marker_info, id);
 }

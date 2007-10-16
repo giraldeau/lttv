@@ -440,6 +440,7 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   info->pointer_size = pointer_size;
   info->size_t_size = size_t_size;
   info->alignment = alignment;
+  info->fields = NULL;
   info->next = NULL;
   head = marker_get_info_from_name(trace, name);
   if (!head)
