@@ -26,7 +26,7 @@
 
 #include <lttv/module.h>
 #include <gmodule.h>
-
+#include <stdlib.h>
 
 struct _LttvLibrary
 {
