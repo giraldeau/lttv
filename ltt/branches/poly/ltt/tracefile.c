@@ -41,7 +41,6 @@
 #include <stdlib.h>
 
 
-#include "parser.h"
 #include <ltt/ltt.h>
 #include "ltt-private.h"
 #include <ltt/trace.h>
