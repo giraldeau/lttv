@@ -22,7 +22,8 @@ lttinclude_HEADERS = \
 	ltt.h\
 	time.h\
 	trace.h\
-	marker-desc.h \
+	event.h\
+	marker-desc.h\
 	ltt-types.h
 
 EXTRA_DIST = crc32.tab
