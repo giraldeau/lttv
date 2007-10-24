@@ -51,14 +51,11 @@
 #include "eventhooks.h"
 
 #include "hGuiControlFlowInsert.xpm"
-#include "hLegendInsert.xpm"
 
 GQuark LTT_NAME_CPU;
 
 /** Array containing instanced objects. Used when module is unloaded */
 GSList *g_control_flow_data_list = NULL ;
-
-GSList *g_legend_list = NULL ;
 
 /*****************************************************************************
  *                 Functions for module loading/unloading                    *
@@ -81,14 +78,6 @@ static void init() {
                                   "Insert Control Flow Viewer",
                                   h_guicontrolflow);
   
-  lttvwindow_register_constructor("guicontrolflowlegend",
-                                  "/",
-                                  "Popup Control Flow Viewer Legend",
-                                  hLegendInsert_xpm,
-                                  "Popup Control Flow Viewer Legend",
-                                  h_legend);
-
-
   LTT_NAME_CPU = g_quark_from_string("/cpu");
 }
 
@@ -97,13 +86,6 @@ void destroy_walk(gpointer data, gpointer user_data)
   g_info("Walk destroy GUI Control Flow Viewer");
   guicontrolflow_destructor_full((LttvPluginCFV*)data);
 }
-
-void destroy_legend_walk(gpointer data, gpointer user_data)
-{
-  g_info("Walk destroy GUI Control Flow Viewer");
-  legend_destructor((GtkWindow*)data);
-}
-
 
 
 /**
@@ -119,13 +101,10 @@ static void destroy() {
   
   g_slist_free(g_control_flow_data_list);
 
-  g_slist_foreach(g_legend_list, destroy_legend_walk, NULL );
-  
   g_slist_free(g_control_flow_data_list);
   
   /* Unregister the toolbar insert button and menu entry */
   lttvwindow_unregister_constructor(h_guicontrolflow);
-  lttvwindow_unregister_constructor(h_legend);
 }
 
 

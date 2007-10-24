@@ -119,6 +119,20 @@ static void        filter_button      (GtkToolButton *toolbutton,
   //FIXME : viewer returned.
 }
 
+static void legend_button(GtkToolButton *toolbutton, gpointer user_data)
+{
+  GtkWindow *legend = GTK_WINDOW(gtk_window_new(GTK_WINDOW_TOPLEVEL));
+ 
+  gtk_window_set_title(legend, "Control Flow View Legend");
+
+  GtkWidget *pixmap = create_pixmap(GTK_WIDGET(legend), "lttv-color-list.png");
+  
+  gtk_container_add(GTK_CONTAINER(legend), GTK_WIDGET(pixmap));
+
+  gtk_widget_show(GTK_WIDGET(pixmap));
+  gtk_widget_show(GTK_WIDGET(legend));
+}
+
 
 
 /*****************************************************************************
@@ -230,6 +244,21 @@ guicontrolflow(LttvPluginTab *ptab)
       control_flow_data->button_prop,
       1);
 
+  tmp_toolbar_icon = create_pixmap (main_window_get_widget(tab),
+      "qmark.png");
+  gtk_widget_show(tmp_toolbar_icon);
+  control_flow_data->button_legend = gtk_tool_button_new(tmp_toolbar_icon,
+      "Legend");
+  g_signal_connect (G_OBJECT(control_flow_data->button_legend),
+        "clicked",
+        G_CALLBACK (legend_button),
+        (gpointer)plugin_cfv);
+  gtk_toolbar_insert(GTK_TOOLBAR(control_flow_data->toolbar),
+      control_flow_data->button_legend,
+      0);
+  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(control_flow_data->button_legend),
+      tooltips, "Show the legend", NULL);
+
   gtk_toolbar_set_style(GTK_TOOLBAR(control_flow_data->toolbar),
       GTK_TOOLBAR_ICONS);
 
@@ -266,6 +295,7 @@ guicontrolflow(LttvPluginTab *ptab)
   gtk_widget_show(control_flow_data->toolbar);
   gtk_widget_show(GTK_WIDGET(control_flow_data->button_prop));
   gtk_widget_show(GTK_WIDGET(control_flow_data->button_filter));
+  gtk_widget_show(GTK_WIDGET(control_flow_data->button_legend));
   gtk_widget_show(control_flow_data->hbox);
   
   g_object_set_data_full(

@@ -28,6 +28,7 @@ EXTRA_DIST =  \
 	close.png\
 	stock_jump_to_24.png\
 	properties.png\
-	lttv-color-list.png\
+	controlflow-legend.png\
 	guifilter22x22.png\
-	guifilter16x16.png
+	guifilter16x16.png\
+	qmark.png

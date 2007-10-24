@@ -49,6 +49,7 @@ struct _ControlFlowData {
   GtkWidget *toolbar; /* Vbox that contains the viewer's toolbar */
   GtkToolItem *button_prop; /* Properties button. */
   GtkToolItem *button_filter; /* Properties button. */
+  GtkToolItem *button_legend; /* Properties button. */
   GtkWidget *box; /* box that contains the hpaned. necessary for it to work */
   GtkWidget *h_paned;
 

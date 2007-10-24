@@ -38,5 +38,4 @@ libguicontrolflow_la_SOURCES = 	module.c eventhooks.c cfv.c processlist.c\
 noinst_HEADERS = 	eventhooks.h cfv.h processlist.h\
 				drawing.h drawitem.h lttv_plugin_cfv.h
 
-EXTRA_DIST = \
-		hGuiControlFlowInsert.xpm hLegendInsert.xpm
+EXTRA_DIST = hGuiControlFlowInsert.xpm
