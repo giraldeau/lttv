@@ -93,34 +93,6 @@ static void        property_button      (GtkToolButton *toolbutton,
 
 }
 
-/* Toolbar callbacks */
-static void        filter_button      (GtkToolButton *toolbutton,
-                                          gpointer       user_data)
-{
-  LttvPluginCFV *plugin_cfv = (LttvPluginCFV*)user_data;
-  LttvAttribute *attribute;
-  LttvAttributeValue value;
-  gboolean ret;
-  g_printf("Filter button clicked\n");
-
-  attribute = LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
-        LTTV_IATTRIBUTE(lttv_global_attributes()),
-        LTTV_VIEWER_CONSTRUCTORS));
-  g_assert(attribute);
-
-  ret = lttv_iattribute_find_by_path(LTTV_IATTRIBUTE(attribute),
-      "guifilter", LTTV_POINTER, &value);
-  g_assert(ret);
-  lttvwindow_viewer_constructor constructor =
-    (lttvwindow_viewer_constructor)*(value.v_pointer);
-  if(constructor) constructor(&plugin_cfv->parent);
-  else g_warning("Filter module not loaded.");
-
-  //FIXME : viewer returned.
-}
-
-
-
 /*****************************************************************************
  *                     Control Flow Viewer class implementation              *
  *****************************************************************************/
@@ -202,33 +174,18 @@ resourceview(LttvPluginTab *ptab)
   gtk_toolbar_set_orientation(GTK_TOOLBAR(control_flow_data->toolbar),
                               GTK_ORIENTATION_VERTICAL);
 
-  tmp_toolbar_icon = create_pixmap (main_window_get_widget(tab),
-      "guifilter16x16.png");
-  gtk_widget_show(tmp_toolbar_icon);
-  control_flow_data->button_filter = gtk_tool_button_new(tmp_toolbar_icon,
-      "Filter");
-  g_signal_connect (G_OBJECT(control_flow_data->button_filter),
-        "clicked",
-        G_CALLBACK (filter_button),
-        (gpointer)plugin_cfv);
-  gtk_toolbar_insert(GTK_TOOLBAR(control_flow_data->toolbar),
-      control_flow_data->button_filter,
-      0);
-  gtk_tool_item_set_tooltip(GTK_TOOL_ITEM(control_flow_data->button_filter),
-      tooltips, "Open the filter window", NULL);
-
-  tmp_toolbar_icon = create_pixmap (main_window_get_widget(tab),
-      "properties.png");
-  gtk_widget_show(tmp_toolbar_icon);
-  control_flow_data->button_prop = gtk_tool_button_new(tmp_toolbar_icon,
-      "Properties");
-  g_signal_connect (G_OBJECT(control_flow_data->button_prop),
-        "clicked",
-        G_CALLBACK (property_button),
-        (gpointer)control_flow_data);
-  gtk_toolbar_insert(GTK_TOOLBAR(control_flow_data->toolbar),
-      control_flow_data->button_prop,
-      1);
+//  tmp_toolbar_icon = create_pixmap (main_window_get_widget(tab),
+//      "properties.png");
+//  gtk_widget_show(tmp_toolbar_icon);
+//  control_flow_data->button_prop = gtk_tool_button_new(tmp_toolbar_icon,
+//      "Properties");
+//  g_signal_connect (G_OBJECT(control_flow_data->button_prop),
+//        "clicked",
+//        G_CALLBACK (property_button),
+//        (gpointer)control_flow_data);
+//  gtk_toolbar_insert(GTK_TOOLBAR(control_flow_data->toolbar),
+//      control_flow_data->button_prop,
+//      1);
 
   gtk_toolbar_set_style(GTK_TOOLBAR(control_flow_data->toolbar),
       GTK_TOOLBAR_ICONS);
@@ -264,8 +221,7 @@ resourceview(LttvPluginTab *ptab)
   gtk_widget_show(control_flow_data->h_paned);
   gtk_widget_show(control_flow_data->box);
   gtk_widget_show(control_flow_data->toolbar);
-  gtk_widget_show(GTK_WIDGET(control_flow_data->button_prop));
-  gtk_widget_show(GTK_WIDGET(control_flow_data->button_filter));
+//  gtk_widget_show(GTK_WIDGET(control_flow_data->button_prop));
   gtk_widget_show(control_flow_data->hbox);
   
   g_object_set_data_full(
