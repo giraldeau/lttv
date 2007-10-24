@@ -158,6 +158,7 @@ typedef enum _LttTypeEnum
 #define LTT_ARCH_TYPE_X86_64        8
 #define LTT_ARCH_TYPE_C2            9
 #define LTT_ARCH_TYPE_POWERPC       10
+#define LTT_ARCH_TYPE_X86           11
 
 /* Standard definitions for variants */
 #define LTT_ARCH_VARIANT_NONE       0  /* Main architecture implementation */
