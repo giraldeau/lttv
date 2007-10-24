@@ -293,7 +293,7 @@ guicontrolflow(LttvPluginTab *ptab)
   gtk_widget_show(control_flow_data->h_paned);
   gtk_widget_show(control_flow_data->box);
   gtk_widget_show(control_flow_data->toolbar);
-  gtk_widget_show(GTK_WIDGET(control_flow_data->button_prop));
+  //gtk_widget_show(GTK_WIDGET(control_flow_data->button_prop));
   gtk_widget_show(GTK_WIDGET(control_flow_data->button_filter));
   gtk_widget_show(GTK_WIDGET(control_flow_data->button_legend));
   gtk_widget_show(control_flow_data->hbox);
