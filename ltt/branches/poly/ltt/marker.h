@@ -73,6 +73,19 @@ static inline struct marker_info *marker_get_info_from_name(LttTrace *trace,
   return marker_get_info_from_id(trace, (guint16)(gulong)value);
 }
 
+static inline char *marker_get_format_from_name(LttTrace *trace,
+    GQuark name)
+{
+  gpointer orig_key, value;
+  int res;
+
+  res = g_hash_table_lookup_extended(trace->markers_format_hash,
+ 	 	(gconstpointer)name, &orig_key, &value);
+  if (!res)
+    return NULL;
+  return (char *)value;
+}
+
 static inline struct marker_field *marker_get_field(struct marker_info *info,
 							guint i)
 {

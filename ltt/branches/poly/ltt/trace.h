@@ -47,6 +47,7 @@ struct LttTrace {
   /* Support for markers */
   GArray    *markers;                       //indexed by marker ID
   GHashTable *markers_hash;                 //indexed by name hash
+  GHashTable *markers_format_hash;                 //indexed by name hash
 };
 
 

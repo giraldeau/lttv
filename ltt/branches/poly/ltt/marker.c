@@ -405,22 +405,23 @@ int marker_parse_format(const char *format, struct marker_info *info)
 int marker_format_event(LttTrace *trace, GQuark name, const char *format)
 {
   struct marker_info *info;
+  char *fquery;
+  char *fcopy;
   
+  fquery = marker_get_format_from_name(trace, name);
+  if (fquery)
+    if (strcmp(fquery, format) != 0)
+      g_error("Marker format mismatch \"%s\" vs \"%s\" for marker %s. "
+            "Kernel issue.", fquery, format, g_quark_to_string(name));
+
+  fcopy = g_new(char, strlen(format)+1);
+  strcpy(fcopy, format);
+  g_hash_table_insert(trace->markers_format_hash, (gpointer)name,
+    (gpointer)fcopy);
+
   info = marker_get_info_from_name(trace, name);
-  if (!info) {
-    /* We ignore marker format that does not have IDs. It just means that it
-     * is only used by someone else's probe.
-     */
-    //g_error("Got marker format \"%s\", but marker name \"%s\" has no ID yet. "
-    //        "Kernel issue.",
-    //        format, g_quark_to_string(name));
-    return 0;
-  }
   for (; info != NULL; info = info->next) {
-    if (info->format)
-      g_free(info->format);
-    info->format = g_new(char, strlen(format)+1);
-    strcpy(info->format, format);
+    info->format = fcopy;
     if (marker_parse_format(format, info))
       g_error("Error parsing marker format \"%s\" for marker \"%s\"", format,
         g_quark_to_string(name));
@@ -447,6 +448,10 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   info->alignment = alignment;
   info->fields = NULL;
   info->next = NULL;
+  info->format = marker_get_format_from_name(trace, name);
+  if (info->format && marker_parse_format(info->format, info))
+      g_error("Error parsing marker format \"%s\" for marker \"%s\"",
+        info->format, g_quark_to_string(name));
   head = marker_get_info_from_name(trace, name);
   if (!head)
     g_hash_table_insert(trace->markers_hash, (gpointer)name,
@@ -475,6 +480,10 @@ int allocate_marker_data(LttTrace *trace)
   trace->markers_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
   if (!trace->markers_hash)
     return -ENOMEM;
+  trace->markers_format_hash = g_hash_table_new_full(g_direct_hash,
+     g_direct_equal, NULL, g_free);
+  if (!trace->markers_hash)
+    return -ENOMEM;
   return 0;
 }
 
@@ -485,11 +494,10 @@ void destroy_marker_data(LttTrace *trace)
 
   for (i=0; i<trace->markers->len; i++) {
     info = &g_array_index(trace->markers, struct marker_info, i);
-    if (info->format)
-      g_free(info->format);
     if (info->fields)
       g_array_free(info->fields, TRUE);
   }
   g_array_free(trace->markers, TRUE);
   g_hash_table_destroy(trace->markers_hash);
+  g_hash_table_destroy(trace->markers_format_hash);
 }
