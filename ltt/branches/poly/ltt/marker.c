@@ -407,10 +407,15 @@ int marker_format_event(LttTrace *trace, GQuark name, const char *format)
   struct marker_info *info;
   
   info = marker_get_info_from_name(trace, name);
-  if (!info)
-    g_error("Got marker format \"%s\", but marker name \"%s\" has no ID yet. "
-            "Kernel issue.",
-            format, g_quark_to_string(name));
+  if (!info) {
+    /* We ignore marker format that does not have IDs. It just means that it
+     * is only used by someone else's probe.
+     */
+    //g_error("Got marker format \"%s\", but marker name \"%s\" has no ID yet. "
+    //        "Kernel issue.",
+    //        format, g_quark_to_string(name));
+    return 0;
+  }
   for (; info != NULL; info = info->next) {
     if (info->format)
       g_free(info->format);
