@@ -410,7 +410,7 @@ int marker_format_event(LttTrace *trace, GQuark name, const char *format)
   if (!info)
     g_error("Got marker format \"%s\", but marker name \"%s\" has no ID yet. "
             "Kernel issue.",
-            format, name);
+            format, g_quark_to_string(name));
   for (; info != NULL; info = info->next) {
     if (info->format)
       g_free(info->format);
