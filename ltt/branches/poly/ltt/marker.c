@@ -409,11 +409,13 @@ int marker_format_event(LttTrace *trace, GQuark name, const char *format)
   char *fcopy;
   
   fquery = marker_get_format_from_name(trace, name);
-  if (fquery)
+  if (fquery) {
     if (strcmp(fquery, format) != 0)
       g_error("Marker format mismatch \"%s\" vs \"%s\" for marker %s. "
             "Kernel issue.", fquery, format, g_quark_to_string(name));
-
+    else
+      return 0;  /* Already exists. Nothing to do. */
+  }
   fcopy = g_new(char, strlen(format)+1);
   strcpy(fcopy, format);
   g_hash_table_insert(trace->markers_format_hash, (gpointer)name,
