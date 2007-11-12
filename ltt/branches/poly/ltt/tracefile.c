@@ -368,7 +368,7 @@ gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
     perror("Error in allocating memory for buffer of tracefile");
     goto close_file;
   }
-  g_assert( ( (guint)tf->buffer.head&(8-1) ) == 0); // make sure it's aligned.
+  g_assert( ( (gulong)tf->buffer.head&(8-1) ) == 0); // make sure it's aligned.
   
   header = (struct ltt_block_start_header*)tf->buffer.head;
   
@@ -669,8 +669,8 @@ void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname)
 int get_tracefile_name_number(gchar *raw_name,
                               GQuark *name,
                               guint *num,
-                              guint *tid,
-                              guint *pgid,
+                              gulong *tid,
+                              gulong *pgid,
                               guint64 *creation)
 {
   guint raw_name_len = strlen(raw_name);
@@ -881,10 +881,12 @@ int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_path)
       if(ret < 0) continue;
     } else if(S_ISREG(stat_buf.st_mode)) {
       GQuark name;
-      guint num, tid, pgid;
+      guint num;
+      gulong tid, pgid;
       guint64 creation;
       GArray *group;
-      num = tid = pgid = 0;
+      num = 0;
+      tid = pgid = 0;
       creation = 0;
       if(get_tracefile_name_number(rel_path, &name, &num, &tid, &pgid, &creation))
         continue; /* invalid name */
@@ -1933,7 +1935,7 @@ gint map_block(LttTracefile * tf, guint block_num)
     g_assert(0);
     goto map_error;
   }
-  g_assert( ( (guint)tf->buffer.head&(8-1) ) == 0); // make sure it's aligned.
+  g_assert( ( (gulong)tf->buffer.head&(8-1) ) == 0); // make sure it's aligned.
   
 
   tf->buffer.index = block_num;

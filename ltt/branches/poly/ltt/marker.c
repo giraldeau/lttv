@@ -418,7 +418,7 @@ int marker_format_event(LttTrace *trace, GQuark name, const char *format)
   }
   fcopy = g_new(char, strlen(format)+1);
   strcpy(fcopy, format);
-  g_hash_table_insert(trace->markers_format_hash, (gpointer)name,
+  g_hash_table_insert(trace->markers_format_hash, (gpointer)(gulong)name,
     (gpointer)fcopy);
 
   info = marker_get_info_from_name(trace, name);
@@ -456,7 +456,7 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
         info->format, g_quark_to_string(name));
   head = marker_get_info_from_name(trace, name);
   if (!head)
-    g_hash_table_insert(trace->markers_hash, (gpointer)name,
+    g_hash_table_insert(trace->markers_hash, (gpointer)(gulong)name,
       (gpointer)(gulong)id);
   else {
     struct marker_info *iter;
@@ -464,7 +464,7 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
       if (iter->name == name)
         found = 1;
     if (!found) {
-      g_hash_table_replace(trace->markers_hash, (gpointer)name,
+      g_hash_table_replace(trace->markers_hash, (gpointer)(gulong)name,
         (gpointer)(gulong)id);
       info->next = head;
     }
