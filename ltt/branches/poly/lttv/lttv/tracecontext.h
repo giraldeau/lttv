@@ -210,7 +210,7 @@ void lttv_process_traceset_begin(LttvTracesetContext *self,
 
 guint lttv_process_traceset_middle(LttvTracesetContext *self,
                               LttTime end, 
-                              guint nb_events,
+                              gulong nb_events,
                               const LttvTracesetContextPosition *end_position);
 
 void lttv_process_traceset_end(LttvTracesetContext *self,
