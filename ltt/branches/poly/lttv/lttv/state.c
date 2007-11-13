@@ -2139,7 +2139,7 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
  * the parent waits for its child terminaison, but may also happen in special
  * cases in the child's exit : when the parent ignores its children SIGCCHLD or
  * has the flag SA_NOCLDWAIT. It can also happen when the child is part
- * of a killed thread ground, but isn't the leader.
+ * of a killed thread group, but isn't the leader.
  */
 static void exit_process(LttvTracefileState *tfs, LttvProcessState *process) 
 {
