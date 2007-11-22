@@ -253,7 +253,10 @@ static void lttv_state_free_usertraces(GHashTable *usertraces)
   g_hash_table_destroy(usertraces);
 }
 
-
+gboolean rettrue(gpointer key, gpointer value, gpointer user_data)
+{
+	return TRUE;
+}
 
 static void
 restore_init_state(LttvTraceState *self)
@@ -316,7 +319,8 @@ restore_init_state(LttvTraceState *self)
 
   /* reset bdev states */
   g_hash_table_foreach(self->bdev_states, bdevstate_free_cb, NULL);
-  g_hash_table_steal_all(self->bdev_states);
+  //g_hash_table_steal_all(self->bdev_states);
+  g_hash_table_foreach_steal(self->bdev_states, rettrue, NULL);
   
 #if 0
   nb_tracefile = self->parent.tracefiles->len;
