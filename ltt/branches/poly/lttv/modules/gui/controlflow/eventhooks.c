@@ -397,7 +397,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
           if(ltt_time_compare(evtime, time_window.start_time) == -1
                 || ltt_time_compare(evtime, time_window.end_time) == 1)
-                    return;
+                    return FALSE;
 #endif //EXTRA_CHECK
           Drawing_t *drawing = control_flow_data->drawing;
           guint width = drawing->width;
@@ -422,7 +422,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
         if(ltt_time_compare(evtime, time_window.start_time) == -1
               || ltt_time_compare(evtime, time_window.end_time) == 1)
-                  return;
+                  return FALSE;
 #endif //EXTRA_CHECK
         Drawing_t *drawing = control_flow_data->drawing;
         guint width = drawing->width;
@@ -561,7 +561,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
           if(ltt_time_compare(evtime, time_window.start_time) == -1
                 || ltt_time_compare(evtime, time_window.end_time) == 1)
-                    return;
+                    return FALSE;
 #endif //EXTRA_CHECK
           Drawing_t *drawing = control_flow_data->drawing;
           guint width = drawing->width;
@@ -586,7 +586,7 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
         if(ltt_time_compare(evtime, time_window.start_time) == -1
               || ltt_time_compare(evtime, time_window.end_time) == 1)
-                  return;
+                  return FALSE;
 #endif //EXTRA_CHECK
         Drawing_t *drawing = control_flow_data->drawing;
         guint width = drawing->width;
@@ -786,7 +786,7 @@ int after_schedchange_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
     if(ltt_time_compare(evtime, time_window.start_time) == -1
         || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return;
+            return FALSE;
 #endif //EXTRA_CHECK
     Drawing_t *drawing = control_flow_data->drawing;
     guint width = drawing->width;
@@ -924,7 +924,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
       if(ltt_time_compare(evtime, time_window.start_time) == -1
             || ltt_time_compare(evtime, time_window.end_time) == 1)
-                return;
+                return FALSE;
 #endif //EXTRA_CHECK
       Drawing_t *drawing = control_flow_data->drawing;
       guint width = drawing->width;
@@ -950,7 +950,7 @@ int before_execmode_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
     if(ltt_time_compare(evtime, time_window.start_time) == -1
           || ltt_time_compare(evtime, time_window.end_time) == 1)
-              return;
+              return FALSE;
 #endif //EXTRA_CHECK
     Drawing_t *drawing = control_flow_data->drawing;
     guint width = drawing->width;
@@ -1119,7 +1119,7 @@ int before_process_exit_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
       if(ltt_time_compare(evtime, time_window.start_time) == -1
             || ltt_time_compare(evtime, time_window.end_time) == 1)
-                return;
+                return FALSE;
 #endif //EXTRA_CHECK
       Drawing_t *drawing = control_flow_data->drawing;
       guint width = drawing->width;
@@ -1145,7 +1145,7 @@ int before_process_exit_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
     if(ltt_time_compare(evtime, time_window.start_time) == -1
           || ltt_time_compare(evtime, time_window.end_time) == 1)
-              return;
+              return FALSE;
 #endif //EXTRA_CHECK
     Drawing_t *drawing = control_flow_data->drawing;
     guint width = drawing->width;
@@ -1283,29 +1283,11 @@ int before_process_release_hook(void *hook_data, void *call_data)
           &birth,
           trace_num);
     if(unlikely(hashed_process_data == NULL))
-    {
-      g_assert(pid == 0 || pid != process->ppid);
-      /* Process not present */
-      Drawing_t *drawing = control_flow_data->drawing;
-      ProcessInfo *process_info;
-      processlist_add(process_list,
-          drawing,
-          pid,
-          process->tgid,
-          process->cpu,
-          process->ppid,
-          &birth,
-          trace_num,
-          process->name,
-          process->brand,
-          &pl_height,
-          &process_info,
-          &hashed_process_data);
-      gtk_widget_set_size_request(drawing->drawing_area,
-                                  -1,
-                                  pl_height);
-      gtk_widget_queue_draw(drawing->drawing_area);
-    }
+      /*
+       * Process already been scheduled out EXIT_DEAD, not in the process list
+       * anymore. Just return.
+       */
+      return FALSE;
 
     /* Now, the process is in the state hash and our own process hash.
      * We definitely can draw the items related to the ending state.
@@ -1321,7 +1303,7 @@ int before_process_release_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
         if(ltt_time_compare(evtime, time_window.start_time) == -1
               || ltt_time_compare(evtime, time_window.end_time) == 1)
-                  return;
+                  return FALSE;
 #endif //EXTRA_CHECK
         Drawing_t *drawing = control_flow_data->drawing;
         guint width = drawing->width;
@@ -1347,7 +1329,7 @@ int before_process_release_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
       if(ltt_time_compare(evtime, time_window.start_time) == -1
             || ltt_time_compare(evtime, time_window.end_time) == 1)
-                return;
+                return FALSE;
 #endif //EXTRA_CHECK
       Drawing_t *drawing = control_flow_data->drawing;
       guint width = drawing->width;
@@ -1523,7 +1505,7 @@ int after_process_fork_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
     if(ltt_time_compare(evtime, time_window.start_time) == -1
           || ltt_time_compare(evtime, time_window.end_time) == 1)
-              return;
+              return FALSE;
 #endif //EXTRA_CHECK
     Drawing_t *drawing = control_flow_data->drawing;
     guint width = drawing->width;
@@ -1550,7 +1532,7 @@ int after_process_fork_hook(void *hook_data, void *call_data)
       hashed_process_data_child->x.under_marked = FALSE;
     }
   }
-  return 0;
+  return FALSE;
 }
 
 
@@ -1654,7 +1636,7 @@ int after_process_exit_hook(void *hook_data, void *call_data)
 #ifdef EXTRA_CHECK
     if(ltt_time_compare(evtime, time_window.start_time) == -1
           || ltt_time_compare(evtime, time_window.end_time) == 1)
-              return;
+              return FALSE;
 #endif //EXTRA_CHECK
     Drawing_t *drawing = control_flow_data->drawing;
     guint width = drawing->width;
@@ -1671,7 +1653,7 @@ int after_process_exit_hook(void *hook_data, void *call_data)
     }
   }
 
-  return 0;
+  return FALSE;
 }
 
 

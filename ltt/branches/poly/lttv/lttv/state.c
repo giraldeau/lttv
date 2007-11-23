@@ -2550,7 +2550,7 @@ static gboolean schedchange(void *hook_data, void *call_data)
         process->state->change = s->parent.timestamp;
       }
       
-      if(state_out == 32 || state_out == 128)
+      if(state_out == 32 || state_out == 64)
          exit_process(s, process); /* EXIT_DEAD || TASK_DEAD */
             /* see sched.h for states */
     }
