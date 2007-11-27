@@ -828,6 +828,15 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
   ProcessList *process_list = resourceview_data->process_list;
 
   hashed_process_data = resourcelist_obtain_irq(resourceview_data, trace_num, irq);
+  // TODO: fix this, it's ugly and slow:
+  GQuark name;
+  {
+    gchar *str;
+    str = g_strdup_printf("IRQ %llu [%s]", irq, (char*)g_quark_to_string(ts->irq_names[irq]));
+    name = g_quark_from_string(str);
+    g_free(str);
+  }
+  gtk_tree_store_set(resourceview_data->process_list->list_store, &hashed_process_data->y_iter, NAME_COLUMN, g_quark_to_string(name), -1);
 
   /* Now, the process is in the state hash and our own process hash.
    * We definitely can draw the items related to the ending state.
