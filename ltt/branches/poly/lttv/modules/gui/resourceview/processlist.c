@@ -59,7 +59,7 @@ gint resource_sort_func  ( GtkTreeModel *model,
 
 static guint ru_numeric_hash_fct(gconstpointer key)
 {
-  ResourceUniqueNumeric *ru = (const ResourceUniqueNumeric *)key;
+  ResourceUniqueNumeric *ru = (ResourceUniqueNumeric *)key;
   int tmp = (ru->trace_num << 8) ^ ru->id;
 
   return g_int_hash(&tmp);
@@ -139,7 +139,7 @@ void update_index_to_pixmap(ProcessList *process_list)
   arg.count = 0;
   arg.process_list = process_list;
 
-  gtk_tree_model_foreach(process_list->list_store,
+  gtk_tree_model_foreach(GTK_TREE_MODEL(process_list->list_store),
       (GtkTreeModelForeachFunc)update_index_to_pixmap_each, &arg);
 }
 
@@ -514,7 +514,7 @@ HashedResourceData *resourcelist_obtain_machine(ControlFlowData *resourceview_da
     gtk_widget_queue_draw(resourceview_data->drawing->drawing_area);
   }
 
-  gtk_tree_view_expand_all(resourceview_data->process_list->process_list_widget);
+  gtk_tree_view_expand_all(GTK_TREE_VIEW(resourceview_data->process_list->process_list_widget));
 
   return data;
 }

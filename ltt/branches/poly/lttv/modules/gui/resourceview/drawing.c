@@ -503,7 +503,7 @@ void drawing_chunk_begin(EventsRequest *events_request, LttvTracesetState *tss)
 {
   g_debug("Begin of chunk");
   ControlFlowData *cfd = events_request->viewer_data;
-  LttvTracesetContext *tsc = &tss->parent.parent;
+  LttvTracesetContext *tsc = &tss->parent;
   //LttTime current_time = lttv_traceset_context_get_current_tfc(tsc)->timestamp;
   guint i;
   LttvTraceset *traceset = tsc->ts;
