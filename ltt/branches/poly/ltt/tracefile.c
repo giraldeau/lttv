@@ -76,6 +76,8 @@ GQuark LTT_TRACEFILE_NAME_FACILITIES;
 #define PAGE_MASK (~(page_size-1))
 #define PAGE_ALIGN(addr)  (((addr)+page_size-1)&PAGE_MASK)
 
+LttTrace *father_trace = NULL;
+
 /* set the offset of the fields belonging to the event,
    need the information of the archecture */
 //void set_fields_offsets(LttTracefile *tf, LttEventType *event_type);
@@ -283,6 +285,13 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
                                          &vheader->start_freq);
           t->freq_scale = ltt_get_uint32(LTT_GET_BO(tf),
                                          &vheader->freq_scale);
+          if(father_trace) {
+            t->start_freq = father_trace->start_freq;
+            t->freq_scale = father_trace->freq_scale;
+          }
+          else {
+            father_trace = t;
+          }
           t->start_tsc = ltt_get_uint64(LTT_GET_BO(tf),
                                         &vheader->start_tsc);
           t->start_monotonic = ltt_get_uint64(LTT_GET_BO(tf),
