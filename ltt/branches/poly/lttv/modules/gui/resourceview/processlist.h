@@ -45,8 +45,9 @@
 #define RV_RESOURCE_CPU       1
 #define RV_RESOURCE_IRQ       2
 #define RV_RESOURCE_SOFT_IRQ  3
-#define RV_RESOURCE_BDEV      4
-#define RV_RESOURCE_COUNT     5
+#define RV_RESOURCE_TRAP      4
+#define RV_RESOURCE_BDEV      5
+#define RV_RESOURCE_COUNT     6
 
 /* Enumeration of the columns */
 enum

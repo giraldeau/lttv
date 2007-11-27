@@ -172,6 +172,7 @@ static GQuark
   LTTV_STATE_RESOURCE_CPUS_COUNT,
   LTTV_STATE_RESOURCE_IRQS,
   LTTV_STATE_RESOURCE_SOFT_IRQS,
+  LTTV_STATE_RESOURCE_TRAPS,
   LTTV_STATE_RESOURCE_BLKDEVS;
 
 static void create_max_time(LttvTraceState *tcs);
@@ -263,7 +264,7 @@ gboolean rettrue(gpointer key, gpointer value, gpointer user_data)
 static void
 restore_init_state(LttvTraceState *self)
 {
-  guint i, nb_cpus, nb_irqs, nb_soft_irqs;
+  guint i, nb_cpus, nb_irqs, nb_soft_irqs, nb_traps;
 
   //LttvTracefileState *tfcs;
 
@@ -290,6 +291,7 @@ restore_init_state(LttvTraceState *self)
   nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
   nb_irqs = self->nb_irqs;
   nb_soft_irqs = self->nb_soft_irqs;
+  nb_traps = self->nb_traps;
   
   /* Put the per cpu running_process to beginning state : process 0. */
   for(i=0; i< nb_cpus; i++) {
@@ -323,6 +325,11 @@ restore_init_state(LttvTraceState *self)
   /* reset softirq states */
   for(i=0; i<nb_soft_irqs; i++) {
     self->soft_irq_states[i].running = 0;
+  }
+
+  /* reset trap states */
+  for(i=0; i<nb_traps; i++) {
+    self->trap_states[i].running = 0;
   }
 
   /* reset bdev states */
@@ -497,6 +504,9 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     /* init soft irq stuff */
     /* the kernel has a statically fixed max of 32 softirqs */
     tcs->soft_irq_states = g_new(LttvSoftIRQState, tcs->nb_soft_irqs);
+
+    /* init trap stuff */
+    tcs->trap_states = g_new(LttvTrapState, tcs->nb_traps);
 
     /* init bdev resource stuff */
     tcs->bdev_states = g_hash_table_new(g_int_hash, g_int_equal);
@@ -1225,6 +1235,25 @@ static void lttv_state_free_soft_irq_states(LttvSoftIRQState *states, guint n)
   g_free(states);
 }
 
+static LttvTrapState *lttv_state_copy_trap_states(LttvTrapState *states, guint n)
+{
+  guint i;
+  LttvTrapState *retval;
+
+  retval = g_malloc(n*sizeof(LttvTrapState));
+
+  for(i=0; i<n; i++) {
+    retval[i].running = states[i].running;
+  }
+
+  return retval;
+}
+
+static void lttv_state_free_trap_states(LttvTrapState *states, guint n)
+{
+  g_free(states);
+}
+
 /* bdevstate stuff */
 
 static LttvBdevState *get_hashed_bdevstate(LttvTraceState *ts, guint16 devcode)
@@ -1316,7 +1345,7 @@ static void lttv_state_free_blkdev_hashtable(GHashTable *ht)
 
 static void state_save(LttvTraceState *self, LttvAttribute *container)
 {
-  guint i, nb_tracefile, nb_cpus, nb_irqs;
+  guint i, nb_tracefile, nb_cpus, nb_irqs, nb_soft_irqs, nb_traps;
 
   LttvTracefileState *tfcs;
 
@@ -1412,6 +1441,14 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
     *(value.v_pointer) = lttv_state_copy_soft_irq_states(self->soft_irq_states, nb_soft_irqs);
   }
 
+  /* save the trap state */
+  nb_traps = self->nb_traps;
+  {
+    value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_TRAPS,
+        LTTV_POINTER);
+    *(value.v_pointer) = lttv_state_copy_trap_states(self->trap_states, nb_traps);
+  }
+
   /* save the blkdev states */
   value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_BLKDEVS,
         LTTV_POINTER);
@@ -1421,7 +1458,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
 
 static void state_restore(LttvTraceState *self, LttvAttribute *container)
 {
-  guint i, nb_tracefile, pid, nb_cpus, nb_irqs, nb_soft_irqs;
+  guint i, nb_tracefile, pid, nb_cpus, nb_irqs, nb_soft_irqs, nb_traps;
 
   LttvTracefileState *tfcs;
 
@@ -1486,6 +1523,13 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
   g_assert(type == LTTV_POINTER);
   lttv_state_free_soft_irq_states(self->soft_irq_states, nb_soft_irqs);
   self->soft_irq_states = lttv_state_copy_soft_irq_states(*(value.v_pointer), nb_soft_irqs);
+ 
+  /* restore trap resource states */
+  nb_traps = self->nb_traps;
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_TRAPS, &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_trap_states(self->trap_states, nb_traps);
+  self->trap_states = lttv_state_copy_trap_states(*(value.v_pointer), nb_traps);
  
   /* restore the blkdev states */
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_BLKDEVS, &value);
@@ -3929,6 +3973,7 @@ static void module_init()
   LTTV_STATE_RESOURCE_CPUS = g_quark_from_string("cpu count");
   LTTV_STATE_RESOURCE_IRQS = g_quark_from_string("irq resource states");
   LTTV_STATE_RESOURCE_SOFT_IRQS = g_quark_from_string("soft irq resource states");
+  LTTV_STATE_RESOURCE_TRAPS = g_quark_from_string("trap resource states");
   LTTV_STATE_RESOURCE_BLKDEVS = g_quark_from_string("blkdevs resource states");
 
   

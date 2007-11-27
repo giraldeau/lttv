@@ -107,6 +107,13 @@ GdkColor drawing_colors_soft_irq[NUM_COLORS_SOFT_IRQ] =
   { 0, 0xFFFF, 0x9400, 0x9600 }, /* COL_SOFT_IRQ_BUSY */
 };
 
+GdkColor drawing_colors_trap[NUM_COLORS_TRAP] =
+{ /* Pixel, R, G, B */
+  { 0, 0x0000, 0x0000, 0x0000 }, /* COL_TRAP_UNKNOWN */
+  { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_TRAP_IDLE */
+  { 0, 0xFF00, 0xFF00, 0x0100 }, /* COL_TRAP_BUSY */
+};
+
 GdkColor drawing_colors_bdev[NUM_COLORS_BDEV] =
 { /* Pixel, R, G, B */
   { 0, 0x0000, 0x0000, 0x0000 }, /* COL_BDEV_UNKNOWN */
@@ -1017,6 +1024,8 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
                             TRUE, success);
   gdk_colormap_alloc_colors(colormap, drawing_colors_soft_irq, NUM_COLORS_SOFT_IRQ, FALSE,
                             TRUE, success);
+  gdk_colormap_alloc_colors(colormap, drawing_colors_trap, NUM_COLORS_TRAP, FALSE,
+                            TRUE, success);
   gdk_colormap_alloc_colors(colormap, drawing_colors_bdev, NUM_COLORS_BDEV, FALSE,
                             TRUE, success);
   
@@ -1078,6 +1087,7 @@ void drawing_destroy(Drawing_t *drawing)
   gdk_colormap_free_colors(colormap, drawing_colors_cpu, NUM_COLORS_CPU);
   gdk_colormap_free_colors(colormap, drawing_colors_irq, NUM_COLORS_IRQ);
   gdk_colormap_free_colors(colormap, drawing_colors_soft_irq, NUM_COLORS_IRQ);
+  gdk_colormap_free_colors(colormap, drawing_colors_trap, NUM_COLORS_TRAP);
   gdk_colormap_free_colors(colormap, drawing_colors_bdev, NUM_COLORS_BDEV);
 
   // Do not unref here, Drawing_t destroyed by it's widget.

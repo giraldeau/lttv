@@ -373,6 +373,7 @@ ProcessList *processlist_construct(void)
   process_list->restypes[RV_RESOURCE_CPU].hash_table = g_hash_table_new(ru_numeric_hash_fct, ru_numeric_equ_fct);
   process_list->restypes[RV_RESOURCE_IRQ].hash_table = g_hash_table_new(ru_numeric_hash_fct, ru_numeric_equ_fct);
   process_list->restypes[RV_RESOURCE_SOFT_IRQ].hash_table = g_hash_table_new(ru_numeric_hash_fct, ru_numeric_equ_fct);
+  process_list->restypes[RV_RESOURCE_TRAP].hash_table = g_hash_table_new(ru_numeric_hash_fct, ru_numeric_equ_fct);
   process_list->restypes[RV_RESOURCE_BDEV].hash_table = g_hash_table_new(ru_numeric_hash_fct, ru_numeric_equ_fct);
 
   return process_list;
@@ -476,6 +477,18 @@ GQuark make_soft_irq_name(ControlFlowData *resourceview_data, guint trace_num, g
   gchar *str;
 
   str = g_strdup_printf("SOFTIRQ %u", id);
+  name = g_quark_from_string(str);
+  g_free(str);
+
+  return name;
+}
+
+GQuark make_trap_name(ControlFlowData *resourceview_data, guint trace_num, guint id)
+{
+  GQuark name;
+  gchar *str;
+
+  str = g_strdup_printf("Trap %u", id);
   name = g_quark_from_string(str);
   g_free(str);
 
@@ -662,6 +675,11 @@ HashedResourceData *resourcelist_obtain_irq(ControlFlowData *resourceview_data, 
 HashedResourceData *resourcelist_obtain_soft_irq(ControlFlowData *resourceview_data, guint trace_num, guint id)
 {
   return resourcelist_obtain_generic(resourceview_data, RV_RESOURCE_SOFT_IRQ, trace_num, id, make_soft_irq_name);
+}
+
+HashedResourceData *resourcelist_obtain_trap(ControlFlowData *resourceview_data, guint trace_num, guint id)
+{
+  return resourcelist_obtain_generic(resourceview_data, RV_RESOURCE_TRAP, trace_num, id, make_trap_name);
 }
 
 HashedResourceData *resourcelist_obtain_bdev(ControlFlowData *resourceview_data, guint trace_num, guint id)

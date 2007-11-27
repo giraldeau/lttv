@@ -311,6 +311,7 @@ typedef struct _LttvCPUState {
   GArray *mode_stack;
   guint last_irq;
   guint last_soft_irq;
+  guint last_trap;
 } LttvCPUState;
 
 typedef struct _LttvIRQState {
@@ -320,6 +321,10 @@ typedef struct _LttvIRQState {
 typedef struct _LttvSoftIRQState {
   guint running; /* number of times it is currently running (on different processors) */
 } LttvSoftIRQState;
+
+typedef struct _LttvTrapState {
+  guint running; /* number of times it is currently running (on different processors) */
+} LttvTrapState;
 
 typedef struct _LttvBdevState {
   GArray *mode_stack;
@@ -351,6 +356,7 @@ struct _LttvTraceState {
   LttvCPUState *cpu_states; /* state of each cpu */
   LttvIRQState *irq_states; /* state of each irq handler */
   LttvSoftIRQState *soft_irq_states; /* state of each softirq */
+  LttvTrapState *trap_states; /* state of each trap */
   GHashTable *bdev_states; /* state of the block devices */
 };
 
