@@ -243,7 +243,7 @@ resourceview(LttvPluginTab *ptab)
 
   //WARNING : The widget must be 
   //inserted in the main window before the drawing area
-  //can be configured (and this must happend bedore sending
+  //can be configured (and this must happen before sending
   //data)
   
   return control_flow_data;
