@@ -1208,7 +1208,7 @@ static void lttv_state_free_irq_states(LttvIRQState *states, guint n)
 
 static LttvSoftIRQState *lttv_state_copy_soft_irq_states(LttvSoftIRQState *states, guint n)
 {
-  guint i,j;
+  guint i;
   LttvSoftIRQState *retval;
 
   retval = g_malloc(n*sizeof(LttvSoftIRQState));
