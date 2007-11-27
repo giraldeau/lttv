@@ -66,6 +66,13 @@ typedef enum _draw_color_irq {
                 NUM_COLORS_IRQ
 } draw_color_irq; 
 
+typedef enum _draw_color_soft_irq {
+                COL_SOFT_IRQ_UNKNOWN,
+                COL_SOFT_IRQ_IDLE,
+                COL_SOFT_IRQ_BUSY,
+                NUM_COLORS_SOFT_IRQ
+} draw_color_soft_irq; 
+
 typedef enum _draw_color_bdev {
                 COL_BDEV_UNKNOWN,
                 COL_BDEV_IDLE,
@@ -77,6 +84,7 @@ typedef enum _draw_color_bdev {
 extern GdkColor drawing_colors[NUM_COLORS];
 extern GdkColor drawing_colors_cpu[NUM_COLORS_CPU];
 extern GdkColor drawing_colors_irq[NUM_COLORS_IRQ];
+extern GdkColor drawing_colors_soft_irq[NUM_COLORS_SOFT_IRQ];
 extern GdkColor drawing_colors_bdev[NUM_COLORS_BDEV];
 
 /* This part of the viewer does :

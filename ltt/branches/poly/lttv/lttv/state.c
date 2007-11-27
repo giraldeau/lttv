@@ -170,6 +170,7 @@ static GQuark
   LTTV_STATE_RESOURCE_CPUS,
   LTTV_STATE_RESOURCE_CPUS_COUNT,
   LTTV_STATE_RESOURCE_IRQS,
+  LTTV_STATE_RESOURCE_SOFT_IRQS,
   LTTV_STATE_RESOURCE_BLKDEVS;
 
 static void create_max_time(LttvTraceState *tcs);
@@ -261,7 +262,7 @@ gboolean rettrue(gpointer key, gpointer value, gpointer user_data)
 static void
 restore_init_state(LttvTraceState *self)
 {
-  guint i, nb_cpus, nb_irqs;
+  guint i, nb_cpus, nb_irqs, nb_soft_irqs;
 
   //LttvTracefileState *tfcs;
 
@@ -287,6 +288,7 @@ restore_init_state(LttvTraceState *self)
 
   nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
   nb_irqs = self->nb_irqs;
+  nb_soft_irqs = self->nb_soft_irqs;
   
   /* Put the per cpu running_process to beginning state : process 0. */
   for(i=0; i< nb_cpus; i++) {
@@ -315,6 +317,11 @@ restore_init_state(LttvTraceState *self)
   for(i=0; i<nb_irqs; i++) {
     if(self->irq_states[i].mode_stack->len > 0)
       g_array_remove_range(self->irq_states[i].mode_stack, 0, self->irq_states[i].mode_stack->len);
+  }
+
+  /* reset softirq states */
+  for(i=0; i<nb_soft_irqs; i++) {
+    self->soft_irq_states[i].running = 0;
   }
 
   /* reset bdev states */
@@ -485,6 +492,10 @@ init(LttvTracesetState *self, LttvTraceset *ts)
       tcs->irq_states[j].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvIRQMode));
       g_assert(tcs->irq_states[j].mode_stack != NULL);
     } 
+
+    /* init soft irq stuff */
+    /* the kernel has a statically fixed max of 32 softirqs */
+    tcs->soft_irq_states = g_new(LttvSoftIRQState, tcs->nb_soft_irqs);
 
     /* init bdev resource stuff */
     tcs->bdev_states = g_hash_table_new(g_int_hash, g_int_equal);
@@ -1194,6 +1205,25 @@ static void lttv_state_free_irq_states(LttvIRQState *states, guint n)
   g_free(states);
 }
 
+static LttvSoftIRQState *lttv_state_copy_soft_irq_states(LttvSoftIRQState *states, guint n)
+{
+  guint i,j;
+  LttvSoftIRQState *retval;
+
+  retval = g_malloc(n*sizeof(LttvSoftIRQState));
+
+  for(i=0; i<n; i++) {
+    retval[i].running = states[i].running;
+  }
+
+  return retval;
+}
+
+static void lttv_state_free_soft_irq_states(LttvIRQState *states, guint n)
+{
+  g_free(states);
+}
+
 /* bdevstate stuff */
 
 static LttvBdevState *get_hashed_bdevstate(LttvTraceState *ts, guint16 devcode)
@@ -1373,6 +1403,14 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
     *(value.v_pointer) = lttv_state_copy_irq_states(self->irq_states, nb_irqs);
   }
 
+  /* save the soft irq state */
+  nb_irqs = self->nb_irqs;
+  {
+    value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_SOFT_IRQS,
+        LTTV_POINTER);
+    *(value.v_pointer) = lttv_state_copy_soft_irq_states(self->soft_irq_states, nb_irqs);
+  }
+
   /* save the blkdev states */
   value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_BLKDEVS,
         LTTV_POINTER);
@@ -1382,7 +1420,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
 
 static void state_restore(LttvTraceState *self, LttvAttribute *container)
 {
-  guint i, nb_tracefile, pid, nb_cpus, nb_irqs;
+  guint i, nb_tracefile, pid, nb_cpus, nb_irqs, nb_soft_irqs;
 
   LttvTracefileState *tfcs;
 
@@ -1440,6 +1478,13 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
   g_assert(type == LTTV_POINTER);
   lttv_state_free_irq_states(self->irq_states, nb_irqs);
   self->irq_states = lttv_state_copy_irq_states(*(value.v_pointer), nb_irqs);
+ 
+  /* restore soft irq resource states */
+  nb_soft_irqs = self->nb_soft_irqs;
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_SOFT_IRQS, &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_soft_irq_states(self->soft_irq_states, nb_soft_irqs);
+  self->soft_irq_states = lttv_state_copy_soft_irq_states(*(value.v_pointer), nb_soft_irqs);
  
   /* restore the blkdev states */
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_BLKDEVS, &value);
@@ -1755,9 +1800,10 @@ create_name_tables(LttvTraceState *tcs)
   }
   */
 
-  name_tables->nb_softirqs = 256;
-  name_tables->soft_irq_names = g_new(GQuark, 256);
-  for(i = 0 ; i < 256 ; i++) {
+  /* the kernel is limited to 32 statically defined softirqs */
+  name_tables->nb_softirqs = 32;
+  name_tables->soft_irq_names = g_new(GQuark, name_tables->nb_softirqs);
+  for(i = 0 ; i < name_tables->nb_softirqs ; i++) {
     g_string_printf(fe_name, "softirq %d", i);
     name_tables->soft_irq_names[i] = g_quark_from_string(fe_name->str);
   }
@@ -1786,7 +1832,7 @@ get_name_tables(LttvTraceState *tcs)
   tcs->irq_names = name_tables->irq_names;
   tcs->soft_irq_names = name_tables->soft_irq_names;
   tcs->nb_irqs = name_tables->nb_irqs;
-  tcs->nb_softirqs = name_tables->nb_softirqs;
+  tcs->nb_soft_irqs = name_tables->nb_softirqs;
 }
 
 
@@ -2301,12 +2347,17 @@ static gboolean irq_entry(void *hook_data, void *call_data)
 static gboolean soft_irq_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
+  guint softirq = s->cpu_state->last_soft_irq;
 
   pop_state(s, LTTV_STATE_SOFT_IRQ);
+
+  /* update softirq status */
+  if(ts->soft_irq_states[softirq].running)
+    ts->soft_irq_states[softirq].running--;
+
   return FALSE;
 }
-
-
 
 static gboolean irq_exit(void *hook_data, void *call_data)
 {
@@ -2327,6 +2378,7 @@ static gboolean irq_exit(void *hook_data, void *call_data)
 static gboolean soft_irq_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   //guint8 ev_id = ltt_event_eventtype_id(e);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
@@ -2334,7 +2386,7 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
 
   LttvExecutionSubmode submode;
   guint64 softirq = ltt_event_get_long_unsigned(e, f);
-  guint64 nb_softirqs = ((LttvTraceState *)(s->parent.t_context))->nb_softirqs;
+  guint64 nb_softirqs = ((LttvTraceState *)(s->parent.t_context))->nb_soft_irqs;
 
   if(softirq < nb_softirqs) {
     submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[softirq];
@@ -2348,6 +2400,11 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_SOFT_IRQ, submode);
+
+  /* update softirq status */
+  s->cpu_state->last_soft_irq = softirq;
+  ts->soft_irq_states[softirq].running++;
+
   return FALSE;
 }
 
@@ -3864,6 +3921,7 @@ static void module_init()
   LTTV_STATE_RESOURCE_CPUS = g_quark_from_string("cpu resource states");
   LTTV_STATE_RESOURCE_CPUS = g_quark_from_string("cpu count");
   LTTV_STATE_RESOURCE_IRQS = g_quark_from_string("irq resource states");
+  LTTV_STATE_RESOURCE_SOFT_IRQS = g_quark_from_string("soft irq resource states");
   LTTV_STATE_RESOURCE_BLKDEVS = g_quark_from_string("blkdevs resource states");
 
   

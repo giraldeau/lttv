@@ -309,11 +309,16 @@ GType lttv_traceset_state_get_type (void);
 typedef struct _LttvCPUState {
   GArray *mode_stack;
   guint last_irq;
+  guint last_soft_irq;
 } LttvCPUState;
 
 typedef struct _LttvIRQState {
   GArray *mode_stack;
 } LttvIRQState;
+
+typedef struct _LttvSoftIRQState {
+  guint running; /* number of times it is currently running (on different processors) */
+} LttvSoftIRQState;
 
 typedef struct _LttvBdevState {
   GArray *mode_stack;
@@ -334,7 +339,7 @@ struct _LttvTraceState {
   GQuark *trap_names;
   guint  nb_traps;
   guint  nb_irqs;
-  guint  nb_softirqs;
+  guint  nb_soft_irqs;
   GQuark *irq_names;
   GQuark *soft_irq_names;
   LttTime *max_time_state_recomputed_in_seek;
@@ -344,6 +349,7 @@ struct _LttvTraceState {
   gboolean has_precomputed_states;
   LttvCPUState *cpu_states; /* state of each cpu */
   LttvIRQState *irq_states; /* state of each irq handler */
+  LttvSoftIRQState *soft_irq_states; /* state of each softirq */
   GHashTable *bdev_states; /* state of the block devices */
 };
 

@@ -99,6 +99,13 @@ GdkColor drawing_colors_irq[NUM_COLORS_IRQ] =
   { 0, 0xFFFF, 0x5E00, 0x0000 }, /* COL_IRQ_BUSY */
 };
 
+GdkColor drawing_colors_soft_irq[NUM_COLORS_SOFT_IRQ] =
+{ /* Pixel, R, G, B */
+  { 0, 0x0000, 0x0000, 0x0000 }, /* COL_SOFT_IRQ_UNKNOWN */
+  { 0, 0x0000, 0x0000, 0x0000 }, /* COL_SOFT_IRQ_IDLE */
+  { 0, 0xFFFF, 0x9400, 0x9600 }, /* COL_SOFT_IRQ_BUSY */
+};
+
 GdkColor drawing_colors_bdev[NUM_COLORS_BDEV] =
 { /* Pixel, R, G, B */
   { 0, 0x0000, 0x0000, 0x0000 }, /* COL_BDEV_UNKNOWN */
@@ -277,22 +284,22 @@ void drawing_data_request(Drawing_t *drawing,
           before_execmode_hook,
           events_request,
           &hooks);
-//
-//      lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL,
-//          LTT_EVENT_SOFT_IRQ_ENTRY,
-//          FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
-//          before_execmode_hook,
-//          events_request,
-//          &hooks);
-//
-//      lttv_trace_find_hook(ts->parent.t,
-//          LTT_FACILITY_KERNEL,
-//          LTT_EVENT_SOFT_IRQ_EXIT,
-//          NULL,
-//          before_execmode_hook,
-//          events_request,
-//          &hooks);
+
+      lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_KERNEL,
+          LTT_EVENT_SOFT_IRQ_ENTRY,
+          FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
+          before_execmode_hook,
+          events_request,
+          &hooks);
+
+      lttv_trace_find_hook(ts->parent.t,
+          LTT_FACILITY_KERNEL,
+          LTT_EVENT_SOFT_IRQ_EXIT,
+          NULL,
+          before_execmode_hook,
+          events_request,
+          &hooks);
 
 
       lttv_trace_find_hook(ts->parent.t,
@@ -1007,6 +1014,8 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
                             TRUE, success);
   gdk_colormap_alloc_colors(colormap, drawing_colors_irq, NUM_COLORS_IRQ, FALSE,
                             TRUE, success);
+  gdk_colormap_alloc_colors(colormap, drawing_colors_soft_irq, NUM_COLORS_IRQ, FALSE,
+                            TRUE, success);
   gdk_colormap_alloc_colors(colormap, drawing_colors_bdev, NUM_COLORS_BDEV, FALSE,
                             TRUE, success);
   
@@ -1067,6 +1076,7 @@ void drawing_destroy(Drawing_t *drawing)
   gdk_colormap_free_colors(colormap, drawing_colors, NUM_COLORS);
   gdk_colormap_free_colors(colormap, drawing_colors_cpu, NUM_COLORS_CPU);
   gdk_colormap_free_colors(colormap, drawing_colors_irq, NUM_COLORS_IRQ);
+  gdk_colormap_free_colors(colormap, drawing_colors_soft_irq, NUM_COLORS_IRQ);
   gdk_colormap_free_colors(colormap, drawing_colors_bdev, NUM_COLORS_BDEV);
 
   // Do not unref here, Drawing_t destroyed by it's widget.
