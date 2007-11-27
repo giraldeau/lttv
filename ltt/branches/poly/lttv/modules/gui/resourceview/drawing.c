@@ -1015,7 +1015,7 @@ Drawing_t *drawing_construct(ControlFlowData *control_flow_data)
                             TRUE, success);
   gdk_colormap_alloc_colors(colormap, drawing_colors_irq, NUM_COLORS_IRQ, FALSE,
                             TRUE, success);
-  gdk_colormap_alloc_colors(colormap, drawing_colors_soft_irq, NUM_COLORS_IRQ, FALSE,
+  gdk_colormap_alloc_colors(colormap, drawing_colors_soft_irq, NUM_COLORS_SOFT_IRQ, FALSE,
                             TRUE, success);
   gdk_colormap_alloc_colors(colormap, drawing_colors_bdev, NUM_COLORS_BDEV, FALSE,
                             TRUE, success);
