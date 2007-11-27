@@ -298,7 +298,13 @@ ProcessList *processlist_construct(void)
   process_list->process_list_widget = 
     gtk_tree_view_new_with_model
     (GTK_TREE_MODEL (process_list->list_store));
-  g_object_set(process_list->process_list_widget, "enable-tree-lines", TRUE, NULL);
+
+  gtk_tree_view_set_show_expanders(
+    GTK_TREE_VIEW(process_list->process_list_widget), FALSE);
+  gtk_tree_view_set_level_indentation(
+    process_list->process_list_widget, 20);
+  
+  gtk_tree_view_set_enable_tree_lines(process_list->process_list_widget, TRUE);
 
   g_object_unref (G_OBJECT (process_list->list_store));
 
@@ -308,7 +314,6 @@ ProcessList *processlist_construct(void)
       NULL,
       NULL);
  
-
   gtk_tree_sortable_set_sort_column_id(
       GTK_TREE_SORTABLE(process_list->list_store),
       GTK_TREE_SORTABLE_DEFAULT_SORT_COLUMN_ID,
@@ -368,7 +373,7 @@ ProcessList *processlist_construct(void)
   process_list->restypes[RV_RESOURCE_CPU].hash_table = g_hash_table_new(ru_numeric_hash_fct, ru_numeric_equ_fct);
   process_list->restypes[RV_RESOURCE_IRQ].hash_table = g_hash_table_new(ru_numeric_hash_fct, ru_numeric_equ_fct);
   process_list->restypes[RV_RESOURCE_BDEV].hash_table = g_hash_table_new(ru_numeric_hash_fct, ru_numeric_equ_fct);
-  
+
   return process_list;
 }
 
