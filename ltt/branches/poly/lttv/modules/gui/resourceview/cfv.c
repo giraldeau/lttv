@@ -232,7 +232,7 @@ resourceview(LttvPluginTab *ptab)
     
   g_object_set_data(
       G_OBJECT(drawing_area),
-      "control_flow_data",
+      "resourceview_data",
       control_flow_data);
         
   g_control_flow_data_list = g_slist_append(

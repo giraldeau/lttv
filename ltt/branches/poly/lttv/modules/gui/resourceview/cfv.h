@@ -24,7 +24,6 @@
 #include <gtk/gtk.h>
 #include <lttvwindow/mainwindow.h>
 #include <lttv/filter.h>
-#include "processlist.h"
 #include <lttvwindow/lttv_plugin_tab.h>
 
 extern GQuark LTT_NAME_CPU;
@@ -38,6 +37,11 @@ typedef struct _Drawing_t Drawing_t;
 #define TYPE_CONTROLFLOWDATA_DEFINED
 typedef struct _ControlFlowData ControlFlowData;
 #endif //TYPE_CONTROLFLOWDATA_DEFINED
+
+#ifndef TYPE_PROCESSLIST_DEFINED
+#define TYPE_PROCESSLIST_DEFINED
+typedef struct _ProcessList ProcessList;
+#endif //TYPE_PROCESSLIST_DEFINED
 
 struct _ControlFlowData {
 

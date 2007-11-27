@@ -25,6 +25,7 @@
 #include <ltt/ltt.h>
 
 #include "drawitem.h"
+#include "cfv.h"
 
 /* The process list
  *
@@ -39,23 +40,37 @@
  *
  */
 
+/* Unique identifiers for resource types */
+#define RV_RESOURCE_MACHINE   0
+#define RV_RESOURCE_CPU       1
+#define RV_RESOURCE_IRQ       2
+#define RV_RESOURCE_BDEV      3
+#define RV_RESOURCE_COUNT     4
 
 /* Enumeration of the columns */
 enum
 {
   NAME_COLUMN,
+  DATA_COLUMN,
   N_COLUMNS
 };
 
-
+/*
 typedef struct _ResourceInfo {
   GQuark name;
   guint trace_num;
   guint type;
   guint64 id;
 } ResourceInfo;
+*/
+
+typedef struct _ResourceUniqueNumeric {
+	guint trace_num;
+	guint id;
+} ResourceUniqueNumeric;
 
 typedef struct _HashedResourceData {
+  guint type;
  
   GdkPixmap *pixmap;  // Pixmap slice containing drawing buffer for the PID
   gint height; // height of the pixmap
@@ -79,15 +94,24 @@ typedef struct _HashedResourceData {
 
 } HashedResourceData;
   
+struct _ResourceType {
+	/* functions for the hash table below */
+	guint (*hashfunc)(gconstpointer);
+	gboolean (*hashequalfunc)(gconstpointer,gconstpointer);
+	/* a hashtable containing the data of each resource of this type */
+	GHashTable *hash_table;
+};
+typedef struct _ResourceType ResourceType;
+
 struct _ProcessList {
   
   GtkWidget *process_list_widget;
-  GtkListStore *list_store;
+  GtkTreeStore *list_store;
   GtkWidget *button; /* one button of the tree view */
   GtkCellRenderer *renderer;
 
   /* A hash table by PID to speed up process position find in the list */
-  GHashTable *process_hash;
+//  GHashTable *process_hash;
   
   guint number_of_process;
   gint cell_height;
@@ -99,10 +123,18 @@ struct _ProcessList {
    * every time the process list is reordered, process added or removed */
   GPtrArray * index_to_pixmap;
 
+  ResourceType restypes[RV_RESOURCE_COUNT];
 };
 
+typedef struct _UpdateIndexPixmapArg {
+  ProcessList *process_list;
+  guint count;
+} UpdateIndexPixmapArg;
 
+#ifndef TYPE_PROCESSLIST_DEFINED
+#define TYPE_PROCESSLIST_DEFINED
 typedef struct _ProcessList ProcessList;
+#endif //TYPE_PROCESSLIST_DEFINED
 
 
 #ifndef TYPE_DRAWING_T_DEFINED
@@ -118,9 +150,9 @@ void processlist_clear(ProcessList *process_list);
 
 // out : success (0) and height
 /* CPU num is only used for PID 0 */
-int resourcelist_add(  ProcessList *process_list, Drawing_t *drawing, guint trace_num,
-      GQuark name, guint type, guint id, guint *height, ResourceInfo **pm_resource_info,
-      HashedResourceData **pm_hashed_resource_data);
+//int resourcelist_add(  ProcessList *process_list, Drawing_t *drawing, guint trace_num,
+//      GQuark name, guint type, guint id, guint *height, ResourceInfo **pm_resource_info,
+//      HashedResourceData **pm_hashed_resource_data, GQuark parent);
 
 // out : success (0) and height
 int processlist_remove(ProcessList *process_list, guint pid, guint cpu, 
@@ -168,7 +200,6 @@ void copy_pixmap_to_screen(ProcessList *process_list,
     gint x, gint y,
     gint width, gint height);
 
-
 static inline gint get_cell_height(GtkTreeView *TreeView)
 {
   gint height;
@@ -191,26 +222,26 @@ static inline guint processlist_get_height(ProcessList *process_list)
 }
 
 
-static inline HashedResourceData *processlist_get_process_data( 
-          ProcessList *process_list, GQuark resource_name, guint trace_num)
-{
-  ResourceInfo resource_info;
-
-//  process_info.pid = pid;
-//  if(pid == 0)
-//    process_info.cpu = cpu;
-//  else
-//    process_info.cpu = ANY_CPU;
-//  process_info.birth = *birth;
-//  process_info.trace_num = trace_num;
-  resource_info.name = resource_name;
-  resource_info.trace_num = trace_num;
-
-  return  (HashedResourceData*)g_hash_table_lookup(
-                process_list->process_hash,
-                &resource_info);
-}
-
+//static inline HashedResourceData *processlist_get_process_data( 
+//          ProcessList *process_list, GQuark resource_name, guint trace_num)
+//{
+//  ResourceInfo resource_info;
+//
+////  process_info.pid = pid;
+////  if(pid == 0)
+////    process_info.cpu = cpu;
+////  else
+////    process_info.cpu = ANY_CPU;
+////  process_info.birth = *birth;
+////  process_info.trace_num = trace_num;
+//  resource_info.name = resource_name;
+//  resource_info.trace_num = trace_num;
+//
+//  return  (HashedResourceData*)g_hash_table_lookup(
+//                process_list->process_hash,
+//                &resource_info);
+//}
+//
 
 static inline gint processlist_get_pixels_from_data(  ProcessList *process_list,
           HashedResourceData *hashed_process_data,
@@ -238,16 +269,28 @@ static inline guint processlist_get_index_from_data(ProcessList *process_list,
   gint *path_indices;
   GtkTreePath *tree_path;
   guint ret;
+  gint depth;
 
   tree_path = gtk_tree_model_get_path((GtkTreeModel*)process_list->list_store,
                     &hashed_process_data->y_iter);
   path_indices =  gtk_tree_path_get_indices (tree_path);
+  depth = gtk_tree_path_get_depth(tree_path);
 
+//  ret = path_indices[1]+path_indices[0]+1;
   ret = path_indices[0];
+  if(depth>1)
+    ret+= 1+path_indices[1];
 
   gtk_tree_path_free(tree_path);
 
   return ret;
+}
+
+/* Return the hash table used to store the data of each resource of a given resource type */
+
+static inline GHashTable *resourcelist_get_resource_hash_table(ControlFlowData *resourceview_data, guint type)
+{
+	return resourceview_data->process_list->restypes[type].hash_table;
 }
 
 

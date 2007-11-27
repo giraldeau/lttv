@@ -411,6 +411,11 @@ static inline guint lttv_state_get_target_pid(LttvTracefileState *tfs)
 #define HDR_QUARKS 9
 #define HDR_QUARK 10
 
-#define MKDEV(ma,mi)    ((ma)<<8 | (mi))
+/* Device number manipulation macros from kernel source */
+#define MINORBITS	20
+#define MINORMASK	((1U << MINORBITS) - 1)
+#define MAJOR(dev)	((unsigned int) ((dev) >> MINORBITS))
+#define MINOR(dev)	((unsigned int) ((dev) & MINORMASK))
+#define MKDEV(ma,mi)	(((ma) << MINORBITS) | (mi))
 
 #endif // STATE_H

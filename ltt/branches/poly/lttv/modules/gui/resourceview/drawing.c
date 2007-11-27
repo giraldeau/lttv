@@ -138,7 +138,7 @@ void drawing_data_request(Drawing_t *drawing,
 
   ControlFlowData *control_flow_data = drawing->control_flow_data;
   //    (ControlFlowData*)g_object_get_data(
-  //               G_OBJECT(drawing->drawing_area), "control_flow_data");
+  //               G_OBJECT(drawing->drawing_area), "resourceview_data");
 
   LttTime start, time_end;
   LttTime window_end = time_window.end_time;
@@ -453,7 +453,7 @@ void drawing_data_request(Drawing_t *drawing,
 
 static void set_last_start(gpointer key, gpointer value, gpointer user_data)
 {
-  ResourceInfo *process_info = (ResourceInfo*)key;
+  //ResourceInfo *process_info = (ResourceInfo*)key;
   HashedResourceData *hashed_process_data = (HashedResourceData*)value;
   guint x = (guint)user_data;
 
@@ -473,6 +473,8 @@ static void set_last_start(gpointer key, gpointer value, gpointer user_data)
 
 void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState *tss)
 {
+  int i;
+
   g_debug("Begin of data request");
   ControlFlowData *cfd = events_request->viewer_data;
   LttvTracesetContext *tsc = LTTV_TRACESET_CONTEXT(tss);
@@ -490,8 +492,10 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
           width,
           &x);
 
-  g_hash_table_foreach(cfd->process_list->process_hash, set_last_start,
-                            (gpointer)x);
+  for(i=0; i<RV_RESOURCE_COUNT; i++) {
+    g_hash_table_foreach(cfd->process_list->restypes[i].hash_table, set_last_start,
+                         (gpointer)x);
+  }
 
 }
 
@@ -673,7 +677,7 @@ expose_event( GtkWidget *widget, GdkEventExpose *event, gpointer user_data )
   ControlFlowData *control_flow_data =
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
-                "control_flow_data");
+                "resourceview_data");
 #if 0
   if(unlikely(drawing->gc == NULL)) {
     drawing->gc = gdk_gc_new(drawing->drawing_area->window);
@@ -800,7 +804,7 @@ button_press_event( GtkWidget *widget, GdkEventButton *event, gpointer user_data
   ControlFlowData *control_flow_data =
       (ControlFlowData*)g_object_get_data(
                 G_OBJECT(widget),
-                "control_flow_data");
+                "resourceview_data");
   Drawing_t *drawing = control_flow_data->drawing;
   TimeWindow time_window =
                lttvwindow_get_time_window(control_flow_data->tab);
