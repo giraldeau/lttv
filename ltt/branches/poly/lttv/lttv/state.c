@@ -1220,7 +1220,7 @@ static LttvSoftIRQState *lttv_state_copy_soft_irq_states(LttvSoftIRQState *state
   return retval;
 }
 
-static void lttv_state_free_soft_irq_states(LttvIRQState *states, guint n)
+static void lttv_state_free_soft_irq_states(LttvSoftIRQState *states, guint n)
 {
   g_free(states);
 }
