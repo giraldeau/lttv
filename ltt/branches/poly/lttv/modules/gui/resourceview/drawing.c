@@ -110,7 +110,7 @@ GdkColor drawing_colors_soft_irq[NUM_COLORS_SOFT_IRQ] =
 GdkColor drawing_colors_trap[NUM_COLORS_TRAP] =
 { /* Pixel, R, G, B */
   { 0, 0x0000, 0x0000, 0x0000 }, /* COL_TRAP_UNKNOWN */
-  { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_TRAP_IDLE */
+  { 0, 0x0000, 0x0000, 0x0000 }, /* COL_TRAP_IDLE */
   { 0, 0xFF00, 0xFF00, 0x0100 }, /* COL_TRAP_BUSY */
 };
 

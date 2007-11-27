@@ -1167,8 +1167,8 @@ int before_execmode_hook_trap(void *hook_data, void *call_data)
   guint64 trap;
   guint cpu = tfs->cpu;
 
-  guint16 ev_id_entry = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY)));
-  guint16 ev_id_exit = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_EXIT)));
+  guint16 ev_id_entry = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_ENTRY)));
+  guint16 ev_id_exit = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL_ARCH, LTT_EVENT_TRAP_EXIT)));
   if(ev_id_entry == e->event_id) {
     trap = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   }

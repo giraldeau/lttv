@@ -2314,6 +2314,7 @@ static gboolean syscall_exit(void *hook_data, void *call_data)
 static gboolean trap_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
   struct marker_field *f = lttv_trace_get_hook_field(th, 0);
@@ -2338,17 +2339,27 @@ static gboolean trap_entry(void *hook_data, void *call_data)
   /* update cpu status */
   cpu_push_mode(s->cpu_state, LTTV_CPU_TRAP);
 
+  /* update trap status */
+  s->cpu_state->last_trap = trap;
+  ts->trap_states[trap].running++;
+
   return FALSE;
 }
 
 static gboolean trap_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
+  guint trap = s->cpu_state->last_trap;
 
   pop_state(s, LTTV_STATE_TRAP);
 
   /* update cpu status */
   cpu_pop_mode(s->cpu_state);
+
+  /* update trap status */
+  if(ts->trap_states[trap].running)
+    ts->trap_states[trap].running--;
 
   return FALSE;
 }
