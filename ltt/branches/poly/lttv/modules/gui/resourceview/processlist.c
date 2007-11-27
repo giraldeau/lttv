@@ -445,6 +445,42 @@ void destroy_hash_data(gpointer data)
   g_free(data);
 }
 
+GQuark make_cpu_name(ControlFlowData *resourceview_data, guint trace_num, guint id)
+{
+  GQuark name;
+  gchar *str;
+
+  str = g_strdup_printf("CPU%u", id);
+  name = g_quark_from_string(str);
+  g_free(str);
+
+  return name;
+}
+
+GQuark make_irq_name(ControlFlowData *resourceview_data, guint trace_num, guint id)
+{
+  GQuark name;
+  gchar *str;
+
+  str = g_strdup_printf("IRQ %u", id);
+  name = g_quark_from_string(str);
+  g_free(str);
+
+  return name;
+}
+
+GQuark make_bdev_name(ControlFlowData *resourceview_data, guint trace_num, guint id)
+{
+  GQuark name;
+  gchar *str;
+
+  str = g_strdup_printf("Block (%u,%u)", MAJOR(id), MINOR(id));
+  name = g_quark_from_string(str);
+  g_free(str);
+
+  return name;
+}
+
 HashedResourceData *resourcelist_obtain_machine(ControlFlowData *resourceview_data, guint trace_num, guint id)
 {
   ResourceUniqueNumeric *ru = g_new(ResourceUniqueNumeric, 1);
@@ -524,7 +560,7 @@ HashedResourceData *resourcelist_obtain_machine(ControlFlowData *resourceview_da
   return data;
 }
 
-HashedResourceData *resourcelist_obtain_cpu(ControlFlowData *resourceview_data, guint trace_num, guint id)
+HashedResourceData *resourcelist_obtain_generic(ControlFlowData *resourceview_data, gint res_type, guint trace_num, guint id, GQuark (*make_name_func)(ControlFlowData *resourceview_data, guint trace_num, guint id))
 {
   ResourceUniqueNumeric *ru = g_new(ResourceUniqueNumeric, 1);
   HashedResourceData *data = g_new(HashedResourceData, 1);
@@ -534,7 +570,7 @@ HashedResourceData *resourcelist_obtain_cpu(ControlFlowData *resourceview_data, 
   ru->id = id;
   
   /* Search within hash table */
-  GHashTable *ht = resourceview_data->process_list->restypes[RV_RESOURCE_CPU].hash_table;
+  GHashTable *ht = resourceview_data->process_list->restypes[res_type].hash_table;
   data = g_hash_table_lookup(ht, ru);
   
   /* If not found in hash table, add it */
@@ -548,7 +584,7 @@ HashedResourceData *resourcelist_obtain_cpu(ControlFlowData *resourceview_data, 
     /* Prepare hashed data */
     data = g_malloc(sizeof(HashedResourceData));
 
-    data->type = RV_RESOURCE_CPU;
+    data->type = res_type;
     data->x.over = 0;
     data->x.over_used = FALSE;
     data->x.over_marked = FALSE;
@@ -579,12 +615,7 @@ HashedResourceData *resourcelist_obtain_cpu(ControlFlowData *resourceview_data, 
     resourceview_data->process_list->number_of_process++; // TODO: check
 
     /* add to process list */
-    {
-      gchar *str;
-      str = g_strdup_printf("CPU%u", id);
-      name = g_quark_from_string(str);
-      g_free(str);
-    }
+    name = make_name_func(resourceview_data, trace_num, id);
 
     gtk_tree_store_append(resourceview_data->process_list->list_store, &data->y_iter, &parent->y_iter);
     gtk_tree_store_set(resourceview_data->process_list->list_store, &data->y_iter,
@@ -603,166 +634,20 @@ HashedResourceData *resourcelist_obtain_cpu(ControlFlowData *resourceview_data, 
   }
 
   return data;
+}
+
+HashedResourceData *resourcelist_obtain_cpu(ControlFlowData *resourceview_data, guint trace_num, guint id)
+{
+  return resourcelist_obtain_generic(resourceview_data, RV_RESOURCE_CPU, trace_num, id, make_cpu_name);
 }
 
 HashedResourceData *resourcelist_obtain_irq(ControlFlowData *resourceview_data, guint trace_num, guint id)
 {
-  ResourceUniqueNumeric *ru = g_new(ResourceUniqueNumeric, 1);
-  HashedResourceData *data = g_new(HashedResourceData, 1);
-  
-  /* Prepare hash key */
-  ru->trace_num = trace_num;
-  ru->id = id;
-  
-  /* Search within hash table */
-  GHashTable *ht = resourceview_data->process_list->restypes[RV_RESOURCE_IRQ].hash_table;
-  data = g_hash_table_lookup(ht, ru);
-  
-  /* If not found in hash table, add it */
-  if(data == NULL) {
-    GQuark name;
-    HashedResourceData *parent;
-
-    /* Find the parent machine */
-    parent = resourcelist_obtain_machine(resourceview_data, trace_num, trace_num);
-
-    /* Prepare hashed data */
-    data = g_malloc(sizeof(HashedResourceData));
-
-    data->type = RV_RESOURCE_IRQ;
-    data->x.over = 0;
-    data->x.over_used = FALSE;
-    data->x.over_marked = FALSE;
-    data->x.middle = 0; // last 
-    data->x.middle_used = FALSE;
-    data->x.middle_marked = FALSE;
-    data->x.under = 0;
-    data->x.under_used = FALSE;
-    data->x.under_marked = FALSE;
-    data->next_good_time = ltt_time_zero;
-
-    data->height = resourceview_data->process_list->cell_height;
-    data->pixmap = 
-        gdk_pixmap_new(resourceview_data->drawing->drawing_area->window,
-                       resourceview_data->drawing->alloc_width,
-                       data->height,
-                       -1);
-
-    gdk_draw_rectangle (data->pixmap,
-        resourceview_data->drawing->drawing_area->style->black_gc,
-        TRUE,
-        0, 0,
-        resourceview_data->drawing->alloc_width,
-        data->height);
-
-    /* add to hash table */
-    g_hash_table_insert(ht, ru, data);
-    resourceview_data->process_list->number_of_process++; // TODO: check
-
-    /* add to process list */
-    {
-      gchar *str;
-      str = g_strdup_printf("IRQ %u", id);
-      name = g_quark_from_string(str);
-      g_free(str);
-    }
-
-    gtk_tree_store_append(resourceview_data->process_list->list_store, &data->y_iter, &parent->y_iter);
-    gtk_tree_store_set(resourceview_data->process_list->list_store, &data->y_iter,
-         NAME_COLUMN, g_quark_to_string(name), DATA_COLUMN, data,
-         -1);
-
-    update_index_to_pixmap(resourceview_data->process_list);
-
-    int heightall = data->height * resourceview_data->process_list->number_of_process;
-
-    gtk_widget_set_size_request(resourceview_data->drawing->drawing_area,
-                              -1,
-                              heightall);
-
-    gtk_widget_queue_draw(resourceview_data->drawing->drawing_area);
-  }
-
-  return data;
+  return resourcelist_obtain_generic(resourceview_data, RV_RESOURCE_IRQ, trace_num, id, make_irq_name);
 }
 
 HashedResourceData *resourcelist_obtain_bdev(ControlFlowData *resourceview_data, guint trace_num, guint id)
 {
-  ResourceUniqueNumeric *ru = g_new(ResourceUniqueNumeric, 1);
-  HashedResourceData *data = g_new(HashedResourceData, 1);
-  
-  /* Prepare hash key */
-  ru->trace_num = trace_num;
-  ru->id = id;
-  
-  /* Search within hash table */
-  GHashTable *ht = resourceview_data->process_list->restypes[RV_RESOURCE_BDEV].hash_table;
-  data = g_hash_table_lookup(ht, ru);
-  
-  /* If not found in hash table, add it */
-  if(data == NULL) {
-    GQuark name;
-    HashedResourceData *parent;
-
-    /* Find the parent machine */
-    parent = resourcelist_obtain_machine(resourceview_data, trace_num, trace_num);
-
-    /* Prepare hashed data */
-    data = g_malloc(sizeof(HashedResourceData));
-
-    data->type = RV_RESOURCE_BDEV;
-    data->x.over = 0;
-    data->x.over_used = FALSE;
-    data->x.over_marked = FALSE;
-    data->x.middle = 0; // last 
-    data->x.middle_used = FALSE;
-    data->x.middle_marked = FALSE;
-    data->x.under = 0;
-    data->x.under_used = FALSE;
-    data->x.under_marked = FALSE;
-    data->next_good_time = ltt_time_zero;
-
-    data->height = resourceview_data->process_list->cell_height;
-    data->pixmap = 
-        gdk_pixmap_new(resourceview_data->drawing->drawing_area->window,
-                       resourceview_data->drawing->alloc_width,
-                       data->height,
-                       -1);
-
-    gdk_draw_rectangle (data->pixmap,
-        resourceview_data->drawing->drawing_area->style->black_gc,
-        TRUE,
-        0, 0,
-        resourceview_data->drawing->alloc_width,
-        data->height);
-
-    /* add to hash table */
-    g_hash_table_insert(ht, ru, data);
-    resourceview_data->process_list->number_of_process++; // TODO: check
-
-    /* add to process list */
-    {
-      gchar *str;
-      str = g_strdup_printf("Block (%u,%u)", MAJOR(id), MINOR(id));
-      name = g_quark_from_string(str);
-      g_free(str);
-    }
-
-    gtk_tree_store_append(resourceview_data->process_list->list_store, &data->y_iter, &parent->y_iter);
-    gtk_tree_store_set(resourceview_data->process_list->list_store, &data->y_iter,
-         NAME_COLUMN, g_quark_to_string(name), DATA_COLUMN, data,
-         -1);
-
-    update_index_to_pixmap(resourceview_data->process_list);
-
-    int heightall = data->height * resourceview_data->process_list->number_of_process;
-
-    gtk_widget_set_size_request(resourceview_data->drawing->drawing_area,
-                              -1,
-                              heightall);
-
-    gtk_widget_queue_draw(resourceview_data->drawing->drawing_area);
-  }
-
-  return data;
+  return resourcelist_obtain_generic(resourceview_data, RV_RESOURCE_BDEV, trace_num, id, make_bdev_name);
 }
+
