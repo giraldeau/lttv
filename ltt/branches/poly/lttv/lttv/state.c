@@ -1405,11 +1405,11 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
   }
 
   /* save the soft irq state */
-  nb_irqs = self->nb_irqs;
+  nb_soft_irqs = self->nb_soft_irqs;
   {
     value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_SOFT_IRQS,
         LTTV_POINTER);
-    *(value.v_pointer) = lttv_state_copy_soft_irq_states(self->soft_irq_states, nb_irqs);
+    *(value.v_pointer) = lttv_state_copy_soft_irq_states(self->soft_irq_states, nb_soft_irqs);
   }
 
   /* save the blkdev states */
