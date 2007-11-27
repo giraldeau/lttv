@@ -235,6 +235,11 @@ resourceview(LttvPluginTab *ptab)
       "resourceview_data",
       control_flow_data);
         
+  g_object_set_data(
+      G_OBJECT(control_flow_data->process_list->process_list_widget),
+      "resourceview_data",
+      control_flow_data);
+        
   g_control_flow_data_list = g_slist_append(
       g_control_flow_data_list,
       plugin_cfv);

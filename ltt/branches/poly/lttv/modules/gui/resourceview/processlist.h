@@ -66,7 +66,19 @@ typedef struct _ResourceInfo {
 } ResourceInfo;
 */
 
+struct _ResourceType {
+	/* a hashtable containing the data of each resource of this type */
+	GHashTable *hash_table;
+};
+typedef struct _ResourceType ResourceType;
+
+typedef struct _ResourceUnique {
+	ResourceType *type;
+	void *priv;
+} ResourceUnique;
+
 typedef struct _ResourceUniqueNumeric {
+	ResourceUnique ru;
 	guint trace_num;
 	guint id;
 } ResourceUniqueNumeric;
@@ -93,18 +105,10 @@ typedef struct _HashedResourceData {
 
   LttTime next_good_time; /* precalculate the next time where the next
                              pixel is.*/
+  gint hidden;
 
 } HashedResourceData;
   
-struct _ResourceType {
-	/* functions for the hash table below */
-	guint (*hashfunc)(gconstpointer);
-	gboolean (*hashequalfunc)(gconstpointer,gconstpointer);
-	/* a hashtable containing the data of each resource of this type */
-	GHashTable *hash_table;
-};
-typedef struct _ResourceType ResourceType;
-
 struct _ProcessList {
   
   GtkWidget *process_list_widget;

@@ -106,6 +106,77 @@ gboolean scroll_event(GtkWidget *widget, GdkEventScroll *event, gpointer data)
 	return TRUE;
 }
 
+void expand_event(GtkTreeView *treeview, GtkTreeIter *iter, GtkTreePath *arg2, gpointer user_data)
+{
+  ControlFlowData *resourceview_data = 
+      (ControlFlowData*)g_object_get_data(
+                G_OBJECT(treeview),
+                "resourceview_data");
+  ProcessList *process_list = (ProcessList *) user_data;
+  ResourceUnique *rup;
+  HashedResourceData *hrd;
+  gboolean result;
+
+  GtkTreeModel *model;
+  GtkTreeIter child;
+
+  /* Determine which trace has been expanded */
+  model = gtk_tree_view_get_model(treeview);
+
+  /* mark each of the trace's resources invisible */
+  result = gtk_tree_model_iter_children(model, &child, iter);
+
+  /* for each child of the collapsed row */
+  while(result) {
+    /* hide the item */
+    gtk_tree_model_get(model, &child, DATA_COLUMN, &hrd, -1);
+    hrd->hidden=0;
+
+    /* find next */
+    result = gtk_tree_model_iter_next(model, &child);
+  }
+
+  update_index_to_pixmap(process_list);
+
+  gtk_widget_queue_draw(resourceview_data->drawing->drawing_area);
+}
+
+void collapse_event(GtkTreeView *treeview, GtkTreeIter *iter, GtkTreePath *arg2, gpointer user_data)
+{
+  ControlFlowData *resourceview_data = 
+      (ControlFlowData*)g_object_get_data(
+                G_OBJECT(treeview),
+                "resourceview_data");
+  ProcessList *process_list = (ProcessList *) user_data;
+  ResourceUnique *rup;
+  HashedResourceData *hrd;
+  gboolean result;
+
+  GtkTreeModel *model;
+  GtkTreeIter child;
+
+  /* Determine which trace has been expanded */
+  model = gtk_tree_view_get_model(treeview);
+
+  /* mark each of the trace's resources invisible */
+  result = gtk_tree_model_iter_children(model, &child, iter);
+
+  /* for each child of the collapsed row */
+  while(result) {
+    char *name;
+    /* hide the item */
+    gtk_tree_model_get(model, &child, NAME_COLUMN, &name, DATA_COLUMN, &hrd, -1);
+    hrd->hidden=1;
+
+    /* find next */
+    result = gtk_tree_model_iter_next(model, &child);
+  }
+
+  update_index_to_pixmap(process_list);
+
+  gtk_widget_queue_draw(resourceview_data->drawing->drawing_area);
+}
+
 static gboolean update_index_to_pixmap_each (GtkTreeModel *model, GtkTreePath *path, GtkTreeIter *iter, UpdateIndexPixmapArg *arg) 
 {
   guint array_index = arg->count;
@@ -116,11 +187,13 @@ static gboolean update_index_to_pixmap_each (GtkTreeModel *model, GtkTreePath *p
   
   g_assert(array_index < arg->process_list->index_to_pixmap->len);
   
-  GdkPixmap **pixmap =
-    (GdkPixmap**)&g_ptr_array_index(arg->process_list->index_to_pixmap, array_index);
-  *pixmap = hdata->pixmap;
+  if(hdata->hidden == 0) {
+    GdkPixmap **pixmap =
+      (GdkPixmap**)&g_ptr_array_index(arg->process_list->index_to_pixmap, array_index);
+    *pixmap = hdata->pixmap;
 
-  arg->count++;
+    arg->count++;
+  }
 
   return FALSE;
 }
@@ -134,6 +207,8 @@ void update_index_to_pixmap(ProcessList *process_list)
     items += g_hash_table_size(process_list->restypes[i].hash_table);
   }
 
+  /* we don't know the exact number of items there will be,
+   * so set an upper bound */
   g_ptr_array_set_size(process_list->index_to_pixmap, items);
 
   arg.count = 0;
@@ -141,6 +216,9 @@ void update_index_to_pixmap(ProcessList *process_list)
 
   gtk_tree_model_foreach(GTK_TREE_MODEL(process_list->list_store),
       (GtkTreeModelForeachFunc)update_index_to_pixmap_each, &arg);
+
+  /* now that we know the exact number of items, set it */
+  g_ptr_array_set_size(process_list->index_to_pixmap, arg.count);
 }
 
 
@@ -334,6 +412,9 @@ ProcessList *processlist_construct(void)
       NULL,
       NULL,
       &process_list->cell_height);
+
+  g_signal_connect(process_list->process_list_widget, "row-expanded", G_CALLBACK(expand_event), process_list);
+  g_signal_connect(process_list->process_list_widget, "row-collapsed", G_CALLBACK(collapse_event), process_list);
 	
 #if GTK_CHECK_VERSION(2,4,15)
   guint ypad;
@@ -532,6 +613,7 @@ HashedResourceData *resourcelist_obtain_machine(ControlFlowData *resourceview_da
     data->x.under_used = FALSE;
     data->x.under_marked = FALSE;
     data->next_good_time = ltt_time_zero;
+    data->hidden = 0;
 
     data->height = resourceview_data->process_list->cell_height;
     data->pixmap = 
@@ -576,7 +658,16 @@ HashedResourceData *resourcelist_obtain_machine(ControlFlowData *resourceview_da
     gtk_widget_queue_draw(resourceview_data->drawing->drawing_area);
   }
 
-  gtk_tree_view_expand_all(GTK_TREE_VIEW(resourceview_data->process_list->process_list_widget));
+  /* expand the newly added machine */
+  {
+    GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(resourceview_data->process_list->process_list_widget));
+    GtkTreePath *path;
+    path = gtk_tree_model_get_path(model, &data->y_iter);
+
+    gtk_tree_view_expand_row(GTK_TREE_VIEW(resourceview_data->process_list->process_list_widget), path, FALSE);
+
+    gtk_tree_path_free(path);
+  }
 
   return data;
 }
@@ -587,6 +678,7 @@ HashedResourceData *resourcelist_obtain_generic(ControlFlowData *resourceview_da
   HashedResourceData *data = g_new(HashedResourceData, 1);
   
   /* Prepare hash key */
+  ru->ru.type = &(resourceview_data->process_list->restypes[res_type]);
   ru->trace_num = trace_num;
   ru->id = id;
   
@@ -642,6 +734,19 @@ HashedResourceData *resourcelist_obtain_generic(ControlFlowData *resourceview_da
     gtk_tree_store_set(resourceview_data->process_list->list_store, &data->y_iter,
          NAME_COLUMN, g_quark_to_string(name), DATA_COLUMN, data,
          -1);
+
+    /* Determine if we should add it hidden or not */
+    {
+      gboolean result;
+      GtkTreeModel *model = gtk_tree_view_get_model(GTK_TREE_VIEW(resourceview_data->process_list->process_list_widget));
+      GtkTreeIter parent_iter;
+
+      result = gtk_tree_model_iter_parent(model, &parent_iter, &data->y_iter);
+      GtkTreePath *path = gtk_tree_model_get_path(model, &parent_iter);
+      data->hidden = gtk_tree_view_row_expanded(GTK_TREE_VIEW(resourceview_data->process_list->process_list_widget), path)?0:1;
+      gtk_tree_path_free(path);
+    }
+
 
     update_index_to_pixmap(resourceview_data->process_list);
 
