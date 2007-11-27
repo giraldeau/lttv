@@ -281,6 +281,9 @@ static void cpu_set_line_color(PropertiesLine *prop_line, LttvCPUState *s)
   else if(present_state == LTTV_CPU_IRQ) {
     prop_line->color = drawing_colors_cpu[COL_CPU_IRQ];
   }
+  else if(present_state == LTTV_CPU_SOFT_IRQ) {
+    prop_line->color = drawing_colors_cpu[COL_CPU_SOFT_IRQ];
+  }
   else if(present_state == LTTV_CPU_TRAP) {
     prop_line->color = drawing_colors_cpu[COL_CPU_TRAP];
   } else {

@@ -55,6 +55,7 @@ typedef enum _draw_color_cpu {
                 COL_CPU_IDLE,
                 COL_CPU_BUSY,
                 COL_CPU_IRQ,
+                COL_CPU_SOFT_IRQ,
                 COL_CPU_TRAP,
                 NUM_COLORS_CPU
 } draw_color_cpu; 

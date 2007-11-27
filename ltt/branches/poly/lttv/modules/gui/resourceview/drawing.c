@@ -89,6 +89,7 @@ GdkColor drawing_colors_cpu[NUM_COLORS_CPU] =
   { 0, 0xBBBB, 0xBBBB, 0xBBBB }, /* COL_CPU_IDLE */
   { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_CPU_BUSY */
   { 0, 0xFFFF, 0x5E00, 0x0000 }, /* COL_CPU_IRQ */
+  { 0, 0xFFFF, 0x9400, 0x9600 }, /* COL_CPU_SOFT_IRQ */
   { 0, 0xFF00, 0xFF00, 0x0100 }, /* COL_CPU_TRAP */
 };
 

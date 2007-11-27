@@ -212,6 +212,7 @@ extern LttvCPUMode
   LTTV_CPU_IDLE,
   LTTV_CPU_BUSY,
   LTTV_CPU_IRQ,
+  LTTV_CPU_SOFT_IRQ,
   LTTV_CPU_TRAP;
 
 typedef GQuark LttvIRQMode;

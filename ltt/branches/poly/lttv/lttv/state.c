@@ -142,6 +142,7 @@ LttvCPUMode
   LTTV_CPU_IDLE,
   LTTV_CPU_BUSY,
   LTTV_CPU_IRQ,
+  LTTV_CPU_SOFT_IRQ,
   LTTV_CPU_TRAP;
 
 LttvIRQMode
@@ -2356,6 +2357,9 @@ static gboolean soft_irq_exit(void *hook_data, void *call_data)
   if(ts->soft_irq_states[softirq].running)
     ts->soft_irq_states[softirq].running--;
 
+  /* update cpu status */
+  cpu_pop_mode(s->cpu_state);
+
   return FALSE;
 }
 
@@ -2400,6 +2404,9 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_SOFT_IRQ, submode);
+
+  /* update cpu status */
+  cpu_push_mode(s->cpu_state, LTTV_CPU_SOFT_IRQ);
 
   /* update softirq status */
   s->cpu_state->last_soft_irq = softirq;
@@ -3986,6 +3993,7 @@ static void module_init()
   LTTV_CPU_IDLE = g_quark_from_string("idle");
   LTTV_CPU_BUSY = g_quark_from_string("busy");
   LTTV_CPU_IRQ = g_quark_from_string("irq");
+  LTTV_CPU_SOFT_IRQ = g_quark_from_string("softirq");
   LTTV_CPU_TRAP = g_quark_from_string("trap");
 
   LTTV_IRQ_UNKNOWN = g_quark_from_string("unknown");
