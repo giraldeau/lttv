@@ -2769,8 +2769,9 @@ static gboolean process_fork(void *hook_data, void *call_data)
      *
      * Simply put a correct parent.
      */
-    g_assert(0); /* This is a problematic case : the process has been created
-                    before the fork event */
+    g_error("Process %u has been created before fork on cpu %u. Probably an unsynchronized TSC problem on the traced machine.", child_pid, cpu);
+    //g_assert(0); /* This is a problematic case : the process has been created
+    //                before the fork event */
     child_process->ppid = process->pid;
     child_process->tgid = child_tgid;
   }
