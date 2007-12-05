@@ -1877,7 +1877,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   event->event_time = ltt_interpolate_time(tf, event);
 
   if(!tf->compact) {
-    event->event_id = *(guint16*)pos;
+    event->event_id = ltt_get_uint16(LTT_GET_BO(tf), pos);
     pos += sizeof(guint16);
 
     event->event_size = ltt_get_uint16(LTT_GET_BO(tf), pos);
