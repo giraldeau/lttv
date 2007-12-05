@@ -46,6 +46,7 @@ typedef enum _draw_color {
                 COL_ZOMBIE,       /* dark purple */
                 COL_WAIT_FORK,    /* dark green */
                 COL_EXIT,         /* "less dark" magenta */
+		COL_DEAD,         /* black */
                 COL_MODE_UNKNOWN, /* white */
                 COL_UNNAMED,      /* white */
                 NUM_COLORS } draw_color; 

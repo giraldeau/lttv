@@ -616,7 +616,7 @@ static void write_process_state(gpointer key, gpointer value,
 
   process = (LttvProcessState *)value;
   fprintf(fp,
-"  <PROCESS CORE=%p PID=%u TGID=%u PPID=%u TYPE=\"%s\" CTIME_S=%lu CTIME_NS=%lu ITIME_S=%lu ITIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\">\n",
+"  <PROCESS CORE=%p PID=%u TGID=%u PPID=%u TYPE=\"%s\" CTIME_S=%lu CTIME_NS=%lu ITIME_S=%lu ITIME_NS=%lu NAME=\"%s\" BRAND=\"%s\" CPU=\"%u\" FREE_EVENTS=\"%u\">\n",
       process, process->pid, process->tgid, process->ppid,
       g_quark_to_string(process->type),
       process->creation_time.tv_sec,
@@ -625,7 +625,7 @@ static void write_process_state(gpointer key, gpointer value,
       process->insertion_time.tv_nsec,
       g_quark_to_string(process->name),
       g_quark_to_string(process->brand),
-      process->cpu);
+      process->cpu, process->free_events);
 
   for(i = 0 ; i < process->execution_stack->len; i++) {
     es = &g_array_index(process->execution_stack, LttvExecutionState, i);
@@ -726,6 +726,7 @@ static void write_process_state_raw(gpointer key, gpointer value,
   //fputc('\0', fp);
   fwrite(&process->brand, sizeof(process->brand), 1, fp);
   fwrite(&process->pid, sizeof(process->pid), 1, fp);
+  fwrite(&process->free_events, sizeof(process->free_events), 1, fp);
   fwrite(&process->tgid, sizeof(process->tgid), 1, fp);
   fwrite(&process->ppid, sizeof(process->ppid), 1, fp);
   fwrite(&process->cpu, sizeof(process->cpu), 1, fp);
@@ -875,6 +876,7 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp,
   fread(&tmp.name, sizeof(tmp.name), 1, fp);
   fread(&tmp.brand, sizeof(tmp.brand), 1, fp);
   fread(&tmp.pid, sizeof(tmp.pid), 1, fp);
+  fread(&tmp.free_events, sizeof(tmp.free_events), 1, fp);
   fread(&tmp.tgid, sizeof(tmp.tgid), 1, fp);
   fread(&tmp.ppid, sizeof(tmp.ppid), 1, fp);
   fread(&tmp.cpu, sizeof(tmp.cpu), 1, fp);
@@ -905,7 +907,7 @@ static void read_process_state_raw(LttvTraceState *self, FILE *fp,
     (gchar*)g_ptr_array_index(quarktable, tmp.brand));
   process->name = 
     g_quark_from_string((gchar*)g_ptr_array_index(quarktable, tmp.name));
-
+  process->free_events = tmp.free_events;
 
   do {
     if(feof(fp) || ferror(fp)) goto end_loop;
@@ -2162,6 +2164,7 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
     process->creation_time.tv_nsec);
   process->pid_time = g_quark_from_string(buffer);
   process->cpu = cpu;
+  process->free_events = 0;
   //process->last_cpu = tfs->cpu_name;
   //process->last_cpu_index = ltt_tracefile_num(((LttvTracefileContext*)tfs)->tf);
   process->execution_stack = g_array_sized_new(FALSE, FALSE, 
@@ -2236,10 +2239,15 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
  * has the flag SA_NOCLDWAIT. It can also happen when the child is part
  * of a killed thread group, but isn't the leader.
  */
-static void exit_process(LttvTracefileState *tfs, LttvProcessState *process) 
+static int exit_process(LttvTracefileState *tfs, LttvProcessState *process) 
 {
   LttvTraceState *ts = LTTV_TRACE_STATE(tfs->parent.t_context);
   LttvProcessState key;
+
+  /* Wait for both schedule with exit dead and process free to happen.
+   * They can happen in any order. */
+  if (++(process->free_events) < 2)
+    return 0;
 
   key.pid = process->pid;
   key.cpu = process->cpu;
@@ -2247,6 +2255,7 @@ static void exit_process(LttvTracefileState *tfs, LttvProcessState *process)
   g_array_free(process->execution_stack, TRUE);
   g_array_free(process->user_stack, TRUE);
   g_free(process);
+  return 1;
 }
 
 
@@ -2669,9 +2678,13 @@ static gboolean schedchange(void *hook_data, void *call_data)
         process->state->change = s->parent.timestamp;
       }
       
-      if(state_out == 32 || state_out == 64)
-         exit_process(s, process); /* EXIT_DEAD || TASK_DEAD */
-            /* see sched.h for states */
+      if(state_out == 32 || state_out == 64) { /* EXIT_DEAD || TASK_DEAD */
+        /* see sched.h for states */
+        if (!exit_process(s, process)) {
+          process->state->s = LTTV_STATE_DEAD;
+          process->state->change = s->parent.timestamp;
+	}
+      }
     }
   }
   process = ts->running_process[cpu] =
@@ -2800,11 +2813,13 @@ static gboolean process_kernel_thread(void *hook_data, void *call_data)
 
   process = lttv_state_find_process_or_create(ts, ANY_CPU, pid,
   		&ltt_time_zero);
-  process->execution_stack = 
-    g_array_set_size(process->execution_stack, 1);
-  es = process->state =
-    &g_array_index(process->execution_stack, LttvExecutionState, 0);
-  es->t = LTTV_STATE_SYSCALL;
+  if (process->state->s != LTTV_STATE_DEAD) {
+    process->execution_stack = 
+      g_array_set_size(process->execution_stack, 1);
+    es = process->state =
+      &g_array_index(process->execution_stack, LttvExecutionState, 0);
+    es->t = LTTV_STATE_SYSCALL;
+  }
   process->type = LTTV_STATE_KERNEL_THREAD;
 
   return FALSE;
@@ -2848,7 +2863,10 @@ static gboolean process_free(void *hook_data, void *call_data)
   g_assert(release_pid != 0);
 
   process = lttv_state_find_process(ts, ANY_CPU, release_pid);
-
+  if(likely(process != NULL))
+    exit_process(s, process);
+  return FALSE;
+//DISABLED
   if(likely(process != NULL)) {
     /* release_task is happening at kernel level : we can now safely release
      * the data structure of the process */

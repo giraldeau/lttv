@@ -266,6 +266,8 @@ static inline PropertiesLine prepare_s_e_line(LttvProcessState *process)
     prop_line.color = drawing_colors[COL_EXIT];
   } else if(process->state->s == LTTV_STATE_UNNAMED) {
     prop_line.color = drawing_colors[COL_UNNAMED];
+  } else if(process->state->s == LTTV_STATE_DEAD) {
+    prop_line.color = drawing_colors[COL_DEAD];
   } else {
 		g_critical("unknown state : %s", g_quark_to_string(process->state->s));
     g_assert(FALSE);   /* UNKNOWN STATE */
@@ -319,9 +321,11 @@ int before_schedchange_hook(void *hook_data, void *call_data)
 
   guint pid_out;
   guint pid_in;
+  guint state_out;
   {
     pid_out = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
     pid_in = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
+    state_out = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 2));
   }
   
   tfc->target_pid = pid_out;
@@ -709,11 +713,6 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   e = ltt_tracefile_get_event(tfc->tf);
 
   LttvFilter *filter = control_flow_data->filter;
-  if(filter != NULL && filter->head != NULL)
-    if(!lttv_filter_tree_parse(filter->head,e,tfc->tf,
-          tfc->t_context->t,tfc,NULL,NULL))
-      return FALSE;
-
   LttTime evtime = ltt_event_time(e);
 
   /* Add process to process list (if not present) */
@@ -731,79 +730,84 @@ int after_schedchange_hook(void *hook_data, void *call_data)
     pid_in = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
   }
 
-
-  /* Find process pid_in in the list... */
-  //process_in = lttv_state_find_process(ts, ANY_CPU, pid_in);
-  //process_in = tfs->process;
-  guint cpu = tfs->cpu;
-  guint trace_num = ts->parent.index;
-  process_in = ts->running_process[cpu];
-  /* It should exist, because we are after the state update. */
+  tfc->target_pid = pid_in;
+  if(!filter || !filter->head ||
+    lttv_filter_tree_parse(filter->head,e,tfc->tf,
+          tfc->t_context->t,tfc,NULL,NULL)) { 
+    /* Find process pid_in in the list... */
+    //process_in = lttv_state_find_process(ts, ANY_CPU, pid_in);
+    //process_in = tfs->process;
+    guint cpu = tfs->cpu;
+    guint trace_num = ts->parent.index;
+    process_in = ts->running_process[cpu];
+    /* It should exist, because we are after the state update. */
 #ifdef EXTRA_CHECK
-  g_assert(process_in != NULL);
+    g_assert(process_in != NULL);
 #endif //EXTRA_CHECK
-  birth = process_in->creation_time;
-
-  hashed_process_data_in = processlist_get_process_data(process_list,
+    birth = process_in->creation_time;
+  
+    hashed_process_data_in = processlist_get_process_data(process_list,
+            pid_in,
+            process_in->cpu,
+            &birth,
+            trace_num);
+    if(hashed_process_data_in == NULL)
+    {
+      g_assert(pid_in == 0 || pid_in != process_in->ppid);
+      ProcessInfo *process_info;
+      Drawing_t *drawing = control_flow_data->drawing;
+      /* Process not present */
+      processlist_add(process_list,
+          drawing,
           pid_in,
+          process_in->tgid,
           process_in->cpu,
+          process_in->ppid,
           &birth,
-          trace_num);
-  if(hashed_process_data_in == NULL)
-  {
-    g_assert(pid_in == 0 || pid_in != process_in->ppid);
-    ProcessInfo *process_info;
-    Drawing_t *drawing = control_flow_data->drawing;
-    /* Process not present */
-    processlist_add(process_list,
-        drawing,
-        pid_in,
-        process_in->tgid,
-        process_in->cpu,
-        process_in->ppid,
-        &birth,
-        trace_num,
-        process_in->name,
-        process_in->brand,
-        &pl_height,
-        &process_info,
-        &hashed_process_data_in);
-        gtk_widget_set_size_request(drawing->drawing_area,
-                                    -1,
-                                    pl_height);
-        gtk_widget_queue_draw(drawing->drawing_area);
-  }
-  /* Set the current process */
-  process_list->current_hash_data[trace_num][process_in->cpu] =
-                                             hashed_process_data_in;
-
-  if(ltt_time_compare(hashed_process_data_in->next_good_time,
-                          evtime) <= 0)
-  {
-    TimeWindow time_window = 
-    lttvwindow_get_time_window(control_flow_data->tab);
-
+          trace_num,
+          process_in->name,
+          process_in->brand,
+          &pl_height,
+          &process_info,
+          &hashed_process_data_in);
+          gtk_widget_set_size_request(drawing->drawing_area,
+                                      -1,
+                                      pl_height);
+          gtk_widget_queue_draw(drawing->drawing_area);
+    }
+    /* Set the current process */
+    process_list->current_hash_data[trace_num][process_in->cpu] =
+                                               hashed_process_data_in;
+  
+    if(ltt_time_compare(hashed_process_data_in->next_good_time,
+                            evtime) <= 0)
+    {
+      TimeWindow time_window = 
+      lttvwindow_get_time_window(control_flow_data->tab);
+  
 #ifdef EXTRA_CHECK
-    if(ltt_time_compare(evtime, time_window.start_time) == -1
-        || ltt_time_compare(evtime, time_window.end_time) == 1)
-            return FALSE;
+      if(ltt_time_compare(evtime, time_window.start_time) == -1
+          || ltt_time_compare(evtime, time_window.end_time) == 1)
+              return FALSE;
 #endif //EXTRA_CHECK
-    Drawing_t *drawing = control_flow_data->drawing;
-    guint width = drawing->width;
-    guint new_x;
-    
-    convert_time_to_pixels(
-        time_window,
-        evtime,
-        width,
-        &new_x);
-
-    if(hashed_process_data_in->x.middle != new_x) {
-      hashed_process_data_in->x.middle = new_x;
-      hashed_process_data_in->x.middle_used = FALSE;
-      hashed_process_data_in->x.middle_marked = FALSE;
+      Drawing_t *drawing = control_flow_data->drawing;
+      guint width = drawing->width;
+      guint new_x;
+      
+      convert_time_to_pixels(
+          time_window,
+          evtime,
+          width,
+          &new_x);
+  
+      if(hashed_process_data_in->x.middle != new_x) {
+        hashed_process_data_in->x.middle = new_x;
+        hashed_process_data_in->x.middle_used = FALSE;
+        hashed_process_data_in->x.middle_marked = FALSE;
+      }
     }
   }
+
   return 0;
 }
 

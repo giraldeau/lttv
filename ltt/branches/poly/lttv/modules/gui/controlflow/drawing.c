@@ -78,6 +78,7 @@ GdkColor drawing_colors[NUM_COLORS] =
   { 0, 0x6400, 0x0000, 0x5D00 }, /* COL_ZOMBIE : dark purple */
   { 0, 0x0700, 0x6400, 0x0000 }, /* COL_WAIT_FORK : dark green */
   { 0, 0x8900, 0x0000, 0x8400 }, /* COL_EXIT : "less dark" magenta */
+  { 0, 0x0000, 0x0000, 0x0000 }, /* COL_DEAD : black */
   { 0, 0xFFFF, 0xFFFF, 0xFFFF }, /* COL_MODE_UNKNOWN : white */
   { 0, 0xFFFF, 0xFFFF, 0xFFFF }  /* COL_UNNAMED : white */
 

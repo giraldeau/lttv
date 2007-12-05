@@ -260,6 +260,7 @@ typedef struct _LttvProcessState {
   guint64  current_function;
   LttvProcessType type;        /* kernel thread or user space ? */
   guint target_pid; /* target PID of the current event. */
+  guint free_events; /* 0 : none, 1 : free or exit dead, 2 : should delete */
 } LttvProcessState;
 
 #define ANY_CPU 0 /* For clarity sake : a call to lttv_state_find_process for
