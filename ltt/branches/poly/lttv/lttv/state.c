@@ -2239,15 +2239,10 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
  * has the flag SA_NOCLDWAIT. It can also happen when the child is part
  * of a killed thread group, but isn't the leader.
  */
-static int exit_process(LttvTracefileState *tfs, LttvProcessState *process) 
+static void exit_process(LttvTracefileState *tfs, LttvProcessState *process) 
 {
   LttvTraceState *ts = LTTV_TRACE_STATE(tfs->parent.t_context);
   LttvProcessState key;
-
-  /* Wait for both schedule with exit dead and process free to happen.
-   * They can happen in any order. */
-  if (++(process->free_events) < 2)
-    return 0;
 
   key.pid = process->pid;
   key.cpu = process->cpu;
@@ -2255,7 +2250,6 @@ static int exit_process(LttvTracefileState *tfs, LttvProcessState *process)
   g_array_free(process->execution_stack, TRUE);
   g_array_free(process->user_stack, TRUE);
   g_free(process);
-  return 1;
 }
 
 
@@ -2680,10 +2674,8 @@ static gboolean schedchange(void *hook_data, void *call_data)
       
       if(state_out == 32 || state_out == 64) { /* EXIT_DEAD || TASK_DEAD */
         /* see sched.h for states */
-        if (!exit_process(s, process)) {
-          process->state->s = LTTV_STATE_DEAD;
-          process->state->change = s->parent.timestamp;
-	}
+        process->state->s = LTTV_STATE_DEAD;
+        process->state->change = s->parent.timestamp;
       }
     }
   }
@@ -2865,33 +2857,6 @@ static gboolean process_free(void *hook_data, void *call_data)
   process = lttv_state_find_process(ts, ANY_CPU, release_pid);
   if(likely(process != NULL))
     exit_process(s, process);
-  return FALSE;
-//DISABLED
-  if(likely(process != NULL)) {
-    /* release_task is happening at kernel level : we can now safely release
-     * the data structure of the process */
-    //This test is fun, though, as it may happen that 
-    //at time t : CPU 0 : process_free
-    //at time t+150ns : CPU 1 : schedule out
-    //Clearly due to time imprecision, we disable it. (Mathieu)
-    //If this weird case happen, we have no choice but to put the 
-    //Currently running process on the cpu to 0.
-    //I re-enable it following time precision fixes. (Mathieu)
-    //Well, in the case where an process is freed by a process on another CPU
-    //and still scheduled, it happens that this is the schedchange that will
-    //drop the last reference count. Do not free it here!
-    guint num_cpus = ltt_trace_get_num_cpu(ts->parent.t);
-    guint i;
-    for(i=0; i< num_cpus; i++) {
-      //g_assert(process != ts->running_process[i]);
-      if(process == ts->running_process[i]) {
-        //ts->running_process[i] = lttv_state_find_process(ts, i, 0);
-        break;
-      }
-    }
-    if(i == num_cpus) /* process is not scheduled */
-      exit_process(s, process);
-  }
 
   return FALSE;
 }
