@@ -81,7 +81,8 @@ GQuark
     LTT_EVENT_REQUEST_ISSUE,
     LTT_EVENT_REQUEST_COMPLETE,
     LTT_EVENT_LIST_INTERRUPT,
-    LTT_EVENT_SYS_CALL_TABLE;
+    LTT_EVENT_SYS_CALL_TABLE,
+    LTT_EVENT_SOFTIRQ_VEC;
 
 /* Fields Quarks */
 
@@ -2666,6 +2667,24 @@ static gboolean dump_syscall(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean dump_softirq(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  guint id;
+  guint64 address;
+  char *symbol;
+
+  id = ltt_event_get_unsigned(e, lttv_trace_get_hook_field(th, 0));
+  address = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
+  symbol = ltt_event_get_string(e, lttv_trace_get_hook_field(th, 2));
+  ts->soft_irq_names[id] = g_quark_from_string(symbol);
+
+  return FALSE;
+}
+
 static gboolean schedchange(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
@@ -3396,6 +3415,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         FIELD_ARRAY(LTT_FIELD_ID, LTT_FIELD_ADDRESS, LTT_FIELD_SYMBOL),
         dump_syscall, NULL, &hooks);
 
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_STATEDUMP,
+        LTT_EVENT_SOFTIRQ_VEC,
+        FIELD_ARRAY(LTT_FIELD_ID, LTT_FIELD_ADDRESS, LTT_FIELD_SYMBOL),
+        dump_softirq, NULL, &hooks);
+
     /* Add these hooks to each event_by_id hooks list */
 
     nb_tracefile = ts->parent.tracefiles->len;
@@ -4084,6 +4109,7 @@ static void module_init()
   LTT_EVENT_REQUEST_COMPLETE = g_quark_from_string("_blk_request_complete");
   LTT_EVENT_LIST_INTERRUPT = g_quark_from_string("interrupt");
   LTT_EVENT_SYS_CALL_TABLE = g_quark_from_string("sys_call_table");
+  LTT_EVENT_SOFTIRQ_VEC = g_quark_from_string("softirq_vec");
 
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");
   LTT_FIELD_TRAP_ID       = g_quark_from_string("trap_id");

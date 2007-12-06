@@ -55,7 +55,13 @@ static inline void print_enum_events(LttEvent *e, struct marker_field *f,
       f->name == LTT_FIELD_SYSCALL_ID) {
     g_string_append_printf(s, " [%s]",
       g_quark_to_string(ts->syscall_names[value]));
+  } else if ((info->name == g_quark_from_static_string("kernel_softirq_entry")
+    || info->name == g_quark_from_static_string("kernel_softirq_exit")) &&
+      f->name == g_quark_from_static_string("softirq_id")) {
+    g_string_append_printf(s, " [%s]",
+      g_quark_to_string(ts->soft_irq_names[value]));
   }
+
 }
 
 void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
