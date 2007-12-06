@@ -43,11 +43,26 @@
 #include <ltt/ltt-private.h>
 #include <string.h>
 
+static inline void print_enum_events(LttEvent *e, struct marker_field *f,
+                      guint64 value, GString *s, LttvTracefileState *tfs)
+{
+  LttTrace *trace = ltt_tracefile_get_trace(e->tracefile);
+  struct marker_info *info = marker_get_info_from_id(trace, e->event_id);
+  LttvTraceState *ts = (LttvTraceState*)(tfs->parent.t_context);
+  
+  //TODO optimize with old quarks.
+  if (info->name == g_quark_from_static_string("kernel_arch_syscall_entry") && 
+      f->name == LTT_FIELD_SYSCALL_ID) {
+    g_string_append_printf(s, " [%s]",
+      g_quark_to_string(ts->syscall_names[value]));
+  }
+}
 
 void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
-                      gboolean field_names)
+                      gboolean field_names, LttvTracefileState *tfs)
 {
   GQuark name;
+  guint64 value;
 
   //int nb, i;
 
@@ -58,9 +73,10 @@ void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
         if(name)
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
       }
-
-      g_string_append_printf(s, "%lld", ltt_event_get_long_int(e,f));
+      value = ltt_event_get_long_int(e,f);
+      g_string_append_printf(s, "%lld", value);
       //g_string_append_printf(s, type->fmt, ltt_event_get_long_int(e,f));
+      print_enum_events(e, f, value, s, tfs);
       break;
 
     case LTT_TYPE_UNSIGNED_INT:
@@ -69,7 +85,9 @@ void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
         if(name)
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
       }
-      g_string_append_printf(s, "%llu", ltt_event_get_long_unsigned(e,f));
+      value = ltt_event_get_long_unsigned(e,f);
+      g_string_append_printf(s, "%llu", value);
+      print_enum_events(e, f, value, s, tfs);
       //g_string_append_printf(s, type->fmt, ltt_event_get_long_unsigned(e,f));
       break;
     
@@ -261,7 +279,7 @@ void lttv_event_to_string(LttEvent *e, GString *s,
                 field++) {
     if(field != marker_get_field(info, 0))
       g_string_append_printf(s, ", ");
-    lttv_print_field(e, field, s, field_names);
+    lttv_print_field(e, field, s, field_names, tfs);
   }
   g_string_append_printf(s, " }");
 } 

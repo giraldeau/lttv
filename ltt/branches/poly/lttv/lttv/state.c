@@ -31,6 +31,7 @@
 #include <ltt/marker-desc.h>
 #include <stdio.h>
 #include <string.h>
+#include <ltt/ltt-private.h>
 
 /* Comment :
  * Mathieu Desnoyers
@@ -52,7 +53,8 @@ GQuark
     LTT_FACILITY_LIST,
     LTT_FACILITY_FS,
     LTT_FACILITY_USER_GENERIC,
-    LTT_FACILITY_BLOCK;
+    LTT_FACILITY_BLOCK,
+    LTT_FACILITY_STATEDUMP;
 
 /* Events Quarks */
 
@@ -78,7 +80,8 @@ GQuark
     LTT_EVENT_THREAD_BRAND,
     LTT_EVENT_REQUEST_ISSUE,
     LTT_EVENT_REQUEST_COMPLETE,
-    LTT_EVENT_LIST_INTERRUPT;
+    LTT_EVENT_LIST_INTERRUPT,
+    LTT_EVENT_SYS_CALL_TABLE;
 
 /* Fields Quarks */
 
@@ -106,7 +109,10 @@ GQuark
     LTT_FIELD_MINOR,
     LTT_FIELD_MAJOR,
     LTT_FIELD_OPERATION,
-    LTT_FIELD_ACTION;
+    LTT_FIELD_ACTION,
+    LTT_FIELD_ID,
+    LTT_FIELD_ADDRESS,
+    LTT_FIELD_SYMBOL;
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -2626,6 +2632,40 @@ static gboolean function_exit(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean dump_syscall(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  guint id;
+  guint64 address;
+  char *symbol;
+
+  id = ltt_event_get_unsigned(e, lttv_trace_get_hook_field(th, 0));
+  address = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
+  symbol = ltt_event_get_string(e, lttv_trace_get_hook_field(th, 2));
+
+  if (ts->nb_syscalls < id) {
+    GQuark *old_names = ts->syscall_names;
+    guint new_nb_syscalls = max(id + 1, ts->nb_syscalls * 2);
+    guint i;
+    GString *fe_name = g_string_new("");
+    ts->syscall_names = g_new(GQuark, new_nb_syscalls);
+    memcpy(ts->syscall_names, old_names,
+        ts->nb_syscalls * sizeof(GQuark));
+    for(i = ts->nb_syscalls ; i < new_nb_syscalls ; i++) {
+      g_string_printf(fe_name, "syscall %d", i);
+      ts->syscall_names[i] = g_quark_from_string(fe_name->str);
+    }
+    g_string_free(fe_name, TRUE);
+    ts->nb_syscalls = new_nb_syscalls;
+  }
+  ts->syscall_names[id] = g_quark_from_string(symbol);
+
+  return FALSE;
+}
+
 static gboolean schedchange(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
@@ -3350,6 +3390,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         FIELD_ARRAY(LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE),
         function_exit, NULL, &hooks);
 
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_STATEDUMP,
+        LTT_EVENT_SYS_CALL_TABLE,
+        FIELD_ARRAY(LTT_FIELD_ID, LTT_FIELD_ADDRESS, LTT_FIELD_SYMBOL),
+        dump_syscall, NULL, &hooks);
+
     /* Add these hooks to each event_by_id hooks list */
 
     nb_tracefile = ts->parent.tracefiles->len;
@@ -4013,8 +4059,8 @@ static void module_init()
   LTT_FACILITY_LIST = g_quark_from_string("list");
   LTT_FACILITY_USER_GENERIC    = g_quark_from_string("user_generic");
   LTT_FACILITY_BLOCK = g_quark_from_string("block");
-
-  
+  LTT_FACILITY_STATEDUMP = g_quark_from_string("statedump");
+ 
   LTT_EVENT_SYSCALL_ENTRY = g_quark_from_string("syscall_entry");
   LTT_EVENT_SYSCALL_EXIT  = g_quark_from_string("syscall_exit");
   LTT_EVENT_TRAP_ENTRY    = g_quark_from_string("trap_entry");
@@ -4036,8 +4082,8 @@ static void module_init()
   LTT_EVENT_THREAD_BRAND  = g_quark_from_string("thread_brand");
   LTT_EVENT_REQUEST_ISSUE = g_quark_from_string("_blk_request_issue");
   LTT_EVENT_REQUEST_COMPLETE = g_quark_from_string("_blk_request_complete");
-  LTT_EVENT_LIST_INTERRUPT = g_quark_from_string("interrupt");;
-
+  LTT_EVENT_LIST_INTERRUPT = g_quark_from_string("interrupt");
+  LTT_EVENT_SYS_CALL_TABLE = g_quark_from_string("sys_call_table");
 
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");
   LTT_FIELD_TRAP_ID       = g_quark_from_string("trap_id");
@@ -4063,6 +4109,9 @@ static void module_init()
   LTT_FIELD_MINOR     = g_quark_from_string("minor");
   LTT_FIELD_OPERATION     = g_quark_from_string("direction");
   LTT_FIELD_ACTION        = g_quark_from_string("action");
+  LTT_FIELD_ID            = g_quark_from_string("id");
+  LTT_FIELD_ADDRESS       = g_quark_from_string("address");
+  LTT_FIELD_SYMBOL        = g_quark_from_string("symbol");
   
   LTTV_CPU_UNKNOWN = g_quark_from_string("unknown");
   LTTV_CPU_IDLE = g_quark_from_string("idle");

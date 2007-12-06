@@ -61,7 +61,8 @@ extern GQuark
     LTT_FACILITY_FS,
     LTT_FACILITY_LIST,
     LTT_FACILITY_USER_GENERIC,
-    LTT_FACILITY_BLOCK;
+    LTT_FACILITY_BLOCK,
+    LTT_FACILITY_STATEDUMP;
 
 /* Events Quarks */
 
@@ -87,7 +88,8 @@ extern GQuark
     LTT_EVENT_THREAD_BRAND,
     LTT_EVENT_REQUEST_ISSUE,
     LTT_EVENT_REQUEST_COMPLETE,
-    LTT_EVENT_LIST_INTERRUPT;
+    LTT_EVENT_LIST_INTERRUPT,
+    LTT_EVENT_SYS_CALL_TABLE;
 
 /* Fields Quarks */
 
@@ -114,7 +116,10 @@ extern GQuark
     LTT_FIELD_MINOR,
     LTT_FIELD_MAJOR,
     LTT_FIELD_OPERATION,
-    LTT_FIELD_ACTION;
+    LTT_FIELD_ACTION,
+    LTT_FIELD_ID,
+    LTT_FIELD_ADDRESS,
+    LTT_FIELD_SYMBOL;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
