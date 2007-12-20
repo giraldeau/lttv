@@ -2296,16 +2296,23 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
   guint nb_syscalls = ((LttvTraceState *)(s->parent.t_context))->nb_syscalls;
   guint syscall = ltt_event_get_unsigned(e, f);
   
-  if(syscall < nb_syscalls) {
-    submode = ((LttvTraceState *)(s->parent.t_context))->syscall_names[
-        syscall];
-  } else {
+  if(nb_syscalls <= syscall) {
     /* Fixup an incomplete syscall table */
-    GString *string = g_string_new("");
-    g_string_printf(string, "syscall %u", syscall);
-    submode = g_quark_from_string(string->str);
-    g_string_free(string, TRUE);
+    GQuark *old_names = ts->syscall_names;
+    guint new_nb_syscalls = max(syscall + 1, ts->nb_syscalls * 2);
+    guint i;
+    GString *fe_name = g_string_new("");
+    ts->syscall_names = g_new(GQuark, new_nb_syscalls);
+    memcpy(ts->syscall_names, old_names,
+        ts->nb_syscalls * sizeof(GQuark));
+    for(i = ts->nb_syscalls ; i < new_nb_syscalls ; i++) {
+      g_string_printf(fe_name, "syscall %d", i);
+      ts->syscall_names[i] = g_quark_from_string(fe_name->str);
+    }
+    g_string_free(fe_name, TRUE);
+    ts->nb_syscalls = new_nb_syscalls;
   }
+  submode = ((LttvTraceState *)(s->parent.t_context))->syscall_names[syscall];
   /* There can be no system call from PID 0 : unknown state */
   if(process->pid != 0)
     push_state(s, LTTV_STATE_SYSCALL, submode);
@@ -2337,18 +2344,25 @@ static gboolean trap_entry(void *hook_data, void *call_data)
 
   LttvExecutionSubmode submode;
 
-  guint64 nb_traps = ((LttvTraceState *)(s->parent.t_context))->nb_traps;
   guint64 trap = ltt_event_get_long_unsigned(e, f);
 
-  if(trap < nb_traps) {
-    submode = ((LttvTraceState *)(s->parent.t_context))->trap_names[trap];
-  } else {
+  if (unlikely(ts->nb_traps <= trap)) {
     /* Fixup an incomplete trap table */
-    GString *string = g_string_new("");
-    g_string_printf(string, "trap %llu", trap);
-    submode = g_quark_from_string(string->str);
-    g_string_free(string, TRUE);
+    GQuark *old_names = ts->trap_names;
+    guint new_nb_traps = max(trap + 1, ts->nb_traps * 2);
+    guint i;
+    GString *fe_name = g_string_new("");
+    ts->trap_names = g_new(GQuark, new_nb_traps);
+    memcpy(ts->trap_names, old_names,
+        ts->nb_traps * sizeof(GQuark));
+    for(i = ts->nb_traps ; i < new_nb_traps ; i++) {
+      g_string_printf(fe_name, "trap %d", i);
+      ts->trap_names[i] = g_quark_from_string(fe_name->str);
+    }
+    g_string_free(fe_name, TRUE);
+    ts->nb_traps = new_nb_traps;
   }
+  submode = ((LttvTraceState *)(s->parent.t_context))->trap_names[trap];
 
   push_state(s, LTTV_STATE_TRAP, submode);
 
@@ -2391,17 +2405,24 @@ static gboolean irq_entry(void *hook_data, void *call_data)
 
   LttvExecutionSubmode submode;
   guint64 irq = ltt_event_get_long_unsigned(e, f);
-  guint64 nb_irqs = ((LttvTraceState *)(s->parent.t_context))->nb_irqs;
 
-  if(irq < nb_irqs) {
-    submode = ((LttvTraceState *)(s->parent.t_context))->irq_names[irq];
-  } else {
+  if (unlikely(ts->nb_irqs <= irq)) {
     /* Fixup an incomplete irq table */
-    GString *string = g_string_new("");
-    g_string_printf(string, "irq %llu", irq);
-    submode = g_quark_from_string(string->str);
-    g_string_free(string, TRUE);
+    GQuark *old_names = ts->irq_names;
+    guint new_nb_irqs = max(irq + 1, ts->nb_irqs * 2);
+    guint i;
+    GString *fe_name = g_string_new("");
+    ts->irq_names = g_new(GQuark, new_nb_irqs);
+    memcpy(ts->irq_names, old_names,
+        ts->nb_irqs * sizeof(GQuark));
+    for(i = ts->nb_irqs ; i < new_nb_irqs ; i++) {
+      g_string_printf(fe_name, "irq %d", i);
+      ts->irq_names[i] = g_quark_from_string(fe_name->str);
+    }
+    g_string_free(fe_name, TRUE);
+    ts->nb_irqs = new_nb_irqs;
   }
+  submode = ((LttvTraceState *)(s->parent.t_context))->irq_names[irq];
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_IRQ, submode);
@@ -2463,15 +2484,23 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
   guint64 softirq = ltt_event_get_long_unsigned(e, f);
   guint64 nb_softirqs = ((LttvTraceState *)(s->parent.t_context))->nb_soft_irqs;
 
-  if(softirq < nb_softirqs) {
-    submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[softirq];
-  } else {
-    /* Fixup an incomplete irq table */
-    GString *string = g_string_new("");
-    g_string_printf(string, "softirq %llu", softirq);
-    submode = g_quark_from_string(string->str);
-    g_string_free(string, TRUE);
+  if (unlikely(nb_softirqs <= softirq)) {
+    /* Fixup an incomplete softirq table */
+    GQuark *old_names = ts->soft_irq_names;
+    guint new_nb_soft_irqs = max(softirq + 1, ts->nb_soft_irqs * 2);
+    guint i;
+    GString *fe_name = g_string_new("");
+    ts->soft_irq_names = g_new(GQuark, new_nb_soft_irqs);
+    memcpy(ts->soft_irq_names, old_names,
+        ts->nb_soft_irqs * sizeof(GQuark));
+    for(i = ts->nb_soft_irqs ; i < new_nb_soft_irqs ; i++) {
+      g_string_printf(fe_name, "softirq %d", i);
+      ts->soft_irq_names[i] = g_quark_from_string(fe_name->str);
+    }
+    g_string_free(fe_name, TRUE);
+    ts->nb_soft_irqs = new_nb_soft_irqs;
   }
+  submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[softirq];
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_SOFT_IRQ, submode);
@@ -2498,6 +2527,21 @@ static gboolean enum_interrupt(void *hook_data, void *call_data)
     lttv_trace_get_hook_field(th, 0)));
   guint irq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
 
+  if (ts->nb_irqs <= irq) {
+    GQuark *old_names = ts->irq_names;
+    guint new_nb_irqs = max(irq + 1, ts->nb_irqs * 2);
+    guint i;
+    GString *fe_name = g_string_new("");
+    ts->irq_names = g_new(GQuark, new_nb_irqs);
+    memcpy(ts->irq_names, old_names,
+        ts->nb_irqs * sizeof(GQuark));
+    for(i = ts->nb_irqs ; i < new_nb_irqs ; i++) {
+      g_string_printf(fe_name, "irq %d", i);
+      ts->irq_names[i] = g_quark_from_string(fe_name->str);
+    }
+    g_string_free(fe_name, TRUE);
+    ts->nb_irqs = new_nb_irqs;
+  }
   ts->irq_names[irq] = action;
 
   return FALSE;
@@ -2647,7 +2691,7 @@ static gboolean dump_syscall(void *hook_data, void *call_data)
   address = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
   symbol = ltt_event_get_string(e, lttv_trace_get_hook_field(th, 2));
 
-  if (ts->nb_syscalls < id) {
+  if (ts->nb_syscalls <= id) {
     GQuark *old_names = ts->syscall_names;
     guint new_nb_syscalls = max(id + 1, ts->nb_syscalls * 2);
     guint i;
@@ -2680,6 +2724,24 @@ static gboolean dump_softirq(void *hook_data, void *call_data)
   id = ltt_event_get_unsigned(e, lttv_trace_get_hook_field(th, 0));
   address = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
   symbol = ltt_event_get_string(e, lttv_trace_get_hook_field(th, 2));
+
+  if (ts->nb_soft_irqs <= id) {
+    /* Fixup an incomplete softirq table */
+    GQuark *old_names = ts->soft_irq_names;
+    guint new_nb_soft_irqs = max(id + 1, ts->nb_soft_irqs * 2);
+    guint i;
+    GString *fe_name = g_string_new("");
+    ts->soft_irq_names = g_new(GQuark, new_nb_soft_irqs);
+    memcpy(ts->soft_irq_names, old_names,
+        ts->nb_soft_irqs * sizeof(GQuark));
+    for(i = ts->nb_soft_irqs ; i < new_nb_soft_irqs ; i++) {
+      g_string_printf(fe_name, "softirq %d", i);
+      ts->soft_irq_names[i] = g_quark_from_string(fe_name->str);
+    }
+    g_string_free(fe_name, TRUE);
+    ts->nb_soft_irqs = new_nb_soft_irqs;
+  }
+
   ts->soft_irq_names[id] = g_quark_from_string(symbol);
 
   return FALSE;
