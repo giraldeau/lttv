@@ -125,7 +125,7 @@ static void legend_button(GtkToolButton *toolbutton, gpointer user_data)
  
   gtk_window_set_title(legend, "Control Flow View Legend");
 
-  GtkWidget *pixmap = create_pixmap(GTK_WIDGET(legend), "lttv-color-list.png");
+  GtkWidget *pixmap = create_pixmap(GTK_WIDGET(legend), "controlflow-legend.png");
   
   gtk_container_add(GTK_CONTAINER(legend), GTK_WIDGET(pixmap));
 
