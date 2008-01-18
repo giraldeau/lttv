@@ -302,7 +302,7 @@ static void expand_syscall_table(LttvTraceState *ts, int id)
   guint new_nb = check_expand(ts->nb_syscalls, id);
   if(likely(new_nb == ts->nb_syscalls))
     return;
-  expand_name_table(ts, &ts->syscall_names, ts->nb_syscalls, id);
+  expand_name_table(ts, &ts->syscall_names, ts->nb_syscalls, new_nb);
   fill_name_table(ts, ts->syscall_names, ts->nb_syscalls, new_nb, "syscall");
   /* Update the table size */
   ts->nb_syscalls = new_nb;
