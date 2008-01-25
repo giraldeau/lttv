@@ -367,6 +367,10 @@ make install
 ** Section 3 * Using LTTng and LTTV                      **
 ***********************************************************
 
+* Arm Linux Kernel Markers after each boot
+
+ltt-armall
+
 * Use graphical LTTV to control tracing and analyse traces
 
 lttv-gui (or /usr/local/bin/lttv-gui)
