@@ -1,5 +1,9 @@
 
 #include "marker.h"
+#include <stdio.h>
+
+extern struct marker __start___markers[];
+extern struct marker __stop___markers[];
 
 /**
  * __mark_empty_function - Empty probe callback
@@ -31,4 +35,15 @@ void marker_probe_cb(const struct marker *mdata, void *call_private,
 {
 
 
+}
+
+__attribute__((constructor)) void marker_init(void)
+{
+	struct marker *iter;
+
+	printf("Marker section : from %p to %p\n",
+		__start___markers, __stop___markers);
+	for (iter = __start___markers; iter < __stop___markers; iter++) {
+		printf("Marker : %s\n", iter->name);
+	}
 }

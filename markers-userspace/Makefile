@@ -7,7 +7,7 @@ marker-lib.o: marker-lib.c marker.h
 	$(CC) -O2 -DCONFIG_MARKERS -c -o $@ marker-lib.c
 
 testprog: testprog.c marker.h marker-lib.o
-	$(CC) -O2 -DCONFIG_MARKERS -o $@ testprog.c marker-lib.o
+	$(CC) -Wl,-Telf_i386.xmark -O2 -DCONFIG_MARKERS -o $@ testprog.c marker-lib.o
 
 testprog.S: testprog.c marker.h
 	$(CC) -O2 -DCONFIG_MARKERS -S -o $@ testprog.c
