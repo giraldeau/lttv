@@ -15,4 +15,4 @@ testprog.S: testprog.c marker.h
 .PHONY: clean
 
 clean:
-	rm -f testprog testprog.S
+	rm -f testprog testprog.S marker-lib.o

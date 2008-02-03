@@ -1,6 +1,7 @@
 
 #include "marker.h"
 #include <stdio.h>
+#include <errno.h>
 
 extern struct marker __start___markers[];
 extern struct marker __stop___markers[];
@@ -33,16 +34,21 @@ void __mark_empty_function(void *probe_private, void *call_private,
 void marker_probe_cb(const struct marker *mdata, void *call_private,
 	const char *fmt, ...)
 {
+	static unsigned int count = 0;
 
-
+	printf("Test probe function %u\n", count++);
 }
 
 __attribute__((constructor)) void marker_init(void)
 {
 	struct marker *iter;
+	int ret;
 
 	printf("Marker section : from %p to %p\n",
 		__start___markers, __stop___markers);
+	ret = sys_marker(__start___markers, __stop___markers);
+	if (ret)
+		perror("Error connecting markers");
 	for (iter = __start___markers; iter < __stop___markers; iter++) {
 		printf("Marker : %s\n", iter->name);
 	}

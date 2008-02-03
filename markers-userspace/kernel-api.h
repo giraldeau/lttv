@@ -5,6 +5,15 @@
 #ifndef __KERNEL_API
 #define __KERNEL_API
 
+#include <errno.h>
+#include <syscall.h>
+#include <string.h>
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DECLARE_IMV(type, name) extern __typeof__(type) name##__imv
 #define DEFINE_IMV(type, name)  __typeof__(type) name##__imv
 
@@ -27,5 +36,13 @@
  * based mechanism. Useful for __init and __exit section data read.
  */
 #define _imv_read(name)		(name##__imv)
+
+#define __NR_marker             326
+
+#define sys_marker(...) syscall(__NR_marker, __VA_ARGS__)
+
+#ifdef __cplusplus
+} /* end of extern "C" */
+#endif
 
 #endif
