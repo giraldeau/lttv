@@ -1475,8 +1475,6 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		print_tabs(1, fd);
 	}
 	fprintf(fd, "u64 tsc;\n");
-	print_tabs(1, fd);
-	fprintf(fd, "size_t before_hdr_pad, after_hdr_pad, header_size;\n");
 	fprintf(fd, "\n");
 	
 	if(!event->force) {
@@ -1579,9 +1577,7 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	print_tabs(2, fd);
 	fprintf(fd, "buffer = ltt_reserve_slot(trace, channel, &transport_data,\n");
 	print_tabs(3, fd);
-	fprintf(fd, "reserve_size, &slot_size, &tsc,\n");
-	print_tabs(3, fd);
-	fprintf(fd, "&before_hdr_pad, &after_hdr_pad, &header_size);\n");
+	fprintf(fd, "reserve_size, &slot_size, &tsc);\n");
 	/* If error, return */
 	print_tabs(2, fd);
 	fprintf(fd, "if (!buffer)\n");
@@ -1597,15 +1593,15 @@ int print_event_logging_function(char *basename, facility_t *fac,
 	/* Write event header */
 	if(strcmp("compact", fac->name) != 0) {
 		print_tabs(2, fd);
-		fprintf(fd, "ltt_write_event_header(trace, channel, buffer,\n");
+		fprintf(fd, "buffer = ltt_write_event_header(trace, channel, buffer,\n");
 		print_tabs(3, fd);
 		fprintf(fd, "ltt_facility_%s_%X, event_%s_%s,\n", fac->name, fac->checksum,
 										fac->name, event->name);
 		print_tabs(3, fd);
-		fprintf(fd, "reserve_size, before_hdr_pad, tsc);\n");
+		fprintf(fd, "reserve_size, tsc);\n");
 	} else {
 		print_tabs(2, fd);
-		fprintf(fd, "ltt_write_compact_header(trace, channel, buffer,\n");
+		fprintf(fd, "buffer = ltt_write_compact_header(trace, channel, buffer,\n");
 		print_tabs(3, fd);
 		fprintf(fd, "ltt_facility_%s_%X, event_%s_%s,\n", fac->name, fac->checksum,
 										fac->name, event->name);
@@ -1613,14 +1609,11 @@ int print_event_logging_function(char *basename, facility_t *fac,
 		if(event->compact_data) {
 			assert(event->fields.position > 0);
 			field_t *field = (field_t*)(event->fields.array[0]);
-			fprintf(fd, "reserve_size, before_hdr_pad, tsc, lttng_param_%s);\n",
+			fprintf(fd, "reserve_size, tsc, lttng_param_%s);\n",
 				field->name);
 		} else
-			fprintf(fd, "reserve_size, before_hdr_pad, tsc, 0);\n");
+			fprintf(fd, "reserve_size, tsc, 0);\n");
 	}
-	print_tabs(2, fd);
-	fprintf(fd, "*to_base += before_hdr_pad + after_hdr_pad + header_size;\n");
-	fprintf(fd, "\n");
 	
 	/* write data. */
 
@@ -2024,8 +2017,6 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	}
 	fprintf(fd, "uint64_t tsc;\n");
 	print_tabs(1, fd);
-	fprintf(fd, "size_t before_hdr_pad, after_hdr_pad, header_size;\n");
-	fprintf(fd, "\n");
 	
 	print_tabs(1, fd);
 	fprintf(fd, "if (!trace) {\n");
@@ -2111,9 +2102,7 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 	print_tabs(2, fd);
 	fprintf(fd, "buffer = ltt_reserve_slot(trace, ltt_buf,\n");
 	print_tabs(3, fd);
-	fprintf(fd, "reserve_size, &slot_size, &tsc,\n");
-	print_tabs(3, fd);
-	fprintf(fd, "&before_hdr_pad, &after_hdr_pad, &header_size);\n");
+	fprintf(fd, "reserve_size, &slot_size, &tsc);\n");
 	/* If error, return */
 	print_tabs(2, fd);
 	fprintf(fd, "if (!buffer)\n");
@@ -2128,15 +2117,12 @@ int print_event_logging_function_user_fast(char *basename, facility_t *fac,
 
 	/* Write event header */
 	print_tabs(2, fd);
-	fprintf(fd, "ltt_write_event_header(trace, ltt_buf, buffer,\n");
+	fprintf(fd, "buffer = ltt_write_event_header(trace, ltt_buf, buffer,\n");
 	print_tabs(3, fd);
 	fprintf(fd, "ltt_facility_%s_%X, event_%s_%s,\n", fac->name, fac->checksum,
 									fac->name, event->name);
 	print_tabs(3, fd);
-	fprintf(fd, "reserve_size, before_hdr_pad, tsc);\n");
-	print_tabs(2, fd);
-	fprintf(fd, "*to_base += before_hdr_pad + after_hdr_pad + header_size;\n");
-	fprintf(fd, "\n");
+	fprintf(fd, "reserve_size, tsc);\n");
 	
 	/* write data. */
 
@@ -2560,6 +2546,8 @@ int print_loader_header(facility_t *fac)
   fprintf(fd,"ltt_facility_t\tltt_facility_%s;\n", fac->name);
   fprintf(fd,"ltt_facility_t\tltt_facility_%s_%X;\n\n",
 			fac->name, fac->checksum);
+  fprintf(fd,"extern unsigned int ltt_get_channel_index_%s(u8 eID);\n\n",
+			fac->name);
 
   fprintf(fd,"#define LTT_FACILITY_SYMBOL\t\tltt_facility_%s\n",
       fac->name);
@@ -2571,6 +2559,8 @@ int print_loader_header(facility_t *fac)
 			fac->name);
   fprintf(fd,"#define LTT_FACILITY_ALIGNMENT\t\t%u\n\n",
   			fac->align);
+  fprintf(fd,"#define LTT_FACILITY_SELECT\t\tltt_get_channel_index_%s\n\n",
+  			fac->name);
   fprintf(fd, "#endif //CONFIG_LTT\n\n");
   fprintf(fd, "#endif //_LTT_FACILITY_LOADER_%s_H_\n", fac->capname);
 
@@ -2717,6 +2707,7 @@ int print_loader_c(facility_t *fac)
   fprintf(fd, "\t.checksum = LTT_FACILITY_CHECKSUM,\n");
   fprintf(fd, "\t.symbol = SYMBOL_STRING(LTT_FACILITY_SYMBOL),\n");
   fprintf(fd, "\t.alignment = LTT_FACILITY_ALIGNMENT,\n");
+  fprintf(fd, "\t.select = LTT_FACILITY_SELECT,\n");
   fprintf(fd, "};\n");
   fprintf(fd, "\n");
   fprintf(fd, "static int __init facility_init(void)\n");

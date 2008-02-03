@@ -12,9 +12,12 @@ ifneq ($(CONFIG_LTT),)
 	#obj-m += ltt-probe-tests.o
 	#obj-m += test-time-probe3.o
 endif
-	obj-m += test-slub.o
-	obj-m += test-slub2.o
-	obj-m += test-showval.o
+	obj-m += test-sys_call.o
+#	obj-m += test-bug.o
+	obj-m += test-mark-speed.o
+	#obj-m += test-slub.o
+	#obj-m += test-slub2.o
+	#obj-m += test-showval.o
 	#obj-m += cond_call.o
 	#obj-m += cond_call2.o
 #	obj-m += test-irq-latency.o
@@ -41,8 +44,8 @@ endif
 	#obj-m += test-ser.o
 #	obj-m += test-cmpxchg.o
 #	obj-m += test-cmpxchg-nolock.o
-	obj-m += test-cmpxchg-nolock2.o
-	obj-m += test-cmpxchg8b.o
+	#obj-m += test-cmpxchg-nolock2.o
+	#obj-m += test-cmpxchg8b.o
 #	obj-m += test-spinlock.o
 #	obj-m += test-inc.o
 #	obj-m += test-inc-nolock.o

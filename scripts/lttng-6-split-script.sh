@@ -12,7 +12,7 @@ function wr () {
 
 
 PRENAME=patch
-NAME=-2.6.20-lttng-$1
+NAME=-2.6.21-rc6-mm1-lttng-$1
 ALL_NAME=${PRENAME}${NAME}-all.diff
 VALUE=1
 printf -v COUNT "%02d" ${VALUE}
@@ -607,8 +607,7 @@ FILE=../${PRENAME}${COUNT}${NAME}-timestamp.diff
 VALUE=$(( ${VALUE} + 1 ))
 printf -v COUNT "%02d" ${VALUE}
 
-IN="?_ltt_ltt-test-tsc.c
-?_include_asm-alpha_ltt.h
+IN="?_include_asm-alpha_ltt.h
 ?_include_asm-arm_ltt.h
 ?_include_asm-arm26_ltt.h
 ?_include_asm-cris_ltt.h
