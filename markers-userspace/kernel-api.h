@@ -37,7 +37,7 @@ extern "C" {
  */
 #define _imv_read(name)		(name##__imv)
 
-#define __NR_marker             326
+#define __NR_marker             328
 
 #define sys_marker(...) syscall(__NR_marker, __VA_ARGS__)
 

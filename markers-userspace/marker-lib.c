@@ -39,17 +39,37 @@ void marker_probe_cb(const struct marker *mdata, void *call_private,
 	printf("Test probe function %u\n", count++);
 }
 
+//FIXME : imv_read won't work with optimized immediate values.
+//will need to issue one sys_marker call for each immediate value.
+
 __attribute__((constructor)) void marker_init(void)
 {
 	struct marker *iter;
 	int ret;
 
-	printf("Marker section : from %p to %p\n",
+	printf("Marker section : from %p to %p (init)\n",
 		__start___markers, __stop___markers);
-	ret = sys_marker(__start___markers, __stop___markers);
-	if (ret)
-		perror("Error connecting markers");
 	for (iter = __start___markers; iter < __stop___markers; iter++) {
 		printf("Marker : %s\n", iter->name);
+		ret = sys_marker(iter->name, iter->format,
+			&imv_read(iter->state), 1);
+		if (ret)
+			perror("Error connecting markers");
+	}
+}
+
+__attribute__((destructor)) void marker_fini(void)
+{
+	struct marker *iter;
+	int ret;
+
+	printf("Marker section : from %p to %p (fini)\n",
+		__start___markers, __stop___markers);
+	for (iter = __start___markers; iter < __stop___markers; iter++) {
+		printf("Marker : %s\n", iter->name);
+		ret = sys_marker(iter->name, iter->format,
+			&imv_read(iter->state), 0);
+		if (ret)
+			perror("Error disconnecting markers");
 	}
 }
