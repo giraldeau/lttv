@@ -3,8 +3,8 @@
 #include <stdio.h>
 #include <errno.h>
 
-extern struct marker __start___markers[];
-extern struct marker __stop___markers[];
+__attribute__ ((visibility ("protected"))) extern struct marker __start___markers[];
+__attribute__ ((visibility ("protected"))) extern struct marker __stop___markers[];
 
 /**
  * __mark_empty_function - Empty probe callback
@@ -18,6 +18,7 @@ extern struct marker __stop___markers[];
  * though the function pointer change and the marker enabling are two distinct
  * operations that modifies the execution flow of preemptible code.
  */
+__attribute__ ((visibility ("protected")))
 void __mark_empty_function(void *probe_private, void *call_private,
 	const char *fmt, va_list *args)
 {
@@ -31,6 +32,7 @@ void __mark_empty_function(void *probe_private, void *call_private,
  * @...:  Variable argument list.
  *
  */
+__attribute__ ((visibility ("protected")))
 void marker_probe_cb(const struct marker *mdata, void *call_private,
 	const char *fmt, ...)
 {
@@ -41,14 +43,20 @@ void marker_probe_cb(const struct marker *mdata, void *call_private,
 
 //FIXME : imv_read won't work with optimized immediate values.
 //will need to issue one sys_marker call for each immediate value.
+__attribute__ ((visibility ("protected")))
+void testip(void)
+{
+	printf("addr : %p\n", __builtin_return_address(0));
+}
 
-__attribute__((constructor)) void marker_init(void)
+__attribute__((constructor, visibility ("protected"))) void marker_init(void)
 {
 	struct marker *iter;
 	int ret;
 
 	printf("Marker section : from %p to %p (init)\n",
 		__start___markers, __stop___markers);
+	testip();
 	for (iter = __start___markers; iter < __stop___markers; iter++) {
 		printf("Marker : %s\n", iter->name);
 		ret = sys_marker(iter->name, iter->format,
@@ -58,7 +66,7 @@ __attribute__((constructor)) void marker_init(void)
 	}
 }
 
-__attribute__((destructor)) void marker_fini(void)
+static __attribute__((destructor, visibility ("protected"))) void marker_fini(void)
 {
 	struct marker *iter;
 	int ret;

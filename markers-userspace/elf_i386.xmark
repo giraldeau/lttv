@@ -135,9 +135,9 @@ SECTIONS
   {
     *(.data .data.* .gnu.linkonce.d.*)
     . = ALIGN(8);
-    PROVIDE_HIDDEN (__start___markers = .);
+    PROVIDE (__start___markers = .);
     *(__markers)
-    PROVIDE_HIDDEN (__stop___markers = .);
+    PROVIDE (__stop___markers = .);
     KEEP (*(.gnu.linkonce.d.*personality*))
     SORT(CONSTRUCTORS)
   }
