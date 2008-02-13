@@ -3,8 +3,11 @@
 #include <stdio.h>
 #include <errno.h>
 
-__attribute__ ((visibility ("protected"))) extern struct marker __start___markers[];
-__attribute__ ((visibility ("protected"))) extern struct marker __stop___markers[];
+__attribute__ ((visibility ("protected")))
+extern struct marker __start___markers[];
+
+__attribute__ ((visibility ("protected")))
+extern struct marker __stop___markers[];
 
 /**
  * __mark_empty_function - Empty probe callback
@@ -49,7 +52,8 @@ void testip(void)
 	printf("addr : %p\n", __builtin_return_address(0));
 }
 
-__attribute__((constructor, visibility ("protected"))) void marker_init(void)
+__attribute__((constructor, visibility ("protected")))
+void marker_init(void)
 {
 	struct marker *iter;
 	int ret;
@@ -66,7 +70,8 @@ __attribute__((constructor, visibility ("protected"))) void marker_init(void)
 	}
 }
 
-static __attribute__((destructor, visibility ("protected"))) void marker_fini(void)
+__attribute__((destructor, visibility ("protected")))
+void marker_fini(void)
 {
 	struct marker *iter;
 	int ret;
