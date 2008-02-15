@@ -39,9 +39,13 @@ __attribute__ ((visibility ("protected")))
 void marker_probe_cb(const struct marker *mdata, void *call_private,
 	const char *fmt, ...)
 {
-	static unsigned int count = 0;
+	char buf[PAGE_SIZE];
+	va_list ap;
 
-	printf("Test probe function %u\n", count++);
+	va_start(ap, fmt);
+	vsnprintf(buf, PAGE_SIZE-1, fmt, ap);
+	sys_trace(0, 0, buf);
+	va_end(ap);
 }
 
 //FIXME : imv_read won't work with optimized immediate values.
