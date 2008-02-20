@@ -453,7 +453,7 @@ The following lttctl commands take a flight recorder trace :
 
 lttctl -n trace -c -m flight
 lttd -n -d -t /tmp/trace -c /sys/kernel/debug/ltt 
-lttctl -n trace -s -m flight
+lttctl -n trace -s
 .. do stuff
 lttctl -n trace -q
 lttd -f -d -t /tmp/trace -c /sys/kernel/debug/ltt
