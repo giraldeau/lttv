@@ -451,11 +451,13 @@ including control channels, except for the facilities tracefiles.
 
 The following lttctl commands take a flight recorder trace :
 
-Create trace channel, start lttd on normal channels, start tracing:
-lttctl -n tracename -d -l /mnt/relayfs/ltt -t /tmp/trace1 -m flight
-
-Stop tracing, start lttd on flight recorder channels, destroy trace channels :
-lttctl -n tracename -f -l /mnt/relayfs/ltt -t /tmp/trace1 -m flight
+lttctl -n trace -c -m flight
+lttd -n -d -t /tmp/trace -c /sys/kernel/debug/ltt 
+lttctl -n trace -s -m flight
+.. do stuff
+lttctl -n trace -q
+lttd -f -d -t /tmp/trace -c /sys/kernel/debug/ltt
+lttctl -m trace -r
 
 
 ***********************************************************
