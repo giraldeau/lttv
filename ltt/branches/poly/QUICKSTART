@@ -419,7 +419,7 @@ of the events to the clipboard and paste them in the GUI by clicking on the
 bottom right label "Current time". Support for this type of filtering should
 be added to the filter module soon.
 
-* Flight recorder mode
+* Hybrid mode
 
 Starting from LTTng 0.5.105 and ltt-control 0.20, a new mode can be used :
 hybrid. It can be especially useful when studying big workloads on a long period
@@ -443,6 +443,19 @@ We will need to tweak what we consider "important" medium rate events. For
 instance, thread branding events are actually considered a "high rate" event
 when it should be considered "medium rate". The same should apply for the
 state dump process enumeration.
+
+* Flight recorder mode
+
+The flight recorder mode writes data into overwritten buffers for all channels,
+including control channels, except for the facilities tracefiles.
+
+The following lttctl commands take a flight recorder trace :
+
+Create trace channel, start lttd on normal channels, start tracing:
+lttctl -n tracename -d -l /mnt/relayfs/ltt -t /tmp/trace1 -m flight
+
+Stop tracing, start lttd on flight recorder channels, destroy trace channels :
+lttctl -n tracename -f -l /mnt/relayfs/ltt -t /tmp/trace1 -m flight
 
 
 ***********************************************************
