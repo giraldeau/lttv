@@ -344,7 +344,7 @@ __EXPORT void lttvwindowtraces_background_request_queue
   GSList **slist;
   gboolean result;
 
-  lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+  result = lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
                                 LTTV_REQUESTS_QUEUE,
                                 LTTV_POINTER,
                                 &value);
@@ -426,7 +426,7 @@ void lttvwindowtraces_background_request_remove
   GSList **slist;
   gboolean result;
 
-  lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
+  result = lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
                                 LTTV_REQUESTS_QUEUE,
                                 LTTV_POINTER,
                                 &value);
