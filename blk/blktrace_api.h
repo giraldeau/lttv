@@ -30,31 +30,32 @@ enum {
 /*
  * Basic trace actions
  */
-enum {
-	__BLK_TA_QUEUE = 1,		/* queued */
-	__BLK_TA_BACKMERGE,		/* back merged to existing rq */
-	__BLK_TA_FRONTMERGE,		/* front merge to existing rq */
-	__BLK_TA_GETRQ,			/* allocated new request */
-	__BLK_TA_SLEEPRQ,		/* sleeping on rq allocation */
-	__BLK_TA_REQUEUE,		/* request requeued */
-	__BLK_TA_ISSUE,			/* sent to driver */
-	__BLK_TA_COMPLETE,		/* completed by driver */
-	__BLK_TA_PLUG,			/* queue was plugged */
-	__BLK_TA_UNPLUG_IO,		/* queue was unplugged by io */
-	__BLK_TA_UNPLUG_TIMER,		/* queue was unplugged by timer */
-	__BLK_TA_INSERT,		/* insert request */
-	__BLK_TA_SPLIT,			/* bio was split */
-	__BLK_TA_BOUNCE,		/* bio was bounced */
-	__BLK_TA_REMAP,			/* bio was remapped */
-};
+//enum blktrace_act {
+//	__BLK_TA_QUEUE = 1,		/* queued */
+//	__BLK_TA_BACKMERGE,		/* back merged to existing rq */
+//	__BLK_TA_FRONTMERGE,		/* front merge to existing rq */
+//	__BLK_TA_GETRQ,			/* allocated new request */
+//	__BLK_TA_SLEEPRQ,		/* sleeping on rq allocation */
+//	__BLK_TA_REQUEUE,		/* request requeued */
+//	__BLK_TA_ISSUE,			/* sent to driver */
+//	__BLK_TA_COMPLETE,		/* completed by driver */
+//	__BLK_TA_PLUG,			/* queue was plugged */
+//	__BLK_TA_UNPLUG_IO,		/* queue was unplugged by io */
+//	__BLK_TA_UNPLUG_TIMER,		/* queue was unplugged by timer */
+//	__BLK_TA_INSERT,		/* insert request */
+//	__BLK_TA_SPLIT,			/* bio was split */
+//	__BLK_TA_BOUNCE,		/* bio was bounced */
+//	__BLK_TA_REMAP,			/* bio was remapped */
+//};
 
 /*
  * Notify events.
  */
-enum blktrace_notify {
-	__BLK_TN_PROCESS = 0,		/* establish pid/name mapping */
-	__BLK_TN_TIMESTAMP,		/* include system clock */
-};
+//enum blktrace_notify {
+//	__BLK_TN_PROCESS = 0,		/* establish pid/name mapping */
+//	__BLK_TN_TIMESTAMP,		/* include system clock */
+//};
+
 
 /*
  * Trace actions in full. Additionally, read or write is masked
@@ -84,27 +85,47 @@ enum blktrace_notify {
 /*
  * The trace itself
  */
-struct blk_io_trace {
-	__u32 magic;		/* MAGIC << 8 | version */
-	__u32 sequence;		/* event number */
-	__u64 time;		/* in nanoseconds */
-	__u64 sector;		/* disk offset */
-	__u32 bytes;		/* transfer length */
-	__u32 action;		/* what happened */
-	__u32 pid;		/* who did it */
-	__u32 device;		/* device identifier (dev_t) */
-	__u32 cpu;		/* on what cpu did it happen */
-	__u16 error;		/* completion error */
-	__u16 pdu_len;		/* length of data after this trace */
-};
+//struct blk_io_trace {
+//	u32 magic;		/* MAGIC << 8 | version */
+//	u32 sequence;		/* event number */
+//	u64 time;		/* in microseconds */
+//	u64 sector;		/* disk offset */
+//	u32 bytes;		/* transfer length */
+//	u32 action;		/* what happened */
+//	u32 pid;		/* who did it */
+//	u32 device;		/* device number */
+//	u32 cpu;		/* on what cpu did it happen */
+//	u16 error;		/* completion error */
+//	u16 pdu_len;		/* length of data after this trace */
+//};
 
 /*
  * The remap event
  */
-struct blk_io_trace_remap {
-	__u32 device;
-	__u32 device_from;
-	__u64 sector;
+//struct blk_io_trace_remap {
+//	__be32 device;
+//	__be32 device_from;
+//	__be64 sector;
+//};
+
+enum {
+	Blktrace_setup = 1,
+	Blktrace_running,
+	Blktrace_stopped,
+};
+
+struct blk_trace {
+	int trace_state;
+//	struct rchan *rchan;
+//	unsigned long *sequence;
+//	u16 act_mask;
+//	u64 start_lba;
+//	u64 end_lba;
+//	u32 pid;
+	__u32 dev;
+//	struct dentry *dir;
+//	struct dentry *dropped_file;
+//	atomic_t dropped;
 };
 
 /*
@@ -112,12 +133,12 @@ struct blk_io_trace_remap {
  */
 struct blk_user_trace_setup {
 	char name[32];			/* output */
-	__u16 act_mask;			/* input */
-	__u32 buf_size;			/* input */
-	__u32 buf_nr;			/* input */
-	__u64 start_lba;
-	__u64 end_lba;
-	__u32 pid;
+//	__u16 act_mask;			/* input */
+//	__u32 buf_size;			/* input */
+//	__u32 buf_nr;			/* input */
+//	__u64 start_lba;
+//	__u64 end_lba;
+//	__u32 pid;
 };
 
 #define BLKTRACESETUP _IOWR(0x12,115,struct blk_user_trace_setup)

@@ -12,9 +12,9 @@ int start(int fd)
 	struct blk_user_trace_setup buts;
 
 	memset(&buts, 0, sizeof(buts));
-	buts.buf_size = 512*1024;
-	buts.buf_nr = 4;
-	buts.act_mask = ~0;
+//	buts.buf_size = 512*1024;
+//	buts.buf_nr = 4;
+//	buts.act_mask = ~0;
 
 	if (ioctl(fd, BLKTRACESETUP, &buts) < 0) {
 		perror("BLKTRACESETUP");
@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 
 	fd = open(argv[2], O_RDONLY | O_NONBLOCK);
 	if (fd < 0) {
-		perror(argv[1]);
+		perror(argv[0]);
 		return 1;
 	}
 
