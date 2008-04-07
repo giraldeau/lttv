@@ -16,6 +16,8 @@ rmmod test-mark-speed-opt
 RESOPT=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-edit.ko
+#Patch with nops
+for a in `seq 1 10`; do cat /proc/testmark;done
 for a in `seq 1 10`; do cat /proc/testmark;done
 rmmod test-mark-speed-edit
 RESNOP=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
