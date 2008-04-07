@@ -12,9 +12,12 @@ ifneq ($(CONFIG_LTT),)
 	#obj-m += ltt-probe-tests.o
 	#obj-m += test-time-probe3.o
 endif
-	obj-m += test-sys_call.o
+	#obj-m += test-sys_call.o
 #	obj-m += test-bug.o
 	obj-m += test-mark-speed.o
+	obj-m += test-mark-speed-edit.o
+	obj-m += test-mark-speed-opt.o
+#	obj-m += toggle-tester.o
 	#obj-m += test-slub.o
 	#obj-m += test-slub2.o
 	#obj-m += test-showval.o
