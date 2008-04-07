@@ -1,5 +1,6 @@
 ifneq ($(KERNELRELEASE),)
 	obj-m += test-mark-speed.o
+	obj-m += test-mark-speed-empty.o
 	obj-m += test-mark-speed-edit.o
 	obj-m += test-mark-speed-opt.o
 else
