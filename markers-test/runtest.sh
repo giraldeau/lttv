@@ -15,6 +15,7 @@ for a in `seq 1 10`; do cat /proc/testmark;done
 rmmod test-mark-speed-edit
 RESNOP=`dmesg |tail -n 10|sed 's/^\[.*\] cycles : \(.*\)$/\1/'`
 
+echo "20000 iterations"
 
 echo "Numbers for normal marker"
 
