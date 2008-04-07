@@ -9,17 +9,17 @@ LOOPS=2000
 insmod test-mark-speed-empty.ko
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-empty
-RESEMP=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESEMP=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed.ko
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed
-RESSTD=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESSTD=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-opt.ko
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-opt
-RESOPT=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESOPT=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-edit.ko
 #Patch with nops
@@ -27,7 +27,7 @@ cat /proc/testmark
 
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-edit
-RESNOP=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESNOP=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-local.ko
 #Patch with nops
@@ -35,7 +35,7 @@ cat /proc/testmark
 
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-local
-RESNOPLOCAL=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESNOPLOCAL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 
 make clean
@@ -44,17 +44,17 @@ make EXTRA_CFLAGS=-DCACHEFLUSH
 insmod test-mark-speed-empty.ko
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-empty
-RESEMPFL=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESEMPFL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed.ko
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed
-RESSTDFL=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESSTDFL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-opt.ko
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-opt
-RESOPTFL=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESOPTFL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-edit.ko
 #Patch with nops
@@ -62,7 +62,7 @@ cat /proc/testmark
 
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-edit
-RESNOPFL=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESNOPFL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-local.ko
 #Patch with nops
@@ -70,7 +70,7 @@ cat /proc/testmark
 
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-local
-RESNOPLOCALFL=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+RESNOPLOCALFL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 
 
