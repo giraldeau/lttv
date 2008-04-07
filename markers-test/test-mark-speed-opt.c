@@ -8,6 +8,8 @@
 #include <linux/timex.h>
 #include <linux/marker.h>
 #include <asm/ptrace.h>
+#include <asm/system.h>
+
 static void noinline test2(const struct marker *mdata,
         void *call_private, ...)
 {
@@ -52,6 +54,7 @@ struct proc_dir_entry *pentry = NULL;
 
 static inline void test(unsigned long arg, unsigned long arg2)
 {
+	wbinvd();
 	//asm volatile ("");
 	//__my_trace_mark(1, kernel_debug_test, NULL, "%d %d %ld %ld", 2, current->pid, arg, arg2);
 	__my_trace_mark(0, kernel_debug_test, NULL, "%d %d %ld %ld", 2, current->pid, arg, arg2);
@@ -67,7 +70,7 @@ static int my_open(struct inode *inode, struct file *file)
 	rdtsc_barrier();
 	cycles1 = get_cycles();
 	rdtsc_barrier();
-	for(i=0; i<20000; i++) {
+	for(i=0; i<2000; i++) {
 		test(i, i);
 	}
 	rdtsc_barrier();

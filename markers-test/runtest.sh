@@ -1,54 +1,58 @@
 #!/bin/sh
 
+ITER=10
+LOOPS=2000
+
 insmod test-mark-speed-empty.ko
-for a in `seq 1 10`; do cat /proc/testmark;done
+for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-empty
 RESEMP=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed.ko
-for a in `seq 1 10`; do cat /proc/testmark;done
+for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed
 RESSTD=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-opt.ko
-for a in `seq 1 10`; do cat /proc/testmark;done
+for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-opt
 RESOPT=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-edit.ko
 #Patch with nops
-for a in `seq 1 10`; do cat /proc/testmark;done
-for a in `seq 1 10`; do cat /proc/testmark;done
+cat /proc/testmark
+
+for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-edit
 RESNOP=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
-echo "20000 iterations"
+echo "Results in cycles per loop"
 
-echo "Numbers for empty loop"
+echo "Cycles for wbinvd() loop (will be substracted from following results)"
 
 SUM="0"
 for a in $RESEMP; do SUM=$[$SUM + $a]; done
-RESEMP=$[$SUM / 10]
+RESEMP=`echo $SUM/$ITER/$LOOPS | bc -l /dev/stdin`
 
 echo $RESEMP
 
-echo "Numbers for normal marker"
+echo "Added cycles for normal marker"
 
 SUM="0"
 for a in $RESSTD; do SUM=$[$SUM + $a]; done
-RESSTD=$[$SUM / 10]
+RESSTD=`echo $SUM/$ITER/$LOOPS - $RESEMP | bc -l /dev/stdin`
 
 echo $RESSTD
 
-echo "Numbers for optimized marker"
+echo "Added cycles for optimized marker"
 SUM="0"
 for a in $RESOPT; do SUM=$[$SUM + $a]; done
-RESOPT=$[$SUM / 10]
+RESOPT=`echo $SUM/$ITER/$LOOPS - $RESEMP | bc -l /dev/stdin`
 echo $RESOPT
 
-echo "Numbers for NOP replacement of function call"
+echo "Added cycles for NOP replacement of function call"
 SUM="0"
 for a in $RESNOP; do SUM=$[$SUM + $a]; done
-RESNOP=$[$SUM / 10]
+RESNOP=`echo $SUM/$ITER/$LOOPS - $RESEMP | bc -l /dev/stdin`
 echo $RESNOP
 
