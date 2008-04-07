@@ -19,10 +19,10 @@ static void noinline test2(const struct marker *mdata,
 		ins[0], ins[1], ins[2], ins[3], ins[4]);
 #endif //0
 	ins[0] = 0x90;
-	ins[1] = 0x90;
-	ins[2] = 0x90;
-	ins[3] = 0x90;
-	ins[4] = 0x90;
+	ins[1] = 0x8d;
+	ins[2] = 0x74;
+	ins[3] = 0x26;
+	ins[4] = 0x00;
 }
 
 /*
