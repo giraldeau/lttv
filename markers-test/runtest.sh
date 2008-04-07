@@ -29,6 +29,14 @@ for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-edit
 RESNOP=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
+insmod test-mark-speed-local.ko
+#Patch with nops
+cat /proc/testmark
+
+for a in `seq 1 $ITER`; do cat /proc/testmark;done
+rmmod test-mark-speed-local
+RESNOPLOCAL=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+
 
 make clean
 make EXTRA_CFLAGS=-DCACHEFLUSH
@@ -55,6 +63,14 @@ cat /proc/testmark
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-edit
 RESNOPFL=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
+
+insmod test-mark-speed-local.ko
+#Patch with nops
+cat /proc/testmark
+
+for a in `seq 1 $ITER`; do cat /proc/testmark;done
+rmmod test-mark-speed-local
+RESNOPLOCALFL=`dmesg |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 
 
@@ -101,16 +117,27 @@ RESOPTFL=`echo $SUM/$ITER/$LOOPS - $RESEMPFL | bc -l /dev/stdin`
 echo $RESOPTFL
 
 
-echo "Added cycles for NOP replacement of function call (cached)"
+echo "Added cycles for NOP replacement of function call (cached) (1 pointer read, 5 local vars)"
 SUM="0"
 for a in $RESNOP; do SUM=$[$SUM + $a]; done
 RESNOP=`echo $SUM/$ITER/$LOOPS - $RESEMP | bc -l /dev/stdin`
 echo $RESNOP
 
-echo "Added cycles for NOP replacement of function call (uncached)"
+echo "Added cycles for NOP replacement of function call (uncached) (1 pointer read, 5 local vars)"
 SUM="0"
 for a in $RESNOPFL; do SUM=$[$SUM + $a]; done
 RESNOPFL=`echo $SUM/$ITER/$LOOPS - $RESEMPFL | bc -l /dev/stdin`
 echo $RESNOPFL
 
 
+echo "Added cycles for NOP replacement of function call (cached) (6 local vars)"
+SUM="0"
+for a in $RESNOPLOCAL; do SUM=$[$SUM + $a]; done
+RESNOPLOCAL=`echo $SUM/$ITER/$LOOPS - $RESEMP | bc -l /dev/stdin`
+echo $RESNOPLOCAL
+
+echo "Added cycles for NOP replacement of function call (uncached) (6 local vars)"
+SUM="0"
+for a in $RESNOPLOCALFL; do SUM=$[$SUM + $a]; done
+RESNOPLOCALFL=`echo $SUM/$ITER/$LOOPS - $RESEMPFL | bc -l /dev/stdin`
+echo $RESNOPLOCALFL
