@@ -72,7 +72,16 @@ static int my_open(struct inode *inode, struct file *file)
 	rdtsc_barrier();
 	cycles1 = get_cycles();
 	rdtsc_barrier();
-	for(i=0; i<2000; i++) {
+	for(i=0; i<200; i++) {
+		test(i, i);
+		test(i, i);
+		test(i, i);
+		test(i, i);
+		test(i, i);
+		test(i, i);
+		test(i, i);
+		test(i, i);
+		test(i, i);
 		test(i, i);
 	}
 	rdtsc_barrier();
