@@ -62,11 +62,16 @@ static void noinline test2(const struct marker *mdata,
 	//asm volatile ("");
 struct proc_dir_entry *pentry = NULL;
 
+volatile int temp = 10;
+volatile int temp2 = 10;
+
 static inline void test(unsigned long arg, unsigned long arg2)
 {
 #ifdef CACHEFLUSH
 	wbinvd();
 #endif
+	temp = temp * 100 + 60;
+	temp2 = temp << 10;
 	//asm volatile ("");
 	//__my_trace_mark(1, kernel_debug_test, NULL, "%d %d %ld %ld", 2, current->pid, arg, arg2);
 	test2(NULL, NULL, 2, 10, arg, arg2);
