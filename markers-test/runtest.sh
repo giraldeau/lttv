@@ -28,6 +28,7 @@ SUM="0"
 for a in $RESEMP; do SUM=$[$SUM + $a]; done
 RESEMP=$[$SUM / 10]
 
+echo $RESEMP
 
 echo "Numbers for normal marker"
 
