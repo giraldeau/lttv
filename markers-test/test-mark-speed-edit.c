@@ -11,8 +11,18 @@
 static void noinline test2(const struct marker *mdata,
         void *call_private, ...)
 {
+	unsigned char *ins = __builtin_return_address(0) - 5;
+#if 0
 	/* not called */
-	printk("blah\n");
+	printk("ip %p\n", __builtin_return_address(0));
+	printk("prev_ins %hX %hX %hX %hX %hX\n",
+		ins[0], ins[1], ins[2], ins[3], ins[4]);
+#endif //0
+	ins[0] = 0x90;
+	ins[1] = 0x90;
+	ins[2] = 0x90;
+	ins[3] = 0x90;
+	ins[4] = 0x90;
 }
 
 /*
