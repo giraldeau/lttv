@@ -54,7 +54,9 @@ struct proc_dir_entry *pentry = NULL;
 
 static inline void test(unsigned long arg, unsigned long arg2)
 {
+#ifdef CACHEFLUSH
 	wbinvd();
+#endif
 	asm volatile ("");
 	//__my_trace_mark(1, kernel_debug_test, NULL, "%d %d %ld %ld", 2, current->pid, arg, arg2);
 	//__my_trace_mark(0, kernel_debug_test, NULL, "%d %d %ld %ld", 2, current->pid, arg, arg2);
@@ -103,4 +105,5 @@ void cleanup_module(void)
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mathieu Desnoyers");
 MODULE_DESCRIPTION("Marker Test");
+MODULE_VERSION("1.0");
 
