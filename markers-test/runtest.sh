@@ -3,7 +3,7 @@
 make clean
 make #build no flush modules
 
-ITER=10
+ITER=100
 LOOPS=2000
 
 insmod test-mark-speed-empty.ko
