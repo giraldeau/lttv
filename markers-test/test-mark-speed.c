@@ -11,7 +11,8 @@
 #include <asm/system.h>
 
 static void pmc_flush_cache(void)
-  {
+{
+    register int i;
     /* write back and invalidate cache (a serializing instruction) */
 
     __asm__ __volatile__ ( "wbinvd" : : : "memory" );
@@ -26,8 +27,10 @@ static void pmc_flush_cache(void)
      * Does wbinvd also cause the TLB to be flushed?
      * A comment in mtrr.c suggests that it does.
      */
-    { register int i; for (i = 0; i < 512*1024; i++) { } }
-  }
+    for (i = 0; i < 512*1024; i++) {
+    	cpu_relax();
+    }
+}
 
 static void noinline test2(const struct marker *mdata,
         void *call_private, ...)
@@ -73,7 +76,7 @@ struct proc_dir_entry *pentry = NULL;
 
 static inline void test(unsigned long arg, unsigned long arg2)
 {
-	register int temp[5];
+	volatile int temp[5];
 #ifdef CACHEFLUSH
 	pmc_flush_cache();
 #endif
