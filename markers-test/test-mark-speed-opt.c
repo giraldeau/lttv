@@ -62,7 +62,9 @@ static inline void test(unsigned long arg, unsigned long arg2)
 	temp = (temp + 60) << 10;
 	//asm volatile ("");
 	//__my_trace_mark(1, kernel_debug_test, NULL, "%d %d %ld %ld", 2, current->pid, arg, arg2);
+	barrier();
 	__my_trace_mark(0, kernel_debug_test, NULL, "%d %d %ld %ld", 2, current->pid, arg, arg2);
+	barrier();
 }
 
 static int my_open(struct inode *inode, struct file *file)

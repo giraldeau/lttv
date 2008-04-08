@@ -72,7 +72,9 @@ static inline void test(unsigned long arg, unsigned long arg2)
 	temp = (temp + 60) << 10;
 	//asm volatile ("");
 	//__my_trace_mark(1, kernel_debug_test, NULL, "%d %d %ld %ld", 2, current->pid, arg, arg2);
+	barrier();
 	test2(NULL, NULL, 2, 10, arg, arg2);
+	barrier();	// make sure the compiler does not optimize marker conditions away!
 	//__my_trace_mark(0, kernel_debug_test, NULL, "%d %d %ld %ld", 2, current->pid, arg, arg2);
 }
 
