@@ -10,6 +10,25 @@
 #include <asm/ptrace.h>
 #include <asm/system.h>
 
+static void pmc_flush_cache(void)
+  {
+    /* write back and invalidate cache (a serializing instruction) */
+
+    __asm__ __volatile__ ( "wbinvd" : : : "memory" );
+
+    /* The wbinvd instruction does not wait for the external caches
+     * to be flushed, but only requests that it be done.  The loop
+     * is to be sure that enough time has elapsed, but the compiler
+     * might simplify or even remove it.  The loop bound is for a
+     * 512 KB L2 cache.  On a Pentium Pro/II/III, the loop uses
+     * 2 cycles per iteration.
+     *
+     * Does wbinvd also cause the TLB to be flushed?
+     * A comment in mtrr.c suggests that it does.
+     */
+    { register int i; for (i = 0; i < 512*1024; i++) { } }
+  }
+
 static void noinline test2(const struct marker *mdata,
         void *call_private, ...)
 {
@@ -59,7 +78,7 @@ char temp5[8192];
 static inline void test(unsigned long arg, unsigned long arg2)
 {
 #ifdef CACHEFLUSH
-	wbinvd();
+	pmc_flush_cache();
 #endif
 	temp[2] = (temp[0] + 60) << 10;
 	temp[3] = (temp[2] + 60) << 10;
@@ -80,7 +99,7 @@ static int my_open(struct inode *inode, struct file *file)
 
 	local_irq_save(flags);
 #ifdef CACHEFLUSH
-	wbinvd();	/* initial write back, without cycle count */
+	pmc_flush_cache();	/* initial write back, without cycle count */
 	msleep(20);	/* wait for L2 flush */
 #endif
 	rdtsc_barrier();

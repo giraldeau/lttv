@@ -4,7 +4,6 @@ ifneq ($(KERNELRELEASE),)
 	obj-m += test-mark-speed-edit.o
 	obj-m += test-mark-speed-opt.o
 	obj-m += test-mark-speed-local.o
-	obj-m += cachectl.o
 else
 	KERNELDIR ?= /lib/modules/$(shell uname -r)/build
 	PWD := $(shell pwd)
