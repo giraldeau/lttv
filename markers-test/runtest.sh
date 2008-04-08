@@ -44,7 +44,7 @@ RESNOPLOCAL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cyc
 #make clean
 #make EXTRA_CFLAGS=-DCACHEFLUSH
 
-modprobe cachectl
+insmod cachectl.ko
 
 insmod test-mark-speed-empty.ko
 cat /proc/testmark
