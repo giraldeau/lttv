@@ -78,7 +78,7 @@ static inline void test(unsigned long arg, unsigned long arg2)
 {
 	volatile int temp[5];
 #ifdef CACHEFLUSH
-	pmc_flush_cache();
+	clflush(&current->pid);
 #endif
 	temp[2] = (temp[0] + 60) << 10;
 	temp[3] = (temp[2] + 60) << 10;
@@ -99,8 +99,8 @@ static int my_open(struct inode *inode, struct file *file)
 
 	local_irq_save(flags);
 #ifdef CACHEFLUSH
-	pmc_flush_cache();	/* initial write back, without cycle count */
-	msleep(20);	/* wait for L2 flush */
+	//pmc_flush_cache();	/* initial write back, without cycle count */
+	//msleep(20);	/* wait for L2 flush */
 #endif
 	rdtsc_barrier();
 	cycles1 = get_cycles();
