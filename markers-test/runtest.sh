@@ -89,7 +89,7 @@ for a in $RESEMP; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESEMP=`echo $SUM/$ITER/$LOOPS | bc -l /dev/stdin`
 echo $RESEMP
 
-echo "Cycles for wbinvd() loop (will be substracted non-cached runs)"
+echo "Cycles for clflush() loop (will be substracted non-cached runs)"
 SUM="0"
 for a in $RESEMPFL; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESEMPFL=`echo $SUM/$ITER/$LOOPS | bc -l /dev/stdin`
