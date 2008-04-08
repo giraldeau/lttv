@@ -39,6 +39,12 @@ static void noinline test2(const struct marker *mdata,
 	printk("blah\n");
 }
 
+#ifdef CACHEFLUSH
+#define myclflush(a) clflush(a)
+#else
+#define myclflush(a)
+#endif									\
+
 /*
  * Generic marker flavor always available.
  * Note : the empty asm volatile with read constraint is used here instead of a
@@ -64,6 +70,7 @@ static void noinline test2(const struct marker *mdata,
 					(&__mark_##name, call_private,	\
 					## args);		\
 		} else {						\
+			myclflush(&_imv_read(__mark_##name.state));	\
 			if (unlikely(_imv_read(__mark_##name.state)))	\
 				test2			\
 					(&__mark_##name, call_private,	\
@@ -77,9 +84,6 @@ struct proc_dir_entry *pentry = NULL;
 static inline void test(unsigned long arg, unsigned long arg2)
 {
 	volatile int temp[5];
-#ifdef CACHEFLUSH
-	clflush(&current->pid);
-#endif
 	temp[2] = (temp[0] + 60) << 10;
 	temp[3] = (temp[2] + 60) << 10;
 	temp[4] = (temp[3] + 60) << 10;
