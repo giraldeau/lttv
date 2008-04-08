@@ -52,8 +52,9 @@ static void noinline test2(const struct marker *mdata,
 	//asm volatile ("");
 struct proc_dir_entry *pentry = NULL;
 
+char temp0[8192];
 int temp __cacheline_aligned = 10;
-int temp2 __cacheline_aligned = 10;
+char temp2[8192];
 
 static inline void test(unsigned long arg, unsigned long arg2)
 {
