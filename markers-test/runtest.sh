@@ -7,16 +7,19 @@ ITER=10
 LOOPS=20000
 
 insmod test-mark-speed-empty.ko
+cat /proc/testmark
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-empty
 RESEMP=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed.ko
+cat /proc/testmark
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed
 RESSTD=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-opt.ko
+cat /proc/testmark
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-opt
 RESOPT=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
@@ -42,16 +45,19 @@ make clean
 make EXTRA_CFLAGS=-DCACHEFLUSH
 
 insmod test-mark-speed-empty.ko
+cat /proc/testmark
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-empty
 RESEMPFL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed.ko
+cat /proc/testmark
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed
 RESSTDFL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 insmod test-mark-speed-opt.ko
+cat /proc/testmark
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
 rmmod test-mark-speed-opt
 RESOPTFL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
