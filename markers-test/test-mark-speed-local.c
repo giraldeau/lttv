@@ -91,6 +91,7 @@ static int my_open(struct inode *inode, struct file *file)
 	local_irq_save(flags);
 #ifdef CACHEFLUSH
 	wbinvd();	/* initial write back, without cycle count */
+	msleep(20);	/* wait for L2 flush */
 #endif
 	rdtsc_barrier();
 	cycles1 = get_cycles();
