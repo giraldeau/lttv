@@ -41,8 +41,10 @@ rmmod test-mark-speed-local
 RESNOPLOCAL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 
-make clean
-make EXTRA_CFLAGS=-DCACHEFLUSH
+#make clean
+#make EXTRA_CFLAGS=-DCACHEFLUSH
+
+modprobe cachectl
 
 insmod test-mark-speed-empty.ko
 cat /proc/testmark
@@ -79,6 +81,7 @@ rmmod test-mark-speed-local
 RESNOPLOCALFL=`dmesg |grep "cycles : " |tail -n 10 |sed 's/^\[.*\] //'| sed 's/cycles : \(.*\)$/\1/'`
 
 
+rmmod cachectl
 
 
 echo "Results in cycles per loop"
