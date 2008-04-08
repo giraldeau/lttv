@@ -53,15 +53,18 @@ static void noinline test2(const struct marker *mdata,
 struct proc_dir_entry *pentry = NULL;
 
 char temp0[8192];
-int temp __cacheline_aligned = 10;
-char temp2[8192];
+int temp[8192];
+char temp5[8192];
 
 static inline void test(unsigned long arg, unsigned long arg2)
 {
 #ifdef CACHEFLUSH
 	wbinvd();
 #endif
-	temp = (temp + 60) << 10;
+	temp[2] = (temp[0] + 60) << 10;
+	temp[3] = (temp[2] + 60) << 10;
+	temp[4] = (temp[3] + 60) << 10;
+	temp[0] = (temp[4] + 60) << 10;
 	barrier();
 	asm ("");
 	barrier();
