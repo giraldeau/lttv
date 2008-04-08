@@ -53,7 +53,7 @@ static void noinline test2(const struct marker *mdata,
 struct proc_dir_entry *pentry = NULL;
 
 char temp0[8192];
-int temp[8192];
+int temp[8192] __cacheline_aligned;
 char temp5[8192];
 
 static inline void test(unsigned long arg, unsigned long arg2)
