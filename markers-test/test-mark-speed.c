@@ -73,7 +73,7 @@ struct proc_dir_entry *pentry = NULL;
 
 static inline void test(unsigned long arg, unsigned long arg2)
 {
-	int temp[5];
+	register int temp[5];
 #ifdef CACHEFLUSH
 	pmc_flush_cache();
 #endif
