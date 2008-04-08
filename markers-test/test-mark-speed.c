@@ -94,7 +94,7 @@ static int my_open(struct inode *inode, struct file *file)
 	cycles2 = get_cycles();
 	rdtsc_barrier();
 	local_irq_restore(flags);
-	printk("cycles : %llu\n", (cycles2-cycles1)/20000);
+	printk("cycles : %llu\n", cycles2-cycles1);
 	return -EPERM;
 }
 

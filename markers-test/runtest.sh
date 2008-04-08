@@ -4,7 +4,7 @@ make clean
 make #build no flush modules
 
 ITER=10
-LOOPS=1
+LOOPS=20000
 
 insmod test-mark-speed-empty.ko
 for a in `seq 1 $ITER`; do cat /proc/testmark;done
