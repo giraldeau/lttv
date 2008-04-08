@@ -79,25 +79,25 @@ echo "Results in cycles per loop"
 
 echo "Cycles for empty loop (will be substracted for cached runs)"
 SUM="0"
-for a in $RESEMP; do SUM=$[$SUM + $a]; done
+for a in $RESEMP; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESEMP=`echo $SUM/$ITER/$LOOPS | bc -l /dev/stdin`
 echo $RESEMP
 
 echo "Cycles for wbinvd() loop (will be substracted non-cached runs)"
 SUM="0"
-for a in $RESEMPFL; do SUM=$[$SUM + $a]; done
+for a in $RESEMPFL; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESEMPFL=`echo $SUM/$ITER/$LOOPS | bc -l /dev/stdin`
 echo $RESEMPFL
 
 
 echo -n "Added cycles for normal marker [cached, uncached]    "
 SUM="0"
-for a in $RESSTD; do SUM=$[$SUM + $a]; done
+for a in $RESSTD; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESSTD=`echo $SUM/$ITER/$LOOPS - $RESEMP | bc -l /dev/stdin`
 echo -n "[$RESSTD, "
 
 SUM="0"
-for a in $RESSTDFL; do SUM=$[$SUM + $a]; done
+for a in $RESSTDFL; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESSTDFL=`echo $SUM/$ITER/$LOOPS - $RESEMPFL | bc -l /dev/stdin`
 echo "$RESSTDFL]"
 
@@ -105,36 +105,36 @@ echo "$RESSTDFL]"
 
 echo -n "Added cycles for optimized marker [cached, uncached]    "
 SUM="0"
-for a in $RESOPT; do SUM=$[$SUM + $a]; done
+for a in $RESOPT; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESOPT=`echo $SUM/$ITER/$LOOPS - $RESEMP | bc -l /dev/stdin`
 echo -n "[$RESOPT, "
 
 SUM="0"
-for a in $RESOPTFL; do SUM=$[$SUM + $a]; done
+for a in $RESOPTFL; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESOPTFL=`echo $SUM/$ITER/$LOOPS - $RESEMPFL | bc -l /dev/stdin`
 echo "$RESOPTFL]"
 
 
 echo -n "Added cycles for NOP replacement of function call (1 pointer read, 5 local vars) [cached, uncached]    "
 SUM="0"
-for a in $RESNOP; do SUM=$[$SUM + $a]; done
+for a in $RESNOP; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESNOP=`echo $SUM/$ITER/$LOOPS - $RESEMP | bc -l /dev/stdin`
 echo -n "[$RESNOP, "
 
 SUM="0"
-for a in $RESNOPFL; do SUM=$[$SUM + $a]; done
+for a in $RESNOPFL; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESNOPFL=`echo $SUM/$ITER/$LOOPS - $RESEMPFL | bc -l /dev/stdin`
 echo "$RESNOPFL]"
 
 
 echo -n "Added cycles for NOP replacement of function call (6 local vars) [cached, uncached]    "
 SUM="0"
-for a in $RESNOPLOCAL; do SUM=$[$SUM + $a]; done
+for a in $RESNOPLOCAL; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESNOPLOCAL=`echo $SUM/$ITER/$LOOPS - $RESEMP | bc -l /dev/stdin`
 echo -n "[$RESNOPLOCAL, "
 
 SUM="0"
-for a in $RESNOPLOCALFL; do SUM=$[$SUM + $a]; done
+for a in $RESNOPLOCALFL; do SUM=`echo "$SUM + $a" | bc -l /dev/stdin`; done
 RESNOPLOCALFL=`echo $SUM/$ITER/$LOOPS - $RESEMPFL | bc -l /dev/stdin`
 echo "$RESNOPLOCALFL]"
 
