@@ -79,6 +79,9 @@ static int my_open(struct inode *inode, struct file *file)
 	unsigned long flags;
 
 	local_irq_save(flags);
+#ifdef CACHEFLUSH
+	wbinvd();	/* initial write back, without cycle count */
+#endif
 	rdtsc_barrier();
 	cycles1 = get_cycles();
 	rdtsc_barrier();
