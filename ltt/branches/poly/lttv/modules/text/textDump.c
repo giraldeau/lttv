@@ -451,9 +451,9 @@ static void destroy()
 
   lttv_hooks_remove_data(before_trace, write_trace_header, NULL);
 
-  lttv_hooks_remove_data(before_trace, write_traceset_header, NULL);
+  lttv_hooks_remove_data(before_traceset, write_traceset_header, NULL);
 
-  lttv_hooks_remove_data(before_trace, write_traceset_footer, NULL);
+  lttv_hooks_remove_data(after_tracecet, write_traceset_footer, NULL);
 }
 
 
