@@ -303,6 +303,8 @@ static gboolean write_trace_header(void *hook_data, void *call_data)
 
 static int write_event_content(void *hook_data, void *call_data)
 {
+  gboolean result;
+
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
   
   LttvTracefileContext *tfc = (LttvTracefileContext *)call_data;
@@ -321,8 +323,9 @@ static int write_event_content(void *hook_data, void *call_data)
 
   e = ltt_tracefile_get_event(tfc->tf);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "filter/lttv_filter",
-      LTTV_POINTER, &value_filter));
+  result = lttv_iattribute_find_by_path(attributes, "filter/lttv_filter",
+      LTTV_POINTER, &value_filter);
+  g_assert(result);
   filter = (LttvFilter*)*(value_filter.v_pointer);
 
   /*
@@ -349,6 +352,8 @@ static int write_event_content(void *hook_data, void *call_data)
 
 static void init()
 {
+  gboolean result;
+
   LttvAttributeValue value;
 
   LttvIAttribute *attributes = LTTV_IATTRIBUTE(lttv_global_attributes());
@@ -393,25 +398,33 @@ static void init()
       "",
       LTTV_OPT_NONE, &a_path_output, NULL, NULL);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/event",
-      LTTV_POINTER, &value));
-  g_assert((event_hook = *(value.v_pointer)) != NULL);
+  result = lttv_iattribute_find_by_path(attributes, "hooks/event",
+      LTTV_POINTER, &value);
+  g_assert(result);
+  event_hook = *(value.v_pointer);
+  g_assert(event_hook);
   lttv_hooks_add(event_hook, write_event_content, NULL, LTTV_PRIO_DEFAULT);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
-      LTTV_POINTER, &value));
-  g_assert((before_trace = *(value.v_pointer)) != NULL);
+  result = lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
+      LTTV_POINTER, &value);
+  g_assert(result);
+  before_trace = *(value.v_pointer);
+  g_assert(before_trace);
   lttv_hooks_add(before_trace, write_trace_header, NULL, LTTV_PRIO_DEFAULT);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
-      LTTV_POINTER, &value));
-  g_assert((before_traceset = *(value.v_pointer)) != NULL);
+  result = lttv_iattribute_find_by_path(attributes, "hooks/traceset/before",
+      LTTV_POINTER, &value);
+  g_assert(result);
+  before_traceset = *(value.v_pointer);
+  g_assert(before_traceset);
   lttv_hooks_add(before_traceset, write_traceset_header, NULL,
       LTTV_PRIO_DEFAULT);
 
-  g_assert(lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
-      LTTV_POINTER, &value));
-  g_assert((after_traceset = *(value.v_pointer)) != NULL);
+  result = lttv_iattribute_find_by_path(attributes, "hooks/traceset/after",
+      LTTV_POINTER, &value);
+  g_assert(result);
+  after_traceset = *(value.v_pointer);
+  g_assert(after_traceset);
   lttv_hooks_add(after_traceset, write_traceset_footer, NULL,
       LTTV_PRIO_DEFAULT);
 }
