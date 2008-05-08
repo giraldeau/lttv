@@ -137,6 +137,7 @@ static int ltt_test_init(void)
 {
 	printk(KERN_ALERT "test init\n");
 	
+	do_test_sync_cmpxchg();
 	do_test_cmpxchg();
 	do_test_enable_int();
 	do_test_disable_int();
