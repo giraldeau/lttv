@@ -116,8 +116,8 @@ static void do_test_preempt(void)
 	preempt_disable();
 	time1 = get_cycles();
 	for (i = 0; i < NR_LOOPS; i++) {
-		preempt_enable();
 		preempt_disable();
+		preempt_enable();
 	}
 	time2 = get_cycles();
 	preempt_enable();
