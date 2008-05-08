@@ -56,8 +56,8 @@ static void do_test_spinlock(void)
 	spin_lock_irqsave(&mylock, flags);
 	time1 = get_cycles();
 	for (i = 0; i < NR_LOOPS; i++) {
-		spin_unlock_irqrestore(&mylock, flags);
-		spin_lock_irqsave(&mylock, flags);
+		spin_unlock(&mylock);
+		spin_lock(&mylock);
 	}
 	time2 = get_cycles();
 	spin_unlock_irqrestore(&mylock, flags);

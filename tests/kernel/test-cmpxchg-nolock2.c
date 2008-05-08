@@ -100,6 +100,64 @@ static void do_test_cmpxchg(void)
 	printk(KERN_ALERT "-> non locked cmpxchg takes %llu cycles\n", time);
 	printk(KERN_ALERT "test end\n");
 }
+static void do_test_sync_inc(void)
+{
+	int ret;
+	long flags;
+	unsigned int i;
+	cycles_t time1, time2, time;
+	long rem;
+	atomic_t val;
+
+	local_irq_save(flags);
+	preempt_disable();
+	time1 = get_cycles();
+	for (i = 0; i < NR_LOOPS; i++) {
+		ret = atomic_add_return(10, &val);
+	}
+	time2 = get_cycles();
+	local_irq_restore(flags);
+	preempt_enable();
+	time = time2 - time1;
+
+	printk(KERN_ALERT "test results: time for locked add return\n");
+	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
+	printk(KERN_ALERT "total time: %llu\n", time);
+	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	printk(KERN_ALERT "-> locked add return takes %llu cycles\n", time);
+	printk(KERN_ALERT "test end\n");
+}
+
+
+static void do_test_inc(void)
+{
+	int ret;
+	long flags;
+	unsigned int i;
+	cycles_t time1, time2, time;
+	long rem;
+	local_t loc_val;
+
+	local_irq_save(flags);
+	preempt_disable();
+	time1 = get_cycles();
+	for (i = 0; i < NR_LOOPS; i++) {
+		ret = local_add_return(10, &loc_val);
+	}
+	time2 = get_cycles();
+	local_irq_restore(flags);
+	preempt_enable();
+	time = time2 - time1;
+
+	printk(KERN_ALERT "test results: time for non locked add return\n");
+	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
+	printk(KERN_ALERT "total time: %llu\n", time);
+	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	printk(KERN_ALERT "-> non locked add return takes %llu cycles\n", time);
+	printk(KERN_ALERT "test end\n");
+}
+
+
 
 /*
  * This test will have a higher standard deviation due to incoming interrupts.
@@ -195,6 +253,8 @@ static int ltt_test_init(void)
 	do_testbaseline();
 	do_test_sync_cmpxchg();
 	do_test_cmpxchg();
+	do_test_sync_inc();
+	do_test_inc();
 	do_test_enable_int();
 	do_test_disable_int();
 	do_test_int();
