@@ -9,6 +9,8 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/calc64.h>
+#include <linux/spinlock.h>
+#include <linux/seqlock.h>
 #include <asm/timex.h>
 #include <asm/system.h>
 
@@ -18,7 +20,6 @@ int test_val;
 
 static void do_testbaseline(void)
 {
-	int ret;
 	long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
@@ -45,22 +46,21 @@ static void do_testbaseline(void)
 
 static void do_test_spinlock(void)
 {
-	static DEFINE_SPINLOCK mylock;
-	int ret;
+	static DEFINE_SPINLOCK(mylock);
 	long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
 	long rem;
 
 	preempt_disable();
-	spin_lock_irqsave(flags);
+	spin_lock_irqsave(&mylock, flags);
 	time1 = get_cycles();
 	for (i = 0; i < NR_LOOPS; i++) {
-		spin_unlock_irqrestore(flags);
-		spin_lock_irqsave(flags);
+		spin_unlock_irqrestore(&mylock, flags);
+		spin_lock_irqsave(&mylock, flags);
 	}
 	time2 = get_cycles();
-	spin_unlock_irqrestore(flags);
+	spin_unlock_irqrestore(&mylock, flags);
 	preempt_enable();
 	time = time2 - time1;
 
@@ -75,7 +75,7 @@ static void do_test_spinlock(void)
 static void do_test_seqlock(void)
 {
 	static seqlock_t test_lock;
-	int ret;
+	unsigned long seq;
 	long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
