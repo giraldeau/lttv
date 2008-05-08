@@ -16,6 +16,33 @@
 
 int test_val;
 
+static void do_testbaseline(void)
+{
+	int ret;
+	long flags;
+	unsigned int i;
+	cycles_t time1, time2, time;
+	long rem;
+
+	local_irq_save(flags);
+	preempt_disable();
+	time1 = get_cycles();
+	for (i = 0; i < NR_LOOPS; i++) {
+		asm volatile ("");
+	}
+	time2 = get_cycles();
+	local_irq_restore(flags);
+	preempt_enable();
+	time = time2 - time1;
+
+	printk(KERN_ALERT "test results: time for baseline\n");
+	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
+	printk(KERN_ALERT "total time: %llu\n", time);
+	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	printk(KERN_ALERT "-> baseline takes %llu cycles\n", time);
+	printk(KERN_ALERT "test end\n");
+}
+
 static void do_test_sync_cmpxchg(void)
 {
 	int ret;
@@ -165,6 +192,7 @@ static int ltt_test_init(void)
 {
 	printk(KERN_ALERT "test init\n");
 	
+	do_testbaseline();
 	do_test_sync_cmpxchg();
 	do_test_cmpxchg();
 	do_test_enable_int();
