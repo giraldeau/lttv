@@ -81,18 +81,18 @@ static void do_test_seqlock(void)
 	cycles_t time1, time2, time;
 	long rem;
 
-	local_irq_save(flags);
+	//local_irq_save(flags);
 	preempt_disable();
 	time1 = get_cycles();
 	for (i = 0; i < NR_LOOPS; i++) {
 		do {
-			seq = read_seqbegin(&test_lock);
-		} while (read_seqretry(&test_lock, seq));
+			seq = read_seqbegin_irqsave(&test_lock, flags);
+		} while (read_seqretry_irqrestore(&test_lock, seq, flags));
 	}
 	time2 = get_cycles();
 	preempt_enable();
 	time = time2 - time1;
-	local_irq_restore(flags);
+	//local_irq_restore(flags);
 
 	printk(KERN_ALERT "test results: time for seqlock\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
