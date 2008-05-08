@@ -16,6 +16,7 @@ endif
 #	obj-m += test-bug.o
 	obj-m += test-cmpxchg-nolock2.o
 	obj-m += test-trace-speed.o
+	obj-m += test-fct-speed.o
 	#obj-m += test-mark-speed.o
 	#obj-m += test-mark-speed-edit.o
 	#obj-m += test-mark-speed-opt.o
