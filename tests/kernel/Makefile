@@ -14,7 +14,7 @@ ifneq ($(CONFIG_LTT),)
 endif
 	#obj-m += test-sys_call.o
 #	obj-m += test-bug.o
-	obj-m += test-cmpxchg.o
+	obj-m += test-cmpxchg-nolock2.o
 	#obj-m += test-mark-speed.o
 	#obj-m += test-mark-speed-edit.o
 	#obj-m += test-mark-speed-opt.o

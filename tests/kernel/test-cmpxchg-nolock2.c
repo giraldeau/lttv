@@ -16,6 +16,37 @@
 
 int test_val;
 
+static void do_test_sync_cmpxchg(void)
+{
+	int ret;
+	long flags;
+	unsigned int i;
+	cycles_t time1, time2, time;
+	long rem;
+
+	local_irq_save(flags);
+	preempt_disable();
+	time1 = get_cycles();
+	for (i = 0; i < NR_LOOPS; i++) {
+#ifdef CONFIG_X86_32
+		ret = sync_cmpxchg(&test_val, 0, 0);
+#else
+		ret = cmpxchg(&test_val, 0, 0);
+#endif
+	}
+	time2 = get_cycles();
+	local_irq_restore(flags);
+	preempt_enable();
+	time = time2 - time1;
+
+	printk(KERN_ALERT "test results: time for locked cmpxchg\n");
+	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
+	printk(KERN_ALERT "total time: %llu\n", time);
+	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	printk(KERN_ALERT "-> locked cmpxchg takes %llu cycles\n", time);
+	printk(KERN_ALERT "test end\n");
+}
+
 static void do_test_cmpxchg(void)
 {
 	int ret;
