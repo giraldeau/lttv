@@ -18,6 +18,7 @@ endif
 	obj-m += test-trace-speed.o
 	obj-m += test-rcu-speed.o
 	obj-m += test-fct-speed.o
+	obj-m += test-int3-speed.o
 	obj-m += test-kprobes2.o
 	#obj-m += test-mark-speed.o
 	#obj-m += test-mark-speed-edit.o
