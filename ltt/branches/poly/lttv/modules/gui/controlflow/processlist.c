@@ -412,7 +412,6 @@ ProcessList *processlist_construct(void)
       NULL,
       &process_list->cell_height);
 
-  process_list->cell_height = 0;
 #if GTK_CHECK_VERSION(2,4,15)
   guint ypad;
   g_object_get(G_OBJECT(renderer), "ypad", &ypad, NULL);
