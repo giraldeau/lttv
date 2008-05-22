@@ -401,8 +401,10 @@ ProcessList *processlist_construct(void)
   process_list->renderer = renderer;
 
 	gint vertical_separator;
+	gint tree_line_width;
 	gtk_widget_style_get (GTK_WIDGET (process_list->process_list_widget),
 			"vertical-separator", &vertical_separator,
+			"tree-line-width", &tree_line_width,
 			NULL);
   gtk_cell_renderer_get_size(renderer,
       GTK_WIDGET(process_list->process_list_widget),
@@ -412,14 +414,8 @@ ProcessList *processlist_construct(void)
       NULL,
       &process_list->cell_height);
 
-#if GTK_CHECK_VERSION(2,4,15)
-  guint ypad;
-  g_object_get(G_OBJECT(renderer), "ypad", &ypad, NULL);
-
-  process_list->cell_height += ypad;
-#endif
   process_list->cell_height += vertical_separator;
-	
+  process_list->cell_height += tree_line_width;
 
   column = gtk_tree_view_column_new_with_attributes ( "Process",
                 renderer,
