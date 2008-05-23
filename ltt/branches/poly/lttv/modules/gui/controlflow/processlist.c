@@ -400,22 +400,15 @@ ProcessList *processlist_construct(void)
   renderer = gtk_cell_renderer_text_new ();
   process_list->renderer = renderer;
 
-	gint vertical_separator;
-	gint tree_line_width;
-	gtk_widget_style_get (GTK_WIDGET (process_list->process_list_widget),
-			"vertical-separator", &vertical_separator,
-			"tree-line-width", &tree_line_width,
-			NULL);
-  gtk_cell_renderer_get_size(renderer,
-      GTK_WIDGET(process_list->process_list_widget),
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      &process_list->cell_height);
+  /* Add a temporary row to the model to get the cell size when the first
+   * real process is added. */
+  GtkTreeIter iter;
+  GtkTreePath *path;
+  path = gtk_tree_path_new_first();
+  gtk_tree_model_get_iter (gtk_tree_view_get_model(GTK_TREE_VIEW(process_list->process_list_widget)), &iter, path);
+  gtk_list_store_append(process_list->list_store, &iter);
 
-  process_list->cell_height += vertical_separator;
-  process_list->cell_height += tree_line_width;
+  process_list->cell_height = 0;	// not ready to get size yet.
 
   column = gtk_tree_view_column_new_with_attributes ( "Process",
                 renderer,
@@ -669,6 +662,21 @@ int processlist_add(  ProcessList *process_list,
   hashed_process_data->x.under_marked = FALSE;
   hashed_process_data->next_good_time = ltt_time_zero;
  
+  if (process_list->cell_height == 0) {
+    GtkTreePath *path;
+    GdkRectangle rect;
+    GtkTreeIter iter;
+
+    path = gtk_tree_path_new_first();
+    gtk_tree_model_get_iter (gtk_tree_view_get_model(GTK_TREE_VIEW(process_list->process_list_widget)), &iter, path);
+    gtk_tree_view_get_background_area(
+      GTK_TREE_VIEW(process_list->process_list_widget),
+      path, NULL, &rect);
+    gtk_list_store_remove(process_list->list_store, &iter);
+    gtk_tree_path_free (path);
+    process_list->cell_height = rect.height;
+  }
+
   /* Add a new row to the model */
   gtk_list_store_append ( process_list->list_store,
                           &hashed_process_data->y_iter);
@@ -693,9 +701,19 @@ int processlist_add(  ProcessList *process_list,
         (gpointer)hashed_process_data);
   
   process_list->number_of_process++;
+#if 0
+  GtkTreePath *path;
+  GdkRectangle rect;
+  gtk_widget_queue_draw(process_list->process_list_widget);
+  path = gtk_tree_path_new_first();
+  gtk_tree_view_get_background_area(GTK_TREE_VIEW(process_list->process_list_widget),
+    path, NULL, &rect);
+  gtk_tree_path_free (path);
+  process_list->cell_height = rect.height;
+#endif //0
+
 
   hashed_process_data->height = process_list->cell_height;
-
   g_assert(hashed_process_data->height != 0);
 
   *height = hashed_process_data->height * process_list->number_of_process;

@@ -938,8 +938,13 @@ __EXPORT void lttvwindow_events_request(Tab *tab,
     /* Redraw has +20 priority. We want to let the redraw be done while we do
      * our job. Mathieu : test with high prio higher than events for better
      * scrolling. */
-    //g_idle_add_full((G_PRIORITY_HIGH_IDLE + 21),
-    g_idle_add_full((G_PRIORITY_DEFAULT + 2),
+    /* Mathieu, 2008 : ok, finally, the control flow view needs the cell updates
+     * to come soon enough so we can have one active cell to get the pixmap
+     * buffer height from. Therefore, let the gdk events run before the events
+     * requests.
+     */
+    g_idle_add_full((G_PRIORITY_HIGH_IDLE + 21),
+    //g_idle_add_full((G_PRIORITY_DEFAULT + 2),
                     (GSourceFunc)execute_events_requests,
                     tab,
                     NULL);
