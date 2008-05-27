@@ -407,6 +407,7 @@ ProcessList *processlist_construct(void)
   path = gtk_tree_path_new_first();
   gtk_tree_model_get_iter (gtk_tree_view_get_model(GTK_TREE_VIEW(process_list->process_list_widget)), &iter, path);
   gtk_list_store_append(process_list->list_store, &iter);
+  gtk_tree_path_free(path);
 
   process_list->cell_height = 0;	// not ready to get size yet.
 

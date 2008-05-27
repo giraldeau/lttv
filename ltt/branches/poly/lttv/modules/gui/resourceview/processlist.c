@@ -214,8 +214,12 @@ void update_index_to_pixmap(ProcessList *process_list)
   arg.count = 0;
   arg.process_list = process_list;
 
-  gtk_tree_model_foreach(GTK_TREE_MODEL(process_list->list_store),
+  /* If cell_height is still 0, the only element in the tree is a temporary
+   * element that has no pixmap, see also processlist_construct() */
+  if (process_list->cell_height != 0) {
+    gtk_tree_model_foreach(GTK_TREE_MODEL(process_list->list_store),
       (GtkTreeModelForeachFunc)update_index_to_pixmap_each, &arg);
+  }
 
   /* now that we know the exact number of items, set it */
   g_ptr_array_set_size(process_list->index_to_pixmap, arg.count);
@@ -401,29 +405,20 @@ ProcessList *processlist_construct(void)
   renderer = gtk_cell_renderer_text_new ();
   process_list->renderer = renderer;
 
-	gint vertical_separator;
-	gtk_widget_style_get (GTK_WIDGET (process_list->process_list_widget),
-			"vertical-separator", &vertical_separator,
-			NULL);
-  gtk_cell_renderer_get_size(renderer,
-      GTK_WIDGET(process_list->process_list_widget),
-      NULL,
-      NULL,
-      NULL,
-      NULL,
-      &process_list->cell_height);
-
   g_signal_connect(process_list->process_list_widget, "row-expanded", G_CALLBACK(expand_event), process_list);
   g_signal_connect(process_list->process_list_widget, "row-collapsed", G_CALLBACK(collapse_event), process_list);
-	
-#if GTK_CHECK_VERSION(2,4,15)
-  guint ypad;
-  g_object_get(G_OBJECT(renderer), "ypad", &ypad, NULL);
 
-  process_list->cell_height += ypad;
-#endif
-  process_list->cell_height += vertical_separator;
-	
+  /* Add a temporary row to the model to get the cell size when the first
+  * real process is added. */
+  GtkTreeIter iter;
+  GtkTreePath *path;
+  path = gtk_tree_path_new_first();
+  gtk_tree_model_get_iter (gtk_tree_view_get_model(GTK_TREE_VIEW(
+    process_list->process_list_widget)), &iter, path);
+  gtk_tree_store_append(process_list->list_store, &iter, NULL);
+  gtk_tree_path_free(path);
+
+  process_list->cell_height = 0;	// not ready to get size yet.
 
   column = gtk_tree_view_column_new_with_attributes ( "Resource",
                 renderer,
@@ -615,6 +610,24 @@ HashedResourceData *resourcelist_obtain_machine(ControlFlowData *resourceview_da
     data->next_good_time = ltt_time_zero;
     data->hidden = 0;
 
+    if (resourceview_data->process_list->cell_height == 0) {
+        GtkTreePath *path;
+        GdkRectangle rect;
+        GtkTreeIter iter;
+
+        path = gtk_tree_path_new_first();
+        gtk_tree_model_get_iter(gtk_tree_view_get_model(GTK_TREE_VIEW(
+            resourceview_data->process_list->process_list_widget)),
+            &iter, path);
+        gtk_tree_view_get_background_area(GTK_TREE_VIEW(
+            resourceview_data->process_list->process_list_widget),
+            path, NULL, &rect);
+        gtk_tree_store_remove(resourceview_data->process_list->list_store,
+            &iter);
+        gtk_tree_path_free(path);
+        resourceview_data->process_list->cell_height = rect.height;
+    }
+
     data->height = resourceview_data->process_list->cell_height;
     data->pixmap = 
         gdk_pixmap_new(resourceview_data->drawing->drawing_area->window,
@@ -708,6 +721,24 @@ HashedResourceData *resourcelist_obtain_generic(ControlFlowData *resourceview_da
     data->x.under_used = FALSE;
     data->x.under_marked = FALSE;
     data->next_good_time = ltt_time_zero;
+
+    if (resourceview_data->process_list->cell_height == 0) {
+        GtkTreePath *path;
+        GdkRectangle rect;
+        GtkTreeIter iter;
+
+        path = gtk_tree_path_new_first();
+        gtk_tree_model_get_iter(gtk_tree_view_get_model(GTK_TREE_VIEW(
+            resourceview_data->process_list->process_list_widget)), &iter,
+            path);
+        gtk_tree_view_get_background_area(GTK_TREE_VIEW(
+            resourceview_data->process_list->process_list_widget), path,
+            NULL, &rect);
+        gtk_tree_store_remove(resourceview_data->process_list->list_store,
+            &iter);
+        gtk_tree_path_free(path);
+        resourceview_data->process_list->cell_height = rect.height;
+    }
 
     data->height = resourceview_data->process_list->cell_height;
     data->pixmap = 
