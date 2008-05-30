@@ -862,9 +862,6 @@ void lttv_process_trace_seek_time(LttvTraceContext *self, LttTime start)
   g_debug("test tree after seek_time");
   g_tree_foreach(pqueue, test_tree, NULL);
 #endif //DEBUG
-
-
-
 }
 
 
