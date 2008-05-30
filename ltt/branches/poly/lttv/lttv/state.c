@@ -1735,6 +1735,12 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
   g_assert(type == LTTV_POINTER);
   lttv_state_free_irq_states(*(value.v_pointer), nb_irqs);
 
+  /* free softirq resource states */
+  nb_softirqs = self->nb_irqs;
+  type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_SOFT_IRQS, &value);
+  g_assert(type == LTTV_POINTER);
+  lttv_state_free_soft_irq_states(*(value.v_pointer), nb_softirqs);
+
   /* free the blkdev states */
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_BLKDEVS, &value);
   g_assert(type == LTTV_POINTER);
