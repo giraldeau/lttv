@@ -21,6 +21,7 @@
 #define TRACE_H
 
 #include <ltt/ltt.h>
+#include <ltt/ltt-private.h>
 #include <stdint.h>
 #include <glib.h>
 

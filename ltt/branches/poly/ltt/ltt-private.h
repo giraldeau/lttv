@@ -25,8 +25,6 @@
 #include <ltt/ltt.h>
 #include <endian.h>
 #include <ltt/event.h>
-#include <ltt/marker.h>
-#include <ltt/trace.h>
 
 #ifndef max
 #define max(a,b) ((a)>(b)?(a):(b))

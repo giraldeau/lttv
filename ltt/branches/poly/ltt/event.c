@@ -27,6 +27,8 @@
 #include <ltt/event.h>
 #include <ltt/ltt-types.h>
 #include <ltt/ltt-private.h>
+#include <ltt/marker.h>
+#include <ltt/marker-field.h>
 
 /*****************************************************************************
  *Function name

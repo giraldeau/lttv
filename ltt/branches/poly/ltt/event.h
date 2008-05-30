@@ -7,7 +7,8 @@
 #include <endian.h>
 #include <ltt/ltt.h>
 #include <ltt/time.h>
-#include <ltt/marker.h>
+
+struct marker_field;
 
 /*
  * Structure LttEvent and LttEventPosition must begin with the _exact_ same
