@@ -313,10 +313,12 @@ static void irq_set_line_color(PropertiesLine *prop_line, LttvIRQState *s)
 static void soft_irq_set_line_color(PropertiesLine *prop_line, LttvSoftIRQState *s)
 {
   GQuark present_state;
-  if(s->running == 0)
-    prop_line->color = drawing_colors_soft_irq[COL_SOFT_IRQ_IDLE];
-  else
+  if(s->running)
     prop_line->color = drawing_colors_soft_irq[COL_SOFT_IRQ_BUSY];
+  else if(s->pending)
+    prop_line->color = drawing_colors_soft_irq[COL_SOFT_IRQ_PENDING];
+  else
+    prop_line->color = drawing_colors_soft_irq[COL_SOFT_IRQ_IDLE];
 }
 
 static void trap_set_line_color(PropertiesLine *prop_line, LttvTrapState *s)
@@ -1002,9 +1004,10 @@ int before_execmode_hook_soft_irq(void *hook_data, void *call_data)
   guint64 softirq;
   guint cpu = tfs->cpu;
 
+  guint16 ev_id_raise = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_RAISE)));
   guint16 ev_id_entry = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY)));
   guint16 ev_id_exit = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_EXIT)));
-  if(ev_id_entry == e->event_id) {
+  if(ev_id_entry == e->event_id || ev_id_raise == e->event_id) {
     softirq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   }
   else if(ev_id_exit == e->event_id) {

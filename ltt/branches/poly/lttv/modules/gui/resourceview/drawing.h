@@ -70,6 +70,7 @@ typedef enum _draw_color_irq {
 typedef enum _draw_color_soft_irq {
                 COL_SOFT_IRQ_UNKNOWN,
                 COL_SOFT_IRQ_IDLE,
+                COL_SOFT_IRQ_PENDING,
                 COL_SOFT_IRQ_BUSY,
                 NUM_COLORS_SOFT_IRQ
 } draw_color_soft_irq; 
