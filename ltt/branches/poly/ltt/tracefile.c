@@ -1288,8 +1288,11 @@ int ltt_tracefile_seek_position(LttTracefile *tf, const LttEventPosition *ep)
 
   err = ltt_tracefile_read_update_event(tf);
   if(err) goto fail;
+
+  /* deactivate this, as it does nothing for now
   err = ltt_tracefile_read_op(tf);
   if(err) goto fail;
+  */
 
   return 0;
 
@@ -1368,8 +1371,11 @@ int ltt_tracefile_read(LttTracefile *tf)
   if(err) return err;
   err = ltt_tracefile_read_update_event(tf);
   if(err) return err;
+
+  /* deactivate this, as it does nothing for now
   err = ltt_tracefile_read_op(tf);
   if(err) return err;
+  */
 
   return 0;
 }
@@ -1405,22 +1411,21 @@ int ltt_tracefile_read_seek(LttTracefile *tf)
 
 /* do an operation when reading a new event */
 
-/* do specific operation on events */
+/* This function does nothing for now */
+#if 0
 int ltt_tracefile_read_op(LttTracefile *tf)
 {
   LttEvent *event;
 
   event = &tf->event;
 
-   /* do event specific operation */
+  /* do event specific operation */
 
-  /* do something if its an heartbeat event : increment the heartbeat count */
-  //if(event->facility_id == LTT_FACILITY_CORE)
-  //  if(event->event_id == LTT_EVENT_HEARTBEAT)
-  //    tf->cur_heart_beat_number++;
-  
+  /* nothing */
+
   return 0;
 }
+#endif
 
 static void print_debug_event_header(LttEvent *ev, void *start_pos, void *end_pos)
 {
