@@ -2557,7 +2557,8 @@ static gboolean soft_irq_raise(void *hook_data, void *call_data)
   }
 
   /* update softirq status */
-  ts->soft_irq_states[softirq].pending++;
+  /* a soft irq raises are not cumulative */
+  ts->soft_irq_states[softirq].pending=1;
 
   return FALSE;
 }
