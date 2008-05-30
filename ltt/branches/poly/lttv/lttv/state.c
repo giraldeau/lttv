@@ -65,6 +65,7 @@ GQuark
     LTT_EVENT_TRAP_EXIT,
     LTT_EVENT_IRQ_ENTRY,
     LTT_EVENT_IRQ_EXIT,
+    LTT_EVENT_SOFT_IRQ_RAISE,
     LTT_EVENT_SOFT_IRQ_ENTRY,
     LTT_EVENT_SOFT_IRQ_EXIT,
     LTT_EVENT_SCHED_SCHEDULE,
@@ -430,6 +431,7 @@ restore_init_state(LttvTraceState *self)
 
   /* reset softirq states */
   for(i=0; i<nb_soft_irqs; i++) {
+    self->soft_irq_states[i].pending = 0;
     self->soft_irq_states[i].running = 0;
   }
 
@@ -1332,6 +1334,7 @@ static LttvSoftIRQState *lttv_state_copy_soft_irq_states(LttvSoftIRQState *state
   retval = g_new(LttvSoftIRQState, n);
 
   for(i=0; i<n; i++) {
+    retval[i].pending = states[i].pending;
     retval[i].running = states[i].running;
   }
 
@@ -1686,7 +1689,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
 
 static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
 {
-  guint i, nb_tracefile, nb_cpus, nb_irqs;
+  guint i, nb_tracefile, nb_cpus, nb_irqs, nb_softirqs;
 
   LttvTracefileState *tfcs;
 
@@ -2530,6 +2533,35 @@ static gboolean irq_exit(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean soft_irq_raise(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  //guint8 ev_id = ltt_event_eventtype_id(e);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  struct marker_field *f = lttv_trace_get_hook_field(th, 0);
+
+  LttvExecutionSubmode submode;
+  guint64 softirq = ltt_event_get_long_unsigned(e, f);
+  guint64 nb_softirqs = ((LttvTraceState *)(s->parent.t_context))->nb_soft_irqs;
+
+  if(softirq < nb_softirqs) {
+    submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[softirq];
+  } else {
+    /* Fixup an incomplete irq table */
+    GString *string = g_string_new("");
+    g_string_printf(string, "softirq %llu", softirq);
+    submode = g_quark_from_string(string->str);
+    g_string_free(string, TRUE);
+  }
+
+  /* update softirq status */
+  ts->soft_irq_states[softirq].pending++;
+
+  return FALSE;
+}
+
 static gboolean soft_irq_entry(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
@@ -2551,6 +2583,8 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
 
   /* update softirq status */
   s->cpu_state->last_soft_irq = softirq;
+  if(ts->soft_irq_states[softirq].pending)
+    ts->soft_irq_states[softirq].pending--;
   ts->soft_irq_states[softirq].running++;
 
   return FALSE;
@@ -3369,6 +3403,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
     lttv_trace_find_hook(ts->parent.t,
         LTT_FACILITY_KERNEL,
+        LTT_EVENT_SOFT_IRQ_RAISE,
+        FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
+        soft_irq_raise, NULL, &hooks);
+
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SOFT_IRQ_ENTRY,
         FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
         soft_irq_entry, NULL, &hooks);
@@ -4151,6 +4191,7 @@ static void module_init()
   LTT_EVENT_TRAP_EXIT     = g_quark_from_string("trap_exit");
   LTT_EVENT_IRQ_ENTRY     = g_quark_from_string("irq_entry");
   LTT_EVENT_IRQ_EXIT      = g_quark_from_string("irq_exit");
+  LTT_EVENT_SOFT_IRQ_RAISE     = g_quark_from_string("softirq_raise");
   LTT_EVENT_SOFT_IRQ_ENTRY     = g_quark_from_string("softirq_entry");
   LTT_EVENT_SOFT_IRQ_EXIT      = g_quark_from_string("softirq_exit");
   LTT_EVENT_SCHED_SCHEDULE   = g_quark_from_string("sched_schedule");

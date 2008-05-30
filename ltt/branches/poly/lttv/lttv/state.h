@@ -73,6 +73,7 @@ extern GQuark
     LTT_EVENT_TRAP_EXIT,
     LTT_EVENT_IRQ_ENTRY,
     LTT_EVENT_IRQ_EXIT,
+    LTT_EVENT_SOFT_IRQ_RAISE,
     LTT_EVENT_SOFT_IRQ_ENTRY,
     LTT_EVENT_SOFT_IRQ_EXIT,
     LTT_EVENT_SCHED_SCHEDULE,
@@ -326,6 +327,7 @@ typedef struct _LttvIRQState {
 } LttvIRQState;
 
 typedef struct _LttvSoftIRQState {
+  guint pending; /* number of times it is pending */
   guint running; /* number of times it is currently running (on different processors) */
 } LttvSoftIRQState;
 
