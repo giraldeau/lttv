@@ -2021,6 +2021,11 @@ int before_chunk(void *hook_data, void *call_data)
   return 0;
 }
 
+/* before_request
+ *
+ * This gets executed just before an events request is executed
+ */
+
 int before_request(void *hook_data, void *call_data)
 {
   EventsRequest *events_request = (EventsRequest*)hook_data;

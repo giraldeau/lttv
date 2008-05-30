@@ -892,6 +892,10 @@ void open_traceset(GtkWidget * widget, gpointer user_data)
 }
 
 /* lttvwindow_process_pending_requests
+ *
+ * Process requests for parts of the trace from viewers.
+ *
+ * These requests are made by lttvwindow_events_request().
  * 
  * This internal function gets called by g_idle, taking care of the pending
  * requests. It is responsible for concatenation of time intervals and position

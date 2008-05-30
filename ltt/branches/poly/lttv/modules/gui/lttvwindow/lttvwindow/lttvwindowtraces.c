@@ -1003,6 +1003,8 @@ static gint find_window_widget(MainWindow *a, GtkWidget *b)
 
 
 /* lttvwindowtraces_process_pending_requests
+ *
+ * Process the pending background computation requests
  * 
  * This internal function gets called by g_idle, taking care of the pending
  * requests.
@@ -1615,7 +1617,7 @@ void lttvwindowtraces_register_computation_hooks(LttvAttributeName module_name,
 
 
 /**
- * It removes all the requests than can be currently processed by the
+ * It removes all the requests that can be currently processed by the
  * background computation algorithm for all the traces (list_in and list_out).
  *
  * Leaves the flag to in_progress or none.. depending if current or queue
@@ -1709,7 +1711,7 @@ void lttvwindowtraces_unregister_requests(LttvAttributeName module_name)
 /**
  * Unregister the background computation hooks for a specific module.
  *
- * It also removes all the requests than can be currently processed by the
+ * It also removes all the requests that can be currently processed by the
  * background computation algorithm for all the traces (list_in and list_out).
  *
  * @param module_name A GQuark : the name of the module which computes the
