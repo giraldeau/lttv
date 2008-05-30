@@ -23,5 +23,3 @@ lttinclude_HEADERS = \
 	event.h\
 	marker-desc.h\
 	ltt-types.h
-
-EXTRA_DIST = crc32.tab
