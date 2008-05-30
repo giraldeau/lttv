@@ -84,25 +84,6 @@ guint ltt_trace_get_num_cpu(LttTrace *t);
 LttSystemDescription *ltt_trace_system_description(LttTrace *t);
 
 
-/* Functions to discover the facilities in the trace. Once the number
-   of facilities is known, they may be accessed by position. Multiple
-   versions of a facility (same name, different checksum) have consecutive
-   positions. */
-
-//unsigned ltt_trace_facility_number(LttTrace *t);
-
-//LttFacility * ltt_trace_facility_by_id(LttTrace * trace, guint8 id);
-
-/* Returns an array of indexes (guint) that matches the facility name */
-//GArray *ltt_trace_facility_get_by_name(LttTrace *t, GQuark name);
-
-/* Functions to discover all the event types in the trace */
-
-//unsigned ltt_trace_eventtype_number(LttTrace *t);
-
-//LttEventType *ltt_trace_eventtype_get(LttTrace *t, unsigned i);
-
-
 /* Get the start time and end time of the trace */
 
 void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end);
@@ -207,12 +188,6 @@ void compute_tracefile_group(GQuark key_id,
                              GArray *group,
                              struct compute_tracefile_group_args *args);
 
-//LttFacility *ltt_trace_get_facility_by_num(LttTrace *t, guint num);
-
-
-//gint check_fields_compatibility(LttEventType *event_type1,
-//    LttEventType *event_type2,
-//    LttField *field1, LttField *field2);
 
 gint64 ltt_get_int(gboolean reverse_byte_order, gint size, void *data);
 

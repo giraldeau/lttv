@@ -23,7 +23,6 @@
  * */
 
 #include <ltt/ltt.h>
-//#include <ltt/ltt-private.h>
 #include <glib.h>
 #include <ltt/time.h>
 

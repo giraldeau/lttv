@@ -67,39 +67,6 @@ enum ltt_core_events {
 };
 
 
-#if 0
-/* enumeration definition */
-
-typedef enum _BuildinEvent{
-  TRACE_FACILITY_LOAD = 0,
-  TRACE_BLOCK_START   = 17,
-  TRACE_BLOCK_END     = 18,
-  TRACE_TIME_HEARTBEAT= 19
-} BuildinEvent;
-
-
-/* structure definition */
-
-typedef struct _FacilityLoad{
-  gchar * name;
-  LttChecksum checksum;
-  guint32     base_code;
-} LTT_PACKED_STRUCT FacilityLoad;
-
-typedef struct _BlockStart {
-  LttTime       time;       //Time stamp of this block
-  LttCycleCount cycle_count; //cycle count of the event
-  guint32       block_id;    //block id 
-} LTT_PACKED_STRUCT BlockStart;
-
-typedef struct _BlockEnd {
-  LttTime       time;       //Time stamp of this block
-  LttCycleCount cycle_count; //cycle count of the event
-  guint32       block_id;    //block id 
-} LTT_PACKED_STRUCT BlockEnd;
-#endif //0
-
-
 typedef guint8 uint8_t;
 typedef guint16 uint16_t;
 typedef guint32 uint32_t;
@@ -172,82 +139,7 @@ struct ltt_block_start_header {
 } LTT_PACKED_STRUCT;
 
 
-#if 0
-struct _LttType{
-// LTTV does not care about type names. Everything is a field.
-// GQuark type_name;                //type name if it is a named type
-  gchar * fmt;
-  guint size;
-  LttTypeEnum type_class;          //which type
-  GHashTable *enum_map;                 //maps enum labels to numbers.
-  gint32 highest_value;			//For enum
-  gint32 lowest_value;			//For enum
-  GArray *fields;     // Array of LttFields, for array, sequence, union, struct.
-  GData *fields_by_name;
-  guint network;  // Is the type in network byte order ?
-  //part added by gaby for fmt:
-  char *header;
-  char *separator;
-  char *footer;
-};
-#endif //0
-
-#if 0
-struct _LttEventType{
-  GQuark name;
-  gchar * description;
-  guint index;            //id of the event type within the facility
-  struct marker_info *info;
-  GArray * fields;        //event's fields (LttField)
-  GData *fields_by_name;
-  int has_compact_data;       //event header contains compact data (first field)
-};
-#endif //0
-
 enum field_status { FIELD_UNKNOWN, FIELD_VARIABLE, FIELD_FIXED };
-
-#if 0
-struct _LttField{
-  GQuark name;
-  gchar *description;
-  LttType field_type;      //field type
-
-  off_t offset_root;            //offset from the root
-  enum field_status fixed_root; //offset fixed according to the root
-
-  guint field_size;       // size of the field
-                          // Only if field type size is set to 0
-                          // (it's variable), then the field_size should be
-                          // dynamically calculated while reading the trace
-                          // and put here. Otherwise, the field_size always
-                          // equals the type size.
-  off_t array_offset;     // offset of the beginning of the array (for array
-                          // and sequences)
-  GArray * dynamic_offsets; // array of offsets calculated dynamically at
-                            // each event for sequences and arrays that
-                            // contain variable length fields.
-};
-#endif //0
-#if 0
-struct _LttFacility{
-  LttTrace  *trace;
-  GQuark name;
-  guint32 checksum;      //checksum of the facility 
-  guint32  id;          //id of the facility
- 
-  guint32 int_size;
-  guint32 long_size;
-  guint32 pointer_size;
-  guint32 size_t_size;
-  guint32 alignment;
-
-  GArray *events;
-  GData *events_by_name;
- // not necessary in LTTV GData *named_types;
-  
-  unsigned char exists; /* 0 does not exist, 1 exists */
-};
-#endif //0
 
 typedef struct _LttBuffer {
   void * head;
