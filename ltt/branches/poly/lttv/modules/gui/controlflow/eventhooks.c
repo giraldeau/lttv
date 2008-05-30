@@ -78,7 +78,7 @@
 
 
 #define MAX_PATH_LEN 256
-#define STATE_LINE_WIDTH 4
+#define STATE_LINE_WIDTH 6
 #define COLLISION_POSITION(height) (((height - STATE_LINE_WIDTH)/2) -3)
 
 extern GSList *g_legend_list;
