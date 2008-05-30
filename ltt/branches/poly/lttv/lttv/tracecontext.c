@@ -1038,7 +1038,8 @@ void lttv_trace_hook_remove_all(GArray **th)
   for(i=0; i<(*th)->len; i++) {
     g_ptr_array_free(g_array_index(*th, LttvTraceHook, i).fields, TRUE);
   }
-  *th = g_array_remove_range(*th, 0, (*th)->len);
+  if((*th)->len)
+    *th = g_array_remove_range(*th, 0, (*th)->len);
 }
 
 LttvTracesetContextPosition *lttv_traceset_context_position_new(
