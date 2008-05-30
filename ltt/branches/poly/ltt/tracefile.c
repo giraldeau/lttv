@@ -104,8 +104,6 @@ static guint64 cycles_2_ns(LttTracefile *tf, guint64 cycles);
 /* go to the next event */
 static int ltt_seek_next_event(LttTracefile *tf);
 
-//void ltt_update_event_size(LttTracefile *tf);
-
 static int open_tracefiles(LttTrace *trace, gchar *root_path,
     gchar *relative_path);
 static int ltt_process_facility_tracefile(LttTracefile *tf);
@@ -113,8 +111,6 @@ static void ltt_tracefile_time_span_get(LttTracefile *tf,
                                         LttTime *start, LttTime *end);
 static void group_time_span_get(GQuark name, gpointer data, gpointer user_data);
 static gint map_block(LttTracefile * tf, guint block_num);
-static int ltt_seek_next_event(LttTracefile *tf);
-static void __attribute__((constructor)) init(void);
 static void ltt_update_event_size(LttTracefile *tf);
 
 /* Enable event debugging */
@@ -125,17 +121,11 @@ void ltt_event_debug(int state)
   a_event_debug = state;
 }
 
-guint ltt_trace_get_num_cpu(LttTrace *t)
-{
-  return t->num_cpu;
-}
-
-
 /* trace can be NULL
  *
  * Return value : 0 success, 1 bad tracefile
  */
-int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
+static int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
 {
   guint32 *magic_number = (guint32*)header;
   struct ltt_trace_header_any *any = (struct ltt_trace_header_any *)header;
@@ -247,7 +237,7 @@ int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
  *                       : 0 for success, -1 otherwise.
  ****************************************************************************/ 
 
-gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
+static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 {
   struct stat    lTDFStat;    /* Trace data file status */
   struct ltt_block_start_header *header;
@@ -336,11 +326,6 @@ end:
   return -1;
 }
 
-LttTrace *ltt_tracefile_get_trace(LttTracefile *tf)
-{
-  return tf->trace;
-}
-
 #if 0
 /*****************************************************************************
  *Open control and per cpu tracefiles
@@ -416,7 +401,7 @@ gint ltt_tracefile_open_control(LttTrace *t, gchar * control_name)
  *    t                  : tracefile which will be closed
  ****************************************************************************/
 
-void ltt_tracefile_close(LttTracefile *t)
+static void ltt_tracefile_close(LttTracefile *t)
 {
   int page_size = getpagesize();
 
@@ -584,7 +569,7 @@ void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname)
  * The left side is the name, the right side is the number.
  */
 
-int get_tracefile_name_number(gchar *raw_name,
+static int get_tracefile_name_number(gchar *raw_name,
                               GQuark *name,
                               guint *num,
                               gulong *tid,
@@ -702,7 +687,7 @@ void compute_tracefile_group(GQuark key_id,
 }
 
 
-void ltt_tracefile_group_destroy(gpointer data)
+static void ltt_tracefile_group_destroy(gpointer data)
 {
   GArray *group = (GArray *)data;
   int i;
@@ -716,7 +701,7 @@ void ltt_tracefile_group_destroy(gpointer data)
   g_array_free(group, TRUE);
 }
 
-gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
+static gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
 {
   GArray *group = (GArray *)data;
   int i;
@@ -742,7 +727,7 @@ gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
  * A tracefile group is simply an array where all the per cpu tracefiles sit.
  */
 
-int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_path)
+static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_path)
 {
   DIR *dir = opendir(root_path);
   struct dirent *entry;
@@ -858,7 +843,7 @@ int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_path)
 
 /* Presumes the tracefile is already seeked at the beginning. It makes sense,
  * because it must be done just after the opening */
-int ltt_process_facility_tracefile(LttTracefile *tf)
+static int ltt_process_facility_tracefile(LttTracefile *tf)
 {
   int err;
   //LttFacility *fac;
@@ -1059,12 +1044,6 @@ alloc_error:
 
 }
 
-GQuark ltt_trace_name(const LttTrace *t)
-{
-  return t->pathname;
-}
-
-
 /******************************************************************************
  * When we copy a trace, we want all the opening actions to happen again :
  * the trace will be reopened and totally independant from the original.
@@ -1112,7 +1091,7 @@ struct tracefile_time_span_get_args {
   LttTime *end;
 };
 
-void group_time_span_get(GQuark name, gpointer data, gpointer user_data)
+static void group_time_span_get(GQuark name, gpointer data, gpointer user_data)
 {
   struct tracefile_time_span_get_args *args =
           (struct tracefile_time_span_get_args*)user_data;
@@ -1133,6 +1112,8 @@ void group_time_span_get(GQuark name, gpointer data, gpointer user_data)
   }
 }
 
+/* return the start and end time of a trace */
+
 void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
 {
   LttTime min_start = ltt_time_infinite;
@@ -1144,51 +1125,6 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end)
   if(start != NULL) *start = min_start;
   if(end != NULL) *end = max_end;
   
-}
-
-
-/*****************************************************************************
- *Get the name of a tracefile
- ****************************************************************************/
-
-GQuark ltt_tracefile_name(const LttTracefile *tf)
-{
-  return tf->name;
-}
-
-GQuark ltt_tracefile_long_name(const LttTracefile *tf)
-{
-  return tf->long_name;
-}
-
-
-
-guint ltt_tracefile_cpu(LttTracefile *tf)
-{
-  return tf->cpu_num;
-}
-
-guint ltt_tracefile_tid(LttTracefile *tf)
-{
-  return tf->tid;
-}
-
-guint ltt_tracefile_pgid(LttTracefile *tf)
-{
-  return tf->pgid;
-}
-
-guint64 ltt_tracefile_creation(LttTracefile *tf)
-{
-  return tf->creation;
-}
-/*****************************************************************************
- * Get the number of blocks in the tracefile 
- ****************************************************************************/
-
-guint ltt_tracefile_block_number(LttTracefile *tf)
-{
-  return tf->num_blocks; 
 }
 
 
@@ -1316,8 +1252,8 @@ fail:
 }
 
 
-int ltt_tracefile_seek_position(LttTracefile *tf, const LttEventPosition *ep) {
-  
+int ltt_tracefile_seek_position(LttTracefile *tf, const LttEventPosition *ep)
+{
   int err;
   
   if(ep->tracefile != tf) {
@@ -1627,7 +1563,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
  *    EIO             : can not read from the file
  ****************************************************************************/
 
-gint map_block(LttTracefile * tf, guint block_num)
+static gint map_block(LttTracefile * tf, guint block_num)
 {
   int page_size = getpagesize();
   struct ltt_block_start_header *header;
@@ -1893,7 +1829,7 @@ void ltt_update_event_size(LttTracefile *tf)
  *         ERANGE if we are at the end of the buffer.
  *         ENOPROTOOPT if an error occured when getting the current event size.
  */
-int ltt_seek_next_event(LttTracefile *tf)
+static int ltt_seek_next_event(LttTracefile *tf)
 {
   int ret = 0;
   void *pos;
@@ -2896,7 +2832,7 @@ LttTime ltt_trace_start_time_monotonic(LttTrace *t)
   return t->start_time_from_tsc;
 }
 
-LttTracefile *ltt_tracefile_new()
+static LttTracefile *ltt_tracefile_new()
 {
   LttTracefile *tf;
   tf = g_new(LttTracefile, 1);
@@ -2904,19 +2840,19 @@ LttTracefile *ltt_tracefile_new()
   return tf;
 }
 
-void ltt_tracefile_destroy(LttTracefile *tf)
+static void ltt_tracefile_destroy(LttTracefile *tf)
 {
   g_free(tf);
 }
 
-void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src)
+static void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src)
 {
   *dest = *src;
 }
 
 /* Before library loading... */
 
-void init(void)
+static __attribute__((constructor)) void init(void)
 {
   LTT_FACILITY_NAME_HEARTBEAT = g_quark_from_string("heartbeat");
   LTT_EVENT_NAME_HEARTBEAT = g_quark_from_string("heartbeat");

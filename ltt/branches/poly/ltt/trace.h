@@ -50,6 +50,10 @@ struct LttTrace {
   GHashTable *markers_format_hash;                 //indexed by name hash
 };
 
+static inline guint ltt_trace_get_num_cpu(LttTrace *t)
+{
+  return t->num_cpu;
+}
 
 
 extern GQuark LTT_FACILITY_NAME_HEARTBEAT,
@@ -75,11 +79,13 @@ LttTrace *ltt_trace_open(const gchar *pathname);
  */
 LttTrace *ltt_trace_copy(LttTrace *self);
 
-GQuark ltt_trace_name(const LttTrace *t);
+static inline GQuark ltt_trace_name(const LttTrace *t)
+{
+  return t->pathname;
+}
+
 
 void ltt_trace_close(LttTrace *t); 
-
-guint ltt_trace_get_num_cpu(LttTrace *t);
 
 LttSystemDescription *ltt_trace_system_description(LttTrace *t);
 
@@ -91,24 +97,50 @@ void ltt_trace_time_span_get(LttTrace *t, LttTime *start, LttTime *end);
 
 /* Get the name of a tracefile */
 
-GQuark ltt_tracefile_name(const LttTracefile *tf);
-GQuark ltt_tracefile_long_name(const LttTracefile *tf);
+static inline GQuark ltt_tracefile_name(const LttTracefile *tf)
+{
+  return tf->name;
+}
+
+static inline GQuark ltt_tracefile_long_name(const LttTracefile *tf)
+{
+  return tf->long_name;
+}
 
 /* get the cpu number of the tracefile */
 
-guint ltt_tracefile_cpu(LttTracefile *tf);
+static inline guint ltt_tracefile_cpu(LttTracefile *tf)
+{
+  return tf->cpu_num;
+}
 
 /* For usertrace */
-guint ltt_tracefile_tid(LttTracefile *tf);
-guint ltt_tracefile_pgid(LttTracefile *tf);
-guint64 ltt_tracefile_creation(LttTracefile *tf);
+static inline guint ltt_tracefile_tid(LttTracefile *tf)
+{
+  return tf->tid;
+}
 
+static inline guint ltt_tracefile_pgid(LttTracefile *tf)
+{
+  return tf->pgid;
+}
 
-LttTrace *ltt_tracefile_get_trace(LttTracefile *tf);
+static inline guint64 ltt_tracefile_creation(LttTracefile *tf)
+{
+  return tf->creation;
+}
+
+static inline LttTrace *ltt_tracefile_get_trace(LttTracefile *tf)
+{
+  return tf->trace;
+}
 
 /* Get the number of blocks in the tracefile */
 
-unsigned ltt_tracefile_block_number(LttTracefile *tf);
+static inline guint ltt_tracefile_block_number(LttTracefile *tf)
+{
+  return tf->num_blocks; 
+}
 
 
 /* Seek to the first event of the trace with time larger or equal to time */
@@ -131,10 +163,6 @@ int ltt_tracefile_read_op(LttTracefile *t);
 
 /* Get the current event of the tracefile : valid until the next read */
 LttEvent *ltt_tracefile_get_event(LttTracefile *tf);
-
-/* open tracefile */
-
-gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf);
 
 /* get the data type size and endian type of the local machine */
 
@@ -166,11 +194,6 @@ LttTime ltt_trace_start_time(LttTrace *t);
 
 LttTime ltt_trace_start_time_monotonic(LttTrace *t);
 
-/* copy tracefile info over another. Used for sync. */
-LttTracefile *ltt_tracefile_new();
-void ltt_tracefile_destroy(LttTracefile *tf);
-void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src);
-
 void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname);
 
 /* May return a NULL tracefile group */
@@ -182,7 +205,6 @@ struct compute_tracefile_group_args {
   ForEachTraceFileFunc func;
   gpointer func_args;
 };
-
 
 void compute_tracefile_group(GQuark key_id,
                              GArray *group,
