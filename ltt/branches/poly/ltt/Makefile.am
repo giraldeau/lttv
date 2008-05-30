@@ -12,8 +12,6 @@ LIBS += $(GLIB_LIBS)
 lib_LTLIBRARIES = liblttvtraceread.la
 liblttvtraceread_la_SOURCES = tracefile.c marker.c event.c
 noinst_HEADERS = ltt-private.h
-#event.c parser.c type.c
-#parser.h
 
 lttinclude_HEADERS = \
 	compiler.h\
