@@ -949,6 +949,11 @@ seek_error:
   return err;
 }
 
+/*
+ * Open a trace and return its LttTrace handle.
+ *
+ * pathname must be the directory of the trace
+ */
 
 LttTrace *ltt_trace_open(const gchar *pathname)
 {
@@ -1044,15 +1049,22 @@ alloc_error:
 
 }
 
-/******************************************************************************
+/* Open another, completely independant, instance of a trace.
+ *
+ * A read on this new instance will read the first event of the trace.
+ * 
  * When we copy a trace, we want all the opening actions to happen again :
  * the trace will be reopened and totally independant from the original.
  * That's why we call ltt_trace_open.
- *****************************************************************************/
+ */
 LttTrace *ltt_trace_copy(LttTrace *self)
 {
   return ltt_trace_open(g_quark_to_string(self->pathname));
 }
+
+/*
+ * Close a trace
+ */
 
 void ltt_trace_close(LttTrace *t)
 {
@@ -1251,6 +1263,8 @@ fail:
   return EPERM;
 }
 
+/* Seek to a position indicated by an LttEventPosition
+ */
 
 int ltt_tracefile_seek_position(LttTracefile *tf, const LttEventPosition *ep)
 {
@@ -1284,6 +1298,10 @@ fail:
       g_quark_to_string(tf->name));
   return 1;
 }
+
+/* Given a TSC value, return the LttTime (seconds,nanoseconds) it
+ * corresponds to.
+ */
 
 LttTime ltt_interpolate_time_from_tsc(LttTracefile *tf, guint64 tsc)
 {
@@ -1385,6 +1403,7 @@ int ltt_tracefile_read_seek(LttTracefile *tf)
   return 0;
 }
 
+/* do an operation when reading a new event */
 
 /* do specific operation on events */
 int ltt_tracefile_read_op(LttTracefile *tf)
