@@ -39,8 +39,11 @@ foo/
 |   |-- modules_0
 |   |-- modules_1
 |   |-- modules_...
-|   `-- processes_0
-|   `-- processes_1
+|   |-- network_0
+|   |-- network_1
+|   |-- network_...
+|   |-- processes_0
+|   |-- processes_1
 |   `-- processes_...
 |-- cpu_0
 |-- cpu_1
@@ -144,8 +147,11 @@ uint8 alignment
 		Yes -> the value indicates the alignment
 		No (0) -> data is packed.
 uint8 tsc_lsb_truncate
+	* Used for compact channels
 uint8 tscbits
+	* Used for compact channels
 uint8 compact_data_shift
+	* Used for compact channels
 uint32 freq_scale
 		event time is always calculated from :
 			trace_start_time + ((event_tsc - trace_start_tsc) * (freq / freq_scale))
