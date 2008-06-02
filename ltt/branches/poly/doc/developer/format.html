@@ -1,26 +1,31 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/2002/REC-xhtml1-20020801/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
 <head>
   <title>The LTTng trace format</title>
 </head>
-  <body>
+
+<body>
 
 <h1>The LTTng trace format</h1>
 
-<P>
-<EM>Last update: 2008/05/23</EM>
+<p>
+<em>Last update: 2008/06/02</em>
+</p>
 
-<P>
+<p>
 This document describes the LTTng trace format. It should be useful mainly to
 developers who code the LTTng tracer or the traceread LTTV library, as this
 library offers all the necessary abstractions on top of the raw trace data.
+</p>
 
-<P>
+<p>
 A trace is contained in a directory tree. To send a trace remotely, the
 directory tree may be tar-gzipped. The trace <tt>foo</tt>, placed in the home
 directory of user john, /home/john, would have the following contents:
+</p>
 
-<PRE><TT>
+<pre><tt>
 $ cd /home/john
 $ tree foo
 foo/
@@ -41,16 +46,17 @@ foo/
 |-- cpu_1
 `-- cpu_...
 
-</TT></PRE>
+</tt></pre>
 
-<P>
+<p>
 The root directory contains a tracefile for each cpu, numbered from 0, 
 in .trace format. A uniprocessor thus only contains the file cpu_0. 
 A multi-processor with some unused (possibly hotplug) CPU slots may have some
 unused CPU numbers. For instance an 8 way SMP board with 6 CPUs randomly 
 installed may produce tracefiles named 0, 1, 2, 4, 6, 7.
+</p>
 
-<P>
+<p>
 The files in the control directory also follow the .trace format and are
 also per cpu.  The "facilities" files only contain "core" marker_id,
 marker_format and time_heartbeat events. The first two are used to describe the
@@ -60,16 +66,21 @@ creations and exit. The interest of placing such subsequent events in control
 trace files instead of (or in addition to) in the per cpu trace files is that
 they may be accessed more quickly/conveniently and that they may be kept even
 when the per cpu files are overwritten in "flight recorder mode".
+</p>
 
-<H2>Trace format</H2>
+<h2>Trace format</h2>
 
-<P>
+<p>
 Each tracefile is divided into equal size blocks with a header at the beginning
 of the block. Events are packed sequentially in the block starting right after
 the block header.
-<P>
+</p>
+
+<p>
 Each block consists of :
-<PRE><TT>
+</p>
+
+<pre><tt>
 block start/end header
 trace header
 event 1 header
@@ -78,11 +89,11 @@ event 2 header
 event 2 variable length data
 ....
 padding
-</TT></PRE>
+</tt></pre>
 
-<H3>The block start/end header</H3>
+<h3>The block start/end header</h3>
 
-<PRE><TT>
+<pre><tt>
 begin
 	* the beginning of buffer information
 	uint64 cycle_count
@@ -99,13 +110,13 @@ uint32 lost_size
 	* number of bytes of padding at the end of the buffer.
 uint32 buf_size
 	* size of the sub-buffer.
-</TT></PRE>
+</tt></pre>
 
 
 
-<H3>The trace header</H3>
+<h3>The trace header</h3>
 
-<PRE><TT>
+<pre><tt>
 uint32 magic_number
 	* 0x00D6B7ED, used to check the trace byte order vs host byte order.
 uint32 arch_type
@@ -152,18 +163,20 @@ start_time
 		clock frequency).
 	uint32 seconds
 	uint32 nanoseconds
-</TT></PRE>
+</tt></pre>
 
 
-<H3>Event header</H3>
+<h3>Event header</h3>
 
-<P>
+<p>
 Event headers differ according to the following conditions : does the
 traced system have a heartbeat timer? Is tracing alignment activated?
+</p>
 
-<P>
+<p>
 Event header :
-<PRE><TT>
+</p>
+<pre><tt>
 { uint32 timestamp
 	or
 	uint64 timestamp }
@@ -177,24 +190,26 @@ uint8 event_id
 	* Numerical ID of the event inside the facility.
 uint16 event_size
 	* Size of the variable length data that follows this header.
-</TT></PRE>
+</tt></pre>
 
-<P>
+<p>
 Event header alignment
+</p>
 
-<P>
+<p>
 If trace alignment is activated (<tt>alignment</tt>), the event header is
 aligned. In addition, padding is automatically added after the event header so
 the variable length data is automatically aligned on the architecture size.
+</p>
 
-<P>
 <!--
-<H2>System description</H2>
+<h2>System description</h2>
 
-<P>
+<p>
 The system type description, in system.xml, looks like:
+</p>
 
-<PRE><TT>
+<pre><tt>
 &lt;system 
  node_name="vaucluse"
  domainname="polymtl.ca" 
@@ -214,9 +229,9 @@ The system type description, in system.xml, looks like:
 &gt;
 Some comments about the system
 &lt;/system&gt;
-</TT></PRE>
+</tt></pre>
 
-<P>
+<p>
 The system attributes kernel_name, node_name, kernel_release,
  kernel_version, machine, processor, hardware_platform and operating_system
 come from the uname(1) program. The domainname attribute is obtained from
@@ -228,29 +243,36 @@ type, having these explicit allows analysing traces from yet unknown
 platforms. The cpu attribute specifies the maximum number of processors in
 the system; only tracefiles 0 to this maximum - 1 may exist in the cpu
 directory.
+</p>
 
-<P>
+<p>
 Within the system element, the text enclosed may describe further the
 system traced.
+</p>
 
-<H2>Bookmarks</H2>
 
-<P>
+<h2>Bookmarks</h2>
+
+<p>
 Bookmarks are user supplied information added to a trace. They contain user
 annotations attached to a time interval.
+</p>
 
-<PRE><TT>
+
+<pre><tt>
 &lt;bookmarks&gt;
   &lt;location name=name cpu=n start_time=t end_time=t&gt;Some text&lt;/location&gt;
   ...
 &lt;/bookmarks&gt;
-</TT></PRE>
+</tt></pre>
 
-<P>
+<p>
 The interval is defined using either "time=" or "start_time=" and 
 "end_time=", or "cycle=" or "start_cycle=" and "end_cycle=". 
 The time is in seconds with decimals up to nanoseconds and cycle counts 
 are unsigned integers with a 64 bits range. The cpu attribute is optional.
+</p>
+
 -->
-</BODY>
-</HTML>
+</body>
+</html>
