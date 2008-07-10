@@ -37,10 +37,11 @@ extern "C" {
  */
 #define _imv_read(name)		(name##__imv)
 
-#define __NR_marker             328
-#define __NR_trace              329
+#define __NR_marker             327
+#define __NR_trace              328
 
 #define sys_marker(...) syscall(__NR_marker, __VA_ARGS__)
+#define sys_trace(...) syscall(__NR_trace, __VA_ARGS__)
 
 #ifdef __cplusplus
 } /* end of extern "C" */

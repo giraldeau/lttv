@@ -2,6 +2,7 @@
 #include "marker.h"
 #include <stdio.h>
 #include <errno.h>
+#include <sys/user.h>
 
 __attribute__ ((visibility ("protected")))
 extern struct marker __start___markers[];
