@@ -1,4 +1,6 @@
 
+# 32 bits arch makefile
+
 CC=gcc
 
 all: libtestlib.so testprog testprog.S
