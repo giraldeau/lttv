@@ -4,7 +4,7 @@
 echo Connecting all userspace markers of _CURRENTLY RUNNING_ processes only !
 
 for a in /proc/[0-9]*; do
-	for marker in $a/markers; do
+	for marker in `cat $a/markers`; do
 		echo Connecting marker $a:$marker
 		case $marker in 
 		*)
