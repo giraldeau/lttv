@@ -1,0 +1,5 @@
+136a137,140
+>     . = ALIGN(8);
+>     PROVIDE (__start___markers = .);
+>     *(__markers)
+>     PROVIDE (__stop___markers = .);
