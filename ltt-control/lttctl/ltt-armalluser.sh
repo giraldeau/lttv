@@ -1,7 +1,7 @@
 #excluding core markers (already connected)
 #excluding locking markers (high traffic)
 
-echo Connecting all userspace markers
+echo Connecting all userspace markers of _CURRENTLY RUNNING_ processes only !
 
 for a in /proc/[0-9]*; do
 	echo Connecting markers in $a
