@@ -1,12 +1,11 @@
 #excluding core markers (already connected)
 #excluding locking markers (high traffic)
 
-echo Connecting all userspace markers
+echo Disconnecting all userspace markers of _RUNNING PROCESSES_ only !
 
 for a in /proc/[0-9]*; do
-	echo Connecting markers in $a
-
 	for marker in $a/markers; do
+		echo Disonnecting marker $a:$marker
 		case $marker in 
 		*)
 			CHANNEL=
