@@ -33,8 +33,6 @@
 #include <string.h>
 #include <ltt/ltt-private.h>
 
-guint64 nr_states = 0;
-
 /* Comment :
  * Mathieu Desnoyers
  * usertrace is there only to be able to update the current CPU of the
@@ -2361,8 +2359,6 @@ static int exit_process(LttvTracefileState *tfs, LttvProcessState *process)
   LttvTraceState *ts = LTTV_TRACE_STATE(tfs->parent.t_context);
   LttvProcessState key;
 
-  nr_states++;
-
   /* Wait for both schedule with exit dead and process free to happen.
    * They can happen in any order. */
   if (++(process->free_events) < 2)
@@ -2404,8 +2400,6 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
   struct marker_field *f = lttv_trace_get_hook_field(th, 0);
   LttvExecutionSubmode submode;
 
-  nr_states++;
-
   guint syscall = ltt_event_get_unsigned(e, f);
   expand_syscall_table(ts, syscall);
   submode = ((LttvTraceState *)(s->parent.t_context))->syscall_names[syscall];
@@ -2440,7 +2434,6 @@ static gboolean trap_entry(void *hook_data, void *call_data)
 
   LttvExecutionSubmode submode;
 
-  nr_states++;
   guint64 trap = ltt_event_get_long_unsigned(e, f);
 
   expand_trap_table(ts, trap);
@@ -2486,7 +2479,6 @@ static gboolean irq_entry(void *hook_data, void *call_data)
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
   struct marker_field *f = lttv_trace_get_hook_field(th, 0);
 
-  nr_states++;
   LttvExecutionSubmode submode;
   guint64 irq = ltt_event_get_long_unsigned(e, f);
 
@@ -2584,7 +2576,6 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
   expand_soft_irq_table(ts, softirq);
   submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[softirq];
 
-  nr_states++;
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_SOFT_IRQ, submode);
 
@@ -2635,7 +2626,6 @@ static gboolean bdev_request_issue(void *hook_data, void *call_data)
     lttv_trace_get_hook_field(th, 2));
   guint16 devcode = MKDEV(major,minor);
 
-  nr_states++;
   /* have we seen this block device before? */
   gpointer bdev = get_hashed_bdevstate(ts, devcode);
 
@@ -2806,7 +2796,6 @@ static gboolean schedchange(void *hook_data, void *call_data)
   pid_in = ltt_event_get_unsigned(e, lttv_trace_get_hook_field(th, 1));
   state_out = ltt_event_get_long_int(e, lttv_trace_get_hook_field(th, 2));
   
-  nr_states++;
   if(likely(process != NULL)) {
 
     /* We could not know but it was not the idle process executing.
@@ -2896,7 +2885,6 @@ static gboolean process_fork(void *hook_data, void *call_data)
   LttvProcessState *child_process;
   struct marker_field *f;
 
-  nr_states++;
   /* Parent PID */
   parent_pid = ltt_event_get_unsigned(e, lttv_trace_get_hook_field(th, 0));
 
@@ -3072,7 +3060,6 @@ static gboolean process_exec(void *hook_data, void *call_data)
   guint cpu = s->cpu;
   LttvProcessState *process = ts->running_process[cpu];
 
-  nr_states++;
 #if 0//how to use a sequence that must be transformed in a string
   /* PID of the process to release */
   guint64 name_len = ltt_event_field_element_number(e,

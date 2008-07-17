@@ -274,7 +274,6 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
   g_info("TextDump traceset footer");
 
   fprintf(a_file,"End trace set\n\n");
-  fprintf(a_file,"nr states created (total) : %llu\n\n", nr_states);
 
   if(LTTV_IS_TRACESET_STATS(tc)) {
     lttv_stats_sum_traceset((LttvTracesetStats *)tc, ltt_time_infinite);

@@ -53,7 +53,6 @@
 
 #define LTTV_STATE_SAVE_INTERVAL 50000
 
-extern guint64 nr_states;
 /* Facilities Quarks */
 
 extern GQuark
