@@ -5,6 +5,7 @@
  * This is a simple daemon that reads a few relay+debugfs channels and save
  * them in a trace.
  *
+ * CPU hot-plugging is supported using inotify.
  *
  * Copyright 2005 -
  * 	Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
@@ -116,6 +117,16 @@ struct inotify_watch_array {
 	struct inotify_watch *elem;
 	int num;
 };
+
+
+
+struct channel_trace_fd fd_pairs = { NULL, 0 };
+int inotify_fd = -1;
+struct inotify_watch_array inotify_watch_array = { NULL, 0 };
+
+/* protects fd_pairs and inotify_watch_array */
+pthread_rwlock_t fd_pairs_lock = PTHREAD_RWLOCK_INITIALIZER;
+
 
 static char		*trace_name = NULL;
 static char		*channel_name = NULL;
@@ -577,6 +588,10 @@ int read_inotify(int inotify_fd,
 	offset = 0;
 	len = read(inotify_fd, buf, sizeof(struct inotify_event) + PATH_MAX);
 	if(len < 0) {
+
+		if(errno == EAGAIN)
+			return 0;  /* another thread got the data before us */
+
 		printf("Error in read from inotify FD %s.\n", strerror(len));
 		return -1;
 	}
@@ -628,10 +643,11 @@ int read_inotify(int inotify_fd,
  * full.
  */
 
-int read_channels(unsigned int thread_num, struct channel_trace_fd *fd_pairs,
+int read_channels(unsigned long thread_num, struct channel_trace_fd *fd_pairs,
 	int inotify_fd, struct inotify_watch_array *iwatch_array)
 {
 	struct pollfd *pollfd = NULL;
+	int num_pollfd;
 	int i,j;
 	int num_rdy, num_hup;
 	int high_prio;
@@ -645,6 +661,8 @@ int read_channels(unsigned int thread_num, struct channel_trace_fd *fd_pairs,
 	inotify_fds = 0;
 #endif
 
+	pthread_rwlock_rdlock(&fd_pairs_lock);
+
 	/* Start polling the FD. Keep one fd for inotify */
 	pollfd = malloc((inotify_fds + fd_pairs->num_pairs) * sizeof(struct pollfd));
 
@@ -657,7 +675,11 @@ int read_channels(unsigned int thread_num, struct channel_trace_fd *fd_pairs,
 		pollfd[inotify_fds+i].fd = fd_pairs->pair[i].channel;
 		pollfd[inotify_fds+i].events = POLLIN|POLLPRI;
 	}
-	
+	num_pollfd = inotify_fds + fd_pairs->num_pairs;
+
+
+	pthread_rwlock_unlock(&fd_pairs_lock);
+
 	while(1) {
 		high_prio = 0;
 		num_hup = 0; 
@@ -665,13 +687,14 @@ int read_channels(unsigned int thread_num, struct channel_trace_fd *fd_pairs,
 		printf("Press a key for next poll...\n");
 		char buf[1];
 		read(STDIN_FILENO, &buf, 1);
-		printf("Next poll (polling %d fd) :\n", 1+fd_pairs->num_pairs);
+		printf("Next poll (polling %d fd) :\n", num_pollfd);
 #endif //DEBUG
 
 		/* Have we received a signal ? */
 		if(quit_program) break;
 		
-		num_rdy = poll(pollfd, inotify_fds+fd_pairs->num_pairs, -1);
+		num_rdy = poll(pollfd, num_pollfd, -1);
+
 		if(num_rdy == -1) {
 			perror("Poll error");
 			goto free_fd;
@@ -691,20 +714,18 @@ int read_channels(unsigned int thread_num, struct channel_trace_fd *fd_pairs,
 				break;
 			case POLLPRI:
 			case POLLIN:
+
 				printf("Polling inotify fd %d : data ready.\n", pollfd[0].fd);
-				old_num = fd_pairs->num_pairs;
+
+				pthread_rwlock_wrlock(&fd_pairs_lock);
 				read_inotify(inotify_fd, fd_pairs, iwatch_array);
-				pollfd = realloc(pollfd,
-						(inotify_fds + fd_pairs->num_pairs) * sizeof(struct pollfd));
-				for(i=old_num;i<fd_pairs->num_pairs;i++) {
-					pollfd[inotify_fds+i].fd = fd_pairs->pair[i].channel;
-					pollfd[inotify_fds+i].events = POLLIN|POLLPRI;
-				}
+				pthread_rwlock_unlock(&fd_pairs_lock);
+
 			break;
 		}
 #endif
 
-		for(i=inotify_fds;i<inotify_fds+fd_pairs->num_pairs;i++) {
+		for(i=inotify_fds;i<num_pollfd;i++) {
 			switch(pollfd[i].revents) {
 				case POLLERR:
 					printf("Error returned in polling fd %d.\n", pollfd[i].fd);
@@ -719,6 +740,7 @@ int read_channels(unsigned int thread_num, struct channel_trace_fd *fd_pairs,
 					num_hup++;
 					break;
 				case POLLPRI:
+					pthread_rwlock_rdlock(&fd_pairs_lock);
 					if(pthread_mutex_trylock(&fd_pairs->pair[i-inotify_fds].mutex) == 0) {
 						printf("Urgent read on fd %d\n", pollfd[i].fd);
 						/* Take care of high priority channels first. */
@@ -731,16 +753,18 @@ int read_channels(unsigned int thread_num, struct channel_trace_fd *fd_pairs,
 						if(ret)
 							printf("Error in mutex unlock : %s\n", strerror(ret));
 					}
+					pthread_rwlock_unlock(&fd_pairs_lock);
 					break;
 			}
 		}
 		/* If every buffer FD has hung up, we end the read loop here */
-		if(num_hup == fd_pairs->num_pairs) break;
+		if(num_hup == num_pollfd - inotify_fds) break;
 
 		if(!high_prio) {
-			for(i=inotify_fds;i<inotify_fds+fd_pairs->num_pairs;i++) {
+			for(i=inotify_fds;i<num_pollfd;i++) {
 				switch(pollfd[i].revents) {
 					case POLLIN:
+						pthread_rwlock_rdlock(&fd_pairs_lock);
 						if(pthread_mutex_trylock(&fd_pairs->pair[i-inotify_fds].mutex) == 0) {
 							/* Take care of low priority channels. */
 							printf("Normal read on fd %d\n", pollfd[i].fd);
@@ -752,11 +776,34 @@ int read_channels(unsigned int thread_num, struct channel_trace_fd *fd_pairs,
 							if(ret)
 								printf("Error in mutex unlock : %s\n", strerror(ret));
 						}
+						pthread_rwlock_unlock(&fd_pairs_lock);
 						break;
 				}
 			}
 		}
 
+		/* Update pollfd array if an entry was added to fd_pairs */
+		pthread_rwlock_rdlock(&fd_pairs_lock);
+		if((inotify_fds + fd_pairs->num_pairs) != num_pollfd) {
+			pollfd = realloc(pollfd,
+					(inotify_fds + fd_pairs->num_pairs) * sizeof(struct pollfd));
+			for(i=num_pollfd-inotify_fds;i<fd_pairs->num_pairs;i++) {
+				pollfd[inotify_fds+i].fd = fd_pairs->pair[i].channel;
+				pollfd[inotify_fds+i].events = POLLIN|POLLPRI;
+			}
+			num_pollfd = fd_pairs->num_pairs + inotify_fds;
+		}
+		pthread_rwlock_unlock(&fd_pairs_lock);
+
+		/* NB: If the fd_pairs structure is updated by another thread from this
+		 *     point forward, the current thread will wait in the poll without
+		 *     monitoring the new channel. However, this thread will add the
+		 *     new channel on next poll (and this should not take too much time
+		 *     on a loaded system).
+		 *
+		 *     This event is quite unlikely and can only occur if a CPU is
+		 *     hot-plugged while multple lttd threads are running.
+		 */
 	}
 
 free_fd:
@@ -786,13 +833,21 @@ void close_channel_trace_pairs(struct channel_trace_fd *fd_pairs, int inotify_fd
 /* Thread worker */
 void * thread_main(void *arg)
 {
-	struct channel_trace_fd fd_pairs = { NULL, 0 };
-	int inotify_fd = -1;
-	struct inotify_watch_array inotify_watch_array = { NULL, 0 };
+	long ret;
+	unsigned long thread_num = (unsigned long)arg;
+
+	ret = read_channels(thread_num, &fd_pairs, inotify_fd, &inotify_watch_array);
+
+	return (void*)ret;
+}
+
+
+int channels_init()
+{
 	int ret = 0;
-	unsigned int thread_num = (unsigned int)arg;
 
 	inotify_fd = inotify_init();
+	fcntl(inotify_fd, F_SETFL, O_NONBLOCK);
 
 	if(ret = open_channel_trace_pairs(channel_name, trace_name, &fd_pairs,
 			&inotify_fd, &inotify_watch_array))
@@ -801,24 +856,22 @@ void * thread_main(void *arg)
 	if(ret = map_channels(&fd_pairs, 0, fd_pairs.num_pairs))
 		goto close_channel;
 
-	ret = read_channels(thread_num, &fd_pairs, inotify_fd, &inotify_watch_array);
-
-	ret |= unmap_channels(&fd_pairs);
+	return 0;
 
 close_channel:
 	close_channel_trace_pairs(&fd_pairs, inotify_fd, &inotify_watch_array);
 	if(inotify_fd >= 0)
 		close(inotify_fd);
-
-	return (void*)ret;
+	return ret;
 }
+
 
 int main(int argc, char ** argv)
 {
 	int ret = 0;
 	struct sigaction act;
 	pthread_t *tids;
-	unsigned int i;
+	unsigned long i;
 	void *tret;
 	
 	ret = parse_arguments(argc, argv);
@@ -849,6 +902,9 @@ int main(int argc, char ** argv)
 	sigaction(SIGQUIT, &act, NULL);
 	sigaction(SIGINT, &act, NULL);
 
+	if(ret = channels_init())
+		return ret;
+
 	tids = malloc(sizeof(pthread_t) * num_threads);
 	for(i=0; i<num_threads; i++) {
 
@@ -865,12 +921,18 @@ int main(int argc, char ** argv)
 			perror("Error joining thread");
 			break;
 		}
-		if((int)tret != 0) {
-			printf("Error %s occured in thread %u\n", strerror((int)tret), i);
+		if((long)tret != 0) {
+			printf("Error %s occured in thread %u\n",
+				strerror((long)tret), i);
 		}
 	}
 
 	free(tids);
+
+	ret = unmap_channels(&fd_pairs);
+	close_channel_trace_pairs(&fd_pairs, inotify_fd, &inotify_watch_array);
+	if(inotify_fd >= 0)
+		close(inotify_fd);
 			
 	return ret;
 }
