@@ -1031,8 +1031,9 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
-    if(ltt_process_facility_tracefile(tf))
-      goto facilities_error;
+    if (tf->cpu_online)
+      if(ltt_process_facility_tracefile(tf))
+        goto facilities_error;
   }
 
   return t;
