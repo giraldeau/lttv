@@ -1,0 +1,828 @@
+#LyX 1.5.5 created this file. For more info see http://www.lyx.org/
+\lyxformat 276
+\begin_document
+\begin_header
+\textclass article
+\language english
+\inputencoding auto
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\paperfontsize default
+\spacing single
+\papersize default
+\use_geometry false
+\use_amsmath 1
+\use_esint 1
+\cite_engine basic
+\use_bibtopic false
+\paperorientation portrait
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation skip
+\defskip medskip
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\author "" 
+\author "" 
+\end_header
+
+\begin_body
+
+\begin_layout Title
+A Set of APIs for a Third-Generation Trace Viewer
+\end_layout
+
+\begin_layout Author
+\noindent
+Pierre-Marc Fournier, Michel Dagenais, Mathieu Desnoyers
+\newline
+
+\family typewriter
+\size footnotesize
+<pierre-marc.fournier _at_ polymtl.ca>
+\family default
+\size default
+
+\newline
+
+\newline
+CASI Lab
+\newline
+École Polytechnique de Montréal
+\newline
+
+\newline
+WORK IN PROGRESS
+\end_layout
+
+\begin_layout Section
+Introduction
+\end_layout
+
+\begin_layout Standard
+This document proposes some APIs for a trace viewing and analysis infrastructure.
+\end_layout
+
+\begin_layout Standard
+Design choices were made based on the experience acquired by the design,
+ development and use of two previous generations of trace viewers, respectively
+ the Trace Visualizer from the Linux Trace Toolkit and its successor, the
+ LTTV from the LTTng tracing toolkit.
+\end_layout
+
+\begin_layout Section
+Goals
+\end_layout
+
+\begin_layout Itemize
+Provide an infrastructure for fast, interactive visualization and analysis
+ of huge traces (>10 GB) on standard workstations
+\begin_inset Foot
+status open
+
+\begin_layout Standard
+Efficiency is of great importance.
+ It is tempting to think that as computers get faster, it will be possible
+ to run more complex analyses on traces in a shorter time.
+ In fact, the size of the traces grows as computers get more powerful, because
+ they do more operations than before in the same amount of time and therefore
+ generate more events.
+ The current tendency to parallelize systems is another factor that results
+ in bigger traces.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Support live trace processing
+\end_layout
+
+\begin_layout Itemize
+Allow merging of traces of different formats
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Itemize
+Design the viewer in such a way that it can run in parallel on multi-core
+ systems 
+\begin_inset Note Greyedout
+status open
+
+\begin_layout Standard
+(Is it worth it? Beware of complex locking issues)
+\end_layout
+
+\end_inset
+
+; No, we don't.
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Itemize
+Design with both command line utilities (C language) and graphical interfaces
+ (Java and others) in mind, sharing code and standardizing interfaces as
+ much as possible
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Both command-line interfaces and graphical interfaces have an important
+ role to play in trace analysis.
+ While graphical interfaces allow for complex views, command-line utilities
+ can be used quickly in more environments; they can also be more convenient
+ in some circumstances.
+ A good design should be such that they can share code and APIs.
+\end_layout
+
+\end_deeper
+\begin_layout Section
+General aspects
+\end_layout
+
+\begin_layout Itemize
+All data structures must be accessed through API methods, in order to allow
+ for internal change without breaking compatibility.
+\end_layout
+
+\begin_layout Section
+Controlling the tracing of a system
+\end_layout
+
+\begin_layout Subsection
+Overview
+\end_layout
+
+\begin_layout Standard
+The goal of this API is to provide a portable way of controlling tracing
+ of heterogenous systems.
+\end_layout
+
+\begin_layout Standard
+It should enable to do the following actions.
+\end_layout
+
+\begin_layout Itemize
+Set the parameters of a trace (channels, buffering, destination of data
+ (file, network, process)...) 
+\end_layout
+
+\begin_layout Itemize
+Control the recording of events (start, stop, pause the trace)
+\end_layout
+
+\begin_layout Itemize
+Create tracepoints (on dynamic tracers) and control which tracepoints are
+ activated (some may be at trace level, others might only permit system
+ level)
+\end_layout
+
+\begin_layout Subsection
+Trace control API
+\end_layout
+
+\begin_layout Itemize
+List the static tracepoints available on a system
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+These may be static tracepoints (active or inactive) or dynamic tracepoints
+ (active or proposed).
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Add a new dynamic tracepoint
+\end_layout
+
+\begin_layout Itemize
+Activate a tracepoint
+\end_layout
+
+\begin_layout Itemize
+Deactivate a tracepoint
+\end_layout
+
+\begin_layout Itemize
+List available probes
+\end_layout
+
+\begin_layout Itemize
+Connect a probe to a tracepoint
+\end_layout
+
+\begin_layout Itemize
+Start tracing
+\end_layout
+
+\begin_layout Itemize
+Stop tracing
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Note Greyedout
+status open
+
+\begin_layout Standard
+others missing...
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Reading traces
+\end_layout
+
+\begin_layout Subsection
+Overview
+\end_layout
+
+\begin_layout Subsubsection
+Timestamps
+\end_layout
+
+\begin_layout Standard
+Timestamps, at the framework level, should be in an architecture-independent
+ format.
+ One possibility would be to have them stored in seconds (with decimals).
+ Offsetting, if necessary, could be handled by the traceset (trace merging)
+ level.
+ An uncertainty value should accompany the timestamp.
+ Timestamps in cycles should be available if they are provided by the tracer.
+\end_layout
+
+\begin_layout Subsection
+Low-level trace reading API
+\end_layout
+
+\begin_layout Standard
+The goal of this API is to provide a uniform way for the framework to access
+ the events recorded in a trace, in an encoding-independant way.
+\end_layout
+
+\begin_layout Subsubsection
+Factory methods
+\end_layout
+
+\begin_layout Itemize
+get_supported_formats()
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments: none
+\end_layout
+
+\begin_layout Standard
+Return:
+\end_layout
+
+\begin_layout Itemize
+a list of supported formats
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+open_trace()
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+trace URL
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+local file name
+\end_layout
+
+\begin_layout Itemize
+other special url to establish a network connection
+\end_layout
+
+\begin_layout Itemize
+etc...
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+trace format (optional, for cases where auto detection would not work or
+ be ambiguous)
+\end_layout
+
+\begin_layout Standard
+Return:
+\end_layout
+
+\begin_layout Itemize
+a trace handle
+\end_layout
+
+\end_deeper
+\begin_layout Subsubsection
+Trace methods
+\end_layout
+
+\begin_layout Itemize
+close()
+\end_layout
+
+\begin_layout Itemize
+current_event()
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments: none
+\end_layout
+
+\begin_layout Standard
+Return:
+\end_layout
+
+\begin_layout Itemize
+the event currently pointed by the position pointer
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+advance()
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Advance the position pointer to the next event in the trace.
+\end_layout
+
+\begin_layout Standard
+Arguments: none
+\end_layout
+
+\begin_layout Standard
+Return values:
+\end_layout
+
+\begin_layout Itemize
+The result:
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Success
+\end_layout
+
+\begin_layout Itemize
+Final end of trace (end of a non-live trace or of a completed live trace)
+\end_layout
+
+\begin_layout Itemize
+No more events for now (end of a still running live trace)
+\end_layout
+
+\end_deeper
+\end_deeper
+\begin_layout Itemize
+seek_time()
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+The time to seek to
+\end_layout
+
+\begin_layout Standard
+Return: none
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+get_position_handle()
+\end_layout
+
+\begin_layout Itemize
+seek_to_position_handle()
+\end_layout
+
+\begin_layout Itemize
+destroy_position_handle()
+\end_layout
+
+\begin_layout Itemize
+get_time_start()
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments: none
+\end_layout
+
+\begin_layout Standard
+Return:
+\end_layout
+
+\begin_layout Itemize
+the timestamp of the first event in the trace
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+get_time_end()
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments: none
+\end_layout
+
+\begin_layout Standard
+Return:
+\end_layout
+
+\begin_layout Itemize
+the timestamp of the last event in the trace
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+register_callback_new_event()
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Register a callback that is called when a new event becomes available in
+ a live trace.
+ It is also called when the live trace ends.
+\end_layout
+
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+after (timestamp) : call only if the event occurent later than 
+\emph on
+after
+\end_layout
+
+\begin_layout Itemize
+the callback function
+\begin_inset Note Note
+status open
+
+\begin_layout Standard
+specify its args and return val
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Return:
+\end_layout
+
+\begin_layout Itemize
+Result (success or failure)
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+High-level trace reading API
+\end_layout
+
+\begin_layout Standard
+The goal of this API is to provide a uniform way for analyses and views
+ to obtain trace events from a traceset (merge of many traces or a single
+ trace), regardless of the system they were recorded on and of the tracer
+ used.
+\end_layout
+
+\begin_layout Itemize
+Request a range of events
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+(implicitly) the traceset
+\end_layout
+
+\begin_layout Itemize
+start timestamp
+\end_layout
+
+\begin_layout Itemize
+stop timestamp (special value for infinity, for live traces)
+\end_layout
+
+\begin_layout Itemize
+list of event types and callbacks
+\end_layout
+
+\begin_layout Itemize
+filter with complex expressions
+\end_layout
+
+\begin_layout Itemize
+private pointer to be passed to the callbacks
+\end_layout
+
+\begin_layout Standard
+Return:
+\end_layout
+
+\begin_layout Itemize
+handle to the request for cancelling it
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Cancel a request
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+the handle to the request
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+State management
+\end_layout
+
+\begin_layout Subsubsection
+State accessing API
+\end_layout
+
+\begin_layout Itemize
+Request the values of a given set of state variables at a point in time
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+the list of state variables
+\end_layout
+
+\begin_layout Itemize
+the timestamp
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Request all the states changes of a given set of state variables between
+ two time indexes
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+the list of state variables
+\end_layout
+
+\begin_layout Itemize
+timestamp 1
+\end_layout
+
+\begin_layout Itemize
+timestamp 2
+\end_layout
+
+\end_deeper
+\begin_layout Subsubsection
+State setting API
+\end_layout
+
+\begin_layout Section
+Describing event types
+\end_layout
+
+\begin_layout Subsection
+Overview
+\end_layout
+
+\begin_layout Standard
+Because tracepoints may be created dynamically, information about the descriptio
+n of events is just as dynamic.
+ In this context, one simple way to communicate the event description informatio
+n to upper layers would be to send them as events, as it is done in recent
+ versions of LTTV.
+ The core events used to describe other events are the only ones whose descripti
+on is hardcoded in the framework.
+\end_layout
+
+\begin_layout Standard
+These event-type-describing events could then be received and interpreted
+ by a module, the Event Description Service, which would be a client to
+ the high-level tracing API at the same level as normal views and analyses.
+ It would store the information and allow the other views and analyses to
+ access it via this API.
+\end_layout
+
+\begin_layout Subsection
+Events-describing events
+\end_layout
+
+\begin_layout Itemize
+Event type declaration event
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Announce the existence of an event type
+\end_layout
+
+\begin_layout Itemize
+event type name
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Argument declaration event
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Announce the existence of an event argument
+\end_layout
+
+\begin_layout Itemize
+event type name
+\end_layout
+
+\begin_layout Itemize
+name
+\end_layout
+
+\begin_layout Itemize
+type
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Event destruction
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Announce that an event type ceased to exist
+\end_layout
+
+\begin_layout Itemize
+event type name
+\end_layout
+
+\end_deeper
+\begin_layout Subsection
+Event type description API
+\end_layout
+
+\begin_layout Itemize
+Get the list of all the event types
+\end_layout
+
+\begin_layout Itemize
+Find an event type by name
+\end_layout
+
+\begin_layout Itemize
+Get the number of arguments of an event
+\end_layout
+
+\begin_layout Itemize
+Get the list of arguments of an event
+\end_layout
+
+\begin_layout Itemize
+Find an argument by name
+\end_layout
+
+\begin_layout Itemize
+Get the type of an argument of an event type
+\end_layout
+
+\begin_layout Itemize
+Get a string representation of an argument of any type, given an event that
+ contains it an instance of it
+\end_layout
+
+\begin_layout Itemize
+Get an integer representation of an integer argument, a floating-point represent
+ation of a floating-point argument
+\end_layout
+
+\begin_layout Itemize
+Functions for accessing other types
+\end_layout
+
+\begin_layout Section
+Inspecting events
+\end_layout
+
+\begin_layout Subsection
+Overview
+\end_layout
+
+\begin_layout Standard
+Events contain the following information.
+\end_layout
+
+\begin_layout Itemize
+Timestamp
+\end_layout
+
+\begin_layout Itemize
+Event type identifier
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Two possibilities:
+\end_layout
+
+\begin_layout Itemize
+an event id (integer)
+\end_layout
+
+\begin_layout Itemize
+an event name (string)
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+The name of the machine it occured on
+\end_layout
+
+\begin_layout Subsection
+Event inspecting API
+\end_layout
+
+\begin_layout Itemize
+get the event type identifier
+\end_layout
+
+\begin_layout Itemize
+get timestamp
+\end_layout
+
+\begin_layout Itemize
+get the name of the machine on which the event occured
+\end_layout
+
+\begin_layout Itemize
+get information on the type of tracing technology that was used
+\end_layout
+
+\begin_layout Itemize
+get the corresponding tracepoint (machine/tracing technology/name/location
+ in code(if available))
+\end_layout
+
+\end_body
+\end_document
