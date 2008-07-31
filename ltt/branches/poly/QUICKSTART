@@ -221,25 +221,28 @@ make menuconfig (or make xconfig or make config)
     Items preceded by [*] means they has to be built into the kernel.
     Items preceded by [M] means they has to be built as modules.
     Items preceded by [ ] means they should be removed.
-  go to the "Instrumentation Support" section
+  go to the "General setup" section
     Select the following options :
+    [*] Activate tracepoints
+    [*] Activate markers
+    [*] Activate userspace markers ABI
+    <*> Compile generic tracing probes
+    Linux Trace Toolkit  --->
+    [LTTng fine-grained-timestamping]
     [*] Linux Trace Toolkit Instrumentation Support
+    <M> or <*> Linux Trace Toolkit Relay+DebugFS Support
+    <M> or <*> Linux Trace Toolkit Serializer
+    <M> or <*> Linux Trace Toolkit Marker Control
     <M> or <*> Linux Trace Toolkit Tracer
-      <M> or <*> Linux Trace Toolkit Relay+DebugFS Support
-        It makes no difference for the rest of the procedure whether the Tracer
-        is compiled built-in or as a module.
+      It makes no difference for the rest of the procedure whether the Tracer
+      is compiled built-in or as a module.
     activate :
        [*] Align Linux Trace Toolkit Traces
-       [*] Allow tracing from userspace
        <M> Linux Trace Toolkit Netlink Controller
        <M> Linux Trace Toolkit State Dump
     your choice (see < Help >) :
-       [ ] Activate Linux Trace Toolkit Heartbeat Timer
-    You may or may not decide to compile probes. Afterward, you will have to
-    load the probe modules to enable tracing of their events. The probes
-    automatically select the appropriate facilities.
-    Static instrumentation is a more invasive type of instrumentation that gives
-    the address taking a lock or doing a printk.
+       [ ] Write heartbeat event to shrink traces
+       [ ] Support trace extraction from crash dump
   Select <Exit>
   Select <Exit>
   Select <Yes>
@@ -290,16 +293,15 @@ these commands load all LTT modules. Depending on what options you chose to
 compile statically, you may not need to issue all these commands. 
 
 modprobe ltt-control
-modprobe ltt-core
-modprobe ltt-relay
+modprobe ltt-marker-control
 modprobe ltt-tracer
-modprobe ltt-probe-mm
-modprobe ltt-probe-kernel
-modprobe ltt-probe-i386 (or x86_64, powerpc, ppc, arm, mips)
-modprobe ltt-probe-net
-modprobe ltt-probe-list
-modprobe ltt-probe-ipc
-modprobe ltt-probe-fs
+modprobe ltt-serialize
+modprobe ltt-relay
+modprobe ipc-trace
+modprobe kernel-trace
+modprobe mm-trace
+modprobe net-trace
+modprobe fs-trace
 
 If you want to have complete information about the kernel state (including all
 the process names), you need to load the ltt-statedump module. This is done by
@@ -311,21 +313,15 @@ You can automate at boot time loading the ltt-control module by :
 
 cp /etc/modules /etc/modules.bkp
 echo ltt-control >> /etc/modules
-echo ltt-core >> /etc/modules
-echo ltt-relay >> /etc/modules
+echo ltt-marker-control >> /etc/modules
 echo ltt-tracer >> /etc/modules
-echo ltt-probe-mm >> /etc/modules
-echo ltt-probe-kernel >> /etc/modules
-echo ltt-probe-i386 >> /etc/modules (or x86_64, powerpc, ppc, arm, mips)
-echo ltt-probe-net >> /etc/modules
-echo ltt-probe-list >> /etc/modules
-echo ltt-probe-ipc >> /etc/modules
-echo ltt-probe-fs >> /etc/modules
-echo ltt-statedump >> /etc/modules
-
-(note : if you want to probe a marker which is within a module, make sure you
-load the probe _after_ the module, otherwise the probe will not be able to
-connect itself to the marker.)
+echo ltt-serialize >> /etc/modules
+echo ltt-relay >> /etc/modules
+echo ipc-trace >> /etc/modules
+echo kernel-trace >> /etc/modules
+echo mm-trace >> /etc/modules
+echo net-trace >> /etc/modules
+echo fs-trace >> /etc/modules
 
 
 * Getting and installing the ltt-control package (on the traced machine)
@@ -342,8 +338,8 @@ system)
 make
 make install
 
-* Getting and installing the ltt-usertrace package for user space tracing
-See http://ltt.polymtl.ca/ > USERSPACE TRACING QUICKSTART
+* Getting and installing the markers-userspace package for user space tracing
+See http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2 or more recent.
 
 
 * Getting and installing the LTTV package (on the visualisation machine, same or
