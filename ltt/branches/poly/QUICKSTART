@@ -1,7 +1,7 @@
 Linux Trace Toolkit Quickstart
 ------------------------------
 Author : Mathieu Desnoyers, September 2005
-Last update : May 14, 2007
+Last update : July 31, 2008
 
 
 This document is made of four parts : the first one explains how to install
@@ -14,9 +14,9 @@ applications.
 What you will typically want is to read sections 2 and 3 : install LTTng from
 sources and use it.
 
-These operations are made for installing the LTTng 0.6.X tracer on a
-linux 2.6.X kernel. You will also find instructions for installation of
-LTTV 0.8.x : the Linux Trace Toolkit Viewer. 
+These operations are made for installing the LTTng 0.12 tracer on a linux 2.6.X
+kernel. You will also find instructions for installation of LTTV 0.8.x : the
+Linux Trace Toolkit Viewer. 
 
 To see the list of compatibilities between LTTng, ltt-control, LTTV, genevent
 and ltt-usertrace, please refer to :
