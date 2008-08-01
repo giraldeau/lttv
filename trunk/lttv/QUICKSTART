@@ -18,8 +18,8 @@ These operations are made for installing the LTTng 0.12 tracer on a linux 2.6.X
 kernel. You will also find instructions for installation of LTTV 0.8.x : the
 Linux Trace Toolkit Viewer. 
 
-To see the list of compatibilities between LTTng, ltt-control, LTTV, genevent
-and ltt-usertrace, please refer to :
+To see the list of compatibilities between LTTng, ltt-control, LTTV and
+markers-userspace, please refer to :
 http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
 
 
@@ -53,59 +53,9 @@ PowerPC 32 and 64 bits
 ** Section 1 * Installation from Debian or RPM packages  **
 ***********************************************************
 
-** NOTE : RPM and Debian packages are only made once a version has been
-   thoroughly tested. If they do not exist at the moment, please install from
-   sources (see section 2 below). To see the list of compatibilities between
-   LTTng, ltt-control, LTTV, genevent and lttng-modules, please refer to
-   http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
-
-
-* Install from RPM packages on Fedora Core 4 :
-
-Get LTTV RPM from :
-
-http://ltt.polymtl.ca/packages/fedora/RPMS
-
-LTTV RPM are ready.
-
-LTTng kernel and lttng-modules RPM are available for some architectures (i586,
-i686). Feel free to help fix the spec files to have correct lttng-modules RPM
-package.
-
-
-* Install from .deb packages on Debian :
-
-You can use the ltt.polymtl.ca apt source to get LTTV for Debian :
-
-Add the following two sources to your /etc/apt/sources.list :
-
-deb http://ltt.polymtl.ca/packages/debian experimental main
-deb-src http://ltt.polymtl.ca/packages/debian experimental main
-
-
-* Install from precompiled binary packages (LTTV compiled only for i386, and
-  LTTng only for i686 smp), perform the following :
-
-su -
-apt-get update
-apt-get install lttv lttv-doc
-apt-get install kernel-image-2.6.12-rc4-mm2-lttng-0.4.2
-apt-get install lttng-modules-modules-2.6.12-rc4-mm2-lttng-0.4.2
-  * note : the packages are signed by myself. I am not considered a trusted
-    Debian source yet, so warnings are normal.
-
-Then, follow the section "Editing the system wide configuration" in section 2.
-
 * Create custom LTTV Debian packages
 
-Binary packages are only available for i386. If you want to create your own LTTV
-packages for other platforms, do :
-
-su -
-cd /usr/src
-apt-get source lttv
-cd lttv-0.6.9
-dpkg-buildpackage -rfakeroot
+Use : dpkg-buildpackage -rfakeroot
 
 You should then have your LTTV .deb files created for your architecture.
 
@@ -113,28 +63,13 @@ You should then have your LTTV .deb files created for your architecture.
 
 For building LTTng Debian packages :
 
-su -
-apt-get install kernel-source-2.6.12-rc4-mm2-lttng-0.4.2
-cd /usr/src
-bzip2 -cd kernel-source-2.6.12-rc4-mm2-lttng-0.4.2.tar.bz2 | tar xvof -
-cd kernel-source-2.6.12-rc4-mm2-lttng-0.4.2
+Get the build tree with patches applies as explained in section 2.
+
 make menuconfig (or xconfig or config) (customize your configuration)
 make-kpkg kernel_image
 
 You will then see your freshly created .deb in /usr/src. Install it with
 dpkg -i /usr/src/(image-name).deb
-
-You will also need to create a package for the lttng-modules :
-
-su -
-cd /usr/src
-apt-get source lttng-modules
-cd kernel-source-2.6.12-rc4-mm2-lttng-0.4.2
-make-kpkg --added_modules /usr/src/lttng-modules-0.3 modules_image
-
-You will then see your freshly created .deb in /usr/src. Install it with
-dpkg -i /usr/src/lttng-modules-modules-(your version).deb
-
 
 Then, follow the section "Editing the system wide configuration" in section 2.
 
@@ -347,9 +282,9 @@ See http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2 or more recent.
 
 su -
 cd /usr/src
-wget http://ltt.polymtl.ca/packages/LinuxTraceToolkitViewer-0.x.xx-xxxx2006.tar.gz
-gzip -cd LinuxTraceToolkitViewer-0.x.xx-xxxx2006.tar.gz | tar xvof -
-cd LinuxTraceToolkitViewer-0.x.xx-xxxx2006
+wget http://ltt.polymtl.ca/packages/lttv-0.x.xx-xxxx2008.tar.gz
+gzip -cd lttv-0.x.xx-xxxx2008.tar.gz | tar xvof -
+cd lttv-0.x.xx-xxxx2008
 (refer to README to see the development libraries that must be installed on your
 system)
 ./configure
@@ -363,7 +298,7 @@ make install
 ** Section 3 * Using LTTng and LTTV                      **
 ***********************************************************
 
-* Arm Linux Kernel Markers after each boot
+* IMPORTANT : Arm Linux Kernel Markers after each boot
 
 ltt-armall
 
@@ -429,10 +364,10 @@ flight recorder buffer (now named flight-channelname_X).
 The following lttctl commands take an hybrid trace :
 
 Create trace channel, start lttd on normal channels, start tracing:
-lttctl -n tracename -d -l /mnt/relayfs/ltt -t /tmp/trace1 -m hybrid
+lttctl -n tracename -d -l /mnt/debugfs/ltt -t /tmp/trace1 -m hybrid
 
 Stop tracing, start lttd on flight recorder channels, destroy trace channels :
-lttctl -n tracename -f -l /mnt/relayfs/ltt -t /tmp/trace1 -m hybrid
+lttctl -n tracename -f -l /mnt/debugfs/ltt -t /tmp/trace1 -m hybrid
 
 
 We will need to tweak what we consider "important" medium rate events. For
@@ -448,60 +383,25 @@ including control channels, except for the facilities tracefiles.
 The following lttctl commands take a flight recorder trace :
 
 lttctl -n trace -c -m flight
-lttd -n -d -t /tmp/trace -c /sys/kernel/debug/ltt 
+lttd -n -d -t /tmp/trace -c /mnt/debugfs/ltt/trace
 lttctl -n trace -s
 .. do stuff
 lttctl -n trace -q
-lttd -f -d -t /tmp/trace -c /sys/kernel/debug/ltt
+lttd -f -d -t /tmp/trace -c /mnt/debugfs/ltt/trace
 lttctl -m trace -r
 
 
-***********************************************************
-** Section 4 * Adding new instrumentations with genevent **
-***********************************************************
+**************************************************************
+** Section 4 * Adding new instrumentations with the markers **
+**************************************************************
 
-* Getting and installing genevent
+See Documentation/markers.txt and Documentation/tracepoints.txt in your kernel
+tree.
 
-su -
-cd /usr/src
-wget http://ltt.polymtl.ca/packages/genevent-0.xx.tar.gz
-gzip -cd genevent-0.xx.tar.gz | tar xvof -
-cd genevent-0.xx
-make
-make install
+* Add new events to userspace programs with userspace markers
+http://ltt.polymtl.ca/packages/
 
+Get the latest markers-userspace-*.tar.bz2 and see the Makefile and examples. It
+allows inserting markers in executables and libraries, currently only on x86_32
+and x86_64.
 
-* Add new events to the kernel with genevent (deprecated in LTTng 0.9.x)
-
-su -
-cd /usr/local/share/ltt-control/facilities
-cp process.xml yourfacility.xml
-  * edit yourfacility.xml to fit your needs.
-cd /tmp
-/usr/local/bin/genevent /usr/local/share/ltt-control/facilities/yourfacility.xml
-cp ltt-facility-yourfacility.h ltt-facility-id-yourfacility.h \
-         /usr/src/linux-2.6.17-lttng-0.x.xx8/include/ltt
-cp ltt-facility-loader-yourfacility.c ltt-facility-loader-yourfacility.h \
-         /usr/src/linux-2.6.17-lttng-0.x.xx/ltt/facilities
-  * edit the kernel file you want to instrument to add a marker to it. See
-    include/linux/marker.h.
-  * create a dynamically loadable probe. See ltt/probes for examples. The probe
-    will be connected to your marker and will typically call the logging
-    functions found in the header file you created with genevent.
-
-* Add new kernel events
-
-*Important* note : in its current state, LTTng and LTTV needs the programmer
-to keep the marker/probe format string and the XML description of the
-event data types in sync by hand. Failure to do so will result in errors in
-LTTV.
-
-See the markers documentation to see how to describe the marker. You will need
-to clone probe modules found in ltt/probes to connect them to the markers so
-that the information can be recorded in the trace.
-
-* Add new events to userspace programs with genevent
-See http://ltt.polymtl.ca/ > USERSPACE TRACING QUICKSTART
-
-User-space tracing still uses genevent, which is subject to change in a near
-future.
