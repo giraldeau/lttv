@@ -289,7 +289,7 @@ Factory methods
 \end_layout
 
 \begin_layout Itemize
-get_supported_formats()
+void get_supported_formats(void)
 \end_layout
 
 \begin_deeper
@@ -352,11 +352,11 @@ Trace methods
 \end_layout
 
 \begin_layout Itemize
-close()
+bool close(struct trace *tr)
 \end_layout
 
 \begin_layout Itemize
-current_event()
+struct event *current_event(struct trace *)
 \end_layout
 
 \begin_deeper
@@ -374,7 +374,7 @@ the event currently pointed by the position pointer
 
 \end_deeper
 \begin_layout Itemize
-advance()
+bool advance(struct trace *tr)
 \end_layout
 
 \begin_deeper
@@ -410,7 +410,7 @@ No more events for now (end of a still running live trace)
 \end_deeper
 \end_deeper
 \begin_layout Itemize
-seek_time()
+bool seek_time(struct trace *tr, struct trace_cursor *cur)
 \end_layout
 
 \begin_deeper
@@ -428,19 +428,25 @@ Return: none
 
 \end_deeper
 \begin_layout Itemize
-get_position_handle()
+struct trace_cursor *trace_new_cursor_beginning(struct trace *tr)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Return a new cursor associated to the trace, positioned at its beginning
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+struct trace_cursor *trace_cursor_copy(struct trace_cursor *cur)
 \end_layout
 
 \begin_layout Itemize
-seek_to_position_handle()
+void trace_cursor_destroy(struct trace_cursor_destroy *)
 \end_layout
 
 \begin_layout Itemize
-destroy_position_handle()
-\end_layout
-
-\begin_layout Itemize
-get_time_start()
+struct trace_time get_time_start(struct trace *tr)
 \end_layout
 
 \begin_deeper
@@ -458,7 +464,7 @@ the timestamp of the first event in the trace
 
 \end_deeper
 \begin_layout Itemize
-get_time_end()
+struct trace_time get_time_end(struct trace *tr)
 \end_layout
 
 \begin_deeper
@@ -476,7 +482,8 @@ the timestamp of the last event in the trace
 
 \end_deeper
 \begin_layout Itemize
-register_callback_new_event()
+register_callback_new_event(struct trace *tr, struct trace_time after, void
+ (*cb)(void))
 \end_layout
 
 \begin_deeper
@@ -497,7 +504,7 @@ after
 \end_layout
 
 \begin_layout Itemize
-the callback function
+cb: the callback function
 \begin_inset Note Note
 status open
 
