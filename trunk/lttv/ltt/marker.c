@@ -143,7 +143,7 @@ parse_end:
 __attribute__((no_instrument_function))
 static inline const char *parse_c_type(struct marker_info *info,
     const char *fmt,
-    char *c_size, enum ltt_type *c_type)
+    char *c_size, enum ltt_type *c_type, GString *field_fmt)
 {
   int qualifier;    /* 'h', 'l', or 'L' for integer fields */
         /* 'z' support added 23/7/1999 S.H.    */
@@ -158,6 +158,7 @@ static inline const char *parse_c_type(struct marker_info *info,
       case ' ':
       case '#':
       case '0':
+        g_string_append_c(field_fmt, *fmt);
         ++fmt;
         goto repeat;
     }
@@ -171,6 +172,7 @@ static inline const char *parse_c_type(struct marker_info *info,
     ++fmt;
     if (qualifier == 'l' && *fmt == 'l') {
       qualifier = 'L';
+      g_string_append_c(field_fmt, *fmt);
       ++fmt;
     }
   }
@@ -179,6 +181,7 @@ static inline const char *parse_c_type(struct marker_info *info,
     case 'c':
       *c_type = LTT_TYPE_UNSIGNED_INT;
       *c_size = sizeof(unsigned char);
+      g_string_append_c(field_fmt, *fmt);
       goto parse_end;
     case 's':
       *c_type = LTT_TYPE_STRING;
@@ -190,11 +193,17 @@ static inline const char *parse_c_type(struct marker_info *info,
     case 'd':
     case 'i':
       *c_type = LTT_TYPE_SIGNED_INT;
+      g_string_append_c(field_fmt, 'l');
+      g_string_append_c(field_fmt, 'l');
+      g_string_append_c(field_fmt, *fmt);
       break;
     case 'o':
     case 'u':
     case 'x':
     case 'X':
+      g_string_append_c(field_fmt, 'l');
+      g_string_append_c(field_fmt, 'l');
+      g_string_append_c(field_fmt, *fmt);
       *c_type = LTT_TYPE_UNSIGNED_INT;
       break;
     default:
@@ -231,7 +240,7 @@ static inline long add_type(struct marker_info *info,
     long offset, const char *name,
     char trace_size, enum ltt_type trace_type,
     char c_size, enum ltt_type c_type, unsigned long attributes,
-    unsigned int field_count)
+    unsigned int field_count, GString *field_fmt)
 {
   struct marker_field *field;
   char tmpname[MAX_NAME_LEN];
@@ -246,6 +255,7 @@ static inline long add_type(struct marker_info *info,
     field->name = g_quark_from_string(tmpname);
   }
   field->type = trace_type;
+  field->fmt = g_string_new(field_fmt->str);
 
   switch (trace_type) {
   case LTT_TYPE_SIGNED_INT:
@@ -329,6 +339,7 @@ static void format_parse(const char *fmt, struct marker_info *info)
   const char *name_begin = NULL, *name_end = NULL;
   char *name = NULL;
   unsigned int field_count = 1;
+  GString *field_fmt = g_string_new("");
 
   name_begin = fmt;
   for (; *fmt ; ++fmt) {
@@ -336,18 +347,24 @@ static void format_parse(const char *fmt, struct marker_info *info)
     case '#':
       /* tracetypes (#) */
       ++fmt;      /* skip first '#' */
-      if (*fmt == '#')  /* Escaped ## */
+      if (*fmt == '#') {  /* Escaped ## */
+        g_string_append_c(field_fmt, *fmt);
+        g_string_append_c(field_fmt, *fmt);
         break;
+      }
       attributes = 0;
       fmt = parse_trace_type(info, fmt, &trace_size, &trace_type,
         &attributes);
       break;
     case '%':
       /* c types (%) */
+      g_string_append_c(field_fmt, *fmt);
       ++fmt;      /* skip first '%' */
-      if (*fmt == '%')  /* Escaped %% */
+      if (*fmt == '%') {  /* Escaped %% */
+        g_string_append_c(field_fmt, *fmt);
         break;
-      fmt = parse_c_type(info, fmt, &c_size, &c_type);
+      }
+      fmt = parse_c_type(info, fmt, &c_size, &c_type, field_fmt);
       /*
        * Output c types if no trace types has been
        * specified.
@@ -360,9 +377,12 @@ static void format_parse(const char *fmt, struct marker_info *info)
         trace_type = LTT_TYPE_STRING;
       /* perform trace write */
       offset = add_type(info, offset, name, trace_size,
-            trace_type, c_size, c_type, attributes, field_count++);
+            trace_type, c_size, c_type, attributes, field_count++,
+	    field_fmt);
+      g_string_truncate(field_fmt, 0);
       trace_size = c_size = 0;
       trace_type = c_size = LTT_TYPE_NONE;
+      g_string_truncate(field_fmt, 0);
       attributes = 0;
       name_begin = NULL;
       if (name) {
@@ -371,6 +391,7 @@ static void format_parse(const char *fmt, struct marker_info *info)
       }
       break;
     case ' ':
+      g_string_truncate(field_fmt, 0);
       if (!name_end && name_begin) {
         name_end = fmt;
         if (name)
@@ -381,6 +402,7 @@ static void format_parse(const char *fmt, struct marker_info *info)
       }
       break;  /* Skip white spaces */
     default:
+      g_string_append_c(field_fmt, *fmt);
       if (!name_begin) {
         name_begin = fmt;
         name_end = NULL;
@@ -390,6 +412,7 @@ static void format_parse(const char *fmt, struct marker_info *info)
   info->size = offset;
   if (name)
     g_free(name);
+  g_string_free(field_fmt, TRUE);
 }
 
 int marker_parse_format(const char *format, struct marker_info *info)
@@ -491,13 +514,19 @@ int allocate_marker_data(LttTrace *trace)
 
 void destroy_marker_data(LttTrace *trace)
 {
-  unsigned int i;
+  unsigned int i, j;
   struct marker_info *info;
+  struct marker_field *field;
 
   for (i=0; i<trace->markers->len; i++) {
     info = &g_array_index(trace->markers, struct marker_info, i);
-    if (info->fields)
+    if (info->fields) {
+      for (j = 0; j < info->fields->len; j++) {
+        field = &g_array_index(info->fields, struct marker_field, j);
+	g_string_free(field->fmt, TRUE);
+      }
       g_array_free(info->fields, TRUE);
+    }
   }
   g_array_free(trace->markers, TRUE);
   g_hash_table_destroy(trace->markers_hash);

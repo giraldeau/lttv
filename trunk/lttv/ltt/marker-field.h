@@ -28,6 +28,7 @@ struct marker_field {
   unsigned long attributes;
   int static_offset;	/* boolean - private - is the field offset statically
   			 * known with the preceding types ? */
+  GString *fmt;
 };
 
 static inline GQuark marker_field_get_name(struct marker_field *field)

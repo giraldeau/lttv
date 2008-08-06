@@ -81,7 +81,8 @@ void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
       }
       value = ltt_event_get_long_int(e,f);
-      g_string_append_printf(s, "%lld", value);
+      //g_string_append_printf(s, "%lld", value);
+      g_string_append_printf(s, f->fmt->str, value);
       //g_string_append_printf(s, type->fmt, ltt_event_get_long_int(e,f));
       print_enum_events(e, f, value, s, tfs);
       break;
@@ -93,7 +94,8 @@ void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
       }
       value = ltt_event_get_long_unsigned(e,f);
-      g_string_append_printf(s, "%llu", value);
+      //g_string_append_printf(s, "%llu", value);
+      g_string_append_printf(s, f->fmt->str, value);
       print_enum_events(e, f, value, s, tfs);
       //g_string_append_printf(s, type->fmt, ltt_event_get_long_unsigned(e,f));
       break;
