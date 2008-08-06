@@ -62,7 +62,7 @@ static inline const char *parse_trace_type(struct marker_info *info,
   if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L' ||
       *fmt =='Z' || *fmt == 'z' || *fmt == 't' ||
       *fmt == 'S' || *fmt == '1' || *fmt == '2' ||
-      *fmt == '4' || *fmt == 8) {
+      *fmt == '4' || *fmt == '8') {
     qualifier = *fmt;
     ++fmt;
     if (qualifier == 'l' && *fmt == 'l') {
@@ -172,7 +172,6 @@ static inline const char *parse_c_type(struct marker_info *info,
     ++fmt;
     if (qualifier == 'l' && *fmt == 'l') {
       qualifier = 'L';
-      g_string_append_c(field_fmt, *fmt);
       ++fmt;
     }
   }
@@ -379,7 +378,6 @@ static void format_parse(const char *fmt, struct marker_info *info)
       offset = add_type(info, offset, name, trace_size,
             trace_type, c_size, c_type, attributes, field_count++,
 	    field_fmt);
-      g_string_truncate(field_fmt, 0);
       trace_size = c_size = 0;
       trace_type = c_size = LTT_TYPE_NONE;
       g_string_truncate(field_fmt, 0);
