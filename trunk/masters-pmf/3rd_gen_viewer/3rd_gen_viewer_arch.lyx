@@ -115,30 +115,6 @@ Support live trace processing
 Allow merging of traces of different formats
 \end_layout
 
-\begin_layout Standard
-\begin_inset Note Note
-status open
-
-\begin_layout Itemize
-Design the viewer in such a way that it can run in parallel on multi-core
- systems 
-\begin_inset Note Greyedout
-status open
-
-\begin_layout Standard
-(Is it worth it? Beware of complex locking issues)
-\end_layout
-
-\end_inset
-
-; No, we don't.
-\end_layout
-
-\end_inset
-
-
-\end_layout
-
 \begin_layout Itemize
 Design with both command line utilities (C language) and graphical interfaces
  (Java and others) in mind, sharing code and standardizing interfaces as
@@ -165,92 +141,44 @@ All data structures must be accessed through API methods, in order to allow
  for internal change without breaking compatibility.
 \end_layout
 
-\begin_layout Section
-Controlling the tracing of a system
+\begin_layout Itemize
+The APIs in this document are described as C functions and datatypes.
+ When an operation applies to an abstraction that should be an object in
+ an object-oriented language, it is specified as the first argument of the
+ function.
+ In such languages, this first argument should be removed, as it will be
+ passed implicitly.
 \end_layout
 
 \begin_layout Subsection
-Overview
+Time
 \end_layout
 
 \begin_layout Standard
-The goal of this API is to provide a portable way of controlling tracing
- of heterogenous systems.
+The framework needs to represent points in the time line and time ranges.
+ This is done by two data structures, respectively:
+\end_layout
+
+\begin_layout Itemize
+struct trace_time
+\end_layout
+
+\begin_layout Itemize
+struct trace_time_range
 \end_layout
 
 \begin_layout Standard
-It should enable to do the following actions.
+The preferred representation for times is seconds.
 \end_layout
-
-\begin_layout Itemize
-Set the parameters of a trace (channels, buffering, destination of data
- (file, network, process)...) 
-\end_layout
-
-\begin_layout Itemize
-Control the recording of events (start, stop, pause the trace)
-\end_layout
-
-\begin_layout Itemize
-Create tracepoints (on dynamic tracers) and control which tracepoints are
- activated (some may be at trace level, others might only permit system
- level)
-\end_layout
-
-\begin_layout Subsection
-Trace control API
-\end_layout
-
-\begin_layout Itemize
-List the static tracepoints available on a system
-\end_layout
-
-\begin_deeper
-\begin_layout Standard
-These may be static tracepoints (active or inactive) or dynamic tracepoints
- (active or proposed).
-\end_layout
-
-\end_deeper
-\begin_layout Itemize
-Add a new dynamic tracepoint
-\end_layout
-
-\begin_layout Itemize
-Activate a tracepoint
-\end_layout
-
-\begin_layout Itemize
-Deactivate a tracepoint
-\end_layout
-
-\begin_layout Itemize
-List available probes
-\end_layout
-
-\begin_layout Itemize
-Connect a probe to a tracepoint
-\end_layout
-
-\begin_layout Itemize
-Start tracing
-\end_layout
-
-\begin_layout Itemize
-Stop tracing
-\end_layout
-
-\begin_layout Itemize
-\begin_inset Note Greyedout
-status open
 
 \begin_layout Standard
-others missing...
-\end_layout
-
-\end_inset
-
-
+Ranges are a span between two points in time.
+ They are represented as these two points.
+ One or both of them can have the special value 
+\emph on
+infinity
+\emph default
+.
 \end_layout
 
 \begin_layout Section
@@ -538,36 +466,38 @@ The goal of this API is to provide a uniform way for analyses and views
 \end_layout
 
 \begin_layout Itemize
-Request a range of events
+struct request_handle *traceset_new_event_request(struct traceset *tr, struct
+ trace_time t1, struct trace_time t2, struct event_filter *filter, void
+ (*cb)(void *data, ), void *data)
 \end_layout
 
 \begin_deeper
+\begin_layout Standard
+Request a range of events
+\end_layout
+
 \begin_layout Standard
 Arguments:
 \end_layout
 
 \begin_layout Itemize
-(implicitly) the traceset
+tr: the traceset
 \end_layout
 
 \begin_layout Itemize
-start timestamp
+t1: start timestamp
 \end_layout
 
 \begin_layout Itemize
-stop timestamp (special value for infinity, for live traces)
+t2: stop timestamp (special value for infinity, for live traces)
 \end_layout
 
 \begin_layout Itemize
-list of event types and callbacks
+filter: filter with complex expressions
 \end_layout
 
 \begin_layout Itemize
-filter with complex expressions
-\end_layout
-
-\begin_layout Itemize
-private pointer to be passed to the callbacks
+data: private pointer to be passed to the callback
 \end_layout
 
 \begin_layout Standard
@@ -580,7 +510,7 @@ handle to the request for cancelling it
 
 \end_deeper
 \begin_layout Itemize
-Cancel a request
+void event_request_cancel(struct request_handle *req)
 \end_layout
 
 \begin_deeper
@@ -589,7 +519,7 @@ Arguments:
 \end_layout
 
 \begin_layout Itemize
-the handle to the request
+req: the handle to the request
 \end_layout
 
 \end_deeper
@@ -597,53 +527,130 @@ the handle to the request
 State management
 \end_layout
 
+\begin_layout Standard
+States are key/value pairs associated with a time range.
+ Keys can be (and generally are) duplicated as long as they do not apply
+ to overlapping ranges.
+\end_layout
+
+\begin_layout Standard
+Keys are character strings.
+\end_layout
+
+\begin_layout Standard
+Values may be of various types:
+\end_layout
+
+\begin_layout Itemize
+string
+\end_layout
+
+\begin_layout Itemize
+uint32
+\end_layout
+
+\begin_layout Itemize
+int32
+\end_layout
+
+\begin_layout Itemize
+blob (binary block of arbitrary length)
+\end_layout
+
+\begin_layout Itemize
+float32
+\end_layout
+
+\begin_layout Itemize
+float64
+\end_layout
+
+\begin_layout Standard
+The state information must be persistent between executions of the framework.
+\end_layout
+
+\begin_layout Standard
+It is possible to assign a state to the range -infinity..infinity to indicate
+ that it is global to the trace, regardless of .
+\end_layout
+
+\begin_layout Standard
+The key names should be hierarchical.
+\end_layout
+
 \begin_layout Subsubsection
 State accessing API
 \end_layout
 
 \begin_layout Itemize
-Request the values of a given set of state variables at a point in time
+struct state_value *state_get_value_at_time(char *key, struct trace_time
+ time)
 \end_layout
 
 \begin_deeper
+\begin_layout Standard
+Request the value of a given key at a point in time
+\end_layout
+
 \begin_layout Standard
 Arguments:
 \end_layout
 
 \begin_layout Itemize
-the list of state variables
+var: the state variables (string)
 \end_layout
 
 \begin_layout Itemize
-the timestamp
+time: the timestamp
+\end_layout
+
+\begin_layout Standard
+Return value:
+\end_layout
+
+\begin_layout Itemize
+The state value
 \end_layout
 
 \end_deeper
 \begin_layout Itemize
+struct state_value_range **state_get_values_in_range(char *key, struct state_val
+ue *val, struct trace_time_range range)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
 Request all the states changes of a given set of state variables between
  two time indexes
 \end_layout
 
-\begin_deeper
 \begin_layout Standard
 Arguments:
 \end_layout
 
 \begin_layout Itemize
-the list of state variables
+key: the key
 \end_layout
 
 \begin_layout Itemize
-timestamp 1
-\end_layout
-
-\begin_layout Itemize
-timestamp 2
+range: the time range
 \end_layout
 
 \end_deeper
+\begin_layout Itemize
+Other functions for getting values for a set of keys at once?
+\end_layout
+
 \begin_layout Subsubsection
 State setting API
+\end_layout
+
+\begin_layout Itemize
+set a particular state
+\end_layout
+
+\begin_layout Itemize
+delete some states
 \end_layout
 
 \begin_layout Section
@@ -666,10 +673,35 @@ on is hardcoded in the framework.
 
 \begin_layout Standard
 These event-type-describing events could then be received and interpreted
- by a module, the Event Description Service, which would be a client to
- the high-level tracing API at the same level as normal views and analyses.
+ by the Event Description Service, which would be a client to the high-level
+ tracing API at the same level as normal views and analyses.
  It would store the information and allow the other views and analyses to
  access it via this API.
+\end_layout
+
+\begin_layout Standard
+Each event has a timestamp, a name and arguments of various types.
+ The framework should support the following types:
+\end_layout
+
+\begin_layout Itemize
+uint32
+\end_layout
+
+\begin_layout Itemize
+uint64
+\end_layout
+
+\begin_layout Itemize
+int32
+\end_layout
+
+\begin_layout Itemize
+int64
+\end_layout
+
+\begin_layout Itemize
+string
 \end_layout
 
 \begin_layout Subsection
@@ -730,42 +762,108 @@ event type name
 Event type description API
 \end_layout
 
+\begin_layout Standard
+The event type description service provides the following functions.
+\end_layout
+
 \begin_layout Itemize
+GArray<struct event_type *> *traceset_get_all_event_types(struct traceset
+ *ts)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
 Get the list of all the event types
 \end_layout
 
+\begin_layout Standard
+Arguments:
+\end_layout
+
 \begin_layout Itemize
+ts: the traceset of which we want the event types
+\end_layout
+
+\begin_layout Standard
+Return value:
+\end_layout
+
+\begin_layout Itemize
+A GArray of of struct event_type.
+ The GArray must be gfree()'d by the caller when it is done reading it.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+struct event_type *traceset_get_event_type_by_name(struct traceset *ts,
+ char *name)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
 Find an event type by name
 \end_layout
 
-\begin_layout Itemize
-Get the number of arguments of an event
+\begin_layout Standard
+Arguments:
 \end_layout
 
 \begin_layout Itemize
+ts: the traceset of which we want the event type
+\end_layout
+
+\begin_layout Itemize
+name: the name of the of the event type we are looking for
+\end_layout
+
+\begin_layout Standard
+Return value:
+\end_layout
+
+\begin_layout Itemize
+A pointer to the event type (must not be free'd) or NULL if not found
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+GArray<struct event arg *> *event_type_get_all_args(struct event_type *evtype)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
 Get the list of arguments of an event
 \end_layout
 
+\begin_layout Standard
+Arguments:
+\end_layout
+
 \begin_layout Itemize
+eventype: the event type of which we want the arguments
+\end_layout
+
+\begin_layout Standard
+Return value:
+\end_layout
+
+\begin_layout Itemize
+A GArray of struct event_args.
+ The GArray must be gfree()'d by the caller when it is done reading it.
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+struct event_arg *event_type_get_arg_by_name(struct event_type *evtype)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
 Find an argument by name
 \end_layout
 
+\end_deeper
 \begin_layout Itemize
-Get the type of an argument of an event type
-\end_layout
-
-\begin_layout Itemize
-Get a string representation of an argument of any type, given an event that
- contains it an instance of it
-\end_layout
-
-\begin_layout Itemize
-Get an integer representation of an integer argument, a floating-point represent
-ation of a floating-point argument
-\end_layout
-
-\begin_layout Itemize
-Functions for accessing other types
+Functions for accessing struct event_arg fields
 \end_layout
 
 \begin_layout Section
@@ -785,25 +883,12 @@ Timestamp
 \end_layout
 
 \begin_layout Itemize
-Event type identifier
-\end_layout
-
-\begin_deeper
-\begin_layout Standard
-Two possibilities:
+Event type identifier - an event id (integer) - hidden to the API users,
+ manipulated as pointers/references to struct event_type
 \end_layout
 
 \begin_layout Itemize
-an event id (integer)
-\end_layout
-
-\begin_layout Itemize
-an event name (string)
-\end_layout
-
-\end_deeper
-\begin_layout Itemize
-The name of the machine it occured on
+A reference to the trace it was in
 \end_layout
 
 \begin_layout Subsection
@@ -811,15 +896,52 @@ Event inspecting API
 \end_layout
 
 \begin_layout Itemize
-get the event type identifier
+struct event_type *event_get_type(struct traceset *ts, struct event *ev)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+get the event type corresponding to an event
+\end_layout
+
+\begin_layout Standard
+Arguments:
 \end_layout
 
 \begin_layout Itemize
-get timestamp
+ts:
 \end_layout
 
 \begin_layout Itemize
-get the name of the machine on which the event occured
+ev:
+\end_layout
+
+\begin_layout Standard
+Return value:
+\end_layout
+
+\begin_layout Itemize
+The event type or NULL if no information
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+struct trace_time event_get_time(struct event *ev)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+get the event time
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+struct trace *event_get_trace(struct event *ev)
+\end_layout
+
+\begin_layout Itemize
+get the name of the machine on which the event occured or other location
+ information
 \end_layout
 
 \begin_layout Itemize
@@ -829,6 +951,126 @@ get information on the type of tracing technology that was used
 \begin_layout Itemize
 get the corresponding tracepoint (machine/tracing technology/name/location
  in code(if available))
+\end_layout
+
+\begin_layout Itemize
+uint32 event_read_arg_uint32(struct event *ev, struct event_arg *arg)
+\end_layout
+
+\begin_layout Itemize
+int32 event_read_arg_int32(struct event *ev, struct event_arg *arg)
+\end_layout
+
+\begin_layout Itemize
+uint64 event_read_arg_uint64(struct event *ev, struct event_arg *arg)
+\end_layout
+
+\begin_layout Itemize
+int64 event_read_arg_int64(struct event *ev, struct event_arg *arg)
+\end_layout
+
+\begin_layout Itemize
+float32 event_read_arg_float32(struct event *ev, struct event_arg *arg)
+\end_layout
+
+\begin_layout Itemize
+float64 event_read_arg_float64(struct event *ev, struct event_arg *arg)
+\end_layout
+
+\begin_layout Section
+Filtering events
+\end_layout
+
+\begin_layout Standard
+A filtering API is proposed.
+\end_layout
+
+\begin_layout Section
+Controlling the tracing of a system
+\end_layout
+
+\begin_layout Subsection
+Overview
+\end_layout
+
+\begin_layout Standard
+The goal of this API is to provide a portable way of controlling tracing
+ of heterogenous systems.
+\end_layout
+
+\begin_layout Standard
+It should enable to do the following actions.
+\end_layout
+
+\begin_layout Itemize
+Set the parameters of a trace (channels, buffering, destination of data
+ (file, network, process)...) 
+\end_layout
+
+\begin_layout Itemize
+Control the recording of events (start, stop, pause the trace)
+\end_layout
+
+\begin_layout Itemize
+Create tracepoints (on dynamic tracers) and control which tracepoints are
+ activated (some may be at trace level, others might only permit system
+ level)
+\end_layout
+
+\begin_layout Subsection
+Trace control API
+\end_layout
+
+\begin_layout Itemize
+List the static tracepoints available on a system
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+These may be static tracepoints (active or inactive) or dynamic tracepoints
+ (active or proposed).
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+Add a new dynamic tracepoint
+\end_layout
+
+\begin_layout Itemize
+Activate a tracepoint
+\end_layout
+
+\begin_layout Itemize
+Deactivate a tracepoint
+\end_layout
+
+\begin_layout Itemize
+List available probes
+\end_layout
+
+\begin_layout Itemize
+Connect a probe to a tracepoint
+\end_layout
+
+\begin_layout Itemize
+Start tracing
+\end_layout
+
+\begin_layout Itemize
+Stop tracing
+\end_layout
+
+\begin_layout Itemize
+\begin_inset Note Greyedout
+status open
+
+\begin_layout Standard
+others missing...
+\end_layout
+
+\end_inset
+
+
 \end_layout
 
 \end_body
