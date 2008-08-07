@@ -419,8 +419,12 @@ restore_init_state(LttvTraceState *self)
     self->running_process[i]->cpu = i;
 
     /* reset cpu states */
-    if(self->cpu_states[i].mode_stack->len > 0)
+    if(self->cpu_states[i].mode_stack->len > 0) {
       g_array_remove_range(self->cpu_states[i].mode_stack, 0, self->cpu_states[i].mode_stack->len);
+      self->cpu_states[i].last_irq = -1;
+      self->cpu_states[i].last_soft_irq = -1;
+      self->cpu_states[i].last_trap = -1;
+    }
   }
 
   /* reset irq states */
@@ -599,6 +603,9 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     tcs->cpu_states = g_new(LttvCPUState, nb_cpu);
     for(j = 0; j<nb_cpu; j++) {
       tcs->cpu_states[j].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvCPUMode));
+      tcs->cpu_states[j].last_irq = -1;
+      tcs->cpu_states[j].last_soft_irq = -1;
+      tcs->cpu_states[j].last_trap = -1;
       g_assert(tcs->cpu_states[j].mode_stack != NULL);
     } 
 
@@ -1277,6 +1284,8 @@ static LttvCPUState *lttv_state_copy_cpu_states(LttvCPUState *states, guint n)
   for(i=0; i<n; i++) {
     retval[i].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvCPUMode));
     retval[i].last_irq = states[i].last_irq;
+    retval[i].last_soft_irq = states[i].last_soft_irq;
+    retval[i].last_trap = states[i].last_trap;
     g_array_set_size(retval[i].mode_stack, states[i].mode_stack->len);
     for(j=0; j<states[i].mode_stack->len; j++) {
       g_array_index(retval[i].mode_stack, GQuark, j) = g_array_index(states[i].mode_stack, GQuark, j);
@@ -2456,7 +2465,7 @@ static gboolean trap_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
-  guint trap = s->cpu_state->last_trap;
+  gint trap = s->cpu_state->last_trap;
 
   pop_state(s, LTTV_STATE_TRAP);
 
@@ -2464,8 +2473,9 @@ static gboolean trap_exit(void *hook_data, void *call_data)
   cpu_pop_mode(s->cpu_state);
 
   /* update trap status */
-  if(ts->trap_states[trap].running)
-    ts->trap_states[trap].running--;
+  if (trap != -1)
+    if(ts->trap_states[trap].running)
+      ts->trap_states[trap].running--;
 
   return FALSE;
 }
@@ -2503,13 +2513,14 @@ static gboolean soft_irq_exit(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
-  guint softirq = s->cpu_state->last_soft_irq;
+  gint softirq = s->cpu_state->last_soft_irq;
 
   pop_state(s, LTTV_STATE_SOFT_IRQ);
 
   /* update softirq status */
-  if(ts->soft_irq_states[softirq].running)
-    ts->soft_irq_states[softirq].running--;
+  if (softirq != -1)
+    if(ts->soft_irq_states[softirq].running)
+      ts->soft_irq_states[softirq].running--;
 
   /* update cpu status */
   cpu_pop_mode(s->cpu_state);
@@ -2528,7 +2539,8 @@ static gboolean irq_exit(void *hook_data, void *call_data)
   cpu_pop_mode(s->cpu_state);
 
   /* update irq status */
-  irq_pop_mode(&ts->irq_states[s->cpu_state->last_irq]);
+  if (s->cpu_state->last_irq != -1)
+    irq_pop_mode(&ts->irq_states[s->cpu_state->last_irq]);
 
   return FALSE;
 }
