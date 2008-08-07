@@ -135,7 +135,7 @@ gboolean
 lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
 
   GString* f = NULL;
-  printf("array len : %d\n", fp->len);
+
   if(fp->len < 2) return FALSE;
   g_assert((f=ltt_g_ptr_array_remove_index_slow(fp,0)));
 
@@ -153,7 +153,7 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
    * subfields, it will be considered 
    * as a dynamic field
    */
-    printf("DBG1: %s\n", f->str);
+
   if(!g_strcasecmp(f->str,"trace") ) {
     /*
      * Possible values:
@@ -179,7 +179,6 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
       se->field = LTTV_FILTER_TRACEFILE_NAME;
     }
   } else if(!g_strcasecmp(f->str,"state") ) {
-    printf("DBG2: %s\n", f->str);
     /*
      * Possible values:
      *  state.pid
@@ -237,7 +236,7 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
      */
     g_string_free(f,TRUE);
     f=ltt_g_ptr_array_remove_index_slow(fp,0);
-    printf("DBG: %s\n", f->str);
+
     if(!g_strcasecmp(f->str,"name") ) {
       se->field = LTTV_FILTER_EVENT_NAME;
     }
