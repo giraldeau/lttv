@@ -101,6 +101,26 @@ lttv_simple_expression_new() {
   return se;
 }
 
+/*
+ * Keeps the array order.
+ */
+static inline gpointer ltt_g_ptr_array_remove_index_slow(GPtrArray *fp,
+    int index)
+{
+  gpointer ptr;
+  int i;
+
+  if (fp->len == 0)
+    return NULL;
+
+  ptr = g_ptr_array_index(fp, index);
+  for (i = index; i < fp->len - 1; i++) {
+    g_ptr_array_index(fp, i) = g_ptr_array_index(fp, i + 1);
+  }
+  g_ptr_array_remove_index(fp, fp->len - 1);
+  return ptr;
+}
+
 /**
  *  @fn gboolean lttv_simple_expression_assign_field(GPtrArray*,LttvSimpleExpression*)
  * 
@@ -115,10 +135,11 @@ gboolean
 lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
 
   GString* f = NULL;
-  
+  printf("array len : %d\n", fp->len);
   if(fp->len < 2) return FALSE;
-  g_assert((f=g_ptr_array_remove_index(fp,0))); 
-  
+  g_assert((f=ltt_g_ptr_array_remove_index_slow(fp,0)));
+
+
   /*
    * Parse through the specified 
    * hardcoded fields.
@@ -132,13 +153,14 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
    * subfields, it will be considered 
    * as a dynamic field
    */
+    printf("DBG1: %s\n", f->str);
   if(!g_strcasecmp(f->str,"trace") ) {
     /*
      * Possible values:
      *  trace.name
      */
     g_string_free(f,TRUE);
-    f=g_ptr_array_remove_index(fp,0);
+    f=ltt_g_ptr_array_remove_index_slow(fp,0);
     if(!g_strcasecmp(f->str,"name")) {
       se->field = LTTV_FILTER_TRACE_NAME;    
     }
@@ -152,11 +174,12 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
      *  tracefile.name
      */
     g_string_free(f,TRUE);
-    f=g_ptr_array_remove_index(fp,0);
+    f=ltt_g_ptr_array_remove_index_slow(fp,0);
     if(!g_strcasecmp(f->str,"name")) {
       se->field = LTTV_FILTER_TRACEFILE_NAME;
     }
   } else if(!g_strcasecmp(f->str,"state") ) {
+    printf("DBG2: %s\n", f->str);
     /*
      * Possible values:
      *  state.pid
@@ -171,7 +194,7 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
      *  state.cpu
      */
     g_string_free(f,TRUE);
-    f=g_ptr_array_remove_index(fp,0);
+    f=ltt_g_ptr_array_remove_index_slow(fp,0);
     if(!g_strcasecmp(f->str,"pid") ) { 
       se->field = LTTV_FILTER_STATE_PID; 
     }
@@ -213,7 +236,8 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
      *  event.field
      */
     g_string_free(f,TRUE);
-    f=g_ptr_array_remove_index(fp,0);
+    f=ltt_g_ptr_array_remove_index_slow(fp,0);
+    printf("DBG: %s\n", f->str);
     if(!g_strcasecmp(f->str,"name") ) {
       se->field = LTTV_FILTER_EVENT_NAME;
     }
@@ -235,16 +259,16 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
     else if(!g_strcasecmp(f->str,"field") ) {
       se->field = LTTV_FILTER_EVENT_FIELD;
       g_string_free(f,TRUE);
-      f=g_ptr_array_remove_index(fp,0);
+      f=ltt_g_ptr_array_remove_index_slow(fp,0);
 
     } else {
-      g_string_free(f,TRUE);
-      f=g_ptr_array_remove_index(fp,0);
+      //g_string_free(f,TRUE);
+      //f=ltt_g_ptr_array_remove_index_slow(fp,0);
       g_warning("Unknown event filter subtype %s", f->str);
     }
   } else {
     g_string_free(f,TRUE);
-    f=g_ptr_array_remove_index(fp,0);
+    f=ltt_g_ptr_array_remove_index_slow(fp,0);
 
     g_warning("Unrecognized field in filter string");
   }
@@ -1666,7 +1690,7 @@ lttv_filter_update(LttvFilter* filter) {
   g_ptr_array_free(a_field_path,TRUE);
 
   /* free the tree stack -- but keep the root tree */
-  filter->head = g_ptr_array_remove_index(tree_stack,0);
+  filter->head = ltt_g_ptr_array_remove_index_slow(tree_stack,0);
   g_ptr_array_free(tree_stack,TRUE);
   
   /* free the field buffer if allocated */
