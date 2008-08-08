@@ -36,9 +36,8 @@ public class read_trace {
 				byte[] arg2 = new byte[strlen];
 				eargs_data.readFully(arg2, 0, strlen);
 
-				//System.out.printf("timestamp %d id %d args=(short=%d string=\"%s\") %n", timestamp, id, arg1, new String(arg2));
-				String strout = String.format("timestamp %d id %d args=(short=%d string=\"%s\") %n", timestamp, id, arg1, new String(arg2));
-				tmp += strout.length();
+				if(args.length>0 && args[0].equals("-p"))
+					System.out.printf("timestamp %d id %d args=(short=%d string=\"%s\") %n", timestamp, id, arg1, new String(arg2));
 			}
 
 		}
@@ -48,6 +47,5 @@ public class read_trace {
 		}
 
 		//file_input.close();
-		System.out.println(tmp);
 	}
 }

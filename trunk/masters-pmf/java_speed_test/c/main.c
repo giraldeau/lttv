@@ -5,11 +5,16 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-int main()
+int main(int argc, char **argv)
 {
 	int result;
 	int fd;
+	int print = 0;
+
+	if(argc >= 2 && !strcmp(argv[1], "-p"))
+		print = 1;
 
 	result = fd = open("../trace.dat", O_RDONLY);
 	if(result == -1) {
@@ -57,7 +62,8 @@ int main()
 		arg1 = *(unsigned short *)args;
 		arg2 = args+2;
 
-		printf("timestamp %u id %hu args=(arg1=%hu arg2=\"%s\")\n", timestamp, id, arg1, arg2);
+		if(print)
+			printf("timestamp %lu id %hu args=(arg1=%hu arg2=\"%s\")\n", timestamp, id, arg1, arg2);
 
 		free(args);
 	}
