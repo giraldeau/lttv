@@ -1,0 +1,284 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/2002/REC-xhtml1-20020801/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+
+<head>
+  <title>The LTTng trace format</title>
+</head>
+
+<body>
+
+<h1>The LTTng trace format</h1>
+
+<p>
+<em>Last update: 2008/06/02</em>
+</p>
+
+<p>
+This document describes the LTTng trace format. It should be useful mainly to
+developers who code the LTTng tracer or the traceread LTTV library, as this
+library offers all the necessary abstractions on top of the raw trace data.
+</p>
+
+<p>
+A trace is contained in a directory tree. To send a trace remotely, the
+directory tree may be tar-gzipped. The trace <tt>foo</tt>, placed in the home
+directory of user john, /home/john, would have the following contents:
+</p>
+
+<pre><tt>
+$ cd /home/john
+$ tree foo
+foo/
+|-- control
+|   |-- facilities_0
+|   |-- facilities_1
+|   |-- facilities_...
+|   |-- interrupts_0
+|   |-- interrupts_1
+|   |-- interrupts_...
+|   |-- modules_0
+|   |-- modules_1
+|   |-- modules_...
+|   |-- network_0
+|   |-- network_1
+|   |-- network_...
+|   |-- processes_0
+|   |-- processes_1
+|   `-- processes_...
+|-- cpu_0
+|-- cpu_1
+`-- cpu_...
+
+</tt></pre>
+
+<p>
+The root directory contains a tracefile for each cpu, numbered from 0, 
+in .trace format. A uniprocessor thus only contains the file cpu_0. 
+A multi-processor with some unused (possibly hotplug) CPU slots may have some
+unused CPU numbers. For instance an 8 way SMP board with 6 CPUs randomly 
+installed may produce tracefiles named 0, 1, 2, 4, 6, 7.
+</p>
+
+<p>
+The files in the control directory also follow the .trace format and are
+also per cpu.  The "facilities" files only contain "core" marker_id,
+marker_format and time_heartbeat events. The first two are used to describe the
+events that are in the trace. The other control files contain the initial
+system state and various subsequent important events, for example process
+creations and exit. The interest of placing such subsequent events in control
+trace files instead of (or in addition to) in the per cpu trace files is that
+they may be accessed more quickly/conveniently and that they may be kept even
+when the per cpu files are overwritten in "flight recorder mode".
+</p>
+
+<h2>Trace format</h2>
+
+<p>
+Each tracefile is divided into equal size blocks with a header at the beginning
+of the block. Events are packed sequentially in the block starting right after
+the block header.
+</p>
+
+<p>
+Each block consists of :
+</p>
+
+<pre><tt>
+block start/end header
+trace header
+event 1 header
+event 1 variable length data
+event 2 header
+event 2 variable length data
+....
+padding
+</tt></pre>
+
+<h3>The block start/end header</h3>
+
+<pre><tt>
+begin
+	* the beginning of buffer information
+	uint64 cycle_count
+		* TSC at the beginning of the buffer
+	uint64 freq
+		* frequency of the CPUs at the beginning of the buffer.
+end
+	* the end of buffer information
+	uint64 cycle_count
+		* TSC at the end of the buffer
+	uint64 freq
+		* frequency of the CPUs at the end of the buffer.
+uint32 lost_size
+	* number of bytes of padding at the end of the buffer.
+uint32 buf_size
+	* size of the sub-buffer.
+</tt></pre>
+
+
+
+<h3>The trace header</h3>
+
+<pre><tt>
+uint32 magic_number
+	* 0x00D6B7ED, used to check the trace byte order vs host byte order.
+uint32 arch_type
+	* Architecture type of the traced machine.
+uint32 arch_variant
+	* Architecture variant of the traced machine. May be unused on some arch.
+uint32 float_word_order
+	* Byte order of floats and doubles, sometimes different from integer byte
+	  order. Useful only for user space traces.
+uint8 arch_size
+	* Size (in bytes) of the void * on the traced machine.
+uint8 major_version
+	* major version of the trace.
+uint8 minor_version
+	* minor version of the trace.
+uint8 flight_recorder
+	* Is flight recorder mode activated ? If yes, data might be missing
+	  (overwritten) in the trace.
+uint8	has_heartbeat
+	* Does this trace have heartbeat timer event activated ?
+		Yes (1) -> Event header has 32 bits TSC
+		No (0) -> Event header has 64 bits TSC
+uint8 alignment
+	* Are event headers in this trace aligned ?
+		Yes -> the value indicates the alignment
+		No (0) -> data is packed.
+uint8 tsc_lsb_truncate
+	* Used for compact channels
+uint8 tscbits
+	* Used for compact channels
+uint8 compact_data_shift
+	* Used for compact channels
+uint32 freq_scale
+		event time is always calculated from :
+			trace_start_time + ((event_tsc - trace_start_tsc) * (freq / freq_scale))
+uint64 start_freq
+	* CPUs clock frequency at the beginnig of the trace.
+uint64 start_tsc
+	* TSC at the beginning of the trace.
+uint64 start_monotonic
+	* monotonically increasing time at the beginning of the trace.
+		(currently not supported)
+start_time
+	* Real time at the beginning of the trace (as given by date, adjusted by NTP)
+		This is the only time reference with the real world : the rest of the trace
+		has monotonically increasing time from this point (with TSC difference and
+		clock frequency).
+	uint32 seconds
+	uint32 nanoseconds
+</tt></pre>
+
+
+<h3>Event header</h3>
+
+<p>
+Event headers differ according to the following conditions : does the
+traced system have a heartbeat timer? Is tracing alignment activated?
+</p>
+
+<p>
+Event header :
+</p>
+<pre><tt>
+{ uint32 timestamp
+	or
+	uint64 timestamp }
+	* if has_heartbeat : 32 LSB of the cycle counter at the event record time.
+	* else : 64 bits complete cycle counter.
+uint8 facility_id
+	* Numerical ID of the facility corresponding to the event. See the facility
+	  tracefile to know which facility ID matches which facility name and
+		description.
+uint8 event_id
+	* Numerical ID of the event inside the facility.
+uint16 event_size
+	* Size of the variable length data that follows this header.
+</tt></pre>
+
+<p>
+Event header alignment
+</p>
+
+<p>
+If trace alignment is activated (<tt>alignment</tt>), the event header is
+aligned. In addition, padding is automatically added after the event header so
+the variable length data is automatically aligned on the architecture size.
+</p>
+
+<!--
+<h2>System description</h2>
+
+<p>
+The system type description, in system.xml, looks like:
+</p>
+
+<pre><tt>
+&lt;system 
+ node_name="vaucluse"
+ domainname="polymtl.ca" 
+ cpu=4
+ arch_size="ILP32" 
+ endian="little" 
+ kernel_name="Linux" 
+ kernel_release="2.4.18-686-smp" 
+ kernel_version="#1 SMP Sun Apr 14 12:07:19 EST 2002"
+ machine="i686" 
+ processor="unknown" 
+ hardware_platform="unknown"
+ operating_system="Linux" 
+ ltt_major_version="2"
+ ltt_minor_version="0"
+ ltt_block_size="100000"
+&gt;
+Some comments about the system
+&lt;/system&gt;
+</tt></pre>
+
+<p>
+The system attributes kernel_name, node_name, kernel_release,
+ kernel_version, machine, processor, hardware_platform and operating_system
+come from the uname(1) program. The domainname attribute is obtained from
+the "hostname &#045;&#045;domain" command. The arch_size attribute is one of
+LP32, ILP32, LP64 or ILP64 and specifies the length in bits of integers (I),
+long (L) and pointers (P). The endian attribute is "little" or "big".
+While the arch_size and endian attributes could be deduced from the platform
+type, having these explicit allows analysing traces from yet unknown
+platforms. The cpu attribute specifies the maximum number of processors in
+the system; only tracefiles 0 to this maximum - 1 may exist in the cpu
+directory.
+</p>
+
+<p>
+Within the system element, the text enclosed may describe further the
+system traced.
+</p>
+
+
+<h2>Bookmarks</h2>
+
+<p>
+Bookmarks are user supplied information added to a trace. They contain user
+annotations attached to a time interval.
+</p>
+
+
+<pre><tt>
+&lt;bookmarks&gt;
+  &lt;location name=name cpu=n start_time=t end_time=t&gt;Some text&lt;/location&gt;
+  ...
+&lt;/bookmarks&gt;
+</tt></pre>
+
+<p>
+The interval is defined using either "time=" or "start_time=" and 
+"end_time=", or "cycle=" or "start_cycle=" and "end_cycle=". 
+The time is in seconds with decimals up to nanoseconds and cycle counts 
+are unsigned integers with a 64 bits range. The cpu attribute is optional.
+</p>
+
+-->
+</body>
+</html>

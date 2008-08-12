@@ -1,0 +1,34 @@
+<html>
+<body>
+<center><big><big>LTTV & LTTng new features<small><small></center>
+<br>
+<br>
+<P>
+One might ask what are the new features present in LTTng and LTTV that are not
+in the LTT toolkit. Here are the major enhancements.<br>
+<br>
+Here is a list of the new features in LTTV :<br>
+Modular architecture based on plugins.<br>
+Reads from several traces. It supports SMP machines.<br>
+Synchronized graphical views. Plugins can cooperate to show the trace
+together.<br>
+Supports event types with metainformation.<br>
+Supports huge traces : 10-15 GB.<br>
+<br>
+<br>
+Here are the new features in LTTng/genevent :<br>
+Real ~100ns time accuracy, with monotonic increment.<br>
+Implements the "facility" event type metainformation.<br>
+Supports variable size event records.<br>
+Supports nested compound types : structures, array, sequences, unions, strings.<br>
+Supports compiler and architecture independant elementary types.<br>
+Supports ISO C compatible dynamic alignment of data.<br>
+Solid atomic (lockless) logging (NMI, traps, faults handler safe).<br>
+Supports writing to multiple traces at once (eventually with different
+filters).<br>
+Uses separate RelayFS channels for interrupts, modules, process and facility
+events.<br>
+</body>
+</html>
+
+

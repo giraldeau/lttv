@@ -1,0 +1,119 @@
+
+Mathieu Desnoyers, June 2007
+
+Marker design
+
+Events are described in data structures in DECLARE_MARKER(), in the same file
+the marker is in, or exported and in a globally included header.
+
+When a new marker is encountered (module load, marker armed), an event_load
+event is traced in the facilities channel. If the marker refers to an already
+existing marker declaration, nothing changes, except that it must check that the
+types match.
+
+At trace start, we take the superset of the filtered in events and arm their
+markers. We trace an event load event for each armed marker encountered.
+
+Format string verification by GCC.
+
+Format string extensions (sequence, structs, arrays..)
+
+Field names.
+
+
+User space tracing
+
+Declare their own DECLARE_MARKER, use MARK() macros that refers to it. At module
+load, (to decide) either the kernel or the library walks on the markers sections
+and issues a marker_load  system call. Facility namespacing prefix "user_" is
+used for userspace facilities.
+
+We have to deal with multiple registrations of the same event with different
+caracteristics but same name.
+
+Markers must be enabled by the kernel, if activated and tracing starts.
+
+Modify linker script to get section start and end in programs.
+
+
+-------------------------
+
+Maybe DECLARE_MARKER is not necessary:
+
+Use LTTV dictionnary to add information about events.
+event and field description.
+
+<facility name="fac">
+<event name="event"> <description> assdfas </description> </event>
+<field name="field1"> <description> asdfasdf </description> </field>
+<field name="field2"> <enum>....</enum><description> asdfasdf </description> </field>
+</facility>
+
+Field names
+
+trace_mark(facility_event, "field1 %u field2 %p", asdf, asdf);
+
+Extract the field names from the format string.
+Check for format string equivalence before enabling a marker. Allow enabling
+markers with the same format string as the first one found, but warn about the
+others which do not match.
+Trace an event_load event for each enabled marker with non-NULL format string at
+trace start and when they are activated. Since we want to keep the same format
+string if module loads/unload/reload, and we cannot point into this module's
+memory, we reallocate the entry and copy the format string whenever the newly
+loaded module contains active markers and these markers have a NULL format
+string.
+When we enable a marker, if the marker has a non null format string, we trace a
+marker_load.
+
+Default : cardinal field1, field2....
+Calling: ltt_trace
+callback[0]: ltt_serialize_data
+
+Types
+
+-- Add network byte ordering to types.
+-- Change format strings to use backward compatible types. (format check)
+
+Reserve 8 IDs for core events. Never allow wrapping over 65535 IDs during a
+trace : need compaction when no trace is active.
+
+Marker hash table points to a structure containing the marker's event ID (16
+bits). Assign event ID when a probe is registered.
+
+Compact channel. Use separate 8 bits event IDs for events going in the
+compact channel. Identified by registering probe with id type MARKER_ID_COMPACT.
+
+update probes (temp)
+
+-- Enabling a marker:
+-- give: state marker name, channel.
+/proc/markers: enable/disable name [channel]
+
+probe_data should provide, for ltt:
+callbacks
+id <-- will stay in marker because otherwise we would need another hash table.
+channel index : put inside the marker structure (parameter to register).
+A marker control module
+
+Q: field names in dictionnary or in marker ?
+
+
+What users will do with marker interface:
+
+from userspace:
+enable/disable marker_name (act on any marker, reg by module or other)
+channel marker_name channel_name (act on any marker)
+
+Default: use serializer
+But.. module can override _default_ probe with a "register" operation.
+
+Use case
+Set channel
+Register by specific module (unregister default, register specific)
+activate.
+
+Serve as a proxy for probe registration.
+
+
+

@@ -1,0 +1,52 @@
+
+LTTng synthetic TSC MSB
+
+Mathieu Desnoyers, Mars 1, 2006
+
+A problem found on some architectures is that the TSC is limited to 32 bits,
+which induces a wrap-around every 8 seconds or so.
+
+The wraps arounds are detectable by the use of a heartbeat timer, which
+generates an event in each trace at periodic interval. It makes reading the
+trace sequentially possible.
+
+What causes problem is fast time seek in the trace : it uses the buffer
+boundary timestamps (64 bits) to seek to the right block in O(log(n)). It
+cannot, however, read the trace sequentially.
+
+So the problem posed is the following : we want to generate a per cpu 64 bits
+TSC from the available 32 bits with the 32 MSB generated synthetically. I should
+be readable by the buffer switch event.
+
+The idea is the following : we keep a 32 bits previous_tsc value per cpu. It
+helps detect the wrap around. Each time a heartbeat fires or a buffer switch
+happens, the previous_tsc is read, and then written to the new value. If a wrap
+around is detected, the msb_tsc for the cpu is atomically incremented.
+
+We are sure that there is only one heartbeat at a given time because they are
+fired at fixed interval : typically 10 times per 32bit TSC wrap around. Even
+better, as they are launched by a worker thread, it can only be queued once in
+the worker queue.
+
+Now with buffer switch vs heartbeat concurrency. Worse case : a heartbeat is
+happenning : one CPU is in process context (worker thread), the other ones are
+in interrupt context (IPI). On one CPU in IPI, we have an NMI triggered that
+generates a buffer switch.
+
+What is sure is that the heartbeat needs to read and write the previous_tsc. It
+also needs to increment atomically the msb_tsc. However, the buffer switch only
+needs to read the previous_tsc, compare it to the current tsc and read the
+msb_tsc.
+
+Another race case is that the buffer switch can be interrupted by the heartbeat.
+
+So what we need is to have an atomic write. As the architecture does not support
+64 bits cmpxchg, we will need this little data structure to overcome this
+problem :
+
+An array of two 64 bits elements. Elements are updated in two memory writes, but
+the element switch (current element) is made atomically. As there is only one
+writer, this has no locking problem.
+
+We make sure the synthetic tcs reader does not sleep by disabling preemption. We
+do the same for the writer.

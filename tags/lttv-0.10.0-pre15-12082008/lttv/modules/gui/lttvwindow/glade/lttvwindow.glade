@@ -1,0 +1,760 @@
+<?xml version="1.0" standalone="no"?> <!--*- mode: xml -*-->
+<!DOCTYPE glade-interface SYSTEM "http://glade.gnome.org/glade-2.0.dtd">
+
+<glade-interface>
+
+<widget class="GtkWindow" id="MWindow">
+  <property name="width_request">100</property>
+  <property name="height_request">50</property>
+  <property name="visible">True</property>
+  <property name="title" translatable="yes">Main window</property>
+  <property name="type">GTK_WINDOW_TOPLEVEL</property>
+  <property name="window_position">GTK_WIN_POS_NONE</property>
+  <property name="modal">False</property>
+  <property name="default_width">600</property>
+  <property name="default_height">400</property>
+  <property name="resizable">True</property>
+  <property name="destroy_with_parent">False</property>
+  <signal name="destroy" handler="on_MWindow_destroy" last_modification_time="Tue, 10 Jun 2003 16:31:35 GMT"/>
+
+  <child>
+    <widget class="GtkVBox" id="MVbox">
+      <property name="visible">True</property>
+      <property name="homogeneous">False</property>
+      <property name="spacing">0</property>
+
+      <child>
+	<widget class="GtkHBox" id="MMenuBox">
+	  <property name="visible">True</property>
+	  <property name="homogeneous">False</property>
+	  <property name="spacing">0</property>
+
+	  <child>
+	    <widget class="GtkMenuBar" id="MenuMain">
+	      <property name="visible">True</property>
+
+	      <child>
+		<widget class="GtkMenuItem" id="FileMenuTitle">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes">_File</property>
+		  <property name="use_underline">True</property>
+
+		  <child>
+		    <widget class="GtkMenu" id="FileMenuTitle_menu">
+
+		      <child>
+			<widget class="GtkMenuItem" id="FileMenuNewTitle">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">New</property>
+			  <property name="use_underline">True</property>
+
+			  <child>
+			    <widget class="GtkMenu" id="FileMenuNewTitle_menu">
+
+			      <child>
+				<widget class="GtkMenuItem" id="EmptyTraceset">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Empty trace set</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_empty_traceset_activate" last_modification_time="Tue, 10 Jun 2003 15:03:01 GMT"/>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="CloneTraceset">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Clone trace set</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_clone_traceset_activate" last_modification_time="Tue, 10 Jun 2003 15:03:22 GMT"/>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="FileMenuNewSep">
+				  <property name="visible">True</property>
+				</widget>
+			      </child>
+
+			      <child>
+				<widget class="GtkMenuItem" id="Tab">
+				  <property name="visible">True</property>
+				  <property name="label" translatable="yes">Tab</property>
+				  <property name="use_underline">True</property>
+				  <signal name="activate" handler="on_tab_activate" last_modification_time="Tue, 10 Jun 2003 15:03:37 GMT"/>
+				</widget>
+			      </child>
+			    </widget>
+			  </child>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="OpenTraceset">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Open</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_open_activate" last_modification_time="Tue, 10 Jun 2003 15:03:47 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="Close">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Close</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_close_activate" last_modification_time="Tue, 10 Jun 2003 15:03:56 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="CloseTab">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Close Tab</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_close_tab_activate" last_modification_time="Tue, 10 Jun 2003 15:04:06 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="FileMenuSeparator1">
+			  <property name="visible">True</property>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="AddTrace">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Add Trace</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_add_trace_activate" last_modification_time="Tue, 10 Jun 2003 15:04:14 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="RemoveTrace">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Remove Trace</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_remove_trace_activate" last_modification_time="Tue, 10 Jun 2003 15:04:24 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="Save">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Save</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_save_activate" last_modification_time="Tue, 10 Jun 2003 15:04:36 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="SaveAs">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Save As</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_save_as_activate" last_modification_time="Tue, 10 Jun 2003 15:04:45 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="FileMenuSeparator2">
+			  <property name="visible">True</property>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="Quit">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Quit</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_quit_activate" last_modification_time="Tue, 10 Jun 2003 15:04:53 GMT"/>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+
+	      <child>
+		<widget class="GtkMenuItem" id="EditMenuTitle">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes">_Edit</property>
+		  <property name="use_underline">True</property>
+
+		  <child>
+		    <widget class="GtkMenu" id="EditMenuTitle_menu">
+
+		      <child>
+			<widget class="GtkImageMenuItem" id="Cut">
+			  <property name="visible">True</property>
+			  <property name="label">gtk-cut</property>
+			  <property name="use_stock">True</property>
+			  <signal name="activate" handler="on_cut_activate" last_modification_time="Tue, 10 Jun 2003 15:05:00 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkImageMenuItem" id="Copy">
+			  <property name="visible">True</property>
+			  <property name="label">gtk-copy</property>
+			  <property name="use_stock">True</property>
+			  <signal name="activate" handler="on_copy_activate" last_modification_time="Tue, 10 Jun 2003 15:05:06 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkImageMenuItem" id="Paste">
+			  <property name="visible">True</property>
+			  <property name="label">gtk-paste</property>
+			  <property name="use_stock">True</property>
+			  <signal name="activate" handler="on_paste_activate" last_modification_time="Tue, 10 Jun 2003 15:05:14 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkImageMenuItem" id="Delete">
+			  <property name="visible">True</property>
+			  <property name="label">gtk-delete</property>
+			  <property name="use_stock">True</property>
+			  <signal name="activate" handler="on_delete_activate" last_modification_time="Tue, 10 Jun 2003 15:05:22 GMT"/>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+
+	      <child>
+		<widget class="GtkMenuItem" id="ViewMenuTitle">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes">_View</property>
+		  <property name="use_underline">True</property>
+
+		  <child>
+		    <widget class="GtkMenu" id="ViewMenuTitle_menu">
+
+		      <child>
+			<widget class="GtkMenuItem" id="ZoomIn">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Zoom in</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_zoom_in_activate" last_modification_time="Tue, 10 Jun 2003 15:05:30 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="ZoomOut">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Zoom out</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_zoom_out_activate" last_modification_time="Tue, 10 Jun 2003 15:05:37 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="ZoomExtended">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Zoom extended</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_zoom_extended_activate" last_modification_time="Tue, 10 Jun 2003 15:05:44 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="ViewMenuSeparator">
+			  <property name="visible">True</property>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="GoToTime">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Go to time</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_go_to_time_activate" last_modification_time="Tue, 10 Jun 2003 15:05:50 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="ShowTimeFrame">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Show time frame</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_show_time_frame_activate" last_modification_time="Tue, 10 Jun 2003 15:06:00 GMT"/>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+
+	      <child>
+		<widget class="GtkMenuItem" id="ToolMenuTitle">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes">Tools</property>
+		  <property name="use_underline">True</property>
+
+		  <child>
+		    <widget class="GtkMenu" id="ToolMenuTitle_menu">
+
+		      <child>
+			<widget class="GtkMenuItem" id="MoveViewerUp">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Move viewer up</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_move_viewer_up_activate" last_modification_time="Tue, 10 Jun 2003 15:06:05 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="MoveViewerDown">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Move viewer down</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_move_viewer_down_activate" last_modification_time="Tue, 10 Jun 2003 15:06:14 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="RemoveViewer">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Remove viewer</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_remove_viewer_activate" last_modification_time="Tue, 10 Jun 2003 15:06:21 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="ToolMenuSeparator">
+			  <property name="visible">True</property>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="insert_viewer_test">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Insert viewer test</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_insert_viewer_test_activate" last_modification_time="Mon, 16 Jun 2003 16:43:52 GMT"/>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+
+	      <child>
+		<widget class="GtkMenuItem" id="PluginMenuTitle">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes">Plugins</property>
+		  <property name="use_underline">True</property>
+
+		  <child>
+		    <widget class="GtkMenu" id="PluginMenuTitle_menu">
+
+		      <child>
+			<widget class="GtkMenuItem" id="LoadModule">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Load module</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_load_module_activate" last_modification_time="Tue, 10 Jun 2003 15:06:30 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="UnloadModule">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Unload module</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_unload_module_activate" last_modification_time="Tue, 10 Jun 2003 15:06:39 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="AddModuleSearchPath">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Add module search path</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_add_module_search_path_activate" last_modification_time="Tue, 10 Jun 2003 15:06:50 GMT"/>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+
+	      <child>
+		<widget class="GtkMenuItem" id="OptionMenuTitle">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes">Options</property>
+		  <property name="use_underline">True</property>
+
+		  <child>
+		    <widget class="GtkMenu" id="OptionMenuTitle_menu">
+
+		      <child>
+			<widget class="GtkMenuItem" id="Color">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Color</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_color_activate" last_modification_time="Tue, 10 Jun 2003 15:06:58 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="OptMenuSeparator">
+			  <property name="visible">True</property>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="OpenFilter">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Filter</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_filter_activate" last_modification_time="Tue, 10 Jun 2003 15:07:04 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="SaveConfiguration">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Save configuration</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_save_configuration_activate" last_modification_time="Tue, 10 Jun 2003 15:07:12 GMT"/>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">False</property>
+	      <property name="fill">False</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="GtkMenuBar" id="MenuHelp">
+	      <property name="visible">True</property>
+
+	      <child>
+		<widget class="GtkMenuItem" id="HelpMenuTitle">
+		  <property name="visible">True</property>
+		  <property name="label" translatable="yes">_Help</property>
+		  <property name="use_underline">True</property>
+
+		  <child>
+		    <widget class="GtkMenu" id="HelpMenu">
+
+		      <child>
+			<widget class="GtkMenuItem" id="Content">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">Content</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_content_activate" last_modification_time="Tue, 10 Jun 2003 15:07:19 GMT"/>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="HelpmenuSeparator">
+			  <property name="visible">True</property>
+			</widget>
+		      </child>
+
+		      <child>
+			<widget class="GtkMenuItem" id="About">
+			  <property name="visible">True</property>
+			  <property name="label" translatable="yes">About...</property>
+			  <property name="use_underline">True</property>
+			  <signal name="activate" handler="on_about_activate" last_modification_time="Tue, 10 Jun 2003 15:07:28 GMT"/>
+			</widget>
+		      </child>
+		    </widget>
+		  </child>
+		</widget>
+	      </child>
+	    </widget>
+	    <packing>
+	      <property name="padding">0</property>
+	      <property name="expand">False</property>
+	      <property name="fill">False</property>
+	      <property name="pack_type">GTK_PACK_END</property>
+	    </packing>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkToolbar" id="MToolbar1">
+	  <property name="visible">True</property>
+	  <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
+	  <property name="toolbar_style">GTK_TOOLBAR_ICONS</property>
+	  <property name="tooltips">True</property>
+
+	  <child>
+	    <widget class="button" id="tlbEmptyTraceset">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">New window with empty trace set</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">filenew.png</property>
+	      <signal name="clicked" handler="on_button_new_clicked" last_modification_time="Thu, 05 Jun 2003 18:24:14 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbOpenTraceset">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">open a trace set</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">fileopen.png</property>
+	      <signal name="clicked" handler="on_button_open_clicked" last_modification_time="Thu, 05 Jun 2003 18:24:37 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbAddTrace">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Add a trace </property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">edit_add_22.png</property>
+	      <signal name="clicked" handler="on_button_add_trace_clicked" last_modification_time="Thu, 05 Jun 2003 18:30:00 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbRemoveTrace">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Remove a trace</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">edit_remove_22.png</property>
+	      <signal name="clicked" handler="on_button_remove_trace_clicked" last_modification_time="Thu, 05 Jun 2003 18:30:09 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbSave">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">save the current trace set</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">filesave.png</property>
+	      <signal name="clicked" handler="on_button_save_clicked" last_modification_time="Thu, 05 Jun 2003 18:25:30 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbSaveAs">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">save as </property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">filesaveas.png</property>
+	      <signal name="clicked" handler="on_button_save_as_clicked" last_modification_time="Thu, 05 Jun 2003 18:26:10 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbZoomIn">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Zoom in</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">stock_zoom_in_24.png</property>
+	      <property name="new_group">True</property>
+	      <signal name="clicked" handler="on_button_zoom_in_clicked" last_modification_time="Thu, 05 Jun 2003 18:26:01 GMT"/>
+	    </widget>
+	    <packing>
+	      <property name="new_group">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbZoomOut">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Zoom out</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">stock_zoom_out_24.png</property>
+	      <signal name="clicked" handler="on_button_zoom_out_clicked" last_modification_time="Thu, 05 Jun 2003 18:26:32 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbZoomExtended">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Zoom extended</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">stock_zoom_fit_24.png</property>
+	      <signal name="clicked" handler="on_button_zoom_extended_clicked" last_modification_time="Thu, 05 Jun 2003 18:26:48 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbGoToTime">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Go to time</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">gtk-jump-to.png</property>
+	      <signal name="clicked" handler="on_button_go_to_time_clicked" last_modification_time="Thu, 05 Jun 2003 18:28:07 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbShowTimeFrame">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Show time frame</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">mini-display.xpm</property>
+	      <signal name="clicked" handler="on_button_show_time_frame_clicked" last_modification_time="Thu, 05 Jun 2003 18:28:21 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbMoveViewerUp">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Move up current viewer</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">1uparrow.png</property>
+	      <property name="new_group">True</property>
+	      <signal name="clicked" handler="on_button_move_up_clicked" last_modification_time="Thu, 05 Jun 2003 18:28:41 GMT"/>
+	    </widget>
+	    <packing>
+	      <property name="new_group">True</property>
+	    </packing>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbMoveViewerDown">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Move down current viewer</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">1downarrow.png</property>
+	      <signal name="clicked" handler="on_button_move_down_clicked" last_modification_time="Thu, 05 Jun 2003 18:28:59 GMT"/>
+	    </widget>
+	  </child>
+
+	  <child>
+	    <widget class="button" id="tlbRemoveViewer">
+	      <property name="border_width">1</property>
+	      <property name="visible">True</property>
+	      <property name="tooltip" translatable="yes">Delete current viewer</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">True</property>
+	      <property name="icon">remove.png</property>
+	      <signal name="clicked" handler="on_button_delete_viewer_clicked" last_modification_time="Thu, 05 Jun 2003 18:29:26 GMT"/>
+	    </widget>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkToolbar" id="MToolbar2">
+	  <property name="visible">True</property>
+	  <property name="orientation">GTK_ORIENTATION_HORIZONTAL</property>
+	  <property name="toolbar_style">GTK_TOOLBAR_BOTH</property>
+	  <property name="tooltips">True</property>
+
+	  <child>
+	    <placeholder/>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkNotebook" id="MNotebook">
+	  <property name="visible">True</property>
+	  <property name="can_focus">True</property>
+	  <property name="show_tabs">True</property>
+	  <property name="show_border">True</property>
+	  <property name="tab_pos">GTK_POS_TOP</property>
+	  <property name="scrollable">False</property>
+	  <property name="enable_popup">False</property>
+	  <signal name="switch_page" handler="on_MNotebook_switch_page" last_modification_time="Tue, 17 Jun 2003 17:00:29 GMT"/>
+
+	  <child>
+	    <placeholder/>
+	  </child>
+
+	  <child>
+	    <widget class="GtkLabel" id="label1">
+	      <property name="visible">True</property>
+	      <property name="label" translatable="yes"></property>
+	      <property name="use_underline">False</property>
+	      <property name="use_markup">False</property>
+	      <property name="justify">GTK_JUSTIFY_LEFT</property>
+	      <property name="wrap">False</property>
+	      <property name="selectable">False</property>
+	      <property name="xalign">0.5</property>
+	      <property name="yalign">0.5</property>
+	      <property name="xpad">0</property>
+	      <property name="ypad">0</property>
+	    </widget>
+	    <packing>
+	      <property name="type">tab</property>
+	    </packing>
+	  </child>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">True</property>
+	  <property name="fill">True</property>
+	</packing>
+      </child>
+
+      <child>
+	<widget class="GtkStatusbar" id="MStatusbar">
+	  <property name="visible">True</property>
+	  <property name="has_resize_grip">True</property>
+	</widget>
+	<packing>
+	  <property name="padding">0</property>
+	  <property name="expand">False</property>
+	  <property name="fill">False</property>
+	</packing>
+      </child>
+    </widget>
+  </child>
+</widget>
+
+</glade-interface>

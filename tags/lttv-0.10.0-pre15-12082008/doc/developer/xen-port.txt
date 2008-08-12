@@ -1,0 +1,146 @@
+
+
+Xen port notes
+
+Mathieu Desnoyers, April 2006
+
+Useful files :
+
+common/trace.c
+include/xen/trace.h and the dom0 op in include/public/dom0_ops.h
+
+alloc buffer (alloc_trace_bufs) :
+alloc_xenheap_pages
+
+Shared buffer between dom0 and hypervisor :
+share_xen_page_with_privileged_guests
+
+
+
+trace_create / trace_destroy :
+
+call xen hooks from dom0 to allocate a new buffer, get the newly allocated 
+struct trace pointer.
+Share struct traces with dom0 to have offset and consumed counts.
+Share the buffers with dom0 too.
+
+Create a new "xen" channel.
+
+
+Create 4 new xen facilities (see include/public/trace.h) :
+xen_sched  (grep TRC_SCHED)
+  sched_dom_add
+	sched_dom_rem
+	sched_sleep
+	sched_wake
+	sched_yield
+	sched_block
+	sched_shutdown
+	sched_ctl
+	sched_switch
+	sched_s_timer_fn
+	sched_t_timer_fn
+	sched_dom_timer_fn
+	sched_dom_timer_fn
+	sched_switch_infprev
+	sched_switch_infnext
+xen_dom0op (grep TRC_DOM0OP)
+  dom0op_enter_base
+  dom0op_leave_base
+xen_vmx (grep TRC_VMX)
+  vmx_vmexit
+  vmx_vmentry
+	vmx_timer_intr
+	vmx_int
+	vmx_io
+xen_mem (grep TRC_MEM)
+  mem_page_grant_map
+	mem_page_grant_unmap
+	mem_page_grant_transfer
+
+
+How to share xen pages efficiently ?
+Pages allocated in xen heap, the shared with dom0.
+
+How buffers are accessed in dom0 ?
+directly from pointers to buffers contained in get_info control information.
+
+do_dom0_op
+
+tbufcontrol -> control info
+  int tb_control(dom0_tbufcontrol_t *tbc)
+
+DOM0_TBUF_GET_INFO  buffer_mfn   __pa(t_bufs[0]) >> PAGE_SHIFT;
+
+
+create trace :
+
+in : 
+trace name
+buffer size
+return : 0 success, 1 failure
+do :
+alloc buffer xen
+share with dom0
+
+destroy trace :
+in :
+trace name
+do : unshare buffer / free.
+
+
+start/stop : 
+tb_control that will update the control structure.
+in : trace name
+start : put active to 1 + inc. nb_active traces
+stop : put active to 0 + dec nb_active traces.
+return : 0 success, 1 failure.
+
+consume :
+in : trace name
+tb_control that will update the consumed count.
+in : old count.
+return : 0 success, 1 failure (pushed).
+
+get_info :
+tb_control that returns a fresh copy of trace control info.
+
+
+
+NOTE 8-11-2006
+
+Xen 3.0.3
+Only one init of buffers (cannot change buffer size)
+tbc->buffer_mfn = opt_tbuf_size ? virt_to_mfn(per_cpu(t_bufs, 0)) : 0;
+/* Convert between Xen-heap virtual addresses and machine frame numbers. */
+#define virt_to_mfn(va)     (virt_to_maddr(va) >> PAGE_SHIFT)
+
+struct t_buf *tbufs_mapped;
+
+    tbufs_mapped = xc_map_foreign_range(xc_handle, DOMID_XEN,
+                                        size * num, PROT_READ | PROT_WRITE,
+                                        tbufs_mfn);
+
+int fd = open("/proc/xen/privcmd", O_RDWR);
+
+/* sleep for this long (milliseconds) between checking the trace buffers */
+#define POLL_SLEEP_MILLIS 100
+
+
+netfront.c
+xenbus_alloc_evtchn
+bind_evtchn_to_irqhandler
+
+
+virq :
+
+include/public/xen.h VIRQ_TBUF
+			/* G. (DOM0) Trace buffer has records available. */
+
+trace_notify_guest : send_guest_global_virq(dom0, VIRQ_TBUF);
+
+see arch/i386/oprofile/xenoprof.c
+bind_virq
+
+
+

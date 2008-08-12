@@ -1,0 +1,86 @@
+
+
+LTTng for Xen
+
+Design document
+
+Mathieu Desnoyers, November 2006
+
+Last modification :
+
+Only allow a single channel. Directory consumed by a lttd-xen client through
+hypercalls. This design choice is made because there are no RCU lists and there
+is no link between the number of CPUs seen by Xen and number of CPUs in the
+dom0.
+
+Does better than Xentrace :
+Variable size records
+Easily extensible event description
+// not planned : missing RCU list. Multiple active traces
+Reader uses poll()-like mechanism instead of polling the buffers each 100ms.
+
+
+* Dom0 lttd-xen process
+
+Does an hypercall to map the buffers (increment refcount)
+Does an hypercall to poll for data, put to sleep by the OS.
+Uses write from the mapped buffers to a file.
+unmap buffer, decrement refcount.
+
+
+* Xen
+
+tb_control (hypercalls seen from dom0 OS)
+(hypercalls done by lttctl-xen)
+- trace_create
+Map a page for control information, return it for mapping by user space. (rw)
+Map multiple pages for buffers. return them for mapping by user space.
+(shared, read-only for consumer)
+increment refcount
+- trace_start
+Activate tracing in control information.
+- trace_stop
+Stop tracing in control information.
+- trace_destroy
+wait for pending writers (is the hypervisor preemptible ? not full.)
+  Preemption : not full -> spinlock does not disable preemption : would deadlock
+  for the non irq_disable case.
+  volountary : poll call -> volountary. explicit __schedule call., do_yield().
+Quiescent state detection.
+  for_each_domain( d )
+    for_each_vcpu( d, v )
+      vcpu_sleep_sync(v);
+decrement refcount : destroy the channels
+
+Events coming from xen :
+- Buffer switch
+  through virq sent to dom0
+- wakes up poll on the buffers FD.
+
+
+* Dom0 Linux OS
+
+Receive virq upon buffer switch.
+xen_wakeup_readers handler : wakes up the readers for the channel.
+
+Hypercalls are autonomous from LTTng linux kernel tracing.
+
+on lttngxentrace create, hypercall channel_create
+on lttngxentrace start, hypercall channel_start
+on lttngxentrace stop, hypercall channel_stop
+on lttngxentrace destroy, hypercall channel_destroy
+
+
+* Facilities
+
+Export a facilities per cpu channel too.
+
+
+Q1 : In Xen preemptible ? Full ? Volountary ? Volountary X
+Q2 : How to synchronize to wait for writers to finish writing ? X
+
+
+Number of CPUs in dom0 != number of CPUs in Xen.
+CPU hotplug in kernel tracing ? Done.
+
+

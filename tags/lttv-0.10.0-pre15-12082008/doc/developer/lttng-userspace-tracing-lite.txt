@@ -1,0 +1,69 @@
+
+
+Mathieu Desnoyers
+
+March 2006
+
+Here is a simpler, but slower, version of user space tracing design.
+
+It will be useful on architectures where doing a system call is mandatory, for
+example when CPUs are lacking a 64 bits TSC : it must be worked around by doing
+a system call to the the time or the synthetic MSB of the TSC (yes, disabling
+preemption is at least required).
+
+
+So the design is simple :
+
+Two system calls :
+
+One system call for event logging
+
+
+ltt_trace_generic
+args :
+fac_id
+event_id
+data pointer
+data size
+
+ltt_register_generic
+args:
+struct pointer (in)
+fac_id pointer (out)
+
+#define NAME_MAX 4096
+
+struct :
+char name[NAME_MAX]
+u32 num_events
+u32 checksum
+u32 alignment
+u32 int_size
+u32 long_size
+u32 pointer_size
+u32 size_t_size
+
+
+If a facility is registered twice, the same handle is used.
+	For a facility to be the exact same, it must share _every_ element of the
+	struct (even type sizes).
+Potential problem : If a facility is registered, it is never unregistered.
+
+Now.. not being able to free facilities when they are not used is not fun. So
+how can we know every process that has registered a facility have finished using
+it ? If we know that, we might do a cleanup when _all_ the traces are destroyed:
+this is way better than a reboot.
+
+A solution might be to keep a reference count to the fac_id : it would be
+incremented upon registration and decremented when a process exits. To do that,
+a process must keep an array of fac ids it uses. 0 is unset.
+
+CONFIG option :
+
+CONFIG_LTT_USERSPACE_GENERIC
+
+
+
+
+
+

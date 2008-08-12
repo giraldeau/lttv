@@ -1,0 +1,324 @@
+Linux Trace Toolkit
+
+Requests Servicing Schedulers
+
+
+Mathieu Desnoyers, 07/06/2004
+
+
+In the LTT graphical interface, two main types of events requests may occur :
+
+- events requests made by a viewer concerning a traceset for a ad hoc
+  computation.
+- events requests made by a viewer concerning a trace for a precomputation.
+
+
+Ad Hoc Computation
+
+The ad hoc computation must be serviced immediately : they are directly
+responding to events requests that must be serviced to complete the graphical
+widgets'data. This kind of computation may lead to incomplete result as long as
+precomputation are not finished. Once precomputation is over, the widgets will
+be redrawn if they needed such information. A ad hoc computation is done on a
+traceset : the workspace of a tab.
+
+Precomputation 
+
+Traces are global objects. Only one instance of a trace is opened for all the
+program. Precomputation will append data to the traces attributes (states,
+statistics). It must inform the widgets which asked for such states or
+statistics of their availability. Only one precomputation must be launched for
+each trace and no duplication of precomputation must be done.
+
+
+Schedulers
+
+There is one tracesetcontext per traceset. Each reference to a trace by a
+traceset also has its own tracecontext. Each trace, by itself, has its own
+tracecontext.
+
+Let's define a scheduler as a g_idle events request servicing function.
+
+There is one scheduler per traceset context (registered when there are requests
+to answer). There is also one scheduler per autonomous trace context (not
+related to any traceset context).
+
+A scheduler processes requests for a specific traceset or trace by combining
+time intervals of the requests. It is interruptible by any GTK event. A
+precomputation scheduler has a lower priority than a ad hoc computation
+scheduler. That means that no precomputation will be performed until there is
+no more ad hoc compuation pending. When a scheduler is interrupted, it makes no
+assumption about the presence or absence of the current requests in its pool
+when it starts back.
+
+
+Foreground Scheduler
+
+There can be one foreground scheduler per traceset (one traceset per tab). It
+simply calls the hooks given by the events requests of the viewers for the
+specified time intervals.
+
+
+Background Scheduler
+
+Right now, to simplify the problem of the background scheduler, we assume that
+the module that loads the extended statistics hooks has been loaded before the
+data is requested and that it is not unloaded until the program stops. We will
+eventually have to deal with the requests removal based on module load/unload,
+but it complicates the problem quite a bit.
+
+A background scheduler adds hooks located under a global attributes path
+(specified by the viewer who makes the request) to the trace's traceset
+context (the trace is specified by the viewer). Then, it processes the whole
+trace with this context (and hooks).
+
+Typically, a module that extends statistics will register hooks in the global
+attributes tree under /computation/modulename/hook_name . A viewer
+that needs these statistics for a set of traces does a background computation
+request through a call to the main window API function. It must specify all
+types of hooks that must be called for the specified trace.
+
+The background computation requests for a trace are queued. When the idle
+function kicks in to answer these requests, it add the hooks of all the requests
+toghether in the context and starts the read. It also keeps a list of the
+background requests currently serviced.
+
+The read is done from start to end of the trace, calling all the hooks present
+in the context. Only when the read is over, the after_request hooks of the
+currently serviced requests are called and the requests are destroyed.
+
+If there are requests in the waiting queue, they are all added to the current
+pool and processed. It is important to understand that, while a processing is in
+being done, no requests are added to the pool : they wait for their turn in the
+queue.
+
+Every hook that are added to the context by the scheduler comes from global
+attributes, i.e.
+/traces/#
+    in LttvTrace attributes : modulename/hook_name
+
+They come with a flag telling either in_progress or ready. If the flag
+ready is set, a viewer knows that the data it needs is already ready and he
+doesn't have to make a request.
+
+If the flag in_progress is set, that means that the data it needs is currently
+being serviced, and it must wait for the current servicing to be finished. It
+tells the lttvwindow API to call a hook when the actual servicing is over (there
+is a special function for this, as it requires to modify the pool of requests
+actually being serviced : we must make sure that no new reading hooks are
+added!).
+
+
+
+
+
+New Global Attributes
+
+/traces/#
+    in LttvTrace attributes :
+
+When a processing is fired, a variable
+                              computation/modulename/in_progress is set.
+
+When a processing finished, a variable
+                              computation/modulename/in_progress is unset
+                              computation/modulename/ready is set
+
+
+
+
+
+Typical Use For a Viewer
+
+When a viewer wants extended information, it must first check if it is ready.
+if not :
+Before a viewer makes a request, it must check the in_progress status of the
+hooks.
+
+If the in_progress is unset, it makes the request.
+
+If the in_progress is set, it makes a special request for being informed of the
+end of request.
+
+
+
+
+Hooks Lists
+
+In order to answer the problems of background processing, we need to add a
+reference counter for each hook of a hook list. If the same hook is added twice,
+it will be called only once, but it will need two "remove" to be really removed
+from the list. Two hooks are identical if they have the same function pointer
+and hook_data.
+
+
+
+
+
+
+Implementation
+
+Ad Hoc Computation
+
+see lttvwindow_events_delivery.txt
+
+
+Hooks Lists
+
+need new ref_count field with each hook
+lttv_hook_add and lttv_hook_add_list must compare addition with present and
+increment ref counter if already present.
+
+lttv_hook_remove and remove_with_data must decrement ref_count is >1, or remove
+the element otherwise (==1).
+
+
+
+Background Scheduler
+
+Global traces
+
+Two global attributes per trace : 
+traces/#
+  It is a pointer to the LttvTrace structure.
+  In the LttvTrace attributes :
+    state/
+      saved_states/
+    statistics/
+      modes/
+      cpu/
+      processes/
+      modulename1/
+      modulename2/
+      ...
+    computation/  /* Trace specific background computation hooks status */
+      state/
+        in_progress
+        ready
+      stats/
+        in_progress
+        ready
+      modulename1/
+        in_progress
+        ready
+    requests_queue/     /* Background computation requests */
+    requests_current/   /* Type : BackgroundRequest */
+    notify_queue/
+    notify_current/
+    computation_traceset/
+    computation_traceset_context/
+
+
+computation/      /* Global background computation hooks */
+  state/
+    before_chunk_traceset
+    before_chunk_trace
+    before_chunk_tracefile
+    after_...
+    before_request
+    after_request
+    event_hook
+    event_hook_by_id
+    hook_adder
+    hook_remover
+  stats/
+    ...
+  modulename1/
+    ...
+
+Hook Adder and Hook remover
+
+Hook functions that takes a trace context as call data. They simply 
+add / remove the computation related hooks from the trace context.
+
+
+
+Modify Traceset
+Points to the global traces. Main window must open a new one only when no
+instance of the pathname exists.
+
+Modify trace opening / close to make them create and destroy
+LttvBackgroundComputation (and call end requests hooks for servicing requests)
+and global trace info when references to the trace is zero.
+
+
+
+EventsRequest Structure
+
+This structure is the element of the events requests pools. The owner field is
+used as an ownership identifier. The viewer field is a pointer to the data
+structure upon which the action applies. Typically, both will be pointers to
+the viewer's data structure.
+
+In a ad hoc events request, a pointer to the EventsRequest structure is used as
+hook_data in the hook lists : it must have been added by the viewers.
+
+
+Modify module load/unload
+
+A module that registers global computation hooks in the global attributes upon
+load should unregister them when unloaded. Also, it must remove every background
+computation request for each trace that has its own module_name as GQuark.
+
+
+Give an API for calculation modules
+
+Must have an API for module which register calculation hooks. Unregistration
+must also remove all requests made for these hooks.
+
+
+Background Requests Servicing Algorithm (v1)
+
+
+list_in : currently serviced requests
+list_out : queue of requests waiting for processing
+
+notification lists :
+notify_in : currently checked notifications
+notify_out : queue of notifications that comes along with next processing.
+
+
+0.1 Lock traces
+0.2 Sync tracefiles
+
+1. Before processing
+  - if list_in is empty
+    - Add all requests in list_out to list_in, empty list_out
+    - for each request in list_in
+      - set hooks'in_progress flag to TRUE
+      - call before request hook
+    - seek trace to start
+    - Move all notifications from notify_out to notify_in.
+  - for each request in list_in
+    - Call before chunk hooks for list_in
+    - add hooks to context *note only one hook of each type added.
+
+2. call process traceset middle for a chunk
+  (assert list_in is not empty! : should not even be called in that case)
+
+3. After the chunk
+  3.1 call after_chunk hooks for list_in
+    - for each request in list_in
+      - Call after chunk hooks for list_in
+      - remove hooks from context *note : only one hook of each type
+  3.2 for each notify_in
+    - if current time >= notify time, call notify and remove from notify_in
+    - if current position >= notify position, call notify and remove from
+      notify_in
+  3.3 if end of trace reached
+    - for each request in list_in
+      - set hooks'in_progress flag to FALSE
+      - set hooks'ready flag to TRUE
+      - call after request hook
+      - remove request
+    - for each notifications in notify_in
+      - call notify and remove from notify_in
+    - reset the context
+    - if list_out is empty
+      return FALSE (scheduler stopped)
+    - else
+      return TRUE (scheduler still registered)
+  3.4 else
+    - return TRUE (scheduler still registered)
+
+4. Unlock traces
