@@ -6,7 +6,8 @@ public class read_trace {
 
 		try {
 			FileInputStream file_input = new FileInputStream ("../trace.dat");
-			DataInputStream data_input = new DataInputStream (file_input);
+			BufferedInputStream buffered_input = new BufferedInputStream(file_input);
+			DataInputStream data_input = new DataInputStream (buffered_input);
 			
 			int timestamp;
 			short id;

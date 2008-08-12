@@ -1,3 +1,6 @@
+#define _LARGEFILE_SOURCE
+#define _FILE_OFFSET_BITS 64
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -10,15 +13,15 @@
 int main(int argc, char **argv)
 {
 	int result;
-	int fd;
+	FILE *fp;
 	int print = 0;
 
 	if(argc >= 2 && !strcmp(argv[1], "-p"))
 		print = 1;
 
-	result = fd = open("../trace.dat", O_RDONLY);
-	if(result == -1) {
-		perror("open");
+	fp = fopen("../trace.dat", "r");
+	if(fp == NULL) {
+		perror("fopen");
 		return 1;
 	}
 
@@ -28,33 +31,18 @@ int main(int argc, char **argv)
 		unsigned char arglen;
 		char *args;
 
-		result = read(fd, &timestamp, 4);
-		if(result == 0)
+		fscanf(fp, "%4c", &timestamp);
+		if(feof(fp))
 			break;
-		if(result < 4) {
-			perror("read");
-			return 1;
-		}
 
-		result = read(fd, &id, 2);
-		if(result < 2) {
-			perror("read");
-			return 1;
-		}
+		fscanf(fp, "%2c", &id);
 
-		result = read(fd, &arglen, 1);
-		if(result < 1) {
-			perror("read");
-			return 1;
-		}
+		fscanf(fp, "%1c", &arglen);
 
 		args = malloc(arglen);
 
-		result = read(fd, args, arglen);
-		if(result < arglen) {
-			perror("read");
-			return 1;
-		}
+		// manually specify length of args
+		fscanf(fp, "%15c", args);
 
 		unsigned short arg1;
 		char *arg2;
@@ -66,8 +54,9 @@ int main(int argc, char **argv)
 			printf("timestamp %lu id %hu args=(arg1=%hu arg2=\"%s\")\n", timestamp, id, arg1, arg2);
 
 		free(args);
+
 	}
-	close(fd);
+	fclose(fp);
 
 	return 0;
 }
