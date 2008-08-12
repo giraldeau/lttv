@@ -6,7 +6,7 @@ class Task:
 	cmd = ""
 	post_cmd = ""
 	results = 0
-	remain = 10
+	remain = 1
 
 	def __init__(self):
 		self.results = []
@@ -25,14 +25,14 @@ t3.name = "C version (with print)"
 t3.pre_cmd = ""
 t3.cmd = "pushd ../c >/dev/null; ./main -p; popd >/dev/null;"
 t3.post_cmd = ""
-tasks.append(t3)
+#tasks.append(t3)
 
 t5 = Task()
 t5.name = "C version (with print, but sent to /dev/null)"
 t5.pre_cmd = ""
 t5.cmd = "pushd ../c >/dev/null; ./main -p >/dev/null; popd >/dev/null;"
 t5.post_cmd = ""
-tasks.append(t5)
+#tasks.append(t5)
 
 t2 = Task()
 t2.name = "Java version (without print)"
@@ -46,14 +46,14 @@ t4.name = "Java version (with print)"
 t4.pre_cmd = ""
 t4.cmd = "pushd ../java >/dev/null; java read_trace -p; popd >/dev/null;"
 t4.post_cmd = ""
-tasks.append(t4)
+#tasks.append(t4)
 
 t6 = Task()
 t6.name = "Java version (with print, but sent to /dev/null)"
 t6.pre_cmd = ""
 t6.cmd = "pushd ../java >/dev/null; java read_trace -p >/dev/null; popd >/dev/null;"
 t6.post_cmd = ""
-tasks.append(t6)
+#tasks.append(t6)
 
 import os
 import time
@@ -111,9 +111,11 @@ def main():
 	for task in tasks:
 		print "RESULTS for " + task.name
 		print "Runs: " + str(len(task.results))
-		print "Average: " + str(round(average(task.results), 3))
-		print "Min: " + str(round(min(task.results), 3))
-		print "Max: " + str(round(max(task.results), 3))
+		av = average(task.results)
+		print "Average run time: " + str(round(av, 3)) + " s"
+		print "Rate: " + str(round(1000000.0 / av, 3)) + " events/s"
+		#print "Min: " + str(round(min(task.results), 3))
+		#print "Max: " + str(round(max(task.results), 3))
 		print ""
 
 main()
