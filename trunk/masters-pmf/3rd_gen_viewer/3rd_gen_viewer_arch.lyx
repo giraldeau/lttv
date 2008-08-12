@@ -108,7 +108,11 @@ Efficiency is of great importance.
 \end_layout
 
 \begin_layout Itemize
-Support live trace processing
+Allow efficient manipulation of traces that are larger than the system memory
+\end_layout
+
+\begin_layout Itemize
+Support processing of live traces
 \end_layout
 
 \begin_layout Itemize
@@ -143,11 +147,9 @@ All data structures must be accessed through API methods, in order to allow
 
 \begin_layout Itemize
 The APIs in this document are described as C functions and datatypes.
- When an operation applies to an abstraction that should be an object in
+ When an operation applies to an abstraction that could be an object in
  an object-oriented language, it is specified as the first argument of the
  function.
- In such languages, this first argument should be removed, as it will be
- passed implicitly.
 \end_layout
 
 \begin_layout Subsection
@@ -181,13 +183,27 @@ infinity
 .
 \end_layout
 
+\begin_layout Standard
+Each time is accompanied by an uncertainty value.
+\end_layout
+
 \begin_layout Section
-Reading traces
+Low level reading of traces
 \end_layout
 
 \begin_layout Subsection
 Overview
 \end_layout
+
+\begin_layout Standard
+This API presents a uniform way of accessing traces at a low level, that
+ is to access randomly the events of the trace in an physical-encoding-independa
+nt way.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
 
 \begin_layout Subsubsection
 Timestamps
@@ -203,14 +219,14 @@ Timestamps, at the framework level, should be in an architecture-independent
  Timestamps in cycles should be available if they are provided by the tracer.
 \end_layout
 
-\begin_layout Subsection
-Low-level trace reading API
+\end_inset
+
+
 \end_layout
 
 \begin_layout Standard
-The goal of this API is to provide a uniform way for the framework to access
- the events recorded in a trace, in an encoding-independant way.
-\end_layout
+\begin_inset Note Note
+status open
 
 \begin_layout Subsubsection
 Factory methods
@@ -274,17 +290,29 @@ Return:
 a trace handle
 \end_layout
 
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Methods of the Low Level Trace Reading API
+\end_layout
+
+\begin_layout Itemize
+void close(struct trace *tr)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Close the trace and unallocate all resources associated to this struct trace
+ including the handle.
+ After this call, tr is invalid and its memory is freed.
+\end_layout
+
 \end_deeper
-\begin_layout Subsubsection
-Trace methods
-\end_layout
-
 \begin_layout Itemize
-bool close(struct trace *tr)
-\end_layout
-
-\begin_layout Itemize
-struct event *current_event(struct trace *)
+struct event *current_event(struct trace *, struct cursor *cur)
 \end_layout
 
 \begin_deeper
@@ -300,22 +328,35 @@ Return:
 the event currently pointed by the position pointer
 \end_layout
 
+\begin_layout Itemize
+NULL, if current_event is called on a new cursor that is positioned before
+ the beginning of the trace
+\end_layout
+
 \end_deeper
 \begin_layout Itemize
-bool advance(struct trace *tr)
+int advance(struct trace *tr, struct trace_cursor *cur)
 \end_layout
 
 \begin_deeper
 \begin_layout Standard
-Advance the position pointer to the next event in the trace.
+Advance the cursor to the next event in the trace.
 \end_layout
 
 \begin_layout Standard
-Arguments: none
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+tr: the trace
+\end_layout
+
+\begin_layout Itemize
+cur: the cursor that should be advanced
 \end_layout
 
 \begin_layout Standard
-Return values:
+Return value:
 \end_layout
 
 \begin_layout Itemize
@@ -324,21 +365,24 @@ The result:
 
 \begin_deeper
 \begin_layout Itemize
-Success
+Success (TRACE_ADVANCE_OK)
 \end_layout
 
 \begin_layout Itemize
-Final end of trace (end of a non-live trace or of a completed live trace)
+The cursor was not advanced because the end of trace is reached (end of
+ a non-live trace or of a completed live trace) (TRACE_ADVANCE_END)
 \end_layout
 
 \begin_layout Itemize
-No more events for now (end of a still running live trace)
+The cursor was not advanced because no new events are available at this
+ time (with a live trace that is still running) (TRACE_ADVANCE_TRY_AGAIN)
 \end_layout
 
 \end_deeper
 \end_deeper
 \begin_layout Itemize
-bool seek_time(struct trace *tr, struct trace_cursor *cur)
+int seek_time(struct trace *tr, struct trace_cursor *cur, struct trace_time
+ time)
 \end_layout
 
 \begin_deeper
@@ -347,21 +391,39 @@ Arguments:
 \end_layout
 
 \begin_layout Itemize
-The time to seek to
+tr: the trace that should be seeked
+\end_layout
+
+\begin_layout Itemize
+cur: the cursor to seek
+\end_layout
+
+\begin_layout Itemize
+time: the time to seek to
 \end_layout
 
 \begin_layout Standard
-Return: none
+Return:
+\end_layout
+
+\begin_layout Itemize
+0: success
+\end_layout
+
+\begin_layout Itemize
+!= 0: time out of range
 \end_layout
 
 \end_deeper
 \begin_layout Itemize
-struct trace_cursor *trace_new_cursor_beginning(struct trace *tr)
+struct trace_cursor *trace_new_cursor(struct trace *tr)
 \end_layout
 
 \begin_deeper
 \begin_layout Standard
-Return a new cursor associated to the trace, positioned at its beginning
+Return a new cursor associated to the trace.
+ The position of this new cursor is just before the first event, therefore
+ advance() must be called before reading the first event.
 \end_layout
 
 \end_deeper
@@ -369,17 +431,58 @@ Return a new cursor associated to the trace, positioned at its beginning
 struct trace_cursor *trace_cursor_copy(struct trace_cursor *cur)
 \end_layout
 
-\begin_layout Itemize
-void trace_cursor_destroy(struct trace_cursor_destroy *)
+\begin_deeper
+\begin_layout Standard
+Copy a cursor.
 \end_layout
 
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+cur: the cursor to copy
+\end_layout
+
+\begin_layout Standard
+Return value:
+\end_layout
+
+\begin_layout Itemize
+a new cursor that is at the same location as cur
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+void trace_cursor_destroy(struct trace_cursor *cur)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Free all resources associated to a cursor.
+ After this call, cur is invalid.
+\end_layout
+
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+cur: the cursor to destroy
+\end_layout
+
+\end_deeper
 \begin_layout Itemize
 struct trace_time get_time_start(struct trace *tr)
 \end_layout
 
 \begin_deeper
 \begin_layout Standard
-Arguments: none
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+tr: the trace
 \end_layout
 
 \begin_layout Standard
@@ -411,7 +514,7 @@ the timestamp of the last event in the trace
 \end_deeper
 \begin_layout Itemize
 register_callback_new_event(struct trace *tr, struct trace_time after, void
- (*cb)(void))
+ (*cb)(struct trace *))
 \end_layout
 
 \begin_deeper
@@ -426,7 +529,8 @@ Arguments:
 \end_layout
 
 \begin_layout Itemize
-after (timestamp) : call only if the event occurent later than 
+after (timestamp) : call only if the timestamp of the event is later than
+ 
 \emph on
 after
 \end_layout
@@ -454,15 +558,29 @@ Result (success or failure)
 \end_layout
 
 \end_deeper
-\begin_layout Subsection
-High-level trace reading API
+\begin_layout Section
+High level reading of traces
+\end_layout
+
+\begin_layout Standard
+When reading/analyzing/viewing several traces of heterogenous types, these
+ traces are read by translator modules, which export the Low Level Trace
+ Reading API.
+ The traceset service then uses this API to read each of these traces individual
+ly, then merge them.
+ It may apply timestamp offsetting or other synchronization techniques.
+ To allow views and analyses to access events, it in turn exports the High
+ Level Trace Reading API.
 \end_layout
 
 \begin_layout Standard
 The goal of this API is to provide a uniform way for analyses and views
- to obtain trace events from a traceset (merge of many traces or a single
- trace), regardless of the system they were recorded on and of the tracer
- used.
+ to obtain large sets of trace events from a traceset (merge of many traces
+ or a single trace).
+\end_layout
+
+\begin_layout Subsection
+Methods of the high-level trace reading API
 \end_layout
 
 \begin_layout Itemize
@@ -514,6 +632,10 @@ void event_request_cancel(struct request_handle *req)
 \end_layout
 
 \begin_deeper
+\begin_layout Standard
+Cancel a request.
+\end_layout
+
 \begin_layout Standard
 Arguments:
 \end_layout
@@ -571,7 +693,7 @@ The state information must be persistent between executions of the framework.
 
 \begin_layout Standard
 It is possible to assign a state to the range -infinity..infinity to indicate
- that it is global to the trace, regardless of .
+ that it is global to the trace.
 \end_layout
 
 \begin_layout Standard
