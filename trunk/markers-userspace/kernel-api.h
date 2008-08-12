@@ -38,11 +38,11 @@ extern "C" {
 #define _imv_read(name)		(name##__imv)
 
 #ifdef __i386__
-#define __NR_marker             327
-#define __NR_trace              328
+#define __NR_marker             333
+#define __NR_trace              334
 #elif defined(__x86_64__)
-#define __NR_marker		288
-#define __NR_trace		289
+#define __NR_marker		295
+#define __NR_trace		296
 #else
 #error "Unsupported architecture for userspace markers"
 #endif
