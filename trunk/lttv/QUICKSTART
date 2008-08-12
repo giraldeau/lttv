@@ -237,6 +237,8 @@ modprobe kernel-trace
 modprobe mm-trace
 modprobe net-trace
 modprobe fs-trace
+#if locking tracing is wanted, uncomment the following
+#modprobe lockdep-trace
 
 If you want to have complete information about the kernel state (including all
 the process names), you need to load the ltt-statedump module. This is done by
@@ -257,6 +259,8 @@ echo kernel-trace >> /etc/modules
 echo mm-trace >> /etc/modules
 echo net-trace >> /etc/modules
 echo fs-trace >> /etc/modules
+#if locking tracing is wanted, uncomment the following
+#echo lockdep-trace >> /etc/modules
 
 
 * Getting and installing the ltt-control package (on the traced machine)
