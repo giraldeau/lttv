@@ -3,9 +3,12 @@
 AM_CFLAGS = -DPACKAGE_DATA_DIR=\""$(datadir)"\" -DPACKAGE_BIN_DIR=\""$(bindir)"\"
 
 bin_PROGRAMS = lttctl
-bin_SCRIPTS = ltt-armall ltt-disarmall ltt-armalluser ltt-disarmalluser
+bin_SCRIPTS = ltt-armall ltt-disarmall ltt-armalluser ltt-disarmalluser \
+  ltt-armtap ltt-disarmtap
 CLEANFILES = $(bin_SCRIPTS)
-EXTRA_DIST = ltt-armall.sh ltt-disarmall.sh ltt-armalluser.sh ltt-disarmalluser.sh
+EXTRA_DIST = ltt-armall.sh ltt-disarmall.sh \
+  ltt-armalluser.sh ltt-disarmalluser.sh \
+  ltt-armtap.sh ltt-disarmtap.sh
 
 ltt-armall: ltt-armall.sh
 	rm -f ltt-armall
@@ -18,6 +21,18 @@ ltt-disarmall: ltt-disarmall.sh
 	echo "#!"$(BASH) > ltt-disarmall
 	cat $(srcdir)/ltt-disarmall.sh >> ltt-disarmall
 	chmod ugo+x ltt-disarmall
+
+ltt-armtap: ltt-armtap.sh
+	rm -f ltt-armtap
+	echo "#!"$(BASH) > ltt-armtap
+	cat $(srcdir)/ltt-armtap.sh >> ltt-armtap
+	chmod ugo+x ltt-armtap
+
+ltt-disarmtap: ltt-disarmtap.sh
+	rm -f ltt-disarmtap
+	echo "#!"$(BASH) > ltt-disarmtap
+	cat $(srcdir)/ltt-disarmtap.sh >> ltt-disarmtap
+	chmod ugo+x ltt-disarmtap
 
 ltt-armalluser: ltt-armalluser.sh
 	rm -f ltt-armalluser
