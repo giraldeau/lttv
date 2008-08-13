@@ -120,5 +120,4 @@ void cleanup_module(void)
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mathieu Desnoyers");
-MODULE_DESCRIPTION("Marker Test");
-
+MODULE_DESCRIPTION("NOP Test");
