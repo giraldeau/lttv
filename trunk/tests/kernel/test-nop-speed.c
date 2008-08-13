@@ -11,11 +11,16 @@
 
 #define NR_TESTS 20000
 
+int var, var2;
+
 struct proc_dir_entry *pentry = NULL;
 
 void empty(void)
 {
 	asm volatile ("");
+	var += 50;
+	var /= 10;
+	var *= var2;
 }
 
 void twobytesjump(void)
@@ -23,26 +28,41 @@ void twobytesjump(void)
 	asm volatile ("jmp 1f\n\t"
 		".byte 0x00, 0x00, 0x00\n\t"
 		"1:\n\t");
+	var += 50;
+	var /= 10;
+	var *= var2;
 }
 
 void fivebytesjump(void)
 {
 	asm (".byte 0xe9, 0x00, 0x00, 0x00, 0x00\n\t");
+	var += 50;
+	var /= 10;
+	var *= var2;
 }
 
 void threetwonops(void)
 {
 	asm (".byte 0x66,0x66,0x90,0x66,0x90\n\t");
+	var += 50;
+	var /= 10;
+	var *= var2;
 }
 
 void fivebytesnop(void)
 {
 	asm (".byte 0x66,0x66,0x66,0x66,0x90\n\t");
+	var += 50;
+	var /= 10;
+	var *= var2;
 }
 
 void fivebytespsixnop(void)
 {
 	asm (".byte 0x0f,0x1f,0x44,0x00,0\n\t");
+	var += 50;
+	var /= 10;
+	var *= var2;
 }
 
 void perform_test(const char *name, void (*callback)(void))
