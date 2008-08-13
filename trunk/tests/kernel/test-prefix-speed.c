@@ -122,7 +122,7 @@ static struct file_operations my_operations = {
 
 int init_module(void)
 {
-	pentry = create_proc_entry("testnops", 0444, NULL);
+	pentry = create_proc_entry("testprefix", 0444, NULL);
 	if (pentry)
 		pentry->proc_fops = &my_operations;
 
@@ -131,9 +131,9 @@ int init_module(void)
 
 void cleanup_module(void)
 {
-	remove_proc_entry("testnops", NULL);
+	remove_proc_entry("testprefix", NULL);
 }
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mathieu Desnoyers");
-MODULE_DESCRIPTION("NOP Test");
+MODULE_DESCRIPTION("prefix test");
