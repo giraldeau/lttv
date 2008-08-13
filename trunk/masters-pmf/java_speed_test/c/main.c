@@ -15,11 +15,26 @@ int main(int argc, char **argv)
 	int result;
 	FILE *fp;
 	int print = 0;
+	int i;
+	char *filename = NULL;
 
-	if(argc >= 2 && !strcmp(argv[1], "-p"))
-		print = 1;
+	if(argc > 1) {
+		for(i=1; i<argc; i++) {
+			if(!strcmp(argv[i], "-p")) {
+				print = 1;
+			}
+			else {
+				filename = argv[i];
+			}
+		}
+	}
 
-	fp = fopen("../trace.dat", "r");
+	if(filename == NULL) {
+		fprintf(stderr, "No trace file specified\n");
+		return 1;
+	}
+
+	fp = fopen(filename, "r");
 	if(fp == NULL) {
 		perror("fopen");
 		return 1;

@@ -3,9 +3,25 @@ import java.io.*;
 public class read_trace {
 	public static void main(String[] args) {
 		int tmp = 0;
+		boolean print = false;
+		String filename = "";
+
+		for(String s : args) {
+			if(s.equals("-p")) {
+				print = true;
+			}
+			else {
+				filename = s;
+			}
+		}
+		
+		if(filename.equals("")) {
+			System.out.println("error: no filename specified");
+			return;
+		}
 
 		try {
-			FileInputStream file_input = new FileInputStream ("../trace.dat");
+			FileInputStream file_input = new FileInputStream (filename);
 			BufferedInputStream buffered_input = new BufferedInputStream(file_input);
 			DataInputStream data_input = new DataInputStream (buffered_input);
 			
