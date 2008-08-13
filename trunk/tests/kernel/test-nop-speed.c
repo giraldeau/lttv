@@ -9,7 +9,7 @@
 #include <linux/marker.h>
 #include <asm/ptrace.h>
 
-#define NR_TESTS 20000
+#define NR_TESTS 10000000
 
 int var, var2;
 
