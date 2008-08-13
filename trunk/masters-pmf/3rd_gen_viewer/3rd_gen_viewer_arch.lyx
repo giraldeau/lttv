@@ -310,18 +310,42 @@ Close the trace and unallocate all resources associated to this struct trace
  After this call, tr is invalid and its memory is freed.
 \end_layout
 
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+tr: the trace
+\end_layout
+
+\begin_layout Standard
+Return value: none
+\end_layout
+
 \end_deeper
 \begin_layout Itemize
-struct event *current_event(struct trace *, struct cursor *cur)
+struct event *current_event(struct trace *tr, struct cursor *cur)
 \end_layout
 
 \begin_deeper
 \begin_layout Standard
-Arguments: none
+Return the event pointed by the cursor cur.
 \end_layout
 
 \begin_layout Standard
-Return:
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+tr: the trace
+\end_layout
+
+\begin_layout Itemize
+cur: the cursor indicating the position of the wanted event
+\end_layout
+
+\begin_layout Standard
+Return value:
 \end_layout
 
 \begin_layout Itemize
@@ -387,6 +411,10 @@ int seek_time(struct trace *tr, struct trace_cursor *cur, struct trace_time
 
 \begin_deeper
 \begin_layout Standard
+Place a cursor at a particular time index in a trace.
+\end_layout
+
+\begin_layout Standard
 Arguments:
 \end_layout
 
@@ -424,6 +452,22 @@ struct trace_cursor *trace_new_cursor(struct trace *tr)
 Return a new cursor associated to the trace.
  The position of this new cursor is just before the first event, therefore
  advance() must be called before reading the first event.
+\end_layout
+
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+tr: the trace
+\end_layout
+
+\begin_layout Standard
+Return value:
+\end_layout
+
+\begin_layout Itemize
+the new cursor
 \end_layout
 
 \end_deeper
@@ -471,6 +515,10 @@ Arguments:
 cur: the cursor to destroy
 \end_layout
 
+\begin_layout Standard
+Return value: none
+\end_layout
+
 \end_deeper
 \begin_layout Itemize
 struct trace_time get_time_start(struct trace *tr)
@@ -486,7 +534,7 @@ tr: the trace
 \end_layout
 
 \begin_layout Standard
-Return:
+Return value:
 \end_layout
 
 \begin_layout Itemize
@@ -514,7 +562,7 @@ the timestamp of the last event in the trace
 \end_deeper
 \begin_layout Itemize
 register_callback_new_event(struct trace *tr, struct trace_time after, void
- (*cb)(struct trace *))
+ (*cb)(struct trace *, void *priv), void *private)
 \end_layout
 
 \begin_deeper
@@ -567,7 +615,7 @@ When reading/analyzing/viewing several traces of heterogenous types, these
  traces are read by translator modules, which export the Low Level Trace
  Reading API.
  The traceset service then uses this API to read each of these traces individual
-ly, then merge them.
+ly, merging them along the way.
  It may apply timestamp offsetting or other synchronization techniques.
  To allow views and analyses to access events, it in turn exports the High
  Level Trace Reading API.
@@ -586,12 +634,12 @@ Methods of the high-level trace reading API
 \begin_layout Itemize
 struct request_handle *traceset_new_event_request(struct traceset *tr, struct
  trace_time t1, struct trace_time t2, struct event_filter *filter, void
- (*cb)(void *data, ), void *data)
+ (*cb)(void *priv, ), void *private)
 \end_layout
 
 \begin_deeper
 \begin_layout Standard
-Request a range of events
+Request a range of events from a traceset
 \end_layout
 
 \begin_layout Standard
@@ -615,11 +663,11 @@ filter: filter with complex expressions
 \end_layout
 
 \begin_layout Itemize
-data: private pointer to be passed to the callback
+private: private pointer to be passed to the callback
 \end_layout
 
 \begin_layout Standard
-Return:
+Return value:
 \end_layout
 
 \begin_layout Itemize
