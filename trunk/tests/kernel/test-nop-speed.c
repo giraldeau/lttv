@@ -35,7 +35,7 @@ void twobytesjump(void)
 
 void fivebytesjump(void)
 {
-	asm (".byte 0xe9, 0x00, 0x00, 0x00, 0x00\n\t");
+	asm volatile (".byte 0xe9, 0x00, 0x00, 0x00, 0x00\n\t");
 	var += 50;
 	var /= 10;
 	var *= var2;
@@ -43,7 +43,7 @@ void fivebytesjump(void)
 
 void threetwonops(void)
 {
-	asm (".byte 0x66,0x66,0x90,0x66,0x90\n\t");
+	asm volatile (".byte 0x66,0x66,0x90,0x66,0x90\n\t");
 	var += 50;
 	var /= 10;
 	var *= var2;
@@ -51,7 +51,7 @@ void threetwonops(void)
 
 void fivebytesnop(void)
 {
-	asm (".byte 0x66,0x66,0x66,0x66,0x90\n\t");
+	asm volatile (".byte 0x66,0x66,0x66,0x66,0x90\n\t");
 	var += 50;
 	var /= 10;
 	var *= var2;
@@ -59,7 +59,7 @@ void fivebytesnop(void)
 
 void fivebytespsixnop(void)
 {
-	asm (".byte 0x0f,0x1f,0x44,0x00,0\n\t");
+	asm volatile (".byte 0x0f,0x1f,0x44,0x00,0\n\t");
 	var += 50;
 	var /= 10;
 	var *= var2;
