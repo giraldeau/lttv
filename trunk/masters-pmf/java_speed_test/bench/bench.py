@@ -58,7 +58,7 @@ tasks.append(t5)
 
 t2 = JavaTestTask()
 t2.name = "Java version (without print)"
-t2.tracefile = "../trace_med.dat"
+t2.tracefile = "../trace_long.dat"
 t2.pre_cmd = ""
 t2.cmd = "pushd ../java >/dev/null; java read_trace %s; popd >/dev/null;" % t2.tracefile
 t2.post_cmd = ""
