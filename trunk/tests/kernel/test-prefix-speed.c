@@ -108,9 +108,13 @@ static int my_open(struct inode *inode, struct file *file)
 	printk("NR_TESTS %d\n", NR_TESTS);
 
 	perform_test("empty", empty);
+	printk("value : %ld\n", atomic64_read(&atomicval));
 	perform_test("test 1-byte nop xadd", testnop);
+	printk("value : %ld\n", atomic64_read(&atomicval));
 	perform_test("test DS override prefix xadd", testprefix);
+	printk("value : %ld\n", atomic64_read(&atomicval));
 	perform_test("test LOCK xadd", testlock);
+	printk("value : %ld\n", atomic64_read(&atomicval));
 
 	return -EPERM;
 }
