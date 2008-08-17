@@ -18,6 +18,9 @@
 #error "fair rwlock needs more bits per long to deal with that many CPUs"
 #endif
 
+/* Test duration, in seconds */
+#define TEST_DURATION 600
+
 #define THREAD_ROFFSET	1UL
 #define THREAD_RMASK	((NR_CPUS - 1) * THREAD_ROFFSET)
 #define SOFTIRQ_ROFFSET	(THREAD_RMASK + 1)
@@ -40,6 +43,9 @@
 #define NR_WRITERS 3
 #define NR_READERS 6
 #define NR_INTERRUPT_READERS 2
+
+/* Writer iteration delay, in ms. 0 for busy loop. */
+#define WRITER_DELAY 1
 
 static int var[NR_VARS];
 static struct task_struct *reader_threads[NR_READERS];
@@ -159,7 +165,8 @@ static int writer_thread(void *data)
 		//fair_write_unlock(&frwlock);
 		fair_write_unlock_irq(&frwlock);
 		preempt_enable();	/* for get_cycles accuracy */
-		//msleep(100);
+		if (WRITER_DELAY > 0)
+			msleep(WRITER_DELAY);
 	} while (!kthread_should_stop());
 	printk("writer_thread/%lu iterations : %lu, "
 		"max contention %llu cycles\n",
@@ -215,7 +222,7 @@ static void perform_test(const char *name, void (*callback)(void))
 static int my_open(struct inode *inode, struct file *file)
 {
 	perform_test("fair-rwlock-create", fair_rwlock_create);
-	ssleep(30);
+	ssleep(600);
 	perform_test("fair-rwlock-stop", fair_rwlock_stop);
 
 	return -EPERM;
