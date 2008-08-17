@@ -47,8 +47,11 @@
 #define NR_INTERRUPT_READERS 1
 #define NR_TRYLOCK_INTERRUPT_READERS 1
 
-/* Writer iteration delay, in ms. 0 for busy loop. */
-#define WRITER_DELAY 1
+/*
+ * Writer iteration delay, in us. 0 for busy loop. Caution : writers can
+ * starve readers.
+ */
+#define WRITER_DELAY 10
 
 static int var[NR_VARS];
 static struct task_struct *reader_threads[NR_READERS];
@@ -252,7 +255,7 @@ static int writer_thread(void *data)
 		fair_write_unlock_irq(&frwlock);
 		preempt_enable();	/* for get_cycles accuracy */
 		if (WRITER_DELAY > 0)
-			msleep(WRITER_DELAY);
+			udelay(WRITER_DELAY);
 	} while (!kthread_should_stop());
 	printk("writer_thread/%lu iterations : %lu, "
 		"max contention %llu cycles\n",
@@ -282,7 +285,7 @@ static int trylock_writer_thread(void *data)
 		//fair_write_unlock(&frwlock);
 		fair_write_unlock_irq(&frwlock);
 		if (WRITER_DELAY > 0)
-			msleep(WRITER_DELAY);
+			udelay(WRITER_DELAY);
 	} while (!kthread_should_stop());
 	printk("trylock_writer_thread/%lu iterations : %lu, "
 		"successful iterations : %lu\n",
