@@ -18,6 +18,11 @@
 #error "fair rwlock needs more bits per long to deal with that many CPUs"
 #endif
 
+/* Test with no contention duration, in seconds */
+#define SINGLE_WRITER_TEST_DURATION 10
+#define SINGLE_READER_TEST_DURATION 10
+#define MULTIPLE_READERS_TEST_DURATION 10
+
 /* Test duration, in seconds */
 #define TEST_DURATION 60
 
@@ -65,6 +70,15 @@ static struct fair_rwlock frwlock = {
 	.value = ATOMIC_LONG_INIT(0),
 };
 
+static cycles_t cycles_calibration_min,
+	cycles_calibration_avg,
+	cycles_calibration_max;
+
+static inline cycles_t calibrate_cycles(cycles_t cycles)
+{
+	return cycles - cycles_calibration_avg;
+}
+
 struct proc_dir_entry *pentry = NULL;
 
 static int reader_thread(void *data)
@@ -72,16 +86,26 @@ static int reader_thread(void *data)
 	int i;
 	int prev, cur;
 	unsigned long iter = 0;
-	cycles_t time1, time2, delaymax = 0;
+	cycles_t time1, time2, delay, delaymax = 0, delaymin = ULLONG_MAX,
+		delayavg = 0;
 
 	printk("reader_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
 		preempt_disable();	/* for get_cycles accuracy */
+		rdtsc_barrier();
 		time1 = get_cycles();
+		rdtsc_barrier();
+
 		fair_read_lock(&frwlock);
+
+		rdtsc_barrier();
 		time2 = get_cycles();
-		delaymax = max(delaymax, time2 - time1);
+		rdtsc_barrier();
+		delay = time2 - time1;
+		delaymax = max(delaymax, delay);
+		delaymin = min(delaymin, delay);
+		delayavg += delay;
 		prev = var[0];
 		for (i = 1; i < NR_VARS; i++) {
 			cur = var[i];
@@ -94,9 +118,13 @@ static int reader_thread(void *data)
 		preempt_enable();	/* for get_cycles accuracy */
 		//msleep(100);
 	} while (!kthread_should_stop());
+	delayavg /= iter;
 	printk("reader_thread/%lu iterations : %lu, "
-		"max contention %llu cycles\n",
-		(unsigned long)data, iter, delaymax);
+		"lock delay [min,avg,max] %llu,%llu,%llu cycles\n",
+		(unsigned long)data, iter,
+		calibrate_cycles(delaymin),
+		calibrate_cycles(delayavg),
+		calibrate_cycles(delaymax));
 	return 0;
 }
 
@@ -128,14 +156,17 @@ static int trylock_reader_thread(void *data)
 	return 0;
 }
 
+DEFINE_PER_CPU(cycles_t, int_delaymin);
+DEFINE_PER_CPU(cycles_t, int_delayavg);
 DEFINE_PER_CPU(cycles_t, int_delaymax);
+DEFINE_PER_CPU(cycles_t, int_ipi_nr);
 
 static void interrupt_reader_ipi(void *data)
 {
 	int i;
 	int prev, cur;
 	cycles_t time1, time2;
-	cycles_t *delaymax;
+	cycles_t *delaymax, *delaymin, *delayavg, *ipi_nr, delay;
 
 	/*
 	 * Skip the ipi caller, not in irq context.
@@ -144,10 +175,24 @@ static void interrupt_reader_ipi(void *data)
 		return;
 
 	delaymax = &per_cpu(int_delaymax, smp_processor_id());
+	delaymin = &per_cpu(int_delaymin, smp_processor_id());
+	delayavg = &per_cpu(int_delayavg, smp_processor_id());
+	ipi_nr = &per_cpu(int_ipi_nr, smp_processor_id());
+
+	rdtsc_barrier();
 	time1 = get_cycles();
+	rdtsc_barrier();
+
 	fair_read_lock(&frwlock);
+
+	rdtsc_barrier();
 	time2 = get_cycles();
-	*delaymax = max(*delaymax, time2 - time1);
+	rdtsc_barrier();
+	delay = time2 - time1;
+	*delaymax = max(*delaymax, delay);
+	*delaymin = min(*delaymin, delay);
+	*delayavg += delay;
+	(*ipi_nr)++;
 	prev = var[0];
 	for (i = 1; i < NR_VARS; i++) {
 		cur = var[i];
@@ -194,6 +239,12 @@ static int interrupt_reader_thread(void *data)
 	unsigned long iter = 0;
 	int i;
 
+	for_each_online_cpu(i) {
+		per_cpu(int_delaymax, i) = 0;
+		per_cpu(int_delaymin, i) = ULLONG_MAX;
+		per_cpu(int_delayavg, i) = 0;
+		per_cpu(int_ipi_nr, i) = 0;
+	}
 	do {
 		iter++;
 		on_each_cpu(interrupt_reader_ipi, NULL, 0);
@@ -202,9 +253,13 @@ static int interrupt_reader_thread(void *data)
 	printk("interrupt_reader_thread/%lu iterations : %lu\n",
 			(unsigned long)data, iter);
 	for_each_online_cpu(i) {
+		per_cpu(int_delayavg, i) /= per_cpu(int_ipi_nr, i);
 		printk("interrupt readers on CPU %i, "
-			"max contention : %llu cycles\n",
-			i, per_cpu(int_delaymax, i));
+			"lock delay [min,avg,max] %llu,%llu,%llu cycles\n",
+			i,
+			calibrate_cycles(per_cpu(int_delaymin, i)),
+			calibrate_cycles(per_cpu(int_delayavg, i)),
+			calibrate_cycles(per_cpu(int_delaymax, i)));
 	}
 	return 0;
 }
@@ -227,6 +282,8 @@ static int trylock_interrupt_reader_thread(void *data)
 			"successful iterations : %lu\n",
 			i, per_cpu(trylock_int_iter, i),
 			per_cpu(trylock_int_success, i));
+		per_cpu(trylock_int_iter, i) = 0;
+		per_cpu(trylock_int_success, i) = 0;
 	}
 	return 0;
 }
@@ -236,17 +293,27 @@ static int writer_thread(void *data)
 	int i;
 	int new;
 	unsigned long iter = 0;
-	cycles_t time1, time2, delaymax = 0;
+	cycles_t time1, time2, delay, delaymax = 0, delaymin = ULLONG_MAX,
+		delayavg = 0;
 
 	printk("writer_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
 		preempt_disable();	/* for get_cycles accuracy */
+		rdtsc_barrier();
 		time1 = get_cycles();
+		rdtsc_barrier();
+
 		fair_write_lock_irq(&frwlock);
 		//fair_write_lock(&frwlock);
+
+		rdtsc_barrier();
 		time2 = get_cycles();
-		delaymax = max(delaymax, time2 - time1);
+		rdtsc_barrier();
+		delay = time2 - time1;
+		delaymax = max(delaymax, delay);
+		delaymin = min(delaymin, delay);
+		delayavg += delay;
 		new = (int)get_cycles();
 		for (i = 0; i < NR_VARS; i++) {
 			var[i] = new;
@@ -257,9 +324,13 @@ static int writer_thread(void *data)
 		if (WRITER_DELAY > 0)
 			udelay(WRITER_DELAY);
 	} while (!kthread_should_stop());
+	delayavg /= iter;
 	printk("writer_thread/%lu iterations : %lu, "
-		"max contention %llu cycles\n",
-		(unsigned long)data, iter, delaymax);
+		"lock delay [min,avg,max] %llu,%llu,%llu cycles\n",
+		(unsigned long)data, iter,
+		calibrate_cycles(delaymin),
+		calibrate_cycles(delayavg),
+		calibrate_cycles(delaymax));
 	return 0;
 }
 
@@ -331,7 +402,6 @@ static void fair_rwlock_create(void)
 			(void *)i, "frwlock_trylock_writer");
 		BUG_ON(!trylock_writer_threads[i]);
 	}
-
 }
 
 static void fair_rwlock_stop(void)
@@ -359,6 +429,62 @@ static void perform_test(const char *name, void (*callback)(void))
 
 static int my_open(struct inode *inode, struct file *file)
 {
+	unsigned long i;
+	cycles_t time1, time2, delay;
+
+	printk("** get_cycles calibration **\n");
+	cycles_calibration_min = ULLONG_MAX;
+	cycles_calibration_avg = 0;
+	cycles_calibration_max = 0;
+
+	local_irq_disable();
+	for (i = 0; i < 10; i++) {
+		rdtsc_barrier();
+		time1 = get_cycles();
+		rdtsc_barrier();
+		rdtsc_barrier();
+		time2 = get_cycles();
+		rdtsc_barrier();
+		delay = time2 - time1;
+		cycles_calibration_min = min(cycles_calibration_min, delay);
+		cycles_calibration_avg += delay;
+		cycles_calibration_max = max(cycles_calibration_max, delay);
+	}
+	cycles_calibration_avg /= 10;
+	local_irq_enable();
+
+	printk("get_cycles takes [min,avg,max] %llu,%llu,%llu cycles, "
+		"results calibrated on avg\n",
+		cycles_calibration_min,
+		cycles_calibration_avg,
+		cycles_calibration_max);
+
+	printk("** Single writer test, no contention **\n");
+	writer_threads[0] = kthread_run(writer_thread, (void *)0,
+		"frwlock_writer");
+	BUG_ON(!writer_threads[0]);
+	ssleep(SINGLE_WRITER_TEST_DURATION);
+	kthread_stop(writer_threads[0]);
+
+	printk("** Single reader test, no contention **\n");
+	reader_threads[0] = kthread_run(reader_thread, (void *)0,
+		"frwlock_reader");
+	BUG_ON(!reader_threads[0]);
+	ssleep(SINGLE_READER_TEST_DURATION);
+	kthread_stop(reader_threads[0]);
+
+	printk("** Multiple readers test, no contention **\n");
+	for (i = 0; i < NR_READERS; i++) {
+		printk("starting reader thread %lu\n", i);
+		reader_threads[i] = kthread_run(reader_thread, (void *)i,
+			"frwlock_reader");
+		BUG_ON(!reader_threads[i]);
+	}
+	ssleep(SINGLE_READER_TEST_DURATION);
+	for (i = 0; i < NR_READERS; i++)
+		kthread_stop(reader_threads[i]);
+
+	printk("** High contention test **\n");
 	perform_test("fair-rwlock-create", fair_rwlock_create);
 	ssleep(TEST_DURATION);
 	perform_test("fair-rwlock-stop", fair_rwlock_stop);
