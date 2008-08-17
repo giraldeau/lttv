@@ -40,17 +40,23 @@
 #define HARDIRQ_WOFFSET	HARDIRQ_WMASK
 
 #define NR_VARS 100
-#define NR_WRITERS 3
-#define NR_READERS 6
-#define NR_INTERRUPT_READERS 2
+#define NR_WRITERS 2
+#define NR_TRYLOCK_WRITERS 2
+#define NR_READERS 4
+#define NR_TRYLOCK_READERS 2
+#define NR_INTERRUPT_READERS 1
+#define NR_TRYLOCK_INTERRUPT_READERS 1
 
 /* Writer iteration delay, in ms. 0 for busy loop. */
-#define WRITER_DELAY 0
+#define WRITER_DELAY 1
 
 static int var[NR_VARS];
 static struct task_struct *reader_threads[NR_READERS];
+static struct task_struct *trylock_reader_threads[NR_TRYLOCK_READERS];
 static struct task_struct *writer_threads[NR_WRITERS];
+static struct task_struct *trylock_writer_threads[NR_TRYLOCK_WRITERS];
 static struct task_struct *interrupt_reader;
+static struct task_struct *trylock_interrupt_reader;
 
 static struct fair_rwlock frwlock = {
 	.value = ATOMIC_LONG_INIT(0),
@@ -91,6 +97,34 @@ static int reader_thread(void *data)
 	return 0;
 }
 
+static int trylock_reader_thread(void *data)
+{
+	int i;
+	int prev, cur;
+	unsigned long iter = 0, success_iter = 0;
+
+	printk("trylock_reader_thread/%lu runnning\n", (unsigned long)data);
+	do {
+		while (!fair_read_trylock(&frwlock))
+			iter++;
+		success_iter++;
+		prev = var[0];
+		for (i = 1; i < NR_VARS; i++) {
+			cur = var[i];
+			if (cur != prev)
+				printk(KERN_ALERT
+				"Unequal cur %d/prev %d at i %d, iter %lu "
+				"in thread\n", cur, prev, i, iter);
+		}
+		fair_read_unlock(&frwlock);
+		//msleep(100);
+	} while (!kthread_should_stop());
+	printk("trylock_reader_thread/%lu iterations : %lu, "
+		"successful iterations : %lu\n",
+		(unsigned long)data, iter, success_iter);
+	return 0;
+}
+
 DEFINE_PER_CPU(cycles_t, int_delaymax);
 
 static void interrupt_reader_ipi(void *data)
@@ -122,6 +156,36 @@ static void interrupt_reader_ipi(void *data)
 	fair_read_unlock(&frwlock);
 }
 
+DEFINE_PER_CPU(unsigned long, trylock_int_iter);
+DEFINE_PER_CPU(unsigned long, trylock_int_success);
+
+static void trylock_interrupt_reader_ipi(void *data)
+{
+	int i;
+	int prev, cur;
+
+	/*
+	 * Skip the ipi caller, not in irq context.
+	 */
+	if (!in_irq())
+		return;
+
+	per_cpu(trylock_int_iter, smp_processor_id())++;
+	while (!fair_read_trylock(&frwlock))
+		per_cpu(trylock_int_iter, smp_processor_id())++;
+	per_cpu(trylock_int_success, smp_processor_id())++;
+	prev = var[0];
+	for (i = 1; i < NR_VARS; i++) {
+		cur = var[i];
+		if (cur != prev)
+			printk(KERN_ALERT
+			"Unequal cur %d/prev %d at i %d in interrupt\n",
+				cur, prev, i);
+	}
+	fair_read_unlock(&frwlock);
+}
+
+
 static int interrupt_reader_thread(void *data)
 {
 	unsigned long iter = 0;
@@ -138,6 +202,28 @@ static int interrupt_reader_thread(void *data)
 		printk("interrupt readers on CPU %i, "
 			"max contention : %llu cycles\n",
 			i, per_cpu(int_delaymax, i));
+	}
+	return 0;
+}
+
+static int trylock_interrupt_reader_thread(void *data)
+{
+	unsigned long iter = 0;
+	int i;
+
+	do {
+		iter++;
+		on_each_cpu(trylock_interrupt_reader_ipi, NULL, 0);
+		msleep(100);
+	} while (!kthread_should_stop());
+	printk("trylock_interrupt_reader_thread/%lu iterations : %lu\n",
+			(unsigned long)data, iter);
+	for_each_online_cpu(i) {
+		printk("trylock interrupt readers on CPU %i, "
+			"iterations %lu, "
+			"successful iterations : %lu\n",
+			i, per_cpu(trylock_int_iter, i),
+			per_cpu(trylock_int_success, i));
 	}
 	return 0;
 }
@@ -174,6 +260,36 @@ static int writer_thread(void *data)
 	return 0;
 }
 
+static int trylock_writer_thread(void *data)
+{
+	int i;
+	int new;
+	unsigned long iter = 0, success = 0;
+
+	printk("trylock_writer_thread/%lu runnning\n", (unsigned long)data);
+	do {
+		fair_write_subscribe(&frwlock);
+		while (!fair_write_trylock_subscribed_irq(&frwlock)) {
+			iter++;
+			continue;
+		}
+		success++;
+		//fair_write_lock(&frwlock);
+		new = (int)get_cycles();
+		for (i = 0; i < NR_VARS; i++) {
+			var[i] = new;
+		}
+		//fair_write_unlock(&frwlock);
+		fair_write_unlock_irq(&frwlock);
+		if (WRITER_DELAY > 0)
+			msleep(WRITER_DELAY);
+	} while (!kthread_should_stop());
+	printk("trylock_writer_thread/%lu iterations : %lu, "
+		"successful iterations : %lu\n",
+		(unsigned long)data, iter, success);
+	return 0;
+}
+
 static void fair_rwlock_create(void)
 {
 	unsigned long i;
@@ -185,9 +301,20 @@ static void fair_rwlock_create(void)
 		BUG_ON(!reader_threads[i]);
 	}
 
+	for (i = 0; i < NR_TRYLOCK_READERS; i++) {
+		printk("starting trylock reader thread %lu\n", i);
+		trylock_reader_threads[i] = kthread_run(trylock_reader_thread,
+			(void *)i, "frwlock_trylock_reader");
+		BUG_ON(!trylock_reader_threads[i]);
+	}
+
+
 	printk("starting interrupt reader %lu\n", i);
 	interrupt_reader = kthread_run(interrupt_reader_thread, NULL,
 		"frwlock_interrupt_reader");
+	printk("starting trylock interrupt reader %lu\n", i);
+	trylock_interrupt_reader = kthread_run(trylock_interrupt_reader_thread,
+		NULL, "frwlock_trylock_interrupt_reader");
 
 	for (i = 0; i < NR_WRITERS; i++) {
 		printk("starting writer thread %lu\n", i);
@@ -195,21 +322,29 @@ static void fair_rwlock_create(void)
 			"frwlock_writer");
 		BUG_ON(!writer_threads[i]);
 	}
+	for (i = 0; i < NR_TRYLOCK_WRITERS; i++) {
+		printk("starting trylock writer thread %lu\n", i);
+		trylock_writer_threads[i] = kthread_run(trylock_writer_thread,
+			(void *)i, "frwlock_trylock_writer");
+		BUG_ON(!trylock_writer_threads[i]);
+	}
+
 }
 
 static void fair_rwlock_stop(void)
 {
 	unsigned long i;
 
-	for (i = 0; i < NR_WRITERS; i++) {
+	for (i = 0; i < NR_WRITERS; i++)
 		kthread_stop(writer_threads[i]);
-	}
-
-	for (i = 0; i < NR_READERS; i++) {
+	for (i = 0; i < NR_TRYLOCK_WRITERS; i++)
+		kthread_stop(trylock_writer_threads[i]);
+	for (i = 0; i < NR_READERS; i++)
 		kthread_stop(reader_threads[i]);
-	}
-
+	for (i = 0; i < NR_TRYLOCK_READERS; i++)
+		kthread_stop(trylock_reader_threads[i]);
 	kthread_stop(interrupt_reader);
+	kthread_stop(trylock_interrupt_reader);
 }
 
 
