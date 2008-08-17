@@ -11,9 +11,10 @@
 #include <linux/delay.h>
 #include <linux/hardirq.h>
 #include <linux/module.h>
+#include <linux/percpu.h>
 #include <asm/ptrace.h>
 
-#if (NR_CPUS > 512 && (BITS_PER_LONG == 32 || NR_CPUS > 1048576))
+#if (NR_CPUS > 64 && (BITS_PER_LONG == 32 || NR_CPUS > 32768))
 #error "fair rwlock needs more bits per long to deal with that many CPUs"
 #endif
 
@@ -24,9 +25,16 @@
 #define HARDIRQ_ROFFSET	((SOFTIRQ_RMASK | THREAD_RMASK) + 1)
 #define HARDIRQ_RMASK	((NR_CPUS - 1) * HARDIRQ_ROFFSET)
 
-#define THREAD_WMASK	((HARDIRQ_RMASK | SOFTIRQ_RMASK | THREAD_RMASK) + 1)
-#define SOFTIRQ_WMASK	(THREAD_WMASK << 1)
+#define SUBSCRIBERS_WOFFSET	\
+	((HARDIRQ_RMASK | SOFTIRQ_RMASK | THREAD_RMASK) + 1)
+#define SUBSCRIBERS_WMASK	\
+	((NR_CPUS - 1) * SUBSCRIBERS_WOFFSET)
+#define WRITER_MUTEX		\
+	((SUBSCRIBERS_WMASK | HARDIRQ_RMASK | SOFTIRQ_RMASK | THREAD_RMASK) + 1)
+#define SOFTIRQ_WMASK	(WRITER_MUTEX << 1)
+#define SOFTIRQ_WOFFSET	SOFTIRQ_WMASK
 #define HARDIRQ_WMASK	(SOFTIRQ_WMASK << 1)
+#define HARDIRQ_WOFFSET	HARDIRQ_WMASK
 
 #define NR_VARS 100
 #define NR_WRITERS 3
@@ -40,7 +48,6 @@ static struct task_struct *interrupt_reader;
 
 static struct fair_rwlock frwlock = {
 	.value = ATOMIC_LONG_INIT(0),
-	.wlock = __SPIN_LOCK_UNLOCKED(&frwlock.wlock),
 };
 
 struct proc_dir_entry *pentry = NULL;
@@ -50,11 +57,16 @@ static int reader_thread(void *data)
 	int i;
 	int prev, cur;
 	unsigned long iter = 0;
+	cycles_t time1, time2, delaymax = 0;
 
 	printk("reader_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
+		preempt_disable();	/* for get_cycles accuracy */
+		time1 = get_cycles();
 		fair_read_lock(&frwlock);
+		time2 = get_cycles();
+		delaymax = max(delaymax, time2 - time1);
 		prev = var[0];
 		for (i = 1; i < NR_VARS; i++) {
 			cur = var[i];
@@ -64,19 +76,35 @@ static int reader_thread(void *data)
 				"in thread\n", cur, prev, i, iter);
 		}
 		fair_read_unlock(&frwlock);
+		preempt_enable();	/* for get_cycles accuracy */
 		//msleep(100);
 	} while (!kthread_should_stop());
-	printk("reader_thread/%lu iterations : %lu\n",
-			(unsigned long)data, iter);
+	printk("reader_thread/%lu iterations : %lu, "
+		"max contention %llu cycles\n",
+		(unsigned long)data, iter, delaymax);
 	return 0;
 }
+
+DEFINE_PER_CPU(cycles_t, int_delaymax);
 
 static void interrupt_reader_ipi(void *data)
 {
 	int i;
 	int prev, cur;
+	cycles_t time1, time2;
+	cycles_t *delaymax;
 
+	/*
+	 * Skip the ipi caller, not in irq context.
+	 */
+	if (!in_irq())
+		return;
+
+	delaymax = &per_cpu(int_delaymax, smp_processor_id());
+	time1 = get_cycles();
 	fair_read_lock(&frwlock);
+	time2 = get_cycles();
+	*delaymax = max(*delaymax, time2 - time1);
 	prev = var[0];
 	for (i = 1; i < NR_VARS; i++) {
 		cur = var[i];
@@ -91,6 +119,8 @@ static void interrupt_reader_ipi(void *data)
 static int interrupt_reader_thread(void *data)
 {
 	unsigned long iter = 0;
+	int i;
+
 	do {
 		iter++;
 		on_each_cpu(interrupt_reader_ipi, NULL, 0);
@@ -98,6 +128,11 @@ static int interrupt_reader_thread(void *data)
 	} while (!kthread_should_stop());
 	printk("interrupt_reader_thread/%lu iterations : %lu\n",
 			(unsigned long)data, iter);
+	for_each_online_cpu(i) {
+		printk("interrupt readers on CPU %i, "
+			"max contention : %llu cycles\n",
+			i, per_cpu(int_delaymax, i));
+	}
 	return 0;
 }
 
@@ -106,22 +141,29 @@ static int writer_thread(void *data)
 	int i;
 	int new;
 	unsigned long iter = 0;
+	cycles_t time1, time2, delaymax = 0;
 
 	printk("writer_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
+		preempt_disable();	/* for get_cycles accuracy */
+		time1 = get_cycles();
 		fair_write_lock_irq(&frwlock);
 		//fair_write_lock(&frwlock);
+		time2 = get_cycles();
+		delaymax = max(delaymax, time2 - time1);
 		new = (int)get_cycles();
 		for (i = 0; i < NR_VARS; i++) {
 			var[i] = new;
 		}
 		//fair_write_unlock(&frwlock);
 		fair_write_unlock_irq(&frwlock);
+		preempt_enable();	/* for get_cycles accuracy */
 		//msleep(100);
 	} while (!kthread_should_stop());
-	printk("writer_thread/%lu iterations : %lu\n",
-			(unsigned long)data, iter);
+	printk("writer_thread/%lu iterations : %lu, "
+		"max contention %llu cycles\n",
+		(unsigned long)data, iter, delaymax);
 	return 0;
 }
 
@@ -152,15 +194,15 @@ static void fair_rwlock_stop(void)
 {
 	unsigned long i;
 
+	for (i = 0; i < NR_WRITERS; i++) {
+		kthread_stop(writer_threads[i]);
+	}
+
 	for (i = 0; i < NR_READERS; i++) {
 		kthread_stop(reader_threads[i]);
 	}
 
-	//kthread_stop(interrupt_reader);
-
-	for (i = 0; i < NR_WRITERS; i++) {
-		kthread_stop(writer_threads[i]);
-	}
+	kthread_stop(interrupt_reader);
 }
 
 
@@ -193,12 +235,14 @@ int init_module(void)
 	printk("NR_CPUS : %d\n", NR_CPUS);
 	printk("THREAD_ROFFSET : %lX\n", THREAD_ROFFSET);
 	printk("THREAD_RMASK : %lX\n", THREAD_RMASK);
-	printk("THREAD_WMASK : %lX\n", THREAD_WMASK);
 	printk("SOFTIRQ_ROFFSET : %lX\n", SOFTIRQ_ROFFSET);
 	printk("SOFTIRQ_RMASK : %lX\n", SOFTIRQ_RMASK);
-	printk("SOFTIRQ_WMASK : %lX\n", SOFTIRQ_WMASK);
 	printk("HARDIRQ_ROFFSET : %lX\n", HARDIRQ_ROFFSET);
 	printk("HARDIRQ_RMASK : %lX\n", HARDIRQ_RMASK);
+	printk("SUBSCRIBERS_WOFFSET : %lX\n", SUBSCRIBERS_WOFFSET);
+	printk("SUBSCRIBERS_WMASK : %lX\n", SUBSCRIBERS_WMASK);
+	printk("WRITER_MUTEX : %lX\n", WRITER_MUTEX);
+	printk("SOFTIRQ_WMASK : %lX\n", SOFTIRQ_WMASK);
 	printk("HARDIRQ_WMASK : %lX\n", HARDIRQ_WMASK);
 
 	return 0;
