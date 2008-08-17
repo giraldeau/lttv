@@ -19,7 +19,7 @@
 #endif
 
 /* Test duration, in seconds */
-#define TEST_DURATION 600
+#define TEST_DURATION 60
 
 #define THREAD_ROFFSET	1UL
 #define THREAD_RMASK	((NR_CPUS - 1) * THREAD_ROFFSET)
@@ -45,7 +45,7 @@
 #define NR_INTERRUPT_READERS 2
 
 /* Writer iteration delay, in ms. 0 for busy loop. */
-#define WRITER_DELAY 1
+#define WRITER_DELAY 0
 
 static int var[NR_VARS];
 static struct task_struct *reader_threads[NR_READERS];
@@ -222,7 +222,7 @@ static void perform_test(const char *name, void (*callback)(void))
 static int my_open(struct inode *inode, struct file *file)
 {
 	perform_test("fair-rwlock-create", fair_rwlock_create);
-	ssleep(600);
+	ssleep(TEST_DURATION);
 	perform_test("fair-rwlock-stop", fair_rwlock_stop);
 
 	return -EPERM;
