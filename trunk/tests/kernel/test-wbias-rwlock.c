@@ -15,10 +15,6 @@
 #include <linux/spinlock.h>
 #include <asm/ptrace.h>
 
-#if (NR_CPUS > 64 && (BITS_PER_LONG == 32 || NR_CPUS > 32768))
-#error "writer-biased rwlock needs more bits per long to deal with so many CPUs"
-#endif
-
 /* Test with no contention duration, in seconds */
 #define SINGLE_WRITER_TEST_DURATION 10
 #define SINGLE_READER_TEST_DURATION 10
@@ -28,13 +24,10 @@
 #define TEST_DURATION 60
 
 #define NR_VARS 100
-//#define NR_WRITERS 2
 #define NR_WRITERS 2
-//#define NR_TRYLOCK_WRITERS 2
-#define NR_TRYLOCK_WRITERS 0
+#define NR_TRYLOCK_WRITERS 1
 #define NR_READERS 4
-//#define NR_TRYLOCK_READERS 2
-#define NR_TRYLOCK_READERS 0
+#define NR_TRYLOCK_READERS 1
 
 /*
  * 1 : test standard rwlock
@@ -674,7 +667,7 @@ int init_module(void)
 	if (pentry)
 		pentry->proc_fops = &my_operations;
 
-	printk("NR_CPUS : %d\n", NR_CPUS);
+	printk("pow2cpus : %lu\n", pow2cpus);
 	printk("THREAD_ROFFSET : %lX\n", THREAD_ROFFSET);
 	printk("THREAD_RMASK : %lX\n", THREAD_RMASK);
 	printk("SOFTIRQ_ROFFSET : %lX\n", SOFTIRQ_ROFFSET);
