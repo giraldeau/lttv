@@ -1,4 +1,4 @@
-/* test-fair-rwlock.c
+/* test-wbias-rwlock.c
  *
  */
 
@@ -6,7 +6,7 @@
 #include <linux/proc_fs.h>
 #include <linux/sched.h>
 #include <linux/timex.h>
-#include <linux/fair-rwlock.h>
+#include <linux/wbias-rwlock.h>
 #include <linux/kthread.h>
 #include <linux/delay.h>
 #include <linux/hardirq.h>
@@ -16,7 +16,7 @@
 #include <asm/ptrace.h>
 
 #if (NR_CPUS > 64 && (BITS_PER_LONG == 32 || NR_CPUS > 32768))
-#error "fair rwlock needs more bits per long to deal with that many CPUs"
+#error "writer-biased rwlock needs more bits per long to deal with so many CPUs"
 #endif
 
 /* Test with no contention duration, in seconds */
@@ -38,7 +38,7 @@
 
 /*
  * 1 : test standard rwlock
- * 0 : test frwlock
+ * 0 : test wbiasrwlock
  */
 #define TEST_STD_RWLOCK 0
 
@@ -103,24 +103,22 @@ static DEFINE_RWLOCK(std_rw_lock);
 
 #else
 
-static struct fair_rwlock frwlock = {
-	.value = ATOMIC_LONG_INIT(0),
-};
+static DEFINE_WBIAS_RWLOCK(wbiasrwlock);
 
-#define wrap_read_lock()	fair_read_lock(&frwlock)
-#define wrap_read_trylock()	fair_read_trylock(&frwlock)
-#define wrap_read_unlock()	fair_read_unlock(&frwlock)
+#define wrap_read_lock()	wbias_read_lock(&wbiasrwlock)
+#define wrap_read_trylock()	wbias_read_trylock(&wbiasrwlock)
+#define wrap_read_unlock()	wbias_read_unlock(&wbiasrwlock)
 
-#define wrap_read_lock_irq()	fair_read_lock_irq(&frwlock)
-#define wrap_read_trylock_irq()	fair_read_trylock_irq(&frwlock)
-#define wrap_read_unlock_irq()	fair_read_unlock_irq(&frwlock)
+#define wrap_read_lock_irq()	wbias_read_lock_irq(&wbiasrwlock)
+#define wrap_read_trylock_irq()	wbias_read_trylock_irq(&wbiasrwlock)
+#define wrap_read_unlock_irq()	wbias_read_unlock_irq(&wbiasrwlock)
 
 #if (TEST_INTERRUPTS)
-#define wrap_write_lock()	fair_write_lock_irq(&frwlock)
-#define wrap_write_unlock()	fair_write_unlock_irq(&frwlock)
+#define wrap_write_lock()	wbias_write_lock_irq(&wbiasrwlock)
+#define wrap_write_unlock()	wbias_write_unlock_irq(&wbiasrwlock)
 #else
-#define wrap_write_lock()	fair_write_lock(&frwlock)
-#define wrap_write_unlock()	fair_write_unlock(&frwlock)
+#define wrap_write_lock()	wbias_write_lock(&wbiasrwlock)
+#define wrap_write_unlock()	wbias_write_unlock(&wbiasrwlock)
 #endif
 
 #endif
@@ -469,9 +467,9 @@ static int trylock_writer_thread(void *data)
 	do {
 		iter++;
 #if (TEST_INTERRUPTS)
-		if (fair_write_trylock_irq_else_subscribe(&frwlock))
+		if (wbias_write_trylock_irq_else_subscribe(&wbiasrwlock))
 #else
-		if (fair_write_trylock_else_subscribe(&frwlock))
+		if (wbias_write_trylock_else_subscribe(&wbiasrwlock))
 #endif
 			goto locked;
 
@@ -479,9 +477,9 @@ static int trylock_writer_thread(void *data)
 		for (;;) {
 			iter++;
 #if (TEST_INTERRUPTS)
-			if (fair_write_trylock_irq_subscribed(&frwlock))
+			if (wbias_write_trylock_irq_subscribed(&wbiasrwlock))
 #else
-			if (fair_write_trylock_subscribed(&frwlock))
+			if (wbias_write_trylock_subscribed(&wbiasrwlock))
 #endif
 				goto locked;
 		}
@@ -489,15 +487,15 @@ static int trylock_writer_thread(void *data)
 		for (i = 0; i < TRYLOCK_WRITERS_FAIL_ITER - 1; i++) {
 			iter++;
 #if (TEST_INTERRUPTS)
-			if (fair_write_trylock_irq_subscribed(&frwlock))
+			if (wbias_write_trylock_irq_subscribed(&wbiasrwlock))
 #else
-			if (fair_write_trylock_subscribed(&frwlock))
+			if (wbias_write_trylock_subscribed(&wbiasrwlock))
 #endif
 				goto locked;
 		}
 #endif
 		fail++;
-		fair_write_unsubscribe(&frwlock);
+		wbias_write_unsubscribe(&wbiasrwlock);
 		goto loop;
 locked:
 		success++;
@@ -506,9 +504,9 @@ locked:
 			var[i] = new;
 		}
 #if (TEST_INTERRUPTS)
-		fair_write_unlock_irq(&frwlock);
+		wbias_write_unlock_irq(&wbiasrwlock);
 #else
-		fair_write_unlock(&frwlock);
+		wbias_write_unlock(&wbiasrwlock);
 #endif
 loop:
 		if (TRYLOCK_WRITER_DELAY > 0)
@@ -524,50 +522,50 @@ loop:
 
 #endif	/* TEST_STD_RWLOCK */
 
-static void fair_rwlock_create(void)
+static void wbias_rwlock_create(void)
 {
 	unsigned long i;
 
 	for (i = 0; i < NR_READERS; i++) {
 		printk("starting reader thread %lu\n", i);
 		reader_threads[i] = kthread_run(reader_thread, (void *)i,
-			"frwlock_reader");
+			"wbiasrwlock_reader");
 		BUG_ON(!reader_threads[i]);
 	}
 
 	for (i = 0; i < NR_TRYLOCK_READERS; i++) {
 		printk("starting trylock reader thread %lu\n", i);
 		trylock_reader_threads[i] = kthread_run(trylock_reader_thread,
-			(void *)i, "frwlock_trylock_reader");
+			(void *)i, "wbiasrwlock_trylock_reader");
 		BUG_ON(!trylock_reader_threads[i]);
 	}
 	for (i = 0; i < NR_INTERRUPT_READERS; i++) {
 		printk("starting interrupt reader %lu\n", i);
 		interrupt_reader[i] = kthread_run(interrupt_reader_thread,
 			(void *)i,
-			"frwlock_interrupt_reader");
+			"wbiasrwlock_interrupt_reader");
 	}
 	for (i = 0; i < NR_TRYLOCK_INTERRUPT_READERS; i++) {
 		printk("starting trylock interrupt reader %lu\n", i);
 		trylock_interrupt_reader[i] =
 			kthread_run(trylock_interrupt_reader_thread,
-			(void *)i, "frwlock_trylock_interrupt_reader");
+			(void *)i, "wbiasrwlock_trylock_interrupt_reader");
 	}
 	for (i = 0; i < NR_WRITERS; i++) {
 		printk("starting writer thread %lu\n", i);
 		writer_threads[i] = kthread_run(writer_thread, (void *)i,
-			"frwlock_writer");
+			"wbiasrwlock_writer");
 		BUG_ON(!writer_threads[i]);
 	}
 	for (i = 0; i < NR_TRYLOCK_WRITERS; i++) {
 		printk("starting trylock writer thread %lu\n", i);
 		trylock_writer_threads[i] = kthread_run(trylock_writer_thread,
-			(void *)i, "frwlock_trylock_writer");
+			(void *)i, "wbiasrwlock_trylock_writer");
 		BUG_ON(!trylock_writer_threads[i]);
 	}
 }
 
-static void fair_rwlock_stop(void)
+static void wbias_rwlock_stop(void)
 {
 	unsigned long i;
 
@@ -626,7 +624,7 @@ static int my_open(struct inode *inode, struct file *file)
 
 	printk("** Single writer test, no contention **\n");
 	writer_threads[0] = kthread_run(writer_thread, (void *)0,
-		"frwlock_writer");
+		"wbiasrwlock_writer");
 	BUG_ON(!writer_threads[0]);
 	ssleep(SINGLE_WRITER_TEST_DURATION);
 	kthread_stop(writer_threads[0]);
@@ -634,14 +632,14 @@ static int my_open(struct inode *inode, struct file *file)
 	printk("** Single trylock writer test, no contention **\n");
 	trylock_writer_threads[0] = kthread_run(trylock_writer_thread,
 		(void *)0,
-		"trylock_frwlock_writer");
+		"trylock_wbiasrwlock_writer");
 	BUG_ON(!trylock_writer_threads[0]);
 	ssleep(SINGLE_WRITER_TEST_DURATION);
 	kthread_stop(trylock_writer_threads[0]);
 
 	printk("** Single reader test, no contention **\n");
 	reader_threads[0] = kthread_run(reader_thread, (void *)0,
-		"frwlock_reader");
+		"wbiasrwlock_reader");
 	BUG_ON(!reader_threads[0]);
 	ssleep(SINGLE_READER_TEST_DURATION);
 	kthread_stop(reader_threads[0]);
@@ -650,7 +648,7 @@ static int my_open(struct inode *inode, struct file *file)
 	for (i = 0; i < NR_READERS; i++) {
 		printk("starting reader thread %lu\n", i);
 		reader_threads[i] = kthread_run(reader_thread, (void *)i,
-			"frwlock_reader");
+			"wbiasrwlock_reader");
 		BUG_ON(!reader_threads[i]);
 	}
 	ssleep(SINGLE_READER_TEST_DURATION);
@@ -658,9 +656,9 @@ static int my_open(struct inode *inode, struct file *file)
 		kthread_stop(reader_threads[i]);
 
 	printk("** High contention test **\n");
-	perform_test("fair-rwlock-create", fair_rwlock_create);
+	perform_test("wbias-rwlock-create", wbias_rwlock_create);
 	ssleep(TEST_DURATION);
-	perform_test("fair-rwlock-stop", fair_rwlock_stop);
+	perform_test("wbias-rwlock-stop", wbias_rwlock_stop);
 
 	return -EPERM;
 }
@@ -672,7 +670,7 @@ static struct file_operations my_operations = {
 
 int init_module(void)
 {
-	pentry = create_proc_entry("testfrwlock", 0444, NULL);
+	pentry = create_proc_entry("testwbiasrwlock", 0444, NULL);
 	if (pentry)
 		pentry->proc_fops = &my_operations;
 
@@ -694,9 +692,9 @@ int init_module(void)
 
 void cleanup_module(void)
 {
-	remove_proc_entry("testfrwlock", NULL);
+	remove_proc_entry("testwbiasrwlock", NULL);
 }
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mathieu Desnoyers");
-MODULE_DESCRIPTION("Fair rwlock test");
+MODULE_DESCRIPTION("wbias rwlock test");
