@@ -12,6 +12,7 @@
 #include <linux/hardirq.h>
 #include <linux/module.h>
 #include <linux/percpu.h>
+#include <linux/spinlock.h>
 #include <asm/ptrace.h>
 
 #if (NR_CPUS > 64 && (BITS_PER_LONG == 32 || NR_CPUS > 32768))
@@ -26,29 +27,20 @@
 /* Test duration, in seconds */
 #define TEST_DURATION 60
 
-#define THREAD_ROFFSET	1UL
-#define THREAD_RMASK	((NR_CPUS - 1) * THREAD_ROFFSET)
-#define SOFTIRQ_ROFFSET	(THREAD_RMASK + 1)
-#define SOFTIRQ_RMASK	((NR_CPUS - 1) * SOFTIRQ_ROFFSET)
-#define HARDIRQ_ROFFSET	((SOFTIRQ_RMASK | THREAD_RMASK) + 1)
-#define HARDIRQ_RMASK	((NR_CPUS - 1) * HARDIRQ_ROFFSET)
-
-#define SUBSCRIBERS_WOFFSET	\
-	((HARDIRQ_RMASK | SOFTIRQ_RMASK | THREAD_RMASK) + 1)
-#define SUBSCRIBERS_WMASK	\
-	((NR_CPUS - 1) * SUBSCRIBERS_WOFFSET)
-#define WRITER_MUTEX		\
-	((SUBSCRIBERS_WMASK | HARDIRQ_RMASK | SOFTIRQ_RMASK | THREAD_RMASK) + 1)
-#define SOFTIRQ_WMASK	(WRITER_MUTEX << 1)
-#define SOFTIRQ_WOFFSET	SOFTIRQ_WMASK
-#define HARDIRQ_WMASK	(SOFTIRQ_WMASK << 1)
-#define HARDIRQ_WOFFSET	HARDIRQ_WMASK
-
 #define NR_VARS 100
+//#define NR_WRITERS 2
 #define NR_WRITERS 2
-#define NR_TRYLOCK_WRITERS 2
+//#define NR_TRYLOCK_WRITERS 2
+#define NR_TRYLOCK_WRITERS 0
 #define NR_READERS 4
-#define NR_TRYLOCK_READERS 2
+//#define NR_TRYLOCK_READERS 2
+#define NR_TRYLOCK_READERS 0
+
+/*
+ * 1 : test standard rwlock
+ * 0 : test frwlock
+ */
+#define TEST_STD_RWLOCK 0
 
 /*
  * 1 : test with thread and interrupt readers.
@@ -68,7 +60,7 @@
  * Writer iteration delay, in us. 0 for busy loop. Caution : writers can
  * starve readers.
  */
-#define WRITER_DELAY 10
+#define WRITER_DELAY 100
 #define TRYLOCK_WRITER_DELAY 1000
 
 /*
@@ -89,9 +81,49 @@ static struct task_struct *trylock_writer_threads[NR_TRYLOCK_WRITERS];
 static struct task_struct *interrupt_reader[NR_INTERRUPT_READERS];
 static struct task_struct *trylock_interrupt_reader[NR_TRYLOCK_INTERRUPT_READERS];
 
+#if (TEST_STD_RWLOCK)
+
+static DEFINE_RWLOCK(std_rw_lock);
+
+#define wrap_read_lock()	read_lock(&std_rw_lock)
+#define wrap_read_trylock()	read_trylock(&std_rw_lock)
+#define wrap_read_unlock()	read_unlock(&std_rw_lock)
+
+#define wrap_read_lock_irq()	read_lock(&std_rw_lock)
+#define wrap_read_trylock_irq()	read_trylock(&std_rw_lock)
+#define wrap_read_unlock_irq()	read_unlock(&std_rw_lock)
+
+#if (TEST_INTERRUPTS)
+#define wrap_write_lock()	write_lock_irq(&std_rw_lock)
+#define wrap_write_unlock()	write_unlock_irq(&std_rw_lock)
+#else
+#define wrap_write_lock()	write_lock(&std_rw_lock)
+#define wrap_write_unlock()	write_unlock(&std_rw_lock)
+#endif
+
+#else
+
 static struct fair_rwlock frwlock = {
 	.value = ATOMIC_LONG_INIT(0),
 };
+
+#define wrap_read_lock()	fair_read_lock(&frwlock)
+#define wrap_read_trylock()	fair_read_trylock(&frwlock)
+#define wrap_read_unlock()	fair_read_unlock(&frwlock)
+
+#define wrap_read_lock_irq()	fair_read_lock_irq(&frwlock)
+#define wrap_read_trylock_irq()	fair_read_trylock_irq(&frwlock)
+#define wrap_read_unlock_irq()	fair_read_unlock_irq(&frwlock)
+
+#if (TEST_INTERRUPTS)
+#define wrap_write_lock()	fair_write_lock_irq(&frwlock)
+#define wrap_write_unlock()	fair_write_unlock_irq(&frwlock)
+#else
+#define wrap_write_lock()	fair_write_lock(&frwlock)
+#define wrap_write_unlock()	fair_write_unlock(&frwlock)
+#endif
+
+#endif
 
 static cycles_t cycles_calibration_min,
 	cycles_calibration_avg,
@@ -120,7 +152,7 @@ static int reader_thread(void *data)
 		time1 = get_cycles();
 		rdtsc_barrier();
 
-		fair_read_lock(&frwlock);
+		wrap_read_lock();
 
 		rdtsc_barrier();
 		time2 = get_cycles();
@@ -137,7 +169,9 @@ static int reader_thread(void *data)
 				"Unequal cur %d/prev %d at i %d, iter %lu "
 				"in thread\n", cur, prev, i, iter);
 		}
-		fair_read_unlock(&frwlock);
+
+		wrap_read_unlock();
+
 		preempt_enable();	/* for get_cycles accuracy */
 		if (THREAD_READER_DELAY)
 			msleep(THREAD_READER_DELAY);
@@ -165,7 +199,7 @@ static int trylock_reader_thread(void *data)
 
 	printk("trylock_reader_thread/%lu runnning\n", (unsigned long)data);
 	do {
-		while (!fair_read_trylock(&frwlock))
+		while (!wrap_read_trylock())
 			iter++;
 		success_iter++;
 		prev = var[0];
@@ -176,7 +210,7 @@ static int trylock_reader_thread(void *data)
 				"Unequal cur %d/prev %d at i %d, iter %lu "
 				"in thread\n", cur, prev, i, iter);
 		}
-		fair_read_unlock(&frwlock);
+		wrap_read_unlock();
 		if (THREAD_READER_DELAY)
 			msleep(THREAD_READER_DELAY);
 	} while (!kthread_should_stop());
@@ -213,7 +247,7 @@ static void interrupt_reader_ipi(void *data)
 	time1 = get_cycles();
 	rdtsc_barrier();
 
-	fair_read_lock(&frwlock);
+	wrap_read_lock_irq();
 
 	rdtsc_barrier();
 	time2 = get_cycles();
@@ -231,7 +265,7 @@ static void interrupt_reader_ipi(void *data)
 			"Unequal cur %d/prev %d at i %d in interrupt\n",
 				cur, prev, i);
 	}
-	fair_read_unlock(&frwlock);
+	wrap_read_unlock_irq();
 }
 
 DEFINE_PER_CPU(unsigned long, trylock_int_iter);
@@ -249,7 +283,7 @@ static void trylock_interrupt_reader_ipi(void *data)
 		return;
 
 	per_cpu(trylock_int_iter, smp_processor_id())++;
-	while (!fair_read_trylock(&frwlock))
+	while (!wrap_read_trylock_irq())
 		per_cpu(trylock_int_iter, smp_processor_id())++;
 	per_cpu(trylock_int_success, smp_processor_id())++;
 	prev = var[0];
@@ -260,7 +294,7 @@ static void trylock_interrupt_reader_ipi(void *data)
 			"Unequal cur %d/prev %d at i %d in interrupt\n",
 				cur, prev, i);
 	}
-	fair_read_unlock(&frwlock);
+	wrap_read_unlock_irq();
 }
 
 
@@ -338,11 +372,7 @@ static int writer_thread(void *data)
 		time1 = get_cycles();
 		rdtsc_barrier();
 
-#if (TEST_INTERRUPTS)
-		fair_write_lock_irq(&frwlock);
-#else
-		fair_write_lock(&frwlock);
-#endif
+		wrap_write_lock();
 
 		rdtsc_barrier();
 		time2 = get_cycles();
@@ -355,11 +385,9 @@ static int writer_thread(void *data)
 		for (i = 0; i < NR_VARS; i++) {
 			var[i] = new;
 		}
-#if (TEST_INTERRUPTS)
-		fair_write_unlock_irq(&frwlock);
-#else
-		fair_write_unlock(&frwlock);
-#endif
+
+		wrap_write_unlock();
+
 		preempt_enable();	/* for get_cycles accuracy */
 		if (WRITER_DELAY > 0)
 			udelay(WRITER_DELAY);
@@ -373,6 +401,63 @@ static int writer_thread(void *data)
 		calibrate_cycles(delaymax));
 	return 0;
 }
+
+#if (TEST_STD_RWLOCK)
+static int trylock_writer_thread(void *data)
+{
+	int i;
+	int new;
+	unsigned long iter = 0, success = 0, fail = 0;
+
+	printk("trylock_writer_thread/%lu runnning\n", (unsigned long)data);
+	do {
+#if (TEST_INTERRUPTS)
+		/* std write trylock cannot disable interrupts. */
+		local_irq_disable();
+#endif
+
+#if (TRYLOCK_WRITERS_FAIL_ITER == -1)
+		for (;;) {
+			iter++;
+			if (write_trylock(&std_rw_lock))
+				goto locked;
+		}
+#else
+		for (i = 0; i < TRYLOCK_WRITERS_FAIL_ITER; i++) {
+			iter++;
+			if (write_trylock(&std_rw_lock))
+				goto locked;
+		}
+#endif
+		fail++;
+#if (TEST_INTERRUPTS)
+		local_irq_enable();
+#endif
+		goto loop;
+locked:
+		success++;
+		new = (int)get_cycles();
+		for (i = 0; i < NR_VARS; i++) {
+			var[i] = new;
+		}
+#if (TEST_INTERRUPTS)
+		write_unlock_irq(&std_rw_lock);
+#else
+		write_unlock(&std_rw_lock);
+#endif
+loop:
+		if (TRYLOCK_WRITER_DELAY > 0)
+			udelay(TRYLOCK_WRITER_DELAY);
+	} while (!kthread_should_stop());
+	printk("trylock_writer_thread/%lu iterations : "
+		"[try,success,fail after %d try], "
+		"%lu,%lu,%lu\n",
+		(unsigned long)data, TRYLOCK_WRITERS_FAIL_ITER,
+		iter, success, fail);
+	return 0;
+}
+
+#else /* !TEST_STD_RWLOCK */
 
 static int trylock_writer_thread(void *data)
 {
@@ -389,6 +474,7 @@ static int trylock_writer_thread(void *data)
 		if (fair_write_trylock_else_subscribe(&frwlock))
 #endif
 			goto locked;
+
 #if (TRYLOCK_WRITERS_FAIL_ITER == -1)
 		for (;;) {
 			iter++;
@@ -400,7 +486,7 @@ static int trylock_writer_thread(void *data)
 				goto locked;
 		}
 #else
-		for (i = 0; i < TRYLOCK_WRITERS_FAIL_ITER; i++) {
+		for (i = 0; i < TRYLOCK_WRITERS_FAIL_ITER - 1; i++) {
 			iter++;
 #if (TEST_INTERRUPTS)
 			if (fair_write_trylock_irq_subscribed(&frwlock))
@@ -435,6 +521,8 @@ loop:
 		iter, success, fail);
 	return 0;
 }
+
+#endif	/* TEST_STD_RWLOCK */
 
 static void fair_rwlock_create(void)
 {
