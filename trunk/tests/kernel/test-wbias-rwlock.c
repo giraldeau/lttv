@@ -616,13 +616,17 @@ static int my_open(struct inode *inode, struct file *file)
 		cycles_calibration_max);
 
 	printk("** Single writer test, no contention **\n");
+	wbias_rwlock_profile_latency_reset();
 	writer_threads[0] = kthread_run(writer_thread, (void *)0,
 		"wbiasrwlock_writer");
 	BUG_ON(!writer_threads[0]);
 	ssleep(SINGLE_WRITER_TEST_DURATION);
 	kthread_stop(writer_threads[0]);
 
+	wbias_rwlock_profile_latency_print();
+
 	printk("** Single trylock writer test, no contention **\n");
+	wbias_rwlock_profile_latency_reset();
 	trylock_writer_threads[0] = kthread_run(trylock_writer_thread,
 		(void *)0,
 		"trylock_wbiasrwlock_writer");
@@ -630,14 +634,20 @@ static int my_open(struct inode *inode, struct file *file)
 	ssleep(SINGLE_WRITER_TEST_DURATION);
 	kthread_stop(trylock_writer_threads[0]);
 
+	wbias_rwlock_profile_latency_print();
+
 	printk("** Single reader test, no contention **\n");
+	wbias_rwlock_profile_latency_reset();
 	reader_threads[0] = kthread_run(reader_thread, (void *)0,
 		"wbiasrwlock_reader");
 	BUG_ON(!reader_threads[0]);
 	ssleep(SINGLE_READER_TEST_DURATION);
 	kthread_stop(reader_threads[0]);
 
+	wbias_rwlock_profile_latency_print();
+
 	printk("** Multiple readers test, no contention **\n");
+	wbias_rwlock_profile_latency_reset();
 	for (i = 0; i < NR_READERS; i++) {
 		printk("starting reader thread %lu\n", i);
 		reader_threads[i] = kthread_run(reader_thread, (void *)i,
@@ -648,10 +658,15 @@ static int my_open(struct inode *inode, struct file *file)
 	for (i = 0; i < NR_READERS; i++)
 		kthread_stop(reader_threads[i]);
 
+	wbias_rwlock_profile_latency_print();
+
 	printk("** High contention test **\n");
+	wbias_rwlock_profile_latency_reset();
 	perform_test("wbias-rwlock-create", wbias_rwlock_create);
 	ssleep(TEST_DURATION);
 	perform_test("wbias-rwlock-stop", wbias_rwlock_stop);
+
+	wbias_rwlock_profile_latency_print();
 
 	return -EPERM;
 }
