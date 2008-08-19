@@ -19,17 +19,23 @@
 RCFILE=".runlttvrc"
 
 ARGS="-L lttv/modules/gui/controlflow/.libs -m guicontrolflow -L lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow -L lttv/modules/gui/detailedevents/.libs -m guievents -L lttv/modules/gui/tracecontrol/.libs -m guitracecontrol -L lttv/modules/gui/statistics/.libs -m guistatistics -L lttv/modules/gui/resourceview/.libs -m resourceview -L lttv/modules/gui/filter/.libs -m guifilter -L lttv/modules/gui/interrupts/.libs -m interrupts -L lttv/modules/gui/histogram/.libs -m guihistogram"
+LTTV_EXEC="lttv/lttv/.libs/lttv.real"
+
+if [ ! -e "$LTTV_EXEC" ]; then
+	echo "error: LTTV should be compiled before running this script." >/dev/stderr
+	exit 1
+fi
 
 if [ -e "$RCFILE" ]; then
 	source "$RCFILE";
 fi
 
 if [ "$1" = "dbg" ]; then
-	LD_LIBRARY_PATH=ltt/.libs gdb --args lttv/lttv/.libs/lttv.real $ARGS $TRACEFILE
+	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $ARGS $TRACEFILE
 elif [ "$1" = "valgrind" ]; then
-	LD_LIBRARY_PATH=ltt/.libs valgrind lttv/lttv/.libs/lttv.real $ARGS $TRACEFILE
+	LD_LIBRARY_PATH=ltt/.libs valgrind $LTTV_EXEC $ARGS $TRACEFILE
 elif [ "$1" = "strace" ]; then
-	LD_LIBRARY_PATH=ltt/.libs strace lttv/lttv/.libs/lttv.real $ARGS $TRACEFILE
+	LD_LIBRARY_PATH=ltt/.libs strace $LTTV_EXEC $ARGS $TRACEFILE
 else
-	LD_LIBRARY_PATH=ltt/.libs lttv/lttv/.libs/lttv.real $ARGS $TRACEFILE
+	LD_LIBRARY_PATH=ltt/.libs $LTTV_EXEC $ARGS $TRACEFILE
 fi
