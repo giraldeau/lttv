@@ -6,7 +6,6 @@
 #include <linux/proc_fs.h>
 #include <linux/sched.h>
 #include <linux/timex.h>
-#include <linux/wbias-rwlock.h>
 #include <linux/kthread.h>
 #include <linux/delay.h>
 #include <linux/hardirq.h>
@@ -14,6 +13,7 @@
 #include <linux/percpu.h>
 #include <linux/spinlock.h>
 #include <asm/ptrace.h>
+#include <linux/wbias-rwlock.h>
 
 /* Test with no contention duration, in seconds */
 #define SINGLE_WRITER_TEST_DURATION 10
@@ -26,7 +26,6 @@
 #define NR_VARS 100
 #define NR_WRITERS 2
 #define NR_TRYLOCK_WRITERS 1
-#define NR_PREADERS 2
 #define NR_NPREADERS 2
 #define NR_TRYLOCK_READERS 1
 
@@ -49,6 +48,19 @@
 #define NR_INTERRUPT_READERS 0
 #define NR_TRYLOCK_INTERRUPT_READERS 0
 #endif
+
+/*
+ * 1 : test with thread preemption readers.
+ * 0 : test only with non-preemptable thread readers.
+ */
+#define TEST_PREEMPT 1
+
+#if (TEST_PREEMPT)
+#define NR_PREADERS 2
+#else
+#define NR_PREADERS 0
+#endif
+
 
 /*
  * Writer iteration delay, in us. 0 for busy loop. Caution : writers can
@@ -121,9 +133,27 @@ static DEFINE_WBIAS_RWLOCK(wbiasrwlock);
 #if (TEST_INTERRUPTS)
 #define wrap_write_lock()	wbias_write_lock_irq(&wbiasrwlock)
 #define wrap_write_unlock()	wbias_write_unlock_irq(&wbiasrwlock)
+#define wrap_write_trylock_else_subscribe()	\
+	wbias_write_trylock_irq_else_subscribe(&wbiasrwlock)
+#define wrap_write_trylock_subscribed()		\
+	wbias_write_trylock_irq_subscribed(&wbiasrwlock)
 #else
+#if (TEST_PREEMPT)
 #define wrap_write_lock()	wbias_write_lock(&wbiasrwlock)
 #define wrap_write_unlock()	wbias_write_unlock(&wbiasrwlock)
+#define wrap_write_trylock_else_subscribe()	\
+	wbias_write_trylock_else_subscribe(&wbiasrwlock)
+#define wrap_write_trylock_subscribed()		\
+	wbias_write_trylock_subscribed(&wbiasrwlock)
+#else
+#else
+#define wrap_write_lock()	wbias_write_lock_atomic(&wbiasrwlock)
+#define wrap_write_unlock()	wbias_write_unlock_atomic(&wbiasrwlock)
+#define wrap_write_trylock_else_subscribe()	\
+	wbias_write_trylock_atomic_else_subscribe(&wbiasrwlock)
+#define wrap_write_trylock_subscribed()		\
+	wbias_write_trylock_atomic_subscribed(&wbiasrwlock)
+#endif
 #endif
 
 #endif
@@ -490,31 +520,19 @@ static int trylock_writer_thread(void *data)
 	printk("trylock_writer_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
-#if (TEST_INTERRUPTS)
-		if (wbias_write_trylock_irq_else_subscribe(&wbiasrwlock))
-#else
-		if (wbias_write_trylock_else_subscribe(&wbiasrwlock))
-#endif
+		if (wrap_write_trylock_else_subscribe())
 			goto locked;
 
 #if (TRYLOCK_WRITERS_FAIL_ITER == -1)
 		for (;;) {
 			iter++;
-#if (TEST_INTERRUPTS)
-			if (wbias_write_trylock_irq_subscribed(&wbiasrwlock))
-#else
-			if (wbias_write_trylock_subscribed(&wbiasrwlock))
-#endif
+			if (wrap_write_trylock_subscribed())
 				goto locked;
 		}
 #else
 		for (i = 0; i < TRYLOCK_WRITERS_FAIL_ITER - 1; i++) {
 			iter++;
-#if (TEST_INTERRUPTS)
-			if (wbias_write_trylock_irq_subscribed(&wbiasrwlock))
-#else
-			if (wbias_write_trylock_subscribed(&wbiasrwlock))
-#endif
+			if (wrap_write_trylock_subscribed())
 				goto locked;
 		}
 #endif
@@ -527,11 +545,7 @@ locked:
 		for (i = 0; i < NR_VARS; i++) {
 			var[i] = new;
 		}
-#if (TEST_INTERRUPTS)
-		wbias_write_unlock_irq(&wbiasrwlock);
-#else
-		wbias_write_unlock(&wbiasrwlock);
-#endif
+		wrap_write_unlock();
 loop:
 		if (TRYLOCK_WRITER_DELAY > 0)
 			udelay(TRYLOCK_WRITER_DELAY);
