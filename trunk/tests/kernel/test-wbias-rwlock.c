@@ -746,21 +746,21 @@ int init_module(void)
 	if (pentry)
 		pentry->proc_fops = &my_operations;
 
-	printk("PTHREAD_ROFFSET : %lX\n", PTHREAD_ROFFSET);
-	printk("PTHREAD_RMASK : %lX\n", PTHREAD_RMASK);
-	printk("NPTHREAD_ROFFSET : %lX\n", NPTHREAD_ROFFSET);
-	printk("NPTHREAD_RMASK : %lX\n", NPTHREAD_RMASK);
-	printk("SOFTIRQ_ROFFSET : %lX\n", SOFTIRQ_ROFFSET);
-	printk("SOFTIRQ_RMASK : %lX\n", SOFTIRQ_RMASK);
-	printk("HARDIRQ_ROFFSET : %lX\n", HARDIRQ_ROFFSET);
-	printk("HARDIRQ_RMASK : %lX\n", HARDIRQ_RMASK);
-	printk("PTHREAD_WOFFSET : %lX\n", PTHREAD_WOFFSET);
-	printk("PTHREAD_WMASK : %lX\n", PTHREAD_WMASK);
-	printk("NPTHREAD_WOFFSET : %lX\n", NPTHREAD_WOFFSET);
-	printk("NPTHREAD_WMASK : %lX\n", NPTHREAD_WMASK);
-	printk("WRITER_MUTEX : %lX\n", WRITER_MUTEX);
-	printk("SOFTIRQ_WMASK : %lX\n", SOFTIRQ_WMASK);
-	printk("HARDIRQ_WMASK : %lX\n", HARDIRQ_WMASK);
+	printk("PTHREAD_ROFFSET  : %016lX\n", PTHREAD_ROFFSET);
+	printk("PTHREAD_RMASK    : %016lX\n", PTHREAD_RMASK);
+	printk("NPTHREAD_ROFFSET : %016lX\n", NPTHREAD_ROFFSET);
+	printk("NPTHREAD_RMASK   : %016lX\n", NPTHREAD_RMASK);
+	printk("SOFTIRQ_ROFFSET  : %016lX\n", SOFTIRQ_ROFFSET);
+	printk("SOFTIRQ_RMASK    : %016lX\n", SOFTIRQ_RMASK);
+	printk("HARDIRQ_ROFFSET  : %016lX\n", HARDIRQ_ROFFSET);
+	printk("HARDIRQ_RMASK    : %016lX\n", HARDIRQ_RMASK);
+	printk("PTHREAD_WOFFSET  : %016lX\n", PTHREAD_WOFFSET);
+	printk("PTHREAD_WMASK    : %016lX\n", PTHREAD_WMASK);
+	printk("NPTHREAD_WOFFSET : %016lX\n", NPTHREAD_WOFFSET);
+	printk("NPTHREAD_WMASK   : %016lX\n", NPTHREAD_WMASK);
+	printk("WRITER_MUTEX     : %016lX\n", WRITER_MUTEX);
+	printk("SOFTIRQ_WMASK    : %016lX\n", SOFTIRQ_WMASK);
+	printk("HARDIRQ_WMASK    : %016lX\n", HARDIRQ_WMASK);
 
 	return 0;
 }
