@@ -53,7 +53,7 @@
  * 1 : test with thread preemption readers.
  * 0 : test only with non-preemptable thread readers.
  */
-#define TEST_PREEMPT 0
+#define TEST_PREEMPT 1
 
 #if (TEST_PREEMPT)
 #define NR_PREADERS 2
@@ -703,6 +703,7 @@ static int my_open(struct inode *inode, struct file *file)
 
 	wbias_rwlock_profile_latency_print();
 
+#if (TEST_PREEMPT)
 	printk("** Single non-preemptable reader test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
 	npreader_threads[0] = kthread_run(npreader_thread, (void *)0,
@@ -713,6 +714,7 @@ static int my_open(struct inode *inode, struct file *file)
 	printk("\n");
 
 	wbias_rwlock_profile_latency_print();
+#endif
 
 	printk("** Multiple p/non-p readers test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
