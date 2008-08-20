@@ -776,6 +776,8 @@ int init_module(void)
 	printk("WRITER_MUTEX     : %016lX\n", WRITER_MUTEX);
 	printk("SOFTIRQ_WMASK    : %016lX\n", SOFTIRQ_WMASK);
 	printk("HARDIRQ_WMASK    : %016lX\n", HARDIRQ_WMASK);
+	printk("WQ_MUTEX         : %016lX\n", WQ_MUTEX);
+	printk("WQ_ACTIVE        : %016lX\n", WQ_ACTIVE);
 
 	return 0;
 }
