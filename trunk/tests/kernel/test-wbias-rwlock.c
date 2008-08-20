@@ -53,7 +53,7 @@
  * 1 : test with thread preemption readers.
  * 0 : test only with non-preemptable thread readers.
  */
-#define TEST_PREEMPT 1
+#define TEST_PREEMPT 0
 
 #if (TEST_PREEMPT)
 #define NR_PREADERS 2
