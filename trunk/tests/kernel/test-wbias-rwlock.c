@@ -689,8 +689,8 @@ int init_module(void)
 
 	printk("PTHREAD_ROFFSET : %lX\n", PTHREAD_ROFFSET);
 	printk("PTHREAD_RMASK : %lX\n", PTHREAD_RMASK);
-	printk("NPTHREAD_ROFFSET : %lX\n", THREAD_ROFFSET);
-	printk("NPTHREAD_RMASK : %lX\n", THREAD_RMASK);
+	printk("NPTHREAD_ROFFSET : %lX\n", NPTHREAD_ROFFSET);
+	printk("NPTHREAD_RMASK : %lX\n", NPTHREAD_RMASK);
 	printk("SOFTIRQ_ROFFSET : %lX\n", SOFTIRQ_ROFFSET);
 	printk("SOFTIRQ_RMASK : %lX\n", SOFTIRQ_RMASK);
 	printk("HARDIRQ_ROFFSET : %lX\n", HARDIRQ_ROFFSET);
