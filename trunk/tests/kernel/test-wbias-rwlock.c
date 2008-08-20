@@ -26,7 +26,8 @@
 #define NR_VARS 100
 #define NR_WRITERS 2
 #define NR_TRYLOCK_WRITERS 1
-#define NR_READERS 4
+#define NR_PREADERS 2
+#define NR_NPREADERS 2
 #define NR_TRYLOCK_READERS 1
 
 /*
@@ -67,7 +68,8 @@
 #define INTERRUPT_READER_DELAY 100
 
 static int var[NR_VARS];
-static struct task_struct *reader_threads[NR_READERS];
+static struct task_struct *preader_threads[NR_PREADERS];
+static struct task_struct *npreader_threads[NR_NPREADERS];
 static struct task_struct *trylock_reader_threads[NR_TRYLOCK_READERS];
 static struct task_struct *writer_threads[NR_WRITERS];
 static struct task_struct *trylock_writer_threads[NR_TRYLOCK_WRITERS];
@@ -81,6 +83,10 @@ static DEFINE_RWLOCK(std_rw_lock);
 #define wrap_read_lock()	read_lock(&std_rw_lock)
 #define wrap_read_trylock()	read_trylock(&std_rw_lock)
 #define wrap_read_unlock()	read_unlock(&std_rw_lock)
+
+#define wrap_read_lock_inatomic()	read_lock(&std_rw_lock)
+#define wrap_read_trylock_inatomic()	read_trylock(&std_rw_lock)
+#define wrap_read_unlock_inatomic()	read_unlock(&std_rw_lock)
 
 #define wrap_read_lock_irq()	read_lock(&std_rw_lock)
 #define wrap_read_trylock_irq()	read_trylock(&std_rw_lock)
@@ -101,6 +107,12 @@ static DEFINE_WBIAS_RWLOCK(wbiasrwlock);
 #define wrap_read_lock()	wbias_read_lock(&wbiasrwlock)
 #define wrap_read_trylock()	wbias_read_trylock(&wbiasrwlock)
 #define wrap_read_unlock()	wbias_read_unlock(&wbiasrwlock)
+
+#define wrap_read_lock_inatomic()	wbias_read_lock_inatomic(&wbiasrwlock)
+#define wrap_read_trylock_inatomic()	\
+		wbias_read_trylock_inatomic(&wbiasrwlock)
+#define wrap_read_unlock_inatomic()	\
+		wbias_read_unlock_inatomic(&wbiasrwlock)
 
 #define wrap_read_lock_irq()	wbias_read_lock_irq(&wbiasrwlock)
 #define wrap_read_trylock_irq()	wbias_read_trylock_irq(&wbiasrwlock)
@@ -127,7 +139,7 @@ static inline cycles_t calibrate_cycles(cycles_t cycles)
 
 struct proc_dir_entry *pentry = NULL;
 
-static int reader_thread(void *data)
+static int p_or_np_reader_thread(void *data, int preemptable)
 {
 	int i;
 	int prev, cur;
@@ -138,12 +150,16 @@ static int reader_thread(void *data)
 	printk("reader_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
-		//preempt_disable();	/* for get_cycles accuracy */
+		if (!preemptable)
+			preempt_disable();
 		rdtsc_barrier();
 		time1 = get_cycles();
 		rdtsc_barrier();
 
-		wrap_read_lock();
+		if (!preemptable)
+			wrap_read_lock_inatomic();
+		else
+			wrap_read_lock();
 
 		rdtsc_barrier();
 		time2 = get_cycles();
@@ -161,9 +177,12 @@ static int reader_thread(void *data)
 				"in thread\n", cur, prev, i, iter);
 		}
 
-		wrap_read_unlock();
-
-		//preempt_enable();	/* for get_cycles accuracy */
+		if (!preemptable)
+			wrap_read_unlock_inatomic();
+		else
+			wrap_read_unlock();
+		if (!preemptable)
+			preempt_enable();
 		if (THREAD_READER_DELAY)
 			msleep(THREAD_READER_DELAY);
 	} while (!kthread_should_stop());
@@ -180,6 +199,16 @@ static int reader_thread(void *data)
 			calibrate_cycles(delaymax));
 	}
 	return 0;
+}
+
+static int preader_thread(void *data)
+{
+	return p_or_np_reader_thread(data, 1);
+}
+
+static int npreader_thread(void *data)
+{
+	return p_or_np_reader_thread(data, 0);
 }
 
 static int trylock_reader_thread(void *data)
@@ -519,11 +548,18 @@ static void wbias_rwlock_create(void)
 {
 	unsigned long i;
 
-	for (i = 0; i < NR_READERS; i++) {
-		printk("starting reader thread %lu\n", i);
-		reader_threads[i] = kthread_run(reader_thread, (void *)i,
-			"wbiasrwlock_reader");
-		BUG_ON(!reader_threads[i]);
+	for (i = 0; i < NR_PREADERS; i++) {
+		printk("starting preemptable reader thread %lu\n", i);
+		preader_threads[i] = kthread_run(preader_thread, (void *)i,
+			"wbiasrwlock_preader");
+		BUG_ON(!preader_threads[i]);
+	}
+
+	for (i = 0; i < NR_NPREADERS; i++) {
+		printk("starting non-preemptable reader thread %lu\n", i);
+		npreader_threads[i] = kthread_run(npreader_thread, (void *)i,
+			"wbiasrwlock_npreader");
+		BUG_ON(!npreader_threads[i]);
 	}
 
 	for (i = 0; i < NR_TRYLOCK_READERS; i++) {
@@ -566,8 +602,10 @@ static void wbias_rwlock_stop(void)
 		kthread_stop(writer_threads[i]);
 	for (i = 0; i < NR_TRYLOCK_WRITERS; i++)
 		kthread_stop(trylock_writer_threads[i]);
-	for (i = 0; i < NR_READERS; i++)
-		kthread_stop(reader_threads[i]);
+	for (i = 0; i < NR_NPREADERS; i++)
+		kthread_stop(npreader_threads[i]);
+	for (i = 0; i < NR_PREADERS; i++)
+		kthread_stop(preader_threads[i]);
 	for (i = 0; i < NR_TRYLOCK_READERS; i++)
 		kthread_stop(trylock_reader_threads[i]);
 	for (i = 0; i < NR_INTERRUPT_READERS; i++)
@@ -639,28 +677,47 @@ static int my_open(struct inode *inode, struct file *file)
 
 	wbias_rwlock_profile_latency_print();
 
-	printk("** Single reader test, no contention **\n");
+	printk("** Single preemptable reader test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
-	reader_threads[0] = kthread_run(reader_thread, (void *)0,
-		"wbiasrwlock_reader");
-	BUG_ON(!reader_threads[0]);
+	preader_threads[0] = kthread_run(preader_thread, (void *)0,
+		"wbiasrwlock_preader");
+	BUG_ON(!preader_threads[0]);
 	ssleep(SINGLE_READER_TEST_DURATION);
-	kthread_stop(reader_threads[0]);
+	kthread_stop(preader_threads[0]);
 	printk("\n");
 
 	wbias_rwlock_profile_latency_print();
 
-	printk("** Multiple readers test, no contention **\n");
+	printk("** Single non-preemptable reader test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
-	for (i = 0; i < NR_READERS; i++) {
-		printk("starting reader thread %lu\n", i);
-		reader_threads[i] = kthread_run(reader_thread, (void *)i,
-			"wbiasrwlock_reader");
-		BUG_ON(!reader_threads[i]);
+	npreader_threads[0] = kthread_run(npreader_thread, (void *)0,
+		"wbiasrwlock_npreader");
+	BUG_ON(!npreader_threads[0]);
+	ssleep(SINGLE_READER_TEST_DURATION);
+	kthread_stop(npreader_threads[0]);
+	printk("\n");
+
+	wbias_rwlock_profile_latency_print();
+
+	printk("** Multiple p/non-p readers test, no contention **\n");
+	wbias_rwlock_profile_latency_reset();
+	for (i = 0; i < NR_PREADERS; i++) {
+		printk("starting preader thread %lu\n", i);
+		preader_threads[i] = kthread_run(preader_thread, (void *)i,
+			"wbiasrwlock_preader");
+		BUG_ON(!preader_threads[i]);
+	}
+	for (i = 0; i < NR_NPREADERS; i++) {
+		printk("starting npreader thread %lu\n", i);
+		npreader_threads[i] = kthread_run(npreader_thread, (void *)i,
+			"wbiasrwlock_npreader");
+		BUG_ON(!npreader_threads[i]);
 	}
 	ssleep(SINGLE_READER_TEST_DURATION);
-	for (i = 0; i < NR_READERS; i++)
-		kthread_stop(reader_threads[i]);
+	for (i = 0; i < NR_NPREADERS; i++)
+		kthread_stop(npreader_threads[i]);
+	for (i = 0; i < NR_PREADERS; i++)
+		kthread_stop(preader_threads[i]);
 	printk("\n");
 
 	wbias_rwlock_profile_latency_print();
