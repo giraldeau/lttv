@@ -139,7 +139,8 @@ static inline cycles_t calibrate_cycles(cycles_t cycles)
 
 struct proc_dir_entry *pentry = NULL;
 
-static int p_or_np_reader_thread(void *data, int preemptable)
+static int p_or_np_reader_thread(const char *typename,
+		void *data, int preemptable)
 {
 	int i;
 	int prev, cur;
@@ -147,7 +148,7 @@ static int p_or_np_reader_thread(void *data, int preemptable)
 	cycles_t time1, time2, delay, delaymax = 0, delaymin = ULLONG_MAX,
 		delayavg = 0;
 
-	printk("reader_thread/%lu runnning\n", (unsigned long)data);
+	printk("%s/%lu runnning\n", typename, (unsigned long)data);
 	do {
 		iter++;
 		if (!preemptable)
@@ -187,12 +188,13 @@ static int p_or_np_reader_thread(void *data, int preemptable)
 			msleep(THREAD_READER_DELAY);
 	} while (!kthread_should_stop());
 	if (!iter) {
-		printk("reader_thread/%lu iterations : %lu",
+		printk("%s/%lu iterations : %lu", typename,
 			(unsigned long)data, iter);
 	} else {
 		delayavg /= iter;
-		printk("reader_thread/%lu iterations : %lu, "
+		printk("%s/%lu iterations : %lu, "
 			"lock delay [min,avg,max] %llu,%llu,%llu cycles\n",
+			typename,
 			(unsigned long)data, iter,
 			calibrate_cycles(delaymin),
 			calibrate_cycles(delayavg),
@@ -203,12 +205,12 @@ static int p_or_np_reader_thread(void *data, int preemptable)
 
 static int preader_thread(void *data)
 {
-	return p_or_np_reader_thread(data, 1);
+	return p_or_np_reader_thread("preader_thread", data, 1);
 }
 
 static int npreader_thread(void *data)
 {
-	return p_or_np_reader_thread(data, 0);
+	return p_or_np_reader_thread("npreader_thread", data, 0);
 }
 
 static int trylock_reader_thread(void *data)
