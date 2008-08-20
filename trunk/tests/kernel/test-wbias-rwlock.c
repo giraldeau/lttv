@@ -759,7 +759,6 @@ int init_module(void)
 	printk("NPTHREAD_WOFFSET : %lX\n", NPTHREAD_WOFFSET);
 	printk("NPTHREAD_WMASK : %lX\n", NPTHREAD_WMASK);
 	printk("WRITER_MUTEX : %lX\n", WRITER_MUTEX);
-	printk("NPTHREAD_WMASK : %lX\n", SOFTIRQ_WMASK);
 	printk("SOFTIRQ_WMASK : %lX\n", SOFTIRQ_WMASK);
 	printk("HARDIRQ_WMASK : %lX\n", HARDIRQ_WMASK);
 
