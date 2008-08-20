@@ -138,7 +138,7 @@ static int reader_thread(void *data)
 	printk("reader_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
-		preempt_disable();	/* for get_cycles accuracy */
+		//preempt_disable();	/* for get_cycles accuracy */
 		rdtsc_barrier();
 		time1 = get_cycles();
 		rdtsc_barrier();
@@ -163,7 +163,7 @@ static int reader_thread(void *data)
 
 		wrap_read_unlock();
 
-		preempt_enable();	/* for get_cycles accuracy */
+		//preempt_enable();	/* for get_cycles accuracy */
 		if (THREAD_READER_DELAY)
 			msleep(THREAD_READER_DELAY);
 	} while (!kthread_should_stop());
@@ -358,7 +358,7 @@ static int writer_thread(void *data)
 	printk("writer_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
-		preempt_disable();	/* for get_cycles accuracy */
+		//preempt_disable();	/* for get_cycles accuracy */
 		rdtsc_barrier();
 		time1 = get_cycles();
 		rdtsc_barrier();
@@ -379,7 +379,7 @@ static int writer_thread(void *data)
 
 		wrap_write_unlock();
 
-		preempt_enable();	/* for get_cycles accuracy */
+		//preempt_enable();	/* for get_cycles accuracy */
 		if (WRITER_DELAY > 0)
 			udelay(WRITER_DELAY);
 	} while (!kthread_should_stop());
@@ -687,9 +687,10 @@ int init_module(void)
 	if (pentry)
 		pentry->proc_fops = &my_operations;
 
-	printk("pow2cpus : %lu\n", pow2cpus);
-	printk("THREAD_ROFFSET : %lX\n", THREAD_ROFFSET);
-	printk("THREAD_RMASK : %lX\n", THREAD_RMASK);
+	printk("PTHREAD_ROFFSET : %lX\n", PTHREAD_ROFFSET);
+	printk("PTHREAD_RMASK : %lX\n", PTHREAD_RMASK);
+	printk("NPTHREAD_ROFFSET : %lX\n", THREAD_ROFFSET);
+	printk("NPTHREAD_RMASK : %lX\n", THREAD_RMASK);
 	printk("SOFTIRQ_ROFFSET : %lX\n", SOFTIRQ_ROFFSET);
 	printk("SOFTIRQ_RMASK : %lX\n", SOFTIRQ_RMASK);
 	printk("HARDIRQ_ROFFSET : %lX\n", HARDIRQ_ROFFSET);
@@ -697,6 +698,7 @@ int init_module(void)
 	printk("SUBSCRIBERS_WOFFSET : %lX\n", SUBSCRIBERS_WOFFSET);
 	printk("SUBSCRIBERS_WMASK : %lX\n", SUBSCRIBERS_WMASK);
 	printk("WRITER_MUTEX : %lX\n", WRITER_MUTEX);
+	printk("NPTHREAD_WMASK : %lX\n", SOFTIRQ_WMASK);
 	printk("SOFTIRQ_WMASK : %lX\n", SOFTIRQ_WMASK);
 	printk("HARDIRQ_WMASK : %lX\n", HARDIRQ_WMASK);
 
