@@ -146,7 +146,6 @@ static DEFINE_WBIAS_RWLOCK(wbiasrwlock);
 #define wrap_write_trylock_subscribed()		\
 	wbias_write_trylock_subscribed(&wbiasrwlock)
 #else
-#else
 #define wrap_write_lock()	wbias_write_lock_atomic(&wbiasrwlock)
 #define wrap_write_unlock()	wbias_write_unlock_atomic(&wbiasrwlock)
 #define wrap_write_trylock_else_subscribe()	\
