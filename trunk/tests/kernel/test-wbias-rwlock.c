@@ -137,6 +137,8 @@ static DEFINE_WBIAS_RWLOCK(wbiasrwlock);
 	wbias_write_trylock_irq_else_subscribe(&wbiasrwlock)
 #define wrap_write_trylock_subscribed()		\
 	wbias_write_trylock_irq_subscribed(&wbiasrwlock)
+#define wrap_write_unsubscribe()		\
+	wbias_write_unsubscribe_irq(&wbiasrwlock)
 #else
 #if (TEST_PREEMPT)
 #define wrap_write_lock()	wbias_write_lock(&wbiasrwlock)
@@ -145,6 +147,8 @@ static DEFINE_WBIAS_RWLOCK(wbiasrwlock);
 	wbias_write_trylock_else_subscribe(&wbiasrwlock)
 #define wrap_write_trylock_subscribed()		\
 	wbias_write_trylock_subscribed(&wbiasrwlock)
+#define wrap_write_unsubscribe()		\
+	wbias_write_unsubscribe(&wbiasrwlock)
 #else
 #define wrap_write_lock()	wbias_write_lock_atomic(&wbiasrwlock)
 #define wrap_write_unlock()	wbias_write_unlock_atomic(&wbiasrwlock)
@@ -152,6 +156,8 @@ static DEFINE_WBIAS_RWLOCK(wbiasrwlock);
 	wbias_write_trylock_atomic_else_subscribe(&wbiasrwlock)
 #define wrap_write_trylock_subscribed()		\
 	wbias_write_trylock_atomic_subscribed(&wbiasrwlock)
+#define wrap_write_unsubscribe()		\
+	wbias_write_unsubscribe_atomic(&wbiasrwlock)
 #endif
 #endif
 
@@ -174,8 +180,9 @@ static int p_or_np_reader_thread(const char *typename,
 	int i;
 	int prev, cur;
 	unsigned long iter = 0;
-	cycles_t time1, time2, delay, delaymax = 0, delaymin = ULLONG_MAX,
-		delayavg = 0;
+	cycles_t time1, time2, delay;
+	cycles_t ldelaymax = 0, ldelaymin = ULLONG_MAX, ldelayavg = 0;
+	cycles_t udelaymax = 0, udelaymin = ULLONG_MAX, udelayavg = 0;
 
 	printk("%s/%lu runnning\n", typename, (unsigned long)data);
 	do {
@@ -195,9 +202,9 @@ static int p_or_np_reader_thread(const char *typename,
 		time2 = get_cycles();
 		rdtsc_barrier();
 		delay = time2 - time1;
-		delaymax = max(delaymax, delay);
-		delaymin = min(delaymin, delay);
-		delayavg += delay;
+		ldelaymax = max(ldelaymax, delay);
+		ldelaymin = min(ldelaymin, delay);
+		ldelayavg += delay;
 		prev = var[0];
 		for (i = 1; i < NR_VARS; i++) {
 			cur = var[i];
@@ -207,12 +214,25 @@ static int p_or_np_reader_thread(const char *typename,
 				"in thread\n", cur, prev, i, iter);
 		}
 
+		rdtsc_barrier();
+		time1 = get_cycles();
+		rdtsc_barrier();
+
 		if (!preemptable)
 			wrap_read_unlock_inatomic();
 		else
 			wrap_read_unlock();
+		rdtsc_barrier();
+		time2 = get_cycles();
+		rdtsc_barrier();
+		delay = time2 - time1;
+		udelaymax = max(udelaymax, delay);
+		udelaymin = min(udelaymin, delay);
+		udelayavg += delay;
+
 		if (!preemptable)
 			preempt_enable();
+
 		if (THREAD_READER_DELAY)
 			msleep(THREAD_READER_DELAY);
 	} while (!kthread_should_stop());
@@ -220,14 +240,22 @@ static int p_or_np_reader_thread(const char *typename,
 		printk("%s/%lu iterations : %lu", typename,
 			(unsigned long)data, iter);
 	} else {
-		delayavg /= iter;
+		ldelayavg /= iter;
+		udelayavg /= iter;
 		printk("%s/%lu iterations : %lu, "
 			"lock delay [min,avg,max] %llu,%llu,%llu cycles\n",
 			typename,
 			(unsigned long)data, iter,
-			calibrate_cycles(delaymin),
-			calibrate_cycles(delayavg),
-			calibrate_cycles(delaymax));
+			calibrate_cycles(ldelaymin),
+			calibrate_cycles(ldelayavg),
+			calibrate_cycles(ldelaymax));
+		printk("%s/%lu iterations : %lu, "
+			"unlock delay [min,avg,max] %llu,%llu,%llu cycles\n",
+			typename,
+			(unsigned long)data, iter,
+			calibrate_cycles(udelaymin),
+			calibrate_cycles(udelayavg),
+			calibrate_cycles(udelaymax));
 	}
 	return 0;
 }
@@ -271,9 +299,12 @@ static int trylock_reader_thread(void *data)
 	return 0;
 }
 
-DEFINE_PER_CPU(cycles_t, int_delaymin);
-DEFINE_PER_CPU(cycles_t, int_delayavg);
-DEFINE_PER_CPU(cycles_t, int_delaymax);
+DEFINE_PER_CPU(cycles_t, int_ldelaymin);
+DEFINE_PER_CPU(cycles_t, int_ldelayavg);
+DEFINE_PER_CPU(cycles_t, int_ldelaymax);
+DEFINE_PER_CPU(cycles_t, int_udelaymin);
+DEFINE_PER_CPU(cycles_t, int_udelayavg);
+DEFINE_PER_CPU(cycles_t, int_udelaymax);
 DEFINE_PER_CPU(cycles_t, int_ipi_nr);
 
 static void interrupt_reader_ipi(void *data)
@@ -281,7 +312,8 @@ static void interrupt_reader_ipi(void *data)
 	int i;
 	int prev, cur;
 	cycles_t time1, time2;
-	cycles_t *delaymax, *delaymin, *delayavg, *ipi_nr, delay;
+	cycles_t *ldelaymax, *ldelaymin, *ldelayavg, *ipi_nr, delay;
+	cycles_t *udelaymax, *udelaymin, *udelayavg;
 
 	/*
 	 * Skip the ipi caller, not in irq context.
@@ -289,9 +321,12 @@ static void interrupt_reader_ipi(void *data)
 	if (!in_irq())
 		return;
 
-	delaymax = &per_cpu(int_delaymax, smp_processor_id());
-	delaymin = &per_cpu(int_delaymin, smp_processor_id());
-	delayavg = &per_cpu(int_delayavg, smp_processor_id());
+	ldelaymax = &per_cpu(int_ldelaymax, smp_processor_id());
+	ldelaymin = &per_cpu(int_ldelaymin, smp_processor_id());
+	ldelayavg = &per_cpu(int_ldelayavg, smp_processor_id());
+	udelaymax = &per_cpu(int_udelaymax, smp_processor_id());
+	udelaymin = &per_cpu(int_udelaymin, smp_processor_id());
+	udelayavg = &per_cpu(int_udelayavg, smp_processor_id());
 	ipi_nr = &per_cpu(int_ipi_nr, smp_processor_id());
 
 	rdtsc_barrier();
@@ -304,9 +339,9 @@ static void interrupt_reader_ipi(void *data)
 	time2 = get_cycles();
 	rdtsc_barrier();
 	delay = time2 - time1;
-	*delaymax = max(*delaymax, delay);
-	*delaymin = min(*delaymin, delay);
-	*delayavg += delay;
+	*ldelaymax = max(*ldelaymax, delay);
+	*ldelaymin = min(*ldelaymin, delay);
+	*ldelayavg += delay;
 	(*ipi_nr)++;
 	prev = var[0];
 	for (i = 1; i < NR_VARS; i++) {
@@ -316,7 +351,16 @@ static void interrupt_reader_ipi(void *data)
 			"Unequal cur %d/prev %d at i %d in interrupt\n",
 				cur, prev, i);
 	}
+	rdtsc_barrier();
+	time1 = get_cycles();
+	rdtsc_barrier();
 	wrap_read_unlock_irq();
+	time2 = get_cycles();
+	rdtsc_barrier();
+	delay = time2 - time1;
+	*udelaymax = max(*udelaymax, delay);
+	*udelaymin = min(*udelaymin, delay);
+	*udelayavg += delay;
 }
 
 DEFINE_PER_CPU(unsigned long, trylock_int_iter);
@@ -355,9 +399,12 @@ static int interrupt_reader_thread(void *data)
 	int i;
 
 	for_each_online_cpu(i) {
-		per_cpu(int_delaymax, i) = 0;
-		per_cpu(int_delaymin, i) = ULLONG_MAX;
-		per_cpu(int_delayavg, i) = 0;
+		per_cpu(int_ldelaymax, i) = 0;
+		per_cpu(int_ldelaymin, i) = ULLONG_MAX;
+		per_cpu(int_ldelayavg, i) = 0;
+		per_cpu(int_udelaymax, i) = 0;
+		per_cpu(int_udelaymin, i) = ULLONG_MAX;
+		per_cpu(int_udelayavg, i) = 0;
 		per_cpu(int_ipi_nr, i) = 0;
 	}
 	do {
@@ -375,9 +422,15 @@ static int interrupt_reader_thread(void *data)
 		printk("interrupt readers on CPU %i, "
 			"lock delay [min,avg,max] %llu,%llu,%llu cycles\n",
 			i,
-			calibrate_cycles(per_cpu(int_delaymin, i)),
-			calibrate_cycles(per_cpu(int_delayavg, i)),
-			calibrate_cycles(per_cpu(int_delaymax, i)));
+			calibrate_cycles(per_cpu(int_ldelaymin, i)),
+			calibrate_cycles(per_cpu(int_ldelayavg, i)),
+			calibrate_cycles(per_cpu(int_ldelaymax, i)));
+		printk("interrupt readers on CPU %i, "
+			"unlock delay [min,avg,max] %llu,%llu,%llu cycles\n",
+			i,
+			calibrate_cycles(per_cpu(int_udelaymin, i)),
+			calibrate_cycles(per_cpu(int_udelayavg, i)),
+			calibrate_cycles(per_cpu(int_udelaymax, i)));
 	}
 	return 0;
 }
@@ -412,8 +465,9 @@ static int writer_thread(void *data)
 	int i;
 	int new;
 	unsigned long iter = 0;
-	cycles_t time1, time2, delay, delaymax = 0, delaymin = ULLONG_MAX,
-		delayavg = 0;
+	cycles_t time1, time2, delay;
+	cycles_t ldelaymax = 0, ldelaymin = ULLONG_MAX, ldelayavg = 0;
+	cycles_t udelaymax = 0, udelaymin = ULLONG_MAX, udelayavg = 0;
 
 	printk("writer_thread/%lu runnning\n", (unsigned long)data);
 	do {
@@ -429,27 +483,46 @@ static int writer_thread(void *data)
 		time2 = get_cycles();
 		rdtsc_barrier();
 		delay = time2 - time1;
-		delaymax = max(delaymax, delay);
-		delaymin = min(delaymin, delay);
-		delayavg += delay;
+		ldelaymax = max(ldelaymax, delay);
+		ldelaymin = min(ldelaymin, delay);
+		ldelayavg += delay;
 		new = (int)get_cycles();
 		for (i = 0; i < NR_VARS; i++) {
 			var[i] = new;
 		}
 
+		rdtsc_barrier();
+		time1 = get_cycles();
+		rdtsc_barrier();
+
 		wrap_write_unlock();
+
+		rdtsc_barrier();
+		time2 = get_cycles();
+		rdtsc_barrier();
+		delay = time2 - time1;
+		udelaymax = max(udelaymax, delay);
+		udelaymin = min(udelaymin, delay);
+		udelayavg += delay;
 
 		//preempt_enable();	/* for get_cycles accuracy */
 		if (WRITER_DELAY > 0)
 			udelay(WRITER_DELAY);
 	} while (!kthread_should_stop());
-	delayavg /= iter;
+	ldelayavg /= iter;
+	udelayavg /= iter;
 	printk("writer_thread/%lu iterations : %lu, "
 		"lock delay [min,avg,max] %llu,%llu,%llu cycles\n",
 		(unsigned long)data, iter,
 		calibrate_cycles(delaymin),
 		calibrate_cycles(delayavg),
 		calibrate_cycles(delaymax));
+	printk("writer_thread/%lu iterations : %lu, "
+		"unlock delay [min,avg,max] %llu,%llu,%llu cycles\n",
+		(unsigned long)data, iter,
+		calibrate_cycles(udelaymin),
+		calibrate_cycles(udelayavg),
+		calibrate_cycles(udelaymax));
 	return 0;
 }
 
@@ -536,7 +609,7 @@ static int trylock_writer_thread(void *data)
 		}
 #endif
 		fail++;
-		wbias_write_unsubscribe(&wbiasrwlock);
+		wrap_write_unsubscribe();
 		goto loop;
 locked:
 		success++;
