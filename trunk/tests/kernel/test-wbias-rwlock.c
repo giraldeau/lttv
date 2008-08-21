@@ -418,7 +418,8 @@ static int interrupt_reader_thread(void *data)
 	for_each_online_cpu(i) {
 		if (!per_cpu(int_ipi_nr, i))
 			continue;
-		per_cpu(int_delayavg, i) /= per_cpu(int_ipi_nr, i);
+		per_cpu(int_ldelayavg, i) /= per_cpu(int_ipi_nr, i);
+		per_cpu(int_udelayavg, i) /= per_cpu(int_ipi_nr, i);
 		printk("interrupt readers on CPU %i, "
 			"lock delay [min,avg,max] %llu,%llu,%llu cycles\n",
 			i,
@@ -514,9 +515,9 @@ static int writer_thread(void *data)
 	printk("writer_thread/%lu iterations : %lu, "
 		"lock delay [min,avg,max] %llu,%llu,%llu cycles\n",
 		(unsigned long)data, iter,
-		calibrate_cycles(delaymin),
-		calibrate_cycles(delayavg),
-		calibrate_cycles(delaymax));
+		calibrate_cycles(ldelaymin),
+		calibrate_cycles(ldelayavg),
+		calibrate_cycles(ldelaymax));
 	printk("writer_thread/%lu iterations : %lu, "
 		"unlock delay [min,avg,max] %llu,%llu,%llu cycles\n",
 		(unsigned long)data, iter,
