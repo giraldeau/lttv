@@ -114,7 +114,18 @@ static DEFINE_RWLOCK(std_rw_lock);
 
 #else
 
-static DEFINE_WBIAS_RWLOCK(wbiasrwlock);
+#if (TEST_INTERRUPTS)
+#define WBIASRWLOCKMASK (BW_WPTHREAD | BW_RIRQ | BW_RNPTHREAD | BW_RPTHREAD)
+#else
+#if (TEST_PREEMPT)
+#define WBIASRWLOCKMASK (BW_WPTHREAD | BW_RNPTHREAD | BW_RPTHREAD)
+#else
+#define WBIASRWLOCKMASK (BW_WPTHREAD | BW_RNPTHREAD)
+#endif
+#endif
+static DEFINE_WBIAS_RWLOCK(wbiasrwlock, WBIASRWLOCKMASK);
+CHECK_WBIAS_RWLOCK_MAP(WBIASRWLOCKMASK);
+	
 
 #define wrap_read_lock()	wbias_read_lock(&wbiasrwlock)
 #define wrap_read_trylock()	wbias_read_trylock(&wbiasrwlock)
@@ -130,36 +141,16 @@ static DEFINE_WBIAS_RWLOCK(wbiasrwlock);
 #define wrap_read_trylock_irq()	wbias_read_trylock_irq(&wbiasrwlock)
 #define wrap_read_unlock_irq()	wbias_read_unlock_irq(&wbiasrwlock)
 
-#if (TEST_INTERRUPTS)
-#define wrap_write_lock()	wbias_write_lock_irq(&wbiasrwlock)
-#define wrap_write_unlock()	wbias_write_unlock_irq(&wbiasrwlock)
+#define wrap_write_lock()			\
+	wbias_write_lock(&wbiasrwlock, WBIASRWLOCKMASK)
+#define wrap_write_unlock()			\
+	wbias_write_unlock(&wbiasrwlock, WBIASRWLOCKMASK)
 #define wrap_write_trylock_else_subscribe()	\
-	wbias_write_trylock_irq_else_subscribe(&wbiasrwlock)
+	wbias_write_trylock_else_subscribe(&wbiasrwlock, WBIASRWLOCKMASK)
 #define wrap_write_trylock_subscribed()		\
-	wbias_write_trylock_irq_subscribed(&wbiasrwlock)
+	wbias_write_trylock_subscribed(&wbiasrwlock, WBIASRWLOCKMASK)
 #define wrap_write_unsubscribe()		\
-	wbias_write_unsubscribe_irq(&wbiasrwlock)
-#else
-#if (TEST_PREEMPT)
-#define wrap_write_lock()	wbias_write_lock(&wbiasrwlock)
-#define wrap_write_unlock()	wbias_write_unlock(&wbiasrwlock)
-#define wrap_write_trylock_else_subscribe()	\
-	wbias_write_trylock_else_subscribe(&wbiasrwlock)
-#define wrap_write_trylock_subscribed()		\
-	wbias_write_trylock_subscribed(&wbiasrwlock)
-#define wrap_write_unsubscribe()		\
-	wbias_write_unsubscribe(&wbiasrwlock)
-#else
-#define wrap_write_lock()	wbias_write_lock_atomic(&wbiasrwlock)
-#define wrap_write_unlock()	wbias_write_unlock_atomic(&wbiasrwlock)
-#define wrap_write_trylock_else_subscribe()	\
-	wbias_write_trylock_atomic_else_subscribe(&wbiasrwlock)
-#define wrap_write_trylock_subscribed()		\
-	wbias_write_trylock_atomic_subscribed(&wbiasrwlock)
-#define wrap_write_unsubscribe()		\
-	wbias_write_unsubscribe_atomic(&wbiasrwlock)
-#endif
-#endif
+	wbias_write_unsubscribe(&wbiasrwlock, WBIASRWLOCKMASK)
 
 #endif
 
