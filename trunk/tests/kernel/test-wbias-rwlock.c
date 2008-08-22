@@ -115,21 +115,31 @@ static DEFINE_RWLOCK(std_rw_lock);
 #else
 
 #if (TEST_INTERRUPTS)
+#if (TEST_PREEMPT)
 #define WBIASRWLOCKMASK (BW_WPTHREAD | BW_RIRQ | BW_RNPTHREAD | BW_RPTHREAD)
+#else
+#define WBIASRWLOCKMASK (BW_WNPTHREAD | BW_RIRQ | BW_RNPTHREAD)
+#endif
 #else
 #if (TEST_PREEMPT)
 #define WBIASRWLOCKMASK (BW_WPTHREAD | BW_RNPTHREAD | BW_RPTHREAD)
 #else
-#define WBIASRWLOCKMASK (BW_WPTHREAD | BW_RNPTHREAD)
+#define WBIASRWLOCKMASK (BW_WNPTHREAD | BW_RNPTHREAD)
 #endif
 #endif
 static DEFINE_WBIAS_RWLOCK(wbiasrwlock, WBIASRWLOCKMASK);
-CHECK_WBIAS_RWLOCK_MAP(WBIASRWLOCKMASK);
+CHECK_WBIAS_RWLOCK_MAP(wbiasrwlock, WBIASRWLOCKMASK);
 	
 
+#if (TEST_PREEMPT)
 #define wrap_read_lock()	wbias_read_lock(&wbiasrwlock)
 #define wrap_read_trylock()	wbias_read_trylock(&wbiasrwlock)
 #define wrap_read_unlock()	wbias_read_unlock(&wbiasrwlock)
+#else
+#define wrap_read_lock()	wbias_read_lock_inatomic(&wbiasrwlock)
+#define wrap_read_trylock()	wbias_read_trylock_inatomic(&wbiasrwlock)
+#define wrap_read_unlock()	wbias_read_unlock_inatomic(&wbiasrwlock)
+#endif
 
 #define wrap_read_lock_inatomic()	wbias_read_lock_inatomic(&wbiasrwlock)
 #define wrap_read_trylock_inatomic()	\
@@ -269,6 +279,9 @@ static int trylock_reader_thread(void *data)
 
 	printk("trylock_reader_thread/%lu runnning\n", (unsigned long)data);
 	do {
+#if (!TEST_PREEMPT)
+		preempt_disable();
+#endif
 		while (!wrap_read_trylock())
 			iter++;
 		success_iter++;
@@ -281,6 +294,9 @@ static int trylock_reader_thread(void *data)
 				"in thread\n", cur, prev, i, iter);
 		}
 		wrap_read_unlock();
+#if (!TEST_PREEMPT)
+		preempt_enable();
+#endif
 		if (THREAD_READER_DELAY)
 			msleep(THREAD_READER_DELAY);
 	} while (!kthread_should_stop());
@@ -464,7 +480,9 @@ static int writer_thread(void *data)
 	printk("writer_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
-		//preempt_disable();	/* for get_cycles accuracy */
+#if (!TEST_PREEMPT)
+		preempt_disable();
+#endif
 		rdtsc_barrier();
 		time1 = get_cycles();
 		rdtsc_barrier();
@@ -497,9 +515,16 @@ static int writer_thread(void *data)
 		udelaymin = min(udelaymin, delay);
 		udelayavg += delay;
 
-		//preempt_enable();	/* for get_cycles accuracy */
+#if (!TEST_PREEMPT)
+		preempt_enable();
+#endif
 		if (WRITER_DELAY > 0)
 			udelay(WRITER_DELAY);
+		cpu_relax();	/*
+				 * make sure we don't busy-loop faster than
+				 * the lock busy-loop, it would cause reader and
+				 * writer starvation.
+				 */
 	} while (!kthread_should_stop());
 	ldelayavg /= iter;
 	udelayavg /= iter;
@@ -564,6 +589,11 @@ locked:
 loop:
 		if (TRYLOCK_WRITER_DELAY > 0)
 			udelay(TRYLOCK_WRITER_DELAY);
+		cpu_relax();	/*
+				 * make sure we don't busy-loop faster than
+				 * the lock busy-loop, it would cause reader and
+				 * writer starvation.
+				 */
 	} while (!kthread_should_stop());
 	printk("trylock_writer_thread/%lu iterations : "
 		"[try,success,fail after %d try], "
@@ -584,6 +614,9 @@ static int trylock_writer_thread(void *data)
 	printk("trylock_writer_thread/%lu runnning\n", (unsigned long)data);
 	do {
 		iter++;
+#if (!TEST_PREEMPT)
+		preempt_disable();
+#endif
 		if (wrap_write_trylock_else_subscribe())
 			goto locked;
 
@@ -611,8 +644,16 @@ locked:
 		}
 		wrap_write_unlock();
 loop:
+#if (!TEST_PREEMPT)
+		preempt_enable();
+#endif
 		if (TRYLOCK_WRITER_DELAY > 0)
 			udelay(TRYLOCK_WRITER_DELAY);
+		cpu_relax();	/*
+				 * make sure we don't busy-loop faster than
+				 * the lock busy-loop, it would cause reader and
+				 * writer starvation.
+				 */
 	} while (!kthread_should_stop());
 	printk("trylock_writer_thread/%lu iterations : "
 		"[try,success,fail after %d try], "
@@ -783,12 +824,14 @@ static int my_open(struct inode *inode, struct file *file)
 
 	printk("** Multiple p/non-p readers test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
+#if (TEST_PREEMPT)
 	for (i = 0; i < NR_PREADERS; i++) {
 		printk("starting preader thread %lu\n", i);
 		preader_threads[i] = kthread_run(preader_thread, (void *)i,
 			"wbiasrwlock_preader");
 		BUG_ON(!preader_threads[i]);
 	}
+#endif
 	for (i = 0; i < NR_NPREADERS; i++) {
 		printk("starting npreader thread %lu\n", i);
 		npreader_threads[i] = kthread_run(npreader_thread, (void *)i,
@@ -798,8 +841,10 @@ static int my_open(struct inode *inode, struct file *file)
 	ssleep(SINGLE_READER_TEST_DURATION);
 	for (i = 0; i < NR_NPREADERS; i++)
 		kthread_stop(npreader_threads[i]);
+#if (TEST_PREEMPT)
 	for (i = 0; i < NR_PREADERS; i++)
 		kthread_stop(preader_threads[i]);
+#endif
 	printk("\n");
 
 	wbias_rwlock_profile_latency_print();
