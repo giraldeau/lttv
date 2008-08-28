@@ -66,10 +66,6 @@ CASI Lab
 WORK IN PROGRESS
 \end_layout
 
-\begin_layout Section
-Introduction
-\end_layout
-
 \begin_layout Standard
 This document proposes some APIs for a trace viewing and analysis infrastructure.
 \end_layout
@@ -185,6 +181,70 @@ infinity
 
 \begin_layout Standard
 Each time is accompanied by an uncertainty value.
+\end_layout
+
+\begin_layout Subsection
+Modules
+\end_layout
+
+\begin_layout Standard
+The following modules should be part of the framework.
+ This list does not include modules related to the GUI, the controlling
+ of traces and the transfer of traces.
+\end_layout
+
+\begin_layout Description
+Trace Has one instance per open trace.
+ Allows the access to a trace by exporting the Low-level Trace Reading API.
+ The underlying implementation may change from one trace to another to adapt
+ to the specific format of each trace.
+\end_layout
+
+\begin_layout Description
+Traceset Receives data from several Traces using their Low-Level Trace Reading
+ API and merge them in a single stream.
+ May also receive data from other instances of Traceset.
+ Exports the High-level Trace Reading API and the Low-level Trace Reading
+ API.
+ Handles time offsetting if necessary to align traces.
+ Handles filtering.
+\end_layout
+
+\begin_layout Description
+State\InsetSpace ~
+providers They receive the stream of events from the Traceset, using
+ the High-level Trace Reading API.
+ They detect state changes.
+ Each one is designed to detect states of a particular level (kernel, applicatio
+n-level, UML states).
+ It pushes the detected states to the State module using the State Setting
+ API.
+\end_layout
+
+\begin_layout Description
+State Records changes in the system state received from State providers
+ by the State Setting API.
+ It implements an efficient state searching engine.
+ Exports the State Accessing API to allow plugins to access the information.
+\end_layout
+
+\begin_layout Description
+Event\InsetSpace ~
+description Receives the stream of events from the Traceset using the
+ High-level Trace Reading API.
+ It reads the events that describe other events and stores the information
+ they contain.
+ Other components can access this information through an API it exports.
+\end_layout
+
+\begin_layout Description
+Plugins...
+ These are the graphical views, analyses and other components that need
+ access to the events.
+ They receive data from a traceset using the High-level Trace Reading API.
+ They use the services they need (State, Event Description, and/or others).
+ They may export a special API if other components need to access their
+ data.
 \end_layout
 
 \begin_layout Section
@@ -749,7 +809,7 @@ The key names should be hierarchical.
 \end_layout
 
 \begin_layout Subsubsection
-State accessing API
+Methods of the State Accessing API
 \end_layout
 
 \begin_layout Itemize
@@ -812,7 +872,7 @@ Other functions for getting values for a set of keys at once?
 \end_layout
 
 \begin_layout Subsubsection
-State setting API
+Methods of the State Setting API
 \end_layout
 
 \begin_layout Itemize
@@ -929,7 +989,7 @@ event type name
 
 \end_deeper
 \begin_layout Subsection
-Event type description API
+Methods of the Event Type Description API
 \end_layout
 
 \begin_layout Standard
@@ -1062,7 +1122,7 @@ A reference to the trace it was in
 \end_layout
 
 \begin_layout Subsection
-Event inspecting API
+Methods of the Event inspecting API
 \end_layout
 
 \begin_layout Itemize
@@ -1188,7 +1248,7 @@ Create tracepoints (on dynamic tracers) and control which tracepoints are
 \end_layout
 
 \begin_layout Subsection
-Trace control API
+Methods of the Trace Control API
 \end_layout
 
 \begin_layout Itemize
