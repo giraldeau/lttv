@@ -233,8 +233,8 @@ Event\InsetSpace ~
 description Receives the stream of events from the Traceset using the
  High-level Trace Reading API.
  It reads the events that describe other events and stores the information
- they contain.
- Other components can access this information through an API it exports.
+ they contain, possibly using the State module.
+ Other components can access this information through an exported API.
 \end_layout
 
 \begin_layout Description
@@ -670,6 +670,10 @@ Result (success or failure)
 High level reading of traces
 \end_layout
 
+\begin_layout Subsection
+Overview
+\end_layout
+
 \begin_layout Standard
 When reading/analyzing/viewing several traces of heterogenous types, these
  traces are read by translator modules, which export the Low Level Trace
@@ -753,7 +757,7 @@ req: the handle to the request
 \end_layout
 
 \end_deeper
-\begin_layout Subsection
+\begin_layout Section
 State management
 \end_layout
 
@@ -765,6 +769,22 @@ States are key/value pairs associated with a time range.
 
 \begin_layout Standard
 Keys are character strings.
+ They are organized in a filesystem-like hierarchy.
+\end_layout
+
+\begin_layout Standard
+Each key/value pair is associated either to a specific trace or to the traceset.
+\end_layout
+
+\begin_layout Standard
+State can persist between runs of the program.
+ This is useful both to reduce pre-calculation times when re-opening a trace,
+ and also to keep general parameters like bookmarks.
+\end_layout
+
+\begin_layout Standard
+It is possible to assign a state to the time range -infinity..infinity to
+ indicate that it is global to the trace.
 \end_layout
 
 \begin_layout Standard
@@ -784,6 +804,14 @@ int32
 \end_layout
 
 \begin_layout Itemize
+uint64
+\end_layout
+
+\begin_layout Itemize
+int64
+\end_layout
+
+\begin_layout Itemize
 blob (binary block of arbitrary length)
 \end_layout
 
@@ -795,20 +823,11 @@ float32
 float64
 \end_layout
 
-\begin_layout Standard
-The state information must be persistent between executions of the framework.
+\begin_layout Itemize
+others?
 \end_layout
 
-\begin_layout Standard
-It is possible to assign a state to the range -infinity..infinity to indicate
- that it is global to the trace.
-\end_layout
-
-\begin_layout Standard
-The key names should be hierarchical.
-\end_layout
-
-\begin_layout Subsubsection
+\begin_layout Subsection
 Methods of the State Accessing API
 \end_layout
 
@@ -839,7 +858,9 @@ Return value:
 \end_layout
 
 \begin_layout Itemize
-The state value
+The state value.
+ A struct state_value contains the value and the time interval that applies
+ to it.
 \end_layout
 
 \end_deeper
@@ -850,7 +871,7 @@ ue *val, struct trace_time_range range)
 
 \begin_deeper
 \begin_layout Standard
-Request all the states changes of a given set of state variables between
+Request all the state changes of a given set of state variables between
  two time indexes
 \end_layout
 
@@ -866,12 +887,20 @@ key: the key
 range: the time range
 \end_layout
 
+\begin_layout Standard
+Return value:
+\end_layout
+
+\begin_layout Itemize
+The values
+\end_layout
+
 \end_deeper
 \begin_layout Itemize
 Other functions for getting values for a set of keys at once?
 \end_layout
 
-\begin_layout Subsubsection
+\begin_layout Subsection
 Methods of the State Setting API
 \end_layout
 
