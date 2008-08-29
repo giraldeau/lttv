@@ -25,9 +25,9 @@
 
 #define NR_VARS 100
 #define NR_WRITERS 2
-#define NR_TRYLOCK_WRITERS 1
-#define NR_NPREADERS 2
-#define NR_TRYLOCK_READERS 1
+#define NR_TRYLOCK_WRITERS 2
+#define NR_NPREADERS 4
+#define NR_TRYLOCK_READERS 2
 
 /*
  * 1 : test standard rwlock
@@ -79,6 +79,12 @@
 #define THREAD_READER_DELAY 0	/* busy loop */
 #define INTERRUPT_READER_DELAY 100
 
+#ifdef CONFIG_PREEMPT
+#define yield_in_non_preempt()
+#else
+#define yield_in_non_preempt()	yield()
+#endif
+
 static int var[NR_VARS];
 static struct task_struct *preader_threads[NR_PREADERS];
 static struct task_struct *npreader_threads[NR_NPREADERS];
@@ -98,11 +104,9 @@ static DEFINE_RWLOCK(std_rw_lock);
 
 #define wrap_read_lock_inatomic()	read_lock(&std_rw_lock)
 #define wrap_read_trylock_inatomic()	read_trylock(&std_rw_lock)
-#define wrap_read_unlock_inatomic()	read_unlock(&std_rw_lock)
 
 #define wrap_read_lock_irq()	read_lock(&std_rw_lock)
 #define wrap_read_trylock_irq()	read_trylock(&std_rw_lock)
-#define wrap_read_unlock_irq()	read_unlock(&std_rw_lock)
 
 #if (TEST_INTERRUPTS)
 #define wrap_write_lock()	write_lock_irq(&std_rw_lock)
@@ -112,19 +116,21 @@ static DEFINE_RWLOCK(std_rw_lock);
 #define wrap_write_unlock()	write_unlock(&std_rw_lock)
 #endif
 
+#define wrap_write_trylock()	write_trylock(&std_rw_lock)
+
 #else
 
 #if (TEST_INTERRUPTS)
 #if (TEST_PREEMPT)
-#define WBIASRWLOCKMASK (BW_WPTHREAD | BW_RIRQ | BW_RNPTHREAD | BW_RPTHREAD)
+#define WBIASRWLOCKMASK (WB_WPTHREAD | WB_RIRQ | WB_RNPTHREAD | WB_RPTHREAD)
 #else
-#define WBIASRWLOCKMASK (BW_WNPTHREAD | BW_RIRQ | BW_RNPTHREAD)
+#define WBIASRWLOCKMASK (WB_WNPTHREAD | WB_RIRQ | WB_RNPTHREAD)
 #endif
 #else
 #if (TEST_PREEMPT)
-#define WBIASRWLOCKMASK (BW_WPTHREAD | BW_RNPTHREAD | BW_RPTHREAD)
+#define WBIASRWLOCKMASK (WB_WPTHREAD | WB_RNPTHREAD | WB_RPTHREAD)
 #else
-#define WBIASRWLOCKMASK (BW_WNPTHREAD | BW_RNPTHREAD)
+#define WBIASRWLOCKMASK (WB_WNPTHREAD | WB_RNPTHREAD)
 #endif
 #endif
 static DEFINE_WBIAS_RWLOCK(wbiasrwlock, WBIASRWLOCKMASK);
@@ -134,33 +140,25 @@ CHECK_WBIAS_RWLOCK_MAP(wbiasrwlock, WBIASRWLOCKMASK);
 #if (TEST_PREEMPT)
 #define wrap_read_lock()	wbias_read_lock(&wbiasrwlock)
 #define wrap_read_trylock()	wbias_read_trylock(&wbiasrwlock)
-#define wrap_read_unlock()	wbias_read_unlock(&wbiasrwlock)
 #else
 #define wrap_read_lock()	wbias_read_lock_inatomic(&wbiasrwlock)
 #define wrap_read_trylock()	wbias_read_trylock_inatomic(&wbiasrwlock)
-#define wrap_read_unlock()	wbias_read_unlock_inatomic(&wbiasrwlock)
 #endif
+#define wrap_read_unlock()	wbias_read_unlock(&wbiasrwlock)
 
 #define wrap_read_lock_inatomic()	wbias_read_lock_inatomic(&wbiasrwlock)
-#define wrap_read_trylock_inatomic()	\
+#define wrap_read_trylock_inatomic()		\
 		wbias_read_trylock_inatomic(&wbiasrwlock)
-#define wrap_read_unlock_inatomic()	\
-		wbias_read_unlock_inatomic(&wbiasrwlock)
 
 #define wrap_read_lock_irq()	wbias_read_lock_irq(&wbiasrwlock)
 #define wrap_read_trylock_irq()	wbias_read_trylock_irq(&wbiasrwlock)
-#define wrap_read_unlock_irq()	wbias_read_unlock_irq(&wbiasrwlock)
 
 #define wrap_write_lock()			\
 	wbias_write_lock(&wbiasrwlock, WBIASRWLOCKMASK)
 #define wrap_write_unlock()			\
 	wbias_write_unlock(&wbiasrwlock, WBIASRWLOCKMASK)
-#define wrap_write_trylock_else_subscribe()	\
-	wbias_write_trylock_else_subscribe(&wbiasrwlock, WBIASRWLOCKMASK)
-#define wrap_write_trylock_subscribed()		\
-	wbias_write_trylock_subscribed(&wbiasrwlock, WBIASRWLOCKMASK)
-#define wrap_write_unsubscribe()		\
-	wbias_write_unsubscribe(&wbiasrwlock, WBIASRWLOCKMASK)
+#define wrap_write_trylock()			\
+	wbias_write_trylock(&wbiasrwlock, WBIASRWLOCKMASK)
 
 #endif
 
@@ -209,20 +207,20 @@ static int p_or_np_reader_thread(const char *typename,
 		prev = var[0];
 		for (i = 1; i < NR_VARS; i++) {
 			cur = var[i];
-			if (cur != prev)
+			if (cur != prev) {
 				printk(KERN_ALERT
 				"Unequal cur %d/prev %d at i %d, iter %lu "
-				"in thread\n", cur, prev, i, iter);
+				"in reader thread\n",
+				cur, prev, i, iter);
+			}
 		}
 
 		rdtsc_barrier();
 		time1 = get_cycles();
 		rdtsc_barrier();
 
-		if (!preemptable)
-			wrap_read_unlock_inatomic();
-		else
-			wrap_read_unlock();
+		wrap_read_unlock();
+
 		rdtsc_barrier();
 		time2 = get_cycles();
 		rdtsc_barrier();
@@ -236,6 +234,7 @@ static int p_or_np_reader_thread(const char *typename,
 
 		if (THREAD_READER_DELAY)
 			msleep(THREAD_READER_DELAY);
+		yield_in_non_preempt();
 	} while (!kthread_should_stop());
 	if (!iter) {
 		printk("%s/%lu iterations : %lu", typename,
@@ -282,16 +281,20 @@ static int trylock_reader_thread(void *data)
 #if (!TEST_PREEMPT)
 		preempt_disable();
 #endif
-		while (!wrap_read_trylock())
+		while (!wrap_read_trylock()) {
+			cpu_relax();
 			iter++;
+		}
 		success_iter++;
 		prev = var[0];
 		for (i = 1; i < NR_VARS; i++) {
 			cur = var[i];
-			if (cur != prev)
+			if (cur != prev) {
 				printk(KERN_ALERT
 				"Unequal cur %d/prev %d at i %d, iter %lu "
-				"in thread\n", cur, prev, i, iter);
+				"in trylock reader thread\n",
+				cur, prev, i, iter);
+			}
 		}
 		wrap_read_unlock();
 #if (!TEST_PREEMPT)
@@ -299,6 +302,7 @@ static int trylock_reader_thread(void *data)
 #endif
 		if (THREAD_READER_DELAY)
 			msleep(THREAD_READER_DELAY);
+		yield_in_non_preempt();
 	} while (!kthread_should_stop());
 	printk("trylock_reader_thread/%lu iterations : %lu, "
 		"successful iterations : %lu\n",
@@ -361,7 +365,7 @@ static void interrupt_reader_ipi(void *data)
 	rdtsc_barrier();
 	time1 = get_cycles();
 	rdtsc_barrier();
-	wrap_read_unlock_irq();
+	wrap_read_unlock();
 	time2 = get_cycles();
 	rdtsc_barrier();
 	delay = time2 - time1;
@@ -396,7 +400,7 @@ static void trylock_interrupt_reader_ipi(void *data)
 			"Unequal cur %d/prev %d at i %d in interrupt\n",
 				cur, prev, i);
 	}
-	wrap_read_unlock_irq();
+	wrap_read_unlock();
 }
 
 
@@ -419,6 +423,7 @@ static int interrupt_reader_thread(void *data)
 		on_each_cpu(interrupt_reader_ipi, NULL, 0);
 		if (INTERRUPT_READER_DELAY)
 			msleep(INTERRUPT_READER_DELAY);
+		yield_in_non_preempt();
 	} while (!kthread_should_stop());
 	printk("interrupt_reader_thread/%lu iterations : %lu\n",
 			(unsigned long)data, iter);
@@ -453,6 +458,7 @@ static int trylock_interrupt_reader_thread(void *data)
 		on_each_cpu(trylock_interrupt_reader_ipi, NULL, 0);
 		if (INTERRUPT_READER_DELAY)
 			msleep(INTERRUPT_READER_DELAY);
+		yield_in_non_preempt();
 	} while (!kthread_should_stop());
 	printk("trylock_interrupt_reader_thread/%lu iterations : %lu\n",
 			(unsigned long)data, iter);
@@ -471,7 +477,7 @@ static int trylock_interrupt_reader_thread(void *data)
 static int writer_thread(void *data)
 {
 	int i;
-	int new;
+	int new, prev, cur;
 	unsigned long iter = 0;
 	cycles_t time1, time2, delay;
 	cycles_t ldelaymax = 0, ldelaymin = ULLONG_MAX, ldelayavg = 0;
@@ -496,6 +502,18 @@ static int writer_thread(void *data)
 		ldelaymax = max(ldelaymax, delay);
 		ldelaymin = min(ldelaymin, delay);
 		ldelayavg += delay;
+		/*
+		 * Read the previous values, check that they are coherent.
+		 */
+		prev = var[0];
+		for (i = 1; i < NR_VARS; i++) {
+			cur = var[i];
+			if (cur != prev)
+				printk(KERN_ALERT
+				"Unequal cur %d/prev %d at i %d, iter %lu "
+				"in writer thread\n",
+				cur, prev, i, iter);
+		}
 		new = (int)get_cycles();
 		for (i = 0; i < NR_VARS; i++) {
 			var[i] = new;
@@ -525,6 +543,7 @@ static int writer_thread(void *data)
 				 * the lock busy-loop, it would cause reader and
 				 * writer starvation.
 				 */
+		yield_in_non_preempt();
 	} while (!kthread_should_stop());
 	ldelayavg /= iter;
 	udelayavg /= iter;
@@ -543,7 +562,6 @@ static int writer_thread(void *data)
 	return 0;
 }
 
-#if (TEST_STD_RWLOCK)
 static int trylock_writer_thread(void *data)
 {
 	int i;
@@ -552,7 +570,11 @@ static int trylock_writer_thread(void *data)
 
 	printk("trylock_writer_thread/%lu runnning\n", (unsigned long)data);
 	do {
-#if (TEST_INTERRUPTS)
+#if ((!TEST_PREEMPT) && (!TEST_STD_RWLOCK))
+		preempt_disable();
+#endif
+
+#if (TEST_STD_RWLOCK && TEST_INTERRUPTS)
 		/* std write trylock cannot disable interrupts. */
 		local_irq_disable();
 #endif
@@ -560,81 +582,27 @@ static int trylock_writer_thread(void *data)
 #if (TRYLOCK_WRITERS_FAIL_ITER == -1)
 		for (;;) {
 			iter++;
-			if (write_trylock(&std_rw_lock))
+			if (wrap_write_trylock())
 				goto locked;
+			cpu_relax();
 		}
 #else
 		for (i = 0; i < TRYLOCK_WRITERS_FAIL_ITER; i++) {
 			iter++;
-			if (write_trylock(&std_rw_lock))
+			if (wrap_write_trylock())
 				goto locked;
+			cpu_relax();
 		}
 #endif
 		fail++;
-#if (TEST_INTERRUPTS)
+
+#if (TEST_STD_RWLOCK && TEST_INTERRUPTS)
 		local_irq_enable();
 #endif
-		goto loop;
-locked:
-		success++;
-		new = (int)get_cycles();
-		for (i = 0; i < NR_VARS; i++) {
-			var[i] = new;
-		}
-#if (TEST_INTERRUPTS)
-		write_unlock_irq(&std_rw_lock);
-#else
-		write_unlock(&std_rw_lock);
+
+#if ((!TEST_PREEMPT) && (!TEST_STD_RWLOCK))
+		preempt_enable();
 #endif
-loop:
-		if (TRYLOCK_WRITER_DELAY > 0)
-			udelay(TRYLOCK_WRITER_DELAY);
-		cpu_relax();	/*
-				 * make sure we don't busy-loop faster than
-				 * the lock busy-loop, it would cause reader and
-				 * writer starvation.
-				 */
-	} while (!kthread_should_stop());
-	printk("trylock_writer_thread/%lu iterations : "
-		"[try,success,fail after %d try], "
-		"%lu,%lu,%lu\n",
-		(unsigned long)data, TRYLOCK_WRITERS_FAIL_ITER,
-		iter, success, fail);
-	return 0;
-}
-
-#else /* !TEST_STD_RWLOCK */
-
-static int trylock_writer_thread(void *data)
-{
-	int i;
-	int new;
-	unsigned long iter = 0, success = 0, fail = 0;
-
-	printk("trylock_writer_thread/%lu runnning\n", (unsigned long)data);
-	do {
-		iter++;
-#if (!TEST_PREEMPT)
-		preempt_disable();
-#endif
-		if (wrap_write_trylock_else_subscribe())
-			goto locked;
-
-#if (TRYLOCK_WRITERS_FAIL_ITER == -1)
-		for (;;) {
-			iter++;
-			if (wrap_write_trylock_subscribed())
-				goto locked;
-		}
-#else
-		for (i = 0; i < TRYLOCK_WRITERS_FAIL_ITER - 1; i++) {
-			iter++;
-			if (wrap_write_trylock_subscribed())
-				goto locked;
-		}
-#endif
-		fail++;
-		wrap_write_unsubscribe();
 		goto loop;
 locked:
 		success++;
@@ -643,10 +611,10 @@ locked:
 			var[i] = new;
 		}
 		wrap_write_unlock();
-loop:
-#if (!TEST_PREEMPT)
+#if ((!TEST_PREEMPT) && (!TEST_STD_RWLOCK))
 		preempt_enable();
 #endif
+loop:
 		if (TRYLOCK_WRITER_DELAY > 0)
 			udelay(TRYLOCK_WRITER_DELAY);
 		cpu_relax();	/*
@@ -654,6 +622,7 @@ loop:
 				 * the lock busy-loop, it would cause reader and
 				 * writer starvation.
 				 */
+		yield_in_non_preempt();
 	} while (!kthread_should_stop());
 	printk("trylock_writer_thread/%lu iterations : "
 		"[try,success,fail after %d try], "
@@ -662,8 +631,6 @@ loop:
 		iter, success, fail);
 	return 0;
 }
-
-#endif	/* TEST_STD_RWLOCK */
 
 static void wbias_rwlock_create(void)
 {
@@ -775,6 +742,7 @@ static int my_open(struct inode *inode, struct file *file)
 		cycles_calibration_max);
 	printk("\n");
 
+#if (NR_WRITERS)
 	printk("** Single writer test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
 	writer_threads[0] = kthread_run(writer_thread, (void *)0,
@@ -785,7 +753,9 @@ static int my_open(struct inode *inode, struct file *file)
 	printk("\n");
 
 	wbias_rwlock_profile_latency_print();
+#endif
 
+#if (NR_TRYLOCK_WRITERS)
 	printk("** Single trylock writer test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
 	trylock_writer_threads[0] = kthread_run(trylock_writer_thread,
@@ -797,7 +767,9 @@ static int my_open(struct inode *inode, struct file *file)
 	printk("\n");
 
 	wbias_rwlock_profile_latency_print();
+#endif
 
+#if (TEST_PREEMPT)
 	printk("** Single preemptable reader test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
 	preader_threads[0] = kthread_run(preader_thread, (void *)0,
@@ -808,8 +780,8 @@ static int my_open(struct inode *inode, struct file *file)
 	printk("\n");
 
 	wbias_rwlock_profile_latency_print();
+#endif
 
-#if (TEST_PREEMPT)
 	printk("** Single non-preemptable reader test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
 	npreader_threads[0] = kthread_run(npreader_thread, (void *)0,
@@ -820,7 +792,6 @@ static int my_open(struct inode *inode, struct file *file)
 	printk("\n");
 
 	wbias_rwlock_profile_latency_print();
-#endif
 
 	printk("** Multiple p/non-p readers test, no contention **\n");
 	wbias_rwlock_profile_latency_reset();
@@ -871,23 +842,20 @@ int init_module(void)
 	if (pentry)
 		pentry->proc_fops = &my_operations;
 
-	printk("PTHREAD_ROFFSET  : %016lX\n", PTHREAD_ROFFSET);
-	printk("PTHREAD_RMASK    : %016lX\n", PTHREAD_RMASK);
-	printk("NPTHREAD_ROFFSET : %016lX\n", NPTHREAD_ROFFSET);
-	printk("NPTHREAD_RMASK   : %016lX\n", NPTHREAD_RMASK);
-	printk("SOFTIRQ_ROFFSET  : %016lX\n", SOFTIRQ_ROFFSET);
-	printk("SOFTIRQ_RMASK    : %016lX\n", SOFTIRQ_RMASK);
-	printk("HARDIRQ_ROFFSET  : %016lX\n", HARDIRQ_ROFFSET);
-	printk("HARDIRQ_RMASK    : %016lX\n", HARDIRQ_RMASK);
-	printk("PTHREAD_WOFFSET  : %016lX\n", PTHREAD_WOFFSET);
-	printk("PTHREAD_WMASK    : %016lX\n", PTHREAD_WMASK);
-	printk("NPTHREAD_WOFFSET : %016lX\n", NPTHREAD_WOFFSET);
-	printk("NPTHREAD_WMASK   : %016lX\n", NPTHREAD_WMASK);
-	printk("WRITER_MUTEX     : %016lX\n", WRITER_MUTEX);
-	printk("SOFTIRQ_WMASK    : %016lX\n", SOFTIRQ_WMASK);
-	printk("HARDIRQ_WMASK    : %016lX\n", HARDIRQ_WMASK);
-	printk("WQ_MUTEX         : %016lX\n", WQ_MUTEX);
-	printk("WQ_ACTIVE        : %016lX\n", WQ_ACTIVE);
+	printk("UC_READER_MASK   :         %08X\n", UC_READER_MASK);
+	printk("UC_HARDIRQ_R_MASK:         %08X\n", UC_HARDIRQ_READER_MASK);
+	printk("UC_SOFTIRQ_R_MASK:         %08X\n", UC_SOFTIRQ_READER_MASK);
+	printk("UC_NPTHREA_R_MASK:         %08X\n", UC_NPTHREAD_READER_MASK);
+	printk("UC_PTHREAD_R_MASK:         %08X\n", UC_PTHREAD_READER_MASK);
+	printk("UC_WRITER        :         %08X\n", UC_WRITER);
+	printk("UC_SLOW_WRITER   :         %08X\n", UC_SLOW_WRITER);
+	printk("UC_WQ_ACTIVE     :         %08X\n", UC_WQ_ACTIVE);
+	printk("WS_MASK          :         %08X\n", WS_MASK);
+	printk("WS_WQ_MUTEX      :         %08X\n", WS_WQ_MUTEX);
+	printk("WS_COUNT_MUTEX   :         %08X\n", WS_COUNT_MUTEX);
+	printk("WS_LOCK_MUTEX    :         %08X\n", WS_LOCK_MUTEX);
+	printk("CTX_RMASK        : %016lX\n", CTX_RMASK);
+	printk("CTX_WMASK        : %016lX\n", CTX_WMASK);
 
 	return 0;
 }
