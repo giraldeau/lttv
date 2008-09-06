@@ -25,9 +25,9 @@
 
 #define NR_VARS 100
 #define NR_WRITERS 2
-#define NR_TRYLOCK_WRITERS 2
-#define NR_NPREADERS 4
-#define NR_TRYLOCK_READERS 2
+#define NR_TRYLOCK_WRITERS 1
+#define NR_NPREADERS 2
+#define NR_TRYLOCK_READERS 1
 
 /*
  * 1 : test standard rwlock
@@ -122,19 +122,24 @@ static DEFINE_RWLOCK(std_rw_lock);
 
 #if (TEST_INTERRUPTS)
 #if (TEST_PREEMPT)
-#define WBIASRWLOCKMASK (WB_WPTHREAD | WB_RIRQ | WB_RNPTHREAD | WB_RPTHREAD)
+#define WBIASRWLOCKWCTX WB_PRIO_P
+#define WBIASRWLOCKRCTX (WB_RIRQ | WB_RNPTHREAD | WB_RPTHREAD)
 #else
-#define WBIASRWLOCKMASK (WB_WNPTHREAD | WB_RIRQ | WB_RNPTHREAD)
+#define WBIASRWLOCKWCTX WB_PRIO_NP
+#define WBIASRWLOCKRCTX (WB_RIRQ | WB_RNPTHREAD)
 #endif
 #else
 #if (TEST_PREEMPT)
-#define WBIASRWLOCKMASK (WB_WPTHREAD | WB_RNPTHREAD | WB_RPTHREAD)
+#define WBIASRWLOCKWCTX WB_PRIO_P
+#define WBIASRWLOCKRCTX (WB_RNPTHREAD | WB_RPTHREAD)
 #else
-#define WBIASRWLOCKMASK (WB_WNPTHREAD | WB_RNPTHREAD)
+#define WBIASRWLOCKWCTX WB_PRIO_NP
+#define WBIASRWLOCKRCTX (WB_RNPTHREAD)
 #endif
 #endif
-static DEFINE_WBIAS_RWLOCK(wbiasrwlock, WBIASRWLOCKMASK);
-CHECK_WBIAS_RWLOCK_MAP(wbiasrwlock, WBIASRWLOCKMASK);
+
+static DEFINE_WBIAS_RWLOCK(wbiasrwlock, WBIASRWLOCKWCTX, WBIASRWLOCKRCTX);
+CHECK_WBIAS_RWLOCK_MAP(wbiasrwlock, WBIASRWLOCKWCTX, WBIASRWLOCKRCTX);
 	
 
 #if (TEST_PREEMPT)
@@ -154,11 +159,11 @@ CHECK_WBIAS_RWLOCK_MAP(wbiasrwlock, WBIASRWLOCKMASK);
 #define wrap_read_trylock_irq()	wbias_read_trylock_irq(&wbiasrwlock)
 
 #define wrap_write_lock()			\
-	wbias_write_lock(&wbiasrwlock, WBIASRWLOCKMASK)
+	wbias_write_lock(&wbiasrwlock, WBIASRWLOCKWCTX, WBIASRWLOCKRCTX)
 #define wrap_write_unlock()			\
-	wbias_write_unlock(&wbiasrwlock, WBIASRWLOCKMASK)
+	wbias_write_unlock(&wbiasrwlock, WBIASRWLOCKWCTX, WBIASRWLOCKRCTX)
 #define wrap_write_trylock()			\
-	wbias_write_trylock(&wbiasrwlock, WBIASRWLOCKMASK)
+	wbias_write_trylock(&wbiasrwlock, WBIASRWLOCKWCTX, WBIASRWLOCKRCTX)
 
 #endif
 
@@ -306,7 +311,7 @@ static int trylock_reader_thread(void *data)
 	} while (!kthread_should_stop());
 	printk("trylock_reader_thread/%lu iterations : %lu, "
 		"successful iterations : %lu\n",
-		(unsigned long)data, iter, success_iter);
+		(unsigned long)data, iter + success_iter, success_iter);
 	return 0;
 }
 
