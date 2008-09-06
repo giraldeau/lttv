@@ -17,7 +17,7 @@ endif
 	obj-m += test-nop-speed.o
 #	obj-m += test-prefix-speed-32.o
 	obj-m += test-prefix-speed.o
-	obj-m += test-wbias-rwlock.o
+	obj-m += test-psrwlock.o
 #	obj-m += test-cmpxchg-nolock2.o
 #	obj-m += test-trace-speed.o
 #	obj-m += test-rcu-speed.o
