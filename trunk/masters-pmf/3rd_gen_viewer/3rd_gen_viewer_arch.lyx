@@ -757,6 +757,32 @@ req: the handle to the request
 \end_layout
 
 \end_deeper
+\begin_layout Itemize
+void traceset_process(struct traceset *tr, struct timeval *tv)
+\end_layout
+
+\begin_deeper
+\begin_layout Standard
+Process requests for the time specified by tv, then return to the caller.
+ The time is a wall time and has no relationship with the timestamps of
+ the trace.
+ It is used to process a part of the trace while allowing a GUI to remain
+ responsive.
+\end_layout
+
+\begin_layout Standard
+Arguments:
+\end_layout
+
+\begin_layout Itemize
+tr: the traceset
+\end_layout
+
+\begin_layout Itemize
+tv: the duration for which to process the trace
+\end_layout
+
+\end_deeper
 \begin_layout Section
 State management
 \end_layout
@@ -1325,6 +1351,40 @@ status open
 
 \begin_layout Standard
 others missing...
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Note Note
+status open
+
+\begin_layout Section*
+TODO
+\end_layout
+
+\begin_layout Itemize
+extend APIs for monitoring (case where the flow of events is constant and
+ we cannot keep the whole trace forever)
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+views must be able to register the fact that they need the whole trace if
+ they do
+\end_layout
+
+\begin_layout Itemize
+there must be an elegant way to destroy old events
+\end_layout
+
+\end_deeper
+\begin_layout Itemize
+add API or infos about interaction with gui? ex: how traceset_process should
+ be called
 \end_layout
 
 \end_inset
