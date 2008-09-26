@@ -1,0 +1,1 @@
+exec /usr/local/bin/lttctl -n trace -R
