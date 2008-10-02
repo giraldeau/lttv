@@ -118,7 +118,7 @@ struct inotify_watch_array {
 	int num;
 };
 
-
+static __thread int thread_pipe[2];
 
 struct channel_trace_fd fd_pairs = { NULL, 0 };
 int inotify_fd = -1;
@@ -419,19 +419,20 @@ end:
 
 int read_subbuffer(struct fd_pair *pair)
 {
-	unsigned int	consumed_old;
-	int err, ret=0;
+	unsigned int consumed_old;
+	int err;
+	long ret;
+	unsigned long len, offset;
 
 
-	err = ioctl(pair->channel, RELAY_GET_SUBBUF, 
-								&consumed_old);
+	err = ioctl(pair->channel, RELAY_GET_SUBBUF, &consumed_old);
 	printf("cookie : %u\n", consumed_old);
 	if(err != 0) {
 		ret = errno;
 		perror("Reserving sub buffer failed (everything is normal, it is due to concurrency)");
 		goto get_error;
 	}
-	
+#if 0
 	err = TEMP_FAILURE_RETRY(write(pair->trace,
 				pair->mmap 
 					+ (consumed_old & ((pair->n_subbufs * pair->subbuf_size)-1)),
@@ -442,6 +443,28 @@ int read_subbuffer(struct fd_pair *pair)
 		perror("Error in writing to file");
 		goto write_error;
 	}
+#endif //0
+	len = pair->subbuf_size;
+	offset = 0;
+	while (len > 0) {
+		printf("splice chan to pipe offset %lu\n", offset);
+		ret = splice(pair->channel, &offset, thread_pipe[1], NULL,
+			len, SPLICE_F_MOVE);
+		printf("splice chan to pipe ret %ld\n", ret);
+		if (ret < 0) {
+			perror("Error in relay splice");
+			goto write_error;
+		}
+		ret = splice(thread_pipe[0], NULL, pair->trace, NULL,
+			ret, SPLICE_F_MOVE);
+		printf("splice pipe to file %ld\n", ret);
+		if (ret < 0) {
+			perror("Error in file splice");
+			goto write_error;
+		}
+		len -= ret;
+	}
+
 #if 0
 	err = fsync(pair->trace);
 	if(err < 0) {
@@ -451,6 +474,7 @@ int read_subbuffer(struct fd_pair *pair)
 	}
 #endif //0
 write_error:
+	ret = 0;
 	err = ioctl(pair->channel, RELAY_PUT_SUBBUF, &consumed_old);
 	if(err != 0) {
 		ret = errno;
@@ -466,7 +490,6 @@ write_error:
 get_error:
 	return ret;
 }
-
 
 
 int map_channels(struct channel_trace_fd *fd_pairs,
@@ -504,6 +527,7 @@ int map_channels(struct channel_trace_fd *fd_pairs,
 		}
 	}
 
+#if 0
 	/* Mmap each FD */
 	for(i=idx_begin;i<idx_end;i++) {
 		struct fd_pair *pair = &fd_pairs->pair[i];
@@ -533,12 +557,10 @@ munmap:
 		ret |= err_ret;
 	}
 
+#endif //0
 end:
 	return ret;
-
-
 }
-
 
 int unmap_channels(struct channel_trace_fd *fd_pairs)
 {
@@ -550,11 +572,13 @@ int unmap_channels(struct channel_trace_fd *fd_pairs)
 		struct fd_pair *pair = &fd_pairs->pair[j];
 		int err_ret;
 
+#if 0
 		err_ret = munmap(pair->mmap, pair->subbuf_size * pair->n_subbufs);
 		if(err_ret != 0) {
 			perror("Error in munmap");
 		}
 		ret |= err_ret;
+#endif //0
 		err_ret = pthread_mutex_destroy(&pair->mutex);
 		if(err_ret != 0) {
 			perror("Error in mutex destroy");
@@ -836,8 +860,14 @@ void * thread_main(void *arg)
 	long ret;
 	unsigned long thread_num = (unsigned long)arg;
 
+	ret = pipe(thread_pipe);
+	if (ret < 0) {
+		perror("Error creating pipe");
+		return (void*)ret;
+	}
 	ret = read_channels(thread_num, &fd_pairs, inotify_fd, &inotify_watch_array);
-
+	close(thread_pipe[0]);	/* close read end */
+	close(thread_pipe[1]);	/* close write end */
 	return (void*)ret;
 }
 
@@ -855,7 +885,6 @@ int channels_init()
 
 	if(ret = map_channels(&fd_pairs, 0, fd_pairs.num_pairs))
 		goto close_channel;
-
 	return 0;
 
 close_channel:
@@ -928,7 +957,6 @@ int main(int argc, char ** argv)
 	}
 
 	free(tids);
-
 	ret = unmap_channels(&fd_pairs);
 	close_channel_trace_pairs(&fd_pairs, inotify_fd, &inotify_watch_array);
 	if(inotify_fd >= 0)
