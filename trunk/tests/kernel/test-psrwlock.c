@@ -33,7 +33,7 @@
  * 1 : test standard rwlock
  * 0 : test psrwlock
  */
-#define TEST_STD_RWLOCK 1
+#define TEST_STD_RWLOCK 0
 
 /*
  * 1 : test with thread and interrupt readers.
