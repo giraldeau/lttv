@@ -33,7 +33,7 @@
  * 1 : test standard rwlock
  * 0 : test psrwlock
  */
-#define TEST_STD_RWLOCK 0
+#define TEST_STD_RWLOCK 1
 
 /*
  * 1 : test with thread and interrupt readers.
@@ -143,20 +143,28 @@ CHECK_PSRWLOCK_MAP(psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX);
 	
 
 #if (TEST_PREEMPT)
-#define wrap_read_lock()	psread_lock(&psrwlock)
-#define wrap_read_trylock()	psread_trylock(&psrwlock)
+#define wrap_read_lock()			\
+	psread_lock(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
+#define wrap_read_trylock()			\
+	psread_trylock(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
 #else
-#define wrap_read_lock()	psread_lock_inatomic(&psrwlock)
-#define wrap_read_trylock()	psread_trylock_inatomic(&psrwlock)
+#define wrap_read_lock()			\
+	psread_lock_inatomic(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
+#define wrap_read_trylock()			\
+	psread_trylock_inatomic(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
 #endif
-#define wrap_read_unlock()	psread_unlock(&psrwlock)
+#define wrap_read_unlock()			\
+	psread_unlock(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
 
-#define wrap_read_lock_inatomic()	psread_lock_inatomic(&psrwlock)
+#define wrap_read_lock_inatomic()		\
+	psread_lock_inatomic(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
 #define wrap_read_trylock_inatomic()		\
-		psread_trylock_inatomic(&psrwlock)
+	psread_trylock_inatomic(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
 
-#define wrap_read_lock_irq()	psread_lock_irq(&psrwlock)
-#define wrap_read_trylock_irq()	psread_trylock_irq(&psrwlock)
+#define wrap_read_lock_irq()			\
+	psread_lock_irq(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
+#define wrap_read_trylock_irq()			\
+	psread_trylock_irq(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
 
 #define wrap_write_lock()			\
 	pswrite_lock(&psrwlock, PSRWLOCKWCTX, PSRWLOCKRCTX)
