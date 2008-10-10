@@ -165,7 +165,7 @@ static int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
           (struct ltt_trace_header_2_0 *)header;
         tf->buffer_header_size =
          sizeof(struct ltt_block_start_header) 
-            + sizeof(struct ltt_trace_header_1_0);
+            + sizeof(struct ltt_trace_header_2_0);
         tf->tscbits = vheader->tscbits;
         tf->eventbits = vheader->eventbits;
         tf->tsc_mask = ((1ULL << tf->tscbits) - 1);
@@ -1256,7 +1256,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   
   event->timestamp = ltt_get_uint32(LTT_GET_BO(tf), pos);
   event->event_id = event->timestamp >> tf->tscbits;
-  event->timestamp = event->timestamp & tsc_mask;
+  event->timestamp = event->timestamp & tf->tsc_mask;
   pos += sizeof(guint32);
 
   switch (event->event_id) {
@@ -1495,7 +1495,7 @@ void ltt_update_event_size(LttTracefile *tf)
    */
   if (likely(info && info->fields)) {
     /* alignment */
-    event->data += ltt_align((off_t)event->data, info->largest_align,
+    tf->event.data += ltt_align((off_t)tf->event.data, info->largest_align,
                              info->alignment);
     /* size, dynamically computed */
     if (info->size != -1)

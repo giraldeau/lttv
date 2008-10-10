@@ -1,4 +1,4 @@
-
+#ifndef _LTT_EVENT_H
 #define _LTT_EVENT_H
 
 #include <glib.h>
