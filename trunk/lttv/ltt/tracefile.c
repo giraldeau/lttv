@@ -122,52 +122,42 @@ void ltt_event_debug(int state)
  *
  * Return value : 0 success, 1 bad tracefile
  */
-static int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
+static int parse_trace_header(ltt_subbuffer_header_t *header,
+  LttTracefile *tf, LttTrace *t)
 {
-  guint32 *magic_number = (guint32*)header;
-  struct ltt_trace_header_any *any = (struct ltt_trace_header_any *)header;
-
-  if(*magic_number == LTT_MAGIC_NUMBER)
+  if (header->magic_number == LTT_MAGIC_NUMBER)
     tf->reverse_bo = 0;
-  else if(*magic_number == LTT_REV_MAGIC_NUMBER)
+  else if(header->magic_number == LTT_REV_MAGIC_NUMBER)
     tf->reverse_bo = 1;
   else  /* invalid magic number, bad tracefile ! */
     return 1;
-    
+ 
+  if(t) {
+    t->ltt_major_version = header->major_version;
+    t->ltt_minor_version = header->minor_version;
+    t->arch_size = header->arch_size;
+  }
+  tf->alignment = header->alignment;
+
   /* Get float byte order : might be different from int byte order
    * (or is set to 0 if the trace has no float (kernel trace)) */
-  tf->float_word_order = any->float_word_order;
-	tf->alignment = any->alignment;
+  tf->float_word_order = 0;
 
-  if(t) {
-    t->arch_type = ltt_get_uint32(LTT_GET_BO(tf),
-                          &any->arch_type);
-    t->arch_variant = ltt_get_uint32(LTT_GET_BO(tf),
-        &any->arch_variant);
-    t->arch_size = any->arch_size;
-    t->ltt_major_version = any->major_version;
-    t->ltt_minor_version = any->minor_version;
-    t->flight_recorder = any->flight_recorder;
-  }
- 
-  switch(any->major_version) {
+  switch(header->major_version) {
   case 0:
   case 1:
     g_warning("Unsupported trace version : %hhu.%hhu",
-          any->major_version, any->minor_version);
+          header->major_version, header->minor_version);
     return 1;
     break;
   case 2:
-    switch(any->minor_version) {
+    switch(header->minor_version) {
     case 0:
       {
-        struct ltt_trace_header_2_0 *vheader =
-          (struct ltt_trace_header_2_0 *)header;
-        tf->buffer_header_size =
-         sizeof(struct ltt_block_start_header) 
-            + sizeof(struct ltt_trace_header_2_0);
-        tf->tscbits = vheader->tscbits;
-        tf->eventbits = vheader->eventbits;
+        struct ltt_subbuffer_header_2_0 *vheader = header;
+        tf->buffer_header_size = sizeof(struct ltt_subbuffer_header_2_0) ;
+        tf->tscbits = 27;
+        tf->eventbits = 5;
         tf->tsc_mask = ((1ULL << tf->tscbits) - 1);
         tf->tsc_mask_next_bit = (1ULL << tf->tscbits);
 
@@ -179,14 +169,12 @@ static int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
           if(father_trace) {
             t->start_freq = father_trace->start_freq;
             t->freq_scale = father_trace->freq_scale;
-          }
-          else {
+          } else {
             father_trace = t;
           }
           t->start_tsc = ltt_get_uint64(LTT_GET_BO(tf),
-                                        &vheader->start_tsc);
-          t->start_monotonic = ltt_get_uint64(LTT_GET_BO(tf),
-                                              &vheader->start_monotonic);
+                                        &vheader->cycle_count_begin);
+          t->start_monotonic = 0;
           t->start_time.tv_sec = ltt_get_uint64(LTT_GET_BO(tf),
                                        &vheader->start_time_sec);
           t->start_time.tv_nsec = ltt_get_uint64(LTT_GET_BO(tf),
@@ -202,17 +190,15 @@ static int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
       break;
     default:
       g_warning("Unsupported trace version : %hhu.%hhu",
-              any->major_version, any->minor_version);
+              header->major_version, header->minor_version);
       return 1;
     }
     break;
   default:
     g_warning("Unsupported trace version : %hhu.%hhu",
-            any->major_version, any->minor_version);
+            header->major_version, header->minor_version);
     return 1;
   }
-
-
   return 0;
 }
 
@@ -232,7 +218,7 @@ static int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
 static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 {
   struct stat    lTDFStat;    /* Trace data file status */
-  struct ltt_block_start_header *header;
+  ltt_subbuffer_header_t *header;
   int page_size = getpagesize();
 
   //open the file
@@ -252,8 +238,7 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 
   // Is the file large enough to contain a trace 
   if(lTDFStat.st_size <
-      (off_t)(sizeof(struct ltt_block_start_header) 
-                     + sizeof(struct ltt_trace_header_any))){
+      (off_t)(sizeof(ltt_subbuffer_header_t))){
     g_print("The input data file %s does not contain a trace\n", fileName);
     goto close_file;
   }
@@ -261,8 +246,7 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   /* Temporarily map the buffer start header to get trace information */
   /* Multiple of pages aligned head */
   tf->buffer.head = mmap(0,
-      PAGE_ALIGN(sizeof(struct ltt_block_start_header)
-          + sizeof(struct ltt_trace_header_any)), PROT_READ, 
+      PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)), PROT_READ, 
       MAP_PRIVATE, tf->fd, 0);
   if(tf->buffer.head == MAP_FAILED) {
     perror("Error in allocating memory for buffer of tracefile");
@@ -270,9 +254,9 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   }
   g_assert( ( (gulong)tf->buffer.head&(8-1) ) == 0); // make sure it's aligned.
   
-  header = (struct ltt_block_start_header*)tf->buffer.head;
+  header = (ltt_subbuffer_header_t *)tf->buffer.head;
   
-  if(parse_trace_header(header->trace, tf, NULL)) {
+  if(parse_trace_header(header, tf, NULL)) {
     g_warning("parse_trace_header error");
     goto unmap_file;
   }
@@ -283,11 +267,9 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   tf->num_blocks = tf->file_size / tf->buf_size;
 
   if(munmap(tf->buffer.head,
-        PAGE_ALIGN(sizeof(struct ltt_block_start_header)
-            + sizeof(struct ltt_trace_header_any)))) {
+        PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)))) {
     g_warning("unmap size : %u\n",
-        PAGE_ALIGN(sizeof(struct ltt_block_start_header)
-            + sizeof(struct ltt_trace_header_any)));
+        PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)));
     perror("munmap error");
     g_assert(0);
   }
@@ -304,11 +286,9 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   /* Error */
 unmap_file:
   if(munmap(tf->buffer.head,
-        PAGE_ALIGN(sizeof(struct ltt_block_start_header)
-            + sizeof(struct ltt_trace_header_any)))) {
+        PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)))) {
     g_warning("unmap size : %u\n",
-        PAGE_ALIGN(sizeof(struct ltt_block_start_header)
-            + sizeof(struct ltt_trace_header_any)));
+        PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)));
     perror("munmap error");
     g_assert(0);
   }
@@ -738,7 +718,7 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   LttTracefile *tf;
   GArray *group;
   int i, ret;
-  struct ltt_block_start_header *header;
+  ltt_subbuffer_header_t *header;
   DIR *dir;
   struct dirent *entry;
   guint control_found = 0;
@@ -795,9 +775,8 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   /* Get the trace information for the control/metadata_0 tracefile */
   g_assert(group->len > 0);
   tf = &g_array_index (group, LttTracefile, 0);
-  header = (struct ltt_block_start_header*)tf->buffer.head;
-  g_assert(parse_trace_header(header->trace,
-                                  tf, t) == 0);
+  header = (ltt_subbuffer_header_t *)tf->buffer.head;
+  g_assert(parse_trace_header(header, tf, t) == 0);
 
   t->num_cpu = group->len;
   
@@ -1338,7 +1317,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
 static gint map_block(LttTracefile * tf, guint block_num)
 {
   int page_size = getpagesize();
-  struct ltt_block_start_header *header;
+  ltt_subbuffer_header_t *header;
 
   g_assert(block_num < tf->num_blocks);
 
@@ -1367,23 +1346,17 @@ static gint map_block(LttTracefile * tf, guint block_num)
 
   tf->buffer.index = block_num;
 
-  header = (struct ltt_block_start_header*)tf->buffer.head;
+  header = (ltt_subbuffer_header_t *)tf->buffer.head;
 
   tf->buffer.begin.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
-                                              &header->begin.cycle_count);
-  tf->buffer.begin.freq = ltt_get_uint64(LTT_GET_BO(tf),
-                                         &header->begin.freq);
-  if(tf->buffer.begin.freq == 0)
-    tf->buffer.begin.freq = tf->trace->start_freq;
+                                              &header->cycle_count_begin);
+  tf->buffer.begin.freq = tf->trace->start_freq;
 
   tf->buffer.begin.timestamp = ltt_interpolate_time_from_tsc(tf, 
                                           tf->buffer.begin.cycle_count);
   tf->buffer.end.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
-                                              &header->end.cycle_count);
-  tf->buffer.end.freq = ltt_get_uint64(LTT_GET_BO(tf),
-                                       &header->end.freq);
-  if(tf->buffer.end.freq == 0)
-    tf->buffer.end.freq = tf->trace->start_freq;
+                                              &header->cycle_count_end);
+  tf->buffer.end.freq = tf->trace->start_freq;
   
   tf->buffer.lost_size = ltt_get_uint32(LTT_GET_BO(tf),
                                         &header->lost_size);

@@ -41,14 +41,12 @@
 
 #define NSEC_PER_USEC 1000
 
-#define LTT_PACKED_STRUCT __attribute__ ((packed))
-
 /* Byte ordering */
 #define LTT_GET_BO(t) ((t)->reverse_bo)
 
-#define LTT_HAS_FLOAT(t) ((t)->float_word_order!=0)
+#define LTT_HAS_FLOAT(t) ((t)->float_word_order ! =0)
 #define LTT_GET_FLOAT_BO(t) \
-  (((t)->float_word_order==__BYTE_ORDER)?0:1)
+  (((t)->float_word_order == __BYTE_ORDER) ? 0 : 1)
 
 #define SEQUENCE_AVG_ELEMENTS 1000
                                
@@ -57,55 +55,29 @@ typedef guint16 uint16_t;
 typedef guint32 uint32_t;
 typedef guint64 uint64_t;
 
-/* Block and trace headers */
+/* Subbuffer header */
+struct ltt_subbuffer_header_2_0 {
+	uint64_t cycle_count_begin;	/* Cycle count at subbuffer start */
+	uint64_t cycle_count_end;	/* Cycle count at subbuffer end */
+	uint32_t magic_number;		/* Trace magic number.
+					 * contains endianness information.
+					 */
+	uint8_t major_version;
+	uint8_t minor_version;
+	uint8_t arch_size;		/* Architecture pointer size */
+	uint8_t alignment;		/* LTT data alignment */
+	uint64_t start_time_sec;	/* NTP-corrected start time */
+	uint64_t start_time_usec;
+	uint64_t start_freq;		/*
+					 * Frequency at trace start,
+					 * used all along the trace.
+					 */
+	uint32_t freq_scale;		/* Frequency scaling */
+	uint32_t lost_size;		/* Size unused at end of subbuffer */
+	uint32_t buf_size;		/* Size of this subbuffer */
+};
 
-struct ltt_trace_header_any {
-  uint32_t        magic_number;
-  uint32_t        arch_type;
-  uint32_t        arch_variant;
-  uint32_t        float_word_order;
-  uint8_t         arch_size;
-  uint8_t         major_version;
-  uint8_t         minor_version;
-  uint8_t         flight_recorder;
-  uint8_t         alignment;    /* Architecture alignment */
-} LTT_PACKED_STRUCT;
-
-struct ltt_trace_header_2_0 {
-  uint32_t        magic_number;
-  uint32_t        arch_type;
-  uint32_t        arch_variant;
-  uint32_t        float_word_order;
-  uint8_t         arch_size;
-  uint8_t         major_version;
-  uint8_t         minor_version;
-  uint8_t         flight_recorder;
-  uint8_t         alignment;    /* Architecture alignment */
-  uint8_t         tscbits;
-  uint8_t         eventbits;
-  uint8_t         unused1;
-  uint32_t        freq_scale;
-  uint64_t        start_freq;
-  uint64_t        start_tsc;
-  uint64_t        start_monotonic;
-  uint64_t        start_time_sec;
-  uint64_t        start_time_usec;
-} LTT_PACKED_STRUCT;
-
-struct ltt_block_start_header {
-  struct { 
-    uint64_t                cycle_count;
-    uint64_t                freq;
-  } begin;
-  struct {
-    uint64_t                cycle_count;
-    uint64_t                freq;
-  } end;
-  uint32_t                lost_size;  /* Size unused at the end of the buffer */
-  uint32_t                buf_size;   /* The size of this sub-buffer */
-  struct ltt_trace_header_any trace[0];
-} LTT_PACKED_STRUCT;
-
+typedef struct ltt_subbuffer_header_2_0 ltt_subbuffer_header_t;
 
 enum field_status { FIELD_UNKNOWN, FIELD_VARIABLE, FIELD_FIXED };
 
@@ -128,7 +100,6 @@ typedef struct _LttBuffer {
   /* Timekeeping */
   uint64_t                tsc;       /* Current timestamp counter */
   uint64_t                freq; /* Frequency in khz */
-  //double                  nsecs_per_cycle;  /* Precalculated from freq */
   guint32                 cyc2ns_scale;
 } LttBuffer;
 
