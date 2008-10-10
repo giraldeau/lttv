@@ -57,19 +57,6 @@ typedef guint16 uint16_t;
 typedef guint32 uint32_t;
 typedef guint64 uint64_t;
 
-struct ltt_event_header_hb {
-  uint32_t      timestamp;
-  uint16_t      event_id;
-  uint16_t      event_size;
-} LTT_PACKED_STRUCT;
-
-struct ltt_event_header_nohb {
-  uint64_t      timestamp;
-  uint16_t      event_id;
-  uint16_t      event_size;
-} LTT_PACKED_STRUCT;
-
-
 /* Block and trace headers */
 
 struct ltt_trace_header_any {
