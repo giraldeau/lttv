@@ -2970,6 +2970,60 @@ powerpc64, s390, sparc, sparc64.<br>
 </td>
 </tr>
 
+<tr>
+<td style="vertical-align: top;">
+0.11.0<br>
+</td>
+<td style="vertical-align: top;">
+0.37<br>
+</td>
+<td style="vertical-align: top;">
+0.53<br>
+</td>
+<td style="vertical-align: top;">
+obsolete<br>
+</td>
+<td style="vertical-align: top;">
+0.6<br>
+</td>
+<td style="vertical-align: top;">
+obsolete<br>
+</td>
+<td style="vertical-align: top;">
+2.0<br>
+</td>
+<td style="vertical-align: top;">
+2.6.27<br>
+</td>
+<td style="vertical-align: top;">
+LTTng 0.37 and LTTV 0.11.0
+I just cleaned up the LTTng trace format heavily, got rid of the
+heartbeat timer (by checking for overflow at the tracing site), got rid
+of the "special" compact channel; it removed about 5 FIXMEs in LTTng 
+(cpu hotplug and compact channel related). Everything is compact now :<br>
+<br>
+This is much more compact than the previous format, and permits a
+"tracer debug mode" in menuconfig which enables the "event size" field,
+which helps cross-checking the size expected by the userspace tool and
+the size written by the kernel.<br>
+<br>
+Note that this "event size" field can eventually be enabled on a
+per-event or per-channel basis. This will probably be useful to encode
+"binary blobs"...<br>
+<br>
+The trace major number is bumped to "2" and is completely incompatible 
+with old LTTV.<br>
+</td>
+<td style="vertical-align: top;">
+</td>
+<td style="vertical-align: top;">
+x86, alpha, arm26, avr32, cris, frv, h8300, m32r, m68knommu, parisc, sh, sh64,
+um, v850, xtensa.<br>
+arm, i686, ia64, m68k, mips, mipsel, x86_64, powerpc 405,
+powerpc64, s390, sparc, sparc64.<br>
+</td>
+</tr>
+
 
 
 </tbody>
