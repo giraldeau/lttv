@@ -47,10 +47,6 @@ static inline const char *parse_trace_type(struct marker_info *info,
   /* parse attributes. */
   repeat:
     switch (*fmt) {
-      case 'b':
-        *attributes |= LTT_ATTRIBUTE_COMPACT;
-        ++fmt;
-        goto repeat;
       case 'n':
         *attributes |= LTT_ATTRIBUTE_NETWORK_BYTE_ORDER;
         ++fmt;
@@ -262,6 +258,8 @@ static inline long add_type(struct marker_info *info,
   case LTT_TYPE_POINTER:
     field->size = trace_size;
     field->alignment = trace_size;
+    info->largest_align = max((guint8)field->alignment,
+                              (guint8)info->largest_align);
     field->attributes = attributes;
     if (offset == -1) {
       field->offset = -1;
@@ -283,7 +281,7 @@ static inline long add_type(struct marker_info *info,
       field->static_offset = 1;
     return -1;
   default:
-    g_error("Unexpected type"); //FIXME: compact type
+    g_error("Unexpected type");
     return 0;
   }
 }
@@ -320,7 +318,7 @@ long marker_update_fields_offsets(struct marker_info *info, const char *data)
       // not aligning on pointer size, breaking genevent backward compatibility.
       break;
     default:
-      g_error("Unexpected type"); //FIXME: compact type
+      g_error("Unexpected type");
       return -1;
     }
   }
@@ -472,6 +470,7 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   info->fields = NULL;
   info->next = NULL;
   info->format = marker_get_format_from_name(trace, name);
+  info->largest_align = 1;
   if (info->format && marker_parse_format(info->format, info))
       g_error("Error parsing marker format \"%s\" for marker \"%s\"",
         info->format, g_quark_to_string(name));

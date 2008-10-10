@@ -14,32 +14,31 @@
 #include <ltt/marker-field.h>
 #include <ltt/trace.h>
 
-#define LTT_ATTRIBUTE_COMPACT (1<<0)
 #define LTT_ATTRIBUTE_NETWORK_BYTE_ORDER (1<<1)
 
 /* static ids 0-7 reserved for internal use. */
 #define MARKER_CORE_IDS         8
-/* dynamic ids 8-127 reserved for compact events. */
-#define MARKER_COMPACT_IDS      128
 
 struct marker_info;
 
 struct marker_info {
   GQuark name;
   char *format;
-  long size;       /* size if known statically, else -1 */
-  GArray *fields;           /* Array of struct marker_field */
-  guint8 int_size, long_size, pointer_size, size_t_size, alignment;
+  long size;         /* size if known statically, else -1 */
+  guint8 largest_align; /* Size of the largest alignment needed in the
+                           payload. */
+  GArray *fields;    /* Array of struct marker_field */
+  guint8 int_size, long_size, pointer_size, size_t_size;
+  guint8 alignment;  /* Size on which the architecture alignment must be
+                        done. Useful to encapsulate x86_32 events on
+			x86_64 kernels. */
   struct marker_info *next; /* Linked list of markers with the same name */
 };
 
 enum marker_id {
   MARKER_ID_SET_MARKER_ID = 0,  /* Static IDs available (range 0-7) */
   MARKER_ID_SET_MARKER_FORMAT,
-  MARKER_ID_HEARTBEAT_32,
-  MARKER_ID_HEARTBEAT_64,
-  MARKER_ID_COMPACT,    /* Compact IDs (range: 8-127)      */
-  MARKER_ID_DYNAMIC,    /* Dynamic IDs (range: 128-65535)   */
+  MARKER_ID_DYNAMIC,    /* Dynamic IDs (range: 8-65535)   */
 };
 
 static inline guint16 marker_get_id_from_info(LttTrace *trace,

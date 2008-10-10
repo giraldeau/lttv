@@ -68,9 +68,7 @@
    contained information (byte offsets) may vary with the architecture
    associated to the trace. */
    
-#define NUM_FACILITIES 256
-#define FACILITIES_BITS 8
-#define AVG_EVENTS_PER_FACILITIES 10
+#define PREALLOC_EVENTS	512
 
 typedef struct LttTrace LttTrace;
 
@@ -162,7 +160,5 @@ typedef enum _LttTypeEnum
 
 /* Standard definitions for variants */
 #define LTT_ARCH_VARIANT_NONE       0  /* Main architecture implementation */
-
-
 
 #endif // LTT_H

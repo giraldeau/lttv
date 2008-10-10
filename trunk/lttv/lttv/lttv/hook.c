@@ -409,7 +409,7 @@ gboolean lttv_hooks_call_check_merge(LttvHooks *h1, void *call_data1,
 LttvHooksById *lttv_hooks_by_id_new() 
 {
   LttvHooksById *h = g_new(LttvHooksById, 1);
-  h->index = g_ptr_array_sized_new(NUM_FACILITIES * AVG_EVENTS_PER_FACILITIES);
+  h->index = g_ptr_array_sized_new(PREALLOC_EVENTS);
   h->array = g_array_sized_new(FALSE, FALSE, sizeof(guint), 50);
   return h;
 }

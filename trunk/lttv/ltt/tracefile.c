@@ -48,12 +48,9 @@
 #include <ltt/ltt-types.h>
 #include <ltt/marker.h>
 
-/* Facility names used in this file */
+/* Tracefile names used in this file */
 
-GQuark LTT_FACILITY_NAME_HEARTBEAT,
-       LTT_EVENT_NAME_HEARTBEAT,
-       LTT_EVENT_NAME_HEARTBEAT_FULL;
-GQuark LTT_TRACEFILE_NAME_FACILITIES;
+GQuark LTT_TRACEFILE_NAME_METADATA;
 
 #ifndef g_open
 #define g_open open
@@ -82,9 +79,9 @@ LttTrace *father_trace = NULL;
 //void set_fields_offsets(LttTracefile *tf, LttEventType *event_type);
 //size_t get_fields_offsets(LttTracefile *tf, LttEventType *event_type, void *data);
 
+#if 0
 /* get the size of the field type according to 
  * The facility size information. */
-#if 0
 static inline void preset_field_type_size(LttTracefile *tf,
     LttEventType *event_type,
     off_t offset_root, off_t offset_parent,
@@ -106,7 +103,7 @@ static int ltt_seek_next_event(LttTracefile *tf);
 
 static int open_tracefiles(LttTrace *trace, gchar *root_path,
     gchar *relative_path);
-static int ltt_process_facility_tracefile(LttTracefile *tf);
+static int ltt_process_metadata_tracefile(LttTracefile *tf);
 static void ltt_tracefile_time_span_get(LttTracefile *tf,
                                         LttTime *start, LttTime *end);
 static void group_time_span_get(GQuark name, gpointer data, gpointer user_data);
@@ -141,7 +138,6 @@ static int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
    * (or is set to 0 if the trace has no float (kernel trace)) */
   tf->float_word_order = any->float_word_order;
 	tf->alignment = any->alignment;
-  tf->has_heartbeat = any->has_heartbeat;
 
   if(t) {
     t->arch_type = ltt_get_uint32(LTT_GET_BO(tf),
@@ -152,33 +148,29 @@ static int parse_trace_header(void *header, LttTracefile *tf, LttTrace *t)
     t->ltt_major_version = any->major_version;
     t->ltt_minor_version = any->minor_version;
     t->flight_recorder = any->flight_recorder;
-   // t->compact_facilities = NULL;
   }
  
   switch(any->major_version) {
-
   case 0:
+  case 1:
     g_warning("Unsupported trace version : %hhu.%hhu",
           any->major_version, any->minor_version);
     return 1;
     break;
-  case 1:
+  case 2:
     switch(any->minor_version) {
     case 0:
       {
-        struct ltt_trace_header_1_0 *vheader =
-          (struct ltt_trace_header_1_0 *)header;
+        struct ltt_trace_header_2_0 *vheader =
+          (struct ltt_trace_header_2_0 *)header;
         tf->buffer_header_size =
          sizeof(struct ltt_block_start_header) 
             + sizeof(struct ltt_trace_header_1_0);
-        tf->tsc_lsb_truncate = vheader->tsc_lsb_truncate;
         tf->tscbits = vheader->tscbits;
-        tf->tsc_msb_cutoff = 32 - tf->tsc_lsb_truncate - tf->tscbits;
-        tf->compact_event_bits = 32 - vheader->compact_data_shift;
-        tf->tsc_mask = ((1ULL << (tf->tscbits))-1);
-        tf->tsc_mask = tf->tsc_mask << tf->tsc_lsb_truncate;
-        tf->tsc_mask_next_bit = (1ULL<<(tf->tscbits));
-        tf->tsc_mask_next_bit = tf->tsc_mask_next_bit << tf->tsc_lsb_truncate;
+        tf->eventbits = vheader->eventbits;
+        tf->tsc_mask = ((1ULL << tf->tscbits) - 1);
+        tf->tsc_mask_next_bit = (1ULL << tf->tscbits);
+
         if(t) {
           t->start_freq = ltt_get_uint64(LTT_GET_BO(tf),
                                          &vheader->start_freq);
@@ -326,73 +318,6 @@ end:
   return -1;
 }
 
-#if 0
-/*****************************************************************************
- *Open control and per cpu tracefiles
- ****************************************************************************/
-
-void ltt_tracefile_open_cpu(LttTrace *t, gchar * tracefile_name)
-{
-  LttTracefile * tf;
-  tf = ltt_tracefile_open(t,tracefile_name);
-  if(!tf) return;
-  t->per_cpu_tracefile_number++;
-  g_ptr_array_add(t->per_cpu_tracefiles, tf);
-}
-
-gint ltt_tracefile_open_control(LttTrace *t, gchar * control_name)
-{
-  LttTracefile * tf;
-  LttEvent ev;
-  LttFacility * f;
-  void * pos;
-  FacilityLoad fLoad;
-  unsigned int i;
-
-  tf = ltt_tracefile_open(t,control_name);
-  if(!tf) {
-	  g_warning("ltt_tracefile_open_control : bad file descriptor");
-    return -1;
-  }
-  t->control_tracefile_number++;
-  g_ptr_array_add(t->control_tracefiles,tf);
-
-  //parse facilities tracefile to get base_id
-  if(strcmp(&control_name[strlen(control_name)-10],"facilities") ==0){
-    while(1){
-      if(!ltt_tracefile_read(tf,&ev)) return 0; // end of file
-
-      if(ev.event_id == TRACE_FACILITY_LOAD){
-	pos = ev.data;
-	fLoad.name = (gchar*)pos;
-	fLoad.checksum = *(LttChecksum*)(pos + strlen(fLoad.name));
-	fLoad.base_code = *(guint32 *)(pos + strlen(fLoad.name) + sizeof(LttChecksum));
-
-	for(i=0;i<t->facility_number;i++){
-	  f = (LttFacility*)g_ptr_array_index(t->facilities,i);
-	  if(strcmp(f->name,fLoad.name)==0 && fLoad.checksum==f->checksum){
-	    f->base_id = fLoad.base_code;
-	    break;
-	  }
-	}
-	if(i==t->facility_number) {
-	  g_warning("Facility: %s, checksum: %u is not found",
-		  fLoad.name,(unsigned int)fLoad.checksum);
-    return -1;
-  }
-      }else if(ev.event_id == TRACE_BLOCK_START){
-	continue;
-      }else if(ev.event_id == TRACE_BLOCK_END){
-	break;
-      }else {
-        g_warning("Not valid facilities trace file");
-        return -1;
-      }
-    }
-  }
-  return 0;
-}
-#endif //0
 
 /*****************************************************************************
  *Function name
@@ -416,130 +341,6 @@ static void ltt_tracefile_close(LttTracefile *t)
   close(t->fd);
 }
 
-
-/*****************************************************************************
- *Get system information
- ****************************************************************************/
-#if 0
-gint getSystemInfo(LttSystemDescription* des, gchar * pathname)
-{
-  int fd;
-  GIOChannel *iochan;
-  gchar *buf = NULL;
-  gsize length;
-
-  GMarkupParseContext * context;
-  GError * error = NULL;
-  GMarkupParser markup_parser =
-    {
-      parser_start_element,
-      NULL,
-      parser_characters,
-      NULL,  /*  passthrough  */
-      NULL   /*  error        */
-    };
-
-  fd = g_open(pathname, O_RDONLY, 0);
-  if(fd == -1){
-    g_warning("Can not open file : %s\n", pathname);
-    return -1;
-  }
-  
-  iochan = g_io_channel_unix_new(fd);
-  
-  context = g_markup_parse_context_new(&markup_parser, 0, des,NULL);
-  
-  //while(fgets(buf,DIR_NAME_SIZE, fp) != NULL){
-  while(g_io_channel_read_line(iochan, &buf, &length, NULL, &error)
-      != G_IO_STATUS_EOF) {
-
-    if(error != NULL) {
-      g_warning("Can not read xml file: \n%s\n", error->message);
-      g_error_free(error);
-    }
-    if(!g_markup_parse_context_parse(context, buf, length, &error)){
-      if(error != NULL) {
-        g_warning("Can not parse xml file: \n%s\n", error->message);
-        g_error_free(error);
-      }
-      g_markup_parse_context_free(context);
-
-      g_io_channel_shutdown(iochan, FALSE, &error); /* No flush */
-      if(error != NULL) {
-        g_warning("Can not close file: \n%s\n", error->message);
-        g_error_free(error);
-      }
-
-      close(fd);
-      return -1;
-    }
-  }
-  g_markup_parse_context_free(context);
-
-  g_io_channel_shutdown(iochan, FALSE, &error); /* No flush */
-  if(error != NULL) {
-    g_warning("Can not close file: \n%s\n", error->message);
-    g_error_free(error);
-  }
-
-  g_close(fd);
-
-  g_free(buf);
-  return 0;
-}
-#endif //0
-
-/*****************************************************************************
- *The following functions get facility/tracefile information
- ****************************************************************************/
-#if 0
-gint getFacilityInfo(LttTrace *t, gchar* eventdefs)
-{
-  GDir * dir;
-  const gchar * name;
-  unsigned int i,j;
-  LttFacility * f;
-  LttEventType * et;
-  gchar fullname[DIR_NAME_SIZE];
-  GError * error = NULL;
-
-  dir = g_dir_open(eventdefs, 0, &error);
-
-  if(error != NULL) {
-    g_warning("Can not open directory: %s, %s\n", eventdefs, error->message);
-    g_error_free(error);
-    return -1;
-  }
-
-  while((name = g_dir_read_name(dir)) != NULL){
-    if(!g_pattern_match_simple("*.xml", name)) continue;
-    strcpy(fullname,eventdefs);
-    strcat(fullname,name);
-    ltt_facility_open(t,fullname);
-  }
-  g_dir_close(dir);
-  
-  for(j=0;j<t->facility_number;j++){
-    f = (LttFacility*)g_ptr_array_index(t->facilities, j);
-    for(i=0; i<f->event_number; i++){
-      et = f->events[i];
-      setFieldsOffset(NULL, et, NULL, t);
-    }    
-  }
-  return 0;
-}
-#endif //0
-
-/*****************************************************************************
- *A trace is specified as a pathname to the directory containing all the
- *associated data (control tracefiles, per cpu tracefiles, event 
- *descriptions...).
- *
- *When a trace is closed, all the associated facilities, types and fields
- *are released as well.
- */
-
-
 /****************************************************************************
  * get_absolute_pathname
  *
@@ -553,7 +354,7 @@ void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname)
 {
   abs_pathname[0] = '\0';
 
-  if ( realpath (pathname, abs_pathname) != NULL)
+  if (realpath(pathname, abs_pathname) != NULL)
     return;
   else
   {
@@ -810,11 +611,6 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
       tmp_tf.tid = tid;
       tmp_tf.pgid = pgid;
       tmp_tf.creation = creation;
-      if(tmp_tf.name == g_quark_from_string("/compact")
-        || tmp_tf.name == g_quark_from_string("/flight-compact"))
-        tmp_tf.compact = 1;
-      else
-        tmp_tf.compact = 0;
       group = g_datalist_id_get_data(&trace->tracefiles, name);
       if(group == NULL) {
         /* Elements are automatically cleared when the array is allocated.
@@ -843,13 +639,10 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
 
 /* Presumes the tracefile is already seeked at the beginning. It makes sense,
  * because it must be done just after the opening */
-static int ltt_process_facility_tracefile(LttTracefile *tf)
+static int ltt_process_metadata_tracefile(LttTracefile *tf)
 {
   int err;
-  //LttFacility *fac;
-  //GArray *fac_ids;
   guint i;
-  //LttEventType *et;
   
   while(1) {
     err = ltt_tracefile_read_seek(tf);
@@ -859,40 +652,30 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
     err = ltt_tracefile_read_update_event(tf);
     if(err) goto update_error;
 
-    /* We are on a facility load/or facility unload/ or heartbeat event */
     /* The rules are :
-     * * facility 0 is hardcoded : this is the core facility. It will be shown
-     *   in the facility array though, and is shown as "loaded builtin" in the
-     *   trace.
-     * It contains event :
-     *  0 : facility load
-     *  1 : facility unload
-     *  2 : state dump facility load
-     *  3 : heartbeat
+     * It contains only core events :
+     *  0 : set_marker_id
+     *  1 : set_marker_format
      */
     if(tf->event.event_id >= MARKER_CORE_IDS) {
-      /* Should only contain core facility */
-      g_warning("Error in processing facility file %s, "
+      /* Should only contain core events */
+      g_warning("Error in processing metadata file %s, "
           "should not contain event id %u.", g_quark_to_string(tf->name),
           tf->event.event_id);
       err = EPERM;
       goto event_id_error;
     } else {
-    
       char *pos;
       const char *marker_name, *format;
       uint16_t id;
       guint8 int_size, long_size, pointer_size, size_t_size, alignment;
 
-      // FIXME align
       switch((enum marker_id)tf->event.event_id) {
         case MARKER_ID_SET_MARKER_ID:
           marker_name = pos = tf->event.data;
           g_debug("Doing MARKER_ID_SET_MARKER_ID of marker %s", marker_name);
           pos += strlen(marker_name) + 1;
-          //remove genevent compatibility
-	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
-          pos += ltt_align((size_t)pos, sizeof(uint16_t), tf->alignment);
+          pos += ltt_align((size_t)pos, sizeof(guint16), tf->alignment);
           id = ltt_get_uint16(LTT_GET_BO(tf), pos);
           g_debug("In MARKER_ID_SET_MARKER_ID of marker %s id %hu",
 	  	marker_name, id);
@@ -916,21 +699,14 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
           g_debug("Doing MARKER_ID_SET_MARKER_FORMAT of marker %s",
                   marker_name);
           pos += strlen(marker_name) + 1;
-          //break genevent.
-	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
           format = pos;
           pos += strlen(format) + 1;
-          //break genevent
-	  //pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
           marker_format_event(tf->trace, g_quark_from_string(marker_name),
                               format);
-          /* get information from dictionnary TODO */
-          break;
-        case MARKER_ID_HEARTBEAT_32:
-        case MARKER_ID_HEARTBEAT_64:
+          /* get information from dictionary TODO */
           break;
         default:
-          g_warning("Error in processing facility file %s, "
+          g_warning("Error in processing metadata file %s, "
               "unknown event id %hhu.",
               g_quark_to_string(tf->name),
               tf->event.event_id);
@@ -945,7 +721,7 @@ static int ltt_process_facility_tracefile(LttTracefile *tf)
 event_id_error:
 update_error:
 seek_error:
-  g_warning("An error occured in facility tracefile parsing");
+  g_warning("An error occured in metadata tracefile parsing");
   return err;
 }
 
@@ -1008,15 +784,15 @@ LttTrace *ltt_trace_open(const gchar *pathname)
     goto find_error;
   }
   
-  /* Parse each trace control/facilitiesN files : get runtime fac. info */
-  group = g_datalist_id_get_data(&t->tracefiles, LTT_TRACEFILE_NAME_FACILITIES);
+  /* Parse each trace control/metadata_N files : get runtime fac. info */
+  group = g_datalist_id_get_data(&t->tracefiles, LTT_TRACEFILE_NAME_METADATA);
   if(group == NULL) {
-    g_error("Trace %s has no facility tracefile", abs_path);
+    g_error("Trace %s has no metadata tracefile", abs_path);
     g_assert(0);
-    goto facilities_error;
+    goto metadata_error;
   }
 
-  /* Get the trace information for the control/facility 0 tracefile */
+  /* Get the trace information for the control/metadata_0 tracefile */
   g_assert(group->len > 0);
   tf = &g_array_index (group, LttTracefile, 0);
   header = (struct ltt_block_start_header*)tf->buffer.head;
@@ -1032,14 +808,14 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
     if (tf->cpu_online)
-      if(ltt_process_facility_tracefile(tf))
-        goto facilities_error;
+      if(ltt_process_metadata_tracefile(tf))
+        goto metadata_error;
   }
 
   return t;
 
   /* Error handling */
-facilities_error:
+metadata_error:
   destroy_marker_data(t);
 find_error:
   g_datalist_clear(&t->tracefiles);
@@ -1475,101 +1251,72 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   /* Read event header */
   
   /* Align the head */
-  if(!tf->compact)
-    pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
-  else {
-    g_assert(tf->has_heartbeat);
-    pos += ltt_align((size_t)pos, sizeof(uint32_t), tf->alignment);
-  }
+  pos += ltt_align((size_t)pos, sizeof(guint32), tf->alignment);
   pos_aligned = pos;
   
-  if(tf->has_heartbeat) {
-    event->timestamp = ltt_get_uint32(LTT_GET_BO(tf),
-                                          pos);
-    if(!tf->compact) {
-      /* 32 bits -> 64 bits tsc */
-      /* note : still works for seek and non seek cases. */
-      if(event->timestamp < (0xFFFFFFFFULL&tf->buffer.tsc)) {
-        tf->buffer.tsc = ((tf->buffer.tsc&0xFFFFFFFF00000000ULL)
-                            + 0x100000000ULL)
-                                | (guint64)event->timestamp;
-        event->tsc = tf->buffer.tsc;
-      } else {
-        /* no overflow */
-        tf->buffer.tsc = (tf->buffer.tsc&0xFFFFFFFF00000000ULL) 
-                                | (guint64)event->timestamp;
-        event->tsc = tf->buffer.tsc;
-        event->compact_data = 0;
-      }
-    } else {
-      /* Compact header */
-      /* We keep the LSB of the previous timestamp, to make sure
-       * we never go back */
-      event->event_id = event->timestamp >> tf->tscbits;
-      event->event_id = event->event_id & ((1 << tf->compact_event_bits) - 1);
-      event->compact_data = event->timestamp >> 
-        (tf->compact_event_bits + tf->tscbits);
-      //printf("tsc bits %u, ev bits %u init data %u\n",
-      //  tf->tscbits, tf->trace->compact_event_bits, event->compact_data);
-      /* Put the compact data back in original endianness */
-      event->compact_data = ltt_get_uint32(LTT_GET_BO(tf), &event->compact_data);
-      event->event_size = 0xFFFF;
-      //printf("Found compact event %d\n", event->event_id);
-      //printf("Compact data %d\n", event->compact_data);
-      event->timestamp = event->timestamp << tf->tsc_lsb_truncate;
-      event->timestamp = event->timestamp & tf->tsc_mask;
-      //printf("timestamp 0x%lX\n", event->timestamp);
-      //printf("mask 0x%llX\n", tf->tsc_mask);
-      //printf("mask_next 0x%llX\n", tf->tsc_mask_next_bit);
-      //printf("previous tsc 0x%llX\n", tf->buffer.tsc);
-      //printf("previous tsc&mask 0x%llX\n", tf->tsc_mask&tf->buffer.tsc);
-      //printf("previous tsc&(~mask) 0x%llX\n", tf->buffer.tsc&(~tf->tsc_mask));
-      if(event->timestamp < (tf->tsc_mask&tf->buffer.tsc)) {
-        //printf("wrap\n");
-        tf->buffer.tsc = ((tf->buffer.tsc&(~tf->tsc_mask))
-                            + tf->tsc_mask_next_bit)
-                                | (guint64)event->timestamp;
-        event->tsc = tf->buffer.tsc;
-      } else {
-        //printf("no wrap\n");
-        /* no overflow */
-        tf->buffer.tsc = (tf->buffer.tsc&(~tf->tsc_mask)) 
-                                | (guint64)event->timestamp;
-        event->tsc = tf->buffer.tsc;
-      }
-      //printf("current tsc 0x%llX\n", tf->buffer.tsc);
-    }
-    pos += sizeof(guint32);
-  } else {
-    event->tsc = ltt_get_uint64(LTT_GET_BO(tf), pos);
-    tf->buffer.tsc = event->tsc;
-    event->compact_data = 0;
-    pos += sizeof(guint64);
-  }
-  event->event_time = ltt_interpolate_time(tf, event);
+  event->timestamp = ltt_get_uint32(LTT_GET_BO(tf), pos);
+  event->event_id = event->timestamp >> tf->tscbits;
+  event->timestamp = event->timestamp & tsc_mask;
+  pos += sizeof(guint32);
 
-  if(!tf->compact) {
+  switch (event->event_id) {
+  case 29:  /* LTT_RFLAG_ID_SIZE_TSC */
     event->event_id = ltt_get_uint16(LTT_GET_BO(tf), pos);
     pos += sizeof(guint16);
-
     event->event_size = ltt_get_uint16(LTT_GET_BO(tf), pos);
     pos += sizeof(guint16);
-  } else {
-    /* Compact event */
-    event->event_size = 0xFFFF;
+    if (event->event_size == 0xFFFF) {
+      event->event_size = ltt_get_uint32(LTT_GET_BO(tf), pos);
+      pos += sizeof(guint32);
+    }
+    pos += ltt_align((size_t)pos, sizeof(guint64), tf->alignment);
+    tf->buffer.tsc = ltt_get_uint64(LTT_GET_BO(tf), pos);
+    pos += sizeof(guint64);
+    break;
+  case 30:  /* LTT_RFLAG_ID_SIZE */
+    event->event_id = ltt_get_uint16(LTT_GET_BO(tf), pos);
+    pos += sizeof(guint16);
+    event->event_size = ltt_get_uint16(LTT_GET_BO(tf), pos);
+    pos += sizeof(guint16);
+    if (event->event_size == 0xFFFF) {
+      event->event_size = ltt_get_uint32(LTT_GET_BO(tf), pos);
+      pos += sizeof(guint32);
+    }
+    break;
+  case 31: /* LTT_RFLAG_ID */
+    event->event_id = ltt_get_uint16(LTT_GET_BO(tf), pos);
+    pos += sizeof(guint16);
+    event->event_size = G_MAXUINT;
+    break;
+  default:
+    event->event_size = G_MAXUINT;
+    break;
   }
+
+  if (likely(event->event_id != 29)) {
+      /* No extended timestamp */
+      if (event->timestamp < (tf->buffer.tsc & tf->tsc_mask))
+        tf->buffer.tsc = ((tf->buffer.tsc & ~tf->tsc_mask)  /* overflow */
+                            + tf->tsc_mask_next_bit)
+                                | (guint64)event->timestamp;
+      else
+        tf->buffer.tsc = (tf->buffer.tsc & ~tf->tsc_mask)   /* no overflow */
+                                | (guint64)event->timestamp;
+  }
+  event->tsc = tf->buffer.tsc;
+
+  event->event_time = ltt_interpolate_time(tf, event);
 
   if (a_event_debug)
     print_debug_event_header(event, pos_aligned, pos);
 
-  /* Align the head */
-  if(!tf->compact)
-    pos += ltt_align((size_t)pos, tf->trace->arch_size, tf->alignment);
-
   event->data = pos;
 
-  /* get the data size and update the event fields with the current
-   * information. Also update the time if a heartbeat_full event is found. */
+  /*
+   * Let ltt_update_event_size update event->data according to the largest
+   * alignment within the payload.
+   * Get the data size and update the event fields with the current
+   * information. */
   ltt_update_event_size(tf);
 
   return 0;
@@ -1603,7 +1350,6 @@ static gint map_block(LttTracefile * tf, guint block_num)
       g_assert(0);
     }
   }
-    
   
   /* Multiple of pages aligned head */
   tf->buffer.head = mmap(0,
@@ -1623,16 +1369,6 @@ static gint map_block(LttTracefile * tf, guint block_num)
 
   header = (struct ltt_block_start_header*)tf->buffer.head;
 
-#if 0
-  tf->buffer.begin.timestamp = ltt_time_add(
-                                ltt_time_from_uint64(
-                                 ltt_get_uint64(LTT_GET_BO(tf),
-                                  &header->begin.timestamp)
-                                    - tf->trace->start_monotonic),
-                                  tf->trace->start_time);
-#endif //0
-  //g_debug("block %u begin : %lu.%lu", block_num,
-  //    tf->buffer.begin.timestamp.tv_sec, tf->buffer.begin.timestamp.tv_nsec);
   tf->buffer.begin.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->begin.cycle_count);
   tf->buffer.begin.freq = ltt_get_uint64(LTT_GET_BO(tf),
@@ -1642,25 +1378,6 @@ static gint map_block(LttTracefile * tf, guint block_num)
 
   tf->buffer.begin.timestamp = ltt_interpolate_time_from_tsc(tf, 
                                           tf->buffer.begin.cycle_count);
-#if 0
-    ltt_time_add(
-                                ltt_time_from_uint64(
-                                  (double)(tf->buffer.begin.cycle_count
-                                  - tf->trace->start_tsc) * 1000000.0
-                                    / (double)tf->trace->start_freq),
-                                   tf->trace->start_time_from_tsc);
-#endif //0
-#if 0
-
-  tf->buffer.end.timestamp = ltt_time_add(
-                                ltt_time_from_uint64(
-                                 ltt_get_uint64(LTT_GET_BO(tf),
-                                  &header->end.timestamp)
-                                    - tf->trace->start_monotonic),
-                                  tf->trace->start_time);
-#endif //0
-  //g_debug("block %u end : %lu.%lu", block_num,
-  //    tf->buffer.end.timestamp.tv_sec, tf->buffer.end.timestamp.tv_nsec);
   tf->buffer.end.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->end.cycle_count);
   tf->buffer.end.freq = ltt_get_uint64(LTT_GET_BO(tf),
@@ -1672,14 +1389,6 @@ static gint map_block(LttTracefile * tf, guint block_num)
                                         &header->lost_size);
   tf->buffer.end.timestamp = ltt_interpolate_time_from_tsc(tf,
                                         tf->buffer.end.cycle_count);
-#if 0
-    ltt_time_add(
-                                ltt_time_from_uint64(
-                                  (double)(tf->buffer.end.cycle_count
-                                  - tf->trace->start_tsc) * 1000000.0
-                                    / (double)tf->trace->start_freq),
-                                tf->trace->start_time_from_tsc);
-#endif //0
   tf->buffer.tsc =  tf->buffer.begin.cycle_count;
   tf->event.tsc = tf->buffer.tsc;
   tf->buffer.freq = tf->buffer.begin.freq;
@@ -1690,12 +1399,6 @@ static gint map_block(LttTracefile * tf, guint block_num)
   g_assert(tf->buf_size  == ltt_get_uint32(LTT_GET_BO(tf), 
                                              &header->buf_size));
   
-  /* Now that the buffer is mapped, calculate the time interpolation for the
-   * block. */
-  
-//  tf->buffer.nsecs_per_cycle = calc_nsecs_per_cycle(tf);
-  //tf->buffer.cyc2ns_scale = calc_nsecs_per_cycle(tf);
- 
   /* Make the current event point to the beginning of the buffer :
    * it means that the event read must get the first event. */
   tf->event.tracefile = tf;
@@ -1706,7 +1409,6 @@ static gint map_block(LttTracefile * tf, guint block_num)
 
 map_error:
   return -errno;
-
 }
 
 static void print_debug_event_data(LttEvent *ev)
@@ -1781,18 +1483,6 @@ void ltt_update_event_size(LttTracefile *tf)
       size = strlen((char*)tf->event.data) + 1;
       size += strlen((char*)tf->event.data + size) + 1;
       break;
-    case MARKER_ID_HEARTBEAT_32:
-      g_debug("Update Event heartbeat 32 bits");
-      break;
-    case MARKER_ID_HEARTBEAT_64:
-      g_debug("Update Event heartbeat 64 bits");
-      tscdata = (char*)(tf->event.data);
-      tf->event.tsc = ltt_get_uint64(LTT_GET_BO(tf), tscdata);
-      tf->buffer.tsc = tf->event.tsc;
-      tf->event.event_time = ltt_interpolate_time(tf, &tf->event);
-      size = ltt_align(size, sizeof(guint64), tf->alignment);
-      size += sizeof(guint64);
-      break;
   }
 
   info = marker_get_info_from_id(tf->trace, tf->event.event_id);
@@ -1801,9 +1491,13 @@ void ltt_update_event_size(LttTracefile *tf)
     g_assert(info != NULL);
 
   /* Do not update field offsets of core markers when initially reading the
-   * facility tracefile when the infos about these markers do not exist yet.
+   * metadata tracefile when the infos about these markers do not exist yet.
    */
   if (likely(info && info->fields)) {
+    /* alignment */
+    event->data += ltt_align((off_t)event->data, info->largest_align,
+                             info->alignment);
+    /* size, dynamically computed */
     if (info->size != -1)
       size = info->size;
     else
@@ -1814,7 +1508,7 @@ void ltt_update_event_size(LttTracefile *tf)
   tf->event.data_size = size;
   
   /* Check consistency between kernel and LTTV structure sizes */
-  if(tf->event.event_size == 0xFFFF) {
+  if(tf->event.event_size == G_MAXUINT) {
     /* Event size too big to fit in the event size field */
     tf->event.event_size = tf->event.data_size;
   }
@@ -1822,12 +1516,12 @@ void ltt_update_event_size(LttTracefile *tf)
   if (a_event_debug)
     print_debug_event_data(&tf->event);
 
-  /* Having a marker load or marker format event out of the facilities
+  /* Having a marker load or marker format event out of the metadata
    * tracefiles is a serious bug. */
   switch((enum marker_id)tf->event.event_id) {
     case MARKER_ID_SET_MARKER_ID:
     case MARKER_ID_SET_MARKER_FORMAT:
-      if (tf->name != g_quark_from_string("/control/facilities"))
+      if (tf->name != g_quark_from_string("/control/metadata"))
         g_error("Trace inconsistency : metadata event found in data "
                 "tracefile %s", g_quark_to_string(tf->long_name));
   }
@@ -1843,8 +1537,8 @@ void ltt_update_event_size(LttTracefile *tf)
 }
 
 
-/* Take the tf current event offset and use the event facility id and event id
- * to figure out where is the next event offset.
+/* Take the tf current event offset and use the event id to figure out where is
+ * the next event offset.
  *
  * This is an internal function not aiming at being used elsewhere : it will
  * not jump over the current block limits. Please consider using
@@ -1868,8 +1562,7 @@ static int ltt_seek_next_event(LttTracefile *tf)
     }
     goto found;
   }
-
-  
+ 
   pos = tf->event.data;
 
   if(tf->event.data_size < 0) goto error;
@@ -1893,44 +1586,6 @@ error:
   return ENOPROTOOPT;
 }
 
-#if 0
-/*****************************************************************************
- *Function name
- *    calc_nsecs_per_cycle : calculate nsecs per cycle for current block
- *
- *    1.0 / (freq(khz) *1000)  * 1000000000
- *Input Params
- *    t               : tracefile
- ****************************************************************************/
-/* from timer_tsc.c */
-#define CYC2NS_SCALE_FACTOR 10
-static guint32 calc_nsecs_per_cycle(LttTracefile * tf)
-{
-  //return 1e6 / (double)tf->buffer.freq;
-  guint32 cpu_mhz = tf->buffer.freq / 1000;
-  guint32 cyc2ns_scale = (1000 << CYC2NS_SCALE_FACTOR)/cpu_mhz;
-  
-  return cyc2ns_scale;
- // return 1e6 / (double)tf->buffer.freq;
-}
-
-static guint64 cycles_2_ns(LttTracefile *tf, guint64 cycles)
-{
-  return (cycles * tf->buffer.cyc2ns_scale) >> CYC2NS_SCALE_FACTOR;
-}
-#endif //0
-
-#if 0
-void setFieldsOffset(LttTracefile *tf, LttEventType *evT,void *evD)
-{
-  LttField * rootFld = evT->root_field;
-  //  rootFld->base_address = evD;
-
-  if(likely(rootFld))
-    rootFld->field_size = getFieldtypeSize(tf, evT->facility,
-        evT, 0,0,rootFld, evD);  
-}
-#endif //0
 #if 0
 /*****************************************************************************
  *Function name
@@ -2879,9 +2534,5 @@ static void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src)
 
 static __attribute__((constructor)) void init(void)
 {
-  LTT_FACILITY_NAME_HEARTBEAT = g_quark_from_string("heartbeat");
-  LTT_EVENT_NAME_HEARTBEAT = g_quark_from_string("heartbeat");
-  LTT_EVENT_NAME_HEARTBEAT_FULL = g_quark_from_string("heartbeat_full");
-  
-  LTT_TRACEFILE_NAME_FACILITIES = g_quark_from_string("/control/facilities");
+  LTT_TRACEFILE_NAME_METADATA = g_quark_from_string("/control/metadata");
 }

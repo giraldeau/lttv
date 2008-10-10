@@ -1,4 +1,4 @@
-#ifndef _LTT_EVENT_H
+
 #define _LTT_EVENT_H
 
 #include <glib.h>
@@ -33,9 +33,7 @@ struct LttEvent {
 	void *data;		/* event data */
 	guint data_size;
 	guint event_size;	/* event_size field of the header :
-				   used to verify data_size from facility. */
-	uint32_t compact_data;
-
+				   used to verify data_size from marker. */
 	int count;		/* the number of overflow of cycle count */
 	gint64 overflow_nsec;	/* precalculated nsec for overflows */
 };

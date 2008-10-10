@@ -43,9 +43,6 @@
 
 #define LTT_PACKED_STRUCT __attribute__ ((packed))
 
-/* Hardcoded facilities */
-#define LTT_FACILITY_CORE 0
- 
 /* Byte ordering */
 #define LTT_GET_BO(t) ((t)->reverse_bo)
 
@@ -55,16 +52,6 @@
 
 #define SEQUENCE_AVG_ELEMENTS 1000
                                
-/* Hardcoded core events */
-enum ltt_core_events {
-    LTT_EVENT_FACILITY_LOAD,
-    LTT_EVENT_FACILITY_UNLOAD,
-    LTT_EVENT_HEARTBEAT,
-    LTT_EVENT_HEARTBEAT_FULL,
-    LTT_EVENT_STATE_DUMP_FACILITY_LOAD
-};
-
-
 typedef guint8 uint8_t;
 typedef guint16 uint16_t;
 typedef guint32 uint32_t;
@@ -94,12 +81,10 @@ struct ltt_trace_header_any {
   uint8_t         major_version;
   uint8_t         minor_version;
   uint8_t         flight_recorder;
-  uint8_t         has_heartbeat;
-  uint8_t         alignment;  /* Event header alignment */
-  uint32_t        freq_scale;
+  uint8_t         alignment;    /* Architecture alignment */
 } LTT_PACKED_STRUCT;
 
-struct ltt_trace_header_1_0 {
+struct ltt_trace_header_2_0 {
   uint32_t        magic_number;
   uint32_t        arch_type;
   uint32_t        arch_variant;
@@ -108,11 +93,10 @@ struct ltt_trace_header_1_0 {
   uint8_t         major_version;
   uint8_t         minor_version;
   uint8_t         flight_recorder;
-  uint8_t         has_heartbeat;
-  uint8_t         alignment;  /* Event header alignment */
-  uint8_t         tsc_lsb_truncate;
+  uint8_t         alignment;    /* Architecture alignment */
   uint8_t         tscbits;
-  uint8_t         compact_data_shift;
+  uint8_t         eventbits;
+  uint8_t         unused1;
   uint32_t        freq_scale;
   uint64_t        start_freq;
   uint64_t        start_tsc;
@@ -120,7 +104,6 @@ struct ltt_trace_header_1_0 {
   uint64_t        start_time_sec;
   uint64_t        start_time_usec;
 } LTT_PACKED_STRUCT;
-
 
 struct ltt_block_start_header {
   struct { 
@@ -180,13 +163,9 @@ struct LttTracefile {
   size_t    alignment;               //alignment of events in the tracefile.
                                      // 0 or the architecture size in bytes.
 
-  guint8    has_heartbeat;
   size_t    buffer_header_size;
-  int       compact;                 //compact tracefile ?
-  uint8_t   tsc_lsb_truncate;
   uint8_t   tscbits;
-  uint8_t   tsc_msb_cutoff;
-  uint8_t   compact_event_bits;
+  uint8_t   eventbits;
   uint64_t  tsc_mask;
   uint64_t  tsc_mask_next_bit;       //next MSB after the mask
 
@@ -196,18 +175,6 @@ struct LttTracefile {
   /* Current block */
   LttBuffer buffer;                  //current buffer
   guint32 buf_size;                  /* The size of blocks */
-
-  /* Time flow */
-  //unsigned int      count;           //the number of overflow of cycle count
-  //double nsec_per_cycle;             //Nsec per cycle
-  //TimeHeartbeat * last_heartbeat;    //last heartbeat
-
-  //LttCycleCount cycles_per_nsec_reciprocal; // Optimisation for speed
-  //void * last_event_pos;
-
-  //LttTime prev_block_end_time;       //the end time of previous block
-  //LttTime prev_event_time;           //the time of the previous event
-  //LttCycleCount pre_cycle_count;     //previous cycle count of the event
 };
 
 /* The characteristics of the system on which the trace was obtained
@@ -230,18 +197,6 @@ struct LttSystemDescription {
   LttTime trace_start;
   LttTime trace_end;
 };
-
-/*****************************************************************************
- macro for size of some data types
- *****************************************************************************/
-// alignment -> dynamic!
-
-//#define TIMESTAMP_SIZE    sizeof(guint32)
-//#define EVENT_ID_SIZE     sizeof(guint16)
-//#define EVENT_HEADER_SIZE (TIMESTAMP_SIZE + EVENT_ID_SIZE)
-
-
-//off_t get_alignment(LttField *field);
 
 /* Calculate the offset needed to align the type.
  * If alignment is 0, alignment is disactivated.
