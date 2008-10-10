@@ -33,10 +33,10 @@ done
 # Connect the interesting high-speed markers to the marker tap.
 # Markers starting with "tap_" are considered high-speed.
 echo Connecting high-rate markers to tap
-MARKERS=`cat /proc/ltt | grep ^tap_`
+MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2}'|sort -u |grep ^tap_`
 
 #Uncomment the following to also record lockdep events.
-#MARKERS=`cat /proc/ltt | grep -e ^tap_ -e ^lockdep`
+#MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2}'|sort -u|grep -e ^tap_ -e ^lockdep`
 
 for a in $MARKERS; do
 	echo Connecting $a
