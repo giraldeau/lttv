@@ -1468,7 +1468,8 @@ void ltt_update_event_size(LttTracefile *tf)
    */
   if (likely(info && info->fields)) {
     /* alignment */
-    tf->event.data += ltt_align((off_t)tf->event.data, info->largest_align,
+    tf->event.data += ltt_align((off_t)(unsigned long)tf->event.data,
+    			     info->largest_align,
                              info->alignment);
     /* size, dynamically computed */
     if (info->size != -1)
