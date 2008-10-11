@@ -49,17 +49,28 @@
   (((t)->float_word_order == __BYTE_ORDER) ? 0 : 1)
 
 #define SEQUENCE_AVG_ELEMENTS 1000
-                               
+ 
+/*
+ * offsetof taken from Linux kernel.
+ */
+#undef offsetof
+#ifdef __compiler_offsetof
+#define offsetof(TYPE,MEMBER) __compiler_offsetof(TYPE,MEMBER)
+#else
+#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
+#endif
+
 typedef guint8 uint8_t;
 typedef guint16 uint16_t;
 typedef guint32 uint32_t;
 typedef guint64 uint64_t;
 
 /* Subbuffer header */
-struct ltt_subbuffer_header_2_0 {
+struct ltt_subbuffer_header_2_1 {
 	uint64_t cycle_count_begin;	/* Cycle count at subbuffer start */
 	uint64_t cycle_count_end;	/* Cycle count at subbuffer end */
-	uint32_t magic_number;		/* Trace magic number.
+	uint32_t magic_number;		/*
+					 * Trace magic number.
 					 * contains endianness information.
 					 */
 	uint8_t major_version;
@@ -75,9 +86,20 @@ struct ltt_subbuffer_header_2_0 {
 	uint32_t freq_scale;		/* Frequency scaling */
 	uint32_t lost_size;		/* Size unused at end of subbuffer */
 	uint32_t buf_size;		/* Size of this subbuffer */
+	char header_end[0];		/* End of header */
 };
 
-typedef struct ltt_subbuffer_header_2_0 ltt_subbuffer_header_t;
+typedef struct ltt_subbuffer_header_2_1 ltt_subbuffer_header_t;
+
+/*
+ * Return header size without padding after the structure. Don't use packed
+ * structure because gcc generates inefficient code on some architectures
+ * (powerpc, mips..)
+ */
+static inline size_t ltt_subbuffer_header_size(void)
+{
+	return offsetof(ltt_subbuffer_header_t, header_end);
+}
 
 enum field_status { FIELD_UNKNOWN, FIELD_VARIABLE, FIELD_FIXED };
 

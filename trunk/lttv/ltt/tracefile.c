@@ -152,10 +152,10 @@ static int parse_trace_header(ltt_subbuffer_header_t *header,
     break;
   case 2:
     switch(header->minor_version) {
-    case 0:
+    case 1:
       {
-        struct ltt_subbuffer_header_2_0 *vheader = header;
-        tf->buffer_header_size = sizeof(struct ltt_subbuffer_header_2_0) ;
+        struct ltt_subbuffer_header_2_1 *vheader = header;
+        tf->buffer_header_size = ltt_subbuffer_header_size();
         tf->tscbits = 27;
         tf->eventbits = 5;
         tf->tsc_mask = ((1ULL << tf->tscbits) - 1);
@@ -238,7 +238,7 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 
   // Is the file large enough to contain a trace 
   if(lTDFStat.st_size <
-      (off_t)(sizeof(ltt_subbuffer_header_t))){
+      (off_t)(ltt_subbuffer_header_size())){
     g_print("The input data file %s does not contain a trace\n", fileName);
     goto close_file;
   }
@@ -246,7 +246,7 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   /* Temporarily map the buffer start header to get trace information */
   /* Multiple of pages aligned head */
   tf->buffer.head = mmap(0,
-      PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)), PROT_READ, 
+      PAGE_ALIGN(ltt_subbuffer_header_size()), PROT_READ, 
       MAP_PRIVATE, tf->fd, 0);
   if(tf->buffer.head == MAP_FAILED) {
     perror("Error in allocating memory for buffer of tracefile");
@@ -267,9 +267,9 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   tf->num_blocks = tf->file_size / tf->buf_size;
 
   if(munmap(tf->buffer.head,
-        PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)))) {
+        PAGE_ALIGN(ltt_subbuffer_header_size()))) {
     g_warning("unmap size : %u\n",
-        PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)));
+        PAGE_ALIGN(ltt_subbuffer_header_size()));
     perror("munmap error");
     g_assert(0);
   }
@@ -286,9 +286,9 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   /* Error */
 unmap_file:
   if(munmap(tf->buffer.head,
-        PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)))) {
+        PAGE_ALIGN(ltt_subbuffer_header_size()))) {
     g_warning("unmap size : %u\n",
-        PAGE_ALIGN(sizeof(ltt_subbuffer_header_t)));
+        PAGE_ALIGN(ltt_subbuffer_header_size()));
     perror("munmap error");
     g_assert(0);
   }
