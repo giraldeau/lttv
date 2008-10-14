@@ -776,7 +776,8 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   g_assert(group->len > 0);
   tf = &g_array_index (group, LttTracefile, 0);
   header = (ltt_subbuffer_header_t *)tf->buffer.head;
-  g_assert(parse_trace_header(header, tf, t) == 0);
+  ret = parse_trace_header(header, tf, t);
+  g_assert(!ret);
 
   t->num_cpu = group->len;
   
