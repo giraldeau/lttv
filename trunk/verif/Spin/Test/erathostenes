@@ -1,0 +1,40 @@
+/*
+	The Sieve of Erathostenes
+	Prints all prime numbers up to PRIME_MAX
+*/
+#define PRIME_MAX	100
+
+chan count = [0] of { int };
+byte tries = 2;
+
+proctype sieve(chan c; int prime)
+{	int i, haschild;
+
+end:	do
+	:: c?i ->
+		if
+		:: (i%prime) ->
+			if
+			:: !haschild ->
+				/* found a new prime */
+				printf("MSC: %d\n", i);
+				haschild++;
+				chan child = [0] of { int };
+				run sieve(child, i);
+			:: else ->
+				child!i
+			fi;
+		:: else
+			/* i is divisible by prime */
+		fi
+	od
+}
+
+init
+{
+	run sieve(count, 2);
+	do
+	:: (tries <  PRIME_MAX) -> count!tries; tries++
+	:: (tries >= PRIME_MAX) -> break
+	od
+}

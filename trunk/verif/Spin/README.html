@@ -1,0 +1,374 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<!-- saved from url=(0040)http://spinroot.com/spin/Man/README.html -->
+<HTML><HEAD><TITLE>Spin - Version 5.1 - December 2007</TITLE>
+<META http-equiv=Content-Type content="text/html; charset=windows-1252">
+<META content="MSHTML 6.00.2800.1276" name=GENERATOR></HEAD>
+<BODY bgColor=#ffffff>
+<p>
+<H1><TT><FONT color=#ff0000>SPIN README</FONT></TT></H1>
+<ul></ul>
+<H2><TT>Overview of this File</TT></H2>
+<OL>
+  <LI><A href="http://spinroot.com/spin/Man/README.html#S2">Downloading Spin</A>
+  <LI><A href="http://spinroot.com/spin/Man/README.html#S1">Installing Spin</A>
+  <LI><A href="http://spinroot.com/spin/Man/README.html#S3">Related software
+  (gcc, cpp, tcl/tk wish, yacc, dot, jspin, ltl2ba)</A> </LI></OL>
+<HR>
+
+<H2><TT>0. Overview</TT></H2>This readme file contains the guidelines for
+downloading and installing Spin and related software on Unix/Linux and Windows
+platforms. Refer to <A href="http://spinroot.com/spin/whatispin.html">Spin's
+homepage</A> for a general description of Spin, with pointers to <A
+href="http://spinroot.com/spin/Man/index.html">manual pages</A>, <A
+href="http://spinroot.com/spin/News/index.html">newsletters</A>.
+<p>Spin is distributed in source form to encourage research in formal
+verification, and to help a support friendly and open exchange of algorithms,
+ideas, and tools. The software itself has a copyright from Lucent Technologies
+and Bell Laboratories, and is distributed for research and educational purposes
+only (i.e., no guarantee of any kind is implied by the distribution of the code,
+and all rights are reserved by the copyright holder). For this general use of
+Spin, no license is required.
+<p>Commercial application of the Spin software is also allowed, but requires the
+acceptance of a basic license. Refer to the <A
+href="http://www.spinroot.com/spin/spin_license.html">Spin Public license</A> for details.
+<p>
+<HR>
+
+<H2><TT><A name=S2>1. Downloading Spin</A></TT></H2>Spin runs on Unix,
+Solaris, and Linux machines, on most flavors of Windows PCs, and on Macs.
+Precompiled binary executables for some popular types of machines are available
+in the
+<A href="http://spinroot.com/spin/Bin/index.html">Spin Binaries</A>.
+<p>
+All binaries have an extension that matches the Spin version number,
+such as <tt>spin427.exe</tt>. To install the binary, rename it to
+<tt>spin.exe</tt> and copy it into your bin directory.
+<p>
+If you have machine type that is not available there, or if you are
+installing Spin for the first time, then follow the more detailed instructions
+below.
+<ul>
+  <LI><B>Unix</B> systems: <BR>download the most recent .tar-file with sources,
+  the graphical interface Xspin, documentation and examples from the <A
+  href="http://spinroot.com/spin/Src/index.html">Spin Distribution</A>, and
+  continue at <A href="http://spinroot.com/spin/Man/README.html#S1a"><FONT
+  color=red><B><TT>Step 2a</TT></B></FONT></A>.</LI>
+  <p></p>
+  <LI><B>PCs</B> (Windows95/98/2000/NT/XP): <BR>download the most recent
+  pc_spin*.zip file, with a precompiled Spin executable, the graphical interface
+  Xspin, and some examples from the <A
+  href="http://spinroot.com/spin/Src/index.html">Spin Distribution</A>, and
+  continue at <A href="http://spinroot.com/spin/Man/README.html#S1b"><FONT
+  color=red><B><TT>Step 2b</TT></B></FONT></A>. </LI>
+  <p></p>
+  <LI><B>Macs</B> (Mac OS X): <BR>download the most recent .tar-file with sources,
+  from the <A href="http://spinroot.com/spin/Src/index.html">Spin Distribution</A>,
+  and continue at <A href="http://spinroot.com/spin/Man/README.html#S1c"><FONT
+  color=red><B><TT>Step 2c</TT></B></FONT></A>.
+  </LI></ul>
+<p>
+<HR>
+
+<H2><TT><A name=S1>2. Installing Spin</A></TT></H2>
+<ul>
+  <LI><A href="http://spinroot.com/spin/Man/README.html#S1a"><TT>Unix/Linux
+  systems</TT> (compiled from the sources)</A>
+  <LI><A href="http://spinroot.com/spin/Man/README.html#S1b"><TT>Windows
+  PC's</TT> (using the executable)</A> </LI>
+  <LI><A href="http://spinroot.com/spin/Man/README.html#S1c"><TT>Macs
+  </TT> (compiled from the sources, with some patches)</A> </LI></ul><p>
+<HR>
+
+<H2><TT><A name=S1a><FONT color=red>2a. Installing Spin on a Unix/Linux
+System</A></FONT></TT></H2>
+<ul>Place the *.tar.gz file from the <A
+  href="http://spinroot.com/spin/Src/index.html">Spin Source Distribution</A> in
+  clean directory, and cd to that directory. If you have a standard Unix/Linux system,
+  unpack the archive, and compile an executable, for instance as follows: <pre>	gunzip *.tar.gz
+	tar -xf *.tar
+	cd Src*
+	make 	# or, on older distributions: make -f make_unix
+</pre>
+  <p>If you are on a SOLARIS system, edit the makefile and add
+  <TT>-DSOLARIS</TT> to the compiler directives in the makefile before you type
+  'make'. Similarly, if you use a different C compiler than defined in the
+  makefile, edit the makefile first. You need to have at least a C compiler and
+  a copy of yacc.
+  <p>If all else fails, you can also compile everything with the following line:
+<pre>	yacc -v -d spin.y; cc -o spin *.c
+</pre>
+  <p>Spin should compile without warnings. Install the executable version of
+  spin in a directory that is within your default search path (such as your home
+  bin directory, or /usr/local/bin etc.)
+  <p>
+  On Unix/Linux systems Spin assumes that the standard C preprocessor cpp is
+  stored in file "/lib/cpp". On some systems this is different: check the
+  comments in the makefile for details if you run into this problem.
+
+  <H3><TT>Testing</TT></H3>To test the basic sanity of the Spin executable, cd
+  to the Test directory that was created when you unpacked the source archive,
+  and follow the instructions in README.tests file that is included there.
+  <H3><TT>Adding Xspin (Unix/Linux)</TT></H3>Xspin is an optional, but highly
+  recommended, graphical user interface to Spin, written in Tcl/Tk. To obtain
+  Tcl/Tk, see <A href="http://spinroot.com/spin/Man/README.html#S3">Related
+  software</A>. The Xspin source can be found the Xspin4.? directory that will
+  also have been created when you unpacked the source tarfile.
+  <p>The current version of Xspin is compatible with 
+<pre>	Tk version 4.2 - Tcl version 7.6
+	Tk version 8.4 - Tcl version 8.4
+</pre>
+  <p>Xspin prints the version numbers of Spin, Xspin, and Tcl/Tk when it starts
+  up. You can also check separately which version of Tcl/Tk you have installed
+  by executing the following commands in `wish' (a Tcl/Tk command): <pre>	info tclversion
+	puts $tk_version
+</pre>You can find out which version of Spin you have by typing, at the
+  command prompt: <pre>	$ spin -V
+</pre>
+  <p>Xspin can also make use the graph layout program 'dot' if it is available
+  on your system (not required, but very nice if available -- xspin will
+  automatically recognize if it is installed.) For information on 'dot,' see <A
+  href="http://spinroot.com/spin/Man/README.html#S3">Related software</A>.
+  <p>To install Xspin on Unix/Linux:
+  <ul>
+    <LI>cd to directory Xspin... from the distribution,
+    <LI>Rename xspin*.tcl into a more convenient form (like xspin or xspin.tcl)
+    and follow the instructions at the top of this xspin.tcl file. Minimally:
+    you must change the first few lines of this file to point to the executable
+    `wish' command on your system that you want to use. If you use another
+    C-compiler than the default (gcc), you should update the global variable CC
+    inside xspin as well. Follow the instructions inside the xspin.tcl file to
+    do so.
+    <LI>copy the file into a directory within your search path, renamed to plain <tt>xspin</tt>
+and make it
+    executable, for instance:
+<pre>	cp xspin510.tcl /usr/local/bin/xspin
+	chmod +x /usr/local/bin/xspin
+</pre>
+    <LI>On Unix/Linux, invoke the program by typing
+<pre>	xspin	# or xspin.tcl if you keep the extension...
+or
+	xspin promela_spec
+
+For example:
+	cd Test
+	xspin leader
+</pre></LI></ul>Check the online Help menus in xspin for more details on
+  routine use. </ul>
+<p>
+<HR>
+
+<H2><TT><A name=S1b><FONT color=red>2b. Installing Spin on a Windows
+PC</FONT></A></TT></H2>
+<ul>If you just need to update the Spin executable itself, download a new
+  version from <A
+  href="http://spinroot.com/spin/Bin/index.html">http://spinroot.com/spin/Bin/index.html</A>
+  If you need more files, e.g. a new copy of Xspin, download the latest
+  pc_spin*.zip file from <A
+  href="http://spinroot.com/spin/Src/index.html">http://spinroot.com/spin/Src/index.html</A>
+  Extract the files from pc_spin*.zip, and copy spin*.exe, renamed spin.exe, into the directory
+  where all your commands reside and that is within your default search path
+  (e.g., c:/cygwin/bin/, or c:\apps\spin\) You can find out what your search
+  path is set to by typing 'set' at an MS-DOS prompt -- this prints a list of
+  all defined variables in your environment, including the search path that is
+  used to find executable commands.
+  (Note that you may need to set the search path in the environment variables)
+  <p>If you use Spin from the command line (i.e., without Xspin), be warned that
+  some command shells, e.g., the MKS Korn-shell, have none-standard rules for
+  argument parsing (i.e., you can not reliably quote an argument that contains
+  spaces, such as an LTL formula). In most cases this will not be much of a
+  problem, except with the conversion of LTL formula with the Spin -f option.
+  You can circumvent this by using -F instead of -f, to read the formula from a
+  file instead of the command line.
+  <p>To run Spin, also with the precompiled version, you need a working
+  C-compiler and a C-preprocessor, because Spin generates its model checking
+  software as C-source files that require compilation before a verification can
+  be performed. This guarantees fast model checking, because each model checker
+  can be optimized to the specific model being checked. Check, for instance, if
+  you can compile and run a minimal C program succesfully, e.g.:
+<pre>
+	#include &#60;stdio.h&#62;
+	int main(void) { printf("hello\n"); }
+</pre>
+  <p>To find a public version of a C compiler and some instructions on how to
+  install it see <A href="http://spinroot.com/spin/Man/README.html#S3">Related
+  software</A>.
+  <H3><TT>Adding Xspin (PC)</TT></H3>To run Xspin on a PC, you need the PC
+  version of Tcl/Tk, which you can find under <A
+  href="http://spinroot.com/spin/Man/README.html#S3">Related software</A>.
+  <p>The xspin*.tcl source is contained in the .zip file of the <A
+  href="http://spinroot.com/spin/Src/index.html">distribution</A>. Copy the .tcl
+  file as is into a directory where you plan to work, or put a shortcut to this
+  file on the Desktop or in the Start Menu. If you keep the extension .tcl, make
+  sure it is recognized as a 'wish' file by the system, so that xspin starts
+  when you double click the xspin*.tcl script.
+  <p>Under cygwin, copy the xspin*.tcl file to /bin/xspin and make it executable
+  -- check the first few lines of xspin*.tcl to make sure the location of xspin
+  matches what you have on your system (it is currently setup for
+  c:/cygwin/bin/xspin). You can now use xspin as a normal Unix-style command,
+  and you can pass the name of a filename to it, for instance as: <pre>	xspin leader
+</pre>
+  <p>An indirect way to force xspin to startup is to first start `wish' from the
+  Start Menu, under Programs, then select the larger window that comes up (the
+  command window), and cd to the directory where you've stored the xspin.tcl
+  file. Then you can then start it up by typing: <pre>	source xspin.tcl  # or whatever else you've named this
+</pre>and you should be up and running.
+  <p>The PC installation assumes that you have a command called "cpp.exe"
+  available (which comes with the gnu-c installation), which is the traditional
+  name of the C preprocessor. Alternatively, it can also use the Visual C++
+  compiler, which is named cl.exe for preprocessing. To complicate your life
+  somewhat, if you have a copy of the Borland C++ compiler installed, you'll
+  notice that this cplusplus compiler was also named cpp.exe -- that's not the
+  cpp you want. To avoid the name clash, you either have to edit the Spin source
+  code to give it the full path name of the 'real' cpp.exe and recompile, or use
+  Spin with the command-line option -Pxxxx where xxxx is the path for cpp.exe.
+  Nothing much in Spin will work without access to cpp.exe. You can do a
+  reasonable number of things without gcc.exe though (like simulations). The
+  C-compiler is required for all verifications and for the automata views in
+  Xspin. </p></ul>
+<p>
+<H2><TT><A name=S1c><FONT color=red>2c. Installing Spin on a Mac</FONT></A></TT></H2>
+  <ul>
+  Compile Spin from its sources, as described under 2a for Unix systems in general,
+  while following the suggestions below, which were provided by
+  Dominik Brettnacher, email: <tt>domi@saargate.de</tt>.
+<p>
+The C preprocessor on Mac OS X cannot be found in <tt>/lib</tt>.
+Change the path in the makefile for the
+proper location (<tt>/usr/bin/cpp</tt>), and in addition
+also tell the Mac preprocessor to handle its input as
+"assembler-with-cpp."
+This can be done by adding a flag to cpp, for instance in
+the makefile by adding the directive
+<ul>
+<pre>
+-DCPP="\"/usr/bin/cpp -xassembler-with-cpp\""
+</pre>
+</ul>
+to the definition of <tt>CFLAGS</tt>.
+</pre>
+<p>
+<H3><TT>Adding Xspin (Unix)</TT></H3>
+On the Mac, Xspin is known to work correctly with Tcl/Tk Aqua,
+which offers a self-contained binary distribution for the Mac.
+Use, for instance, "TclTkAquaStandalone", version 8.4.4 from
+<ul>
+<pre><a href="http://www.maths.mq.edu.au/~steffen/tcltk/TclTkAqua/">http://www.maths.mq.edu.au/~steffen/tcltk/TclTkAqua/</a>
+</pre>
+</ul>
+<p>
+Xspin by default places its temporary files into the root directory.
+This is nasty if you have admin privileges and probably leads to error
+messages if you don't.
+To prevent this, add a "cd" statement to xspin (no arguments, just cd by
+itself on a line), as the first command executed.
+Place it, for instance, directly after the opening comments in the file.
+This makes Xspin use the home directory for these files.
+<p>
+TclTk Aqua also provides the possibility to start a script when being run.
+For instance, to make Xspin start if you launch the TCL interpreter:
+move the xspin file into the "Wish Shell.app", as follows:
+<ul><pre>
+chmod -R u+w Wish\ Shell.app
+mkdir Wish\ Shell.app/Contents/Resources/Scripts
+mv xspin*.tcl Wish\ Shell.app/Contents/Resources/Scripts/AppMain.tcl
+</pre>
+</ul>
+</ul>
+
+<HR>
+
+<H2><TT><A name=S3>3. Related Software</A></TT></H2>
+<ul>Pointers to public domain versions of some related software packages are
+  discussed below:
+  <ul>
+    <LI>Gcc,</LI>
+    <LI>Cpp,</LI>
+    <LI>Yacc,</LI>
+    <LI>Tcl/Tk wish,</LI>
+    <LI>Dot,</LI>
+    <LI>JSpin, and</LI>
+    <LI>Ltl2Ba. </LI></ul>
+  <H3><TT>GCC</TT></H3>On Unix/Linux you probably have gcc, or an equivalent,
+  installed. On the PC you need either a copy of Visual Studio Express (for the cl
+  command), or an installation of gcc with minimally the executables: gcc.exe,
+  and cpp.exe in your search path, together with all the standard C library
+  routines and header files. You can get good free version of all these files
+  with the <TT>cygwin</TT> toolkit, which is mostly self-installing and
+  available from: <A href="http://www.cygwin.com/">http://www.cygwin.com/</A>
+  <BR>See also what's available in <A
+  href="http://spinroot.com/spin/Bin/index.html">http://spinroot.com/spin/Bin/index.html</A>.
+
+  <H3><TT>Tcl/Tk Wish</TT></H3>To run Xspin you'll need Tcl/Tk. Tcl/Tk was
+  written by John Ousterhout (john.ousterhout@eng.sun.com) and is public domain.
+  It can be obtained (for PCs or Unix) from cygwin, or from: <A
+  href="http://www.tcl.tk/">http://www.tcl.tk/</A> or also (a more recent extension):
+  <a href="http://www.activestate.com/Products/ActiveTcl/">
+  http://www.activestate.com/Products/ActiveTcl/</a><BR>More details can be found
+  in netnews-group: comp.lang.tcl
+
+  <H3><TT>Yacc (optional)</TT></H3>To compile Spin itself from its sources on a
+  PC, you'll need to have a copy of yacc installed. A public domain version for
+  a PC can most easily be obtained from <b>cygwin</b>, or also from: 
+<pre>	<A href="ftp://ftp.cs.berkeley.edu/ucb/4bsd/byacc.tar.Z">ftp://ftp.cs.berkeley.edu/ucb/4bsd/byacc.tar.Z</A>
+</pre>A copy of this file is also available in: <A
+  href="http://spinroot.com/spin/Bin/index.html">http://spinroot.com/spin/Bin/index.html</A>
+  (You don't need yacc on the PC's if you use the pre-compiled version of Spin
+  for the pc in the pc*.zip file from the distribution) Look at the file
+  make_it.bat for an example on how to perform the compilation.
+  <H3><TT>Dot (optional)</TT></H3>Dot is a graph layout tool developed by
+  Stephen North and colleagues at AT&amp;T (email: north@research.att.com).
+  Xspin can make use of dot to beautify the layout of the state-machines in the
+  automata-view option (recommended!).
+To obtain Dot, see
+<pre>
+	<A href="http://www.graphviz.org/">http://www.graphviz.org/</A>
+</pre>
+The are both PC and Unix versions of dot available. For documentation of
+dot see, for instance:
+<pre><I>	A technique for drawing directed graphs</I>,
+	by Gansner, Koutsofios, North and Vo,
+	IEEE-TSE, March, 1993.
+</pre>
+If you accept the default installation on a PC, you will need to define the
+location of dot.exe in the xspin source as follows:
+<pre>
+	set DOT "C:/Program\\ Files\ATT\Graphviz/bin/dot.exe"
+</pre>
+(the line that sets the location of DOT appears near the top of the xspin.tcl file).
+<H3><TT>JSpin (optional)</TT></H3>
+An alternative to the Xspin GUI, written in Java instead of Tcl/Tk.
+Written by Moti Ben-Ari (moti.ben-ari@weizmann.ac.il), see
+<pre>
+	<a href="http://stwww.weizmann.ac.il/g-cs/benari/jspin/">http://stwww.weizmann.ac.il/g-cs/benari/jspin/</a>
+</pre>
+The jSpin tool currently expects spin to be installed on Windows in c:/spin/spin.exe, and it assumes that you are using the
+mingw version of gcc.
+  <H3><TT>Ltl2Ba (optional)</TT></H3>A faster method to generate very small
+  never claims from LTL formulae, developed by Denis Oddoux and Paul Gastin is
+  available online in source form:
+<pre>
+	<A href="http://spinroot.com/spin/Src/ltl2ba.tar.gz">http://spinroot.com/spin/Src/ltl2ba.tar.gz</A>
+</pre>
+The latest version can be obtained from the authors website via:
+<pre>
+	<A href="http://www.lsv.ens-cachan.fr/~gastin/ltl2ba/download.php">http://www.lsv.ens-cachan.fr/~gastin/ltl2ba/download.php</A>
+See also
+	<A href="http://www.lsv.ens-cachan.fr/~gastin/ltl2ba/index.php">http://www.lsv.ens-cachan.fr/~gastin/ltl2ba/index.php</A>
+</pre>
+The C source code can be linked with Spin, or run as a standalone tool.
+<p>
+</ul>
+<HR>
+<TT>
+<TABLE cols=3 width="100%">
+<TBODY><TR>
+<TD align=left><A href="http://spinroot.com/spin/whatispin.html"><TT>Spin HomePage</TT></A></TD>
+<TD></TD>
+<TD align=right><FONT size=3><B><TT>
+(Page Last Updated: 26 April 2008)
+</TT></B></FONT></TD>
+</TR></TBODY>
+</TABLE>
+</TT>
+</BODY>
+</HTML>

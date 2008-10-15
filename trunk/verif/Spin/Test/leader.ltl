@@ -1,0 +1,70 @@
+#define elected		(nr_leaders >  0)
+#define noLeader	(nr_leaders == 0)
+#define oneLeader	(nr_leaders == 1)
+
+	/*
+	 * Formula As Typed: <>[]oneLeader
+	 * The Never Claim Below Corresponds
+	 * To The Negated Formula !(<>[]oneLeader)
+	 * (formalizing violations of the original)
+	 */
+
+never {    /* !(<>[]oneLeader) */
+T0_init:
+	if
+	:: (1) -> goto T0_init
+	:: (! ((oneLeader))) -> goto accept_S5
+	fi;
+accept_S5:
+	if
+	:: (1) -> goto T0_init
+	fi;
+accept_all:
+	skip
+}
+
+#ifdef NOTES
+Some other properties:
+	![] noLeader
+	<>  elected
+	[] (noLeader U oneLeader)
+
+
+
+
+
+
+#endif
+#ifdef RESULT
+warning: for p.o. reduction to be valid the never claim must be stutter-closed
+(never claims generated from LTL formulae are stutter-closed)
+(Spin Version 3.1.2 -- 14 March 1998)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never-claim         	+
+	assertion violations	+ (if within scope of claim)
+	acceptance   cycles 	+ (fairness disabled)
+	invalid endstates	- (disabled by never-claim)
+
+State-vector 200 byte, depth reached 233, errors: 0
+     202 states, stored (402 visited)
+     281 states, matched
+     683 transitions (= visited+matched)
+      36 atomic steps
+hash conflicts: 0 (resolved)
+(max size 2^19 states)
+
+2.542 	memory usage (Mbyte)
+
+unreached in proctype node
+	line 105, state 28, "out!two,nr"
+	(1 of 49 states)
+unreached in proctype :init:
+	(0 of 11 states)
+
+real 0.13
+user 0.04
+sys  0.09
+
+#endif

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+../Spin/Src5.1.6/spin -a buffer.spin
+cc -DSAFETY -o pan pan.c
+./pan

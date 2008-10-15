@@ -1,0 +1,1171 @@
+# To unbundle, sh this file
+echo ex.readme 1>&2
+sed 's/.//' >ex.readme <<'//GO.SYSIN DD ex.readme'
+-The 12 files in this bundle are the PROMELA
+-files of all exercises and examples discussed
+-in the document Doc/Exercises.ps from the
+-SPIN distribution.
+//GO.SYSIN DD ex.readme
+echo ex.1a 1>&2
+sed 's/.//' >ex.1a <<'//GO.SYSIN DD ex.1a'
+-init {
+-	byte i = 0;
+-	do
+-	:: i = i+1
+-	od
+-}
+//GO.SYSIN DD ex.1a
+echo ex.1b 1>&2
+sed 's/.//' >ex.1b <<'//GO.SYSIN DD ex.1b'
+-init {
+-	chan dummy = [20] of { byte };
+-	do
+-	:: dummy!85
+-	:: dummy!170
+-	od
+-}
+//GO.SYSIN DD ex.1b
+echo ex.1c 1>&2
+sed 's/.//' >ex.1c <<'//GO.SYSIN DD ex.1c'
+-#define N	26
+-
+-int a;
+-byte b;
+-
+-init {
+-	do
+-	:: atomic { (b < N) ->
+-		if
+-		:: a = a + (1<<b)
+-		:: skip
+-		fi;
+-		b=b+1 }
+-	od
+-}
+//GO.SYSIN DD ex.1c
+echo ex.2 1>&2
+sed 's/.//' >ex.2 <<'//GO.SYSIN DD ex.2'
+-#define MAX 8
+-proctype A(chan in, out)
+-{	byte mt; /* message data */
+-	bit  vr;
+-S1:	mt = (mt+1)%MAX;
+-	out!mt,1;
+-	goto S2;
+-S2:	in?vr;
+-	if
+-	:: (vr == 1) -> goto S1
+-	:: (vr == 0) -> goto S3
+-	:: printf("AERROR1\n") -> goto S5
+-	fi;
+-S3:	out!mt,1;
+-	goto S4;
+-S4:	in?vr;
+-	if
+-	:: goto S1
+-	:: printf("AERROR2\n"); goto S5
+-	fi;
+-S5:	out!mt,0;
+-	goto S4
+-}
+-proctype B(chan in, out)
+-{	byte mr, lmr;
+-	bit ar;
+-	goto S2; /* initial state */
+-S1:	assert(mr == (lmr+1)%MAX);
+-	lmr = mr;
+-	out!1;
+-	goto S2;
+-S2:	in?mr,ar;
+-	if
+-	:: (ar == 1) -> goto S1
+-	:: (ar == 0) -> goto S3
+-	:: printf("ERROR1\n"); goto S5
+-	fi;
+-S3:	out!1;
+-	goto S2;
+-S4:	in?mr,ar;
+-	if
+-	:: goto S1
+-	:: printf("ERROR2\n"); goto S5
+-	fi;
+-S5:	out!0;
+-	goto S4
+-}
+-init {
+-	chan a2b = [2] of { bit };
+-	chan b2a = [2] of { byte, bit };
+-	atomic {
+-		run A(a2b, b2a);
+-		run B(b2a, a2b)
+-	}
+-}
+//GO.SYSIN DD ex.2
+echo ex.3 1>&2
+sed 's/.//' >ex.3 <<'//GO.SYSIN DD ex.3'
+-mtype = { a, b, c, d, e, i, l, m, n, q, r, u, v };
+-
+-chan dce = [0] of { mtype };
+-chan dte = [0] of { mtype };
+-
+-active proctype dte_proc()
+-{
+-state01:
+-	do
+-	:: dce!b -> /* state21 */ dce!a
+-	:: dce!i -> /* state14 */
+-			if
+-			:: dte?m -> goto state19
+-			:: dce!a
+-			fi
+-	:: dte?m -> goto state18
+-	:: dte?u -> goto state08
+-	:: dce!d -> break
+-	od;
+-
+-	/* state02: */
+-	if
+-	:: dte?v
+-	:: dte?u -> goto state15
+-	:: dte?m -> goto state19
+-	fi;
+-state03:
+-	dce!e;
+-	/* state04: */
+-	if
+-	:: dte?m -> goto state19
+-	:: dce!c
+-	fi;
+-	/* state05: */
+-	if
+-	:: dte?m -> goto state19
+-	:: dte?r
+-	fi;
+-	/* state6A: */
+-	if
+-	:: dte?m -> goto state19
+-	:: dte?q
+-	fi;
+-state07:
+-	if
+-	:: dte?m -> goto state19
+-	:: dte?r
+-	fi;
+-	/* state6B: */
+-	if		/* non-deterministic select */
+-	:: dte?q -> goto state07
+-	:: dte?q
+-	:: dte?m -> goto state19
+-	fi;
+-	/* state10: */
+-	if
+-	:: dte?m -> goto state19
+-	:: dte?r
+-	fi;
+-state6C:
+-	if
+-	:: dte?m -> goto state19
+-	:: dte?l
+-	fi;
+-	/* state11: */
+-	if
+-	:: dte?m -> goto state19
+-	:: dte?n
+-	fi;
+-	/* state12: */
+-	if
+-	:: dte?m -> goto state19
+-	:: dce!b -> goto state16
+-	fi;
+-
+-state15:
+-	if
+-	:: dte?v -> goto state03
+-	:: dte?m -> goto state19
+-	fi;
+-state08:
+-	if
+-	:: dce!c
+-	:: dce!d -> goto state15
+-	:: dte?m -> goto state19
+-	fi;
+-	/* state09: */
+-	if
+-	:: dte?m -> goto state19
+-	:: dte?q
+-	fi;
+-	/* state10B: */
+-	if
+-	:: dte?r -> goto state6C
+-	:: dte?m -> goto state19
+-	fi;
+-state18:
+-	if
+-	:: dte?l -> goto state01
+-	:: dte?m -> goto state19
+-	fi;
+-state16:
+-	dte?m;
+-	/* state17: */
+-	dte?l;
+-	/* state21: */
+-	dce!a; goto state01;
+-state19:
+-	dce!b;
+-	/* state20: */
+-	dte?l;
+-	/* state21: */
+-	dce!a; goto state01
+-}
+-
+-active proctype dce_proc()
+-{
+-state01:
+-	do
+-	:: dce?b -> /* state21 */ dce?a
+-	:: dce?i -> /* state14 */
+-			if
+-			:: dce?b -> goto state16
+-			:: dce?a
+-			fi
+-	:: dte!m -> goto state18
+-	:: dte!u -> goto state08
+-	:: dce?d -> break
+-	od;
+-
+-	/* state02: */
+-	if
+-	:: dte!v
+-	:: dte!u -> goto state15
+-	:: dce?b -> goto state16
+-	fi;
+-state03:
+-	dce?e;
+-	/* state04: */
+-	if
+-	:: dce?b -> goto state16
+-	:: dce?c
+-	fi;
+-	/* state05: */
+-	if
+-	:: dce?b -> goto state16
+-	:: dte!r
+-	fi;
+-	/* state6A: */
+-	if
+-	:: dce?b -> goto state16
+-	:: dte!q
+-	fi;
+-state07:
+-	if
+-	:: dce?b -> goto state16
+-	:: dte!r
+-	fi;
+-	/* state6B: */
+-	if		/* non-deterministic select */
+-	:: dte!q -> goto state07
+-	:: dte!q
+-	:: dce?b -> goto state16
+-	fi;
+-	/* state10: */
+-	if
+-	:: dce?b -> goto state16
+-	:: dte!r
+-	fi;
+-state6C:
+-	if
+-	:: dce?b -> goto state16
+-	:: dte!l
+-	fi;
+-	/* state11: */
+-	if
+-	:: dce?b -> goto state16
+-	:: dte!n
+-	fi;
+-	/* state12: */
+-	if
+-	:: dce?b -> goto state16
+-	:: dte!m -> goto state19
+-	fi;
+-
+-state15:
+-	if
+-	:: dte!v -> goto state03
+-	:: dce?b -> goto state16
+-	fi;
+-state08:
+-	if
+-	:: dce?c
+-	:: dce?d -> goto state15
+-	:: dce?b -> goto state16
+-	fi;
+-	/* state09: */
+-	if
+-	:: dce?b -> goto state16
+-	:: dte!q
+-	fi;
+-	/* state10B: */
+-	if
+-	:: dte!r -> goto state6C
+-	:: dce?b -> goto state16
+-	fi;
+-state18:
+-	if
+-	:: dte!l -> goto state01
+-	:: dce?b -> goto state16
+-	fi;
+-state16:
+-	dte!m;
+-	/* state17: */
+-	dte!l;
+-	/* state21: */
+-	dce?a; goto state01;
+-state19:
+-	dce?b;
+-	/* state20: */
+-	dte!l;
+-	/* state21: */
+-	dce?a; goto state01
+-}
+//GO.SYSIN DD ex.3
+echo ex.4b 1>&2
+sed 's/.//' >ex.4b <<'//GO.SYSIN DD ex.4b'
+-#define true	1
+-#define false	0
+-
+-bool flag[2];
+-bool turn;
+-
+-active [2] proctype user()
+-{	flag[_pid] = true;
+-	turn = _pid;
+-	(flag[1-_pid] == false || turn == 1-_pid);
+-crit:	skip;	/* critical section */
+-	flag[_pid] = false
+-}
+//GO.SYSIN DD ex.4b
+echo ex.4c 1>&2
+sed 's/.//' >ex.4c <<'//GO.SYSIN DD ex.4c'
+-byte in;
+-byte x, y, z;
+-active [2] proctype user()	/* file ex.4c */
+-{	byte me = _pid+1;			/* me is 1 or 2 */
+-L1:	x = me;
+-L2:	if
+-	:: (y != 0 && y != me) -> goto L1	/* try again */
+-	:: (y == 0 || y == me)
+-	fi;
+-L3:	z = me;
+-L4:	if
+-	:: (x != me)  -> goto L1		/* try again */
+-	:: (x == me)
+-	fi;
+-L5:	y = me;
+-L6:	if
+-	:: (z != me) -> goto L1			/* try again */
+-	:: (z == me)
+-	fi;
+-L7:						/* success */
+-	in = in+1;
+-	assert(in == 1);
+-	in = in - 1;
+-	goto L1
+-}
+//GO.SYSIN DD ex.4c
+echo ex.5a 1>&2
+sed 's/.//' >ex.5a <<'//GO.SYSIN DD ex.5a'
+-#define Place	byte	/* assume < 256 tokens per place */
+-
+-Place p1, p2, p3;
+-Place p4, p5, p6;
+-#define inp1(x)		(x>0) -> x=x-1
+-#define inp2(x,y)	(x>0&&y>0) -> x = x-1; y=y-1
+-#define out1(x)		x=x+1
+-#define out2(x,y)	x=x+1; y=y+1
+-init
+-{	p1 = 1; p4 = 1;	/* initial marking */
+-	do
+-/*t1*/	:: atomic { inp1(p1)	-> out1(p2) }
+-/*t2*/	:: atomic { inp2(p2,p4)	-> out1(p3) }
+-/*t3*/	:: atomic { inp1(p3)	-> out2(p1,p4) }
+-/*t4*/	:: atomic { inp1(p4)	-> out1(p5) }
+-/*t5*/	:: atomic { inp2(p1,p5) -> out1(p6) }
+-/*t6*/	:: atomic { inp1(p6)	-> out2(p4,p1) }
+-	od
+-}
+//GO.SYSIN DD ex.5a
+echo ex.5b 1>&2
+sed 's/.//' >ex.5b <<'//GO.SYSIN DD ex.5b'
+-#define Place	byte	/* assume < 256 tokens per place */
+-
+-Place P1, P2, P4, P5, RC, CC, RD, CD;
+-Place p1, p2, p4, p5, rc, cc, rd, cd;
+-
+-#define inp1(x)		(x>0) -> x=x-1
+-#define inp2(x,y)	(x>0&&y>0) -> x = x-1; y=y-1
+-#define out1(x)		x=x+1
+-#define out2(x,y)	x=x+1; y=y+1
+-
+-init			/* file ex.5b */
+-{	P1 = 1; p1 = 1;	/* initial marking */
+-	do
+-	:: atomic { inp1(P1)	-> out2(rc,P2)	}	/* DC */
+-	:: atomic { inp2(P2,CC)	-> out1(P4)	}	/* CA */
+-	:: atomic { inp1(P4)	-> out2(P5,rd)	}	/* DD */
+-	:: atomic { inp2(P5,CD)	-> out1(P1)	}	/* FD */
+-	:: atomic { inp2(P1,RC)	-> out2(P4,cc)	}	/* AC */
+-	:: atomic { inp2(P4,RD) -> out2(P1,cd)	}	/* AD */
+-	:: atomic { inp2(P5,RD)	-> out1(P1)	}	/* DA */
+-
+-	:: atomic { inp1(p1)	-> out2(RC,p2)	}	/* dc */
+-	:: atomic { inp2(p2,cc)	-> out1(p4)	}	/* ca */
+-	:: atomic { inp1(p4)	-> out2(p5,RD)	}	/* dd */
+-	:: atomic { inp2(p5,cd)	-> out1(p1)	}	/* fd */
+-	:: atomic { inp2(p1,rc)	-> out2(p4,CC)	}	/* ac */
+-	:: atomic { inp2(p4,rd) -> out2(p1,CD)	}	/* ad */
+-	:: atomic { inp2(p5,rd)	-> out1(p1)	}	/* da */
+-	od
+-}
+//GO.SYSIN DD ex.5b
+echo ex.6 1>&2
+sed 's/.//' >ex.6 <<'//GO.SYSIN DD ex.6'
+-#if 0
+-	Cambridge Ring Protocol [Needham'82]
+-	basic protocol - no LTL properties
+-#endif
+-
+-#define LOSS	1
+-#define RELAXED	1
+-
+-#if RELAXED==1
+-#define stimeout	empty(sender)
+-#define rtimeout	empty(recv)
+-#else
+-#define stimeout	timeout
+-#define rtimeout	timeout
+-#endif
+-
+-#define QSZ	6	/* length of message queues */
+-
+-	mtype =	{
+-		RDY, NOTRDY, DATA, NODATA, RESET
+-	};
+-	chan sender	= [QSZ] of { mtype, byte };
+-	chan recv	= [QSZ] of { mtype, byte };
+-
+-active proctype Sender()
+-{	short n = -1; byte t,m;
+-
+-	xr sender;
+-	xs recv;
+-
+-I:		/* Idle State */
+-		do
+-#if LOSS==1
+-		:: sender?_,_ -> progress2: skip
+-#endif
+-		:: sender?RESET,0 ->
+-ackreset:		recv!RESET,0;	/* stay in idle */
+-			n = -1;
+-			goto I
+-
+-		/* E-rep: protocol error */
+-
+-		:: sender?RDY,m ->		/* E-exp */
+-			assert(m == (n+1)%4);
+-advance:		n = (n+1)%4;
+-			if
+-/* buffer */		:: atomic {
+-				printf("MSC: NEW\n");
+-				recv!DATA,n;
+-				goto E
+-			   }
+-/* no buffer */		:: recv!NODATA,n;
+-				goto N
+-			fi
+-
+-		:: sender?NOTRDY,m ->	/* N-exp */
+-expected:		assert(m == (n+1)%4);
+-			goto I
+-
+-		/* Timeout */
+-		/* ignored (p.154, in [Needham'82]) */
+-
+-		:: goto reset
+-
+-		od;
+-
+-E:		/* Essential element sent, ack expected */
+-		do
+-#if LOSS==1
+-		:: sender?_,_ -> progress0: skip
+-#endif
+-		:: sender?RESET,0 ->
+-			goto ackreset
+-
+-		:: sender?RDY,m ->
+-			if
+-			:: (m == n) ->		/* E-rep */
+-				goto retrans
+-			:: (m == (n+1)%4) ->	/* E-exp */
+-				goto advance
+-			fi
+-
+-		:: sender?NOTRDY,m ->	/* N-exp */
+-			goto expected
+-
+-		/* Timeout */
+-		:: stimeout ->
+-			printf("MSC: STO\n");
+-retrans:		recv!DATA,n	/* retransmit */
+-
+-		:: goto reset
+-
+-		od;
+-
+-
+-N:		/* Non-essential element sent */
+-		do
+-#if LOSS==1
+-		:: sender?_,_ -> progress1: skip
+-#endif
+-		:: sender?RESET,0 ->
+-			goto ackreset
+-
+-		:: sender?RDY,m ->		/* E-rep */
+-			assert(m == n)		/* E-exp: protocol error */
+-			-> recv!NODATA,n	/* retransmit and stay in N */
+-
+-		:: recv!DATA,n;		/* buffer ready event */
+-			goto E
+-
+-		:: goto reset
+-
+-		/* Timeout */
+-		/* ignored (p.154, in [Needham'82]) */
+-		od;
+-
+-reset:		recv!RESET,0;
+-		do
+-#if LOSS==1
+-		:: sender?_,_ -> progress3: skip
+-#endif
+-		:: sender?t,m ->
+-			if
+-			:: t == RESET -> n = -1; goto I
+-			:: else	/* ignored, p. 152 */
+-			fi
+-		:: timeout ->	/* a real timeout */
+-			goto reset
+-		od
+-}
+-
+-active proctype Receiver()
+-{	byte t, n, m, Nexp;
+-
+-	xr recv;
+-	xs sender;
+-
+-I:		/* Idle State */
+-		do
+-#if LOSS==1
+-		:: recv?_,_ -> progress2: skip
+-#endif
+-		:: recv?RESET,0 ->
+-ackreset:		sender!RESET,0;		/* stay in idle */
+-			n = 0; Nexp = 0;
+-			goto I
+-
+-		:: atomic { recv?DATA(m) ->	/* E-exp */
+-			assert(m == n);
+-advance:		printf("MSC: EXP\n");
+-			n = (n+1)%4;
+-			assert(m == Nexp);
+-			Nexp = (m+1)%4;
+-			if
+-			:: sender!RDY,n; goto E
+-			:: sender!NOTRDY,n; goto N
+-			fi
+-		   }
+-
+-		:: recv?NODATA(m) ->		/* N-exp */
+-			assert(m == n)
+-
+-		/* Timeout: ignored */
+-
+-	/* only receiver can initiate transfer; p. 156 */
+-	:: empty(recv) -> sender!RDY,n; goto E
+-
+-		:: goto reset
+-		od;
+-
+-E:
+-		do
+-#if LOSS==1
+-		:: recv?_,_ -> progress1: skip
+-#endif
+-		:: recv?RESET,0 ->
+-			goto ackreset
+-
+-		:: atomic { recv?DATA(m) ->
+-			if
+-			:: ((m+1)%4 == n) ->		/* E-rep */
+-				printf("MSC: REP\n");
+-				goto retrans
+-			:: (m == n) ->			/* E-exp */
+-				goto advance
+-			fi
+-		   }
+-
+-		:: recv?NODATA(m) ->		/* N-exp  */
+-			assert(m == n);
+-			goto I
+-
+-		:: rtimeout ->
+-			printf("MSC: RTO\n");
+-retrans:		sender!RDY,n;
+-			goto E
+-
+-		:: goto reset
+-
+-		od;
+-
+-N:
+-		do
+-#if LOSS==1
+-		:: recv?_,_ -> progress0: skip
+-#endif
+-		:: recv?RESET,0 ->
+-			goto ackreset
+-
+-		:: recv?DATA(m) ->		/* E-rep */
+-			assert((m+1)%4 == n);	/* E-exp and N-exp: protocol error */
+-			printf("MSC: REP\n");
+-			sender!NOTRDY,n	/* retransmit and stay in N */
+-
+-		:: sender!RDY,n ->		/* buffer ready event */
+-			goto E
+-
+-		/* Timeout: ignored */
+-
+-		:: goto reset
+-
+-		od;
+-
+-progress:
+-reset:		sender!RESET,0;
+-		do
+-#if LOSS==1
+-		:: recv?_,_ -> progress3: skip
+-#endif
+-		:: recv?t,m ->
+-			if
+-			:: t == RESET -> n = 0; Nexp = 0; goto I
+-			:: else	/* ignored, p. 152 */
+-			fi
+-		:: timeout ->	/* a real timeout */
+-			goto reset
+-		od
+-}
+//GO.SYSIN DD ex.6
+echo ex.7 1>&2
+sed 's/.//' >ex.7 <<'//GO.SYSIN DD ex.7'
+-mtype = { Wakeme, Running };
+-
+-bit	lk,	sleep_q;
+-bit	r_lock,	r_want;
+-mtype	State =	Running;
+-
+-active proctype client()
+-{
+-sleep:					/* sleep routine */
+-	atomic { (lk == 0) -> lk = 1 };	/* spinlock(&lk) */
+-	do				/* while r->lock */
+-	:: (r_lock == 1) ->		/* r->lock == 1 */
+-		r_want = 1;
+-		State = Wakeme;
+-		lk = 0;			/* freelock(&lk) */
+-		(State == Running);	/* wait for wakeup */
+-	:: else ->			/* r->lock == 0 */
+-		break
+-	od;
+-progress:
+-	assert(r_lock == 0);		/* should still be true */
+-	r_lock = 1;			/* consumed resource */
+-	lk = 0;				/* freelock(&lk) */
+-	goto sleep
+-}
+-
+-active proctype server()		/* interrupt routine */
+-{
+-wakeup:					/* wakeup routine */
+-	r_lock = 0;			/* r->lock = 0 */
+-	(lk == 0);			/* waitlock(&lk) */
+-	if
+-	:: r_want ->			/* someone is sleeping */
+-		atomic {		/* spinlock on sleep queue */
+-			(sleep_q == 0) -> sleep_q = 1
+-		};
+-		r_want = 0;
+-#ifdef PROPOSED_FIX
+-		(lk == 0);		/* waitlock(&lk) */
+-#endif
+-		if
+-		:: (State == Wakeme) ->
+-			State = Running;
+-		:: else ->
+-		fi;
+-		sleep_q = 0
+-	:: else ->
+-	fi;
+-	goto wakeup
+-}
+//GO.SYSIN DD ex.7
+echo ex.8 1>&2
+sed 's/.//' >ex.8 <<'//GO.SYSIN DD ex.8'
+-/* Dolev, Klawe & Rodeh for leader election in unidirectional ring
+- * `An O(n log n) unidirectional distributed algorithm for extrema
+- * finding in a circle,'  J. of Algs, Vol 3. (1982), pp. 245-260
+- */
+-
+-#define elected		(nr_leaders >  0)
+-#define noLeader	(nr_leaders == 0)
+-#define oneLeader	(nr_leaders == 1)
+-
+-/* properties:
+- *	![] noLeader
+- *	<>  elected
+- *	<>[]oneLeader
+- *	[] (noLeader U oneLeader)
+- */
+-
+-#define N	7	/* nr of processes (use 5 for demos) */
+-#define I	3	/* node given the smallest number    */
+-#define L	14	/* size of buffer  (>= 2*N) */
+-
+-mtype = { one, two, winner };
+-chan q[N] = [L] of { mtype, byte};
+-
+-byte nr_leaders = 0;
+-
+-proctype node (chan in, out; byte mynumber)
+-{	bit Active = 1, know_winner = 0;
+-	byte nr, maximum = mynumber, neighbourR;
+-
+-	xr in;
+-	xs out;
+-
+-	printf("MSC: %d\n", mynumber);
+-	out!one(mynumber);
+-end:	do
+-	:: in?one(nr) ->
+-		if
+-		:: Active -> 
+-			if
+-			:: nr != maximum ->
+-				out!two(nr);
+-				neighbourR = nr
+-			:: else ->
+-				/* Raynal p.39:  max is greatest number */
+-				assert(nr == N);
+-				know_winner = 1;
+-				out!winner,nr;
+-			fi
+-		:: else ->
+-			out!one(nr)
+-		fi
+-
+-	:: in?two(nr) ->
+-		if
+-		:: Active -> 
+-			if
+-			:: neighbourR > nr && neighbourR > maximum ->
+-				maximum = neighbourR;
+-				out!one(neighbourR)
+-			:: else ->
+-				Active = 0
+-			fi
+-		:: else ->
+-			out!two(nr)
+-		fi
+-	:: in?winner,nr ->
+-		if
+-		:: nr != mynumber ->
+-			printf("MSC: LOST\n");
+-		:: else ->
+-			printf("MSC: LEADER\n");
+-			nr_leaders++;
+-			assert(nr_leaders == 1)
+-		fi;
+-		if
+-		:: know_winner
+-		:: else -> out!winner,nr
+-		fi;
+-		break
+-	od
+-}
+-
+-init {
+-	byte proc;
+-	atomic {
+-		proc = 1;
+-		do
+-		:: proc <= N ->
+-			run node (q[proc-1], q[proc%N], (N+I-proc)%N+1);
+-			proc++
+-		:: proc > N ->
+-			break
+-		od
+-	}
+-}
+-
+-#if 0
+-/* !(<>[]oneLeader) */
+-
+-never {
+-T0:
+-        if
+-        :: skip -> goto T0
+-        :: !oneLeader -> goto accept
+-        fi;
+-accept:
+-        if
+-        :: skip -> goto T0
+-        fi
+-}
+-#endif
+//GO.SYSIN DD ex.8
+echo ex.9 1>&2
+sed 's/.//' >ex.9 <<'//GO.SYSIN DD ex.9'
+-#define MaxSeq	3
+-#define MaxSeq_plus_1	4
+-#define inc(x)	x = (x + 1) % (MaxSeq_plus_1)
+-
+-chan q[2] = [MaxSeq] of { byte, byte };
+-
+-active [2] proctype p5()
+-{	byte	NextFrame, AckExp, FrameExp,
+-		r, s, nbuf, i;
+-	chan in, out;
+-
+-	in = q[_pid];
+-	out = q[1-_pid];
+-
+-	xr in;
+-	xs out;
+-
+-	do
+-	:: nbuf < MaxSeq ->
+-		nbuf++;
+-		out!NextFrame , (FrameExp + MaxSeq) % (MaxSeq_plus_1);
+-		inc(NextFrame)
+-	:: in?r,s ->
+-		if
+-		:: r == FrameExp ->
+-			inc(FrameExp)
+-		:: else
+-		fi;
+-	 	do
+-		:: ((AckExp <= s) && (s <  NextFrame))
+-		|| ((AckExp <= s) && (NextFrame <  AckExp))
+-		|| ((s <  NextFrame) && (NextFrame <  AckExp)) ->
+-			nbuf--;
+-			inc(AckExp)
+-		:: else ->
+-			break
+-		od
+-	:: timeout ->
+-		NextFrame = AckExp;
+-		i = 1;
+-		do
+-		:: i <= nbuf ->
+-			out!NextFrame , (FrameExp + MaxSeq) % (MaxSeq_plus_1);
+-			inc(NextFrame);
+-			i++
+-		:: else ->
+-			break
+-		od
+-	od
+-}
+//GO.SYSIN DD ex.9
+echo ex.9b 1>&2
+sed 's/.//' >ex.9b <<'//GO.SYSIN DD ex.9b'
+-#define MaxSeq	3
+-#define MaxSeq_plus_1	4
+-#define inc(x)	x = (x + 1) % (MaxSeq + 1)
+-
+-chan q[2] = [MaxSeq] of { byte, byte };
+-
+-active [2] proctype p5()
+-{	byte	NextFrame, AckExp, FrameExp,
+-		r, s, nbuf, i;
+-	chan in, out;
+-
+-	d_step {
+-		in = q[_pid];
+-		out = q[1-_pid]
+-	};
+-	xr in;
+-	xs out;
+-
+-	do
+-	:: atomic { nbuf < MaxSeq ->
+-		nbuf++;
+-		out!NextFrame , (FrameExp + MaxSeq) % (MaxSeq + 1);
+-		printf("MSC: nbuf: %d\n", nbuf);
+-		inc(NextFrame)
+-	}
+-	:: atomic { in?r,s ->
+-		if
+-		:: r == FrameExp ->
+-			printf("MSC: accept %d\n", r);
+-			inc(FrameExp)
+-		:: else
+-			-> printf("MSC: reject\n")
+-		fi
+-	};
+-	d_step {
+-		do
+-		:: ((AckExp <= s) && (s <  NextFrame))
+-		|| ((AckExp <= s) && (NextFrame <  AckExp))
+-		|| ((s <  NextFrame) && (NextFrame <  AckExp)) ->
+-			nbuf--;
+-			printf("MSC: nbuf: %d\n", nbuf);
+-			inc(AckExp)
+-		:: else ->
+-			printf("MSC: %d %d %d\n", AckExp, s, NextFrame);
+-			break
+-		od; skip
+-	}
+-	:: timeout ->
+-	d_step {
+-		NextFrame = AckExp;
+-		printf("MSC: timeout\n");
+-		i = 1;
+-		do
+-		:: i <= nbuf ->
+-			out!NextFrame , (FrameExp + MaxSeq) % (MaxSeq + 1);
+-			inc(NextFrame);
+-			i++
+-		:: else ->
+-			break
+-		od; i = 0
+-	}
+-	od
+-}
+//GO.SYSIN DD ex.9b
+echo ex.9c 1>&2
+sed 's/.//' >ex.9c <<'//GO.SYSIN DD ex.9c'
+-#define MaxSeq	3
+-#define MaxSeq_plus_1	4
+-#define inc(x)	x = (x + 1) % (MaxSeq + 1)
+-
+-#define CHECKIT
+-
+-#ifdef CHECKIT
+-	mtype = { red, white, blue };	/* Wolper's test */
+-	chan source = [0] of { mtype };
+-	chan q[2] = [MaxSeq] of { mtype, byte, byte };
+-	mtype rcvd = white;
+-	mtype sent = white;
+-#else
+-	chan q[2] = [MaxSeq] of { byte, byte };
+-#endif
+-
+-active [2] proctype p5()
+-{	byte	NextFrame, AckExp, FrameExp,
+-		r, s, nbuf, i;
+-	chan in, out;
+-#ifdef CHECKIT
+-	mtype	ball;
+-	byte frames[MaxSeq_plus_1];
+-#endif
+-
+-	d_step {
+-		in = q[_pid];
+-		out = q[1-_pid]
+-	};
+-
+-	xr in;
+-	xs out;
+-
+-	do
+-	:: atomic {
+-		nbuf < MaxSeq ->
+-		nbuf++;
+-#ifdef CHECKIT
+-		if
+-		:: _pid%2 -> source?ball
+-		:: else
+-		fi;
+-		frames[NextFrame] = ball;
+-		out!ball, NextFrame , (FrameExp + MaxSeq) % (MaxSeq + 1);
+-		if
+-		:: _pid%2 -> sent = ball;
+-		:: else
+-		fi;
+-#else
+-		out!NextFrame , (FrameExp + MaxSeq) % (MaxSeq + 1);
+-#endif
+-#ifdef VERBOSE
+-		printf("MSC: nbuf: %d\n", nbuf);
+-#endif
+-		inc(NextFrame)
+-	}
+-#ifdef CHECKIT
+-	:: atomic { in?ball,r,s ->
+-#else
+-	:: atomic { in?r,s ->
+-#endif
+-		if
+-		:: r == FrameExp ->
+-#ifdef VERBOSE
+-			printf("MSC: accept %d\n", r);
+-#endif
+-#ifdef CHECKIT
+-			if
+-			:: _pid%2
+-			:: else -> rcvd = ball
+-			fi;
+-#endif
+-			inc(FrameExp)
+-		:: else
+-#ifdef VERBOSE
+-			-> printf("MSC: reject\n")
+-#endif
+-		fi
+-	};
+-	d_step {
+-	 	do
+-		:: ((AckExp <= s) && (s <  NextFrame))
+-		|| ((AckExp <= s) && (NextFrame <  AckExp))
+-		|| ((s <  NextFrame) && (NextFrame <  AckExp)) ->
+-			nbuf--;
+-#ifdef VERBOSE
+-			printf("MSC: nbuf: %d\n", nbuf);
+-#endif
+-			inc(AckExp)
+-		:: else ->
+-#ifdef VERBOSE
+-			printf("MSC: %d %d %d\n", AckExp, s, NextFrame);
+-#endif
+-			break
+-		od;
+-		skip
+-	}
+-	:: timeout ->
+-	d_step {
+-		NextFrame = AckExp;
+-#ifdef VERBOSE
+-		printf("MSC: timeout\n");
+-#endif
+-		i = 1;
+-		do
+-		:: i <= nbuf ->
+-#ifdef CHECKIT
+-			if
+-			:: _pid%2 -> ball = frames[NextFrame]
+-			:: else
+-			fi;		
+-			out!ball, NextFrame , (FrameExp + MaxSeq) % (MaxSeq + 1);
+-#else
+-			out!NextFrame , (FrameExp + MaxSeq) % (MaxSeq + 1);
+-#endif
+-			inc(NextFrame);
+-			i++
+-		:: else ->
+-			break
+-		od;
+-		i = 0
+-	}
+-	od
+-}
+-#ifdef CHECKIT
+-active proctype Source()
+-{
+-	do
+-	:: source!white
+-	:: source!red -> break
+-	od;
+-	do
+-	:: source!white
+-	:: source!blue -> break
+-	od;
+-end:	do
+-	:: source!white
+-	od
+-}
+-
+-#define sw	(sent == white)
+-#define sr	(sent == red)
+-#define sb	(sent == blue)
+-
+-#define rw	(rcvd == white)
+-#define rr	(rcvd == red)
+-#define rb	(rcvd == blue)
+-
+-#define LTL	3
+-#if LTL==1
+-
+-never {		/* ![](sr -> <> rr) */
+-		/* the never claim is generated by
+-			spin -f "![](sr -> <> rr)"
+-		   and then edited a little for readability
+-		   the same is true for all others below
+-		 */
+-        do
+-        :: 1
+-        :: !rr && sr -> goto accept
+-        od;
+-accept:
+-        if
+-        :: !rr -> goto accept
+-        fi
+-}
+-
+-#endif
+-#if LTL==2
+-
+-never {		/* !rr U rb */
+-	do
+-        :: !rr
+-        :: rb -> break	/* move to implicit 2nd state */
+-        od
+-}
+-
+-#endif
+-#if LTL==3
+-
+-never {		/* (![](sr -> <> rr)) || (!rr U rb) */
+-
+-        if
+-        :: 1 -> goto T0_S5
+-        :: !rr && sr -> goto accept_S8
+-        :: !rr -> goto T0_S2
+-        :: rb -> goto accept_all
+-        fi;
+-accept_S8:
+-        if
+-        :: !rr -> goto T0_S8
+-        fi;
+-T0_S2:
+-        if
+-        :: !rr -> goto T0_S2
+-        :: rb -> goto accept_all
+-        fi;
+-T0_S8:
+-        if
+-        :: !rr -> goto accept_S8
+-        fi;
+-T0_S5:
+-        if
+-        :: 1 -> goto T0_S5
+-        :: !rr && sr -> goto accept_S8
+-        fi;
+-accept_all:
+-        skip
+-}
+-#endif
+-
+-#endif
+//GO.SYSIN DD ex.9c

@@ -1,0 +1,107 @@
+#define p	in?[red]
+#define q	out?[red]
+#define r	(BS[a_id]@progress || BS[p_id]@progress)
+
+	/*
+	 * Formula As Typed: (![]<>(r)) -> [](<>p -> <>q)
+	 * The Never Claim Below Corresponds
+	 * To The Negated Formula !((![]<>(r)) -> [](<>p -> <>q))
+	 * (formalizing violations of the original)
+	 */
+
+never {    /*  !((![]<>(r)) -> [](<>p -> <>q))  */
+T0_init:
+	if
+	:: (! ((q)) && ! ((r)) && (p)) -> goto accept_S8
+	:: (! ((q)) && ! ((r))) -> goto T0_S13
+	:: (! ((q)) && (p)) -> goto T0_S26
+	:: (! ((q))) -> goto T0_S32
+	:: (! ((r))) -> goto T0_S44
+	:: (1) -> goto T0_init
+	fi;
+accept_S8:
+	if
+	:: (! ((q)) && ! ((r))) -> goto T0_S8
+	fi;
+T0_S8:
+	if
+	:: (! ((q)) && ! ((r))) -> goto accept_S8
+	fi;
+T0_S13:
+	if
+	:: (! ((q)) && ! ((r)) && (p)) -> goto accept_S8
+	:: (! ((q)) && ! ((r))) -> goto T0_S13
+	fi;
+T0_S26:
+	if
+	:: (! ((q)) && ! ((r))) -> goto accept_S8
+	:: (! ((q))) -> goto T0_S26
+	fi;
+T0_S32:
+	if
+	:: (! ((q)) && ! ((r)) && (p)) -> goto accept_S8
+	:: (! ((q)) && ! ((r))) -> goto T0_S13
+	:: (! ((q)) && (p)) -> goto T0_S26
+	:: (! ((q))) -> goto T0_S32
+	fi;
+T0_S44:
+	if
+	:: (! ((q)) && ! ((r)) && (p)) -> goto accept_S8
+	:: (! ((q)) && ! ((r))) -> goto T0_S13
+	:: (! ((r))) -> goto T0_S44
+	fi;
+accept_all:
+	skip
+}
+
+#ifdef NOTES
+Use Load to open a file or a template.
+#endif
+#ifdef RESULT
+warning: for p.o. reduction to be valid the never claim must be stutter-closed
+(never claims generated from LTL formulae are stutter-closed)
+(Spin Version 3.2.4 -- 16 October 1998)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never-claim         	+
+	assertion violations	+ (if within scope of claim)
+	acceptance   cycles 	+ (fairness disabled)
+	invalid endstates	- (disabled by never-claim)
+
+State-vector 96 byte, depth reached 1944, errors: 0
+   16191 states, stored (18994 visited)
+   46781 states, matched
+   65775 transitions (= visited+matched)
+      16 atomic steps
+hash conflicts: 1713 (resolved)
+(max size 2^19 states)
+
+Stats on memory usage (in Megabytes):
+1.684 	equivalent memory usage for states (stored*(State-vector + overhead))
+0.998 	actual memory usage for states (compression: 59.24%)
+	State-vector as stored = 54 byte + 8 byte overhead
+2.097 	memory used for hash-table (-w19)
+0.240 	memory used for DFS stack (-m10000)
+3.464 	total actual memory usage
+
+unreached in proctype CC
+	line 28, state 25, "-end-"
+	(1 of 25 states)
+unreached in proctype HC
+	line 35, state 6, "-end-"
+	(1 of 6 states)
+unreached in proctype BS
+	line 65, state 31, "-end-"
+	(1 of 31 states)
+unreached in proctype MS
+	line 78, state 14, "-end-"
+	(1 of 14 states)
+unreached in proctype System
+	line 98, state 13, "-end-"
+	(1 of 13 states)
+unreached in proctype Out
+	line 105, state 7, "-end-"
+	(1 of 7 states)
+
+#endif
