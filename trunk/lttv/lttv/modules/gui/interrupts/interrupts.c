@@ -583,7 +583,7 @@ static void CalculateData(LttTime time_exit,  guint cpu_id,InterruptEventData *e
   LttTime duration;
   GArray *FirstRequestIrqExit = event_data->FirstRequestIrqExit;
   GArray *FirstRequestIrqEntry = event_data->FirstRequestIrqEntry;
-  for(i = 0; i < FirstRequestIrqEntry->len; i++)
+  for(i = FirstRequestIrqEntry->len-1; i >=0; i--)
   {
     element = &g_array_index(FirstRequestIrqEntry,irq_entry,i);
     if(element->cpu_id == cpu_id)
