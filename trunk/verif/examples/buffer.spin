@@ -1,8 +1,8 @@
 
-// LTTng ltt-tracer.c atomic lockless buffering scheme Promela model v1
+// LTTng ltt-tracer.c atomic lockless buffering scheme Promela model v2
 // Created for the Spin validator.
 // Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
-// June 2008
+// October 2008
 
 // TODO : create test cases that will generate an overflow on the offset and
 // counter type. Counter types smaller than a byte should be used.
@@ -20,7 +20,7 @@
 #define NUMPROCS 4
 
 // NUMPROCS 3 : does not cause event loss because buffers are big enough.
-//#define NUMPROCS 3
+// #define NUMPROCS 3
 // e.g. 3 events, 1 switch, read 1 subbuffer
 
 #define NUMSWITCH 1
@@ -34,7 +34,6 @@ byte commit_count[NR_SUBBUFS];
 
 // Reader counters
 byte read_off = 0;
-byte retrieve_count[NR_SUBBUFS];
 
 byte events_lost = 0;
 byte refcount = 0;
@@ -80,8 +79,11 @@ cmpxchg_loop:
     tmp_commit = commit_count[(prev_off % BUFSIZE) / SUBBUF_SIZE] + size;
     commit_count[(prev_off % BUFSIZE) / SUBBUF_SIZE] = tmp_commit;
     if
-    :: tmp_commit % SUBBUF_SIZE == 0 -> deliver = 1
-    :: else -> skip
+    :: (((prev_off / BUFSIZE) * BUFSIZE) / NR_SUBBUFS) + SUBBUF_SIZE -
+        tmp_commit
+      -> deliver = 1
+    :: else
+      -> skip
     fi;
     refcount = refcount - 1;
   }
@@ -139,8 +141,11 @@ cmpxchg_loop:
     tmp_commit = commit_count[(prev_off % BUFSIZE) / SUBBUF_SIZE] + size;
     commit_count[(prev_off % BUFSIZE) / SUBBUF_SIZE] = tmp_commit;
     if
-    :: tmp_commit % SUBBUF_SIZE == 0 -> deliver = 1;
-    :: else -> skip
+    :: (((prev_off / BUFSIZE) * BUFSIZE) / NR_SUBBUFS) + SUBBUF_SIZE -
+        tmp_commit
+      -> deliver = 1
+    :: else
+      -> skip
     fi;
   }
   atomic {
@@ -163,15 +168,13 @@ end:
 proctype reader()
 {
   byte i, j;
-  byte tmp_retrieve;
-  byte lwrite_off, lcommit_count;
 
   do
   :: (write_off / SUBBUF_SIZE) - (read_off / SUBBUF_SIZE) > 0
      && (write_off / SUBBUF_SIZE) - (read_off / SUBBUF_SIZE) < HALF_UCHAR
-           && commit_count[(read_off % BUFSIZE) / SUBBUF_SIZE]
-             - retrieve_count[(read_off % BUFSIZE) / SUBBUF_SIZE]
-               == SUBBUF_SIZE ->
+           && (commit_count[(read_off % BUFSIZE) / SUBBUF_SIZE]
+             - SUBBUF_SIZE - (((read_off / BUFSIZE) * BUFSIZE) / NR_SUBBUFS)
+               == 0) ->
       atomic {
         i = 0;
         do
@@ -184,10 +187,6 @@ proctype reader()
       }
       // reading from buffer...
 
-      // Since there is only one reader per buffer at any given time,
-      // we don't care about retrieve_count vs read_off ordering :
-      // combined use of retrieve_count and read_off are made atomic by a
-      // mutex.
       atomic {
         i = 0;
         do
@@ -196,9 +195,6 @@ proctype reader()
           i++
         :: i >= SUBBUF_SIZE -> break
         od;
-        tmp_retrieve = retrieve_count[(read_off % BUFSIZE) / SUBBUF_SIZE]
-            + SUBBUF_SIZE;
-        retrieve_count[(read_off % BUFSIZE) / SUBBUF_SIZE] = tmp_retrieve;
         read_off = read_off + SUBBUF_SIZE;
       }
   :: read_off >= (NUMPROCS - events_lost) -> break;
@@ -231,7 +227,6 @@ init {
     do
     :: i < NR_SUBBUFS ->
       commit_count[i] = 0;
-      retrieve_count[i] = 0;
       i++
     :: i >= NR_SUBBUFS -> break
     od;
@@ -272,8 +267,8 @@ init {
       commit_sum = commit_sum + commit_count[j];
       // The commit count of a particular subbuffer must always be higher
       // or equal to the retrieve_count of this subbuffer.
-      assert(commit_count[j] - retrieve_count[j] >= 0 &&
-        commit_count[j] - retrieve_count[j] < HALF_UCHAR);
+      // assert(commit_count[j] - retrieve_count[j] >= 0 &&
+      //  commit_count[j] - retrieve_count[j] < HALF_UCHAR);
       j++
     :: j >= NR_SUBBUFS -> break
     od;

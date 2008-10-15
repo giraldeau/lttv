@@ -478,7 +478,7 @@ addproc(int n)
 		break;
 	case 4:	/* :init: */
 		((P4 *)pptr(h))->_t = 4;
-		((P4 *)pptr(h))->_p = 42; reached4[42]=1;
+		((P4 *)pptr(h))->_p = 41; reached4[41]=1;
 		/* params: */
 		/* locals: */
 		((P4 *)pptr(h))->i = 0;
@@ -508,20 +508,14 @@ addproc(int n)
 		break;
 	case 2:	/* reader */
 		((P2 *)pptr(h))->_t = 2;
-		((P2 *)pptr(h))->_p = 28; reached2[28]=1;
+		((P2 *)pptr(h))->_p = 26; reached2[26]=1;
 		/* params: */
 		/* locals: */
 		((P2 *)pptr(h))->i = 0;
 		((P2 *)pptr(h))->j = 0;
-		((P2 *)pptr(h))->tmp_retrieve = 0;
-		((P2 *)pptr(h))->lwrite_off = 0;
-		((P2 *)pptr(h))->lcommit_count = 0;
 #ifdef VAR_RANGES
 		logval("reader:i", ((P2 *)pptr(h))->i);
 		logval("reader:j", ((P2 *)pptr(h))->j);
-		logval("reader:tmp_retrieve", ((P2 *)pptr(h))->tmp_retrieve);
-		logval("reader:lwrite_off", ((P2 *)pptr(h))->lwrite_off);
-		logval("reader:lcommit_count", ((P2 *)pptr(h))->lcommit_count);
 #endif
 #ifdef HAS_CODE
 		locinit2(h);
@@ -9835,12 +9829,6 @@ iniglobals(void)
 		}
 	}
 		now.read_off = 0;
-	{	int l_in;
-		for (l_in = 0; l_in < 2; l_in++)
-		{
-			now.retrieve_count[l_in] = 0;
-		}
-	}
 		now.events_lost = 0;
 		now.refcount = 0;
 #ifdef VAR_RANGES
@@ -9858,12 +9846,6 @@ iniglobals(void)
 		}
 	}
 		logval("read_off", now.read_off);
-	{	int l_in;
-		for (l_in = 0; l_in < 2; l_in++)
-		{
-			logval("retrieve_count[l_in]", now.retrieve_count[l_in]);
-		}
-	}
 		logval("events_lost", now.events_lost);
 		logval("refcount", now.refcount);
 #endif
@@ -11464,12 +11446,6 @@ c_globals(void)
 		}
 	}
 	printf("	byte   read_off:	%d\n", now.read_off);
-	{	int l_in;
-		for (l_in = 0; l_in < 2; l_in++)
-		{
-			printf("	byte   retrieve_count[%d]:	%d\n", l_in, now.retrieve_count[l_in]);
-		}
-	}
 	printf("	byte   events_lost:	%d\n", now.events_lost);
 	printf("	byte   refcount:	%d\n", now.refcount);
 	{	int l_in;
@@ -11497,9 +11473,6 @@ c_locals(int pid, int tp)
 		printf("local vars proc %d (reader):\n", pid);
 	printf("	byte   i:	%d\n", ((P2 *)pptr(pid))->i);
 	printf("	byte   j:	%d\n", ((P2 *)pptr(pid))->j);
-	printf("	byte   tmp_retrieve:	%d\n", ((P2 *)pptr(pid))->tmp_retrieve);
-	printf("	byte   lwrite_off:	%d\n", ((P2 *)pptr(pid))->lwrite_off);
-	printf("	byte   lcommit_count:	%d\n", ((P2 *)pptr(pid))->lcommit_count);
 		break;
 	case 1:
 		printf("local vars proc %d (tracer):\n", pid);

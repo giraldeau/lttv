@@ -1,5 +1,8 @@
 #!/bin/bash
 
+#avail. mem
+MEM=15360
+
 ../Spin/Src5.1.6/spin -a buffer.spin
-cc -DSAFETY -o pan pan.c
+cc -DMEMLIM=${MEM} -DSAFETY -o pan pan.c
 ./pan

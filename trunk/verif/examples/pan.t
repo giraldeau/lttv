@@ -26,123 +26,121 @@ settable(void)
 
 	/* proctype 4: :init: */
 
-	trans[4] = (Trans **) emalloc(59*sizeof(Trans *));
+	trans[4] = (Trans **) emalloc(57*sizeof(Trans *));
 
-	T = trans[ 4][42] = settr(161,2,0,0,0,"ATOMIC", 1, 2, 0);
-	T->nxt	= settr(161,2,1,0,0,"ATOMIC", 1, 2, 0);
-	trans[4][1]	= settr(120,2,8,3,3,"i = 0", 1, 2, 0);
-	trans[4][9]	= settr(128,2,8,1,0,".(goto)", 1, 2, 0);
-	T = trans[4][8] = settr(127,2,0,0,0,"DO", 1, 2, 0);
-	T = T->nxt	= settr(127,2,2,0,0,"DO", 1, 2, 0);
-	    T->nxt	= settr(127,2,6,0,0,"DO", 1, 2, 0);
-	trans[4][2]	= settr(121,2,8,4,4,"((i<2))", 1, 2, 0); /* m: 3 -> 8,0 */
+	T = trans[ 4][41] = settr(158,2,0,0,0,"ATOMIC", 1, 2, 0);
+	T->nxt	= settr(158,2,1,0,0,"ATOMIC", 1, 2, 0);
+	trans[4][1]	= settr(118,2,7,3,3,"i = 0", 1, 2, 0);
+	trans[4][8]	= settr(125,2,7,1,0,".(goto)", 1, 2, 0);
+	T = trans[4][7] = settr(124,2,0,0,0,"DO", 1, 2, 0);
+	T = T->nxt	= settr(124,2,2,0,0,"DO", 1, 2, 0);
+	    T->nxt	= settr(124,2,5,0,0,"DO", 1, 2, 0);
+	trans[4][2]	= settr(119,2,7,4,4,"((i<2))", 1, 2, 0); /* m: 3 -> 7,0 */
 	reached4[3] = 1;
 	trans[4][3]	= settr(0,0,0,0,0,"commit_count[i] = 0",0,0,0);
-	trans[4][4]	= settr(0,0,0,0,0,"retrieve_count[i] = 0",0,0,0);
-	trans[4][5]	= settr(0,0,0,0,0,"i = (i+1)",0,0,0);
-	trans[4][6]	= settr(125,2,17,5,5,"((i>=2))", 1, 2, 0); /* m: 11 -> 17,0 */
-	reached4[11] = 1;
-	trans[4][7]	= settr(126,2,11,1,0,"goto :b6", 1, 2, 0); /* m: 11 -> 0,17 */
-	reached4[11] = 1;
-	trans[4][10]	= settr(129,2,11,1,0,"break", 1, 2, 0);
-	trans[4][11]	= settr(130,2,17,6,6,"i = 0", 1, 2, 0);
-	trans[4][18]	= settr(137,2,17,1,0,".(goto)", 1, 2, 0);
-	T = trans[4][17] = settr(136,2,0,0,0,"DO", 1, 2, 0);
-	T = T->nxt	= settr(136,2,12,0,0,"DO", 1, 2, 0);
-	    T->nxt	= settr(136,2,15,0,0,"DO", 1, 2, 0);
-	trans[4][12]	= settr(131,2,17,7,7,"((i<4))", 1, 2, 0); /* m: 13 -> 17,0 */
-	reached4[13] = 1;
-	trans[4][13]	= settr(0,0,0,0,0,"buffer_use[i] = 0",0,0,0);
-	trans[4][14]	= settr(0,0,0,0,0,"i = (i+1)",0,0,0);
-	trans[4][15]	= settr(134,2,20,8,8,"((i>=4))", 1, 2, 0);
-	trans[4][16]	= settr(135,2,20,1,0,"goto :b7", 1, 2, 0);
-	trans[4][19]	= settr(138,2,20,1,0,"break", 1, 2, 0);
-	trans[4][20]	= settr(139,2,21,9,9,"(run reader())", 1, 2, 0);
-	trans[4][21]	= settr(140,2,29,10,10,"(run cleaner())", 1, 2, 0); /* m: 22 -> 29,0 */
-	reached4[22] = 1;
-	trans[4][22]	= settr(0,0,0,0,0,"i = 0",0,0,0);
-	trans[4][30]	= settr(149,2,29,1,0,".(goto)", 1, 2, 0);
-	T = trans[4][29] = settr(148,2,0,0,0,"DO", 1, 2, 0);
-	T = T->nxt	= settr(148,2,23,0,0,"DO", 1, 2, 0);
-	    T->nxt	= settr(148,2,27,0,0,"DO", 1, 2, 0);
-	trans[4][23]	= settr(142,2,25,11,11,"((i<4))", 1, 2, 0); /* m: 24 -> 25,0 */
-	reached4[24] = 1;
-	trans[4][24]	= settr(0,0,0,0,0,"refcount = (refcount+1)",0,0,0);
-	trans[4][25]	= settr(144,2,29,12,12,"(run tracer())", 1, 2, 0); /* m: 26 -> 29,0 */
-	reached4[26] = 1;
-	trans[4][26]	= settr(0,0,0,0,0,"i = (i+1)",0,0,0);
-	trans[4][27]	= settr(146,2,39,13,13,"((i>=4))", 1, 2, 0); /* m: 32 -> 39,0 */
-	reached4[32] = 1;
-	trans[4][28]	= settr(147,2,32,1,0,"goto :b8", 1, 2, 0); /* m: 32 -> 0,39 */
-	reached4[32] = 1;
-	trans[4][31]	= settr(150,2,32,1,0,"break", 1, 2, 0);
-	trans[4][32]	= settr(151,2,39,14,14,"i = 0", 1, 2, 0);
-	trans[4][40]	= settr(159,2,39,1,0,".(goto)", 1, 2, 0);
-	T = trans[4][39] = settr(158,2,0,0,0,"DO", 1, 2, 0);
-	T = T->nxt	= settr(158,2,33,0,0,"DO", 1, 2, 0);
-	    T->nxt	= settr(158,2,37,0,0,"DO", 1, 2, 0);
-	trans[4][33]	= settr(152,2,35,15,15,"((i<1))", 1, 2, 0); /* m: 34 -> 35,0 */
-	reached4[34] = 1;
-	trans[4][34]	= settr(0,0,0,0,0,"refcount = (refcount+1)",0,0,0);
-	trans[4][35]	= settr(154,2,39,16,16,"(run switcher())", 1, 2, 0); /* m: 36 -> 39,0 */
-	reached4[36] = 1;
-	trans[4][36]	= settr(0,0,0,0,0,"i = (i+1)",0,0,0);
-	trans[4][37]	= settr(156,2,41,17,17,"((i>=1))", 1, 2, 0); /* m: 38 -> 41,0 */
-	reached4[38] = 1;
-	trans[4][38]	= settr(157,2,41,1,0,"goto :b9", 1, 2, 0);
-	trans[4][41]	= settr(160,0,57,1,0,"break", 1, 2, 0);
-	T = trans[ 4][57] = settr(176,2,0,0,0,"ATOMIC", 1, 2, 0);
-	T->nxt	= settr(176,2,43,0,0,"ATOMIC", 1, 2, 0);
-	trans[4][43]	= settr(162,2,52,18,18,"assert((((write_off-read_off)>=0)&&((write_off-read_off)<(255/2))))", 1, 2, 0); /* m: 44 -> 0,52 */
-	reached4[44] = 1;
-	trans[4][44]	= settr(0,0,0,0,0,"j = 0",0,0,0);
-	trans[4][45]	= settr(0,0,0,0,0,"commit_sum = 0",0,0,0);
-	trans[4][53]	= settr(172,2,52,1,0,".(goto)", 1, 2, 0);
-	T = trans[4][52] = settr(171,2,0,0,0,"DO", 1, 2, 0);
-	T = T->nxt	= settr(171,2,46,0,0,"DO", 1, 2, 0);
-	    T->nxt	= settr(171,2,50,0,0,"DO", 1, 2, 0);
-	trans[4][46]	= settr(165,2,52,19,19,"((j<2))", 1, 2, 0); /* m: 47 -> 52,0 */
-	reached4[47] = 1;
-	trans[4][47]	= settr(0,0,0,0,0,"commit_sum = (commit_sum+commit_count[j])",0,0,0);
-	trans[4][48]	= settr(0,0,0,0,0,"assert((((commit_count[j]-retrieve_count[j])>=0)&&((commit_count[j]-retrieve_count[j])<(255/2))))",0,0,0);
-	trans[4][49]	= settr(0,0,0,0,0,"j = (j+1)",0,0,0);
-	trans[4][50]	= settr(169,4,58,20,20,"((j>=2))", 1, 2, 0); /* m: 55 -> 58,0 */
-	reached4[55] = 1;
-	trans[4][51]	= settr(170,2,55,1,0,"goto :b10", 1, 2, 0); /* m: 55 -> 0,58 */
-	reached4[55] = 1;
-	trans[4][54]	= settr(173,2,55,1,0,"break", 1, 2, 0);
-	trans[4][55]	= settr(174,4,58,21,21,"assert((((write_off-commit_sum)>=0)&&((write_off-commit_sum)<(255/2))))", 1, 2, 0); /* m: 56 -> 0,58 */
-	reached4[56] = 1;
-	trans[4][56]	= settr(0,0,0,0,0,"assert((((4+1)>4)||(events_lost==0)))",0,0,0);
-	trans[4][58]	= settr(177,0,0,22,22,"-end-", 0, 3500, 0);
+	trans[4][4]	= settr(0,0,0,0,0,"i = (i+1)",0,0,0);
+	trans[4][5]	= settr(122,2,16,5,5,"((i>=2))", 1, 2, 0); /* m: 10 -> 16,0 */
+	reached4[10] = 1;
+	trans[4][6]	= settr(123,2,10,1,0,"goto :b6", 1, 2, 0); /* m: 10 -> 0,16 */
+	reached4[10] = 1;
+	trans[4][9]	= settr(126,2,10,1,0,"break", 1, 2, 0);
+	trans[4][10]	= settr(127,2,16,6,6,"i = 0", 1, 2, 0);
+	trans[4][17]	= settr(134,2,16,1,0,".(goto)", 1, 2, 0);
+	T = trans[4][16] = settr(133,2,0,0,0,"DO", 1, 2, 0);
+	T = T->nxt	= settr(133,2,11,0,0,"DO", 1, 2, 0);
+	    T->nxt	= settr(133,2,14,0,0,"DO", 1, 2, 0);
+	trans[4][11]	= settr(128,2,16,7,7,"((i<4))", 1, 2, 0); /* m: 12 -> 16,0 */
+	reached4[12] = 1;
+	trans[4][12]	= settr(0,0,0,0,0,"buffer_use[i] = 0",0,0,0);
+	trans[4][13]	= settr(0,0,0,0,0,"i = (i+1)",0,0,0);
+	trans[4][14]	= settr(131,2,19,8,8,"((i>=4))", 1, 2, 0);
+	trans[4][15]	= settr(132,2,19,1,0,"goto :b7", 1, 2, 0);
+	trans[4][18]	= settr(135,2,19,1,0,"break", 1, 2, 0);
+	trans[4][19]	= settr(136,2,20,9,9,"(run reader())", 1, 2, 0);
+	trans[4][20]	= settr(137,2,28,10,10,"(run cleaner())", 1, 2, 0); /* m: 21 -> 28,0 */
+	reached4[21] = 1;
+	trans[4][21]	= settr(0,0,0,0,0,"i = 0",0,0,0);
+	trans[4][29]	= settr(146,2,28,1,0,".(goto)", 1, 2, 0);
+	T = trans[4][28] = settr(145,2,0,0,0,"DO", 1, 2, 0);
+	T = T->nxt	= settr(145,2,22,0,0,"DO", 1, 2, 0);
+	    T->nxt	= settr(145,2,26,0,0,"DO", 1, 2, 0);
+	trans[4][22]	= settr(139,2,24,11,11,"((i<4))", 1, 2, 0); /* m: 23 -> 24,0 */
+	reached4[23] = 1;
+	trans[4][23]	= settr(0,0,0,0,0,"refcount = (refcount+1)",0,0,0);
+	trans[4][24]	= settr(141,2,28,12,12,"(run tracer())", 1, 2, 0); /* m: 25 -> 28,0 */
+	reached4[25] = 1;
+	trans[4][25]	= settr(0,0,0,0,0,"i = (i+1)",0,0,0);
+	trans[4][26]	= settr(143,2,38,13,13,"((i>=4))", 1, 2, 0); /* m: 31 -> 38,0 */
+	reached4[31] = 1;
+	trans[4][27]	= settr(144,2,31,1,0,"goto :b8", 1, 2, 0); /* m: 31 -> 0,38 */
+	reached4[31] = 1;
+	trans[4][30]	= settr(147,2,31,1,0,"break", 1, 2, 0);
+	trans[4][31]	= settr(148,2,38,14,14,"i = 0", 1, 2, 0);
+	trans[4][39]	= settr(156,2,38,1,0,".(goto)", 1, 2, 0);
+	T = trans[4][38] = settr(155,2,0,0,0,"DO", 1, 2, 0);
+	T = T->nxt	= settr(155,2,32,0,0,"DO", 1, 2, 0);
+	    T->nxt	= settr(155,2,36,0,0,"DO", 1, 2, 0);
+	trans[4][32]	= settr(149,2,34,15,15,"((i<1))", 1, 2, 0); /* m: 33 -> 34,0 */
+	reached4[33] = 1;
+	trans[4][33]	= settr(0,0,0,0,0,"refcount = (refcount+1)",0,0,0);
+	trans[4][34]	= settr(151,2,38,16,16,"(run switcher())", 1, 2, 0); /* m: 35 -> 38,0 */
+	reached4[35] = 1;
+	trans[4][35]	= settr(0,0,0,0,0,"i = (i+1)",0,0,0);
+	trans[4][36]	= settr(153,2,40,17,17,"((i>=1))", 1, 2, 0); /* m: 37 -> 40,0 */
+	reached4[37] = 1;
+	trans[4][37]	= settr(154,2,40,1,0,"goto :b9", 1, 2, 0);
+	trans[4][40]	= settr(157,0,55,1,0,"break", 1, 2, 0);
+	T = trans[ 4][55] = settr(172,2,0,0,0,"ATOMIC", 1, 2, 0);
+	T->nxt	= settr(172,2,42,0,0,"ATOMIC", 1, 2, 0);
+	trans[4][42]	= settr(159,2,50,18,18,"assert((((write_off-read_off)>=0)&&((write_off-read_off)<(255/2))))", 1, 2, 0); /* m: 43 -> 0,50 */
+	reached4[43] = 1;
+	trans[4][43]	= settr(0,0,0,0,0,"j = 0",0,0,0);
+	trans[4][44]	= settr(0,0,0,0,0,"commit_sum = 0",0,0,0);
+	trans[4][51]	= settr(168,2,50,1,0,".(goto)", 1, 2, 0);
+	T = trans[4][50] = settr(167,2,0,0,0,"DO", 1, 2, 0);
+	T = T->nxt	= settr(167,2,45,0,0,"DO", 1, 2, 0);
+	    T->nxt	= settr(167,2,48,0,0,"DO", 1, 2, 0);
+	trans[4][45]	= settr(162,2,50,19,19,"((j<2))", 1, 2, 0); /* m: 46 -> 50,0 */
+	reached4[46] = 1;
+	trans[4][46]	= settr(0,0,0,0,0,"commit_sum = (commit_sum+commit_count[j])",0,0,0);
+	trans[4][47]	= settr(0,0,0,0,0,"j = (j+1)",0,0,0);
+	trans[4][48]	= settr(165,4,56,20,20,"((j>=2))", 1, 2, 0); /* m: 53 -> 56,0 */
+	reached4[53] = 1;
+	trans[4][49]	= settr(166,2,53,1,0,"goto :b10", 1, 2, 0); /* m: 53 -> 0,56 */
+	reached4[53] = 1;
+	trans[4][52]	= settr(169,2,53,1,0,"break", 1, 2, 0);
+	trans[4][53]	= settr(170,4,56,21,21,"assert((((write_off-commit_sum)>=0)&&((write_off-commit_sum)<(255/2))))", 1, 2, 0); /* m: 54 -> 0,56 */
+	reached4[54] = 1;
+	trans[4][54]	= settr(0,0,0,0,0,"assert((((4+1)>4)||(events_lost==0)))",0,0,0);
+	trans[4][56]	= settr(173,0,0,22,22,"-end-", 0, 3500, 0);
 
 	/* proctype 3: cleaner */
 
 	trans[3] = (Trans **) emalloc(10*sizeof(Trans *));
 
-	T = trans[ 3][8] = settr(118,2,0,0,0,"ATOMIC", 1, 2, 0);
-	T->nxt	= settr(118,2,5,0,0,"ATOMIC", 1, 2, 0);
-	trans[3][6]	= settr(116,2,5,1,0,".(goto)", 1, 2, 0);
-	T = trans[3][5] = settr(115,2,0,0,0,"DO", 1, 2, 0);
-	    T->nxt	= settr(115,2,1,0,0,"DO", 1, 2, 0);
-	trans[3][1]	= settr(111,2,3,23,23,"((refcount==0))", 1, 2, 0); /* m: 2 -> 3,0 */
+	T = trans[ 3][8] = settr(116,2,0,0,0,"ATOMIC", 1, 2, 0);
+	T->nxt	= settr(116,2,5,0,0,"ATOMIC", 1, 2, 0);
+	trans[3][6]	= settr(114,2,5,1,0,".(goto)", 1, 2, 0);
+	T = trans[3][5] = settr(113,2,0,0,0,"DO", 1, 2, 0);
+	    T->nxt	= settr(113,2,1,0,0,"DO", 1, 2, 0);
+	trans[3][1]	= settr(109,2,3,23,23,"((refcount==0))", 1, 2, 0); /* m: 2 -> 3,0 */
 	reached3[2] = 1;
 	trans[3][2]	= settr(0,0,0,0,0,"refcount = (refcount+1)",0,0,0);
-	trans[3][3]	= settr(113,2,7,24,24,"(run switcher())", 1, 2, 0); /* m: 4 -> 7,0 */
+	trans[3][3]	= settr(111,2,7,24,24,"(run switcher())", 1, 2, 0); /* m: 4 -> 7,0 */
 	reached3[4] = 1;
-	trans[3][4]	= settr(114,2,7,1,0,"goto :b5", 1, 2, 0);
-	trans[3][7]	= settr(117,0,9,1,0,"break", 1, 2, 0);
-	trans[3][9]	= settr(119,0,0,25,25,"-end-", 0, 3500, 0);
+	trans[3][4]	= settr(112,2,7,1,0,"goto :b5", 1, 2, 0);
+	trans[3][7]	= settr(115,0,9,1,0,"break", 1, 2, 0);
+	trans[3][9]	= settr(117,0,0,25,25,"-end-", 0, 3500, 0);
 
 	/* proctype 2: reader */
 
-	trans[2] = (Trans **) emalloc(32*sizeof(Trans *));
+	trans[2] = (Trans **) emalloc(30*sizeof(Trans *));
 
-	trans[2][29]	= settr(108,0,28,1,0,".(goto)", 0, 2, 0);
-	T = trans[2][28] = settr(107,0,0,0,0,"DO", 0, 2, 0);
-	T = T->nxt	= settr(107,0,1,0,0,"DO", 0, 2, 0);
-	    T->nxt	= settr(107,0,26,0,0,"DO", 0, 2, 0);
-	trans[2][1]	= settr(80,0,12,26,0,"((((((write_off/(4/2))-(read_off/(4/2)))>0)&&(((write_off/(4/2))-(read_off/(4/2)))<(255/2)))&&((commit_count[((read_off%4)/(4/2))]-retrieve_count[((read_off%4)/(4/2))])==(4/2))))", 1, 2, 0);
+	trans[2][27]	= settr(106,0,26,1,0,".(goto)", 0, 2, 0);
+	T = trans[2][26] = settr(105,0,0,0,0,"DO", 0, 2, 0);
+	T = T->nxt	= settr(105,0,1,0,0,"DO", 0, 2, 0);
+	    T->nxt	= settr(105,0,24,0,0,"DO", 0, 2, 0);
+	trans[2][1]	= settr(80,0,12,26,0,"((((((write_off/(4/2))-(read_off/(4/2)))>0)&&(((write_off/(4/2))-(read_off/(4/2)))<(255/2)))&&(((commit_count[((read_off%4)/(4/2))]-(4/2))-(((read_off/4)*4)/2))==0)))", 1, 2, 0);
 	T = trans[ 2][12] = settr(91,2,0,0,0,"ATOMIC", 1, 2, 0);
 	T->nxt	= settr(91,2,2,0,0,"ATOMIC", 1, 2, 0);
 	trans[2][2]	= settr(81,2,9,27,27,"i = 0", 1, 2, 0);
@@ -158,9 +156,9 @@ settable(void)
 	trans[2][7]	= settr(86,2,11,29,29,"((i>=(4/2)))", 1, 2, 0); /* m: 8 -> 11,0 */
 	reached2[8] = 1;
 	trans[2][8]	= settr(87,2,11,1,0,"goto :b3", 1, 2, 0);
-	trans[2][11]	= settr(90,0,25,1,0,"break", 1, 2, 0);
-	T = trans[ 2][25] = settr(104,2,0,0,0,"ATOMIC", 1, 2, 0);
-	T->nxt	= settr(104,2,13,0,0,"ATOMIC", 1, 2, 0);
+	trans[2][11]	= settr(90,0,23,1,0,"break", 1, 2, 0);
+	T = trans[ 2][23] = settr(102,2,0,0,0,"ATOMIC", 1, 2, 0);
+	T->nxt	= settr(102,2,13,0,0,"ATOMIC", 1, 2, 0);
 	trans[2][13]	= /* c */ settr(92,2,19,27,27,"i = 0", 1, 2, 0);
 	trans[2][20]	= settr(99,2,19,1,0,".(goto)", 1, 2, 0);
 	T = trans[2][19] = settr(98,2,0,0,0,"DO", 1, 2, 0);
@@ -170,19 +168,14 @@ settable(void)
 	reached2[15] = 1;
 	trans[2][15]	= settr(0,0,0,0,0,"buffer_use[((read_off+i)%4)] = 0",0,0,0);
 	trans[2][16]	= settr(0,0,0,0,0,"i = (i+1)",0,0,0);
-	trans[2][17]	= settr(96,0,28,31,31,"((i>=(4/2)))", 1, 2, 0); /* m: 22 -> 28,0 */
-	reached2[22] = 1;
-	trans[2][18]	= settr(97,2,22,1,0,"goto :b4", 1, 2, 0); /* m: 22 -> 0,28 */
-	reached2[22] = 1;
+	trans[2][17]	= settr(96,2,21,31,31,"((i>=(4/2)))", 1, 2, 0);
+	trans[2][18]	= settr(97,2,21,1,0,"goto :b4", 1, 2, 0);
 	trans[2][21]	= settr(100,2,22,1,0,"break", 1, 2, 0);
-	trans[2][22]	= settr(101,0,28,32,32,"tmp_retrieve = (retrieve_count[((read_off%4)/(4/2))]+(4/2))", 1, 2, 0); /* m: 23 -> 0,28 */
-	reached2[23] = 1;
-	trans[2][23]	= settr(0,0,0,0,0,"retrieve_count[((read_off%4)/(4/2))] = tmp_retrieve",0,0,0);
-	trans[2][24]	= settr(0,0,0,0,0,"read_off = (read_off+(4/2))",0,0,0);
-	trans[2][26]	= settr(105,0,31,33,0,"((read_off>=(4-events_lost)))", 1, 2, 0);
-	trans[2][27]	= settr(106,0,31,1,0,"goto :b2", 0, 2, 0);
-	trans[2][30]	= settr(109,0,31,1,0,"break", 0, 2, 0);
-	trans[2][31]	= settr(110,0,0,34,34,"-end-", 0, 3500, 0);
+	trans[2][22]	= settr(101,0,26,32,32,"read_off = (read_off+(4/2))", 1, 2, 0);
+	trans[2][24]	= settr(103,0,29,33,0,"((read_off>=(4-events_lost)))", 1, 2, 0);
+	trans[2][25]	= settr(104,0,29,1,0,"goto :b2", 0, 2, 0);
+	trans[2][28]	= settr(107,0,29,1,0,"break", 0, 2, 0);
+	trans[2][29]	= settr(108,0,0,34,34,"-end-", 0, 3500, 0);
 
 	/* proctype 1: tracer */
 
@@ -253,7 +246,7 @@ settable(void)
 	T = trans[1][43] = settr(72,2,0,0,0,"IF", 1, 2, 0);
 	T = T->nxt	= settr(72,2,39,0,0,"IF", 1, 2, 0);
 	    T->nxt	= settr(72,2,41,0,0,"IF", 1, 2, 0);
-	trans[1][39]	= settr(68,4,49,47,47,"(((tmp_commit%(4/2))==0))", 1, 2, 0); /* m: 40 -> 49,0 */
+	trans[1][39]	= settr(68,4,49,47,47,"((((((prev_off/4)*4)/2)+(4/2))-tmp_commit))", 1, 2, 0); /* m: 40 -> 49,0 */
 	reached1[40] = 1;
 	trans[1][40]	= settr(0,0,0,0,0,"deliver = 1",0,0,0);
 	trans[1][44]	= settr(73,0,49,48,48,".(goto)", 1, 2, 0);
@@ -308,7 +301,7 @@ settable(void)
 	T = trans[0][25] = settr(24,2,0,0,0,"IF", 1, 2, 0);
 	T = T->nxt	= settr(24,2,21,0,0,"IF", 1, 2, 0);
 	    T->nxt	= settr(24,2,23,0,0,"IF", 1, 2, 0);
-	trans[0][21]	= settr(20,4,29,60,60,"(((tmp_commit%(4/2))==0))", 1, 2, 0); /* m: 22 -> 29,0 */
+	trans[0][21]	= settr(20,4,29,60,60,"((((((prev_off/4)*4)/2)+(4/2))-tmp_commit))", 1, 2, 0); /* m: 22 -> 29,0 */
 	reached0[22] = 1;
 	trans[0][22]	= settr(0,0,0,0,0,"deliver = 1",0,0,0);
 	trans[0][26]	= settr(25,4,29,61,61,".(goto)", 1, 2, 0); /* m: 27 -> 0,29 */

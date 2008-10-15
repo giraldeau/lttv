@@ -23,6 +23,9 @@ char *trailfilename;
 #ifndef uint
 #define uint	unsigned int
 #endif
+#ifndef HASH32
+#define HASH64
+#endif
 #define DELTA	500
 #ifdef MA
 	#if NCORE>1 && !defined(SEP_STATE)
@@ -53,38 +56,38 @@ typedef struct S_F_MAP {
 	char *fnm; int from; int upto;
 } S_F_MAP;
 
-#define nstates4	59	/* :init: */
-#define endstate4	58
+#define nstates4	57	/* :init: */
+#define endstate4	56
 short src_ln4 [] = {
-	  0, 225, 227, 228, 229, 230, 231, 231, 
-	226, 233, 226, 233, 235, 236, 237, 238, 
-	238, 234, 240, 234, 240, 241, 242, 244, 
-	245, 246, 247, 248, 248, 243, 250, 243, 
-	250, 252, 253, 254, 255, 256, 256, 251, 
-	258, 251, 224, 262, 263, 264, 266, 267, 
-	271, 272, 273, 273, 265, 278, 265, 278, 
-	282, 260, 284,   0, };
+	  0, 226, 228, 229, 230, 231, 231, 227, 
+	233, 227, 233, 235, 236, 237, 238, 238, 
+	234, 240, 234, 240, 241, 242, 244, 245, 
+	246, 247, 248, 248, 243, 250, 243, 250, 
+	252, 253, 254, 255, 256, 256, 251, 258, 
+	251, 225, 262, 263, 264, 266, 267, 272, 
+	273, 273, 265, 278, 265, 278, 282, 260, 
+	284,   0, };
 S_F_MAP src_file4 [] = {
 	{ "-", 0, 0 },
-	{ "buffer.spin", 1, 58 },
-	{ "-", 59, 60 }
+	{ "buffer.spin", 1, 56 },
+	{ "-", 57, 58 }
 };
 uchar reached4 [] = {
-	  0,   1,   1,   0,   0,   0,   1,   1, 
-	  0,   1,   1,   0,   1,   0,   0,   1, 
-	  1,   0,   1,   1,   0,   0,   0,   1, 
-	  0,   0,   0,   1,   1,   0,   1,   1, 
-	  0,   1,   0,   0,   0,   1,   1,   0, 
-	  1,   1,   0,   1,   0,   0,   1,   0, 
+	  0,   1,   1,   0,   0,   1,   1,   0, 
+	  1,   1,   0,   1,   0,   0,   1,   1, 
+	  0,   1,   1,   0,   0,   0,   1,   0, 
 	  0,   0,   1,   1,   0,   1,   1,   0, 
-	  0,   0,   0,   0, };
+	  1,   0,   0,   0,   1,   1,   0,   1, 
+	  1,   0,   1,   0,   0,   1,   0,   0, 
+	  1,   1,   0,   1,   1,   0,   0,   0, 
+	  0,   0, };
 uchar *loopstate4;
 
 #define nstates3	10	/* cleaner */
 #define endstate3	9
 short src_ln3 [] = {
-	  0, 210, 211, 212, 213, 209, 215, 209, 
-	208, 216,   0, };
+	  0, 211, 212, 213, 214, 210, 216, 210, 
+	209, 217,   0, };
 S_F_MAP src_file3 [] = {
 	{ "-", 0, 0 },
 	{ "buffer.spin", 1, 9 },
@@ -95,37 +98,35 @@ uchar reached3 [] = {
 	  0,   0,   0, };
 uchar *loopstate3;
 
-#define nstates2	32	/* reader */
-#define endstate2	31
+#define nstates2	30	/* reader */
+#define endstate2	29
 short src_ln2 [] = {
-	  0, 169, 171, 173, 174, 175, 176, 177, 
-	177, 172, 179, 172, 170, 187, 189, 190, 
-	191, 192, 192, 188, 194, 188, 194, 196, 
-	197, 186, 199, 199, 164, 201, 164, 201, 
-	  0, };
+	  0, 177, 179, 181, 182, 183, 184, 185, 
+	185, 180, 187, 180, 178, 191, 193, 194, 
+	195, 196, 196, 192, 198, 192, 198, 190, 
+	200, 200, 172, 202, 172, 202,   0, };
 S_F_MAP src_file2 [] = {
 	{ "-", 0, 0 },
-	{ "buffer.spin", 1, 31 },
-	{ "-", 32, 33 }
+	{ "buffer.spin", 1, 29 },
+	{ "-", 30, 31 }
 };
 uchar reached2 [] = {
 	  0,   1,   1,   1,   0,   0,   0,   1, 
 	  1,   0,   1,   1,   0,   1,   1,   0, 
 	  0,   1,   1,   0,   1,   1,   0,   0, 
-	  0,   0,   1,   1,   0,   1,   1,   0, 
-	  0, };
+	  1,   1,   0,   1,   1,   0,   0, };
 uchar *loopstate2;
 
 #define nstates1	51	/* tracer */
 #define endstate1	50
 short src_ln1 [] = {
-	  0,  99, 100,  98, 104, 105, 106, 106, 
-	103, 108, 102, 111, 111, 112, 112, 110, 
-	114, 114, 116, 117, 118, 119, 120, 120, 
-	115, 122, 115, 109, 127, 129, 130, 131, 
-	132, 132, 128, 134, 128, 134, 135, 137, 
-	137, 138, 138, 136, 140, 126, 142, 144, 
-	146, 141, 148,   0, };
+	  0, 106, 107, 105, 111, 112, 113, 113, 
+	110, 115, 109, 118, 118, 119, 119, 117, 
+	121, 121, 123, 124, 125, 126, 127, 127, 
+	122, 129, 122, 116, 134, 136, 137, 138, 
+	139, 139, 135, 141, 135, 141, 142, 145, 
+	146, 147, 148, 143, 150, 133, 152, 154, 
+	156, 151, 158,   0, };
 S_F_MAP src_file1 [] = {
 	{ "-", 0, 0 },
 	{ "buffer.spin", 1, 50 },
@@ -144,10 +145,10 @@ uchar *loopstate1;
 #define nstates0	31	/* switcher */
 #define endstate0	30
 short src_ln0 [] = {
-	  0,  56,  57,  58,  61,  62,  63,  64, 
-	 64,  59,  66,  55,  69,  69,  70,  70, 
-	 68,  72,  67,  75,  76,  78,  78,  79, 
-	 79,  77,  81,  81,  74,  84,  85,   0, };
+	  0,  60,  61,  62,  65,  66,  67,  68, 
+	 68,  63,  70,  59,  73,  73,  74,  74, 
+	 72,  76,  71,  79,  80,  83,  84,  85, 
+	 86,  81,  88,  88,  78,  91,  92,   0, };
 S_F_MAP src_file0 [] = {
 	{ "-", 0, 0 },
 	{ "buffer.spin", 1, 30 },
@@ -224,11 +225,8 @@ typedef struct P2 { /* reader */
 	unsigned _p   : 7; /* state    */
 	uchar i;
 	uchar j;
-	uchar tmp_retrieve;
-	uchar lwrite_off;
-	uchar lcommit_count;
 } P2;
-#define Air2	(sizeof(P2) - Offsetof(P2, lcommit_count) - 1*sizeof(uchar))
+#define Air2	(sizeof(P2) - Offsetof(P2, j) - 1*sizeof(uchar))
 #define Ptracer	((P1 *)this)
 typedef struct P1 { /* tracer */
 	unsigned _pid : 8;  /* 0..255 */
@@ -453,7 +451,6 @@ typedef struct State {
 	uchar write_off;
 	uchar commit_count[2];
 	uchar read_off;
-	uchar retrieve_count[2];
 	uchar events_lost;
 	uchar refcount;
 	uchar sv[VECTORSZ];
@@ -473,9 +470,9 @@ uchar *loopstate5;  /* np_ */
 #define endstate5	2 /* np_ */
 
 #define start5	0 /* np_ */
-#define start4	42
+#define start4	41
 #define start3	8
-#define start2	28
+#define start2	26
 #define start1	3
 #define start0	11
 #ifdef NP

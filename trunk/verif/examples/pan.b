@@ -10,16 +10,15 @@
 		;
 		goto R999;
 
-	case 4: /* STATE 5 */
+	case 4: /* STATE 4 */
 		;
-		((P4 *)this)->i = trpt->bup.ovals[2];
-		now.retrieve_count[ Index(((P4 *)this)->i, 2) ] = trpt->bup.ovals[1];
+		((P4 *)this)->i = trpt->bup.ovals[1];
 		now.commit_count[ Index(((P4 *)this)->i, 2) ] = trpt->bup.ovals[0];
 		;
-		ungrab_ints(trpt->bup.ovals, 3);
+		ungrab_ints(trpt->bup.ovals, 2);
 		goto R999;
 
-	case 5: /* STATE 11 */
+	case 5: /* STATE 10 */
 		;
 		((P4 *)this)->i = trpt->bup.ovals[1];
 	/* 0 */	((P4 *)this)->i = trpt->bup.ovals[0];
@@ -28,13 +27,13 @@
 		ungrab_ints(trpt->bup.ovals, 2);
 		goto R999;
 
-	case 6: /* STATE 11 */
+	case 6: /* STATE 10 */
 		;
 		((P4 *)this)->i = trpt->bup.oval;
 		;
 		goto R999;
 
-	case 7: /* STATE 14 */
+	case 7: /* STATE 13 */
 		;
 		((P4 *)this)->i = trpt->bup.ovals[1];
 		now.buffer_use[ Index(((P4 *)this)->i, 4) ] = trpt->bup.ovals[0];
@@ -42,21 +41,21 @@
 		ungrab_ints(trpt->bup.ovals, 2);
 		goto R999;
 
-	case 8: /* STATE 15 */
+	case 8: /* STATE 14 */
 		;
 	/* 0 */	((P4 *)this)->i = trpt->bup.oval;
 		;
 		;
 		goto R999;
 
-	case 9: /* STATE 20 */
+	case 9: /* STATE 19 */
 		;
 		;
 		delproc(0, now._nr_pr-1);
 		;
 		goto R999;
 
-	case 10: /* STATE 22 */
+	case 10: /* STATE 21 */
 		;
 		((P4 *)this)->i = trpt->bup.oval;
 		;
@@ -64,13 +63,13 @@
 		;
 		goto R999;
 
-	case 11: /* STATE 24 */
+	case 11: /* STATE 23 */
 		;
 		now.refcount = trpt->bup.oval;
 		;
 		goto R999;
 
-	case 12: /* STATE 26 */
+	case 12: /* STATE 25 */
 		;
 		((P4 *)this)->i = trpt->bup.oval;
 		;
@@ -78,7 +77,7 @@
 		;
 		goto R999;
 
-	case 13: /* STATE 32 */
+	case 13: /* STATE 31 */
 		;
 		((P4 *)this)->i = trpt->bup.ovals[1];
 	/* 0 */	((P4 *)this)->i = trpt->bup.ovals[0];
@@ -87,19 +86,19 @@
 		ungrab_ints(trpt->bup.ovals, 2);
 		goto R999;
 
-	case 14: /* STATE 32 */
+	case 14: /* STATE 31 */
 		;
 		((P4 *)this)->i = trpt->bup.oval;
 		;
 		goto R999;
 
-	case 15: /* STATE 34 */
+	case 15: /* STATE 33 */
 		;
 		now.refcount = trpt->bup.oval;
 		;
 		goto R999;
 
-	case 16: /* STATE 36 */
+	case 16: /* STATE 35 */
 		;
 		((P4 *)this)->i = trpt->bup.oval;
 		;
@@ -107,14 +106,14 @@
 		;
 		goto R999;
 
-	case 17: /* STATE 37 */
+	case 17: /* STATE 36 */
 		;
 	/* 0 */	((P4 *)this)->i = trpt->bup.oval;
 		;
 		;
 		goto R999;
 
-	case 18: /* STATE 45 */
+	case 18: /* STATE 44 */
 		;
 		((P4 *)this)->commit_sum = trpt->bup.ovals[1];
 		((P4 *)this)->j = trpt->bup.ovals[0];
@@ -122,7 +121,7 @@
 		ungrab_ints(trpt->bup.ovals, 2);
 		goto R999;
 
-	case 19: /* STATE 49 */
+	case 19: /* STATE 47 */
 		;
 		((P4 *)this)->j = trpt->bup.ovals[1];
 		((P4 *)this)->commit_sum = trpt->bup.ovals[0];
@@ -130,7 +129,7 @@
 		ungrab_ints(trpt->bup.ovals, 2);
 		goto R999;
 
-	case 20: /* STATE 50 */
+	case 20: /* STATE 48 */
 		;
 	/* 0 */	((P4 *)this)->j = trpt->bup.oval;
 		;
@@ -138,10 +137,10 @@
 		goto R999;
 ;
 		
-	case 21: /* STATE 55 */
+	case 21: /* STATE 53 */
 		goto R999;
 
-	case 22: /* STATE 58 */
+	case 22: /* STATE 56 */
 		;
 		p_restor(II);
 		;
@@ -203,29 +202,22 @@
 		ungrab_ints(trpt->bup.ovals, 2);
 		goto R999;
 
-	case 31: /* STATE 24 */
+	case 31: /* STATE 17 */
 		;
-		now.read_off = trpt->bup.ovals[3];
-		now.retrieve_count[ Index(((now.read_off%4)/(4/2)), 2) ] = trpt->bup.ovals[2];
-		((P2 *)this)->tmp_retrieve = trpt->bup.ovals[1];
-	/* 0 */	((P2 *)this)->i = trpt->bup.ovals[0];
+	/* 0 */	((P2 *)this)->i = trpt->bup.oval;
 		;
 		;
-		ungrab_ints(trpt->bup.ovals, 4);
 		goto R999;
 
-	case 32: /* STATE 24 */
+	case 32: /* STATE 22 */
 		;
-		now.read_off = trpt->bup.ovals[2];
-		now.retrieve_count[ Index(((now.read_off%4)/(4/2)), 2) ] = trpt->bup.ovals[1];
-		((P2 *)this)->tmp_retrieve = trpt->bup.ovals[0];
+		now.read_off = trpt->bup.oval;
 		;
-		ungrab_ints(trpt->bup.ovals, 3);
 		goto R999;
 ;
 		;
 		
-	case 34: /* STATE 31 */
+	case 34: /* STATE 29 */
 		;
 		p_restor(II);
 		;
@@ -323,11 +315,12 @@
 
 	case 47: /* STATE 40 */
 		;
-		deliver = trpt->bup.ovals[1];
-	/* 0 */	((P1 *)this)->tmp_commit = trpt->bup.ovals[0];
+		deliver = trpt->bup.ovals[2];
+	/* 1 */	((P1 *)this)->tmp_commit = trpt->bup.ovals[1];
+	/* 0 */	((P1 *)this)->prev_off = trpt->bup.ovals[0];
 		;
 		;
-		ungrab_ints(trpt->bup.ovals, 2);
+		ungrab_ints(trpt->bup.ovals, 3);
 		goto R999;
 ;
 		
@@ -409,12 +402,13 @@
 
 	case 60: /* STATE 27 */
 		;
-		now.refcount = trpt->bup.ovals[2];
-		deliver = trpt->bup.ovals[1];
-	/* 0 */	((P0 *)this)->tmp_commit = trpt->bup.ovals[0];
+		now.refcount = trpt->bup.ovals[3];
+		deliver = trpt->bup.ovals[2];
+	/* 1 */	((P0 *)this)->tmp_commit = trpt->bup.ovals[1];
+	/* 0 */	((P0 *)this)->prev_off = trpt->bup.ovals[0];
 		;
 		;
-		ungrab_ints(trpt->bup.ovals, 3);
+		ungrab_ints(trpt->bup.ovals, 4);
 		goto R999;
 
 	case 61: /* STATE 27 */
