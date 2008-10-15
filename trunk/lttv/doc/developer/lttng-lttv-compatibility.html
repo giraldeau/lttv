@@ -3039,6 +3039,7 @@ powerpc64, s390, sparc, sparc64.<br>
 <td style="vertical-align: top;">
 0.39<br>
 0.40<br>
+0.41<br>
 </td>
 <td style="vertical-align: top;">
 0.53<br>
@@ -3061,6 +3062,9 @@ obsolete<br>
 </td>
 <td style="vertical-align: top;">
 LTTng 0.39 and LTTV 0.11.1 fixes 32-64 bits subbuffer header portability.<br>
+LTTng 0.41 reintroduces the formal verification fix, which solves the
+case where the reader thinks the uncommitted subbuffer is fully committed.
+Unlikely to happen, but could, with small buffers especially.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
