@@ -22,6 +22,7 @@
 #include <signal.h>
 #include <dirent.h>
 #include <string.h>
+#include <limits.h>
 #include <sys/stat.h>
 
 /* Buffer for file copy : 4k seems optimal. */
@@ -52,6 +53,7 @@ static unsigned append_trace = 0;
 static enum trace_mode mode = LTT_TRACE_NORMAL;
 static enum trace_ctl_op op = CTL_OP_NONE;
 static char *channel_root = NULL;
+static char channel_root_default[PATH_MAX];
 static char *trace_root = NULL;
 static char *num_threads = "1";
 
@@ -92,6 +94,26 @@ void show_arguments(void)
 	printf("\n");
 }
 
+int getdebugfsmntdir(char *mntdir)
+{
+	char mnt_dir[PATH_MAX];
+	char mnt_type[PATH_MAX];
+
+	FILE *fp = fopen("/proc/mounts", "r");
+	if (!fp) {
+		return EINVAL;
+	}
+
+	while (1) {
+		if (fscanf(fp, "%*s %s %s %*s %*s %*s", mnt_dir, mnt_type) <= 0) {
+			return ENOENT;
+		}
+		if (!strcmp(mnt_type, "debugfs")) {
+			strcpy(mntdir, mnt_dir);
+			return 0;
+		}
+	}
+}
 
 /* parse_arguments
  *
@@ -304,9 +326,16 @@ int parse_arguments(int argc, char **argv)
 			ret = EINVAL;
 		}
 		if(channel_root == NULL) {
-			printf("Please specify -l ltt_root_path with the -d option.\n");
-			printf("\n");
-			ret = EINVAL;
+			if (getdebugfsmntdir(channel_root_default) == 0) {
+				strcat(channel_root_default, "/ltt");
+				printf("No -l ltt_root_path with the -d option, using default: %s\n", channel_root_default);
+				printf("\n");
+				channel_root=channel_root_default;
+			} else {
+				printf("Please specify -l ltt_root_path with the -d option.\n");
+				printf("\n");
+				ret = EINVAL;
+			}
 		}
 	}
 
