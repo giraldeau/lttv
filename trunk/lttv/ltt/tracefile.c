@@ -772,7 +772,13 @@ LttTrace *ltt_trace_open(const gchar *pathname)
     goto metadata_error;
   }
 
-  /* Get the trace information for the control/metadata_0 tracefile */
+  /*
+   * Get the trace information for the control/metadata_0 tracefile.
+   * Getting a correct trace start_time and start_tsc is insured by the fact
+   * that no subbuffers are supposed to be lost in the metadata channel.
+   * Therefore, the first subbuffer contains the start_tsc timestamp in its
+   * buffer header.
+   */
   g_assert(group->len > 0);
   tf = &g_array_index (group, LttTracefile, 0);
   header = (ltt_subbuffer_header_t *)tf->buffer.head;
