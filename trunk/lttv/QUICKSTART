@@ -237,6 +237,7 @@ modprobe kernel-trace
 modprobe mm-trace
 modprobe net-trace
 modprobe fs-trace
+modprobe syscall-trace
 #if locking tracing is wanted, uncomment the following
 #modprobe lockdep-trace
 
