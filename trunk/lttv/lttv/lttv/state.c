@@ -1876,7 +1876,7 @@ create_name_tables(LttvTraceState *tcs)
   hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 1);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
-      LTT_FACILITY_KERNEL_ARCH,
+      LTT_FACILITY_KERNEL,
       LTT_EVENT_SYSCALL_ENTRY,
       FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
       NULL, NULL, &hooks)) {
@@ -3379,13 +3379,13 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     //hn = 0;
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SYSCALL_ENTRY,
         FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
 	syscall_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SYSCALL_EXIT,
         NULL,
         syscall_exit, NULL, &hooks);

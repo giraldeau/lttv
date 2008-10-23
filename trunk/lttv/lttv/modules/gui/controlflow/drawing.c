@@ -223,7 +223,7 @@ void drawing_data_request(Drawing_t *drawing,
       /* before hooks */
       
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL_ARCH,
+          LTT_FACILITY_KERNEL,
           LTT_EVENT_SYSCALL_ENTRY,
           FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
           before_execmode_hook,
@@ -231,7 +231,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL_ARCH,
+          LTT_FACILITY_KERNEL,
           LTT_EVENT_SYSCALL_EXIT,
           NULL,
           before_execmode_hook,
