@@ -121,6 +121,13 @@ libc6 development librairies
   (Debian : libc6, libc6-dev)
   (Fedora : glibc, glibc)
 
+* Reminder
+
+See the list of compatibilities between LTTng, ltt-control, LTTV and
+markers-userspace at :
+http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
+
+
 
 * Getting the LTTng packages
 
