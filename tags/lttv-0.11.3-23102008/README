@@ -1,0 +1,75 @@
+LTT Viewing Tools package README
+--------------------------------
+Mathieu Desnoyers 
+Last update: 2007/05/14
+
+
+This package contains the trace reading library and trace viewing tools for
+the new Linux Trace Toolkit trace format.
+
+* Compiling
+
+gcc 3.2 or better
+gtk 2.4 or better development libraries
+  (Debian : libgtk2.0, libgtk2.0-dev)
+  (Fedora : gtk2, gtk2-devel)
+  note : For Fedora users : this might require at least core 3 from Fedora,
+  or you might have to compile your own GTK2 library.
+glib 2.4 or better development libraries
+  (Debian : libglib2.0-0, libglib2.0-dev)
+  (Fedora : glib2, glib2-devel)
+libpopt development libraries
+  (Debian : libpopt0, libpopt-dev)
+  (Fedora : popt)
+libpango development libraries
+  (Debian : libpango1.0, libpango1.0-dev)
+  (Fedora : pango, pango-devel)
+libc6 development librairies 
+  (Debian : libc6, libc6-dev)
+  (Fedora : glibc, glibc)
+
+
+To compile the source tree from a tarball, simply follow these steps :
+
+- ./configure
+- make
+- make install
+
+After running ./configure, you can also go in specific subdirectories and
+use make, make install.
+
+
+* Quick Start
+
+See QUICKSTART.
+
+
+* Source Tree Structure
+
+Here is the tree structure of the Linux Trace Toolkit Viewer package.
+
+ltt/		New trace format reading library.
+README		This file.
+debian/		Debian config files (currently empty).
+doc/		Documentation.
+doc/user/	User related documentation.
+doc/developer/	Developer related documentation.
+lttv/		Linux Trace Toolkit trace analysis tool and viewer.
+lttv/modules/	Linux Trace Toolkit analysis tool and viewer plugin modules.
+specs/		RPM config files (currently empty).
+
+
+* For Developers
+
+This source tree is based on the autotools suite from GNU to simplify
+portability. Here are some things you should have on your system in order to
+compile the subversion repository tree :
+
+
+- GNU autotools (automake >=1.7, autoconf >=2.50, autoheader >=2.50)
+  (make sure your system wide "automake" points to a recent version!)
+- GNU Libtool
+  (for more information, go to http://www.gnu.org/software/autoconf/)
+
+If you get the tree from the repository, you will need to use the autogen.sh
+script. It calls all the GNU tools needed to prepare the tree configuration.

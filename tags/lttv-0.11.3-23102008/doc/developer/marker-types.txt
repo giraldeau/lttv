@@ -1,0 +1,86 @@
+
+#define MARK_TRAP 1
+#define _MARK_TRAP (1 << MARK_TRAP)
+  Can generate a trap
+
+#define MARK_PREEMPT 2
+#define _MARK_PREEMPT (1 << MARK_PREEMPT)
+  Permits blocking calls within probe.
+  How to deal with probe removal :
+  Each site has its per cpu probe_exec counters. The sum of the signed values
+  gives the number of executors. Operations inc/dec on those values are done
+  within preempt disable so they can be done non atomically without risking
+  to be corrupted by another CPU.
+  1 - disable site and remove call
+  2 - while sum of probe_exec counters != 0, sleep 50ms
+      fail after 10 loops
+        - if someone sleeps in here for a long time or waits for 
+	  a busy ressource, removal may fail with -EBUSY.
+
+site :
+
+if (enable) {
+	preempt_disable();
+	probe_exec[smp_processor_id()]++;
+	preempt_enable();
+	handler();
+	preempt_disable();
+	probe_exec[smp_processor_id()]--;
+	preempt_enable();
+}
+
+#define MARK_RESCHED 3
+#define _MARK_RESCHED (1 << MARK_RESCHED)
+  preempt_schedule() will be called by the marker.
+
+#define MARK_PRINTK 4
+#define _MARK_PRINTK (1 << MARK_PRINTK)
+  vprintk can be called in the probe/printk can be called as probe.
+
+#define MARK_LOCK_SAFE
+#define _MARK_LOCK_SAFE (1 << MARK_LOCK_SAFE)
+  It is completely safe to take a lock, disable irqs, softirqs, ... from this marker.
+  If unset, checking the context must be done to insure no deadlock or recursive
+  call will occur.
+
+#define _MARK_DEFAULT (_MARK_TRAP | _MARK_RESCHED | _MARK_PRINTK)
+
+#define MARK (format, args...) _MARK(MARK_DEFAULT, format, ## args)
+
+ex. i386
+#define _MARK(opt, format, args...) \
+do { \
+	if (opt & _MARK_TRAP) \
+		MARK(opt, format, ## args); \
+	else \
+		GEN_MARK(opt, format, ## args); \
+} while (0)
+
+ex. powerpc
+#define _MARK(opt, format, args...) MARK(opt, format, ## args);
+
+
+MARK(opt, format, ...) \
+static declare opt in struct; \
+if (enable) {
+	preempt_disable();
+	if (opt & _MARK_PREEMPT) {
+		probe_exec[smp_processor_id()]++;
+		if (opt & _MARK_RESCHED)
+			preempt_enable();
+		else
+			preempt_enable_no_resched();
+	}
+	handler();
+	if (opt & _MARK_PREEMPT) {
+		preempt_disable();
+		probe_exec[smp_processor_id()]--;
+	}
+	if (opt & _MARK_RESCHED)
+		preempt_enable();
+	else
+		preempt_enable_no_resched();
+}
+
+
+

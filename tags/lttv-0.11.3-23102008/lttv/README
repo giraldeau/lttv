@@ -1,0 +1,21 @@
+Linux Trace Toolkit Visualizer
+
+* Getting started
+
+Use ./autogen.sh in the top level directory. It will create the Makefile
+for you. Then, you can use make and make install to install this user
+tool.
+
+Loading it from the command line is then as simple as :
+
+lttv -L modules-path -m module1 -m module2 ...
+
+So, to load the graphical interface with a detailed events list, it
+would be (if the installation prefix is /usr, for instance)
+
+lttv -L /usr/lib/lttv/plugins -m lttvwindow -m guievents
+
+* Tree structure
+lttv:    main program composed of the program itself including helper modules.
+modules: text and graphical viewing and analysis tools.
+

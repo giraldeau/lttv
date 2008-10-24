@@ -1,0 +1,314 @@
+
+Some thoughts about userspace tracing
+
+Mathieu Desnoyers January 2006
+
+
+
+* Goals
+
+Fast and secure user space tracing.
+
+Fast : 
+
+- 5000ns for a system call is too long. Writing an event directly to memory
+	takes 220ns.
+- Still, we can afford a system call for buffer switch, which occurs less often.
+- No locking, no signal disabling. Disabling signals require 2 system calls.
+	Mutexes are implemented with a short spin lock, followed by a yield. Yet
+	another system call. In addition, we have no way to know on which CPU we are
+	running when in user mode. We can be preempted anywhere.
+- No contention.
+- No interrupt disabling : it doesn't exist in user mode.
+
+Secure :
+
+- A process shouldn't be able to corrupt the system's trace or another
+	process'trace. It should be limited to its own memory space.
+
+
+
+* Solution
+
+- Signal handler concurrency
+
+Using atomic space reservation in the buffer(s) will remove the requirement for
+locking. This is the fast and safe way to deal with concurrency coming from
+signal handlers.
+
+- Start/stop tracing
+
+Two possible solutions :
+
+Either we export a read-only memory page from kernel to user space. That would
+be somehow seen as a hack, as I have never even seen such interface anywhere
+else. It may lead to problems related to exported types. The proper, but slow,
+way to do it would be to have a system call that would return the tracing
+status.
+
+My suggestion is to go for a system call, but only call it :
+
+- when the thread starts
+- when receiving a SIGRTMIN+3 (multithread ?)
+
+Note : save the thread ID (process ID) in the logging function and the update
+handler. Use it as a comparison to check if we are a forked child thread.
+Start a brand new buffer list in that case.
+
+
+Two possibilities :
+
+- one system call per information to get/one system call to get all information.
+- one signal per information to get/one signal for "update" tracing info.
+
+I would tend to adopt :
+
+- One signal for "general tracing update"
+	One signal handler would clearly be enough, more would be unnecessary
+	overhead/pollution.
+- One system call for all updates.
+	We will need to have multiple parameters though. We have up to 6 parameters.
+
+syscall get_tracing_info
+
+parameter 1 : trace buffer map address. (id)
+
+parameter 2 : active ? (int)
+
+
+Concurrency
+
+We must have per thread buffers. Then, no memory can be written by two threads
+at once. It removes the need for locks (ok, atomic reservation was already doing
+that) and removes false sharing.
+
+
+Multiple traces
+
+By having the number of active traces, we can allocate as much buffers as we
+need. Allocation is done in the kernel with relay_open. User space mapping is
+done when receiving the signal/starting the process and getting the number of
+traces actives.
+
+It means that we must make sure to only update the data structures used by
+tracing functions once the buffers are created.
+
+We could have a syscall "get_next_buffer" that would basically mmap the next
+unmmapped buffer, or return NULL is all buffers are mapped.
+
+If we remove a trace, the kernel should stop the tracing, and then get the last
+buffer for this trace. What is important is to make sure no writers are still
+trying to write in a memory region that get desallocated.
+
+For that, we will keep an atomic variable "tracing_level", which tells how many
+times we are nested in tracing code (program code/signal handlers) for a
+specific trace.
+
+We could do that trace removal in two operations :
+
+- Send an update tracing signal to the process
+	- the sig handler get the new tracing status, which tells that tracing is 
+		disabled for the specific trace. It writes this status in the tracing
+		control structure of the process.
+	- If tracing_level is 0, well, it's fine : there are no potential writers in
+		the removed trace. It's up to us to buffer switch the removed trace, and,
+		after the control returns to us, set_tracing_info this page to NULL and
+		delete this memory area.
+	- Else (tracing_level > 0), flag the removed trace for later switch/delete.
+	
+	It then returns control to the process.
+
+- If the tracing_level was > 0, there was one or more writers potentially
+	accessing this memory area. When the control comes back to the writer, at the
+	end of the write in a trace, if the trace is marked for switch/delete and the
+	tracing_level is 0 (after the decrement of the writer itself), then the
+	writer must buffer switch, and then delete the memory area.
+
+
+Filter
+
+The update tracing info signal will make the thread get the new filter
+information. Getting this information will also happen upon process creation.
+
+parameter 3 for the get tracing info : a integer containing the 32 bits mask.
+
+
+Buffer switch
+
+There could be a tracing_buffer_switch system call, that would give the page
+start address as parameter. The job of the kernel is to steal this page,
+possibly replacing it with a zeroed page (we don't care about the content of the
+page after the syscall).
+
+Process dying
+
+The kernel should be aware of the current pages used for tracing in each thread.
+If a thread dies unexpectedly, we want the kernel to get the last bits of
+information before the thread crashes.
+
+Memory protection
+
+If a process corrupt its own mmaped buffers, the rest of the trace will be
+readable, and each process have its own memory space.
+
+Two possibilities :
+
+Either we create one channel per process, or we have per cpu tracefiles for all
+the processes, with the specification that data is written in a monotically
+increasing time order and that no process share a 4k page with another process.
+
+The problem with having only one tracefile per cpu is that we cannot safely
+steal a process'buffer upon a schedule change because it may be currently
+writing to it.
+
+It leaves the one tracefile per thread as the only solution.
+
+Another argument in favor of this solution is the possibility to have mixed
+32-64 bits processes on the same machine. Dealing with types will be easier.
+
+
+Corrupted trace
+
+A corrupted tracefile will only affect one thread. The rest of the trace will
+still be readable.
+
+
+Facilities
+
+Upon process creation or when receiving the signal of trace info update, when a
+new trace appears, the thread should write the facility information into it. It
+must then have a list of registered facilities, all done at the thread level.
+
+We must decide if we allow a facility channel for each thread. The advantage is
+that we have a readable channel in flight recorder mode, while the disadvantage
+is to duplicate the number of channels, which may become quite high. To follow
+the general design of a high throughput channel and a low throughput channel for
+vital information, I suggest to have a separate channel for facilities, per
+trace, per process.
+
+
+
+API :
+
+syscall 1 :
+
+in :
+buffer : NULL means get new traces
+				 non NULL means to get the information for the specified buffer
+out :
+buffer : returns the address of the trace buffer
+active : is the trace active ?
+filter : 32 bits filter mask
+
+return : 0 on success, 1 on error.
+
+int ltt_update(void **buffer, int *active, int *filter);
+
+syscall 2 :
+
+in :
+buffer : Switch the specified buffer.
+return : 0 on success, 1 on error.
+
+int ltt_switch(void *buffer);
+
+
+Signal :
+
+SIGRTMIN+3
+(like hardware fault and expiring timer : to the thread, see p. 413 of Advances
+prog. in the UNIX env.)
+
+Signal is sent on tracing create/destroy, start/stop and filter change.
+
+Will update for itself only : it will remove unnecessary concurrency.
+
+
+
+Notes :
+
+It doesn't matter "when" the process receives the update signal after a trace
+start : it will receive it in priority, before executing anything else when it
+will be scheduled in.
+
+
+
+Major enhancement :
+
+* Buffer pool *
+
+The problem with the design, up to now, is if an heavily threaded application
+launches many threads that has a short lifetime : it will allocate memory for
+each traced thread, consuming time and it will create an incredibly high
+number of files in the trace (or per thread).
+
+(thanks to Matthew Khouzam)
+The solution to this sits in the use of a buffer poll : We typically create a
+buffer pool of a specified size (say, 10 buffers by default, alterable by the
+user), each 8k in size (4k for normal trace, 4k for facility channel), for a
+total of 80kB of memory. It has to be tweaked to the maximum number of
+expected threads running at once, or it will have to grow dynamically (thus
+impacting on the trace).
+
+A typical approach to dynamic growth is to double the number of allocated
+buffers each time a threashold near the limit is reached.
+
+Each channel would be found as :
+
+trace_name/user/facilities_0
+trace_name/user/cpu_0
+trace_name/user/facilities_1
+trace_name/user/cpu_1
+...
+
+When a thread asks for being traced, it gets a buffer from free buffers pool. If
+the number of available buffers falls under a threshold, the pool is marked for
+expansion and the thread gets its buffer quickly. The expansion will be executed
+a little bit later by a worker thread. If however, the number of available
+buffer is 0, then an "emergency" reservation will be done, allocating only one
+buffer. The goal of this is to modify the thread fork time as less as possible.
+
+When a thread releases a buffer (the thread terminates), a buffer switch is
+performed, so the data can be flushed to disk and no other thread will mess
+with it or render the buffer unreadable.
+
+Upon trace creation, the pre-allocated pool is allocated. Upon trace
+destruction, the threads are first informed of the trace destruction, any
+pending worker thread (for pool allocation) is cancelled and then the pool is
+released. Buffers used by threads at this moment but not mapped for reading
+will be simply destroyed (as their refcount will fall to 0). It means that
+between the "trace stop" and "trace destroy", there should be enough time to let
+the lttd daemon open the newly created channels or they will be lost.
+
+Upon buffer switch, the reader can read directly from the buffer. Note that when
+the reader finish reading a buffer, if the associated thread writer has
+exited, it must fill the buffer with zeroes and put it back into the free pool.
+In the case where the trace is destroyed, it must just derement its refcount (as
+it would do otherwise) and the buffer will be destroyed.
+
+This pool will reduce the number of trace files created to the order of the
+number of threads present in the system at a given time.
+
+A worse cast scenario is 32768 processes traced at the same time, for a total
+amount of 256MB of buffers. If a machine has so many threads, it probably have
+enough memory to handle this.
+
+In flight recorder mode, it would be interesting to use a LRU algorithm to
+choose which buffer from the pool we must take for a newly forked thread. A
+simple queue would do it.
+
+SMP : per cpu pools ? -> no, L1 and L2 caches are typically too small to be
+impacted by the fact that a reused buffer is on a different or the same CPU.
+
+
+
+
+
+
+
+
+
+
+
+
+

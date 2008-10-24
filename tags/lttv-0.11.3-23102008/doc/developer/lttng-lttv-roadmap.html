@@ -1,0 +1,125 @@
+<html>
+<body>
+<center><big><big>LTTV & LTTng roadmap<small><small></center>
+<br>
+<br>
+Here are the roadmaps for the LTTV and LTTng development. I use a priority indice
+for the TODO items :<br>
+(1) : very high priority<br>
+(10): lowest priority<br>
+<br>
+<br>
+Dependencies are written between brackets [ ].<br>
+The # symbol marks who is currently working on the item.<br>
+The % symbol marks who is interested in the realisation of the item.<br>
+<br>
+<big>LTTV Roadmap<small><br>
+<br>
+* TODO<br>
+(3) Add cluster support.<br>
+	# <A HREF="mailto:Eric Clement <eric.clement@polymtl.ca>">Eric Clement</A><br>
+(3) Make LTTV aware of type formats (visual separators) defined in the XML
+file.<br>
+	# <A HREF="mailto:Gabriel Matni <gabrien.matni@polymtl.ca>">Gabriel Matni</A><br>
+(4) Statistics per time window.<br>
+(4) Add Xen per physical CPU view.<br>
+(4) Add Xen per vcpu view.<br>
+(4) Disable plugins when threshold reached (i.e. too much process in control
+flow view). Draw, and, when the threshold is reached, stop drawing. The global
+statistics view can inhibit showing the per process stats.<br>
+(4) Add a visual artifact : PID 0 could be named swapper instead of UNNAMED for
+cpus > 0.<br>
+(4) Add event specific fields support to filter.<br>
+(4) Add a periodic event interval view. (useful to verify event periodicity)<br>
+(4) create a graphical per cpu activity view.<br>
+(4) Filter by target process.<br>
+(4) Compensate for time spent in probes in LTTV analysis.<br>
+(4) Add CPU, network, disk, memory usage histogram. [Per interval statistics]<br>
+(4) Add sort by process priority in the control flow view (must also instrument
+priority information of the processes).<br>
+% Airbus<br>
+(5) Add Python scripting hooks.<br>
+(5) Add GUI interface to take an hybrid trace.<br>
+(5) Flight recorder : start lttd automatically upon GUI trace control stop.<br>
+(5) Automatically detect traces with too much processes and disable faulty operations.<br>
+(5) Event sequence detector (inspired from regular expressions).<br>
+(7) Create a hardware counter viewer (low cost rate counters : L1 cache miss,
+page faults, interrupts...). This will be a generalisation of the event rate
+view into a view of the evolution of a user definable event field.<br>
+<br>
+* TO FIX<br>
+(10) Add cancel button to LTTV filter GUI window.<br>
+(10) Sometimes, in the control flow view, a process with 0 creation time is
+created in addition to the real process itself. Seems to be caused by end of
+process life.<br>
+(10) Statistics do not take in account the time spent in the mode present at
+the beginning of the trace. Example : real time spent in system call on behalf
+of process 0.<br>
+<br>
+<br>
+<big>LTT Next Generation Roadmap<small><br>
+<br>
+* TODO<br>
+(1) Dump mounts.<br>
+(1) Bring userspace tracing in sync with new lttng.<br>
+(1) Bring stack dump in sync with new lttng.<br>
+(1) efficient dynamic event filtering while recording trace.<br>
+	% Google<br>
+	% Sensis Corp. <A HREF="mailto:Bish, Tim <Tim.Bish@Sensis.com>">Tim Bish</A><br>
+	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
+	- Partly implemented: per marker selection through /proc interface.<br>
+	- Must still implement per active trace filtering.<br>
+(1) Add Xen support. (Trace buffer desallocation needs to be fixed)<br>
+	# <A HREF="mailto:Mathieu Desnoyers <compudj@krystal.dyndns.org>">Mathieu Desnoyers</A><br>
+(1) Integrate SystemTAP logging with LTTng.<br>
+(4) instrument kernel bottom half irqsave, seqlocks, semaphores, mutexes, brlock.<br>
+(4) integrate NPTL instrumentation (see
+<A HREF="http://nptltracetool.sourceforge.net/">PTT</A>).<br>
+(4) Probe calibration kernel module.<br>
+(4) Make page faults detect nested fault without nesting 4 times in the page
+fault handler.<br>
+(5) Support CPUs with scalable frequency.<br>
+(5) Add boot time tracing support.<br>
+(5) Integrate LTTng and lttd with LKCD.<br>
+(7) Integrate periodical dump of perfctr hardware counters.<br>
+(8) Integrate periodical dump of SystemTAP computed information.<br>
+(9) Add support for setjmp/longjmp and jump tables instrumentation to
+ltt-instrument-functions.<br>
+(9) Make ltt-usertrace-fast support internal heartbeat timer.<br>
+(3) port LTTng to :<br>
+alpha<BR>
+user-mode Linux<BR>
+Xen<BR>
+# IBM<BR>
+S/390<BR>
+RTLinux<BR>
+% Wind River for 2.6.14<BR>
+sparc64<BR>
+# Wind River<BR>
+sh4<br>
+<br>
+<br>
+<br>
+* TODO (low priority)<br>
+enhance RPM packages for lttng kernel<br>
+Integrate header generation (genevent) in kernel build system.<br>
+Export channels via network sockets instead of writing them to disk.<br>
+Export buffers with time constraint for "live" visualisation. Use
+ltt_force_switch periodically from a timer to insure slow channels do not
+interfere with viewing.<br>
+Have an optional round-robin mode to write information into multiple channels
+from the same source.<br>
+<br>
+* Need to be discussed<br>
+Use 2.6.14 RelayFS control files.<br>
+Drop ltt-module-register and ltt-module-unregister, use exported variables.<br>
+drop ltt_filter_control, use functions pointers instead.<br>
+Merge facilities headers into one big header.<br>
+Change the name of XML files from XML to something else.<br>
+Remove ltt-base.c.<br>
+<br>
+Mathieu Desnoyers<br>
+
+
+</body>
+</html>

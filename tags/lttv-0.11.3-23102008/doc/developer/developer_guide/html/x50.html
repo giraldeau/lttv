@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Using the reading context</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer Developer Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="How to use the Linux Trace Toolkit Viewer's Reading Context"
+HREF="c40.html"><LINK
+REL="PREVIOUS"
+TITLE="Why an event driven trace reader ?"
+HREF="x46.html"><LINK
+REL="NEXT"
+TITLE="Linux Trace Toolkit Viewer Graphical Module Tutorial"
+HREF="c67.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer Developer Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="x46.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. How to use the Linux Trace Toolkit Viewer's Reading Context</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c67.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="AEN50"
+>2.3. Using the reading context</A
+></H1
+><P
+>&#13;If you have read the tutorials about writing a text and a graphic module, you
+should be fairly ready to use the information provided to your hook by the
+reading API.
+</P
+><P
+>&#13;The data structures of the reading context are based on the gobject, a
+object-oriented library from the glib. Some evolved types that are found in the
+context also comes from the "glib" (GArray, GHashTable and so on). For detailed
+information about "gobjects" and the "glib", see the <A
+HREF="http://www.gtk.org"
+TARGET="_top"
+>www.gtk.org</A
+> website. They provide a complete
+API reference about the data types they provide.
+</P
+><P
+>&#13;The reading context is object oriented. It is described by the lttv/tracecontext.h
+header. Is can be illustrated with this UML class diagram :
+</P
+><P
+>&#13;<DIV
+CLASS="mediaobject"
+><P
+><IMG
+SRC="lttv-context.png"
+ALIGN="center"><DIV
+CLASS="caption"
+><P
+>Linux Trace Toolkit Viewer Reading Context Class Diagram</P
+></DIV
+></P
+></DIV
+>
+</P
+><P
+>&#13;Though, for performance's sake, navigating through it is not as encapsulated as
+it could. Consider the class attributes to be all public (no get/set functions).
+Sometimes, iteration upon a specific element can be uneasy. For example, you may
+have to get the number of tracefiles in a trace from the "vt" field of the trace
+context to be able to iterate over all the tracefiles contained by the trace.
+</P
+><P
+>&#13;To facilitate the common operations on the reading context, LTTV now provides a
+header that consists of simple macros : lttv/contextmacros.h. It gives an object
+look-and-feel to the context classes. Simple "GET" macros can be used to easily
+access the different fields are iterate over the elements (and get the total
+number of elements too).
+</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="x46.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c67.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Why an event driven trace reader ?</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c40.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Linux Trace Toolkit Viewer Graphical Module Tutorial</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,189 @@
+
+*************************************************************
+AMD
+http://lkml.org/lkml/2005/11/4/173
+http://www.amd.com/us-en/assets/content_type/white_papers_and_tech_docs/26094.PDF
+http://developer.amd.com/article_print.jsp?id=92 (RH)
+
+[7] AMD's 7th  generation  processors return  a CPUID  base
+    family value of '7'. These include AMD Athlon, AthlonXP,
+    AthlonMP, and Duron.
+
+[8] AMD's  8th generation  processors  return an  effective
+    CPUID family of '0x0F'. These include AMD Opteron, 
+    Athlon64, and Turion.
+
+
+before 7th gen : ok
+7th gen:
+  P-state (performance state) change
+    UP : warn about time inaccuracy
+    SMP
+      sol : disable powernow
+      Use monotonic pseudo-TSC
+  STPCLK-Throttling (temperature) : only done on UP, ok
+    UP : warn about time inaccuracy
+8th gen :
+  P-state change
+    UP : inaccuracy
+    dual-core : locked-step ; inaccuracy
+    SMP : may drift
+      sol : disable powernow
+    Use monotonic pseudo-TSC
+  SMP, dual core : C1-clock ramping (halt) (power state : C-state)
+    sol : idle=poll or disable C1-ramping
+    Use monotonic pseudo-TSC
+  STPCLK-Throttling (temperature) :
+    single processor dual-core ok ; inaccuracy
+    SMP : NOT ok (rare)
+      Use monotonic pseudo-TSC
+
+
+Until TSC  becomes invariant, AMD  recommends that operating
+system  developers  avoid TSC  as  a  fast  timer source  on
+affected systems. (AMD  recommends that the operating system
+should  favor these  time sources  in a  prioritized manner:
+HPET first,  then ACPI PM  Timer, then PIT.)   The following
+pseudo-code shows one way of determining when to use TSC:
+
+ use_AMD_TSC() { // returns TRUE if ok to use TSC
+   if (CPUID.base_family < 0xf) {
+             // TSC drift doesn't exist on 7th Gen or less
+             // However, OS still needs to consider effects
+             // of P-state changes on TSC
+             return TRUE;
+   } else if (CPUID.AdvPowerMgmtInfo.TscInvariant) {
+             // Invariant TSC on 8th Gen or newer, use it
+             // (assume all cores have invariant TSC)
+             return TRUE;
+   } else if ((number_processors == 1)&&(number_cores == 1)){
+             // OK to use TSC on uni-processor-uni-core
+             // However, OS still needs to consider effects
+             // of P-state changes on TSC
+             return TRUE;
+   } else if ( (number_processors == 1) && 
+               (CPUID.effective_family == 0x0f) &&
+               !C1_ramp_8gen                       ){
+             // Use TSC on 8th Gen uni-proc with C1_ramp off 
+             // However, OS still needs to consider effects
+             // of P-state changes on TSC
+             return TRUE;
+   } else {
+             return FALSE;
+   }
+ }
+ C1_ramp_8gen() {
+    // Check if C1-Clock ramping enabled in  PMM7.CpuLowPwrEnh
+    // On 8th-Generation cores only. Assume BIOS has setup
+    // all Northbridges equivalently.
+    return (1 & read_pci_byte(bus=0,dev=0x18,fcn=3,offset=0x87));
+ }
+
+
+When  an operating  system can  not avoid  using TSC  in the
+short-term,  the  operating   system  will  need  to  either
+re-synchronize the TSC of  the halted core when exiting halt
+or disable C1-clock  ramping.  The pseudo-code for disabling
+C1-clock ramping follows:
+
+ if ( !use_AMD_TSC() && 
+      (CPUID.effective_family == 0x0f) &&
+      C1_ramp_8gen()                       ){
+    for (i=0; i < number_processors; ++i){
+       // Do for all NorthBridges in platform
+       tmp = read_pci_byte(bus=0,dev=0x18+i,fcn=3,offset=0x87);
+       tmp &= 0xFC;    // clears pmm7[1:0]
+       write_pci_byte(bus=0,dev=0x18+i,fcn=3,offset=0x87,tmp)
+      }
+ }
+
+
+Future TSC Directions and Solutions
+===================================
+Future AMD processors will provide a TSC that is P-state and
+C-State invariant and unaffected by STPCLK-throttling.  This
+will make  the TSC immune  to drift.  Because using  the TSC
+for  fast  timer APIs  is  a  desirable  feature that  helps
+performance,  AMD  has  defined  a CPUID  feature  bit  that
+software   can   test   to   determine   if   the   TSC   is
+invariant. Issuing a CPUID instruction with an %eax register
+value of  0x8000_0007, on a  processor whose base  family is
+0xF, returns "Advanced  Power Management Information" in the
+%eax, %ebx, %ecx,  and %edx registers.  Bit 8  of the return
+%edx is  the "TscInvariant" feature  flag which is  set when
+TSC is P-state, C-state, and STPCLK-throttling invariant; it
+is clear otherwise.
+
+The  rate of the  invariant TSC  is implementation-dependent
+and  will likely  *not* be  the frequency  of  the processor
+core; however,  its period should be short  enough such that
+it is  not possible for two  back-to-back rdtsc instructions
+to  return the  same  value.  Software  which  is trying  to
+measure  actual  processor  frequency  or  cycle-performance
+should  use Performance  Event 76h,  CPU Clocks  not Halted,
+rather than the TSC to count CPU cycles.
+
+
+
+*************************************************************
+Intel
+
+Pentium M
+  family [06H], models [09H, 0DH]
+  UP
+    warn about time inaccuracy
+  SMP
+    SOL : disable speedstep
+Pentium 4 processors, Intel Xeon
+  family [0FH], models [00H, 01H, or 02H]
+  UP
+    warn about time inaccuracy
+  SMP
+    SOL : disable speedstep
+
+Other : ok
+
+http://download.intel.com/design/Xeon/specupdt/30675712.pdf
+http://forum.rightmark.org/post.cgi?id=print:6:269&user=%20Dmitri%20Besedin&color=1
+http://bochs.sourceforge.net/techspec/24161821.pdf cpuid
+
+cpuz
+AFAIK this problem only concerns Prescott CPUs, but I bet future production will
+also use the same rule.
+
+Well, from what Intel states in one of their docs (Intel(R) Pentium(R) M
+Processor on 90 nm Process with 2-MB L2 Cache, Specification Update, Document
+No. 302209-010 (http://www.intel.com/design/mobile/specupdt/302209.htm) ), your
+supposition is true:
+
+
+Article V. For Pentium M processors (family [06H], models [09H, 0DH]); for
+Pentium 4 processors, Intel Xeon processors (family [0FH], models [00H, 01H, or
+02H]); and for P6 family processors: the timestamp counter increments with every
+internal processor clock cycle. The internal processor clock cycle is determined
+by the current core-clock to bus-clock ratio. Intel(R) SpeedStep(R) technology
+transitions may also impact the processor clock.
+
+Article VI. For Pentium 4 processors, Intel Xeon processors (family [0FH],
+models [03H and higher]): the time-stamp counter increments at a constant rate.
+That rate may be set by the maximum core-clock to bus-clock ratio of the
+processor or may be set by the frequency at which the processor is booted. The
+specific processor configuration determines the behavior. Constant TSC behavior
+ensures that the duration of each clock tick is uniform and supports the use of
+the TSC as a wall clock timer even if the processor core changes frequency. This
+is the architectural behavior moving forward.
+
+
+It's a pity they call this sucking TSC behavior an "architectural behavior
+moving forward"
+
+
+
+*************************************************************
+HPET
+
+http://www.intel.com/hardwaredesign/hpetspec_1.pdf
+
+
+
+

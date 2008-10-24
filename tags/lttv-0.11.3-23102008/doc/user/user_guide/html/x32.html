@@ -1,0 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN""http://www.w3.org/TR/html4/loose.dtd">
+<HTML
+><HEAD
+><TITLE
+>Running the executable with basic libraries</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.79"><LINK
+REL="HOME"
+TITLE="Linux Trace Toolkit Viewer User Guide"
+HREF="index.html"><LINK
+REL="UP"
+TITLE="Getting started"
+HREF="c25.html"><LINK
+REL="PREVIOUS"
+TITLE="Getting started"
+HREF="c25.html"><LINK
+REL="NEXT"
+TITLE="Using LTTV graphical interface"
+HREF="c42.html"></HEAD
+><BODY
+CLASS="sect1"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+SUMMARY="Header navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+>Linux Trace Toolkit Viewer User Guide</TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="c25.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+>Chapter 2. Getting started</TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="c42.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="sect1"
+><H1
+CLASS="sect1"
+><A
+NAME="running"
+>2.2. Running the executable with basic libraries</A
+></H1
+><P
+>&#13;Starting the graphical mode with the basic viewer activated is as simple as :
+</P
+><PRE
+CLASS="screen"
+>&#13;<SAMP
+CLASS="prompt"
+>$</SAMP
+> <KBD
+CLASS="userinput"
+>lttv-gui</KBD
+>
+</PRE
+><P
+>&#13;Using the text mode is very simple too. Look in /usr/local/lib/lttv/plugins for
+the list of modules. You may use the --help switch to get basic help on the
+command line parameters of every loaded modules. To simply output the events of
+a trace in a text file, try the textDump module. The batchAnalysis module
+permits to do batch mode analysis (state and statistics calculation ) on a
+trace.
+</P
+><PRE
+CLASS="screen"
+>&#13;<SAMP
+CLASS="prompt"
+>$</SAMP
+> <KBD
+CLASS="userinput"
+>lttv -L /usr/local/lib/lttv/plugins -m textDump --help</KBD
+>
+</PRE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+SUMMARY="Footer navigation table"
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="c25.html"
+ACCESSKEY="P"
+>Prev</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="index.html"
+ACCESSKEY="H"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="c42.html"
+ACCESSKEY="N"
+>Next</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Getting started</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="c25.html"
+ACCESSKEY="U"
+>Up</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Using LTTV graphical interface</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

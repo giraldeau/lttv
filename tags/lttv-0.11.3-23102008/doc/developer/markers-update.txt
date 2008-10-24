@@ -1,0 +1,116 @@
+
+Tracepoint proposal
+
+- Tracepoint infrastructure
+  - In-kernel users
+  - Complete typing, verified by the compiler
+  - Dynamically linked and activated
+
+- Marker infrastructure
+  - Exported API to userland
+  - Basic types only
+
+- Dynamic vs static
+  - In-kernel probes are dynamically linked, dynamically activated, connected to
+    tracepoints. Type verification is done at compile-time. Those in-kernel
+    probes can be a probe extracting the information to put in a marker or a
+    specific in-kernel tracer such as ftrace.
+  - Information sinks (LTTng, SystemTAP) are dynamically connected to the
+    markers inserted in the probes and are dynamically activated.
+
+- Near instrumentation site vs in a separate tracer module
+
+A probe module, only if provided with the kernel tree, could connect to internal
+tracing sites. This argues for keeping the tracepoing probes near the
+instrumentation site code. However, if a tracer is general purpose and exports
+typing information to userspace through some mechanism, it should only export
+the "basic type" information and could be therefore shipped outside of the
+kernel tree.
+
+In-kernel probes should be integrated to the kernel tree. They would be close to
+the instrumented kernel code and would translate between the in-kernel
+instrumentation and the "basic type" exports. Other in-kernel probes could
+provide a different output (statistics available through debugfs for instance).
+ftrace falls into this category.
+
+Generic or specialized information "sinks" (LTTng, systemtap) could be connected
+to the markers put in tracepoint probes to extract the information to userspace.
+They would extract both typing information and the per-tracepoint execution
+information to userspace.
+
+Therefore, the code would look like :
+
+kernel/sched.c:
+
+#include "sched-trace.h"
+
+schedule()
+{
+  ...
+  trace_sched_switch(prev, next);
+  ...
+}
+
+
+kernel/sched-trace.h:
+
+DEFINE_TRACE(sched_switch, struct task_struct *prev, struct task_struct *next);
+
+
+kernel/sched-trace.c:
+
+#include "sched-trace.h"
+
+static probe_sched_switch(struct task_struct *prev, struct task_struct
+  *next)
+{
+  trace_mark(kernel_sched_switch, "prev_pid %d next_pid %d prev_state %ld",
+    prev->pid, next->pid, prev->state);
+}
+
+int __init init(void)
+{
+  return register_sched_switch(probe_sched_switch);
+}
+
+void __exit exit(void)
+{
+  unregister_sched_switch(probe_sched_switch);
+}
+
+
+Where DEFINE_TRACE internals declare a structure, a trace_* inline function,
+a register_trace_* and unregister_trace_* inline functions :
+
+static instrumentation site structure, containing function pointers to
+deactivated functions and activation boolean. It also contains the
+"sched_switch" string. This structure is placed in a special section to create
+an array of these structures.
+
+static inline void trace_sched_switch(struct task_struct *prev,
+  struct task_struct *next)
+{
+ if (sched_switch tracing is activated)
+   marshall_probes(&instrumentation_site_structure, prev, next);
+}
+
+static inline int register_trace_sched_switch(
+  void (*probe)(struct task_struct *prev, struct task_struct *next)
+{
+  return do_register_probe("sched_switch", (void *)probe);
+}
+
+static inline void unregister_trace_sched_switch(
+  void (*probe)(struct task_struct *prev, struct task_struct *next)
+{
+  do_unregister_probe("sched_switch", (void *)probe);
+}
+
+
+We need a a new kernel probe API :
+
+do_register_probe / do_unregister_probe
+  - Connects the in-kernel probe to the site
+  - Activates the site tracing (probe reference counting)
+
+

@@ -1,0 +1,134 @@
+Adding support for "compact" 32 bits events.
+
+Mathieu Desnoyers
+March 9, 2007
+
+
+event header
+
+
+32 bits header
+Aligned on 32 bits
+  1 bit to select event type
+  4 bits event ID
+    16 events (too few)
+  27 bits TSC (cut MSB)
+    wraps 32 times per second at 4GHz
+    each wraps spaced from 0.03125s
+    100HZ clock : tick each 0.01s
+      detect wrap at least each 3 jiffies (dangerous, may miss)
+    granularity : 2^0 = 1 cycle : 0.25ns @4GHz
+payload size known by facility
+
+32 bits header
+Aligned on 32 bits
+  1 bit to select event type
+  4 bits event ID
+    16 events (too few)
+  27 bits TSC (cut LSB)
+    wraps each second at 4GHz
+    100HZ clock : tick each 0.01s
+    granularity : 2^5 = 32 cycles : 8ns @4GHz
+payload size known by facility
+
+32 bits header
+Aligned on 32 bits
+  1 bit to select event type
+  5 bits event ID
+    32 events
+  26 bits TSC (cut LSB)
+    wraps each 0.5 second at 4GHz
+    100HZ clock : tick each 0.01s
+    granularity : 2^6 = 64 cycles : 16ns @4GHz
+payload size known by facility
+
+32 bits header
+Aligned on 32 bits
+  1 bit to select event type
+  6 bits event ID
+    64 events
+  25 bits TSC (cut LSB)
+    wraps each 0.5 second at 4GHz
+    100HZ clock : tick each 0.01s
+    granularity : 2^7 = 128 cycles : 32ns @4GHz
+payload size known by facility
+
+64 bits header
+Aligned on 32 bits
+  1 bit to select event type
+  15 bits event id, (major 8 minor 8)
+     32768 events
+  16 bits event size (extra)
+  32 bits TSC
+    wraps each second at 4GHz
+    100HZ clock : tick each 0.01s
+
+96 or 128 bits header (full 64 bits TSC, useful when no heartbeat available
+  size depends on internal alignment)
+Aligned on 32 bits
+  1 bit to select event type
+  15 bits event id, (major 8 minor 8)
+     32768 events
+  16 bits event size (extra)
+Align on 64 bits
+  64 bits TSC
+    wraps each 146.14 years at 4GHz
+
+
+
+
+
+Must put the event ID fields first in the large (64, 96-128 bits) event headers
+Create a "compact" facility which reserves the facility IDs with the MSB at 1.
+  - or better : select mapping for events
+What is the minimum granularity required ? (so we know how much LSB to cut)
+  - How much can synchonized CPU TSCs drift apart one from another ?
+    PLL
+    http://en.wikipedia.org/wiki/Phase-locked_loop
+    static phase offset -> tracking jitter
+    25 MHz oscillator on motherboard for CPU
+    jitter : expressed in ±picoseconds (should therefore be lower than 0.25ns)
+    http://www.eetasia.com/ART_8800082274_480600_683c4e6b200103.HTM
+    NEED MORE INFO.
+  - What is the cacheline synchronization latency between the CPUs ?
+    Worse case : Intel Core 2, Intel Xeon 5100, Intel core solo, intel core duo
+    Unified L2 cache. http://www.intel.com/design/processor/manuals/253668.pdf
+    Intel Core 2, Intel Xeon 5100 
+    http://www.intel.com/design/processor/manuals/253665.pdf
+    Up to 10.7 GB/s FSB
+    http://www.xbitlabs.com/articles/mobile/display/core2duo_2.html
+                      Intel Core Duo     Intel Core 2 Duo
+    L2 cache latency  14 cycles          14 cycles
+    (round-trip : 28 cycles) 7ns @4GHz
+    sparc64 : between threads : shares L1 cache.
+    suspected to be ~2 cycles total (1+1) (to check)
+  - How close (cycle-wise) can be two consecutive recorded events in the same
+    buffer ? (~200ns, time for logging an event) (~800 cycles @4GHz)
+  - Tracing code itself : if it's at a subbuffer boundary, more check to do.
+    Must see the maximum duration of a non interrupted probe.
+    Worse case (had NMIs enabled) : 6997 cycles. 1749 ns @4GHz.
+    TODO : test with NMIs disabled and HT disabled.
+    Ordering can be changed if an interrupt comes between the memory operation
+    and the tracer call. Therefore, we cannot rely on more precision than the
+    expected interrupt handler duration. (guess : ~10000cycles, 2500ns@4GHz)
+  - If there is a faster interconnect between the CPUs, it can be a problem, but
+    seems to only be proprietary interconnects, not used in general.
+  - IPI are expected to take much more than 28 cycles.
+What is the minimum wrap-around interval ? (must be safe for timer interrupt
+miss and multiple timer HZ (configurable) and CPU MHZ frequencies)
+Must align _all_ headers on 32 bits, not 64.
+
+Granularity : 800ns (200 cycles@4GHz) : 2^9 = 512 (remove 9 LSB)
+  Number of LSB skipped : first_bit(probe_duration_in_cycles)-1
+
+Min wrap : 100HZ system, each 3 timer ticks : 0.03s (32-4 MSB for 4 GHZ : 0.26s)
+  (heartbeat each 100HZ, to be safe)
+  Number of MSB to skip :
+    32 - first_bit(( (expected_longest_cli()[ms] + max_timer_interval[ms]) * 2 /
+                   cpu_khz ))
+
+
+9LSB + 4MSB = 13 bits total. 12 bits for event IDs : 4096 events.
+
+
+

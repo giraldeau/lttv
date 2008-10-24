@@ -1,0 +1,184 @@
+Linux Trace Toolkit
+
+Mathieu Desnoyers 17-05-2004
+
+
+1. Read Requests Cases Study
+
+The goal of this document is to describe the typical behavior of viewers when
+they request data to a process traceset. After the implementation of three
+viewers, with different needs, the idea of their need for a trace processing API
+is getting clearer. We then describe a new API for process traceset that would
+better suits the needs of those viewers.
+
+They are splitted in two different categories : the first one is the one where
+the viewers select the events they need by specifying a time interval in the
+traceset and the second one is where the viewers specify a start event by its
+position in the traceset and a certain amount of events it needs.
+
+This is a simplified case study : we look at the direct interaction between
+graphical viewers and process traceset, without the main window as a negociator.
+
+Control Flow Viewer
+
+This viewer, consisting in a two dimensions graph, shows the different processes
+as its y axis and the time as x axis. It's clear that it needs to get the events
+by specifying a start time and an end time, constituing a time interval.
+
+
+Detailed Events List
+
+This list has nothing to do with time : it shows the events one by one. It cares
+about the quantity of events, not their time.
+
+It would be simple to get the events one by one if we were reading only one
+tracefile (one cpu), but the way events are read through each trace
+(monothically increasing time) makes it a little bit more difficult to specify
+how to increment event position. We will determine how it could be done simply.
+
+Let's define an event position. It's a pointer to a position into each
+tracefile. It's only meaningful when associated with a context. Comparisons
+between positions are done by looking comparing saved positions for each
+tracefile, until a difference is found.
+
+A viewer could use a start time as a start event. It would specify a number of
+events it needs. As a first call, it could ask for the start time of the
+traceset. Afterward, it can save the position of the context after the last
+event has been delivered in its after traceset function.
+
+Now, let's see how process traceset could handle it. It would seek in the
+traceset, searching the position number.
+(need a new lttv_process_traceset_seek_position)
+
+Then, the viewer could simply call a process traceset middle function
+specifying a number of events to get.
+
+The whole concept of numbering events would be hidden in the order in which the
+process traceset gets the events in a monothically increasing time.
+
+
+
+2. Architecture
+
+API to seek/read traceset will be extended to fully support both start time,
+start position, end time, end position and number of events as possible
+boundaries for reading.
+
+lttv_process_traceset_seek_time
+lttv_process_traceset_seek_position
+
+lttv_process_traceset_middle
+
+It must be modified to end when it encounters the first criterion : number of
+events to read reached, end time reached, end position reached.
+
+lttv_traceset_context_position_save
+
+The position_save saves a position that can be used later to seek back to this
+exact same position, with event granularity. This implies that the
+process_traceset must deliver events with the same timestamp in a deterministic
+manner. This is actually done by using tracefile and trace numbers in the
+context in the comparison function.
+
+
+
+Description of new context API useage
+
+1. seek
+2. begin  -> add middle hooks
+          -> call begin hooks by id
+3. middle -> call middle hooks by id
+4. end    -> call end hooks by id
+          -> remove middle hooks
+
+3. Impact on State
+
+From now on, the state computation will be done in the middle hook call, with a
+priority higher than default. We will define this priority as PRIO_STATE,
+defined to 25.
+
+If state has to be computed, lttv_process_traceset_begin has to be  called in
+a first time. It adds the state hooks to the context. Then, the state
+seek_closest will have to be used to restore the nearest state, plus a
+process_traceset with no hooks present other than the state hooks will have to
+be called to go from the closest state to the real time seeked.
+
+The lttv_process_traceset_end will only need to be called if no further state
+computation is needed.
+
+
+4. Implementation in tracecontext.c
+
+
+- Type LttvTracesetContextPosition
+
+struct _LttvTraceContextPosition {
+  LttEventPosition *tf_pos;          /* Position in each trace           */
+  guint nb_tracefile;                /* Number of tracefiles (check)     */
+}
+
+struct _LttvTracesetContextPosition {
+  LttTraceContextPosition *t_pos;    /* Position in each trace           */
+  guint nb_trace;                    /* Number of traces (check)         */
+}
+
+with interfaces :
+
+lttv_traceset_context_position_save
+(const LttvTracesetContext *context,
+ LttvTracesetContextPosition *pos);
+
+
+Dependencies :
+
+- lttv_process_traceset_seek_position(LttvTracesetContext *self,
+                                const LttvTracesetContextPosition *position);
+    - ltt_tracefile_seek_position : already implemented
+
+lttv_process_traceset_seek_position will seek each tracefile to the right
+position. We keep information about number of tracefiles for extra integrity
+checking when reloading the position in the context. It also loads the pqueue.
+
+
+
+- lttv_process_traceset_middle
+We modify lttv_process_traceset_middle so that it takes as arguments :
+(LttvTracesetContext *self,
+LttTime end,
+unsigned nb_events,
+const LttvTracesetContextPosition *end_position)
+
+This new version of process traceset middle will call the event hooks for
+events until the first criterion is fulfilled : either the end time is reached,
+the number of events requested is passed, the end position is reached or the
+last event hook list called returned TRUE. When this function ends, the end
+position can be extracted from the context, the end event is set as described
+below and the number of events read is returned.
+
+The end event is a pointer to the last event the hooks has been called for.
+
+- lttv_process_traceset_seek_time : already implemented
+  - now loads the pqueue.
+
+- lttv_process_traceset_begin(LttvTracesetContext *self,
+                              LttvHooks       *before_traceset,
+                              LttvHooks       *before_trace,
+                              LttvHooks       *before_tracefile,
+                              LttvHooks       *event,
+                              LttvHooksById   *event_by_id)
+
+
+- lttv_process_traceset_end(LttvTracesetContext *self,
+                            LttvHooks           *after_traceset,
+                            LttvHooks           *after_trace,
+                            LttvHooks           *after_tracefile,
+                            LttvHooks           *event,
+                            LttvHooksById       *event_by_id)
+
+- lttv_traceset_context_add_hooks and lttv_traceset_context_remove_hooks
+
+These functions now become internal to tracecontext.c
+
+
+
+
