@@ -911,15 +911,6 @@ int main(int argc, char ** argv)
 
 	show_info();
 
-	if(daemon_mode) {
-		ret = daemon(0, 0);
-		
-		if(ret == -1) {
-			perror("An error occured while daemonizing.");
-			exit(-1);
-		}
-	}
-
 	/* Connect the signal handlers */
 	act.sa_handler = handler;
 	act.sa_flags = 0;
@@ -933,6 +924,15 @@ int main(int argc, char ** argv)
 
 	if(ret = channels_init())
 		return ret;
+
+	if(daemon_mode) {
+		ret = daemon(0, 0);
+
+		if(ret == -1) {
+			perror("An error occured while daemonizing.");
+			exit(-1);
+		}
+	}
 
 	tids = malloc(sizeof(pthread_t) * num_threads);
 	for(i=0; i<num_threads; i++) {
