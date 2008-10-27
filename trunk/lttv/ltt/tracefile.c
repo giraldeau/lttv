@@ -1389,14 +1389,14 @@ static gint map_block(LttTracefile * tf, guint block_num)
   
   if (header->events_lost) {
     g_warning("%d events lost so far in tracefile %s at block %u",
-      tf->events_lost - header->events_lost,
+      (guint)header->events_lost,
       g_quark_to_string(tf->long_name),
       block_num);
     tf->events_lost = header->events_lost;
   }
   if (header->subbuf_corrupt) {
     g_warning("%d subbuffer(s) corrupted so far in tracefile %s at block %u",
-      tf->subbuf_corrupt - header->subbuf_corrupt,
+      (guint)header->subbuf_corrupt,
       g_quark_to_string(tf->long_name),
       block_num);
     tf->subbuf_corrupt = header->subbuf_corrupt;
