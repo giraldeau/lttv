@@ -88,11 +88,13 @@ struct ltt_subbuffer_header_2_2 {
 	uint32_t buf_size;		/* Size of this subbuffer */
 	uint32_t events_lost;		/*
 					 * Events lost in this subbuffer since
-					 * last subbuffer switch.
+					 * the beginning of the trace.
+					 * (may overflow)
 					 */
 	uint32_t subbuf_corrupt;	/*
 					 * Corrupted (lost) subbuffers since
 					 * the begginig of the trace.
+					 * (may overflow)
 					 */
 	char header_end[0];		/* End of header */
 };
