@@ -245,6 +245,7 @@ modprobe mm-trace
 modprobe net-trace
 modprobe fs-trace
 modprobe syscall-trace
+modprobe trap-trace
 #if locking tracing is wanted, uncomment the following
 #modprobe lockdep-trace
 
