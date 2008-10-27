@@ -322,6 +322,9 @@ static int write_event_content(void *hook_data, void *call_data)
   LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
   LttvProcessState *process = ts->running_process[cpu];
 
+  if (!a_noevent)
+    return FALSE;
+
   e = ltt_tracefile_get_event(tfc->tf);
 
   result = lttv_iattribute_find_by_path(attributes, "filter/lttv_filter",
@@ -405,14 +408,12 @@ static void init()
       "",
       LTTV_OPT_NONE, &a_path_output, NULL, NULL);
 
-  if (!a_noevent) {
-    result = lttv_iattribute_find_by_path(attributes, "hooks/event",
-        LTTV_POINTER, &value);
-    g_assert(result);
-    event_hook = *(value.v_pointer);
-    g_assert(event_hook);
-    lttv_hooks_add(event_hook, write_event_content, NULL, LTTV_PRIO_DEFAULT);
-  }
+  result = lttv_iattribute_find_by_path(attributes, "hooks/event",
+      LTTV_POINTER, &value);
+  g_assert(result);
+  event_hook = *(value.v_pointer);
+  g_assert(event_hook);
+  lttv_hooks_add(event_hook, write_event_content, NULL, LTTV_PRIO_DEFAULT);
 
   result = lttv_iattribute_find_by_path(attributes, "hooks/trace/before",
       LTTV_POINTER, &value);
@@ -458,8 +459,7 @@ static void destroy()
 
   g_string_free(a_string, TRUE);
 
-  if (!a_noevent)
-    lttv_hooks_remove_data(event_hook, write_event_content, NULL);
+  lttv_hooks_remove_data(event_hook, write_event_content, NULL);
 
   lttv_hooks_remove_data(before_trace, write_trace_header, NULL);
 
