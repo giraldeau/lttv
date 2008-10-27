@@ -1068,28 +1068,28 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 12);
 
     lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SYSCALL_ENTRY,
         FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
         before_syscall_entry, NULL, 
         &hooks);
 
     lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SYSCALL_EXIT,
         NULL,
         before_syscall_exit, NULL, 
         &hooks);
 
     lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_ENTRY,
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         before_trap_entry, NULL, 
         &hooks);
 
     lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_EXIT,
         NULL,
         before_trap_exit, NULL,
@@ -1157,28 +1157,28 @@ void lttv_stats_add_event_hooks(LttvTracesetStats *self)
     hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 16);
 
     lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SYSCALL_ENTRY,
         FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
         after_syscall_entry, NULL, 
         &hooks);
 
     lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_SYSCALL_EXIT,
         NULL,
         after_syscall_exit, NULL, 
         &hooks);
 
     lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_ENTRY, 
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         after_trap_entry, NULL,
         &hooks);
 
     lttv_trace_find_hook(ts->parent.parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_EXIT,
         NULL,
         after_trap_exit, NULL,

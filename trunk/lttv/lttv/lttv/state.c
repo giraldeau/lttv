@@ -49,7 +49,6 @@
 
 GQuark
     LTT_FACILITY_KERNEL,
-    LTT_FACILITY_KERNEL_ARCH,
     LTT_FACILITY_LIST,
     LTT_FACILITY_FS,
     LTT_FACILITY_USER_GENERIC,
@@ -3447,7 +3446,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         process_fork, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_KTHREAD_CREATE,
         FIELD_ARRAY(LTT_FIELD_PID),
         process_kernel_thread, NULL, &hooks);
@@ -4191,7 +4190,6 @@ static void module_init()
 
   
   LTT_FACILITY_KERNEL     = g_quark_from_string("kernel");
-  LTT_FACILITY_KERNEL_ARCH = g_quark_from_string("kernel_arch");
   LTT_FACILITY_FS    = g_quark_from_string("fs");
   LTT_FACILITY_LIST = g_quark_from_string("list");
   LTT_FACILITY_USER_GENERIC    = g_quark_from_string("user_generic");
