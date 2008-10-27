@@ -152,9 +152,9 @@ static int parse_trace_header(ltt_subbuffer_header_t *header,
     break;
   case 2:
     switch(header->minor_version) {
-    case 1:
+    case 2:
       {
-        struct ltt_subbuffer_header_2_1 *vheader = header;
+        struct ltt_subbuffer_header_2_2 *vheader = header;
         tf->buffer_header_size = ltt_subbuffer_header_size();
         tf->tscbits = 27;
         tf->eventbits = 5;
@@ -265,6 +265,8 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
   tf->file_size = lTDFStat.st_size;
   tf->buf_size = ltt_get_uint32(LTT_GET_BO(tf), &header->buf_size);
   tf->num_blocks = tf->file_size / tf->buf_size;
+  tf->events_lost = 0;
+  tf->subbuf_corrupt = 0;
 
   if(munmap(tf->buffer.head,
         PAGE_ALIGN(ltt_subbuffer_header_size()))) {
@@ -1385,6 +1387,19 @@ static gint map_block(LttTracefile * tf, guint block_num)
   tf->event.block = block_num;
   tf->event.offset = 0;
   
+  if (tf->events_lost != header->events_lost) {
+    g_warning("%d events lost in tracefile %s",
+      tf->events_lost - header->events_lost,
+      g_quark_to_string(tf->long_name));
+    tf->events_lost = header->events_lost;
+  }
+  if (tf->subbuf_corrupt != header->subbuf_corrupt) {
+    g_warning("%d subbuffer(s) corrupted in tracefile %s",
+      tf->subbuf_corrupt - header->subbuf_corrupt,
+      g_quark_to_string(tf->long_name));
+    tf->subbuf_corrupt = header->subbuf_corrupt;
+  }
+
   return 0;
 
 map_error:

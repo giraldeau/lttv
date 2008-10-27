@@ -66,7 +66,7 @@ typedef guint32 uint32_t;
 typedef guint64 uint64_t;
 
 /* Subbuffer header */
-struct ltt_subbuffer_header_2_1 {
+struct ltt_subbuffer_header_2_2 {
 	uint64_t cycle_count_begin;	/* Cycle count at subbuffer start */
 	uint64_t cycle_count_end;	/* Cycle count at subbuffer end */
 	uint32_t magic_number;		/*
@@ -86,10 +86,18 @@ struct ltt_subbuffer_header_2_1 {
 	uint32_t freq_scale;		/* Frequency scaling */
 	uint32_t lost_size;		/* Size unused at end of subbuffer */
 	uint32_t buf_size;		/* Size of this subbuffer */
+	uint32_t events_lost;		/*
+					 * Events lost in this subbuffer since
+					 * last subbuffer switch.
+					 */
+	uint32_t subbuf_corrupt;	/*
+					 * Corrupted (lost) subbuffers since
+					 * the begginig of the trace.
+					 */
 	char header_end[0];		/* End of header */
 };
 
-typedef struct ltt_subbuffer_header_2_1 ltt_subbuffer_header_t;
+typedef struct ltt_subbuffer_header_2_2 ltt_subbuffer_header_t;
 
 /*
  * Return header size without padding after the structure. Don't use packed
@@ -147,7 +155,9 @@ struct LttTracefile {
   uint8_t   tscbits;
   uint8_t   eventbits;
   uint64_t  tsc_mask;
-  uint64_t  tsc_mask_next_bit;       //next MSB after the mask
+  uint64_t  tsc_mask_next_bit;       //next MSB after the mask<
+  uint32_t  events_lost;
+  uint32_t  subbuf_corrupt;
 
   /* Current event */
   LttEvent event;                    //Event currently accessible in the trace
