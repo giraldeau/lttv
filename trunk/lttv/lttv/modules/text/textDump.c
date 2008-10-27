@@ -322,7 +322,7 @@ static int write_event_content(void *hook_data, void *call_data)
   LttvTraceState *ts = (LttvTraceState*)tfc->t_context;
   LttvProcessState *process = ts->running_process[cpu];
 
-  if (!a_noevent)
+  if (a_noevent)
     return FALSE;
 
   e = ltt_tracefile_get_event(tfc->tf);
