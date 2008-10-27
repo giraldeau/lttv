@@ -1912,7 +1912,7 @@ create_name_tables(LttvTraceState *tcs)
   lttv_trace_hook_remove_all(&hooks);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_ENTRY,
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         NULL, NULL, &hooks)) {
@@ -3391,13 +3391,13 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         syscall_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_ENTRY,
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         trap_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL_ARCH,
+        LTT_FACILITY_KERNEL,
         LTT_EVENT_TRAP_EXIT,
         NULL,
         trap_exit, NULL, &hooks);
