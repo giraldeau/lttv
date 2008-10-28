@@ -136,14 +136,21 @@ static unsigned long	num_threads = 1;
 volatile static int	quit_program = 0;	/* For signal handler */
 static int		dump_flight_only = 0;
 static int		dump_normal_only = 0;
+static int		verbose_mode = 0;
+
+#define printf_verbose(fmt, args...) \
+  do {                               \
+    if (verbose_mode)                \
+      printf(fmt, ##args);           \
+  } while (0)
 
 /* Args :
  *
  * -t directory		Directory name of the trace to write to. Will be created.
  * -c directory		Root directory of the debugfs trace channels.
  * -d          		Run in background (daemon).
- * -a							Trace append mode.
- * -s							Send SIGUSR1 to parent when ready for IO.
+ * -a			Trace append mode.
+ * -s			Send SIGUSR1 to parent when ready for IO.
  */
 void show_arguments(void)
 {
@@ -157,6 +164,7 @@ void show_arguments(void)
 	printf("-N            Number of threads to start.\n");
 	printf("-f            Dump only flight recorder channels.\n");
 	printf("-n            Dump only normal channels.\n");
+	printf("-v            Verbose mode.\n");
 	printf("\n");
 }
 
@@ -213,6 +221,9 @@ int parse_arguments(int argc, char **argv)
 						break;
 					case 'n':
 						dump_normal_only = 1;
+						break;
+					case 'v':
+						verbose_mode = 1;
 						break;
 					default:
 						printf("Invalid argument '%s'.\n", argv[argn]);
@@ -271,16 +282,18 @@ int open_buffer_file(char *filename, char *path_channel, char *path_trace,
 
 	if(strncmp(filename, "flight-", sizeof("flight-")-1) != 0) {
 		if(dump_flight_only) {
-			printf("Skipping normal channel %s\n", path_channel);
+			printf_verbose("Skipping normal channel %s\n",
+				path_channel);
 			return 0;
 		}
 	} else {
 		if(dump_normal_only) {
-			printf("Skipping flight channel %s\n", path_channel);
+			printf_verbose("Skipping flight channel %s\n",
+				path_channel);
 			return 0;
 		}
 	}
-	printf("Opening file.\n");
+	printf_verbose("Opening file.\n");
 	
 	fd_pairs->pair = realloc(fd_pairs->pair,
 			++fd_pairs->num_pairs * sizeof(struct fd_pair));
@@ -297,7 +310,8 @@ int open_buffer_file(char *filename, char *path_channel, char *path_trace,
 	ret = stat(path_trace, &stat_buf);
 	if(ret == 0) {
 		if(append_mode) {
-			printf("Appending to file %s as requested\n", path_trace);
+			printf_verbose("Appending to file %s as requested\n",
+				path_trace);
 
 			fd_pairs->pair[fd_pairs->num_pairs-1].trace = 
 				open(path_trace, O_WRONLY|O_APPEND,
@@ -347,7 +361,7 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 		goto end;
 	}
 
-	printf("Creating trace subdirectory %s\n", subtrace_name);
+	printf_verbose("Creating trace subdirectory %s\n", subtrace_name);
 	ret = mkdir(subtrace_name, S_IRWXU|S_IRWXG|S_IRWXO);
 	if(ret == -1) {
 		if(errno != EEXIST) {
@@ -373,11 +387,12 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 	iwatch_array->elem = realloc(iwatch_array->elem,
 		++iwatch_array->num * sizeof(struct inotify_watch));
 	
-	printf("Adding inotify for channel %s\n", path_channel);
+	printf_verbose("Adding inotify for channel %s\n", path_channel);
 	iwatch_array->elem[iwatch_array->num-1].wd = inotify_add_watch(*inotify_fd, path_channel, IN_CREATE);
 	strcpy(iwatch_array->elem[iwatch_array->num-1].path_channel, path_channel);
 	strcpy(iwatch_array->elem[iwatch_array->num-1].path_trace, path_trace);
-	printf("Added inotify for channel %s, wd %u\n", iwatch_array->elem[iwatch_array->num-1].path_channel,
+	printf_verbose("Added inotify for channel %s, wd %u\n",
+		iwatch_array->elem[iwatch_array->num-1].path_channel,
 		iwatch_array->elem[iwatch_array->num-1].wd);
 #endif
 
@@ -394,11 +409,11 @@ int open_channel_trace_pairs(char *subchannel_name, char *subtrace_name,
 			continue;
 		}
 		
-		printf("Channel file : %s\n", path_channel);
+		printf_verbose("Channel file : %s\n", path_channel);
 		
 		if(S_ISDIR(stat_buf.st_mode)) {
 
-			printf("Entering channel subdirectory...\n");
+			printf_verbose("Entering channel subdirectory...\n");
 			ret = open_channel_trace_pairs(path_channel, path_trace, fd_pairs,
 				inotify_fd, iwatch_array);
 			if(ret < 0) continue;
@@ -426,7 +441,7 @@ int read_subbuffer(struct fd_pair *pair)
 
 
 	err = ioctl(pair->channel, RELAY_GET_SUBBUF, &consumed_old);
-	printf("cookie : %u\n", consumed_old);
+	printf_verbose("cookie : %u\n", consumed_old);
 	if(err != 0) {
 		ret = errno;
 		perror("Reserving sub buffer failed (everything is normal, it is due to concurrency)");
@@ -447,17 +462,17 @@ int read_subbuffer(struct fd_pair *pair)
 	len = pair->subbuf_size;
 	offset = 0;
 	while (len > 0) {
-		printf("splice chan to pipe offset %lu\n", offset);
+		printf_verbose("splice chan to pipe offset %lu\n", offset);
 		ret = splice(pair->channel, &offset, thread_pipe[1], NULL,
 			len, SPLICE_F_MOVE);
-		printf("splice chan to pipe ret %ld\n", ret);
+		printf_verbose("splice chan to pipe ret %ld\n", ret);
 		if (ret < 0) {
 			perror("Error in relay splice");
 			goto write_error;
 		}
 		ret = splice(thread_pipe[0], NULL, pair->trace, NULL,
 			ret, SPLICE_F_MOVE);
-		printf("splice pipe to file %ld\n", ret);
+		printf_verbose("splice pipe to file %ld\n", ret);
 		if (ret < 0) {
 			perror("Error in file splice");
 			goto write_error;
@@ -624,9 +639,11 @@ int read_inotify(int inotify_fd,
 		for(i=0; i<iwatch_array->num; i++) {
 			if(iwatch_array->elem[i].wd == ievent->wd &&
 				ievent->mask == IN_CREATE) {
-				printf("inotify wd %u event mask : %u for %s%s\n",
+				printf_verbose(
+					"inotify wd %u event mask : %u for %s%s\n",
 					ievent->wd, ievent->mask,
-					iwatch_array->elem[i].path_channel, ievent->name);
+					iwatch_array->elem[i].path_channel,
+					ievent->name);
 				old_num = fd_pairs->num_pairs;
 				strcpy(path_channel, iwatch_array->elem[i].path_channel);
 				strcat(path_channel, ievent->name);
@@ -724,22 +741,29 @@ int read_channels(unsigned long thread_num, struct channel_trace_fd *fd_pairs,
 			goto free_fd;
 		}
 
-		printf("Data received\n");
+		printf_verbose("Data received\n");
 #ifdef HAS_INOTIFY
 		switch(pollfd[0].revents) {
 			case POLLERR:
-				printf("Error returned in polling inotify fd %d.\n", pollfd[0].fd);
+				printf_verbose(
+					"Error returned in polling inotify fd %d.\n",
+					pollfd[0].fd);
 				break;
 			case POLLHUP:
-				printf("Polling inotify fd %d tells it has hung up.\n", pollfd[0].fd);
+				printf_verbose(
+					"Polling inotify fd %d tells it has hung up.\n",
+					pollfd[0].fd);
 				break;
 			case POLLNVAL:
-				printf("Polling inotify fd %d tells fd is not open.\n", pollfd[0].fd);
+				printf_verbose(
+					"Polling inotify fd %d tells fd is not open.\n",
+					pollfd[0].fd);
 				break;
 			case POLLPRI:
 			case POLLIN:
-
-				printf("Polling inotify fd %d : data ready.\n", pollfd[0].fd);
+				printf_verbose(
+					"Polling inotify fd %d : data ready.\n",
+					pollfd[0].fd);
 
 				pthread_rwlock_wrlock(&fd_pairs_lock);
 				read_inotify(inotify_fd, fd_pairs, iwatch_array);
@@ -752,21 +776,29 @@ int read_channels(unsigned long thread_num, struct channel_trace_fd *fd_pairs,
 		for(i=inotify_fds;i<num_pollfd;i++) {
 			switch(pollfd[i].revents) {
 				case POLLERR:
-					printf("Error returned in polling fd %d.\n", pollfd[i].fd);
+					printf_verbose(
+						"Error returned in polling fd %d.\n",
+						pollfd[i].fd);
 					num_hup++;
 					break;
 				case POLLHUP:
-					printf("Polling fd %d tells it has hung up.\n", pollfd[i].fd);
+					printf_verbose(
+						"Polling fd %d tells it has hung up.\n",
+						pollfd[i].fd);
 					num_hup++;
 					break;
 				case POLLNVAL:
-					printf("Polling fd %d tells fd is not open.\n", pollfd[i].fd);
+					printf_verbose(
+						"Polling fd %d tells fd is not open.\n",
+						pollfd[i].fd);
 					num_hup++;
 					break;
 				case POLLPRI:
 					pthread_rwlock_rdlock(&fd_pairs_lock);
 					if(pthread_mutex_trylock(&fd_pairs->pair[i-inotify_fds].mutex) == 0) {
-						printf("Urgent read on fd %d\n", pollfd[i].fd);
+						printf_verbose(
+							"Urgent read on fd %d\n",
+							pollfd[i].fd);
 						/* Take care of high priority channels first. */
 						high_prio = 1;
 						/* it's ok to have an unavailable subbuffer */
@@ -791,7 +823,9 @@ int read_channels(unsigned long thread_num, struct channel_trace_fd *fd_pairs,
 						pthread_rwlock_rdlock(&fd_pairs_lock);
 						if(pthread_mutex_trylock(&fd_pairs->pair[i-inotify_fds].mutex) == 0) {
 							/* Take care of low priority channels. */
-							printf("Normal read on fd %d\n", pollfd[i].fd);
+							printf_verbose(
+								"Normal read on fd %d\n",
+								pollfd[i].fd);
 							/* it's ok to have an unavailable subbuffer */
 							ret = read_subbuffer(&fd_pairs->pair[i-inotify_fds]);
 							if(ret == EAGAIN) ret = 0;
