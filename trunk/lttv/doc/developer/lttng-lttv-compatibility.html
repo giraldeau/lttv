@@ -3094,6 +3094,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.47<br>
 0.48<br>
 0.49<br>
+0.50<br>
 </td>
 <td style="vertical-align: top;">
 0.53<br>
@@ -3121,6 +3122,9 @@ LTTng 0.47 and LTTV 0.11.4 now saves the event lost count in the subbuffer
 header. It's printed as a lttv warning when encountered. LTTng 0.47 also
 implemented specialized trap probes.<br>
 LTTng 0.49 is a compile fix for userspace markers.<br>
+LTTng 0.50 fixes immediate values by reverting the "jump patching" version of
+immediate values. They were always on, and therefore broken. It also
+reimplements tracepoint, marker and imv mutexes.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
