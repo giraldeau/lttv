@@ -2946,12 +2946,15 @@ static gboolean process_fork(void *hook_data, void *call_data)
      *
      * Simply put a correct parent.
      */
-    g_error("Process %u has been created at [%lu.%09lu] before \n"
+    g_error("Process %u has been created at [%lu.%09lu] "
+            "and inserted at [%lu.%09lu] before \n"
             "fork on cpu %u[%lu.%09lu].\n"
             "Probably an unsynchronized TSC problem on the traced machine.",
             child_pid,
             child_process->creation_time.tv_sec,
             child_process->creation_time.tv_nsec,
+            child_process->insertion_time.tv_sec,
+            child_process->insertion_time.tv_nsec,
             cpu, ltt_event_time(e).tv_sec, ltt_event_time(e).tv_nsec);
     //g_assert(0); /* This is a problematic case : the process has been created
     //                before the fork event */
