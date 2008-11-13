@@ -183,7 +183,7 @@ static int parse_trace_header(ltt_subbuffer_header_t *header,
 
           t->start_time_from_tsc = ltt_time_from_uint64(
               (double)t->start_tsc
-              * (1000000000.0 / tf->trace->freq_scale)
+              * 1000000000.0 * tf->trace->freq_scale
               / (double)t->start_freq);
         }
       }
@@ -1078,13 +1078,13 @@ LttTime ltt_interpolate_time_from_tsc(LttTracefile *tf, guint64 tsc)
   if(tsc > tf->trace->start_tsc) {
     time = ltt_time_from_uint64(
         (double)(tsc - tf->trace->start_tsc) 
-                                    * (1000000000.0 / tf->trace->freq_scale)
+                                    * 1000000000.0 * tf->trace->freq_scale
                                     / (double)tf->trace->start_freq);
     time = ltt_time_add(tf->trace->start_time_from_tsc, time);
   } else {
     time = ltt_time_from_uint64(
         (double)(tf->trace->start_tsc - tsc)
-                                    * (1000000000.0 / tf->trace->freq_scale)
+                                    * 1000000000.0 * tf->trace->freq_scale
                                     / (double)tf->trace->start_freq);
     time = ltt_time_sub(tf->trace->start_time_from_tsc, time);
   }

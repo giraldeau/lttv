@@ -83,7 +83,7 @@ struct ltt_subbuffer_header_2_2 {
 					 * Frequency at trace start,
 					 * used all along the trace.
 					 */
-	uint32_t freq_scale;		/* Frequency scaling */
+	uint32_t freq_scale;		/* Frequency scaling (divide freq) */
 	uint32_t lost_size;		/* Size unused at end of subbuffer */
 	uint32_t buf_size;		/* Size of this subbuffer */
 	uint32_t events_lost;		/*
