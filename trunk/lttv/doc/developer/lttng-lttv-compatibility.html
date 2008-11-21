@@ -3103,6 +3103,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.54<br>
 0.55<br>
 0.56<br>
+0.57<br>
 </td>
 <td style="vertical-align: top;">
 0.53<br>
@@ -3139,6 +3140,10 @@ LTTng 0.53 implements a timer-based generic tracing clock, also includes
 various fixes.<br>
 LTTng 0.54 fixes the MIPS get_cycles_rate() and also change the freq_scale
 variable from a multiplier to a divisor.<br>
+LTTng 0.57 fixes the modification done to offset and commit count counters
+following formal verification so the overflow is dealt with correctly. It was
+causing problems on 32-bits machines after 4GB worth of data going through a
+buffer.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
