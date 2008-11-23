@@ -57,7 +57,7 @@ enum {
 	LTTCTL_ERR_SUPP,
 	LTTCTL_ERR_RECVBUF,
 	LTTCTL_ERR_TIMEOUT,
-				LTTCTL_ERR_PROTOCOL
+	LTTCTL_ERR_PROTOCOL,
 };
 #define LTTCTL_MAXERR LTTCTL_ERR_PROTOCOL
 
@@ -228,7 +228,7 @@ void lttctl_perror(const char *s)
 	if (lttctl_errno)
 		fprintf(stderr, ": %s", lttctl_errstr());
 	if (errno)
-		fprintf(stderr, ": %s", strerror(errno));
+		fprintf(stderr, ": %s", strerror(-errno));
 	fputc('\n', stderr);
 }
 
