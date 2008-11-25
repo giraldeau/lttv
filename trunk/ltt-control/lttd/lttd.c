@@ -52,6 +52,7 @@
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,14)
 #include <sys/inotify.h>
+#if 0	/* should now be provided by libc. */
 /* From the inotify-tools 2.6 package */
 static inline int inotify_init (void)
 {
@@ -67,6 +68,7 @@ static inline int inotify_rm_watch (int fd, __u32 wd)
 {
 	return syscall (__NR_inotify_rm_watch, fd, wd);
 }
+#endif //0
 #define HAS_INOTIFY
 #else
 static inline int inotify_init (void)
