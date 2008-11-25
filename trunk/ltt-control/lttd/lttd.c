@@ -51,7 +51,7 @@
 #define RELAY_GET_SUBBUF_SIZE   _IOR(0xF5, 0x03,__u32)
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,14)
-#include <linux/inotify.h>
+#include <sys/inotify.h>
 /* From the inotify-tools 2.6 package */
 static inline int inotify_init (void)
 {
