@@ -437,7 +437,8 @@ int read_subbuffer(struct fd_pair *pair)
 	unsigned int consumed_old;
 	int err;
 	long ret;
-	unsigned long len, offset;
+	unsigned long len;
+	off_t offset;
 
 
 	err = ioctl(pair->channel, RELAY_GET_SUBBUF, &consumed_old);
@@ -462,7 +463,8 @@ int read_subbuffer(struct fd_pair *pair)
 	len = pair->subbuf_size;
 	offset = 0;
 	while (len > 0) {
-		printf_verbose("splice chan to pipe offset %lu\n", offset);
+		printf_verbose("splice chan to pipe offset %lu\n",
+			(unsigned long)offset);
 		ret = splice(pair->channel, &offset, thread_pipe[1], NULL,
 			len, SPLICE_F_MOVE);
 		printf_verbose("splice chan to pipe ret %ld\n", ret);
