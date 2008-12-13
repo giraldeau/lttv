@@ -1,16 +1,19 @@
 #excluding locking
 #excluding core markers, not connected to default.
 echo Disconnecting all markers
-MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2}'|sort -u|grep -v ^core_|grep -v ^locking_|grep -v ^lockdep_|grep -v ^lockdep|grep -v ^tap_`
+MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2 " " $4}'|sort -u|grep -v ^metadata|grep -v ^locking|grep -v ^lockdep|grep -v ^tap`
+
+IFS=$'\n'
 for a in $MARKERS; do echo Disconnecting $a; echo "disconnect $a" > /proc/ltt; done
 
 # Markers starting with "tap_" are considered high-speed.
 echo Disconnecting high-rate markers to tap
-MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2}'|sort -u |grep ^tap_`
+MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2 " " $4}'|sort -u |grep ^tap`
 
 #Uncomment the following to also stop recording lockdep events.
 #MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2}'|sort -u|grep -e ^tap_ -e ^lockdep`
 
+IFS=$'\n'
 for a in $MARKERS; do
 	echo Disconnecting $a
 
