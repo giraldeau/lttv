@@ -46,8 +46,8 @@
 static inline void print_enum_events(LttEvent *e, struct marker_field *f,
                       guint64 value, GString *s, LttvTracefileState *tfs)
 {
-  LttTrace *trace = ltt_tracefile_get_trace(e->tracefile);
-  struct marker_info *info = marker_get_info_from_id(trace, e->event_id);
+  struct marker_info *info = marker_get_info_from_id(tfs->parent.tf->mdata,
+    e->event_id);
   LttvTraceState *ts = (LttvTraceState*)(tfs->parent.t_context);
   
   //TODO optimize with old quarks.
@@ -256,11 +256,10 @@ void lttv_event_to_string(LttEvent *e, GString *s,
   guint cpu = tfs->cpu;
   LttvTraceState *ts = (LttvTraceState*)tfs->parent.t_context;
   LttvProcessState *process = ts->running_process[cpu];
-  LttTrace *trace = ts->parent.t;
 
   s = g_string_set_size(s,0);
 
-  info = marker_get_info_from_id(trace, e->event_id);
+  info = marker_get_info_from_id(tfs->parent.tf->mdata, e->event_id);
 
   if(mandatory_fields) {
     time = ltt_event_time(e);

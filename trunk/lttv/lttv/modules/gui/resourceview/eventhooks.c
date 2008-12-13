@@ -813,6 +813,7 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+  struct marker_info *minfo;
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
@@ -830,17 +831,20 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
   guint64 irq;
   guint cpu = tfs->cpu;
 
-  guint16 ev_id_entry = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_ENTRY)));
-  guint16 ev_id_exit = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_IRQ_EXIT)));
-  if(ev_id_entry == e->event_id) {
-    irq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
-  }
-  else if(ev_id_exit == e->event_id) {
-    irq = ts->cpu_states[cpu].last_irq;
-  }
-  else {
+  /*
+   * Check for LTT_CHANNEL_KERNEL channel name and event ID
+   * corresponding to LTT_EVENT_IRQ_ENTRY or LTT_EVENT_IRQ_EXIT.
+   */
+  if (tfc->tf->name != LTT_CHANNEL_KERNEL)
     return 0;
-  }
+  minfo = marker_get_info_from_id(tfc->tf->mdata, e->event_id);
+  g_assert(minfo != NULL);
+  if (minfo->name == LTT_EVENT_IRQ_ENTRY) {
+    irq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
+  } else if (minfo->name == LTT_EVENT_IRQ_EXIT) {
+    irq = ts->cpu_states[cpu].last_irq;
+  } else
+    return 0;
 
   guint trace_num = ts->parent.index;
 
@@ -987,6 +991,7 @@ int before_execmode_hook_soft_irq(void *hook_data, void *call_data)
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+  struct marker_info *minfo;
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
@@ -1004,18 +1009,22 @@ int before_execmode_hook_soft_irq(void *hook_data, void *call_data)
   guint64 softirq;
   guint cpu = tfs->cpu;
 
-  guint16 ev_id_raise = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_RAISE)));
-  guint16 ev_id_entry = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_ENTRY)));
-  guint16 ev_id_exit = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_SOFT_IRQ_EXIT)));
-  if(ev_id_entry == e->event_id || ev_id_raise == e->event_id) {
-    softirq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
-  }
-  else if(ev_id_exit == e->event_id) {
-    softirq = ts->cpu_states[cpu].last_soft_irq;
-  }
-  else {
+  /*
+   * Check for LTT_CHANNEL_KERNEL channel name and event ID
+   * corresponding to LTT_EVENT_SOFT_IRQ_RAISE, LTT_EVENT_SOFT_IRQ_ENTRY
+   * or LTT_EVENT_SOFT_IRQ_EXIT.
+   */
+  if (tfc->tf->name != LTT_CHANNEL_KERNEL)
     return 0;
-  }
+  minfo = marker_get_info_from_id(tfc->tf->mdata, e->event_id);
+  g_assert(minfo != NULL);
+  if (minfo->name == LTT_EVENT_SOFT_IRQ_RAISE
+      || minfo->name == LTT_EVENT_SOFT_IRQ_ENTRY) {
+    softirq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
+  } else if (minfo->name == LTT_EVENT_SOFT_IRQ_EXIT) {
+    softirq = ts->cpu_states[cpu].last_soft_irq;
+  } else
+    return 0;
 
   guint trace_num = ts->parent.index;
 
@@ -1153,6 +1162,7 @@ int before_execmode_hook_trap(void *hook_data, void *call_data)
 
   LttvTracefileState *tfs = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)tfc->t_context;
+  struct marker_info *minfo;
 
   LttEvent *e;
   e = ltt_tracefile_get_event(tfc->tf);
@@ -1170,17 +1180,20 @@ int before_execmode_hook_trap(void *hook_data, void *call_data)
   guint64 trap;
   guint cpu = tfs->cpu;
 
-  guint16 ev_id_entry = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_ENTRY)));
-  guint16 ev_id_exit = marker_get_id_from_info(trace, marker_get_info_from_name(trace, lttv_merge_facility_event_name(LTT_FACILITY_KERNEL, LTT_EVENT_TRAP_EXIT)));
-  if(ev_id_entry == e->event_id) {
-    trap = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
-  }
-  else if(ev_id_exit == e->event_id) {
-    trap = ts->cpu_states[cpu].last_trap;
-  }
-  else {
+  /*
+   * Check for LTT_CHANNEL_KERNEL channel name and event ID
+   * corresponding to LTT_EVENT_TRAP_ENTRY or LTT_EVENT_TRAP_EXIT.
+   */
+  if (tfc->tf->name != LTT_CHANNEL_KERNEL)
     return 0;
-  }
+  minfo = marker_get_info_from_id(tfc->tf->mdata, e->event_id);
+  g_assert(minfo != NULL);
+  if (minfo->name == LTT_EVENT_TRAP_ENTRY) {
+    trap = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
+  } else if (minfo->name == LTT_EVENT_TRAP_EXIT) {
+    trap = ts->cpu_states[cpu].last_trap;
+  } else
+    return 0;
 
   guint trace_num = ts->parent.index;
 

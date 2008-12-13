@@ -1,4 +1,5 @@
 AM_CFLAGS = $(GLIB_CFLAGS) 
+LIBS += $(THREAD_LIBS)
 LIBS += $(POPT_LIBS) $(GLIB_LIBS) -lgobject-2.0 -L${top_builddir}/ltt\
           -llttvtraceread
 

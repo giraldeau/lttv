@@ -137,7 +137,7 @@ EventsRequest consists in
 - a stop_flag, ending the read process when set to TRUE
 - a end timestamp and/or position and/or number of events to read
 - hook lists to call for traceset/trace/tracefile begin and end, and for each
-  event (event hooks and event_by_id hooks).
+  event (event hooks and event_by_id_channel hooks).
   
 The main window will deliver events for every EventRequests it has
 pending through an algorithm that guarantee that all events requested,
@@ -665,7 +665,7 @@ typedef struct _EventsRequest {
   LttvHooks                   *before_chunk_trace;    /* Unset : NULL       */
   LttvHooks                   *before_chunk_tracefile;/* Unset : NULL       */
   LttvHooks                   *event;           /* Unset : NULL             */
-  LttvHooksById               *event_by_id;     /* Unset : NULL             */
+  LttvHooksByIdChannelArray   *event_by_id_channel;/* Unset : NULL          */
   LttvHooks                   *after_chunk_tracefile; /* Unset : NULL       */
   LttvHooks                   *after_chunk_trace;     /* Unset : NULL       */
   LttvHooks                   *after_chunk_traceset;  /* Unset : NULL       */

@@ -201,11 +201,11 @@ void lttv_process_traceset(LttvTracesetContext *self, LttTime end,
 
 
 void lttv_process_traceset_begin(LttvTracesetContext *self,
-                                 LttvHooks       *before_traceset,
-                                 LttvHooks       *before_trace,
-                                 LttvHooks       *before_tracefile,
-                                 LttvHooks       *event,
-                                 LttvHooksById   *event_by_id);
+                             LttvHooks       *before_traceset,
+                             LttvHooks       *before_trace,
+                             LttvHooks       *before_tracefile,
+                             LttvHooks       *event,
+                             LttvHooksByIdChannelArray   *event_by_id_channel);
 
 
 guint lttv_process_traceset_middle(LttvTracesetContext *self,
@@ -214,11 +214,11 @@ guint lttv_process_traceset_middle(LttvTracesetContext *self,
                               const LttvTracesetContextPosition *end_position);
 
 void lttv_process_traceset_end(LttvTracesetContext *self,
-                               LttvHooks           *after_traceset,
-                               LttvHooks           *after_trace,
-                               LttvHooks           *after_tracefile,
-                               LttvHooks           *event,
-                               LttvHooksById       *event_by_id);
+                             LttvHooks           *after_traceset,
+                             LttvHooks           *after_trace,
+                             LttvHooks           *after_tracefile,
+                             LttvHooks           *event,
+                             LttvHooksByIdChannelArray   *event_by_id_channel);
 
 
 void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start);
@@ -233,26 +233,26 @@ void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
     LttvHooks *before_trace, 
     LttvHooks *before_tracefile,
     LttvHooks *event,
-    LttvHooksById *event_by_id);
+    LttvHooksByIdChannelArray *event_by_id_channel);
 
 void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
     LttvHooks *after_traceset,
     LttvHooks *after_trace, 
     LttvHooks *after_tracefile,
     LttvHooks *event, 
-    LttvHooksById *event_by_id);
+    LttvHooksByIdChannelArray *event_by_id_channel);
 
 void lttv_trace_context_add_hooks(LttvTraceContext *self,
     LttvHooks *before_trace, 
     LttvHooks *before_tracefile,
     LttvHooks *event, 
-    LttvHooksById *event_by_id);
+    LttvHooksByIdChannelArray *event_by_id_channel);
 
 void lttv_trace_context_remove_hooks(LttvTraceContext *self,
     LttvHooks *after_trace, 
     LttvHooks *after_tracefile,
     LttvHooks *event, 
-    LttvHooksById *event_by_id);
+    LttvHooksByIdChannelArray *event_by_id_channel);
 
 void lttv_tracefile_context_add_hooks(LttvTracefileContext *self,
           LttvHooks *before_tracefile,
@@ -261,20 +261,14 @@ void lttv_tracefile_context_add_hooks(LttvTracefileContext *self,
 
 
 void lttv_tracefile_context_remove_hooks(LttvTracefileContext *self,
-           LttvHooks *after_tracefile,
-           LttvHooks *event, 
-           LttvHooksById *event_by_id);
-
-
-void lttv_tracefile_context_add_hooks_by_id(LttvTracefileContext *self,
-					    unsigned i,
-					    LttvHooks *event_by_id);
-
-void lttv_tracefile_context_remove_hooks_by_id(LttvTracefileContext *self,
-					       unsigned i);
+          LttvHooks *after_tracefile,
+          LttvHooks *event, 
+          LttvHooksById *event_by_id);
 
 typedef struct _LttvTraceHook {
   LttvHook h;
+  struct marker_data *mdata;
+  GQuark channel;
   guint16 id;  /* id of the marker associated with this hook */
   GPtrArray *fields;  /* struct marker_fields pointers */
   gpointer hook_data;
@@ -308,6 +302,7 @@ lttv_trace_get_hook_field(LttvTraceHook *hook, unsigned int index)
 	return g_ptr_array_index(hook->fields, index);
 }
 
+#if 0
 static inline GQuark lttv_merge_facility_event_name(GQuark fac, GQuark ev)
 {
   char *tmp;
@@ -324,6 +319,7 @@ static inline GQuark lttv_merge_facility_event_name(GQuark fac, GQuark ev)
   g_free(tmp);
   return ret;
 }
+#endif //0
 
 LttvTracefileContext *lttv_traceset_context_get_current_tfc(
                              LttvTracesetContext *self);

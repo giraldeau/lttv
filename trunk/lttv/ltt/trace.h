@@ -45,10 +45,6 @@ struct LttTrace {
   LttTime   start_time_from_tsc;
 
   GData     *tracefiles;                    //tracefiles groups
-  /* Support for markers */
-  GArray    *markers;                       //indexed by marker ID
-  GHashTable *markers_hash;                 //indexed by name hash
-  GHashTable *markers_format_hash;                 //indexed by name hash
 };
 
 static inline guint ltt_trace_get_num_cpu(LttTrace *t)

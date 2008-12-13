@@ -130,7 +130,7 @@ typedef struct _LttvHooksById {
 
 /* Create and destroy a hooks by id list */
 
-LttvHooksById *lttv_hooks_by_id_new();
+LttvHooksById *lttv_hooks_by_id_new(void);
 
 void lttv_hooks_by_id_destroy(LttvHooksById *h);
 
@@ -156,9 +156,32 @@ static inline LttvHooks *lttv_hooks_by_id_get(LttvHooksById *h, unsigned id)
   return ret;
 }
 
-
 /* Remove the list of hooks associated with an id */
 
 void lttv_hooks_by_id_remove(LttvHooksById *h, unsigned id);
+
+void lttv_hooks_by_id_copy(LttvHooksById *dest, LttvHooksById *src);
+
+/*
+ * Hooks per channel per id. Useful for GUI to save/restore hooks
+ * on a per trace basis (rather than per tracefile).
+ */
+
+/* Internal structure, contained in by the LttvHooksByIdChannelArray */
+typedef struct _LttvHooksByIdChannel {
+  LttvHooksById *hooks_by_id;
+  GQuark channel;
+} LttvHooksByIdChannel;
+
+typedef struct _LttvHooksByIdChannelArray {
+  GArray *array;	/* Array of LttvHooksByIdChannel */
+} LttvHooksByIdChannelArray;
+
+LttvHooksByIdChannelArray *lttv_hooks_by_id_channel_new(void);
+
+void lttv_hooks_by_id_channel_destroy(LttvHooksByIdChannelArray *h);
+
+LttvHooks *lttv_hooks_by_id_channel_find(LttvHooksByIdChannelArray *h,
+    GQuark channel, guint16 id);
 
 #endif // HOOK_H

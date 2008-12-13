@@ -759,7 +759,7 @@ void lttvwindowtraces_call_before_chunk(LttvAttributeName module_name,
   LttvHooks *before_chunk_trace=NULL;
   LttvHooks *before_chunk_tracefile=NULL;
   LttvHooks *event_hook=NULL;
-  LttvHooksById *event_hook_by_id=NULL;
+  LttvHooksByIdChannelArray *event_hook_by_id_channel=NULL;
 
  
   module_attribute =
@@ -802,10 +802,10 @@ void lttvwindowtraces_call_before_chunk(LttvAttributeName module_name,
   }
 
   type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
-                                     LTTV_EVENT_HOOK_BY_ID,
+                                     LTTV_EVENT_HOOK_BY_ID_CHANNEL,
                                      &value);
   if(type == LTTV_POINTER) {
-    event_hook_by_id = (LttvHooksById*)*(value.v_pointer);
+    event_hook_by_id_channel = (LttvHooksById*)*(value.v_pointer);
   }
 
   lttv_process_traceset_begin(tsc,
@@ -813,7 +813,7 @@ void lttvwindowtraces_call_before_chunk(LttvAttributeName module_name,
                               before_chunk_trace,
                               before_chunk_tracefile,
                               event_hook,
-                              event_hook_by_id);
+                              event_hook_by_id_channel);
 }
 
 
@@ -829,7 +829,7 @@ void lttvwindowtraces_call_after_chunk(LttvAttributeName module_name,
   LttvHooks *after_chunk_trace=NULL;
   LttvHooks *after_chunk_tracefile=NULL;
   LttvHooks *event_hook=NULL;
-  LttvHooksById *event_hook_by_id=NULL;
+  LttvHooksById *event_hook_by_id_channel=NULL;
  
   module_attribute =
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
@@ -871,10 +871,10 @@ void lttvwindowtraces_call_after_chunk(LttvAttributeName module_name,
   }
 
   type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(module_attribute),
-                                     LTTV_EVENT_HOOK_BY_ID,
+                                     LTTV_EVENT_HOOK_BY_ID_CHANNEL,
                                      &value);
   if(type == LTTV_POINTER) {
-    event_hook_by_id = (LttvHooksById*)*(value.v_pointer);
+    event_hook_by_id_channel = (LttvHooksById*)*(value.v_pointer);
   }
   
   lttv_process_traceset_end(tsc,
@@ -882,7 +882,7 @@ void lttvwindowtraces_call_after_chunk(LttvAttributeName module_name,
                             after_chunk_trace,
                             after_chunk_tracefile,
                             event_hook,
-                            event_hook_by_id);
+                            event_hook_by_id_channel);
 
 }
 
@@ -1500,18 +1500,18 @@ gboolean lttvwindowtraces_process_pending_requests(LttvTrace *trace)
  *                    information.
  */
 void lttvwindowtraces_register_computation_hooks(LttvAttributeName module_name,
-                                          LttvHooks *before_chunk_traceset,
-                                          LttvHooks *before_chunk_trace,
-                                          LttvHooks *before_chunk_tracefile,
-                                          LttvHooks *after_chunk_traceset,
-                                          LttvHooks *after_chunk_trace,
-                                          LttvHooks *after_chunk_tracefile,
-                                          LttvHooks *before_request,
-                                          LttvHooks *after_request,
-                                          LttvHooks *event_hook,
-                                          LttvHooksById *event_hook_by_id,
-                                          LttvHooks *hook_adder,
-                                          LttvHooks *hook_remover)
+                                        LttvHooks *before_chunk_traceset,
+                                        LttvHooks *before_chunk_trace,
+                                        LttvHooks *before_chunk_tracefile,
+                                        LttvHooks *after_chunk_traceset,
+                                        LttvHooks *after_chunk_trace,
+                                        LttvHooks *after_chunk_tracefile,
+                                        LttvHooks *before_request,
+                                        LttvHooks *after_request,
+                                        LttvHooks *event_hook,
+                                        LttvHooksById *event_hook_by_id_channel,
+                                        LttvHooks *hook_adder,
+                                        LttvHooks *hook_remover)
 {
   LttvAttribute *g_attribute = lttv_global_attributes();
   LttvAttribute *attribute;
@@ -1593,11 +1593,11 @@ void lttvwindowtraces_register_computation_hooks(LttvAttributeName module_name,
   *(value.v_pointer) = event_hook;
 
   result = lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
-                                LTTV_EVENT_HOOK_BY_ID,
+                                LTTV_EVENT_HOOK_BY_ID_CHANNEL,
                                 LTTV_POINTER,
                                 &value);
   g_assert(result);
-  *(value.v_pointer) = event_hook_by_id;
+  *(value.v_pointer) = event_hook_by_id_channel;
 
   result = lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
                                 LTTV_HOOK_ADDER,
@@ -1827,14 +1827,14 @@ void lttvwindowtraces_unregister_computation_hooks
     lttv_hooks_destroy(event_hook);
  
   result = lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
-                                LTTV_EVENT_HOOK_BY_ID,
+                                LTTV_EVENT_HOOK_BY_ID_CHANNEL,
                                 LTTV_POINTER,
                                 &value);
   g_assert(result);
 
-  LttvHooksById *event_hook_by_id = (LttvHooksById*)*(value.v_pointer);
-  if(event_hook_by_id != NULL)
-    lttv_hooks_by_id_destroy(event_hook_by_id);
+  LttvHooksById *event_hook_by_id_channel = (LttvHooksById*)*(value.v_pointer);
+  if(event_hook_by_id_channel != NULL)
+    lttv_hooks_by_id_channel_destroy(event_hook_by_id_channel);
  
   result = lttv_iattribute_find(LTTV_IATTRIBUTE(attribute),
                                 LTTV_HOOK_ADDER,
@@ -1858,7 +1858,7 @@ void lttvwindowtraces_unregister_computation_hooks
  
 
   lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
-                                     LTTV_EVENT_HOOK_BY_ID);
+                                     LTTV_EVENT_HOOK_BY_ID_CHANNEL);
   lttv_iattribute_remove_by_name(LTTV_IATTRIBUTE(attribute),
                                      LTTV_EVENT_HOOK);
 

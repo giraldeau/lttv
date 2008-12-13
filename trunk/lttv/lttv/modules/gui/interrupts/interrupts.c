@@ -148,7 +148,7 @@ typedef struct _InterruptEventData {
   LttvHooks  * hooks_trace_after;
   LttvHooks  * hooks_trace_before;
   TimeWindow   time_window;
-  LttvHooksById * event_by_id_hooks;
+  LttvHooksByIdChannelArray * event_by_id_hooks;
   GArray *FirstRequestIrqExit;
   GArray *FirstRequestIrqEntry;
   GArray *SecondRequestIrqEntry;
@@ -461,11 +461,11 @@ static void FirstRequest(InterruptEventData *event_data )
  	/* Get a trace state */
 	ts = (LttvTraceState *)tsc->traces[i];
 	/* Create event_by_Id hooks */
- 	event_data->event_by_id_hooks = lttv_hooks_by_id_new();
+ 	event_data->event_by_id_hooks = lttv_hooks_by_id_channel_new();
   
  	/*Register event_by_id_hooks with a callback function*/ 
         lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_KERNEL,
+		LTT_CHANNEL_KERNEL,
                 LTT_EVENT_IRQ_ENTRY,
 		FIELD_ARRAY(LTT_FIELD_IRQ_ID),
 		FirstRequestIrqEntryCallback,
@@ -473,7 +473,7 @@ static void FirstRequest(InterruptEventData *event_data )
 		&hooks);
 	 
 	lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_KERNEL,
+		LTT_CHANNEL_KERNEL,
                 LTT_EVENT_IRQ_EXIT,
 		NULL,
 		FirstRequestIrqExitCallback,
@@ -484,7 +484,9 @@ static void FirstRequest(InterruptEventData *event_data )
 	for(k = 0 ; k < hooks->len; k++) 
 	{ 
 		th = &g_array_index(hooks, LttvTraceHook, k); 
-		lttv_hooks_add(lttv_hooks_by_id_find(event_data->event_by_id_hooks, th->id),
+		lttv_hooks_add(lttv_hooks_by_id_channel_find(
+			                       event_data->event_by_id_hooks,
+		                               th->channel, th->id),
 			th->h,
 			th,
 			LTTV_PRIO_DEFAULT);
@@ -508,7 +510,7 @@ static void FirstRequest(InterruptEventData *event_data )
 	events_request->before_chunk_trace    = event_data->hooks_trace_before; 
 	events_request->before_chunk_tracefile= NULL; 
 	events_request->event		        = NULL;  
-	events_request->event_by_id		= event_data->event_by_id_hooks; 
+	events_request->event_by_id_channel     = event_data->event_by_id_hooks; 
 	events_request->after_chunk_tracefile = NULL; 
 	events_request->after_chunk_trace     = NULL;    
 	events_request->after_chunk_traceset	= NULL; 
@@ -721,11 +723,11 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
   	/* Get a trace state */
 	ts = (LttvTraceState *)tsc->traces[i];
 	/* Create event_by_Id hooks */
-  	event_data->event_by_id_hooks = lttv_hooks_by_id_new();
+  	event_data->event_by_id_hooks = lttv_hooks_by_id_channel_new();
   
  	/*Register event_by_id_hooks with a callback function*/ 
           ret = lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_KERNEL,
+		LTT_CHANNEL_KERNEL,
 		LTT_EVENT_IRQ_ENTRY,
 		FIELD_ARRAY(LTT_FIELD_IRQ_ID),
 		SecondRequestIrqEntryCallback,
@@ -733,7 +735,7 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
 		&hooks);
 	 
 	 ret = lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_KERNEL,
+		LTT_CHANNEL_KERNEL,
 		LTT_EVENT_IRQ_EXIT,
 		NULL,
 		SecondRequestIrqExitCallback,
@@ -746,7 +748,9 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
 	for(k = 0 ; k < hooks->len; k++) 
 	{ 
 		th = &g_array_index(hooks, LttvTraceHook, k); 
-		lttv_hooks_add(lttv_hooks_by_id_find(event_data->event_by_id_hooks, th->id),
+		lttv_hooks_add(lttv_hooks_by_id_channel_find(
+			    event_data->event_by_id_hooks,
+			    th->channel, th->id),
 			th->h,
 			th,
 			LTTV_PRIO_DEFAULT);
@@ -770,7 +774,7 @@ static gboolean SecondRequest(void *hook_data, void *call_data)
 	events_request->before_chunk_trace    = NULL; 
 	events_request->before_chunk_tracefile= NULL; 
 	events_request->event		        = NULL;  
-	events_request->event_by_id		= event_data->event_by_id_hooks; 
+	events_request->event_by_id_channel	= event_data->event_by_id_hooks; 
 	events_request->after_chunk_tracefile = NULL; 
 	events_request->after_chunk_trace     = NULL;    
 	events_request->after_chunk_traceset	= NULL; 

@@ -35,50 +35,56 @@ struct marker_info {
   struct marker_info *next; /* Linked list of markers with the same name */
 };
 
+struct marker_data {
+  GArray *markers;			//indexed by marker id
+  GHashTable *markers_hash;		//indexed by name hash
+  GHashTable *markers_format_hash;	//indexed by name hash
+};
+
 enum marker_id {
   MARKER_ID_SET_MARKER_ID = 0,  /* Static IDs available (range 0-7) */
   MARKER_ID_SET_MARKER_FORMAT,
   MARKER_ID_DYNAMIC,    /* Dynamic IDs (range: 8-65535)   */
 };
 
-static inline guint16 marker_get_id_from_info(LttTrace *trace,
+static inline guint16 marker_get_id_from_info(struct marker_data *data,
     struct marker_info *info)
 {
-  return ((unsigned long)info - (unsigned long)trace->markers->data)
+  return ((unsigned long)info - (unsigned long)data->markers->data)
            / sizeof(struct marker_info);
 }
 
-static inline struct marker_info *marker_get_info_from_id(LttTrace *trace,
-    guint16 id)
+static inline struct marker_info *marker_get_info_from_id(
+    struct marker_data *data, guint16 id)
 {
-  if (unlikely(trace->markers->len <= id))
+  if (unlikely(data->markers->len <= id))
     return NULL;
-  return &g_array_index(trace->markers, struct marker_info, id);
+  return &g_array_index(data->markers, struct marker_info, id);
 }
 
 /*
  * Returns the head of the marker info list for that name.
  */
-static inline struct marker_info *marker_get_info_from_name(LttTrace *trace,
-    GQuark name)
+static inline struct marker_info *marker_get_info_from_name(
+    struct marker_data *data, GQuark name)
 {
   gpointer orig_key, value;
   int res;
 
-  res = g_hash_table_lookup_extended(trace->markers_hash,
+  res = g_hash_table_lookup_extended(data->markers_hash,
     (gconstpointer)(gulong)name, &orig_key, &value);
   if (!res)
     return NULL;
-  return marker_get_info_from_id(trace, (guint16)(gulong)value);
+  return marker_get_info_from_id(data, (guint16)(gulong)value);
 }
 
-static inline char *marker_get_format_from_name(LttTrace *trace,
+static inline char *marker_get_format_from_name(struct marker_data *data,
     GQuark name)
 {
   gpointer orig_key, value;
   int res;
 
-  res = g_hash_table_lookup_extended(trace->markers_format_hash,
+  res = g_hash_table_lookup_extended(data->markers_format_hash,
  	 	(gconstpointer)(gulong)name, &orig_key, &value);
   if (!res)
     return NULL;
@@ -106,11 +112,12 @@ static inline unsigned int marker_get_num_fields(struct marker_info *info)
 		field != marker_get_field(info, marker_get_num_fields(info)); \
 		field++)
 
-int marker_format_event(LttTrace *trace, GQuark name, const char *format);
-int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
+int marker_format_event(LttTrace *trace, GQuark channel, GQuark name,
+  const char *format);
+int marker_id_event(LttTrace *trace, GQuark channel, GQuark name, guint16 id,
   uint8_t int_size, uint8_t long_size, uint8_t pointer_size,
   uint8_t size_t_size, uint8_t alignment);
-int allocate_marker_data(LttTrace *trace);
-void destroy_marker_data(LttTrace *trace);
+struct marker_data *allocate_marker_data(void);
+void destroy_marker_data(struct marker_data *data);
 
 #endif //_LTT_MARKERS_H

@@ -28,9 +28,6 @@
 #include <lttv/filter.h>
 #include <errno.h>
 
-#define min(a,b) (((a)<(b))?(a):(b))
-
-
 gint compare_tracefile(gconstpointer a, gconstpointer b)
 {
   gint comparison = 0;
@@ -291,7 +288,7 @@ void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
     LttvHooks *before_trace, 
     LttvHooks *before_tracefile,
     LttvHooks *event,
-    LttvHooksById *event_by_id)
+    LttvHooksByIdChannelArray *event_by_id_channel)
 {
   LttvTraceset *ts = self->ts;
 
@@ -309,7 +306,7 @@ void lttv_traceset_context_add_hooks(LttvTracesetContext *self,
                                  before_trace,
                                  before_tracefile,
                                  event,
-                                 event_by_id);
+                                 event_by_id_channel);
   }
 }
 
@@ -319,7 +316,7 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
     LttvHooks *after_trace, 
     LttvHooks *after_tracefile,
     LttvHooks *event, 
-    LttvHooksById *event_by_id)
+    LttvHooksByIdChannelArray *event_by_id_channel)
 {
 
   LttvTraceset *ts = self->ts;
@@ -336,7 +333,7 @@ void lttv_traceset_context_remove_hooks(LttvTracesetContext *self,
                                     after_trace,
                                     after_tracefile,
                                     event,
-                                    event_by_id);
+                                    event_by_id_channel);
   }
 
   lttv_hooks_call(after_traceset, self);
@@ -348,11 +345,11 @@ void lttv_trace_context_add_hooks(LttvTraceContext *self,
     LttvHooks *before_trace, 
     LttvHooks *before_tracefile,
     LttvHooks *event, 
-    LttvHooksById *event_by_id)
+    LttvHooksByIdChannelArray *event_by_id_channel)
 {
-  guint i, nb_tracefile;
-
+  guint i, j, nb_tracefile;
   LttvTracefileContext **tfc;
+  LttTracefile *tf;
 
   lttv_hooks_call(before_trace, self);
 
@@ -360,10 +357,22 @@ void lttv_trace_context_add_hooks(LttvTraceContext *self,
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfc = &g_array_index(self->tracefiles, LttvTracefileContext*, i);
+    tf = (*tfc)->tf;
     lttv_tracefile_context_add_hooks(*tfc,
                                      before_tracefile,
                                      event,
-                                     event_by_id);
+                                     NULL);
+    if (event_by_id_channel) {
+      for(j = 0; j < event_by_id_channel->array->len; j++) {
+        LttvHooksByIdChannel *hooks = &g_array_index(event_by_id_channel->array,
+                                                    LttvHooksByIdChannel, j);
+        if (tf->name == hooks->channel)
+          lttv_tracefile_context_add_hooks(*tfc,
+                                       NULL,
+                                       NULL,
+                                       hooks->hooks_by_id);
+      }
+    }
   }
 }
 
@@ -373,20 +382,33 @@ void lttv_trace_context_remove_hooks(LttvTraceContext *self,
     LttvHooks *after_trace, 
     LttvHooks *after_tracefile,
     LttvHooks *event, 
-    LttvHooksById *event_by_id)
+    LttvHooksByIdChannelArray *event_by_id_channel)
 {
-  guint i, nb_tracefile;
-
+  guint i, j, nb_tracefile;
   LttvTracefileContext **tfc;
+  LttTracefile *tf;
 
   nb_tracefile = self->tracefiles->len;
 
   for(i = 0 ; i < nb_tracefile ; i++) {
     tfc = &g_array_index(self->tracefiles, LttvTracefileContext*, i);
+    tf = (*tfc)->tf;
+    if (event_by_id_channel) {
+      for(j = 0; j < event_by_id_channel->array->len; j++) {
+        LttvHooksByIdChannel *hooks = &g_array_index(event_by_id_channel->array,
+                                                    LttvHooksByIdChannel, j);
+        if (tf->name == hooks->channel)
+          lttv_tracefile_context_remove_hooks(*tfc,
+                                       NULL,
+                                       NULL,
+                                       hooks->hooks_by_id);
+      }
+    }
     lttv_tracefile_context_remove_hooks(*tfc,
-                                        after_tracefile,
-                                        event,
-                                        event_by_id);
+                                     after_tracefile,
+                                     event,
+                                     NULL);
+
   }
 
   lttv_hooks_call(after_trace, self);
@@ -398,7 +420,6 @@ void lttv_tracefile_context_add_hooks(LttvTracefileContext *self,
           LttvHooksById *event_by_id)
 {
   guint i, index;
-
   LttvHooks *hook;
   
   lttv_hooks_call(before_tracefile, self);
@@ -432,23 +453,6 @@ void lttv_tracefile_context_remove_hooks(LttvTracefileContext *self,
   }
 
   lttv_hooks_call(after_tracefile, self);
-}
-
-
-
-void lttv_tracefile_context_add_hooks_by_id(LttvTracefileContext *tfc,
-					    unsigned i,
-					    LttvHooks *event_by_id)
-{
-  LttvHooks * h;
-  h = lttv_hooks_by_id_find(tfc->event_by_id, i);
-  lttv_hooks_add_list(h, event_by_id);
-}
-
-void lttv_tracefile_context_remove_hooks_by_id(LttvTracefileContext *tfc,
-					       unsigned i)
-{
-  lttv_hooks_by_id_remove(tfc->event_by_id, i);
 }
 
 static LttvTracesetContext *
@@ -667,7 +671,7 @@ void lttv_process_traceset_begin(LttvTracesetContext *self,
                                  LttvHooks       *before_trace,
                                  LttvHooks       *before_tracefile,
                                  LttvHooks       *event,
-                                 LttvHooksById   *event_by_id)
+                                 LttvHooksByIdChannelArray *event_by_id_channel)
 {
 
   /* simply add hooks in context. _before hooks are called by add_hooks. */
@@ -677,7 +681,7 @@ void lttv_process_traceset_begin(LttvTracesetContext *self,
                                   before_trace,
                                   before_tracefile,
                                   event,
-                                  event_by_id);
+                                  event_by_id_channel);
   
 }
 
@@ -810,7 +814,7 @@ void lttv_process_traceset_end(LttvTracesetContext *self,
                                LttvHooks           *after_trace,
                                LttvHooks           *after_tracefile,
                                LttvHooks           *event,
-                               LttvHooksById       *event_by_id)
+                               LttvHooksByIdChannelArray *event_by_id_channel)
 {
   /* Remove hooks from context. _after hooks are called by remove_hooks. */
   /* It calls all after_traceset, after_trace, and after_tracefile hooks. */
@@ -819,7 +823,7 @@ void lttv_process_traceset_end(LttvTracesetContext *self,
                                      after_trace,
                                      after_tracefile,
                                      event,
-                                     event_by_id);
+                                     event_by_id_channel);
 }
 
 /* Subtile modification : 
@@ -962,22 +966,30 @@ find_field(LttEventType *et, const GQuark field)
 
 struct marker_info *lttv_trace_hook_get_marker(LttTrace *t, LttvTraceHook *th)
 {
-  return marker_get_info_from_id(t, th->id);
+  return marker_get_info_from_id(th->mdata, th->id);
 }
 
-int lttv_trace_find_hook(LttTrace *t, GQuark facility_name, GQuark event_name,
+int lttv_trace_find_hook(LttTrace *t, GQuark channel_name, GQuark event_name,
     GQuark fields[], LttvHook h, gpointer hook_data, GArray **trace_hooks)
 {
   struct marker_info *info;
   guint16 marker_id;
   int init_array_size;
-  GQuark marker_name;
+  GArray *group;
+  struct marker_data *mdata;
 
-  marker_name = lttv_merge_facility_event_name(facility_name, event_name);
+  group = g_datalist_id_get_data(&t->tracefiles, channel_name);
+  if (unlikely(!group || group->len == 0)) {
+    g_warning("No channel for marker named %s.%s found",
+    g_quark_to_string(channel_name), g_quark_to_string(event_name));
+    return 1;
+  }
 
-  info = marker_get_info_from_name(t, marker_name);
+  mdata = g_array_index (group, LttTracefile, 0).mdata;
+  info = marker_get_info_from_name(mdata, event_name);
   if(unlikely(info == NULL)) {
-    g_warning("No marker of name %s found", g_quark_to_string(marker_name));
+    g_warning("No marker named %s.%s found",
+    g_quark_to_string(channel_name), g_quark_to_string(event_name));
     return 1;
   }
 
@@ -990,9 +1002,11 @@ int lttv_trace_find_hook(LttTrace *t, GQuark facility_name, GQuark event_name,
     GQuark *f;
     struct marker_field *marker_field;
 
-    marker_id = marker_get_id_from_info(t, info);
+    marker_id = marker_get_id_from_info(mdata, info);
 
     tmpth.h = h;
+    tmpth.mdata = mdata;
+    tmpth.channel = channel_name;
     tmpth.id = marker_id;
     tmpth.hook_data = hook_data;
     tmpth.fields = g_ptr_array_new();
@@ -1012,8 +1026,9 @@ int lttv_trace_find_hook(LttTrace *t, GQuark facility_name, GQuark event_name,
            marker. Print a warning and skip this marker completely.
 	   Still iterate on other markers with same name. */
         g_ptr_array_free(tmpth.fields, TRUE);
-        g_warning("Field %s cannot be found in marker %s",
-                g_quark_to_string(*f), g_quark_to_string(marker_name));
+        g_warning("Field %s cannot be found in marker %s.%s",
+                g_quark_to_string(*f), g_quark_to_string(channel_name),
+                                       g_quark_to_string(event_name));
         goto skip_marker;
       }
     }
@@ -1025,8 +1040,8 @@ skip_marker:
 
   /* Error if no new trace hook has been added */
   if (init_array_size == (*trace_hooks)->len) {
-        g_warning("No marker of name %s has all requested fields",
-                g_quark_to_string(marker_name));
+        g_warning("No marker of name %s.%s has all requested fields",
+                g_quark_to_string(channel_name), g_quark_to_string(event_name));
         return 1;
   }
   return 0;

@@ -52,7 +52,7 @@ static inline guint16 ltt_event_id(struct LttEvent *event)
 	return event->event_id;
 }
 
-static inline LttTime ltt_event_time(struct LttEvent *event)
+static inline LttTime ltt_event_time(const struct LttEvent *event)
 {
 	return event->event_time;
 }

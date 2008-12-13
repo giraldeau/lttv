@@ -302,7 +302,7 @@ void histo_request_event( HistoControlFlowData *histocontrol_flow_data, guint x,
   	histo_events_request->before_chunk_trace    = NULL; 
   	histo_events_request->before_chunk_tracefile= NULL; 
   	histo_events_request->event 		    = histo_count_event_hooks; 
-   	histo_events_request->event_by_id	    = NULL;//histo_event_by_id;//NULL; 
+   	histo_events_request->event_by_id_channel   = NULL;//histo_event_by_id;//NULL; 
   	histo_events_request->after_chunk_tracefile = NULL; 
   	histo_events_request->after_chunk_trace     = NULL;   
   	histo_events_request->after_chunk_traceset  = histo_after_chunk_traceset;//NULL; 

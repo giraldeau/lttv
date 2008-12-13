@@ -8,6 +8,7 @@
 
 AM_CFLAGS = $(GLIB_CFLAGS) 
 LIBS += $(GLIB_LIBS)
+LIBS += $(THREAD_LIBS)
 
 lib_LTLIBRARIES = liblttvtraceread.la
 liblttvtraceread_la_SOURCES = tracefile.c marker.c event.c

@@ -410,7 +410,7 @@ LttvHooksById *lttv_hooks_by_id_new()
 {
   LttvHooksById *h = g_new(LttvHooksById, 1);
   h->index = g_ptr_array_sized_new(PREALLOC_EVENTS);
-  h->array = g_array_sized_new(FALSE, FALSE, sizeof(guint), 50);
+  h->array = g_array_sized_new(FALSE, FALSE, sizeof(guint), PREALLOC_EVENTS);
   return h;
 }
 
@@ -458,3 +458,66 @@ void lttv_hooks_by_id_remove(LttvHooksById *h, unsigned id)
   }
 }
 
+void lttv_hooks_by_id_copy(LttvHooksById *dest, LttvHooksById *src)
+{
+  guint i;
+
+  for(i = 0 ; i < src->array->len ; i++) {
+    guint index = g_array_index(src->array, guint, i);
+    LttvHooks *srch = lttv_hooks_by_id_find(src, index);
+    LttvHooks *desth = lttv_hooks_by_id_find(dest, index);
+    lttv_hooks_add_list(desth, srch);
+  }
+}
+
+LttvHooksByIdChannelArray *lttv_hooks_by_id_channel_new(void)
+{
+  LttvHooksByIdChannelArray *h = g_new(LttvHooksByIdChannelArray, 1);
+
+  h->array = g_array_new(FALSE, FALSE, sizeof(LttvHooksByIdChannel));
+  return h;
+}
+
+void lttv_hooks_by_id_channel_destroy(LttvHooksByIdChannelArray *h)
+{
+  LttvHooksByIdChannel *hid;
+  int i;
+
+  for (i = 0; i < h->array->len; i++) {
+    hid = &g_array_index(h->array, LttvHooksByIdChannel, i);
+    lttv_hooks_by_id_destroy(hid->hooks_by_id);
+  }
+  g_array_free(h->array, TRUE);
+  g_free(h);
+}
+
+static LttvHooksByIdChannel *lttv_hooks_by_id_channel_find_channel(
+    LttvHooksByIdChannelArray *h,
+    GQuark channel)
+{
+  LttvHooksByIdChannel *hid;
+  int i, found = 0;
+
+  for (i = 0; i < h->array->len; i++) {
+    hid = &g_array_index(h->array, LttvHooksByIdChannel, i);
+    if (hid->channel == channel)
+      found = 1;
+      break;
+  }
+  if (!found) {
+    g_array_set_size(h->array, h->array->len + 1);
+    hid = &g_array_index(h->array, LttvHooksByIdChannel, h->array->len - 1);
+    hid->channel = channel;
+    hid->hooks_by_id = lttv_hooks_by_id_new();
+  }
+  return hid;
+}
+
+/* get, or create if not found */
+LttvHooks *lttv_hooks_by_id_channel_find(LttvHooksByIdChannelArray *h,
+    GQuark channel, guint16 id)
+{
+  LttvHooksByIdChannel *hid;
+  hid = lttv_hooks_by_id_channel_find_channel(h, channel);
+  return lttv_hooks_by_id_find(hid->hooks_by_id, id);
+}

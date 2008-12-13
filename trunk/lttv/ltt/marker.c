@@ -421,46 +421,63 @@ int marker_parse_format(const char *format, struct marker_info *info)
   return 0;
 }
 
-int marker_format_event(LttTrace *trace, GQuark name, const char *format)
+int marker_format_event(LttTrace *trace, GQuark channel, GQuark name,
+  const char *format)
 {
   struct marker_info *info;
+  struct marker_data *mdata;
   char *fquery;
   char *fcopy;
-  
-  fquery = marker_get_format_from_name(trace, name);
+  GArray *group;
+
+  group = g_datalist_id_get_data(&trace->tracefiles, channel);
+  g_assert(group->len > 0);
+  mdata = g_array_index (group, LttTracefile, 0).mdata;
+
+  fquery = marker_get_format_from_name(mdata, name);
   if (fquery) {
     if (strcmp(fquery, format) != 0)
-      g_error("Marker format mismatch \"%s\" vs \"%s\" for marker %s. "
-            "Kernel issue.", fquery, format, g_quark_to_string(name));
+      g_error("Marker format mismatch \"%s\" vs \"%s\" for marker %s.%s. "
+            "Kernel issue.", fquery, format,
+            g_quark_to_string(channel), g_quark_to_string(name));
     else
       return 0;  /* Already exists. Nothing to do. */
   }
   fcopy = g_new(char, strlen(format)+1);
   strcpy(fcopy, format);
-  g_hash_table_insert(trace->markers_format_hash, (gpointer)(gulong)name,
+  g_hash_table_insert(mdata->markers_format_hash, (gpointer)(gulong)name,
     (gpointer)fcopy);
 
-  info = marker_get_info_from_name(trace, name);
+  info = marker_get_info_from_name(mdata, name);
   for (; info != NULL; info = info->next) {
     info->format = fcopy;
     if (marker_parse_format(format, info))
-      g_error("Error parsing marker format \"%s\" for marker \"%s\"", format,
-        g_quark_to_string(name));
+      g_error("Error parsing marker format \"%s\" for marker \"%.s.%s\"",
+        format, g_quark_to_string(channel), g_quark_to_string(name));
   }
   return 0;
 }
 
-int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
+int marker_id_event(LttTrace *trace, GQuark channel, GQuark name, guint16 id,
   uint8_t int_size, uint8_t long_size, uint8_t pointer_size,
   uint8_t size_t_size, uint8_t alignment)
 {
+  struct marker_data *mdata;
   struct marker_info *info, *head;
   int found = 0;
+  GArray *group;
 
-  if (trace->markers->len <= id)
-    trace->markers = g_array_set_size(trace->markers,
-      max(trace->markers->len * 2, id + 1));
-  info = &g_array_index(trace->markers, struct marker_info, id);
+  g_debug("Add channel %s event %s %hu\n", g_quark_to_string(channel),
+    g_quark_to_string(name), id);
+
+  group = g_datalist_id_get_data(&trace->tracefiles, channel);
+  g_assert(group->len > 0);
+  mdata = g_array_index (group, LttTracefile, 0).mdata;
+
+  if (mdata->markers->len <= id)
+    mdata->markers = g_array_set_size(mdata->markers,
+      max(mdata->markers->len * 2, id + 1));
+  info = &g_array_index(mdata->markers, struct marker_info, id);
   info->name = name;
   info->int_size = int_size;
   info->long_size = long_size;
@@ -469,14 +486,14 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   info->alignment = alignment;
   info->fields = NULL;
   info->next = NULL;
-  info->format = marker_get_format_from_name(trace, name);
+  info->format = marker_get_format_from_name(mdata, name);
   info->largest_align = 1;
   if (info->format && marker_parse_format(info->format, info))
-      g_error("Error parsing marker format \"%s\" for marker \"%s\"",
-        info->format, g_quark_to_string(name));
-  head = marker_get_info_from_name(trace, name);
+      g_error("Error parsing marker format \"%s\" for marker \"%s.%s\"",
+        info->format, g_quark_to_string(channel), g_quark_to_string(name));
+  head = marker_get_info_from_name(mdata, name);
   if (!head)
-    g_hash_table_insert(trace->markers_hash, (gpointer)(gulong)name,
+    g_hash_table_insert(mdata->markers_hash, (gpointer)(gulong)name,
       (gpointer)(gulong)id);
   else {
     struct marker_info *iter;
@@ -484,7 +501,7 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
       if (iter->name == name)
         found = 1;
     if (!found) {
-      g_hash_table_replace(trace->markers_hash, (gpointer)(gulong)name,
+      g_hash_table_replace(mdata->markers_hash, (gpointer)(gulong)name,
         (gpointer)(gulong)id);
       info->next = head;
     }
@@ -492,31 +509,43 @@ int marker_id_event(LttTrace *trace, GQuark name, guint16 id,
   return 0;
 }
 
-int allocate_marker_data(LttTrace *trace)
+struct marker_data *allocate_marker_data(void)
 {
+  struct marker_data *data;
+
+  data = g_new(struct marker_data, 1);
   /* Init array to 0 */
-  trace->markers = g_array_sized_new(FALSE, TRUE,
+  data->markers = g_array_sized_new(FALSE, TRUE,
                     sizeof(struct marker_info), DEFAULT_MARKERS_NUM);
-  if (!trace->markers)
-    return -ENOMEM;
-  trace->markers_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
-  if (!trace->markers_hash)
-    return -ENOMEM;
-  trace->markers_format_hash = g_hash_table_new_full(g_direct_hash,
+  if (!data->markers)
+    goto free_data;
+  data->markers_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
+  if (!data->markers_hash)
+    goto free_markers;
+  data->markers_format_hash = g_hash_table_new_full(g_direct_hash,
      g_direct_equal, NULL, g_free);
-  if (!trace->markers_hash)
-    return -ENOMEM;
-  return 0;
+  if (!data->markers_format_hash)
+    goto free_markers_hash;
+  return data;
+
+  /* error handling */
+free_markers_hash:
+  g_hash_table_destroy(data->markers_hash);
+free_markers:
+  g_array_free(data->markers, TRUE);
+free_data:
+  g_free(data);
+  return NULL;
 }
 
-void destroy_marker_data(LttTrace *trace)
+void destroy_marker_data(struct marker_data *data)
 {
   unsigned int i, j;
   struct marker_info *info;
   struct marker_field *field;
 
-  for (i=0; i<trace->markers->len; i++) {
-    info = &g_array_index(trace->markers, struct marker_info, i);
+  for (i=0; i<data->markers->len; i++) {
+    info = &g_array_index(data->markers, struct marker_info, i);
     if (info->fields) {
       for (j = 0; j < info->fields->len; j++) {
         field = &g_array_index(info->fields, struct marker_field, j);
@@ -525,7 +554,8 @@ void destroy_marker_data(LttTrace *trace)
       g_array_free(info->fields, TRUE);
     }
   }
-  g_array_free(trace->markers, TRUE);
-  g_hash_table_destroy(trace->markers_hash);
-  g_hash_table_destroy(trace->markers_format_hash);
+  g_hash_table_destroy(data->markers_format_hash);
+  g_hash_table_destroy(data->markers_hash);
+  g_array_free(data->markers, TRUE);
+  g_free(data);
 }

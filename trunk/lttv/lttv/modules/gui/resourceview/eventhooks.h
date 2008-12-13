@@ -120,4 +120,21 @@ gint continue_notify(void *hook_data, void *call_data);
 
 void legend_destructor(GtkWindow *legend);
 
+ControlFlowData *resourceview(LttvPluginTab *ptab);
+
+HashedResourceData *resourcelist_obtain_cpu(ControlFlowData *resourceview_data,
+  guint trace_num, guint id);
+
+HashedResourceData *resourcelist_obtain_irq(ControlFlowData *resourceview_data,
+  guint trace_num, guint id);
+
+HashedResourceData *resourcelist_obtain_soft_irq(
+  ControlFlowData *resourceview_data, guint trace_num, guint id);
+
+HashedResourceData *resourcelist_obtain_trap(ControlFlowData *resourceview_data,
+  guint trace_num, guint id);
+
+HashedResourceData *resourcelist_obtain_bdev(ControlFlowData *resourceview_data,
+  guint trace_num, guint id);
+
 #endif // _EVENT_HOOKS_H

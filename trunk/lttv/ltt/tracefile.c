@@ -152,9 +152,9 @@ static int parse_trace_header(ltt_subbuffer_header_t *header,
     break;
   case 2:
     switch(header->minor_version) {
-    case 2:
+    case 3:
       {
-        struct ltt_subbuffer_header_2_2 *vheader = header;
+        struct ltt_subbuffer_header_2_3 *vheader = header;
         tf->buffer_header_size = ltt_subbuffer_header_size();
         tf->tscbits = 27;
         tf->eventbits = 5;
@@ -350,6 +350,7 @@ void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname)
 /* Search for something like : .*_.*
  *
  * The left side is the name, the right side is the number.
+ * Exclude leading /.
  */
 
 static int get_tracefile_name_number(gchar *raw_name,
@@ -366,6 +367,14 @@ static int get_tracefile_name_number(gchar *raw_name,
   long int cpu_num;
   gchar *endptr;
   gchar *tmpptr;
+
+  /* skip leading / */
+  for(i = 0; i < raw_name_len-1;i++) {
+    if(raw_name[i] != '/')
+      break;
+  }
+  raw_name = &raw_name[i];
+  raw_name_len = strlen(raw_name);
 
   for(i=raw_name_len-1;i>=0;i--) {
     if(raw_name[i] == '_') break;
@@ -476,6 +485,8 @@ static void ltt_tracefile_group_destroy(gpointer data)
   int i;
   LttTracefile *tf;
 
+  if (group->len > 0)
+    destroy_marker_data(g_array_index (group, LttTracefile, 0).mdata);
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
     if(tf->cpu_online)
@@ -515,7 +526,8 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
   DIR *dir = opendir(root_path);
   struct dirent *entry;
   struct stat stat_buf;
-  int ret;
+  int ret, i;
+  struct marker_data *mdata;
   
   gchar path[PATH_MAX];
   int path_len;
@@ -586,7 +598,8 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
 
       g_debug("Tracefile name is %s and number is %u", 
           g_quark_to_string(name), num);
-      
+
+      mdata = NULL;
       tmp_tf.cpu_online = 1;
       tmp_tf.cpu_num = num;
       tmp_tf.name = name;
@@ -601,15 +614,25 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
         group = g_array_sized_new (FALSE, TRUE, sizeof(LttTracefile), 10);
         g_datalist_id_set_data_full(&trace->tracefiles, name,
                                  group, ltt_tracefile_group_destroy);
+        mdata = allocate_marker_data();
+        if (!mdata)
+          g_error("Error in allocating marker data");
       }
 
       /* Add the per cpu tracefile to the named group */
       unsigned int old_len = group->len;
       if(num+1 > old_len)
         group = g_array_set_size(group, num+1);
+
+      g_assert(group->len > 0);
+      if (!mdata)
+        mdata = g_array_index (group, LttTracefile, 0).mdata;
+
       g_array_index (group, LttTracefile, num) = tmp_tf;
       g_array_index (group, LttTracefile, num).event.tracefile = 
         &g_array_index (group, LttTracefile, num);
+      for (i = 0; i < group->len; i++)
+        g_array_index (group, LttTracefile, i).mdata = mdata;
     }
   }
   
@@ -648,19 +671,22 @@ static int ltt_process_metadata_tracefile(LttTracefile *tf)
       goto event_id_error;
     } else {
       char *pos;
-      const char *marker_name, *format;
+      const char *channel_name, *marker_name, *format;
       uint16_t id;
       guint8 int_size, long_size, pointer_size, size_t_size, alignment;
 
       switch((enum marker_id)tf->event.event_id) {
         case MARKER_ID_SET_MARKER_ID:
-          marker_name = pos = tf->event.data;
-          g_debug("Doing MARKER_ID_SET_MARKER_ID of marker %s", marker_name);
+          channel_name = pos = tf->event.data;
+	  pos += strlen(channel_name) + 1;
+	  marker_name = pos;
+          g_debug("Doing MARKER_ID_SET_MARKER_ID of marker %s.%s",
+	    channel_name, marker_name);
           pos += strlen(marker_name) + 1;
           pos += ltt_align((size_t)pos, sizeof(guint16), tf->alignment);
           id = ltt_get_uint16(LTT_GET_BO(tf), pos);
-          g_debug("In MARKER_ID_SET_MARKER_ID of marker %s id %hu",
-	  	marker_name, id);
+          g_debug("In MARKER_ID_SET_MARKER_ID of marker %s.%s id %hu",
+	  	channel_name, marker_name, id);
           pos += sizeof(guint16);
           int_size = *(guint8*)pos;
           pos += sizeof(guint8);
@@ -672,18 +698,24 @@ static int ltt_process_metadata_tracefile(LttTracefile *tf)
           pos += sizeof(guint8);
           alignment = *(guint8*)pos;
           pos += sizeof(guint8);
-          marker_id_event(tf->trace, g_quark_from_string(marker_name),
+          marker_id_event(tf->trace,
+                          g_quark_from_string(channel_name),
+                          g_quark_from_string(marker_name),
                           id, int_size, long_size,
                           pointer_size, size_t_size, alignment);
           break;
         case MARKER_ID_SET_MARKER_FORMAT:
-          marker_name = pos = tf->event.data;
-          g_debug("Doing MARKER_ID_SET_MARKER_FORMAT of marker %s",
-                  marker_name);
+          channel_name = pos = tf->event.data;
+          pos += strlen(channel_name) + 1;
+          marker_name = pos;
+          g_debug("Doing MARKER_ID_SET_MARKER_FORMAT of marker %s.%s",
+                  channel_name, marker_name);
           pos += strlen(marker_name) + 1;
           format = pos;
           pos += strlen(format) + 1;
-          marker_format_event(tf->trace, g_quark_from_string(marker_name),
+          marker_format_event(tf->trace,
+                              g_quark_from_string(channel_name),
+                              g_quark_from_string(marker_name),
                               format);
           /* get information from dictionary TODO */
           break;
@@ -723,7 +755,6 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   ltt_subbuffer_header_t *header;
   DIR *dir;
   struct dirent *entry;
-  guint control_found = 0;
   struct stat stat_buf;
   gchar path[PATH_MAX];
   
@@ -750,15 +781,8 @@ LttTrace *ltt_trace_open(const gchar *pathname)
       perror(path);
       continue;
     }
-    if(S_ISDIR(stat_buf.st_mode)) {
-      if(strcmp(entry->d_name, "control") == 0) {
-        control_found = 1;
-      }
-    }
   }
   closedir(dir);
-  
-  if(!control_found) goto find_error;
   
   /* Open all the tracefiles */
   if(open_tracefiles(t, abs_path, "")) {
@@ -766,16 +790,16 @@ LttTrace *ltt_trace_open(const gchar *pathname)
     goto find_error;
   }
   
-  /* Parse each trace control/metadata_N files : get runtime fac. info */
+  /* Parse each trace metadata_N files : get runtime fac. info */
   group = g_datalist_id_get_data(&t->tracefiles, LTT_TRACEFILE_NAME_METADATA);
   if(group == NULL) {
     g_error("Trace %s has no metadata tracefile", abs_path);
     g_assert(0);
-    goto metadata_error;
+    goto find_error;
   }
 
   /*
-   * Get the trace information for the control/metadata_0 tracefile.
+   * Get the trace information for the metadata_0 tracefile.
    * Getting a correct trace start_time and start_tsc is insured by the fact
    * that no subbuffers are supposed to be lost in the metadata channel.
    * Therefore, the first subbuffer contains the start_tsc timestamp in its
@@ -789,22 +813,23 @@ LttTrace *ltt_trace_open(const gchar *pathname)
 
   t->num_cpu = group->len;
   
-  ret = allocate_marker_data(t);
-  if (ret)
-    g_error("Error in allocating marker data");
+  //ret = allocate_marker_data(t);
+  //if (ret)
+  //  g_error("Error in allocating marker data");
 
   for(i=0; i<group->len; i++) {
     tf = &g_array_index (group, LttTracefile, i);
     if (tf->cpu_online)
       if(ltt_process_metadata_tracefile(tf))
-        goto metadata_error;
+        goto find_error;
+      //  goto metadata_error;
   }
 
   return t;
 
   /* Error handling */
-metadata_error:
-  destroy_marker_data(t);
+//metadata_error:
+//  destroy_marker_data(t);
 find_error:
   g_datalist_clear(&t->tracefiles);
 open_error:
@@ -1462,27 +1487,31 @@ void ltt_update_event_size(LttTracefile *tf)
   off_t size = 0;
   char *tscdata;
   struct marker_info *info;
- 
-  switch((enum marker_id)tf->event.event_id) {
-    case MARKER_ID_SET_MARKER_ID:
-      size = strlen((char*)tf->event.data) + 1;
-      g_debug("marker %s id set", (char*)tf->event.data);
-      size += ltt_align(size, sizeof(guint16), tf->alignment);
-      size += sizeof(guint16);
-      size += sizeof(guint8);
-      size += sizeof(guint8);
-      size += sizeof(guint8);
-      size += sizeof(guint8);
-      size += sizeof(guint8);
-      break;
-    case MARKER_ID_SET_MARKER_FORMAT:
-      g_debug("marker %s format set", (char*)tf->event.data);
-      size = strlen((char*)tf->event.data) + 1;
-      size += strlen((char*)tf->event.data + size) + 1;
-      break;
+
+  if (tf->name == LTT_TRACEFILE_NAME_METADATA) {
+    switch((enum marker_id)tf->event.event_id) {
+      case MARKER_ID_SET_MARKER_ID:
+        size = strlen((char*)tf->event.data) + 1;
+        g_debug("marker %s id set", (char*)tf->event.data + size);
+        size += strlen((char*)tf->event.data + size) + 1;
+        size += ltt_align(size, sizeof(guint16), tf->alignment);
+        size += sizeof(guint16);
+        size += sizeof(guint8);
+        size += sizeof(guint8);
+        size += sizeof(guint8);
+        size += sizeof(guint8);
+        size += sizeof(guint8);
+        break;
+      case MARKER_ID_SET_MARKER_FORMAT:
+        size = strlen((char*)tf->event.data) + 1;
+        g_debug("marker %s format set", (char*)tf->event.data);
+        size += strlen((char*)tf->event.data + size) + 1;
+        size += strlen((char*)tf->event.data + size) + 1;
+        break;
+    }
   }
 
-  info = marker_get_info_from_id(tf->trace, tf->event.event_id);
+  info = marker_get_info_from_id(tf->mdata, tf->event.event_id);
 
   if (tf->event.event_id >= MARKER_CORE_IDS)
     g_assert(info != NULL);
@@ -1499,7 +1528,7 @@ void ltt_update_event_size(LttTracefile *tf)
     if (info->size != -1)
       size = info->size;
     else
-      size = marker_update_fields_offsets(marker_get_info_from_id(tf->trace,
+      size = marker_update_fields_offsets(marker_get_info_from_id(tf->mdata,
                                    tf->event.event_id), tf->event.data);
   }
 
@@ -1514,19 +1543,12 @@ void ltt_update_event_size(LttTracefile *tf)
   if (a_event_debug)
     print_debug_event_data(&tf->event);
 
-  /* Having a marker load or marker format event out of the metadata
-   * tracefiles is a serious bug. */
-  switch((enum marker_id)tf->event.event_id) {
-    case MARKER_ID_SET_MARKER_ID:
-    case MARKER_ID_SET_MARKER_FORMAT:
-      if (tf->name != g_quark_from_string("/control/metadata"))
-        g_error("Trace inconsistency : metadata event found in data "
-                "tracefile %s", g_quark_to_string(tf->long_name));
-  }
-
   if (tf->event.data_size != tf->event.event_size) {
-    struct marker_info *info = marker_get_info_from_id(tf->trace,
+    struct marker_info *info = marker_get_info_from_id(tf->mdata,
                                                        tf->event.event_id);
+    if (!info)
+      g_error("Undescribed event %hhu in channel %s", tf->event.event_id,
+        g_quark_to_string(tf->name));
     g_error("Kernel/LTTV event size differs for event %s: kernel %u, LTTV %u",
         g_quark_to_string(info->name),
         tf->event.event_size, tf->event.data_size);
@@ -2532,5 +2554,5 @@ static void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src)
 
 static __attribute__((constructor)) void init(void)
 {
-  LTT_TRACEFILE_NAME_METADATA = g_quark_from_string("/control/metadata");
+  LTT_TRACEFILE_NAME_METADATA = g_quark_from_string("metadata");
 }

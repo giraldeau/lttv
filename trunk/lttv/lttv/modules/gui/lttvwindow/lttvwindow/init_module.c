@@ -69,7 +69,7 @@ __EXPORT LttvTraceInfo
        LTTV_BEFORE_REQUEST,
        LTTV_AFTER_REQUEST,
        LTTV_EVENT_HOOK,
-       LTTV_EVENT_HOOK_BY_ID,
+       LTTV_EVENT_HOOK_BY_ID_CHANNEL,
        LTTV_HOOK_ADDER,
        LTTV_HOOK_REMOVER,
        LTTV_IN_PROGRESS,
@@ -159,7 +159,7 @@ static void init() {
   LTTV_BEFORE_REQUEST = g_quark_from_string("before_request");
   LTTV_AFTER_REQUEST = g_quark_from_string("after_request");
   LTTV_EVENT_HOOK = g_quark_from_string("event_hook");
-  LTTV_EVENT_HOOK_BY_ID = g_quark_from_string("event_hook_by_id");
+  LTTV_EVENT_HOOK_BY_ID_CHANNEL = g_quark_from_string("event_hook_by_id_channel");
   LTTV_HOOK_ADDER = g_quark_from_string("hook_adder");
   LTTV_HOOK_REMOVER = g_quark_from_string("hook_remover");
   LTTV_IN_PROGRESS = g_quark_from_string("in_progress");

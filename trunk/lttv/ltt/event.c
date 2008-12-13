@@ -322,13 +322,15 @@ double ltt_event_get_double(LttEvent *e, struct marker_field *f)
 
 /*****************************************************************************
  * The string obtained is only valid until the next read from
- * the same tracefile.
+ * the same tracefile. We reference directly the buffers.
  ****************************************************************************/
-char *ltt_event_get_string(LttEvent *e, struct marker_field *f)
+gchar *ltt_event_get_string(LttEvent *e, struct marker_field *f)
 {
   g_assert(f->type == LTT_TYPE_STRING);
 
-  return (gchar*)g_strdup((gchar*)(e->data + f->offset));
+  //caused memory leaks
+  //return (gchar*)g_strdup((gchar*)(e->data + f->offset));
+  return (gchar*)(e->data + f->offset);
 }
 
 

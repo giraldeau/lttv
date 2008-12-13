@@ -88,7 +88,7 @@ typedef struct _DiskPerformanceData {
   
   GArray *disk_array; 
   
-  LttvHooksById * event_by_id_hooks;
+  LttvHooksByIdChannelArray * event_by_id_hooks;
   
 } DiskPerformanceData;
 
@@ -445,17 +445,17 @@ static void request_event(DiskPerformanceData *disk_performance)
 	/* Get a trace state */
 	ts = (LttvTraceState *)tsc->traces[i];
         
-	disk_performance->event_by_id_hooks = lttv_hooks_by_id_new();
+	disk_performance->event_by_id_hooks = lttv_hooks_by_id_channel_new();
 	/* Register event_by_id_hooks with a callback function */ 
         ret = lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_BLOCK, LTT_EVENT_BLOCK_READ,
+		LTT_CHANNEL_BLOCK, LTT_EVENT_BLOCK_READ,
 		0, 0, 0,
 		block_read_callback,
 		disk_performance,
 		&g_array_index(hooks, LttvTraceHook, 0));
 	 
 	ret = lttv_trace_find_hook(ts->parent.t,
-		LTT_FACILITY_BLOCK, LTT_EVENT_BLOCK_WRITE,
+		LTT_CHANNEL_BLOCK, LTT_EVENT_BLOCK_WRITE,
 		0, 0, 0,
 		block_write_callback,
 		disk_performance,
@@ -470,7 +470,9 @@ static void request_event(DiskPerformanceData *disk_performance)
 		for(l=0; l<hook->fac_list->len; l++) 
 		{
 			thf = g_array_index(hook->fac_list, LttvTraceHookByFacility*, l); 
-			lttv_hooks_add(lttv_hooks_by_id_find(disk_performance->event_by_id_hooks, thf->id),
+			lttv_hooks_add(lttv_hooks_by_id_channel_find(
+                              disk_performance->event_by_id_hooks,
+			      thf->channel, thf->id),
 				thf->h,
 				disk_performance,
 				LTTV_PRIO_DEFAULT);
@@ -502,7 +504,7 @@ static void request_event(DiskPerformanceData *disk_performance)
 	events_request->before_chunk_trace    = disk_performance->hooks_trace_before;
 	events_request->before_chunk_tracefile= NULL;
 	events_request->event		        = NULL; 
-	events_request->event_by_id		= disk_performance->event_by_id_hooks;
+	events_request->event_by_id_channel = disk_performance->event_by_id_hooks;
 	events_request->after_chunk_tracefile = NULL;
 	events_request->after_chunk_trace     = NULL;
 	events_request->after_chunk_traceset	= NULL;

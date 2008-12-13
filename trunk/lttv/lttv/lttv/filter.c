@@ -2047,7 +2047,8 @@ lttv_filter_tree_parse_branch(
             if(event == NULL) return TRUE;
             else {
               struct marker_info *info;
-              info = marker_get_info_from_id((LttTrace *)trace, event->event_id);
+	      LttTracefile *tf = context->tf;
+              info = marker_get_info_from_id(tf->mdata, event->event_id);
               g_assert(info != NULL);
               GQuark quark = info->name;
               return se->op((gpointer)&quark,v);

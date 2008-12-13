@@ -68,7 +68,7 @@
    contained information (byte offsets) may vary with the architecture
    associated to the trace. */
    
-#define PREALLOC_EVENTS	512
+#define PREALLOC_EVENTS	28
 
 typedef struct LttTrace LttTrace;
 

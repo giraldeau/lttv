@@ -23,7 +23,7 @@
 AC_PREREQ(2.57)
 AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 #AC_WITH_LTDL  # not needed ?
-AM_INIT_AUTOMAKE(lttv,0.11.6-13112008)
+AM_INIT_AUTOMAKE(lttv,0.12.0-13122008)
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
@@ -46,8 +46,8 @@ AC_CHECK_LIB([util], [forkpty], UTIL_LIBS="-lutil", AC_MSG_ERROR([libutil is
 required in order to compile LinuxTraceToolkit]))
 
 
-# pthread for lttd
-#AC_CHECK_LIB(pthread, pthread_join,[THREAD_LIBS="-lpthread"], AC_MSG_ERROR([LinuxThreads is required in order to compile lttd]))
+# pthread for gdb with dlopen().
+AC_CHECK_LIB(pthread, pthread_join,[THREAD_LIBS="-lpthread"], AC_MSG_ERROR([LinuxThreads is required in order to make sure gdb works fine with lttv-gui]))
 
 # Checks for header files.
 AC_HEADER_STDC

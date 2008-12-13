@@ -1229,7 +1229,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                 events_request->before_chunk_trace,
                 events_request->before_chunk_tracefile,
                 events_request->event,
-                events_request->event_by_id);
+                events_request->event_by_id_channel);
           else {
             guint nb_trace = lttv_traceset_number(tsc->ts);
             g_assert((guint)events_request->trace < nb_trace &&
@@ -1242,7 +1242,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                          events_request->before_chunk_trace,
                                          events_request->before_chunk_tracefile,
                                          events_request->event,
-                                         events_request->event_by_id);
+                                         events_request->event_by_id_channel);
           }
         }
       }
@@ -1266,7 +1266,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                 events_request->before_chunk_trace,
                 events_request->before_chunk_tracefile,
                 events_request->event,
-                events_request->event_by_id);
+                events_request->event_by_id_channel);
           else {
             guint nb_trace = lttv_traceset_number(tsc->ts);
             g_assert((guint)events_request->trace < nb_trace &&
@@ -1279,7 +1279,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                          events_request->before_chunk_trace,
                                          events_request->before_chunk_tracefile,
                                          events_request->event,
-                                         events_request->event_by_id);
+                                         events_request->event_by_id_channel);
           }
 
           iter = g_slist_next(iter);
@@ -1330,7 +1330,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                   events_request->before_chunk_trace,
                   events_request->before_chunk_tracefile,
                   events_request->event,
-                  events_request->event_by_id);
+                  events_request->event_by_id_channel);
             else {
               guint nb_trace = lttv_traceset_number(tsc->ts);
               g_assert((guint)events_request->trace < nb_trace &&
@@ -1343,7 +1343,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                            events_request->before_chunk_trace,
                                            events_request->before_chunk_tracefile,
                                            events_request->event,
-                                           events_request->event_by_id);
+                                           events_request->event_by_id_channel);
           }
 
 
@@ -1483,7 +1483,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                          events_request->after_chunk_trace,
                                          events_request->after_chunk_tracefile,
                                          events_request->event,
-                                         events_request->event_by_id);
+                                         events_request->event_by_id_channel);
 
           else {
             guint nb_trace = lttv_traceset_number(tsc->ts);
@@ -1495,7 +1495,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                          events_request->after_chunk_trace,
                                          events_request->after_chunk_tracefile,
                                          events_request->event,
-                                         events_request->event_by_id);
+                                         events_request->event_by_id_channel);
             lttv_hooks_call(events_request->after_chunk_traceset, tsc);
 
 
@@ -1541,7 +1541,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                          events_request->after_chunk_trace,
                                          events_request->after_chunk_tracefile,
                                          events_request->event,
-                                         events_request->event_by_id);
+                                         events_request->event_by_id_channel);
 
           else {
             guint nb_trace = lttv_traceset_number(tsc->ts);
@@ -1553,7 +1553,7 @@ gboolean lttvwindow_process_pending_requests(Tab *tab)
                                          events_request->after_chunk_trace,
                                          events_request->after_chunk_tracefile,
                                          events_request->event,
-                                         events_request->event_by_id);
+                                         events_request->event_by_id_channel);
 
             lttv_hooks_call(events_request->after_chunk_traceset, tsc);
           }

@@ -173,8 +173,6 @@ void drawing_data_request(Drawing_t *drawing,
 
     GArray *hooks;
 
-    LttvTraceHook *hook;
-
     LttvTraceHook *th;
 
     guint ret;
@@ -186,7 +184,8 @@ void drawing_data_request(Drawing_t *drawing,
       EventsRequest *events_request = g_new(EventsRequest, 1);
       // Create the hooks
       //LttvHooks *event = lttv_hooks_new();
-      LttvHooksById *event_by_id = lttv_hooks_by_id_new();
+      LttvHooksByIdChannelArray *event_by_id_channel =
+          lttv_hooks_by_id_channel_new();
       LttvHooks *before_chunk_traceset = lttv_hooks_new();
       LttvHooks *after_chunk_traceset = lttv_hooks_new();
       LttvHooks *before_request_hook = lttv_hooks_new();
@@ -223,7 +222,7 @@ void drawing_data_request(Drawing_t *drawing,
       /* before hooks */
       
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_SYSCALL_ENTRY,
           FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
           before_execmode_hook,
@@ -231,7 +230,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_SYSCALL_EXIT,
           NULL,
           before_execmode_hook,
@@ -239,7 +238,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_TRAP_ENTRY,
           FIELD_ARRAY(LTT_FIELD_TRAP_ID),
           before_execmode_hook,
@@ -247,7 +246,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_TRAP_EXIT,
           NULL, 
           before_execmode_hook,
@@ -255,7 +254,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_IRQ_ENTRY,
           FIELD_ARRAY(LTT_FIELD_IRQ_ID),
           before_execmode_hook,
@@ -263,7 +262,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_IRQ_EXIT,
           NULL,
           before_execmode_hook,
@@ -271,7 +270,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_SOFT_IRQ_ENTRY,
           FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
           before_execmode_hook,
@@ -279,7 +278,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_SOFT_IRQ_EXIT,
           NULL,
           before_execmode_hook,
@@ -288,7 +287,7 @@ void drawing_data_request(Drawing_t *drawing,
 
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_SCHED_SCHEDULE,
           FIELD_ARRAY(LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE),
           before_schedchange_hook,
@@ -296,7 +295,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_PROCESS_EXIT,
           FIELD_ARRAY(LTT_FIELD_PID),
           before_process_exit_hook,
@@ -304,7 +303,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
       
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_PROCESS_FREE,
           FIELD_ARRAY(LTT_FIELD_PID),
           before_process_release_hook,
@@ -312,7 +311,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_LIST,
+          LTT_CHANNEL_GLOBAL_STATE,
           LTT_EVENT_STATEDUMP_END,
           NULL,
           before_statedump_end,
@@ -323,7 +322,7 @@ void drawing_data_request(Drawing_t *drawing,
       first_after = hooks->len;
  
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_SCHED_SCHEDULE,
           FIELD_ARRAY(LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID, LTT_FIELD_PREV_STATE),
           after_schedchange_hook,
@@ -331,7 +330,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_PROCESS_FORK,
           FIELD_ARRAY(LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID),
           after_process_fork_hook,
@@ -339,7 +338,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_KERNEL,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_PROCESS_EXIT,
           FIELD_ARRAY(LTT_FIELD_PID),
           after_process_exit_hook,
@@ -347,7 +346,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_FS,
+          LTT_CHANNEL_FS,
           LTT_EVENT_EXEC,
           NULL,
           after_fs_exec_hook,
@@ -355,7 +354,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_USER_GENERIC,
+          LTT_CHANNEL_USERSPACE,
           LTT_EVENT_THREAD_BRAND,
           FIELD_ARRAY(LTT_FIELD_NAME),
           after_user_generic_thread_brand_hook,
@@ -363,7 +362,7 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       lttv_trace_find_hook(ts->parent.t,
-          LTT_FACILITY_LIST,
+          LTT_CHANNEL_TASK_STATE,
           LTT_EVENT_PROCESS_STATE,
           FIELD_ARRAY(LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME),
           after_event_enum_process_hook,
@@ -371,11 +370,12 @@ void drawing_data_request(Drawing_t *drawing,
           &hooks);
 
       
-      /* Add these hooks to each event_by_id hooks list */
+      /* Add these hooks to each event_by_id_channel hooks list */
       /* add before */
       for(k = 0 ; k < first_after ; k++) {
         th = &g_array_index(hooks, LttvTraceHook, k);
-        lttv_hooks_add(lttv_hooks_by_id_find(event_by_id, th->id),
+        lttv_hooks_add(lttv_hooks_by_id_channel_find(event_by_id_channel,
+			                             th->channel, th->id),
                         th->h,
                         th,
                         LTTV_PRIO_STATE-5);
@@ -384,7 +384,8 @@ void drawing_data_request(Drawing_t *drawing,
       /* add after */
       for(k = first_after ; k < hooks->len ; k++) {
         th = &g_array_index(hooks, LttvTraceHook, k);
-        lttv_hooks_add(lttv_hooks_by_id_find(event_by_id, th->id),
+        lttv_hooks_add(lttv_hooks_by_id_channel_find(event_by_id_channel,
+			                             th->channel, th->id),
                        th->h,
                        th,
                        LTTV_PRIO_STATE+5);
@@ -407,7 +408,7 @@ void drawing_data_request(Drawing_t *drawing,
       events_request->before_chunk_trace = NULL;
       events_request->before_chunk_tracefile = NULL;
       events_request->event = NULL;
-      events_request->event_by_id = event_by_id;
+      events_request->event_by_id_channel = event_by_id_channel;
       events_request->after_chunk_tracefile = NULL;
       events_request->after_chunk_trace = NULL;
       events_request->after_chunk_traceset = after_chunk_traceset;

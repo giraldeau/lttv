@@ -66,7 +66,7 @@ typedef guint32 uint32_t;
 typedef guint64 uint64_t;
 
 /* Subbuffer header */
-struct ltt_subbuffer_header_2_2 {
+struct ltt_subbuffer_header_2_3 {
 	uint64_t cycle_count_begin;	/* Cycle count at subbuffer start */
 	uint64_t cycle_count_end;	/* Cycle count at subbuffer end */
 	uint32_t magic_number;		/*
@@ -99,7 +99,7 @@ struct ltt_subbuffer_header_2_2 {
 	char header_end[0];		/* End of header */
 };
 
-typedef struct ltt_subbuffer_header_2_2 ltt_subbuffer_header_t;
+typedef struct ltt_subbuffer_header_2_3 ltt_subbuffer_header_t;
 
 /*
  * Return header size without padding after the structure. Don't use packed
@@ -144,6 +144,7 @@ struct LttTracefile {
   guint pgid;                         //Usertrace pgid, else 0
   guint64 creation;                   //Usertrace creation, else 0
   LttTrace * trace;                  //trace containing the tracefile
+  struct marker_data *mdata;         // marker id/name/fields mapping
   int fd;                            //file descriptor 
   off_t file_size;                   //file size
   //unsigned block_size;               //block_size

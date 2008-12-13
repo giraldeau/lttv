@@ -171,7 +171,7 @@ gboolean trace_event(void __UNUSED__ *hook_data, void *call_data)
   ltt_event_position(e, a_event_position);
   ltt_event_position_get(a_event_position, &tf, &nb_block, &offset, &tsc);
   fprintf(stderr,"Event %s %lu.%09lu [%u 0x%x tsc %llu]\n",
-      g_quark_to_string(marker_get_info_from_id(ltt_tracefile_get_trace(tf),
+      g_quark_to_string(marker_get_info_from_id(tf->mdata,
       			ltt_event_id(e))->name),
       tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec,
       nb_block, offset, tsc);
@@ -228,10 +228,8 @@ gboolean save_state_copy_event(void *hook_data, void *call_data)
 
   FILE *fp;
 
-  LttTrace *trace = ((LttvTracefileContext *)tfs)->t_context->t;
-
   if(ts->nb_event == 0 && 
-      marker_get_info_from_id(trace, e->event_id)->name
+      marker_get_info_from_id(tfs->parent.tf->mdata, e->event_id)->name
                             == QUARK_BLOCK_START) {
     if(a_save_sample != NULL) {
       filename = g_string_new("");
@@ -330,7 +328,7 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
   do {
     LttTracefile *tf_pos;
     //event_type = ltt_event_eventtype(event);
-    minfo = marker_get_info_from_id(ltt_tracefile_get_trace(tracefile),
+    minfo = marker_get_info_from_id(tracefile->mdata,
     					ltt_event_id(event));
     time = ltt_event_time(event);
     ltt_event_position(event, a_event_position);

@@ -45,15 +45,24 @@
 
 #define PREALLOCATED_EXECUTION_STACK 10
 
-/* Facilities Quarks */
+/* Channel Quarks */
 
 GQuark
-    LTT_FACILITY_KERNEL,
-    LTT_FACILITY_LIST,
-    LTT_FACILITY_FS,
-    LTT_FACILITY_USER_GENERIC,
-    LTT_FACILITY_BLOCK,
-    LTT_FACILITY_STATEDUMP;
+    LTT_CHANNEL_FD_STATE,
+    LTT_CHANNEL_GLOBAL_STATE,
+    LTT_CHANNEL_IRQ_STATE,
+    LTT_CHANNEL_MODULE_STATE,
+    LTT_CHANNEL_NETIF_STATE,
+    LTT_CHANNEL_SOFTIRQ_STATE,
+    LTT_CHANNEL_SWAP_STATE,
+    LTT_CHANNEL_SYSCALL_STATE,
+    LTT_CHANNEL_TASK_STATE,
+    LTT_CHANNEL_VM_STATE,
+    LTT_CHANNEL_FS,
+    LTT_CHANNEL_KERNEL,
+    LTT_CHANNEL_MM,
+    LTT_CHANNEL_USERSPACE,
+    LTT_CHANNEL_BLOCK;
 
 /* Events Quarks */
 
@@ -1875,7 +1884,7 @@ create_name_tables(LttvTraceState *tcs)
   hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 1);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
-      LTT_FACILITY_KERNEL,
+      LTT_CHANNEL_KERNEL,
       LTT_EVENT_SYSCALL_ENTRY,
       FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
       NULL, NULL, &hooks)) {
@@ -1911,7 +1920,7 @@ create_name_tables(LttvTraceState *tcs)
   lttv_trace_hook_remove_all(&hooks);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_TRAP_ENTRY,
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         NULL, NULL, &hooks)) {
@@ -1940,7 +1949,7 @@ create_name_tables(LttvTraceState *tcs)
   lttv_trace_hook_remove_all(&hooks);
 
   if(!lttv_trace_find_hook(tcs->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_IRQ_ENTRY,
         FIELD_ARRAY(LTT_FIELD_IRQ_ID),
         NULL, NULL, &hooks)) {
@@ -3387,106 +3396,106 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     //hn = 0;
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_SYSCALL_ENTRY,
         FIELD_ARRAY(LTT_FIELD_SYSCALL_ID),
 	syscall_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_SYSCALL_EXIT,
         NULL,
         syscall_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_TRAP_ENTRY,
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         trap_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_TRAP_EXIT,
         NULL,
         trap_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_IRQ_ENTRY,
         FIELD_ARRAY(LTT_FIELD_IRQ_ID),
         irq_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_IRQ_EXIT,
         NULL,
         irq_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_SOFT_IRQ_RAISE,
         FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
         soft_irq_raise, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_SOFT_IRQ_ENTRY,
         FIELD_ARRAY(LTT_FIELD_SOFT_IRQ_ID),
         soft_irq_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_SOFT_IRQ_EXIT,
         NULL,
         soft_irq_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_SCHED_SCHEDULE,
         FIELD_ARRAY(LTT_FIELD_PREV_PID, LTT_FIELD_NEXT_PID,
 	  LTT_FIELD_PREV_STATE),
         schedchange, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_PROCESS_FORK,
         FIELD_ARRAY(LTT_FIELD_PARENT_PID, LTT_FIELD_CHILD_PID,
 	  LTT_FIELD_CHILD_TGID),
         process_fork, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_KTHREAD_CREATE,
         FIELD_ARRAY(LTT_FIELD_PID),
         process_kernel_thread, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_PROCESS_EXIT,
         FIELD_ARRAY(LTT_FIELD_PID),
         process_exit, NULL, &hooks);
     
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_KERNEL,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_PROCESS_FREE,
         FIELD_ARRAY(LTT_FIELD_PID),
         process_free, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_FS,
+        LTT_CHANNEL_FS,
         LTT_EVENT_EXEC,
         FIELD_ARRAY(LTT_FIELD_FILENAME),
         process_exec, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_USER_GENERIC,
+        LTT_CHANNEL_USERSPACE,
         LTT_EVENT_THREAD_BRAND,
         FIELD_ARRAY(LTT_FIELD_NAME),
         thread_brand, NULL, &hooks);
 
      /* statedump-related hooks */
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_LIST,
+        LTT_CHANNEL_TASK_STATE,
         LTT_EVENT_PROCESS_STATE,
         FIELD_ARRAY(LTT_FIELD_PID, LTT_FIELD_PARENT_PID, LTT_FIELD_NAME,
 	  LTT_FIELD_TYPE, LTT_FIELD_MODE, LTT_FIELD_SUBMODE,
@@ -3494,49 +3503,49 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         enum_process_state, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_LIST,
+        LTT_CHANNEL_GLOBAL_STATE,
         LTT_EVENT_STATEDUMP_END,
         NULL,
         statedump_end, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_LIST,
+        LTT_CHANNEL_IRQ_STATE,
         LTT_EVENT_LIST_INTERRUPT,
         FIELD_ARRAY(LTT_FIELD_ACTION, LTT_FIELD_IRQ_ID),
         enum_interrupt, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_BLOCK,
+        LTT_CHANNEL_BLOCK,
         LTT_EVENT_REQUEST_ISSUE,
         FIELD_ARRAY(LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION),
         bdev_request_issue, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_BLOCK,
+        LTT_CHANNEL_BLOCK,
         LTT_EVENT_REQUEST_COMPLETE,
         FIELD_ARRAY(LTT_FIELD_MAJOR, LTT_FIELD_MINOR, LTT_FIELD_OPERATION),
         bdev_request_complete, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_USER_GENERIC,
+        LTT_CHANNEL_USERSPACE,
         LTT_EVENT_FUNCTION_ENTRY,
         FIELD_ARRAY(LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE),
         function_entry, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_USER_GENERIC,
+        LTT_CHANNEL_USERSPACE,
         LTT_EVENT_FUNCTION_EXIT,
         FIELD_ARRAY(LTT_FIELD_THIS_FN, LTT_FIELD_CALL_SITE),
         function_exit, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_STATEDUMP,
+        LTT_CHANNEL_SYSCALL_STATE,
         LTT_EVENT_SYS_CALL_TABLE,
         FIELD_ARRAY(LTT_FIELD_ID, LTT_FIELD_ADDRESS, LTT_FIELD_SYMBOL),
         dump_syscall, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
-        LTT_FACILITY_STATEDUMP,
+        LTT_CHANNEL_SOFTIRQ_STATE,
         LTT_EVENT_SOFTIRQ_VEC,
         FIELD_ARRAY(LTT_FIELD_ID, LTT_FIELD_ADDRESS, LTT_FIELD_SYMBOL),
         dump_softirq, NULL, &hooks);
@@ -3552,11 +3561,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
       for(k = 0 ; k < hooks->len ; k++) {
         th = &g_array_index(hooks, LttvTraceHook, k);
-          lttv_hooks_add(
-            lttv_hooks_by_id_find(tfs->parent.event_by_id, th->id),
-            th->h,
-            th,
-            LTTV_PRIO_STATE);
+	  if (th->mdata == tfs->parent.tf->mdata)
+            lttv_hooks_add(
+              lttv_hooks_by_id_find(tfs->parent.event_by_id, th->id),
+              th->h,
+              th,
+              LTTV_PRIO_STATE);
       }
     }
     lttv_attribute_find(ts->parent.a, LTTV_STATE_HOOKS, LTTV_POINTER, &val);
@@ -3607,6 +3617,7 @@ void lttv_state_remove_event_hooks(LttvTracesetState *self)
 
       for(k = 0 ; k < hooks->len ; k++) {
         th = &g_array_index(hooks, LttvTraceHook, k);
+	if (th->mdata == tfs->parent.tf->mdata)
           lttv_hooks_remove_data(
             lttv_hooks_by_id_find(tfs->parent.event_by_id, th->id),
                     th->h,
@@ -4197,14 +4208,22 @@ static void module_init()
   LTTV_STATE_RESOURCE_TRAPS = g_quark_from_string("trap resource states");
   LTTV_STATE_RESOURCE_BLKDEVS = g_quark_from_string("blkdevs resource states");
 
-  
-  LTT_FACILITY_KERNEL     = g_quark_from_string("kernel");
-  LTT_FACILITY_FS    = g_quark_from_string("fs");
-  LTT_FACILITY_LIST = g_quark_from_string("list");
-  LTT_FACILITY_USER_GENERIC    = g_quark_from_string("user_generic");
-  LTT_FACILITY_BLOCK = g_quark_from_string("block");
-  LTT_FACILITY_STATEDUMP = g_quark_from_string("statedump");
- 
+  LTT_CHANNEL_FD_STATE     = g_quark_from_string("fd_state");
+  LTT_CHANNEL_GLOBAL_STATE     = g_quark_from_string("global_state");
+  LTT_CHANNEL_IRQ_STATE     = g_quark_from_string("irq_state");
+  LTT_CHANNEL_MODULE_STATE     = g_quark_from_string("module_state");
+  LTT_CHANNEL_NETIF_STATE     = g_quark_from_string("netif_state");
+  LTT_CHANNEL_SOFTIRQ_STATE     = g_quark_from_string("softirq_state");
+  LTT_CHANNEL_SWAP_STATE     = g_quark_from_string("swap_state");
+  LTT_CHANNEL_SYSCALL_STATE     = g_quark_from_string("syscall_state");
+  LTT_CHANNEL_TASK_STATE     = g_quark_from_string("task_state");
+  LTT_CHANNEL_VM_STATE     = g_quark_from_string("vm_state");
+  LTT_CHANNEL_FS     = g_quark_from_string("fs");
+  LTT_CHANNEL_KERNEL     = g_quark_from_string("kernel");
+  LTT_CHANNEL_MM     = g_quark_from_string("mm");
+  LTT_CHANNEL_USERSPACE     = g_quark_from_string("userspace");
+  LTT_CHANNEL_BLOCK     = g_quark_from_string("block");
+
   LTT_EVENT_SYSCALL_ENTRY = g_quark_from_string("syscall_entry");
   LTT_EVENT_SYSCALL_EXIT  = g_quark_from_string("syscall_exit");
   LTT_EVENT_TRAP_ENTRY    = g_quark_from_string("trap_entry");

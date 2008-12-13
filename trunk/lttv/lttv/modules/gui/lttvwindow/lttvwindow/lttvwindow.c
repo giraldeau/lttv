@@ -1126,8 +1126,8 @@ void events_request_free(EventsRequest *events_request)
        lttv_hooks_destroy(events_request->before_chunk_tracefile);
   if(events_request->event != NULL)
        lttv_hooks_destroy(events_request->event);
-  if(events_request->event_by_id != NULL)
-       lttv_hooks_by_id_destroy(events_request->event_by_id);
+  if(events_request->event_by_id_channel != NULL)
+       lttv_hooks_by_id_channel_destroy(events_request->event_by_id_channel);
   if(events_request->after_chunk_tracefile != NULL)
        lttv_hooks_destroy(events_request->after_chunk_tracefile);
   if(events_request->after_chunk_trace != NULL)
