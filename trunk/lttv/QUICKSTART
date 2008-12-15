@@ -14,8 +14,8 @@ applications.
 What you will typically want is to read sections 2 and 3 : install LTTng from
 sources and use it.
 
-These operations are made for installing the LTTng 0.12 tracer on a linux 2.6.X
-kernel. You will also find instructions for installation of LTTV 0.8.x : the
+These operations are made for installing the LTTng 0.67 tracer on a linux 2.6.X
+kernel. You will also find instructions for installation of LTTV 0.12.x : the
 Linux Trace Toolkit Viewer. 
 
 To see the list of compatibilities between LTTng, ltt-control, LTTV and
