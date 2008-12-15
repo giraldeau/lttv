@@ -264,7 +264,7 @@ void lttv_event_to_string(LttEvent *e, GString *s,
 
   if(mandatory_fields) {
     time = ltt_event_time(e);
-    g_string_append_printf(s,"%s: %ld.%09ld (%s%s_%u)",
+    g_string_append_printf(s,"%s: %ld.%09ld (%s/%s_%u)",
         g_quark_to_string(info->name),
         (long)time.tv_sec, time.tv_nsec,
 	g_quark_to_string(
