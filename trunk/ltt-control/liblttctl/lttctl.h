@@ -14,86 +14,26 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
  * GNU General Public License for more details.
  *
- *
- * Inspired from iptables, by James Morris <jmorris@intercode.com.au>.
- * 
  */
 
 #ifndef _LIBLTT_H
 #define _LIBLTT_H
 
-#include <linux/limits.h>
-#include <asm/types.h>
-#include <sys/socket.h>
-#include <linux/netlink.h>
+int lttctl_init(void);
+int lttctl_destroy(void);
+int lttctl_setup_trace(const char *name);
+int lttctl_destroy_trace(const char *name);
+int lttctl_alloc_trace(const char *name);
+int lttctl_start(const char *name);
+int lttctl_pause(const char *name);
+int lttctl_set_trans(const char *name, const char *trans);
+int lttctl_set_channel_enable(const char *name, const char *channel,
+		int enable);
+int lttctl_set_channel_overwrite(const char *name, const char *channel,
+		int overwrite);
+int lttctl_set_channel_subbuf_num(const char *name, const char *channel,
+		unsigned subbuf_num);
+int lttctl_set_channel_subbuf_size(const char *name, const char *channel,
+		unsigned subbuf_size);
 
-#ifndef NETLINK_LTT
-#define NETLINK_LTT 31
-#endif
-
-
-enum trace_op {
-	OP_CREATE,
-	OP_DESTROY,
-	OP_START,
-	OP_STOP,
-	OP_NONE
-};
-
-enum trace_mode {
-	LTT_TRACE_NORMAL,
-	LTT_TRACE_FLIGHT,
-	LTT_TRACE_HYBRID
-};
-
-typedef struct lttctl_peer_msg {
-	char trace_name[NAME_MAX];
-	char trace_type[NAME_MAX];
-	enum trace_op op;
-	union {
-		struct {
-			enum trace_mode mode;
-			unsigned subbuf_size_low;
-			unsigned n_subbufs_low;
-			unsigned subbuf_size_med;
-			unsigned n_subbufs_med;
-			unsigned subbuf_size_high;
-			unsigned n_subbufs_high;
-		} new_trace;
-	} args;
-} lttctl_peer_msg_t;
-
-
-struct lttctl_handle
-{
-	int fd;
-	//u_int8_t blocking;
-	struct sockaddr_nl local;
-	struct sockaddr_nl peer;
-};
-
-typedef struct lttctl_resp_msg {
-	int err;
-} lttctl_resp_msg_t;
-
-struct lttctl_handle *lttctl_create_handle(void);
-
-int lttctl_destroy_handle(struct lttctl_handle *h);
-
-
-int lttctl_create_trace(const struct lttctl_handle *h,
-		char *name, enum trace_mode mode, char *trace_type,
-		unsigned subbuf_size_low, unsigned n_subbufs_low,
-		unsigned subbuf_size_med, unsigned n_subbufs_med,
-		unsigned subbuf_size_high, unsigned n_subbufs_high);
-
-int lttctl_destroy_trace(const struct lttctl_handle *handle, char *name);
-
-int lttctl_start(const struct lttctl_handle *handle, char *name);
-
-int lttctl_stop(const struct lttctl_handle *handle, char *name);
-
-#define LTTCTLM_BASE	0x10
-#define LTTCTLM_CONTROL	(LTTCTLM_BASE + 1)	/* LTT control message */
-
-#endif //_LIBLTT_H
+#endif /*_LIBLTT_H */

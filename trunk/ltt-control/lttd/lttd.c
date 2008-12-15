@@ -920,7 +920,11 @@ int channels_init()
 	if(ret = open_channel_trace_pairs(channel_name, trace_name, &fd_pairs,
 			&inotify_fd, &inotify_watch_array))
 		goto close_channel;
-
+	if (fd_pairs.num_pairs == 0) {
+		printf("No channel available for reading, exiting\n");
+		ret = -ENOENT;
+		goto close_channel;
+	}
 	if(ret = map_channels(&fd_pairs, 0, fd_pairs.num_pairs))
 		goto close_channel;
 	return 0;

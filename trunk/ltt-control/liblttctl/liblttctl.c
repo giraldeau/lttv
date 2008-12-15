@@ -2,10 +2,7 @@
  *
  * Linux Trace Toolkit Netlink Control Library
  *
- * Controls the ltt-control kernel module through a netlink socket.
- *
- * Heavily inspired from libipq.c (iptables) made by 
- * James Morris <jmorris@intercode.com.au>
+ * Controls the ltt-control kernel module through debugfs.
  *
  * Copyright 2005 -
  * 	Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
@@ -20,7 +17,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.	See the
  * GNU General Public License for more details.
- * 	
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -30,462 +27,640 @@
 #include <liblttctl/lttctl.h>
 #include <errno.h>
 #include <stdio.h>
-#include <error.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <string.h>
+#include <dirent.h>
+#include <limits.h>
+#include <fcntl.h>
+#include <stdlib.h>
 
+#define MAX_CHANNEL	(256)
 
+static char debugfsmntdir[PATH_MAX];
 
-/* Private interface */
-
-enum {
-	LTTCTL_ERR_NONE = 0,
-	LTTCTL_ERR_IMPL,
-	LTTCTL_ERR_HANDLE,
-	LTTCTL_ERR_SOCKET,
-	LTTCTL_ERR_BIND,
-	LTTCTL_ERR_BUFFER,
-	LTTCTL_ERR_RECV,
-	LTTCTL_ERR_NLEOF,
-	LTTCTL_ERR_ADDRLEN,
-	LTTCTL_ERR_STRUNC,
-	LTTCTL_ERR_RTRUNC,
-	LTTCTL_ERR_NLRECV,
-	LTTCTL_ERR_SEND,
-	LTTCTL_ERR_SUPP,
-	LTTCTL_ERR_RECVBUF,
-	LTTCTL_ERR_TIMEOUT,
-	LTTCTL_ERR_PROTOCOL,
-};
-#define LTTCTL_MAXERR LTTCTL_ERR_PROTOCOL
-
-
-struct lttctl_errmap_t {
-	int errcode;
-	char *message;
-} lttctl_errmap[] = {
-	{ LTTCTL_ERR_NONE, "Unknown error" },
-	{ LTTCTL_ERR_IMPL, "Implementation error" },
-	{ LTTCTL_ERR_HANDLE, "Unable to create netlink handle" },
-	{ LTTCTL_ERR_SOCKET, "Unable to create netlink socket" },
-	{ LTTCTL_ERR_BIND, "Unable to bind netlink socket" },
-	{ LTTCTL_ERR_BUFFER, "Unable to allocate buffer" },
-	{ LTTCTL_ERR_RECV, "Failed to receive netlink message" },
-	{ LTTCTL_ERR_NLEOF, "Received EOF on netlink socket" },
-	{ LTTCTL_ERR_ADDRLEN, "Invalid peer address length" },
-	{ LTTCTL_ERR_STRUNC, "Sent message truncated" },
-	{ LTTCTL_ERR_RTRUNC, "Received message truncated" },
-	{ LTTCTL_ERR_NLRECV, "Received error from netlink" },
-	{ LTTCTL_ERR_SEND, "Failed to send netlink message" },
-	{ LTTCTL_ERR_SUPP, "Operation not supported" },
-	{ LTTCTL_ERR_RECVBUF, "Receive buffer size invalid" },
-	{ LTTCTL_ERR_TIMEOUT, "Timeout"},
-	{ LTTCTL_ERR_PROTOCOL, "Invalid protocol specified" }
-};
-
-static int lttctl_errno = LTTCTL_ERR_NONE;
-
-
-static ssize_t lttctl_netlink_sendto(const struct lttctl_handle *h,
-																	const void *msg, size_t len);
-
-static ssize_t lttctl_netlink_recvfrom(const struct lttctl_handle *h,
-																		unsigned char *buf, size_t len,
-																		int timeout);
-
-static ssize_t lttctl_netlink_sendmsg(const struct lttctl_handle *h,
-																	 const struct msghdr *msg,
-																	 unsigned int flags);
-
-static char *lttctl_strerror(int errcode);
-
-void lttctl_perror(const char *s);
-
-static ssize_t lttctl_netlink_sendto(const struct lttctl_handle *h,
-																	const void *msg, size_t len)
+static int initdebugfsmntdir(void)
 {
-	int status = sendto(h->fd, msg, len, 0,
-			(struct sockaddr *)&h->peer, sizeof(h->peer));
-	if (status < 0)
-		lttctl_errno = LTTCTL_ERR_SEND;
-	
-	return status;
-}
+	char mnt_dir[PATH_MAX];
+	char mnt_type[PATH_MAX];
 
-static ssize_t lttctl_netlink_sendmsg(const struct lttctl_handle *h,
-																	 const struct msghdr *msg,
-																	 unsigned int flags)
-{
-	int status = sendmsg(h->fd, msg, flags);
-	if (status < 0)
-		lttctl_errno = LTTCTL_ERR_SEND;
-	return status;
-}
-
-static ssize_t lttctl_netlink_recvfrom(const struct lttctl_handle *h,
-																		unsigned char *buf, size_t len,
-																		int timeout)
-{
-	int addrlen, status;
-	struct nlmsghdr *nlh;
-
-	if (len < sizeof(struct nlmsghdr)) {
-		lttctl_errno = LTTCTL_ERR_RECVBUF;
-		lttctl_perror("Netlink recvfrom");
-		return -1;
+	FILE *fp = fopen("/proc/mounts", "r");
+	if (!fp) {
+		fprintf(stderr, "%s: Can't open /proc/mounts\n", __func__);
+		return 1;
 	}
-	addrlen = sizeof(h->peer);
 
-	if (timeout != 0) {
-		int ret;
-		struct timeval tv;
-		fd_set read_fds;
-		
-		if (timeout < 0) {
-			/* non-block non-timeout */
-			tv.tv_sec = 0;
-			tv.tv_usec = 0;
-		} else {
-			tv.tv_sec = timeout / 1000000;
-			tv.tv_usec = timeout % 1000000;
+	while (1) {
+		if (fscanf(fp, "%*s %s %s %*s %*s %*s", mnt_dir, mnt_type)
+			<= 0) {
+			fprintf(stderr, "%s: debugfs mountpoint not found\n",
+				__func__);
+			return 1;
 		}
-
-		FD_ZERO(&read_fds);
-		FD_SET(h->fd, &read_fds);
-		ret = select(h->fd+1, &read_fds, NULL, NULL, &tv);
-		if (ret < 0) {
-			if (errno == EINTR) {
-				printf("eintr\n");
-				return 0;
-			} else {
-				lttctl_errno = LTTCTL_ERR_RECV;
-				lttctl_perror("Netlink recvfrom");
-				return -1;
-			}
-		}
-		if (!FD_ISSET(h->fd, &read_fds)) {
-			lttctl_errno = LTTCTL_ERR_TIMEOUT;
-			printf("timeout\n");
+		if (!strcmp(mnt_type, "debugfs")) {
+			strcpy(debugfsmntdir, mnt_dir);
 			return 0;
 		}
 	}
-	status = recvfrom(h->fd, buf, len, 0,
-			(struct sockaddr *)&h->peer, &addrlen);
-	
-	if (status < 0) {
-		lttctl_errno = LTTCTL_ERR_RECV;
-		lttctl_perror("Netlink recvfrom");
-		return status;
-	}
-	if (addrlen != sizeof(h->peer)) {
-		lttctl_errno = LTTCTL_ERR_RECV;
-		lttctl_perror("Netlink recvfrom");
-		return -1;
-	}
-	if (h->peer.nl_pid != 0) {
-		lttctl_errno = LTTCTL_ERR_RECV;
-		lttctl_perror("Netlink recvfrom");
-		return -1;
-	}
-	if (status == 0) {
-		lttctl_errno = LTTCTL_ERR_NLEOF;
-		lttctl_perror("Netlink recvfrom");
-		return -1;
-	}
-	nlh = (struct nlmsghdr *)buf;
-	if (nlh->nlmsg_flags & MSG_TRUNC || nlh->nlmsg_len > status) {
-		lttctl_errno = LTTCTL_ERR_RTRUNC;
-		lttctl_perror("Netlink recvfrom");
-		return -1;
-	}
-	
-
-	return status;
 }
 
-
-static char *lttctl_strerror(int errcode)
+int lttctl_init(void)
 {
-	if (errcode < 0 || errcode > LTTCTL_MAXERR)
-		errcode = LTTCTL_ERR_IMPL;
-	return lttctl_errmap[errcode].message;
+	int ret;
+	DIR *dir;
+	char controldirname[PATH_MAX];
+
+	ret = initdebugfsmntdir();
+	if (ret) {
+		fprintf(stderr, "Debugfs mount point not found\n");
+		return 1;
+	}
+
+	/* check ltt control's debugfs dir */
+	sprintf(controldirname, "%s/ltt/control/", debugfsmntdir);
+
+	dir = opendir(controldirname);
+	if (!dir) {
+		fprintf(stderr, "ltt-trace-control's debugfs dir not found\n");
+		closedir(dir);
+		return -errno;
+	}
+
+	closedir(dir);
+
+	return 0;
 }
 
-
-char *lttctl_errstr(void)
+int lttctl_destroy(void)
 {
-	return lttctl_strerror(lttctl_errno);
+	return 0;
 }
 
-void lttctl_perror(const char *s)
+static int lttctl_sendop(const char *fname, const char *op)
 {
-	if (s)
-		fputs(s, stderr);
-	else
-		fputs("ERROR", stderr);
-	if (lttctl_errno)
-		fprintf(stderr, ": %s", lttctl_errstr());
-	if (errno)
-		fprintf(stderr, ": %s", strerror(-errno));
-	fputc('\n', stderr);
-}
+	int fd;
 
-/* public interface */
+	if (!fname) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		return 1;
+	}
 
-/*
- * Create and initialise an lttctl handle.
- */
-struct lttctl_handle *lttctl_create_handle(void)
-{
-	int status;
-	struct lttctl_handle *h;
+	fd = open(fname, O_WRONLY);
+	if (fd == -1) {
+		fprintf(stderr, "%s: open %s failed: %s\n", __func__, fname,
+			strerror(errno));
+		return errno;
+	}
 
-	h = (struct lttctl_handle *)malloc(sizeof(struct lttctl_handle));
-	if (h == NULL) {
-		lttctl_errno = LTTCTL_ERR_HANDLE;
-		lttctl_perror("Create handle");
-		goto alloc_error;
+	if (write(fd, op, strlen(op)) == -1) {
+		fprintf(stderr, "%s: write %s to %s failed: %s\n", __func__, op,
+			fname, strerror(errno));
+		close(fd);
+		return 1;
 	}
-	
-	memset(h, 0, sizeof(struct lttctl_handle));
-	
-	h->fd = socket(PF_NETLINK, SOCK_RAW, NETLINK_LTT);
-				
-	if (h->fd == -1) {
-		lttctl_errno = LTTCTL_ERR_SOCKET;
-		lttctl_perror("Create handle");
-		goto socket_error;
-	}
-	memset(&h->local, 0, sizeof(struct sockaddr_nl));
-	h->local.nl_family = AF_NETLINK;
-	h->local.nl_pid = getpid();
-	h->local.nl_groups = 0;
-	status = bind(h->fd, (struct sockaddr *)&h->local, sizeof(h->local));
-	if (status == -1) {
-		lttctl_errno = LTTCTL_ERR_BIND;
-		lttctl_perror("Create handle");
-		goto bind_error;
-	}
-	memset(&h->peer, 0, sizeof(struct sockaddr_nl));
-	h->peer.nl_family = AF_NETLINK;
-	h->peer.nl_pid = 0;
-	h->peer.nl_groups = 0;
-	return h;
-	
-	/* Error condition */
-bind_error:
-socket_error:
-		close(h->fd);
-alloc_error:
-		free(h);
-	return NULL;
+
+	close(fd);
+
+	return 0;
 }
 
 /*
- * No error condition is checked here at this stage, but it may happen
- * if/when reliable messaging is implemented.
+ * check is trace exist(check debugfsmntdir too)
+ * expect:
+ *   0: expect that trace not exist
+ *   !0: expect that trace exist
+ *
+ * ret:
+ *   0: check pass
+ *   1: check failed
+ *   -ERRNO: error happened (no check)
  */
-int lttctl_destroy_handle(struct lttctl_handle *h)
+static int lttctl_check_trace(const char *name, int expect)
 {
-	if (h) {
-		close(h->fd);
-		free(h);
+	char tracedirname[PATH_MAX];
+	DIR *dir;
+	int exist;
+
+	if (!name) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		return -EINVAL;
 	}
+
+	if (!debugfsmntdir[0]) {
+		fprintf(stderr, "%s: debugfsmntdir not valid\n", __func__);
+		return -EINVAL;
+	}
+
+	sprintf(tracedirname, "%s/ltt/control/%s", debugfsmntdir, name);
+
+	dir = opendir(tracedirname);
+	if (dir) {
+		exist = 1;
+	} else {
+		if (errno != ENOENT) {
+			fprintf(stderr, "%s: %s\n", __func__, strerror(errno));
+			return -EINVAL;
+		}
+		exist = 0;
+	}
+
+	closedir(dir);
+
+	if (!expect != !exist) {
+		if (exist)
+			fprintf(stderr, "Trace %s already exist\n", name);
+		else
+			fprintf(stderr, "Trace %s not exist\n", name);
+		return 1;
+	}
+
 	return 0;
 }
 
-
-int lttctl_create_trace(const struct lttctl_handle *h,
-		char *name, enum trace_mode mode, char *trace_type,
-		unsigned subbuf_size_low, unsigned n_subbufs_low,
-		unsigned subbuf_size_med, unsigned n_subbufs_med,
-		unsigned subbuf_size_high, unsigned n_subbufs_high)
+/*
+ * get channel list of a trace
+ * don't include metadata channel when metadata is 0
+ *
+ * return number of channel on success
+ * return negative number on fail
+ * Caller must free channellist.
+ */
+static int lttctl_get_channellist(const char *tracename,
+		char ***channellist, int metadata)
 {
-	int err;
+	char tracedirname[PATH_MAX];
+	struct dirent *dirent;
+	DIR *dir;
+	char **list = NULL, **old_list;
+	int nr_chan = 0;
 	
-	struct {
-		struct nlmsghdr	nlh;
-		lttctl_peer_msg_t	msg;
-	} req;
-	struct {
-		struct nlmsghdr	nlh;
-		struct nlmsgerr	nlerr;
-		lttctl_peer_msg_t	msg;
-	} ack;
+	sprintf(tracedirname, "%s/ltt/control/%s/channel", debugfsmntdir,
+		tracename);
 
-	memset(&req, 0, sizeof(req));
-	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(lttctl_peer_msg_t));
-	req.nlh.nlmsg_flags = NLM_F_REQUEST|NLM_F_ACK;
-	req.nlh.nlmsg_type = LTTCTLM_CONTROL;
-	req.nlh.nlmsg_pid = h->local.nl_pid;
-	req.nlh.nlmsg_seq = 0;
-
-	strncpy(req.msg.trace_name, name, NAME_MAX);
-	strncpy(req.msg.trace_type, trace_type, NAME_MAX);
-	req.msg.op = OP_CREATE;
-	req.msg.args.new_trace.mode = mode;
-	req.msg.args.new_trace.subbuf_size_low = subbuf_size_low;
-	req.msg.args.new_trace.n_subbufs_low = n_subbufs_low;
-	req.msg.args.new_trace.subbuf_size_med = subbuf_size_med;
-	req.msg.args.new_trace.n_subbufs_med = n_subbufs_med;
-	req.msg.args.new_trace.subbuf_size_high = subbuf_size_high;
-	req.msg.args.new_trace.n_subbufs_high = n_subbufs_high;
-
-	err = lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
-	if(err < 0) goto senderr;
-
-	err = lttctl_netlink_recvfrom(h, (void*)&ack, sizeof(ack), 0);
-	if(err < 0) goto senderr;
-
-	err = ack.nlerr.error;
-	if(err != 0) {
-		errno = err;
-		lttctl_perror("Create Trace Error");
-		return err;
+	dir = opendir(tracedirname);
+	if (!dir) {
+		nr_chan = -ENOENT;
+		goto error;
 	}
 
-	return 0;
+	for (;;) {
+		dirent = readdir(dir);
+		if (!dirent)
+			break;
+		if (!strcmp(dirent->d_name, ".")
+				|| !strcmp(dirent->d_name, ".."))
+			continue;
+		if (!metadata && !strcmp(dirent->d_name, "metadata"))
+			continue;
+		old_list = list;
+		list = malloc(sizeof(char *) * ++nr_chan);
+		memcpy(list, old_list, sizeof(*list) * (nr_chan - 1));
+		free(old_list);
+		list[nr_chan - 1] = strdup(dirent->d_name);
+	}	
 
-senderr:
-	lttctl_perror("Create Trace Error");
-	err = EPERM;
-	return err;
+	closedir(dir);
+
+	*channellist = list;
+	return nr_chan;
+error:
+	free(list);
+	*channellist = NULL;
+	return nr_chan;
 }
 
-int lttctl_destroy_trace(const struct lttctl_handle *h,
-		char *name)
+int lttctl_setup_trace(const char *name)
 {
-	struct {
-		struct nlmsghdr	nlh;
-		lttctl_peer_msg_t	msg;
-	} req;
-	struct {
-		struct nlmsghdr	nlh;
-		struct nlmsgerr	nlerr;
-		lttctl_peer_msg_t	msg;
-	} ack;
-	int err;
+	int ret;
+	char ctlfname[PATH_MAX];
 
-	memset(&req, 0, sizeof(req));
-	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(lttctl_peer_msg_t));
-	req.nlh.nlmsg_flags = NLM_F_REQUEST;
-	req.nlh.nlmsg_type = LTTCTLM_CONTROL;
-	req.nlh.nlmsg_pid = h->local.nl_pid;
+	if (!name) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
 
-	strncpy(req.msg.trace_name, name, NAME_MAX);
-	req.msg.op = OP_DESTROY;
+	ret = lttctl_check_trace(name, 0);
+	if (ret)
+		goto arg_error;
 
-	err = lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
-	if(err < 0) goto senderr;
+	sprintf(ctlfname, "%s/ltt/setup_trace", debugfsmntdir);
 
-	err = lttctl_netlink_recvfrom(h, (void*)&ack, sizeof(ack), 0);
-	if(err < 0) goto senderr;
-
-	err = ack.nlerr.error;
-	if(err != 0) {
-		errno = err;
-		lttctl_perror("Destroy Trace Channels Error");
-		return err;
+	ret = lttctl_sendop(ctlfname, name);
+	if (ret) {
+		fprintf(stderr, "Setup trace failed\n");
+		goto op_err;
 	}
 
 	return 0;
 
-senderr:
-	lttctl_perror("Destroy Trace Channels Error");
-	err = EPERM;
-	return err;
-
+op_err:
+arg_error:
+	return ret;
 }
 
-int lttctl_start(const struct lttctl_handle *h,
-		char *name)
+int lttctl_destroy_trace(const char *name)
 {
-	struct {
-		struct nlmsghdr	nlh;
-		lttctl_peer_msg_t	msg;
-	} req;
-	struct {
-		struct nlmsghdr	nlh;
-		struct nlmsgerr	nlerr;
-		lttctl_peer_msg_t	msg;
-	} ack;
+	int ret;
+	char ctlfname[PATH_MAX];
 
-	int err;
+	if (!name) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
 
-	memset(&req, 0, sizeof(req));
-	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(lttctl_peer_msg_t));
-	req.nlh.nlmsg_flags = NLM_F_REQUEST;
-	req.nlh.nlmsg_type = LTTCTLM_CONTROL;
-	req.nlh.nlmsg_pid = h->local.nl_pid;
+	ret = lttctl_check_trace(name, 1);
+	if (ret)
+		goto arg_error;
 
-	strncpy(req.msg.trace_name, name, NAME_MAX);
-	req.msg.op = OP_START;
+	sprintf(ctlfname, "%s/ltt/destroy_trace", debugfsmntdir);
 
-	err = lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
-	if(err < 0) goto senderr;
-
-	err = lttctl_netlink_recvfrom(h, (void*)&ack, sizeof(ack), 0);
-	if(err < 0) goto senderr;
-
-	err = ack.nlerr.error;
-	if(err != 0) {
-		errno = err;
-		lttctl_perror("Start Trace Error");
-		return err;
+	ret = lttctl_sendop(ctlfname, name);
+	if (ret) {
+		fprintf(stderr, "Destroy trace failed\n");
+		goto op_err;
 	}
 
 	return 0;
 
-senderr:
-	err = EPERM;
-	lttctl_perror("Start Trace Error");
-	return err;
-
+op_err:
+arg_error:
+	return ret;
 }
 
-int lttctl_stop(const struct lttctl_handle *h,
-		char *name)
+int lttctl_alloc_trace(const char *name)
 {
-	struct {
-		struct nlmsghdr	nlh;
-		lttctl_peer_msg_t msg;
-	} req;
-	struct {
-		struct nlmsghdr	nlh;
-		struct nlmsgerr	nlerr;
-		lttctl_peer_msg_t msg;
-	} ack;
-	int err;
+	int ret;
+	char ctlfname[PATH_MAX];
 
-	memset(&req, 0, sizeof(req));
-	req.nlh.nlmsg_len = NLMSG_LENGTH(sizeof(lttctl_peer_msg_t));
-	req.nlh.nlmsg_flags = NLM_F_REQUEST;
-	req.nlh.nlmsg_type = LTTCTLM_CONTROL;
-	req.nlh.nlmsg_pid = h->local.nl_pid;
+	if (!name) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
 
-	strncpy(req.msg.trace_name, name, NAME_MAX);
-	req.msg.op = OP_STOP;
+	ret = lttctl_check_trace(name, 1);
+	if (ret)
+		goto arg_error;
 
-	err = lttctl_netlink_sendto(h, (void *)&req, req.nlh.nlmsg_len);
-	if(err < 0) goto senderr;
+	sprintf(ctlfname, "%s/ltt/control/%s/alloc", debugfsmntdir, name);
 
-	err = lttctl_netlink_recvfrom(h, (void*)&ack, sizeof(ack), 0);
-	if(err < 0) goto senderr;
-
-	err = ack.nlerr.error;
-	if(err != 0) {
-		errno = err;
-		lttctl_perror("Stop Trace Error");
-		return err;
+	ret = lttctl_sendop(ctlfname, "1");
+	if (ret) {
+		fprintf(stderr, "Allocate trace failed\n");
+		goto op_err;
 	}
 
 	return 0;
 
-senderr:
-	err = EPERM;
-	lttctl_perror("Stop Trace Error");
-	return err;
+op_err:
+arg_error:
+	return ret;
 }
 
+int lttctl_start(const char *name)
+{
+	int ret;
+	char ctlfname[PATH_MAX];
+
+	if (!name) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
+
+	ret = lttctl_check_trace(name, 1);
+	if (ret)
+		goto arg_error;
+
+	sprintf(ctlfname, "%s/ltt/control/%s/enabled", debugfsmntdir, name);
+
+	ret = lttctl_sendop(ctlfname, "1");
+	if (ret) {
+		fprintf(stderr, "Start trace failed\n");
+		goto op_err;
+	}
+
+	return 0;
+
+op_err:
+arg_error:
+	return ret;
+}
+
+int lttctl_pause(const char *name)
+{
+	int ret;
+	char ctlfname[PATH_MAX];
+
+	if (!name) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
+
+	ret = lttctl_check_trace(name, 1);
+	if (ret)
+		goto arg_error;
+
+	sprintf(ctlfname, "%s/ltt/control/%s/enabled", debugfsmntdir, name);
+
+	ret = lttctl_sendop(ctlfname, "0");
+	if (ret) {
+		fprintf(stderr, "Pause trace failed\n");
+		goto op_err;
+	}
+
+	return 0;
+
+op_err:
+arg_error:
+	return ret;
+}
+
+int lttctl_set_trans(const char *name, const char *trans)
+{
+	int ret;
+	char ctlfname[PATH_MAX];
+
+	if (!name) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
+
+	ret = lttctl_check_trace(name, 1);
+	if (ret)
+		goto arg_error;
+
+	sprintf(ctlfname, "%s/ltt/control/%s/trans", debugfsmntdir, name);
+
+	ret = lttctl_sendop(ctlfname, trans);
+	if (ret) {
+		fprintf(stderr, "Set transport failed\n");
+		goto op_err;
+	}
+
+	return 0;
+
+op_err:
+arg_error:
+	return ret;
+}
+
+static int __lttctl_set_channel_enable(const char *name, const char *channel,
+		int enable)
+{
+	int ret;
+	char ctlfname[PATH_MAX];
+
+	sprintf(ctlfname, "%s/ltt/control/%s/channel/%s/enable", debugfsmntdir,
+		name, channel);
+
+	ret = lttctl_sendop(ctlfname, enable ? "1" : "0");
+	if (ret)
+		fprintf(stderr, "Set channel's enable mode failed\n");
+
+	return ret;
+}
+int lttctl_set_channel_enable(const char *name, const char *channel,
+		int enable)
+{
+	int ret;
+
+	if (!name || !channel) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
+
+	ret = lttctl_check_trace(name, 1);
+	if (ret)
+		goto arg_error;
+
+	if (strcmp(channel, "all")) {
+		ret = __lttctl_set_channel_enable(name, channel, enable);
+		if (ret)
+			goto op_err;
+	} else {
+		char **channellist;
+		int n_channel;
+
+		/* Don't allow set enable state for metadata channel */
+		n_channel = lttctl_get_channellist(name, &channellist, 0);
+		if (n_channel < 0) {
+			fprintf(stderr, "%s: lttctl_get_channellist failed\n",
+				__func__);
+			ret = -ENOENT;
+			goto op_err;
+		}
+
+		for (; n_channel > 0; n_channel--) {
+			ret = __lttctl_set_channel_enable(name,
+				channellist[n_channel - 1], enable);
+			if (ret)
+				goto op_err;
+		}
+		free(channellist);
+	}
+
+	return 0;
+
+op_err:
+arg_error:
+	return ret;
+}
+
+static int __lttctl_set_channel_overwrite(const char *name, const char *channel,
+		int overwrite)
+{
+	int ret;
+	char ctlfname[PATH_MAX];
+
+	sprintf(ctlfname, "%s/ltt/control/%s/channel/%s/overwrite",
+		debugfsmntdir, name, channel);
+
+	ret = lttctl_sendop(ctlfname, overwrite ? "1" : "0");
+	if (ret)
+		fprintf(stderr, "Set channel's overwrite mode failed\n");
+
+	return ret;
+}
+int lttctl_set_channel_overwrite(const char *name, const char *channel,
+		int overwrite)
+{
+	int ret;
+
+	if (!name || !channel) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
+
+	ret = lttctl_check_trace(name, 1);
+	if (ret)
+		goto arg_error;
+
+	if (strcmp(channel, "all")) {
+		ret = __lttctl_set_channel_overwrite(name, channel, overwrite);
+		if (ret)
+			goto op_err;
+	} else {
+		char **channellist;
+		int n_channel;
+
+		/* Don't allow set overwrite for metadata channel */
+		n_channel = lttctl_get_channellist(name, &channellist, 0);
+		if (n_channel < 0) {
+			fprintf(stderr, "%s: lttctl_get_channellist failed\n",
+				__func__);
+			ret = -ENOENT;
+			goto op_err;
+		}
+
+		for (; n_channel > 0; n_channel--) {
+			ret = __lttctl_set_channel_overwrite(name,
+				channellist[n_channel - 1], overwrite);
+			if (ret)
+				goto op_err;
+		}
+		free(channellist);
+	}
+
+	return 0;
+
+op_err:
+arg_error:
+	return ret;
+}
+
+static int __lttctl_set_channel_subbuf_num(const char *name,
+		const char *channel, unsigned subbuf_num)
+{
+	int ret;
+	char ctlfname[PATH_MAX];
+	char opstr[32];
+
+	sprintf(ctlfname, "%s/ltt/control/%s/channel/%s/subbuf_num",
+		debugfsmntdir, name, channel);
+
+	sprintf(opstr, "%u", subbuf_num);
+
+	ret = lttctl_sendop(ctlfname, opstr);
+	if (ret)
+		fprintf(stderr, "Set channel's subbuf number failed\n");
+
+	return ret;
+}
+int lttctl_set_channel_subbuf_num(const char *name, const char *channel,
+		unsigned subbuf_num)
+{
+	int ret;
+
+	if (!name || !channel) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
+
+	ret = lttctl_check_trace(name, 1);
+	if (ret)
+		goto arg_error;
+
+	if (strcmp(channel, "all")) {
+		ret = __lttctl_set_channel_subbuf_num(name, channel,
+			subbuf_num);
+		if (ret)
+			goto op_err;
+	} else {
+		char **channellist;
+		int n_channel;
+
+		/* allow set subbuf_num for metadata channel */
+		n_channel = lttctl_get_channellist(name, &channellist, 1);
+		if (n_channel < 0) {
+			fprintf(stderr, "%s: lttctl_get_channellist failed\n",
+				__func__);
+			ret = -ENOENT;
+			goto op_err;
+		}
+
+		for (; n_channel > 0; n_channel--) {
+			ret = __lttctl_set_channel_subbuf_num(name,
+				channellist[n_channel - 1], subbuf_num);
+			if (ret)
+				goto op_err;
+		}
+		free(channellist);
+	}
+
+	return 0;
+
+op_err:
+arg_error:
+	return ret;
+}
+
+static int __lttctl_set_channel_subbuf_size(const char *name,
+		const char *channel, unsigned subbuf_size)
+{
+	int ret;
+	char ctlfname[PATH_MAX];
+	char opstr[32];
+
+	sprintf(ctlfname, "%s/ltt/control/%s/channel/%s/subbuf_size",
+		debugfsmntdir, name, channel);
+
+	sprintf(opstr, "%u", subbuf_size);
+
+	ret = lttctl_sendop(ctlfname, opstr);
+	if (ret)
+		fprintf(stderr, "Set channel's subbuf size failed\n");
+}
+int lttctl_set_channel_subbuf_size(const char *name, const char *channel,
+		unsigned subbuf_size)
+{
+	int ret;
+
+	if (!name || !channel) {
+		fprintf(stderr, "%s: args invalid\n", __func__);
+		ret = -EINVAL;
+		goto arg_error;
+	}
+
+	ret = lttctl_check_trace(name, 1);
+	if (ret)
+		goto arg_error;
+
+	if (strcmp(channel, "all")) {
+		ret = __lttctl_set_channel_subbuf_size(name, channel,
+			subbuf_size);
+		if (ret)
+			goto op_err;
+	} else {
+		char **channellist;
+		int n_channel;
+
+		/* allow set subbuf_size for metadata channel */
+		n_channel = lttctl_get_channellist(name, &channellist, 1);
+		if (n_channel < 0) {
+			fprintf(stderr, "%s: lttctl_get_channellist failed\n",
+				__func__);
+			ret = -ENOENT;
+			goto op_err;
+		}
+
+		for (; n_channel > 0; n_channel--) {
+			ret = __lttctl_set_channel_subbuf_size(name,
+				channellist[n_channel - 1], subbuf_size);
+			if (ret)
+				goto op_err;
+		}
+		free(channellist);
+	}
+
+	return 0;
+
+op_err:
+arg_error:
+	return ret;
+}
