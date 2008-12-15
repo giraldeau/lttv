@@ -351,6 +351,7 @@ void get_absolute_pathname(const gchar *pathname, gchar * abs_pathname)
  *
  * The left side is the name, the right side is the number.
  * Exclude leading /.
+ * Exclude flight- prefix.
  */
 
 static int get_tracefile_name_number(gchar *raw_name,
@@ -446,9 +447,12 @@ static int get_tracefile_name_number(gchar *raw_name,
     if(cpu_num == LONG_MIN || cpu_num == LONG_MAX)
       return -1; /* underflow / overflow */
     
+    if (!strncmp(raw_name, "flight-", sizeof("flight-") - 1)) {
+      raw_name += sizeof("flight-") - 1;
+      underscore_pos -= sizeof("flight-") - 1;
+    }
     strncpy(char_name, raw_name, underscore_pos);
     char_name[underscore_pos] = '\0';
-
     *name = g_quark_from_string(char_name);
     *num = cpu_num;
   }

@@ -234,7 +234,7 @@ space. This is done by issuing the following commands. Note however
 these commands load all LTT modules. Depending on what options you chose to
 compile statically, you may not need to issue all these commands. 
 
-modprobe ltt-control
+modprobe ltt-trace-control
 modprobe ltt-marker-control
 modprobe ltt-tracer
 modprobe ltt-serialize
@@ -258,7 +258,7 @@ modprobe ltt-statedump
 You can automate at boot time loading the ltt-control module by :
 
 cp /etc/modules /etc/modules.bkp
-echo ltt-control >> /etc/modules
+echo ltt-trace-control >> /etc/modules
 echo ltt-marker-control >> /etc/modules
 echo ltt-tracer >> /etc/modules
 echo ltt-serialize >> /etc/modules
@@ -333,18 +333,19 @@ root).
 
 Start tracing :
 
-lttctl -n trace -d -l /mnt/debugfs/ltt -t /tmp/trace
+lttctl -C -w /tmp/trace1 trace1
 
 Stop tracing and destroy trace channels :
 
-lttctl -n trace -R
+lttctl -D trace1
 
 see lttctl --help for details.
 
 (note : to see if the buffers has been filled, look at the dmesg output after
 lttctl -R or after stopping tracing from the GUI, it will show an event lost
 count. If it is the case, try using larger buffers. See lttctl --help to learn 
-how.)
+how. lttv now also shows event lost messages in the console when loading a trace
+with missing events or lost subbuffers.)
 
 * Use text mode LTTV
 
@@ -377,31 +378,24 @@ flight recorder buffer (now named flight-channelname_X).
 The following lttctl commands take an hybrid trace :
 
 Create trace channel, start lttd on normal channels, start tracing:
-lttctl -n tracename -d -l /mnt/debugfs/ltt -t /tmp/trace1 -m hybrid
+lttctl -C -w /tmp/trace2 -o channel.kernel.overwrite=1 trace2
 
 Stop tracing, start lttd on flight recorder channels, destroy trace channels :
-lttctl -n tracename -f -l /mnt/debugfs/ltt -t /tmp/trace1 -m hybrid
+lttctl -D -w /tmp/trace2 trace2
 
-
-We will need to tweak what we consider "important" medium rate events. For
-instance, thread branding events are actually considered a "high rate" event
-when it should be considered "medium rate". The same should apply for the
-state dump process enumeration.
+Each "overwrite" channel is flight recorder channel.
 
 * Flight recorder mode
 
 The flight recorder mode writes data into overwritten buffers for all channels,
-including control channels, except for the facilities tracefiles.
+including control channels, except for the facilities tracefiles. It consists of
+setting all channels to "overwrite".
 
 The following lttctl commands take a flight recorder trace :
 
-lttctl -n trace -c -m flight
-lttd -n -d -t /tmp/trace -c /mnt/debugfs/ltt/trace
-lttctl -n trace -s
-.. do stuff
-lttctl -n trace -q
-lttd -f -d -t /tmp/trace -c /mnt/debugfs/ltt/trace
-lttctl -m trace -r
+lttctl -C -w /tmp/trace3 -o channel.all.overwrite=1 trace3
+...
+lttctl -D -w /tmp/trace3 trace3
 
 
 **************************************************************
