@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ltt/ltt-private.h>
+#include <inttypes.h>
 
 /* Comment :
  * Mathieu Desnoyers
@@ -646,12 +647,12 @@ init(LttvTracesetState *self, LttvTraceset *ts)
         /* It's a Usertrace */
         guint tid = ltt_tracefile_tid(tfcs->parent.tf);
         GTree *usertrace_tree = (GTree*)g_hash_table_lookup(tcs->usertraces,
-            (gconstpointer)tid);
+							    GUINT_TO_POINTER(tid));
         if(!usertrace_tree) {
           usertrace_tree = g_tree_new_full(compare_usertraces,
               NULL, free_usertrace_key, NULL);
           g_hash_table_insert(tcs->usertraces,
-              (gpointer)tid, usertrace_tree);
+			      GUINT_TO_POINTER(tid), usertrace_tree);
         }
         LttTime *timestamp = g_new(LttTime, 1);
         *timestamp = ltt_interpolate_time_from_tsc(tfcs->parent.tf,
@@ -761,7 +762,7 @@ static void write_process_state(gpointer key, gpointer value,
 
   for(i = 0 ; i < process->user_stack->len; i++) {
     address = g_array_index(process->user_stack, guint64, i);
-    fprintf(fp, "    <USER_STACK ADDRESS=\"%llu\"/>\n",
+    fprintf(fp, "    <USER_STACK ADDRESS=\"%" PRIu64 "\"/>\n",
             address);
   }
 
@@ -815,7 +816,7 @@ void lttv_state_write(LttvTraceState *self, LttTime t, FILE *fp)
     else {
       ltt_event_position(e, ep);
       ltt_event_position_get(ep, &tf, &nb_block, &offset, &tsc);
-      fprintf(fp, " BLOCK=%u OFFSET=%u TSC=%llu/>\n", nb_block, offset,
+      fprintf(fp, " BLOCK=%u OFFSET=%u TSC=%" PRIu64 "/>\n", nb_block, offset,
           tsc);
     }
   }
@@ -1536,7 +1537,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
       guint64 tsc;
       LttTracefile *tf;
       ltt_event_position_get(ep, &tf, &nb_block, &offset, &tsc);
-      g_info("Block %u offset %u tsc %llu time %lu.%lu", nb_block, offset,
+      g_info("Block %u offset %u tsc %" PRIu64 " time %lu.%lu", nb_block, offset,
           tsc,
           tfcs->parent.timestamp.tv_sec, tfcs->parent.timestamp.tv_nsec);
     }
@@ -2242,7 +2243,8 @@ static LttvTracefileState *ltt_state_usertrace_find(LttvTraceState *tcs,
    * timestamp the lowest, but higher or equal to "timestamp". */
   res.time = timestamp;
   res.best = NULL;
-  GTree *usertrace_tree = g_hash_table_lookup(tcs->usertraces, (gpointer)pid);
+  GTree *usertrace_tree = g_hash_table_lookup(tcs->usertraces,
+					      GUINT_TO_POINTER(pid));
   if(usertrace_tree) {
     g_tree_search(usertrace_tree, search_usertrace, &res);
     if(res.best)
@@ -2571,7 +2573,7 @@ static gboolean soft_irq_raise(void *hook_data, void *call_data)
   } else {
     /* Fixup an incomplete irq table */
     GString *string = g_string_new("");
-    g_string_printf(string, "softirq %llu", softirq);
+    g_string_printf(string, "softirq %" PRIu64, softirq);
     submode = g_quark_from_string(string->str);
     g_string_free(string, TRUE);
   }
@@ -2708,7 +2710,7 @@ static void pop_function(LttvTracefileState *tfs, guint64 funcptr)
   if(process->current_function != funcptr){
     g_info("Different functions (%lu.%09lu): ignore it\n",
         tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec);
-    g_info("process state has %llu when pop_function is %llu\n",
+    g_info("process state has %" PRIu64 " when pop_function is %" PRIu64 "\n",
         process->current_function, funcptr);
     g_info("{ %u, %u, %s, %s, %s }\n",
         process->pid,
@@ -3957,7 +3959,7 @@ void lttv_state_traceset_seek_time_closest(LttvTracesetState *self, LttTime t)
 
   gboolean is_named;
 
-  LttvAttribute *saved_states_tree, *saved_state_tree, *closest_tree;
+  LttvAttribute *saved_states_tree, *saved_state_tree, *closest_tree = NULL;
 
   //g_tree_destroy(self->parent.pqueue);
   //self->parent.pqueue = g_tree_new(compare_tracefile);

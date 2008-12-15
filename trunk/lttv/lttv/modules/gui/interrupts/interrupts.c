@@ -1014,7 +1014,7 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
   guint maxIRQduration;
   guint minIRQduration;
   double periodInSec;
-  int periodInNsec;
+  int periodInNsec = 0;
   char maxIrqHandler[80];
   char minIrqHandler[80];
   InterruptEventData *event_data = (InterruptEventData *)hook_data;
@@ -1034,14 +1034,14 @@ static gboolean DisplayViewer(void *hook_data, void *call_data)
     maxIRQduration *= NANOSECONDS_PER_SECOND;
     maxIRQduration += element.max_irq_handler.duration.tv_nsec;
     
-    sprintf(maxIrqHandler, "%d [%d.%d - %d.%d]",maxIRQduration, element.max_irq_handler.start_time.tv_sec, \
+    sprintf(maxIrqHandler, "%d [%lu.%lu - %lu.%lu]",maxIRQduration, element.max_irq_handler.start_time.tv_sec, \
     element.max_irq_handler.start_time.tv_nsec, element.max_irq_handler.end_time.tv_sec, \
     element.max_irq_handler.end_time.tv_nsec) ;
     
     minIRQduration  =  element.min_irq_handler.duration.tv_sec;
     minIRQduration *= NANOSECONDS_PER_SECOND;
     minIRQduration += element.min_irq_handler.duration.tv_nsec;
-    sprintf(minIrqHandler, "%d [%d.%d - %d.%d]",minIRQduration, element.min_irq_handler.start_time.tv_sec, \
+    sprintf(minIrqHandler, "%d [%lu.%lu - %lu.%lu]",minIRQduration, element.min_irq_handler.start_time.tv_sec, \
     element.min_irq_handler.start_time.tv_nsec, element.min_irq_handler.end_time.tv_sec, \
     element.min_irq_handler.end_time.tv_nsec) ;
  

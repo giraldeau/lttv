@@ -142,11 +142,11 @@ LttvAttributeValue
 lttv_attribute_add(LttvAttribute *self, LttvAttributeName name, 
     LttvAttributeType t)
 {
-  unsigned i;
+  unsigned int i;
 
   Attribute a, *pa;
 
-  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  i = GPOINTER_TO_UINT(g_hash_table_lookup(self->names, GUINT_TO_POINTER(name)));
   if(i != 0) g_error("duplicate entry in attribute table");
 
   a.name = name;
@@ -165,11 +165,11 @@ LttvAttributeValue
 lttv_attribute_add_unnamed(LttvAttribute *self, LttvAttributeName name, 
     LttvAttributeType t)
 {
-  unsigned i;
+  unsigned int i;
 
   Attribute a, *pa;
 
-  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  i = GPOINTER_TO_UINT(g_hash_table_lookup(self->names, GUINT_TO_POINTER(name)));
   if(i != 0) g_error("duplicate entry in attribute table");
 
   a.name = name;
@@ -215,9 +215,9 @@ lttv_attribute_remove(LttvAttribute *self, unsigned i)
 void 
 lttv_attribute_remove_by_name(LttvAttribute *self, LttvAttributeName name)
 {
-  unsigned i;
+  unsigned int i;
 
-  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  i = GPOINTER_TO_UINT(g_hash_table_lookup(self->names, GUINT_TO_POINTER(name)));
   if(unlikely(i == 0)) g_error("remove by name non existent attribute");
 
   lttv_attribute_remove(self, i - 1);
@@ -231,13 +231,13 @@ lttv_attribute_remove_by_name(LttvAttribute *self, LttvAttributeName name)
 /*CHECK*/LttvAttribute* 
 lttv_attribute_find_subdir(LttvAttribute *self, LttvAttributeName name)
 {
-  unsigned i;
+  unsigned int i;
 
   Attribute a;
 
   LttvAttribute *new;
   
-  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  i = GPOINTER_TO_UINT(g_hash_table_lookup(self->names, GUINT_TO_POINTER(name)));
   if(likely(i != 0)) {
     a = g_array_index(self->attributes, Attribute, i - 1);
     if(likely(a.type == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(a.value.dv_gobject))) {
@@ -253,13 +253,13 @@ lttv_attribute_find_subdir(LttvAttribute *self, LttvAttributeName name)
 /*CHECK*/LttvAttribute* 
 lttv_attribute_find_subdir_unnamed(LttvAttribute *self, LttvAttributeName name)
 {
-  unsigned i;
+  unsigned int i;
 
   Attribute a;
 
   LttvAttribute *new;
   
-  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  i = GPOINTER_TO_UINT(g_hash_table_lookup(self->names, GUINT_TO_POINTER(name)));
   if(likely(i != 0)) {
     a = g_array_index(self->attributes, Attribute, i - 1);
     if(likely(a.type == LTTV_GOBJECT && LTTV_IS_IATTRIBUTE(a.value.dv_gobject))) {
@@ -277,11 +277,11 @@ gboolean
 lttv_attribute_find(LttvAttribute *self, LttvAttributeName name, 
     LttvAttributeType t, LttvAttributeValue *v)
 {
-  unsigned i;
+  unsigned int i;
 
   Attribute *a;
 
-  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  i = GPOINTER_TO_UINT(g_hash_table_lookup(self->names, GUINT_TO_POINTER(name)));
   if(likely(i != 0)) {
     a = &g_array_index(self->attributes, Attribute, i - 1);
     if(unlikely(a->type != t)) return FALSE;
@@ -301,7 +301,7 @@ lttv_attribute_find_unnamed(LttvAttribute *self, LttvAttributeName name,
 
   Attribute *a;
 
-  i = (unsigned)g_hash_table_lookup(self->names, GUINT_TO_POINTER(name));
+  i = GPOINTER_TO_UINT(g_hash_table_lookup(self->names, GUINT_TO_POINTER(name)));
   if(likely(i != 0)) {
     a = &g_array_index(self->attributes, Attribute, i - 1);
     if(unlikely(a->type != t)) return FALSE;

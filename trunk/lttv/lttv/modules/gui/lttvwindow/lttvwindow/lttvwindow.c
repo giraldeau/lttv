@@ -1113,7 +1113,6 @@ void events_request_free(EventsRequest *events_request)
   if(events_request->end_position != NULL)
        lttv_traceset_context_position_destroy(events_request->end_position);
   if(events_request->hooks != NULL) {
-    guint i;
     GArray *hooks = events_request->hooks;
     lttv_trace_hook_remove_all(&hooks);
     g_array_free(events_request->hooks, TRUE);

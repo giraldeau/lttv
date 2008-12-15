@@ -215,9 +215,9 @@ static void update_pixmap_size_each(ProcessInfo *key,
 
 void update_pixmap_size(ProcessList *process_list, guint width)
 {
-  g_hash_table_foreach(process_list->process_hash, 
-                       (GHFunc)update_pixmap_size_each,
-                       (gpointer)width);
+  g_hash_table_foreach(process_list->process_hash,
+		       (GHFunc)update_pixmap_size_each,
+		       GUINT_TO_POINTER(width));
 }
 
 

@@ -431,7 +431,7 @@ static void set_last_start(gpointer key, gpointer value, gpointer user_data)
 {
   ProcessInfo *process_info = (ProcessInfo*)key;
   HashedProcessData *hashed_process_data = (HashedProcessData*)value;
-  guint x = (guint)user_data;
+  guint x = GPOINTER_TO_UINT(user_data);
 
   hashed_process_data->x.over = x;
   hashed_process_data->x.over_used = FALSE;
@@ -467,7 +467,7 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
           &x);
 
   g_hash_table_foreach(cfd->process_list->process_hash, set_last_start,
-                            (gpointer)x);
+		       GUINT_TO_POINTER(x));
 
 }
 

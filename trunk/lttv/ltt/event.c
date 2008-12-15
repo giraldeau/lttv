@@ -175,7 +175,7 @@ guint32 ltt_event_get_unsigned(LttEvent *e, struct marker_field *f)
     break;
   case 8:
   default:
-    g_critical("ltt_event_get_unsigned : field size %i unknown", f->size);
+    g_critical("ltt_event_get_unsigned : field size %li unknown", f->size);
     return 0;
     break;
   }
@@ -205,7 +205,7 @@ gint32 ltt_event_get_int(LttEvent *e, struct marker_field *f)
     break;
   case 8:
   default:
-    g_critical("ltt_event_get_int : field size %i unknown", f->size);
+    g_critical("ltt_event_get_int : field size %li unknown", f->size);
     return 0;
     break;
   }
@@ -237,7 +237,7 @@ guint64 ltt_event_get_long_unsigned(LttEvent *e, struct marker_field *f)
     return ltt_get_uint64(reverse_byte_order, e->data + f->offset);
     break;
   default:
-    g_critical("ltt_event_get_long_unsigned : field size %i unknown", f->size);
+    g_critical("ltt_event_get_long_unsigned : field size %li unknown", f->size);
     return 0;
     break;
   }
@@ -269,7 +269,7 @@ gint64 ltt_event_get_long_int(LttEvent *e, struct marker_field *f)
     return ltt_get_int64(reverse_byte_order, e->data + f->offset);
     break;
   default:
-    g_critical("ltt_event_get_long_int : field size %i unknown", f->size);
+    g_critical("ltt_event_get_long_int : field size %li unknown", f->size);
     return 0;
     break;
   }

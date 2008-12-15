@@ -246,9 +246,9 @@ void update_pixmap_size(ProcessList *process_list, guint width)
 {
   int i;
   for(i=0; i<RV_RESOURCE_COUNT; i++) {
-    g_hash_table_foreach(process_list->restypes[i].hash_table, 
-                       (GHFunc)update_pixmap_size_each,
-                       (gpointer)width);
+    g_hash_table_foreach(process_list->restypes[i].hash_table,
+			 (GHFunc)update_pixmap_size_each,
+			 GUINT_TO_POINTER(width));
   }
 }
 

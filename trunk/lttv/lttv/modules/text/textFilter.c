@@ -54,7 +54,7 @@ static char
   *a_file_name = NULL,
   *a_string = NULL;
 
-static LttvHooks
+static LttvHooks __attribute__ ((__unused__))
   *before_traceset,
   *event_hook;
 

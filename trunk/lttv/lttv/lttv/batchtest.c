@@ -25,6 +25,7 @@
 #endif
 
 #include <string.h>
+#include <inttypes.h>
 #include <lttv/lttv.h>
 #include <lttv/attribute.h>
 #include <lttv/hook.h>
@@ -170,7 +171,7 @@ gboolean trace_event(void __UNUSED__ *hook_data, void *call_data)
   LttEvent *e = ltt_tracefile_get_event(tfs->parent.tf);
   ltt_event_position(e, a_event_position);
   ltt_event_position_get(a_event_position, &tf, &nb_block, &offset, &tsc);
-  fprintf(stderr,"Event %s %lu.%09lu [%u 0x%x tsc %llu]\n",
+  fprintf(stderr, "Event %s %lu.%09lu [%u 0x%x tsc %" PRIu64 "]\n",
       g_quark_to_string(marker_get_info_from_id(tf->mdata,
       			ltt_event_id(e))->name),
       tfs->parent.timestamp.tv_sec, tfs->parent.timestamp.tv_nsec,
@@ -334,7 +335,7 @@ static void compute_tracefile(LttTracefile *tracefile, void *hook_data)
     ltt_event_position(event, a_event_position);
     ltt_event_position_get(a_event_position, &tf_pos, &nb_block, &offset, &tsc);
     //fprintf(fp,"%s.%s: %llu %lu.%09lu position %u/%u\n", 
-    fprintf(fp, "%s: %llu %lu.%09lu position %u/%u, tracefile %s\n", 
+    fprintf(fp, "%s: %" PRIu64 " %lu.%09lu position %u/%u, tracefile %s\n",
     	g_quark_to_string(minfo->name),
         tsc, (unsigned long)time.tv_sec, 
         (unsigned long)time.tv_nsec, 

@@ -850,10 +850,7 @@ static inline void lttvwindow_events_request_enable(void)
 }
 
 
-
-
-
-
-
+void current_position_change_manager(Tab *tab,
+                                     LttvTracesetContextPosition *pos);
 
 #endif //LTTVWINDOW_H

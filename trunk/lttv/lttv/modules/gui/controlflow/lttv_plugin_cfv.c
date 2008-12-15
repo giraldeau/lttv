@@ -20,6 +20,7 @@
 #include "lttv_plugin_cfv.h"
 #include <lttvwindow/lttvwindow.h>
 #include "drawing.h"
+#include "eventhooks.h"
 
 /* 
  * forward definitions

@@ -47,7 +47,7 @@ struct LttEventPosition {
 	uint64_t tsc;		 /* Current timestamp counter */
 };
 
-static inline guint16 ltt_event_id(struct LttEvent *event)
+static inline guint16 ltt_event_id(const struct LttEvent *event)
 {
 	return event->event_id;
 }

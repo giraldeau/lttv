@@ -28,6 +28,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include <ltt/time.h>
 #include <ltt/trace.h>
@@ -79,7 +80,7 @@ __EXPORT LttvTrace *lttvwindowtraces_get_trace_by_name(gchar *path)
   for(i=0;i<lttvwindowtraces_get_number();i++) {
     LttvTrace *trace_v = lttvwindowtraces_get_trace(i);
     LttTrace *trace;
-    gchar *name;
+    const gchar *name;
     g_assert(trace_v != NULL);
 
     trace = lttv_trace(trace_v);
@@ -153,7 +154,8 @@ void lttvwindowtraces_add_trace(LttvTrace *trace)
         g_quark_to_string(ltt_trace_name(lttv_trace(trace))));
     return;
   }
-  result = snprintf(attribute_path, PATH_MAX, "%llu:%llu", buf.st_dev, buf.st_ino);
+  result = snprintf(attribute_path, PATH_MAX, "%" PRIu64 ":%" PRIu64,
+		    buf.st_dev, buf.st_ino);
   g_assert(result >= 0);
   
   attribute = 
@@ -805,7 +807,7 @@ void lttvwindowtraces_call_before_chunk(LttvAttributeName module_name,
                                      LTTV_EVENT_HOOK_BY_ID_CHANNEL,
                                      &value);
   if(type == LTTV_POINTER) {
-    event_hook_by_id_channel = (LttvHooksById*)*(value.v_pointer);
+    event_hook_by_id_channel = (LttvHooksByIdChannelArray*)*(value.v_pointer);
   }
 
   lttv_process_traceset_begin(tsc,
@@ -829,7 +831,7 @@ void lttvwindowtraces_call_after_chunk(LttvAttributeName module_name,
   LttvHooks *after_chunk_trace=NULL;
   LttvHooks *after_chunk_tracefile=NULL;
   LttvHooks *event_hook=NULL;
-  LttvHooksById *event_hook_by_id_channel=NULL;
+  LttvHooksByIdChannelArray *event_hook_by_id_channel=NULL;
  
   module_attribute =
       LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(LTTV_IATTRIBUTE(g_attribute),
@@ -874,7 +876,7 @@ void lttvwindowtraces_call_after_chunk(LttvAttributeName module_name,
                                      LTTV_EVENT_HOOK_BY_ID_CHANNEL,
                                      &value);
   if(type == LTTV_POINTER) {
-    event_hook_by_id_channel = (LttvHooksById*)*(value.v_pointer);
+    event_hook_by_id_channel = (LttvHooksByIdChannelArray*)*(value.v_pointer);
   }
   
   lttv_process_traceset_end(tsc,
@@ -1832,7 +1834,7 @@ void lttvwindowtraces_unregister_computation_hooks
                                 &value);
   g_assert(result);
 
-  LttvHooksById *event_hook_by_id_channel = (LttvHooksById*)*(value.v_pointer);
+  LttvHooksByIdChannelArray *event_hook_by_id_channel = (LttvHooksByIdChannelArray*)*(value.v_pointer);
   if(event_hook_by_id_channel != NULL)
     lttv_hooks_by_id_channel_destroy(event_hook_by_id_channel);
  

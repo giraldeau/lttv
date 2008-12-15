@@ -240,10 +240,6 @@ static void destroy_walk(gpointer data, gpointer user_data)
  */
 static void destroy() {
 
-  LttvAttributeValue value;  
-  LttvTrace *trace;
-  GSList *iter = NULL;
-  
   lttv_option_remove("trace");
 
   lttv_hooks_remove_data(main_hooks, window_creation_hook, NULL);

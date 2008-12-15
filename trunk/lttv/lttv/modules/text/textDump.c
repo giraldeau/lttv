@@ -38,6 +38,7 @@
 #include <ltt/event.h>
 #include <ltt/trace.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 static gboolean
   a_noevent,
@@ -79,7 +80,7 @@ print_path_tree(FILE *fp, GString *indent, LttvAttribute *tree)
     if(is_named) {
       g_string_sprintfa(indent, "/%s", g_quark_to_string(name));
     } else {
-      g_string_sprintfa(indent, "/%s", name);
+	    g_string_sprintfa(indent, "/%" PRIu32, (guint32) name);
     }
 
     switch(type) {
@@ -146,7 +147,8 @@ print_tree(FILE *fp, GString *indent, LttvAttribute *tree)
 		if(is_named)
 	    fprintf(fp, "%s%s: ", indent->str, g_quark_to_string(name));
 		else
-	    fprintf(fp, "%s%lu: ", indent->str, name);
+			fprintf(fp, "%s%" PRIu32 ": ", indent->str,
+				(guint32) name);
 
     switch(type) {
       case LTTV_INT:
@@ -205,8 +207,6 @@ print_stats(FILE *fp, LttvTracesetStats *tscs)
 
   GString *indent;
 
-  LttSystemDescription *desc;
-
   if(tscs->stats == NULL) return;
   indent = g_string_new("");
   fprintf(fp, "Traceset statistics:\n\n");
@@ -222,6 +222,7 @@ print_stats(FILE *fp, LttvTracesetStats *tscs)
   for(i = 0 ; i < nb ; i++) {
     tcs = (LttvTraceStats *)(LTTV_TRACESET_CONTEXT(tscs)->traces[i]);
 #if 0 //FIXME
+    LttSystemDescription *desc;
     desc = ltt_trace_system_description(tcs->parent.parent.t);
     LttTime start_time = ltt_trace_system_description_trace_start_time(desc);
     fprintf(fp, "Trace on system %s at time %lu.%09lu :\n", 
@@ -289,8 +290,8 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
 
 static gboolean write_trace_header(void *hook_data, void *call_data)
 {
-  LttvTraceContext *tc = (LttvTraceContext *)call_data;
 #if 0 //FIXME
+  LttvTraceContext *tc = (LttvTraceContext *)call_data;
   LttSystemDescription *system = ltt_trace_system_description(tc->t);
 
   fprintf(a_file,"  Trace from %s in %s\n%s\n\n", 

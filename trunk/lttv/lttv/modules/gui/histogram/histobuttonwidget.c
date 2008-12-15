@@ -29,12 +29,16 @@
 #include "histobuttonwidget.h"
 #include "histodrawing.h"
 #include "histodrawitem.h"
-#include "stock_zoom_in_24.xpm"
-#include "stock_zoom_out_24.xpm"
-#include "stock_zoom_fit_24.xpm"
 
+extern void histogram_show(HistoControlFlowData *histocontrol_flow_data,
+			   guint draw_begin, guint draw_end);
+
+#ifndef g_info
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#endif
+#ifndef g_debug
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+#endif
 
 /* Preallocated Size of the index_to_pixmap array */
 #define ALLOCATE_PROCESSES 1000
@@ -113,7 +117,7 @@ static GtkWidget *xpm_label_box( gchar* xpm_filename,
 
     /* Now on to the image stuff */
         
-    pixbufP = gdk_pixbuf_new_from_xpm_data((const char*)xpm_filename);
+    pixbufP = gdk_pixbuf_new_from_xpm_data((const char **)&xpm_filename);
     image =  gtk_image_new_from_pixbuf(pixbufP);
 
     /* Create a label for the button */
@@ -148,9 +152,9 @@ ButtonWidget *histo_buttonwidget_construct(HistoControlFlowData *histocontrol_fl
   buttonwidget ->buttonFit =gtk_button_new ();
 
 /* This calls our box creating function */
-  boxPlus = xpm_label_box (stock_zoom_in_24, "vertical");
-  boxMinus = xpm_label_box (stock_zoom_out_24, "vertical");
-  boxfit = xpm_label_box (stock_zoom_fit_24, "vertical");
+  boxPlus = xpm_label_box ("stock_zoom_in_24.xpm", "vertical");
+  boxMinus = xpm_label_box ("stock_zoom_out_24.xpm", "vertical");
+  boxfit = xpm_label_box ("stock_zoom_fit_24.xpm", "vertical");
 
 /* Pack and show all widgets */
   gtk_widget_show (boxPlus);

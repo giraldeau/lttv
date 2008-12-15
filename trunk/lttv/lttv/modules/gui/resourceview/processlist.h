@@ -299,6 +299,10 @@ static inline GHashTable *resourcelist_get_resource_hash_table(ControlFlowData *
 	return resourceview_data->process_list->restypes[type].hash_table;
 }
 
-
+HashedResourceData *resourcelist_obtain_cpu(ControlFlowData *resourceview_data, guint trace_num, guint id);
+HashedResourceData *resourcelist_obtain_irq(ControlFlowData *resourceview_data, guint trace_num, guint id);
+HashedResourceData *resourcelist_obtain_soft_irq(ControlFlowData *resourceview_data, guint trace_num, guint id);
+HashedResourceData *resourcelist_obtain_trap(ControlFlowData *resourceview_data, guint trace_num, guint id);
+HashedResourceData *resourcelist_obtain_bdev(ControlFlowData *resourceview_data, guint trace_num, guint id);
 
 #endif // _PROCESS_LIST_H

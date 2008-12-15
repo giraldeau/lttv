@@ -55,6 +55,7 @@
 #include <ltt/ltt.h>
 #include <ltt/event.h>
 #include <ltt/trace.h>
+#include <lttv/lttv.h>
 #include <lttv/module.h>
 #include <lttv/hook.h>
 #include <lttv/tracecontext.h>
@@ -1226,7 +1227,7 @@ void tree_v_size_allocate_cb (GtkWidget *widget, GtkAllocation *alloc, gpointer 
  
   g_debug("size allocate %p : last_num_visible_events : %d",
            event_viewer_data, last_num_visible_events);
-  g_debug("num_visible_events : %d, value %lu",
+  g_debug("num_visible_events : %d, value %f",
            event_viewer_data->num_visible_events,
 	   event_viewer_data->vadjust_c->value);
 
@@ -1360,6 +1361,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
     break;
   case SCROLL_JUMP:
     g_debug("get_events : SCROLL_JUMP");
+    relative_position = 0;
     seek_by_time = 1;
     break;
   case SCROLL_NONE:
@@ -1416,7 +1418,7 @@ static void get_events(double new_value, EventViewerData *event_viewer_data)
    */
     if(relative_position > 0) {
       guint count;
-      count += lttv_process_traceset_seek_n_forward(tsc, relative_position,
+      count = lttv_process_traceset_seek_n_forward(tsc, relative_position,
           events_check_handler,
           &event_viewer_data->tab->stop_foreground,
           event_viewer_data->main_win_filter,

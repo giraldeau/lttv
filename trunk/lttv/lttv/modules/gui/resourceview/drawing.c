@@ -482,7 +482,7 @@ static void set_last_start(gpointer key, gpointer value, gpointer user_data)
 {
   //ResourceInfo *process_info = (ResourceInfo*)key;
   HashedResourceData *hashed_process_data = (HashedResourceData*)value;
-  guint x = (guint)(gulong)user_data;
+  guint x = GPOINTER_TO_UINT(user_data);
 
   hashed_process_data->x.over = x;
   hashed_process_data->x.over_used = FALSE;
@@ -521,7 +521,7 @@ void drawing_data_request_begin(EventsRequest *events_request, LttvTracesetState
 
   for(i=0; i<RV_RESOURCE_COUNT; i++) {
     g_hash_table_foreach(cfd->process_list->restypes[i].hash_table, set_last_start,
-                         (gpointer)(gulong)x);
+                         GUINT_TO_POINTER(x));
   }
 
 }

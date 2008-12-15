@@ -615,7 +615,7 @@ gint histo_update_time_window_hook(void *hook_data, void *call_data)
 
   histo_drawing_update_vertical_ruler(drawing);
 
-
+#if 0
 
 /*//  if( histo_new_time_window->time_width.tv_sec == histo_old_time_window->time_width.tv_sec
   && histo_new_time_window->time_width.tv_nsec == histo_old_time_window->time_width.tv_nsec)
@@ -834,6 +834,8 @@ gint histo_update_time_window_hook(void *hook_data, void *call_data)
 
   histo_drawing_update_vertical_ruler(drawing);
 */
+#endif
+
 //disabled for histogram, always redraw whole screen. 
   return 0;
 }
@@ -1111,7 +1113,9 @@ int histo_after_chunk(void *hook_data, void *call_data)
 
   histoDrawing_t *drawing = histocontrol_flow_data->drawing;
 
-  if(!histocontrol_flow_data->chunk_has_begun) return;
+  if(!histocontrol_flow_data->chunk_has_begun)
+	  return 0;
+
   histocontrol_flow_data->chunk_has_begun = TRUE;
 
   if(tfc != NULL)

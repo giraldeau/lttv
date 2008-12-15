@@ -764,7 +764,7 @@ void move_down_viewer(GtkWidget * widget, gpointer user_data)
     return;
   } else {
     LttvPluginTab *ptab;
-    ptab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    ptab = g_object_get_data(G_OBJECT(page), "Tab_Plugin");
     tab = ptab->tab;
   }
 
@@ -839,7 +839,7 @@ void delete_viewer(GtkWidget * widget, gpointer user_data)
     return;
   } else {
     LttvPluginTab *ptab;
-    ptab = (Tab *)g_object_get_data(G_OBJECT(page), "Tab_Plugin");
+    ptab = g_object_get_data(G_OBJECT(page), "Tab_Plugin");
     tab = ptab->tab;
   }
 
@@ -2577,7 +2577,7 @@ void
 on_trace_facility_activate              (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  g_info("Trace facility selector: %s\n");  
+	g_info("Trace facility selector: %s\n", "");
 }
 
 
@@ -2895,7 +2895,7 @@ on_unload_module_activate              (GtkMenuItem     *menuitem,
   GError *error = NULL;
   MainWindow * mw_data = get_window_data_struct((GtkWidget*)menuitem);
 
-  LttvLibrary *library;
+  LttvLibrary *library = NULL;
   {
     GPtrArray *name;
     guint nb,i;
@@ -4349,10 +4349,10 @@ MainWindow *construct_main_window(MainWindow * parent)
     LttvIAttribute *attributes_global = 
        LTTV_IATTRIBUTE(lttv_global_attributes());
 
-    g_assert(attribute = 
-      LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
-                                LTTV_IATTRIBUTE(attributes_global),
-                                LTTV_VIEWER_CONSTRUCTORS)));
+    attribute = LTTV_ATTRIBUTE(lttv_iattribute_find_subdir(
+				       LTTV_IATTRIBUTE(attributes_global),
+				       LTTV_VIEWER_CONSTRUCTORS));
+    g_assert(attribute);
 
     name = g_quark_from_string("guievents");
     type = lttv_iattribute_get_by_name(LTTV_IATTRIBUTE(attribute),

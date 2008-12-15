@@ -93,6 +93,6 @@ static inline ProcessList *guicontrolflow_get_process_list
     return control_flow_data->process_list ;
 }
 
-
+ControlFlowData *resourceview(LttvPluginTab *ptab);
 
 #endif // _CFV_H

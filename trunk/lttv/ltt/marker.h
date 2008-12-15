@@ -44,7 +44,6 @@ struct marker_data {
 enum marker_id {
   MARKER_ID_SET_MARKER_ID = 0,  /* Static IDs available (range 0-7) */
   MARKER_ID_SET_MARKER_FORMAT,
-  MARKER_ID_DYNAMIC,    /* Dynamic IDs (range: 8-65535)   */
 };
 
 static inline guint16 marker_get_id_from_info(struct marker_data *data,

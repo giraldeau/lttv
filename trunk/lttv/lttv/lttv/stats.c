@@ -21,6 +21,7 @@
 #endif
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <lttv/module.h>
 #include <lttv/stats.h>
 #include <lttv/lttv.h>
@@ -398,7 +399,7 @@ find_event_tree(LttvTracefileStats *tfcs,
   gint ret;
 
   ret = snprintf(fstring, MAX_64_HEX_STRING_LEN-1,
-        "0x%llX", function) > 0;
+        "0x%" PRIX64, function) > 0;
   g_assert(ret > 0);
   fstring[MAX_64_HEX_STRING_LEN-1] = '\0';
 

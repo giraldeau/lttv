@@ -32,9 +32,12 @@
 #include <unistd.h>
 #include <math.h>
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <malloc.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <ctype.h>
+#include <inttypes.h>
 
 // For realpath
 #include <limits.h>
@@ -47,6 +50,9 @@
 #include <ltt/event.h>
 #include <ltt/ltt-types.h>
 #include <ltt/marker.h>
+
+/* from marker.c */
+extern long marker_update_fields_offsets(struct marker_info *info, const char *data);
 
 /* Tracefile names used in this file */
 
@@ -270,7 +276,7 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 
   if(munmap(tf->buffer.head,
         PAGE_ALIGN(ltt_subbuffer_header_size()))) {
-    g_warning("unmap size : %u\n",
+    g_warning("unmap size : %zu\n",
         PAGE_ALIGN(ltt_subbuffer_header_size()));
     perror("munmap error");
     g_assert(0);
@@ -289,7 +295,7 @@ static gint ltt_tracefile_open(LttTrace *t, gchar * fileName, LttTracefile *tf)
 unmap_file:
   if(munmap(tf->buffer.head,
         PAGE_ALIGN(ltt_subbuffer_header_size()))) {
-    g_warning("unmap size : %u\n",
+    g_warning("unmap size : %zu\n",
         PAGE_ALIGN(ltt_subbuffer_header_size()));
     perror("munmap error");
     g_assert(0);
@@ -363,7 +369,7 @@ static int get_tracefile_name_number(gchar *raw_name,
 {
   guint raw_name_len = strlen(raw_name);
   gchar char_name[PATH_MAX];
-  int i;
+  unsigned int i;
   int underscore_pos;
   long int cpu_num;
   gchar *endptr;
@@ -472,7 +478,7 @@ void compute_tracefile_group(GQuark key_id,
                              GArray *group,
                              struct compute_tracefile_group_args *args)
 {
-  int i;
+  unsigned int i;
   LttTracefile *tf;
 
   for(i=0; i<group->len; i++) {
@@ -486,7 +492,7 @@ void compute_tracefile_group(GQuark key_id,
 static void ltt_tracefile_group_destroy(gpointer data)
 {
   GArray *group = (GArray *)data;
-  int i;
+  unsigned int i;
   LttTracefile *tf;
 
   if (group->len > 0)
@@ -499,10 +505,10 @@ static void ltt_tracefile_group_destroy(gpointer data)
   g_array_free(group, TRUE);
 }
 
-static gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
+static __attribute__ ((__unused__)) gboolean ltt_tracefile_group_has_cpu_online(gpointer data)
 {
   GArray *group = (GArray *)data;
-  int i;
+  unsigned int i;
   LttTracefile *tf;
 
   for(i=0; i<group->len; i++) {
@@ -651,7 +657,6 @@ static int open_tracefiles(LttTrace *trace, gchar *root_path, gchar *relative_pa
 static int ltt_process_metadata_tracefile(LttTracefile *tf)
 {
   int err;
-  guint i;
   
   while(1) {
     err = ltt_tracefile_read_seek(tf);
@@ -755,7 +760,8 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   LttTrace  * t;
   LttTracefile *tf;
   GArray *group;
-  int i, ret;
+  unsigned int i;
+  int ret;
   ltt_subbuffer_header_t *header;
   DIR *dir;
   struct dirent *entry;
@@ -903,7 +909,7 @@ static void group_time_span_get(GQuark name, gpointer data, gpointer user_data)
           (struct tracefile_time_span_get_args*)user_data;
 
   GArray *group = (GArray *)data;
-  int i;
+  unsigned int i;
   LttTracefile *tf;
   LttTime tmp_start;
   LttTime tmp_end;
@@ -1226,10 +1232,10 @@ static void print_debug_event_header(LttEvent *ev, void *start_pos, void *end_po
   unsigned int offset = 0;
   int i, j;
 
-  g_printf("Event header (tracefile %s offset %llx):\n",
+  g_printf("Event header (tracefile %s offset %" PRIx64 "):\n",
     g_quark_to_string(ev->tracefile->long_name),
-    ((uint64_t)ev->tracefile->buffer.index * ev->tracefile->buf_size)
-      + (long)start_pos - (long)ev->tracefile->buffer.head);
+	   ((uint64_t)ev->tracefile->buffer.index * ev->tracefile->buf_size)
+	   + (long)start_pos - (long)ev->tracefile->buffer.head);
 
   while (offset < (long)end_pos - (long)start_pos) {
     g_printf("%8lx", (long)start_pos - (long)ev->tracefile->buffer.head + offset);
@@ -1445,10 +1451,10 @@ static void print_debug_event_data(LttEvent *ev)
   if (!max(ev->event_size, ev->data_size))
     return;
 
-  g_printf("Event data (tracefile %s offset %llx):\n",
-    g_quark_to_string(ev->tracefile->long_name),
-    ((uint64_t)ev->tracefile->buffer.index * ev->tracefile->buf_size)
-      + (long)ev->data - (long)ev->tracefile->buffer.head);
+  g_printf("Event data (tracefile %s offset %" PRIx64 "):\n",
+	   g_quark_to_string(ev->tracefile->long_name),
+	   ((uint64_t)ev->tracefile->buffer.index * ev->tracefile->buf_size)
+	   + (long)ev->data - (long)ev->tracefile->buffer.head);
 
   while (offset < max(ev->event_size, ev->data_size)) {
     g_printf("%8lx", (long)ev->data + offset
@@ -1489,7 +1495,6 @@ static void print_debug_event_data(LttEvent *ev)
 void ltt_update_event_size(LttTracefile *tf)
 {
   off_t size = 0;
-  char *tscdata;
   struct marker_info *info;
 
   if (tf->name == LTT_TRACEFILE_NAME_METADATA) {
@@ -2536,7 +2541,7 @@ LttTime ltt_trace_start_time_monotonic(LttTrace *t)
   return t->start_time_from_tsc;
 }
 
-static LttTracefile *ltt_tracefile_new()
+static __attribute__ ((__unused__)) LttTracefile *ltt_tracefile_new()
 {
   LttTracefile *tf;
   tf = g_new(LttTracefile, 1);
@@ -2544,12 +2549,12 @@ static LttTracefile *ltt_tracefile_new()
   return tf;
 }
 
-static void ltt_tracefile_destroy(LttTracefile *tf)
+static __attribute__ ((__unused__)) void ltt_tracefile_destroy(LttTracefile *tf)
 {
   g_free(tf);
 }
 
-static void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src)
+static __attribute__ ((__unused__)) void ltt_tracefile_copy(LttTracefile *dest, const LttTracefile *src)
 {
   *dest = *src;
 }

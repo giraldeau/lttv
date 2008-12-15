@@ -42,6 +42,7 @@
 #include <ctype.h>
 #include <ltt/ltt-private.h>
 #include <string.h>
+#include <inttypes.h>
 
 static inline void print_enum_events(LttEvent *e, struct marker_field *f,
                       guint64 value, GString *s, LttvTracefileState *tfs)
@@ -140,7 +141,7 @@ void lttv_print_field(LttEvent *e, struct marker_field *f, GString *s,
         if(name)
           g_string_append_printf(s, "%s = ", g_quark_to_string(name));
       }
-      g_string_append_printf(s, "0x%llx", ltt_event_get_long_unsigned(e,f));
+      g_string_append_printf(s, "0x%" PRIx64, ltt_event_get_long_unsigned(e,f));
       //g_string_append_printf(s, type->fmt, ltt_event_get_long_unsigned(e,f));
       break;
 
@@ -271,12 +272,13 @@ void lttv_event_to_string(LttEvent *e, GString *s,
         g_quark_to_string(ltt_tracefile_name(tfs->parent.tf)),
         cpu);
     /* Print the process id and the state/interrupt type of the process */
-    g_string_append_printf(s,", %u, %u, %s, %s, %u, 0x%llX, %s", process->pid,
-        process->tgid,
-        g_quark_to_string(process->name),
-        g_quark_to_string(process->brand),
-        process->ppid, process->current_function,
-        g_quark_to_string(process->state->t));
+    g_string_append_printf(s,", %u, %u, %s, %s, %u, 0x%" PRIx64", %s",
+			   process->pid,
+			   process->tgid,
+			   g_quark_to_string(process->name),
+			   g_quark_to_string(process->brand),
+			   process->ppid, process->current_function,
+			   g_quark_to_string(process->state->t));
   }
   
   if(marker_get_num_fields(info) == 0) return;

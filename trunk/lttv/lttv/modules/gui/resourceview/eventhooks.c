@@ -56,6 +56,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 //#include <pango/pango.h>
 
@@ -92,7 +93,6 @@ extern GSList *g_legend_list;
 static gint background_ready(void *hook_data, void *call_data)
 {
   ControlFlowData *resourceview_data = (ControlFlowData *)hook_data;
-  LttvTrace *trace = (LttvTrace*)call_data;
 
   resourceview_data->background_info_waiting--;
   
@@ -621,6 +621,10 @@ int after_schedchange_hook(void *hook_data, void *call_data)
   return 0;
 }
 
+int before_execmode_hook_irq(void *hook_data, void *call_data);
+int before_execmode_hook_soft_irq(void *hook_data, void *call_data);
+int before_execmode_hook_trap(void *hook_data, void *call_data);
+
 /* before_execmode_hook
  * 
  * This function basically draw lines and icons. Two types of lines are drawn :
@@ -861,7 +865,7 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
   GQuark name;
   {
     gchar *str;
-    str = g_strdup_printf("IRQ %llu [%s]", irq, (char*)g_quark_to_string(ts->irq_names[irq]));
+    str = g_strdup_printf("IRQ %" PRIu64 " [%s]", irq, (char*)g_quark_to_string(ts->irq_names[irq]));
     name = g_quark_from_string(str);
     g_free(str);
   }
@@ -2115,7 +2119,8 @@ int after_chunk(void *hook_data, void *call_data)
   guint nb_trace = lttv_traceset_number(traceset);
 
   /* Only execute when called for the first trace's events request */
-  if(!process_list->current_hash_data) return;
+  if(!process_list->current_hash_data)
+	  return 0;
 
   for(i = 0 ; i < nb_trace ; i++) {
     g_free(process_list->current_hash_data[i]);

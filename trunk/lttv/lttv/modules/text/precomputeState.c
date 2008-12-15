@@ -93,7 +93,7 @@ static gboolean write_traceset_footer(void *hook_data, void *call_data)
 {
   LttvTracesetContext *tc = (LttvTracesetContext *)call_data;
   GQuark q;
-  gchar *string;
+  const gchar *string;
 
   if(a_raw) {
 

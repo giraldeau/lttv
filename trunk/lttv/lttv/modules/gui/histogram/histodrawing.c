@@ -36,8 +36,12 @@
 #include "histoeventhooks.h"
 #include "histocfv.h"
 
+#ifndef g_info
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
+#endif
+#ifndef g_debug
 #define g_debug(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_DEBUG, format)
+#endif
 
 //FIXME
 // fixed #define TRACE_NUMBER 0
@@ -168,7 +172,7 @@ void histo_drawing_request_expose(EventsRequest *events_request,
   HistoControlFlowData *cfd = events_request->viewer_data;
   histoDrawing_t *drawing = cfd->drawing;
    
-  gint x, x_end, width;
+  guint x, x_end, width;
   LttvTracesetContext *tsc = (LttvTracesetContext*)tss;
     
   TimeWindow time_window = 
@@ -771,6 +775,7 @@ void histo_drawing_clear(histoDrawing_t *drawing,guint clear_from,guint clear_to
       TRUE,
       0,0,
       drawing->drawing_area->allocation.width,drawing->drawing_area->allocation.height );
+*/
    
   /* ask for the buffer to be redrawn */
 //enabled again for histogram.
@@ -1073,6 +1078,7 @@ histo_motion_notify_ruler(GtkWidget *widget, GdkEventMotion *event, gpointer use
 {
   //g_debug("motion");
   //eventually follow mouse and show time here
+	return FALSE;
 }
 
 static gboolean
@@ -1080,6 +1086,7 @@ histo_motion_notify_vertical_ruler(GtkWidget *widget, GdkEventMotion *event, gpo
 {
   //g_debug("motion");
   //eventually follow mouse and show time here
+	return FALSE;
 }
 
 
@@ -1141,7 +1148,7 @@ histo_expose_vertical_ruler( GtkWidget *widget, GdkEventExpose *event, gpointer 
                    drawing->vertical_ruler-> allocation.width-7, 1);
 
 
-  snprintf(text, 255, "%lu",0);
+  snprintf(text, 255, "%d", 0);
 
   pango_layout_set_text(layout, text, -1);
   pango_layout_get_pixel_extents(layout, &ink_rect, NULL);

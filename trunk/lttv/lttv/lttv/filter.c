@@ -1891,7 +1891,7 @@ lttv_filter_tree_parse(
     
   gboolean lresult = FALSE, rresult = FALSE;
 
-  LttvTraceState *ts;
+  LttvTraceState *ts = NULL;
   LttvTracefileState *tfs = (LttvTracefileState*)context;
   if(tc)
     ts = (LttvTraceState*)tc;
