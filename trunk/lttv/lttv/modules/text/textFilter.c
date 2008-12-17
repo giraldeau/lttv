@@ -128,14 +128,14 @@ void filter_list_commands(void *hook_data) {
   g_print("[field] [op] [value]\n\n");
 
   g_print("*** Possible fields ***\n");
-  g_print("event.name (string)\n");
-  g_print("event.facility (string)\n");
+  g_print("event.name (string) (channel_name.event_name)\n");
+  g_print("event.subname (string)\n");
   g_print("event.category (string)\n");
   g_print("event.time (double)\n");
   g_print("event.tsc (integer)\n");
   g_print("event.target_pid (integer)\n");
-  g_print("event.field.facility_name.event_name.field_name.subfield_name (field_type)\n");
-  g_print("tracefile.name (string)\n");
+  g_print("event.field.channel_name.event_name.field_name.subfield_name (field_type)\n");
+  g_print("channel.name (string)\n");
   g_print("trace.name (string)\n");
   g_print("state.pid (integer)\n");
   g_print("state.ppid (integer)\n");

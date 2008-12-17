@@ -30,20 +30,20 @@
  *  \verbatim
  *  LttvTracefileContext{} 
  *  |->event\ 
- *  | |->name (String, converted to GQuark)
- *  | |->facility (String, converted to GQuark)
+ *  | |->name (String, converted to GQuark) (channel.event)
+ *  | |->subname (String, converted to GQuark)
  *  | |->category (String, not yet implemented)
  *  | |->time (LttTime)
  *  | |->tsc (LttCycleCount --> uint64)
  *  | |->target_pid (target PID of the event)
  *  | |->fields
- *  |   |->"facility_name
+ *  |   |->"channel name"
  *  |     |->"event name"
  *  |       |->"field name"
  *  |         |->"sub-field name"
  *  |           |->...
  *  |             |->"leaf-field name" (field type)
- *  |->tracefile
+ *  |->channel (or tracefile)
  *  | |->name (String, converted to GQuark)
  *  |->trace
  *  | |->name (String, converted to GQuark)
@@ -168,10 +168,12 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
     /* 
      * FIXME: not yet implemented !
      */
-  } else if(!g_strcasecmp(f->str,"tracefile") ) {
+  } else if(!g_strcasecmp(f->str,"tracefile")
+            || !g_strcasecmp(f->str,"channel") ) {
     /*
      * Possible values:
      *  tracefile.name
+     *  channel.name
      */
     g_string_free(f,TRUE);
     f=ltt_g_ptr_array_remove_index_slow(fp,0);
@@ -228,6 +230,7 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
     /*
      * Possible values:
      *  event.name
+     *  event.channel
      *  event.category
      *  event.time
      *  event.tsc
@@ -239,6 +242,9 @@ lttv_simple_expression_assign_field(GPtrArray* fp, LttvSimpleExpression* se) {
 
     if(!g_strcasecmp(f->str,"name") ) {
       se->field = LTTV_FILTER_EVENT_NAME;
+    }
+    else if(!g_strcasecmp(f->str,"subname") ) {
+      se->field = LTTV_FILTER_EVENT_SUBNAME;
     }
     else if(!g_strcasecmp(f->str,"category") ) {
       /*
@@ -305,7 +311,7 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
      case LTTV_FILTER_TRACEFILE_NAME:
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_STATE_T_BRAND:
-     case LTTV_FILTER_EVENT_NAME:
+     case LTTV_FILTER_EVENT_SUBNAME:
      case LTTV_FILTER_STATE_EX_MODE:
      case LTTV_FILTER_STATE_EX_SUBMODE:
      case LTTV_FILTER_STATE_P_STATUS:
@@ -321,6 +327,21 @@ lttv_simple_expression_assign_operator(LttvSimpleExpression* se, LttvExpressionO
            return FALSE;
        }
        break;
+     /*
+      * two strings.
+      */
+     case LTTV_FILTER_EVENT_NAME:
+       switch(op) {
+         case LTTV_FIELD_EQ:
+           se->op = lttv_apply_op_eq_quarks;
+           break;
+         case LTTV_FIELD_NE:
+           se->op = lttv_apply_op_ne_quarks;
+           break;
+         default:
+           g_warning("Error encountered in operator assignment = or != expected");
+           return FALSE;
+       }
      /* 
       * integer
       */
@@ -467,13 +488,32 @@ lttv_simple_expression_assign_value(LttvSimpleExpression* se, char* value) {
      case LTTV_FILTER_TRACEFILE_NAME:
      case LTTV_FILTER_STATE_P_NAME:
      case LTTV_FILTER_STATE_T_BRAND:
-     case LTTV_FILTER_EVENT_NAME:
+     case LTTV_FILTER_EVENT_SUBNAME:
      case LTTV_FILTER_STATE_EX_MODE:
      case LTTV_FILTER_STATE_EX_SUBMODE:
      case LTTV_FILTER_STATE_P_STATUS:
       // se->value.v_string = value;
        se->value.v_quark = g_quark_from_string(value);
        g_free(value);
+       break;
+     /*
+      * Two strings.
+      */
+     case LTTV_FILTER_EVENT_NAME:
+       {
+         /* channel.event */
+         char *end = strchr(value, '.');
+         if (end) {
+           *end = '\0';
+           end++;
+           se->value.v_quarks.q[0] = g_quark_from_string(value);
+           se->value.v_quarks.q[1] = g_quark_from_string(end);
+         } else {
+           se->value.v_quarks.q[0] = (GQuark)0;
+           se->value.v_quarks.q[1] = g_quark_from_string(value);
+         }
+         g_free(value);
+       }
        break;
      /* 
       * integer -- supposed to be uint64
@@ -583,7 +623,7 @@ lttv_struct_type(gint ft) {
         case LTTV_FILTER_STATE_CT:
         case LTTV_FILTER_STATE_IT:
         case LTTV_FILTER_STATE_P_NAME:
-  case LTTV_FILTER_STATE_T_BRAND:
+        case LTTV_FILTER_STATE_T_BRAND:
         case LTTV_FILTER_STATE_EX_MODE:
         case LTTV_FILTER_STATE_EX_SUBMODE:
         case LTTV_FILTER_STATE_P_STATUS:
@@ -591,6 +631,7 @@ lttv_struct_type(gint ft) {
             return LTTV_FILTER_STATE;
             break;
         case LTTV_FILTER_EVENT_NAME:
+        case LTTV_FILTER_EVENT_SUBNAME:
         case LTTV_FILTER_EVENT_CATEGORY:
         case LTTV_FILTER_EVENT_TIME:
         case LTTV_FILTER_EVENT_TSC:
@@ -706,6 +747,25 @@ gboolean lttv_apply_op_eq_quark(const gpointer v1, LttvFieldValue v2) {
 }
 
 /**
+ *  @fn gboolean lttv_apply_op_eq_quarks(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'equal' operator to the
+ *  specified structure and value
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_eq_quarks(const gpointer v1, LttvFieldValue v2) {
+  GQuark *r1 = (GQuark *) v1;
+  GQuark *r2 = r1 + 1;
+  if (likely(*r1 != (GQuark)0) && *r1 != v2.v_quarks.q[0])
+    return 0;
+  if (*r2 != v2.v_quarks.q[1])
+    return 0;
+  return 1;
+}
+
+/**
  *  @fn gboolean lttv_apply_op_eq_ltttime(gpointer,LttvFieldValue) 
  * 
  *  Applies the 'equal' operator to the
@@ -817,6 +877,23 @@ gboolean lttv_apply_op_ne_quark(const gpointer v1, LttvFieldValue v2) {
   return (*r != v2.v_quark);
 }
 
+/**
+ *  @fn gboolean lttv_apply_op_ne_quarks(gpointer,LttvFieldValue) 
+ * 
+ *  Applies the 'equal' operator to the
+ *  specified structure and value
+ *  @param v1 left member of comparison
+ *  @param v2 right member of comparison
+ *  @return success/failure of operation
+ */
+gboolean lttv_apply_op_ne_quarks(const gpointer v1, LttvFieldValue v2) {
+  GQuark *r1 = (GQuark *) v1;
+  GQuark *r2 = r1 + 1;
+  if ((*r1 == (GQuark)0 || *r1 == v2.v_quarks.q[0]) && *r2 == v2.v_quarks.q[1])
+    return 0;
+  else
+    return 1;
+}
 
 /**
  *  @fn gboolean lttv_apply_op_ne_ltttime(gpointer,LttvFieldValue) 
@@ -2044,6 +2121,19 @@ lttv_filter_tree_parse_branch(
             }
             break;
         case LTTV_FILTER_EVENT_NAME:
+            if(event == NULL) return TRUE;
+            else {
+              struct marker_info *info;
+              GQuark qtuple[2];
+	      LttTracefile *tf = context->tf;
+              qtuple[0] = ltt_tracefile_name(tracefile);
+              info = marker_get_info_from_id(tf->mdata, event->event_id);
+              g_assert(info != NULL);
+              qtuple[1] = info->name;
+              return se->op((gpointer)qtuple,v);
+            }
+            break;
+        case LTTV_FILTER_EVENT_SUBNAME:
             if(event == NULL) return TRUE;
             else {
               struct marker_info *info;

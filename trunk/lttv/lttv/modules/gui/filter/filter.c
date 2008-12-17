@@ -187,7 +187,7 @@ gui_filter(LttvPlugin *plugin)
   fvd->f_field_options = g_ptr_array_new(); //g_array_new(FALSE,FALSE,16);
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new(""));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.name"));
-  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.facility"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.subname"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.category"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.time"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("event.tsc"));
@@ -195,7 +195,7 @@ gui_filter(LttvPlugin *plugin)
   /*
    * TODO: Add core.xml fields here !
    */
-  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("tracefile.name"));
+  g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("channel.name"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("trace.name"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.process_name"));
   g_ptr_array_add(fvd->f_field_options,(gpointer) g_string_new("state.thread_brand"));
