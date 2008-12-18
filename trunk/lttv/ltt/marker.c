@@ -431,6 +431,8 @@ int marker_format_event(LttTrace *trace, GQuark channel, GQuark name,
   GArray *group;
 
   group = g_datalist_id_get_data(&trace->tracefiles, channel);
+  if (!group)
+    return -ENOENT;
   g_assert(group->len > 0);
   mdata = g_array_index (group, LttTracefile, 0).mdata;
 
@@ -471,6 +473,8 @@ int marker_id_event(LttTrace *trace, GQuark channel, GQuark name, guint16 id,
     g_quark_to_string(name), id);
 
   group = g_datalist_id_get_data(&trace->tracefiles, channel);
+  if (!group)
+    return -ENOENT;
   g_assert(group->len > 0);
   mdata = g_array_index (group, LttTracefile, 0).mdata;
 
