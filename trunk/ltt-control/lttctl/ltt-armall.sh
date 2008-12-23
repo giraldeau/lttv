@@ -4,8 +4,8 @@
 echo Connecting all markers
 MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2 " " $4}'|sort -u|grep -v ^metadata|grep -v ^locking|grep -v ^lockdep`
 
-#separator is newline
-IFS=$
+#separator is newline, ensure compatibility with bash and ash
+IFS=$''
 for a in $MARKERS; do
 	echo Connecting $a
 
@@ -40,8 +40,8 @@ MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2}'|sort -u |grep ^tap_`
 #Uncomment the following to also record lockdep events.
 #MARKERS=`cat /proc/ltt|grep -v %k|awk '{print $2}'|sort -u|grep -e ^tap_ -e ^lockdep`
 
-#separator is newline
-IFS=$
+#separator is newline, ensure compatibility with bash and ash
+IFS=$''
 for a in $MARKERS; do
 	echo Connecting $a
 
