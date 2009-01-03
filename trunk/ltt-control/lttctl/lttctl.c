@@ -6,6 +6,10 @@
  *
  * Copyright 2005 -
  * 	Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+ *
+ * Copyright 2008 FUJITSU
+ * 	Zhao Lei <zhaolei@cn.fujitsu.com>
+ * 	Gui Jianfeng <guijianfeng@cn.fujitsu.com>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -27,26 +31,27 @@
 #define OPT_NAMELEN		(256)
 #define OPT_VALSTRINGLEN	(256)
 
-enum lttcrl_option_type {
-	option_type_unknown,
-	option_type_string,
-	option_type_int,
-	option_type_uint,
-	option_type_positive,
-	option_type_bool,
+enum opt_type {
+	CHANNEL,
+};
+
+struct channel_option {
+	char chan_name[OPT_NAMELEN];
+	int enable;
+	int overwrite;
+	int bufnum;
+	int bufsize;
 };
 
 struct lttctl_option {
-	char name1[OPT_NAMELEN];
-	char name2[OPT_NAMELEN];
-	char name3[OPT_NAMELEN];
 	union {
-		char v_string[OPT_VALSTRINGLEN];
-		int v_int;
-		unsigned int v_uint;
-		int v_bool:1;
-	} value;
+		struct channel_option chan_opt;
+	} opt_mode;
+	enum opt_type type;
+	struct lttctl_option *next;
 };
+
+struct lttctl_option *opt_head, *last_opt;
 
 static int opt_create;
 static int opt_destroy;
@@ -54,8 +59,6 @@ static int opt_start;
 static int opt_pause;
 static int opt_help;
 static const char *opt_transport;
-static struct lttctl_option opt_options[OPT_MAX];
-static unsigned int opt_option_n;
 static const char *opt_write;
 static int opt_append;
 static unsigned int opt_dump_threads;
@@ -214,93 +217,103 @@ static int separate_opt(const char *name, char *name1, char *name2, char *name3)
 	return 0;
 }
 
-/*
- * get option's type by its name,
- * can also be used to check is option exists
- * (return option_type_unknown when not exist)
- */
-static enum lttcrl_option_type opt_type(const char *name1, const char *name2,
-		const char *name3)
+static void init_channel_opt(struct channel_option *opt, char *opt_name)
 {
-	if (!name1 || !name2 || !name3)
-		return option_type_unknown;
-
-	if (strlen(name1) >= OPT_NAMELEN
-		|| strlen(name2) >= OPT_NAMELEN
-		|| strlen(name3) >= OPT_NAMELEN)
-		return option_type_unknown;
-
-	if (strcmp(name1, "channel") == 0) {
-		/* Option is channel class */
-		if (strcmp(name3, "enable") == 0)
-			return option_type_bool;
-		if (strcmp(name3, "overwrite") == 0)
-			return option_type_bool;
-		if (strcmp(name3, "bufnum") == 0)
-			return option_type_uint;
-		if (strcmp(name3, "bufsize") == 0)
-			return option_type_uint;
-		return option_type_unknown;
+	if (opt && opt_name) {
+		opt->enable = -1;
+		opt->overwrite = -1;
+		opt->bufnum = -1;
+		opt->bufsize = -1;
+		strcpy(opt->chan_name, opt_name);
 	}
-
-	/*
-	 * Now we only support channel options
-	 * other option class' will used in future
-	 */
-
-	return option_type_unknown;
 }
 
-static struct lttctl_option *find_opt(const char *name1, const char *name2,
-		const char *name3)
+static struct lttctl_option *find_insert_channel_opt(char *opt_name)
 {
-	int i;
+	struct lttctl_option *iter, *new_opt;
 
-	if (!name1 || !name2 || !name3)
-		return NULL;
-
-	for (i = 0; i < opt_option_n; i++) {
-		if (strcmp(opt_options[i].name1, name1) == 0
-			&& strcmp(opt_options[i].name2, name2) == 0
-			&& strcmp(opt_options[i].name3, name3) == 0)
-			return opt_options + i;
+	if (!opt_head) {
+		opt_head = (struct lttctl_option *)malloc(sizeof(struct lttctl_option));
+		init_channel_opt(&opt_head->opt_mode.chan_opt, opt_name);
+		opt_head->type = CHANNEL;
+		opt_head->next = NULL;
+		last_opt = opt_head;
+		return opt_head;
 	}
 
-	return NULL;
+	for (iter = opt_head; iter; iter = iter->next) {
+		if (iter->type != CHANNEL)
+			continue;
+		if (!strcmp(iter->opt_mode.chan_opt.chan_name, opt_name))
+			return iter;
+	}
+
+	new_opt = (struct lttctl_option *)malloc(sizeof(struct lttctl_option));
+	init_channel_opt(&new_opt->opt_mode.chan_opt, opt_name);
+	new_opt->type = CHANNEL;
+	new_opt->next = NULL;
+	last_opt->next = new_opt;
+	last_opt = new_opt;
+	return new_opt;
 }
 
-static struct lttctl_option *get_opt(const char *name1, const char *name2,
-		const char *name3)
+int set_channel_opt(struct channel_option *opt, char *opt_name, char *opt_valstr)
 {
-	struct lttctl_option *opt;
+	int opt_val, ret;
 
-	if (!name1 || !name2 || !name3)
-		return NULL;
+	if (!strcmp("enable", opt_name)) {
+		if (opt_valstr[1] != 0) {
+			return -EINVAL;
+		}
+		if (opt_valstr[0] == 'Y' || opt_valstr[0] == 'y'
+		    || opt_valstr[0] == '1')
+			opt_val = 1;
+		else if (opt_valstr[0] == 'N' || opt_valstr[0] == 'n'
+			 || opt_valstr[0] == '0')
+			opt_val = 0;
+		else {
+			return -EINVAL;
+		}
 
-	opt = find_opt(name1, name2, name3);
-	if (opt)
-		return opt;
+		opt->enable = opt_val;
+		return 0;
+	} else if (!strcmp("overwrite", opt_name)) {
+		if (opt_valstr[1] != 0) {
+			return -EINVAL;
+		}
+		if (opt_valstr[0] == 'Y' || opt_valstr[0] == 'y'
+		    || opt_valstr[0] == '1')
+			opt_val = 1;
+		else if (opt_valstr[0] == 'N' || opt_valstr[0] == 'n'
+			 || opt_valstr[0] == '0')
+			opt_val = 0;
+		else {
+			return -EINVAL;
+		}
 
-	if (opt_option_n >= OPT_MAX) {
-		fprintf(stderr, "Option number out of range\n");
-		return NULL;
+		opt->overwrite = opt_val;
+		return 0;
+
+	} else if (!strcmp("bufnum", opt_name)) {
+		ret = sscanf(opt_valstr, "%d", &opt_val);
+		if (ret != 1 || opt_val < 0) {
+			return -EINVAL;
+		}
+		
+		opt->bufnum = opt_val;
+		return 0;
+	} else if (!strcmp("bufsize", opt_name)) {
+		ret = sscanf(opt_valstr, "%d", &opt_val);
+		if (ret != 1 || opt_val < 0) {
+			return -EINVAL;
+		}
+		
+		opt->bufsize = opt_val;
+		return 0;
+	} else {
+		return -EINVAL;
 	}
 
-	if (strlen(name1) >= OPT_NAMELEN
-		|| strlen(name2) >= OPT_NAMELEN
-		|| strlen(name3) >= OPT_NAMELEN) {
-		fprintf(stderr, "Option name too long: %s.%s.%s\n",
-			name1, name2, name3);
-		return NULL;
-	}
-
-	opt = &opt_options[opt_option_n];
-	strcpy(opt->name1, name1);
-	strcpy(opt->name2, name2);
-	strcpy(opt->name3, name3);
-	opt_option_n++;
-
-	return opt;
 }
 
 static int parst_opt(const char *optarg)
@@ -314,10 +327,10 @@ static int parst_opt(const char *optarg)
 	char name2[OPT_NAMELEN];
 	char name3[OPT_NAMELEN];
 
-	enum lttcrl_option_type opttype;
 	int opt_intval;
+	int opt_val;
 	unsigned int opt_uintval;
-	struct lttctl_option *newopt;
+	struct lttctl_option *opt;
 
 	if (!optarg) {
 		fprintf(stderr, "Option empty\n");
@@ -348,84 +361,23 @@ static int parst_opt(const char *optarg)
 	/* separate option name into 3 fields */
 	ret = separate_opt(opt_name, name1, name2, name3);
 	if (ret != 0) {
-		fprintf(stderr, "Option name error: %s\n", optarg);
+		fprintf(stderr, "Option name error1: %s\n", optarg);
 		return -EINVAL;
 	}
-
-	/*
-	 * check and add option
-	 */
-	opttype = opt_type(name1, name2, name3);
-	switch (opttype) {
-	case option_type_unknown:
-		fprintf(stderr, "Option not supported: %s\n", optarg);
-		return -EINVAL;
-	case option_type_string:
-		newopt = get_opt(name1, name2, name3);
-		if (!newopt)
-			return -EINVAL;
-		strcpy(newopt->value.v_string, opt_valstr);
-		return 0;
-	case option_type_int:
-		ret = sscanf(opt_valstr, "%d", &opt_intval);
-		if (ret != 1) {
-			fprintf(stderr, "Option format error: %s\n", optarg);
-			return -EINVAL;
+	
+	if (!strcmp("channel", name1)) {
+		opt = find_insert_channel_opt(name2);
+		if ((ret = set_channel_opt(&opt->opt_mode.chan_opt, 
+					   name3, opt_valstr) != 0)) {
+			fprintf(stderr, "Option name error2: %s\n", optarg);
+			return ret;
 		}
-		newopt = get_opt(name1, name2, name3);
-		if (!newopt)
-			return -EINVAL;
-		newopt->value.v_int = opt_intval;
-		return 0;
-	case option_type_uint:
-		ret = sscanf(opt_valstr, "%u", &opt_uintval);
-		if (ret != 1) {
-			fprintf(stderr, "Option format error: %s\n", optarg);
-			return -EINVAL;
-		}
-		newopt = get_opt(name1, name2, name3);
-		if (!newopt)
-			return -EINVAL;
-		newopt->value.v_uint = opt_uintval;
-		return 0;
-	case option_type_positive:
-		ret = sscanf(opt_valstr, "%u", &opt_uintval);
-		if (ret != 1 || opt_uintval == 0) {
-			fprintf(stderr, "Option format error: %s\n", optarg);
-			return -EINVAL;
-		}
-		newopt = get_opt(name1, name2, name3);
-		if (!newopt)
-			return -EINVAL;
-		newopt->value.v_uint = opt_uintval;
-		return 0;
-	case option_type_bool:
-		if (opt_valstr[1] != 0) {
-			fprintf(stderr, "Option format error: %s\n", optarg);
-			return -EINVAL;
-		}
-		if (opt_valstr[0] == 'Y' || opt_valstr[0] == 'y'
-			|| opt_valstr[0] == '1')
-			opt_intval = 1;
-		else if (opt_valstr[0] == 'N' || opt_valstr[0] == 'n'
-			|| opt_valstr[0] == '0')
-			opt_intval = 0;
-		else {
-			fprintf(stderr, "Option format error: %s\n", optarg);
-			return -EINVAL;
-		}
-
-		newopt = get_opt(name1, name2, name3);
-		if (!newopt)
-			return -EINVAL;
-		newopt->value.v_bool = opt_intval;
-		return 0;
-	default:
-		fprintf(stderr, "Internal error on opt %s\n", optarg);
+	} else {
+		fprintf(stderr, "Option name error3: %s\n", optarg);
 		return -EINVAL;
 	}
-
-	return 0; /* should not run to here */
+	
+	return 0;
 }
 
 /* parse_arguments
@@ -438,7 +390,7 @@ static int parst_opt(const char *optarg)
 static int parse_arguments(int argc, char **argv)
 {
 	int ret = 0;
-
+	
 	static struct option longopts[] = {
 		{"create",		no_argument,		NULL,	'c'},
 		{"destroy",		no_argument,		NULL,	'd'},
@@ -654,7 +606,7 @@ static int parse_arguments(int argc, char **argv)
 
 	return 0;
 }
-
+ 
 static void show_info(void)
 {
 	printf("Linux Trace Toolkit Trace Control " VERSION"\n");
@@ -665,50 +617,54 @@ static void show_info(void)
 	}
 }
 
+static int lttctl_channel_setup(struct channel_option *opt)
+{
+	int ret;
+
+	if (opt->enable != -1) {
+		if ((ret = lttctl_set_channel_enable(opt_tracename,
+						     opt->chan_name,
+						     opt->enable)) != 0)
+			return ret;
+	} 
+	if (opt->overwrite != -1) {
+		if ((ret = lttctl_set_channel_overwrite(opt_tracename,
+							opt->chan_name,
+							opt->overwrite)) != 0)
+			return ret;
+	}
+	if (opt->bufnum != -1) {
+		if ((ret = lttctl_set_channel_subbuf_num(opt_tracename,
+							 opt->chan_name,
+							 opt->bufnum)) != 0)
+			return ret;
+	}
+	if (opt->bufsize != -1) {
+		if ((ret = lttctl_set_channel_subbuf_size(opt_tracename,
+							  opt->chan_name,
+							  opt->bufsize)) != 0)
+			return ret;
+	}
+
+	return 0;
+}
+
 static int lttctl_create_trace(void)
 {
 	int ret;
 	int i;
+	struct lttctl_option *opt;
 
 	ret = lttctl_setup_trace(opt_tracename);
 	if (ret)
 		goto setup_trace_fail;
 
-	for (i = 0; i < opt_option_n; i++) {
-		if (strcmp(opt_options[i].name1, "channel") != 0)
+	for (opt = opt_head; opt; opt = opt->next) {
+		if (opt->type != CHANNEL)
 			continue;
-
-		if (strcmp(opt_options[i].name3, "enable") == 0) {
-			ret = lttctl_set_channel_enable(opt_tracename,
-				opt_options[i].name2,
-				opt_options[i].value.v_bool);
-			if (ret)
-				goto set_option_fail;
-		}
-
-		if (strcmp(opt_options[i].name3, "overwrite") == 0) {
-			ret = lttctl_set_channel_overwrite(opt_tracename,
-				opt_options[i].name2,
-				opt_options[i].value.v_bool);
-			if (ret)
-				goto set_option_fail;
-		}
-
-		if (strcmp(opt_options[i].name3, "bufnum") == 0) {
-			ret = lttctl_set_channel_subbuf_num(opt_tracename,
-				opt_options[i].name2,
-				opt_options[i].value.v_uint);
-			if (ret)
-				goto set_option_fail;
-		}
-
-		if (strcmp(opt_options[i].name3, "bufsize") == 0) {
-			ret = lttctl_set_channel_subbuf_size(opt_tracename,
-				opt_options[i].name2,
-				opt_options[i].value.v_uint);
-			if (ret)
-				goto set_option_fail;
-		}
+		ret = lttctl_channel_setup(&opt->opt_mode.chan_opt);
+		if (ret)
+			goto set_option_fail;;
 	}
 
 	ret = lttctl_set_trans(opt_tracename, opt_transport);
