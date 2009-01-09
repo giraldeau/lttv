@@ -1,7 +1,7 @@
 Linux Trace Toolkit Quickstart
 ------------------------------
 Author : Mathieu Desnoyers, September 2005
-Last update : July 31, 2008
+Last update : January 9th, 2009
 
 
 This document is made of four parts : the first one explains how to install
@@ -165,26 +165,22 @@ make menuconfig (or make xconfig or make config)
     Items preceded by [ ] means they should be removed.
   go to the "General setup" section
     Select the following options :
-    [*] Activate tracepoints
+    [*] Prompt for development and/or incomplete code/drivers
     [*] Activate markers
-    [*] Activate userspace markers ABI
-    <*> Compile generic tracing probes
-    Linux Trace Toolkit  --->
-    [LTTng fine-grained-timestamping]
-    [*] Linux Trace Toolkit Instrumentation Support
-    <M> or <*> Linux Trace Toolkit Relay+DebugFS Support
+    [*] Activate userspace markers ABI (experimental, optional)
+    [*] Immediate value optimization (optional)
+    [*] Linux Trace Toolkit Next Generation (LTTng) --->
+    <M> or <*> Compile lttng tracing probes
+    <M> or <*> Linux Trace Toolkit High-speed Lockless Data Relay
+    <M> or <*> Linux Trace Toolkit Lock-Protected Data Relay
     <M> or <*> Linux Trace Toolkit Serializer
-    <M> or <*> Linux Trace Toolkit Marker Control
-    <M> or <*> Linux Trace Toolkit Tracer
-      It makes no difference for the rest of the procedure whether the Tracer
-      is compiled built-in or as a module.
-    activate :
-       [*] Align Linux Trace Toolkit Traces
-       <M> Linux Trace Toolkit Netlink Controller
-       <M> Linux Trace Toolkit State Dump
-    your choice (see < Help >) :
-       [ ] Write heartbeat event to shrink traces
-       [ ] Support trace extraction from crash dump
+    <M> or <*>   Linux Trace Toolkit Marker Control
+    <M> or <*>     Linux Trace Toolkit Tracer
+    [*] Align Linux Trace Toolkit Traces
+    <M> or <*> Support logging events from userspace
+    [*] Support trace extraction from crash dump
+    <M> or <*> Linux Trace Toolkit Trace Controller
+    <M> or <*> Linux Trace Toolkit State Dump
   Select <Exit>
   Select <Exit>
   Select <Yes>
@@ -196,7 +192,7 @@ make modules_install
 -- on X86, X86_64
 make install
 reboot
-Select the Linux 2.6.17-lttng-0.x.xx kernel in your boot loader.
+Select the Linux 2.6.X-lttng-0.x.xx kernel in your boot loader.
 
 -- on PowerPC
 cp vmlinux.strip /boot/vmlinux-2.6.X-lttng-0.x.xx
@@ -209,7 +205,7 @@ that comes first is the default kernel)
 ybin
 select the right entry at the yaboot prompt (see choices : tab, select : type
 the kernel name followed by enter)
-Select the Linux 2.6.17-lttng-0.x.xx kernel in your boot loader.
+Select the Linux 2.6.X-lttng-0.x.xx kernel in your boot loader.
 --
 
 
@@ -278,7 +274,7 @@ same name as the ltt-control kernel module, they are *not* the same thing.)
 su -
 cd /usr/src
 wget http://ltt.polymtl.ca/lttng/ltt-control-0.x-xxxx2006.tar.gz
-gzip -cd ltt-control-0.x-xxxx2006.tar.gz | tar xvof -
+gzip -cd ltt-control-0.x-xxxx2008.tar.gz | tar xvof -
 cd ltt-control-0.x-xxxx2006
 (refer to README to see the development libraries that must be installed on you
 system)
@@ -286,9 +282,14 @@ system)
 make
 make install
 
-* Getting and installing the markers-userspace package for user space tracing
-See http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2 or more recent.
+* Userspace tracing
 
+Simple userspace tracing is available through
+echo "some text to record" > /mnt/debugfs/ltt/write_event
+
+It will appear in the trace under event :
+channel : userspace
+event name : event
 
 * Getting and installing the LTTV package (on the visualisation machine, same or
   different from the visualisation machine)
@@ -304,6 +305,10 @@ system)
 make
 make install
 
+
+* Getting and installing the markers-userspace package for user space tracing
+(experimental)
+See http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2 or more recent.
 
 
 
