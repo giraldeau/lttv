@@ -47,19 +47,20 @@
 static inline void print_enum_events(LttEvent *e, struct marker_field *f,
                       guint64 value, GString *s, LttvTracefileState *tfs)
 {
-  struct marker_info *info = marker_get_info_from_id(tfs->parent.tf->mdata,
-    e->event_id);
+  LttTracefile *tf = tfs->parent.tf;
+  struct marker_info *info = marker_get_info_from_id(tf->mdata, e->event_id);
   LttvTraceState *ts = (LttvTraceState*)(tfs->parent.t_context);
   
-  //TODO optimize with old quarks.
-  if (info->name == g_quark_from_static_string("kernel_syscall_entry") && 
+  if (tf->name == LTT_CHANNEL_KERNEL &&
+      info->name == LTT_EVENT_SYSCALL_ENTRY && 
       f->name == LTT_FIELD_SYSCALL_ID) {
     g_string_append_printf(s, " [%s]",
       g_quark_to_string(ts->syscall_names[value]));
-  } else if ((info->name == g_quark_from_static_string("kernel_softirq_entry")
-    || info->name == g_quark_from_static_string("kernel_softirq_exit")
-    || info->name == g_quark_from_static_string("kernel_softirq_raise")) &&
-      f->name == g_quark_from_static_string("softirq_id")) {
+  } else if ((tf->name == LTT_CHANNEL_KERNEL &&
+    (info->name == LTT_EVENT_SOFT_IRQ_ENTRY
+    || info->name == LTT_EVENT_SOFT_IRQ_EXIT
+    || info->name == LTT_EVENT_SOFT_IRQ_RAISE)) &&
+      f->name == LTT_FIELD_SOFT_IRQ_ID) {
     g_string_append_printf(s, " [%s]",
       g_quark_to_string(ts->soft_irq_names[value]));
   }
