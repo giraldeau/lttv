@@ -240,6 +240,8 @@ modprobe kernel-trace
 modprobe mm-trace
 modprobe net-trace
 modprobe fs-trace
+modprobe jbd2-trace
+modprobe ext4-trace
 modprobe syscall-trace
 modprobe trap-trace
 #if locking tracing is wanted, uncomment the following
@@ -264,6 +266,10 @@ echo kernel-trace >> /etc/modules
 echo mm-trace >> /etc/modules
 echo net-trace >> /etc/modules
 echo fs-trace >> /etc/modules
+echo jbd2-trace >> /etc/modules
+echo ext4-trace >> /etc/modules
+echo syscall-trace >> /etc/modules
+echo trap-trace >> /etc/modules
 #if locking tracing is wanted, uncomment the following
 #echo lockdep-trace >> /etc/modules
 
