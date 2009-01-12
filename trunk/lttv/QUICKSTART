@@ -288,7 +288,13 @@ system)
 make
 make install
 
+
 * Userspace tracing
+
+Make sure you selected the kernel menuconfig option :
+    <M> or <*> Support logging events from userspace
+And that the ltt-userspace-event kernel module is loaded if selected as a
+module.
 
 Simple userspace tracing is available through
 echo "some text to record" > /mnt/debugfs/ltt/write_event
@@ -296,6 +302,7 @@ echo "some text to record" > /mnt/debugfs/ltt/write_event
 It will appear in the trace under event :
 channel : userspace
 event name : event
+
 
 * Getting and installing the LTTV package (on the visualisation machine, same or
   different from the visualisation machine)
