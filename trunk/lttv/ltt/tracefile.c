@@ -369,7 +369,7 @@ static int get_tracefile_name_number(gchar *raw_name,
 {
   guint raw_name_len = strlen(raw_name);
   gchar char_name[PATH_MAX];
-  unsigned int i;
+  int i;
   int underscore_pos;
   long int cpu_num;
   gchar *endptr;
@@ -803,8 +803,7 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   /* Parse each trace metadata_N files : get runtime fac. info */
   group = g_datalist_id_get_data(&t->tracefiles, LTT_TRACEFILE_NAME_METADATA);
   if(group == NULL) {
-    g_error("Trace %s has no metadata tracefile", abs_path);
-    g_assert(0);
+    g_warning("Trace %s has no metadata tracefile", abs_path);
     goto find_error;
   }
 
