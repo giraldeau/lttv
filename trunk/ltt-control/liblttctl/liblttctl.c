@@ -39,52 +39,59 @@ static char debugfsmntdir[PATH_MAX];
 
 static int initdebugfsmntdir(void)
 {
-	char mnt_dir[PATH_MAX];
-	char mnt_type[PATH_MAX];
+	return getdebugfsmntdir(debugfsmntdir);
+}
 
-	FILE *fp = fopen("/proc/mounts", "r");
-	if (!fp) {
-		fprintf(stderr, "%s: Can't open /proc/mounts\n", __func__);
-		return 1;
+/*
+ * This function must called posterior to initdebugfsmntdir(),
+ * because it need to use debugfsmntdir[] which is inited in initdebugfsmntdir()
+ */
+static int initmodule(void)
+{
+	char controldirname[PATH_MAX];
+	DIR *dir;
+	int tryload_done = 0;
+
+	sprintf(controldirname, "%s/ltt/control/", debugfsmntdir);
+
+check_again:
+	/*
+	 * Check ltt control's debugfs dir
+	 *
+	 * We don't check is ltt-trace-control module exist, because it maybe
+	 * compiled into kernel.
+	 */
+	dir = opendir(controldirname);
+	if (dir) {
+		closedir(dir);
+		return 0;
 	}
 
-	while (1) {
-		if (fscanf(fp, "%*s %s %s %*s %*s %*s", mnt_dir, mnt_type)
-			<= 0) {
-			fprintf(stderr, "%s: debugfs mountpoint not found\n",
-				__func__);
-			return 1;
-		}
-		if (!strcmp(mnt_type, "debugfs")) {
-			strcpy(debugfsmntdir, mnt_dir);
-			return 0;
-		}
+	if (!tryload_done) {
+		system("modprobe ltt-trace-control");
+		tryload_done = 1;
+		goto check_again;
 	}
+
+	return -ENOENT;
 }
 
 int lttctl_init(void)
 {
 	int ret;
-	DIR *dir;
-	char controldirname[PATH_MAX];
+
 
 	ret = initdebugfsmntdir();
 	if (ret) {
-		fprintf(stderr, "Debugfs mount point not found\n");
+		fprintf(stderr, "Get debugfs mount point failed\n");
 		return 1;
 	}
 
-	/* check ltt control's debugfs dir */
-	sprintf(controldirname, "%s/ltt/control/", debugfsmntdir);
-
-	dir = opendir(controldirname);
-	if (!dir) {
-		fprintf(stderr, "ltt-trace-control's debugfs dir not found\n");
-		closedir(dir);
-		return -errno;
+	ret = initmodule();
+	if (ret) {
+		fprintf(stderr, "Control module seems not work\n");
+		return 1;
 	}
-
-	closedir(dir);
 
 	return 0;
 }
@@ -663,4 +670,34 @@ int lttctl_set_channel_subbuf_size(const char *name, const char *channel,
 op_err:
 arg_error:
 	return ret;
+}
+
+int getdebugfsmntdir(char *mntdir)
+{
+	char mnt_dir[PATH_MAX];
+	char mnt_type[PATH_MAX];
+	int trymount_done = 0;
+
+	FILE *fp = fopen("/proc/mounts", "r");
+	if (!fp)
+		return -EINVAL;
+
+find_again:
+	while (1) {
+		if (fscanf(fp, "%*s %s %s %*s %*s %*s", mnt_dir, mnt_type) <= 0)
+			break;
+
+		if (!strcmp(mnt_type, "debugfs")) {
+			strcpy(mntdir, mnt_dir);
+			return 0;
+		}
+	}
+
+	if (!trymount_done) {
+		mount("debugfs", "/sys/kernel/debug/", "debugfs", 0, NULL);
+		trymount_done = 1;
+		goto find_again;
+	}
+
+	return -ENOENT;
 }

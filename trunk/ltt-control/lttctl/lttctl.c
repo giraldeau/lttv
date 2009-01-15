@@ -142,26 +142,6 @@ static void show_arguments(void)
 	printf("\n");
 }
 
-static int getdebugfsmntdir(char *mntdir)
-{
-	char mnt_dir[PATH_MAX];
-	char mnt_type[PATH_MAX];
-
-	FILE *fp = fopen("/proc/mounts", "r");
-	if (!fp)
-		return -EINVAL;
-
-	while (1) {
-		if (fscanf(fp, "%*s %s %s %*s %*s %*s", mnt_dir, mnt_type) <= 0)
-			return -ENOENT;
-
-		if (!strcmp(mnt_type, "debugfs")) {
-			strcpy(mntdir, mnt_dir);
-			return 0;
-		}
-	}
-}
-
 /*
  * Separate option name to 3 fields
  * Ex:
@@ -559,19 +539,15 @@ static int parse_arguments(int argc, char **argv)
 			if (getdebugfsmntdir(channel_root_default) == 0) {
 				strcat(channel_root_default, "/ltt");
 				opt_channel_root = channel_root_default;
+			} else {
+				fprintf(stderr,
+					"Channel_root is necessary for -w"
+					" option, but neither --channel_root"
+					" option\n"
+					"specified, nor debugfs's mount dir"
+					" found, mount debugfs also failed\n");
+				return -EINVAL;
 			}
-		/* Todo:
-		 * if (!opt_channel_root)
-		 *	if (auto_mount_debugfs_dir(channel_root_default) == 0)
-		 *		opt_channel_root = debugfs_dir_mnt_point;
-		 */
-		if (!opt_channel_root) {
-			fprintf(stderr,
-				"Channel_root is necessary for -w option,"
-				" but neither --channel_root option\n"
-				"specified, nor debugfs's mount dir found.\n");
-			return -EINVAL;
-		}
 
 		if (opt_dump_threads == 0)
 			opt_dump_threads = 1;
