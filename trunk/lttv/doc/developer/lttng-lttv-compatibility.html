@@ -3236,6 +3236,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.79<br>
 0.80<br>
 0.81<br>
+0.82<br>
 </td>
 <td style="vertical-align: top;">
 0.60<br>
@@ -3283,6 +3284,9 @@ ltt-trace-control.ko.<br>
 LTTng 0.80 fixes regression in entry_64.S where a tbench slowdown occured when
 SYSCALL AUDIT or secure computing was enabled.<br>
 LTTng 0.81 fixes userspace marker ABI x86_32 build error.<br>
+LTTng 0.82 fixes x86_32 entry_32.S syscall tracing missing event due to thread
+flag being moved to bit 9 in 2.6.28. The testb has to be changed for a
+testw.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
