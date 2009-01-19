@@ -1,0 +1,44 @@
+
+Mathieu Desnoyers and Michel Dagenais, January 19, 2009
+
+Markers vs Tracepoints :
+
+What markers are good for :
+
+* One-liner instrumentation of kernel code. (fast debug-style instrumentation)
+* Specify the basic data types exported by the tracer in a format string placed into the marker.
+* Exports those format strings along with the trace metadata so the event types are automatically identified.
+
+What they are _not_ good for :
+
+* Cannot identify more complex data type to be presented to a specialized tracer (e.g. pointer to a struct task_struct).
+* Lack of declaration of kernel instrumentation in a global header.  Presence in a global header could make it easier for someone to quickly review the list of markers, especially if "git grep trace_mark" is not satisfactory.
+* Markers are mostly aimed at LTTng, which takes the data identified by the marker and sends it to the trace buffers directly. It's less convenient for specialized tracers such as ftrace, kmemtrace, blktrace because those tracers need to access more complex types to do more work on the data (e.g. filtering) before it is either written to the trace or used to generate statistics.
+  - LTTng tracing buffer format API is available here :
+    http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=ltt/probes/ltt-type-serializer.h
+    With usage examples here :
+    http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=ltt/probes/kernel-trace.c
+
+* Markers are tying the inner kernel instrumentation to the exported userspace "API".  (It's not an actual Application Programming Interface to user space, but a potential data stream that might be construed as long-lasting as /proc file formats.) This is actually one of their worse aspect in terms of kernel development. No developer will want to add new markers in their code if they know it will fix a new interface exported to userspace.
+
+Tracepoints address those issues by adding a layer which separates the
+instrumentation from the binary representation of the event in the trace.
+Tracepoints are meant to stay an in-kernel API which is never exported
+to userspace, which makes it easier to adapt and change when the kernel
+code evolves. Markers are now used to declare the events in the form
+they will be written into the trace, which does not necessarily
+correspond to the way the instrumentation will appear in the kernel
+code.
+
+So, typically, a "standardized" event will appear in the kernel code
+with a tracepoint declared in a global header in include/trace/subsys.h
+which is easy to manage by the kernel community. It will then be
+inserted into the core kernel code. Tracers can then connect on this
+event source to do any type of work they need to do in their callback,
+including marker invocation to record data in the trace. Tracepoint name
+should start with the name of the header in which it is located (e.g. subsys_).
+
+Tracepoints allows kernel modules (tracers) to connected multiple callbacks on
+a given tracepoint. Tracepoints also have a low impact on system performance
+when no probe is connected, exactly like markers.
+
