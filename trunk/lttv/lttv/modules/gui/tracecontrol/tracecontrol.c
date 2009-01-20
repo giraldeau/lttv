@@ -127,8 +127,6 @@ struct _ControlData {
   GtkWidget *lttctl_path_entry;
   GtkWidget *lttd_path_label;
   GtkWidget *lttd_path_entry;
-  GtkWidget *fac_path_label;
-  GtkWidget *fac_path_entry;
 };
 
 /**
@@ -343,15 +341,6 @@ gui_control(LttvPluginTab *ptab)
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_path_entry,2,6,13,14,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
 
   
-  tcd->fac_path_label = gtk_label_new("path to facilities:");
-  gtk_widget_show (tcd->fac_path_label);
-  tcd->fac_path_entry = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(tcd->fac_path_entry),PACKAGE_DATA_DIR "/" "ltt-control" "/facilities");
-  gtk_widget_set_size_request(tcd->fac_path_entry, 250, -1);
-  gtk_widget_show (tcd->fac_path_entry);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_label,0,2,14,15,GTK_FILL,GTK_FILL,2,2);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->fac_path_entry,2,6,14,15,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
-
   focus_chain = g_list_append (focus_chain, tcd->username_entry);
   focus_chain = g_list_append (focus_chain, tcd->password_entry);
   focus_chain = g_list_append (focus_chain, tcd->start_button);
@@ -369,7 +358,6 @@ gui_control(LttvPluginTab *ptab)
   focus_chain = g_list_append (focus_chain, tcd->lttd_threads_entry);
   focus_chain = g_list_append (focus_chain, tcd->lttctl_path_entry);
   focus_chain = g_list_append (focus_chain, tcd->lttd_path_entry);
-  focus_chain = g_list_append (focus_chain, tcd->fac_path_entry);
 
   gtk_container_set_focus_chain(GTK_CONTAINER(tcd->main_box), focus_chain);
 
@@ -433,7 +421,7 @@ gui_control_destructor(ControlData *tcd)
 }
 
 static int execute_command(const gchar *command, const gchar *username,
-    const gchar *password, const gchar *lttd_path, const gchar *fac_path)
+    const gchar *password, const gchar *lttd_path)
 {
   pid_t pid;
   int fdpty;
@@ -610,8 +598,6 @@ wait_child:
     /* Setup environment variables */
     if(strcmp(lttd_path, "") != 0)
       setenv("LTT_DAEMON", lttd_path, 1);
-    if(strcmp(fac_path, "") != 0)
-      setenv("LTT_FACILITIES", fac_path, 1);
    
 		/* One comment line (must be only one) */
     g_printf("Executing (as %s) : %s\n", username, command);
@@ -674,8 +660,6 @@ void start_clicked (GtkButton *button, gpointer user_data)
   const gchar *lttctl_path =
     gtk_entry_get_text(GTK_ENTRY(tcd->lttctl_path_entry));
   const gchar *lttd_path = gtk_entry_get_text(GTK_ENTRY(tcd->lttd_path_entry));
-  const gchar *fac_path = gtk_entry_get_text(GTK_ENTRY(tcd->fac_path_entry));
-
 
   /* Setup arguments to su */
   /* child */
@@ -744,12 +728,6 @@ void start_clicked (GtkButton *button, gpointer user_data)
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
   }
 
-  /* trace mode */
-  strncat(args, "-m ", args_left);
-  args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  strncat(args, trace_mode, args_left);
-  args_left = MAX_ARGS_LEN - strlen(args) - 1;
-
   /* Append to trace ? */
   if(append) {
     /* space */
@@ -804,7 +782,7 @@ void start_clicked (GtkButton *button, gpointer user_data)
   strncat(args, trace_name, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-  int retval = execute_command(args, username, password, lttd_path, fac_path);
+  int retval = execute_command(args, username, password, lttd_path);
 
   if(retval) {
     gchar msg[256];
@@ -836,7 +814,6 @@ void pause_clicked (GtkButton *button, gpointer user_data)
   const gchar *trace_name =
     gtk_entry_get_text(GTK_ENTRY(tcd->trace_name_entry));
   const gchar *lttd_path = "";
-  const gchar *fac_path = "";
   
   const gchar *lttctl_path =
     gtk_entry_get_text(GTK_ENTRY(tcd->lttctl_path_entry));
@@ -878,7 +855,7 @@ void pause_clicked (GtkButton *button, gpointer user_data)
   strncat(args, trace_name, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-  int retval = execute_command(args, username, password, lttd_path, fac_path);
+  int retval = execute_command(args, username, password, lttd_path);
   if(retval) {
     gchar msg[256];
     guint msg_left = 256;
@@ -908,7 +885,6 @@ void unpause_clicked (GtkButton *button, gpointer user_data)
   const gchar *trace_name =
     gtk_entry_get_text(GTK_ENTRY(tcd->trace_name_entry));
   const gchar *lttd_path = "";
-  const gchar *fac_path = "";
   
   const gchar *lttctl_path =
     gtk_entry_get_text(GTK_ENTRY(tcd->lttctl_path_entry));
@@ -950,7 +926,7 @@ void unpause_clicked (GtkButton *button, gpointer user_data)
   strncat(args, trace_name, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-  int retval = execute_command(args, username, password, lttd_path, fac_path);
+  int retval = execute_command(args, username, password, lttd_path);
   if(retval) {
     gchar msg[256];
     guint msg_left = 256;
@@ -980,7 +956,6 @@ void stop_clicked (GtkButton *button, gpointer user_data)
   const gchar *trace_name =
     gtk_entry_get_text(GTK_ENTRY(tcd->trace_name_entry));
   const gchar *lttd_path = "";
-  const gchar *fac_path = "";
   const gchar *trace_mode;
   const gchar *trace_mode_sel;
   GtkTreeIter iter;
@@ -1050,7 +1025,7 @@ void stop_clicked (GtkButton *button, gpointer user_data)
   strncat(args, trace_name, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-  int retval = execute_command(args, username, password, lttd_path, fac_path);
+  int retval = execute_command(args, username, password, lttd_path);
   if(retval) {
     gchar msg[256];
     guint msg_left = 256;
