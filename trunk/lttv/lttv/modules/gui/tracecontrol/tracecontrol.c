@@ -981,7 +981,19 @@ void stop_clicked (GtkButton *button, gpointer user_data)
     gtk_entry_get_text(GTK_ENTRY(tcd->trace_name_entry));
   const gchar *lttd_path = "";
   const gchar *fac_path = "";
+  const gchar *trace_mode;
+  const gchar *trace_mode_sel;
+  GtkTreeIter iter;
   
+  gtk_combo_box_get_active_iter(GTK_COMBO_BOX(tcd->trace_mode_combo), &iter);
+  gtk_tree_model_get(
+      gtk_combo_box_get_model(GTK_COMBO_BOX(tcd->trace_mode_combo)),
+      &iter, 0, &trace_mode_sel, -1);
+  if(strcmp(trace_mode_sel, "normal") == 0)
+    trace_mode = "normal";
+  else
+    trace_mode = "flight";
+ 
   const gchar *lttctl_path =
     gtk_entry_get_text(GTK_ENTRY(tcd->lttctl_path_entry));
   gchar *trace_dir = gtk_entry_get_text(GTK_ENTRY(tcd->trace_dir_entry));
