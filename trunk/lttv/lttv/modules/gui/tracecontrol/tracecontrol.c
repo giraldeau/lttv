@@ -79,6 +79,8 @@ void control_destroy_walk(gpointer data, gpointer user_data);
  * Callback functions
  */
 
+static void arm_clicked (GtkButton *button, gpointer user_data);
+static void disarm_clicked (GtkButton *button, gpointer user_data);
 static void start_clicked (GtkButton *button, gpointer user_data);
 static void pause_clicked (GtkButton *button, gpointer user_data);
 static void unpause_clicked (GtkButton *button, gpointer user_data);
@@ -96,6 +98,8 @@ struct _ControlData {
   GtkWidget *window;                  /**< window */
   
   GtkWidget *main_box;                /**< main container */
+  GtkWidget *ltt_armall_button;
+  GtkWidget *ltt_disarmall_button;
   GtkWidget *start_button;
   GtkWidget *pause_button;
   GtkWidget *unpause_button;
@@ -127,6 +131,10 @@ struct _ControlData {
   GtkWidget *lttctl_path_entry;
   GtkWidget *lttd_path_label;
   GtkWidget *lttd_path_entry;
+  GtkWidget *ltt_armall_path_label;
+  GtkWidget *ltt_armall_path_entry;
+  GtkWidget *ltt_disarmall_path_label;
+  GtkWidget *ltt_disarmall_path_entry;
 };
 
 /**
@@ -182,8 +190,27 @@ gui_control(LttvPluginTab *ptab)
   /*
    * start/pause/stop buttons
    */
+
   GdkPixbuf *pixbuf;
   GtkWidget *image;
+  pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlStart_xpm);
+  image = gtk_image_new_from_pixbuf(pixbuf);
+  tcd->ltt_armall_button = gtk_button_new_with_label("Arm LTTng kernel probes");
+  //2.6 gtk_button_set_image(GTK_BUTTON(tcd->ltt_armall_button), image);
+  g_object_set(G_OBJECT(tcd->ltt_armall_button), "image", image, NULL);
+  gtk_button_set_alignment(GTK_BUTTON(tcd->ltt_armall_button), 0.0, 0.0);
+  gtk_widget_show (tcd->ltt_armall_button);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_armall_button,6,7,0,1,GTK_FILL,GTK_FILL,2,2);
+ 
+  pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlStop_xpm);
+  image = gtk_image_new_from_pixbuf(pixbuf);
+  tcd->ltt_disarmall_button = gtk_button_new_with_label("Disarm LTTng kernel probes");
+  //2.6 gtk_button_set_image(GTK_BUTTON(tcd->ltt_disarmall_button), image);
+  g_object_set(G_OBJECT(tcd->ltt_disarmall_button), "image", image, NULL);
+  gtk_button_set_alignment(GTK_BUTTON(tcd->ltt_disarmall_button), 0.0, 0.0);
+  gtk_widget_show (tcd->ltt_disarmall_button);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_disarmall_button,6,7,1,2,GTK_FILL,GTK_FILL,2,2);
+
   pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlStart_xpm);
   image = gtk_image_new_from_pixbuf(pixbuf);
   tcd->start_button = gtk_button_new_with_label("start");
@@ -191,7 +218,7 @@ gui_control(LttvPluginTab *ptab)
   g_object_set(G_OBJECT(tcd->start_button), "image", image, NULL);
   gtk_button_set_alignment(GTK_BUTTON(tcd->start_button), 0.0, 0.0);
   gtk_widget_show (tcd->start_button);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->start_button,6,7,0,1,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->start_button,6,7,2,3,GTK_FILL,GTK_FILL,2,2);
   
   pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlPause_xpm);
   image = gtk_image_new_from_pixbuf(pixbuf);
@@ -200,7 +227,7 @@ gui_control(LttvPluginTab *ptab)
   g_object_set(G_OBJECT(tcd->pause_button), "image", image, NULL);
   gtk_button_set_alignment(GTK_BUTTON(tcd->pause_button), 0.0, 0.0);
   gtk_widget_show (tcd->pause_button);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->pause_button,6,7,1,2,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->pause_button,6,7,3,4,GTK_FILL,GTK_FILL,2,2);
 
   pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlPause_xpm);
   image = gtk_image_new_from_pixbuf(pixbuf);
@@ -209,7 +236,7 @@ gui_control(LttvPluginTab *ptab)
   g_object_set(G_OBJECT(tcd->unpause_button), "image", image, NULL);
   gtk_button_set_alignment(GTK_BUTTON(tcd->unpause_button), 0.0, 0.0);
   gtk_widget_show (tcd->unpause_button);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->unpause_button,6,7,2,3,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->unpause_button,6,7,4,5,GTK_FILL,GTK_FILL,2,2);
 
   pixbuf = gdk_pixbuf_new_from_xpm_data((const char **)TraceControlStop_xpm);
   image = gtk_image_new_from_pixbuf(pixbuf);
@@ -218,7 +245,7 @@ gui_control(LttvPluginTab *ptab)
   g_object_set(G_OBJECT(tcd->stop_button), "image", image, NULL);
   gtk_button_set_alignment(GTK_BUTTON(tcd->stop_button), 0.0, 0.0);
   gtk_widget_show (tcd->stop_button);
-  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->stop_button,6,7,3,4,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->stop_button,6,7,5,6,GTK_FILL,GTK_FILL,2,2);
   
   /*
    *  First half of the filter window
@@ -340,9 +367,26 @@ gui_control(LttvPluginTab *ptab)
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_path_label,0,2,13,14,GTK_FILL,GTK_FILL,2,2);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->lttd_path_entry,2,6,13,14,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
 
-  
+  tcd->ltt_armall_path_label = gtk_label_new("path to ltt_armall:");
+  gtk_widget_show (tcd->ltt_armall_path_label);
+  tcd->ltt_armall_path_entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(tcd->ltt_armall_path_entry),PACKAGE_BIN_DIR "/ltt_armall");
+  gtk_widget_show (tcd->ltt_armall_path_entry);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_armall_path_label,0,2,13,14,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_armall_path_entry,2,6,13,14,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
+  tcd->ltt_disarmall_path_label = gtk_label_new("path to ltt_disarmall:");
+  gtk_widget_show (tcd->ltt_disarmall_path_label);
+  tcd->ltt_disarmall_path_entry = gtk_entry_new();
+  gtk_entry_set_text(GTK_ENTRY(tcd->ltt_disarmall_path_entry),PACKAGE_BIN_DIR "/ltt_disarmall");
+  gtk_widget_show (tcd->ltt_disarmall_path_entry);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_disarmall_path_label,0,2,13,14,GTK_FILL,GTK_FILL,2,2);
+  gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_disarmall_path_entry,2,6,13,14,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
+
   focus_chain = g_list_append (focus_chain, tcd->username_entry);
   focus_chain = g_list_append (focus_chain, tcd->password_entry);
+  focus_chain = g_list_append (focus_chain, tcd->ltt_armall_path_entry);
+  focus_chain = g_list_append (focus_chain, tcd->ltt_disarmall_path_entry);
   focus_chain = g_list_append (focus_chain, tcd->start_button);
   focus_chain = g_list_append (focus_chain, tcd->pause_button);
   focus_chain = g_list_append (focus_chain, tcd->unpause_button);
@@ -371,6 +415,10 @@ gui_control(LttvPluginTab *ptab)
       (GCallback)unpause_clicked, tcd);
   g_signal_connect(G_OBJECT(tcd->stop_button), "clicked", 
       (GCallback)stop_clicked, tcd);
+  g_signal_connect(G_OBJECT(tcd->ltt_armall_button), "clicked", 
+      (GCallback)arm_clicked, tcd);
+  g_signal_connect(G_OBJECT(tcd->ltt_disarmall_button), "clicked", 
+      (GCallback)disarm_clicked, tcd);
 
   /* 
    * show main container 
@@ -1077,6 +1125,108 @@ void stop_clicked (GtkButton *button, gpointer user_data)
   }
   gtk_widget_destroy(dialogue);
   g_slist_free(trace_list);
+}
+
+void arm_clicked (GtkButton *button, gpointer user_data)
+{
+  ControlData *tcd = (ControlData*)user_data;
+
+  const gchar *username = gtk_entry_get_text(GTK_ENTRY(tcd->username_entry));
+  const gchar *password = gtk_entry_get_text(GTK_ENTRY(tcd->password_entry));
+  const gchar *ltt_armall_path =
+    gtk_entry_get_text(GTK_ENTRY(tcd->ltt_armall_path_entry));
+
+  /* Setup arguments to su */
+  /* child */
+  gchar args[MAX_ARGS_LEN];
+  gint args_left = MAX_ARGS_LEN - 1; /* for \0 */
+ 
+  args[0] = '\0';
+
+  /* Command */
+  strncat(args, "exec", args_left);
+  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+  /* space */
+  strncat(args, " ", args_left);
+  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+  if(strcmp(ltt_armall_path, "") == 0)
+    strncat(args, "ltt-armall", args_left);
+  else
+    strncat(args, ltt_armall_path, args_left);
+  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+  int retval = execute_command(args, username, password, "");
+  if(retval) {
+    gchar msg[256];
+    guint msg_left = 256;
+
+    strcpy(msg, "A problem occured when executing the su command : ");
+    msg_left = 256 - strlen(msg) - 1;
+    strncat(msg, strerror(retval), msg_left);
+    GtkWidget *dialogue = 
+      gtk_message_dialog_new(
+        GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button))),
+        GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_ERROR,
+        GTK_BUTTONS_OK,
+        msg);
+    gtk_dialog_run(GTK_DIALOG(dialogue));
+    gtk_widget_destroy(dialogue);
+  }
+ 
+}
+
+void disarm_clicked (GtkButton *button, gpointer user_data)
+{
+  ControlData *tcd = (ControlData*)user_data;
+
+  const gchar *username = gtk_entry_get_text(GTK_ENTRY(tcd->username_entry));
+  const gchar *password = gtk_entry_get_text(GTK_ENTRY(tcd->password_entry));
+  const gchar *ltt_disarmall_path =
+    gtk_entry_get_text(GTK_ENTRY(tcd->ltt_disarmall_path_entry));
+
+  /* Setup arguments to su */
+  /* child */
+  gchar args[MAX_ARGS_LEN];
+  gint args_left = MAX_ARGS_LEN - 1; /* for \0 */
+ 
+  args[0] = '\0';
+
+  /* Command */
+  strncat(args, "exec", args_left);
+  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+  /* space */
+  strncat(args, " ", args_left);
+  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+  if(strcmp(ltt_disarmall_path, "") == 0)
+    strncat(args, "ltt-disarmall", args_left);
+  else
+    strncat(args, ltt_disarmall_path, args_left);
+  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+  int retval = execute_command(args, username, password, "");
+  if(retval) {
+    gchar msg[256];
+    guint msg_left = 256;
+
+    strcpy(msg, "A problem occured when executing the su command : ");
+    msg_left = 256 - strlen(msg) - 1;
+    strncat(msg, strerror(retval), msg_left);
+    GtkWidget *dialogue = 
+      gtk_message_dialog_new(
+        GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button))),
+        GTK_DIALOG_MODAL|GTK_DIALOG_DESTROY_WITH_PARENT,
+        GTK_MESSAGE_ERROR,
+        GTK_BUTTONS_OK,
+        msg);
+    gtk_dialog_run(GTK_DIALOG(dialogue));
+    gtk_widget_destroy(dialogue);
+  }
+ 
 }
 
 
