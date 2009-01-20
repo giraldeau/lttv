@@ -702,8 +702,22 @@ void start_clicked (GtkButton *button, gpointer user_data)
   strncat(args, " ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
+  /* Start daemon ? */
+  if(start_daemon) {
+    strncat(args, "-C", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+  } else {
+    /* Simply create the channel and then start tracing */
+    //strncat(args, "-b", args_left);
+    //args_left = MAX_ARGS_LEN - strlen(args) - 1;
+  }
+
+  /* space */
+  strncat(args, " ", args_left);
+  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
   /* channel dir */
-  strncat(args, "-l ", args_left);
+  strncat(args, "--channel_root ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
   strncat(args, channel_dir, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
@@ -713,7 +727,7 @@ void start_clicked (GtkButton *button, gpointer user_data)
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
   /* trace dir */
-  strncat(args, "-t ", args_left);
+  strncat(args, "-w ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
   strncat(args, trace_dir, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
@@ -721,37 +735,20 @@ void start_clicked (GtkButton *button, gpointer user_data)
   /* space */
   strncat(args, " ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  
-  /* name */
-  strncat(args, "-n ", args_left);
-  args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  strncat(args, trace_name, args_left);
-  args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-  /* space */
-  strncat(args, " ", args_left);
-  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+  if(strcmp(trace_mode, "flight") == 0) {
+    strncat(args, "-o channel.all.overwrite=1", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+  } else {
+    strncat(args, "-o channel.all.overwrite=0", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+  }
 
   /* trace mode */
   strncat(args, "-m ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
   strncat(args, trace_mode, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
-
-  /* space */
-  strncat(args, " ", args_left);
-  args_left = MAX_ARGS_LEN - strlen(args) - 1;
-
-  /* Start daemon ? */
-  if(start_daemon) {
-    strncat(args, "-d", args_left);
-    args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  } else {
-    /* Simply create the channel and then start tracing */
-    strncat(args, "-b", args_left);
-    args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  }
-
 
   /* Append to trace ? */
   if(append) {
@@ -769,7 +766,7 @@ void start_clicked (GtkButton *button, gpointer user_data)
     strncat(args, " ", args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-    strncat(args, "-z ", args_left);
+    strncat(args, "-o channel.all.bufsize=", args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
     strncat(args, subbuf_size, args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
@@ -781,7 +778,7 @@ void start_clicked (GtkButton *button, gpointer user_data)
     strncat(args, " ", args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-    strncat(args, "-x ", args_left);
+    strncat(args, "-o channel.all.bufnum=", args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
     strncat(args, subbuf_num, args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
@@ -793,13 +790,20 @@ void start_clicked (GtkButton *button, gpointer user_data)
     strncat(args, " ", args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-    strncat(args, "-N ", args_left);
+    strncat(args, "-n ", args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
     strncat(args, threads_num, args_left);
     args_left = MAX_ARGS_LEN - strlen(args) - 1;
   }
 
+  /* space */
+  strncat(args, " ", args_left);
+  args_left = MAX_ARGS_LEN - strlen(args) - 1;
   
+  /* name */
+  strncat(args, trace_name, args_left);
+  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
   int retval = execute_command(args, username, password, lttd_path, fac_path);
 
   if(retval) {
@@ -858,22 +862,20 @@ void pause_clicked (GtkButton *button, gpointer user_data)
     strncat(args, lttctl_path, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
-  /* space */
+ /* space */
   strncat(args, " ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  
-  /* name */
-  strncat(args, "-n ", args_left);
-  args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  strncat(args, trace_name, args_left);
+ 
+  /* Simply pause tracing */
+  strncat(args, "-p", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
   /* space */
   strncat(args, " ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
- 
-  /* Simply pause tracing */
-  strncat(args, "-q", args_left);
+  
+  /* name */
+  strncat(args, trace_name, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
   int retval = execute_command(args, username, password, lttd_path, fac_path);
@@ -935,19 +937,17 @@ void unpause_clicked (GtkButton *button, gpointer user_data)
   /* space */
   strncat(args, " ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  
-  /* name */
-  strncat(args, "-n ", args_left);
-  args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  strncat(args, trace_name, args_left);
+ 
+  /* Simply unpause tracing */
+  strncat(args, "-s", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
   /* space */
   strncat(args, " ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
- 
-  /* Simply unpause tracing */
-  strncat(args, "-s", args_left);
+  
+  /* name */
+  strncat(args, trace_name, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
   int retval = execute_command(args, username, password, lttd_path, fac_path);
@@ -1013,19 +1013,29 @@ void stop_clicked (GtkButton *button, gpointer user_data)
   /* space */
   strncat(args, " ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  
-  /* name */
-  strncat(args, "-n ", args_left);
+ 
+  /* Simply stop tracing and destroy channel */
+  strncat(args, "-D", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
-  strncat(args, trace_name, args_left);
-  args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+  if(strcmp(trace_mode, "flight") == 0) {
+    /* space */
+    strncat(args, " ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+
+    /* trace dir */
+    strncat(args, "-w ", args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+    strncat(args, trace_dir, args_left);
+    args_left = MAX_ARGS_LEN - strlen(args) - 1;
+  }
 
   /* space */
   strncat(args, " ", args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
- 
-  /* Simply stop tracing and destroy channel */
-  strncat(args, "-R", args_left);
+  
+  /* name */
+  strncat(args, trace_name, args_left);
   args_left = MAX_ARGS_LEN - strlen(args) - 1;
 
   int retval = execute_command(args, username, password, lttd_path, fac_path);
