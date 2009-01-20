@@ -1,0 +1,32 @@
+LTTng User-space Tracing Design
+
+A user-space application may contain static instrumentation, and be linked with
+an associated runtime library, in order to produce an execution trace. User
+space Tracepoints and Markers, analogous to Kernel Tracepoints and Markers,
+define program locations and arguments provided. Probes may then be connected to
+each Tracepoint and Marker before they are activated. The probes will typically
+call LTTng user-space event writing functions.
+
+When the instrumented application starts, a pipe is opened to allow external
+tracing control, asynchronous notification is requested when commands arrive in
+the pipe, and a signal handler is installed for SIGIO. Every time a SIGIO signal
+is received, the runtime library checks for commands received on the external
+tracing control pipe. The recognized commands are:
+
+- list the available Markers and Tracepoints;
+- dynamically load a library (presumably containing probes to connect);
+- connect a probe to a Tracepoint or Marker;
+- activate a Tracepoint or Marker;
+- initialize the tracing buffers;
+- flush the tracing buffers;
+- finalize the tracing buffers;
+
+The application may also spontaneously provide information to the pipe:
+
+- a buffer is full;
+- new tracepoints or markers are appearing or disappearing, because modules are
+  dynamically loaded or unloaded;
+
+In addition, the tracing control application should be notified when the
+application exits (to save the content of buffers if the application is
+crashing). Such notification may be obtained through utrace.
