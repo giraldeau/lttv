@@ -370,7 +370,7 @@ gui_control(LttvPluginTab *ptab)
   tcd->ltt_armall_path_label = gtk_label_new("path to ltt_armall:");
   gtk_widget_show (tcd->ltt_armall_path_label);
   tcd->ltt_armall_path_entry = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(tcd->ltt_armall_path_entry),PACKAGE_BIN_DIR "/ltt_armall");
+  gtk_entry_set_text(GTK_ENTRY(tcd->ltt_armall_path_entry),PACKAGE_BIN_DIR "/ltt-armall");
   gtk_widget_show (tcd->ltt_armall_path_entry);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_armall_path_label,0,2,13,14,GTK_FILL,GTK_FILL,2,2);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_armall_path_entry,2,6,13,14,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
@@ -378,7 +378,7 @@ gui_control(LttvPluginTab *ptab)
   tcd->ltt_disarmall_path_label = gtk_label_new("path to ltt_disarmall:");
   gtk_widget_show (tcd->ltt_disarmall_path_label);
   tcd->ltt_disarmall_path_entry = gtk_entry_new();
-  gtk_entry_set_text(GTK_ENTRY(tcd->ltt_disarmall_path_entry),PACKAGE_BIN_DIR "/ltt_disarmall");
+  gtk_entry_set_text(GTK_ENTRY(tcd->ltt_disarmall_path_entry),PACKAGE_BIN_DIR "/ltt-disarmall");
   gtk_widget_show (tcd->ltt_disarmall_path_entry);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_disarmall_path_label,0,2,13,14,GTK_FILL,GTK_FILL,2,2);
   gtk_table_attach( GTK_TABLE(tcd->main_box),tcd->ltt_disarmall_path_entry,2,6,13,14,GTK_FILL|GTK_EXPAND|GTK_SHRINK,GTK_FILL,0,0);
