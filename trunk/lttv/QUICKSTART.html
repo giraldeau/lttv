@@ -34,7 +34,6 @@ to follow to trace a system and view it. The third part explains
 briefly how to add a new trace point to the kernel and to user space
 applications. The fourth and last part explains how to create Debian or RPM
 packages from the LTTng and LTTV sources.
-
 <p>
 These operations are made for installing the LTTng 0.86 tracer on a linux 2.6.X
 kernel. You will also find instructions for installation of LTTV 0.12.x : the
@@ -342,7 +341,7 @@ make install
 
 <li>Getting and installing the markers-userspace package for user space
 tracing (experimental)</li>
-
+<p>
 See <a
 href="http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2">markers-userspace-0.5.tar.bz2</a> or more recent.
 
@@ -352,13 +351,11 @@ href="http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2">markers-user
 <h2><a href="#TOCsection3" name="section3">Using LTTng and LTTV</a></h2>
 
 <li>IMPORTANT : Arm Linux Kernel Markers after each boot</li>
-
 <PRE>
 ltt-armall
 </PRE>
 
 <li>Use graphical LTTV to control tracing and analyse traces</li>
-
 <PRE>
 lttv-gui (or /usr/local/bin/lttv-gui)
   - Spot the "Tracing Control" icon : click on it
@@ -398,14 +395,11 @@ Feel free to look in /usr/local/lib/lttv/plugins to see all the text and
 graphical plugins available.
 <p>
 For example, a simple trace dump in text format is available with :
-
 <PRE>
 lttv -m textDump -t /tmp/trace
 </PRE>
-
 <p>
 See lttv -m textDump --help for detailed command line options of textDump.
-
 <p>
 It is, in the current state of the project, very useful to use "grep" on the
 text output to filter by specific event fields. You can later copy the timestamp
@@ -414,18 +408,15 @@ bottom right label "Current time". Support for this type of filtering should
 be added to the filter module soon.
 
 <li>Hybrid mode</li>
-
 <p>
 Starting from LTTng 0.5.105 and ltt-control 0.20, a new mode can be used :
 hybrid. It can be especially useful when studying big workloads on a long period
 of time.
-
 <p>
 When using this mode, the most important, low rate control information will be
 recorded during all the trace by lttd (i.e. process creation/exit). The high
 rate information (i.e. interrupt/traps/syscall entry/exit) will be kept in a
 flight recorder buffer (now named flight-channelname_X).
-
 <p>
 The following lttctl commands take an hybrid trace :
 <p>
@@ -442,15 +433,12 @@ lttctl -D -w /tmp/trace2 trace2
 Each "overwrite" channel is flight recorder channel.
 
 <li>Flight recorder mode</li>
-
 <p>
 The flight recorder mode writes data into overwritten buffers for all channels,
 including control channels, except for the facilities tracefiles. It consists of
 setting all channels to "overwrite".
-
 <p>
 The following lttctl commands take a flight recorder trace :
-
 <PRE>
 lttctl -C -w /tmp/trace3 -o channel.all.overwrite=1 trace3
 ...
