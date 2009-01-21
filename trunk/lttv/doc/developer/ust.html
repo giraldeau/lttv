@@ -46,9 +46,11 @@ crashing). Such notification may be obtained through utrace.
 This tracing scheme plans to use a direct function call to tracing into buffers
 mapped in user-space. This should be an order of magnitude faster than the
 current Dtrace implementation (c.f.
-https://ltt.polymtl.ca/tracingwiki/index.php/DTrace) which uses a breakpoint to
+<a href="http://ltt.polymtl.ca/tracingwiki/index.php/DTrace">Dtrace information
+on the TracingWiki</a>) which uses a breakpoint to
 perform both dynamic and static user-space tracing. Performance comparison of
 a function call vs the int3 approach is available at
-http://sourceware.org/ml/systemtap/2006-q3/msg00793.html (see "Conclusion").
+<a href="http://sourceware.org/ml/systemtap/2006-q3/msg00793.html">Markers vs
+int3 performance comparison</a> (see "Conclusion").
   </body>
 </html>
