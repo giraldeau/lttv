@@ -9,43 +9,42 @@
 
 
 Author : Mathieu Desnoyers, September 2005<br>
-Last update : January 9th, 2009<br>
+Last update : January 21st, 2009<br>
+
+<h2>Table of Contents</h2>
+<ul>
+
+<li><a href="#section1" name="TOCsection1">Installing LTTng and LTTV from
+sources</a></li>
+<li><a href="#section2" name="TOCsection2">Using LTTng and LTTV</a></li>
+<li><a href="#section3" name="TOCsection3">Adding kernel and user-space
+tracepoints</a></li>
 
 <p>
-This document is made of four parts : the first one explains how to install
-LTTng and LTTV from Debian and RPM binary packages, the second one explains how
-to install LTTng and LTTV from sources and the third one describes the steps
-to follow to trace a system and view it. The fourth and last part explains
+This document is made of three parts : the first one explains how
+to install LTTng and LTTV from sources, the second one describes the steps
+to follow to trace a system and view it. The third and last part explains
 briefly how to add a new trace point to the kernel and to user space
 applications.
 
 <p>
-What you will typically want is to read sections 2 and 3 : install LTTng from
-sources and use it.
-
-<p>
-These operations are made for installing the LTTng 0.74 tracer on a linux 2.6.X
+These operations are made for installing the LTTng 0.86 tracer on a linux 2.6.X
 kernel. You will also find instructions for installation of LTTV 0.12.x : the
 Linux Trace Toolkit Viewer. 
 
 <p>
-To see the list of compatibilities between LTTng, ltt-control, LTTV and
-markers-userspace, please refer to :
+To see the list of compatibilities between LTTng, ltt-control, LTTV, please
+refer to :
 <a
 href="http://ltt.polymtl.ca/svn/trunk/lttv/doc/developer/lttng-lttv-compatibility.html">LTTng+LTTV versions compatibility</a>
 
-
 <p>
-The following lttng patch is necessary to have the tracing hooks in the kernel.
-The following ltt-control module controls the tracing.
+The lttng patch is necessary to have the tracing hooks in the kernel.
 
-<p>
-Required programs and libraries are assumed to be automatically installed in an
-installation with Debian or RPM packages. In the case of an installation from
-sources, the dependencies are listed.
-
-
+<br>
+<br>
 ** Current development status **<br>
+<br>
 <br>
 LTTng :<br>
 Supported architectures : 
@@ -54,6 +53,7 @@ Supported architectures :
 <li> ARM (with limited timestamping precision, e.g. 1HZ. Need
 architecture-specific support for better precision)
 <li> MIPS
+<br>
 <br>
 LTTV :<br>
 supported architectures :<br>
