@@ -15,7 +15,8 @@ endif
 	#obj-m += test-sys_call.o
 #	obj-m += test-bug.o
 	obj-m += test-tsc-sync2.o
-	obj-m += test-nop-speed.o
+	#obj-m += test-63.o
+	#obj-m += test-nop-speed.o
 	#obj-m += test-hpet.o
 #	obj-m += test-prefix-speed-32.o
 	#obj-m += test-prefix-speed.o
