@@ -31,3 +31,12 @@ The application may also spontaneously provide information to the pipe:
 In addition, the tracing control application should be notified when the
 application exits (to save the content of buffers if the application is
 crashing). Such notification may be obtained through utrace.
+
+This tracing scheme plans to use a direct function call to tracing into buffers
+mapped in user-space. This should be an order of magnitude faster than the
+current Dtrace implementation (c.f.
+https://ltt.polymtl.ca/tracingwiki/index.php/DTrace) which uses a breakpoint to
+perform both dynamic and static user-space tracing. Performance comparison of
+a function call vs the int3 approach is available at
+http://sourceware.org/ml/systemtap/2006-q3/msg00793.html (see "Conclusion").
+
