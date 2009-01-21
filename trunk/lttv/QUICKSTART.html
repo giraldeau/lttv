@@ -66,7 +66,7 @@ the LTTng traces and the LTTV analysis tool.
 <hr />
 
 
-<h2><a href="#TOCsection2" name="section2">Installation from sources</a></h2>
+<h2><a href="#TOCsection1" name="section1">Installation from sources</a></h2>
 <p>
 
 <li>Prerequisites</li>
@@ -349,7 +349,7 @@ href="http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2">markers-user
 <hr />
 
 
-<h2><a href="#TOCsection3" name="section3">Using LTTng and LTTV</a></h2>
+<h2><a href="#TOCsection2" name="section2">Using LTTng and LTTV</a></h2>
 
 <li>IMPORTANT : Arm Linux Kernel Markers after each boot</li>
 <PRE>
@@ -446,42 +446,53 @@ lttctl -C -w /tmp/trace3 -o channel.all.overwrite=1 trace3
 lttctl -D -w /tmp/trace3 trace3
 </PRE>
 
-**************************************************************
-** Section 4 * Adding new instrumentations with the markers **
-**************************************************************
+<hr />
 
+
+<h2><a href="#TOCsection3" name="section3">Adding new instrumentations with the
+markers</a></h2>
+<p>
+
+<p>
 See Documentation/markers.txt and Documentation/tracepoints.txt in your kernel
 tree.
 
-* Add new events to userspace programs with userspace markers
-http://ltt.polymtl.ca/packages/
+<li>Add new events to userspace programs with userspace markers
+http://ltt.polymtl.ca/packages/</li>
 
+<p>
 Get the latest markers-userspace-*.tar.bz2 and see the Makefile and examples. It
 allows inserting markers in executables and libraries, currently only on x86_32
 and x86_64.
 
-***********************************************************
-** Section 5 * Creating Debian or RPM packages           **
-***********************************************************
+<hr />
 
-* Create custom LTTV Debian packages
+<h2><a href="#TOCsection4" name="section4">Creating Debian or RPM packages</a></h2>
+<p>
 
+<li>Create custom LTTV Debian packages</li>
+
+<PRE>
 Use : dpkg-buildpackage -rfakeroot
-
+</PRE>
+<p>
 You should then have your LTTV .deb files created for your architecture.
 
-* Create custom LTTng packages
-
+<li>Create custom LTTng packages</li>
+<p>
 For building LTTng Debian packages :
+get the build tree with patches applies as explained in section 2.
 
-Get the build tree with patches applies as explained in section 2.
-
+<PRE>
 make menuconfig (or xconfig or config) (customize your configuration)
 make-kpkg kernel_image
-
+</PRE>
+<p>
 You will then see your freshly created .deb in /usr/src. Install it with
+<PRE>
 dpkg -i /usr/src/(image-name).deb
-
+</PRE>
+<p>
 Then, follow the section "Editing the system wide configuration" in section 2.
 
 
