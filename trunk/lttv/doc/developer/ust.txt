@@ -9,9 +9,10 @@ call LTTng user-space event writing functions.
 
 When the instrumented application starts, a pipe is opened to allow external
 tracing control, asynchronous notification is requested when commands arrive in
-the pipe, and a signal handler is installed for SIGIO. Every time a SIGIO signal
-is received, the runtime library checks for commands received on the external
-tracing control pipe. The recognized commands are:
+the pipe, and a signal handler is installed for SIGIO (or a carefully chosen
+chainable signal number). Every time such signal is received, the runtime
+library checks for commands received on the external tracing control pipe. The
+recognized commands are:
 
 - list the available Markers and Tracepoints;
 - dynamically load a library (presumably containing probes to connect);
