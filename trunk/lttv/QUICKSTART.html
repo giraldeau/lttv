@@ -83,12 +83,14 @@ Tools needed to follow the package download steps :
 You have to install the standard development libraries and programs necessary
 to compile a kernel :
 
+<PRE>
 (from Documentation/Changes in the Linux kernel tree)
-<li>Gnu C &nbsp;               2.95.3 &nbsp;               # gcc --version
-<li>Gnu make &nbsp;            3.79.1 &nbsp;               # make --version
-<li>binutils  &nbsp;           2.12   &nbsp;               # ld -v
-<li>util-linux &nbsp;          2.10o  &nbsp;               # fdformat --version
-<li>module-init-tools &nbsp;   0.9.10 &nbsp;               # depmod -V
+Gnu C                2.95.3                # gcc --version
+Gnu make             3.79.1                # make --version
+binutils             2.12                  # ld -v
+util-linux           2.10o                 # fdformat --version
+module-init-tools    0.9.10                # depmod -V
+</PRE>
 
 <p>
 You might also want to have libncurses5 to have the text mode kernel
@@ -97,24 +99,26 @@ configuration menu, but there are alternatives.
 <p>
 Prerequisites for LTTV 0.x.x installation are :
 
-<li>gcc 3.2 or better
-<li>gtk 2.4 or better development libraries
+<PRE>
+gcc 3.2 or better
+gtk 2.4 or better development libraries
   (Debian : libgtk2.0, libgtk2.0-dev)
   (Fedora : gtk2, gtk2-devel)
   note : For Fedora users : this might require at least core 3 from Fedora,
   or you might have to compile your own GTK2 library.
-<li>glib 2.4 or better development libraries
+glib 2.4 or better development libraries
   (Debian : libglib2.0-0, libglib2.0-dev)
   (Fedora : glib2, glib2-devel)
-<li>libpopt development libraries
+libpopt development libraries
   (Debian : libpopt0, libpopt-dev)
   (Fedora : popt)
-<li>libpango development libraries
+libpango development libraries
   (Debian : libpango1.0, libpango1.0-dev)
   (Fedora : pango, pango-devel)
-<li>libc6 development librairies 
+libc6 development librairies 
   (Debian : libc6, libc6-dev)
   (Fedora : glibc, glibc)
+</PRE>
 </ul>
 
 <li>Reminder/<li>
