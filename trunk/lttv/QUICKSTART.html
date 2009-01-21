@@ -16,6 +16,8 @@ Last update : January 21st, 2009<br>
 
 <li><a href="#intro" name="TOCintro">Introduction</a></li>
 <li><a href="#section1" name="TOCsection1">Installing LTTng and LTTV from
+<ul>
+<li><a href="#userspacetracing" name="TOCuserspacetracing">Userspace Tracing</ul>
 sources</a></li>
 <li><a href="#section2" name="TOCsection2">Using LTTng and LTTV</a></li>
 <li><a href="#section3" name="TOCsection3">Adding kernel and user-space
@@ -308,7 +310,7 @@ make
 make install
 </PRE>
 
-<li>Userspace tracing</li>
+<h3><a href="#TOCuserspacetracing" name="userspacetracing">Userspace tracing</a></h3>
 
 <PRE>
 Make sure you selected the kernel menuconfig option :
@@ -458,14 +460,20 @@ tree.
 Get the latest markers-userspace-*.tar.bz2 and see the Makefile and examples. It
 allows inserting markers in executables and libraries, currently only on x86_32
 and x86_64.
-
 See <a
 href="http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2">markers-userspace-0.5.tar.bz2</a> or more recent.
 
+<p>
 Note that a new design document for a 3rd generation of tracepoint/marker-based
 userspace tracing is available at <a
 href="http://ltt.polymtl.ca/svn/trunk/lttv/doc/developer/ust.html">LTTng User-space Tracing
-Design"</a>.
+Design"</a>. This new infrastructure is not yet implemented.
+
+<p>
+The easy quick-and-dirty way to perform userspace tracing is currently to write
+an string to /mnt/debugfs/ltt/write_event. See <a
+href="#userspacetracing">Userspace tracing</a> in the
+installation for sources section of this document.
 
 <hr />
 
