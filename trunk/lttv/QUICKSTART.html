@@ -16,9 +16,18 @@ Last update : January 21st, 2009<br>
 
 <li><a href="#intro" name="TOCintro">Introduction</a></li>
 <li><a href="#section1" name="TOCsection1">Installing LTTng and LTTV from
-<ul>
-<li><a href="#userspacetracing" name="TOCuserspacetracing">Userspace Tracing</ul>
 sources</a></li>
+<ul>
+<li><a href="#prerequisites" name="TOCprerequisites">Prerequisistes</ul>
+<li><a href="#getlttng" name="TOCgetlttng">Getting the LTTng packages</ul>
+<li><a href="#getlttngsrc" name="TOCgetlttngsrc">Getting the LTTng kernel sources</ul>
+<li><a href="#installlttng" name="TOCinstalllttng">Installing a LTTng kernel</ul>
+<li><a href="#editconfig" name="TOCeditconfig">Editing the system wide
+configuration</a>
+<li><a href="#getlttctl" name="TOCgetlttctl">Getting and installing the
+ltt-control package</ul>
+<li><a href="#userspacetracing" name="TOCuserspacetracing">Userspace Tracing</ul>
+<li><a href="#getlttv" name="TOCgetlttv">Getting and installing the LTTV package</ul>
 <li><a href="#section2" name="TOCsection2">Using LTTng and LTTV</a></li>
 <li><a href="#section3" name="TOCsection3">Adding kernel and user-space
 tracepoints</a></li>
@@ -50,7 +59,7 @@ The lttng patch is necessary to have the tracing hooks in the kernel.
 <br>
 <br>
 Supported architectures : 
-<br>
+br>
 LTTng :<br>
 <li> x86 32/64 bits
 <li> PowerPC 32 and 64 bits
@@ -71,7 +80,7 @@ the LTTng traces and the LTTV analysis tool.
 <h2><a href="#TOCsection1" name="section1">Installation from sources</a></h2>
 <p>
 
-<li>Prerequisites</li>
+<h3><a href="#TOCprerequisites" name="prerequisites">Prerequisites</a></h3>
 <ul>
 <p>
 Tools needed to follow the package download steps :
@@ -132,7 +141,7 @@ href="http://ltt.polymtl.ca/svn/trunk/lttv/doc/developer/lttng-lttv-compatibilit
 versions compatibility</a>.
 
 
-<li>Getting the LTTng packages</li>
+<h3><a href="#TOCgetlttng" name="getlttng">Getting the LTTng packages</a></h3>
 
 <PRE>
 su -
@@ -144,7 +153,7 @@ bzip2 -cd patch-2.6.X-lttng-0.x.xx.tar.bz2 | tar xvof -
 </PRE>
 
 
-<li>Getting LTTng kernel sources</li>
+<h3><a href="#TOCgetlttngsrc" name="getlttngsrc">Getting LTTng kernel sources</a></h3>
 
 <PRE>
 su -
@@ -160,7 +169,7 @@ mv linux-2.6.X linux-2.6.X-lttng-0.x.xx
 </PRE>
 
 
-<li>Installing a LTTng kernel</li>
+<h3><a href="#TOCinstalllttng" name="installlttng">Installing a LTTng kernel</a></h3>
 
 <PRE>
 su -
@@ -217,7 +226,8 @@ Select the Linux 2.6.X-lttng-0.x.xx kernel in your boot loader.
 --
 </PRE>
 
-<li>Editing the system wide configuration</li>
+<h3><a href="#TOCeditconfig" name="editconfig">Editing the system wide
+configuration</a></h3>
 
 <p>
 You must activate debugfs and specify a mount point. This is typically done in
@@ -292,7 +302,9 @@ echo trap-trace >> /etc/modules
 #echo lockdep-trace >> /etc/modules
 </PRE>
 
-<li>Getting and installing the ltt-control package (on the traced machine)</li>
+
+<h3><a href="#TOCgetlttctl" name="getlttctl">Getting and installing the
+ltt-control package (on the traced machine)</a></h3>
 <p>
 (note : the ltt-control package contains lttd and lttctl. Although it has the
 same name as the ltt-control kernel module, they are *not* the same thing.)
@@ -326,8 +338,9 @@ channel : userspace
 event name : event
 </PRE>
 
-<li>Getting and installing the LTTV package (on the visualisation machine, same
-or different from the visualisation machine)</li>
+<h3><a href="#TOCgetlttv" name="getlttv">Getting and installing the LTTV package
+(on the visualisation machine, same
+or different from the visualisation machine)</a></h3>
 
 <PRE>
 su -
