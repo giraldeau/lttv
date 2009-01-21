@@ -1,5 +1,13 @@
-LTTng User-space Tracing Design
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <title>LTTng User-space Tracing Design</title>
+</head>
+  <body>
 
+<h1>LTTng User-space Tracing Design</h1>
+
+<p>
 A user-space application may contain static instrumentation, and be linked with
 an associated runtime library, in order to produce an execution trace. User
 space Tracepoints and Markers, analogous to Kernel Tracepoints and Markers,
@@ -7,6 +15,7 @@ define program locations and arguments provided. Probes may then be connected to
 each Tracepoint and Marker before they are activated. The probes will typically
 call LTTng user-space event writing functions.
 
+<p>
 When the instrumented application starts, a pipe is opened to allow external
 tracing control, asynchronous notification is requested when commands arrive in
 the pipe, and a signal handler is installed for SIGIO (or a carefully chosen
@@ -14,24 +23,26 @@ chainable signal number). Every time such signal is received, the runtime
 library checks for commands received on the external tracing control pipe. The
 recognized commands are:
 
-- list the available Markers and Tracepoints;
-- dynamically load a library (presumably containing probes to connect);
-- connect a probe to a Tracepoint or Marker;
-- activate a Tracepoint or Marker;
-- initialize the tracing buffers;
-- flush the tracing buffers;
-- finalize the tracing buffers;
+<li> list the available Markers and Tracepoints;
+<li> dynamically load a library (presumably containing probes to connect);
+<li> connect a probe to a Tracepoint or Marker;
+<li> activate a Tracepoint or Marker;
+<li> initialize the tracing buffers;
+<li> flush the tracing buffers;
+<li> finalize the tracing buffers;
 
+<p>
 The application may also spontaneously provide information to the pipe:
 
-- a buffer is full;
-- new tracepoints or markers are appearing or disappearing, because modules are
+<li> a buffer is full;
+<li> new tracepoints or markers are appearing or disappearing, because modules are
   dynamically loaded or unloaded;
 
+<p>
 In addition, the tracing control application should be notified when the
 application exits (to save the content of buffers if the application is
 crashing). Such notification may be obtained through utrace.
-
+<p>
 This tracing scheme plans to use a direct function call to tracing into buffers
 mapped in user-space. This should be an order of magnitude faster than the
 current Dtrace implementation (c.f.
@@ -39,4 +50,5 @@ https://ltt.polymtl.ca/tracingwiki/index.php/DTrace) which uses a breakpoint to
 perform both dynamic and static user-space tracing. Performance comparison of
 a function call vs the int3 approach is available at
 http://sourceware.org/ml/systemtap/2006-q3/msg00793.html (see "Conclusion").
-
+  </body>
+</html>
