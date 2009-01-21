@@ -52,5 +52,12 @@ perform both dynamic and static user-space tracing. Performance comparison of
 a function call vs the int3 approach is available at
 <a href="http://sourceware.org/ml/systemtap/2006-q3/msg00793.html">Markers vs
 int3 performance comparison</a> (see "Conclusion").
+
+Tracing of Java application is planned to be done through a JNI interface.
+Linking standard low-level C tracing library to the application within a JNI
+adaptation class will be required to trace Java events. This has been prototyped
+in the past. The work is available here for older LTTng versions : <a
+href="http://ltt.polymtl.ca/svn/trunk/attic/ltt-usertrace/java/"</a>
+
   </body>
 </html>
