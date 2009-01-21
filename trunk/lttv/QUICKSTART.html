@@ -7,7 +7,6 @@
 
 <h1>Linux Trace Toolkit Quickstart</h1>
 
-
 Author : Mathieu Desnoyers, September 2005<br>
 Last update : January 21st, 2009<br>
 
@@ -20,6 +19,8 @@ sources</a></li>
 <li><a href="#section2" name="TOCsection2">Using LTTng and LTTV</a></li>
 <li><a href="#section3" name="TOCsection3">Adding kernel and user-space
 tracepoints</a></li>
+<li><a href="#section4" name="TOCsection4">Creating Debian and RPM packages
+from LTTV</a>
 
 </ul>
 
@@ -27,33 +28,28 @@ tracepoints</a></li>
 
 <h2><a href="#TOCintro" name="intro">Introduction</a></h2>
 <p>
-This document is made of three parts : the first one explains how
+This document is made of four parts : the first one explains how
 to install LTTng and LTTV from sources, the second one describes the steps
-to follow to trace a system and view it. The third and last part explains
+to follow to trace a system and view it. The third part explains
 briefly how to add a new trace point to the kernel and to user space
-applications.
+applications. The fourth and last part explains how to create Debian or RPM
+packages from the LTTng and LTTV sources.
 
 <p>
 These operations are made for installing the LTTng 0.86 tracer on a linux 2.6.X
 kernel. You will also find instructions for installation of LTTV 0.12.x : the
 Linux Trace Toolkit Viewer. 
-
-<p>
 To see the list of compatibilities between LTTng, ltt-control, LTTV, please
 refer to :
 <a
 href="http://ltt.polymtl.ca/svn/trunk/lttv/doc/developer/lttng-lttv-compatibility.html">LTTng+LTTV versions compatibility</a>
-
-<p>
 The lttng patch is necessary to have the tracing hooks in the kernel.
 
 <br>
 <br>
-** Current development status **<br>
-<br>
+Supported architectures : 
 <br>
 LTTng :<br>
-Supported architectures : 
 <li> x86 32/64 bits
 <li> PowerPC 32 and 64 bits
 <li> ARM (with limited timestamping precision, e.g. 1HZ. Need
@@ -62,7 +58,6 @@ architecture-specific support for better precision)
 <br>
 <br>
 LTTV :<br>
-supported architectures :<br>
 <li> Intel 32/64 bits
 <li> PowerPC 32 and 64 bits
 <li> Possibly others. Takes care of endianness and type size difference between
@@ -70,84 +65,64 @@ the LTTng traces and the LTTV analysis tool.
 
 <hr />
 
-***********************************************************
-** Section 1 * Installation from Debian or RPM packages  **
-***********************************************************
 
-* Create custom LTTV Debian packages
+<h2><a href="#TOCsection2" name="section2">Installation from sources</a></h2>
+<p>
 
-Use : dpkg-buildpackage -rfakeroot
-
-You should then have your LTTV .deb files created for your architecture.
-
-* Create custom LTTng packages
-
-For building LTTng Debian packages :
-
-Get the build tree with patches applies as explained in section 2.
-
-make menuconfig (or xconfig or config) (customize your configuration)
-make-kpkg kernel_image
-
-You will then see your freshly created .deb in /usr/src. Install it with
-dpkg -i /usr/src/(image-name).deb
-
-Then, follow the section "Editing the system wide configuration" in section 2.
-
-
-***********************************************************
-** Section 2 * Installation from sources                 **
-***********************************************************
-
-* Prerequisites
-
+<li>Prerequisites</li>
+<ul>
+<p>
 Tools needed to follow the package download steps :
 
-o wget
-o bzip2
-o gzip
-o tar
+<li>wget
+<li>bzip2
+<li>gzip
+<li>tar
 
+<p>
 You have to install the standard development libraries and programs necessary
 to compile a kernel :
 
 (from Documentation/Changes in the Linux kernel tree)
-o  Gnu C                  2.95.3                  # gcc --version
-o  Gnu make               3.79.1                  # make --version
-o  binutils               2.12                    # ld -v
-o  util-linux             2.10o                   # fdformat --version
-o  module-init-tools      0.9.10                  # depmod -V
+<li>Gnu C                  2.95.3                  # gcc --version
+<li>Gnu make               3.79.1                  # make --version
+<li>binutils               2.12                    # ld -v
+<li>util-linux             2.10o                   # fdformat --version
+<li>module-init-tools      0.9.10                  # depmod -V
 
+<p>
 You might also want to have libncurses5 to have the text mode kernel
 configuration menu, but there are alternatives.
 
+<p>
 Prerequisites for LTTV 0.x.x installation are :
 
-gcc 3.2 or better
-gtk 2.4 or better development libraries
+<li>gcc 3.2 or better
+<li>gtk 2.4 or better development libraries
   (Debian : libgtk2.0, libgtk2.0-dev)
   (Fedora : gtk2, gtk2-devel)
   note : For Fedora users : this might require at least core 3 from Fedora,
   or you might have to compile your own GTK2 library.
-glib 2.4 or better development libraries
+<li>glib 2.4 or better development libraries
   (Debian : libglib2.0-0, libglib2.0-dev)
   (Fedora : glib2, glib2-devel)
-libpopt development libraries
+<li>libpopt development libraries
   (Debian : libpopt0, libpopt-dev)
   (Fedora : popt)
-libpango development libraries
+<li>libpango development libraries
   (Debian : libpango1.0, libpango1.0-dev)
   (Fedora : pango, pango-devel)
-libc6 development librairies 
+<li>libc6 development librairies 
   (Debian : libc6, libc6-dev)
   (Fedora : glibc, glibc)
+</ul>
 
-* Reminder
+<li>Reminder/<li>
 
-See the list of compatibilities between LTTng, ltt-control, LTTV and
-markers-userspace at :
-http://ltt.polymtl.ca > LTTng+LTTV versions compatibility
-
+See the list of compatibilities between LTTng, ltt-control and LTTV at :
+<a
+href="http://ltt.polymtl.ca/svn/trunk/lttv/doc/developer/lttng-lttv-compatibility.html">LTTng+LTTV
+versions compatibility</a>.
 
 
 * Getting the LTTng packages
@@ -450,6 +425,32 @@ http://ltt.polymtl.ca/packages/
 Get the latest markers-userspace-*.tar.bz2 and see the Makefile and examples. It
 allows inserting markers in executables and libraries, currently only on x86_32
 and x86_64.
+
+***********************************************************
+** Section 5 * Creating Debian or RPM packages           **
+***********************************************************
+
+* Create custom LTTV Debian packages
+
+Use : dpkg-buildpackage -rfakeroot
+
+You should then have your LTTV .deb files created for your architecture.
+
+* Create custom LTTng packages
+
+For building LTTng Debian packages :
+
+Get the build tree with patches applies as explained in section 2.
+
+make menuconfig (or xconfig or config) (customize your configuration)
+make-kpkg kernel_image
+
+You will then see your freshly created .deb in /usr/src. Install it with
+dpkg -i /usr/src/(image-name).deb
+
+Then, follow the section "Editing the system wide configuration" in section 2.
+
+
 
   </body>
 </html>
