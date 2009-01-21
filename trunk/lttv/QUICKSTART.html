@@ -121,26 +121,30 @@ libc6 development librairies
 </PRE>
 </ul>
 
-<li>Reminder/<li>
+<li>Reminder</li>
 
+<p>
 See the list of compatibilities between LTTng, ltt-control and LTTV at :
 <a
 href="http://ltt.polymtl.ca/svn/trunk/lttv/doc/developer/lttng-lttv-compatibility.html">LTTng+LTTV
 versions compatibility</a>.
 
 
-* Getting the LTTng packages
+<li>Getting the LTTng packages</li>
 
+<PRE>
 su -
 mkdir /usr/src/lttng
 cd /usr/src/lttng
 (see http://ltt.polymtl.ca/lttng for package listing)
 wget http://ltt.polymtl.ca/lttng/patch-2.6.X-lttng-0.x.xx.tar.bz2
 bzip2 -cd patch-2.6.X-lttng-0.x.xx.tar.bz2 | tar xvof -
+</PRE>
 
 
-* Getting LTTng kernel sources
+<li>Getting LTTng kernel sources</li>
 
+<PRE>
 su -
 cd /usr/src
 wget http://kernel.org/pub/linux/kernel/v2.6/linux-2.6.X.tar.bz2
@@ -151,10 +155,12 @@ cd linux-2.6.X
   or use quilt
 cd ..
 mv linux-2.6.X linux-2.6.X-lttng-0.x.xx
+</PRE>
 
 
-* Installing a LTTng kernel
+<li>Installing a LTTng kernel</li>
 
+<PRE>
 su -
 cd /usr/src/linux-2.6.X-lttng-0.x.xx
 make menuconfig (or make xconfig or make config)
@@ -207,29 +213,34 @@ select the right entry at the yaboot prompt (see choices : tab, select : type
 the kernel name followed by enter)
 Select the Linux 2.6.X-lttng-0.x.xx kernel in your boot loader.
 --
+</PRE>
 
+<li>Editing the system wide configuration</li>
 
-
-* Editing the system wide configuration
-
+<p>
 You must activate debugfs and specify a mount point. This is typically done in
-fstab such that it happens at boot time.
+fstab such that it happens at boot time.  If you have never used DebugFS before,
+these operation would do this for you :
 
-If you have never used DebugFS before, these operation would do this for you :
-
+<PRE>
 mkdir /mnt/debugfs
 cp /etc/fstab /etc/fstab.lttng.bkp
 echo "debugfs         /mnt/debugfs    debugfs rw              0       0"  >> /etc/fstab
+</PRE>
 
+<p>
 then, rebooting or issuing the following command will activate debugfs :
-
+<PRE>
 mount /mnt/debugfs
+</PRE>
 
+<p>
 You need to load the LTT modules to be able to control tracing from user
 space. This is done by issuing the following commands. Note however
 these commands load all LTT modules. Depending on what options you chose to
 compile statically, you may not need to issue all these commands. 
 
+<PRE>
 modprobe ltt-trace-control
 modprobe ltt-marker-control
 modprobe ltt-tracer
@@ -246,15 +257,20 @@ modprobe syscall-trace
 modprobe trap-trace
 #if locking tracing is wanted, uncomment the following
 #modprobe lockdep-trace
+</PRE>
 
+<p>
 If you want to have complete information about the kernel state (including all
 the process names), you need to load the ltt-statedump module. This is done by
 issuing the command :
 
+<PRE>
 modprobe ltt-statedump
-
+</PRE>
+<p>
 You can automate at boot time loading the ltt-control module by :
 
+<PRE>
 cp /etc/modules /etc/modules.bkp
 echo ltt-trace-control >> /etc/modules
 echo ltt-marker-control >> /etc/modules
@@ -272,11 +288,14 @@ echo syscall-trace >> /etc/modules
 echo trap-trace >> /etc/modules
 #if locking tracing is wanted, uncomment the following
 #echo lockdep-trace >> /etc/modules
+</PRE>
 
-
-* Getting and installing the ltt-control package (on the traced machine)
+<li>Getting and installing the ltt-control package (on the traced machine)</li>
+<p>
 (note : the ltt-control package contains lttd and lttctl. Although it has the
 same name as the ltt-control kernel module, they are *not* the same thing.)
+
+<PRE>
 su -
 cd /usr/src
 wget http://ltt.polymtl.ca/lttng/ltt-control-0.x-xxxx2006.tar.gz
@@ -287,10 +306,11 @@ system)
 ./configure
 make
 make install
+</PRE>
 
+<li>Userspace tracing</li>
 
-* Userspace tracing
-
+<PRE>
 Make sure you selected the kernel menuconfig option :
     <M> or <*> Support logging events from userspace
 And that the ltt-userspace-event kernel module is loaded if selected as a
@@ -302,11 +322,12 @@ echo "some text to record" > /mnt/debugfs/ltt/write_event
 It will appear in the trace under event :
 channel : userspace
 event name : event
+</PRE>
 
+<li>Getting and installing the LTTV package (on the visualisation machine, same
+or different from the visualisation machine)</li>
 
-* Getting and installing the LTTV package (on the visualisation machine, same or
-  different from the visualisation machine)
-
+<PRE>
 su -
 cd /usr/src
 wget http://ltt.polymtl.ca/packages/lttv-0.x.xx-xxxx2008.tar.gz
@@ -319,22 +340,27 @@ make
 make install
 
 
-* Getting and installing the markers-userspace package for user space tracing
-(experimental)
-See http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2 or more recent.
+<li>Getting and installing the markers-userspace package for user space
+tracing (experimental)</li>
+
+<p>
+See <a
+href="http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2">markers-userspace-0.5.tar.bz2</a> or more recent.
+
+<hr />
 
 
+<h2><a href="#TOCsection3" name="section3">Using LTTng and LTTV</a></h2>
 
-***********************************************************
-** Section 3 * Using LTTng and LTTV                      **
-***********************************************************
+<li>IMPORTANT : Arm Linux Kernel Markers after each boot</li>
 
-* IMPORTANT : Arm Linux Kernel Markers after each boot
-
+<PRE>
 ltt-armall
+</PRE>
 
-* Use graphical LTTV to control tracing and analyse traces
+<li>Use graphical LTTV to control tracing and analyse traces</li>
 
+<PRE>
 lttv-gui (or /usr/local/bin/lttv-gui)
   - Spot the "Tracing Control" icon : click on it
       (it's a traffic light icon)
@@ -343,9 +369,11 @@ lttv-gui (or /usr/local/bin/lttv-gui)
     - click "stop"
     - Yes
       * You should now see a trace
+</PRE>
 
-* Use text mode LTTng to control tracing
+<li>Use text mode LTTng to control tracing</li>
 
+<PRE>
 The tracing can be controlled from a terminal by using the lttctl command (as
 root).
 
@@ -358,63 +386,81 @@ Stop tracing and destroy trace channels :
 lttctl -D trace1
 
 see lttctl --help for details.
+<PRE>
 
+<p>
 (note : to see if the buffers has been filled, look at the dmesg output after
 lttctl -R or after stopping tracing from the GUI, it will show an event lost
 count. If it is the case, try using larger buffers. See lttctl --help to learn 
 how. lttv now also shows event lost messages in the console when loading a trace
 with missing events or lost subbuffers.)
 
-* Use text mode LTTV
+<li>Use text mode LTTV</li>
 
+<p>
 Feel free to look in /usr/local/lib/lttv/plugins to see all the text and
 graphical plugins available.
 
+<p>
 For example, a simple trace dump in text format is available with :
 
+<PRE>
 lttv -m textDump -t /tmp/trace
+</PRE>
 
-see lttv -m textDump --help for detailed command line options of textDump.
+<p>
+See lttv -m textDump --help for detailed command line options of textDump.
 
+<p>
 It is, in the current state of the project, very useful to use "grep" on the
 text output to filter by specific event fields. You can later copy the timestamp
 of the events to the clipboard and paste them in the GUI by clicking on the
 bottom right label "Current time". Support for this type of filtering should
 be added to the filter module soon.
 
-* Hybrid mode
+<li>Hybrid mode</li>
 
+<p>
 Starting from LTTng 0.5.105 and ltt-control 0.20, a new mode can be used :
 hybrid. It can be especially useful when studying big workloads on a long period
 of time.
 
+<p>
 When using this mode, the most important, low rate control information will be
 recorded during all the trace by lttd (i.e. process creation/exit). The high
 rate information (i.e. interrupt/traps/syscall entry/exit) will be kept in a
 flight recorder buffer (now named flight-channelname_X).
 
+<p>
 The following lttctl commands take an hybrid trace :
-
+<p>
 Create trace channel, start lttd on normal channels, start tracing:
+<PRE>
 lttctl -C -w /tmp/trace2 -o channel.kernel.overwrite=1 trace2
-
+</PRE>
+<p>
 Stop tracing, start lttd on flight recorder channels, destroy trace channels :
+<PRE>
 lttctl -D -w /tmp/trace2 trace2
-
+</PRE>
+<p>
 Each "overwrite" channel is flight recorder channel.
 
-* Flight recorder mode
+<li>Flight recorder mode</li>
 
+<p>
 The flight recorder mode writes data into overwritten buffers for all channels,
 including control channels, except for the facilities tracefiles. It consists of
 setting all channels to "overwrite".
 
+<p>
 The following lttctl commands take a flight recorder trace :
 
+<PRE>
 lttctl -C -w /tmp/trace3 -o channel.all.overwrite=1 trace3
 ...
 lttctl -D -w /tmp/trace3 trace3
-
+</PRE>
 
 **************************************************************
 ** Section 4 * Adding new instrumentations with the markers **
