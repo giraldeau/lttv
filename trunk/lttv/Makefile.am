@@ -3,4 +3,4 @@
 
 SUBDIRS = ltt lttv doc
 
-EXTRA_DIST = QUICKSTART
+EXTRA_DIST = QUICKSTART.html
