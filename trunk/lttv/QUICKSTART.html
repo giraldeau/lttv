@@ -30,7 +30,12 @@ ltt-control package</li>
 <li><a href="#getlttv" name="TOCgetlttv">Getting and installing the LTTV package</ul>
 <li><a href="#section2" name="TOCsection2">Using LTTng and LTTV</a></li>
 <li><a href="#section3" name="TOCsection3">Adding kernel and user-space
-tracepoints</a></li>
+instrumentation</a>
+<ul>
+<li><a href="#kerneltp" name="TOCkerneltp">Adding kernel instrumentation</a></li>
+<li><a href="#usertp" name="TOCusertp">Adding userspace instrumentation</a></li>
+</ul>
+
 <li><a href="#section4" name="TOCsection4">Creating Debian and RPM packages
 from LTTV</a>
 
@@ -462,9 +467,21 @@ lttctl -D -w /tmp/trace3 trace3
 markers</a></h2>
 <p>
 
+<h3><a href="#TOCkerneltp" name="kerneltp">Adding kernel
+instrumentation</a></h3>
+
 <p>
-See Documentation/markers.txt and Documentation/tracepoints.txt in your kernel
+See <a
+href="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=Documentation/markers.txt">Documentation/markers.txt</a>
+and <a
+href="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=Documentation/tracepoints.txt">Documentation/tracepoints.txt</a> in your kernel
 tree.
+<p>
+Also see <a
+href="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=tree;f=ltt/probes">ltt/probes/</a>
+for LTTng probe examples.
+
+<h3><a href="#TOCusertp" name="usertp">Adding userspace instrumentation</a></h3>
 
 <li>Add new events to userspace programs with
 <a href="http://ltt.polymtl.ca/packages/">userspace markers packages</a></li>
