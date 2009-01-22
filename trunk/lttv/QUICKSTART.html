@@ -35,9 +35,13 @@ instrumentation</a>
 <li><a href="#kerneltp" name="TOCkerneltp">Adding kernel instrumentation</a></li>
 <li><a href="#usertp" name="TOCusertp">Adding userspace instrumentation</a></li>
 </ul>
-
 <li><a href="#section4" name="TOCsection4">Creating Debian and RPM packages
-from LTTV</a>
+from LTTV</a></li>
+<ul>
+<li><a href="#pkgdebian" name="TOCpkgdebian">Create custom LTTV Debian
+<li><a href="#pkglttng" name="TOCpkglttng">Create custom LTTng packages</a></li>
+
+</ul>
 
 </ul>
 
@@ -497,7 +501,7 @@ href="http://ltt.polymtl.ca/packages/markers-userspace-0.5.tar.bz2">markers-user
 Note that a new design document for a 3rd generation of tracepoint/marker-based
 userspace tracing is available at <a
 href="http://ltt.polymtl.ca/svn/trunk/lttv/doc/developer/ust.html">LTTng User-space Tracing
-Design"</a>. This new infrastructure is not yet implemented.
+Design</a>. This new infrastructure is not yet implemented.
 
 <p>
 The easy quick-and-dirty way to perform userspace tracing is currently to write
@@ -510,7 +514,7 @@ installation for sources section of this document.
 <h2><a href="#TOCsection4" name="section4">Creating Debian or RPM packages</a></h2>
 <p>
 
-<li>Create custom LTTV Debian packages</li>
+<h3><a href="#TOCpkgdebian" name="pkgdebian">Create custom LTTV Debian packages</a></h3>
 
 <PRE>
 Use : dpkg-buildpackage -rfakeroot
@@ -518,7 +522,7 @@ Use : dpkg-buildpackage -rfakeroot
 <p>
 You should then have your LTTV .deb files created for your architecture.
 
-<li>Create custom LTTng packages</li>
+<h3><a href="#TOCpkglttng" name="pkglttng">Create custom LTTng packages</a></h3>
 <p>
 For building LTTng Debian packages :
 get the build tree with patches applies as explained in section 2.
