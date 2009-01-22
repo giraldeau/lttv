@@ -55,18 +55,22 @@ from LTTV</a></li>
 <li><a href="#pkglttng" name="TOCpkglttng">Create custom LTTng packages</a></li>
 </ul>
 
+<li><a href="#section5" name="TOCsection5">Examples of LTTng use in the
+field</a></li>
+
 </ul>
 
 <hr />
 
 <h2><a href="#TOCintro" name="intro">Introduction</a></h2>
 <p>
-This document is made of four parts : the first one explains how
+This document is made of five parts : the first one explains how
 to install LTTng and LTTV from sources, the second one describes the steps
 to follow to trace a system and view it. The third part explains
 briefly how to add a new trace point to the kernel and to user space
-applications. The fourth and last part explains how to create Debian or RPM
-packages from the LTTng and LTTV sources.
+applications. The fourth part explains how to create Debian or RPM
+packages from the LTTng and LTTV sources. The fifth and last part describes use
+of LTTng in the field.
 <p>
 These operations are made for installing the LTTng 0.86 tracer on a linux 2.6.X
 kernel. You will also find instructions for installation of LTTV 0.12.x : the
@@ -80,8 +84,9 @@ The lttng patch is necessary to have the tracing hooks in the kernel.
 <br>
 <br>
 Supported architectures : 
-br>
+<br>
 LTTng :<br>
+<br>
 <li> x86 32/64 bits
 <li> PowerPC 32 and 64 bits
 <li> ARM (with limited timestamping precision, e.g. 1HZ. Need
@@ -90,6 +95,7 @@ architecture-specific support for better precision)
 <br>
 <br>
 LTTV :<br>
+<br>
 <li> Intel 32/64 bits
 <li> PowerPC 32 and 64 bits
 <li> Possibly others. Takes care of endianness and type size difference between
@@ -552,7 +558,50 @@ dpkg -i /usr/src/(image-name).deb
 <p>
 Then, follow the section "Editing the system wide configuration" in section 2.
 
+<hr />
 
+<h2><a href="#TOCsection5" name="section5">Examples of LTTng use in the field</a></h2>
+<p>
+A few examples of successful LTTng users :
 
+<ul>
+<li> Google are deploying LTTng on their servers. They want to use it to
+  monitor their production servers (with flight recorder mode tracing)
+  and to help them solve hard to reproduce problems. They have had
+  success with such tracing approach to fix "rare disk delay" issues and
+  VM-related issues presented in this article :
+
+  * "Linux Kernel Debugging on Google-sized clusters at Ottawa Linux
+    Symposium 2007"
+    http://ltt.polymtl.ca/papers/bligh-Reprint.pdf
+
+<li> IBM Research have had problems with Commercial Scale-out applications,
+  which are being an increasing trend to split large server workloads.
+  They used LTTng successfully to solve a distributed filesystem-related
+  issue. It's presented in the same paper above.
+
+<li> Autodesk, in the development of their next-generation of Linux
+  audio/video edition applications, used LTTng extensively to solve
+  soft real-time issues they had. Also presented in the same paper.
+
+<li> Wind River included LTTng in their Linux distribution so their
+  clients, already familiar to Wind River own tracing solution in
+  VxWorks, car have the same kind of feature they have relied on for a
+  long time.
+
+<li> Montavista have integrated LTTng in their distribution for the same
+  reasons. It's used by Sony amongst others.
+
+<li> SuSE are currently integrating LTTng in their next SLES distribution,
+  because their clients asking for solutions which supports a kernel
+  closer to real-time need such tools to debug their problems.
+
+<li> A project between Ericsson, the Canadian Defense, NSERC and various
+  universities is just starting. It aims at monitoring and debugging
+  multi-core systems and provide automated and help user system behavior
+  analysis.
+
+<li> Siemens have been using LTTng internally for quite some time now.
+</ul>
   </body>
 </html>
