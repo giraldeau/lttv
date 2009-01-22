@@ -12,9 +12,10 @@ Last update : January 21st, 2009<br>
 (originally known as the LTTng QUICKSTART guide)
 
 <h2>Table of Contents</h2>
-<ul>
 
+<ul>
 <li><a href="#intro" name="TOCintro">Introduction</a></li>
+
 <li><a href="#section1" name="TOCsection1">Installing LTTng and LTTV from
 sources</a></li>
 <ul>
@@ -28,19 +29,30 @@ configuration</a>
 ltt-control package</li>
 <li><a href="#userspacetracing" name="TOCuserspacetracing">Userspace Tracing</li>
 <li><a href="#getlttv" name="TOCgetlttv">Getting and installing the LTTV package</ul>
+
 <li><a href="#section2" name="TOCsection2">Using LTTng and LTTV</a></li>
+<ul>
+<li><a href="#uselttvgui" name="TOCuselttvgui">Use graphical LTTV to control
+tracing and analyse traces</a></li>
+<li><a href="#uselttngtext" name="TOCuselttngtext">Use text mode LTTng to
+<li><a href="#uselttvtext" name="TOCuselttvtext">Use text mode LTTV</a></li>
+<li><a href="#hybrid" name="TOChybrid">Tracing in "Hybrid" mode</a></li>
+<li><a href="#flight" name="TOCflight">Tracing in flight recorder mode</a></li>
+
+</ul>
+
 <li><a href="#section3" name="TOCsection3">Adding kernel and user-space
 instrumentation</a>
 <ul>
 <li><a href="#kerneltp" name="TOCkerneltp">Adding kernel instrumentation</a></li>
 <li><a href="#usertp" name="TOCusertp">Adding userspace instrumentation</a></li>
 </ul>
+
 <li><a href="#section4" name="TOCsection4">Creating Debian and RPM packages
 from LTTV</a></li>
 <ul>
 <li><a href="#pkgdebian" name="TOCpkgdebian">Create custom LTTV Debian
 <li><a href="#pkglttng" name="TOCpkglttng">Create custom LTTng packages</a></li>
-
 </ul>
 
 </ul>
@@ -369,12 +381,13 @@ make install
 
 <h2><a href="#TOCsection2" name="section2">Using LTTng and LTTV</a></h2>
 
-<li>IMPORTANT : Arm Linux Kernel Markers after each boot</li>
+<li><b>IMPORTANT : Arm Linux Kernel Markers after each boot before tracing</b></li>
 <PRE>
 ltt-armall
 </PRE>
 
-<li>Use graphical LTTV to control tracing and analyse traces</li>
+<h3><a href="#TOCuselttvgui" name="uselttvgui">Use graphical LTTV to control
+tracing and analyse traces</a></h3>
 <PRE>
 lttv-gui (or /usr/local/bin/lttv-gui)
   - Spot the "Tracing Control" icon : click on it
@@ -386,7 +399,7 @@ lttv-gui (or /usr/local/bin/lttv-gui)
       * You should now see a trace
 </PRE>
 
-<li>Use text mode LTTng to control tracing</li>
+<h3><a href="#TOCuselttngtext" name="uselttngtext">Use text mode LTTng to control tracing</a></h3>
 <PRE>
 The tracing can be controlled from a terminal by using the lttctl command (as
 root).
@@ -408,7 +421,7 @@ count. If it is the case, try using larger buffers. See lttctl --help to learn
 how. lttv now also shows event lost messages in the console when loading a trace
 with missing events or lost subbuffers.)
 
-<li>Use text mode LTTV</li>
+<h3><a href="#TOCuselttvtext" name="uselttvtext">Use text mode LTTV</a></h3>
 <p>
 Feel free to look in /usr/local/lib/lttv/plugins to see all the text and
 graphical plugins available.
@@ -426,7 +439,7 @@ of the events to the clipboard and paste them in the GUI by clicking on the
 bottom right label "Current time". Support for this type of filtering should
 be added to the filter module soon.
 
-<li>Hybrid mode</li>
+<h3><a href="#TOChybrid" name="hybrid">Tracing in "Hybrid" mode</a></h3>
 <p>
 Starting from LTTng 0.5.105 and ltt-control 0.20, a new mode can be used :
 hybrid. It can be especially useful when studying big workloads on a long period
@@ -451,6 +464,8 @@ lttctl -D -w /tmp/trace2 trace2
 <p>
 Each "overwrite" channel is flight recorder channel.
 
+
+<h3><a href="#TOCflight" name="flight">Tracing in flight recorder mode</a></h3>
 <li>Flight recorder mode</li>
 <p>
 The flight recorder mode writes data into overwritten buffers for all channels,
