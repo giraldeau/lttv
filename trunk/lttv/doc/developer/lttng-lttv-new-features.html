@@ -18,16 +18,16 @@ Supports huge traces : 10-15 GB.<br>
 <br>
 Here are the new features in LTTng/genevent :<br>
 Real ~100ns time accuracy, with monotonic increment.<br>
-Implements the "facility" event type metainformation.<br>
+Exports trace metainformation within the trace stream.<br>
+Supports arbitrary architecture type size or endianness.<br>
 Supports variable size event records.<br>
-Supports nested compound types : structures, array, sequences, unions, strings.<br>
 Supports compiler and architecture independant elementary types.<br>
 Supports ISO C compatible dynamic alignment of data.<br>
 Solid atomic (lockless) logging (NMI, traps, faults handler safe).<br>
 Supports writing to multiple traces at once (eventually with different
 filters).<br>
-Uses separate RelayFS channels for interrupts, modules, process and facility
-events.<br>
+Uses separate information channels for each information provider and for
+metadata events.<br>
 </body>
 </html>
 
