@@ -3,4 +3,4 @@
 
 SUBDIRS = ltt lttv doc
 
-EXTRA_DIST = QUICKSTART.html
+EXTRA_DIST = LTTngManual.html
