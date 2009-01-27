@@ -1186,15 +1186,20 @@ int before_execmode_hook_trap(void *hook_data, void *call_data)
 
   /*
    * Check for LTT_CHANNEL_KERNEL channel name and event ID
-   * corresponding to LTT_EVENT_TRAP_ENTRY or LTT_EVENT_TRAP_EXIT.
+   * corresponding to LTT_EVENT_TRAP/PAGE_FAULT_ENTRY or
+   * LTT_EVENT_TRAP/PAGE_FAULT_EXIT.
    */
   if (tfc->tf->name != LTT_CHANNEL_KERNEL)
     return 0;
   minfo = marker_get_info_from_id(tfc->tf->mdata, e->event_id);
   g_assert(minfo != NULL);
-  if (minfo->name == LTT_EVENT_TRAP_ENTRY) {
+  if (minfo->name == LTT_EVENT_TRAP_ENTRY
+      || minfo->name == LTT_EVENT_PAGE_FAULT_ENTRY
+      || minfo->name == LTT_EVENT_PAGE_FAULT_NOSEM_ENTRY) {
     trap = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
-  } else if (minfo->name == LTT_EVENT_TRAP_EXIT) {
+  } else if (minfo->name == LTT_EVENT_TRAP_EXIT
+             || minfo->name == LTT_EVENT_PAGE_FAULT_EXIT
+             || minfo->name == LTT_EVENT_PAGE_FAULT_NOSEM_EXIT) {
     trap = ts->cpu_states[cpu].last_trap;
   } else
     return 0;

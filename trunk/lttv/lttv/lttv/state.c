@@ -70,6 +70,10 @@ GQuark
 GQuark 
     LTT_EVENT_SYSCALL_ENTRY,
     LTT_EVENT_SYSCALL_EXIT,
+    LTT_EVENT_PAGE_FAULT_NOSEM_ENTRY,
+    LTT_EVENT_PAGE_FAULT_NOSEM_EXIT,
+    LTT_EVENT_PAGE_FAULT_ENTRY,
+    LTT_EVENT_PAGE_FAULT_EXIT,
     LTT_EVENT_TRAP_ENTRY,
     LTT_EVENT_TRAP_EXIT,
     LTT_EVENT_IRQ_ENTRY,
@@ -3423,6 +3427,30 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
 
     lttv_trace_find_hook(ts->parent.t,
         LTT_CHANNEL_KERNEL,
+        LTT_EVENT_PAGE_FAULT_ENTRY,
+        FIELD_ARRAY(LTT_FIELD_TRAP_ID),
+        trap_entry, NULL, &hooks);
+
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_CHANNEL_KERNEL,
+        LTT_EVENT_PAGE_FAULT_EXIT,
+        NULL,
+        trap_exit, NULL, &hooks);
+
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_CHANNEL_KERNEL,
+        LTT_EVENT_PAGE_FAULT_NOSEM_ENTRY,
+        FIELD_ARRAY(LTT_FIELD_TRAP_ID),
+        trap_entry, NULL, &hooks);
+
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_CHANNEL_KERNEL,
+        LTT_EVENT_PAGE_FAULT_NOSEM_EXIT,
+        NULL,
+        trap_exit, NULL, &hooks);
+
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_CHANNEL_KERNEL,
         LTT_EVENT_IRQ_ENTRY,
         FIELD_ARRAY(LTT_FIELD_IRQ_ID),
         irq_entry, NULL, &hooks);
@@ -4230,6 +4258,10 @@ static void module_init()
   LTT_EVENT_SYSCALL_EXIT  = g_quark_from_string("syscall_exit");
   LTT_EVENT_TRAP_ENTRY    = g_quark_from_string("trap_entry");
   LTT_EVENT_TRAP_EXIT     = g_quark_from_string("trap_exit");
+  LTT_EVENT_PAGE_FAULT_ENTRY    = g_quark_from_string("page_fault_entry");
+  LTT_EVENT_PAGE_FAULT_EXIT     = g_quark_from_string("page_fault_exit");
+  LTT_EVENT_PAGE_FAULT_NOSEM_ENTRY = g_quark_from_string("page_fault_nosem_entry");
+  LTT_EVENT_PAGE_FAULT_NOSEM_EXIT = g_quark_from_string("page_fault_nosem_exit");
   LTT_EVENT_IRQ_ENTRY     = g_quark_from_string("irq_entry");
   LTT_EVENT_IRQ_EXIT      = g_quark_from_string("irq_exit");
   LTT_EVENT_SOFT_IRQ_RAISE     = g_quark_from_string("softirq_raise");

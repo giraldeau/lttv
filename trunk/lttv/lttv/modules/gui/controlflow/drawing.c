@@ -255,6 +255,38 @@ void drawing_data_request(Drawing_t *drawing,
 
       lttv_trace_find_hook(ts->parent.t,
           LTT_CHANNEL_KERNEL,
+          LTT_EVENT_PAGE_FAULT_ENTRY,
+          FIELD_ARRAY(LTT_FIELD_TRAP_ID),
+          before_execmode_hook,
+          events_request,
+          &hooks);
+
+      lttv_trace_find_hook(ts->parent.t,
+          LTT_CHANNEL_KERNEL,
+          LTT_EVENT_PAGE_FAULT_EXIT,
+          NULL, 
+          before_execmode_hook,
+          events_request,
+          &hooks);
+
+      lttv_trace_find_hook(ts->parent.t,
+          LTT_CHANNEL_KERNEL,
+          LTT_EVENT_PAGE_FAULT_NOSEM_ENTRY,
+          FIELD_ARRAY(LTT_FIELD_TRAP_ID),
+          before_execmode_hook,
+          events_request,
+          &hooks);
+
+      lttv_trace_find_hook(ts->parent.t,
+          LTT_CHANNEL_KERNEL,
+          LTT_EVENT_PAGE_FAULT_NOSEM_EXIT,
+          NULL, 
+          before_execmode_hook,
+          events_request,
+          &hooks);
+
+      lttv_trace_find_hook(ts->parent.t,
+          LTT_CHANNEL_KERNEL,
           LTT_EVENT_IRQ_ENTRY,
           FIELD_ARRAY(LTT_FIELD_IRQ_ID),
           before_execmode_hook,
