@@ -59,6 +59,7 @@ GQuark
     LTT_CHANNEL_SYSCALL_STATE,
     LTT_CHANNEL_TASK_STATE,
     LTT_CHANNEL_VM_STATE,
+    LTT_CHANNEL_KPROBE_STATE,
     LTT_CHANNEL_FS,
     LTT_CHANNEL_KERNEL,
     LTT_CHANNEL_MM,
@@ -97,7 +98,8 @@ GQuark
     LTT_EVENT_LIST_INTERRUPT,
     LTT_EVENT_SYS_CALL_TABLE,
     LTT_EVENT_SOFTIRQ_VEC,
-    LTT_EVENT_KPROBE_TABLE;
+    LTT_EVENT_KPROBE_TABLE,
+    LTT_EVENT_KPROBE;
 
 /* Fields Quarks */
 
@@ -322,6 +324,12 @@ static void expand_syscall_table(LttvTraceState *ts, int id)
   fill_name_table(ts, ts->syscall_names, ts->nb_syscalls, new_nb, "syscall");
   /* Update the table size */
   ts->nb_syscalls = new_nb;
+}
+
+static void expand_kprobe_table(LttvTraceState *ts, guint64 ip, char *symbol)
+{
+  g_hash_table_insert(ts->kprobe_hash, (gpointer)ip,
+    (gpointer)(glong)g_quark_from_string(symbol));
 }
 
 static void expand_trap_table(LttvTraceState *ts, int id)
@@ -1867,6 +1875,7 @@ typedef struct _LttvNameTables {
   guint nb_irqs;
   GQuark *soft_irq_names;
   guint nb_softirqs;
+  GHashTable *kprobe_hash;
 } LttvNameTables;
 
 
@@ -1996,6 +2005,8 @@ create_name_tables(LttvTraceState *tcs)
   g_array_free(hooks, TRUE);
 
   g_string_free(fe_name, TRUE);
+
+  name_tables->kprobe_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
 }
 
 
@@ -2019,6 +2030,7 @@ get_name_tables(LttvTraceState *tcs)
   tcs->soft_irq_names = name_tables->soft_irq_names;
   tcs->nb_irqs = name_tables->nb_irqs;
   tcs->nb_soft_irqs = name_tables->nb_softirqs;
+  tcs->kprobe_hash = name_tables->kprobe_hash;
 }
 
 
@@ -2040,6 +2052,7 @@ free_name_tables(LttvTraceState *tcs)
   if(name_tables->irq_names) g_free(name_tables->irq_names);
   if(name_tables->soft_irq_names) g_free(name_tables->soft_irq_names);
   if(name_tables) g_free(name_tables);
+  if(name_tables) g_hash_table_destroy(name_tables->kprobe_hash);
 } 
 
 #ifdef HASH_TABLE_DEBUG
@@ -2787,6 +2800,23 @@ static gboolean dump_syscall(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean dump_kprobe(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  guint64 ip;
+  char *symbol;
+
+  ip = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
+  symbol = ltt_event_get_string(e, lttv_trace_get_hook_field(th, 1));
+
+  expand_kprobe_table(ts, ip, symbol);
+
+  return FALSE;
+}
+
 static gboolean dump_softirq(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
@@ -3399,7 +3429,7 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
     /* Find the eventtype id for the following events and register the
        associated by id hooks. */
 
-    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 19);
+    hooks = g_array_sized_new(FALSE, FALSE, sizeof(LttvTraceHook), 20);
     //hooks = g_array_set_size(hooks, 19); // Max possible number of hooks.
     //hn = 0;
 
@@ -3575,6 +3605,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         LTT_EVENT_SYS_CALL_TABLE,
         FIELD_ARRAY(LTT_FIELD_ID, LTT_FIELD_ADDRESS, LTT_FIELD_SYMBOL),
         dump_syscall, NULL, &hooks);
+
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_CHANNEL_KPROBE_STATE,
+        LTT_EVENT_KPROBE_TABLE,
+        FIELD_ARRAY(LTT_FIELD_IP, LTT_FIELD_SYMBOL),
+        dump_kprobe, NULL, &hooks);
 
     lttv_trace_find_hook(ts->parent.t,
         LTT_CHANNEL_SOFTIRQ_STATE,
@@ -4250,6 +4286,7 @@ static void module_init()
   LTT_CHANNEL_SYSCALL_STATE     = g_quark_from_string("syscall_state");
   LTT_CHANNEL_TASK_STATE     = g_quark_from_string("task_state");
   LTT_CHANNEL_VM_STATE     = g_quark_from_string("vm_state");
+  LTT_CHANNEL_KPROBE_STATE     = g_quark_from_string("kprobe_state");
   LTT_CHANNEL_FS     = g_quark_from_string("fs");
   LTT_CHANNEL_KERNEL     = g_quark_from_string("kernel");
   LTT_CHANNEL_MM     = g_quark_from_string("mm");
@@ -4286,6 +4323,7 @@ static void module_init()
   LTT_EVENT_SYS_CALL_TABLE = g_quark_from_string("sys_call_table");
   LTT_EVENT_SOFTIRQ_VEC = g_quark_from_string("softirq_vec");
   LTT_EVENT_KPROBE_TABLE = g_quark_from_string("kprobe_table");
+  LTT_EVENT_KPROBE = g_quark_from_string("kprobe");
 
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");
   LTT_FIELD_TRAP_ID       = g_quark_from_string("trap_id");

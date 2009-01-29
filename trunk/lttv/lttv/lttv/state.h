@@ -66,6 +66,7 @@ extern GQuark
     LTT_CHANNEL_SYSCALL_STATE,
     LTT_CHANNEL_TASK_STATE,
     LTT_CHANNEL_VM_STATE,
+    LTT_CHANNEL_KPROBE_STATE,
     LTT_CHANNEL_FS,
     LTT_CHANNEL_KERNEL,
     LTT_CHANNEL_MM,
@@ -104,7 +105,8 @@ extern GQuark
     LTT_EVENT_LIST_INTERRUPT,
     LTT_EVENT_SYS_CALL_TABLE,
     LTT_EVENT_SOFTIRQ_VEC,
-    LTT_EVENT_KPROBE_TABLE;
+    LTT_EVENT_KPROBE_TABLE,
+    LTT_EVENT_KPROBE;
 
 /* Fields Quarks */
 
@@ -372,6 +374,7 @@ struct _LttvTraceState {
   GQuark *irq_names;
   GQuark *soft_irq_names;
   LttTime *max_time_state_recomputed_in_seek;
+  GHashTable *kprobe_hash;
 
   /* Array of per cpu running process */
   LttvProcessState **running_process;
