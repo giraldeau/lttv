@@ -69,19 +69,26 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   LttvTracesetStats *tscs;
 
+  LttvTracesetState *tss;
+
   LttvTracesetContext *tc;
 
   LttTime start, end;
 
   g_info("BatchAnalysis begin process traceset");
 
-  tscs = g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
-  tc = &tscs->parent.parent;
+  if (a_stats) {
+    tscs = g_object_new(LTTV_TRACESET_STATS_TYPE, NULL);
+    tss = &tscs->parent;
+  } else {
+    tss = g_object_new(LTTV_TRACESET_STATE_TYPE, NULL);
+  }
+  tc = &tss->parent;
 
   g_info("BatchAnalysis initialize context");
 
   lttv_context_init(tc, traceset);
-  lttv_state_add_event_hooks(&tscs->parent);
+  lttv_state_add_event_hooks(tc);
   if(a_stats) lttv_stats_add_event_hooks(tscs);
 
   g_assert(lttv_iattribute_find_by_path(attributes, "filter/expression",
@@ -132,10 +139,13 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   g_info("BatchAnalysis destroy context");
 
   lttv_filter_destroy(*(value_filter.v_pointer));
-  lttv_state_remove_event_hooks(&tscs->parent);
+  lttv_state_remove_event_hooks(tss);
   if(a_stats) lttv_stats_remove_event_hooks(tscs);
   lttv_context_fini(tc);
-  g_object_unref(tscs);
+  if (a_stats)
+    g_object_unref(tscs);
+  else
+    g_object_unref(tss);
 
   g_info("BatchAnalysis end process traceset");
   return FALSE;
