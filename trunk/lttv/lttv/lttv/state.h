@@ -103,7 +103,8 @@ extern GQuark
     LTT_EVENT_REQUEST_COMPLETE,
     LTT_EVENT_LIST_INTERRUPT,
     LTT_EVENT_SYS_CALL_TABLE,
-    LTT_EVENT_SOFTIRQ_VEC;
+    LTT_EVENT_SOFTIRQ_VEC,
+    LTT_EVENT_KPROBE_TABLE;
 
 /* Fields Quarks */
 
@@ -133,7 +134,8 @@ extern GQuark
     LTT_FIELD_ACTION,
     LTT_FIELD_ID,
     LTT_FIELD_ADDRESS,
-    LTT_FIELD_SYMBOL;
+    LTT_FIELD_SYMBOL,
+    LTT_FIELD_IP;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;

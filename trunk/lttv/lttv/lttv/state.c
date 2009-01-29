@@ -96,7 +96,8 @@ GQuark
     LTT_EVENT_REQUEST_COMPLETE,
     LTT_EVENT_LIST_INTERRUPT,
     LTT_EVENT_SYS_CALL_TABLE,
-    LTT_EVENT_SOFTIRQ_VEC;
+    LTT_EVENT_SOFTIRQ_VEC,
+    LTT_EVENT_KPROBE_TABLE;
 
 /* Fields Quarks */
 
@@ -127,7 +128,8 @@ GQuark
     LTT_FIELD_ACTION,
     LTT_FIELD_ID,
     LTT_FIELD_ADDRESS,
-    LTT_FIELD_SYMBOL;
+    LTT_FIELD_SYMBOL,
+    LTT_FIELD_IP;
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -4283,6 +4285,7 @@ static void module_init()
   LTT_EVENT_LIST_INTERRUPT = g_quark_from_string("interrupt");
   LTT_EVENT_SYS_CALL_TABLE = g_quark_from_string("sys_call_table");
   LTT_EVENT_SOFTIRQ_VEC = g_quark_from_string("softirq_vec");
+  LTT_EVENT_KPROBE_TABLE = g_quark_from_string("kprobe_table");
 
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");
   LTT_FIELD_TRAP_ID       = g_quark_from_string("trap_id");
@@ -4311,6 +4314,7 @@ static void module_init()
   LTT_FIELD_ID            = g_quark_from_string("id");
   LTT_FIELD_ADDRESS       = g_quark_from_string("address");
   LTT_FIELD_SYMBOL        = g_quark_from_string("symbol");
+  LTT_FIELD_IP            = g_quark_from_string("ip");
   
   LTTV_CPU_UNKNOWN = g_quark_from_string("unknown");
   LTTV_CPU_IDLE = g_quark_from_string("idle");
