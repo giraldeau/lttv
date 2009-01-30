@@ -317,7 +317,7 @@ static int open_output_files(void)
 		exit(-1);
 	}
 	fd = open(outfile_name, O_WRONLY);
-	if(fd_process < 0) {
+	if(fd < 0) {
 		perror("Error in open");
 		exit(-1);
 	}
