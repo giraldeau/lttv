@@ -8,7 +8,7 @@ LTT_CFLAGS=-I. -O2 -L. -fPIC
 # note : x86_64 needs -fPIC ? FIXME
 
 #For testing lib ltt-usertrace-fast
-#CFLAGS+=-DLTT_SUBBUF_SIZE_CPU=134217728
+#CFLAGS+=-DLTT_SUBBUF_SIZE_PROCESS=134217728
 #CFLAGS+=-DLTT_NULL_OUTPUT_TEST
 
 all: libs samples
