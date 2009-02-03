@@ -1,4 +1,3 @@
-
 #include <jni.h>
 #include "Sample.h"
 #include <stdio.h>
@@ -13,8 +12,8 @@ JNIEXPORT void JNICALL Java_Sample_trace_1java_1generic_1string
 {
   const char *str;
   str = (*env)->GetStringUTFChars(env, jstr, NULL);
-  if (str == NULL) return; // out of memory error thrown
-	trace_user_generic_string(str);
+  if (str == NULL)
+    return; /* out of memory error thrown */
+  trace_user_generic_string(str);
   (*env)->ReleaseStringUTFChars(env, jstr, str);
 }
-
