@@ -1,49 +1,21 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
-<html>
-<head>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
+
   <title>LTTng User-space Tracing Design</title>
-</head>
-  <body>
+</head><body>
 
 <h1>LTTng User-space Tracing Design</h1>
 
 <p>
-A user-space application may contain static instrumentation, and be linked with
-an associated runtime library, in order to produce an execution trace. User
-space Tracepoints and Markers, analogous to Kernel Tracepoints and Markers,
-define program locations and arguments provided. Probes may then be connected to
-each Tracepoint and Marker before they are activated. The probes will typically
-call LTTng user-space event writing functions.
-
-<p>
-When the instrumented application starts, a pipe is opened to allow external
-tracing control, asynchronous notification is requested when commands arrive in
-the pipe, and a signal handler is installed for SIGIO (or a carefully chosen
-chainable signal number). Every time such signal is received, the runtime
-library checks for commands received on the external tracing control pipe. The
-recognized commands are:
-
-<li> list the available Markers and Tracepoints;
-<li> dynamically load a library (presumably containing probes to connect);
-<li> connect a probe to a Tracepoint or Marker;
-<li> activate a Tracepoint or Marker;
-<li> initialize the tracing buffers;
-<li> flush the tracing buffers;
-<li> finalize the tracing buffers;
-
-<p>
-The application may also spontaneously provide information to the pipe:
-
-<li> a buffer is full;
-<li> new tracepoints or markers are appearing or disappearing, because modules are
-  dynamically loaded or unloaded;
-
-<p>
-In addition, the tracing control application should be notified when the
-application exits (to save the content of buffers if the application is
-crashing). Such notification may be obtained through utrace.
-<p>
-This tracing scheme plans to use a direct function call to tracing into buffers
+Earlier versions of LTTng contained simple, system call based, tracepoints and fast,
+user-space buffered, tracepoints for user-space tracing. During the kernel inclusion phase
+of LTTng, extensive rework and modularization of the kernel tracing portion was undertaken.
+This phase is well under way and several portions have been included already in the mainline kernel.
+The rework of the  kernel tracing infrastructure will shortly thereafter be ported to fast user-space
+tracing.
+This fast user-space tracing scheme uses a direct function call to write events into buffers
 mapped in user-space. This should be an order of magnitude faster than the
 current Dtrace implementation (c.f.
 <a href="http://ltt.polymtl.ca/tracingwiki/index.php/DTrace">Dtrace information
@@ -53,13 +25,88 @@ a function call vs the int3 approach is available at
 <a href="http://sourceware.org/ml/systemtap/2006-q3/msg00793.html">Markers vs
 int3 performance comparison</a> (see "Conclusion").
 
+</p><p>
+Libmarkers will provide applications with user-space Markers and Tracepoints
+declarations, such that programmers will be able to insert Markers and Tracepoints in their
+libraries and applications. User-space Tracepoints and Markers, analogous to Kernel Tracepoints and Markers,
+define program locations and arguments provided. Libmarkers will also
+provide utility functions to enumerate, activate and deactivate tracepoints and markers in the
+process, and to associate probes with any tracepoint or marker. 
+<ul><li> Linux Kernel Tracepoints documentation: <a href="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=Documentation/tracepoints.txt" class="external text" title="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=Documentation/tracepoints.txt" rel="nofollow">Documentation/tracepoints.txt</a>
+</li><li> Linux Kernel Tracepoints example: <a href="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=samples/tracepoints" class="external text" title="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=samples/tracepoints" rel="nofollow">samples/tracepoints</a>
+</li><li> Linux Kernel Markers documentation: <a href="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=Documentation/markers.txt" class="external text" title="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=Documentation/markers.txt" rel="nofollow">Documentation/markers.txt</a>
+</li><li> Linux Kernel Markers example: <a href="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=samples/markers" class="external text" title="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=samples/markers" rel="nofollow">samples/markers</a>
+</ul>
+
+
+</p><p>
+Libtracing will provide the infrastructure to allocate buffers, define event types, write event
+metadata and data to the buffers, and get notification when buffers are full. The initial implementation
+will simply use one set of buffers per process. Subsequent more optimized versions will allocate one
+set of buffers per thread; one set of buffers per CPU would be desirable but user-space programs cannot check
+or control CPU migration without resorting to more costly bus locking operations or system calls. The library
+provides a generic probe for markers which, when connected, generates an event in the buffer each time the marker
+is encountered.
+
+<UL>
+</li><li> LTTng Linux Kernel Markers Efficicient API: <a href="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=ltt/probes/ltt-type-serializer.h" class="external text" title="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=ltt/probes/ltt-type-serializer.h" rel="nofollow">ltt/probes/ltt-type-serializer.h</a>
+</li><li> LTTng Linux Kernel Markers Efficicient API usage example: <a href="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=ltt/probes/kernel-trace.c" class="external text" title="http://git.kernel.org/?p=linux/kernel/git/compudj/linux-2.6-lttng.git;a=blob;f=ltt/probes/kernel-trace.c" rel="nofollow">ltt/probes/kernel-trace.c</a>
+</li>
+</UL>
+</p><p>
+Finally, libtracingcontrol opens a connection allowing a separate process (e.g. LTTng daemon, Eclipse, GDB) to control the 
+tracing within the application. Through this connection, the remote process can:
+
+<UL>
+<li> list the available Markers and Tracepoints;
+</li><li> dynamically load a library (presumably containing probes to connect);
+</li><li> connect a probe to a Tracepoint or Marker;
+</li><li> activate a Tracepoint or Marker;
+</li><li> initialize the tracing buffers;
+</li><li> retrieve the content of the tracing buffers;
+</li><li> flush the tracing buffers;
+</li><li> finalize the tracing buffers;
+</li>
+</UL>
+
+In the first version, libtracingcontrol will simply contain the basic functionality
+required to generate a trace of the Markers encountered. Subsequent versions will interact with
+other probing mechanisms like GDB Tracepoints, user-space SystemTap and those defined by virtual 
+machines (e.g. Java Virtual Machine, Python, Errlang...).
+</p><p>
 Tracing of Java application is planned to be done through a JNI interface.
 Linking standard low-level C tracing library to the application within a JNI
 adaptation class will be required to trace Java events. This has been prototyped
 in the past. The work is available
-<a
-href="http://ltt.polymtl.ca/svn/trunk/obsolete/ltt-usertrace/java/">here</a>
+<a href="http://ltt.polymtl.ca/svn/trunk/obsolete/ltt-usertrace/java/">here</a>
 for older LTTng versions.
+<p></p>
+The principle of operation of libtracingcontrol is that
+when the instrumented application starts, a pipe is opened to allow external
+tracing control. Asynchronous notification is requested when commands arrive in
+the pipe, and a signal handler is installed for SIGIO (or a carefully chosen
+chainable signal number). Every time such signal is received, the runtime
+library checks for commands received on the external tracing control pipe.
+The application may also spontaneously provide information to the remote control process
+through the pipe:
 
-  </body>
-</html>
+</p><ul></li><li> a buffer is full;
+</li><li> new tracepoints or markers are appearing or disappearing, because modules are
+  dynamically loaded or unloaded;
+</li></ul>
+<p>
+In addition, the tracing control application should be notified when the
+application exits (to save the content of buffers if the application is
+crashing) or forks (to trace the child as well if needed). 
+Such notification may be obtained through utrace.
+
+</p><p>
+In summary, a user-space application linking with libmarkers may contain static
+instrumentation, Tracepoints and Markers, just like the kernel with Kernel Markers and Tracepoints.
+The application can exploit this instrumentation itself or link with libtracing and have tracing probes
+connected to each Marker. Other instrumentation mechanisms, like the GCC instrument-function option, or hooks
+inserted by a JIT compiler, can also use libtracing to define and write event to the trace buffers. 
+Finally, libtracingcontrol, analogous to GDB stubs, allows the remote control of the tracing by remote
+monitoring or debugging frameworks.
+
+</p></body></html>
