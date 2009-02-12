@@ -1,0 +1,61 @@
+;; Display
+(set-default-font "6x13")
+;;(standard-display-european t)   ; affichage des caracte`res iso-latin
+(require 'iso-insert)           ; pour l'insertion de caracte`res
+
+
+;; Auto font lock mode
+(if (string-match "XEmacs" emacs-version 0)
+    (progn
+      (require 'font-lock)
+      (setq-default font-lock-auto-fontify t))
+  (global-font-lock-mode t)
+)                     
+
+
+;; Custom variables and keys
+(menu-bar-mode 0)
+(tool-bar-mode 0)
+(setq-default auto-save-mode nil)
+(global-set-key "\M-g" 'goto-line)
+(setq-default indent-tabs-mode nil)
+(setq c-basic-offset 8)
+(global-set-key [delete]  'delete-char) ; [Del] 
+(global-set-key [home]    'beginning-of-line) ; [Home] 
+(global-set-key [end]     'end-of-line) ; [End] 
+
+
+;; Promela mode
+(autoload 'promela-mode "promela-mode" "PROMELA mode" nil t)
+(setq auto-mode-alist
+      (append
+       (list (cons "\\.promela$"  'promela-mode)
+             (cons "\\.spin$"     'promela-mode)
+             (cons "\\.pml$"      'promela-mode)
+             )
+       auto-mode-alist))
+
+;; Mousewheel
+(defun sd-mousewheel-scroll-up (event)
+  "Scroll window under mouse up by five lines."
+  (interactive "e")
+  (let ((current-window (selected-window)))
+    (unwind-protect
+        (progn 
+          (select-window (posn-window (event-start event)))
+          (scroll-up 5))
+      (select-window current-window))))
+
+(defun sd-mousewheel-scroll-down (event)
+  "Scroll window under mouse down by five lines."
+  (interactive "e")
+  (let ((current-window (selected-window)))
+    (unwind-protect
+        (progn 
+          (select-window (posn-window (event-start event)))
+          (scroll-down 5))
+      (select-window current-window))))
+
+(global-set-key (kbd "<mouse-5>") 'sd-mousewheel-scroll-up)
+(global-set-key (kbd "<mouse-4>") 'sd-mousewheel-scroll-down)
+

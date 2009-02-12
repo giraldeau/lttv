@@ -1,0 +1,5 @@
+// If we have less writers than the buffer space available, we should
+// not loose events.
+// assert(NUMPROCS + NUMSWITCH > BUFSIZE || events_lost == 0);
+
+[]((buffer_large_enough) -> (!have_events_lost))

@@ -1,0 +1,272 @@
+Exit-Status 0
+warning: for p.o. reduction to be valid the never claim must be stutter-invariant
+(never claims generated from LTL formulae are stutter-invariant)
+depth 0: Claim reached state 5 (line 301)
+Depth=     198 States=    1e+06 Transitions=  2.9e+06 Memory=    79.649	t=   7.71 R=   1e+05
+
+(Spin Version 5.1.6 -- 9 May 2008)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	+
+	assertion violations	+ (if within scope of claim)
+	acceptance   cycles 	+ (fairness disabled)
+	invalid end states	- (disabled by never claim)
+
+State-vector 100 byte, depth reached 200, errors: 0
+  1295413 states, stored
+  2540827 states, matched
+  3836240 transitions (= stored+matched)
+  4818193 atomic steps
+hash conflicts:   1991528 (resolved)
+
+Stats on memory usage (in Megabytes):
+  143.307	equivalent memory usage for states (stored*(State-vector + overhead))
+  100.700	actual memory usage for states (compression: 70.27%)
+         	state-vector as stored = 66 byte + 16 byte overhead
+    2.000	memory used for hash table (-w19)
+    0.305	memory used for DFS stack (-m10000)
+  102.891	total actual memory usage
+
+unreached in proctype switcher
+	(0 of 31 states)
+unreached in proctype tracer
+	(0 of 51 states)
+unreached in proctype reader
+	(0 of 29 states)
+unreached in proctype cleaner
+	(0 of 9 states)
+unreached in proctype :init:
+	(0 of 43 states)
+unreached in proctype :never:
+	line 306, "pan.___", state 8, "-end-"
+	(1 of 8 states)
+
+pan: elapsed time 10.3 seconds
+pan: rate 125768.25 states/second
+pan: avg transition delay 2.6849e-06 usec
+Exit-Status 0
+warning: for p.o. reduction to be valid the never claim must be stutter-invariant
+(never claims generated from LTL formulae are stutter-invariant)
+depth 0: Claim reached state 5 (line 301)
+Depth=     198 States=    1e+06 Transitions=  2.9e+06 Memory=    79.649	t=    7.7 R=   1e+05
+
+(Spin Version 5.1.6 -- 9 May 2008)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	+
+	assertion violations	+ (if within scope of claim)
+	acceptance   cycles 	+ (fairness disabled)
+	invalid end states	- (disabled by never claim)
+
+State-vector 100 byte, depth reached 200, errors: 0
+  1295413 states, stored
+  2540827 states, matched
+  3836240 transitions (= stored+matched)
+  4818193 atomic steps
+hash conflicts:   1991528 (resolved)
+
+Stats on memory usage (in Megabytes):
+  143.307	equivalent memory usage for states (stored*(State-vector + overhead))
+  100.700	actual memory usage for states (compression: 70.27%)
+         	state-vector as stored = 66 byte + 16 byte overhead
+    2.000	memory used for hash table (-w19)
+    0.305	memory used for DFS stack (-m10000)
+  102.891	total actual memory usage
+
+unreached in proctype switcher
+	(0 of 31 states)
+unreached in proctype tracer
+	(0 of 51 states)
+unreached in proctype reader
+	(0 of 29 states)
+unreached in proctype cleaner
+	(0 of 9 states)
+unreached in proctype :init:
+	(0 of 43 states)
+unreached in proctype :never:
+	line 306, "pan.___", state 8, "-end-"
+	(1 of 8 states)
+
+pan: elapsed time 10.3 seconds
+pan: rate 125890.48 states/second
+pan: avg transition delay 2.6823e-06 usec
+Exit-Status 0
+warning: for p.o. reduction to be valid the never claim must be stutter-invariant
+(never claims generated from LTL formulae are stutter-invariant)
+depth 0: Claim reached state 3 (line 302)
+depth 25: Claim reached state 7 (line 307)
+pan: acceptance cycle (at depth 167)
+pan: wrote model.spin.trail
+
+(Spin Version 5.1.6 -- 9 May 2008)
+Warning: Search not completed
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	+
+	assertion violations	+ (if within scope of claim)
+	acceptance   cycles 	+ (fairness disabled)
+	invalid end states	- (disabled by never claim)
+
+State-vector 100 byte, depth reached 168, errors: 1
+       43 states, stored
+        0 states, matched
+       43 transitions (= stored+matched)
+       83 atomic steps
+hash conflicts:         0 (resolved)
+
+Stats on memory usage (in Megabytes):
+    0.005	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.277	actual memory usage for states (unsuccessful compression: 5822.98%)
+         	state-vector as stored = 6739 byte + 16 byte overhead
+    2.000	memory used for hash table (-w19)
+    0.305	memory used for DFS stack (-m10000)
+    2.501	total actual memory usage
+
+unreached in proctype switcher
+	line 80, "pan.___", state 8, "(1)"
+	line 75, "pan.___", state 9, "(((((new_off-read_off)>4)&&((new_off-read_off)<(255/2)))||(size==(4/2))))"
+	line 75, "pan.___", state 9, "else"
+	line 86, "pan.___", state 15, "write_off = new_off"
+	line 83, "pan.___", state 18, "((prev_off!=write_off))"
+	line 83, "pan.___", state 18, "else"
+	line 96, "pan.___", state 21, "commit_count[((prev_off%4)/(4/2))] = tmp_commit"
+	line 102, "pan.___", state 25, "(1)"
+	line 97, "pan.___", state 26, "((((((prev_off/4)*4)/2)+(4/2))-tmp_commit))"
+	line 97, "pan.___", state 26, "else"
+	line 90, "pan.___", state 29, "tmp_commit = (commit_count[((prev_off%4)/(4/2))]+size)"
+	(8 of 31 states)
+unreached in proctype tracer
+	line 153, "pan.___", state 34, "((i<size))"
+	line 153, "pan.___", state 34, "((i>=size))"
+	line 151, "pan.___", state 46, "i = 0"
+	line 176, "pan.___", state 48, "events_lost = (events_lost+1)"
+	(3 of 51 states)
+unreached in proctype reader
+	line 201, "pan.___", state 12, "i = 0"
+	line 215, "pan.___", state 23, "i = 0"
+	(2 of 29 states)
+unreached in proctype cleaner
+	(0 of 9 states)
+unreached in proctype :init:
+	line 253, "pan.___", state 7, "((i<2))"
+	line 253, "pan.___", state 7, "((i>=2))"
+	line 272, "pan.___", state 29, "((i<4))"
+	line 272, "pan.___", state 29, "((i>=4))"
+	(2 of 43 states)
+unreached in proctype :never:
+	line 306, "pan.___", state 7, "(!((events_lost!=0)))"
+	line 309, "pan.___", state 9, "-end-"
+	(2 of 9 states)
+
+pan: elapsed time 0 seconds
+Exit-Status 0
+warning: for p.o. reduction to be valid the never claim must be stutter-invariant
+(never claims generated from LTL formulae are stutter-invariant)
+depth 0: Claim reached state 5 (line 301)
+depth 0: Claim reached state 5 (line 302)
+
+(Spin Version 5.1.6 -- 9 May 2008)
+	+ Partial Order Reduction
+
+Full statespace search for:
+	never claim         	+
+	assertion violations	+ (if within scope of claim)
+	acceptance   cycles 	+ (fairness disabled)
+	invalid end states	- (disabled by never claim)
+
+State-vector 32 byte, depth reached 0, errors: 0
+        1 states, stored
+        0 states, matched
+        1 transitions (= stored+matched)
+        0 atomic steps
+hash conflicts:         0 (resolved)
+
+Stats on memory usage (in Megabytes):
+    0.000	equivalent memory usage for states (stored*(State-vector + overhead))
+    0.277	actual memory usage for states (unsuccessful compression: 604850.00%)
+         	state-vector as stored = 290312 byte + 16 byte overhead
+    2.000	memory used for hash table (-w19)
+    0.305	memory used for DFS stack (-m10000)
+    2.501	total actual memory usage
+
+unreached in proctype switcher
+	line 74, "pan.___", state 3, "new_off = (prev_off+size)"
+	line 80, "pan.___", state 8, "(1)"
+	line 75, "pan.___", state 9, "(((((new_off-read_off)>4)&&((new_off-read_off)<(255/2)))||(size==(4/2))))"
+	line 75, "pan.___", state 9, "else"
+	line 71, "pan.___", state 11, "prev_off = write_off"
+	line 86, "pan.___", state 15, "write_off = new_off"
+	line 83, "pan.___", state 18, "((prev_off!=write_off))"
+	line 83, "pan.___", state 18, "else"
+	line 96, "pan.___", state 21, "commit_count[((prev_off%4)/(4/2))] = tmp_commit"
+	line 102, "pan.___", state 25, "(1)"
+	line 97, "pan.___", state 26, "((((((prev_off/4)*4)/2)+(4/2))-tmp_commit))"
+	line 97, "pan.___", state 26, "else"
+	line 90, "pan.___", state 29, "tmp_commit = (commit_count[((prev_off%4)/(4/2))]+size)"
+	line 108, "pan.___", state 31, "-end-"
+	(11 of 31 states)
+unreached in proctype tracer
+	line 122, "pan.___", state 3, "prev_off = write_off"
+	line 130, "pan.___", state 7, "(1)"
+	line 126, "pan.___", state 10, "((((new_off-read_off)>4)&&((new_off-read_off)<(255/2))))"
+	line 126, "pan.___", state 10, "else"
+	line 136, "pan.___", state 14, "write_off = new_off"
+	line 142, "pan.___", state 20, "buffer_use[((prev_off+i)%4)] = 1"
+	line 143, "pan.___", state 21, "i = (i+1)"
+	line 133, "pan.___", state 27, "((prev_off!=write_off))"
+	line 133, "pan.___", state 27, "else"
+	line 156, "pan.___", state 31, "i = (i+1)"
+	line 153, "pan.___", state 34, "((i<size))"
+	line 153, "pan.___", state 34, "((i>=size))"
+	line 164, "pan.___", state 39, "commit_count[((prev_off%4)/(4/2))] = tmp_commit"
+	line 170, "pan.___", state 43, "(1)"
+	line 165, "pan.___", state 44, "((((((prev_off/4)*4)/2)+(4/2))-tmp_commit))"
+	line 165, "pan.___", state 44, "else"
+	line 151, "pan.___", state 46, "i = 0"
+	line 176, "pan.___", state 48, "events_lost = (events_lost+1)"
+	line 178, "pan.___", state 49, "refcount = (refcount-1)"
+	line 173, "pan.___", state 50, "goto end"
+	line 180, "pan.___", state 51, "-end-"
+	(17 of 51 states)
+unreached in proctype reader
+	line 206, "pan.___", state 5, "buffer_use[((read_off+i)%4)] = 1"
+	line 207, "pan.___", state 6, "i = (i+1)"
+	line 201, "pan.___", state 12, "i = 0"
+	line 220, "pan.___", state 16, "i = (i+1)"
+	line 223, "pan.___", state 22, "read_off = (read_off+(4/2))"
+	line 215, "pan.___", state 23, "i = 0"
+	line 195, "pan.___", state 26, "((((((write_off/(4/2))-(read_off/(4/2)))>0)&&(((write_off/(4/2))-(read_off/(4/2)))<(255/2)))&&(((commit_count[((read_off%4)/(4/2))]-(4/2))-(((read_off/4)*4)/2))==0)))"
+	line 195, "pan.___", state 26, "((read_off>=(4-events_lost)))"
+	line 227, "pan.___", state 29, "-end-"
+	(8 of 29 states)
+unreached in proctype cleaner
+	line 239, "pan.___", state 3, "(run switcher())"
+	line 236, "pan.___", state 5, "((refcount==0))"
+	line 235, "pan.___", state 8, "((refcount==0))"
+	line 243, "pan.___", state 9, "-end-"
+	(4 of 9 states)
+unreached in proctype :init:
+	line 256, "pan.___", state 4, "i = (i+1)"
+	line 253, "pan.___", state 7, "((i<2))"
+	line 253, "pan.___", state 7, "((i>=2))"
+	line 266, "pan.___", state 14, "i = (i+1)"
+	line 263, "pan.___", state 17, "((i<4))"
+	line 263, "pan.___", state 17, "((i>=4))"
+	line 269, "pan.___", state 20, "(run reader())"
+	line 270, "pan.___", state 21, "(run cleaner())"
+	line 275, "pan.___", state 25, "(run tracer())"
+	line 272, "pan.___", state 29, "((i<4))"
+	line 272, "pan.___", state 29, "((i>=4))"
+	line 283, "pan.___", state 35, "(run switcher())"
+	line 288, "pan.___", state 43, "-end-"
+	(10 of 43 states)
+unreached in proctype :never:
+	line 305, "pan.___", state 11, "((events_lost!=0))"
+	line 305, "pan.___", state 11, "(1)"
+	line 311, "pan.___", state 14, "-end-"
+	(2 of 14 states)
+
+pan: elapsed time 0 seconds
