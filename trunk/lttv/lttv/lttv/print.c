@@ -64,8 +64,13 @@ static inline void print_enum_events(LttEvent *e, struct marker_field *f,
         g_quark_to_string(ts->soft_irq_names[value]));
     } else if (info->name == LTT_EVENT_KPROBE
                && f->name == LTT_FIELD_IP) {
-      GQuark symbol = g_hash_table_lookup(ts->kprobe_hash,
+#if (__SIZEOF_LONG__ == 4)
+      GQuark symbol = (GQuark)g_hash_table_lookup(ts->kprobe_hash,
+                                          (gconstpointer)&value);
+#else
+      GQuark symbol = (GQuark)g_hash_table_lookup(ts->kprobe_hash,
                                           (gconstpointer)value);
+#endif
       if (symbol)
         g_string_append_printf(s, " [%s]", g_quark_to_string(symbol));
     }

@@ -227,6 +227,23 @@ static void bdevstate_free_cb(gpointer key, gpointer value, gpointer user_data);
 static LttvBdevState *bdevstate_copy(LttvBdevState *bds);
 
 
+#if (__SIZEOF_LONG__ == 4)
+guint guint64_hash(gconstpointer key)
+{
+	guint64 ukey = *(const guint64 *)key;
+
+	return (guint)ukey ^ (guint)(ukey >> 32);
+}
+
+gboolean guint64_equal(gconstpointer a, gconstpointer b)
+{
+	guint64 ua = *(const guint64 *)a;
+	guint64 ub = *(const guint64 *)b;
+
+	return ua == ub;
+}
+#endif
+
 void lttv_state_save(LttvTraceState *self, LttvAttribute *container)
 {
   LTTV_TRACE_STATE_GET_CLASS(self)->state_save(self, container);
@@ -328,8 +345,14 @@ static void expand_syscall_table(LttvTraceState *ts, int id)
 
 static void expand_kprobe_table(LttvTraceState *ts, guint64 ip, char *symbol)
 {
+#if (__SIZEOF_LONG__ == 4)
+  guint64 *ip_ptr = g_new(guint64, 1);
+  g_hash_table_insert(ts->kprobe_hash, ip_ptr,
+    (gpointer)(glong)g_quark_from_string(symbol));
+#else
   g_hash_table_insert(ts->kprobe_hash, (gpointer)ip,
     (gpointer)(glong)g_quark_from_string(symbol));
+#endif
 }
 
 static void expand_trap_table(LttvTraceState *ts, int id)
@@ -2006,7 +2029,12 @@ create_name_tables(LttvTraceState *tcs)
 
   g_string_free(fe_name, TRUE);
 
+#if (__SIZEOF_LONG__ == 4)
+  name_tables->kprobe_hash = g_hash_table_new_full(guint64_hash, guint64_equal,
+    g_free, NULL);
+#else
   name_tables->kprobe_hash = g_hash_table_new(g_direct_hash, g_direct_equal);
+#endif
 }
 
 
