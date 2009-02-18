@@ -1256,6 +1256,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   void * pos;
   LttEvent *event;
   void *pos_aligned;
+  guint16 packed_evid;	/* event id reader from the 5 bits in header */
  
   event = &tf->event;
   pos = tf->buffer.head + event->offset;
@@ -1267,11 +1268,11 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
   pos_aligned = pos;
   
   event->timestamp = ltt_get_uint32(LTT_GET_BO(tf), pos);
-  event->event_id = event->timestamp >> tf->tscbits;
+  event->event_id = packed_evid = event->timestamp >> tf->tscbits;
   event->timestamp = event->timestamp & tf->tsc_mask;
   pos += sizeof(guint32);
 
-  switch (event->event_id) {
+  switch (packed_evid) {
   case 29:  /* LTT_RFLAG_ID_SIZE_TSC */
     event->event_id = ltt_get_uint16(LTT_GET_BO(tf), pos);
     pos += sizeof(guint16);
@@ -1305,7 +1306,7 @@ int ltt_tracefile_read_update_event(LttTracefile *tf)
     break;
   }
 
-  if (likely(event->event_id != 29)) {
+  if (likely(packed_evid != 29)) {
       /* No extended timestamp */
       if (event->timestamp < (tf->buffer.tsc & tf->tsc_mask))
         tf->buffer.tsc = ((tf->buffer.tsc & ~tf->tsc_mask)  /* overflow */
