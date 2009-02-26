@@ -121,7 +121,8 @@ static void show_arguments(void)
 	printf("        channel.<channelname>.enable=\n");
 	printf("        channel.<channelname>.overwrite=\n");
 	printf("        channel.<channelname>.bufnum=\n");
-	printf("        channel.<channelname>.bufsize=\n");
+	printf("        channel.<channelname>.bufsize= (in bytes, rounded to "
+	       "next power of 2)\n");
 	printf("        <channelname> can be set to all for all channels\n");
 	printf("\n");
 	printf(" Integration options:\n");
