@@ -115,7 +115,7 @@ static void show_arguments(void)
 	printf("\n");
 	printf(" Advanced options:\n");
 	printf("  --transport TRANSPORT\n");
-	printf("        Set trace's transport. (ex. relay)\n");
+	printf("        Set trace's transport. (ex. relay-locked or relay)\n");
 	printf("  -o, --option OPTION\n");
 	printf("        Set options, following operations are supported:\n");
 	printf("        channel.<channelname>.enable=\n");
