@@ -1962,6 +1962,11 @@ create_name_tables(LttvTraceState *tcs)
         LTT_CHANNEL_KERNEL,
         LTT_EVENT_TRAP_ENTRY,
         FIELD_ARRAY(LTT_FIELD_TRAP_ID),
+        NULL, NULL, &hooks) ||
+     !lttv_trace_find_hook(tcs->parent.t,
+        LTT_CHANNEL_KERNEL,
+        LTT_EVENT_PAGE_FAULT_ENTRY,
+        FIELD_ARRAY(LTT_FIELD_TRAP_ID),
         NULL, NULL, &hooks)) {
 
 //    th = lttv_trace_hook_get_first(&th);
