@@ -3395,6 +3395,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.104<br>
 0.105<br>
 0.106<br>
+0.108<br>
 </td>
 <td style="vertical-align: top;">
 0.65<br>
@@ -3430,6 +3431,8 @@ LTTng 0.103 integrates a patch to cache the page_address lookup.<br>
 LTTng 0.104 includes the basics for future text output support (ltt-ascii is
 still work in progress) and a lot of patch folding has been done in preparation
 for LKML post. It supports kernel 2.6.29-rc7.<br>
+LTTng 0.108 boosts performances. Fixes a false-sharing problem, divides the
+buffer management code into slow and fast paths for better locality.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
