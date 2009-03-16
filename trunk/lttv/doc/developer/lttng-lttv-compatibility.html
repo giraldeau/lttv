@@ -3397,6 +3397,8 @@ powerpc64, s390, sparc, sparc64.<br>
 0.106<br>
 0.108<br>
 0.109<br>
+0.110<br>
+0.111<br>
 </td>
 <td style="vertical-align: top;">
 0.65<br>
@@ -3436,6 +3438,8 @@ LTTng 0.108 boosts performances. Fixes a false-sharing problem, divides the
 buffer management code into slow and fast paths for better locality.<br>
 LTTng 0.110 moves to a pointer array instead of a linked list to manage the
 buffer pages.<br>
+LTTng 0.111 adds commit count prefetch, removes rcu list prefetch (slows down
+small lists) and fixes powerpc64 build.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
