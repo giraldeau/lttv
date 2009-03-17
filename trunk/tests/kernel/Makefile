@@ -14,14 +14,15 @@ ifneq ($(CONFIG_LTT),)
 endif
 	#obj-m += test-sys_call.o
 #	obj-m += test-bug.o
-	obj-m += test-tsc-sync2.o
+	obj-m += genkprobe.o
+	#obj-m += test-tsc-sync2.o
 	#obj-m += test-63.o
 	#obj-m += test-nop-speed.o
 	#obj-m += test-hpet.o
 #	obj-m += test-prefix-speed-32.o
 	#obj-m += test-prefix-speed.o
 	#obj-m += test-psrwlock.o
-#	obj-m += test-cmpxchg-nolock2.o
+	obj-m += test-cmpxchg-nolock2.o
 #	obj-m += test-trace-speed.o
 #	obj-m += test-rcu-speed.o
 #	obj-m += test-fct-speed.o

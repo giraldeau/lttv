@@ -8,7 +8,7 @@
 #include <linux/compiler.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/calc64.h>
+#include <linux/math64.h>
 #include <asm/timex.h>
 #include <asm/system.h>
 
@@ -18,11 +18,10 @@ int test_val;
 
 static void do_testbaseline(void)
 {
-	int ret;
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	local_irq_save(flags);
 	preempt_disable();
@@ -38,7 +37,7 @@ static void do_testbaseline(void)
 	printk(KERN_ALERT "test results: time for baseline\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> baseline takes %llu cycles\n", time);
 	printk(KERN_ALERT "test end\n");
 }
@@ -46,10 +45,10 @@ static void do_testbaseline(void)
 static void do_test_sync_cmpxchg(void)
 {
 	int ret;
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	local_irq_save(flags);
 	preempt_disable();
@@ -69,7 +68,7 @@ static void do_test_sync_cmpxchg(void)
 	printk(KERN_ALERT "test results: time for locked cmpxchg\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> locked cmpxchg takes %llu cycles\n", time);
 	printk(KERN_ALERT "test end\n");
 }
@@ -77,10 +76,10 @@ static void do_test_sync_cmpxchg(void)
 static void do_test_cmpxchg(void)
 {
 	int ret;
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	local_irq_save(flags);
 	preempt_disable();
@@ -96,17 +95,17 @@ static void do_test_cmpxchg(void)
 	printk(KERN_ALERT "test results: time for non locked cmpxchg\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> non locked cmpxchg takes %llu cycles\n", time);
 	printk(KERN_ALERT "test end\n");
 }
 static void do_test_sync_inc(void)
 {
 	int ret;
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 	atomic_t val;
 
 	local_irq_save(flags);
@@ -123,7 +122,7 @@ static void do_test_sync_inc(void)
 	printk(KERN_ALERT "test results: time for locked add return\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> locked add return takes %llu cycles\n", time);
 	printk(KERN_ALERT "test end\n");
 }
@@ -132,10 +131,10 @@ static void do_test_sync_inc(void)
 static void do_test_inc(void)
 {
 	int ret;
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 	local_t loc_val;
 
 	local_irq_save(flags);
@@ -152,7 +151,7 @@ static void do_test_inc(void)
 	printk(KERN_ALERT "test results: time for non locked add return\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> non locked add return takes %llu cycles\n", time);
 	printk(KERN_ALERT "test end\n");
 }
@@ -164,10 +163,10 @@ static void do_test_inc(void)
  */
 static void do_test_enable_int(void)
 {
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	local_irq_save(flags);
 	preempt_disable();
@@ -183,7 +182,7 @@ static void do_test_enable_int(void)
 	printk(KERN_ALERT "test results: time for enabling interrupts (STI)\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> enabling interrupts (STI) takes %llu cycles\n",
 					time);
 	printk(KERN_ALERT "test end\n");
@@ -194,7 +193,7 @@ static void do_test_disable_int(void)
 	unsigned long flags, flags2;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	local_irq_save(flags);
 	preempt_disable();
@@ -210,7 +209,7 @@ static void do_test_disable_int(void)
 	printk(KERN_ALERT "test results: time for disabling interrupts (CLI)\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> disabling interrupts (CLI) takes %llu cycles\n",
 				time);
 	printk(KERN_ALERT "test end\n");
@@ -218,10 +217,10 @@ static void do_test_disable_int(void)
 
 static void do_test_int(void)
 {
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	local_irq_save(flags);
 	preempt_disable();
@@ -238,7 +237,7 @@ static void do_test_int(void)
 	printk(KERN_ALERT "test results: time for disabling/enabling interrupts (STI/CLI)\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> enabling/disabling interrupts (STI/CLI) takes %llu cycles\n",
 					time);
 	printk(KERN_ALERT "test end\n");
