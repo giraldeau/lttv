@@ -13,7 +13,7 @@
 #include <asm/timex.h>
 #include <asm/system.h>
 
-#define NR_LOOPS 20000
+#define NR_LOOPS 200000
 
 DEFINE_TRACE(kernel_test);
 
