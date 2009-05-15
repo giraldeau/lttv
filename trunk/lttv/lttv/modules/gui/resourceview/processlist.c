@@ -693,6 +693,7 @@ HashedResourceData *resourcelist_obtain_generic(ControlFlowData *resourceview_da
   /* Prepare hash key */
   ru->ru.type = &(resourceview_data->process_list->restypes[res_type]);
   ru->trace_num = trace_num;
+  g_assert(id != -1);
   ru->id = id;
   
   /* Search within hash table */

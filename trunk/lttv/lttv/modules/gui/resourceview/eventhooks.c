@@ -1201,6 +1201,9 @@ int before_execmode_hook_trap(void *hook_data, void *call_data)
              || minfo->name == LTT_EVENT_PAGE_FAULT_EXIT
              || minfo->name == LTT_EVENT_PAGE_FAULT_NOSEM_EXIT) {
     trap = ts->cpu_states[cpu].last_trap;
+    /* Handle case where a trace starts with a trap exit event */
+    if (trap == -1)
+      return 0;
   } else
     return 0;
 
