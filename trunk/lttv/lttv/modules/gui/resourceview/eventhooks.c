@@ -847,6 +847,8 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
     irq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   } else if (minfo->name == LTT_EVENT_IRQ_EXIT) {
     irq = ts->cpu_states[cpu].last_irq;
+    if (irq == -1)
+      return 0;
   } else
     return 0;
 
@@ -1027,6 +1029,8 @@ int before_execmode_hook_soft_irq(void *hook_data, void *call_data)
     softirq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   } else if (minfo->name == LTT_EVENT_SOFT_IRQ_EXIT) {
     softirq = ts->cpu_states[cpu].last_soft_irq;
+    if (softirq == -1)
+      return 0;
   } else
     return 0;
 
