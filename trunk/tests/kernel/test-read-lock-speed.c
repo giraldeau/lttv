@@ -2,7 +2,7 @@
  * test-read-lock-speed.c
  *
  * Compare speed of :
- * - spin lock irqsave / spin unlock irqrestore (protects from interrupts)
+ * - spin lock / spin unlock
  * - rwlock read lock (not disabling interrupts, can deal with nesting)
  * - using a sequence read lock (uncontended)
  * - preempt disable/enable (RCU)
