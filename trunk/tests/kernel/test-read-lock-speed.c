@@ -62,9 +62,9 @@ static void do_testbaseline(void)
 
 	printk(KERN_ALERT "test results: time for baseline\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
-	printk(KERN_ALERT "total time: %llu\n", time);
+	printk(KERN_ALERT "total time: %llu\n", (unsigned long long)time);
 	time = div_u64_rem(time, NR_LOOPS, &rem);
-	printk(KERN_ALERT "-> baseline takes %llu cycles\n", time);
+	printk(KERN_ALERT "-> baseline takes %llu cycles\n", (unsigned long long)time);
 	printk(KERN_ALERT "test end\n");
 }
 
@@ -90,9 +90,9 @@ static void do_test_spinlock(void)
 
 	printk(KERN_ALERT "test results: time for spinlock\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
-	printk(KERN_ALERT "total time: %llu\n", time);
+	printk(KERN_ALERT "total time: %llu\n", (unsigned long long)time);
 	time = div_u64_rem(time, NR_LOOPS, &rem);
-	printk(KERN_ALERT "-> spinlock takes %llu cycles\n", time);
+	printk(KERN_ALERT "-> spinlock takes %llu cycles\n", (unsigned long long)time);
 	printk(KERN_ALERT "test end\n");
 }
 
@@ -120,9 +120,9 @@ static void do_test_read_rwlock(void)
 
 	printk(KERN_ALERT "test results: time for read rwlock\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
-	printk(KERN_ALERT "total time: %llu\n", time);
+	printk(KERN_ALERT "total time: %llu\n", (unsigned long long)time);
 	time = div_u64_rem(time, NR_LOOPS, &rem);
-	printk(KERN_ALERT "-> read rwlock takes %llu cycles\n", time);
+	printk(KERN_ALERT "-> read rwlock takes %llu cycles\n", (unsigned long long)time);
 	printk(KERN_ALERT "test end\n");
 }
 
@@ -148,9 +148,9 @@ static void do_test_seqlock(void)
 
 	printk(KERN_ALERT "test results: time for seqlock\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
-	printk(KERN_ALERT "total time: %llu\n", time);
+	printk(KERN_ALERT "total time: %llu\n", (unsigned long long)time);
 	time = div_u64_rem(time, NR_LOOPS, &rem);
-	printk(KERN_ALERT "-> seqlock takes %llu cycles\n", time);
+	printk(KERN_ALERT "-> seqlock takes %llu cycles\n", (unsigned long long)time);
 	printk(KERN_ALERT "test end\n");
 }
 
@@ -182,10 +182,10 @@ static void do_test_preempt(void)
 	printk(KERN_ALERT
 		"test results: time for preempt disable/enable pairs\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
-	printk(KERN_ALERT "total time: %llu\n", time);
+	printk(KERN_ALERT "total time: %llu\n", (unsigned long long)time);
 	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> preempt disable/enable pair takes %llu cycles\n",
-					time);
+					(unsigned long long)time);
 	printk(KERN_ALERT "test end\n");
 }
 
