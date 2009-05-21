@@ -1032,7 +1032,13 @@ int before_execmode_hook_soft_irq(void *hook_data, void *call_data)
       || minfo->name == LTT_EVENT_SOFT_IRQ_ENTRY) {
     softirq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   } else if (minfo->name == LTT_EVENT_SOFT_IRQ_EXIT) {
-    softirq = ts->cpu_states[cpu].last_soft_irq;
+    gint len = ts->cpu_states[cpu].softirq_stack->len;
+    if(len) {
+      softirq = g_array_index(ts->cpu_states[cpu].softirq_stack, gint, len-1);
+    }
+    else {
+      return 0;
+    }
   } else
     return 0;
 
@@ -1206,7 +1212,13 @@ int before_execmode_hook_trap(void *hook_data, void *call_data)
   } else if (minfo->name == LTT_EVENT_TRAP_EXIT
              || minfo->name == LTT_EVENT_PAGE_FAULT_EXIT
              || minfo->name == LTT_EVENT_PAGE_FAULT_NOSEM_EXIT) {
-    trap = ts->cpu_states[cpu].last_trap;
+    gint len = ts->cpu_states[cpu].trap_stack->len;
+    if(len) {
+      trap = g_array_index(ts->cpu_states[cpu].trap_stack, gint, len-1);
+    }
+    else {
+      return 0;
+    }
   } else
     return 0;
 
