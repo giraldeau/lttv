@@ -846,9 +846,7 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
   if (minfo->name == LTT_EVENT_IRQ_ENTRY) {
     irq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   } else if (minfo->name == LTT_EVENT_IRQ_EXIT) {
-    irq = ts->cpu_states[cpu].last_irq;
-    if (irq == -1)
-      return 0;
+    irq = g_array_index(ts->cpu_states[cpu].irq_stack, gint, ts->cpu_states[cpu].irq_stack->len-1);
   } else
     return 0;
 
@@ -1029,8 +1027,6 @@ int before_execmode_hook_soft_irq(void *hook_data, void *call_data)
     softirq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   } else if (minfo->name == LTT_EVENT_SOFT_IRQ_EXIT) {
     softirq = ts->cpu_states[cpu].last_soft_irq;
-    if (softirq == -1)
-      return 0;
   } else
     return 0;
 
@@ -1205,9 +1201,6 @@ int before_execmode_hook_trap(void *hook_data, void *call_data)
              || minfo->name == LTT_EVENT_PAGE_FAULT_EXIT
              || minfo->name == LTT_EVENT_PAGE_FAULT_NOSEM_EXIT) {
     trap = ts->cpu_states[cpu].last_trap;
-    /* Handle case where a trace starts with a trap exit event */
-    if (trap == -1)
-      return 0;
   } else
     return 0;
 

@@ -467,7 +467,8 @@ restore_init_state(LttvTraceState *self)
     /* reset cpu states */
     if(self->cpu_states[i].mode_stack->len > 0) {
       g_array_remove_range(self->cpu_states[i].mode_stack, 0, self->cpu_states[i].mode_stack->len);
-      self->cpu_states[i].last_irq = -1;
+      if(self->cpu_states[i].irq_stack->len)
+        g_array_remove_range(self->cpu_states[i].irq_stack, 0, self->cpu_states[i].irq_stack->len);
       self->cpu_states[i].last_soft_irq = -1;
       self->cpu_states[i].last_trap = -1;
     }
@@ -649,7 +650,7 @@ init(LttvTracesetState *self, LttvTraceset *ts)
     tcs->cpu_states = g_new(LttvCPUState, nb_cpu);
     for(j = 0; j<nb_cpu; j++) {
       tcs->cpu_states[j].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvCPUMode));
-      tcs->cpu_states[j].last_irq = -1;
+      tcs->cpu_states[j].irq_stack = g_array_new(FALSE, FALSE, sizeof(gint));
       tcs->cpu_states[j].last_soft_irq = -1;
       tcs->cpu_states[j].last_trap = -1;
       g_assert(tcs->cpu_states[j].mode_stack != NULL);
@@ -1328,10 +1329,16 @@ static LttvCPUState *lttv_state_copy_cpu_states(LttvCPUState *states, guint n)
   retval = g_new(LttvCPUState, n);
 
   for(i=0; i<n; i++) {
-    retval[i].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvCPUMode));
-    retval[i].last_irq = states[i].last_irq;
     retval[i].last_soft_irq = states[i].last_soft_irq;
     retval[i].last_trap = states[i].last_trap;
+
+    retval[i].irq_stack = g_array_new(FALSE, FALSE, sizeof(gint));
+    g_array_set_size(retval[i].irq_stack, states[i].irq_stack->len);
+    for(j=0; j<states[i].irq_stack->len; j++) {
+      g_array_index(retval[i].irq_stack, gint, j) = g_array_index(states[i].irq_stack, gint, j);
+    }
+
+    retval[i].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvCPUMode));
     g_array_set_size(retval[i].mode_stack, states[i].mode_stack->len);
     for(j=0; j<states[i].mode_stack->len; j++) {
       g_array_index(retval[i].mode_stack, GQuark, j) = g_array_index(states[i].mode_stack, GQuark, j);
@@ -1347,6 +1354,7 @@ static void lttv_state_free_cpu_states(LttvCPUState *states, guint n)
 
   for(i=0; i<n; i++) {
     g_array_free(states[i].mode_stack, TRUE);
+    g_array_free(states[i].irq_stack, TRUE);
   }
 
   g_free(states);
@@ -2565,7 +2573,7 @@ static gboolean irq_entry(void *hook_data, void *call_data)
   cpu_push_mode(s->cpu_state, LTTV_CPU_IRQ);
 
   /* update irq status */
-  s->cpu_state->last_irq = irq;
+  g_array_append_val(s->cpu_state->irq_stack, irq);
   irq_push_mode(&ts->irq_states[irq], LTTV_IRQ_BUSY);
 
   return FALSE;
@@ -2601,8 +2609,11 @@ static gboolean irq_exit(void *hook_data, void *call_data)
   cpu_pop_mode(s->cpu_state);
 
   /* update irq status */
-  if (s->cpu_state->last_irq != -1)
-    irq_pop_mode(&ts->irq_states[s->cpu_state->last_irq]);
+  if (s->cpu_state->irq_stack->len > 0) {
+    gint last = g_array_index(s->cpu_state->irq_stack, gint, s->cpu_state->irq_stack->len-1);
+    g_array_remove_index(s->cpu_state->irq_stack, s->cpu_state->irq_stack->len-1);
+    irq_pop_mode(&ts->irq_states[last]);
+  }
 
   return FALSE;
 }
