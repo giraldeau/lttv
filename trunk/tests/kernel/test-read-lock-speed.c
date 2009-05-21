@@ -22,6 +22,13 @@
 #include <asm/timex.h>
 #include <asm/system.h>
 
+#ifdef CONFIG_ARM
+#include <linux/trace-clock.h>
+#define get_timestamp	trace_clock_read64
+#else
+#define get_timestamp	get_cycles
+#endif
+
 #define NR_LOOPS 20000
 
 #ifndef CONFIG_PREEMPT
@@ -51,11 +58,11 @@ static void do_testbaseline(void)
 
 	local_irq_save(flags);
 	preempt_disable();
-	time1 = get_cycles();
+	time1 = get_timestamp();
 	for (i = 0; i < NR_LOOPS; i++) {
 		asm volatile ("");
 	}
-	time2 = get_cycles();
+	time2 = get_timestamp();
 	local_irq_restore(flags);
 	preempt_enable();
 	time = time2 - time1;
@@ -78,12 +85,12 @@ static void do_test_spinlock(void)
 
 	preempt_disable();
 	spin_lock_irqsave(&mylock, flags);
-	time1 = get_cycles();
+	time1 = get_timestamp();
 	for (i = 0; i < NR_LOOPS; i++) {
 		spin_unlock(&mylock);
 		spin_lock(&mylock);
 	}
-	time2 = get_cycles();
+	time2 = get_timestamp();
 	spin_unlock_irqrestore(&mylock, flags);
 	preempt_enable();
 	time = time2 - time1;
@@ -107,12 +114,12 @@ static void do_test_read_rwlock(void)
 	preempt_disable();
 	local_irq_save(flags);
 	read_lock(&mylock);
-	time1 = get_cycles();
+	time1 = get_timestamp();
 	for (i = 0; i < NR_LOOPS; i++) {
 		read_unlock(&mylock);
 		read_lock(&mylock);
 	}
-	time2 = get_cycles();
+	time2 = get_timestamp();
 	read_unlock(&mylock);
 	local_irq_restore(flags);
 	preempt_enable();
@@ -136,13 +143,13 @@ static void do_test_seqlock(void)
 	u32 rem;
 
 	local_irq_save(flags);
-	time1 = get_cycles();
+	time1 = get_timestamp();
 	for (i = 0; i < NR_LOOPS; i++) {
 		do {
 			seq = read_seqbegin(&test_lock);
 		} while (read_seqretry(&test_lock, seq));
 	}
-	time2 = get_cycles();
+	time2 = get_timestamp();
 	time = time2 - time1;
 	local_irq_restore(flags);
 
@@ -169,12 +176,12 @@ static void do_test_preempt(void)
 
 	local_irq_save(flags);
 	preempt_disable();
-	time1 = get_cycles();
+	time1 = get_timestamp();
 	for (i = 0; i < NR_LOOPS; i++) {
 		preempt_disable();
 		preempt_enable();
 	}
-	time2 = get_cycles();
+	time2 = get_timestamp();
 	preempt_enable();
 	time = time2 - time1;
 	local_irq_restore(flags);
