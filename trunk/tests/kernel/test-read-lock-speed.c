@@ -2,8 +2,8 @@
  * test-read-lock-speed.c
  *
  * Compare speed of :
- * - spin lock irqsave / spin unlock irqrestore (close to rwlocks when
- *   uncontended)
+ * - spin lock irqsave / spin unlock irqrestore (protects from interrupts)
+ * - rwlock read lock (not disabling interrupts, can deal with nesting)
  * - using a sequence read lock (uncontended)
  * - preempt disable/enable (RCU)
  *
@@ -96,6 +96,36 @@ static void do_test_spinlock(void)
 	printk(KERN_ALERT "test end\n");
 }
 
+static void do_test_read_rwlock(void)
+{
+	static DEFINE_RWLOCK(mylock);
+	unsigned long flags;
+	unsigned int i;
+	cycles_t time1, time2, time;
+	u32 rem;
+
+	preempt_disable();
+	local_irq_save(flags);
+	read_lock(&mylock);
+	time1 = get_cycles();
+	for (i = 0; i < NR_LOOPS; i++) {
+		read_unlock(&mylock);
+		read_lock(&mylock);
+	}
+	time2 = get_cycles();
+	read_unlock(&mylock);
+	local_irq_restore(flags);
+	preempt_enable();
+	time = time2 - time1;
+
+	printk(KERN_ALERT "test results: time for read rwlock\n");
+	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
+	printk(KERN_ALERT "total time: %llu\n", time);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
+	printk(KERN_ALERT "-> read rwlock takes %llu cycles\n", time);
+	printk(KERN_ALERT "test end\n");
+}
+
 static void do_test_seqlock(void)
 {
 	static seqlock_t test_lock;
@@ -166,6 +196,7 @@ static int ltt_test_init(void)
 	printk(KERN_ALERT "Number of active CPUs : %d\n", num_online_cpus());
 	do_testbaseline();
 	do_test_spinlock();
+	do_test_read_rwlock();
 	do_test_seqlock();
 	do_test_preempt();
 	return -EAGAIN; /* Fail will directly unload the module */
