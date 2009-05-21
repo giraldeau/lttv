@@ -1,6 +1,9 @@
-/* test-cmpxchg-nolock.c
+/* test-rcu-speed.c
  *
- * Compare local cmpxchg with irq disable / enable.
+ * Compare speed of :
+ * - spin lock irqsave/ spin unlock irqrestore
+ * - using a sequence read lock (uncontended)
+ * - preempt disable/enable
  */
 
 
@@ -8,22 +11,39 @@
 #include <linux/compiler.h>
 #include <linux/init.h>
 #include <linux/module.h>
-#include <linux/calc64.h>
+#include <linux/math64.h>
 #include <linux/spinlock.h>
 #include <linux/seqlock.h>
+#include <linux/cpumask.h>
 #include <asm/timex.h>
 #include <asm/system.h>
 
 #define NR_LOOPS 20000
 
+#ifndef CONFIG_PREEMPT
+#error "Your kernel should be build with preemption enabled"
+#endif
+
+#ifdef CONFIG_DEBUG_PREEMPT
+#error "Please disable CONFIG_DEBUG_PREEMPT"
+#endif
+
+#ifdef CONFIG_DEBUG_SPINLOCK
+#error "Please disable CONFIG_DEBUG_SPINLOCK"
+#endif
+
+#ifdef CONFIG_LOCKDEP
+#error "Please disable CONFIG_LOCKDEP"
+#endif
+
 int test_val;
 
 static void do_testbaseline(void)
 {
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	local_irq_save(flags);
 	preempt_disable();
@@ -39,7 +59,7 @@ static void do_testbaseline(void)
 	printk(KERN_ALERT "test results: time for baseline\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> baseline takes %llu cycles\n", time);
 	printk(KERN_ALERT "test end\n");
 }
@@ -47,10 +67,10 @@ static void do_testbaseline(void)
 static void do_test_spinlock(void)
 {
 	static DEFINE_SPINLOCK(mylock);
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	preempt_disable();
 	spin_lock_irqsave(&mylock, flags);
@@ -67,7 +87,7 @@ static void do_test_spinlock(void)
 	printk(KERN_ALERT "test results: time for spinlock\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> spinlock takes %llu cycles\n", time);
 	printk(KERN_ALERT "test end\n");
 }
@@ -76,13 +96,12 @@ static void do_test_seqlock(void)
 {
 	static seqlock_t test_lock;
 	unsigned long seq;
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	local_irq_save(flags);
-	preempt_disable();
 	time1 = get_cycles();
 	for (i = 0; i < NR_LOOPS; i++) {
 		do {
@@ -90,27 +109,29 @@ static void do_test_seqlock(void)
 		} while (read_seqretry(&test_lock, seq));
 	}
 	time2 = get_cycles();
-	preempt_enable();
 	time = time2 - time1;
 	local_irq_restore(flags);
 
 	printk(KERN_ALERT "test results: time for seqlock\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> seqlock takes %llu cycles\n", time);
 	printk(KERN_ALERT "test end\n");
 }
 
 /*
- * This test will have a higher standard deviation due to incoming interrupts.
+ * Note : This test _should_ trigger lockdep errors due to preemption
+ * disabling/enabling within irq off section. Given we are only interested in
+ * having the most precise measurement for preemption disable/enable, we don't
+ * care about this.
  */
 static void do_test_preempt(void)
 {
-	long flags;
+	unsigned long flags;
 	unsigned int i;
 	cycles_t time1, time2, time;
-	long rem;
+	u32 rem;
 
 	local_irq_save(flags);
 	preempt_disable();
@@ -127,7 +148,7 @@ static void do_test_preempt(void)
 	printk(KERN_ALERT "test results: time for preempt disable/enable pairs\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
-	time = div_long_long_rem(time, NR_LOOPS, &rem);
+	time = div_u64_rem(time, NR_LOOPS, &rem);
 	printk(KERN_ALERT "-> preempt disable/enable pair takes %llu cycles\n",
 					time);
 	printk(KERN_ALERT "test end\n");
@@ -137,6 +158,7 @@ static int ltt_test_init(void)
 {
 	printk(KERN_ALERT "test init\n");
 	
+	printk(KERN_ALERT "Number of active CPUs : %d\n", num_online_cpus());
 	do_testbaseline();
 	do_test_spinlock();
 	do_test_seqlock();

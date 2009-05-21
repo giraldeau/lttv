@@ -14,9 +14,9 @@ ifneq ($(CONFIG_LTT),)
 endif
 	#obj-m += test-sys_call.o
 #	obj-m += test-bug.o
-	obj-m += genkprobe.o
-	obj-m += test-lttng-tp.o
-	obj-m += test-trace.o
+#	obj-m += genkprobe.o
+#	obj-m += test-lttng-tp.o
+#	obj-m += test-trace.o
 	#obj-m += test-tsc-sync2.o
 	#obj-m += test-63.o
 	#obj-m += test-nop-speed.o
@@ -26,7 +26,7 @@ endif
 	#obj-m += test-psrwlock.o
 	obj-m += test-cmpxchg-nolock2.o
 #	obj-m += test-trace-speed.o
-#	obj-m += test-rcu-speed.o
+	obj-m += test-rcu-speed.o
 #	obj-m += test-fct-speed.o
 #	obj-m += test-int3-speed.o
 #	obj-m += test-kprobes2.o
