@@ -1,11 +1,15 @@
-/* test-rcu-speed.c
+/*
+ * test-read-lock-speed.c
  *
  * Compare speed of :
- * - spin lock irqsave/ spin unlock irqrestore
+ * - spin lock irqsave / spin unlock irqrestore (close to rwlocks when
+ *   uncontended)
  * - using a sequence read lock (uncontended)
- * - preempt disable/enable
+ * - preempt disable/enable (RCU)
+ *
+ * Copyright 2009 - Mathieu Desnoyers <mathieu.desnoyers@polymtl.ca>
+ * Distributed under GPLv2
  */
-
 
 #include <linux/jiffies.h>
 #include <linux/compiler.h>
@@ -145,7 +149,8 @@ static void do_test_preempt(void)
 	time = time2 - time1;
 	local_irq_restore(flags);
 
-	printk(KERN_ALERT "test results: time for preempt disable/enable pairs\n");
+	printk(KERN_ALERT
+		"test results: time for preempt disable/enable pairs\n");
 	printk(KERN_ALERT "number of loops: %d\n", NR_LOOPS);
 	printk(KERN_ALERT "total time: %llu\n", time);
 	time = div_u64_rem(time, NR_LOOPS, &rem);
@@ -176,5 +181,4 @@ module_exit(ltt_test_exit)
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Mathieu Desnoyers");
-MODULE_DESCRIPTION("Cmpxchg vs int Test");
-
+MODULE_DESCRIPTION("Test read lock speed");
