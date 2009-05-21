@@ -846,7 +846,13 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
   if (minfo->name == LTT_EVENT_IRQ_ENTRY) {
     irq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 0));
   } else if (minfo->name == LTT_EVENT_IRQ_EXIT) {
-    irq = g_array_index(ts->cpu_states[cpu].irq_stack, gint, ts->cpu_states[cpu].irq_stack->len-1);
+    gint len = ts->cpu_states[cpu].irq_stack->len;
+    if(len) {
+      irq = g_array_index(ts->cpu_states[cpu].irq_stack, gint, len-1);
+    }
+    else {
+      return 0;
+    }
   } else
     return 0;
 
