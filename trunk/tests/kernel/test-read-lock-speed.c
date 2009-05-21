@@ -3,7 +3,7 @@
  *
  * Compare speed of :
  * - spin lock / spin unlock
- * - rwlock read lock (not disabling interrupts, can deal with nesting)
+ * - rwlock read lock
  * - using a sequence read lock (uncontended)
  * - preempt disable/enable (RCU)
  *
