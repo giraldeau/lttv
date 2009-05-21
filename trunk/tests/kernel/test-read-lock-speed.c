@@ -25,7 +25,7 @@
 #define NR_LOOPS 20000
 
 #ifndef CONFIG_PREEMPT
-#error "Your kernel should be build with preemption enabled"
+#error "Your kernel should be built with preemption enabled"
 #endif
 
 #ifdef CONFIG_DEBUG_PREEMPT
