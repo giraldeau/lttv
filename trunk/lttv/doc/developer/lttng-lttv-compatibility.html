@@ -3428,6 +3428,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.136<br>
 0.137<br>
 0.138<br>
+0.139<br>
 </td>
 <td style="vertical-align: top;">
 0.65<br>
@@ -3501,6 +3502,11 @@ LTTV 0.12.14 fixes irq and softirq handling of resourceview for exit event at
 the beginning of the trace.<br>
 LTTng 0.137 moves trace_clock generic variable to trace_clock_var. Conflict with
 ftrace.<br>
+LTTng 0.139 modifies the memory barrier IPIs (at sub-subber switch) to give them
+a good deal of paranoia : don't trust the Linux IPI mechanism to ensure that
+memory is presented in program order when the remote ipi handler runs. Use our
+own smp_mb()s to ensure memory ordering. It's a slow path anyway, we don't
+care.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
