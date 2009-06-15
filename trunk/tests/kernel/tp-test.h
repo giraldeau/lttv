@@ -1,5 +1,5 @@
 #include <linux/tracepoint.h>
 
 DECLARE_TRACE(kernel_test,
-	TPPROTO(void *a, void *b),
-		TPARGS(a, b));
+	TP_PROTO(void *a, void *b),
+		TP_ARGS(a, b));

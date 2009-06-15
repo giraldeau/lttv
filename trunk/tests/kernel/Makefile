@@ -15,8 +15,8 @@ endif
 	#obj-m += test-sys_call.o
 #	obj-m += test-bug.o
 #	obj-m += genkprobe.o
-#	obj-m += test-lttng-tp.o
-#	obj-m += test-trace.o
+	obj-m += test-lttng-tp.o
+	obj-m += test-trace.o
 	#obj-m += test-tsc-sync2.o
 	#obj-m += test-63.o
 	#obj-m += test-nop-speed.o
