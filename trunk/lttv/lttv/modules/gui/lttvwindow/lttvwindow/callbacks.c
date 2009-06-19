@@ -2474,7 +2474,10 @@ void
 on_quit_activate                       (GtkMenuItem     *menuitem,
                                         gpointer         user_data)
 {
-  mainwindow_quit();
+  while (g_slist_length(g_main_window_list) != 0) {
+    on_MWindow_destroy(((MainWindow *)g_main_window_list->data)->mwindow,
+      user_data);
+  }
 }
 
 
