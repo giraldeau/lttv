@@ -84,13 +84,13 @@ int lttctl_init(void)
 	ret = initdebugfsmntdir();
 	if (ret) {
 		fprintf(stderr, "Get debugfs mount point failed\n");
-		return 1;
+		return ret;
 	}
 
 	ret = initmodule();
 	if (ret) {
 		fprintf(stderr, "Control module seems not work\n");
-		return 1;
+		return ret;
 	}
 
 	return 0;
@@ -118,10 +118,11 @@ static int lttctl_sendop(const char *fname, const char *op)
 	}
 
 	if (write(fd, op, strlen(op)) == -1) {
+		int ret = errno;
 		fprintf(stderr, "%s: write %s to %s failed: %s\n", __func__, op,
 			fname, strerror(errno));
 		close(fd);
-		return 1;
+		return ret;
 	}
 
 	close(fd);
@@ -137,7 +138,7 @@ static int lttctl_sendop(const char *fname, const char *op)
  *
  * ret:
  *   0: check pass
- *   1: check failed
+ *   -(EEXIST | ENOENT): check failed
  *   -ERRNO: error happened (no check)
  */
 static int lttctl_check_trace(const char *name, int expect)
@@ -173,10 +174,16 @@ static int lttctl_check_trace(const char *name, int expect)
 
 	if (!expect != !exist) {
 		if (exist)
+		{
 			fprintf(stderr, "Trace %s already exist\n", name);
+			return -EEXIST;
+		}
 		else
+		{
 			fprintf(stderr, "Trace %s not exist\n", name);
-		return 1;
+			return -ENOENT;
+		}
+		
 	}
 
 	return 0;
@@ -232,6 +239,14 @@ error:
 	free(list);
 	*channellist = NULL;
 	return nr_chan;
+}
+
+static void lttctl_free_channellist(char **channellist, int n_channel)
+{
+	int i = 0;
+	for(; i < n_channel; ++i)
+		free(channellist[i]);
+	free(channellist);
 }
 
 int lttctl_setup_trace(const char *name)
@@ -433,6 +448,8 @@ int lttctl_set_channel_enable(const char *name, const char *channel,
 		int enable)
 {
 	int ret;
+	char **channellist;
+	int n_channel;
 
 	if (!name || !channel) {
 		fprintf(stderr, "%s: args invalid\n", __func__);
@@ -449,9 +466,6 @@ int lttctl_set_channel_enable(const char *name, const char *channel,
 		if (ret)
 			goto op_err;
 	} else {
-		char **channellist;
-		int n_channel;
-
 		/* Don't allow set enable state for metadata channel */
 		n_channel = lttctl_get_channellist(name, &channellist, 0);
 		if (n_channel < 0) {
@@ -465,13 +479,15 @@ int lttctl_set_channel_enable(const char *name, const char *channel,
 			ret = __lttctl_set_channel_enable(name,
 				channellist[n_channel - 1], enable);
 			if (ret)
-				goto op_err;
+				goto op_err_clean;
 		}
-		free(channellist);
+		lttctl_free_channellist(channellist, n_channel);
 	}
 
 	return 0;
 
+op_err_clean:
+	lttctl_free_channellist(channellist, n_channel);
 op_err:
 arg_error:
 	return ret;
@@ -496,6 +512,8 @@ int lttctl_set_channel_overwrite(const char *name, const char *channel,
 		int overwrite)
 {
 	int ret;
+	char **channellist;
+	int n_channel;
 
 	if (!name || !channel) {
 		fprintf(stderr, "%s: args invalid\n", __func__);
@@ -512,9 +530,6 @@ int lttctl_set_channel_overwrite(const char *name, const char *channel,
 		if (ret)
 			goto op_err;
 	} else {
-		char **channellist;
-		int n_channel;
-
 		/* Don't allow set overwrite for metadata channel */
 		n_channel = lttctl_get_channellist(name, &channellist, 0);
 		if (n_channel < 0) {
@@ -528,13 +543,15 @@ int lttctl_set_channel_overwrite(const char *name, const char *channel,
 			ret = __lttctl_set_channel_overwrite(name,
 				channellist[n_channel - 1], overwrite);
 			if (ret)
-				goto op_err;
+				goto op_err_clean;
 		}
-		free(channellist);
+		lttctl_free_channellist(channellist, n_channel);
 	}
 
 	return 0;
 
+op_err_clean:
+	lttctl_free_channellist(channellist, n_channel);
 op_err:
 arg_error:
 	return ret;
@@ -562,6 +579,8 @@ int lttctl_set_channel_subbuf_num(const char *name, const char *channel,
 		unsigned subbuf_num)
 {
 	int ret;
+	char **channellist;
+	int n_channel;
 
 	if (!name || !channel) {
 		fprintf(stderr, "%s: args invalid\n", __func__);
@@ -579,9 +598,6 @@ int lttctl_set_channel_subbuf_num(const char *name, const char *channel,
 		if (ret)
 			goto op_err;
 	} else {
-		char **channellist;
-		int n_channel;
-
 		/* allow set subbuf_num for metadata channel */
 		n_channel = lttctl_get_channellist(name, &channellist, 1);
 		if (n_channel < 0) {
@@ -595,13 +611,15 @@ int lttctl_set_channel_subbuf_num(const char *name, const char *channel,
 			ret = __lttctl_set_channel_subbuf_num(name,
 				channellist[n_channel - 1], subbuf_num);
 			if (ret)
-				goto op_err;
+				goto op_err_clean;
 		}
-		free(channellist);
+		lttctl_free_channellist(channellist, n_channel);
 	}
 
 	return 0;
 
+op_err_clean:
+	lttctl_free_channellist(channellist, n_channel);
 op_err:
 arg_error:
 	return ret;
@@ -627,6 +645,8 @@ int lttctl_set_channel_subbuf_size(const char *name, const char *channel,
 		unsigned subbuf_size)
 {
 	int ret;
+	char **channellist;
+	int n_channel;
 
 	if (!name || !channel) {
 		fprintf(stderr, "%s: args invalid\n", __func__);
@@ -644,9 +664,6 @@ int lttctl_set_channel_subbuf_size(const char *name, const char *channel,
 		if (ret)
 			goto op_err;
 	} else {
-		char **channellist;
-		int n_channel;
-
 		/* allow set subbuf_size for metadata channel */
 		n_channel = lttctl_get_channellist(name, &channellist, 1);
 		if (n_channel < 0) {
@@ -660,13 +677,15 @@ int lttctl_set_channel_subbuf_size(const char *name, const char *channel,
 			ret = __lttctl_set_channel_subbuf_size(name,
 				channellist[n_channel - 1], subbuf_size);
 			if (ret)
-				goto op_err;
+				goto op_err_clean;
 		}
-		free(channellist);
+		lttctl_free_channellist(channellist, n_channel);
 	}
 
 	return 0;
 
+op_err_clean:
+	lttctl_free_channellist(channellist, n_channel);
 op_err:
 arg_error:
 	return ret;
