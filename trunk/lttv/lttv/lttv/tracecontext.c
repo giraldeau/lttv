@@ -980,7 +980,7 @@ int lttv_trace_find_hook(LttTrace *t, GQuark channel_name, GQuark event_name,
 
   group = g_datalist_id_get_data(&t->tracefiles, channel_name);
   if (unlikely(!group || group->len == 0)) {
-    g_warning("No channel for marker named %s.%s found",
+    g_info("No channel for marker named %s.%s found",
     g_quark_to_string(channel_name), g_quark_to_string(event_name));
     return 1;
   }
@@ -988,7 +988,7 @@ int lttv_trace_find_hook(LttTrace *t, GQuark channel_name, GQuark event_name,
   mdata = g_array_index (group, LttTracefile, 0).mdata;
   info = marker_get_info_from_name(mdata, event_name);
   if(unlikely(info == NULL)) {
-    g_warning("No marker named %s.%s found",
+    g_info("No marker named %s.%s found",
     g_quark_to_string(channel_name), g_quark_to_string(event_name));
     return 1;
   }
@@ -1026,7 +1026,7 @@ int lttv_trace_find_hook(LttTrace *t, GQuark channel_name, GQuark event_name,
            marker. Print a warning and skip this marker completely.
 	   Still iterate on other markers with same name. */
         g_ptr_array_free(tmpth.fields, TRUE);
-        g_warning("Field %s cannot be found in marker %s.%s",
+        g_info("Field %s cannot be found in marker %s.%s",
                 g_quark_to_string(*f), g_quark_to_string(channel_name),
                                        g_quark_to_string(event_name));
         goto skip_marker;
@@ -1040,7 +1040,7 @@ skip_marker:
 
   /* Error if no new trace hook has been added */
   if (init_array_size == (*trace_hooks)->len) {
-        g_warning("No marker of name %s.%s has all requested fields",
+        g_info("No marker of name %s.%s has all requested fields",
                 g_quark_to_string(channel_name), g_quark_to_string(event_name));
         return 1;
   }
