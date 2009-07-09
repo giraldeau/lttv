@@ -171,10 +171,9 @@ static int parse_trace_header(ltt_subbuffer_header_t *header,
                                        &vheader->start_time_usec);
           t->start_time.tv_nsec *= 1000; /* microsec to nanosec */
 
-          t->start_time_from_tsc = ltt_time_from_uint64(
-              (double)t->start_tsc
-              * 1000000000.0 * tf->trace->freq_scale
-              / (double)t->start_freq);
+	  t->start_time_from_tsc =
+		  ltt_time_from_uint64(tsc_to_uint64(t->freq_scale,
+				  t->start_freq, t->start_tsc));
         }
       }
       break;
@@ -872,6 +871,8 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   g_assert(!ret);
 
   t->num_cpu = group->len;
+  t->drift = 1.;
+  t->offset = 0.;
   
   //ret = allocate_marker_data(t);
   //if (ret)
@@ -1154,28 +1155,22 @@ fail:
   return 1;
 }
 
+/*
+ * Convert a value in "TSC scale" to a value in nanoseconds
+ */
+guint64 tsc_to_uint64(guint32 freq_scale, uint64_t start_freq, guint64 tsc)
+{
+	return (double) tsc * NANOSECONDS_PER_SECOND * freq_scale / start_freq;
+}
+
 /* Given a TSC value, return the LttTime (seconds,nanoseconds) it
  * corresponds to.
  */
-
 LttTime ltt_interpolate_time_from_tsc(LttTracefile *tf, guint64 tsc)
 {
-  LttTime time;
-  
-  if(tsc > tf->trace->start_tsc) {
-    time = ltt_time_from_uint64(
-        (double)(tsc - tf->trace->start_tsc) 
-                                    * 1000000000.0 * tf->trace->freq_scale
-                                    / (double)tf->trace->start_freq);
-    time = ltt_time_add(tf->trace->start_time_from_tsc, time);
-  } else {
-    time = ltt_time_from_uint64(
-        (double)(tf->trace->start_tsc - tsc)
-                                    * 1000000000.0 * tf->trace->freq_scale
-                                    / (double)tf->trace->start_freq);
-    time = ltt_time_sub(tf->trace->start_time_from_tsc, time);
-  }
-  return time;
+	return ltt_time_from_uint64(tsc_to_uint64(tf->trace->freq_scale,
+			tf->trace->start_freq, tf->trace->drift * tsc +
+			tf->trace->offset));
 }
 
 /* Calculate the real event time based on the buffer boundaries */

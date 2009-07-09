@@ -41,6 +41,8 @@ struct LttTrace {
   uint64_t  start_freq;
   uint64_t  start_tsc;
   uint64_t  start_monotonic;
+  double    drift;
+  double    offset;
   LttTime   start_time;
   LttTime   start_time_from_tsc;
 
@@ -206,6 +208,8 @@ void compute_tracefile_group(GQuark key_id,
 gint64 ltt_get_int(gboolean reverse_byte_order, gint size, void *data);
 
 guint64 ltt_get_uint(gboolean reverse_byte_order, gint size, void *data);
+
+guint64 tsc_to_uint64(guint32 freq_scale, uint64_t start_freq, guint64 tsc);
 
 LttTime ltt_interpolate_time_from_tsc(LttTracefile *tf, guint64 tsc);
 
