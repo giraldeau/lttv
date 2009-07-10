@@ -1,1 +1,1 @@
-exec /usr/local/bin/lttctl -n trace -R
+exec /usr/local/bin/lttctl -D trace

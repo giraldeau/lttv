@@ -1,2 +1,2 @@
 ltt-armall
-exec /usr/local/bin/lttctl -l /mnt/debugfs/ltt -t /home/pmf/traces/$(hostname)-$(date +%Y%m%d%H%M%S) -n trace -m normal -d -N 1
+exec /usr/local/bin/lttctl -C --channel_root /mnt/debugfs/ltt -w /home/pmf/traces/$(hostname)-$(date +%Y%m%d%H%M%S) -o channel.all.overwrite=0 -o channel.all.bufsize=1048576 -n 1 trace
