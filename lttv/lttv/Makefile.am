@@ -1,5 +1,5 @@
 AM_CFLAGS= $(PACKAGE_CFLAGS)
-LDADD = $(POPT_LIBS) ${top_builddir}/ltt/liblttvtraceread.la
+LDADD = $(POPT_LIBS) $(M_LIBS) ${top_builddir}/ltt/liblttvtraceread.la
 
 bin_PROGRAMS = lttv.real
 
@@ -51,6 +51,7 @@ lttv_real_SOURCES = \
 	stats.c\
 	tracecontext.c\
 	traceset.c\
+	sync.c\
 	filter.c\
 	print.c
 

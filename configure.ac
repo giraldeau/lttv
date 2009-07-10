@@ -65,7 +65,7 @@ AC_PROG_CC
 
 # Checks for libraries.
 AC_CHECK_LIB([popt], [poptGetNextOpt], POPT_LIBS="-lpopt",AC_MSG_ERROR([libpopt is required in order to compile LinuxTraceToolkit])  )
-#AC_CHECK_LIB([m], [round], M_LIBS="-lm",AC_MSG_ERROR([Mathematical libraries are missing.])  )
+AC_CHECK_LIB([m], [round], M_LIBS="-lm",AC_MSG_ERROR([Mathematical libraries are missing.])  )
 
 AC_CHECK_LIB([util], [forkpty], UTIL_LIBS="-lutil", AC_MSG_ERROR([
 libutil is required in order to compile LinuxTraceToolkit]))

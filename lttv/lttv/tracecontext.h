@@ -223,6 +223,9 @@ void lttv_process_traceset_end(LttvTracesetContext *self,
 
 void lttv_process_traceset_seek_time(LttvTracesetContext *self, LttTime start);
 
+void lttv_traceset_context_compute_time_span(LttvTracesetContext *self,
+	TimeInterval *time_span);
+
 gboolean lttv_process_traceset_seek_position(LttvTracesetContext *self, 
                                         const LttvTracesetContextPosition *pos);
 

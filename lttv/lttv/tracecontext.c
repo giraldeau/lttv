@@ -109,9 +109,8 @@ lttv_context_new_tracefile_context(LttvTracesetContext *self)
  *
  * Author : Xang Xiu Yang
  ***************************************************************************/
-static void lttv_traceset_context_compute_time_span(
-                                          LttvTracesetContext *self,
-	                              				  TimeInterval *time_span)
+void lttv_traceset_context_compute_time_span(LttvTracesetContext *self,
+	TimeInterval *time_span)
 {
   LttvTraceset * traceset = self->ts;
   int numTraces = lttv_traceset_number(traceset);

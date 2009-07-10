@@ -89,6 +89,9 @@ static gboolean process_traceset(void *hook_data, void *call_data)
   g_info("BatchAnalysis initialize context");
 
   lttv_context_init(tc, traceset);
+
+  sync_traceset(tc);
+
   lttv_state_add_event_hooks(tc);
   if(a_stats) lttv_stats_add_event_hooks(tscs);
 
@@ -272,4 +275,4 @@ static void destroy()
 
 LTTV_MODULE("batchAnalysis", "Batch processing of a trace", \
     "Run through a trace calling all the registered hooks", \
-    init, destroy, "state", "stats", "option","textFilter")
+    init, destroy, "state", "stats", "option","textFilter", "sync")
