@@ -1,6 +1,5 @@
-# WARNING : ltt must come before lttv, so that the traceread library is
-# up to date
+# WARNING : modules must be done at the end, so modules can dynamically link
+# themselves to libraries compiled here but not installed in the system.
+SUBDIRS = lttv modules
 
-SUBDIRS = ltt lttv doc
-
-EXTRA_DIST = LTTngManual.html
+modules_CFLAGS = -fvisibility=hidden
