@@ -1,2 +1,0 @@
-#!/bin/bash
-../Spin/Src5.1.6/spin -t -p buffer.spin |less

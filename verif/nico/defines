@@ -1,8 +1,0 @@
-#define rd_wr_wr_off1       (write_off - read_off >= 0)
-#define rd_wr_wr_off2       (write_off - read_off < HALF_UCHAR)
-
-#define commit_sum_wr_off1	(write_off - commit_sum >= 0)
-#define commit_sum_wr_off2	(write_off - commit_sum < HALF_UCHAR)
-
-#define buffer_large_enough	(NUMPROCS + NUMSWITCH <= BUFSIZE)
-#define have_events_lost	(events_lost != 0)

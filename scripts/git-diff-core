@@ -1,3 +1,0 @@
-#!/bin/sh
-
-git-diff-tree -p -r v2.6.18 lttng-core-$1-for-2.6.18 > ../patch-2.6.18-lttng-core-$1-all.diff

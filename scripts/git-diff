@@ -1,3 +1,0 @@
-#!/bin/sh
-
-git-diff-tree -p -r v2.6.21-rc6-mm1-2 lttng-$1-for-v2.6.21-rc6-mm1 > ../patch-2.6.21-rc6-mm1-lttng-$1-all.diff

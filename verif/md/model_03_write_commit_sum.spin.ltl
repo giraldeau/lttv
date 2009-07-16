@@ -1,6 +1,0 @@
-// The sum of all subbuffer commit counts must always be lower or equal
-// to the writer head, because space must be reserved before it is
-// written to and then committed.
-// assert(write_off - _commit_sum >= 0 && write_off - _commit_sum < HALF_UCHAR);
-
-[] (wcsum1 && wcsum2)

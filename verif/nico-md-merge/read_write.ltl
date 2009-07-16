@@ -1,4 +1,0 @@
-// The writer head must always be superior or equal to the reader head.
-// assert(write_off - read_off >= 0 && write_off - read_off < HALF_UCHAR);
-
-[] (rwoff1 && rwoff2)
