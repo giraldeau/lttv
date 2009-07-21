@@ -1153,7 +1153,7 @@ void lttv_traceset_context_position_copy(LttvTracesetContextPosition *dest,
   int i;
   LttvTracefileContextPosition *src_tfcp, *dest_tfcp;
   
-  g_assert(src->tfcp->len == src->tfcp->len);
+  g_assert(src->tfcp->len == dest->tfcp->len);
   
   for(i=0;i<src->tfcp->len;i++) {
     src_tfcp = 
