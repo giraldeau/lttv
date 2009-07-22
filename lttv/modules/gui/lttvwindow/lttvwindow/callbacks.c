@@ -467,6 +467,8 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
 {
   LttvTracesetContext *tsc =
         LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
+
+  sync_traceset(tsc);
   TimeInterval time_span = tsc->time_span;
   TimeWindow new_time_window = tab->time_window;
   LttTime new_current_time = tab->current_time;
@@ -551,15 +553,16 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   LttvHooks * tmp;
   LttvAttributeValue value;
   gint retval = 0;
-
  
   retval= lttv_iattribute_find_by_path(tab->attributes,
     "hooks/updatetraceset", LTTV_POINTER, &value);
   g_assert(retval);
 
   tmp = (LttvHooks*)*(value.v_pointer);
-  if(tmp == NULL) retval = 1;
-  else lttv_hooks_call(tmp,traceset);
+  if(tmp == NULL)
+	  retval = 1;
+  else
+	  lttv_hooks_call(tmp,traceset);
 
   time_change_manager(tab, new_time_window);
   current_time_change_manager(tab, new_current_time);
