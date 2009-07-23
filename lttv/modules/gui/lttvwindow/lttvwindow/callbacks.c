@@ -39,6 +39,7 @@
 #include <lttv/iattribute.h>
 #include <lttv/stats.h>
 #include <lttv/filter.h>
+#include <lttv/sync/sync_chain.h>
 #include <lttvwindow/mainwindow.h>
 #include <lttvwindow/mainwindow-private.h>
 #include <lttvwindow/menu.h>
@@ -468,7 +469,7 @@ int SetTraceset(Tab * tab, LttvTraceset *traceset)
   LttvTracesetContext *tsc =
         LTTV_TRACESET_CONTEXT(tab->traceset_info->traceset_context);
 
-  sync_traceset(tsc);
+  syncTraceset(tsc);
   TimeInterval time_span = tsc->time_span;
   TimeWindow new_time_window = tab->time_window;
   LttTime new_current_time = tab->current_time;

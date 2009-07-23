@@ -34,6 +34,7 @@
 #include <lttv/stats.h>
 #include <lttv/filter.h>
 #include <ltt/trace.h>
+#include <lttv/sync/sync_chain.h>
 
 static LttvTraceset *traceset;
 
@@ -90,7 +91,7 @@ static gboolean process_traceset(void *hook_data, void *call_data)
 
   lttv_context_init(tc, traceset);
 
-  sync_traceset(tc);
+  syncTraceset(tc);
 
   lttv_state_add_event_hooks(tc);
   if(a_stats) lttv_stats_add_event_hooks(tscs);
