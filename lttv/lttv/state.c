@@ -83,6 +83,7 @@ GQuark
     LTT_EVENT_SOFT_IRQ_ENTRY,
     LTT_EVENT_SOFT_IRQ_EXIT,
     LTT_EVENT_SCHED_SCHEDULE,
+    LTT_EVENT_SCHED_TRY_WAKEUP,
     LTT_EVENT_PROCESS_FORK,
     LTT_EVENT_KTHREAD_CREATE,
     LTT_EVENT_PROCESS_EXIT,
@@ -99,7 +100,10 @@ GQuark
     LTT_EVENT_SYS_CALL_TABLE,
     LTT_EVENT_SOFTIRQ_VEC,
     LTT_EVENT_KPROBE_TABLE,
-    LTT_EVENT_KPROBE;
+    LTT_EVENT_KPROBE,
+    LTT_EVENT_OPEN,
+    LTT_EVENT_READ,
+    LTT_EVENT_POLL_EVENT;
 
 /* Fields Quarks */
 
@@ -131,7 +135,8 @@ GQuark
     LTT_FIELD_ID,
     LTT_FIELD_ADDRESS,
     LTT_FIELD_SYMBOL,
-    LTT_FIELD_IP;
+    LTT_FIELD_IP,
+    LTT_FIELD_FD;
 
 LttvExecutionMode
   LTTV_STATE_MODE_UNKNOWN,
@@ -1311,6 +1316,24 @@ static void copy_process_state(gpointer key, gpointer value,gpointer user_data)
         g_array_index(process->user_stack, guint64, i);
   }
   new_process->current_function = process->current_function;
+
+  /* fd hash table stuff */
+  {
+    GHashTableIter it;
+    int key;
+    GQuark value;
+
+    /* copy every item in the hash table */
+    new_process->fds = g_hash_table_new(g_direct_hash, g_direct_equal);
+
+    g_hash_table_iter_init(&it, process->fds);
+    while (g_hash_table_iter_next (&it, (void *)&key, (void *)&value)) {
+      g_hash_table_insert(new_process->fds, &key, &value);
+    }
+  }
+
+  /* When done creating the new process state, insert it in the
+   * hash table */
   g_hash_table_insert(new_processes, new_process, new_process);
 }
 
@@ -2327,6 +2350,7 @@ static LttvTracefileState *ltt_state_usertrace_find(LttvTraceState *tcs,
   return tfs;
 }
 
+/* Return a new and initialized LttvProcessState structure */
 
 LttvProcessState *
 lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent, 
@@ -2400,6 +2424,8 @@ lttv_state_create_process(LttvTraceState *tcs, LttvProcessState *parent,
   /* Allocate an empty function call stack. If it's empty, use 0x0. */
   process->user_stack = g_array_sized_new(FALSE, FALSE,
       sizeof(guint64), 0);
+
+  process->fds = g_hash_table_new(g_direct_hash, g_direct_equal);
   
   return process;
 }
@@ -2441,7 +2467,7 @@ lttv_state_find_process_or_create(LttvTraceState *ts, guint cpu, guint pid,
 
 /* FIXME : this function should be called when we receive an event telling that
  * release_task has been called in the kernel. In happens generally when
- * the parent waits for its child terminaison, but may also happen in special
+ * the parent waits for its child termination, but may also happens in special
  * cases in the child's exit : when the parent ignores its children SIGCCHLD or
  * has the flag SA_NOCLDWAIT. It can also happen when the child is part
  * of a killed thread group, but isn't the leader.
@@ -2461,6 +2487,10 @@ static int exit_process(LttvTracefileState *tfs, LttvProcessState *process)
   g_hash_table_remove(ts->processes, &key);
   g_array_free(process->execution_stack, TRUE);
   g_array_free(process->user_stack, TRUE);
+
+  /* the following also clears the content */
+  g_hash_table_destroy(process->fds);
+
   g_free(process);
   return 1;
 }
@@ -2470,6 +2500,10 @@ static void free_process_state(gpointer key, gpointer value,gpointer user_data)
 {
   g_array_free(((LttvProcessState *)value)->execution_stack, TRUE);
   g_array_free(((LttvProcessState *)value)->user_stack, TRUE);
+
+  /* the following also clears the content */
+  g_hash_table_destroy(((LttvProcessState *)value)->fds);
+
   g_free(value);
 }
 
@@ -3224,6 +3258,29 @@ static gboolean thread_brand(void *hook_data, void *call_data)
   return FALSE;
 }
 
+static gboolean fs_open(void *hook_data, void *call_data)
+{
+  LttvTracefileState *s = (LttvTracefileState *)call_data;
+  LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
+  LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
+  LttvTraceHook *th = (LttvTraceHook *)hook_data;
+  struct marker_field *f;
+  guint cpu = s->cpu;
+  int fd;
+  char *filename;
+  LttvProcessState *process = ts->running_process[cpu];
+
+  f = lttv_trace_get_hook_field(th, 0);
+  fd = ltt_event_get_int(e, f);
+
+  f = lttv_trace_get_hook_field(th, 1);
+  filename = ltt_event_get_string(e, f);
+
+  g_hash_table_insert(process->fds, fd, g_quark_from_string(filename));
+
+  return FALSE;
+}
+
 static void fix_process(gpointer key, gpointer value,
    gpointer user_data)
 {
@@ -3676,6 +3733,12 @@ void lttv_state_add_event_hooks(LttvTracesetState *self)
         LTT_EVENT_SOFTIRQ_VEC,
         FIELD_ARRAY(LTT_FIELD_ID, LTT_FIELD_ADDRESS, LTT_FIELD_SYMBOL),
         dump_softirq, NULL, &hooks);
+
+    lttv_trace_find_hook(ts->parent.t,
+        LTT_CHANNEL_FS,
+        LTT_EVENT_OPEN,
+        FIELD_ARRAY(LTT_FIELD_FD, LTT_FIELD_FILENAME),
+        fs_open, NULL, &hooks);
 
     /* Add these hooks to each event_by_id hooks list */
 
@@ -4366,6 +4429,7 @@ static void module_init()
   LTT_EVENT_SOFT_IRQ_ENTRY     = g_quark_from_string("softirq_entry");
   LTT_EVENT_SOFT_IRQ_EXIT      = g_quark_from_string("softirq_exit");
   LTT_EVENT_SCHED_SCHEDULE   = g_quark_from_string("sched_schedule");
+  LTT_EVENT_SCHED_TRY_WAKEUP = g_quark_from_string("sched_try_wakeup");
   LTT_EVENT_PROCESS_FORK          = g_quark_from_string("process_fork");
   LTT_EVENT_KTHREAD_CREATE = g_quark_from_string("kthread_create");
   LTT_EVENT_PROCESS_EXIT          = g_quark_from_string("process_exit");
@@ -4383,6 +4447,9 @@ static void module_init()
   LTT_EVENT_SOFTIRQ_VEC = g_quark_from_string("softirq_vec");
   LTT_EVENT_KPROBE_TABLE = g_quark_from_string("kprobe_table");
   LTT_EVENT_KPROBE = g_quark_from_string("kprobe");
+  LTT_EVENT_OPEN = g_quark_from_string("open");
+  LTT_EVENT_READ = g_quark_from_string("read");
+  LTT_EVENT_POLL_EVENT = g_quark_from_string("poll_event");
 
   LTT_FIELD_SYSCALL_ID    = g_quark_from_string("syscall_id");
   LTT_FIELD_TRAP_ID       = g_quark_from_string("trap_id");
@@ -4412,6 +4479,7 @@ static void module_init()
   LTT_FIELD_ADDRESS       = g_quark_from_string("address");
   LTT_FIELD_SYMBOL        = g_quark_from_string("symbol");
   LTT_FIELD_IP            = g_quark_from_string("ip");
+  LTT_FIELD_FD            = g_quark_from_string("fd");
   
   LTTV_CPU_UNKNOWN = g_quark_from_string("unknown");
   LTTV_CPU_IDLE = g_quark_from_string("idle");

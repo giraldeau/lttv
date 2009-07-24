@@ -90,6 +90,7 @@ extern GQuark
     LTT_EVENT_SOFT_IRQ_ENTRY,
     LTT_EVENT_SOFT_IRQ_EXIT,
     LTT_EVENT_SCHED_SCHEDULE,
+    LTT_EVENT_SCHED_TRY_WAKEUP,
     LTT_EVENT_PROCESS_FORK,
     LTT_EVENT_KTHREAD_CREATE,
     LTT_EVENT_PROCESS_EXIT,
@@ -106,7 +107,10 @@ extern GQuark
     LTT_EVENT_SYS_CALL_TABLE,
     LTT_EVENT_SOFTIRQ_VEC,
     LTT_EVENT_KPROBE_TABLE,
-    LTT_EVENT_KPROBE;
+    LTT_EVENT_KPROBE,
+    LTT_EVENT_OPEN,
+    LTT_EVENT_READ,
+    LTT_EVENT_POLL_EVENT;
 
 /* Fields Quarks */
 
@@ -137,7 +141,8 @@ extern GQuark
     LTT_FIELD_ID,
     LTT_FIELD_ADDRESS,
     LTT_FIELD_SYMBOL,
-    LTT_FIELD_IP;
+    LTT_FIELD_IP,
+    LTT_FIELD_FD;
 
 typedef struct _LttvTracesetState LttvTracesetState;
 typedef struct _LttvTracesetStateClass LttvTracesetStateClass;
@@ -284,6 +289,7 @@ typedef struct _LttvProcessState {
   LttvProcessType type;        /* kernel thread or user space ? */
   guint target_pid; /* target PID of the current event. */
   guint free_events; /* 0 : none, 1 : free or exit dead, 2 : should delete */
+  GHashTable *fds; /* hash table of int (file descriptor) -> GQuark (file name) */
 } LttvProcessState;
 
 #define ANY_CPU 0 /* For clarity sake : a call to lttv_state_find_process for
