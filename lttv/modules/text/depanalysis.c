@@ -297,6 +297,14 @@ static void delete_data_val(struct process_with_state *pwstate)
 	//	g_free(pwstate);
 }
 
+inline void print_time(LttTime t)
+{
+	//printf("%lu.%lu", t.tv_sec, t.tv_nsec);
+	double f;
+	f = (double)t.tv_sec + ((double)t.tv_nsec)/1000000000.0;
+	printf("%.9f", f);
+}
+
 static struct sstack_item *prepare_push_item(struct process *p, enum llev_state st, LttTime t)
 {
 	struct process_with_state *pwstate = g_malloc(sizeof(struct process_with_state));
@@ -322,7 +330,9 @@ static struct sstack_item *prepare_push_item(struct process *p, enum llev_state 
 	pwstate->state.private = g_malloc(llev_state_infos[st].size_priv);
 
 	item->data_val = pwstate;
-	item->delete_data_val = delete_data_val;
+	item->delete_data_val = (void (*)(void*))delete_data_val;
+
+	return item;
 }
 
 static void *item_private(struct sstack_item *item)
@@ -504,20 +514,12 @@ static gboolean write_traceset_header(void *hook_data, void *call_data)
   return FALSE;
 }
 
-inline void print_time(LttTime t)
-{
-	//printf("%lu.%lu", t.tv_sec, t.tv_nsec);
-	double f;
-	f = (double)t.tv_sec + ((double)t.tv_nsec)/1000000000.0;
-	printf("%.9f", f);
-}
-
-GArray *oldstyle_stack_to_garray(struct process_state_stack **oldstyle_stack, int current)
+GArray *oldstyle_stack_to_garray(struct process_state **oldstyle_stack, int current)
 {
 	GArray *retval;
 	int i;
 
-	retval = g_array_new(FALSE, FALSE, sizeof(struct process_state_stack *));
+	retval = g_array_new(FALSE, FALSE, sizeof(struct process_state *));
 
 	for(i=0; i<current; i++) {
 		g_array_append_val(retval, oldstyle_stack[i]);
@@ -1885,7 +1887,7 @@ static int process_event(void *hook_data, void *call_data)
 			goto next_iter;
 
 		item->data_val = se;
-		item->delete_data_val = delete_data_val;
+		item->delete_data_val = (void (*)(void *))delete_data_val;
 
 		sstack_add_item(target_pinfo->stack, item);
 

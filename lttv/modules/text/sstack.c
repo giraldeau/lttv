@@ -1,4 +1,5 @@
 #include <glib.h>
+#include <stdio.h>
 
 #include "sstack.h"
 

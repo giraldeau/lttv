@@ -69,4 +69,6 @@ struct sstack_item *sstack_item_new_push(unsigned char finished);
 struct sstack_item *sstack_item_new_pop(void);
 struct sstack_item *sstack_item_new_evt(void);
 
+extern void print_stack(struct sstack *stack);
+
 #endif /* SSTACK_H */
