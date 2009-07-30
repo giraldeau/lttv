@@ -764,6 +764,11 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   get_absolute_pathname(pathname, abs_path);
   t->pathname = g_quark_from_string(abs_path);
 
+  t->start_tsc = 0;
+  t->freq_scale = 1;
+  t->start_freq = 1;
+  t->start_time_from_tsc = ltt_time_zero;
+
   g_datalist_init(&t->tracefiles);
 
   /* Test to see if it looks like a trace */
