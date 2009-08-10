@@ -42,7 +42,7 @@ echo $dbg
 if [ -n "$dbg" ]; then
 	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $ARGS $TRACEFILE
 elif [ -n "$valgrind" ]; then
-	LD_LIBRARY_PATH=ltt/.libs valgrind --show-reachable=yes --leak-check=full $LTTV_EXEC $ARGS $TRACEFILE
+	LD_LIBRARY_PATH=ltt/.libs valgrind --track-origins=yes --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $ARGS $TRACEFILE
 elif [ -n "$strace" ]; then
 	LD_LIBRARY_PATH=ltt/.libs strace $LTTV_EXEC $ARGS $TRACEFILE
 else
