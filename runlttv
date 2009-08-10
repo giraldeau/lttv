@@ -30,9 +30,11 @@ ARGS=\
 "-L lttv/modules/gui/interrupts/.libs -m interrupts "\
 "-L lttv/modules/gui/histogram/.libs -m guihistogram"
 
-LTTV_EXEC="lttv/lttv/.libs/lttv.real"
-
-if [ ! -e "$LTTV_EXEC" ]; then
+if [ -e "lttv/lttv/.libs/lttv.real" ]; then
+	LTTV_EXEC="lttv/lttv/.libs/lttv.real"
+elif [ -e "lttv/lttv/lttv.real" ]; then
+	LTTV_EXEC="lttv/lttv/lttv.real"
+else
 	echo "error: LTTV should be compiled before running this script." >/dev/stderr
 	exit 1
 fi
