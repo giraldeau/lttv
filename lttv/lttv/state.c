@@ -1320,15 +1320,15 @@ static void copy_process_state(gpointer key, gpointer value,gpointer user_data)
   /* fd hash table stuff */
   {
     GHashTableIter it;
-    int key;
-    GQuark value;
+    gpointer key;
+    gpointer value;
 
     /* copy every item in the hash table */
     new_process->fds = g_hash_table_new(g_direct_hash, g_direct_equal);
 
     g_hash_table_iter_init(&it, process->fds);
     while (g_hash_table_iter_next (&it, (void *)&key, (void *)&value)) {
-      g_hash_table_insert(new_process->fds, &key, &value);
+      g_hash_table_insert(new_process->fds, key, value);
     }
   }
 
@@ -3276,7 +3276,7 @@ static gboolean fs_open(void *hook_data, void *call_data)
   f = lttv_trace_get_hook_field(th, 1);
   filename = ltt_event_get_string(e, f);
 
-  g_hash_table_insert(process->fds, fd, g_quark_from_string(filename));
+  g_hash_table_insert(process->fds, (gpointer)fd, (gpointer)g_quark_from_string(filename));
 
   return FALSE;
 }
