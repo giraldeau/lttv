@@ -45,6 +45,6 @@ lttv_real_SOURCES = batchtest.c main.c module.c option.c \
 lttv_real_LDFLAGS = -export-dynamic
 
 if LTTVSTATIC
-  lttv_real_LDFLAGS += -profile -static
+  lttv_real_LDFLAGS += -static
 endif
 

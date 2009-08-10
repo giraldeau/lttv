@@ -148,9 +148,6 @@ do
   fi
 done
 
-conf_flags="--enable-maintainer-mode"
-
-
 #if [ -a "$srcdir/include" ]; then
 #	echo -n Removing old system include behavior emulation... 
 #	rm -rf $srcdir/include
