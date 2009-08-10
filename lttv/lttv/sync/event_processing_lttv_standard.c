@@ -461,7 +461,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 				lttv_trace_get_hook_field(traceHook, 0));
 			inE->packetKey= NULL;
 
-			g_hash_table_insert(processingData->pendingRecv[traceNum],
+			g_hash_table_replace(processingData->pendingRecv[traceNum],
 				inE->skb, inE);
 
 			g_debug("Adding inE %p for skb %p to pendingRecv\n", inE, inE->skb);
@@ -529,27 +529,6 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 			syncState->matchingModule->matchEvent(syncState, inE, IN);
 
 			g_debug("Input event %p for skb %p done\n", inE, skb);
-		}
-	}
-	else if (info->name == LTT_EVENT_PKFREE_SKB)
-	{
-		gboolean result;
-		void* skb;
-
-		// Search pendingRecv for an event with the same skb
-		skb= (void*) (long) ltt_event_get_long_unsigned(event,
-			lttv_trace_get_hook_field(traceHook, 0));
-
-		result= g_hash_table_remove(processingData->pendingRecv[traceNum],
-			skb);
-		if (result == FALSE)
-		{
-			g_debug("No matching pending receive event found, \"shaddow"
-				"skb\" %p\n", skb);
-		}
-		else
-		{
-			g_debug("Non-TCP skb %p\n", skb);
 		}
 	}
 	else if (info->name == LTT_EVENT_NETWORK_IPV4_INTERFACE)

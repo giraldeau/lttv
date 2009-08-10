@@ -42,10 +42,6 @@
 		.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_PROTOCOL),\
 	}, {\
 		.channelName= LTT_CHANNEL_NET,\
-		.eventName= LTT_EVENT_PKFREE_SKB,\
-		.fields= FIELD_ARRAY(LTT_FIELD_SKB),\
-	}, {\
-		.channelName= LTT_CHANNEL_NET,\
 		.eventName= LTT_EVENT_TCPV4_RCV,\
 		.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_SADDR,\
 			LTT_FIELD_DADDR, LTT_FIELD_TOT_LEN, LTT_FIELD_IHL,\
@@ -84,7 +80,6 @@ void createQuarks()
 
 	LTT_EVENT_DEV_XMIT= g_quark_from_static_string("dev_xmit");
 	LTT_EVENT_DEV_RECEIVE= g_quark_from_static_string("dev_receive");
-	LTT_EVENT_PKFREE_SKB= g_quark_from_static_string("pkfree_skb");
 	LTT_EVENT_TCPV4_RCV= g_quark_from_static_string("tcpv4_rcv");
 	LTT_EVENT_NETWORK_IPV4_INTERFACE=
 		g_quark_from_static_string("network_ipv4_interface");
