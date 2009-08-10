@@ -6,7 +6,7 @@
 
 #libdir = ${lttlibdir}
 
-AM_CFLAGS = $(GLIB_CFLAGS) 
+AM_CFLAGS = $(PACKAGE_CFLAGS)
 LIBS += $(GLIB_LIBS)
 LIBS += $(THREAD_LIBS)
 

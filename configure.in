@@ -60,9 +60,13 @@ AC_HEADER_STDC
 
 pkg_modules="gtk+-2.0 >= 2.0.0"
 PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
-PACKAGE_CFLAGS="-Wall -Wformat"
-AC_SUBST(PACKAGE_CFLAGS)
-AC_SUBST(PACKAGE_LIBS)
+
+PACKAGE_CFLAGS="$PACKAGE_CFLAGS -Wall -Wformat"
+MODULE_CFLAGS="$PACKAGE_CFLAGS -fvisibility=hidden"
+MODULE_LDFLAGS="-module -avoid-version"
+AC_SUBST([PACKAGE_CFLAGS])
+AC_SUBST([MODULE_CFLAGS])
+AC_SUBST([MODULE_LDFLAGS])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
@@ -88,9 +92,6 @@ top_lttvdir="\$(top_srcdir)/lttv"
 top_lttvwindowdir="\$(top_srcdir)/lttv/modules/gui/lttvwindow"
 
 DEFAULT_INCLUDES="-I\$(top_srcdir) -I\$(top_builddir) -I\$(top_lttvdir) -I\$(top_lttvwindowdir)"
-
-#CPPFLAGS="${GLIB_CFLAGS}"
-#AC_SUBST(CPPFLAGS)
 
 lttincludedir="${includedir}/ltt"
 lttvincludedir="${includedir}/lttv"

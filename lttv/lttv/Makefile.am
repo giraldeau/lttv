@@ -1,4 +1,5 @@
-AM_CFLAGS = $(GLIB_CFLAGS) 
+AM_CFLAGS= $(PACKAGE_CFLAGS)
+
 LIBS += $(THREAD_LIBS)
 LIBS += $(POPT_LIBS) $(GLIB_LIBS) -lgobject-2.0 -L${top_builddir}/ltt\
           -llttvtraceread
@@ -24,24 +25,9 @@ lttv-gui: lttv-gui.sh
 
 INCLUDES = \
 	-DPACKAGE_PLUGIN_DIR=\""$(lttvplugindir)"\" \
-	@PACKAGE_CFLAGS@ \
 	$(DEFAULT_INCLUDES)
 
 libdir = ${lttvplugindir}
-
-lttvinclude_HEADERS = \
-	attribute.h\
-	hook.h\
-	iattribute.h\
-	lttv.h\
-	module.h\
-	option.h\
-	state.h\
-	stats.h\
-	tracecontext.h\
-	traceset.h\
-	filter.h\
-	print.h
 
 #noinst_HEADERS = \
 #	filter.h

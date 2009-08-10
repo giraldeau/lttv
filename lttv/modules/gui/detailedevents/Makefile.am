@@ -23,17 +23,9 @@
 # Created by Mathieu Desnoyers on May 6, 2003
 #
 
-AM_CFLAGS = $(GLIB_CFLAGS) 
-AM_CFLAGS += $(GTK_CFLAGS)
-AM_CFLAGS += -fvisibility=hidden
-LIBS += $(GLIB_LIBS)
-LIBS += $(THREAD_LIBS)
-LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -llttvwindow
-
-libdir = ${lttvplugindir}
+include ../common.am
 
 lib_LTLIBRARIES = libguievents.la
-libguievents_la_LDFLAGS = -module -avoid-version
 libguievents_la_SOURCES = events.c lttv_plugin_evd.c
 
 noinst_HEADERS =	lttv_plugin_evd.h events.h

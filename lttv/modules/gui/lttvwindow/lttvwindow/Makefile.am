@@ -1,16 +1,10 @@
 ## Process this file with automake to produce Makefile.in
 
-AM_CFLAGS = $(GLIB_CFLAGS) 
-AM_CFLAGS += $(GTK_CFLAGS)
-AM_CFLAGS += -fvisibility=hidden
-LIBS += $(GLIB_LIBS)
-LIBS += $(THREAD_LIBS)
-LIBS += $(GTK_LIBS)
+include ../../common.am
 
 INCLUDES = \
 	-DPACKAGE_DATA_DIR=\""$(datadir)"\" \
 	-DPACKAGE_LOCALE_DIR=\""$(prefix)/$(DATADIRNAME)/locale"\" \
-	@PACKAGE_CFLAGS@ \
 	$(DEFAULT_INCLUDES)
 
 #libdir = ${lttvplugindir}
@@ -45,5 +39,5 @@ lttvwindowinclude_HEADERS = \
 	lttv_plugin_tab.h \
 	lttv_plugin.h
 
-liblttvwindow_la_LIBADD = @PACKAGE_LIBS@ $(INTLLIBS)
+liblttvwindow_la_LIBADD = $(INTLLIBS)
 

@@ -22,17 +22,9 @@
 # Created by Mathieu Desnoyers on September 27, 2003
 #
 
-AM_CFLAGS = $(GLIB_CFLAGS) 
-AM_CFLAGS += $(GTK_CFLAGS)
-AM_CFLAGS += -fvisibility=hidden
-LIBS += $(GLIB_LIBS)
-LIBS += $(THREAD_LIBS)
-LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -llttvwindow
-
-libdir = ${lttvplugindir}
+include ../common.am
 
 lib_LTLIBRARIES = libguicontrolflow.la
-libguicontrolflow_la_LDFLAGS = -module -avoid-version
 libguicontrolflow_la_SOURCES = 	module.c eventhooks.c cfv.c processlist.c\
 				drawing.c drawitem.c lttv_plugin_cfv.c
 

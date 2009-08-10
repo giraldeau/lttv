@@ -1,3 +1,4 @@
+# vim: set syntax=automake:
 # This file is part of the Linux Trace Toolkit viewer
 # Copyright (C) 2003-2004 Mathieu Desnoyers
 #
@@ -12,21 +13,15 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place - Suite 330, Boston, 
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston,
 # MA 02111-1307, USA.
 
+AM_CFLAGS = $(MODULE_CFLAGS)
+AM_CFLAGS += $(GTK_CFLAGS)
+AM_LDFLAGS = $(MODULE_LDFLAGS)
+LIBS += $(GLIB_LIBS)
+LIBS += $(THREAD_LIBS)
+LIBS += $(GTK_LIBS) -L${top_builddir}/lttv/modules/gui/lttvwindow/lttvwindow -llttvwindow
 
+libdir = ${lttvplugindir}
 
-#
-# Makefile for LTT New generation user interface : plugins.
-#
-# Created by Mathieu Desnoyers on May 6, 2003
-#
-
-include ../common.am
-
-lib_LTLIBRARIES = libtutorial.la
-libtutorial_la_SOURCES = tutorial.c
-
-EXTRA_DIST = \
-		hTutorialInsert.xpm
