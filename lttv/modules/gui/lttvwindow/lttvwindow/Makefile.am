@@ -39,5 +39,3 @@ lttvwindowinclude_HEADERS = \
 	lttv_plugin_tab.h \
 	lttv_plugin.h
 
-liblttvwindow_la_LIBADD = $(INTLLIBS)
-

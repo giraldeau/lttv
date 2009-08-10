@@ -1,8 +1,5 @@
 AM_CFLAGS= $(PACKAGE_CFLAGS)
-
-LIBS += $(THREAD_LIBS)
-LIBS += $(POPT_LIBS) $(GLIB_LIBS) -lgobject-2.0 -L${top_builddir}/ltt\
-          -llttvtraceread
+LDADD = $(POPT_LIBS) ${top_builddir}/ltt/liblttvtraceread.la
 
 bin_PROGRAMS = lttv.real
 

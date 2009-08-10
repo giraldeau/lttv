@@ -42,12 +42,11 @@ AC_PROG_CC
 AC_CHECK_LIB([popt], [poptGetNextOpt], POPT_LIBS="-lpopt",AC_MSG_ERROR([libpopt is required in order to compile LinuxTraceToolkit])  )
 #AC_CHECK_LIB([m], [round], M_LIBS="-lm",AC_MSG_ERROR([Mathematical libraries are missing.])  )
 
-AC_CHECK_LIB([util], [forkpty], UTIL_LIBS="-lutil", AC_MSG_ERROR([libutil is
-required in order to compile LinuxTraceToolkit]))
+AC_CHECK_LIB([util], [forkpty], UTIL_LIBS="-lutil", AC_MSG_ERROR([libutil is required in order to compile LinuxTraceToolkit]))
 
 
 # pthread for gdb with dlopen().
-AC_CHECK_LIB(pthread, pthread_join,[THREAD_LIBS="-lpthread"], AC_MSG_ERROR([LinuxThreads is required in order to make sure gdb works fine with lttv-gui]))
+AC_CHECK_LIB(pthread, pthread_join, [], AC_MSG_ERROR([LinuxThreads is required in order to make sure gdb works fine with lttv-gui]))
 
 # Checks for header files.
 AC_HEADER_STDC
@@ -59,9 +58,13 @@ AM_PROG_CC_STDC
 AC_HEADER_STDC
 
 pkg_modules="gtk+-2.0 >= 2.0.0"
-PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
+PKG_CHECK_MODULES(GTK, [$pkg_modules])
 
-PACKAGE_CFLAGS="$PACKAGE_CFLAGS -Wall -Wformat"
+pkg_modules="gobject-2.0 >= 2.0.0"
+PKG_CHECK_MODULES(GOBJECT, [$pkg_modules])
+
+LIBS="$LIBS $GTK_LIBS $GOBJECT_LIBS"
+PACKAGE_CFLAGS="$GTK_CFLAGS $GOBJECT_CFLAGS -Wall -Wformat"
 MODULE_CFLAGS="$PACKAGE_CFLAGS -fvisibility=hidden"
 MODULE_LDFLAGS="-module -avoid-version"
 AC_SUBST([PACKAGE_CFLAGS])
@@ -98,9 +101,8 @@ lttvincludedir="${includedir}/lttv"
 lttvwindowincludedir="${includedir}/lttvwindow"
 lttctlincludedir="${includedir}/liblttctl"
 
-AC_SUBST(POPT_LIBS)
-AC_SUBST(UTIL_LIBS)
-AC_SUBST(THREAD_LIBS)
+AC_SUBST([POPT_LIBS])
+AC_SUBST([UTIL_LIBS])
 AC_SUBST(lttvlibdir)
 AC_SUBST(lttvplugindir)
 #AC_SUBST(lttlibdir)

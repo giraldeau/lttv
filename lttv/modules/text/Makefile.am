@@ -1,8 +1,6 @@
 AM_CFLAGS = $(MODULE_CFLAGS)
 AM_LDFLAGS = $(MODULE_LDFLAGS)
 
-LIBS += $(THREAD_LIBS)
-LIBS += $(GLIB_LIBS) -lgobject-2.0 -L${top_builddir}/ltt -llttvtraceread
 libdir = ${lttvplugindir}
 
 lib_LTLIBRARIES = libtextDump.la libbatchAnalysis.la libtextFilter.la libprecomputeState.la libdepanalysis.la
