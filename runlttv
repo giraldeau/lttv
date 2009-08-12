@@ -56,6 +56,9 @@ if [ "$HELPER" = "gdb" ]; then
 elif [ "$HELPER" = "valgrind" ]; then
 	shift
 	LD_LIBRARY_PATH=ltt/.libs valgrind --track-origins=yes --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $ARGS $TRACEFILE $@
+elif [ "$HELPER" = "massif" ]; then
+	shift
+	LD_LIBRARY_PATH=ltt/.libs valgrind --tool=massif $LTTV_EXEC $ARGS $TRACEFILE $@
 elif [ "$HELPER" = "strace" ]; then
 	shift
 	LD_LIBRARY_PATH=ltt/.libs strace $LTTV_EXEC $ARGS $TRACEFILE $@
