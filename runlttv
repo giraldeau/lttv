@@ -13,7 +13,6 @@
 #     ex: TRACEFILE="-t /tmp/traces/dijkstra-20071212"
 # - by setting the ARGS variable, a different set of plugins can be loaded
 #     for an example see the ARGS= line below
-# - the LTTV_ARGS environment variable may be used to add additional arguments to lttv
 #
 # In order for icons to display correctly, it might be necessary to create a
 # symlink:
@@ -42,10 +41,6 @@ else
 	exit 1
 fi
 
-for a in $@; do
-	eval $(echo $a)"=1"
-done
-
 if [ -n "$TF" ]; then
 	TRACEFILE="-t $TF"
 fi
@@ -54,14 +49,16 @@ if [ -e "$RCFILE" ]; then
 	source "$RCFILE";
 fi
 
-ARGS="$ARGS $LTTV_ARGS"
-
-if [ -n "$dbg" ]; then
-	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $ARGS $TRACEFILE
-elif [ -n "$valgrind" ]; then
-	LD_LIBRARY_PATH=ltt/.libs valgrind --track-origins=yes --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $ARGS $TRACEFILE
-elif [ -n "$strace" ]; then
-	LD_LIBRARY_PATH=ltt/.libs strace $LTTV_EXEC $ARGS $TRACEFILE
+HELPER=$1
+if [ "$HELPER" = "dbg" ]; then
+	shift
+	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $ARGS $TRACEFILE $@
+elif [ "$HELPER" = "valgrind" ]; then
+	shift
+	LD_LIBRARY_PATH=ltt/.libs valgrind --track-origins=yes --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $ARGS $TRACEFILE $@
+elif [ "$HELPER" = "strace" ]; then
+	shift
+	LD_LIBRARY_PATH=ltt/.libs strace $LTTV_EXEC $ARGS $TRACEFILE $@
 else
-	LD_LIBRARY_PATH=ltt/.libs $LTTV_EXEC $ARGS $TRACEFILE
+	LD_LIBRARY_PATH=ltt/.libs $LTTV_EXEC $ARGS $TRACEFILE $@
 fi
