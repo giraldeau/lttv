@@ -4,6 +4,9 @@
 
 # This script runs LTTV in place in the compile directory without need for
 # installing it with make install.
+#
+# Run with the TF environment variable set to a trace directory to open it.
+#     ex: TF=/my/trace ./runlttv
 # 
 # The .runlttvrc file can be used to control its behavior.
 # - by setting the TRACEFILE variable, a trace can be automatically loaded
@@ -43,13 +46,15 @@ for a in $@; do
 	eval $(echo $a)"=1"
 done
 
+if [ -n "$TF" ]; then
+	TRACEFILE="-t $TF"
+fi
+
 if [ -e "$RCFILE" ]; then
 	source "$RCFILE";
 fi
 
 ARGS="$ARGS $LTTV_ARGS"
-
-echo $dbg
 
 if [ -n "$dbg" ]; then
 	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $ARGS $TRACEFILE
