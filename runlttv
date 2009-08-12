@@ -50,7 +50,7 @@ if [ -e "$RCFILE" ]; then
 fi
 
 HELPER=$1
-if [ "$HELPER" = "dbg" ]; then
+if [ "$HELPER" = "gdb" ]; then
 	shift
 	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $ARGS $TRACEFILE $@
 elif [ "$HELPER" = "valgrind" ]; then
