@@ -1,0 +1,65 @@
+
+
+%start Map1::Start
+%class fd
+%header fd.h
+
+%map Map1
+%%
+//STATE		TRANSITION				END STATE	ACTION(S)
+
+Start
+{
+		fs_close(pid: int, fd: int)	
+			CloseState			
+			{save_args(pid, fd);}
+	
+	
+		process_exit(pid: int, i: int)
+			[my_process_exit(ctxt, pid) == 1]
+			ExitState
+			{destroy_scenario(i);}
+
+		Default	
+			Start	
+			{}
+
+}
+
+CloseState
+{
+	fs_read(pid: int, fd: int, ts_sec: long, ts_nsec: long)
+		[test_args(ctxt,pid, fd) == 1]		
+		CloseState
+		{warning("Trying to read from a closed fd");print_ts(ts_sec, ts_nsec); skip_FSM();}
+	
+	fs_write(pid: int, fd: int)
+		[test_args(ctxt,pid, fd) == 1]		
+		CloseState
+		{warning("Trying to write to a closed fd");skip_FSM();}
+
+	process_exit(pid: int, i: int)
+		[my_process_exit(ctxt, pid) == 1]
+		ExitState
+		{destroy_scenario(i);}
+	
+	fs_open(pid: int, fd: int, i: int)
+		[test_args(ctxt, pid, fd)==1]
+		ExitState
+		{destroy_scenario(i);skip_FSM();}
+	
+	fs_dup3(pid: int, newfd: int, i: int)
+		[test_args(ctxt, pid, newfd)==1]
+		ExitState
+		{destroy_scenario(i);skip_FSM();}
+
+	Default CloseState {}
+}
+
+ExitState
+{
+	Default ExitState {}
+}
+
+%%
+

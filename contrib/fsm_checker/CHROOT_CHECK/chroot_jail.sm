@@ -1,0 +1,36 @@
+%start Map1::Start
+%class rootjail
+%header chroot_jail.h
+
+%map Map1
+%%
+//STATE		TRANSITION				END STATE	ACTION(S)
+
+Start
+{
+		chroot(pid: int, newroot:char*)		Newroot		{savepid(pid); savenewroot(newroot);}
+		Default
+							Start
+		{}
+
+}
+Newroot
+{
+		chdir(pid: int, newdir: char *)
+			[thisprocess(ctxt, pid)==1 && checknewdir(newdir)==1]		Destroy		
+			{destroyfsm();}
+		chdir(pid: int, newdir: char *)		
+											Newroot		
+			{}		
+		open(pid: int)[thisprocess(ctxt, pid)==1]	
+											Destroy		
+			{warning(); destroyfsm();}
+		Default
+											Newroot
+		{}
+}
+Destroy
+{
+		Default		Destroy		{}	
+}
+%%

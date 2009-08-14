@@ -1,0 +1,60 @@
+%start Map1::S0
+%class lockclass
+%header lockclass.h
+
+%map Map1
+%%
+
+S0
+{
+	acquire_lock(lock: void *, lock_add: guint32, hardirqs_off: int,hardirq_context: int, pid: int)
+		[irq_check(ctxt, lock, hardirqs_off, hardirq_context)]	S0	
+		{updatelock(lock, lock_add, pid, hardirqs_off, hardirq_context);warning("potential deadlock", lock);pushlock(lock);}
+	acquire_lock(lock: void *, lock_add: guint32, hardirqs_off: int,hardirq_context: int, pid: int)
+								Locks_acquired	
+		{updatelock(lock, lock_add, pid, hardirqs_off, hardirq_context);pushlock(lock);}
+	free_lock(lock: void *)
+								S0	
+		{clearlock(lock);}
+
+	Default
+						S0
+						{}
+}
+Locks_acquired
+{
+	acquire_lock(lock: void *, lock_add: guint32,  hardirqs_off: int,hardirq_context: int, pid: int)
+		[irq_check(ctxt, lock, hardirqs_off, hardirq_context)]		Locks_acquired	
+		{updatelock(lock, lock_add, pid, hardirqs_off, hardirq_context);pushlock(lock);warning("potential deadlock", lock);}
+	acquire_lock(lock: void *, lock_add: guint32,  hardirqs_off: int,hardirq_context: int, pid: int)
+									Locks_acquired	
+		{updatelock(lock, lock_add, pid, hardirqs_off, hardirq_context);pushlock(lock);}
+	release_lock(lock: void *)
+		[empty_stack(ctxt)]					S0
+		{poplock(lock);}
+	release_lock(lock: void *)
+									Locks_acquired
+		{poplock(lock);}
+	free_lock(lock: void *)
+		[lock_held(ctxt, lock)]		Locks_acquired	
+		{warning("Lockdep attempting to free a held lock", lock);}
+	free_lock(lock: void *)
+									Locks_acquired
+		{clearlock(lock);}
+	schedule_out(pid: guint32)
+		[lock_held_on_behalf(ctxt, pid)]		Locks_acquired
+	//	{warning("process... was scheduled out when a lock is being held on its behalf", NULL);printstack(); 
+	//		schedule_err(pid);}
+		{test();}
+	Default
+						Locks_acquired
+	{}
+}
+Potential_Deadlock
+{
+	Default					Potential_Deadlock 	{}
+}
+Error{
+	Default					Error	{}
+}
+%%
