@@ -20,9 +20,16 @@
 #include <config.h>
 #endif
 
+#include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
 #include <stdlib.h>
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <lttv/module.h>
 #include <lttv/option.h>
@@ -39,6 +46,7 @@ static void init();
 static void destroy();
 
 static void timeDiff(struct timeval* const end, const struct timeval* const start);
+
 static gint gcfCompareAnalysis(gconstpointer a, gconstpointer b);
 static gint gcfCompareProcessing(gconstpointer a, gconstpointer b);
 static void gfAppendAnalysisName(gpointer data, gpointer user_data);
@@ -47,6 +55,9 @@ static gboolean optionSync;
 static gboolean optionSyncStats;
 static gboolean optionSyncNull;
 static char* optionSyncAnalysis;
+static gboolean optionSyncGraphs;
+static char* optionSyncGraphsDir;
+static char graphsDir[20];
 
 GQueue processingModules= G_QUEUE_INIT;
 GQueue matchingModules= G_QUEUE_INIT;
@@ -67,6 +78,7 @@ GQueue analysisModules= G_QUEUE_INIT;
 static void init()
 {
 	GString* analysisModulesNames;
+	int retval;
 
 	g_debug("\t\t\tXXXX sync init\n");
 
@@ -95,6 +107,21 @@ static void init()
 		"event analysis" , analysisModulesNames->str, LTTV_OPT_STRING,
 		&optionSyncAnalysis, NULL, NULL);
 	g_string_free(analysisModulesNames, TRUE);
+
+	optionSyncGraphs= FALSE;
+	lttv_option_add("sync-graphs", '\0', "output gnuplot graph showing "
+		"synchronization points", "none", LTTV_OPT_NONE, &optionSyncGraphs,
+		NULL, NULL);
+
+	retval= snprintf(graphsDir, sizeof(graphsDir), "graphs-%d", getpid());
+	if (retval > sizeof(graphsDir) - 1)
+	{
+		graphsDir[sizeof(graphsDir) - 1]= '\0';
+	}
+	optionSyncGraphsDir= graphsDir;
+	lttv_option_add("sync-graphs-dir", '\0', "specify the directory where to"
+		" store the graphs", graphsDir, LTTV_OPT_STRING, &optionSyncGraphsDir,
+		NULL, NULL);
 }
 
 
@@ -109,6 +136,8 @@ static void destroy()
 	lttv_option_remove("sync-stats");
 	lttv_option_remove("sync-null");
 	lttv_option_remove("sync-analysis");
+	lttv_option_remove("sync-graphs");
+	lttv_option_remove("sync-graphs-dir");
 }
 
 
@@ -126,6 +155,9 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	struct timeval startTime, endTime;
 	struct rusage startUsage, endUsage;
 	GList* result;
+	char* cwd;
+	FILE* graphsStream;
+	int graphsFp;
 	int retval;
 
 	if (optionSync == FALSE)
@@ -153,6 +185,16 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 		syncState->stats= false;
 	}
 
+	if (optionSyncGraphs)
+	{
+		syncState->graphs= optionSyncGraphsDir;
+	}
+	else
+	{
+		syncState->graphs= NULL;
+	}
+
+	// Identify and initialize processing module
 	syncState->processingData= NULL;
 	if (optionSyncNull)
 	{
@@ -166,8 +208,39 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	}
 	g_assert(result != NULL);
 	syncState->processingModule= (ProcessingModule*) result->data;
+
+	graphsStream= NULL;
+	if (syncState->graphs)
+	{
+		// Create the graph directory right away in case the module initialization
+		// functions have something to write in it.
+		cwd= changeToGraphDir(syncState->graphs);
+
+		if (syncState->processingModule->writeProcessingGraphsPlots != NULL)
+		{
+			if ((graphsFp= open("graphs.gnu", O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR |
+					S_IWUSR | S_IXUSR | S_IRGRP | S_IWGRP | S_IXGRP | S_IROTH
+					| S_IWOTH | S_IXOTH)) == -1)
+			{
+				g_error(strerror(errno));
+			}
+			if ((graphsStream= fdopen(graphsFp, "w")) == NULL)
+			{
+				g_error(strerror(errno));
+			}
+		}
+
+		retval= chdir(cwd);
+		if (retval == -1)
+		{
+			g_error(strerror(errno));
+		}
+		free(cwd);
+	}
+
 	syncState->processingModule->initProcessing(syncState, traceSetContext);
 
+	// Identify and initialize matching and analysis modules
 	syncState->matchingData= NULL;
 	syncState->analysisData= NULL;
 	if (optionSyncNull)
@@ -202,6 +275,64 @@ void syncTraceset(LttvTracesetContext* const traceSetContext)
 	lttv_process_traceset_seek_time(traceSetContext, ltt_time_zero);
 
 	syncState->processingModule->finalizeProcessing(syncState);
+
+	// Write graphs file
+	if (graphsStream != NULL)
+	{
+		unsigned int i, j;
+
+		fprintf(graphsStream,
+			"#!/usr/bin/gnuplot\n\n"
+			"set terminal postscript eps color size 8in,6in\n");
+
+		// Cover the upper triangular matrix, i is the reference node.
+		for (i= 0; i < syncState->traceNb; i++)
+		{
+			for (j= i + 1; j < syncState->traceNb; j++)
+			{
+				long pos;
+
+				fprintf(graphsStream,
+					"\nset output \"%03d-%03d.eps\"\n"
+					"plot \\\n", i, j);
+
+				syncState->processingModule->writeProcessingGraphsPlots(graphsStream,
+					syncState, i, j);
+
+				// Remove the ", \\\n" from the last graph plot line
+				fflush(graphsStream);
+				pos= ftell(graphsStream);
+				if (ftruncate(fileno(graphsStream), pos - 4) == -1)
+				{
+					g_error(strerror(errno));
+				}
+				if (fseek(graphsStream, 0, SEEK_END) == -1)
+				{
+					g_error(strerror(errno));
+				}
+
+				fprintf(graphsStream,
+					"\nset output \"%1$03d-%2$03d.eps\"\n"
+					"set key inside right bottom\n"
+					"set title \"\"\n"
+					"set xlabel \"Clock %1$u\"\n"
+					"set xtics nomirror\n"
+					"set ylabel \"Clock %2$u\"\n"
+					"set ytics nomirror\n", i, j);
+
+				syncState->processingModule->writeProcessingGraphsOptions(graphsStream,
+					syncState, i, j);
+
+				fprintf(graphsStream,
+					"replot\n");
+			}
+		}
+
+		if (fclose(graphsStream) != 0)
+		{
+			g_error(strerror(errno));
+		}
+	}
 
 	if (syncState->processingModule->printProcessingStats != NULL)
 	{
@@ -323,7 +454,47 @@ static void gfAppendAnalysisName(gpointer data, gpointer user_data)
 }
 
 
+/*
+ * Change to the directory used to hold graphs. Create it if necessary.
+ *
+ * Args:
+ *   graph:        name of directory
+ *
+ * Returns:
+ *   The current working directory before the execution of the function. The
+ *   string must be free'd by the caller.
+ */
+char* changeToGraphDir(char* const graphs)
+{
+	int retval;
+	char* cwd;
+
+	cwd= getcwd(NULL, 0);
+	if (cwd == NULL)
+	{
+		g_error(strerror(errno));
+	}
+	while ((retval= chdir(graphs)) != 0)
+	{
+		if (errno == ENOENT)
+		{
+			retval= mkdir(graphs, S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP |
+				S_IWGRP | S_IXGRP | S_IROTH | S_IWOTH | S_IXOTH);
+			if (retval != 0)
+			{
+				g_error(strerror(errno));
+			}
+		}
+		else
+		{
+			g_error(strerror(errno));
+		}
+	}
+
+	return cwd;
+}
+
+
 LTTV_MODULE("sync", "Synchronize traces", \
 	"Synchronizes a traceset based on the correspondance of network events", \
 	init, destroy, "option")
-

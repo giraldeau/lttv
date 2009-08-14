@@ -20,8 +20,10 @@
 #include <config.h>
 #endif
 
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "event_analysis.h"
 #include "sync_chain.h"
@@ -42,6 +44,10 @@ static void matchEventTCP(SyncState* const syncState, NetEvent* const event,
 	EventType eventType);
 static GArray* finalizeMatchingTCP(SyncState* const syncState);
 static void printMatchingStatsTCP(SyncState* const syncState);
+static void writeMatchingGraphsPlotsTCP(FILE* stream, SyncState* const
+	syncState, const unsigned int i, const unsigned int j);
+static void writeMatchingGraphsOptionsTCP(FILE* stream, SyncState* const
+	syncState, const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerMatchingTCP() __attribute__((constructor (101)));
@@ -57,6 +63,10 @@ static bool needsAck(const Packet* const packet);
 static void buildReversedConnectionKey(ConnectionKey* const
 	reversedConnectionKey, const ConnectionKey* const connectionKey);
 
+static void openGraphDataFiles(SyncState* const syncState);
+static void closeGraphDataFiles(SyncState* const syncState);
+static void writeMessagePoint(FILE* stream, const Packet* const packet);
+
 
 static MatchingModule matchingModuleTCP = {
 	.name= "TCP",
@@ -65,6 +75,8 @@ static MatchingModule matchingModuleTCP = {
 	.matchEvent= &matchEventTCP,
 	.finalizeMatching= &finalizeMatchingTCP,
 	.printMatchingStats= &printMatchingStatsTCP,
+	.writeMatchingGraphsPlots= &writeMatchingGraphsPlotsTCP,
+	.writeMatchingGraphsOptions= &writeMatchingGraphsOptionsTCP,
 };
 
 
@@ -110,11 +122,29 @@ static void initMatchingTCP(SyncState* const syncState)
 
 	if (syncState->stats)
 	{
+		unsigned int i;
+
 		matchingData->stats= calloc(1, sizeof(MatchingStatsTCP));
+		matchingData->stats->totMessageArray= malloc(syncState->traceNb *
+			sizeof(unsigned int*));
+		for (i= 0; i < syncState->traceNb; i++)
+		{
+			matchingData->stats->totMessageArray[i]=
+				calloc(syncState->traceNb, sizeof(unsigned int));
+		}
 	}
 	else
 	{
 		matchingData->stats= NULL;
+	}
+
+	if (syncState->graphs)
+	{
+		openGraphDataFiles(syncState);
+	}
+	else
+	{
+		matchingData->messagePoints= NULL;
 	}
 }
 
@@ -144,6 +174,13 @@ static void destroyMatchingTCP(SyncState* const syncState)
 
 	if (syncState->stats)
 	{
+		unsigned int i;
+
+		for (i= 0; i < syncState->traceNb; i++)
+		{
+			free(matchingData->stats->totMessageArray[i]);
+		}
+		free(matchingData->stats->totMessageArray);
 		free(matchingData->stats);
 	}
 
@@ -176,13 +213,15 @@ static void partialDestroyMatchingTCP(SyncState* const syncState)
 		return;
 	}
 
-	g_debug("Cleaning up unMatchedInE list\n");
 	g_hash_table_destroy(matchingData->unMatchedInE);
 	matchingData->unMatchedInE= NULL;
-	g_debug("Cleaning up unMatchedOutE list\n");
 	g_hash_table_destroy(matchingData->unMatchedOutE);
-	g_debug("Cleaning up unAcked list\n");
 	g_hash_table_destroy(matchingData->unAcked);
+
+	if (syncState->graphs && matchingData->messagePoints)
+	{
+		closeGraphDataFiles(syncState);
+	}
 }
 
 
@@ -242,6 +281,7 @@ static GArray* finalizeMatchingTCP(SyncState* const syncState)
  */
 static void printMatchingStatsTCP(SyncState* const syncState)
 {
+	unsigned int i, j;
 	MatchingDataTCP* matchingData;
 
 	if (!syncState->stats)
@@ -252,14 +292,30 @@ static void printMatchingStatsTCP(SyncState* const syncState)
 	matchingData= (MatchingDataTCP*) syncState->matchingData;
 
 	printf("TCP matching stats:\n");
-	printf("\ttotal input and output events matched together to form a packet: %d\n",
+	printf("\ttotal input and output events matched together to form a packet: %u\n",
 		matchingData->stats->totPacket);
-	printf("\ttotal packets identified needing an acknowledge: %d\n",
-		matchingData->stats->totPacketNeedAck);
-	printf("\ttotal exchanges (four events matched together): %d\n",
-		matchingData->stats->totExchangeEffective);
-	printf("\ttotal synchronization exchanges: %d\n",
-		matchingData->stats->totExchangeSync);
+
+	printf("\tMessage traffic:\n");
+
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		for (j= i + 1; j < syncState->traceNb; j++)
+		{
+			printf("\t\t%3d - %-3d: sent %-10u received %-10u\n", i, j,
+				matchingData->stats->totMessageArray[j][i],
+				matchingData->stats->totMessageArray[i][j]);
+		}
+	}
+
+	if (syncState->analysisModule->analyzeExchange != NULL)
+	{
+		printf("\ttotal packets identified needing an acknowledge: %u\n",
+			matchingData->stats->totPacketNeedAck);
+		printf("\ttotal exchanges (four events matched together): %u\n",
+			matchingData->stats->totExchangeEffective);
+		printf("\ttotal synchronization exchanges: %u\n",
+			matchingData->stats->totExchangeSync);
+	}
 
 	if (syncState->analysisModule->printAnalysisStats != NULL)
 	{
@@ -298,11 +354,6 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 	{
 		g_debug("Found matching companion event, ");
 
-		if (syncState->stats)
-		{
-			matchingData->stats->totPacket++;
-		}
-
 		// If it's there, remove it and create a Packet
 		g_hash_table_steal(unMatchedOppositeList, event->packetKey);
 		packet= malloc(sizeof(Packet));
@@ -313,6 +364,12 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 		packet->outE->packetKey= packet->inE->packetKey;
 		packet->acks= NULL;
 
+		if (syncState->stats)
+		{
+			matchingData->stats->totPacket++;
+			matchingData->stats->totMessageArray[packet->inE->traceNum][packet->outE->traceNum]++;
+		}
+
 		// Discard loopback traffic
 		if (packet->inE->traceNum == packet->outE->traceNum)
 		{
@@ -320,14 +377,20 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 			return;
 		}
 
-		if (syncState->analysisModule->analyzePacket)
+		if (syncState->graphs)
+		{
+			writeMessagePoint(matchingData->messagePoints[packet->inE->traceNum][packet->outE->traceNum],
+				packet);
+		}
+
+		if (syncState->analysisModule->analyzePacket != NULL)
 		{
 			syncState->analysisModule->analyzePacket(syncState, packet);
 		}
 
 		// We can skip the rest of the algorithm if the analysis module is not
 		// interested in exchanges
-		if (!syncState->analysisModule->analyzeExchange)
+		if (syncState->analysisModule->analyzeExchange == NULL)
 		{
 			destroyPacket(packet);
 			return;
@@ -498,4 +561,175 @@ static void buildReversedConnectionKey(ConnectionKey* const
 	reversedConnectionKey->daddr= connectionKey->saddr;
 	reversedConnectionKey->source= connectionKey->dest;
 	reversedConnectionKey->dest= connectionKey->source;
+}
+
+
+/*
+ * Create and open files used to store message points to genereate
+ * graphs. Allocate and populate array to store file pointers.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ */
+static void openGraphDataFiles(SyncState* const syncState)
+{
+	unsigned int i, j;
+	int retval;
+	char* cwd;
+	char name[29];
+	MatchingDataTCP* matchingData;
+
+	matchingData= (MatchingDataTCP*) syncState->matchingData;
+
+	cwd= changeToGraphDir(syncState->graphs);
+
+	matchingData->messagePoints= malloc(syncState->traceNb * sizeof(FILE**));
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		matchingData->messagePoints[i]= malloc(syncState->traceNb *
+			sizeof(FILE*));
+		for (j= 0; j < syncState->traceNb; j++)
+		{
+			if (i != j)
+			{
+				retval= snprintf(name, sizeof(name),
+					"matching_tcp-%03u_to_%03u.data", j, i);
+				if (retval > sizeof(name) - 1)
+				{
+					name[sizeof(name) - 1]= '\0';
+				}
+				if ((matchingData->messagePoints[i][j]= fopen(name, "w")) ==
+					NULL)
+				{
+					g_error(strerror(errno));
+				}
+			}
+		}
+	}
+
+	retval= chdir(cwd);
+	if (retval == -1)
+	{
+		g_error(strerror(errno));
+	}
+	free(cwd);
+}
+
+
+/*
+ * Write a message point to a file used to generate graphs
+ *
+ * Args:
+ *   stream:           FILE*, file pointer where to write the point
+ *   packet:       message for which to write the point
+ */
+static void writeMessagePoint(FILE* stream, const Packet* const packet)
+{
+	LttCycleCount x, y;
+
+	if (packet->inE->traceNum < packet->outE->traceNum)
+	{
+		// CA is inE->traceNum
+		x= packet->inE->tsc;
+		y= packet->outE->tsc;
+	}
+	else
+	{
+		// CA is outE->traceNum
+		x= packet->outE->tsc;
+		y= packet->inE->tsc;
+	}
+
+	fprintf(stream, "%20llu %20llu\n", x, y);
+}
+
+
+/*
+ * Close files used to store convex hull points to genereate graphs.
+ * Deallocate array to store file pointers.
+ *
+ * Args:
+ *   syncState:    container for synchronization data
+ */
+static void closeGraphDataFiles(SyncState* const syncState)
+{
+	unsigned int i, j;
+	MatchingDataTCP* matchingData;
+	int retval;
+
+	matchingData= (MatchingDataTCP*) syncState->matchingData;
+
+	if (matchingData->messagePoints == NULL)
+	{
+		return;
+	}
+
+	for (i= 0; i < syncState->traceNb; i++)
+	{
+		for (j= 0; j < syncState->traceNb; j++)
+		{
+			if (i != j)
+			{
+				retval= fclose(matchingData->messagePoints[i][j]);
+				if (retval != 0)
+				{
+					g_error(strerror(errno));
+				}
+			}
+		}
+		free(matchingData->messagePoints[i]);
+	}
+	free(matchingData->messagePoints);
+
+	matchingData->messagePoints= NULL;
+}
+
+
+/*
+ * Write the matching-specific graph lines in the gnuplot script. Call the
+ * downstream module's graph function.
+ *
+ * Args:
+ *   stream:       stream where to write the data
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeMatchingGraphsPlotsTCP(FILE* stream, SyncState* const
+	syncState, const unsigned int i, const unsigned int j)
+{
+	fprintf(stream,
+		"\t\"matching_tcp-%1$03d_to_%2$03d.data\" "
+			"title \"Sent messages\" with points linetype 4 "
+			"linecolor rgb \"#98fc66\" pointtype 9 pointsize 2, \\\n"
+		"\t\"matching_tcp-%2$03d_to_%1$03d.data\" "
+			"title \"Received messages\" with points linetype 4 "
+			"linecolor rgb \"#6699cc\" pointtype 11 pointsize 2, \\\n", i, j);
+
+	if (syncState->analysisModule->writeAnalysisGraphsPlots != NULL)
+	{
+		syncState->analysisModule->writeAnalysisGraphsPlots(stream, syncState,
+			i, j);
+	}
+}
+
+
+/*
+ * Write the matching-specific options in the gnuplot script (none). Call the
+ * downstream module's options function.
+ *
+ * Args:
+ *   stream:       stream where to write the data
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeMatchingGraphsOptionsTCP(FILE* stream, SyncState* const
+	syncState, const unsigned int i, const unsigned int j)
+{
+	if (syncState->analysisModule->writeAnalysisGraphsOptions != NULL)
+	{
+		syncState->analysisModule->writeAnalysisGraphsOptions(stream,
+			syncState, i, j);
+	}
 }

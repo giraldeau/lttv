@@ -27,6 +27,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <unistd.h>
+
 #include "lookup3.h"
 
 #include "data_structures_tcp.h"
@@ -382,4 +384,3 @@ void gdnConnectionKeyDestroy(gpointer data)
 {
 	free((ConnectionKey*) data);
 }
-

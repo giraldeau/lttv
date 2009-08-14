@@ -33,7 +33,7 @@
 #endif
 
 
-// Functions common to all matching modules
+// Functions common to all processing modules
 static void initProcessingLTTVNull(SyncState* const syncState,
 	LttvTracesetContext* const traceSetContext);
 static void destroyProcessingLTTVNull(SyncState* const syncState);
@@ -51,6 +51,8 @@ static ProcessingModule processingModuleLTTVNull = {
 	.destroyProcessing= &destroyProcessingLTTVNull,
 	.finalizeProcessing= &finalizeProcessingLTTVNull,
 	.printProcessingStats= NULL,
+	.writeProcessingGraphsPlots= NULL,
+	.writeProcessingGraphsOptions= NULL,
 };
 
 
@@ -89,7 +91,7 @@ static void initProcessingLTTVNull(SyncState* const syncState,
 		sizeof(GArray*), syncState->traceNb);
 
 	registerHooks(processingData->hookListList, traceSetContext,
-		syncState->traceNb, &processEventLTTVNull, syncState);
+		&processEventLTTVNull, syncState);
 }
 
 
@@ -125,7 +127,7 @@ static void destroyProcessingLTTVNull(SyncState* const syncState)
 	}
 
 	unregisterHooks(processingData->hookListList,
-		processingData->traceSetContext, syncState->traceNb);
+		processingData->traceSetContext);
 
 	free(syncState->processingData);
 	syncState->processingData= NULL;

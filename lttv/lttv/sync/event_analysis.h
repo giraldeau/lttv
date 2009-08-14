@@ -20,6 +20,7 @@
 #define EVENT_ANALYSIS_H
 
 #include <glib.h>
+#include <stdio.h>
 
 #include "data_structures_tcp.h"
 
@@ -33,10 +34,16 @@ typedef struct
 	void (*initAnalysis)(struct _SyncState* const syncState);
 	void (*destroyAnalysis)(struct _SyncState* const syncState);
 
-	void (*analyzePacket)(struct _SyncState* const syncState, Packet* const packet);
-	void (*analyzeExchange)(struct _SyncState* const syncState, Packet* const packet);
+	void (*analyzePacket)(struct _SyncState* const syncState, Packet* const
+		packet);
+	void (*analyzeExchange)(struct _SyncState* const syncState, Packet* const
+		packet);
 	GArray* (*finalizeAnalysis)(struct _SyncState* const syncState);
 	void (*printAnalysisStats)(struct _SyncState* const syncState);
+	void (*writeAnalysisGraphsPlots)(FILE* stream, struct _SyncState* const
+		syncState, const unsigned int i, const unsigned int j);
+	void (*writeAnalysisGraphsOptions)(FILE* stream, struct _SyncState* const
+		syncState, const unsigned int i, const unsigned int j);
 } AnalysisModule;
 
 #endif

@@ -20,6 +20,7 @@
 #define EVENT_PROCESSING_H
 
 #include <glib.h>
+#include <stdio.h>
 
 #include <lttv/tracecontext.h>
 
@@ -37,7 +38,17 @@ typedef struct
 	void (*destroyProcessing)(struct _SyncState* const syncState);
 
 	void (*finalizeProcessing)(struct _SyncState* const syncState);
+
 	void (*printProcessingStats)(struct _SyncState* const syncState);
+
+	/* The processing module must provide the next function if it wishes
+	 * graphs to be created at all. If it provides the next function, it must
+	 * also provide the second next function.
+	 */
+	void (*writeProcessingGraphsPlots)(FILE* stream, struct _SyncState* const
+		syncState, const unsigned int i, const unsigned int j);
+	void (*writeProcessingGraphsOptions)(FILE* stream, struct _SyncState*
+		const syncState, const unsigned int i, const unsigned int j);
 } ProcessingModule;
 
 #endif

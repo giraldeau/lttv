@@ -44,9 +44,11 @@ static void destroyAnalysisLinReg(SyncState* const syncState);
 static void analyzeExchangeLinReg(SyncState* const syncState, Packet* const packet);
 static GArray* finalizeAnalysisLinReg(SyncState* const syncState);
 static void printAnalysisStatsLinReg(SyncState* const syncState);
+static void writeAnalysisGraphsPlotsLinReg(FILE* stream, SyncState* const
+	syncState, const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
-static void registerAnalysisLinReg() __attribute__((constructor (101)));
+static void registerAnalysisLinReg() __attribute__((constructor (102)));
 
 static void finalizeLSA(SyncState* const syncState);
 static void doGraphProcessing(SyncState* const syncState);
@@ -73,6 +75,8 @@ static AnalysisModule analysisModuleLinReg= {
 	.analyzeExchange= &analyzeExchangeLinReg,
 	.finalizeAnalysis= &finalizeAnalysisLinReg,
 	.printAnalysisStats= &printAnalysisStatsLinReg,
+	.writeAnalysisGraphsPlots= &writeAnalysisGraphsPlotsLinReg,
+	.writeAnalysisGraphsOptions= NULL,
 };
 
 
@@ -483,6 +487,7 @@ static GArray* calculateFactors(SyncState* const syncState)
 	analysisData= (AnalysisDataLinReg*) syncState->analysisData;
 	factors= g_array_sized_new(FALSE, FALSE, sizeof(Factors),
 		syncState->traceNb);
+	g_array_set_size(factors, syncState->traceNb);
 
 	// Calculate the resulting offset and drift between each trace and its
 	// reference
@@ -743,3 +748,28 @@ static gint gcfGraphTraceCompare(gconstpointer a, gconstpointer b)
 	}
 }
 
+
+/*
+ * Write the analysis-specific graph lines in the gnuplot script.
+ *
+ * Args:
+ *   stream:       stream where to write the data
+ *   syncState:    container for synchronization data
+ *   i:            first trace number, on the x axis
+ *   j:            second trace number, garanteed to be larger than i
+ */
+void writeAnalysisGraphsPlotsLinReg(FILE* stream, SyncState* const syncState,
+	const unsigned int i, const unsigned int j)
+{
+	AnalysisDataLinReg* analysisData;
+	Fit* fit;
+
+	analysisData= (AnalysisDataLinReg*) syncState->analysisData;
+	fit= &analysisData->fitArray[j][i];
+
+	fprintf(stream,
+		"\t%7g + %7g * x "
+		"title \"Linreg conversion\" with lines "
+		"linecolor rgb \"gray60\" linetype 1, \\\n",
+		fit->d0, 1. + fit->x);
+}

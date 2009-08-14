@@ -29,6 +29,7 @@ typedef struct _SyncState
 {
 	unsigned int traceNb;
 	bool stats;
+	char* graphs;
 
 	const ProcessingModule* processingModule;
 	void* processingData;
@@ -44,5 +45,7 @@ extern GQueue analysisModules;
 
 
 void syncTraceset(LttvTracesetContext* const traceSetContext);
+
+char* changeToGraphDir(char* const graphs);
 
 #endif

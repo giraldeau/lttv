@@ -26,10 +26,16 @@
 
 typedef struct
 {
-	int totPacket,
+	unsigned int totPacket,
 		totPacketNeedAck,
 		totExchangeEffective,
 		totExchangeSync;
+	/* The structure of the array is the same as for hullArray in
+	 * analysis_chull, messagePoints[row][col] where:
+	 *   row= inE->traceNum
+	 *   col= outE->traceNum
+	 */
+	unsigned int** totMessageArray;
 } MatchingStatsTCP;
 
 typedef struct
@@ -42,6 +48,16 @@ typedef struct
 	GHashTable* unAcked;
 
 	MatchingStatsTCP* stats;
+	/* This array is used for graphs. It contains file pointers to files where
+	 * messages x-y points are outputed. Each trace-pair has two files, one
+	 * for each message direction. The structure of the array is the same as
+	 * for hullArray in analysis_chull, messagePoints[row][col] where:
+	 *   row= inE->traceNum
+	 *   col= outE->traceNum
+	 *
+	 * The elements on the diagonal are not initialized.
+	 */
+	FILE*** messagePoints;
 } MatchingDataTCP;
 
 #endif

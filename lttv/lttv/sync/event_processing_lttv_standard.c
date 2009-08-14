@@ -39,13 +39,17 @@
 #endif
 
 
-// Functions common to all matching modules
+// Functions common to all processing modules
 static void initProcessingLTTVStandard(SyncState* const syncState,
 	LttvTracesetContext* const traceSetContext);
 static void destroyProcessingLTTVStandard(SyncState* const syncState);
 
 static void finalizeProcessingLTTVStandard(SyncState* const syncState);
 static void printProcessingStatsLTTVStandard(SyncState* const syncState);
+static void writeProcessingGraphsPlotsLTTVStandard(FILE* stream, SyncState*
+	const syncState, const unsigned int i, const unsigned int j);
+static void writeProcessingGraphsOptionsLTTVStandard(FILE* stream, SyncState*
+	const syncState, const unsigned int i, const unsigned int j);
 
 // Functions specific to this module
 static void registerProcessingLTTVStandard() __attribute__((constructor (102)));
@@ -59,6 +63,8 @@ static ProcessingModule processingModuleLTTVStandard = {
 	.destroyProcessing= &destroyProcessingLTTVStandard,
 	.finalizeProcessing= &finalizeProcessingLTTVStandard,
 	.printProcessingStats= &printProcessingStatsLTTVStandard,
+	.writeProcessingGraphsPlots= &writeProcessingGraphsPlotsLTTVStandard,
+	.writeProcessingGraphsOptions= &writeProcessingGraphsOptionsLTTVStandard,
 };
 
 
@@ -125,7 +131,7 @@ static void initProcessingLTTVStandard(SyncState* const syncState, LttvTracesetC
 	}
 
 	registerHooks(processingData->hookListList, traceSetContext,
-		syncState->traceNb, &processEventLTTVStandard, syncState);
+		&processEventLTTVStandard, syncState);
 }
 
 
@@ -333,7 +339,7 @@ static void partialDestroyProcessingLTTVStandard(SyncState* const syncState)
 	free(processingData->pendingRecv);
 
 	unregisterHooks(processingData->hookListList,
-		processingData->traceSetContext, syncState->traceNb);
+		processingData->traceSetContext);
 }
 
 
@@ -558,4 +564,63 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 	}
 
 	return FALSE;
+}
+
+
+/*
+ * Write the processing-specific graph lines in the gnuplot script (none at
+ * the moment). Call the downstream module's graph function.
+ *
+ * Args:
+ *   stream:       stream where to write the data
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeProcessingGraphsPlotsLTTVStandard(FILE* stream, SyncState*
+	const syncState, const unsigned int i, const unsigned int j)
+{
+	if (syncState->matchingModule->writeMatchingGraphsPlots != NULL)
+	{
+		syncState->matchingModule->writeMatchingGraphsPlots(stream, syncState,
+			i, j);
+	}
+}
+
+
+/*
+ * Write the processing-specific options in the gnuplot script. Call the
+ * downstream module's options function.
+ *
+ * Args:
+ *   stream:       stream where to write the data
+ *   syncState:    container for synchronization data
+ *   i:            first trace number
+ *   j:            second trace number, garanteed to be larger than i
+ */
+static void writeProcessingGraphsOptionsLTTVStandard(FILE* stream, SyncState*
+	const syncState, const unsigned int i, const unsigned int j)
+{
+	ProcessingDataLTTVStandard* processingData;
+	LttTrace* traceI, * traceJ;
+
+	processingData= (ProcessingDataLTTVStandard*) syncState->processingData;
+
+	traceI= processingData->traceSetContext->traces[i]->t;
+	traceJ= processingData->traceSetContext->traces[j]->t;
+
+	fprintf(stream,
+		"set x2label \"Clock %1$d (s)\"\n"
+		"set x2range [GPVAL_X_MIN / %2$.1f : GPVAL_X_MAX / %2$.1f]\n"
+		"set x2tics\n"
+		"set y2label \"Clock %3$d (s)\"\n"
+		"set y2range [GPVAL_Y_MIN / %4$.1f : GPVAL_Y_MAX / %4$.1f]\n"
+		"set y2tics\n", i, (double) traceI->start_freq / traceI->freq_scale,
+		j, (double) traceJ->start_freq / traceJ->freq_scale);
+
+	if (syncState->matchingModule->writeMatchingGraphsOptions != NULL)
+	{
+		syncState->matchingModule->writeMatchingGraphsOptions(stream,
+			syncState, i, j);
+	}
 }

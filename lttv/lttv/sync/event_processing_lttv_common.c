@@ -23,50 +23,9 @@
 #include "event_processing_lttv_common.h"
 
 
-/* This compound literal is #define'd in order to be able to "assign" it and
- * 'sizeof()' it
- */
-#define EVENT_HOOK_INFO_LIST ((EventHookInfo[]) {\
-	{\
-		.channelName= LTT_CHANNEL_NET,\
-		.eventName= LTT_EVENT_DEV_XMIT,\
-		.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_NETWORK_PROTOCOL,\
-			LTT_FIELD_TRANSPORT_PROTOCOL, LTT_FIELD_SADDR,\
-			LTT_FIELD_DADDR, LTT_FIELD_TOT_LEN, LTT_FIELD_IHL,\
-			LTT_FIELD_SOURCE, LTT_FIELD_DEST, LTT_FIELD_SEQ,\
-			LTT_FIELD_ACK_SEQ, LTT_FIELD_DOFF, LTT_FIELD_ACK,\
-			LTT_FIELD_RST, LTT_FIELD_SYN, LTT_FIELD_FIN),\
-	}, {\
-		.channelName= LTT_CHANNEL_NET,\
-		.eventName= LTT_EVENT_DEV_RECEIVE,\
-		.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_PROTOCOL),\
-	}, {\
-		.channelName= LTT_CHANNEL_NET,\
-		.eventName= LTT_EVENT_TCPV4_RCV,\
-		.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_SADDR,\
-			LTT_FIELD_DADDR, LTT_FIELD_TOT_LEN, LTT_FIELD_IHL,\
-			LTT_FIELD_SOURCE, LTT_FIELD_DEST, LTT_FIELD_SEQ,\
-			LTT_FIELD_ACK_SEQ, LTT_FIELD_DOFF, LTT_FIELD_ACK,\
-			LTT_FIELD_RST, LTT_FIELD_SYN, LTT_FIELD_FIN),\
-	}, {\
-		.channelName= LTT_CHANNEL_NETIF_STATE,\
-		.eventName= LTT_EVENT_NETWORK_IPV4_INTERFACE,\
-		.fields= FIELD_ARRAY(LTT_FIELD_NAME, LTT_FIELD_ADDRESS,\
-			LTT_FIELD_UP),\
-	}\
-})
-
 #ifndef g_info
 #define g_info(format...) g_log (G_LOG_DOMAIN, G_LOG_LEVEL_INFO, format)
 #endif
-
-
-typedef struct
-{
-	GQuark channelName;
-	GQuark eventName;
-	GQuark* fields;
-} EventHookInfo;
 
 
 /*
@@ -115,17 +74,51 @@ void createQuarks()
  * r328)
  *
  * Args:
+ *   hookListList: LttvTraceHook hookListList[traceNum][hookNum]
+ *   traceSetContext: LTTV traceset
+ *   hookFunction: call back function when event is encountered
+ *   hookData:     data that will be made accessible to hookFunction in
+ *                 arg0->hook_data
  */
 void registerHooks(GArray* hookListList, LttvTracesetContext* const
-	traceSetContext, unsigned int traceNb, LttvHook hookFunction, gpointer
-	hookData)
+	traceSetContext, LttvHook hookFunction, gpointer hookData)
 {
 	unsigned int i, j, k;
-	unsigned int hookNb;
-	EventHookInfo* eventHookInfoList;
-
-	eventHookInfoList= EVENT_HOOK_INFO_LIST;
-	hookNb= sizeof(EVENT_HOOK_INFO_LIST) / sizeof(EventHookInfo);
+	unsigned int traceNb= lttv_traceset_number(traceSetContext->ts);
+	struct {
+		GQuark channelName;
+		GQuark eventName;
+		GQuark* fields;
+	} eventHookInfoList[] = {
+		{
+			.channelName= LTT_CHANNEL_NET,
+			.eventName= LTT_EVENT_DEV_XMIT,
+			.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_NETWORK_PROTOCOL,
+				LTT_FIELD_TRANSPORT_PROTOCOL, LTT_FIELD_SADDR,
+				LTT_FIELD_DADDR, LTT_FIELD_TOT_LEN, LTT_FIELD_IHL,
+				LTT_FIELD_SOURCE, LTT_FIELD_DEST, LTT_FIELD_SEQ,
+				LTT_FIELD_ACK_SEQ, LTT_FIELD_DOFF, LTT_FIELD_ACK,
+				LTT_FIELD_RST, LTT_FIELD_SYN, LTT_FIELD_FIN),
+		}, {
+			.channelName= LTT_CHANNEL_NET,
+			.eventName= LTT_EVENT_DEV_RECEIVE,
+			.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_PROTOCOL),
+		}, {
+			.channelName= LTT_CHANNEL_NET,
+			.eventName= LTT_EVENT_TCPV4_RCV,
+			.fields= FIELD_ARRAY(LTT_FIELD_SKB, LTT_FIELD_SADDR,
+				LTT_FIELD_DADDR, LTT_FIELD_TOT_LEN, LTT_FIELD_IHL,
+				LTT_FIELD_SOURCE, LTT_FIELD_DEST, LTT_FIELD_SEQ,
+				LTT_FIELD_ACK_SEQ, LTT_FIELD_DOFF, LTT_FIELD_ACK,
+				LTT_FIELD_RST, LTT_FIELD_SYN, LTT_FIELD_FIN),
+		}, {
+			.channelName= LTT_CHANNEL_NETIF_STATE,
+			.eventName= LTT_EVENT_NETWORK_IPV4_INTERFACE,
+			.fields= FIELD_ARRAY(LTT_FIELD_NAME, LTT_FIELD_ADDRESS,
+				LTT_FIELD_UP),
+		}
+	}; // This is called a compound literal
+	unsigned int hookNb= sizeof(eventHookInfoList) / sizeof(*eventHookInfoList);
 
 	for(i= 0; i < traceNb; i++)
 	{
@@ -177,7 +170,7 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
 				}
 				if (traceHook->mdata == tfc->tf->mdata)
 				{
-					lttv_hooks_add(lttv_hooks_by_id_find( tfc->event_by_id,
+					lttv_hooks_add(lttv_hooks_by_id_find(tfc->event_by_id,
 							traceHook->id), traceHook->h, traceHook,
 						LTTV_PRIO_DEFAULT);
 				}
@@ -192,12 +185,12 @@ void registerHooks(GArray* hookListList, LttvTracesetContext* const
  * Args:
  *   hookListList: LttvTraceHook hookListList[traceNum][hookNum]
  *   traceSetContext: LTTV traceset
- *   traceNb:      number of traces in the traceset
  */
 void unregisterHooks(GArray* hookListList, LttvTracesetContext* const
-	traceSetContext, unsigned int traceNb)
+	traceSetContext)
 {
 	unsigned int i, j, k;
+	unsigned int traceNb= lttv_traceset_number(traceSetContext->ts);
 
 	for(i= 0; i < traceNb; i++)
 	{

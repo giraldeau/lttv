@@ -16,8 +16,8 @@
  * MA 02111-1307, USA.
  */
 
-#ifndef EVENT_PROCESSING_LTTV_COMMON_H
-#define EVENT_PROCESSING_LTTV_COMMON_H
+#ifndef EVENT_PROCESSING_LTTNG_COMMON_H
+#define EVENT_PROCESSING_LTTNG_COMMON_H
 
 #include <glib.h>
 
@@ -59,9 +59,9 @@ GQuark
 
 void createQuarks();
 void registerHooks(GArray* hookListList, LttvTracesetContext* const
-	traceSetContext, unsigned int traceNb, LttvHook hookFunction, gpointer
+	traceSetContext, LttvHook hookFunction, gpointer
 	hookData);
 void unregisterHooks(GArray* hookListList, LttvTracesetContext* const
-	traceSetContext, unsigned int traceNb);
+	traceSetContext);
 
 #endif
