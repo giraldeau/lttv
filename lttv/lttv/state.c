@@ -2128,8 +2128,8 @@ free_name_tables(LttvTraceState *tcs)
   if(name_tables->trap_names) g_free(name_tables->trap_names);
   if(name_tables->irq_names) g_free(name_tables->irq_names);
   if(name_tables->soft_irq_names) g_free(name_tables->soft_irq_names);
-  if(name_tables) g_free(name_tables);
-  if(name_tables) g_hash_table_destroy(name_tables->kprobe_hash);
+  g_hash_table_destroy(name_tables->kprobe_hash);
+  g_free(name_tables);
 } 
 
 #ifdef HASH_TABLE_DEBUG
