@@ -764,11 +764,6 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   get_absolute_pathname(pathname, abs_path);
   t->pathname = g_quark_from_string(abs_path);
 
-  t->start_tsc = 0;
-  t->freq_scale = 1;
-  t->start_freq = 1;
-  t->start_time_from_tsc = ltt_time_zero;
-
   g_datalist_init(&t->tracefiles);
 
   /* Test to see if it looks like a trace */
@@ -790,6 +785,7 @@ LttTrace *ltt_trace_open(const gchar *pathname)
   closedir(dir);
   
   /* Open all the tracefiles */
+  t->start_freq= 0;
   if(open_tracefiles(t, abs_path, "")) {
     g_warning("Error opening tracefile %s", abs_path);
     goto find_error;
@@ -1389,21 +1385,23 @@ static gint map_block(LttTracefile * tf, guint block_num)
 
   tf->buffer.begin.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->cycle_count_begin);
-  tf->buffer.begin.freq = tf->trace->start_freq;
-
-  tf->buffer.begin.timestamp = ltt_interpolate_time_from_tsc(tf, 
-                                          tf->buffer.begin.cycle_count);
   tf->buffer.end.cycle_count = ltt_get_uint64(LTT_GET_BO(tf),
                                               &header->cycle_count_end);
-  tf->buffer.end.freq = tf->trace->start_freq;
-  
   tf->buffer.lost_size = ltt_get_uint32(LTT_GET_BO(tf),
                                         &header->lost_size);
-  tf->buffer.end.timestamp = ltt_interpolate_time_from_tsc(tf,
-                                        tf->buffer.end.cycle_count);
   tf->buffer.tsc =  tf->buffer.begin.cycle_count;
   tf->event.tsc = tf->buffer.tsc;
   tf->buffer.freq = tf->buffer.begin.freq;
+
+  if (tf->trace->start_freq)
+  {
+    tf->buffer.begin.freq = tf->trace->start_freq;
+    tf->buffer.begin.timestamp = ltt_interpolate_time_from_tsc(tf,
+      tf->buffer.begin.cycle_count);
+    tf->buffer.end.freq = tf->trace->start_freq;
+    tf->buffer.end.timestamp = ltt_interpolate_time_from_tsc(tf,
+      tf->buffer.end.cycle_count);
+  }
 
   /* FIXME
    * eventually support variable buffer size : will need a partial pre-read of
