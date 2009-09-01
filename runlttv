@@ -21,8 +21,10 @@
 
 RCFILE=".runlttvrc"
 
-ARGS=\
-"-L lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow "\
+if [ "$MODE" = "text" ]; then
+	ARGS="-L lttv/modules/text/.libs -m textDump"
+else
+	ARGS="-L lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow "\
 "-L lttv/modules/gui/controlflow/.libs -m guicontrolflow "\
 "-L lttv/modules/gui/detailedevents/.libs -m guievents "\
 "-L lttv/modules/gui/tracecontrol/.libs -m guitracecontrol "\
@@ -31,6 +33,7 @@ ARGS=\
 "-L lttv/modules/gui/filter/.libs -m guifilter "\
 "-L lttv/modules/gui/interrupts/.libs -m interrupts "\
 "-L lttv/modules/gui/histogram/.libs -m guihistogram"
+fi
 
 if [ -e "lttv/lttv/.libs/lttv.real" ]; then
 	LTTV_EXEC="lttv/lttv/.libs/lttv.real"
