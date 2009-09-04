@@ -194,30 +194,31 @@ AC_SUBST(lttctlincludedir)
 		 #lttv/modules/gui/tutorial/Makefile
 		 #lttv/modules/gui/diskperformance/Makefile
 AC_CONFIG_FILES([Makefile
-		 lttv/Makefile
-		 lttv/lttv/Makefile
-		 lttv/modules/Makefile
-		 lttv/modules/text/Makefile
-		 lttv/modules/gui/Makefile
-		 lttv/modules/gui/lttvwindow/Makefile
-		 lttv/modules/gui/interrupts/Makefile
-		 lttv/modules/gui/lttvwindow/lttvwindow/Makefile
-		 lttv/modules/gui/lttvwindow/pixmaps/Makefile
-		 lttv/modules/gui/controlflow/Makefile
-		 lttv/modules/gui/detailedevents/Makefile
-		 lttv/modules/gui/statistics/Makefile
-     		 lttv/modules/gui/histogram/Makefile
-                 lttv/modules/gui/filter/Makefile
-                 lttv/modules/gui/tracecontrol/Makefile
-                 lttv/modules/gui/resourceview/Makefile
-		 ltt/Makefile
-     doc/Makefile
-     doc/developer/Makefile
-     doc/developer/developer_guide/Makefile
-     doc/developer/developer_guide/docbook/Makefile
-     doc/developer/developer_guide/html/Makefile
-     doc/user/Makefile
-     doc/user/user_guide/Makefile
-     doc/user/user_guide/docbook/Makefile
-     doc/user/user_guide/html/Makefile])
+	lttv/Makefile
+	lttv/lttv/Makefile
+	lttv/lttv/sync/Makefile
+	lttv/modules/Makefile
+	lttv/modules/text/Makefile
+	lttv/modules/gui/Makefile
+	lttv/modules/gui/lttvwindow/Makefile
+	lttv/modules/gui/interrupts/Makefile
+	lttv/modules/gui/lttvwindow/lttvwindow/Makefile
+	lttv/modules/gui/lttvwindow/pixmaps/Makefile
+	lttv/modules/gui/controlflow/Makefile
+	lttv/modules/gui/detailedevents/Makefile
+	lttv/modules/gui/statistics/Makefile
+	lttv/modules/gui/histogram/Makefile
+	lttv/modules/gui/filter/Makefile
+	lttv/modules/gui/tracecontrol/Makefile
+	lttv/modules/gui/resourceview/Makefile
+	ltt/Makefile
+	doc/Makefile
+	doc/developer/Makefile
+	doc/developer/developer_guide/Makefile
+	doc/developer/developer_guide/docbook/Makefile
+	doc/developer/developer_guide/html/Makefile
+	doc/user/Makefile
+	doc/user/user_guide/Makefile
+	doc/user/user_guide/docbook/Makefile
+	doc/user/user_guide/html/Makefile])
 AC_OUTPUT

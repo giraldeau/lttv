@@ -1,0 +1,7 @@
+# Most simple successful case, two hulls made of two points each
+2
+0	1	48.85	55.29
+0	1	65.50	71.83
+
+1	0	53.03	48.73
+1	0	71.57	67.99

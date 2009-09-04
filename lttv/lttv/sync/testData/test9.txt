@@ -1,0 +1,7 @@
+# Cas dégénéré 6
+# un point, une ligne avec maximum et minimum
+2
+0	1	56.51	64.08
+
+1	0	58.01	54.59
+1	0	57.80	61.03

@@ -1,0 +1,6 @@
+# Cas dégénéré 5
+# seulement deux points
+2
+0	1	56.15	62.88
+
+1	0	56.01	59.98

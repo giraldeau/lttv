@@ -1,0 +1,7 @@
+# Cas dégénéré 7
+# un point, une ligne sans minimum
+2
+0	1	51.59	60.31
+
+1	0	58.01	54.59
+1	0	57.80	61.03

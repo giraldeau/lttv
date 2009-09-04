@@ -1,3 +1,5 @@
+SUBDIRS= sync
+
 AM_CFLAGS= $(PACKAGE_CFLAGS)
 LDADD = $(POPT_LIBS) $(M_LIBS) ${top_builddir}/ltt/liblttvtraceread.la
 
