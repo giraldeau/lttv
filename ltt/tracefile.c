@@ -885,6 +885,8 @@ void ltt_tracefile_time_span_get(LttTracefile *tf,
     *end = ltt_time_zero;
   } else
     *end = tf->buffer.end.timestamp;
+
+  g_assert(end->tv_sec <= G_MAXUINT);
 }
 
 struct tracefile_time_span_get_args {
