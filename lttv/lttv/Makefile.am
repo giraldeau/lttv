@@ -3,9 +3,19 @@ LDADD = $(POPT_LIBS) ${top_builddir}/ltt/liblttvtraceread.la
 
 bin_PROGRAMS = lttv.real
 
+if BUILD_LTTV_GUI
 bin_SCRIPTS = lttv lttv-gui
+else
+bin_SCRIPTS = lttv
+endif
+
 CLEANFILES = $(bin_SCRIPTS)
+
+if BUILD_LTTV_GUI
 EXTRA_DIST = lttv.sh lttv-gui.sh
+else
+EXTRA_DIST = lttv.sh
+endif
 
 lttv: lttv.sh
 	rm -f lttv

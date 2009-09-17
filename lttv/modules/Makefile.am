@@ -24,5 +24,10 @@
 #
 
 # the gui subdir comes first : dependency
+
+if BUILD_LTTV_GUI
 SUBDIRS = text gui
+else
+SUBDIRS = text
+endif
 

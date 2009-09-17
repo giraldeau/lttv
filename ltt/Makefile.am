@@ -9,7 +9,13 @@
 AM_CFLAGS = $(PACKAGE_CFLAGS)
 
 lib_LTLIBRARIES = liblttvtraceread.la
+
+if BUILD_JNI_INTERFACE
+liblttvtraceread_la_SOURCES = jni_interface.c tracefile.c marker.c event.c
+else
 liblttvtraceread_la_SOURCES = tracefile.c marker.c event.c
+endif
+
 noinst_HEADERS = ltt-private.h
 
 lttinclude_HEADERS = \

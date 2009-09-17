@@ -27,9 +27,32 @@ AM_INIT_AUTOMAKE(lttv,0.12.17-01072009)
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
+# If requested, only build LTT library part
+AC_ARG_WITH(liblttvtraceread-only, [  --with-liblttvtraceread-only      Do not build any LTT ui, only compile the trace reading library])
+if test -z "$with_liblttvtraceread_only"; then
+        with_liblttvtraceread_only=${with_liblttvtraceread_only_default-no}
+else
+        # Requesting lib-only turn off the lttv-gui building as well
+        enable_lttv_gui="no"
+fi
+AM_CONDITIONAL(BUILD_LIB_ONLY, test "$with_liblttvtraceread_only" = "yes")
+
+
+# If requested, avoid building LLTv part
+AC_ARG_ENABLE(lttv-gui,
+[  --disable-lttv-gui      Do not build LTTv gui, only build textmode LTTv])
+
+if test -z "$enable_lttv_gui"; then
+        enable_lttv_gui=${enable_lttv_gui_default-yes}
+fi
+AM_CONDITIONAL(BUILD_LTTV_GUI, test "$enable_lttv_gui" = "yes")
+
 AM_PATH_GLIB_2_0(2.4.0, ,AC_MSG_ERROR([glib is required in order to compile LinuxTraceToolkit - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)
 
-AM_PATH_GTK_2_0(2.4.0, ,AC_MSG_ERROR([gtk is required in order to compile GUI - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)
+# GTK is only needed by the GUI
+if test "$enable_lttv_gui" = "yes" ; then
+        AM_PATH_GTK_2_0(2.4.0, ,AC_MSG_ERROR([gtk is required in order to compile GUI - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)
+fi
 
 AC_PATH_PROGS(BASH, bash)
 
@@ -42,7 +65,8 @@ AC_PROG_CC
 AC_CHECK_LIB([popt], [poptGetNextOpt], POPT_LIBS="-lpopt",AC_MSG_ERROR([libpopt is required in order to compile LinuxTraceToolkit])  )
 #AC_CHECK_LIB([m], [round], M_LIBS="-lm",AC_MSG_ERROR([Mathematical libraries are missing.])  )
 
-AC_CHECK_LIB([util], [forkpty], UTIL_LIBS="-lutil", AC_MSG_ERROR([libutil is required in order to compile LinuxTraceToolkit]))
+AC_CHECK_LIB([util], [forkpty], UTIL_LIBS="-lutil", AC_MSG_ERROR([
+libutil is required in order to compile LinuxTraceToolkit]))
 
 
 # pthread for gdb with dlopen().
@@ -52,19 +76,59 @@ AC_CHECK_LIB(pthread, pthread_join, [], AC_MSG_ERROR([LinuxThreads is required i
 AC_HEADER_STDC
 AC_CHECK_HEADERS([fcntl.h stdlib.h string.h sys/time.h unistd.h pthread.h])
 
+# Set compile flags to java include files if given
+AC_ARG_WITH(java_jdk, [  --with-java-jdk=DIR     use java jdk from DIR. Ex : $JAVA_HOME.], JAVA_SDK=$withval,)
+if test $JAVA_SDK; then
+        if test -d $JAVA_SDK; then
+                AC_MSG_RESULT([using java include in $JAVA_SDK])
+                SUBDIRS=`find $JAVA_SDK/include -type d`
+                CPPFLAGS+=`for x in $SUBDIRS; do echo -n "-I$x "; done`
+        else
+                AC_MSG_ERROR(Unable to find java include file in $JAVA_JDK)
+        fi
+fi
+
+
+# Check for JNI header files if requested
+AC_ARG_ENABLE(jni-interface,
+[  --enable-jni-interface  build JNI interface between C and java. Need java include files. ])
+
+if test -z "$enable_jni_interface"; then
+        enable_jni_interface=${enable_jni_interface_default-no}
+fi
+
+if test "$enable_jni_interface" = "yes"; then
+        AC_CHECK_HEADERS([jni.h],,AC_MSG_ERROR([
+missing jni.h
+Make sure Sun Java or GJC is installed and that this header file exists in the system path.
+Use --with-java-jdk=DIR flag to point to your java include files or desactivate the JNI interface.]))
+fi
+AM_CONDITIONAL(BUILD_JNI_INTERFACE, test "$enable_jni_interface" = "yes")
+
+
 AC_ISC_POSIX
 AC_PROG_CC
 AM_PROG_CC_STDC
 AC_HEADER_STDC
 
-pkg_modules="gtk+-2.0 >= 2.0.0"
-PKG_CHECK_MODULES(GTK, [$pkg_modules])
+if test "$enable_lttv_gui" = "yes" ; then
+        pkg_modules="gtk+-2.0 >= 2.0.0"
+        PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
+        PACKAGE_CFLAGS="-Wall -Wformat"
+        AC_SUBST(PACKAGE_CFLAGS)
+        AC_SUBST(PACKAGE_LIBS)
+fi
 
 pkg_modules="gobject-2.0 >= 2.0.0"
 PKG_CHECK_MODULES(GOBJECT, [$pkg_modules])
 
-LIBS="$LIBS $GTK_LIBS $GOBJECT_LIBS"
-PACKAGE_CFLAGS="$GTK_CFLAGS $GOBJECT_CFLAGS -Wall -Wformat"
+if test "$enable_lttv_gui" = "yes" ; then
+	LIBS="$LIBS $GTK_LIBS $GOBJECT_LIBS"
+	PACKAGE_CFLAGS="$GTK_CFLAGS $GOBJECT_CFLAGS -Wall -Wformat"
+else
+	LIBS="$LIBS $GOBJECT_LIBS"
+        PACKAGE_CFLAGS="$GOBJECT_CFLAGS -Wall -Wformat"
+fi
 MODULE_CFLAGS="$PACKAGE_CFLAGS -fvisibility=hidden"
 MODULE_LDFLAGS="-module -avoid-version"
 AC_SUBST([PACKAGE_CFLAGS])
