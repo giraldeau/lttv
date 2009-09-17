@@ -82,7 +82,7 @@ if test $JAVA_SDK; then
         if test -d $JAVA_SDK; then
                 AC_MSG_RESULT([using java include in $JAVA_SDK])
                 SUBDIRS=`find $JAVA_SDK/include -type d`
-                CPPFLAGS+=`for x in $SUBDIRS; do echo -n "-I$x "; done`
+                CFLAGS+=`for x in $SUBDIRS; do echo -n "-I$x "; done`
         else
                 AC_MSG_ERROR(Unable to find java include file in $JAVA_JDK)
         fi
@@ -111,9 +111,18 @@ AC_PROG_CC
 AM_PROG_CC_STDC
 AC_HEADER_STDC
 
+# If we want the gui, we need additionnal flags for GTK
 if test "$enable_lttv_gui" = "yes" ; then
         pkg_modules="gtk+-2.0 >= 2.0.0"
         PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
+        PACKAGE_CFLAGS="-Wall -Wformat"
+        AC_SUBST(PACKAGE_CFLAGS)
+        AC_SUBST(PACKAGE_LIBS)
+# Else, we still have a dependency on gmodule
+# We will add flags for gmodule alone
+else
+        pkg_modules="gmodule-2.0 >= 2.0.0"
+        PKG_CHECK_MODULES(GMODULE, [$pkg_modules])
         PACKAGE_CFLAGS="-Wall -Wformat"
         AC_SUBST(PACKAGE_CFLAGS)
         AC_SUBST(PACKAGE_LIBS)
@@ -122,13 +131,8 @@ fi
 pkg_modules="gobject-2.0 >= 2.0.0"
 PKG_CHECK_MODULES(GOBJECT, [$pkg_modules])
 
-if test "$enable_lttv_gui" = "yes" ; then
-	LIBS="$LIBS $GTK_LIBS $GOBJECT_LIBS"
-	PACKAGE_CFLAGS="$GTK_CFLAGS $GOBJECT_CFLAGS -Wall -Wformat"
-else
-	LIBS="$LIBS $GOBJECT_LIBS"
-        PACKAGE_CFLAGS="$GOBJECT_CFLAGS -Wall -Wformat"
-fi
+LIBS="$LIBS $GTK_LIBS $GOBJECT_LIBS $GMODULE_LIBS"
+PACKAGE_CFLAGS="$GTK_CFLAGS $GOBJECT_CFLAGS $GMODULE_CFLAGS -Wall -Wformat"
 MODULE_CFLAGS="$PACKAGE_CFLAGS -fvisibility=hidden"
 MODULE_LDFLAGS="-module -avoid-version"
 AC_SUBST([PACKAGE_CFLAGS])
