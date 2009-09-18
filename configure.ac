@@ -82,7 +82,9 @@ if test $JAVA_SDK; then
         if test -d $JAVA_SDK; then
                 AC_MSG_RESULT([using java include in $JAVA_SDK])
                 SUBDIRS=`find $JAVA_SDK/include -type d`
+		CFLAGS+=" "
                 CFLAGS+=`for x in $SUBDIRS; do echo -n "-I$x "; done`
+		CFLAGS+=" "
         else
                 AC_MSG_ERROR(Unable to find java include file in $JAVA_JDK)
         fi
