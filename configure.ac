@@ -21,9 +21,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.57)
-AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
-#AC_WITH_LTDL  # not needed ?
-AM_INIT_AUTOMAKE(lttv,0.12.17-01072009)
+AC_INIT([lttv], [0.12.17-01072009], [ltt-dev@lists.casi.polymtl.ca])
+AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
@@ -38,9 +37,9 @@ fi
 AM_CONDITIONAL(BUILD_LIB_ONLY, test "$with_liblttvtraceread_only" = "yes")
 
 
-# If requested, avoid building LLTv part
+# If requested, avoid building LTTV part
 AC_ARG_ENABLE(lttv-gui,
-[  --disable-lttv-gui      Do not build LTTv gui, only build textmode LTTv])
+[  --disable-lttv-gui      Do not build LTTV gui, only build textmode LTTV])
 
 if test -z "$enable_lttv_gui"; then
         enable_lttv_gui=${enable_lttv_gui_default-yes}
