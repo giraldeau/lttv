@@ -19,7 +19,7 @@
 #   $ ln -s ./lttv/modules/gui/lttvwindow/pixmaps
 # while in the same directory as this script.
 
-RCFILE=".runlttvrc"
+RCFILE="$(dirname $0)/.runlttvrc"
 
 if [ "$MODE" = "text" ]; then
 	ARGS="-L lttv/modules/text/.libs -m textDump"
