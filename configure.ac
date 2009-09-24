@@ -40,7 +40,7 @@ AM_CONDITIONAL(BUILD_LIB_ONLY, test "$with_lttv" = "no")
 
 
 # If requested, avoid building LTTV part
-AC_ARG_WITH(lttv-gui, [  --with-lttv-gui         Do not build LTTV gui, only build textmode LTTV])
+AC_ARG_WITH(lttv-gui, [  --with-lttv-gui         Build LTTV gui, as opposed to only build textmode LTTV])
 
 if test -z "$with_lttv_gui"; then
         with_lttv_gui=${with_lttv_gui_default-yes}
