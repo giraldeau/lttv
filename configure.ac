@@ -27,29 +27,30 @@ AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
 # If requested, only build LTT library part
-AC_ARG_WITH(liblttvtraceread-only, [  --with-liblttvtraceread-only      Do not build any LTT ui, only compile the trace reading library])
-if test -z "$with_liblttvtraceread_only"; then
-        with_liblttvtraceread_only=${with_liblttvtraceread_only_default-no}
+AC_ARG_WITH(lttv, [  --with-lttv             Build whole LTTv system, as opposd to only the trace reading library])
+if test -z "$with_lttv"; then
+        with_lttv=${with_lttv_default-yes}
 else
-        # Requesting lib-only turn off the lttv-gui building as well
-        enable_lttv_gui="no"
+	if test "$with_lttv" = "no"; then
+	        # Requesting lib-only turn off the lttv-gui building as well
+        	with_lttv_gui="no"
+	fi
 fi
-AM_CONDITIONAL(BUILD_LIB_ONLY, test "$with_liblttvtraceread_only" = "yes")
+AM_CONDITIONAL(BUILD_LIB_ONLY, test "$with_lttv" = "no")
 
 
 # If requested, avoid building LTTV part
-AC_ARG_ENABLE(lttv-gui,
-[  --disable-lttv-gui      Do not build LTTV gui, only build textmode LTTV])
+AC_ARG_WITH(lttv-gui, [  --with-lttv-gui         Do not build LTTV gui, only build textmode LTTV])
 
-if test -z "$enable_lttv_gui"; then
-        enable_lttv_gui=${enable_lttv_gui_default-yes}
+if test -z "$with_lttv_gui"; then
+        with_lttv_gui=${with_lttv_gui_default-yes}
 fi
-AM_CONDITIONAL(BUILD_LTTV_GUI, test "$enable_lttv_gui" = "yes")
+AM_CONDITIONAL(BUILD_LTTV_GUI, test "$with_lttv_gui" = "yes")
 
 AM_PATH_GLIB_2_0(2.4.0, ,AC_MSG_ERROR([glib is required in order to compile LinuxTraceToolkit - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)
 
 # GTK is only needed by the GUI
-if test "$enable_lttv_gui" = "yes" ; then
+if test "$with_lttv_gui" = "yes" ; then
         AM_PATH_GTK_2_0(2.4.0, ,AC_MSG_ERROR([gtk is required in order to compile GUI - download it from ftp://ftp.gtk.org/pub/gtk]) , gmodule)
 fi
 
@@ -91,20 +92,19 @@ fi
 
 
 # Check for JNI header files if requested
-AC_ARG_ENABLE(jni-interface,
-[  --enable-jni-interface  build JNI interface between C and java. Need java include files. ])
+AC_ARG_WITH(jni-interface, [  --with-jni-interface    build JNI interface between C and java. Need java include files. ])
 
-if test -z "$enable_jni_interface"; then
-        enable_jni_interface=${enable_jni_interface_default-no}
+if test -z "$with_jni_interface"; then
+        with_jni_interface=${with_jni_interface_default-no}
 fi
 
-if test "$enable_jni_interface" = "yes"; then
+if test "$with_jni_interface" = "yes"; then
         AC_CHECK_HEADERS([jni.h],,AC_MSG_ERROR([
 missing jni.h
 Make sure Sun Java or GJC is installed and that this header file exists in the system path.
 Use --with-java-jdk=DIR flag to point to your java include files or desactivate the JNI interface.]))
 fi
-AM_CONDITIONAL(BUILD_JNI_INTERFACE, test "$enable_jni_interface" = "yes")
+AM_CONDITIONAL(BUILD_JNI_INTERFACE, test "$with_jni_interface" = "yes")
 
 
 AC_ISC_POSIX
@@ -113,7 +113,7 @@ AM_PROG_CC_STDC
 AC_HEADER_STDC
 
 # If we want the gui, we need additionnal flags for GTK
-if test "$enable_lttv_gui" = "yes" ; then
+if test "$with_lttv_gui" = "yes" ; then
         pkg_modules="gtk+-2.0 >= 2.0.0"
         PKG_CHECK_MODULES(PACKAGE, [$pkg_modules])
         PACKAGE_CFLAGS="-Wall -Wformat"
