@@ -10,14 +10,29 @@
 #   $ ln -s ./lttv/modules/gui/lttvwindow/pixmaps
 # while in the same directory as this script.
 
+PROGNAME=$0
 RCFILE="$(dirname $0)/.runlttvrc"
+TEXTLIBS="-L lttv/modules/text/.libs -m textDump"
+GRAPHLIBS="-L lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow "\
+"-L lttv/modules/gui/controlflow/.libs -m guicontrolflow "\
+"-L lttv/modules/gui/detailedevents/.libs -m guievents "\
+"-L lttv/modules/gui/tracecontrol/.libs -m guitracecontrol "\
+"-L lttv/modules/gui/statistics/.libs -m guistatistics "\
+"-L lttv/modules/gui/resourceview/.libs -m resourceview "\
+"-L lttv/modules/gui/filter/.libs -m guifilter "\
+"-L lttv/modules/gui/interrupts/.libs -m interrupts "\
+"-L lttv/modules/gui/histogram/.libs -m guihistogram"
+DEFAULTMODE="gui"
 
 function usage {
-	echo "Usage: $0 OPTIONS TRACES..." >/dev/stderr
+	echo "Usage: $0 [OPTION]... [TRACE]..." >/dev/stderr
 	echo "" >/dev/stderr
 	echo "Options:" >/dev/stderr
-	echo -e "\t-m mode (modes: text)" >/dev/stderr
-	echo -e "\t-H helper (helpers: gdb, valgrind, massif, strace)" >/dev/stderr
+	echo -e "\t-m MODE      Output mode (modes: text, gui)" >/dev/stderr
+	echo -e "\t-H HELPER    Invoke LTTV through a helper program" >/dev/stderr
+	echo -e "\t             (helpers: gdb, valgrind, massif, strace)" >/dev/stderr
+	echo -e "\t-b OPTIONS   LTTV options to specify before the module list" >/dev/stderr
+	echo -e "\t-a OPTIONS   LTTV options to specify after the module list" >/dev/stderr
 	echo "" >/dev/stderr
 }
 
@@ -30,55 +45,51 @@ else
 	exit 1
 fi
 
+while getopts "H:m:b:a:h" options; do
+	case $options in
+		H) HELPER=$OPTARG;;
+		m) MODE=$OPTARG;;
+		b) BOPTIONS="$BOPTIONS $OPTARG";;
+		a) AOPTIONS="$AOPTIONS $OPTARG";;
+		h) usage;
+			exit 0;;
+		\?) usage;
+			exit 1;;
+	esac
+done
+shift $(($OPTIND - 1))
+
+for trace in $@
+do
+	TRACEFILES="$TRACEFILES -t $trace "
+done
+
 if [ -e "$RCFILE" ]; then
 	source "$RCFILE";
 fi
 
-while getopts ":hH:m:" options; do
-        case $options in
-                H) HELPER=$OPTARG;;
-		m) MODE=$OPTARG;;
-                h) usage;
-                   exit 0;;
-                \?) usage
-                        exit 1;;
-                *) usage
-                        exit 1;;
-        esac
-done
-shift $(($OPTIND - 1))
-
-for trace in $@;
-do
-	TRACEFILE="$TRACEFILE -t $trace "
-done
-
-if [ "$MODE" = "text" ]; then
-	ARGS="-L lttv/modules/text/.libs -m textDump"
-else
-	ARGS="-L lttv/modules/gui/lttvwindow/lttvwindow/.libs -m lttvwindow "\
-"-L lttv/modules/gui/controlflow/.libs -m guicontrolflow "\
-"-L lttv/modules/gui/detailedevents/.libs -m guievents "\
-"-L lttv/modules/gui/tracecontrol/.libs -m guitracecontrol "\
-"-L lttv/modules/gui/statistics/.libs -m guistatistics "\
-"-L lttv/modules/gui/resourceview/.libs -m resourceview "\
-"-L lttv/modules/gui/filter/.libs -m guifilter "\
-"-L lttv/modules/gui/interrupts/.libs -m interrupts "\
-"-L lttv/modules/gui/histogram/.libs -m guihistogram"
+if [ -z "$MODE" ]; then
+	MODE=$DEFAULTMODE
 fi
 
-if [ "$HELPER" = "gdb" ]; then
-	shift
-	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $ARGS $TRACEFILE $@
-elif [ "$HELPER" = "valgrind" ]; then
-	shift
-	LD_LIBRARY_PATH=ltt/.libs valgrind --track-origins=yes --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $ARGS $TRACEFILE $@
-elif [ "$HELPER" = "massif" ]; then
-	shift
-	LD_LIBRARY_PATH=ltt/.libs valgrind --tool=massif $LTTV_EXEC $ARGS $TRACEFILE $@
-elif [ "$HELPER" = "strace" ]; then
-	shift
-	LD_LIBRARY_PATH=ltt/.libs strace $LTTV_EXEC $ARGS $TRACEFILE $@
+if [ "$MODE" = "text" ]; then
+	LIBS="$TEXTLIBS"
+elif [ "$MODE" = "gui" ]; then
+	LIBS="$GRAPHLIBS"
 else
-	LD_LIBRARY_PATH=ltt/.libs $LTTV_EXEC $ARGS $TRACEFILE $@
+	echo "$PROGNAME: unknown mode -- $MODE" >/dev/stderr
+	exit 1
+fi
+
+LTTV_ARGS="$BOPTIONS $LIBS $TRACEFILES $AOPTIONS"
+if [ "$HELPER" = "gdb" ]; then
+	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $LTTV_ARGS
+elif [ "$HELPER" = "valgrind" ]; then
+	LD_LIBRARY_PATH=ltt/.libs valgrind --track-origins=yes --show-reachable=yes --leak-check=full --error-limit=no $LTTV_EXEC $LTTV_ARGS
+elif [ "$HELPER" = "massif" ]; then
+	LD_LIBRARY_PATH=ltt/.libs valgrind --tool=massif $LTTV_EXEC $LTTV_ARGS
+elif [ "$HELPER" = "strace" ]; then
+	LD_LIBRARY_PATH=ltt/.libs strace $LTTV_EXEC $LTTV_ARGS
+else
+	LD_LIBRARY_PATH=ltt/.libs $LTTV_EXEC $LTTV_ARGS
 fi
