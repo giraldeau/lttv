@@ -5,21 +5,53 @@
 # This script runs LTTV in place in the compile directory without need for
 # installing it with make install.
 #
-# Run with the TF environment variable set to a trace directory to open it.
-#     ex: TF=/my/trace ./runlttv
-# 
-# The .runlttvrc file can be used to control its behavior.
-# - by setting the TRACEFILE variable, a trace can be automatically loaded
-#     ex: TRACEFILE="-t /tmp/traces/dijkstra-20071212"
-# - by setting the ARGS variable, a different set of plugins can be loaded
-#     for an example see the ARGS= line below
-#
 # In order for icons to display correctly, it might be necessary to create a
 # symlink:
 #   $ ln -s ./lttv/modules/gui/lttvwindow/pixmaps
 # while in the same directory as this script.
 
 RCFILE="$(dirname $0)/.runlttvrc"
+
+function usage {
+	echo "Usage: $0 OPTIONS TRACES..." >/dev/stderr
+	echo "" >/dev/stderr
+	echo "Options:" >/dev/stderr
+	echo -e "\t-m mode (modes: text)" >/dev/stderr
+	echo -e "\t-H helper (helpers: gdb, valgrind, massif, strace)" >/dev/stderr
+	echo "" >/dev/stderr
+}
+
+if [ -e "lttv/lttv/.libs/lttv.real" ]; then
+	LTTV_EXEC="lttv/lttv/.libs/lttv.real"
+elif [ -e "lttv/lttv/lttv.real" ]; then
+	LTTV_EXEC="lttv/lttv/lttv.real"
+else
+	echo "error: LTTV should be compiled before running this script." >/dev/stderr
+	exit 1
+fi
+
+if [ -e "$RCFILE" ]; then
+	source "$RCFILE";
+fi
+
+while getopts ":hH:m:" options; do
+        case $options in
+                H) HELPER=$OPTARG;;
+		m) MODE=$OPTARG;;
+                h) usage;
+                   exit 0;;
+                \?) usage
+                        exit 1;;
+                *) usage
+                        exit 1;;
+        esac
+done
+shift $(($OPTIND - 1))
+
+for trace in $@;
+do
+	TRACEFILE="$TRACEFILE -t $trace "
+done
 
 if [ "$MODE" = "text" ]; then
 	ARGS="-L lttv/modules/text/.libs -m textDump"
@@ -35,24 +67,6 @@ else
 "-L lttv/modules/gui/histogram/.libs -m guihistogram"
 fi
 
-if [ -e "lttv/lttv/.libs/lttv.real" ]; then
-	LTTV_EXEC="lttv/lttv/.libs/lttv.real"
-elif [ -e "lttv/lttv/lttv.real" ]; then
-	LTTV_EXEC="lttv/lttv/lttv.real"
-else
-	echo "error: LTTV should be compiled before running this script." >/dev/stderr
-	exit 1
-fi
-
-if [ -n "$TF" ]; then
-	TRACEFILE="-t $TF"
-fi
-
-if [ -e "$RCFILE" ]; then
-	source "$RCFILE";
-fi
-
-HELPER=$1
 if [ "$HELPER" = "gdb" ]; then
 	shift
 	LD_LIBRARY_PATH=ltt/.libs gdb --args $LTTV_EXEC $ARGS $TRACEFILE $@
