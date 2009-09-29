@@ -27,7 +27,8 @@ AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
 # If requested, only build LTT library part
-AC_ARG_WITH(lttv, [  --with-lttv             Build whole LTTv system, as opposd to only the trace reading library])
+AC_ARG_WITH(lttv, [  --with-lttv             Build whole LTTV system, as opposd to only the trace reading library
+			  [[default=yes]]])
 if test -z "$with_lttv"; then
         with_lttv=${with_lttv_default-yes}
 else
@@ -40,7 +41,8 @@ AM_CONDITIONAL(BUILD_LIB_ONLY, test "$with_lttv" = "no")
 
 
 # If requested, avoid building LTTV part
-AC_ARG_WITH(lttv-gui, [  --with-lttv-gui         Build LTTV gui, as opposed to only build textmode LTTV])
+AC_ARG_WITH(lttv-gui, [  --with-lttv-gui         Build LTTV gui, as opposed to only build textmode LTTV
+			  [[default=yes]]])
 
 if test -z "$with_lttv_gui"; then
         with_lttv_gui=${with_lttv_gui_default-yes}
@@ -92,7 +94,8 @@ fi
 
 
 # Check for JNI header files if requested
-AC_ARG_WITH(jni-interface, [  --with-jni-interface    build JNI interface between C and java. Need java include files. ])
+AC_ARG_WITH(jni-interface, [  --with-jni-interface    Build JNI interface between C and java. Need java include files.
+			  [[default=no]]])
 
 if test -z "$with_jni_interface"; then
         with_jni_interface=${with_jni_interface_default-no}
