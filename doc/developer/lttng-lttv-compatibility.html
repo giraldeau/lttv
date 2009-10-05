@@ -3451,6 +3451,7 @@ powerpc64, s390, sparc, sparc64.<br>
 0.156<br>
 0.157<br>
 0.158<br>
+0.159<br>
 </td>
 <td style="vertical-align: top;">
 0.65<br>
@@ -3565,6 +3566,8 @@ ltt-control 0.71 fixes uClibc support.<br>
 LTTng 0.158 fixes a memory size allocation problem, triggered with large number
 of subbuffers in lockless mode. Also adds a per-subbuffer event counter in
 lockless buffers shown in dmesg when buffers are destroyed.<br>
+LTTng 0.159 fixes trace-clock for mips and x86: use spinlock in cpu hotplug
+notifier instead of mutex.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
