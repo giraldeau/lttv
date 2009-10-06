@@ -3485,6 +3485,7 @@ obsolete<br>
 2.6.30-rc2<br>
 2.6.30-rc5<br>
 2.6.30<br>
+2.6.30.9<br>
 </td>
 <td style="vertical-align: top;">
 LTTng 0.92 reorders the LTTng patchset and drops the /proc/ltt interface.<br>
@@ -3568,6 +3569,9 @@ of subbuffers in lockless mode. Also adds a per-subbuffer event counter in
 lockless buffers shown in dmesg when buffers are destroyed.<br>
 LTTng 0.159 fixes trace-clock for mips and x86: use spinlock in cpu hotplug
 notifier instead of mutex.<br>
+LTTng 0.160 supports kernel 2.6.30.9. Using CONFIG_TREE_RCU with kernel 2.6.30.x
+is recommended due to problems encountered with mainline PREEMPT and CLASSIC
+RCU.<br>
 </td>
 <td style="vertical-align: top;">
 </td>
