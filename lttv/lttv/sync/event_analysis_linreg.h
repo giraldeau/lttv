@@ -21,7 +21,7 @@
 
 #include <glib.h>
 
-#include "data_structures_tcp.h"
+#include "data_structures.h"
 
 
 typedef struct

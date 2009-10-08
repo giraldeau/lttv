@@ -21,7 +21,7 @@
 
 #include <glib.h>
 
-#include "data_structures_tcp.h"
+#include "data_structures.h"
 
 
 struct _SyncState;
@@ -33,8 +33,8 @@ typedef struct
 	void (*initMatching)(struct _SyncState* const syncState);
 	void (*destroyMatching)(struct _SyncState* const syncState);
 
-	void (*matchEvent)(struct _SyncState* const syncState, NetEvent* const event,
-		EventType eventType);
+	void (*matchEvent)(struct _SyncState* const syncState, Event* const
+		event);
 	GArray* (*finalizeMatching)(struct _SyncState* const syncState);
 	void (*printMatchingStats)(struct _SyncState* const syncState);
 	void (*writeMatchingGraphsPlots)(FILE* stream, struct _SyncState* const

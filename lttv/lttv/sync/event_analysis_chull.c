@@ -28,7 +28,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "sync_chain.h"
+#include "sync_chain_lttv.h"
 
 #include "event_analysis_chull.h"
 
@@ -56,7 +56,8 @@ typedef enum
 static void initAnalysisCHull(SyncState* const syncState);
 static void destroyAnalysisCHull(SyncState* const syncState);
 
-static void analyzePacketCHull(SyncState* const syncState, Packet* const packet);
+static void analyzeMessageCHull(SyncState* const syncState, Message* const
+	message);
 static GArray* finalizeAnalysisCHull(SyncState* const syncState);
 static void printAnalysisStatsCHull(SyncState* const syncState);
 static void writeAnalysisGraphsPlotsCHull(FILE* stream, SyncState* const
@@ -106,8 +107,9 @@ static AnalysisModule analysisModuleCHull= {
 	.name= "chull",
 	.initAnalysis= &initAnalysisCHull,
 	.destroyAnalysis= &destroyAnalysisCHull,
-	.analyzePacket= &analyzePacketCHull,
+	.analyzeMessage= &analyzeMessageCHull,
 	.analyzeExchange= NULL,
+	.analyzeBroadcast= NULL,
 	.finalizeAnalysis= &finalizeAnalysisCHull,
 	.printAnalysisStats= &printAnalysisStatsCHull,
 	.writeAnalysisGraphsPlots= &writeAnalysisGraphsPlotsCHull,
@@ -380,9 +382,9 @@ static void destroyAnalysisCHull(SyncState* const syncState)
  *
  * Args:
  *   syncState     container for synchronization data
- *   packet        structure containing the events
+ *   message       structure containing the events
  */
-static void analyzePacketCHull(SyncState* const syncState, Packet* const packet)
+static void analyzeMessageCHull(SyncState* const syncState, Message* const message)
 {
 	AnalysisDataCHull* analysisData;
 	Point* newPoint;
@@ -392,29 +394,29 @@ static void analyzePacketCHull(SyncState* const syncState, Packet* const packet)
 	analysisData= (AnalysisDataCHull*) syncState->analysisData;
 
 	newPoint= malloc(sizeof(Point));
-	if (packet->inE->traceNum < packet->outE->traceNum)
+	if (message->inE->traceNum < message->outE->traceNum)
 	{
 		// CA is inE->traceNum
-		newPoint->x= packet->inE->tsc;
-		newPoint->y= packet->outE->tsc;
+		newPoint->x= message->inE->time;
+		newPoint->y= message->outE->time;
 		hullType= UPPER;
-		g_debug("Reception point hullArray[%lu][%lu] x= inE->tsc= %llu y= outE->tsc= %llu",
-			packet->inE->traceNum, packet->outE->traceNum, newPoint->x,
+		g_debug("Reception point hullArray[%lu][%lu] x= inE->time= %llu y= outE->time= %llu",
+			message->inE->traceNum, message->outE->traceNum, newPoint->x,
 			newPoint->y);
 	}
 	else
 	{
 		// CA is outE->traceNum
-		newPoint->x= packet->outE->tsc;
-		newPoint->y= packet->inE->tsc;
+		newPoint->x= message->outE->time;
+		newPoint->y= message->inE->time;
 		hullType= LOWER;
-		g_debug("Send point hullArray[%lu][%lu] x= inE->tsc= %llu y= outE->tsc= %llu",
-			packet->inE->traceNum, packet->outE->traceNum, newPoint->x,
+		g_debug("Send point hullArray[%lu][%lu] x= inE->time= %llu y= outE->time= %llu",
+			message->inE->traceNum, message->outE->traceNum, newPoint->x,
 			newPoint->y);
 	}
 
 	hull=
-		analysisData->hullArray[packet->inE->traceNum][packet->outE->traceNum];
+		analysisData->hullArray[message->inE->traceNum][message->outE->traceNum];
 
 	if (hull->length >= 1 && newPoint->x < ((Point*)
 			g_queue_peek_tail(hull))->x)

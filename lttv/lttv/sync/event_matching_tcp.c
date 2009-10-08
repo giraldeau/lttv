@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 #include "event_analysis.h"
-#include "sync_chain.h"
+#include "sync_chain_lttv.h"
 
 #include "event_matching_tcp.h"
 
@@ -40,8 +40,7 @@
 static void initMatchingTCP(SyncState* const syncState);
 static void destroyMatchingTCP(SyncState* const syncState);
 
-static void matchEventTCP(SyncState* const syncState, NetEvent* const event,
-	EventType eventType);
+static void matchEventTCP(SyncState* const syncState, Event* const event);
 static GArray* finalizeMatchingTCP(SyncState* const syncState);
 static void printMatchingStatsTCP(SyncState* const syncState);
 static void writeMatchingGraphsPlotsTCP(FILE* stream, SyncState* const
@@ -52,20 +51,20 @@ static void writeMatchingGraphsOptionsTCP(FILE* stream, SyncState* const
 // Functions specific to this module
 static void registerMatchingTCP() __attribute__((constructor (101)));
 
-static void matchEvents(SyncState* const syncState, NetEvent* const event,
+static void matchEvents(SyncState* const syncState, Event* const event,
 	GHashTable* const unMatchedList, GHashTable* const
 	unMatchedOppositeList, const size_t fieldOffset, const size_t
 	oppositeFieldOffset);
 static void partialDestroyMatchingTCP(SyncState* const syncState);
 
-static bool isAck(const Packet* const packet);
-static bool needsAck(const Packet* const packet);
+static bool isAck(const Message* const message);
+static bool needsAck(const Message* const message);
 static void buildReversedConnectionKey(ConnectionKey* const
 	reversedConnectionKey, const ConnectionKey* const connectionKey);
 
 static void openGraphDataFiles(SyncState* const syncState);
 static void closeGraphDataFiles(SyncState* const syncState);
-static void writeMessagePoint(FILE* stream, const Packet* const packet);
+static void writeMessagePoint(FILE* stream, const Message* const message);
 
 
 static MatchingModule matchingModuleTCP = {
@@ -112,13 +111,13 @@ static void initMatchingTCP(SyncState* const syncState)
 	matchingData= malloc(sizeof(MatchingDataTCP));
 	syncState->matchingData= matchingData;
 
-	matchingData->unMatchedInE= g_hash_table_new_full(&ghfPacketKeyHash,
-		&gefPacketKeyEqual, NULL, &gdnDestroyNetEvent);
-	matchingData->unMatchedOutE= g_hash_table_new_full(&ghfPacketKeyHash,
-		&gefPacketKeyEqual, NULL, &gdnDestroyNetEvent);
+	matchingData->unMatchedInE= g_hash_table_new_full(&ghfSegmentKeyHash,
+		&gefSegmentKeyEqual, NULL, &gdnDestroyEvent);
+	matchingData->unMatchedOutE= g_hash_table_new_full(&ghfSegmentKeyHash,
+		&gefSegmentKeyEqual, NULL, &gdnDestroyEvent);
 	matchingData->unAcked= g_hash_table_new_full(&ghfConnectionKeyHash,
 		&gefConnectionKeyEqual, &gdnConnectionKeyDestroy,
-		&gdnPacketListDestroy);
+		&gdnTCPSegmentListDestroy);
 
 	if (syncState->stats)
 	{
@@ -234,23 +233,23 @@ static void partialDestroyMatchingTCP(SyncState* const syncState)
  *   event         new event to match
  *   eventType     type of event to match
  */
-static void matchEventTCP(SyncState* const syncState, NetEvent* const event, EventType eventType)
+static void matchEventTCP(SyncState* const syncState, Event* const event)
 {
 	MatchingDataTCP* matchingData;
 
 	matchingData= (MatchingDataTCP*) syncState->matchingData;
 
-	if (eventType == IN)
+	if (event->event.tcpEvent->direction == IN)
 	{
 		matchEvents(syncState, event, matchingData->unMatchedInE,
-			matchingData->unMatchedOutE, offsetof(Packet, inE),
-			offsetof(Packet, outE));
+			matchingData->unMatchedOutE, offsetof(Message, inE),
+			offsetof(Message, outE));
 	}
 	else
 	{
 		matchEvents(syncState, event, matchingData->unMatchedOutE,
-			matchingData->unMatchedInE, offsetof(Packet, outE),
-			offsetof(Packet, inE));
+			matchingData->unMatchedInE, offsetof(Message, outE),
+			offsetof(Message, inE));
 	}
 }
 
@@ -328,41 +327,41 @@ static void printMatchingStatsTCP(SyncState* const syncState)
  * Implementation of a packet matching algorithm for TCP
  *
  * Args:
- *   netEvent:     new event to match
+ *   event:        new event to match
  *   unMatchedList: list of unmatched events of the same type (send or
- *                 receive) as netEvent
+ *                 receive) as event
  *   unMatchedOppositeList: list of unmatched events of the opposite type of
- *                 netEvent
- *   fieldOffset:  offset of the NetEvent field in the Packet struct for the
- *                 field of the type of netEvent
- *   oppositeFieldOffset: offset of the NetEvent field in the Packet struct
- *                 for the field of the opposite type of netEvent
+ *                 event
+ *   fieldOffset:  offset of the Event field in the Message struct for the
+ *                 field of the type of event
+ *   oppositeFieldOffset: offset of the Event field in the Message struct
+ *                 for the field of the opposite type of event
  */
-static void matchEvents(SyncState* const syncState, NetEvent* const event,
+static void matchEvents(SyncState* const syncState, Event* const event,
 	GHashTable* const unMatchedList, GHashTable* const unMatchedOppositeList,
 	const size_t fieldOffset, const size_t oppositeFieldOffset)
 {
-	NetEvent* companionEvent;
-	Packet* packet;
+	Event* companionEvent;
+	Message* packet;
 	MatchingDataTCP* matchingData;
 	GQueue* conUnAcked;
 
 	matchingData= (MatchingDataTCP*) syncState->matchingData;
 
-	companionEvent= g_hash_table_lookup(unMatchedOppositeList, event->packetKey);
+	companionEvent= g_hash_table_lookup(unMatchedOppositeList, event->event.tcpEvent->segmentKey);
 	if (companionEvent != NULL)
 	{
 		g_debug("Found matching companion event, ");
 
-		// If it's there, remove it and create a Packet
-		g_hash_table_steal(unMatchedOppositeList, event->packetKey);
-		packet= malloc(sizeof(Packet));
-		*((NetEvent**) ((void*) packet + fieldOffset))= event;
-		*((NetEvent**) ((void*) packet + oppositeFieldOffset))= companionEvent;
-		// Both events can now share the same packetKey
-		free(packet->outE->packetKey);
-		packet->outE->packetKey= packet->inE->packetKey;
-		packet->acks= NULL;
+		// If it's there, remove it and create a Message
+		g_hash_table_steal(unMatchedOppositeList, event->event.tcpEvent->segmentKey);
+		packet= malloc(sizeof(Message));
+		*((Event**) ((void*) packet + fieldOffset))= event;
+		*((Event**) ((void*) packet + oppositeFieldOffset))= companionEvent;
+		packet->print= &printTCPSegment;
+		// Both events can now share the same segmentKey
+		free(packet->outE->event.tcpEvent->segmentKey);
+		packet->outE->event.tcpEvent->segmentKey= packet->inE->event.tcpEvent->segmentKey;
 
 		if (syncState->stats)
 		{
@@ -373,7 +372,7 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 		// Discard loopback traffic
 		if (packet->inE->traceNum == packet->outE->traceNum)
 		{
-			destroyPacket(packet);
+			destroyTCPSegment(packet);
 			return;
 		}
 
@@ -383,16 +382,16 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 				packet);
 		}
 
-		if (syncState->analysisModule->analyzePacket != NULL)
+		if (syncState->analysisModule->analyzeMessage != NULL)
 		{
-			syncState->analysisModule->analyzePacket(syncState, packet);
+			syncState->analysisModule->analyzeMessage(syncState, packet);
 		}
 
 		// We can skip the rest of the algorithm if the analysis module is not
 		// interested in exchanges
 		if (syncState->analysisModule->analyzeExchange == NULL)
 		{
-			destroyPacket(packet);
+			destroyTCPSegment(packet);
 			return;
 		}
 
@@ -402,15 +401,18 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 			ConnectionKey oppositeConnectionKey;
 
 			buildReversedConnectionKey(&oppositeConnectionKey,
-				&event->packetKey->connectionKey);
+				&event->event.tcpEvent->segmentKey->connectionKey);
 			conUnAcked= g_hash_table_lookup(matchingData->unAcked,
 				&oppositeConnectionKey);
 			if (conUnAcked != NULL)
 			{
-				Packet* ackedPacket;
+				Message* ackedPacket;
 				GList* result;
+				Exchange* exchange;
 
-				result= g_queue_find_custom(conUnAcked, packet, &gcfPacketAckCompare);
+				exchange= NULL;
+
+				result= g_queue_find_custom(conUnAcked, packet, &gcfTCPSegmentAckCompare);
 
 				while (result != NULL)
 				{
@@ -418,7 +420,7 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 					// and keep it for later offset calculations
 					g_debug("Found matching unAcked packet, ");
 
-					ackedPacket= (Packet*) result->data;
+					ackedPacket= (Message*) result->data;
 					g_queue_delete_link(conUnAcked, result);
 
 					if (syncState->stats)
@@ -426,28 +428,30 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 						matchingData->stats->totExchangeEffective++;
 					}
 
-					if (packet->acks == NULL)
+					if (exchange == NULL)
 					{
-						packet->acks= g_queue_new();
+						exchange= malloc(sizeof(Exchange));
+						exchange->message= packet;
+						exchange->acks= g_queue_new();
 					}
 
-					g_queue_push_tail(packet->acks, ackedPacket);
+					g_queue_push_tail(exchange->acks, ackedPacket);
 
 					result= g_queue_find_custom(conUnAcked, packet,
-						&gcfPacketAckCompare);
+						&gcfTCPSegmentAckCompare);
 				}
 
 				// It might be possible to do an offset calculation
-				if (packet->acks != NULL)
+				if (exchange != NULL)
 				{
-					ackedPacket= g_queue_peek_tail(packet->acks);
+					ackedPacket= g_queue_peek_tail(exchange->acks);
 					if (ackedPacket->outE->traceNum != packet->inE->traceNum
 						|| ackedPacket->inE->traceNum !=
 						packet->outE->traceNum || packet->inE->traceNum ==
 						packet->outE->traceNum)
 					{
-						printPacket(ackedPacket);
-						printPacket(packet);
+						ackedPacket->print(ackedPacket);
+						packet->print(packet);
 						g_error("Disorganized exchange encountered during "
 							"synchronization");
 					}
@@ -459,8 +463,11 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 						}
 
 						syncState->analysisModule->analyzeExchange(syncState,
-							packet);
+							exchange);
 					}
+
+					exchange->message= NULL;
+					destroyTCPExchange(exchange);
 				}
 			}
 		}
@@ -475,13 +482,13 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 			// If this packet will generate an ack, add it to the unAcked list
 			g_debug("Adding to unAcked, ");
 			conUnAcked= g_hash_table_lookup(matchingData->unAcked,
-				&event->packetKey->connectionKey);
+				&event->event.tcpEvent->segmentKey->connectionKey);
 			if (conUnAcked == NULL)
 			{
 				ConnectionKey* connectionKey;
 
 				connectionKey= malloc(sizeof(ConnectionKey));
-				memcpy(connectionKey, &event->packetKey->connectionKey,
+				memcpy(connectionKey, &event->event.tcpEvent->segmentKey->connectionKey,
 					sizeof(ConnectionKey));
 				g_hash_table_insert(matchingData->unAcked, connectionKey,
 					conUnAcked= g_queue_new());
@@ -490,7 +497,7 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 		}
 		else
 		{
-			destroyPacket(packet);
+			destroyTCPSegment(packet);
 		}
 	}
 	else
@@ -498,7 +505,7 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 		// If there's no corresponding event, add the event to the unmatched
 		// list for this type of event
 		g_debug("Adding to unmatched event list, ");
-		g_hash_table_replace(unMatchedList, event->packetKey, event);
+		g_hash_table_replace(unMatchedList, event->event.tcpEvent->segmentKey, event);
 	}
 }
 
@@ -506,13 +513,16 @@ static void matchEvents(SyncState* const syncState, NetEvent* const event,
 /*
  * Check if a packet is an acknowledge
  *
+ * Args:
+ *   packet        TCP Message
+ *
  * Returns:
  *   true if it is,
  *   false otherwise
  */
-static bool isAck(const Packet* const packet)
+static bool isAck(const Message* const packet)
 {
-	if (packet->inE->packetKey->ack == 1)
+	if (packet->inE->event.tcpEvent->segmentKey->ack == 1)
 	{
 		return true;
 	}
@@ -527,15 +537,18 @@ static bool isAck(const Packet* const packet)
  * Check if a packet will increment the sequence number, thus needing an
  * acknowledge
  *
+ * Args:
+ *   packet        TCP Message
+ *
  * Returns:
  *   true if the packet will need an acknowledge
  *   false otherwise
  */
-static bool needsAck(const Packet* const packet)
+static bool needsAck(const Message* const packet)
 {
-	if (packet->inE->packetKey->syn || packet->inE->packetKey->fin ||
-		packet->inE->packetKey->tot_len - packet->inE->packetKey->ihl * 4 -
-		packet->inE->packetKey->doff * 4 > 0)
+	if (packet->inE->event.tcpEvent->segmentKey->syn || packet->inE->event.tcpEvent->segmentKey->fin ||
+		packet->inE->event.tcpEvent->segmentKey->tot_len - packet->inE->event.tcpEvent->segmentKey->ihl * 4 -
+		packet->inE->event.tcpEvent->segmentKey->doff * 4 > 0)
 	{
 		return true;
 	}
@@ -620,24 +633,24 @@ static void openGraphDataFiles(SyncState* const syncState)
  * Write a message point to a file used to generate graphs
  *
  * Args:
- *   stream:           FILE*, file pointer where to write the point
- *   packet:       message for which to write the point
+ *   stream:       FILE*, file pointer where to write the point
+ *   message:       message for which to write the point
  */
-static void writeMessagePoint(FILE* stream, const Packet* const packet)
+static void writeMessagePoint(FILE* stream, const Message* const message)
 {
 	LttCycleCount x, y;
 
-	if (packet->inE->traceNum < packet->outE->traceNum)
+	if (message->inE->traceNum < message->outE->traceNum)
 	{
 		// CA is inE->traceNum
-		x= packet->inE->tsc;
-		y= packet->outE->tsc;
+		x= message->inE->time;
+		y= message->outE->time;
 	}
 	else
 	{
 		// CA is outE->traceNum
-		x= packet->outE->tsc;
-		y= packet->inE->tsc;
+		x= message->outE->time;
+		y= message->inE->time;
 	}
 
 	fprintf(stream, "%20llu %20llu\n", x, y);

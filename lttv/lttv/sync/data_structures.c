@@ -31,7 +31,7 @@
 
 #include "lookup3.h"
 
-#include "data_structures_tcp.h"
+#include "data_structures.h"
 
 
 #ifndef g_info
@@ -72,15 +72,19 @@ bool connectionKeyEqual(const ConnectionKey* const a, const
  * Check if a packet is an acknowledge of another packet.
  *
  * Args:
- *   ackPacket     packet that is the confirmation
- *   ackedPacket   packet that contains the original data, both packets have to
- *                 come from the same direction of the same connection
+ *   ackSegment    packet that is the confirmation
+ *   ackedSegment  packet that contains the original data, both packets have to
+ *                 come from the same direction of the same connection. Both
+ *                 messages have to contain TCP events.
  */
-bool isAcking(const Packet* const ackPacket, const Packet* const
-	ackedPacket)
+bool isAcking(const Message* const ackSegment, const Message* const
+	ackedSegment)
 {
-	if (SEQ_GT(ackPacket->inE->packetKey->ack_seq,
-			ackedPacket->inE->packetKey->seq))
+	g_assert(ackSegment->inE->type == TCP);
+	g_assert(ackSegment->outE->type == TCP);
+
+	if (SEQ_GT(ackSegment->inE->event.tcpEvent->segmentKey->ack_seq,
+			ackedSegment->inE->event.tcpEvent->segmentKey->seq))
     {
         return true;
     }
@@ -108,41 +112,48 @@ void convertIP(char* const str, const uint32_t addr)
 
 
 /*
- * Print the content of a Packet structure
+ * Print the content of a TCP Message structure
  */
-void printPacket(const Packet* const packet)
+void printTCPSegment(const Message* const segment)
 {
 	char saddr[17], daddr[17];
-	PacketKey* packetKey;
+	SegmentKey* segmentKey;
 
-	packetKey= packet->inE->packetKey;
+	g_assert(segment->inE->type == TCP);
+	g_assert(segment->inE->event.tcpEvent->segmentKey ==
+		segment->outE->event.tcpEvent->segmentKey);
 
-	convertIP(saddr, packetKey->connectionKey.saddr);
-	convertIP(daddr, packetKey->connectionKey.daddr);
+	segmentKey= segment->inE->event.tcpEvent->segmentKey;
+
+	convertIP(saddr, segmentKey->connectionKey.saddr);
+	convertIP(daddr, segmentKey->connectionKey.daddr);
 	g_debug("%s:%u to %s:%u tot_len: %u ihl: %u seq: %u ack_seq: %u doff: %u "
 		"ack: %u rst: %u syn: %u fin: %u", saddr,
-		packetKey->connectionKey.source, daddr, packetKey->connectionKey.dest,
-		packetKey->tot_len, packetKey->ihl, packetKey->seq,
-		packetKey->ack_seq, packetKey->doff, packetKey->ack, packetKey->rst,
-		packetKey->syn, packetKey->fin);
+		segmentKey->connectionKey.source, daddr, segmentKey->connectionKey.dest,
+		segmentKey->tot_len, segmentKey->ihl, segmentKey->seq,
+		segmentKey->ack_seq, segmentKey->doff, segmentKey->ack, segmentKey->rst,
+		segmentKey->syn, segmentKey->fin);
 }
 
 
 /*
  * A GHashFunc for g_hash_table_new()
  *
- * This function is for indexing netEvents in unMatched lists. All fields of
- * the corresponding packet must match for two keys to be equal.
+ * This function is for indexing TCPEvents in unMatched lists. All fields of
+ * the corresponding SegmentKey must match for two keys to be equal.
  *
  * Args:
- *    key        PacketKey*
+ *   key           SegmentKey*
+ *
+ * Returns:
+ *   A hash of all fields in the SegmentKey
  */
-guint ghfPacketKeyHash(gconstpointer key)
+guint ghfSegmentKeyHash(gconstpointer key)
 {
-	const PacketKey* p;
+	const SegmentKey* p;
 	uint32_t a, b, c;
 
-	p= (PacketKey*) key;
+	p= (SegmentKey*) key;
 
 	a= p->connectionKey.source + (p->connectionKey.dest << 16);
 	b= p->connectionKey.saddr;
@@ -157,6 +168,8 @@ guint ghfPacketKeyHash(gconstpointer key)
 	a+= p->ack + (p->rst << 8) + (p->syn << 16) + (p->fin << 24);
 	final(a, b, c);
 
+	g_debug("segment key hash %p: %u", p, c);
+
 	return c;
 }
 
@@ -164,37 +177,39 @@ guint ghfPacketKeyHash(gconstpointer key)
 /*
  * A GEqualFunc for g_hash_table_new()
  *
- * This function is for indexing netEvents in unMatched lists. All fields of
- * the corresponding packet must match for two keys to be equal.
+ * This function is for indexing TCPEvents in unMatched lists. All fields of
+ * the corresponding SegmentKey must match for two keys to be equal.
  *
  * Args:
- *   a, b          PacketKey*
+ *   a, b          SegmentKey*
  *
  * Returns:
  *   TRUE if both values are equal
  */
-gboolean gefPacketKeyEqual(gconstpointer a, gconstpointer b)
+gboolean gefSegmentKeyEqual(gconstpointer a, gconstpointer b)
 {
-	const PacketKey* pA, * pB;
+	const SegmentKey* sA, * sB;
 
-	pA= ((PacketKey*) a);
-	pB= ((PacketKey*) b);
+	sA= (SegmentKey*) a;
+	sB= (SegmentKey*) b;
 
-	if (connectionKeyEqual(&pA->connectionKey, &pB->connectionKey) &&
-		pA->ihl == pB->ihl &&
-		pA->tot_len == pB->tot_len &&
-		pA->seq == pB->seq &&
-		pA->ack_seq == pB->ack_seq &&
-		pA->doff == pB->doff &&
-		pA->ack == pB->ack &&
-		pA->rst == pB->rst &&
-		pA->syn == pB->syn &&
-		pA->fin == pB->fin)
+	if (connectionKeyEqual(&sA->connectionKey, &sB->connectionKey) &&
+		sA->ihl == sB->ihl &&
+		sA->tot_len == sB->tot_len &&
+		sA->seq == sB->seq &&
+		sA->ack_seq == sB->ack_seq &&
+		sA->doff == sB->doff &&
+		sA->ack == sB->ack &&
+		sA->rst == sB->rst &&
+		sA->syn == sB->syn &&
+		sA->fin == sB->fin)
 	{
+		g_debug("segment key equal %p %p: TRUE", sA, sB);
 		return TRUE;
 	}
 	else
 	{
+		g_debug("segment key equal %p %p: FALSE", sA, sB);
 		return FALSE;
 	}
 }
@@ -204,11 +219,13 @@ gboolean gefPacketKeyEqual(gconstpointer a, gconstpointer b)
  * A GDestroyNotify function for g_hash_table_new_full()
  *
  * Args:
- *   data:         NetEvent*
+ *   data:         Event*
  */
-void gdnDestroyNetEvent(gpointer data)
+void gdnDestroyEvent(gpointer data)
 {
-	destroyNetEvent((NetEvent*) data);
+	Event* event= data;
+
+	event->destroy(event);
 }
 
 
@@ -218,15 +235,15 @@ void gdnDestroyNetEvent(gpointer data)
  * Args:
  *   data:         GQueue* list[Packet]
  */
-void gdnPacketListDestroy(gpointer data)
+void gdnTCPSegmentListDestroy(gpointer data)
 {
 	GQueue* list;
 
 	list= (GQueue*) data;
 
-	g_debug("XXXX gdnPacketListDestroy\n");
+	g_debug("XXXX gdnTCPSegmentListDestroy\n");
 
-	g_queue_foreach(list, &gfPacketDestroy, NULL);
+	g_queue_foreach(list, &gfTCPSegmentDestroy, NULL);
 	g_queue_free(list);
 }
 
@@ -235,56 +252,108 @@ void gdnPacketListDestroy(gpointer data)
  * A GFunc for g_queue_foreach()
  *
  * Args:
- *   data          Packet*, packet to destroy
+ *   data          Message*, TCP message to destroy
  *   user_data     NULL
  */
-void gfPacketDestroy(gpointer data, gpointer user_data)
+void gfTCPSegmentDestroy(gpointer data, gpointer user_data)
 {
-	g_debug("XXXX gfPacketDestroy\n");
-	destroyPacket((Packet*) data);
+	g_debug("XXXX gfTCPSegmentDestroy\n");
+	destroyTCPSegment((Message*) data);
 }
 
 
 /*
- * Free the memory used by a Packet and the memory of all its associated
+ * Free the memory used by a TCP Message and the memory of all its associated
  * resources
+ *
+ * Args:
+ *   segment       TCP Message to destroy
  */
-void destroyPacket(Packet* const packet)
+void destroyTCPSegment(Message* const segment)
 {
-	g_debug("XXXX destroyPacket ");
-	printPacket(packet);
-	g_debug("\n");
+	TCPEvent* inE, *outE;
 
-	g_assert(packet->inE != NULL && packet->outE != NULL &&
-		packet->inE->packetKey == packet->outE->packetKey);
+	g_debug("XXXX destroyTCPSegment");
+	segment->print(segment);
 
-	packet->outE->packetKey= NULL;
+	g_assert(segment->inE != NULL && segment->outE != NULL);
+	g_assert(segment->inE->type == TCP && segment->outE->type == TCP);
+	inE= segment->inE->event.tcpEvent;
+	outE= segment->outE->event.tcpEvent;
+	g_assert(inE->segmentKey == outE->segmentKey);
 
-	destroyNetEvent(packet->inE);
-	destroyNetEvent(packet->outE);
+	outE->segmentKey= NULL;
 
-	if (packet->acks != NULL)
-	{
-		g_queue_foreach(packet->acks, &gfPacketDestroy, NULL);
-		g_queue_free(packet->acks);
-	}
+	destroyTCPEvent(segment->inE);
+	destroyTCPEvent(segment->outE);
 
-	free(packet);
+	free(segment);
 }
 
 
 /*
- * Free the memory used by a NetEvent
+ * Free the memory used by a TCP Exchange and the memory of SOME of its
+ * associated resources. The message is not destroyed. Use destroyTCPSegment()
+ * to free it.
+ *
+ * Args:
+ *   exchange      TCP Exchange to destroy. The .message must be NULL
  */
-void destroyNetEvent(NetEvent* const event)
+void destroyTCPExchange(Exchange* const exchange)
 {
-	g_debug("XXXX destroyNetEvent\n");
+	g_assert(exchange->message == NULL);
 
-	if (event->packetKey != NULL)
+	if (exchange->acks != NULL)
 	{
-		free(event->packetKey);
+		g_queue_foreach(exchange->acks, &gfTCPSegmentDestroy, NULL);
+		g_queue_free(exchange->acks);
 	}
+
+	free(exchange);
+}
+
+
+/*
+ * Free the memory used by a TCP Event and its associated resources
+ */
+void destroyTCPEvent(Event* const event)
+{
+	g_assert(event->type == TCP);
+
+	if (event->event.tcpEvent->segmentKey != NULL)
+	{
+		free(event->event.tcpEvent->segmentKey);
+	}
+	free(event->event.tcpEvent);
+	event->event.tcpEvent= NULL;
+	destroyEvent(event);
+}
+
+/*
+ * Free the memory used by a base Event
+ */
+void destroyEvent(Event* const event)
+{
+	g_assert(event->event.tcpEvent == NULL);
+
 	free(event);
+}
+
+
+/*
+ * Free the memory used by a UDP Event and its associated resources
+ */
+void destroyUDPEvent(Event* const event)
+{
+	g_assert(event->type == UDP);
+
+	if (event->event.udpEvent->datagramKey != NULL)
+	{
+		free(event->event.udpEvent->datagramKey);
+	}
+	free(event->event.udpEvent);
+	event->event.udpEvent= NULL;
+	destroyEvent(event);
 }
 
 
@@ -292,15 +361,15 @@ void destroyNetEvent(NetEvent* const event)
  * A GCompareFunc for g_queue_find_custom()
  *
  * Args:
- *   a          Packet* acked packet
- *   b          Packet* ack packet
+ *   a          Message* acked packet
+ *   b          Message* ack packet
  *
  * Returns:
  *   0 if b acks a
  */
-gint gcfPacketAckCompare(gconstpointer a, gconstpointer b)
+gint gcfTCPSegmentAckCompare(gconstpointer a, gconstpointer b)
 {
-	if (isAcking((const Packet*) b, (const Packet*) a))
+	if (isAcking((const Message*) b, (const Message*) a))
 	{
 		return 0;
 	}

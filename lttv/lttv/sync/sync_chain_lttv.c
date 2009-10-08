@@ -34,7 +34,7 @@
 #include <lttv/module.h>
 #include <lttv/option.h>
 
-#include "sync_chain.h"
+#include "sync_chain_lttv.h"
 
 
 #ifndef g_info

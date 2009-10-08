@@ -20,7 +20,7 @@
 #include <config.h>
 #endif
 
-#include "event_processing_lttv_common.h"
+#include "event_processing_lttng_common.h"
 
 
 #ifndef g_info

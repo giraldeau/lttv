@@ -22,10 +22,10 @@
 
 #include <stdlib.h>
 
-#include "sync_chain.h"
-#include "event_processing_lttv_common.h"
+#include "sync_chain_lttv.h"
+#include "event_processing_lttng_common.h"
 
-#include "event_processing_lttv_null.h"
+#include "event_processing_lttng_null.h"
 
 
 #ifndef g_info

@@ -28,10 +28,10 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "sync_chain.h"
-#include "event_processing_lttv_common.h"
+#include "sync_chain_lttv.h"
+#include "event_processing_lttng_common.h"
 
-#include "event_processing_lttv_standard.h"
+#include "event_processing_lttng_standard.h"
 
 
 #ifndef g_info
@@ -127,7 +127,7 @@ static void initProcessingLTTVStandard(SyncState* const syncState, LttvTracesetC
 	for(i= 0; i < syncState->traceNb; i++)
 	{
 		processingData->pendingRecv[i]= g_hash_table_new_full(&g_direct_hash,
-			NULL, NULL, &gdnDestroyNetEvent);
+			NULL, NULL, &gdnDestroyEvent);
 	}
 
 	registerHooks(processingData->hookListList, traceSetContext,
@@ -218,8 +218,6 @@ static void finalizeProcessingLTTVStandard(SyncState* const syncState)
 		processingData->traceSetContext->time_span.start_time.tv_nsec,
 		processingData->traceSetContext->time_span.end_time.tv_sec,
 		processingData->traceSetContext->time_span.end_time.tv_nsec);
-
-	return;
 }
 
 
@@ -386,7 +384,7 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 	if (info->name == LTT_EVENT_DEV_XMIT)
 	{
-		NetEvent* outE;
+		Event* outE;
 
 		if (!ltt_event_get_unsigned(event,
 				lttv_trace_get_hook_field(traceHook, 1)) == ETH_P_IP ||
@@ -401,40 +399,48 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 			processingData->stats->totOutE++;
 		}
 
-		outE= malloc(sizeof(NetEvent));
-		outE->packetKey= malloc(sizeof(PacketKey));
-
+		outE= malloc(sizeof(Event));
 		outE->traceNum= traceNum;
-		outE->tsc= tsc;
-		outE->skb= NULL;
-		outE->packetKey->connectionKey.saddr= ltt_event_get_unsigned(event,
-			lttv_trace_get_hook_field(traceHook, 3));
-		outE->packetKey->connectionKey.daddr= ltt_event_get_unsigned(event,
-			lttv_trace_get_hook_field(traceHook, 4));
-		outE->packetKey->tot_len= ltt_event_get_unsigned(event,
-			lttv_trace_get_hook_field(traceHook, 5));
-		outE->packetKey->ihl= ltt_event_get_unsigned(event,
+		outE->time= tsc;
+		outE->type= TCP;
+		outE->destroy= &destroyTCPEvent;
+		outE->event.tcpEvent= malloc(sizeof(TCPEvent));
+		outE->event.tcpEvent->direction= OUT;
+		outE->event.tcpEvent->segmentKey= malloc(sizeof(SegmentKey));
+		outE->event.tcpEvent->segmentKey->connectionKey.saddr=
+			ltt_event_get_unsigned(event, lttv_trace_get_hook_field(traceHook,
+					3));
+		outE->event.tcpEvent->segmentKey->connectionKey.daddr=
+			ltt_event_get_unsigned(event, lttv_trace_get_hook_field(traceHook,
+					4));
+		outE->event.tcpEvent->segmentKey->tot_len=
+			ltt_event_get_unsigned(event, lttv_trace_get_hook_field(traceHook,
+					5));
+		outE->event.tcpEvent->segmentKey->ihl= ltt_event_get_unsigned(event,
 			lttv_trace_get_hook_field(traceHook, 6));
-		outE->packetKey->connectionKey.source= ltt_event_get_unsigned(event,
-			lttv_trace_get_hook_field(traceHook, 7));
-		outE->packetKey->connectionKey.dest= ltt_event_get_unsigned(event,
-			lttv_trace_get_hook_field(traceHook, 8));
-		outE->packetKey->seq= ltt_event_get_unsigned(event,
+		outE->event.tcpEvent->segmentKey->connectionKey.source=
+			ltt_event_get_unsigned(event, lttv_trace_get_hook_field(traceHook,
+					7));
+		outE->event.tcpEvent->segmentKey->connectionKey.dest=
+			ltt_event_get_unsigned(event, lttv_trace_get_hook_field(traceHook,
+					8));
+		outE->event.tcpEvent->segmentKey->seq= ltt_event_get_unsigned(event,
 			lttv_trace_get_hook_field(traceHook, 9));
-		outE->packetKey->ack_seq= ltt_event_get_unsigned(event,
-			lttv_trace_get_hook_field(traceHook, 10));
-		outE->packetKey->doff= ltt_event_get_unsigned(event,
+		outE->event.tcpEvent->segmentKey->ack_seq=
+			ltt_event_get_unsigned(event, lttv_trace_get_hook_field(traceHook,
+					10));
+		outE->event.tcpEvent->segmentKey->doff= ltt_event_get_unsigned(event,
 			lttv_trace_get_hook_field(traceHook, 11));
-		outE->packetKey->ack= ltt_event_get_unsigned(event,
+		outE->event.tcpEvent->segmentKey->ack= ltt_event_get_unsigned(event,
 			lttv_trace_get_hook_field(traceHook, 12));
-		outE->packetKey->rst= ltt_event_get_unsigned(event,
+		outE->event.tcpEvent->segmentKey->rst= ltt_event_get_unsigned(event,
 			lttv_trace_get_hook_field(traceHook, 13));
-		outE->packetKey->syn= ltt_event_get_unsigned(event,
+		outE->event.tcpEvent->segmentKey->syn= ltt_event_get_unsigned(event,
 			lttv_trace_get_hook_field(traceHook, 14));
-		outE->packetKey->fin= ltt_event_get_unsigned(event,
+		outE->event.tcpEvent->segmentKey->fin= ltt_event_get_unsigned(event,
 			lttv_trace_get_hook_field(traceHook, 15));
 
-		syncState->matchingModule->matchEvent(syncState, outE, OUT);
+		syncState->matchingModule->matchEvent(syncState, outE);
 
 		g_debug("Output event done\n");
 	}
@@ -452,25 +458,26 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 
 		if (protocol == ETH_P_IP)
 		{
-			NetEvent* inE;
+			Event* inE;
+			void* skb;
 
 			if (syncState->stats)
 			{
 				processingData->stats->totRecvIp++;
 			}
 
-			inE= malloc(sizeof(NetEvent));
-
+			inE= malloc(sizeof(Event));
 			inE->traceNum= traceNum;
-			inE->tsc= tsc;
-			inE->skb= (void*) (long) ltt_event_get_long_unsigned(event,
+			inE->time= tsc;
+			inE->event.tcpEvent= NULL;
+			inE->destroy= &destroyEvent;
+
+			skb= (void*) (long) ltt_event_get_long_unsigned(event,
 				lttv_trace_get_hook_field(traceHook, 0));
-			inE->packetKey= NULL;
+			g_hash_table_replace(processingData->pendingRecv[traceNum], skb,
+				inE);
 
-			g_hash_table_replace(processingData->pendingRecv[traceNum],
-				inE->skb, inE);
-
-			g_debug("Adding inE %p for skb %p to pendingRecv\n", inE, inE->skb);
+			g_debug("Adding inE %p for skb %p to pendingRecv\n", inE, skb);
 		}
 		else
 		{
@@ -479,14 +486,14 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 	}
 	else if (info->name == LTT_EVENT_TCPV4_RCV)
 	{
-		NetEvent* inE;
+		Event* inE;
 		void* skb;
 
 		// Search pendingRecv for an event with the same skb
 		skb= (void*) (long) ltt_event_get_long_unsigned(event,
 			lttv_trace_get_hook_field(traceHook, 0));
 
-		inE= (NetEvent*)
+		inE= (Event*)
 			g_hash_table_lookup(processingData->pendingRecv[traceNum], skb);
 		if (inE == NULL)
 		{
@@ -503,36 +510,52 @@ static gboolean processEventLTTVStandard(void* hookData, void* callData)
 			// If it's there, remove it and proceed with a receive event
 			g_hash_table_steal(processingData->pendingRecv[traceNum], skb);
 
-			inE->packetKey= malloc(sizeof(PacketKey));
+			inE->type= TCP;
+			inE->event.tcpEvent= malloc(sizeof(TCPEvent));
+			inE->destroy= &destroyTCPEvent;
+			inE->event.tcpEvent->direction= IN;
+			inE->event.tcpEvent->segmentKey= malloc(sizeof(SegmentKey));
+			inE->event.tcpEvent->segmentKey->connectionKey.saddr=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 1));
+			inE->event.tcpEvent->segmentKey->connectionKey.daddr=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 2));
+			inE->event.tcpEvent->segmentKey->tot_len=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 3));
+			inE->event.tcpEvent->segmentKey->ihl=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 4));
+			inE->event.tcpEvent->segmentKey->connectionKey.source=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 5));
+			inE->event.tcpEvent->segmentKey->connectionKey.dest=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 6));
+			inE->event.tcpEvent->segmentKey->seq=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 7));
+			inE->event.tcpEvent->segmentKey->ack_seq=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 8));
+			inE->event.tcpEvent->segmentKey->doff=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 9));
+			inE->event.tcpEvent->segmentKey->ack=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 10));
+			inE->event.tcpEvent->segmentKey->rst=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 11));
+			inE->event.tcpEvent->segmentKey->syn=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 12));
+			inE->event.tcpEvent->segmentKey->fin=
+				ltt_event_get_unsigned(event,
+					lttv_trace_get_hook_field(traceHook, 13));
 
-			inE->packetKey->connectionKey.saddr= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 1));
-			inE->packetKey->connectionKey.daddr= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 2));
-			inE->packetKey->tot_len= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 3));
-			inE->packetKey->ihl= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 4));
-			inE->packetKey->connectionKey.source= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 5));
-			inE->packetKey->connectionKey.dest= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 6));
-			inE->packetKey->seq= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 7));
-			inE->packetKey->ack_seq= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 8));
-			inE->packetKey->doff= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 9));
-			inE->packetKey->ack= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 10));
-			inE->packetKey->rst= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 11));
-			inE->packetKey->syn= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 12));
-			inE->packetKey->fin= ltt_event_get_unsigned(event,
-				lttv_trace_get_hook_field(traceHook, 13));
-
-			syncState->matchingModule->matchEvent(syncState, inE, IN);
+			syncState->matchingModule->matchEvent(syncState, inE);
 
 			g_debug("Input event %p for skb %p done\n", inE, skb);
 		}

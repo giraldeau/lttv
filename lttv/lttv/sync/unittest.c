@@ -34,7 +34,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include "sync_chain.h"
+#include "sync_chain_lttv.h"
 
 
 #ifndef g_info
@@ -616,7 +616,7 @@ static void processEvents(SyncState* const syncState, FILE* testCase)
 		unsigned int sender, receiver;
 		double sendTime, recvTime;
 		char tmp;
-		NetEvent* event;
+		Event* event;
 
 		if (retval == -1 && !feof(testCase))
 		{
@@ -650,48 +650,54 @@ static void processEvents(SyncState* const syncState, FILE* testCase)
 		}
 
 		// Output event
-		event= malloc(sizeof(NetEvent));
+		event= malloc(sizeof(Event));
 		event->traceNum= sender;
-		event->tsc= round(sendTime * freq);
-		event->skb= NULL;
-		event->packetKey= malloc(sizeof(PacketKey));
-		event->packetKey->ihl= 5;
-		event->packetKey->tot_len= 40;
-		event->packetKey->connectionKey.saddr= sender + addressOffset;
-		event->packetKey->connectionKey.daddr= receiver + addressOffset;
-		event->packetKey->connectionKey.source= 57645;
-		event->packetKey->connectionKey.dest= 80;
-		event->packetKey->seq= seq[sender];
-		event->packetKey->ack_seq= 0;
-		event->packetKey->doff= 5;
-		event->packetKey->ack= 0;
-		event->packetKey->rst= 0;
-		event->packetKey->syn= 1;
-		event->packetKey->fin= 0;
+		event->time= round(sendTime * freq);
+		event->type= TCP;
+		event->destroy= &destroyTCPEvent;
+		event->event.tcpEvent= malloc(sizeof(TCPEvent));
+		event->event.tcpEvent->direction= OUT;
+		event->event.tcpEvent->segmentKey= malloc(sizeof(SegmentKey));
+		event->event.tcpEvent->segmentKey->ihl= 5;
+		event->event.tcpEvent->segmentKey->tot_len= 40;
+		event->event.tcpEvent->segmentKey->connectionKey.saddr= sender + addressOffset;
+		event->event.tcpEvent->segmentKey->connectionKey.daddr= receiver + addressOffset;
+		event->event.tcpEvent->segmentKey->connectionKey.source= 57645;
+		event->event.tcpEvent->segmentKey->connectionKey.dest= 80;
+		event->event.tcpEvent->segmentKey->seq= seq[sender];
+		event->event.tcpEvent->segmentKey->ack_seq= 0;
+		event->event.tcpEvent->segmentKey->doff= 5;
+		event->event.tcpEvent->segmentKey->ack= 0;
+		event->event.tcpEvent->segmentKey->rst= 0;
+		event->event.tcpEvent->segmentKey->syn= 1;
+		event->event.tcpEvent->segmentKey->fin= 0;
 
-		syncState->matchingModule->matchEvent(syncState, event, OUT);
+		syncState->matchingModule->matchEvent(syncState, event);
 
 		// Input event
-		event= malloc(sizeof(NetEvent));
+		event= malloc(sizeof(Event));
 		event->traceNum= receiver;
-		event->tsc= round(recvTime * freq);
-		event->skb= NULL;
-		event->packetKey= malloc(sizeof(PacketKey));
-		event->packetKey->ihl= 5;
-		event->packetKey->tot_len= 40;
-		event->packetKey->connectionKey.saddr= sender + addressOffset;
-		event->packetKey->connectionKey.daddr= receiver + addressOffset;
-		event->packetKey->connectionKey.source= 57645;
-		event->packetKey->connectionKey.dest= 80;
-		event->packetKey->seq= seq[sender];
-		event->packetKey->ack_seq= 0;
-		event->packetKey->doff= 5;
-		event->packetKey->ack= 0;
-		event->packetKey->rst= 0;
-		event->packetKey->syn= 1;
-		event->packetKey->fin= 0;
+		event->time= round(recvTime * freq);
+		event->type= TCP;
+		event->destroy= &destroyTCPEvent;
+		event->event.tcpEvent= malloc(sizeof(TCPEvent));
+		event->event.tcpEvent->direction= IN;
+		event->event.tcpEvent->segmentKey= malloc(sizeof(SegmentKey));
+		event->event.tcpEvent->segmentKey->ihl= 5;
+		event->event.tcpEvent->segmentKey->tot_len= 40;
+		event->event.tcpEvent->segmentKey->connectionKey.saddr= sender + addressOffset;
+		event->event.tcpEvent->segmentKey->connectionKey.daddr= receiver + addressOffset;
+		event->event.tcpEvent->segmentKey->connectionKey.source= 57645;
+		event->event.tcpEvent->segmentKey->connectionKey.dest= 80;
+		event->event.tcpEvent->segmentKey->seq= seq[sender];
+		event->event.tcpEvent->segmentKey->ack_seq= 0;
+		event->event.tcpEvent->segmentKey->doff= 5;
+		event->event.tcpEvent->segmentKey->ack= 0;
+		event->event.tcpEvent->segmentKey->rst= 0;
+		event->event.tcpEvent->segmentKey->syn= 1;
+		event->event.tcpEvent->segmentKey->fin= 0;
 
-		syncState->matchingModule->matchEvent(syncState, event, IN);
+		syncState->matchingModule->matchEvent(syncState, event);
 
 		seq[sender]++;
 

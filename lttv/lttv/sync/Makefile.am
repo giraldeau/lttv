@@ -5,7 +5,7 @@ check_PROGRAMS = unittest
 
 unittest_SOURCES = \
 	unittest.c\
-	data_structures_tcp.c\
+	data_structures.c\
 	event_matching_tcp.c\
 	event_analysis_linreg.c\
 	event_analysis_chull.c

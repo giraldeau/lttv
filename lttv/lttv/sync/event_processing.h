@@ -24,7 +24,7 @@
 
 #include <lttv/tracecontext.h>
 
-#include "data_structures_tcp.h"
+#include "data_structures.h"
 
 
 struct _SyncState;

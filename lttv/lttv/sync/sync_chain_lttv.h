@@ -16,8 +16,8 @@
  * MA 02111-1307, USA.
  */
 
-#ifndef SYNC_CHAIN_H
-#define SYNC_CHAIN_H
+#ifndef SYNC_CHAIN_LTTV_H
+#define SYNC_CHAIN_LTTV_H
 
 #include <glib.h>
 

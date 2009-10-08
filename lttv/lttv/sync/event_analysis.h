@@ -22,7 +22,7 @@
 #include <glib.h>
 #include <stdio.h>
 
-#include "data_structures_tcp.h"
+#include "data_structures.h"
 
 
 struct _SyncState;
@@ -34,10 +34,12 @@ typedef struct
 	void (*initAnalysis)(struct _SyncState* const syncState);
 	void (*destroyAnalysis)(struct _SyncState* const syncState);
 
-	void (*analyzePacket)(struct _SyncState* const syncState, Packet* const
-		packet);
-	void (*analyzeExchange)(struct _SyncState* const syncState, Packet* const
-		packet);
+	void (*analyzeMessage)(struct _SyncState* const syncState, Message* const
+		message);
+	void (*analyzeExchange)(struct _SyncState* const syncState, Exchange* const
+		exchange);
+	void (*analyzeBroadcast)(struct _SyncState* const syncState, Broadcast* const
+		broadcast);
 	GArray* (*finalizeAnalysis)(struct _SyncState* const syncState);
 	void (*printAnalysisStats)(struct _SyncState* const syncState);
 	void (*writeAnalysisGraphsPlots)(FILE* stream, struct _SyncState* const

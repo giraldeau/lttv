@@ -34,7 +34,7 @@
 #include <lttv/stats.h>
 #include <lttv/filter.h>
 #include <ltt/trace.h>
-#include <lttv/sync/sync_chain.h>
+#include <lttv/sync/sync_chain_lttv.h>
 
 static LttvTraceset *traceset;
 

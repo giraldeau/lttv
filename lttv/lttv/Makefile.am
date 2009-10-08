@@ -55,11 +55,11 @@ lttv_real_SOURCES = \
 	traceset.c\
 	filter.c\
 	print.c\
-	sync/sync_chain.c\
-	sync/data_structures_tcp.c\
-	sync/event_processing_lttv_common.c\
-	sync/event_processing_lttv_standard.c\
-	sync/event_processing_lttv_null.c\
+	sync/sync_chain_lttv.c\
+	sync/data_structures.c\
+	sync/event_processing_lttng_common.c\
+	sync/event_processing_lttng_standard.c\
+	sync/event_processing_lttng_null.c\
 	sync/event_matching_tcp.c\
 	sync/event_analysis_linreg.c\
 	sync/event_analysis_chull.c

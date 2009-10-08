@@ -27,7 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "sync_chain.h"
+#include "sync_chain_lttv.h"
 
 #include "event_analysis_linreg.h"
 
@@ -41,7 +41,7 @@
 static void initAnalysisLinReg(SyncState* const syncState);
 static void destroyAnalysisLinReg(SyncState* const syncState);
 
-static void analyzeExchangeLinReg(SyncState* const syncState, Packet* const packet);
+static void analyzeExchangeLinReg(SyncState* const syncState, Exchange* const exchange);
 static GArray* finalizeAnalysisLinReg(SyncState* const syncState);
 static void printAnalysisStatsLinReg(SyncState* const syncState);
 static void writeAnalysisGraphsPlotsLinReg(FILE* stream, SyncState* const
@@ -71,8 +71,9 @@ static AnalysisModule analysisModuleLinReg= {
 	.name= "linreg",
 	.initAnalysis= &initAnalysisLinReg,
 	.destroyAnalysis= &destroyAnalysisLinReg,
-	.analyzePacket= NULL,
+	.analyzeMessage= NULL,
 	.analyzeExchange= &analyzeExchangeLinReg,
+	.analyzeBroadcast= NULL,
 	.finalizeAnalysis= &finalizeAnalysisLinReg,
 	.printAnalysisStats= &printAnalysisStatsLinReg,
 	.writeAnalysisGraphsPlots= &writeAnalysisGraphsPlotsLinReg,
@@ -170,47 +171,38 @@ static void destroyAnalysisLinReg(SyncState* const syncState)
 /*
  * Perform analysis on a series of event pairs.
  *
- * If one event pair is a packet, an exchange is composed of at least two
- * packets, one in each direction. There should be a non-negative minimum
- * "round trip time" (RTT) between the first and last event of the exchange.
- * This RTT should be as small as possible so these packets should be closely
- * related in time like a data packet and an acknowledgement packet. If the
- * events analyzed are such that the minimum RTT can be zero, there's nothing
- * gained in analyzing exchanges beyond what can already be figured out by
- * analyzing packets.
- *
- * An exchange can also consist of more than two packets, in case one packet
- * single handedly acknowledges many data packets.
- *
  * Args:
  *   syncState     container for synchronization data
- *   packet        structure containing the many events
+ *   exchange      structure containing the many events
  */
-static void analyzeExchangeLinReg(SyncState* const syncState, Packet* const packet)
+static void analyzeExchangeLinReg(SyncState* const syncState, Exchange* const exchange)
 {
 	unsigned int ni, nj;
 	double dji, eji;
 	double timoy;
 	Fit* fit;
-	Packet* ackedPacket;
+	Message* ackedMessage;
 	AnalysisDataLinReg* analysisData;
 
 	g_debug("Synchronization calculation, ");
 	g_debug("%d acked packets - using last one, ",
-		g_queue_get_length(packet->acks));
+		g_queue_get_length(exchange->acks));
 
 	analysisData= (AnalysisDataLinReg*) syncState->analysisData;
-	ackedPacket= g_queue_peek_tail(packet->acks);
+	ackedMessage= g_queue_peek_tail(exchange->acks);
 
 	// Calculate the intermediate values for the
 	// least-squares analysis
-	dji= ((double) ackedPacket->inE->tsc - (double) ackedPacket->outE->tsc +
-		(double) packet->outE->tsc - (double) packet->inE->tsc) / 2;
-	eji= fabs((double) ackedPacket->inE->tsc - (double) ackedPacket->outE->tsc
-		- (double) packet->outE->tsc + (double) packet->inE->tsc) / 2;
-	timoy= ((double) ackedPacket->outE->tsc + (double) packet->inE->tsc) / 2;
-	ni= ackedPacket->outE->traceNum;
-	nj= ackedPacket->inE->traceNum;
+	dji= ((double) ackedMessage->inE->time - (double) ackedMessage->outE->time
+		+ (double) exchange->message->outE->time - (double)
+		exchange->message->inE->time) / 2;
+	eji= fabs((double) ackedMessage->inE->time - (double)
+		ackedMessage->outE->time - (double) exchange->message->outE->time +
+		(double) exchange->message->inE->time) / 2;
+	timoy= ((double) ackedMessage->outE->time + (double)
+		exchange->message->inE->time) / 2;
+	ni= ackedMessage->outE->traceNum;
+	nj= ackedMessage->inE->traceNum;
 	fit= &analysisData->fitArray[nj][ni];
 
 	fit->n++;
