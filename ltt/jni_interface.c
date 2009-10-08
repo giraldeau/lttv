@@ -30,14 +30,15 @@
 
 #if __WORDSIZE == 64
         #define CONVERT_JLONG_TO_PTR(p) (p)
+	#define CONVERT_PTR_TO_JLONG(p) (jlong)(p)
         // Define the "gint" type we should use for pointer.
-        #define GINT_TYPE_FOR_PTR gint32
+        #define GINT_TYPE_FOR_PTR gint64
 #else
         // Conversion to int first to save warning
         #define CONVERT_JLONG_TO_PTR(p) (int)(p)
         #define CONVERT_PTR_TO_JLONG(p) (jlong)(int)(p)
         // Define the "gint" type we should use for pointer.
-        #define GINT_TYPE_FOR_PTR gint64
+        #define GINT_TYPE_FOR_PTR gint32
 #endif
 
 // Structure to encapsulate java_data to pass as arguments
@@ -61,7 +62,7 @@ struct addMarkersArgs
 // JNI method to call printf from the java side
 JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_Jni_1C_1Common_ltt_1printC(JNIEnv* env, jobject jobj, jstring new_string)
 {
-    printf( (*env)->GetStringUTFChars(env, new_string, 0) );
+        printf("%s", (*env)->GetStringUTFChars(env, new_string, 0) );
 }
 
 // #
@@ -249,13 +250,13 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTrace_ltt_1print
         printf("start_freq              : %lu\n"    ,(long unsigned int)(newPtr->start_freq) );
         printf("start_tsc               : %lu\n"    ,(long unsigned int)(newPtr->start_tsc) );
         printf("start_monotonic         : %lu\n"    ,(long unsigned int)(newPtr->start_monotonic) );
-        printf("start_time ptr          : 0x%p\n"   ,&newPtr->start_time);
+        printf("start_time ptr          : %p\n"     ,&newPtr->start_time);
         printf("   tv_sec               : %lu\n"    ,(long unsigned int)(newPtr->start_time.tv_sec) );
         printf("   tv_nsec              : %lu\n"    ,(long unsigned int)(newPtr->start_time.tv_nsec) );
-        printf("start_time_from_tsc ptr : 0x%p\n"   ,&newPtr->start_time_from_tsc);
+        printf("start_time_from_tsc ptr : %p\n"     ,&newPtr->start_time_from_tsc);
         printf("   tv_sec               : %lu\n"    ,(long unsigned int)(newPtr->start_time_from_tsc.tv_sec) );
         printf("   tv_nsec              : %lu\n"    ,(long unsigned int)(newPtr->start_time_from_tsc.tv_nsec) );
-        printf("tracefiles ptr          : 0x%p\n"   ,newPtr->tracefiles);
+        printf("tracefiles ptr          : %p\n"     ,newPtr->tracefiles);
         printf("\n");
 }
 // #
@@ -483,8 +484,8 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTracefile_ltt_1p
         printf("tid                     : %u\n"     ,(unsigned int)(newPtr->tid));
         printf("pgid                    : %u\n"     ,(unsigned int)(newPtr->pgid));
         printf("creation                : %lu\n"    ,(long unsigned int)(newPtr->creation));
-        printf("trace ptr               : 0x%p\n"   ,newPtr->trace);
-        printf("marker ptr              : 0x%p\n"   ,newPtr->mdata);
+        printf("trace ptr               : %p\n"     ,newPtr->trace);
+        printf("marker ptr              : %p\n"     ,newPtr->mdata);
         printf("fd                      : %i\n"     ,(int)(newPtr->fd));
         printf("file_size               : %u\n"     ,(unsigned int)(newPtr->file_size));
         printf("num_blocks              : %u\n"     ,(unsigned int)(newPtr->num_blocks));
@@ -498,8 +499,8 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniTracefile_ltt_1p
         printf("tsc_mask_next_bit       : %lu\n"    ,(long unsigned int)newPtr->tsc_mask_next_bit);
         printf("events_lost             : %u\n"     ,(unsigned int)newPtr->events_lost);
         printf("subbuf_corrupt          : %u\n"     ,(unsigned int)newPtr->subbuf_corrupt);
-        printf("event ptr               : 0x%p\n"   ,&newPtr->event);
-        printf("buffer ptr              : 0x%p\n"   ,&newPtr->buffer);
+        printf("event ptr               : %p\n"     ,&newPtr->event);
+        printf("buffer ptr              : %p\n"     ,&newPtr->buffer);
         printf("buf_size                : %i\n"     ,(unsigned int)newPtr->buf_size);
         printf("\n");
 }
@@ -686,16 +687,16 @@ JNIEXPORT jlong JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniEvent_ltt_1getO
 JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniEvent_ltt_1printEvent(JNIEnv* env, jobject jobj, jlong event_ptr) {
         LttEvent* newPtr = (LttEvent*)CONVERT_JLONG_TO_PTR(event_ptr);
         
-        printf("tracefile               : 0x%p\n",(void*)newPtr->tracefile );
+        printf("tracefile               : %p\n"  ,(void*)newPtr->tracefile );
         printf("block                   : %u\n"  ,(unsigned int)newPtr->block );
         printf("offset                  : %u\n"  ,(unsigned int)newPtr->offset );
         printf("tsc                     : %lu\n" ,(long unsigned int)newPtr->tsc );
         printf("timestamp               : %u\n"  ,(unsigned int)newPtr->timestamp );
         printf("event_id                : %u\n"  ,(unsigned short)newPtr->event_id );
-        printf("event_time              : 0x%p\n",(void*) &newPtr->event_time );
+        printf("event_time              : %p\n"  ,(void*) &newPtr->event_time );
         printf("   sec                  : %lu\n" ,(long unsigned int)(newPtr->event_time.tv_sec) );
         printf("   nsec                 : %lu\n" ,(long unsigned int)(newPtr->event_time.tv_nsec) );
-        printf("data                    : 0x%p\n",(void*) newPtr->data );
+        printf("data                    : %p\n"  ,(void*) newPtr->data );
         printf("data_size               : %u\n"  ,(unsigned int)newPtr->data_size );
         printf("event_size              : %u\n"  ,(unsigned int)newPtr->event_size );
         printf("count                   : %d\n"  ,(int)newPtr->count );
@@ -811,13 +812,13 @@ JNIEXPORT void JNICALL Java_org_eclipse_linuxtools_lttng_jni_JniMarker_ltt_1prin
         printf("format        : %s\n"  ,newPtr->format );
         printf("size          : %li\n" ,(long int)newPtr->size );
         printf("largest_align : %u\n"  ,(unsigned short)newPtr->largest_align );
-        printf("fields        : 0x%p\n",newPtr->fields );
+        printf("fields        : %p\n"  ,newPtr->fields );
         printf("int_size      : %u\n"  ,(unsigned short)newPtr->int_size );
         printf("long_size     : %u\n"  ,(unsigned short)newPtr->long_size );
         printf("pointer_size  : %u\n"  ,(unsigned short)newPtr->pointer_size );
         printf("size_t_size   : %u\n"  ,(unsigned short)newPtr->size_t_size );
         printf("alignment     : %u\n"  ,(unsigned short)newPtr->alignment );
-        printf("next          : 0x%p\n",newPtr->next );
+        printf("next          : %p\n"  ,newPtr->next );
         printf("\n");
 }
 
