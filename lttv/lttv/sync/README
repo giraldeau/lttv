@@ -1,0 +1,211 @@
+Benjamin Poirier
+benjamin.poirier@polymtl.ca
+2009
+
++ About time synchronization
+This framework performs offline time synchronization. This means that the
+synchronization is done after tracing is over. It is not the same as online
+synchronization like what is done by NTP. Nor is it directly influenced by it.
+
+Event timestamps are adjusted according to a clock correction function that
+palliates for initial offset and rate offset (ie. clocks that don't start out
+at the same value and clocks that don't run at the same speed). It can work on
+two or more traces.
+
+The synchronization is based on relations identified in network traffic
+between nodes. So, for it to work, there must be traffic exchanged between the
+nodes. At the moment, this must be TCP traffic. Any kind will do (ssh, http,
+...)
+
+For scientific information about the algorithms used, see:
+* Duda, A., Harrus, G., Haddad, Y., and Bernard, G.: Estimating global time in
+distributed systems, Proc. 7th Int. Conf. on Distributed Computing Systems,
+Berlin, volume 18, 1987
+* Ashton, P.: Algorithms for Off-line Clock Synchronisation, University of
+Canterbury, December 1995
+http://www.cosc.canterbury.ac.nz/research/reports/TechReps/1995/tr_9512.pdf
+
++ Using time synchronization
+++ Recording traces
+To use time synchronization you have to record traces on multiple nodes
+simultaneously with lttng (the tracer). While recording the traces, you have
+to make sure the following markers are enabled:
+* dev_receive
+* dev_xmit_extended
+* tcpv4_rcv_extended
+* udpv4_rcv_extended
+You also have to make sure there is some TCP traffic between the traced nodes.
+
+++ Viewing traces
+Afterwards, you have to make sure all the traces are accessible from a single
+machine, where lttv (the viewer) is run.
+
+Time synchronization is enabled and controlled via the following lttv options,
+as seen with "-h":
+--sync
+                     synchronize the time between the traces
+--sync-stats
+                     print statistics about the time synchronization
+--sync-null
+					 read the events but do not perform any processing, this
+					 is mostly for performance evaluation
+--sync-analysis  -  argument: chull, linreg
+                     specify the algorithm to use for event analysis
+--sync-graphs
+                     output gnuplot graph showing synchronization points
+--sync-graphs-dir  -  argument: DIRECTORY
+                     specify the directory where to store the graphs, by
+					 default in "graphs-<lttv-pid>"
+
+To enable synchronization, start lttv with the "--sync" option. It can be
+used in text mode or in GUI mode. You can add the traces one by one in the GUI
+but this will recompute the synchronization after every trace that is added.
+Instead, you can save some time by specifying all your traces on the command
+line (using -t).
+
+Example:
+lttv-gui -t traces/node1 -t traces/node2 --sync
+
+++ Statistics
+The --sync-stats option is useful to make sure the synchronization algorithms
+worked. Here is an example output (with added comments) from a successful
+chull (one of the synchronization algorithms) run of two traces:
+	LTTV processing stats:
+		received frames: 452
+		received frames that are IP: 452
+		received and processed packets that are TCP: 268
+		sent packets that are TCP: 275
+	TCP matching stats:
+		total input and output events matched together to form a packet: 240
+		Message traffic:
+			  0 - 1  : sent 60         received 60
+# Note that 60 + 60 < 240, this is because there was loopback traffic, which is
+# discarded.
+	Convex hull analysis stats:
+		out of order packets dropped from analysis: 0
+		Number of points in convex hulls:
+			  0 - 1  : lower half-hull 7     upper half-hull 9
+		Individual synchronization factors:
+			  0 - 1  : Middle     a0= -1.33641e+08 a1= 1 - 4.5276e-08 accuracy 1.35355e-05
+								  a0: -1.34095e+08 to -1.33187e+08 (delta=  907388)
+								  a1: 1 -6.81298e-06 to +6.72248e-06 (delta= 1.35355e-05)
+	Resulting synchronization factors:
+		trace 0 drift= 1 offset= 0 (0.000000) start time= 18.799023588
+		trace 1 drift= 1 offset= 1.33641e+08 (0.066818) start time= 19.090688494
+	Synchronization time:
+		real time: 0.113308
+		user time: 0.112007
+		system time: 0.000000
+
+++ Algorithms
+The synchronization framework is extensible and already includes two
+algorithms: chull and linreg. You can choose which analysis algorithm to use
+with the --sync-analysis option.
+
++ Design
+This part describes the design of the synchronization framework. This is to
+help programmers interested in:
+* adding new synchronization algorithms (analysis part)
+	There are already two analysis algorithms available: chull and linreg
+* using new types of events (processing and matching parts)
+* using time synchronization with another data source/tracer (processing part)
+	There are already two data sources available: lttng and unittest
+
+++ Sync chain
+This part is specific to the framework in use: the program doing
+synchronization, the executable linking to the event_*.o
+eg. LTTV, unittest
+
+This reads parameters, creates SyncState and calls the processing init
+function. The "sync chain" is the set of event-* modules. At the moment there
+is only one module at each stage. However, as more module are added, it will
+become relevant to have many modules at the same stage simultaneously. This
+will require some modifications. I've kept this possibility at the back of my
+mind while designing.
+
+++ Stage 1: Event processing
+Specific to the tracing data source.
+eg. LTTng, LTT userspace, libpcap
+
+Read the events from the trace and stuff them in an appropriate Event object.
+
+++ Communication between stages 1 and 2: events
+Communication is done via objects specialized from Event. At the moment, all
+*Event are in data_structures.h. Specific event structures and functions could
+be in separate files. This way, adding a new set of modules would require
+shipping extra data_structures* files instead of modifying the existing one.
+For this to work, Event.type couldn't be an enum, it could be an int and use
+#defines or constants defined the specialized data_structures* files.
+Event.event could be a void*.
+
+++ Stage 2: Event matching
+This stage and its modules are specific to the type of event. Event processing
+feeds the events one at a time but event analysis works on groups of events.
+Event matching is responsible for forming these groups. Generally speaking,
+these can have different types of relation ("one to one", "one to many", or a
+mix) and it will influence the overall behavior of the module.
+eg. TCP, UDP, MPI
+
+matchEvent() takes an Event pointer. An actual matching module doesn't have
+to be able to process every type of event. It has to check that the passed
+event is of a type it can process.
+
+++ Communication between stages 2 and 3: event groups
+Communication consists of events grouped in Message, Exchange or Broadcast
+structs.
+
+About exchanges:
+If one event pair is a packet (more generally, something representable as a
+Message), an exchange is composed of at least two packets, one in each
+direction. There should be a non-negative minimum "round trip time" (RTT)
+between the first and last event of the exchange. This RTT should be as small
+as possible so these packets should be closely related in time like a data
+packet and an acknowledgement packet. If the events analyzed are such that the
+minimum RTT can be zero, there's nothing gained in analyzing exchanges beyond
+what can already be figured out by analyzing packets.
+
+An exchange can also consist of more than two packets, in case one packet
+single handedly acknowledges many data packets. In this case, it is best to
+use the last acknowledged packet. Assuming a linear clock, an acknowledged
+packet is as good as any other. However, since the linear clock assumption is
+further from reality as the interval grows longer, it is best to keep the
+interval between the two packets as short as possible.
+
+++ Stage 3: Event analysis
+This stage and its modules are specific to the algorithm that analyzes events
+to deduce synchronization factors.
+eg. convex hull, linear regression, broadcast Maximum Likelihood Estimator
+
+Instead of having one analyzeEvents() function that can receive any sort of
+grouping of events, there are three prototypes: analyzeMessage(),
+analyzeExchange() and analyzeBroadcast(). A module implements only the
+relevant one(s) and sets the other function pointers to NULL in its
+AnalysisModule struct.
+
+The approach is different from matchEvent() where there is one point of entry
+no mather the type of event. The analyze*() approach has the advantage that
+there is no casting or type detection to do. It is also possible to deduce
+from the functions pointers which groupings of events a module can analyze.
+However, it means each analysis module will have to be modified if there is
+ever a new type of event grouping.
+
+I chose this approach because:
+1) I thought it likely that there will be new types of events but not so
+   likely that there will be new types of event groups.
+2) all events share some members (time, traceNb, ...) but not event groups
+3) we'll see which one of the two approaches works best and we can adapt
+   later.
+
+++ Data flow
+Data from traces flows "down" from processing to matching to analysis. Factors
+come back up.
+
+++ Evolution and adaptation
+It is possible to change/add another sync chain and to add other event_*
+modules. It has been done. New types of events may need to be added to
+data_structures.h. This is only to link between Event-* modules. If the data
+does not have to be shared, data_structures.h does not have to be modified.
+
+At the moment there is some code duplication in the last steps of linreg and
+chull analysis: the code to propagate the factors when there are more than two
+nodes. Maybe there could be a Stage 4 that does that?
