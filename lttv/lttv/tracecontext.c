@@ -101,7 +101,7 @@ lttv_context_new_tracefile_context(LttvTracesetContext *self)
 /****************************************************************************
  * lttv_traceset_context_compute_time_span
  *
- * Keep the time span is sync with on the fly addition and removal of traces
+ * Keep the time span in sync with on the fly addition and removal of traces
  * in a trace set. It must be called each time a trace is added/removed from
  * the traceset. It could be more efficient to call it only once a bunch
  * of traces are loaded, but the calculation is not long, so it's not

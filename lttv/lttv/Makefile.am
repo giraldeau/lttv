@@ -39,10 +39,20 @@ libdir = ${lttvplugindir}
 #noinst_HEADERS = \
 #	filter.h
 
-lttv_real_SOURCES = batchtest.c main.c module.c option.c \
-               hook.c attribute.c \
-               iattribute.c state.c stats.c \
-	       tracecontext.c traceset.c filter.c print.c
+lttv_real_SOURCES = \
+	batchtest.c\
+	main.c\
+	module.c\
+	option.c\
+	hook.c\
+	attribute.c\
+	iattribute.c\
+	state.c\
+	stats.c\
+	tracecontext.c\
+	traceset.c\
+	filter.c\
+	print.c
 
 #man_MANS = lttv.1
 #EXTRA_DIST = lttv.1
