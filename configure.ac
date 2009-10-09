@@ -27,7 +27,7 @@ AM_CONFIG_HEADER(config.h)
 AM_PROG_LIBTOOL
 
 # If requested, only build LTT library part
-AC_ARG_WITH(lttv, [  --with-lttv             Build whole LTTV system, as opposd to only the trace reading library
+AC_ARG_WITH(lttv, [  --with-lttv             build whole LTTV system, as opposd to only the trace reading library
 			  [[default=yes]]])
 if test -z "$with_lttv"; then
         with_lttv=${with_lttv_default-yes}
@@ -41,7 +41,7 @@ AM_CONDITIONAL(BUILD_LIB_ONLY, test "$with_lttv" = "no")
 
 
 # If requested, avoid building LTTV part
-AC_ARG_WITH(lttv-gui, [  --with-lttv-gui         Build LTTV gui, as opposed to only build textmode LTTV
+AC_ARG_WITH(lttv-gui, [  --with-lttv-gui         build LTTV gui, as opposed to only build textmode LTTV
 			  [[default=yes]]])
 
 if test -z "$with_lttv_gui"; then
@@ -94,7 +94,7 @@ fi
 
 
 # Check for JNI header files if requested
-AC_ARG_WITH(jni-interface, [  --with-jni-interface    Build JNI interface between C and java. Need java include files.
+AC_ARG_WITH(jni-interface, [  --with-jni-interface    build JNI interface between C and java. Need java include files.
 			  [[default=no]]])
 
 if test -z "$with_jni_interface"; then
@@ -161,7 +161,7 @@ AC_CHECK_FUNCS([select])
 
 AC_ARG_ENABLE(lttvstatic,
 	AC_HELP_STRING( [--enable-lttvstatic],
-		[Build a statically linked executable @<:@default=no@:>@]),
+		[build a statically linked executable @<:@default=no@:>@]),
 		[with_lttvstatic="yes"],
 		[with_lttvstatic="no"])
 AM_CONDITIONAL(LTTVSTATIC, test "x$with_lttvstatic" = "xyes")
