@@ -361,6 +361,18 @@ typedef struct _LttvBdevState {
   GArray *mode_stack;
 } LttvBdevState;
 
+typedef struct _LttvNameTables {
+  GQuark *syscall_names;
+  guint nb_syscalls;
+  GQuark *trap_names;
+  guint nb_traps;
+  GQuark *irq_names;
+  guint nb_irqs;
+  GQuark *soft_irq_names;
+  guint nb_soft_irqs;
+  GHashTable *kprobe_hash;
+} LttvNameTables;
+
 struct _LttvTraceState {
   LttvTraceContext parent;
 
@@ -371,14 +383,7 @@ struct _LttvTraceState {
   guint nb_event, save_interval;
   /* Block/char devices, locks, memory pages... */
   GQuark *eventtype_names;
-  GQuark *syscall_names;
-  guint  nb_syscalls;
-  GQuark *trap_names;
-  guint  nb_traps;
-  guint  nb_irqs;
-  guint  nb_soft_irqs;
-  GQuark *irq_names;
-  GQuark *soft_irq_names;
+  LttvNameTables *name_tables;
   LttTime *max_time_state_recomputed_in_seek;
   GHashTable *kprobe_hash;
 

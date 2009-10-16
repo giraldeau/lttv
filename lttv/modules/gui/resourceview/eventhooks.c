@@ -871,7 +871,8 @@ int before_execmode_hook_irq(void *hook_data, void *call_data)
   GQuark name;
   {
     gchar *str;
-    str = g_strdup_printf("IRQ %" PRIu64 " [%s]", irq, (char*)g_quark_to_string(ts->irq_names[irq]));
+    str = g_strdup_printf("IRQ %" PRIu64 " [%s]", irq,
+                    (char*)g_quark_to_string(ts->name_tables->irq_names[irq]));
     name = g_quark_from_string(str);
     g_free(str);
   }

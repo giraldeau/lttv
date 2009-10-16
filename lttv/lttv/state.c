@@ -323,6 +323,7 @@ static void expand_name_table(LttvTraceState *ts, GQuark **table,
   GQuark *old_table = *table;
   *table = g_new(GQuark, new_nb);
   memcpy(*table, old_table, nb * sizeof(GQuark));
+  g_free(old_table);
 }
 
 static void fill_name_table(LttvTraceState *ts, GQuark *table, guint nb,
@@ -339,84 +340,103 @@ static void fill_name_table(LttvTraceState *ts, GQuark *table, guint nb,
 
 static void expand_syscall_table(LttvTraceState *ts, int id)
 {
-  guint new_nb = check_expand(ts->nb_syscalls, id);
-  if(likely(new_nb == ts->nb_syscalls))
+  LttvNameTables *nt = ts->name_tables;
+  guint new_nb;
+
+  new_nb = check_expand(nt->nb_syscalls, id);
+  if(likely(new_nb == nt->nb_syscalls))
     return;
-  expand_name_table(ts, &ts->syscall_names, ts->nb_syscalls, new_nb);
-  fill_name_table(ts, ts->syscall_names, ts->nb_syscalls, new_nb, "syscall");
+  expand_name_table(ts, &nt->syscall_names, nt->nb_syscalls, new_nb);
+  fill_name_table(ts, nt->syscall_names, nt->nb_syscalls, new_nb, "syscall");
   /* Update the table size */
-  ts->nb_syscalls = new_nb;
+  nt->nb_syscalls = new_nb;
 }
 
 static void expand_kprobe_table(LttvTraceState *ts, guint64 ip, char *symbol)
 {
+  LttvNameTables *nt = ts->name_tables;
 #if (__SIZEOF_LONG__ == 4)
   guint64 *ip_ptr = g_new(guint64, 1);
-  g_hash_table_insert(ts->kprobe_hash, ip_ptr,
+  g_hash_table_insert(nt->kprobe_hash, ip_ptr,
     (gpointer)(glong)g_quark_from_string(symbol));
 #else
-  g_hash_table_insert(ts->kprobe_hash, (gpointer)ip,
+  g_hash_table_insert(nt->kprobe_hash, (gpointer)ip,
     (gpointer)(glong)g_quark_from_string(symbol));
 #endif
 }
 
 static void expand_trap_table(LttvTraceState *ts, int id)
 {
-  guint new_nb = check_expand(ts->nb_traps, id);
-  guint i;
-  if(likely(new_nb == ts->nb_traps))
-    return;
-  expand_name_table(ts, &ts->trap_names, ts->nb_traps, new_nb);
-  fill_name_table(ts, ts->trap_names, ts->nb_traps, new_nb, "trap");
-  /* Update the table size */
-  ts->nb_traps = new_nb;
+  LttvNameTables *nt = ts->name_tables;
+  LttvTrapState *old_table;
+  guint new_nb, i;
 
-  LttvTrapState *old_table = ts->trap_states;
+  new_nb = check_expand(nt->nb_traps, id);
+  if(likely(new_nb == nt->nb_traps))
+    return;
+
+  expand_name_table(ts, &nt->trap_names, nt->nb_traps, new_nb);
+  fill_name_table(ts, nt->trap_names, nt->nb_traps, new_nb, "trap");
+
+  old_table = ts->trap_states;
   ts->trap_states = g_new(LttvTrapState, new_nb);
-  memcpy(ts->trap_states, old_table,
-    ts->nb_traps * sizeof(LttvTrapState));
-  for(i = ts->nb_traps; i < new_nb; i++)
+  memcpy(ts->trap_states, old_table, nt->nb_traps * sizeof(LttvTrapState));
+  g_free(old_table);
+  for(i = nt->nb_traps; i < new_nb; i++)
     ts->trap_states[i].running = 0;
+
+  /* Update the table size */
+  nt->nb_traps = new_nb;
 }
 
 static void expand_irq_table(LttvTraceState *ts, int id)
 {
-  guint new_nb = check_expand(ts->nb_irqs, id);
-  guint i;
-  if(likely(new_nb == ts->nb_irqs))
-    return;
-  expand_name_table(ts, &ts->irq_names, ts->nb_irqs, new_nb);
-  fill_name_table(ts, ts->irq_names, ts->nb_irqs, new_nb, "irq");
+  LttvNameTables *nt = ts->name_tables;
+  LttvIRQState *old_table;
+  guint new_nb, i;
 
-  LttvIRQState *old_table = ts->irq_states;
+  new_nb = check_expand(nt->nb_irqs, id);
+  if(likely(new_nb == nt->nb_irqs))
+    return;
+
+  expand_name_table(ts, &nt->irq_names, nt->nb_irqs, new_nb);
+  fill_name_table(ts, nt->irq_names, nt->nb_irqs, new_nb, "irq");
+
+  old_table = ts->irq_states;
   ts->irq_states = g_new(LttvIRQState, new_nb);
-  memcpy(ts->irq_states, old_table, ts->nb_irqs * sizeof(LttvIRQState));
-  for(i = ts->nb_irqs; i < new_nb; i++) {
-    ts->irq_states[i].mode_stack = g_array_new(FALSE, FALSE, sizeof(LttvIRQMode));
-  }
+  memcpy(ts->irq_states, old_table, nt->nb_irqs * sizeof(LttvIRQState));
+  g_free(old_table);
+  for(i = nt->nb_irqs; i < new_nb; i++)
+    ts->irq_states[i].mode_stack =
+      g_array_new(FALSE, FALSE, sizeof(LttvIRQMode));
 
   /* Update the table size */
-  ts->nb_irqs = new_nb;
+  nt->nb_irqs = new_nb;
 }
 
 static void expand_soft_irq_table(LttvTraceState *ts, int id)
 {
-  guint new_nb = check_expand(ts->nb_soft_irqs, id);
-  guint i;
-  if(likely(new_nb == ts->nb_soft_irqs))
-    return;
-  expand_name_table(ts, &ts->soft_irq_names, ts->nb_soft_irqs, new_nb);
-  fill_name_table(ts, ts->soft_irq_names, ts->nb_soft_irqs, new_nb, "softirq");
+  LttvNameTables *nt = ts->name_tables;
+  LttvSoftIRQState *old_table;
+  guint new_nb, i;
 
-  LttvSoftIRQState *old_table = ts->soft_irq_states;
+  new_nb = check_expand(nt->nb_soft_irqs, id);
+  if(likely(new_nb == nt->nb_soft_irqs))
+    return;
+
+  expand_name_table(ts, &nt->soft_irq_names, nt->nb_soft_irqs, new_nb);
+  fill_name_table(ts, nt->soft_irq_names, nt->nb_soft_irqs, new_nb, "softirq");
+
+  old_table = ts->soft_irq_states;
   ts->soft_irq_states = g_new(LttvSoftIRQState, new_nb);
   memcpy(ts->soft_irq_states, old_table,
-    ts->nb_soft_irqs * sizeof(LttvSoftIRQState));
-  for(i = ts->nb_soft_irqs; i < new_nb; i++)
+    nt->nb_soft_irqs * sizeof(LttvSoftIRQState));
+  g_free(old_table);
+  for(i = nt->nb_soft_irqs; i < new_nb; i++)
     ts->soft_irq_states[i].running = 0;
 
   /* Update the table size */
-  ts->nb_soft_irqs = new_nb;
+  nt->nb_soft_irqs = new_nb;
 }
 
 static void
@@ -447,9 +467,9 @@ restore_init_state(LttvTraceState *self)
   //lttv_process_trace_seek_time(&self->parent, ltt_time_zero);
 
   nb_cpus = ltt_trace_get_num_cpu(self->parent.t);
-  nb_irqs = self->nb_irqs;
-  nb_soft_irqs = self->nb_soft_irqs;
-  nb_traps = self->nb_traps;
+  nb_irqs = self->name_tables->nb_irqs;
+  nb_soft_irqs = self->name_tables->nb_soft_irqs;
+  nb_traps = self->name_tables->nb_traps;
   
   /* Put the per cpu running_process to beginning state : process 0. */
   for(i=0; i< nb_cpus; i++) {
@@ -648,7 +668,7 @@ init(LttvTracesetState *self, LttvTraceset *ts)
 
     nb_tracefile = tc->tracefiles->len;
     nb_cpu = ltt_trace_get_num_cpu(tc->t);
-    nb_irq = tcs->nb_irqs;
+    nb_irq = tcs->name_tables->nb_irqs;
     tcs->processes = NULL;
     tcs->usertraces = NULL;
     tcs->running_process = g_new(LttvProcessState*, nb_cpu);
@@ -672,10 +692,10 @@ init(LttvTracesetState *self, LttvTraceset *ts)
 
     /* init soft irq stuff */
     /* the kernel has a statically fixed max of 32 softirqs */
-    tcs->soft_irq_states = g_new(LttvSoftIRQState, tcs->nb_soft_irqs);
+    tcs->soft_irq_states = g_new(LttvSoftIRQState, tcs->name_tables->nb_soft_irqs);
 
     /* init trap stuff */
-    tcs->trap_states = g_new(LttvTrapState, tcs->nb_traps);
+    tcs->trap_states = g_new(LttvTrapState, tcs->name_tables->nb_traps);
 
     /* init bdev resource stuff */
     tcs->bdev_states = g_hash_table_new(g_int_hash, g_int_equal);
@@ -1636,7 +1656,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
   }
 
   /* save the irq state */
-  nb_irqs = self->nb_irqs;
+  nb_irqs = self->name_tables->nb_irqs;
   {
     value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_IRQS,
         LTTV_POINTER);
@@ -1644,7 +1664,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
   }
 
   /* save the soft irq state */
-  nb_soft_irqs = self->nb_soft_irqs;
+  nb_soft_irqs = self->name_tables->nb_soft_irqs;
   {
     value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_SOFT_IRQS,
         LTTV_POINTER);
@@ -1652,7 +1672,7 @@ static void state_save(LttvTraceState *self, LttvAttribute *container)
   }
 
   /* save the trap state */
-  nb_traps = self->nb_traps;
+  nb_traps = self->name_tables->nb_traps;
   {
     value = lttv_attribute_add(container, LTTV_STATE_RESOURCE_TRAPS,
         LTTV_POINTER);
@@ -1721,21 +1741,21 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
   self->cpu_states = lttv_state_copy_cpu_states(*(value.v_pointer), nb_cpus);
  
   /* restore irq resource states */
-  nb_irqs = self->nb_irqs;
+  nb_irqs = self->name_tables->nb_irqs;
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_IRQS, &value);
   g_assert(type == LTTV_POINTER);
   lttv_state_free_irq_states(self->irq_states, nb_irqs);
   self->irq_states = lttv_state_copy_irq_states(*(value.v_pointer), nb_irqs);
  
   /* restore soft irq resource states */
-  nb_soft_irqs = self->nb_soft_irqs;
+  nb_soft_irqs = self->name_tables->nb_soft_irqs;
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_SOFT_IRQS, &value);
   g_assert(type == LTTV_POINTER);
   lttv_state_free_soft_irq_states(self->soft_irq_states, nb_soft_irqs);
   self->soft_irq_states = lttv_state_copy_soft_irq_states(*(value.v_pointer), nb_soft_irqs);
  
   /* restore trap resource states */
-  nb_traps = self->nb_traps;
+  nb_traps = self->name_tables->nb_traps;
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_TRAPS, &value);
   g_assert(type == LTTV_POINTER);
   lttv_state_free_trap_states(self->trap_states, nb_traps);
@@ -1788,7 +1808,7 @@ static void state_restore(LttvTraceState *self, LttvAttribute *container)
 
 static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
 {
-  guint i, nb_tracefile, nb_cpus, nb_irqs, nb_softirqs;
+  guint i, nb_tracefile, nb_cpus, nb_irqs, nb_soft_irqs;
 
   LttvTracefileState *tfcs;
 
@@ -1832,16 +1852,16 @@ static void state_saved_free(LttvTraceState *self, LttvAttribute *container)
   lttv_state_free_cpu_states(*(value.v_pointer), nb_cpus);
 
   /* free irq resource states */
-  nb_irqs = self->nb_irqs;
+  nb_irqs = self->name_tables->nb_irqs;
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_IRQS, &value);
   g_assert(type == LTTV_POINTER);
   lttv_state_free_irq_states(*(value.v_pointer), nb_irqs);
 
   /* free softirq resource states */
-  nb_softirqs = self->nb_irqs;
+  nb_soft_irqs = self->name_tables->nb_soft_irqs;
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_SOFT_IRQS, &value);
   g_assert(type == LTTV_POINTER);
-  lttv_state_free_soft_irq_states(*(value.v_pointer), nb_softirqs);
+  lttv_state_free_soft_irq_states(*(value.v_pointer), nb_soft_irqs);
 
   /* free the blkdev states */
   type = lttv_attribute_get_by_name(container, LTTV_STATE_RESOURCE_BLKDEVS, &value);
@@ -1930,21 +1950,6 @@ free_max_time(LttvTraceState *tcs)
   g_free(*(v.v_pointer));
   *(v.v_pointer) = NULL;
 }
-
-
-typedef struct _LttvNameTables {
- // FIXME  GQuark *eventtype_names;
-  GQuark *syscall_names;
-  guint nb_syscalls;
-  GQuark *trap_names;
-  guint nb_traps;
-  GQuark *irq_names;
-  guint nb_irqs;
-  GQuark *soft_irq_names;
-  guint nb_softirqs;
-  GHashTable *kprobe_hash;
-} LttvNameTables;
-
 
 static void 
 create_name_tables(LttvTraceState *tcs) 
@@ -2068,9 +2073,9 @@ create_name_tables(LttvTraceState *tcs)
   */
 
   /* the kernel is limited to 32 statically defined softirqs */
-  name_tables->nb_softirqs = 32;
-  name_tables->soft_irq_names = g_new(GQuark, name_tables->nb_softirqs);
-  for(i = 0 ; i < name_tables->nb_softirqs ; i++) {
+  name_tables->nb_soft_irqs = 32;
+  name_tables->soft_irq_names = g_new(GQuark, name_tables->nb_soft_irqs);
+  for(i = 0 ; i < name_tables->nb_soft_irqs ; i++) {
     g_string_printf(fe_name, "softirq %d", i);
     name_tables->soft_irq_names[i] = g_quark_from_string(fe_name->str);
   }
@@ -2090,24 +2095,12 @@ create_name_tables(LttvTraceState *tcs)
 static void 
 get_name_tables(LttvTraceState *tcs) 
 {
-  LttvNameTables *name_tables;
-
   LttvAttributeValue v;
 
   lttv_attribute_find(tcs->parent.t_a, LTTV_STATE_NAME_TABLES, 
         LTTV_POINTER, &v);
   g_assert(*(v.v_pointer) != NULL);
-  name_tables = (LttvNameTables *)*(v.v_pointer);
-  //tcs->eventtype_names = name_tables->eventtype_names;
-  tcs->syscall_names = name_tables->syscall_names;
-  tcs->nb_syscalls = name_tables->nb_syscalls;
-  tcs->trap_names = name_tables->trap_names;
-  tcs->nb_traps = name_tables->nb_traps;
-  tcs->irq_names = name_tables->irq_names;
-  tcs->soft_irq_names = name_tables->soft_irq_names;
-  tcs->nb_irqs = name_tables->nb_irqs;
-  tcs->nb_soft_irqs = name_tables->nb_softirqs;
-  tcs->kprobe_hash = name_tables->kprobe_hash;
+  tcs->name_tables = (LttvNameTables *)*(v.v_pointer);
 }
 
 
@@ -2525,10 +2518,11 @@ static gboolean syscall_entry(void *hook_data, void *call_data)
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
   struct marker_field *f = lttv_trace_get_hook_field(th, 0);
   LttvExecutionSubmode submode;
+  LttvNameTables *nt = ((LttvTraceState *)(s->parent.t_context))->name_tables;
 
   guint syscall = ltt_event_get_unsigned(e, f);
   expand_syscall_table(ts, syscall);
-  submode = ((LttvTraceState *)(s->parent.t_context))->syscall_names[syscall];
+  submode = nt->syscall_names[syscall];
   /* There can be no system call from PID 0 : unknown state */
   if(process->pid != 0)
     push_state(s, LTTV_STATE_SYSCALL, submode);
@@ -2557,6 +2551,7 @@ static gboolean trap_entry(void *hook_data, void *call_data)
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
   struct marker_field *f = lttv_trace_get_hook_field(th, 0);
+  LttvNameTables *nt = ((LttvTraceState *)(s->parent.t_context))->name_tables;
 
   LttvExecutionSubmode submode;
 
@@ -2564,7 +2559,7 @@ static gboolean trap_entry(void *hook_data, void *call_data)
 
   expand_trap_table(ts, trap);
 
-  submode = ((LttvTraceState *)(s->parent.t_context))->trap_names[trap];
+  submode = nt->trap_names[trap];
 
   push_state(s, LTTV_STATE_TRAP, submode);
 
@@ -2606,13 +2601,14 @@ static gboolean irq_entry(void *hook_data, void *call_data)
   //guint8 ev_id = ltt_event_eventtype_id(e);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
   struct marker_field *f = lttv_trace_get_hook_field(th, 0);
+  LttvNameTables *nt = ((LttvTraceState *)(s->parent.t_context))->name_tables;
 
   LttvExecutionSubmode submode;
   guint64 irq = ltt_event_get_long_unsigned(e, f);
 
   expand_irq_table(ts, irq);
 
-  submode = ((LttvTraceState *)(s->parent.t_context))->irq_names[irq];
+  submode = nt->irq_names[irq];
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_IRQ, submode);
@@ -2675,13 +2671,14 @@ static gboolean soft_irq_raise(void *hook_data, void *call_data)
   //guint8 ev_id = ltt_event_eventtype_id(e);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
   struct marker_field *f = lttv_trace_get_hook_field(th, 0);
+  LttvNameTables *nt = ((LttvTraceState *)(s->parent.t_context))->name_tables;
 
   LttvExecutionSubmode submode;
   guint64 softirq = ltt_event_get_long_unsigned(e, f);
-  guint64 nb_softirqs = ((LttvTraceState *)(s->parent.t_context))->nb_soft_irqs;
+  guint64 nb_softirqs = nt->nb_soft_irqs;
 
   if(softirq < nb_softirqs) {
-    submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[softirq];
+    submode = nt->soft_irq_names[softirq];
   } else {
     /* Fixup an incomplete irq table */
     GString *string = g_string_new("");
@@ -2708,7 +2705,8 @@ static gboolean soft_irq_entry(void *hook_data, void *call_data)
   LttvExecutionSubmode submode;
   guint64 softirq = ltt_event_get_long_unsigned(e, f);
   expand_soft_irq_table(ts, softirq);
-  submode = ((LttvTraceState *)(s->parent.t_context))->soft_irq_names[softirq];
+  LttvNameTables *nt = ((LttvTraceState *)(s->parent.t_context))->name_tables;
+  submode = nt->soft_irq_names[softirq];
 
   /* Do something with the info about being in user or system mode when int? */
   push_state(s, LTTV_STATE_SOFT_IRQ, submode);
@@ -2729,6 +2727,7 @@ static gboolean enum_interrupt(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState *)s->parent.t_context;
+  LttvNameTables *nt = ts->name_tables;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   //guint8 ev_id = ltt_event_eventtype_id(e);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
@@ -2738,7 +2737,7 @@ static gboolean enum_interrupt(void *hook_data, void *call_data)
   guint irq = ltt_event_get_long_unsigned(e, lttv_trace_get_hook_field(th, 1));
 
   expand_irq_table(ts, irq);
-  ts->irq_names[irq] = action;
+  nt->irq_names[irq] = action;
 
   return FALSE;
 }
@@ -2877,6 +2876,7 @@ static gboolean dump_syscall(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttvNameTables *nt = ts->name_tables;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
   guint id;
@@ -2888,7 +2888,7 @@ static gboolean dump_syscall(void *hook_data, void *call_data)
   symbol = ltt_event_get_string(e, lttv_trace_get_hook_field(th, 2));
 
   expand_syscall_table(ts, id);
-  ts->syscall_names[id] = g_quark_from_string(symbol);
+  nt->syscall_names[id] = g_quark_from_string(symbol);
 
   return FALSE;
 }
@@ -2914,6 +2914,7 @@ static gboolean dump_softirq(void *hook_data, void *call_data)
 {
   LttvTracefileState *s = (LttvTracefileState *)call_data;
   LttvTraceState *ts = (LttvTraceState*)s->parent.t_context;
+  LttvNameTables *nt = ts->name_tables;
   LttEvent *e = ltt_tracefile_get_event(s->parent.tf);
   LttvTraceHook *th = (LttvTraceHook *)hook_data;
   guint id;
@@ -2925,7 +2926,7 @@ static gboolean dump_softirq(void *hook_data, void *call_data)
   symbol = ltt_event_get_string(e, lttv_trace_get_hook_field(th, 2));
 
   expand_soft_irq_table(ts, id);
-  ts->soft_irq_names[id] = g_quark_from_string(symbol);
+  nt->soft_irq_names[id] = g_quark_from_string(symbol);
 
   return FALSE;
 }
@@ -3276,7 +3277,8 @@ static gboolean fs_open(void *hook_data, void *call_data)
   f = lttv_trace_get_hook_field(th, 1);
   filename = ltt_event_get_string(e, f);
 
-  g_hash_table_insert(process->fds, (gpointer)fd, (gpointer)g_quark_from_string(filename));
+  g_hash_table_insert(process->fds, (gpointer)(long)fd,
+                      (gpointer)(unsigned long)g_quark_from_string(filename));
 
   return FALSE;
 }

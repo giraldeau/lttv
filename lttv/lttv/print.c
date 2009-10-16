@@ -50,25 +50,26 @@ static inline void print_enum_events(LttEvent *e, struct marker_field *f,
   LttTracefile *tf = tfs->parent.tf;
   struct marker_info *info = marker_get_info_from_id(tf->mdata, e->event_id);
   LttvTraceState *ts = (LttvTraceState*)(tfs->parent.t_context);
+  LttvNameTables *nt = ts->name_tables;
   
   if (tf->name == LTT_CHANNEL_KERNEL) {
     if (info->name == LTT_EVENT_SYSCALL_ENTRY
         && f->name == LTT_FIELD_SYSCALL_ID) {
       g_string_append_printf(s, " [%s]",
-        g_quark_to_string(ts->syscall_names[value]));
+        g_quark_to_string(nt->syscall_names[value]));
     } else if ((info->name == LTT_EVENT_SOFT_IRQ_ENTRY
                 || info->name == LTT_EVENT_SOFT_IRQ_EXIT
                 || info->name == LTT_EVENT_SOFT_IRQ_RAISE)
                && f->name == LTT_FIELD_SOFT_IRQ_ID) {
       g_string_append_printf(s, " [%s]",
-        g_quark_to_string(ts->soft_irq_names[value]));
+        g_quark_to_string(nt->soft_irq_names[value]));
     } else if (info->name == LTT_EVENT_KPROBE
                && f->name == LTT_FIELD_IP) {
 #if (__SIZEOF_LONG__ == 4)
-      GQuark symbol = (GQuark)g_hash_table_lookup(ts->kprobe_hash,
+      GQuark symbol = (GQuark)g_hash_table_lookup(nt->kprobe_hash,
                                           (gconstpointer)&value);
 #else
-      GQuark symbol = (GQuark)g_hash_table_lookup(ts->kprobe_hash,
+      GQuark symbol = (GQuark)g_hash_table_lookup(nt->kprobe_hash,
                                           (gconstpointer)value);
 #endif
       if (symbol)
