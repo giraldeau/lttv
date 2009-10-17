@@ -54,6 +54,20 @@ lttv_real_SOURCES = \
 	filter.c\
 	print.c
 
+lttvinclude_HEADERS = \
+	attribute.h\
+	hook.h\
+	iattribute.h\
+	lttv.h\
+	module.h\
+	option.h\
+	state.h\
+	stats.h\
+	tracecontext.h\
+	traceset.h\
+	filter.h\
+	print.h
+
 #man_MANS = lttv.1
 #EXTRA_DIST = lttv.1
 

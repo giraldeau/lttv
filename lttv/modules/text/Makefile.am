@@ -12,4 +12,5 @@ libprecomputeState_la_SOURCES = precomputeState.c
 libdepanalysis_la_SOURCES = depanalysis.c sstack.c
 
 noinst_HEADERS = \
-	batchanalysis.h
+	batchanalysis.h \
+	sstack.h
