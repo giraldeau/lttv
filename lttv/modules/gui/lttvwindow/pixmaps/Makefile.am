@@ -4,7 +4,9 @@
 # Created by Mathieu Desnoyers on September 30, 2003
 #
 
-EXTRA_DIST =  \
+pixmapsdir = $(datadir)/pixmaps/$(PACKAGE)
+
+dist_pixmaps_DATA =  \
 	1downarrow.png\
 	1uparrow.png\
 	edit_add_22.png\

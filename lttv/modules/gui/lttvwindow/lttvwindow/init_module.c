@@ -119,7 +119,7 @@ static gboolean window_creation_hook(void *hook_data, void *call_data)
   gtk_set_locale ();
   gtk_init (&lttv_argc, &lttv_argv);
 
-  add_pixmap_directory (PACKAGE_DATA_DIR "/" PACKAGE "/pixmaps");
+  add_pixmap_directory (PACKAGE_DATA_DIR "/pixmaps/" PACKAGE);
   add_pixmap_directory ("pixmaps");
   add_pixmap_directory ("../modules/gui/main/pixmaps");
 
