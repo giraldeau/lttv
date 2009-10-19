@@ -100,6 +100,13 @@ static gboolean process_traceset(void *hook_data, void *call_data)
     LTTV_POINTER, &value_filter);
   g_assert(retval);
 
+  /* Repeat the search for the first element, the second search might have
+   * moved the first element (by creating the second element)
+   */
+  retval= lttv_iattribute_find_by_path(attributes, "filter/expression",
+    LTTV_POINTER, &value_expression);
+  g_assert(retval);
+
   *(value_filter.v_pointer) = lttv_filter_new();
   //g_debug("Filter string: %s",((GString*)*(value_expression.v_pointer))->str);
 
